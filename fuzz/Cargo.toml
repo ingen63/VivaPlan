@@ -31,3 +31,9 @@ name = "validate_plan"
 path = "fuzz_targets/validate_plan.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "run_plan"
+path = "fuzz_targets/run_plan.rs"
+test = false
+doc = false

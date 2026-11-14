@@ -203,6 +203,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: taiki-e/install-action@v2
         with: { tool: cargo-fuzz }
+      # FEA-68: Der Korpus wächst von Nacht zu Nacht. Gespeichert wird je Lauf ein neuer Stand; geladen der jüngste.
+      - name: Korpus aus dem letzten Lauf
+        uses: actions/cache@v4
+        with:
+          path: fuzz/corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: fuzz-corpus-
       - name: Alle Fuzz-Targets je 5 Minuten
         run: |
           # ISS-11: cargo-fuzz baut ohne --target für das Ziel, für das es selbst gebaut ist.
@@ -210,8 +217,12 @@ jobs:
           # Deshalb ausdrücklich für den Host bauen (x86_64-unknown-linux-gnu).
           host=$(rustc +nightly -vV | sed -n 's/^host: //p')
           cd fuzz
+          # FEA-68: Neue Eingaben landen in corpus/<Ziel> (Cache); seeds/<Ziel> ist der Startkorpus im Repo.
+          # Ein Fund (Absturz, Panik) beendet den Lauf mit Fehler; die Eingabe liegt dann unter artifacts/.
           for t in $(cargo +nightly fuzz list); do
-            cargo +nightly fuzz run --target "$host" "$t" -- -max_total_time=300
+            mkdir -p "corpus/$t"
+            seeds=""; [ -d "seeds/$t" ] && seeds="seeds/$t"
+            cargo +nightly fuzz run --target "$host" "$t" "corpus/$t" $seeds -- -max_total_time=300
           done
       - uses: actions/upload-artifact@v4
         if: failure()

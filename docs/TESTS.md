@@ -48,6 +48,16 @@ jeden Test in einem eigenen Prozess. Unter `cargo test` laufen die Tests als Thr
 prozessweiten Fortschritt und Abbruch (`crates/engine/src/progress.rs`); ein Abbrechen-Test kann dann eine gleichzeitig
 laufende Berechnung eines anderen Tests abbrechen. Hook, CI und Abdeckung verwenden deshalb ebenfalls nextest.
 
+## Fuzzing
+
+`make fuzz` (cargo-fuzz, Nightly, eigener Workspace `fuzz/`) und nächtlich `test-quality.yml` führen jedes Ziel aus:
+`parse_csv`, `parse_snb` und `validate_plan` auf rohe Eingaben, `run_plan` (FEA-68) auf die ganze Rechnung. `run_plan`
+verändert die Beispielplanung strukturiert (je vier Bytes: Feld, Art der Änderung, Wert; höchstens 255 Monte-Carlo-Pfade,
+keine Variationen) und ruft `api::run` auf; Absturz oder ungültige Zahl im Ergebnis ist ein Fund. Der Startkorpus liegt
+in `fuzz/seeds/<Ziel>/` (für `run_plan`: alle Renditequellen mit allen Strategien), neue Eingaben in `fuzz/corpus/<Ziel>/`
+(nicht eingecheckt, nächtlich im Cache von GitHub Actions). Ein Fund lässt den Lauf fehlschlagen; die Eingabe liegt im
+Artefakt `fuzz-artifacts`.
+
 ## Gefundene Fehler
 
 Mit dieser Strategie gefunden und behoben (November 2026):

@@ -336,7 +336,7 @@ Die Testqualität wird auf mehreren Ebenen gemessen (Details und Schichten: `doc
 | Ausführung | cargo-nextest (Profil `ci`, Wiederholungen, flaky = Fehler) | `make test` | `junit.xml` |
 | Abdeckung | cargo-llvm-cov (Gate: Zeilen ≥ 80 % je Paket, `tools/coverage-min`) | `make coverage` | HTML, LCOV, Cobertura |
 | Wirksamkeit | cargo-mutants (PR und nächtlich: nur geänderte Zeilen seit dem letzten erfolgreichen nächtlichen Lauf; voll: lokal oder manuell in Actions) | `make mutants`, `make mutants-diff` | `local/mutants.out/` (`missed.txt`) |
-| Eingabebreite | proptest (`crates/engine/tests/proptest_parsers.rs`), cargo-fuzz (`fuzz/`) | `make proptest`, `make fuzz` | Fehlerfälle, Korpora |
+| Eingabebreite | proptest (`crates/engine/tests/proptest_parsers.rs`, zufällige Planungen in `proptest_plans.rs`), cargo-fuzz (`fuzz/`, ganze Rechnung im Ziel `run_plan`) | `make proptest`, `make fuzz` | Fehlerfälle, Korpora |
 
 Miri und loom sind nicht eingerichtet: der Code enthält kein `unsafe` und nur einfache Atomic-Flags (`progress.rs`).
 
