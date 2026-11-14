@@ -1,6 +1,6 @@
 # Arbeitsanleitung für Claude Code
 
-Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick in `docs/BESCHREIBUNG.md` und `README.md`, Tests in `docs/TESTS.md` und `docs/QA.md`, Spezifikationen in `docs/spezifikation/`.
+Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick in `docs/BESCHREIBUNG.md` und `README.md`, Technik und Rechenregeln in `docs/ENTWICKLUNG.md`, Tests in `docs/TESTS.md` und `docs/QA.md`, Spezifikationen in `docs/spezifikation/`.
 
 ## Sprache
 

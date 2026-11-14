@@ -6,7 +6,7 @@ Quellen; deren Nutzungsbedingungen gelten. Die Reihen werden mit Quellenangabe u
 weitergegeben.
 
 Ausgeliefert werden keine Originaldateien, sondern daraus berechnete Renditen (Monats- bzw. Jahreswerte). Wie sie
-entstehen, steht in `README.md` (Abschnitt «Datenbibliothek»).
+entstehen, steht in `docs/ENTWICKLUNG.md` (Abschnitt «Datenbibliothek»).
 
 ## Quellen
 

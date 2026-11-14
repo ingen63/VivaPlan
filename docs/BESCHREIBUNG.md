@@ -199,7 +199,7 @@ deshalb beim ersten Start eine Warnung.
 
 ## Verlässlichkeit
 
-Die Rechenregeln sind im README Schritt für Schritt beschrieben. Jede Regel ist mit einem von Hand nachgerechneten
+Die Rechenregeln sind in `docs/ENTWICKLUNG.md` Schritt für Schritt beschrieben. Jede Regel ist mit einem von Hand nachgerechneten
 Testfall belegt. Dazu kommen:
 
 - Prüfungen an Hunderten zufälliger Planungen (zum Beispiel muss das Gesamtvermögen immer der Summe seiner Teile entsprechen),
