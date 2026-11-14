@@ -62,6 +62,10 @@ jobs:
         working-directory: fuzz
         run: cargo fmt --all --check
 
+  # Einziger Lauf der Rust-Tests mit Abdeckung je Push (FEA-62; vorher zusätzlich coverage.yml).
+  # Harte Sperre: Liegt Engine oder App unter tools/coverage-min, schlägt der Schritt fehl.
+  # Tests laufen mit nextest wie in make test und im pre-push-Hook: jeder Test in einem eigenen Prozess.
+  # Unter cargo test teilen sich parallele Tests den prozessweiten Fortschritt und Abbruch (crates/engine/src/progress.rs).
   tests-coverage:
     needs: changes
     if: needs.changes.outputs.run == 'true'
