@@ -32,6 +32,7 @@ mod optimize_ranges;
 mod pillar3a;
 mod pillar3a_plan;
 mod proptest_parsers;
+mod proptest_plans;
 mod qa_matrix;
 mod reference;
 mod rerun_paths;
