@@ -66,7 +66,7 @@ $B library                                       # Zeitreihen der Datenbibliothe
 $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.xls, .xlsx, .ods)
 $B import-snb devkum.csv rendoblim.csv           # SNB-Daten aktualisieren, CHF-Reihen neu berechnen
 
-cargo test                                       # alle Tests
+make test                                        # alle Tests (nextest, Grund in docs/TESTS.md)
 tools/ui-smoke.sh                                # Oberflächentest
 cargo llvm-cov --workspace --exclude vivaplan-app --summary-only   # Testabdeckung
 ```

@@ -34,7 +34,7 @@ Stand 7. November 2026. Grundlage: Testplan «VivaPlan» (Haushalt bis Performan
 | Dateien: Roundtrip, Fehler beim Öffnen | neu; Neu/Öffnen/Speichern unter in der Oberfläche **nicht automatisch** |
 | CLI: validate, run, export, import | vorh. (`crates/cli/tests/cli.rs`) |
 | UI: Ansichten, Konsolenfehler | vorh. (`tools/ui-smoke.sh`); neu Playwright (`e2e/`): Navigation, Eingaben und Prüfung, Live-Vorschau = Simulation, Meilensteine verschieben, Undo/Redo mit 100 Aktionen, Datei Neu/Öffnen/Speichern/Roundtrip, Ergebnisansichten, Tooltips, Responsiveness (4 Breiten), Dunkelmodus, gespeicherte Simulationen |
-| Performance und Stresstest | neu, `cargo test --release --test all qa_matrix:: -- --ignored --nocapture` |
+| Performance und Stresstest | neu, `cargo nextest run --cargo-profile release -p vivaplan-engine --run-ignored only -E 'test(/^qa_matrix::/)' --no-capture` (nextest wie `make test`, siehe `TESTS.md`) |
 | Golden Master (10 Fälle) | neu, `crates/engine/tests/golden.rs` mit Ergebnissen in `crates/engine/tests/golden/` |
 
 ## Gefundene Fehler
@@ -94,7 +94,7 @@ Zehn feste Planungen (Einzelperson, Ehepaar, PK-Rente, PK-Kapitalbezug, Immobili
 Bootstrap, parametrisch, Szenarien, Notverkauf). Gespeichert sind Kennzahlen, Ereignisse, Perzentile bzw. Szenario-
 Ergebnisse und die Monatswerte jedes Januars und Julis sowie des letzten Monats. Zahlen gelten mit 1e-9 relativer
 Toleranz. Der Test schlägt bei jeder Abweichung fehl und nennt die Stelle. Eine gewollte Änderung der Rechenregeln
-wird bewusst übernommen mit `GOLDEN_UPDATE=1 cargo test --test all golden::`; danach die Änderung der JSON-Dateien in
+wird bewusst übernommen mit `GOLDEN_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'`; danach die Änderung der JSON-Dateien in
 Git prüfen. Die Ergebnisse sind über mehrere Läufe stabil (parallele Berechnung ändert nichts).
 
 ## Messungen (Release-Build, Apple-Rechner des Entwicklers)

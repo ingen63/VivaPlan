@@ -11,29 +11,42 @@ Schnittstellen. Ziel: mindestens 80 % Zeilenabdeckung je Paket (`vivaplan-engine
 |---|---|---|
 | 1 Einheiten | `crates/engine/src/*.rs` (`#[cfg(test)]`) | Steuertabellen, Kurven, Monate, CSV, SNB-Format, Zufallszahlen, Obligationenformel, Szenario-Kombinationen |
 | 2 Referenzfälle | `crates/engine/tests/reference.rs`, `crates/engine/tests/simulation.rs`, `crates/engine/tests/household.rs` (zweite Person, Strategien, Perzentile) | Je Regel ein kleiner Fall mit Rechnung im Kommentar: Teuerung (anteilig ab Start), PK-Zins (monatlich aufgelaufen, anteilig beim Bezug), Kapitalsteuern im selben Jahr, Einkommens- und Vermögenssteuer, Grundstückgewinnsteuer (Stufen, Zürcher Tabelle, Modell Aargau, Steuerfuss-Option, Besitzdauer in vollen Jahren, Freigrenze), Inflation je Immobilie (Wert, Nebenkosten, Miete), Tragbarkeit beim Kauf und bei jeder Hypothekenerneuerung (Einmalrückzahlung), Perzentile je Szenario, Immobilienereignisse, Entnahmestrategie bei Zuflüssen (`crates/engine/tests/inflow_strategy.rs`), 3-Topf nach Spezifikation mit Netto-Bedarf, Januar-Auffüllung, Renditekriterium und den Fällen A/B/C inkl. «alle Töpfe leer» (`crates/engine/tests/buckets_need.rs`), Hypothekarzins, SARON-Untergrenze, Amortisation direkt/indirekt, Säule 3a, Kauf/Verkauf, Kauf nach Verkauf, Tragbarkeit, Notverkauf, Miete, 3-Topf, «aufgebraucht», Fortschreibung |
+| 2b Einzelregeln und Funktionen | `crates/engine/tests/sim_rules.rs` (Einzelregeln mit nachgerechneten Werten, FEA-29), `crates/engine/tests/strategy.rs` (Anlagestrategie, FEA-53), `crates/engine/tests/buckets_guardrails.rs` (3-Topf mit Guardrails, Fixe Rate, VPW, Endowment), `crates/engine/tests/cash_housing.rs` (Lebenshaltung mit Wohnkosten, Cash getrennt vom Portfolio), `crates/engine/tests/income_indexed.rs` (Einkommen mit Teuerung), `crates/engine/tests/pillar3a.rs` und `crates/engine/tests/pillar3a_plan.rs` (Säule 3a, indirekte Amortisation, Auszahlungsplan), `crates/engine/tests/reserve_standard_only.rs` (Cash-Reserve nur bei «Standard»), `crates/engine/tests/milestones_limits.rs` (feste Meilensteine und ihre Grenzen) | Je Funktion von Hand nachrechenbare, erfundene Planungen; die Tests nennen Issue und Abnahmekriterium |
+| 2c Eingabeprüfung | `crates/engine/tests/mandatory_inputs.rs`, `crates/engine/tests/validate_extra.rs` | Jede Zeile der Pflichteingaben (`docs/spezifikation/Pflichteingaben.md`) löst ihren Fehler mit der erwarteten Meldung aus; Person 2, Grenzen der Monte-Carlo-Angaben, Warnungen zu Strategie und Variationen |
 | 3 Invarianten | `crates/engine/tests/invariants.rs` | 500 zufällige Planungen; jeder Test verlangt, dass mehr als die Hälfte ohne Prüffehler gerechnet wird (FEA-63) (Immobilien, Hypotheken, 3a, Steuern, beide Strategien): keine ungültigen Zahlen, Total = Liquid + Immobilien + Vorsorge, Liquid = Cash + Aktien + Obligationen, Steuern total = Summe der Monatssteuern, Ergebnis reproduzierbar; ohne Renditen/Steuern ändert sich das Cash genau um die Geldflüsse; Kauf und Verkauf zum Buchwert ändern das Gesamtvermögen nicht |
-| 4 Daten und Statistik | `crates/engine/tests/data.rs`, `crates/engine/tests/library.rs` | Shiller-Import gegen die Rohspalten der Originaldatei, ausgelieferte Reihen = Import, CSV-Fehlerfälle, Bootstrap erhält Mittelwert, Streuung und Blocklänge, Kurssprünge mit erwarteter Häufigkeit, Szenario mit Ausgangswert = Grundlauf, geordnete Bandbreiten, Datenbibliothek |
+| 4 Daten und Statistik | `crates/engine/tests/data.rs`, `crates/engine/tests/library.rs`, `crates/engine/tests/jst.rs` (Weltindex aus den JST-Daten), `crates/engine/tests/proptest_parsers.rs` (Parser und CSV für beliebige Eingaben, Fallzahl über `PROPTEST_CASES`) | Shiller-Import gegen die Rohspalten der Originaldatei, ausgelieferte Reihen = Import, CSV-Fehlerfälle, Bootstrap erhält Mittelwert, Streuung und Blocklänge, Kurssprünge mit erwarteter Häufigkeit, Szenario mit Ausgangswert = Grundlauf, geordnete Bandbreiten, Datenbibliothek |
 | 5 Robustheit | `crates/engine/tests/robustness.rs` | 600 zufällig verfälschte Planungen über alle Renditequellen, je zur Hälfte nur Zahlen durch Extremwerte ersetzt (prüft die Rechnung) und beliebig verfälscht (falsche Verweise, Typwechsel, gelöschte Felder; prüft Lesen und Eingabeprüfung). Mindestens ein Viertel der ersten und ein Zehntel der zweiten Hälfte wird gerechnet (FEA-63): Prüfung, Vorschau und Simulation stürzen nie ab und liefern keine ungültigen Zahlen |
 | 5b QA-Matrix | `crates/engine/tests/qa_matrix.rs` (Plan und Bericht: `QA.md`) | Eingabeprüfung (auch Besitzdauer-Tabelle und fehlendes Kaufdatum, Dateiformat), Planungsdauer 30–100 Jahre, Meilensteine, PK/3a/AHV, altersabhängige Ausgaben, Anlage- und Entnahmeparameter, Hypotheken, Steuerinterpolation, historische Krisenstarts, Monte-Carlo-Reproduzierbarkeit, Szenario-Konsistenz, Dateien, Last- und Stresstests |
 | 5c Golden Masters | `crates/engine/tests/golden.rs`, `crates/engine/tests/golden/*.json` | Zehn feste Planungen mit eingecheckten Ergebnissen; jede unbeabsichtigte Änderung der Rechenergebnisse fällt auf (Aktualisieren mit `GOLDEN_UPDATE=1`). Gespeichert sind die Monatswerte jedes Januars und Julis, der letzte Monat und je Zahlenfeld die Summe über alle Monate, damit auch eine Änderung in einem anderen Monat auffällt (FEA-64) |
 | 5d Referenz-Tabelle | `crates/engine/tests/ods_reference.rs`, `crates/engine/tests/golden/Test Retirement.ods` | Basisrechnung des Altprogramms als Tabelle; das Programm muss die Monatswerte der Tabelle auf den Rappen treffen (Blatt 1 bis zur Amortisation, Blatt 2 bis zur Pensionierung); bekannte Fehler der Tabelle sind festgehalten |
-| 5e Optimierung und Abbruch | `crates/engine/tests/optimize_ranges.rs`, `crates/engine/tests/cancel.rs` | Parameter je Strategie fix oder in Bandbreite (Katalog mit Einheit und Planwert, Ungültiges abgelehnt), Entnahmerate im Ergebnis; Fortschrittszähler und Abbrechen von Simulation und Optimierung |
-| 6 Schnittstellen | `crates/cli/tests/cli.rs`, `tools/ui-smoke.sh` | Alle Befehle der Kommandozeile (Rechnen, Prüfen, Import, Bibliothek, Leistungstest, Schema) und der Entwicklungsserver (Oberfläche, alle API-Befehle, Fehlerfälle). Oberfläche: jede Ansicht und Registerkarte mit allen Renditequellen in Chrome ohne Fenster, ohne JavaScript-Fehler, mit gezeichneten Grafiken |
+| 5e Optimierung und Abbruch | `crates/engine/tests/optimize_ranges.rs`, `crates/engine/tests/cancel.rs`, `crates/engine/tests/optimize_goal.rs` (Ziel «Kein Notverkauf»), `crates/engine/tests/optimization_settings.rs` (Einstellungen in der Planung), `crates/engine/tests/rerun_paths.rs` (Läufe einer Variationsstufe nachrechnen) | Parameter je Strategie fix oder in Bandbreite (Katalog mit Einheit und Planwert, Ungültiges abgelehnt), Entnahmerate im Ergebnis; Fortschrittszähler und Abbrechen von Simulation und Optimierung |
+| 5f Dateien und Formate | `crates/engine/tests/legacy_format.rs`, `crates/engine/tests/legacy_import.rs`, `crates/engine/tests/example_neu.rs`, `crates/engine/tests/upgrade_api.rs` | Altes Format `.rplan` bleibt lesbar, Import alter `config.json`, mitgelieferte Planung `Neu.vplan` rechenbar, Nachführen älterer Planungen (`api::upgrade_plan`) |
+| 6 Schnittstellen | `crates/cli/tests/cli.rs`, `tools/ui-smoke.sh`, `crates/engine/tests/bench.rs` (Messung der Rechenzeit für die Dauerschätzung) | Alle Befehle der Kommandozeile (Rechnen, Prüfen, Import, Bibliothek, Leistungstest, Schema) und der Entwicklungsserver (Oberfläche, alle API-Befehle, Fehlerfälle). Oberfläche: jede Ansicht und Registerkarte mit allen Renditequellen in Chrome ohne Fenster, ohne JavaScript-Fehler, mit gezeichneten Grafiken |
 
 Nicht automatisch getestet: die Fenster- und Dialogschicht der Desktop-App (`crates/app`, nur Weiterleitung an
 den Rechenkern) und die Darstellung der Grafiken im Detail (Sichtkontrolle mit Bildschirmfotos).
 
-Die Bedienung der Oberfläche prüft Playwright in `e2e/ui.spec.js` (50 Tests, installiertes Google Chrome, lokaler
-Entwicklungsserver; Abbrechen-Tests getrennt in `ui-cancel.spec.js`, weil der Abbruch für alle laufenden Berechnungen gilt).
+Alle Dateien in `crates/engine/tests/` sind Module der einen Testdatei `all.rs` (FEA-32); eine neue Datei muss dort
+eingetragen werden, sonst schlägt ein Test fehl.
+
+Die Bedienung der Oberfläche prüft Playwright in `e2e/` (156 Tests, Stand 14.11.2026: `ui.spec.js`, `optimum.spec.js`
+und getrennt `ui-cancel.spec.js`, weil der Abbruch für alle laufenden Berechnungen gilt; installiertes Google Chrome,
+lokaler Entwicklungsserver). Die Tests warten auf Zustände statt fester Zeiten; die wenigen festen Pausen sind im Test
+begründet (FEA-65).
 
 ## Ausführen
 
 ```sh
-cargo test                                                              # Schichten 1–6 (Rust)
-tools/ui-smoke.sh                                                       # Oberfläche (Rauchtest)
-(cd e2e && npm install && npx playwright test)                     # Oberfläche (Bedienung, 50 Tests)
-cargo llvm-cov --workspace --exclude vivaplan-app --summary-only  # Abdeckung
+make test                                        # Schichten 1–6 (Rust), mit nextest
+tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
+(cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 156 Tests)
+make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)
 ```
+
+Die Rust-Tests laufen mit `make test` (`cargo nextest run --workspace`), nicht mit `cargo test`. Grund: nextest startet
+jeden Test in einem eigenen Prozess. Unter `cargo test` laufen die Tests als Threads eines Prozesses und teilen sich den
+prozessweiten Fortschritt und Abbruch (`crates/engine/src/progress.rs`); ein Abbrechen-Test kann dann eine gleichzeitig
+laufende Berechnung eines anderen Tests abbrechen. Hook, CI und Abdeckung verwenden deshalb ebenfalls nextest.
 
 ## Gefundene Fehler
 
@@ -56,9 +69,10 @@ Mit dieser Strategie gefunden und behoben (November 2026):
 
 ## Abdeckung
 
-Zeilenabdeckung Rust (`cargo llvm-cov`, ohne Desktop-Hülle), 7. November 2026: **91,3 %** (4'443 Zeilen, 387 nicht
-ausgeführt). Rechenkern: Simulation 97,9 %, Monte Carlo 97,8 %, Steuern 98,4 %, Zeitreihen 95,2 %, Import alter
-Konfigurationen 94,1 %, Prüfung 91,6 %, Schnittstelle 82,6 %; Kommandozeile 93,8 %.
+Zeilenabdeckung Rust (`make coverage`, cargo llvm-cov mit nextest), 14. November 2026: **95,9 %** über den
+Arbeitsbereich (12'337 Zeilen, 503 nicht ausgeführt). Je Paket (Schwelle 80 %): Rechenkern `vivaplan-engine` 98,1 %,
+Desktop-App `vivaplan-app` 89,9 %. Rechenkern: Simulation 99,3 %, Monte Carlo 100 %, Steuern 99,0 %, Optimierung
+98,9 %, Import alter Konfigurationen 98,8 %, Prüfung 96,5 %, Schnittstelle 97,1 %; Kommandozeile 94,3 %.
 Der Entwicklungsserver (`crates/cli/src/devserver.rs`) erscheint mit 0 %, weil er im Test als eigener Prozess läuft und
 beendet wird, bevor er Messdaten schreibt; seine Befehle sind in `crates/cli/tests/cli.rs` geprüft.
 
