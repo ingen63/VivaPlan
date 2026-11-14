@@ -36,6 +36,36 @@
         "reason": "Notverkaufskriterium"
       }
     ],
+    "recordSums": {
+      "age": 8395.0,
+      "ahv": 0.0,
+      "bondIndex": 129.47380176030063,
+      "bonds": 17496430.339256298,
+      "cash": 0.0,
+      "earned": 0.0,
+      "housing": 13448.936997850959,
+      "income": 0.0,
+      "liquid": 34992860.678512596,
+      "mortgage": 4500000.0,
+      "pensionFund": 0.0,
+      "pillar3a": 0.0,
+      "pillar3aIn": 0.0,
+      "pkPension": 0.0,
+      "plannedSpending": 567544.222752752,
+      "priceIndex": 126.12093838950048,
+      "propertyEquity": 4529921.247313697,
+      "propertyValue": 9029921.247313697,
+      "spending": 580993.159750603,
+      "stockIndex": 154.99205592824387,
+      "stocks": 17496430.339256298,
+      "taxCapital": 112.19,
+      "taxGain": 0.0,
+      "taxIncome": 0.0,
+      "taxWealth": 2246.5000000000005,
+      "taxes": 2358.6900000000005,
+      "total": 39522781.92582633,
+      "withdrawal": 580993.159750603
+    },
     "records": [
       {
         "age": 65.0,

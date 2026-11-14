@@ -1,6 +1,8 @@
 //! Golden-Master-Tests: zehn feste Planungen, deren Ergebnisse in `tests/golden/*.json` liegen.
 //! Jede Abweichung lässt den Test fehlschlagen. Gewollte Änderungen übernehmen mit
-//! `GOLDEN_UPDATE=1 cargo test --test all golden::` und die Differenz der JSON-Dateien prüfen.
+//! `GOLDEN_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'` und die Differenz der JSON-Dateien prüfen.
+//! Gespeichert sind die Monatswerte jedes Januars und Julis, der letzte Monat und je Zahlenfeld die Summe über alle
+//! Monate (`recordSums`, FEA-64).
 
 use std::path::{Path, PathBuf};
 
@@ -128,6 +130,8 @@ fn cases() -> Vec<(&'static str, Value)> {
 }
 
 /// Ergebnis ohne Laufzeit; Monatswerte auf jeden Januar, jeden Juli und den letzten Monat verdichtet.
+/// Neben jeder verdichteten Liste steht `recordSums`: je Zahlenfeld die Summe über alle Monate (FEA-64), damit auch
+/// eine Änderung in einem nicht gespeicherten Monat auffällt.
 fn snapshot(plan: &Value) -> Value {
     let out = api::run(plan, &library(), Some(&library()));
     assert!(out.error.is_none(), "{:?}", out.error);
@@ -137,12 +141,28 @@ fn snapshot(plan: &Value) -> Value {
     v
 }
 
+/// Summe je Zahlenfeld über alle Monate.
+fn record_sums(records: &[Value]) -> Value {
+    let mut sums = serde_json::Map::new();
+    for r in records {
+        for (k, x) in r.as_object().into_iter().flatten() {
+            if let Some(x) = x.as_f64() {
+                let s = sums.entry(k.clone()).or_insert(json!(0.0));
+                *s = json!(s.as_f64().unwrap() + x);
+            }
+        }
+    }
+    Value::Object(sums)
+}
+
 fn thin(v: &mut Value) {
     match v {
         Value::Object(m) => {
+            let mut sums = None;
             for (k, x) in m.iter_mut() {
                 if k == "records" {
                     if let Value::Array(a) = x {
+                        sums = Some(record_sums(a));
                         let n = a.len();
                         let keep: Vec<Value> = a
                             .iter()
@@ -160,6 +180,9 @@ fn thin(v: &mut Value) {
                 } else {
                     thin(x);
                 }
+            }
+            if let Some(s) = sums {
+                m.insert("recordSums".into(), s);
             }
         }
         Value::Array(a) => a.iter_mut().for_each(thin),
@@ -231,9 +254,10 @@ fn golden_masters() {
 /// Die Golden Masters sind selbst plausibel: sie müssen alle Fälle abdecken und den jeweiligen Zweck zeigen.
 #[test]
 fn golden_cases_exercise_their_feature() {
-    let get = |n: &str| -> Value {
-        serde_json::from_str(&std::fs::read_to_string(dir().join(format!("{n}.json"))).unwrap()).unwrap()
-    };
+    // FEA-64/AK2: das frisch gerechnete Ergebnis prüfen, nicht die eingecheckten Dateien
+    // (sonst bestünde der Test auch, wenn GOLDEN_UPDATE=1 ein falsches Ergebnis übernommen hat).
+    let all = cases();
+    let get = |n: &str| -> Value { snapshot(&all.iter().find(|(name, _)| *name == n).unwrap().1) };
     let has_event = |v: &Value, kind: &str| {
         v["single"]["events"]
             .as_array()
@@ -268,4 +292,24 @@ fn golden_cases_exercise_their_feature() {
     assert_eq!(get("07-bootstrap")["batch"]["summary"]["runs"], 200);
     assert_eq!(get("08-parametrisch")["batch"]["summary"]["runs"], 200);
     assert_eq!(get("09-szenarien")["scenarios"]["results"].as_array().unwrap().len(), 9);
+}
+
+/// FEA-64/AK3: Eine Änderung in einem Monat, der nicht als Monatswert gespeichert ist (März), fällt über die
+/// Summen auf.
+#[test]
+fn golden_detects_change_in_any_month() {
+    let (_, plan) = cases().swap_remove(0);
+    let out = api::run(&plan, &library(), Some(&library()));
+    let mut full = serde_json::to_value(&out).unwrap();
+    full.as_object_mut().unwrap().remove("elapsedMs");
+    let mut changed = full.clone();
+    let march = &mut changed["single"]["records"][2];
+    assert_eq!(march["month"], "2030-03");
+    march["cash"] = json!(march["cash"].as_f64().unwrap() + 1.0);
+    thin(&mut full);
+    thin(&mut changed);
+    let mut d = vec![];
+    diff("", &changed, &full, &mut d);
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert!(d[0].starts_with(".single.recordSums.cash:"), "{d:?}");
 }

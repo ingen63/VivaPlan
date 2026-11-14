@@ -87,6 +87,36 @@
         "rate": 0.017
       }
     ],
+    "recordSums": {
+      "age": 23237.5,
+      "ahv": 0.0,
+      "bondIndex": 363.68076078689546,
+      "bonds": 185799484.2140051,
+      "cash": 0.0,
+      "earned": 3600000.0,
+      "housing": 419075.1833776236,
+      "income": 3600000.0,
+      "liquid": 464498710.5350128,
+      "mortgage": 104400000.0,
+      "pensionFund": 0.0,
+      "pillar3a": 0.0,
+      "pillar3aIn": 0.0,
+      "pkPension": 0.0,
+      "plannedSpending": 1702344.896110149,
+      "priceIndex": 340.46897922202953,
+      "propertyEquity": 236068979.22202954,
+      "propertyValue": 340468979.2220299,
+      "spending": 2121420.079487772,
+      "stockIndex": 588.1208754474092,
+      "stocks": 278699226.32100755,
+      "taxCapital": 112.19,
+      "taxGain": 0.0,
+      "taxIncome": 360000.0,
+      "taxWealth": 227166.62,
+      "taxes": 587278.8099999999,
+      "total": 700567689.7570423,
+      "withdrawal": -1478579.920512228
+    },
     "records": [
       {
         "age": 65.0,
