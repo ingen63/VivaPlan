@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = ["crates/engine", "crates/cli", "crates/app"]
+
+[workspace.package]
+version = "0.8.0"
+edition = "2021"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+# FEA-32: Build-Profil für Mutationsläufe (cargo mutants, gewählt in .cargo/mutants.toml). Prüfungen wie im Profil test
+# (Überlaufprüfung und debug_assert bleiben an), aber:
+#  - debug = "none": Auf macOS bleiben sonst die Objektdateien jedes Mutanten im Zielverzeichnis liegen (rund 350 je
+#    Mutant, nach 800 Mutanten 285'000 Dateien); die Prüfung neuer Programme durch macOS wurde damit immer langsamer.
+#  - opt-level = 1: Die Tests rechnen rund dreimal schneller, das Übersetzen dauert gleich lang. Die Rechenergebnisse
+#    sind dieselben (Rust rechnet Gleitkommazahlen in jeder Optimierungsstufe gleich; die Golden-Tests laufen mit).
+[profile.mutants]
+inherits = "test"
+debug = "none"
+opt-level = 1
+debug-assertions = true
+overflow-checks = true

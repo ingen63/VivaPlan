@@ -1,0 +1,214 @@
+name: Test quality
+on:
+  push:                           # FEA-28: Arbeit direkt auf main, der Push ist die Prüfstelle (statt Pull Request)
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 2 * * *"          # nächtlich 02:17 UTC
+  workflow_dispatch:              # manuell: läuft immer
+    inputs:
+      base:
+        description: "Basis für die Abdeckung des geänderten Codes (Commit, Tag oder Zweig; leer = Vorgänger HEAD~1)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read                   # für gh run list im changes-Job
+  issues: read                    # Übersichtsseite Testqualität liest die Issues (FEA-31)
+  pull-requests: read
+
+concurrency:
+  group: test-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+      last: ${{ steps.check.outputs.last }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          last=$(gh run list -R "$GITHUB_REPOSITORY" --workflow test-quality.yml \
+                   --event schedule --status success --limit 1 \
+                   --json headSha -q '.[0].headSha')
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+          if [ "$last" = "$GITHUB_SHA" ]; then
+            echo "Kein neuer Commit seit letztem Lauf ($last) – übersprungen." >> "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # FEA-42: Der ganze Rust-Code ist mit rustfmt formatiert (rustfmt.toml); Abweichungen lassen den Lauf fehlschlagen.
+  format:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: rustfmt }
+      - name: cargo fmt --all --check (Workspace)
+        run: cargo fmt --all --check
+      - name: cargo fmt --all --check (fuzz, eigener Workspace)
+        working-directory: fuzz
+        run: cargo fmt --all --check
+
+  tests-coverage:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-22.04      # wie pakete.yml; ubuntu-latest ist inzwischen 26.04
+    timeout-minutes: 90
+    env:
+      PROPTEST_CASES: ${{ github.event_name == 'schedule' && '10000' || '256' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }      # für die Abdeckung des geänderten Codes (git diff gegen den Basis-Zweig)
+      - uses: ./.github/actions/linux-deps
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: llvm-tools-preview }
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with: { tool: "cargo-llvm-cov,nextest" }
+      - name: Tests + Coverage (JUnit via nextest-Profil ci)
+        run: |
+          cargo llvm-cov nextest --workspace --all-features --profile ci \
+            --lcov --output-path lcov.info
+          # Schwelle je Paket (tools/coverage-min), nicht über den ganzen Arbeitsbereich
+          for pkg in vivaplan-engine vivaplan-app; do
+            cargo llvm-cov report -p "$pkg" --fail-under-lines "$(cat tools/coverage-min)"
+          done
+          cargo llvm-cov report --html --output-dir coverage-html
+          cargo llvm-cov report --cobertura --output-path cobertura.xml
+      - name: JUnit einsammeln
+        if: ${{ !cancelled() }}
+        run: cp "$(find target -path '*nextest/ci/junit.xml' | head -n1)" junit.xml || true
+      - name: Tests der Berichtswerkzeuge (Übersichtsseite, Diff-Abdeckung)
+        run: python3 -m unittest discover tools/report
+      - name: Basis für den geänderten Code bestimmen
+        if: ${{ !cancelled() }}
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+          INPUT_BASE: ${{ inputs.base }}
+        run: |
+          # Push: Stand vor dem Push; Pull Request: Basis-Zweig; von Hand: Eingabe; sonst (nächtlich): kein Vergleich
+          case "$EVENT" in
+            push)              base="$BEFORE" ;;
+            pull_request)      base="origin/$BASE_REF" ;;
+            workflow_dispatch) base="${INPUT_BASE:-HEAD~1}" ;;
+            *)                 base="" ;;
+          esac
+          # Erster Push eines Zweigs (lauter Nullen) oder unbekannter Stand: Vorgänger des letzten Commits
+          if [ -n "$base" ] && ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then
+            base="HEAD~1"
+          fi
+          echo "DIFF_BASE=$base" >> "$GITHUB_ENV"
+      - name: Abdeckung des geänderten Codes (Hinweis, keine Sperre)
+        if: ${{ !cancelled() && env.DIFF_BASE != '' }}
+        continue-on-error: true
+        run: python3 tools/coverage_diff.py lcov.info "$DIFF_BASE" >> "$GITHUB_STEP_SUMMARY"
+      - name: Übersichtsseite Testqualität
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/report/report.py --out report-html --summary >> "$GITHUB_STEP_SUMMARY"
+      - name: Coverage-Zusammenfassung
+        if: ${{ !cancelled() }}
+        run: |
+          { echo '### Coverage'; echo '```'; cargo llvm-cov report --summary-only; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: test-quality-reports
+          path: |
+            lcov.info
+            cobertura.xml
+            coverage-html/
+            junit.xml
+            report-html/
+
+  mutants-diff:
+    needs: changes
+    # Pull Request, sonst nächtlich (Arbeit direkt auf main, also kein PR): Mutanten der seit dem
+    # letzten erfolgreichen nächtlichen Lauf geänderten Zeilen.
+    if: github.event_name == 'pull_request' || (github.event_name == 'schedule' && needs.changes.outputs.run == 'true')
+    runs-on: ubuntu-24.04      # cargo-mutants braucht glibc 2.39 (22.04 hat 2.35)
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: ./.github/actions/linux-deps
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with: { tool: "cargo-mutants,nextest" }
+      - name: Mutanten auf geänderten Zeilen
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          LAST: ${{ needs.changes.outputs.last }}
+        run: |
+          # Pull Request: Basis-Zweig; nächtlich: letzter erfolgreicher nächtlicher Lauf,
+          # sonst der letzte Commit vor 24 Stunden, sonst der Vorgänger von HEAD.
+          if [ "$EVENT" = "pull_request" ]; then
+            base="origin/$BASE_REF"
+          else
+            base="$LAST"
+            git rev-parse --verify --quiet "${base:-x}^{commit}" >/dev/null || base=$(git rev-list -n1 --before="24 hours ago" HEAD)
+            [ -n "$base" ] || base="HEAD~1"
+          fi
+          echo "Basis für den Vergleich: $base" >> "$GITHUB_STEP_SUMMARY"
+          # Nur Rust-Dateien: cargo mutants kann den Kopf einer umbenannten Markdown-Datei mit Umlaut nicht lesen
+          # (git setzt den Pfad in Anführungszeichen mit Oktalcodes).
+          git diff "$base"...HEAD -- '*.rs' > pr.diff
+          if ! grep -q '\.rs$' <(git diff --name-only "$base"...HEAD); then
+            echo "Keine Rust-Änderungen – keine Mutanten." >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          cargo mutants --in-diff pr.diff --no-shuffle -j 2
+      - name: Mutations-Zusammenfassung
+        if: ${{ !cancelled() }}
+        run: |
+          f=local/mutants.out/outcomes.json
+          [ -f "$f" ] || exit 0
+          jq -r '"### Mutation testing\ncaught: \(.caught)  missed: \(.missed)  timeout: \(.timeout)  unviable: \(.unviable)"' "$f" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s local/mutants.out/missed.txt ]; then
+            echo '#### Nicht erkannte Mutanten' >> "$GITHUB_STEP_SUMMARY"
+            sed 's/^/- /' local/mutants.out/missed.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: mutants-diff, path: local/mutants.out/ }
+
+  fuzz:
+    needs: changes
+    if: github.event_name == 'schedule' && needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@v2
+        with: { tool: cargo-fuzz }
+      - name: Alle Fuzz-Targets je 5 Minuten
+        run: |
+          # ISS-11: cargo-fuzz baut ohne --target für das Ziel, für das es selbst gebaut ist.
+          # install-action lädt die musl-Fassung, und musl verträgt den AddressSanitizer nicht.
+          # Deshalb ausdrücklich für den Host bauen (x86_64-unknown-linux-gnu).
+          host=$(rustc +nightly -vV | sed -n 's/^host: //p')
+          cd fuzz
+          for t in $(cargo +nightly fuzz list); do
+            cargo +nightly fuzz run --target "$host" "$t" -- -max_total_time=300
+          done
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: fuzz-artifacts, path: fuzz/artifacts/ }

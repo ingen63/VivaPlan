@@ -1,0 +1,119 @@
+# Reine Verdrahtung nicht mutieren (Desktop-App leitet nur an den Rechenkern weiter, CLI-main)
+exclude_globs = ["crates/cli/src/main.rs", "crates/app/**"]
+test_tool = "nextest"
+
+# FEA-29: Begründet ausgeschlossene Mutanten. Zwei Arten:
+#  - gleichwertig: Das Ergebnis bleibt bei jeder Eingabe gleich (redundante Bedingung, Betrag 0, nie gelesener Wert).
+#  - Grenzfall: Der Mutant ändert nur das Verhalten bei exakter Gleichheit zweier gerechneter Frankenbeträge oder
+#    innerhalb der Rundungstoleranz von 0.005; fachlich ist das ohne Bedeutung, ein Test dafür prüfte Rundungszufälle.
+# Jeder Eintrag nennt Datei, Spalte und Funktion; die Zeile ist offen (\d+), damit Änderungen oberhalb den Eintrag nicht
+# lösen. Verschiebt sich der Ausdruck innerhalb der Zeile, erscheint der Mutant wieder als nicht erkannt und wird neu
+# beurteilt. Offene (noch nicht getestete) Mutanten stehen in docs/TESTS.md. Begründungen:
+exclude_re = [
+    # Bei x = 0 ist die Steuer in beiden Fällen 0.
+    "replace < with <= in tax",
+    # Mit head × 1 wird zusätzlich die Kopfzeile gelesen; ihre erste Zelle ist kein Datum und wird übersprungen.
+    "import\\.rs:\\d+:25: replace \\+ with \\* in parse_shiller",
+    # Grenzwert |y1| = 1e-9: Die Formel und der Grenzwert n unterscheiden sich dort um weniger als die Rechengenauigkeit.
+    "import\\.rs:\\d+:31: replace < with <= in bond_return",
+    # Grenzwert |r| = 1e-9 bei der VPW-Rate: gleiches Ergebnis innerhalb der Rechengenauigkeit.
+    "sim\\.rs:\\d+:27: replace < with <= in vpw_rate",
+    # Historischer Pfad: Ein Monat bzw. Jahre mehr Fortschreibung als nötig; die zusätzlichen Werte werden nie gelesen.
+    "market\\.rs:\\d+:48: replace - with [+/] in historical_path",
+    "market\\.rs:\\d+:51: replace - with \\+ in historical_path",
+    # Zufallszahlen: Die Grenzen q = 0, q = 1 (Polar-Methode), u = Schranke (Gamma) und p = l (Poisson) treten mit
+    # Wahrscheinlichkeit 0 auf.
+    "montecarlo\\.rs:\\d+:18: replace > with >= in Rng::normal",
+    "montecarlo\\.rs:\\d+:29: replace < with <= in Rng::normal",
+    "montecarlo\\.rs:\\d+:18: replace < with <= in Rng::gamma",
+    "montecarlo\\.rs:\\d+:55: replace < with <= in Rng::gamma",
+    "montecarlo\\.rs:\\d+:17: replace > with >= in Rng::poisson",
+    # Gamma: Die schnelle Annahme (Squeeze) ist eine untere Schranke der exakten Bedingung; ohne sie entscheidet die
+    # exakte Bedingung gleich, ohne zusätzliche Zufallszahlen.
+    "montecarlo\\.rs:\\d+:18: replace < with == in Rng::gamma",
+    # Block-Bootstrap: Grenze u = p_new mit Wahrscheinlichkeit 0.
+    "montecarlo\\.rs:\\d+:38: replace < with <= in Bootstrap<'_>::positions",
+    # Jahres-Bootstrap: Positionen für mehr Jahre als nötig; die Zufallszahlen danach werden nicht mehr verwendet.
+    "montecarlo\\.rs:\\d+:62: replace - with [+/] in Bootstrap<'_>::path",
+    "montecarlo\\.rs:\\d+:41: replace - with \\+ in Bootstrap<'_>::path",
+    # Ziel 2 ohne geplante Ausgaben: median / 0 ergibt ±∞ oder NaN, max(0) macht daraus in beiden Fällen 0.
+    "optimize\\.rs:\\d+:41: replace > with >= in Metrics::violation",
+    # Schwankung: Ausgangswerte von genau 1e-9 kommen nicht vor (Jahreskonsum ist 0 oder mindestens Rappenbeträge).
+    "optimize\\.rs:\\d+:26: replace > with >= in path_stats",
+    # Mustersuche: Die Schrittweite 0.2 / 2^k ist nie genau 0.01.
+    "optimize\\.rs:\\d+:16: replace > with >= in search",
+
+    # --- Simulation (sim.rs), gleichwertig ---
+    # Folgekauf und Käufe «nach Verkauf»: «attempted» deckt «active» und «done» ab (gekauft oder entfallen heisst immer
+    # versucht); die verkaufte Immobilie ist erledigt. Die Teilbedingungen sind redundant.
+    "sim\\.rs:\\d+:26: replace \\|\\| with && in Run<'a>::follow_up_purchase",
+    "sim\\.rs:\\d+:37: replace \\|\\| with && in Run<'a>::follow_up_purchase",
+    "sim\\.rs:\\d+:26: replace \\|\\| with && in Run<'a>::after_sales",
+    "sim\\.rs:\\d+:37: replace \\|\\| with && in Run<'a>::after_sales",
+    # Kauf «nach Verkauf» entfällt: Ohne Immobilie im Besitz ist der Monat nach dem Verkauf schon vorgemerkt; mit einer
+    # Immobilie im Besitz setzt die anschliessende Prüfung im selben Monat die Vormerkung zurück (ohne Folgen).
+    # Ausnahme von der offenen Zeile: Spalte und Funktion treffen auch andere Bedingungen in after_sales; verschiebt sich
+    # die Zeile, erscheint der Mutant wieder und der Eintrag wird nachgeführt.
+    "sim\\.rs:1170:20: delete ! in Run<'a>::after_sales",
+    # Amortisation 0: Es kommen 0 Franken dazu (Schätzung, laufende Kosten, Quartalszahlung).
+    "sim\\.rs:\\d+:34: replace > with >= in Run<'a>::running_estimate",
+    "sim\\.rs:\\d+:34: replace > with >= in Run<'a>::properties",
+    # Verschiebungen von höchstens 1e-9 werden nicht gebucht: Überschuss genau gleich Ziel bucht nichts.
+    "sim\\.rs:\\d+:33: replace > with >= in Run<'a>::fill_pots",
+    "sim\\.rs:\\d+:34: replace > with >= in Run<'a>::fill_pots",
+    # Vermögen genau gleich Reserve: Beide Zweige ergeben Bargeld = Vermögen, Anlagen 0.
+    "sim\\.rs:\\d+:28: replace < with <= in Run<'a>::rebalance",
+    # Bedarf: Der Monat m liegt nie nach dem Planende, es zählt immer mindestens ein Monat (n > 0).
+    "sim\\.rs:\\d+:22: replace > with >= in Run<'a>::plan_basis",
+    # Aktienrendite: Die Renditen des Monats sind beim Aufruf schon verbucht (k < Länge); die Begrenzung greift nie.
+    "sim\\.rs:\\d+:31: replace - with [+/] in Run<'a>::stock_return",
+    # Start im Januar (k = 0): Teuerungsfaktor 1, die AHV bleibt gleich.
+    "sim\\.rs:\\d+:36: replace > with >= in Run<'a>::execute",
+    # Einmalbetrag 0: zählt als Ausgabe 0.
+    "sim\\.rs:\\d+:32: replace < with <= in Run<'a>::execute",
+    # Reservierung von 0 (Verkauf ohne Erlös): wirkt nur auf das Protokoll der Töpfe (Eintrag über 0), nicht auf die
+    # Beträge. Ein Verkauf ohne Erlös reserviert ohnehin nichts (net > 0 vorausgesetzt).
+    "sim\\.rs:\\d+:19: replace > with >= in Run<'a>::mark_reservation",
+    # C2 und Notverkauf, während ein Verkaufserlös reserviert ist: Die Reservierung besteht nur im Verkaufsmonat; dass
+    # die Töpfe im selben Monat nicht reichen und noch eine Immobilie im Besitz ist, setzt eine zweite Immobilie und
+    # einen Verkauf mit Folgekauf im selben Monat voraus. Bewusst nicht getestet (Entscheid zu FEA-29).
+    "sim\\.rs:\\d+:43: replace - with \\+ in Run<'a>::cover_payments",
+    "sim\\.rs:\\d+:34: replace > with (==|>=|<) in Run<'a>::cover_payments",
+    # PK-Kapitalbezug: Die Steuer t liegt zwischen 0 und dem Bezug, lump − t > 0 gilt genau dann, wenn lump + t > 0 bzw.
+    # lump / t > 0.
+    "sim\\.rs:\\d+:29: replace - with [+/] in Run<'a>::execute",
+
+    # --- Simulation (sim.rs), Grenzfälle ---
+    # Tragbarkeit bei der Erneuerung: Vermögen nach der Einmalzahlung genau 0 bzw. genau auf dem Notverkaufskriterium.
+    "sim\\.rs:\\d+:39: replace < with <= in Run<'a>::renewal_affordability",
+    "sim\\.rs:\\d+:60: replace < with <= in Run<'a>::renewal_affordability",
+    # Kauf: Vermögen genau gleich den Eigenmitteln.
+    "sim\\.rs:\\d+:19: replace < with <= in Run<'a>::try_buy",
+    # Phase 8: Topf 1 genau 0 (≤ statt <).
+    "sim\\.rs:\\d+:42: replace < with <= in Run<'a>::bucket_step",
+    # C1: Rundungstoleranz −0.005 statt +0.005.
+    "sim\\.rs:\\d+:49: delete - in Run<'a>::cover_payments",
+    # Guardrails: Vermögen genau 0, Rate genau gleich Start- bzw. Grenzrate.
+    "sim\\.rs:\\d+:50: replace > with >= in Run<'a>::update_budget",
+    "sim\\.rs:\\d+:73: replace > with >= in Run<'a>::update_budget",
+    "sim\\.rs:\\d+:25: replace > with >= in Run<'a>::update_budget",
+    "sim\\.rs:\\d+:32: replace < with <= in Run<'a>::update_budget",
+    # Rendite nur bei positivem Vermögen: Vermögen genau 0.
+    "sim\\.rs:\\d+:23: replace > with >= in Run<'a>::execute",
+    # Aufgebraucht: Rundungstoleranz 0.005 (≤ statt <).
+    "sim\\.rs:\\d+:24: replace < with <= in Run<'a>::execute",
+]
+
+# FEA-32: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).
+# Der Testlauf mit dem Profil «mutants» dauert wenige Sekunden; mit Mindestzeit 120 s und Faktor 1 gilt faktisch eine feste
+# Höchstdauer von 2 Minuten. Ein Timeout zählt als erkannt (Endlosschleife). Mutationsläufe verwenden das nextest-Profil «mutants» (.config/nextest.toml) ohne die schweren Tests.
+minimum_test_timeout = 120.0
+timeout_multiplier = 1.0
+additional_cargo_test_args = ["--profile", "mutants"]
+
+# FEA-32: eigenes Build-Profil (Cargo.toml, [profile.mutants]): ohne Debug-Informationen und mit leichter Optimierung.
+# Begründung und Messung stehen dort und in docs/TESTS.md.
+profile = "mutants"
+
+# FEA-35: Ergebnisse nach local/mutants.out statt ins Wurzelverzeichnis (local/ ist von Git ausgeschlossen).
+output = "local"

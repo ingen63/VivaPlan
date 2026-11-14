@@ -1,0 +1,16 @@
+[package]
+name = "vivaplan-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "vivaplan"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+vivaplan-engine = { path = "../engine" }
+serde_json.workspace = true
+serde.workspace = true

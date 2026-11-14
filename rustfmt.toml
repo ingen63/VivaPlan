@@ -1,0 +1,4 @@
+# FEA-42: Formatierung des ganzen Projekts (Workspace und fuzz/). Prüfen mit `cargo fmt --all --check`.
+edition = "2021"
+# Der Code nutzt lange Zeilen; 120 statt des Standards 100 hält Umbrüche klein.
+max_width = 120

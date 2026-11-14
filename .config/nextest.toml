@@ -1,0 +1,33 @@
+[profile.default]
+retries = 0
+
+[profile.ci]
+retries = 2
+flaky-result = "fail"      # Test, der erst im Retry besteht, lässt den Lauf scheitern
+fail-fast = false
+slow-timeout = { period = "60s", terminate-after = 3 }
+
+[profile.ci.junit]
+path = "junit.xml"         # landet unter <target>/nextest/ci/junit.xml
+store-success-output = false
+store-failure-output = true
+
+# Der Robustheitstest (600 verfälschte Planungen) braucht auch lokal fast zwei Minuten.
+[[profile.ci.overrides]]
+filter = 'test(mutated_plans_never_crash)'
+slow-timeout = { period = "120s", terminate-after = 5 }
+
+# FEA-32: Profil für Mutationstests (cargo-mutants, .cargo/mutants.toml). Jeder Mutant führt die Tests neu aus; die
+# schweren Tests (über etwa 14 s unter Last) würden die Läufe auf viele Stunden verlängern. Sie laufen weiterhin in
+# `make test` und in CI (Profil default und ci). Ausgenommen sind:
+#  - mutated_plans_never_crash: 600 verfälschte Planungen (Robustheit, prüft Abstürze, keine Rechenregel)
+#  - bench_measures_one_run_for_each_source: Leistungsmessung aller Renditequellen
+#  - statistics_are_stable_across_path_counts, parametric_paths_are_finite_and_plausible: Statistik mit vielen Pfaden
+#  - progress_counts_and_cancel_...: Abbruch und Fortschritt mit langen Läufen
+#  - plan_uses_library_reference: voller Lauf mit der Datenbibliothek
+#  - goal_two_report_is_sorted_..., goal_two_needs_a_property_...: Optimierung mit Ziel 2 (viele Pfade)
+#  - fixed_parameters_keep_the_plan_value_...: Optimierung mit Bandbreiten (viele Pfade)
+[profile.mutants]
+retries = 0
+fail-fast = true            # der erste fehlschlagende Test genügt, der Mutant ist erkannt
+default-filter = 'not (test(mutated_plans_never_crash) | test(bench_measures_one_run_for_each_source) | test(statistics_are_stable_across_path_counts) | test(parametric_paths_are_finite_and_plausible) | test(progress_counts_and_cancel_stops_simulation_and_optimization) | test(plan_uses_library_reference) | test(goal_two_report_is_sorted_by_emergency_share) | test(goal_two_needs_a_property_and_a_sensible_minimum) | test(fixed_parameters_keep_the_plan_value_and_varied_ones_stay_in_their_range))'

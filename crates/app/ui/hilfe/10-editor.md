@@ -1,0 +1,347 @@
+# Editor: Abschnitte und Felder
+
+## @s-general Haushalt & Projekt
+Stichworte: Name, Währung, Personen, Geburt, zweite Person, Double Income, Simulationszeitraum
+
+Hier legen Sie die Grunddaten fest.
+
+- **Projektname und Währung:** Alle Beträge werden in der Projektwährung erfasst (CHF, EUR oder USD). Die Indizes der [Anlagestrategie](#f-ret-series) sind in CHF; bei einer Planung in EUR oder USD erscheint ein Hinweis.
+- **Person 1:** Name und Geburtsmonat (Format MM.JJJJ). Aus dem Geburtsmonat berechnet die App das Alter für Meilensteine («mit 65») und für die Beschriftung der Grafiken.
+- **+ Zweite Person:** Fügt eine zweite Person mit eigenem Einkommen, eigener Pensionskasse und eigener AHV hinzu (Double Income). Steuern, Vermögen und Ausgaben gelten für den Haushalt. Siehe [Zweite Person und Ehepaar-Regeln](#f-couple).
+- **Simulationszeitraum:** Start und Ende sind Meilensteine und werden unter [Meilensteine](#s-milestones) geändert.
+
+Alle Zeitangaben haben das Format **MM.JJJJ** (zum Beispiel 05.2027).
+
+## @s-milestones Meilensteine
+Stichworte: Bezug Pensionskasse, Pensionierung, Start, Ende, AHV-Bezug, AHV-Beginn, Datum, Alter, Zeitpunkt, Grenzen
+
+Ein Meilenstein ist ein benannter Zeitpunkt, auf den sich alle anderen Eingaben beziehen können («ab Bezug Pensionskasse»). Verschieben Sie den Bezug der Pensionskasse, verschiebt sich alles mit, was daran hängt. Das ist der wichtigste Hebel, um Szenarien «früher oder später in Pension» durchzuspielen.
+
+Fest vorgegeben sind **Simulationsstart** und **Simulationsende**. Dazu hat **jede Person** zwei feste Meilensteine, die immer vorhanden sind:
+
+| Meilenstein | Bedeutung | Grenzen | Standard |
+|---|---|---|---|
+| **Bezug Pensionskasse** (bisher «Pensionierung») | Bezug von Rente und Kapital der Pensionskasse, Start der Entnahmestrategie | 58 bis 65 Jahre | 65 |
+| **AHV-Bezug** | Beginn der AHV-Rente; Ende der Einzahlungen und der indirekten Amortisation in die [Säule 3a](#s-pillar3a), Auszahlung des Rests | 63 bis 70 Jahre | 65 |
+
+Sie lassen sich nicht löschen, ihr Zeitpunkt ist aber frei wählbar (Alter oder Datum), solange er innerhalb der Grenzen liegt; die Grenzen selbst sind erlaubt. Die Grenzen sind in den [Einstellungen](#f-settings) änderbar. Bei zwei Personen heissen sie «Bezug Pensionskasse Person 2» und «AHV-Bezug Person 2». Das **Ende des Erwerbseinkommens** ist kein Meilenstein: Sie legen es im [Einkommen](#s-flows) fest. Ist das Erwerbseinkommen nach dem Bezug der Pensionskasse noch grösser als 0, zeigt die Prüfung eine Warnung mit dem Betrag.
+
+Eigene Meilensteine fügen Sie mit «+ Meilenstein» hinzu, zum Beispiel «Verkauf Haus» oder «Kinder ausgezogen».
+
+Jeder Meilenstein ist festgelegt als:
+
+- **Datum:** ein fester Monat (05.2027)
+- **Alter von:** das Alter einer Person, zum Beispiel «Person 1 mit 64.5 Jahren». Dezimalstellen sind erlaubt: 64.5 Jahre sind 64 Jahre und 6 Monate.
+
+Die Spalte «Ergibt» zeigt den daraus berechneten Monat. **Beim Wechsel** zwischen «Datum» und «Alter von» bleibt der Zeitpunkt derselbe: Das Alter bzw. das Datum aus der Spalte «Ergibt» wird in das neue Feld eingetragen. der Meilenstein lässt sich mit «✕» löschen. **Wird er noch verwendet**, fragt ein Dialog nach: Er nennt die Zahl der Eingaben und die Abschnitte und stellt sie beim Löschen auf das **feste Datum** (Monat/Jahr) des Meilensteins um, bei «Alter von» auf das berechnete Datum. Entsteht dadurch in einer Zeitreihe ein doppelter Zeitpunkt, gilt die spätere Zeile und eine Meldung weist darauf hin. Mit «Rückgängig» (⌘Z) lässt sich alles zurücknehmen. Nicht löschbar sind **Simulationsstart, Simulationsende, Bezug Pensionskasse und AHV-Bezug**; die Schaltfläche ist ausgegraut.
+
+**Ältere Planungen:** Fehlt einer der festen Meilensteine, wird er beim Öffnen mit 65 Jahren ergänzt. Liegt ein Alter ausserhalb der Grenzen, wird es auf die nächste Grenze gesetzt. «Pensionierung» heisst neu «Bezug Pensionskasse». Ein Dialog nennt jede Änderung.
+
+> Das **Ende der Simulation** sollten Sie bewusst spät setzen, etwa auf Alter 95 oder 100. Ein zu frühes Ende macht das Ergebnis besser, als es ist: Das Geld muss nur bis dahin reichen.
+
+## @s-pension Vorsorge
+Stichworte: Pensionskasse, AHV, 2. Säule, 1. Säule, Säule 3a, Rente
+
+Pensionskasse (2. Säule) und AHV (1. Säule), bei zwei Personen für jede Person eigene Karten. Die Zahlen finden Sie auf dem **Vorsorgeausweis** Ihrer Pensionskasse und im **AHV-Konto** (Kontoauszug oder Rentenvorausberechnung der Ausgleichskasse).
+
+- Pensionskasse: [Altersguthaben, Bezug, Kapitalbezug, Umwandlungssatz](#f-pk)
+- AHV: [Rente und Bezugsbeginn](#f-ahv)
+
+Eine Zeile unter den Karten zeigt, was beim Bezug der Pensionskasse aus dem Guthaben wird (Kapital und Rente).
+
+Die **Säule 3a** hat einen eigenen Abschnitt, siehe [Säule 3a](#s-pillar3a).
+
+## @s-pillar3a Säule 3a
+Stichworte: 3a, gebundene Vorsorge, Einzahlung, Auszahlung, Auszahlungsplan, Alter, Datum, Guthaben, Maximalbetrag, indirekte Amortisation
+
+Die Säule 3a ist ein eigenes Konto **je Person**, getrennt von Pensionskasse und Hypothek.
+
+- **Guthaben per Simulationsstart** und **Verzinsung / Rendite p.a.**
+- **Einzahlung pro Jahr:** 0 bis zum Maximalbetrag (7 258 Franken, änderbar in den [Einstellungen](#f-settings)). Die App zahlt monatlich ein Zwölftel ein, bis vor dem Monat des **AHV-Bezugs**. Die Einzahlung **zählt zu den Ausgaben**: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme und gehört zum Netto-Bedarf der 3-Topf-Strategie.
+- **Auszahlungsplan:** Zeilen aus Zeitpunkt und Betrag, zum Beispiel 2041 50 000 und 2042 50 000. Den **Zeitpunkt** legen Sie wie bei einem Meilenstein als **Datum** (MM.JJJJ) oder als **Alter** der Person fest, der das Konto gehört (zum Beispiel 61.5 Jahre). Daneben steht der Monat, der sich daraus ergibt, und das Alter. Wechseln Sie zwischen «Datum» und «Alter», bleibt der Zeitpunkt gleich. Ohne Betrag wird das ganze Guthaben ausbezahlt. Eine Auszahlung ist **frühestens 5 Jahre vor dem AHV-Bezug** möglich, auch nach Alter; ein früherer Eintrag ist ein Fehler am Feld. Ist ein Betrag grösser als das Guthaben, wird nur das Guthaben ausbezahlt (Hinweis in den Ereignissen).
+- **Guthaben aus der Vorschau:** Jede Zeile zeigt das **Guthaben vor der Auszahlung** und den **Rest danach**, unter dem Plan steht das Guthaben, das im AHV-Bezug ausbezahlt wird. Die Werte stammen aus der Vorschau mit fixen Renditen; hat die Planung einen Fehler, gibt es keine Vorschau, und es steht «–».
+- **+ Auszahlung** legt eine Zeile ein Jahr nach der letzten an (ohne Zeile: im frühesten erlaubten Monat, 5 Jahre vor dem AHV-Bezug, nicht vor dem Simulationsstart), höchstens im AHV-Bezug. Als Betrag steht das Guthaben zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1 000. Sie können ihn danach frei ändern.
+- **Rest im AHV-Bezug:** Was noch im Konto ist, wird **spätestens im Monat des AHV-Bezugs** ausbezahlt.
+- **Verwendung:** ins freie Vermögen oder, wenn eine Tranche mit indirekter Amortisation in dieses Konto besteht, «Hypothek zurückzahlen» (zuerst die Tranchen mit indirekter Amortisation).
+
+Jede Auszahlung ist ein **Kapitalbezug** mit Kapitalbezugssteuer. Bezüge im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet.
+
+Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in dieses Konto (siehe [Hypotheken](#f-re-mortgage)). Einzahlung und indirekte Amortisation zusammen sollten den Maximalbetrag pro Jahr nicht übersteigen; sonst zeigt die Prüfung eine Warnung.
+
+> Beispiel: Geburt 06.1980, Guthaben 120 000 ohne Zins, Auszahlung mit 61.5 Jahren (ergibt 12.2041) über 50 000: Guthaben vor der Auszahlung 120 000, Rest danach 70 000. «+ Auszahlung» schlägt eine Zeile mit 62.5 Jahren (12.2042) über 70 000 vor.
+
+> Beispiel: Guthaben 120 000, Auszahlungen 2041 und 2042 je 50 000, AHV-Bezug 2045: Der Rest von 20 000 (plus Zins) wird im Monat des AHV-Bezugs ausbezahlt. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig, und der Rest kommt 2046.
+
+## @f-settings Einstellungen
+Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte
+
+Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Linux Menü «Datei → Einstellungen…» (Ctrl+,), oder die Schaltfläche «Einstellungen» oben. Die Einstellungen gelten für **alle Planungen auf diesem Gerät** und werden lokal gespeichert, **nicht in der Planungsdatei**.
+
+| Einstellung | Standard |
+|---|---|
+| AHV-Bezug: untere und obere Grenze | 63 und 70 Jahre |
+| Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
+| Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
+
+Die untere Grenze darf nicht über der oberen liegen, Alter sind ganze Jahre, der Maximalbetrag ist 0 oder mehr. «Standardwerte» setzt alles nach Rückfrage zurück. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das; dieselbe Planung kann deshalb auf einem anderen Gerät mit anderen Einstellungen eine Meldung ergeben. Die Kommandozeile verwendet immer die Standardwerte.
+
+## @f-pk Pensionskasse
+Stichworte: BVG, Altersguthaben, Beiträge, Verzinsung, Vorsorgeausweis
+
+- **Altersguthaben per Simulationsstart (MM.JJJJ):** Das Guthaben laut Vorsorgeausweis (Altersguthaben inkl. überobligatorischer Teil). Die Hochrechnungen im Ausweis (Projektion mit Zins) trägt man nicht hier ein, die rechnet die App selbst.
+- **Bezug ab:** immer der Meilenstein **Bezug Pensionskasse** der Person (58 bis 65 Jahre). Den Zeitpunkt ändern Sie unter [Meilensteine](#s-milestones).
+- **Beiträge pro Monat:** Summe aus Arbeitnehmer- und Arbeitgeberbeiträgen (und Einkäufen), die bis zum Bezug einbezahlt werden. Mit dem Bezug enden sie.
+- **Verzinsung pro Jahr:** Zinssatz auf das Altersguthaben. Die Verzinsung wird im Dezember gutgeschrieben. Realistisch sind 1 % bis 2 %.
+- [Anteil Kapitalbezug](#f-pk-lumpsum) und [Umwandlungssatz](#f-pk-conversion) bestimmen, wie viel als Kapital und wie viel als Rente fliesst.
+
+Beiträge und Verzinsung sind [zeitabhängig](#f-timed) eingebbar, zum Beispiel höhere Beiträge ab 55.
+
+## @f-pk-conversion Umwandlungssatz
+Stichworte: Rente, Pensionskasse, Prozent, Umwandlung
+
+Der Umwandlungssatz legt fest, wie viel **Jahresrente** Sie pro Franken Altersguthaben erhalten, das Sie nicht als Kapital beziehen.
+
+> Jahresrente = Rentenkapital × Umwandlungssatz. Beispiel: 500 000 Franken × 5.0 % = 25 000 Franken pro Jahr (rund 2 083 pro Monat).
+
+- Das **gesetzliche Minimum** liegt im obligatorischen Teil bei 6.8 %, doch viele Pensionskassen rechnen mit **tieferen** Sätzen (häufig 4.5 % bis 5.5 %), weil sie den überobligatorischen Teil anders umwandeln. Verwenden Sie den Wert Ihres Vorsorgeausweises, nicht das Gesetzesminimum.
+- Der Satz hängt vom Alter beim Bezug ab. Verwenden Sie den Satz für Ihr Pensionierungsalter.
+- In der App gilt: Rente pro Monat = Rentenkapital × Umwandlungssatz / 12, **fix** (keine Teuerung) bis ans Lebensende.
+
+Mit dem Szenarien-Bereich können Sie den Kapitalbezug variieren (siehe [Szenarien](#f-sweep)).
+
+## @f-pk-lumpsum Anteil Kapitalbezug
+Stichworte: Kapitalbezug, Rente, Kapitalsteuer, Einmalauszahlung
+
+Der Anteil des Altersguthabens, der bei der Pensionierung **als Kapital** ausbezahlt wird. 0 % heisst «ganz als Rente», 100 % «ganz als Kapital».
+
+- Das Kapital kommt netto auf Ihr liquides Vermögen. Davon wird die **Kapitalbezugssteuer** abgezogen (siehe [Steuertabellen](#f-tax-tables)). Bezüge im selben Kalenderjahr (Pensionskasse, Säule 3a) werden für den Satz zusammengerechnet.
+- Der Rest wird mit dem [Umwandlungssatz](#f-pk-conversion) zur Rente.
+- **Rente:** planbar, lebenslang, aber nicht indexiert und nicht vererbbar. **Kapital:** flexibel und vererbbar, trägt aber das Anlagerisiko und die Verantwortung, es nicht zu früh aufzubrauchen.
+
+Der beste Anteil hängt von der Steuer, vom Umwandlungssatz und von Ihrer Risikobereitschaft ab. Lassen Sie ihn mit einer [Variation](#f-sweep) laufen und sehen Sie, wie sich die Erfolgsquote verändert.
+
+## @f-ahv AHV
+Stichworte: Rente, Bezug, Teuerung, Index, 1. Säule, Beitragsjahre
+
+- **Rente pro Monat bei Bezugsbeginn:** Ihre voraussichtliche Monatsrente laut Rentenvorausberechnung der Ausgleichskasse, in heutigen Preisen.
+- **Bezug ab:** immer der Meilenstein **AHV-Bezug** der Person (63 bis 70 Jahre). Ein Vorbezug oder Aufschub ändert die Rente. Passen Sie die Rente dann entsprechend an.
+- **Rente jährlich an die Teuerung anpassen:** Die AHV wird im Januar um die seit dem letzten Januar aufgelaufene Teuerung erhöht . Lassen Sie das Feld angekreuzt, wenn die Rente mitwachsen soll.
+
+Bei zwei Personen gibt es bei Verheirateten eine Obergrenze für beide Renten zusammen, siehe [Zweite Person und Ehepaar-Regeln](#f-couple).
+
+## @f-couple Zweite Person und Ehepaar-Regeln
+Stichworte: Ehepaar, verheiratet, Plafonierung, 150 Prozent, Partner, Double Income
+
+Mit «+ Zweite Person» erfassen Sie einen Haushalt mit zwei Personen.
+
+- Jede Person hat **eigenes Einkommen, eigene Pensionskasse und eigene AHV**.
+- Steuern, Vermögen, Ausgaben und Immobilien gelten für den **Haushalt**.
+- **Als pensioniert gilt der Haushalt**, sobald alle Personen mit Bezugsdatum pensioniert sind. Erst dann greifen die Entnahmestrategien.
+
+**Verheiratet** (Ehepaar-Regeln): Sind beide AHV-Renten fällig, werden sie zusammen auf höchstens **3 780 Franken pro Monat** begrenzt (150 % der Maximalrente 2025). Der Wert ist änderbar, falls die Maximalrente steigt. Die Grenze wächst mit der Teuerung, wenn die Renten angepasst werden. Unter [Steuern](#s-taxes) können für Verheiratete eigene Tabellen hinterlegt werden.
+
+**Nicht gerechnet:** Todesfall einer Person, Hinterlassenenrenten, Witwenrente. Die Planung rechnet, als lebten beide bis zum Ende.
+
+## @s-flows Einnahmen & Ausgaben
+Stichworte: Einkommen, Lebenshaltung, Ausgaben, einmalige Beträge, Erbschaft, Inflation
+
+Monatliche Beträge. **Ausgaben werden in heutigen Preisen erfasst** und von der App mit der Inflation fortgeschrieben. Sie tragen also Ihre heutigen Kosten ein, auch für Jahre in der Zukunft.
+
+- **Erwerbseinkommen netto pro Monat:** Was nach Abzügen (AHV, Pensionskasse, Steuern wird separat gerechnet) auf Ihr Konto kommt. Es endet, wenn Sie es [zeitabhängig](#f-timed) auf 0 setzen, zum Beispiel «ab Bezug Pensionskasse 0». Der Bezug der Pensionskasse beendet es nicht von selbst; ist es danach noch grösser als 0, zeigt die Prüfung eine Warnung mit dem Betrag.
+- **Steigt mit der Teuerung** (je Person): Mit Häkchen gelten die Beträge, auch jede Zeile eines zeitabhängigen Einkommens, in **heutigen Preisen** (Preise beim Simulationsstart) und wachsen mit der Teuerung des jeweiligen Pfades, genau wie die Lebenshaltung. Beispiel: 8 000 pro Monat bei 2 % Teuerung sind nach einem Jahr 8 160, nach fünf Jahren rund 8 830. Ohne Häkchen bleibt der Betrag nominal gleich. Neue Planungen und eine neu hinzugefügte zweite Person haben das Häkchen gesetzt; ältere Planungen ohne Angabe rechnen wie bisher ohne. Steuern, Jahreswerte und Tragbarkeit verwenden den angepassten Betrag; die Warnung nach dem Bezug der Pensionskasse nennt dann den Betrag «in Preisen des Simulationsstarts».
+- **Lebenshaltungskosten pro Monat:** Alles, was Sie ausgeben, **inklusive Miete bzw. Wohnkosten** (Hypothekarzins, Amortisation, Nebenkosten), so wie es auf dem Kontoauszug steht. Die App zieht den **Wohnanteil** ab, das sind die Wohnkosten im Startmonat aus dem Abschnitt [Immobilien](#s-realestate) als Monatsdurchschnitt (Zins und Amortisation werden vierteljährlich bezahlt), mit der Teuerung fortgeschrieben, und zwar von jeder Zeile gleich. Gerechnet wird mit der Lebenshaltung ohne Wohnen plus den **simulierten** Wohnkosten: Ändert sich der Zins bei einer Erneuerung oder ziehen Sie nach einem Verkauf in eine Miete, ändern sich die Ausgaben entsprechend. Beispiel: 8 000 inklusive 2 000 Wohnkosten; nach einer Zinserhöhung um 300 sind die Ausgaben 8 300, mit einer Miete von 2 500 sind es 8 500. Ist eine Zeile kleiner als der Wohnanteil, meldet die Prüfung einen Fehler. Die Einzahlung in die [Säule 3a](#s-pillar3a) ist nicht enthalten. Ältere Planungen (Lebenshaltung ohne Wohnkosten) rechnet die App beim Öffnen um, ein Hinweis nennt den addierten Betrag. Steuern werden separat gerechnet. Ein realistischer Wert ist der wichtigste Einzelfaktor für das Ergebnis. Schauen Sie dazu zwei bis drei Jahre Kontoauszüge an.
+- **Einmalige Beträge:** Datum, Betrag und Beschreibung. Positiv ist ein Zufluss (Erbschaft, Schenkung), negativ eine Ausgabe (Auto, Reise, Renovation).
+
+Mit dem Alter sinken die Ausgaben oft, zum Beispiel weniger Reisen ab 80, dafür steigen Gesundheitskosten. Nutzen Sie dafür [zeitabhängige Werte](#f-timed).
+
+## @f-timed Zeitabhängige Werte
+Stichworte: Konstant, Zeitabhängig, Zeile, ab, Verlauf, Minigrafik
+
+Viele Beträge und Sätze gibt es in zwei Formen:
+
+- **Konstant:** Ein Wert für die ganze Simulation.
+- **Zeitabhängig:** Eine Abfolge von Zeilen «ab *Zeitpunkt* gilt *Wert*». Der Zeitpunkt ist ein Meilenstein («ab Bezug Pensionskasse») oder ein festes Datum. Jede Zeile gilt, bis die nächste beginnt.
+
+Beispiel Lebenshaltung: «ab Start 9 500», «ab Bezug Pensionskasse 8 500», «ab 80 7 000».
+
+Die kleine Grafik neben dem Feld zeigt den Verlauf. Mit dem Mausrad zoomen Sie hinein, die Knöpfe «Alles», «10 J.», «5 J.» und «2 J.» wählen den Ausschnitt.
+
+Zeilen, die in der Zeit hinten stehen, aber vor einer anderen beginnen, ordnet die App nach dem Zeitpunkt. Verschieben Sie daher ruhig Meilensteine, die Reihenfolge der Werte bleibt konsistent.
+
+## @s-wealth Vermögen & Anlage
+Stichworte: Aktien, Obligationen, Cash, Liquidität, Aktienquote, Aktienanteil, Reserve, Portfolio, Anlagestrategie, Index
+
+Die **Bestände per Simulationsstart**, die **Aufteilung** des Portfolios und die **Anlagestrategie**.
+
+- **Aktien, Obligationen, Cash:** Ihre Bestände per Simulationsstart. Immobilien und Vorsorgeguthaben stehen separat, hier nur das liquide Vermögen. Die App übernimmt die Bestände beim Start unverändert. Neben Aktien und Obligationen steht ihr Anteil am Portfolio (ohne Cash, ganze Prozent), zum Beispiel ergeben 80 000 Aktien und 20 000 Obligationen «80 % des Portfolios» bzw. «20 % des Portfolios».
+- **Cash zählt nicht zum Portfolio.** Die [Aktienquote](#f-stockshare) bezieht sich nur auf Aktien und Obligationen: 80 000 Aktien, 20 000 Obligationen und 50 000 Cash ergeben eine Aktienquote von 80 %.
+- **Bis zur Pensionierung** (Bezug Pensionskasse der ersten Person) gilt keine Entnahmestrategie. Die App hält so viel Cash, wie im Feld **Cash** steht, mit der **Teuerung** fortgeschrieben: Ein Überschuss geht nach der Aktienquote ins Portfolio, ein Fehlbetrag wird aus dem Portfolio nachgefüllt.
+- **Ab der Pensionierung** bestimmt die [Entnahmestrategie](#s-withdrawal) das Cash: «Standard» mit der [Cash-Reserve](#f-reserve) aus ihrer Karte, alle anderen mit 3 Monaten bzw. die 3-Topf-Strategie mit ihren Töpfen.
+
+- **Anlagestrategie:** je ein Index für die Aktien (Welt, Welt individuell, Schweiz, S&P 500) und für die Obligationen (Eidgenossenschaft 10 Jahre oder kurzfristig, USA). Bei «Welt individuell» legen Sie die Gewichte von Schweiz, USA, EU und Asien-Pazifik fest; sie müssen zusammen 100 % ergeben. Unter der Auswahl stehen der gemeinsame Zeitraum und die mittleren Renditen; wird ein Index auf den gemeinsamen Zeitraum gekürzt, erscheint ein Hinweis. Einzelheiten: [Anlagestrategie](#f-ret-series).
+
+Das Vermögen wird in der Simulation jeden Monat mit der Rendite von Aktien und Obligationen fortgeschrieben: aus den Indizes der Anlagestrategie, nach der Methode unter [Simulation](#s-returns) (fixe Renditen, historischer Verlauf oder Monte Carlo).
+
+## @f-stockshare Aktienanteil
+Stichworte: Risiko, Aktien, Rebalancing, Portfolio
+
+Der Anteil der **Aktien am Portfolio** (Aktien + Obligationen, ohne Cash). Der Rest ist Obligationen.
+
+- Die App stellt diesen Anteil jeden Monat wieder her (**Rebalancing**), soweit die Strategie nichts anderes vorsieht.
+- Ein hoher Aktienanteil bringt im Mittel mehr Rendite, aber auch tiefere Tiefstände. Gerade am Anfang der Pensionierung ist das Risiko hoch (**Sequenzrisiko**): Ein Börseneinbruch kurz nach der Pensionierung schadet viel mehr als derselbe Einbruch 20 Jahre später.
+- Der Wert kann [zeitabhängig](#f-timed) sein, zum Beispiel 70 % bis zur Pensionierung und 50 % danach.
+
+Wie stark der Aktienanteil das Ergebnis verändert, zeigt eine [Variation](#f-sweep) des Aktienanteils, oder die [Optimierung](#s-optimize), die den Anteil gleich mit sucht.
+
+## @f-reserve Cash-Reserve
+Stichworte: Cash, Reserve, Monate, Liquidität, Liquiditätsreserve
+
+Wie viele **Monate der ungedeckten Ausgaben** (Ausgaben minus Einkommen und Renten) **ab der Pensionierung** als Cash gehalten werden, bevor der Rest nach der [Aktienquote](#f-stockshare) investiert wird. Vor der Pensionierung gilt das Feld «Cash» unter [Vermögen & Anlage](#s-wealth).
+
+- Eine hohe Reserve schützt davor, bei tiefen Kursen Aktien verkaufen zu müssen, kostet aber Rendite.
+- Einstellbar nur bei der Strategie «Standard» (Karte «Standard» unter «Entnahmestrategie») und wirksam erst ab der Pensionierung. **Alle anderen Strategien** (Guardrails, feste Rate, VPW, Endowment) rechnen ab der Pensionierung mit einer **festen Reserve von 3 Monaten**; bei der [3-Topf-Strategie](#f-wd-three_buckets) ersetzen die Töpfe die Reserve.
+- Eine ältere Planung mit anderer Strategie und einer Reserve ungleich 3 Monaten rechnet deshalb mit 3 Monaten und kann leicht andere Ergebnisse liefern. Die App weist einmal darauf hin, beim ersten Öffnen einer solchen Planung; danach erscheint der Hinweis nicht mehr. Der gespeicherte Wert bleibt in der Datei und gilt wieder, wenn Sie zu «Standard» wechseln.
+- Zeitabhängig sinnvoll: zum Beispiel 6 Monate bis zur Pensionierung und 12 Monate danach.
+
+## @s-taxes Steuern
+Stichworte: Einkommenssteuer, Vermögenssteuer, Kapitalsteuer, Steuerfuss, Tabelle
+
+Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten können. Zwischen den Stufen wird **linear interpoliert**, der Satz wird mit dem [Steuerfuss](#f-tax-multiplier) multipliziert.
+
+- [Steuerfuss und Tabellen](#f-tax-tables)
+- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto. Bezahlt wird beides im Mai des Folgejahres.
+- Eine bei Planende noch offene Steuer wird im letzten Monat abgezogen.
+- Die [Grundstückgewinnsteuer](#f-tax-gain) fällt beim Verkauf einer Immobilie an, siehe auch [Immobilien](#s-realestate).
+
+Die Beispielwerte sind nur Platzhalter. Ersetzen Sie sie für Ihr Ergebnis durch Werte Ihres Wohnorts.
+
+## @f-tax-multiplier Steuerfuss
+Stichworte: Kanton, Gemeinde, Multiplikator
+
+Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor.
+
+## @f-tax-gain Grundstückgewinnsteuer
+Stichworte: Grundstückgewinn, Verkauf, Immobilie, Besitzdauer, Zürich, Aargau, Kanton, Freigrenze, Tarif, Steuerfuss
+
+Die Steuer auf dem Gewinn beim **Verkauf** einer Immobilie. Die Regeln sind **von Kanton zu Kanton verschieden** und deshalb vollständig editierbar. **Pflicht:** Enthält die Planung eine Immobilie mit Status «Besitz» oder «Kauf geplant», müssen die Regeln gesetzt sein (Vorlage Zürich, Vorlage Aargau oder eigene Regeln, auch mit Satz 0 %). Fehlen sie, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» sowie «Optimieren» sind gesperrt. Reine Mietobjekte und Planungen ohne Immobilie brauchen keine Regeln.
+
+Zwei Modelle stehen zur Wahl: **Zürich** (Stufentarif mit Zu- und Abschlägen) und **Aargau** (direkter Steuersatz nach Besitzdauer). Die **eigene Eingabe** basiert auf dem Modell Aargau.
+
+**Berechnung:** Gewinn = Verkaufswert − bezahlter Kaufpreis. Wertvermehrende Investitionen, Handänderungs- und Verkaufskosten werden nicht abgezogen. Dann:
+
+1. **Freigrenze:** Liegt der Gewinn darunter, ist er steuerfrei. Ab der Grenze wird der **ganze** Gewinn besteuert.
+2. **Modell Zürich, Stufen:** Der Gewinn wird stufenweise besteuert. Jede Zeile gilt für ihren Gewinnteil («bis» ist die Breite der Stufe), über der letzten Stufe gilt deren Satz.
+3. **Modell Zürich, Besitzdauer:** Die Steuer wird um den Zuschlag oder Abzug der passenden Zeile verändert. Es gilt die letzte Zeile, deren Jahre erreicht sind (Besitzdauer in vollen Jahren, aus dem [Kaufdatum](#f-re-bought)).
+4. **Feste Ermässigung:** Ein zusätzlicher Abzug in Prozent, unabhängig von der Besitzdauer. Bei den Vorlagen steht er auf 0.
+5. **Steuerfuss:** Mit der Option «Mit dem Steuerfuss multiplizieren» wird die Steuer zusätzlich mit dem Steuerfuss von Kanton und Gemeinde multipliziert (Standard: aus).
+
+**Vorlage Kanton Zürich** (Tarif § 225 StG, Stand 09/2025): Stufen 10 % (erste 4 000), 15 % (6 000), 20 % (8 000), 25 % (12 000), 30 % (20 000), 35 % (50 000), 40 % darüber. Zuschlag 50 % bei Besitzdauer unter 1 Jahr, 25 % unter 2 Jahren. Abzug ab 5 vollen Jahren 5 %, dann 3 Prozentpunkte mehr pro Jahr bis 50 % ab 20 Jahren. Gewinne unter 5 000 sind steuerfrei. Der Steuerfuss wirkt nur, wenn die Option oben gesetzt ist.
+
+**Vorlage Kanton Aargau** (§ 109 StG): Im **Modell Aargau** gilt statt der Stufen ein **direkter Steuersatz auf den ganzen Gewinn**, abhängig von der Besitzdauer in vollen Jahren: 40 % im ersten Besitzjahr, dann je Jahr 2 Prozentpunkte weniger bis 20 % im elften Besitzjahr, danach 1 Prozentpunkt weniger je Jahr bis 6 % im 25. Besitzjahr und 5 % ab 25 vollen Jahren. Ohne Kaufdatum gilt der höchste Satz, und die App warnt.
+
+Für einen anderen Kanton passen Sie die Tabellen an. Die Werte finden Sie im Tarifblatt der kantonalen Steuerverwaltung. Prüfen Sie sie vor Gebrauch, die Vorlage ist ein Stand und keine Steuerberatung.
+
+## @f-tax-tables Steuertabellen
+Stichworte: Satz, Interpolation, Einkommen, Vermögen, Kapitalbezug, Verheiratete
+
+Jede Tabelle hat Stufen aus **Betrag** und **Satz**. Dazwischen interpoliert die App linear.
+
+| Tabelle | Betrag | Satz |
+|---|---|---|
+| Einkommenssteuer | steuerbares Jahreseinkommen | Anteil des Einkommens, der als Steuer anfällt |
+| Vermögenssteuer | steuerbares Vermögen | Anteil des Vermögens pro Jahr |
+| Kapitalbezugssteuer | Kapitalbezug im Jahr | Anteil des Bezugs |
+
+- **Sätze sind Dezimalzahlen:** 0.05 steht für 5 %, in der Oberfläche als Prozent eingetippt.
+- Der Steuerbetrag ist Satz × Betrag × Steuerfuss, auf Rappen gerundet.
+- **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet. Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
+- **Verheiratete:** Bei zwei Personen und angekreuztem «Verheiratet» können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
+- Gehen Sie von der **effektiven** Steuerbelastung aus, nicht vom Grenzsteuersatz. Der Steuerrechner Ihres Kantons liefert beides.
+
+## @s-realestate Immobilien
+Stichworte: Haus, Wohnung, Hypothek, Miete, Kauf, Verkauf, Tragbarkeit
+
+Eigene, geplante und gemietete Objekte. Sie können beliebig viele erfassen.
+
+- **Eigentum («owned»):** Der Marktwert per Simulationsstart steht in der Kopfzeile neben dem Namen. Darunter folgen in festen Plätzen [Kaufdatum](#f-re-bought), Kaufpreis (bezahlt, für die Grundstückgewinnsteuer), «Verkauf ab» (nie, Meilenstein oder Datum) und Nebenkosten pro Monat. Bei «Kauf geplant» stehen dieselben Felder an denselben Plätzen (statt Kaufdatum «Kauf ab»), nur der Marktwert fehlt; beim Statuswechsel bleiben die erfassten Werte erhalten. Der Verkauf muss **nach dem Kaufdatum** liegen, sonst ist das ein Fehler am Feld.
+- **Inflation:** Wert und Nebenkosten lassen sich je Objekt **einzeln** mit der Inflation fortschreiben, bei Miete ebenso die Miete.
+- **Geplanter Kauf («planned»):** Kauf ab Meilenstein, Kaufpreis, Hypothek. Dazu kommt **«Verkauf ab»** (Vorgabe «Nie», sonst Datum oder Meilenstein); die Simulation verkauft das Objekt dann zu diesem Zeitpunkt. Der Verkauf muss nach «Kauf ab» liegen, sonst ist das ein Fehler am Feld. Bei Kauf «nach Verkauf von …» ist der Kaufzeitpunkt beim Erfassen nicht bekannt, dann entfällt diese Prüfung.
+- **Miete («rent»):** Beginn und Miete pro Monat (heutiger Wert, wird standardmässig mit der Teuerung fortgeschrieben; die Option «Miete mit Inflation anpassen» schaltet das aus).
+- **Hypothek:** Tranchen mit Perioden, siehe [Hypotheken](#f-re-mortgage).
+- [Notverkauf](#f-re-emergency) und [Tragbarkeit](#f-re-afford) für Käufe «nach Verkauf».
+
+Die Lebenshaltung enthält **keine** Miete und keine Hypothekarzinsen. Diese kommen als **Wohnkosten** dazu. Nach dem Verkauf der letzten Immobilie wird im Folgemonat die nächste mit Kauf «nach Verkauf» gekauft, sofern sie tragbar ist und das Eigenkapital reicht. Sonst beginnen die Mieten «ab nach Verkauf». Ein Kauf «nach Verkauf» wird **einmal** im Folgemonat versucht. Ist er nicht finanzierbar, **entfällt** er mit einer Meldung in den Ereignissen, und die Folgeregeln greifen im nächsten Monat: Mieten «ab nach Verkauf» dieser Immobilie beginnen, weitere Käufe «nach Verkauf» davon werden versucht. Ein **Kauf- oder Verkaufsdatum vor dem Simulationsstart** wird nie erreicht; die Prüfung meldet es als Hinweis.
+
+## @f-re-bought Kaufdatum
+Stichworte: Besitzdauer, Grundstückgewinnsteuer, Kauf
+
+Der Monat, in dem Sie die Immobilie gekauft haben. Er bestimmt die **Besitzdauer** und damit den Zu- oder Abschlag bei der [Grundstückgewinnsteuer](#f-tax-gain): Je länger Sie die Immobilie besitzen, desto weniger Steuer fällt in vielen Kantonen an.
+
+- Das Feld gibt es nur bei Immobilien im Besitz. Bei einer **geplanten** Immobilie zählt der Kaufmonat der Simulation.
+- Ohne Kaufdatum rechnet die App **ohne** Zu- oder Abschlag (die Steuer nach dem Grundtarif). Sind Besitzdauer-Regeln erfasst, weist die Prüfung darauf hin.
+- Massgebend ist die Besitzdauer in **vollen Jahren** bis zum Verkaufsmonat.
+
+## @f-re-mortgage Hypotheken
+Stichworte: Tranche, SARON, Festhypothek, Amortisation, Marge, Zins
+
+Eine Hypothek besteht aus **Tranchen**. Jede Tranche hat eine Folge von **Perioden**:
+
+- **fest:** fester Zinssatz für die Laufzeit der Periode
+- **SARON:** SARON plus Marge (der SARON hat eine Untergrenze von 0). Den SARON-Verlauf liefert die Zeitreihe oder der fixe Wert, siehe [SARON](#ret-saron).
+
+Die erste Periode beginnt am Startdatum der Tranche (beim Kauf), jede weitere am Ende der vorherigen. Danach wird die Tranche zu gleichen Konditionen verlängert oder zurückbezahlt.
+
+- **Zins** = Schuld × Satz / 12 pro Monat. Er läuft auf und wird zusammen mit der Amortisation am **Quartalsende** (März, Juni, September, Dezember) bezahlt.
+- **Amortisation:** fixer Betrag pro Quartal, direkt (reduziert die Schuld) oder **indirekt** (Einzahlung in die [Säule 3a](#s-pillar3a) der Person; bei zwei Personen wählen Sie das Konto an der Tranche).
+- **Indirekte Amortisation nur bis zum AHV-Bezug:** Ab dem Monat des AHV-Bezugs der Person wird derselbe Betrag **direkt** amortisiert und verringert die Hypothek. Eine Periode, die erst ab dem AHV-Bezug beginnt (auch eine Erneuerung), amortisiert immer direkt; die Auswahl zeigt dann «direkt (ab AHV)». Die Vorschau der Periode vermerkt «+ 3a bis AHV», wenn eine Periode über den AHV-Bezug hinaus läuft. Da jede Person einen AHV-Bezug hat, gilt die Regel immer. Der Wechsel erscheint in den [Ereignissen](#r-events) («Amortisation Hypothek … ab AHV-Bezug direkt statt über die Säule 3a»), wenn die Tranche vorher indirekt amortisiert hat und weiter amortisiert wird.
+- Zahlt die Säule 3a mit «Hypothek zurückzahlen» aus, gehen die Beträge zuerst an Tranchen mit indirekter Amortisation in dieses Konto.
+- Bei Verkauf werden die aufgelaufenen Zinsen sofort bezahlt.
+
+## @f-re-emergency Notverkauf
+Stichworte: Verkauf, Liquidität, Schwelle, Zwangsverkauf
+
+Wird das liquide Vermögen knapp, verkauft die App die Immobilie im Folgemonat. Die **Schwelle** sind Monate ungedeckter Ausgaben: Deckt das liquide Vermögen weniger Monate (Ausgaben minus Einkommen), ist ein Notverkauf nötig.
+
+Ein Notverkauf zeigt, dass die Planung ohne Immobilienverkauf nicht aufgeht. Er erscheint in den [Ereignissen](#r-events) der Ergebnisse. Je höher die Schwelle, desto früher wird verkauft.
+
+## @f-re-afford Tragbarkeit
+Stichworte: Bank, Belehnung, kalkulatorischer Zins, Eigenmittel, Hypothek
+
+Die Tragbarkeitsrechnung der Banken, angewandt auf Käufe «nach Verkauf» und bei jeder Erneuerung einer Hypothekarperiode. Eine Hypothek ist tragbar, wenn die **kalkulatorischen Kosten** einen Anteil des Einkommens nicht übersteigen.
+
+- **Höchstens vom Einkommen:** üblich ein Drittel (33 %).
+- **Kalkulatorischer Zins:** meist 5 %, unabhängig vom aktuellen Zins.
+- **Nebenkosten:** üblich 1 % des Preises pro Jahr.
+- **Einkommen:** Angerechnet werden nur Erwerbseinkommen und Renten, **nicht** die Entnahme aus dem Vermögen. Reicht das Einkommen nicht, wird die Hypothek gekürzt; der Kauf zeigt dann die **Einmalrückzahlung** aus dem Vermögen als Ereignis.
+- **Höchste Belehnung:** meist 80 % des Preises. Mindestens 20 % sind Eigenmittel.
+
+Ist der Kauf nicht tragbar, wird die Hypothek gekürzt. Reichen auch dann die Eigenmittel nicht, wird nicht gekauft und es beginnen die Mieten.
+
+**Bei jeder Erneuerung** einer Hypothekarperiode (auch bei Immobilien im Besitz) prüft die App die Tragbarkeit der ganzen Hypothek neu, mit dem Einkommen des Erneuerungsmonats (Erwerb und Renten). Ist die Hypothek nicht mehr tragbar, berechnet die Simulation die **minimal nötige Einmalzahlung**, damit sie es wieder ist, und zahlt sie aus dem Vermögen (anteilig auf alle Tranchen). Das gilt nur, wenn das Vermögen danach **nicht negativ** ist **und** das [Notverkaufskriterium](#f-re-emergency) nach der Zahlung **nicht** ausgelöst wird (geschätzt mit den geplanten Ausgaben und den Wohnkosten nach der Zahlung). Dann wird die Hypothek mit dem reduzierten Betrag erneuert. Sonst gibt es **keine Zahlung**, die Hypothek wird **nicht erneuert**, und ein **Notverkauf** der Immobilie wird eingeleitet (ausgeführt im Folgemonat). Die Ergebnisansicht protokolliert jede Erneuerung (Datum und Alter, Tragbarkeit, Einmalzahlung, neue Hypothek, Notverkauf mit Grund «Vermögen < 0» oder «Notverkaufskriterium») und zählt bei mehreren Läufen, in wie vielen Läufen Einmalzahlungen und Notverkäufe vorkommen, auch je Perzentil. Typischer Fall: Das Einkommen sinkt mit der Pensionierung.
+
+## @s-scenarios Szenarien & Simulation
+Stichworte: Variation, Sweep, Parameter, Läufe, Umfang
+
+Hier legen Sie fest, welche Parameter **systematisch variiert** werden. «Simulation starten» rechnet die Planung wie erfasst und zusätzlich jede Kombination der Variationen mit allen Renditepfaden. Das Ergebnis ist eine Tabelle und eine Heatmap in den [Szenario-Ergebnissen](#r-scenarios).
+
+Die Dauer der Simulation steht ausserdem links neben dem Knopf «Simulation starten». Während der Berechnung können Sie sie mit **Abbrechen** stoppen.
+
+Die Zahl der Kombinationen ist **nicht begrenzt**; erst bei mehr als **1'000'000** Kombinationen lehnt der Rechenkern ab (Speicherschutz). Liegt die geschätzte Rechenzeit über **einer Minute**, fragt die App vor dem Start nach (Dauer und Zahl der Läufe, «Trotzdem starten» oder «Abbrechen»). Die Anzeige «Umfang» zeigt, wie viele Läufe insgesamt entstehen (Variationen × Pfade); ein **gelbes Warnsymbol (⚠)** daneben erscheint, sobald die geschätzte Rechenzeit **90 Sekunden** übersteigt, und eine **grobe Schätzung der Dauer**. Sie beruht auf einer kurzen Messung Ihrer Planung auf diesem Rechner. Die Spanne («meist … bis …») berücksichtigt, dass Läufe je nach Planung unterschiedlich lange dauern. Jede zusätzliche Variation und jeder zusätzliche Pfad verlängert die Rechenzeit entsprechend: 35 Kombinationen mit 50 000 Pfaden dauern bei Bootstrap etwa 10 Sekunden, mit dem parametrischen Modell rund eine Minute. Höchstens 400 Kombinationen sind erlaubt.
+
+Die Variationen selbst: [Variationen](#f-sweep).
+
+## @f-sweep Variationen
+Stichworte: Sweep, Von, Bis, Schritt, Parameter, Heatmap
+
+Eine Variation hat einen **Parameter**, einen Bereich **Von … Bis** und einen **Schritt**. Die App rechnet jeden Wert und zeigt die Wirkung auf Erfolgsquote und Endvermögen.
+
+| Parameter | Bedeutung |
+|---|---|
+| Aktienanteil | Aktienquote: Aktien am Portfolio aus Aktien und Obligationen (ohne Cash) |
+| Kapitalbezug Pensionskasse | Anteil Kapitalbezug |
+| Historischer Startmonat | nur mit der Quelle «historisch» |
+| Datum Bezug Pensionskasse | Monat des Meilensteins «Bezug Pensionskasse» |
+| Ausgaben-Faktor | Faktor auf die Lebenshaltungskosten ohne den Wohnanteil (0.9 = 10 % weniger); die Wohnkosten bleiben |
+| Entnahmerate (fixe Rate / Guardrails-Start) | Rate der fixen Entnahme bzw. Startrate bei Guardrails |
+
+Bei zwei Variationen entsteht eine **Heatmap** über beide Parameter. Alle Kombinationen verwenden **dieselben Renditepfade**. Unterschiede kommen damit nur von den Parametern, nicht vom Zufall.

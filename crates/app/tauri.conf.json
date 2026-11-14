@@ -1,0 +1,80 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "VivaPlan",
+  "version": "0.8.0",
+  "identifier": "ch.vivaplan-app.desktop",
+  "build": {
+    "frontendDist": "ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "VivaPlan",
+        "create": false,
+        "width": 1440,
+        "height": 920,
+        "minWidth": 1000,
+        "minHeight": 680
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost"
+      },
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Finance",
+    "resources": {
+      "../engine/assets/Neu.vplan": "Neu.vplan"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "vplan"
+        ],
+        "name": "VivaPlan-Plan",
+        "description": "VivaPlan-Plan",
+        "role": "Editor",
+        "mimeType": "application/x-vivaplan"
+      }
+    ],
+    "shortDescription": "Pensionsplanung",
+    "copyright": "© 2026 Dr. Ing. Günter Speckhofer",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "longDescription": "VivaPlan rechnet die Pensionierung durch: Vorsorge, Vermögen, Hypotheken, Steuern und Entnahmestrategien, mit historischen Daten und Monte Carlo. Alle Daten bleiben lokal auf dem Rechner.",
+    "windows": {
+      "nsis": {
+        "languages": [
+          "German"
+        ],
+        "installMode": "currentUser"
+      },
+      "wix": {
+        "language": "de-DE"
+      }
+    },
+    "linux": {
+      "deb": {
+        "section": "finance"
+      }
+    }
+  }
+}

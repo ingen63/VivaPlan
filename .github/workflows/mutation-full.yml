@@ -1,0 +1,45 @@
+# Nur manuell starten (Actions → Mutation (full) → Run workflow): Ein voller Lauf braucht auf den
+# 2-Kern-Runnern eines privaten Repos viele Stunden und würde das Free-Kontingent (2000 Min./Monat) aufbrauchen.
+# Regelmässig läuft nur der Diff-Lauf in test-quality.yml; der volle Lauf lokal mit `make mutants`.
+# FEA-32: 16 Shards, Mutationsläufe mit dem nextest-Profil «mutants» ohne die schweren Tests (.cargo/mutants.toml)
+# und höchstens 2 Minuten je Mutant, damit jeder Shard mit Reserve unter der Zeitgrenze bleibt.
+name: Mutation (full)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  mutants:
+    runs-on: ubuntu-24.04          # cargo-mutants braucht glibc 2.39 (22.04 hat 2.35)
+    timeout-minutes: 350          # GitHub bricht Jobs nach 6 h ab
+    strategy:
+      fail-fast: false
+      matrix: { shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with: { tool: "cargo-mutants,nextest" }
+      - run: cargo mutants -p vivaplan-engine --shard ${{ matrix.shard }}/16 --no-shuffle -j 2
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: "mutants-shard-${{ matrix.shard }}", path: local/mutants.out/ }
+
+  summary:
+    needs: mutants
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { pattern: "mutants-shard-*" }
+      - run: |
+          # FEA-29: kein Mutation Score als Zielwert; die nicht erkannten Mutanten werden einzeln beurteilt
+          jq -s '{caught: (map(.caught)|add), missed: (map(.missed)|add), timeout: (map(.timeout)|add), unviable: (map(.unviable)|add)}' \
+             mutants-shard-*/outcomes.json > total.json
+          jq -r '"### Mutationstest (voll)\ncaught \(.caught) · missed \(.missed) · timeout \(.timeout) · unviable \(.unviable)\n\nJeder nicht erkannte Mutant wird mit einem Test getötet oder mit Begründung ausgeschlossen (docs/TESTS.md, Abschnitt Mutationstests)."' total.json >> "$GITHUB_STEP_SUMMARY"
+          echo '#### Nicht erkannte Mutanten' >> "$GITHUB_STEP_SUMMARY"
+          cat mutants-shard-*/missed.txt | sort | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"

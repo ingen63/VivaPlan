@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Git-Hook: läuft lokal vor jedem `git push`.
+# 1. Enthalten die zu pushenden Commits Rust-Änderungen, startet der
+#    rust-test-agent (Claude Code headless) und ergänzt Tests.
+# 2. Hat der Agent neue Tests committet, wird der Push abgebrochen,
+#    damit diese Tests mitgepusht werden (einfach erneut pushen).
+# 3. Danach harte Prüfung: Tests grün und Zeilenabdeckung >= 80 % je Paket (Engine, App),
+#    sonst wird der Push abgebrochen.
+# Installation: git config core.hooksPath tools/git-hooks
+
+set -uo pipefail
+
+# Schwelle steht nur in tools/coverage-min (auch von den Workflows gelesen)
+COVERAGE_MIN=$(cat "$(git rev-parse --show-toplevel)/tools/coverage-min")
+# Sicherung: Ändert der Test-Agent mehr als so viele Dateien, hat er vermutlich umformatiert oder aufgeräumt.
+AGENT_MAX_FILES=8
+ZERO="0000000000000000000000000000000000000000"
+
+# Rekursion verhindern (falls der Agent selbst pusht)
+[ -n "${RUST_TEST_AGENT_RUNNING:-}" ] && exit 0
+
+[ -f Cargo.toml ] || exit 0
+
+# Zu pushende Commits aus stdin ermitteln
+commits=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$ZERO" ] && continue              # Branch wird gelöscht
+  if [ "$remote_sha" = "$ZERO" ]; then                 # neuer Branch
+    range_commits="$(git rev-list "$local_sha" --not --remotes)"
+  else
+    range_commits="$(git rev-list "$remote_sha..$local_sha")"
+  fi
+  commits="$commits $range_commits"
+done
+
+commits="$(echo $commits | tr ' ' '\n' | sed '/^$/d' | sort -u)"
+[ -z "$commits" ] && exit 0
+
+# Enthalten die Commits Rust-Änderungen?
+rust_changed=0
+for c in $commits; do
+  if git diff-tree --root --no-commit-id --name-only -r "$c" | grep -Eq '\.rs$|Cargo\.toml$'; then
+    rust_changed=1; break
+  fi
+done
+[ "$rust_changed" -eq 0 ] && exit 0
+
+# --- 1. Test-Agent (übersprungen, wenn der letzte Commit bereits test(auto) ist) ---
+head_before="$(git rev-parse HEAD)"
+last_msg="$(git log -1 --pretty=%s)"
+
+if [[ "$last_msg" != test\(auto\):* ]]; then
+  if command -v claude >/dev/null; then
+    shas="$(echo "$commits" | xargs -n1 git rev-parse --short | tr '\n' ' ')"
+    echo "pre-push: rust-test-agent prüft die Commits: $shas"
+    echo "pre-push: (das kann einige Minuten dauern)"
+    status_before="$(git status --porcelain | sort)"
+    RUST_TEST_AGENT_RUNNING=1 claude -p \
+      "Verwende den Subagenten rust-test-agent. Betrachte statt nur des letzten Commits alle folgenden noch nicht gepushten Commits: $shas. Arbeite im VOLLMODUS (Abdeckung je Paket). Tests ausführen, neue Testfälle für diese Änderungen schreiben und Zeilenabdeckung >= ${COVERAGE_MIN} % sicherstellen, und zwar getrennt für vivaplan-engine und vivaplan-app. Neuen Testcode mit cargo fmt formatieren (cargo fmt --all --check muss sauber sein), nur gezielt Testdateien ändern und stagen. Gib am Ende eine kurze Zusammenfassung inklusive gefundener Bugs im Produktivcode aus." \
+      --permission-mode acceptEdits
+    # Sicherung gegen einen verschmutzten Arbeitsbaum (z. B. Umformatieren des ganzen Projekts)
+    agent_changed="$(comm -13 <(printf '%s\n' "$status_before") <(git status --porcelain | sort) | sed '/^$/d')"
+    agent_n="$(printf '%s\n' "$agent_changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$agent_n" -gt "$AGENT_MAX_FILES" ]; then
+      echo ""
+      echo "pre-push: Der Test-Agent hat $agent_n Dateien verändert (erlaubt: höchstens $AGENT_MAX_FILES). Vermutlich wurde umformatiert."
+      printf '%s\n' "$agent_changed" | head -20
+      echo "pre-push: Push abgebrochen. Änderungen prüfen und ggf. mit 'git checkout -- <Datei>' verwerfen."
+      exit 1
+    fi
+  else
+    echo "pre-push: 'claude' CLI nicht gefunden, Test-Agent übersprungen."
+  fi
+
+  if [ "$(git rev-parse HEAD)" != "$head_before" ]; then
+    echo ""
+    echo "pre-push: Der Test-Agent hat neue Tests committet."
+    echo "pre-push: Push abgebrochen, damit sie mitgepusht werden. Bitte 'git push' erneut ausführen."
+    exit 1
+  fi
+fi
+
+# --- 2. Harte Prüfung: Tests + Abdeckung ---
+if ! command -v cargo-llvm-cov >/dev/null && ! cargo llvm-cov --version >/dev/null 2>&1; then
+  echo "pre-push: cargo-llvm-cov fehlt (cargo install cargo-llvm-cov). Push abgebrochen."
+  exit 1
+fi
+
+# Abdeckung getrennt je Paket: Engine und App müssen jeweils für sich >= 80 % haben
+failed=0
+for pkg in vivaplan-engine vivaplan-app; do
+  echo "pre-push: Prüfe Tests und Abdeckung von $pkg (>= ${COVERAGE_MIN} %) ..."
+  if ! cargo llvm-cov nextest -p "$pkg" --all-features --summary-only --fail-under-lines "$COVERAGE_MIN"; then
+    echo "pre-push: $pkg: Tests fehlgeschlagen oder Abdeckung unter ${COVERAGE_MIN} %."
+    failed=1
+  fi
+done
+if [ "$failed" -ne 0 ]; then
+  echo ""
+  echo "pre-push: Push abgebrochen."
+  exit 1
+fi
+
+echo "pre-push: Alles grün, Push wird ausgeführt."
+exit 0
