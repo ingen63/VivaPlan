@@ -218,7 +218,7 @@ Die Beispielwerte sind nur Platzhalter. Ersetzen Sie sie für Ihr Ergebnis durch
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator
 
-Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor.
+Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor. Erlaubt sind Werte von 0 bis 10.
 
 ## @f-tax-gain Grundstückgewinnsteuer
 Stichworte: Grundstückgewinn, Verkauf, Immobilie, Besitzdauer, Zürich, Aargau, Kanton, Freigrenze, Tarif, Steuerfuss
@@ -254,6 +254,7 @@ Jede Tabelle hat Stufen aus **Betrag** und **Satz**. Dazwischen interpoliert die
 
 - **Sätze sind Dezimalzahlen:** 0.05 steht für 5 %, in der Oberfläche als Prozent eingetippt.
 - Der Steuerbetrag ist Satz × Betrag × Steuerfuss, auf Rappen gerundet.
+- **Grenzen:** Jeder Satz liegt zwischen 0 % und 100 %, jeder Betrag ist 0 oder grösser. Werte ausserhalb meldet die Prüfung am Feld.
 - **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet. Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
 - **Verheiratete:** Bei zwei Personen und angekreuztem «Verheiratet» können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
 - Gehen Sie von der **effektiven** Steuerbelastung aus, nicht vom Grenzsteuersatz. Der Steuerrechner Ihres Kantons liefert beides.

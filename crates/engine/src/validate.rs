@@ -580,6 +580,48 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
+    // ISS-18: Steuerfuss und Satztabellen (Einkommen, Vermögen, Kapitalbezug, auch Verheiratete). Ohne Prüfung ergab
+    // ein Satz von −10¹⁵ ungültige Zahlen in der Simulation.
+    let t = &plan.taxes;
+    if !(0.0..=10.0).contains(&t.multiplier) {
+        v.err_at(
+            "taxes",
+            "taxes.multiplier",
+            "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
+        );
+    }
+    let mut tables: Vec<(&str, &str, &[(f64, f64)])> = vec![
+        ("income", "Einkommenssteuer", &t.income),
+        ("wealth", "Vermögenssteuer", &t.wealth),
+        ("capital", "Kapitalbezugssteuer", &t.capital),
+    ];
+    if let Some(c) = &t.couple {
+        tables.push(("couple.income", "Einkommenssteuer (Verheiratete)", &c.income));
+        tables.push(("couple.wealth", "Vermögenssteuer (Verheiratete)", &c.wealth));
+        tables.push(("couple.capital", "Kapitalbezugssteuer (Verheiratete)", &c.capital));
+    }
+    for (key, name, rows) in tables {
+        for (i, &(from, rate)) in rows.iter().enumerate() {
+            if !(from.is_finite() && from >= 0.0) {
+                v.err_at(
+                    "taxes",
+                    format!("taxes.{key}.{i}.0"),
+                    format!("{name}, Stufe {}: Der Betrag muss 0 oder grösser sein.", i + 1),
+                );
+            }
+            if !(0.0..=1.0).contains(&rate) {
+                v.err_at(
+                    "taxes",
+                    format!("taxes.{key}.{i}.1"),
+                    format!(
+                        "{name}, Stufe {}: Der Steuersatz muss zwischen 0 % und 100 % liegen.",
+                        i + 1
+                    ),
+                );
+            }
+        }
+    }
+
     // Grundstückgewinnsteuer ist Pflicht, sobald eine Immobilie mit Status «Besitz» oder «Kauf geplant» vorkommt
     // (Mietobjekte lösen sie nicht aus). Regeln mit Satz 0 % zählen als gesetzt.
     if plan.taxes.property_gain.is_none()

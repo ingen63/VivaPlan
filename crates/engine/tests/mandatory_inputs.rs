@@ -437,3 +437,67 @@ fn planned_property_is_sold_at_the_chosen_date() {
         out.issues
     );
 }
+
+/// ISS-18/AK1–AK3: Steuerfuss und Satztabellen (auch Verheiratete) werden geprüft; Grenzwerte gelten als gültig.
+#[test]
+fn iss18_tax_tables_and_multiplier_must_be_in_range() {
+    let errors = |v: &Value| -> Vec<String> {
+        issues(v)
+            .into_iter()
+            .filter(|i| i.severity == Severity::Error)
+            .map(|i| i.message)
+            .collect()
+    };
+    // Grenzwerte: Satz 0 % und 100 %, Betrag 0, Steuerfuss 0 und 10
+    for m in [0.0, 10.0] {
+        let mut v = base();
+        v["taxes"] = json!({ "multiplier": m, "income": [[0, 0.0], [1e6, 1.0]], "wealth": [[0, 0.0]], "capital": [] });
+        assert!(errors(&v).is_empty(), "{m}: {:?}", errors(&v));
+    }
+    // AK1: Satz unter 0 % oder über 100 %, am Feld
+    for (rate, key) in [(-0.01, "wealth"), (1.01, "income"), (-1e15, "capital")] {
+        let mut v = base();
+        v["taxes"][key] = json!([[0, 0.0], [100_000, rate]]);
+        assert_error(
+            &v,
+            "taxes",
+            "Stufe 2: Der Steuersatz muss zwischen 0 % und 100 % liegen.",
+            Some(&format!("taxes.{key}.1.1")),
+        );
+    }
+    // AK2: negativer Betrag, am Feld
+    let mut v = base();
+    v["taxes"]["income"] = json!([[-1, 0.1]]);
+    assert_error(
+        &v,
+        "taxes",
+        "Einkommenssteuer, Stufe 1: Der Betrag muss 0 oder grösser sein.",
+        Some("taxes.income.0.0"),
+    );
+    // AK1, AK2: Tabellen für Verheiratete
+    let mut v = base();
+    v["taxes"]["couple"] = json!({ "income": [], "wealth": [[0, -0.001]], "capital": [[-5, 0.0]] });
+    assert_error(
+        &v,
+        "taxes",
+        "Vermögenssteuer (Verheiratete), Stufe 1: Der Steuersatz",
+        Some("taxes.couple.wealth.0.1"),
+    );
+    assert_error(
+        &v,
+        "taxes",
+        "Kapitalbezugssteuer (Verheiratete), Stufe 1: Der Betrag",
+        Some("taxes.couple.capital.0.0"),
+    );
+    // AK3: Steuerfuss unter 0 oder über 10, am Feld
+    for m in [-0.1, 10.5] {
+        let mut v = base();
+        v["taxes"]["multiplier"] = json!(m);
+        assert_error(
+            &v,
+            "taxes",
+            "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
+            Some("taxes.multiplier"),
+        );
+    }
+}

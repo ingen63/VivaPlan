@@ -41,6 +41,7 @@ betroffenen Abschnitt.
 | Lebenshaltung inklusive Wohnkosten (FEA-39) | jede Zeile der Lebenshaltung mindestens so gross wie der Wohnanteil (Wohnkosten zum Simulationsstart) | `cash_housing::fea39_ak4_ak5_check_and_no_housing` |
 | Säule 3a (FEA-37, FEA-41) | ein Konto je Person; Guthaben ≥ 0; Zins −50 % bis 100 %; Einzahlung 0 bis Maximalbetrag (Einstellungen); Auszahlungen (Datum oder Alter 0–150 Jahre) frühestens 5 Jahre vor dem AHV-Bezug, Betrag > 0 | `pillar_3a_is_checked` |
 | Meilensteine «Bezug Pensionskasse» und «AHV-Bezug» (FEA-38) | Alter innerhalb der Grenzen aus den Einstellungen (Standard 58–65 und 63–70 Jahre) | `milestones_limits::fea38_ak2_ages_within_limits` |
+| Steuertabellen und Steuerfuss (ISS-18) | Einkommens-, Vermögens- und Kapitalbezugssteuer (auch Verheiratete): je Stufe Betrag ≥ 0 und Satz 0 % bis 100 %; Steuerfuss 0 bis 10; Meldung am Feld | `iss18_tax_tables_and_multiplier_must_be_in_range` |
 | Grundstückgewinnsteuer | gültige Besitzdauer-Staffel (Modell Aargau: Satz je Besitzdauer) | `property_gain_tax_rules_must_be_valid` |
 | Grundstückgewinnsteuer (Regeln gesetzt) | Bei einer Immobilie mit Status «Besitz» oder «Kauf geplant» müssen Regeln gesetzt sein (Vorlage oder eigene, auch Satz 0 %); Mietobjekte lösen die Pflicht nicht aus (ISS-3) | `property_gain_tax_is_mandatory_for_owned_and_planned_properties` |
 | Variationen | gültiger Parameter, Wertebereich und Schritt | `variations_need_a_valid_parameter` |
