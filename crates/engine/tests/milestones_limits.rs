@@ -157,12 +157,15 @@ fn fea38_ak8_ak9_income_after_the_pension_fund() {
 #[test]
 fn fea38_income_warning_with_distant_end() {
     let mut v = with_age(1, 60.0);
-    v["milestones"][3]["years"] = json!(10_000_000);
+    v["milestones"][3]["years"] = json!(100_000_000);
     v["flows"]["income"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "retire", "value": 0 },
         { "from": "2100-01", "value": 700 } ] });
+    // FEA-65: Die Prüfung sucht den Betrag über die Stützstellen und dauert Millisekunden. Ginge sie Monat für Monat
+    // bis zum Ende (1,2 Mrd. Monate), bräuchte sie auf jedem Rechner viele Minuten. Die Grenze von 60 s fängt nur
+    // dieses Hängen ab und hält auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
     let t = std::time::Instant::now();
     let w = warnings(&v);
-    assert!(t.elapsed().as_secs() < 5, "Prüfung dauert zu lange");
+    assert!(t.elapsed().as_secs() < 60, "Prüfung dauert zu lange");
     assert!(w.iter().any(|m| m.ends_with("noch 700 pro Monat.")), "{w:?}");
 }
 

@@ -207,7 +207,9 @@ fn server() -> Server {
             .unwrap(),
         port,
     );
-    for _ in 0..100 {
+    // FEA-65: Warten auf den Zustand (Port offen) statt fester Wartezeit; bis 30 s, damit auch ein langsamer Runner
+    // unter Abdeckungsmessung den Server starten kann.
+    for _ in 0..600 {
         if TcpStream::connect(("127.0.0.1", port)).is_ok() {
             return srv;
         }

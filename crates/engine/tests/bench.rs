@@ -39,11 +39,14 @@ fn bench_measures_one_run_for_each_source() {
 #[test]
 fn bench_caps_the_number_of_paths_and_reports_errors() {
     let mut p = plan("bootstrap");
-    p["returns"]["bootstrap"]["paths"] = json!(1_000_000);
+    // FEA-65: Mit einer Milliarde Pfaden bräuchte eine Messung ohne Begrenzung auf jedem Rechner Stunden; begrenzt
+    // auf 1000 Pfade dauert sie lokal unter einer Sekunde und auch auf einem 2-Kern-Runner unter Abdeckungsmessung
+    // nur Sekunden. Die Grenze von 120 s trennt beides sicher, ohne von der Geschwindigkeit des Rechners abzuhängen.
+    p["returns"]["bootstrap"]["paths"] = json!(1_000_000_000);
     let t0 = std::time::Instant::now();
     api::bench(&p, Path::new("/"), Some(&data_dir())).unwrap();
     assert!(
-        t0.elapsed().as_secs_f64() < 20.0,
+        t0.elapsed().as_secs_f64() < 120.0,
         "Messung darf nicht von der Pfadzahl abhängen"
     );
     // ohne Bibliothek: verständlicher Fehler statt Absturz

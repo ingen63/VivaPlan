@@ -57,8 +57,10 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let seen = w.join().unwrap();
     assert_eq!(r.error.as_deref(), Some("Abgebrochen"));
     assert!(seen.total == 300_000 && seen.done < seen.total);
+    // FEA-65: Dass abgebrochen wurde, zeigen Fehlertext und Zähler. Die Zeitgrenze fängt nur ein Hängen ab; der Abbruch
+    // selbst dauert Millisekunden, 60 s halten auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
     assert!(
-        t0.elapsed() < Duration::from_secs(30),
+        t0.elapsed() < Duration::from_secs(60),
         "Abbruch kam zu spät: {:?}",
         t0.elapsed()
     );
@@ -75,8 +77,9 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let e = api::optimize(&plan(200), &req, Path::new("/"), Some(&lib)).unwrap_err();
     w.join().unwrap();
     assert_eq!(e.to_string(), "Abgebrochen");
+    // FEA-65: wie oben, nur gegen ein Hängen.
     assert!(
-        t0.elapsed() < Duration::from_secs(30),
+        t0.elapsed() < Duration::from_secs(60),
         "Abbruch kam zu spät: {:?}",
         t0.elapsed()
     );

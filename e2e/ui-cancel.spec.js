@@ -29,7 +29,8 @@ test.describe("Abbrechen laufender Berechnungen", () => {
     expect(big).toMatchObject({ paths: 20000, checkPaths: 20000, samples: 60 });
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("#jobCancel")).toBeVisible();
-    await page.waitForTimeout(1000);
+    // FEA-65: abbrechen, sobald die Optimierung nachweislich rechnet (Fortschrittsbalken über 0), statt fest zu warten
+    await expect.poll(() => page.evaluate(() => document.getElementById("jobBar")?.value ?? 0), { timeout: 60_000 }).toBeGreaterThan(0);
     await page.locator("#jobCancel").click();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off", { timeout: 60_000 });
     await expect(page.locator("#toast")).toContainText("abgebrochen");

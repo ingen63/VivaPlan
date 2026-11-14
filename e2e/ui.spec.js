@@ -1364,8 +1364,8 @@ test.describe("Ergebnisse", () => {
     test.setTimeout(120_000);
     const errors = await open(page, "scenarios");
     const run = async sweeps => {
+      // FEA-65: renderSection und renderDerived zeichnen synchron; kein Warten nötig
       await page.evaluate(s => { state.scenarios.sweeps = s; renderSection(); renderDerived(); }, sweeps);
-      await page.waitForTimeout(300);
       return page.evaluate(async () => {
         const out = await Engine.call("validate", { plan: state });
         return { text: document.querySelector('[data-computed="runs"]')?.innerText || "", errors: out.filter(i => i.severity === "error").map(i => i.message) };
@@ -1960,7 +1960,8 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(true);
     await page.locator("#fileInput").setInputFiles(file);
     await expect(page.locator("#fileName")).toHaveText(path.basename(file));
-    await page.waitForTimeout(300);
+    // FEA-65: Nach dem Dateinamen folgen nur noch Mikroaufgaben (Hinweise, reserveNotice); eine leere Ereignisschleife genügt
+    await page.evaluate(() => new Promise(r => setTimeout(r)));
     await expect(page.locator("#ask")).toBeHidden();
     // Standard mit Reserve 6: kein Hinweis; der gespeicherte Wert bleibt
     expect(await page.evaluate(() => reserveDiffers({ withdrawal: { strategy: "standard" }, wealth: { reserveMonths: { mode: "const", value: 6 } } }))).toBe(false);
@@ -2057,14 +2058,14 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     test("FEA-58/AK2: weiterer Start mit betroffener Planung zeigt keinen Hinweis", async ({ page }) => {
       await openApp(page, { path: "/x/Alt.vplan", plan: await affected(page), notice: null }, { reserveNoticeShown: true });
       await expect(page.locator("#fileName")).toHaveText("Alt.vplan");
-      await page.waitForTimeout(300);
+      // FEA-65: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
       await expect(page.locator("#ask")).toBeHidden();
     });
 
     test("FEA-58/AK4: nicht betroffene Planung zählt nicht; die erste betroffene zeigt den Hinweis, die nächste nicht", async ({ page }) => {
       await openApp(page, { path: "/x/Standard.vplan", plan: await plan(page), notice: null });
       await expect(page.locator("#fileName")).toHaveText("Standard.vplan");
-      await page.waitForTimeout(300);
+      // FEA-65: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
       await expect(page.locator("#ask")).toBeHidden();
       expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(false);
       const p = await affected(page);
@@ -2072,8 +2073,8 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#askTitle")).toHaveText("Hinweis zur Cash-Reserve");
       await page.locator('#ask button[value="ok"]').click();
       await expect(page.locator("#ask")).toBeHidden();
+      // FEA-65: reserveNotice entscheidet synchron und öffnet den Dialog synchron; kein Warten nötig
       await page.evaluate(p => { reserveNotice(p); }, p);
-      await page.waitForTimeout(300);
       await expect(page.locator("#ask")).toBeHidden();
     });
 
@@ -2576,7 +2577,10 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
     const end = kpiValue(page, "Vermögen am Ende");
     await expect(end).not.toHaveText("–");
     const before = await end.textContent();
-    // AK1, AK4: Ziffer für Ziffer, mit Pause: keine Meldung am Feld, keine in der Prüfliste, Vorschau unverändert
+    // AK1, AK4: Ziffer für Ziffer, mit Pause: keine Meldung am Feld, keine in der Prüfliste, Vorschau unverändert.
+    // FEA-65: Die festen Pausen in diesem und dem nächsten Test bleiben, denn geprüft wird, dass während einer Pause
+    // nichts geschieht; dafür gibt es keinen Zustand, auf den man warten könnte. Sie sind länger als die Verzögerung
+    // der Vorschau (120 ms in requestPreview) und als die Sammelzeit des Rückgängig-Verlaufs (400 ms).
     await years.click(); await years.press("End");
     await years.press("Backspace"); await years.press("Backspace"); await years.type("6");
     await page.waitForTimeout(800);
