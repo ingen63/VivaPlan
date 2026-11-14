@@ -27,9 +27,14 @@ fn leaves(v: &Value, path: String, out: &mut Vec<String>) {
     out.push(path);
 }
 
-fn mutate(rng: &mut Rng, plan: &mut Value) {
+/// Verfälscht 1 bis 4 Stellen der Planung. `destructive`: beliebige Stellen, auch Typwechsel und gelöschte Felder
+/// (prüft das Lesen und die Eingabeprüfung). Sonst nur Zahlen durch Extremwerte (prüft die Rechnung selbst, FEA-63).
+fn mutate(rng: &mut Rng, plan: &mut Value, destructive: bool) {
     let mut paths = vec![];
     leaves(plan, String::new(), &mut paths);
+    if !destructive {
+        paths.retain(|p| plan.pointer(p).is_some_and(Value::is_number));
+    }
     for _ in 0..1 + rng.below(4) {
         let p = &paths[rng.below(paths.len())];
         if p.is_empty() {
@@ -58,7 +63,8 @@ fn mutate(rng: &mut Rng, plan: &mut Value) {
             json!("afterSale:xyz"),
             json!(""),
         ];
-        let replacement = match (rng.below(10), &current) {
+        let kind = if destructive { rng.below(10) } else { rng.below(7) };
+        let replacement = match (kind, &current) {
             // meist typgerecht ersetzen, damit die Planung lesbar bleibt
             (0..=6, Value::Number(_)) => numbers[rng.below(numbers.len())].clone(),
             (0..=6, Value::String(_)) => strings[rng.below(strings.len())].clone(),
@@ -152,11 +158,12 @@ fn mutated_plans_never_crash() {
     base["scenarios"]["sweeps"] = json!([{ "param": "wealth.stockShare", "from": 0.4, "to": 0.6, "step": 0.1 }]);
     let mut rng = Rng::new(99, 0);
     let sources = ["fixed", "historical", "rolling", "bootstrap", "parametric"];
-    let mut ran = 0;
+    // gerechnet ohne Fehler: [nur Zahlen verfälscht, beliebig verfälscht]
+    let mut ran = [0u64; 2];
     for n in 0..MUTANTS {
         let mut plan = base.clone();
         plan["returns"]["source"] = json!(sources[rng.below(sources.len())]);
-        mutate(&mut rng, &mut plan);
+        mutate(&mut rng, &mut plan, n % 2 == 1);
         let outcome = catch_unwind(AssertUnwindSafe(|| {
             let issues = api::validate(&plan);
             let preview = api::preview(&plan, Path::new("/"), Some(&lib));
@@ -167,7 +174,7 @@ fn mutated_plans_never_crash() {
             panic!("Absturz bei Mutation {n}: {}", serde_json::to_string(&plan).unwrap());
         };
         if out.error.is_none() {
-            ran += 1;
+            ran[(n % 2) as usize] += 1;
         } else if std::env::var("ROBUST_DEBUG").is_ok() {
             eprintln!(
                 "FEHLER {}",
@@ -180,5 +187,22 @@ fn mutated_plans_never_crash() {
             serde_json::to_string(&plan).unwrap()
         );
     }
-    assert!(ran > 40, "nur {ran} Mutationen gerechnet");
+    eprintln!("gerechnet: {ran:?} von je {}", MUTANTS / 2);
+    // FEA-63/AK2: Mindestanteile, gemessen am 14.11.2026 (nach ISS-18): 97 und 69 von je 300.
+    // Nur Zahlen verfälscht: Extremwerte weist die Eingabeprüfung oft ab (gewollt); ein Viertel gerechnet heisst, dass
+    // die Rechnung mindestens 75 Planungen mit Extremwerten durchläuft. Sinkt der Anteil darunter, prüft der Test vor
+    // allem noch die Eingabeprüfung und sollte andere Extremwerte wählen.
+    // Beliebig verfälscht: Diese Hälfte prüft vor allem Lesen und Eingabeprüfung; ein Zehntel muss trotzdem rechnen,
+    // damit auch Planungen mit falschen Verweisen und fehlenden Feldern bis in die Simulation kommen.
+    let half = MUTANTS / 2;
+    assert!(
+        ran[0] * 4 >= half,
+        "nur {} von {half} Mutationen mit Extremwerten gerechnet",
+        ran[0]
+    );
+    assert!(
+        ran[1] * 10 >= half,
+        "nur {} von {half} beliebigen Mutationen gerechnet",
+        ran[1]
+    );
 }

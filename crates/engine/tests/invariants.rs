@@ -258,9 +258,11 @@ fn random_plans_keep_books_balanced() {
 #[test]
 fn cash_flows_are_conserved_without_returns() {
     let mut g = Gen(Rng::new(7, 2));
+    let mut ran = 0;
     for n in 0..PLANS {
         let v = g.plan(true);
         let Some((sim, res)) = run(&v) else { continue };
+        ran += 1;
         let p: Plan = serde_json::from_value(v.clone()).unwrap();
         let r = engine::resolve::Resolver::new(&p).unwrap();
         let savings = engine::resolve::Curve::compile(p.flows.savings.as_ref().unwrap(), &r).unwrap();
@@ -284,13 +286,18 @@ fn cash_flows_are_conserved_without_returns() {
             prev = rec.liquid;
         }
     }
+    eprintln!("gerechnet: {ran} von {PLANS}");
+    // FEA-63/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
+    assert!(ran > PLANS / 2, "nur {ran} von {PLANS} Planungen ohne Prüffehler");
 }
 
 /// Kauf und Verkauf zum Buchwert ohne Kosten ändern das Gesamtvermögen nicht.
 #[test]
 fn buying_and_selling_at_book_value_keeps_total() {
+    const N: u64 = 100;
     let mut g = Gen(Rng::new(11, 3));
-    for _ in 0..100 {
+    let mut ran = 0;
+    for _ in 0..N {
         let mut v = g.plan(true);
         let price = g.f(300_000.0, 900_000.0);
         v["wealth"]["cash"] = json!(2_000_000);
@@ -299,14 +306,21 @@ fn buying_and_selling_at_book_value_keeps_total() {
         v["flows"] = json!({ "income": 0, "spending": 0 });
         v["pension"]["ahv"]["monthly"] = json!(0);
         v["returns"]["fixed"]["inflation"] = json!(0);
+        // FEA-63/AK3: Ohne Grundstückgewinnsteuer scheiterte jede Planung an der Prüfung (Pflicht seit der Prüfung auf
+        // Immobilien im Besitz oder mit geplantem Kauf); der Test rechnete keine einzige. Satz 0 % zählt als gesetzt.
+        v["taxes"]["propertyGain"] = json!({ "brackets": [[1e9, 0.0]] });
         v["realestate"] = json!({ "properties": [ {
             "id": "a", "name": "A", "status": "planned", "buy": g.month(2028, 2030), "sell": g.month(2031, 2034),
             "price": price, "worth": price,
             "mortgage": { "tranches": [ { "amount": price * 0.6, "periods": [ { "term": 20, "rate": 0.0 } ] } ] }
         } ] });
         let Some((_, res)) = run(&v) else { continue };
+        ran += 1;
         for rec in &res.records {
             assert!((rec.total - 2_000_000.0).abs() < 1e-6, "{}: {}", rec.month, rec.total);
         }
     }
+    eprintln!("gerechnet: {ran} von {N}");
+    // FEA-63/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
+    assert!(ran > N / 2, "nur {ran} von {N} Planungen ohne Prüffehler");
 }
