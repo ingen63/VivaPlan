@@ -365,6 +365,28 @@ fn a_later_pension_fund_withdrawal_goes_to_pot_3_and_triggers_a_with_reduced_tar
     never_negative(&res);
 }
 
+/// GEN-03/AK4: Ein PK-Kapitalbezug mitten im Jahr (Auslöser A) bestimmt den Netto-Bedarf neu, aus den Monaten ab dem
+/// Bezug auf 12 Monate hochgerechnet; dieser Bedarf gilt bis zum nächsten Januar.
+#[test]
+fn gen03_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawal_month() {
+    let res = run(two_persons());
+    let a = find(&res, "A", 2030, 7);
+    assert_eq!(a.basis.year, 2030);
+    assert_eq!(a.basis.months, 6, "Juli bis Dezember");
+    assert!(a.basis.source.starts_with("ab 07.2030"), "{}", a.basis.source);
+    assert!(a.basis.source.contains("hochgerechnet"), "{}", a.basis.source);
+    close(a.need, a.basis.need(), "Bedarf aus der neuen Grundlage");
+    // bis Dezember gilt diese Grundlage, erst der Januar bestimmt den Bedarf neu
+    for r in res
+        .bucket_refills
+        .iter()
+        .filter(|r| r.month.year() == 2030 && r.month.month() > 7)
+    {
+        assert_eq!(r.basis.source, a.basis.source, "{} {}", r.trigger, r.month);
+    }
+    assert_eq!(january(&res, 2031).basis.source, "Januar, geplant");
+}
+
 #[test]
 fn external_inflows_go_to_pot_3_only() {
     let reference = run(base());

@@ -188,8 +188,14 @@ Reihenfolge pro Monat:
    **Netto-Bedarf** = Lebenshaltung + Wohnen (ohne Amortisation) + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen, aus den
    geplanten Werten des laufenden Jahres (Beginn mit einem Auslöser A: Monate ab dem Auslöser, auf 12 Monate hochgerechnet,
    auch die Einkommenssteuer); einmalige Ausgaben, Käufe, Amortisationen und Sondersteuern zählen nicht. Bedarf ≤ 0 → Ziele 0.
-   Ziel Topf 1/2 = Jahre × Netto-Bedarf, nie aus dem Topfstand. **Renditekriterium:** Aktienrendite der letzten 12 Monate (in den
-   ersten 12 Monaten seit Januar) ≥ `refillThreshold`; sonst sind nur Verkäufe aus Topf 3 gesperrt.
+   Der Netto-Bedarf wird im Januar und bei **jedem** Auslöser A neu bestimmt, also auch bei einem PK-Kapitalbezug mitten im
+   Jahr (Monate ab dem Bezug, hochgerechnet), und gilt bis zum nächsten Januar oder Auslöser A (GEN-03, abweichend von der
+   früheren Spezifikation, die nur beim Start und Neustart neu hochrechnete).
+   Ziel Topf 1/2 = Jahre × Netto-Bedarf, nie aus dem Topfstand. **Renditekriterium:** Aktienrendite der letzten 12 Monate; in den
+   ersten 12 Monaten der Simulation die nicht annualisierte Rendite seit Januar des laufenden Jahres, bei einem
+   Simulationsstart nach Januar seit dem Start (GEN-03, abweichend von
+   der früheren Spezifikation, die die annualisierte Rendite seit Simulationsstart vorsah) ≥ `refillThreshold`; sonst sind nur
+   Verkäufe aus Topf 3 gesperrt.
    **Januar-Auffüllung:** Topf 1 aus Topf 2, der Rest aus Topf 3, danach Topf 2 aus Topf 3 (bei nicht erfülltem Kriterium: nur
    Topf 1 aus Topf 2, Topf 2 wird nicht nachgefüllt); Überschuss in Topf 1 oder 2 → Topf 3.
    **A** (Start der Entnahmephase, PK-Kapitalbezug, Neustart nach «alle Töpfe leer»; einmal pro Monat): Kapitalbezug bzw. das

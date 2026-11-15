@@ -1194,3 +1194,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-77/AK4 | Je Kriterium gibt es eine Spalte «Geprüft» (Datum, Ergebnis), die Claude bei einer Einzelprüfung auf Anweisung nachführt. Auf Anweisung hakt Claude dabei auch die erfüllten Kriterien im Issue ab und schliesst das Issue, wenn alle erfüllt sind (geändert per Kommentar am 15.11.2026). | ☑ | **gilt** | kein Test | 15.11.2026 ok (nach geänderter Fassung) |
 | FEA-77/AK5 | Überholte Kriterien werden in den Issues nicht geändert; die Liste schlägt vor, was zu tun ist (Kommentar im Issue oder neues Issue). | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
 | FEA-77/AK6 | Die Auswahl der Issues ist reproduzierbar beschrieben (Abfrage mit `gh`), damit die Liste später nachgeführt werden kann. | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
+
+### #99 GEN-03 Ordner docs/spezifikation auflösen
+
+[Issue #99](https://github.com/ingen63/VivaPlan/issues/99) · geschlossen · Umsetzung: 9f23216
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| GEN-03/AK1 | `Pflichteingaben.md`, `FEA-51 FEA-52 Weltindex JST.md` und `FEA-60 VivaPlan in Claude (MCP).md` liegen unter gleichem Namen in `docs/` (mit `git mv`, damit die Historie folgt). | ☑ | **gilt** | kein Test (`git show --stat 9f23216`: Umbenennung) | 15.11.2026 ok |
+| GEN-03/AK2 | Alle Verweise auf die verschobenen Dateien zeigen auf den neuen Pfad (Code, Tests, Hilfe, Doku, `CLAUDE.md`). `git grep "docs/spezifikation"` findet ausserhalb von `docs/ABNAHME.md` nichts mehr. | ☑ | **gilt** | kein Test (`git grep`) | 15.11.2026 ok |
+| GEN-03/AK3 | Die vier entbehrlichen Dateien sind gelöscht. | ☑ | **gilt** | kein Test (`git show --stat 9f23216`) | 15.11.2026 ok |
+| GEN-03/AK4 | Die Rechenregeln aus `3-topf-strategie-spezifikation.md` sind mit «Rechenregeln» in `docs/ENTWICKLUNG.md` abgeglichen; jede Abweichung ist im Issue aufgeführt und nachgetragen oder begründet verworfen. | ☑ | **gilt** | [engine/tests/buckets_need.rs](../crates/engine/tests/buckets_need.rs) (`gen03_ak4_…`, `a_simulation_younger_than_12_months_…`) | 15.11.2026 ok (zwei Abweichungen entschieden: der Code gilt, in `ENTWICKLUNG.md` Punkt 8 nachgetragen) |
+| GEN-03/AK5 | Vor dem Löschen steht im Issue je Datei der Beschreibungen umgesetzter Issues, wo ihr Inhalt steht oder dass er entfällt. | ☑ | **gilt** | kein Test (Kommentar im Issue) | 15.11.2026 ok |
+| GEN-03/AK6 | `docs/spezifikation/` existiert nicht mehr. `CLAUDE.md` und `docs/ENTWICKLUNG.md` nennen den Ordner nicht mehr; der Satz zu `tools/github-issues/create.sh` in `CLAUDE.md` stimmt weiterhin. | ☑ | **gilt** | kein Test (Durchsicht) | 15.11.2026 ok (Satz zu `create.sh` sinngemäss, nicht wortgleich) |
+| GEN-03/AK7 | `make test` und `make ui-unit` sind grün; `tools/ui-smoke.sh` meldet keine kaputten Hilfeverweise. | ☑ | **gilt** | `make test`, `make ui-unit`, `tools/ui-smoke.sh` | 15.11.2026 ok (636 Rust, 18 UI-Unit grün; `#helpcheck` 0 Probleme; voller Rauchtest unter Last mit Zeitüberschreitungen, einzeln grün) |
