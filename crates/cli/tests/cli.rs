@@ -60,6 +60,23 @@ fn usage_and_schema() {
     assert!(schema["properties"]["returns"].is_object());
 }
 
+// FEA-75/AK2: `vivaplan --version` nennt die Version des Arbeitsbereichs (Cargo.toml, `version = "…"` unter `[workspace.package]`).
+#[test]
+fn version_is_printed() {
+    let ws = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    let want = ws
+        .lines()
+        .find_map(|l| l.strip_prefix("version = \""))
+        .unwrap()
+        .trim_end_matches('"')
+        .to_string();
+    for flag in ["--version", "-V"] {
+        let o = run(&[flag]);
+        assert!(o.status.success(), "{flag}");
+        assert_eq!(text(&o).trim(), format!("vivaplan {want}"), "{flag}");
+    }
+}
+
 #[test]
 fn run_single_with_outputs() {
     let d = tmp("single");

@@ -24,6 +24,7 @@ Verwendung:
         [--goal 1|2] [--min-consumption 90] [--max-ruin 5] [--ruin-age 95] [--weight-median 0.5] [--vol-weight 1] [--max-vol 10]
         [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json <datei>]
   vivaplan schema
+  vivaplan --version
   vivaplan library [--library <ordner>]          (Zeitreihen der Datenbibliothek)
   vivaplan import-shiller <ie_data.xls|.xlsx|.ods> [--library <ordner>]
   vivaplan import-snb <würfel.csv>… [--library <ordner>]   (devkum, plkopr, zimoma, rendoblim von data.snb.ch)
@@ -52,6 +53,10 @@ fn main() -> ExitCode {
                 .map(PathBuf::from)
                 .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../app/ui"));
             devserver::serve(port, ui, library_dir(&args)).map_err(Into::into)
+        }
+        Some("--version" | "-V") => {
+            println!("vivaplan {}", env!("CARGO_PKG_VERSION"));
+            Ok(())
         }
         Some("schema") => {
             let schema = schemars_schema();
