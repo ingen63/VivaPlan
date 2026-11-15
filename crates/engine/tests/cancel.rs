@@ -66,6 +66,11 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     );
     assert!(!progress::snapshot().active);
 
+    // ISS-20: Der Abbruch gilt nur für die laufende Berechnung. Die Messung der Rechenzeit (`bench`) läuft ohne eigene
+    // Berechnung; nach einem Abbruch muss sie trotzdem alle Läufe rechnen (vorher: 0,0006 µs je Lauf statt einiger µs).
+    let b = api::bench(&plan(300), Path::new("/"), Some(&lib)).unwrap();
+    assert!(b.us_per_run > 0.1, "{b:?}");
+
     // danach läuft die nächste Berechnung wieder normal (der Abbruch gilt nur einmal)
     let r = api::run(&plan(200), Path::new("/"), Some(&lib));
     assert!(r.error.is_none(), "{:?}", r.error);

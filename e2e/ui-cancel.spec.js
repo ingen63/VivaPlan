@@ -43,7 +43,7 @@ test.describe("Abbrechen laufender Berechnungen", () => {
     const errors = await open(page, "scenarios/bootstrap");
     await expect(page.locator("#est-run")).toContainText("Dauer:", { timeout: 30_000 });
     await page.evaluate(() => { state.returns.bootstrap.paths = 1000000; });
-    await page.evaluate(() => { runSimulation("overview"); });
+    await page.evaluate(() => { runSimulation("overview", { noConfirm: true }); });
     await expect(page.locator("#jobCancel")).toBeVisible();
     await page.locator("#jobCancel").click();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off", { timeout: 60_000 });

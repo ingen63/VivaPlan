@@ -284,6 +284,12 @@ fn select_variation(plan: &Value) -> crate::Result<Option<Value>> {
 /// Simulation gemäss `returns.source`. `base_dir`: Verzeichnis der Projektdatei (für Zeitreihen),
 /// `library`: Ordner der Datenbibliothek.
 pub fn run(plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
+    run_as(None, plan, base_dir, library)
+}
+
+/// Wie [`run`], als Berechnung mit der Kennung `job` (Abbruch und Fortschritt gelten nur für sie); ohne Angabe vergibt die
+/// Engine eine.
+pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
     let t0 = Instant::now();
     let fail = |issues, e: String| RunOut {
         issues,
@@ -307,7 +313,7 @@ pub fn run(plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
         Ok(p) => p,
         Err(i) => return fail(vec![i], "Die Projektdatei ist unvollständig.".into()),
     };
-    let job = crate::progress::start(0);
+    let job = crate::progress::start_as(job, 0);
     let mut issues = validate::validate(&p);
     let sim = match Simulator::new(&p) {
         Ok(s) => s,

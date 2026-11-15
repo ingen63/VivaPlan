@@ -731,12 +731,14 @@ document.addEventListener("change", e => { if (e.target?.id && /^optS-/.test(e.t
 const OPT_SEARCH_EVALS = { standard: 22, fixed_rate: 14, three_buckets: 46, three_buckets_guardrails: 110, endowment: 40, vpw: 74, guardrails: 90 };
 // ----- Fortschritt und Abbruch laufender Berechnungen -----
 let job = null;
+/** Kennung der nächsten Berechnung; mit der Zeit begonnen, damit sie nach einem Neuladen nicht mit einer alten zusammenfällt. */
+let jobSeq = Date.now();
 /** HTML der Fortschrittsanzeige; `jobTick` füllt sie während der Berechnung. */
 const jobCard = (title, note = "") => `<div class="card job"><h3 style="margin:0">${title}</h3><progress id="jobBar" max="1000" value="0"></progress>
   <div class="row"><span class="hint" id="jobTxt" style="margin:0">Startet…</span><button class="btn small" data-action="job-cancel" id="jobCancel">Abbrechen</button></div>${note ? `<p class="hint" style="margin:0">${note}</p>` : ""}</div>`;
 async function jobTick() {
   if (!job) return;
-  let p; try { p = await Engine.call("progress_get"); } catch { return; }
+  let p; try { p = await Engine.call("progress_get", { jobId: job.id }); } catch { return; }
   const bar = document.getElementById("jobBar"), txt = document.getElementById("jobTxt");
   if (!job || !bar || !txt) return;
   const frac = p.total > 0 ? Math.min(0.99, p.done / p.total) : 0, el = (performance.now() - job.t0) / 1000;
@@ -745,14 +747,14 @@ async function jobTick() {
 }
 /** Führt `fn` aus und zeigt dabei den Fortschritt; gibt `undefined` zurück, wenn abgebrochen wurde. */
 async function withJob(fn) {
-  job = { t0: performance.now() };
+  job = { t0: performance.now(), id: ++jobSeq };
   job.timer = setInterval(jobTick, 250); document.documentElement.dataset.job = "on";
   try { return await fn(); } finally { clearInterval(job.timer); job = null; document.documentElement.dataset.job = "off"; }
 }
 const isCancelled = e => errText(e) === "Abgebrochen";
 const jobCancel = async () => {
   const b = document.getElementById("jobCancel"); if (b) b.disabled = true;
-  try { await Engine.call("cancel_job"); } catch (e) { toast(errText(e)); }
+  try { await Engine.call("cancel_job", { jobId: job?.id }); } catch (e) { toast(errText(e)); }
 };
 const bench = { key: "", us: null, gen: 0, fixedPaths: null, cores: 0, busy: false, error: null };
 const benchKey = () => JSON.stringify({ ...state, optimization: undefined, scenarios: undefined });
@@ -950,7 +952,7 @@ OPT_ACTIONS["opt-run"] = async () => {
   saveOptCfg();
   optBusy = true; optError = null; renderSection();
   const planJson = optKey();
-  try { const report = await withJob(() => Engine.call("optimize", { plan: state, request: req, path: currentPath })); lastOpt = { report, req, planJson }; }
+  try { const report = await withJob(() => Engine.call("optimize", { plan: state, request: req, path: currentPath, jobId: job.id })); lastOpt = { report, req, planJson }; }
   catch (e) { if (isCancelled(e)) toast("Optimierung abgebrochen."); else optError = errText(e); }
   optBusy = false;
   if (current === "optimize") renderSection();
@@ -2018,7 +2020,7 @@ async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
   $("#resultsBody").innerHTML = jobCard("Simulation läuft…", "Die Berechnung läuft lokal auf diesem Rechner.");
   try {
     const planAtRun = JSON.parse(JSON.stringify(state));
-    lastRun = await withJob(() => Engine.call("run_simulation", { plan: state, path: currentPath }));
+    lastRun = await withJob(() => Engine.call("run_simulation", { plan: state, path: currentPath, jobId: job.id }));
     lastRunPlan = planAtRun;
     if (isCancelled(lastRun.error)) { lastRun = null; showResults(false); return toast("Simulation abgebrochen."); }
     renderResults(lastRun); document.documentElement.dataset.rendered = resultTab; rememberRun(lastRun);

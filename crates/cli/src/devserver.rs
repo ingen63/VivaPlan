@@ -92,6 +92,11 @@ fn base_dir(args: &Value) -> PathBuf {
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
 }
 
+/// Kennung der Berechnung (`jobId`), die die Oberfläche beim Start mitgibt.
+fn job_id(args: &Value) -> Option<u64> {
+    args.get("jobId").and_then(Value::as_u64)
+}
+
 fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
     let plan = args.get("plan").cloned().unwrap_or(Value::Null);
     let to = |v: &dyn erased::Ser| v.json();
@@ -99,9 +104,17 @@ fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
     Ok(match cmd {
         "app_info" => serde_json::json!({ "version": env!("CARGO_PKG_VERSION"), "buildEpoch": null }),
         "bench_plan" => to(&api::bench(&plan, &base_dir(args), lib)?),
-        "progress_get" => to(&engine::progress::snapshot()),
+        "progress_get" => to(&match job_id(args) {
+            Some(id) => engine::progress::snapshot_of(id),
+            None => engine::progress::snapshot(),
+        }),
         "cancel_job" => {
-            engine::progress::cancel();
+            match job_id(args) {
+                Some(id) => {
+                    engine::progress::cancel_job(id);
+                }
+                None => engine::progress::cancel(),
+            }
             Value::Null
         }
         "opt_params" => to(&api::opt_params(&plan)),
@@ -109,7 +122,7 @@ fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
         "validate" => to(&api::validate(&plan)),
         "upgrade_plan" => to(&api::upgrade_plan(&plan)),
         "preview" => to(&api::preview(&plan, &base_dir(args), lib)),
-        "run_simulation" => to(&api::run(&plan, &base_dir(args), lib)),
+        "run_simulation" => to(&api::run_as(job_id(args), &plan, &base_dir(args), lib)),
         "rerun_paths" => {
             let picks: Vec<(u32, usize)> =
                 serde_json::from_value(args.get("picks").cloned().unwrap_or_default()).map_err(|e| e.to_string())?;
@@ -121,7 +134,10 @@ fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
             to(&api::series_info(p, &cwd, lib).map_err(|e| e.to_string())?)
         }
         "optimize" => {
-            let req = args.get("request").cloned().unwrap_or(json!({}));
+            let mut req = args.get("request").cloned().unwrap_or(json!({}));
+            if let (Some(id), Some(obj)) = (job_id(args), req.as_object_mut()) {
+                obj.insert("jobId".into(), id.into());
+            }
             to(&api::optimize(&plan, &req, &base_dir(args), lib).map_err(|e| e.to_string())?)
         }
         "library_list" => to(&api::library_list(library).map_err(|e| e.to_string())?),
@@ -195,6 +211,31 @@ mod tests {
         assert!(re.is_object());
         let o = call_ok("optimize", json!({ "plan": plan(), "request": {} }));
         assert!(o["outcomes"].is_array());
+    }
+
+    #[test]
+    fn progress_and_cancel_follow_the_job_id() {
+        // FEA-83/AK2, FEA-83/AK4: Die Oberfläche gibt die Kennung beim Start mit und fragt damit Stand und Abbruch ab.
+        let before = call_ok("progress_get", json!({ "jobId": 424242 }));
+        assert_eq!(
+            (before["id"].as_u64(), before["active"].as_bool()),
+            (Some(424242), Some(false))
+        );
+        assert!(call_ok("cancel_job", json!({ "jobId": 424242 })).is_null());
+        let run = call_ok("run_simulation", json!({ "plan": plan(), "jobId": 424242 }));
+        assert!(run["error"].is_null(), "{run}");
+        let after = call_ok("progress_get", json!({ "jobId": 424242 }));
+        assert_eq!(
+            (after["active"].as_bool(), after["cancelled"].as_bool()),
+            (Some(false), Some(false))
+        );
+        assert!(after["total"].as_u64().unwrap() >= 1, "{after}"); // der Job dieser Kennung hat gerechnet
+                                                                   // ohne Kennung: die zuletzt gestartete Berechnung; Abbruch ohne Kennung trifft alle laufenden
+        assert_eq!(call_ok("progress_get", json!({}))["id"], json!(424242));
+        assert!(call_ok("cancel_job", json!({})).is_null());
+        let o = call_ok("optimize", json!({ "plan": plan(), "request": {}, "jobId": 424243 }));
+        assert!(o["outcomes"].is_array());
+        assert_eq!(call_ok("progress_get", json!({ "jobId": 424243 }))["id"], json!(424243));
     }
 
     #[test]

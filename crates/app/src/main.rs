@@ -469,16 +469,24 @@ async fn bench_plan<R: Runtime>(app: AppHandle<R>, plan: Value, path: Option<Str
     api::bench(&plan, &base_dir(path.as_deref()), lib.as_deref())
 }
 
-/// Stand der laufenden Berechnung (Simulation oder Optimierung).
+/// Stand einer Berechnung (Simulation oder Optimierung); ohne Kennung die zuletzt gestartete.
 #[tauri::command]
-fn progress_get() -> engine::progress::Progress {
-    engine::progress::snapshot()
+fn progress_get(job_id: Option<u64>) -> engine::progress::Progress {
+    match job_id {
+        Some(id) => engine::progress::snapshot_of(id),
+        None => engine::progress::snapshot(),
+    }
 }
 
-/// Bricht die laufende Berechnung ab.
+/// Bricht eine Berechnung ab (mit Kennung nur diese, sonst alle laufenden).
 #[tauri::command]
-fn cancel_job() {
-    engine::progress::cancel();
+fn cancel_job(job_id: Option<u64>) {
+    match job_id {
+        Some(id) => {
+            engine::progress::cancel_job(id);
+        }
+        None => engine::progress::cancel(),
+    }
 }
 
 /// Parameter der Strategien mit Standard-Bandbreiten und den Werten der Planung.
@@ -510,9 +518,14 @@ async fn preview<R: Runtime>(app: AppHandle<R>, plan: Value, path: Option<String
 }
 
 #[tauri::command]
-async fn run_simulation<R: Runtime>(app: AppHandle<R>, plan: Value, path: Option<String>) -> api::RunOut {
+async fn run_simulation<R: Runtime>(
+    app: AppHandle<R>,
+    plan: Value,
+    path: Option<String>,
+    job_id: Option<u64>,
+) -> api::RunOut {
     let lib = library_dir(&app).ok();
-    api::run(&plan, &base_dir(path.as_deref()), lib.as_deref())
+    api::run_as(job_id, &plan, &base_dir(path.as_deref()), lib.as_deref())
 }
 
 #[tauri::command]
@@ -530,10 +543,14 @@ async fn rerun_paths<R: Runtime>(
 async fn optimize<R: Runtime>(
     app: AppHandle<R>,
     plan: Value,
-    request: Value,
+    mut request: Value,
     path: Option<String>,
+    job_id: Option<u64>,
 ) -> Result<engine::optimize::Report, String> {
     let lib = library_dir(&app).ok();
+    if let (Some(id), Some(obj)) = (job_id, request.as_object_mut()) {
+        obj.insert("jobId".into(), id.into());
+    }
     api::optimize(&plan, &request, &base_dir(path.as_deref()), lib.as_deref()).map_err(|e| e.to_string())
 }
 
@@ -1531,6 +1548,90 @@ mod tests {
         call(&w, "cancel_job", json!({})).unwrap();
         let p = call(&w, "progress_get", json!({})).unwrap();
         assert_eq!(p["cancelled"], false);
+    }
+
+    #[test]
+    fn fortschritt_und_abbruch_folgen_der_kennung_der_berechnung() {
+        // FEA-83/AK2, FEA-83/AK4
+        let (_app, w, _g) = setup();
+        let plan = call(&w, "example_plan", json!({})).unwrap();
+        let p = call(&w, "progress_get", json!({"jobId": 31337})).unwrap();
+        assert_eq!((p["id"].as_u64(), p["active"].as_bool()), (Some(31337), Some(false)));
+        assert!(call(&w, "cancel_job", json!({"jobId": 31337})).unwrap().is_null());
+        call(&w, "run_simulation", json!({"plan": plan, "jobId": 31337})).unwrap();
+        let p = call(&w, "progress_get", json!({"jobId": 31337})).unwrap();
+        assert_eq!((p["id"].as_u64(), p["cancelled"].as_bool()), (Some(31337), Some(false)));
+        assert!(p["total"].as_u64().unwrap() >= 1);
+        call(&w, "optimize", json!({"plan": plan, "request": {}, "jobId": 31338})).unwrap();
+        assert_eq!(call(&w, "progress_get", json!({"jobId": 31338})).unwrap()["id"], 31338);
+    }
+
+    #[test]
+    fn fea82_cancel_job_bricht_die_berechnung_mit_dieser_kennung_ab() {
+        let (_app, w, _g) = setup();
+        let job = engine::progress::start_as(Some(55_001), 0);
+        let other = engine::progress::start_as(Some(55_002), 0);
+        assert!(!engine::progress::cancelled());
+        // Der innere Job (55002) ist der des Threads; ein Abbruch von 55001 trifft ihn nicht.
+        call(&w, "cancel_job", json!({"jobId": 55_001})).unwrap();
+        assert!(!engine::progress::cancelled());
+        assert!(engine::progress::snapshot_of(55_001).cancelled);
+        // Ohne Kennung werden alle laufenden Berechnungen abgebrochen.
+        call(&w, "cancel_job", json!({})).unwrap();
+        assert!(engine::progress::cancelled());
+        drop(other);
+        drop(job);
+    }
+
+    #[test]
+    fn fea82_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen() {
+        let (_app, w, _g) = setup();
+        // Zuerst aufräumen: ein früher abgebrochener Lauf (z. B. durch einen Mutanten) kann den Wert hinterlassen haben.
+        call(&w, "settings_set", json!({"key": "fea82Test", "value": null})).unwrap();
+        let before = call(&w, "settings_get", json!({})).unwrap();
+        assert!(before.get("fea82Test").is_none_or(|v| v.is_null()), "{before}");
+        call(&w, "settings_set", json!({"key": "fea82Test", "value": 42})).unwrap();
+        let after = call(&w, "settings_get", json!({})).unwrap();
+        assert_eq!(after["fea82Test"], 42);
+        call(&w, "settings_set", json!({"key": "fea82Test", "value": null})).unwrap();
+    }
+
+    #[test]
+    fn fea82_datenordner_nennen_den_identifier() {
+        let (app, _w, _g) = setup();
+        let id = app.config().identifier.clone();
+        let dirs = data_dirs(app.handle());
+        assert!(dirs.len() >= 2, "{dirs:?}");
+        for d in &dirs {
+            assert!(d.to_string_lossy().contains(&id), "{d:?} ohne {id}");
+        }
+    }
+
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[test]
+    fn fea82_vom_system_gemeldete_datei_wird_vorgemerkt() {
+        // macOS: Doppelklick auf eine Planungsdatei meldet «Opened» (FEA-34); andere Dateien werden ignoriert.
+        let (app, _w, _g) = setup();
+        let dir = tmp("opened");
+        let plan = dir.join("a.vplan");
+        std::fs::write(&plan, "{}").unwrap();
+        let other = dir.join("b.txt");
+        std::fs::write(&other, "x").unwrap();
+        on_run_event(
+            app.handle(),
+            RunEvent::Opened {
+                urls: vec![tauri::Url::from_file_path(&other).unwrap()],
+            },
+        );
+        assert!(app.state::<PendingOpen>().take().is_none());
+        on_run_event(
+            app.handle(),
+            RunEvent::Opened {
+                urls: vec![tauri::Url::from_file_path(&plan).unwrap()],
+            },
+        );
+        assert_eq!(app.state::<PendingOpen>().take(), Some(plan));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -309,8 +309,11 @@ ausserdem links neben «Simulation starten».
 ### Fortschritt und Abbruch
 
 Simulation, Szenarien und Optimierung zeigen einen Fortschrittsbalken mit vergangener und geschätzter Restzeit und einen
-Knopf «Abbrechen». Die Befehle `progress_get` und `cancel_job` fragen den Stand ab bzw. verlangen den Abbruch (`engine::progress`);
-die Läufe werden in Blöcken gerechnet, nach jedem Block wird der Abbruch geprüft. Es läuft immer nur eine Berechnung.
+Knopf «Abbrechen». Jede Berechnung ist ein Job mit eigener Kennung (`jobId`, von der Oberfläche beim Start mitgegeben), eigenem
+Zähler und eigenem Abbruch (`engine::progress`, FEA-83). Die Befehle `progress_get` und `cancel_job` nehmen die Kennung; ohne Kennung
+liefert `progress_get` die zuletzt gestartete Berechnung und `cancel_job` bricht alle laufenden ab. Der Job hängt am Thread der
+Berechnung; ohne Job (zum Beispiel bei der Messung der Rechenzeit) gibt es weder Abbruch noch Zähler (ISS-20). Die Läufe werden in
+Blöcken gerechnet, nach jedem Block wird der Abbruch geprüft. Zwei Berechnungen beeinflussen sich nicht.
 
 ### Liste der Simulationen
 

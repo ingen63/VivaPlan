@@ -897,6 +897,8 @@ pub struct Request {
     pub seed: u64,
     /// Bandbreiten und fixe Parameter je Strategie (siehe [`split_defs`]).
     pub ranges: Ranges,
+    /// Kennung der Berechnung für Fortschritt und Abbruch (von der Oberfläche gewählt; sonst vergibt die Engine eine).
+    pub job_id: Option<crate::progress::JobId>,
 }
 
 impl Default for Request {
@@ -915,6 +917,7 @@ impl Default for Request {
             samples: d_samples(),
             seed: d_seed(),
             ranges: Ranges::new(),
+            job_id: None,
         }
     }
 }
@@ -935,6 +938,7 @@ impl From<&crate::model::OptimizerSettings> for Request {
             samples: s.samples,
             seed: d_seed(),
             ranges: s.ranges.clone(),
+            job_id: None,
         }
     }
 }
@@ -1081,7 +1085,7 @@ pub fn run_request(
         }
     }
     let strategies = req.strategy_list()?;
-    let _job = crate::progress::start(progress_total(req, &strategies)?);
+    let _job = crate::progress::start_as(req.job_id, progress_total(req, &strategies)?);
     let plan = parse_plan(base)?;
     let sim = Simulator::new(&plan)?;
     let retire = sim
