@@ -72,7 +72,8 @@ test("FEA-75/AK1, FEA-75/AK3: alle Stellen nennen dieselbe Programmversion, das 
   }
   // Ein Abschnitt «Nächste Version» (noch nicht veröffentlichte Änderungen) steht vor den Versionen und zählt nicht mit.
   const heads = [...read("CHANGELOG.md").matchAll(/^## (.+)$/gm)].map(m => m[1]).filter(h => h !== "Nächste Version");
-  assert.equal(heads[0], `Version ${v}: erster öffentlicher Stand`);
-  assert.equal(heads.length, 1, "keine Einträge zu früheren Versionen");
+  assert.ok(heads[0].startsWith(`Version ${v}`), `oberster Abschnitt: ${heads[0]}`);
+  assert.equal(heads.at(-1), "Version 0.8.0: erster öffentlicher Stand");
+  assert.ok(heads.every(h => /^Version 0\.8\.\d+/.test(h)), "keine Einträge zu früheren Versionen (1.x)");
   assert.equal(fs.existsSync(path.join(ROOT, "docs/release-notes-1.1.3.md")), false);
 });

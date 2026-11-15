@@ -1,7 +1,8 @@
 # Changelog
 
-## Nächste Version
+## Version 0.8.1
 
+- **Kommandozeile:** `vivaplan --version` nennt die Version (FEA-75). Abbruch und Fortschritt gelten je Berechnung (FEA-83, behebt ISS-20); Abdeckungsschwelle und Mutationstests auch für Kommandozeile und App (FEA-81, FEA-82).
 - **Monte Carlo parametrisch je Aktienindex (FEA-78):** Die Vorschlagswerte für Rendite, Streuung und Kurssprünge entstehen zur Laufzeit aus der Reihe des gewählten Aktienindex (Welt, Schweiz, S&P 500, «Welt individuell») und liegen nahe am historischen Bootstrap. Von Hand geänderte Werte bleiben beim Wechsel des Index.
 - **Monte Carlo parametrisch mit Obligationen und Inflation (FEA-79):** Obligationen und Inflation sind zufällig und mit den Aktien korreliert (Matrix je Kombination, im Reiter «Simulation» sichtbar). **Das ändert die Ergebnisse bestehender parametrischer Planungen;** ihre eigenen Parameter bleiben, beim Öffnen erscheint ein einmaliger Hinweis.
 - **Steuern nach Steuerjahr (FEA-85):** Die Jahreswerte zeigen die Einkommens- und Vermögenssteuer in der Zeile des Steuerjahres, für das sie gelten. Bezahlt wird sie weiter im Mai des Folgejahres, Vermögen und Liquidität ändern sich nicht.
