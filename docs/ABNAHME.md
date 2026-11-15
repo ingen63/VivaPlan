@@ -88,6 +88,22 @@ Vermerk «(Kommentar)» in der Liste. Änderungen an Kriterien per Kommentar sin
 
 FEA-12/AK2, FEA-33/AK1, FEA-33/AK2, FEA-33/AK3, FEA-33/AK4, FEA-33/AK5, FEA-35/AK3, FEA-60/AK1, FEA-60/AK2, FEA-60/AK3, FEA-60/AK4, FEA-60/AK5, FEA-60/AK6, FEA-60/AK7, FEA-60/AK8, FEA-74/AK1, FEA-74/AK2, FEA-74/AK3, FEA-74/AK4
 
+## Offene Punkte (Stand 15.11.2026)
+
+### Von Hand beim Anwender
+
+- **Sichtprüfung in der App:** FEA-09 AK4/AK5 (#10), FEA-10 AK6 (#11), FEA-21 AK5 (#22, Legenden hell und dunkel).
+- **Mit lokalen Daten:** FEA-74 AK4 (`local/eigene/`), FEA-76 AK2 (Shiller-Datei), FEA-32 AK3/AK4/AK6 (Laufzeiten, Mutantenvergleich), FEA-29 AK1 (voller Mutationslauf), FEA-27 AK2 bis AK4 (Agentenlauf, Laufzeit des Hooks), FEA-34 AK8 (Repository-Umbenennung).
+- **Nicht mehr belegbar** (das öffentliche Repository hat nur einen Commit): FEA-42 AK3, FEA-56 AK8, FEA-58 AK6 («Golden-Dateien unverändert»; die Golden-Tests laufen grün).
+- **Auf GitHub nach dem Push:** FEA-62 AK2 (Schwelle 99), FEA-68 AK3, FEA-71 AK1/AK2, FEA-30 AK6, FEA-32 AK5, FEA-35 AK3.
+- **Zu entscheiden:** FEA-80 (#103, Renditeregel unter 12 Monaten), ISS-19 (#102, Laufzeit des Monte-Carlo-Tests, FEA-67 AK3), FEA-45 AK5 (#61, wieder öffnen?), FEA-18 K3 (2-Zeilen-Grenze), FEA-28 AK1/AK2 (Pull Requests gibt es nicht mehr), FEA-36 AK5 (seit FEA-38 kaum noch darstellbar), FEA-19 AK4 (Vergleich Ziel 1 und Ziel 2, Test fehlt).
+- **Hilfetexte und `BESCHREIBUNG.md`** sind nur stichwortartig abgeglichen, nicht Satz für Satz (FEA-17, FEA-24, FEA-26, FEA-36, FEA-37, FEA-38, FEA-40 und weitere).
+
+### Offene und nicht umgesetzte Issues
+
+- **Offen, umgesetzt, Nachweis fehlt:** #80 (FEA-62), #86 (FEA-68), #88 (FEA-70), #89 (FEA-71), #102 (ISS-19), #103 (FEA-80).
+- **Nicht umgesetzt, deshalb nicht geprüft:** FEA-46 bis FEA-50 (#62 bis #66), FEA-73 (#91), FEA-75 (#93), FEA-78 (#100), FEA-79 (#101).
+
 ## Issues
 
 ### #1 ISS-1 Steuern 2029→2030 steigen stärker als die Einnahmen (False Positive)

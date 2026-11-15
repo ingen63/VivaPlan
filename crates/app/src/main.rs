@@ -201,6 +201,7 @@ fn plan_arg(args: impl IntoIterator<Item = OsString>) -> Option<PathBuf> {
 
 /// Datei aus dem Betriebssystem öffnen (macOS: Doppelklick bei laufender oder startender App). Läuft die Oberfläche
 /// schon, öffnet sie die Datei über das Ereignis «open-file»; beim Start holt sie sie mit `startup_plan`.
+#[cfg(any(test, target_os = "macos", target_os = "ios"))]
 fn open_from_system<R: Runtime>(app: &AppHandle<R>, path: PathBuf) {
     app.state::<PendingOpen>().set(path.clone());
     let _ = app.emit("open-file", path.to_string_lossy());
@@ -287,11 +288,7 @@ fn ask_before_exit<R: Runtime>(app: &AppHandle<R>) -> bool {
 /// Beenden über das System (z. B. Dock oder Abmeldung): bei ungespeicherten Änderungen stoppen und fragen.
 fn on_run_event<R: Runtime>(app: &AppHandle<R>, event: RunEvent) {
     match event {
-        RunEvent::ExitRequested { api, .. } => {
-            if ask_before_exit(app) {
-                api.prevent_exit();
-            }
-        }
+        RunEvent::ExitRequested { api, .. } if ask_before_exit(app) => api.prevent_exit(),
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         RunEvent::Opened { urls } => {
             if let Some(p) = urls
