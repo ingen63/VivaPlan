@@ -3,7 +3,7 @@
 Grundsatz: Die Rechenregeln sind die Referenz (`docs/ENTWICKLUNG.md`, Abschnitt «Rechenregeln»), nicht das frühere Programm.
 Jede Regel ist mit einem von Hand nachgerechneten Fall belegt; dazu kommen Invarianten an vielen zufälligen
 Planungen, statistische Prüfungen der Monte-Carlo-Pfade, Robustheit gegen fehlerhafte Eingaben und Tests der
-Schnittstellen. Ziel: mindestens 80 % Zeilenabdeckung je Paket (`vivaplan-engine` und `vivaplan-app`, getrennt gemessen). Die Schwelle steht nur in `tools/coverage-min`; der pre-push-Hook und der Workflow `test-quality.yml` (Job `tests-coverage`, der einzige Lauf der Rust-Tests mit Abdeckung je Push) lesen sie dort.
+Schnittstellen. Ziel: mindestens 80 % Zeilenabdeckung je Paket (`vivaplan-engine`, `vivaplan-app` und `vivaplan-cli`, getrennt gemessen). Die Schwelle steht nur in `tools/coverage-min`; der pre-push-Hook und der Workflow `test-quality.yml` (Job `tests-coverage`, der einzige Lauf der Rust-Tests mit Abdeckung je Push) lesen sie dort.
 
 ## Schichten
 
@@ -89,7 +89,7 @@ Mit dieser Strategie gefunden und behoben (November 2026):
 Zeilenabdeckung Rust (`make coverage`, cargo llvm-cov mit nextest), 14. November 2026: **95,9 %** über den
 Arbeitsbereich (12'337 Zeilen, 503 nicht ausgeführt). Je Paket (Schwelle 80 %): Rechenkern `vivaplan-engine` 98,1 %,
 Desktop-App `vivaplan-app` 89,9 %. Rechenkern: Simulation 99,3 %, Monte Carlo 100 %, Steuern 99,0 %, Optimierung
-98,9 %, Import alter Konfigurationen 98,8 %, Prüfung 96,5 %, Schnittstelle 97,1 %; Kommandozeile 94,3 %.
+98,9 %, Import alter Konfigurationen 98,8 %, Prüfung 96,5 %, Schnittstelle 97,1 %; Kommandozeile 94,3 %. Seit FEA-81 gilt die Schwelle auch für `vivaplan-cli`; der Dev-Server (`devserver.rs`, vorher nur von den Oberflächentests benutzt) hat eigene Rust-Tests.
 Der Entwicklungsserver (`crates/cli/src/devserver.rs`) erscheint mit 0 %, weil er im Test als eigener Prozess läuft und
 beendet wird, bevor er Messdaten schreibt; seine Befehle sind in `crates/cli/tests/cli.rs` geprüft.
 
@@ -121,7 +121,7 @@ Es gibt **keine Gesamtnote**. Jede Schicht hat ihren eigenen Status (erfüllt, H
 | Schicht | erfüllt | Hinweis | nicht erfüllt |
 |---|---|---|---|
 | 1 Hygiene | keine Fehlschläge, keine flaky Tests | flaky Tests | ein Test schlägt fehl |
-| 2 Angemessenheit | beide Pakete ≥ 80 %, keine nicht erkannten Mutanten | Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf | ein Paket unter 80 % |
+| 2 Angemessenheit | alle drei Pakete ≥ 80 %, keine nicht erkannten Mutanten | Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf | ein Paket unter 80 % |
 | 3 Anforderungsbezug | jedes Abnahmekriterium durch Test belegt oder abgehakt | Kriterien ohne Test und ohne Haken | – |
 | 4 Ergebnis | jeder durchgerutschte Fehler nennt den Test, der ihn hätte fangen müssen, und den Regressionstest | eine Antwort fehlt | – |
 

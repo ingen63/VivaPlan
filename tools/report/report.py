@@ -24,7 +24,8 @@ ROOT = Path(subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_outp
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT / "tools"))
 MIN_COVERAGE = float((ROOT / "tools" / "coverage-min").read_text().strip())
-PACKAGES = {"Engine (vivaplan-engine)": "crates/engine/", "App (vivaplan-app)": "crates/app/"}
+PACKAGES = {"Engine (vivaplan-engine)": "crates/engine/", "App (vivaplan-app)": "crates/app/",
+            "Kommandozeile (vivaplan-cli)": "crates/cli/"}
 OK, HINT, FAIL, NODATA = "erfüllt", "Hinweis", "nicht erfüllt", "keine Daten"
 E = html.escape
 
@@ -323,7 +324,7 @@ def main():
     h.append("</section>")
 
     # Angemessenheit
-    h.append(f"<section><h2>2 Angemessenheit {badge(st_f)}</h2><p class='rule'>Regel: erfüllt = beide Pakete mindestens {MIN_COVERAGE:.0f} % Zeilenabdeckung und keine nicht erkannten Mutanten; Hinweis = Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf vorhanden; nicht erfüllt = ein Paket unter {MIN_COVERAGE:.0f} %; keine Daten = keine Abdeckung vorhanden.</p>")
+    h.append(f"<section><h2>2 Angemessenheit {badge(st_f)}</h2><p class='rule'>Regel: erfüllt = alle drei Pakete mindestens {MIN_COVERAGE:.0f} % Zeilenabdeckung und keine nicht erkannten Mutanten; Hinweis = Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf vorhanden; nicht erfüllt = ein Paket unter {MIN_COVERAGE:.0f} %; keine Daten = keine Abdeckung vorhanden.</p>")
     if cov:
         h.append("<h3>Zeilenabdeckung je Paket</h3>" + table(["Paket", "Abdeckung", "Untergrenze", "Zeilen"], [
             (E(label), (f"<b class='{'erfüllt' if v[0] >= MIN_COVERAGE else 'nicht'}'>{fmt(v[0])}</b>" if v else "keine Daten"), f"{MIN_COVERAGE:.0f} %", str(v[1]) if v else "–") for label, v in cov["pkgs"].items()], num=(1, 2, 3)) + f"<small>Stand {cov['when']} {link('target/llvm-cov/html/index.html', '· Abdeckung als HTML')}</small>")

@@ -39,7 +39,7 @@ Commit und Push nur, wenn es ausdrücklich verlangt wird. Nie `--force`, nie die
 
 - Alle Rust-Tests: `make test` (nextest). Weitere Werkzeuge: `make coverage`, `make mutants`, `make proptest`, `make fuzz`, `make quality`.
 - Oberflächentests: `e2e/` (Playwright), Rauchtest `tools/ui-smoke.sh`.
-- Engine (`vivaplan-engine`) und App (`vivaplan-app`) haben jeweils mindestens 80 % Zeilenabdeckung (Schwelle in `tools/coverage-min`). Die 80 % sind eine **Untergrenze**; zusätzlich zeigen `make coverage-diff` die Abdeckung des geänderten Codes und `make mutants-diff` die nicht erkannten Mutanten (jeder wird getestet oder begründet ausgeschlossen, kein Score-Ziel). Nach einem Commit und vor einem Push läuft der Agent `rust-test-agent` über die Hooks.
+- Engine (`vivaplan-engine`), App (`vivaplan-app`) und Kommandozeile (`vivaplan-cli`) haben jeweils mindestens 80 % Zeilenabdeckung (Schwelle in `tools/coverage-min`). Die 80 % sind eine **Untergrenze**; zusätzlich zeigen `make coverage-diff` die Abdeckung des geänderten Codes und `make mutants-diff` die nicht erkannten Mutanten (jeder wird getestet oder begründet ausgeschlossen, kein Score-Ziel). Nach einem Commit und vor einem Push läuft der Agent `rust-test-agent` über die Hooks.
 - Tests, die ein Abnahmekriterium belegen, nennen Issue und Kriterium (`FEA-100/AK2` im Kommentar oder Namen, `AK2` = zweites Häkchen). `make report` zeigt die Übersichtsseite Testqualität (Beschreibung in `docs/TESTS.md`).
 - Änderungen am Rechenkern brauchen einen Regressionstest. Die Golden-Dateien (`crates/engine/tests/golden/`) dürfen nur mit Begründung im Issue ändern.
 

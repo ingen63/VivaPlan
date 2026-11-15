@@ -86,9 +86,9 @@ if ! command -v cargo-llvm-cov >/dev/null && ! cargo llvm-cov --version >/dev/nu
   exit 1
 fi
 
-# Abdeckung getrennt je Paket: Engine und App müssen jeweils für sich >= 80 % haben
+# Abdeckung getrennt je Paket: Engine, App und Kommandozeile müssen jeweils für sich >= 80 % haben
 failed=0
-for pkg in vivaplan-engine vivaplan-app; do
+for pkg in vivaplan-engine vivaplan-app vivaplan-cli; do
   echo "pre-push: Prüfe Tests und Abdeckung von $pkg (>= ${COVERAGE_MIN} %) ..."
   if ! cargo llvm-cov nextest -p "$pkg" --all-features --summary-only --fail-under-lines "$COVERAGE_MIN"; then
     echo "pre-push: $pkg: Tests fehlgeschlagen oder Abdeckung unter ${COVERAGE_MIN} %."

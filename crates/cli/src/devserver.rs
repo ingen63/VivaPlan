@@ -140,3 +140,171 @@ mod erased {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! FEA-81/AK1: Der Dev-Server ohne Browser. `call` ist der Befehlsverteiler; `serve` und `handle` laufen auf 127.0.0.1.
+    use super::*;
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    /// Eigene Datenbibliothek je Test (`library_list` legt dort die ausgelieferten Zeitreihen an).
+    fn library() -> PathBuf {
+        tmp(&format!("lib-{:?}", std::thread::current().id()).replace(['(', ')'], ""))
+    }
+
+    fn tmp(name: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("vivaplan-devserver-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    /// Kleine, schnelle Planung: feste Renditen, keine Szenarien.
+    fn plan() -> Value {
+        let mut p = api::example_plan();
+        p["returns"]["source"] = json!("fixed");
+        p["scenarios"]["sweeps"] = json!([]);
+        p
+    }
+
+    fn call_ok(cmd: &str, args: Value) -> Value {
+        call(cmd, &args, &library()).unwrap_or_else(|e| panic!("{cmd}: {e}"))
+    }
+
+    #[test]
+    fn commands_without_a_plan() {
+        assert!(call_ok("app_info", json!({}))["version"].is_string());
+        assert!(call_ok("progress_get", json!({}))["active"].is_boolean());
+        assert!(call_ok("cancel_job", json!({})).is_null());
+        assert!(call_ok("example_plan", json!({}))["household"].is_object());
+        assert!(call_ok("library_list", json!({}))["entries"].is_array());
+        assert!(call_ok("opt_params", json!({ "plan": plan() })).is_array());
+    }
+
+    #[test]
+    fn commands_with_a_plan() {
+        let args = json!({ "plan": plan() });
+        assert!(call_ok("validate", args.clone()).is_array());
+        assert!(call_ok("upgrade_plan", args.clone()).is_object());
+        assert!(call_ok("preview", args.clone()).is_object());
+        let run = call_ok("run_simulation", args.clone());
+        assert!(run["single"]["summary"]["endTotal"].is_number(), "{run}");
+        assert!(call_ok("bench_plan", args.clone()).is_object());
+        let re = call_ok("rerun_paths", json!({ "plan": plan(), "picks": [] }));
+        assert!(re.is_object());
+        let o = call_ok("optimize", json!({ "plan": plan(), "request": {} }));
+        assert!(o["outcomes"].is_array());
+    }
+
+    #[test]
+    fn invalid_arguments_and_unknown_commands_are_errors() {
+        let lib = library();
+        let err = |cmd: &str, args: Value| call(cmd, &args, &lib).unwrap_err();
+        assert!(err("rerun_paths", json!({ "plan": plan(), "picks": "x" })).contains("invalid type"));
+        assert_eq!(err("series_info", json!({})), "Pfad fehlt");
+        assert!(!err("series_info", json!({ "path": "/gibt/es/nicht.csv" })).is_empty());
+        assert!(!err("optimize", json!({ "plan": plan(), "request": "unsinn" })).is_empty());
+        assert_eq!(
+            err("open_dialog", json!({})),
+            "Befehl «open_dialog» gibt es nur in der Desktop-App"
+        );
+    }
+
+    #[test]
+    fn series_info_passes_the_file_to_the_parser() {
+        let dir = tmp("series");
+        std::fs::write(dir.join("s.csv"), "Date,Value\n2000-01,1.0\n2000-02,1.1\n2000-03,1.2\n").unwrap();
+        let e = call(
+            "series_info",
+            &json!({ "path": dir.join("s.csv").to_string_lossy() }),
+            &library(),
+        )
+        .unwrap_err();
+        assert!(e.contains("Spalte «Stocks» fehlt"), "{e}");
+    }
+
+    #[test]
+    fn base_dir_is_the_folder_of_the_plan_file_or_the_working_directory() {
+        assert_eq!(base_dir(&json!({ "path": "/a/b/plan.vplan" })), PathBuf::from("/a/b"));
+        assert_eq!(base_dir(&json!({})), std::env::current_dir().unwrap());
+        assert_eq!(base_dir(&json!({ "path": 5 })), std::env::current_dir().unwrap());
+    }
+
+    #[test]
+    fn content_types_follow_the_extension() {
+        for (name, t) in [
+            ("a.html", "text/html"),
+            ("a.js", "text/javascript"),
+            ("a.css", "text/css"),
+            ("a.svg", "image/svg+xml"),
+            ("a.png", "image/png"),
+            ("a.md", "text/markdown"),
+            ("a.bin", "application/octet-stream"),
+            ("a", "application/octet-stream"),
+        ] {
+            assert_eq!(content_type(Path::new(name)), t, "{name}");
+        }
+    }
+
+    /// Eine Anfrage an den laufenden Server; gibt Statuszeile und Rumpf zurück.
+    fn request(port: u16, head: &str, body: &str) -> (String, String) {
+        let mut s = (0..100)
+            .find_map(|_| {
+                TcpStream::connect(("127.0.0.1", port)).ok().or_else(|| {
+                    std::thread::sleep(Duration::from_millis(50));
+                    None
+                })
+            })
+            .expect("Server erreichbar");
+        write!(s, "{head}\r\nContent-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+        let mut out = String::new();
+        s.read_to_string(&mut out).unwrap();
+        let (h, b) = out.split_once("\r\n\r\n").unwrap();
+        (h.lines().next().unwrap().to_string(), b.to_string())
+    }
+
+    #[test]
+    fn serves_files_and_the_api_and_refuses_paths_outside() {
+        let ui = tmp("ui");
+        std::fs::write(ui.join("index.html"), "<p>Start</p>").unwrap();
+        std::fs::write(ui.join("app.js"), "1").unwrap();
+        let port = {
+            let l = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+            l.local_addr().unwrap().port()
+        };
+        let lib = library();
+        std::thread::spawn(move || serve(port, ui, lib));
+        assert_eq!(
+            request(port, "GET / HTTP/1.1", ""),
+            ("HTTP/1.1 200 OK".into(), "<p>Start</p>".into())
+        );
+        assert_eq!(request(port, "GET /app.js?x=1 HTTP/1.1", "").1, "1");
+        assert_eq!(
+            request(port, "GET /gibt-es-nicht HTTP/1.1", "").0,
+            "HTTP/1.1 404 Not Found"
+        );
+        assert_eq!(
+            request(port, "GET /../Cargo.toml HTTP/1.1", "").0,
+            "HTTP/1.1 404 Not Found"
+        );
+        let (st, body) = request(port, "POST /api/example_plan HTTP/1.1", "{}");
+        assert_eq!(st, "HTTP/1.1 200 OK");
+        assert!(serde_json::from_str::<Value>(&body).unwrap()["household"].is_object());
+        let (st, body) = request(port, "POST /api/gibt_es_nicht HTTP/1.1", "kein json");
+        assert_eq!(st, "HTTP/1.1 400 Bad Request");
+        assert!(body.contains("gibt es nur in der Desktop-App"), "{body}");
+        // GET auf /api/ ist keine Anfrage an den Verteiler
+        assert_eq!(
+            request(port, "GET /api/example_plan HTTP/1.1", "").0,
+            "HTTP/1.1 404 Not Found"
+        );
+    }
+
+    #[test]
+    fn serve_fails_when_the_port_is_taken() {
+        let l = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = l.local_addr().unwrap().port();
+        assert!(serve(port, PathBuf::from("."), library()).is_err());
+    }
+}

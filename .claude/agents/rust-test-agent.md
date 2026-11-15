@@ -1,6 +1,6 @@
 ---
 name: rust-test-agent
-description: Führt nach jedem Commit und vor jedem Push (Hooks) die Rust-Tests aus, misst die Zeilenabdeckung getrennt für die Engine (vivaplan-engine) und die App (vivaplan-app) und schreibt Testfälle, bis jedes der beiden Pakete mindestens 80 % erreicht und die geänderten Zeilen des Rechenkerns keine neuen nicht erkannten Mutanten (cargo mutants --in-diff) hinterlassen.
+description: Führt nach jedem Commit und vor jedem Push (Hooks) die Rust-Tests aus, misst die Zeilenabdeckung getrennt für die Engine (vivaplan-engine), die App (vivaplan-app) und die Kommandozeile (vivaplan-cli) und schreibt Testfälle, bis jedes der drei Pakete mindestens 80 % erreicht und die geänderten Zeilen des Rechenkerns keine neuen nicht erkannten Mutanten (cargo mutants --in-diff) hinterlassen.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
@@ -79,10 +79,11 @@ Das Projekt ist mit rustfmt formatiert (FEA-42, Einstellungen in `rustfmt.toml`)
 4. **Abdeckung getrennt pro Paket prüfen** (jedes Paket muss einzeln >= 80 % Zeilenabdeckung haben)
    - Engine: `cargo llvm-cov nextest -p vivaplan-engine --all-features --summary-only --fail-under-lines 80`
    - App:    `cargo llvm-cov nextest -p vivaplan-app --all-features --summary-only --fail-under-lines 80`
+   - CLI:    `cargo llvm-cov nextest -p vivaplan-cli --all-features --summary-only --fail-under-lines 80`
    - Die Pakete werden einzeln gemessen. Gute Werte des einen Pakets gleichen schlechte des anderen nicht aus,
-     und Tests anderer Pakete (z. B. `cli`) zählen nicht für die Abdeckung der Engine.
+     und Tests anderer Pakete zählen nicht für die Abdeckung der Engine.
    - Erreicht ein Paket die 80 % nicht: gezielt Testfälle für dessen nicht abgedeckte Zeilen schreiben
-     (`cargo llvm-cov -p <paket> --text` zeigt sie) und erneut messen. Wiederholen, bis beide Pakete >= 80 % haben.
+     (`cargo llvm-cov -p <paket> --text` zeigt sie) und erneut messen. Wiederholen, bis alle Pakete >= 80 % haben.
    - Engine-Tests liegen in `crates/engine/` (Unit-Tests im Modul, Integrationstests unter `crates/engine/tests/`).
    - App (`crates/app`, Tauri-Commands in `src/main.rs`, derzeit 0 %): Die Commands sind dünne Wrapper
      um die Engine. So wird testbar:

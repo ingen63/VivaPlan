@@ -116,7 +116,7 @@ jobs:
           cargo llvm-cov nextest --workspace --all-features --profile ci \
             --lcov --output-path lcov.info
           # Schwelle je Paket (tools/coverage-min), nicht über den ganzen Arbeitsbereich
-          for pkg in vivaplan-engine vivaplan-app; do
+          for pkg in vivaplan-engine vivaplan-app vivaplan-cli; do
             cargo llvm-cov report -p "$pkg" --fail-under-lines "$(cat tools/coverage-min)"
           done
           cargo llvm-cov report --html --output-dir coverage-html

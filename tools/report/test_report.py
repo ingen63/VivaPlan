@@ -24,13 +24,14 @@ class Status(unittest.TestCase):
         self.assertEqual(report.status_hygiene({"failed": ["x"], "flaky": ["a"]}), report.FAIL)
 
     def test_fit_needs_both_packages_and_no_missed_mutants(self):
-        pk = lambda a, b: {"pkgs": {"Engine (vivaplan-engine)": (a, 10), "App (vivaplan-app)": (b, 10)}}
+        pk = lambda a, b, c=90: {"pkgs": {"Engine (vivaplan-engine)": (a, 10), "App (vivaplan-app)": (b, 10), "Kommandozeile (vivaplan-cli)": (c, 10)}}
         mut = lambda n: {"missed": n}
         self.assertEqual(report.status_fit(None, None), report.NODATA)
         self.assertEqual(report.status_fit(pk(90, 85), mut(0)), report.OK)
         self.assertEqual(report.status_fit(pk(90, 85), mut(2)), report.HINT)
         self.assertEqual(report.status_fit(pk(90, 85), None), report.HINT)
         self.assertEqual(report.status_fit(pk(95, 79.9), mut(0)), report.FAIL)  # Pakete werden nicht gemittelt
+        self.assertEqual(report.status_fit(pk(95, 85, 79.9), mut(0)), report.FAIL)  # FEA-81/AK3: auch die Kommandozeile zählt
 
     def test_junit_with_a_failing_test_is_reported_by_name(self):
         xml = '<testsuites><testsuite><testcase classname="engine::x" name="kaputt" time="0.1"><failure/></testcase><testcase classname="engine::x" name="ok" time="0.2"/><testcase classname="engine::x" name="wackelt" time="0.3"><flakyFailure/></testcase></testsuite></testsuites>'
