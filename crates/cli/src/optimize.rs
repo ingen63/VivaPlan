@@ -19,8 +19,8 @@ fn pct1(v: f64) -> String {
     format!("{:.1} %", v * 100.0)
 }
 
-fn show(label: &str, m: &opt::Metrics) {
-    println!(
+fn metrics_line(label: &str, m: &opt::Metrics) -> String {
+    format!(
         "    {label:<12} Ruin {:>7}   Median {:>9}   P10 {:>9}   Schwankung {:>7}   Entnahmerate {:>6}   Notverkauf {:>6}",
         pct1(m.ruin),
         chf(m.median),
@@ -28,10 +28,10 @@ fn show(label: &str, m: &opt::Metrics) {
         pct1(m.volatility),
         pct1(m.draw_rate),
         pct1(m.emergency_share)
-    );
+    )
 }
 
-fn print_outcome(o: &Outcome, obj: &Objective) {
+fn outcome_text(o: &Outcome, obj: &Objective) -> String {
     let ok = if o.feasible {
         ""
     } else if obj.goal == Goal::KeepProperty {
@@ -39,7 +39,6 @@ fn print_outcome(o: &Outcome, obj: &Objective) {
     } else {
         "  – Ruingrenze NICHT eingehalten"
     };
-    println!("\n{}{ok}", o.strategy);
     let params: Vec<String> = o
         .params
         .iter()
@@ -51,35 +50,25 @@ fn print_outcome(o: &Outcome, obj: &Objective) {
             }
         })
         .collect();
-    println!("    {}", params.join(", "));
-    show("Optimierung", &o.fitted);
-    show("Prüfung", &o.validated);
-    if obj.goal == Goal::KeepProperty {
-        println!(
+    let target = if obj.goal == Goal::KeepProperty {
+        format!(
             "    Ziel (Prüfung): ungeplanter Immobilienverkauf in {} der Läufe",
             pct1(o.validated.emergency_share)
-        );
+        )
     } else {
-        println!("    Ziel (Prüfung): {} pro Jahr", chf(o.validated.score(obj)));
-    }
+        format!("    Ziel (Prüfung): {} pro Jahr", chf(o.validated.score(obj)))
+    };
+    format!(
+        "\n{}{ok}\n    {}\n{}\n{}\n{target}",
+        o.strategy,
+        params.join(", "),
+        metrics_line("Optimierung", &o.fitted),
+        metrics_line("Prüfung", &o.validated)
+    )
 }
 
-pub fn cmd_optimize(args: &[String]) -> R {
-    let path = positional(args).ok_or("Projektdatei fehlt")?;
-    let base_dir = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-    let base = api::read_plan(Path::new(path))?;
-    let plan: Plan = serde_json::from_value(base.clone())?;
-    if matches!(plan.returns.source, ReturnSource::Fixed | ReturnSource::Historical) {
-        eprintln!(
-            "Hinweis: Mit der Renditequelle «{}» gibt es nur einen Pfad; Ruin ist dann 0 % oder 100 %. \
-             Für sinnvolle Ergebnisse Bootstrap, parametrisch oder rollierend wählen.",
-            if plan.returns.source == ReturnSource::Fixed {
-                "fix"
-            } else {
-                "historisch"
-            }
-        );
-    }
+/// Anfrage aus den gespeicherten Einstellungen der Planung und den Optionen der Kommandozeile.
+fn request_from(plan: &Plan, args: &[String]) -> Result<Request, Box<dyn std::error::Error>> {
     // Gespeicherte Einstellungen der Planung gelten als Ausgangspunkt, Optionen überschreiben sie.
     let mut req = plan.optimization.as_ref().map_or_else(Request::default, Request::from);
     if let Some(v) = num(args, "--max-ruin")? {
@@ -122,6 +111,26 @@ pub fn cmd_optimize(args: &[String]) -> R {
     if let Some(s) = option(args, &["--strategy"]) {
         req.strategies = s.split(',').map(str::to_string).collect();
     }
+    Ok(req)
+}
+
+pub fn cmd_optimize(args: &[String]) -> R {
+    let path = positional(args).ok_or("Projektdatei fehlt")?;
+    let base_dir = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+    let base = api::read_plan(Path::new(path))?;
+    let plan: Plan = serde_json::from_value(base.clone())?;
+    if matches!(plan.returns.source, ReturnSource::Fixed | ReturnSource::Historical) {
+        eprintln!(
+            "Hinweis: Mit der Renditequelle «{}» gibt es nur einen Pfad; Ruin ist dann 0 % oder 100 %. \
+             Für sinnvolle Ergebnisse Bootstrap, parametrisch oder rollierend wählen.",
+            if plan.returns.source == ReturnSource::Fixed {
+                "fix"
+            } else {
+                "historisch"
+            }
+        );
+    }
+    let req = request_from(&plan, args)?;
     let obj = req.objective();
     let report = opt::run_request(&base, &base_dir, Some(&library_dir(args)), &req)?;
 
@@ -151,9 +160,9 @@ pub fn cmd_optimize(args: &[String]) -> R {
     }
     println!("Konsum in Preisen des Startmonats, pro Jahr, inkl. Wohnkosten, vor Steuern.");
     println!("\nAusgangslage ({}, unverändert)", report.reference.strategy);
-    show("Prüfung", &report.reference.metrics);
+    println!("{}", metrics_line("Prüfung", &report.reference.metrics));
     for o in &report.outcomes {
-        print_outcome(o, &obj);
+        println!("{}", outcome_text(o, &obj));
     }
     if let Some(best) = report.outcomes.first() {
         println!(
@@ -172,4 +181,155 @@ pub fn cmd_optimize(args: &[String]) -> R {
         println!("Ergebnis: {json}");
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    //! FEA-82: Optionen und Ausgabe des Befehls `optimize`, ohne die Optimierung selbst zu rechnen.
+    use super::*;
+    use engine::optimize::Metrics;
+
+    fn args(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn plan() -> Plan {
+        serde_json::from_value(api::example_plan()).unwrap()
+    }
+
+    fn metrics(ruin: f64) -> Metrics {
+        Metrics {
+            runs: 100,
+            ruin,
+            median: 100_000.0,
+            p10: 80_000.0,
+            volatility: 0.05,
+            draw_rate: 0.04,
+            emergency_share: 0.125,
+            planned: 120_000.0,
+        }
+    }
+
+    fn outcome(feasible: bool) -> Outcome {
+        Outcome {
+            strategy: "Guardrails".into(),
+            params: vec![
+                ("rate".into(), "Startrate".into(), 0.045, true),
+                ("cashYears".into(), "Topf 1".into(), 2.5, false),
+            ],
+            fixed: vec![],
+            fitted: metrics(0.02),
+            validated: metrics(0.03),
+            feasible,
+            evaluations: 10,
+            patch: serde_json::json!({}),
+        }
+    }
+
+    #[test]
+    fn every_option_overrides_the_saved_settings() {
+        let a = args(&[
+            "p.vplan",
+            "--max-ruin",
+            "7,5%",
+            "--goal",
+            "2",
+            "--min-consumption",
+            "85",
+            "--ruin-age",
+            "90",
+            "--weight-median",
+            "0.6",
+            "--vol-weight",
+            "2",
+            "--max-vol",
+            "25",
+            "--paths",
+            "111",
+            "--check-paths",
+            "222",
+            "--samples",
+            "5",
+            "--seed",
+            "9",
+            "--strategy",
+            "standard,vpw",
+        ]);
+        let r = request_from(&plan(), &a).unwrap();
+        assert!((r.max_ruin - 0.075).abs() < 1e-12);
+        assert_eq!(r.goal, Goal::KeepProperty);
+        assert!((r.min_consumption - 0.85).abs() < 1e-12);
+        assert_eq!(r.ruin_age, Some(90.0));
+        assert_eq!((r.weight_median, r.vol_weight), (0.6, 2.0));
+        assert!((r.max_vol.unwrap() - 0.25).abs() < 1e-12);
+        assert_eq!((r.paths, r.check_paths, r.samples, r.seed), (111, 222, 5, 9));
+        assert_eq!(r.strategies, ["standard", "vpw"]);
+    }
+
+    #[test]
+    fn without_options_the_defaults_stay_and_bad_values_are_errors() {
+        let r = request_from(&plan(), &args(&["p.vplan"])).unwrap();
+        assert_eq!(r.goal, Goal::Consumption);
+        assert_eq!(r.max_vol, None);
+        let goal = request_from(&plan(), &args(&["p.vplan", "--goal", "3"])).unwrap_err();
+        assert!(goal.to_string().contains("--goal"));
+        let n = request_from(&plan(), &args(&["p.vplan", "--paths", "viele"])).unwrap_err();
+        assert_eq!(n.to_string(), "--paths: Zahl erwartet");
+        for g in ["1", "consumption"] {
+            assert_eq!(
+                request_from(&plan(), &args(&["p.vplan", "--goal", g])).unwrap().goal,
+                Goal::Consumption
+            );
+        }
+        for g in ["keepProperty", "keep-property"] {
+            assert_eq!(
+                request_from(&plan(), &args(&["p.vplan", "--goal", g])).unwrap().goal,
+                Goal::KeepProperty
+            );
+        }
+    }
+
+    #[test]
+    fn metrics_line_shows_all_six_figures() {
+        let l = metrics_line("Prüfung", &metrics(0.02));
+        assert!(l.starts_with("    Prüfung"), "{l}");
+        for part in [
+            "Ruin   2.0 %",
+            "Schwankung   5.0 %",
+            "Entnahmerate  4.0 %",
+            "Notverkauf 12.5 %",
+        ] {
+            assert!(l.contains(part), "{part} in {l}");
+        }
+        assert!(l.contains("Median") && l.contains("P10"));
+    }
+
+    #[test]
+    fn outcome_text_names_strategy_parameters_and_the_goal() {
+        let consumption = request_from(&plan(), &args(&["p.vplan"])).unwrap().objective();
+        let keep = request_from(&plan(), &args(&["p.vplan", "--goal", "2"]))
+            .unwrap()
+            .objective();
+        let ok = outcome_text(&outcome(true), &consumption);
+        assert!(
+            ok.starts_with("\nGuardrails\n    Startrate 4.5 %, Topf 1 2.5\n"),
+            "{ok}"
+        );
+        assert!(ok.contains("Optimierung") && ok.contains("Prüfung"));
+        assert!(ok.contains("Ziel (Prüfung): ") && ok.ends_with(" pro Jahr"), "{ok}");
+        assert!(!ok.contains("NICHT"));
+        let bad = outcome_text(&outcome(false), &consumption);
+        assert!(
+            bad.starts_with("\nGuardrails  – Ruingrenze NICHT eingehalten\n"),
+            "{bad}"
+        );
+        let bad_keep = outcome_text(&outcome(false), &keep);
+        assert!(bad_keep.contains("Nebenbedingungen NICHT eingehalten"), "{bad_keep}");
+        assert!(
+            bad_keep.ends_with("ungeplanter Immobilienverkauf in 12.5 % der Läufe"),
+            "{bad_keep}"
+        );
+        // ohne Verletzung der Nebenbedingungen steht bei Ziel 2 keine Warnung
+        assert!(!outcome_text(&outcome(true), &keep).contains("NICHT"));
+    }
 }

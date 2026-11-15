@@ -100,7 +100,7 @@ Das Projekt ist mit rustfmt formatiert (FEA-42, Einstellungen in `rustfmt.toml`)
 
 4b. **Mutationstest der Änderung** (nur Rechenkern `crates/engine/`; Vollmodus, im Schnellmodus nur unter etwa 2 Minuten)
    - Änderung als Diff schreiben und mutieren: `git diff <Basis>..HEAD -- crates/engine/src > /tmp/agent.diff` und
-     `cargo mutants -p vivaplan-engine --in-diff /tmp/agent.diff --no-shuffle -j 4`.
+     `cargo mutants --workspace --in-diff /tmp/agent.diff --no-shuffle -j 4`.
      Die Basis ist der Commit vor den betrachteten Commits (im Hook: der Stand auf dem Server). Die Einstellungen
      (Zeitgrenze 2 Minuten, nextest-Profil `mutants` ohne die schweren Tests, Build-Profil `mutants`) stehen in
      `.cargo/mutants.toml`.

@@ -133,6 +133,18 @@ mod tests {
     }
 
     #[test]
+    fn leer_oder_fehlend_wird_erkannt_andere_fehler_bleiben_fehler() {
+        let root = tmp("leer");
+        assert!(is_empty_or_missing(&root.join("gibt-es-nicht")).unwrap());
+        assert!(is_empty_or_missing(&root).unwrap());
+        std::fs::write(root.join("a"), "x").unwrap();
+        assert!(!is_empty_or_missing(&root).unwrap());
+        // Eine Datei statt eines Ordners ist weder leer noch fehlend: der Fehler wird gemeldet, nicht verschluckt.
+        assert!(is_empty_or_missing(&root.join("a")).is_err());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn paare_aus_den_neuen_ordnern() {
         let data = PathBuf::from("/h/Library/Application Support/ch.vivaplan-app.desktop");
         let web = webkit_dir(Path::new("/h"), "ch.vivaplan-app.desktop");

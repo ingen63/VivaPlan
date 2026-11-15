@@ -24,7 +24,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with: { tool: "cargo-mutants,nextest" }
-      - run: cargo mutants -p vivaplan-engine --shard ${{ matrix.shard }}/16 --no-shuffle -j 2
+      - run: cargo mutants --workspace --shard ${{ matrix.shard }}/16 --no-shuffle -j 2
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with: { name: "mutants-shard-${{ matrix.shard }}", path: local/mutants.out/ }

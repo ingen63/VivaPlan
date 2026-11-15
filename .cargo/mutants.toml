@@ -1,5 +1,5 @@
-# Reine Verdrahtung nicht mutieren (Desktop-App leitet nur an den Rechenkern weiter, CLI-main)
-exclude_globs = ["crates/cli/src/main.rs", "crates/app/**"]
+# FEA-82: Kommandozeile (ohne main.rs, reine Verdrahtung) und App sind im Lauf; die CLI-main.rs verteilt nur Befehle
+exclude_globs = ["crates/cli/src/main.rs"]
 test_tool = "nextest"
 
 # FEA-29: Begründet ausgeschlossene Mutanten. Zwei Arten:
@@ -102,6 +102,27 @@ exclude_re = [
     "sim\\.rs:\\d+:23: replace > with >= in Run<'a>::execute",
     # Aufgebraucht: Rundungstoleranz 0.005 (≤ statt <).
     "sim\\.rs:\\d+:24: replace < with <= in Run<'a>::execute",
+    # FEA-82, App (`crates/app/src/main.rs`): Die folgenden Mutanten betreffen Aufrufe, die erst eine laufende Anwendung mit
+    # Fenster, Betriebssystem-Dialog oder Ereignisschleife auslöst. Die Mock-Runtime von Tauri (`tauri::test`) kann sie nicht
+    # erzeugen (`request_exit` ist dort nicht umgesetzt, `ExitRequestApi` hat keinen öffentlichen Konstruktor). Die
+    # Entscheidungen dahinter (`ask_before_exit`, `Quit::must_ask`, `picked`, `save_with`) sind einzeln getestet.
+    # Beenden über das System: `ExitRequestApi` ist nur der Laufzeit zugänglich; die Bedingung steckt in `ask_before_exit`.
+    "main\\.rs:\\d+:\\d+: replace match guard ask_before_exit\\(app\\) with (true|false) in on_run_event",
+    # Beenden: `app.exit(0)` ist in der Mock-Runtime nicht umgesetzt (`quit_app`); `quit_from_menu` ist getestet.
+    "main\\.rs:\\d+:\\d+: replace quit_app with \\(\\)",
+    # Fenster-Ereignis: braucht ein echtes Fenster (Schliessen-Knopf); die Rückfrage ist in `ask_before_exit` getestet.
+    "main\\.rs:\\d+:\\d+: replace on_window_event with \\(\\)",
+    # Dünner Wrapper um `remember_in` (getestet); ein Test über den Datenordner der Mock-App würde sich mit den übrigen
+    # Tests (gleiche Datei, parallele Prozesse) stören.
+    "main\\.rs:\\d+:\\d+: replace remember_plan with \\(\\)",
+    # Betriebssystem-Dateidialoge (`NativeDialogs`): öffnen ein echtes Fenster; die Auswahl ist über `FakeDialogs` getestet.
+    "main\\.rs:\\d+:\\d+: replace <impl Dialogs for NativeDialogs<R>>::(pick_file|pick_files|save_file) -> .* with .*",
+    # Menü der echten Anwendung: Tauri gibt das Tastenkürzel eines Eintrags nicht zurück; Tabellen und Kürzel sind getestet.
+    "main\\.rs:\\d+:\\d+: delete ! in submenu",
+    "main\\.rs:\\d+:\\d+: replace install_menu -> .* with .*",
+    # Start der echten Anwendung (Fenster aus der Konfiguration, Dialoge, Menü): nur mit laufender Ereignisschleife.
+    "main\\.rs:\\d+:\\d+: replace setup_app -> .* with .*",
+    "main\\.rs:\\d+:\\d+: replace main with \\(\\)",
 ]
 
 # FEA-32: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).

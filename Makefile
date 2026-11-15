@@ -11,7 +11,7 @@ coverage-diff:
 	python3 tools/coverage_diff.py local/test-quality/lcov.info $${BASE:-origin/main}
 # FEA-32: 8 parallele Arbeitskopien (10 Kerne); Profil, Zeitgrenze, Testauswahl und Ausgabeordner (local/mutants.out)
 # stehen in .cargo/mutants.toml
-mutants:     ; cargo mutants -p vivaplan-engine -j 8 --no-shuffle
+mutants:     ; cargo mutants --workspace -j 8 --no-shuffle
 mutants-diff:; git diff origin/main...HEAD > /tmp/pr.diff && cargo mutants --in-diff /tmp/pr.diff
 proptest:    ; PROPTEST_CASES=10000 cargo nextest run --workspace -E 'test(/proptest/)'
 fuzz:        ; cd fuzz && for t in $$(cargo +nightly fuzz list); do mkdir -p corpus/$$t; s=; [ -d seeds/$$t ] && s=seeds/$$t; cargo +nightly fuzz run $$t corpus/$$t $$s -- -max_total_time=60; done
