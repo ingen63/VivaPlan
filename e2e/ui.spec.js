@@ -2979,6 +2979,38 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
+  test("FEA-85/AK1, AK2, AK3: Steuer des Steuerjahres in der Zeile des Jahres, Total ist die Summe, Kapital- und Grundstückgewinnsteuer im Jahr des Bezugs", async ({ page }) => {
+    const errors = await open(page, "results/nosweep");
+    await page.getByRole("button", { name: "Jahreswerte" }).click();
+    await page.locator('button[data-action="tax-cols"]').click();
+    await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
+    const t = await page.evaluate(() => {
+      const num = s => Number(s.replace(/[’'\s\u00a0\u202f]/g, "").replace("−", "-")) || 0;
+      const head = [...document.querySelector("#resultsBody table.yt").rows[0].cells];
+      const first = head.findIndex(c => c.classList.contains("tx"));
+      const recs = lastRun.single.months ?? lastRun.single.records;
+      const rows = [...document.querySelectorAll("#resultsBody table.yt tr")].slice(1).filter(r => /^\d{4}/.test(r.cells[0].innerText.trim()));
+      return rows.map(r => {
+        const y = r.cells[0].innerText.trim().slice(0, 4), cells = [...r.cells].slice(first, first + 5).map(c => num(c.innerText));
+        const rs = recs.filter(m => m.month.startsWith(y)), sum = f => rs.reduce((a, m) => a + f(m), 0);
+        return { y, cells, ai: sum(m => m.assessedIncome), aw: sum(m => m.assessedWealth), kap: sum(m => m.taxCapital), gain: sum(m => m.taxGain) };
+      });
+    });
+    expect(t.length).toBeGreaterThan(5);
+    let positive = 0;
+    for (const r of t) {
+      const [ink, verm, kap, gain, total] = r.cells;
+      expect(Math.abs(ink - r.ai)).toBeLessThanOrEqual(1);       // AK1: veranlagt im Steuerjahr der Zeile
+      expect(Math.abs(verm - r.aw)).toBeLessThanOrEqual(1);
+      expect(Math.abs(kap - r.kap)).toBeLessThanOrEqual(1);      // AK3: im Jahr des Bezugs
+      expect(Math.abs(gain - r.gain)).toBeLessThanOrEqual(1);
+      expect(Math.abs(total - (ink + verm + kap + gain))).toBeLessThanOrEqual(2);   // AK2
+      if (ink > 0) positive++;
+    }
+    expect(positive).toBeGreaterThan(0);
+    await noErrors(page, errors);
+  });
+
   test("FEA-08/AK3, FEA-08/AK4, FEA-09/AK2, FEA-09/AK3: Aufklapp-Zeilen nur in Jahren mit Auffüllung, Ereignisliste behält alles ausser den 3-Topf-Buchungen", async ({ page }) => {
     const errors = await open(page);
     // 3-Topf: genau ein Schalter je Jahr mit Auffüllung
@@ -3303,6 +3335,24 @@ test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
     await page.evaluate(() => { showResults(false); Pref.set("askSaveBeforeRun", false); runSimulation("overview", { noConfirm: true }); });
     await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
     await expect(page.locator("#resultsBody")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("FEA-86/AK1, AK2, AK4: «Speichern» speichert zuerst und startet danach; neue Planung ohne Dateinamen", async ({ page }) => {
+    const errors = await open(page);
+    await prepare(page, true);
+    await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
+    // AK1: drei Schaltflächen; AK4: eine Planung ohne Dateinamen sagt das in der Frage (im Browser ohne eigenen Dialog: Download)
+    await expect(page.locator('#ask button[value="ok"]')).toHaveText("Speichern");
+    await expect(page.locator('#ask button[value="discard"]')).toHaveText("Ohne Speichern simulieren");
+    await expect(page.locator('#ask button[value="cancel"]')).toBeVisible();
+    await expect(page.locator("#askText")).toContainText("noch keinen Dateinamen");
+    const download = page.waitForEvent("download");
+    await page.locator('#ask button[value="ok"]').click();
+    expect((await download).suggestedFilename()).toMatch(/\.vplan$/);
+    await page.evaluate(() => window.__ran);
+    await expect(page.locator("#resultsBody")).toBeVisible();
+    expect(await page.evaluate(() => dirty)).toBe(false);
     await noErrors(page, errors);
   });
 
