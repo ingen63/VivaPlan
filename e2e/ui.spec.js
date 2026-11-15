@@ -2713,10 +2713,12 @@ test.describe("FEA-54 Willkommensdialog", () => {
   test("AK4: «Leere Planung» wirkt wie Datei → Neu", async ({ page }) => {
     const errors = await open(page, "welcome");
     await welcome(page).getByRole("button", { name: /Leere Planung/ }).click();
-    await expect(page.locator("#nav a.active")).toContainText("Haushalt & Projekt");
+    // ISS-17: «Neu» übernimmt die leere Planung erst nach zwei Aufrufen an den Rechenkern. «Haushalt & Projekt» ist schon
+    // vorher aktiv; deshalb auf die Planung selbst warten statt nur auf die Navigation.
     // Merkmale der leeren Planung von Datei → Neu: kein Name, keine Beträge, keine Immobilien
-    expect(await page.evaluate(() => [state.project.name, state.household.persons.length, state.household.persons[0].name,
+    await expect.poll(() => page.evaluate(() => [state.project.name, state.household.persons.length, state.household.persons[0].name,
       state.flows.spending.value, state.wealth.stocks, state.realestate.properties.length])).toEqual(["Neue Planung", 1, "", 0, 0, 0]);
+    await expect(page.locator("#nav a.active")).toContainText("Haushalt & Projekt");
     await noErrors(page, errors);
   });
 
