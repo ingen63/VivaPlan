@@ -228,15 +228,14 @@ fn end_totals(v: &Value) -> Vec<f64> {
 /// FEA-53/AK5: Die übernommene Planung rechnet genau wie vorher (alle historischen Startzeitpunkte).
 #[test]
 fn fea53_ak5_upgraded_plans_give_the_same_results() {
-    for series in ["library:Shiller CHF.csv"] {
-        let mut old = plan_with(Some(series));
-        old["returns"]["source"] = json!("rolling");
-        let new = api::upgrade_plan(&old).plan;
-        assert!(new["returns"].get("series").is_none());
-        let (a, b) = (end_totals(&old), end_totals(&new));
-        assert!(a.len() > 5);
-        assert_eq!(a, b, "{series}");
-    }
+    let series = "library:Shiller CHF.csv";
+    let mut old = plan_with(Some(series));
+    old["returns"]["source"] = json!("rolling");
+    let new = api::upgrade_plan(&old).plan;
+    assert!(new["returns"].get("series").is_none());
+    let (a, b) = (end_totals(&old), end_totals(&new));
+    assert!(a.len() > 5);
+    assert_eq!(a, b, "{series}");
 }
 
 /// FEA-53/AK4: Fixe Renditen funktionieren wie bisher; die Strategie spielt dann keine Rolle.
@@ -378,9 +377,10 @@ fn fea59_ak1_ak3_short_bonds_in_strategies() {
     let world = shipped(library::WORLD_FILE);
     assert_eq!(w.freq, Freq::Yearly);
     assert_eq!((w.first.year(), w.last().year()), (1900, 2020));
-    for k in 0..w.len() {
+    assert!(short.len() >= w.len());
+    for (k, &bond) in short.iter().enumerate().take(w.len()) {
         assert!((w.stocks[k] - world.stocks[k]).abs() < 1e-9);
-        assert_eq!(w.bonds[k], short[k]);
+        assert_eq!(w.bonds[k], bond);
     }
     // S&P 500: jährlich (nicht monatlich), bis ins letzte ganze SARON-Jahr
     let s = ds(StockIndex::Sp500, BondIndex::ChShort);

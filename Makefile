@@ -1,7 +1,9 @@
-.PHONY: test ui-unit coverage coverage-diff mutants mutants-diff proptest fuzz quality report
+.PHONY: test ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report
 test:        ; cargo nextest run --workspace
 # FEA-69: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
 ui-unit:     ; node --test e2e/unit/*.test.js
+# FEA-70: wie im Workflow, Warnungen sind Fehler
+clippy:      ; cargo clippy --workspace --all-targets -- -D warnings && cd fuzz && cargo clippy --all-targets -- -D warnings
 coverage:    ; cargo llvm-cov nextest --workspace --html --open
 # FEA-28: Abdeckung des geänderten Codes gegenüber BASE (Vorgabe origin/main); ein Hinweis, keine Sperre
 coverage-diff:

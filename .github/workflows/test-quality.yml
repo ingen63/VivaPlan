@@ -62,6 +62,23 @@ jobs:
         working-directory: fuzz
         run: cargo fmt --all --check
 
+  # FEA-70: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
+  clippy:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-22.04      # wie tests-coverage (Tauri-Abhängigkeiten)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/linux-deps
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: clippy }
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo clippy (Workspace)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: cargo clippy (fuzz, eigener Workspace)
+        working-directory: fuzz
+        run: cargo clippy --all-targets -- -D warnings
+
   # FEA-69: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js) mit node --test, ohne Browser.
   ui-unit:
     if: github.event_name != 'schedule'

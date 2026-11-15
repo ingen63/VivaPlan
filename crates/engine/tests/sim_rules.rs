@@ -1091,7 +1091,10 @@ fn lean_buckets() -> Value {
     v
 }
 
-fn c_moves(r: &SimResult, m: YearMonth) -> Vec<(String, Vec<(u8, u8, i64)>)> {
+/// Auslöser und Bewegungen (von Topf, nach Topf, Betrag) eines Monats.
+type Moves = Vec<(String, Vec<(u8, u8, i64)>)>;
+
+fn c_moves(r: &SimResult, m: YearMonth) -> Moves {
     r.bucket_refills
         .iter()
         .filter(|x| x.month == m && x.trigger.starts_with('C'))
@@ -1158,12 +1161,8 @@ fn pots_follow_the_moves(r: &SimResult) {
                 pots[mv.to as usize - 1] += mv.amount;
             }
         }
-        for i in 0..3 {
-            close(
-                x.after[i],
-                pots[i],
-                &format!("{} {:?} Topf {}", x.trigger, x.month, i + 1),
-            );
+        for (i, (&after, &pot)) in x.after.iter().zip(&pots).enumerate() {
+            close(after, pot, &format!("{} {:?} Topf {}", x.trigger, x.month, i + 1));
         }
     }
 }

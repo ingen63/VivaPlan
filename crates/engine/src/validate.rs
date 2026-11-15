@@ -590,7 +590,9 @@ fn check(plan: &Plan, v: &mut Issues) {
             "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
         );
     }
-    let mut tables: Vec<(&str, &str, &[(f64, f64)])> = vec![
+    /// Schlüssel im Pfad, Name in der Meldung, Stufen [(Betrag, Satz)].
+    type Table<'a> = (&'a str, &'a str, &'a [(f64, f64)]);
+    let mut tables: Vec<Table> = vec![
         ("income", "Einkommenssteuer", &t.income),
         ("wealth", "Vermögenssteuer", &t.wealth),
         ("capital", "Kapitalbezugssteuer", &t.capital),
@@ -978,7 +980,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                     v.warn("pillar3a", format!("{who}: Die Auszahlung im {date} liegt nach dem AHV-Bezug ({a}); das Guthaben ist dann schon ausbezahlt."));
                 }
             }
-            if x.amount.is_some_and(|b| !(b > 0.0)) {
+            if x.amount.is_some_and(|b| b.is_nan() || b <= 0.0) {
                 v.err_at(
                     "pillar3a",
                     format!("pillar3a.{k}.payouts.{j}.amount"),
@@ -1025,7 +1027,7 @@ fn chf(v: f64) -> String {
     let digits = n.unsigned_abs().to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i) % 3 == 0 {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
             out.push('\'');
         }
         out.push(c);

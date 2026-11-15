@@ -55,7 +55,7 @@ impl Limits {
                 ));
             }
         }
-        if !(self.pillar3a_max >= 0.0) || !self.pillar3a_max.is_finite() {
+        if !self.pillar3a_max.is_finite() || self.pillar3a_max < 0.0 {
             out.push("Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.".into());
         }
         out

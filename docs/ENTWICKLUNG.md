@@ -68,6 +68,7 @@ $B import-snb devkum.csv rendoblim.csv           # SNB-Daten aktualisieren, CHF-
 
 make test                                        # alle Tests (nextest, Grund in docs/TESTS.md)
 make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test)
+make clippy                                      # clippy ohne Warnungen (läuft bei jedem Push)
 tools/ui-smoke.sh                                # Oberflächentest
 cargo llvm-cov --workspace --exclude vivaplan-app --summary-only   # Testabdeckung
 ```
@@ -335,6 +336,7 @@ Die Testqualität wird auf mehreren Ebenen gemessen (Details und Schichten: `doc
 | Ebene | Werkzeug | Lokal | Report |
 |---|---|---|---|
 | Ausführung | cargo-nextest (Profil `ci`, Wiederholungen, flaky = Fehler) | `make test` | `junit.xml` |
+| Statische Prüfung | clippy mit `-D warnings` (Workspace und `fuzz/`, Job `clippy`) | `make clippy` | Log des Laufs |
 | Abdeckung | cargo-llvm-cov (Gate: Zeilen ≥ 80 % je Paket, `tools/coverage-min`) | `make coverage` | HTML, LCOV, Cobertura |
 | Wirksamkeit | cargo-mutants (PR und nächtlich: nur geänderte Zeilen seit dem letzten erfolgreichen nächtlichen Lauf; voll: lokal oder manuell in Actions) | `make mutants`, `make mutants-diff` | `local/mutants.out/` (`missed.txt`) |
 | Eingabebreite | proptest (`crates/engine/tests/proptest_parsers.rs`, zufällige Planungen in `proptest_plans.rs`), cargo-fuzz (`fuzz/`, ganze Rechnung im Ziel `run_plan`) | `make proptest`, `make fuzz` | Fehlerfälle, Korpora |

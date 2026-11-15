@@ -138,7 +138,8 @@ fn finite_result(r: &engine::sim::SimResult) -> bool {
 
 fuzz_target!(|data: &[u8]| {
     let mut plan = base();
-    for c in data.chunks_exact(4).take(8) {
+    let (ops, _) = data.as_chunks::<4>();
+    for c in ops.iter().take(8) {
         mutate(&mut plan, u16::from_le_bytes([c[0], c[1]]), c[2], c[3]);
     }
     keep_small(&mut plan);

@@ -39,6 +39,7 @@ begründet (FEA-65).
 ```sh
 make test                                        # Schichten 1–6 (Rust), mit nextest
 make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test, ohne Browser)
+make clippy                                      # clippy, Warnungen sind Fehler (wie im Workflow, FEA-70)
 tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
 (cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 156 Tests)
 make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)
