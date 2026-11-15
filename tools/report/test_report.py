@@ -90,5 +90,81 @@ class DiffCoverage(unittest.TestCase):
                 os.environ["DIFF_BASE"] = old
 
 
+class Page(unittest.TestCase):
+    """Die ganze Seite wird in einem leeren Arbeitsordner erzeugt (ohne Zugriff auf das Repository und auf GitHub)."""
+
+    def render(self, setup=None, gh=None):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "Cargo.toml").write_text('[workspace.package]\nversion = "9.9.9"\n')
+            (root / ".github" / "workflows").mkdir(parents=True)
+            (root / ".github" / "workflows" / "test-quality.yml").write_text("PROPTEST_CASES: ${{ x && '256' || '32' }}\n")
+            if setup:
+                setup(root)
+            cwd, old_root, old_sh, old_argv = os.getcwd(), report.ROOT, report.sh, sys.argv
+            os.chdir(root)
+            report.ROOT = root
+            report.sh = lambda *cmd, check=False: (gh(cmd) if cmd[0] == "gh" else "") if gh else None
+            sys.argv = ["report.py", "--out", str(root / "out")]
+            try:
+                report.main()
+            finally:
+                os.chdir(cwd)
+                report.ROOT, report.sh, sys.argv = old_root, old_sh, old_argv
+            return (root / "out" / "index.html").read_text(encoding="utf-8")
+
+    def test_fea_30_ak3_missed_mutants_are_listed_one_by_one_with_file_and_line(self):
+        # FEA-30/AK3
+        def setup(root):
+            m = root / "local" / "mutants.out"
+            m.mkdir(parents=True)
+            (m / "outcomes.json").write_text('{"caught": 7, "missed": 2, "unviable": 1, "timeout": 0}')
+            (m / "missed.txt").write_text("crates/engine/src/a.rs:12:5: replace f -> bool with true\ncrates/engine/src/b.rs:40:9: delete -\n")
+        page = self.render(setup)
+        self.assertIn("Nicht erkannte Mutanten (2)", page)
+        self.assertIn("crates/engine/src/a.rs:12:5: replace f -&gt; bool with true", page)
+        self.assertIn("crates/engine/src/b.rs:40:9: delete -", page)
+
+    def test_fea_30_ak4_without_a_mutation_run_the_area_says_no_data(self):
+        # FEA-30/AK4
+        page = self.render()
+        self.assertIn("kein Mutationslauf vorhanden", page)
+        self.assertNotIn("Traceback", page)
+
+    def test_fea_31_ak2_a_found_in_use_bug_shows_cause_and_regression_test(self):
+        # FEA-31/AK2
+        import json
+        bug = {"number": 9, "title": "ISS-9 x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "gefunden:nutzung"}],
+               "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** Ein Rundungstest.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
+        page = self.render(gh=lambda cmd: json.dumps([bug]))
+        ergebnis = page[page.index("4 Ergebnis"):page.index("Verlauf")]
+        self.assertIn("nutzung", ergebnis)
+        self.assertIn("Ein Rundungstest.", ergebnis)
+        self.assertIn("crates/engine/tests/x.rs", ergebnis)
+
+    def test_fea_31_ak3_comparison_with_the_previous_version_shows_changes_per_figure(self):
+        # FEA-31/AK3
+        import json
+        def setup(root):
+            h = root / "local" / "test-quality" / "history"
+            h.mkdir(parents=True)
+            (h / "9.9.8.json").write_text(json.dumps({"coverage_engine": 80.0, "coverage_app": 85.0, "missed": 5, "flaky": 0, "criteria_share": 40.0}))
+            m = root / "local" / "mutants.out"
+            m.mkdir(parents=True)
+            (m / "outcomes.json").write_text('{"caught": 7, "missed": 2}')
+        page = self.render(setup)
+        verlauf = page[page.index("<h2>Verlauf</h2>"):]
+        self.assertIn("Vergleich mit Version 9.9.8", verlauf)
+        self.assertIn("Nicht erkannte Mutanten", verlauf)
+        self.assertIn("3,0 ▲", verlauf)  # 5 → 2 nicht erkannte Mutanten: weniger ist besser
+
+    def test_fea_31_ak4_without_gh_the_two_layers_say_no_data_and_the_rest_stays_complete(self):
+        # FEA-31/AK4
+        page = self.render(gh=None)
+        self.assertEqual(page.count("<code>gh</code> ist nicht angemeldet oder nicht erreichbar"), 2)
+        for abschnitt in ("1 Hygiene", "2 Angemessenheit", "3 Anforderungsbezug", "4 Ergebnis", "Verlauf"):
+            self.assertIn(abschnitt, page)
+
+
 if __name__ == "__main__":
     unittest.main()

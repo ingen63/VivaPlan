@@ -2943,3 +2943,216 @@ test.describe("FEA-45 Haftungsausschluss", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// Abnahmekriterien, die vorher keinen eigenen Test hatten (Abnahmeliste docs/ABNAHME.md, Spalte «Test»)
+test.describe("Ergänzende Abnahmetests", () => {
+  const setThreeBuckets = (strategy) => page => page.evaluate(async strategy => {
+    state.returns.source = "fixed"; state.scenarios.sweeps = [];
+    state.withdrawal.strategy = strategy;
+    if (strategy === "three_buckets") state.withdrawal.buckets = { cashYears: 2, bondYears: 1, refillThreshold: -1, reserveMonths: 3 };
+    lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+    resetVariation(); resultTab = "overview"; showResults(true); renderResults(lastRun);
+  }, strategy);
+
+  test("FEA-07/AK4, FEA-07/AK5, FEA-07/AK6: Steuern total bleibt sichtbar, Berechnung unverändert, Umschalten verschiebt keine Spalte", async ({ page }) => {
+    const errors = await open(page, "results/nosweep");
+    await expect(resultKpi(page, "Steuern total")).toBeVisible();
+    const kpi = await resultKpi(page, "Steuern total").textContent();
+    await page.getByRole("button", { name: "Jahreswerte" }).click();
+    // Inhalt der Tabelle ohne die Steuerspalten (Spaltenköpfe mit Klasse tx) und Grösse des Ergebnisses
+    const snap = () => page.evaluate(() => {
+      const t = document.querySelector("#resultsBody table.yt");
+      const heads = [...t.rows[0].cells];
+      const keep = heads.map((c, i) => (c.classList.contains("tx") ? -1 : i)).filter(i => i >= 0);
+      return { head: keep.map(i => heads[i].innerText.trim()), rows: [...t.rows].slice(1).map(r => keep.map(i => r.cells[i]?.innerText.trim())), run: JSON.stringify(lastRun).length };
+    });
+    const closed = await snap();
+    await page.locator('button[data-action="tax-cols"]').click();
+    await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
+    const open5 = await snap();
+    expect(open5.head).toEqual(closed.head);          // AK6: dieselben Spalten in derselben Reihenfolge
+    expect(open5.rows).toEqual(closed.rows);          // AK6: dieselben Werte darin
+    expect(open5.run).toBe(closed.run);               // AK5: das Ergebnis ist unverändert
+    await page.getByRole("button", { name: "Übersicht" }).click();
+    await expect(resultKpi(page, "Steuern total")).toHaveText(kpi);   // AK4: auch bei ausgeklappten Spalten
+    await noErrors(page, errors);
+  });
+
+  test("FEA-08/AK3, FEA-08/AK4, FEA-09/AK2, FEA-09/AK3: Aufklapp-Zeilen nur in Jahren mit Auffüllung, Ereignisliste behält alles ausser den 3-Topf-Buchungen", async ({ page }) => {
+    const errors = await open(page);
+    // 3-Topf: genau ein Schalter je Jahr mit Auffüllung
+    await setThreeBuckets("three_buckets")(page);
+    const t = await page.evaluate(() => {
+      const evs = lastRun.single.events, shown = evs.filter(e => !isBucketBooking(e));
+      return { years: new Set(lastRun.single.bucketRefills.map(r => r.month.slice(0, 4))).size, all: evs.length, shown: shown.length, texts: shown.map(e => e.text), booked: evs.filter(e => isBucketBooking(e)).map(e => e.text) };
+    });
+    const items = page.locator("#resultsBody .evlist li");
+    await expect(items).toHaveCount(t.shown);                       // FEA-09/AK2: alles ausser den Buchungen steht in der Liste
+    expect(t.shown).toBeLessThan(t.all);
+    const listed = await items.locator("span:nth-child(2)").allTextContents();
+    expect(listed).toEqual(t.texts);
+    expect(listed.some(x => x.startsWith("Bezug Pensionskasse"))).toBe(true);
+    expect(listed.some(x => x.includes("Neues Auto"))).toBe(true);
+    for (const b of t.booked) expect(listed).not.toContain(b);
+    await page.getByRole("button", { name: "Jahreswerte" }).click();
+    const rows = await page.locator("#resultsBody table.yt tr").count();
+    const toggles = await page.locator('button[data-action="bk-toggle"]').count();
+    expect(toggles).toBe(t.years);                                  // FEA-08/AK3: nur Jahre mit Auffüllung
+    expect(rows - 1).toBeGreaterThan(toggles);
+    // Ohne 3-Topf: keine Aufklapp-Zeilen, die Ereignisliste ist vollständig wie bisher
+    await setThreeBuckets("standard")(page);
+    const all = await page.evaluate(() => lastRun.single.events.length);
+    await expect(page.locator("#resultsBody .evlist li")).toHaveCount(all);   // FEA-09/AK3
+    await page.getByRole("button", { name: "Jahreswerte" }).click();
+    await expect(page.locator('button[data-action="bk-toggle"]')).toHaveCount(0);   // FEA-08/AK4
+    await expect(page.locator("#resultsBody tr.bk")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-08/AK6: beim Wechsel des Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs", async ({ page }) => {
+    test.setTimeout(180_000);
+    const errors = await open(page);
+    await page.evaluate(async () => {
+      state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 60; state.scenarios.sweeps = [];
+      state.withdrawal.strategy = "three_buckets";
+      state.withdrawal.buckets = { cashYears: 2, bondYears: 1, refillThreshold: 0.02, reserveMonths: 3 };
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "table"; showResults(true); renderResults(lastRun);
+    });
+    const seen = [];
+    for (const p of [5, 50, 95]) {
+      await page.locator(`button[data-action="detail"][data-p="${p}"]`).click();
+      const expected = await page.evaluate(p => new Set(detailsOf(lastRun).find(([q]) => q === p)[1].bucketRefills.map(r => r.month.slice(0, 4))).size, p);
+      await expect(page.locator('button[data-action="bk-toggle"]')).toHaveCount(expected);
+      await page.locator('button[data-action="bk-toggle"]').first().click();
+      const text = await page.locator("#resultsBody tr.bk").first().innerText();
+      const first = await page.evaluate(p => detailsOf(lastRun).find(([q]) => q === p)[1].bucketRefills[0].need, p);
+      expect(text.replace(/['’]/g, "")).toContain(String(Math.round(first)));      // Netto-Bedarf des angezeigten Laufs
+      seen.push(first);
+    }
+    expect(new Set(seen).size).toBeGreaterThan(1);                  // die drei Läufe zeigen nicht dieselbe Herleitung
+    await noErrors(page, errors);
+  });
+
+  test("FEA-10/AK3: die Parameter im Tooltip stimmen mit dem Reiter «Entnahmestrategie» überein", async ({ page }) => {
+    test.setTimeout(240_000);
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    await page.evaluate(async () => {
+      Runs.memoryOnly();
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      state.withdrawal.strategy = "three_buckets";
+      state.withdrawal.buckets = { cashYears: 3, bondYears: 4, refillThreshold: 0.02, reserveMonths: 3 };
+      await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
+      await openRuns();
+    });
+    const tip = await page.locator("#runsTbl td.ptip", { hasText: "3-Topf" }).first().getAttribute("data-tip");
+    await page.evaluate(() => goto("withdrawal"));
+    const val = p => page.locator(`#main input[data-path="withdrawal.buckets.${p}"]`).inputValue();
+    expect(tip).toContain(`Topf 1 · Cash: ${await val("cashYears")} J.`);
+    expect(tip).toContain(`Topf 2 · Obligationen: ${await val("bondYears")} J.`);
+    expect(tip).toContain(`${(await val("refillThreshold")).replace(/\s*%$/, "").replace(",", ".")} %`);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-11/AK2, FEA-11/AK3, FEA-12/AK5: Zeitreihe ohne Pfad und .csv, feste und parametrische Renditen in Grau, geplanter Verkauf ohne Warnsymbol", async ({ page }) => {
+    test.setTimeout(240_000);
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    const label = await page.evaluate(async () => {
+      Runs.memoryOnly();
+      state.returns.source = "historical";
+      const label = seriesLabel();
+      const base = { created: "2021-01-01T00:00:00.000Z", note: "", strategy: "standard", kind: "batch", runs: 50, successRate: 0.9, end50: 2_500_000, end5: 1_200_000 };
+      const add = (id, extra) => Runs.add({ id, name: id, ...base, ...extra }, { plan: JSON.parse(JSON.stringify(state)), result: lastRun });
+      await add("hist", { source: "historical", seriesName: label, emergencySaleRuns: 0 });
+      await add("fix", { source: "fixed", seriesName: null, emergencySaleRuns: 0 });
+      await add("par", { source: "parametric", seriesName: null, emergencySaleRuns: 0 });
+      // geplanter Verkauf (Tragbarkeit, Einmalzahlung) in allen Läufen, aber kein Notverkauf
+      await add("geplant", { source: "bootstrap", seriesName: label, emergencySaleRuns: 0, affordabilitySaleRuns: 50, lumpSumRuns: 50 });
+      await openRuns();
+      return label;
+    });
+    expect(label).toBeTruthy();
+    expect(label).not.toMatch(/[\\/]|\.csv/i);                          // AK2: Name ohne Pfad und Endung
+    const row = id => page.locator("#runsTbl tr", { has: page.locator(`input.runedit[value="${id}"]`) });
+    await expect(row("hist").locator("td").nth(4)).toHaveText(label);
+    for (const [id, text] of [["fix", "feste Renditen"], ["par", "parametrisch"]]) {
+      const cell = row(id).locator("span.muted", { hasText: text });
+      await expect(cell).toHaveCount(1);                                   // AK3
+      const colors = await cell.evaluate(el => [getComputedStyle(el).color, getComputedStyle(el.closest("td")).color]);
+      expect(colors[0]).not.toBe(colors[1]);                               // grau, nicht in der Textfarbe
+    }
+    await expect(row("geplant").locator(".hwarn")).toHaveCount(0);        // FEA-12/AK5
+    await noErrors(page, errors);
+  });
+
+  test("FEA-22/AK5: die Kennzahlkarte «Notverkäufe» zeigt Läufe und Anteil wie bisher", async ({ page }) => {
+    test.setTimeout(240_000);
+    const errors = await open(page, "results/bootstrap");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview", { timeout: 180_000 });
+    const s = await page.evaluate(() => ({ n: lastRun.batch.summary.emergencySaleRuns, runs: lastRun.batch.summary.runs, text: fmtInt(lastRun.batch.summary.emergencySaleRuns), pct: pctTxt(lastRun.batch.summary.emergencySaleRuns / lastRun.batch.summary.runs) }));
+    const card = page.locator("#resultsBody .kpi:has(.k:text-is('Notverkäufe'))");
+    await expect(card.locator(".v")).toHaveText(`${s.text} Läufe`);
+    await expect(card).toContainText(`${s.pct} der Läufe`);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-23/AK5, FEA-23/AK6: Hinweis bei abweichendem Endvermögen; Einzellauf mit Variationen wie bisher", async ({ page }) => {
+    test.setTimeout(240_000);
+    const errors = await open(page);
+    const out = await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.returns.bootstrap.paths = 100;
+      state.scenarios.sweeps = [{ param: "wealth.stockShare", from: 0.3, to: 0.6, step: 0.3 }, { param: "pension.pk.lumpsum", from: 0.2, to: 0.6, step: 0.4 }];
+      // Einzellauf (AK6): die gewählte Stufe zeigt den Lauf dieser Stufe, so wie ihn die Szenarientabelle nennt
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "runs"; showResults(true); renderResults(lastRun);
+      const selects = document.querySelectorAll('select[data-action="var-sel"]').length;
+      const lvl = lastRun.scenarios.results.find(x => x.values[0] === 0.3 && x.values[1] === 0.6);
+      await pickVariation([0.3, 0.6]);
+      const shown = singleOf(lastRun).summary.endTotal;
+      await pickVariation([null, null]);
+      const back = singleOf(lastRun) === lastRun.single;
+      // Abweichendes Endvermögen (AK5): als hätte sich seit dem Speichern etwas geändert
+      state.returns.source = "bootstrap";
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "runs"; showResults(true); renderResults(lastRun);
+      await pickVariation([0.3, 0.6]);
+      const clean = document.querySelector("#resultsPick").textContent.includes("weicht von der Szenarientabelle ab");
+      const level = lastRun.scenarios.results.find(x => x.values[0] === 0.3 && x.values[1] === 0.6);
+      level.percentiles.find(p => p.percent === 50).endTotal += 50_000;
+      resetVariation(); renderResults(lastRun);
+      await pickVariation([0.3, 0.6]);
+      const hint = document.querySelector("#resultsPick").textContent;
+      return { selects, shown, p50: lvl.p50, back, clean, hint };
+    });
+    expect(out.selects).toBe(2);
+    expect(out.shown).toBeCloseTo(out.p50, 4);
+    expect(out.back).toBe(true);
+    expect(out.clean).toBe(false);                                   // ohne Abweichung kein Hinweis
+    expect(out.hint).toContain("weicht von der Szenarientabelle ab");
+    await noErrors(page, errors);
+  });
+
+  test("FEA-24/AK7: Einstellungen ändern die Planung nicht; liegt sie ausserhalb der neuen Grenzen, meldet die Prüfung es", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.pillar3a[0].contribution = 7500; renderSection(); });
+    await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(1);   // über 7'258
+    const before = await page.evaluate(() => JSON.stringify(state));
+    const setMax = async v => {
+      await page.locator('header button[data-action="settings"]').click();
+      await page.locator("#set-pillar3aMax").fill(v);
+      await page.locator("#settingsSave").click();
+      await expect(page.locator("#settings")).toBeHidden();
+    };
+    await setMax("8000");
+    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);                           // Planung unverändert
+    await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(0);   // innerhalb der neuen Grenze
+    await setMax("5000");
+    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);
+    await expect(page.locator("#val li.err", { hasText: "Maximalbetrag von 5'000" })).toHaveCount(1);
+    await setMax("7258");                                                                            // Standard wieder herstellen
+    await noErrors(page, errors);
+  });
+});

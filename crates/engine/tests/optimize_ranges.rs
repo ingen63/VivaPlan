@@ -165,6 +165,33 @@ fn catalog_lists_every_parameter_with_unit_and_plan_value() {
 }
 
 #[test]
+fn fea_17_ak4_only_standard_offers_the_reserve_to_the_optimisation() {
+    // FEA-17/AK4: Die Reserve (reserveMonths) ist nur bei «Standard» ein Parameter der Optimierung.
+    for s in catalog(&plan()) {
+        let offers = s.params.iter().any(|p| p.key == "reserveMonths");
+        assert_eq!(offers, s.key == "standard", "{}", s.key);
+    }
+}
+
+#[test]
+fn fea_05_ak11_three_buckets_with_guardrails_is_its_own_strategy_with_two_fixed_parameters() {
+    // FEA-05/AK11: eigene Strategie in der Optimierung; untere Leitplanke und Anpassung sind standardmässig fix.
+    let c = catalog(&plan());
+    let s = c.iter().find(|s| s.key == "three_buckets_guardrails").unwrap();
+    assert_eq!(s.name, "3-Topf + Guardrails");
+    for key in ["cashYears", "bondYears", "refillThreshold", "initialRate", "upper"] {
+        let p = s.params.iter().find(|p| p.key == key).unwrap();
+        assert!(!p.fixed, "{key} wird standardmässig variiert");
+    }
+    for key in ["lower", "adjust"] {
+        let p = s.params.iter().find(|p| p.key == key).unwrap();
+        assert!(p.fixed, "{key} ist standardmässig fix");
+    }
+    // sie kommt neben der einfachen 3-Topf-Strategie vor, nicht an deren Stelle
+    assert!(c.iter().any(|s| s.key == "three_buckets"));
+}
+
+#[test]
 fn results_show_the_withdrawal_rate_of_the_first_retirement_year() {
     // Fixe Rate von 4 %: Die Entnahme im ersten Jahr liegt nahe bei 4 % des liquiden Vermögens.
     let r = ranges(

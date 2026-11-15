@@ -344,3 +344,16 @@ fn fea37_ak13_legacy_pillar3a_of_a_mortgage() {
         .iter()
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("7500 CHF")));
 }
+
+/// FEA-37/AK12: Die Pensionskasse enthält kein 3a-Guthaben; in den Auswertungen stehen beide getrennt.
+#[test]
+fn fea37_ak12_pension_fund_and_pillar3a_are_kept_apart() {
+    let mut v = base();
+    v["pension"]["pk"]["capital"] = json!(200_000);
+    v["pillar3a"] = json!([{ "person": "A", "balance": 50_000, "rate": 0 }]);
+    let r = run(&v);
+    close(rec(&r, 2040, 1).pension_fund, 200_000.0, "Pensionskasse ohne 3a");
+    close(rec(&r, 2040, 1).pillar3a, 50_000.0, "Säule 3a für sich");
+    // Das 3a-Guthaben zählt auch nicht zum liquiden Vermögen (Cash 1'000'000 abzüglich der Ausgaben des Monats)
+    close(rec(&r, 2040, 1).liquid, 999_000.0, "liquid ohne 3a und PK");
+}

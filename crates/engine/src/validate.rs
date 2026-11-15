@@ -1514,7 +1514,7 @@ mod tests {
         assert!(!has(&same("2030-12", 0.5), SAME));
     }
 
-    // FEA-37/AK: Einzahlung zwischen 0 und dem Maximalbetrag (Einstellungen), mit der indirekten Amortisation zusammen.
+    // FEA-37/AK7 und FEA-37/AK10: Einzahlung zwischen 0 und dem Maximalbetrag (Einstellungen), mit der indirekten Amortisation zusammen (Warnung, keine Sperre).
     #[test]
     fn pillar3a_contribution() {
         let c = |x: f64| with_3a(json!({"person": "A", "contribution": x}));
