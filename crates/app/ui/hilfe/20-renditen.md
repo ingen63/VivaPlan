@@ -15,7 +15,7 @@ Es gibt fünf Methoden. Die Ansicht zeigt nur die Eingaben, die für die gewähl
 | [Historisch ab Startzeitpunkt](#f-ret-historical) | 1 | «Was wäre gewesen, wenn ich 1973 in Pension gegangen wäre?» |
 | [Alle historischen Startzeitpunkte](#f-ret-rolling) | ca. 400 bis 900 | Wie sich jeder reale Start ausgewirkt hätte |
 | [Monte Carlo · historisch (Bootstrap)](#f-ret-bootstrap) | frei, z. B. 50 000 | Breite Streuung aus echten Monatsdaten |
-| [Monte Carlo · parametrisch](#f-ret-parametric) | frei, z. B. 50 000 | Eigene Annahmen zu Rendite und Risiko |
+| [Monte Carlo · parametrisch](#f-ret-parametric) | frei, z. B. 50 000 | Modell mit Vorschlagswerten je Index oder eigenen Annahmen |
 
 Wenn Sie nicht wissen, womit beginnen: lesen Sie [Welche Quelle passt?](#ret-which).
 
@@ -80,7 +80,7 @@ Ein einziger Lauf mit **konstanten Jahreswerten** für Aktien, Obligationen, Inf
 - **Wahl der Werte:** Rechnen Sie mit vorsichtigen, **realistischen** Werten, nicht mit den Spitzenjahren der Vergangenheit. Eine nüchterne Annahme wäre zum Beispiel 4 % bis 5 % für Aktien, 1 % bis 2 % für Obligationen, 1 % bis 2 % Inflation.
 - Bei den Strategien «Fixe Rate», «Guardrails» und anderen zeigt ein Lauf mit fixen Renditen nur den Durchschnittsfall.
 
-Bei den anderen Quellen gelten die fixen Werte teilweise trotzdem: für den **SARON** ausserhalb des Zeitraums der Reihe, für Obligationen und Inflation beim [parametrischen Modell](#f-ret-parametric) und nach dem Ende der Reihe bei der [Fortschreibung](#f-ret-extrapolation).
+Bei den anderen Quellen gelten die fixen Werte teilweise trotzdem: für den **SARON** ausserhalb des Zeitraums der Reihe und beim [parametrischen Modell](#f-ret-parametric) und nach dem Ende der Reihe bei der [Fortschreibung](#f-ret-extrapolation).
 
 ## @f-ret-historical Historisch ab Startzeitpunkt
 Stichworte: Rückblick, Startmonat, 1973, 1929, Backtest, Zeitreihe
@@ -137,31 +137,47 @@ Der Bootstrap erzeugt **tausende neue Renditepfade**, indem er zufällige Abschn
 - Die Detailansichten (5., 50., 95. Perzentil und die Randläufe) rechnen den jeweiligen Pfad exakt nach.
 
 ## @f-ret-parametric Monte Carlo · parametrisch
-Stichworte: Student-t, Fat Tails, Volatilität, Drift, Kurssprünge, mu, sigma, Freiheitsgrade, Poisson, Crash
+Stichworte: Student-t, Fat Tails, Volatilität, Drift, Kurssprünge, mu, sigma, Freiheitsgrade, Poisson, Crash, Vorschlagswerte, Korrelation, Obligationen, Inflation
 
-Ein **Aktienmodell mit eigenen Annahmen**. Die Aktienkurse folgen einer Zufallsbewegung in **Tagesschritten** (21 pro Monat), ergänzt um seltene **Kurssprünge**. Obligationen, Inflation und SARON gelten konstant als fixe Werte.
+Ein **Aktienmodell mit eigenen oder vorgeschlagenen Annahmen**. Die Aktienkurse folgen einer Zufallsbewegung in **Tagesschritten** (21 pro Monat), ergänzt um seltene **Kurssprünge**. **Obligationen und Inflation** sind ebenfalls zufällig und mit den Aktien **korreliert**, so wie in der Reihe der [Anlagestrategie](#f-ret-series). Der SARON gilt konstant als fixer Wert.
 
-| Eingabe | Standard | Bedeutung |
+| Eingabe | Vorschlag (Beispiel Welt (JST)) | Bedeutung |
 |---|---|---|
 | Anzahl Pfade | 50 000 | wie beim Bootstrap |
-| Erwartete Rendite (Drift μ) | 7 % | durchschnittliche (arithmetische) Jahresrendite der Aktien |
-| Volatilität σ | 15 % | Schwankung der Jahresrenditen |
+| Erwartete Rendite (Drift μ) | 12.15 % | Drift der Log-Rendite plus σ²/2; die mittlere (arithmetische) Jahresrendite ohne Sprünge |
+| Volatilität σ | 12.25 % | Schwankung der Jahresrenditen ohne die Sprünge |
 | Freiheitsgrade | 6 | Dicke der Ränder («Fat Tails»), 0 = Normalverteilung |
-| Kurssprünge pro Jahr | 0.05 | Wie oft ein Crash vorkommt (0.05 = alle 20 Jahre im Mittel) |
-| Mittlere Sprunghöhe (log) | −30 % | Grösse des Sprungs; −30 % in Log-Rendite sind rund −26 % Kursverlust |
+| Kurssprünge pro Jahr | 0.15 | Wie oft ein Crash vorkommt (0.15 = etwa alle 7 Jahre im Mittel) |
+| Mittlere Sprunghöhe (log) | −25 % | Grösse des Sprungs; −25 % in Log-Rendite sind rund −22 % Kursverlust |
 | Streuung der Sprunghöhe | 15 % | Wie unterschiedlich die Sprünge sind |
 | Zufallsstartwert | | siehe [Zufallsstartwert](#ret-seed) |
 
-**Mathematik in Kürze:** Die Log-Rendite je Tag ist (μ − σ²/2)·dt + σ·√dt·Z. Z ist ein **Student-t-verteilter** Schock, auf Varianz 1 skaliert. Dazu kommen **Poisson-Sprünge** mit der Rate «Kurssprünge pro Jahr» und log-normaler Höhe.
+**Vorschlagswerte je Aktienindex:** Die App berechnet die Parameter aus der ganzen Aktienreihe des gewählten Index, so dass die Jahresrenditen des Modells (Mittelwert, Streuung, geometrisches Mittel und 5 %-Quantil) denen des [historischen Bootstraps](#f-ret-bootstrap) entsprechen. Freiheitsgrade (6) und Streuung der Sprunghöhe (15 %) bleiben fest.
 
-**Wie Sie die Werte wählen:**
+| Aktienindex | μ | σ | Sprünge pro Jahr | Sprunghöhe | Jahre |
+|---|---|---|---|---|---|
+| Welt (JST) | 12.15 % | 12.25 % | 0.15 | −25 % | 1900–2020 |
+| Schweiz (JST) | 10.55 % | 14.5 % | 0.26 | −10 % | 1900–2020 |
+| S&P 500 (Shiller) | 15.05 % | 16.5 % | 0.26 | −20 % | 1922–2025 |
 
-- **μ:** Langfristig liefern breit gestreute Aktien in der Geschichte real etwa 5 % bis 7 % pro Jahr, nominal entsprechend mehr. Wer vorsichtig plant, nimmt tiefere Werte als die Vergangenheit, weil Bewertungen heute hoch sind. Beachten Sie: μ ist **nominal** und **arithmetisch**. Abzüglich Inflation und Varianzeffekt (σ²/2) bleibt weniger übrig.
-- **σ:** 15 % bis 20 % ist für Aktien typisch.
+«Welt individuell» erhält Werte aus seiner eigenen, gewichteten Reihe. Nach einem Update der Shiller-Daten ändern sich die Werte für den S&P 500 mit. Beim S&P 500 zieht der Bootstrap Monate; seine Jahre sind dadurch etwas milder als die Kalenderjahre, und die Vorschlagswerte folgen dem Bootstrap.
+
+- **Neue Planung:** Die Werte folgen dem Aktienindex. Wechseln Sie den Index unter «Vermögen & Anlage», gelten die Vorschlagswerte des neuen Index.
+- **Eigene Werte:** Sobald Sie einen der sechs Modellwerte ändern, bleiben Ihre Werte, auch bei einem Wechsel des Index. Neben jedem Feld steht dann der Vorschlag für den gewählten Index. Mit **«Vorschlagswerte übernehmen»** folgen die Werte wieder dem Index.
+- **Ältere Planungen**, die schon parametrisch rechneten, behalten ihre Werte. Beim Öffnen erscheint einmal ein Hinweis, dass Obligationen und Inflation neu zufällig sind.
+
+**Obligationen und Inflation:** Die Karte «Obligationen und Inflation» zeigt Mittelwert, Streuung und die Korrelation von Aktien, Obligationen und Inflation, berechnet aus den Jahreswerten derselben Reihe, die auch der Bootstrap verwendet. Sie hängt von der Kombination aus Aktien- und Obligationenindex ab. Beispiele für die Korrelation Aktien/Obligationen: Welt mit Eidgenossen 10 Jahre −0.01, Schweiz mit Eidgenossen 10 Jahre 0.19, S&P 500 mit USA 10 Jahre 0.45 (beide tragen den Dollarkurs). Jedes Kalenderjahr zieht das Modell einen Wert für Obligationen und Inflation, der mit der Aktienrendite desselben Jahres korreliert ist. Die Jahre sind voneinander unabhängig wie im Bootstrap, ein Gedächtnis für Inflation oder Zinsen gibt es nicht. Ohne Zeitreihe gelten für Obligationen und Inflation die fixen Werte.
+
+**Mathematik in Kürze:** Die Log-Rendite je Tag ist (μ − σ²/2)·dt + σ·√dt·Z. Z ist ein **Student-t-verteilter** Schock, auf Varianz 1 skaliert. Dazu kommen **Poisson-Sprünge** mit der Rate «Kurssprünge pro Jahr» und log-normaler Höhe. Obligationen und Inflation eines Jahres sind normalverteilt mit Mittelwert und Streuung der Reihe; ihre Abhängigkeit von der standardisierten Log-Rendite der Aktien ist so gewählt, dass die Korrelation mit der Aktienrendite der Reihe entspricht.
+
+**Wie Sie eigene Werte wählen:**
+
+- **μ:** Langfristig liefern breit gestreute Aktien in der Geschichte real etwa 5 % bis 7 % pro Jahr, nominal entsprechend mehr. Wer vorsichtig plant, nimmt tiefere Werte als die Vergangenheit, weil Bewertungen heute hoch sind. Beachten Sie: Die Kurssprünge ziehen die Rendite zusätzlich nach unten; die erwartete geometrische Rendite steht in der Vorschau rechts.
+- **σ:** 12 % bis 20 % ist für Aktien typisch; mit häufigen Sprüngen kleiner, weil die Sprünge einen Teil der Schwankung tragen.
 - **Freiheitsgrade:** Tiefe Werte (3 bis 5) erzeugen extreme Tage, 6 ist moderat. Mit 0 verschwinden die Fat Tails, und Krisen werden unrealistisch selten.
 - **Kurssprünge:** Zusammen mit den Fat Tails sorgen sie dafür, dass Crashs wie 2008 oder 2020 plausibel vorkommen. Setzen Sie die Rate auf 0, bleibt nur die Zufallsbewegung.
 
-**Wann sinnvoll:** wenn Sie die Annahmen selbst setzen wollen (zum Beispiel «künftig 4 % statt 7 %»), und als Gegenprobe zum Bootstrap. **Einschränkung:** Obligationen und Inflation sind fix, Zusammenhänge zwischen den Anlageklassen gibt es nicht.
+**Wann sinnvoll:** als Gegenprobe zum Bootstrap mit glatten Verteilungen statt der begrenzten Zahl historischer Jahre, und wenn Sie eigene Annahmen setzen wollen (zum Beispiel «künftig 4 % weniger Rendite»). **Einschränkungen:** Schweizer Aktien laufen über mehrere Jahre zum Mittel zurück; das bilden weder Bootstrap noch Modell ab. Die Korrelation ist über alle Jahre gemittelt; in Jahren hoher Inflation fallen Aktien und Obligationen historisch öfter gemeinsam. Bei «S&P 500» mit «Eidgenossenschaft 10 Jahre» deckt die Reihe nur die Jahre ab 1988 ab, die Aktienparameter aber die ganze Reihe ab 1922.
 
 ## @f-ret-series Anlagestrategie: Indizes für Aktien und Obligationen
 Stichworte: Anlagestrategie, Index, Welt, JST, Pictet, Shiller, S&P 500, Gewichte, Regionen, EU, USA, Schweiz, Asien-Pazifik, Zeitreihe, SNB, Währung, kurzfristig, Geldmarkt

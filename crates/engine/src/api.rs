@@ -77,17 +77,32 @@ fn pct(v: f64) -> String {
 /// Jahresrenditen, beim parametrischen Modell die erwartete geometrische Aktienrendite.
 fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Option<String> {
     use crate::model::Series;
-    let f = &mut p.returns.fixed;
     match p.returns.source {
         ReturnSource::Fixed => None,
         ReturnSource::Parametric => {
-            let q = p.returns.parametric.clone().unwrap_or_default();
+            // FEA-78/79: mit Zeitreihe die Vorschlagswerte (bei «auto») und die Mittel von Obligationen und Inflation
+            let ds = crate::batch::returns_series(p, base_dir, library).ok().flatten();
+            let (q, _) = crate::calibrate::resolve(&p.returns.parametric.clone().unwrap_or_default(), ds.as_ref());
             let g = (q.mu - 0.5 * q.sigma * q.sigma + q.jump_lambda * q.jump_mu).exp() - 1.0;
+            let f = &mut p.returns.fixed;
             f.stocks = Series::Number(g);
-            Some(format!(
-                "Vorschau mit der erwarteten Aktienrendite des Modells ({} pro Jahr).",
-                pct(g)
-            ))
+            match ds {
+                Some(ds) => {
+                    let (_, b, i) = ds.averages();
+                    f.bonds = Series::Number(b);
+                    f.inflation = Series::Number(i);
+                    Some(format!(
+                        "Vorschau mit der erwarteten Aktienrendite des Modells ({} pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen {}, Inflation {} pro Jahr.",
+                        pct(g),
+                        pct(b),
+                        pct(i)
+                    ))
+                }
+                None => Some(format!(
+                    "Vorschau mit der erwarteten Aktienrendite des Modells ({} pro Jahr).",
+                    pct(g)
+                )),
+            }
         }
         _ => {
             let ds = crate::batch::returns_series(p, base_dir, library).ok()??;
@@ -519,6 +534,7 @@ pub fn series_info(series: &str, base_dir: &Path, library: Option<&Path>) -> cra
     };
     Ok(SeriesInfo {
         parts,
+        parametric: Some(crate::calibrate::suggestion(&ds)),
         ..SeriesInfo::of(&ds)
     })
 }
@@ -617,13 +633,28 @@ mod tests {
             json!({"paths": 10, "mu": 0.08, "sigma": 0.2, "df": 6, "jumpLambda": 0.5, "jumpMu": -0.1});
         // 0.08 − 0.02 − 0.05 = 0.01 ⇒ e^0.01 − 1 ≈ 1.005 %
         let out = preview(&v, Path::new("."), None);
-        assert_eq!(
-            out.basis.as_deref(),
-            Some("Vorschau mit der erwarteten Aktienrendite des Modells (1.0 % pro Jahr).")
+        // FEA-79: mit Anlagestrategie dazu die Mittel von Obligationen und Inflation der Reihe
+        let basis = out.basis.unwrap();
+        assert!(
+            basis.starts_with("Vorschau mit der erwarteten Aktienrendite des Modells (1.0 % pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen "),
+            "{basis}"
         );
         v["returns"]["parametric"]["mu"] = json!(0.16);
         let out = preview(&v, Path::new("."), None);
         assert!(out.basis.unwrap().contains("(9.4 % pro Jahr)"));
+        // Ohne Zeitreihe nur die Aktienrendite
+        let mut w = v.clone();
+        w["returns"]["strategy"]["stocks"] = json!("worldCustom");
+        w["returns"]["strategy"]["weights"] = json!({"ch": 1.0, "usa": 1.0, "eu": 0.0, "apac": 0.0});
+        let out = preview(&w, Path::new("."), None);
+        assert_eq!(
+            out.basis.as_deref(),
+            Some("Vorschau mit der erwarteten Aktienrendite des Modells (9.4 % pro Jahr).")
+        );
+        // FEA-78: mit «auto» die Vorschlagswerte des Aktienindex statt der gespeicherten
+        v["returns"]["parametric"]["auto"] = json!(true);
+        let out = preview(&v, Path::new("."), None);
+        assert!(!out.basis.unwrap().contains("(9.4 % pro Jahr)"));
 
         // Fixe Renditen: keine Angabe, auch wenn noch eine Zeitreihe eingetragen ist.
         let mut v = example();

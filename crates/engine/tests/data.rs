@@ -205,12 +205,14 @@ fn parametric_jumps_have_expected_frequency() {
         jump_mu: -0.3,
         jump_sigma: 0.0,
         seed: 3,
+        auto: false,
     };
     let g = Parametric {
         fixed: &f,
         start: YearMonth::new(2030, 1),
         months: 12,
         params: q,
+        correlated: None,
     };
     let jumps: usize = (0..g.len())
         .map(|i| g.path(i).stocks.iter().filter(|r| r.abs() > 1e-12).count())

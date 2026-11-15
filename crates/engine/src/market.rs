@@ -29,6 +29,17 @@ pub struct DataSet {
     pub bonds: Vec<f64>,
     pub inflation: Vec<f64>,
     pub saron: Option<Vec<f64>>,
+    /// FEA-78: ganze Aktienreihe des Index (auch über die gemeinsamen Jahre mit den Obligationen hinaus), in der
+    /// Häufigkeit, die der Bootstrap verwendet; für die Vorschlagswerte des parametrischen Modells.
+    pub stock_series: Option<StockSeries>,
+}
+
+/// FEA-78: Aktienrenditen eines Index (Monats- oder Jahresrenditen ab `first`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct StockSeries {
+    pub freq: Freq,
+    pub first: YearMonth,
+    pub values: Vec<f64>,
 }
 
 /// Angaben aus den Kommentarzeilen am Anfang der CSV-Datei (`# Titel: …`, `# Währung: CHF`, …).

@@ -457,6 +457,7 @@ pub fn world_dataset(jst: &JstData, snb: &SnbData) -> Result<DataSet> {
         bonds: bonds[..n].to_vec(),
         inflation,
         saron: None,
+        stock_series: None,
     })
 }
 

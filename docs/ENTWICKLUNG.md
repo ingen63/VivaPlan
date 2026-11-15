@@ -88,10 +88,30 @@ Alle Läufe werden parallel auf allen Kernen gerechnet; Monte-Carlo-Pfade entste
   Pro Monat endet ein Block mit Wahrscheinlichkeit 1/`block`, dann folgt ein zufälliger neuer Startmonat; am Ende
   der Reihe geht es am Anfang weiter. Aktien, Obligationen, Inflation und SARON stammen immer aus demselben
   historischen Monat. Bei Jahresreihen gilt die Blocklänge in Jahren (`block` / 12).
-- **`parametric`** (`{"paths", "mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma", "seed"}`): Aktienmodell des
-  bisherigen Programms in Tagesschritten (21 pro Monat): Log-Rendite (μ − σ²/2)·dt + σ·√dt·Z mit Student-t-Schocks Z
+- **`parametric`** (`{"paths", "mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma", "seed", "auto"}`): Aktienmodell
+  des bisherigen Programms in Tagesschritten (21 pro Monat): Log-Rendite (μ − σ²/2)·dt + σ·√dt·Z mit Student-t-Schocks Z
   (auf Varianz 1 skaliert, `df` = 0 → Normalverteilung) plus Poisson-Sprünge (Rate `jumpLambda` pro Jahr, Höhe
-  log-normal mit `jumpMu`, `jumpSigma`). Obligationen, Inflation und SARON folgen den fixen Werten.
+  log-normal mit `jumpMu`, `jumpSigma`). Der SARON folgt dem fixen Wert. Die Zeitreihe der Planung (Anlagestrategie)
+  wird auch für `parametric` geladen (`batch::load_series`); ohne Reihe folgen auch Obligationen und Inflation den
+  fixen Werten.
+- **Vorschlagswerte (FEA-78, `calibrate.rs`):** aus der ganzen Aktienreihe des Index (`DataSet::stock_series`, nicht
+  nur die gemeinsamen Jahre mit den Obligationen). Ziel sind die Jahresrenditen, wie der Bootstrap sie zieht: bei
+  Jahresreihen die Jahre selbst, bei Monatsreihen (S&P 500 mit US- oder 10-jährigen Eidgenossen) eine feste
+  Stichprobe von 100'000 Jahren aus Blöcken mit mittlerer Länge 12 Monate. `df` = 6 und `jumpSigma` = 0.15 sind fest.
+  Für jede Kombination aus `jumpLambda` (0 bis 0.30, Schritt 0.01) und `jumpMu` (−0.05 bis −0.50, Schritt 0.05) folgen
+  μ und σ geschlossen aus Mittelwert und Streuung (die Jahresrendite ist eine Poisson-Mischung von
+  Lognormalverteilungen); gewählt wird die Kombination mit dem kleinsten Fehler bei 5 %-Quantil und geometrischem
+  Mittel. Gerundet auf 0.05 Prozentpunkte. Mit `auto` = wahr rechnet der Rechenkern mit den Vorschlagswerten
+  (`calibrate::resolve`), sonst mit den gespeicherten Werten; fehlt `auto` (ältere Planung), gilt falsch.
+  `upgrade_plan` setzt `auto` = falsch bei Planungen, die parametrisch rechnen (mit Hinweis), sonst wahr.
+- **Obligationen und Inflation (FEA-79):** Mittelwert, Streuung (Nenner n) und Korrelation (Aktien, Obligationen,
+  Inflation) der Jahreswerte der Reihe der Anlagestrategie (Monatsreihen zu Kalenderjahren verknüpft, Inflation des
+  Dezembers). Je Kalenderjahr der Simulation: z = (L − E[L]·f) / (sd(L)·√f) aus der Log-Rendite L der Aktien in den
+  f·12 Monaten dieses Jahres; Obligationen = μB + σB·(aB·z + l11·e1), Inflation = μI + σI·(aI·z + l21·e1 + l22·e2) mit
+  unabhängigen Standardnormalen e1, e2 aus einem eigenen Zufallsstrom (die Aktienpfade bleiben gleich). a = Korrelation
+  der Reihe / corr(exp(L) − 1, L), damit die Korrelation mit der einfachen Aktienrendite stimmt; l aus der Zerlegung der
+  Restkovarianz (begrenzt, falls die Matrix nicht positiv definit wäre). Werte unter −95 % werden auf −95 % gesetzt. Die
+  Jahre sind unabhängig, wie im Bootstrap.
 - Pfad *i* entsteht immer aus (`seed`, *i*): gleiche Einstellungen ⇒ gleiche Ergebnisse; alle Szenarien verwenden
   dieselben Pfade. Die Detailansichten (5./50./95. Perzentil) rechnen den betreffenden Pfad exakt nach.
 - «Alle historischen Startzeitpunkte» unterschätzt die Streuung: 864 Startmonate aus 104 Jahren überlappen stark

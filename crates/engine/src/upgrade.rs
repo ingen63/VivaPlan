@@ -7,6 +7,8 @@
 //! - Pensionskasse und AHV-Rente beziehen sich auf diese Meilensteine.
 //! - Die Säule 3a an einer Hypothek wird ein eigenes 3a-Konto der ersten Person mit einem Auszahlungsplan.
 //! - FEA-53: Die gewählte Zeitreihe wird eine Anlagestrategie (Index für Aktien und Obligationen).
+//! - FEA-78/79: Das parametrische Modell erhält das Merkmal `auto` (Parameter folgen dem Aktienindex). Rechnet die
+//!   Planung parametrisch, bleiben ihre Parameter (`auto` = falsch) und ein Hinweis nennt die geänderte Rechnung.
 
 use std::borrow::Cow;
 
@@ -65,7 +67,36 @@ pub fn upgrade(v: &mut Value) -> Vec<String> {
     housing(v, &mut notes);
     strategy(v, &mut notes);
     pictet(v, &mut notes);
+    parametric(v, &mut notes);
     notes
+}
+
+/// FEA-79: Hinweis beim Öffnen einer Planung, die vor FEA-78/79 parametrisch rechnete.
+pub const PARAMETRIC_NOTE: &str = "Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig, korreliert mit den Aktien gemäss der Anlagestrategie (bisher fixe Werte). Ihre Parameter des Aktienmodells bleiben; die Vorschlagswerte für den Aktienindex stehen im Reiter «Simulation». Das Ergebnis ändert sich.";
+
+/// FEA-78/79: Merkmal `auto` für die Parameter des Aktienmodells. Planungen, die parametrisch rechnen, behalten ihre
+/// Werte (mit Hinweis, FEA-79/AK6); bei allen anderen waren die Werte nicht in Gebrauch und folgen künftig dem
+/// Aktienindex.
+fn parametric(v: &mut Value, notes: &mut Vec<String>) {
+    let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
+        return;
+    };
+    let active = ret.get("source").and_then(Value::as_str) == Some("parametric");
+    match ret.get_mut("parametric").and_then(Value::as_object_mut) {
+        Some(q) if q.contains_key("auto") => return,
+        Some(q) => {
+            q.insert("auto".into(), json!(!active));
+        }
+        // ohne gespeicherte Werte rechnete sie mit den bisherigen Standardwerten; diese bleiben
+        None if active => {
+            let q = serde_json::to_value(crate::model::ParametricParams::default()).unwrap_or_default();
+            ret.insert("parametric".into(), q);
+        }
+        None => {}
+    }
+    if active {
+        notes.push(PARAMETRIC_NOTE.into());
+    }
 }
 
 /// FEA-72: Der Index «Schweiz (Pictet)» wird nicht mehr mitgeliefert. Aktien «Schweiz (Pictet)» werden

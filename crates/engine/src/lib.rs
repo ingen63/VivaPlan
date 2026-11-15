@@ -6,6 +6,7 @@
 
 pub mod api;
 pub mod batch;
+pub mod calibrate;
 pub mod housing;
 pub mod import;
 pub mod jst;

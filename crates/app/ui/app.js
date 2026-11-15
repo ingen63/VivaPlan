@@ -257,8 +257,10 @@ function normalize(p) {
   p.realestate.affordability ??= { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, wealthContribution: 0.03, maxLoanToValue: 0.8 };
   p.returns.extrapolation ??= { method: "fixed", range: 30 };
   p.returns.bootstrap ??= { paths: 50000, block: 12, seed: 42 };
-  p.returns.parametric ??= { paths: 50000, mu: 0.07, sigma: 0.15, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15 };
+  // FEA-78: neue Planungen folgen den Vorschlagswerten des Aktienindex (`auto`); ältere setzt upgrade_plan
+  p.returns.parametric ??= { paths: 50000, mu: 0.07, sigma: 0.15, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, auto: true };
   p.returns.parametric.seed ??= 42; p.returns.bootstrap.seed ??= 42;
+  p.returns.parametric.auto ??= p.returns.source !== "parametric";
   p.returns.fixed.saron ??= 0;
   // FEA-53: Anlagestrategie (ältere Planungen: aus der Zeitreihe übernommen, siehe upgrade_plan)
   p.returns.strategy ??= { stocks: "worldJst", bonds: "ch" };
@@ -309,6 +311,21 @@ function seriesRef() {
   const r = state.returns;
   return r.series || (r.strategy ? "strategy:" + JSON.stringify(r.strategy) : null);
 }
+// FEA-78: Parameter des Aktienmodells mit Vorschlagswerten je Aktienindex (Feld → Darstellung)
+const PARAM_KEYS = { mu: "pct", sigma: "pct", df: "num", jumpLambda: "num", jumpMu: "pct", jumpSigma: "pct" };
+const paramSuggestion = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.stocks ?? null : null;
+const fmtParam = (k, v) => PARAM_KEYS[k] === "pct" ? `${fmtPct(v)} %` : (+v).toLocaleString("de-CH", { maximumFractionDigits: 2 });
+/** FEA-78: Folgen die Parameter dem Index (`auto`), die Vorschlagswerte des gewählten Index übernehmen. Ohne
+ *  Änderungsmarke und ohne eigenen Schritt im Verlauf (der aktuelle Schritt erhält dieselben Werte): Der Rechenkern
+ *  rechnet bei `auto` ohnehin mit den Vorschlagswerten. */
+function followSuggestion() {
+  const q = state?.returns.parametric, s = paramSuggestion();
+  if (!q?.auto || !s) return;
+  const vals = Object.fromEntries(Object.keys(PARAM_KEYS).map(k => [k, s[k]]));
+  if (Object.keys(vals).every(k => q[k] === vals[k])) return;
+  Object.assign(q, vals);
+  History.patch(o => { if (o.returns?.parametric?.auto) Object.assign(o.returns.parametric, vals); });
+}
 let seriesInfoRef;
 async function refreshSeriesInfo() {
   seriesInfo = null;
@@ -319,6 +336,7 @@ async function refreshSeriesInfo() {
     catch (e) { seriesInfo = { error: errText(e) }; }
   }
   if (seriesInfoRef !== s) return; // eine neuere Abfrage läuft
+  followSuggestion();
   // Welche Felder «Simulation» zeigt, hängt von der Zeitreihe ab.
   if (current === "returns") renderSection(); else renderDerived();
 }
@@ -582,8 +600,9 @@ const SOURCES = [
   ["historical", "Historisch ab Startzeitpunkt", "Ein historischer Verlauf ab einem gewählten Jahr bzw. Monat.", true],
   ["rolling", "Alle historischen Startzeitpunkte", "Jeder mögliche Start wird gerechnet (ersetzt «Iteration»).", true],
   ["bootstrap", "Monte Carlo · historisch", "Zufällige Blöcke aus der Zeitreihe (Länge zufällig), alle Werte aus demselben Monat.", true],
-  ["parametric", "Monte Carlo · parametrisch", "Aktien mit Student-t-Verteilung und Kurssprüngen wie bisher; Obligationen und Inflation fix.", true]
+  ["parametric", "Monte Carlo · parametrisch", "Aktien mit Student-t-Verteilung und Kurssprüngen, Obligationen und Inflation mit der Korrelation der Anlagestrategie.", true]
 ];
+const paramJoint = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.joint ?? null : null;
 /** Welche Eingaben bei der gewählten Quelle tatsächlich verwendet werden. */
 function returnsUse() {
   const r = state.returns, src = r.source, i = seriesInfo && !seriesInfo.error ? seriesInfo : null;
@@ -600,8 +619,9 @@ function returnsUse() {
     series: withSeries,
     extrapolate,
     fixedStocks: src === "fixed" || (extrapolate && r.extrapolation.method === "fixed"),
-    fixedBonds: src === "fixed" || src === "parametric" || (extrapolate && r.extrapolation.method === "fixed"),
-    fixedInflation: src === "fixed" || src === "parametric" || (extrapolate && r.extrapolation.method === "fixed"),
+    // FEA-79: Das parametrische Modell zieht Obligationen und Inflation aus der Reihe; fix nur ohne Reihe.
+    fixedBonds: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
+    fixedInflation: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
     fixedSaron: usesSaron && (!withSeries || saronGap || extrapolate),
     usesSaron
   };
@@ -610,9 +630,9 @@ R.returns = () => {
   const r = state.returns, src = r.source, u = returnsUse();
   const fields = [u.fixedStocks && F("returns.fixed.stocks", "Aktien", "pct"), u.fixedBonds && F("returns.fixed.bonds", "Obligationen", "pct"),
     u.fixedInflation && F("returns.fixed.inflation", "Inflation", "pct"), u.fixedSaron && F("returns.fixed.saron", "SARON (für SARON-Hypotheken)", "pct")].filter(Boolean);
-  const fixedTitle = { fixed: "Fixe Renditen pro Jahr", parametric: "Obligationen, Inflation und SARON pro Jahr" }[src]
+  const fixedTitle = { fixed: "Fixe Renditen pro Jahr", parametric: u.fixedBonds ? "Obligationen, Inflation und SARON pro Jahr" : "SARON pro Jahr" }[src]
     || (u.fixedStocks ? "Werte für die Fortschreibung pro Jahr" : "SARON pro Jahr");
-  const fixedHint = src === "fixed" ? "" : src === "parametric" ? "Das Aktienmodell erzeugt nur Aktienrenditen; diese Werte gelten konstant."
+  const fixedHint = src === "fixed" ? "" : src === "parametric" ? (u.fixedBonds ? "Ohne Zeitreihe erzeugt das Modell nur Aktienrenditen; diese Werte gelten konstant." : "Der SARON gilt konstant.")
     : [u.fixedStocks && "Aktien, Obligationen und Inflation gelten, nachdem die Zeitreihe endet.", u.fixedSaron && "Der SARON gilt ausserhalb des SARON-Zeitraums der Zeitreihe."].filter(Boolean).join(" ");
   const fixed = fields.length ? `<div class="card"><h3>${fixedTitle}</h3><div class="grid2">${fields.join("")}</div>${fixedHint ? `<p class="hint">${fixedHint}</p>` : ""}</div>` : "";
   const series = u.series ? `<div class="card"><h3>Renditen aus der Anlagestrategie</h3><p style="margin:0">${C("strategyinfo")} <a href="#" data-action="goto" data-sec="wealth">Ändern unter «Vermögen &amp; Anlage»</a></p></div>` : "";
@@ -623,10 +643,14 @@ R.returns = () => {
   if (src === "bootstrap") params = `<div class="card"><h3>Bootstrap</h3><div class="grid3">${F("returns.bootstrap.paths", "Anzahl Pfade", "num")}${F("returns.bootstrap.block", "Mittlere Blocklänge", "months")}${F("returns.bootstrap.seed", "Zufallsstartwert", "num")}</div>
     <p class="hint">Jeder Pfad wird aus Abschnitten der Zeitreihe zusammengesetzt. Ein Abschnitt endet in jedem Monat mit Wahrscheinlichkeit 1 / Blocklänge, dann folgt ein zufälliger neuer Startmonat (stationärer Bootstrap). Aktien, Obligationen, Inflation und SARON stammen immer aus demselben historischen Monat; Krisen behalten so ihren Verlauf. Bei Jahresdaten gilt die Blocklänge in ganzen Jahren.</p>
     <p class="hint">Gleicher Zufallsstartwert ⇒ gleiche Pfade. Szenarien verwenden dieselben Pfade, damit Unterschiede von den Parametern stammen.</p></div>`;
-  if (src === "parametric") params = `<div class="card"><h3>Aktienmodell</h3><div class="grid3">${F("returns.parametric.paths", "Anzahl Pfade", "num")}${F("returns.parametric.mu", "Erwartete Rendite (Drift)", "pct")}${F("returns.parametric.sigma", "Volatilität", "pct")}
-    ${F("returns.parametric.df", "Freiheitsgrade (Fat Tails)", "num")}${F("returns.parametric.jumpLambda", "Kurssprünge pro Jahr", "num")}${F("returns.parametric.jumpMu", "Mittlere Sprunghöhe (log)", "pct")}
-    ${F("returns.parametric.jumpSigma", "Streuung der Sprunghöhe", "pct")}${F("returns.parametric.seed", "Zufallsstartwert", "num")}</div>
-    <p class="hint">Tagesschritte (21 pro Monat), Student-t-Schocks auf Varianz 1 skaliert (0 Freiheitsgrade = Normalverteilung), Poisson-Kurssprünge. Mittlere Sprunghöhe −30 % (log) ≈ −26 % Kursverlust.</p></div>`;
+  if (src === "parametric") {
+    const P = (k, label) => F("returns.parametric." + k, label, PARAM_KEYS[k], { hint: C("psug", k) });
+    params = `<div class="card"><h3>Aktienmodell</h3><p class="hint" style="margin-top:0">${C("pauto")}</p><div class="grid3">${F("returns.parametric.paths", "Anzahl Pfade", "num")}${P("mu", "Erwartete Rendite (Drift)")}${P("sigma", "Volatilität")}
+    ${P("df", "Freiheitsgrade (Fat Tails)")}${P("jumpLambda", "Kurssprünge pro Jahr")}${P("jumpMu", "Mittlere Sprunghöhe (log)")}
+    ${P("jumpSigma", "Streuung der Sprunghöhe")}${F("returns.parametric.seed", "Zufallsstartwert", "num")}</div>
+    <p class="hint">Tagesschritte (21 pro Monat), Student-t-Schocks auf Varianz 1 skaliert (0 Freiheitsgrade = Normalverteilung), Poisson-Kurssprünge. Eine Sprunghöhe von −30 % (log) entspricht etwa −26 % Kursverlust.</p></div>
+    <div class="card"><h3>Obligationen und Inflation <span class="sub">aus der Anlagestrategie, nur Anzeige</span></h3><div id="paramJoint">${C("pjoint")}</div></div>`;
+  }
   const extra = !u.extrapolate ? "" : `<div class="card"><h3>Fortschreibung <span class="sub">die Zeitreihe endet vor dem Simulationsende</span></h3>
     <div class="grid2"><label class="field"><span>Methode</span>${Sel("returns.extrapolation.method", [["fixed", "Fixe Werte"], ["average", "Gleitender Durchschnitt"], ["geometric", "Gleitender geometrischer Durchschnitt"]], { rerender: 1 })}</label>
     ${r.extrapolation.method === "fixed" ? "" : F("returns.extrapolation.range", "Durchschnitt über", "num", { unit: "Jahre" })}</div></div>`;
@@ -1187,6 +1211,32 @@ const COMPUTED = {
     return "";
   },
   basis: () => esc(previewBasis || "die fixen Werte."),
+  // FEA-78: Vorschlagswert neben einem Feld des Aktienmodells (nur bei eigenen Werten)
+  psug: k => {
+    const q = state.returns.parametric, s = paramSuggestion();
+    return !s || q.auto ? "" : `Vorschlag: ${fmtParam(k, s[k])}`;
+  },
+  pauto: () => {
+    const q = state.returns.parametric, s = paramSuggestion();
+    if (!seriesInfo) return "Die Vorschlagswerte werden geladen.";
+    if (!s) return "Für diese Zeitreihe gibt es keine Vorschlagswerte; es gelten die eingegebenen Werte.";
+    const st = state.returns.strategy, y = seriesInfo.parametric.stockYears;
+    const name = state.returns.series ? seriesShort(state.returns.series) : STOCK_INDICES.find(x => x[0] === st?.stocks)?.[1] ?? "–";
+    return q.auto ? `Die Werte folgen dem Aktienindex <b>${esc(name)}</b>: Vorschlagswerte aus den Jahren ${y[0]}–${y[1]}, so gewählt, dass die Jahresrenditen dem historischen Bootstrap entsprechen. Ändern Sie einen Wert, gelten Ihre eigenen Werte.`
+      : `Eigene Werte. Neben den Feldern stehen die Vorschlagswerte für <b>${esc(name)}</b>. <button class="btn small" data-action="param-suggest">Vorschlagswerte übernehmen</button>`;
+  },
+  // FEA-79: Mittel, Streuung und Korrelation von Aktien, Obligationen und Inflation der Reihe
+  pjoint: () => {
+    const j = paramJoint();
+    if (!seriesInfo) return "";
+    if (!j) return "Ohne Zeitreihe gelten für Obligationen und Inflation die fixen Werte.";
+    const p = v => `${(v * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+    const c = v => v.toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace("-", "−");
+    const names = ["Aktien", "Obligationen", "Inflation"];
+    return `<table class="tbl num"><thead><tr><th>Korrelation</th>${names.map(n => `<th>${n}</th>`).join("")}<th>Mittel</th><th>Streuung</th></tr></thead><tbody>
+      ${names.map((n, a) => `<tr><td>${n}</td>${names.map((_, b) => `<td>${a === b ? "1" : c(j.corr[a][b])}</td>`).join("")}<td>${a === 1 ? p(j.bondsMean) : a === 2 ? p(j.inflationMean) : "Modell"}</td><td>${a === 1 ? p(j.bondsSd) : a === 2 ? p(j.inflationSd) : "Modell"}</td></tr>`).join("")}</tbody></table>
+      <p class="hint">Jahreswerte ${j.first}–${j.last} der Reihe, die auch der historische Bootstrap verwendet. Jedes Jahr ziehen Obligationen und Inflation einen Wert, der mit der Aktienrendite desselben Jahres korreliert ist; die Jahre sind voneinander unabhängig. Der SARON bleibt fix.</p>`;
+  },
   bucket: k => {
     const rm = refMonth(state.pension.pk.at); if (!lastSim) return "–";
     const i = lastSim.m.indexOf(rm); if (i < 0) return "–";
@@ -1491,6 +1541,11 @@ const History = {
     if (this.stack.length > 200) this.stack.shift();
     this.pos = this.stack.length - 1;
   },
+  /** Ändert den aktuellen Schritt, ohne einen neuen anzulegen (abgeleitete Werte, FEA-78). */
+  patch(f) {
+    if (this.pos < 0 || !this.stack[this.pos]) return;
+    const o = JSON.parse(this.stack[this.pos]); f(o); this.stack[this.pos] = JSON.stringify(o);
+  },
   undo() { this.commit(); if (this.pos <= 0) return toast("Nichts mehr rückgängig zu machen."); this.pos--; this.apply(); },
   redo() { this.commit(); if (this.pos >= this.stack.length - 1) return toast("Nichts zu wiederholen."); this.pos++; this.apply(); },
   apply() {
@@ -1617,6 +1672,8 @@ function onEdit(el) {
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
   setP(path, v); markDirty();
+  // FEA-78: eine eigene Eingabe im Aktienmodell beendet das Folgen der Vorschlagswerte
+  if (/^returns\.parametric\.(mu|sigma|df|jumpLambda|jumpMu|jumpSigma)$/.test(path)) state.returns.parametric.auto = false;
   if (/\.amortMode$/.test(path) && v === "indirect") {
     // FEA-37: Die indirekte Amortisation braucht ein 3a-Konto (erste Person bzw. gewählte Person der Tranche).
     const t = getP(path.split(".").slice(0, 6).join(".")), pid = t?.pillar3a ?? state.household.persons[0].id;
@@ -1681,6 +1738,8 @@ const ACTIONS = {
   goto: d => goto(d.sec),
   "ms-goto": d => { flashId = d.id; goto("milestones"); flashId = null; },
   set: d => { setP(d.path, d.value); markDirty(); renderSection(); if (d.path === "returns.source") refreshSeriesInfo(); },
+  // FEA-78: wieder den Vorschlagswerten des Aktienindex folgen
+  "param-suggest": () => { state.returns.parametric.auto = true; followSuggestion(); markDirty(); renderSection(); },
   "series-mode": d => {
     const s = getP(d.path); if (s.mode === d.mode) return;
     if (d.mode === "timed") { s.rows = [{ from: "start", value: s.value ?? 0 }]; delete s.value; }
@@ -2637,8 +2696,10 @@ function paramSections(plan) {
     if (src === "historical") rrows.push(["Historischer Startmonat", ymShow(r.startDate)]);
     if (src === "bootstrap") rrows.push(["Pfade", num(r.bootstrap?.paths)], ["Blocklänge (Monate)", num(r.bootstrap?.block)], ["Zufallsstartwert", num(r.bootstrap?.seed)]);
     if (src === "parametric") { const q = r.parametric || {};
-      rrows.push(["Pfade", num(q.paths)], ["Erwartete Aktienrendite", pc(q.mu)], ["Schwankung", pc(q.sigma)], ["Freiheitsgrade", num(q.df)], ["Kurssprünge pro Jahr", num(q.jumpLambda)], ["Sprunghöhe (Mittel)", pc(q.jumpMu)], ["Sprunghöhe (Streuung)", pc(q.jumpSigma)], ["Zufallsstartwert", num(q.seed)],
-        ["Obligationen pro Jahr", pc(f.bonds)], ["Inflation pro Jahr", pc(f.inflation)]); }
+      rrows.push(["Pfade", num(q.paths)], ["Parameter", q.auto ? "Vorschlagswerte des Aktienindex" : "eigene Werte"], ["Erwartete Aktienrendite", pc(q.mu)], ["Schwankung", pc(q.sigma)], ["Freiheitsgrade", num(q.df)], ["Kurssprünge pro Jahr", num(q.jumpLambda)], ["Sprunghöhe (Mittel)", pc(q.jumpMu)], ["Sprunghöhe (Streuung)", pc(q.jumpSigma)], ["Zufallsstartwert", num(q.seed)]);
+      if (r.strategy) { const st = r.strategy, name = (list, k) => list.find(x => x[0] === k)?.[1] ?? k;
+        rrows.push(["Aktien (Anlagestrategie)", name(STOCK_INDICES, st.stocks)], ["Obligationen und Inflation", `zufällig, korreliert gemäss ${name(BOND_INDICES, st.bonds)}`]); }
+      else rrows.push(["Obligationen pro Jahr", pc(f.bonds)], ["Inflation pro Jahr", pc(f.inflation)]); }
     if (r.extrapolation) rrows.push(["Fortschreibung", `${r.extrapolation.method ?? "–"}${r.extrapolation.range ? ` (${r.extrapolation.range} J.)` : ""}`]);
   }
   out.push(["Renditequelle und Zeitreihe", rrows]);

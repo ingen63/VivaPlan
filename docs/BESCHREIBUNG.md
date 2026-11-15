@@ -88,7 +88,9 @@ laufende **Prüfung** meldet Fehler und Hinweise, bevor gerechnet wird. Eine **Z
   zusammengesetzt; Aktien, Obligationen, Inflation und Zinsen stammen dabei immer aus demselben Monat, damit ihr
   Zusammenhang erhalten bleibt.
 - **Parametrisch:** Monte Carlo mit einem Aktienmodell in Tagesschritten, mit breiten Rändern (Student-t) und
-  Kurssprüngen, mit selbst gewählten Annahmen zu Rendite und Risiko.
+  Kurssprüngen. Die Parameter folgen dem gewählten Aktienindex (Vorschlagswerte, so gewählt, dass die Jahresrenditen
+  dem historischen Bootstrap entsprechen) oder werden selbst gesetzt. Obligationen und Inflation sind zufällig und mit
+  den Aktien korreliert, mit Mittelwert, Streuung und Korrelation der Reihe aus der Anlagestrategie.
 
 Die Läufe werden parallel auf allen Prozessorkernen gerechnet, 50 000 Monte-Carlo-Pfade dauern wenige Sekunden. Gleiche
 Einstellungen ergeben immer gleiche Ergebnisse.

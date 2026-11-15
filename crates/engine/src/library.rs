@@ -117,6 +117,8 @@ pub struct SeriesInfo {
     pub avg_inflation: f64,
     /// Teile der Anlagestrategie mit ihren eigenen Jahren (leer bei einer einzelnen Zeitreihe).
     pub parts: Vec<SeriesPart>,
+    /// FEA-78/79: Vorschlagswerte des parametrischen Modells (nur bei der Kurzinfo zur Planung).
+    pub parametric: Option<crate::calibrate::Suggestion>,
 }
 
 impl SeriesInfo {
@@ -148,6 +150,7 @@ impl SeriesInfo {
             avg_bonds,
             avg_inflation,
             parts: vec![],
+            parametric: None,
         }
     }
 }

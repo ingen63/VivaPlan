@@ -498,8 +498,9 @@ impl Default for BootstrapParams {
     }
 }
 
-/// Aktienmodell des bisherigen Programms: Student-t-Schocks und Kurssprünge, Tagesschritte.
-/// Obligationen, Inflation und SARON folgen den fixen Werten.
+/// Aktienmodell des bisherigen Programms: Student-t-Schocks und Kurssprünge, Tagesschritte. Mit einer Zeitreihe
+/// (Anlagestrategie) sind Obligationen und Inflation zufällig und mit den Aktien korreliert (FEA-79), sonst folgen sie
+/// wie der SARON den fixen Werten.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ParametricParams {
@@ -521,6 +522,10 @@ pub struct ParametricParams {
     pub jump_sigma: f64,
     #[serde(default = "default_seed")]
     pub seed: u64,
+    /// FEA-78: Die Modellparameter folgen den Vorschlagswerten des Aktienindex (nicht von Hand geändert). Fehlt das
+    /// Merkmal (ältere Planungen), gelten die gespeicherten Werte.
+    #[serde(default)]
+    pub auto: bool,
 }
 
 impl Default for ParametricParams {
@@ -534,6 +539,7 @@ impl Default for ParametricParams {
             jump_mu: -0.3,
             jump_sigma: 0.15,
             seed: default_seed(),
+            auto: false,
         }
     }
 }

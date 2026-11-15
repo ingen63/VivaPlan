@@ -3175,3 +3175,100 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// FEA-78: Aktienparameter je Aktienindex; FEA-79: Obligationen und Inflation mit Korrelation je Index
+test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
+  const KEYS = ["mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma"];
+  const params = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, state.returns.parametric[x]])), KEYS);
+  const suggestion = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, seriesInfo.parametric.stocks[x]])), KEYS);
+  /** Aktienindex unter «Vermögen & Anlage» wählen und zurück zur Simulation. */
+  async function chooseStocks(page, value, bonds) {
+    await page.locator("#nav a", { hasText: "Vermögen & Anlage" }).first().click();
+    await page.locator('select[data-path="returns.strategy.stocks"]').selectOption(value);
+    if (bonds) await page.locator('select[data-path="returns.strategy.bonds"]').selectOption(bonds);
+    await page.locator("#nav a", { hasText: "Simulation" }).first().click();
+    await expect(page.locator("#main h2")).toHaveText(/^Simulation/);
+    await page.waitForFunction(v => seriesInfo?.parametric && state.returns.strategy.stocks === v && seriesInfoRef === seriesRef(), value);
+  }
+  async function parametric(page) {
+    const errors = await open(page, "returns");
+    await page.locator('#main .choice[data-value="parametric"]').click();
+    await page.waitForFunction(() => seriesInfo?.parametric?.stocks);
+    return errors;
+  }
+
+  test("FEA-78/AK4: neue Planung, Wechsel des Aktienindex setzt die Vorschlagswerte des neuen Index", async ({ page }) => {
+    const errors = await parametric(page);
+    expect(await page.evaluate(() => state.returns.parametric.auto)).toBe(true);
+    await chooseStocks(page, "chJst");
+    const ch = await params(page);
+    expect(ch).toEqual(await suggestion(page));
+    await expect(page.locator('#main [data-computed="pauto"]')).toContainText("Die Werte folgen dem Aktienindex Schweiz (JST)");
+    await expect(field(page, "returns.parametric.mu")).toHaveValue(String(+(ch.mu * 100).toFixed(4)));
+    await chooseStocks(page, "sp500");
+    const sp = await params(page);
+    expect(sp).toEqual(await suggestion(page));
+    expect(sp.mu).not.toBe(ch.mu);
+    // Neben den Feldern keine Vorschläge, solange die Werte dem Index folgen
+    expect((await page.locator('#main [data-computed="psug"]').allInnerTexts()).join("")).toBe("");
+    await noErrors(page, errors);
+  });
+
+  test("FEA-78/AK5: eigene Werte bleiben beim Wechsel des Index, daneben die Vorschlagswerte; «Vorschlagswerte übernehmen»", async ({ page }) => {
+    const errors = await parametric(page);
+    await chooseStocks(page, "worldJst");
+    const mu = field(page, "returns.parametric.mu");
+    await mu.fill("5");
+    await mu.press("Tab");
+    expect(await page.evaluate(() => [state.returns.parametric.auto, state.returns.parametric.mu])).toEqual([false, 0.05]);
+    await chooseStocks(page, "chJst");
+    const own = await params(page), sug = await suggestion(page);
+    expect(own.mu).toBe(0.05);
+    expect(own.sigma).not.toBe(sug.sigma); // Volatilität von «Welt (JST)», nicht von «Schweiz (JST)»
+    await expect(page.locator('#main [data-computed="pauto"]')).toContainText("Eigene Werte");
+    const hints = await page.locator('#main [data-computed="psug"]').allInnerTexts();
+    expect(hints).toHaveLength(6);
+    expect(hints[0]).toBe(`Vorschlag: ${(sug.mu * 100).toLocaleString("de-CH", { maximumFractionDigits: 3 })} %`);
+    await page.locator('#main [data-action="param-suggest"]').click();
+    expect(await page.evaluate(() => state.returns.parametric.auto)).toBe(true);
+    expect(await params(page)).toEqual(sug);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-79/AK4: Matrix der Korrelation im Reiter «Simulation», abhängig von Aktien und Obligationen", async ({ page }) => {
+    const errors = await parametric(page);
+    const table = page.locator("#paramJoint table");
+    await chooseStocks(page, "worldJst", "ch");
+    await expect(table).toBeVisible();
+    const a = await table.innerText();
+    expect(await page.locator("#main").innerText()).not.toContain("Obligationen, Inflation und SARON pro Jahr");
+    await chooseStocks(page, "worldJst", "usa");
+    await expect(table).not.toHaveText(a);
+    const b = await table.innerText();
+    const j = await page.evaluate(() => seriesInfo.parametric.joint);
+    expect(b).toContain(j.corr[0][1].toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    await chooseStocks(page, "chJst", "usa");
+    await expect(table).not.toHaveText(b);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-79/AK6: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch», eigene Werte bleiben", async ({ page }) => {
+    const errors = await open(page);
+    const plan = await page.evaluate(() => {
+      const s = JSON.parse(JSON.stringify(state));
+      s.returns.source = "parametric";
+      s.returns.parametric = { paths: 100, mu: 0.05, sigma: 0.12, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, seed: 42 };
+      return s;
+    });
+    const file = path.join(os.tmpdir(), `fea79-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(plan));
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect(page.locator("#ask")).toBeVisible();
+    await expect(page.locator("#askText")).toContainText("Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig");
+    await page.locator("#ask button[value='ok']").click();
+    expect(await page.evaluate(() => [state.returns.parametric.auto, state.returns.parametric.mu])).toEqual([false, 0.05]);
+    fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+});

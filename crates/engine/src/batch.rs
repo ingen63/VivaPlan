@@ -13,11 +13,12 @@ use crate::sim::{SimResult, Simulator};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Lädt die Zeitreihe der Planung, wenn die Renditequelle eine braucht; siehe [`returns_series`].
+/// Lädt die Zeitreihe der Planung, wenn die Renditequelle eine braucht; siehe [`returns_series`]. Das parametrische
+/// Modell braucht sie für die Vorschlagswerte und die Korrelation mit Obligationen und Inflation (FEA-78, FEA-79).
 pub fn load_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Result<Option<DataSet>> {
     if !matches!(
         plan.returns.source,
-        ReturnSource::Historical | ReturnSource::Rolling | ReturnSource::Bootstrap
+        ReturnSource::Historical | ReturnSource::Rolling | ReturnSource::Bootstrap | ReturnSource::Parametric
     ) {
         return Ok(None);
     }
@@ -139,13 +140,15 @@ pub fn path_source<'a>(plan: &Plan, sim: &'a Simulator, data: Option<&'a DataSet
             }))
         }
         ReturnSource::Parametric => {
-            let params = plan.returns.parametric.clone().unwrap_or_default();
+            let (params, correlated) =
+                crate::calibrate::resolve(&plan.returns.parametric.clone().unwrap_or_default(), data);
             limit(params.paths)?;
             Ok(Paths::Parametric(Parametric {
                 fixed: &sim.fixed,
                 start: sim.start,
                 months: sim.months(),
                 params,
+                correlated,
             }))
         }
         _ => market_paths(plan, sim, data).map(Paths::List),

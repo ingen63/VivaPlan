@@ -5,6 +5,7 @@
 //! braucht auch eine Simulation mit 50'000 Pfaden wenig Speicher, und jeder Pfad lässt sich für die
 //! Detailansicht exakt wiederholen.
 
+use crate::calibrate::Correlated;
 use crate::market::{monthly, DataSet, FixedCurves, Freq, MarketPath};
 use crate::model::{BootstrapParams, ParametricParams};
 use crate::time::YearMonth;
@@ -207,13 +208,19 @@ pub const TRADING_DAYS: usize = 21;
 
 /// Aktien: geometrische Brownsche Bewegung mit Student-t-Schocks (auf Varianz 1 skaliert) und
 /// Poisson-Kurssprüngen, in Tagesschritten gerechnet und zu Monatsrenditen zusammengefasst.
-/// Obligationen, Inflation und SARON folgen den fixen Werten.
+/// Obligationen und Inflation: mit `correlated` je Kalenderjahr zufällig und mit der Aktienrendite des Jahres
+/// korreliert (FEA-79), aus einem eigenen Zufallsstrom, damit die Aktienpfade gleich bleiben; sonst wie der SARON
+/// die fixen Werte.
 pub struct Parametric<'a> {
     pub fixed: &'a FixedCurves,
     pub start: YearMonth,
     pub months: usize,
     pub params: ParametricParams,
+    pub correlated: Option<Correlated>,
 }
+
+/// Unterscheidet den Zufallsstrom für Obligationen und Inflation von dem der Aktien.
+const JOINT_STREAM: u64 = 0x6a09_e667_f3bc_c908;
 
 impl Parametric<'_> {
     pub fn len(&self) -> usize {
@@ -252,9 +259,28 @@ impl Parametric<'_> {
                 }
             }
             p.stocks.push(log.exp() - 1.0);
-            p.bonds.push(monthly(self.fixed.bonds.at(m)));
-            p.inflation.push(self.fixed.inflation.at(m));
             p.saron.push(self.fixed.saron.at(m));
+            if self.correlated.is_none() {
+                p.bonds.push(monthly(self.fixed.bonds.at(m)));
+                p.inflation.push(self.fixed.inflation.at(m));
+            }
+        }
+        if let Some(c) = &self.correlated {
+            let mut rng = Rng::new(q.seed ^ JOINT_STREAM, index as u64);
+            let mut k = 0;
+            while k < self.months {
+                // Monate dieses Kalenderjahres in der Simulation
+                let m = self.start.plus(k as i32);
+                let len = (13 - m.month() as usize).min(self.months - k);
+                let log: f64 = p.stocks[k..k + len].iter().map(|r| (1.0 + r).ln()).sum();
+                let (e1, e2) = (rng.normal(), rng.normal());
+                let (b, i) = c.draw(log, len, e1, e2);
+                for _ in 0..len {
+                    p.bonds.push(monthly(b));
+                    p.inflation.push(i);
+                }
+                k += len;
+            }
         }
         p
     }
@@ -357,12 +383,14 @@ mod tests {
             jump_mu: 0.0,
             jump_sigma: 0.0,
             seed: 1,
+            auto: false,
         };
         let g = Parametric {
             fixed: &f,
             start: YearMonth::new(2030, 1),
             months: 12,
             params: q,
+            correlated: None,
         };
         // Jahres-Logrendite: Mittel (mu − σ²/2), Standardabweichung σ.
         let logs: Vec<f64> = (0..g.len())
@@ -411,6 +439,7 @@ mod tests {
                 paths,
                 ..Default::default()
             },
+            correlated: None,
         };
         assert!(p(0).is_empty() && !p(3).is_empty());
     }
@@ -478,6 +507,7 @@ mod tests {
             start: YearMonth::new(2030, 1),
             months: 24,
             params: q,
+            correlated: None,
         };
         let p = g.path(0);
         assert!(p.stocks.windows(2).any(|w| w[0] != w[1]));
@@ -499,6 +529,7 @@ mod tests {
             start: YearMonth::new(2030, 1),
             months: 3,
             params: q,
+            correlated: None,
         };
         let p = g.path(0);
         // Toleranz für kleine Unterschiede der Mathematikbibliothek zwischen Plattformen.
@@ -518,6 +549,7 @@ mod tests {
             start: YearMonth::new(2030, 1),
             months: 3,
             params: q,
+            correlated: None,
         }
         .path(0);
         let expected = [0.06842020080156996, 0.08498775592559737, 0.0484071107147952];

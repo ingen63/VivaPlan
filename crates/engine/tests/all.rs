@@ -29,6 +29,7 @@ mod ods_reference;
 mod optimization_settings;
 mod optimize_goal;
 mod optimize_ranges;
+mod parametric_fit;
 mod pillar3a;
 mod pillar3a_plan;
 mod proptest_parsers;

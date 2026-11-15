@@ -12,7 +12,7 @@ use std::path::Path;
 
 use crate::jst::{self, JstData};
 use crate::library::{self, SeriesPart};
-use crate::market::{DataSet, Freq, Meta};
+use crate::market::{DataSet, Freq, Meta, StockSeries};
 use crate::model::{BondIndex, Investment, RegionWeights, StockIndex};
 use crate::time::YearMonth;
 use crate::{Error, Result};
@@ -89,9 +89,9 @@ fn builtin_series(file: &str, lib: Option<&Path>) -> Result<DataSet> {
 
 /// Jahreswerte ab einem Jahr.
 #[derive(Clone, Debug, PartialEq)]
-struct Yearly {
-    first: i32,
-    values: Vec<f64>,
+pub(crate) struct Yearly {
+    pub(crate) first: i32,
+    pub(crate) values: Vec<f64>,
 }
 
 impl Yearly {
@@ -104,7 +104,7 @@ impl Yearly {
 }
 
 /// Monatsrenditen zu Kalenderjahren verknüpft (nur ganze Jahre).
-fn compound_years(first: YearMonth, monthly: &[f64]) -> Yearly {
+pub(crate) fn compound_years(first: YearMonth, monthly: &[f64]) -> Yearly {
     let mut out = Yearly {
         first: if first.month() == 1 {
             first.year()
@@ -124,7 +124,7 @@ fn compound_years(first: YearMonth, monthly: &[f64]) -> Yearly {
 
 /// Jahreswert aus Monatswerten, die schon Jahressätze sind (Inflation: Dezember gegenüber Vorjahr; SARON: Mittel
 /// der zwölf Monate, `NaN` wenn ein Monat fehlt).
-fn yearly_rates(first: YearMonth, monthly: &[f64], december_only: bool) -> Yearly {
+pub(crate) fn yearly_rates(first: YearMonth, monthly: &[f64], december_only: bool) -> Yearly {
     let c = compound_years(first, monthly);
     let start = (c.first * 12 - first.0) as usize;
     let values = (0..c.values.len())
@@ -221,11 +221,18 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
         ds.name = label(s);
         let own = years_of(&ds);
         // S&P 500 mit Obligationen der Eidgenossenschaft: die Aktien reichen weiter zurück als die SNB-Renditen.
-        let stocks = if s.bonds == BondIndex::Ch {
-            years_of(&builtin_series("Shiller CHF.csv", lib)?)
+        let shiller = if s.bonds == BondIndex::Ch {
+            builtin_series("Shiller CHF.csv", lib)?
         } else {
-            own
+            ds.clone()
         };
+        let stocks = years_of(&shiller);
+        // FEA-78: ganze Aktienreihe, monatlich wie der Bootstrap dieser Reihe
+        ds.stock_series = Some(StockSeries {
+            freq: Freq::Monthly,
+            first: shiller.first,
+            values: shiller.stocks.clone(),
+        });
         return Ok((ds, parts(s, stocks, own)));
     }
 
@@ -343,6 +350,11 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
         bonds: years.clone().map(|y| bonds.at(y)).collect(),
         inflation: years.clone().map(|y| inflation.at(y)).collect(),
         saron: Some(years.map(saron_at).collect()),
+        stock_series: Some(StockSeries {
+            freq: Freq::Yearly,
+            first: YearMonth::new(stocks.first, 1),
+            values: stocks.values.clone(),
+        }),
     };
     Ok((ds, parts))
 }

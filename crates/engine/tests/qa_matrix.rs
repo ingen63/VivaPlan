@@ -1081,15 +1081,14 @@ fn parametric_paths_are_finite_and_plausible() {
 
 #[test]
 fn statistics_are_stable_across_path_counts() {
-    // Mittelwert und Erfolgsquote dürfen sich bei Verzehnfachung der Pfade nur wenig ändern.
+    // Mittelwert und Erfolgsquote dürfen sich bei Verzehnfachung der Pfade nur wenig ändern. Der Mittelwert ist der
+    // der Perzentile ohne den schlechtesten und den besten Lauf: Diese Extreme wachsen mit der Anzahl Pfade (seit
+    // FEA-79 mit zufälliger Inflation deutlich).
     let small = mc_summary(&mc_plan("parametric", 1000, 11));
     let large = mc_summary(&mc_plan("parametric", 10_000, 12));
-    assert!(
-        (small.1 / large.1 - 1.0).abs() < 0.08,
-        "Mittelwert {} vs {}",
-        small.1,
-        large.1
-    );
+    let inner = |e: &[f64]| e[1..e.len() - 1].iter().sum::<f64>() / (e.len() - 2) as f64;
+    let (a, b) = (inner(&small.2), inner(&large.2));
+    assert!((a / b - 1.0).abs() < 0.08, "Mittelwert {a} vs {b}");
     assert!(
         (small.0 - large.0).abs() < 0.05,
         "Erfolgsquote {} vs {}",
