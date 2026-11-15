@@ -609,7 +609,7 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 | FEA-30/AK3 | Mit einem vorhandenen `mutants.out/` stehen die missed Mutanten einzeln mit Datei und Zeile auf der Seite. | ☑ | **gilt** | [test_report.py:116](../tools/report/test_report.py#L116) | 15.11.2026 ok (Test) |
 | FEA-30/AK4 | Ohne Mutationslauf zeigt der Bereich «keine Daten» statt eines Fehlers. | ☑ | **gilt** | [test_report.py:128](../tools/report/test_report.py#L128) | 15.11.2026 ok (Test) |
 | FEA-30/AK5 | Es gibt keine Gesamtnote; jede Schicht hat ihren eigenen Status mit genannter Regel. | ☑ | **gilt** | [tools/report/test_report.py:14](../tools/report/test_report.py#L14) | 15.11.2026 teilweise: Regel je Schicht getestet |
-| FEA-30/AK6 | Ein Lauf von `test-quality.yml` enthält die Seite als Artefakt und die Kurzfassung in der Zusammenfassung. | ☑ | **gilt** | kein Test | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-30/AK6 | Ein Lauf von `test-quality.yml` enthält die Seite als Artefakt und die Kurzfassung in der Zusammenfassung. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Lauf 43753527025: Artefakt test-quality-reports mit report-html/index.html, Kurzfassung in der Zusammenfassung) |
 | FEA-30/AK7 | `TESTS.md` beschreibt die Seite, den Befehl und die Statusregeln. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok |
 
 ### #42 FEA-31 Übersichtsseite Testqualität (Stufe 2: Anforderungsbezug und Ergebnis)
