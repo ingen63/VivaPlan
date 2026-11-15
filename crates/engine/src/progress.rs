@@ -215,62 +215,72 @@ where
 mod tests {
     use super::*;
 
-    // FEA-29: Zähler, Abbruch und Blockgrösse. Ein einziger Test, weil der Zustand global ist (nextest startet jeden Test
-    // in einem eigenen Prozess).
+    // FEA-83/AK5: Jeder Test benutzt eigene Kennungen und liest nur den Stand seiner Berechnung (`snapshot_of`); der
+    // Abbruch gilt je Kennung (`cancel_job`) und der Thread-Job ist threadlokal. Die Tests stören sich daher nicht, auch
+    // wenn sie im selben Prozess laufen. Die prozessweiten Aufrufe `cancel()` (alle Berechnungen) und `snapshot()`
+    // (zuletzt gestartete) prüft `crates/engine/tests/cancel.rs` mit einer echten Berechnung.
+
+    // FEA-29: Zähler und Gesamtzahl einer Berechnung.
     #[test]
-    fn counters_cancel_and_blocks() {
-        let job = start(10);
-        assert_eq!(
-            (
-                snapshot().active,
-                snapshot().cancelled,
-                snapshot().done,
-                snapshot().total
-            ),
-            (true, false, 0, 10)
-        );
+    fn counters_follow_the_job() {
+        let job = start_as(Some(3001), 10);
+        let id = job.id();
+        let p = snapshot_of(id);
+        assert_eq!((p.active, p.cancelled, p.done, p.total), (true, false, 0, 10));
         set_total(20);
         add_total(5);
         tick(3);
         tick(4);
-        assert_eq!((snapshot().done, snapshot().total), (7, 25));
-        cancel();
-        assert!(cancelled() && snapshot().cancelled);
+        let p = snapshot_of(id);
+        assert_eq!((p.done, p.total), (7, 25));
         drop(job);
-        assert!(!snapshot().active);
-        // ISS-20: Die Marke bleibt für die Anzeige stehen, wirkt aber nicht mehr; eine Rechnung ohne Job läuft ganz durch.
-        assert!(snapshot().cancelled && !cancelled());
-        assert_eq!(par_map(1_000, |i| i).len(), 1_000);
+        assert!(!snapshot_of(id).active);
+    }
 
-        // Ohne laufende Berechnung wirkt ein Abbruch nicht.
-        let job = start(0);
+    // ISS-20: Nach dem Ende der Berechnung wirkt ein Abbruch nicht mehr; eine Rechnung ohne Job läuft ganz durch.
+    #[test]
+    fn a_cancel_does_not_outlive_its_job() {
+        let job = start_as(Some(3002), 10);
+        let id = job.id();
+        assert!(cancel_job(id));
+        assert!(cancelled() && snapshot_of(id).cancelled);
         drop(job);
-        cancel();
+        // Die Marke wirkt nicht mehr (der Stand bleibt nur bis zum Start der nächsten Berechnung abfragbar).
         assert!(!cancelled());
+        assert_eq!(par_map(1_000, |i| i).len(), 1_000);
+        assert!(!cancel_job(id), "beendet: kein Abbruch mehr möglich");
+    }
 
-        // Vollständiger Lauf: Ergebnis in Reihenfolge, jeder Lauf genau einmal gezählt.
-        let _job = start(0);
+    // Vollständiger Lauf: Ergebnis in Reihenfolge, jeder Lauf genau einmal gezählt.
+    #[test]
+    fn par_map_keeps_order_and_counts_every_run_once() {
+        let job = start_as(Some(3003), 0);
         let n = 1_000;
         let out = par_map(n, |i| i * 2);
         assert_eq!(out, (0..n).map(|i| i * 2).collect::<Vec<_>>());
-        assert_eq!(snapshot().done, n as u64);
+        assert_eq!(snapshot_of(job.id()).done, n as u64);
+    }
 
-        // Abbruch im ersten Block: Der Block wird fertig gerechnet, danach endet die Schleife.
-        // Blockgrösse = max(n / 100, Threads × 4, 1).
+    // Abbruch im ersten Block: Der Block wird fertig gerechnet, danach endet die Schleife.
+    // Blockgrösse = max(n / 100, Threads × 4, 1).
+    #[test]
+    fn a_cancel_in_the_first_block_ends_after_that_block() {
         let threads = rayon::current_num_threads();
-        for n in [100usize, 100_000] {
-            let _job = start(0);
+        for (k, n) in [100usize, 100_000].into_iter().enumerate() {
+            let job = start_as(Some(3010 + k as u64), 0);
+            let id = job.id();
             let out = par_map(n, |i| {
                 if i == 0 {
-                    cancel();
+                    cancel_job(id);
                 }
                 i
             });
             let chunk = (n / 100).max(threads * 4).max(1).min(n);
             assert_eq!(out.len(), chunk, "n = {n}");
-            assert_eq!(snapshot().done, chunk as u64);
+            assert_eq!(snapshot_of(id).done, chunk as u64);
         }
     }
+
     // FEA-83/AK2, FEA-83/AK3: Zwei Berechnungen gleichzeitig beeinflussen sich nicht. Dieser Test braucht nur Kennungen
     // und `cancel_job`, nie das globale `cancel()`.
     #[test]
@@ -316,9 +326,8 @@ mod tests {
             (seen_b.id, seen_b.cancelled, seen_b.done, seen_b.total),
             (1002, false, 5_000, 5_000)
         );
-        // Nach dem Ende wirkt cancel_job nicht mehr; der Stand bleibt abfragbar
+        // Nach dem Ende wirkt cancel_job nicht mehr
         assert!(!cancel_job(1001) && !cancel_job(1002));
-        assert!(!snapshot_of(1002).active && snapshot_of(1002).done == 5_000);
     }
 
     // FEA-83/AK1: Eine bereits vergebene Kennung wird nicht doppelt benutzt; verschachtelte Jobs stellen den äusseren wieder her.
@@ -334,7 +343,7 @@ mod tests {
         tick(2);
         assert_eq!(snapshot_of(2001).done, 2);
         drop(outer);
-        tick(5); // ohne Job: wirkungslos
-        assert_eq!(snapshot_of(2001).done, 2);
+        tick(5); // ohne Job: wirkungslos (und kein Absturz)
+        assert!(!cancelled());
     }
 }
