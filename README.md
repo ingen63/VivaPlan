@@ -11,7 +11,15 @@
   <a href="https://github.com/ingen63/VivaPlan/actions/workflows/test-quality.yml"><img src="https://github.com/ingen63/VivaPlan/actions/workflows/test-quality.yml/badge.svg" alt="Test quality"></a>
 </p>
 
-<!-- Bildschirmfoto folgt (GEN-02): docs/bilder/uebersicht.png, Beispielplanung mit Editor, Live-Vorschau und Vermögensband -->
+<p align="center">
+  <img src="docs/bilder/uebersicht.png" alt="VivaPlan: Beispielplanung mit Zeitleiste, Eingaben und Live-Vorschau des Vermögensverlaufs" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/bilder/ergebnisse.png" alt="VivaPlan: Ergebnisse der Beispielplanung mit Kennzahlen und Vermögensverlauf" width="900">
+</p>
+
+<p align="center"><sub>Bildschirmfotos der mitgelieferten Beispielplanung (erfundene Daten).</sub></p>
 
 ## Worum es geht
 
