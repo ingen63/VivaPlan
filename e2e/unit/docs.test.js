@@ -70,8 +70,9 @@ test("FEA-75/AK1, FEA-75/AK3: alle Stellen nennen dieselbe Programmversion, das 
       if (m[1] !== "vivaplan-fuzz") assert.equal(m[2], v, `${lock}: ${m[1]}`);
     }
   }
-  const first = read("CHANGELOG.md").match(/^## (.+)$/m)?.[1];
-  assert.equal(first, `Version ${v}: erster öffentlicher Stand`);
-  assert.equal([...read("CHANGELOG.md").matchAll(/^## /gm)].length, 1, "keine Einträge zu früheren Versionen");
+  // Ein Abschnitt «Nächste Version» (noch nicht veröffentlichte Änderungen) steht vor den Versionen und zählt nicht mit.
+  const heads = [...read("CHANGELOG.md").matchAll(/^## (.+)$/gm)].map(m => m[1]).filter(h => h !== "Nächste Version");
+  assert.equal(heads[0], `Version ${v}: erster öffentlicher Stand`);
+  assert.equal(heads.length, 1, "keine Einträge zu früheren Versionen");
   assert.equal(fs.existsSync(path.join(ROOT, "docs/release-notes-1.1.3.md")), false);
 });
