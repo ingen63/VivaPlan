@@ -53,11 +53,12 @@ Vermerk «(Kommentar)» in der Liste. Änderungen an Kriterien per Kommentar sin
 | gilt | 464 |
 | überholt | 15 |
 | unklar | 1 |
-| im Issue nicht abgehakt | 13 |
+| im Issue nicht abgehakt | 12 |
 | ohne Test mit Kennung | 176 |
-| geprüft am 15.11.2026: ok | 342 |
+| geprüft am 15.11.2026: ok | 346 |
 | geprüft: teilweise | 39 |
-| geprüft: nicht geprüft | 30 |
+| geprüft: nicht geprüft | 23 |
+| geprüft: vom Anwender geschlossen (nicht mehr belegbar) | 3 |
 | geprüft: überholt, nicht geprüft | 11 |
 
 ### Überholt oder unklar
@@ -92,9 +93,7 @@ FEA-12/AK2, FEA-33/AK1, FEA-33/AK2, FEA-33/AK3, FEA-33/AK4, FEA-33/AK5, FEA-35/A
 
 ### Von Hand beim Anwender
 
-- **Sichtprüfung in der App:** FEA-09 AK4/AK5 (#10), FEA-10 AK6 (#11), FEA-21 AK5 (#22, Legenden hell und dunkel).
 - **Mit lokalen Daten:** FEA-74 AK4 (`local/eigene/`), FEA-76 AK2 (Shiller-Datei), FEA-32 AK3/AK4/AK6 (Laufzeiten, Mutantenvergleich), FEA-29 AK1 (voller Mutationslauf), FEA-27 AK2 bis AK4 (Agentenlauf, Laufzeit des Hooks), FEA-34 AK8 (Repository-Umbenennung).
-- **Nicht mehr belegbar** (das öffentliche Repository hat nur einen Commit): FEA-42 AK3, FEA-56 AK8, FEA-58 AK6 («Golden-Dateien unverändert»; die Golden-Tests laufen grün).
 - **Auf GitHub nach dem Push:** FEA-62 AK2 (Schwelle 99), FEA-68 AK3, FEA-71 AK1/AK2, FEA-30 AK6, FEA-32 AK5, FEA-35 AK3.
 - **Zu entscheiden:** FEA-80 (#103, Renditeregel unter 12 Monaten), ISS-19 (#102, Laufzeit des Monte-Carlo-Tests, FEA-67 AK3), FEA-45 AK5 (#61, wieder öffnen?), FEA-18 K3 (2-Zeilen-Grenze), FEA-28 AK1/AK2 (Pull Requests gibt es nicht mehr), FEA-36 AK5 (seit FEA-38 kaum noch darstellbar), FEA-19 AK4 (Vergleich Ziel 1 und Ziel 2, Test fehlt).
 - **Hilfetexte und `BESCHREIBUNG.md`** sind nur stichwortartig abgeglichen, nicht Satz für Satz (FEA-17, FEA-24, FEA-26, FEA-36, FEA-37, FEA-38, FEA-40 und weitere).
@@ -224,8 +223,8 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 | FEA-09/AK1 | Ein 3-Topf-Lauf zeigt in der Karte «Ereignisse» keine Zeile zu Auffüllung, Zufluss oder Reservierung. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Ereignisliste ohne «Topf 1») |
 | FEA-09/AK2 | Pensionierung, Kapitalbezug, Käufe, Verkäufe, Notverkäufe, Defizitphase und Geld aufgebraucht stehen weiterhin in der Liste. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
 | FEA-09/AK3 | Ein Lauf ohne 3-Topf-Strategie zeigt dieselbe Liste wie bisher. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
-| FEA-09/AK4 | Jeder reservierte Verkaufserlös ist in den Jahreswerten unter der Herleitung (FEA-08) zu finden. | ☑ | **gilt** | kein Test | nicht geprüft: nicht im Test; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
-| FEA-09/AK5 | Zeitleiste und Grafikmarken sind unverändert. | ☑ | **gilt** | kein Test | nicht geprüft: nicht im Test; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
+| FEA-09/AK4 | Jeder reservierte Verkaufserlös ist in den Jahreswerten unter der Herleitung (FEA-08) zu finden. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Sichtprüfung vom Anwender) |
+| FEA-09/AK5 | Zeitleiste und Grafikmarken sind unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Sichtprüfung vom Anwender) |
 | FEA-09/AK6 | Der UI-Test, der 3-Topf-Ereignisse in der Liste erwartet, ist angepasst. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Test erwartet keine 3-Topf-Ereignisse mehr) |
 
 ### #11 FEA-10 Gespeicherte Ergebnisse: Strategie-Tooltip mit Parametern
@@ -239,7 +238,7 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 | FEA-10/AK3 | Die Werte stimmen mit dem Reiter «Parameter» (FEA-03) überein. | ☑ | **gilt** | [ui.spec.js:3038](../e2e/ui.spec.js#L3038) | 15.11.2026 ok (Test) |
 | FEA-10/AK4 | Der Tooltip ist per Tastaturfokus erreichbar. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Tastaturfokus zeigt den Tooltip) |
 | FEA-10/AK5 | Ein altes Ergebnis ohne Kurzform zeigt «Parameter nicht verfügbar», ohne Fehler. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok («Parameter nicht verfügbar») |
-| FEA-10/AK6 | Die Liste lädt nicht langsamer (Ergebnisdaten werden dafür nicht geladen). | ☑ | **gilt** | kein Test | nicht geprüft: Ladezeit nicht gemessen; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
+| FEA-10/AK6 | Die Liste lädt nicht langsamer (Ergebnisdaten werden dafür nicht geladen). | ☑ | **gilt** | kein Test | 15.11.2026 ok (Prüfung in der App vom Anwender) |
 
 ### #12 FEA-11 Gespeicherte Ergebnisse: Spalte «Zeitreihe» statt «Art»
 
@@ -387,7 +386,7 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 | FEA-21/AK2 | Die Legende der Verteilung des Endvermögens nennt die fünf Perzentil-Linien mit gestricheltem Symbol. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
 | FEA-21/AK3 | Übersicht und Grafiken zeigen dieselben Legenden. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
 | FEA-21/AK4 | Jede Linie in den beiden Diagrammen hat einen Legendeneintrag und umgekehrt. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok (fünf gestrichelte Linien, Legende dazu) |
-| FEA-21/AK5 | Die Legenden sind im hellen und dunklen Erscheinungsbild lesbar. | ☑ | **gilt** | kein Test | nicht geprüft: hell und dunkel nicht per Sicht geprüft; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
+| FEA-21/AK5 | Die Legenden sind im hellen und dunklen Erscheinungsbild lesbar. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Sichtprüfung vom Anwender, hell und dunkel) |
 
 ### #23 FEA-22 Übersicht: Immobilienverkäufe statt Notverkäufe und Einmalzahlungen
 
@@ -718,14 +717,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | FEA-38/AK1 | Jede Person hat die Meilensteine «AHV-Bezug» und «Bezug Pensionskasse». Beide lassen sich in der Oberfläche nicht löschen (keine Löschen-Schaltfläche, Hinweis warum). | ☑ | **gilt** | [engine/src/upgrade.rs:496](../crates/engine/src/upgrade.rs#L496), [engine/tests/milestones_limits.rs:108](../crates/engine/tests/milestones_limits.rs#L108) (+2) | 15.11.2026 ok (Test grün) |
 | FEA-38/AK2 | Beide lassen sich ändern (Alter oder Datum, wie die übrigen Meilensteine). Das Alter muss innerhalb der Grenzen liegen: AHV-Bezug 63 bis 70 Jahre, Bezug Pensionskasse 58 bis 65 Jahre. Die Grenzen selbst sind gültig (63 und 70, 58 und 65), ein Wert ausserhalb wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Die Grenzen sind seit FEA-24 einstellbar; 63 bis 70 und 58 bis 65 sind die Standardwerte. | [engine/tests/milestones_limits.rs:59](../crates/engine/tests/milestones_limits.rs#L59), [ui.spec.js:631](../e2e/ui.spec.js#L631) (+1) | 15.11.2026 ok (Test grün) |
-| FEA-38/AK3 | Neue Planung: Beide Meilensteine stehen auf 65 Jahren. | ☑ | **gilt** | [tests/milestones_limits.rs:110](../crates/engine/tests/milestones_limits.rs#L110) | 15.11.2026 teilweise: Meilensteine immer vorhanden; Vorgabe 65 nicht eigens geprüft |
+| FEA-38/AK3 | Neue Planung: Beide Meilensteine stehen auf 65 Jahren. | ☑ | **gilt** | [e2e/ui.spec.js](../e2e/ui.spec.js) (FEA-38/AK3) | 15.11.2026 ok |
 | FEA-38/AK4 | Beispiel: Geburt 1980-06. AHV-Bezug mit 65 liegt im Monat 2045-06, mit 63 im Monat 2043-06, mit 70 im Monat 2050-06. Bezug Pensionskasse mit 58 liegt im Monat 2038-06. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:95](../crates/engine/tests/milestones_limits.rs#L95) | 15.11.2026 ok (Test grün) |
 | FEA-38/AK5 | Der Meilenstein «Pensionierung» heisst überall «Bezug Pensionskasse» (Oberfläche, Hilfe, Berichte). Die Id `retire` bleibt, damit Planungsdateien gültig bleiben. | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [ui.spec.js:2346](../e2e/ui.spec.js#L2346) | 15.11.2026 ok (Test grün) |
 | FEA-38/AK6 | Ältere Planungsdateien ohne einen der beiden Meilensteine erhalten ihn beim Laden mit dem Standard 65. Liegt ein vorhandenes Alter ausserhalb der Grenzen, wird es auf die nächste Grenze gesetzt, mit Hinweis beim Laden (kein stiller Datenverlust). | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [engine/src/upgrade.rs:459](../crates/engine/src/upgrade.rs#L459) (+2) | 15.11.2026 ok (Test grün) |
 | FEA-38/AK7 | Bis FEA-24 umgesetzt ist, gelten die Grenzen fest. Die Stelle, die später die Einstellung liest, ist an einer Stelle gebündelt. | ☑ | **überholt**: durch FEA-24: Die Grenzen kommen aus den Einstellungen. | kein Test | 15.11.2026 überholt, nicht geprüft |
 | FEA-38/AK8 | Prüfung (Warnung, keine Sperre): Beträgt das Erwerbseinkommen im Monat des Bezugs der Pensionskasse oder danach mehr als 0, meldet die Prüfung eine Warnung mit dem Betrag, z. B. «Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (06.2040) noch 12'500 pro Monat.» Bei Einkommen 0 ab dem Bezug erscheint keine Warnung. Die Warnung steht in der Prüfung des Rechenkerns (`Severity::Warning`) und in der Oberfläche. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123), [ui.spec.js:2365](../e2e/ui.spec.js#L2365) | 15.11.2026 ok (Test grün) |
 | FEA-38/AK9 | Beispiel mit erfundenen Zahlen: Einkommen 12'500 ab 2035-02 ohne spätere Zeile mit 0, Bezug Pensionskasse 2040-06: Es erscheint die Warnung mit 12'500. Mit einer Zeile «ab Bezug Pensionskasse: 0» erscheint keine Warnung. Mit einer Zeile «ab 2040-06: 3'000» lautet die Warnung 3'000. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123) | 15.11.2026 ok (Test grün) |
-| FEA-38/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt; Regressionstest im Rechenkern. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
+| FEA-38/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt; Regressionstest im Rechenkern. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Hilfe, Beschreibung und Spezifikation stimmen überein) |
 
 ### #52 FEA-37 Säule 3a als eigenes Konto mit Auszahlungsplan, Rest spätestens im AHV-Alter
 
@@ -803,7 +802,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | FEA-42/AK1 | Im Wurzelverzeichnis liegt eine `rustfmt.toml` mit den gewählten Einstellungen (z. B. Zeilenlänge); sie gilt für alle Pakete. | ☑ | **gilt** | kein Test (Datei geprüft: `rustfmt.toml`) | 15.11.2026 ok (max_width = 120) |
 | FEA-42/AK2 | `cargo fmt --all --check` meldet im ganzen Workspace keine Abweichung. | ☑ | **gilt** | kein Test | 15.11.2026 ok (cargo fmt --all --check meldet nichts) |
-| FEA-42/AK3 | Die Umformatierung ist ein eigener Commit ohne inhaltliche Änderung; alle Rust-Tests (`make test`) laufen danach unverändert grün, die Golden-Dateien bleiben gleich. | ☑ | **gilt** | kein Test | nicht geprüft: Einzelcommit nicht geprüft |
+| FEA-42/AK3 | Die Umformatierung ist ein eigener Commit ohne inhaltliche Änderung; alle Rust-Tests (`make test`) laufen danach unverändert grün, die Golden-Dateien bleiben gleich. | ☑ | **gilt** | kein Test | 15.11.2026 vom Anwender geschlossen: nicht mehr belegbar (das öffentliche Repository hat nur einen Commit; die Tests laufen grün) |
 | FEA-42/AK4 | Der Commit der Umformatierung steht in `.git-blame-ignore-revs`, damit `git blame` die fachlichen Änderungen zeigt. | ☑ | **überholt**: durch GEN-01: Das öffentliche Repository hat die alte Historie nicht; `.git-blame-ignore-revs` ist entfernt. | kein Test | 15.11.2026 überholt, nicht geprüft |
 | FEA-42/AK5 | Ein GitHub-Workflow (oder ein bestehender Job) prüft bei jedem Push `cargo fmt --all --check` und schlägt bei Abweichungen fehl. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Job format) |
 | FEA-42/AK6 | `CLAUDE.md` beschreibt die neue Regel: Code wird mit `cargo fmt` formatiert, vor dem Commit läuft `cargo fmt --all --check`. | ☑ | **gilt** | kein Test (Datei geprüft: `CLAUDE.md`) | 15.11.2026 ok |
@@ -957,7 +956,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-56/AK5 | Beträge im Text folgen dem Umschalter «Nominal» bzw. «Heutige Kaufkraft». | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
 | FEA-56/AK6 | Ein Hinweis auf den nächsten Schritt mit Link in die Hilfe: Liegt die Erfolgsquote unter 95 %, verweist er auf die Optimierung. Sonst verweist er auf die Szenarien. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826), [ui.spec.js:2868](../e2e/ui.spec.js#L2868) | 15.11.2026 ok (Test grün) |
 | FEA-56/AK7 | Ergebnisse aus der Liste der Simulationen zeigen den Text ebenfalls. | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
-| FEA-56/AK8 | Der Text entsteht in der Oberfläche aus den vorhandenen Kennzahlen. Der Rechenkern und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | nicht geprüft: Golden unverändert geprüft? nicht eigens |
+| FEA-56/AK8 | Der Text entsteht in der Oberfläche aus den vorhandenen Kennzahlen. Der Rechenkern und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 vom Anwender geschlossen: nicht mehr belegbar (das öffentliche Repository hat nur einen Commit; die Golden-Tests laufen grün) |
 | FEA-56/AK9 | Die Hilfe (`@r-overview`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
 
 ### #73 FEA-57 Vermögen & Anlage: Quote von Aktien und Obligationen als Info neben den Beständen
@@ -985,7 +984,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-58/AK3 | Nachdem der Hinweis einmal erschienen ist, erscheint er auch beim Öffnen einer betroffenen Planung über «Öffnen» oder per Doppelklick nicht mehr. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959) | 15.11.2026 ok (Test grün) |
 | FEA-58/AK4 | Nicht betroffene Planungen (z. B. Strategie «Standard») zeigen keinen Hinweis und zählen nicht als «gezeigt»: Beispiel: erster Start mit einer Planung «Standard» ohne Hinweis, danach Öffnen einer betroffenen Planung zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2064](../e2e/ui.spec.js#L2064) | 15.11.2026 ok (Test grün) |
 | FEA-58/AK5 | Dass der Hinweis gezeigt wurde, merkt sich die App in den lokalen Einstellungen (nicht in der Planungsdatei); die Planungsdatei bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959), [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | 15.11.2026 ok (Test grün) |
-| FEA-58/AK6 | Die Rechenergebnisse ändern sich nicht (der Hinweis ist nur eine Information); Golden-Dateien unverändert. | ☑ | **gilt** | kein Test | nicht geprüft: nicht eigens geprüft |
+| FEA-58/AK6 | Die Rechenergebnisse ändern sich nicht (der Hinweis ist nur eine Information); Golden-Dateien unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 vom Anwender geschlossen: nicht mehr belegbar (das öffentliche Repository hat nur einen Commit; die Golden-Tests laufen grün) |
 | FEA-58/AK7 | Hilfe und Spezifikation (FEA-17) beschreiben das neue Verhalten. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nennt es (grep) |
 
 ### #75 ISS-15 Rauchtest: Prüfung der Jahreswerte erwartet veraltete Steuerspalten
@@ -1054,7 +1053,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | FEA-62/AK1 | Ein Push auf `main` startet genau einen Lauf der Rust-Tests mit Abdeckung. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Datei) |
-| FEA-62/AK2 | Liegt Engine oder App unter `tools/coverage-min`, schlägt der Lauf fehl (Beispiel: Schwelle vorübergehend 99). | ☐ | **gilt** | kein Test | nicht geprüft: Schwelle 99 nur auf GitHub erprobbar |
+| FEA-62/AK2 | Liegt Engine oder App unter `tools/coverage-min`, schlägt der Lauf fehl (Beispiel: Schwelle vorübergehend 99). | ☑ | **gilt** | kein Test | 15.11.2026 ok (Schwelle 99: alle drei Pakete Exit 1) |
 | FEA-62/AK3 | Doku (`docs/TESTS.md`, Kommentare in den Workflows) nennt nur noch den verbleibenden Workflow. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (Durchsicht) |
 
 ### #81 FEA-63 Invarianten- und Robustheitstests rechnen nachweislich genug Planungen
@@ -1114,7 +1113,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | FEA-68/AK1 | Neues Ziel verändert eine gültige Planung strukturiert und ruft `api::run` auf. | ☑ | **gilt** | kein Test (Fuzz-Ziel `fuzz/fuzz_targets/run_plan.rs`) | 15.11.2026 ok (clippy sauber) |
 | FEA-68/AK2 | Ein Startkorpus liegt im Repo; der nächtliche Lauf speichert den Korpus zwischen (Cache). | ☐ | **gilt** | kein Test | 15.11.2026 teilweise: Korpus und Cache in der Datei; GitHub nicht gelaufen |
-| FEA-68/AK3 | Ein Fund lässt den nächtlichen Lauf fehlschlagen und wird als Artefakt abgelegt (wie bisher). | ☐ | **gilt** | kein Test | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-68/AK3 | Ein Fund lässt den nächtlichen Lauf fehlschlagen und wird als Artefakt abgelegt (wie bisher). | ☐ | **gilt** | kein Test | 15.11.2026 teilweise: Konfiguration geprüft (Fuzz-Schritt schlägt fehl, Artefakt bei failure()); kein echter Fund erprobt |
 
 ### #87 FEA-69 Unit-Tests für die Hilfsfunktionen der Oberfläche
 
@@ -1132,7 +1131,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-70/AK1 | `cargo clippy --workspace --all-targets -- -D warnings` läuft bei jedem Push und lässt ihn bei Warnungen fehlschlagen. | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 teilweise: GitHub nicht gelaufen |
+| FEA-70/AK1 | `cargo clippy --workspace --all-targets -- -D warnings` läuft bei jedem Push und lässt ihn bei Warnungen fehlschlagen. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 ok (clippy-Job rot auf 7280069, grün auf 6bf8b21 und fb13872) |
 | FEA-70/AK2 | Bestehende Warnungen sind behoben oder begründet erlaubt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (clippy sauber) |
 
 ### #89 FEA-71 Oberflächentests nächtlich auf GitHub
@@ -1141,9 +1140,9 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | nicht geprüft: nur auf GitHub prüfbar |
-| FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | nicht geprüft: nur auf GitHub prüfbar |
-| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 15.11.2026 teilweise: Bericht liest die Datei; Artefaktabruf nicht erprobt |
+| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 teilweise: Job läuft (Lauf 43746959803), 3 Tests rot (Zeitüberschreitungen); Gegenmassnahme offen; Nachtlauf nicht beobachtet |
+| FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 ok: Artefakt e2e-failure mit Bericht und Traces vorhanden |
+| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 15.11.2026 teilweise: Bericht liest die Datei; auf GitHub erst nach grünem Lauf |
 
 ### #90 FEA-72 Pictet-Reihe aus App und Repository entfernen
 

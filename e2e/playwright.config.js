@@ -9,7 +9,7 @@ module.exports = defineConfig({
   timeout: 90_000,
   expect: { timeout: 30_000 },
   fullyParallel: true,
-  workers: 4,
+  workers: process.env.CI ? 2 : 4, // der GitHub-Runner hat 2 Kerne; mit 4 Workern fehlte dem Entwicklungsserver die Rechenzeit (Lauf 43746959803)
   reporter: [["list"], ["json", { outputFile: "results.json" }], ["html", { open: "never" }]],
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,

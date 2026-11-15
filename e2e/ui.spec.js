@@ -3135,6 +3135,25 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
+  test("FEA-38/AK3: neue Planung hat «AHV-Bezug» und «Bezug Pensionskasse» mit 65 Jahren", async ({ page }) => {
+    const errors = await open(page);
+    const ms = await page.evaluate(() => {
+      const p = blankPlan(JSON.parse(JSON.stringify(state)));
+      return p.milestones.filter(m => m.id === "ahv" || m.id === "retire").map(m => ({ id: m.id, name: m.name, kind: m.kind, years: m.years }));
+    });
+    expect(ms).toEqual(expect.arrayContaining([
+      { id: "retire", name: "Bezug Pensionskasse", kind: "age", years: 65 },
+      { id: "ahv", name: "AHV-Bezug", kind: "age", years: 65 },
+    ]));
+    expect(ms).toHaveLength(2);
+    // und sie erscheint so in der Oberfläche: «Neue Planung» zeigt beide Meilensteine mit Alter 65
+    await page.evaluate(() => { state = blankPlan(JSON.parse(JSON.stringify(state))); goto("milestones"); });
+    for (const id of ["retire", "ahv"]) {
+      await expect((await msRow(page, id)).locator("input[data-type=years]")).toHaveValue("65");
+    }
+    await noErrors(page, errors);
+  });
+
   test("FEA-24/AK7: Einstellungen ändern die Planung nicht; liegt sie ausserhalb der neuen Grenzen, meldet die Prüfung es", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.pillar3a[0].contribution = 7500; renderSection(); });
