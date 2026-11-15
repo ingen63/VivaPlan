@@ -239,7 +239,7 @@ fn dev_server_serves_ui_and_api() {
     let p = srv.1;
     let (h, b) = http(p, "GET", "/", "");
     assert!(h.contains("200") && h.contains("text/html") && b.contains("VivaPlan"));
-    for f in ["/app.js", "/charts.js", "/api.js"] {
+    for f in ["/app.js", "/charts.js", "/api.js", "/util.js"] {
         let (h, _) = http(p, "GET", f, "");
         assert!(h.contains("text/javascript"), "{f}: {h}");
     }

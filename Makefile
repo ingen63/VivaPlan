@@ -1,5 +1,7 @@
-.PHONY: test coverage coverage-diff mutants mutants-diff proptest fuzz quality report
+.PHONY: test ui-unit coverage coverage-diff mutants mutants-diff proptest fuzz quality report
 test:        ; cargo nextest run --workspace
+# FEA-69: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
+ui-unit:     ; node --test e2e/unit/*.test.js
 coverage:    ; cargo llvm-cov nextest --workspace --html --open
 # FEA-28: Abdeckung des geänderten Codes gegenüber BASE (Vorgabe origin/main); ein Hinweis, keine Sperre
 coverage-diff:

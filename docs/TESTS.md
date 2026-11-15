@@ -38,6 +38,7 @@ begründet (FEA-65).
 
 ```sh
 make test                                        # Schichten 1–6 (Rust), mit nextest
+make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test, ohne Browser)
 tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
 (cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 156 Tests)
 make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)
@@ -47,6 +48,11 @@ Die Rust-Tests laufen mit `make test` (`cargo nextest run --workspace`), nicht m
 jeden Test in einem eigenen Prozess. Unter `cargo test` laufen die Tests als Threads eines Prozesses und teilen sich den
 prozessweiten Fortschritt und Abbruch (`crates/engine/src/progress.rs`); ein Abbrechen-Test kann dann eine gleichzeitig
 laufende Berechnung eines anderen Tests abbrechen. Hook, CI und Abdeckung verwenden deshalb ebenfalls nextest.
+
+Die reinen Hilfsfunktionen der Oberfläche (Zahlenformate, Monate, Pfadzugriff, Steuersatz, Dauerschätzung) liegen in
+`crates/app/ui/util.js` und haben Unit-Tests in `e2e/unit/util.test.js` (`node --test`, unter 1 s, FEA-69). Der Job
+`ui-unit` in `test-quality.yml` führt sie bei jedem Push aus. Neue Funktionen ohne DOM und ohne Zustand der Planung
+gehören in `util.js`.
 
 ## Fuzzing
 

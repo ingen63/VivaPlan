@@ -67,6 +67,7 @@ $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.
 $B import-snb devkum.csv rendoblim.csv           # SNB-Daten aktualisieren, CHF-Reihen neu berechnen
 
 make test                                        # alle Tests (nextest, Grund in docs/TESTS.md)
+make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test)
 tools/ui-smoke.sh                                # Oberflächentest
 cargo llvm-cov --workspace --exclude vivaplan-app --summary-only   # Testabdeckung
 ```

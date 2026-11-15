@@ -62,6 +62,18 @@ jobs:
         working-directory: fuzz
         run: cargo fmt --all --check
 
+  # FEA-69: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js) mit node --test, ohne Browser.
+  ui-unit:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: node --test
+        run: node --test e2e/unit/*.test.js
+
   # Einziger Lauf der Rust-Tests mit Abdeckung je Push (FEA-62; vorher zusätzlich coverage.yml).
   # Harte Sperre: Liegt Engine oder App unter tools/coverage-min, schlägt der Schritt fehl.
   # Tests laufen mit nextest wie in make test und im pre-push-Hook: jeder Test in einem eigenen Prozess.

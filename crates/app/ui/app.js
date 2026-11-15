@@ -37,11 +37,6 @@ let lastSim = null;
 
 // ---------- Hilfsfunktionen ----------
 const $ = s => document.querySelector(s);
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const isYM = s => typeof s === "string" && /^\d{4}-\d{2}$/.test(s);
-function ym2i(s) { const m = /^(\d{4})-(\d{2})$/.exec(s || ""); return m ? (+m[1]) * 12 + (+m[2] - 1) : NaN; }
-function i2ym(i) { const y = Math.floor(i / 12), mo = i - y * 12 + 1; return `${y}-${String(mo).padStart(2, "0")}`; }
 /** Schliesst offene Info-Popups (auch bei Maus- oder Tastaturfokus); `true`, wenn eines offen war. */
 function closeInfoPops() {
   const shown = p => p.classList.contains("open") || p.matches(":hover, :focus-within");
@@ -60,32 +55,12 @@ function seriesTip(i) {
 }
 /** Simulationsstart als MM.JJJJ für Bezeichnungen («… per Simulationsstart (11.2026)»). */
 const startTxt = () => ymShow(i2ym(startM()));
-function ymShow(s) { return isYM(s) ? `${s.slice(5)}.${s.slice(0, 4)}` : "—"; }
-function parseShow(s) {
-  const m = /^\s*(\d{1,2})\s*[.\/]\s*(\d{4})\s*$/.exec(s || "");
-  if (!m || +m[1] < 1 || +m[1] > 12) return null;
-  return `${m[2]}-${String(+m[1]).padStart(2, "0")}`;
-}
-function parseNum(s) {
-  s = String(s).replace(/[’'\s]/g, "").replace(",", ".");
-  if (s === "" || s === "-" || s === ".") return null;
-  const v = Number(s); return Number.isFinite(v) ? v : null;
-}
-const fmtInt = v => Math.round(v).toLocaleString("de-CH");
 const cur = () => state.project.currency;
 const fmtMoney = v => `${fmtInt(v)} ${cur()}`;
-const baseName = p => String(p || "").split(/[\\/]/).pop();
-/** Anzeigename einer Zeitreihe: ohne Ordner, das interne Präfix «library:» und die Endung «.csv». */
-const seriesShort = p => baseName(String(p || "").replace(/^library:/, "")).replace(/\.csv$/i, "");
-function fmtMio(v) { return Math.abs(v) >= 1e6 ? `${(v / 1e6).toLocaleString("de-CH", { maximumFractionDigits: 2 })} Mio` : `${fmtInt(v / 1000)}k`; }
-const fmtPct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 3 })}`;
 
-function getP(path) { return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), state); }
-function setP(path, v) {
-  const ks = path.split("."); let o = state;
-  for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
-  o[ks[ks.length - 1]] = v;
-}
+// Pfadzugriff auf die Planung (getPath, setPath in util.js)
+function getP(path) { return getPath(state, path); }
+function setP(path, v) { setPath(state, path, v); }
 
 // ---------- Meilensteine & Zeit ----------
 function person(id) { return state.household.persons.find(p => p.id === id) || state.household.persons[0]; }
@@ -112,12 +87,6 @@ function seriesAt(ser, m) {
   for (const r of ser.rows) { const rm = refMonth(r.from); if (rm <= m && rm >= bm) { bm = rm; best = r; } }
   return best ? +best.value || 0 : 0;
 }
-function rateAt(table, x) {
-  const t = [...table].sort((a, b) => a[0] - b[0]);
-  if (!t.length || x <= t[0][0]) return t.length ? t[0][1] : 0;
-  for (let i = 1; i < t.length; i++) if (x < t[i][0]) { const [x0, r0] = t[i - 1], [x1, r1] = t[i]; return r0 + (r1 - r0) * (x - x0) / (x1 - x0); }
-  return t[t.length - 1][1];
-}
 const tax = (table, x) => x <= 0 ? 0 : x * rateAt(table, x) * (+state.taxes.multiplier || 1);
 
 // Hypothek: eine oder mehrere Tranchen, jede mit einer Abfolge von Perioden. Die erste Periode beginnt am
@@ -125,7 +94,6 @@ const tax = (table, x) => x <= 0 ? 0 : x * rateAt(table, x) * (+state.taxes.mult
 // fällig Ende März/Juni/September/Dezember; direkt (reduziert die Schuld) oder indirekt (Einzahlung in die Säule 3a).
 const saron = () => +state.returns.fixed.saron || 0;
 const perRate = d => d.type === "saron" ? Math.max(0, saron() + (+d.margin || 0)) : +d.rate || 0;
-function quarterEnds(a, b) { let n = 0; for (let m = a; m < b; m++) if (m % 3 === 2) n++; return n; }
 const newPeriod = (o = {}) => ({ type: "fixed", term: 5, rate: 0.015, margin: 0.009, amort: 0, amortMode: "direct", ...o });
 const newMortgage = () => ({ tranches: [ { name: "Tranche 1", amount: 400000, after: "renew", periods: [newPeriod({ term: 10 })] } ] });
 
@@ -730,9 +698,7 @@ const OPT_DEFAULT = { goal: "consumption", minConsumption: 90, maxRuin: 5, ruinA
 let optCfg = { ...OPT_DEFAULT };
 const OPT_ACTIONS = {};
 let lastOpt = null, optBusy = false, optError = null;
-const optNum = (v, d) => { const x = parseFloat(String(v).replace(",", ".")); return Number.isFinite(x) ? x : d; };
 // Die Einstellungen liegen in der Planung (`optimization`, Anteile als Dezimalzahl) und werden mit ihr gespeichert.
-const optRound = x => Math.round(x * 1e6) / 1e6;
 function optFromPlan() {
   const o = state.optimization; if (!o) return { ...OPT_DEFAULT };
   const d = OPT_DEFAULT;
@@ -790,14 +756,6 @@ const jobCancel = async () => {
 };
 const bench = { key: "", us: null, gen: 0, fixedPaths: null, cores: 0, busy: false, error: null };
 const benchKey = () => JSON.stringify({ ...state, optimization: undefined, scenarios: undefined });
-function fmtShort(sec) {
-  if (sec < 1) return "unter 1 s";
-  if (sec < 90) return `${Math.round(sec)} s`;
-  if (sec < 5400) return `${Math.round(sec / 60)} min`;
-  return `${(sec / 3600).toLocaleString("de-CH", { maximumFractionDigits: 1 })} h`;
-}
-/** «ca. 12 s (7 s bis 20 s)»: grobe Schätzung mit Spanne, weil die Suchschritte der Optimierung vom Fall abhängen. */
-const fmtEstimate = (sec, spread = [0.6, 1.6]) => sec < 1 ? "<b>unter 1 Sekunde</b>" : `ca. <b>${fmtShort(sec)}</b> <span class="computed">(meist ${fmtShort(sec * spread[0])} bis ${fmtShort(sec * spread[1])})</span>`;
 /** Die Pfade der Suche werden einmal erzeugt und dann je Kandidat nur gerechnet; die Prüfpfade entstehen bei jeder Auswertung neu. */
 /** Auswertungen je Strategie; mit weniger variierten Parametern sind es weniger Suchschritte. */
 function optEvals(k, c) {
@@ -806,11 +764,7 @@ function optEvals(k, c) {
   const varied = s.params.filter(d => !(c.ranges?.[k]?.[d.key]?.fixed ?? d.fixed)).length, usual = Math.max(1, s.params.filter(d => !d.fixed).length);
   return varied === 0 ? 1 : c.samples + 2 + search * varied / usual;
 }
-function optSeconds(c) {
-  const fit = bench.fixedPaths ?? c.paths, check = bench.fixedPaths ?? c.checkPaths, n = c.strategies.length;
-  const evals = c.strategies.reduce((a, k) => a + optEvals(k, c), 0), sim = Math.max(0.1, bench.us - bench.gen);
-  return (evals * fit * sim + fit * bench.gen + (n + 1) * check * bench.us) / 1e6;
-}
+function optSeconds(c) { return optSecondsFor(bench, c, c.strategies.reduce((a, k) => a + optEvals(k, c), 0)); }
 /** Geschätzte Rechenzeit, ab der in der Karte «Umfang» ein Warnsymbol erscheint (die Rückfrage vor dem Start hat ihre eigene Grenze). */
 const SLOW_RUN_SECONDS = 90;
 function scenSeconds() {
@@ -1159,9 +1113,7 @@ R.scenarios = () => `<h2>Szenarien & Simulation</h2><p class="lead">Parameter, d
 
 // ---------- Berechnete Anzeigen ----------
 function sweepCount(s) {
-  const t = SWEEP_PARAMS.find(p => p.id === s.param)?.type;
-  if (t === "month") { const a = ym2i(s.from), b = ym2i(s.to); return a <= b && s.step > 0 ? Math.floor((b - a) / s.step) + 1 : 0; }
-  return s.to >= s.from && s.step > 0 ? Math.floor((s.to - s.from) / s.step + 1e-9) + 1 : 0;
+  return sweepSteps(s.from, s.to, s.step, SWEEP_PARAMS.find(p => p.id === s.param)?.type === "month");
 }
 function rollingCount() {
   const i = seriesInfo; if (!i || i.error) return 0;
