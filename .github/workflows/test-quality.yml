@@ -150,6 +150,17 @@ jobs:
         if: ${{ !cancelled() && env.DIFF_BASE != '' }}
         continue-on-error: true
         run: python3 tools/coverage_diff.py lcov.info "$DIFF_BASE" >> "$GITHUB_STEP_SUMMARY"
+      # FEA-71: e2e läuft nur nächtlich (Job e2e); die Übersichtsseite zeigt das jüngste vorhandene Ergebnis.
+      - name: Oberflächentests der letzten Nacht holen
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow test-quality.yml --event schedule --limit 10 \
+                        --json databaseId -q '.[].databaseId'); do
+            gh run download "$id" -R "$GITHUB_REPOSITORY" -n e2e-results -D e2e && break
+          done
       - name: Übersichtsseite Testqualität
         if: ${{ !cancelled() }}
         continue-on-error: true
@@ -222,6 +233,40 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with: { name: mutants-diff, path: local/mutants.out/ }
+
+  # FEA-71: Oberflächentests (e2e/, Playwright) nächtlich und von Hand; nur bei neuem Commit wie die übrigen nächtlichen Jobs.
+  # Dauer 20 bis 30 Minuten auf dem 2-Kern-Runner. Der Entwicklungsserver (vivaplan ui-dev) startet die Playwright-Konfiguration selbst.
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04      # hat Google Chrome (die Konfiguration nutzt channel: chrome)
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Abhängigkeiten der Oberflächentests
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install chrome
+      - name: Playwright
+        working-directory: e2e
+        run: npx playwright test
+      # Ergebnis immer ablegen: Die Übersichtsseite (tests-coverage) liest e2e/results.json des letzten Laufs.
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: e2e-results, path: e2e/results.json, retention-days: 30 }
+      # Bei Fehlschlag Bericht und Traces (trace: retain-on-failure) zum Nachsehen.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-failure
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
 
   fuzz:
     needs: changes

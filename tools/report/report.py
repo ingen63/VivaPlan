@@ -73,12 +73,20 @@ def read_junit():
     return r
 
 
+def run_time(iso):
+    """Beginn eines Playwright-Laufs (ISO 8601, UTC) als lokale Zeit; ungültig oder fehlend: None."""
+    try:
+        return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone().strftime("%d.%m.%Y %H:%M")
+    except (AttributeError, ValueError):
+        return None
+
+
 def read_playwright():
     f = first("e2e/results.json")
     if not f:
         return None
     s = json.loads(f.read_text()).get("stats", {})
-    return {"when": when(f), "ok": s.get("expected", 0), "failed": s.get("unexpected", 0), "flaky": s.get("flaky", 0), "skipped": s.get("skipped", 0)}
+    return {"when": run_time(s.get("startTime")) or when(f), "ok": s.get("expected", 0), "failed": s.get("unexpected", 0), "flaky": s.get("flaky", 0), "skipped": s.get("skipped", 0)}
 
 
 # ---------- Angemessenheit ----------

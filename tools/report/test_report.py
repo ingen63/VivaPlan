@@ -11,6 +11,12 @@ import coverage_diff  # noqa: E402
 
 
 class Status(unittest.TestCase):
+    def test_playwright_run_time_comes_from_the_run_not_from_the_file(self):
+        # FEA-71/AK3: results.json wird in der Pipeline heruntergeladen, die Dateizeit wäre die des Downloads
+        self.assertRegex(report.run_time("2026-11-14T22:01:05.375Z"), r"^\d\d\.\d\d\.\d{4} \d\d:\d\d$")
+        self.assertIsNone(report.run_time(None))
+        self.assertIsNone(report.run_time("kein Datum"))
+
     def test_hygiene_follows_the_stated_rule(self):
         self.assertEqual(report.status_hygiene(None), report.NODATA)
         self.assertEqual(report.status_hygiene({"failed": [], "flaky": []}), report.OK)
