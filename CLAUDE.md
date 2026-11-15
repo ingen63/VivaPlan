@@ -26,6 +26,11 @@ Gibt es zur Aufgabe kein Issue, zuerst fragen oder eines vorschlagen. Nichts ums
    Teilschritte bekommen das Label nicht. Wird das Issue wieder geöffnet, weil etwas fehlt, kommt das Label weg, bis die
    Nacharbeit committet ist.
 6. **Abnahme** macht der Mensch. Claude hakt die Kriterien im Issue **nicht** selbst ab und schliesst es nicht.
+   **Ausnahme: Einzelprüfung auf Anweisung** («Prüfe FEA-xx», Grundlage `docs/ABNAHME.md`). Dann prüft Claude die Kriterien
+   (vorhandene Tests laufen lassen, sonst von Hand) und hält das Ergebnis fest: Kommentar im Issue mit dem Ergebnis je
+   Kriterium, erfüllte Kriterien abhaken, das Issue schliessen, wenn alle erfüllt sind (sonst offen lassen und den Fehler
+   nennen), und in `docs/ABNAHME.md` die Spalten «Test» und «Geprüft» nachführen. Die Änderung an `docs/ABNAHME.md` wird
+   nur auf ausdrückliches Wort committet.
 7. **Push und Version** (Tag) nur auf ausdrückliches Wort.
 
 Commit und Push nur, wenn es ausdrücklich verlangt wird. Nie `--force`, nie die Git-Historie umschreiben. Die Hooks (`rust-test-agent`) und die GitHub-Workflows sind die Kontrolle anstelle eines Pull Requests.

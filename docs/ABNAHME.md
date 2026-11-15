@@ -1,6 +1,6 @@
 # Abnahmeliste
 
-Stand 14.11.2026 (FEA-77, #97). Die Liste nennt die Abnahmekriterien aller umgesetzten Issues und schätzt ein, ob sie zum
+Stand 14.11.2026 (FEA-77, #97), nachgeführt am 15.11.2026 mit der Sammelprüfung aller FEA-Issues (siehe Spalte «Geprüft»). Die Liste nennt die Abnahmekriterien aller umgesetzten Issues und schätzt ein, ob sie zum
 heutigen Funktionsstand noch passen. Sie ist die Grundlage für Einzelprüfungen: Claude prüft auf Anweisung ein Issue oder
 ein Kriterium und trägt das Ergebnis in der Spalte «Geprüft» ein.
 
@@ -27,15 +27,20 @@ Vermerk «(Kommentar)» in der Liste. Änderungen an Kriterien per Kommentar sin
 - **Test:** Tests, die das Kriterium mit seiner Kennung nennen (`FEA-xx/AKn` im Namen oder Kommentar, in `e2e/` auch als
   `AKn` innerhalb eines Blocks mit der Issue-ID). Tests, die nur das Issue nennen, stehen beim Issue. Die Zeilennummern
   gelten für den Stand dieser Liste.
-- **Geprüft:** Datum und Ergebnis der letzten Einzelprüfung (`ok`, `Fehler: …`, `nicht prüfbar: …`), mit Art der Prüfung
-  (Test, Oberfläche, Durchsicht).
+- **Geprüft:** Datum und Ergebnis der letzten Prüfung: `ok` (Test oder Durchsicht belegt das Kriterium), `teilweise: …`
+  (nur ein Teil belegt), `überholt, nicht geprüft`, `Fehler: …` oder `nicht geprüft: …` (kein Test, keine Durchsicht möglich;
+  braucht eine Prüfung von Hand oder einen neuen Test). Die Sammelprüfung vom 15.11.2026 (FEA-01 bis FEA-76) stützt sich auf
+  den grünen Lauf aller Testsuiten (612 Rust, 156 e2e, 14 UI-Unit, 9 Berichtswerkzeuge) und auf die Durchsicht von
+  Dateien und Hilfetexten; die Desktop-App und GitHub-Workflows wurden dabei nicht gestartet.
 
 ## Vorgehen bei der Einzelprüfung
 
 1. Anweisung zum Beispiel «Prüfe FEA-41» oder «Prüfe FEA-41/AK4».
 2. Claude prüft das Kriterium am heutigen Stand: vorhandenen Test laufen lassen, sonst in der Oberfläche oder im Code
    nachsehen. Bei «überholt» wird nur geprüft, ob das neue Verhalten gilt.
-3. Claude trägt das Ergebnis in der Spalte «Geprüft» ein. Im Issue hakt Claude nichts ab und ändert keine Kriterien.
+3. Claude trägt das Ergebnis in den Spalten «Test» und «Geprüft» ein, schreibt einen Kommentar ins Issue, hakt erfüllte
+   Kriterien dort ab und schliesst das Issue, wenn alle erfüllt sind (`CLAUDE.md`, Ablauf Schritt 6). Kriterien werden
+   nicht geändert.
 4. Ein Fehler wird als neues Issue vorgeschlagen (Label `bug`, `gefunden:abnahme`). Ein überholtes Kriterium bekommt
    auf Wunsch einen Kommentar im Issue.
 
@@ -43,25 +48,29 @@ Vermerk «(Kommentar)» in der Liste. Änderungen an Kriterien per Kommentar sin
 
 | | Anzahl |
 |---|---|
-| Issues in der Liste | 76 (davon 5 ohne Kriterien) |
-| Kriterien | 452 |
-| gilt | 433 |
-| überholt | 16 |
-| unklar | 3 |
-| im Issue nicht abgehakt | 19 |
-| ohne Test mit Kennung | 302 |
+| Issues in der Liste | 87 (davon 5 ohne Kriterien) |
+| Kriterien | 494 |
+| gilt | 464 |
+| überholt | 15 |
+| unklar | 1 |
+| im Issue nicht abgehakt | 13 |
+| ohne Test mit Kennung | 176 |
+| geprüft am 15.11.2026: ok | 342 |
+| geprüft: teilweise | 39 |
+| geprüft: nicht geprüft | 30 |
+| geprüft: überholt, nicht geprüft | 11 |
 
 ### Überholt oder unklar
 
 | Kennung | Einschätzung |
 |---|---|
 | FEA-02/AK3 | **überholt**: durch FEA-54 und FEA-45: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `Neu.vplan`. |
-| FEA-11/AK2 | **unklar**: Seit FEA-53 wählt man eine Anlagestrategie statt einer Zeitreihendatei; zu klären, was die Spalte «Zeitreihe» heute zeigen soll. |
+| FEA-11/AK2 | **gilt** in neuer Fassung: Die Spalte «Zeitreihe» zeigt den Namen der Anlagestrategie bzw. der Reihe (Kommentar in #12 vom 15.11.2026). |
 | FEA-12/AK8 | **überholt**: durch FEA-24: Die Schwelle ist keine Einstellung geworden und gilt fest mit 5 % (Kommentar in FEA-24). |
 | FEA-17/AK3 | **überholt**: durch FEA-58: Der Hinweis erscheint nur einmal, beim ersten Laden einer betroffenen Planung. |
 | FEA-18/AK1 | **überholt**: durch FEA-53: Die Karte «Zeitreihe» gibt es nicht mehr; die Erklärung steht im Info-Popup der Anlagestrategie. |
 | FEA-18/AK4 | **überholt**: durch den Kommentar im Issue (Info in der Tabellenzeile) und danach FEA-53 (keine Tabelle der Reihen mehr). |
-| FEA-18/AK5 | **unklar**: Seit FEA-53 gibt es keine eigenen Dateien und keinen Ordnerpfad mehr; der Test prüft, dass der Text kopierbar ist. |
+| FEA-18/AK5 | **überholt**: durch FEA-53: Seit FEA-53 gibt es keine eigenen Dateien und keinen Ordnerpfad mehr (Kommentar in #19 vom 15.11.2026). |
 | FEA-18/AK6 | **überholt**: durch den Kommentar im Issue (Texte gekürzt) und FEA-53 (Texte zur Anlagestrategie). |
 | FEA-18/K1 | **überholt**: durch FEA-53: keine Tabelle der Reihen mehr. |
 | FEA-18/K2 | **überholt**: durch FEA-53: keine Tabelle der Reihen mehr; das Popup gibt es je Anlagestrategie. |
@@ -99,11 +108,11 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-01/AK1 | Mit `examples/Test 1.rplan` hat jedes Kauf-, Verkaufs- und Notverkaufsereignis eine Beschriftung. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | kein Test | – |
-| FEA-01/AK2 | Keine zwei Beschriftungen überdecken sich. | ☑ | **gilt** | kein Test | – |
-| FEA-01/AK3 | Ereignisse und Meilensteine sind ohne Farbunterscheidung auseinanderzuhalten. | ☑ | **gilt** | kein Test | – |
-| FEA-01/AK4 | Bei mehr als 15 Ereignissen erscheinen nur Symbole, Text beim Hover. | ☑ | **gilt** | kein Test | – |
-| FEA-01/AK5 | Ohne Ergebnis keine Ereignisse. | ☑ | **gilt** | kein Test | – |
+| FEA-01/AK1 | Mit `examples/Test 1.rplan` hat jedes Kauf-, Verkaufs- und Notverkaufsereignis eine Beschriftung. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
+| FEA-01/AK2 | Keine zwei Beschriftungen überdecken sich. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
+| FEA-01/AK3 | Ereignisse und Meilensteine sind ohne Farbunterscheidung auseinanderzuhalten. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
+| FEA-01/AK4 | Bei mehr als 15 Ereignissen erscheinen nur Symbole, Text beim Hover. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
+| FEA-01/AK5 | Ohne Ergebnis keine Ereignisse. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
 
 ### #4 FEA-02 Beim Start die letzte Planung öffnen
 
@@ -111,14 +120,14 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-02/AK1 | Planung öffnen, App beenden, neu starten: dieselbe Planung ist geladen, der Dateiname steht im Kopf. | ☑ | **gilt** | kein Test | – |
-| FEA-02/AK2 | Speichern unter neuem Namen und Neustart: die neue Datei wird geöffnet. | ☑ | **gilt** | kein Test | – |
-| FEA-02/AK3 | Erststart ohne Merkung: Beispielplanung, kein Hinweis. | ☑ | **überholt**: durch FEA-54 und FEA-45: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `Neu.vplan`. | kein Test | – |
-| FEA-02/AK4 | Datei zwischen den Starts gelöscht: Beispielplanung und Hinweis «Zuletzt geöffnete Datei nicht gefunden». | ☑ | **gilt** | kein Test | – |
-| FEA-02/AK5 | «Neue Planung» ohne Speichern, dann Neustart: die zuletzt gespeicherte Planung wird geöffnet. | ☑ | **gilt** | kein Test | – |
-| FEA-02/AK6 | Beenden mit ungespeicherten Änderungen: Dialog mit Speichern, Verwerfen, Abbrechen; Abbrechen lässt die App offen. | ☑ | **gilt** | kein Test | – |
-| FEA-02/AK7 | Die Merkung enthält nur den Dateipfad und bleibt lokal. | ☑ | **gilt** | kein Test | – |
-| FEA-02/AK8 | Die Beispielplanung enthält keine persönlichen Daten und ist ohne Fehler simulierbar. | ☑ | **gilt**: Beispielplanung heute `crates/engine/assets/beispiel.vplan`. | kein Test | – |
+| FEA-02/AK1 | Planung öffnen, App beenden, neu starten: dieselbe Planung ist geladen, der Dateiname steht im Kopf. | ☑ | **gilt** | [app/main.rs:1964](../crates/app/src/main.rs#L1964), [app/main.rs:2005](../crates/app/src/main.rs#L2005), [ui.spec.js:2038](../e2e/ui.spec.js#L2038) | 15.11.2026 ok (Tests grün; echter Neustart vom Anwender geprüft) |
+| FEA-02/AK2 | Speichern unter neuem Namen und Neustart: die neue Datei wird geöffnet. | ☑ | **gilt** | [app/main.rs:2020](../crates/app/src/main.rs#L2020), [app/main.rs:2005](../crates/app/src/main.rs#L2005) | 15.11.2026 ok (Tests grün; echter Neustart vom Anwender geprüft) |
+| FEA-02/AK3 | Erststart ohne Merkung: Beispielplanung, kein Hinweis. | ☑ | **überholt**: durch FEA-54 und FEA-45: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `Neu.vplan`. | [app/main.rs:1919](../crates/app/src/main.rs#L1919), [ui.spec.js:2038](../e2e/ui.spec.js#L2038) | 15.11.2026 ok (Tests grün); ohne Hinweis, dazu Willkommensdialog (FEA-54) |
+| FEA-02/AK4 | Datei zwischen den Starts gelöscht: Beispielplanung und Hinweis «Zuletzt geöffnete Datei nicht gefunden». | ☑ | **gilt** | [app/main.rs:1977](../crates/app/src/main.rs#L1977), [ui.spec.js:2081](../e2e/ui.spec.js#L2081) | 15.11.2026 ok (Tests grün) |
+| FEA-02/AK5 | «Neue Planung» ohne Speichern, dann Neustart: die zuletzt gespeicherte Planung wird geöffnet. | ☑ | **gilt** | kein Test (Code: «Neue Planung» ruft `remember_plan` nicht auf) | 15.11.2026 ok (Code gelesen) |
+| FEA-02/AK6 | Beenden mit ungespeicherten Änderungen: Dialog mit Speichern, Verwerfen, Abbrechen; Abbrechen lässt die App offen. | ☑ | **gilt** | [app/main.rs:2042](../crates/app/src/main.rs#L2042), [ui.spec.js:2089](../e2e/ui.spec.js#L2089) | 15.11.2026 ok (Tests grün) |
+| FEA-02/AK7 | Die Merkung enthält nur den Dateipfad und bleibt lokal. | ☑ | **gilt** | [app/main.rs:2005](../crates/app/src/main.rs#L2005) | 15.11.2026 ok (Code gelesen: `lastPlan` ist der Pfad) |
+| FEA-02/AK8 | Die Beispielplanung enthält keine persönlichen Daten und ist ohne Fehler simulierbar. | ☑ | **gilt**: Beispielplanung heute `crates/engine/assets/beispiel.vplan`. | [app/main.rs:1094](../crates/app/src/main.rs#L1094), [app/main.rs:1486](../crates/app/src/main.rs#L1486), [app/main.rs:2061](../crates/app/src/main.rs#L2061) | 15.11.2026 ok (Tests grün) |
 
 ### #5 FEA-03 Ergebnisse: Reiter «Parameter»
 
@@ -126,11 +135,11 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-03/AK1 | Nach einem Lauf zeigt der Reiter alle Werte des Laufs; danach im Editor eine Zahl ändern: Der Reiter des bereits berechneten Ergebnisses bleibt unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-03/AK2 | Ein gespeichertes Ergebnis zeigt nach dem Öffnen dieselbe Zusammenfassung wie beim Berechnen. | ☑ | **gilt** | kein Test | – |
-| FEA-03/AK3 | Nichts im Reiter ist editierbar. | ☑ | **gilt** | kein Test | – |
-| FEA-03/AK4 | Test: je einen Parameter pro Editorabschnitt ändern, neu rechnen: Die beiden Zusammenfassungen unterscheiden sich an dieser Stelle. | ☑ | **gilt** | kein Test | – |
-| FEA-03/AK5 | Ein altes Ergebnis ohne Parameter zeigt «Nicht verfügbar» und keinen Fehler. | ☑ | **gilt** | kein Test | – |
+| FEA-03/AK1 | Nach einem Lauf zeigt der Reiter alle Werte des Laufs; danach im Editor eine Zahl ändern: Der Reiter des bereits berechneten Ergebnisses bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) (prüft mehrere Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e grün) |
+| FEA-03/AK2 | Ein gespeichertes Ergebnis zeigt nach dem Öffnen dieselbe Zusammenfassung wie beim Berechnen. | ☑ | **gilt** | [ui.spec.js:1286](../e2e/ui.spec.js#L1286) (prüft mehrere Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e grün; Gleichheit nicht Wert für Wert getestet, Code: gespeichert wird die Planung des Laufs) |
+| FEA-03/AK3 | Nichts im Reiter ist editierbar. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) | 15.11.2026 ok (e2e grün) |
+| FEA-03/AK4 | Test: je einen Parameter pro Editorabschnitt ändern, neu rechnen: Die beiden Zusammenfassungen unterscheiden sich an dieser Stelle. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) | 15.11.2026 ok (e2e grün) |
+| FEA-03/AK5 | Ein altes Ergebnis ohne Parameter zeigt «Nicht verfügbar» und keinen Fehler. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) | 15.11.2026 ok (e2e grün) |
 
 ### #6 FEA-05 Guardrails und 3-Topf gemeinsam anwenden
 
@@ -138,18 +147,18 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-05/AK1 | Auf der Karte «3-Topf» kann «Ausgaben ab Pensionierung» zwischen «wie geplant» und «mit Guardrails steuern» gewählt werden; bei «mit Guardrails» erscheinen die Karten «Guardrails» und «Grenzen der Lebenshaltung». | ☑ | **gilt** | [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | – |
-| FEA-05/AK2 | Bei «mit Guardrails» bestimmen Startrate, Teuerung, Leitplanken und Grenzen die Lebenshaltung genau wie bei der Strategie «Guardrails»; bei gleichen Eingaben und gleichem Vermögensverlauf ist die Entnahme in beiden identisch. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:99](../crates/engine/tests/buckets_guardrails.rs#L99) | – |
-| FEA-05/AK3 | Die Guardrails (rein und kombiniert) starten mit der Pensionierung der ersten Person; in der Kombination gemeinsam mit den Töpfen. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:121](../crates/engine/tests/buckets_guardrails.rs#L121) | – |
-| FEA-05/AK4 | Ein für einen Kauf reservierter Verkaufserlös zählt für die Guardrails-Rate (rein und kombiniert) nicht zum Vermögen. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:156](../crates/engine/tests/buckets_guardrails.rs#L156) | – |
-| FEA-05/AK5 | Nach einem Zufluss rechnen die Guardrails (rein und kombiniert) die Entnahme neu; in der Kombination geht das Geld in Topf 3, und die Topfziele bleiben bis zum nächsten Januar. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:187](../crates/engine/tests/buckets_guardrails.rs#L187) | – |
-| FEA-05/AK6 | Netto-Bedarf und Topfziele werden aus der Guardrails-Lebenshaltung berechnet; die Tabelle «3-Topf-Strategie» nennt diese Quelle. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:228](../crates/engine/tests/buckets_guardrails.rs#L228) | – |
-| FEA-05/AK7 | Nach einer Kürzung durch die Leitplanke sinken die Ziele von Topf 1 und 2 in der nächsten Januar-Auffüllung entsprechend. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:276](../crates/engine/tests/buckets_guardrails.rs#L276) | – |
-| FEA-05/AK8 | Die Topf-Regeln (Januar-Auffüllung, A, B, C, Renditekriterium, Notverkauf, Phase 8) gelten unverändert. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:292](../crates/engine/tests/buckets_guardrails.rs#L292) | – |
-| FEA-05/AK9 | Planungen ohne das neue Feld rechnen unverändert, ausser mit der Strategie «Guardrails» bei zwei Personen mit verschiedenem Pensionierungsdatum oder mit reserviertem Verkaufserlös (Golden-Dateien unverändert, keine verwendet Guardrails). | ☑ | **gilt** | [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | – |
-| FEA-05/AK10 | Der Strategiename «3-Topf + Guardrails» erscheint in Ergebnissen, gespeicherten Ergebnissen, Vergleich und Tooltip (FEA-10). | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:347](../crates/engine/tests/buckets_guardrails.rs#L347), [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | – |
-| FEA-05/AK11 | Die Optimierung bietet «3-Topf + Guardrails» als eigene Strategie an (standardmässig nicht angewählt; untere Leitplanke und Anpassung standardmässig fix). | ☑ | **gilt** | kein Test | – |
-| FEA-05/AK12 | Hilfe, `BESCHREIBUNG.md` und Spezifikation beschreiben die Kombination. | ☑ | **gilt** | kein Test | – |
+| FEA-05/AK1 | Auf der Karte «3-Topf» kann «Ausgaben ab Pensionierung» zwischen «wie geplant» und «mit Guardrails steuern» gewählt werden; bei «mit Guardrails» erscheinen die Karten «Guardrails» und «Grenzen der Lebenshaltung». | ☑ | **gilt** | [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK2 | Bei «mit Guardrails» bestimmen Startrate, Teuerung, Leitplanken und Grenzen die Lebenshaltung genau wie bei der Strategie «Guardrails»; bei gleichen Eingaben und gleichem Vermögensverlauf ist die Entnahme in beiden identisch. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:99](../crates/engine/tests/buckets_guardrails.rs#L99) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK3 | Die Guardrails (rein und kombiniert) starten mit der Pensionierung der ersten Person; in der Kombination gemeinsam mit den Töpfen. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:121](../crates/engine/tests/buckets_guardrails.rs#L121) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK4 | Ein für einen Kauf reservierter Verkaufserlös zählt für die Guardrails-Rate (rein und kombiniert) nicht zum Vermögen. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:156](../crates/engine/tests/buckets_guardrails.rs#L156) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK5 | Nach einem Zufluss rechnen die Guardrails (rein und kombiniert) die Entnahme neu; in der Kombination geht das Geld in Topf 3, und die Topfziele bleiben bis zum nächsten Januar. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:187](../crates/engine/tests/buckets_guardrails.rs#L187) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK6 | Netto-Bedarf und Topfziele werden aus der Guardrails-Lebenshaltung berechnet; die Tabelle «3-Topf-Strategie» nennt diese Quelle. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:228](../crates/engine/tests/buckets_guardrails.rs#L228) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK7 | Nach einer Kürzung durch die Leitplanke sinken die Ziele von Topf 1 und 2 in der nächsten Januar-Auffüllung entsprechend. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:276](../crates/engine/tests/buckets_guardrails.rs#L276) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK8 | Die Topf-Regeln (Januar-Auffüllung, A, B, C, Renditekriterium, Notverkauf, Phase 8) gelten unverändert. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:292](../crates/engine/tests/buckets_guardrails.rs#L292) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK9 | Planungen ohne das neue Feld rechnen unverändert, ausser mit der Strategie «Guardrails» bei zwei Personen mit verschiedenem Pensionierungsdatum oder mit reserviertem Verkaufserlös (Golden-Dateien unverändert, keine verwendet Guardrails). | ☑ | **gilt** | [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK10 | Der Strategiename «3-Topf + Guardrails» erscheint in Ergebnissen, gespeicherten Ergebnissen, Vergleich und Tooltip (FEA-10). | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:347](../crates/engine/tests/buckets_guardrails.rs#L347), [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | 15.11.2026 ok (Test grün) |
+| FEA-05/AK11 | Die Optimierung bietet «3-Topf + Guardrails» als eigene Strategie an (standardmässig nicht angewählt; untere Leitplanke und Anpassung standardmässig fix). | ☑ | **gilt** | [optimize_ranges.rs:177](../crates/engine/tests/optimize_ranges.rs#L177) | 15.11.2026 ok (Test: eigene Strategie, Leitplanke und Anpassung fix; nicht angewählt: ui.spec.js «FEA-05») |
+| FEA-05/AK12 | Hilfe, `BESCHREIBUNG.md` und Spezifikation beschreiben die Kombination. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `BESCHREIBUNG.md:100`, `hilfe/30-entnahme.md:104`; die Spezifikation entfällt mit GEN-03) |
 
 ### #7 FEA-06 Jahreswerte: Entnahmerate als Spalte
 
@@ -157,11 +166,11 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-06/AK1 | Entnahme 40'000 pro Jahr bei Total 1'000'000 und Liquid 500'000 am Jahresanfang ergibt 4.0 % bzw. 8.0 %. | ☑ | **gilt** | kein Test | – |
-| FEA-06/AK2 | Im ersten Jahr einer im November startenden Simulation: Entnahme der zwei Monate mal 6, geteilt durch das Startvermögen. | ☑ | **gilt** | kein Test | – |
-| FEA-06/AK3 | Jahre mit Einkommen über den Ausgaben zeigen leere Zellen. | ☑ | **gilt** | kein Test | – |
-| FEA-06/AK4 | Wechsel nominal/real ändert die Werte nicht. | ☑ | **gilt** | kein Test | – |
-| FEA-06/AK5 | Jede Zeile stimmt mit der manuellen Rechnung aus den Spalten «Entnahme», «Total» und «Liquid» (Test mit `examples/Test 1.rplan`). | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | kein Test | – |
+| FEA-06/AK1 | Entnahme 40'000 pro Jahr bei Total 1'000'000 und Liquid 500'000 am Jahresanfang ergibt 4.0 % bzw. 8.0 %. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 teilweise: Total-Spalte gerechnet; Liquid-Spalte nicht im Test |
+| FEA-06/AK2 | Im ersten Jahr einer im November startenden Simulation: Entnahme der zwei Monate mal 6, geteilt durch das Startvermögen. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (erstes Jahr mit Startvermögen als Basis) |
+| FEA-06/AK3 | Jahre mit Einkommen über den Ausgaben zeigen leere Zellen. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (leere Zellen bei Entnahme 0) |
+| FEA-06/AK4 | Wechsel nominal/real ändert die Werte nicht. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (nominal gleich real in der Rate) |
+| FEA-06/AK5 | Jede Zeile stimmt mit der manuellen Rechnung aus den Spalten «Entnahme», «Total» und «Liquid» (Test mit `examples/Test 1.rplan`). | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (Zeilen stimmen mit der Rechnung aus Entnahme und Vermögen) |
 
 ### #8 FEA-07 Jahreswerte: Steuerspalten einklappbar
 
@@ -169,13 +178,13 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-07/AK1 | Beim ersten Öffnen (ohne gespeicherte Wahl) zeigt die Jahrestabelle keine Spalte mit «Steuer». | ☑ | **gilt** | kein Test | – |
-| FEA-07/AK2 | «Steuern anzeigen» blendet die fünf Spalten mit denselben Werten wie bisher ein, ein zweiter Klick blendet sie aus. | ☑ | **gilt** | kein Test | – |
-| FEA-07/AK3 | Nach Neustart der App gilt die zuletzt gewählte Einstellung. | ☑ | **gilt** | kein Test | – |
-| FEA-07/AK4 | Kennzahl «Steuern total» bleibt sichtbar. | ☑ | **gilt** | kein Test | – |
-| FEA-07/AK5 | Die Berechnung und ein allfälliger Export sind unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-07/AK6 | Das Umschalten verschiebt keine anderen Spalten. | ☑ | **gilt** | kein Test | – |
-| FEA-07/AK7 | Steht die gespeicherte Einstellung nicht zur Verfügung (zum Beispiel Datenverzeichnis nicht lesbar), gilt eingeklappt. | ☑ | **gilt** | kein Test | – |
+| FEA-07/AK1 | Beim ersten Öffnen (ohne gespeicherte Wahl) zeigt die Jahrestabelle keine Spalte mit «Steuer». | ☑ | **gilt** | [ui.spec.js:837](../e2e/ui.spec.js#L837) | 15.11.2026 ok |
+| FEA-07/AK2 | «Steuern anzeigen» blendet die fünf Spalten mit denselben Werten wie bisher ein, ein zweiter Klick blendet sie aus. | ☑ | **gilt** | [ui.spec.js:837](../e2e/ui.spec.js#L837) | 15.11.2026 ok (fünf Spalten, zweiter Klick blendet aus) |
+| FEA-07/AK3 | Nach Neustart der App gilt die zuletzt gewählte Einstellung. | ☑ | **gilt** | [ui.spec.js:1221](../e2e/ui.spec.js#L1221) | 15.11.2026 ok (Wahl bleibt nach dem Neuladen) |
+| FEA-07/AK4 | Kennzahl «Steuern total» bleibt sichtbar. | ☑ | **gilt** | [ui.spec.js:2958](../e2e/ui.spec.js#L2958) | 15.11.2026 ok (Test) |
+| FEA-07/AK5 | Die Berechnung und ein allfälliger Export sind unverändert. | ☑ | **gilt** | [ui.spec.js:2958](../e2e/ui.spec.js#L2958) | 15.11.2026 ok (Test) |
+| FEA-07/AK6 | Das Umschalten verschiebt keine anderen Spalten. | ☑ | **gilt** | [ui.spec.js:2958](../e2e/ui.spec.js#L2958) | 15.11.2026 ok (Test) |
+| FEA-07/AK7 | Steht die gespeicherte Einstellung nicht zur Verfügung (zum Beispiel Datenverzeichnis nicht lesbar), gilt eingeklappt. | ☑ | **gilt** | [ui.spec.js:1221](../e2e/ui.spec.js#L1221) | 15.11.2026 ok (Speicher nicht lesbar: eingeklappt) |
 
 ### #9 FEA-08 3-Topf-Herleitung aufklappbar in den Jahreswerten
 
@@ -183,12 +192,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-08/AK1 | Ein 3-Topf-Lauf hat keine Karte «3-Topf-Strategie, Herleitung …». | ☑ | **gilt** | kein Test | – |
-| FEA-08/AK2 | In den Jahreswerten lässt sich zu einem Jahr mit Auffüllung die Herleitung aufklappen, mit allen Angaben nach Abschnitt 10. | ☑ | **gilt** | kein Test | – |
-| FEA-08/AK3 | Jahre ohne Auffüllung haben keine Aufklapp-Zeile. | ☑ | **gilt** | kein Test | – |
-| FEA-08/AK4 | Läufe ohne 3-Topf-Strategie zeigen keine Aufklapp-Zeilen. | ☑ | **gilt** | kein Test | – |
-| FEA-08/AK5 | Der UI-Test zur Herleitung (`ui-tests/ui.spec.js:728`), die 3-Topf-Spezifikation (Abschnitt 10), die Hilfe und die Beschreibung sind nachgeführt. | ☑ | **gilt**: Einmalige Nachführung; der Test liegt heute in `e2e/ui.spec.js` (FEA-35). | kein Test | – |
-| FEA-08/AK6 | Beim Wechsel des gewählten Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs. | ☑ | **gilt** | kein Test | – |
+| FEA-08/AK1 | Ein 3-Topf-Lauf hat keine Karte «3-Topf-Strategie, Herleitung …». | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (keine Karte) |
+| FEA-08/AK2 | In den Jahreswerten lässt sich zu einem Jahr mit Auffüllung die Herleitung aufklappen, mit allen Angaben nach Abschnitt 10. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Herleitung mit Netto-Bedarf, PK-Rente, Kriterium, Umbuchungen) |
+| FEA-08/AK3 | Jahre ohne Auffüllung haben keine Aufklapp-Zeile. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
+| FEA-08/AK4 | Läufe ohne 3-Topf-Strategie zeigen keine Aufklapp-Zeilen. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
+| FEA-08/AK5 | Der UI-Test zur Herleitung (`ui-tests/ui.spec.js:728`), die 3-Topf-Spezifikation (Abschnitt 10), die Hilfe und die Beschreibung sind nachgeführt. | ☑ | **gilt**: Einmalige Nachführung; der Test liegt heute in `e2e/ui.spec.js` (FEA-35). | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Test, Hilfe und Beschreibung vorhanden) |
+| FEA-08/AK6 | Beim Wechsel des gewählten Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs. | ☑ | **gilt** | [ui.spec.js:3013](../e2e/ui.spec.js#L3013) | 15.11.2026 ok (Test) |
 
 ### #10 FEA-09 Ereignisliste ohne 3-Topf-Meldungen
 
@@ -196,12 +205,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-09/AK1 | Ein 3-Topf-Lauf zeigt in der Karte «Ereignisse» keine Zeile zu Auffüllung, Zufluss oder Reservierung. | ☑ | **gilt** | kein Test | – |
-| FEA-09/AK2 | Pensionierung, Kapitalbezug, Käufe, Verkäufe, Notverkäufe, Defizitphase und Geld aufgebraucht stehen weiterhin in der Liste. | ☑ | **gilt** | kein Test | – |
-| FEA-09/AK3 | Ein Lauf ohne 3-Topf-Strategie zeigt dieselbe Liste wie bisher. | ☑ | **gilt** | kein Test | – |
-| FEA-09/AK4 | Jeder reservierte Verkaufserlös ist in den Jahreswerten unter der Herleitung (FEA-08) zu finden. | ☑ | **gilt** | kein Test | – |
-| FEA-09/AK5 | Zeitleiste und Grafikmarken sind unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-09/AK6 | Der UI-Test, der 3-Topf-Ereignisse in der Liste erwartet, ist angepasst. | ☑ | **gilt** | kein Test | – |
+| FEA-09/AK1 | Ein 3-Topf-Lauf zeigt in der Karte «Ereignisse» keine Zeile zu Auffüllung, Zufluss oder Reservierung. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Ereignisliste ohne «Topf 1») |
+| FEA-09/AK2 | Pensionierung, Kapitalbezug, Käufe, Verkäufe, Notverkäufe, Defizitphase und Geld aufgebraucht stehen weiterhin in der Liste. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
+| FEA-09/AK3 | Ein Lauf ohne 3-Topf-Strategie zeigt dieselbe Liste wie bisher. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
+| FEA-09/AK4 | Jeder reservierte Verkaufserlös ist in den Jahreswerten unter der Herleitung (FEA-08) zu finden. | ☑ | **gilt** | kein Test | nicht geprüft: nicht im Test; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
+| FEA-09/AK5 | Zeitleiste und Grafikmarken sind unverändert. | ☑ | **gilt** | kein Test | nicht geprüft: nicht im Test; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
+| FEA-09/AK6 | Der UI-Test, der 3-Topf-Ereignisse in der Liste erwartet, ist angepasst. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Test erwartet keine 3-Topf-Ereignisse mehr) |
 
 ### #11 FEA-10 Gespeicherte Ergebnisse: Strategie-Tooltip mit Parametern
 
@@ -209,12 +218,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-10/AK1 | Mouseover über «3-Topf» zeigt Jahre Topf 1 und 2 und die Renditeschwelle mit den Werten des Ergebnisses (nicht der aktuellen Planung). | ☑ | **gilt** | kein Test | – |
-| FEA-10/AK2 | Jede der sechs Strategien zeigt genau ihre Parameter. | ☑ | **gilt**: Heute sieben Strategien (FEA-05: «3-Topf + Guardrails»). | kein Test | – |
-| FEA-10/AK3 | Die Werte stimmen mit dem Reiter «Parameter» (FEA-03) überein. | ☑ | **gilt** | kein Test | – |
-| FEA-10/AK4 | Der Tooltip ist per Tastaturfokus erreichbar. | ☑ | **gilt** | kein Test | – |
-| FEA-10/AK5 | Ein altes Ergebnis ohne Kurzform zeigt «Parameter nicht verfügbar», ohne Fehler. | ☑ | **gilt** | kein Test | – |
-| FEA-10/AK6 | Die Liste lädt nicht langsamer (Ergebnisdaten werden dafür nicht geladen). | ☑ | **gilt** | kein Test | – |
+| FEA-10/AK1 | Mouseover über «3-Topf» zeigt Jahre Topf 1 und 2 und die Renditeschwelle mit den Werten des Ergebnisses (nicht der aktuellen Planung). | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Tooltip zeigt Werte des Ergebnisses, nicht der aktuellen Planung) |
+| FEA-10/AK2 | Jede der sechs Strategien zeigt genau ihre Parameter. | ☑ | **gilt**: Heute sieben Strategien (FEA-05: «3-Topf + Guardrails»). | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 teilweise: nur 3-Topf im Test |
+| FEA-10/AK3 | Die Werte stimmen mit dem Reiter «Parameter» (FEA-03) überein. | ☑ | **gilt** | [ui.spec.js:3038](../e2e/ui.spec.js#L3038) | 15.11.2026 ok (Test) |
+| FEA-10/AK4 | Der Tooltip ist per Tastaturfokus erreichbar. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Tastaturfokus zeigt den Tooltip) |
+| FEA-10/AK5 | Ein altes Ergebnis ohne Kurzform zeigt «Parameter nicht verfügbar», ohne Fehler. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok («Parameter nicht verfügbar») |
+| FEA-10/AK6 | Die Liste lädt nicht langsamer (Ergebnisdaten werden dafür nicht geladen). | ☑ | **gilt** | kein Test | nicht geprüft: Ladezeit nicht gemessen; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
 
 ### #12 FEA-11 Gespeicherte Ergebnisse: Spalte «Zeitreihe» statt «Art»
 
@@ -222,12 +231,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-11/AK1 | Liste und Vergleich haben keine Spalte «Art», aber eine Spalte «Zeitreihe». | ☑ | **gilt** | kein Test | – |
-| FEA-11/AK2 | Ein historisches oder Bootstrap-Ergebnis zeigt den Reihennamen ohne Pfad und «.csv». | ☑ | **unklar**: Seit FEA-53 wählt man eine Anlagestrategie statt einer Zeitreihendatei; zu klären, was die Spalte «Zeitreihe» heute zeigen soll. | kein Test | – |
-| FEA-11/AK3 | Feste und parametrische Ergebnisse zeigen «feste Renditen» bzw. «parametrisch» in Grau. | ☑ | **gilt** | kein Test | – |
-| FEA-11/AK4 | Ein Ergebnis zeigt auch nach Änderung der Zeitreihe in der aktuellen Planung weiterhin die Zeitreihe von damals. | ☑ | **gilt**: Sinngemäss: Änderung der Anlagestrategie statt der Zeitreihe (FEA-53). | kein Test | – |
-| FEA-11/AK5 | Einzellauf, Szenarien und Anzahl Läufe sind weiterhin erkennbar (zweite Zeile in «Ergebnis»). | ☑ | **gilt** | kein Test | – |
-| FEA-11/AK6 | Alte Einträge zeigen «–» ohne Fehler. | ☑ | **gilt** | kein Test | – |
+| FEA-11/AK1 | Liste und Vergleich haben keine Spalte «Art», aber eine Spalte «Zeitreihe». | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Spalte Zeitreihe, keine Spalte Art) |
+| FEA-11/AK2 | Ein historisches oder Bootstrap-Ergebnis zeigt den Reihennamen ohne Pfad und «.csv». | ☑ | **gilt**: in der neuen Fassung (Kommentar in #12 vom 15.11.2026): Die Spalte «Zeitreihe» zeigt den Namen der Anlagestrategie bzw. der Reihe | [ui.spec.js:3059](../e2e/ui.spec.js#L3059) | 15.11.2026 ok (Test, in der neuen Fassung vom 15.11.2026) |
+| FEA-11/AK3 | Feste und parametrische Ergebnisse zeigen «feste Renditen» bzw. «parametrisch» in Grau. | ☑ | **gilt** | [ui.spec.js:3059](../e2e/ui.spec.js#L3059) | 15.11.2026 ok (Test, auch Grau) |
+| FEA-11/AK4 | Ein Ergebnis zeigt auch nach Änderung der Zeitreihe in der aktuellen Planung weiterhin die Zeitreihe von damals. | ☑ | **gilt**: Sinngemäss: Änderung der Anlagestrategie statt der Zeitreihe (FEA-53). | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Ergebnis behält die Werte von damals) |
+| FEA-11/AK5 | Einzellauf, Szenarien und Anzahl Läufe sind weiterhin erkennbar (zweite Zeile in «Ergebnis»). | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok («Einzellauf» in der zweiten Zeile) |
+| FEA-11/AK6 | Alte Einträge zeigen «–» ohne Fehler. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (alte Einträge «–») |
 
 ### #13 FEA-12 Gespeicherte Ergebnisse: 5-%-Vermögen und Warnsymbol bei Notverkauf
 
@@ -235,14 +244,14 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-12/AK1 | Ein Monte-Carlo-Ergebnis zeigt «Erfolgsquote · 5 %: Betrag», der Betrag entspricht dem 5. Perzentil der Ergebnistabelle der Übersicht; der Median steht im Tooltip. | ☑ | **gilt** | kein Test | – |
-| FEA-12/AK2 | Mit `examples/Test 1.rplan` und einem Notverkauf in mindestens 5 % der Läufe erscheint das Symbol, der Tooltip nennt Anteil und Anzahl Läufe. | ☐ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. Im Issue nicht abgehakt. | kein Test | – |
-| FEA-12/AK3 | Bei weniger als 5 % Läufen mit Notverkauf erscheint kein Symbol. | ☑ | **gilt** | kein Test | – |
-| FEA-12/AK4 | Eine Planung ohne Notverkauf oder ohne Immobilien zeigt kein Symbol. | ☑ | **gilt** | kein Test | – |
-| FEA-12/AK5 | Ein geplanter Verkauf löst das Symbol nicht aus. | ☑ | **gilt** | kein Test | – |
-| FEA-12/AK6 | Ein Einzellauf mit Notverkauf zeigt das Symbol. | ☑ | **gilt** | kein Test | – |
-| FEA-12/AK7 | Alte Einträge ohne Angabe werden fehlerfrei und ohne Symbol angezeigt. | ☑ | **gilt** | kein Test | – |
-| FEA-12/AK8 | Wird in den Einstellungen (FEA-24) eine andere Schwelle gewählt, gilt sie. | ☑ | **überholt**: durch FEA-24: Die Schwelle ist keine Einstellung geworden und gilt fest mit 5 % (Kommentar in FEA-24). | kein Test | – |
+| FEA-12/AK1 | Ein Monte-Carlo-Ergebnis zeigt «Erfolgsquote · 5 %: Betrag», der Betrag entspricht dem 5. Perzentil der Ergebnistabelle der Übersicht; der Median steht im Tooltip. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok («90 % · 5 %: 1.2 Mio», Median im Tooltip) |
+| FEA-12/AK2 | Mit `examples/Test 1.rplan` und einem Notverkauf in mindestens 5 % der Läufe erscheint das Symbol, der Tooltip nennt Anteil und Anzahl Läufe. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. Im Issue nicht abgehakt. | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok (Tooltip nennt Anteil und Anzahl Läufe) |
+| FEA-12/AK3 | Bei weniger als 5 % Läufen mit Notverkauf erscheint kein Symbol. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
+| FEA-12/AK4 | Eine Planung ohne Notverkauf oder ohne Immobilien zeigt kein Symbol. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
+| FEA-12/AK5 | Ein geplanter Verkauf löst das Symbol nicht aus. | ☑ | **gilt** | [ui.spec.js:3059](../e2e/ui.spec.js#L3059) | 15.11.2026 ok (Test) |
+| FEA-12/AK6 | Ein Einzellauf mit Notverkauf zeigt das Symbol. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
+| FEA-12/AK7 | Alte Einträge ohne Angabe werden fehlerfrei und ohne Symbol angezeigt. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
+| FEA-12/AK8 | Wird in den Einstellungen (FEA-24) eine andere Schwelle gewählt, gilt sie. | ☑ | **überholt**: durch FEA-24: Die Schwelle ist keine Einstellung geworden und gilt fest mit 5 % (Kommentar in FEA-24). | kein Test | nicht geprüft: überholt durch FEA-24 (Schwelle fest 5 %) |
 
 ### #14 FEA-13 Pflichteingaben prüfen und markieren
 
@@ -250,13 +259,13 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-13/AK1 | Leerer Name: Fehler am Feld, Start blockiert. | ☑ | **gilt** | kein Test | – |
-| FEA-13/AK2 | Leeres oder ungültiges Geburtsdatum: Fehler am Feld, Start blockiert. | ☑ | **gilt** | kein Test | – |
-| FEA-13/AK3 | Jede Zeile der Pflichtliste hat einen Test, der den Fehler auslöst und die Meldung prüft. | ☑ | **gilt** | kein Test | – |
-| FEA-13/AK4 | Sind alle Pflichtfelder gültig, startet die Simulation wie bisher. | ☑ | **gilt** | kein Test | – |
-| FEA-13/AK5 | Beim Blockieren führt der Verweis in den ersten Abschnitt mit Fehler. | ☑ | **gilt** | kein Test | – |
-| FEA-13/AK6 | Verkaufsdatum vor dem Simulationsstart: Warnung im Abschnitt Immobilien. | ☑ | **gilt** | kein Test | – |
-| FEA-13/AK7 | Die Liste in der Spezifikation stimmt mit den Prüfungen in der Engine überein. | ☑ | **gilt** | kein Test | – |
+| FEA-13/AK1 | Leerer Name: Fehler am Feld, Start blockiert. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok |
+| FEA-13/AK2 | Leeres oder ungültiges Geburtsdatum: Fehler am Feld, Start blockiert. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok |
+| FEA-13/AK3 | Jede Zeile der Pflichtliste hat einen Test, der den Fehler auslöst und die Meldung prüft. | ☑ | **gilt** | [tests/mandatory_inputs.rs:1](../crates/engine/tests/mandatory_inputs.rs#L1) | 15.11.2026 ok |
+| FEA-13/AK4 | Sind alle Pflichtfelder gültig, startet die Simulation wie bisher. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok |
+| FEA-13/AK5 | Beim Blockieren führt der Verweis in den ersten Abschnitt mit Fehler. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok (Meldung nennt «Haushalt») |
+| FEA-13/AK6 | Verkaufsdatum vor dem Simulationsstart: Warnung im Abschnitt Immobilien. | ☑ | **gilt** | [src/validate.rs:731](../crates/engine/src/validate.rs#L731) | 15.11.2026 ok (Warnung «Verkaufszeitpunkt liegt vor dem Simulationsstart» (Test in validate.rs:1295)) |
+| FEA-13/AK7 | Die Liste in der Spezifikation stimmt mit den Prüfungen in der Engine überein. | ☑ | **gilt** | [tests/mandatory_inputs.rs:1](../crates/engine/tests/mandatory_inputs.rs#L1) | 15.11.2026 ok (jede Zeile der Liste hat einen Test) |
 
 ### #15 FEA-14 Meilensteine: «Verwendet» entfällt, Löschen mit Umstellung
 
@@ -264,14 +273,14 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-14/AK1 | Keine Spalte «Verwendet». | ☑ | **gilt** | kein Test | – |
-| FEA-14/AK2 | Meilenstein «AHV» löschen: Dialog nennt Verwendung und Datum; danach zeigt die AHV-Rente das feste Datum, die Rechnung liefert dieselben Zahlen wie vorher. | ☑ | **gilt** | kein Test | – |
-| FEA-14/AK3 | Bei «Alter von» wird das berechnete Datum eingetragen. | ☑ | **gilt** | kein Test | – |
-| FEA-14/AK4 | Rückgängig stellt Meilenstein und Verwendungen wieder her. | ☑ | **gilt** | kein Test | – |
-| FEA-14/AK5 | «Pensionierung», «Simulationsstart» und «Simulationsende» lassen sich nicht löschen. | ☑ | **gilt**: «Pensionierung» heisst seit FEA-38 «Bezug Pensionskasse»; gesperrt sind heute Simulationsstart, Simulationsende, Bezug Pensionskasse und AHV-Bezug (FEA-38/AK1). | kein Test | – |
-| FEA-14/AK6 | Nicht verwendete Meilensteine lassen sich ohne Dialog löschen. | ☑ | **gilt** | kein Test | – |
-| FEA-14/AK7 | Doppelter Zeitpunkt in einer Reihe: genau eine Zeile bleibt, mit Hinweis. | ☑ | **gilt** | kein Test | – |
-| FEA-14/AK8 | Variation und Optimierung laufen nach dem Löschen eines anderen Meilensteins unverändert. | ☑ | **gilt** | kein Test | – |
+| FEA-14/AK1 | Keine Spalte «Verwendet». | ☑ | **gilt** | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok |
+| FEA-14/AK2 | Meilenstein «AHV» löschen: Dialog nennt Verwendung und Datum; danach zeigt die AHV-Rente das feste Datum, die Rechnung liefert dieselben Zahlen wie vorher. | ☑ | **gilt** | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok (Dialog, Datum, gleiches Endvermögen) |
+| FEA-14/AK3 | Bei «Alter von» wird das berechnete Datum eingetragen. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 ok |
+| FEA-14/AK4 | Rückgängig stellt Meilenstein und Verwendungen wieder her. | ☑ | **gilt** | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok (Rückgängig) |
+| FEA-14/AK5 | «Pensionierung», «Simulationsstart» und «Simulationsende» lassen sich nicht löschen. | ☑ | **gilt**: «Pensionierung» heisst seit FEA-38 «Bezug Pensionskasse»; gesperrt sind heute Simulationsstart, Simulationsende, Bezug Pensionskasse und AHV-Bezug (FEA-38/AK1). | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok |
+| FEA-14/AK6 | Nicht verwendete Meilensteine lassen sich ohne Dialog löschen. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 ok |
+| FEA-14/AK7 | Doppelter Zeitpunkt in einer Reihe: genau eine Zeile bleibt, mit Hinweis. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 ok |
+| FEA-14/AK8 | Variation und Optimierung laufen nach dem Löschen eines anderen Meilensteins unverändert. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 teilweise: Parameter «Pensionierung» bleibt wählbar; Lauf nicht verglichen |
 
 ### #16 FEA-15 «Altersguthaben heute» → «per Simulationsstart»
 
@@ -279,10 +288,10 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-15/AK1 | Bei Start 11.2026 heisst das Feld «Altersguthaben per Simulationsstart (11.2026)»; nach Änderung des Starts auf 03.2027 ändert sich der Text sofort. | ☑ | **gilt** | kein Test | – |
-| FEA-15/AK2 | Die Bezeichnung gilt für beide Personen. | ☑ | **gilt** | kein Test | – |
-| FEA-15/AK3 | «Altersguthaben heute» kommt in Editor, Hilfe und Beschreibung nicht mehr vor. | ☑ | **gilt** | kein Test | – |
-| FEA-15/AK4 | Oberflächentests sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-15/AK1 | Bei Start 11.2026 heisst das Feld «Altersguthaben per Simulationsstart (11.2026)»; nach Änderung des Starts auf 03.2027 ändert sich der Text sofort. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
+| FEA-15/AK2 | Die Bezeichnung gilt für beide Personen. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok (zwei Personen) |
+| FEA-15/AK3 | «Altersguthaben heute» kommt in Editor, Hilfe und Beschreibung nicht mehr vor. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok (alte Bezeichnungen in Editor, Hilfe und Beschreibung nicht mehr gefunden (grep)) |
+| FEA-15/AK4 | Oberflächentests sind nachgeführt. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
 
 ### #17 FEA-16 «Bestände heute» → «per Simulationsstart»
 
@@ -290,10 +299,10 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-16/AK1 | Karte und Einleitung tragen die neue Bezeichnung mit dem aktuellen Start. | ☑ | **gilt** | kein Test | – |
-| FEA-16/AK2 | Die Felder 3a-Guthaben und Marktwert tragen die neue Bezeichnung. | ☑ | **gilt** | kein Test | – |
-| FEA-16/AK3 | «Bestände heute», «Aktuelle Bestände», «Guthaben heute» und «Marktwert heute» kommen in Editor, Hilfe und Beschreibung nicht mehr vor. | ☑ | **gilt** | kein Test | – |
-| FEA-16/AK4 | Oberflächentests sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-16/AK1 | Karte und Einleitung tragen die neue Bezeichnung mit dem aktuellen Start. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
+| FEA-16/AK2 | Die Felder 3a-Guthaben und Marktwert tragen die neue Bezeichnung. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
+| FEA-16/AK3 | «Bestände heute», «Aktuelle Bestände», «Guthaben heute» und «Marktwert heute» kommen in Editor, Hilfe und Beschreibung nicht mehr vor. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok (alte Bezeichnungen nicht mehr gefunden (grep)) |
+| FEA-16/AK4 | Oberflächentests sind nachgeführt. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
 
 ### #18 FEA-17 Liquiditätsreserve nur für die Strategie «Standard»
 
@@ -301,11 +310,11 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-17/AK1 | «Vermögen & Anlage» enthält die Reserve nicht mehr, die Karte «Standard» enthält sie. | ☑ | **gilt**: «Liquiditätsreserve» heisst seit FEA-40 «Cash-Reserve». | kein Test | – |
-| FEA-17/AK2 | Eine Planung mit Strategie Standard und Reserve 6 liefert dieselben Ergebnisse wie vor der Änderung (Regressionstest mit den Golden-Dateien). | ☑ | **gilt** | kein Test | – |
-| FEA-17/AK3 | Eine Planung mit Guardrails und Reserve 6 rechnet mit 3 Monaten, der Hinweis erscheint beim Laden einmal. | ☑ | **überholt**: durch FEA-58: Der Hinweis erscheint nur einmal, beim ersten Laden einer betroffenen Planung. | kein Test | – |
-| FEA-17/AK4 | Die Optimierung bietet die Reserve weiterhin nur für Standard an. | ☑ | **gilt** | kein Test | – |
-| FEA-17/AK5 | Hilfe, Beschreibung und Tests sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-17/AK1 | «Vermögen & Anlage» enthält die Reserve nicht mehr, die Karte «Standard» enthält sie. | ☑ | **gilt**: «Liquiditätsreserve» heisst seit FEA-40 «Cash-Reserve». | [ui.spec.js:1937](../e2e/ui.spec.js#L1937) | 15.11.2026 ok |
+| FEA-17/AK2 | Eine Planung mit Strategie Standard und Reserve 6 liefert dieselben Ergebnisse wie vor der Änderung (Regressionstest mit den Golden-Dateien). | ☑ | **gilt** | [tests/reserve_standard_only.rs:39](../crates/engine/tests/reserve_standard_only.rs#L39) | 15.11.2026 ok (Standard rechnet mit der Reserve; Golden-Dateien grün) |
+| FEA-17/AK3 | Eine Planung mit Guardrails und Reserve 6 rechnet mit 3 Monaten, der Hinweis erscheint beim Laden einmal. | ☑ | **überholt**: durch FEA-58: Der Hinweis erscheint nur einmal, beim ersten Laden einer betroffenen Planung. | [ui.spec.js:1937](../e2e/ui.spec.js#L1937) | 15.11.2026 ok (Hinweis einmal (jetzt nach FEA-58)) |
+| FEA-17/AK4 | Die Optimierung bietet die Reserve weiterhin nur für Standard an. | ☑ | **gilt** | [optimize_ranges.rs:168](../crates/engine/tests/optimize_ranges.rs#L168) | 15.11.2026 ok (Test) |
+| FEA-17/AK5 | Hilfe, Beschreibung und Tests sind nachgeführt. | ☑ | **gilt** | [ui.spec.js:1937](../e2e/ui.spec.js#L1937) | 15.11.2026 teilweise: Hilfe und Beschreibung nicht Satz für Satz verglichen |
 
 ### #19 FEA-18 Zeitreihen-Erklärungen in ein Info-Popup
 
@@ -313,12 +322,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-18/AK1 | Die Karte «Zeitreihe» enthält unter der Tabelle keine festen Erklärungstexte mehr. | ☑ | **überholt**: durch FEA-53: Die Karte «Zeitreihe» gibt es nicht mehr; die Erklärung steht im Info-Popup der Anlagestrategie. | kein Test | – |
-| FEA-18/AK2 | Maus auf ⓘ öffnet das Popup mit dem bisherigen Text; Tastaturfokus und Klick öffnen es ebenfalls, Esc schliesst es. | ☑ | **gilt**: Heute für das Info-Popup der Anlagestrategie (Test FEA-18/FEA-53). | kein Test | – |
-| FEA-18/AK3 | Das Popup bleibt offen, wenn die Maus hineinbewegt wird. | ☑ | **gilt**: Heute für das Info-Popup der Anlagestrategie. | kein Test | – |
-| FEA-18/AK4 | Die Info zur gewählten Reihe bleibt sichtbar. | ☑ | **überholt**: durch den Kommentar im Issue (Info in der Tabellenzeile) und danach FEA-53 (keine Tabelle der Reihen mehr). | kein Test | – |
-| FEA-18/AK5 | Der Ordnerpfad lässt sich aus dem Popup kopieren. | ☑ | **unklar**: Seit FEA-53 gibt es keine eigenen Dateien und keinen Ordnerpfad mehr; der Test prüft, dass der Text kopierbar ist. | kein Test | – |
-| FEA-18/AK6 | Der Inhalt der Texte ist unverändert. | ☑ | **überholt**: durch den Kommentar im Issue (Texte gekürzt) und FEA-53 (Texte zur Anlagestrategie). | kein Test | – |
+| FEA-18/AK1 | Die Karte «Zeitreihe» enthält unter der Tabelle keine festen Erklärungstexte mehr. | ☑ | **überholt**: durch FEA-53: Die Karte «Zeitreihe» gibt es nicht mehr; die Erklärung steht im Info-Popup der Anlagestrategie. | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-18/AK2 | Maus auf ⓘ öffnet das Popup mit dem bisherigen Text; Tastaturfokus und Klick öffnen es ebenfalls, Esc schliesst es. | ☑ | **gilt**: Heute für das Info-Popup der Anlagestrategie (Test FEA-18/FEA-53). | [ui.spec.js:138](../e2e/ui.spec.js#L138) | 15.11.2026 ok |
+| FEA-18/AK3 | Das Popup bleibt offen, wenn die Maus hineinbewegt wird. | ☑ | **gilt**: Heute für das Info-Popup der Anlagestrategie. | [ui.spec.js:138](../e2e/ui.spec.js#L138) | 15.11.2026 ok |
+| FEA-18/AK4 | Die Info zur gewählten Reihe bleibt sichtbar. | ☑ | **überholt**: durch den Kommentar im Issue (Info in der Tabellenzeile) und danach FEA-53 (keine Tabelle der Reihen mehr). | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-18/AK5 | Der Ordnerpfad lässt sich aus dem Popup kopieren. | ☑ | **überholt**: durch FEA-53: Seit FEA-53 gibt es keine eigenen Dateien und keinen Ordnerpfad mehr (Kommentar in #19 vom 15.11.2026) | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-18/AK6 | Der Inhalt der Texte ist unverändert. | ☑ | **überholt**: durch den Kommentar im Issue (Texte gekürzt) und FEA-53 (Texte zur Anlagestrategie). | kein Test | 15.11.2026 überholt, nicht geprüft |
 | FEA-18/K1 (Kommentar) | Unter der Tabelle steht keine Zeile «Gewählt:» mehr; ein Fehler zur Reihe wird weiterhin angezeigt. | ☑ | **überholt**: durch FEA-53: keine Tabelle der Reihen mehr. | kein Test | – |
 | FEA-18/K2 (Kommentar) | Jede Reihe hat ein ⓘ; Maus, Tastaturfokus und Klick öffnen das Popup, Esc schliesst es. | ☑ | **überholt**: durch FEA-53: keine Tabelle der Reihen mehr; das Popup gibt es je Anlagestrategie. | kein Test | – |
 | FEA-18/K3 (Kommentar) | Jeder Popup-Text hat höchstens 2 Zeilen. | ☑ | **unklar**: Gilt die Grenze von 2 Zeilen auch für die Texte der Anlagestrategie? | kein Test | – |
@@ -332,12 +341,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-19/AK1 | Die Optimierung hat die Auswahl «Ziel»; Standard ist Ziel 1; die Ergebnisse für Ziel 1 sind identisch mit denen vor der Änderung (Regressionstest). | ☑ | **gilt** | kein Test | – |
-| FEA-19/AK2 | Bei Ziel 2 zeigt die Ergebnistabelle je Strategie den Anteil Läufe mit ungeplantem Immobilienverkauf; die Reihenfolge richtet sich nach diesem Anteil, bei Gleichstand nach der Ruinwahrscheinlichkeit. | ☑ | **gilt** | kein Test | – |
-| FEA-19/AK3 | Strategien mit Konsum unter K % der geplanten Ausgaben werden nicht als beste gewählt. | ☑ | **gilt** | kein Test | – |
-| FEA-19/AK4 | Mit `examples/Test 1.rplan` liefert Ziel 2 eine Strategie mit höchstens so vielen ungeplanten Verkäufen wie Ziel 1. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | kein Test | – |
-| FEA-19/AK5 | Planungen ohne Immobilien: Ziel 2 ist nicht wählbar (mit Hinweis). | ☑ | **gilt** | kein Test | – |
-| FEA-19/AK6 | Das Ziel steht in der Plandatei und in der Hilfe. | ☑ | **gilt** | kein Test | – |
+| FEA-19/AK1 | Die Optimierung hat die Auswahl «Ziel»; Standard ist Ziel 1; die Ergebnisse für Ziel 1 sind identisch mit denen vor der Änderung (Regressionstest). | ☑ | **gilt** | [tests/optimize_goal.rs:44](../crates/engine/tests/optimize_goal.rs#L44) | 15.11.2026 ok (Ziel 1 ist Standard und wertet wie bisher) |
+| FEA-19/AK2 | Bei Ziel 2 zeigt die Ergebnistabelle je Strategie den Anteil Läufe mit ungeplantem Immobilienverkauf; die Reihenfolge richtet sich nach diesem Anteil, bei Gleichstand nach der Ruinwahrscheinlichkeit. | ☑ | **gilt** | [tests/optimize_goal.rs:61](../crates/engine/tests/optimize_goal.rs#L61) | 15.11.2026 ok (sortiert nach Anteil, dann Ruin) |
+| FEA-19/AK3 | Strategien mit Konsum unter K % der geplanten Ausgaben werden nicht als beste gewählt. | ☑ | **gilt** | [tests/optimize_goal.rs:76](../crates/engine/tests/optimize_goal.rs#L76) | 15.11.2026 ok (Mindestkonsum als Nebenbedingung) |
+| FEA-19/AK4 | Mit `examples/Test 1.rplan` liefert Ziel 2 eine Strategie mit höchstens so vielen ungeplanten Verkäufen wie Ziel 1. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (GEN-01); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | kein Test | nicht geprüft: Beispielplanung nicht verglichen |
+| FEA-19/AK5 | Planungen ohne Immobilien: Ziel 2 ist nicht wählbar (mit Hinweis). | ☑ | **gilt** | [tests/optimize_goal.rs:136](../crates/engine/tests/optimize_goal.rs#L136) | 15.11.2026 ok (Ziel 2 braucht eine Immobilie) |
+| FEA-19/AK6 | Das Ziel steht in der Plandatei und in der Hilfe. | ☑ | **gilt** | [tests/optimize_goal.rs:155](../crates/engine/tests/optimize_goal.rs#L155) | 15.11.2026 ok (Ziel in der Plandatei; Hilfe nicht verglichen) |
 
 ### #21 FEA-20 Variationen ohne feste Obergrenze, Warnung ab 60 s
 
@@ -345,12 +354,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-20/AK1 | Mit 1'001 Kombinationen (bisher abgelehnt) wird die Berechnung angeboten. | ☑ | **gilt** | kein Test | – |
-| FEA-20/AK2 | Bei geschätzten 90 s erscheint die Warnung mit Dauer und Läufen; «Abbrechen» startet nichts, «Trotzdem starten» startet. | ☑ | **gilt** | kein Test | – |
-| FEA-20/AK3 | Bei geschätzten 30 s keine Warnung. | ☑ | **gilt** | kein Test | – |
-| FEA-20/AK4 | Die Zusammenfassung der Variationen nennt keine Grenze mehr ausser der technischen. | ☑ | **gilt** | kein Test | – |
-| FEA-20/AK5 | 1'000'001 Kombinationen werden mit der technischen Meldung abgelehnt, ohne die App zu belasten. | ☑ | **gilt** | kein Test | – |
-| FEA-20/AK6 | Abbrechen bleibt während der Berechnung möglich. | ☑ | **gilt** | kein Test | – |
+| FEA-20/AK1 | Mit 1'001 Kombinationen (bisher abgelehnt) wird die Berechnung angeboten. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
+| FEA-20/AK2 | Bei geschätzten 90 s erscheint die Warnung mit Dauer und Läufen; «Abbrechen» startet nichts, «Trotzdem starten» startet. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
+| FEA-20/AK3 | Bei geschätzten 30 s keine Warnung. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
+| FEA-20/AK4 | Die Zusammenfassung der Variationen nennt keine Grenze mehr ausser der technischen. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
+| FEA-20/AK5 | 1'000'001 Kombinationen werden mit der technischen Meldung abgelehnt, ohne die App zu belasten. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
+| FEA-20/AK6 | Abbrechen bleibt während der Berechnung möglich. | ☑ | **gilt** | [ui-cancel.spec.js:41](../e2e/ui-cancel.spec.js#L41) | 15.11.2026 ok (Abbrechen läuft (ui-cancel.spec.js:41)) |
 
 ### #22 FEA-21 Legenden: gestrichelte Linien
 
@@ -358,11 +367,11 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-21/AK1 | In «Bandbreite des Gesamtvermögens» zeigt die Legende «1. und 99. Perzentil» als gestricheltes Linien-Symbol in der Farbe des Diagramms. | ☑ | **gilt** | kein Test | – |
-| FEA-21/AK2 | Die Legende der Verteilung des Endvermögens nennt die fünf Perzentil-Linien mit gestricheltem Symbol. | ☑ | **gilt** | kein Test | – |
-| FEA-21/AK3 | Übersicht und Grafiken zeigen dieselben Legenden. | ☑ | **gilt** | kein Test | – |
-| FEA-21/AK4 | Jede Linie in den beiden Diagrammen hat einen Legendeneintrag und umgekehrt. | ☑ | **gilt** | kein Test | – |
-| FEA-21/AK5 | Die Legenden sind im hellen und dunklen Erscheinungsbild lesbar. | ☑ | **gilt** | kein Test | – |
+| FEA-21/AK1 | In «Bandbreite des Gesamtvermögens» zeigt die Legende «1. und 99. Perzentil» als gestricheltes Linien-Symbol in der Farbe des Diagramms. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
+| FEA-21/AK2 | Die Legende der Verteilung des Endvermögens nennt die fünf Perzentil-Linien mit gestricheltem Symbol. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
+| FEA-21/AK3 | Übersicht und Grafiken zeigen dieselben Legenden. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
+| FEA-21/AK4 | Jede Linie in den beiden Diagrammen hat einen Legendeneintrag und umgekehrt. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok (fünf gestrichelte Linien, Legende dazu) |
+| FEA-21/AK5 | Die Legenden sind im hellen und dunklen Erscheinungsbild lesbar. | ☑ | **gilt** | kein Test | nicht geprüft: hell und dunkel nicht per Sicht geprüft; Sichtprüfung in der App ausstehend, Ihnen zugewiesen |
 
 ### #23 FEA-22 Übersicht: Immobilienverkäufe statt Notverkäufe und Einmalzahlungen
 
@@ -370,13 +379,13 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-22/AK1 | Die Übersicht hat keine Karte und keine Spalte «Einmalzahlungen». | ☑ | **gilt** | kein Test | – |
-| FEA-22/AK2 | Die Spalte heisst «Immobilienverkäufe» und zeigt pro Verkauf eine Zeile «Haus: 05.2034». | ☑ | **gilt** | kein Test | – |
-| FEA-22/AK3 | Ein Notverkauf trägt das Warnsymbol, ein geplanter Verkauf nicht. | ☑ | **gilt** | kein Test | – |
-| FEA-22/AK4 | Ein Lauf mit zwei Verkäufen zeigt zwei Zeilen. | ☑ | **gilt** | kein Test | – |
-| FEA-22/AK5 | Die Kennzahlkarte «Notverkäufe» zeigt die Zahlen wie bisher. | ☑ | **gilt** | kein Test | – |
-| FEA-22/AK6 | Planungen ohne Immobilien zeigen die Spalte nicht. | ☑ | **gilt** | kein Test | – |
-| FEA-22/AK7 | Zahlen und Daten stimmen mit den Immobilienereignissen des jeweiligen Perzentil-Laufs überein. | ☑ | **gilt** | kein Test | – |
+| FEA-22/AK1 | Die Übersicht hat keine Karte und keine Spalte «Einmalzahlungen». | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
+| FEA-22/AK2 | Die Spalte heisst «Immobilienverkäufe» und zeigt pro Verkauf eine Zeile «Haus: 05.2034». | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
+| FEA-22/AK3 | Ein Notverkauf trägt das Warnsymbol, ein geplanter Verkauf nicht. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
+| FEA-22/AK4 | Ein Lauf mit zwei Verkäufen zeigt zwei Zeilen. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
+| FEA-22/AK5 | Die Kennzahlkarte «Notverkäufe» zeigt die Zahlen wie bisher. | ☑ | **gilt** | [ui.spec.js:3091](../e2e/ui.spec.js#L3091) | 15.11.2026 ok (Test) |
+| FEA-22/AK6 | Planungen ohne Immobilien zeigen die Spalte nicht. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
+| FEA-22/AK7 | Zahlen und Daten stimmen mit den Immobilienereignissen des jeweiligen Perzentil-Laufs überein. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
 
 ### #24 FEA-23 Berechnete Variationen in «Einzelne Läufe» und «Jahreswerte» wählbar
 
@@ -384,12 +393,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-23/AK1 | Ein Monte-Carlo-Ergebnis mit zwei Variationen zeigt in «Einzelne Läufe» und «Jahreswerte» zwei Auswahlfelder mit den berechneten Stufen. | ☑ | **gilt** | kein Test | – |
-| FEA-23/AK2 | Die Auswahl «Aktienanteil 30 %, Kapitalbezug 60 %» zeigt den 50.-Perzentil-Lauf dieser Stufe; sein Endvermögen stimmt mit dem Wert in der Szenarientabelle überein. | ☑ | **gilt** | kein Test | – |
-| FEA-23/AK3 | Der Wechsel dauert wenige Sekunden und löst keinen vollständigen Durchlauf aus. | ☑ | **gilt** | kein Test | – |
-| FEA-23/AK4 | Die Auswahl wirkt in beiden Reitern; die anderen Reiter zeigen Planwerte mit Vermerk. | ☑ | **gilt** | kein Test | – |
-| FEA-23/AK5 | Bei gespeicherten Ergebnissen funktioniert die Auswahl; bei abweichendem Endvermögen erscheint der Hinweis. | ☑ | **gilt** | kein Test | – |
-| FEA-23/AK6 | Der Einzellauf mit Variationen funktioniert wie bisher. | ☑ | **gilt** | kein Test | – |
+| FEA-23/AK1 | Ein Monte-Carlo-Ergebnis mit zwei Variationen zeigt in «Einzelne Läufe» und «Jahreswerte» zwei Auswahlfelder mit den berechneten Stufen. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok |
+| FEA-23/AK2 | Die Auswahl «Aktienanteil 30 %, Kapitalbezug 60 %» zeigt den 50.-Perzentil-Lauf dieser Stufe; sein Endvermögen stimmt mit dem Wert in der Szenarientabelle überein. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok |
+| FEA-23/AK3 | Der Wechsel dauert wenige Sekunden und löst keinen vollständigen Durchlauf aus. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok (nur «rerun_paths», kein vollständiger Lauf) |
+| FEA-23/AK4 | Die Auswahl wirkt in beiden Reitern; die anderen Reiter zeigen Planwerte mit Vermerk. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok |
+| FEA-23/AK5 | Bei gespeicherten Ergebnissen funktioniert die Auswahl; bei abweichendem Endvermögen erscheint der Hinweis. | ☑ | **gilt** | [ui.spec.js:3102](../e2e/ui.spec.js#L3102) | 15.11.2026 ok (Test: Hinweis bei abweichendem Endvermögen; gespeicherte Ergebnisse laufen über dieselbe Funktion) |
+| FEA-23/AK6 | Der Einzellauf mit Variationen funktioniert wie bisher. | ☑ | **gilt** | [ui.spec.js:3102](../e2e/ui.spec.js#L3102) | 15.11.2026 ok (Test) |
 
 ### #25 FEA-24 Einstellungen (Grenzen AHV-/PK-Bezug, Maximalbetrag 3a)
 
@@ -397,14 +406,14 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-24/AK1 | Die App hat einen erreichbaren Bereich «Einstellungen» mit den fünf Einstellungen der Tabelle, je mit Beschriftung, Einheit und Standardwert. | ☑ | **gilt**: Laut Kommentar fünf Einstellungen (die Schwelle von FEA-12 entfällt). | [engine/src/settings.rs:69](../crates/engine/src/settings.rs#L69), [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | – |
-| FEA-24/AK2 | Eine Änderung wird gespeichert und gilt nach einem Neustart der App weiterhin. Ohne gespeicherten Wert gilt der Standardwert. | ☑ | **gilt** | [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | – |
-| FEA-24/AK3 | Eine Schaltfläche «Standardwerte» setzt alle Einstellungen (nach Rückfrage) auf die Standardwerte zurück. | ☑ | **gilt** | [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | – |
-| FEA-24/AK4 | Prüfung der Eingabe: Die untere Grenze ist höchstens so gross wie die obere Grenze. Alter sind ganze Jahre. Der Maximalbetrag ist 0 oder mehr. Ein ungültiger Wert wird mit klarer Meldung abgelehnt und nicht gespeichert (Beispiel: untere Grenze AHV 71 bei oberer Grenze 70). | ☑ | **gilt** | [engine/src/settings.rs:83](../crates/engine/src/settings.rs#L83), [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | – |
-| FEA-24/AK5 | Die Grenzen für AHV-Bezug und Bezug Pensionskasse (FEA-38) und der Maximalbetrag der 3a (FEA-37) werden an einer Stelle aus den Einstellungen gelesen und dem Rechenkern als Parameter übergeben. Der Rechenkern kennt die Standardwerte als Rückfall (für Kommandozeile und Tests). | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169) | – |
-| FEA-24/AK6 | Beispiel: Obere Grenze Bezug Pensionskasse 67 statt 65: Ein Bezug mit 67 Jahren ist gültig, mit 68 wird er abgelehnt. Der Standard 65 des Meilensteins ändert sich dadurch nicht. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169), [ui.spec.js:2332](../e2e/ui.spec.js#L2332) | – |
-| FEA-24/AK7 | Die Einstellungen ändern keine Planungsdatei und kein gespeichertes Ergebnis. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das mit klarer Meldung (siehe FEA-38). | ☑ | **gilt** | kein Test | – |
-| FEA-24/AK8 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-24/AK1 | Die App hat einen erreichbaren Bereich «Einstellungen» mit den fünf Einstellungen der Tabelle, je mit Beschriftung, Einheit und Standardwert. | ☑ | **gilt**: Laut Kommentar fünf Einstellungen (die Schwelle von FEA-12 entfällt). | [engine/src/settings.rs:69](../crates/engine/src/settings.rs#L69), [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
+| FEA-24/AK2 | Eine Änderung wird gespeichert und gilt nach einem Neustart der App weiterhin. Ohne gespeicherten Wert gilt der Standardwert. | ☑ | **gilt** | [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
+| FEA-24/AK3 | Eine Schaltfläche «Standardwerte» setzt alle Einstellungen (nach Rückfrage) auf die Standardwerte zurück. | ☑ | **gilt** | [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
+| FEA-24/AK4 | Prüfung der Eingabe: Die untere Grenze ist höchstens so gross wie die obere Grenze. Alter sind ganze Jahre. Der Maximalbetrag ist 0 oder mehr. Ein ungültiger Wert wird mit klarer Meldung abgelehnt und nicht gespeichert (Beispiel: untere Grenze AHV 71 bei oberer Grenze 70). | ☑ | **gilt** | [engine/src/settings.rs:83](../crates/engine/src/settings.rs#L83), [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
+| FEA-24/AK5 | Die Grenzen für AHV-Bezug und Bezug Pensionskasse (FEA-38) und der Maximalbetrag der 3a (FEA-37) werden an einer Stelle aus den Einstellungen gelesen und dem Rechenkern als Parameter übergeben. Der Rechenkern kennt die Standardwerte als Rückfall (für Kommandozeile und Tests). | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169) | 15.11.2026 ok (Test grün) |
+| FEA-24/AK6 | Beispiel: Obere Grenze Bezug Pensionskasse 67 statt 65: Ein Bezug mit 67 Jahren ist gültig, mit 68 wird er abgelehnt. Der Standard 65 des Meilensteins ändert sich dadurch nicht. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169), [ui.spec.js:2332](../e2e/ui.spec.js#L2332) | 15.11.2026 ok (Test grün) |
+| FEA-24/AK7 | Die Einstellungen ändern keine Planungsdatei und kein gespeichertes Ergebnis. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das mit klarer Meldung (siehe FEA-38). | ☑ | **gilt** | [ui.spec.js:3138](../e2e/ui.spec.js#L3138) | 15.11.2026 ok (Test) |
+| FEA-24/AK8 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
 ### #26 GEN-01 Repository öffentlich machen (Daten- und Plandateien bereinigen)
 
@@ -466,11 +475,11 @@ Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-25/AK1 | Immobilie «Besitz» oder «Kauf geplant» ohne Grundstückgewinnsteuer: Fehler im Abschnitt Steuern mit Meldung, Start blockiert (Engine und Oberfläche). | ☑ | **gilt** | kein Test | – |
-| FEA-25/AK2 | Nur Mietobjekte oder keine Immobilie: kein Fehler. | ☑ | **gilt** | kein Test | – |
-| FEA-25/AK3 | Mit Vorlage oder eigenen Regeln (auch Satz 0 %): kein Fehler. | ☑ | **gilt** | kein Test | – |
-| FEA-25/AK4 | Die Pflichtliste (FEA-13) in der Spezifikation und die Hilfe nennen die neue Pflicht. | ☑ | **gilt** | kein Test | – |
-| FEA-25/AK5 | Test in der Engine und in der Oberfläche. | ☑ | **gilt** | kein Test | – |
+| FEA-25/AK1 | Immobilie «Besitz» oder «Kauf geplant» ohne Grundstückgewinnsteuer: Fehler im Abschnitt Steuern mit Meldung, Start blockiert (Engine und Oberfläche). | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok (Engine- und Oberflächentest (ISS-3)) |
+| FEA-25/AK2 | Nur Mietobjekte oder keine Immobilie: kein Fehler. | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok |
+| FEA-25/AK3 | Mit Vorlage oder eigenen Regeln (auch Satz 0 %): kein Fehler. | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok |
+| FEA-25/AK4 | Die Pflichtliste (FEA-13) in der Spezifikation und die Hilfe nennen die neue Pflicht. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Pflichtliste und Hilfe nicht Satz für Satz verglichen |
+| FEA-25/AK5 | Test in der Engine und in der Oberfläche. | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok |
 
 ### #32 FEA-26 Immobilien: einheitliche Feldreihenfolge
 
@@ -478,13 +487,13 @@ Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-26/AK1 | Reihenfolge und Plätze der Felder sind bei «Besitz» und «Kauf geplant» gleich. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | – |
-| FEA-26/AK2 | Der Marktwert steht bei «Besitz» in der Kopfzeile neben dem Namen und fehlt bei «Kauf geplant». | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | – |
-| FEA-26/AK3 | Beim Statuswechsel bleiben Name, Kaufpreis, Verkauf und Nebenkosten an ihrem Platz. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | – |
-| FEA-26/AK4 | Alle Felder bleiben erreichbar, erfasste Werte sind unverändert. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | – |
-| FEA-26/AK5 | Schmales Fenster: Marktwert unter dem Namen. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | – |
-| FEA-26/AK6 | Oberflächentest prüft die Reihenfolge. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | – |
-| FEA-26/AK7 | Hilfe (`app/ui/hilfe/`) ist nachgeführt. | ☑ | **gilt**: Pfad heute `crates/app/ui/hilfe/` (FEA-35). | kein Test | – |
+| FEA-26/AK1 | Reihenfolge und Plätze der Felder sind bei «Besitz» und «Kauf geplant» gleich. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| FEA-26/AK2 | Der Marktwert steht bei «Besitz» in der Kopfzeile neben dem Namen und fehlt bei «Kauf geplant». | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| FEA-26/AK3 | Beim Statuswechsel bleiben Name, Kaufpreis, Verkauf und Nebenkosten an ihrem Platz. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| FEA-26/AK4 | Alle Felder bleiben erreichbar, erfasste Werte sind unverändert. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| FEA-26/AK5 | Schmales Fenster: Marktwert unter dem Namen. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| FEA-26/AK6 | Oberflächentest prüft die Reihenfolge. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| FEA-26/AK7 | Hilfe (`app/ui/hilfe/`) ist nachgeführt. | ☑ | **gilt**: Pfad heute `crates/app/ui/hilfe/` (FEA-35). | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
 ### #33 ISS-7 Mixed findings
 
@@ -545,11 +554,11 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-27/AK1 | Die Anweisung `.claude/agents/rust-test-agent.md` enthält den Mutationslauf, das neue Ziel und das Verbot von Tests ohne Prüfung. | ☑ | **gilt** | kein Test | – |
-| FEA-27/AK2 | Ein Beispiellauf mit einer absichtlich schwach getesteten Änderung im Rechenkern meldet einen missed Mutanten, und der Agent ergänzt einen Test, der ihn tötet. | ☑ | **gilt** | kein Test | – |
-| FEA-27/AK3 | Der Bericht des Agenten listet verbleibende missed Mutanten. | ☑ | **gilt** | kein Test | – |
-| FEA-27/AK4 | Die Laufzeit des pre-push-Hooks ist gemessen und im Issue vermerkt. | ☑ | **gilt** | kein Test | – |
-| FEA-27/AK5 | `TESTS.md` beschreibt das neue Vorgehen. | ☑ | **gilt** | kein Test | – |
+| FEA-27/AK1 | Die Anweisung `.claude/agents/rust-test-agent.md` enthält den Mutationslauf, das neue Ziel und das Verbot von Tests ohne Prüfung. | ☑ | **gilt** | kein Test (Datei geprüft: `.claude/agents/rust-test-agent.md`) | 15.11.2026 ok (Mutationslauf und «Keine Tests ohne Prüfung» stehen in der Anweisung) |
+| FEA-27/AK2 | Ein Beispiellauf mit einer absichtlich schwach getesteten Änderung im Rechenkern meldet einen missed Mutanten, und der Agent ergänzt einen Test, der ihn tötet. | ☑ | **gilt** | kein Test | nicht geprüft: einmaliger Beispiellauf, nicht wiederholt |
+| FEA-27/AK3 | Der Bericht des Agenten listet verbleibende missed Mutanten. | ☑ | **gilt** | kein Test | nicht geprüft: Bericht des Agenten nicht geprüft |
+| FEA-27/AK4 | Die Laufzeit des pre-push-Hooks ist gemessen und im Issue vermerkt. | ☑ | **gilt** | kein Test | nicht geprüft: Laufzeit im Issue vermerkt? nicht geprüft |
+| FEA-27/AK5 | `TESTS.md` beschreibt das neue Vorgehen. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (Mutationstest ist beschrieben) |
 
 ### #39 FEA-28 Abdeckung des geänderten Codes im Pull Request anzeigen
 
@@ -557,11 +566,11 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-28/AK1 | Ein Pull Request mit neuem, ungetestetem Code zeigt in der Lauf-Zusammenfassung einen Diff-Abdeckungswert unter 100 % und die nicht abgedeckten Zeilen. | ☑ | **gilt**: Pull Requests werden nicht mehr verwendet (`CLAUDE.md`); sinngemäss für den Push und lokal mit `make coverage-diff` prüfen. | kein Test | – |
-| FEA-28/AK2 | Ein Pull Request ohne Rust-Änderungen zeigt «keine Rust-Änderungen». | ☑ | **gilt**: Wie AK1. | kein Test | – |
-| FEA-28/AK3 | Die Diff-Abdeckung lässt den Lauf nicht fehlschlagen. | ☑ | **gilt** | kein Test | – |
-| FEA-28/AK4 | Der lokale Befehl liefert dasselbe Ergebnis. | ☑ | **gilt** | kein Test | – |
-| FEA-28/AK5 | `TESTS.md` und `CLAUDE.md` nennen die Diff-Abdeckung und dass die 80 % eine Untergrenze sind. | ☑ | **gilt** | kein Test | – |
+| FEA-28/AK1 | Ein Pull Request mit neuem, ungetestetem Code zeigt in der Lauf-Zusammenfassung einen Diff-Abdeckungswert unter 100 % und die nicht abgedeckten Zeilen. | ☑ | **gilt**: Pull Requests werden nicht mehr verwendet (`CLAUDE.md`); sinngemäss für den Push und lokal mit `make coverage-diff` prüfen. | kein Test | nicht geprüft: Pull Requests werden nicht mehr verwendet |
+| FEA-28/AK2 | Ein Pull Request ohne Rust-Änderungen zeigt «keine Rust-Änderungen». | ☑ | **gilt**: Wie AK1. | kein Test | nicht geprüft: wie AK1 |
+| FEA-28/AK3 | Die Diff-Abdeckung lässt den Lauf nicht fehlschlagen. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Schritt mit continue-on-error) |
+| FEA-28/AK4 | Der lokale Befehl liefert dasselbe Ergebnis. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 teilweise: make coverage-diff vorhanden; Gleichheit mit dem Lauf nicht verglichen |
+| FEA-28/AK5 | `TESTS.md` und `CLAUDE.md` nennen die Diff-Abdeckung und dass die 80 % eine Untergrenze sind. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (TESTS.md und CLAUDE.md nennen es) |
 
 ### #40 FEA-29 Nicht erkannte Mutanten im Rechenkern einzeln beurteilen
 
@@ -569,10 +578,10 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-29/AK1 | Ein voller Lauf `make mutants` auf `pensionsplaner-engine` ist ausgewertet; jeder missed Mutant ist getestet oder begründet ausgeschlossen. | ☑ | **gilt**: Das Paket heisst seit FEA-34 `vivaplan-engine`. | kein Test | – |
-| FEA-29/AK2 | Jeder Ausschluss trägt eine Begründung im Code oder in `.cargo/mutants.toml`. | ☑ | **gilt** | kein Test | – |
-| FEA-29/AK3 | Die Liste der offenen missed Mutanten ist dokumentiert (Ort in `TESTS.md` genannt). | ☑ | **gilt** | kein Test | – |
-| FEA-29/AK4 | `TESTS.md` beschreibt die Regel «einzeln beurteilen, kein Score-Ziel» und die Durchsicht pro Version. | ☑ | **gilt** | kein Test | – |
+| FEA-29/AK1 | Ein voller Lauf `make mutants` auf `pensionsplaner-engine` ist ausgewertet; jeder missed Mutant ist getestet oder begründet ausgeschlossen. | ☑ | **gilt**: Das Paket heisst seit FEA-34 `vivaplan-engine`. | kein Test | nicht geprüft: voller Lauf nicht wiederholt |
+| FEA-29/AK2 | Jeder Ausschluss trägt eine Begründung im Code oder in `.cargo/mutants.toml`. | ☑ | **gilt** | kein Test (Datei geprüft: `.cargo/mutants.toml`) | 15.11.2026 ok (Ausschlüsse mit Begründung) |
+| FEA-29/AK3 | Die Liste der offenen missed Mutanten ist dokumentiert (Ort in `TESTS.md` genannt). | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (offene Mutanten stehen dort) |
+| FEA-29/AK4 | `TESTS.md` beschreibt die Regel «einzeln beurteilen, kein Score-Ziel» und die Durchsicht pro Version. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (Regel «einzeln beurteilen, kein Score-Ziel») |
 
 ### #41 FEA-30 Übersichtsseite Testqualität (Stufe 1: Hygiene und Angemessenheit)
 
@@ -580,13 +589,13 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-30/AK1 | `make report` erzeugt die Seite nach einem Lauf von `make test` und `make coverage`; sie öffnet sich ohne Netzwerk. | ☑ | **gilt** | kein Test | – |
-| FEA-30/AK2 | Mit einem absichtlich fehlschlagenden Test zeigt Hygiene «nicht erfüllt» und nennt den Test. | ☑ | **gilt** | kein Test | – |
-| FEA-30/AK3 | Mit einem vorhandenen `mutants.out/` stehen die missed Mutanten einzeln mit Datei und Zeile auf der Seite. | ☑ | **gilt** | kein Test | – |
-| FEA-30/AK4 | Ohne Mutationslauf zeigt der Bereich «keine Daten» statt eines Fehlers. | ☑ | **gilt** | kein Test | – |
-| FEA-30/AK5 | Es gibt keine Gesamtnote; jede Schicht hat ihren eigenen Status mit genannter Regel. | ☑ | **gilt** | kein Test | – |
-| FEA-30/AK6 | Ein Lauf von `test-quality.yml` enthält die Seite als Artefakt und die Kurzfassung in der Zusammenfassung. | ☑ | **gilt** | kein Test | – |
-| FEA-30/AK7 | `TESTS.md` beschreibt die Seite, den Befehl und die Statusregeln. | ☑ | **gilt** | kein Test | – |
+| FEA-30/AK1 | `make report` erzeugt die Seite nach einem Lauf von `make test` und `make coverage`; sie öffnet sich ohne Netzwerk. | ☑ | **gilt** | kein Test | 15.11.2026 ok (`report.py` erzeugt die Seite, sie enthält weder Skripte noch Netzwerkadressen) |
+| FEA-30/AK2 | Mit einem absichtlich fehlschlagenden Test zeigt Hygiene «nicht erfüllt» und nennt den Test. | ☑ | **gilt** | [tools/report/test_report.py:29](../tools/report/test_report.py#L29) | 15.11.2026 ok (fehlschlagender Test wird genannt (9 Tests grün)) |
+| FEA-30/AK3 | Mit einem vorhandenen `mutants.out/` stehen die missed Mutanten einzeln mit Datei und Zeile auf der Seite. | ☑ | **gilt** | [test_report.py:116](../tools/report/test_report.py#L116) | 15.11.2026 ok (Test) |
+| FEA-30/AK4 | Ohne Mutationslauf zeigt der Bereich «keine Daten» statt eines Fehlers. | ☑ | **gilt** | [test_report.py:128](../tools/report/test_report.py#L128) | 15.11.2026 ok (Test) |
+| FEA-30/AK5 | Es gibt keine Gesamtnote; jede Schicht hat ihren eigenen Status mit genannter Regel. | ☑ | **gilt** | [tools/report/test_report.py:14](../tools/report/test_report.py#L14) | 15.11.2026 teilweise: Regel je Schicht getestet |
+| FEA-30/AK6 | Ein Lauf von `test-quality.yml` enthält die Seite als Artefakt und die Kurzfassung in der Zusammenfassung. | ☑ | **gilt** | kein Test | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-30/AK7 | `TESTS.md` beschreibt die Seite, den Befehl und die Statusregeln. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok |
 
 ### #42 FEA-31 Übersichtsseite Testqualität (Stufe 2: Anforderungsbezug und Ergebnis)
 
@@ -594,11 +603,11 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-31/AK1 | Ein Issue mit drei Kriterien, davon zwei mit gekennzeichnetem Test, erscheint mit 2 von 3 belegt. | ☑ | **gilt** | kein Test | – |
-| FEA-31/AK2 | Ein Bug-Issue mit Label `gefunden:nutzung` erscheint unter «Ergebnis» mit Ursache und Regressionstest. | ☑ | **gilt** | kein Test | – |
-| FEA-31/AK3 | Der Vergleich zur vorherigen Version zeigt Veränderungen je Kennzahl. | ☑ | **gilt** | kein Test | – |
-| FEA-31/AK4 | Ohne `gh`-Anmeldung erscheinen die beiden Schichten als «keine Daten», die übrige Seite bleibt vollständig. | ☑ | **gilt** | kein Test | – |
-| FEA-31/AK5 | Labels und Kennzeichnung sind in `CLAUDE.md`, `TESTS.md` und den Issue-Vorlagen beschrieben. | ☑ | **gilt** | kein Test | – |
+| FEA-31/AK1 | Ein Issue mit drei Kriterien, davon zwei mit gekennzeichnetem Test, erscheint mit 2 von 3 belegt. | ☑ | **gilt** | [tools/report/test_report.py:47](../tools/report/test_report.py#L47) | 15.11.2026 ok (2 von 3 belegt) |
+| FEA-31/AK2 | Ein Bug-Issue mit Label `gefunden:nutzung` erscheint unter «Ergebnis» mit Ursache und Regressionstest. | ☑ | **gilt** | [test_report.py:134](../tools/report/test_report.py#L134) | 15.11.2026 ok (Test) |
+| FEA-31/AK3 | Der Vergleich zur vorherigen Version zeigt Veränderungen je Kennzahl. | ☑ | **gilt** | [test_report.py:145](../tools/report/test_report.py#L145) | 15.11.2026 ok (Test) |
+| FEA-31/AK4 | Ohne `gh`-Anmeldung erscheinen die beiden Schichten als «keine Daten», die übrige Seite bleibt vollständig. | ☑ | **gilt** | [test_report.py:161](../tools/report/test_report.py#L161) | 15.11.2026 ok (Test) |
+| FEA-31/AK5 | Labels und Kennzeichnung sind in `CLAUDE.md`, `TESTS.md` und den Issue-Vorlagen beschrieben. | ☑ | **gilt** | kein Test (Datei geprüft: `CLAUDE.md`) | 15.11.2026 teilweise: Labels in CLAUDE.md; TESTS.md und Vorlagen nicht verglichen |
 
 ### #43 FEA-32 Mutationstests beschleunigen (Timeout, schwere Tests, Shards)
 
@@ -606,13 +615,13 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-32/AK1 | `.cargo/mutants.toml` setzt den Timeout; ein Mutant mit Endlosschleife bricht nach der Höchstdauer ab. | ☑ | **gilt** | kein Test | – |
-| FEA-32/AK2 | Mutationsläufe verwenden das eigene nextest-Profil ohne die schweren Tests; `make test` führt sie weiterhin aus. | ☑ | **gilt** | kein Test | – |
-| FEA-32/AK3 | Voller Lauf lokal (`make mutants`): Wanduhrzeit vorher und nachher im Issue, Ziel unter 8 h. | ☑ | **gilt** | kein Test | – |
-| FEA-32/AK4 | `--in-diff` für eine mittlere Änderung (50–100 Zeilen im Rechenkern) dauert lokal unter 10 min. | ☑ | **gilt** | kein Test | – |
-| FEA-32/AK5 | `mutation-full.yml` läuft auf GitHub mit allen Shards innerhalb der Zeitgrenze durch. | ☑ | **gilt** | kein Test | – |
-| FEA-32/AK6 | Vergleich vorher/nachher: Anteil erkannter Mutanten und Liste neu nicht erkannter Mutanten im Issue. | ☑ | **gilt** | kein Test | – |
-| FEA-32/AK7 | `TESTS.md` beschreibt Timeout, Profil und ausgenommene Tests. | ☑ | **gilt** | kein Test | – |
+| FEA-32/AK1 | `.cargo/mutants.toml` setzt den Timeout; ein Mutant mit Endlosschleife bricht nach der Höchstdauer ab. | ☑ | **gilt** | kein Test (Datei geprüft: `.cargo/mutants.toml`) | 15.11.2026 teilweise: Timeout gesetzt; Endlosschleife nicht erprobt |
+| FEA-32/AK2 | Mutationsläufe verwenden das eigene nextest-Profil ohne die schweren Tests; `make test` führt sie weiterhin aus. | ☑ | **gilt** | kein Test (Datei geprüft: `.config/nextest.toml`) | 15.11.2026 ok (Profil mutants; make test führt alle aus (612)) |
+| FEA-32/AK3 | Voller Lauf lokal (`make mutants`): Wanduhrzeit vorher und nachher im Issue, Ziel unter 8 h. | ☑ | **gilt** | kein Test | nicht geprüft: Laufzeit nur auf dem Rechner des Nutzers |
+| FEA-32/AK4 | `--in-diff` für eine mittlere Änderung (50–100 Zeilen im Rechenkern) dauert lokal unter 10 min. | ☑ | **gilt** | kein Test | nicht geprüft: Laufzeit nicht gemessen |
+| FEA-32/AK5 | `mutation-full.yml` läuft auf GitHub mit allen Shards innerhalb der Zeitgrenze durch. | ☑ | **gilt** | kein Test | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-32/AK6 | Vergleich vorher/nachher: Anteil erkannter Mutanten und Liste neu nicht erkannter Mutanten im Issue. | ☑ | **gilt** | kein Test | nicht geprüft: nicht geprüft |
+| FEA-32/AK7 | `TESTS.md` beschreibt Timeout, Profil und ausgenommene Tests. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok |
 
 ### #44 FEA-34 App umbenennen: RetirementPlanner → VivaPlan (im bestehenden Repository, GitHub-Repository am Schluss umbenennen)
 
@@ -620,14 +629,14 @@ Sammelbefund ohne Kriterien; die Punkte sind in ISS-10 (#37) aufgenommen (dort A
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-34/AK1 | Die Suche ohne Beachtung der Gross- und Kleinschreibung nach `retirement`, `rplan` und `pensionsplaner` findet nur noch markierte `legacy`-Stellen und die im Bericht genannten fachlichen Begriffe. | ☑ | **gilt** | kein Test | – |
-| FEA-34/AK2 | Die App startet als «VivaPlan»: Dock, Programmmenü, About-Dialog, Fenstertitel `VivaPlan - ‹Dateiname›`. | ☑ | **gilt** | [app/src/main.rs:1791](../crates/app/src/main.rs#L1791) | – |
-| FEA-34/AK3 | Eine `.rplan`-Datei öffnet mit identischen Werten; «Speichern unter» schlägt `.vplan` vor; die `.vplan` öffnet wieder und ergibt dieselben Ergebnisse; die `.rplan` ist unverändert (Prüfsumme). | ☑ | **gilt** | [app/src/main.rs:1731](../crates/app/src/main.rs#L1731), [engine/tests/legacy_format.rs:82](../crates/engine/tests/legacy_format.rs#L82) | – |
-| FEA-34/AK4 | Beim ersten Start werden die App-Daten aus dem alten Datenordner übernommen; der alte Ordner existiert danach noch. | ☑ | **gilt** | [app/src/migrate.rs:92](../crates/app/src/migrate.rs#L92) | – |
-| FEA-34/AK5 | Ein Doppelklick auf eine `.vplan`-Datei im Finder öffnet VivaPlan. | ☑ | **gilt** | [app/src/main.rs:1803](../crates/app/src/main.rs#L1803) | – |
-| FEA-34/AK6 | Alle Tests sind grün (`make test`, Oberflächentests, Rauchtest), Golden-Ergebnisse unverändert, ein Release-Build läuft durch, alle GitHub-Workflows laufen mit den neuen Paketnamen. | ☑ | **gilt** | kein Test | – |
-| FEA-34/AK7 | Die Git-Historie umbenannter Dateien bleibt erhalten (`git log --follow`). | ☑ | **überholt**: durch GEN-01: Das öffentliche Repository beginnt mit einem einzigen Commit; die Historie liegt nur im alten, privaten Repository. | kein Test | – |
-| FEA-34/AK8 | Das GitHub-Repository heisst `VivaPlan`, `origin` zeigt auf die neue Adresse, Push und Workflows funktionieren, im Repository verweist nichts mehr auf `RetirementPlanning` (ausser Weiterleitungs-Hinweis, falls gewünscht). | ☑ | **gilt**: Seit GEN-01 ist `ingen63/VivaPlan` ein neues Repository; das alte heisst wieder `RetirementPlanning` und bleibt privat. | kein Test | – |
+| FEA-34/AK1 | Die Suche ohne Beachtung der Gross- und Kleinschreibung nach `retirement`, `rplan` und `pensionsplaner` findet nur noch markierte `legacy`-Stellen und die im Bericht genannten fachlichen Begriffe. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Treffer nur noch .rplan-Altformat und Legacy-Stellen (grep) |
+| FEA-34/AK2 | Die App startet als «VivaPlan»: Dock, Programmmenü, About-Dialog, Fenstertitel `VivaPlan - ‹Dateiname›`. | ☑ | **gilt** | [app/src/main.rs:1791](../crates/app/src/main.rs#L1791) | 15.11.2026 ok (Test grün) |
+| FEA-34/AK3 | Eine `.rplan`-Datei öffnet mit identischen Werten; «Speichern unter» schlägt `.vplan` vor; die `.vplan` öffnet wieder und ergibt dieselben Ergebnisse; die `.rplan` ist unverändert (Prüfsumme). | ☑ | **gilt** | [app/src/main.rs:1731](../crates/app/src/main.rs#L1731), [engine/tests/legacy_format.rs:82](../crates/engine/tests/legacy_format.rs#L82) | 15.11.2026 ok (Test grün) |
+| FEA-34/AK4 | Beim ersten Start werden die App-Daten aus dem alten Datenordner übernommen; der alte Ordner existiert danach noch. | ☑ | **gilt** | [app/src/migrate.rs:92](../crates/app/src/migrate.rs#L92) | 15.11.2026 ok (Test grün) |
+| FEA-34/AK5 | Ein Doppelklick auf eine `.vplan`-Datei im Finder öffnet VivaPlan. | ☑ | **gilt** | [app/src/main.rs:1803](../crates/app/src/main.rs#L1803) | 15.11.2026 ok (Test grün) |
+| FEA-34/AK6 | Alle Tests sind grün (`make test`, Oberflächentests, Rauchtest), Golden-Ergebnisse unverändert, ein Release-Build läuft durch, alle GitHub-Workflows laufen mit den neuen Paketnamen. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Tests heute grün (Rust, e2e, Smoke); Release-Build und Workflows nicht geprüft |
+| FEA-34/AK7 | Die Git-Historie umbenannter Dateien bleibt erhalten (`git log --follow`). | ☑ | **überholt**: durch GEN-01: Das öffentliche Repository beginnt mit einem einzigen Commit; die Historie liegt nur im alten, privaten Repository. | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-34/AK8 | Das GitHub-Repository heisst `VivaPlan`, `origin` zeigt auf die neue Adresse, Push und Workflows funktionieren, im Repository verweist nichts mehr auf `RetirementPlanning` (ausser Weiterleitungs-Hinweis, falls gewünscht). | ☑ | **gilt**: Seit GEN-01 ist `ingen63/VivaPlan` ein neues Repository; das alte heisst wieder `RetirementPlanning` und bleibt privat. | kein Test | nicht geprüft: Repository-Umbenennung nicht geprüft |
 
 ### #45 Verwaltung, nicht öffentlich
 
@@ -651,11 +660,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-33/AK1 | Bei zwei Personen mit verschiedenem Pensionierungsdatum legen «Fixe Rate», «VPW» und «Endowment» die jährliche Entnahme im Monat der ersten Pensionierung fest (Rate × liquides Vermögen; bei VPW mit dem Alter der Hauptperson in diesem Monat). Ab diesem Monat gilt die Lebenshaltung der Strategie. | ☐ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | – |
-| FEA-33/AK2 | Ein noch laufendes Erwerbseinkommen der zweiten Person zählt zu «Einkommen und Renten»: Lebenshaltung = Entnahme + Einkommen und Renten − Wohnkosten, wie bei Guardrails. | ☐ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | – |
-| FEA-33/AK3 | Die Unter- und die Obergrenze der Lebenshaltung gelten ab demselben Monat. | ☐ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | – |
-| FEA-33/AK4 | Bei einer Person und bei zwei Personen mit gleichem Pensionierungsdatum ändert sich nichts (Regressionstest, Golden-Dateien unverändert). | ☐ | **gilt** | [engine/tests/buckets_guardrails.rs:452](../crates/engine/tests/buckets_guardrails.rs#L452) | – |
-| FEA-33/AK5 | Die Hilfe (Absatz «Wann gilt die Strategie?» und die Stellen der drei Strategien) und `BESCHREIBUNG.md` nennen den neuen Start. | ☐ | **gilt** | kein Test | – |
+| FEA-33/AK1 | Bei zwei Personen mit verschiedenem Pensionierungsdatum legen «Fixe Rate», «VPW» und «Endowment» die jährliche Entnahme im Monat der ersten Pensionierung fest (Rate × liquides Vermögen; bei VPW mit dem Alter der Hauptperson in diesem Monat). Ab diesem Monat gilt die Lebenshaltung der Strategie. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | 15.11.2026 ok (Test grün) |
+| FEA-33/AK2 | Ein noch laufendes Erwerbseinkommen der zweiten Person zählt zu «Einkommen und Renten»: Lebenshaltung = Entnahme + Einkommen und Renten − Wohnkosten, wie bei Guardrails. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | 15.11.2026 ok (Test grün) |
+| FEA-33/AK3 | Die Unter- und die Obergrenze der Lebenshaltung gelten ab demselben Monat. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | 15.11.2026 ok (Test grün) |
+| FEA-33/AK4 | Bei einer Person und bei zwei Personen mit gleichem Pensionierungsdatum ändert sich nichts (Regressionstest, Golden-Dateien unverändert). | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:452](../crates/engine/tests/buckets_guardrails.rs#L452) | 15.11.2026 ok (Test grün) |
+| FEA-33/AK5 | Die Hilfe (Absatz «Wann gilt die Strategie?» und die Stellen der drei Strategien) und `BESCHREIBUNG.md` nennen den neuen Start. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/app/ui/hilfe/30-entnahme.md`) | 15.11.2026 ok («Wann gilt die Strategie?») |
 
 ### #48 FEA-35 Projektstruktur vereinfachen (Workspace mit crates/, docs/, tools/)
 
@@ -663,14 +672,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-35/AK1 | `make test` läuft grün, die Golden-Dateien sind unverändert | ☑ | **gilt** | kein Test | – |
-| FEA-35/AK2 | Die Abdeckung von Engine und App erreicht weiterhin die Schwelle in `coverage-min`; `make coverage`, `make mutants` und `make report` laufen mit den neuen Pfaden | ☑ | **gilt** | kein Test | – |
-| FEA-35/AK3 | Alle GitHub-Workflows (Abdeckung, Pakete, Mutationen, Testqualität) laufen mit den neuen Pfaden grün | ☐ | **gilt**: Im Issue nicht abgehakt; im neuen Repository mit `gh run list` prüfbar. | kein Test | – |
-| FEA-35/AK4 | Die Desktop-App lässt sich bauen und starten (`scripts/build-install.sh` bzw. dessen neuer Pfad, Git-Hook und Rauchtest `ui-smoke.sh` inbegriffen); die Oberflächentests laufen | ☑ | **gilt**: Das Skript heisst heute `tools/build-install.sh`. | kein Test | – |
-| FEA-35/AK5 | Die Engine enthält ihre Daten und Beispiele selbst; `cargo package -p <engine>` schlägt nicht an fehlenden Dateien fehl | ☑ | **gilt** | kein Test | – |
-| FEA-35/AK6 | Im Wurzelverzeichnis liegen keine `mutants.out*`-Ordner mehr, neue Mutationsläufe schreiben nach `target/` oder `local/` | ☑ | **gilt** | kein Test | – |
-| FEA-35/AK7 | Hooks, `.claude/`, Makefile, CLAUDE.md, README, `docs/` und Spezifikation verweisen auf die neuen Pfade, keine toten Verweise | ☑ | **gilt** | kein Test | – |
-| FEA-35/AK8 | Die Git-Historie der verschobenen Dateien bleibt erhalten (`git mv`) | ☑ | **überholt**: durch GEN-01: keine übernommene Historie im öffentlichen Repository. | kein Test | – |
+| FEA-35/AK1 | `make test` läuft grün, die Golden-Dateien sind unverändert | ☑ | **gilt** | kein Test | 15.11.2026 ok (make test grün; Golden-Dateien seit FEA-64 mit Summen ergänzt (begründet im Issue)) |
+| FEA-35/AK2 | Die Abdeckung von Engine und App erreicht weiterhin die Schwelle in `coverage-min`; `make coverage`, `make mutants` und `make report` laufen mit den neuen Pfaden | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Abdeckung 95.9 % am 14.11.2026; heute nicht neu gemessen |
+| FEA-35/AK3 | Alle GitHub-Workflows (Abdeckung, Pakete, Mutationen, Testqualität) laufen mit den neuen Pfaden grün | ☐ | **gilt**: Im Issue nicht abgehakt; im neuen Repository mit `gh run list` prüfbar. | kein Test | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-35/AK4 | Die Desktop-App lässt sich bauen und starten (`scripts/build-install.sh` bzw. dessen neuer Pfad, Git-Hook und Rauchtest `ui-smoke.sh` inbegriffen); die Oberflächentests laufen | ☑ | **gilt**: Das Skript heisst heute `tools/build-install.sh`. | kein Test | 15.11.2026 teilweise: Oberflächentests und Rauchtest laufen; App-Build nicht geprüft |
+| FEA-35/AK5 | Die Engine enthält ihre Daten und Beispiele selbst; `cargo package -p <engine>` schlägt nicht an fehlenden Dateien fehl | ☑ | **gilt** | kein Test | 15.11.2026 ok (`cargo package -p vivaplan-engine --allow-dirty --offline` baut das Paket aus den verpackten Dateien) |
+| FEA-35/AK6 | Im Wurzelverzeichnis liegen keine `mutants.out*`-Ordner mehr, neue Mutationsläufe schreiben nach `target/` oder `local/` | ☑ | **gilt** | kein Test | 15.11.2026 ok (keine mutants.out*-Ordner im Wurzelverzeichnis) |
+| FEA-35/AK7 | Hooks, `.claude/`, Makefile, CLAUDE.md, README, `docs/` und Spezifikation verweisen auf die neuen Pfade, keine toten Verweise | ☑ | **gilt** | [docs.test.js:40](../e2e/unit/docs.test.js#L40) | 15.11.2026 ok (Test auf tote Verweise in README, CLAUDE.md und docs/) |
+| FEA-35/AK8 | Die Git-Historie der verschobenen Dateien bleibt erhalten (`git mv`) | ☑ | **überholt**: durch GEN-01: keine übernommene Historie im öffentlichen Repository. | kein Test | 15.11.2026 überholt, nicht geprüft |
 
 ### #50 FEA-36 Indirekte Amortisation nur bis zum AHV-Alter, danach direkt; 3a-Auszahlung beim AHV-Alter
 
@@ -678,12 +687,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-36/AK1 | Bis zum Monat vor dem AHV-Bezug fliesst die Amortisation einer Tranche mit indirekter Amortisation (`amortMode: indirect`) in das 3a-Konto, wie bisher. | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | – |
-| FEA-36/AK2 | Ab dem Monat des AHV-Bezugs wird dieselbe Amortisation als direkte Amortisation behandelt: Sie verringert die Hypothek und wird nicht mehr in die Säule 3a eingezahlt. Der Betrag je Quartal bleibt gleich. | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | – |
-| FEA-36/AK3 | Beispiel mit erfundenen Zahlen: Hypothek 400'000, Tranche mit 750 pro Quartal indirekt, AHV-Bezug im Monat M. Vor M steigt der 3a-Saldo um 750 pro Quartal und die Hypothek bleibt 400'000. Ab M sinkt die Hypothek um 750 pro Quartal, und der 3a-Saldo bleibt unverändert (die Auszahlung des Rests in M ist Sache von FEA-37). | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | – |
-| FEA-36/AK4 | Eine Tranche oder Periode, die erst ab dem AHV-Alter beginnt (auch eine Erneuerung), kann nicht indirekt amortisieren; sie wird direkt behandelt. Die Eingabemaske schaltet die Auswahl auf «direkt» und nennt den Grund. | ☑ | **gilt** | [engine/tests/pillar3a.rs:243](../crates/engine/tests/pillar3a.rs#L243), [ui.spec.js:2411](../e2e/ui.spec.js#L2411) | – |
-| FEA-36/AK5 | Gibt es keine Person mit AHV-Bezug in der Planung, bleibt das Verhalten unverändert. Das ist in der Hilfe benannt. | ☑ | **gilt** | kein Test | – |
-| FEA-36/AK6 | Regressionstest für den Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfetexte (`app/ui/hilfe/`), `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Pfad heute `crates/app/ui/hilfe/` (FEA-35). | kein Test | – |
+| FEA-36/AK1 | Bis zum Monat vor dem AHV-Bezug fliesst die Amortisation einer Tranche mit indirekter Amortisation (`amortMode: indirect`) in das 3a-Konto, wie bisher. | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | 15.11.2026 ok (Test grün) |
+| FEA-36/AK2 | Ab dem Monat des AHV-Bezugs wird dieselbe Amortisation als direkte Amortisation behandelt: Sie verringert die Hypothek und wird nicht mehr in die Säule 3a eingezahlt. Der Betrag je Quartal bleibt gleich. | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | 15.11.2026 ok (Test grün) |
+| FEA-36/AK3 | Beispiel mit erfundenen Zahlen: Hypothek 400'000, Tranche mit 750 pro Quartal indirekt, AHV-Bezug im Monat M. Vor M steigt der 3a-Saldo um 750 pro Quartal und die Hypothek bleibt 400'000. Ab M sinkt die Hypothek um 750 pro Quartal, und der 3a-Saldo bleibt unverändert (die Auszahlung des Rests in M ist Sache von FEA-37). | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | 15.11.2026 ok (Test grün) |
+| FEA-36/AK4 | Eine Tranche oder Periode, die erst ab dem AHV-Alter beginnt (auch eine Erneuerung), kann nicht indirekt amortisieren; sie wird direkt behandelt. Die Eingabemaske schaltet die Auswahl auf «direkt» und nennt den Grund. | ☑ | **gilt** | [engine/tests/pillar3a.rs:243](../crates/engine/tests/pillar3a.rs#L243), [ui.spec.js:2411](../e2e/ui.spec.js#L2411) | 15.11.2026 ok (Test grün) |
+| FEA-36/AK5 | Gibt es keine Person mit AHV-Bezug in der Planung, bleibt das Verhalten unverändert. Das ist in der Hilfe benannt. | ☑ | **gilt** | kein Test | nicht geprüft: nicht im Test |
+| FEA-36/AK6 | Regressionstest für den Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfetexte (`app/ui/hilfe/`), `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Pfad heute `crates/app/ui/hilfe/` (FEA-35). | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
 ### #51 FEA-38 Meilensteine AHV-Bezug und Bezug Pensionskasse: immer vorhanden, nicht löschbar, Grenzen und Standard 65
 
@@ -691,16 +700,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-38/AK1 | Jede Person hat die Meilensteine «AHV-Bezug» und «Bezug Pensionskasse». Beide lassen sich in der Oberfläche nicht löschen (keine Löschen-Schaltfläche, Hinweis warum). | ☑ | **gilt** | [engine/src/upgrade.rs:496](../crates/engine/src/upgrade.rs#L496), [engine/tests/milestones_limits.rs:108](../crates/engine/tests/milestones_limits.rs#L108) (+2) | – |
-| FEA-38/AK2 | Beide lassen sich ändern (Alter oder Datum, wie die übrigen Meilensteine). Das Alter muss innerhalb der Grenzen liegen: AHV-Bezug 63 bis 70 Jahre, Bezug Pensionskasse 58 bis 65 Jahre. Die Grenzen selbst sind gültig (63 und 70, 58 und 65), ein Wert ausserhalb wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Die Grenzen sind seit FEA-24 einstellbar; 63 bis 70 und 58 bis 65 sind die Standardwerte. | [engine/tests/milestones_limits.rs:59](../crates/engine/tests/milestones_limits.rs#L59), [ui.spec.js:631](../e2e/ui.spec.js#L631) (+1) | – |
-| FEA-38/AK3 | Neue Planung: Beide Meilensteine stehen auf 65 Jahren. | ☑ | **gilt** | kein Test | – |
-| FEA-38/AK4 | Beispiel: Geburt 1980-06. AHV-Bezug mit 65 liegt im Monat 2045-06, mit 63 im Monat 2043-06, mit 70 im Monat 2050-06. Bezug Pensionskasse mit 58 liegt im Monat 2038-06. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:95](../crates/engine/tests/milestones_limits.rs#L95) | – |
-| FEA-38/AK5 | Der Meilenstein «Pensionierung» heisst überall «Bezug Pensionskasse» (Oberfläche, Hilfe, Berichte). Die Id `retire` bleibt, damit Planungsdateien gültig bleiben. | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [ui.spec.js:2346](../e2e/ui.spec.js#L2346) | – |
-| FEA-38/AK6 | Ältere Planungsdateien ohne einen der beiden Meilensteine erhalten ihn beim Laden mit dem Standard 65. Liegt ein vorhandenes Alter ausserhalb der Grenzen, wird es auf die nächste Grenze gesetzt, mit Hinweis beim Laden (kein stiller Datenverlust). | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [engine/src/upgrade.rs:459](../crates/engine/src/upgrade.rs#L459) (+2) | – |
-| FEA-38/AK7 | Bis FEA-24 umgesetzt ist, gelten die Grenzen fest. Die Stelle, die später die Einstellung liest, ist an einer Stelle gebündelt. | ☑ | **überholt**: durch FEA-24: Die Grenzen kommen aus den Einstellungen. | kein Test | – |
-| FEA-38/AK8 | Prüfung (Warnung, keine Sperre): Beträgt das Erwerbseinkommen im Monat des Bezugs der Pensionskasse oder danach mehr als 0, meldet die Prüfung eine Warnung mit dem Betrag, z. B. «Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (06.2040) noch 12'500 pro Monat.» Bei Einkommen 0 ab dem Bezug erscheint keine Warnung. Die Warnung steht in der Prüfung des Rechenkerns (`Severity::Warning`) und in der Oberfläche. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123), [ui.spec.js:2365](../e2e/ui.spec.js#L2365) | – |
-| FEA-38/AK9 | Beispiel mit erfundenen Zahlen: Einkommen 12'500 ab 2035-02 ohne spätere Zeile mit 0, Bezug Pensionskasse 2040-06: Es erscheint die Warnung mit 12'500. Mit einer Zeile «ab Bezug Pensionskasse: 0» erscheint keine Warnung. Mit einer Zeile «ab 2040-06: 3'000» lautet die Warnung 3'000. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123) | – |
-| FEA-38/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt; Regressionstest im Rechenkern. | ☑ | **gilt** | kein Test | – |
+| FEA-38/AK1 | Jede Person hat die Meilensteine «AHV-Bezug» und «Bezug Pensionskasse». Beide lassen sich in der Oberfläche nicht löschen (keine Löschen-Schaltfläche, Hinweis warum). | ☑ | **gilt** | [engine/src/upgrade.rs:496](../crates/engine/src/upgrade.rs#L496), [engine/tests/milestones_limits.rs:108](../crates/engine/tests/milestones_limits.rs#L108) (+2) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK2 | Beide lassen sich ändern (Alter oder Datum, wie die übrigen Meilensteine). Das Alter muss innerhalb der Grenzen liegen: AHV-Bezug 63 bis 70 Jahre, Bezug Pensionskasse 58 bis 65 Jahre. Die Grenzen selbst sind gültig (63 und 70, 58 und 65), ein Wert ausserhalb wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Die Grenzen sind seit FEA-24 einstellbar; 63 bis 70 und 58 bis 65 sind die Standardwerte. | [engine/tests/milestones_limits.rs:59](../crates/engine/tests/milestones_limits.rs#L59), [ui.spec.js:631](../e2e/ui.spec.js#L631) (+1) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK3 | Neue Planung: Beide Meilensteine stehen auf 65 Jahren. | ☑ | **gilt** | [tests/milestones_limits.rs:110](../crates/engine/tests/milestones_limits.rs#L110) | 15.11.2026 teilweise: Meilensteine immer vorhanden; Vorgabe 65 nicht eigens geprüft |
+| FEA-38/AK4 | Beispiel: Geburt 1980-06. AHV-Bezug mit 65 liegt im Monat 2045-06, mit 63 im Monat 2043-06, mit 70 im Monat 2050-06. Bezug Pensionskasse mit 58 liegt im Monat 2038-06. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:95](../crates/engine/tests/milestones_limits.rs#L95) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK5 | Der Meilenstein «Pensionierung» heisst überall «Bezug Pensionskasse» (Oberfläche, Hilfe, Berichte). Die Id `retire` bleibt, damit Planungsdateien gültig bleiben. | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [ui.spec.js:2346](../e2e/ui.spec.js#L2346) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK6 | Ältere Planungsdateien ohne einen der beiden Meilensteine erhalten ihn beim Laden mit dem Standard 65. Liegt ein vorhandenes Alter ausserhalb der Grenzen, wird es auf die nächste Grenze gesetzt, mit Hinweis beim Laden (kein stiller Datenverlust). | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [engine/src/upgrade.rs:459](../crates/engine/src/upgrade.rs#L459) (+2) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK7 | Bis FEA-24 umgesetzt ist, gelten die Grenzen fest. Die Stelle, die später die Einstellung liest, ist an einer Stelle gebündelt. | ☑ | **überholt**: durch FEA-24: Die Grenzen kommen aus den Einstellungen. | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-38/AK8 | Prüfung (Warnung, keine Sperre): Beträgt das Erwerbseinkommen im Monat des Bezugs der Pensionskasse oder danach mehr als 0, meldet die Prüfung eine Warnung mit dem Betrag, z. B. «Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (06.2040) noch 12'500 pro Monat.» Bei Einkommen 0 ab dem Bezug erscheint keine Warnung. Die Warnung steht in der Prüfung des Rechenkerns (`Severity::Warning`) und in der Oberfläche. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123), [ui.spec.js:2365](../e2e/ui.spec.js#L2365) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK9 | Beispiel mit erfundenen Zahlen: Einkommen 12'500 ab 2035-02 ohne spätere Zeile mit 0, Bezug Pensionskasse 2040-06: Es erscheint die Warnung mit 12'500. Mit einer Zeile «ab Bezug Pensionskasse: 0» erscheint keine Warnung. Mit einer Zeile «ab 2040-06: 3'000» lautet die Warnung 3'000. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123) | 15.11.2026 ok (Test grün) |
+| FEA-38/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt; Regressionstest im Rechenkern. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
 ### #52 FEA-37 Säule 3a als eigenes Konto mit Auszahlungsplan, Rest spätestens im AHV-Alter
 
@@ -708,20 +717,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-37/AK1 | Die Oberfläche hat einen eigenen Abschnitt «Säule 3a» (nicht unter Immobilien, nicht unter Pensionskasse) mit Guthaben bei Simulationsstart und Verzinsung. | ☑ | **gilt** | [ui.spec.js:2372](../e2e/ui.spec.js#L2372) | – |
-| FEA-37/AK2 | Der Auszahlungsplan ist eine Liste aus Monat/Jahr und Betrag. Zeilen lassen sich hinzufügen und löschen. | ☑ | **gilt** | [ui.spec.js:2372](../e2e/ui.spec.js#L2372) | – |
-| FEA-37/AK3 | Beispiel mit erfundenen Zahlen: Guthaben 120'000, Plan 2041: 50'000 und 2042: 50'000, AHV-Bezug im Jahr 2045. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig (frühester Zeitpunkt 2041) und der Rest wird erst 2046 ausbezahlt. Ergebnis: Auszahlungen von 50'000 in 2041 und 2042 und Auszahlung des Rests (20'000 plus Zins) im Monat des AHV-Bezugs. Danach ist das Guthaben 0. | ☑ | **gilt** | [engine/tests/pillar3a.rs:62](../crates/engine/tests/pillar3a.rs#L62) | – |
-| FEA-37/AK4 | Ein Plan-Eintrag früher als 5 Jahre vor dem Meilenstein «AHV-Bezug» wird mit klarer Meldung abgelehnt (Validierung im Rechenkern und in der Oberfläche). Genau 5 Jahre vorher ist gültig. | ☑ | **gilt** | [engine/src/validate.rs:1397](../crates/engine/src/validate.rs#L1397) | – |
-| FEA-37/AK5 | Ist ein Betrag grösser als das Guthaben zum Zeitpunkt, wird nur das Guthaben ausbezahlt (Hinweis in den Ereignissen). | ☑ | **gilt** | [engine/src/validate.rs:1397](../crates/engine/src/validate.rs#L1397), [engine/tests/pillar3a.rs:102](../crates/engine/tests/pillar3a.rs#L102) | – |
-| FEA-37/AK6 | Jede Auszahlung ist ein Kapitalbezug mit Kapitalbezugssteuer; Bezüge im selben Jahr werden mit PK-Kapitalbezügen für die Progression zusammengerechnet (wie bisher). | ☑ | **gilt** | [engine/tests/pillar3a.rs:128](../crates/engine/tests/pillar3a.rs#L128) | – |
-| FEA-37/AK7 | Das 3a-Konto hat das Feld «Einzahlung pro Jahr» (Standard 0). Gültig sind Werte von 0 bis zum Maximalbetrag (7'258), beide Grenzen eingeschlossen. Ein negativer Wert oder ein Wert über dem Maximalbetrag wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Der Maximalbetrag ist seit FEA-24 einstellbar (Standard 7'258). | kein Test | – |
-| FEA-37/AK8 | Die Einzahlung erhöht das 3a-Guthaben und zählt zu den Ausgaben: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme bzw. verringert den Überschuss und wirkt in den Ausgaben der Strategien (3-Topf, Guardrails, Netto-Bedarf). Die Einzahlung verteilt sich auf zwölf gleiche Monatsbeträge. Beispiel mit erfundenen Zahlen: Einzahlung 6'000 pro Jahr, Guthaben 10'000, Zins 0: nach einem Jahr 16'000, die Ausgaben des Jahres sind um 6'000 höher (500 pro Monat im Monatsdurchschnitt). | ☑ | **gilt** | [engine/tests/pillar3a.rs:146](../crates/engine/tests/pillar3a.rs#L146), [ui.spec.js:2396](../e2e/ui.spec.js#L2396) | – |
-| FEA-37/AK9 | Einzahlungen enden spätestens im Monat vor dem Meilenstein «AHV-Bezug». Danach zahlt keine Einzahlung mehr ein (Hinweis in der Eingabe). | ☑ | **gilt** | [engine/tests/pillar3a.rs:173](../crates/engine/tests/pillar3a.rs#L173) | – |
-| FEA-37/AK10 | Die Einzahlungen und die indirekte Amortisation (FEA-36) zusammen dürfen im Jahr den Maximalbetrag nicht überschreiten. Die Prüfung meldet eine Überschreitung mit klarer Warnung (keine Sperre). | ☑ | **gilt** | kein Test | – |
-| FEA-37/AK11 | Der Maximalbetrag ist an einer Stelle gebündelt, damit FEA-24 ihn später aus den Einstellungen liest. | ☑ | **überholt**: durch FEA-24: Der Maximalbetrag kommt aus den Einstellungen. | kein Test | – |
-| FEA-37/AK12 | Die Pensionskasse enthält kein 3a-Guthaben mehr. In den Auswertungen bleibt «Säule 3a» getrennt von «Pensionskasse» (heute schon im Diagramm Vorsorge). | ☑ | **gilt** | kein Test | – |
-| FEA-37/AK13 | Alte Planungsdateien (`realestate.properties[].mortgage.pillar3a` mit Guthaben, Zins, `payout`) werden beim Laden in das neue 3a-Konto übernommen: Guthaben und Zins bleiben erhalten, die frühere Auszahlung wird ein einzelner Plan-Eintrag über das ganze Guthaben, auf den frühesten erlaubten Zeitpunkt begrenzt, mit Hinweis beim Laden. Mehrere Immobilien mit je einer 3a werden zu einem Konto zusammengefasst (Hinweis). | ☑ | **gilt** | [engine/src/upgrade.rs:533](../crates/engine/src/upgrade.rs#L533), [engine/src/upgrade.rs:592](../crates/engine/src/upgrade.rs#L592) (+2) | – |
-| FEA-37/AK14 | Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-37/AK1 | Die Oberfläche hat einen eigenen Abschnitt «Säule 3a» (nicht unter Immobilien, nicht unter Pensionskasse) mit Guthaben bei Simulationsstart und Verzinsung. | ☑ | **gilt** | [ui.spec.js:2372](../e2e/ui.spec.js#L2372) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK2 | Der Auszahlungsplan ist eine Liste aus Monat/Jahr und Betrag. Zeilen lassen sich hinzufügen und löschen. | ☑ | **gilt** | [ui.spec.js:2372](../e2e/ui.spec.js#L2372) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK3 | Beispiel mit erfundenen Zahlen: Guthaben 120'000, Plan 2041: 50'000 und 2042: 50'000, AHV-Bezug im Jahr 2045. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig (frühester Zeitpunkt 2041) und der Rest wird erst 2046 ausbezahlt. Ergebnis: Auszahlungen von 50'000 in 2041 und 2042 und Auszahlung des Rests (20'000 plus Zins) im Monat des AHV-Bezugs. Danach ist das Guthaben 0. | ☑ | **gilt** | [engine/tests/pillar3a.rs:62](../crates/engine/tests/pillar3a.rs#L62) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK4 | Ein Plan-Eintrag früher als 5 Jahre vor dem Meilenstein «AHV-Bezug» wird mit klarer Meldung abgelehnt (Validierung im Rechenkern und in der Oberfläche). Genau 5 Jahre vorher ist gültig. | ☑ | **gilt** | [engine/src/validate.rs:1397](../crates/engine/src/validate.rs#L1397) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK5 | Ist ein Betrag grösser als das Guthaben zum Zeitpunkt, wird nur das Guthaben ausbezahlt (Hinweis in den Ereignissen). | ☑ | **gilt** | [engine/src/validate.rs:1397](../crates/engine/src/validate.rs#L1397), [engine/tests/pillar3a.rs:102](../crates/engine/tests/pillar3a.rs#L102) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK6 | Jede Auszahlung ist ein Kapitalbezug mit Kapitalbezugssteuer; Bezüge im selben Jahr werden mit PK-Kapitalbezügen für die Progression zusammengerechnet (wie bisher). | ☑ | **gilt** | [engine/tests/pillar3a.rs:128](../crates/engine/tests/pillar3a.rs#L128) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK7 | Das 3a-Konto hat das Feld «Einzahlung pro Jahr» (Standard 0). Gültig sind Werte von 0 bis zum Maximalbetrag (7'258), beide Grenzen eingeschlossen. Ein negativer Wert oder ein Wert über dem Maximalbetrag wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Der Maximalbetrag ist seit FEA-24 einstellbar (Standard 7'258). | [validate.rs:1519](../crates/engine/src/validate.rs#L1519) | 15.11.2026 ok (Test) |
+| FEA-37/AK8 | Die Einzahlung erhöht das 3a-Guthaben und zählt zu den Ausgaben: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme bzw. verringert den Überschuss und wirkt in den Ausgaben der Strategien (3-Topf, Guardrails, Netto-Bedarf). Die Einzahlung verteilt sich auf zwölf gleiche Monatsbeträge. Beispiel mit erfundenen Zahlen: Einzahlung 6'000 pro Jahr, Guthaben 10'000, Zins 0: nach einem Jahr 16'000, die Ausgaben des Jahres sind um 6'000 höher (500 pro Monat im Monatsdurchschnitt). | ☑ | **gilt** | [engine/tests/pillar3a.rs:146](../crates/engine/tests/pillar3a.rs#L146), [ui.spec.js:2396](../e2e/ui.spec.js#L2396) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK9 | Einzahlungen enden spätestens im Monat vor dem Meilenstein «AHV-Bezug». Danach zahlt keine Einzahlung mehr ein (Hinweis in der Eingabe). | ☑ | **gilt** | [engine/tests/pillar3a.rs:173](../crates/engine/tests/pillar3a.rs#L173) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK10 | Die Einzahlungen und die indirekte Amortisation (FEA-36) zusammen dürfen im Jahr den Maximalbetrag nicht überschreiten. Die Prüfung meldet eine Überschreitung mit klarer Warnung (keine Sperre). | ☑ | **gilt** | [validate.rs:1519](../crates/engine/src/validate.rs#L1519) | 15.11.2026 ok (Test) |
+| FEA-37/AK11 | Der Maximalbetrag ist an einer Stelle gebündelt, damit FEA-24 ihn später aus den Einstellungen liest. | ☑ | **überholt**: durch FEA-24: Der Maximalbetrag kommt aus den Einstellungen. | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-37/AK12 | Die Pensionskasse enthält kein 3a-Guthaben mehr. In den Auswertungen bleibt «Säule 3a» getrennt von «Pensionskasse» (heute schon im Diagramm Vorsorge). | ☑ | **gilt** | [pillar3a.rs:350](../crates/engine/tests/pillar3a.rs#L350) | 15.11.2026 ok (Test) |
+| FEA-37/AK13 | Alte Planungsdateien (`realestate.properties[].mortgage.pillar3a` mit Guthaben, Zins, `payout`) werden beim Laden in das neue 3a-Konto übernommen: Guthaben und Zins bleiben erhalten, die frühere Auszahlung wird ein einzelner Plan-Eintrag über das ganze Guthaben, auf den frühesten erlaubten Zeitpunkt begrenzt, mit Hinweis beim Laden. Mehrere Immobilien mit je einer 3a werden zu einem Konto zusammengefasst (Hinweis). | ☑ | **gilt** | [engine/src/upgrade.rs:533](../crates/engine/src/upgrade.rs#L533), [engine/src/upgrade.rs:592](../crates/engine/src/upgrade.rs#L592) (+2) | 15.11.2026 ok (Test grün) |
+| FEA-37/AK14 | Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
 ### #53 FEA-39 Lebenshaltungskosten inklusive Wohnkosten, Simulation mit den echten Wohnkosten
 
@@ -729,14 +738,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-39/AK1 | Beschriftung und Hilfe der Lebenshaltungskosten sagen «inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)». | ☑ | **gilt** | [ui.spec.js:2451](../e2e/ui.spec.js#L2451) | – |
-| FEA-39/AK2 | Der Wohnanteil ist die Summe der simulierten Wohnkosten im Startmonat (Miete bzw. Hypothekarzins, Amortisation, Nebenkosten), mit der Teuerung fortgeschrieben. Er wird von jeder Zeile einer zeitabhängigen Lebenshaltung gleich abgezogen. | ☑ | **gilt** | [engine/src/housing.rs:99](../crates/engine/src/housing.rs#L99), [ui.spec.js:2451](../e2e/ui.spec.js#L2451) | – |
-| FEA-39/AK3 | Beispiel mit erfundenen Zahlen: Eingabe 8'000, Wohnkosten im Startmonat 2'000 (Zins 1'000, Amortisation 500, Nebenkosten 500), Teuerung 0. Die Simulation rechnet mit 6'000 Lebenshaltung plus den echten Wohnkosten; solange sich nichts ändert, sind die «Ausgaben total» 8'000. Steigt der Zins bei einer Erneuerung um 300, sind sie 8'300; bei einem Wechsel in eine Miete von 2'500 sind sie 8'500. | ☑ | **gilt** | [engine/src/housing.rs:99](../crates/engine/src/housing.rs#L99), [engine/tests/cash_housing.rs:70](../crates/engine/tests/cash_housing.rs#L70) | – |
-| FEA-39/AK4 | Ist der Wohnanteil grösser als eine Zeile der Lebenshaltung, meldet die Prüfung einen Fehler mit beiden Beträgen. | ☑ | **gilt** | [engine/tests/cash_housing.rs:85](../crates/engine/tests/cash_housing.rs#L85), [ui.spec.js:2459](../e2e/ui.spec.js#L2459) | – |
-| FEA-39/AK5 | Ohne Wohnkosten im Startmonat (keine Immobilie, keine Miete) ändert sich nichts. | ☑ | **gilt** | [engine/src/housing.rs:122](../crates/engine/src/housing.rs#L122), [engine/tests/cash_housing.rs:85](../crates/engine/tests/cash_housing.rs#L85) | – |
-| FEA-39/AK6 | Die Einzahlung in die Säule 3a (FEA-37) ist nicht in der Eingabe enthalten und kommt wie bisher separat zu den Ausgaben. | ☑ | **gilt** | [engine/tests/cash_housing.rs:108](../crates/engine/tests/cash_housing.rs#L108) | – |
-| FEA-39/AK7 | Ältere Planungen (Lebenshaltung bisher ohne Wohnkosten) werden beim Öffnen umgerechnet (Wohnanteil zu jeder Zeile addiert), mit Hinweis, damit sich das Ergebnis nicht ändert. | ☑ | **gilt** | [engine/tests/cash_housing.rs:118](../crates/engine/tests/cash_housing.rs#L118), [ui.spec.js:2480](../e2e/ui.spec.js#L2480) | – |
-| FEA-39/AK8 | Jahreswerte («Ausgaben total», «Abweichung vom Plan»), Netto-Bedarf der 3-Topf-Strategie, Ausgabenregeln (Guardrails & Co.), Grenzen der Lebenshaltung und Ausgaben-Faktor der Variation verwenden die neue Aufteilung. Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [engine/tests/cash_housing.rs:158](../crates/engine/tests/cash_housing.rs#L158) | – |
+| FEA-39/AK1 | Beschriftung und Hilfe der Lebenshaltungskosten sagen «inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)». | ☑ | **gilt** | [ui.spec.js:2451](../e2e/ui.spec.js#L2451) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK2 | Der Wohnanteil ist die Summe der simulierten Wohnkosten im Startmonat (Miete bzw. Hypothekarzins, Amortisation, Nebenkosten), mit der Teuerung fortgeschrieben. Er wird von jeder Zeile einer zeitabhängigen Lebenshaltung gleich abgezogen. | ☑ | **gilt** | [engine/src/housing.rs:99](../crates/engine/src/housing.rs#L99), [ui.spec.js:2451](../e2e/ui.spec.js#L2451) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK3 | Beispiel mit erfundenen Zahlen: Eingabe 8'000, Wohnkosten im Startmonat 2'000 (Zins 1'000, Amortisation 500, Nebenkosten 500), Teuerung 0. Die Simulation rechnet mit 6'000 Lebenshaltung plus den echten Wohnkosten; solange sich nichts ändert, sind die «Ausgaben total» 8'000. Steigt der Zins bei einer Erneuerung um 300, sind sie 8'300; bei einem Wechsel in eine Miete von 2'500 sind sie 8'500. | ☑ | **gilt** | [engine/src/housing.rs:99](../crates/engine/src/housing.rs#L99), [engine/tests/cash_housing.rs:70](../crates/engine/tests/cash_housing.rs#L70) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK4 | Ist der Wohnanteil grösser als eine Zeile der Lebenshaltung, meldet die Prüfung einen Fehler mit beiden Beträgen. | ☑ | **gilt** | [engine/tests/cash_housing.rs:85](../crates/engine/tests/cash_housing.rs#L85), [ui.spec.js:2459](../e2e/ui.spec.js#L2459) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK5 | Ohne Wohnkosten im Startmonat (keine Immobilie, keine Miete) ändert sich nichts. | ☑ | **gilt** | [engine/src/housing.rs:122](../crates/engine/src/housing.rs#L122), [engine/tests/cash_housing.rs:85](../crates/engine/tests/cash_housing.rs#L85) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK6 | Die Einzahlung in die Säule 3a (FEA-37) ist nicht in der Eingabe enthalten und kommt wie bisher separat zu den Ausgaben. | ☑ | **gilt** | [engine/tests/cash_housing.rs:108](../crates/engine/tests/cash_housing.rs#L108) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK7 | Ältere Planungen (Lebenshaltung bisher ohne Wohnkosten) werden beim Öffnen umgerechnet (Wohnanteil zu jeder Zeile addiert), mit Hinweis, damit sich das Ergebnis nicht ändert. | ☑ | **gilt** | [engine/tests/cash_housing.rs:118](../crates/engine/tests/cash_housing.rs#L118), [ui.spec.js:2480](../e2e/ui.spec.js#L2480) | 15.11.2026 ok (Test grün) |
+| FEA-39/AK8 | Jahreswerte («Ausgaben total», «Abweichung vom Plan»), Netto-Bedarf der 3-Topf-Strategie, Ausgabenregeln (Guardrails & Co.), Grenzen der Lebenshaltung und Ausgaben-Faktor der Variation verwenden die neue Aufteilung. Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [engine/tests/cash_housing.rs:158](../crates/engine/tests/cash_housing.rs#L158) | 15.11.2026 ok (Test grün) |
 
 ### #54 FEA-40 Cash getrennt vom Portfolio, Strategien erst ab Pensionierung, «Liquidität» heisst «Cash»
 
@@ -744,15 +753,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-40/AK1 | Die Aktienquote gilt nur für Aktien und Obligationen; Cash ist nicht Teil davon. Beschriftung und Hilfe sagen das. | ☑ | **gilt** | [ui.spec.js:2470](../e2e/ui.spec.js#L2470) | – |
-| FEA-40/AK2 | Beispiel mit erfundenen Zahlen: Aktien 80'000, Obligationen 20'000, Cash 50'000, Aktienquote 80 %, keine Renditen, Einnahmen gleich Ausgaben: Bis zur Pensionierung bleiben Cash 50'000, Aktien 80'000, Obligationen 20'000 (kein Umschichten von Cash ins Portfolio). | ☑ | **gilt** | [engine/tests/cash_housing.rs:168](../crates/engine/tests/cash_housing.rs#L168) | – |
-| FEA-40/AK3 | Beispiel Überschuss: wie oben, aber 2'000 Einkommen mehr als Ausgaben pro Monat. Cash bleibt 50'000, die 2'000 gehen ins Portfolio (1'600 Aktien, 400 Obligationen). | ☑ | **gilt** | [engine/tests/cash_housing.rs:180](../crates/engine/tests/cash_housing.rs#L180) | – |
-| FEA-40/AK4 | Vor der Pensionierung gilt keine Entnahmestrategie, auch nicht «Standard»; die Liquiditäts- bzw. Cash-Reserve in Monaten wirkt erst ab der Pensionierung. | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214), [ui.spec.js:2470](../e2e/ui.spec.js#L2470) | – |
-| FEA-40/AK5 | Ab der Pensionierung: «Standard» mit der konfigurierten Cash-Reserve (Monate), alle anderen Strategien wie bisher (3 Monate bzw. 3-Topf mit ihren Töpfen). | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214) | – |
-| FEA-40/AK6 | «Liquidität…» heisst überall «Cash…» (Oberfläche, Hilfe, Jahreswerte, Grafiken, Berichte, Prüfmeldungen, Dokumentation). Die Feldnamen in der Planungsdatei bleiben (`wealth.cash`, `reserveMonths`), damit bestehende Dateien gültig bleiben. | ☑ | **gilt** | kein Test | – |
-| FEA-40/AK7 | Beispiel Nachfüllen und Teuerung: Cash 50'000, Teuerung 2 % pro Jahr, Ausgaben 1'000 über den Einnahmen pro Monat: Cash wird jeden Monat aus dem Portfolio auf den mit der Teuerung fortgeschriebenen Betrag gebracht (nach einem Jahr rund 51'000). | ☑ | **gilt** | kein Test | – |
-| FEA-40/AK8 | Ältere Planungen rechnen nach dem neuen Verhalten; beim Öffnen weist ein Hinweis darauf hin, dass Cash vor der Pensionierung neu fest gehalten wird. | ☑ | **gilt** | [engine/tests/cash_housing.rs:143](../crates/engine/tests/cash_housing.rs#L143), [ui.spec.js:2480](../e2e/ui.spec.js#L2480) | – |
-| FEA-40/AK9 | Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-40/AK1 | Die Aktienquote gilt nur für Aktien und Obligationen; Cash ist nicht Teil davon. Beschriftung und Hilfe sagen das. | ☑ | **gilt** | [ui.spec.js:2470](../e2e/ui.spec.js#L2470) | 15.11.2026 ok (Test grün) |
+| FEA-40/AK2 | Beispiel mit erfundenen Zahlen: Aktien 80'000, Obligationen 20'000, Cash 50'000, Aktienquote 80 %, keine Renditen, Einnahmen gleich Ausgaben: Bis zur Pensionierung bleiben Cash 50'000, Aktien 80'000, Obligationen 20'000 (kein Umschichten von Cash ins Portfolio). | ☑ | **gilt** | [engine/tests/cash_housing.rs:168](../crates/engine/tests/cash_housing.rs#L168) | 15.11.2026 ok (Test grün) |
+| FEA-40/AK3 | Beispiel Überschuss: wie oben, aber 2'000 Einkommen mehr als Ausgaben pro Monat. Cash bleibt 50'000, die 2'000 gehen ins Portfolio (1'600 Aktien, 400 Obligationen). | ☑ | **gilt** | [engine/tests/cash_housing.rs:180](../crates/engine/tests/cash_housing.rs#L180) | 15.11.2026 ok (Test grün) |
+| FEA-40/AK4 | Vor der Pensionierung gilt keine Entnahmestrategie, auch nicht «Standard»; die Liquiditäts- bzw. Cash-Reserve in Monaten wirkt erst ab der Pensionierung. | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214), [ui.spec.js:2470](../e2e/ui.spec.js#L2470) | 15.11.2026 ok (Test grün) |
+| FEA-40/AK5 | Ab der Pensionierung: «Standard» mit der konfigurierten Cash-Reserve (Monate), alle anderen Strategien wie bisher (3 Monate bzw. 3-Topf mit ihren Töpfen). | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214) | 15.11.2026 ok (Test grün) |
+| FEA-40/AK6 | «Liquidität…» heisst überall «Cash…» (Oberfläche, Hilfe, Jahreswerte, Grafiken, Berichte, Prüfmeldungen, Dokumentation). Die Feldnamen in der Planungsdatei bleiben (`wealth.cash`, `reserveMonths`), damit bestehende Dateien gültig bleiben. | ☑ | **gilt** | [docs.test.js:18](../e2e/unit/docs.test.js#L18) | 15.11.2026 ok (Test: «Liquidität» nur noch als Suchbegriff in den Stichwortzeilen der Hilfe) |
+| FEA-40/AK7 | Beispiel Nachfüllen und Teuerung: Cash 50'000, Teuerung 2 % pro Jahr, Ausgaben 1'000 über den Einnahmen pro Monat: Cash wird jeden Monat aus dem Portfolio auf den mit der Teuerung fortgeschriebenen Betrag gebracht (nach einem Jahr rund 51'000). | ☑ | **gilt** | [tests/cash_housing.rs:194](../crates/engine/tests/cash_housing.rs#L194) | 15.11.2026 ok (Nachfüllen und Teuerung) |
+| FEA-40/AK8 | Ältere Planungen rechnen nach dem neuen Verhalten; beim Öffnen weist ein Hinweis darauf hin, dass Cash vor der Pensionierung neu fest gehalten wird. | ☑ | **gilt** | [engine/tests/cash_housing.rs:143](../crates/engine/tests/cash_housing.rs#L143), [ui.spec.js:2480](../e2e/ui.spec.js#L2480) | 15.11.2026 ok (Test grün) |
+| FEA-40/AK9 | Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
 ### #55 FEA-41 Säule 3a: Auszahlungsplan mit Datum oder Alter, Guthaben anzeigen, Restbetrag vorabfüllen
 
@@ -760,15 +769,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-41/AK1 | Jede Zeile des Auszahlungsplans hat die Auswahl «Datum» oder «Alter». Beim Wechsel bleibt der Zeitpunkt gleich (wie bei Meilensteinen, ISS-10). Daneben steht der berechnete Monat und das Alter. | ☑ | **gilt** | [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | – |
-| FEA-41/AK2 | Beispiel mit erfundenen Zahlen: Geburt 1980-06, Zeile «Alter 61.5» ergibt 12.2041; als «Datum» umgestellt steht 12.2041 im Feld. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:44](../crates/engine/tests/pillar3a_plan.rs#L44), [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | – |
-| FEA-41/AK3 | Die Regel «frühestens 5 Jahre vor dem AHV-Bezug» (FEA-37) gilt auch für eine Zeile nach Alter; die Meldung steht am Feld. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:63](../crates/engine/tests/pillar3a_plan.rs#L63), [ui.spec.js:2534](../e2e/ui.spec.js#L2534) | – |
-| FEA-41/AK4 | Jede Zeile zeigt «Guthaben vor Auszahlung» und «Rest danach» aus der Vorschau; unter dem Plan steht das Guthaben, das im AHV-Bezug ausbezahlt wird. Ohne Vorschau (Fehler in der Planung) steht «–». | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:94](../crates/engine/tests/pillar3a_plan.rs#L94), [ui.spec.js:2534](../e2e/ui.spec.js#L2534) (+1) | – |
-| FEA-41/AK5 | Beispiel: Guthaben 120'000, Zins 0, keine Einzahlung, Zeile 2041 mit 50'000: vor 120'000, Rest 70'000; Rest im AHV-Bezug 70'000. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:94](../crates/engine/tests/pillar3a_plan.rs#L94), [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | – |
-| FEA-41/AK6 | «+ Auszahlung» legt die neue Zeile ein Jahr nach der letzten an (ohne Zeile: frühester erlaubter Monat, 5 Jahre vor dem AHV-Bezug, nicht vor dem Start, höchstens im AHV-Bezug). Der Betrag ist das Guthaben laut Vorschau zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1'000. Er bleibt danach frei änderbar. | ☑ | **gilt** | [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | – |
-| FEA-41/AK7 | Beispiel: wie oben; «+ Auszahlung» ergibt eine Zeile 2042 mit 70'000. | ☑ | **gilt** | [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | – |
-| FEA-41/AK8 | Ältere Planungen (Zeile nur mit Datum) bleiben gültig und erscheinen als «Datum». | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:130](../crates/engine/tests/pillar3a_plan.rs#L130), [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | – |
-| FEA-41/AK9 | Regressionstest im Rechenkern für die Zeile nach Alter; Oberflächentest für Umschalten, Anzeige und Vorabfüllen. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-41/AK1 | Jede Zeile des Auszahlungsplans hat die Auswahl «Datum» oder «Alter». Beim Wechsel bleibt der Zeitpunkt gleich (wie bei Meilensteinen, ISS-10). Daneben steht der berechnete Monat und das Alter. | ☑ | **gilt** | [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK2 | Beispiel mit erfundenen Zahlen: Geburt 1980-06, Zeile «Alter 61.5» ergibt 12.2041; als «Datum» umgestellt steht 12.2041 im Feld. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:44](../crates/engine/tests/pillar3a_plan.rs#L44), [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK3 | Die Regel «frühestens 5 Jahre vor dem AHV-Bezug» (FEA-37) gilt auch für eine Zeile nach Alter; die Meldung steht am Feld. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:63](../crates/engine/tests/pillar3a_plan.rs#L63), [ui.spec.js:2534](../e2e/ui.spec.js#L2534) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK4 | Jede Zeile zeigt «Guthaben vor Auszahlung» und «Rest danach» aus der Vorschau; unter dem Plan steht das Guthaben, das im AHV-Bezug ausbezahlt wird. Ohne Vorschau (Fehler in der Planung) steht «–». | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:94](../crates/engine/tests/pillar3a_plan.rs#L94), [ui.spec.js:2534](../e2e/ui.spec.js#L2534) (+1) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK5 | Beispiel: Guthaben 120'000, Zins 0, keine Einzahlung, Zeile 2041 mit 50'000: vor 120'000, Rest 70'000; Rest im AHV-Bezug 70'000. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:94](../crates/engine/tests/pillar3a_plan.rs#L94), [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK6 | «+ Auszahlung» legt die neue Zeile ein Jahr nach der letzten an (ohne Zeile: frühester erlaubter Monat, 5 Jahre vor dem AHV-Bezug, nicht vor dem Start, höchstens im AHV-Bezug). Der Betrag ist das Guthaben laut Vorschau zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1'000. Er bleibt danach frei änderbar. | ☑ | **gilt** | [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK7 | Beispiel: wie oben; «+ Auszahlung» ergibt eine Zeile 2042 mit 70'000. | ☑ | **gilt** | [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK8 | Ältere Planungen (Zeile nur mit Datum) bleiben gültig und erscheinen als «Datum». | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:130](../crates/engine/tests/pillar3a_plan.rs#L130), [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | 15.11.2026 ok (Test grün) |
+| FEA-41/AK9 | Regressionstest im Rechenkern für die Zeile nach Alter; Oberflächentest für Umschalten, Anzeige und Vorabfüllen. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [tests/pillar3a_plan.rs:46](../crates/engine/tests/pillar3a_plan.rs#L46) | 15.11.2026 ok (Regressionstests und Oberflächentest vorhanden) |
 
 ### #56 FEA-42 Ganzes Projekt mit rustfmt formatieren, Formatierung prüfen, Agentenanleitung anpassen
 
@@ -776,15 +785,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-42/AK1 | Im Wurzelverzeichnis liegt eine `rustfmt.toml` mit den gewählten Einstellungen (z. B. Zeilenlänge); sie gilt für alle Pakete. | ☑ | **gilt** | kein Test | – |
-| FEA-42/AK2 | `cargo fmt --all --check` meldet im ganzen Workspace keine Abweichung. | ☑ | **gilt** | kein Test | – |
-| FEA-42/AK3 | Die Umformatierung ist ein eigener Commit ohne inhaltliche Änderung; alle Rust-Tests (`make test`) laufen danach unverändert grün, die Golden-Dateien bleiben gleich. | ☑ | **gilt** | kein Test | – |
-| FEA-42/AK4 | Der Commit der Umformatierung steht in `.git-blame-ignore-revs`, damit `git blame` die fachlichen Änderungen zeigt. | ☑ | **überholt**: durch GEN-01: Das öffentliche Repository hat die alte Historie nicht; `.git-blame-ignore-revs` ist entfernt. | kein Test | – |
-| FEA-42/AK5 | Ein GitHub-Workflow (oder ein bestehender Job) prüft bei jedem Push `cargo fmt --all --check` und schlägt bei Abweichungen fehl. | ☑ | **gilt** | kein Test | – |
-| FEA-42/AK6 | `CLAUDE.md` beschreibt die neue Regel: Code wird mit `cargo fmt` formatiert, vor dem Commit läuft `cargo fmt --all --check`. | ☑ | **gilt** | kein Test | – |
-| FEA-42/AK7 | Die Sperre von `cargo fmt` in `.claude/settings.json` ist aufgehoben (bzw. auf das Nötige beschränkt). | ☑ | **gilt** | kein Test | – |
-| FEA-42/AK8 | Die Agentenanleitung `.claude/agents/rust-test-agent.md` und die Aufträge in `.claude/hooks/after-commit.sh` und `scripts/git-hooks/pre-push` sagen nicht mehr «Kein cargo fmt (das Projekt ist nicht rustfmt-formatiert)», sondern verlangen formatierten Code. | ☑ | **gilt**: Der Hook liegt heute unter `tools/git-hooks/pre-push`. | kein Test | – |
-| FEA-42/AK9 | Keine anderen Dokumente (`TESTS.md`, `QA.md`, `README.md`) beschreiben die alte Regel noch. | ☑ | **gilt** | kein Test | – |
+| FEA-42/AK1 | Im Wurzelverzeichnis liegt eine `rustfmt.toml` mit den gewählten Einstellungen (z. B. Zeilenlänge); sie gilt für alle Pakete. | ☑ | **gilt** | kein Test (Datei geprüft: `rustfmt.toml`) | 15.11.2026 ok (max_width = 120) |
+| FEA-42/AK2 | `cargo fmt --all --check` meldet im ganzen Workspace keine Abweichung. | ☑ | **gilt** | kein Test | 15.11.2026 ok (cargo fmt --all --check meldet nichts) |
+| FEA-42/AK3 | Die Umformatierung ist ein eigener Commit ohne inhaltliche Änderung; alle Rust-Tests (`make test`) laufen danach unverändert grün, die Golden-Dateien bleiben gleich. | ☑ | **gilt** | kein Test | nicht geprüft: Einzelcommit nicht geprüft |
+| FEA-42/AK4 | Der Commit der Umformatierung steht in `.git-blame-ignore-revs`, damit `git blame` die fachlichen Änderungen zeigt. | ☑ | **überholt**: durch GEN-01: Das öffentliche Repository hat die alte Historie nicht; `.git-blame-ignore-revs` ist entfernt. | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-42/AK5 | Ein GitHub-Workflow (oder ein bestehender Job) prüft bei jedem Push `cargo fmt --all --check` und schlägt bei Abweichungen fehl. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Job format) |
+| FEA-42/AK6 | `CLAUDE.md` beschreibt die neue Regel: Code wird mit `cargo fmt` formatiert, vor dem Commit läuft `cargo fmt --all --check`. | ☑ | **gilt** | kein Test (Datei geprüft: `CLAUDE.md`) | 15.11.2026 ok |
+| FEA-42/AK7 | Die Sperre von `cargo fmt` in `.claude/settings.json` ist aufgehoben (bzw. auf das Nötige beschränkt). | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `.claude/settings.json` sperrt `cargo fmt` nicht mehr) |
+| FEA-42/AK8 | Die Agentenanleitung `.claude/agents/rust-test-agent.md` und die Aufträge in `.claude/hooks/after-commit.sh` und `scripts/git-hooks/pre-push` sagen nicht mehr «Kein cargo fmt (das Projekt ist nicht rustfmt-formatiert)», sondern verlangen formatierten Code. | ☑ | **gilt**: Der Hook liegt heute unter `tools/git-hooks/pre-push`. | kein Test (Datei geprüft: `.claude/agents/rust-test-agent.md`) | 15.11.2026 ok (verlangt cargo fmt) |
+| FEA-42/AK9 | Keine anderen Dokumente (`TESTS.md`, `QA.md`, `README.md`) beschreiben die alte Regel noch. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `TESTS.md`, `QA.md`, `README.md`, `ENTWICKLUNG.md` nennen keine alte Regel; sie gilt in `CLAUDE.md`) |
 
 ### #57 ISS-13 Fehlermeldung am Feld erst beim Verlassen, nicht während der Eingabe
 
@@ -804,12 +813,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-43/AK1 | Beim Erwerbseinkommen jeder Person gibt es eine Auswahl «steigt mit der Teuerung» (ja/nein). Ohne Angabe gilt «nein»; bestehende Planungen rechnen unverändert. | ☑ | **gilt** | [engine/tests/income_indexed.rs:52](../crates/engine/tests/income_indexed.rs#L52), [engine/tests/income_indexed.rs:189](../crates/engine/tests/income_indexed.rs#L189) (+1) | – |
-| FEA-43/AK2 | Mit «ja» wird jeder Wert, auch jede Zeile eines zeitabhängigen Einkommens, als Betrag in Preisen des Simulationsstarts verstanden und mit dem Preisindex der Simulation fortgeschrieben (wie die Lebenshaltung). | ☑ | **gilt** | [engine/tests/income_indexed.rs:72](../crates/engine/tests/income_indexed.rs#L72) | – |
-| FEA-43/AK3 | Beispiel mit erfundenen Zahlen: Einkommen 8'000 pro Monat, Teuerung 2 % pro Jahr, «ja»: nach 12 Monaten rund 8'160, nach 5 Jahren rund 8'830. Mit «nein» bleiben es 8'000. | ☑ | **gilt** | [engine/tests/income_indexed.rs:52](../crates/engine/tests/income_indexed.rs#L52) | – |
-| FEA-43/AK4 | Die Auswahl wirkt in allen Renditequellen (fix, historisch, Monte Carlo) mit dem jeweiligen Preisindex des Pfades. | ☑ | **gilt** | [engine/tests/income_indexed.rs:87](../crates/engine/tests/income_indexed.rs#L87) | – |
-| FEA-43/AK5 | Jahreswerte, Grafiken, Einkommenssteuer und die Warnung «Erwerbseinkommen nach dem Bezug der Pensionskasse» (FEA-38) verwenden den angepassten Betrag. | ☑ | **gilt** | [engine/tests/income_indexed.rs:139](../crates/engine/tests/income_indexed.rs#L139) | – |
-| FEA-43/AK6 | Regressionstest im Rechenkern; Golden-Dateien ändern nicht (Vorgabe «nein»). Oberflächentest für die Auswahl. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-43/AK1 | Beim Erwerbseinkommen jeder Person gibt es eine Auswahl «steigt mit der Teuerung» (ja/nein). Ohne Angabe gilt «nein»; bestehende Planungen rechnen unverändert. | ☑ | **gilt** | [engine/tests/income_indexed.rs:52](../crates/engine/tests/income_indexed.rs#L52), [engine/tests/income_indexed.rs:189](../crates/engine/tests/income_indexed.rs#L189) (+1) | 15.11.2026 ok (Test grün) |
+| FEA-43/AK2 | Mit «ja» wird jeder Wert, auch jede Zeile eines zeitabhängigen Einkommens, als Betrag in Preisen des Simulationsstarts verstanden und mit dem Preisindex der Simulation fortgeschrieben (wie die Lebenshaltung). | ☑ | **gilt** | [engine/tests/income_indexed.rs:72](../crates/engine/tests/income_indexed.rs#L72) | 15.11.2026 ok (Test grün) |
+| FEA-43/AK3 | Beispiel mit erfundenen Zahlen: Einkommen 8'000 pro Monat, Teuerung 2 % pro Jahr, «ja»: nach 12 Monaten rund 8'160, nach 5 Jahren rund 8'830. Mit «nein» bleiben es 8'000. | ☑ | **gilt** | [engine/tests/income_indexed.rs:52](../crates/engine/tests/income_indexed.rs#L52) | 15.11.2026 ok (Test grün) |
+| FEA-43/AK4 | Die Auswahl wirkt in allen Renditequellen (fix, historisch, Monte Carlo) mit dem jeweiligen Preisindex des Pfades. | ☑ | **gilt** | [engine/tests/income_indexed.rs:87](../crates/engine/tests/income_indexed.rs#L87) | 15.11.2026 ok (Test grün) |
+| FEA-43/AK5 | Jahreswerte, Grafiken, Einkommenssteuer und die Warnung «Erwerbseinkommen nach dem Bezug der Pensionskasse» (FEA-38) verwenden den angepassten Betrag. | ☑ | **gilt** | [engine/tests/income_indexed.rs:139](../crates/engine/tests/income_indexed.rs#L139) | 15.11.2026 ok (Test grün) |
+| FEA-43/AK6 | Regressionstest im Rechenkern; Golden-Dateien ändern nicht (Vorgabe «nein»). Oberflächentest für die Auswahl. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Regressionstests und Oberflächentest vorhanden (E2633)) |
 
 ### #59 FEA-44 Einstellungen auf macOS im Programmmenü
 
@@ -817,11 +826,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-44/AK1 | macOS: Das Menü «RetirementPlanner» zeigt «Über RetirementPlanner», Trennlinie, «Einstellungen…» (⌘,), Trennlinie, dann die Systemeinträge und «Beenden». | ☑ | **gilt**: Das Programmmenü heisst seit FEA-34 «VivaPlan». | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | – |
-| FEA-44/AK2 | macOS: Das Menü «Datei» enthält keinen Eintrag «Einstellungen…». | ☑ | **gilt** | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | – |
-| FEA-44/AK3 | Windows und Linux: Das Menü «Datei» endet mit «Einstellungen…» (Ctrl+,), Trennlinie, «Beenden». | ☑ | **gilt** | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | – |
-| FEA-44/AK4 | Auf jedem System gibt es den Eintrag genau einmal; er öffnet den Dialog «Einstellungen» wie bisher. | ☑ | **gilt** | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | – |
-| FEA-44/AK5 | Hilfe, BESCHREIBUNG.md und Spezifikation nennen den Ort je System. | ☑ | **gilt** | kein Test | – |
+| FEA-44/AK1 | macOS: Das Menü «RetirementPlanner» zeigt «Über RetirementPlanner», Trennlinie, «Einstellungen…» (⌘,), Trennlinie, dann die Systemeinträge und «Beenden». | ☑ | **gilt**: Das Programmmenü heisst seit FEA-34 «VivaPlan». | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | 15.11.2026 ok (Test grün) |
+| FEA-44/AK2 | macOS: Das Menü «Datei» enthält keinen Eintrag «Einstellungen…». | ☑ | **gilt** | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | 15.11.2026 ok (Test grün) |
+| FEA-44/AK3 | Windows und Linux: Das Menü «Datei» endet mit «Einstellungen…» (Ctrl+,), Trennlinie, «Beenden». | ☑ | **gilt** | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | 15.11.2026 ok (Test grün) |
+| FEA-44/AK4 | Auf jedem System gibt es den Eintrag genau einmal; er öffnet den Dialog «Einstellungen» wie bisher. | ☑ | **gilt** | [app/src/main.rs:1370](../crates/app/src/main.rs#L1370) | 15.11.2026 ok (Test grün) |
+| FEA-44/AK5 | Hilfe, BESCHREIBUNG.md und Spezifikation nennen den Ort je System. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen den Ort (grep) |
 
 ### #60 ISS-14 Zeitreihen-CSV: Absturz bei Jahreszahl ausserhalb des Bereichs (Fuzz parse_csv)
 
@@ -840,11 +849,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-45/AK1 | Beim ersten Start erscheint die Kurzfassung als Dialog. Weiter geht es erst, wenn das Kästchen «Ich habe den Hinweis gelesen und verstanden» angekreuzt und bestätigt ist; ohne Bestätigung ist die App nicht bedienbar. | ☑ | **gilt** | [ui.spec.js:2000](../e2e/ui.spec.js#L2000) | – |
-| FEA-45/AK2 | Die Bestätigung wird lokal gespeichert (wie die Einstellungen, nicht in der Planungsdatei); bei späteren Starts erscheint der Dialog nicht mehr. Ändert sich der Text (Versionsnummer des Hinweises), wird erneut gefragt. | ☑ | **gilt** | [ui.spec.js:2000](../e2e/ui.spec.js#L2000), [ui.spec.js:2029](../e2e/ui.spec.js#L2029) (+1) | – |
-| FEA-45/AK3 | Alle Ergebnisseiten (Übersicht, Grafiken, Ereignisse, Jahreswerte, Szenarien, Optimierung) zeigen unten die Fusszeile «Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.»; auch in Ausdruck bzw. PDF-Export, falls vorhanden. | ☑ | **gilt** | [ui.spec.js:2895](../e2e/ui.spec.js#L2895), [ui.spec.js:2908](../e2e/ui.spec.js#L2908) | – |
-| FEA-45/AK4 | Der vollständige Haftungsausschluss ist jederzeit erreichbar: im Dialog «Über …» (Menü und Hilfe) und als Seite in der Hilfe, mit Stand-Datum. | ☑ | **gilt** | [ui.spec.js:2921](../e2e/ui.spec.js#L2921) | – |
-| FEA-45/AK5 | Oberflächentests für AK1 bis AK4 (erster Start, gespeicherte Bestätigung, neue Version fragt erneut, Fusszeile, Info-Bereich). Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Kommentar vom 14.11.2026: «AK-5. Nicht erfüllt.» Das Issue ist trotzdem geschlossen und abgehakt; nachprüfen. | kein Test | – |
+| FEA-45/AK1 | Beim ersten Start erscheint die Kurzfassung als Dialog. Weiter geht es erst, wenn das Kästchen «Ich habe den Hinweis gelesen und verstanden» angekreuzt und bestätigt ist; ohne Bestätigung ist die App nicht bedienbar. | ☑ | **gilt** | [ui.spec.js:2000](../e2e/ui.spec.js#L2000) | 15.11.2026 ok (Test grün) |
+| FEA-45/AK2 | Die Bestätigung wird lokal gespeichert (wie die Einstellungen, nicht in der Planungsdatei); bei späteren Starts erscheint der Dialog nicht mehr. Ändert sich der Text (Versionsnummer des Hinweises), wird erneut gefragt. | ☑ | **gilt** | [ui.spec.js:2000](../e2e/ui.spec.js#L2000), [ui.spec.js:2029](../e2e/ui.spec.js#L2029) (+1) | 15.11.2026 ok (Test grün) |
+| FEA-45/AK3 | Alle Ergebnisseiten (Übersicht, Grafiken, Ereignisse, Jahreswerte, Szenarien, Optimierung) zeigen unten die Fusszeile «Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.»; auch in Ausdruck bzw. PDF-Export, falls vorhanden. | ☑ | **gilt** | [ui.spec.js:2895](../e2e/ui.spec.js#L2895), [ui.spec.js:2908](../e2e/ui.spec.js#L2908) | 15.11.2026 ok (Test grün) |
+| FEA-45/AK4 | Der vollständige Haftungsausschluss ist jederzeit erreichbar: im Dialog «Über …» (Menü und Hilfe) und als Seite in der Hilfe, mit Stand-Datum. | ☑ | **gilt** | [ui.spec.js:2921](../e2e/ui.spec.js#L2921) | 15.11.2026 ok (Test grün) |
+| FEA-45/AK5 | Oberflächentests für AK1 bis AK4 (erster Start, gespeicherte Bestätigung, neue Version fragt erneut, Fusszeile, Info-Bereich). Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Kommentar vom 14.11.2026: «AK-5. Nicht erfüllt.» Das Issue ist trotzdem geschlossen und abgehakt; nachprüfen. | kein Test | nicht geprüft: Kommentar im Issue: «AK-5 nicht erfüllt» |
 
 ### #67 FEA-51 Eigener Welt-Aktienindex aus den JST-Daten nach BIP gewichtet, Vergleich mit DMS
 
@@ -852,12 +861,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-51/AK1 | Der Rechenweg ist beschrieben und aus den Rohdaten nachrechenbar: BIP in USD über den Wechselkurs, Gewicht = BIP-Anteil des Vorjahres, Umrechnung der Länderrenditen in CHF, Gewichte jährlich angepasst. | ☑ | **gilt** | [engine/tests/jst.rs:91](../crates/engine/tests/jst.rs#L91) | – |
-| FEA-51/AK2 | Fehlende Länder oder Jahre (zum Beispiel Deutschland 1945 ohne Wechselkurs) sind benannt; die Gewichte der übrigen Länder werden neu auf 100 % gerechnet. | ☑ | **gilt** | [engine/tests/jst.rs:91](../crates/engine/tests/jst.rs#L91) | – |
-| FEA-51/AK3 | Ein Test rechnet drei Jahre von Hand nach (Beispielwerte im Test). | ☑ | **gilt** | [engine/tests/jst.rs:61](../crates/engine/tests/jst.rs#L61) | – |
-| FEA-51/AK4 | Vergleich mit den DMS-Kennzahlen (Rendite, Schwankung, schlechtestes Jahr) mit einem Absatz Bewertung. Die DMS-Zahlen dienen nur dem Vergleich und werden nicht ausgeliefert. | ☑ | **gilt** | [engine/tests/jst.rs:138](../crates/engine/tests/jst.rs#L138) | – |
-| FEA-51/AK5 | Der Entscheid über Japan und Australien ist mit Begründung dokumentiert. | ☑ | **gilt** | kein Test | – |
-| FEA-51/AK6 | Ist die Abweichung zu DMS unerwartet gross, ist die Ursache beschrieben, bevor FEA-52 beginnt. | ☑ | **gilt** | kein Test | – |
+| FEA-51/AK1 | Der Rechenweg ist beschrieben und aus den Rohdaten nachrechenbar: BIP in USD über den Wechselkurs, Gewicht = BIP-Anteil des Vorjahres, Umrechnung der Länderrenditen in CHF, Gewichte jährlich angepasst. | ☑ | **gilt** | [engine/tests/jst.rs:91](../crates/engine/tests/jst.rs#L91) | 15.11.2026 ok (Test grün) |
+| FEA-51/AK2 | Fehlende Länder oder Jahre (zum Beispiel Deutschland 1945 ohne Wechselkurs) sind benannt; die Gewichte der übrigen Länder werden neu auf 100 % gerechnet. | ☑ | **gilt** | [engine/tests/jst.rs:91](../crates/engine/tests/jst.rs#L91) | 15.11.2026 ok (Test grün) |
+| FEA-51/AK3 | Ein Test rechnet drei Jahre von Hand nach (Beispielwerte im Test). | ☑ | **gilt** | [engine/tests/jst.rs:61](../crates/engine/tests/jst.rs#L61) | 15.11.2026 ok (Test grün) |
+| FEA-51/AK4 | Vergleich mit den DMS-Kennzahlen (Rendite, Schwankung, schlechtestes Jahr) mit einem Absatz Bewertung. Die DMS-Zahlen dienen nur dem Vergleich und werden nicht ausgeliefert. | ☑ | **gilt** | [engine/tests/jst.rs:138](../crates/engine/tests/jst.rs#L138) | 15.11.2026 ok (Test grün) |
+| FEA-51/AK5 | Der Entscheid über Japan und Australien ist mit Begründung dokumentiert. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `docs/FEA-51 FEA-52 Weltindex JST.md`, Abschnitt «Entscheid Japan und Australien») |
+| FEA-51/AK6 | Ist die Abweichung zu DMS unerwartet gross, ist die Ursache beschrieben, bevor FEA-52 beginnt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: dieselbe Datei, «Bewertung» zum Vergleich mit DMS) |
 
 ### #68 FEA-52 Zeitreihen «Welt (JST)» und Schweizer Staatsanleihen aus SNB und JST
 
@@ -865,11 +874,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-52/AK1 | Die Reihe «Welt (JST)» beginnt 1900 und endet mit dem letzten JST-Jahr; Teuerung aus JST bzw. Landesindex (BFS). | ☑ | **gilt** | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | – |
-| FEA-52/AK2 | Obligationen: jährlich aus JST vor 1988, monatlich aus der SNB ab 1988; der Übergang ist im Test ohne Sprung geprüft. | ☑ | **gilt** | [engine/tests/jst.rs:170](../crates/engine/tests/jst.rs#L170) | – |
-| FEA-52/AK3 | `data/QUELLEN.md`, Dateikopf und Hilfe nennen die Quelle, die Zitate (Jordà, Schularick, Taylor 2017; Jordà et al. 2019), das Abrufdatum und die Lizenz CC BY-NC-SA 4.0. | ☑ | **gilt**: Die Datei liegt heute unter `crates/engine/data/QUELLEN.md`. | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | – |
-| FEA-52/AK4 | Die Reihen sind als Datei mit derselben Lizenz gekennzeichnet; in `QUELLEN.md` steht, dass die App kostenlos bleiben muss (nicht kommerziell). | ☑ | **gilt**: Wie AK3. | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | – |
-| FEA-52/AK5 | Ein Golden-Test hält die Werte fest. | ☑ | **gilt** | [engine/tests/jst.rs:37](../crates/engine/tests/jst.rs#L37) | – |
+| FEA-52/AK1 | Die Reihe «Welt (JST)» beginnt 1900 und endet mit dem letzten JST-Jahr; Teuerung aus JST bzw. Landesindex (BFS). | ☑ | **gilt** | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | 15.11.2026 ok (Test grün) |
+| FEA-52/AK2 | Obligationen: jährlich aus JST vor 1988, monatlich aus der SNB ab 1988; der Übergang ist im Test ohne Sprung geprüft. | ☑ | **gilt** | [engine/tests/jst.rs:170](../crates/engine/tests/jst.rs#L170) | 15.11.2026 ok (Test grün) |
+| FEA-52/AK3 | `data/QUELLEN.md`, Dateikopf und Hilfe nennen die Quelle, die Zitate (Jordà, Schularick, Taylor 2017; Jordà et al. 2019), das Abrufdatum und die Lizenz CC BY-NC-SA 4.0. | ☑ | **gilt**: Die Datei liegt heute unter `crates/engine/data/QUELLEN.md`. | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | 15.11.2026 ok (Test grün) |
+| FEA-52/AK4 | Die Reihen sind als Datei mit derselben Lizenz gekennzeichnet; in `QUELLEN.md` steht, dass die App kostenlos bleiben muss (nicht kommerziell). | ☑ | **gilt**: Wie AK3. | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | 15.11.2026 ok (Test grün) |
+| FEA-52/AK5 | Ein Golden-Test hält die Werte fest. | ☑ | **gilt** | [engine/tests/jst.rs:37](../crates/engine/tests/jst.rs#L37) | 15.11.2026 ok (Test grün) |
 
 ### #69 FEA-53 Anlagestrategie statt Renditewahl, Gewichtung von CH, EU und USA, Reiter «Renditen & Daten» entfällt
 
@@ -877,13 +886,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-53/AK1 | Der Reiter «Renditen & Daten» ist weg; die Strategie wird bei den Anlagen gewählt (Aktien und Obligationen getrennt). | ☑ | **gilt** | [ui.spec.js:167](../e2e/ui.spec.js#L167) | – |
-| FEA-53/AK2 | «Welt individuell»: Die Gewichte ergeben immer 100 %; ungültige Eingaben werden angezeigt. Beispiel: EU 40 % auf 20 % halbiert jeden EU-Länderanteil. | ☑ | **gilt** | [engine/tests/strategy.rs:60](../crates/engine/tests/strategy.rs#L60), [engine/tests/strategy.rs:82](../crates/engine/tests/strategy.rs#L82) (+1) | – |
-| FEA-53/AK3 | 100 % USA in «Welt individuell» ergibt dieselbe Reihe wie die USA-Reihe der Welt (JST) (Test). | ☑ | **gilt** | [engine/tests/strategy.rs:46](../crates/engine/tests/strategy.rs#L46) | – |
-| FEA-53/AK4 | Feste Renditen funktionieren wie bisher; der Import eigener CSV-Dateien ist entfernt, die Hilfe nennt das. | ☑ | **gilt**: Der Import eigener Zeitreihen ist entfernt; das betrifft auch FEA-73 (#91). | [engine/tests/strategy.rs:242](../crates/engine/tests/strategy.rs#L242), [engine/tests/strategy.rs:407](../crates/engine/tests/strategy.rs#L407) (+1) | – |
-| FEA-53/AK5 | Alte Planungen werden beim Öffnen auf die neue Strategie abgebildet; die Abbildung ist beschrieben und getestet. | ☑ | **gilt** | [engine/tests/strategy.rs:179](../crates/engine/tests/strategy.rs#L179), [engine/tests/strategy.rs:228](../crates/engine/tests/strategy.rs#L228) (+2) | – |
-| FEA-53/AK6 | Vor der Umsetzung ist die Frage «CH Pictet bleibt oder nicht» geklärt. | ☑ | **überholt**: durch FEA-72: «Schweiz (Pictet)» ist entfernt. | kein Test | – |
-| FEA-53/AK7 | Hilfe, `BESCHREIBUNG.md`, `README.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-53/AK1 | Der Reiter «Renditen & Daten» ist weg; die Strategie wird bei den Anlagen gewählt (Aktien und Obligationen getrennt). | ☑ | **gilt** | [ui.spec.js:167](../e2e/ui.spec.js#L167) | 15.11.2026 ok (Test grün) |
+| FEA-53/AK2 | «Welt individuell»: Die Gewichte ergeben immer 100 %; ungültige Eingaben werden angezeigt. Beispiel: EU 40 % auf 20 % halbiert jeden EU-Länderanteil. | ☑ | **gilt** | [engine/tests/strategy.rs:60](../crates/engine/tests/strategy.rs#L60), [engine/tests/strategy.rs:82](../crates/engine/tests/strategy.rs#L82) (+1) | 15.11.2026 ok (Test grün) |
+| FEA-53/AK3 | 100 % USA in «Welt individuell» ergibt dieselbe Reihe wie die USA-Reihe der Welt (JST) (Test). | ☑ | **gilt** | [engine/tests/strategy.rs:46](../crates/engine/tests/strategy.rs#L46) | 15.11.2026 ok (Test grün) |
+| FEA-53/AK4 | Feste Renditen funktionieren wie bisher; der Import eigener CSV-Dateien ist entfernt, die Hilfe nennt das. | ☑ | **gilt**: Der Import eigener Zeitreihen ist entfernt; das betrifft auch FEA-73 (#91). | [engine/tests/strategy.rs:242](../crates/engine/tests/strategy.rs#L242), [engine/tests/strategy.rs:407](../crates/engine/tests/strategy.rs#L407) (+1) | 15.11.2026 ok (Test grün) |
+| FEA-53/AK5 | Alte Planungen werden beim Öffnen auf die neue Strategie abgebildet; die Abbildung ist beschrieben und getestet. | ☑ | **gilt** | [engine/tests/strategy.rs:179](../crates/engine/tests/strategy.rs#L179), [engine/tests/strategy.rs:228](../crates/engine/tests/strategy.rs#L228) (+2) | 15.11.2026 ok (Test grün) |
+| FEA-53/AK6 | Vor der Umsetzung ist die Frage «CH Pictet bleibt oder nicht» geklärt. | ☑ | **überholt**: durch FEA-72: «Schweiz (Pictet)» ist entfernt. | kein Test | 15.11.2026 überholt, nicht geprüft |
+| FEA-53/AK7 | Hilfe, `BESCHREIBUNG.md`, `README.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Beschreibung nennt es; README nicht |
 | FEA-53/AK8 (Kommentar) | Die Kurzinfo zur Strategie nennt den gemeinsamen Zeitraum, auf den sich die mittleren Renditen beziehen. Wird ein Index gekürzt, weil der andere kürzer ist, erscheint ein Hinweis mit dem Index, seinem eigenen Zeitraum und dem gekürzten Zeitraum, und dass die Simulation (Monte Carlo und historische Verläufe) nur diesen Zeitraum nutzt. Ohne Kürzung kein Hinweis. Test in Rechenkern und Oberfläche. | ☑ | **gilt**: Nachtrag im Kommentar vom 14.11.2026. Das Beispiel dort nutzt Pictet (seit FEA-72 entfernt); mit einer anderen Kombination prüfen. | [engine/tests/strategy.rs:280](../crates/engine/tests/strategy.rs#L280), [engine/tests/strategy.rs:320](../crates/engine/tests/strategy.rs#L320) (+1) | – |
 
 ### #70 FEA-54 Willkommensdialog beim ersten Start
@@ -892,15 +901,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-54/AK1 | Beim allerersten Start (es gibt noch keine `einstellungen.json`) erscheint der Dialog «Willkommen bei VivaPlan». Er enthält einen Satz zum Zweck der App und drei Knöpfe: «Beispiel erkunden», «Eigene Planung beginnen» und «Leere Planung». | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934), [ui.spec.js:2672](../e2e/ui.spec.js#L2672) | – |
-| FEA-54/AK2 | «Beispiel erkunden» lässt die Beispielplanung geladen, wie heute, und öffnet die Hilfe beim Thema «Was VivaPlan kann» (`@start`). | ☑ | **gilt** | [ui.spec.js:2686](../e2e/ui.spec.js#L2686) | – |
-| FEA-54/AK3 | «Eigene Planung beginnen» lädt die Beispielplanung als Vorlage, öffnet den Abschnitt «Haushalt & Projekt» und blendet die Checkliste «Erste Schritte» ein (FEA-55). Solange FEA-55 noch nicht umgesetzt ist, öffnet sich stattdessen die Hilfe beim Schnellstart (`@quickstart`). | ☑ | **gilt**: Nacharbeit laut Kommentar: Die Checkliste wird in den Blick gescrollt und erhält den Fokus. | [ui.spec.js:2695](../e2e/ui.spec.js#L2695), [ui.spec.js:2803](../e2e/ui.spec.js#L2803) | – |
-| FEA-54/AK4 | «Leere Planung» wirkt genau wie Datei → Neu. | ☑ | **gilt** | [ui.spec.js:2709](../e2e/ui.spec.js#L2709) | – |
-| FEA-54/AK5 | Esc oder der Schliessen-Knopf wirken wie «Beispiel erkunden», nur ohne die Hilfe zu öffnen. | ☑ | **gilt** | [ui.spec.js:2719](../e2e/ui.spec.js#L2719) | – |
-| FEA-54/AK6 | Bei späteren Starts erscheint der Dialog nicht mehr, auch nicht, wenn die zuletzt geöffnete Datei fehlt. | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934) | – |
-| FEA-54/AK7 | Hilfe → «Willkommen …» öffnet den Dialog jederzeit. Bei ungespeicherten Änderungen fragt die App vor dem Laden nach, wie bei Datei → Neu. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui.spec.js:2738](../e2e/ui.spec.js#L2738) | – |
-| FEA-54/AK8 | Der Dialog lässt sich ganz mit der Tastatur bedienen (Tab, Enter, Esc). | ☑ | **gilt** | [ui.spec.js:2719](../e2e/ui.spec.js#L2719) | – |
-| FEA-54/AK9 | Die Hilfe (`00-einstieg.md`, `@bedienung`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-54/AK1 | Beim allerersten Start (es gibt noch keine `einstellungen.json`) erscheint der Dialog «Willkommen bei VivaPlan». Er enthält einen Satz zum Zweck der App und drei Knöpfe: «Beispiel erkunden», «Eigene Planung beginnen» und «Leere Planung». | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934), [ui.spec.js:2672](../e2e/ui.spec.js#L2672) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK2 | «Beispiel erkunden» lässt die Beispielplanung geladen, wie heute, und öffnet die Hilfe beim Thema «Was VivaPlan kann» (`@start`). | ☑ | **gilt** | [ui.spec.js:2686](../e2e/ui.spec.js#L2686) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK3 | «Eigene Planung beginnen» lädt die Beispielplanung als Vorlage, öffnet den Abschnitt «Haushalt & Projekt» und blendet die Checkliste «Erste Schritte» ein (FEA-55). Solange FEA-55 noch nicht umgesetzt ist, öffnet sich stattdessen die Hilfe beim Schnellstart (`@quickstart`). | ☑ | **gilt**: Nacharbeit laut Kommentar: Die Checkliste wird in den Blick gescrollt und erhält den Fokus. | [ui.spec.js:2695](../e2e/ui.spec.js#L2695), [ui.spec.js:2803](../e2e/ui.spec.js#L2803) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK4 | «Leere Planung» wirkt genau wie Datei → Neu. | ☑ | **gilt** | [ui.spec.js:2709](../e2e/ui.spec.js#L2709) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK5 | Esc oder der Schliessen-Knopf wirken wie «Beispiel erkunden», nur ohne die Hilfe zu öffnen. | ☑ | **gilt** | [ui.spec.js:2719](../e2e/ui.spec.js#L2719) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK6 | Bei späteren Starts erscheint der Dialog nicht mehr, auch nicht, wenn die zuletzt geöffnete Datei fehlt. | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK7 | Hilfe → «Willkommen …» öffnet den Dialog jederzeit. Bei ungespeicherten Änderungen fragt die App vor dem Laden nach, wie bei Datei → Neu. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui.spec.js:2738](../e2e/ui.spec.js#L2738) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK8 | Der Dialog lässt sich ganz mit der Tastatur bedienen (Tab, Enter, Esc). | ☑ | **gilt** | [ui.spec.js:2719](../e2e/ui.spec.js#L2719) | 15.11.2026 ok (Test grün) |
+| FEA-54/AK9 | Die Hilfe (`00-einstieg.md`, `@bedienung`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
 
 ### #71 FEA-55 Checkliste «Erste Schritte» im Editor
 
@@ -908,16 +917,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-55/AK1 | Im Editor gibt es einen Kasten «Erste Schritte» mit den acht Schritten des Schnellstarts: Haushalt & Projekt, Meilensteine, Vorsorge, Einnahmen & Ausgaben, Vermögen & Anlage, Renditen & Daten, Steuern, Simulation starten. | ☑ | **gilt**: Der sechste Schritt heisst seit FEA-53 «Simulation» statt «Renditen & Daten» (Kommentar im Issue). | [ui.spec.js:2754](../e2e/ui.spec.js#L2754) | – |
-| FEA-55/AK2 | Ein Klick auf einen Schritt öffnet dessen Abschnitt. Das Zeichen ⓘ öffnet die Hilfe zum Schritt. | ☑ | **gilt** | [ui.spec.js:2763](../e2e/ui.spec.js#L2763) | – |
-| FEA-55/AK3 | Ein Abschnitt-Schritt gilt als erledigt, sobald darin mindestens ein Wert geändert wurde oder der Benutzer ihn von Hand abhakt. «Simulation starten» ist erledigt, sobald eine Simulation ohne Abbruch durchgelaufen ist. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772), [ui.spec.js:2790](../e2e/ui.spec.js#L2790) | – |
-| FEA-55/AK4 | Ein Haken bleibt, auch wenn die Änderung mit ⌘Z rückgängig gemacht wird. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772) | – |
-| FEA-55/AK5 | Der Fortschritt steht im Kopf des Kastens, zum Beispiel «3 von 8». | ☑ | **gilt** | [ui.spec.js:2754](../e2e/ui.spec.js#L2754) | – |
-| FEA-55/AK6 | Mit × lässt sich der Kasten ausblenden, über Hilfe → «Erste Schritte» wieder einblenden. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui.spec.js:2797](../e2e/ui.spec.js#L2797) | – |
-| FEA-55/AK7 | Sind alle acht Schritte erledigt, erscheint ein kurzer Hinweis. Danach klappt der Kasten zu. | ☑ | **gilt** | [ui.spec.js:2797](../e2e/ui.spec.js#L2797) | – |
-| FEA-55/AK8 | Wählt der Benutzer im Willkommensdialog (FEA-54) «Eigene Planung beginnen», wird die Checkliste eingeblendet und zurückgesetzt, auch wenn er sie vorher ausgeblendet hatte. Alle Schritte stehen dann auf offen. | ☑ | **gilt** | [ui.spec.js:2813](../e2e/ui.spec.js#L2813) | – |
-| FEA-55/AK9 | Der Fortschritt wird in `einstellungen.json` gespeichert und gilt für den Benutzer, nicht für eine einzelne Planung. Das `.vplan`-Format bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772) | – |
-| FEA-55/AK10 | Die Hilfe, `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-55/AK1 | Im Editor gibt es einen Kasten «Erste Schritte» mit den acht Schritten des Schnellstarts: Haushalt & Projekt, Meilensteine, Vorsorge, Einnahmen & Ausgaben, Vermögen & Anlage, Renditen & Daten, Steuern, Simulation starten. | ☑ | **gilt**: Der sechste Schritt heisst seit FEA-53 «Simulation» statt «Renditen & Daten» (Kommentar im Issue). | [ui.spec.js:2754](../e2e/ui.spec.js#L2754) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK2 | Ein Klick auf einen Schritt öffnet dessen Abschnitt. Das Zeichen ⓘ öffnet die Hilfe zum Schritt. | ☑ | **gilt** | [ui.spec.js:2763](../e2e/ui.spec.js#L2763) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK3 | Ein Abschnitt-Schritt gilt als erledigt, sobald darin mindestens ein Wert geändert wurde oder der Benutzer ihn von Hand abhakt. «Simulation starten» ist erledigt, sobald eine Simulation ohne Abbruch durchgelaufen ist. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772), [ui.spec.js:2790](../e2e/ui.spec.js#L2790) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK4 | Ein Haken bleibt, auch wenn die Änderung mit ⌘Z rückgängig gemacht wird. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK5 | Der Fortschritt steht im Kopf des Kastens, zum Beispiel «3 von 8». | ☑ | **gilt** | [ui.spec.js:2754](../e2e/ui.spec.js#L2754) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK6 | Mit × lässt sich der Kasten ausblenden, über Hilfe → «Erste Schritte» wieder einblenden. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui.spec.js:2797](../e2e/ui.spec.js#L2797) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK7 | Sind alle acht Schritte erledigt, erscheint ein kurzer Hinweis. Danach klappt der Kasten zu. | ☑ | **gilt** | [ui.spec.js:2797](../e2e/ui.spec.js#L2797) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK8 | Wählt der Benutzer im Willkommensdialog (FEA-54) «Eigene Planung beginnen», wird die Checkliste eingeblendet und zurückgesetzt, auch wenn er sie vorher ausgeblendet hatte. Alle Schritte stehen dann auf offen. | ☑ | **gilt** | [ui.spec.js:2813](../e2e/ui.spec.js#L2813) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK9 | Der Fortschritt wird in `einstellungen.json` gespeichert und gilt für den Benutzer, nicht für eine einzelne Planung. Das `.vplan`-Format bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772) | 15.11.2026 ok (Test grün) |
+| FEA-55/AK10 | Die Hilfe, `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
 
 ### #72 FEA-56 Ergebnis in Worten in der Übersicht
 
@@ -925,15 +934,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-56/AK1 | **Mehrere Läufe:** Die Einordnung steht in Klammern hinter der Zahl, zum Beispiel «In 87 % (mittel) der Läufe reicht das Vermögen bis 12.2055 (Alter 95).» Die Einordnung ist ein Link auf die Hilfe «Wie viel Erfolgsquote ist genug?» (`@r-overview`). Die Grenzen sind dieselben wie bei der Ampel: «hoch» ab 95 %, «mittel» von 80 % bis unter 95 %, «tief» unter 80 %. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826) | – |
-| FEA-56/AK2 | An den Grenzen gilt 95,0 % als «hoch» und 80,0 % als «mittel». Massgebend ist derselbe gerundete Wert, den die Kennzahl «Erfolgsquote» anzeigt. | ☑ | **gilt** | [ui.spec.js:2842](../e2e/ui.spec.js#L2842) | – |
-| FEA-56/AK3 | Geht in mindestens einem Lauf das Geld aus, folgt der Satz «Im ungünstigsten Lauf ist das Geld mit Alter … aufgebraucht.» Er nennt dasselbe Alter wie die Kennzahl «Früheste Erschöpfung». | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826) | – |
-| FEA-56/AK4 | **Ein einzelner Lauf:** «Das Vermögen reicht bis zum Ende der Planung und beträgt dann CHF ….» oder «Das Vermögen ist im 03.2049 (Alter 84) aufgebraucht.» | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | – |
-| FEA-56/AK5 | Beträge im Text folgen dem Umschalter «Nominal» bzw. «Heutige Kaufkraft». | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | – |
-| FEA-56/AK6 | Ein Hinweis auf den nächsten Schritt mit Link in die Hilfe: Liegt die Erfolgsquote unter 95 %, verweist er auf die Optimierung. Sonst verweist er auf die Szenarien. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826), [ui.spec.js:2868](../e2e/ui.spec.js#L2868) | – |
-| FEA-56/AK7 | Ergebnisse aus der Liste der Simulationen zeigen den Text ebenfalls. | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | – |
-| FEA-56/AK8 | Der Text entsteht in der Oberfläche aus den vorhandenen Kennzahlen. Der Rechenkern und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-56/AK9 | Die Hilfe (`@r-overview`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | – |
+| FEA-56/AK1 | **Mehrere Läufe:** Die Einordnung steht in Klammern hinter der Zahl, zum Beispiel «In 87 % (mittel) der Läufe reicht das Vermögen bis 12.2055 (Alter 95).» Die Einordnung ist ein Link auf die Hilfe «Wie viel Erfolgsquote ist genug?» (`@r-overview`). Die Grenzen sind dieselben wie bei der Ampel: «hoch» ab 95 %, «mittel» von 80 % bis unter 95 %, «tief» unter 80 %. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK2 | An den Grenzen gilt 95,0 % als «hoch» und 80,0 % als «mittel». Massgebend ist derselbe gerundete Wert, den die Kennzahl «Erfolgsquote» anzeigt. | ☑ | **gilt** | [ui.spec.js:2842](../e2e/ui.spec.js#L2842) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK3 | Geht in mindestens einem Lauf das Geld aus, folgt der Satz «Im ungünstigsten Lauf ist das Geld mit Alter … aufgebraucht.» Er nennt dasselbe Alter wie die Kennzahl «Früheste Erschöpfung». | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK4 | **Ein einzelner Lauf:** «Das Vermögen reicht bis zum Ende der Planung und beträgt dann CHF ….» oder «Das Vermögen ist im 03.2049 (Alter 84) aufgebraucht.» | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK5 | Beträge im Text folgen dem Umschalter «Nominal» bzw. «Heutige Kaufkraft». | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK6 | Ein Hinweis auf den nächsten Schritt mit Link in die Hilfe: Liegt die Erfolgsquote unter 95 %, verweist er auf die Optimierung. Sonst verweist er auf die Szenarien. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826), [ui.spec.js:2868](../e2e/ui.spec.js#L2868) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK7 | Ergebnisse aus der Liste der Simulationen zeigen den Text ebenfalls. | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
+| FEA-56/AK8 | Der Text entsteht in der Oberfläche aus den vorhandenen Kennzahlen. Der Rechenkern und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | nicht geprüft: Golden unverändert geprüft? nicht eigens |
+| FEA-56/AK9 | Die Hilfe (`@r-overview`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
 
 ### #73 FEA-57 Vermögen & Anlage: Quote von Aktien und Obligationen als Info neben den Beständen
 
@@ -941,13 +950,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-57/AK1 | Aktien 80 000, Obligationen 20 000, Cash 50 000: neben «Aktien» steht «80 %», neben «Obligationen» «20 %». | ☑ | **gilt** | kein Test | – |
-| FEA-57/AK2 | Die Quote wird ganzzahlig gerundet (Aktien 1, Obligationen 2: «33 %» und «67 %»). | ☑ | **gilt** | kein Test | – |
-| FEA-57/AK3 | Nach einer Änderung von Aktien oder Obligationen stimmt die Anzeige, sobald der Wert übernommen ist (beim Verlassen des Feldes, wie die übrigen Textfelder nach ISS-13). | ☑ | **gilt** | kein Test | – |
-| FEA-57/AK4 | Sind Aktien und Obligationen beide 0 oder leer, erscheint keine Quote (kein «NaN», kein «0 %»). | ☑ | **gilt** | kein Test | – |
-| FEA-57/AK5 | Cash allein ändert die Quoten nicht (Beispiel AK1 mit Cash 0 oder 500 000: weiterhin 80 % / 20 %). | ☑ | **gilt** | kein Test | – |
-| FEA-57/AK6 | Die Quote wird nicht in der Planungsdatei gespeichert; Rechenergebnisse und Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-57/AK7 | Die Hilfe zu den Beständen erwähnt die angezeigte Quote. | ☑ | **gilt** | kein Test | – |
+| FEA-57/AK1 | Aktien 80 000, Obligationen 20 000, Cash 50 000: neben «Aktien» steht «80 %», neben «Obligationen» «20 %». | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
+| FEA-57/AK2 | Die Quote wird ganzzahlig gerundet (Aktien 1, Obligationen 2: «33 %» und «67 %»). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
+| FEA-57/AK3 | Nach einer Änderung von Aktien oder Obligationen stimmt die Anzeige, sobald der Wert übernommen ist (beim Verlassen des Feldes, wie die übrigen Textfelder nach ISS-13). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
+| FEA-57/AK4 | Sind Aktien und Obligationen beide 0 oder leer, erscheint keine Quote (kein «NaN», kein «0 %»). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
+| FEA-57/AK5 | Cash allein ändert die Quoten nicht (Beispiel AK1 mit Cash 0 oder 500 000: weiterhin 80 % / 20 %). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
+| FEA-57/AK6 | Die Quote wird nicht in der Planungsdatei gespeichert; Rechenergebnisse und Golden-Dateien bleiben unverändert. | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
+| FEA-57/AK7 | Die Hilfe zu den Beständen erwähnt die angezeigte Quote. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/app/ui/hilfe/10-editor.md`) | 15.11.2026 ok (Hilfe nennt die Quote) |
 
 ### #74 FEA-58 Hinweis zur Cash-Reserve nur einmal, beim ersten Laden einer betroffenen Planung
 
@@ -955,13 +964,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-58/AK1 | Das erste Laden einer betroffenen Planung nach dem Update (beim Start, über «Öffnen» oder per Doppelklick) zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | – |
-| FEA-58/AK2 | Jeder weitere Start mit derselben oder einer anderen betroffenen Planung: Kein Hinweis. | ☑ | **gilt** | [ui.spec.js:2057](../e2e/ui.spec.js#L2057) | – |
-| FEA-58/AK3 | Nachdem der Hinweis einmal erschienen ist, erscheint er auch beim Öffnen einer betroffenen Planung über «Öffnen» oder per Doppelklick nicht mehr. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959) | – |
-| FEA-58/AK4 | Nicht betroffene Planungen (z. B. Strategie «Standard») zeigen keinen Hinweis und zählen nicht als «gezeigt»: Beispiel: erster Start mit einer Planung «Standard» ohne Hinweis, danach Öffnen einer betroffenen Planung zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2064](../e2e/ui.spec.js#L2064) | – |
-| FEA-58/AK5 | Dass der Hinweis gezeigt wurde, merkt sich die App in den lokalen Einstellungen (nicht in der Planungsdatei); die Planungsdatei bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959), [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | – |
-| FEA-58/AK6 | Die Rechenergebnisse ändern sich nicht (der Hinweis ist nur eine Information); Golden-Dateien unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-58/AK7 | Hilfe und Spezifikation (FEA-17) beschreiben das neue Verhalten. | ☑ | **gilt** | kein Test | – |
+| FEA-58/AK1 | Das erste Laden einer betroffenen Planung nach dem Update (beim Start, über «Öffnen» oder per Doppelklick) zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | 15.11.2026 ok (Test grün) |
+| FEA-58/AK2 | Jeder weitere Start mit derselben oder einer anderen betroffenen Planung: Kein Hinweis. | ☑ | **gilt** | [ui.spec.js:2057](../e2e/ui.spec.js#L2057) | 15.11.2026 ok (Test grün) |
+| FEA-58/AK3 | Nachdem der Hinweis einmal erschienen ist, erscheint er auch beim Öffnen einer betroffenen Planung über «Öffnen» oder per Doppelklick nicht mehr. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959) | 15.11.2026 ok (Test grün) |
+| FEA-58/AK4 | Nicht betroffene Planungen (z. B. Strategie «Standard») zeigen keinen Hinweis und zählen nicht als «gezeigt»: Beispiel: erster Start mit einer Planung «Standard» ohne Hinweis, danach Öffnen einer betroffenen Planung zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2064](../e2e/ui.spec.js#L2064) | 15.11.2026 ok (Test grün) |
+| FEA-58/AK5 | Dass der Hinweis gezeigt wurde, merkt sich die App in den lokalen Einstellungen (nicht in der Planungsdatei); die Planungsdatei bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959), [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | 15.11.2026 ok (Test grün) |
+| FEA-58/AK6 | Die Rechenergebnisse ändern sich nicht (der Hinweis ist nur eine Information); Golden-Dateien unverändert. | ☑ | **gilt** | kein Test | nicht geprüft: nicht eigens geprüft |
+| FEA-58/AK7 | Hilfe und Spezifikation (FEA-17) beschreiben das neue Verhalten. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nennt es (grep) |
 
 ### #75 ISS-15 Rauchtest: Prüfung der Jahreswerte erwartet veraltete Steuerspalten
 
@@ -979,11 +988,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-59/AK1 | Bei den Obligationen gibt es die Wahl «CH kurzfristig» neben CH, CH Pictet und USA. Hilfe und Info-Fenster nennen Quelle, Zeitraum und dass die Rendite praktisch dem Geldmarktsatz entspricht. | ☑ | **gilt**: «CH Pictet» gibt es seit FEA-72 nicht mehr. | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui.spec.js:178](../e2e/ui.spec.js#L178) | – |
-| FEA-59/AK2 | Die Jahresrenditen stammen bis 2020 aus der JST-Datenbank (`bill_rate`, Schweiz, lückenlos ab 1870, verwendet ab 1900) und danach aus einer Reihe der SNB. Der Übergang hat keine Lücke; ein Test rechnet ein Jahr vor und ein Jahr nach dem Übergang von Hand nach. | ☑ | **gilt** | [engine/tests/strategy.rs:343](../crates/engine/tests/strategy.rs#L343) | – |
-| FEA-59/AK3 | Eine Strategie mit «CH kurzfristig» rechnet jährlich über die gemeinsamen Jahre mit der gewählten Aktienreihe, wie die anderen gemischten Kombinationen (FEA-53). | ☑ | **gilt** | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui.spec.js:178](../e2e/ui.spec.js#L178) | – |
-| FEA-59/AK4 | Bestehende Planungen rechnen unverändert (Golden-Dateien ohne Änderung). | ☑ | **gilt** | kein Test | – |
-| FEA-59/AK5 | QUELLEN.md nennt Quelle, Abrufdatum und Lizenz der neuen Daten. | ☑ | **gilt** | kein Test | – |
+| FEA-59/AK1 | Bei den Obligationen gibt es die Wahl «CH kurzfristig» neben CH, CH Pictet und USA. Hilfe und Info-Fenster nennen Quelle, Zeitraum und dass die Rendite praktisch dem Geldmarktsatz entspricht. | ☑ | **gilt**: «CH Pictet» gibt es seit FEA-72 nicht mehr. | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui.spec.js:178](../e2e/ui.spec.js#L178) | 15.11.2026 ok (Test grün) |
+| FEA-59/AK2 | Die Jahresrenditen stammen bis 2020 aus der JST-Datenbank (`bill_rate`, Schweiz, lückenlos ab 1870, verwendet ab 1900) und danach aus einer Reihe der SNB. Der Übergang hat keine Lücke; ein Test rechnet ein Jahr vor und ein Jahr nach dem Übergang von Hand nach. | ☑ | **gilt** | [engine/tests/strategy.rs:343](../crates/engine/tests/strategy.rs#L343) | 15.11.2026 ok (Test grün) |
+| FEA-59/AK3 | Eine Strategie mit «CH kurzfristig» rechnet jährlich über die gemeinsamen Jahre mit der gewählten Aktienreihe, wie die anderen gemischten Kombinationen (FEA-53). | ☑ | **gilt** | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui.spec.js:178](../e2e/ui.spec.js#L178) | 15.11.2026 ok (Test grün) |
+| FEA-59/AK4 | Bestehende Planungen rechnen unverändert (Golden-Dateien ohne Änderung). | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Golden-Dateien grün |
+| FEA-59/AK5 | QUELLEN.md nennt Quelle, Abrufdatum und Lizenz der neuen Daten. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/engine/data/QUELLEN.md`) | 15.11.2026 teilweise: Quellen genannt; Abrufdatum für SARON nicht gefunden |
 
 ### #77 FEA-60 Konzept: VivaPlan in Claude nutzen (MCP)
 
@@ -991,14 +1000,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-60/AK1 | Das Konzept liegt als `docs/spezifikation/FEA-60 VivaPlan in Claude (MCP).md` vor. | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK2 | Es beschreibt mindestens zwei Varianten und vergleicht sie, mindestens: (a) lokaler MCP-Server (stdio) auf Basis von `vivaplan-engine`/`vivaplan-cli`, der Werkzeuge bereitstellt, und (b) die Oberfläche als interaktive Ansicht in Claude (MCP Apps / UI-Ressourcen). Es enthält eine Empfehlung mit Begründung. | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK3 | Es listet die Werkzeuge (Tools) mit Name, Zweck, Eingaben und Ausgaben, mindestens: Planung öffnen, prüfen, Werte ändern, Vorschau, Simulation, Optimierung, Ergebnisse abrufen und vergleichen, Planung speichern. | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK4 | Es legt fest, welche Daten an Claude gehen, und wie das zur Regel «Alle Daten bleiben lokal» passt (die App selbst bleibt ohne Netzwerkzugriff; der Benutzer entscheidet bewusst, Daten an Claude zu geben). Dazu Hinweise für den Benutzer in der Hilfe. | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK5 | Es beschreibt, wie Änderungen durch Claude sichtbar und rückgängig zu machen sind und dass Planungsdateien nie ohne Bestätigung überschrieben werden. | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK6 | Es beschreibt Grenzen und Risiken (lange Rechenzeiten und Abbruch, Grösse der Ergebnisse, Fehlbedienung, Haftungsausschluss FEA-45). | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK7 | Es beschreibt Installation und Einrichtung in Claude Desktop und Claude Code, die Tests (wie der MCP-Server automatisch geprüft wird) und eine Aufteilung der Umsetzung in Folge-Issues mit Abnahmekriterien. | ☐ | **gilt** | kein Test | – |
-| FEA-60/AK8 | Rechenkern und Oberfläche bleiben getrennt: Das Konzept nutzt die bestehende Schnittstelle (`api`) des Rechenkerns, ohne Berechnungen doppelt zu führen. | ☐ | **gilt** | kein Test | – |
+| FEA-60/AK1 | Das Konzept liegt als `docs/spezifikation/FEA-60 VivaPlan in Claude (MCP).md` vor. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Datei liegt seit GEN-03 in docs/) |
+| FEA-60/AK2 | Es beschreibt mindestens zwei Varianten und vergleicht sie, mindestens: (a) lokaler MCP-Server (stdio) auf Basis von `vivaplan-engine`/`vivaplan-cli`, der Werkzeuge bereitstellt, und (b) die Oberfläche als interaktive Ansicht in Claude (MCP Apps / UI-Ressourcen). Es enthält eine Empfehlung mit Begründung. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Varianten (a), (b), (c) und Vergleich) |
+| FEA-60/AK3 | Es listet die Werkzeuge (Tools) mit Name, Zweck, Eingaben und Ausgaben, mindestens: Planung öffnen, prüfen, Werte ändern, Vorschau, Simulation, Optimierung, Ergebnisse abrufen und vergleichen, Planung speichern. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Abschnitt «Werkzeuge») |
+| FEA-60/AK4 | Es legt fest, welche Daten an Claude gehen, und wie das zur Regel «Alle Daten bleiben lokal» passt (die App selbst bleibt ohne Netzwerkzugriff; der Benutzer entscheidet bewusst, Daten an Claude zu geben). Dazu Hinweise für den Benutzer in der Hilfe. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Abschnitt «Daten und Datenschutz») |
+| FEA-60/AK5 | Es beschreibt, wie Änderungen durch Claude sichtbar und rückgängig zu machen sind und dass Planungsdateien nie ohne Bestätigung überschrieben werden. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Abschnitt «Änderungen sichtbar machen …») |
+| FEA-60/AK6 | Es beschreibt Grenzen und Risiken (lange Rechenzeiten und Abbruch, Grösse der Ergebnisse, Fehlbedienung, Haftungsausschluss FEA-45). | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Abschnitt «Grenzen und Risiken») |
+| FEA-60/AK7 | Es beschreibt Installation und Einrichtung in Claude Desktop und Claude Code, die Tests (wie der MCP-Server automatisch geprüft wird) und eine Aufteilung der Umsetzung in Folge-Issues mit Abnahmekriterien. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 ok (Abschnitte Installation, Tests, Folge-Issues) |
+| FEA-60/AK8 | Rechenkern und Oberfläche bleiben getrennt: Das Konzept nutzt die bestehende Schnittstelle (`api`) des Rechenkerns, ohne Berechnungen doppelt zu führen. | ☐ | **gilt** | kein Test (Datei geprüft: `docs/FEA-60 VivaPlan in Claude (MCP).md`) | 15.11.2026 teilweise: Abschnitt «Aufbau» nur nach Überschrift beurteilt |
 
 ### #78 FEA-61 Testdateien MSCI.csv und beispiel.rplan durch erfundene Daten ersetzen
 
@@ -1006,11 +1015,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-61/AK1 | `crates/engine/tests/fixtures/MSCI.csv` und `crates/engine/tests/fixtures/beispiel.rplan` sind gelöscht; `git ls-files` findet keine Datei mehr, deren Pfad `MSCI` oder `beispiel.rplan` enthält. | ☑ | **gilt** | kein Test | – |
-| FEA-61/AK2 | Eine erfundene Renditereihe (neutraler Dateiname ohne «MSCI», gleiches CSV-Format) ersetzt `MSCI.csv` in allen oben genannten Tests; die Tests prüfen weiterhin dasselbe Verhalten (Laden, historische Rendite, `series_info` relativ zur Planung). | ☑ | **gilt** | kein Test | – |
-| FEA-61/AK3 | Eine erfundene Planung im alten Format `.rplan` (neutraler Name, keine echten Namen oder Beträge) ersetzt `beispiel.rplan` in `legacy_format.rs`; das Lesen des alten Formats bleibt abgedeckt. | ☑ | **gilt**: Die erfundene Planung heisst `crates/engine/tests/fixtures/planung-altformat.rplan`. | kein Test | – |
-| FEA-61/AK4 | `make test` läuft grün, die Abdeckung von Engine und App bleibt je mindestens 80 %. | ☑ | **gilt** | kein Test | – |
-| FEA-61/AK5 | Die Golden-Dateien (`crates/engine/tests/golden/`) bleiben unverändert. | ☑ | **gilt** | kein Test | – |
+| FEA-61/AK1 | `crates/engine/tests/fixtures/MSCI.csv` und `crates/engine/tests/fixtures/beispiel.rplan` sind gelöscht; `git ls-files` findet keine Datei mehr, deren Pfad `MSCI` oder `beispiel.rplan` enthält. | ☑ | **gilt** | kein Test | 15.11.2026 ok (git ls-files findet MSCI und beispiel.rplan nicht) |
+| FEA-61/AK2 | Eine erfundene Renditereihe (neutraler Dateiname ohne «MSCI», gleiches CSV-Format) ersetzt `MSCI.csv` in allen oben genannten Tests; die Tests prüfen weiterhin dasselbe Verhalten (Laden, historische Rendite, `series_info` relativ zur Planung). | ☑ | **gilt** | kein Test (Datei geprüft: `crates/engine/tests/fixtures/renditen-muster.csv`) | 15.11.2026 ok (erfundene Reihe vorhanden) |
+| FEA-61/AK3 | Eine erfundene Planung im alten Format `.rplan` (neutraler Name, keine echten Namen oder Beträge) ersetzt `beispiel.rplan` in `legacy_format.rs`; das Lesen des alten Formats bleibt abgedeckt. | ☑ | **gilt**: Die erfundene Planung heisst `crates/engine/tests/fixtures/planung-altformat.rplan`. | kein Test (Datei geprüft: `crates/engine/tests/fixtures/planung-altformat.rplan`) | 15.11.2026 ok |
+| FEA-61/AK4 | `make test` läuft grün, die Abdeckung von Engine und App bleibt je mindestens 80 %. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: make test grün; Abdeckung am 14.11.2026 95.9 % |
+| FEA-61/AK5 | Die Golden-Dateien (`crates/engine/tests/golden/`) bleiben unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Golden-Dateien seit FEA-64 ergänzt, begründet im Issue |
 
 ### #79 ISS-16 Oberflächentests schlagen bei vollem Lauf fehl
 
@@ -1022,19 +1031,117 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | ISS-16/AK2 | Drei volle Läufe nacheinander (`npx playwright test`, frischer Server) sind grün. | ☑ | **gilt** | kein Test | – |
 | ISS-16/AK3 | Welcher Test hätte ihn fangen müssen / Regressionstest: im Issue beantwortet. | ☑ | **gilt** | kein Test | – |
 
+### #80 FEA-62 CI: Tests und Abdeckung nur einmal je Push
+
+[Issue #80](https://github.com/ingen63/VivaPlan/issues/80) · offen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-62/AK1 | Ein Push auf `main` startet genau einen Lauf der Rust-Tests mit Abdeckung. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Datei) |
+| FEA-62/AK2 | Liegt Engine oder App unter `tools/coverage-min`, schlägt der Lauf fehl (Beispiel: Schwelle vorübergehend 99). | ☐ | **gilt** | kein Test | nicht geprüft: Schwelle 99 nur auf GitHub erprobbar |
+| FEA-62/AK3 | Doku (`docs/TESTS.md`, Kommentare in den Workflows) nennt nur noch den verbleibenden Workflow. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (Durchsicht) |
+
+### #81 FEA-63 Invarianten- und Robustheitstests rechnen nachweislich genug Planungen
+
+[Issue #81](https://github.com/ingen63/VivaPlan/issues/81) · geschlossen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-63/AK1 | `cash_flows_are_conserved_without_returns` und `buying_and_selling_at_book_value_keeps_total` schlagen fehl, wenn weniger als die Hälfte der Planungen gerechnet wurde. | ☑ | **gilt** | [invariants.rs:252](../crates/engine/tests/invariants.rs#L252) | 15.11.2026 ok (Test grün) |
+| FEA-63/AK2 | `mutated_plans_never_crash` verlangt einen begründeten Mindestanteil (statt 40 von 600). | ☑ | **gilt** | [robustness.rs](../crates/engine/tests/robustness.rs) | 15.11.2026 ok (Test grün) |
+| FEA-63/AK3 | Ist der Mindestanteil heute nicht erreicht, ist der Generator so angepasst, dass er erreicht wird. | ☑ | **gilt** | [robustness.rs](../crates/engine/tests/robustness.rs) | 15.11.2026 ok (Test grün) |
+
+### #82 FEA-64 Golden Masters erkennen Änderungen in jedem Monat
+
+[Issue #82](https://github.com/ingen63/VivaPlan/issues/82) · geschlossen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-64/AK1 | Je Fall wird zusätzlich eine Prüfsumme (oder Summe) über alle Monatswerte gespeichert und verglichen. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 15.11.2026 ok (Test grün) |
+| FEA-64/AK2 | `golden_cases_exercise_their_feature` prüft das frisch gerechnete Ergebnis. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 15.11.2026 ok (Test grün) |
+| FEA-64/AK3 | Beispiel: Ein künstlich veränderter Wert im März lässt den Test fehlschlagen. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 15.11.2026 ok (Test grün) |
+
+### #83 FEA-65 Tests ohne feste Zeitgrenzen und feste Wartezeiten
+
+[Issue #83](https://github.com/ingen63/VivaPlan/issues/83) · geschlossen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-65/AK1 | Rust-Tests prüfen keine absoluten Laufzeiten mehr, ausser in `#[ignore]`-Messungen; oder die Grenzen sind mit Begründung so gross, dass sie auf einem 2-Kern-Runner unter Abdeckungsmessung halten. | ☑ | **gilt** | kein Test (Durchsicht der Grenzen) | 15.11.2026 ok |
+| FEA-65/AK2 | In `e2e/` ersetzt ein Warten auf einen Zustand jedes `waitForTimeout`, wo das möglich ist; die übrigen sind begründet. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/ui.spec.js`) | 15.11.2026 ok (fünf begründete Pausen) |
+
+### #84 FEA-66 Testdoku auf den Stand bringen
+
+[Issue #84](https://github.com/ingen63/VivaPlan/issues/84) · geschlossen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-66/AK1 | `README.md`, `docs/TESTS.md`, `docs/QA.md` nennen `make test` (nextest) statt `cargo test`, mit Grund. | ☑ | **gilt** | kein Test (Dokumente geprüft) | 15.11.2026 ok |
+| FEA-66/AK2 | Zahl der Oberflächentests, Abdeckung und Schichtentabelle (alle Dateien in `crates/engine/tests/`) stimmen. | ☑ | **gilt** | kein Test (Dokumente geprüft) | 15.11.2026 ok (Zahlen nicht neu gemessen) |
+| FEA-66/AK3 | `tools/test-quality.sh` schreibt den Stand nur nach erfolgreichem Lauf (Fehlercode 3 von cargo-mutants = nicht erkannte Mutanten ausgenommen, mit Kommentar). | ☑ | **gilt** | kein Test (Skript gelesen) | 15.11.2026 ok (nicht ausgeführt) |
+
+### #85 FEA-67 Zufällige Planungen über alle Renditequellen und Entnahmestrategien, mit Verkleinerung
+
+[Issue #85](https://github.com/ingen63/VivaPlan/issues/85) · offen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-67/AK1 | Der Generator ist eine proptest-Strategie; ein Fehlschlag wird verkleinert und als Regression gespeichert. | ☑ | **gilt** | [proptest_plans.rs](../crates/engine/tests/proptest_plans.rs) | 15.11.2026 ok (Test grün) |
+| FEA-67/AK2 | Erzeugt werden alle Renditequellen und alle sechs Strategien sowie Planungen mit Partner. | ☑ | **gilt** | [proptest_plans.rs](../crates/engine/tests/proptest_plans.rs) | 15.11.2026 ok (Test grün) |
+| FEA-67/AK3 | Laufzeit im Standard unter 5 s; Monte-Carlo-Fälle mit wenigen Pfaden (ca. 20); schwere Fälle nicht im Profil `mutants`. | ☐ | **gilt** | [proptest_plans.rs](../crates/engine/tests/proptest_plans.rs) | 15.11.2026 teilweise: Hauptlauf 1.8 s, Monte-Carlo-Lauf 11.9 s; nachverfolgt in #102 (ISS-19) |
+
+### #86 FEA-68 Fuzz-Ziel für die ganze Rechnung
+
+[Issue #86](https://github.com/ingen63/VivaPlan/issues/86) · offen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-68/AK1 | Neues Ziel verändert eine gültige Planung strukturiert und ruft `api::run` auf. | ☑ | **gilt** | kein Test (Fuzz-Ziel `fuzz/fuzz_targets/run_plan.rs`) | 15.11.2026 ok (clippy sauber) |
+| FEA-68/AK2 | Ein Startkorpus liegt im Repo; der nächtliche Lauf speichert den Korpus zwischen (Cache). | ☐ | **gilt** | kein Test | 15.11.2026 teilweise: Korpus und Cache in der Datei; GitHub nicht gelaufen |
+| FEA-68/AK3 | Ein Fund lässt den nächtlichen Lauf fehlschlagen und wird als Artefakt abgelegt (wie bisher). | ☐ | **gilt** | kein Test | nicht geprüft: nur auf GitHub prüfbar |
+
+### #87 FEA-69 Unit-Tests für die Hilfsfunktionen der Oberfläche
+
+[Issue #87](https://github.com/ingen63/VivaPlan/issues/87) · geschlossen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-69/AK1 | Reine Funktionen liegen in einem eigenen Modul. | ☑ | **gilt** | kein Test (Datei `crates/app/ui/util.js`) | 15.11.2026 ok |
+| FEA-69/AK2 | `node --test` prüft sie, ohne Browser; Laufzeit unter 10 s. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) | 15.11.2026 ok (14 Tests in 0.12 s) |
+| FEA-69/AK3 | Der Lauf ist in `test-quality.yml` eingebunden. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 ok (GitHub nicht gelaufen) |
+
+### #88 FEA-70 clippy im Workflow
+
+[Issue #88](https://github.com/ingen63/VivaPlan/issues/88) · offen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-70/AK1 | `cargo clippy --workspace --all-targets -- -D warnings` läuft bei jedem Push und lässt ihn bei Warnungen fehlschlagen. | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 teilweise: GitHub nicht gelaufen |
+| FEA-70/AK2 | Bestehende Warnungen sind behoben oder begründet erlaubt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (clippy sauber) |
+
+### #89 FEA-71 Oberflächentests nächtlich auf GitHub
+
+[Issue #89](https://github.com/ingen63/VivaPlan/issues/89) · offen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | nicht geprüft: nur auf GitHub prüfbar |
+| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 15.11.2026 teilweise: Bericht liest die Datei; Artefaktabruf nicht erprobt |
+
 ### #90 FEA-72 Pictet-Reihe aus App und Repository entfernen
 
 [Issue #90](https://github.com/ingen63/VivaPlan/issues/90) · geschlossen · Umsetzung: `6f1ab9e` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:200](../e2e/ui.spec.js#L200)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-72/AK1 | `crates/engine/data/Pictet CH.csv` ist gelöscht; `git ls-files` findet keine Datei, deren Pfad `Pictet` enthält, und kein `include_str!` verweist mehr darauf. | ☑ | **gilt** | [engine/tests/library.rs:140](../crates/engine/tests/library.rs#L140) | – |
-| FEA-72/AK2 | Die Anlagestrategie bietet «Schweiz (Pictet)» weder bei den Aktien noch bei den Obligationen an (Auswahl in der Oberfläche, Strategieangaben des Rechenkerns). | ☑ | **gilt** | [ui.spec.js:258](../e2e/ui.spec.js#L258) | – |
-| FEA-72/AK3 | Eine Planung mit `"strategy": {"stocks": "chPictet", …}` öffnet ohne Fehler und erhält für die Aktien «Schweiz (JST)» (`chJst`); eine Planung mit `"bonds": "chPictet"` erhält «Eidgenossenschaft 10 Jahre» (`ch`). Ein Hinweis beim Öffnen nennt die Umstellung. | ☑ | **gilt** | [engine/tests/strategy.rs:475](../crates/engine/tests/strategy.rs#L475), [ui.spec.js:258](../e2e/ui.spec.js#L258) | – |
-| FEA-72/AK4 | Eine ältere Planung mit `"series": "library:Pictet CH.csv"` öffnet ohne Fehler, erhält `chJst` + `ch` und denselben Hinweis. | ☑ | **gilt** | [engine/tests/strategy.rs:185](../crates/engine/tests/strategy.rs#L185), [ui.spec.js:249](../e2e/ui.spec.js#L249) | – |
-| FEA-72/AK5 | Die App legt `Pictet CH.csv` nicht mehr im Datenordner an. Eine dort schon vorhandene Kopie wird weder gelöscht noch verändert und nicht mehr als mitgelieferte Reihe angeboten. | ☑ | **gilt** | [engine/tests/library.rs:140](../crates/engine/tests/library.rs#L140) | – |
-| FEA-72/AK6 | Hilfe (`20-renditen.md`, `10-editor.md`, `60-referenz.md`), `README.md`, `docs/BESCHREIBUNG.md`, `crates/engine/data/QUELLEN.md` und die Spezifikation FEA-53 sind nachgeführt. Die Erwähnung von Pictet als Quelle der Schweizer JST-Aktienreihe darf bleiben. | ☑ | **gilt** | kein Test | – |
-| FEA-72/AK7 | `make test` und die Oberflächentests (`e2e/`) laufen grün; die Abdeckung von Engine und App bleibt je mindestens 80 %; die Golden-Dateien (`crates/engine/tests/golden/`) bleiben unverändert. | ☑ | **gilt** | kein Test | – |
+| FEA-72/AK1 | `crates/engine/data/Pictet CH.csv` ist gelöscht; `git ls-files` findet keine Datei, deren Pfad `Pictet` enthält, und kein `include_str!` verweist mehr darauf. | ☑ | **gilt** | [engine/tests/library.rs:140](../crates/engine/tests/library.rs#L140) | 15.11.2026 ok (Test grün) |
+| FEA-72/AK2 | Die Anlagestrategie bietet «Schweiz (Pictet)» weder bei den Aktien noch bei den Obligationen an (Auswahl in der Oberfläche, Strategieangaben des Rechenkerns). | ☑ | **gilt** | [ui.spec.js:258](../e2e/ui.spec.js#L258) | 15.11.2026 ok (Test grün) |
+| FEA-72/AK3 | Eine Planung mit `"strategy": {"stocks": "chPictet", …}` öffnet ohne Fehler und erhält für die Aktien «Schweiz (JST)» (`chJst`); eine Planung mit `"bonds": "chPictet"` erhält «Eidgenossenschaft 10 Jahre» (`ch`). Ein Hinweis beim Öffnen nennt die Umstellung. | ☑ | **gilt** | [engine/tests/strategy.rs:475](../crates/engine/tests/strategy.rs#L475), [ui.spec.js:258](../e2e/ui.spec.js#L258) | 15.11.2026 ok (Test grün) |
+| FEA-72/AK4 | Eine ältere Planung mit `"series": "library:Pictet CH.csv"` öffnet ohne Fehler, erhält `chJst` + `ch` und denselben Hinweis. | ☑ | **gilt** | [engine/tests/strategy.rs:185](../crates/engine/tests/strategy.rs#L185), [ui.spec.js:249](../e2e/ui.spec.js#L249) | 15.11.2026 ok (Test grün) |
+| FEA-72/AK5 | Die App legt `Pictet CH.csv` nicht mehr im Datenordner an. Eine dort schon vorhandene Kopie wird weder gelöscht noch verändert und nicht mehr als mitgelieferte Reihe angeboten. | ☑ | **gilt** | [engine/tests/library.rs:140](../crates/engine/tests/library.rs#L140) | 15.11.2026 ok (Test grün) |
+| FEA-72/AK6 | Hilfe (`20-renditen.md`, `10-editor.md`, `60-referenz.md`), `README.md`, `docs/BESCHREIBUNG.md`, `crates/engine/data/QUELLEN.md` und die Spezifikation FEA-53 sind nachgeführt. Die Erwähnung von Pictet als Quelle der Schweizer JST-Aktienreihe darf bleiben. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: «Pictet» steht noch als Stichwort und als Quellenhinweis |
+| FEA-72/AK7 | `make test` und die Oberflächentests (`e2e/`) laufen grün; die Abdeckung von Engine und App bleibt je mindestens 80 %; die Golden-Dateien (`crates/engine/tests/golden/`) bleiben unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: alle Tests heute grün; Abdeckung am 14.11.2026 |
 
 ### #92 FEA-74 Test für eigene Konfigurationen ohne feste Dateinamen
 
@@ -1042,10 +1149,10 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-74/AK1 | Der Test liest alle Dateien mit der Endung `.json` im Ordner `local/eigene/` statt einer festen Liste von Dateinamen. | ☐ | **gilt** | [engine/tests/legacy_import.rs:61](../crates/engine/tests/legacy_import.rs#L61) | – |
-| FEA-74/AK2 | Fehlt der Ordner oder enthält er keine `.json`-Datei, wird der Test ohne Fehler übersprungen (wie heute). | ☐ | **gilt** | [engine/tests/legacy_import.rs:61](../crates/engine/tests/legacy_import.rs#L61) | – |
-| FEA-74/AK3 | Im aktuellen Stand findet `git grep -i <Name aus FEA-74>` keine Stelle mehr. | ☐ | **gilt**: Der gesuchte Name ist hier weggelassen, damit die Suche diese Datei nicht findet; er steht im Issue. | kein Test | – |
-| FEA-74/AK4 | Mit den bisherigen Dateien in `local/eigene/` prüft der Test dieselben Konfigurationen wie vorher; `make test` läuft grün. | ☐ | **gilt** | kein Test | – |
+| FEA-74/AK1 | Der Test liest alle Dateien mit der Endung `.json` im Ordner `local/eigene/` statt einer festen Liste von Dateinamen. | ☑ | **gilt** | [engine/tests/legacy_import.rs:61](../crates/engine/tests/legacy_import.rs#L61) | 15.11.2026 ok (Test grün) |
+| FEA-74/AK2 | Fehlt der Ordner oder enthält er keine `.json`-Datei, wird der Test ohne Fehler übersprungen (wie heute). | ☑ | **gilt** | [engine/tests/legacy_import.rs:61](../crates/engine/tests/legacy_import.rs#L61) | 15.11.2026 ok (Test grün) |
+| FEA-74/AK3 | Im aktuellen Stand findet `git grep -i <Name aus FEA-74>` keine Stelle mehr. | ☑ | **gilt**: Der gesuchte Name ist hier weggelassen, damit die Suche diese Datei nicht findet; er steht im Issue. | kein Test | 15.11.2026 ok (`git grep -i` auf den Namen findet im aktuellen Stand keine Stelle) |
+| FEA-74/AK4 | Mit den bisherigen Dateien in `local/eigene/` prüft der Test dieselben Konfigurationen wie vorher; `make test` läuft grün. | ☐ | **gilt** | kein Test | nicht geprüft: braucht die privaten Dateien in local/eigene/ |
 
 ### #94 FEA-76 Shiller-Originaltabelle nicht im Repository, Bedingungen von SNB und BFS in den Quellen
 
@@ -1053,9 +1160,22 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-76/AK1 | `git ls-files` findet `shiller-index.ods` nicht mehr; der Pfad steht in `.gitignore`; eine lokal vorhandene Datei bleibt unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-76/AK2 | Die Tests, die aus der Tabelle nachrechnen (`crates/engine/tests/library.rs`, `crates/engine/tests/data.rs`, `crates/cli/tests/cli.rs`, `crates/app/src/main.rs`), laufen mit vorhandener Datei wie bisher. Fehlt sie, werden sie ohne Fehler übersprungen und melden das. | ☑ | **gilt** | kein Test | – |
-| FEA-76/AK3 | Die ausgelieferten Reihen `Shiller USD.csv`, `Shiller CHF.csv` und `Shiller CHF + CH-Obligationen.csv` und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | – |
-| FEA-76/AK4 | `crates/engine/data/QUELLEN.md` sagt, dass die Shiller-Tabelle nicht mitgeliefert wird und wo man sie herunterlädt; es nennt für die SNB-Daten die Bedingungen «nicht kommerziell», «Quellenangabe» und «nicht als Grundlage für Finanztransaktionen» und für die BFS-Daten die Quellenangabe mit Autor, Titel und Link. | ☑ | **gilt** | kein Test | – |
-| FEA-76/AK5 | Die Hilfe (Datenquellen) nennt den Download der Shiller-Tabelle bei shillerdata.com und den Import in der App. | ☑ | **gilt** | kein Test | – |
-| FEA-76/AK6 | `make test` und die Oberflächentests laufen grün; die Abdeckung von Engine und App bleibt je mindestens 80 %, auch ohne die Datei (wie auf GitHub). | ☑ | **gilt** | kein Test | – |
+| FEA-76/AK1 | `git ls-files` findet `shiller-index.ods` nicht mehr; der Pfad steht in `.gitignore`; eine lokal vorhandene Datei bleibt unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 ok (shiller-index.ods nicht im Index, in .gitignore) |
+| FEA-76/AK2 | Die Tests, die aus der Tabelle nachrechnen (`crates/engine/tests/library.rs`, `crates/engine/tests/data.rs`, `crates/cli/tests/cli.rs`, `crates/app/src/main.rs`), laufen mit vorhandener Datei wie bisher. Fehlt sie, werden sie ohne Fehler übersprungen und melden das. | ☑ | **gilt** | kein Test | nicht geprüft: Test mit vorhandener Datei nicht ausgeführt |
+| FEA-76/AK3 | Die ausgelieferten Reihen `Shiller USD.csv`, `Shiller CHF.csv` und `Shiller CHF + CH-Obligationen.csv` und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Golden-Dateien grün |
+| FEA-76/AK4 | `crates/engine/data/QUELLEN.md` sagt, dass die Shiller-Tabelle nicht mitgeliefert wird und wo man sie herunterlädt; es nennt für die SNB-Daten die Bedingungen «nicht kommerziell», «Quellenangabe» und «nicht als Grundlage für Finanztransaktionen» und für die BFS-Daten die Quellenangabe mit Autor, Titel und Link. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/engine/data/QUELLEN.md`) | 15.11.2026 ok |
+| FEA-76/AK5 | Die Hilfe (Datenquellen) nennt den Download der Shiller-Tabelle bei shillerdata.com und den Import in der App. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/app/ui/hilfe/20-renditen.md`) | 15.11.2026 ok |
+| FEA-76/AK6 | `make test` und die Oberflächentests laufen grün; die Abdeckung von Engine und App bleibt je mindestens 80 %, auch ohne die Datei (wie auf GitHub). | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Tests heute grün (mit Datei, wenn vorhanden) |
+
+### #97 FEA-77 Abnahmeliste: Abnahmekriterien aller umgesetzten Issues auf den aktuellen Stand prüfen
+
+[Issue #97](https://github.com/ingen63/VivaPlan/issues/97) · offen · Umsetzung: siehe Kommentar im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-77/AK1 | Die Liste liegt als Datei im Repository (`docs/ABNAHME.md`) und nennt je Issue Nummer, ID, Titel, Status (offen/geschlossen) und, sofern bekannt, den Commit der Umsetzung. | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
+| FEA-77/AK2 | Je Abnahmekriterium stehen Kennung (`FEA-xx/AKn`), Text wie im Issue, Häkchenstand im Issue und eine Einschätzung: «gilt», «überholt durch <Issue>» mit kurzer Begründung, oder «unklar». | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
+| FEA-77/AK3 | Je Kriterium ist der belegende Test genannt, sofern einer mit der Kennung existiert (Rust oder `e2e/`), sonst «kein Test». | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
+| FEA-77/AK4 | Je Kriterium gibt es eine Spalte «Geprüft» (Datum, Ergebnis), die Claude bei einer Einzelprüfung auf Anweisung nachführt. Auf Anweisung hakt Claude dabei auch die erfüllten Kriterien im Issue ab und schliesst das Issue, wenn alle erfüllt sind (geändert per Kommentar am 15.11.2026). | ☑ | **gilt** | kein Test | 15.11.2026 ok (nach geänderter Fassung) |
+| FEA-77/AK5 | Überholte Kriterien werden in den Issues nicht geändert; die Liste schlägt vor, was zu tun ist (Kommentar im Issue oder neues Issue). | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
+| FEA-77/AK6 | Die Auswahl der Issues ist reproduzierbar beschrieben (Abfrage mit `gh`), damit die Liste später nachgeführt werden kann. | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
