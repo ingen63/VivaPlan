@@ -1457,6 +1457,13 @@ mod tests {
         let zero =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": 0}]}));
         assert!(has(&zero, "muss grösser als 0 sein"));
+        // FEA-70: negativer Betrag ist ebenfalls ungültig (Bedingung `b.is_nan() || b <= 0.0`).
+        let negative =
+            with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": -1}]}));
+        assert!(has(&negative, "muss grösser als 0 sein"));
+        let positive =
+            with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": 0.01}]}));
+        assert!(!has(&positive, "muss grösser als 0 sein"));
         let whole = with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01"}]}));
         assert!(!has(&whole, "muss grösser als 0 sein"), "ohne Betrag: ganzes Guthaben");
     }
