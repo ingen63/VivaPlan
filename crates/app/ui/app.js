@@ -332,7 +332,7 @@ function showVal(type, v) {
   if (type === "month") return ymShow(v);
   return v ?? "";
 }
-// ---------- Pflichteingaben (FEA-13; Liste in docs/spezifikation/Pflichteingaben.md) ----------
+// ---------- Pflichteingaben (FEA-13; Liste in docs/Pflichteingaben.md) ----------
 const REQUIRED_PATHS = [/^household\.persons\.\d\.(name|birth)$/, /^household\.ahvCoupleCap$/, /^(partner|pension)\.pk\.(capital|conversion|lumpsum)$/,
   /^(partner|pension)\.ahv\.monthly$/, /^wealth\.(stocks|bonds|cash)$/, /^taxes\.multiplier$/];
 const isRequired = path => REQUIRED_PATHS.some(r => r.test(path));

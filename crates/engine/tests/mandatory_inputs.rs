@@ -1,4 +1,4 @@
-//! FEA-13: Jede Zeile der Liste der Pflichteingaben (`docs/spezifikation/Pflichteingaben.md`) hat einen Test, der den
+//! FEA-13: Jede Zeile der Liste der Pflichteingaben (`docs/Pflichteingaben.md`) hat einen Test, der den
 //! Fehler auslöst und die Meldung prüft.
 
 use engine::api;

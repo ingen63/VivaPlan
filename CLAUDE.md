@@ -1,6 +1,6 @@
 # Arbeitsanleitung für Claude Code
 
-Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick in `docs/BESCHREIBUNG.md` und `README.md`, Technik und Rechenregeln in `docs/ENTWICKLUNG.md`, Tests in `docs/TESTS.md` und `docs/QA.md`, Spezifikationen in `docs/spezifikation/`.
+Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick in `docs/BESCHREIBUNG.md` und `README.md`, Technik und Rechenregeln in `docs/ENTWICKLUNG.md`, Tests in `docs/TESTS.md` und `docs/QA.md`, Spezifikationen in `docs/` (Pflichteingaben, Weltindex JST, MCP-Konzept).
 
 ## Sprache
 
@@ -52,4 +52,4 @@ Commit und Push nur, wenn es ausdrücklich verlangt wird. Nie `--force`, nie die
 - Vorlagen liegen in `.github/ISSUE_TEMPLATE/` (Fehler, Funktion). Labels: `bug`, `feature`, `allgemein`, `engine`, `ui`, `repo`, `false-positive`, `umgesetzt` (siehe Ablauf, Schritt 5); bei Fehlern zusätzlich der Fundort `gefunden:test`, `gefunden:abnahme` oder `gefunden:nutzung`. Meilensteine: «Nächste Version», «Später».
 - Eine Anforderung pro Issue. Die Abnahmekriterien nach dem Start nicht stillschweigend ändern: Änderungen als Kommentar mit Begründung.
 - Fehlalarme mit `false-positive` als «not planned» schliessen, mit Begründung.
-- Das Skript `tools/github-issues/create.sh` hat die ersten Issues aus `docs/spezifikation/` angelegt. Es ist wiederholbar und überspringt vorhandene Issues.
+- Das Skript `tools/github-issues/create.sh` hat die ersten Issues aus den Spezifikationen angelegt. Es ist wiederholbar und überspringt vorhandene Issues.

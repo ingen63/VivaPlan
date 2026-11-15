@@ -60,7 +60,7 @@ fn at(v: &[f64], y: i32) -> f64 {
 
 /// FEA-51/AK3: Drei Jahre unabhängig nachgerechnet, direkt aus den Zeilen des Auszugs: Rendite je Land in CHF über die
 /// Kurse Ende Jahr, Gewicht = BIP pro Kopf × Bevölkerung des Vorjahres, Länder ohne Rendite fallen weg.
-/// Die Rohdaten und die Zwischenwerte der Jahre 1950, 1990 und 2008 stehen in `docs/spezifikation/FEA-51 FEA-52 Weltindex
+/// Die Rohdaten und die Zwischenwerte der Jahre 1950, 1990 und 2008 stehen in `docs/FEA-51 FEA-52 Weltindex
 /// JST.md` (Abschnitt «Stichjahre 1950, 1990, 2008»).
 #[test]
 fn fea51_ak3_three_years_by_hand() {
@@ -135,7 +135,7 @@ fn geo(v: impl Iterator<Item = f64>) -> f64 {
     (log / n).exp() - 1.0
 }
 
-/// FEA-51/AK4: Kennzahlen für den Vergleich mit DMS (Werte in `docs/spezifikation/FEA-51 Weltindex JST.md`).
+/// FEA-51/AK4: Kennzahlen für den Vergleich mit DMS (Werte in `docs/FEA-51 FEA-52 Weltindex JST.md`).
 /// DMS (Global Investment Returns Yearbook 2021) nennt für 1900–2020 5,3 % reale Rendite pro Jahr in USD.
 #[test]
 fn fea51_ak4_figures_for_the_dms_comparison() {

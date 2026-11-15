@@ -4,7 +4,7 @@
 //! BIP gewichtete Regionen und ein Welt-Aktienindex. Die Rohdaten (`data/quellen/JSTdatasetR6.xlsx`) stehen unter
 //! der Lizenz CC BY-NC-SA 4.0; ausgeliefert wird ein Auszug der benötigten Spalten (`data/quellen/jst-r6.csv`).
 //!
-//! Rechenweg (`docs/spezifikation/FEA-51 Weltindex JST.md`):
+//! Rechenweg (`docs/FEA-51 FEA-52 Weltindex JST.md`):
 //! - Rendite in CHF: `(1 + r) × k(t) / k(t−1) − 1` mit `k` = CHF je Einheit Landeswährung (aus den Kursen gegenüber
 //!   dem USD, `xrusd`).
 //! - Gewicht eines Landes im Jahr `t`: reales BIP des Vorjahres (BIP pro Kopf nach Maddison × Bevölkerung). Die

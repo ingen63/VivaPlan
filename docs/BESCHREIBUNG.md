@@ -139,7 +139,7 @@ Die Renditen stammen aus den Indizes der Anlagestrategie. Dahinter stehen diese 
   nach realem BIP gewichtet, in CHF, jährlich 1900–2020; dazu 10-jährige Obligationen der Eidgenossenschaft (JST bis
   1988, danach SNB). Daraus auch «Schweiz (JST)» und «Welt individuell». Lizenz CC BY-NC-SA 4.0 (nicht kommerziell).
   Der Index liegt rund 1,3 Prozentpunkte pro Jahr über dem Weltindex von Dimson, Marsh und Staunton (Begründung in
-  `docs/spezifikation/FEA-51 FEA-52 Weltindex JST.md`).
+  `docs/FEA-51 FEA-52 Weltindex JST.md`).
 - **Shiller USD und CHF:** Robert Shillers US-Daten ab 1872 (Aktien inklusive Dividenden, Staatsanleihen, Inflation),
   dieselben Daten in Franken umgerechnet mit dem Schweizer Landesindex der Konsumentenpreise und dem SARON, dazu eine
   Variante mit 10-jährigen Obligationen der Eidgenossenschaft.

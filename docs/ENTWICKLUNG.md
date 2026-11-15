@@ -17,7 +17,7 @@ Projektdatei und die Rechenregeln Schritt für Schritt. Was die App kann, steht 
 | `e2e/` | Oberflächentests (Playwright) |
 | `fuzz/` | Fuzzing (cargo-fuzz, eigener Workspace) |
 | `tools/` | Skripte: Git-Hooks, Build und Installation, Rauchtest `ui-smoke.sh`, Testqualität, Übersichtsseite, Issues |
-| `docs/` | Beschreibung, Teststrategie ([`docs/TESTS.md`](TESTS.md)), QA-Bericht, Spezifikation (`docs/spezifikation/`) |
+| `docs/` | Beschreibung, Teststrategie ([`docs/TESTS.md`](TESTS.md)), QA-Bericht, Spezifikationen (Pflichteingaben, Weltindex JST, MCP-Konzept) |
 | `local/` | Nur lokal (von Git ausgeschlossen): Mutationsläufe, Berichte der Testqualität, eigene Planungen und alte Konfigurationen (`local/eigene/`), Notizen |
 
 ## Desktop-App
