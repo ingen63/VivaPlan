@@ -840,8 +840,8 @@ test.describe("Ergebnisse", () => {
     await page.locator('button[data-action="tax-cols"]').click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
     expect(await page.locator("#resultsBody table.yt th.tx").nth(2).innerText()).toMatch(/^Steuer\s+Kapital Bezug$/);
-    expect(await page.locator("#resultsBody table.yt th.tx").first().getAttribute("title")).toContain("Im Jahr bezahlt");
-    await expect(page.locator("#resultsBody p.hint", { hasText: "Stände am Jahresende" })).toContainText("Steuerjahres 2029");
+    expect(await page.locator("#resultsBody table.yt th.tx").first().getAttribute("title")).toContain("Steuerjahr");
+    await expect(page.locator("#resultsBody p.hint", { hasText: "Stände am Jahresende" })).toContainText("Zeile des Steuerjahres");
     const cell = await page.locator("#resultsBody table.yt tr").nth(1).locator("td").nth(11).textContent();
     expect(cell).toMatch(/^-?\d+[.,]\d %$/);
     await page.locator('button[data-action="tax-cols"]').click();
@@ -3269,6 +3269,56 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
     await page.locator("#ask button[value='ok']").click();
     expect(await page.evaluate(() => [state.returns.parametric.auto, state.returns.parametric.mu])).toEqual([false, 0.05]);
     fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
+  /** Die Rückfrage ist im Browser nur mit `askSaveDev` aktiv; die Planung wird ungespeichert markiert. */
+  const prepare = (page, dev) => page.evaluate(dev => { Pref.set("askSaveDev", dev); Pref.set("askSaveBeforeRun", true); markDirty(); }, dev);
+
+  test("FEA-86/AK1, AK2, AK3, AK5: Rückfrage vor der Simulation bei ungespeicherten Änderungen", async ({ page }) => {
+    const errors = await open(page);
+    // AK3: ohne Änderungen keine Rückfrage
+    await page.evaluate(() => { Pref.set("askSaveDev", true); runSimulation("overview", { noConfirm: true }); });
+    await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
+    await expect(page.locator("#resultsBody")).toBeVisible();
+    await page.evaluate(() => showResults(false));
+    // AK1, AK2: Abbrechen startet nichts, die Planung bleibt ungespeichert
+    await prepare(page, true);
+    await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
+    await expect(page.locator("#ask")).toHaveAttribute("open", "");
+    await expect(page.locator("#askText")).toContainText("ungespeicherte Änderungen");
+    await expect(page.locator('#ask button[value="discard"]')).toHaveText("Ohne Speichern simulieren");
+    await page.locator('#ask button[value="cancel"]').click();
+    await page.evaluate(() => window.__ran);
+    await expect(page.locator("#results")).toBeHidden();
+    expect(await page.evaluate(() => dirty)).toBe(true);
+    // AK2: «Ohne Speichern simulieren» rechnet und lässt die Planung ungespeichert
+    await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
+    await page.locator('#ask button[value="discard"]').click();
+    await expect(page.locator("#resultsBody")).toBeVisible();
+    expect(await page.evaluate(() => dirty)).toBe(true);
+    // AK5: abgeschaltet, keine Rückfrage
+    await page.evaluate(() => { showResults(false); Pref.set("askSaveBeforeRun", false); runSimulation("overview", { noConfirm: true }); });
+    await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
+    await expect(page.locator("#resultsBody")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("FEA-86/AK5: die Einstellung steht im Dialog «Einstellungen» und bleibt erhalten", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => showSettings());
+    const box = page.locator("#set-askSave");
+    await expect(box).toBeChecked();
+    await box.uncheck();
+    await page.locator("#settingsSave").click();
+    expect(await page.evaluate(() => Pref.get("askSaveBeforeRun", true))).toBe(false);
+    await page.evaluate(() => showSettings());
+    await expect(page.locator("#set-askSave")).not.toBeChecked();
+    await page.locator("#settingsDefaults").click();
+    await page.locator('#ask button[value="ok"]').click();
+    await expect(page.locator("#set-askSave")).toBeChecked();
     await noErrors(page, errors);
   });
 });

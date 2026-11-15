@@ -96,6 +96,10 @@ pub struct MonthRecord {
     pub tax_wealth: f64,
     pub tax_capital: f64,
     pub tax_gain: f64,
+    /// FEA-85: Im Dezember veranlagte Einkommens- und Vermögenssteuer des Steuerjahres (bezahlt wird sie im Mai des
+    /// Folgejahres, siehe `tax_income`/`tax_wealth`). Die Jahreswerte zeigen sie in der Zeile des Steuerjahres.
+    pub assessed_income: f64,
+    pub assessed_wealth: f64,
     /// Geplante Lebenshaltung aus der Planung (nominal, ohne Wohnkosten).
     pub planned_spending: f64,
     /// Entnahme aus dem Vermögen: tatsächliche Lebenshaltung und Wohnkosten minus Einkommen (vor Steuern).
@@ -2725,6 +2729,7 @@ impl<'a> Run<'a> {
             // Steuern
             let mut paid = 0.0;
             let (mut paid_income, mut paid_wealth) = (0.0, 0.0);
+            let (mut assessed_income, mut assessed_wealth) = (0.0, 0.0);
             if m.month() == 5 {
                 paid += std::mem::take(&mut self.tax_pending);
                 paid_income += std::mem::take(&mut self.pending_income);
@@ -2740,6 +2745,7 @@ impl<'a> Run<'a> {
                 self.tax_pending += ti + tw;
                 self.pending_income += ti;
                 self.pending_wealth += tw;
+                (assessed_income, assessed_wealth) = (ti, tw);
                 self.year_income = 0.0;
                 self.year_capital = 0.0;
             }
@@ -2835,6 +2841,8 @@ impl<'a> Run<'a> {
                     tax_wealth: paid_wealth,
                     tax_capital: self.month_capital_tax,
                     tax_gain: self.month_gain_tax,
+                    assessed_income,
+                    assessed_wealth,
                     planned_spending: planned,
                     withdrawal: living + prop_cost + p3a_in - income,
                     earned,

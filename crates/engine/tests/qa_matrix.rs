@@ -1481,6 +1481,44 @@ fn income_tax_is_assessed_yearly_and_paid_in_may_of_next_year() {
     assert!((may.taxes - 7_200.0).abs() < 0.01, "Mai 2031: {}", may.taxes);
 }
 
+/// FEA-85/AK5: Die veranlagte Steuer steht im Dezember des Steuerjahres, bezahlt wird sie im Mai des Folgejahres;
+/// über alle Monate ist die Summe der veranlagten gleich der Summe der bezahlten Steuer.
+#[test]
+fn fea85_ak5_assessed_tax_is_booked_in_the_tax_year() {
+    let mut v = base();
+    v["milestones"][1]["date"] = json!("2035-01");
+    v["flows"]["income"] = json!(6_000);
+    v["flows"]["spending"] = json!(0);
+    v["taxes"] = json!({ "income": [[0, 0.1]], "wealth": [], "capital": [] });
+    let res = run(&v);
+    for year in [2030, 2031, 2032] {
+        let dec = res
+            .records
+            .iter()
+            .find(|r| r.month == YearMonth::new(year, 12))
+            .unwrap();
+        assert!(
+            (dec.assessed_income - 7_200.0).abs() < 0.01,
+            "Dezember {year}: {}",
+            dec.assessed_income
+        );
+        let may = res
+            .records
+            .iter()
+            .find(|r| r.month == YearMonth::new(year + 1, 5))
+            .unwrap();
+        assert!(
+            (may.tax_income - 7_200.0).abs() < 0.01,
+            "Mai {}: {}",
+            year + 1,
+            may.tax_income
+        );
+        assert!(may.assessed_income.abs() < 0.005, "im Mai wird nichts veranlagt");
+    }
+    let sum = |f: &dyn Fn(&engine::sim::MonthRecord) -> f64| res.records.iter().map(f).sum::<f64>();
+    assert!((sum(&|r| r.assessed_income) - sum(&|r| r.tax_income)).abs() < 0.01);
+}
+
 /// Teuerung: wirkt jeden Monat (1 + i)^(1/12), nicht als Sprung im Januar.
 #[test]
 

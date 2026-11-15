@@ -2006,8 +2006,11 @@ function limitProblems(l) {
   if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push("Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.");
   return out;
 }
+/** FEA-86: Rückfrage zum Speichern vor der Simulation (Standard: ein). */
+const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
 function settingsFields(l) {
-  return LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(k === "pillar3aMax" ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">Standard ${k === "pillar3aMax" ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k]}</span></label>`).join("");
+  return `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> Vor der Simulation fragen, ob die Planung gespeichert werden soll</label>`
+    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(k === "pillar3aMax" ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">Standard ${k === "pillar3aMax" ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k]}</span></label>`).join("");
 }
 function readSettings() {
   const l = {};
@@ -2023,14 +2026,14 @@ function showSettings() {
 $("#settingsSave").addEventListener("click", e => {
   const l = readSettings(), problems = limitProblems(l);
   if (problems.length) { e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>"); return; }
-  Pref.set("limits", l);
+  Pref.set("limits", l); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
   $("#settings").close(); toast("Einstellungen gespeichert.");
   renderSection();
 });
 $("#settingsDefaults").addEventListener("click", async e => {
   e.preventDefault();
   if (!await ask("Standardwerte", "Alle Einstellungen auf die Standardwerte zurücksetzen?", null, "Zurücksetzen")) return;
-  Pref.set("limits", { ...LIMIT_DEFAULTS });
+  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("askSaveBeforeRun", true);
   $("#settingsBody").innerHTML = settingsFields(limits()); $("#settingsErr").textContent = "";
   renderSection();
 });
@@ -2071,8 +2074,21 @@ async function confirmLongRun() {
   if (!(sec > LONG_RUN_SECONDS)) return true;
   return !!await ask("Lange Berechnung", `Die Berechnung dauert voraussichtlich ca. <b>${esc(fmtShort(sec))}</b> (${fmtInt(runs)} ${runs === 1 ? "Simulationslauf" : "Simulationsläufe"}). Sie lässt sich während der Berechnung abbrechen.`, null, "Trotzdem starten");
 }
+/**
+ * FEA-86: Hat die Planung ungespeicherte Änderungen, fragt die App vor der Simulation, ob gespeichert werden soll.
+ * Nur in der Desktop-App (im Browser ist «Speichern» ein Download); `askSaveDev` in den Einstellungen schaltet es für Tests ein.
+ * `false`, wenn der Benutzer abbricht oder das Speichern nicht zustande kommt.
+ */
+async function confirmSaveBeforeRun() {
+  if (!dirty || !askSaveOn() || !(Engine.inApp || Pref.get("askSaveDev", false))) return true;
+  const r = await ask("Planung speichern?", `Die Planung hat ungespeicherte Änderungen${currentPath ? "" : " und noch keinen Dateinamen"}. Vor der Simulation speichern?`, null, "Speichern", "Ohne Speichern simulieren");
+  if (r === null) return false;
+  if (r === true) { await save(false); if (dirty) return false; }
+  return true;
+}
 async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
   if (await blockedByErrors()) return;
+  if (!await confirmSaveBeforeRun()) return;
   if (!noConfirm && !await confirmLongRun()) return;
   unpark(); showResults(true); resultTab = tab; detailP = 50; resetVariation();
   $("#resultsTitle").textContent = "Simulation läuft…"; $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
@@ -2233,15 +2249,15 @@ function yearTable(recs, start, refills = []) {
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="Herleitung der 3-Topf-Auffüllungen dieses Jahres ${open ? "ausblenden" : "anzeigen"}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${last.age.toFixed(1)}</td><td>${fmtInt(rv(last, last.liquid))}</td><td>${fmtInt(rv(last, last.propertyEquity))}</td><td>${fmtInt(rv(last, last.pensionFund + last.pillar3a))}</td><td><b>${fmtInt(rv(last, last.total))}</b></td>
       ${cell(total, true)}${cell(draw)}${cell(receipts, true)}${rateCell(yearDraw, baseTotal)}${cell(receipts - total)}<td>${(infl * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${tx ? `${cell(sum(rs, r => r.taxIncome))}${cell(sum(rs, r => r.taxWealth))}${cell(sum(rs, r => r.taxCapital))}${cell(sum(rs, r => r.taxGain))}${cell(sum(rs, r => r.taxes), true)}` : ""}</tr>`
+      ${tx ? `${cell(sum(rs, r => r.assessedIncome ?? 0))}${cell(sum(rs, r => r.assessedWealth ?? 0))}${cell(sum(rs, r => r.taxCapital))}${cell(sum(rs, r => r.taxGain))}${cell(sum(rs, r => (r.assessedIncome ?? 0) + (r.assessedWealth ?? 0) + r.taxCapital + r.taxGain), true)}` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
-  const taxHint = tx ? ` Die <b>Steuern</b> sind <b>Jahressummen der im Jahr bezahlten Beträge</b>, nicht die Steuer auf dem Einkommen derselben Zeile: Einkommens- und Vermögenssteuer werden im Dezember veranlagt und im Mai des Folgejahres bezahlt, stehen also im Folgejahr (die Zeile 2030 zeigt die Steuer des Steuerjahres 2029). Kapitalbezugs- und Grundstückgewinnsteuer stehen im Jahr des Bezugs bzw. Verkaufs. Ändert sich das Einkommen, ändern sich die Steuern deshalb ein Jahr später.` : "";
+  const taxHint = tx ? ` Die <b>Steuern</b> stehen in der Zeile des <b>Steuerjahres</b>, für das sie gelten: Einkommens- und Vermögenssteuer werden im Dezember veranlagt, aber erst im Mai des Folgejahres bezahlt (die Liquidität sinkt erst dann). Kapitalbezugs- und Grundstückgewinnsteuer stehen im Jahr des Bezugs bzw. Verkaufs. Die Steuer des letzten, unvollständigen Jahres fehlt, wenn die Planung vor Dezember endet. Die Summe über alle Jahre bleibt gleich.` : "";
   return `<div class="seg" style="margin-bottom:8px"><button class="${tx ? "on" : ""}" data-action="tax-cols" aria-pressed="${tx}" title="Spalten mit den Steuern des Jahres ein- oder ausblenden">${tx ? "Steuern ausblenden" : "Steuern anzeigen"}</button></div>
     <div class="tscroll"><table class="tbl num yt"><tr><th>Jahr</th><th>Alter</th><th title="Vermögen am Jahresende: liquide Mittel">Liquid</th><th title="Vermögen am Jahresende: Immobilien abzüglich Hypotheken">Immobilien</th><th title="Vermögen am Jahresende: Pensionskasse und Säule 3a">Vorsorge</th><th title="Vermögen am Jahresende: Summe">Total</th>
       <th title="Monatsdurchschnitt des Jahres: geplante Ausgaben plus Miete bzw. Hypothekarzins, Amortisation und übrige Wohnkosten, plus Einzahlung in die Säule 3a">Ausgaben total</th><th title="Monatsdurchschnitt des Jahres: was dem Vermögen entnommen wird (tatsächliche Ausgaben minus Einkommen, vor Steuern)">Entnahme</th><th title="Monatsdurchschnitt des Jahres: Einkommen plus Entnahme aus dem Vermögen">Einkommen total</th><th title="Jährliche Entnahme / Gesamtvermögen am Jahresanfang (Total des Vorjahres)">Entnahmerate</th>
       <th title="Monatsdurchschnitt des Jahres: Einkommen total minus Ausgaben total. 0 = wie geplant, negativ = Kürzung gegenüber dem Plan, positiv = höhere Ausgaben als geplant">Abweichung vom Plan</th><th title="Veränderung des Preisindex im Kalenderjahr (im ersten Jahr seit Start)">Inflation<br>pro Jahr</th>
-      ${tx ? `<th class="tx" title="Im Jahr bezahlt. Einkommens- und Vermögenssteuer gehören zum Vorjahr (Veranlagung im Dezember, Zahlung im Mai); Kapitalbezugs- und Grundstückgewinnsteuer zum Jahr des Bezugs bzw. Verkaufs.">Steuer<br>Einkommen</th><th class="tx">Steuer<br>Vermögen</th><th class="tx">Steuer<br>Kapital Bezug</th><th class="tx">Steuer<br>Grundstück</th><th class="tx">Steuer<br>Total</th>` : ""}</tr>${rows}</table></div>
+      ${tx ? `<th class="tx" title="Steuer des Steuerjahres der Zeile (veranlagt im Dezember, bezahlt im Mai des Folgejahres); Kapitalbezugs- und Grundstückgewinnsteuer im Jahr des Bezugs bzw. Verkaufs.">Steuer<br>Einkommen</th><th class="tx">Steuer<br>Vermögen</th><th class="tx">Steuer<br>Kapital Bezug</th><th class="tx">Steuer<br>Grundstück</th><th class="tx">Steuer<br>Total</th>` : ""}</tr>${rows}</table></div>
     <p class="hint">Die <b>Vermögen</b> (Liquid, Immobilien, Vorsorge, Total) sind <b>Stände am Jahresende</b>. <b>Ausgaben total</b>, <b>Entnahme</b>, <b>Einkommen total</b> und <b>Abweichung vom Plan</b> sind <b>Monatsdurchschnitte</b> des Kalenderjahrs.${taxHint} <b>Ausgaben total</b> = geplante Ausgaben aus der Planung plus Miete bzw. Hypothekarzins und übrige Wohnkosten plus Einzahlung in die Säule 3a. <b>Entnahme</b> = was dem Vermögen entnommen wird (tatsächliche Ausgaben minus Einkommen, vor Steuern). <b>Einkommen total</b> = Einkommen plus Entnahme. <b>Abweichung vom Plan</b> = Einkommen total − Ausgaben total: bei 0 verläuft alles wie geplant; bei Guardrails &amp; Co. zeigt ein negativer Wert, um wie viel die Strategie die Ausgaben kürzt. <b>Inflation pro Jahr</b> = Veränderung des Preisindex im Kalenderjahr (im ersten Jahr seit Simulationsstart). <b>Entnahmerate</b> = jährliche Entnahme / Gesamtvermögen am Jahresanfang. Die jährliche Entnahme ist die Summe der Monatsentnahmen des Jahres (bei unvollständigen Jahren der Monatsdurchschnitt mal 12), das Vermögen am Jahresanfang der Wert des Vorjahres, im ersten Jahr der Stand zum Simulationsstart; gerechnet wird immer mit nominalen Werten. Ist die Entnahme null oder negativ, bleibt die Zelle leer; ist das Vermögen null oder negativ, steht «–». Ein Stern (*) kennzeichnet ein unvollständiges Jahr (erstes und letztes).</p>${refills.length ? `<p class="hint"><b>3-Topf-Strategie:</b> Jahre mit Auffüllung haben vorn einen Pfeil (▸); er klappt die Herleitung der Topfgrössen und der Auffüllungen dieses Jahres auf.</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {

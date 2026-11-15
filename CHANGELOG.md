@@ -1,5 +1,10 @@
 # Changelog
 
+## Nächste Version
+
+- **Steuern nach Steuerjahr (FEA-85):** Die Jahreswerte zeigen die Einkommens- und Vermögenssteuer in der Zeile des Steuerjahres, für das sie gelten. Bezahlt wird sie weiter im Mai des Folgejahres, Vermögen und Liquidität ändern sich nicht.
+- **Speichern vor der Simulation (FEA-86):** Bei ungespeicherten Änderungen fragt die Desktop-App vor der Simulation, ob gespeichert werden soll; abschaltbar in den Einstellungen.
+
 ## Version 0.8.0: erster öffentlicher Stand
 
 VivaPlan ist ein lokales Planungswerkzeug für die Pensionsplanung in der Schweiz. Alle Daten bleiben auf dem eigenen

@@ -38,6 +38,8 @@
     "recordSums": {
       "age": 13042.5,
       "ahv": 780569.3662945628,
+      "assessedIncome": 133584.81,
+      "assessedWealth": 40380.54,
       "bondIndex": 201.8084620345175,
       "bonds": 79765902.24442041,
       "cash": 0.0,
@@ -69,6 +71,8 @@
       {
         "age": 65.0,
         "ahv": 3780.0,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0012414877164493,
         "bonds": 283282.19714667666,
         "cash": 0.0,
@@ -100,6 +104,8 @@
       {
         "age": 65.5,
         "ahv": 3780.0,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0087228481974213,
         "bonds": 293845.7133212411,
         "cash": 0.0,
@@ -131,6 +137,8 @@
       {
         "age": 66.0,
         "ahv": 3855.977999999995,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0162601100321957,
         "bonds": 304566.93748041004,
         "cash": 0.0,
@@ -162,6 +170,8 @@
       {
         "age": 66.5,
         "ahv": 3855.977999999995,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0238536909203826,
         "bonds": 312024.7086053567,
         "cash": 0.0,
@@ -193,6 +203,8 @@
       {
         "age": 67.0,
         "ahv": 3933.4831577999894,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0315040116826786,
         "bonds": 323131.5578515089,
         "cash": 0.0,
@@ -224,6 +236,8 @@
       {
         "age": 67.5,
         "ahv": 3933.4831577999894,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0392114962841879,
         "bonds": 330861.95046139765,
         "cash": 0.0,
@@ -255,6 +269,8 @@
       {
         "age": 68.0,
         "ahv": 4012.5461692717604,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0469765718579183,
         "bonds": 342368.6123307094,
         "cash": 0.0,
@@ -286,6 +302,8 @@
       {
         "age": 68.5,
         "ahv": 4012.5461692717604,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0547996687284502,
         "bonds": 350378.4370219484,
         "cash": 0.0,
@@ -317,6 +335,8 @@
       {
         "age": 69.0,
         "ahv": 4093.198347274114,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0626812204357863,
         "bonds": 362299.5346041434,
         "cash": 0.0,
@@ -348,6 +368,8 @@
       {
         "age": 69.5,
         "ahv": 4093.198347274114,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0706216637593762,
         "bonds": 370595.5113196179,
         "cash": 0.0,
@@ -379,6 +401,8 @@
       {
         "age": 70.0,
         "ahv": 4175.471634054315,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0786214387423225,
         "bonds": 382946.1107639617,
         "cash": 0.0,
@@ -410,6 +434,8 @@
       {
         "age": 70.5,
         "ahv": 4175.471634054315,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0866809887157665,
         "bonds": 391534.84426836926,
         "cash": 0.0,
@@ -441,6 +467,8 @@
       {
         "age": 71.0,
         "ahv": 4259.398613898798,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.0948007603234566,
         "bonds": 404330.46201599186,
         "cash": 0.0,
@@ -472,6 +500,8 @@
       {
         "age": 71.5,
         "ahv": 4259.398613898798,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.102981203546502,
         "bonds": 413218.4211167021,
         "cash": 0.0,
@@ -503,6 +533,8 @@
       {
         "age": 72.0,
         "ahv": 4345.012526038156,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1112227717283079,
         "bonds": 426475.0309215619,
         "cash": 0.0,
@@ -534,6 +566,8 @@
       {
         "age": 72.5,
         "ahv": 4345.012526038156,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.119525921599699,
         "bonds": 435668.50735704973,
         "cash": 0.0,
@@ -565,6 +599,8 @@
       {
         "age": 73.0,
         "ahv": 4432.347277811515,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1278911133042318,
         "bonds": 449402.5467309391,
         "cash": 0.0,
@@ -596,6 +632,8 @@
       {
         "age": 73.5,
         "ahv": 4432.347277811515,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1363188104236936,
         "bonds": 458907.62152066623,
         "cash": 0.0,
@@ -627,6 +665,8 @@
       {
         "age": 74.0,
         "ahv": 4521.437458095517,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1448094800037942,
         "bonds": 473135.99772528117,
         "cash": 0.0,
@@ -658,6 +698,8 @@
       {
         "age": 74.5,
         "ahv": 4521.437458095517,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1533635925800483,
         "bonds": 482958.5151062421,
         "cash": 0.0,
@@ -689,6 +731,8 @@
       {
         "age": 75.0,
         "ahv": 4612.318351003231,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.161981622203851,
         "bonds": 497698.61081975524,
         "cash": 0.0,
@@ -720,6 +764,8 @@
       {
         "age": 75.5,
         "ahv": 4612.318351003231,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.170664046468749,
         "bonds": 507844.11966377543,
         "cash": 0.0,
@@ -751,6 +797,8 @@
       {
         "age": 76.0,
         "ahv": 4685.807055994284,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1794113465369085,
         "bonds": 523106.11018114054,
         "cash": 0.0,
@@ -782,6 +830,8 @@
       {
         "age": 76.5,
         "ahv": 4685.807055994284,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1882240071657801,
         "bonds": 533533.24224153,
         "cash": 0.0,
@@ -813,6 +863,8 @@
       {
         "age": 77.0,
         "ahv": 4732.665126554224,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.1971025167349618,
         "bonds": 549284.33413761,
         "cash": 0.0,
@@ -844,6 +896,8 @@
       {
         "age": 77.5,
         "ahv": 4732.665126554224,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.2060473672732663,
         "bonds": 559945.990667072,
         "cash": 0.0,
@@ -875,6 +929,8 @@
       {
         "age": 78.0,
         "ahv": 4779.991777819763,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.2150590544859858,
         "bonds": 576144.1561008659,
         "cash": 0.0,
@@ -906,6 +962,8 @@
       {
         "age": 78.5,
         "ahv": 4779.991777819763,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.2241380777823647,
         "bonds": 587066.4170042801,
         "cash": 0.0,
@@ -937,6 +995,8 @@
       {
         "age": 79.0,
         "ahv": 4827.791695597956,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.233284940303275,
         "bonds": 603724.0115626919,
         "cash": 0.0,
@@ -968,6 +1028,8 @@
       {
         "age": 79.5,
         "ahv": 4827.791695597956,
+        "assessedIncome": 0.0,
+        "assessedWealth": 0.0,
         "bondIndex": 1.2425001489490997,
         "bonds": 614907.2593231098,
         "cash": 0.0,
@@ -999,6 +1061,8 @@
       {
         "age": 79.91666666666667,
         "ahv": 4827.791695597956,
+        "assessedIncome": 10018.35,
+        "assessedWealth": 4918.94,
         "bondIndex": 1.2502320666543612,
         "bonds": 623174.7507146251,
         "cash": 0.0,
