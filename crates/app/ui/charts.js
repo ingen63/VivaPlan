@@ -39,6 +39,14 @@ const Charts = (() => {
         `<text x="${f.L - 6}" y="${y + 4}" text-anchor="end" font-size="10.5" fill="${cssv("--muted")}">${yFmt(v)}</text>`;
     }).join("");
   }
+  /**
+   * Bezugslinie (FEA-89): die Linie, an der ein Ergebnis kippt (meist 0, im Index 100), dicker als das Raster und hinter
+   * den Daten. `at` ist die Position im Skalenraum (bei logarithmischer Skala log10); ausserhalb des Bereichs keine Linie.
+   */
+  function refLine(f, ys, at, y) {
+    if (!Number.isFinite(at) || at < ys.lo - 1e-9 * Math.abs(ys.hi - ys.lo) || at > ys.hi + 1e-9 * Math.abs(ys.hi - ys.lo)) return "";
+    return `<line class="ref" x1="${f.L}" x2="${f.W - f.R}" y1="${y}" y2="${y}" stroke="${cssv("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
+  }
   function tipAt(svg, tip, f, px, html) {
     if (!tip) return;
     const r = svg.getBoundingClientRect();
@@ -57,7 +65,7 @@ const Charts = (() => {
    * Zeitachse mit Linien, Bändern und optional gestapelten Flächen.
    * o = { x: [Monatsindex], xFmt, yFmt, lines: [{label, color, values, dash, width}],
    *       bands: [{lo, hi, color, opacity, label}], stack: [{label, color, values}], percent,
-   *       marks: [{x, color, label}], tip: (i) => html, yMin }
+   *       marks: [{x, color, label}], tip: (i) => html, yMin, ref: Bezugslinie (Standard 0, null = keine) }
    */
   /**
    * Bereichsauswahl per Maus: Mit gedrückter Taste einen waagrechten Bereich aufziehen (hervorgehoben),
@@ -136,6 +144,9 @@ const Charts = (() => {
     const pos = o.log ? v => (v > 0 ? Math.log10(v) : NaN) : v => v;
     f.y = v => f.T + (1 - (pos(v) - ys.lo) / (ys.hi - ys.lo)) * (f.H - f.T - f.B);
     let h = grid(f, ys, o.percent ? v => `${v} %` : o.yFmt);
+    // Bezugslinie: `ref` (Standard 0, null = keine)
+    const ref = o.ref === undefined ? 0 : o.ref;
+    if (ref != null) h += refLine(f, ys, pos(ref), f.y(ref));
     let lastLabel = -1e9;
     for (let i = 0; i < n; i++) {
       if (o.x[i] % 12 === 0 && (o.x[i] / 12) % (n > 360 ? 10 : 5) === 0 && f.x(i) - lastLabel > 50) {
@@ -195,7 +206,7 @@ const Charts = (() => {
     const ys = scale(Math.min(...bottoms, ...extra), Math.max(...tops, ...extra));
     const slot = (f.W - f.L - f.R) / n, bw = Math.max(1, slot * 0.8 / groups.length);
     f.y = v => f.T + (1 - (v - ys.lo) / (ys.hi - ys.lo)) * (f.H - f.T - f.B);
-    let h = grid(f, ys, o.yFmt);
+    let h = grid(f, ys, o.yFmt) + refLine(f, ys, 0, f.y(0));
     const every = Math.ceil(n / Math.max(1, Math.floor((f.W - f.L) / 46)));
     for (let i = 0; i < n; i++) {
       const x0 = f.L + i * slot + slot * 0.1;
@@ -239,6 +250,8 @@ const Charts = (() => {
       const p = hist.counts[i] / total * 100, x0 = f.x(hist.edges[i]), x1 = f.x(hist.edges[i + 1]);
       h += `<rect x="${(x0 + 0.5).toFixed(1)}" y="${f.y(p).toFixed(1)}" width="${Math.max(0.5, x1 - x0 - 1).toFixed(1)}" height="${(f.y(0) - f.y(p)).toFixed(1)}" fill="${color(o.color || "--c1")}" fill-opacity=".75"/>`;
     }
+    // Bezugslinie (FEA-89): hier liegt der Wert auf der waagrechten Achse, also senkrecht bei 0 (z. B. Endvermögen 0)
+    if (lo <= 0 && hi >= 0) h += `<line class="ref" x1="${f.x(0)}" x2="${f.x(0)}" y1="${f.T}" y2="${f.H - f.B}" stroke="${cssv("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
     const sx = scale(lo, hi, false);
     for (const v of sx.ticks) if (v >= lo && v <= hi) h += `<text x="${f.x(v)}" y="${f.H - 8}" text-anchor="middle" font-size="10.5" fill="${cssv("--muted")}">${o.xFmt(v)}</text>`;
     for (const mk of o.marks || []) {
@@ -266,7 +279,7 @@ const Charts = (() => {
     const ys = o.range ? scale(o.range[0], o.range[1], false) : scale(Math.min(...all), Math.max(...all));
     f.x = i => n === 1 ? (f.L + f.W - f.R) / 2 : f.L + 20 + i / (n - 1) * (f.W - f.L - f.R - 40);
     f.y = v => f.T + (1 - (v - ys.lo) / (ys.hi - ys.lo)) * (f.H - f.T - f.B);
-    let h = grid(f, ys, o.yFmt);
+    let h = grid(f, ys, o.yFmt) + refLine(f, ys, 0, f.y(0));
     const every = Math.ceil(n / Math.max(1, Math.floor((f.W - f.L) / 60)));
     o.xs.forEach((t, i) => { if (i % every === 0) h += `<text x="${f.x(i)}" y="${f.H - 8}" text-anchor="middle" font-size="10.5" fill="${cssv("--muted")}">${escx(t)}</text>`; });
     for (const b of o.bands || []) {

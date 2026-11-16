@@ -85,6 +85,8 @@ Die Registerkarte «Grafiken» zeigt die Diagramme in voller Grösse:
 
 Jede Grafik hat ein ⓘ an der Überschrift. Mit **F1** über einer Grafik erhalten Sie die passende Erklärung.
 
+**Dicke Linie bei 0:** In allen Grafiken mit einer Wertachse, die 0 enthält, ist die Linie bei 0 dicker als das übrige Raster, auch im Vergleich und in der Minigrafik im Editor. Unter dieser Linie ist das Geld aufgebraucht. In der [Verteilung des Endvermögens](#r-hist) steht sie senkrecht bei einem Endvermögen von 0. Liegt 0 ausserhalb des gezeigten Bereichs, fehlt die Linie.
+
 ## @r-runs Einzelne Läufe
 Stichworte: Lauf, Detail, Perzentillauf, schlechtester Lauf, Pfad, Einzellauf
 
@@ -148,7 +150,7 @@ Stichworte: Index, Rendite, Verlauf, Marktverlauf, Preisindex, Teuerung, Inflati
 
 Zeigt den **Renditeverlauf dieses Laufs** als Index, **Start = 100**, mit wiederangelegten Ausschüttungen. Die **Inflation** (Preisindex) läuft wie Aktien und Obligationen mit, gestrichelt. Im Tooltip steht zusätzlich die Änderung der letzten zwölf Monate, bei der Inflation in Klammern.
 
-Zwei Schalter ändern die Darstellung: **Wertentwicklung (Start = 100)** oder **Änderung in %** (gegenüber dem Vorjahresmonat). Bei der Wertentwicklung wählen Sie **Linear** oder **Logarithmisch**; logarithmisch zeigen gleiche Abstände gleiche prozentuale Änderungen. Die Prozentansicht ist immer linear.
+Zwei Schalter ändern die Darstellung: **Wertentwicklung (Start = 100)** oder **Änderung in %** (gegenüber dem Vorjahresmonat). Bei der Wertentwicklung wählen Sie **Linear** oder **Logarithmisch**; logarithmisch zeigen gleiche Abstände gleiche prozentuale Änderungen. Die Prozentansicht ist immer linear. Die dicke Linie liegt bei der Wertentwicklung bei **100** (Stand beim Start), bei der Änderung in % bei **0 %**.
 
 So erkennen Sie, **was in diesem Lauf am Markt passiert ist**: ein Einbruch zum Start, eine lange Seitwärtsphase oder eine hohe Inflation. Das erklärt oft, warum ein Lauf schlecht oder gut endet.
 

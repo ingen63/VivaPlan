@@ -1388,6 +1388,8 @@ function renderChart(svgSel, tipSel, s) {
   let g = "";
   for (let v = 0; v <= top + 1e-6; v += step) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10.5" fill="${css("--muted")}">${fmtMio(v)}</text>`;
   for (let i = 0; i < n; i++) { const mm = s.m[i]; if (mm % 60 === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="${css("--muted")}">${mm / 12}</text>`; }
+  // FEA-89: Bezugslinie bei 0 wie in den Ergebnisgrafiken
+  g += `<line class="ref" x1="${L}" x2="${W - Rr}" y1="${y(0)}" y2="${y(0)}" stroke="${css("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
   const stack = [s.pk, s.prop, s.liquid], cols = ["--c3", "--c2", "--c1"];
   let base = new Array(n).fill(0), areas = "";
   stack.forEach((arr, k) => {
@@ -2361,6 +2363,8 @@ function drawRunCharts(res, p) {
   const stockTxt = (k, i) => i >= 12 ? pctTxt(last12(k, i)) : "–";
   const all = recs.map((_, i) => i);
   Charts.time($(`#${p}-mkt`), $(`#${p}-mkt-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, marks, log: mktLog && !mktPct,
+    // FEA-89: Bezugslinie bei Start = 100 bzw. bei 0 % Änderung
+    ref: mktPct ? 0 : 100,
     yFmt: mktPct ? v => `${v.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %` : v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }),
     lines: mktPct
       ? [{ color: "--c1", values: all.map(i => pct12("stockIndex", i)) }, { color: "--c2", values: all.map(i => pct12("bondIndex", i)) }, { color: "--muted", dash: "5 3", width: 1.5, values: all.map(i => 100 * infl12(i)) }]

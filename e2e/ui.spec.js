@@ -3480,3 +3480,70 @@ test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Bezugslinie in den Grafiken (FEA-89)", () => {
+  /** Bezugslinie einer Grafik: y-Lage und Strichbreite; dazu die y-Lage einer beschrifteten Rasterlinie. */
+  const refOf = (page, sel) => page.evaluate(sel => {
+    const svg = document.querySelector(sel), ref = svg.querySelector("line.ref");
+    const tickY = label => { const t = [...svg.querySelectorAll("text")].find(x => x.textContent === label); return t ? Number(t.getAttribute("y")) - 4 : null; };
+    const grid = [...svg.querySelectorAll("line:not(.ref):not(.hov)")].find(l => l.getAttribute("y1") === l.getAttribute("y2"));
+    return ref && { y: Number(ref.getAttribute("y1")), width: Number(ref.getAttribute("stroke-width")), gridWidth: Number(grid?.getAttribute("stroke-width") ?? 1), tickY };
+  }, sel);
+
+  test("FEA-89/AK1, AK3, AK4: Nulllinie dicker, bei negativen Werten an der 0, hinter den Daten, ausserhalb des Bereichs keine", async ({ page }) => {
+    const errors = await open(page, "results/charts");
+    await expect(page.locator("#rc-wealth line.ref")).toHaveCount(1);
+    // Beispiel mit negativem Vermögen: −0.5 bis 3 Mio.; die dicke Linie liegt bei der Beschriftung «0»
+    const r = await page.evaluate(() => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.width = "600px"; svg.style.height = "240px"; document.body.appendChild(svg);
+      const values = Array.from({ length: 25 }, (_, i) => -0.5e6 + i * 3.5e6 / 24);
+      Charts.time(svg, null, { x: values.map((_, i) => i * 12), xFmt: m => m / 12, yFmt: v => String(v / 1e6), lines: [{ color: "--c1", values }], tip: () => "" });
+      const ref = svg.querySelector("line.ref"), zero = [...svg.querySelectorAll("text")].find(t => t.textContent === "0");
+      const kids = [...svg.children], refAt = kids.indexOf(ref), lineAt = kids.findIndex(k => k.tagName === "path");
+      // Bereich 1 bis 3 Mio. ohne 0 (wie nach einem Zoom): keine Bezugslinie
+      Charts.time(svg, null, { x: [0, 12, 24], xFmt: m => m, yFmt: String, range: [1e6, 3e6], lines: [{ color: "--c1", values: [1e6, 2e6, 3e6] }], tip: () => "" });
+      const outside = svg.querySelectorAll("line.ref").length;
+      svg.remove();
+      return { y: Number(ref.getAttribute("y1")), zeroY: Number(zero.getAttribute("y")) - 4, width: Number(ref.getAttribute("stroke-width")), behind: refAt < lineAt, outside };
+    });
+    expect(r.width).toBeGreaterThanOrEqual(2);
+    expect(Math.abs(r.y - r.zeroY)).toBeLessThan(0.5);
+    expect(r.behind).toBe(true);
+    expect(r.outside).toBe(0);
+    // Balken (Einnahmen und Ausgaben) und Minigrafik im Editor haben die Nulllinie ebenfalls
+    await expect(page.locator("#rc-flows line.ref")).toHaveCount(1);
+    await expect(page.locator("#chart line.ref")).toHaveCount(1);
+    const flows = await refOf(page, "#rc-flows");
+    expect(flows.width).toBeGreaterThan(flows.gridWidth);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-89/AK2: Aktien, Obligationen und Inflation: Linie bei 100 (linear und logarithmisch), bei 0 % in «Änderung in %»", async ({ page }) => {
+    const errors = await open(page, "results/charts");
+    await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
+    // linear: 100 liegt in der Mitte zwischen den Beschriftungen 0 und 200
+    let r = await refOf(page, "#rc-mkt");
+    const mid = await page.evaluate(() => {
+      const svg = document.querySelector("#rc-mkt"), y = l => Number([...svg.querySelectorAll("text")].find(t => t.textContent === l).getAttribute("y")) - 4;
+      return (y("0") + y("200")) / 2;
+    });
+    expect(Math.abs(r.y - mid)).toBeLessThan(0.5);
+    expect(r.width).toBeGreaterThanOrEqual(2);
+    // logarithmisch: die Linie liegt bei der Beschriftung «100»
+    await page.locator('button[data-action="mkt-log"][data-v="1"]').click();
+    await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
+    r = await refOf(page, "#rc-mkt");
+    const at100 = await page.evaluate(() => { const t = [...document.querySelectorAll("#rc-mkt text")].find(x => x.textContent === "100"); return t ? Number(t.getAttribute("y")) - 4 : null; });
+    expect(at100).not.toBeNull();
+    expect(Math.abs(r.y - at100)).toBeLessThan(0.5);
+    // Änderung in %: die Linie bei 0 %
+    await page.locator('button[data-action="mkt"][data-v="pct"]').click();
+    await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
+    r = await refOf(page, "#rc-mkt");
+    const at0 = await page.evaluate(() => { const t = [...document.querySelectorAll("#rc-mkt text")].find(x => /^0 ?%$/.test(x.textContent.trim())); return t ? Number(t.getAttribute("y")) - 4 : null; });
+    expect(at0).not.toBeNull();
+    expect(Math.abs(r.y - at0)).toBeLessThan(0.5);
+    await noErrors(page, errors);
+  });
+});
