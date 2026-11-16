@@ -1,5 +1,7 @@
 # FEA-82: Kommandozeile (ohne main.rs, reine Verdrahtung) und App sind im Lauf; die CLI-main.rs verteilt nur Befehle
-exclude_globs = ["crates/cli/src/main.rs"]
+# ISS-22: test_alloc.rs ist die Speichergrenze der Testprogramme (Testinfrastruktur, nicht Teil der App). Ein Mutant darin
+# veränderte den Speicherverwalter aller Tests und sagte nichts über die Tests der App aus.
+exclude_globs = ["crates/cli/src/main.rs", "crates/engine/src/test_alloc.rs"]
 test_tool = "nextest"
 
 # FEA-29: Begründet ausgeschlossene Mutanten. Zwei Arten:
@@ -126,9 +128,9 @@ exclude_re = [
 ]
 
 # FEA-32: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).
-# Der Testlauf mit dem Profil «mutants» dauert wenige Sekunden; mit Mindestzeit 120 s und Faktor 1 gilt faktisch eine feste
-# Höchstdauer von 2 Minuten. Ein Timeout zählt als erkannt (Endlosschleife). Mutationsläufe verwenden das nextest-Profil «mutants» (.config/nextest.toml) ohne die schweren Tests.
-minimum_test_timeout = 120.0
+# Der Testlauf mit dem Profil «mutants» dauert wenige Sekunden; mit Mindestzeit 60 s und Faktor 1 gilt faktisch eine feste
+# Höchstdauer von 1 Minute (ISS-22: vorher 120 s; eine Endlosschleife belastet den Rechner so nur halb so lange). Ein Timeout zählt als erkannt (Endlosschleife). Mutationsläufe verwenden das nextest-Profil «mutants» (.config/nextest.toml) ohne die schweren Tests.
+minimum_test_timeout = 60.0
 timeout_multiplier = 1.0
 additional_cargo_test_args = ["--profile", "mutants"]
 

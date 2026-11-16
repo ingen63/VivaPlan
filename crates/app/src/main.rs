@@ -5,6 +5,11 @@
 
 mod migrate;
 
+// ISS-22: Speichergrenze je Testprozess (engine::test_alloc).
+#[cfg(test)]
+#[global_allocator]
+static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
+
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};

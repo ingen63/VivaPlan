@@ -3,6 +3,11 @@
 mod devserver;
 mod optimize;
 
+// ISS-22: Speichergrenze je Testprozess (engine::test_alloc).
+#[cfg(test)]
+#[global_allocator]
+static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
+
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;

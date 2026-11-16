@@ -36,4 +36,7 @@ slow-timeout = { period = "120s", terminate-after = 15 }
 [profile.mutants]
 retries = 0
 fail-fast = true            # der erste fehlschlagende Test genügt, der Mutant ist erkannt
+# ISS-22: höchstens 4 Testprozesse je Job (sonst so viele wie Kerne). Ein Mutant, der Speicher ohne Ende anfordert, trifft
+# alle laufenden Tests eines Jobs; mit der Speichergrenze je Prozess (engine::test_alloc, 1,5 GB) bleibt ein Job unter 6 GB.
+test-threads = 4
 default-filter = 'not (test(mutated_plans_never_crash) | test(bench_measures_one_run_for_each_source) | test(statistics_are_stable_across_path_counts) | test(parametric_paths_are_finite_and_plausible) | test(progress_counts_and_cancel_stops_simulation_and_optimization) | test(plan_uses_library_reference) | test(goal_two_report_is_sorted_by_emergency_share) | test(goal_two_needs_a_property_and_a_sensible_minimum) | test(fixed_parameters_keep_the_plan_value_and_varied_ones_stay_in_their_range) | test(proptest_plans_monte_carlo_keep_books_balanced))'

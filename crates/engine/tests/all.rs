@@ -7,6 +7,10 @@
 //!
 //! Eine neue Testdatei muss hier eingetragen werden. Der Test am Ende schlägt fehl, wenn eine Datei fehlt.
 
+// ISS-22: Speichergrenze je Testprozess, damit ein Mutant mit endloser Schleife den Rechner nicht lahmlegt.
+#[global_allocator]
+static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
+
 mod bench;
 mod buckets_guardrails;
 mod buckets_need;

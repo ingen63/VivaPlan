@@ -289,6 +289,12 @@ impl Parametric<'_> {
                 // Monate dieses Kalenderjahres in der Simulation
                 let m = self.start.plus(k as i32);
                 let len = (13 - m.month() as usize).min(self.months - k);
+                // ISS-22: Jeder Durchgang kommt voran, und `k` zählt die schon geschriebenen Monate. Sonst würde ein
+                // Fehler (oder ein Mutant wie `k *= len`) die Schleife endlos machen und den Speicher füllen.
+                debug_assert!(
+                    len > 0 && k == p.bonds.len(),
+                    "Parametric::path: Schleife kommt nicht voran"
+                );
                 let log: f64 = p.stocks[k..k + len].iter().map(|r| (1.0 + r).ln()).sum();
                 let (e1, e2) = (rng.normal(), rng.normal());
                 let (b, i) = c.draw(log, len, e1, e2);

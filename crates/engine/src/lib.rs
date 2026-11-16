@@ -23,11 +23,18 @@ pub mod settings;
 pub mod sim;
 pub mod strategy;
 pub mod tax;
+#[doc(hidden)]
+pub mod test_alloc;
 pub mod time;
 pub mod upgrade;
 pub mod validate;
 
 use std::fmt;
+
+// ISS-22: Speichergrenze je Testprozess (siehe `test_alloc`).
+#[cfg(test)]
+#[global_allocator]
+static TEST_ALLOC: test_alloc::Limited = test_alloc::Limited;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Error {

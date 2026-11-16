@@ -1,5 +1,9 @@
 //! Schnittstellentests: alle Befehle der Kommandozeile und der lokale Entwicklungsserver.
 
+// ISS-22: Speichergrenze je Testprozess (engine::test_alloc).
+#[global_allocator]
+static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
+
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
