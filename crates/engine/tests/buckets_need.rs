@@ -285,17 +285,55 @@ fn years_below_the_threshold_sell_nothing_from_pot_3_in_january_and_pot_1_comes_
     never_negative(&res);
 }
 
+/// FEA-80/AK2: Start im Juli 2030; der Vorlauf des Renditepfads (Juli 2029 bis Juni 2030) liefert die Monate vor dem
+/// Start. Die Januar-Auffüllung 2031 misst die letzten 12 Monate (Februar 2030 bis Januar 2031): 5 Vorlaufmonate,
+/// Juli bis Dezember 2030 je +2 %, Januar 2031 0 %. Schwelle 5 %.
 #[test]
-fn a_simulation_younger_than_12_months_uses_the_return_since_january() {
+fn fea80_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run() {
     let mut v = base();
-    v["milestones"][1]["date"] = json!("2030-03");
-    let res = run(v);
-    let a = find(&res, "A", 2030, 3);
-    assert_eq!(a.return_basis, "seit Januar");
-    assert!(a.stock_return > 0.0 && a.stock_return < 0.06, "{}", a.stock_return);
+    v["milestones"][0]["date"] = json!("2030-07");
+    v["milestones"][1]["date"] = json!("2030-07");
+    v["withdrawal"]["buckets"]["refillThreshold"] = json!(0.05);
+    let run_pre = |pre: f64| {
+        let p: Plan = serde_json::from_value(crate::any_age(v.clone())).expect("Planung gültig");
+        let sim = Simulator::new(&p).unwrap();
+        let mut path = batch::market_paths(&p, &sim, None).unwrap().remove(0);
+        assert_eq!(path.pre_stocks.len(), 12, "Vorlauf bei fixen Renditen");
+        path.pre_stocks = vec![pre; 12];
+        for (k, x) in path.stocks.iter_mut().enumerate() {
+            *x = if k < 6 { 0.02 } else { 0.0 };
+        }
+        sim.run(&path, true)
+    };
+
+    // Vorlauf −1 % pro Monat: 0.99⁵ × 1.02⁶ − 1 = +7.1 % ≥ 5 % → erfüllt, es wird aus Topf 3 verkauft
+    let res = run_pre(-0.01);
     let j = january(&res, 2031);
     assert_eq!(j.return_basis, "letzte 12 Monate");
-    close(j.stock_return, 0.06, "Rendite 12 Monate");
+    close(
+        j.stock_return,
+        0.99f64.powi(5) * 1.02f64.powi(6) - 1.0,
+        "Februar 2030 bis Januar 2031",
+    );
+    assert!(j.condition_met);
+    assert!(j.moves.iter().any(|m| m.from == 3), "{:?}", j.moves);
+
+    // Vorlauf −3 % pro Monat: 0.97⁵ × 1.02⁶ − 1 = −3.3 % < 5 % → nicht erfüllt, kein Verkauf aus Topf 3
+    let res = run_pre(-0.03);
+    let j = january(&res, 2031);
+    close(
+        j.stock_return,
+        0.97f64.powi(5) * 1.02f64.powi(6) - 1.0,
+        "Februar 2030 bis Januar 2031",
+    );
+    assert!(!j.condition_met);
+    assert!(j.moves.iter().all(|m| m.from != 3), "{:?}", j.moves);
+
+    // Ab dem 13. Monat misst das Kriterium nur noch Monate des Pfads
+    let j = january(&res, 2032);
+    assert_eq!(j.return_basis, "letzte 12 Monate");
+    close(j.stock_return, 0.0, "Februar 2031 bis Januar 2032");
+    never_negative(&res);
 }
 
 #[test]

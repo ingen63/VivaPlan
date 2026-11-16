@@ -112,6 +112,12 @@ Alle Läufe werden parallel auf allen Kernen gerechnet; Monte-Carlo-Pfade entste
   der Reihe / corr(exp(L) − 1, L), damit die Korrelation mit der einfachen Aktienrendite stimmt; l aus der Zerlegung der
   Restkovarianz (begrenzt, falls die Matrix nicht positiv definit wäre). Werte unter −95 % werden auf −95 % gesetzt. Die
   Jahre sind unabhängig, wie im Bootstrap.
+- **Vorlauf (FEA-80, `MarketPath::pre_stocks`):** Jeder Pfad trägt die Aktien-Monatsrenditen der 12 Monate vor dem
+  Start mit, nur für das Renditekriterium der 3-Topf-Strategie (kein Vermögen, kein Topf). Historisch: die echten Monate
+  vor dem historischen Start (Jahresreihen nach Kalenderjahr, wie der Pfad), am Anfang der Reihe entsprechend weniger.
+  Bootstrap: die echten Monate vor dem ersten Block, zirkulär (Jahresreihen: Monate des Startjahres aus dem ersten
+  gezogenen Jahr, die übrigen aus dem Jahr davor). Parametrisch: 12 Monate aus demselben Zufallsstrom, vor dem Pfad
+  gezogen. Fixe Renditen: der Satz des Startmonats.
 - Pfad *i* entsteht immer aus (`seed`, *i*): gleiche Einstellungen ⇒ gleiche Ergebnisse; alle Szenarien verwenden
   dieselben Pfade. Die Detailansichten (5./50./95. Perzentil) rechnen den betreffenden Pfad exakt nach.
 - «Alle historischen Startzeitpunkte» unterschätzt die Streuung: 864 Startmonate aus 104 Jahren überlappen stark
@@ -211,11 +217,11 @@ Reihenfolge pro Monat:
    Der Netto-Bedarf wird im Januar und bei **jedem** Auslöser A neu bestimmt, also auch bei einem PK-Kapitalbezug mitten im
    Jahr (Monate ab dem Bezug, hochgerechnet), und gilt bis zum nächsten Januar oder Auslöser A (GEN-03, abweichend von der
    früheren Spezifikation, die nur beim Start und Neustart neu hochrechnete).
-   Ziel Topf 1/2 = Jahre × Netto-Bedarf, nie aus dem Topfstand. **Renditekriterium:** Aktienrendite der letzten 12 Monate; in den
-   ersten 12 Monaten der Simulation die nicht annualisierte Rendite seit Januar des laufenden Jahres, bei einem
-   Simulationsstart nach Januar seit dem Start (GEN-03, abweichend von
-   der früheren Spezifikation, die die annualisierte Rendite seit Simulationsstart vorsah) ≥ `refillThreshold`; sonst sind nur
-   Verkäufe aus Topf 3 gesperrt.
+   Ziel Topf 1/2 = Jahre × Netto-Bedarf, nie aus dem Topfstand. **Renditekriterium:** Aktienrendite der letzten 12 Monate
+   einschliesslich des laufenden (Indexstand Ende Monat im Verhältnis zum Stand 12 Monate davor, nicht annualisiert); in
+   den ersten 12 Monaten liefert der Vorlauf des Renditepfads die Monate vor dem Start (FEA-80). Fehlen Vorlaufmonate
+   (Reihe beginnt später), gilt die Rendite seit dem frühesten bekannten Stand («seit Start»). Rendite ≥ `refillThreshold`,
+   sonst sind nur Verkäufe aus Topf 3 gesperrt.
    **Januar-Auffüllung:** Topf 1 aus Topf 2, der Rest aus Topf 3, danach Topf 2 aus Topf 3 (bei nicht erfülltem Kriterium: nur
    Topf 1 aus Topf 2, Topf 2 wird nicht nachgefüllt); Überschuss in Topf 1 oder 2 → Topf 3.
    **A** (Start der Entnahmephase, PK-Kapitalbezug, Neustart nach «alle Töpfe leer»; einmal pro Monat): Kapitalbezug bzw. das

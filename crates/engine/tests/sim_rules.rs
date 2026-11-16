@@ -246,7 +246,7 @@ fn need_in_the_last_year_counts_only_the_remaining_months() {
 }
 
 #[test]
-fn stock_return_over_the_last_twelve_months_and_since_january() {
+fn stock_return_over_the_last_twelve_months() {
     let mut v = base();
     v["wealth"]["stockShare"] = json!(1);
     buckets(&mut v, 1.0, 1.0, -1.0);
@@ -266,20 +266,56 @@ fn stock_return_over_the_last_twelve_months_and_since_january() {
     let j = refill(&r, "Januar", 2033, 1);
     assert_eq!(j.return_basis, "letzte 12 Monate");
     close(j.stock_return, 1.01f64.powi(11) * 1.0 - 1.0, "Feb 2032 bis Jan 2033");
+}
 
-    // Pensionierung im Januar 2027 (2. Monat): Rendite seit Januar, also nur der Januar
+/// FEA-80: In den ersten 12 Monaten der Simulation liefert der Vorlauf des Renditepfads die Monate vor dem Start; das
+/// Kriterium misst immer die letzten 12 Monate einschliesslich des laufenden.
+#[test]
+fn fea80_the_pre_run_supplies_the_months_before_the_start() {
+    // Start November 2026, Pensionierung im Januar 2027 (3. Monat)
     let mut v = base();
     v["wealth"]["stockShare"] = json!(1);
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Pensionierung", "date": "2027-01"});
     buckets(&mut v, 1.0, 1.0, -1.0);
-    let r = run_with(&v, |p, _| {
+    let set = |p: &mut MarketPath| {
         p.stocks[0] = 0.10; // November 2026
         p.stocks[1] = 0.20; // Dezember 2026
         p.stocks[2] = 0.05; // Januar 2027
+    };
+    // Vorlauf Februar bis Oktober 2026 je +1 %, davor (Nov. 2025 bis Jan. 2026) −50 %: zählt nicht mehr
+    let r = run_with(&v, |p, _| {
+        set(p);
+        p.pre_stocks = [vec![-0.5; 3], vec![0.01; 9]].concat();
     });
     let a = refill(&r, "A", 2027, 1);
-    assert_eq!(a.return_basis, "seit Januar");
-    close(a.stock_return, 0.05, "Januar 2027");
+    assert_eq!(a.return_basis, "letzte 12 Monate");
+    close(
+        a.stock_return,
+        1.01f64.powi(9) * 1.1 * 1.2 * 1.05 - 1.0,
+        "Feb 2026 bis Jan 2027",
+    );
+
+    // Ohne Vorlauf (Reihe beginnt beim Start): Rendite seit dem Start
+    let r = run_with(&v, |p, _| {
+        set(p);
+        p.pre_stocks.clear();
+    });
+    let a = refill(&r, "A", 2027, 1);
+    assert_eq!(a.return_basis, "seit Start");
+    close(a.stock_return, 1.1 * 1.2 * 1.05 - 1.0, "Nov 2026 bis Jan 2027");
+
+    // Teilweiser Vorlauf (zwei Monate): seit dem frühesten bekannten Stand
+    let r = run_with(&v, |p, _| {
+        set(p);
+        p.pre_stocks = vec![0.03, -0.02];
+    });
+    let a = refill(&r, "A", 2027, 1);
+    assert_eq!(a.return_basis, "seit Start");
+    close(
+        a.stock_return,
+        1.03 * 0.98 * 1.1 * 1.2 * 1.05 - 1.0,
+        "Sep 2026 bis Jan 2027",
+    );
 }
 
 // ---------------------------------------------------------------------------------------------

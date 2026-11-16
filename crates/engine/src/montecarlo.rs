@@ -6,7 +6,7 @@
 //! Detailansicht exakt wiederholen.
 
 use crate::calibrate::Correlated;
-use crate::market::{monthly, DataSet, FixedCurves, Freq, MarketPath};
+use crate::market::{monthly, DataSet, FixedCurves, Freq, MarketPath, PRE_MONTHS};
 use crate::model::{BootstrapParams, ParametricParams};
 use crate::time::YearMonth;
 
@@ -170,11 +170,14 @@ impl Bootstrap<'_> {
         };
         match ds.freq {
             Freq::Monthly => {
-                for (k, &i) in self
-                    .positions(&mut rng, self.months, self.params.block)
-                    .iter()
-                    .enumerate()
-                {
+                let pos = self.positions(&mut rng, self.months, self.params.block);
+                // Vorlauf: die echten Monate vor dem ersten Block (zirkulär wie der Bootstrap)
+                let n = ds.len();
+                p.pre_stocks = (1..=PRE_MONTHS)
+                    .rev()
+                    .map(|j| ds.stocks[(pos[0] + n * PRE_MONTHS - j) % n])
+                    .collect();
+                for (k, &i) in pos.iter().enumerate() {
                     let m = self.start.plus(k as i32);
                     p.stocks.push(ds.stocks[i]);
                     p.bonds.push(ds.bonds[i]);
@@ -187,6 +190,15 @@ impl Bootstrap<'_> {
                 let end = self.start.plus(self.months as i32 - 1);
                 let years = (end.year() - self.start.year() + 1) as usize;
                 let pos = self.positions(&mut rng, years, self.params.block / 12.0);
+                // Vorlauf: Monate im Startjahr vor dem Start aus dem ersten Jahr, die übrigen aus dem Jahr davor (zirkulär)
+                let n = ds.len();
+                p.pre_stocks = (1..=PRE_MONTHS as i32)
+                    .rev()
+                    .map(|j| {
+                        let back = (self.start.year() - self.start.plus(-j).year()) as usize;
+                        monthly(ds.stocks[(pos[0] + n - back % n) % n])
+                    })
+                    .collect();
                 for k in 0..self.months {
                     let m = self.start.plus(k as i32);
                     let i = pos[(m.year() - self.start.year()) as usize];
@@ -240,8 +252,7 @@ impl Parametric<'_> {
         let vol = q.sigma * dt.sqrt();
         let lambda = q.jump_lambda * dt;
         let mut p = MarketPath::with_capacity(format!("Zufallspfad {}", index + 1), self.months);
-        for k in 0..self.months {
-            let m = self.start.plus(k as i32);
+        let month = |rng: &mut Rng| {
             let mut log = 0.0;
             for _ in 0..TRADING_DAYS {
                 let z = if q.df > 0.0 {
@@ -258,7 +269,13 @@ impl Parametric<'_> {
                     }
                 }
             }
-            p.stocks.push(log.exp() - 1.0);
+            log.exp() - 1.0
+        };
+        // Vorlauf (FEA-80): 12 Monate aus demselben Zufallsstrom, vor dem Pfad gezogen
+        p.pre_stocks = (0..PRE_MONTHS).map(|_| month(&mut rng)).collect();
+        for k in 0..self.months {
+            let m = self.start.plus(k as i32);
+            p.stocks.push(month(&mut rng));
             p.saron.push(self.fixed.saron.at(m));
             if self.correlated.is_none() {
                 p.bonds.push(monthly(self.fixed.bonds.at(m)));
@@ -355,6 +372,10 @@ mod tests {
         };
         let p = b.path(3);
         assert_eq!(p.stocks.len(), 600);
+        // FEA-80: Vorlauf = die 12 echten Monate vor dem ersten Block (zirkulär)
+        let i0 = p.stocks[0] as usize;
+        let pre: Vec<f64> = (1..=12).rev().map(|j| ((i0 + n - j) % n) as f64).collect();
+        assert_eq!(p.pre_stocks, pre);
         let mut jumps = 0;
         for k in 0..600 {
             let i = p.stocks[k] as usize;
@@ -442,6 +463,49 @@ mod tests {
             correlated: None,
         };
         assert!(p(0).is_empty() && !p(3).is_empty());
+    }
+
+    /// FEA-80: Jahresreihe, Start im Juli: Januar bis Juni des Startjahres aus dem ersten gezogenen Jahr, Juli bis
+    /// Dezember des Vorjahres aus dem Jahr davor (zirkulär).
+    #[test]
+    fn fea80_yearly_bootstrap_pre_run_by_calendar_year() {
+        let n = 20;
+        let ds = DataSet {
+            name: "j".into(),
+            freq: Freq::Yearly,
+            first: YearMonth::new(1950, 1),
+            stocks: (0..n).map(|i| i as f64 * 0.01).collect(),
+            bonds: vec![0.0; n],
+            inflation: vec![0.0; n],
+            ..Default::default()
+        };
+        let f = fixed();
+        let b = Bootstrap {
+            data: &ds,
+            fixed: &f,
+            start: YearMonth::new(2030, 7),
+            months: 24,
+            params: BootstrapParams {
+                paths: 50,
+                block: 12.0,
+                seed: 3,
+            },
+        };
+        let mut wrapped = false;
+        for k in 0..b.len() {
+            let p = b.path(k);
+            let i0 = (((1.0 + p.stocks[0]).powi(12) - 1.0) / 0.01).round() as usize;
+            let prev = (i0 + n - 1) % n;
+            wrapped |= i0 == 0;
+            assert_eq!(p.pre_stocks.len(), PRE_MONTHS);
+            for r in &p.pre_stocks[..6] {
+                assert!((r - monthly(ds.stocks[prev])).abs() < 1e-12, "Vorjahr");
+            }
+            for r in &p.pre_stocks[6..] {
+                assert_eq!(*r, p.stocks[0], "Startjahr");
+            }
+        }
+        assert!(wrapped, "kein Pfad beginnt am Anfang der Reihe");
     }
 
     // Jahresreihe: ein Wert pro Kalenderjahr, Blocklänge in Jahren (block / 12).
@@ -533,7 +597,8 @@ mod tests {
         };
         let p = g.path(0);
         // Toleranz für kleine Unterschiede der Mathematikbibliothek zwischen Plattformen.
-        let expected = [0.06150036486902888, -0.3369147970351759, 0.008840613985451329];
+        // FEA-80: Seit dem Vorlauf (12 Monate vor dem Pfad aus demselben Strom) beginnt der Pfad mit dem 13. Monat.
+        let expected = [-0.1760832325318339, -0.08742723973668332, -0.08198575085856707];
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
         }
@@ -552,9 +617,16 @@ mod tests {
             correlated: None,
         }
         .path(0);
-        let expected = [0.06842020080156996, 0.08498775592559737, 0.0484071107147952];
+        let expected = [0.02816194106109493, 0.04537789657227864, 0.08217147870817776];
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
+        }
+        // FEA-80: Der Vorlauf sind die 12 Monate davor aus demselben Strom; seine ersten Monate sind die früheren Werte
+        // des Pfads (vor FEA-80 der Pfad selbst).
+        assert_eq!(p.pre_stocks.len(), PRE_MONTHS);
+        let before = [0.06842020080156996, 0.08498775592559737, 0.0484071107147952];
+        for (a, b) in p.pre_stocks.iter().zip(before) {
+            assert!((a - b).abs() < 1e-9, "{:?}", p.pre_stocks);
         }
     }
 }

@@ -282,7 +282,13 @@ pub struct MarketPath {
     /// Jahressätze.
     pub inflation: Vec<f64>,
     pub saron: Vec<f64>,
+    /// Vorlauf (FEA-80): Aktien-Monatsrenditen der bis zu 12 Monate vor dem Start, der älteste zuerst. Er dient nur dem
+    /// Renditekriterium der 3-Topf-Strategie (letzte 12 Monate) und ändert kein Vermögen.
+    pub pre_stocks: Vec<f64>,
 }
+
+/// Anzahl Monate Vorlauf vor dem Simulationsstart (FEA-80).
+pub const PRE_MONTHS: usize = 12;
 
 /// Jahressatz → Monatssatz; Sätze unter −100 % gelten als −100 % (statt einer ungültigen Zahl).
 pub fn monthly(yearly: f64) -> f64 {
@@ -306,6 +312,8 @@ pub fn fixed_path(c: &FixedCurves, start: YearMonth, months: usize) -> MarketPat
         p.inflation.push(c.inflation.at(m));
         p.saron.push(c.saron.at(m));
     }
+    // Vorlauf mit dem Satz des Startmonats (vor dem Start ist keine Kurve definiert)
+    p.pre_stocks = vec![monthly(c.stocks.at(start)); PRE_MONTHS];
     p
 }
 
@@ -324,6 +332,7 @@ impl MarketPath {
             bonds: Vec::with_capacity(n),
             inflation: Vec::with_capacity(n),
             saron: Vec::with_capacity(n),
+            pre_stocks: Vec::new(),
         }
     }
 }
@@ -376,6 +385,15 @@ pub fn historical_path(
                 p.inflation.push(infl[i]);
                 p.saron.push(or_fixed(saron.as_deref(), i, || fixed.saron.at(m)));
             }
+            // Vorlauf: die Monate vor dem Start gehören wie im Pfad zum Jahreswert ihres Kalenderjahres
+            for j in (1..=PRE_MONTHS as i32).rev() {
+                let m = sim_start.plus(-j);
+                let i = offset as i64 + (m.year() - sim_start.year()) as i64;
+                if i < 0 {
+                    continue;
+                }
+                p.pre_stocks.push(monthly(ds.stocks[i as usize]));
+            }
         }
         Freq::Monthly => {
             let offset = hist_start.0 - ds.first.0;
@@ -402,6 +420,9 @@ pub fn historical_path(
                     fixed.saron.at(sim_start.plus(k as i32))
                 }));
             }
+            // Vorlauf: die echten Monate vor dem historischen Start, soweit die Reihe sie enthält
+            let from = (offset - PRE_MONTHS as i32).max(0) as usize;
+            p.pre_stocks.extend_from_slice(&ds.stocks[from..offset as usize]);
         }
     }
     Ok(p)
@@ -522,6 +543,67 @@ mod tests {
         assert!((p.stocks[0] - monthly(0.1)).abs() < 1e-15);
         assert!((p.stocks[2] - monthly(-0.1)).abs() < 1e-15);
         assert_eq!(rolling_starts(&ds, YearMonth::new(2030, 11), 3).len(), 2);
+    }
+
+    /// FEA-80: Vorlauf bei Jahresdaten nach Kalenderjahr: Start November 2030 mit dem Jahr 2001 ⇒ November und Dezember
+    /// 2029 aus 2000, Januar bis Oktober 2030 aus 2001; ohne Vorjahr in der Reihe nur die Monate des Startjahres.
+    #[test]
+    fn fea80_yearly_pre_run_by_calendar_year() {
+        let ds = DataSet::parse_csv("t", CSV).unwrap();
+        let path = |hist: i32| {
+            historical_path(
+                &ds,
+                YearMonth::new(hist, 11),
+                YearMonth::new(2030, 11),
+                3,
+                &Default::default(),
+                &flat(),
+            )
+            .unwrap()
+        };
+        let p = path(2001);
+        assert_eq!(p.pre_stocks.len(), PRE_MONTHS);
+        close(p.pre_stocks[0], monthly(0.1));
+        close(p.pre_stocks[1], monthly(0.1));
+        for r in &p.pre_stocks[2..] {
+            close(*r, monthly(-0.1));
+        }
+        let p = path(2000);
+        assert_eq!(p.pre_stocks.len(), 10, "Januar bis Oktober aus 2000");
+        close(p.pre_stocks[0], monthly(0.1));
+    }
+
+    /// FEA-80: Vorlauf bei Monatsdaten: die echten 12 Monate vor dem historischen Start, am Anfang der Reihe weniger.
+    #[test]
+    fn fea80_monthly_pre_run_takes_the_months_before_the_start() {
+        let ds = DataSet {
+            name: "t".into(),
+            freq: Freq::Monthly,
+            first: YearMonth::new(2000, 1),
+            stocks: (0..40).map(|i| i as f64 / 1000.0).collect(),
+            bonds: vec![0.0; 40],
+            inflation: vec![0.0; 40],
+            ..Default::default()
+        };
+        let path = |hist: YearMonth| {
+            historical_path(&ds, hist, YearMonth::new(2030, 7), 6, &Default::default(), &flat()).unwrap()
+        };
+        let p = path(YearMonth::new(2001, 9)); // Position 20
+        let expected: Vec<f64> = (8..20).map(|i| i as f64 / 1000.0).collect();
+        assert_eq!(p.pre_stocks, expected);
+        close(p.stocks[0], 0.020);
+        let p = path(YearMonth::new(2000, 6)); // Position 5
+        assert_eq!(p.pre_stocks, vec![0.0, 0.001, 0.002, 0.003, 0.004]);
+        assert!(path(YearMonth::new(2000, 1)).pre_stocks.is_empty());
+    }
+
+    /// FEA-80: Fixe Renditen: Vorlauf mit dem Satz des Startmonats.
+    #[test]
+    fn fea80_fixed_pre_run_uses_the_start_rate() {
+        let mut c = flat();
+        c.stocks = Curve::constant(0.06);
+        let p = fixed_path(&c, YearMonth::new(2030, 7), 3);
+        assert_eq!(p.pre_stocks, vec![monthly(0.06); PRE_MONTHS]);
     }
 
     fn flat() -> FixedCurves {

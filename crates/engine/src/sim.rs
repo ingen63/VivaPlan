@@ -264,7 +264,7 @@ pub struct BucketRefill {
     pub need: f64,
     pub target1: f64,
     pub target2: f64,
-    /// Aktienrendite für die Renditebedingung (letzte 12 Monate; am Start seit Januar) und ihre Grundlage.
+    /// Aktienrendite für die Renditebedingung (letzte 12 Monate, mit dem Vorlauf vor dem Start) und ihre Grundlage.
     pub stock_return: f64,
     pub return_basis: String,
     pub threshold: f64,
@@ -1017,8 +1017,11 @@ struct Run<'a> {
     reserved: f64,
     /// Alle Töpfe leer, keine Immobilie mehr: Topf 1 darf negativ sein, Topf 2 und 3 sind stillgelegt.
     phase8: bool,
-    /// Aktienindex am Ende jedes Monats (für die Rendite der letzten 12 Monate).
+    /// Aktienindex am Ende jedes Monats (für die Rendite der letzten 12 Monate), beginnend mit dem Vorlauf des Pfads
+    /// (FEA-80): zuerst der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der Stand Ende Monat `k` liegt bei
+    /// `hist_off + k`.
     stock_hist: Vec<f64>,
+    hist_off: usize,
     /// Anteil der Amortisation an den laufenden Wohnkosten dieses Monats (gehört nicht zum Bedarf).
     month_amort: f64,
     /// Anlässe, bei denen die Entnahmestrategie in diesem Monat sofort angewendet wird (Zuflüsse, Verkauf ohne Folgekauf).
@@ -1134,7 +1137,8 @@ impl<'a> Run<'a> {
             a_reasons: vec![],
             reserved: 0.0,
             phase8: false,
-            stock_hist: Vec::with_capacity(s.months),
+            stock_hist: pre_levels(&path.pre_stocks, s.months),
+            hist_off: path.pre_stocks.len() + 1,
             month_amort: 0.0,
             apply_reasons: vec![],
             apply_now: false,
@@ -1995,21 +1999,18 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Aktienrendite für die Renditebedingung: die letzten 12 Monate; solange es noch keine 12 Monate Verlauf gibt (Start),
-    /// die Rendite seit Januar (bzw. seit dem Start).
-    fn stock_return(&self, k: usize, m: YearMonth) -> (f64, &'static str) {
+    /// Aktienrendite für die Renditebedingung (FEA-80): die letzten 12 Monate einschliesslich des laufenden, als Verhältnis
+    /// der Indexstände; der Vorlauf des Pfads liefert die Monate vor dem Start. Fehlt er ganz oder teilweise (Reihe beginnt
+    /// erst später), gilt die Rendite seit dem frühesten bekannten Stand («seit Start»).
+    fn stock_return(&self, k: usize) -> (f64, &'static str) {
         let h = &self.stock_hist;
-        if h.is_empty() {
-            return (0.0, "seit Januar");
-        }
         // Vor dem Renditeschritt des Monats (Vorschau) fehlt der laufende Monat: dann gilt der letzte vorhandene
-        let k = k.min(h.len() - 1);
-        if k >= 12 {
-            return (h[k] / h[k - 12] - 1.0, "letzte 12 Monate");
+        let i = (self.hist_off + k).min(h.len() - 1);
+        if i >= 12 {
+            (h[i] / h[i - 12] - 1.0, "letzte 12 Monate")
+        } else {
+            (h[i] / h[0] - 1.0, "seit Start")
         }
-        let back = m.month() as usize;
-        let base = if k >= back { h[k - back] } else { 1.0 };
-        (h[k] / base - 1.0, "seit Januar")
     }
 
     /// Bucht `amount` von Topf `from` nach Topf `to` um und hält es fest (1 = Cash, 2 = Obligationen, 3 = Aktien).
@@ -2088,7 +2089,7 @@ impl<'a> Run<'a> {
         after: [f64; 3],
         text: String,
     ) {
-        let (ret, ret_basis) = self.stock_return(k, m);
+        let (ret, ret_basis) = self.stock_return(k);
         let basis = self.basis.clone().unwrap_or_default();
         let need = basis.need();
         self.event(m, EventKind::Buckets, text);
@@ -2214,7 +2215,7 @@ impl<'a> Run<'a> {
         (before, mut moves): ([f64; 3], Vec<BucketMove>),
     ) {
         let (t1, t2) = self.target_pair(b, passed, one_off);
-        let (ret, ret_basis) = self.stock_return(k, m);
+        let (ret, ret_basis) = self.stock_return(k);
         let met = ret >= b.refill_threshold;
         let sell_ok = met || ignore;
         // Überschussbuchung in Topf 3 nur bei der Januar-Auffüllung
@@ -2291,7 +2292,7 @@ impl<'a> Run<'a> {
             if self.cash - self.reserved >= -0.005 {
                 return;
             }
-            let (ret, _) = self.stock_return(k, m);
+            let (ret, _) = self.stock_return(k);
             if ret >= b.refill_threshold {
                 // C1: Ablauf der Januar-Auffüllung auf dem Stand vor den Ausgaben
                 let passed = m.month() - 1;
@@ -2876,6 +2877,19 @@ impl<'a> Run<'a> {
             pillar3a: self.p3a_view,
         }
     }
+}
+
+/// Indexstände des Vorlaufs (FEA-80): der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der letzte ist 1 (Stand
+/// beim Start). Platz für `months` weitere Monate.
+fn pre_levels(pre: &[f64], months: usize) -> Vec<f64> {
+    let mut levels = Vec::with_capacity(pre.len() + 1 + months);
+    levels.push(1.0);
+    for r in pre.iter().rev() {
+        let last = *levels.last().unwrap_or(&1.0);
+        levels.push(last / (1.0 + r).max(1e-9));
+    }
+    levels.reverse();
+    levels
 }
 
 #[cfg(test)]
