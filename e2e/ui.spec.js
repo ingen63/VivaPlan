@@ -356,7 +356,7 @@ test.describe("Start und Navigation", () => {
   test("ISS-10: Warnsymbol in der Karte «Umfang» ab 90 s geschätzter Rechenzeit", async ({ page }) => {
     const errors = await open(page, "scenarios");
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
-    const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); updateEstimates(); }, sec);
+    const fake = async sec => { await page.waitForFunction(() => !bench.busy); await page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); updateEstimates(); }, sec); };
     const warn = page.locator("#est-warn");
     await fake(89);
     await expect(warn).toHaveText("");
@@ -1383,7 +1383,7 @@ test.describe("Ergebnisse", () => {
     expect(over.errors).toContain("Die Variationen ergeben 1'010'000 Kombinationen; höchstens 1'000'000 sind technisch möglich.");
     // Warnung ab einer Minute geschätzter Rechenzeit
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
-    const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); }, sec);
+    const fake = async sec => { await page.waitForFunction(() => !bench.busy); await page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); }, sec); };
     await fake(90);
     await page.locator('button[data-action="run"]').click();
     await expect(page.locator("#ask")).toBeVisible();
