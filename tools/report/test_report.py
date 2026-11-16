@@ -61,6 +61,49 @@ class Requirements(unittest.TestCase):
         self.assertEqual(report.MARK.search("// FEA-100/AK2 prüft").group(0), "FEA-100/AK2")
         self.assertEqual(report.NAMEMARK.search("fn fea_100_ak2_rundung()").groups(), ("fea", "100", "2"))
 
+    def test_fea_88_ak1_leading_zero_in_title_or_mark_is_the_same_issue(self):
+        issue = dict(self.ISSUE, title="FEA-07 Beispiel")
+        marks = report.scan_marks("e2e/x.spec.js", ['test("FEA-07/AK1 …", () => {});', "// FEA-7/AK3"], {})
+        kinds = [k for k, _, _ in report.requirements([issue], marks)[0]["items"]]
+        self.assertEqual(kinds, ["test", "manuell", "test"])
+
+    def test_fea_88_ak2_bare_ak_in_a_describe_block_with_one_issue_id(self):
+        src = ['test.describe("FEA-56 Ergebnis in Worten", () => {',
+               '  test("AK1, AK3: mehrere Läufe", async () => {',
+               '  });',
+               '  test.describe("Untergruppe ohne ID", () => {',
+               '    test("AK2 im inneren Block", async () => {});',
+               '  });',
+               '});',
+               'test("AK4 ausserhalb jedes Blocks", async () => {});',
+               'test.describe("FEA-54 und FEA-55", () => {',
+               '  test("AK5 mehrdeutig", async () => {});',
+               '});']
+        marks = report.scan_marks("e2e/x.spec.js", src, {})
+        self.assertEqual(sorted(marks), [("FEA-56", 1), ("FEA-56", 2), ("FEA-56", 3)])
+        self.assertEqual(marks[("FEA-56", 1)], ["e2e/x.spec.js:2"])
+        # in Rust-Dateien gibt es keine describe-Blöcke
+        self.assertEqual(report.scan_marks("a.rs", src, {}), {})
+
+    def test_fea_88_ak3_checked_criteria_count_as_checked_not_manual(self):
+        c = lambda day, body: {"createdAt": f"{day}T10:00:00Z", "body": body}
+        issue = dict(self.ISSUE, body="- [x] a\n- [x] b\n- [x] c\n- [x] d\n- [ ] e\n", comments=[
+            c("2026-11-15", "Prüfung FEA-100 (15.11.2026)\n\n- **AK1 erfüllt.** Test grün.\n- **AK2 nicht ganz erfüllt.** Rest.\n- AK3, AK4 ok: gelesen."),
+            c("2026-11-16", "Nacharbeit AK2 in abc1234: erledigt.\n\n- **AK2 erfüllt.**"),
+            c("2026-11-16", "Prüfung vom 16.11.2026 durch den Anwender in der App: AK4 ist in Ordnung."),
+            c("2026-11-17", "**Erneute Prüfung**\n\n- AK3 offen: Gegenprobe fehlt."),
+        ])
+        items = report.requirements([issue], {("FEA-100", 4): ["t.rs:1"]})[0]["items"]
+        self.assertEqual([k for k, _, _ in items], ["geprueft", "geprueft", "manuell", "test", "ohne"])
+        self.assertEqual(items[1][2], ["Prüfung vom 16.11.2026"])
+
+    def test_fea_88_ak3_summary_comments_mark_all_criteria_except_the_listed_ones(self):
+        summary = "Prüfung vom 15.11.2026 (Claude).\n\nErgebnis: 2 von 3 Kriterien ok.\n\nNicht (voll) belegt:\n- AK2 nicht geprüft: fehlt"
+        self.assertEqual(sorted(report.checked([{"createdAt": "2026-11-15", "body": summary}], 3)), [1, 3])
+        self.assertEqual(sorted(report.checked([{"createdAt": "2026-11-15", "body": "**Prüfung (Einzelprüfung auf Anweisung)**\n\nAlle drei Kriterien erfüllt:\n- AK1, AK2: x"}], 3)), [1, 2, 3])
+        self.assertEqual(report.checked([{"createdAt": "2026-11-15", "body": "**Prüfung**\n\nNoch nicht umgesetzt, alle fünf Kriterien offen."}], 5), {})
+        self.assertEqual(report.checked([{"createdAt": "2026-11-15", "body": "Umgesetzt in abc1234. Abnahme ausstehend.\n- AK1 erfüllt"}], 3), {})
+
     def test_escapes_list_found_where_and_regression_test(self):
         bug = {"number": 9, "title": "ISS-9 x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "gefunden:nutzung"}],
                "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** Ein Rundungstest.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}

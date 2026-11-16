@@ -149,13 +149,24 @@ Es gibt **keine Gesamtnote**. Jede Schicht hat ihren eigenen Status (erfüllt, H
 |---|---|---|---|
 | 1 Hygiene | keine Fehlschläge, keine flaky Tests | flaky Tests | ein Test schlägt fehl |
 | 2 Angemessenheit | alle drei Pakete ≥ 80 %, keine nicht erkannten Mutanten | Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf | ein Paket unter 80 % |
-| 3 Anforderungsbezug | jedes Abnahmekriterium durch Test belegt oder abgehakt | Kriterien ohne Test und ohne Haken | – |
+| 3 Anforderungsbezug | jedes Abnahmekriterium durch Test belegt, geprüft oder abgehakt | Kriterien ohne Test, ohne Prüfung und ohne Haken | – |
 | 4 Ergebnis | jeder durchgerutschte Fehler nennt den Test, der ihn hätte fangen müssen, und den Regressionstest | eine Antwort fehlt | – |
 
-Fehlende Daten erscheinen als «keine Daten», nicht als Fehler. Die Schichten 3 und 4 lesen die Issues nur beim Erzeugen der Seite über `gh` (nicht die App); ohne Anmeldung sind beide «keine Daten», die übrige Seite bleibt vollständig. Ein «Verlauf» vergleicht Abdeckung je Paket, Zahl der nicht erkannten Mutanten, flaky Tests und den Anteil der Kriterien mit Test mit der vorherigen Version (Stand je Version in `local/test-quality/history/`).
+Fehlende Daten erscheinen als «keine Daten», nicht als Fehler. Die Schichten 3 und 4 lesen die Issues nur beim Erzeugen der Seite über `gh` (nicht die App); ohne Anmeldung sind beide «keine Daten», die übrige Seite bleibt vollständig. Ein «Verlauf» vergleicht Abdeckung je Paket, Zahl der nicht erkannten Mutanten, flaky Tests und die Anteile der Kriterien mit Test und der geprüften Kriterien mit der vorherigen Version (Stand je Version in `local/test-quality/history/`).
 
 Die Werkzeuge haben eigene Tests: `python3 -m unittest discover tools/report` (Statusregeln, Kennzeichnung der Tests, Fundort-Auswertung; läuft auch in `test-quality.yml`).
 
-**Kennzeichnung der Tests (FEA-31):** Ein Test, der ein Abnahmekriterium belegt, nennt Issue und Kriterium im Kommentar oder im Namen: `// FEA-100/AK2` (Zweites Kriterium des Issues FEA-100) oder `fn fea_100_ak2_…`; in den Oberflächentests im Testtitel (`FEA-100/AK2`). Gezählt wird die Reihenfolge der Häkchen-Liste des Issues.
+**Kennzeichnung der Tests (FEA-31):** Ein Test, der ein Abnahmekriterium belegt, nennt Issue und Kriterium im Kommentar oder im Namen: `// FEA-100/AK2` (Zweites Kriterium des Issues FEA-100) oder `fn fea_100_ak2_…`; in den Oberflächentests im Testtitel (`FEA-100/AK2`). Gezählt wird die Reihenfolge der Häkchen-Liste des Issues. Führende Nullen spielen keine Rolle (`FEA-07/AK4` und `FEA-7/AK4` gehören zum Issue «FEA-07 …»). In den Oberflächentests genügt `AK2` im Testtitel, wenn der Test in einem `test.describe` steht, dessen Titel genau eine Issue-ID nennt (`test.describe("FEA-100 …")`); nennt der Titel mehrere IDs, zählt der Test nicht (FEA-88).
+
+**Kriterien je Issue (FEA-88):** Der Abschnitt «3 Anforderungsbezug» teilt jedes Kriterium einer von vier Arten zu, in dieser Rangfolge:
+
+| Art | Bedeutung |
+|---|---|
+| mit Test | ein gekennzeichneter Test belegt das Kriterium |
+| geprüft | eine Prüfung auf Anweisung («Prüfe FEA-xx», siehe `CLAUDE.md`) hält es im Issue als erfüllt fest |
+| nur manuell | abgehakt, ohne gekennzeichneten Test und ohne solche Prüfung |
+| ohne | weder Test noch Prüfung noch Haken |
+
+Als Prüfung zählen Kommentare, die mit «Prüfung …», «Erneute Prüfung …», «Nacharbeit AKn …» oder «AKn erfüllt in <Commit>» beginnen. Darin gilt ein Kriterium als geprüft bei einer Zeile «AKn erfüllt», «AKn ok» oder «AKn ist belegt» (auch mehrere: «AK1, AK3 ok»), bei «Alle … Kriterien erfüllt» und bei «Ergebnis: x von y Kriterien ok». «AKn nicht …», «offen», «teilweise» oder «überholt» nehmen es wieder heraus. Je Kriterium zählt die letzte Aussage. Eine Abnahme durch den Anwender («Prüfung … durch den Anwender») zählt nicht als Prüfung, sondern bleibt «nur manuell».
 
 **Fundort durchgerutschter Fehler:** Bug-Issues tragen eines der Labels `gefunden:test` (ein Test fand ihn, vor der Abnahme), `gefunden:abnahme` oder `gefunden:nutzung`. Der Text beantwortet **«Welcher Test hätte ihn fangen müssen?»** und nennt den **Regressionstest** (Vorlage `.github/ISSUE_TEMPLATE/fehler.md`).

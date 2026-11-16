@@ -150,7 +150,7 @@ def fuzz_info():
 
 # ---------- Anforderungsbezug und Ergebnis (nur über gh) ----------
 def read_issues():
-    out = sh("gh", "issue", "list", "--state", "all", "--limit", "500", "--json", "number,title,state,labels,body", check=True)
+    out = sh("gh", "issue", "list", "--state", "all", "--limit", "500", "--json", "number,title,state,labels,body,comments", check=True)
     try:
         return json.loads(out) if out else None
     except ValueError:
@@ -159,10 +159,46 @@ def read_issues():
 
 MARK = re.compile(r"\b(FEA|ISS|GEN)-(\d+)/AK(\d+)\b", re.I)
 NAMEMARK = re.compile(r"\b(fea|iss|gen)_(\d+)_ak(\d+)", re.I)
+IDS = re.compile(r"\b(FEA|ISS|GEN)-(\d+)\b", re.I)
+DESCRIBE = re.compile(r"^(\s*)test\.describe(?:\.\w+)?\(\s*([\"'`])(.*?)\2")
+TESTNAME = re.compile(r"^\s*test(?:\.\w+)?\(\s*([\"'`])(.*?)\1")
+BARE_AK = re.compile(r"(?<![/\w])AK(\d+)\b")
+
+
+def norm_id(prefix, num):
+    """`FEA-07` und `FEA-7` sind dasselbe Issue (FEA-88/AK1)."""
+    return f"{prefix.upper()}-{int(num)}"
+
+
+def scan_marks(path, lines, marks):
+    """Kennzeichnungen einer Datei. In e2e-Dateien belegt ein Test mit `AKn` im Namen das Kriterium des Issues aus dem
+    umgebenden `test.describe` (nur wenn dessen Titel genau eine Issue-ID nennt, FEA-88/AK2)."""
+    stack = []  # (Einrückung, IDs) der offenen describe-Blöcke
+    for i, line in enumerate(lines, 1):
+        for rx in (MARK, NAMEMARK):
+            for m in rx.finditer(line):
+                marks.setdefault((norm_id(m.group(1), m.group(2)), int(m.group(3))), []).append(f"{path}:{i}")
+        if not path.endswith(".js"):
+            continue
+        d = DESCRIBE.match(line)
+        if d:
+            stack.append((len(d.group(1)), {norm_id(p, n) for p, n in IDS.findall(d.group(3))}))
+            continue
+        if stack and re.match(r"^\s*\}\);", line) and len(line) - len(line.lstrip()) == stack[-1][0]:
+            stack.pop()
+            continue
+        t = TESTNAME.match(line)
+        if t and stack:
+            ids = next((s[1] for s in reversed(stack) if s[1]), set())
+            if len(ids) == 1:
+                for n in BARE_AK.findall(t.group(2)):
+                    marks.setdefault((next(iter(ids)), int(n)), []).append(f"{path}:{i}")
+    return marks
 
 
 def test_marks():
-    """Kennzeichnung der Tests: `FEA-100/AK2` (Kommentar, Testname) oder `fea_100_ak2_…`; {(ID, Nr): [Fundstellen]}."""
+    """Kennzeichnung der Tests: `FEA-100/AK2` (Kommentar, Testname), `fea_100_ak2_…` oder `AK2` im Testnamen innerhalb
+    eines `test.describe("FEA-100 …")`; {(ID, Nr): [Fundstellen]}."""
     files = []
     for pat in ("crates/engine/**/*.rs", "crates/cli/**/*.rs", "crates/app/src/**/*.rs", "e2e/*.js"):
         files += glob.glob(pat, recursive=True)
@@ -170,29 +206,63 @@ def test_marks():
     for f in files:
         if "/target/" in f or "node_modules" in f:
             continue
-        for i, line in enumerate(open(f, encoding="utf-8", errors="ignore"), 1):
-            for rx in (MARK, NAMEMARK):
-                for m in rx.finditer(line):
-                    marks.setdefault((f"{m.group(1).upper()}-{int(m.group(2))}", int(m.group(3))), []).append(f"{f}:{i}")
+        with open(f, encoding="utf-8", errors="ignore") as fh:
+            scan_marks(f, fh.read().splitlines(), marks)
     return marks
 
 
 def issue_id(title):
-    m = re.match(r"\s*((?:FEA|ISS|GEN)-\d+)\b", title)
-    return m.group(1) if m else None
+    m = re.match(r"\s*(FEA|ISS|GEN)-(\d+)\b", title)
+    return norm_id(m.group(1), m.group(2)) if m else None
+
+
+# Prüfung auf Anweisung («Prüfe FEA-xx», CLAUDE.md): Kommentar «Prüfung …», «Erneute Prüfung …», «Nacharbeit AKn …» oder
+# «AKn erfüllt in <Commit>». Je Kriterium zählt die letzte Aussage (FEA-88/AK3).
+CHECK_HEAD = re.compile(r"^\W*(?:(?:Erneute )?Prüfung\b(?! vom \S+ durch den Anwender)|Nacharbeit AK\d+|AK\d+ (?:erfüllt|ok) in [0-9a-f]{7})", re.I)
+CHECK_LINE = re.compile(r"^\s*(?:[-*]\s+)?\**((?:AK\d+(?:\s*,\s*|\s+und\s+)?)+)\**[\s.:]*\**\s*(ok|erfüllt|ist belegt|nicht|offen|teilweise|überholt)?", re.I | re.M)
+CHECK_ALL = re.compile(r"\b(?:alle (?:\w+ )?Kriterien (?:sind )?(?:erfüllt|ok)|Ergebnis: \d+ von \d+ Kriterien ok)", re.I)
+POSITIVE = ("ok", "erfüllt", "ist belegt")
+
+
+def checked(comments, n_crit):
+    """{Nr des Kriteriums: Datum der Prüfung} aus den Prüfkommentaren eines Issues."""
+    res = {}
+    for c in sorted(comments or [], key=lambda c: c.get("createdAt", "")):
+        body = c.get("body") or ""
+        if not CHECK_HEAD.search(body):
+            continue
+        day = ".".join(reversed((c.get("createdAt") or "")[:10].split("-")))
+        if CHECK_ALL.search(body):
+            res.update({n: day for n in range(1, n_crit + 1)})
+        for m in CHECK_LINE.finditer(body):
+            verdict = (m.group(2) or "").lower()
+            nrs = [int(n) for n in re.findall(r"\d+", m.group(1))]
+            if verdict in POSITIVE:
+                res.update({n: day for n in nrs})
+            elif verdict:
+                for n in nrs:
+                    res.pop(n, None)
+    return res
 
 
 def requirements(issues, marks):
+    """Je Kriterium die Art: test (gekennzeichneter Test), geprueft (Prüfung auf Anweisung), manuell (nur abgehakt), ohne."""
     rows = []
     for it in sorted(issues, key=lambda i: i["number"]):
         iid = issue_id(it["title"])
         crit = re.findall(r"^\s*- \[( |x|X)\] (.+)$", it["body"] or "", re.M)
         if not iid or not crit:
             continue
+        chk = checked(it.get("comments"), len(crit))
         items = []
         for n, (done, text) in enumerate(crit, 1):
             ev = marks.get((iid, n), [])
-            items.append(("test" if ev else "manuell" if done != " " else "ohne", text.strip(), ev))
+            if ev:
+                items.append(("test", text.strip(), ev))
+            elif n in chk:
+                items.append(("geprueft", text.strip(), [f"Prüfung vom {chk[n]}"]))
+            else:
+                items.append(("manuell" if done != " " else "ohne", text.strip(), []))
         rows.append({"id": iid, "nr": it["number"], "title": it["title"], "state": it["state"], "items": items})
     return rows
 
@@ -295,10 +365,12 @@ def main():
 
     n_crit = sum(len(r["items"]) for r in reqs) if reqs else None
     n_test = sum(1 for r in reqs for i in r["items"] if i[0] == "test") if reqs else None
+    n_chk = sum(1 for r in reqs for i in r["items"] if i[0] == "geprueft") if reqs else None
     metrics = {"coverage_engine": (cov["pkgs"].get(list(PACKAGES)[0]) or [None])[0] if cov else None,
                "coverage_app": (cov["pkgs"].get(list(PACKAGES)[1]) or [None])[0] if cov else None,
                "missed": mut["missed"] if mut else None, "flaky": len(junit["flaky"]) if junit else None,
-               "criteria_share": round(100 * n_test / n_crit, 1) if n_crit else None}
+               "criteria_share": round(100 * n_test / n_crit, 1) if n_crit else None,
+               "criteria_checked": round(100 * n_chk / n_crit, 1) if n_crit else None}
     prev = history(ver, metrics)
 
     h = [f"<!doctype html><html lang='de'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Testqualität</title><style>{CSS}</style></head><body>",
@@ -344,16 +416,16 @@ def main():
     h.append(f"<h3>Property-Tests und Fuzzing</h3><p>Property-Tests: {pt['tests'] if pt['tests'] is not None else 'keine Daten'} Tests mit «proptest» im Namen, Fallzahl {E(pt['cases'])}.</p><p>Fuzzing: {len(fz['targets'])} Ziele ({E(', '.join(fz['targets']))}), {fz['crashes']} gespeicherte Abstürze in <code>fuzz/artifacts</code>; letzter Lauf: keine Daten (läuft nächtlich auf GitHub).</p></section>")
 
     # Anforderungsbezug
-    h.append(f"<section><h2>3 Anforderungsbezug {badge(st_r)}</h2><p class='rule'>Regel: erfüllt = jedes Abnahmekriterium ist durch einen gekennzeichneten Test belegt oder abgehakt; Hinweis = es gibt Kriterien ohne Test und ohne Haken; keine Daten = keine Verbindung zu GitHub (<code>gh</code>). Ein Test wird mit <code>FEA-100/AK2</code> im Kommentar oder Namen (<code>fea_100_ak2_…</code>) gekennzeichnet; AK2 ist das zweite Kriterium des Issues.</p>")
+    h.append(f"<section><h2>3 Anforderungsbezug {badge(st_r)}</h2><p class='rule'>Regel: erfüllt = jedes Abnahmekriterium ist durch einen gekennzeichneten Test belegt, geprüft oder abgehakt; Hinweis = es gibt Kriterien ohne Test, ohne Prüfung und ohne Haken; keine Daten = keine Verbindung zu GitHub (<code>gh</code>). Ein Test wird mit <code>FEA-100/AK2</code> im Kommentar oder Namen (<code>fea_100_ak2_…</code>) gekennzeichnet, in den Oberflächentests auch mit <code>AK2</code> im Testnamen innerhalb von <code>test.describe(\"FEA-100 …\")</code>; AK2 ist das zweite Kriterium des Issues. «Geprüft» heisst: in einer Prüfung auf Anweisung (Kommentar «Prüfung …» im Issue) als erfüllt festgehalten. «Nur manuell» heisst: abgehakt, ohne gekennzeichneten Test und ohne solche Prüfung.</p>")
     if reqs is None:
         h.append("<p class='muted'>Keine Daten: <code>gh</code> ist nicht angemeldet oder nicht erreichbar.</p>")
     else:
         rows = []
         for r in reqs:
-            t = sum(1 for i in r["items"] if i[0] == "test"); m = sum(1 for i in r["items"] if i[0] == "manuell"); n = len(r["items"])
-            det = "<details><summary>Kriterien</summary><ul>" + "".join(f"<li>{ {'test': '✔ Test', 'manuell': '☑ nur manuell geprüft', 'ohne': '○ ohne Test'}[k] }: {E(tx)}" + (f" <small><code>{E(', '.join(ev[:2]))}</code></small>" if ev else "") + "</li>" for k, tx, ev in r["items"]) + "</ul></details>"
-            rows.append((f"#{r['nr']} {E(r['title'])}{det}", f"{t} von {n}", str(m), str(n - t - m)))
-        h.append(table(["Issue", "mit Test", "nur manuell", "ohne"], rows, num=(1, 2, 3)))
+            cnt = {k: sum(1 for i in r["items"] if i[0] == k) for k in ("test", "geprueft", "manuell", "ohne")}; n = len(r["items"])
+            det = "<details><summary>Kriterien</summary><ul>" + "".join(f"<li>{ {'test': '✔ Test', 'geprueft': '✔ geprüft', 'manuell': '☑ nur manuell', 'ohne': '○ ohne Test'}[k] }: {E(tx)}" + (f" <small><code>{E(', '.join(ev[:2]))}</code></small>" if ev else "") + "</li>" for k, tx, ev in r["items"]) + "</ul></details>"
+            rows.append((f"#{r['nr']} {E(r['title'])}{det}", f"{cnt['test']} von {n}", str(cnt["geprueft"]), str(cnt["manuell"]), str(cnt["ohne"])))
+        h.append(table(["Issue", "mit Test", "geprüft", "nur manuell", "ohne"], rows, num=(1, 2, 3, 4)))
     h.append("</section>")
 
     # Ergebnis
@@ -369,7 +441,7 @@ def main():
     # Verlauf
     rows = []
     cur = metrics
-    for key, label, better in (("coverage_engine", "Abdeckung Engine", True), ("coverage_app", "Abdeckung App", True), ("missed", "Nicht erkannte Mutanten", False), ("flaky", "Flaky Tests", False), ("criteria_share", "Kriterien mit Test (Anteil)", True)):
+    for key, label, better in (("coverage_engine", "Abdeckung Engine", True), ("coverage_app", "Abdeckung App", True), ("missed", "Nicht erkannte Mutanten", False), ("flaky", "Flaky Tests", False), ("criteria_share", "Kriterien mit Test (Anteil)", True), ("criteria_checked", "Kriterien geprüft (Anteil)", True)):
         p = prev[1].get(key) if prev else None
         rows.append((label, fmt(cur[key], "") if cur[key] is not None else "–", fmt(p, "") if p is not None else "–", delta(cur[key], p, better)))
     h.append(f"<section><h2>Verlauf</h2><p class='rule'>Vergleich mit {'Version ' + E(prev[0]) if prev else 'keiner vorherigen Version (erster Lauf; die Werte je Version stehen in <code>local/test-quality/history/</code>)'}.</p>" + table(["Kennzahl", f"Version {ver}", "vorher", "Veränderung"], rows, num=(1, 2)) + "</section>")
@@ -380,7 +452,7 @@ def main():
     if "--summary" in sys.argv:
         lines = [f"### Testqualität (Version {ver}, Commit {commit})", "", f"- **Hygiene:** {st_h}" + (f" ({len(junit['tests'])} Tests, {len(junit['failed'])} fehlgeschlagen, {len(junit['flaky'])} flaky)" if junit else ""),
                  f"- **Angemessenheit:** {st_f}" + (" · Abdeckung " + ", ".join(f"{k.split(' ')[0]} {fmt(v[0]) if v else '–'}" for k, v in cov['pkgs'].items()) if cov else "") + (f" · nicht erkannte Mutanten: {mut['missed']}" if mut else " · kein Mutationslauf"),
-                 f"- **Anforderungsbezug:** {st_r}" + (f" ({n_test} von {n_crit} Kriterien mit Test)" if n_crit else ""), f"- **Ergebnis:** {st_e}"]
+                 f"- **Anforderungsbezug:** {st_r}" + (f" ({n_test} von {n_crit} Kriterien mit Test, {n_chk} geprüft)" if n_crit else ""), f"- **Ergebnis:** {st_e}"]
         print("\n".join(lines))
 
 
