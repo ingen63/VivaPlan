@@ -1286,6 +1286,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-90/AK6 | Zoom und Registerkarten wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK6: …» | 16.11.2026 ok |
 | FEA-90/AK7 | Hilfe «Ergebnisse vergleichen» nachgeführt; Oberflächentests für Umschalter, Grafiken und Jahreswerte. | ☑ | **gilt** | kein Test (Hilfe durchgesehen), Tests oben | 16.11.2026 ok |
 
+### #116 ISS-22 Mutationslauf bringt den Mac zum Absturz (endlose Schleife füllt den Speicher)
+
+[Issue #116](https://github.com/ingen63/VivaPlan/issues/116) · geschlossen · Umsetzung: 51395f5
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| ISS-22/AK1 | Speichergrenze 1,5 GB in allen Testprogrammen von Engine, App und Kommandozeile. | ☑ | **gilt** | kein Test (Durchsicht der `#[global_allocator]`-Stellen) | 16.11.2026 ok |
+| ISS-22/AK2 | Grenze getestet: über der Grenze Fehler, normal gelingt, Zähler stimmt. | ☑ | **gilt** | [test_alloc.rs](../crates/engine/src/test_alloc.rs) «iss_22_ak2_allocations_above_the_limit_…», «iss_22_ak2_reserve_refuses_…» | 16.11.2026 ok |
+| ISS-22/AK3 | Schleife in `Parametric::path` prüft den Fortschritt; Mutanten an 288 und 299 enden sofort. | ☑ | **gilt** | kein Test (Mutanten von Hand eingesetzt) | 16.11.2026 ok (beide Mutanten: Fehler nach höchstens 5 s, kein Speicherwachstum) |
+| ISS-22/AK4 | Profil `mutants`: 4 Tests je Job, Mindestzeit 60 s. | ☑ | **gilt** | kein Test (Durchsicht der Konfiguration) | 16.11.2026 ok |
+| ISS-22/AK5 | Mutanten von `montecarlo.rs` laufen ohne Speicherwachstum durch. | ☑ | **gilt** | kein Test (Lauf mit `cargo mutants -f …`) | 16.11.2026 ok (im Issue abgehakt, nicht wiederholt) |
+| ISS-22/AK6 | `docs/TESTS.md` beschreibt Grenze und Einstellungen. | ☑ | **gilt** | kein Test (Durchsicht) | 16.11.2026 ok |
+
 ### #118 FEA-91 Vergleich: Kennzahlen nach Spalte sortieren (auf- und absteigend)
 
 [Issue #118](https://github.com/ingen63/VivaPlan/issues/118) · geschlossen · Umsetzung: db2e666
