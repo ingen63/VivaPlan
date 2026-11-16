@@ -1285,3 +1285,82 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-90/AK5 | Sonderfälle: Start verschieden, fehlende Grössen mit Vermerk. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK5: …» | 16.11.2026 ok |
 | FEA-90/AK6 | Zoom und Registerkarten wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK6: …» | 16.11.2026 ok |
 | FEA-90/AK7 | Hilfe «Ergebnisse vergleichen» nachgeführt; Oberflächentests für Umschalter, Grafiken und Jahreswerte. | ☑ | **gilt** | kein Test (Hilfe durchgesehen), Tests oben | 16.11.2026 ok |
+
+### #118 FEA-91 Vergleich: Kennzahlen nach Spalte sortieren (auf- und absteigend)
+
+[Issue #118](https://github.com/ingen63/VivaPlan/issues/118) · geschlossen · Umsetzung: db2e666
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-91/AK1 | Klick auf den Spaltenkopf sortiert aufsteigend, zweiter Klick absteigend, andere Spalte wieder aufsteigend. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-91/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| FEA-91/AK2 | Pfeil ▲/▼ in der sortierten Spalte, ↕ in den übrigen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-91/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| FEA-91/AK3 | Zahlen nach Wert, Daten nach Datum («keine» zuletzt), Texte alphabetisch. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «FEA-91/AK3, AK4: …» | 16.11.2026 ok |
+| FEA-91/AK4 | Fehlende Werte in beiden Richtungen am Ende. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «FEA-91/AK3, AK4: …» | 16.11.2026 ok |
+| FEA-91/AK5 | Ohne Klick Reihenfolge der Liste; Sortierung bleibt bei Registerkarte und Kaufkraft; Farben bleiben. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-91/AK5: …» | 16.11.2026 ok |
+| FEA-91/AK6 | Spaltenköpfe per Tastatur bedienbar, mit `aria-sort`. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-91/AK6: …» | 16.11.2026 ok |
+| FEA-91/AK7 | Hilfe beschreibt die Sortierung. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
+
+### #119 FEA-92 Name eines Ergebnisses mit Abkürzung von Renditequelle und Strategie
+
+[Issue #119](https://github.com/ingen63/VivaPlan/issues/119) · geschlossen · Umsetzung: a48c37e, 7628f6f (Nacharbeit AK4)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-92/AK1 | Name «Planung · Quelle · Strategie · Datum, Zeit», Zahl der Läufe in der Zeile darunter. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-92/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| FEA-92/AK2 | Abkürzungen der Renditequelle, bei Szenarien «Szenarien». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-92/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| FEA-92/AK3 | Abkürzungen der Strategie. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-92/AK1, AK2, AK3: …», «FEA-92/AK4: …» | 16.11.2026 ok |
+| FEA-92/AK4 | Abkürzungen an einer Stelle, zusammen mit `SOURCES` bzw. `STRATS`; Test auf Vollständigkeit. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-92/AK4: …» | 16.11.2026 ok (nach Nacharbeit 7628f6f; vorher teilweise: bei `sourceName` statt bei `SOURCES`/`STRATS`) |
+| FEA-92/AK5 | Gespeicherte Ergebnisse behalten ihren Namen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-92/AK5: …» | 16.11.2026 ok |
+| FEA-92/AK6 | Hilfe nennt Aufbau und Abkürzungen. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
+
+### #120 FEA-93 Vergleich auf 10 Ergebnisse erweitern und begrenzen
+
+[Issue #120](https://github.com/ingen63/VivaPlan/issues/120) · geschlossen · Umsetzung: 2f6e114
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-93/AK1 | «Vergleichen» aktiv bei 2 bis 10, sonst gesperrt; Tooltip nennt die Grenze. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-93/AK1, AK2: …» | 16.11.2026 ok |
+| FEA-93/AK2 | Ab dem 11. markierten Ergebnis Hinweis; Markieren und Löschen bleiben möglich. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-93/AK1, AK2: …» | 16.11.2026 ok |
+| FEA-93/AK3 | Zehn unterscheidbare Farben, hell und dunkel, überall gleich. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-93/AK3: …» (light, dark) | 16.11.2026 ok (Bildschirmfotos hell und dunkel) |
+| FEA-93/AK4 | Mit 10 Ergebnissen lesbar: Tabellen und Balken scrollen waagrecht. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-93/AK4: …» | 16.11.2026 ok (Bildschirmfoto) |
+| FEA-93/AK5 | Ein Oberflächentest vergleicht 10 Ergebnisse. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «Vergleich mit bis zu 10 Ergebnissen (FEA-93)» | 16.11.2026 ok |
+| FEA-93/AK6 | Hilfe nennt die Grenze von 10. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
+
+### #121 FEA-94 Wahrscheinlichkeit, dass das Geld reicht: Achse 80–100 %, umschaltbar auf 0–100 %
+
+[Issue #121](https://github.com/ingen63/VivaPlan/issues/121) · geschlossen · Umsetzung: 9b24b38
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-94/AK1 | Standard 80–100 % im Einzelergebnis und im Vergleich. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-94/AK1, AK2: …» | 16.11.2026 ok |
+| FEA-94/AK2 | Schalter 80–100 % / 0–100 % gilt für beide Ansichten und bleibt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-94/AK1, AK2: …» | 16.11.2026 ok |
+| FEA-94/AK3 | Unter 80 % abgeschnitten, Hinweis mit Verweis auf 0–100 %. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-94/AK3, AK4: …», «FEA-94/AK3: im Vergleich …» | 16.11.2026 ok |
+| FEA-94/AK4 | Tooltip zeigt den echten Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-94/AK3, AK4: …» | 16.11.2026 ok |
+| FEA-94/AK5 | Hilfe beschreibt den Schalter. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
+
+### #122 FEA-95 Vergleich: Aktien, Obligationen und Inflation linear, logarithmisch oder in %
+
+[Issue #122](https://github.com/ingen63/VivaPlan/issues/122) · geschlossen · Umsetzung: 773898d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-95/AK1 | Dieselben Schalter wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-95/AK1, AK3: …» | 16.11.2026 ok |
+| FEA-95/AK2 | Änderung in % je Ergebnis wie im Einzelergebnis; Bezugslinie bei 0 bzw. 100. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-95/AK2, AK5, AK6: …» | 16.11.2026 ok |
+| FEA-95/AK3 | Logarithmische Achse wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-95/AK1, AK3: …» | 16.11.2026 ok |
+| FEA-95/AK4 | Wahl gilt im Einzelergebnis und im Vergleich gemeinsam. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-95/AK4: …» | 16.11.2026 ok |
+| FEA-95/AK5 | Tooltip je Ergebnis; Kennzeichnung der Linien bleibt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-95/AK2, AK5, AK6: …» | 16.11.2026 ok (Linienarten im Bildschirmfoto) |
+| FEA-95/AK6 | Heutige Kaufkraft gilt in allen Darstellungen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-95/AK2, AK5, AK6: …» | 16.11.2026 ok |
+| FEA-95/AK7 | Hilfe nachgeführt. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
+
+### #123 FEA-96 Vergleich: Unterschiede in der Planung mit Bezeichnungen statt internen Feldnamen
+
+[Issue #123](https://github.com/ingen63/VivaPlan/issues/123) · geschlossen · Umsetzung: 31c1d0f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-96/AK1 | Bezeichnung wie im Editor mit Abschnitt, keine internen Feldnamen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK1, AK2, AK3: …» | 16.11.2026 ok (Bildschirmfoto) |
+| FEA-96/AK2 | Werte wie im Editor (Prozente, Beträge, Auswahltext, zeitabhängige Werte lesbar). | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK1, AK2, AK3: …», «FEA-96/AK2, AK4: …» | 16.11.2026 ok |
+| FEA-96/AK3 | Gruppiert und sortiert nach den Abschnitten des Editors. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| FEA-96/AK4 | Listen mit Namen statt Index. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK2, AK4: …» | 16.11.2026 ok |
+| FEA-96/AK5 | Felder ohne Bezeichnung erscheinen nicht; Test über alle Felder einer Beispielplanung. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK5: …» | 16.11.2026 ok |
+| FEA-96/AK6 | Hilfe nachgeführt. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
