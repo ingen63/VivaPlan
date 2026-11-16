@@ -1310,11 +1310,24 @@ const sysMs = ms => SYS_MS[ms.id] ?? null;
 const msLocked = ms => !!ms.fixed || !!sysMs(ms);
 
 // ---------- Rendering ----------
+/**
+ * ISS-21: Das Menü wird einmal aufgebaut und danach nur nachgeführt (aktiver Abschnitt, Zahl der Fehler und Warnungen).
+ * Ein Neuaufbau bei jeder Vorschau ersetzte die Einträge; fiel er zwischen Drücken und Loslassen der Maustaste, ging der
+ * Klick verloren.
+ */
 function renderNav(vals) {
-  $("#nav").innerHTML = SECTIONS.map((s, i) => {
-    const e = vals.filter(v => v.sec === s.id && v.sev === "err").length, w = vals.filter(v => v.sec === s.id && v.sev === "warn").length;
-    return `<a class="${s.id === current ? "active" : ""}" data-action="goto" data-sec="${s.id}"><span class="num">${i + 1}</span>${s.title}${e ? `<span class="badge err">${e}</span>` : w ? `<span class="badge warn">${w}</span>` : ""}</a>`;
-  }).join("") + `<div class="navfoot">Daten bleiben lokal auf diesem Rechner. Keine Verbindung ins Internet.</div>`;
+  const nav = $("#nav");
+  if (nav.querySelectorAll("a[data-sec]").length !== SECTIONS.length)
+    nav.innerHTML = SECTIONS.map((s, i) => `<a data-action="goto" data-sec="${s.id}"><span class="num">${i + 1}</span>${s.title}</a>`).join("")
+      + `<div class="navfoot">Daten bleiben lokal auf diesem Rechner. Keine Verbindung ins Internet.</div>`;
+  for (const a of nav.querySelectorAll("a[data-sec]")) {
+    const id = a.dataset.sec, e = vals.filter(v => v.sec === id && v.sev === "err").length, w = vals.filter(v => v.sec === id && v.sev === "warn").length;
+    a.classList.toggle("active", id === current);
+    const want = e ? `<span class="badge err">${e}</span>` : w ? `<span class="badge warn">${w}</span>` : "", old = a.querySelector(".badge");
+    if ((old?.outerHTML ?? "") === want) continue;
+    old?.remove();
+    if (want) a.insertAdjacentHTML("beforeend", want);
+  }
 }
 function renderSection() {
   const m = $("#main"), y = m.scrollTop;
@@ -1344,8 +1357,10 @@ function renderDerived() {
 function renderVal(vals) {
   const order = { err: 0, warn: 1 };
   vals.sort((a, b) => order[a.sev] - order[b.sev]);
-  $("#val").innerHTML = vals.length ? vals.map(v => `<li class="${v.sev}" data-action="goto" data-sec="${v.sec}"><span class="ic">${v.sev === "err" ? "!" : "▲"}</span><span>${v.text}</span><span class="sec">${SECTIONS.find(s => s.id === v.sec).title}</span></li>`).join("")
+  const html = vals.length ? vals.map(v => `<li class="${v.sev}" data-action="goto" data-sec="${v.sec}"><span class="ic">${v.sev === "err" ? "!" : "▲"}</span><span>${v.text}</span><span class="sec">${SECTIONS.find(s => s.id === v.sec).title}</span></li>`).join("")
     : `<li class="ok"><span class="ic">✓</span><span>Keine Fehler gefunden.</span></li>`;
+  // ISS-21: nur neu aufbauen, wenn sich die Meldungen ändern (sonst ginge ein Klick auf eine Meldung verloren)
+  if (html !== renderVal.html) { $("#val").innerHTML = html; renderVal.html = html; }
 }
 
 function renderKpis() {

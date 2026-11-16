@@ -3424,3 +3424,58 @@ test.describe("Testzugänge für lastunabhängige Tests (FEA-87)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
+  /** Drückt die Maustaste auf `loc`, lässt die App wie beim Eintreffen einer Vorschau neu zeichnen und lässt dann los. */
+  const clickDuringPreview = async (page, loc) => {
+    await loc.scrollIntoViewIfNeeded();
+    const b = await loc.boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.evaluate(() => renderDerived());
+    await page.mouse.up();
+  };
+
+  test("ISS-21/AK1, AK2: Menüeinträge bleiben dieselben Elemente; der Klick öffnet den Abschnitt", async ({ page }) => {
+    const errors = await open(page);
+    await previewIdle(page);
+    const same = await page.evaluate(() => {
+      const before = [...document.querySelectorAll("#nav a")];
+      renderDerived();
+      return before.every((a, i) => a.isConnected && a === document.querySelectorAll("#nav a")[i]);
+    });
+    expect(same).toBe(true);
+    await clickDuringPreview(page, page.locator("#nav a", { hasText: "Vermögen & Anlage" }));
+    await expect(page.locator("#nav a.active")).toContainText("Vermögen & Anlage");
+    expect(await page.evaluate(() => current)).toBe("wealth");
+    await expect(page.locator("#nav a.active")).toHaveCount(1);
+    await noErrors(page, errors);
+  });
+
+  test("ISS-21/AK3: Klick auf eine Meldung der Prüfliste bei unveränderter Liste", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    await previewIdle(page); // die Liste nach der ersten Vorschau; danach ändert sie sich nicht mehr
+    const item = page.locator("#val li[data-sec]").first();
+    await expect(item).toBeVisible();
+    const sec = await item.getAttribute("data-sec");
+    expect(sec).not.toBe("wealth");
+    await clickDuringPreview(page, item);
+    expect(await page.evaluate(() => current)).toBe(sec);
+    await noErrors(page, errors);
+  });
+
+  test("ISS-21/AK4: Zahl der Fehler am Menü erscheint und verschwindet", async ({ page }) => {
+    const errors = await open(page);
+    const badge = page.locator("#nav a", { hasText: "Haushalt" }).locator(".badge.err");
+    await expect(badge).toHaveCount(0);
+    await field(page, "project.name").fill("");
+    await field(page, "household.persons.0.birth").fill("01.2999");
+    await field(page, "household.persons.0.birth").press("Tab");
+    await expect(badge).toHaveText(/^\d+$/);
+    await field(page, "household.persons.0.birth").fill("01.1960");
+    await field(page, "household.persons.0.birth").press("Tab");
+    await expect(badge).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+});
