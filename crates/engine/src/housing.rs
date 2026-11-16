@@ -148,4 +148,27 @@ mod tests {
         );
         assert_eq!(w(json!([])), 0.0);
     }
+
+    // FEA-97/AK8: Grenzen der Perioden und der Miete. Eine Periode, die genau im Startmonat endet, zählt nicht mehr; eine
+    // Tranche «zurückzahlen» zählt, solange ihre Periode läuft; eine Tranche ohne Perioden trägt nichts bei; eine Miete
+    // bis nach dem Start zählt.
+    #[test]
+    fn fea97_ak8_period_and_rent_limits() {
+        let tranche = |t: serde_json::Value| json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 0, "mortgage": { "tranches": [t] } }]);
+        // 120'000 × 1 % / 12 = 100 (zweite Periode ab 2040-01), nicht 120'000 × 5 % / 12 = 500
+        let ends_at_start = tranche(
+            json!({ "amount": 120_000, "start": "2030-01", "periods": [ { "term": 10, "rate": 0.05 }, { "term": 10, "rate": 0.01 } ] }),
+        );
+        assert!((w(ends_at_start) - 100.0).abs() < 1e-9);
+        let repay_running = tranche(
+            json!({ "amount": 120_000, "start": "2035-01", "after": "repay", "periods": [ { "term": 10, "rate": 0.01 } ] }),
+        );
+        assert!((w(repay_running) - 100.0).abs() < 1e-9);
+        let no_periods = tranche(json!({ "amount": 120_000, "start": "2035-01", "after": "renew", "periods": [] }));
+        assert_eq!(w(no_periods), 0.0);
+        assert_eq!(
+            w(json!([{ "name": "M", "status": "rent", "from": "2030-01", "until": "2041-01", "rent": 2500 }])),
+            2500.0
+        );
+    }
 }

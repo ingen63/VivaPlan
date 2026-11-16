@@ -516,3 +516,38 @@ fn fea72_ak3_pictet_strategies_are_replaced_with_a_note() {
     assert!(serde_json::from_value::<StockIndex>(json!("chPictet")).is_err());
     assert!(serde_json::from_value::<BondIndex>(json!("chPictet")).is_err());
 }
+
+/// Bibliothek mit einer Shiller-Reihe nur für das Kalenderjahr `year` (12 Monate, je 1 %, SARON 2 %).
+fn lib_with_shiller_year(year: i32) -> PathBuf {
+    let dir = std::env::temp_dir().join(format!("vivaplan-fea97-{}-{year}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut csv = String::from("# Titel: Test\n# Währung: CHF\nDate,Stocks,Bonds,Inflation,Saron\n");
+    for m in 1..=12 {
+        csv += &format!("{year}-{m:02},0.01,0.01,0.01,0.02\n");
+    }
+    std::fs::write(dir.join("Shiller CHF.csv"), csv).unwrap();
+    dir
+}
+
+/// FEA-97/AK8: Aktien des Weltindex (JST) mit Obligationen USA (Shiller): Ein einziges gemeinsames Jahr genügt, der SARON
+/// gilt auch im ersten und letzten Jahr seiner Reihe; ohne gemeinsames Jahr meldet die Strategie einen Fehler.
+#[test]
+fn fea97_ak8_common_years_of_the_indices() {
+    let s = Investment {
+        stocks: StockIndex::WorldJst,
+        bonds: BondIndex::Usa,
+        weights: RegionWeights::default(),
+    };
+    let last = JstData::builtin().last_year();
+    let one = lib_with_shiller_year(last);
+    let r = strategy::dataset(&s, Some(&one));
+    let late = lib_with_shiller_year(last + 5);
+    let e = strategy::dataset(&s, Some(&late));
+    let _ = std::fs::remove_dir_all(one);
+    let _ = std::fs::remove_dir_all(late);
+    let d = r.expect("ein gemeinsames Jahr");
+    assert_eq!((d.first, d.stocks.len()), (YearMonth::new(last, 1), 1));
+    assert_eq!(d.saron.as_deref().map(|s| s.len()), Some(1));
+    assert!((d.saron.unwrap()[0] - 0.02).abs() < 1e-12, "SARON im einzigen Jahr");
+    assert!(e.unwrap_err().to_string().contains("keine gemeinsamen Jahre"));
+}

@@ -1184,4 +1184,13 @@ mod tests {
             json!({"mode": "timed", "rows": [{"from": "2030-01", "value": 1.5}]})
         );
     }
+
+    // FEA-97/AK7: Eine Auszahlung nach Alter behält beim Speichern ihre Art; die Art «date» (Vorgabe) wird weggelassen.
+    #[test]
+    fn fea97_ak7_payout_kind_is_saved_only_for_age() {
+        let age: Pillar3aPayout = serde_json::from_value(json!({"kind": "age", "years": 61.5})).unwrap();
+        let date: Pillar3aPayout = serde_json::from_value(json!({"date": "2040-06"})).unwrap();
+        assert_eq!(serde_json::to_value(&age).unwrap()["kind"], json!("age"));
+        assert!(serde_json::to_value(&date).unwrap().get("kind").is_none());
+    }
 }

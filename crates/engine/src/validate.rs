@@ -1547,4 +1547,91 @@ mod tests {
             .message
             .contains("Einzahlung (3'259) und indirekte Amortisation (4'000)"));
     }
+
+    // --- FEA-97/AK7: Säule 3a mit zwei Personen, Hinweis «Hypothek zurückzahlen», Frankenbeträge ---
+
+    /// Zweite Person B (Geburt 1970-11, AHV-Bezug 2035-11).
+    fn couple(v: &mut Value) {
+        v["household"]["persons"] = json!([
+            { "id": "A", "name": "Anna", "birth": "1966-11" },
+            { "id": "B", "name": "Ben", "birth": "1970-11" }
+        ]);
+        let ms = v["milestones"].as_array_mut().unwrap();
+        ms.insert(
+            3,
+            json!({ "id": "retire2", "name": "Bezug Pensionskasse 2", "kind": "age", "person": "B", "years": 65 }),
+        );
+        ms.insert(
+            4,
+            json!({ "id": "ahv2", "name": "AHV-Bezug 2", "kind": "age", "person": "B", "years": 65 }),
+        );
+        v["partner"] = json!({ "pk": { "capital": 0, "at": "retire2", "lumpsum": 0, "conversion": 0 },
+            "ahv": { "monthly": 0, "at": "ahv2" } });
+    }
+
+    /// Haus mit einer Tranche, indirekt amortisiert mit `amort` pro Quartal in die Säule 3a von `person`.
+    fn indirect_house(v: &mut Value, person: Option<&str>, amort: f64) {
+        let mut t = json!({ "name": "T", "amount": 400_000, "start": "2026-11",
+            "periods": [ { "type": "fixed", "term": 10, "rate": 0.01, "amort": amort, "amortMode": "indirect" } ] });
+        if let Some(p) = person {
+            t["pillar3a"] = json!(p);
+        }
+        v["realestate"]["properties"] = json!([ { "id": "h", "name": "Haus", "status": "owned", "price": 500_000,
+            "worth": 800_000, "sell": "never", "fixCosts": 0, "mortgage": { "tranches": [t] } } ]);
+    }
+
+    const OVER: &str = "Einzahlung (0) und indirekte Amortisation (8'000) übersteigen zusammen den Maximalbetrag";
+
+    #[test]
+    fn fea97_ak7_indirect_amortization_per_person() {
+        // Tranche in die 3a von B (8'000 pro Jahr): Die Warnung nennt B, nicht A.
+        let v = with(|v| {
+            couple(v);
+            indirect_house(v, Some("B"), 2000.0);
+        });
+        assert!(has(&v, &format!("Säule 3a Ben: {OVER}")), "{:?}", messages(&v));
+        assert!(!has(&v, "Säule 3a Anna"), "{:?}", messages(&v));
+        // A hat ein Konto, B nicht: Für B gilt die Warnung ohne Konto weiterhin.
+        let v = with(|v| {
+            couple(v);
+            indirect_house(v, Some("B"), 2000.0);
+            v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0 }]);
+        });
+        assert!(has(&v, &format!("Säule 3a Ben: {OVER}")), "{:?}", messages(&v));
+        // Eine Person: ohne Namen.
+        let v = with(|v| indirect_house(v, None, 2000.0));
+        assert!(
+            messages(&v).iter().any(|m| m.starts_with(&format!("Säule 3a: {OVER}"))),
+            "{:?}",
+            messages(&v)
+        );
+    }
+
+    #[test]
+    fn fea97_ak7_repay_needs_an_indirect_tranche() {
+        const REPAY: &str =
+            "«Hypothek zurückzahlen» (Auszahlung im 01.2032) setzt eine Tranche mit indirekter Amortisation voraus";
+        let account = |usage: &str| {
+            json!([{ "person": "B", "balance": 10_000, "rate": 0,
+                "payouts": [{ "date": "2032-01", "amount": 5_000, "use": usage }] }])
+        };
+        let v = with(|v| {
+            couple(v);
+            v["pillar3a"] = account("repay");
+        });
+        assert!(has(&v, &format!("Säule 3a Ben: {REPAY}")), "{:?}", messages(&v));
+        let v = with(|v| {
+            couple(v);
+            v["pillar3a"] = account("wealth");
+        });
+        assert!(!has(&v, "Hypothek zurückzahlen"), "{:?}", messages(&v));
+    }
+
+    #[test]
+    fn fea97_ak7_chf_formats_with_thousands_separator() {
+        assert_eq!(chf(0.0), "0");
+        assert_eq!(chf(-0.4), "0");
+        assert_eq!(chf(-1234.4), "-1'234");
+        assert_eq!(chf(1_234_567.0), "1'234'567");
+    }
 }

@@ -2229,4 +2229,20 @@ mod tests {
         }
         assert_eq!(QUIT_TEXT, "Beenden");
     }
+
+    // FEA-97/AK8: Die Fenster aus der Konfiguration (dort `create: false`) entstehen erst beim Start der App.
+    #[test]
+    fn fenster_aus_der_konfiguration_werden_erstellt() {
+        let _g = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut ctx = mock_context(noop_assets());
+        ctx.config_mut().app.windows = vec![tauri::utils::config::WindowConfig {
+            label: "haupt".into(),
+            create: false,
+            ..Default::default()
+        }];
+        let app = configure(mock_builder()).build(ctx).expect("App baut");
+        assert!(app.get_webview_window("haupt").is_none());
+        create_windows(&app).expect("Fenster");
+        assert!(app.get_webview_window("haupt").is_some());
+    }
 }

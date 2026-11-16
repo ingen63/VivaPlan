@@ -56,7 +56,7 @@ exclude_re = [
     # Immobilie im Besitz setzt die anschliessende Prüfung im selben Monat die Vormerkung zurück (ohne Folgen).
     # Ausnahme von der offenen Zeile: Spalte und Funktion treffen auch andere Bedingungen in after_sales; verschiebt sich
     # die Zeile, erscheint der Mutant wieder und der Eintrag wird nachgeführt.
-    "sim\\.rs:1170:20: delete ! in Run<'a>::after_sales",
+    "sim\\.rs:1351:20: delete ! in Run<'a>::after_sales",
     # Amortisation 0: Es kommen 0 Franken dazu (Schätzung, laufende Kosten, Quartalszahlung).
     "sim\\.rs:\\d+:34: replace > with >= in Run<'a>::running_estimate",
     "sim\\.rs:\\d+:34: replace > with >= in Run<'a>::properties",
@@ -68,7 +68,7 @@ exclude_re = [
     # Bedarf: Der Monat m liegt nie nach dem Planende, es zählt immer mindestens ein Monat (n > 0).
     "sim\\.rs:\\d+:22: replace > with >= in Run<'a>::plan_basis",
     # Aktienrendite: Die Renditen des Monats sind beim Aufruf schon verbucht (k < Länge); die Begrenzung greift nie.
-    "sim\\.rs:\\d+:31: replace - with [+/] in Run<'a>::stock_return",
+    "sim\\.rs:\\d+:49: replace - with [+/] in Run<'a>::stock_return",
     # Start im Januar (k = 0): Teuerungsfaktor 1, die AHV bleibt gleich.
     "sim\\.rs:\\d+:36: replace > with >= in Run<'a>::execute",
     # Einmalbetrag 0: zählt als Ausgabe 0.
@@ -104,6 +104,58 @@ exclude_re = [
     "sim\\.rs:\\d+:23: replace > with >= in Run<'a>::execute",
     # Aufgebraucht: Rundungstoleranz 0.005 (≤ statt <).
     "sim\\.rs:\\d+:24: replace < with <= in Run<'a>::execute",
+    # --- FEA-97 (voller Lauf vom 16.11.2026), gleichwertig ---
+    # Säule 3a: Eine Einzahlung von 0 erhöht das Guthaben um 0.
+    "sim\\.rs:\\d+:33: replace > with >= in Run<'a>::pillar3a",
+    # Korrelation: Die Abweichungen vom Mittelwert summieren sich zu 0; (x + mx)·(y − my) und (x − mx)·(y + my) ergeben
+    # dieselbe Kovarianz.
+    "calibrate\\.rs:\\d+:(52|63): replace - with \\+ in corr",
+    # Jahresrendite ohne Streuung: Φ(±∞) ist dieselbe Stufe wie der Zweig ohne Streuung; anders nur, wenn die Bisektion genau
+    # das Mittel trifft.
+    "calibrate\\.rs:\\d+:23: replace > with >= in YearModel::cdf_log",
+    # Bisektion: Ob Gleichheit mit p nach unten oder oben geht, verschiebt das Quantil höchstens um eine Rundungsstelle.
+    "calibrate\\.rs:\\d+:34: replace < with <= in YearModel::quantile",
+    # Streuung der einfachen und der Log-Rendite sind genau dann 0, wenn die Verteilung ein Punkt ist, also immer beide.
+    "calibrate\\.rs:\\d+:22: replace \\|\\| with && in YearModel::corr_simple_log",
+    # Raster ohne Sprünge: Ohne Abbruch wiederholt die Schleife dieselbe Kombination (Sprunghöhe 0) mit demselben Fehler;
+    # die erste bleibt. Zwei Kombinationen mit genau demselben Fehler (≤ statt <) kommen im Raster nicht vor.
+    "calibrate\\.rs:\\d+:28: replace > with < in fit_moments",
+    "calibrate\\.rs:\\d+:54: replace < with <= in fit_moments",
+    # Monats-Bootstrap: Grenze u = 1/12 mit Wahrscheinlichkeit 0.
+    "calibrate\\.rs:\\d+:46: replace < with <= in bootstrap_years",
+    # Wohnanteil: Die Schutzgrenze von 1000 Perioden wird nie erreicht. Eine Periode, die genau im Startmonat beginnt, ist
+    # im Zweig davor erledigt (m > start statt >=); ohne Abbruch (==) findet die Schleife danach keinen Treffer mehr.
+    "housing\\.rs:\\d+:54: replace < with <= in start_housing",
+    "housing\\.rs:\\d+:30: replace > with (==|>=) in start_housing",
+    # JST: BIP mal Bevölkerung ist in den Daten nie genau 0.
+    "jst\\.rs:\\d+:49: replace > with >= in JstData::gdp_weight",
+    # Ein Eintrag genau bei `from` ist schon als at(from) enthalten.
+    "resolve\\.rs:\\d+:57: replace < with <= in Curve::first_above",
+    # Welt individuell: Eine Region mit Gewicht 0 trägt 0 bei (alle Regionen haben in allen Jahren Werte).
+    "strategy\\.rs:\\d+:56: replace > with >= in custom_world",
+    # Jahres-Bootstrap, Vorlauf: (a + n − back + n) % n ist gleich (a + n − back % n) % n, weil back kleiner als n ist.
+    "montecarlo\\.rs:\\d+:62: replace % with \\+ in Bootstrap<'_>::path",
+    # Import alter Dateien: Fehlende feste Meilensteine hat der Schritt `milestones` vorher eingefügt; der Zweig für
+    # «retire» und «ahv» ohne Eintrag wird nie erreicht («false», «&&» und das Alter darin ändern nichts).
+    "upgrade\\.rs:\\d+:21: replace match guard .* with false in pillar3a",
+    "upgrade\\.rs:\\d+:49: replace \\|\\| with && in pillar3a",
+    "upgrade\\.rs:\\d+:62: replace \\* with [+/] in pillar3a",
+    # Prüfung: Eine indirekte Amortisation von 0 erhöht das Maximum nicht.
+    "validate\\.rs:881:32: replace > with >= in check",
+
+    # --- FEA-97, Grenzfälle ---
+    # Säule 3a: Wunschbetrag genau Guthaben + 0.005, Rest genau 0.005 (Rundungstoleranz).
+    "sim\\.rs:\\d+:58: replace > with >= in Run<'a>::pillar3a",
+    "sim\\.rs:\\d+:25: replace > with >= in Run<'a>::pillar3a",
+    # Gewichte der Regionen: Summe genau 1 ± 1e-6.
+    "strategy\\.rs:\\d+:24: replace > with >= in weight_issue",
+    # Alter genau auf der Grenze ± 1e-9 (Import und Prüfung).
+    "upgrade\\.rs:\\d+:30: replace (< with <=|> with >=) in milestones",
+    "validate\\.rs:323:(20: replace < with <=|39: replace > with >=) in check",
+    # Prüfung: Wohnanteil, Maximalbetrag der 3a mit indirekter Amortisation (Rundungstoleranz 0.005).
+    "validate\\.rs:377:26: replace < with <= in check",
+    "validate\\.rs:937:40: replace > with >= in check",
+    "validate\\.rs:1006:21: replace > with >= in check",
     # FEA-82, App (`crates/app/src/main.rs`): Die folgenden Mutanten betreffen Aufrufe, die erst eine laufende Anwendung mit
     # Fenster, Betriebssystem-Dialog oder Ereignisschleife auslöst. Die Mock-Runtime von Tauri (`tauri::test`) kann sie nicht
     # erzeugen (`request_exit` ist dort nicht umgesetzt, `ExitRequestApi` hat keinen öffentlichen Konstruktor). Die

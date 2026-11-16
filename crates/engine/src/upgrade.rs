@@ -644,4 +644,40 @@ mod tests {
         let mut v = json!({ "household": { "persons": [] } });
         assert!(upgrade(&mut v).is_empty());
     }
+
+    // FEA-97/AK6: Ein Alter genau auf der Grenze bleibt (kein Hinweis). Eine Säule 3a an der Hypothek ohne
+    // Auszahlungszeitpunkt (oder mit unbekanntem Meilenstein) wird im AHV-Bezug ausbezahlt; «Hypothek zurückzahlen» setzt
+    // eine indirekte Amortisation über 0 voraus. Eine Planung, die nicht parametrisch rechnet, bekommt keine Parameter.
+    #[test]
+    fn fea97_ak6_limits_pillar3a_and_parametric() {
+        let mut v = plan();
+        v["milestones"][1]["years"] = json!(58);
+        let notes = upgrade(&mut v);
+        assert_eq!(ms(&v, "retire")["years"], 58);
+        assert!(!notes.iter().any(|n| n.contains("ausserhalb der Grenzen")), "{notes:?}");
+
+        for payout in [None, Some("never"), Some("unbekannt")] {
+            let mut v = plan();
+            let mut pa = json!({ "balance": 10_000, "rate": 0, "use": "repay" });
+            if let Some(p) = payout {
+                pa["payout"] = json!(p);
+            }
+            v["realestate"] = json!({ "properties": [ { "name": "Haus", "mortgage": { "pillar3a": pa,
+                "tranches": [ { "amount": 100_000, "periods": [ { "amort": 0, "amortMode": "indirect" } ] } ] } } ] });
+            let notes = upgrade(&mut v);
+            assert!(
+                notes.contains(&"Die Säule 3a von «Haus» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt.".to_string()),
+                "{payout:?}: {notes:?}"
+            );
+            assert_eq!(v["pillar3a"][0]["use"], "wealth", "Amortisation 0: nicht indirekt");
+            assert!(notes
+                .iter()
+                .any(|n| n.contains("setzt neu eine Tranche mit indirekter Amortisation voraus")));
+        }
+
+        let mut v = plan();
+        v["returns"] = json!({ "source": "fixed" });
+        assert!(upgrade(&mut v).iter().all(|n| n != PARAMETRIC_NOTE));
+        assert!(v["returns"].get("parametric").is_none());
+    }
 }

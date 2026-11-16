@@ -684,4 +684,121 @@ mod bootstrap_tests {
         };
         assert_eq!(bootstrap_years(&yearly).len(), 240);
     }
+
+    // FEA-97/AK5: Grenzen der Eingaben. Genau MIN_YEARS Jahre (bzw. 12 × MIN_YEARS Monate) genügen; eine Rendite von
+    // −100 % oder eine unvollständige Reihe ergibt keinen Vorschlag; `last` ist das letzte Jahr der Reihe.
+    #[test]
+    fn fea97_ak5_input_limits() {
+        let years: Vec<f64> = (0..MIN_YEARS).map(|i| if i % 3 == 0 { -0.1 } else { 0.12 }).collect();
+        assert!(fit_stocks(&years).is_some(), "genau {MIN_YEARS} Jahre");
+        assert!(fit_stocks(&years[1..]).is_none(), "ein Jahr zu wenig");
+        let mut total_loss = years.repeat(2);
+        total_loss[3] = -1.0;
+        assert!(fit_stocks(&total_loss).is_none(), "Rendite −100 %");
+
+        let y = YearlyTriples {
+            first: 1990,
+            stocks: years.clone(),
+            bonds: years.iter().map(|r| r / 3.0).collect(),
+            inflation: years.iter().map(|r| 0.02 + r / 10.0).collect(),
+        };
+        let j = joint(&y).expect("genau MIN_YEARS Jahre");
+        assert_eq!((j.first, j.last), (1990, 1990 + MIN_YEARS as i32 - 1));
+        let short = YearlyTriples {
+            stocks: y.stocks[1..].to_vec(),
+            bonds: y.bonds[1..].to_vec(),
+            inflation: y.inflation[1..].to_vec(),
+            ..y.clone()
+        };
+        assert!(joint(&short).is_none(), "ein Jahr zu wenig");
+        let mut bonds_short = y.clone();
+        bonds_short.bonds.pop();
+        assert!(joint(&bonds_short).is_none(), "Obligationen unvollständig");
+        let mut inflation_short = y.clone();
+        inflation_short.inflation.pop();
+        assert!(joint(&inflation_short).is_none(), "Inflation unvollständig");
+
+        let monthly = StockSeries {
+            freq: Freq::Monthly,
+            first: crate::time::YearMonth::new(1950, 1),
+            values: vec![0.01; 12 * MIN_YEARS],
+        };
+        assert_eq!(
+            bootstrap_years(&monthly).len(),
+            BOOTSTRAP_YEARS,
+            "genau 12 × MIN_YEARS Monate"
+        );
+    }
+
+    // FEA-97/AK5: Ohne Streuung ist die Jahresrendite fest: Das Quantil ist e^μ − 1. Ohne Streuung der Aktien bleiben
+    // Obligationen und Inflation beim Mittelwert der Reihe (z = 0).
+    #[test]
+    fn fea97_ak5_model_without_spread() {
+        let q = ParametricParams {
+            mu: 0.05,
+            sigma: 0.0,
+            jump_lambda: 0.0,
+            ..ParametricParams::default()
+        };
+        let m = YearModel::new(&q);
+        for p in [0.05, 0.5, 0.95] {
+            assert!(
+                (m.quantile(p) - (0.05f64.exp() - 1.0)).abs() < 1e-9,
+                "p = {p}: {}",
+                m.quantile(p)
+            );
+        }
+        let c = Correlated {
+            log_mean: 0.05,
+            log_sd: 0.0,
+            bonds: (0.03, 0.05),
+            inflation: (0.01, 0.02),
+            a_bonds: 0.3,
+            a_inflation: 0.2,
+            l: (0.9, 0.1, 0.9),
+        };
+        assert_eq!(c.draw(0.4, 12, 0.0, 0.0), (0.03, 0.01));
+    }
+
+    // FEA-97/AK5: Wahl des Rasters. Eine Reihe ohne Ausreisser passt am besten ohne Sprünge (λ = 0); für Reihen mit
+    // Crash-Jahren gewichtet die Fehlerfunktion das 5 %-Quantil (1 %), die Mittel und die Streuung (0.2 %): Ergebnis als
+    // Regression.
+    #[test]
+    fn fea97_ak5_grid_choice() {
+        let calm = YearModel::new(
+            &StockFit {
+                mu: 0.06,
+                sigma: 0.12,
+                df: DF,
+                jump_lambda: 0.0,
+                jump_mu: 0.0,
+                jump_sigma: 0.0,
+            }
+            .params(),
+        )
+        .moments();
+        let f = fit_moments(&calm).expect("Vorschlag");
+        assert_eq!((f.jump_lambda, f.jump_mu, f.jump_sigma), (0.0, 0.0, 0.0), "{f:?}");
+        let crash = Moments {
+            mean: 0.085,
+            sd: 0.19,
+            geo: 0.067,
+            q5: -0.27,
+        };
+        let f = fit_moments(&crash).expect("Vorschlag");
+        let got = [f.mu, f.sigma, f.jump_lambda, f.jump_mu, f.jump_sigma];
+        let want = [0.139, 0.119, 0.27, -0.25, JUMP_SIGMA];
+        assert!(got.iter().zip(want).all(|(a, b)| (a - b).abs() < 1e-9), "{f:?}");
+        // Hier entscheidet die Abweichung der Streuung (μ und σ sind auf 0.0005 gerundet und treffen sie nicht genau).
+        let steep = Moments {
+            mean: 0.12,
+            sd: 0.16,
+            geo: 0.12 - 0.16 * 0.16 / 2.0,
+            q5: -0.22,
+        };
+        let f = fit_moments(&steep).expect("Vorschlag");
+        let got = [f.mu, f.sigma, f.jump_lambda, f.jump_mu];
+        let want = [0.1665, 0.0735, 0.25, -0.25];
+        assert!(got.iter().zip(want).all(|(a, b)| (a - b).abs() < 1e-9), "{f:?}");
+    }
 }

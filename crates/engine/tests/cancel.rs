@@ -1,5 +1,5 @@
-//! Fortschritt und Abbruch langer Berechnungen. Ein einziger Test, weil Fortschritt und Abbruch
-//! prozessweit gelten (parallele Tests würden sich gegenseitig abbrechen).
+//! Fortschritt und Abbruch langer Berechnungen. Fortschritt und Abbruch gelten prozessweit: Jeder Test braucht einen
+//! eigenen Prozess (nextest); parallel im selben Prozess würden sich die Tests gegenseitig abbrechen.
 
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -89,4 +89,19 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
         t0.elapsed()
     );
     assert!(!progress::snapshot().active);
+}
+
+/// FEA-97/AK4: `cancel()` bricht jede laufende Berechnung ab, eine beendete nicht. Kurz, damit der Abbruch auch im
+/// Mutationslauf geprüft wird (der Test oben ist dort zu lang). Wie dieser braucht er einen eigenen Prozess (nextest).
+#[test]
+fn fea97_ak4_cancel_stops_every_running_job() {
+    let running = progress::start_as(None, 10);
+    let finished = progress::start_as(None, 10);
+    let finished_id = finished.id();
+    drop(finished);
+    assert!(!progress::cancelled());
+    progress::cancel();
+    assert!(progress::cancelled());
+    assert!(progress::snapshot_of(running.id()).cancelled);
+    assert!(!progress::snapshot_of(finished_id).cancelled);
 }

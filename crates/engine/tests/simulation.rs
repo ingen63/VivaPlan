@@ -999,3 +999,55 @@ fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
         res.records[7].housing
     );
 }
+
+/// FEA-97/AK3: Die Einmalrückzahlung bei der Erneuerung kommt aus dem liquiden Vermögen (Fall 2 oben: 80'000).
+#[test]
+fn fea97_ak3_lump_sum_is_paid_from_liquid_wealth() {
+    let r = renewal_case(6_000.0, 2_000_000.0, 0.0, 6.0);
+    let at = |y: i32, m: u32| {
+        r.records
+            .iter()
+            .find(|x| x.month == YearMonth::new(y, m))
+            .expect("Monat")
+    };
+    let (dec, jan) = (at(2030, 12), at(2031, 1));
+    // Einkommen 6'000 des Monats, Einmalzahlung 80'000; die Zinsen laufen im Januar nur auf.
+    assert!(
+        (dec.liquid - jan.liquid - 74_000.0).abs() < 1e-6,
+        "{} → {}",
+        dec.liquid,
+        jan.liquid
+    );
+    assert!(
+        (dec.mortgage - jan.mortgage - 80_000.0).abs() < 1e-6,
+        "{} → {}",
+        dec.mortgage,
+        jan.mortgage
+    );
+}
+
+/// FEA-97/AK3: Nach der Pensionierung hält «Standard» die Reserve für die laufenden Kosten; die Hypothekarzinsen
+/// gehören dazu (Hypothek 400'000 zu 1.2 %: 400 pro Monat, Reserve 12 Monate).
+#[test]
+fn fea97_ak3_mortgage_interest_counts_for_the_reserve() {
+    let cash = |rate: f64| {
+        let mut v = base();
+        v["milestones"][1]["date"] = json!("2030-01");
+        v["flows"]["spending"] = json!(1000);
+        v["wealth"]["cash"] = json!(1_000_000);
+        v["wealth"]["reserveMonths"] = json!(12);
+        v["realestate"] = json!({ "properties": [ {
+            "name": "Haus", "status": "owned", "price": 500_000, "worth": 800_000, "sell": "never", "fixCosts": 0,
+            "mortgage": { "tranches": [ { "amount": 400_000, "start": "2030-01",
+                "periods": [ { "type": "fixed", "term": 10, "rate": rate } ] } ] }
+        } ] });
+        let r = run(&plan(v));
+        r.records
+            .iter()
+            .find(|x| x.month == YearMonth::new(2030, 5))
+            .expect("Mai")
+            .cash
+    };
+    assert!((cash(0.0) - 12.0 * 1000.0).abs() < 1e-6, "ohne Zins: {}", cash(0.0));
+    assert!((cash(0.012) - 12.0 * 1400.0).abs() < 1e-6, "mit Zins: {}", cash(0.012));
+}
