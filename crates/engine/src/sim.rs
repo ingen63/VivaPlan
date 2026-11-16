@@ -2966,3 +2966,28 @@ mod tests_schedule {
             .is_empty());
     }
 }
+
+#[cfg(test)]
+mod tests_pre_levels {
+    use super::pre_levels;
+
+    #[test]
+    fn fea80_pre_levels_walk_back_from_the_start_level() {
+        // Vorlauf +10 %, dann +20 %: Start = 1, davor 1/1.2, davor 1/1.2/1.1.
+        let l = pre_levels(&[0.10, 0.20], 3);
+        assert_eq!(l.len(), 3);
+        assert!((l[2] - 1.0).abs() < 1e-12);
+        assert!((l[1] - 1.0 / 1.2).abs() < 1e-12);
+        assert!((l[0] - 1.0 / 1.2 / 1.1).abs() < 1e-12);
+        assert_eq!(pre_levels(&[], 3), vec![1.0]);
+    }
+
+    #[test]
+    fn fea80_pre_levels_total_loss_stays_finite() {
+        // Rendite -100 % darf nicht durch 0 teilen.
+        let l = pre_levels(&[-1.0], 1);
+        assert_eq!(l.len(), 2);
+        assert!(l[0].is_finite() && l[0] > 1e6);
+        assert_eq!(l[1], 1.0);
+    }
+}
