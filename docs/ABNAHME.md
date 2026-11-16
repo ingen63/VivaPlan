@@ -1377,3 +1377,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-96/AK4 | Listen mit Namen statt Index. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK2, AK4: …» | 16.11.2026 ok |
 | FEA-96/AK5 | Felder ohne Bezeichnung erscheinen nicht; Test über alle Felder einer Beispielplanung. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-96/AK5: …» | 16.11.2026 ok |
 | FEA-96/AK6 | Hilfe nachgeführt. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
+
+### #125 FEA-98 Kopfzeile des Ergebnisses mit dem Namen der Berechnung vor der Anzahl Läufe
+
+[Issue #125](https://github.com/ingen63/VivaPlan/issues/125) · geschlossen · Umsetzung: e37f43c
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-98/AK1 | Mehrere Läufe: «<Name> · <Anzahl> Läufe», Name des gespeicherten Ergebnisses. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK1, AK3: …» | 16.11.2026 ok |
+| FEA-98/AK2 | Einzellauf: Name vorne, danach «Einzellauf · …». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK2: …» | 16.11.2026 ok |
+| FEA-98/AK3 | Gilt für frisch berechnete und aus der Liste geöffnete Ergebnisse. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK1, AK3: …», «FEA-98/AK3, AK4: …» | 16.11.2026 ok |
+| FEA-98/AK4 | Nach dem Umbenennen zeigt die Kopfzeile den neuen Namen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK3, AK4: …» | 16.11.2026 ok |
+| FEA-98/AK5 | Langer Name gekürzt, Anzahl sichtbar, voller Name im Tooltip. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK5: …» | 16.11.2026 ok |
+| FEA-98/AK6 | Ohne gespeicherten Namen bleibt die Kopfzeile wie heute. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK6: …» | 16.11.2026 ok |
+| FEA-98/AK7 | Oberflächentest für frisches und geöffnetes Ergebnis; Hilfe nachgeführt. | ☑ | **gilt** | Tests oben; Hilfe `@r-overview` durchgesehen | 16.11.2026 ok |
