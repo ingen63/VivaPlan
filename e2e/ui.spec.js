@@ -3774,3 +3774,50 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Name eines Ergebnisses mit Abkürzungen (FEA-92)", () => {
+  test("FEA-92/AK1, AK2, AK3: Name «Planung · Quelle · Strategie · Zeitpunkt», Zahl der Läufe in der Zeile darunter", async ({ page }) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    const meta = await page.evaluate(async () => (await Runs.list())[0]);
+    expect(meta.name).toMatch(/^.+ · MC hist\. · [^·]+ · \d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}$/);
+    expect(meta.name).not.toContain("Läufe");
+    const strat = await page.evaluate(m => STRAT_SHORT[m.strategy], meta);
+    expect(meta.name).toContain(` · ${strat} · `);
+    await expect(page.locator(`#resultsBody tr:has(input[data-id="${meta.id}"]) small`)).toContainText("500 Läufe");
+    // Szenarien statt Quelle, andere Quellen und Strategien
+    const t = await page.evaluate(() => [
+      runTitle("P", { kind: "scenarios", source: "bootstrap", strategy: "vpw" }, "2026-11-16T13:05:00Z"),
+      runTitle("P", { kind: "batch", source: "parametric", strategy: "three_buckets_guardrails" }, "2026-11-16T13:05:00Z"),
+      runTitle("P", { kind: "single", source: "fixed", strategy: "fixed_rate" }, "2026-11-16T13:05:00Z"),
+    ]);
+    expect(t[0]).toMatch(/^P · Szenarien · VPW · /);
+    expect(t[1]).toMatch(/^P · MC param\. · 3-Topf \+ Guard · /);
+    expect(t[2]).toMatch(/^P · Fix · Fixe Rate · /);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-92/AK4: jede Renditequelle und jede Strategie hat eine Abkürzung", async ({ page }) => {
+    const errors = await open(page);
+    const missing = await page.evaluate(() => [
+      ...SOURCES.map(s => s[0]).filter(k => !SOURCE_SHORT[k]),
+      ...[...STRATS.map(s => s[0]), "three_buckets_guardrails"].filter(k => !STRAT_SHORT[k]),
+    ]);
+    expect(missing).toEqual([]);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-92/AK5: gespeicherte Ergebnisse behalten ihren Namen", async ({ page }) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    // Eintrag einer älteren Version (Name im alten Aufbau), danach ein neues Ergebnis: der alte Name bleibt
+    const old = "Alt · 500 Läufe · Monte Carlo · historisch · 01.11.26, 10:00";
+    const id = await page.evaluate(async old => { const [m] = await Runs.list(); await Runs.update(m.id, { name: old }); return m.id; }, old);
+    await page.evaluate(async () => { await rememberRun(await Engine.call("run_simulation", { plan: state, path: null })); await openRuns(); });
+    const names = await page.evaluate(async () => (await Runs.list()).map(m => ({ id: m.id, name: m.name })));
+    expect(names.length).toBe(2);
+    expect(names.find(m => m.id === id).name).toBe(old);
+    await noErrors(page, errors);
+  });
+});

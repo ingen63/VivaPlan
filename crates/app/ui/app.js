@@ -2808,6 +2808,11 @@ const runsSel = new Set(), RUN_COLORS = ["--c1", "--c2", "--c3", "--warn", "--ok
 const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" });
 const stratName = id => id === "three_buckets_guardrails" ? "3-Topf + Guardrails" : STRATS.find(x => x[0] === id)?.[1] || id;
 const sourceName = id => SOURCES.find(x => x[0] === id)?.[1] || id;
+/** FEA-92: Abkürzungen für den Namen eines gespeicherten Ergebnisses (jede Quelle und jede Strategie hat eine). */
+const SOURCE_SHORT = { fixed: "Fix", historical: "Hist.", rolling: "Alle Starts", bootstrap: "MC hist.", parametric: "MC param." };
+const STRAT_SHORT = { standard: "Standard", three_buckets: "3-Topf", three_buckets_guardrails: "3-Topf + Guard", guardrails: "Guardrails", fixed_rate: "Fixe Rate", vpw: "VPW", endowment: "Endowment" };
+/** Name eines neuen Ergebnisses: Planung · Quelle (bei Szenarien «Szenarien») · Strategie · Datum, Zeit. */
+const runTitle = (base, m, iso) => [base, m.kind === "scenarios" ? "Szenarien" : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
 /** Beim Ansehen einer gespeicherten Simulation gilt deren Planung; der Editor-Stand wird solange zurückgestellt. */
 function unpark() { if (parkedState) { state = parkedState; parkedState = null; } savedView = null; }
 /** Wert einer Zeitreihe der Planung als Text: konstant → Wert, sonst «zeitabhängig». */
@@ -2870,7 +2875,8 @@ async function rememberRun(r) {
   try {
     const plan = JSON.parse(JSON.stringify(state)), m = runMeta(r);
     const base = (currentPath && baseName(currentPath).replace(/\.[rv]plan$/, "")) || plan.project.name || "Planung";
-    const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: new Date().toISOString(), name: `${base} · ${runKind(m)} · ${runDate(new Date().toISOString())}`, note: "", ...m };
+    const now = new Date().toISOString();
+    const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
     await Runs.add(meta, { plan, result: r });
     document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
   } catch (e) { noteError("Ergebnis nicht gespeichert: " + errText(e)); }
