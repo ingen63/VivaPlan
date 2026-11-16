@@ -243,12 +243,17 @@ Jede Simulation wird nach dem Start als Ergebnis **automatisch abgelegt**, mit d
 Die Liste liegt **lokal im Speicher der App**, nicht in der Planungsdatei. Sie wächst, bis Sie Einträge löschen: Ein Eintrag mit vielen Läufen belegt einige Megabyte.
 
 ## @r-compare Ergebnisse vergleichen
-Stichworte: Vergleich, nebeneinander, Unterschiede, Planung, Kennzahlen
+Stichworte: Vergleich, nebeneinander, Unterschiede, Planung, Kennzahlen, Jahreswerte, Kaufkraft
 
-Der Vergleich zeigt bis zu sechs gespeicherte Ergebnisse nebeneinander:
+Der Vergleich zeigt bis zu sechs gespeicherte Ergebnisse nebeneinander, jedes in einer eigenen Farbe. Er hat dieselben Möglichkeiten wie ein einzelnes Ergebnis, verteilt auf vier Registerkarten:
 
-- **Kennzahlen:** Zeitreihe, Strategie, Erfolgsquote, Endvermögen am Median, am 5. und 1. Perzentil und im schlechtesten Lauf, früheste Erschöpfung.
-- **Gesamtvermögen im Vergleich:** Median (durchgezogen) und 5. Perzentil (gestrichelt) jedes Ergebnisses über die Jahre seit dem Start. Jedes Ergebnis hat eine eigene Farbe.
-- **Unterschiede in der Planung:** Eine Tabelle aller Eingaben, die sich zwischen den Ergebnissen unterscheiden. So sehen Sie genau, **was** zu einem anderen Ergebnis geführt hat.
+- **Übersicht:** Kennzahlen (Zeitreihe, Strategie, Erfolgsquote, Endvermögen am Median, am 5. und 1. Perzentil und im schlechtesten Lauf, früheste Erschöpfung), die **Bandbreite des Gesamtvermögens** (Median durchgezogen, 5. Perzentil gestrichelt, 95. Perzentil gepunktet), das **Endvermögen nach Perzentil** als Tabelle, die **Wahrscheinlichkeit, dass das Geld reicht**, und das **Alter bei Erschöpfung** als Anteil der Läufe (so bleiben Ergebnisse mit verschieden vielen Läufen vergleichbar).
+- **Verläufe:** die Grafiken des Einzelergebnisses für den Lauf, den es unter «Grafiken» bzw. «Einzelne Läufe» zeigt: bei einem Einzellauf dieser Lauf, bei mehreren Läufen der **Median-Lauf**. Gesamtvermögen, liquides Vermögen (wählbar: Total, Aktien, Obligationen, Cash), Einnahmen, Ausgaben oder Steuern pro Jahr, Entnahmerate, Immobilien (Eigenkapital), Vorsorge sowie Aktien, Obligationen und Inflation (Aktien durchgezogen, Obligationen gestrichelt, Preisindex gepunktet).
+- **Jahreswerte:** eine Zeile je Jahr und eine Spalte je Ergebnis für eine wählbare Grösse (Gesamtvermögen, liquides Vermögen, Immobilien, Vorsorge, Einkommen, Ausgaben, Entnahme, Entnahmerate, Steuern). Die Werte sind dieselben wie in den [Jahreswerten](#r-table) der einzelnen Ergebnisse.
+- **Planung:** eine Tabelle aller Eingaben, die sich zwischen den Ergebnissen unterscheiden. So sehen Sie genau, **was** zu einem anderen Ergebnis geführt hat.
 
-Vergleichen Sie am besten Ergebnisse, die sich in **einem** Punkt unterscheiden (zum Beispiel Aktienanteil oder Strategie). Der Vergleich zeigt nominale Werte. Ergebnisse mit Szenarien erscheinen nur als Kennzahl.
+Oben rechts wechseln Sie zwischen **Nominal** und **Heutiger Kaufkraft**; jedes Ergebnis wird mit seiner eigenen Inflation umgerechnet. In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils. Der Zoom gilt wie im Einzelergebnis für alle Grafiken mit Zeitachse.
+
+Die Ergebnisse werden nach **Jahren seit ihrem Start** ausgerichtet. Beginnen sie in verschiedenen Kalenderjahren, zeigen die Jahreswerte «1. Jahr», «2. Jahr» usw., die Jahreszahl steht im Tooltip. Fehlt einem Ergebnis eine Grösse, fehlt es in dieser Grafik bzw. Spalte, und ein Vermerk nennt es: ein Einzellauf erscheint in der Bandbreite als eine Linie und hat keine Perzentile, keine Wahrscheinlichkeit und kein Alter bei Erschöpfung; ein Ergebnis ohne Immobilie oder ohne Vorsorgevermögen fehlt in diesen Grafiken; ein Ergebnis nur mit Szenarien erscheint nur als Kennzahl; ältere Ergebnisse ohne Werte in heutiger Kaufkraft fehlen in der Bandbreite.
+
+Vergleichen Sie am besten Ergebnisse, die sich in **einem** Punkt unterscheiden (zum Beispiel Aktienanteil oder Strategie).

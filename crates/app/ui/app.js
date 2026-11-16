@@ -1905,7 +1905,11 @@ const ACTIONS = {
   back: () => showResults(false),
   detail: d => showDetail(+d.p),
   rtab: d => { resultTab = d.tab; renderResults(lastRun); },
-  real: d => { realView = d.v === "1"; renderResults(lastRun); },
+  real: d => { realView = d.v === "1"; redrawResults(); },
+  // FEA-90: Registerkarten und Auswahlen im Vergleich
+  "cmp-tab": d => { compareTab = d.tab; compareRuns(); },
+  "cmp-liquid": d => { cmpLiquid = d.v; compareRuns(); },
+  "cmp-flow": d => { cmpFlow = d.v; compareRuns(); },
   "bk-toggle": d => { bucketOpen.has(d.y) ? bucketOpen.delete(d.y) : bucketOpen.add(d.y); renderResults(lastRun); },
   "info-toggle": (d, el) => { const open = !el.classList.contains("open"); document.querySelectorAll(".infopop.open").forEach(x => x.classList.remove("open")); if (open) el.classList.add("open"); },
   "tax-cols": () => { showTaxCols = !showTaxCols; Pref.set("showTaxCols", showTaxCols); renderResults(lastRun); },
@@ -2249,31 +2253,44 @@ const pctTxt = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits
  * `start`: Gesamt- und liquides Vermögen zum Simulationsstart (Grundlage der Entnahmerate im ersten Jahr).
  * `refills`: 3-Topf-Auffüllungen des Laufs; Jahre mit Auffüllung haben eine aufklappbare Zeile mit der Herleitung.
  */
-function yearTable(recs, start, refills = []) {
+/**
+ * Werte der Jahreswerte je Kalenderjahr (nominal oder in heutiger Kaufkraft je nach Umschalter). Grundlage der Tabelle
+ * «Jahreswerte» und der Jahreswerte im Vergleich (FEA-90), damit beide dieselben Zahlen zeigen.
+ */
+function yearValues(recs, start) {
   const by = new Map();
   for (const r of recs) { const y = r.month.slice(0, 4); if (!by.has(y)) by.set(y, []); by.get(y).push(r); }
   const sum = (rs, f) => rs.reduce((a, r) => a + rv(r, f(r)), 0), avg = (rs, f) => sum(rs, f) / rs.length;
-  const cell = (v, bold) => `<td>${Math.abs(v) < 0.5 ? "" : bold ? `<b>${fmtInt(v)}</b>` : fmtInt(v)}</td>`;
-  /** Entnahmerate: jährliche Entnahme (nominal, unvollständige Jahre auf 12 Monate hochgerechnet) / Vermögen am Jahresanfang. */
-  const rateCell = (draw, base) => !(draw > 0) ? "<td></td>" : !(base > 0) ? "<td>–</td>" : `<td>${(draw / base * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>`;
-  const tx = showTaxCols, cols = 12 + (tx ? 5 : 0);
-  const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);
   let prevLast = null;
-  const rows = [...by.entries()].map(([y, rs]) => {
-    const last = rs[rs.length - 1], part = rs.length < 12 ? `<span title="Unvollständiges Jahr: ${rs.length} Monate" style="color:var(--muted)">*</span>` : "";
+  return [...by.entries()].map(([y, rs]) => {
+    const last = rs[rs.length - 1];
     const planned = avg(rs, r => r.plannedSpending), housing = avg(rs, r => r.housing), income = avg(rs, r => r.income), draw = avg(rs, r => r.withdrawal);
     // FEA-37: Einzahlungen in die Säule 3a zählen zu den Ausgaben.
     const p3aIn = avg(rs, r => r.pillar3aIn ?? 0);
-    const total = planned + housing + p3aIn, receipts = income + draw;
-    const prev = prevLast ? prevLast.priceIndex : 1, infl = last.priceIndex / prev - 1;
+    const spending = planned + housing + p3aIn, receipts = income + draw;
+    const prev = prevLast ? prevLast.priceIndex : 1;
+    /** Entnahmerate: jährliche Entnahme (nominal, unvollständige Jahre auf 12 Monate hochgerechnet) / Vermögen am Jahresanfang. */
     const yearDraw = rs.reduce((a, r) => a + r.withdrawal, 0) / rs.length * 12;
     const baseTotal = prevLast ? prevLast.total : start?.total;
     prevLast = last;
+    const taxIncome = sum(rs, r => r.assessedIncome ?? 0), taxWealth = sum(rs, r => r.assessedWealth ?? 0), taxCapital = sum(rs, r => r.taxCapital), taxGain = sum(rs, r => r.taxGain);
+    return { y, months: rs.length, age: last.age, liquid: rv(last, last.liquid), property: rv(last, last.propertyEquity), pension: rv(last, last.pensionFund + last.pillar3a),
+      total: rv(last, last.total), spending, draw, receipts, yearDraw, rate: yearDraw > 0 && baseTotal > 0 ? yearDraw / baseTotal : yearDraw > 0 ? NaN : null,
+      deviation: receipts - spending, inflation: last.priceIndex / prev - 1, taxIncome, taxWealth, taxCapital, taxGain, taxTotal: taxIncome + taxWealth + taxCapital + taxGain };
+  });
+}
+const rateTxt = r => r == null ? "" : Number.isNaN(r) ? "–" : `${(r * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+function yearTable(recs, start, refills = []) {
+  const cell = (v, bold) => `<td>${Math.abs(v) < 0.5 ? "" : bold ? `<b>${fmtInt(v)}</b>` : fmtInt(v)}</td>`;
+  const tx = showTaxCols, cols = 12 + (tx ? 5 : 0);
+  const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);
+  const rows = yearValues(recs, start).map(v => {
+    const y = v.y, part = v.months < 12 ? `<span title="Unvollständiges Jahr: ${v.months} Monate" style="color:var(--muted)">*</span>` : "";
     const rf = refillsOf(y), open = bucketOpen.has(y);
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="Herleitung der 3-Topf-Auffüllungen dieses Jahres ${open ? "ausblenden" : "anzeigen"}">${open ? "▾" : "▸"}</button>` : "";
-    return `<tr><td>${toggle}${y}${part}</td><td>${last.age.toFixed(1)}</td><td>${fmtInt(rv(last, last.liquid))}</td><td>${fmtInt(rv(last, last.propertyEquity))}</td><td>${fmtInt(rv(last, last.pensionFund + last.pillar3a))}</td><td><b>${fmtInt(rv(last, last.total))}</b></td>
-      ${cell(total, true)}${cell(draw)}${cell(receipts, true)}${rateCell(yearDraw, baseTotal)}${cell(receipts - total)}<td>${(infl * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${tx ? `${cell(sum(rs, r => r.assessedIncome ?? 0))}${cell(sum(rs, r => r.assessedWealth ?? 0))}${cell(sum(rs, r => r.taxCapital))}${cell(sum(rs, r => r.taxGain))}${cell(sum(rs, r => (r.assessedIncome ?? 0) + (r.assessedWealth ?? 0) + r.taxCapital + r.taxGain), true)}` : ""}</tr>`
+    return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
+      ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
+      ${tx ? `${cell(v.taxIncome)}${cell(v.taxWealth)}${cell(v.taxCapital)}${cell(v.taxGain)}${cell(v.taxTotal, true)}` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` Die <b>Steuern</b> stehen in der Zeile des <b>Steuerjahres</b>, für das sie gelten: Einkommens- und Vermögenssteuer werden im Dezember veranlagt, aber erst im Mai des Folgejahres bezahlt (der Cash-Bestand sinkt erst dann). Kapitalbezugs- und Grundstückgewinnsteuer stehen im Jahr des Bezugs bzw. Verkaufs. Die Steuer des letzten, unvollständigen Jahres fehlt, wenn die Planung vor Dezember endet. Die Summe über alle Jahre bleibt gleich.` : "";
@@ -2900,37 +2917,177 @@ const flat = (o, p = "", out = {}) => {
   else out[p] = o;
   return out;
 };
+// ---------- Vergleich gespeicherter Ergebnisse (FEA-90) ----------
+// Registerkarten wie beim Einzelergebnis: Übersicht (Kennzahlen, Bandbreite, Perzentile, Wahrscheinlichkeit, Erschöpfung),
+// Verläufe (Grafiken des Einzellaufs bzw. Median-Laufs), Jahreswerte (eine Spalte je Ergebnis) und Planung (Unterschiede).
+// Die Ergebnisse werden nach Monaten bzw. Jahren seit ihrem Start ausgerichtet.
+let compareTab = "overview", cmpYearKey = "total", cmpLiquid = "liquid", cmpFlow = "in";
+const CMP_TABS = [["overview", "Übersicht"], ["charts", "Verläufe"], ["table", "Jahreswerte"], ["plan", "Planung"]];
+const CMP_YEAR = [["total", "Gesamtvermögen (Total)"], ["liquid", "Liquides Vermögen"], ["property", "Immobilien"], ["pension", "Vorsorge"],
+  ["receipts", "Einkommen total"], ["spending", "Ausgaben total"], ["draw", "Entnahme"], ["rate", "Entnahmerate"], ["taxTotal", "Steuern total"]];
+const CMP_LIQUID = [["liquid", "Total"], ["stocks", "Aktien"], ["bonds", "Obligationen"], ["cash", "Cash"]];
+const CMP_FLOW = [["in", "Einnahmen"], ["out", "Ausgaben"], ["taxes", "Steuern"]];
+/** Was ein gespeichertes Ergebnis für den Vergleich hergibt; `run` ist der Lauf, den das Einzelergebnis unter «Grafiken» bzw. «Einzelne Läufe» zeigt. */
+function cmpItem(m, d, i) {
+  const res = d?.result || {}, batch = res.batch || null, single = res.single || null;
+  const run = single || (batch && (batch.details?.find(([q]) => q === 50)?.[1] || batch.details?.[0]?.[1])) || null;
+  return { m, i, color: RUN_COLORS[i], name: m.name, batch, single, run, runName: single ? "Einzellauf" : "Median-Lauf", scenariosOnly: !batch && !single };
+}
+const cmpSel = (action, opts, cur) => `<div class="seg" style="margin-bottom:8px">${opts.map(([k, t]) => `<button class="${k === cur ? "on" : ""}" data-action="${action}" data-v="${k}">${t}</button>`).join("")}</div>`;
+const cmpNote = list => list.length ? `<p class="hint cmpnote">${list.join(" ")}</p>` : "";
+const cmpLegend = items => legend(items.map(it => [it.color, esc(it.name)]));
+/** Gleich lange Reihen (Monate seit Start); fehlende Monate bleiben Lücken. */
+const cmpPad = (n, v) => Array.from({ length: n }, (_, k) => k < v.length ? v[k] : NaN);
+const cmpX = n => Array.from({ length: n }, (_, k) => k);
+const cmpTime = (id, n, lines, tip, extra = {}) => Charts.time($(`#${id}`), $(`#${id}-tip`), { x: cmpX(n), xFmt: m => `${m / 12} J.`,
+  view: resultZoom ? [resultZoom.from, resultZoom.to] : null, onZoom: setCustomZoom, lines, tip: k => `<b>Jahr ${(k / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })}</b>${tip(k)}`, ...extra });
+const cmpRow = (it, v, f) => Number.isFinite(v) ? `<br><span style="color:var(${it.color})">■</span> ${esc(it.name)}: ${f(v)}` : "";
+/** Kalenderjahre gleich: Jahreszahl; sonst «n. Jahr» seit Start (die Jahreszahl steht im Tooltip der Zelle). */
+function cmpYears(items, valuesOf) {
+  const per = items.map(it => it.run ? valuesOf(it) : null);
+  const firsts = per.filter(Boolean).map(v => v[0]?.y);
+  const same = firsts.every(y => y === firsts[0]);
+  const n = Math.max(0, ...per.map(v => v ? v.length : 0));
+  return { per, n, same, label: k => same ? (per.find(v => v && v[k])?.[k].y ?? "") : `${k + 1}. Jahr` };
+}
 async function compareRuns() {
   const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse().slice(0, RUN_COLORS.length);
   const datas = await Promise.all(metas.map(m => Runs.get(m.id)));
   lastRun = null; savedView = null; compareOpen = true;
-  $("#resultsTitle").textContent = `Vergleich von ${metas.length} Ergebnissen`; $("#resultsInfo").textContent = "nominal";
-  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-open">← Zur Liste</button>`;
-  const sw = i => `<i class="sw" style="background:var(${RUN_COLORS[i]})"></i>`;
-  const num = (v, f = fmtMio) => v == null ? "–" : f(v);
-  const rows = metas.map((m, i) => `<tr><td class="l">${sw(i)}${esc(m.name)}<br><small class="muted">${esc(runKind(m))}</small></td><td class="l">${seriesCell(m)}</td>${stratCell(m, " l")}
-    <td class="r">${m.kind === "batch" ? pctTxt(m.successRate) : "–"}</td>
-    <td class="r">${m.kind === "single" ? num(m.endTotal) : num(m.end50)}</td><td class="r">${num(m.end5)}</td><td class="r">${num(m.end1)}</td><td class="r">${num(m.end0)}</td>
-    <td class="r">${m.kind === "single" ? (m.depleted ? ymShow(m.depleted) : "keine") : m.kind === "batch" ? (m.earliest ? ymShow(m.earliest) : "keine") : "–"}</td></tr>`).join("");
-  // Verlauf des Gesamtvermögens (Median bzw. Einzellauf) nach Jahren seit Simulationsstart
-  const series = datas.map(d => d.result.batch ? { med: d.result.batch.bands.p50, low: d.result.batch.bands.p5 } : d.result.single ? { med: d.result.single.records.map(r => r.total) } : null);
-  const n = Math.max(0, ...series.map(x => x ? x.med.length : 0));
-  const pad = v => Array.from({ length: n }, (_, i) => i < v.length ? v[i] : NaN);
-  const lines = [];
-  series.forEach((x, i) => { if (!x) return; lines.push({ color: RUN_COLORS[i], values: pad(x.med) }); if (x.low) lines.push({ color: RUN_COLORS[i], dash: "5 3", width: 1.3, values: pad(x.low) }); });
+  const items = metas.map((m, i) => cmpItem(m, datas[i], i));
+  if (!CMP_TABS.some(([k]) => k === compareTab)) compareTab = "overview";
+  $("#resultsTitle").textContent = `Vergleich von ${metas.length} Ergebnissen`; $("#resultsInfo").textContent = realView ? "heutige Kaufkraft" : "nominal";
+  $("#resultsPick").innerHTML = "";
+  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-open">← Zur Liste</button>
+    <div class="seg tabs">${CMP_TABS.map(([k, t]) => `<button class="${k === compareTab ? "on" : ""}" data-action="cmp-tab" data-tab="${k}">${t}</button>`).join("")}</div>
+    <div class="seg"><button class="${realView ? "" : "on"}" data-action="real" data-v="0" title="Beträge wie sie dann anfallen">Nominal</button><button class="${realView ? "on" : ""}" data-action="real" data-v="1" title="Beträge in Preisen des jeweiligen Simulationsstarts (jedes Ergebnis mit seiner eigenen Inflation)">Heutige Kaufkraft</button></div>`;
+  const body = $("#resultsBody");
+  if (compareTab === "overview") cmpOverview(body, items);
+  else if (compareTab === "charts") cmpCharts(body, items);
+  else if (compareTab === "table") cmpTable(body, items);
+  else cmpPlan(body, items, datas);
+  document.documentElement.dataset.rendered = "compare";
+}
+const cmpSw = it => `<i class="sw" style="background:var(${it.color})"></i>`;
+const cmpReal = () => realView ? "heutige Kaufkraft (jedes Ergebnis mit seiner eigenen Inflation)" : "nominal";
+function cmpOverview(body, items) {
+  const num = v => v == null || !Number.isFinite(v) ? "–" : fmtMio(v);
+  /** Endvermögen eines Perzentils: nominal aus der Zusammenfassung, real aus dem Lauf dieses Perzentils. */
+  const endAt = (it, q) => {
+    if (it.single) return q === 50 ? (realView ? it.single.summary.endTotalReal : it.single.summary.endTotal) : null;
+    if (!it.batch) return null;
+    if (!realView) return it.batch.summary.percentiles.find(p => p.percent === q)?.endTotal ?? null;
+    return it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
+  };
+  const notes = [];
+  const rows = items.map(it => { const m = it.m; return `<tr><td class="l">${cmpSw(it)}${esc(m.name)}<br><small class="muted">${esc(runKind(m))}</small></td><td class="l">${seriesCell(m)}</td>${stratCell(m, " l")}
+    <td class="r">${it.batch ? pctTxt(it.batch.summary.successRate) : "–"}</td>
+    <td class="r">${num(endAt(it, 50))}</td><td class="r">${num(endAt(it, 5))}</td><td class="r">${num(endAt(it, 1))}</td><td class="r">${num(endAt(it, 0))}</td>
+    <td class="r">${it.single ? (it.single.summary.depleted ? ymShow(it.single.summary.depleted) : "keine") : it.batch ? (it.batch.summary.earliestDepletion ? ymShow(it.batch.summary.earliestDepletion[0]) : "keine") : "–"}</td></tr>`; }).join("");
+  const scen = items.filter(it => it.scenariosOnly);
+  if (scen.length) notes.push(`Nur als Kennzahl (Ergebnis mit Szenarien ohne Einzel- oder Monte-Carlo-Lauf): ${scen.map(it => esc(it.name)).join(", ")}.`);
+  // Bandbreite: Median (bzw. Einzellauf) und 5./95. Perzentil
+  const bandOf = it => { if (!it.batch) return null; const b = it.batch.bands; return realView ? b.real || null : b; };
+  const noReal = items.filter(it => it.batch && realView && !it.batch.bands.real);
+  if (noReal.length) notes.push(`Ohne Werte in heutiger Kaufkraft (älteres Ergebnis): ${noReal.map(it => esc(it.name)).join(", ")}.`);
+  const singles = items.filter(it => it.single);
+  if (singles.length) notes.push(`Einzellauf ohne Perzentile (in der Bandbreite nur der eine Lauf; keine Perzentile, keine Wahrscheinlichkeit und kein Alter bei Erschöpfung): ${singles.map(it => esc(it.name)).join(", ")}.`);
+  const fan = items.map(it => it.single ? { med: it.single.records.map(r => rv(r, r.total)) } : bandOf(it) ? { med: bandOf(it).p50, lo: bandOf(it).p5, hi: bandOf(it).p95 } : null);
+  const n = Math.max(0, ...fan.map(f => f ? f.med.length : 0));
+  const fanLines = [];
+  fan.forEach((f, k) => { if (!f) return; fanLines.push({ color: items[k].color, values: cmpPad(n, f.med) });
+    if (f.lo) fanLines.push({ color: items[k].color, dash: "5 3", width: 1.2, values: cmpPad(n, f.lo) }, { color: items[k].color, dash: "2 3", width: 1.2, values: cmpPad(n, f.hi) }); });
+  // Perzentile: alle Perzentile der Ergebnisse als Zeilen
+  const batches = items.filter(it => it.batch);
+  const qs = [...new Set(batches.flatMap(it => it.batch.summary.percentiles.map(p => p.percent)))].sort((a, b) => b - a);
+  const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">Perzentil</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
+    ${qs.map(q => `<tr><td class="l">${q === 0 ? "Schlechtester Lauf" : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
+    : `<p class="hint" style="margin:0">Kein Ergebnis mit mehreren Läufen.</p>`;
+  // Wahrscheinlichkeit, dass das Geld reicht
+  const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);
+  const ns = Math.max(0, ...surv.map(v => v ? v.length : 0));
+  // Alter bei Erschöpfung: Anteil der Läufe je Altersjahr (Ergebnisse mit verschieden vielen Läufen bleiben vergleichbar)
+  const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
+  const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
+  body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<table class="tbl"><tr><th class="l">Ergebnis</th><th class="l">Zeitreihe</th><th class="l">Strategie</th><th class="r">Erfolgsquote</th><th class="r">Median bzw. Endvermögen</th><th class="r">5. Perzentil</th><th class="r">1. Perzentil</th><th class="r">Schlechtester Lauf</th><th class="r">Früheste Erschöpfung</th></tr>${rows}</table>`
+      + (realView ? `<p class="hint">In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils.</p>` : ""))
+    + cmpNote(notes)
+    + (fanLines.length ? card("Bandbreite des Gesamtvermögens", `${cmpReal()} · durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil, gepunktet: 95. Perzentil`, chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
+    + card("Endvermögen nach Perzentil", cmpReal(), pTable)
+    + (batches.length ? card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", chartBox("cmp-surv", 260, true) + cmpLegend(batches)) : "")
+    + (batches.length ? card("Alter bei Erschöpfung", "Anteil der Läufe, in denen das Vermögen in diesem Altersjahr aufgebraucht ist",
+      ages.length ? chartBox("cmp-dep", 220) + cmpLegend(batches) : `<p class="hint" style="margin:0">In keinem Lauf aufgebraucht.</p>`) : "");
+  if (fanLines.length) cmpTime("cmp-wealth", n, fanLines, k => fan.map((f, j) => f ? cmpRow(items[j], cmpPad(n, f.med)[k], fmtMoney) : "").join(""), { yFmt: fmtMio });
+  if (batches.length) cmpTime("cmp-surv", ns, surv.map((v, j) => v && { color: items[j].color, values: cmpPad(ns, v) }).filter(Boolean),
+    k => surv.map((v, j) => v ? cmpRow(items[j], cmpPad(ns, v)[k], x => `${x.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`) : "").join(""), { yFmt: v => `${v} %`, range: [0, 100] });
+  if (ages.length) {
+    const shares = batches.map(depShare);
+    Charts.bars($("#cmp-dep"), $("#cmp-dep-tip"), { cats: ages.map(String), yFmt: v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`,
+      series: batches.map((it, j) => ({ group: String(j), color: it.color, values: shares[j] })),
+      tip: k => `Alter <b>${ages[k]}</b>` + batches.map((it, j) => cmpRow(it, shares[j][k], pctTxt)).join("") });
+  }
+}
+function cmpCharts(body, items) {
+  const runs = items.filter(it => it.run);
+  const notes = items.filter(it => !it.run).map(it => `Ohne Lauf (nur Szenarien): ${esc(it.name)}.`);
+  if (!runs.length) { body.innerHTML = cmpNote(notes) || `<p class="hint">Keine Verläufe vorhanden.</p>`; return; }
+  const hasProp = runs.filter(it => it.run.records.some(r => r.propertyValue > 0)), hasPk = runs.filter(it => it.run.records.some(r => r.pensionFund > 0 || r.pillar3a > 0));
+  const noProp = runs.filter(it => !hasProp.includes(it)), noPk = runs.filter(it => !hasPk.includes(it));
+  const which = `je Ergebnis der ${runs.every(it => it.single) ? "Einzellauf" : runs.every(it => !it.single) ? "Median-Lauf" : "Einzellauf bzw. Median-Lauf"}`;
+  const n = Math.max(...runs.map(it => it.run.records.length));
+  const series = (it, f) => cmpPad(n, it.run.records.map(r => rv(r, f(r))));
+  const LQ = { liquid: r => r.liquid, stocks: r => r.stocks, bonds: r => r.bonds, cash: r => r.cash };
+  // Jahresgrössen der Balken: Einnahmen, Ausgaben, Steuern; Entnahmerate wie im Einzelergebnis
+  const yrs = cmpYears(runs, it => yearly(it.run.records));
+  const flowOf = a => cmpFlow === "in" ? a.earned + a.pk + a.ahv : cmpFlow === "out" ? a.living + a.housing + a.p3a + a.taxes : a.taxes;
+  const rateOf = a => a.liquidStart > 0 ? Math.max(0, a.draw) / a.liquidStart * 12 / a.months : 0;
+  const yearSeries = f => yrs.per.map(v => v ? Array.from({ length: yrs.n }, (_, k) => v[k] ? f(v[k]) : NaN) : null).filter(Boolean);
+  const cats = Array.from({ length: yrs.n }, (_, k) => String(yrs.label(k)));
+  const idx = (it, key) => cmpPad(n, it.run.records.map(r => 100 * r[key] / (realView ? r.priceIndex : 1)));
+  body.innerHTML = cmpNote([`Verläufe ${which}.`, ...notes])
+    + card("Gesamtvermögen", cmpReal(), chartBox("cmp-total", 280, true) + cmpLegend(runs))
+    + card("Liquides Vermögen nach Anlage", cmpReal(), cmpSel("cmp-liquid", CMP_LIQUID, cmpLiquid) + chartBox("cmp-liq", 280, true) + cmpLegend(runs))
+    + card("Einnahmen und Ausgaben pro Jahr", `${cmpReal()} · Kalenderjahre, das erste und letzte Jahr sind unvollständig`, cmpSel("cmp-flow", CMP_FLOW, cmpFlow) + chartBox("cmp-flows", 260) + cmpLegend(runs))
+    + card("Entnahme aus dem Vermögen", "pro Jahr: Ausgaben inkl. Steuern − Einnahmen, im Verhältnis zum liquiden Vermögen", chartBox("cmp-draw", 240) + cmpLegend(runs))
+    + (hasProp.length ? card("Immobilien", `${cmpReal()} · Eigenkapital (Marktwert − Hypothek)`, chartBox("cmp-prop", 240, true) + cmpLegend(hasProp) + cmpNote(noProp.length ? [`Ohne Immobilie: ${noProp.map(it => esc(it.name)).join(", ")}.`] : [])) : "")
+    + (hasPk.length ? card("Vorsorge", `${cmpReal()} · Pensionskasse und Säule 3a`, chartBox("cmp-pk", 240, true) + cmpLegend(hasPk) + cmpNote(noPk.length ? [`Ohne Vorsorgevermögen: ${noPk.map(it => esc(it.name)).join(", ")}.`] : [])) : "")
+    + card("Aktien, Obligationen und Inflation", `Wertentwicklung seit Start = 100, ${cmpReal()} · durchgezogen: Aktien, gestrichelt: Obligationen, gepunktet: Inflation (Preisindex)`, chartBox("cmp-mkt", 260, true) + cmpLegend(runs));
+  const money = (id, f, list = runs) => cmpTime(id, n, list.map(it => ({ color: it.color, values: series(it, f) })), k => list.map(it => cmpRow(it, series(it, f)[k], fmtMoney)).join(""), { yFmt: fmtMio });
+  money("cmp-total", r => r.total);
+  money("cmp-liq", LQ[cmpLiquid] || LQ.liquid);
+  if (hasProp.length) money("cmp-prop", r => r.propertyEquity, hasProp);
+  if (hasPk.length) money("cmp-pk", r => r.pensionFund + r.pillar3a, hasPk);
+  const flows = yearSeries(flowOf), rates = yearSeries(rateOf);
+  Charts.bars($("#cmp-flows"), $("#cmp-flows-tip"), { cats, yFmt: fmtMio, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: flows[j].map(v => Number.isFinite(v) ? v : 0) })),
+    tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, flows[j][k], fmtMoney)).join("") });
+  Charts.bars($("#cmp-draw"), $("#cmp-draw-tip"), { cats, yFmt: v => `${(v * 100).toFixed(1)} %`, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: rates[j].map(v => Number.isFinite(v) ? v : 0) })),
+    tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, rates[j][k], pctTxt)).join("") });
+  const mk = [];
+  runs.forEach(it => mk.push({ color: it.color, values: idx(it, "stockIndex") }, { color: it.color, dash: "6 3", width: 1.5, values: idx(it, "bondIndex") },
+    { color: it.color, dash: "2 3", width: 1.2, values: cmpPad(n, it.run.records.map(r => 100 * r.priceIndex)) }));
+  cmpTime("cmp-mkt", n, mk, k => runs.map(it => cmpRow(it, idx(it, "stockIndex")[k], v => `Aktien ${v.toFixed(1)}, Obligationen ${idx(it, "bondIndex")[k].toFixed(1)}, Preisindex ${(100 * it.run.records[k].priceIndex).toFixed(1)}`)).join(""),
+    { ref: 100, yFmt: v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }) });
+}
+function cmpTable(body, items) {
+  const runs = items.filter(it => it.run);
+  const yrs = cmpYears(runs, it => yearValues(it.run.records, { total: it.run.summary.startTotal, liquid: it.run.summary.startLiquid }));
+  const key = cmpYearKey, label = CMP_YEAR.find(([k]) => k === key)?.[1] || "";
+  const cell = (v, y) => `<td title="${esc(String(y))}">${key === "rate" ? rateTxt(v) : !Number.isFinite(v) ? "–" : fmtInt(v)}</td>`;
+  const notes = items.filter(it => !it.run).map(it => `Ohne Lauf (nur Szenarien): ${esc(it.name)}.`);
+  const rows = Array.from({ length: yrs.n }, (_, k) => `<tr><td>${yrs.label(k)}</td>${yrs.per.map(v => v[k] ? cell(v[k][key], v[k].y) : "<td>–</td>").join("")}</tr>`).join("");
+  body.innerHTML = card("Jahreswerte", `${label} · ${cmpReal()}, Beträge in ${cur()} · ${runs.every(it => it.single) ? "Einzellauf" : "Einzellauf bzw. Median-Lauf"}`,
+    `<label class="field" style="max-width:320px"><span>Grösse</span><select data-action="cmp-year">${CMP_YEAR.map(([k, t]) => `<option value="${k}" ${k === key ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+    <div class="tscroll"><table class="tbl num yt cmpyear"><tr><th>${yrs.same ? "Jahr" : "Jahr seit Start"}</th>${runs.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${rows}</table></div>
+    <p class="hint">Dieselben Werte wie in den Jahreswerten der einzelnen Ergebnisse: Vermögen sind Stände am Jahresende, Einkommen, Ausgaben und Entnahme Monatsdurchschnitte des Kalenderjahrs, Steuern die Summe des Steuerjahres.${yrs.same ? "" : " Die Ergebnisse beginnen in verschiedenen Jahren und sind nach Jahren seit dem Start ausgerichtet; die Jahreszahl steht im Tooltip der Zelle."}</p>`, "yearcard")
+    + cmpNote(notes);
+}
+document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
+function cmpPlan(body, items, datas) {
   const flats = datas.map(d => flat(d.plan)), keys = [...new Set(flats.flatMap(f => Object.keys(f)))].filter(k => k !== "project.name" && flats.some(f => JSON.stringify(f[k]) !== JSON.stringify(flats[0][k])));
   const show = v => v === undefined ? "—" : esc(typeof v === "object" ? JSON.stringify(v) : String(v));
-  $("#resultsBody").innerHTML = card("Kennzahlen", "Endvermögen nominal", `<table class="tbl"><tr><th class="l">Ergebnis</th><th class="l">Zeitreihe</th><th class="l">Strategie</th><th class="r">Erfolgsquote</th><th class="r">Median bzw. Endvermögen</th><th class="r">5. Perzentil</th><th class="r">1. Perzentil</th><th class="r">Schlechtester Lauf</th><th class="r">Früheste Erschöpfung</th></tr>${rows}</table>`)
-    + (lines.length ? card("Gesamtvermögen im Vergleich", "durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil", chartBox("cmp-wealth", 300, true) + legend(metas.map((m, i) => [RUN_COLORS[i], esc(m.name)]))) : "")
-    + card("Unterschiede in der Planung", "gegenüber dem ersten Ergebnis in der Reihenfolge der Liste",
-      keys.length ? `<table class="tbl"><tr><th class="l">Eingabe</th>${metas.map((m, i) => `<th class="l">${sw(i)}${esc(m.name)}</th>`).join("")}</tr>${keys.slice(0, 60).map(k => `<tr><td class="l"><code>${esc(k)}</code></td>${flats.map(f => `<td class="l">${show(f[k])}</td>`).join("")}</tr>`).join("")}</table>${keys.length > 60 ? `<p class="hint">… und ${keys.length - 60} weitere Unterschiede.</p>` : ""}`
-        : `<p style="margin:0">Die Planungen sind identisch.</p>`);
-  if (lines.length) {
-    const x = Array.from({ length: n }, (_, i) => i);
-    Charts.time($("#cmp-wealth"), $("#cmp-wealth-tip"), { x, xFmt: m => `${m / 12} J.`, view: resultZoom ? [resultZoom.from, resultZoom.to] : null, onZoom: setCustomZoom, yFmt: fmtMio, lines,
-      tip: i => `<b>Jahr ${(i / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })}</b>` + series.map((q, k) => q && Number.isFinite(pad(q.med)[i]) ? `<br><span style="color:var(${RUN_COLORS[k]})">■</span> ${esc(metas[k].name)}: ${fmtMoney(q.med[i])}` : "").join("") });
-  }
-  document.documentElement.dataset.rendered = "compare";
+  body.innerHTML = card("Unterschiede in der Planung", "gegenüber dem ersten Ergebnis in der Reihenfolge der Liste",
+    keys.length ? `<table class="tbl"><tr><th class="l">Eingabe</th>${items.map(it => `<th class="l">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${keys.slice(0, 60).map(k => `<tr><td class="l"><code>${esc(k)}</code></td>${flats.map(f => `<td class="l">${show(f[k])}</td>`).join("")}</tr>`).join("")}</table>${keys.length > 60 ? `<p class="hint">… und ${keys.length - 60} weitere Unterschiede.</p>` : ""}`
+      : `<p style="margin:0">Die Planungen sind identisch.</p>`);
 }
 Object.assign(ACTIONS, {
   "runs-open": () => openRuns(),

@@ -1569,7 +1569,9 @@ test.describe("Gespeicherte Ergebnisse", () => {
   test("zwei Läufe ablegen und vergleichen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
-    await expect(page.locator("#resultsBody")).toContainText("Vergleich");
+    // FEA-90: Die Karte «Gesamtvermögen im Vergleich» heisst jetzt «Bandbreite des Gesamtvermögens»; der Titel nennt den Vergleich
+    await expect(page.locator("#resultsTitle")).toContainText("Vergleich von 2 Ergebnissen");
+    await expect(page.locator("#resultsBody")).toContainText("Kennzahlen");
     await noErrors(page, errors);
   });
 
@@ -3544,6 +3546,136 @@ test.describe("Bezugslinie in den Grafiken (FEA-89)", () => {
     const at0 = await page.evaluate(() => { const t = [...document.querySelectorAll("#rc-mkt text")].find(x => /^0 ?%$/.test(x.textContent.trim())); return t ? Number(t.getAttribute("y")) - 4 : null; });
     expect(at0).not.toBeNull();
     expect(Math.abs(r.y - at0)).toBeLessThan(0.5);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
+  /** Zwei Monte-Carlo-Ergebnisse (#runsflow), Vergleich offen und sichtbar. */
+  const openCompare = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+  const tab = (page, t) => page.locator(`button[data-action="cmp-tab"]`, { hasText: t }).click();
+
+  test("FEA-90/AK1: Umschalter Nominal / Heutige Kaufkraft gilt für Kennzahlen, Grafiken und Jahreswerte, je Ergebnis mit seiner Inflation", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    await expect(page.locator("#resultsInfo")).toHaveText("heutige Kaufkraft");
+    await expect(page.locator("#resultsBody .card h3").first()).toContainText("heutige Kaufkraft");
+    // Kennzahl Median real = Endvermögen des Median-Laufs in heutiger Kaufkraft, je Ergebnis
+    const exp = await page.evaluate(async () => {
+      const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
+      return Promise.all(metas.map(async m => { const d = await Runs.get(m.id); return fmtMio(d.result.batch.details.find(([q]) => q === 50)[1].summary.endTotalReal); }));
+    });
+    const rows = page.locator("#resultsBody table").first().locator("tr");
+    for (let i = 0; i < exp.length; i++) await expect(rows.nth(i + 1).locator("td").nth(4)).toHaveText(exp[i]);
+    // Jahreswerte: Gesamtvermögen am Ende des ersten Jahres = nominal / Preisindex dieses Monats (Median-Lauf)
+    await tab(page, "Jahreswerte");
+    const want = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
+      const y = run.records[0].month.slice(0, 4), last = run.records.filter(r => r.month.startsWith(y)).pop();
+      return fmtInt(last.total / last.priceIndex);
+    });
+    await expect(page.locator(".cmpyear tr").nth(1).locator("td").nth(1)).toHaveText(want);
+    await tab(page, "Verläufe");
+    await expect(page.locator("#resultsBody .card h3").first()).toContainText("heutige Kaufkraft");
+    await noErrors(page, errors);
+  });
+
+  test("FEA-90/AK2: Übersicht mit Bandbreite, Endvermögen nach Perzentil, Wahrscheinlichkeit und Alter bei Erschöpfung je Ergebnis", async ({ page }) => {
+    const errors = await openCompare(page);
+    const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
+    for (const t of ["Kennzahlen", "Bandbreite des Gesamtvermögens", "Endvermögen nach Perzentil", "Wahrscheinlichkeit, dass das Geld reicht"])
+      expect(titles.some(x => x.startsWith(t)), t).toBe(true);
+    // Bandbreite: je Ergebnis Median, 5. und 95. Perzentil
+    await expect(page.locator("#cmp-wealth path")).toHaveCount(6);
+    await expect(page.locator("#cmp-surv path")).toHaveCount(2);
+    // Perzentile: eine Spalte je Ergebnis, Median wie in der Zusammenfassung
+    const pt = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("table");
+    await expect(pt.locator("tr").first().locator("th")).toHaveCount(3);
+    const med = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0];
+      return fmtInt((await Runs.get(m.id)).result.batch.summary.percentiles.find(p => p.percent === 50).endTotal);
+    });
+    await expect(pt.locator("tr", { hasText: /^50\./ }).locator("td").nth(1)).toHaveText(med);
+    if (titles.some(x => x.startsWith("Alter bei Erschöpfung"))) await expect(page.locator("#cmp-dep rect").first()).toBeAttached();
+    await noErrors(page, errors);
+  });
+
+  test("FEA-90/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
+    const errors = await openCompare(page);
+    await tab(page, "Verläufe");
+    await expect(page.locator(".cmpnote").first()).toContainText("Median-Lauf");
+    const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
+    for (const t of ["Liquides Vermögen nach Anlage", "Einnahmen und Ausgaben pro Jahr", "Entnahme aus dem Vermögen", "Vorsorge", "Aktien, Obligationen und Inflation"])
+      expect(titles.some(x => x.startsWith(t)), t).toBe(true);
+    await expect(page.locator("#cmp-liq path")).toHaveCount(2);
+    await expect(page.locator("#cmp-mkt path")).toHaveCount(6);
+    await expect(page.locator("#cmp-mkt line.ref")).toHaveCount(1);
+    const d1 = await page.locator("#cmp-liq path").first().getAttribute("d");
+    await page.locator('button[data-action="cmp-liquid"][data-v="stocks"]').click();
+    await expect.poll(() => page.locator("#cmp-liq path").first().getAttribute("d")).not.toBe(d1);
+    await page.locator('button[data-action="cmp-flow"][data-v="out"]').click();
+    await expect(page.locator("#cmp-flows rect").first()).toBeAttached();
+    await noErrors(page, errors);
+  });
+
+  test("FEA-90/AK4: Jahreswerte mit einer Spalte je Ergebnis stimmen mit den Jahreswerten des einzelnen Ergebnisses überein", async ({ page }) => {
+    const errors = await openCompare(page);
+    await tab(page, "Jahreswerte");
+    await expect(page.locator(".cmpyear tr").first().locator("th")).toHaveCount(3);
+    for (const [key, col] of [["total", 5], ["draw", 7], ["receipts", 8]]) {
+      await page.locator('select[data-action="cmp-year"]').selectOption(key);
+      // Tabelle «Jahreswerte» des Einzelergebnisses (Median-Lauf) für das zweite Ergebnis
+      const single = await page.evaluate(async col => {
+        const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[1], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
+        const div = document.createElement("div");
+        div.innerHTML = yearTable(run.records, { total: run.summary.startTotal, liquid: run.summary.startLiquid });
+        return [...div.querySelectorAll("table.yt tr")].slice(1).map(tr => tr.children[col].textContent);
+      }, col);
+      const cmp = await page.locator(".cmpyear tr").evaluateAll(trs => trs.slice(1).map(tr => tr.children[2].textContent));
+      // Die Tabelle des Einzelergebnisses lässt Beträge unter 0.5 leer
+      const norm = v => ["0", "-0", "–", ""].includes(v) ? "" : v;
+      expect(cmp.length).toBeGreaterThan(30);
+      expect(cmp.map(norm)).toEqual(single.map(norm));
+    }
+    await noErrors(page, errors);
+  });
+
+  test("FEA-90/AK5: Einzellauf mit späterem Start: nach Jahren seit Start ausgerichtet, fehlende Grössen mit Vermerk", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.evaluate(async () => {
+      state.returns.source = "fixed";
+      state.milestones.find(m => m.id === "start").date = "2027-03";
+      await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
+      runsSel.clear(); (await Runs.list()).slice(0, 2).forEach(m => runsSel.add(m.id));
+      compareTab = "overview"; await compareRuns();
+    });
+    await expect(page.locator(".cmpnote")).toContainText("Einzellauf ohne Perzentile");
+    // Perzentile und Wahrscheinlichkeit nur für das Ergebnis mit mehreren Läufen
+    await expect(page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("tr").first().locator("th")).toHaveCount(2);
+    await expect(page.locator("#cmp-surv path")).toHaveCount(1);
+    // Bandbreite: Einzellauf als eine Linie, Monte Carlo mit drei
+    await expect(page.locator("#cmp-wealth path")).toHaveCount(4);
+    await tab(page, "Jahreswerte");
+    await expect(page.locator(".cmpyear tr").first().locator("th").first()).toHaveText("Jahr seit Start");
+    await expect(page.locator(".cmpyear tr").nth(1).locator("td").first()).toHaveText("1. Jahr");
+    await expect(page.locator(".cmpyear tr").nth(1).locator("td").nth(1)).toHaveAttribute("title", /^202[67]$/);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-90/AK6: Zoom gilt für alle Grafiken des Vergleichs und bleibt beim Wechsel der Registerkarte", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"]').first().click();
+    await expect(page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"].on').first()).toBeAttached();
+    await tab(page, "Verläufe");
+    await expect(page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"].on').first()).toBeAttached();
+    const xs = await page.locator("#cmp-total text").allInnerTexts();
+    expect(xs.filter(t => / J\.$/.test(t)).length).toBeLessThanOrEqual(3);
     await noErrors(page, errors);
   });
 });

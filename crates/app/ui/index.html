@@ -268,6 +268,8 @@ dialog pre{margin:0;padding:14px 16px;overflow:auto;max-height:66vh;font:12px/1.
 .bigchart{width:100%;height:320px;display:block}
 .chartwrap{position:relative}
 table.num td,table.num th{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* FEA-90: Spaltenköpfe des Vergleichs (lange Namen der Ergebnisse) umbrechen */
+table.num th.cmph{white-space:normal;vertical-align:bottom;min-width:110px;max-width:220px}
 table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{text-align:left}
 .evlist{list-style:none;margin:0;padding:0;font-size:13px}
 .evlist li{padding:5px 0;border-bottom:1px solid var(--grid);display:flex;gap:14px}

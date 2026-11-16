@@ -173,8 +173,10 @@ lassen sich nominal oder in heutiger Kaufkraft anzeigen.
 - **Szenarien:** Kurven je Variante, bei zwei Parametern Heatmaps.
 
 **Liste der Simulationen:** Jede Simulation wird mit der Planung von damals gespeichert. Die Liste lässt sich umbenennen,
-mit Notizen versehen, aufräumen und zum **Vergleichen** nutzen: Kennzahlen nebeneinander, Vermögensverlauf und die Eingaben,
-die sich unterscheiden.
+mit Notizen versehen, aufräumen und zum **Vergleichen** nutzen. Der Vergleich bietet dieselben Möglichkeiten wie ein
+einzelnes Ergebnis: Kennzahlen, Bandbreite, Perzentile, Wahrscheinlichkeit und Erschöpfungsalter, die Verläufe des Einzel-
+bzw. Median-Laufs, Jahreswerte mit einer Spalte je Ergebnis und die Eingaben, die sich unterscheiden; nominal oder in
+heutiger Kaufkraft.
 
 ## Hilfe und Bedienung
 
