@@ -1,6 +1,6 @@
 Die Mindestabdeckung ist uneinheitlich: Der pre-push-Hook (`scripts/git-hooks/pre-push`), `coverage.yml` und `CLAUDE.md` verlangen **80 % Zeilenabdeckung je Paket** (Engine und App getrennt). `.github/workflows/test-quality.yml` verlangt dagegen **92 % für den ganzen Arbeitsbereich** (`--fail-under-lines 92`). Ein Pull Request kann deshalb an der zweiten Prüfung scheitern, obwohl Hook und Push grün waren.
 
-**Anforderung:** Überall gilt dieselbe Regel: mindestens 80 % Zeilenabdeckung, getrennt für `pensionsplaner-engine` und `pensionsplaner-app`. Der Wert steht, wo möglich, nur an einer Stelle.
+**Anforderung:** Überall gilt dieselbe Regel: mindestens 80 % Zeilenabdeckung, getrennt für `vivaplan-engine` und `vivaplan-app`. Der Wert steht, wo möglich, nur an einer Stelle.
 
 **Abnahme**
 

@@ -2,14 +2,14 @@ Nicht erkannte (missed) Mutanten im Rechenkern werden einzeln beurteilt statt ü
 
 **Anforderung**
 
-1. Für jeden missed Mutanten in `pensionsplaner-engine` gilt eines von beiden: Ein Test wird ergänzt, der ihn tötet, oder er wird mit `#[mutants::skip]` bzw. `exclude_re` in `.cargo/mutants.toml` **mit Begründung** ausgeschlossen (zum Beispiel äquivalenter Mutant, reine Protokollierung).
+1. Für jeden missed Mutanten in `vivaplan-engine` gilt eines von beiden: Ein Test wird ergänzt, der ihn tötet, oder er wird mit `#[mutants::skip]` bzw. `exclude_re` in `.cargo/mutants.toml` **mit Begründung** ausgeschlossen (zum Beispiel äquivalenter Mutant, reine Protokollierung).
 2. Es gibt keinen Mutation Score als Zielwert.
 3. Die Liste der offenen missed Mutanten des letzten vollen Laufs ist einsehbar (Datei oder Lauf-Zusammenfassung) und wird pro Version durchgesehen.
 4. Ausschlüsse ohne Begründung sind nicht erlaubt.
 
 **Abnahme**
 
-- [ ] Ein voller Lauf `make mutants` auf `pensionsplaner-engine` ist ausgewertet; jeder missed Mutant ist getestet oder begründet ausgeschlossen.
+- [ ] Ein voller Lauf `make mutants` auf `vivaplan-engine` ist ausgewertet; jeder missed Mutant ist getestet oder begründet ausgeschlossen.
 - [ ] Jeder Ausschluss trägt eine Begründung im Code oder in `.cargo/mutants.toml`.
 - [ ] Die Liste der offenen missed Mutanten ist dokumentiert (Ort in `TESTS.md` genannt).
 - [ ] `TESTS.md` beschreibt die Regel «einzeln beurteilen, kein Score-Ziel» und die Durchsicht pro Version.

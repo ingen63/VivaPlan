@@ -1,4 +1,4 @@
-Der Workflow `.github/workflows/coverage.yml` («Tests & Coverage», läuft bei jedem Push und Pull Request) installiert die Linux-Abhängigkeiten von Tauri nicht. `pakete.yml` tut das (`libwebkit2gtk-4.1-dev`, `libxdo-dev`, `libssl-dev` und weitere). Der Schritt «App – Abdeckungsschwelle» (`cargo llvm-cov -p pensionsplaner-app`) kann daher auf dem Runner schon beim Bauen scheitern.
+Der Workflow `.github/workflows/coverage.yml` («Tests & Coverage», läuft bei jedem Push und Pull Request) installiert die Linux-Abhängigkeiten von Tauri nicht. `pakete.yml` tut das (`libwebkit2gtk-4.1-dev`, `libxdo-dev`, `libssl-dev` und weitere). Der Schritt «App – Abdeckungsschwelle» (`cargo llvm-cov -p vivaplan-app`) kann daher auf dem Runner schon beim Bauen scheitern.
 
 Vermutung, nicht belegt: Auf GitHub gibt es bisher keinen Lauf dieses Workflows. Zuerst klären, ob er scheitert.
 
