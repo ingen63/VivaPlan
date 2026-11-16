@@ -13,6 +13,14 @@ serde_json = "1"
 [workspace.lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }
 
+# Ohne diese Zeile bleiben auf macOS die Objektdateien (*.rcgu.o) jedes Testprogramms im Zielverzeichnis liegen
+# (rund 15'000 Dateien, mehrere GB); die Debug-Informationen werden stattdessen gleich eingebunden.
+[profile.dev]
+split-debuginfo = "off"
+
+[profile.test]
+split-debuginfo = "off"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
