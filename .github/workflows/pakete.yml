@@ -1,4 +1,4 @@
-# Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .rpm, .AppImage) und macOS (.dmg).
+# Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .AppImage; .rpm nur ohne Vorabversion) und macOS (.dmg).
 # Start von Hand (Actions → «Installationspakete» → Run workflow) oder durch ein Versions-Tag (v0.3.0):
 # dann entsteht zusätzlich ein Entwurf unter «Releases» mit allen Paketen.
 name: Installationspakete
@@ -47,7 +47,8 @@ jobs:
           cache-dependency-path: crates/app/package-lock.json
       - run: npm ci
         working-directory: crates/app
-      - run: npx tauri build
+      # RPM erlaubt in der Version keinen Bindestrich: bei Vorabversionen (1.0.0-beta.1) entfällt das .rpm.
+      - run: npx tauri build ${{ matrix.name == 'linux' && contains(github.ref_name, '-') && '--bundles deb,appimage' || '' }}
         working-directory: crates/app
       - uses: actions/upload-artifact@v4
         with:
