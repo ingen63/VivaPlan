@@ -1956,8 +1956,9 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(true);
     await page.locator("#fileInput").setInputFiles(file);
     await expect(page.locator("#fileName")).toHaveText(path.basename(file));
-    // FEA-65: Nach dem Dateinamen folgen nur noch Mikroaufgaben (Hinweise, reserveNotice); eine leere Ereignisschleife genügt
-    await page.evaluate(() => new Promise(r => setTimeout(r)));
+    // FEA-87/AK4: Der Handler leert das Dateifeld erst nach den Hinweisen (showNotes, reserveNotice). Erschiene der Hinweis,
+    // bliebe er beim Dialog stehen und das Feld gefüllt.
+    await expect(page.locator("#fileInput")).toHaveValue("");
     await expect(page.locator("#ask")).toBeHidden();
     // Standard mit Reserve 6: kein Hinweis; der gespeicherte Wert bleibt
     expect(await page.evaluate(() => reserveDiffers({ withdrawal: { strategy: "standard" }, wealth: { reserveMonths: { mode: "const", value: 6 } } }))).toBe(false);
