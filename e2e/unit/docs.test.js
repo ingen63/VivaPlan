@@ -62,7 +62,7 @@ test("FEA-75/AK1, FEA-75/AK3: alle Stellen nennen dieselbe Programmversion, das 
     "crates/app/package.json": JSON.parse(read("crates/app/package.json")).version,
   };
   const v = versions["Cargo.toml"];
-  assert.match(v, /^\d+\.\d+\.\d+$/);
+  assert.match(v, /^\d+\.\d+\.\d+(-beta\.\d+)?$/); // Vorabversionen nur als «-beta.N»
   for (const [f, x] of Object.entries(versions)) assert.equal(x, v, f);
   // Cargo.lock: die eigenen Pakete tragen dieselbe Version
   for (const lock of ["Cargo.lock", "fuzz/Cargo.lock"]) {
@@ -74,6 +74,7 @@ test("FEA-75/AK1, FEA-75/AK3: alle Stellen nennen dieselbe Programmversion, das 
   const heads = [...read("CHANGELOG.md").matchAll(/^## (.+)$/gm)].map(m => m[1]).filter(h => h !== "Nächste Version");
   assert.ok(heads[0].startsWith(`Version ${v}`), `oberster Abschnitt: ${heads[0]}`);
   assert.equal(heads.at(-1), "Version 0.8.0: erster öffentlicher Stand");
-  assert.ok(heads.every(h => /^Version 0\.8\.\d+/.test(h)), "keine Einträge zu früheren Versionen (1.x)");
+  // Seit 0.8.0 (Neustart der Nummerierung) nur 0.8.x und 1.0.0-beta.N; keine Einträge des früheren Projekts (1.1.x).
+  assert.ok(heads.every(h => /^Version (0\.8\.\d+|1\.0\.0-beta\.\d+)\b/.test(h)), "keine Einträge zu früheren Versionen (1.1.x)");
   assert.equal(fs.existsSync(path.join(ROOT, "docs/release-notes-1.1.3.md")), false);
 });

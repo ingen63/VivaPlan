@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 1.0.0-beta.1
+
+Erste Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.1, weil das MSI-Format keine Vorabversion wie «beta.1» kennt; die übrigen Pakete heissen 1.0.0-beta.1.
+
+- **Renditekriterium der 3-Topf-Strategie (FEA-80):** Jeder Renditepfad trägt die Aktienrenditen der 12 Monate vor dem Simulationsstart mit. Das Renditekriterium gilt damit auch in den ersten 12 Monaten über volle 12 Monate. **Das kann die Ergebnisse von Planungen mit 3-Topf-Strategie im ersten Jahr ändern.**
+- **Vergleich der Ergebnisse (FEA-90):** Der Vergleich gespeicherter Ergebnisse bietet dieselben Möglichkeiten wie ein einzelnes Ergebnis: nominal oder in heutiger Kaufkraft, alle Grafiken und die Jahreswerte, mit Wahl des Laufs (Perzentil).
+- **Bezugslinie in den Grafiken (FEA-89):** Die Linie bei 0 (bzw. bei 100 in der Wertentwicklung) ist in allen Ergebnisgrafiken deutlich hervorgehoben.
+- **Menü (ISS-21):** Ein Klick ins Menü links oder in die Prüfliste geht nicht mehr verloren, wenn gleichzeitig eine Vorschau eintrifft.
+- **Tests und Entwicklung:** Oberflächentests unabhängig von der Rechnerlast (FEA-87), Übersichtsseite Testqualität mit geprüften Kriterien (FEA-88), Speichergrenze für Testprozesse bei Mutationsläufen (ISS-22).
+
 ## Version 0.8.1
 
 - **Kommandozeile:** `vivaplan --version` nennt die Version (FEA-75). Abbruch und Fortschritt gelten je Berechnung (FEA-83, behebt ISS-20); Abdeckungsschwelle und Mutationstests auch für Kommandozeile und App (FEA-81, FEA-82).
