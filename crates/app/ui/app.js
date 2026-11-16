@@ -1911,6 +1911,8 @@ const ACTIONS = {
   "cmp-liquid": d => { cmpLiquid = d.v; compareRuns(); },
   "cmp-flow": d => { cmpFlow = d.v; compareRuns(); },
   "cmp-p": d => { cmpP = +d.p; compareRuns(); },
+  // FEA-91: erster Klick aufsteigend, jeder weitere kehrt die Richtung um
+  "cmp-sort": d => { cmpSort = cmpSort?.col === d.col ? { col: d.col, dir: -cmpSort.dir } : { col: d.col, dir: 1 }; compareRuns(); },
   "bk-toggle": d => { bucketOpen.has(d.y) ? bucketOpen.delete(d.y) : bucketOpen.add(d.y); renderResults(lastRun); },
   "info-toggle": (d, el) => { const open = !el.classList.contains("open"); document.querySelectorAll(".infopop.open").forEach(x => x.classList.remove("open")); if (open) el.classList.add("open"); },
   "tax-cols": () => { showTaxCols = !showTaxCols; Pref.set("showTaxCols", showTaxCols); renderResults(lastRun); },
@@ -2923,6 +2925,8 @@ const flat = (o, p = "", out = {}) => {
 // Verläufe (Grafiken des Einzellaufs bzw. Median-Laufs), Jahreswerte (eine Spalte je Ergebnis) und Planung (Unterschiede).
 // Die Ergebnisse werden nach Monaten bzw. Jahren seit ihrem Start ausgerichtet.
 let compareTab = "overview", cmpYearKey = "total", cmpLiquid = "liquid", cmpFlow = "in", cmpP = 50;
+/** FEA-91: Sortierung der Kennzahlen im Vergleich: { col, dir } (dir 1 auf-, −1 absteigend); null = Reihenfolge der Liste. */
+let cmpSort = null;
 const CMP_TABS = [["overview", "Übersicht"], ["charts", "Verläufe"], ["table", "Jahreswerte"], ["plan", "Planung"]];
 const CMP_YEAR = [["total", "Gesamtvermögen (Total)"], ["liquid", "Liquides Vermögen"], ["property", "Immobilien"], ["pension", "Vorsorge"],
   ["receipts", "Einkommen total"], ["spending", "Ausgaben total"], ["draw", "Entnahme"], ["rate", "Entnahmerate"], ["taxTotal", "Steuern total"]];
@@ -3005,7 +3009,18 @@ function cmpOverview(body, items) {
     return it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
   };
   const notes = [];
-  const rows = items.map(it => { const m = it.m; return `<tr><td class="l">${cmpSw(it)}${esc(m.name)}<br><small class="muted">${esc(runKind(m))}</small></td><td class="l">${seriesCell(m)}</td>${stratCell(m, " l")}
+  // FEA-91: Kennzahlen nach Spalte sortierbar; Farben und Reihenfolge der übrigen Karten bleiben
+  const depAt = it => { const d = it.single ? it.single.summary.depleted : it.batch ? it.batch.summary.earliestDepletion?.[0] : undefined;
+    return !it.single && !it.batch ? null : d ? ym2i(d) : Infinity; };
+  const cols = [["name", "Ergebnis", "l", it => it.name], ["series", "Zeitreihe", "l", it => it.m.seriesName || (it.m.source === "fixed" ? "feste Renditen" : it.m.source === "parametric" ? "parametrisch" : null)],
+    ["strat", "Strategie", "l", it => stratName(it.m.strategy)], ["succ", "Erfolgsquote", "r", it => it.batch ? it.batch.summary.successRate : null],
+    ["p50", "Median bzw. Endvermögen", "r", it => endAt(it, 50)], ["p5", "5. Perzentil", "r", it => endAt(it, 5)], ["p1", "1. Perzentil", "r", it => endAt(it, 1)],
+    ["p0", "Schlechtester Lauf", "r", it => endAt(it, 0)], ["dep", "Früheste Erschöpfung", "r", depAt]];
+  const sc = cmpSort && cols.find(c => c[0] === cmpSort.col);
+  const sorted = sc ? sortBy(items, sc[3], cmpSort.dir) : items;
+  const head = cols.map(([k, t, al]) => { const on = sc && sc[0] === k, dir = on ? cmpSort.dir : 0;
+    return `<th class="${al} sorth" aria-sort="${dir > 0 ? "ascending" : dir < 0 ? "descending" : "none"}"><button class="sortbtn" data-action="cmp-sort" data-col="${k}" title="Nach ${esc(t)} sortieren${on ? (dir > 0 ? " (absteigend)" : " (aufsteigend)") : ""}">${t}<span class="sorti${on ? " on" : ""}" aria-hidden="true">${dir > 0 ? "▲" : dir < 0 ? "▼" : "↕"}</span></button></th>`; }).join("");
+  const rows = sorted.map(it => { const m = it.m; return `<tr><td class="l">${cmpSw(it)}${esc(m.name)}<br><small class="muted">${esc(runKind(m))}</small></td><td class="l">${seriesCell(m)}</td>${stratCell(m, " l")}
     <td class="r">${it.batch ? pctTxt(it.batch.summary.successRate) : "–"}</td>
     <td class="r">${num(endAt(it, 50))}</td><td class="r">${num(endAt(it, 5))}</td><td class="r">${num(endAt(it, 1))}</td><td class="r">${num(endAt(it, 0))}</td>
     <td class="r">${it.single ? (it.single.summary.depleted ? ymShow(it.single.summary.depleted) : "keine") : it.batch ? (it.batch.summary.earliestDepletion ? ymShow(it.batch.summary.earliestDepletion[0]) : "keine") : "–"}</td></tr>`; }).join("");
@@ -3034,7 +3049,7 @@ function cmpOverview(body, items) {
   // Alter bei Erschöpfung: Anteil der Läufe je Altersjahr (Ergebnisse mit verschieden vielen Läufen bleiben vergleichbar)
   const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
   const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
-  body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<table class="tbl"><tr><th class="l">Ergebnis</th><th class="l">Zeitreihe</th><th class="l">Strategie</th><th class="r">Erfolgsquote</th><th class="r">Median bzw. Endvermögen</th><th class="r">5. Perzentil</th><th class="r">1. Perzentil</th><th class="r">Schlechtester Lauf</th><th class="r">Früheste Erschöpfung</th></tr>${rows}</table>`
+  body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table>`
       + (realView ? `<p class="hint">In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils.</p>` : ""))
     + cmpNote(notes)
     + (fanLines.length ? card("Bandbreite des Gesamtvermögens", `${cmpReal()} · durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil, gepunktet: 95. Perzentil`, chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")

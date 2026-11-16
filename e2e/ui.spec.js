@@ -1647,7 +1647,8 @@ test.describe("Gespeicherte Ergebnisse", () => {
     expect(await old.locator("td.ptip").getAttribute("data-tip")).toBe("Parameter nicht verfügbar");
     // Vergleich: gleiche Spalten
     await page.evaluate(() => { runsSel.clear(); runsSel.add(runsIds[0]); runsSel.add(runsIds[1]); return compareRuns(); });
-    const cmp = await page.locator("#resultsBody table").first().locator("tr:first-child th").allInnerTexts();
+    // FEA-91: der Spaltenkopf trägt zusätzlich den Sortierpfeil
+    const cmp = (await page.locator("#resultsBody table").first().locator("tr:first-child th").allInnerTexts()).map(t => t.replace(/[▲▼↕]/g, "").trim());
     expect(cmp).toContain("Zeitreihe");
     expect(cmp).not.toContain("Art");
     await noErrors(page, errors);
@@ -3698,6 +3699,78 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await expect(page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"].on').first()).toBeAttached();
     const xs = await page.locator("#cmp-total text").allInnerTexts();
     expect(xs.filter(t => / J\.$/.test(t)).length).toBeLessThanOrEqual(3);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
+  const openCompare = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+  const kpi = page => page.locator("table.cmpkpi");
+  const head = (page, t) => kpi(page).locator("th", { hasText: t });
+  /** Farben der Zeilen von oben nach unten (die Farbe gehört zum Ergebnis). */
+  const colors = page => kpi(page).locator("tr td:first-child i.sw").evaluateAll(l => l.map(x => x.getAttribute("style")));
+  /** Farben in der Reihenfolge des Medians (aufsteigend), berechnet aus den gespeicherten Ergebnissen. */
+  const byMedian = page => page.evaluate(async () => {
+    const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
+    const v = await Promise.all(metas.map(async (m, i) => ({ c: `background:var(${RUN_COLORS[i]})`, p: (await Runs.get(m.id)).result.batch.summary.percentiles.find(x => x.percent === 50).endTotal })));
+    return v.sort((a, b) => a.p - b.p).map(x => x.c);
+  });
+
+  test("FEA-91/AK1, AK2, AK3: Klick auf den Spaltenkopf sortiert auf-, dann absteigend, mit Pfeil; andere Spalte wieder aufsteigend", async ({ page }) => {
+    const errors = await openCompare(page);
+    const asc = await byMedian(page);
+    expect(asc[0]).not.toBe(asc[1]);
+    const med = head(page, "Median");
+    await med.locator("button").click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "ascending");
+    await expect(head(page, "Median").locator(".sorti")).toHaveText("▲");
+    expect(await colors(page)).toEqual(asc);
+    await head(page, "Median").locator("button").click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
+    await expect(head(page, "Median").locator(".sorti")).toHaveText("▼");
+    expect(await colors(page)).toEqual([...asc].reverse());
+    // die übrigen Spalten zeigen ↕ und sind nicht sortiert
+    await expect(head(page, "Erfolgsquote")).toHaveAttribute("aria-sort", "none");
+    await expect(head(page, "Erfolgsquote").locator(".sorti")).toHaveText("↕");
+    await head(page, "5. Perzentil").locator("button").click();
+    await expect(head(page, "5. Perzentil")).toHaveAttribute("aria-sort", "ascending");
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "none");
+    await noErrors(page, errors);
+  });
+
+  test("FEA-91/AK5: ohne Klick Reihenfolge der Liste; Sortierung bleibt beim Wechsel von Registerkarte und Kaufkraft, Farben bleiben beim Ergebnis", async ({ page }) => {
+    const errors = await openCompare(page);
+    await expect(kpi(page).locator('th[aria-sort="none"]')).toHaveCount(9);
+    expect(await colors(page)).toEqual(["background:var(--c1)", "background:var(--c2)"]);
+    const asc = await byMedian(page);
+    await head(page, "Median").locator("button").click();
+    await head(page, "Median").locator("button").click();
+    const desc = [...asc].reverse();
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Verläufe" }).click();
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Übersicht" }).click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
+    expect(await colors(page)).toEqual(desc);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
+    // die übrigen Karten (hier: Endvermögen nach Perzentil) behalten die Reihenfolge der Liste
+    await expect(page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("th.cmph i.sw").first()).toHaveAttribute("style", /--c1/);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-91/AK6: Spaltenköpfe per Tastatur bedienbar und mit aria-sort", async ({ page }) => {
+    const errors = await openCompare(page);
+    await head(page, "Erfolgsquote").locator("button").focus();
+    await page.keyboard.press("Enter");
+    await expect(head(page, "Erfolgsquote")).toHaveAttribute("aria-sort", "ascending");
+    await head(page, "Erfolgsquote").locator("button").focus();
+    await page.keyboard.press(" ");
+    await expect(head(page, "Erfolgsquote")).toHaveAttribute("aria-sort", "descending");
     await noErrors(page, errors);
   });
 });

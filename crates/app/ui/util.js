@@ -83,10 +83,23 @@ function sweepSteps(from, to, step, month = false) {
   if (month) { const a = ym2i(from), b = ym2i(to); return a <= b && step > 0 ? Math.floor((b - a) / step) + 1 : 0; }
   return to >= from && step > 0 ? Math.floor((to - from) / step + 1e-9) + 1 : 0;
 }
+/**
+ * FEA-91: Liste stabil nach einem Wert sortieren. `dir` 1 aufsteigend, −1 absteigend. Texte nach Alphabet (de-CH), Zahlen
+ * nach Wert. Fehlende Werte (null, undefined, NaN, "") stehen in beiden Richtungen am Ende.
+ */
+function sortBy(list, valOf, dir = 1) {
+  const miss = v => v == null || v === "" || (typeof v === "number" && Number.isNaN(v));
+  return list.map((x, i) => ({ x, i, v: valOf(x) })).sort((a, b) => {
+    const ma = miss(a.v), mb = miss(b.v);
+    if (ma || mb) return ma === mb ? a.i - b.i : ma ? 1 : -1;
+    const c = typeof a.v === "string" || typeof b.v === "string" ? String(a.v).localeCompare(String(b.v), "de-CH") : a.v < b.v ? -1 : a.v > b.v ? 1 : 0;
+    return c * dir || a.i - b.i;
+  }).map(o => o.x);
+}
 
 if (typeof module !== "undefined") {
   module.exports = {
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
-    rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps,
+    rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
   };
 }

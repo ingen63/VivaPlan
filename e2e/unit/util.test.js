@@ -135,3 +135,17 @@ test("Stufen einer Variation, auch über Monate", () => {
   assert.equal(u.sweepSteps("2030-01", "2031-01", 6, true), 3);
   assert.equal(u.sweepSteps("2031-01", "2030-01", 6, true), 0);
 });
+
+test("FEA-91/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehlende Werte immer am Ende", () => {
+  const v = x => x;
+  assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v), [2, 9, 10, 100, null]);
+  assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v, -1), [100, 10, 9, 2, null]);
+  assert.deepEqual(u.sortBy(["b", undefined, "Ä", "a"], v), ["a", "Ä", "b", undefined]);
+  assert.deepEqual(u.sortBy([NaN, 1, "", 3], v, -1), [3, 1, NaN, ""]);
+  // «keine Erschöpfung» als Infinity gilt als spätester Wert
+  assert.deepEqual(u.sortBy([Infinity, 24000, 23990], v), [23990, 24000, Infinity]);
+  // stabil: gleiche Werte behalten ihre Reihenfolge
+  const l = [{ k: 1, n: "x" }, { k: 0, n: "y" }, { k: 1, n: "z" }];
+  assert.deepEqual(u.sortBy(l, o => o.k).map(o => o.n), ["y", "x", "z"]);
+  assert.deepEqual(u.sortBy(l, o => o.k, -1).map(o => o.n), ["x", "z", "y"]);
+});
