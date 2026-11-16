@@ -1140,9 +1140,9 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach FEA-87); Nachtlauf mit e2e noch nicht beobachtet |
+| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach FEA-87; beim Aufräumen der Runs gelöscht, Ergebnis im Issue); zweite Prüfung 16.11.2026: noch kein Nachtlauf mit e2e |
 | FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 ok: Artefakt e2e-failure mit Bericht und Traces vorhanden (Lauf 43746959803) |
-| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e |
+| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e (zweite Prüfung 16.11.2026 unverändert) |
 
 ### #90 FEA-72 Pictet-Reihe aus App und Repository entfernen
 
@@ -1233,7 +1233,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-87/AK4 | Kein Test wartet fest (`waitForTimeout`, `setTimeout` in der Seite); ISS-13-Prüfungen mit `page.clock` und Zählung der Anfragen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-13/…», «FEA-17: Cash-Reserve …» | 16.11.2026 ok (Nacharbeit 200fc64) |
 | FEA-87/AK5 | Ausser den Abbruchtests hat kein Test einen eigenen Timeout. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/`) | 16.11.2026 ok |
 | FEA-87/AK6 | Tests, die auf bestimmte Ereignisse angewiesen sind, finden diese mit 500 Pfaden. | ☑ | **gilt** | ganzer Satz `e2e/` | 16.11.2026 ok (ohne Anpassung) |
-| FEA-87/AK7 | Die Oberflächentests laufen auf GitHub dreimal hintereinander grün. | ☑ | **gilt** | Läufe 43850404495, 43851543289, 43852527223 | 16.11.2026 ok |
+| FEA-87/AK7 | Die Oberflächentests laufen auf GitHub dreimal hintereinander grün. | ☑ | **gilt** | Läufe 43850404495, 43851543289, 43852527223 (beim Aufräumen der Runs am 16.11.2026 gelöscht, Ergebnis im Issue) | 16.11.2026 ok |
 | FEA-87/AK8 | `docs/TESTS.md` beschreibt die Regel; `#nobench` und `page.clock` mit Zweck. | ☑ | **gilt** | kein Test (Datei geprüft) | 16.11.2026 ok |
 
 ### #112 ISS-21 Klick ins Menü geht verloren, wenn gleichzeitig eine Vorschau eintrifft
@@ -1246,3 +1246,42 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | ISS-21/AK2 | Ein Klick ins Menü mit Vorschau zwischen Drücken und Loslassen öffnet den Abschnitt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK1, AK2: …» (Gegenprobe mit altem Verhalten rot) | 16.11.2026 ok |
 | ISS-21/AK3 | Die Prüfliste wird nur neu aufgebaut, wenn sich ihre Meldungen ändern; ein Klick auf eine Meldung geht nicht verloren. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK3: …» | 16.11.2026 ok |
 | ISS-21/AK4 | Zahlen am Menü und Markierung des aktiven Abschnitts stimmen weiterhin. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK4: …», ganzer Satz `e2e/` | 16.11.2026 ok |
+
+### #113 FEA-88 Anforderungsbezug erkennt Prüfungen, describe-Blöcke und Nummern mit Null
+
+[Issue #113](https://github.com/ingen63/VivaPlan/issues/113) · geschlossen · Umsetzung: 3f6b3c7
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-88/AK1 | Kennzeichnungen werden unabhängig von führenden Nullen zugeordnet. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) `test_fea_88_ak1_…` | 16.11.2026 ok (auch auf echten Daten: FEA-07 findet seine Tests) |
+| FEA-88/AK2 | Ein Test mit `AKn` in einem `describe`-Block mit Issue-ID belegt das Kriterium n. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) `test_fea_88_ak2_…` | 16.11.2026 ok |
+| FEA-88/AK3 | Ein in einer Prüfung als erfüllt festgehaltenes Kriterium zählt in der Spalte «geprüft». | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) `test_fea_88_ak3_…` (2 Tests) | 16.11.2026 ok (237 Kriterien «geprüft») |
+| FEA-88/AK4 | Spalten «mit Test», «geprüft», «nur manuell», «ohne»; Aufklappliste mit Art und Datum der Prüfung. | ☑ | **gilt** | kein Test (Seite aus `report.py` durchgesehen) | 16.11.2026 ok |
+| FEA-88/AK5 | Unittests in `tools/report/test_report.py` decken die drei Fälle ab. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) (18 Tests grün) | 16.11.2026 ok |
+| FEA-88/AK6 | `docs/TESTS.md` beschreibt die Zuordnung. | ☑ | **gilt** | kein Test (Datei geprüft) | 16.11.2026 ok |
+
+### #114 FEA-89 Bezugslinie (0 bzw. 100) in den Ergebnisgrafiken dicker zeichnen
+
+[Issue #114](https://github.com/ingen63/VivaPlan/issues/114) · geschlossen · Umsetzung: 77a6423
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-89/AK1 | Nulllinie dicker in jeder Ergebnisgrafik mit 0 im Bereich, auch im Vergleich und in der Minigrafik. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-89/AK1, AK3, AK4: …» | 16.11.2026 ok |
+| FEA-89/AK2 | Aktien, Obligationen und Inflation: dicke Linie bei 100 (linear, logarithmisch), bei 0 % in «Änderung in %». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-89/AK2: …» | 16.11.2026 ok |
+| FEA-89/AK3 | Ausserhalb des gezeigten Bereichs keine Bezugslinie. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-89/AK1, AK3, AK4: …» | 16.11.2026 ok |
+| FEA-89/AK4 | Bezugslinie hinter den Daten, hell und dunkel gut sichtbar. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-89/AK1, AK3, AK4: …» (Reihenfolge) | 16.11.2026 ok (hell und dunkel von Hand in der Vorschau) |
+| FEA-89/AK5 | Ein Oberflächentest prüft die dicke Linie. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «Bezugslinie in den Grafiken (FEA-89)» | 16.11.2026 ok |
+
+### #115 FEA-90 Vergleich der Ergebnisse an das Einzelergebnis angleichen
+
+[Issue #115](https://github.com/ingen63/VivaPlan/issues/115) · geschlossen · Umsetzung: f036687, c48e278
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-90/AK1 | Umschalter Nominal / Heutige Kaufkraft für Kennzahlen, Grafiken und Jahreswerte, je Ergebnis mit seiner Inflation. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK1: …» | 16.11.2026 ok |
+| FEA-90/AK2 | Übersicht: Endvermögen nach Perzentil, Wahrscheinlichkeit, Alter bei Erschöpfung, Bandbreite je Ergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK2: …» | 16.11.2026 ok |
+| FEA-90/AK3 | Verläufe je Ergebnis überlagert (erweitert um «Lauf wählen», Kommentar zu c48e278). | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK3: …», «FEA-90/AK3, AK4: Lauf wählen …» | 16.11.2026 ok |
+| FEA-90/AK4 | Jahreswerte mit einer Spalte je Ergebnis, gleich wie die Jahreswerte des Einzelergebnisses. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK4: …», «FEA-90/AK3, AK4: Lauf wählen …» | 16.11.2026 ok |
+| FEA-90/AK5 | Sonderfälle: Start verschieden, fehlende Grössen mit Vermerk. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK5: …» | 16.11.2026 ok |
+| FEA-90/AK6 | Zoom und Registerkarten wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-90/AK6: …» | 16.11.2026 ok |
+| FEA-90/AK7 | Hilfe «Ergebnisse vergleichen» nachgeführt; Oberflächentests für Umschalter, Grafiken und Jahreswerte. | ☑ | **gilt** | kein Test (Hilfe durchgesehen), Tests oben | 16.11.2026 ok |
