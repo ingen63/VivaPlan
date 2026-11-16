@@ -95,12 +95,12 @@ FEA-12/AK2, FEA-33/AK1, FEA-33/AK2, FEA-33/AK3, FEA-33/AK4, FEA-33/AK5, FEA-35/A
 
 - **Mit lokalen Daten:** FEA-74 AK4 (`local/eigene/`), FEA-76 AK2 (Shiller-Datei), FEA-32 AK3/AK4/AK6 (Laufzeiten, Mutantenvergleich), FEA-29 AK1 (voller Mutationslauf), FEA-27 AK2 bis AK4 (Agentenlauf, Laufzeit des Hooks), FEA-34 AK8 (Repository-Umbenennung).
 - **Auf GitHub nach dem Push:** FEA-62 AK2 (Schwelle 99), FEA-68 AK3, FEA-71 AK1/AK2, FEA-30 AK6, FEA-32 AK5, FEA-35 AK3.
-- **Zu entscheiden:** FEA-80 (#103, Renditeregel unter 12 Monaten), ISS-19 (#102, Laufzeit des Monte-Carlo-Tests, FEA-67 AK3), FEA-45 AK5 (#61, wieder öffnen?), FEA-18 K3 (2-Zeilen-Grenze), FEA-28 AK1/AK2 (Pull Requests gibt es nicht mehr), FEA-36 AK5 (seit FEA-38 kaum noch darstellbar), FEA-19 AK4 (Vergleich Ziel 1 und Ziel 2, Test fehlt).
+- **Zu entscheiden:** ISS-19 (#102, Laufzeit des Monte-Carlo-Tests, FEA-67 AK3), FEA-45 AK5 (#61, wieder öffnen?), FEA-18 K3 (2-Zeilen-Grenze), FEA-28 AK1/AK2 (Pull Requests gibt es nicht mehr), FEA-36 AK5 (seit FEA-38 kaum noch darstellbar), FEA-19 AK4 (Vergleich Ziel 1 und Ziel 2, Test fehlt).
 - **Hilfetexte und `BESCHREIBUNG.md`** sind nur stichwortartig abgeglichen, nicht Satz für Satz (FEA-17, FEA-24, FEA-26, FEA-36, FEA-37, FEA-38, FEA-40 und weitere).
 
 ### Offene und nicht umgesetzte Issues
 
-- **Offen, umgesetzt, Nachweis fehlt:** #80 (FEA-62), #86 (FEA-68), #88 (FEA-70), #89 (FEA-71), #102 (ISS-19), #103 (FEA-80).
+- **Offen, umgesetzt, Nachweis fehlt** (Stand 16.11.2026): #89 (FEA-71, Nachtlauf mit e2e). Offen und nicht umgesetzt: #102 (ISS-19).
 - **Nicht umgesetzt, deshalb nicht geprüft:** FEA-46 bis FEA-50 (#62 bis #66), FEA-73 (#91), FEA-75 (#93), FEA-78 (#100), FEA-79 (#101).
 
 ## Issues
@@ -1140,9 +1140,9 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 teilweise: Job läuft (Lauf 43746959803), 3 Tests rot (Zeitüberschreitungen); Gegenmassnahme offen; Nachtlauf nicht beobachtet |
-| FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 ok: Artefakt e2e-failure mit Bericht und Traces vorhanden |
-| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 15.11.2026 teilweise: Bericht liest die Datei; auf GitHub erst nach grünem Lauf |
+| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach FEA-87); Nachtlauf mit e2e noch nicht beobachtet |
+| FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 ok: Artefakt e2e-failure mit Bericht und Traces vorhanden (Lauf 43746959803) |
+| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e |
 
 ### #90 FEA-72 Pictet-Reihe aus App und Repository entfernen
 
@@ -1208,3 +1208,41 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | GEN-03/AK5 | Vor dem Löschen steht im Issue je Datei der Beschreibungen umgesetzter Issues, wo ihr Inhalt steht oder dass er entfällt. | ☑ | **gilt** | kein Test (Kommentar im Issue) | 15.11.2026 ok |
 | GEN-03/AK6 | `docs/spezifikation/` existiert nicht mehr. `CLAUDE.md` und `docs/ENTWICKLUNG.md` nennen den Ordner nicht mehr; der Satz zu `tools/github-issues/create.sh` in `CLAUDE.md` stimmt weiterhin. | ☑ | **gilt** | kein Test (Durchsicht) | 15.11.2026 ok (Satz zu `create.sh` sinngemäss, nicht wortgleich) |
 | GEN-03/AK7 | `make test` und `make ui-unit` sind grün; `tools/ui-smoke.sh` meldet keine kaputten Hilfeverweise. | ☑ | **gilt** | `make test`, `make ui-unit`, `tools/ui-smoke.sh` | 15.11.2026 ok (636 Rust, 18 UI-Unit grün; `#helpcheck` 0 Probleme; voller Rauchtest unter Last mit Zeitüberschreitungen, einzeln grün) |
+
+### #103 FEA-80 Renditekriterium der 3-Topf-Strategie bei Simulationen unter 12 Monaten
+
+[Issue #103](https://github.com/ingen63/VivaPlan/issues/103) · geschlossen · Umsetzung: cdbe449, e3a53ba
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-80/AK1 | Die Regel für Simulationen unter 12 Monaten ist entschieden und im Issue als Kommentar mit Begründung festgehalten. | ☑ | **gilt** (Entscheid «letzte 12 Monate mit Vorlauf», Kommentar vom 16.11.2026) | kein Test (Kommentar im Issue) | 16.11.2026 ok |
+| FEA-80/AK2 | Ein Test mit Start im Juli und bekannten Monatsrenditen belegt die gewählte Regel; der bisherige Test «seit Januar» ist ersetzt (angepasst im Kommentar vom 16.11.2026). | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) `fea80_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run`, [sim_rules.rs](../crates/engine/tests/sim_rules.rs) `fea80_the_pre_run_supplies_the_months_before_the_start` | 16.11.2026 ok |
+| FEA-80/AK3 | `docs/ENTWICKLUNG.md` und die Hilfe zur 3-Topf-Strategie nennen dieselbe Regel. | ☑ | **gilt** | kein Test (Dateien geprüft: `docs/ENTWICKLUNG.md`, `hilfe/30-entnahme.md`) | 16.11.2026 ok |
+| FEA-80/AK4 | Der Geltungsbereich der Hochrechnung im Startjahr ist festgelegt, getestet und in `docs/ENTWICKLUNG.md` beschrieben. | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) `gen03_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawal_month` | 16.11.2026 ok |
+| FEA-80/AK5 | Ändert sich ein Ergebnis der Golden-Dateien, steht die Begründung im Issue. | ☑ | **gilt** | `golden::golden_masters` (nur 08 geändert, Begründung im Issue) | 16.11.2026 ok |
+
+### #111 FEA-87 Oberflächentests unabhängig von der Rechnerlast
+
+[Issue #111](https://github.com/ingen63/VivaPlan/issues/111) · geschlossen · Umsetzung: a334c91, 200fc64
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-87/AK1 | Der Testzugang `#results/…` rechnet Bootstrap und Parametrisch mit 500 Pfaden und dem Zufallsstartwert 42; zwei Läufe mit derselben Adresse ergeben dieselben Kennzahlen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-87/AK1: …» | 16.11.2026 ok |
+| FEA-87/AK2 | Mit dem Testzugang `#nobench` misst die App die Rechenzeit nicht; Anzeige «Dauer wird geschätzt…», keine Rückfrage «Lange Berechnung». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-87/AK2: …» (mit Gegenprobe) | 16.11.2026 ok |
+| FEA-87/AK3 | `open()` setzt `#nobench` standardmässig; nur Tests, die die echte Messung prüfen, schalten sie ein. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/`) | 16.11.2026 ok |
+| FEA-87/AK4 | Kein Test wartet fest (`waitForTimeout`, `setTimeout` in der Seite); ISS-13-Prüfungen mit `page.clock` und Zählung der Anfragen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-13/…», «FEA-17: Cash-Reserve …» | 16.11.2026 ok (Nacharbeit 200fc64) |
+| FEA-87/AK5 | Ausser den Abbruchtests hat kein Test einen eigenen Timeout. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/`) | 16.11.2026 ok |
+| FEA-87/AK6 | Tests, die auf bestimmte Ereignisse angewiesen sind, finden diese mit 500 Pfaden. | ☑ | **gilt** | ganzer Satz `e2e/` | 16.11.2026 ok (ohne Anpassung) |
+| FEA-87/AK7 | Die Oberflächentests laufen auf GitHub dreimal hintereinander grün. | ☑ | **gilt** | Läufe 43850404495, 43851543289, 43852527223 | 16.11.2026 ok |
+| FEA-87/AK8 | `docs/TESTS.md` beschreibt die Regel; `#nobench` und `page.clock` mit Zweck. | ☑ | **gilt** | kein Test (Datei geprüft) | 16.11.2026 ok |
+
+### #112 ISS-21 Klick ins Menü geht verloren, wenn gleichzeitig eine Vorschau eintrifft
+
+[Issue #112](https://github.com/ingen63/VivaPlan/issues/112) · geschlossen · Umsetzung: 9383d82
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| ISS-21/AK1 | Das Menü wird beim Eintreffen einer Vorschau nicht neu aufgebaut; nachgeführt werden nur Markierung und Zahlen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK1, AK2: …» | 16.11.2026 ok |
+| ISS-21/AK2 | Ein Klick ins Menü mit Vorschau zwischen Drücken und Loslassen öffnet den Abschnitt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK1, AK2: …» (Gegenprobe mit altem Verhalten rot) | 16.11.2026 ok |
+| ISS-21/AK3 | Die Prüfliste wird nur neu aufgebaut, wenn sich ihre Meldungen ändern; ein Klick auf eine Meldung geht nicht verloren. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK3: …» | 16.11.2026 ok |
+| ISS-21/AK4 | Zahlen am Menü und Markierung des aktiven Abschnitts stimmen weiterhin. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-21/AK4: …», ganzer Satz `e2e/` | 16.11.2026 ok |
