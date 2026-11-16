@@ -3747,7 +3747,7 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
   test("FEA-91/AK5: ohne Klick Reihenfolge der Liste; Sortierung bleibt beim Wechsel von Registerkarte und Kaufkraft, Farben bleiben beim Ergebnis", async ({ page }) => {
     const errors = await openCompare(page);
     await expect(kpi(page).locator('th[aria-sort="none"]')).toHaveCount(9);
-    expect(await colors(page)).toEqual(["background:var(--c1)", "background:var(--c2)"]);
+    expect(await colors(page)).toEqual(["background:var(--r1)", "background:var(--r2)"]);
     const asc = await byMedian(page);
     await head(page, "Median").locator("button").click();
     await head(page, "Median").locator("button").click();
@@ -3759,7 +3759,7 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
     await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
     await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
     // die übrigen Karten (hier: Endvermögen nach Perzentil) behalten die Reihenfolge der Liste
-    await expect(page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("th.cmph i.sw").first()).toHaveAttribute("style", /--c1/);
+    await expect(page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("th.cmph i.sw").first()).toHaveAttribute("style", /--r1\)/);
     await noErrors(page, errors);
   });
 
@@ -3818,6 +3818,81 @@ test.describe("Name eines Ergebnisses mit Abkürzungen (FEA-92)", () => {
     const names = await page.evaluate(async () => (await Runs.list()).map(m => ({ id: m.id, name: m.name })));
     expect(names.length).toBe(2);
     expect(names.find(m => m.id === id).name).toBe(old);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
+  /** n Ergebnisse als Kopien des ersten Monte-Carlo-Ergebnisses (mit leicht anderem Endvermögen), alle markiert. */
+  const withRuns = async (page, n) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    await page.evaluate(async n => {
+      const [m] = await Runs.list(), d = await Runs.get(m.id);
+      for (let i = 1; i < n; i++) await Runs.add({ ...m, id: `kopie-${i}`, name: `Kopie ${i}`, created: new Date(Date.parse(m.created) + i * 1000).toISOString() }, d);
+      await openRuns();
+    }, n);
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+  const selectAll = page => page.locator('input[data-action="runs-all"]').check();
+
+  test("FEA-93/AK1, AK2: Vergleichen bei 2 bis 10 markierten aktiv; ab 11 gesperrt mit Hinweis, Markieren und Löschen bleiben möglich", async ({ page }) => {
+    const errors = await withRuns(page, 11);
+    const btn = page.locator('button[data-action="runs-compare"]');
+    await expect(btn).toHaveAttribute("title", "Zwei bis 10 Ergebnisse markieren");
+    await selectAll(page);
+    await expect(btn).toBeDisabled();
+    await expect(btn).toHaveText("Vergleichen (11)");
+    await expect(page.locator(".cmpmax")).toHaveText("Höchstens 10 Ergebnisse lassen sich vergleichen.");
+    await expect(page.locator('button[data-action="runs-delete"]')).toBeEnabled();
+    await page.locator('input[data-action="run-sel"]').first().uncheck();
+    await expect(btn).toBeEnabled();
+    await expect(page.locator(".cmpmax")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  for (const scheme of ["light", "dark"]) {
+    test(`FEA-93/AK3: zehn unterscheidbare Farben, in allen Karten gleich (${scheme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      const errors = await withRuns(page, 10);
+      await selectAll(page);
+      await page.locator('button[data-action="runs-compare"]').click();
+      await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+      const rgb = await page.evaluate(() => RUN_COLORS.map(c => getComputedStyle(document.documentElement).getPropertyValue(c).trim()));
+      expect(new Set(rgb).size).toBe(10);
+      const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+      let min = Infinity;
+      for (let i = 0; i < 10; i++) for (let j = i + 1; j < 10; j++) min = Math.min(min, Math.hypot(...hex(rgb[i]).map((v, k) => v - hex(rgb[j])[k])));
+      expect(min).toBeGreaterThan(50);
+      // Kennzahlen und Perzentile: dieselbe Farbe je Ergebnis
+      const kpi = await page.locator("table.cmpkpi tr td:first-child i.sw").evaluateAll(l => l.map(x => x.getAttribute("style")));
+      const pt = await page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("th.cmph i.sw").evaluateAll(l => l.map(x => x.getAttribute("style")));
+      expect(kpi).toEqual(Array.from({ length: 10 }, (_, i) => `background:var(--r${i + 1})`));
+      expect(pt).toEqual(kpi);
+      await noErrors(page, errors);
+    });
+  }
+
+  test("FEA-93/AK4: mit 10 Ergebnissen scrollen Tabellen und Balken waagrecht statt zu schrumpfen", async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 900 });
+    const errors = await withRuns(page, 10);
+    await selectAll(page);
+    await page.locator('button[data-action="runs-compare"]').click();
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    // Seite wird nicht breiter
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await expect(page.locator("table.cmpkpi")).toHaveCount(1);
+    expect(await page.locator("table.cmpkpi").evaluate(t => t.parentElement.classList.contains("tscroll"))).toBe(true);
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Verläufe" }).click();
+    const w = await page.locator("#cmp-flows rect:not(.hov)").evaluateAll(l => Math.min(...l.map(r => +r.getAttribute("width"))));
+    expect(w).toBeGreaterThanOrEqual(2);
+    expect(await page.locator("#cmp-flows").evaluate(s => s.parentElement.classList.contains("hscroll"))).toBe(true);
+    for (const t of ["Jahreswerte", "Planung", "Übersicht"]) {
+      await page.locator('button[data-action="cmp-tab"]', { hasText: t }).click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), t).toBe(true);
+    }
     await noErrors(page, errors);
   });
 });

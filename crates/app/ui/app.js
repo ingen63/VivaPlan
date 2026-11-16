@@ -2804,7 +2804,9 @@ function showDetail(p) { detailP = p; bucketOpen.clear(); if (lastRun) renderRes
 
 // ---------- Gespeicherte Simulationen ----------
 let savedView = null, parkedState = null;
-const runsSel = new Set(), RUN_COLORS = ["--c1", "--c2", "--c3", "--warn", "--ok", "--err"];
+/** FEA-93: Höchstzahl der Ergebnisse im Vergleich; jedes hat eine eigene Farbe (--r1 … --r10 in index.html). */
+const CMP_MAX = 10;
+const runsSel = new Set(), RUN_COLORS = Array.from({ length: CMP_MAX }, (_, i) => `--r${i + 1}`);
 const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" });
 const stratName = id => id === "three_buckets_guardrails" ? "3-Topf + Guardrails" : STRATS.find(x => x[0] === id)?.[1] || id;
 const sourceName = id => SOURCES.find(x => x[0] === id)?.[1] || id;
@@ -2883,8 +2885,8 @@ async function rememberRun(r) {
 }
 let runsIds = [];
 function runsBar() {
-  const k = runsSel.size, n = runsIds.length, canCompare = k >= 2 && k <= RUN_COLORS.length;
-  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-compare" ${canCompare ? "" : "disabled"} title="Zwei bis ${RUN_COLORS.length} Ergebnisse markieren">Vergleichen (${k})</button>
+  const k = runsSel.size, n = runsIds.length, canCompare = k >= 2 && k <= CMP_MAX;
+  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-compare" ${canCompare ? "" : "disabled"} title="Zwei bis ${CMP_MAX} Ergebnisse markieren">Vergleichen (${k})</button>${k > CMP_MAX ? `<span class="cmpmax hint" role="status">Höchstens ${CMP_MAX} Ergebnisse lassen sich vergleichen.</span>` : ""}
     <button class="btn small" data-action="runs-delete" ${k < 1 ? "disabled" : ""}>Markierte löschen (${k})</button>
     <button class="btn small" data-action="runs-delete-all" ${n < 1 ? "disabled" : ""}>Alle löschen</button>`;
   const all = document.querySelector('input[data-action="runs-all"]');
@@ -2902,12 +2904,12 @@ async function openRuns() {
   const cell = m => (m.kind === "batch" ? `<span title="Median ${fmtMio(m.end50)}">${pctTxt(m.successRate)} · 5 %: ${fmtMio(m.end5)}</span>` : m.kind === "single" ? `Endvermögen ${fmtMio(m.endTotal)}` : "–") + emergencyMark(m);
   $("#resultsBody").innerHTML = list.length ? `<div class="card"><table class="tbl" id="runsTbl">
     <tr><th><input type="checkbox" data-action="runs-all" title="Alle markieren oder Markierung aufheben"></th><th>Name</th><th>Notiz</th><th>Datum</th><th>Zeitreihe</th><th>Strategie</th><th>Ergebnis</th><th></th></tr>
-    ${list.map(m => `<tr><td><input type="checkbox" data-action="run-sel" data-id="${m.id}" ${runsSel.has(m.id) ? "checked" : ""} title="Zum Vergleichen (2 bis ${RUN_COLORS.length}) oder Löschen markieren"></td>
+    ${list.map(m => `<tr><td><input type="checkbox" data-action="run-sel" data-id="${m.id}" ${runsSel.has(m.id) ? "checked" : ""} title="Zum Vergleichen (2 bis ${CMP_MAX}) oder Löschen markieren"></td>
       <td><input class="runedit" data-id="${m.id}" data-f="name" value="${esc(m.name)}" title="Name ändern"></td>
       <td><input class="runedit" data-id="${m.id}" data-f="note" value="${esc(m.note)}" placeholder="Notiz…"></td>
       <td>${esc(runDate(m.created))}</td><td>${seriesCell(m)}</td>${stratCell(m)}<td>${cell(m)}<br><small class="muted">${esc(runKind(m))}</small></td>
       <td style="white-space:nowrap"><button class="btn small" data-action="run-view" data-id="${m.id}">Öffnen</button> <button class="btn small" data-action="run-del" data-id="${m.id}" title="Dieses Ergebnis löschen">Löschen</button></td></tr>`).join("")}
-    </table><p class="hint">Jedes Ergebnis wird automatisch hier abgelegt, mit der Planung von damals. Name und Notiz lassen sich direkt in der Liste ändern. Zum Löschen beliebig viele Einträge markieren (oder oben «Alle löschen»); zum Vergleichen zwei bis ${RUN_COLORS.length} Einträge markieren.</p></div>`
+    </table><p class="hint">Jedes Ergebnis wird automatisch hier abgelegt, mit der Planung von damals. Name und Notiz lassen sich direkt in der Liste ändern. Zum Löschen beliebig viele Einträge markieren (oder oben «Alle löschen»); zum Vergleichen zwei bis ${CMP_MAX} Einträge markieren.</p></div>`
     : `<div class="card"><p style="margin:0">Noch kein Ergebnis vorhanden. Jedes Ergebnis erscheint nach dem Start einer Simulation automatisch in dieser Liste.</p></div>`;
   document.documentElement.dataset.rendered = "runs";
 }
@@ -2986,7 +2988,7 @@ function cmpYears(items, valuesOf) {
   return { per, n, same, label: k => same ? (per.find(v => v && v[k])?.[k].y ?? "") : `${k + 1}. Jahr` };
 }
 async function compareRuns() {
-  const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse().slice(0, RUN_COLORS.length);
+  const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse().slice(0, CMP_MAX);
   const datas = await Promise.all(metas.map(m => Runs.get(m.id)));
   lastRun = null; savedView = null; compareOpen = true;
   const items = metas.map((m, i) => cmpItem(m, datas[i], i));
@@ -3055,7 +3057,7 @@ function cmpOverview(body, items) {
   // Alter bei Erschöpfung: Anteil der Läufe je Altersjahr (Ergebnisse mit verschieden vielen Läufen bleiben vergleichbar)
   const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
   const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
-  body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table>`
+  body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
       + (realView ? `<p class="hint">In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils.</p>` : ""))
     + cmpNote(notes)
     + (fanLines.length ? card("Bandbreite des Gesamtvermögens", `${cmpReal()} · durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil, gepunktet: 95. Perzentil`, chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
@@ -3068,7 +3070,7 @@ function cmpOverview(body, items) {
     k => surv.map((v, j) => v ? cmpRow(items[j], cmpPad(ns, v)[k], x => `${x.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`) : "").join(""), { yFmt: v => `${v} %`, range: [0, 100] });
   if (ages.length) {
     const shares = batches.map(depShare);
-    Charts.bars($("#cmp-dep"), $("#cmp-dep-tip"), { cats: ages.map(String), yFmt: v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`,
+    Charts.bars($("#cmp-dep"), $("#cmp-dep-tip"), { cats: ages.map(String), minBar: 3, yFmt: v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`,
       series: batches.map((it, j) => ({ group: String(j), color: it.color, values: shares[j] })),
       tip: k => `Alter <b>${ages[k]}</b>` + batches.map((it, j) => cmpRow(it, shares[j][k], pctTxt)).join("") });
   }
@@ -3103,9 +3105,9 @@ function cmpCharts(body, items) {
   if (hasProp.length) money("cmp-prop", r => r.propertyEquity, hasProp);
   if (hasPk.length) money("cmp-pk", r => r.pensionFund + r.pillar3a, hasPk);
   const flows = yearSeries(flowOf), rates = yearSeries(rateOf);
-  Charts.bars($("#cmp-flows"), $("#cmp-flows-tip"), { cats, yFmt: fmtMio, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: flows[j].map(v => Number.isFinite(v) ? v : 0) })),
+  Charts.bars($("#cmp-flows"), $("#cmp-flows-tip"), { cats, yFmt: fmtMio, minBar: 3, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: flows[j].map(v => Number.isFinite(v) ? v : 0) })),
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, flows[j][k], fmtMoney)).join("") });
-  Charts.bars($("#cmp-draw"), $("#cmp-draw-tip"), { cats, yFmt: v => `${(v * 100).toFixed(1)} %`, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: rates[j].map(v => Number.isFinite(v) ? v : 0) })),
+  Charts.bars($("#cmp-draw"), $("#cmp-draw-tip"), { cats, yFmt: v => `${(v * 100).toFixed(1)} %`, minBar: 3, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: rates[j].map(v => Number.isFinite(v) ? v : 0) })),
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, rates[j][k], pctTxt)).join("") });
   const mk = [];
   runs.forEach(it => mk.push({ color: it.color, values: idx(it, "stockIndex") }, { color: it.color, dash: "6 3", width: 1.5, values: idx(it, "bondIndex") },
@@ -3130,7 +3132,7 @@ function cmpPlan(body, items, datas) {
   const flats = datas.map(d => flat(d.plan)), keys = [...new Set(flats.flatMap(f => Object.keys(f)))].filter(k => k !== "project.name" && flats.some(f => JSON.stringify(f[k]) !== JSON.stringify(flats[0][k])));
   const show = v => v === undefined ? "—" : esc(typeof v === "object" ? JSON.stringify(v) : String(v));
   body.innerHTML = card("Unterschiede in der Planung", "gegenüber dem ersten Ergebnis in der Reihenfolge der Liste",
-    keys.length ? `<table class="tbl"><tr><th class="l">Eingabe</th>${items.map(it => `<th class="l">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${keys.slice(0, 60).map(k => `<tr><td class="l"><code>${esc(k)}</code></td>${flats.map(f => `<td class="l">${show(f[k])}</td>`).join("")}</tr>`).join("")}</table>${keys.length > 60 ? `<p class="hint">… und ${keys.length - 60} weitere Unterschiede.</p>` : ""}`
+    keys.length ? `<div class="tscroll"><table class="tbl"><tr><th class="l">Eingabe</th>${items.map(it => `<th class="l">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${keys.slice(0, 60).map(k => `<tr><td class="l"><code>${esc(k)}</code></td>${flats.map(f => `<td class="l">${show(f[k])}</td>`).join("")}</tr>`).join("")}</table></div>${keys.length > 60 ? `<p class="hint">… und ${keys.length - 60} weitere Unterschiede.</p>` : ""}`
       : `<p style="margin:0">Die Planungen sind identisch.</p>`);
 }
 Object.assign(ACTIONS, {

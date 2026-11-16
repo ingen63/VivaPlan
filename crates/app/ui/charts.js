@@ -193,9 +193,16 @@ const Charts = (() => {
    */
   function bars(svg, tip, o) {
     if (!svg) return;
-    const f = frame(svg, o.margin), n = o.cats.length;
+    let f = frame(svg, o.margin);
+    const n = o.cats.length;
     if (!n) { svg.innerHTML = ""; return; }
     const groups = [...new Set(o.series.map(s => s.group ?? s.label))];
+    // FEA-93: Mindestbreite eines Balkens (o.minBar, px); reicht die Breite nicht, wird die Grafik breiter und scrollt waagrecht
+    if (o.minBar) {
+      svg.style.width = ""; svg.parentElement?.classList.remove("hscroll");
+      const need = f.L + f.R + n * o.minBar * groups.length / 0.8;
+      if (need > f.W) { svg.style.width = `${Math.ceil(need)}px`; svg.parentElement?.classList.add("hscroll"); f = frame(svg, o.margin); }
+    }
     const tops = [], bottoms = [];
     for (let i = 0; i < n; i++) for (const g of groups) {
       let pos = 0, neg = 0;
