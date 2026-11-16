@@ -3962,3 +3962,75 @@ test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", ()
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebnis (FEA-95)", () => {
+  const openCharts = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Verläufe" }).click();
+    await expect(page.locator("#cmp-mkt")).toBeAttached();
+    return errors;
+  };
+  const card = page => page.locator("#resultsBody .card", { has: page.locator("#cmp-mkt") });
+  const labels = page => page.locator('#cmp-mkt text[text-anchor="end"]').allTextContents();
+
+  test("FEA-95/AK1, AK3: Schalter Wertentwicklung / Änderung in %, linear / logarithmisch wie im Einzelergebnis", async ({ page }) => {
+    const errors = await openCharts(page);
+    await expect(card(page).locator('button[data-action="mkt"]')).toHaveText(["Wertentwicklung (Start = 100)", "Änderung in %"]);
+    await expect(card(page).locator('button[data-action="mkt-log"]')).toHaveText(["Linear", "Logarithmisch"]);
+    const lin = await labels(page);
+    await card(page).locator('button[data-action="mkt-log"][data-v="1"]').click();
+    const log = await labels(page);
+    expect(log).not.toEqual(lin);
+    // logarithmisch: Teilstriche 1-2-5 je Zehnerpotenz, «100» ist dabei
+    expect(log).toContain("100");
+    await expect(page.locator("#cmp-mkt line.ref")).toHaveCount(1);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-95/AK2, AK5, AK6: Änderung in % je Ergebnis wie im Einzelergebnis, Bezugslinie bei 0, auch in heutiger Kaufkraft", async ({ page }) => {
+    const errors = await openCharts(page);
+    await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
+    await expect(card(page).locator("h3")).toContainText("Änderung gegenüber dem Vorjahresmonat in %");
+    await expect(card(page).locator('button[data-action="mkt-log"]')).toHaveCount(0);
+    expect((await labels(page)).every(t => t.endsWith("%"))).toBe(true);
+    await expect(page.locator("#cmp-mkt path")).toHaveCount(6);
+    // Tooltip im 2. Jahr: Aktien = Änderung der letzten 12 Monate des Median-Laufs des ersten Ergebnisses
+    const want = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], r = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1].records;
+      return (100 * (r[18].stockIndex / r[6].stockIndex - 1)).toLocaleString("de-CH", { maximumFractionDigits: 1 });
+    });
+    const box = await page.locator("#cmp-mkt").boundingBox();
+    const n = await page.evaluate(() => document.querySelector("#cmp-mkt path").getAttribute("d").split(/[ML]/).filter(Boolean).length);
+    // Monat 18 liegt bei 18/(n-1) der Zeichenfläche (L = 60, R = 14 im viewBox = Breite in px)
+    await page.mouse.move(box.x + 60 + 18 / (n - 1) * (box.width - 74), box.y + box.height / 2);
+    await expect(page.locator("#cmp-mkt-tip")).toContainText(`Aktien ${want} %`);
+    // Bezugslinie bei 0 %
+    const r = await page.evaluate(() => { const l = document.querySelector("#cmp-mkt line.ref"), t = [...document.querySelectorAll("#cmp-mkt text")].find(x => /^0 ?%$/.test(x.textContent.trim()));
+      return { y: +l.getAttribute("y1"), t: t ? +t.getAttribute("y") - 4 : null }; });
+    expect(r.t).not.toBeNull();
+    expect(Math.abs(r.y - r.t)).toBeLessThan(0.5);
+    // heutige Kaufkraft: Werte ändern sich, Darstellung bleibt
+    const nominal = await page.locator("#cmp-mkt path").first().getAttribute("d");
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    await expect(card(page).locator('button[data-action="mkt"][data-v="pct"]')).toHaveClass(/on/);
+    expect(await page.locator("#cmp-mkt path").first().getAttribute("d")).not.toBe(nominal);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-95/AK4: die Wahl gilt im Einzelergebnis und im Vergleich gemeinsam", async ({ page }) => {
+    const errors = await openCharts(page);
+    await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
+    expect(await page.evaluate(() => mktPct)).toBe(true);
+    // Einzelergebnis öffnen: dort ist «Änderung in %» gewählt
+    await page.evaluate(async () => { const [m] = await Runs.list(); await viewRun(m.id); });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
+    await page.locator('button[data-action="rtab"][data-tab="runs"]').click();
+    await expect(page.locator('button[data-action="mkt"][data-v="pct"]')).toHaveClass(/on/);
+    await page.locator('button[data-action="mkt"][data-v="idx"]').click();
+    expect(await page.evaluate(() => mktPct)).toBe(false);
+    await noErrors(page, errors);
+  });
+});

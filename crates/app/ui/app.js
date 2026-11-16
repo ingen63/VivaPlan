@@ -1918,8 +1918,9 @@ const ACTIONS = {
   "info-toggle": (d, el) => { const open = !el.classList.contains("open"); document.querySelectorAll(".infopop.open").forEach(x => x.classList.remove("open")); if (open) el.classList.add("open"); },
   "tax-cols": () => { showTaxCols = !showTaxCols; Pref.set("showTaxCols", showTaxCols); renderResults(lastRun); },
   comp: d => { compPercent = d.v === "1"; renderResults(lastRun); },
-  mkt: d => { mktPct = d.v === "pct"; renderResults(lastRun); },
-  "mkt-log": d => { mktLog = d.v === "1"; renderResults(lastRun); },
+  // FEA-95: gilt im Einzelergebnis und im Vergleich
+  mkt: d => { mktPct = d.v === "pct"; redrawResults(); },
+  "mkt-log": d => { mktLog = d.v === "1"; redrawResults(); },
   // Zoom der Ergebnisgrafiken: gilt für alle Registerkarten und bleibt beim Wechsel erhalten
   "var-opt": () => { const o = Optimum.find(lastRun?.scenarios, 50); if (o) pickVariation(o.items.map(it => it.grid)); },
   "var-plan": () => pickVariation(state.scenarios.sweeps.map(() => null)),
@@ -2343,8 +2344,7 @@ function runChartsHtml(res, p) {
     + (hasProp ? card("Immobilien", realNote(), chartBox(`${p}-prop`, 260, true) + legend([["--c2", "Marktwert"], ["--err", "Hypothek"], ["--c1", "Eigenkapital"]])) : "")
     + (hasPk ? card("Vorsorge", realNote(), chartBox(`${p}-pk`, 240, true) + legend([["--c3", "Pensionskasse"], ["--c2", "Säule 3a"]])) : "")
     + card("Aktien, Obligationen und Inflation", `${mktPct ? "Änderung gegenüber dem Vorjahresmonat in %" : "Wertentwicklung seit Start = 100"}, ${realNote()}`,
-      `<div class="seg" style="margin-bottom:8px"><button class="${mktPct ? "" : "on"}" data-action="mkt" data-v="idx">Wertentwicklung (Start = 100)</button><button class="${mktPct ? "on" : ""}" data-action="mkt" data-v="pct">Änderung in %</button></div>`
-      + (mktPct ? "" : ` <div class="seg" style="margin-bottom:8px"><button class="${mktLog ? "" : "on"}" data-action="mkt-log" data-v="0">Linear</button><button class="${mktLog ? "on" : ""}" data-action="mkt-log" data-v="1">Logarithmisch</button></div>`)
+      mktSwitch()
       + chartBox(`${p}-mkt`, 240, true)
       + legend([["--c1", "Aktien"], ["--c2", "Obligationen"], ["--muted", "Inflation (Preisindex)"]])
       + `<p class="hint">${mktPct ? "Änderung der letzten 12 Monate in Prozent (die ersten 12 Monate haben noch keinen Wert). Die logarithmische Darstellung gibt es nur bei der Wertentwicklung. " : "Verlauf der Renditen dieses Laufs als Index (Start = 100, Ausschüttungen wiederangelegt); die Inflation läuft als Preisindex mit. Logarithmisch zeigen gleiche Abstände gleiche prozentuale Änderungen. "}Im Tooltip steht zusätzlich die Änderung der letzten 12 Monate, bei der Inflation in Klammern.</p>`);
@@ -2412,6 +2412,9 @@ const survRange = () => [survFull ? 0 : SURV_LO, 100];
 const survSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${survFull ? "" : "on"}" data-action="surv-scale" data-v="80">80–100 %</button><button class="${survFull ? "on" : ""}" data-action="surv-scale" data-v="0">0–100 %</button></div>`;
 const survClipNote = min => !survFull && min < SURV_LO
   ? `<p class="hint survclip">Die Kurve fällt unter ${SURV_LO} % (tiefster Wert ${min.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %) und ist unten abgeschnitten. «0–100 %» zeigt sie ganz.</p>` : "";
+/** FEA-95: Schalter der Grafik «Aktien, Obligationen und Inflation», im Einzelergebnis und im Vergleich dieselben. */
+const mktSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${mktPct ? "" : "on"}" data-action="mkt" data-v="idx">Wertentwicklung (Start = 100)</button><button class="${mktPct ? "on" : ""}" data-action="mkt" data-v="pct">Änderung in %</button></div>`
+  + (mktPct ? "" : ` <div class="seg" style="margin-bottom:8px"><button class="${mktLog ? "" : "on"}" data-action="mkt-log" data-v="0">Linear</button><button class="${mktLog ? "on" : ""}" data-action="mkt-log" data-v="1">Logarithmisch</button></div>`);
 function batchChartsHtml(b) {
   const st = b.stats;
   return card("Bandbreite des Gesamtvermögens", `${realNote()}, über alle Läufe`, chartBox("mc-fan", 300, true)
@@ -3106,7 +3109,8 @@ function cmpCharts(body, items) {
     + card("Entnahme aus dem Vermögen", "pro Jahr: Ausgaben inkl. Steuern − Einnahmen, im Verhältnis zum liquiden Vermögen", chartBox("cmp-draw", 240) + cmpLegend(runs))
     + (hasProp.length ? card("Immobilien", `${cmpReal()} · Eigenkapital (Marktwert − Hypothek)`, chartBox("cmp-prop", 240, true) + cmpLegend(hasProp) + cmpNote(noProp.length ? [`Ohne Immobilie: ${noProp.map(it => esc(it.name)).join(", ")}.`] : [])) : "")
     + (hasPk.length ? card("Vorsorge", `${cmpReal()} · Pensionskasse und Säule 3a`, chartBox("cmp-pk", 240, true) + cmpLegend(hasPk) + cmpNote(noPk.length ? [`Ohne Vorsorgevermögen: ${noPk.map(it => esc(it.name)).join(", ")}.`] : [])) : "")
-    + card("Aktien, Obligationen und Inflation", `Wertentwicklung seit Start = 100, ${cmpReal()} · durchgezogen: Aktien, gestrichelt: Obligationen, gepunktet: Inflation (Preisindex)`, chartBox("cmp-mkt", 260, true) + cmpLegend(runs));
+    + card("Aktien, Obligationen und Inflation", `${mktPct ? "Änderung gegenüber dem Vorjahresmonat in %" : "Wertentwicklung seit Start = 100"}, ${cmpReal()} · durchgezogen: Aktien, gestrichelt: Obligationen, gepunktet: Inflation${mktPct ? "" : " (Preisindex)"}`,
+      mktSwitch() + chartBox("cmp-mkt", 260, true) + cmpLegend(runs));
   const money = (id, f, list = runs) => cmpTime(id, n, list.map(it => ({ color: it.color, values: series(it, f) })), k => list.map(it => cmpRow(it, series(it, f)[k], fmtMoney)).join(""), { yFmt: fmtMio });
   money("cmp-total", r => r.total);
   money("cmp-liq", LQ[cmpLiquid] || LQ.liquid);
@@ -3117,11 +3121,18 @@ function cmpCharts(body, items) {
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, flows[j][k], fmtMoney)).join("") });
   Charts.bars($("#cmp-draw"), $("#cmp-draw-tip"), { cats, yFmt: v => `${(v * 100).toFixed(1)} %`, minBar: 3, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: rates[j].map(v => Number.isFinite(v) ? v : 0) })),
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, rates[j][k], pctTxt)).join("") });
+  // FEA-95: wie im Einzelergebnis Wertentwicklung (linear oder logarithmisch) oder Änderung der letzten 12 Monate in %
+  const real = (r, k) => r[k] / (realView ? r.priceIndex : 1);
+  const chg = (it, k) => cmpPad(n, it.run.records.map((r, i) => i >= 12 ? 100 * (real(r, k) / real(it.run.records[i - 12], k) - 1) : NaN));
+  const infl = it => cmpPad(n, it.run.records.map((r, i) => i >= 12 ? 100 * (r.priceIndex / it.run.records[i - 12].priceIndex - 1) : NaN));
+  const price = it => cmpPad(n, it.run.records.map(r => 100 * r.priceIndex));
+  const mser = runs.map(it => mktPct ? { s: chg(it, "stockIndex"), b: chg(it, "bondIndex"), p: infl(it) } : { s: idx(it, "stockIndex"), b: idx(it, "bondIndex"), p: price(it) });
   const mk = [];
-  runs.forEach(it => mk.push({ color: it.color, values: idx(it, "stockIndex") }, { color: it.color, dash: "6 3", width: 1.5, values: idx(it, "bondIndex") },
-    { color: it.color, dash: "2 3", width: 1.2, values: cmpPad(n, it.run.records.map(r => 100 * r.priceIndex)) }));
-  cmpTime("cmp-mkt", n, mk, k => runs.map(it => cmpRow(it, idx(it, "stockIndex")[k], v => `Aktien ${v.toFixed(1)}, Obligationen ${idx(it, "bondIndex")[k].toFixed(1)}, Preisindex ${(100 * it.run.records[k].priceIndex).toFixed(1)}`)).join(""),
-    { ref: 100, yFmt: v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }) });
+  runs.forEach((it, j) => mk.push({ color: it.color, values: mser[j].s }, { color: it.color, dash: "6 3", width: 1.5, values: mser[j].b }, { color: it.color, dash: "2 3", width: 1.2, values: mser[j].p }));
+  const f1 = v => Number.isFinite(v) ? v.toLocaleString("de-CH", { maximumFractionDigits: 1 }) + (mktPct ? " %" : "") : "–";
+  cmpTime("cmp-mkt", n, mk, k => runs.map((it, j) => cmpRow(it, mser[j].s[k], () => mktPct ? `Aktien ${f1(mser[j].s[k])}, Obligationen ${f1(mser[j].b[k])}, Inflation ${f1(mser[j].p[k])}`
+    : `Aktien ${f1(mser[j].s[k])}, Obligationen ${f1(mser[j].b[k])}, Preisindex ${f1(mser[j].p[k])}`)).join(""),
+    { ref: mktPct ? 0 : 100, log: mktLog && !mktPct, yFmt: mktPct ? v => `${v.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %` : v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }) });
 }
 function cmpTable(body, items) {
   const runs = items.filter(it => it.run);
