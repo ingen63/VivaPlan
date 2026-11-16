@@ -3943,6 +3943,8 @@ test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", ()
     await expect(page.locator(".survclip")).toContainText("tiefster Wert 60 %");
     expect(await page.locator("#mc-surv g.clipped path").count()).toBe(1);
     expect(await page.locator("#mc-surv clipPath rect").count()).toBe(1);
+    // die Grafik muss im sichtbaren Bereich liegen, sonst erreicht die Maus sie nicht (Kopfzeile kann umbrechen)
+    await page.locator("#mc-surv").scrollIntoViewIfNeeded();
     const box = await page.locator("#mc-surv").boundingBox();
     await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
     await expect(page.locator("#mc-surv-tip")).toContainText("60 %");
@@ -4121,5 +4123,74 @@ test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)
     });
     expect(missing).toEqual([]);
     await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Kopfzeile des Ergebnisses mit dem Namen (FEA-98)", () => {
+  const title = page => page.locator("#resultsTitle");
+
+  test("FEA-98/AK1, AK3: frisch berechnet mit mehreren Läufen: «Name · 500 Läufe»", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 }); return runSimulation("overview", { noConfirm: true }); });
+    await expect(title(page).locator(".rtkind")).toHaveText("500 Läufe");
+    const name = await page.evaluate(async () => (await Runs.list())[0].name);
+    expect(name).toContain("MC hist.");
+    await expect(title(page).locator(".rtname")).toHaveText(name);
+    await expect(title(page)).toHaveText(`${name} · 500 Läufe`);
+    await expect(title(page)).toHaveAttribute("title", name);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-98/AK2: Einzellauf: Name vorne, danach «Einzellauf · …»", async ({ page }) => {
+    const errors = await open(page, "results");
+    await expect(title(page).locator(".rtname")).toBeAttached();
+    const name = await page.evaluate(async () => (await Runs.list())[0].name);
+    await expect(title(page).locator(".rtname")).toHaveText(name);
+    await expect(title(page).locator(".rtkind")).toHaveText(/^Einzellauf/);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-98/AK3, AK4: gespeichertes Ergebnis aus der Liste zeigt seinen (neuen) Namen", async ({ page }) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    const id = await page.evaluate(async () => { const [m] = await Runs.list(); await Runs.update(m.id, { name: "Variante Aktien 30 %" }); return m.id; });
+    await page.evaluate(id => viewRun(id), id);
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
+    await expect(title(page)).toHaveText("Variante Aktien 30 % · 500 Läufe");
+    // zurück zur Liste: Kopfzeile ohne Namen und ohne Tooltip
+    await page.evaluate(() => openRuns());
+    await expect(title(page)).toHaveText("Gespeicherte Ergebnisse");
+    expect(await title(page).getAttribute("title")).toBeNull();
+    await noErrors(page, errors);
+  });
+
+  test("FEA-98/AK5: langer Name wird gekürzt, die Anzahl der Läufe bleibt sichtbar, voller Name im Tooltip", async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 800 });
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    const long = "Sehr lange Bezeichnung einer Berechnung ".repeat(8).trim();
+    const id = await page.evaluate(async long => { const [m] = await Runs.list(); await Runs.update(m.id, { name: long }); return m.id; }, long);
+    await page.evaluate(id => viewRun(id), id);
+    await expect(title(page)).toHaveAttribute("title", long);
+    const r = await page.evaluate(() => { const n = document.querySelector("#resultsTitle .rtname"), k = document.querySelector("#resultsTitle .rtkind").getBoundingClientRect();
+      return { cut: n.scrollWidth > n.clientWidth, overflow: getComputedStyle(n).textOverflow, right: k.right, w: window.innerWidth, kw: k.width }; });
+    expect(r.cut).toBe(true);
+    expect(r.overflow).toBe("ellipsis");
+    expect(r.kw).toBeGreaterThan(0);
+    expect(r.right).toBeLessThanOrEqual(r.w);
+    await expect(title(page).locator(".rtkind")).toBeInViewport();
+    await noErrors(page, errors);
+  });
+
+  test("FEA-98/AK6: ohne gespeicherten Namen bleibt die Kopfzeile wie bisher", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { Runs.add = async () => { throw new Error("Speicher voll (Test)"); }; state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 }); return runSimulation("overview", { noConfirm: true }); });
+    await expect(title(page)).toHaveText("500 Läufe");
+    await expect(title(page).locator(".rtname")).toHaveCount(0);
+    expect(await title(page).getAttribute("title")).toBeNull();
+    // erwartet: nur der gemeldete Speicherfehler
+    expect(errors.filter(e => !/Speicher voll/.test(e))).toEqual([]);
+    expect((await page.evaluate(() => window.__errors)).filter(e => !/Speicher voll/.test(String(e?.message ?? e)))).toEqual([]);
   });
 });

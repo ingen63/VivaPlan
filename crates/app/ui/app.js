@@ -2123,12 +2123,24 @@ async function confirmSaveBeforeRun() {
   if (r === true) { await save(false); if (dirty) return false; }
   return true;
 }
+// FEA-98: Kopfzeile der Ergebnisse. Bei einem Ergebnis zuerst sein Name (gespeichert bzw. eben abgelegt), dann die Art
+// des Laufs; der Name wird gekürzt und steht voll im Tooltip. Ohne Namen nur die Art.
+let lastRunName = null, resultHead = "";
+function plainTitle(t) { const el = $("#resultsTitle"); el.textContent = t; el.removeAttribute("title"); }
+function setResultsTitle(head = resultHead) {
+  resultHead = head;
+  const name = savedView ? savedView.name : lastRunName;
+  if (!name) return plainTitle(head);
+  const el = $("#resultsTitle");
+  el.innerHTML = `<span class="rtname">${esc(name)}</span><span class="rtsep"> · </span><span class="rtkind">${esc(head)}</span>`;
+  el.title = name;
+}
 async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
   if (await blockedByErrors()) return;
   if (!await confirmSaveBeforeRun()) return;
   if (!noConfirm && !await confirmLongRun()) return;
-  unpark(); showResults(true); resultTab = tab; detailP = 50; resetVariation();
-  $("#resultsTitle").textContent = "Simulation läuft…"; $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
+  unpark(); showResults(true); resultTab = tab; detailP = 50; resetVariation(); lastRunName = null;
+  plainTitle("Simulation läuft…"); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
   $("#resultsBody").innerHTML = jobCard("Simulation läuft…", "Die Berechnung läuft lokal auf diesem Rechner.");
   try {
     const planAtRun = JSON.parse(JSON.stringify(state));
@@ -2137,7 +2149,7 @@ async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
     if (isCancelled(lastRun.error)) { lastRun = null; showResults(false); return toast("Simulation abgebrochen."); }
     renderResults(lastRun); document.documentElement.dataset.rendered = resultTab; rememberRun(lastRun);
     if (!lastRun.error) Steps.mark("run"); }
-  catch (e) { $("#resultsTitle").textContent = "Fehler"; $("#resultsBody").innerHTML = `<div class="card errcard">${esc(errText(e))}</div>`; }
+  catch (e) { plainTitle("Fehler"); $("#resultsBody").innerHTML = `<div class="card errcard">${esc(errText(e))}</div>`; }
 }
 const kpi = (k, v, s = "", cls = "") => `<div class="kpi ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
 /** Legende; Eintrag [Farbe, Text, Deckkraft, Linienart]: mit Linienart «solid» oder «dashed» ein Linien-Symbol statt des Kästchens. */
@@ -2660,7 +2672,7 @@ function renderResults(r) {
   compareOpen = false;
   const info = `${r.elapsedMs < 1 ? r.elapsedMs.toFixed(2) : r.elapsedMs.toFixed(0)} ms`;
   if (r.error) {
-    $("#resultsTitle").textContent = "Simulation nicht möglich"; $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
+    plainTitle("Simulation nicht möglich"); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
     $("#resultsBody").innerHTML = `<div class="card errcard"><p style="margin-top:0">${esc(r.error)}</p>
       <ul class="val">${r.issues.filter(i => i.severity === "error").map(i => `<li class="err" data-action="back"><span class="ic">!</span><span>${esc(i.message)}</span></li>`).join("")}</ul></div>`;
     return;
@@ -2672,7 +2684,7 @@ function renderResults(r) {
   if (!tabs.some(([k]) => k === resultTab)) resultTab = "overview";
   // Einzellauf mit Variationen: gewählte Stufe (sonst der Planlauf)
   const sg = r.single ? singleOf(r) : null;
-  $("#resultsTitle").textContent = sg ? ["Einzellauf", runInfo(sg.label), r.scenarios ? selectedVariationText() : ""].filter(Boolean).join(" · ") : `${fmtInt(r.batch.summary.runs)} Läufe`;
+  setResultsTitle(sg ? ["Einzellauf", runInfo(sg.label), r.scenarios ? selectedVariationText() : ""].filter(Boolean).join(" · ") : `${fmtInt(r.batch.summary.runs)} Läufe`);
   const varied = r.batch && r.scenarios && !!variationSel;
   $("#resultsPick").innerHTML = r.single && r.scenarios ? variationPicker(r)
     : r.batch && r.scenarios && (resultTab === "runs" || resultTab === "table") ? variationPicker(r)
@@ -2910,6 +2922,8 @@ async function rememberRun(r) {
     const now = new Date().toISOString();
     const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
     await Runs.add(meta, { plan, result: r });
+    // FEA-98: das eben gezeigte Ergebnis bekommt seinen Namen in die Kopfzeile
+    if (lastRun === r && !savedView) { lastRunName = meta.name; if (resultHead) setResultsTitle(); }
     document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
   } catch (e) { noteError("Ergebnis nicht gespeichert: " + errText(e)); }
 }
@@ -2924,7 +2938,7 @@ function runsBar() {
 }
 async function openRuns() {
   showResults(true); lastRun = null; savedView = null; compareOpen = false;
-  $("#resultsTitle").textContent = "Gespeicherte Ergebnisse";
+  plainTitle("Gespeicherte Ergebnisse");
   let list = [];
   try { list = await Runs.list(); } catch (e) { noteError(errText(e)); }
   for (const id of [...runsSel]) if (!list.some(m => m.id === id)) runsSel.delete(id);
@@ -3023,7 +3037,7 @@ async function compareRuns() {
   lastRun = null; savedView = null; compareOpen = true;
   const items = metas.map((m, i) => cmpItem(m, datas[i], i));
   if (!CMP_TABS.some(([k]) => k === compareTab)) compareTab = "overview";
-  $("#resultsTitle").textContent = `Vergleich von ${metas.length} Ergebnissen`; $("#resultsInfo").textContent = realView ? "heutige Kaufkraft" : "nominal";
+  plainTitle(`Vergleich von ${metas.length} Ergebnissen`); $("#resultsInfo").textContent = realView ? "heutige Kaufkraft" : "nominal";
   $("#resultsPick").innerHTML = "";
   $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-open">← Zur Liste</button>
     <div class="seg tabs">${CMP_TABS.map(([k, t]) => `<button class="${k === compareTab ? "on" : ""}" data-action="cmp-tab" data-tab="${k}">${t}</button>`).join("")}</div>
