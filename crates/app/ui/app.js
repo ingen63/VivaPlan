@@ -1906,6 +1906,7 @@ const ACTIONS = {
   detail: d => showDetail(+d.p),
   rtab: d => { resultTab = d.tab; renderResults(lastRun); },
   real: d => { realView = d.v === "1"; redrawResults(); },
+  "surv-scale": d => { survFull = d.v === "0"; redrawResults(); },
   // FEA-90: Registerkarten und Auswahlen im Vergleich
   "cmp-tab": d => { compareTab = d.tab; compareRuns(); },
   "cmp-liquid": d => { cmpLiquid = d.v; compareRuns(); },
@@ -2403,11 +2404,19 @@ function histQuantile(h, q) {
   for (let i = 0; i < h.counts.length; i++) { acc += h.counts[i]; if (acc >= q * total) return (h.edges[i] + h.edges[i + 1]) / 2; }
   return h.edges[h.edges.length - 1];
 }
+// FEA-94: Achse der Grafik «Wahrscheinlichkeit, dass das Geld reicht»: Standard 80–100 %, umschaltbar auf 0–100 %;
+// die Wahl gilt im Einzelergebnis und im Vergleich, bis sie geändert wird.
+const SURV_LO = 80;
+let survFull = false;
+const survRange = () => [survFull ? 0 : SURV_LO, 100];
+const survSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${survFull ? "" : "on"}" data-action="surv-scale" data-v="80">80–100 %</button><button class="${survFull ? "on" : ""}" data-action="surv-scale" data-v="0">0–100 %</button></div>`;
+const survClipNote = min => !survFull && min < SURV_LO
+  ? `<p class="hint survclip">Die Kurve fällt unter ${SURV_LO} % (tiefster Wert ${min.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %) und ist unten abgeschnitten. «0–100 %» zeigt sie ganz.</p>` : "";
 function batchChartsHtml(b) {
   const st = b.stats;
   return card("Bandbreite des Gesamtvermögens", `${realNote()}, über alle Läufe`, chartBox("mc-fan", 300, true)
       + FAN_LEGEND)
-    + card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", chartBox("mc-surv", 260, true))
+    + card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", survSwitch() + chartBox("mc-surv", 260, true) + survClipNote(Math.min(...st.survival) * 100))
     + card("Verteilung des Endvermögens", realNote(), chartBox("mc-end", 260) + legend([["--text", "1., 5., 50. (Median), 95. und 99. Perzentil", null, "dashed"]]))
     + (st.atRetirement ? card("Verteilung des Vermögens bei Pensionierung", "nominal", chartBox("mc-ret", 240)) : "")
     + (st.depletionAges.length ? card("Alter bei Erschöpfung", "Anzahl Läufe, in denen das Vermögen in diesem Altersjahr aufgebraucht ist", chartBox("mc-dep", 220)) : "");
@@ -2419,9 +2428,7 @@ function drawBatchCharts(b) {
     lines: [{ color: "--c1", values: bands.p50 }, { color: "--warn", dash: "5 3", width: 1.5, values: bands.p99 }, { color: "--warn", dash: "5 3", width: 1.5, values: bands.p1 }, { color: "--err", width: 1.5, values: bands.min }],
     tip: i => `<b>${ymShow(bands.months[i])}</b> · Alter ${ageStr(x[i])}<br>99. ${fmtMoney(bands.p99[i])}<br>95. ${fmtMoney(bands.p95[i])}<br>75. ${fmtMoney(bands.p75[i])}<br><b>Median ${fmtMoney(bands.p50[i])}</b><br>25. ${fmtMoney(bands.p25[i])}<br>5. ${fmtMoney(bands.p5[i])}<br>1. ${fmtMoney(bands.p1[i])}<br><span style="color:var(--err)">Schlechtester ${fmtMoney(bands.min[i])}</span>` });
   const surv = st.survival.map(v => v * 100);
-  // Achse auf den relevanten Bereich zoomen (mindestens 10 Prozentpunkte)
-  const sMin = Math.min(...surv), sLo = Math.max(0, Math.min(90, Math.floor((sMin - 2) / 5) * 5));
-  Charts.time($("#mc-surv"), $("#mc-surv-tip"), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: v => `${v} %`, range: [sLo, 100],
+  Charts.time($("#mc-surv"), $("#mc-surv-tip"), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: v => `${v} %`, range: survRange(),
     lines: [{ color: "--ok", values: surv }],
     tip: i => `<b>${ymShow(bands.months[i])}</b> · Alter ${ageStr(x[i])}<br>Geld reicht in <b>${surv[i].toLocaleString("de-CH", { maximumFractionDigits: 1 })} %</b> der Läufe` });
   const h = realView ? st.endTotalReal : st.endTotal;
@@ -3062,12 +3069,13 @@ function cmpOverview(body, items) {
     + cmpNote(notes)
     + (fanLines.length ? card("Bandbreite des Gesamtvermögens", `${cmpReal()} · durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil, gepunktet: 95. Perzentil`, chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
     + card("Endvermögen nach Perzentil", cmpReal(), pTable)
-    + (batches.length ? card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", chartBox("cmp-surv", 260, true) + cmpLegend(batches)) : "")
+    + (batches.length ? card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", survSwitch() + chartBox("cmp-surv", 260, true) + cmpLegend(batches)
+      + survClipNote(Math.min(...surv.filter(Boolean).flat()))) : "")
     + (batches.length ? card("Alter bei Erschöpfung", "Anteil der Läufe, in denen das Vermögen in diesem Altersjahr aufgebraucht ist",
       ages.length ? chartBox("cmp-dep", 220) + cmpLegend(batches) : `<p class="hint" style="margin:0">In keinem Lauf aufgebraucht.</p>`) : "");
   if (fanLines.length) cmpTime("cmp-wealth", n, fanLines, k => fan.map((f, j) => f ? cmpRow(items[j], cmpPad(n, f.med)[k], fmtMoney) : "").join(""), { yFmt: fmtMio });
   if (batches.length) cmpTime("cmp-surv", ns, surv.map((v, j) => v && { color: items[j].color, values: cmpPad(ns, v) }).filter(Boolean),
-    k => surv.map((v, j) => v ? cmpRow(items[j], cmpPad(ns, v)[k], x => `${x.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`) : "").join(""), { yFmt: v => `${v} %`, range: [0, 100] });
+    k => surv.map((v, j) => v ? cmpRow(items[j], cmpPad(ns, v)[k], x => `${x.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`) : "").join(""), { yFmt: v => `${v} %`, range: survRange() });
   if (ages.length) {
     const shares = batches.map(depShare);
     Charts.bars($("#cmp-dep"), $("#cmp-dep-tip"), { cats: ages.map(String), minBar: 3, yFmt: v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`,

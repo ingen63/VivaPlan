@@ -154,6 +154,9 @@ const Charts = (() => {
         lastLabel = f.x(i);
       }
     }
+    // FEA-94: Bei fester Achse (range) werden Werte ausserhalb am Rand abgeschnitten, nicht verzerrt
+    const clip = o.range ? `clip-${svg.id || "t"}` : null;
+    if (clip) h += `<clipPath id="${clip}"><rect x="${f.L}" y="${f.T - 2}" width="${f.W - f.L - f.R}" height="${f.H - f.T - f.B + 4}"/></clipPath><g class="clipped" clip-path="url(#${clip})">`;
     for (const b of o.bands || []) {
       const up = b.hi.map((v, i) => [f.x(i), f.y(v)]), down = b.lo.map((v, i) => [f.x(i), f.y(v)]).reverse();
       h += `<path d="${pathOf(up)}L${pathOf(down).slice(1)}Z" fill="${color(b.color)}" fill-opacity="${b.opacity ?? 0.2}"/>`;
@@ -168,6 +171,7 @@ const Charts = (() => {
     for (const l of o.lines || []) {
       h += `<path d="${pathOf(l.values.map((v, i) => [f.x(i), f.y(v)]))}" fill="none" stroke="${color(l.color)}" stroke-width="${l.width ?? 2}" ${l.dash ? `stroke-dasharray="${l.dash}"` : ""}/>`;
     }
+    if (clip) h += "</g>";
     for (const mk of o.marks || []) {
       const i = mk.x - o.x[0]; if (i < 0 || i >= n) continue;
       h += `<line x1="${f.x(i)}" x2="${f.x(i)}" y1="${f.T}" y2="${f.H - f.B}" stroke="${color(mk.color || "--muted")}" stroke-dasharray="3 3" stroke-opacity=".7"><title>${escx(mk.label)}</title></line>`;

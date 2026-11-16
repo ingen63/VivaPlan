@@ -3896,3 +3896,69 @@ test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", () => {
+  /** Unterste Beschriftung der y-Achse einer Grafik. */
+  const lowest = (page, sel) => page.locator(`${sel} text[text-anchor="end"]`).evaluateAll(l => l.map(t => t.textContent).sort((a, b) => parseFloat(a) - parseFloat(b))[0]);
+  const openSingle = async page => {
+    const errors = await open(page, "runsflow/mem/view");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
+    await page.evaluate(() => showResults(true));
+    await page.locator('button[data-action="rtab"][data-tab="charts"]').click();
+    await expect(page.locator("#mc-surv")).toBeAttached();
+    return errors;
+  };
+  const openCompare = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+
+  test("FEA-94/AK1, AK2: Standard 80–100 % im Einzelergebnis und im Vergleich; der Schalter gilt in beiden und bleibt", async ({ page }) => {
+    const errors = await openSingle(page);
+    expect(await lowest(page, "#mc-surv")).toBe("80 %");
+    await expect(page.locator('button[data-action="surv-scale"].on')).toHaveText("80–100 %");
+    await page.locator('button[data-action="surv-scale"][data-v="0"]').click();
+    expect(await lowest(page, "#mc-surv")).toBe("0 %");
+    // Registerkarte wechseln und zurück: Wahl bleibt
+    await page.locator('button[data-action="rtab"][data-tab="overview"]').click();
+    await page.locator('button[data-action="rtab"][data-tab="charts"]').click();
+    expect(await lowest(page, "#mc-surv")).toBe("0 %");
+    // im Vergleich gilt dieselbe Wahl
+    await page.evaluate(async () => { (await Runs.list()).forEach(m => runsSel.add(m.id)); return compareRuns(); });
+    await expect(page.locator("#cmp-surv")).toBeAttached();
+    expect(await lowest(page, "#cmp-surv")).toBe("0 %");
+    await page.locator('button[data-action="surv-scale"][data-v="80"]').click();
+    expect(await lowest(page, "#cmp-surv")).toBe("80 %");
+    await noErrors(page, errors);
+  });
+
+  test("FEA-94/AK3, AK4: unter 80 % abgeschnitten mit Hinweis, Tooltip mit echtem Wert", async ({ page }) => {
+    const errors = await openSingle(page);
+    await expect(page.locator(".survclip")).toHaveCount(0);
+    // Kurve künstlich auf 60 % fallen lassen
+    await page.evaluate(() => { const s = lastRun.batch.stats.survival; lastRun.batch.stats.survival = s.map((v, i) => i > s.length / 2 ? 0.6 : v); renderResults(lastRun); });
+    await expect(page.locator(".survclip")).toContainText("tiefster Wert 60 %");
+    expect(await page.locator("#mc-surv g.clipped path").count()).toBe(1);
+    expect(await page.locator("#mc-surv clipPath rect").count()).toBe(1);
+    const box = await page.locator("#mc-surv").boundingBox();
+    await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
+    await expect(page.locator("#mc-surv-tip")).toContainText("60 %");
+    await page.locator('button[data-action="surv-scale"][data-v="0"]').click();
+    await expect(page.locator(".survclip")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-94/AK3: im Vergleich Hinweis, wenn eine Kurve unter 80 % fällt", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.evaluate(async () => {
+      const [m] = (await Runs.list()).filter(m => runsSel.has(m.id)), d = await Runs.get(m.id);
+      d.result.batch.stats.survival = d.result.batch.stats.survival.map(v => Math.min(v, 0.7));
+      await Runs.add({ ...m, id: "tief", name: "tief" }, d); runsSel.add("tief"); await compareRuns();
+    });
+    await expect(page.locator(".survclip")).toContainText("tiefster Wert 70 %");
+    await noErrors(page, errors);
+  });
+});
