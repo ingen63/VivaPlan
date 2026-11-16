@@ -3582,7 +3582,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     });
     await expect(page.locator(".cmpyear tr").nth(1).locator("td").nth(1)).toHaveText(want);
     await tab(page, "Verläufe");
-    await expect(page.locator("#resultsBody .card h3").first()).toContainText("heutige Kaufkraft");
+    await expect(page.locator("#resultsBody .card h3", { hasText: "Gesamtvermögen" })).toContainText("heutige Kaufkraft");
     await noErrors(page, errors);
   });
 
@@ -3609,7 +3609,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
   test("FEA-90/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
     const errors = await openCompare(page);
     await tab(page, "Verläufe");
-    await expect(page.locator(".cmpnote").first()).toContainText("Median-Lauf");
+    await expect(page.locator(".cmpnote").first()).toContainText("50. Perzentil (Median)");
     const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
     for (const t of ["Liquides Vermögen nach Anlage", "Einnahmen und Ausgaben pro Jahr", "Entnahme aus dem Vermögen", "Vorsorge", "Aktien, Obligationen und Inflation"])
       expect(titles.some(x => x.startsWith(t)), t).toBe(true);
@@ -3643,6 +3643,28 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
       expect(cmp.length).toBeGreaterThan(30);
       expect(cmp.map(norm)).toEqual(single.map(norm));
     }
+    await noErrors(page, errors);
+  });
+
+  test("FEA-90/AK3, AK4: Lauf wählen: das gewählte Perzentil gilt für Verläufe und Jahreswerte aller Ergebnisse", async ({ page }) => {
+    const errors = await openCompare(page);
+    await tab(page, "Verläufe");
+    await expect(page.locator('button[data-action="cmp-p"][data-p="50"].on')).toBeAttached();
+    const d50 = await page.locator("#cmp-total path").first().getAttribute("d");
+    await page.locator('button[data-action="cmp-p"][data-p="5"]').click();
+    await expect(page.locator(".cmpnote").first()).toContainText("5. Perzentil");
+    await expect.poll(() => page.locator("#cmp-total path").first().getAttribute("d")).not.toBe(d50);
+    // Jahreswerte: dieselbe Auswahl; Gesamtvermögen = Tabelle des Einzelergebnisses für den Lauf des 5. Perzentils
+    await tab(page, "Jahreswerte");
+    await expect(page.locator('button[data-action="cmp-p"][data-p="5"].on')).toBeAttached();
+    const single = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 5)[1];
+      const div = document.createElement("div");
+      div.innerHTML = yearTable(run.records, { total: run.summary.startTotal, liquid: run.summary.startLiquid });
+      return [...div.querySelectorAll("table.yt tr")].slice(1).map(tr => tr.children[5].textContent);
+    });
+    const cmp = await page.locator(".cmpyear tr").evaluateAll(trs => trs.slice(1).map(tr => tr.children[1].textContent));
+    expect(cmp).toEqual(single);
     await noErrors(page, errors);
   });
 
