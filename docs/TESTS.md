@@ -29,10 +29,36 @@ den Rechenkern) und die Darstellung der Grafiken im Detail (Sichtkontrolle mit B
 Alle Dateien in `crates/engine/tests/` sind Module der einen Testdatei `all.rs` (FEA-32); eine neue Datei muss dort
 eingetragen werden, sonst schlägt ein Test fehl.
 
-Die Bedienung der Oberfläche prüft Playwright in `e2e/` (156 Tests, Stand 14.11.2026: `ui.spec.js`, `optimum.spec.js`
+Die Bedienung der Oberfläche prüft Playwright in `e2e/` (176 Tests, Stand 16.11.2026: `ui.spec.js`, `optimum.spec.js`
 und getrennt `ui-cancel.spec.js`, weil der Abbruch für alle laufenden Berechnungen gilt; installiertes Google Chrome,
-lokaler Entwicklungsserver). Die Tests warten auf Zustände statt fester Zeiten; die wenigen festen Pausen sind im Test
-begründet (FEA-65).
+lokaler Entwicklungsserver).
+
+### Oberflächentests unabhängig von der Rechnerlast (FEA-87)
+
+Ob ein Oberflächentest grün ist, darf nicht davon abhängen, wie schnell der Rechner ist oder wie viele Tests parallel
+laufen. Regeln:
+
+- **Auf Zustände warten, nie auf Zeit.** Kein `waitForTimeout`, kein `setTimeout` mit Wartezeit in der Seite. Signale
+  der App auf `<html>`: `data-ready` (gestartet), `data-job` (Berechnung läuft), `data-rendered` (Ergebnis gezeichnet),
+  `data-preview` (`pending`/`idle`: eine Vorschau steht aus). Die Testhilfe `previewIdle(page)` wartet auf die Vorschau,
+  bevor ein Test nach einer Auswahl sofort weitertippt. Ins Menü klickt die Testhilfe `nav(page, titel)`: Jede Vorschau
+  zeichnet das Menü neu, und ein Klick, der in eine Vorschau fällt, ginge verloren.
+- **Eingaben verlassen.** Geprüft und gerechnet wird beim Verlassen des Felds (ISS-13); ein Test, der ein berechnetes
+  Ergebnis erwartet, drückt nach `fill` die Tabulatortaste und verlässt sich nicht auf eine noch ausstehende Vorschau.
+- **Kleine Rechnungen.** Die Testzugänge `#results/…` und `#runsflow` rechnen Bootstrap und Parametrisch mit 500 Pfaden
+  und dem Zufallsstartwert 42: schnell und bei jedem Lauf gleich. Tests, die selbst rechnen, setzen wenige Pfade.
+- **Keine Messung im Hintergrund.** Die Testhilfe `open()` öffnet mit dem Testzugang `#nobench`; die App misst dann die
+  Rechenzeit nicht (Anzeige «Dauer wird geschätzt…», keine Rückfrage «Lange Berechnung»). Nur Tests, die die echte
+  Messung prüfen, öffnen mit `open(page, …, { bench: true })`.
+- **«Es geschieht nichts»** prüfen die ISS-13-Tests mit der Uhr von Playwright (`page.clock.install()`,
+  `page.clock.runFor(800)`): Die Zeit springt vor, jeder fällige Timer läuft, und die Seite zählt die Anfragen an den
+  Rechenkern; während der Eingabe darf keine starten.
+- **Keine eigenen Timeouts.** Es gelten die Grenzwerte aus `e2e/playwright.config.js` als Schutz gegen Hänger. Ausnahme
+  sind die Abbruchtests in `ui-cancel.spec.js`, die absichtlich lange rechnen.
+
+Geprüft am 16.11.2026 auf einem Rechner mit 10 Kernen: mit 2 Workern (wie der GitHub-Runner) und mit 10 Workern je
+mehrmals hintereinander grün; der ganze Satz dauert mit 2 Workern rund 1 Minute (vorher rund 5 Minuten). Bei starker
+Überbelegung (16 Worker) kann einzelnes an den Grenzwerten scheitern; das ist gewollt, die Grenzwerte schützen vor Hängern.
 
 ## Ausführen
 
@@ -41,7 +67,7 @@ make test                                        # Schichten 1–6 (Rust), mit n
 make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test, ohne Browser)
 make clippy                                      # clippy, Warnungen sind Fehler (wie im Workflow, FEA-70)
 tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
-(cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 156 Tests)
+(cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 176 Tests)
 make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)
 ```
 

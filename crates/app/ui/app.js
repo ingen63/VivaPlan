@@ -151,8 +151,12 @@ function adapt(r) {
   return out;
 }
 
+/** `data-preview` auf <html>: «pending», solange eine Vorschau aussteht, sonst «idle» (FEA-87: Signal für die Oberflächentests). */
 function requestPreview() {
+  requestPreview.n ??= 0;
   clearTimeout(previewTimer);
+  document.documentElement.dataset.preview = "pending";
+  const req = ++requestPreview.n;
   previewTimer = setTimeout(async () => {
     const seq = ++previewSeq;
     try {
@@ -164,6 +168,7 @@ function requestPreview() {
       previewError = errText(e); lastSim = null;
     }
     renderDerived();
+    if (req === requestPreview.n) document.documentElement.dataset.preview = "idle"; // keine neuere Anfrage
   }, 120);
 }
 
@@ -780,7 +785,8 @@ const jobCancel = async () => {
   const b = document.getElementById("jobCancel"); if (b) b.disabled = true;
   try { await Engine.call("cancel_job", { jobId: job?.id }); } catch (e) { toast(errText(e)); }
 };
-const bench = { key: "", us: null, gen: 0, fixedPaths: null, cores: 0, busy: false, error: null };
+// `off`: Testzugang #nobench (FEA-87). Ohne Messung zeigt die App «Dauer wird geschätzt…» und rechnet ohne Rückfrage.
+const bench = { key: "", us: null, gen: 0, fixedPaths: null, cores: 0, busy: false, error: null, off: false };
 const benchKey = () => JSON.stringify({ ...state, optimization: undefined, scenarios: undefined });
 /** Die Pfade der Suche werden einmal erzeugt und dann je Kandidat nur gerechnet; die Prüfpfade entstehen bei jeder Auswertung neu. */
 /** Auswertungen je Strategie; mit weniger variierten Parametern sind es weniger Suchschritte. */
@@ -821,7 +827,7 @@ function updateEstimates() {
 }
 async function ensureBench() {
   const key = benchKey();
-  if (job || bench.busy || (bench.key === key && (bench.us != null || bench.error))) return;
+  if (bench.off || job || bench.busy || (bench.key === key && (bench.us != null || bench.error))) return;
   bench.busy = true;
   try {
     const r = await Engine.call("bench_plan", { plan: state, path: currentPath });
@@ -832,7 +838,7 @@ async function ensureBench() {
   if (benchKey() !== bench.key) scheduleBench();
 }
 /** Die Messung läuft kurz nach der letzten Änderung, damit sie beim Tippen nicht ständig startet. */
-function scheduleBench() { clearTimeout(scheduleBench.t); scheduleBench.t = setTimeout(ensureBench, 800); }
+function scheduleBench() { if (bench.off) return; clearTimeout(scheduleBench.t); scheduleBench.t = setTimeout(ensureBench, 800); }
 function optInput(id, label, unit, hint = "") {
   return `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="opt-${id}" value="${esc(optCfg[id])}">${unit ? `<span class="unit">${unit}</span>` : ""}</div>${hint ? `<span class="computed">${hint}</span>` : ""}</label>`;
 }
@@ -1945,7 +1951,8 @@ function ask(title, html, value = null, okLabel = "OK", discardLabel = null) {
     d.querySelector('button[value="ok"]').textContent = okLabel;
     $("#askTitle").textContent = title; $("#askText").innerHTML = html;
     inp.hidden = value === null; inp.value = value ?? ""; d.returnValue = "";
-    d.onclose = () => res(d.returnValue === "discard" ? "discard" : d.returnValue === "ok" ? (value === null ? true : inp.value.trim()) : null);
+    // FEA-87: Das Ereignis «close» kommt verzögert. Ist der Dialog schon wieder offen (nächste Frage), gehört es zur vorherigen.
+    d.onclose = () => { if (!d.open) res(d.returnValue === "discard" ? "discard" : d.returnValue === "ok" ? (value === null ? true : inp.value.trim()) : null); };
     d.showModal(); if (value !== null) inp.select();
   });
 }
@@ -3045,6 +3052,11 @@ Object.assign(ACTIONS, {
   if (initial.includes("vpw")) state.withdrawal.strategy = "vpw";
   if (initial.includes("endowment")) state.withdrawal.strategy = "endowment";
   if (initial.includes("guardrails")) state.withdrawal.strategy = "guardrails";
+  // FEA-87: Testzugang ohne Messung der Rechenzeit; sie liefe sonst in jedem Test im Hintergrund mit
+  if (initial.includes("nobench")) bench.off = true;
+  // FEA-87: Ergebnisse im Testzugang mit 500 Pfaden und festem Zufallsstartwert: schnell und bei jedem Lauf gleich. Die Tests
+  // prüfen Darstellung und Ablauf; 50 000 Pfade machten sie von der Rechnerlast abhängig.
+  if (initial[0] === "results") for (const k of ["bootstrap", "parametric"]) Object.assign(state.returns[k], { paths: 500, seed: 42 });
   if (!IS_MAC) document.querySelectorAll("[title]").forEach(el => { el.title = el.title.replace(/⇧⌘/g, "Ctrl+Shift+").replace(/⌘↩/g, "Ctrl+Enter").replace(/⌘/g, "Ctrl+"); });
   setFile(startup?.path ?? null); History.reset();
   if (initial.includes("partner")) { ACTIONS["partner-add"](); state.partner.income = { mode: "const", value: 3000 }; History.reset(); }
@@ -3086,10 +3098,10 @@ Object.assign(ACTIONS, {
   if (initial.includes("mem")) Runs.memoryOnly();
   if (initial[0] === "about") showAbout();
   if (initial[0] === "runs") openRuns();
-  // Testzugang: zwei Simulationen ablegen, dann vergleichen (…/view: erste ansehen, …/del: eine löschen). 1000 statt 50 000 Pfade:
-  // Die Tests prüfen Liste, Vergleich und Darstellung, keine Kennzahlen; mit 50 000 Pfaden dauerten sie bei parallelen Tests über 30 s (ISS-16).
+  // Testzugang: zwei Simulationen ablegen, dann vergleichen (…/view: erste ansehen, …/del: eine löschen). 500 statt 50 000 Pfade mit
+  // festem Startwert wie #results (FEA-87): Die Tests prüfen Liste, Vergleich und Darstellung, keine Kennzahlen (ISS-16).
   if (initial[0] === "runsflow") (async () => {
-    state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 1000;
+    state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 });
     await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
     setP("wealth.stockShare.value", 0.3);
     await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));

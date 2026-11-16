@@ -6,11 +6,16 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-/** Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler. */
-async function open(page, hash = "") {
+/**
+ * Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler.
+ * FEA-87: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
+ * der Rechnerlast abhängig. Tests, die die echte Messung prüfen, öffnen mit `{ bench: true }`.
+ */
+async function open(page, hash = "", { bench = false } = {}) {
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
-  await page.goto("/" + (hash ? "#" + hash : ""));
+  const h = bench ? hash : [hash, "nobench"].filter(Boolean).join("/");
+  await page.goto("/" + (h ? "#" + h : ""));
   await page.waitForSelector("html[data-ready='1']");
   await expect(page.locator("#chart path").first()).toBeAttached();
   return errors;
@@ -40,7 +45,7 @@ test.describe("Abbrechen laufender Berechnungen", () => {
 
   test("Simulation zeigt die Dauer am Knopf und lässt sich abbrechen", async ({ page }) => {
     test.setTimeout(120_000);
-    const errors = await open(page, "scenarios/bootstrap");
+    const errors = await open(page, "scenarios/bootstrap", { bench: true });
     await expect(page.locator("#est-run")).toContainText("Dauer:", { timeout: 30_000 });
     await page.evaluate(() => { state.returns.bootstrap.paths = 1000000; });
     await page.evaluate(() => { runSimulation("overview", { noConfirm: true }); });

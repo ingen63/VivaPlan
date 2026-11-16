@@ -8,11 +8,16 @@ const MOD = process.platform === "darwin" ? "Meta" : "Control";
 const SECTIONS = ["Haushalt & Projekt", "Meilensteine", "Vorsorge", "Säule 3a", "Einnahmen & Ausgaben", "Vermögen & Anlage",
   "Simulation", "Entnahmestrategie", "Optimierung", "Steuern", "Immobilien", "Szenarien & Simulation"];
 
-/** Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler. */
-async function open(page, hash = "") {
+/**
+ * Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler.
+ * FEA-87: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
+ * der Rechnerlast abhängig. Tests, die die echte Messung prüfen, öffnen mit `{ bench: true }`.
+ */
+async function open(page, hash = "", { bench = false } = {}) {
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
-  await page.goto("/" + (hash ? "#" + hash : ""));
+  const h = bench ? hash : [hash, "nobench"].filter(Boolean).join("/");
+  await page.goto("/" + (h ? "#" + h : ""));
   await page.waitForSelector("html[data-ready='1']");
   await expect(page.locator("#chart path").first()).toBeAttached();
   return errors;
@@ -22,6 +27,10 @@ const noErrors = async (page, errors) => {
   expect(await page.evaluate(() => window.__errors)).toEqual([]);
 };
 const field = (page, p) => page.locator(`input[data-path="${p}"]`);
+/** FEA-87: wartet, bis keine Vorschau mehr aussteht (sonst nimmt eine verzögerte Vorschau die nächste Eingabe halb mit). */
+const previewIdle = page => expect(page.locator("html")).toHaveAttribute("data-preview", "idle");
+/** FEA-87: Klick ins Menü. Jede Vorschau zeichnet das Menü neu; ein Klick, der in eine Vorschau fällt, ginge verloren. */
+const nav = async (page, title) => { await previewIdle(page); await page.locator("#nav a", { hasText: title }).first().click(); };
 const kpiValue = (page, label) => page.locator(`#kpis .kpi:has(.k:text-is("${label}")) .v`);
 const resultKpi = (page, label) => page.locator(`#resultsBody .kpi:has(.k:text-is("${label}")) .v`);
 const parseNum = s => Number(s.replace(/[’'\sk]/g, ""));
@@ -122,10 +131,10 @@ test.describe("Start und Navigation", () => {
     await expect(page.locator("#main")).toContainText("Altersguthaben per Simulationsstart (03.2027)");
     await page.evaluate(() => ACTIONS["partner-add"]());
     await expect(page.locator("#main label.field span", { hasText: "Altersguthaben per Simulationsstart (03.2027)" })).toHaveCount(2);
-    await page.locator("#nav a", { hasText: "Immobilien" }).click();
+    await nav(page, "Immobilien");
     await expect(page.locator("#main")).toContainText("Marktwert per Simulationsstart (03.2027)");
     // FEA-37: Die Säule 3a hat einen eigenen Abschnitt.
-    await page.locator("#nav a", { hasText: "Säule 3a" }).click();
+    await nav(page, "Säule 3a");
     await expect(page.locator("#main")).toContainText("Guthaben per Simulationsstart (03.2027)");
     for (let i = 0; i < SECTIONS.length; i++) {
       await page.locator("#nav a").nth(i).click();
@@ -183,7 +192,7 @@ test.describe("Start und Navigation", () => {
     await bonds.selectOption("usa");
     await expect(card).toContainText("Monatlich 01.1922 – 12.2025");
     expect(await page.evaluate(() => state.returns.strategy)).toMatchObject({ stocks: "sp500", bonds: "usa" });
-    await page.locator("#nav a", { hasText: "Simulation" }).first().click();
+    await nav(page, "Simulation");
     await expect(page.locator("#main h2")).toHaveText(/^Simulation/);
     await page.evaluate(() => { state.returns.source = "rolling"; renderSection(); });
     await expect(page.locator("#main")).toContainText("Renditen aus der Anlagestrategie");
@@ -220,6 +229,7 @@ test.describe("Start und Navigation", () => {
     for (const k of ["ch", "usa", "eu", "apac"]) await expect(field(page, `returns.strategy.weights.${k}`)).toBeVisible();
     await expect(card).toContainText("Summe 100 %");
     const eu = field(page, "returns.strategy.weights.eu");
+    await previewIdle(page);
     await eu.fill("50");
     await expect(card.locator(".ferr")).toHaveCount(0); // während der Eingabe wartet alles (ISS-13)
     await eu.press("Tab");
@@ -356,7 +366,7 @@ test.describe("Start und Navigation", () => {
   test("ISS-10: Warnsymbol in der Karte «Umfang» ab 90 s geschätzter Rechenzeit", async ({ page }) => {
     const errors = await open(page, "scenarios");
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
-    const fake = async sec => { await page.waitForFunction(() => !bench.busy); await page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); updateEstimates(); }, sec); };
+    const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); updateEstimates(); }, sec);
     const warn = page.locator("#est-warn");
     await fake(89);
     await expect(warn).toHaveText("");
@@ -435,7 +445,6 @@ test.describe("Start und Navigation", () => {
   });
 
   test("FEA-13: Pflichtfelder mit Sternchen, Fehler am Feld, Start und Optimierung gesperrt bis alles gültig ist", async ({ page }) => {
-    test.setTimeout(120_000);
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
@@ -451,6 +460,7 @@ test.describe("Start und Navigation", () => {
     await expect(page.locator("#results")).toBeHidden();
     // Ungültiges Geburtsdatum: Fehler am Feld, gesperrt
     await field(page, "household.persons.0.name").fill("Anna");
+    await field(page, "household.persons.0.name").press("Tab"); // ISS-13: die Meldung verschwindet beim Verlassen
     await expect(name.locator(".ferr")).toHaveCount(0);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("");
@@ -504,7 +514,7 @@ test.describe("Start und Navigation", () => {
 test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
   test("Vorschau rechnet beim Verlassen des Feldes neu (ISS-13)", async ({ page }) => {
     const errors = await open(page);
-    await page.locator("#nav a", { hasText: "Vermögen & Anlage" }).click();
+    await nav(page, "Vermögen & Anlage");
     const before = await kpiValue(page, "Vermögen am Ende").textContent();
     const stocks = page.locator('input[data-path="wealth.stocks"]');
     const original = await stocks.inputValue();
@@ -547,10 +557,11 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
 
   test("Simulationsende vor Start: Fehler im Menü, keine Berechnung", async ({ page }) => {
     const errors = await open(page);
-    await page.locator("#nav a", { hasText: "Meilensteine" }).click();
+    await nav(page, "Meilensteine");
     const endRow = await msRow(page, "end");
     await endRow.locator("select").first().selectOption("date");
     await endRow.locator("input[data-type=month]").fill("01.2000");
+    await endRow.locator("input[data-type=month]").press("Tab"); // ISS-13: Prüfung beim Verlassen (FEA-87: nicht auf eine Vorschau warten)
     await expect(page.locator("#val li.err").first()).toBeVisible();
     await expect(page.locator("#nav a .badge.err").first()).toBeVisible();
     await page.keyboard.press(`${MOD}+Enter`);
@@ -580,7 +591,8 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
   test("leerer Projektname und leere Zahlen führen nicht zum Absturz", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("");
-    await page.locator("#nav a", { hasText: "Vermögen & Anlage" }).click();
+    await field(page, "project.name").press("Tab");
+    await nav(page, "Vermögen & Anlage");
     const stocks = field(page, "wealth.stocks");
     await stocks.fill("");
     await stocks.press("Tab"); // ISS-13
@@ -609,7 +621,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
 test.describe("Meilensteine", () => {
   test("Pensionierung verschieben: abhängige Werte folgen", async ({ page }) => {
     const errors = await open(page);
-    await page.locator("#nav a", { hasText: "Meilensteine" }).click();
+    await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("date");
     const date = row.locator("input[data-type=month]");
@@ -630,10 +642,11 @@ test.describe("Meilensteine", () => {
 
   test("FEA-38/AK2: Bezug Pensionskasse ausserhalb der Grenzen: Fehler am Feld statt Zahlen", async ({ page }) => {
     const errors = await open(page);
-    await page.locator("#nav a", { hasText: "Meilensteine" }).click();
+    await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("date");
     await row.locator("input[data-type=month]").fill("01.2060");
+    await row.locator("input[data-type=month]").press("Tab"); // ISS-13: Prüfung beim Verlassen
     await expect(page.locator("#val li.err").first()).toContainText("«Bezug Pensionskasse»: Alter 89.6 liegt ausserhalb der Grenzen 58 bis 65 Jahre");
     await expect(page.locator("#kpis .kpi")).toHaveCount(1);
     await expect(page.locator("#kpis .kpi .s")).toHaveText("siehe Prüfung");
@@ -642,15 +655,17 @@ test.describe("Meilensteine", () => {
 
   test("Meilenstein nach Alter und nach Datum ergeben denselben Monat", async ({ page }) => {
     const errors = await open(page);
-    await page.locator("#nav a", { hasText: "Meilensteine" }).click();
+    await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("age");
     await row.locator("input[data-type=years]").fill("64");
+    await row.locator("input[data-type=years]").press("Tab"); // ISS-13: gerechnet wird beim Verlassen
     await expect(row.locator('[data-computed="ms"]')).toContainText("Alter 64.0");
     const byAge = await row.locator('[data-computed="ms"]').textContent();
     const m = /(\d{2}\.\d{4})/.exec(byAge)[1];
     await row.locator("select").first().selectOption("date");
     await row.locator("input[data-type=month]").fill(m);
+    await row.locator("input[data-type=month]").press("Tab");
     await expect(row.locator('[data-computed="ms"]')).toHaveText(byAge);
     await noErrors(page, errors);
   });
@@ -661,7 +676,6 @@ test.describe("Rückgängig und Wiederholen", () => {
   const reset = page => page.evaluate(() => { lastCommand = { id: "", t: 0 }; });
 
   test("100 Aktionen vollständig zurück- und wiederherstellen", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const name = field(page, "project.name");
     const original = await name.inputValue();
@@ -875,7 +889,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Perzentil-Tabelle zeigt je Perzentil den optimalen Wert der Variation (Ausgaben-Faktor)", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "bootstrap";
@@ -906,7 +919,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Hypothekenerneuerung: Protokoll im Einzellauf, Zähler und Spalten bei mehreren Läufen", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed";
@@ -970,7 +982,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Zoom per Maus: Bereich aufziehen (sichtbar hervorgehoben), alle Grafiken und Registerkarten zoomen mit, Schaltfläche danach nicht aktiv", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page, "results/charts/nosweep");
     const bars = () => page.locator("#resultsBody .minizoom");
     const n = await bars().count();
@@ -1031,7 +1042,7 @@ test.describe("Ergebnisse", () => {
     await page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"]').first().click();
     await page.keyboard.press("Escape");
     await expect(page.locator("#results")).toBeHidden();
-    await page.locator("#nav a", { hasText: "Einnahmen" }).click();
+    await nav(page, "Einnahmen");
     expect(await page.locator('.minizoom button[data-action="mini-zoom"].on').first().textContent()).toBe("Alles");
     await page.locator('button[data-action="mini-zoom"][data-years="5"]').first().click();
     expect(await page.evaluate(() => resultZoom.years)).toBe(10);
@@ -1050,7 +1061,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Einzellauf mit Variationen: Auswahl der Stufe, Optimum, gleiche Anzeige wie bei Monte-Carlo", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed";
@@ -1081,7 +1091,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Einzellauf ohne Variationen: keine Variationsauswahl; Monte-Carlo mit Variation unverändert", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -1104,7 +1113,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Abschnitt «Immobilien»: Kauf, Verkauf, Erneuerung mit Einmalzahlung und Notverkauf mit Beträgen; ohne Ereignisse ein Hinweis", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -1159,13 +1167,14 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Tabellenkopf der Ergebnisse bleibt beim Scrollen oben stehen", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
-    const out = await page.evaluate(async () => {
+    await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       resetVariation(); resultTab = "table"; showResults(true); renderResults(lastRun);
-      await new Promise(r => setTimeout(r, 100));
+    });
+    await expect(page.locator("#resultsBody table.yt")).toBeAttached();
+    const out = await page.evaluate(() => {
       const tb = document.querySelector("#resultsBody table.yt");
       const ths = [...document.querySelectorAll("#resultsBody table.tbl th")];
       const wrap = tb?.closest(".tscroll");
@@ -1181,7 +1190,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("3-Topf: Herleitung der Topfgrössen (Netto-Bedarf, Ziele, Kriterium, Fall, Umbuchungen) aufklappbar in den Jahreswerten, nicht mehr als eigene Karte", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -1239,7 +1247,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Reiter Parameter: Stand des Laufs, schreibgeschützt, je Editorabschnitt ein Parameter wirkt, alte Ergebnisse «Nicht verfügbar»", async ({ page }) => {
-    test.setTimeout(120_000);
     const errors = await open(page, "results/charts/nosweep");
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
     const body = page.locator("#resultsBody");
@@ -1284,9 +1291,8 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Gespeichertes Ergebnis zeigt im Reiter Parameter die Planung von damals", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "runsflow/mem/view");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
     await expect(page.locator("#resultsBody")).toContainText("Aktienanteil");
     await expect(page.locator("#resultsBody")).toContainText("Monte Carlo");
@@ -1294,7 +1300,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Jahreswerte: Entnahmerate (Jahresentnahme / Vermögen am Jahresanfang), nominal wie real", async ({ page }) => {
-    test.setTimeout(120_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -1329,7 +1334,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("FEA-22: Immobilienverkäufe je Perzentil-Lauf mit Datum, Notverkäufe mit Warnsymbol, ohne Immobilien keine Spalte", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       const lines = html => { const d = document.createElement("div"); d.innerHTML = html; return [...d.querySelectorAll("div")].map(x => ({ text: x.textContent.replace(/\s+/g, " ").trim(), warn: !!x.querySelector(".hwarn") })); };
@@ -1361,7 +1365,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("FEA-20: Variationen ohne feste Grenze (technisch 1'000'000), Warnung vor langen Berechnungen", async ({ page }) => {
-    test.setTimeout(120_000);
     const errors = await open(page, "scenarios");
     const run = async sweeps => {
       // FEA-65: renderSection und renderDerived zeichnen synchron; kein Warten nötig
@@ -1383,7 +1386,7 @@ test.describe("Ergebnisse", () => {
     expect(over.errors).toContain("Die Variationen ergeben 1'010'000 Kombinationen; höchstens 1'000'000 sind technisch möglich.");
     // Warnung ab einer Minute geschätzter Rechenzeit
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
-    const fake = async sec => { await page.waitForFunction(() => !bench.busy); await page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); }, sec); };
+    const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); }, sec);
     await fake(90);
     await page.locator('button[data-action="run"]').click();
     await expect(page.locator("#ask")).toBeVisible();
@@ -1444,9 +1447,8 @@ test.describe("Ergebnisse", () => {
   });
 
   test("FEA-21: Legenden zeigen gestrichelte Linien als gestricheltes Symbol (Übersicht und Grafiken)", async ({ page }) => {
-    test.setTimeout(120_000);
     const errors = await open(page, "results/bootstrap");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview", { timeout: 90_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const dashes = () => page.evaluate(() => [...document.querySelectorAll("#resultsBody .legend")].map(l => ({
       text: l.innerText.replace(/\s+/g, " "), dashed: [...l.querySelectorAll("svg.lsym line")].filter(x => x.getAttribute("stroke-dasharray")).length,
       solid: [...l.querySelectorAll("svg.lsym line")].filter(x => !x.getAttribute("stroke-dasharray")).length })));
@@ -1489,9 +1491,8 @@ test.describe("Ergebnisse", () => {
   });
 
   test("Szenarien: Heatmap ist vollständig", async ({ page }) => {
-    test.setTimeout(180_000); // 9 Kombinationen mit je 50 000 Pfaden, bei parallelen Tests entsprechend langsam
     const errors = await open(page, "results/bootstrap/scenarios/sweep2");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "scenarios", { timeout: 150_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "scenarios");
     const heat = page.locator("table.heat, #resultsBody svg").first();
     await expect(heat).toBeAttached();
     const sweeps = await page.evaluate(() => state.scenarios.sweeps.map(s => s.param));
@@ -1515,7 +1516,6 @@ test.describe("Ergebnisse", () => {
   });
 
   test("jede Renditequelle lässt sich rechnen", async ({ page }) => {
-    test.setTimeout(180_000);
     for (const src of ["fixed", "historical", "rolling", "bootstrap", "parametric"]) {
       const errors = await open(page, `results/${src}`);
       await expect(page.locator("html")).toHaveAttribute("data-rendered", /.+/);
@@ -1567,25 +1567,22 @@ test.describe("Darstellung", () => {
 // ---------------------------------------------------------------------------------------------
 test.describe("Gespeicherte Ergebnisse", () => {
   test("zwei Läufe ablegen und vergleichen", async ({ page }) => {
-    test.setTimeout(240_000); // zwei Simulationen (Testzugang runsflow, 1000 Pfade)
     const errors = await open(page, "runsflow/mem");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
     await expect(page.locator("#resultsBody")).toContainText("Vergleich");
     await noErrors(page, errors);
   });
 
   test("gespeicherte Simulation ansehen", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "runsflow/mem/view");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
     await expect(page.locator("#resultsBody svg path").first()).toBeAttached();
     await noErrors(page, errors);
   });
 
   test("Simulationen einzeln markieren und löschen, alle markieren, alle löschen", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "runsflow/mem/del");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     // Drei weitere Einträge ablegen, dann Liste neu öffnen: 4 Einträge
     await page.evaluate(async () => { for (let i = 0; i < 3; i++) await rememberRun(await Engine.call("run_simulation", { plan: state, path: null })); await openRuns(); });
     const rows = page.locator("#runsTbl tr:not(:first-child)");
@@ -1614,9 +1611,8 @@ test.describe("Gespeicherte Ergebnisse", () => {
   });
 
   test("Liste und Vergleich: Spalte Zeitreihe statt Art, Strategie-Tooltip mit den Parametern des Ergebnisses, alte Einträge ohne Angabe", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "runsflow/mem/del");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
       Runs.memoryOnly();
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -1657,7 +1653,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
 
   test("FEA-12: Liste zeigt «Erfolgsquote · 5 %» statt Median und das Warnsymbol für ungeplante Immobilienverkäufe ab 5 % der Läufe", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
       Runs.memoryOnly();
       const base = { created: "2021-01-01T00:00:00.000Z", note: "", source: "bootstrap", strategy: "standard", successRate: 0.9, end50: 2_500_000, end5: 1_200_000 };
@@ -1852,13 +1848,12 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   });
 
   test("Optimierung läuft mit Fortschritt, Entnahmerate erscheint im Ergebnis", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page, "optimize/bootstrap/optset");
     const small = { paths: 300, checkPaths: 500, samples: 6, strategies: ["fixed_rate"] };
     expect(await setOpt(page, small)).toMatchObject(small); // ISS-16: die kleine Rechnung kommt wirklich in den Feldern an
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("#main .job progress")).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("data-job", "off", { timeout: 150_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-job", "off");
     await expect(page.locator("#main th", { hasText: "Entnahmerate" })).toBeVisible();
     await noErrors(page, errors);
   });
@@ -1910,6 +1905,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(quote("wealth.bonds")).toHaveText("20 % des Portfolios");
     }
     // AK3: während der Eingabe unverändert, nach dem Verlassen des Feldes nachgeführt
+    await previewIdle(page); // FEA-87: keine Vorschau des vorigen Schritts mehr unterwegs
     await field(page, "wealth.stocks").fill("60000");
     await expect(quote("wealth.stocks")).toHaveText("80 % des Portfolios");
     await field(page, "wealth.stocks").blur();
@@ -2139,7 +2135,6 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   });
 
   test("FEA-23: Stufe der Variationen in «Einzelne Läufe» und «Jahreswerte» wählen, ohne Neuberechnung aller Pfade", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 200;
@@ -2175,7 +2170,6 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   });
 
   test("FEA-19: Zielauswahl, Ziel 2 «Kein Notverkauf von Immobilien» wird gespeichert, gerechnet und mit Anteil ungeplanter Verkäufe angezeigt", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "optimize/bootstrap");
     // (1) Auswahl vorhanden, Standard ist Ziel 1, der Plan speichert nichts Zusätzliches
     await expect(page.locator("#opt-goal")).toHaveValue("consumption");
@@ -2192,7 +2186,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     const small = { paths: 200, checkPaths: 300, samples: 3, strategies: ["standard", "fixed_rate"] };
     expect(await setOpt(page, small)).toMatchObject({ ...small, goal: "keepProperty", minConsumption: 80 }); // ISS-16
     await page.locator('button[data-action="opt-run"]').click();
-    await expect(page.locator("html")).toHaveAttribute("data-job", "off", { timeout: 200_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-job", "off");
     await expect(page.locator("#main th", { hasText: "Ungeplanter Verkauf" })).toBeVisible();
     await expect(page.locator("#main h3", { hasText: "Ziel 2" })).toBeVisible();
     // Reihenfolge: Anteil ungeplanter Verkäufe aufsteigend (zulässige Strategien)
@@ -2353,7 +2347,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     }
     await expect(await msRow(page, "retire")).toContainText("Bezug Pensionskasse");
     await expect(await msRow(page, "retire")).toContainText("58 bis 65 Jahre");
-    await page.locator("#nav a", { hasText: "Vorsorge" }).click();
+    await nav(page, "Vorsorge");
     await expect(page.locator("#main")).toContainText("Meilenstein «Bezug Pensionskasse»");
     await expect(page.locator("#main")).toContainText("Meilenstein «AHV-Bezug»");
     await expect(page.locator('#main select[data-path="pension.pk.at"]')).toHaveCount(0);
@@ -2555,6 +2549,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
     // Der Betrag bleibt änderbar
     await field(page, "pillar3a.0.payouts.1.amount").fill("20000");
     expect(await page.evaluate(() => state.pillar3a[0].payouts[1].amount)).toBe(20000);
+    await field(page, "pillar3a.0.payouts.1.amount").press("Tab"); // ISS-13: Vorschau beim Verlassen (FEA-87)
     await expect(page.locator('#main [data-p3a="rest"]')).toHaveText(/^50'000/);
     // Ohne Zeile: frühester erlaubter Monat (06.2040) mit dem ganzen Guthaben, abgerundet auf 1'000
     await setup(page, []);
@@ -2569,42 +2564,61 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
 // ---------------------------------------------------------------------------------------------
 test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
   const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
+  /**
+   * FEA-87: Geprüft wird, dass während einer Pause in der Eingabe nichts geschieht. Statt fest zu warten, läuft die Seite mit
+   * der Uhr von Playwright (page.clock): `pause()` stellt sie um 800 ms vor und führt dabei jeden fälligen Timer aus (Vorschau
+   * nach 120 ms, Sammelzeit des Rückgängig-Verlaufs 400 ms), unabhängig von der Rechnerlast. Zusätzlich zählt die Seite die
+   * Anfragen an den Rechenkern: Während der Eingabe darf keine starten.
+   */
+  async function openWithClock(page, hash) {
+    await page.clock.install();
+    const errors = await open(page, hash);
+    await page.evaluate(() => {
+      window.__api = [];
+      const f = window.fetch;
+      window.fetch = (u, ...a) => { if (String(u).startsWith("/api/")) window.__api.push(String(u)); return f(u, ...a); };
+    });
+    return errors;
+  }
+  const apiCalls = page => page.evaluate(() => window.__api.splice(0));
+  const pause = async page => { await page.clock.runFor(800); expect(await apiCalls(page)).toEqual([]); };
 
   test("ISS-13/AK1–AK4: Während der Eingabe wartet alles; beim Verlassen Meldung, Vorschau und Prüfliste neu", async ({ page }) => {
-    const errors = await open(page, "milestones");
+    const errors = await openWithClock(page, "milestones");
     const i = await page.evaluate(() => state.milestones.findIndex(m => m.id === "ahv"));
     const years = field(page, `milestones.${i}.years`);
     const end = kpiValue(page, "Vermögen am Ende");
     await expect(end).not.toHaveText("–");
     const before = await end.textContent();
-    // AK1, AK4: Ziffer für Ziffer, mit Pause: keine Meldung am Feld, keine in der Prüfliste, Vorschau unverändert.
-    // FEA-65: Die festen Pausen in diesem und dem nächsten Test bleiben, denn geprüft wird, dass während einer Pause
-    // nichts geschieht; dafür gibt es keinen Zustand, auf den man warten könnte. Sie sind länger als die Verzögerung
-    // der Vorschau (120 ms in requestPreview) und als die Sammelzeit des Rückgängig-Verlaufs (400 ms).
+    // AK1, AK4: Ziffer für Ziffer, mit Pause: keine Meldung am Feld, keine in der Prüfliste, Vorschau unverändert,
+    // keine Anfrage an den Rechenkern (pause).
+    await previewIdle(page); await apiCalls(page);
     await years.click(); await years.press("End");
     await years.press("Backspace"); await years.press("Backspace"); await years.type("6");
-    await page.waitForTimeout(800);
+    await pause(page);
     await expect(ferr(years)).toHaveCount(0);
     await expect(page.locator("#val li.err")).toHaveCount(0);
     await expect(end).toHaveText(before);
     await years.type("3"); // 63: gültig, der Wert ist übernommen, gerechnet wird erst beim Verlassen
-    await page.waitForTimeout(800);
+    await pause(page);
     expect(await page.evaluate(n => state.milestones[n].years, i)).toBe(63);
     await expect(end).toHaveText(before);
     await years.press("Tab");
     await expect(end).not.toHaveText(before);
     await expect(ferr(years)).toHaveCount(0);
     // AK2: Alter 6 eingeben: erst beim Verlassen Meldung am Feld und in der Prüfliste
+    await previewIdle(page); await apiCalls(page); // Rechnungen nach dem Verlassen des Felds sind erlaubt, gezählt wird ab der nächsten Eingabe
     await years.fill("6");
-    await page.waitForTimeout(500);
+    await pause(page);
     await expect(ferr(years)).toHaveCount(0);
     await expect(page.locator("#val li.err")).toHaveCount(0);
     await years.press("Tab");
     await expect(ferr(years)).toContainText("ausserhalb der Grenzen");
     await expect(page.locator("#val li.err").first()).toContainText("AHV-Bezug");
     // AK3: zurück ins Feld, gültig machen: Die Meldung bleibt während der Eingabe und verschwindet beim Verlassen
+    await previewIdle(page); await apiCalls(page);
     await years.click(); await years.press("End"); await years.type("5");
-    await page.waitForTimeout(500);
+    await pause(page);
     await expect(ferr(years)).toContainText("ausserhalb der Grenzen");
     await expect(years).toBeFocused();
     await years.press("Tab");
@@ -2615,10 +2629,11 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
   });
 
   test("ISS-13/AK1, AK2: ungültige Zahl erst beim Verlassen bzw. mit Enter gemeldet", async ({ page }) => {
-    const errors = await open(page, "wealth");
+    const errors = await openWithClock(page, "wealth");
+    await previewIdle(page); await apiCalls(page);
     const cash = field(page, "wealth.cash");
     await cash.click(); await cash.press("End"); await cash.type("x");
-    await page.waitForTimeout(500);
+    await pause(page);
     await expect(ferr(cash)).toHaveCount(0);
     await expect(cash).not.toHaveClass(/invalid/);
     await cash.press("Enter");
@@ -2646,9 +2661,9 @@ test.describe("Erwerbseinkommen mit der Teuerung (FEA-43)", () => {
     await own.uncheck();
     await expect.poll(endValue).toBe(before);
     // Zweite Person: eigene Auswahl, neu mit «ja»
-    await page.locator("#nav a", { hasText: "Haushalt & Projekt" }).click();
+    await nav(page, "Haushalt & Projekt");
     await page.getByRole("button", { name: "+ Zweite Person" }).click();
-    await page.locator("#nav a", { hasText: "Einnahmen & Ausgaben" }).click();
+    await nav(page, "Einnahmen & Ausgaben");
     await expect(page.locator('input[data-path="partner.incomeIndexed"]')).toBeChecked();
     await expect(own).not.toBeChecked();
     await noErrors(page, errors);
@@ -2659,7 +2674,7 @@ test.describe("Erwerbseinkommen mit der Teuerung (FEA-43)", () => {
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
     expect(await page.evaluate(() => state.flows.incomeIndexed)).toBe(true);
-    await page.locator("#nav a", { hasText: "Einnahmen & Ausgaben" }).click();
+    await nav(page, "Einnahmen & Ausgaben");
     await expect(page.locator('input[data-path="flows.incomeIndexed"]')).toBeChecked();
     await noErrors(page, errors);
   });
@@ -2912,14 +2927,13 @@ test.describe("FEA-45 Haftungsausschluss", () => {
   });
 
   test("AK3: Fusszeile unter dem Ergebnis der Optimierung", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "optimize/bootstrap");
     await expect(page.locator("#optFoot")).toHaveCount(0);
     // kleine Rechnung: nur die Fusszeile wird geprüft, nicht das Ergebnis
     const small = { paths: 50, checkPaths: 50, samples: 1, strategies: ["fixed_rate"] };
     expect(await setOpt(page, small)).toMatchObject(small); // ISS-16
     await page.locator('button[data-action="opt-run"]').click();
-    await expect(page.locator("html")).toHaveAttribute("data-job", "off", { timeout: 200_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-job", "off");
     await expect(page.locator("#optFoot")).toHaveText(FOOT);
     await noErrors(page, errors);
   });
@@ -3043,7 +3057,6 @@ test.describe("Ergänzende Abnahmetests", () => {
   });
 
   test("FEA-08/AK6: beim Wechsel des Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs", async ({ page }) => {
-    test.setTimeout(180_000);
     const errors = await open(page);
     await page.evaluate(async () => {
       state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 60; state.scenarios.sweeps = [];
@@ -3068,9 +3081,8 @@ test.describe("Ergänzende Abnahmetests", () => {
   });
 
   test("FEA-10/AK3: die Parameter im Tooltip stimmen mit dem Reiter «Entnahmestrategie» überein", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "runsflow/mem/del");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
       Runs.memoryOnly();
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -3089,9 +3101,8 @@ test.describe("Ergänzende Abnahmetests", () => {
   });
 
   test("FEA-11/AK2, FEA-11/AK3, FEA-12/AK5: Zeitreihe ohne Pfad und .csv, feste und parametrische Renditen in Grau, geplanter Verkauf ohne Warnsymbol", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "runsflow/mem/del");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     const label = await page.evaluate(async () => {
       Runs.memoryOnly();
       state.returns.source = "historical";
@@ -3121,9 +3132,8 @@ test.describe("Ergänzende Abnahmetests", () => {
   });
 
   test("FEA-22/AK5: die Kennzahlkarte «Notverkäufe» zeigt Läufe und Anteil wie bisher", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page, "results/bootstrap");
-    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview", { timeout: 180_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const s = await page.evaluate(() => ({ n: lastRun.batch.summary.emergencySaleRuns, runs: lastRun.batch.summary.runs, text: fmtInt(lastRun.batch.summary.emergencySaleRuns), pct: pctTxt(lastRun.batch.summary.emergencySaleRuns / lastRun.batch.summary.runs) }));
     const card = page.locator("#resultsBody .kpi:has(.k:text-is('Notverkäufe'))");
     await expect(card.locator(".v")).toHaveText(`${s.text} Läufe`);
@@ -3132,7 +3142,6 @@ test.describe("Ergänzende Abnahmetests", () => {
   });
 
   test("FEA-23/AK5, FEA-23/AK6: Hinweis bei abweichendem Endvermögen; Einzellauf mit Variationen wie bisher", async ({ page }) => {
-    test.setTimeout(240_000);
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.returns.bootstrap.paths = 100;
@@ -3216,10 +3225,10 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
   const suggestion = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, seriesInfo.parametric.stocks[x]])), KEYS);
   /** Aktienindex unter «Vermögen & Anlage» wählen und zurück zur Simulation. */
   async function chooseStocks(page, value, bonds) {
-    await page.locator("#nav a", { hasText: "Vermögen & Anlage" }).first().click();
+    await nav(page, "Vermögen & Anlage");
     await page.locator('select[data-path="returns.strategy.stocks"]').selectOption(value);
     if (bonds) await page.locator('select[data-path="returns.strategy.bonds"]').selectOption(bonds);
-    await page.locator("#nav a", { hasText: "Simulation" }).first().click();
+    await nav(page, "Simulation");
     await expect(page.locator("#main h2")).toHaveText(/^Simulation/);
     await page.waitForFunction(v => seriesInfo?.parametric && state.returns.strategy.stocks === v && seriesInfoRef === seriesRef(), value);
   }
@@ -3369,6 +3378,49 @@ test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
     await page.locator("#settingsDefaults").click();
     await page.locator('#ask button[value="ok"]').click();
     await expect(page.locator("#set-askSave")).toBeChecked();
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Testzugänge für lastunabhängige Tests (FEA-87)", () => {
+  test("FEA-87/AK1: #results rechnet Bootstrap mit 500 Pfaden und Startwert 42; zwei Läufe ergeben dieselben Kennzahlen", async ({ page }) => {
+    const kpis = async () => {
+      await open(page, "results/bootstrap/nosweep");
+      await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
+      return page.evaluate(() => ({
+        paths: state.returns.bootstrap.paths, seed: state.returns.bootstrap.seed,
+        pPaths: state.returns.parametric.paths, pSeed: state.returns.parametric.seed,
+        kpis: [...document.querySelectorAll("#resultsBody .kpi")].map(k => k.innerText),
+      }));
+    };
+    const a = await kpis();
+    expect(a).toMatchObject({ paths: 500, seed: 42, pPaths: 500, pSeed: 42 });
+    expect(a.kpis.length).toBeGreaterThan(3);
+    expect(a.kpis.find(t => t.includes("Erfolgsquote"))).toMatch(/\d+ %/);
+    expect(await kpis()).toEqual(a);
+  });
+
+  test("FEA-87/AK2: #nobench misst die Rechenzeit nicht, zeigt «Dauer wird geschätzt…» und rechnet ohne Rückfrage", async ({ page }) => {
+    const api = [];
+    page.on("request", r => { const u = new URL(r.url()); if (u.pathname.startsWith("/api/")) api.push(u.pathname); });
+    await page.clock.install();
+    const errors = await open(page, "scenarios"); // open() setzt #nobench
+    await page.evaluate(() => { setP("flows.spendingFactor", 1.01); renderDerived(); });
+    await page.clock.runFor(2000); // Verzögerung der Messung (800 ms) sicher vorbei
+    await expect(page.locator("#est-scen")).toHaveText("Dauer wird geschätzt…");
+    await page.locator('button[data-action="run"]').click();
+    await expect(page.locator("#results")).toBeVisible();
+    await expect(page.locator("#ask")).toBeHidden();
+    expect(api).not.toContain("/api/bench_plan");
+    await noErrors(page, errors);
+  });
+
+  test("FEA-87/AK2: ohne #nobench misst die App die Rechenzeit (Gegenprobe)", async ({ page }) => {
+    const bench = page.waitForRequest(r => new URL(r.url()).pathname === "/api/bench_plan");
+    const errors = await open(page, "scenarios", { bench: true });
+    await bench;
+    await expect(page.locator("#est-scen")).toContainText("Geschätzte Dauer");
     await noErrors(page, errors);
   });
 });
