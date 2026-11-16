@@ -607,6 +607,8 @@ const SOURCES = [
   ["bootstrap", "Monte Carlo · historisch", "Zufällige Blöcke aus der Zeitreihe (Länge zufällig), alle Werte aus demselben Monat.", true],
   ["parametric", "Monte Carlo · parametrisch", "Aktien mit Student-t-Verteilung und Kurssprüngen, Obligationen und Inflation mit der Korrelation der Anlagestrategie.", true]
 ];
+/** FEA-92: Abkürzung jeder Renditequelle für den Namen eines gespeicherten Ergebnisses. */
+const SOURCE_SHORT = { fixed: "Fix", historical: "Hist.", rolling: "Alle Starts", bootstrap: "MC hist.", parametric: "MC param." };
 const paramJoint = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.joint ?? null : null;
 /** Welche Eingaben bei der gewählten Quelle tatsächlich verwendet werden. */
 function returnsUse() {
@@ -673,6 +675,8 @@ const STRATS = [
   ["vpw", "Variable Prozententnahme (VPW)", "Jedes Jahr wird der Anteil des Vermögens entnommen, der es bis zum Planungsalter gleichmässig aufbraucht; der Anteil steigt mit dem Alter.", true],
   ["endowment", "Endowment-Regel", "Entnahme = Vorjahr mit Teuerung, gemischt mit einer Rate des aktuellen Vermögens (Yale/Tobin). Glättet die Ausgaben.", true]
 ];
+/** FEA-92: Abkürzung jeder Strategie (3-Topf mit Guardrails eigens) für den Namen eines gespeicherten Ergebnisses. */
+const STRAT_SHORT = { standard: "Standard", three_buckets: "3-Topf", three_buckets_guardrails: "3-Topf + Guard", guardrails: "Guardrails", fixed_rate: "Fixe Rate", vpw: "VPW", endowment: "Endowment" };
 R.withdrawal = () => {
   const w = state.withdrawal;
   return `<h2>Entnahmestrategie</h2><p class="lead">Wie nach der Pensionierung Geld aus dem Vermögen entnommen und umgeschichtet wird.</p>
@@ -2839,9 +2843,6 @@ const runsSel = new Set(), RUN_COLORS = Array.from({ length: CMP_MAX }, (_, i) =
 const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" });
 const stratName = id => id === "three_buckets_guardrails" ? "3-Topf + Guardrails" : STRATS.find(x => x[0] === id)?.[1] || id;
 const sourceName = id => SOURCES.find(x => x[0] === id)?.[1] || id;
-/** FEA-92: Abkürzungen für den Namen eines gespeicherten Ergebnisses (jede Quelle und jede Strategie hat eine). */
-const SOURCE_SHORT = { fixed: "Fix", historical: "Hist.", rolling: "Alle Starts", bootstrap: "MC hist.", parametric: "MC param." };
-const STRAT_SHORT = { standard: "Standard", three_buckets: "3-Topf", three_buckets_guardrails: "3-Topf + Guard", guardrails: "Guardrails", fixed_rate: "Fixe Rate", vpw: "VPW", endowment: "Endowment" };
 /** Name eines neuen Ergebnisses: Planung · Quelle (bei Szenarien «Szenarien») · Strategie · Datum, Zeit. */
 const runTitle = (base, m, iso) => [base, m.kind === "scenarios" ? "Szenarien" : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
 /** Beim Ansehen einer gespeicherten Simulation gilt deren Planung; der Editor-Stand wird solange zurückgestellt. */
