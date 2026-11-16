@@ -4034,3 +4034,92 @@ test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebn
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)", () => {
+  const openPlan = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Planung" }).click();
+    await expect(page.locator("#resultsBody .card h3")).toContainText("Unterschiede in der Planung");
+    return errors;
+  };
+
+  test("FEA-96/AK1, AK2, AK3: Bezeichnung mit Abschnitt, Werte wie im Editor, gruppiert nach Abschnitten", async ({ page }) => {
+    const errors = await openPlan(page);
+    // runsflow unterscheidet sich im Aktienanteil (30 %)
+    const t = page.locator("table.cmpplan");
+    const row = t.locator("tr", { hasText: "Aktienanteil" }).first();
+    await expect(row.locator("td").nth(2)).toHaveText("30 %");
+    await expect(row.locator("td").nth(1)).toHaveText(/^\d+(\.\d+)? %$/);
+    // Abschnitt als Gruppenzeile davor, keine internen Feldnamen und kein JSON
+    const groups = await t.locator("tr.grp th").allTextContents();
+    expect(groups.length).toBeGreaterThan(0);
+    const order = ["Haushalt", "Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Säule 3a", "Steuerannahmen", "Variationen"];
+    expect(groups.map(g => order.indexOf(g))).toEqual([...groups.map(g => order.indexOf(g))].sort((a, b) => a - b));
+    expect(groups.every(g => order.includes(g))).toBe(true);
+    const text = await t.innerText();
+    expect(text).not.toMatch(/\b[a-z]+[A-Z]?[a-z]*\.[a-z][A-Za-z]*\b/); // kein «wealth.stockShare»
+    expect(text).not.toMatch(/[{}]|"mode"/);
+    await expect(t.locator("code")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-96/AK2, AK4: Auswahlfelder als Text, Listen mit Namen statt Index", async ({ page }) => {
+    const errors = await openPlan(page);
+    await page.evaluate(async () => {
+      const [a] = (await Runs.list()).filter(m => runsSel.has(m.id)), d = structuredClone(await Runs.get(a.id)), p = d.plan;
+      p.returns.source = "parametric";
+      const pr = p.realestate.properties[0]; if (pr) pr.name = "Ferienwohnung Test";
+      if (pr?.worth != null) pr.worth += 50000;
+      await Runs.add({ ...a, id: "geaendert", name: "geändert" }, d); runsSel.clear(); runsSel.add(a.id); runsSel.add("geaendert"); await compareRuns();
+    });
+    const t = page.locator("table.cmpplan");
+    const src = t.locator("tr").filter({ has: page.locator("td.l", { hasText: /^Renditequelle$/ }) });
+    await expect(src.locator("td")).toHaveCount(3);
+    expect((await src.locator("td").allTextContents()).slice(1).sort()).toEqual(["Monte Carlo · historisch", "Monte Carlo · parametrisch"]);
+    const props = await page.evaluate(async () => (await Runs.get("geaendert")).plan.realestate.properties.length);
+    if (props) await expect(t.locator("td", { hasText: /^Ferienwohnung Test: / }).first()).toBeAttached();
+    expect(await t.innerText()).not.toMatch(/properties|[a-z]\.\d+\./);
+    await noErrors(page, errors);
+  });
+
+  test("FEA-96/AK5: jedes Feld der Beispielplanung hat eine Bezeichnung oder ist ausdrücklich ausgeblendet", async ({ page }) => {
+    const errors = await open(page);
+    const missing = await page.evaluate(() => {
+      const base0 = JSON.parse(JSON.stringify(state)), ctxs = [];
+      // Kontexte: jede Renditequelle × Strategie (3-Topf auch mit Guardrails), zwei Personen verheiratet, eigene Gewichtung,
+      // Meilensteine als Datum und als Alter, Immobilien als Besitz, geplant und Miete
+      for (const src of SOURCES.map(x => x[0])) for (const st of [...STRATS.map(x => x[0]), "tbg"]) {
+        const p = JSON.parse(JSON.stringify(base0)); p.returns.source = src;
+        p.withdrawal.strategy = st === "tbg" ? "three_buckets" : st; if (st === "tbg") p.withdrawal.buckets = { ...(p.withdrawal.buckets || {}), spending: "guardrails" };
+        ctxs.push(p);
+      }
+      const v = f => { const p = JSON.parse(JSON.stringify(base0)); f(p); ctxs.push(p); };
+      v(p => { p.household.persons.push({ ...p.household.persons[0], id: "p2x" }); p.household.married = true; (p.milestones || []).forEach(m => { if (m.person) m.person = "p2x"; }); });
+      v(p => { p.returns.series = null; p.returns.source = "bootstrap"; p.returns.strategy = { ...(p.returns.strategy || {}), stocks: "worldCustom" }; });
+      v(p => (p.milestones || []).forEach(m => { if (m.date) m.kind = "date"; }));
+      v(p => (p.milestones || []).forEach(m => { if (m.years != null) m.kind = "age"; }));
+      for (const status of ["owned", "planned", "rent"]) v(p => (p.realestate?.properties || []).forEach(pr => { pr.status = status; }));
+      const ENUM = ["repay", "renew", "saron", "fixed", "indirect", "direct", "date", "age", "owned", "planned", "rent", "wealth", "aargau", "zurich", "worldCustom"];
+      const covered = new Set(), keys = new Set();
+      for (const base of ctxs) {
+        const s0 = JSON.stringify(paramSections(base, true)), f = flat(base);
+        for (const [k, val] of Object.entries(f)) {
+          if (val === "[]" || val === "{}") continue;
+          keys.add(k); if (covered.has(k)) continue;
+          const cands = typeof val === "number" ? [val * 1.37 + 1] : typeof val === "boolean" ? [!val] : val === null ? [5, "2001-01"]
+            : typeof val === "string" ? (isYM(val) ? ["1999-07"] : [val + "x", ...ENUM.filter(e => e !== val), "p2x"]) : [];
+          for (const nv of cands) {
+            const p = JSON.parse(JSON.stringify(base)); setPath(p, k, nv);
+            try { if (JSON.stringify(paramSections(p, true)) !== s0) { covered.add(k); break; } } catch (e) { /* ungültiger Wert */ }
+          }
+        }
+      }
+      return [...keys].filter(k => !covered.has(k) && !PLAN_HIDDEN.some(([re]) => re.test(k)));
+    });
+    expect(missing).toEqual([]);
+    await noErrors(page, errors);
+  });
+});

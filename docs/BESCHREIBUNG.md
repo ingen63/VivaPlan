@@ -172,11 +172,13 @@ lassen sich nominal oder in heutiger Kaufkraft anzeigen.
   Erschöpfung. Die Läufe am 1., 5., 50., 95. und 99. Perzentil und der schlechteste Lauf lassen sich im Detail ansehen.
 - **Szenarien:** Kurven je Variante, bei zwei Parametern Heatmaps.
 
-**Liste der Simulationen:** Jede Simulation wird mit der Planung von damals gespeichert. Die Liste lässt sich umbenennen,
-mit Notizen versehen, aufräumen und zum **Vergleichen** nutzen. Der Vergleich bietet dieselben Möglichkeiten wie ein
-einzelnes Ergebnis: Kennzahlen, Bandbreite, Perzentile, Wahrscheinlichkeit und Erschöpfungsalter, die Verläufe des Einzel-
-bzw. Median-Laufs, Jahreswerte mit einer Spalte je Ergebnis und die Eingaben, die sich unterscheiden; nominal oder in
-heutiger Kaufkraft.
+**Liste der Simulationen:** Jede Simulation wird mit der Planung von damals gespeichert. Der automatische Name nennt
+Planung, Renditequelle und Strategie in Kurzform (z. B. «MC hist. · 3-Topf + Guard»). Die Liste lässt sich umbenennen,
+mit Notizen versehen, aufräumen und zum **Vergleichen** von bis zu zehn Ergebnissen nutzen. Der Vergleich bietet dieselben
+Möglichkeiten wie ein einzelnes Ergebnis: Kennzahlen (nach jeder Spalte sortierbar), Bandbreite, Perzentile,
+Wahrscheinlichkeit und Erschöpfungsalter, die Verläufe des Einzel- bzw. Median-Laufs (Aktien, Obligationen und Inflation
+auch als Änderung in % oder logarithmisch), Jahreswerte mit einer Spalte je Ergebnis und die Eingaben, die sich
+unterscheiden, mit den Bezeichnungen des Editors; nominal oder in heutiger Kaufkraft.
 
 ## Hilfe und Bedienung
 

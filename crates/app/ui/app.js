@@ -2726,8 +2726,10 @@ function renderResults(r) {
 /**
  * Parameter einer Planung als Abschnitte [Titel, [[Bezeichnung, Wert], …]], gegliedert wie die Editorabschnitte.
  * Personennamen fehlen absichtlich (nur der Geburtsmonat), technische Werte nur, soweit sie das Ergebnis reproduzierbar machen.
+ * `full` (FEA-96, Vergleich der Planungen): zusätzlich die übrigen Eingaben des Editors (Tragbarkeit, Teuerung der
+ * Immobilien, Ende der Hypothek, Rest der Säule 3a, Grundstückgewinnsteuer nach Besitzdauer).
  */
-function paramSections(plan) {
+function paramSections(plan, full = false) {
   const c = plan.project?.currency || "";
   const money = v => v == null ? "–" : `${fmtInt(v)} ${c}`, pc = v => v == null ? "–" : `${fmtPct(v)} %`, num = v => v == null ? "–" : String(v);
   const yn = v => v ? "ja" : "nein";
@@ -2795,6 +2797,23 @@ function paramSections(plan) {
   out.push(["Steuerannahmen", [["Steuerfuss", num(t.multiplier)], ["Einkommenssteuer", table(t.income)], ["Vermögenssteuer", table(t.wealth)], ["Kapitalbezugssteuer", table(t.capital)],
     ["Grundstückgewinnsteuer", g ? `${g.model === "aargau" ? "Modell Aargau" : "Stufen"}, Ermässigung ${pc(g.reduction ?? 0)}${g.exemptBelow ? `, steuerfrei unter ${money(g.exemptBelow)}` : ""}` : "keine"]]]);
   out.push(["Variationen", (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), `${SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from} bis ${SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to}, Schritt ${sw.step}`]) : [["Variationen", "keine"]]]);
+  if (full) {
+    const add = (title, rows) => { const sec = out.find(x => x[0] === title); if (sec) sec[1].push(...rows); else if (rows.length) out.push([title, rows]); };
+    const a = plan.realestate?.affordability || {};
+    add("Immobilien", [["Tragbarkeit: Höchstens vom Einkommen", pc(a.sustainability)], ["Tragbarkeit: Kalkulatorischer Zins", pc(a.imputedRate)],
+      ["Tragbarkeit: Nebenkosten p.a. (vom Preis)", pc(a.fixCosts)], ["Tragbarkeit: Höchste Belehnung", pc(a.maxLoanToValue)],
+      ...props.flatMap(p => { const nm = p.name || "Immobilie"; return [
+        ...(p.status === "owned" ? [[`${nm}: Kaufdatum`, ymShow(p.bought)]] : []),
+        ...(p.status === "rent" ? [[`${nm}: Miete ab`, at(p.from)], [`${nm}: Miete mit Inflation anpassen`, yn(p.inflationRent)]]
+          : [[`${nm}: Wert mit Inflation anpassen`, yn(p.inflationValue)], [`${nm}: Nebenkosten mit Inflation anpassen`, yn(p.inflationFixCosts)]]),
+        ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || "Tranche"}: nach der letzten Periode`, t.after === "repay" ? "Restschuld zurückzahlen" : "wie letzte Periode verlängern"])]; })]);
+    add("Säule 3a", (plan.pillar3a || []).map(x => [`${(plan.household?.persons || []).find(q => q.id === x.person)?.name || x.person}: Rest im AHV-Bezug`, x.use === "repay" ? "Hypothek" : "Vermögen"]));
+    // Zeitabhängige Werte der Strategie als Liste statt «zeitabhängig», damit Unterschiede sichtbar sind
+    const ws = plan.wealth || {}, strat = out.find(x => x[0] === "Entnahmestrategie");
+    if (strat) strat[1] = strat[1].map(([k, v]) => k === "Cash-Reserve" ? [k, ser(ws.reserveMonths, x => `${x} Monate`)] : k.startsWith("Aktienanteil") ? [k, ser(ws.stockShare, pc)] : [k, v]);
+    if (g) add("Steuerannahmen", [["Grundstückgewinnsteuer mit dem Steuerfuss multiplizieren", yn(g.useMultiplier)],
+      ...(g.durationRates?.length ? [["Grundstückgewinnsteuer nach Besitzdauer", g.durationRates.map(([y, r]) => `ab ${y} J.: ${fmtPct(r)} %`).join("; ")]] : [])]);
+  }
   return out;
 }
 /** Reiter «Parameter»: schreibgeschützte Zusammenfassung der Planung im Stand des Laufs. */
@@ -3147,11 +3166,30 @@ function cmpTable(body, items) {
     <p class="hint">Dieselben Werte wie in den Jahreswerten der einzelnen Ergebnisse: Vermögen sind Stände am Jahresende, Einkommen, Ausgaben und Entnahme Monatsdurchschnitte des Kalenderjahrs, Steuern die Summe des Steuerjahres.${yrs.same ? "" : " Die Ergebnisse beginnen in verschiedenen Jahren und sind nach Jahren seit dem Start ausgerichtet; die Jahreszahl steht im Tooltip der Zelle."}</p>`, "yearcard");
 }
 document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
+/**
+ * FEA-96: Felder der Planung, die im Vergleich nicht erscheinen (technisch oder ohne Eingabefeld), mit Grund. Alle übrigen
+ * Eingaben zeigt `paramSections(plan, true)` mit den Bezeichnungen des Editors; ein Oberflächentest prüft die Abdeckung.
+ */
+const PLAN_HIDDEN = [
+  [/^format$/, "Dateiformat"], [/^project\.name$/, "Name der Planung, steht im Namen des Ergebnisses"], [/(^|\.)id$/, "interne Kennung"],
+  [/^household\.persons\.\d+\.name$/, "Personennamen werden absichtlich nicht gezeigt"], [/^milestones\.\d+\.fixed$/, "fester Meilenstein (nicht löschbar)"],
+  [/\.mode$/, "Art der Zeitreihe; verglichen werden die Werte"], [/^flows\.spendingIncludesHousing$/, "kein Eingabefeld"],
+  [/^realestate\.affordability\.wealthContribution$/, "kein Eingabefeld"], [/^withdrawal\.buckets\.reserveMonths$/, "kein Eingabefeld"],
+  [/^realestate\.properties\.\d+\.inflation$/, "älteres Feld, ersetzt durch «Wert/Nebenkosten mit Inflation anpassen»"],
+];
 function cmpPlan(body, items, datas) {
-  const flats = datas.map(d => flat(d.plan)), keys = [...new Set(flats.flatMap(f => Object.keys(f)))].filter(k => k !== "project.name" && flats.some(f => JSON.stringify(f[k]) !== JSON.stringify(flats[0][k])));
-  const show = v => v === undefined ? "—" : esc(typeof v === "object" ? JSON.stringify(v) : String(v));
-  body.innerHTML = card("Unterschiede in der Planung", "gegenüber dem ersten Ergebnis in der Reihenfolge der Liste",
-    keys.length ? `<div class="tscroll"><table class="tbl"><tr><th class="l">Eingabe</th>${items.map(it => `<th class="l">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${keys.slice(0, 60).map(k => `<tr><td class="l"><code>${esc(k)}</code></td>${flats.map(f => `<td class="l">${show(f[k])}</td>`).join("")}</tr>`).join("")}</table></div>${keys.length > 60 ? `<p class="hint">… und ${keys.length - 60} weitere Unterschiede.</p>` : ""}`
+  // Abschnitte in der Reihenfolge des Editors, darin die Bezeichnungen in der Reihenfolge ihres ersten Auftretens
+  const secs = new Map();
+  datas.forEach((d, j) => paramSections(d.plan || {}, true).forEach(([title, rows]) => {
+    if (!secs.has(title)) secs.set(title, new Map());
+    const m = secs.get(title);
+    rows.forEach(([k, v]) => { if (!m.has(k)) m.set(k, []); m.get(k)[j] = v; });
+  }));
+  const groups = [...secs].map(([title, m]) => [title, [...m].filter(([, vs]) => datas.some((_, j) => (vs[j] ?? "—") !== (vs[0] ?? "—")))]).filter(([, rows]) => rows.length);
+  const n = groups.reduce((a, [, rows]) => a + rows.length, 0), cols = items.length + 1;
+  body.innerHTML = card("Unterschiede in der Planung", "gegenüber dem ersten Ergebnis in der Reihenfolge der Liste, mit den Bezeichnungen des Editors",
+    n ? `<div class="tscroll"><table class="tbl cmpplan"><tr><th class="l">Eingabe</th>${items.map(it => `<th class="l cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
+      ${groups.map(([title, rows]) => `<tr class="grp"><th class="l" colspan="${cols}">${esc(title)}</th></tr>${rows.map(([k, vs]) => `<tr><td class="l">${esc(k)}</td>${items.map((_, j) => `<td class="l">${esc(vs[j] ?? "—")}</td>`).join("")}</tr>`).join("")}`).join("")}</table></div>`
       : `<p style="margin:0">Die Planungen sind identisch.</p>`);
 }
 Object.assign(ACTIONS, {
