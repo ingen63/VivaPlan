@@ -4,7 +4,7 @@ Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick i
 
 ## Sprache
 
-Deutsch mit «ss» statt «ß» (Schweizer Rechtschreibung), Anrede «Sie». Texte der Oberfläche, Hilfe, Commits und Issues sind deutsch.
+Deutsch mit «ss» statt «ß» (Schweizer Rechtschreibung). Im Gespräch mit mir: Anrede «du». Texte der Oberfläche, Hilfe, Commits und Issues sind deutsch; Oberfläche und Hilfe sprechen die Nutzerinnen und Nutzer weiterhin mit «Sie» an.
 
 ## Anforderungen kommen aus GitHub Issues
 
@@ -15,7 +15,7 @@ Gibt es zur Aufgabe kein Issue, zuerst fragen oder eines vorschlagen. Nichts ums
 ## Ablauf pro Issue
 
 1. **Issue lesen** (`gh issue view <Nr>`). Ist etwas unklar oder widersprüchlich, nachfragen. Nicht still annehmen.
-2. **Direkt auf `main` arbeiten.** Das Projekt hat eine einzige Person, deshalb gibt es keine Feature-Branches und keine Pull Requests. Ein Branch ist die Ausnahme für grosse oder riskante Arbeiten und braucht Ihre Zustimmung.
+2. **Direkt auf `main` arbeiten.** Das Projekt hat eine einzige Person, deshalb gibt es keine Feature-Branches und keine Pull Requests. Ein Branch ist die Ausnahme für grosse oder riskante Arbeiten und braucht deine Zustimmung.
 3. **Umsetzen**, klein und gezielt. Keine Änderungen ausserhalb des Issues. Gefundene Nebenbaustellen als neues Issue vorschlagen, nicht mitmachen.
 4. **Testen** (siehe unten). Jedes Abnahmekriterium prüfen und im Bericht nennen, was geprüft ist und was nicht.
 5. **Commit** mit ID und Issue-Nummer, Imperativ oder Substantiv, ohne Punkt:
