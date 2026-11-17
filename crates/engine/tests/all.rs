@@ -48,6 +48,7 @@ mod reserve_standard_only;
 mod robustness;
 mod sim_rules;
 mod simulation;
+mod statistics;
 mod strategy;
 mod upgrade_api;
 mod validate_extra;
