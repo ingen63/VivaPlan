@@ -1591,6 +1591,23 @@ test.describe("Darstellung", () => {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("Gespeicherte Ergebnisse", () => {
+  test("#147/AK2: Kann die Liste das Ergebnis nicht speichern, erscheint eine Meldung, und die Oberfläche bleibt bedienbar", async ({ page }) => {
+    const errors = await open(page);
+    // Nachbildung: Der Browserspeicher ist voll (IndexedDB bricht die Transaktion ab).
+    await page.evaluate(() => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      Runs.add = async () => { throw new Error("QuotaExceededError"); };
+    });
+    await page.locator('button[data-action="run"]').click();
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
+    await expect(page.locator("#toast")).toContainText("Ergebnis nicht in der Liste gespeichert: QuotaExceededError");
+    // weiter bedienbar: zurück in den Editor
+    await page.keyboard.press("Escape");
+    await expect(field(page, "project.name")).toBeVisible();
+    expect(errors).toEqual([]);
+    expect(await page.evaluate(() => window.__errors)).toEqual(["Ergebnis nicht gespeichert: QuotaExceededError"]);
+  });
+
   test("zwei Läufe ablegen und vergleichen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");

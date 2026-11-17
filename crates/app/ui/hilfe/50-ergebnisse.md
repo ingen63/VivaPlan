@@ -242,7 +242,7 @@ Jede Simulation wird nach dem Start als Ergebnis **automatisch abgelegt**, mit d
 - **Löschen** entfernt ein Ergebnis nach Rückfrage, **«Markierte löschen»** mehrere und **«Alle löschen»** alle. Das Kästchen in der Kopfzeile markiert alle Einträge.
 - **Vergleichen:** Markieren Sie zwei bis zehn Einträge und klicken Sie auf **«Vergleichen»**, siehe [Vergleich](#r-compare). Sind mehr als zehn markiert, ist «Vergleichen» gesperrt und ein Hinweis erscheint; Löschen geht weiterhin.
 
-Die Liste liegt **lokal im Speicher der App**, nicht in der Planungsdatei. Sie wächst, bis Sie Einträge löschen: Ein Eintrag mit vielen Läufen belegt einige Megabyte.
+Die Liste liegt **lokal im Speicher der App**, nicht in der Planungsdatei. Sie wächst, bis Sie Einträge löschen: Ein Eintrag mit vielen Läufen belegt einige Megabyte. Ist der Speicher voll, erscheint die Meldung «Ergebnis nicht in der Liste gespeichert»; das Ergebnis bleibt angezeigt, wird aber nicht abgelegt. Löschen Sie dann ältere Einträge.
 
 ## @r-compare Ergebnisse vergleichen
 Stichworte: Vergleich, nebeneinander, Unterschiede, Planung, Kennzahlen, Jahreswerte, Kaufkraft

@@ -77,7 +77,10 @@ prozessweiten Fortschritt und Abbruch (`crates/engine/src/progress.rs`); ein Abb
 laufende Berechnung eines anderen Tests abbrechen. Hook, CI und Abdeckung verwenden deshalb ebenfalls nextest.
 
 Die reinen Hilfsfunktionen der Oberfläche (Zahlenformate, Monate, Pfadzugriff, Steuersatz, Dauerschätzung) liegen in
-`crates/app/ui/util.js` und haben Unit-Tests in `e2e/unit/util.test.js` (`node --test`, unter 1 s, #87). Der Job
+`crates/app/ui/util.js` und haben Unit-Tests in `e2e/unit/util.test.js` (`node --test`, unter 1 s, #87). Die Ergebnisliste
+(`crates/app/ui/runs.js`, IndexedDB) prüft `e2e/unit/runs.test.js` gegen echtes IndexedDB-Verhalten mit `fake-indexeddb`
+(reine Testabhängigkeit in `e2e/package.json`, #147): Ablegen, Liste, Lesen, Ändern, Löschen, abgebrochene Transaktion,
+Rückfall auf den Arbeitsspeicher und ältere Ergebnisse. Die Oberflächentests verwenden die Liste nur im Arbeitsspeicher. Der Job
 `ui-unit` in `test-quality.yml` führt sie bei jedem Push aus. Neue Funktionen ohne DOM und ohne Zustand der Planung
 gehören in `util.js`.
 

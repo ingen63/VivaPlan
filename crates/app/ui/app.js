@@ -2930,7 +2930,11 @@ async function rememberRun(r) {
     // #125: das eben gezeigte Ergebnis bekommt seinen Namen in die Kopfzeile
     if (lastRun === r && !savedView) { lastRunName = meta.name; if (resultHead) setResultsTitle(); }
     document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
-  } catch (e) { noteError("Ergebnis nicht gespeichert: " + errText(e)); }
+  } catch (e) {
+    // #147: sichtbar melden (z. B. Browserspeicher voll); die Oberfläche bleibt bedienbar, das Ergebnis bleibt angezeigt
+    toast("Ergebnis nicht in der Liste gespeichert: " + errText(e));
+    noteError("Ergebnis nicht gespeichert: " + errText(e));
+  }
 }
 let runsIds = [];
 function runsBar() {

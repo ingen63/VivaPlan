@@ -23,6 +23,9 @@ const Runs = (() => {
       const t = db.transaction(stores, mode), out = fn(...stores.map(s => t.objectStore(s)));
       t.oncomplete = () => res(out.result);
       t.onerror = () => rej(t.error);
+      // #147: Eine abgebrochene Transaktion (z. B. Speicherkontingent erschöpft) meldet nicht immer «error»; ohne
+      // `onabort` bliebe das Versprechen offen und die Oberfläche wartete ohne Ende.
+      t.onabort = () => rej(t.error || new Error("Speichern im Browserspeicher abgebrochen"));
     });
   }
   const req = (r, f) => { r.onsuccess = () => { f.result = r.result; }; return f; };
@@ -54,3 +57,5 @@ const Runs = (() => {
     }
   };
 })();
+// #147: für die Unit-Tests (node --test mit fake-indexeddb)
+if (typeof module !== "undefined") module.exports = { Runs };
