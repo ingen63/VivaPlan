@@ -100,7 +100,7 @@ FEA-12/AK2, FEA-33/AK1, FEA-33/AK2, FEA-33/AK3, FEA-33/AK4, FEA-33/AK5, FEA-35/A
 
 ### Offene und nicht umgesetzte Issues
 
-- **Offen, umgesetzt, Nachweis fehlt** (Stand 16.11.2026): #89 (FEA-71, Nachtlauf mit e2e). Offen und nicht umgesetzt: #102 (ISS-19).
+- **Offen, umgesetzt, Nachweis fehlt** (Stand 17.11.2026): #89 (FEA-71, Nachtlauf mit e2e). Offen und nicht umgesetzt: #102 (ISS-19).
 - **Nicht umgesetzt, deshalb nicht geprüft:** FEA-46 bis FEA-50 (#62 bis #66), FEA-73 (#91), FEA-75 (#93), FEA-78 (#100), FEA-79 (#101).
 
 ## Issues
@@ -1140,9 +1140,9 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach FEA-87; beim Aufräumen der Runs gelöscht, Ergebnis im Issue); zweite Prüfung 16.11.2026: noch kein Nachtlauf mit e2e |
+| FEA-71/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach FEA-87; beim Aufräumen der Runs gelöscht, Ergebnis im Issue); zweite Prüfung 16.11.2026: noch kein Nachtlauf mit e2e; 17.11.2026 offen: GitHub hat am 16.11. und 17.11. keinen Nachtlauf gestartet (letzter schedule-Lauf 15.11., vor e2e) |
 | FEA-71/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 ok: Artefakt e2e-failure mit Bericht und Traces vorhanden (Lauf 43746959803) |
-| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e (zweite Prüfung 16.11.2026 unverändert) |
+| FEA-71/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e (zweite Prüfung 16.11.2026 unverändert); 17.11.2026 offen: test_report.py lokal grün (18 Tests), weiterhin kein Nachtlauf mit e2e |
 
 ### #90 FEA-72 Pictet-Reihe aus App und Repository entfernen
 
