@@ -1391,3 +1391,31 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | FEA-98/AK5 | Langer Name gekürzt, Anzahl sichtbar, voller Name im Tooltip. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK5: …» | 16.11.2026 ok |
 | FEA-98/AK6 | Ohne gespeicherten Namen bleibt die Kopfzeile wie heute. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «FEA-98/AK6: …» | 16.11.2026 ok |
 | FEA-98/AK7 | Oberflächentest für frisches und geöffnetes Ergebnis; Hilfe nachgeführt. | ☑ | **gilt** | Tests oben; Hilfe `@r-overview` durchgesehen | 16.11.2026 ok |
+
+### #124 FEA-97 Nicht erkannte Mutanten aus dem vollen Mutationslauf
+
+[Issue #124](https://github.com/ingen63/VivaPlan/issues/124) · geschlossen · Umsetzung: 181eed4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| FEA-97/AK1 | 3a-Konto der zweiten Person (`account_of`, `try_buy`). | ☑ | **gilt** | [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «fea97_ak1_indirect_amortization_goes_to_the_second_person» | 17.11.2026 ok |
+| FEA-97/AK2 | 3a-Einzahlungen im Ruhestand. | ☑ | **gilt** | [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «fea97_ak2_…» | 17.11.2026 ok |
+| FEA-97/AK3 | Hypothek: Einmalzahlung, Zinsen, `after_sales`, Amortisation beim AHV-Bezug. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs), [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «fea97_ak3_…» | 17.11.2026 ok |
+| FEA-97/AK4 | `progress::cancel` bricht eine Berechnung ab. | ☑ | **gilt** | [cancel.rs](../crates/engine/tests/cancel.rs) «fea97_ak4_cancel_stops_every_running_job» | 17.11.2026 ok |
+| FEA-97/AK5 | Kalibrierung: `corr`, `fit_moments`, `joint`. | ☑ | **gilt** | [calibrate.rs](../crates/engine/src/calibrate.rs) «fea97_ak5_…»; `corr` begründet ausgeschlossen (gleichwertig) | 17.11.2026 ok (Abweichung begründet) |
+| FEA-97/AK6 | Import alter Dateien: Standardalter 3a (`upgrade.rs`). | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «fea97_ak6_…»; unerreichbarer Zweig begründet ausgeschlossen | 17.11.2026 ok (Abweichung begründet) |
+| FEA-97/AK7 | Prüfung der Planung: Warnungen 3a, `PayoutAt::is_date`. | ☑ | **gilt** | [validate.rs](../crates/engine/src/validate.rs) «fea97_ak7_…» | 17.11.2026 ok |
+| FEA-97/AK8 | Übrige Mutanten getötet oder begründet ausgeschlossen. | ☑ | **gilt** | `fea97_ak8_…`, `.cargo/mutants.toml`, `docs/TESTS.md` | 17.11.2026 ok |
+| FEA-97/AK9 | Voller Lauf ohne unbegründete nicht erkannte Mutanten. | ☑ | **gilt** | kein Test (voller Lauf vom 16.11.2026: 0 nicht erkannt) | 17.11.2026 ok (Lauf nicht wiederholt) |
+
+### #126 ISS-23 Vergleich: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt nur sechs Perzentile
+
+[Issue #126](https://github.com/ingen63/VivaPlan/issues/126) · geschlossen · Umsetzung: 23d9807
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| ISS-23/AK1 | Der Rechenkern liefert zu jedem Perzentil den realen Endwert (`endTotalReal`), Rust-Test gegen den Lauf des Perzentils. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «iss_23_ak1_…» | 17.11.2026 ok (Test vergleicht die sechs Perzentile mit Detaillauf; die übrigen haben den Wert, entstehen im Code aber im selben Ausdruck) |
+| ISS-23/AK2 | Karte «Endvermögen nach Perzentil» zeigt in heutiger Kaufkraft für jedes Perzentil einen Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-23/AK2, AK3: …» | 17.11.2026 ok |
+| ISS-23/AK3 | Die Karte trägt in heutiger Kaufkraft den Hinweis der Karte «Kennzahlen». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «ISS-23/AK2, AK3: …» | 17.11.2026 ok |
+| ISS-23/AK4 | Perzentil-Zeilen der Kennzahlen-Karte unverändert. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); FEA-90/91/93 in [ui.spec.js](../e2e/ui.spec.js) | 17.11.2026 ok (Golden-Dateien nur Zeilen hinzugefügt: 120, keine entfernt) |
+| ISS-23/AK5 | Hilfe und Doku nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/50-ergebnisse.md`) | 17.11.2026 ok |
