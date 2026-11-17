@@ -1719,6 +1719,17 @@ test.describe("Gespeicherte Ergebnisse", () => {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
+  test("#138/AK6: Übernommene Vorlagen entsprechen genau den Vorlagen des Rechenkerns", async ({ page }) => {
+    const errors = await open(page, "taxes");
+    const t = await (await page.request.post("/api/gain_templates", { data: {} })).json();
+    for (const [btn, key] of [["gain-zh", "zurich"], ["gain-ag", "aargau"]]) {
+      await page.locator(`button[data-action="${btn}"]`).first().click();
+      const g = await page.evaluate(() => state.taxes.propertyGain);
+      expect(g).toEqual({ ...t[key], useMultiplier: false });
+    }
+    await noErrors(page, errors);
+  });
+
   test("Vorlage Zürich übernehmen, Tabellen bearbeiten, Regeln entfernen", async ({ page }) => {
     const errors = await open(page, "taxes");
     await page.evaluate(() => { delete state.taxes.propertyGain; renderSection(); });

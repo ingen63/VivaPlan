@@ -19,6 +19,11 @@ use crate::sim::{SimResult, Simulator};
 use crate::validate::{self, Issue, Severity};
 
 /// Beispielplanung für «Neu».
+/// #138: Vorlagen der Grundstückgewinnsteuer (Zürich, Aargau), einzige Quelle für Oberfläche und Tests.
+pub fn gain_templates() -> Value {
+    serde_json::from_str(include_str!("../assets/gain-templates.json")).expect("Vorlagen sind gültig")
+}
+
 pub fn example_plan() -> Value {
     serde_json::from_str(include_str!("../assets/beispiel.vplan")).expect("Beispiel ist gültig")
 }

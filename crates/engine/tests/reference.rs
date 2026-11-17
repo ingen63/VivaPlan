@@ -661,3 +661,87 @@ fn value_and_fix_costs_inflation_are_independent() {
     close(v_cost.housing, v_both.housing, "Nebenkosten mit Inflation");
     assert!(v_both.housing > 1_050.0);
 }
+
+// ---------- Vorlagen der Grundstückgewinnsteuer (#138) ----------
+
+fn template(name: &str) -> engine::model::PropertyGainTax {
+    serde_json::from_value(engine::api::gain_templates()[name].clone()).expect("Vorlage passt zum Modell")
+}
+
+fn gain(name: &str, profit: f64, years: i32) -> f64 {
+    tax::property_gain_tax_held(Some(&template(name)), profit, Some(years), 1.0)
+}
+
+/// #138/AK2, AK3, AK4: Vorlage Zürich gegen das amtliche Tarifblatt «Tarif für die Grundstückgewinnsteuer, Kanton Zürich»
+/// (§ 225 StG, StA eForm. 225.1, Stand 09.25, www.steueramt.zh.ch). Teil B des Blatts nennt den Grundtarif: Gewinn
+/// 5'000 → 550, 30'000 → 5'900, 50'000 → 11'900, 100'000 → 29'400, 150'000 → 49'400. Teil A: Zuschlag 50 % (unter 1 Jahr)
+/// bzw. 25 % (unter 2 Jahren), Ermässigung 5 % nach 5 vollen Jahren, je Jahr 3 Prozentpunkte mehr, 50 % ab 20 Jahren;
+/// Gewinne unter 5'000 sind steuerfrei.
+#[test]
+fn issue_138_ak3_zurich_template_matches_the_official_tariff() {
+    // Grundtarif (2 bis 4 volle Jahre: weder Zuschlag noch Ermässigung)
+    for (profit, official) in [
+        (5_000.0, 550.0),
+        (30_000.0, 5_900.0),
+        (50_000.0, 11_900.0),
+        (100_000.0, 29_400.0),
+        (150_000.0, 49_400.0),
+    ] {
+        assert_eq!(gain("zurich", profit, 3), official, "Grundtarif {profit}");
+    }
+    // AK3, Beispiel: 100'000 nach 10 vollen Jahren: 29'400 × (1 − 20 %) = 23'520.00
+    assert_eq!(gain("zurich", 100_000.0, 10), 23_520.0);
+    // Zuschlag: unter 1 Jahr 29'400 × 1.5 = 44'100; unter 2 Jahren 29'400 × 1.25 = 36'750
+    assert_eq!(gain("zurich", 100_000.0, 0), 44_100.0);
+    assert_eq!(gain("zurich", 100_000.0, 1), 36_750.0);
+    // Ermässigung: 5 volle Jahre 11'900 × 0.95 = 11'305; 18 Jahre 29'400 × 0.56 = 16'464; 20 und 30 Jahre 49'400 × 0.5
+    assert_eq!(gain("zurich", 50_000.0, 5), 11_305.0);
+    assert_eq!(gain("zurich", 100_000.0, 18), 16_464.0);
+    assert_eq!(gain("zurich", 150_000.0, 20), 24_700.0);
+    assert_eq!(gain("zurich", 150_000.0, 30), 24_700.0);
+    // Freigrenze: unter 5'000 steuerfrei, ab 5'000 der volle Tarif
+    assert_eq!(gain("zurich", 4_999.0, 3), 0.0);
+    assert_eq!(gain("zurich", 5_000.0, 3), 550.0);
+}
+
+/// #138/AK2, AK5: Vorlage Aargau gegen den Tarif des Kantons (§ 109 StG, ag.ch «Grundstückgewinnsteuer», publiziert
+/// 01.07.2025): 40 % bis zum vollendeten 1. Besitzjahr, je Jahr 2 Prozentpunkte weniger bis 20 % (bis zum vollendeten
+/// 11. Besitzjahr), dann je Jahr 1 Prozentpunkt weniger, 5 % ab dem vollendeten 25. Besitzjahr. Besitzdauer in vollen Jahren.
+#[test]
+fn issue_138_ak5_aargau_template_matches_the_official_tariff() {
+    for (years, rate) in [
+        (0, 0.40),
+        (1, 0.38),
+        (9, 0.22),
+        (10, 0.20),
+        (11, 0.19),
+        (24, 0.06),
+        (25, 0.05),
+        (40, 0.05),
+    ] {
+        assert_eq!(gain("aargau", 100_000.0, years), 100_000.0 * rate, "{years} Jahre");
+    }
+    // Ohne Kaufdatum gilt der höchste Satz
+    let t = tax::property_gain_tax_held(Some(&template("aargau")), 100_000.0, None, 1.0);
+    assert_eq!(t, 40_000.0);
+}
+
+/// #138/AK1: Die Vorlagen stehen nur im Rechenkern; die Oberfläche lädt sie mit dem Befehl `gain_templates` und enthält
+/// keine eigenen Sätze mehr.
+#[test]
+fn issue_138_ak1_templates_have_a_single_source() {
+    let ui = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../app/ui/app.js")).unwrap();
+    assert!(ui.contains(r#"Engine.call("gain_templates")"#));
+    for numbers in [
+        "[4000, 0.10]",
+        "[4000, 0.1]",
+        "40 - 2 * y",
+        "(30 - y) / 100",
+        "0.05 + 0.03 * i",
+    ] {
+        assert!(!ui.contains(numbers), "Vorlage noch in app.js: {numbers}");
+    }
+    let t = engine::api::gain_templates();
+    assert_eq!(t["zurich"]["model"], "zurich");
+    assert_eq!(t["aargau"]["model"], "aargau");
+}

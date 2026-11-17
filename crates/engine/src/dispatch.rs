@@ -20,6 +20,7 @@ pub const COMMANDS: &[&str] = &[
     "cancel_job",
     "opt_params",
     "example_plan",
+    "gain_templates",
     "validate",
     "upgrade_plan",
     "preview",
@@ -71,6 +72,7 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
         }
         "opt_params" => to(&api::opt_params(&plan)),
         "example_plan" => api::example_plan(),
+        "gain_templates" => api::gain_templates(),
         "validate" => to(&api::validate(&plan)),
         "upgrade_plan" => to(&api::upgrade_plan(&plan)),
         "preview" => to(&api::preview(&plan, &base(), lib)),

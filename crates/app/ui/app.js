@@ -1008,18 +1008,11 @@ OPT_ACTIONS["opt-apply"] = d => {
 };
 
 // ----- Grundstückgewinnsteuer (Regeln je Kanton, editierbar) -----
-/** Vorlage Kanton Zürich: Tarif § 225 StG, Zu- und Abschläge nach Besitzdauer, Freigrenze (StA eForm. 225.1, Stand 09/2025). */
-const GAIN_ZH = () => ({
-  brackets: [[4000, 0.10], [6000, 0.15], [8000, 0.20], [12000, 0.25], [20000, 0.30], [50000, 0.35], [100000, 0.40]],
-  duration: [[0, 0.5], [1, 0.25], [2, 0], ...Array.from({ length: 16 }, (_, i) => [5 + i, -Math.round((0.05 + 0.03 * i) * 100) / 100])],
-  exemptBelow: 5000, reduction: 0
-});
-/** Vorlage Kanton Aargau: Steuersatz auf den Gewinn nach Besitzdauer, § 109 StG (40 % im 1. Besitzjahr, 5 % ab 25 vollen Jahren). */
-const GAIN_AG = () => ({
-  model: "aargau",
-  durationRates: Array.from({ length: 26 }, (_, y) => [y, y <= 10 ? Math.round((40 - 2 * y)) / 100 : y <= 24 ? (30 - y) / 100 : 0.05]),
-  brackets: [], duration: [], exemptBelow: 0, reduction: 0, useMultiplier: false
-});
+/** #138: Vorlagen der Grundstückgewinnsteuer aus dem Rechenkern (crates/engine/assets/gain-templates.json): Zürich
+ *  (Tarif § 225 StG, StA eForm. 225.1, Stand 09/2025) und Aargau (§ 109 StG). Geladen beim Start. */
+let gainTemplates = null;
+const GAIN_ZH = () => structuredClone(gainTemplates.zurich);
+const GAIN_AG = () => structuredClone(gainTemplates.aargau);
 function gainCard() {
   const g = state.taxes.propertyGain, P = "taxes.propertyGain";
   const head = `<h3>Grundstückgewinnsteuer</h3>`;
@@ -1049,7 +1042,7 @@ function gainCard() {
     <div style="margin-top:10px">${btns(true)}</div></div>`;
 }
 Object.assign(OPT_ACTIONS, {
-  "gain-zh": () => { state.taxes.propertyGain = { ...GAIN_ZH(), model: "zurich", useMultiplier: !!state.taxes.propertyGain?.useMultiplier }; markDirty(); renderSection(); },
+  "gain-zh": () => { state.taxes.propertyGain = { ...GAIN_ZH(), useMultiplier: !!state.taxes.propertyGain?.useMultiplier }; markDirty(); renderSection(); },
   "gain-ag": () => { state.taxes.propertyGain = { ...GAIN_AG(), useMultiplier: !!state.taxes.propertyGain?.useMultiplier }; markDirty(); renderSection(); },
   "gain-own": () => { state.taxes.propertyGain = { ...GAIN_AG(), durationRates: [[0, 0.2]] }; markDirty(); renderSection(); },
   "gain-model": d => {
@@ -3356,6 +3349,7 @@ Object.assign(ACTIONS, {
     // Desktop-App: zuletzt geöffnete Planung, sonst die mitgelieferte Beispielplanung (#4)
     if (Engine.inApp) startup = await Engine.call("startup_plan");
     var startNotes = await adopt(startup ? startup.plan : await Engine.call("example_plan"));
+    gainTemplates = await Engine.call("gain_templates");
   } catch (e) { document.body.innerHTML = `<p style="padding:24px">Der Rechenkern ist nicht erreichbar: ${esc(errText(e))}</p>`; return; }
   for (const src of ["historical", "rolling", "bootstrap", "parametric"]) if (initial.includes(src)) state.returns.source = src;
   if (initial.includes("buckets")) state.withdrawal.strategy = "three_buckets";

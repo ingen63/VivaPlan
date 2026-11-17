@@ -505,6 +505,12 @@ fn example_plan() -> Value {
     api::example_plan()
 }
 
+/// #138: Vorlagen der Grundstückgewinnsteuer.
+#[tauri::command]
+fn gain_templates() -> Value {
+    api::gain_templates()
+}
+
 #[tauri::command]
 fn validate(plan: Value) -> Vec<Issue> {
     api::validate(&plan)
@@ -837,6 +843,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             progress_get,
             cancel_job,
             example_plan,
+            gain_templates,
             upgrade_plan,
             validate,
             preview,
