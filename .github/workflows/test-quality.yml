@@ -268,6 +268,34 @@ jobs:
             e2e/playwright-report/
             e2e/test-results/
 
+  # #146: Ausgeliefert wird das Profil «release» (thin LTO, codegen-units 1, ohne Überlaufprüfung). Die übrigen Tests laufen
+  # im Testprofil; nächtlich prüfen Golden Masters und Referenztabelle, dass der ausgelieferte Build dieselben Ergebnisse
+  # liefert (heutige Toleranz, ohne GOLDEN_UPDATE). Nur der Rechenkern: keine Tauri-Abhängigkeiten nötig.
+  release-golden:
+    needs: changes
+    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with: { tool: nextest }
+      - uses: Swatinem/rust-cache@v2
+        with: { key: release-golden }
+      - name: Golden Masters und Referenztabelle im Release-Profil
+        run: |
+          unset GOLDEN_UPDATE
+          cargo nextest run --cargo-profile release -p vivaplan-engine -E 'test(/^golden::|^ods_reference::/)' \
+            --no-fail-fast 2>&1 | tee release-golden.log
+          status=${PIPESTATUS[0]}
+          {
+            echo "### Golden Masters im Release-Profil (#146)"
+            if [ "$status" = 0 ]; then echo "Alle bestanden."; else echo "**Fehlgeschlagen** – Ausgabe im Log des Jobs."; fi
+            grep -E '^ +(PASS|FAIL)|Summary' release-golden.log | sed 's/^/    /'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
   fuzz:
     needs: changes
     if: github.event_name == 'schedule' && needs.changes.outputs.run == 'true'
