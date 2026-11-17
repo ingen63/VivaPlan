@@ -277,7 +277,13 @@ impl Bands {
             column.clear();
             column.extend(runs.iter().map(|t| t[k]));
             column.sort_by(f32::total_cmp);
-            let q = |p: f64| column[((p / 100.0) * (column.len() - 1) as f64).round() as usize] as f64;
+            // #135: ohne Läufe (Abbruch vor dem ersten Block) 0, wie beim Minimum
+            let q = |p: f64| {
+                column
+                    .len()
+                    .checked_sub(1)
+                    .map_or(0.0, |last| column[((p / 100.0) * last as f64).round() as usize] as f64)
+            };
             b.min.push(column.first().copied().unwrap_or(0.0) as f64);
             b.p1.push(q(1.0));
             b.p5.push(q(5.0));
@@ -446,6 +452,29 @@ mod tests {
         );
         assert_eq!(s.success_rate, 1.0);
         assert_eq!(s.percentiles.len(), 10);
+    }
+
+    // #135/AK1: Bandbreite mit 0, 1 und 2 Läufen. Ohne Läufe sind alle Werte 0 (vorher Panik durch `len() - 1`).
+    // Mit 2 Läufen [1, 3]: Index = round(p × 1), also bis p25 der erste, ab p50 der zweite Lauf (round(0.5) = 1).
+    #[test]
+    fn issue_135_ak1_bands_with_zero_one_and_two_runs() {
+        let months = vec![YearMonth::new(2030, 1), YearMonth::new(2030, 2)];
+        let b = Bands::from_columns(months.clone(), &[]);
+        for v in [&b.min, &b.p1, &b.p5, &b.p25, &b.p50, &b.p75, &b.p95, &b.p99] {
+            assert_eq!(v, &vec![0.0, 0.0]);
+        }
+        assert_eq!(b.months, months);
+
+        let b = Bands::from_columns(months.clone(), &[vec![1.0, 2.0]]);
+        for v in [&b.min, &b.p1, &b.p5, &b.p25, &b.p50, &b.p75, &b.p95, &b.p99] {
+            assert_eq!(v, &vec![1.0, 2.0]);
+        }
+
+        let b = Bands::from_columns(months, &[vec![3.0, 4.0], vec![1.0, 5.0]]);
+        assert_eq!(b.min, vec![1.0, 4.0]);
+        assert_eq!((b.p1[0], b.p5[0], b.p25[0]), (1.0, 1.0, 1.0));
+        assert_eq!((b.p50[0], b.p75[0], b.p95[0], b.p99[0]), (3.0, 3.0, 3.0, 3.0));
+        assert_eq!((b.p25[1], b.p50[1]), (4.0, 5.0));
     }
 
     #[test]

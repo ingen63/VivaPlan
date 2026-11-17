@@ -105,3 +105,30 @@ fn issue_124_ak4_cancel_stops_every_running_job() {
     assert!(progress::snapshot_of(running.id()).cancelled);
     assert!(!progress::snapshot_of(finished_id).cancelled);
 }
+
+/// #135/AK2: Abbruch, bevor der erste Block rechnet. Eine Berechnung lässt sich erst abbrechen, wenn ihr Job läuft
+/// (`api::run_as` legt ihn selbst an); deshalb steht hier der Job des Tests und `batch::run_with_bands` direkt, genau
+/// wie in `api::run_as` nach der letzten Abbruchprüfung. `progress::par_map` bricht vor dem ersten Block ab und
+/// liefert keine Läufe; die Bandbreite bleibt ohne Panik (vorher `len() - 1` auf einer leeren Spalte).
+#[test]
+fn issue_135_ak2_cancel_before_the_first_block_does_not_panic() {
+    let mut v = api::example_plan();
+    v["returns"]["source"] = json!("parametric");
+    v["returns"]["parametric"] = json!({ "paths": 400, "mu": 0.07, "sigma": 0.15, "df": 6, "seed": 1 });
+    v["scenarios"]["sweeps"] = json!([]);
+    let plan: engine::model::Plan = serde_json::from_value(v).unwrap();
+    let sim = engine::sim::Simulator::new(&plan).unwrap();
+    let paths = engine::batch::path_source(&plan, &sim, None).unwrap();
+    assert_eq!(paths.len(), 400);
+
+    let job = progress::start(paths.len() as u64);
+    assert!(progress::cancel_job(job.id()));
+    let (results, bands) = engine::batch::run_with_bands(&sim, &paths);
+    assert!(results.is_empty(), "kein Block gerechnet");
+    assert_eq!(bands.p50.len(), sim.months());
+    assert!(bands.p50.iter().chain(&bands.min).all(|&x| x == 0.0));
+    assert!(bands.real.as_ref().is_some_and(|r| r.p99.iter().all(|&x| x == 0.0)));
+    let s = engine::batch::summarize(&results);
+    assert_eq!((s.runs, s.percentiles.len()), (0, 0));
+    assert_eq!(progress::snapshot_of(job.id()).done, 0);
+}
