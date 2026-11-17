@@ -138,7 +138,7 @@ Mit «+ Zweite Person» erfassen Sie einen Haushalt mit zwei Personen.
 - Steuern, Vermögen, Ausgaben und Immobilien gelten für den **Haushalt**.
 - **Als pensioniert gilt der Haushalt**, sobald alle Personen mit Bezugsdatum pensioniert sind. Erst dann greifen die Entnahmestrategien.
 
-**Verheiratet** (Ehepaar-Regeln): Sind beide AHV-Renten fällig, werden sie zusammen auf höchstens **3 780 Franken pro Monat** begrenzt (150 % der Maximalrente 2025). Der Wert ist änderbar, falls die Maximalrente steigt. Die Grenze wächst mit der Teuerung, wenn die Renten angepasst werden. Unter [Steuern](#s-taxes) können für Verheiratete eigene Tabellen hinterlegt werden.
+**Verheiratet** (Ehepaar-Regeln): Sind beide AHV-Renten fällig, werden sie zusammen auf höchstens **3 780 Franken pro Monat** begrenzt (150 % der Maximalrente 2025). Der Wert ist änderbar, falls die Maximalrente steigt. Die Grenze steigt jeden Januar einmal mit der Teuerung, sobald mindestens eine Rente mit Teuerungsanpassung läuft. Unter [Steuern](#s-taxes) können für Verheiratete eigene Tabellen hinterlegt werden.
 
 **Nicht gerechnet:** Todesfall einer Person, Hinterlassenenrenten, Witwenrente. Die Planung rechnet, als lebten beide bis zum Ende.
 

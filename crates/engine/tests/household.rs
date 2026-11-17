@@ -138,6 +138,62 @@ fn couple_ahv_is_capped_but_single_pension_is_not() {
     assert!((res.records[0].ahv - 5_040.0).abs() < 1e-9);
 }
 
+/// #145: Ehepaar mit Plafond 3'780 und Teuerung 3 % (fix); AHV im Monat `k` (0 = Januar 2030).
+fn capped_ahv(a_indexed: bool, b_indexed: bool, b_at: &str) -> SimResult {
+    let mut v = with_partner(base());
+    v["milestones"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "id": "b_ahv", "name": "AHV B", "kind": "date", "date": "2032-01" }));
+    v["returns"]["fixed"]["inflation"] = json!(0.03);
+    v["pension"]["ahv"] = json!({ "monthly": 2_520, "at": "start", "indexed": a_indexed });
+    v["partner"]["ahv"] = json!({ "monthly": 2_520, "at": b_at, "indexed": b_indexed });
+    v["household"]["ahvCoupleCap"] = json!(3_780);
+    run(v)
+}
+
+fn ahv_in(res: &SimResult, k: usize) -> f64 {
+    res.records[k].ahv
+}
+
+// #145/AK1, AK2: Beide Renten mit Teuerung: Der Plafond steigt je Januar einmal um 3 %, nicht um 3 % je Person.
+// 01.2031: 3'780 × 1.03 = 3'893.40; 01.2033: 3'780 × 1.03³ = 4'130.51 (vorher 4'010.20 und 4'513.52).
+#[test]
+fn issue_145_ak2_couple_cap_follows_inflation_once_per_year() {
+    let res = capped_ahv(true, true, "start");
+    assert!((ahv_in(&res, 11) - 3_780.0).abs() < 0.01, "{}", ahv_in(&res, 11));
+    assert!((ahv_in(&res, 12) - 3_893.40).abs() < 0.01, "{}", ahv_in(&res, 12));
+    assert!((ahv_in(&res, 36) - 4_130.51).abs() < 0.01, "{}", ahv_in(&res, 36));
+}
+
+// #145/AK3: Nur die Rente von A mit Teuerung, beide laufen. 01.2031: A = 2'520 × 1.03 = 2'595.60, B = 2'520 fest,
+// Summe 5'115.60; Plafond 3'780 × 1.03 = 3'893.40 → 3'893.40. Ohne Plafond (unverheiratet) die volle Summe.
+#[test]
+fn issue_145_ak3_cap_with_only_one_indexed_pension() {
+    let res = capped_ahv(true, false, "start");
+    assert!((ahv_in(&res, 12) - 3_893.40).abs() < 0.01, "{}", ahv_in(&res, 12));
+    // Plafond greift erst, wenn er die Summe unterschreitet: A 1'000 mit Teuerung, B 2'000 fest.
+    let mut v = with_partner(base());
+    v["returns"]["fixed"]["inflation"] = json!(0.03);
+    v["pension"]["ahv"] = json!({ "monthly": 1_000, "at": "start", "indexed": true });
+    v["partner"]["ahv"] = json!({ "monthly": 2_000, "at": "start", "indexed": false });
+    v["household"]["ahvCoupleCap"] = json!(3_780);
+    let res = run(v);
+    // 01.2031: 1'030 + 2'000 = 3'030 < 3'893.40
+    assert!((ahv_in(&res, 12) - 3_030.0).abs() < 0.01, "{}", ahv_in(&res, 12));
+}
+
+// #145/AK4: Die zweite Rente beginnt im Januar 2032. 01.2031: nur A, 2'520 × 1.03 = 2'595.60 (unter dem Plafond).
+// 01.2032: A = 2'520 × 1.03² = 2'673.47, B beginnt mit 2'520; Summe 5'193.47, Plafond 3'780 × 1.03² = 4'010.20.
+// 01.2033: beide angepasst, Plafond 3'780 × 1.03³ = 4'130.51 (vorher 4'254.42).
+#[test]
+fn issue_145_ak4_cap_when_second_pension_starts_later() {
+    let res = capped_ahv(true, true, "b_ahv");
+    assert!((ahv_in(&res, 12) - 2_595.60).abs() < 0.01, "{}", ahv_in(&res, 12));
+    assert!((ahv_in(&res, 24) - 4_010.20).abs() < 0.01, "{}", ahv_in(&res, 24));
+    assert!((ahv_in(&res, 36) - 4_130.51).abs() < 0.01, "{}", ahv_in(&res, 36));
+}
+
 #[test]
 fn couple_tax_tables_replace_single_ones() {
     let mut v = with_partner(base());

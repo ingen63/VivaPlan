@@ -273,7 +273,8 @@ Quartal); der Import meldet das. Mehrere Kapitalbezüge (`LumpsumRatio`) werden 
   Hauptperson). Pensionskasse und AHV laufen pro Person; Steuern, Vermögen und Ausgaben gelten für den Haushalt.
   Als pensioniert gilt der Haushalt (Entnahmestrategien), sobald alle Personen mit Bezugsdatum pensioniert sind.
   Ehepaar-Regeln (`household.married`): beide AHV-Renten zusammen höchstens `ahvCoupleCap` (Standard 3 780 pro
-  Monat = 150 % der Maximalrente 2025), optional eigene Steuertabellen `taxes.couple`. Hinterlassenenrenten
+  Monat = 150 % der Maximalrente 2025); die Grenze steigt jeden Januar einmal mit der Teuerung, sobald mindestens
+  eine Rente mit Teuerungsanpassung läuft (#145). Optional eigene Steuertabellen `taxes.couple`. Hinterlassenenrenten
   und Todesfälle werden nicht berechnet.
 - **Fixe Entnahmerate** (`"strategy": "fixed_rate"`, `"fixedRate": {"rate"}`) und **Guardrails** (`"guardrails":
   {"initialRate", "upper", "lower", "adjust"}`, nach Guyton-Klinger): ab Pensionierung bestimmt die Strategie die

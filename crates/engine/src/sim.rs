@@ -2589,11 +2589,16 @@ impl<'a> Run<'a> {
                 let factor = self.infl_idx / self.infl_idx_jan;
                 self.infl_idx_jan = self.infl_idx;
                 infl_factor = factor;
+                // #145: Der Plafond steigt einmal je Januar, sobald mindestens eine angepasste Rente läuft (nicht je Person).
+                let mut indexed = false;
                 for (st, c) in self.people.iter_mut().zip(&s.people) {
                     if st.ahv_started && c.ahv_indexed {
                         st.ahv *= factor;
-                        self.ahv_scale *= factor;
+                        indexed = true;
                     }
+                }
+                if indexed {
+                    self.ahv_scale *= factor;
                 }
             }
 
