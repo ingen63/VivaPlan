@@ -170,8 +170,10 @@ pub fn run_paths(sim: &Simulator, paths: &Paths) -> Vec<SimResult> {
 pub struct Percentile {
     pub percent: u32,
     pub end_total: f64,
-    /// Endvermögen dieses Laufs in heutiger Kaufkraft (mit der eigenen Inflation des Laufs; #126).
-    pub end_total_real: f64,
+    /// Endvermögen dieses Laufs in heutiger Kaufkraft (mit der eigenen Inflation des Laufs; #126). Fehlt in den
+    /// Perzentilen der Szenarien, die es nicht anzeigen (#130).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end_total_real: Option<f64>,
     pub label: String,
     /// Index des Laufs (bzw. Renditepfads).
     pub index: usize,
@@ -212,7 +214,7 @@ pub fn summarize(results: &[SimResult]) -> BatchSummary {
             Percentile {
                 percent: p,
                 end_total: results[i].summary.end_total,
-                end_total_real: results[i].summary.end_total_real,
+                end_total_real: Some(results[i].summary.end_total_real),
                 label: results[i].label.clone(),
                 index: i,
                 depleted: results[i].summary.depleted,

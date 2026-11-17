@@ -483,7 +483,15 @@ fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: u
                     p50_real: real.get(real.len() / 2).copied().unwrap_or(0.0),
                     at_retirement: at_ret.get(at_ret.len() / 2).copied(),
                     earliest_depletion: s.earliest_depletion.map(|(m, _)| m),
-                    percentiles: s.percentiles.clone(),
+                    // #130: ohne reales Endvermögen je Perzentil, die Szenarien zeigen es nicht
+                    percentiles: s
+                        .percentiles
+                        .into_iter()
+                        .map(|p| batch::Percentile {
+                            end_total_real: None,
+                            ..p
+                        })
+                        .collect(),
                     error: None,
                 })
             })();
