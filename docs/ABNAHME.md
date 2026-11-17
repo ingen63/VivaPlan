@@ -1420,3 +1420,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #126/AK3 | Die Karte trägt in heutiger Kaufkraft den Hinweis der Karte «Kennzahlen». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, AK3: …» | 17.11.2026 ok |
 | #126/AK4 | Perzentil-Zeilen der Kennzahlen-Karte unverändert. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); #115/#118/93 in [ui.spec.js](../e2e/ui.spec.js) | 17.11.2026 ok (Golden-Dateien nur Zeilen hinzugefügt: 120, keine entfernt) |
 | #126/AK5 | Hilfe und Doku nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/50-ergebnisse.md`) | 17.11.2026 ok |
+
+### #117 Issues nach GitHub-Konvention: Nummer statt eigener ID
+
+[Issue #117](https://github.com/ingen63/VivaPlan/issues/117) · geschlossen · Umsetzung: 4bd1a25, 4c29de1, 2eccce0
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #117/AK1 | Kein Titel mit altem Präfix; genau ein Art-Label (`bug`, `enhancement`, `task`). | ☑ | **gilt** | kein Test (Abfrage mit `gh`) | 17.11.2026 ok |
+| #117/AK2 | `docs/ISSUE-IDS.md` nennt jede alte ID mit Nummer, doppelte vermerkt. | ☑ | **gilt** | kein Test (Abgleich mit den Titeln vor der Umstellung) | 17.11.2026 ok |
+| #117/AK3 | `git grep` findet alte IDs nur in `docs/ISSUE-IDS.md`. | ☑ | **gilt** | kein Test (`git grep`) | 17.11.2026 ok |
+| #117/AK4 | Dateinamen ohne alte ID, `tools/github-issues/` entfernt. | ☑ | **gilt** | kein Test (Durchsicht) | 17.11.2026 ok |
+| #117/AK5 | Bericht erkennt `#Nr/AKn`, `issue_Nr_akn_…` und `AKn` im `describe`; nicht weniger belegte Kriterien. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_117_ak5_…» | 17.11.2026 ok (508 belegt vorher und nachher) |
+| #117/AK6 | Dokumente und Vorlagen beschreiben die neue Konvention. | ☑ | **gilt** (Präzisierung 1: kein `Fixes`/`Closes`, Label `implemented`) | kein Test (Durchsicht) | 17.11.2026 ok |
+| #117/AK7 | Labels migriert, Anzahl je Label gleich, englische Beschreibungen. | ☑ | **gilt** | kein Test (Abfrage mit `gh`) | 17.11.2026 ok (Abweichung: `task` 6 → 4, damit jedes Issue genau ein Art-Label hat) |
+| #117/AK8 | Label `accepted` angelegt, `umgesetzt` gelöscht. | ☑ | **überholt** durch Präzisierung 1: `implemented` statt `accepted` | kein Test (Abfrage mit `gh`) | 17.11.2026 ok (`implemented` ersetzt `umgesetzt`) |
+| #117/AK9 | Keine alten Labels mehr im Repo. | ☑ | **gilt** (Präzisierung 2: Labels in Backticks, `gefunden:`) | kein Test (`git grep`) | 17.11.2026 ok |
+| #117/AK10 | `docs/ABNAHME.md` nach Nummer, Auswahl-Abfrage funktioniert. | ☑ | **gilt** | kein Test (Abfrage ausgeführt) | 17.11.2026 ok |
+| #117/AK11 | Alle Tests grün, `cargo fmt` sauber, Golden-Dateien unverändert. | ☑ | **gilt** | alle Testsuiten | 17.11.2026 ok |
