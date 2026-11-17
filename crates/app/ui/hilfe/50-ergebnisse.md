@@ -35,6 +35,8 @@ Die Läufe werden nach ihrem **Endvermögen** sortiert. Das **n-te Perzentil** i
 
 Die Tabelle nennt zu jeder Zeile den **Lauf**, zum Beispiel den historischen Startmonat oder die Nummer des Pfades. Ein **negatives** Endvermögen bedeutet, dass das Geld **vor dem Ende ausging** und danach Schulden (offene Ausgaben) aufliefen.
 
+In **heutiger Kaufkraft** (Umschalter «Nominal / Heutige Kaufkraft») zeigt die Tabelle für jedes Perzentil das Endvermögen **des Laufs, der nominal auf diesem Perzentil liegt**, umgerechnet mit der Teuerung dieses Laufs. Haben die Läufe eine zufällige Teuerung, kann die Reihenfolge dadurch von der nominalen abweichen: Das 99. Perzentil kann real unter dem 95. liegen.
+
 > Der **Median** ist **kein** realistischer Normalfall im Sinn einer Prognose. Er sagt nur, dass die Hälfte der simulierten Zukünfte besser ausgeht. Für die Planung zählen die **unteren** Perzentile, weil dort das Risiko liegt.
 
 ## @r-fan Bandbreite des Gesamtvermögens

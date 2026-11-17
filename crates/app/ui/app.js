@@ -3057,8 +3057,10 @@ function cmpOverview(body, items) {
   const endAt = (it, q) => {
     if (it.single) return q === 50 ? (realView ? it.single.summary.endTotalReal : it.single.summary.endTotal) : null;
     if (!it.batch) return null;
-    if (!realView) return it.batch.summary.percentiles.find(p => p.percent === q)?.endTotal ?? null;
-    return it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
+    const pc = it.batch.summary.percentiles.find(p => p.percent === q);
+    if (!realView) return pc?.endTotal ?? null;
+    // ISS-23: real je Perzentil aus der Zusammenfassung; ältere gespeicherte Ergebnisse haben es nur in den Detailläufen
+    return pc?.endTotalReal ?? it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
   };
   const notes = [];
   // FEA-91: Kennzahlen nach Spalte sortierbar; Farben und Reihenfolge der übrigen Karten bleiben
@@ -3094,6 +3096,7 @@ function cmpOverview(body, items) {
   const qs = [...new Set(batches.flatMap(it => it.batch.summary.percentiles.map(p => p.percent)))].sort((a, b) => b - a);
   const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">Perzentil</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
     ${qs.map(q => `<tr><td class="l">${q === 0 ? "Schlechtester Lauf" : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
+      + (realView ? `<p class="hint">In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils; die Reihenfolge kann deshalb von der nominalen abweichen.</p>` : "")
     : `<p class="hint" style="margin:0">Kein Ergebnis mit mehreren Läufen.</p>`;
   // Wahrscheinlichkeit, dass das Geld reicht
   const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);

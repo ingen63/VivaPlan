@@ -3607,6 +3607,31 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
+  test("ISS-23/AK2, AK3: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt jedes Perzentil, mit Hinweis", async ({ page }) => {
+    const errors = await openCompare(page);
+    const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
+    await expect(card.locator(".hint")).toHaveCount(0);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    const card2 = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
+    const rows = card2.locator("table tr");
+    const n = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0];
+      return (await Runs.get(m.id)).result.batch.summary.percentiles.length;
+    });
+    expect(n).toBeGreaterThan(6);
+    await expect(rows).toHaveCount(n + 1);
+    // keine leere Zelle («–») in der ganzen Tabelle
+    await expect(card2.locator("table td", { hasText: "–" })).toHaveCount(0);
+    // Wert je Zeile = reales Endvermögen des Laufs dieses Perzentils (erstes Ergebnis, Spalte 1)
+    const want = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0];
+      return (await Runs.get(m.id)).result.batch.summary.percentiles.map(p => [p.percent, fmtInt(p.endTotalReal)]);
+    });
+    for (const [q, v] of want) await expect(card2.locator("table tr", { hasText: new RegExp("^" + (q === 0 ? "Schlechtester" : q + "\\.")) }).locator("td").nth(1)).toHaveText(v);
+    await expect(card2.locator(".hint")).toContainText("Laufs dieses Perzentils");
+    await noErrors(page, errors);
+  });
+
   test("FEA-90/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
     const errors = await openCompare(page);
     await tab(page, "Verläufe");

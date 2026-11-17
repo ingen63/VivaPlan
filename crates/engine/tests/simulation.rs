@@ -1051,3 +1051,40 @@ fn fea97_ak3_mortgage_interest_counts_for_the_reserve() {
     assert!((cash(0.0) - 12.0 * 1000.0).abs() < 1e-6, "ohne Zins: {}", cash(0.0));
     assert!((cash(0.012) - 12.0 * 1400.0).abs() < 1e-6, "mit Zins: {}", cash(0.012));
 }
+
+/// ISS-23/AK1: Jedes Perzentil der Zusammenfassung trägt das reale Endvermögen seines Laufs. Parametrisch mit zufälliger
+/// Inflation: Die Läufe haben verschiedene Inflation, real und nominal unterscheiden sich je Lauf anders.
+#[test]
+fn iss_23_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
+    let mut v = engine::api::example_plan();
+    v["returns"]["source"] = json!("parametric");
+    v["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "jumpLambda": 0, "jumpMu": 0, "jumpSigma": 0, "seed": 3 });
+    v["scenarios"]["sweeps"] = json!([]);
+    let out = engine::api::run(&v, Path::new("/"), None);
+    assert!(out.error.is_none(), "{:?}", out.error);
+    let b = out.batch.expect("mehrere Läufe");
+    let json = serde_json::to_value(&b.summary).unwrap();
+    let pcts = json["percentiles"].as_array().unwrap();
+    assert!(
+        pcts.len() > 6,
+        "alle Perzentile, nicht nur die der Detailläufe: {}",
+        pcts.len()
+    );
+    // Mit den Detailläufen (0, 1, 5, 50, 95, 99) vergleichbar: gleicher Lauf, gleicher realer Endwert.
+    let mut checked = 0;
+    for (q, run) in &b.details {
+        let p = pcts.iter().find(|p| p["percent"] == *q).expect("Perzentil");
+        let real = p["endTotalReal"].as_f64().expect("endTotalReal");
+        assert!(
+            (real - run.summary.end_total_real).abs() < 1e-6,
+            "{q}: {real} gegen {}",
+            run.summary.end_total_real
+        );
+        assert!((p["endTotal"].as_f64().unwrap() - run.summary.end_total).abs() < 1e-6);
+        checked += 1;
+    }
+    assert_eq!(checked, 6);
+    // Auch die übrigen Perzentile haben einen Wert, und real ≠ nominal bei positiver Inflation.
+    assert!(pcts.iter().all(|p| p["endTotalReal"].is_f64()));
+    assert!(pcts.iter().any(|p| p["endTotalReal"] != p["endTotal"]));
+}
