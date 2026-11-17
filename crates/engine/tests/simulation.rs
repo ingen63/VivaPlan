@@ -1106,23 +1106,3 @@ fn issue_130_ak1_scenario_percentiles_without_real_end_wealth() {
     assert_eq!(batch.len(), 10);
     assert!(batch.iter().all(|p| p["endTotalReal"].is_f64()));
 }
-
-/// #130/AK1: Die Perzentile der Szenarien tragen kein reales Endvermögen, die Zusammenfassung des Laufs weiterhin schon.
-#[test]
-fn issue_130_ak1_scenario_percentiles_without_real_end_wealth() {
-    let mut v = engine::api::example_plan();
-    v["returns"]["source"] = json!("parametric");
-    v["returns"]["parametric"] = json!({ "paths": 20, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
-    let out = engine::api::run(&v, Path::new("/"), None);
-    assert!(out.error.is_none(), "{:?}", out.error);
-    let json = serde_json::to_value(&out).unwrap();
-    let sc = json["scenarios"]["results"].as_array().expect("Szenarien");
-    assert!(!sc.is_empty());
-    for p in sc.iter().flat_map(|r| r["percentiles"].as_array().unwrap()) {
-        assert!(p.get("endTotalReal").is_none(), "{p}");
-        assert!(p["endTotal"].is_f64());
-    }
-    let batch = json["batch"]["summary"]["percentiles"].as_array().expect("Lauf");
-    assert_eq!(batch.len(), 10);
-    assert!(batch.iter().all(|p| p["endTotalReal"].is_f64()));
-}
