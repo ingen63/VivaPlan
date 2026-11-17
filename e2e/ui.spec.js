@@ -2693,6 +2693,47 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
+test.describe("Zahleneingabe mit Punkt als Tausendertrennzeichen (#140)", () => {
+  const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
+
+  test("AK1, AK4: Betrag «12.500» wird mit Meldung abgelehnt, der bisherige Wert bleibt", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    const cash = field(page, "wealth.cash");
+    const before = await page.evaluate(() => state.wealth.cash);
+    await cash.fill("12.500");
+    await cash.press("Tab");
+    await expect(ferr(cash)).toContainText("Mehrdeutige Zahl");
+    await expect(cash).toHaveClass(/invalid/);
+    expect(await page.evaluate(() => state.wealth.cash)).toBe(before);
+    // Mit Apostroph wird derselbe Betrag übernommen
+    await cash.fill("12'500");
+    await cash.press("Tab");
+    await expect(cash).not.toHaveClass(/invalid/);
+    expect(await page.evaluate(() => state.wealth.cash)).toBe(12500);
+    await noErrors(page, errors);
+  });
+
+  test("AK1, AK2: Anzahl Pfade «50.000» und «1e5» werden abgelehnt, Prozent «1.25» bleibt gültig", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.returns.source = "bootstrap"; });
+    await nav(page, "Simulation");
+    const paths = field(page, "returns.bootstrap.paths");
+    const before = await page.evaluate(() => state.returns.bootstrap.paths);
+    for (const t of ["50.000", "1e5"]) {
+      await paths.fill(t);
+      await paths.press("Tab");
+      await expect(paths).toHaveClass(/invalid/);
+      expect(await page.evaluate(() => state.returns.bootstrap.paths)).toBe(before);
+    }
+    await expect(ferr(paths)).toContainText("Ungültige Zahl.");
+    await paths.fill("2000");
+    await paths.press("Tab");
+    await expect(paths).not.toHaveClass(/invalid/);
+    expect(await page.evaluate(() => state.returns.bootstrap.paths)).toBe(2000);
+    await noErrors(page, errors);
+  });
+});
+
 test.describe("Erwerbseinkommen mit der Teuerung (#58)", () => {
   test("#58/AK1: Auswahl je Person, Vorschau rechnet sofort neu", async ({ page }) => {
     const errors = await open(page, "flows");

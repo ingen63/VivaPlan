@@ -12,6 +12,8 @@ Hier legen Sie die Grunddaten fest.
 
 Alle Zeitangaben haben das Format **MM.JJJJ** (zum Beispiel 05.2027).
 
+**Zahlen** geben Sie mit oder ohne Tausendertrennzeichen ein: Apostroph oder Leerzeichen (1'234 oder 1 234), als Dezimaltrennzeichen Punkt oder Komma (12.5 oder 12,5). Bei **Beträgen** und **ganzen Zahlen** (zum Beispiel Anzahl Pfade) ist ein Punkt mit genau drei Ziffern danach mehrdeutig («12.500»): Das Feld meldet «Mehrdeutige Zahl» und behält den bisherigen Wert; schreiben Sie 12500 oder 12'500. Prozent- und Jahresfelder nehmen «1.25» wie bisher an. Schreibweisen wie «1e5» oder «0x10» sind nirgends erlaubt.
+
 ## @s-milestones Meilensteine
 Stichworte: Bezug Pensionskasse, Pensionierung, Start, Ende, AHV-Bezug, AHV-Beginn, Datum, Alter, Zeitpunkt, Grenzen
 

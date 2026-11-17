@@ -24,18 +24,25 @@ function parseShow(s) {
 function quarterEnds(a, b) { let n = 0; for (let m = a; m < b; m++) if (m % 3 === 2) n++; return n; }
 
 // ---------- Zahlen ----------
-/** Zahl aus einer Eingabe mit Tausendertrennzeichen (’ ' Leerzeichen) und Dezimalkomma; leer oder ungültig: null. */
+/** Zahl aus einer Eingabe mit Tausendertrennzeichen (’ ' Leerzeichen) und Dezimalkomma; leer oder ungültig: null.
+ *  #140: nur Ziffern mit höchstens einem Dezimaltrennzeichen, keine Exponent- oder Hex-Schreibweise («1e5», «0x10»). */
 function parseNum(s) {
   s = String(s).replace(/[’'\s]/g, "").replace(",", ".");
-  if (s === "" || s === "-" || s === ".") return null;
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
   const v = Number(s); return Number.isFinite(v) ? v : null;
 }
+/** #140: Ein Punkt mit genau drei Ziffern danach («1.234», «12.500») ist in einem Betrag oder einer Ganzzahl mehrdeutig:
+ *  meist ein Tausendertrennzeichen. Solche Eingaben werden nicht still als Dezimalzahl übernommen. */
+const ambiguousThousands = s => /\d\.\d{3}(?!\d)/.test(String(s).replace(/[’'\s]/g, ""));
+/** Betrag (CHF) oder Ganzzahl (z. B. Anzahl Pfade): wie `parseNum`, aber mehrdeutige Eingaben ergeben null. */
+function parseAmount(s) { return ambiguousThousands(s) ? null : parseNum(s); }
+const AMBIGUOUS_TEXT = "Mehrdeutige Zahl: Ist der Punkt ein Tausendertrennzeichen? Bitte ohne Punkt (1234) oder mit Apostroph (1'234) eingeben.";
 const fmtInt = v => Math.round(v).toLocaleString("de-CH");
 function fmtMio(v) { return Math.abs(v) >= 1e6 ? `${(v / 1e6).toLocaleString("de-CH", { maximumFractionDigits: 2 })} Mio` : `${fmtInt(v / 1000)}k`; }
 /** Anteil als Prozentzahl ohne Zeichen (0.05 → «5»). */
 const fmtPct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 3 })}`;
 /** Zahl aus einem Feld der Optimierung; sonst der Standard `d`. */
-const optNum = (v, d) => { const x = parseFloat(String(v).replace(",", ".")); return Number.isFinite(x) ? x : d; };
+const optNum = (v, d) => { const x = parseNum(v); return x === null ? d : x; }; // #140: wie parseNum (kein «1e5», «0x10»)
 const optRound = x => Math.round(x * 1e6) / 1e6;
 /** Steuersatz einer Satztabelle [[Betrag, Satz], …]: linear zwischen den Stufen, ausserhalb konstant. */
 function rateAt(table, x) {
@@ -107,6 +114,6 @@ if (typeof module !== "undefined") {
   module.exports = {
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
     rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
-    KNOWN_FORMATS, unknownFormatText,
+    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, AMBIGUOUS_TEXT,
   };
 }

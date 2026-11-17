@@ -410,7 +410,7 @@ async function blockedByErrors() {
 function F(path, label, type = "chf", o = {}) {
   const v = getP(path), unit = o.unit ?? (UNIT[type] ? UNIT[type]() : "");
   const cls = ["chf", "chfopt", "pct", "num", "months", "years"].includes(type) ? "num" : "";
-  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}" value="${esc(showVal(type, v))}" ${type === "month" ? 'placeholder="MM.JJJJ"' : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
+  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""} value="${esc(showVal(type, v))}" ${type === "month" ? 'placeholder="MM.JJJJ"' : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
   if (o.bare) return input;
   return `<label class="field"><span>${label}${reqMark(path)}</span>${input}${o.hint ? `<span class="computed">${o.hint}</span>` : ""}</label>`;
 }
@@ -647,20 +647,20 @@ R.returns = () => {
   if (src === "historical") params = `<div class="card"><h3>Start</h3><div class="grid2">${F("returns.startDate", "Historischer Startmonat", "month")}</div>
     <p class="hint">Der Simulationsstart ${C("ms", "start")} wird auf diesen historischen Zeitpunkt gelegt. Bei Jahresdaten zählt nur das Jahr.</p></div>`;
   if (src === "rolling") params = `<div class="card"><h3>Durchlauf</h3><p style="margin:0">${C("rolling")}</p></div>`;
-  if (src === "bootstrap") params = `<div class="card"><h3>Bootstrap</h3><div class="grid3">${F("returns.bootstrap.paths", "Anzahl Pfade", "num")}${F("returns.bootstrap.block", "Mittlere Blocklänge", "months")}${F("returns.bootstrap.seed", "Zufallsstartwert", "num")}</div>
+  if (src === "bootstrap") params = `<div class="card"><h3>Bootstrap</h3><div class="grid3">${F("returns.bootstrap.paths", "Anzahl Pfade", "num", { int: true })}${F("returns.bootstrap.block", "Mittlere Blocklänge", "months")}${F("returns.bootstrap.seed", "Zufallsstartwert", "num", { int: true })}</div>
     <p class="hint">Jeder Pfad wird aus Abschnitten der Zeitreihe zusammengesetzt. Ein Abschnitt endet in jedem Monat mit Wahrscheinlichkeit 1 / Blocklänge, dann folgt ein zufälliger neuer Startmonat (stationärer Bootstrap). Aktien, Obligationen, Inflation und SARON stammen immer aus demselben historischen Monat; Krisen behalten so ihren Verlauf. Bei Jahresdaten gilt die Blocklänge in ganzen Jahren.</p>
     <p class="hint">Gleicher Zufallsstartwert ⇒ gleiche Pfade. Szenarien verwenden dieselben Pfade, damit Unterschiede von den Parametern stammen.</p></div>`;
   if (src === "parametric") {
     const P = (k, label) => F("returns.parametric." + k, label, PARAM_KEYS[k], { hint: C("psug", k) });
-    params = `<div class="card"><h3>Aktienmodell</h3><p class="hint" style="margin-top:0">${C("pauto")}</p><div class="grid3">${F("returns.parametric.paths", "Anzahl Pfade", "num")}${P("mu", "Erwartete Rendite (Drift)")}${P("sigma", "Volatilität")}
+    params = `<div class="card"><h3>Aktienmodell</h3><p class="hint" style="margin-top:0">${C("pauto")}</p><div class="grid3">${F("returns.parametric.paths", "Anzahl Pfade", "num", { int: true })}${P("mu", "Erwartete Rendite (Drift)")}${P("sigma", "Volatilität")}
     ${P("df", "Freiheitsgrade (Fat Tails)")}${P("jumpLambda", "Kurssprünge pro Jahr")}${P("jumpMu", "Mittlere Sprunghöhe (log)")}
-    ${P("jumpSigma", "Streuung der Sprunghöhe")}${F("returns.parametric.seed", "Zufallsstartwert", "num")}</div>
+    ${P("jumpSigma", "Streuung der Sprunghöhe")}${F("returns.parametric.seed", "Zufallsstartwert", "num", { int: true })}</div>
     <p class="hint">Tagesschritte (21 pro Monat), Student-t-Schocks auf Varianz 1 skaliert (0 Freiheitsgrade = Normalverteilung), Poisson-Kurssprünge. Eine Sprunghöhe von −30 % (log) entspricht etwa −26 % Kursverlust.</p></div>
     <div class="card"><h3>Obligationen und Inflation <span class="sub">aus der Anlagestrategie, nur Anzeige</span></h3><div id="paramJoint">${C("pjoint")}</div></div>`;
   }
   const extra = !u.extrapolate ? "" : `<div class="card"><h3>Fortschreibung <span class="sub">die Zeitreihe endet vor dem Simulationsende</span></h3>
     <div class="grid2"><label class="field"><span>Methode</span>${Sel("returns.extrapolation.method", [["fixed", "Fixe Werte"], ["average", "Gleitender Durchschnitt"], ["geometric", "Gleitender geometrischer Durchschnitt"]], { rerender: 1 })}</label>
-    ${r.extrapolation.method === "fixed" ? "" : F("returns.extrapolation.range", "Durchschnitt über", "num", { unit: "Jahre" })}</div></div>`;
+    ${r.extrapolation.method === "fixed" ? "" : F("returns.extrapolation.range", "Durchschnitt über", "num", { unit: "Jahre", int: true })}</div></div>`;
   return `<h2>Simulation</h2><p class="lead">Wie die Renditen und die Inflation über die Zeit verlaufen: fixe Werte, ein historischer Verlauf oder Monte Carlo. Die Indizes wählen Sie bei der Anlagestrategie unter «Vermögen &amp; Anlage». Angezeigt sind nur die Angaben, die für die gewählte Methode gelten.</p>
     <div class="card"><div class="choices">${SOURCES.map(([k, t, d, ok]) => `<div class="choice ${k === src ? "on" : ""} ${ok ? "" : "off"}" ${ok ? `data-action="set" data-path="returns.source" data-value="${k}"` : ""}><b>${t}</b><small>${d}</small></div>`).join("")}</div></div>
     ${series}${params}${extra}${fixed}
@@ -969,11 +969,16 @@ R.optimize = () => {
     <p class="hint est" id="est-opt" style="margin:8px 0 0"></p></div>
   ${res}${o && !optBusy && !optError ? `<footer class="rfoot" id="optFoot">${esc(DISCLAIMER_FOOT)}</footer>` : ""}`;
 };
+/** #140: Ganzzahl der Optimierung; «50.000» ist mehrdeutig und wird nicht als 50 übernommen (bisheriger Wert bleibt). */
+function optInt(text, prev) {
+  if (ambiguousThousands(text)) { toast(AMBIGUOUS_TEXT); return prev; }
+  return Math.round(optNum(text, prev));
+}
 function readOptCfg() {
   const v = id => document.getElementById("opt-" + id)?.value ?? optCfg[id];
   const goalEl = document.getElementById("opt-goal");
   optCfg = { goal: goalEl ? goalEl.value : optCfg.goal, minConsumption: optNum(v("minConsumption"), 90), maxRuin: optNum(v("maxRuin"), 5), ruinAge: String(v("ruinAge")).trim(), weightMedian: optNum(v("weightMedian"), 50), volWeight: optNum(v("volWeight"), 1),
-    maxVol: String(v("maxVol")).trim(), paths: Math.round(optNum(v("paths"), 5000)), checkPaths: Math.round(optNum(v("checkPaths"), 10000)), samples: Math.round(optNum(v("samples"), 30)),
+    maxVol: String(v("maxVol")).trim(), paths: optInt(v("paths"), optCfg.paths ?? 5000), checkPaths: optInt(v("checkPaths"), optCfg.checkPaths ?? 10000), samples: optInt(v("samples"), optCfg.samples ?? 30),
     strategies: OPT_STRATS.map(x => x[0]).filter(k => document.getElementById("optS-" + k)?.checked), ranges: optCfg.ranges ?? {} };
   return optCfg;
 }
@@ -1672,7 +1677,8 @@ function readInput(el) {
   if (t === "select" || t === "radio" || t === "text") return el.value;
   if (t === "month") return parseShow(el.value);
   if (t === "chfopt" && el.value.trim() === "") return undefined;
-  const v = parseNum(el.value);
+  // #140: Beträge und Ganzzahlen nehmen «1.234» nicht als 1.234
+  const v = t === "chf" || t === "chfopt" || el.dataset.int ? parseAmount(el.value) : parseNum(el.value);
   if (v === null) return null;
   return t === "pct" ? v / 100 : v;
 }
@@ -1688,7 +1694,8 @@ function onEdit(el) {
   const typing = document.activeElement === el && el.matches("input:not([type=checkbox]):not([type=radio])");
   if (typing) holdField(el);
   if (v === null) {
-    invalidFields.set(path, { section: current, message: el.dataset.type === "month" ? "Ungültiges Datum (MM.JJJJ)." : "Ungültige Zahl." });
+    const ambiguous = (["chf", "chfopt"].includes(el.dataset.type) || el.dataset.int) && ambiguousThousands(el.value);
+    invalidFields.set(path, { section: current, message: el.dataset.type === "month" ? "Ungültiges Datum (MM.JJJJ)." : ambiguous ? AMBIGUOUS_TEXT : "Ungültige Zahl." });
     if (!typing) { el.classList.add("invalid"); applyFieldIssues(); }
     return;
   }
@@ -2053,7 +2060,8 @@ function settingsFields(l) {
 }
 function readSettings() {
   const l = {};
-  for (const [k] of LIMIT_FIELDS) { const v = parseNum($("#set-" + k).value); l[k] = v === null ? NaN : v; }
+  // #140: Der Höchstbetrag der Säule 3a ist ein Betrag («7.258» ist mehrdeutig)
+  for (const [k] of LIMIT_FIELDS) { const t = $("#set-" + k).value, v = k === "pillar3aMax" ? parseAmount(t) : parseNum(t); l[k] = v === null ? NaN : v; }
   return l;
 }
 /** Dialog «Einstellungen»: gilt für alle Planungen, wird lokal gespeichert, nie in der Planungsdatei. */

@@ -154,3 +154,31 @@ test("#144/AK2: Meldung bei unbekannter Formatkennung nennt die Kennung", () => 
   assert.deepEqual(u.KNOWN_FORMATS, ["vivaplan/1", "pensionsplaner/1"]);
   assert.equal(u.unknownFormatText("vivaplan/2"), "Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.");
 });
+
+test("#140/AK1: Betrag und Ganzzahl nehmen einen Punkt mit drei Ziffern nicht als Dezimalzahl", () => {
+  for (const t of ["1.234", "12.500", "1.234.567", "50.000", "-1.250", "1'234.567"]) {
+    assert.equal(u.parseAmount(t), null, t);
+    assert.equal(u.ambiguousThousands(t), true, t);
+  }
+  assert.match(u.AMBIGUOUS_TEXT, /Tausendertrennzeichen/);
+});
+
+test("#140/AK2: Exponent-, Hex- und Textschreibweise werden in allen Zahlenfeldern abgelehnt", () => {
+  for (const t of ["0x10", "1e5", "1E5", "Infinity", "-Infinity", "NaN", "12abc", "1.2.3", "--1"]) {
+    assert.equal(u.parseNum(t), null, t);
+    assert.equal(u.parseAmount(t), null, t);
+    assert.equal(u.optNum(t, 7), 7, t);
+  }
+});
+
+test("#140/AK3: gültige Schreibweisen bleiben gültig", () => {
+  const cases = { "1'234.50": 1234.5, "1’234,5": 1234.5, "12,5": 12.5, "1 234": 1234, "-3": -3, "+4": 4, "1234": 1234, "0.5": 0.5, ".5": 0.5, "7258": 7258 };
+  for (const [t, v] of Object.entries(cases)) {
+    assert.equal(u.parseNum(t), v, t);
+    assert.equal(u.parseAmount(t), v, t);
+  }
+  // Prozent- und Jahresfelder lesen mit parseNum: «1.25» bleibt 1.25, auch «12.500» (12.5 %)
+  assert.equal(u.parseNum("1.25"), 1.25);
+  assert.equal(u.parseNum("12.500"), 12.5);
+  assert.equal(u.optNum("2,5", 1), 2.5);
+});
