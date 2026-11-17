@@ -73,7 +73,7 @@ tools/ui-smoke.sh                                # Oberflächentest
 cargo llvm-cov --workspace --exclude vivaplan-app --summary-only   # Testabdeckung
 ```
 
-`returns.strategy` (FEA-53) wählt die Indizes: `{"stocks": "worldJst" | "worldCustom" | "chJst" | "sp500",
+`returns.strategy` (#69) wählt die Indizes: `{"stocks": "worldJst" | "worldCustom" | "chJst" | "sp500",
 "bonds": "ch" | "usa" | "chShort", "weights": {"ch", "usa", "eu", "apac"}}` (Gewichte nur für `worldCustom`, zusammen 1).
 Daraus entsteht die Zeitreihe (`crates/engine/src/strategy.rs`); ein gesetztes `returns.series` (ältere Planungen,
 Kommandozeile) hat Vorrang und wird beim Öffnen in der App zur Strategie.
@@ -94,7 +94,7 @@ Alle Läufe werden parallel auf allen Kernen gerechnet; Monte-Carlo-Pfade entste
   log-normal mit `jumpMu`, `jumpSigma`). Der SARON folgt dem fixen Wert. Die Zeitreihe der Planung (Anlagestrategie)
   wird auch für `parametric` geladen (`batch::load_series`); ohne Reihe folgen auch Obligationen und Inflation den
   fixen Werten.
-- **Vorschlagswerte (FEA-78, `calibrate.rs`):** aus der ganzen Aktienreihe des Index (`DataSet::stock_series`, nicht
+- **Vorschlagswerte (#100, `calibrate.rs`):** aus der ganzen Aktienreihe des Index (`DataSet::stock_series`, nicht
   nur die gemeinsamen Jahre mit den Obligationen). Ziel sind die Jahresrenditen, wie der Bootstrap sie zieht: bei
   Jahresreihen die Jahre selbst, bei Monatsreihen (S&P 500 mit US- oder 10-jährigen Eidgenossen) eine feste
   Stichprobe von 100'000 Jahren aus Blöcken mit mittlerer Länge 12 Monate. `df` = 6 und `jumpSigma` = 0.15 sind fest.
@@ -104,7 +104,7 @@ Alle Läufe werden parallel auf allen Kernen gerechnet; Monte-Carlo-Pfade entste
   Mittel. Gerundet auf 0.05 Prozentpunkte. Mit `auto` = wahr rechnet der Rechenkern mit den Vorschlagswerten
   (`calibrate::resolve`), sonst mit den gespeicherten Werten; fehlt `auto` (ältere Planung), gilt falsch.
   `upgrade_plan` setzt `auto` = falsch bei Planungen, die parametrisch rechnen (mit Hinweis), sonst wahr.
-- **Obligationen und Inflation (FEA-79):** Mittelwert, Streuung (Nenner n) und Korrelation (Aktien, Obligationen,
+- **Obligationen und Inflation (#101):** Mittelwert, Streuung (Nenner n) und Korrelation (Aktien, Obligationen,
   Inflation) der Jahreswerte der Reihe der Anlagestrategie (Monatsreihen zu Kalenderjahren verknüpft, Inflation des
   Dezembers). Je Kalenderjahr der Simulation: z = (L − E[L]·f) / (sd(L)·√f) aus der Log-Rendite L der Aktien in den
   f·12 Monaten dieses Jahres; Obligationen = μB + σB·(aB·z + l11·e1), Inflation = μI + σI·(aI·z + l21·e1 + l22·e2) mit
@@ -112,7 +112,7 @@ Alle Läufe werden parallel auf allen Kernen gerechnet; Monte-Carlo-Pfade entste
   der Reihe / corr(exp(L) − 1, L), damit die Korrelation mit der einfachen Aktienrendite stimmt; l aus der Zerlegung der
   Restkovarianz (begrenzt, falls die Matrix nicht positiv definit wäre). Werte unter −95 % werden auf −95 % gesetzt. Die
   Jahre sind unabhängig, wie im Bootstrap.
-- **Vorlauf (FEA-80, `MarketPath::pre_stocks`):** Jeder Pfad trägt die Aktien-Monatsrenditen der 12 Monate vor dem
+- **Vorlauf (#103, `MarketPath::pre_stocks`):** Jeder Pfad trägt die Aktien-Monatsrenditen der 12 Monate vor dem
   Start mit, nur für das Renditekriterium der 3-Topf-Strategie (kein Vermögen, kein Topf). Historisch: die echten Monate
   vor dem historischen Start (Jahresreihen nach Kalenderjahr, wie der Pfad), am Anfang der Reihe entsprechend weniger.
   Bootstrap: die echten Monate vor dem ersten Block, zirkulär (Jahresreihen: Monate des Startjahres aus dem ersten
@@ -215,11 +215,11 @@ Reihenfolge pro Monat:
    geplanten Werten des laufenden Jahres (Beginn mit einem Auslöser A: Monate ab dem Auslöser, auf 12 Monate hochgerechnet,
    auch die Einkommenssteuer); einmalige Ausgaben, Käufe, Amortisationen und Sondersteuern zählen nicht. Bedarf ≤ 0 → Ziele 0.
    Der Netto-Bedarf wird im Januar und bei **jedem** Auslöser A neu bestimmt, also auch bei einem PK-Kapitalbezug mitten im
-   Jahr (Monate ab dem Bezug, hochgerechnet), und gilt bis zum nächsten Januar oder Auslöser A (GEN-03, abweichend von der
+   Jahr (Monate ab dem Bezug, hochgerechnet), und gilt bis zum nächsten Januar oder Auslöser A (#99, abweichend von der
    früheren Spezifikation, die nur beim Start und Neustart neu hochrechnete).
    Ziel Topf 1/2 = Jahre × Netto-Bedarf, nie aus dem Topfstand. **Renditekriterium:** Aktienrendite der letzten 12 Monate
    einschliesslich des laufenden (Indexstand Ende Monat im Verhältnis zum Stand 12 Monate davor, nicht annualisiert); in
-   den ersten 12 Monaten liefert der Vorlauf des Renditepfads die Monate vor dem Start (FEA-80). Fehlen Vorlaufmonate
+   den ersten 12 Monaten liefert der Vorlauf des Renditepfads die Monate vor dem Start (#103). Fehlen Vorlaufmonate
    (Reihe beginnt später), gilt die Rendite seit dem frühesten bekannten Stand («seit Start»). Rendite ≥ `refillThreshold`,
    sonst sind nur Verkäufe aus Topf 3 gesperrt.
    **Januar-Auffüllung:** Topf 1 aus Topf 2, der Rest aus Topf 3, danach Topf 2 aus Topf 3 (bei nicht erfülltem Kriterium: nur
@@ -342,9 +342,9 @@ ausserdem links neben «Simulation starten».
 
 Simulation, Szenarien und Optimierung zeigen einen Fortschrittsbalken mit vergangener und geschätzter Restzeit und einen
 Knopf «Abbrechen». Jede Berechnung ist ein Job mit eigener Kennung (`jobId`, von der Oberfläche beim Start mitgegeben), eigenem
-Zähler und eigenem Abbruch (`engine::progress`, FEA-83). Die Befehle `progress_get` und `cancel_job` nehmen die Kennung; ohne Kennung
+Zähler und eigenem Abbruch (`engine::progress`, #107). Die Befehle `progress_get` und `cancel_job` nehmen die Kennung; ohne Kennung
 liefert `progress_get` die zuletzt gestartete Berechnung und `cancel_job` bricht alle laufenden ab. Der Job hängt am Thread der
-Berechnung; ohne Job (zum Beispiel bei der Messung der Rechenzeit) gibt es weder Abbruch noch Zähler (ISS-20). Die Läufe werden in
+Berechnung; ohne Job (zum Beispiel bei der Messung der Rechenzeit) gibt es weder Abbruch noch Zähler (#104). Die Läufe werden in
 Blöcken gerechnet, nach jedem Block wird der Abbruch geprüft. Zwei Berechnungen beeinflussen sich nicht.
 
 ### Liste der Simulationen

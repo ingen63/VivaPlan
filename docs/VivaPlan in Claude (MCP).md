@@ -1,4 +1,4 @@
-# FEA-60 Konzept: VivaPlan in Claude nutzen (MCP)
+# #77 Konzept: VivaPlan in Claude nutzen (MCP)
 
 Issue #77. Dieses Dokument ist das Konzept. Umgesetzt wird erst nach der Abnahme, über die Folge-Issues in
 Abschnitt 12. Stand: Entwurf; die offenen Entscheide stehen in Abschnitt 13.
@@ -238,7 +238,7 @@ Texte, die bei der Umsetzung nachzuführen sind:
   3. Vor dem Ersetzen entsteht eine Sicherungskopie `<name>.vplan.bak`. Geschrieben wird in eine Zwischendatei, die
      dann umbenannt wird.
   4. Wurde die Datei seit dem Öffnen von jemand anderem geändert (Änderungszeit oder Inhalt), wird nicht ersetzt.
-  5. Alte `.rplan`-Dateien werden nie ersetzt (wie FEA-34); gespeichert wird als `.vplan`.
+  5. Alte `.rplan`-Dateien werden nie ersetzt (wie #44); gespeichert wird als `.vplan`.
   6. Geschrieben wird nur in den Ordner der geöffneten Planung oder in einen mit `--allow-dir` freigegebenen Ordner.
 - **Desktop-App gleichzeitig offen:** Die App bemerkt Änderungen an der Datei nicht. Die Hilfe rät, eine Planung nicht
   gleichzeitig in der App und in Claude zu bearbeiten; Regel 1 und 4 verhindern den stillen Verlust auf der Seite des
@@ -248,13 +248,13 @@ Texte, die bei der Umsetzung nachzuführen sind:
 
 | Thema | Risiko | Massnahme |
 |---|---|---|
-| Rechenzeit | Meist kurz (10 µs pro Lauf, 2000 Pfade 0,1 s, Optimierung etwa 15 s), mit vielen Variationen oder Pfaden aber Minuten. | `simulation_estimate` vor dem Start; ab 60 s geschätzter Dauer (wie FEA-20) startet die Rechnung nur mit `confirm_long: true`. |
+| Rechenzeit | Meist kurz (10 µs pro Lauf, 2000 Pfade 0,1 s, Optimierung etwa 15 s), mit vielen Variationen oder Pfaden aber Minuten. | `simulation_estimate` vor dem Start; ab 60 s geschätzter Dauer (wie #21) startet die Rechnung nur mit `confirm_long: true`. |
 | Fortschritt | Der Host bricht einen Aufruf ohne Lebenszeichen ab (Claude Code: 30 Minuten bei stdio). | Fortschrittsmeldungen aus `progress::snapshot()` etwa jede Sekunde. |
 | Abbruch | Rechnung läuft weiter, obwohl der Benutzer abgebrochen hat. | Die Abbruchmeldung des Protokolls ruft `progress::cancel()`; endet die Eingabe, bricht der Server ab und beendet sich. |
 | Grösse der Ergebnisse | Antwort sprengt die Grenze des Hosts (Claude Code: Warnung ab 10'000 Token, Grenze 25'000). | Obergrenze 20'000 Zeichen, Sichten in `result_get`, Test je Werkzeug. |
 | Fehlbedienung durch Claude | Falsches Feld, falsche Einheit (Anteil 0.05 statt 5), erfundene Feldpfade. | Unbekannte Pfade werden abgelehnt; `plan_set` prüft sofort und zeigt alt und neu; `plan_schema` nennt Einheiten; Speichern nur nach den Regeln in Abschnitt 7. |
 | Falsche Wiedergabe | Claude rundet, verwechselt nominal und real oder deutet Ergebnisse als Empfehlung. | Antworten nennen Einheit und «nominal» oder «real»; das Ergebnis in Worten kommt aus dem Rechenkern; Haftungsausschluss in jeder Antwort. |
-| Haftung (FEA-45, Issue #61, Abnahme ausstehend) | Der Benutzer hat den Haftungsausschluss der App nie gesehen, wenn er nur über Claude arbeitet. | Kurzfassung in der Beschreibung des Servers und in jeder Ergebnisantwort; voller Text über `plan_open` beim ersten Aufruf. Der Wortlaut folgt FEA-45; die Umsetzung von Folge-Issue 3 setzt den abgenommenen Text voraus. |
+| Haftung (#61, Issue #61, Abnahme ausstehend) | Der Benutzer hat den Haftungsausschluss der App nie gesehen, wenn er nur über Claude arbeitet. | Kurzfassung in der Beschreibung des Servers und in jeder Ergebnisantwort; voller Text über `plan_open` beim ersten Aufruf. Der Wortlaut folgt #61; die Umsetzung von Folge-Issue 3 setzt den abgenommenen Text voraus. |
 | Abweichung von der App | Andere Grenzen oder Zeitreihen als in der App. | Gleiche Einstellungen und Datenbibliothek (Abschnitt 4); Test, der Server und `api` vergleicht. |
 | Protokoll ändert sich | MCP und MCP Apps entwickeln sich schnell. | Kleiner Umfang (nur Werkzeuge), Protokollfassung wird ausgehandelt, Test mit festgehaltener Werkzeugliste. |
 | Unsignierte Pakete | Das Betriebssystem blockiert ein Programm, das Claude startet. | Abschnitt 9; Signierung ist ein eigenes Thema. |

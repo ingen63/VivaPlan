@@ -1,6 +1,6 @@
-# FEA-51, FEA-52: Welt-Aktienindex aus den JST-Daten, Reihe «Welt (JST)»
+# #67, #68: Welt-Aktienindex aus den JST-Daten, Reihe «Welt (JST)»
 
-Issues: FEA-51 (#67), FEA-52 (#68). Umsetzung: `crates/engine/src/jst.rs`, Tests `crates/engine/tests/jst.rs`.
+Issues: #67, #68. Umsetzung: `crates/engine/src/jst.rs`, Tests `crates/engine/tests/jst.rs`.
 
 ## Daten
 
@@ -14,7 +14,7 @@ Issues: FEA-51 (#67), FEA-52 (#68). Umsetzung: `crates/engine/src/jst.rs`, Tests
 - **Schweizer Aktien:** Die JST-Reihe stützt sich ab 1926 auf Pictet und Cie (1998), ab 1960 bzw. 1984 zusätzlich auf
   SNB- und SIX-Statistiken. Sie stimmt mit der Pictet-Reihe der App bis auf Rundungen überein.
 
-## Rechenweg (FEA-51/AK1)
+## Rechenweg (#67/AK1)
 
 1. **Rendite in CHF** je Land und Jahr: `(1 + r) × k(t) / k(t−1) − 1`, `k` = CHF je Einheit Landeswährung aus den Kursen
    gegenüber dem USD (Ende Jahr). Ohne Währungsabsicherung.
@@ -29,7 +29,7 @@ Asien-Pazifik (Japan, Australien). Zeitraum 1900 bis 2020 (ab 1900 haben alle Re
 
 Gewicht der USA: rund 30 % (1900), rund 50 % (ab 1950).
 
-## Fehlende Länderjahre (FEA-51/AK2)
+## Fehlende Länderjahre (#67/AK2)
 
 Fehlt einem Land in einem Jahr die Rendite, fällt es in diesem Jahr weg, die übrigen Gewichte ergeben wieder 100 %.
 
@@ -41,7 +41,7 @@ Fehlt einem Land in einem Jahr die Rendite, fällt es in diesem Jahr weg, die ü
 
 Kanada und Irland haben in Release 6 keine Renditen und sind deshalb nicht im Index.
 
-## Vergleich mit DMS (FEA-51/AK4)
+## Vergleich mit DMS (#67/AK4)
 
 Vergleichswert: Dimson, Marsh, Staunton, Global Investment Returns Yearbook 2021 (Zeitraum 1900–2020, 121 Jahre):
 Weltaktien **5,3 %** reale Rendite pro Jahr in USD (zitiert nach der Cambridge Judge Business School, «Long-term
@@ -72,11 +72,11 @@ der Konstruktion, nicht aus Datenfehlern:
 **Folgerung für die Planung:** «Welt (JST)» ist eher optimistisch. Für vorsichtige Planungen eignen sich ein
 tieferer Aktienanteil, der historische Ablauf mit schlechten Startjahren oder fixe Renditen.
 
-**Entscheid Japan und Australien (FEA-51/AK5):** Sie gehören zum Weltindex (Region «Asien-Pazifik»). Ohne sie wäre der
+**Entscheid Japan und Australien (#67/AK5):** Sie gehören zum Weltindex (Region «Asien-Pazifik»). Ohne sie wäre der
 Index eine Mischung aus Europa und Nordamerika; DMS enthält beide. Mit ihnen sinkt die Schwankung, die Rendite ändert
 sich wenig.
 
-## Reihe «Welt (JST)» (FEA-52)
+## Reihe «Welt (JST)» (#68)
 
 Jahresreihe 1900–2020 in CHF, Datei `crates/engine/data/Welt (JST).csv`, in der Datenbibliothek:
 
@@ -90,7 +90,7 @@ Jahresreihe 1900–2020 in CHF, Datei `crates/engine/data/Welt (JST).csv`, in de
 Neu erzeugen: `JST_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^jst::/)'` (zweimal, weil der Auszug in
 das Programm eingebunden ist).
 
-## Stichjahre 1935, 1972, 2010: Rohdaten und Nachrechnung (FEA-51/AK3)
+## Stichjahre 1935, 1972, 2010: Rohdaten und Nachrechnung (#67/AK3)
 
 Die drei Jahre sind von Hand nachrechenbar. Für ein Jahr `t` braucht die Rechnung die Zeile `t` (Rendite, Kurs Ende Jahr) und die Zeile `t−1` (Gewicht über BIP des Vorjahres, Kurs des Vorjahres). Die Rohdaten stammen aus `crates/engine/data/quellen/jst-r6.csv` (Auszug aus `JSTdatasetR6.xlsx`, JST Release 6, CC BY-NC-SA 4.0); die Werte sind unverändert übernommen.
 
@@ -240,7 +240,7 @@ year,iso,pop,rgdpmad,xrusd,cpi,eq_tr,bond_tr,bond_rate,bill_rate
 2010,AUS,21687.800521512385,25584.48835604182,0.983961428711995,167.16850546816477,0.03306250274181366,0.07380643486976624,0.05366041511297226,0.0434604175388813
 ```
 
-## Stichjahre 1950, 1990, 2008: Rohdaten und Handrechnung (FEA-51/AK3)
+## Stichjahre 1950, 1990, 2008: Rohdaten und Handrechnung (#67/AK3)
 
 Die drei Jahre sind von Hand nachrechenbar. Für ein Jahr `t` braucht die Rechnung die Zeile `t` (Rendite, Kurs Ende Jahr) und die Zeile `t−1` (Gewicht über BIP des Vorjahres, Kurs des Vorjahres). Die Rohdaten stammen aus `crates/engine/data/quellen/jst-r6.csv` (Auszug aus `JSTdatasetR6.xlsx`, JST Release 6, CC BY-NC-SA 4.0); die Werte sind unverändert übernommen.
 

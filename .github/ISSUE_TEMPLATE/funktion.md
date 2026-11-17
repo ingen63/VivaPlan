@@ -1,7 +1,7 @@
 ---
 name: Funktion vorschlagen
 about: Eine neue Funktion oder eine Änderung
-labels: feature
+labels: enhancement
 ---
 
 **Anforderung** (was soll möglich sein, ohne die Lösung vorzuschreiben)

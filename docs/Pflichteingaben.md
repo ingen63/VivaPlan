@@ -1,4 +1,4 @@
-# Pflichteingaben für eine Simulation (FEA-13)
+# Pflichteingaben für eine Simulation (#14)
 
 Grundlage sind `crates/engine/src/model.rs` (Felder ohne Standardwert: fehlen sie, lässt sich die Planung nicht laden) und
 `crates/engine/src/validate.rs` (Fehler, die den Lauf verhindern). Warnungen sind nicht aufgeführt und blockieren nicht.
@@ -36,14 +36,14 @@ betroffenen Abschnitt.
 | Parametrisch | Pfade 1–1'000'000, Volatilität und Sprungrate ≥ 0, Freiheitsgrade > 2 (0 = Normalverteilung) | `return_source_needs_its_inputs` |
 | Entnahme 3-Topf / feste Rate / VPW / Endowment / Guardrails | gültige Töpfe und Raten, Planungsalter, Leitplanken, Untergrenze ≤ Obergrenze | `withdrawal_strategies_need_valid_parameters` |
 | Immobilie im Besitz | je Hypothekentranche mindestens eine Periode | `properties_need_their_inputs` |
-| Immobilie geplant | Hypothek ≤ Kaufpreis; Kauf «nach Verkauf von …» nur mit existierender Immobilie; Kennung eindeutig; optional «Verkauf ab» (Vorgabe «Nie») nach «Kauf ab» (ISS-5) | `properties_need_their_inputs` |
+| Immobilie geplant | Hypothek ≤ Kaufpreis; Kauf «nach Verkauf von …» nur mit existierender Immobilie; Kennung eindeutig; optional «Verkauf ab» (Vorgabe «Nie») nach «Kauf ab» (#28) | `properties_need_their_inputs` |
 | Miete | Mietbeginn und Miete | `properties_need_their_inputs` |
-| Lebenshaltung inklusive Wohnkosten (FEA-39) | jede Zeile der Lebenshaltung mindestens so gross wie der Wohnanteil (Wohnkosten zum Simulationsstart) | `cash_housing::fea39_ak4_ak5_check_and_no_housing` |
-| Säule 3a (FEA-37, FEA-41) | ein Konto je Person; Guthaben ≥ 0; Zins −50 % bis 100 %; Einzahlung 0 bis Maximalbetrag (Einstellungen); Auszahlungen (Datum oder Alter 0–150 Jahre) frühestens 5 Jahre vor dem AHV-Bezug, Betrag > 0 | `pillar_3a_is_checked` |
-| Meilensteine «Bezug Pensionskasse» und «AHV-Bezug» (FEA-38) | Alter innerhalb der Grenzen aus den Einstellungen (Standard 58–65 und 63–70 Jahre) | `milestones_limits::fea38_ak2_ages_within_limits` |
-| Steuertabellen und Steuerfuss (ISS-18) | Einkommens-, Vermögens- und Kapitalbezugssteuer (auch Verheiratete): je Stufe Betrag ≥ 0 und Satz 0 % bis 100 %; Steuerfuss 0 bis 10; Meldung am Feld | `iss18_tax_tables_and_multiplier_must_be_in_range` |
+| Lebenshaltung inklusive Wohnkosten (#53) | jede Zeile der Lebenshaltung mindestens so gross wie der Wohnanteil (Wohnkosten zum Simulationsstart) | `cash_housing::issue_53_ak4_ak5_check_and_no_housing` |
+| Säule 3a (#52, #55) | ein Konto je Person; Guthaben ≥ 0; Zins −50 % bis 100 %; Einzahlung 0 bis Maximalbetrag (Einstellungen); Auszahlungen (Datum oder Alter 0–150 Jahre) frühestens 5 Jahre vor dem AHV-Bezug, Betrag > 0 | `pillar_3a_is_checked` |
+| Meilensteine «Bezug Pensionskasse» und «AHV-Bezug» (#51) | Alter innerhalb der Grenzen aus den Einstellungen (Standard 58–65 und 63–70 Jahre) | `milestones_limits::issue_51_ak2_ages_within_limits` |
+| Steuertabellen und Steuerfuss (#98) | Einkommens-, Vermögens- und Kapitalbezugssteuer (auch Verheiratete): je Stufe Betrag ≥ 0 und Satz 0 % bis 100 %; Steuerfuss 0 bis 10; Meldung am Feld | `issue_98_tax_tables_and_multiplier_must_be_in_range` |
 | Grundstückgewinnsteuer | gültige Besitzdauer-Staffel (Modell Aargau: Satz je Besitzdauer) | `property_gain_tax_rules_must_be_valid` |
-| Grundstückgewinnsteuer (Regeln gesetzt) | Bei einer Immobilie mit Status «Besitz» oder «Kauf geplant» müssen Regeln gesetzt sein (Vorlage oder eigene, auch Satz 0 %); Mietobjekte lösen die Pflicht nicht aus (ISS-3) | `property_gain_tax_is_mandatory_for_owned_and_planned_properties` |
+| Grundstückgewinnsteuer (Regeln gesetzt) | Bei einer Immobilie mit Status «Besitz» oder «Kauf geplant» müssen Regeln gesetzt sein (Vorlage oder eigene, auch Satz 0 %); Mietobjekte lösen die Pflicht nicht aus (#29) | `property_gain_tax_is_mandatory_for_owned_and_planned_properties` |
 | Variationen | gültiger Parameter, Wertebereich und Schritt | `variations_need_a_valid_parameter` |
 
 ## Warnungen (blockieren nicht)

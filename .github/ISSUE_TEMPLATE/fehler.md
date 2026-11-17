@@ -13,7 +13,7 @@ labels: bug
 **Planungsdatei**
 Bitte keine echte Planung mit persönlichen Daten anhängen. Eine anonymisierte oder erfundene Beispielplanung genügt (Namen, Adressen und Beträge ändern).
 
-**Gefunden bei** (Label `gefunden:test`, `gefunden:abnahme` oder `gefunden:nutzung`)
+**Gefunden bei** (Label `found: test`, `found: acceptance` oder `found: usage`)
 
 **Welcher Test hätte ihn fangen müssen?** (nach der Analyse)
 

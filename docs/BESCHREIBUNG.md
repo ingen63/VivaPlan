@@ -141,13 +141,13 @@ Die Renditen stammen aus den Indizes der Anlagestrategie. Dahinter stehen diese 
   nach realem BIP gewichtet, in CHF, jährlich 1900–2020; dazu 10-jährige Obligationen der Eidgenossenschaft (JST bis
   1988, danach SNB). Daraus auch «Schweiz (JST)» und «Welt individuell». Lizenz CC BY-NC-SA 4.0 (nicht kommerziell).
   Der Index liegt rund 1,3 Prozentpunkte pro Jahr über dem Weltindex von Dimson, Marsh und Staunton (Begründung in
-  `docs/FEA-51 FEA-52 Weltindex JST.md`).
+  `docs/Weltindex JST.md`).
 - **Shiller USD und CHF:** Robert Shillers US-Daten ab 1872 (Aktien inklusive Dividenden, Staatsanleihen, Inflation),
   dieselben Daten in Franken umgerechnet mit dem Schweizer Landesindex der Konsumentenpreise und dem SARON, dazu eine
   Variante mit 10-jährigen Obligationen der Eidgenossenschaft.
 
 Neuere Shiller- und SNB-Dateien lassen sich selbst herunterladen und importieren. Eigene Zeitreihen im CSV-Format
-verwendet die App nicht mehr. Die Reihe «Pictet CH» wird aus Lizenzgründen nicht mehr mitgeliefert (FEA-72); ältere Planungen erhalten beim Öffnen die passende Anlagestrategie. Alle Indizes sind in
+verwendet die App nicht mehr. Die Reihe «Pictet CH» wird aus Lizenzgründen nicht mehr mitgeliefert (#90); ältere Planungen erhalten beim Öffnen die passende Anlagestrategie. Alle Indizes sind in
 CHF; die App weist darauf hin, wenn die Planung in einer anderen Währung ist.
 
 Die Zeitreihen fallen nicht unter die Lizenz des Programms (GPL v3). Die Rechte an den Grunddaten liegen bei den
