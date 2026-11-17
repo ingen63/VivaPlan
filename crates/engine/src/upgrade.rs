@@ -64,10 +64,12 @@ pub fn upgrade(v: &mut Value) -> Vec<String> {
     milestones(v, &births, &limits, &mut notes);
     pension_refs(v, &births, &mut notes);
     pillar3a(v, &births, &mut notes);
-    housing(v, &mut notes);
     strategy(v, &mut notes);
     pictet(v, &mut notes);
     parametric(v, &mut notes);
+    // #154: zuletzt, denn `housing` braucht eine lesbare Planung, und die Schritte davor können sie erst lesbar machen
+    // (z. B. eine ungültige `returns.series`). Sonst holte erst das nächste Öffnen die Anpassung nach.
+    housing(v, &mut notes);
     notes
 }
 
@@ -679,5 +681,22 @@ mod tests {
         v["returns"] = json!({ "source": "fixed" });
         assert!(upgrade(&mut v).iter().all(|n| n != PARAMETRIC_NOTE));
         assert!(v["returns"].get("parametric").is_none());
+    }
+
+    // #154: Eine ungültige Zeitreihe (`returns.series` kein Text) macht die Planung erst nach dem Schritt `strategy`
+    // lesbar. Die Anpassung der Wohnkosten (#53/#54) geschieht trotzdem im ersten Lauf; der zweite ändert nichts.
+    #[test]
+    fn issue_154_housing_runs_after_the_plan_became_readable() {
+        let mut v = crate::api::example_plan();
+        let o = v.as_object_mut().unwrap();
+        o["returns"].as_object_mut().unwrap().remove("strategy");
+        o["returns"]["series"] = json!([]);
+        o["flows"].as_object_mut().unwrap().remove("spendingIncludesHousing");
+        let notes = upgrade(&mut v);
+        assert!(notes.iter().any(|n| n == CASH_NOTE), "{notes:?}");
+        assert_eq!(v["flows"]["spendingIncludesHousing"], true);
+        let once = v.clone();
+        assert!(upgrade(&mut v).is_empty());
+        assert_eq!(v, once);
     }
 }
