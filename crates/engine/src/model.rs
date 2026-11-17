@@ -14,6 +14,25 @@ pub const LEGACY_FORMAT: &str = "pensionsplaner/1";
 fn default_format() -> String {
     FORMAT.to_string()
 }
+
+/// #144: Meldung bei einer Formatkennung, die diese Version nicht kennt (derselbe Text wie `unknownFormatText` in
+/// `crates/app/ui/util.js`).
+pub fn unknown_format(format: &str) -> String {
+    format!(
+        "Die Datei hat das Format «{format}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet."
+    )
+}
+
+/// #144: Prüft die Formatkennung einer Planung. Gültig sind [`FORMAT`], [`LEGACY_FORMAT`] und keine Kennung; jede andere
+/// stammt aus einer neueren Version (oder ist keine Planung) und wird abgelehnt.
+pub fn check_format(plan: &serde_json::Value) -> Result<(), crate::Error> {
+    match plan.get("format") {
+        None => Ok(()),
+        Some(serde_json::Value::String(f)) if f == FORMAT || f == LEGACY_FORMAT => Ok(()),
+        Some(serde_json::Value::String(f)) => Err(crate::Error::Invalid(unknown_format(f))),
+        Some(other) => Err(crate::Error::Invalid(unknown_format(&other.to_string()))),
+    }
+}
 fn one() -> f64 {
     1.0
 }
@@ -1120,7 +1139,10 @@ pub struct Scenarios {
 
 impl Plan {
     pub fn from_json(text: &str) -> Result<Plan, crate::Error> {
-        serde_json::from_str(text).map_err(|e| crate::Error::Invalid(format!("Projektdatei: {e}")))
+        let v: serde_json::Value =
+            serde_json::from_str(text).map_err(|e| crate::Error::Invalid(format!("Projektdatei: {e}")))?;
+        check_format(&v)?;
+        serde_json::from_value(v).map_err(|e| crate::Error::Invalid(format!("Projektdatei: {e}")))
     }
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).expect("Plan ist immer serialisierbar")

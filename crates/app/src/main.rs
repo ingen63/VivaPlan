@@ -1298,10 +1298,16 @@ mod tests {
     fn plan_oeffnen_liest_datei_und_meldet_fehler() {
         let dir = tmp("open");
         let f = dir.join("p.vplan");
-        std::fs::write(&f, r#"{"format": 1}"#).unwrap();
+        std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": 1}"#).unwrap();
         let o = opened_from(FilePath::Path(f.clone())).unwrap();
         assert_eq!(o.path, f.to_string_lossy());
-        assert_eq!(o.plan["format"], 1);
+        assert_eq!(o.plan["marker"], 1);
+        // #144/AK2: Eine Datei aus einer neueren Version wird mit der Kennung in der Meldung abgewiesen.
+        std::fs::write(&f, r#"{"format": "vivaplan/2"}"#).unwrap();
+        assert!(opened_from(FilePath::Path(f.clone()))
+            .err()
+            .unwrap()
+            .contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"));
         // Alte config.json wird abgewiesen.
         let alt = dir.join("alt.json");
         std::fs::write(&alt, r#"{"General": {}}"#).unwrap();
@@ -1792,11 +1798,11 @@ mod tests {
     fn plan_oeffnen_ueber_befehl() {
         let dir = tmp("cmd-open");
         let f = dir.join("p.vplan");
-        std::fs::write(&f, r#"{"format": 1}"#).unwrap();
+        std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": 1}"#).unwrap();
         let (_app, w, _g, _) = setup_with(gewaehlt(&f));
         let r = call(&w, "open_plan", json!({})).unwrap();
         assert_eq!(r["path"], f.to_string_lossy().as_ref());
-        assert_eq!(r["plan"]["format"], 1);
+        assert_eq!(r["plan"]["marker"], 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2123,7 +2129,7 @@ mod tests {
     fn oeffnen_und_speichern_ueber_befehle_laufen_mit_merkung_durch() {
         let dir = tmp("merken-befehle");
         let f = dir.join("p.vplan");
-        std::fs::write(&f, r#"{"format": 1}"#).unwrap();
+        std::fs::write(&f, r#"{"format": "vivaplan/1"}"#).unwrap();
         let (_app, w, _g, _) = setup_with(gewaehlt(&f));
         assert_eq!(
             call(&w, "open_plan", json!({})).unwrap()["path"],
@@ -2133,7 +2139,7 @@ mod tests {
         let r = call(
             &w,
             "save_plan",
-            json!({"plan": {"format": 1}, "path": neu.to_string_lossy()}),
+            json!({"plan": {"format": "vivaplan/1"}, "path": neu.to_string_lossy()}),
         )
         .unwrap();
         assert_eq!(r, neu.to_string_lossy().as_ref());

@@ -97,9 +97,16 @@ function sortBy(list, valOf, dir = 1) {
   }).map(o => o.x);
 }
 
+// ---------- Dateiformat (#144) ----------
+/** Kennungen, die diese Version öffnet; «pensionsplaner/1» ist die alte Kennung (legacy: RetirementPlanner). */
+const KNOWN_FORMATS = ["vivaplan/1", "pensionsplaner/1"];
+/** Meldung bei einer unbekannten Kennung; derselbe Text wie im Rechenkern (`model::unknown_format`). */
+const unknownFormatText = f => `Die Datei hat das Format «${f}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.`;
+
 if (typeof module !== "undefined") {
   module.exports = {
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
     rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
+    KNOWN_FORMATS, unknownFormatText,
   };
 }

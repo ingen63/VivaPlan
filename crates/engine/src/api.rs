@@ -51,6 +51,14 @@ pub fn upgrade_plan(plan: &Value) -> UpgradeOut {
 }
 
 pub fn validate(plan: &Value) -> Vec<Issue> {
+    if let Err(e) = crate::model::check_format(plan) {
+        return vec![Issue {
+            severity: Severity::Error,
+            section: "general",
+            message: e.to_string(),
+            field: None,
+        }];
+    }
     match parse(plan) {
         Ok(p) => validate::validate(&p),
         Err(i) => vec![i],
@@ -598,6 +606,8 @@ pub fn read_plan(path: &Path) -> crate::Result<Value> {
                 .into(),
         ));
     }
+    // #144: Datei einer neueren Version nicht still öffnen
+    crate::model::check_format(&v).map_err(|e| crate::Error::Invalid(format!("{}: {e}", path.display())))?;
     Ok(v)
 }
 

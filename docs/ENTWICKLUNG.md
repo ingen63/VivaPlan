@@ -162,7 +162,10 @@ ausgelieferte Reihen an; Kommandozeile und Entwicklungsserver verwenden `crates/
 ## Projektdatei (`.vplan`, JSON)
 
 Kennung `"format": "vivaplan/1"`. Ältere Dateien (`.rplan`, Kennung `pensionsplaner/1`) bleiben lesbar und werden
-beim Speichern als neue `.vplan`-Datei geschrieben.
+beim Speichern als neue `.vplan`-Datei geschrieben. Eine Datei ohne Kennung gilt als `vivaplan/1` (Desktop-App,
+Kommandozeile; im Browser des Entwicklungsservers wird sie abgelehnt). Jede andere Kennung (z. B. `vivaplan/2`) stammt
+aus einer neueren Version: Öffnen, `vivaplan run` und `vivaplan validate` lehnen sie mit der Meldung «Die Datei hat das
+Format «…». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.» ab (`model::check_format`, #144).
 
 Alle Zeitpunkte sind Kalendermonate (`"2027-05"`) oder Verweise auf Meilensteine (`"retire"`), `"never"` = nie.
 Meilensteine sind ein Datum oder das Alter einer Person (`{"kind": "age", "person": "A", "years": 65}`).

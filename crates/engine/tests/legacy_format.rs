@@ -113,9 +113,11 @@ fn schreiben_setzt_die_neue_kennung() {
     let mut ohne_kennung = alt.clone();
     ohne_kennung["format"] = Value::String(FORMAT.into());
     assert_eq!(wieder, ohne_kennung);
-    // Eine andere Kennung bleibt, wie sie ist.
+    // Eine andere Kennung bleibt beim Schreiben, wie sie ist; lesen lässt sie sich seit #144 nicht mehr.
     api::write_plan(&f, &serde_json::json!({"format": "x/2"})).unwrap();
-    assert_eq!(api::read_plan(&f).unwrap()["format"], "x/2");
+    let text: Value = serde_json::from_str(&std::fs::read_to_string(&f).unwrap()).unwrap();
+    assert_eq!(text["format"], "x/2");
+    assert!(api::read_plan(&f).is_err());
     let _ = std::fs::remove_dir_all(&d);
 }
 
@@ -166,4 +168,57 @@ fn schreiben_erfindet_keine_kennung() {
         assert_eq!(serde_json::from_str::<Value>(&text).unwrap(), v);
     }
     let _ = std::fs::remove_dir_all(&d);
+}
+
+// #144/AK1, AK2: Gültig sind «vivaplan/1», die alte Kennung und keine Kennung. Jede andere Kennung lehnen
+// `read_plan` (Öffnen in der Desktop-App), `Plan::from_json` (Kommandozeile) und `validate` mit der Meldung ab.
+#[test]
+fn issue_144_ak2_unknown_format_is_rejected_on_open() {
+    let d = std::env::temp_dir().join(format!("vivaplan-format-{}", std::process::id()));
+    std::fs::create_dir_all(&d).unwrap();
+    let file = d.join("planung.vplan");
+    let mut plan = api::example_plan();
+
+    for ok in [Some(FORMAT), Some(LEGACY_FORMAT), None] {
+        match ok {
+            Some(f) => plan["format"] = Value::String(f.into()),
+            None => {
+                plan.as_object_mut().unwrap().remove("format");
+            }
+        }
+        std::fs::write(&file, plan.to_string()).unwrap();
+        assert!(api::read_plan(&file).is_ok(), "{ok:?}");
+        assert!(engine::model::Plan::from_json(&plan.to_string()).is_ok(), "{ok:?}");
+        assert!(
+            !api::validate(&plan)
+                .iter()
+                .any(|i| i.message.contains("neuere Version")),
+            "{ok:?}"
+        );
+    }
+
+    for (bad, shown) in [
+        (Value::String("vivaplan/2".into()), "vivaplan/2"),
+        (Value::String("andere/9".into()), "andere/9"),
+        (serde_json::json!(2), "2"),
+    ] {
+        plan["format"] = bad;
+        let msg = format!(
+            "Die Datei hat das Format «{shown}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet."
+        );
+        std::fs::write(&file, plan.to_string()).unwrap();
+        let e = api::read_plan(&file).unwrap_err().to_string();
+        assert!(e.contains(&msg) && e.contains("planung.vplan"), "{e}");
+        let e = engine::model::Plan::from_json(&plan.to_string())
+            .unwrap_err()
+            .to_string();
+        assert_eq!(e, msg);
+        let issues = api::validate(&plan);
+        assert_eq!(issues.len(), 1);
+        assert_eq!(
+            (issues[0].severity, issues[0].message.as_str()),
+            (engine::validate::Severity::Error, msg.as_str())
+        );
+    }
+    std::fs::remove_dir_all(&d).ok();
 }

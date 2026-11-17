@@ -2008,13 +2008,15 @@ $("#fileInput").addEventListener("change", async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const obj = JSON.parse(await f.text());
-    // #44: alte Kennung pensionsplaner/1 bleibt lesbar (legacy: RetirementPlanner).
-    if (obj.format !== "vivaplan/1" && obj.format !== "pensionsplaner/1") throw 0;
+    // #44: alte Kennung pensionsplaner/1 bleibt lesbar (legacy: RetirementPlanner). #144: eine andere Kennung stammt
+    // aus einer neueren Version und wird mit eigener Meldung abgelehnt.
+    if (typeof obj?.format === "string" && !KNOWN_FORMATS.includes(obj.format)) throw new Error(unknownFormatText(obj.format));
+    if (!KNOWN_FORMATS.includes(obj?.format)) throw 0;
     const notes = await adopt(obj); setFile(null); History.reset(); $("#fileName").textContent = f.name; showTitle(f.name); goto("general"); refreshSeriesInfo();
     toast(`«${f.name}» geöffnet.`);
     await showNotes(notes);
     await reserveNotice(state);
-  } catch { toast("Datei ist keine Projektdatei im neuen Format."); }
+  } catch (err) { toast(err instanceof Error && err.message.startsWith("Die Datei hat das Format") ? err.message : "Datei ist keine Projektdatei im neuen Format."); }
   e.target.value = "";
 });
 window.addEventListener("resize", () => { renderDerived(); if (lastRun) renderResults(lastRun); });

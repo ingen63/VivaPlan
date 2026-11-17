@@ -365,3 +365,30 @@ fn optimize_goal_two_needs_a_property_and_is_selectable() {
     });
     assert!(!run(&["optimize", &g, "--goal", "2"]).status.success());
 }
+
+// #144/AK3: `run` und `validate` lehnen eine Datei aus einer neueren Version ab (Fehlercode ungleich 0, Meldung mit der
+// Kennung); die geltende und die alte Kennung sowie eine Datei ohne Kennung rechnen wie bisher.
+#[test]
+fn issue_144_ak3_cli_rejects_an_unknown_format() {
+    let d = tmp("format");
+    let newer = plan_file(&d, "fixed", |v| v["format"] = serde_json::json!("vivaplan/2"));
+    for cmd in ["run", "validate"] {
+        let o = run(&[cmd, &newer]);
+        assert!(!o.status.success(), "{cmd}: {}", text(&o));
+        assert!(
+            text(&o).contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"),
+            "{cmd}: {}",
+            text(&o)
+        );
+    }
+    for format in [Some("vivaplan/1"), Some("pensionsplaner/1"), None] {
+        let ok = plan_file(&d, "fixed", |v| match format {
+            Some(f) => v["format"] = serde_json::json!(f),
+            None => {
+                v.as_object_mut().unwrap().remove("format");
+            }
+        });
+        let o = run(&["validate", &ok]);
+        assert!(o.status.success(), "{format:?}: {}", text(&o));
+    }
+}

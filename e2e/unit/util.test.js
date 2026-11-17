@@ -149,3 +149,8 @@ test("#118/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehl
   assert.deepEqual(u.sortBy(l, o => o.k).map(o => o.n), ["y", "x", "z"]);
   assert.deepEqual(u.sortBy(l, o => o.k, -1).map(o => o.n), ["x", "z", "y"]);
 });
+
+test("#144/AK2: Meldung bei unbekannter Formatkennung nennt die Kennung", () => {
+  assert.deepEqual(u.KNOWN_FORMATS, ["vivaplan/1", "pensionsplaner/1"]);
+  assert.equal(u.unknownFormatText("vivaplan/2"), "Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.");
+});

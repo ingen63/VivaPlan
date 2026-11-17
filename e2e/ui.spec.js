@@ -763,7 +763,7 @@ test.describe("Dateien", () => {
   test("Öffnen einer fremden oder defekten Datei wird abgelehnt", async ({ page }) => {
     const errors = await open(page);
     const bad = path.join(os.tmpdir(), `qa-bad-${process.pid}.vplan`);
-    for (const text of ["", "kein json", "{}", JSON.stringify({ format: "andere/9" })]) {
+    for (const text of ["", "kein json", "{}", JSON.stringify({ format: 9 })]) {
       fs.writeFileSync(bad, text);
       await page.locator("#fileInput").setInputFiles(bad);
       await expect(page.locator("#toast")).toContainText("keine Projektdatei");
@@ -771,6 +771,31 @@ test.describe("Dateien", () => {
     }
     fs.rmSync(bad);
     await noErrors(page, errors);
+  });
+
+  test.describe("Unbekannte Formatversion beim Öffnen (#144)", () => {
+    test("AK2, AK4: Eine Datei aus einer neueren Version wird mit Kennung in der Meldung abgelehnt", async ({ page }) => {
+      const errors = await open(page);
+      await field(page, "project.name").fill("Bleibt");
+      await field(page, "project.name").press("Tab");
+      const file = path.join(os.tmpdir(), `qa-format-${process.pid}.vplan`);
+      const plan = await (await page.request.post("/api/example_plan", { data: {} })).json();
+      for (const format of ["vivaplan/2", "andere/9"]) {
+        fs.writeFileSync(file, JSON.stringify({ ...plan, format, project: { name: "Neuere Version" } }));
+        await page.locator("#fileInput").setInputFiles(file);
+        await expect(page.locator("#toast")).toContainText(`Die Datei hat das Format «${format}». Sie braucht eine neuere Version von VivaPlan`);
+        await expect(field(page, "project.name")).toHaveValue("Bleibt");
+      }
+      // AK1: die geltende und die alte Kennung öffnen wie bisher
+      for (const format of ["vivaplan/1", "pensionsplaner/1"]) {
+        fs.writeFileSync(file, JSON.stringify({ ...plan, format, project: { name: `Kennung ${format}` } }));
+        await page.locator("#fileInput").setInputFiles(file);
+        await expect(page.locator("#toast")).toContainText("geöffnet");
+        await expect(field(page, "project.name")).toHaveValue(`Kennung ${format}`);
+      }
+      fs.rmSync(file);
+      await noErrors(page, errors);
+    });
   });
 
   test("Neu fragt bei ungespeicherten Änderungen nach", async ({ page }) => {
