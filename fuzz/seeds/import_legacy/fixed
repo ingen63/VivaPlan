@@ -1,0 +1,43 @@
+{
+    "CalculationMode": "Single",
+    "General": { "StartAge": 61.5, "StartMonth": 7, "EndAge": 92.0, "Plot": "Save" },
+    "Taxes": {
+        "TaxRate": "2.1",
+        "Income": { "0": 0.0, "50000": 0.04, "100000": 0.06, "200000": 0.08, "400000": 0.1 },
+        "Capital": { "0": 0.0, "100000": 0.0001, "500000": 0.0006, "1000000": 0.0009, "2000000": 0.0014 },
+        "PensionCapital": { "0": 0.02, "500000": 0.023, "1000000": 0.041, "2000000": 0.062 }
+    },
+    "Pension": {
+        "EarlyRetirement": 63.75,
+        "LegalRetirement": 65,
+        "Private": {
+            "Capital": 900000,
+            "LumpsumRatio": { "{Pension.EarlyRetirement}": 0.4 },
+            "ConversionRate": 0.052,
+            "Contribution": { "50": 2500, "{Pension.EarlyRetirement}": 0 },
+            "Interest": { "60": 0.02, "63": 0.015 }
+        },
+        "Legal": 2300
+    },
+    "MoneyFlows": {
+        "Savings": { "{General.StartAge}": 500, "{Pension.EarlyRetirement}": 0 },
+        "Income": { "{General.StartAge}": 8500, "{Pension.EarlyRetirement}": 0 },
+        "Spendings": { "{General.StartAge}": 8000, "70": 7500, "80": 7000 },
+        "Extra": { "62.0": -30000, "70.5": 50000 }
+    },
+    "WealthManagement": {
+        "PortfolioBalance": { "{General.StartAge}": 0.7, "75": 0.5 },
+        "Stocks": 300000,
+        "Bonds": 120000,
+        "Cash": 60000,
+        "CashThresholdMonths": { "{General.StartAge}": 6, "{Pension.EarlyRetirement}": 12 },
+        "StockPerformance": 0.06,
+        "BondPerformance": 0.015,
+        "Inflation": 0.012,
+        "HistoricalYear": "----",
+        "HistoricalData": "./MSCI.csv",
+        "Extrapolation": "Weighted Average",
+        "AverageRange": 20
+    },
+    "RealEstate": { "ThresholdMonths": 0, "Properties": [] }
+}

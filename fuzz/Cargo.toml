@@ -37,3 +37,15 @@ name = "run_plan"
 path = "fuzz_targets/run_plan.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "upgrade_plan"
+path = "fuzz_targets/upgrade_plan.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "import_legacy"
+path = "fuzz_targets/import_legacy.rs"
+test = false
+doc = false

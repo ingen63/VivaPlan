@@ -40,6 +40,7 @@ mod pillar3a_plan;
 mod proptest_parsers;
 mod proptest_plans;
 mod proptest_tax;
+mod proptest_upgrade;
 mod qa_matrix;
 mod reference;
 mod rerun_paths;

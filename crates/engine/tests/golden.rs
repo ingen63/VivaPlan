@@ -70,7 +70,7 @@ fn mc(source: &str, paths: usize) -> Value {
     v
 }
 
-fn cases() -> Vec<(&'static str, Value)> {
+pub(crate) fn cases() -> Vec<(&'static str, Value)> {
     let mut simple = base();
     simple["flows"]["income"] = json!({ "mode": "timed", "rows": [
         { "from": "start", "value": 6000 }, { "from": "retire", "value": 0 } ] });

@@ -1,0 +1,572 @@
+{
+  "flows": {
+    "extras": [
+      {
+        "amount": -40000,
+        "date": "2028-06",
+        "label": "Neues Auto"
+      },
+      {
+        "amount": -25000,
+        "date": "2029-09",
+        "label": "Grosse Reise"
+      }
+    ],
+    "income": {
+      "mode": "timed",
+      "rows": [
+        {
+          "from": "start",
+          "value": 10000
+        },
+        {
+          "from": "retire",
+          "value": 0
+        }
+      ]
+    },
+    "spending": {
+      "mode": "timed",
+      "rows": [
+        {
+          "from": "start",
+          "value": 10200.0
+        },
+        {
+          "from": "retire",
+          "value": 9200.0
+        },
+        {
+          "from": "sell_house",
+          "value": 8700.0
+        },
+        {
+          "from": "2050-06",
+          "value": 7700.0
+        }
+      ]
+    },
+    "spendingIncludesHousing": true
+  },
+  "format": "pensionsplaner/1",
+  "household": {
+    "ahvCoupleCap": 3780,
+    "married": true,
+    "persons": [
+      {
+        "birth": "1970-06",
+        "id": "A",
+        "name": "Erika Muster"
+      }
+    ]
+  },
+  "milestones": [
+    {
+      "date": "2026-03",
+      "fixed": true,
+      "id": "start",
+      "kind": "date",
+      "name": "Simulationsstart"
+    },
+    {
+      "date": "2027-05",
+      "id": "retire",
+      "kind": "age",
+      "name": "Bezug Pensionskasse",
+      "person": "A",
+      "years": 58
+    },
+    {
+      "id": "ahv",
+      "kind": "age",
+      "name": "AHV-Bezug",
+      "person": "A",
+      "years": 65
+    },
+    {
+      "date": "2040-06",
+      "id": "sell_house",
+      "kind": "age",
+      "name": "75 Jahre",
+      "person": "A",
+      "years": 75
+    },
+    {
+      "fixed": true,
+      "id": "end",
+      "kind": "age",
+      "name": "Simulationsende",
+      "person": "A",
+      "years": 95
+    }
+  ],
+  "pension": {
+    "ahv": {
+      "at": "ahv",
+      "indexed": true,
+      "monthly": 2000
+    },
+    "pk": {
+      "at": "retire",
+      "capital": 1000000,
+      "contribution": {
+        "mode": "timed",
+        "rows": [
+          {
+            "from": "start",
+            "value": 1000
+          },
+          {
+            "from": "retire",
+            "value": 0
+          }
+        ]
+      },
+      "conversion": 0.05,
+      "interest": {
+        "mode": "const",
+        "value": 0.02
+      },
+      "lumpsum": 0.5
+    }
+  },
+  "pillar3a": [
+    {
+      "balance": 15000.0,
+      "contribution": 0,
+      "payouts": [
+        {
+          "date": "2030-06",
+          "use": "repay"
+        }
+      ],
+      "person": "A",
+      "rate": 0.01,
+      "use": "repay"
+    }
+  ],
+  "project": {
+    "currency": "CHF",
+    "name": "Beispielplanung"
+  },
+  "realestate": {
+    "affordability": {
+      "fixCosts": 0.01,
+      "imputedRate": 0.05,
+      "maxLoanToValue": 0.8,
+      "sustainability": 0.3333333333333333,
+      "wealthContribution": 0.03
+    },
+    "emergencyMonths": {
+      "mode": "const",
+      "value": 12
+    },
+    "properties": [
+      {
+        "bought": "2020-04",
+        "fixCosts": 500,
+        "id": "obji5sap",
+        "inflation": true,
+        "inflationFixCosts": true,
+        "inflationRent": true,
+        "inflationValue": true,
+        "mortgage": {
+          "tranches": [
+            {
+              "after": "renew",
+              "amount": 400000,
+              "name": "Tranche 1",
+              "periods": [
+                {
+                  "amort": 0,
+                  "amortMode": "direct",
+                  "margin": 0.008,
+                  "rate": 0.012,
+                  "term": 10,
+                  "type": "fixed"
+                },
+                {
+                  "amort": 0,
+                  "amortMode": "direct",
+                  "margin": 0.008,
+                  "rate": 0.015,
+                  "term": 3,
+                  "type": "saron"
+                }
+              ],
+              "start": "2022-01"
+            },
+            {
+              "after": "renew",
+              "amount": 200000,
+              "name": "Tranche 2",
+              "periods": [
+                {
+                  "amort": 1500,
+                  "amortMode": "indirect",
+                  "margin": 0.008,
+                  "rate": 0.018,
+                  "term": 5,
+                  "type": "fixed"
+                },
+                {
+                  "amort": 0,
+                  "amortMode": "direct",
+                  "margin": 0.008,
+                  "rate": 0.02,
+                  "term": 5,
+                  "type": "fixed"
+                }
+              ],
+              "start": "2022-05"
+            }
+          ]
+        },
+        "name": "Haus",
+        "price": 1500000,
+        "sell": "sell_house",
+        "status": "owned",
+        "worth": 2000000
+      },
+      {
+        "buy": "afterSale:obji5sap",
+        "fixCosts": 400,
+        "id": "obj6curi",
+        "inflation": true,
+        "inflationFixCosts": true,
+        "inflationRent": true,
+        "inflationValue": true,
+        "mortgage": {
+          "tranches": [
+            {
+              "after": "renew",
+              "amount": 250000,
+              "name": "Tranche 1",
+              "periods": [
+                {
+                  "amort": 2500,
+                  "amortMode": "direct",
+                  "margin": 0.009,
+                  "rate": 0.015,
+                  "term": 3,
+                  "type": "saron"
+                }
+              ],
+              "start": "2026-03"
+            }
+          ]
+        },
+        "name": "Eigentumswohnung",
+        "price": 1000000,
+        "sell": "never",
+        "status": "planned",
+        "worth": 800000
+      },
+      {
+        "buy": "afterSale:obji5sap",
+        "fixCosts": 400,
+        "from": "afterSale",
+        "id": "objoejdd",
+        "inflation": true,
+        "inflationFixCosts": true,
+        "inflationRent": true,
+        "inflationValue": true,
+        "mortgage": {
+          "tranches": [
+            {
+              "after": "renew",
+              "amount": 400000,
+              "name": "Tranche 1",
+              "periods": [
+                {
+                  "amort": 0,
+                  "amortMode": "direct",
+                  "margin": 0.009,
+                  "rate": 0.015,
+                  "term": 10,
+                  "type": "fixed"
+                }
+              ]
+            }
+          ]
+        },
+        "name": "Mietwohnung",
+        "price": 1000000,
+        "rent": 3000,
+        "status": "rent"
+      }
+    ]
+  },
+  "returns": {
+    "bootstrap": {
+      "block": 12,
+      "paths": 50000,
+      "seed": 42
+    },
+    "extrapolation": {
+      "method": "fixed",
+      "range": 30
+    },
+    "fixed": {
+      "bonds": 0.01,
+      "inflation": 0.01,
+      "saron": 0.005,
+      "stocks": 0.05
+    },
+    "parametric": {
+      "df": 6,
+      "jumpLambda": 0.05,
+      "jumpMu": -0.3,
+      "jumpSigma": 0.15,
+      "mu": 0.07,
+      "paths": 50000,
+      "seed": 42,
+      "sigma": 0.15
+    },
+    "strategy": {
+      "bonds": "usa",
+      "stocks": "sp500"
+    },
+    "source": "fixed",
+    "startDate": "2000-01"
+  },
+  "scenarios": {
+    "sweeps": [
+      {
+        "from": 0.3,
+        "param": "wealth.stockShare",
+        "step": 0.1,
+        "to": 1
+      }
+    ]
+  },
+  "taxes": {
+    "capital": [
+      [
+        0,
+        0.02
+      ],
+      [
+        500000,
+        0.023
+      ],
+      [
+        1000000,
+        0.041
+      ],
+      [
+        2000000,
+        0.062
+      ]
+    ],
+    "income": [
+      [
+        0,
+        0
+      ],
+      [
+        50000,
+        0.04
+      ],
+      [
+        100000,
+        0.062
+      ],
+      [
+        200000,
+        0.084
+      ],
+      [
+        400000,
+        0.105
+      ]
+    ],
+    "multiplier": 2,
+    "propertyGain": {
+      "brackets": [],
+      "duration": [],
+      "durationRates": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          0.38
+        ],
+        [
+          2,
+          0.36
+        ],
+        [
+          3,
+          0.34
+        ],
+        [
+          4,
+          0.32
+        ],
+        [
+          5,
+          0.3
+        ],
+        [
+          6,
+          0.28
+        ],
+        [
+          7,
+          0.26
+        ],
+        [
+          8,
+          0.24
+        ],
+        [
+          9,
+          0.22
+        ],
+        [
+          10,
+          0.2
+        ],
+        [
+          11,
+          0.19
+        ],
+        [
+          12,
+          0.18
+        ],
+        [
+          13,
+          0.17
+        ],
+        [
+          14,
+          0.16
+        ],
+        [
+          15,
+          0.15
+        ],
+        [
+          16,
+          0.14
+        ],
+        [
+          17,
+          0.13
+        ],
+        [
+          18,
+          0.12
+        ],
+        [
+          19,
+          0.11
+        ],
+        [
+          20,
+          0.1
+        ],
+        [
+          21,
+          0.09
+        ],
+        [
+          22,
+          0.08
+        ],
+        [
+          23,
+          0.07
+        ],
+        [
+          24,
+          0.06
+        ],
+        [
+          25,
+          0.05
+        ]
+      ],
+      "exemptBelow": 0,
+      "model": "aargau",
+      "reduction": 0,
+      "useMultiplier": false
+    },
+    "wealth": [
+      [
+        0,
+        0
+      ],
+      [
+        100000,
+        0.0001
+      ],
+      [
+        500000,
+        0.0006
+      ],
+      [
+        1000000,
+        0.0009
+      ],
+      [
+        2000000,
+        0.0014
+      ]
+    ]
+  },
+  "wealth": {
+    "bonds": 150000,
+    "cash": 100000,
+    "reserveMonths": {
+      "mode": "timed",
+      "rows": [
+        {
+          "from": "start",
+          "value": 6
+        },
+        {
+          "from": "retire",
+          "value": 12
+        }
+      ]
+    },
+    "stockShare": {
+      "mode": "const",
+      "value": 0.6
+    },
+    "stocks": 500000
+  },
+  "withdrawal": {
+    "buckets": {
+      "bondYears": 6,
+      "cashYears": 2,
+      "refillThreshold": 0,
+      "reserveMonths": 3
+    },
+    "ceiling": 0,
+    "endowment": {
+      "rate": 0.04,
+      "smoothing": 0.3
+    },
+    "fixedRate": {
+      "rate": 0.04
+    },
+    "floor": 0,
+    "guardrails": {
+      "adjust": 0.1,
+      "initialRate": 0.05,
+      "lower": 0.2,
+      "upper": 0.2
+    },
+    "strategy": "standard",
+    "vpw": {
+      "horizonAge": 100,
+      "realReturn": 0.02
+    }
+  }
+}

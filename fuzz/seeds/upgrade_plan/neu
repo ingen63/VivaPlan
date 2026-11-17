@@ -1,0 +1,246 @@
+{
+  "flows": {
+    "extras": [],
+    "income": {
+      "mode": "const",
+      "value": 0
+    },
+    "incomeIndexed": true,
+    "spending": {
+      "mode": "const",
+      "value": 0
+    },
+    "spendingIncludesHousing": true
+  },
+  "format": "vivaplan/1",
+  "household": {
+    "ahvCoupleCap": 3780,
+    "married": true,
+    "persons": [
+      {
+        "birth": "1966-11",
+        "id": "A",
+        "name": "Muster"
+      }
+    ]
+  },
+  "milestones": [
+    {
+      "date": "2026-11",
+      "fixed": true,
+      "id": "start",
+      "kind": "date",
+      "name": "Simulationsstart"
+    },
+    {
+      "id": "retire",
+      "kind": "age",
+      "name": "Bezug Pensionskasse",
+      "person": "A",
+      "years": 65
+    },
+    {
+      "id": "ahv",
+      "kind": "age",
+      "name": "AHV-Bezug",
+      "person": "A",
+      "years": 65
+    },
+    {
+      "fixed": true,
+      "id": "end",
+      "kind": "age",
+      "name": "Simulationsende",
+      "person": "A",
+      "years": 95
+    }
+  ],
+  "pension": {
+    "ahv": {
+      "at": "ahv",
+      "indexed": true,
+      "monthly": 0
+    },
+    "pk": {
+      "at": "retire",
+      "capital": 0,
+      "contribution": {
+        "mode": "const",
+        "value": 0
+      },
+      "conversion": 0.05,
+      "interest": {
+        "mode": "const",
+        "value": 0.02
+      },
+      "lumpsum": 0
+    }
+  },
+  "project": {
+    "currency": "CHF",
+    "name": "Neue Planung"
+  },
+  "realestate": {
+    "affordability": {
+      "fixCosts": 0.01,
+      "imputedRate": 0.05,
+      "maxLoanToValue": 0.8,
+      "sustainability": 0.3333333333333333,
+      "wealthContribution": 0.03
+    },
+    "emergencyMonths": {
+      "mode": "const",
+      "value": 24
+    },
+    "properties": []
+  },
+  "returns": {
+    "bootstrap": {
+      "block": 12,
+      "paths": 50000,
+      "seed": 42
+    },
+    "extrapolation": {
+      "method": "fixed",
+      "range": 30
+    },
+    "fixed": {
+      "bonds": 0.01,
+      "inflation": 0.01,
+      "saron": 0.005,
+      "stocks": 0.05
+    },
+    "parametric": {
+      "auto": true,
+      "df": 6,
+      "jumpLambda": 0.05,
+      "jumpMu": -0.3,
+      "jumpSigma": 0.15,
+      "mu": 0.07,
+      "paths": 50000,
+      "seed": 42,
+      "sigma": 0.15
+    },
+    "strategy": {"bonds": "ch", "stocks": "worldJst"},
+    "source": "fixed",
+    "startDate": "2000-01"
+  },
+  "scenarios": {
+    "sweeps": []
+  },
+  "taxes": {
+    "capital": [
+      [
+        0,
+        0.02
+      ],
+      [
+        500000,
+        0.023
+      ],
+      [
+        1000000,
+        0.041
+      ],
+      [
+        2000000,
+        0.062
+      ]
+    ],
+    "income": [
+      [
+        0,
+        0
+      ],
+      [
+        50000,
+        0.04
+      ],
+      [
+        100000,
+        0.062
+      ],
+      [
+        200000,
+        0.084
+      ],
+      [
+        400000,
+        0.105
+      ]
+    ],
+    "multiplier": 2,
+    "wealth": [
+      [
+        0,
+        0
+      ],
+      [
+        100000,
+        0.0001
+      ],
+      [
+        500000,
+        0.0006
+      ],
+      [
+        1000000,
+        0.0009
+      ],
+      [
+        2000000,
+        0.0014
+      ]
+    ]
+  },
+  "wealth": {
+    "bonds": 0,
+    "cash": 0,
+    "reserveMonths": {
+      "mode": "timed",
+      "rows": [
+        {
+          "from": "start",
+          "value": 6
+        },
+        {
+          "from": "retire",
+          "value": 12
+        }
+      ]
+    },
+    "stockShare": {
+      "mode": "const",
+      "value": 0.6
+    },
+    "stocks": 0
+  },
+  "withdrawal": {
+    "buckets": {
+      "bondYears": 6,
+      "cashYears": 2,
+      "refillThreshold": 0,
+      "reserveMonths": 3
+    },
+    "ceiling": 0,
+    "endowment": {
+      "rate": 0.04,
+      "smoothing": 0.3
+    },
+    "fixedRate": {
+      "rate": 0.04
+    },
+    "floor": 0,
+    "guardrails": {
+      "adjust": 0.1,
+      "initialRate": 0.05,
+      "lower": 0.2,
+      "upper": 0.2
+    },
+    "strategy": "standard",
+    "vpw": {
+      "horizonAge": 100,
+      "realReturn": 0.02
+    }
+  }
+}
