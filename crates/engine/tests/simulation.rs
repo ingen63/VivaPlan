@@ -168,7 +168,7 @@ fn indirect_amortization_goes_to_pillar_3a() {
         ],
         "pillar3a": { "balance": 10_000, "rate": 0.0, "payout": "2031-06", "use": "repay" }
     }));
-    // AHV-Bezug 2035-01: bis dahin indirekt (FEA-36), Auszahlung 2031-06 erlaubt (FEA-37).
+    // AHV-Bezug 2035-01: bis dahin indirekt (#50), Auszahlung 2031-06 erlaubt (#52).
     p.milestones.push(
         serde_json::from_value(json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2035-01" })).unwrap(),
     );
@@ -958,7 +958,7 @@ fn summary_reports_total_and_liquid_wealth_at_simulation_start() {
     assert!((res.summary.end_total - res.summary.start_total).abs() < 1e-6);
 }
 
-/// ISS-2: Ist der Kauf «nach Verkauf» nicht finanzierbar, entfällt er sofort und die Folgeregeln greifen:
+/// #2: Ist der Kauf «nach Verkauf» nicht finanzierbar, entfällt er sofort und die Folgeregeln greifen:
 /// Die Miete «nach Verkauf» der Wohnung beginnt im Monat danach (statt nie).
 #[test]
 fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
@@ -1000,9 +1000,9 @@ fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
     );
 }
 
-/// FEA-97/AK3: Die Einmalrückzahlung bei der Erneuerung kommt aus dem liquiden Vermögen (Fall 2 oben: 80'000).
+/// #124/AK3: Die Einmalrückzahlung bei der Erneuerung kommt aus dem liquiden Vermögen (Fall 2 oben: 80'000).
 #[test]
-fn fea97_ak3_lump_sum_is_paid_from_liquid_wealth() {
+fn issue_124_ak3_lump_sum_is_paid_from_liquid_wealth() {
     let r = renewal_case(6_000.0, 2_000_000.0, 0.0, 6.0);
     let at = |y: i32, m: u32| {
         r.records
@@ -1026,10 +1026,10 @@ fn fea97_ak3_lump_sum_is_paid_from_liquid_wealth() {
     );
 }
 
-/// FEA-97/AK3: Nach der Pensionierung hält «Standard» die Reserve für die laufenden Kosten; die Hypothekarzinsen
+/// #124/AK3: Nach der Pensionierung hält «Standard» die Reserve für die laufenden Kosten; die Hypothekarzinsen
 /// gehören dazu (Hypothek 400'000 zu 1.2 %: 400 pro Monat, Reserve 12 Monate).
 #[test]
-fn fea97_ak3_mortgage_interest_counts_for_the_reserve() {
+fn issue_124_ak3_mortgage_interest_counts_for_the_reserve() {
     let cash = |rate: f64| {
         let mut v = base();
         v["milestones"][1]["date"] = json!("2030-01");
@@ -1052,10 +1052,10 @@ fn fea97_ak3_mortgage_interest_counts_for_the_reserve() {
     assert!((cash(0.012) - 12.0 * 1400.0).abs() < 1e-6, "mit Zins: {}", cash(0.012));
 }
 
-/// ISS-23/AK1: Jedes Perzentil der Zusammenfassung trägt das reale Endvermögen seines Laufs. Parametrisch mit zufälliger
+/// #126/AK1: Jedes Perzentil der Zusammenfassung trägt das reale Endvermögen seines Laufs. Parametrisch mit zufälliger
 /// Inflation: Die Läufe haben verschiedene Inflation, real und nominal unterscheiden sich je Lauf anders.
 #[test]
-fn iss_23_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
+fn issue_126_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
     let mut v = engine::api::example_plan();
     v["returns"]["source"] = json!("parametric");
     v["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "jumpLambda": 0, "jumpMu": 0, "jumpSigma": 0, "seed": 3 });

@@ -104,7 +104,7 @@ function trancheSchedule(p, t) {
   if (!Number.isFinite(m) || !(e > s0)) return [];
   const lim = planned ? e + 1 : Math.min(e + 1, refMonth(p.sell));
   const out = []; let amount = +t.amount || 0;
-  // FEA-36: Indirekte Amortisation nur bis vor dem AHV-Bezug der Person der Säule 3a, danach direkt.
+  // #50: Indirekte Amortisation nur bis vor dem AHV-Bezug der Person der Säule 3a, danach direkt.
   const ahv = msMonth(ahvIdOf(t.pillar3a));
   for (let i = 0; i < 100 && m < lim; i++) {
     if (i >= t.periods.length && t.after !== "renew") break;
@@ -129,7 +129,7 @@ const TICK_KINDS = ["mortgageRenewal", "mortgageRepayment", "amortizationSwitch"
 /** Ergebnis des Rechenkerns in die Form bringen, die Grafiken und Anzeigen verwenden. */
 function adapt(r) {
   const out = { m: [], liquid: [], prop: [], pk: [], total: [], pots: [], events: [], p3a: [], label: r.label };
-  // FEA-39: Wohnanteil = erfasste Lebenshaltung im Startmonat − Lebenshaltung ohne Wohnen der Simulation
+  // #53: Wohnanteil = erfasste Lebenshaltung im Startmonat − Lebenshaltung ohne Wohnen der Simulation
   const r0 = r.records[0];
   out.housingShare = r0 && state.flows.spendingIncludesHousing ? seriesAt(state.flows.spending, ym2i(r0.month)) * (state.flows.spendingFactor ?? 1) - r0.plannedSpending : 0;
   for (const x of r.records) {
@@ -151,7 +151,7 @@ function adapt(r) {
   return out;
 }
 
-/** `data-preview` auf <html>: «pending», solange eine Vorschau aussteht, sonst «idle» (FEA-87: Signal für die Oberflächentests). */
+/** `data-preview` auf <html>: «pending», solange eine Vorschau aussteht, sonst «idle» (#111: Signal für die Oberflächentests). */
 function requestPreview() {
   requestPreview.n ??= 0;
   clearTimeout(previewTimer);
@@ -188,7 +188,7 @@ function collectIssues() {
 /** Fehlende Teile ergänzen, damit der Editor jede gültige Projektdatei anzeigen kann. */
 const SERIES_PATHS = ["flows.income", "flows.spending", "pension.pk.contribution", "pension.pk.interest", "wealth.stockShare", "wealth.reserveMonths", "realestate.emergencyMonths",
   "partner.income", "partner.pk.contribution", "partner.pk.interest"];
-/** FEA-43: Beschriftung der Auswahl beim Erwerbseinkommen jeder Person. */
+/** #58: Beschriftung der Auswahl beim Erwerbseinkommen jeder Person. */
 const INCOME_INDEXED = "Steigt mit der Teuerung (Beträge in heutigen Preisen)";
 const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeIndexed: true,
   pk: { capital: 0, at: "retire2", lumpsum: 0, conversion: 0.05, contribution: { mode: "const", value: 0 }, interest: { mode: "const", value: 0.01 } },
@@ -199,7 +199,7 @@ function newPropId(p = state) {
   return id;
 }
 const FIXED_RESERVE_MONTHS = 3;
-// FEA-17: Planungen mit anderer Strategie als «Standard» und einer Reserve ungleich 3 Monaten rechnen mit 3 Monaten.
+// #18: Planungen mit anderer Strategie als «Standard» und einer Reserve ungleich 3 Monaten rechnen mit 3 Monaten.
 function reserveDiffers(p) {
   if ((p.withdrawal?.strategy ?? "standard") === "standard") return false;
   const r = p.wealth?.reserveMonths;
@@ -207,7 +207,7 @@ function reserveDiffers(p) {
   return vals.some(v => v !== FIXED_RESERVE_MONTHS);
 }
 /**
- * FEA-45: Haftungsausschluss. Die Kurzfassung muss beim ersten Start bestätigt werden; die Bestätigung liegt in den
+ * #61: Haftungsausschluss. Die Kurzfassung muss beim ersten Start bestätigt werden; die Bestätigung liegt in den
  * Einstellungen (nicht in der Planung) mit der Version des Textes. Ändert sich der Text, die Version erhöhen: Dann wird
  * erneut gefragt. Der vollständige Text steht in der Hilfe (`hilfe/00-einstieg.md`, Abschnitt «@disclaimer»).
  */
@@ -230,7 +230,7 @@ function disclaimerGate() {
     d.returnValue = ""; d.showModal();
   });
 }
-/** FEA-58: Einstellung «Hinweis zur Cash-Reserve gezeigt»; der Hinweis erscheint nur beim ersten Laden einer betroffenen Planung. */
+/** #74: Einstellung «Hinweis zur Cash-Reserve gezeigt»; der Hinweis erscheint nur beim ersten Laden einer betroffenen Planung. */
 const RESERVE_NOTICE_KEY = "reserveNoticeShown";
 async function reserveNotice(p) {
   if (!reserveDiffers(p) || Pref.get(RESERVE_NOTICE_KEY, false)) return;
@@ -262,12 +262,12 @@ function normalize(p) {
   p.realestate.affordability ??= { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, wealthContribution: 0.03, maxLoanToValue: 0.8 };
   p.returns.extrapolation ??= { method: "fixed", range: 30 };
   p.returns.bootstrap ??= { paths: 50000, block: 12, seed: 42 };
-  // FEA-78: neue Planungen folgen den Vorschlagswerten des Aktienindex (`auto`); ältere setzt upgrade_plan
+  // #100: neue Planungen folgen den Vorschlagswerten des Aktienindex (`auto`); ältere setzt upgrade_plan
   p.returns.parametric ??= { paths: 50000, mu: 0.07, sigma: 0.15, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, auto: true };
   p.returns.parametric.seed ??= 42; p.returns.bootstrap.seed ??= 42;
   p.returns.parametric.auto ??= p.returns.source !== "parametric";
   p.returns.fixed.saron ??= 0;
-  // FEA-53: Anlagestrategie (ältere Planungen: aus der Zeitreihe übernommen, siehe upgrade_plan)
+  // #69: Anlagestrategie (ältere Planungen: aus der Zeitreihe übernommen, siehe upgrade_plan)
   p.returns.strategy ??= { stocks: "worldJst", bonds: "ch" };
   p.returns.strategy.weights ??= { ch: 0.2, usa: 0.4, eu: 0.3, apac: 0.1 };
   for (const k of ["stocks", "bonds", "inflation", "saron"]) {
@@ -291,7 +291,7 @@ function normalize(p) {
 }
 
 /**
- * Geladene Planung übernehmen: zuerst auf den aktuellen Stand bringen (FEA-37, FEA-38; Hinweise anzeigen), dann
+ * Geladene Planung übernehmen: zuerst auf den aktuellen Stand bringen (#52, #51; Hinweise anzeigen), dann
  * normalisieren. Liefert die Hinweise.
  */
 async function adopt(plan) {
@@ -311,16 +311,16 @@ async function refreshLibrary() {
   if (current === "returns") renderSection();
 }
 
-/** FEA-53: Verweis auf die Zeitreihe der Planung: die Anlagestrategie (`strategy:<JSON>`), bei älteren Planungen die Datei. */
+/** #69: Verweis auf die Zeitreihe der Planung: die Anlagestrategie (`strategy:<JSON>`), bei älteren Planungen die Datei. */
 function seriesRef() {
   const r = state.returns;
   return r.series || (r.strategy ? "strategy:" + JSON.stringify(r.strategy) : null);
 }
-// FEA-78: Parameter des Aktienmodells mit Vorschlagswerten je Aktienindex (Feld → Darstellung)
+// #100: Parameter des Aktienmodells mit Vorschlagswerten je Aktienindex (Feld → Darstellung)
 const PARAM_KEYS = { mu: "pct", sigma: "pct", df: "num", jumpLambda: "num", jumpMu: "pct", jumpSigma: "pct" };
 const paramSuggestion = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.stocks ?? null : null;
 const fmtParam = (k, v) => PARAM_KEYS[k] === "pct" ? `${fmtPct(v)} %` : (+v).toLocaleString("de-CH", { maximumFractionDigits: 2 });
-/** FEA-78: Folgen die Parameter dem Index (`auto`), die Vorschlagswerte des gewählten Index übernehmen. Ohne
+/** #100: Folgen die Parameter dem Index (`auto`), die Vorschlagswerte des gewählten Index übernehmen. Ohne
  *  Änderungsmarke und ohne eigenen Schritt im Verlauf (der aktuelle Schritt erhält dieselben Werte): Der Rechenkern
  *  rechnet bei `auto` ohnehin mit den Vorschlagswerten. */
 function followSuggestion() {
@@ -355,7 +355,7 @@ function showVal(type, v) {
   if (type === "month") return ymShow(v);
   return v ?? "";
 }
-// ---------- Pflichteingaben (FEA-13; Liste in docs/Pflichteingaben.md) ----------
+// ---------- Pflichteingaben (#14; Liste in docs/Pflichteingaben.md) ----------
 const REQUIRED_PATHS = [/^household\.persons\.\d\.(name|birth)$/, /^household\.ahvCoupleCap$/, /^(partner|pension)\.pk\.(capital|conversion|lumpsum)$/,
   /^(partner|pension)\.ahv\.monthly$/, /^wealth\.(stocks|bonds|cash)$/, /^taxes\.multiplier$/];
 const isRequired = path => REQUIRED_PATHS.some(r => r.test(path));
@@ -363,7 +363,7 @@ const reqMark = path => isRequired(path) ? ` <span class="req" title="Pflichtfel
 /** Vom Benutzer eingegebene, nicht lesbare Werte (Feldpfad → Abschnitt und Meldung); die Planung behält den letzten gültigen Wert. */
 const invalidFields = new Map();
 /** Fehlermeldungen des Rechenkerns und ungültige Eingaben direkt am Feld anzeigen. */
-// ISS-13: Solange in ein Feld getippt wird, wartet alles (Vorschau, berechnete Werte, Meldungen, Prüfliste); erst beim
+// #57: Solange in ein Feld getippt wird, wartet alles (Vorschau, berechnete Werte, Meldungen, Prüfliste); erst beim
 // Verlassen (Tab, Klick daneben, Enter) wird neu gerechnet und die Meldung am Feld gezeigt oder entfernt.
 let heldField = null, heldShown = false, pendingRefresh = false;
 function holdField(el) {
@@ -489,7 +489,7 @@ function PensionCards(root, who) {
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
     <div style="margin-top:10px">${Chk(`${ahv}.indexed`, "Rente jährlich an die Teuerung anpassen")}</div></div>`;
 }
-/** FEA-38: Pensionskasse und AHV beginnen an den festen Meilensteinen der Person. */
+/** #51: Pensionskasse und AHV beginnen an den festen Meilensteinen der Person. */
 function fixedAt(index, kind) {
   const id = index ? (kind === "pk" ? "retire2" : "ahv2") : (kind === "pk" ? "retire" : "ahv");
   return `<label class="field"><span>Bezug ab</span><span class="computed" style="padding:8px 0">Meilenstein «${esc(state.milestones.find(m => m.id === id)?.name ?? id)}» · ${C("ms", id)} · <a href="#" data-action="goto" data-sec="milestones">ändern</a></span></label>`;
@@ -500,14 +500,14 @@ R.pension = () => `
   ${state.partner ? PensionCards("partner", state.household.persons[1].name) : ""}
   <p class="hint">${C("pkresult")}</p>`;
 
-// ---------- Säule 3a (FEA-37) ----------
+// ---------- Säule 3a (#52) ----------
 const newAccount = person => ({ person, balance: 0, rate: 0.01, contribution: 0, payouts: [], use: "wealth" });
 /** Id des Meilensteins «AHV-Bezug» der Person (Tranche ohne Angabe: erste Person). */
 const ahvIdOf = pid => state.household.persons.findIndex(p => p.id === pid) === 1 ? "ahv2" : "ahv";
 /** «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation in dieses Konto voraus. */
 const hasIndirectFor = pid => state.realestate.properties.some(p => p.status !== "rent" && (p.mortgage?.tranches || []).some(t =>
   (t.pillar3a ?? state.household.persons[0].id) === pid && t.periods.some(d => d.amortMode === "indirect" && +d.amort > 0)));
-// FEA-41: Monat einer 3a-Auszahlung (Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers).
+// #55: Monat einer 3a-Auszahlung (Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers).
 function payoutMonth(x, pid) {
   if (x.kind === "age") { const b = ym2i(person(pid).birth), y = +x.years; return Number.isFinite(b) && x.years !== "" && x.years != null && Number.isFinite(y) ? b + Math.round(y * 12) : NaN; }
   return ym2i(x.date);
@@ -569,7 +569,7 @@ R.wealth = () => `
     <p class="hint">Cash zählt nicht zum Portfolio. Bis zur Pensionierung (Bezug Pensionskasse der ersten Person) hält die App so viel Cash wie oben erfasst, mit der Teuerung fortgeschrieben; ein Überschuss geht nach der Aktienquote ins Portfolio, ein Fehlbetrag wird daraus nachgefüllt. Ab der Pensionierung bestimmt die Entnahmestrategie das Cash: «Standard» mit der Cash-Reserve (Abschnitt «Entnahmestrategie»), alle anderen mit ${FIXED_RESERVE_MONTHS} Monaten bzw. die 3-Topf-Strategie mit ihren Töpfen.</p></div>
   ${strategyCard()}`;
 
-/** FEA-53: Indizes der Anlagestrategie: [Schlüssel, Name, Erklärung]. */
+/** #69: Indizes der Anlagestrategie: [Schlüssel, Name, Erklärung]. */
 const STOCK_INDICES = [
   ["worldJst", "Welt (JST)", "Aktien von 11 Ländern (Schweiz, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Jährlich 1900–2020."],
   ["worldCustom", "Welt individuell (JST)", "Wie «Welt (JST)», aber mit eigenen Gewichten für Schweiz, USA, EU und Asien-Pazifik. Jährlich 1900–2020."],
@@ -607,7 +607,7 @@ const SOURCES = [
   ["bootstrap", "Monte Carlo · historisch", "Zufällige Blöcke aus der Zeitreihe (Länge zufällig), alle Werte aus demselben Monat.", true],
   ["parametric", "Monte Carlo · parametrisch", "Aktien mit Student-t-Verteilung und Kurssprüngen, Obligationen und Inflation mit der Korrelation der Anlagestrategie.", true]
 ];
-/** FEA-92: Abkürzung jeder Renditequelle für den Namen eines gespeicherten Ergebnisses. */
+/** #119: Abkürzung jeder Renditequelle für den Namen eines gespeicherten Ergebnisses. */
 const SOURCE_SHORT = { fixed: "Fix", historical: "Hist.", rolling: "Alle Starts", bootstrap: "MC hist.", parametric: "MC param." };
 const paramJoint = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.joint ?? null : null;
 /** Welche Eingaben bei der gewählten Quelle tatsächlich verwendet werden. */
@@ -626,7 +626,7 @@ function returnsUse() {
     series: withSeries,
     extrapolate,
     fixedStocks: src === "fixed" || (extrapolate && r.extrapolation.method === "fixed"),
-    // FEA-79: Das parametrische Modell zieht Obligationen und Inflation aus der Reihe; fix nur ohne Reihe.
+    // #101: Das parametrische Modell zieht Obligationen und Inflation aus der Reihe; fix nur ohne Reihe.
     fixedBonds: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
     fixedInflation: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
     fixedSaron: usesSaron && (!withSeries || saronGap || extrapolate),
@@ -675,7 +675,7 @@ const STRATS = [
   ["vpw", "Variable Prozententnahme (VPW)", "Jedes Jahr wird der Anteil des Vermögens entnommen, der es bis zum Planungsalter gleichmässig aufbraucht; der Anteil steigt mit dem Alter.", true],
   ["endowment", "Endowment-Regel", "Entnahme = Vorjahr mit Teuerung, gemischt mit einer Rate des aktuellen Vermögens (Yale/Tobin). Glättet die Ausgaben.", true]
 ];
-/** FEA-92: Abkürzung jeder Strategie (3-Topf mit Guardrails eigens) für den Namen eines gespeicherten Ergebnisses. */
+/** #119: Abkürzung jeder Strategie (3-Topf mit Guardrails eigens) für den Namen eines gespeicherten Ergebnisses. */
 const STRAT_SHORT = { standard: "Standard", three_buckets: "3-Topf", three_buckets_guardrails: "3-Topf + Guard", guardrails: "Guardrails", fixed_rate: "Fixe Rate", vpw: "VPW", endowment: "Endowment" };
 R.withdrawal = () => {
   const w = state.withdrawal;
@@ -705,7 +705,7 @@ R.withdrawal = () => {
       <p class="hint">Der Aktienanteil steht unter <a href="#" data-action="goto" data-sec="wealth">Vermögen & Anlage</a>. Alle anderen Strategien rechnen mit einer festen Reserve von ${FIXED_RESERVE_MONTHS} Monaten.</p></div>`}`;
 };
 
-/** FEA-05: 3-Topf, deren Ausgaben die Guardrails steuern. */
+/** #6: 3-Topf, deren Ausgaben die Guardrails steuern. */
 const bucketsGuardrails = (w = state.withdrawal) => w?.strategy === "three_buckets" && w.buckets?.spending === "guardrails";
 /** Schlüssel der Entnahmestrategie einer Planung; 3-Topf mit Guardrails hat einen eigenen (wie in der Optimierung). */
 const stratKey = w => bucketsGuardrails(w) ? "three_buckets_guardrails" : w?.strategy;
@@ -789,7 +789,7 @@ const jobCancel = async () => {
   const b = document.getElementById("jobCancel"); if (b) b.disabled = true;
   try { await Engine.call("cancel_job", { jobId: job?.id }); } catch (e) { toast(errText(e)); }
 };
-// `off`: Testzugang #nobench (FEA-87). Ohne Messung zeigt die App «Dauer wird geschätzt…» und rechnet ohne Rückfrage.
+// `off`: Testzugang #nobench (#111). Ohne Messung zeigt die App «Dauer wird geschätzt…» und rechnet ohne Rückfrage.
 const bench = { key: "", us: null, gen: 0, fixedPaths: null, cores: 0, busy: false, error: null, off: false };
 const benchKey = () => JSON.stringify({ ...state, optimization: undefined, scenarios: undefined });
 /** Die Pfade der Suche werden einmal erzeugt und dann je Kandidat nur gerechnet; die Prüfpfade entstehen bei jeder Auswertung neu. */
@@ -1070,7 +1070,7 @@ R.taxes = () => `<h2>Steuern</h2><p class="lead">Einfache Satztabellen; zwischen
     ${state.taxes.couple ? TaxTable("couple.income", "Einkommenssteuer (Verheiratete)", "Einkommen") + TaxTable("couple.wealth", "Vermögenssteuer (Verheiratete)", "Vermögen") + TaxTable("couple.capital", "Kapitalbezugssteuer (Verheiratete)", "Kapitalbezug") : ""}</div>` : ""}`;
 
 const PSTAT = [["owned", "Besitz"], ["planned", "Kauf geplant"], ["rent", "Miete geplant"]];
-/** FEA-36: Periode, die erst ab dem AHV-Bezug beginnt (dann nur direkte Amortisation). */
+/** #50: Periode, die erst ab dem AHV-Bezug beginnt (dann nur direkte Amortisation). */
 function periodAfterAhv(p, t, k) {
   const r = trancheSchedule(p, t).find(x => x.i === k);
   return !!r && r.start >= msMonth(ahvIdOf(t.pillar3a));
@@ -1162,7 +1162,7 @@ function runsPerScenario() {
   return { fixed: 1, historical: 1, rolling: rollingCount(), bootstrap: r.bootstrap.paths, parametric: r.parametric.paths }[r.source];
 }
 const COMPUTED = {
-  // FEA-41: Auszahlungsplan der Säule 3a (Zeile «k.j»): Monat und Alter, Guthaben vor und nach der Auszahlung aus der Vorschau.
+  // #55: Auszahlungsplan der Säule 3a (Zeile «k.j»): Monat und Alter, Guthaben vor und nach der Auszahlung aus der Vorschau.
   p3aat: a => {
     const [k, j] = a.split(".").map(Number), acc = state.pillar3a[k], x = acc?.payouts[j];
     const m = x ? payoutMonth(x, acc.person) : NaN;
@@ -1187,7 +1187,7 @@ const COMPUTED = {
   wdinit: () => { const e = lastSim?.events.find(x => x.kind === "withdrawal"); return e ? `Vorschau: ${esc(e.label)} (${ymShow(i2ym(e.m))}).` : "Vorschau: keine Entnahme im Simulationszeitraum (Pensionierung ausserhalb?)."; },
   age0: () => { const s = startM(); return Number.isFinite(s) ? `Alter bei Simulationsstart: <b>${ageStr(s)}</b>` : ""; },
   pkresult: () => lastSim ? `${state.partner ? "Haushalt, bei Pensionierung" : "Bei Pensionierung"}: Kapitalbezug netto <b>${fmtMoney(lastSim.lumpNet)}</b> (Steuer ${fmtMoney(lastSim.lumpTax)}), Rente <b>${fmtMoney(lastSim.pkPension)}</b> / Monat.` : "",
-  // FEA-57: Anteil von Aktien bzw. Obligationen am Portfolio (ohne Cash), ganzzahlig; ohne Portfolio keine Angabe.
+  // #73: Anteil von Aktien bzw. Obligationen am Portfolio (ohne Cash), ganzzahlig; ohne Portfolio keine Angabe.
   wquote: arg => {
     const w = state.wealth, s = Math.max(0, +w.stocks || 0), b = Math.max(0, +w.bonds || 0);
     return s + b > 0 ? `${Math.round(100 * (arg === "stocks" ? s : b) / (s + b))} % des Portfolios` : "";
@@ -1198,18 +1198,18 @@ const COMPUTED = {
     if (seriesInfo.error) return `<span style="color:var(--err)">${esc(seriesInfo.error)}</span>`;
     return `<b>${fmtInt(rollingCount())}</b> Startzeitpunkte decken den Zeitraum von ${((endM() - startM()) / 12).toFixed(1)} Jahren vollständig ab.`;
   },
-  // FEA-53: Summe der Gewichte von «Welt individuell»
+  // #69: Summe der Gewichte von «Welt individuell»
   wsum: () => {
     const w = state.returns.strategy?.weights || {}, sum = REGION_KEYS.reduce((a, k) => a + (+w[k] || 0), 0);
     return `Summe <b${Math.abs(sum - 1) > 1e-6 ? ' style="color:var(--err)"' : ""}>${fmtPct(sum)} %</b> (muss 100 % ergeben).`;
   },
-  // FEA-53: Kurzinfo der Zeitreihe zur Strategie
+  // #69: Kurzinfo der Zeitreihe zur Strategie
   strategyinfo: () => {
     const i = seriesInfo;
     if (!i) return "";
     if (i.error) return i.error.includes("Gewichte") ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // Gewichte: Meldung am Feld
     const p = v => v == null || Number.isNaN(v) ? "–" : `${(v * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
-    // FEA-53/AK8: Die Mittelwerte gelten für den gemeinsamen Zeitraum; ein längerer Index wird darauf gekürzt.
+    // #69/AK8: Die Mittelwerte gelten für den gemeinsamen Zeitraum; ein längerer Index wird darauf gekürzt.
     const from = +String(i.first).slice(0, 4), to = +String(i.last).slice(0, 4), span = `${from}–${to}`;
     const cut = (i.parts || []).filter(x => x.first < from || x.last > to);
     const clip = cut.length ? `<span class="cliphint" id="strategyClip">⚠ ${cut.map(x => `${esc(x.label)} reichen von ${x.first} bis ${x.last}`).join(", ")} und werden auf den gemeinsamen Zeitraum ${span} gekürzt. Die Simulation (Monte Carlo und historische Verläufe) nutzt nur diesen Zeitraum.</span>` : "";
@@ -1221,7 +1221,7 @@ const COMPUTED = {
     return "";
   },
   basis: () => esc(previewBasis || "die fixen Werte."),
-  // FEA-78: Vorschlagswert neben einem Feld des Aktienmodells (nur bei eigenen Werten)
+  // #100: Vorschlagswert neben einem Feld des Aktienmodells (nur bei eigenen Werten)
   psug: k => {
     const q = state.returns.parametric, s = paramSuggestion();
     return !s || q.auto ? "" : `Vorschlag: ${fmtParam(k, s[k])}`;
@@ -1235,7 +1235,7 @@ const COMPUTED = {
     return q.auto ? `Die Werte folgen dem Aktienindex <b>${esc(name)}</b>: Vorschlagswerte aus den Jahren ${y[0]}–${y[1]}, so gewählt, dass die Jahresrenditen dem historischen Bootstrap entsprechen. Ändern Sie einen Wert, gelten Ihre eigenen Werte.`
       : `Eigene Werte. Neben den Feldern stehen die Vorschlagswerte für <b>${esc(name)}</b>. <button class="btn small" data-action="param-suggest">Vorschlagswerte übernehmen</button>`;
   },
-  // FEA-79: Mittel, Streuung und Korrelation von Aktien, Obligationen und Inflation der Reihe
+  // #101: Mittel, Streuung und Korrelation von Aktien, Obligationen und Inflation der Reihe
   pjoint: () => {
     const j = paramJoint();
     if (!seriesInfo) return "";
@@ -1307,7 +1307,7 @@ function milestoneRefs(id) {
   return out;
 }
 const countRefs = id => milestoneRefs(id).length;
-/** FEA-38: feste Meilensteine einer Person («Bezug Pensionskasse», «AHV-Bezug»); `null` für alle anderen. */
+/** #51: feste Meilensteine einer Person («Bezug Pensionskasse», «AHV-Bezug»); `null` für alle anderen. */
 const SYS_MS = { retire: { kind: "pk", index: 0 }, ahv: { kind: "ahv", index: 0 }, retire2: { kind: "pk", index: 1 }, ahv2: { kind: "ahv", index: 1 } };
 const sysMs = ms => SYS_MS[ms.id] ?? null;
 /** Start, Ende und die festen Meilensteine jeder Person lassen sich nicht löschen. */
@@ -1315,7 +1315,7 @@ const msLocked = ms => !!ms.fixed || !!sysMs(ms);
 
 // ---------- Rendering ----------
 /**
- * ISS-21: Das Menü wird einmal aufgebaut und danach nur nachgeführt (aktiver Abschnitt, Zahl der Fehler und Warnungen).
+ * #112: Das Menü wird einmal aufgebaut und danach nur nachgeführt (aktiver Abschnitt, Zahl der Fehler und Warnungen).
  * Ein Neuaufbau bei jeder Vorschau ersetzte die Einträge; fiel er zwischen Drücken und Loslassen der Maustaste, ging der
  * Klick verloren.
  */
@@ -1363,7 +1363,7 @@ function renderVal(vals) {
   vals.sort((a, b) => order[a.sev] - order[b.sev]);
   const html = vals.length ? vals.map(v => `<li class="${v.sev}" data-action="goto" data-sec="${v.sec}"><span class="ic">${v.sev === "err" ? "!" : "▲"}</span><span>${v.text}</span><span class="sec">${SECTIONS.find(s => s.id === v.sec).title}</span></li>`).join("")
     : `<li class="ok"><span class="ic">✓</span><span>Keine Fehler gefunden.</span></li>`;
-  // ISS-21: nur neu aufbauen, wenn sich die Meldungen ändern (sonst ginge ein Klick auf eine Meldung verloren)
+  // #112: nur neu aufbauen, wenn sich die Meldungen ändern (sonst ginge ein Klick auf eine Meldung verloren)
   if (html !== renderVal.html) { $("#val").innerHTML = html; renderVal.html = html; }
 }
 
@@ -1392,7 +1392,7 @@ function renderChart(svgSel, tipSel, s) {
   let g = "";
   for (let v = 0; v <= top + 1e-6; v += step) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10.5" fill="${css("--muted")}">${fmtMio(v)}</text>`;
   for (let i = 0; i < n; i++) { const mm = s.m[i]; if (mm % 60 === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="${css("--muted")}">${mm / 12}</text>`; }
-  // FEA-89: Bezugslinie bei 0 wie in den Ergebnisgrafiken
+  // #114: Bezugslinie bei 0 wie in den Ergebnisgrafiken
   g += `<line class="ref" x1="${L}" x2="${W - Rr}" y1="${y(0)}" y2="${y(0)}" stroke="${css("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
   const stack = [s.pk, s.prop, s.liquid], cols = ["--c3", "--c2", "--c1"];
   let base = new Array(n).fill(0), areas = "";
@@ -1568,7 +1568,7 @@ const History = {
     if (this.stack.length > 200) this.stack.shift();
     this.pos = this.stack.length - 1;
   },
-  /** Ändert den aktuellen Schritt, ohne einen neuen anzulegen (abgeleitete Werte, FEA-78). */
+  /** Ändert den aktuellen Schritt, ohne einen neuen anzulegen (abgeleitete Werte, #100). */
   patch(f) {
     if (this.pos < 0 || !this.stack[this.pos]) return;
     const o = JSON.parse(this.stack[this.pos]); f(o); this.stack[this.pos] = JSON.stringify(o);
@@ -1628,7 +1628,7 @@ function gotoIndex(i) {
 }
 document.addEventListener("keydown", e => {
   const mod = IS_MAC ? e.metaKey : e.ctrlKey, k = e.key.toLowerCase();
-  if (e.key === "Enter" && e.target.matches?.("input[data-path]")) releaseField(e.target); // ISS-13
+  if (e.key === "Enter" && e.target.matches?.("input[data-path]")) releaseField(e.target); // #57
   if (e.key === "Escape" && closeInfoPops()) return;
   if (e.key === "Escape" && !document.querySelector("dialog[open]")) return command("back");
   if (!mod || e.altKey) return;
@@ -1684,7 +1684,7 @@ function onEdit(el) {
     markDirty(); renderSection(); return;
   }
   const v = readInput(el);
-  // ISS-13: nur Textfelder warten; Kästchen und Optionsfelder wirken sofort
+  // #57: nur Textfelder warten; Kästchen und Optionsfelder wirken sofort
   const typing = document.activeElement === el && el.matches("input:not([type=checkbox]):not([type=radio])");
   if (typing) holdField(el);
   if (v === null) {
@@ -1699,10 +1699,10 @@ function onEdit(el) {
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
   setP(path, v); markDirty();
-  // FEA-78: eine eigene Eingabe im Aktienmodell beendet das Folgen der Vorschlagswerte
+  // #100: eine eigene Eingabe im Aktienmodell beendet das Folgen der Vorschlagswerte
   if (/^returns\.parametric\.(mu|sigma|df|jumpLambda|jumpMu|jumpSigma)$/.test(path)) state.returns.parametric.auto = false;
   if (/\.amortMode$/.test(path) && v === "indirect") {
-    // FEA-37: Die indirekte Amortisation braucht ein 3a-Konto (erste Person bzw. gewählte Person der Tranche).
+    // #52: Die indirekte Amortisation braucht ein 3a-Konto (erste Person bzw. gewählte Person der Tranche).
     const t = getP(path.split(".").slice(0, 6).join(".")), pid = t?.pillar3a ?? state.household.persons[0].id;
     if (!state.pillar3a.some(a => a.person === pid)) state.pillar3a.push(newAccount(pid));
   }
@@ -1715,7 +1715,7 @@ function onEdit(el) {
       m.years = Number.isFinite(ergibt) ? Math.round((ergibt - ym2i(person(m.person).birth)) / 12 * 100) / 100 : m.years ?? 65;
     } else m.date = Number.isFinite(ergibt) ? i2ym(ergibt) : m.date ?? i2ym(startM() + 60);
   }
-  if (kindPay) { // FEA-41: wie bei Meilensteinen bleibt der Zeitpunkt beim Wechsel gleich
+  if (kindPay) { // #55: wie bei Meilensteinen bleibt der Zeitpunkt beim Wechsel gleich
     if (v === "age") { kindPay.years = Number.isFinite(payAt) ? Math.round(ageAt(payAt, payPid) * 100) / 100 : 60; delete kindPay.date; }
     else { kindPay.date = i2ym(Number.isFinite(payAt) ? payAt : startM()); delete kindPay.years; delete kindPay.kind; }
   }
@@ -1765,7 +1765,7 @@ const ACTIONS = {
   goto: d => goto(d.sec),
   "ms-goto": d => { flashId = d.id; goto("milestones"); flashId = null; },
   set: d => { setP(d.path, d.value); markDirty(); renderSection(); if (d.path === "returns.source") refreshSeriesInfo(); },
-  // FEA-78: wieder den Vorschlagswerten des Aktienindex folgen
+  // #100: wieder den Vorschlagswerten des Aktienindex folgen
   "param-suggest": () => { state.returns.parametric.auto = true; followSuggestion(); markDirty(); renderSection(); },
   "series-mode": d => {
     const s = getP(d.path); if (s.mode === d.mode) return;
@@ -1816,7 +1816,7 @@ const ACTIONS = {
   },
   "p3a-add": d => { state.pillar3a.push(newAccount(d.person)); markDirty(); renderSection(); },
   "p3a-payout-add": d => {
-    // FEA-41: ein Jahr nach der letzten Zeile (ohne Zeile: frühester erlaubter Monat), höchstens im AHV-Bezug; Betrag
+    // #55: ein Jahr nach der letzten Zeile (ohne Zeile: frühester erlaubter Monat), höchstens im AHV-Bezug; Betrag
     // = Guthaben laut Vorschau zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1'000.
     const a = state.pillar3a[+d.k], pi = state.household.persons.findIndex(q => q.id === a.person), ahv = msMonth(pi === 1 ? "ahv2" : "ahv");
     const s0 = startM(), months = a.payouts.map(x => payoutMonth(x, a.person)).filter(Number.isFinite);
@@ -1904,25 +1904,25 @@ const ACTIONS = {
   run: () => runSimulation(),
   help: () => command("help"),
   about: () => command("about"),
-  // FEA-45/AK4: aus dem Dialog «Über VivaPlan» zum vollständigen Haftungsausschluss in der Hilfe
+  // #61/AK4: aus dem Dialog «Über VivaPlan» zum vollständigen Haftungsausschluss in der Hilfe
   "about-disclaimer": () => { $("#ask").close(); Help.show("disclaimer"); },
   back: () => showResults(false),
   detail: d => showDetail(+d.p),
   rtab: d => { resultTab = d.tab; renderResults(lastRun); },
   real: d => { realView = d.v === "1"; redrawResults(); },
   "surv-scale": d => { survFull = d.v === "0"; redrawResults(); },
-  // FEA-90: Registerkarten und Auswahlen im Vergleich
+  // #115: Registerkarten und Auswahlen im Vergleich
   "cmp-tab": d => { compareTab = d.tab; compareRuns(); },
   "cmp-liquid": d => { cmpLiquid = d.v; compareRuns(); },
   "cmp-flow": d => { cmpFlow = d.v; compareRuns(); },
   "cmp-p": d => { cmpP = +d.p; compareRuns(); },
-  // FEA-91: erster Klick aufsteigend, jeder weitere kehrt die Richtung um
+  // #118: erster Klick aufsteigend, jeder weitere kehrt die Richtung um
   "cmp-sort": d => { cmpSort = cmpSort?.col === d.col ? { col: d.col, dir: -cmpSort.dir } : { col: d.col, dir: 1 }; compareRuns(); },
   "bk-toggle": d => { bucketOpen.has(d.y) ? bucketOpen.delete(d.y) : bucketOpen.add(d.y); renderResults(lastRun); },
   "info-toggle": (d, el) => { const open = !el.classList.contains("open"); document.querySelectorAll(".infopop.open").forEach(x => x.classList.remove("open")); if (open) el.classList.add("open"); },
   "tax-cols": () => { showTaxCols = !showTaxCols; Pref.set("showTaxCols", showTaxCols); renderResults(lastRun); },
   comp: d => { compPercent = d.v === "1"; renderResults(lastRun); },
-  // FEA-95: gilt im Einzelergebnis und im Vergleich
+  // #122: gilt im Einzelergebnis und im Vergleich
   mkt: d => { mktPct = d.v === "pct"; redrawResults(); },
   "mkt-log": d => { mktLog = d.v === "1"; redrawResults(); },
   // Zoom der Ergebnisgrafiken: gilt für alle Registerkarten und bleibt beim Wechsel erhalten
@@ -1945,12 +1945,12 @@ async function showOpened(r) {
   await showNotes(notes);
   await reserveNotice(state);
 }
-// FEA-34: Doppelklick auf eine Planung im Finder, während die App läuft.
+// #44: Doppelklick auf eine Planung im Finder, während die App läuft.
 if (window.__TAURI__?.event) window.__TAURI__.event.listen("open-file", async ev => {
   if (!await confirmDiscard()) return;
   try { await showOpened(await Engine.call("open_path", { path: ev.payload })); } catch (e) { toast(errText(e)); }
 });
-/** FEA-34: Fenstertitel «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan». */
+/** #44: Fenstertitel «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan». */
 function showTitle(name) {
   document.title = name ? `VivaPlan - ${name}` : "VivaPlan";
   if (Engine.inApp) Engine.call("set_window_title", { path: currentPath }).catch(() => {});
@@ -1981,7 +1981,7 @@ function ask(title, html, value = null, okLabel = "OK", discardLabel = null) {
     d.querySelector('button[value="ok"]').textContent = okLabel;
     $("#askTitle").textContent = title; $("#askText").innerHTML = html;
     inp.hidden = value === null; inp.value = value ?? ""; d.returnValue = "";
-    // FEA-87: Das Ereignis «close» kommt verzögert. Ist der Dialog schon wieder offen (nächste Frage), gehört es zur vorherigen.
+    // #111: Das Ereignis «close» kommt verzögert. Ist der Dialog schon wieder offen (nächste Frage), gehört es zur vorherigen.
     d.onclose = () => { if (!d.open) res(d.returnValue === "discard" ? "discard" : d.returnValue === "ok" ? (value === null ? true : inp.value.trim()) : null); };
     d.showModal(); if (value !== null) inp.select();
   });
@@ -2008,7 +2008,7 @@ $("#fileInput").addEventListener("change", async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const obj = JSON.parse(await f.text());
-    // FEA-34: alte Kennung pensionsplaner/1 bleibt lesbar (legacy: RetirementPlanner).
+    // #44: alte Kennung pensionsplaner/1 bleibt lesbar (legacy: RetirementPlanner).
     if (obj.format !== "vivaplan/1" && obj.format !== "pensionsplaner/1") throw 0;
     const notes = await adopt(obj); setFile(null); History.reset(); $("#fileName").textContent = f.name; showTitle(f.name); goto("general"); refreshSeriesInfo();
     toast(`«${f.name}» geöffnet.`);
@@ -2020,7 +2020,7 @@ $("#fileInput").addEventListener("change", async e => {
 window.addEventListener("resize", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
 
-// ---------- Einstellungen (FEA-24) ----------
+// ---------- Einstellungen (#25) ----------
 /** Standardwerte der Einstellungen; der Rechenkern kennt dieselben (crates/engine/src/settings.rs). */
 const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258 };
 const LIMIT_FIELDS = [["ahvMin", "AHV-Bezug: untere Grenze", "Jahre"], ["ahvMax", "AHV-Bezug: obere Grenze", "Jahre"],
@@ -2043,7 +2043,7 @@ function limitProblems(l) {
   if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push("Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.");
   return out;
 }
-/** FEA-86: Rückfrage zum Speichern vor der Simulation (Standard: ein). */
+/** #110: Rückfrage zum Speichern vor der Simulation (Standard: ein). */
 const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
 function settingsFields(l) {
   return `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> Vor der Simulation fragen, ob die Planung gespeichert werden soll</label>`
@@ -2112,7 +2112,7 @@ async function confirmLongRun() {
   return !!await ask("Lange Berechnung", `Die Berechnung dauert voraussichtlich ca. <b>${esc(fmtShort(sec))}</b> (${fmtInt(runs)} ${runs === 1 ? "Simulationslauf" : "Simulationsläufe"}). Sie lässt sich während der Berechnung abbrechen.`, null, "Trotzdem starten");
 }
 /**
- * FEA-86: Hat die Planung ungespeicherte Änderungen, fragt die App vor der Simulation, ob gespeichert werden soll.
+ * #110: Hat die Planung ungespeicherte Änderungen, fragt die App vor der Simulation, ob gespeichert werden soll.
  * Nur in der Desktop-App (im Browser ist «Speichern» ein Download); `askSaveDev` in den Einstellungen schaltet es für Tests ein.
  * `false`, wenn der Benutzer abbricht oder das Speichern nicht zustande kommt.
  */
@@ -2123,7 +2123,7 @@ async function confirmSaveBeforeRun() {
   if (r === true) { await save(false); if (dirty) return false; }
   return true;
 }
-// FEA-98: Kopfzeile der Ergebnisse. Bei einem Ergebnis zuerst sein Name (gespeichert bzw. eben abgelegt), dann die Art
+// #125: Kopfzeile der Ergebnisse. Bei einem Ergebnis zuerst sein Name (gespeichert bzw. eben abgelegt), dann die Art
 // des Laufs; der Name wird gekürzt und steht voll im Tooltip. Ohne Namen nur die Art.
 let lastRunName = null, resultHead = "";
 function plainTitle(t) { const el = $("#resultsTitle"); el.textContent = t; el.removeAttribute("title"); }
@@ -2219,7 +2219,7 @@ function bucketDerivation(rs) {
       <td>${n(r.before[0])} / ${n(r.before[1])} / ${n(r.before[2])}</td><td>${n(r.after[0])} / ${n(r.after[1])} / ${n(r.after[2])}</td></tr>`;
   }).join("");
   return `<div class="tscroll"><table class="tbl num"><tr><th class="l">Zeitpunkt</th><th class="l">Ausgelöst durch</th>
-      <th title="Geplante Lebenshaltung; bei 3-Topf mit Guardrails die Lebenshaltung der Guardrails (vermerkt)">Lebenshaltung</th><th>Wohnen</th><th title="Einzahlungen in die Säule 3a (FEA-37)">3a</th><th title="Steuer auf dem (hochgerechneten) Jahreseinkommen">Einkommens&shy;steuer</th><th title="abgezogene Einnahmen: AHV-Rente pro Jahr">AHV</th><th title="abgezogene Einnahmen: PK-Rente pro Jahr">PK-Rente</th><th title="abgezogene Einnahmen: Erwerbseinkommen pro Jahr">Erwerb</th><th title="Lebenshaltung + Wohnen + 3a + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen">Netto-Bedarf</th>
+      <th title="Geplante Lebenshaltung; bei 3-Topf mit Guardrails die Lebenshaltung der Guardrails (vermerkt)">Lebenshaltung</th><th>Wohnen</th><th title="Einzahlungen in die Säule 3a">3a</th><th title="Steuer auf dem (hochgerechneten) Jahreseinkommen">Einkommens&shy;steuer</th><th title="abgezogene Einnahmen: AHV-Rente pro Jahr">AHV</th><th title="abgezogene Einnahmen: PK-Rente pro Jahr">PK-Rente</th><th title="abgezogene Einnahmen: Erwerbseinkommen pro Jahr">Erwerb</th><th title="Lebenshaltung + Wohnen + 3a + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen">Netto-Bedarf</th>
       <th>Ziel Topf 1</th><th>Ziel Topf 2</th><th class="l" title="Aktienrendite der letzten 12 Monate (vor dem Start aus dem Vorlauf des Renditepfads) gegenüber der Schwelle: Nur bei erfüllter Bedingung wird in der Januar-Auffüllung und in C1 aus Topf 3 verkauft. A und C2 ignorieren sie.">Renditekriterium</th><th class="l" title="Umbuchungen zwischen den Töpfen">Umbuchungen</th><th title="Topf 1 / Topf 2 / Topf 3 vor der Auffüllung">Vorher T1 / T2 / T3</th><th title="Topf 1 / Topf 2 / Topf 3 nach der Auffüllung">Nachher T1 / T2 / T3</th></tr>${rows}</table></div>`;
 }
 const bucketHint = () => `<p class="hint">Beträge in ${cur()}, nominal, pro Jahr; die Topfstände gelten vor den Ausgaben des Monats. <b>Netto-Bedarf</b> = Lebenshaltung + Wohnen (ohne Amortisation) + Einzahlung in die Säule 3a + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen, aus den geplanten Werten des laufenden Jahres (bei 3-Topf mit Guardrails: Lebenshaltung gemäss Guardrails, nach Unter- und Obergrenze); einmalige Ausgaben, Anschaffungen, Käufe und Sondersteuern zählen nicht. Ziel Topf 1 und 2 = Jahre × Netto-Bedarf. <b>Januar-Auffüllung:</b> Topf 1 zuerst aus Topf 2, der Rest aus Topf 3, danach Topf 2 aus Topf 3; ist das Renditekriterium nicht erfüllt, wird nichts aus Topf 3 verkauft und Topf 2 nicht nachgefüllt. Ein Überschuss in Topf 1 oder 2 geht in Topf 3. <b>A:</b> beim Start der Entnahmephase (erste Pensionierung), bei einem PK-Kapitalbezug und beim Neustart nach «alle Töpfe leer»: Das Vermögen (Kapitalbezug) geht zuerst in Topf 3, dann wie im Januar ohne Renditekriterium; die Ziele sind um die vergangenen Monate des Jahres gekürzt, der Netto-Bedarf aus den Monaten ab dem Auslöser auf 12 Monate hochgerechnet. <b>B:</b> Zuflüsse gehen direkt an ihr Ziel und erscheinen als Buchung «extern → Topf 3» (einmalige Zuflüsse, 3a, Verkaufserlöse ohne Folgekauf, Notverkäufe), «extern → Reservierung» (Verkauf mit Kauf im Folgemonat) oder «Reservierung → Topf 3» (Überschuss nach dem Kauf); Topf 1 und 2 werden nicht aufgefüllt. «Vorher» zeigt den Stand vor dem Zufluss. <b>C (Vorausschau):</b> Deckt Topf 1 die Ausgaben des Monats nicht, gilt bei erfülltem Renditekriterium <b>C1</b>: Ablauf wie die Januar-Auffüllung, die Ziele um die seit Januar vergangenen Monate gekürzt und das Ziel von Topf 1 um die einmaligen Ausgaben des Monats erhöht, ohne Überschussbuchung in Topf 3. Bei nicht erfülltem Kriterium gilt <b>C2</b>: Topf 1 wird aus Topf 2, dann Topf 3 so aufgefüllt, dass er die Ausgaben deckt und danach noch (Min(Reserve, Monate bis Januar) − 1) Monatsbedarfe enthält; Topf 2 wird nicht aufgefüllt. Die Überschussbuchung in Topf 3 gibt es nur in der Januar-Auffüllung. Reichen alle Töpfe nicht, wird eine Immobilie notverkauft; ohne Immobilie darf Topf 1 negativ werden, bis das Vermögen wieder positiv ist.</p>`;
@@ -2276,7 +2276,7 @@ const pctTxt = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits
  */
 /**
  * Werte der Jahreswerte je Kalenderjahr (nominal oder in heutiger Kaufkraft je nach Umschalter). Grundlage der Tabelle
- * «Jahreswerte» und der Jahreswerte im Vergleich (FEA-90), damit beide dieselben Zahlen zeigen.
+ * «Jahreswerte» und der Jahreswerte im Vergleich (#115), damit beide dieselben Zahlen zeigen.
  */
 function yearValues(recs, start) {
   const by = new Map();
@@ -2286,7 +2286,7 @@ function yearValues(recs, start) {
   return [...by.entries()].map(([y, rs]) => {
     const last = rs[rs.length - 1];
     const planned = avg(rs, r => r.plannedSpending), housing = avg(rs, r => r.housing), income = avg(rs, r => r.income), draw = avg(rs, r => r.withdrawal);
-    // FEA-37: Einzahlungen in die Säule 3a zählen zu den Ausgaben.
+    // #52: Einzahlungen in die Säule 3a zählen zu den Ausgaben.
     const p3aIn = avg(rs, r => r.pillar3aIn ?? 0);
     const spending = planned + housing + p3aIn, receipts = income + draw;
     const prev = prevLast ? prevLast.priceIndex : 1;
@@ -2400,7 +2400,7 @@ function drawRunCharts(res, p) {
   const stockTxt = (k, i) => i >= 12 ? pctTxt(last12(k, i)) : "–";
   const all = recs.map((_, i) => i);
   Charts.time($(`#${p}-mkt`), $(`#${p}-mkt-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, marks, log: mktLog && !mktPct,
-    // FEA-89: Bezugslinie bei Start = 100 bzw. bei 0 % Änderung
+    // #114: Bezugslinie bei Start = 100 bzw. bei 0 % Änderung
     ref: mktPct ? 0 : 100,
     yFmt: mktPct ? v => `${v.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %` : v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }),
     lines: mktPct
@@ -2420,7 +2420,7 @@ function histQuantile(h, q) {
   for (let i = 0; i < h.counts.length; i++) { acc += h.counts[i]; if (acc >= q * total) return (h.edges[i] + h.edges[i + 1]) / 2; }
   return h.edges[h.edges.length - 1];
 }
-// FEA-94: Achse der Grafik «Wahrscheinlichkeit, dass das Geld reicht»: Standard 80–100 %, umschaltbar auf 0–100 %;
+// #121: Achse der Grafik «Wahrscheinlichkeit, dass das Geld reicht»: Standard 80–100 %, umschaltbar auf 0–100 %;
 // die Wahl gilt im Einzelergebnis und im Vergleich, bis sie geändert wird.
 const SURV_LO = 80;
 let survFull = false;
@@ -2428,7 +2428,7 @@ const survRange = () => [survFull ? 0 : SURV_LO, 100];
 const survSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${survFull ? "" : "on"}" data-action="surv-scale" data-v="80">80–100 %</button><button class="${survFull ? "on" : ""}" data-action="surv-scale" data-v="0">0–100 %</button></div>`;
 const survClipNote = min => !survFull && min < SURV_LO
   ? `<p class="hint survclip">Die Kurve fällt unter ${SURV_LO} % (tiefster Wert ${min.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %) und ist unten abgeschnitten. «0–100 %» zeigt sie ganz.</p>` : "";
-/** FEA-95: Schalter der Grafik «Aktien, Obligationen und Inflation», im Einzelergebnis und im Vergleich dieselben. */
+/** #122: Schalter der Grafik «Aktien, Obligationen und Inflation», im Einzelergebnis und im Vergleich dieselben. */
 const mktSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${mktPct ? "" : "on"}" data-action="mkt" data-v="idx">Wertentwicklung (Start = 100)</button><button class="${mktPct ? "on" : ""}" data-action="mkt" data-v="pct">Änderung in %</button></div>`
   + (mktPct ? "" : ` <div class="seg" style="margin-bottom:8px"><button class="${mktLog ? "" : "on"}" data-action="mkt-log" data-v="0">Linear</button><button class="${mktLog ? "on" : ""}" data-action="mkt-log" data-v="1">Logarithmisch</button></div>`);
 function batchChartsHtml(b) {
@@ -2640,7 +2640,7 @@ function drawScenarioCharts(sc) {
 
 // ---------- Aufbau ----------
 /**
- * FEA-56: Einordnung der Erfolgsquote mit den Grenzen der Ampel. Massgebend ist der angezeigte, auf 0,1 % gerundete Wert:
+ * #72: Einordnung der Erfolgsquote mit den Grenzen der Ampel. Massgebend ist der angezeigte, auf 0,1 % gerundete Wert:
  * 95,0 % ist «hoch», 80,0 % «mittel».
  */
 function rateClass(rate) {
@@ -2648,7 +2648,7 @@ function rateClass(rate) {
   return shown >= 95 ? "hoch" : shown >= 80 ? "mittel" : "tief";
 }
 const helpLink = (topic, text, title = "") => `<a data-action="help-topic" data-topic="${topic}"${title ? ` title="${esc(title)}"` : ""}>${text}</a>`;
-/** FEA-56: Ergebnis in Worten über den Kennzahlen der Übersicht, gebildet aus denselben Werten wie die Kennzahlen. */
+/** #72: Ergebnis in Worten über den Kennzahlen der Übersicht, gebildet aus denselben Werten wie die Kennzahlen. */
 function verdictHtml(r, sg) {
   const lines = [];
   let weak;
@@ -2742,7 +2742,7 @@ function renderResults(r) {
 /**
  * Parameter einer Planung als Abschnitte [Titel, [[Bezeichnung, Wert], …]], gegliedert wie die Editorabschnitte.
  * Personennamen fehlen absichtlich (nur der Geburtsmonat), technische Werte nur, soweit sie das Ergebnis reproduzierbar machen.
- * `full` (FEA-96, Vergleich der Planungen): zusätzlich die übrigen Eingaben des Editors (Tragbarkeit, Teuerung der
+ * `full` (#123, Vergleich der Planungen): zusätzlich die übrigen Eingaben des Editors (Tragbarkeit, Teuerung der
  * Immobilien, Ende der Hypothek, Rest der Säule 3a, Grundstückgewinnsteuer nach Besitzdauer).
  */
 function paramSections(plan, full = false) {
@@ -2849,7 +2849,7 @@ function showDetail(p) { detailP = p; bucketOpen.clear(); if (lastRun) renderRes
 
 // ---------- Gespeicherte Simulationen ----------
 let savedView = null, parkedState = null;
-/** FEA-93: Höchstzahl der Ergebnisse im Vergleich; jedes hat eine eigene Farbe (--r1 … --r10 in index.html). */
+/** #120: Höchstzahl der Ergebnisse im Vergleich; jedes hat eine eigene Farbe (--r1 … --r10 in index.html). */
 const CMP_MAX = 10;
 const runsSel = new Set(), RUN_COLORS = Array.from({ length: CMP_MAX }, (_, i) => `--r${i + 1}`);
 const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" });
@@ -2888,7 +2888,7 @@ function seriesLabel() {
 /** Anzeige der Spalte «Zeitreihe» (Kopfdaten ohne Angabe: «–»). */
 const seriesCell = m => m.seriesName === undefined ? "–" : m.seriesName ? esc(m.seriesName)
   : m.source === "fixed" ? `<span class="muted">feste Renditen</span>` : m.source === "parametric" ? `<span class="muted">parametrisch</span>` : "–";
-/** Anteil der Läufe mit Notverkauf, ab dem das Warnsymbol erscheint (später einstellbar, FEA-24). */
+/** Anteil der Läufe mit Notverkauf, ab dem das Warnsymbol erscheint (später einstellbar, #25). */
 const EMERGENCY_WARN_SHARE = 0.05;
 /** Warnsymbol (Haus mit Warnzeichen) für den ungeplanten Verkauf einer Immobilie; `tip` ist der Tooltip. */
 const houseWarn = tip => `<span class="hwarn" role="img" aria-label="${esc(tip)}" title="${esc(tip)}">🏠⚠️</span>`;
@@ -2922,7 +2922,7 @@ async function rememberRun(r) {
     const now = new Date().toISOString();
     const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
     await Runs.add(meta, { plan, result: r });
-    // FEA-98: das eben gezeigte Ergebnis bekommt seinen Namen in die Kopfzeile
+    // #125: das eben gezeigte Ergebnis bekommt seinen Namen in die Kopfzeile
     if (lastRun === r && !savedView) { lastRunName = meta.name; if (resultHead) setResultsTitle(); }
     document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
   } catch (e) { noteError("Ergebnis nicht gespeichert: " + errText(e)); }
@@ -2972,12 +2972,12 @@ const flat = (o, p = "", out = {}) => {
   else out[p] = o;
   return out;
 };
-// ---------- Vergleich gespeicherter Ergebnisse (FEA-90) ----------
+// ---------- Vergleich gespeicherter Ergebnisse (#115) ----------
 // Registerkarten wie beim Einzelergebnis: Übersicht (Kennzahlen, Bandbreite, Perzentile, Wahrscheinlichkeit, Erschöpfung),
 // Verläufe (Grafiken des Einzellaufs bzw. Median-Laufs), Jahreswerte (eine Spalte je Ergebnis) und Planung (Unterschiede).
 // Die Ergebnisse werden nach Monaten bzw. Jahren seit ihrem Start ausgerichtet.
 let compareTab = "overview", cmpYearKey = "total", cmpLiquid = "liquid", cmpFlow = "in", cmpP = 50;
-/** FEA-91: Sortierung der Kennzahlen im Vergleich: { col, dir } (dir 1 auf-, −1 absteigend); null = Reihenfolge der Liste. */
+/** #118: Sortierung der Kennzahlen im Vergleich: { col, dir } (dir 1 auf-, −1 absteigend); null = Reihenfolge der Liste. */
 let cmpSort = null;
 const CMP_TABS = [["overview", "Übersicht"], ["charts", "Verläufe"], ["table", "Jahreswerte"], ["plan", "Planung"]];
 const CMP_YEAR = [["total", "Gesamtvermögen (Total)"], ["liquid", "Liquides Vermögen"], ["property", "Immobilien"], ["pension", "Vorsorge"],
@@ -3059,11 +3059,11 @@ function cmpOverview(body, items) {
     if (!it.batch) return null;
     const pc = it.batch.summary.percentiles.find(p => p.percent === q);
     if (!realView) return pc?.endTotal ?? null;
-    // ISS-23: real je Perzentil aus der Zusammenfassung; ältere gespeicherte Ergebnisse haben es nur in den Detailläufen
+    // #126: real je Perzentil aus der Zusammenfassung; ältere gespeicherte Ergebnisse haben es nur in den Detailläufen
     return pc?.endTotalReal ?? it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
   };
   const notes = [];
-  // FEA-91: Kennzahlen nach Spalte sortierbar; Farben und Reihenfolge der übrigen Karten bleiben
+  // #118: Kennzahlen nach Spalte sortierbar; Farben und Reihenfolge der übrigen Karten bleiben
   const depAt = it => { const d = it.single ? it.single.summary.depleted : it.batch ? it.batch.summary.earliestDepletion?.[0] : undefined;
     return !it.single && !it.batch ? null : d ? ym2i(d) : Infinity; };
   const cols = [["name", "Ergebnis", "l", it => it.name], ["series", "Zeitreihe", "l", it => it.m.seriesName || (it.m.source === "fixed" ? "feste Renditen" : it.m.source === "parametric" ? "parametrisch" : null)],
@@ -3158,7 +3158,7 @@ function cmpCharts(body, items) {
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, flows[j][k], fmtMoney)).join("") });
   Charts.bars($("#cmp-draw"), $("#cmp-draw-tip"), { cats, yFmt: v => `${(v * 100).toFixed(1)} %`, minBar: 3, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: rates[j].map(v => Number.isFinite(v) ? v : 0) })),
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, rates[j][k], pctTxt)).join("") });
-  // FEA-95: wie im Einzelergebnis Wertentwicklung (linear oder logarithmisch) oder Änderung der letzten 12 Monate in %
+  // #122: wie im Einzelergebnis Wertentwicklung (linear oder logarithmisch) oder Änderung der letzten 12 Monate in %
   const real = (r, k) => r[k] / (realView ? r.priceIndex : 1);
   const chg = (it, k) => cmpPad(n, it.run.records.map((r, i) => i >= 12 ? 100 * (real(r, k) / real(it.run.records[i - 12], k) - 1) : NaN));
   const infl = it => cmpPad(n, it.run.records.map((r, i) => i >= 12 ? 100 * (r.priceIndex / it.run.records[i - 12].priceIndex - 1) : NaN));
@@ -3185,7 +3185,7 @@ function cmpTable(body, items) {
 }
 document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
 /**
- * FEA-96: Felder der Planung, die im Vergleich nicht erscheinen (technisch oder ohne Eingabefeld), mit Grund. Alle übrigen
+ * #123: Felder der Planung, die im Vergleich nicht erscheinen (technisch oder ohne Eingabefeld), mit Grund. Alle übrigen
  * Eingaben zeigt `paramSections(plan, true)` mit den Bezeichnungen des Editors; ein Oberflächentest prüft die Abdeckung.
  */
 const PLAN_HIDDEN = [
@@ -3251,7 +3251,7 @@ document.addEventListener("change", e => {
   Runs.update(el.dataset.id, { [el.dataset.f]: el.value.trim() });
 });
 
-// ---------- Willkommen (FEA-54) und Erste Schritte (FEA-55) ----------
+// ---------- Willkommen (#70) und Erste Schritte (#71) ----------
 /** Lädt die Beispielplanung als neue, ungespeicherte Planung (nach Rückfrage bei ungespeicherten Änderungen). */
 async function loadExample() {
   if (!await confirmDiscard()) return false;
@@ -3339,7 +3339,7 @@ Object.assign(ACTIONS, {
   if (SECTIONS.some(s => s.id === initial[0])) current = initial[0];
   let startup = null;
   try {
-    // Desktop-App: zuletzt geöffnete Planung, sonst die mitgelieferte Beispielplanung (FEA-02)
+    // Desktop-App: zuletzt geöffnete Planung, sonst die mitgelieferte Beispielplanung (#4)
     if (Engine.inApp) startup = await Engine.call("startup_plan");
     var startNotes = await adopt(startup ? startup.plan : await Engine.call("example_plan"));
   } catch (e) { document.body.innerHTML = `<p style="padding:24px">Der Rechenkern ist nicht erreichbar: ${esc(errText(e))}</p>`; return; }
@@ -3349,9 +3349,9 @@ Object.assign(ACTIONS, {
   if (initial.includes("vpw")) state.withdrawal.strategy = "vpw";
   if (initial.includes("endowment")) state.withdrawal.strategy = "endowment";
   if (initial.includes("guardrails")) state.withdrawal.strategy = "guardrails";
-  // FEA-87: Testzugang ohne Messung der Rechenzeit; sie liefe sonst in jedem Test im Hintergrund mit
+  // #111: Testzugang ohne Messung der Rechenzeit; sie liefe sonst in jedem Test im Hintergrund mit
   if (initial.includes("nobench")) bench.off = true;
-  // FEA-87: Ergebnisse im Testzugang mit 500 Pfaden und festem Zufallsstartwert: schnell und bei jedem Lauf gleich. Die Tests
+  // #111: Ergebnisse im Testzugang mit 500 Pfaden und festem Zufallsstartwert: schnell und bei jedem Lauf gleich. Die Tests
   // prüfen Darstellung und Ablauf; 50 000 Pfade machten sie von der Rechnerlast abhängig.
   if (initial[0] === "results") for (const k of ["bootstrap", "parametric"]) Object.assign(state.returns[k], { paths: 500, seed: 42 });
   if (!IS_MAC) document.querySelectorAll("[title]").forEach(el => { el.title = el.title.replace(/⇧⌘/g, "Ctrl+Shift+").replace(/⌘↩/g, "Ctrl+Enter").replace(/⌘/g, "Ctrl+"); });
@@ -3361,13 +3361,13 @@ Object.assign(ACTIONS, {
   if (initial.includes("gainzh")) { ACTIONS["gain-zh"](); History.reset(); }
   if (initial.includes("optset")) { state.optimization = optToPlan({ ...OPT_DEFAULT, maxRuin: 2, weightMedian: 70, maxVol: 12, strategies: ["guardrails", "vpw"] }); History.reset(); }
   renderSection(); refreshSeriesInfo(); refreshLibrary(); Steps.render();
-  // FEA-45: Haftungsausschluss vor allem anderen bestätigen (Desktop-App; im Browser nur mit dem Testzugang #disclaimer).
+  // #61: Haftungsausschluss vor allem anderen bestätigen (Desktop-App; im Browser nur mit dem Testzugang #disclaimer).
   if ((Engine.inApp || initial.includes("disclaimer")) && disclaimerPending()) {
     document.documentElement.dataset.disclaimer = "open";
     await disclaimerGate();
     document.documentElement.dataset.disclaimer = "ok";
   }
-  // FEA-54: Willkommensdialog beim allerersten Start, nach dem Haftungsausschluss (Testzugang im Browser: #welcome). Gemerkt wird das sofort, damit er
+  // #70: Willkommensdialog beim allerersten Start, nach dem Haftungsausschluss (Testzugang im Browser: #welcome). Gemerkt wird das sofort, damit er
   // auch dann nicht wiederkommt, wenn die App ohne Wahl beendet wird.
   if (startup?.first || initial[0] === "welcome") { Pref.set("welcomeShown", true); showWelcome(); }
   if (startup?.notice) ask("Planung beim Start", `<p>${esc(startup.notice)}</p>`);
@@ -3396,7 +3396,7 @@ Object.assign(ACTIONS, {
   if (initial[0] === "about") showAbout();
   if (initial[0] === "runs") openRuns();
   // Testzugang: zwei Simulationen ablegen, dann vergleichen (…/view: erste ansehen, …/del: eine löschen). 500 statt 50 000 Pfade mit
-  // festem Startwert wie #results (FEA-87): Die Tests prüfen Liste, Vergleich und Darstellung, keine Kennzahlen (ISS-16).
+  // festem Startwert wie #results (#111): Die Tests prüfen Liste, Vergleich und Darstellung, keine Kennzahlen (#79).
   if (initial[0] === "runsflow") (async () => {
     state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 });
     await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));

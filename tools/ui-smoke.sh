@@ -88,8 +88,8 @@ if grep -q 'data-path="taxes.propertyGain.brackets.6.1"' "$OUT/page.html" && gre
 "$CHROME" --headless=new --disable-gpu --virtual-time-budget=30000 --dump-dom "http://127.0.0.1:$PORT/#realestate" 2>/dev/null >"$OUT/page.html" || true
 if grep -q 'data-path="realestate.properties.0.bought"' "$OUT/page.html" && ! grep -q 'data-errors=' "$OUT/page.html"; then echo "ok      #realestate (Kaufdatum)"; else echo "FEHLER  #realestate (Kaufdatum fehlt)"; fail=1; fi
 # Jahreswerte: Perzentil-Auswahl, Ausgaben- und Entnahmespalten. Die Steuerspalten sind standardmässig eingeklappt
-# (FEA-06 bis FEA-11) und der Rauchtest kann nicht klicken: Er prüft deshalb den eingeklappten Standard (Knopf
-# «Steuern anzeigen», keine Spalte th.tx). Die eingeblendeten Steuerspalten prüft e2e/ui.spec.js (ISS-15).
+# (#7 bis #12) und der Rauchtest kann nicht klicken: Er prüft deshalb den eingeklappten Standard (Knopf
+# «Steuern anzeigen», keine Spalte th.tx). Die eingeblendeten Steuerspalten prüft e2e/ui.spec.js (#75).
 "$CHROME" --headless=new --disable-gpu --virtual-time-budget=60000 --dump-dom "http://127.0.0.1:$PORT/#results/bootstrap/table" 2>/dev/null >"$OUT/page.html" || true
 if grep -q 'data-action="detail" data-p="5"' "$OUT/page.html" && grep -q 'data-action="tax-cols" aria-pressed="false"[^>]*>Steuern anzeigen' "$OUT/page.html" && ! grep -q '<th class="tx"' "$OUT/page.html" \
    && grep -q 'Ausgaben total' "$OUT/page.html" && grep -q '>Abweichung vom Plan</th>' "$OUT/page.html" && grep -q 'Einkommen total' "$OUT/page.html" && ! grep -q 'Miete / Hypothek' "$OUT/page.html" && ! grep -q 'data-errors=' "$OUT/page.html"; then echo "ok      #results/bootstrap/table (Jahreswerte)"; else echo "FEHLER  #results/bootstrap/table (Jahreswerte unvollständig)"; fail=1; fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Abdeckung des geänderten Codes (FEA-28).
+"""Abdeckung des geänderten Codes (#39).
 
 Liest eine lcov-Datei und vergleicht sie mit den geänderten Rust-Zeilen gegenüber einem Basis-Commit.
 Ausgabe als Markdown (für die GitHub-Zusammenfassung und das Terminal). Ein Hinweis, keine Sperre: Der Aufruf

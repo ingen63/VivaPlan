@@ -57,7 +57,7 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let seen = w.join().unwrap();
     assert_eq!(r.error.as_deref(), Some("Abgebrochen"));
     assert!(seen.total == 300_000 && seen.done < seen.total);
-    // FEA-65: Dass abgebrochen wurde, zeigen Fehlertext und Zähler. Die Zeitgrenze fängt nur ein Hängen ab; der Abbruch
+    // #83: Dass abgebrochen wurde, zeigen Fehlertext und Zähler. Die Zeitgrenze fängt nur ein Hängen ab; der Abbruch
     // selbst dauert Millisekunden, 60 s halten auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
     assert!(
         t0.elapsed() < Duration::from_secs(60),
@@ -66,7 +66,7 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     );
     assert!(!progress::snapshot().active);
 
-    // ISS-20: Der Abbruch gilt nur für die laufende Berechnung. Die Messung der Rechenzeit (`bench`) läuft ohne eigene
+    // #104: Der Abbruch gilt nur für die laufende Berechnung. Die Messung der Rechenzeit (`bench`) läuft ohne eigene
     // Berechnung; nach einem Abbruch muss sie trotzdem alle Läufe rechnen (vorher: 0,0006 µs je Lauf statt einiger µs).
     let b = api::bench(&plan(300), Path::new("/"), Some(&lib)).unwrap();
     assert!(b.us_per_run > 0.1, "{b:?}");
@@ -82,7 +82,7 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let e = api::optimize(&plan(200), &req, Path::new("/"), Some(&lib)).unwrap_err();
     w.join().unwrap();
     assert_eq!(e.to_string(), "Abgebrochen");
-    // FEA-65: wie oben, nur gegen ein Hängen.
+    // #83: wie oben, nur gegen ein Hängen.
     assert!(
         t0.elapsed() < Duration::from_secs(60),
         "Abbruch kam zu spät: {:?}",
@@ -91,10 +91,10 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     assert!(!progress::snapshot().active);
 }
 
-/// FEA-97/AK4: `cancel()` bricht jede laufende Berechnung ab, eine beendete nicht. Kurz, damit der Abbruch auch im
+/// #124/AK4: `cancel()` bricht jede laufende Berechnung ab, eine beendete nicht. Kurz, damit der Abbruch auch im
 /// Mutationslauf geprüft wird (der Test oben ist dort zu lang). Wie dieser braucht er einen eigenen Prozess (nextest).
 #[test]
-fn fea97_ak4_cancel_stops_every_running_job() {
+fn issue_124_ak4_cancel_stops_every_running_job() {
     let running = progress::start_as(None, 10);
     let finished = progress::start_as(None, 10);
     let finished_id = finished.id();

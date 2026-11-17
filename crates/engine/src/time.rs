@@ -14,7 +14,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub struct YearMonth(pub i32);
 
 impl YearMonth {
-    /// Überlaufsicher (ISS-14): extreme Jahre ergeben einen sehr fernen Monat statt eines Absturzes.
+    /// Überlaufsicher (#60): extreme Jahre ergeben einen sehr fernen Monat statt eines Absturzes.
     pub fn new(year: i32, month: u32) -> Self {
         YearMonth(year.saturating_mul(12).saturating_add(month as i32 - 1))
     }

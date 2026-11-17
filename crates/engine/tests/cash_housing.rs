@@ -1,4 +1,4 @@
-//! FEA-39 (Lebenshaltung inklusive Wohnkosten) und FEA-40 (Cash getrennt vom Portfolio, Strategien ab Pensionierung).
+//! #53 (Lebenshaltung inklusive Wohnkosten) und #54 (Cash getrennt vom Portfolio, Strategien ab Pensionierung).
 //!
 //! Erfundene Planung: Geburt 1980-01, Start 2040-01, Bezug Pensionskasse und AHV-Bezug mit 65 (2045-01), keine
 //! Renditen, keine Teuerung (ausser wo vermerkt), keine Steuern.
@@ -67,10 +67,10 @@ fn house(sell: &str) -> Value {
             { "type": "fixed", "term": 10, "rate": 0.026, "amort": 1500, "amortMode": "indirect" } ] } ] } })
 }
 
-/// FEA-39/AK3: Eingabe 8'000 inklusive Wohnkosten 2'000: Ausgaben total 8'000; Zins +300 ergibt 8'300; Miete 2'500
+/// #53/AK3: Eingabe 8'000 inklusive Wohnkosten 2'000: Ausgaben total 8'000; Zins +300 ergibt 8'300; Miete 2'500
 /// nach dem Verkauf ergibt 8'500.
 #[test]
-fn fea39_ak3_real_housing_costs_replace_the_share() {
+fn issue_53_ak3_real_housing_costs_replace_the_share() {
     let mut v = base();
     v["flows"]["income"] = json!(20_000); // tragbar bei der Erneuerung
     v["realestate"] = json!({ "properties": [ house("2043-01"),
@@ -82,9 +82,9 @@ fn fea39_ak3_real_housing_costs_replace_the_share() {
     close(spending_total(&r, 2044), 8500.0, "mit Miete");
 }
 
-/// FEA-39/AK4, AK5: Wohnanteil grösser als eine Zeile ist ein Fehler; ohne Wohnkosten ändert sich nichts.
+/// #53/AK4, AK5: Wohnanteil grösser als eine Zeile ist ein Fehler; ohne Wohnkosten ändert sich nichts.
 #[test]
-fn fea39_ak4_ak5_check_and_no_housing() {
+fn issue_53_ak4_ak5_check_and_no_housing() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house("never") ] });
     v["flows"]["spending"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "2044-01", "value": 1999 } ] });
@@ -105,9 +105,9 @@ fn fea39_ak4_ak5_check_and_no_housing() {
     close(rec(&r, 2040, 1).planned_spending, 8000.0, "ohne Wohnkosten");
 }
 
-/// FEA-39/AK6: Die 3a-Einzahlung ist nicht in der Eingabe enthalten und kommt dazu.
+/// #53/AK6: Die 3a-Einzahlung ist nicht in der Eingabe enthalten und kommt dazu.
 #[test]
-fn fea39_ak6_pillar3a_stays_separate() {
+fn issue_53_ak6_pillar3a_stays_separate() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house("never") ] });
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": 1200 }]);
@@ -115,9 +115,9 @@ fn fea39_ak6_pillar3a_stays_separate() {
     close(spending_total(&r, 2041), 8100.0, "8'000 + 100 Säule 3a");
 }
 
-/// FEA-39/AK7: Ältere Planungen werden beim Öffnen umgerechnet; das Ergebnis bleibt gleich.
+/// #53/AK7: Ältere Planungen werden beim Öffnen umgerechnet; das Ergebnis bleibt gleich.
 #[test]
-fn fea39_ak7_upgrade_keeps_the_result() {
+fn issue_53_ak7_upgrade_keeps_the_result() {
     let mut old = base();
     old["flows"] = json!({ "income": 8000, "spending": { "mode": "timed", "rows": [ { "from": "start", "value": 6000 }, { "from": "2044-01", "value": 5000 } ] } });
     old["realestate"] = json!({ "properties": [ house("never") ] });
@@ -140,9 +140,9 @@ fn fea39_ak7_upgrade_keeps_the_result() {
     assert!(engine::api::upgrade_plan(&out.plan).notes.is_empty());
 }
 
-/// FEA-40/AK8: Eine ältere Planung bekommt beim Öffnen den Hinweis zur Cash-Regel, auch ohne Wohnkosten; einmal.
+/// #54/AK8: Eine ältere Planung bekommt beim Öffnen den Hinweis zur Cash-Regel, auch ohne Wohnkosten; einmal.
 #[test]
-fn fea40_ak8_note_for_older_plans() {
+fn issue_54_ak8_note_for_older_plans() {
     let mut old = base();
     old["flows"] = json!({ "income": 8000, "spending": 6000 });
     let out = engine::api::upgrade_plan(&old);
@@ -155,9 +155,9 @@ fn fea40_ak8_note_for_older_plans() {
     );
 }
 
-/// FEA-39/AK8: Der Ausgaben-Faktor der Variation gilt für die Lebenshaltung ohne Wohnen.
+/// #53/AK8: Der Ausgaben-Faktor der Variation gilt für die Lebenshaltung ohne Wohnen.
 #[test]
-fn fea39_ak8_spending_factor_on_living_without_housing() {
+fn issue_53_ak8_spending_factor_on_living_without_housing() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house("never") ] });
     v["flows"]["spendingFactor"] = json!(0.5);
@@ -165,9 +165,9 @@ fn fea39_ak8_spending_factor_on_living_without_housing() {
     close(rec(&r, 2040, 1).planned_spending, 3000.0, "0.5 × (8'000 − 2'000)");
 }
 
-/// FEA-40/AK2: Einnahmen gleich Ausgaben: bis zur Pensionierung bleiben die Bestände wie erfasst.
+/// #54/AK2: Einnahmen gleich Ausgaben: bis zur Pensionierung bleiben die Bestände wie erfasst.
 #[test]
-fn fea40_ak2_holdings_unchanged_before_retirement() {
+fn issue_54_ak2_holdings_unchanged_before_retirement() {
     let r = run(&base());
     for (y, m) in [(2040, 1), (2042, 6), (2044, 12)] {
         let x = rec(&r, y, m);
@@ -177,9 +177,9 @@ fn fea40_ak2_holdings_unchanged_before_retirement() {
     }
 }
 
-/// FEA-40/AK3: Überschuss 2'000 pro Monat geht ins Portfolio (1'600 Aktien, 400 Obligationen), Cash bleibt.
+/// #54/AK3: Überschuss 2'000 pro Monat geht ins Portfolio (1'600 Aktien, 400 Obligationen), Cash bleibt.
 #[test]
-fn fea40_ak3_surplus_goes_to_the_portfolio() {
+fn issue_54_ak3_surplus_goes_to_the_portfolio() {
     let mut v = base();
     v["flows"]["income"] = json!(10_000);
     let r = run(&v);
@@ -189,9 +189,9 @@ fn fea40_ak3_surplus_goes_to_the_portfolio() {
     close(x.bonds, 20_400.0, "Obligationen");
 }
 
-/// FEA-40: Fehlbetrag wird aus dem Portfolio nachgefüllt; der Cash-Betrag folgt der Teuerung.
+/// #54: Fehlbetrag wird aus dem Portfolio nachgefüllt; der Cash-Betrag folgt der Teuerung.
 #[test]
-fn fea40_refill_and_inflation() {
+fn issue_54_refill_and_inflation() {
     let mut v = base();
     v["flows"]["income"] = json!(7000);
     v["flows"]["spendingIncludesHousing"] = json!(false);
@@ -211,9 +211,9 @@ fn fea40_refill_and_inflation() {
     );
 }
 
-/// FEA-40/AK4, AK5: Die Cash-Reserve von «Standard» wirkt erst ab der Pensionierung.
+/// #54/AK4, AK5: Die Cash-Reserve von «Standard» wirkt erst ab der Pensionierung.
 #[test]
-fn fea40_ak4_ak5_reserve_only_after_retirement() {
+fn issue_54_ak4_ak5_reserve_only_after_retirement() {
     let mut v = base();
     v["flows"]["income"] =
         json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "retire", "value": 0 } ] });

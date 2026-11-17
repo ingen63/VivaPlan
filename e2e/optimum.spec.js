@@ -47,12 +47,12 @@ test.describe("Optimum je Perzentil", () => {
     const sc = one("wealth.stockShare", [
       [0.3, { 1: [-300, "2041-03"] }], [0.5, { 1: [-200, "2044-07"] }], [0.7, { 1: [-100, "2046-01"] }], [1.0, { 1: [-50, "2049-09"] }]]);
     const o = Optimum.find(sc, 1).items[0];
-    // 100 % ist die natürliche Grenze eines Anteils, kein ausgeschöpfter Bereich (ISS-7)
+    // 100 % ist die natürliche Grenze eines Anteils, kein ausgeschöpfter Bereich (#34)
     expect(o).toMatchObject({ v: 1.0, kind: "exact", reaches: false });
   });
 
-  // Kriterien: ISS-7/AK1 ISS-7/AK2 ISS-7/AK3 ISS-7/AK4 ISS-7/AK6
-  test("ISS-7: Anteil an der natürlichen Grenze 0 % / 100 % ohne «≥» / «≤», sonst weiter Randkennzeichnung", () => {
+  // Kriterien: #34/AK1 #34/AK2 #34/AK3 #34/AK4 #34/AK6
+  test("#34: Anteil an der natürlichen Grenze 0 % / 100 % ohne «≥» / «≤», sonst weiter Randkennzeichnung", () => {
     const lump = rows => ({ params: ["pension.pk.lumpsum"], results: rows.map(([v, e]) => res([v], { 5: [e, null] })) });
     expect(Optimum.find(lump([[0, 100], [0.5, 200], [1, 900]]), 5).items[0]).toMatchObject({ v: 1, kind: "exact" });
     expect(Optimum.find(lump([[0, 900], [0.5, 200], [1, 100]]), 5).items[0]).toMatchObject({ v: 0, kind: "exact" });

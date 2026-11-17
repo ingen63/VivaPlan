@@ -1,4 +1,4 @@
-//! FEA-78: Aktienparameter des parametrischen Modells je Aktienindex. FEA-79: Obligationen und Inflation mit
+//! #100: Aktienparameter des parametrischen Modells je Aktienindex. #101: Obligationen und Inflation mit
 //! Korrelation je Kombination aus Aktien- und Obligationenindex.
 
 use std::path::{Path, PathBuf};
@@ -119,11 +119,11 @@ const INDICES: [(StockIndex, BondIndex, &str); 3] = [
     (StockIndex::Sp500, BondIndex::Usa, "S&P 500"),
 ];
 
-/// FEA-78/AK1, AK2: Mittelwert, Streuung und geometrisches Mittel der Jahresrenditen höchstens 0,5 Prozentpunkte vom
+/// #100/AK1, AK2: Mittelwert, Streuung und geometrisches Mittel der Jahresrenditen höchstens 0,5 Prozentpunkte vom
 /// Bootstrap desselben Index entfernt, das 5 %-Quantil höchstens 2 Prozentpunkte, die geometrische Rendite über
 /// 30 Jahre (5., 50., 95. Perzentil) höchstens 0,5 Prozentpunkte.
 #[test]
-fn fea78_ak1_ak2_parametric_matches_the_bootstrap_of_each_index() {
+fn issue_100_ak1_ak2_parametric_matches_the_bootstrap_of_each_index() {
     let mut report = vec![];
     for (s, b, name) in INDICES {
         let d = ds(s, b);
@@ -144,9 +144,9 @@ fn fea78_ak1_ak2_parametric_matches_the_bootstrap_of_each_index() {
     println!("{}", report.join("\n"));
 }
 
-/// FEA-78/AK1 (Referenz aus der Analyse): Kennzahlen der Jahresreihen der drei Indizes.
+/// #100/AK1 (Referenz aus der Analyse): Kennzahlen der Jahresreihen der drei Indizes.
 #[test]
-fn fea78_ak1_reference_values_of_the_series() {
+fn issue_100_ak1_reference_values_of_the_series() {
     for ((s, b, name), (mean, sd, geo)) in
         INDICES
             .into_iter()
@@ -173,9 +173,9 @@ fn fea78_ak1_reference_values_of_the_series() {
     }
 }
 
-/// FEA-78/AK3: Die Vorschlagswerte entstehen zur Laufzeit aus den ausgelieferten Reihen.
+/// #100/AK3: Die Vorschlagswerte entstehen zur Laufzeit aus den ausgelieferten Reihen.
 #[test]
-fn fea78_ak3_suggestions_for_the_shipped_series() {
+fn issue_100_ak3_suggestions_for_the_shipped_series() {
     let fit = |s, b| calibrate::suggestion(&ds(s, b)).stocks.unwrap();
     let expected = [
         (StockIndex::WorldJst, BondIndex::Ch, [0.1215, 0.1225, 0.15, -0.25]),
@@ -207,9 +207,9 @@ fn fea78_ak3_suggestions_for_the_shipped_series() {
     assert_eq!(s.stock_years.unwrap().0, 1922);
 }
 
-/// FEA-78/AK3: Nach einem Update der Shiller-Daten ändern sich die Vorschlagswerte für «S&P 500».
+/// #100/AK3: Nach einem Update der Shiller-Daten ändern sich die Vorschlagswerte für «S&P 500».
 #[test]
-fn fea78_ak3_new_shiller_data_changes_the_suggestion() {
+fn issue_100_ak3_new_shiller_data_changes_the_suggestion() {
     let dir = std::env::temp_dir().join(format!("vivaplan-fea78-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let text = std::fs::read_to_string(lib().join("Shiller CHF.csv")).unwrap();
@@ -228,9 +228,9 @@ fn fea78_ak3_new_shiller_data_changes_the_suggestion() {
     assert_ne!(before.stocks, after.stocks);
 }
 
-/// FEA-78/AK7: «Welt individuell» erhält Vorschlagswerte aus seiner eigenen Reihe.
+/// #100/AK7: «Welt individuell» erhält Vorschlagswerte aus seiner eigenen Reihe.
 #[test]
-fn fea78_ak7_custom_world_uses_its_own_series() {
+fn issue_100_ak7_custom_world_uses_its_own_series() {
     let custom = |weights| {
         calibrate::suggestion(
             &strategy::dataset(
@@ -273,9 +273,9 @@ fn plan_json(source: &str, parametric: Value) -> Value {
     v
 }
 
-/// FEA-78/AK6, FEA-79/AK6: Ältere Planungen behalten ihre Parameter; wer parametrisch rechnet, erhält einen Hinweis.
+/// #100/AK6, #101/AK6: Ältere Planungen behalten ihre Parameter; wer parametrisch rechnet, erhält einen Hinweis.
 #[test]
-fn fea78_ak6_fea79_ak6_older_plans_keep_their_parameters() {
+fn issue_100_ak6_issue_101_ak6_older_plans_keep_their_parameters() {
     let old = json!({"paths": 100, "mu": 0.05, "sigma": 0.12, "df": 4, "jumpLambda": 0.1, "jumpMu": -0.2, "jumpSigma": 0.1, "seed": 3});
     let out = api::upgrade_plan(&plan_json("parametric", old.clone()));
     assert_eq!(out.plan["returns"]["parametric"]["auto"], json!(false));
@@ -305,10 +305,10 @@ fn fea78_ak6_fea79_ak6_older_plans_keep_their_parameters() {
     assert_eq!(r, q);
 }
 
-/// FEA-79/AK1, AK2: Für alle 9 Kombinationen stimmen die Korrelationen der Jahreswerte auf 0,05 mit der Reihe, Mittel
+/// #101/AK1, AK2: Für alle 9 Kombinationen stimmen die Korrelationen der Jahreswerte auf 0,05 mit der Reihe, Mittel
 /// und Streuung von Obligationen und Inflation auf 0,3 Prozentpunkte.
 #[test]
-fn fea79_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
+fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
     let stocks = [StockIndex::WorldJst, StockIndex::Sp500, StockIndex::ChJst];
     let bonds = [BondIndex::ChShort, BondIndex::Ch, BondIndex::Usa];
     let mut report = vec![];
@@ -399,13 +399,13 @@ fn ruin_monthly(paths: &[MarketPath]) -> f64 {
     ruined as f64 / paths.len() as f64
 }
 
-/// FEA-79/AK3: Ruinwahrscheinlichkeit (60/40, 4 % real, 30 Jahre) höchstens 2 Prozentpunkte neben dem Bootstrap für
+/// #101/AK3: Ruinwahrscheinlichkeit (60/40, 4 % real, 30 Jahre) höchstens 2 Prozentpunkte neben dem Bootstrap für
 /// «Welt (JST)» und «Schweiz (JST)» mit «Eidgenossenschaft 10 Jahre» und «kurzfristig». Gerechnet auf den
 /// Renditepfaden (ohne Steuern und Ausgabenplanung), jährlich ausgeglichen: Die Jahresreihen des Bootstraps haben
 /// innerhalb eines Jahres gleiche Monatsrenditen, ein monatlicher Ausgleich brächte dem parametrischen Modell
 /// (Schwankung auch innerhalb des Jahres) einen Ausgleichsgewinn, den der Bootstrap nicht hat.
 #[test]
-fn fea79_ak3_ruin_probability_close_to_the_bootstrap() {
+fn issue_101_ak3_ruin_probability_close_to_the_bootstrap() {
     let mut report = vec![];
     for s in [StockIndex::WorldJst, StockIndex::ChJst] {
         for b in [BondIndex::Ch, BondIndex::ChShort] {
@@ -423,9 +423,9 @@ fn fea79_ak3_ruin_probability_close_to_the_bootstrap() {
     println!("{}", report.join("\n"));
 }
 
-/// FEA-79/AK4: Ein Wechsel der Obligationen oder der Aktien ändert die Matrix.
+/// #101/AK4: Ein Wechsel der Obligationen oder der Aktien ändert die Matrix.
 #[test]
-fn fea79_ak4_matrix_depends_on_the_combination() {
+fn issue_101_ak4_matrix_depends_on_the_combination() {
     let m = |s, b| calibrate::suggestion(&ds(s, b)).joint.unwrap();
     let a = m(StockIndex::WorldJst, BondIndex::Ch);
     assert_ne!(a.corr, m(StockIndex::WorldJst, BondIndex::Usa).corr);
@@ -440,9 +440,9 @@ fn fea79_ak4_matrix_depends_on_the_combination() {
     assert!(p.stocks.is_some());
 }
 
-/// FEA-79/AK5: Gleicher Startwert ergibt gleiche Pfade; die Aktienpfade bleiben mit und ohne Korrelation gleich.
+/// #101/AK5: Gleicher Startwert ergibt gleiche Pfade; die Aktienpfade bleiben mit und ohne Korrelation gleich.
 #[test]
-fn fea79_ak5_same_seed_same_paths_and_unchanged_stocks() {
+fn issue_101_ak5_same_seed_same_paths_and_unchanged_stocks() {
     let d = ds(StockIndex::WorldJst, BondIndex::Ch);
     let f = fixed();
     let q = ParametricParams {

@@ -1,4 +1,4 @@
-//! Wohnanteil der Lebenshaltungskosten (FEA-39).
+//! Wohnanteil der Lebenshaltungskosten (#53).
 //!
 //! Die erfassten Lebenshaltungskosten enthalten Miete bzw. die monatlichen Immobilienkosten. Für die Simulation wird
 //! der darin enthaltene Wohnanteil abgezogen und durch die simulierten Wohnkosten ersetzt. Der Wohnanteil sind die
@@ -96,9 +96,9 @@ mod tests {
         start_housing(&p, &Resolver::new(&p).unwrap())
     }
 
-    // FEA-39/AK2, AK3: Zins 1'000, Amortisation 500, Nebenkosten 500 = Wohnanteil 2'000.
+    // #53/AK2, AK3: Zins 1'000, Amortisation 500, Nebenkosten 500 = Wohnanteil 2'000.
     #[test]
-    fn fea39_owned_property() {
+    fn issue_53_owned_property() {
         let house = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 500, "sell": "never",
             "mortgage": { "tranches": [ { "amount": 600_000, "start": "2035-01",
                 "periods": [ { "type": "fixed", "term": 10, "rate": 0.02, "amort": 1500 } ] } ] } }]);
@@ -119,9 +119,9 @@ mod tests {
         assert_eq!(w(sold), 0.0);
     }
 
-    // FEA-39/AK5: Miete ab Start zählt, spätere Miete, Miete «nach Verkauf» und geplanter Kauf später nicht.
+    // #53/AK5: Miete ab Start zählt, spätere Miete, Miete «nach Verkauf» und geplanter Kauf später nicht.
     #[test]
-    fn fea39_rent_and_planned() {
+    fn issue_53_rent_and_planned() {
         assert_eq!(
             w(json!([{ "name": "M", "status": "rent", "from": "start", "rent": 2500 }])),
             2500.0
@@ -149,11 +149,11 @@ mod tests {
         assert_eq!(w(json!([])), 0.0);
     }
 
-    // FEA-97/AK8: Grenzen der Perioden und der Miete. Eine Periode, die genau im Startmonat endet, zählt nicht mehr; eine
+    // #124/AK8: Grenzen der Perioden und der Miete. Eine Periode, die genau im Startmonat endet, zählt nicht mehr; eine
     // Tranche «zurückzahlen» zählt, solange ihre Periode läuft; eine Tranche ohne Perioden trägt nichts bei; eine Miete
     // bis nach dem Start zählt.
     #[test]
-    fn fea97_ak8_period_and_rent_limits() {
+    fn issue_124_ak8_period_and_rent_limits() {
         let tranche = |t: serde_json::Value| json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 0, "mortgage": { "tranches": [t] } }]);
         // 120'000 × 1 % / 12 = 100 (zweite Periode ab 2040-01), nicht 120'000 × 5 % / 12 = 500
         let ends_at_start = tranche(

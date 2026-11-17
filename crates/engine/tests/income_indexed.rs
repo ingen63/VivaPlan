@@ -1,4 +1,4 @@
-//! FEA-43: Erwerbseinkommen optional mit der Teuerung.
+//! #58: Erwerbseinkommen optional mit der Teuerung.
 //!
 //! Erfundene Planung: Geburt 1980-01, Start 2040-01, Bezug Pensionskasse und AHV-Bezug mit 65 (2045-01), keine
 //! Renditen, keine Steuern; Teuerung wo vermerkt.
@@ -49,10 +49,10 @@ fn close(a: f64, b: f64, what: &str) {
     assert!((a - b).abs() < 1e-6, "{what}: {a} statt {b}");
 }
 
-/// FEA-43/AK1, AK3: 8'000 pro Monat, Teuerung 2 %: mit «ja» nach 12 Monaten 8'160, nach 5 Jahren 8'832.64; mit «nein»
+/// #58/AK1, AK3: 8'000 pro Monat, Teuerung 2 %: mit «ja» nach 12 Monaten 8'160, nach 5 Jahren 8'832.64; mit «nein»
 /// (auch ohne Angabe) bleiben es 8'000.
 #[test]
-fn fea43_ak1_ak3_income_follows_inflation() {
+fn issue_58_ak1_ak3_income_follows_inflation() {
     let mut v = base(0.02);
     let r = run(&v);
     close(rec(&r, 2041, 1).earned, 8000.0, "ohne Angabe: nominal gleich");
@@ -69,9 +69,9 @@ fn fea43_ak1_ak3_income_follows_inflation() {
     close(rec(&run(&v), 2045, 1).earned, 8000.0, "«nein»");
 }
 
-/// FEA-43/AK2: Jede Zeile eines zeitabhängigen Einkommens gilt in Preisen des Starts.
+/// #58/AK2: Jede Zeile eines zeitabhängigen Einkommens gilt in Preisen des Starts.
 #[test]
-fn fea43_ak2_timed_rows_are_in_start_prices() {
+fn issue_58_ak2_timed_rows_are_in_start_prices() {
     let mut v = base(0.02);
     v["flows"]["income"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "2043-01", "value": 10_000 } ] });
     v["flows"]["incomeIndexed"] = json!(true);
@@ -84,9 +84,9 @@ fn fea43_ak2_timed_rows_are_in_start_prices() {
     );
 }
 
-/// FEA-43/AK4: Auf jedem Pfad wächst das Einkommen mit dem Preisindex dieses Pfades, genau wie die Lebenshaltung.
+/// #58/AK4: Auf jedem Pfad wächst das Einkommen mit dem Preisindex dieses Pfades, genau wie die Lebenshaltung.
 #[test]
-fn fea43_ak4_follows_the_price_index_of_any_path() {
+fn issue_58_ak4_follows_the_price_index_of_any_path() {
     let mut v = base(0.0);
     v["flows"]["incomeIndexed"] = json!(true);
     let s = sim(&v);
@@ -110,9 +110,9 @@ fn fea43_ak4_follows_the_price_index_of_any_path() {
     assert!(grew, "Teuerung wirkt");
 }
 
-/// FEA-43: Die Auswahl gilt pro Person; die zweite Person hat ihre eigene.
+/// #58: Die Auswahl gilt pro Person; die zweite Person hat ihre eigene.
 #[test]
-fn fea43_one_choice_per_person() {
+fn issue_58_one_choice_per_person() {
     let mut v = base(0.02);
     v["household"]["persons"] =
         json!([ { "id": "A", "name": "A", "birth": "1980-01" }, { "id": "B", "name": "B", "birth": "1981-01" } ]);
@@ -136,10 +136,10 @@ fn fea43_one_choice_per_person() {
     );
 }
 
-/// FEA-43/AK5: Einkommenssteuer auf dem angepassten Einkommen; die Warnung nach dem Bezug der Pensionskasse nennt
+/// #58/AK5: Einkommenssteuer auf dem angepassten Einkommen; die Warnung nach dem Bezug der Pensionskasse nennt
 /// den Betrag in Preisen des Starts.
 #[test]
-fn fea43_ak5_tax_and_warning_use_the_indexed_amount() {
+fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
     let mut v = base(0.02);
     v["taxes"]["income"] = json!([[0, 0.1], [10_000_000, 0.1]]);
     let plain = run(&v);
@@ -186,9 +186,9 @@ fn fea43_ak5_tax_and_warning_use_the_indexed_amount() {
     );
 }
 
-/// FEA-43/AK1: «nein» wird nicht geschrieben (ältere Dateien bleiben gleich), «ja» schon.
+/// #58/AK1: «nein» wird nicht geschrieben (ältere Dateien bleiben gleich), «ja» schon.
 #[test]
-fn fea43_ak1_written_only_when_set() {
+fn issue_58_ak1_written_only_when_set() {
     let mut v = base(0.0);
     let plan: Plan = serde_json::from_value(v.clone()).unwrap();
     assert!(!plan.flows.income_indexed);
@@ -201,7 +201,7 @@ fn fea43_ak1_written_only_when_set() {
         serde_json::to_value(&plan).unwrap()["flows"]["incomeIndexed"],
         json!(true)
     );
-    // Neue Planungen: «ja» (Entscheid zu FEA-43)
+    // Neue Planungen: «ja» (Entscheid zu #58)
     let neu: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     assert!(neu.flows.income_indexed);
 }

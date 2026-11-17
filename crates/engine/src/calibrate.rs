@@ -1,12 +1,12 @@
-//! FEA-78 und FEA-79: Vorschlagswerte für «Monte Carlo (parametrisch)» aus den Jahresrenditen der Anlagestrategie.
+//! #100 und #101: Vorschlagswerte für «Monte Carlo (parametrisch)» aus den Jahresrenditen der Anlagestrategie.
 //!
-//! - **Aktien (FEA-78):** Aus der ganzen Jahresreihe des Aktienindex (nicht nur den gemeinsamen Jahren mit den
+//! - **Aktien (#100):** Aus der ganzen Jahresreihe des Aktienindex (nicht nur den gemeinsamen Jahren mit den
 //!   Obligationen). Freiheitsgrade (6) und Streuung der Sprunghöhe (15 %) bleiben fest. Für jede Kombination aus
 //!   Sprungrate und Sprunghöhe eines Rasters ergeben sich μ und σ geschlossen aus Mittelwert und Streuung der
 //!   Jahresrenditen; gewählt wird die Kombination, deren 5 %-Quantil und geometrisches Mittel der Reihe am nächsten
 //!   kommen. Die Jahresrendite des Modells ist dabei eine Poisson-Mischung von Lognormalverteilungen (die 252
 //!   Student-t-Tagesschritte eines Jahres sind zusammen praktisch normalverteilt).
-//! - **Obligationen und Inflation (FEA-79):** Mittelwert, Streuung und die 3×3-Korrelation (Aktien, Obligationen,
+//! - **Obligationen und Inflation (#101):** Mittelwert, Streuung und die 3×3-Korrelation (Aktien, Obligationen,
 //!   Inflation) der Jahreswerte aus derselben Reihe, die der historische Bootstrap verwendet. Die Jahre sind
 //!   voneinander unabhängig.
 
@@ -195,7 +195,7 @@ impl YearModel {
     }
 }
 
-// ---------- FEA-78: Aktienparameter ----------
+// ---------- #100: Aktienparameter ----------
 
 /// Vorschlagswerte für das Aktienmodell.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
@@ -279,7 +279,7 @@ pub fn fit_moments(t: &Moments) -> Option<StockFit> {
     best.map(|(_, f)| f)
 }
 
-// ---------- FEA-79: Obligationen und Inflation ----------
+// ---------- #101: Obligationen und Inflation ----------
 
 /// Jahreswerte einer Reihe: Aktien und Obligationen zu Kalenderjahren verknüpft, Inflation im Dezember (Jahressatz).
 /// Jahresreihen bleiben, wie sie sind.
@@ -485,8 +485,8 @@ pub fn suggestion(ds: &DataSet) -> Suggestion {
     }
 }
 
-/// Parameter, mit denen das Modell rechnet: bei `auto` die Vorschlagswerte der Reihe (FEA-78), sonst die
-/// gespeicherten; dazu die Korrelation mit Obligationen und Inflation, sofern es eine Reihe gibt (FEA-79).
+/// Parameter, mit denen das Modell rechnet: bei `auto` die Vorschlagswerte der Reihe (#100), sonst die
+/// gespeicherten; dazu die Korrelation mit Obligationen und Inflation, sofern es eine Reihe gibt (#101).
 pub fn resolve(q: &ParametricParams, data: Option<&DataSet>) -> (ParametricParams, Option<Correlated>) {
     let mut q = q.clone();
     let Some(ds) = data else {
@@ -685,10 +685,10 @@ mod bootstrap_tests {
         assert_eq!(bootstrap_years(&yearly).len(), 240);
     }
 
-    // FEA-97/AK5: Grenzen der Eingaben. Genau MIN_YEARS Jahre (bzw. 12 × MIN_YEARS Monate) genügen; eine Rendite von
+    // #124/AK5: Grenzen der Eingaben. Genau MIN_YEARS Jahre (bzw. 12 × MIN_YEARS Monate) genügen; eine Rendite von
     // −100 % oder eine unvollständige Reihe ergibt keinen Vorschlag; `last` ist das letzte Jahr der Reihe.
     #[test]
-    fn fea97_ak5_input_limits() {
+    fn issue_124_ak5_input_limits() {
         let years: Vec<f64> = (0..MIN_YEARS).map(|i| if i % 3 == 0 { -0.1 } else { 0.12 }).collect();
         assert!(fit_stocks(&years).is_some(), "genau {MIN_YEARS} Jahre");
         assert!(fit_stocks(&years[1..]).is_none(), "ein Jahr zu wenig");
@@ -730,10 +730,10 @@ mod bootstrap_tests {
         );
     }
 
-    // FEA-97/AK5: Ohne Streuung ist die Jahresrendite fest: Das Quantil ist e^μ − 1. Ohne Streuung der Aktien bleiben
+    // #124/AK5: Ohne Streuung ist die Jahresrendite fest: Das Quantil ist e^μ − 1. Ohne Streuung der Aktien bleiben
     // Obligationen und Inflation beim Mittelwert der Reihe (z = 0).
     #[test]
-    fn fea97_ak5_model_without_spread() {
+    fn issue_124_ak5_model_without_spread() {
         let q = ParametricParams {
             mu: 0.05,
             sigma: 0.0,
@@ -760,11 +760,11 @@ mod bootstrap_tests {
         assert_eq!(c.draw(0.4, 12, 0.0, 0.0), (0.03, 0.01));
     }
 
-    // FEA-97/AK5: Wahl des Rasters. Eine Reihe ohne Ausreisser passt am besten ohne Sprünge (λ = 0); für Reihen mit
+    // #124/AK5: Wahl des Rasters. Eine Reihe ohne Ausreisser passt am besten ohne Sprünge (λ = 0); für Reihen mit
     // Crash-Jahren gewichtet die Fehlerfunktion das 5 %-Quantil (1 %), die Mittel und die Streuung (0.2 %): Ergebnis als
     // Regression.
     #[test]
-    fn fea97_ak5_grid_choice() {
+    fn issue_124_ak5_grid_choice() {
         let calm = YearModel::new(
             &StockFit {
                 mu: 0.06,

@@ -1,4 +1,4 @@
-//! FEA-05 (#6): 3-Topf mit Guardrails (die Guardrails steuern die Ausgaben, die Töpfe die Anlage) und FEA-33 (#47):
+//! #6: 3-Topf mit Guardrails (die Guardrails steuern die Ausgaben, die Töpfe die Anlage) und #47:
 //! Fixe Rate, VPW und Endowment ab der Pensionierung der ersten Person.
 //!
 //! Grundplanung (erfunden, wie `sim_rules`): Start 2026-11, Geburt 1966-11, Pensionierung und AHV 2031-11, Ende
@@ -93,13 +93,13 @@ fn withdrawal_events(r: &SimResult) -> Vec<(YearMonth, &str)> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// FEA-05
+// #6
 // ---------------------------------------------------------------------------------------------
 
-/// FEA-05/AK2: Bei gleichem Vermögensverlauf (ohne Renditen) ist die Entnahme rein und kombiniert identisch, auch nach
+/// #6/AK2: Bei gleichem Vermögensverlauf (ohne Renditen) ist die Entnahme rein und kombiniert identisch, auch nach
 /// einer Kürzung durch die Leitplanke.
 #[test]
-fn fea05_ak2_combined_spends_like_pure_guardrails() {
+fn issue_6_ak2_combined_spends_like_pure_guardrails() {
     let (p, c) = (run(&pure(base())), run(&combined(base())));
     for (a, b) in p.records.iter().zip(&c.records) {
         close(b.spending, a.spending, &format!("Ausgaben {:?}", a.month));
@@ -118,10 +118,10 @@ fn fea05_ak2_combined_spends_like_pure_guardrails() {
     assert_eq!(cuts(&p), cuts(&c));
 }
 
-/// FEA-05/AK3 (rein und kombiniert): Die Guardrails starten mit der Pensionierung der ersten Person; ein laufendes
+/// #6/AK3 (rein und kombiniert): Die Guardrails starten mit der Pensionierung der ersten Person; ein laufendes
 /// Erwerbseinkommen der zweiten Person zählt zu «Einkommen und Renten».
 #[test]
-fn fea05_ak3_guardrails_start_with_the_first_retirement() {
+fn issue_6_ak3_guardrails_start_with_the_first_retirement() {
     for v in [pure(couple()), combined(couple())] {
         let r = run(&v);
         let b0 = RATE * rec(&r, 2031, 10).liquid;
@@ -153,9 +153,9 @@ fn fea05_ak3_guardrails_start_with_the_first_retirement() {
     );
 }
 
-/// FEA-05/AK4 (rein und kombiniert): Ein für einen Kauf reservierter Verkaufserlös zählt nicht zur Rate.
+/// #6/AK4 (rein und kombiniert): Ein für einen Kauf reservierter Verkaufserlös zählt nicht zur Rate.
 #[test]
-fn fea05_ak4_reserved_proceeds_do_not_count_for_the_rate() {
+fn issue_6_ak4_reserved_proceeds_do_not_count_for_the_rate() {
     let with_sale = |mut v: Value| {
         v["taxes"]["propertyGain"] = json!({"brackets": [[0, 0]]});
         v["realestate"]["properties"] = json!([
@@ -184,10 +184,10 @@ fn fea05_ak4_reserved_proceeds_do_not_count_for_the_rate() {
     }
 }
 
-/// FEA-05/AK5: Nach einem Zufluss rechnen die Guardrails die Entnahme neu (rein und kombiniert gleich); kombiniert geht
+/// #6/AK5: Nach einem Zufluss rechnen die Guardrails die Entnahme neu (rein und kombiniert gleich); kombiniert geht
 /// das Geld in Topf 3 und die Ziele bleiben bis zum nächsten Januar.
 #[test]
-fn fea05_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
+fn issue_6_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
     let inflow = |mut v: Value| {
         v["flows"]["extras"] = json!([{"date": "2032-05", "amount": 400_000, "label": "Erbe"}]);
         v
@@ -225,10 +225,10 @@ fn fea05_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
     }
 }
 
-/// FEA-05/AK6: Der Netto-Bedarf rechnet mit der Guardrails-Lebenshaltung und nennt die Quelle; ohne Grenzen und
+/// #6/AK6: Der Netto-Bedarf rechnet mit der Guardrails-Lebenshaltung und nennt die Quelle; ohne Grenzen und
 /// Wohnkosten ist er gleich der Entnahme.
 #[test]
-fn fea05_ak6_need_uses_the_guardrails_living() {
+fn issue_6_ak6_need_uses_the_guardrails_living() {
     let r = run(&combined(base()));
     let b0 = rec(&r, 2031, 11).withdrawal * 12.0;
     let a = refill(&r, "A", 2031, 11);
@@ -273,9 +273,9 @@ fn fea05_ak6_need_uses_the_guardrails_living() {
     close(a.basis.living, 12_000.0, "geplant");
 }
 
-/// FEA-05/AK7: Nach einer Kürzung durch die Leitplanke sinken die Ziele in der nächsten Januar-Auffüllung um die Kürzung.
+/// #6/AK7: Nach einer Kürzung durch die Leitplanke sinken die Ziele in der nächsten Januar-Auffüllung um die Kürzung.
 #[test]
-fn fea05_ak7_targets_follow_a_cut() {
+fn issue_6_ak7_targets_follow_a_cut() {
     let r = run(&combined(base()));
     let (cut, _) = withdrawal_events(&r)
         .into_iter()
@@ -289,9 +289,9 @@ fn fea05_ak7_targets_follow_a_cut() {
     close(now.target2, 0.9 * before.target2, "Ziel Topf 2");
 }
 
-/// FEA-05/AK8: Ohne das neue Feld bleibt die Planung unverändert, auch beim Speichern.
+/// #6/AK8: Ohne das neue Feld bleibt die Planung unverändert, auch beim Speichern.
 #[test]
-fn fea05_ak8_plans_without_the_field_stay_unchanged() {
+fn issue_6_ak8_plans_without_the_field_stay_unchanged() {
     let mut v = base();
     v["withdrawal"]["strategy"] = json!("three_buckets");
     v["withdrawal"]["buckets"] = json!({"cashYears": 1, "bondYears": 1, "refillThreshold": -1});
@@ -319,9 +319,9 @@ fn fea05_ak8_plans_without_the_field_stay_unchanged() {
     assert!(serde_json::from_value::<Plan>(v).is_err());
 }
 
-/// FEA-05: Prüfungen der Guardrails und der Grenzen gelten auch kombiniert.
+/// #6: Prüfungen der Guardrails und der Grenzen gelten auch kombiniert.
 #[test]
-fn fea05_validation_of_the_guardrails_and_limits() {
+fn issue_6_validation_of_the_guardrails_and_limits() {
     let errors = |v: &Value| {
         let plan: Plan = serde_json::from_value(v.clone()).unwrap();
         engine::validate::validate(&plan)
@@ -344,9 +344,9 @@ fn fea05_validation_of_the_guardrails_and_limits() {
     assert!(errors(&v).is_empty());
 }
 
-/// FEA-05/AK10: Die Optimierung bietet «3-Topf + Guardrails» an; untere Leitplanke und Anpassung sind standardmässig fix.
+/// #6/AK10: Die Optimierung bietet «3-Topf + Guardrails» an; untere Leitplanke und Anpassung sind standardmässig fix.
 #[test]
-fn fea05_ak10_optimization_offers_the_combination() {
+fn issue_6_ak10_optimization_offers_the_combination() {
     let defs = param_defs(OptStrategy::ThreeBucketsGuardrails);
     let varied: Vec<_> = defs.iter().filter(|d| !d.fixed).map(|d| d.key).collect();
     assert_eq!(
@@ -410,13 +410,13 @@ fn fea05_ak10_optimization_offers_the_combination() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// FEA-33
+// #47
 // ---------------------------------------------------------------------------------------------
 
-/// FEA-33/AK1–AK3: Fixe Rate, VPW und Endowment legen die Entnahme im Monat der ersten Pensionierung fest; ein laufendes
+/// #47/AK1–AK3: Fixe Rate, VPW und Endowment legen die Entnahme im Monat der ersten Pensionierung fest; ein laufendes
 /// Erwerbseinkommen zählt zu «Einkommen und Renten»; die Grenzen gelten ab demselben Monat.
 #[test]
-fn fea33_dynamic_strategies_start_with_the_first_retirement() {
+fn issue_47_dynamic_strategies_start_with_the_first_retirement() {
     let strategies = [
         ("fixed_rate", json!({"fixedRate": {"rate": 0.04}})),
         ("vpw", json!({"vpw": {"horizonAge": 100, "realReturn": 0.02}})),
@@ -449,9 +449,9 @@ fn fea33_dynamic_strategies_start_with_the_first_retirement() {
     }
 }
 
-/// FEA-33/AK4: Bei einer Person ändert sich nichts: Die Entnahme beginnt mit der Pensionierung.
+/// #47/AK4: Bei einer Person ändert sich nichts: Die Entnahme beginnt mit der Pensionierung.
 #[test]
-fn fea33_single_person_starts_at_retirement() {
+fn issue_47_single_person_starts_at_retirement() {
     let mut v = base();
     v["withdrawal"]["strategy"] = json!("fixed_rate");
     let r = run(&v);

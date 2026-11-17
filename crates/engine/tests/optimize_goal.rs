@@ -1,4 +1,4 @@
-//! FEA-19: Zielauswahl der Optimierung. Ziel 1 (Konsum) bleibt unverändert, Ziel 2 («Kein Notverkauf von Immobilien») ordnet nach dem
+//! #20: Zielauswahl der Optimierung. Ziel 1 (Konsum) bleibt unverändert, Ziel 2 («Kein Notverkauf von Immobilien») ordnet nach dem
 //! Anteil der Läufe mit ungeplantem Immobilienverkauf und bei Gleichstand nach der Ruinwahrscheinlichkeit.
 
 use engine::api;

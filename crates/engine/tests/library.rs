@@ -15,9 +15,9 @@ fn data_dir() -> PathBuf {
 #[test]
 fn shipped_series_match_import() {
     let shiller = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/quellen/shiller-index.ods");
-    // FEA-76: die Originaltabelle liegt nur lokal; ohne sie wird der Test übersprungen.
+    // #94: die Originaltabelle liegt nur lokal; ohne sie wird der Test übersprungen.
     if !shiller.exists() {
-        eprintln!("übersprungen: {} fehlt (FEA-76)", shiller.display());
+        eprintln!("übersprungen: {} fehlt (#94)", shiller.display());
         return;
     }
     let usd = import::shiller_dataset(&import::read_shiller(&shiller).unwrap()).unwrap();
@@ -137,10 +137,10 @@ fn seed_and_list() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// FEA-72/AK1, AK5: Pictet wird nicht mehr mitgeliefert und nicht mehr angelegt. Eine früher angelegte Kopie im
+/// #90/AK1, AK5: Pictet wird nicht mehr mitgeliefert und nicht mehr angelegt. Eine früher angelegte Kopie im
 /// Bibliotheksordner bleibt unverändert und gilt nicht mehr als mitgelieferte Reihe (keine Kurzinfo von dort).
 #[test]
-fn fea72_ak5_pictet_is_not_seeded_and_an_old_copy_stays() {
+fn issue_90_ak5_pictet_is_not_seeded_and_an_old_copy_stays() {
     assert!(library::BUILTIN.iter().all(|(f, _)| !f.contains("Pictet")));
     let dir = std::env::temp_dir().join(format!("pp-lib-fea72-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);

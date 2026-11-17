@@ -1,4 +1,4 @@
-//! FEA-34: Planungen im alten Format (Endung `.rplan`, Kennung `pensionsplaner/1`) bleiben lesbar
+//! #44: Planungen im alten Format (Endung `.rplan`, Kennung `pensionsplaner/1`) bleiben lesbar
 //! (legacy: RetirementPlanner). Neue Dateien tragen die Kennung `vivaplan/1`.
 
 use std::path::Path;
@@ -79,7 +79,7 @@ fn result(plan: &Value) -> Value {
     r
 }
 
-/// FEA-34/AK3: Die alte .rplan-Datei ist unverändert (Prüfsumme), öffnet mit identischen Werten wie die .vplan und
+/// #44/AK3: Die alte .rplan-Datei ist unverändert (Prüfsumme), öffnet mit identischen Werten wie die .vplan und
 /// ergibt dieselben Ergebnisse.
 #[test]
 fn rplan_bleibt_unveraendert_und_rechnet_wie_die_vplan() {
@@ -99,7 +99,7 @@ fn rplan_bleibt_unveraendert_und_rechnet_wie_die_vplan() {
     assert_eq!(result(&rplan), result(&neu));
 }
 
-/// FEA-34: Neue Dateien schreiben `vivaplan/1`, auch wenn die Planung noch die alte Kennung trägt.
+/// #44: Neue Dateien schreiben `vivaplan/1`, auch wenn die Planung noch die alte Kennung trägt.
 #[test]
 fn schreiben_setzt_die_neue_kennung() {
     assert_eq!(FORMAT, "vivaplan/1");
@@ -131,7 +131,7 @@ fn sha256_stimmt() {
     );
 }
 
-/// FEA-34: Das Upgrade ersetzt nur die alte Kennung, und zwar ohne Hinweis; fehlende, fremde oder nicht textuelle
+/// #44: Das Upgrade ersetzt nur die alte Kennung, und zwar ohne Hinweis; fehlende, fremde oder nicht textuelle
 /// Kennungen und Nicht-Objekte bleiben unverändert.
 #[test]
 fn upgrade_ersetzt_nur_die_alte_kennung() {
@@ -150,7 +150,7 @@ fn upgrade_ersetzt_nur_die_alte_kennung() {
     assert_eq!(kein_objekt.plan, serde_json::json!([LEGACY_FORMAT]));
 }
 
-/// FEA-34: Beim Schreiben bleiben Planungen ohne Kennung, mit Nicht-Text-Kennung und Nicht-Objekte unverändert.
+/// #44: Beim Schreiben bleiben Planungen ohne Kennung, mit Nicht-Text-Kennung und Nicht-Objekte unverändert.
 #[test]
 fn schreiben_erfindet_keine_kennung() {
     let d = std::env::temp_dir().join(format!("vivaplan-legacy-format-b-{}", std::process::id()));

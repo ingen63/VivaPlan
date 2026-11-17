@@ -1,4 +1,4 @@
-//! FEA-17: Die Cash-Reserve (`wealth.reserveMonths`) wirkt nur bei der Strategie «Standard».
+//! #18: Die Cash-Reserve (`wealth.reserveMonths`) wirkt nur bei der Strategie «Standard».
 //! Alle anderen Strategien rechnen mit einer festen Reserve von 3 Monaten.
 
 use engine::batch;
@@ -12,7 +12,7 @@ fn base(strategy: Value, reserve: f64) -> Value {
         "household": { "persons": [ { "id": "A", "name": "A", "birth": "1970-01" } ] },
         "milestones": [
             { "id": "start", "name": "Start", "kind": "date", "date": "2030-01" },
-            // FEA-40: Strategie und Reserve gelten ab der Pensionierung; sie beginnt hier mit dem Start.
+            // #54: Strategie und Reserve gelten ab der Pensionierung; sie beginnt hier mit dem Start.
             { "id": "retire", "name": "Pensionierung", "kind": "date", "date": "2030-01" },
             { "id": "end", "name": "Ende", "kind": "date", "date": "2036-12" }
         ],

@@ -31,7 +31,7 @@ pub mod validate;
 
 use std::fmt;
 
-// ISS-22: Speichergrenze je Testprozess (siehe `test_alloc`).
+// #116: Speichergrenze je Testprozess (siehe `test_alloc`).
 #[cfg(test)]
 #[global_allocator]
 static TEST_ALLOC: test_alloc::Limited = test_alloc::Limited;
@@ -70,7 +70,7 @@ pub fn schema_json() -> String {
 
 #[cfg(test)]
 mod tests {
-    // FEA-29: Das Schema beschreibt die Projektdatei.
+    // #40: Das Schema beschreibt die Projektdatei.
     #[test]
     fn schema_describes_the_plan() {
         let v: serde_json::Value = serde_json::from_str(&super::schema_json()).unwrap();

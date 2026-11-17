@@ -574,7 +574,7 @@ mod tests {
         rows
     }
 
-    // FEA-29: Zellen als Ganzzahl oder Text; Kopfzeile ganz oben; Werte ≤ 0 fehlen; mindestens 13 Monate.
+    // #40: Zellen als Ganzzahl oder Text; Kopfzeile ganz oben; Werte ≤ 0 fehlen; mindestens 13 Monate.
     #[test]
     fn shiller_cells_header_and_minimum() {
         assert_eq!(cell_num(Some(&Data::Int(7))), Some(7.0));

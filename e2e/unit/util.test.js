@@ -1,4 +1,4 @@
-// FEA-69: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser.
+// #87: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser.
 // Ausführen: `node --test e2e/unit/` (oder `make ui-unit`).
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
@@ -7,7 +7,7 @@ const u = require("../../crates/app/ui/util.js");
 // Tausendertrennzeichen je nach ICU-Stand ' oder ’
 const T = "['’]";
 
-test("FEA-69/AK2: esc maskiert HTML-Sonderzeichen", () => {
+test("#87/AK2: esc maskiert HTML-Sonderzeichen", () => {
   assert.equal(u.esc('<a href="x">&</a>'), "&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;");
   assert.equal(u.esc(null), "");
   assert.equal(u.esc(5), "5");
@@ -86,7 +86,7 @@ test("rateAt interpoliert linear und setzt ausserhalb konstant fort", () => {
   assert.deepEqual(t, [[100_000, 0.1], [0, 0.0]], "die Tabelle bleibt unverändert");
 });
 
-test("FEA-69/AK2: Pfadzugriff getPath und setPath", () => {
+test("#87/AK2: Pfadzugriff getPath und setPath", () => {
   const o = { a: { b: [{ c: 1 }] } };
   assert.equal(u.getPath(o, "a.b.0.c"), 1);
   assert.equal(u.getPath(o, "a.x.y"), undefined);
@@ -104,7 +104,7 @@ test("Dateinamen: baseName und seriesShort", () => {
   assert.equal(u.seriesShort("/daten/Eigene.CSV"), "Eigene");
 });
 
-test("FEA-69/AK2: Dauer kurz und als Schätzung mit Spanne", () => {
+test("#87/AK2: Dauer kurz und als Schätzung mit Spanne", () => {
   assert.equal(u.fmtShort(0.4), "unter 1 s");
   assert.equal(u.fmtShort(45.4), "45 s");
   assert.equal(u.fmtShort(89), "89 s");
@@ -116,7 +116,7 @@ test("FEA-69/AK2: Dauer kurz und als Schätzung mit Spanne", () => {
   assert.match(u.fmtEstimate(100, [0.7, 1.5]), /ca\. <b>2 min<\/b>.*meist 70 s bis 3 min/);
 });
 
-test("FEA-69/AK2: Dauerschätzung der Optimierung", () => {
+test("#87/AK2: Dauerschätzung der Optimierung", () => {
   const b = { us: 100, gen: 20, fixedPaths: null };
   const c = { paths: 1000, checkPaths: 2000, strategies: ["standard", "vpw"] };
   // 50 Auswertungen × 1000 Pfade × 80 µs + 1000 × 20 µs + 3 × 2000 × 100 µs = 4.62 s
@@ -136,7 +136,7 @@ test("Stufen einer Variation, auch über Monate", () => {
   assert.equal(u.sweepSteps("2031-01", "2030-01", 6, true), 0);
 });
 
-test("FEA-91/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehlende Werte immer am Ende", () => {
+test("#118/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehlende Werte immer am Ende", () => {
   const v = x => x;
   assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v), [2, 9, 10, 100, null]);
   assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v, -1), [100, 10, 9, 2, null]);

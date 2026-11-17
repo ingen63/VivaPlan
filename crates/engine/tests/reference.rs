@@ -113,7 +113,7 @@ fn pension_fund_pro_rata_interest_at_retirement() {
 fn capital_withdrawals_in_same_year_are_combined_and_counted() {
     let mut v = base();
     v["milestones"][1]["date"] = json!("2030-06");
-    // AHV-Bezug 2035-01: die 3a-Auszahlung im September 2030 ist erlaubt (FEA-37).
+    // AHV-Bezug 2035-01: die 3a-Auszahlung im September 2030 ist erlaubt (#52).
     v["milestones"].as_array_mut().unwrap().insert(
         2,
         json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2035-01" }),
@@ -366,7 +366,7 @@ fn planned_purchase_before_start_is_reported() {
     );
 }
 
-/// ISS-2: Ein Verkaufsdatum vor dem Simulationsstart wird nie erreicht: die Prüfung warnt (kein Fehler).
+/// #2: Ein Verkaufsdatum vor dem Simulationsstart wird nie erreicht: die Prüfung warnt (kein Fehler).
 #[test]
 fn sale_before_start_is_reported_as_a_warning() {
     let mut v = base();

@@ -39,8 +39,8 @@ pub struct UpgradeOut {
     pub notes: Vec<String>,
 }
 
-/// Ältere Planung beim Laden auf den aktuellen Stand bringen (FEA-37, FEA-38). Die Grenzen kommen als `limits` in der
-/// Planung mit (Einstellungen, FEA-24); sie werden nicht übernommen.
+/// Ältere Planung beim Laden auf den aktuellen Stand bringen (#52, #51). Die Grenzen kommen als `limits` in der
+/// Planung mit (Einstellungen, #25); sie werden nicht übernommen.
 pub fn upgrade_plan(plan: &Value) -> UpgradeOut {
     let mut v = plan.clone();
     let notes = crate::upgrade::upgrade(&mut v);
@@ -65,7 +65,7 @@ pub struct PreviewOut {
     pub error: Option<String>,
     /// Womit die Vorschau rechnet, falls nicht mit den fixen Werten (z. B. Durchschnitt der Reihe).
     pub basis: Option<String>,
-    /// Auszahlungsplan der Säule 3a je Konto (FEA-41).
+    /// Auszahlungsplan der Säule 3a je Konto (#55).
     pub pillar3a: Vec<crate::sim::Pillar3aView>,
 }
 
@@ -80,7 +80,7 @@ fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Opt
     match p.returns.source {
         ReturnSource::Fixed => None,
         ReturnSource::Parametric => {
-            // FEA-78/79: mit Zeitreihe die Vorschlagswerte (bei «auto») und die Mittel von Obligationen und Inflation
+            // #100/#101: mit Zeitreihe die Vorschlagswerte (bei «auto») und die Mittel von Obligationen und Inflation
             let ds = crate::batch::returns_series(p, base_dir, library).ok().flatten();
             let (q, _) = crate::calibrate::resolve(&p.returns.parametric.clone().unwrap_or_default(), ds.as_ref());
             let g = (q.mu - 0.5 * q.sigma * q.sigma + q.jump_lambda * q.jump_mu).exp() - 1.0;
@@ -397,7 +397,7 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
     }
 }
 
-/// Nachgerechnete Läufe einer Variationsstufe (FEA-23).
+/// Nachgerechnete Läufe einer Variationsstufe (#24).
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RerunOut {
@@ -523,7 +523,7 @@ pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
 }
 
 /// Kurzinfo zu einer Zeitreihe (für die Anzeige im Editor).
-/// `series` ist ein Verweis auf eine Datei oder eine Anlagestrategie (`strategy:<JSON>`, FEA-53).
+/// `series` ist ein Verweis auf eine Datei oder eine Anlagestrategie (`strategy:<JSON>`, #69).
 pub fn series_info(series: &str, base_dir: &Path, library: Option<&Path>) -> crate::Result<SeriesInfo> {
     let (ds, parts) = match crate::strategy::from_reference_with_parts(series, library) {
         Some(r) => r?,
@@ -624,7 +624,7 @@ mod tests {
         serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
     }
 
-    // FEA-29: Vorschau beim parametrischen Modell: erwartete geometrische Aktienrendite exp(μ − σ²/2 + λ·μJ) − 1.
+    // #40: Vorschau beim parametrischen Modell: erwartete geometrische Aktienrendite exp(μ − σ²/2 + λ·μJ) − 1.
     #[test]
     fn preview_basis_for_each_source() {
         let mut v = example();
@@ -633,7 +633,7 @@ mod tests {
             json!({"paths": 10, "mu": 0.08, "sigma": 0.2, "df": 6, "jumpLambda": 0.5, "jumpMu": -0.1});
         // 0.08 − 0.02 − 0.05 = 0.01 ⇒ e^0.01 − 1 ≈ 1.005 %
         let out = preview(&v, Path::new("."), None);
-        // FEA-79: mit Anlagestrategie dazu die Mittel von Obligationen und Inflation der Reihe
+        // #101: mit Anlagestrategie dazu die Mittel von Obligationen und Inflation der Reihe
         let basis = out.basis.unwrap();
         assert!(
             basis.starts_with("Vorschau mit der erwarteten Aktienrendite des Modells (1.0 % pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen "),
@@ -651,7 +651,7 @@ mod tests {
             out.basis.as_deref(),
             Some("Vorschau mit der erwarteten Aktienrendite des Modells (9.4 % pro Jahr).")
         );
-        // FEA-78: mit «auto» die Vorschlagswerte des Aktienindex statt der gespeicherten
+        // #100: mit «auto» die Vorschlagswerte des Aktienindex statt der gespeicherten
         v["returns"]["parametric"]["auto"] = json!(true);
         let out = preview(&v, Path::new("."), None);
         assert!(!out.basis.unwrap().contains("(9.4 % pro Jahr)"));

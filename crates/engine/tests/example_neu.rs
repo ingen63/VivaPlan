@@ -1,4 +1,4 @@
-//! FEA-02: Die mitgelieferte Beispielplanung `crates/engine/assets/Neu.vplan` ist lesbar, ohne Fehler und simulierbar.
+//! #4: Die mitgelieferte Beispielplanung `crates/engine/assets/Neu.vplan` ist lesbar, ohne Fehler und simulierbar.
 
 use engine::api;
 use engine::model::Plan;

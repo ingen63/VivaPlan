@@ -165,8 +165,8 @@ fn catalog_lists_every_parameter_with_unit_and_plan_value() {
 }
 
 #[test]
-fn fea_17_ak4_only_standard_offers_the_reserve_to_the_optimisation() {
-    // FEA-17/AK4: Die Reserve (reserveMonths) ist nur bei «Standard» ein Parameter der Optimierung.
+fn issue_18_ak4_only_standard_offers_the_reserve_to_the_optimisation() {
+    // #18/AK4: Die Reserve (reserveMonths) ist nur bei «Standard» ein Parameter der Optimierung.
     for s in catalog(&plan()) {
         let offers = s.params.iter().any(|p| p.key == "reserveMonths");
         assert_eq!(offers, s.key == "standard", "{}", s.key);
@@ -174,8 +174,8 @@ fn fea_17_ak4_only_standard_offers_the_reserve_to_the_optimisation() {
 }
 
 #[test]
-fn fea_05_ak11_three_buckets_with_guardrails_is_its_own_strategy_with_two_fixed_parameters() {
-    // FEA-05/AK11: eigene Strategie in der Optimierung; untere Leitplanke und Anpassung sind standardmässig fix.
+fn issue_6_ak11_three_buckets_with_guardrails_is_its_own_strategy_with_two_fixed_parameters() {
+    // #6/AK11: eigene Strategie in der Optimierung; untere Leitplanke und Anpassung sind standardmässig fix.
     let c = catalog(&plan());
     let s = c.iter().find(|s| s.key == "three_buckets_guardrails").unwrap();
     assert_eq!(s.name, "3-Topf + Guardrails");

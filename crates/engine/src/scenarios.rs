@@ -166,7 +166,7 @@ pub fn apply(plan: &mut Value, param: &str, value: &Value) -> Result<()> {
         }
         "flows.spendingFactor" => {
             let f = value.as_f64().ok_or_else(|| missing("Faktor"))?;
-            // FEA-39: Der Faktor gilt für die Lebenshaltung ohne Wohnen (bei älteren Planungen dasselbe wie bisher).
+            // #53: Der Faktor gilt für die Lebenshaltung ohne Wohnen (bei älteren Planungen dasselbe wie bisher).
             plan["flows"]["spendingFactor"] = json!(f);
         }
         _ => return Err(Error::Invalid(format!("unbekannter Parameter «{param}»"))),
@@ -254,7 +254,7 @@ mod tests {
             "milestones": [{"id": "retire", "name": "Pensionierung", "kind": "age", "person": "A", "years": 64}],
             "flows": {"spending": {"mode": "timed", "rows": [{"from": "start", "value": 1000}, {"from": "retire", "value": 800}]}}
         });
-        // FEA-39: Der Faktor steht als eigenes Feld (gilt für die Lebenshaltung ohne Wohnen); die Reihe bleibt.
+        // #53: Der Faktor steht als eigenes Feld (gilt für die Lebenshaltung ohne Wohnen); die Reihe bleibt.
         apply(&mut p, "flows.spendingFactor", &json!(1.1)).unwrap();
         assert_eq!(p["flows"]["spendingFactor"], 1.1);
         assert_eq!(p["flows"]["spending"]["rows"][1]["value"], 800);
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(p["milestones"][0]["kind"], "date");
     }
 
-    // FEA-29: Startmonat und Entnahmerate (fixe Rate und Startrate der Guardrails).
+    // #40: Startmonat und Entnahmerate (fixe Rate und Startrate der Guardrails).
     #[test]
     fn apply_start_date_and_withdrawal_rate() {
         let mut p = json!({"returns": {}, "withdrawal": {"guardrails": {"initialRate": 0.04}}});
@@ -278,7 +278,7 @@ mod tests {
         assert!(apply(&mut p, "x", &json!(1)).is_err());
     }
 
-    // FEA-29: Genau 1'000'000 Werte sind erlaubt, ein Wert mehr nicht; längere Bereiche werden beim Anlegen gekappt.
+    // #40: Genau 1'000'000 Werte sind erlaubt, ein Wert mehr nicht; längere Bereiche werden beim Anlegen gekappt.
     #[test]
     fn one_million_values_is_the_limit() {
         let sweep =

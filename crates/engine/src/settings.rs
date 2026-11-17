@@ -1,4 +1,4 @@
-//! Anwendungsweite Einstellungen, die der Rechenkern braucht (FEA-24).
+//! Anwendungsweite Einstellungen, die der Rechenkern braucht (#25).
 //!
 //! Die Oberfläche speichert sie lokal (nicht in der Planungsdatei) und gibt sie bei jedem Aufruf als `limits` in der
 //! Planung mit. Fehlen sie (Kommandozeile, Tests), gelten die Standardwerte dieser Datei. Alle Stellen, die eine Grenze
@@ -7,7 +7,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// Standard des Meilensteins «AHV-Bezug» und «Bezug Pensionskasse» in Jahren (FEA-38).
+/// Standard des Meilensteins «AHV-Bezug» und «Bezug Pensionskasse» in Jahren (#51).
 pub const DEFAULT_AGE: f64 = 65.0;
 
 /// Grenzen für die Meilensteine «AHV-Bezug» und «Bezug Pensionskasse» und Maximalbetrag der Säule 3a.
@@ -66,7 +66,7 @@ impl Limits {
 mod tests {
     use super::*;
 
-    // FEA-24/AK1: Standardwerte der Einstellungen.
+    // #25/AK1: Standardwerte der Einstellungen.
     #[test]
     fn defaults() {
         let l = Limits::default();
@@ -80,7 +80,7 @@ mod tests {
         assert_eq!((p.pk_max, p.ahv_min), (67.0, 63.0));
     }
 
-    // FEA-24/AK4: Prüfung der Eingabe.
+    // #25/AK4: Prüfung der Eingabe.
     #[test]
     fn problems() {
         let bad = |f: fn(&mut Limits)| {

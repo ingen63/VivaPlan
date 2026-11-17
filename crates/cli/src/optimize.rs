@@ -185,7 +185,7 @@ pub fn cmd_optimize(args: &[String]) -> R {
 
 #[cfg(test)]
 mod tests {
-    //! FEA-82: Optionen und Ausgabe des Befehls `optimize`, ohne die Optimierung selbst zu rechnen.
+    //! #106: Optionen und Ausgabe des Befehls `optimize`, ohne die Optimierung selbst zu rechnen.
     use super::*;
     use engine::optimize::Metrics;
 

@@ -237,12 +237,12 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     }
     let flows = Flows {
         income: c.series_or_zero("MoneyFlows.Income")?,
-        // Im alten Programm blieb das Einkommen nominal gleich (FEA-43).
+        // Im alten Programm blieb das Einkommen nominal gleich (#58).
         income_indexed: false,
         spending: c.series_or_zero("MoneyFlows.Spendings")?,
         savings: c.series("MoneyFlows.Savings", |x| x)?,
         extras,
-        // Im alten Programm waren die Ausgaben ohne Wohnkosten; die Übernahme beim Öffnen rechnet um (FEA-39).
+        // Im alten Programm waren die Ausgaben ohne Wohnkosten; die Übernahme beim Öffnen rechnet um (#53).
         spending_includes_housing: false,
         spending_factor: None,
     };
@@ -557,7 +557,7 @@ mod tests {
         serde_json::to_value(x).unwrap()
     }
 
-    // FEA-29: Umrechnung einer erfundenen Konfiguration des früheren Programms, Feld für Feld.
+    // #40: Umrechnung einer erfundenen Konfiguration des früheren Programms, Feld für Feld.
     // Start Januar 2030 mit Alter 60 ⇒ Alter a entspricht 2030-01 + (a − 60) × 12 Monaten.
     #[test]
     fn full_config() {

@@ -10,7 +10,7 @@ const SECTIONS = ["Haushalt & Projekt", "Meilensteine", "Vorsorge", "Säule 3a",
 
 /**
  * Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler.
- * FEA-87: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
+ * #111: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
  * der Rechnerlast abhängig. Tests, die die echte Messung prüfen, öffnen mit `{ bench: true }`.
  */
 async function open(page, hash = "", { bench = false } = {}) {
@@ -27,20 +27,20 @@ const noErrors = async (page, errors) => {
   expect(await page.evaluate(() => window.__errors)).toEqual([]);
 };
 const field = (page, p) => page.locator(`input[data-path="${p}"]`);
-/** FEA-87: wartet, bis keine Vorschau mehr aussteht (sonst nimmt eine verzögerte Vorschau die nächste Eingabe halb mit). */
+/** #111: wartet, bis keine Vorschau mehr aussteht (sonst nimmt eine verzögerte Vorschau die nächste Eingabe halb mit). */
 const previewIdle = page => expect(page.locator("html")).toHaveAttribute("data-preview", "idle");
-/** FEA-87: Klick ins Menü. Jede Vorschau zeichnet das Menü neu; ein Klick, der in eine Vorschau fällt, ginge verloren. */
+/** #111: Klick ins Menü. Jede Vorschau zeichnet das Menü neu; ein Klick, der in eine Vorschau fällt, ginge verloren. */
 const nav = async (page, title) => { await previewIdle(page); await page.locator("#nav a", { hasText: title }).first().click(); };
 const kpiValue = (page, label) => page.locator(`#kpis .kpi:has(.k:text-is("${label}")) .v`);
 const resultKpi = (page, label) => page.locator(`#resultsBody .kpi:has(.k:text-is("${label}")) .v`);
 const parseNum = s => Number(s.replace(/[’'\sk]/g, ""));
 /** Stellt die Optimierung ein (z. B. kleine Rechnung) und gibt zurück, was in den Feldern steht. Die Werte gehen über die
- *  Planung (`state.optimization`), denn `saveOptCfg` liest die Felder und überschreibt ein direkt gesetztes `optCfg` (ISS-16). */
+ *  Planung (`state.optimization`), denn `saveOptCfg` liest die Felder und überschreibt ein direkt gesetztes `optCfg` (#79). */
 const setOpt = (page, cfg) => page.evaluate(cfg => { state.optimization = optToPlan({ ...optCfg, ...cfg }); renderSection(); return readOptCfg(); }, cfg);
 /** Tabellenzeile eines Meilensteins (Name steht in einem Eingabefeld, deshalb über den Index der ID). */
 async function msRow(page, id) {
   const i = await page.evaluate(id => state.milestones.findIndex(m => m.id === id), id);
-  // Feste Meilensteine (FEA-38) haben keinen änderbaren Namen; jede Zeile hat aber die Auswahl «Festgelegt als».
+  // Feste Meilensteine (#51) haben keinen änderbaren Namen; jede Zeile hat aber die Auswahl «Festgelegt als».
   return page.locator(`#main table.tbl tr:has(select[data-path="milestones.${i}.kind"])`);
 }
 
@@ -98,7 +98,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-3: «Neu» lädt eine leere Planung mit Standardwerten", async ({ page }) => {
+  test("#29: «Neu» lädt eine leere Planung mit Standardwerten", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
@@ -120,7 +120,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-15/16: Bestände, Guthaben und Marktwert heissen «per Simulationsstart (MM.JJJJ)» und folgen dem Start", async ({ page }) => {
+  test("#16/#17: Bestände, Guthaben und Marktwert heissen «per Simulationsstart (MM.JJJJ)» und folgen dem Start", async ({ page }) => {
     const errors = await open(page, "wealth");
     const start = async () => page.evaluate(() => startTxt());
     const s1 = await start();
@@ -133,7 +133,7 @@ test.describe("Start und Navigation", () => {
     await expect(page.locator("#main label.field span", { hasText: "Altersguthaben per Simulationsstart (03.2027)" })).toHaveCount(2);
     await nav(page, "Immobilien");
     await expect(page.locator("#main")).toContainText("Marktwert per Simulationsstart (03.2027)");
-    // FEA-37: Die Säule 3a hat einen eigenen Abschnitt.
+    // #52: Die Säule 3a hat einen eigenen Abschnitt.
     await nav(page, "Säule 3a");
     await expect(page.locator("#main")).toContainText("Guthaben per Simulationsstart (03.2027)");
     for (let i = 0; i < SECTIONS.length; i++) {
@@ -144,7 +144,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-18/FEA-53: Erklärung der Anlagestrategie im Info-Popup (Maus, Fokus, Klick, Esc, kopierbar)", async ({ page }) => {
+  test("#19/#69: Erklärung der Anlagestrategie im Info-Popup (Maus, Fokus, Klick, Esc, kopierbar)", async ({ page }) => {
     const errors = await open(page, "wealth");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
     const pop = card.locator("h3 .infopop"), body = pop.locator(".infobody");
@@ -173,7 +173,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-53/AK1: Strategie bei den Anlagen, Reiter «Simulation» ohne Wahl der Zeitreihe und ohne eigene Dateien", async ({ page }) => {
+  test("#69/AK1: Strategie bei den Anlagen, Reiter «Simulation» ohne Wahl der Zeitreihe und ohne eigene Dateien", async ({ page }) => {
     const errors = await open(page, "wealth");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
     const stocks = card.locator('select[data-path="returns.strategy.stocks"]'), bonds = card.locator('select[data-path="returns.strategy.bonds"]');
@@ -184,7 +184,7 @@ test.describe("Start und Navigation", () => {
     await expect(card).toContainText("Jährlich 01.1900 – 12.2020");
     await bonds.selectOption("usa");
     await expect(card).toContainText("Jährlich 01.1922 – 12.2020");
-    // FEA-59/AK1, AK3: kurzfristige Eidgenossen, mit dem S&P 500 jährlich
+    // #76/AK1, AK3: kurzfristige Eidgenossen, mit dem S&P 500 jährlich
     await stocks.selectOption("sp500");
     await bonds.selectOption("chShort");
     await expect(card).toContainText("Jährlich 01.1922 – 12.2025");
@@ -201,12 +201,12 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-53/AK8: Mittelwerte im gemeinsamen Zeitraum, Hinweis bei gekürztem Index, ohne Kürzung kein Hinweis", async ({ page }) => {
+  test("#69/AK8: Mittelwerte im gemeinsamen Zeitraum, Hinweis bei gekürztem Index, ohne Kürzung kein Hinweis", async ({ page }) => {
     const errors = await open(page, "wealth");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
     const stocks = card.locator('select[data-path="returns.strategy.stocks"]'), bonds = card.locator('select[data-path="returns.strategy.bonds"]');
     const clip = card.locator(".cliphint");
-    // S&P 500 mit US-Obligationen: beide Teile 1922–2025, kein Hinweis (FEA-72: statt Pictet mit Pictet)
+    // S&P 500 mit US-Obligationen: beide Teile 1922–2025, kein Hinweis (#90: statt Pictet mit Pictet)
     await stocks.selectOption("sp500");
     await bonds.selectOption("usa");
     await expect(card).toContainText("Mittlere Jahresrendite im gemeinsamen Zeitraum 1922–2025 von Aktien und Obligationen");
@@ -222,7 +222,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-53/AK2: «Welt individuell»: Gewichte zusammen 100 %, sonst Fehler beim Feld", async ({ page }) => {
+  test("#69/AK2: «Welt individuell»: Gewichte zusammen 100 %, sonst Fehler beim Feld", async ({ page }) => {
     const errors = await open(page, "wealth");
     await page.locator('select[data-path="returns.strategy.stocks"]').selectOption("worldCustom");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
@@ -231,7 +231,7 @@ test.describe("Start und Navigation", () => {
     const eu = field(page, "returns.strategy.weights.eu");
     await previewIdle(page);
     await eu.fill("50");
-    await expect(card.locator(".ferr")).toHaveCount(0); // während der Eingabe wartet alles (ISS-13)
+    await expect(card.locator(".ferr")).toHaveCount(0); // während der Eingabe wartet alles (#57)
     await eu.press("Tab");
     await expect(card).toContainText("Summe 120 %");
     await expect(card.locator(".ferr")).toContainText("Die Gewichte der Regionen ergeben 120 % statt 100 %.");
@@ -244,7 +244,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-53/AK5: ältere Planung mit Zeitreihe wird beim Öffnen zur Strategie, mit Hinweis bei eigenen Dateien", async ({ page }) => {
+  test("#69/AK5: ältere Planung mit Zeitreihe wird beim Öffnen zur Strategie, mit Hinweis bei eigenen Dateien", async ({ page }) => {
     const errors = await open(page, "general");
     const out = await page.evaluate(async () => {
       const r = [];
@@ -256,7 +256,7 @@ test.describe("Start und Navigation", () => {
       }
       return r;
     });
-    // FEA-72/AK4: Pictet wird nicht mehr mitgeliefert: Schweiz (JST) mit Eidgenossenschaft, mit Hinweis
+    // #90/AK4: Pictet wird nicht mehr mitgeliefert: Schweiz (JST) mit Eidgenossenschaft, mit Hinweis
     expect(out[0].strategy).toMatchObject({ stocks: "chJst", bonds: "ch" });
     expect(out[0].series).toBeUndefined();
     expect(out[0].notes.join(" ")).toContain("«Schweiz (Pictet)» wird aus Lizenzgründen nicht mehr mitgeliefert");
@@ -265,7 +265,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-72/AK2, AK3: keine Wahl «Schweiz (Pictet)»; eine Planung mit Pictet öffnet mit Schweiz (JST) und Eidgenossenschaft und einem Hinweis", async ({ page }) => {
+  test("#90/AK2, AK3: keine Wahl «Schweiz (Pictet)»; eine Planung mit Pictet öffnet mit Schweiz (JST) und Eidgenossenschaft und einem Hinweis", async ({ page }) => {
     const errors = await open(page, "wealth");
     await expect(page.locator('select[data-path^="returns.strategy"] option[value="chPictet"]')).toHaveCount(0);
     const out = await page.evaluate(async () => {
@@ -279,7 +279,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-7: Optimum eines Anteils an der Grenze 100 % / 0 % ohne «≥» / «≤»", async ({ page }) => {
+  test("#34: Optimum eines Anteils an der Grenze 100 % / 0 % ohne «≥» / «≤»", async ({ page }) => {
     const errors = await open(page, "milestones");
     const t = await page.evaluate(() => [
       { param: "pension.pk.lumpsum", v: 1, kind: "exact", reaches: true },
@@ -291,7 +291,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-10: Jahreswerte ohne Spaltengruppen, Einkommen und Ausgaben geplant; Spaltenreihenfolge mit Entnahme; Titel zentriert und fett; Knopf «Steuern anzeigen» sichtbar", async ({ page }) => {
+  test("#37: Jahreswerte ohne Spaltengruppen, Einkommen und Ausgaben geplant; Spaltenreihenfolge mit Entnahme; Titel zentriert und fett; Knopf «Steuern anzeigen» sichtbar", async ({ page }) => {
     const errors = await open(page, "results/table/nosweep");
     const head = page.locator("#resultsBody table.yt tr").first();
     const cols = (await head.locator("th").allInnerTexts()).map(t => t.replace(/\s+/g, " ").trim());
@@ -325,7 +325,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-10: Zeitreihe in den Parametern ohne «library:»", async ({ page }) => {
+  test("#37: Zeitreihe in den Parametern ohne «library:»", async ({ page }) => {
     const errors = await open(page);
     const t = await page.evaluate(() => [seriesShort("library:Shiller CHF + CH-Obligationen.csv"), seriesShort("library:Welt (JST)"), seriesShort("/tmp/x/Eigene.csv")]);
     expect(t).toEqual(["Shiller CHF + CH-Obligationen", "Welt (JST)", "Eigene"]);
@@ -338,7 +338,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-10: Wechsel Datum ↔ Alter von übernimmt den Wert aus «Ergibt»", async ({ page }) => {
+  test("#37: Wechsel Datum ↔ Alter von übernimmt den Wert aus «Ergibt»", async ({ page }) => {
     const errors = await open(page, "milestones");
     const i = await page.evaluate(() => state.milestones.findIndex(m => m.id === "ahv"));
     const row = await msRow(page, "ahv");
@@ -363,7 +363,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-10: Warnsymbol in der Karte «Umfang» ab 90 s geschätzter Rechenzeit", async ({ page }) => {
+  test("#37: Warnsymbol in der Karte «Umfang» ab 90 s geschätzter Rechenzeit", async ({ page }) => {
     const errors = await open(page, "scenarios");
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
     const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); updateEstimates(); }, sec);
@@ -381,7 +381,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-14/ISS-4, FEA-38/AK1: Meilensteine ohne Spalte «Verwendet», verwendete lassen sich mit Umstellung auf das Datum löschen, Start/Ende/Bezug Pensionskasse/AHV-Bezug gesperrt", async ({ page }) => {
+  test("#15/#30, #51/AK1: Meilensteine ohne Spalte «Verwendet», verwendete lassen sich mit Umstellung auf das Datum löschen, Start/Ende/Bezug Pensionskasse/AHV-Bezug gesperrt", async ({ page }) => {
     const errors = await open(page, "milestones");
     await expect(page.locator("#main table.tbl").first()).not.toContainText("Verwendet");
     const rows = () => page.locator("#main table.tbl tr:has(select[data-path^='milestones.'])");
@@ -394,7 +394,7 @@ test.describe("Start und Navigation", () => {
     }
     const preview = () => page.evaluate(async () => { const r = await Engine.call("preview", { plan: state, path: null }); return { end: r.result.summary.endTotal, props: JSON.stringify(state.realestate.properties.map(p => [p.buy, p.sell])) }; });
     const before = await preview();
-    // ISS-4: «75 Jahre» (sell_house) wird zweimal verwendet (Einnahmen & Ausgaben, Verkauf Haus); Löschen ist mit Umstellung möglich
+    // #30: «75 Jahre» (sell_house) wird zweimal verwendet (Einnahmen & Ausgaben, Verkauf Haus); Löschen ist mit Umstellung möglich
     const props0 = await page.evaluate(() => state.realestate.properties.map(p => [p.buy ?? null, p.sell ?? null]));
     expect(props0[0]).toEqual([null, "sell_house"]);
     const row = await msRow(page, "sell_house");
@@ -420,9 +420,9 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-14: Meilenstein «Alter von» wird auf das berechnete Datum umgestellt, unbenutzte ohne Dialog gelöscht, doppelter Zeitpunkt in einer Reihe", async ({ page }) => {
+  test("#15: Meilenstein «Alter von» wird auf das berechnete Datum umgestellt, unbenutzte ohne Dialog gelöscht, doppelter Zeitpunkt in einer Reihe", async ({ page }) => {
     const errors = await open(page, "milestones");
-    // «AHV-Bezug» ist fest (FEA-38); geprüft wird mit einem eigenen Meilenstein «Alter von».
+    // «AHV-Bezug» ist fest (#51); geprüft wird mit einem eigenen Meilenstein «Alter von».
     await page.evaluate(() => { state.milestones.splice(state.milestones.length - 1, 0, { id: "kids", name: "Kinder ausgezogen", kind: "age", person: "A", years: 62 }); renderSection(); });
     const ahv = await page.evaluate(() => i2ym(msMonth("kids")));
     // Eine zweite Zeile der Ausgabenreihe liegt genau auf dem Datum des Meilensteins: nach der Umstellung bleibt die spätere
@@ -444,7 +444,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-13: Pflichtfelder mit Sternchen, Fehler am Feld, Start und Optimierung gesperrt bis alles gültig ist", async ({ page }) => {
+  test("#14: Pflichtfelder mit Sternchen, Fehler am Feld, Start und Optimierung gesperrt bis alles gültig ist", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
@@ -460,11 +460,11 @@ test.describe("Start und Navigation", () => {
     await expect(page.locator("#results")).toBeHidden();
     // Ungültiges Geburtsdatum: Fehler am Feld, gesperrt
     await field(page, "household.persons.0.name").fill("Anna");
-    await field(page, "household.persons.0.name").press("Tab"); // ISS-13: die Meldung verschwindet beim Verlassen
+    await field(page, "household.persons.0.name").press("Tab"); // #57: die Meldung verschwindet beim Verlassen
     await expect(name.locator(".ferr")).toHaveCount(0);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("");
-    await birth.press("Tab"); // ISS-13: Meldung erst beim Verlassen des Feldes
+    await birth.press("Tab"); // #57: Meldung erst beim Verlassen des Feldes
     await expect(page.locator("#main label.field", { has: birth }).locator(".ferr")).toContainText("Ungültiges Datum");
     await page.locator('button[data-action="run"]').click();
     await expect(page.locator("#toast")).toContainText("Die Planung hat 1 Fehler");
@@ -512,7 +512,7 @@ test.describe("Start und Navigation", () => {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
-  test("Vorschau rechnet beim Verlassen des Feldes neu (ISS-13)", async ({ page }) => {
+  test("Vorschau rechnet beim Verlassen des Feldes neu (#57)", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Vermögen & Anlage");
     const before = await kpiValue(page, "Vermögen am Ende").textContent();
@@ -544,7 +544,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     const errors = await open(page);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("13.1970");
-    await birth.press("Tab"); // ISS-13
+    await birth.press("Tab"); // #57
     await expect(birth).toHaveClass(/invalid/);
     await birth.fill("xyz");
     await birth.press("Tab");
@@ -561,11 +561,11 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     const endRow = await msRow(page, "end");
     await endRow.locator("select").first().selectOption("date");
     await endRow.locator("input[data-type=month]").fill("01.2000");
-    await endRow.locator("input[data-type=month]").press("Tab"); // ISS-13: Prüfung beim Verlassen (FEA-87: nicht auf eine Vorschau warten)
+    await endRow.locator("input[data-type=month]").press("Tab"); // #57: Prüfung beim Verlassen (#111: nicht auf eine Vorschau warten)
     await expect(page.locator("#val li.err").first()).toBeVisible();
     await expect(page.locator("#nav a .badge.err").first()).toBeVisible();
     await page.keyboard.press(`${MOD}+Enter`);
-    // FEA-13: Der Start ist gesperrt, die Meldung nennt die Fehlerzahl, der Verweis führt in den betroffenen Abschnitt
+    // #14: Der Start ist gesperrt, die Meldung nennt die Fehlerzahl, der Verweis führt in den betroffenen Abschnitt
     await expect(page.locator("#toast")).toContainText("Die Planung hat 1 Fehler");
     await expect(page.locator("#toast")).toContainText("Meilensteine");
     await expect(page.locator("#results")).toBeHidden();
@@ -577,7 +577,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     const errors = await open(page);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("01.2999");
-    await birth.press("Tab"); // ISS-13: Prüfliste erst beim Verlassen
+    await birth.press("Tab"); // #57: Prüfliste erst beim Verlassen
     await expect(page.locator("#val li.err").first()).toBeVisible();
     await birth.fill("01.1850");
     await birth.press("Tab");
@@ -595,7 +595,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await nav(page, "Vermögen & Anlage");
     const stocks = field(page, "wealth.stocks");
     await stocks.fill("");
-    await stocks.press("Tab"); // ISS-13
+    await stocks.press("Tab"); // #57
     await expect(stocks).toHaveClass(/invalid/);
     await stocks.fill("1'000'000");
     await stocks.press("Tab");
@@ -626,7 +626,7 @@ test.describe("Meilensteine", () => {
     await row.locator("select").first().selectOption("date");
     const date = row.locator("input[data-type=month]");
     await date.fill("01.2030");
-    await date.press("Tab"); // ISS-13: berechnete Werte erst beim Verlassen
+    await date.press("Tab"); // #57: berechnete Werte erst beim Verlassen
     const result = row.locator('[data-computed="ms"]');
     await expect(result).toContainText("01.2030");
     const age1 = await result.textContent();
@@ -640,13 +640,13 @@ test.describe("Meilensteine", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-38/AK2: Bezug Pensionskasse ausserhalb der Grenzen: Fehler am Feld statt Zahlen", async ({ page }) => {
+  test("#51/AK2: Bezug Pensionskasse ausserhalb der Grenzen: Fehler am Feld statt Zahlen", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("date");
     await row.locator("input[data-type=month]").fill("01.2060");
-    await row.locator("input[data-type=month]").press("Tab"); // ISS-13: Prüfung beim Verlassen
+    await row.locator("input[data-type=month]").press("Tab"); // #57: Prüfung beim Verlassen
     await expect(page.locator("#val li.err").first()).toContainText("«Bezug Pensionskasse»: Alter 89.6 liegt ausserhalb der Grenzen 58 bis 65 Jahre");
     await expect(page.locator("#kpis .kpi")).toHaveCount(1);
     await expect(page.locator("#kpis .kpi .s")).toHaveText("siehe Prüfung");
@@ -659,7 +659,7 @@ test.describe("Meilensteine", () => {
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("age");
     await row.locator("input[data-type=years]").fill("64");
-    await row.locator("input[data-type=years]").press("Tab"); // ISS-13: gerechnet wird beim Verlassen
+    await row.locator("input[data-type=years]").press("Tab"); // #57: gerechnet wird beim Verlassen
     await expect(row.locator('[data-computed="ms"]')).toContainText("Alter 64.0");
     const byAge = await row.locator('[data-computed="ms"]').textContent();
     const m = /(\d{2}\.\d{4})/.exec(byAge)[1];
@@ -848,7 +848,7 @@ test.describe("Ergebnisse", () => {
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     const header = page.locator("#resultsBody table.yt tr").first();
     await expect(header).toContainText("Inflation");
-    // FEA-07: Steuerspalten sind standardmässig eingeklappt, die Schaltfläche blendet sie ein und aus
+    // #8: Steuerspalten sind standardmässig eingeklappt, die Schaltfläche blendet sie ein und aus
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(0);
     await expect(header).not.toContainText("Steuer");
     await page.locator('button[data-action="tax-cols"]').click();
@@ -895,7 +895,7 @@ test.describe("Ergebnisse", () => {
       state.returns.bootstrap.paths = 300;
       state.flows.spending = JSON.parse(JSON.stringify(state.flows.spending));
       const rows = state.flows.spending.rows ?? [];
-      // so knapp, dass schlechte Läufe aufgebraucht werden: Lebenshaltung ohne die Wohnkosten (1'700 im Beispiel, FEA-39) × 1.6
+      // so knapp, dass schlechte Läufe aufgebraucht werden: Lebenshaltung ohne die Wohnkosten (1'700 im Beispiel, #53) × 1.6
       rows.forEach(r => { r.value = (r.value - 1700) * 1.6 + 1700; });
       state.scenarios.sweeps = [{ param: "flows.spendingFactor", from: 0.5, to: 1.1, step: 0.1 }];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
@@ -925,7 +925,7 @@ test.describe("Ergebnisse", () => {
       state.scenarios.sweeps = [];
       setP("flows.income", { mode: "const", value: 6000 });
       setP("flows.spending", { mode: "const", value: 0 });
-      state.flows.spendingIncludesHousing = false; // Wohnkosten zusätzlich (FEA-39)
+      state.flows.spendingIncludesHousing = false; // Wohnkosten zusätzlich (#53)
       state.wealth.cash = 2000000;
       state.realestate.properties = [{ id: "h", name: "Haus", status: "owned", price: 500000, worth: 800000, sell: "never", fixCosts: 0,
         inflation: false, mortgage: { tranches: [{ name: "T", amount: 400000, start: "2026-03", after: "renew", periods: [{ type: "fixed", term: 1, rate: 0.01 }] }] } }];
@@ -943,7 +943,7 @@ test.describe("Ergebnisse", () => {
     expect(out.single).not.toContain("Hypothekenerneuerungen"); // Abschnitt heisst «Immobilien»
     expect(out.single).toMatch(/nicht gegeben/);
     expect(out.single).toContain("Einmalrückzahlung Hypothek Haus");
-    // FEA-22: keine Einmalzahlungen mehr in der Übersicht, Kennzahl «Notverkäufe» bleibt, Spalte «Immobilienverkäufe»
+    // #23: keine Einmalzahlungen mehr in der Übersicht, Kennzahl «Notverkäufe» bleibt, Spalte «Immobilienverkäufe»
     expect(out.batch).not.toContain("Einmalzahlungen");
     expect(out.batch).toContain("Notverkäufe");
     expect(out.batch).toContain("Immobilienverkäufe");
@@ -1118,7 +1118,7 @@ test.describe("Ergebnisse", () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       state.taxes.propertyGain = { brackets: [], reduction: 0 };   // Pflicht bei Immobilien; Satz 0 %, damit die Beträge unverändert bleiben
       setP("flows.income", { mode: "const", value: 6000 }); setP("flows.spending", { mode: "const", value: 0 });
-      state.flows.spendingIncludesHousing = false; // Wohnkosten zusätzlich (FEA-39)
+      state.flows.spendingIncludesHousing = false; // Wohnkosten zusätzlich (#53)
       state.wealth.cash = 2000000;
       const house = (extra = {}) => ({ id: "h", name: "Haus", status: "owned", price: 500000, worth: 800000, sell: "never", fixCosts: 0, inflation: false,
         mortgage: { tranches: [{ name: "T", amount: 400000, start: "2026-03", after: "renew", periods: [{ type: "fixed", term: 1, rate: 0.01 }] }] }, ...extra });
@@ -1201,7 +1201,7 @@ test.describe("Ergebnisse", () => {
       const r = lastRun.single.bucketRefills;
       return { cards, n: r.length, first: r[0], jan: r.find(x => x.trigger === "Januar") };
     });
-    // FEA-08: keine eigene Karte; FEA-09: keine 3-Topf-Buchungen in der Ereignisliste
+    // #9: keine eigene Karte; #10: keine 3-Topf-Buchungen in der Ereignisliste
     expect(out.cards.some(t => t.startsWith("3-Topf-Strategie"))).toBe(false);
     await expect(page.locator("#resultsBody .evlist")).not.toContainText("Topf 1");
     await page.getByRole("button", { name: "Jahreswerte" }).click();
@@ -1333,7 +1333,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-22: Immobilienverkäufe je Perzentil-Lauf mit Datum, Notverkäufe mit Warnsymbol, ohne Immobilien keine Spalte", async ({ page }) => {
+  test("#23: Immobilienverkäufe je Perzentil-Lauf mit Datum, Notverkäufe mit Warnsymbol, ohne Immobilien keine Spalte", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       const lines = html => { const d = document.createElement("div"); d.innerHTML = html; return [...d.querySelectorAll("div")].map(x => ({ text: x.textContent.replace(/\s+/g, " ").trim(), warn: !!x.querySelector(".hwarn") })); };
@@ -1364,10 +1364,10 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-20: Variationen ohne feste Grenze (technisch 1'000'000), Warnung vor langen Berechnungen", async ({ page }) => {
+  test("#21: Variationen ohne feste Grenze (technisch 1'000'000), Warnung vor langen Berechnungen", async ({ page }) => {
     const errors = await open(page, "scenarios");
     const run = async sweeps => {
-      // FEA-65: renderSection und renderDerived zeichnen synchron; kein Warten nötig
+      // #83: renderSection und renderDerived zeichnen synchron; kein Warten nötig
       await page.evaluate(s => { state.scenarios.sweeps = s; renderSection(); renderDerived(); }, sweeps);
       return page.evaluate(async () => {
         const out = await Engine.call("validate", { plan: state });
@@ -1446,7 +1446,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-21: Legenden zeigen gestrichelte Linien als gestricheltes Symbol (Übersicht und Grafiken)", async ({ page }) => {
+  test("#22: Legenden zeigen gestrichelte Linien als gestricheltes Symbol (Übersicht und Grafiken)", async ({ page }) => {
     const errors = await open(page, "results/bootstrap");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const dashes = () => page.evaluate(() => [...document.querySelectorAll("#resultsBody .legend")].map(l => ({
@@ -1569,7 +1569,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
   test("zwei Läufe ablegen und vergleichen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
-    // FEA-90: Die Karte «Gesamtvermögen im Vergleich» heisst jetzt «Bandbreite des Gesamtvermögens»; der Titel nennt den Vergleich
+    // #115: Die Karte «Gesamtvermögen im Vergleich» heisst jetzt «Bandbreite des Gesamtvermögens»; der Titel nennt den Vergleich
     await expect(page.locator("#resultsTitle")).toContainText("Vergleich von 2 Ergebnissen");
     await expect(page.locator("#resultsBody")).toContainText("Kennzahlen");
     await noErrors(page, errors);
@@ -1647,14 +1647,14 @@ test.describe("Gespeicherte Ergebnisse", () => {
     expect(await old.locator("td.ptip").getAttribute("data-tip")).toBe("Parameter nicht verfügbar");
     // Vergleich: gleiche Spalten
     await page.evaluate(() => { runsSel.clear(); runsSel.add(runsIds[0]); runsSel.add(runsIds[1]); return compareRuns(); });
-    // FEA-91: der Spaltenkopf trägt zusätzlich den Sortierpfeil
+    // #118: der Spaltenkopf trägt zusätzlich den Sortierpfeil
     const cmp = (await page.locator("#resultsBody table").first().locator("tr:first-child th").allInnerTexts()).map(t => t.replace(/[▲▼↕]/g, "").trim());
     expect(cmp).toContain("Zeitreihe");
     expect(cmp).not.toContain("Art");
     await noErrors(page, errors);
   });
 
-  test("FEA-12: Liste zeigt «Erfolgsquote · 5 %» statt Median und das Warnsymbol für ungeplante Immobilienverkäufe ab 5 % der Läufe", async ({ page }) => {
+  test("#13: Liste zeigt «Erfolgsquote · 5 %» statt Median und das Warnsymbol für ungeplante Immobilienverkäufe ab 5 % der Läufe", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
@@ -1853,7 +1853,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   test("Optimierung läuft mit Fortschritt, Entnahmerate erscheint im Ergebnis", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap/optset");
     const small = { paths: 300, checkPaths: 500, samples: 6, strategies: ["fixed_rate"] };
-    expect(await setOpt(page, small)).toMatchObject(small); // ISS-16: die kleine Rechnung kommt wirklich in den Feldern an
+    expect(await setOpt(page, small)).toMatchObject(small); // #79: die kleine Rechnung kommt wirklich in den Feldern an
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("#main .job progress")).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off");
@@ -1861,7 +1861,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-05/AK1, AK9, AK10: 3-Topf mit Guardrails – Auswahl, Karten, Name, Tooltip und Optimierung", async ({ page }) => {
+  test("#6/AK1, AK9, AK10: 3-Topf mit Guardrails – Auswahl, Karten, Name, Tooltip und Optimierung", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.withdrawal.strategy = "three_buckets"; delete state.withdrawal.buckets.spending; goto("withdrawal"); });
     const sel = page.locator('#main select[data-path="withdrawal.buckets.spending"]');
@@ -1874,7 +1874,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await expect(page.locator('#main input[data-path="withdrawal.floor"]')).toBeVisible();
     await expect(page.locator('#main input[data-path="withdrawal.buckets.cashYears"]')).toBeVisible();
     expect(await page.evaluate(() => state.withdrawal.buckets.spending)).toBe("guardrails");
-    // AK9: Name und Parameter (Tooltip FEA-10) mit Töpfen und Guardrails
+    // AK9: Name und Parameter (Tooltip #11) mit Töpfen und Guardrails
     const info = await page.evaluate(() => ({ name: stratName(stratKey(state.withdrawal)), params: stratParams(state).map(x => x[0]) }));
     expect(info.name).toBe("3-Topf + Guardrails");
     expect(info.params).toEqual(expect.arrayContaining(["Topf 1 · Cash", "Startrate bei Pensionierung", "Untergrenze"]));
@@ -1892,7 +1892,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-57: Quote von Aktien und Obligationen neben den Beständen", async ({ page }) => {
+  test("#73: Quote von Aktien und Obligationen neben den Beständen", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => goto("wealth"));
     const quote = p => page.locator(`label.field:has(input[data-path="${p}"]) [data-computed="wquote"]`);
@@ -1908,7 +1908,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(quote("wealth.bonds")).toHaveText("20 % des Portfolios");
     }
     // AK3: während der Eingabe unverändert, nach dem Verlassen des Feldes nachgeführt
-    await previewIdle(page); // FEA-87: keine Vorschau des vorigen Schritts mehr unterwegs
+    await previewIdle(page); // #111: keine Vorschau des vorigen Schritts mehr unterwegs
     await field(page, "wealth.stocks").fill("60000");
     await expect(quote("wealth.stocks")).toHaveText("80 % des Portfolios");
     await field(page, "wealth.stocks").blur();
@@ -1933,7 +1933,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-17: Cash-Reserve nur in der Karte «Standard»; Hinweis beim Laden bei anderer Strategie und Reserve ≠ 3", async ({ page }) => {
+  test("#18: Cash-Reserve nur in der Karte «Standard»; Hinweis beim Laden bei anderer Strategie und Reserve ≠ 3", async ({ page }) => {
     const errors = await open(page);
     // (1) «Vermögen & Anlage» enthält die Reserve nicht mehr, die Karte «Standard» schon
     await page.evaluate(() => goto("wealth"));
@@ -1955,11 +1955,11 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await expect(page.locator("#askText")).toContainText("3 Monaten");
     await page.locator('#ask button[value="ok"]').click();
     await expect(page.locator("#ask")).toBeHidden();
-    // FEA-58/AK3, AK5: einmal gezeigt, gemerkt in den Einstellungen; erneutes Öffnen zeigt keinen Hinweis
+    // #74/AK3, AK5: einmal gezeigt, gemerkt in den Einstellungen; erneutes Öffnen zeigt keinen Hinweis
     expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(true);
     await page.locator("#fileInput").setInputFiles(file);
     await expect(page.locator("#fileName")).toHaveText(path.basename(file));
-    // FEA-87/AK4: Der Handler leert das Dateifeld erst nach den Hinweisen (showNotes, reserveNotice). Erschiene der Hinweis,
+    // #111/AK4: Der Handler leert das Dateifeld erst nach den Hinweisen (showNotes, reserveNotice). Erschiene der Hinweis,
     // bliebe er beim Dialog stehen und das Feld gefüllt.
     await expect(page.locator("#fileInput")).toHaveValue("");
     await expect(page.locator("#ask")).toBeHidden();
@@ -1972,10 +1972,10 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test.describe("FEA-02: Start mit zuletzt geöffneter Planung, Rückfrage beim Beenden (Desktop-App simuliert)", () => {
+  test.describe("#4: Start mit zuletzt geöffneter Planung, Rückfrage beim Beenden (Desktop-App simuliert)", () => {
     /** Simuliert die Desktop-App: Befehle der Tauri-Schicht werden nachgebildet, alle anderen gehen an den Rechenkern. */
     async function openApp(page, startup, settings = {}) {
-      settings = { disclaimerAccepted: 1, ...settings }; // FEA-45: Haftungsausschluss gilt als bestätigt, ausser ein Test sagt anders
+      settings = { disclaimerAccepted: 1, ...settings }; // #61: Haftungsausschluss gilt als bestätigt, ausser ein Test sagt anders
       await page.addInitScript(([startup, settings]) => {
         window.__calls = [];
         window.__TAURI__ = {
@@ -1998,7 +1998,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     }
     const plan = async page => (await (await page.request.post("/api/example_plan", { data: {} })).json());
 
-    test("FEA-45/AK1, AK2: Haftungsausschluss beim ersten Start; ohne Häkchen und mit Esc geht es nicht weiter; Bestätigung in den Einstellungen", async ({ page }) => {
+    test("#61/AK1, AK2: Haftungsausschluss beim ersten Start; ohne Häkchen und mit Esc geht es nicht weiter; Bestätigung in den Einstellungen", async ({ page }) => {
       const p = await plan(page);
       await openApp(page, { path: null, plan: p, notice: null, first: true }, { disclaimerAccepted: null });
       const d = page.locator("#disclaimer"), ok = page.locator("#disclaimerOk");
@@ -2027,7 +2027,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       expect(JSON.stringify(await page.evaluate(() => state))).not.toContain("disclaimer");
     });
 
-    test("FEA-45/AK2: bestätigte Version fragt nicht mehr, eine ältere Version fragt erneut", async ({ page }) => {
+    test("#61/AK2: bestätigte Version fragt nicht mehr, eine ältere Version fragt erneut", async ({ page }) => {
       const p = await plan(page);
       await openApp(page, { path: "/x/A.vplan", plan: p, notice: null }, { disclaimerAccepted: 1 });
       await expect(page.locator("#disclaimer")).not.toHaveAttribute("open", "");
@@ -2047,7 +2047,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     /** Planung mit Guardrails und Reserve 6 Monate (betroffen vom Hinweis zur Cash-Reserve). */
     const affected = async page => { const p = await plan(page); p.withdrawal.strategy = "guardrails"; p.wealth.reserveMonths = { mode: "const", value: 6 }; return p; };
 
-    test("FEA-58/AK1, AK5: erster Start mit betroffener Planung zeigt den Hinweis einmal und merkt ihn in den Einstellungen", async ({ page }) => {
+    test("#74/AK1, AK5: erster Start mit betroffener Planung zeigt den Hinweis einmal und merkt ihn in den Einstellungen", async ({ page }) => {
       await openApp(page, { path: "/x/Alt.vplan", plan: await affected(page), notice: null });
       await expect(page.locator("#ask")).toBeVisible();
       await expect(page.locator("#askTitle")).toHaveText("Hinweis zur Cash-Reserve");
@@ -2055,17 +2055,17 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       expect(set).toContainEqual({ key: "reserveNoticeShown", value: true });
     });
 
-    test("FEA-58/AK2: weiterer Start mit betroffener Planung zeigt keinen Hinweis", async ({ page }) => {
+    test("#74/AK2: weiterer Start mit betroffener Planung zeigt keinen Hinweis", async ({ page }) => {
       await openApp(page, { path: "/x/Alt.vplan", plan: await affected(page), notice: null }, { reserveNoticeShown: true });
       await expect(page.locator("#fileName")).toHaveText("Alt.vplan");
-      // FEA-65: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
+      // #83: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
       await expect(page.locator("#ask")).toBeHidden();
     });
 
-    test("FEA-58/AK4: nicht betroffene Planung zählt nicht; die erste betroffene zeigt den Hinweis, die nächste nicht", async ({ page }) => {
+    test("#74/AK4: nicht betroffene Planung zählt nicht; die erste betroffene zeigt den Hinweis, die nächste nicht", async ({ page }) => {
       await openApp(page, { path: "/x/Standard.vplan", plan: await plan(page), notice: null });
       await expect(page.locator("#fileName")).toHaveText("Standard.vplan");
-      // FEA-65: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
+      // #83: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
       await expect(page.locator("#ask")).toBeHidden();
       expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(false);
       const p = await affected(page);
@@ -2073,7 +2073,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#askTitle")).toHaveText("Hinweis zur Cash-Reserve");
       await page.locator('#ask button[value="ok"]').click();
       await expect(page.locator("#ask")).toBeHidden();
-      // FEA-65: reserveNotice entscheidet synchron und öffnet den Dialog synchron; kein Warten nötig
+      // #83: reserveNotice entscheidet synchron und öffnet den Dialog synchron; kein Warten nötig
       await page.evaluate(p => { reserveNotice(p); }, p);
       await expect(page.locator("#ask")).toBeHidden();
     });
@@ -2109,7 +2109,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await page.locator('#ask button[value="discard"]').click();
       await expect.poll(async () => (await calls("quit_app")).length).toBe(2);
     });
-    test("Beenden: Speichern beendet erst nach erfolgreichem Speichern; bricht die Ortsabfrage ab, bleibt die App offen (ISS-6)", async ({ page }) => {
+    test("Beenden: Speichern beendet erst nach erfolgreichem Speichern; bricht die Ortsabfrage ab, bleibt die App offen (#27)", async ({ page }) => {
       await openApp(page, { path: null, plan: await plan(page), notice: null });
       const calls = name => page.evaluate(n => window.__calls.filter(c => c[0] === n), name);
       await field(page, "project.name").fill("Geändert"); await field(page, "project.name").blur();
@@ -2138,7 +2138,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-23: Stufe der Variationen in «Einzelne Läufe» und «Jahreswerte» wählen, ohne Neuberechnung aller Pfade", async ({ page }) => {
+  test("#24: Stufe der Variationen in «Einzelne Läufe» und «Jahreswerte» wählen, ohne Neuberechnung aller Pfade", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 200;
@@ -2173,7 +2173,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-19: Zielauswahl, Ziel 2 «Kein Notverkauf von Immobilien» wird gespeichert, gerechnet und mit Anteil ungeplanter Verkäufe angezeigt", async ({ page }) => {
+  test("#20: Zielauswahl, Ziel 2 «Kein Notverkauf von Immobilien» wird gespeichert, gerechnet und mit Anteil ungeplanter Verkäufe angezeigt", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap");
     // (1) Auswahl vorhanden, Standard ist Ziel 1, der Plan speichert nichts Zusätzliches
     await expect(page.locator("#opt-goal")).toHaveValue("consumption");
@@ -2188,7 +2188,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await page.locator("#opt-minConsumption").fill("80"); await page.locator("#opt-minConsumption").blur();
     expect(await page.evaluate(() => state.optimization.minConsumption)).toBe(0.8);
     const small = { paths: 200, checkPaths: 300, samples: 3, strategies: ["standard", "fixed_rate"] };
-    expect(await setOpt(page, small)).toMatchObject({ ...small, goal: "keepProperty", minConsumption: 80 }); // ISS-16
+    expect(await setOpt(page, small)).toMatchObject({ ...small, goal: "keepProperty", minConsumption: 80 }); // #79
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off");
     await expect(page.locator("#main th", { hasText: "Ungeplanter Verkauf" })).toBeVisible();
@@ -2203,7 +2203,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-3: Grundstückgewinnsteuer ist Pflicht bei Immobilie im Besitz oder mit geplantem Kauf, nicht bei Miete; Start blockiert", async ({ page }) => {
+  test("#29: Grundstückgewinnsteuer ist Pflicht bei Immobilie im Besitz oder mit geplantem Kauf, nicht bei Miete; Start blockiert", async ({ page }) => {
     const errors = await open(page);
     // Beispielplanung mit Besitz-Immobilie, aber ohne Regeln: Fehler im Abschnitt Steuern, Start blockiert
     const res = await page.evaluate(async () => {
@@ -2231,8 +2231,8 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  // Kriterien: FEA-26/AK1 FEA-26/AK2 FEA-26/AK3 FEA-26/AK4 FEA-26/AK5 FEA-26/AK6
-  test("FEA-26: Immobilien mit gleicher Feldreihenfolge bei Besitz und Kauf geplant, Marktwert in der Kopfzeile", async ({ page }) => {
+  // Kriterien: #32/AK1 #32/AK2 #32/AK3 #32/AK4 #32/AK5 #32/AK6
+  test("#32: Immobilien mit gleicher Feldreihenfolge bei Besitz und Kauf geplant, Marktwert in der Kopfzeile", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
       state.taxes.propertyGain = GAIN_ZH();
@@ -2267,7 +2267,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-5: Bei «Kauf geplant» gibt es «Verkauf ab» (Vorgabe nie); Verkauf vor oder im Kaufmonat ist ein Fehler am Feld", async ({ page }) => {
+  test("#28: Bei «Kauf geplant» gibt es «Verkauf ab» (Vorgabe nie); Verkauf vor oder im Kaufmonat ist ein Fehler am Feld", async ({ page }) => {
     const errors = await open(page, "realestate");
     const i = await page.evaluate(() => { state.realestate.properties.push({ id: "zz", name: "Testobjekt", status: "planned", buy: "2030-06", price: 400000, fixCosts: 0, mortgage: newMortgage() }); renderSection(); return state.realestate.properties.length - 1; });
     // Feld mit Vorgabe «nie»
@@ -2292,8 +2292,8 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, FEA-37, FEA-38)", () => {
-  test("FEA-24/AK1–AK4: Einstellungen anzeigen, prüfen, speichern, nach Neuladen behalten, Standardwerte", async ({ page }) => {
+test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #51)", () => {
+  test("#25/AK1–AK4: Einstellungen anzeigen, prüfen, speichern, nach Neuladen behalten, Standardwerte", async ({ page }) => {
     const errors = await open(page);
     await page.locator('header button[data-action="settings"]').click();
     const dlg = page.locator("#settings");
@@ -2328,7 +2328,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     await noErrors(page, errors);
   });
 
-  test("FEA-24/AK6, FEA-38/AK2: obere Grenze Bezug Pensionskasse 67: 67 gültig, 68 abgelehnt", async ({ page }) => {
+  test("#25/AK6, #51/AK2: obere Grenze Bezug Pensionskasse 67: 67 gültig, 68 abgelehnt", async ({ page }) => {
     const errors = await open(page, "milestones");
     await page.evaluate(() => Pref.set("limits", { ...LIMIT_DEFAULTS, pkMax: 67 }));
     const row = await msRow(page, "retire");
@@ -2336,13 +2336,13 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     await years.fill("67");
     await expect(page.locator("#val li.err")).toHaveCount(0);
     await years.fill("68");
-    await years.press("Tab"); // ISS-13: Meldung am Feld erst beim Verlassen
+    await years.press("Tab"); // #57: Meldung am Feld erst beim Verlassen
     await expect(page.locator("#val li.err").first()).toContainText("«Bezug Pensionskasse»: Alter 68 liegt ausserhalb der Grenzen 58 bis 67 Jahre (Einstellungen).");
     await expect(row).toContainText("Alter 68 liegt ausserhalb");
     await noErrors(page, errors);
   });
 
-  test("FEA-38/AK1, AK5: feste Meilensteine mit festem Namen und eigener Person; Pensionskasse und AHV beginnen dort", async ({ page }) => {
+  test("#51/AK1, AK5: feste Meilensteine mit festem Namen und eigener Person; Pensionskasse und AHV beginnen dort", async ({ page }) => {
     const errors = await open(page, "milestones");
     for (const id of ["retire", "ahv"]) {
       const row = await msRow(page, id);
@@ -2361,14 +2361,14 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     await noErrors(page, errors);
   });
 
-  test("FEA-38/AK8: Warnung bei Erwerbseinkommen nach dem Bezug der Pensionskasse", async ({ page }) => {
+  test("#51/AK8: Warnung bei Erwerbseinkommen nach dem Bezug der Pensionskasse", async ({ page }) => {
     const errors = await open(page, "flows");
     await page.evaluate(() => { state.flows.income = { mode: "const", value: 12500 }; renderSection(); });
     await expect(page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" })).toContainText("noch 12'500 pro Monat");
     await noErrors(page, errors);
   });
 
-  test("FEA-37/AK1, AK2: Abschnitt Säule 3a mit Konto, Einzahlung und Auszahlungsplan", async ({ page }) => {
+  test("#52/AK1, AK2: Abschnitt Säule 3a mit Konto, Einzahlung und Auszahlungsplan", async ({ page }) => {
     const errors = await open(page, "pillar3a");
     await expect(page.locator("#main h2")).toContainText("Säule 3a");
     await expect(field(page, "pillar3a.0.balance")).toBeVisible();
@@ -2392,7 +2392,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     await noErrors(page, errors);
   });
 
-  test("FEA-37/AK8: Einzahlung erscheint in «Ausgaben total» der Jahreswerte", async ({ page }) => {
+  test("#52/AK8: Einzahlung erscheint in «Ausgaben total» der Jahreswerte", async ({ page }) => {
     const errors = await open(page);
     const total = async contribution => {
       await page.evaluate(c => { state.returns.source = "fixed"; state.scenarios.sweeps = []; state.pillar3a[0].contribution = c; }, contribution);
@@ -2407,7 +2407,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     await noErrors(page, errors);
   });
 
-  test("FEA-36/AK4: Periode ab dem AHV-Bezug amortisiert direkt", async ({ page }) => {
+  test("#50/AK4: Periode ab dem AHV-Bezug amortisiert direkt", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
       const t = state.realestate.properties[0].mortgage.tranches[1];
@@ -2419,7 +2419,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
     await noErrors(page, errors);
   });
 
-  test("FEA-38/AK6, FEA-37/AK13: ältere Datei wird beim Öffnen übernommen, ein Dialog nennt die Änderungen", async ({ page }) => {
+  test("#51/AK6, #52/AK13: ältere Datei wird beim Öffnen übernommen, ein Dialog nennt die Änderungen", async ({ page }) => {
     const errors = await open(page);
     const plan = await page.evaluate(() => {
       const s = JSON.parse(JSON.stringify(state));
@@ -2446,8 +2446,8 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (FEA-24, FEA-36, 
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Lebenshaltung inklusive Wohnen und Cash (FEA-39, FEA-40)", () => {
-  test("FEA-39/AK1, AK2: Beschriftung inklusive Wohnkosten, Hinweis mit dem Wohnanteil zum Simulationsstart", async ({ page }) => {
+test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
+  test("#53/AK1, AK2: Beschriftung inklusive Wohnkosten, Hinweis mit dem Wohnanteil zum Simulationsstart", async ({ page }) => {
     const errors = await open(page, "flows");
     await expect(page.locator("#main")).toContainText("Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)");
     // Beispielplanung: Wohnkosten zum Simulationsstart 1'700 pro Monat
@@ -2455,7 +2455,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (FEA-39, FEA-40)", () => 
     await noErrors(page, errors);
   });
 
-  test("FEA-39/AK4: Lebenshaltung kleiner als der Wohnanteil ist ein Fehler mit beiden Beträgen", async ({ page }) => {
+  test("#53/AK4: Lebenshaltung kleiner als der Wohnanteil ist ein Fehler mit beiden Beträgen", async ({ page }) => {
     const errors = await open(page);
     const issues = await page.evaluate(async () => {
       const s = JSON.parse(JSON.stringify(state));
@@ -2466,7 +2466,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (FEA-39, FEA-40)", () => 
     await noErrors(page, errors);
   });
 
-  test("FEA-40/AK1, AK4: Aktienquote ohne Cash; Hinweis zur Cash-Regel vor und ab der Pensionierung", async ({ page }) => {
+  test("#54/AK1, AK4: Aktienquote ohne Cash; Hinweis zur Cash-Regel vor und ab der Pensionierung", async ({ page }) => {
     const errors = await open(page, "wealth");
     await expect(page.locator("#main")).toContainText("Aktienquote (Aktien am Portfolio aus Aktien und Obligationen)");
     await expect(page.locator("#main")).toContainText("Cash zählt nicht zum Portfolio");
@@ -2476,7 +2476,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (FEA-39, FEA-40)", () => 
     await noErrors(page, errors);
   });
 
-  test("FEA-39/AK7, FEA-40/AK8: ältere Datei: Wohnanteil addiert, Hinweise zu Wohnkosten und Cash", async ({ page }) => {
+  test("#53/AK7, #54/AK8: ältere Datei: Wohnanteil addiert, Hinweise zu Wohnkosten und Cash", async ({ page }) => {
     const errors = await open(page);
     const plan = await page.evaluate(() => {
       const s = JSON.parse(JSON.stringify(state));
@@ -2499,7 +2499,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (FEA-39, FEA-40)", () => 
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => {
+test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
   // Erfundenes Beispiel: Geburt 1980-06 (AHV-Bezug 06.2045, frühestens 06.2040), Guthaben 120'000, Zins 0, keine Einzahlung.
   const setup = async (page, payouts) => {
     await page.evaluate(p => {
@@ -2512,7 +2512,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
   const at = (page, j) => page.locator(`tr[data-p3a-row="${j}"] [data-p3a="at"]`);
   const val = (page, j, which) => page.locator(`tr[data-p3a-row="${j}"] [data-p3a="${which}"]`);
 
-  test("FEA-41/AK1, AK2, AK8: Datum oder Alter; Monat und Alter daneben; beim Wechsel bleibt der Zeitpunkt; alte Zeilen sind «Datum»", async ({ page }) => {
+  test("#55/AK1, AK2, AK8: Datum oder Alter; Monat und Alter daneben; beim Wechsel bleibt der Zeitpunkt; alte Zeilen sind «Datum»", async ({ page }) => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 61.5, amount: 50000, use: "wealth" }, { date: "2043-01", amount: 1000, use: "wealth" }]);
     await expect(at(page, 0)).toHaveText("12.2041 · Alter 61.5");
@@ -2530,7 +2530,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
     await noErrors(page, errors);
   });
 
-  test("FEA-41/AK3, AK4: frühestens 5 Jahre vor dem AHV-Bezug auch nach Alter; ohne Vorschau steht «–»", async ({ page }) => {
+  test("#55/AK3, AK4: frühestens 5 Jahre vor dem AHV-Bezug auch nach Alter; ohne Vorschau steht «–»", async ({ page }) => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 59.9, amount: 50000, use: "wealth" }]);
     await expect(page.locator("#val li.err").first()).toContainText("Die Auszahlung im 05.2040 liegt mehr als 5 Jahre vor dem AHV-Bezug (06.2045)");
@@ -2540,7 +2540,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
     await noErrors(page, errors);
   });
 
-  test("FEA-41/AK4–AK7: Guthaben vor und nach der Auszahlung, Rest im AHV-Bezug; «+ Auszahlung» füllt Zeitpunkt und Betrag vor", async ({ page }) => {
+  test("#55/AK4–AK7: Guthaben vor und nach der Auszahlung, Rest im AHV-Bezug; «+ Auszahlung» füllt Zeitpunkt und Betrag vor", async ({ page }) => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 61.5, amount: 50000, use: "wealth" }]);
     await expect(val(page, 0, "before")).toHaveText("120'000");
@@ -2553,7 +2553,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
     // Der Betrag bleibt änderbar
     await field(page, "pillar3a.0.payouts.1.amount").fill("20000");
     expect(await page.evaluate(() => state.pillar3a[0].payouts[1].amount)).toBe(20000);
-    await field(page, "pillar3a.0.payouts.1.amount").press("Tab"); // ISS-13: Vorschau beim Verlassen (FEA-87)
+    await field(page, "pillar3a.0.payouts.1.amount").press("Tab"); // #57: Vorschau beim Verlassen (#111)
     await expect(page.locator('#main [data-p3a="rest"]')).toHaveText(/^50'000/);
     // Ohne Zeile: frühester erlaubter Monat (06.2040) mit dem ganzen Guthaben, abgerundet auf 1'000
     await setup(page, []);
@@ -2566,10 +2566,10 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (FEA-41)", () => 
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
+test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
   const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
   /**
-   * FEA-87: Geprüft wird, dass während einer Pause in der Eingabe nichts geschieht. Statt fest zu warten, läuft die Seite mit
+   * #111: Geprüft wird, dass während einer Pause in der Eingabe nichts geschieht. Statt fest zu warten, läuft die Seite mit
    * der Uhr von Playwright (page.clock): `pause()` stellt sie um 800 ms vor und führt dabei jeden fälligen Timer aus (Vorschau
    * nach 120 ms, Sammelzeit des Rückgängig-Verlaufs 400 ms), unabhängig von der Rechnerlast. Zusätzlich zählt die Seite die
    * Anfragen an den Rechenkern: Während der Eingabe darf keine starten.
@@ -2587,7 +2587,7 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
   const apiCalls = page => page.evaluate(() => window.__api.splice(0));
   const pause = async page => { await page.clock.runFor(800); expect(await apiCalls(page)).toEqual([]); };
 
-  test("ISS-13/AK1–AK4: Während der Eingabe wartet alles; beim Verlassen Meldung, Vorschau und Prüfliste neu", async ({ page }) => {
+  test("#57/AK1–AK4: Während der Eingabe wartet alles; beim Verlassen Meldung, Vorschau und Prüfliste neu", async ({ page }) => {
     const errors = await openWithClock(page, "milestones");
     const i = await page.evaluate(() => state.milestones.findIndex(m => m.id === "ahv"));
     const years = field(page, `milestones.${i}.years`);
@@ -2632,7 +2632,7 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-13/AK1, AK2: ungültige Zahl erst beim Verlassen bzw. mit Enter gemeldet", async ({ page }) => {
+  test("#57/AK1, AK2: ungültige Zahl erst beim Verlassen bzw. mit Enter gemeldet", async ({ page }) => {
     const errors = await openWithClock(page, "wealth");
     await previewIdle(page); await apiCalls(page);
     const cash = field(page, "wealth.cash");
@@ -2648,8 +2648,8 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (ISS-13)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Erwerbseinkommen mit der Teuerung (FEA-43)", () => {
-  test("FEA-43/AK1: Auswahl je Person, Vorschau rechnet sofort neu", async ({ page }) => {
+test.describe("Erwerbseinkommen mit der Teuerung (#58)", () => {
+  test("#58/AK1: Auswahl je Person, Vorschau rechnet sofort neu", async ({ page }) => {
     const errors = await open(page, "flows");
     const own = page.locator('input[data-path="flows.incomeIndexed"]');
     await expect(own).toBeVisible();
@@ -2673,7 +2673,7 @@ test.describe("Erwerbseinkommen mit der Teuerung (FEA-43)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-43: neue Planungen und neue zweite Person mit «steigt mit der Teuerung»", async ({ page }) => {
+  test("#58: neue Planungen und neue zweite Person mit «steigt mit der Teuerung»", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
@@ -2685,13 +2685,13 @@ test.describe("Erwerbseinkommen mit der Teuerung (FEA-43)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// FEA-54 Willkommensdialog, FEA-55 Erste Schritte, FEA-56 Ergebnis in Worten
+// #70 Willkommensdialog, #71 Erste Schritte, #72 Ergebnis in Worten
 const welcome = page => page.locator("#welcome");
 const steps = page => page.locator("#steps");
 const helpTitle = page => page.locator("#help:not([hidden]) #helpBody h1").first();
 const prefs = page => page.evaluate(() => JSON.parse(localStorage.getItem("rp.settings") || "{}"));
 
-test.describe("FEA-54 Willkommensdialog", () => {
+test.describe("#70 Willkommensdialog", () => {
   test("AK1: erscheint beim ersten Start (Testzugang) mit drei Wahlmöglichkeiten, sonst nicht", async ({ page }) => {
     let errors = await open(page);
     await expect(welcome(page)).not.toHaveAttribute("open", "");
@@ -2732,7 +2732,7 @@ test.describe("FEA-54 Willkommensdialog", () => {
   test("AK4: «Leere Planung» wirkt wie Datei → Neu", async ({ page }) => {
     const errors = await open(page, "welcome");
     await welcome(page).getByRole("button", { name: /Leere Planung/ }).click();
-    // ISS-17: «Neu» übernimmt die leere Planung erst nach zwei Aufrufen an den Rechenkern. «Haushalt & Projekt» ist schon
+    // #95: «Neu» übernimmt die leere Planung erst nach zwei Aufrufen an den Rechenkern. «Haushalt & Projekt» ist schon
     // vorher aktiv; deshalb auf die Planung selbst warten statt nur auf die Navigation.
     // Merkmale der leeren Planung von Datei → Neu: kein Name, keine Beträge, keine Immobilien
     await expect.poll(() => page.evaluate(() => [state.project.name, state.household.persons.length, state.household.persons[0].name,
@@ -2775,7 +2775,7 @@ test.describe("FEA-54 Willkommensdialog", () => {
   });
 });
 
-test.describe("FEA-55 Erste Schritte", () => {
+test.describe("#71 Erste Schritte", () => {
   test("AK1, AK5: acht Schritte des Schnellstarts mit Fortschritt", async ({ page }) => {
     const errors = await open(page);
     await expect(steps(page)).toBeVisible();
@@ -2825,7 +2825,7 @@ test.describe("FEA-55 Erste Schritte", () => {
     await expect(steps(page)).toBeHidden();
     await page.evaluate(() => command("steps"));
     await expect(steps(page)).toBeVisible();
-    await expect(steps(page)).toBeInViewport({ ratio: 0.95 }); // FEA-54/AK3: in den Blick gescrollt
+    await expect(steps(page)).toBeInViewport({ ratio: 0.95 }); // #70/AK3: in den Blick gescrollt
     for (const id of ["general", "milestones", "pension", "flows", "wealth", "returns", "taxes", "run"])
       await steps(page).locator(`li[data-step="${id}"] input`).check();
     await expect(page.locator("#stepsProg")).toHaveText("8 von 8");
@@ -2847,7 +2847,7 @@ test.describe("FEA-55 Erste Schritte", () => {
   });
 });
 
-test.describe("FEA-56 Ergebnis in Worten", () => {
+test.describe("#72 Ergebnis in Worten", () => {
   test("AK1, AK3, AK6: mehrere Läufe mit Einordnung, ungünstigster Lauf und nächster Schritt", async ({ page }) => {
     const errors = await open(page, "results/bootstrap/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
@@ -2899,8 +2899,8 @@ test.describe("FEA-56 Ergebnis in Worten", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// FEA-45 Haftungsausschluss: Fusszeile der Ergebnisse und vollständiger Text
-test.describe("FEA-45 Haftungsausschluss", () => {
+// #61 Haftungsausschluss: Fusszeile der Ergebnisse und vollständiger Text
+test.describe("#61 Haftungsausschluss", () => {
   const FOOT = "Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.";
   const prefs = page => page.evaluate(() => JSON.parse(localStorage.getItem("rp.settings") || "{}"));
   const helpTitle = page => page.locator("#help:not([hidden]) #helpBody h1").first();
@@ -2935,7 +2935,7 @@ test.describe("FEA-45 Haftungsausschluss", () => {
     await expect(page.locator("#optFoot")).toHaveCount(0);
     // kleine Rechnung: nur die Fusszeile wird geprüft, nicht das Ergebnis
     const small = { paths: 50, checkPaths: 50, samples: 1, strategies: ["fixed_rate"] };
-    expect(await setOpt(page, small)).toMatchObject(small); // ISS-16
+    expect(await setOpt(page, small)).toMatchObject(small); // #79
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off");
     await expect(page.locator("#optFoot")).toHaveText(FOOT);
@@ -2973,7 +2973,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     resetVariation(); resultTab = "overview"; showResults(true); renderResults(lastRun);
   }, strategy);
 
-  test("FEA-07/AK4, FEA-07/AK5, FEA-07/AK6: Steuern total bleibt sichtbar, Berechnung unverändert, Umschalten verschiebt keine Spalte", async ({ page }) => {
+  test("#8/AK4, #8/AK5, #8/AK6: Steuern total bleibt sichtbar, Berechnung unverändert, Umschalten verschiebt keine Spalte", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(resultKpi(page, "Steuern total")).toBeVisible();
     const kpi = await resultKpi(page, "Steuern total").textContent();
@@ -2997,7 +2997,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-85/AK1, AK2, AK3: Steuer des Steuerjahres in der Zeile des Jahres, Total ist die Summe, Kapital- und Grundstückgewinnsteuer im Jahr des Bezugs", async ({ page }) => {
+  test("#109/AK1, AK2, AK3: Steuer des Steuerjahres in der Zeile des Jahres, Total ist die Summe, Kapital- und Grundstückgewinnsteuer im Jahr des Bezugs", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     await page.locator('button[data-action="tax-cols"]').click();
@@ -3029,7 +3029,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-08/AK3, FEA-08/AK4, FEA-09/AK2, FEA-09/AK3: Aufklapp-Zeilen nur in Jahren mit Auffüllung, Ereignisliste behält alles ausser den 3-Topf-Buchungen", async ({ page }) => {
+  test("#9/AK3, #9/AK4, #10/AK2, #10/AK3: Aufklapp-Zeilen nur in Jahren mit Auffüllung, Ereignisliste behält alles ausser den 3-Topf-Buchungen", async ({ page }) => {
     const errors = await open(page);
     // 3-Topf: genau ein Schalter je Jahr mit Auffüllung
     await setThreeBuckets("three_buckets")(page);
@@ -3038,7 +3038,7 @@ test.describe("Ergänzende Abnahmetests", () => {
       return { years: new Set(lastRun.single.bucketRefills.map(r => r.month.slice(0, 4))).size, all: evs.length, shown: shown.length, texts: shown.map(e => e.text), booked: evs.filter(e => isBucketBooking(e)).map(e => e.text) };
     });
     const items = page.locator("#resultsBody .evlist li");
-    await expect(items).toHaveCount(t.shown);                       // FEA-09/AK2: alles ausser den Buchungen steht in der Liste
+    await expect(items).toHaveCount(t.shown);                       // #10/AK2: alles ausser den Buchungen steht in der Liste
     expect(t.shown).toBeLessThan(t.all);
     const listed = await items.locator("span:nth-child(2)").allTextContents();
     expect(listed).toEqual(t.texts);
@@ -3048,19 +3048,19 @@ test.describe("Ergänzende Abnahmetests", () => {
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     const rows = await page.locator("#resultsBody table.yt tr").count();
     const toggles = await page.locator('button[data-action="bk-toggle"]').count();
-    expect(toggles).toBe(t.years);                                  // FEA-08/AK3: nur Jahre mit Auffüllung
+    expect(toggles).toBe(t.years);                                  // #9/AK3: nur Jahre mit Auffüllung
     expect(rows - 1).toBeGreaterThan(toggles);
     // Ohne 3-Topf: keine Aufklapp-Zeilen, die Ereignisliste ist vollständig wie bisher
     await setThreeBuckets("standard")(page);
     const all = await page.evaluate(() => lastRun.single.events.length);
-    await expect(page.locator("#resultsBody .evlist li")).toHaveCount(all);   // FEA-09/AK3
+    await expect(page.locator("#resultsBody .evlist li")).toHaveCount(all);   // #10/AK3
     await page.getByRole("button", { name: "Jahreswerte" }).click();
-    await expect(page.locator('button[data-action="bk-toggle"]')).toHaveCount(0);   // FEA-08/AK4
+    await expect(page.locator('button[data-action="bk-toggle"]')).toHaveCount(0);   // #9/AK4
     await expect(page.locator("#resultsBody tr.bk")).toHaveCount(0);
     await noErrors(page, errors);
   });
 
-  test("FEA-08/AK6: beim Wechsel des Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs", async ({ page }) => {
+  test("#9/AK6: beim Wechsel des Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(async () => {
       state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 60; state.scenarios.sweeps = [];
@@ -3084,7 +3084,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-10/AK3: die Parameter im Tooltip stimmen mit dem Reiter «Entnahmestrategie» überein", async ({ page }) => {
+  test("#11/AK3: die Parameter im Tooltip stimmen mit dem Reiter «Entnahmestrategie» überein", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
@@ -3104,7 +3104,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-11/AK2, FEA-11/AK3, FEA-12/AK5: Zeitreihe ohne Pfad und .csv, feste und parametrische Renditen in Grau, geplanter Verkauf ohne Warnsymbol", async ({ page }) => {
+  test("#12/AK2, #12/AK3, #13/AK5: Zeitreihe ohne Pfad und .csv, feste und parametrische Renditen in Grau, geplanter Verkauf ohne Warnsymbol", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     const label = await page.evaluate(async () => {
@@ -3131,11 +3131,11 @@ test.describe("Ergänzende Abnahmetests", () => {
       const colors = await cell.evaluate(el => [getComputedStyle(el).color, getComputedStyle(el.closest("td")).color]);
       expect(colors[0]).not.toBe(colors[1]);                               // grau, nicht in der Textfarbe
     }
-    await expect(row("geplant").locator(".hwarn")).toHaveCount(0);        // FEA-12/AK5
+    await expect(row("geplant").locator(".hwarn")).toHaveCount(0);        // #13/AK5
     await noErrors(page, errors);
   });
 
-  test("FEA-22/AK5: die Kennzahlkarte «Notverkäufe» zeigt Läufe und Anteil wie bisher", async ({ page }) => {
+  test("#23/AK5: die Kennzahlkarte «Notverkäufe» zeigt Läufe und Anteil wie bisher", async ({ page }) => {
     const errors = await open(page, "results/bootstrap");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const s = await page.evaluate(() => ({ n: lastRun.batch.summary.emergencySaleRuns, runs: lastRun.batch.summary.runs, text: fmtInt(lastRun.batch.summary.emergencySaleRuns), pct: pctTxt(lastRun.batch.summary.emergencySaleRuns / lastRun.batch.summary.runs) }));
@@ -3145,7 +3145,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-23/AK5, FEA-23/AK6: Hinweis bei abweichendem Endvermögen; Einzellauf mit Variationen wie bisher", async ({ page }) => {
+  test("#24/AK5, #24/AK6: Hinweis bei abweichendem Endvermögen; Einzellauf mit Variationen wie bisher", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.returns.bootstrap.paths = 100;
@@ -3180,7 +3180,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-38/AK3: neue Planung hat «AHV-Bezug» und «Bezug Pensionskasse» mit 65 Jahren", async ({ page }) => {
+  test("#51/AK3: neue Planung hat «AHV-Bezug» und «Bezug Pensionskasse» mit 65 Jahren", async ({ page }) => {
     const errors = await open(page);
     const ms = await page.evaluate(() => {
       const p = blankPlan(JSON.parse(JSON.stringify(state)));
@@ -3199,7 +3199,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-24/AK7: Einstellungen ändern die Planung nicht; liegt sie ausserhalb der neuen Grenzen, meldet die Prüfung es", async ({ page }) => {
+  test("#25/AK7: Einstellungen ändern die Planung nicht; liegt sie ausserhalb der neuen Grenzen, meldet die Prüfung es", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.pillar3a[0].contribution = 7500; renderSection(); });
     await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(1);   // über 7'258
@@ -3222,8 +3222,8 @@ test.describe("Ergänzende Abnahmetests", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// FEA-78: Aktienparameter je Aktienindex; FEA-79: Obligationen und Inflation mit Korrelation je Index
-test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
+// #100: Aktienparameter je Aktienindex; #101: Obligationen und Inflation mit Korrelation je Index
+test.describe("#100/#101: Monte Carlo parametrisch", () => {
   const KEYS = ["mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma"];
   const params = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, state.returns.parametric[x]])), KEYS);
   const suggestion = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, seriesInfo.parametric.stocks[x]])), KEYS);
@@ -3243,7 +3243,7 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
     return errors;
   }
 
-  test("FEA-78/AK4: neue Planung, Wechsel des Aktienindex setzt die Vorschlagswerte des neuen Index", async ({ page }) => {
+  test("#100/AK4: neue Planung, Wechsel des Aktienindex setzt die Vorschlagswerte des neuen Index", async ({ page }) => {
     const errors = await parametric(page);
     expect(await page.evaluate(() => state.returns.parametric.auto)).toBe(true);
     await chooseStocks(page, "chJst");
@@ -3260,7 +3260,7 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-78/AK5: eigene Werte bleiben beim Wechsel des Index, daneben die Vorschlagswerte; «Vorschlagswerte übernehmen»", async ({ page }) => {
+  test("#100/AK5: eigene Werte bleiben beim Wechsel des Index, daneben die Vorschlagswerte; «Vorschlagswerte übernehmen»", async ({ page }) => {
     const errors = await parametric(page);
     await chooseStocks(page, "worldJst");
     const mu = field(page, "returns.parametric.mu");
@@ -3281,7 +3281,7 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-79/AK4: Matrix der Korrelation im Reiter «Simulation», abhängig von Aktien und Obligationen", async ({ page }) => {
+  test("#101/AK4: Matrix der Korrelation im Reiter «Simulation», abhängig von Aktien und Obligationen", async ({ page }) => {
     const errors = await parametric(page);
     const table = page.locator("#paramJoint table");
     await chooseStocks(page, "worldJst", "ch");
@@ -3298,7 +3298,7 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-79/AK6: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch», eigene Werte bleiben", async ({ page }) => {
+  test("#101/AK6: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch», eigene Werte bleiben", async ({ page }) => {
     const errors = await open(page);
     const plan = await page.evaluate(() => {
       const s = JSON.parse(JSON.stringify(state));
@@ -3318,11 +3318,11 @@ test.describe("FEA-78/FEA-79: Monte Carlo parametrisch", () => {
   });
 });
 
-test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
+test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
   /** Die Rückfrage ist im Browser nur mit `askSaveDev` aktiv; die Planung wird ungespeichert markiert. */
   const prepare = (page, dev) => page.evaluate(dev => { Pref.set("askSaveDev", dev); Pref.set("askSaveBeforeRun", true); markDirty(); }, dev);
 
-  test("FEA-86/AK1, AK2, AK3, AK5: Rückfrage vor der Simulation bei ungespeicherten Änderungen", async ({ page }) => {
+  test("#110/AK1, AK2, AK3, AK5: Rückfrage vor der Simulation bei ungespeicherten Änderungen", async ({ page }) => {
     const errors = await open(page);
     // AK3: ohne Änderungen keine Rückfrage
     await page.evaluate(() => { Pref.set("askSaveDev", true); runSimulation("overview", { noConfirm: true }); });
@@ -3351,7 +3351,7 @@ test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-86/AK1, AK2, AK4: «Speichern» speichert zuerst und startet danach; neue Planung ohne Dateinamen", async ({ page }) => {
+  test("#110/AK1, AK2, AK4: «Speichern» speichert zuerst und startet danach; neue Planung ohne Dateinamen", async ({ page }) => {
     const errors = await open(page);
     await prepare(page, true);
     await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
@@ -3369,7 +3369,7 @@ test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-86/AK5: die Einstellung steht im Dialog «Einstellungen» und bleibt erhalten", async ({ page }) => {
+  test("#110/AK5: die Einstellung steht im Dialog «Einstellungen» und bleibt erhalten", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => showSettings());
     const box = page.locator("#set-askSave");
@@ -3387,8 +3387,8 @@ test.describe("Rückfrage zum Speichern vor der Simulation (FEA-86)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Testzugänge für lastunabhängige Tests (FEA-87)", () => {
-  test("FEA-87/AK1: #results rechnet Bootstrap mit 500 Pfaden und Startwert 42; zwei Läufe ergeben dieselben Kennzahlen", async ({ page }) => {
+test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
+  test("#111/AK1: #results rechnet Bootstrap mit 500 Pfaden und Startwert 42; zwei Läufe ergeben dieselben Kennzahlen", async ({ page }) => {
     const kpis = async () => {
       await open(page, "results/bootstrap/nosweep");
       await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
@@ -3405,7 +3405,7 @@ test.describe("Testzugänge für lastunabhängige Tests (FEA-87)", () => {
     expect(await kpis()).toEqual(a);
   });
 
-  test("FEA-87/AK2: #nobench misst die Rechenzeit nicht, zeigt «Dauer wird geschätzt…» und rechnet ohne Rückfrage", async ({ page }) => {
+  test("#111/AK2: #nobench misst die Rechenzeit nicht, zeigt «Dauer wird geschätzt…» und rechnet ohne Rückfrage", async ({ page }) => {
     const api = [];
     page.on("request", r => { const u = new URL(r.url()); if (u.pathname.startsWith("/api/")) api.push(u.pathname); });
     await page.clock.install();
@@ -3420,7 +3420,7 @@ test.describe("Testzugänge für lastunabhängige Tests (FEA-87)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-87/AK2: ohne #nobench misst die App die Rechenzeit (Gegenprobe)", async ({ page }) => {
+  test("#111/AK2: ohne #nobench misst die App die Rechenzeit (Gegenprobe)", async ({ page }) => {
     const bench = page.waitForRequest(r => new URL(r.url()).pathname === "/api/bench_plan");
     const errors = await open(page, "scenarios", { bench: true });
     await bench;
@@ -3430,7 +3430,7 @@ test.describe("Testzugänge für lastunabhängige Tests (FEA-87)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
+test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
   /** Drückt die Maustaste auf `loc`, lässt die App wie beim Eintreffen einer Vorschau neu zeichnen und lässt dann los. */
   const clickDuringPreview = async (page, loc) => {
     await loc.scrollIntoViewIfNeeded();
@@ -3441,7 +3441,7 @@ test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
     await page.mouse.up();
   };
 
-  test("ISS-21/AK1, AK2: Menüeinträge bleiben dieselben Elemente; der Klick öffnet den Abschnitt", async ({ page }) => {
+  test("#112/AK1, AK2: Menüeinträge bleiben dieselben Elemente; der Klick öffnet den Abschnitt", async ({ page }) => {
     const errors = await open(page);
     await previewIdle(page);
     const same = await page.evaluate(() => {
@@ -3457,7 +3457,7 @@ test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-21/AK3: Klick auf eine Meldung der Prüfliste bei unveränderter Liste", async ({ page }) => {
+  test("#112/AK3: Klick auf eine Meldung der Prüfliste bei unveränderter Liste", async ({ page }) => {
     const errors = await open(page, "wealth");
     await previewIdle(page); // die Liste nach der ersten Vorschau; danach ändert sie sich nicht mehr
     const item = page.locator("#val li[data-sec]").first();
@@ -3469,7 +3469,7 @@ test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-21/AK4: Zahl der Fehler am Menü erscheint und verschwindet", async ({ page }) => {
+  test("#112/AK4: Zahl der Fehler am Menü erscheint und verschwindet", async ({ page }) => {
     const errors = await open(page);
     const badge = page.locator("#nav a", { hasText: "Haushalt" }).locator(".badge.err");
     await expect(badge).toHaveCount(0);
@@ -3484,7 +3484,7 @@ test.describe("Klick ins Menü während einer Vorschau (ISS-21)", () => {
   });
 });
 
-test.describe("Bezugslinie in den Grafiken (FEA-89)", () => {
+test.describe("Bezugslinie in den Grafiken (#114)", () => {
   /** Bezugslinie einer Grafik: y-Lage und Strichbreite; dazu die y-Lage einer beschrifteten Rasterlinie. */
   const refOf = (page, sel) => page.evaluate(sel => {
     const svg = document.querySelector(sel), ref = svg.querySelector("line.ref");
@@ -3493,7 +3493,7 @@ test.describe("Bezugslinie in den Grafiken (FEA-89)", () => {
     return ref && { y: Number(ref.getAttribute("y1")), width: Number(ref.getAttribute("stroke-width")), gridWidth: Number(grid?.getAttribute("stroke-width") ?? 1), tickY };
   }, sel);
 
-  test("FEA-89/AK1, AK3, AK4: Nulllinie dicker, bei negativen Werten an der 0, hinter den Daten, ausserhalb des Bereichs keine", async ({ page }) => {
+  test("#114/AK1, AK3, AK4: Nulllinie dicker, bei negativen Werten an der 0, hinter den Daten, ausserhalb des Bereichs keine", async ({ page }) => {
     const errors = await open(page, "results/charts");
     await expect(page.locator("#rc-wealth line.ref")).toHaveCount(1);
     // Beispiel mit negativem Vermögen: −0.5 bis 3 Mio.; die dicke Linie liegt bei der Beschriftung «0»
@@ -3522,7 +3522,7 @@ test.describe("Bezugslinie in den Grafiken (FEA-89)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-89/AK2: Aktien, Obligationen und Inflation: Linie bei 100 (linear und logarithmisch), bei 0 % in «Änderung in %»", async ({ page }) => {
+  test("#114/AK2: Aktien, Obligationen und Inflation: Linie bei 100 (linear und logarithmisch), bei 0 % in «Änderung in %»", async ({ page }) => {
     const errors = await open(page, "results/charts");
     await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
     // linear: 100 liegt in der Mitte zwischen den Beschriftungen 0 und 200
@@ -3552,7 +3552,7 @@ test.describe("Bezugslinie in den Grafiken (FEA-89)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
+test.describe("Vergleich wie das Einzelergebnis (#115)", () => {
   /** Zwei Monte-Carlo-Ergebnisse (#runsflow), Vergleich offen und sichtbar. */
   const openCompare = async page => {
     const errors = await open(page, "runsflow/mem");
@@ -3562,7 +3562,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
   };
   const tab = (page, t) => page.locator(`button[data-action="cmp-tab"]`, { hasText: t }).click();
 
-  test("FEA-90/AK1: Umschalter Nominal / Heutige Kaufkraft gilt für Kennzahlen, Grafiken und Jahreswerte, je Ergebnis mit seiner Inflation", async ({ page }) => {
+  test("#115/AK1: Umschalter Nominal / Heutige Kaufkraft gilt für Kennzahlen, Grafiken und Jahreswerte, je Ergebnis mit seiner Inflation", async ({ page }) => {
     const errors = await openCompare(page);
     await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
     await expect(page.locator("#resultsInfo")).toHaveText("heutige Kaufkraft");
@@ -3587,7 +3587,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-90/AK2: Übersicht mit Bandbreite, Endvermögen nach Perzentil, Wahrscheinlichkeit und Alter bei Erschöpfung je Ergebnis", async ({ page }) => {
+  test("#115/AK2: Übersicht mit Bandbreite, Endvermögen nach Perzentil, Wahrscheinlichkeit und Alter bei Erschöpfung je Ergebnis", async ({ page }) => {
     const errors = await openCompare(page);
     const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
     for (const t of ["Kennzahlen", "Bandbreite des Gesamtvermögens", "Endvermögen nach Perzentil", "Wahrscheinlichkeit, dass das Geld reicht"])
@@ -3607,7 +3607,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("ISS-23/AK2, AK3: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt jedes Perzentil, mit Hinweis", async ({ page }) => {
+  test("#126/AK2, AK3: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt jedes Perzentil, mit Hinweis", async ({ page }) => {
     const errors = await openCompare(page);
     const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
     await expect(card.locator(".hint")).toHaveCount(0);
@@ -3632,7 +3632,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-90/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
+  test("#115/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
     const errors = await openCompare(page);
     await tab(page, "Verläufe");
     await expect(page.locator(".cmpnote").first()).toContainText("50. Perzentil (Median)");
@@ -3650,7 +3650,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-90/AK4: Jahreswerte mit einer Spalte je Ergebnis stimmen mit den Jahreswerten des einzelnen Ergebnisses überein", async ({ page }) => {
+  test("#115/AK4: Jahreswerte mit einer Spalte je Ergebnis stimmen mit den Jahreswerten des einzelnen Ergebnisses überein", async ({ page }) => {
     const errors = await openCompare(page);
     await tab(page, "Jahreswerte");
     await expect(page.locator(".cmpyear tr").first().locator("th")).toHaveCount(3);
@@ -3672,7 +3672,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-90/AK3, AK4: Lauf wählen: das gewählte Perzentil gilt für Verläufe und Jahreswerte aller Ergebnisse", async ({ page }) => {
+  test("#115/AK3, AK4: Lauf wählen: das gewählte Perzentil gilt für Verläufe und Jahreswerte aller Ergebnisse", async ({ page }) => {
     const errors = await openCompare(page);
     await tab(page, "Verläufe");
     await expect(page.locator('button[data-action="cmp-p"][data-p="50"].on')).toBeAttached();
@@ -3694,7 +3694,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-90/AK5: Einzellauf mit späterem Start: nach Jahren seit Start ausgerichtet, fehlende Grössen mit Vermerk", async ({ page }) => {
+  test("#115/AK5: Einzellauf mit späterem Start: nach Jahren seit Start ausgerichtet, fehlende Grössen mit Vermerk", async ({ page }) => {
     const errors = await openCompare(page);
     await page.evaluate(async () => {
       state.returns.source = "fixed";
@@ -3716,7 +3716,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-90/AK6: Zoom gilt für alle Grafiken des Vergleichs und bleibt beim Wechsel der Registerkarte", async ({ page }) => {
+  test("#115/AK6: Zoom gilt für alle Grafiken des Vergleichs und bleibt beim Wechsel der Registerkarte", async ({ page }) => {
     const errors = await openCompare(page);
     await page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"]').first().click();
     await expect(page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"].on').first()).toBeAttached();
@@ -3729,7 +3729,7 @@ test.describe("Vergleich wie das Einzelergebnis (FEA-90)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
+test.describe("Kennzahlen im Vergleich sortieren (#118)", () => {
   const openCompare = async page => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
@@ -3747,7 +3747,7 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
     return v.sort((a, b) => a.p - b.p).map(x => x.c);
   });
 
-  test("FEA-91/AK1, AK2, AK3: Klick auf den Spaltenkopf sortiert auf-, dann absteigend, mit Pfeil; andere Spalte wieder aufsteigend", async ({ page }) => {
+  test("#118/AK1, AK2, AK3: Klick auf den Spaltenkopf sortiert auf-, dann absteigend, mit Pfeil; andere Spalte wieder aufsteigend", async ({ page }) => {
     const errors = await openCompare(page);
     const asc = await byMedian(page);
     expect(asc[0]).not.toBe(asc[1]);
@@ -3769,7 +3769,7 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-91/AK5: ohne Klick Reihenfolge der Liste; Sortierung bleibt beim Wechsel von Registerkarte und Kaufkraft, Farben bleiben beim Ergebnis", async ({ page }) => {
+  test("#118/AK5: ohne Klick Reihenfolge der Liste; Sortierung bleibt beim Wechsel von Registerkarte und Kaufkraft, Farben bleiben beim Ergebnis", async ({ page }) => {
     const errors = await openCompare(page);
     await expect(kpi(page).locator('th[aria-sort="none"]')).toHaveCount(9);
     expect(await colors(page)).toEqual(["background:var(--r1)", "background:var(--r2)"]);
@@ -3788,7 +3788,7 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-91/AK6: Spaltenköpfe per Tastatur bedienbar und mit aria-sort", async ({ page }) => {
+  test("#118/AK6: Spaltenköpfe per Tastatur bedienbar und mit aria-sort", async ({ page }) => {
     const errors = await openCompare(page);
     await head(page, "Erfolgsquote").locator("button").focus();
     await page.keyboard.press("Enter");
@@ -3801,8 +3801,8 @@ test.describe("Kennzahlen im Vergleich sortieren (FEA-91)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Name eines Ergebnisses mit Abkürzungen (FEA-92)", () => {
-  test("FEA-92/AK1, AK2, AK3: Name «Planung · Quelle · Strategie · Zeitpunkt», Zahl der Läufe in der Zeile darunter", async ({ page }) => {
+test.describe("Name eines Ergebnisses mit Abkürzungen (#119)", () => {
+  test("#119/AK1, AK2, AK3: Name «Planung · Quelle · Strategie · Zeitpunkt», Zahl der Läufe in der Zeile darunter", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     const meta = await page.evaluate(async () => (await Runs.list())[0]);
@@ -3823,7 +3823,7 @@ test.describe("Name eines Ergebnisses mit Abkürzungen (FEA-92)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-92/AK4: jede Renditequelle und jede Strategie hat eine Abkürzung", async ({ page }) => {
+  test("#119/AK4: jede Renditequelle und jede Strategie hat eine Abkürzung", async ({ page }) => {
     const errors = await open(page);
     const missing = await page.evaluate(() => [
       ...SOURCES.map(s => s[0]).filter(k => !SOURCE_SHORT[k]),
@@ -3833,7 +3833,7 @@ test.describe("Name eines Ergebnisses mit Abkürzungen (FEA-92)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-92/AK5: gespeicherte Ergebnisse behalten ihren Namen", async ({ page }) => {
+  test("#119/AK5: gespeicherte Ergebnisse behalten ihren Namen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     // Eintrag einer älteren Version (Name im alten Aufbau), danach ein neues Ergebnis: der alte Name bleibt
@@ -3848,7 +3848,7 @@ test.describe("Name eines Ergebnisses mit Abkürzungen (FEA-92)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
+test.describe("Vergleich mit bis zu 10 Ergebnissen (#120)", () => {
   /** n Ergebnisse als Kopien des ersten Monte-Carlo-Ergebnisses (mit leicht anderem Endvermögen), alle markiert. */
   const withRuns = async (page, n) => {
     const errors = await open(page, "runsflow/mem/del");
@@ -3863,7 +3863,7 @@ test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
   };
   const selectAll = page => page.locator('input[data-action="runs-all"]').check();
 
-  test("FEA-93/AK1, AK2: Vergleichen bei 2 bis 10 markierten aktiv; ab 11 gesperrt mit Hinweis, Markieren und Löschen bleiben möglich", async ({ page }) => {
+  test("#120/AK1, AK2: Vergleichen bei 2 bis 10 markierten aktiv; ab 11 gesperrt mit Hinweis, Markieren und Löschen bleiben möglich", async ({ page }) => {
     const errors = await withRuns(page, 11);
     const btn = page.locator('button[data-action="runs-compare"]');
     await expect(btn).toHaveAttribute("title", "Zwei bis 10 Ergebnisse markieren");
@@ -3879,7 +3879,7 @@ test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
   });
 
   for (const scheme of ["light", "dark"]) {
-    test(`FEA-93/AK3: zehn unterscheidbare Farben, in allen Karten gleich (${scheme})`, async ({ page }) => {
+    test(`#120/AK3: zehn unterscheidbare Farben, in allen Karten gleich (${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
       const errors = await withRuns(page, 10);
       await selectAll(page);
@@ -3900,7 +3900,7 @@ test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
     });
   }
 
-  test("FEA-93/AK4: mit 10 Ergebnissen scrollen Tabellen und Balken waagrecht statt zu schrumpfen", async ({ page }) => {
+  test("#120/AK4: mit 10 Ergebnissen scrollen Tabellen und Balken waagrecht statt zu schrumpfen", async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
     const errors = await withRuns(page, 10);
     await selectAll(page);
@@ -3923,7 +3923,7 @@ test.describe("Vergleich mit bis zu 10 Ergebnissen (FEA-93)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", () => {
+test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (#121)", () => {
   /** Unterste Beschriftung der y-Achse einer Grafik. */
   const lowest = (page, sel) => page.locator(`${sel} text[text-anchor="end"]`).evaluateAll(l => l.map(t => t.textContent).sort((a, b) => parseFloat(a) - parseFloat(b))[0]);
   const openSingle = async page => {
@@ -3941,7 +3941,7 @@ test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", ()
     return errors;
   };
 
-  test("FEA-94/AK1, AK2: Standard 80–100 % im Einzelergebnis und im Vergleich; der Schalter gilt in beiden und bleibt", async ({ page }) => {
+  test("#121/AK1, AK2: Standard 80–100 % im Einzelergebnis und im Vergleich; der Schalter gilt in beiden und bleibt", async ({ page }) => {
     const errors = await openSingle(page);
     expect(await lowest(page, "#mc-surv")).toBe("80 %");
     await expect(page.locator('button[data-action="surv-scale"].on')).toHaveText("80–100 %");
@@ -3960,7 +3960,7 @@ test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", ()
     await noErrors(page, errors);
   });
 
-  test("FEA-94/AK3, AK4: unter 80 % abgeschnitten mit Hinweis, Tooltip mit echtem Wert", async ({ page }) => {
+  test("#121/AK3, AK4: unter 80 % abgeschnitten mit Hinweis, Tooltip mit echtem Wert", async ({ page }) => {
     const errors = await openSingle(page);
     await expect(page.locator(".survclip")).toHaveCount(0);
     // Kurve künstlich auf 60 % fallen lassen
@@ -3978,7 +3978,7 @@ test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", ()
     await noErrors(page, errors);
   });
 
-  test("FEA-94/AK3: im Vergleich Hinweis, wenn eine Kurve unter 80 % fällt", async ({ page }) => {
+  test("#121/AK3: im Vergleich Hinweis, wenn eine Kurve unter 80 % fällt", async ({ page }) => {
     const errors = await openCompare(page);
     await page.evaluate(async () => {
       const [m] = (await Runs.list()).filter(m => runsSel.has(m.id)), d = await Runs.get(m.id);
@@ -3991,7 +3991,7 @@ test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (FEA-94)", ()
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebnis (FEA-95)", () => {
+test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebnis (#122)", () => {
   const openCharts = async page => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
@@ -4003,7 +4003,7 @@ test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebn
   const card = page => page.locator("#resultsBody .card", { has: page.locator("#cmp-mkt") });
   const labels = page => page.locator('#cmp-mkt text[text-anchor="end"]').allTextContents();
 
-  test("FEA-95/AK1, AK3: Schalter Wertentwicklung / Änderung in %, linear / logarithmisch wie im Einzelergebnis", async ({ page }) => {
+  test("#122/AK1, AK3: Schalter Wertentwicklung / Änderung in %, linear / logarithmisch wie im Einzelergebnis", async ({ page }) => {
     const errors = await openCharts(page);
     await expect(card(page).locator('button[data-action="mkt"]')).toHaveText(["Wertentwicklung (Start = 100)", "Änderung in %"]);
     await expect(card(page).locator('button[data-action="mkt-log"]')).toHaveText(["Linear", "Logarithmisch"]);
@@ -4017,7 +4017,7 @@ test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebn
     await noErrors(page, errors);
   });
 
-  test("FEA-95/AK2, AK5, AK6: Änderung in % je Ergebnis wie im Einzelergebnis, Bezugslinie bei 0, auch in heutiger Kaufkraft", async ({ page }) => {
+  test("#122/AK2, AK5, AK6: Änderung in % je Ergebnis wie im Einzelergebnis, Bezugslinie bei 0, auch in heutiger Kaufkraft", async ({ page }) => {
     const errors = await openCharts(page);
     await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
     await expect(card(page).locator("h3")).toContainText("Änderung gegenüber dem Vorjahresmonat in %");
@@ -4047,7 +4047,7 @@ test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebn
     await noErrors(page, errors);
   });
 
-  test("FEA-95/AK4: die Wahl gilt im Einzelergebnis und im Vergleich gemeinsam", async ({ page }) => {
+  test("#122/AK4: die Wahl gilt im Einzelergebnis und im Vergleich gemeinsam", async ({ page }) => {
     const errors = await openCharts(page);
     await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
     expect(await page.evaluate(() => mktPct)).toBe(true);
@@ -4063,7 +4063,7 @@ test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebn
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)", () => {
+test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (#123)", () => {
   const openPlan = async page => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
@@ -4073,7 +4073,7 @@ test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)
     return errors;
   };
 
-  test("FEA-96/AK1, AK2, AK3: Bezeichnung mit Abschnitt, Werte wie im Editor, gruppiert nach Abschnitten", async ({ page }) => {
+  test("#123/AK1, AK2, AK3: Bezeichnung mit Abschnitt, Werte wie im Editor, gruppiert nach Abschnitten", async ({ page }) => {
     const errors = await openPlan(page);
     // runsflow unterscheidet sich im Aktienanteil (30 %)
     const t = page.locator("table.cmpplan");
@@ -4093,7 +4093,7 @@ test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)
     await noErrors(page, errors);
   });
 
-  test("FEA-96/AK2, AK4: Auswahlfelder als Text, Listen mit Namen statt Index", async ({ page }) => {
+  test("#123/AK2, AK4: Auswahlfelder als Text, Listen mit Namen statt Index", async ({ page }) => {
     const errors = await openPlan(page);
     await page.evaluate(async () => {
       const [a] = (await Runs.list()).filter(m => runsSel.has(m.id)), d = structuredClone(await Runs.get(a.id)), p = d.plan;
@@ -4112,7 +4112,7 @@ test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)
     await noErrors(page, errors);
   });
 
-  test("FEA-96/AK5: jedes Feld der Beispielplanung hat eine Bezeichnung oder ist ausdrücklich ausgeblendet", async ({ page }) => {
+  test("#123/AK5: jedes Feld der Beispielplanung hat eine Bezeichnung oder ist ausdrücklich ausgeblendet", async ({ page }) => {
     const errors = await open(page);
     const missing = await page.evaluate(() => {
       const base0 = JSON.parse(JSON.stringify(state)), ctxs = [];
@@ -4152,10 +4152,10 @@ test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (FEA-96)
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Kopfzeile des Ergebnisses mit dem Namen (FEA-98)", () => {
+test.describe("Kopfzeile des Ergebnisses mit dem Namen (#125)", () => {
   const title = page => page.locator("#resultsTitle");
 
-  test("FEA-98/AK1, AK3: frisch berechnet mit mehreren Läufen: «Name · 500 Läufe»", async ({ page }) => {
+  test("#125/AK1, AK3: frisch berechnet mit mehreren Läufen: «Name · 500 Läufe»", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 }); return runSimulation("overview", { noConfirm: true }); });
     await expect(title(page).locator(".rtkind")).toHaveText("500 Läufe");
@@ -4167,7 +4167,7 @@ test.describe("Kopfzeile des Ergebnisses mit dem Namen (FEA-98)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-98/AK2: Einzellauf: Name vorne, danach «Einzellauf · …»", async ({ page }) => {
+  test("#125/AK2: Einzellauf: Name vorne, danach «Einzellauf · …»", async ({ page }) => {
     const errors = await open(page, "results");
     await expect(title(page).locator(".rtname")).toBeAttached();
     const name = await page.evaluate(async () => (await Runs.list())[0].name);
@@ -4176,7 +4176,7 @@ test.describe("Kopfzeile des Ergebnisses mit dem Namen (FEA-98)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-98/AK3, AK4: gespeichertes Ergebnis aus der Liste zeigt seinen (neuen) Namen", async ({ page }) => {
+  test("#125/AK3, AK4: gespeichertes Ergebnis aus der Liste zeigt seinen (neuen) Namen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     const id = await page.evaluate(async () => { const [m] = await Runs.list(); await Runs.update(m.id, { name: "Variante Aktien 30 %" }); return m.id; });
@@ -4190,7 +4190,7 @@ test.describe("Kopfzeile des Ergebnisses mit dem Namen (FEA-98)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-98/AK5: langer Name wird gekürzt, die Anzahl der Läufe bleibt sichtbar, voller Name im Tooltip", async ({ page }) => {
+  test("#125/AK5: langer Name wird gekürzt, die Anzahl der Läufe bleibt sichtbar, voller Name im Tooltip", async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 800 });
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
@@ -4208,7 +4208,7 @@ test.describe("Kopfzeile des Ergebnisses mit dem Namen (FEA-98)", () => {
     await noErrors(page, errors);
   });
 
-  test("FEA-98/AK6: ohne gespeicherten Namen bleibt die Kopfzeile wie bisher", async ({ page }) => {
+  test("#125/AK6: ohne gespeicherten Namen bleibt die Kopfzeile wie bisher", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { Runs.add = async () => { throw new Error("Speicher voll (Test)"); }; state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 }); return runSimulation("overview", { noConfirm: true }); });
     await expect(title(page)).toHaveText("500 Läufe");

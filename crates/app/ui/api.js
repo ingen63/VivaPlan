@@ -8,7 +8,7 @@ window.addEventListener("error", e => noteError(e.message));
 window.addEventListener("unhandledrejection", e => noteError(e.reason?.message || e.reason));
 const Engine = {
   inApp: !!(window.__TAURI__ && window.__TAURI__.core),
-  /** FEA-24: Grenzen aus den Einstellungen (setzt app.js); sie gehen bei jedem Aufruf mit der Planung mit. */
+  /** #25: Grenzen aus den Einstellungen (setzt app.js); sie gehen bei jedem Aufruf mit der Planung mit. */
   limits: () => null,
   async call(cmd, args = {}) {
     // Die Grenzen gehören nicht zur Planung: nie mitspeichern.

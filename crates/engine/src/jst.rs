@@ -1,10 +1,10 @@
-//! FEA-51: Jordà-Schularick-Taylor Macrohistory Database (Release 6, Jahreswerte bis 2020).
+//! #67: Jordà-Schularick-Taylor Macrohistory Database (Release 6, Jahreswerte bis 2020).
 //!
 //! Aus den Länderwerten entstehen Aktien- und Obligationenrenditen in CHF (ohne Währungsabsicherung) und daraus nach
 //! BIP gewichtete Regionen und ein Welt-Aktienindex. Die Rohdaten (`data/quellen/JSTdatasetR6.xlsx`) stehen unter
 //! der Lizenz CC BY-NC-SA 4.0; ausgeliefert wird ein Auszug der benötigten Spalten (`data/quellen/jst-r6.csv`).
 //!
-//! Rechenweg (`docs/FEA-51 FEA-52 Weltindex JST.md`):
+//! Rechenweg (`docs/Weltindex JST.md`):
 //! - Rendite in CHF: `(1 + r) × k(t) / k(t−1) − 1` mit `k` = CHF je Einheit Landeswährung (aus den Kursen gegenüber
 //!   dem USD, `xrusd`).
 //! - Gewicht eines Landes im Jahr `t`: reales BIP des Vorjahres (BIP pro Kopf nach Maddison × Bevölkerung). Die
@@ -53,7 +53,7 @@ pub struct Row {
     pub eq_tr: Option<f64>,
     pub bond_tr: Option<f64>,
     pub bond_rate: Option<f64>,
-    /// FEA-59: Rendite kurzfristiger Staatspapiere (etwa 3 Monate), als Anteil.
+    /// #76: Rendite kurzfristiger Staatspapiere (etwa 3 Monate), als Anteil.
     pub bill_rate: Option<f64>,
 }
 
@@ -103,7 +103,7 @@ pub const USA: Region = Region {
     name: "USA",
     countries: &["USA"],
 };
-/// «EU» gemäss FEA-53: Deutschland, Frankreich, Italien, Spanien, Niederlande, Belgien, Grossbritannien.
+/// «EU» gemäss #69: Deutschland, Frankreich, Italien, Spanien, Niederlande, Belgien, Grossbritannien.
 pub const EU: Region = Region {
     id: "eu",
     name: "EU",
@@ -115,7 +115,7 @@ pub const APAC: Region = Region {
     name: "Asien-Pazifik",
     countries: &["JPN", "AUS"],
 };
-/// Regionen des Weltindexes (FEA-51).
+/// Regionen des Weltindexes (#67).
 pub const REGIONS: [Region; 4] = [SWITZERLAND, USA, EU, APAC];
 
 /// Erstes Jahr des Weltindexes: ab 1900 haben alle Regionen Aktienrenditen.
@@ -357,7 +357,7 @@ fn snb_first_full_year(snb: &SnbData) -> Option<i32> {
     Some(snb.ch_yield10.keys().next()?.year() + 1)
 }
 
-/// FEA-52: Gesamtrendite 10-jähriger Obligationen der Eidgenossenschaft pro Kalenderjahr: aus JST bis zum Jahr vor dem
+/// #68: Gesamtrendite 10-jähriger Obligationen der Eidgenossenschaft pro Kalenderjahr: aus JST bis zum Jahr vor dem
 /// ersten ganzen SNB-Jahr, danach aus den monatlichen SNB-Renditen (Monatsrenditen zum Jahr verknüpft). 1915 fehlt in
 /// JST (Börse geschlossen); dort gilt der Coupon (`bond_rate`) als Rendite. Liefert das erste Jahr und die Werte.
 pub fn ch_bonds_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> {
@@ -389,7 +389,7 @@ pub fn ch_bonds_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> 
     Ok((FIRST_YEAR, out))
 }
 
-/// FEA-59: Rendite kurzfristiger Papiere der Eidgenossenschaft (etwa 3 Monate) pro Kalenderjahr: aus JST (`bill_rate`)
+/// #76: Rendite kurzfristiger Papiere der Eidgenossenschaft (etwa 3 Monate) pro Kalenderjahr: aus JST (`bill_rate`)
 /// ab [`FIRST_YEAR`] bis zum letzten JST-Jahr, danach das Jahresmittel des SARON (SNB, nur ganze Jahre). Bei so kurzer
 /// Laufzeit entspricht die Rendite dem Satz; Kursschwankungen fallen weg. Liefert das erste Jahr und die Werte.
 pub fn ch_short_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> {
@@ -417,7 +417,7 @@ pub fn ch_short_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> 
 /// Erklärung der Reihe «Welt (JST)» (höchstens 2 Zeilen).
 pub const INFO_WORLD: &str = "Welt-Aktienindex aus den JST-Daten (CH, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Obligationen: Eidgenossenschaft 10 Jahre. Teuerung: CH.";
 
-/// FEA-52: Jahresreihe «Welt (JST)» in CHF: Aktien = Weltindex (alle Regionen, nach BIP gewichtet), Obligationen =
+/// #68: Jahresreihe «Welt (JST)» in CHF: Aktien = Weltindex (alle Regionen, nach BIP gewichtet), Obligationen =
 /// 10-jährige Obligationen der Eidgenossenschaft ([`ch_bonds_yearly`]), Teuerung = Schweizer Konsumentenpreise (JST).
 pub fn world_dataset(jst: &JstData, snb: &SnbData) -> Result<DataSet> {
     let countries: Vec<&str> = all_countries().collect();

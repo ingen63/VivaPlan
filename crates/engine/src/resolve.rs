@@ -35,7 +35,7 @@ impl Resolver {
             }
             names.insert(ms.id.clone(), ms.name.clone());
         }
-        // FEA-38: Die festen Meilensteine jeder Person sind immer vorhanden; fehlen sie (ältere Planungen, Tests),
+        // #51: Die festen Meilensteine jeder Person sind immer vorhanden; fehlen sie (ältere Planungen, Tests),
         // gelten sie mit dem Standardalter.
         for (i, p) in plan.household.persons.iter().take(2).enumerate() {
             let (pk, ahv) = crate::model::person_milestones(i);
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(Curve::constant(5.0).at(YearMonth(-100)), 5.0);
     }
 
-    // FEA-29: Namen, Geburtsdaten, erster gültiger Monat und Werte einer Kurve.
+    // #40: Namen, Geburtsdaten, erster gültiger Monat und Werte einer Kurve.
     #[test]
     fn names_births_first_and_values() {
         let r = Resolver {
@@ -182,7 +182,7 @@ mod tests {
         assert_eq!(Curve { points: vec![] }.first(), None);
     }
 
-    // FEA-38: erster Wert über der Schwelle im Bereich (beide Ränder inklusive).
+    // #51: erster Wert über der Schwelle im Bereich (beide Ränder inklusive).
     #[test]
     fn first_above_checks_range_edges_and_eps() {
         let c = Curve {

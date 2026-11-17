@@ -15,11 +15,13 @@ const walk = (dir, ext, out = []) => {
 };
 const rel = p => path.relative(ROOT, p);
 
-test("FEA-40/AK6: «Liquidität» kommt in Oberfläche, Hilfe und Dokumentation nur als Suchbegriff vor", () => {
+test("#54/AK6: «Liquidität» kommt in Oberfläche, Hilfe und Dokumentation nur als Suchbegriff vor", () => {
   // Erlaubt sind die Stichwortzeilen der Hilfe («Stichworte: …»): Wer noch «Liquidität» sucht, findet «Cash».
+  // Ausgenommen sind die Listen, die alte Titel und Kriterien zitieren (Abnahmeliste, alte Issue-IDs, #117).
+  const history = ["ABNAHME.md", "ISSUE-IDS.md"];
   const files = [
     ...walk(path.join(ROOT, "crates/app/ui"), [".js", ".html", ".md", ".css"]),
-    ...walk(path.join(ROOT, "docs"), [".md"]).filter(p => path.basename(p) !== "ABNAHME.md"),
+    ...walk(path.join(ROOT, "docs"), [".md"]).filter(p => !history.includes(path.basename(p))),
     path.join(ROOT, "README.md"), path.join(ROOT, "CLAUDE.md"),
   ];
   const hits = [];
@@ -31,13 +33,13 @@ test("FEA-40/AK6: «Liquidität» kommt in Oberfläche, Hilfe und Dokumentation 
   assert.deepEqual(hits, []);
 });
 
-test("FEA-40/AK6: die Feldnamen der Planungsdatei bleiben (wealth.cash, reserveMonths)", () => {
+test("#54/AK6: die Feldnamen der Planungsdatei bleiben (wealth.cash, reserveMonths)", () => {
   const ui = fs.readFileSync(path.join(ROOT, "crates/app/ui/app.js"), "utf8");
   assert.match(ui, /wealth\.cash/);
   assert.match(ui, /reserveMonths/);
 });
 
-test("FEA-35/AK7: Verweise in README, CLAUDE.md und docs/ auf Dateien im Repository führen nicht ins Leere", () => {
+test("#48/AK7: Verweise in README, CLAUDE.md und docs/ auf Dateien im Repository führen nicht ins Leere", () => {
   const files = [path.join(ROOT, "README.md"), path.join(ROOT, "CLAUDE.md"), ...walk(path.join(ROOT, "docs"), [".md"])];
   const dead = [];
   for (const f of files) {
@@ -52,7 +54,7 @@ test("FEA-35/AK7: Verweise in README, CLAUDE.md und docs/ auf Dateien im Reposit
   assert.deepEqual(dead, []);
 });
 
-test("FEA-75/AK1, FEA-75/AK3: alle Stellen nennen dieselbe Programmversion, das Changelog beginnt mit ihr", () => {
+test("#93/AK1, #93/AK3: alle Stellen nennen dieselbe Programmversion, das Changelog beginnt mit ihr", () => {
   const read = f => fs.readFileSync(path.join(ROOT, f), "utf8");
   const toml = f => read(f).match(/^version\s*=\s*"([^"]+)"/m)?.[1];
   const versions = {

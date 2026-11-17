@@ -12,14 +12,14 @@ use engine::time::YearMonth;
 use engine::{api, import, market};
 use serde_json::json;
 
-/// FEA-76: Shillers Originaltabelle liegt nur lokal (nicht im Repository). Fehlt sie, gibt es `None`, und der Test
+/// #94: Shillers Originaltabelle liegt nur lokal (nicht im Repository). Fehlt sie, gibt es `None`, und der Test
 /// wird mit einer Meldung übersprungen.
 fn shiller_file() -> Option<PathBuf> {
     let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/quellen/shiller-index.ods");
     if p.exists() {
         Some(p)
     } else {
-        eprintln!("übersprungen: {} fehlt (FEA-76)", p.display());
+        eprintln!("übersprungen: {} fehlt (#94)", p.display());
         None
     }
 }
@@ -96,10 +96,10 @@ fn csv_parser_is_robust() {
     }
 }
 
-/// ISS-14/AK1, AK2: Jahreszahlen ausserhalb 1000 bis 9999 ergeben eine Fehlermeldung mit Zeilennummer statt eines
+/// #60/AK1, AK2: Jahreszahlen ausserhalb 1000 bis 9999 ergeben eine Fehlermeldung mit Zeilennummer statt eines
 /// Absturzes (Fund des Fuzzers `parse_csv`: Überlauf in `YearMonth::new`).
 #[test]
-fn iss14_extreme_years_are_errors_not_crashes() {
+fn issue_60_extreme_years_are_errors_not_crashes() {
     let err = |year: &str| {
         let csv = format!("Years,Stocks,Bonds,Inflation\n{year},0,0,0\n");
         DataSet::parse_csv("t", &csv).unwrap_err().to_string()

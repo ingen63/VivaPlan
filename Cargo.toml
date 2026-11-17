@@ -25,7 +25,7 @@ split-debuginfo = "off"
 lto = "thin"
 codegen-units = 1
 
-# FEA-32: Build-Profil für Mutationsläufe (cargo mutants, gewählt in .cargo/mutants.toml). Prüfungen wie im Profil test
+# #43: Build-Profil für Mutationsläufe (cargo mutants, gewählt in .cargo/mutants.toml). Prüfungen wie im Profil test
 # (Überlaufprüfung und debug_assert bleiben an), aber:
 #  - debug = "none": Auf macOS bleiben sonst die Objektdateien jedes Mutanten im Zielverzeichnis liegen (rund 350 je
 #    Mutant, nach 800 Mutanten 285'000 Dateien); die Prüfung neuer Programme durch macOS wurde damit immer langsamer.

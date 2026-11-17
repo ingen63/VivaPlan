@@ -1,4 +1,4 @@
-//! FEA-24/FEA-37/FEA-38: `api::upgrade_plan` bringt eine ältere Planung auf den aktuellen Stand und gibt die
+//! #25/#52/#51: `api::upgrade_plan` bringt eine ältere Planung auf den aktuellen Stand und gibt die
 //! Einstellungen (`limits`) nicht weiter.
 
 use engine::api;

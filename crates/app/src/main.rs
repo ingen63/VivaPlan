@@ -5,7 +5,7 @@
 
 mod migrate;
 
-// ISS-22: Speichergrenze je Testprozess (engine::test_alloc).
+// #116: Speichergrenze je Testprozess (engine::test_alloc).
 #[cfg(test)]
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
@@ -97,7 +97,7 @@ const LAST_PLAN_KEY: &str = "lastPlan";
 const EXAMPLE_RESOURCE: &str = "Neu.vplan";
 
 /// Planung beim Start: Pfad (leer bei der Beispielplanung), Inhalt und ein Hinweis für die Oberfläche.
-/// `first`: allererster Start (FEA-54), die Oberfläche zeigt dann den Willkommensdialog.
+/// `first`: allererster Start (#70), die Oberfläche zeigt dann den Willkommensdialog.
 #[derive(Serialize, Debug, PartialEq)]
 struct Startup {
     path: Option<String>,
@@ -116,7 +116,7 @@ fn file_name(path: &str) -> String {
 /// Bestimmt die Planung beim Start. Eine beim Start übergebene Datei (Doppelklick, Kommandozeile) geht vor, sonst gilt
 /// die gemerkte Datei. Ohne Merkung gilt die Beispielplanung (ohne Hinweis); fehlt die Datei oder ist sie nicht
 /// lesbar, ebenfalls (mit Hinweis). Die Merkung selbst bleibt dabei unverändert.
-/// FEA-54: Gibt es noch keine Einstellungsdatei und wurde keine Datei übergeben, ist es der allererste Start.
+/// #70: Gibt es noch keine Einstellungsdatei und wurde keine Datei übergeben, ist es der allererste Start.
 fn startup_from(data_dir: &Path, given: Option<PathBuf>, example: impl FnOnce() -> Value) -> Startup {
     let first = given.is_none() && !data_dir.join(SETTINGS_FILE).exists();
     let settings = read_settings(data_dir);
@@ -175,7 +175,7 @@ async fn startup_plan<R: Runtime>(app: AppHandle<R>, pending: State<'_, PendingO
     Ok(s)
 }
 
-/// FEA-34: Datei, mit der die App gestartet wurde (Doppelklick im Finder, Dateizuordnung, Kommandozeile), bis die
+/// #44: Datei, mit der die App gestartet wurde (Doppelklick im Finder, Dateizuordnung, Kommandozeile), bis die
 /// Oberfläche beim Start danach fragt.
 #[derive(Default)]
 struct PendingOpen(Mutex<Option<PathBuf>>);
@@ -510,7 +510,7 @@ fn validate(plan: Value) -> Vec<Issue> {
     api::validate(&plan)
 }
 
-/// Ältere Planung beim Laden auf den aktuellen Stand bringen (FEA-37, FEA-38).
+/// Ältere Planung beim Laden auf den aktuellen Stand bringen (#52, #51).
 #[tauri::command]
 fn upgrade_plan(plan: Value) -> api::UpgradeOut {
     api::upgrade_plan(&plan)
@@ -653,7 +653,7 @@ async fn save_plan<R: Runtime>(
 }
 
 /// Speichert unter dem gegebenen Pfad, sonst unter dem im Dialog (`pick`, mit Namensvorschlag) gewählten.
-/// FEA-34: Ist der gegebene Pfad eine alte .rplan-Datei, fragt der Dialog wie «Speichern unter» und schlägt denselben
+/// #44: Ist der gegebene Pfad eine alte .rplan-Datei, fragt der Dialog wie «Speichern unter» und schlägt denselben
 /// Namen vor (mit .vplan); die .rplan-Datei bleibt unverändert.
 fn save_with(
     plan: &Value,
@@ -722,8 +722,8 @@ const FILE_MENU: [Entry; 8] = [
     ("run", "Simulation starten", "CmdOrCtrl+Enter"),
 ];
 
-/// FEA-24: anwendungsweite Einstellungen (Grenzen für AHV-Bezug, Bezug Pensionskasse, Maximalbetrag Säule 3a).
-/// FEA-44: auf macOS im Programmmenü, auf Windows und Linux am Ende von «Datei».
+/// #25: anwendungsweite Einstellungen (Grenzen für AHV-Bezug, Bezug Pensionskasse, Maximalbetrag Säule 3a).
+/// #59: auf macOS im Programmmenü, auf Windows und Linux am Ende von «Datei».
 const SETTINGS: Entry = ("settings", "Einstellungen…", "CmdOrCtrl+,");
 
 /// Einträge des Menüs «Datei» je System (ohne «Beenden», das als Systemeintrag folgt).
@@ -755,7 +755,7 @@ const QUIT_TEXT: &str = "Beenden";
 const EDIT_TITLE: &str = "Bearbeiten";
 const HELP_TITLE: &str = "Hilfe";
 
-/// FEA-54/FEA-55: «Willkommen …» öffnet den Willkommensdialog, «Erste Schritte» blendet die Checkliste ein.
+/// #70/#71: «Willkommen …» öffnet den Willkommensdialog, «Erste Schritte» blendet die Checkliste ein.
 const HELP_MENU: [Entry; 8] = [
     ("helpctx", "Hilfe zum aktuellen Thema", "F1"),
     ("manual", "Handbuch", "CmdOrCtrl+Shift+/"),
@@ -902,7 +902,7 @@ fn create_windows<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Einrichtung beim Start der echten Anwendung: alte App-Daten übernehmen (FEA-34), Fenster, Dateidialoge und Menü.
+/// Einrichtung beim Start der echten Anwendung: alte App-Daten übernehmen (#44), Fenster, Dateidialoge und Menü.
 fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::error::Error>> {
     migrate::take_over_all(&migrate::legacy_pairs(&data_dirs(app.handle())));
     create_windows(app)?;
@@ -1355,13 +1355,13 @@ mod tests {
     #[test]
     fn shiller_import_aus_tabelle_und_fehlerfall() {
         let lib = tmp("shiller");
-        // FEA-76: die Originaltabelle liegt nur lokal; ohne sie entfällt dieser Teil.
+        // #94: die Originaltabelle liegt nur lokal; ohne sie entfällt dieser Teil.
         let ods = root().join("crates/engine/data/quellen/shiller-index.ods");
         if ods.exists() {
             let rep = shiller_from(&lib, FilePath::Path(ods)).unwrap();
             assert!(!rep.written.is_empty());
         } else {
-            eprintln!("übersprungen: {} fehlt (FEA-76)", ods.display());
+            eprintln!("übersprungen: {} fehlt (#94)", ods.display());
         }
         assert!(shiller_from(&lib, FilePath::Path(lib.join("fehlt.xls"))).is_err());
         assert!(shiller_from(&lib, FilePath::Url("https://example.com/x".parse().unwrap())).is_err());
@@ -1386,9 +1386,9 @@ mod tests {
         v
     }
 
-    /// FEA-44/AK1–AK4: Einstellungen auf macOS im Programmmenü, sonst am Ende von «Datei»; genau einmal.
+    /// #59/AK1–AK4: Einstellungen auf macOS im Programmmenü, sonst am Ende von «Datei»; genau einmal.
     #[test]
-    fn fea44_einstellungen_je_system() {
+    fn issue_59_einstellungen_je_system() {
         let n = eigene_eintraege().iter().filter(|e| e.0 == "settings").count();
         assert_eq!(n, 1, "Einstellungen genau einmal");
         assert_eq!(SETTINGS, ("settings", "Einstellungen…", "CmdOrCtrl+,"));
@@ -1557,7 +1557,7 @@ mod tests {
 
     #[test]
     fn fortschritt_und_abbruch_folgen_der_kennung_der_berechnung() {
-        // FEA-83/AK2, FEA-83/AK4
+        // #107/AK2, #107/AK4
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let p = call(&w, "progress_get", json!({"jobId": 31337})).unwrap();
@@ -1572,7 +1572,7 @@ mod tests {
     }
 
     #[test]
-    fn fea82_cancel_job_bricht_die_berechnung_mit_dieser_kennung_ab() {
+    fn issue_106_cancel_job_bricht_die_berechnung_mit_dieser_kennung_ab() {
         let (_app, w, _g) = setup();
         let job = engine::progress::start_as(Some(55_001), 0);
         let other = engine::progress::start_as(Some(55_002), 0);
@@ -1589,20 +1589,20 @@ mod tests {
     }
 
     #[test]
-    fn fea82_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen() {
+    fn issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen() {
         let (_app, w, _g) = setup();
         // Zuerst aufräumen: ein früher abgebrochener Lauf (z. B. durch einen Mutanten) kann den Wert hinterlassen haben.
-        call(&w, "settings_set", json!({"key": "fea82Test", "value": null})).unwrap();
+        call(&w, "settings_set", json!({"key": "issue_106Test", "value": null})).unwrap();
         let before = call(&w, "settings_get", json!({})).unwrap();
-        assert!(before.get("fea82Test").is_none_or(|v| v.is_null()), "{before}");
-        call(&w, "settings_set", json!({"key": "fea82Test", "value": 42})).unwrap();
+        assert!(before.get("issue_106Test").is_none_or(|v| v.is_null()), "{before}");
+        call(&w, "settings_set", json!({"key": "issue_106Test", "value": 42})).unwrap();
         let after = call(&w, "settings_get", json!({})).unwrap();
-        assert_eq!(after["fea82Test"], 42);
-        call(&w, "settings_set", json!({"key": "fea82Test", "value": null})).unwrap();
+        assert_eq!(after["issue_106Test"], 42);
+        call(&w, "settings_set", json!({"key": "issue_106Test", "value": null})).unwrap();
     }
 
     #[test]
-    fn fea82_datenordner_nennen_den_identifier() {
+    fn issue_106_datenordner_nennen_den_identifier() {
         let (app, _w, _g) = setup();
         let id = app.config().identifier.clone();
         let dirs = data_dirs(app.handle());
@@ -1614,8 +1614,8 @@ mod tests {
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     #[test]
-    fn fea82_vom_system_gemeldete_datei_wird_vorgemerkt() {
-        // macOS: Doppelklick auf eine Planungsdatei meldet «Opened» (FEA-34); andere Dateien werden ignoriert.
+    fn issue_106_vom_system_gemeldete_datei_wird_vorgemerkt() {
+        // macOS: Doppelklick auf eine Planungsdatei meldet «Opened» (#44); andere Dateien werden ignoriert.
         let (app, _w, _g) = setup();
         let dir = tmp("opened");
         let plan = dir.join("a.vplan");
@@ -1831,7 +1831,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// FEA-34/AK3 (legacy: RetirementPlanner): Eine geöffnete .rplan-Datei wird nie überschrieben. «Speichern» fragt wie «Speichern unter» und
+    /// #44/AK3 (legacy: RetirementPlanner): Eine geöffnete .rplan-Datei wird nie überschrieben. «Speichern» fragt wie «Speichern unter» und
     /// schlägt denselben Namen mit .vplan vor; die .vplan lässt sich wieder öffnen, die .rplan bleibt unverändert.
     #[test]
     fn rplan_speichern_schlaegt_vplan_vor_und_laesst_die_alte_datei_unveraendert() {
@@ -1891,7 +1891,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// FEA-34/AK2: Fenstertitel «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan».
+    /// #44/AK2: Fenstertitel «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan».
     #[test]
     fn fenstertitel_mit_und_ohne_datei() {
         assert_eq!(window_title(None), "VivaPlan");
@@ -1903,7 +1903,7 @@ mod tests {
         assert_eq!(call(&w, "set_window_title", json!({})).unwrap(), "VivaPlan");
     }
 
-    /// FEA-34/AK5: Eine beim Start übergebene Planung (Doppelklick, Dateizuordnung) wird geöffnet und gemerkt.
+    /// #44/AK5: Eine beim Start übergebene Planung (Doppelklick, Dateizuordnung) wird geöffnet und gemerkt.
     #[test]
     fn beim_start_uebergebene_datei_wird_geoeffnet() {
         assert!(is_plan_file(Path::new("/a/b.vplan")) && is_plan_file(Path::new("b.RPLAN")));
@@ -2034,9 +2034,9 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// FEA-54/AK1, AK6: erster Start nur ohne Einstellungsdatei; danach (auch wenn die gemerkte Datei fehlt) nicht mehr.
+    /// #70/AK1, AK6: erster Start nur ohne Einstellungsdatei; danach (auch wenn die gemerkte Datei fehlt) nicht mehr.
     #[test]
-    fn fea54_erster_start_nur_ohne_einstellungen() {
+    fn issue_70_erster_start_nur_ohne_einstellungen() {
         let dir = tmp("fea54-erst");
         assert!(startup_from(&dir, None, example_stub).first, "ohne einstellungen.json");
         write_setting(&dir, "welcomeShown", json!(true)).unwrap();
@@ -2056,9 +2056,9 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// FEA-54/AK7, FEA-55/AK6: Menü «Hilfe» hat «Willkommen …» und «Erste Schritte».
+    /// #70/AK7, #71/AK6: Menü «Hilfe» hat «Willkommen …» und «Erste Schritte».
     #[test]
-    fn fea54_fea55_menue_hilfe() {
+    fn issue_70_issue_71_menue_hilfe() {
         assert!(HELP_MENU.contains(&("welcome", "Willkommen …", "")));
         assert!(HELP_MENU.contains(&("steps", "Erste Schritte", "")));
     }
@@ -2230,7 +2230,7 @@ mod tests {
         assert_eq!(QUIT_TEXT, "Beenden");
     }
 
-    // FEA-97/AK8: Die Fenster aus der Konfiguration (dort `create: false`) entstehen erst beim Start der App.
+    // #124/AK8: Die Fenster aus der Konfiguration (dort `create: false`) entstehen erst beim Start der App.
     #[test]
     fn fenster_aus_der_konfiguration_werden_erstellt() {
         let _g = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);

@@ -1,6 +1,6 @@
 //! Schnittstellentests: alle Befehle der Kommandozeile und der lokale Entwicklungsserver.
 
-// ISS-22: Speichergrenze je Testprozess (engine::test_alloc).
+// #116: Speichergrenze je Testprozess (engine::test_alloc).
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
 
@@ -56,7 +56,7 @@ fn usage_and_schema() {
     let o = run(&[]);
     assert_eq!(o.status.code(), Some(2));
     assert!(text(&o).contains("Verwendung"));
-    // FEA-45: Kurzfassung des Haftungsausschlusses in einer Zeile
+    // #61: Kurzfassung des Haftungsausschlusses in einer Zeile
     assert!(text(&o).contains("Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung."));
     let o = run(&["schema"]);
     assert!(o.status.success());
@@ -64,7 +64,7 @@ fn usage_and_schema() {
     assert!(schema["properties"]["returns"].is_object());
 }
 
-// FEA-75/AK2: `vivaplan --version` nennt die Version des Arbeitsbereichs (Cargo.toml, `version = "…"` unter `[workspace.package]`).
+// #93/AK2: `vivaplan --version` nennt die Version des Arbeitsbereichs (Cargo.toml, `version = "…"` unter `[workspace.package]`).
 #[test]
 fn version_is_printed() {
     let ws = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
@@ -129,7 +129,7 @@ fn validate_and_errors() {
     let o = run(&["validate", &ok]);
     assert!(o.status.success(), "{}", text(&o));
     assert!(text(&o).contains("gültig"));
-    // Ohne Zeitreihe und ohne Anlagestrategie (FEA-53) fehlen die Renditen für «rolling».
+    // Ohne Zeitreihe und ohne Anlagestrategie (#69) fehlen die Renditen für «rolling».
     let bad = plan_file(&d, "rolling", |v| {
         v["returns"]["series"] = serde_json::Value::Null;
         v["returns"].as_object_mut().unwrap().remove("strategy");
@@ -183,7 +183,7 @@ fn library_import_commands() {
     let o = run(&["library", "--library", l]);
     assert!(o.status.success(), "{}", text(&o));
     assert!(text(&o).contains("Shiller CHF.csv") && text(&o).contains("CHF"));
-    // FEA-76: die Originaltabelle liegt nur lokal; ohne sie entfällt dieser Teil.
+    // #94: die Originaltabelle liegt nur lokal; ohne sie entfällt dieser Teil.
     let shiller = root().join("crates/engine/data/quellen/shiller-index.ods");
     if shiller.exists() {
         let o = run(&["import-shiller", shiller.to_str().unwrap(), "--library", l]);
@@ -194,7 +194,7 @@ fn library_import_commands() {
             text(&o)
         );
     } else {
-        eprintln!("übersprungen: {} fehlt (FEA-76)", shiller.display());
+        eprintln!("übersprungen: {} fehlt (#94)", shiller.display());
     }
     let cube = root().join("crates/engine/data/quellen/snb-zimoma.csv");
     let o = run(&["import-snb", cube.to_str().unwrap(), "--library", l]);
@@ -228,7 +228,7 @@ fn server() -> Server {
             .unwrap(),
         port,
     );
-    // FEA-65: Warten auf den Zustand (Port offen) statt fester Wartezeit; bis 30 s, damit auch ein langsamer Runner
+    // #83: Warten auf den Zustand (Port offen) statt fester Wartezeit; bis 30 s, damit auch ein langsamer Runner
     // unter Abdeckungsmessung den Server starten kann.
     for _ in 0..600 {
         if TcpStream::connect(("127.0.0.1", port)).is_ok() {

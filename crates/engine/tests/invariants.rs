@@ -287,7 +287,7 @@ fn cash_flows_are_conserved_without_returns() {
         }
     }
     eprintln!("gerechnet: {ran} von {PLANS}");
-    // FEA-63/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
+    // #81/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
     assert!(ran > PLANS / 2, "nur {ran} von {PLANS} Planungen ohne Prüffehler");
 }
 
@@ -306,7 +306,7 @@ fn buying_and_selling_at_book_value_keeps_total() {
         v["flows"] = json!({ "income": 0, "spending": 0 });
         v["pension"]["ahv"]["monthly"] = json!(0);
         v["returns"]["fixed"]["inflation"] = json!(0);
-        // FEA-63/AK3: Ohne Grundstückgewinnsteuer scheiterte jede Planung an der Prüfung (Pflicht seit der Prüfung auf
+        // #81/AK3: Ohne Grundstückgewinnsteuer scheiterte jede Planung an der Prüfung (Pflicht seit der Prüfung auf
         // Immobilien im Besitz oder mit geplantem Kauf); der Test rechnete keine einzige. Satz 0 % zählt als gesetzt.
         v["taxes"]["propertyGain"] = json!({ "brackets": [[1e9, 0.0]] });
         v["realestate"] = json!({ "properties": [ {
@@ -321,6 +321,6 @@ fn buying_and_selling_at_book_value_keeps_total() {
         }
     }
     eprintln!("gerechnet: {ran} von {N}");
-    // FEA-63/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
+    // #81/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
     assert!(ran > N / 2, "nur {ran} von {N} Planungen ohne Prüffehler");
 }

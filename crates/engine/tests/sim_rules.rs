@@ -1,4 +1,4 @@
-//! FEA-29: Einzelregeln des Rechenkerns mit nachgerechneten Werten (Entnahmestrategien, Immobilien, Hypotheken,
+//! #40: Einzelregeln des Rechenkerns mit nachgerechneten Werten (Entnahmestrategien, Immobilien, Hypotheken,
 //! 3-Topf-Strategie, Monatsablauf). Jeder Test deckt Fälle ab, die sonst kein Test prüft.
 //!
 //! Grundplanung (erfunden): Start 2026-11, Geburt 1966-11, Pensionierung und AHV 2031-11 (Alter 65), Ende 2061-11;
@@ -15,9 +15,9 @@ fn base() -> Value {
     v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
     v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
     v["flows"]["spending"] = json!(1000);
-    // Die Regeln hier rechnen die Wohnkosten zusätzlich zu den Ausgaben (FEA-39 prüft crates/engine/tests/cash_housing.rs).
+    // Die Regeln hier rechnen die Wohnkosten zusätzlich zu den Ausgaben (#53 prüft crates/engine/tests/cash_housing.rs).
     v["flows"]["spendingIncludesHousing"] = json!(false);
-    // Einkommen nominal gleich, wie die Regeln hier gerechnet sind (FEA-43 prüft crates/engine/tests/income_indexed.rs).
+    // Einkommen nominal gleich, wie die Regeln hier gerechnet sind (#58 prüft crates/engine/tests/income_indexed.rs).
     v["flows"]["incomeIndexed"] = json!(false);
     v["wealth"] = json!({"stocks": 0, "bonds": 0, "cash": 1_000_000, "stockShare": 0, "reserveMonths": 0});
     v
@@ -268,10 +268,10 @@ fn stock_return_over_the_last_twelve_months() {
     close(j.stock_return, 1.01f64.powi(11) * 1.0 - 1.0, "Feb 2032 bis Jan 2033");
 }
 
-/// FEA-80: In den ersten 12 Monaten der Simulation liefert der Vorlauf des Renditepfads die Monate vor dem Start; das
+/// #103: In den ersten 12 Monaten der Simulation liefert der Vorlauf des Renditepfads die Monate vor dem Start; das
 /// Kriterium misst immer die letzten 12 Monate einschliesslich des laufenden.
 #[test]
-fn fea80_the_pre_run_supplies_the_months_before_the_start() {
+fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
     // Start November 2026, Pensionierung im Januar 2027 (3. Monat)
     let mut v = base();
     v["wealth"]["stockShare"] = json!(1);
@@ -813,7 +813,7 @@ fn rent_ends_before_the_until_month() {
 /// abbezahlt), Rückzahlung der Restschuld 2028-11; Reserve 1 Monat, alles in Aktien.
 fn amortized() -> Value {
     let mut v = base();
-    // FEA-40: Die Reserve der Strategie gilt erst ab der Pensionierung; hier beginnt sie mit dem Start.
+    // #54: Die Reserve der Strategie gilt erst ab der Pensionierung; hier beginnt sie mit dem Start.
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Bezug Pensionskasse", "date": "2026-11"});
     v["wealth"]["stockShare"] = json!(1);
     v["wealth"]["reserveMonths"] = json!(1);
@@ -854,7 +854,7 @@ fn pillar3a_collects_indirect_amortization_and_pays_out() {
     // Dezember 2026, März, Juni, September, Dezember 2027: fünf Einzahlungen
     assert_eq!(rec(&r, 2026, 12).pillar3a, 300.0);
     assert_eq!(rec(&r, 2027, 12).pillar3a, 1500.0);
-    // Das leere Konto ohne indirekte Amortisation entfällt beim Übernehmen (FEA-37); im Januar 2028 eine Auszahlung.
+    // Das leere Konto ohne indirekte Amortisation entfällt beim Übernehmen (#52); im Januar 2028 eine Auszahlung.
     let payouts: Vec<_> = r
         .events
         .iter()
@@ -874,7 +874,7 @@ fn initial_split_reserves_the_running_costs() {
     // Lücke = Ausgaben 2000 + (1000 + 200 Zins + 100 Amortisation) − Erwerb 500 = 2800; Reserve 12 Monate = 33'600.
     // Eine geplante Immobilie (noch nicht gekauft) zählt nicht.
     let mut v = base();
-    // FEA-40: Die Reserve der Strategie gilt erst ab der Pensionierung; hier beginnt sie mit dem Start.
+    // #54: Die Reserve der Strategie gilt erst ab der Pensionierung; hier beginnt sie mit dem Start.
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Bezug Pensionskasse", "date": "2026-11"});
     v["flows"]["spending"] = json!(2000);
     v["flows"]["income"] = json!(500);

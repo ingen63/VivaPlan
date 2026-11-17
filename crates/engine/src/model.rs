@@ -46,10 +46,10 @@ pub struct Plan {
     /// Gespeicherte Einstellungen der Optimierung (Oberfläche und `optimize`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optimization: Option<OptimizerSettings>,
-    /// Säule 3a, höchstens ein Konto je Person (FEA-37).
+    /// Säule 3a, höchstens ein Konto je Person (#52).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pillar3a: Vec<Pillar3aAccount>,
-    /// Anwendungsweite Grenzen aus den Einstellungen (FEA-24). Die Oberfläche gibt sie bei jedem Aufruf mit; sie
+    /// Anwendungsweite Grenzen aus den Einstellungen (#25). Die Oberfläche gibt sie bei jedem Aufruf mit; sie
     /// gehören nicht zur Planung und werden nie gespeichert. Fehlen sie, gelten die Standardwerte.
     #[serde(default, skip_serializing)]
     #[schemars(skip)]
@@ -167,7 +167,7 @@ pub struct Partner {
     /// Erwerbseinkommen netto pro Monat (steuerbar).
     #[serde(default)]
     pub income: Series,
-    /// FEA-43: Das Erwerbseinkommen steigt mit der Teuerung (Beträge in Preisen des Simulationsstarts); fehlt: nein.
+    /// #58: Das Erwerbseinkommen steigt mit der Teuerung (Beträge in Preisen des Simulationsstarts); fehlt: nein.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_indexed: bool,
     pub pk: PensionFund,
@@ -182,12 +182,12 @@ pub struct Person {
     pub birth: YearMonth,
 }
 
-/// Name des Meilensteins «Bezug Pensionskasse» (bisher «Pensionierung», FEA-38).
+/// Name des Meilensteins «Bezug Pensionskasse» (bisher «Pensionierung», #51).
 pub const PK_NAME: &str = "Bezug Pensionskasse";
 /// Name des Meilensteins «AHV-Bezug».
 pub const AHV_NAME: &str = "AHV-Bezug";
 
-/// Feste Meilensteine einer Person (FEA-38): Ids für «Bezug Pensionskasse» und «AHV-Bezug». Erste Person `retire`
+/// Feste Meilensteine einer Person (#51): Ids für «Bezug Pensionskasse» und «AHV-Bezug». Erste Person `retire`
 /// und `ahv`, zweite Person `retire2` und `ahv2`. Sie sind immer vorhanden und nicht löschbar.
 pub fn person_milestones(index: usize) -> (&'static str, &'static str) {
     if index == 0 {
@@ -314,12 +314,12 @@ pub struct Flows {
     /// Erwerbseinkommen netto pro Monat (steuerbar).
     #[serde(default)]
     pub income: Series,
-    /// FEA-43: Das Erwerbseinkommen steigt mit der Teuerung (Beträge in Preisen des Simulationsstarts); fehlt: nein.
+    /// #58: Das Erwerbseinkommen steigt mit der Teuerung (Beträge in Preisen des Simulationsstarts); fehlt: nein.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_indexed: bool,
     /// Lebenshaltungskosten pro Monat in Preisen bei Simulationsstart.
     pub spending: Series,
-    /// FEA-39: Die Lebenshaltungskosten enthalten Miete bzw. Wohnkosten. Die Simulation zieht den Wohnanteil
+    /// #53: Die Lebenshaltungskosten enthalten Miete bzw. Wohnkosten. Die Simulation zieht den Wohnanteil
     /// (Wohnkosten im Startmonat, siehe [`crate::housing`]) ab und rechnet mit den simulierten Wohnkosten. Fehlt das
     /// Feld (ältere Planungen), gelten die Lebenshaltungskosten ohne Wohnkosten.
     #[serde(default, skip_serializing_if = "is_false")]
@@ -367,7 +367,7 @@ pub enum ReturnSource {
     Parametric,
 }
 
-/// FEA-53: Index für die Aktien der Anlagestrategie.
+/// #69: Index für die Aktien der Anlagestrategie.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum StockIndex {
@@ -381,7 +381,7 @@ pub enum StockIndex {
     Sp500,
 }
 
-/// FEA-53: Index für die Obligationen der Anlagestrategie.
+/// #69: Index für die Obligationen der Anlagestrategie.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum BondIndex {
@@ -389,11 +389,11 @@ pub enum BondIndex {
     Ch,
     /// 10-jährige US-Staatsanleihen (Shiller) in CHF.
     Usa,
-    /// FEA-59: kurzfristige Papiere der Eidgenossenschaft (etwa 3 Monate): JST bis 2020, danach SARON.
+    /// #76: kurzfristige Papiere der Eidgenossenschaft (etwa 3 Monate): JST bis 2020, danach SARON.
     ChShort,
 }
 
-/// FEA-53: Gewichte der Regionen für «Welt individuell» (Anteile, zusammen 1).
+/// #69: Gewichte der Regionen für «Welt individuell» (Anteile, zusammen 1).
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegionWeights {
@@ -416,7 +416,7 @@ impl Default for RegionWeights {
     }
 }
 
-/// FEA-53: Anlagestrategie: woher die Renditen von Aktien und Obligationen stammen.
+/// #69: Anlagestrategie: woher die Renditen von Aktien und Obligationen stammen.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Investment {
@@ -442,10 +442,10 @@ impl Default for Investment {
 pub struct Returns {
     pub source: ReturnSource,
     pub fixed: FixedReturns,
-    /// FEA-53: Anlagestrategie; gilt, wenn `series` fehlt.
+    /// #69: Anlagestrategie; gilt, wenn `series` fehlt.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub strategy: Option<Investment>,
-    /// Zeitreihe (Pfad zur CSV-Datei, relativ zur Projektdatei); ältere Planungen (vor FEA-53).
+    /// Zeitreihe (Pfad zur CSV-Datei, relativ zur Projektdatei); ältere Planungen (vor #69).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub series: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -499,7 +499,7 @@ impl Default for BootstrapParams {
 }
 
 /// Aktienmodell des bisherigen Programms: Student-t-Schocks und Kurssprünge, Tagesschritte. Mit einer Zeitreihe
-/// (Anlagestrategie) sind Obligationen und Inflation zufällig und mit den Aktien korreliert (FEA-79), sonst folgen sie
+/// (Anlagestrategie) sind Obligationen und Inflation zufällig und mit den Aktien korreliert (#101), sonst folgen sie
 /// wie der SARON den fixen Werten.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -522,7 +522,7 @@ pub struct ParametricParams {
     pub jump_sigma: f64,
     #[serde(default = "default_seed")]
     pub seed: u64,
-    /// FEA-78: Die Modellparameter folgen den Vorschlagswerten des Aktienindex (nicht von Hand geändert). Fehlt das
+    /// #100: Die Modellparameter folgen den Vorschlagswerten des Aktienindex (nicht von Hand geändert). Fehlt das
     /// Merkmal (ältere Planungen), gelten die gespeicherten Werte.
     #[serde(default)]
     pub auto: bool,
@@ -699,13 +699,13 @@ pub struct Buckets {
     /// minus einer in Topf 1 (höchstens die Monate bis Januar).
     #[serde(default = "default_reserve_months")]
     pub reserve_months: f64,
-    /// FEA-05: Ausgaben ab Pensionierung wie geplant oder mit Guardrails gesteuert (Parameter aus `withdrawal.guardrails`,
+    /// #6: Ausgaben ab Pensionierung wie geplant oder mit Guardrails gesteuert (Parameter aus `withdrawal.guardrails`,
     /// Grenzen aus `withdrawal.floor` und `withdrawal.ceiling`).
     #[serde(default, skip_serializing_if = "BucketSpending::is_planned")]
     pub spending: BucketSpending,
 }
 
-/// Ausgabenregel der 3-Topf-Strategie (FEA-05).
+/// Ausgabenregel der 3-Topf-Strategie (#6).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum BucketSpending {
@@ -739,7 +739,7 @@ impl Default for Buckets {
 }
 
 impl Withdrawal {
-    /// FEA-05: 3-Topf-Strategie, deren Ausgaben die Guardrails steuern.
+    /// #6: 3-Topf-Strategie, deren Ausgaben die Guardrails steuern.
     pub fn buckets_with_guardrails(&self) -> bool {
         self.strategy == Strategy::ThreeBuckets
             && self
@@ -934,7 +934,7 @@ pub struct Mortgage {
     #[serde(default)]
     pub amount_mode: AmountMode,
     pub tranches: Vec<Tranche>,
-    /// Veraltet (vor FEA-37): Säule 3a an der Hypothek. Wird beim Laden in [`Plan::pillar3a`] übernommen
+    /// Veraltet (vor #52): Säule 3a an der Hypothek. Wird beim Laden in [`Plan::pillar3a`] übernommen
     /// (siehe [`crate::upgrade`]) und danach nicht mehr verwendet.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pillar3a: Option<Pillar3a>,
@@ -974,7 +974,7 @@ pub struct Tranche {
     #[serde(default)]
     pub after: AfterLast,
     pub periods: Vec<Period>,
-    /// Person (Id), in deren Säule 3a die indirekte Amortisation fliesst (FEA-37); fehlt: erste Person.
+    /// Person (Id), in deren Säule 3a die indirekte Amortisation fliesst (#52); fehlt: erste Person.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pillar3a: Option<String>,
 }
@@ -1024,7 +1024,7 @@ pub enum PayoutUse {
     Wealth,
 }
 
-/// Veraltete Säule 3a an der Hypothek (vor FEA-37); nur noch zum Laden älterer Dateien.
+/// Veraltete Säule 3a an der Hypothek (vor #52); nur noch zum Laden älterer Dateien.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3a {
@@ -1039,7 +1039,7 @@ fn wealth_use() -> PayoutUse {
     PayoutUse::Wealth
 }
 
-/// Säule 3a einer Person (FEA-37): Guthaben bei Simulationsstart, Einzahlung und Auszahlungsplan. Der Rest wird
+/// Säule 3a einer Person (#52): Guthaben bei Simulationsstart, Einzahlung und Auszahlungsplan. Der Rest wird
 /// spätestens im Monat des Meilensteins «AHV-Bezug» der Person ausbezahlt.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -1063,7 +1063,7 @@ pub struct Pillar3aAccount {
     pub usage: PayoutUse,
 }
 
-/// Zeitpunkt einer 3a-Auszahlung (FEA-41): fixes Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers.
+/// Zeitpunkt einer 3a-Auszahlung (#55): fixes Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PayoutAt {
@@ -1134,7 +1134,7 @@ mod tests {
 
     const EXAMPLE: &str = include_str!("../assets/Neu.vplan");
 
-    // FEA-29: Vorgabewerte beim Lesen und knappe Ausgabe beim Schreiben.
+    // #40: Vorgabewerte beim Lesen und knappe Ausgabe beim Schreiben.
     #[test]
     fn defaults_when_reading() {
         let mut v: serde_json::Value = serde_json::from_str(EXAMPLE).unwrap();
@@ -1185,9 +1185,9 @@ mod tests {
         );
     }
 
-    // FEA-97/AK7: Eine Auszahlung nach Alter behält beim Speichern ihre Art; die Art «date» (Vorgabe) wird weggelassen.
+    // #124/AK7: Eine Auszahlung nach Alter behält beim Speichern ihre Art; die Art «date» (Vorgabe) wird weggelassen.
     #[test]
-    fn fea97_ak7_payout_kind_is_saved_only_for_age() {
+    fn issue_124_ak7_payout_kind_is_saved_only_for_age() {
         let age: Pillar3aPayout = serde_json::from_value(json!({"kind": "age", "years": 61.5})).unwrap();
         let date: Pillar3aPayout = serde_json::from_value(json!({"date": "2040-06"})).unwrap();
         assert_eq!(serde_json::to_value(&age).unwrap()["kind"], json!("age"));

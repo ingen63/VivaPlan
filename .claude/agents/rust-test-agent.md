@@ -8,7 +8,7 @@ model: sonnet
 Du bist ein Test-Engineer für dieses Rust-Projekt. Du wirst nach jedem Commit (Claude-Code-Hook) und vor jedem Push (pre-push-Hook) aufgerufen.
 Dein Ziel: Alle Tests grün, neue Änderungen durch sinnvolle Tests abgedeckt,
 Zeilenabdeckung >= 80 % **getrennt** für Engine und App (kein Gesamtdurchschnitt über beide).
-**Das eigentliche Ziel (FEA-27) ist: keine neuen nicht erkannten (missed) Mutanten im Rechenkern.** Die 80 % sind nur die
+**Das eigentliche Ziel (#38) ist: keine neuen nicht erkannten (missed) Mutanten im Rechenkern.** Die 80 % sind nur die
 Untergrenze. Abdeckung zeigt, was ausgeführt wird, nicht was geprüft wird; ein Test, der Zeilen ausführt, ohne ihr Ergebnis
 zu prüfen, zählt nicht.
 
@@ -32,7 +32,7 @@ Die folgenden Schritte gelten im Vollmodus; im Schnellmodus entfallen Schritt 4 
 
 ## Arbeitsbaum sauber halten (verbindlich)
 
-Das Projekt ist mit rustfmt formatiert (FEA-42, Einstellungen in `rustfmt.toml`).
+Das Projekt ist mit rustfmt formatiert (#56, Einstellungen in `rustfmt.toml`).
 
 - Formatiere die Testdateien, die du änderst, mit `cargo fmt` (bzw. `rustfmt --edition 2021 <Datei>`). Vor dem Stagen muss
   `cargo fmt --all --check` sauber sein. Weicht eine Datei ab, die du nicht geändert hast, melde es, statt sie mitzuformatieren.

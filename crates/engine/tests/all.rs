@@ -1,4 +1,4 @@
-//! Einzige Testdatei der Integrationstests (FEA-32). Jede Datei in `crates/engine/tests/` ist hier ein Modul.
+//! Einzige Testdatei der Integrationstests (#43). Jede Datei in `crates/engine/tests/` ist hier ein Modul.
 //!
 //! Grund: Cargo baut sonst je Datei ein eigenes Programm. Bei einem Mutationslauf wurden so pro Mutant 25 Programme
 //! neu übersetzt, gebunden und zum Auflisten der Tests gestartet; das Binden und der erste Start (macOS prüft jedes
@@ -7,7 +7,7 @@
 //!
 //! Eine neue Testdatei muss hier eingetragen werden. Der Test am Ende schlägt fehl, wenn eine Datei fehlt.
 
-// ISS-22: Speichergrenze je Testprozess, damit ein Mutant mit endloser Schleife den Rechner nicht lahmlegt.
+// #116: Speichergrenze je Testprozess, damit ein Mutant mit endloser Schleife den Rechner nicht lahmlegt.
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
 
@@ -49,7 +49,7 @@ mod strategy;
 mod upgrade_api;
 mod validate_extra;
 
-/// Testplanungen, die nicht FEA-38 prüfen, verwenden teils Alter ausserhalb der Grenzen für «AHV-Bezug» und «Bezug
+/// Testplanungen, die nicht #51 prüfen, verwenden teils Alter ausserhalb der Grenzen für «AHV-Bezug» und «Bezug
 /// Pensionskasse» (zum Beispiel ein Bezug mit 75 Jahren). Für sie gelten offene Grenzen; die Grenzen selbst prüfen die
 /// Tests in `validate_extra.rs` und `settings.rs`.
 pub fn any_age(mut v: serde_json::Value) -> serde_json::Value {
@@ -57,7 +57,7 @@ pub fn any_age(mut v: serde_json::Value) -> serde_json::Value {
     v
 }
 
-/// FEA-32: Keine Testdatei darf unbemerkt aus dem Lauf fallen (`autotests = false` in `crates/engine/Cargo.toml`).
+/// #43: Keine Testdatei darf unbemerkt aus dem Lauf fallen (`autotests = false` in `crates/engine/Cargo.toml`).
 #[test]
 fn every_test_file_is_a_module_of_this_binary() {
     use std::collections::BTreeSet;

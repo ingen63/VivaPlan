@@ -1,4 +1,4 @@
-//! Übernahme älterer Planungen beim Laden (FEA-37, FEA-38).
+//! Übernahme älterer Planungen beim Laden (#52, #51).
 //!
 //! [`upgrade`] arbeitet auf dem JSON der Planung, wie die Oberfläche es hält, und liefert Hinweise für jede Änderung,
 //! damit nichts still verloren geht:
@@ -6,8 +6,8 @@
 //!   ausserhalb der Grenzen aus den Einstellungen wird auf die nächste Grenze gesetzt.
 //! - Pensionskasse und AHV-Rente beziehen sich auf diese Meilensteine.
 //! - Die Säule 3a an einer Hypothek wird ein eigenes 3a-Konto der ersten Person mit einem Auszahlungsplan.
-//! - FEA-53: Die gewählte Zeitreihe wird eine Anlagestrategie (Index für Aktien und Obligationen).
-//! - FEA-78/79: Das parametrische Modell erhält das Merkmal `auto` (Parameter folgen dem Aktienindex). Rechnet die
+//! - #69: Die gewählte Zeitreihe wird eine Anlagestrategie (Index für Aktien und Obligationen).
+//! - #100/#101: Das parametrische Modell erhält das Merkmal `auto` (Parameter folgen dem Aktienindex). Rechnet die
 //!   Planung parametrisch, bleiben ihre Parameter (`auto` = falsch) und ein Hinweis nennt die geänderte Rechnung.
 
 use std::borrow::Cow;
@@ -71,11 +71,11 @@ pub fn upgrade(v: &mut Value) -> Vec<String> {
     notes
 }
 
-/// FEA-79: Hinweis beim Öffnen einer Planung, die vor FEA-78/79 parametrisch rechnete.
+/// #101: Hinweis beim Öffnen einer Planung, die vor #100/#101 parametrisch rechnete.
 pub const PARAMETRIC_NOTE: &str = "Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig, korreliert mit den Aktien gemäss der Anlagestrategie (bisher fixe Werte). Ihre Parameter des Aktienmodells bleiben; die Vorschlagswerte für den Aktienindex stehen im Reiter «Simulation». Das Ergebnis ändert sich.";
 
-/// FEA-78/79: Merkmal `auto` für die Parameter des Aktienmodells. Planungen, die parametrisch rechnen, behalten ihre
-/// Werte (mit Hinweis, FEA-79/AK6); bei allen anderen waren die Werte nicht in Gebrauch und folgen künftig dem
+/// #100/#101: Merkmal `auto` für die Parameter des Aktienmodells. Planungen, die parametrisch rechnen, behalten ihre
+/// Werte (mit Hinweis, #101/AK6); bei allen anderen waren die Werte nicht in Gebrauch und folgen künftig dem
 /// Aktienindex.
 fn parametric(v: &mut Value, notes: &mut Vec<String>) {
     let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
@@ -99,7 +99,7 @@ fn parametric(v: &mut Value, notes: &mut Vec<String>) {
     }
 }
 
-/// FEA-72: Der Index «Schweiz (Pictet)» wird nicht mehr mitgeliefert. Aktien «Schweiz (Pictet)» werden
+/// #90: Der Index «Schweiz (Pictet)» wird nicht mehr mitgeliefert. Aktien «Schweiz (Pictet)» werden
 /// «Schweiz (JST)», Obligationen «Schweiz (Pictet)» werden «Eidgenossenschaft 10 Jahre», mit Hinweis.
 fn pictet(v: &mut Value, notes: &mut Vec<String>) {
     let Some(s) = v.pointer_mut("/returns/strategy").and_then(Value::as_object_mut) else {
@@ -122,10 +122,10 @@ fn pictet(v: &mut Value, notes: &mut Vec<String>) {
     }
 }
 
-/// FEA-72: Schlüssel des früheren Index «Schweiz (Pictet)» in der Plandatei.
+/// #90: Schlüssel des früheren Index «Schweiz (Pictet)» in der Plandatei.
 const PICTET_KEY: &str = "chPictet";
 
-/// FEA-53: Die Zeitreihe einer älteren Planung wird die Anlagestrategie mit denselben Werten. Reihen ohne
+/// #69: Die Zeitreihe einer älteren Planung wird die Anlagestrategie mit denselben Werten. Reihen ohne
 /// entsprechende Strategie (in USD oder eigene Dateien) werden ersetzt, mit Hinweis.
 fn strategy(v: &mut Value, notes: &mut Vec<String>) {
     let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
@@ -138,7 +138,7 @@ fn strategy(v: &mut Value, notes: &mut Vec<String>) {
     let (stocks, bonds) = match series.as_deref() {
         None | Some("library:Shiller CHF.csv") => ("sp500", "usa"),
         Some("library:Shiller CHF + CH-Obligationen.csv") => ("sp500", "ch"),
-        // FEA-72: wird anschliessend in `pictet` ersetzt (mit Hinweis).
+        // #90: wird anschliessend in `pictet` ersetzt (mit Hinweis).
         Some("library:Pictet CH.csv") => (PICTET_KEY, PICTET_KEY),
         Some("library:Welt (JST).csv") => ("worldJst", "ch"),
         Some("library:Shiller USD.csv") => {
@@ -156,10 +156,10 @@ fn strategy(v: &mut Value, notes: &mut Vec<String>) {
     ret.insert("strategy".into(), json!({ "stocks": stocks, "bonds": bonds }));
 }
 
-/// FEA-53: Hinweis, wenn eine Planung die Reihe in USD verwendete.
+/// #69: Hinweis, wenn eine Planung die Reihe in USD verwendete.
 pub const STRATEGY_USD_NOTE: &str = "Die Zeitreihe «Shiller USD» (in USD) wird durch die Anlagestrategie S&P 500 mit US-Obligationen in CHF ersetzt; alle Strategien rechnen in CHF. Das Ergebnis ändert sich.";
 
-/// FEA-34: Die alte Format-Kennung (legacy: RetirementPlanner) wird durch die neue ersetzt; der Inhalt bleibt gleich,
+/// #44: Die alte Format-Kennung (legacy: RetirementPlanner) wird durch die neue ersetzt; der Inhalt bleibt gleich,
 /// deshalb ohne Hinweis.
 fn format(v: &mut Value) {
     if v.get("format").and_then(Value::as_str) == Some(crate::model::LEGACY_FORMAT) {
@@ -167,10 +167,10 @@ fn format(v: &mut Value) {
     }
 }
 
-/// FEA-40: Hinweis beim Öffnen einer älteren Planung; das Ergebnis kann sich ändern.
+/// #54: Hinweis beim Öffnen einer älteren Planung; das Ergebnis kann sich ändern.
 pub const CASH_NOTE: &str = "Cash wird neu bis zur Pensionierung (Bezug Pensionskasse) auf dem erfassten Betrag gehalten, mit der Teuerung fortgeschrieben; ein Überschuss geht ins Portfolio. Die Entnahmestrategie, auch «Standard» mit ihrer Cash-Reserve, gilt erst ab der Pensionierung. Das Ergebnis kann sich deshalb ändern.";
 
-/// FEA-39: Ältere Planungen erfassten die Lebenshaltung ohne Wohnkosten. Der Wohnanteil zum Simulationsstart wird zu
+/// #53: Ältere Planungen erfassten die Lebenshaltung ohne Wohnkosten. Der Wohnanteil zum Simulationsstart wird zu
 /// jedem Wert addiert, damit das Ergebnis gleich bleibt.
 fn housing(v: &mut Value, notes: &mut Vec<String>) {
     if v.pointer("/flows/spendingIncludesHousing").and_then(Value::as_bool) == Some(true) || v.get("flows").is_none() {
@@ -184,7 +184,7 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
     };
     let w = crate::housing::start_housing(&plan, &r);
     v["flows"]["spendingIncludesHousing"] = json!(true);
-    // FEA-40/AK8: gleiche Kennzeichnung einer älteren Planung (vor FEA-39/FEA-40).
+    // #54/AK8: gleiche Kennzeichnung einer älteren Planung (vor #53/#54).
     notes.push(CASH_NOTE.to_string());
     if w <= 0.0 {
         return;
@@ -215,7 +215,7 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
     ));
 }
 
-/// FEA-38: feste Meilensteine je Person, Namen und Grenzen.
+/// #51: feste Meilensteine je Person, Namen und Grenzen.
 fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, notes: &mut Vec<String>) {
     if !v.get("milestones").is_some_and(Value::is_array) {
         v["milestones"] = json!([]);
@@ -289,7 +289,7 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
     }
 }
 
-/// FEA-38: Pensionskasse und AHV-Rente beziehen sich auf die festen Meilensteine der Person.
+/// #51: Pensionskasse und AHV-Rente beziehen sich auf die festen Meilensteine der Person.
 fn pension_refs(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<String>) {
     for (i, base) in [(0usize, "/pension"), (1usize, "/partner")] {
         if i >= births.len() {
@@ -310,7 +310,7 @@ fn pension_refs(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<S
     }
 }
 
-/// FEA-37: Säule 3a an einer Hypothek wird ein eigenes 3a-Konto der ersten Person.
+/// #52: Säule 3a an einer Hypothek wird ein eigenes 3a-Konto der ersten Person.
 fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<String>) {
     let Some((pid, _)) = births.first().cloned() else {
         return;
@@ -467,9 +467,9 @@ mod tests {
             .unwrap()
     }
 
-    // FEA-38/AK5, AK6: fehlender AHV-Bezug mit 65 vor dem Ende, «Pensionierung» heisst «Bezug Pensionskasse».
+    // #51/AK5, AK6: fehlender AHV-Bezug mit 65 vor dem Ende, «Pensionierung» heisst «Bezug Pensionskasse».
     #[test]
-    fn fea38_ak6_missing_milestones_and_names() {
+    fn issue_51_ak6_missing_milestones_and_names() {
         let mut v = plan();
         let notes = upgrade(&mut v);
         assert_eq!(ms(&v, "ahv")["years"], 65.0);
@@ -487,9 +487,9 @@ mod tests {
         assert!(upgrade(&mut v).is_empty());
     }
 
-    // FEA-38/AK6: Alter ausserhalb der Grenzen wird auf die nächste Grenze gesetzt, mit Hinweis.
+    // #51/AK6: Alter ausserhalb der Grenzen wird auf die nächste Grenze gesetzt, mit Hinweis.
     #[test]
-    fn fea38_ak6_ages_outside_the_limits() {
+    fn issue_51_ak6_ages_outside_the_limits() {
         let mut v = plan();
         v["milestones"][1]["years"] = json!(55);
         v["milestones"].as_array_mut().unwrap().insert(
@@ -516,7 +516,7 @@ mod tests {
             ),
             "{notes:?}"
         );
-        // FEA-24: Grenzen aus den Einstellungen
+        // #25: Grenzen aus den Einstellungen
         let mut v = plan();
         v["milestones"][1]["years"] = json!(55);
         v["limits"] = json!({ "pkMin": 50 });
@@ -524,9 +524,9 @@ mod tests {
         assert_eq!(ms(&v, "retire")["years"], 55);
     }
 
-    // FEA-38/AK1: zweite Person erhält eigene Meilensteine; Bezüge von Person 2 zeigen darauf.
+    // #51/AK1: zweite Person erhält eigene Meilensteine; Bezüge von Person 2 zeigen darauf.
     #[test]
-    fn fea38_second_person() {
+    fn issue_51_second_person() {
         let mut v = plan();
         v["household"]["persons"] = json!([{ "id": "A", "birth": "1980-06" }, { "id": "B", "birth": "1982-01" }]);
         v["partner"] = json!({ "pk": { "at": "retire" }, "ahv": { "at": "ahv" } });
@@ -561,9 +561,9 @@ mod tests {
         v
     }
 
-    // FEA-37/AK13: Säule 3a an der Hypothek wird ein Konto der ersten Person mit Auszahlungsplan.
+    // #52/AK13: Säule 3a an der Hypothek wird ein Konto der ersten Person mit Auszahlungsplan.
     #[test]
-    fn fea37_ak13_legacy_pillar3a() {
+    fn issue_52_ak13_legacy_pillar3a() {
         // AHV-Bezug 2045-06 (65); frühester Bezug 2040-06.
         let mut v = with_legacy(
             json!({ "balance": 40_000, "rate": 0.01, "payout": "retire", "use": "repay" }),
@@ -620,9 +620,9 @@ mod tests {
         assert!(v.get("pillar3a").is_none());
     }
 
-    // FEA-37/AK13: mehrere Immobilien mit 3a werden zu einem Konto zusammengefasst.
+    // #52/AK13: mehrere Immobilien mit 3a werden zu einem Konto zusammengefasst.
     #[test]
-    fn fea37_ak13_two_legacy_accounts_are_merged() {
+    fn issue_52_ak13_two_legacy_accounts_are_merged() {
         let mut v = with_legacy(
             json!({ "balance": 10_000, "rate": 0.01, "payout": "retire", "use": "wealth" }),
             "indirect",
@@ -645,11 +645,11 @@ mod tests {
         assert!(upgrade(&mut v).is_empty());
     }
 
-    // FEA-97/AK6: Ein Alter genau auf der Grenze bleibt (kein Hinweis). Eine Säule 3a an der Hypothek ohne
+    // #124/AK6: Ein Alter genau auf der Grenze bleibt (kein Hinweis). Eine Säule 3a an der Hypothek ohne
     // Auszahlungszeitpunkt (oder mit unbekanntem Meilenstein) wird im AHV-Bezug ausbezahlt; «Hypothek zurückzahlen» setzt
     // eine indirekte Amortisation über 0 voraus. Eine Planung, die nicht parametrisch rechnet, bekommt keine Parameter.
     #[test]
-    fn fea97_ak6_limits_pillar3a_and_parametric() {
+    fn issue_124_ak6_limits_pillar3a_and_parametric() {
         let mut v = plan();
         v["milestones"][1]["years"] = json!(58);
         let notes = upgrade(&mut v);

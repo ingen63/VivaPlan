@@ -347,7 +347,7 @@ fn pillar_3a_payout_variants() {
         v["wealth"]["cash"] = json!(0);
         v["flows"]["spending"] = json!(0);
         v["milestones"][1]["date"] = json!("2032-01");
-        // AHV-Bezug 2035-06: alle Auszahlungen liegen innerhalb der 5 Jahre davor (FEA-37).
+        // AHV-Bezug 2035-06: alle Auszahlungen liegen innerhalb der 5 Jahre davor (#52).
         v["milestones"].as_array_mut().unwrap().insert(
             2,
             json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2035-06" }),
@@ -1083,7 +1083,7 @@ fn parametric_paths_are_finite_and_plausible() {
 fn statistics_are_stable_across_path_counts() {
     // Mittelwert und Erfolgsquote dürfen sich bei Verzehnfachung der Pfade nur wenig ändern. Der Mittelwert ist der
     // der Perzentile ohne den schlechtesten und den besten Lauf: Diese Extreme wachsen mit der Anzahl Pfade (seit
-    // FEA-79 mit zufälliger Inflation deutlich).
+    // #101 mit zufälliger Inflation deutlich).
     let small = mc_summary(&mc_plan("parametric", 1000, 11));
     let large = mc_summary(&mc_plan("parametric", 10_000, 12));
     let inner = |e: &[f64]| e[1..e.len() - 1].iter().sum::<f64>() / (e.len() - 2) as f64;
@@ -1481,10 +1481,10 @@ fn income_tax_is_assessed_yearly_and_paid_in_may_of_next_year() {
     assert!((may.taxes - 7_200.0).abs() < 0.01, "Mai 2031: {}", may.taxes);
 }
 
-/// FEA-85/AK5: Die veranlagte Steuer steht im Dezember des Steuerjahres, bezahlt wird sie im Mai des Folgejahres;
+/// #109/AK5: Die veranlagte Steuer steht im Dezember des Steuerjahres, bezahlt wird sie im Mai des Folgejahres;
 /// über alle Monate ist die Summe der veranlagten gleich der Summe der bezahlten Steuer.
 #[test]
-fn fea85_ak5_assessed_tax_is_booked_in_the_tax_year() {
+fn issue_109_ak5_assessed_tax_is_booked_in_the_tax_year() {
     let mut v = base();
     v["milestones"][1]["date"] = json!("2035-01");
     v["flows"]["income"] = json!(6_000);

@@ -1,4 +1,4 @@
-//! FEA-13: Jede Zeile der Liste der Pflichteingaben (`docs/Pflichteingaben.md`) hat einen Test, der den
+//! #14: Jede Zeile der Liste der Pflichteingaben (`docs/Pflichteingaben.md`) hat einen Test, der den
 //! Fehler auslöst und die Meldung prüft.
 
 use engine::api;
@@ -288,7 +288,7 @@ fn properties_need_their_inputs() {
 
 #[test]
 fn pillar_3a_is_checked() {
-    // FEA-37: Die Säule 3a ist ein eigenes Konto (Abschnitt «Säule 3a»).
+    // #52: Die Säule 3a ist ein eigenes Konto (Abschnitt «Säule 3a»).
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 2.0 }]);
     assert_error(&v, "pillar3a", "Der Zins muss zwischen", Some("pillar3a.0.rate"));
@@ -438,9 +438,9 @@ fn planned_property_is_sold_at_the_chosen_date() {
     );
 }
 
-/// ISS-18/AK1–AK3: Steuerfuss und Satztabellen (auch Verheiratete) werden geprüft; Grenzwerte gelten als gültig.
+/// #98/AK1–AK3: Steuerfuss und Satztabellen (auch Verheiratete) werden geprüft; Grenzwerte gelten als gültig.
 #[test]
-fn iss18_tax_tables_and_multiplier_must_be_in_range() {
+fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
     let errors = |v: &Value| -> Vec<String> {
         issues(v)
             .into_iter()

@@ -28,7 +28,7 @@ fn leaves(v: &Value, path: String, out: &mut Vec<String>) {
 }
 
 /// Verfälscht 1 bis 4 Stellen der Planung. `destructive`: beliebige Stellen, auch Typwechsel und gelöschte Felder
-/// (prüft das Lesen und die Eingabeprüfung). Sonst nur Zahlen durch Extremwerte (prüft die Rechnung selbst, FEA-63).
+/// (prüft das Lesen und die Eingabeprüfung). Sonst nur Zahlen durch Extremwerte (prüft die Rechnung selbst, #81).
 fn mutate(rng: &mut Rng, plan: &mut Value, destructive: bool) {
     let mut paths = vec![];
     leaves(plan, String::new(), &mut paths);
@@ -188,7 +188,7 @@ fn mutated_plans_never_crash() {
         );
     }
     eprintln!("gerechnet: {ran:?} von je {}", MUTANTS / 2);
-    // FEA-63/AK2: Mindestanteile, gemessen am 14.11.2026 (nach ISS-18): 97 und 69 von je 300.
+    // #81/AK2: Mindestanteile, gemessen am 14.11.2026 (nach #98): 97 und 69 von je 300.
     // Nur Zahlen verfälscht: Extremwerte weist die Eingabeprüfung oft ab (gewollt); ein Viertel gerechnet heisst, dass
     // die Rechnung mindestens 75 Planungen mit Extremwerten durchläuft. Sinkt der Anteil darunter, prüft der Test vor
     // allem noch die Eingabeprüfung und sollte andere Extremwerte wählen.

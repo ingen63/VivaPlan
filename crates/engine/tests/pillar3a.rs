@@ -1,4 +1,4 @@
-//! FEA-37 (Säule 3a als eigenes Konto) und FEA-36 (indirekte Amortisation nur bis zum AHV-Bezug).
+//! #52 (Säule 3a als eigenes Konto) und #50 (indirekte Amortisation nur bis zum AHV-Bezug).
 //!
 //! Erfundene, von Hand nachrechenbare Planung: Geburt 2000-01 (Alter = Jahr − 2000), Start 2040-01, keine Renditen,
 //! keine Teuerung, keine Steuern (ausser wo vermerkt). AHV-Bezug mit 65 Jahren im Januar 2045.
@@ -59,9 +59,9 @@ fn payouts(r: &SimResult) -> Vec<(YearMonth, String)> {
         .collect()
 }
 
-/// FEA-37/AK3: Guthaben 120'000, Plan 2041 und 2042 je 50'000, AHV-Bezug 2045: Rest 20'000 im Monat des AHV-Bezugs.
+/// #52/AK3: Guthaben 120'000, Plan 2041 und 2042 je 50'000, AHV-Bezug 2045: Rest 20'000 im Monat des AHV-Bezugs.
 #[test]
-fn fea37_ak3_payout_plan_and_rest_at_ahv() {
+fn issue_52_ak3_payout_plan_and_rest_at_ahv() {
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 120_000, "rate": 0, "payouts": [
         { "date": "2041-01", "amount": 50_000 }, { "date": "2042-01", "amount": 50_000 } ] }]);
@@ -99,9 +99,9 @@ fn fea37_ak3_payout_plan_and_rest_at_ahv() {
     close(rec(&r, 2045, 12).pillar3a, 20_000.0, "bis 2046");
 }
 
-/// FEA-37/AK5: Ein Betrag grösser als das Guthaben zahlt nur das Guthaben aus, mit Hinweis in den Ereignissen.
+/// #52/AK5: Ein Betrag grösser als das Guthaben zahlt nur das Guthaben aus, mit Hinweis in den Ereignissen.
 #[test]
-fn fea37_ak5_amount_larger_than_balance() {
+fn issue_52_ak5_amount_larger_than_balance() {
     let mut v = base();
     v["pillar3a"] =
         json!([{ "person": "A", "balance": 30_000, "rate": 0, "payouts": [{ "date": "2041-06", "amount": 50_000 }] }]);
@@ -125,9 +125,9 @@ fn fea37_ak5_amount_larger_than_balance() {
     close(rec(&r, 2041, 6).pillar3a, 0.0, "ganzes Guthaben");
 }
 
-/// FEA-37/AK6: Jede Auszahlung ist ein Kapitalbezug; im selben Jahr wie der PK-Kapitalbezug zusammengerechnet.
+/// #52/AK6: Jede Auszahlung ist ein Kapitalbezug; im selben Jahr wie der PK-Kapitalbezug zusammengerechnet.
 #[test]
-fn fea37_ak6_capital_tax_with_pk_lump_sum_in_the_same_year() {
+fn issue_52_ak6_capital_tax_with_pk_lump_sum_in_the_same_year() {
     let mut v = base();
     // Satz linear zwischen den Stützstellen: 100'000 → 5 %, 200'000 → 10 %.
     v["taxes"]["capital"] = json!([[0, 0.0], [200_000, 0.10]]);
@@ -143,9 +143,9 @@ fn fea37_ak6_capital_tax_with_pk_lump_sum_in_the_same_year() {
     );
 }
 
-/// FEA-37/AK8: Die Einzahlung erhöht das Guthaben und zählt zu den Ausgaben (500 pro Monat bei 6'000 pro Jahr).
+/// #52/AK8: Die Einzahlung erhöht das Guthaben und zählt zu den Ausgaben (500 pro Monat bei 6'000 pro Jahr).
 #[test]
-fn fea37_ak8_contribution_counts_as_expense() {
+fn issue_52_ak8_contribution_counts_as_expense() {
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 10_000, "rate": 0, "contribution": 6000 }]);
     let with = run(&v);
@@ -170,9 +170,9 @@ fn fea37_ak8_contribution_counts_as_expense() {
     );
 }
 
-/// FEA-37/AK9: Einzahlungen enden im Monat vor dem AHV-Bezug.
+/// #52/AK9: Einzahlungen enden im Monat vor dem AHV-Bezug.
 #[test]
-fn fea37_ak9_contributions_end_before_ahv() {
+fn issue_52_ak9_contributions_end_before_ahv() {
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": 1200 }]);
     let r = run(&v);
@@ -189,9 +189,9 @@ fn fea37_ak9_contributions_end_before_ahv() {
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("6000 CHF")));
 }
 
-/// FEA-37: Die Einzahlung gehört zum Netto-Bedarf der 3-Topf-Strategie.
+/// #52: Die Einzahlung gehört zum Netto-Bedarf der 3-Topf-Strategie.
 #[test]
-fn fea37_contribution_is_part_of_the_net_need() {
+fn issue_52_contribution_is_part_of_the_net_need() {
     let mut v = base();
     v["milestones"][1]["years"] = json!(60); // Entnahmephase ab Start
     v["withdrawal"] =
@@ -212,9 +212,9 @@ fn house(periods: Value, start: &str) -> Value {
         "mortgage": { "tranches": [ { "name": "T", "amount": 400_000, "start": start, "periods": periods } ] } })
 }
 
-/// FEA-36/AK1–AK3: Hypothek 400'000, 750 pro Quartal indirekt, AHV-Bezug M = 2045-01.
+/// #50/AK1–AK3: Hypothek 400'000, 750 pro Quartal indirekt, AHV-Bezug M = 2045-01.
 #[test]
-fn fea36_ak1_to_ak3_indirect_until_ahv_then_direct() {
+fn issue_50_ak1_to_ak3_indirect_until_ahv_then_direct() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2040-01") ] });
     let r = run(&v);
@@ -240,9 +240,9 @@ fn fea36_ak1_to_ak3_indirect_until_ahv_then_direct() {
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("15000 CHF")));
 }
 
-/// FEA-36/AK4: Eine Periode, die erst ab dem AHV-Bezug beginnt (Erneuerung), amortisiert direkt.
+/// #50/AK4: Eine Periode, die erst ab dem AHV-Bezug beginnt (Erneuerung), amortisiert direkt.
 #[test]
-fn fea36_ak4_period_from_ahv_is_direct() {
+fn issue_50_ak4_period_from_ahv_is_direct() {
     let mut v = base();
     // Erste Periode bis 2045-01 ohne Amortisation, die Erneuerung ab 2045-01 indirekt erfasst.
     v["realestate"] = json!({ "properties": [ house(json!([
@@ -264,9 +264,9 @@ fn switches(r: &SimResult) -> Vec<(YearMonth, String)> {
         .collect()
 }
 
-/// FEA-36: Der Wechsel von indirekter auf direkte Amortisation im AHV-Bezug erscheint einmal in den Ereignissen.
+/// #50: Der Wechsel von indirekter auf direkte Amortisation im AHV-Bezug erscheint einmal in den Ereignissen.
 #[test]
-fn fea36_switch_to_direct_is_an_event() {
+fn issue_50_switch_to_direct_is_an_event() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2040-01") ] });
     let r = run(&v);
@@ -309,9 +309,9 @@ fn fea36_switch_to_direct_is_an_event() {
     assert!(switches(&run(&late)).is_empty());
 }
 
-/// FEA-37: Auszahlung «Hypothek zurückzahlen» zahlt zuerst die Tranche mit indirekter Amortisation zurück.
+/// #52: Auszahlung «Hypothek zurückzahlen» zahlt zuerst die Tranche mit indirekter Amortisation zurück.
 #[test]
-fn fea37_payout_repays_the_indirect_tranche() {
+fn issue_52_payout_repays_the_indirect_tranche() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2040-01") ] });
     v["pillar3a"] = json!([{ "person": "A", "balance": 10_000, "rate": 0, "use": "repay" }]);
@@ -321,9 +321,9 @@ fn fea37_payout_repays_the_indirect_tranche() {
     assert!(payouts(&r).iter().any(|x| x.1.contains("an Hypothek 25000 CHF")));
 }
 
-/// FEA-37/AK13: Eine alte Säule 3a an der Hypothek wird beim Rechnen wie beim Laden übernommen.
+/// #52/AK13: Eine alte Säule 3a an der Hypothek wird beim Rechnen wie beim Laden übernommen.
 #[test]
-fn fea37_ak13_legacy_pillar3a_of_a_mortgage() {
+fn issue_52_ak13_legacy_pillar3a_of_a_mortgage() {
     let mut v = base();
     let mut h = house(
         json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]),
@@ -345,9 +345,9 @@ fn fea37_ak13_legacy_pillar3a_of_a_mortgage() {
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("7500 CHF")));
 }
 
-/// FEA-37/AK12: Die Pensionskasse enthält kein 3a-Guthaben; in den Auswertungen stehen beide getrennt.
+/// #52/AK12: Die Pensionskasse enthält kein 3a-Guthaben; in den Auswertungen stehen beide getrennt.
 #[test]
-fn fea37_ak12_pension_fund_and_pillar3a_are_kept_apart() {
+fn issue_52_ak12_pension_fund_and_pillar3a_are_kept_apart() {
     let mut v = base();
     v["pension"]["pk"]["capital"] = json!(200_000);
     v["pillar3a"] = json!([{ "person": "A", "balance": 50_000, "rate": 0 }]);
@@ -358,7 +358,7 @@ fn fea37_ak12_pension_fund_and_pillar3a_are_kept_apart() {
     close(rec(&r, 2040, 1).liquid, 999_000.0, "liquid ohne 3a und PK");
 }
 
-// --- FEA-97: Tests zu nicht erkannten Mutanten des vollen Mutationslaufs ---
+// --- #124: Tests zu nicht erkannten Mutanten des vollen Mutationslaufs ---
 
 /// Zwei Personen: B (Geburt 1983-01) bezieht die AHV im Januar 2048, A im Januar 2045; Planende 2049-12.
 fn couple() -> Value {
@@ -381,10 +381,10 @@ fn affordable() -> Value {
     json!({ "sustainability": 1, "imputedRate": 0, "fixCosts": 0, "wealthContribution": 0, "maxLoanToValue": 1 })
 }
 
-/// FEA-97/AK1: Die indirekte Amortisation fliesst in die Säule 3a der Person, die an der Tranche steht (hier B), und wird
+/// #124/AK1: Die indirekte Amortisation fliesst in die Säule 3a der Person, die an der Tranche steht (hier B), und wird
 /// bei deren AHV-Bezug ausbezahlt, nicht bei dem der ersten Person. Gilt für eine Immobilie im Besitz und für einen Kauf.
 #[test]
-fn fea97_ak1_indirect_amortization_goes_to_the_second_person() {
+fn issue_124_ak1_indirect_amortization_goes_to_the_second_person() {
     let indirect = json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]);
     let mut owned = house(indirect.clone(), "2040-01");
     owned["mortgage"]["tranches"][0]["pillar3a"] = json!("B");
@@ -428,10 +428,10 @@ fn fea97_ak1_indirect_amortization_goes_to_the_second_person() {
     close(rec(&r, 2047, 12).pillar3a, 21_000.0, "vor dem AHV-Bezug B");
 }
 
-/// FEA-97/AK3: Wechsel auf direkte Amortisation beim AHV-Bezug nur, wenn vorher wirklich indirekt amortisiert wurde,
+/// #124/AK3: Wechsel auf direkte Amortisation beim AHV-Bezug nur, wenn vorher wirklich indirekt amortisiert wurde,
 /// ab jetzt weiter amortisiert wird und noch Schuld besteht; mit mehreren Tranchen nennt das Ereignis die Tranche.
 #[test]
-fn fea97_ak3_switch_to_direct_needs_amortization_before_and_after() {
+fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
     // Mit AHV-Rente ist die Erneuerung im AHV-Bezug tragbar (ohne Einkommen: Notverkauf statt Wechsel).
     let p = |periods: Value| {
         let mut v = base();
@@ -501,10 +501,10 @@ fn fea97_ak3_switch_to_direct_needs_amortization_before_and_after() {
     );
 }
 
-/// FEA-97/AK2: Eine geplante Auszahlung im Monat des AHV-Bezugs wird als eigene Auszahlung gebucht, der Rest danach.
+/// #124/AK2: Eine geplante Auszahlung im Monat des AHV-Bezugs wird als eigene Auszahlung gebucht, der Rest danach.
 /// Ein geplanter Betrag, der genau dem Guthaben entspricht, löst keinen Hinweis «reicht nur» aus.
 #[test]
-fn fea97_ak2_planned_payout_in_the_ahv_month_and_exact_amount() {
+fn issue_124_ak2_planned_payout_in_the_ahv_month_and_exact_amount() {
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 120_000, "rate": 0, "payouts": [
         { "date": "2041-01", "amount": 20_000 }, { "date": "2045-01", "amount": 50_000 } ] }]);
@@ -532,10 +532,10 @@ fn retired_with_contribution(contribution: f64) -> Value {
     v
 }
 
-/// FEA-97/AK2: Ab der Pensionierung zählt die Einzahlung in die 3a weiter zu den Ausgaben: in der Reserve der
+/// #124/AK2: Ab der Pensionierung zählt die Einzahlung in die 3a weiter zu den Ausgaben: in der Reserve der
 /// Strategie «Standard», in den Ausgaben der 3-Topf-Strategie und als Wohn- bzw. Fixkosten der Guardrails.
 #[test]
-fn fea97_ak2_contribution_after_retirement_is_an_expense() {
+fn issue_124_ak2_contribution_after_retirement_is_an_expense() {
     // Standard: Reserve 12 Monate des Fehlbetrags (Ausgaben 1'000 + Einzahlung 200), der Rest in Aktien.
     let standard = |c: f64| {
         let mut v = retired_with_contribution(c);
@@ -586,10 +586,10 @@ fn fea97_ak2_contribution_after_retirement_is_an_expense() {
     );
 }
 
-/// FEA-97/AK2: Netto-Bedarf der 3-Topf-Strategie mit Einzahlung in die 3a: ab Juli auf 12 Monate hochgerechnet, mit
+/// #124/AK2: Netto-Bedarf der 3-Topf-Strategie mit Einzahlung in die 3a: ab Juli auf 12 Monate hochgerechnet, mit
 /// Guardrails-Lebenshaltung und im Jahr des AHV-Bezugs ohne Einzahlung (sie endet vor dem AHV-Bezug).
 #[test]
-fn fea97_ak2_need_with_contribution() {
+fn issue_124_ak2_need_with_contribution() {
     let run_b = |c: f64, guardrails: bool| {
         let mut v = retired_with_contribution(c);
         v["milestones"][1] =

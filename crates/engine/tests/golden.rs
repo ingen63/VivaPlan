@@ -2,7 +2,7 @@
 //! Jede Abweichung lässt den Test fehlschlagen. Gewollte Änderungen übernehmen mit
 //! `GOLDEN_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'` und die Differenz der JSON-Dateien prüfen.
 //! Gespeichert sind die Monatswerte jedes Januars und Julis, der letzte Monat und je Zahlenfeld die Summe über alle
-//! Monate (`recordSums`, FEA-64).
+//! Monate (`recordSums`, #82).
 
 use std::path::{Path, PathBuf};
 
@@ -130,7 +130,7 @@ fn cases() -> Vec<(&'static str, Value)> {
 }
 
 /// Ergebnis ohne Laufzeit; Monatswerte auf jeden Januar, jeden Juli und den letzten Monat verdichtet.
-/// Neben jeder verdichteten Liste steht `recordSums`: je Zahlenfeld die Summe über alle Monate (FEA-64), damit auch
+/// Neben jeder verdichteten Liste steht `recordSums`: je Zahlenfeld die Summe über alle Monate (#82), damit auch
 /// eine Änderung in einem nicht gespeicherten Monat auffällt.
 fn snapshot(plan: &Value) -> Value {
     let out = api::run(plan, &library(), Some(&library()));
@@ -254,7 +254,7 @@ fn golden_masters() {
 /// Die Golden Masters sind selbst plausibel: sie müssen alle Fälle abdecken und den jeweiligen Zweck zeigen.
 #[test]
 fn golden_cases_exercise_their_feature() {
-    // FEA-64/AK2: das frisch gerechnete Ergebnis prüfen, nicht die eingecheckten Dateien
+    // #82/AK2: das frisch gerechnete Ergebnis prüfen, nicht die eingecheckten Dateien
     // (sonst bestünde der Test auch, wenn GOLDEN_UPDATE=1 ein falsches Ergebnis übernommen hat).
     let all = cases();
     let get = |n: &str| -> Value { snapshot(&all.iter().find(|(name, _)| *name == n).unwrap().1) };
@@ -294,7 +294,7 @@ fn golden_cases_exercise_their_feature() {
     assert_eq!(get("09-szenarien")["scenarios"]["results"].as_array().unwrap().len(), 9);
 }
 
-/// FEA-64/AK3: Eine Änderung in einem Monat, der nicht als Monatswert gespeichert ist (März), fällt über die
+/// #82/AK3: Eine Änderung in einem Monat, der nicht als Monatswert gespeichert ist (März), fällt über die
 /// Summen auf.
 #[test]
 fn golden_detects_change_in_any_month() {

@@ -14,7 +14,7 @@ use crate::time::YearMonth;
 use crate::{Error, Result};
 
 /// Lädt die Zeitreihe der Planung, wenn die Renditequelle eine braucht; siehe [`returns_series`]. Das parametrische
-/// Modell braucht sie für die Vorschlagswerte und die Korrelation mit Obligationen und Inflation (FEA-78, FEA-79).
+/// Modell braucht sie für die Vorschlagswerte und die Korrelation mit Obligationen und Inflation (#100, #101).
 pub fn load_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Result<Option<DataSet>> {
     if !matches!(
         plan.returns.source,
@@ -27,7 +27,7 @@ pub fn load_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Resu
 
 /// Zeitreihe der Planung, unabhängig von der Renditequelle: aus `series`, falls gesetzt (ältere Planungen und die
 /// Kommandozeile; relative Pfade ab dem Verzeichnis der Projektdatei, `library:<datei>` in der Datenbibliothek), sonst
-/// aus der Anlagestrategie (FEA-53). Beim Öffnen in der App wird `series` zur Strategie (`upgrade`).
+/// aus der Anlagestrategie (#69). Beim Öffnen in der App wird `series` zur Strategie (`upgrade`).
 pub fn returns_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Result<Option<DataSet>> {
     if let Some(s) = &plan.returns.series {
         return DataSet::load_csv(&crate::library::resolve(s, base_dir, library)?).map(Some);
@@ -170,7 +170,7 @@ pub fn run_paths(sim: &Simulator, paths: &Paths) -> Vec<SimResult> {
 pub struct Percentile {
     pub percent: u32,
     pub end_total: f64,
-    /// Endvermögen dieses Laufs in heutiger Kaufkraft (mit der eigenen Inflation des Laufs; ISS-23).
+    /// Endvermögen dieses Laufs in heutiger Kaufkraft (mit der eigenen Inflation des Laufs; #126).
     pub end_total_real: f64,
     pub label: String,
     /// Index des Laufs (bzw. Renditepfads).
@@ -401,7 +401,7 @@ mod tests {
         }
     }
 
-    // FEA-29: Anzahl Pfade zwischen 1 und 1'000'000 (Grenzen eingeschlossen); `is_empty` folgt der Länge.
+    // #40: Anzahl Pfade zwischen 1 und 1'000'000 (Grenzen eingeschlossen); `is_empty` folgt der Länge.
     #[test]
     fn path_count_limits() {
         let mut v: serde_json::Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();

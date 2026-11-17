@@ -1,4 +1,4 @@
-//! FEA-68: Fuzz-Ziel für die ganze Rechnung. Die Eingabe verändert die Beispielplanung strukturiert (je vier Bytes:
+//! #86: Fuzz-Ziel für die ganze Rechnung. Die Eingabe verändert die Beispielplanung strukturiert (je vier Bytes:
 //! zwei für das Feld, eines für die Art der Änderung, eines für den Wert) und ruft `api::run` auf. Abstürze und ungültige Zahlen im Ergebnis
 //! sind Funde. Damit ein Lauf schnell bleibt, rechnet Monte Carlo höchstens 255 Pfade und es gibt keine Variationen.
 #![no_main]

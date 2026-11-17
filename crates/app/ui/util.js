@@ -1,4 +1,4 @@
-// FEA-69: Reine Hilfsfunktionen der Oberfläche (ohne DOM und ohne Zustand der Planung). Im Browser ein gewöhnliches
+// #87: Reine Hilfsfunktionen der Oberfläche (ohne DOM und ohne Zustand der Planung). Im Browser ein gewöhnliches
 // Skript vor app.js; die Funktionen sind dann global. In Node prüft `node --test` sie über module.exports
 // (Tests in e2e/unit/util.test.js; nicht unter ui/, weil die App diesen Ordner ausliefert).
 "use strict";
@@ -84,7 +84,7 @@ function sweepSteps(from, to, step, month = false) {
   return to >= from && step > 0 ? Math.floor((to - from) / step + 1e-9) + 1 : 0;
 }
 /**
- * FEA-91: Liste stabil nach einem Wert sortieren. `dir` 1 aufsteigend, −1 absteigend. Texte nach Alphabet (de-CH), Zahlen
+ * #118: Liste stabil nach einem Wert sortieren. `dir` 1 aufsteigend, −1 absteigend. Texte nach Alphabet (de-CH), Zahlen
  * nach Wert. Fehlende Werte (null, undefined, NaN, "") stehen in beiden Richtungen am Ende.
  */
 function sortBy(list, valOf, dir = 1) {

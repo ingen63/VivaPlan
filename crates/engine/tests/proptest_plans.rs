@@ -1,4 +1,4 @@
-//! FEA-67: Bilanz-Invarianten an zufälligen Planungen über alle Renditequellen, alle sechs Entnahmestrategien (dazu
+//! #85: Bilanz-Invarianten an zufälligen Planungen über alle Renditequellen, alle sechs Entnahmestrategien (dazu
 //! 3-Topf mit Guardrails) und Haushalte mit Partner. Der Generator ist eine proptest-Strategie: Ein Fehlschlag wird auf
 //! eine möglichst kleine Planung verkleinert und in `tests/proptest-regressions/proptest_plans.txt` gespeichert; dort
 //! gespeicherte Fälle laufen bei jedem Testlauf zuerst.
@@ -24,7 +24,7 @@ fn library() -> PathBuf {
 /// Renditequellen; die ersten beiden rechnen einen Pfad ohne Zeitreihe bzw. mit einer, die übrigen mehrere Pfade.
 const LIGHT_SOURCES: [&str; 2] = ["fixed", "historical"];
 const HEAVY_SOURCES: [&str; 3] = ["rolling", "bootstrap", "parametric"];
-/// Alle sechs Strategien; `three_buckets_guardrails` ist 3-Topf mit Ausgaben nach Guardrails (FEA-05).
+/// Alle sechs Strategien; `three_buckets_guardrails` ist 3-Topf mit Ausgaben nach Guardrails (#6).
 const STRATEGIES: [&str; 7] = [
     "standard",
     "three_buckets",
@@ -294,7 +294,7 @@ fn check(v: &Value, repeat: bool) -> Result<(), TestCaseError> {
     Ok(())
 }
 
-/// FEA-67/AK1: Ablage der verkleinerten Fehlschläge. Der Standard (`SourceParallel`) sucht `lib.rs` oder `main.rs` und
+/// #85/AK1: Ablage der verkleinerten Fehlschläge. Der Standard (`SourceParallel`) sucht `lib.rs` oder `main.rs` und
 /// findet bei Integrationstests keine, deshalb der Pfad ausdrücklich.
 const REGRESSIONS: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -307,13 +307,13 @@ proptest! {
         ..ProptestConfig::default()
     })]
 
-    /// FEA-67/AK1, AK2: fixe Renditen und historischer Verlauf (ein Pfad), alle Strategien, mit und ohne Partner.
+    /// #85/AK1, AK2: fixe Renditen und historischer Verlauf (ein Pfad), alle Strategien, mit und ohne Partner.
     #[test]
     fn proptest_plans_keep_books_balanced(p in params(&LIGHT_SOURCES)) {
         check(&plan(&p), true)?;
     }
 
-    /// FEA-67/AK2, AK3: rollierende Zeitfenster, Bootstrap und parametrisches Monte Carlo (20 Pfade); nicht im Profil
+    /// #85/AK2, AK3: rollierende Zeitfenster, Bootstrap und parametrisches Monte Carlo (20 Pfade); nicht im Profil
     /// `mutants`.
     #[test]
     fn proptest_plans_monte_carlo_keep_books_balanced(p in params(&HEAVY_SOURCES)) {

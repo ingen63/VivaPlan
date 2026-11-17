@@ -1,4 +1,4 @@
-//! FEA-53: Anlagestrategie statt Wahl der Zeitreihe.
+//! #69: Anlagestrategie statt Wahl der Zeitreihe.
 
 use std::path::{Path, PathBuf};
 
@@ -43,9 +43,9 @@ fn shipped(file: &str) -> DataSet {
     DataSet::load_csv(&lib().join(file)).unwrap()
 }
 
-/// FEA-53/AK3: 100 % USA in «Welt individuell» ergibt die USA-Reihe des Weltindexes; 100 % Schweiz die Schweizer.
+/// #69/AK3: 100 % USA in «Welt individuell» ergibt die USA-Reihe des Weltindexes; 100 % Schweiz die Schweizer.
 #[test]
-fn fea53_ak3_hundred_percent_usa_is_the_usa_series() {
+fn issue_69_ak3_hundred_percent_usa_is_the_usa_series() {
     let d = JstData::builtin();
     assert_eq!(
         custom(0.0, 1.0, 0.0, 0.0).stocks,
@@ -57,10 +57,10 @@ fn fea53_ak3_hundred_percent_usa_is_the_usa_series() {
     );
 }
 
-/// FEA-53/AK2: Ändert sich das Gewicht der EU, ändern sich die Anteile aller EU-Länder im gleichen Verhältnis: Die
+/// #69/AK2: Ändert sich das Gewicht der EU, ändern sich die Anteile aller EU-Länder im gleichen Verhältnis: Die
 /// Rendite ist die Summe der Regionen mal ihr Gewicht; innerhalb der EU bleibt die Verteilung nach BIP.
 #[test]
-fn fea53_ak2_eu_weight_scales_all_eu_countries_alike() {
+fn issue_69_ak2_eu_weight_scales_all_eu_countries_alike() {
     let d = JstData::builtin();
     let eu = d.region_stocks(jst::EU.countries).unwrap();
     let usa = d.region_stocks(jst::USA.countries).unwrap();
@@ -79,9 +79,9 @@ fn fea53_ak2_eu_weight_scales_all_eu_countries_alike() {
     assert!(de > gb && (w.iter().map(|x| x.1).sum::<f64>() - 1.0).abs() < 1e-12);
 }
 
-/// FEA-53/AK2: Gewichte zusammen nicht 100 % oder ausserhalb 0–100 %: Fehler beim Feld, kein Lauf.
+/// #69/AK2: Gewichte zusammen nicht 100 % oder ausserhalb 0–100 %: Fehler beim Feld, kein Lauf.
 #[test]
-fn fea53_ak2_invalid_weights_are_reported_at_the_field() {
+fn issue_69_ak2_invalid_weights_are_reported_at_the_field() {
     let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     v["returns"]["strategy"] =
         json!({ "stocks": "worldCustom", "bonds": "ch", "weights": { "ch": 0.5, "usa": 0.5, "eu": 0.5, "apac": 0 } });
@@ -112,7 +112,7 @@ fn fea53_ak2_invalid_weights_are_reported_at_the_field() {
 
 /// Kombinationen, die es als ausgelieferte Reihe gibt, liefern genau diese (gleiche Ergebnisse für ältere Planungen).
 #[test]
-fn fea53_shipped_combinations_are_the_shipped_series() {
+fn issue_69_shipped_combinations_are_the_shipped_series() {
     for (s, b, file) in [
         (StockIndex::Sp500, BondIndex::Usa, "Shiller CHF.csv"),
         (StockIndex::Sp500, BondIndex::Ch, library::CH_BONDS_FILE),
@@ -128,10 +128,10 @@ fn fea53_shipped_combinations_are_the_shipped_series() {
     assert_eq!(ds(StockIndex::Sp500, BondIndex::Usa).freq, Freq::Monthly);
 }
 
-/// Entscheid zu FEA-53: jährlich, sobald ein Teil jährlich ist; Zeitraum = gemeinsame Jahre; Monatswerte zu
+/// Entscheid zu #69: jährlich, sobald ein Teil jährlich ist; Zeitraum = gemeinsame Jahre; Monatswerte zu
 /// Kalenderjahren verknüpft, Teuerung aus der Quelle der Aktien.
 #[test]
-fn fea53_mixed_strategies_are_yearly_over_the_common_years() {
+fn issue_69_mixed_strategies_are_yearly_over_the_common_years() {
     let shiller = shipped("Shiller CHF.csv");
     let (short_first, short) = jst::ch_short_yearly(&JstData::builtin(), &engine::import::SnbData::builtin()).unwrap();
     let s = ds(StockIndex::Sp500, BondIndex::ChShort);
@@ -176,13 +176,13 @@ fn plan_with(series: Option<&str>) -> Value {
     v
 }
 
-/// FEA-53/AK5: Ältere Planungen werden beim Öffnen auf die Strategie abgebildet.
+/// #69/AK5: Ältere Planungen werden beim Öffnen auf die Strategie abgebildet.
 #[test]
-fn fea53_ak5_old_series_become_strategies() {
+fn issue_69_ak5_old_series_become_strategies() {
     for (series, stocks, bonds, note) in [
         (Some("library:Shiller CHF.csv"), "sp500", "usa", false),
         (Some("library:Shiller CHF + CH-Obligationen.csv"), "sp500", "ch", false),
-        // FEA-72/AK4: Pictet wird nicht mehr mitgeliefert: Schweiz (JST) mit Eidgenossenschaft, mit Hinweis.
+        // #90/AK4: Pictet wird nicht mehr mitgeliefert: Schweiz (JST) mit Eidgenossenschaft, mit Hinweis.
         (Some("library:Pictet CH.csv"), "chJst", "ch", true),
         (Some("library:Welt (JST).csv"), "worldJst", "ch", false),
         (Some("library:Shiller USD.csv"), "sp500", "usa", true),
@@ -225,9 +225,9 @@ fn end_totals(v: &Value) -> Vec<f64> {
         .collect()
 }
 
-/// FEA-53/AK5: Die übernommene Planung rechnet genau wie vorher (alle historischen Startzeitpunkte).
+/// #69/AK5: Die übernommene Planung rechnet genau wie vorher (alle historischen Startzeitpunkte).
 #[test]
-fn fea53_ak5_upgraded_plans_give_the_same_results() {
+fn issue_69_ak5_upgraded_plans_give_the_same_results() {
     let series = "library:Shiller CHF.csv";
     let mut old = plan_with(Some(series));
     old["returns"]["source"] = json!("rolling");
@@ -238,9 +238,9 @@ fn fea53_ak5_upgraded_plans_give_the_same_results() {
     assert_eq!(a, b, "{series}");
 }
 
-/// FEA-53/AK4: Fixe Renditen funktionieren wie bisher; die Strategie spielt dann keine Rolle.
+/// #69/AK4: Fixe Renditen funktionieren wie bisher; die Strategie spielt dann keine Rolle.
 #[test]
-fn fea53_ak4_fixed_returns_ignore_the_strategy() {
+fn issue_69_ak4_fixed_returns_ignore_the_strategy() {
     let mut a = plan_with(None);
     a["returns"]["source"] = json!("fixed");
     let mut b = a.clone();
@@ -250,7 +250,7 @@ fn fea53_ak4_fixed_returns_ignore_the_strategy() {
 
 /// Kurzinfo der Strategie für die Oberfläche (`strategy:<JSON>`) und neue Planungen mit «Welt (JST)».
 #[test]
-fn fea53_strategy_info_and_new_plans() {
+fn issue_69_strategy_info_and_new_plans() {
     let r = format!("{}{}", strategy::PREFIX, json!({ "stocks": "chJst", "bonds": "usa" }));
     let i = api::series_info(&r, Path::new("."), None).unwrap();
     assert!(!i.monthly);
@@ -276,11 +276,11 @@ fn fea53_strategy_info_and_new_plans() {
     assert!(series_error(&v));
 }
 
-/// FEA-53/AK8: Die Kurzinfo nennt die Teile der Strategie mit ihren eigenen Jahren. Die Mittelwerte gelten für den
+/// #69/AK8: Die Kurzinfo nennt die Teile der Strategie mit ihren eigenen Jahren. Die Mittelwerte gelten für den
 /// gemeinsamen Zeitraum: Aktien JST (1900–2020) mit Obligationen USA (ab 1922) sind auf 1922–2020 gekürzt, das
 /// Mittel der Obligationen ist das dieser Jahre. Ohne Kürzung reichen beide Teile genau über die Reihe.
 #[test]
-fn fea53_ak8_parts_and_common_period_of_the_averages() {
+fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     let info = |stocks: &str, bonds: &str| {
         let r = format!("{}{}", strategy::PREFIX, json!({ "stocks": stocks, "bonds": bonds }));
         api::series_info(&r, Path::new("."), None).unwrap()
@@ -316,10 +316,10 @@ fn fea53_ak8_parts_and_common_period_of_the_averages() {
     assert!(plain.parts.is_empty());
 }
 
-/// FEA-53/AK8: S&P 500 mit US-Obligationen ist die ausgelieferte Reihe; kein Teil ist gekürzt. Ein unlesbarer
+/// #69/AK8: S&P 500 mit US-Obligationen ist die ausgelieferte Reihe; kein Teil ist gekürzt. Ein unlesbarer
 /// Verweis gibt einen Fehler, ein fremder Verweis `None`.
 #[test]
-fn fea53_ak8_parts_without_cut_and_reference_errors() {
+fn issue_69_ak8_parts_without_cut_and_reference_errors() {
     let inv = Investment {
         stocks: StockIndex::Sp500,
         bonds: BondIndex::Usa,
@@ -339,10 +339,10 @@ fn fea53_ak8_parts_without_cut_and_reference_errors() {
     assert!(strategy::from_reference_with_parts("library:x.csv", None).is_none());
 }
 
-/// FEA-59/AK2: «Eidgenossenschaft kurzfristig»: JST (`bill_rate`) bis 2020, ab 2021 das Jahresmittel des SARON, ohne
+/// #76/AK2: «Eidgenossenschaft kurzfristig»: JST (`bill_rate`) bis 2020, ab 2021 das Jahresmittel des SARON, ohne
 /// Lücke. Das letzte JST-Jahr und das erste SARON-Jahr von Hand nachgerechnet.
 #[test]
-fn fea59_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
+fn issue_76_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
     let jst = JstData::builtin();
     let snb = engine::import::SnbData::builtin();
     let (first, v) = jst::ch_short_yearly(&jst, &snb).unwrap();
@@ -365,9 +365,9 @@ fn fea59_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
     assert!(v.iter().all(|r| r.is_finite()));
 }
 
-/// FEA-59/AK1, AK3: Wahl «chShort» in der Strategie, jährlich über die gemeinsamen Jahre mit den Aktien.
+/// #76/AK1, AK3: Wahl «chShort» in der Strategie, jährlich über die gemeinsamen Jahre mit den Aktien.
 #[test]
-fn fea59_ak1_ak3_short_bonds_in_strategies() {
+fn issue_76_ak1_ak3_short_bonds_in_strategies() {
     let (first, short) = jst::ch_short_yearly(&JstData::builtin(), &engine::import::SnbData::builtin()).unwrap();
     // Name und Speicherform
     assert_eq!(strategy::bond_name(BondIndex::ChShort), "Eidgenossenschaft kurzfristig");
@@ -404,10 +404,10 @@ fn plan_struct(v: &Value) -> Plan {
     serde_json::from_value(v.clone()).unwrap()
 }
 
-/// FEA-53/AK4, AK5: `returns_series` nimmt `series`, falls gesetzt (ältere Planungen, Kommandozeile), sonst die
+/// #69/AK4, AK5: `returns_series` nimmt `series`, falls gesetzt (ältere Planungen, Kommandozeile), sonst die
 /// Strategie; ohne beides gibt es keine Reihe. `load_series` lädt nur bei Renditequellen mit Zeitreihe.
 #[test]
-fn fea53_returns_series_prefers_series_then_strategy_then_none() {
+fn issue_69_returns_series_prefers_series_then_strategy_then_none() {
     let mut v = plan_with(None);
     v["returns"]["source"] = json!("historical");
     // Nur Strategie
@@ -447,9 +447,9 @@ fn fea53_returns_series_prefers_series_then_strategy_then_none() {
     }
 }
 
-/// FEA-53/AK4: Die Vorschau im Editor rechnet bei einer Strategie mit den Durchschnitten der Strategie-Reihe.
+/// #69/AK4: Die Vorschau im Editor rechnet bei einer Strategie mit den Durchschnitten der Strategie-Reihe.
 #[test]
-fn fea53_preview_uses_the_averages_of_the_strategy_series() {
+fn issue_69_preview_uses_the_averages_of_the_strategy_series() {
     let mut v = plan_with(None);
     v["returns"]["source"] = json!("historical");
     v["returns"]["startDate"] = json!("1950-01");
@@ -472,11 +472,11 @@ fn fea53_preview_uses_the_averages_of_the_strategy_series() {
     assert!(api::preview(&v, Path::new("."), Some(&lib())).basis.is_none());
 }
 
-/// FEA-72/AK3: Planungen mit dem früheren Index «Schweiz (Pictet)» öffnen ohne Fehler. Die Aktien werden
+/// #90/AK3: Planungen mit dem früheren Index «Schweiz (Pictet)» öffnen ohne Fehler. Die Aktien werden
 /// «Schweiz (JST)», die Obligationen «Eidgenossenschaft 10 Jahre»; ein Hinweis nennt die Umstellung, und die
 /// übernommene Planung rechnet.
 #[test]
-fn fea72_ak3_pictet_strategies_are_replaced_with_a_note() {
+fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
     for (stocks, bonds, want_stocks, want_bonds, with_stocks, with_bonds) in [
         ("chPictet", "chPictet", "chJst", "ch", true, true),
         ("chPictet", "usa", "chJst", "usa", true, false),
@@ -529,10 +529,10 @@ fn lib_with_shiller_year(year: i32) -> PathBuf {
     dir
 }
 
-/// FEA-97/AK8: Aktien des Weltindex (JST) mit Obligationen USA (Shiller): Ein einziges gemeinsames Jahr genügt, der SARON
+/// #124/AK8: Aktien des Weltindex (JST) mit Obligationen USA (Shiller): Ein einziges gemeinsames Jahr genügt, der SARON
 /// gilt auch im ersten und letzten Jahr seiner Reihe; ohne gemeinsames Jahr meldet die Strategie einen Fehler.
 #[test]
-fn fea97_ak8_common_years_of_the_indices() {
+fn issue_124_ak8_common_years_of_the_indices() {
     let s = Investment {
         stocks: StockIndex::WorldJst,
         bonds: BondIndex::Usa,

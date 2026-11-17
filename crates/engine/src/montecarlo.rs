@@ -221,7 +221,7 @@ pub const TRADING_DAYS: usize = 21;
 /// Aktien: geometrische Brownsche Bewegung mit Student-t-Schocks (auf Varianz 1 skaliert) und
 /// Poisson-Kurssprüngen, in Tagesschritten gerechnet und zu Monatsrenditen zusammengefasst.
 /// Obligationen und Inflation: mit `correlated` je Kalenderjahr zufällig und mit der Aktienrendite des Jahres
-/// korreliert (FEA-79), aus einem eigenen Zufallsstrom, damit die Aktienpfade gleich bleiben; sonst wie der SARON
+/// korreliert (#101), aus einem eigenen Zufallsstrom, damit die Aktienpfade gleich bleiben; sonst wie der SARON
 /// die fixen Werte.
 pub struct Parametric<'a> {
     pub fixed: &'a FixedCurves,
@@ -271,7 +271,7 @@ impl Parametric<'_> {
             }
             log.exp() - 1.0
         };
-        // Vorlauf (FEA-80): 12 Monate aus demselben Zufallsstrom, vor dem Pfad gezogen
+        // Vorlauf (#103): 12 Monate aus demselben Zufallsstrom, vor dem Pfad gezogen
         p.pre_stocks = (0..PRE_MONTHS).map(|_| month(&mut rng)).collect();
         for k in 0..self.months {
             let m = self.start.plus(k as i32);
@@ -289,7 +289,7 @@ impl Parametric<'_> {
                 // Monate dieses Kalenderjahres in der Simulation
                 let m = self.start.plus(k as i32);
                 let len = (13 - m.month() as usize).min(self.months - k);
-                // ISS-22: Jeder Durchgang kommt voran, und `k` zählt die schon geschriebenen Monate. Sonst würde ein
+                // #116: Jeder Durchgang kommt voran, und `k` zählt die schon geschriebenen Monate. Sonst würde ein
                 // Fehler (oder ein Mutant wie `k *= len`) die Schleife endlos machen und den Speicher füllen.
                 debug_assert!(
                     len > 0 && k == p.bonds.len(),
@@ -378,7 +378,7 @@ mod tests {
         };
         let p = b.path(3);
         assert_eq!(p.stocks.len(), 600);
-        // FEA-80: Vorlauf = die 12 echten Monate vor dem ersten Block (zirkulär)
+        // #103: Vorlauf = die 12 echten Monate vor dem ersten Block (zirkulär)
         let i0 = p.stocks[0] as usize;
         let pre: Vec<f64> = (1..=12).rev().map(|j| ((i0 + n - j) % n) as f64).collect();
         assert_eq!(p.pre_stocks, pre);
@@ -432,7 +432,7 @@ mod tests {
         assert_eq!(p.inflation[0], 0.01);
     }
 
-    // FEA-29: Gamma mit Form < 1 hat viel Masse nahe 0: P(X < 0.01) = P(|Z| < √0.02) ≈ 0.1125 bei Form 0.5.
+    // #40: Gamma mit Form < 1 hat viel Masse nahe 0: P(X < 0.01) = P(|Z| < √0.02) ≈ 0.1125 bei Form 0.5.
     #[test]
     fn gamma_below_one_has_mass_near_zero() {
         let mut r = Rng::new(5, 0);
@@ -471,10 +471,10 @@ mod tests {
         assert!(p(0).is_empty() && !p(3).is_empty());
     }
 
-    /// FEA-80: Jahresreihe, Start im Juli: Januar bis Juni des Startjahres aus dem ersten gezogenen Jahr, Juli bis
+    /// #103: Jahresreihe, Start im Juli: Januar bis Juni des Startjahres aus dem ersten gezogenen Jahr, Juli bis
     /// Dezember des Vorjahres aus dem Jahr davor (zirkulär).
     #[test]
-    fn fea80_yearly_bootstrap_pre_run_by_calendar_year() {
+    fn issue_103_yearly_bootstrap_pre_run_by_calendar_year() {
         let n = 20;
         let ds = DataSet {
             name: "j".into(),
@@ -603,7 +603,7 @@ mod tests {
         };
         let p = g.path(0);
         // Toleranz für kleine Unterschiede der Mathematikbibliothek zwischen Plattformen.
-        // FEA-80: Seit dem Vorlauf (12 Monate vor dem Pfad aus demselben Strom) beginnt der Pfad mit dem 13. Monat.
+        // #103: Seit dem Vorlauf (12 Monate vor dem Pfad aus demselben Strom) beginnt der Pfad mit dem 13. Monat.
         let expected = [-0.1760832325318339, -0.08742723973668332, -0.08198575085856707];
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
@@ -627,8 +627,8 @@ mod tests {
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
         }
-        // FEA-80: Der Vorlauf sind die 12 Monate davor aus demselben Strom; seine ersten Monate sind die früheren Werte
-        // des Pfads (vor FEA-80 der Pfad selbst).
+        // #103: Der Vorlauf sind die 12 Monate davor aus demselben Strom; seine ersten Monate sind die früheren Werte
+        // des Pfads (vor #103 der Pfad selbst).
         assert_eq!(p.pre_stocks.len(), PRE_MONTHS);
         let before = [0.06842020080156996, 0.08498775592559737, 0.0484071107147952];
         for (a, b) in p.pre_stocks.iter().zip(before) {

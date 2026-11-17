@@ -176,7 +176,7 @@ const STOCK_SHARE: ParamDef = p("stockShare", "Aktienanteil", 0.1, 1.0, "%", 0.0
 /// Bandbreiten je Strategie und Parameter (Schlüssel der Strategie, dann des Parameters).
 pub type Ranges = std::collections::BTreeMap<String, std::collections::BTreeMap<String, crate::model::ParamRange>>;
 
-/// Strategie der Optimierung: die Entnahmestrategien der Planung und dazu 3-Topf mit Guardrails (FEA-05), die in der
+/// Strategie der Optimierung: die Entnahmestrategien der Planung und dazu 3-Topf mit Guardrails (#6), die in der
 /// Planung «3-Topf» mit `buckets.spending = "guardrails"` ist.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OptStrategy {
@@ -276,7 +276,7 @@ pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
             ceiling,
         ],
         OptStrategy::ThreeBuckets => bucket_defs().to_vec(),
-        // FEA-05: Töpfe und Guardrails; untere Leitplanke und Anpassung sind standardmässig fix.
+        // #6: Töpfe und Guardrails; untere Leitplanke und Anpassung sind standardmässig fix.
         OptStrategy::ThreeBucketsGuardrails => {
             let mut v = bucket_defs().to_vec();
             v.extend([
@@ -528,7 +528,7 @@ pub fn with_params(base: &Value, strategy: OptStrategy, defs: &[ParamDef], x: &[
     } else {
         strategy_key(strategy)
     });
-    // FEA-05: Die Ausgabenregel der Töpfe folgt der Strategie, nicht der Planung.
+    // #6: Die Ausgabenregel der Töpfe folgt der Strategie, nicht der Planung.
     if v["withdrawal"]["buckets"].is_object() || combined {
         if !v["withdrawal"]["buckets"].is_object() {
             v["withdrawal"]["buckets"] = json!({"cashYears": 2.0, "bondYears": 6.0, "refillThreshold": 0.0});
@@ -1175,13 +1175,13 @@ mod tests {
         assert!((ok.score(&o) - 90.0).abs() < 1e-9);
     }
 
-    // ---- FEA-29 ----
+    // ---- #40 ----
 
     /// Erfundene Planung ohne Steuern, Teuerung und Renditen: Start 2026-11, Pensionierung 2031-11, Ende 2061-11,
     /// Ausgaben 1000 pro Monat, Vermögen nur als Bargeld.
     fn calm(cash: f64) -> Value {
         let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
-        // Bezug der Pensionskasse auch nach 65 (der Test verschiebt ihn); die Grenzen prüft FEA-38 anderswo.
+        // Bezug der Pensionskasse auch nach 65 (der Test verschiebt ihn); die Grenzen prüft #51 anderswo.
         v["limits"] = json!({"pkMax": 130, "ahvMax": 130});
         v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
         v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
@@ -1567,7 +1567,7 @@ mod tests {
             progress_total(&req, &[OptStrategy::FixedRate]).unwrap(),
             26 * 100 + 2 * 1000
         );
-        // Alle: 7 × 12 Startpunkte + 22 + 14 + 46 + 110 + 40 + 74 + 90 Schritte (FEA-05: 3-Topf + Guardrails)
+        // Alle: 7 × 12 Startpunkte + 22 + 14 + 46 + 110 + 40 + 74 + 90 Schritte (#6: 3-Topf + Guardrails)
         assert_eq!(
             progress_total(&req, &all_strategies()).unwrap(),
             (84 + 396) * 100 + 8 * 1000

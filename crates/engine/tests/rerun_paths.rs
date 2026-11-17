@@ -1,4 +1,4 @@
-//! FEA-23: Läufe einer Variationsstufe werden aus den Pfadnummern nachgerechnet und stimmen mit der Szenarientabelle überein.
+//! #24: Läufe einer Variationsstufe werden aus den Pfadnummern nachgerechnet und stimmen mit der Szenarientabelle überein.
 
 use engine::api;
 use serde_json::{json, Value};

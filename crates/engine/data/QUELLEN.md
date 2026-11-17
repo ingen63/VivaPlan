@@ -28,14 +28,14 @@ Daraus folgt:
 - **Gleiche Lizenz:** `Welt (JST).csv`, der Auszug `quellen/jst-r6.csv` und die Rohdatei `quellen/JSTdatasetR6.xlsx`
   werden unter CC BY-NC-SA 4.0 weitergegeben, nicht unter der GPL.
 
-Die Obligationen «Eidgenossenschaft kurzfristig» (FEA-59) entstehen in der Strategie aus derselben Datenbank (Spalte
+Die Obligationen «Eidgenossenschaft kurzfristig» (#76) entstehen in der Strategie aus derselben Datenbank (Spalte
 `bill_rate`, Schweiz, 1900–2020, abgerufen 13.11.2026, Lizenz CC BY-NC-SA 4.0) und ab 2021 aus dem Jahresmittel des
 SARON (SNB, data.snb.ch, Würfel `zimoma`, Datei `quellen/snb-zimoma.csv`); der Auszug `quellen/jst-r6.csv` enthält dazu
 die Spalte `bill_rate`.
 
 Die Schweizer Aktienreihe der JST-Daten beruht ab 1926 auf Pictet und Cie (1998).
 
-Die frühere Reihe `Pictet CH.csv` wird seit FEA-72 nicht mehr mitgeliefert: Für die Tabelle von Pictet Wealth
+Die frühere Reihe `Pictet CH.csv` wird seit #90 nicht mehr mitgeliefert: Für die Tabelle von Pictet Wealth
 Management liegt keine offene Lizenz vor.
 
 ## Haftungsausschluss der Shiller-Daten
@@ -53,7 +53,7 @@ Dasselbe gilt für VivaPlan: Vergangene Renditen sind keine Prognose.
 nachrechnen. Sie gehören nicht zur App. Neuere Fassungen laden Sie selbst herunter (shillerdata.com, data.snb.ch) und
 importieren sie in der App.
 
-**Shiller-Tabelle (FEA-76):** Die Originaltabelle von Robert Shiller wird nicht mitgeliefert, weil shillerdata.com
+**Shiller-Tabelle (#94):** Die Originaltabelle von Robert Shiller wird nicht mitgeliefert, weil shillerdata.com
 keine Lizenz für die Weitergabe nennt. Ausgeliefert werden nur die daraus berechneten Renditen. Wer die Tests mit der
 Originaltabelle laufen lassen will, lädt `ie_data.xls` von shillerdata.com und legt sie lokal als
 `quellen/shiller-index.ods` ab (der Pfad ist von Git ausgeschlossen). Ohne die Datei überspringen die Tests diesen

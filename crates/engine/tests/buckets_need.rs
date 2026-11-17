@@ -285,11 +285,11 @@ fn years_below_the_threshold_sell_nothing_from_pot_3_in_january_and_pot_1_comes_
     never_negative(&res);
 }
 
-/// FEA-80/AK2: Start im Juli 2030; der Vorlauf des Renditepfads (Juli 2029 bis Juni 2030) liefert die Monate vor dem
+/// #103/AK2: Start im Juli 2030; der Vorlauf des Renditepfads (Juli 2029 bis Juni 2030) liefert die Monate vor dem
 /// Start. Die Januar-Auffüllung 2031 misst die letzten 12 Monate (Februar 2030 bis Januar 2031): 5 Vorlaufmonate,
 /// Juli bis Dezember 2030 je +2 %, Januar 2031 0 %. Schwelle 5 %.
 #[test]
-fn fea80_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run() {
+fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run() {
     let mut v = base();
     v["milestones"][0]["date"] = json!("2030-07");
     v["milestones"][1]["date"] = json!("2030-07");
@@ -403,10 +403,10 @@ fn a_later_pension_fund_withdrawal_goes_to_pot_3_and_triggers_a_with_reduced_tar
     never_negative(&res);
 }
 
-/// GEN-03/AK4: Ein PK-Kapitalbezug mitten im Jahr (Auslöser A) bestimmt den Netto-Bedarf neu, aus den Monaten ab dem
+/// #99/AK4: Ein PK-Kapitalbezug mitten im Jahr (Auslöser A) bestimmt den Netto-Bedarf neu, aus den Monaten ab dem
 /// Bezug auf 12 Monate hochgerechnet; dieser Bedarf gilt bis zum nächsten Januar.
 #[test]
-fn gen03_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawal_month() {
+fn issue_99_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawal_month() {
     let res = run(two_persons());
     let a = find(&res, "A", 2030, 7);
     assert_eq!(a.basis.year, 2030);

@@ -29,12 +29,12 @@ pub struct DataSet {
     pub bonds: Vec<f64>,
     pub inflation: Vec<f64>,
     pub saron: Option<Vec<f64>>,
-    /// FEA-78: ganze Aktienreihe des Index (auch über die gemeinsamen Jahre mit den Obligationen hinaus), in der
+    /// #100: ganze Aktienreihe des Index (auch über die gemeinsamen Jahre mit den Obligationen hinaus), in der
     /// Häufigkeit, die der Bootstrap verwendet; für die Vorschlagswerte des parametrischen Modells.
     pub stock_series: Option<StockSeries>,
 }
 
-/// FEA-78: Aktienrenditen eines Index (Monats- oder Jahresrenditen ab `first`).
+/// #100: Aktienrenditen eines Index (Monats- oder Jahresrenditen ab `first`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct StockSeries {
     pub freq: Freq,
@@ -152,7 +152,7 @@ impl DataSet {
             let (m, freq) = if date.contains('-') {
                 (date.parse::<YearMonth>().map_err(|e| bad(&e))?, Freq::Monthly)
             } else {
-                // ISS-14: Jahre wie bei Monatsdaten vierstellig; sonst überläuft der Monatsindex.
+                // #60: Jahre wie bei Monatsdaten vierstellig; sonst überläuft der Monatsindex.
                 let y: i32 = date
                     .parse()
                     .ok()
@@ -282,12 +282,12 @@ pub struct MarketPath {
     /// Jahressätze.
     pub inflation: Vec<f64>,
     pub saron: Vec<f64>,
-    /// Vorlauf (FEA-80): Aktien-Monatsrenditen der bis zu 12 Monate vor dem Start, der älteste zuerst. Er dient nur dem
+    /// Vorlauf (#103): Aktien-Monatsrenditen der bis zu 12 Monate vor dem Start, der älteste zuerst. Er dient nur dem
     /// Renditekriterium der 3-Topf-Strategie (letzte 12 Monate) und ändert kein Vermögen.
     pub pre_stocks: Vec<f64>,
 }
 
-/// Anzahl Monate Vorlauf vor dem Simulationsstart (FEA-80).
+/// Anzahl Monate Vorlauf vor dem Simulationsstart (#103).
 pub const PRE_MONTHS: usize = 12;
 
 /// Jahressatz → Monatssatz; Sätze unter −100 % gelten als −100 % (statt einer ungültigen Zahl).
@@ -545,10 +545,10 @@ mod tests {
         assert_eq!(rolling_starts(&ds, YearMonth::new(2030, 11), 3).len(), 2);
     }
 
-    /// FEA-80: Vorlauf bei Jahresdaten nach Kalenderjahr: Start November 2030 mit dem Jahr 2001 ⇒ November und Dezember
+    /// #103: Vorlauf bei Jahresdaten nach Kalenderjahr: Start November 2030 mit dem Jahr 2001 ⇒ November und Dezember
     /// 2029 aus 2000, Januar bis Oktober 2030 aus 2001; ohne Vorjahr in der Reihe nur die Monate des Startjahres.
     #[test]
-    fn fea80_yearly_pre_run_by_calendar_year() {
+    fn issue_103_yearly_pre_run_by_calendar_year() {
         let ds = DataSet::parse_csv("t", CSV).unwrap();
         let path = |hist: i32| {
             historical_path(
@@ -573,9 +573,9 @@ mod tests {
         close(p.pre_stocks[0], monthly(0.1));
     }
 
-    /// FEA-80: Vorlauf bei Monatsdaten: die echten 12 Monate vor dem historischen Start, am Anfang der Reihe weniger.
+    /// #103: Vorlauf bei Monatsdaten: die echten 12 Monate vor dem historischen Start, am Anfang der Reihe weniger.
     #[test]
-    fn fea80_monthly_pre_run_takes_the_months_before_the_start() {
+    fn issue_103_monthly_pre_run_takes_the_months_before_the_start() {
         let ds = DataSet {
             name: "t".into(),
             freq: Freq::Monthly,
@@ -597,9 +597,9 @@ mod tests {
         assert!(path(YearMonth::new(2000, 1)).pre_stocks.is_empty());
     }
 
-    /// FEA-80: Fixe Renditen: Vorlauf mit dem Satz des Startmonats.
+    /// #103: Fixe Renditen: Vorlauf mit dem Satz des Startmonats.
     #[test]
-    fn fea80_fixed_pre_run_uses_the_start_rate() {
+    fn issue_103_fixed_pre_run_uses_the_start_rate() {
         let mut c = flat();
         c.stocks = Curve::constant(0.06);
         let p = fixed_path(&c, YearMonth::new(2030, 7), 3);
@@ -619,7 +619,7 @@ mod tests {
         assert!((a - b).abs() < 1e-12, "{a} != {b}");
     }
 
-    // FEA-29: Name, leere Reihe, Mittelwerte für Jahres- und Monatsreihen.
+    // #40: Name, leere Reihe, Mittelwerte für Jahres- und Monatsreihen.
     #[test]
     fn name_empty_and_averages() {
         let y = DataSet::parse_csv("Jahre", CSV).unwrap();

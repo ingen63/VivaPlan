@@ -67,7 +67,7 @@ impl Issues {
 
 pub fn validate(plan: &Plan) -> Vec<Issue> {
     let mut v = Issues(vec![]);
-    // Ältere Säule 3a an der Hypothek wie beim Laden übernehmen (FEA-37).
+    // Ältere Säule 3a an der Hypothek wie beim Laden übernehmen (#52).
     let plan = crate::upgrade::normalized(plan);
     check(&plan, &mut v);
     v.0
@@ -307,7 +307,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     let pk_lumpsum = [pk.lumpsum, plan.partner.as_ref().map_or(0.0, |q| q.pk.lumpsum)];
     let retire = retire_dates.iter().flatten().max().copied();
 
-    // FEA-38: Feste Meilensteine je Person innerhalb der Grenzen aus den Einstellungen (FEA-24).
+    // #51: Feste Meilensteine je Person innerhalb der Grenzen aus den Einstellungen (#25).
     let lim = plan.limits;
     for problem in lim.problems() {
         v.err("general", format!("Einstellungen: {problem}"));
@@ -332,7 +332,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 }
             }
         }
-        // FEA-38: Erwerbseinkommen nach dem Bezug der Pensionskasse (Warnung).
+        // #51: Erwerbseinkommen nach dem Bezug der Pensionskasse (Warnung).
         let (income, indexed) = if i == 0 {
             (Some(&plan.flows.income), plan.flows.income_indexed)
         } else {
@@ -341,7 +341,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 plan.partner.as_ref().is_some_and(|q| q.income_indexed),
             )
         };
-        // FEA-43: Mit der Teuerung steht der Betrag in Preisen des Starts (die Teuerung hängt vom Pfad ab).
+        // #58: Mit der Teuerung steht der Betrag in Preisen des Starts (die Teuerung hängt vom Pfad ab).
         let prices = if indexed {
             " in Preisen des Simulationsstarts"
         } else {
@@ -370,7 +370,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     // Geldflüsse und Vermögen
     series(v, "flows", "Einkommen", &plan.flows.income, None);
     series(v, "flows", "Ausgaben", &plan.flows.spending, None);
-    // FEA-39: Die Lebenshaltungskosten enthalten die Wohnkosten; jede Zeile muss mindestens den Wohnanteil enthalten.
+    // #53: Die Lebenshaltungskosten enthalten die Wohnkosten; jede Zeile muss mindestens den Wohnanteil enthalten.
     if plan.flows.spending_includes_housing {
         let w = crate::housing::start_housing(plan, &r);
         let check = |v: &mut Issues, field: String, x: f64| {
@@ -429,7 +429,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     );
     series(v, "returns", "Inflation", &ret.fixed.inflation, Some((-0.99, 10.0)));
     series(v, "returns", "SARON", &ret.fixed.saron, Some((-0.99, 10.0)));
-    // FEA-53: Gewichte von «Welt individuell»
+    // #69: Gewichte von «Welt individuell»
     if let Some(st) = ret
         .strategy
         .as_ref()
@@ -499,7 +499,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                     "Die 3-Topf-Strategie beginnt mit der Pensionierung; ohne Bezugsdatum gilt durchgehend «Standard».",
                 );
             }
-            // FEA-05: Steuern die Guardrails die Ausgaben, gelten ihre Prüfungen und die der Grenzen.
+            // #6: Steuern die Guardrails die Ausgaben, gelten ihre Prüfungen und die der Grenzen.
             if plan.withdrawal.buckets_with_guardrails() {
                 check_guardrails(v, &plan.withdrawal);
                 check_limits(v, &plan.withdrawal);
@@ -580,7 +580,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // ISS-18: Steuerfuss und Satztabellen (Einkommen, Vermögen, Kapitalbezug, auch Verheiratete). Ohne Prüfung ergab
+    // #98: Steuerfuss und Satztabellen (Einkommen, Vermögen, Kapitalbezug, auch Verheiratete). Ohne Prüfung ergab
     // ein Satz von −10¹⁵ ungültige Zahlen in der Simulation.
     let t = &plan.taxes;
     if !(0.0..=10.0).contains(&t.multiplier) {
@@ -827,7 +827,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             } else {
                 buy
             };
-            // FEA-37: Konto der indirekten Amortisation; FEA-36: indirekt nur bis vor dem AHV-Bezug dieser Person.
+            // #52: Konto der indirekten Amortisation; #50: indirekt nur bis vor dem AHV-Bezug dieser Person.
             let account = match &t.pillar3a {
                 None => Some(0),
                 Some(id) => {
@@ -892,7 +892,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Säule 3a (FEA-37): Konten, Einzahlung, Auszahlungsplan; Maximalbetrag mit der indirekten Amortisation.
+    // Säule 3a (#52): Konten, Einzahlung, Auszahlungsplan; Maximalbetrag mit der indirekten Amortisation.
     let lim = plan.limits;
     for (k, acc) in plan.pillar3a.iter().enumerate() {
         let f = |name: &str| format!("pillar3a.{k}.{name}");
@@ -951,7 +951,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             v.warn("pillar3a", format!("{who}: «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation voraus; der Rest geht ins freie Vermögen."));
         }
         for (j, x) in acc.payouts.iter().enumerate() {
-            // FEA-41: Zeitpunkt als Datum oder Alter; die Meldung steht am jeweiligen Feld.
+            // #55: Zeitpunkt als Datum oder Alter; die Meldung steht am jeweiligen Feld.
             let at_field = match x.kind {
                 PayoutAt::Date => format!("pillar3a.{k}.payouts.{j}.date"),
                 PayoutAt::Age => format!("pillar3a.{k}.payouts.{j}.years"),
@@ -1066,7 +1066,7 @@ mod tests {
             json!({"id": "end", "kind": "date", "name": "Simulationsende", "date": date, "fixed": true});
     }
 
-    // FEA-29: Grenzwerte der Prüfungen (der Grenzwert selbst ist jeweils erlaubt).
+    // #40: Grenzwerte der Prüfungen (der Grenzwert selbst ist jeweils erlaubt).
     #[test]
     fn period_birth_and_milestones() {
         assert!(messages(&base()).is_empty(), "{:?}", messages(&base()));
@@ -1399,7 +1399,7 @@ mod tests {
             "SARON-Marge"
         ));
 
-        // FEA-36/FEA-37: Indirekte Amortisation zählt bis vor dem AHV-Bezug (2031-11) zum 3a-Maximalbetrag.
+        // #50/#52: Indirekte Amortisation zählt bis vor dem AHV-Bezug (2031-11) zum 3a-Maximalbetrag.
         let ind = |term: f64, amort: f64, mode: &str| {
             owned(json!([{"type": "fixed", "term": term, "rate": 0.01, "amort": amort, "amortMode": mode}]))
         };
@@ -1428,7 +1428,7 @@ mod tests {
         };
         assert!(!has(&ends("2021-11"), MAX));
         assert!(has(&ends("2021-12"), MAX));
-        // FEA-36: Eine Periode ab dem AHV-Bezug ist direkt und zählt nicht; einen Monat davor schon.
+        // #50: Eine Periode ab dem AHV-Bezug ist direkt und zählt nicht; einen Monat davor schon.
         assert!(!has(&ends("2031-11"), MAX));
         assert!(has(&ends("2031-10"), MAX));
     }
@@ -1438,7 +1438,7 @@ mod tests {
         with(|v| v["pillar3a"] = json!([account]))
     }
 
-    // FEA-37/AK4, AK5: Auszahlungsplan frühestens 5 Jahre vor dem AHV-Bezug, Betrag grösser als 0.
+    // #52/AK4, AK5: Auszahlungsplan frühestens 5 Jahre vor dem AHV-Bezug, Betrag grösser als 0.
     #[test]
     fn pillar3a_payout_plan() {
         let pay = |date: &str| {
@@ -1457,7 +1457,7 @@ mod tests {
         let zero =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": 0}]}));
         assert!(has(&zero, "muss grösser als 0 sein"));
-        // FEA-70: negativer Betrag ist ebenfalls ungültig (Bedingung `b.is_nan() || b <= 0.0`).
+        // #88: negativer Betrag ist ebenfalls ungültig (Bedingung `b.is_nan() || b <= 0.0`).
         let negative =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": -1}]}));
         assert!(has(&negative, "muss grösser als 0 sein"));
@@ -1468,7 +1468,7 @@ mod tests {
         assert!(!has(&whole, "muss grösser als 0 sein"), "ohne Betrag: ganzes Guthaben");
     }
 
-    // FEA-37: Konto, Zins, Verwendung, PK-Kapitalbezug im selben Jahr.
+    // #52: Konto, Zins, Verwendung, PK-Kapitalbezug im selben Jahr.
     #[test]
     fn pillar3a_account() {
         assert!(has(
@@ -1514,7 +1514,7 @@ mod tests {
         assert!(!has(&same("2030-12", 0.5), SAME));
     }
 
-    // FEA-37/AK7 und FEA-37/AK10: Einzahlung zwischen 0 und dem Maximalbetrag (Einstellungen), mit der indirekten Amortisation zusammen (Warnung, keine Sperre).
+    // #52/AK7 und #52/AK10: Einzahlung zwischen 0 und dem Maximalbetrag (Einstellungen), mit der indirekten Amortisation zusammen (Warnung, keine Sperre).
     #[test]
     fn pillar3a_contribution() {
         let c = |x: f64| with_3a(json!({"person": "A", "contribution": x}));
@@ -1523,7 +1523,7 @@ mod tests {
         assert!(!has(&c(7258.0), RANGE));
         assert!(has(&c(7258.5), RANGE));
         assert!(has(&c(-1.0), RANGE));
-        // Maximalbetrag aus den Einstellungen (FEA-24)
+        // Maximalbetrag aus den Einstellungen (#25)
         let mut higher = c(7500.0);
         higher["limits"] = json!({"pillar3aMax": 8000});
         assert!(!has(&higher, "Die Einzahlung muss"));
@@ -1548,7 +1548,7 @@ mod tests {
             .contains("Einzahlung (3'259) und indirekte Amortisation (4'000)"));
     }
 
-    // --- FEA-97/AK7: Säule 3a mit zwei Personen, Hinweis «Hypothek zurückzahlen», Frankenbeträge ---
+    // --- #124/AK7: Säule 3a mit zwei Personen, Hinweis «Hypothek zurückzahlen», Frankenbeträge ---
 
     /// Zweite Person B (Geburt 1970-11, AHV-Bezug 2035-11).
     fn couple(v: &mut Value) {
@@ -1583,7 +1583,7 @@ mod tests {
     const OVER: &str = "Einzahlung (0) und indirekte Amortisation (8'000) übersteigen zusammen den Maximalbetrag";
 
     #[test]
-    fn fea97_ak7_indirect_amortization_per_person() {
+    fn issue_124_ak7_indirect_amortization_per_person() {
         // Tranche in die 3a von B (8'000 pro Jahr): Die Warnung nennt B, nicht A.
         let v = with(|v| {
             couple(v);
@@ -1608,7 +1608,7 @@ mod tests {
     }
 
     #[test]
-    fn fea97_ak7_repay_needs_an_indirect_tranche() {
+    fn issue_124_ak7_repay_needs_an_indirect_tranche() {
         const REPAY: &str =
             "«Hypothek zurückzahlen» (Auszahlung im 01.2032) setzt eine Tranche mit indirekter Amortisation voraus";
         let account = |usage: &str| {
@@ -1628,7 +1628,7 @@ mod tests {
     }
 
     #[test]
-    fn fea97_ak7_chf_formats_with_thousands_separator() {
+    fn issue_124_ak7_chf_formats_with_thousands_separator() {
         assert_eq!(chf(0.0), "0");
         assert_eq!(chf(-0.4), "0");
         assert_eq!(chf(-1234.4), "-1'234");

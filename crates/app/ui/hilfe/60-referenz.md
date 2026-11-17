@@ -72,7 +72,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV
 
-Die Desktop-App führt die Bibliothek im Datenordner der App und legt fehlende mitgelieferte Reihen dort an. Die [Anlagestrategie](#f-ret-series) verwendet daraus «Shiller CHF», «Shiller CHF + CH-Obligationen» und die SNB-Daten im Unterordner `quellen`, so dass aktualisierte Shiller- und SNB-Daten wirken; fehlt eine Datei, gilt die eingebaute. Eigene Dateien im Ordner verwendet die App nicht mehr (FEA-53). Unter macOS: `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`. Planungen verweisen mit `library:Name.csv` auf eine Reihe der Bibliothek, unabhängig davon, wo die Planung gespeichert ist.
+Die Desktop-App führt die Bibliothek im Datenordner der App und legt fehlende mitgelieferte Reihen dort an. Die [Anlagestrategie](#f-ret-series) verwendet daraus «Shiller CHF», «Shiller CHF + CH-Obligationen» und die SNB-Daten im Unterordner `quellen`, so dass aktualisierte Shiller- und SNB-Daten wirken; fehlt eine Datei, gilt die eingebaute. Eigene Dateien im Ordner verwendet die App nicht mehr. Unter macOS: `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`. Planungen verweisen mit `library:Name.csv` auf eine Reihe der Bibliothek, unabhängig davon, wo die Planung gespeichert ist.
 
 Eine bereits vorhandene Bibliothek ergänzt die App nicht von selbst um neu mitgelieferte Reihen. Kopieren Sie sie bei Bedarf in den Ordner. Die Indizes stehen unter [Anlagestrategie](#f-ret-series).
 

@@ -1,8 +1,8 @@
 //! Fortschritt und Abbruch langer Berechnungen (Simulation, Szenarien, Optimierung).
 //!
-//! Jede Berechnung ist ein [`Job`] mit eigener Kennung, eigenem Abbruch und eigenem Zähler (FEA-83). Der Job der
+//! Jede Berechnung ist ein [`Job`] mit eigener Kennung, eigenem Abbruch und eigenem Zähler (#107). Der Job der
 //! laufenden Berechnung hängt am Thread, der sie aufgerufen hat; [`par_map`], [`tick`] und [`cancelled`] wirken auf ihn.
-//! Ohne Job (zum Beispiel bei der Messung der Rechenzeit) gibt es weder Abbruch noch Zähler (ISS-20). Gezählt werden
+//! Ohne Job (zum Beispiel bei der Messung der Rechenzeit) gibt es weder Abbruch noch Zähler (#104). Gezählt werden
 //! Läufe (ein Lauf = ein Renditepfad durch die Planung).
 
 use rayon::prelude::*;
@@ -156,7 +156,7 @@ pub fn cancel_job(id: JobId) -> bool {
     }
 }
 
-/// Ist für die Berechnung dieses Threads ein Abbruch verlangt? Ohne Job und nach dessen Ende nie (ISS-20).
+/// Ist für die Berechnung dieses Threads ein Abbruch verlangt? Ohne Job und nach dessen Ende nie (#104).
 pub fn cancelled() -> bool {
     current().is_some_and(|j| j.active.load(Relaxed) && j.cancel.load(Relaxed))
 }
@@ -215,12 +215,12 @@ where
 mod tests {
     use super::*;
 
-    // FEA-83/AK5: Jeder Test benutzt eigene Kennungen und liest nur den Stand seiner Berechnung (`snapshot_of`); der
+    // #107/AK5: Jeder Test benutzt eigene Kennungen und liest nur den Stand seiner Berechnung (`snapshot_of`); der
     // Abbruch gilt je Kennung (`cancel_job`) und der Thread-Job ist threadlokal. Die Tests stören sich daher nicht, auch
     // wenn sie im selben Prozess laufen. Die prozessweiten Aufrufe `cancel()` (alle Berechnungen) und `snapshot()`
     // (zuletzt gestartete) prüft `crates/engine/tests/cancel.rs` mit einer echten Berechnung.
 
-    // FEA-29: Zähler und Gesamtzahl einer Berechnung.
+    // #40: Zähler und Gesamtzahl einer Berechnung.
     #[test]
     fn counters_follow_the_job() {
         let job = start_as(Some(3001), 10);
@@ -237,7 +237,7 @@ mod tests {
         assert!(!snapshot_of(id).active);
     }
 
-    // ISS-20: Nach dem Ende der Berechnung wirkt ein Abbruch nicht mehr; eine Rechnung ohne Job läuft ganz durch.
+    // #104: Nach dem Ende der Berechnung wirkt ein Abbruch nicht mehr; eine Rechnung ohne Job läuft ganz durch.
     #[test]
     fn a_cancel_does_not_outlive_its_job() {
         let job = start_as(Some(3002), 10);
@@ -281,7 +281,7 @@ mod tests {
         }
     }
 
-    // FEA-83/AK2, FEA-83/AK3: Zwei Berechnungen gleichzeitig beeinflussen sich nicht. Dieser Test braucht nur Kennungen
+    // #107/AK2, #107/AK3: Zwei Berechnungen gleichzeitig beeinflussen sich nicht. Dieser Test braucht nur Kennungen
     // und `cancel_job`, nie das globale `cancel()`.
     #[test]
     fn two_jobs_run_side_by_side_and_cancel_one() {
@@ -330,7 +330,7 @@ mod tests {
         assert!(!cancel_job(1001) && !cancel_job(1002));
     }
 
-    // FEA-83/AK1: Eine bereits vergebene Kennung wird nicht doppelt benutzt; verschachtelte Jobs stellen den äusseren wieder her.
+    // #107/AK1: Eine bereits vergebene Kennung wird nicht doppelt benutzt; verschachtelte Jobs stellen den äusseren wieder her.
     #[test]
     fn ids_are_unique_and_jobs_nest() {
         let outer = start_as(Some(2001), 10);

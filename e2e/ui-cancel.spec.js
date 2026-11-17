@@ -8,7 +8,7 @@ const path = require("path");
 
 /**
  * Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler.
- * FEA-87: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
+ * #111: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
  * der Rechnerlast abhängig. Tests, die die echte Messung prüfen, öffnen mit `{ bench: true }`.
  */
 async function open(page, hash = "", { bench = false } = {}) {
@@ -29,12 +29,12 @@ test.describe("Abbrechen laufender Berechnungen", () => {
   test("Abbrechen beendet eine laufende Optimierung", async ({ page }) => {
     test.setTimeout(120_000);
     const errors = await open(page, "optimize/bootstrap/optset");
-    // Über die Planung setzen: saveOptCfg liest die Felder und würde ein direkt gesetztes optCfg überschreiben (ISS-16)
+    // Über die Planung setzen: saveOptCfg liest die Felder und würde ein direkt gesetztes optCfg überschreiben (#79)
     const big = await page.evaluate(() => { state.optimization = optToPlan({ ...optCfg, paths: 20000, checkPaths: 20000, samples: 60 }); renderSection(); return readOptCfg(); });
     expect(big).toMatchObject({ paths: 20000, checkPaths: 20000, samples: 60 });
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("#jobCancel")).toBeVisible();
-    // FEA-65: abbrechen, sobald die Optimierung nachweislich rechnet (Fortschrittsbalken über 0), statt fest zu warten
+    // #83: abbrechen, sobald die Optimierung nachweislich rechnet (Fortschrittsbalken über 0), statt fest zu warten
     await expect.poll(() => page.evaluate(() => document.getElementById("jobBar")?.value ?? 0), { timeout: 60_000 }).toBeGreaterThan(0);
     await page.locator("#jobCancel").click();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off", { timeout: 60_000 });

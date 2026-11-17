@@ -40,7 +40,7 @@ const Charts = (() => {
     }).join("");
   }
   /**
-   * Bezugslinie (FEA-89): die Linie, an der ein Ergebnis kippt (meist 0, im Index 100), dicker als das Raster und hinter
+   * Bezugslinie (#114): die Linie, an der ein Ergebnis kippt (meist 0, im Index 100), dicker als das Raster und hinter
    * den Daten. `at` ist die Position im Skalenraum (bei logarithmischer Skala log10); ausserhalb des Bereichs keine Linie.
    */
   function refLine(f, ys, at, y) {
@@ -154,7 +154,7 @@ const Charts = (() => {
         lastLabel = f.x(i);
       }
     }
-    // FEA-94: Bei fester Achse (range) werden Werte ausserhalb am Rand abgeschnitten, nicht verzerrt
+    // #121: Bei fester Achse (range) werden Werte ausserhalb am Rand abgeschnitten, nicht verzerrt
     const clip = o.range ? `clip-${svg.id || "t"}` : null;
     if (clip) h += `<clipPath id="${clip}"><rect x="${f.L}" y="${f.T - 2}" width="${f.W - f.L - f.R}" height="${f.H - f.T - f.B + 4}"/></clipPath><g class="clipped" clip-path="url(#${clip})">`;
     for (const b of o.bands || []) {
@@ -201,7 +201,7 @@ const Charts = (() => {
     const n = o.cats.length;
     if (!n) { svg.innerHTML = ""; return; }
     const groups = [...new Set(o.series.map(s => s.group ?? s.label))];
-    // FEA-93: Mindestbreite eines Balkens (o.minBar, px); reicht die Breite nicht, wird die Grafik breiter und scrollt waagrecht
+    // #120: Mindestbreite eines Balkens (o.minBar, px); reicht die Breite nicht, wird die Grafik breiter und scrollt waagrecht
     if (o.minBar) {
       svg.style.width = ""; svg.parentElement?.classList.remove("hscroll");
       const need = f.L + f.R + n * o.minBar * groups.length / 0.8;
@@ -261,7 +261,7 @@ const Charts = (() => {
       const p = hist.counts[i] / total * 100, x0 = f.x(hist.edges[i]), x1 = f.x(hist.edges[i + 1]);
       h += `<rect x="${(x0 + 0.5).toFixed(1)}" y="${f.y(p).toFixed(1)}" width="${Math.max(0.5, x1 - x0 - 1).toFixed(1)}" height="${(f.y(0) - f.y(p)).toFixed(1)}" fill="${color(o.color || "--c1")}" fill-opacity=".75"/>`;
     }
-    // Bezugslinie (FEA-89): hier liegt der Wert auf der waagrechten Achse, also senkrecht bei 0 (z. B. Endvermögen 0)
+    // Bezugslinie (#114): hier liegt der Wert auf der waagrechten Achse, also senkrecht bei 0 (z. B. Endvermögen 0)
     if (lo <= 0 && hi >= 0) h += `<line class="ref" x1="${f.x(0)}" x2="${f.x(0)}" y1="${f.T}" y2="${f.H - f.B}" stroke="${cssv("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
     const sx = scale(lo, hi, false);
     for (const v of sx.ticks) if (v >= lo && v <= hi) h += `<text x="${f.x(v)}" y="${f.H - 8}" text-anchor="middle" font-size="10.5" fill="${cssv("--muted")}">${o.xFmt(v)}</text>`;

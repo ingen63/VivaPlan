@@ -1,4 +1,4 @@
-//! FEA-41: Auszahlungsplan der Säule 3a mit Datum oder Alter, Anzeige des Guthabens aus der Vorschau.
+//! #55: Auszahlungsplan der Säule 3a mit Datum oder Alter, Anzeige des Guthabens aus der Vorschau.
 //!
 //! Erfundene Planung: Geburt 1980-06, Start 2040-01, AHV-Bezug mit 65 Jahren (2045-06), frühestens 5 Jahre davor
 //! (2040-06); keine Renditen, keine Teuerung, keine Steuern.
@@ -41,9 +41,9 @@ fn errors(v: &Value) -> Vec<(Option<String>, String)> {
         .collect()
 }
 
-/// FEA-41/AK2: Geburt 1980-06, Alter 61.5 ergibt 12.2041.
+/// #55/AK2: Geburt 1980-06, Alter 61.5 ergibt 12.2041.
 #[test]
-fn fea41_ak2_age_gives_the_month() {
+fn issue_55_ak2_age_gives_the_month() {
     let plan: Plan = serde_json::from_value(base(json!([{ "kind": "age", "years": 61.5, "amount": 50_000 }]))).unwrap();
     let x = &plan.pillar3a[0].payouts[0];
     assert_eq!(x.kind, PayoutAt::Age);
@@ -60,9 +60,9 @@ fn fea41_ak2_age_gives_the_month() {
         .all(|x| x.month(Some(ym(1980, 6))).is_none()));
 }
 
-/// FEA-41/AK3: «frühestens 5 Jahre vor dem AHV-Bezug» gilt auch nach Alter; die Meldung steht am Feld «years».
+/// #55/AK3: «frühestens 5 Jahre vor dem AHV-Bezug» gilt auch nach Alter; die Meldung steht am Feld «years».
 #[test]
-fn fea41_ak3_earliest_rule_for_age_rows() {
+fn issue_55_ak3_earliest_rule_for_age_rows() {
     assert!(
         errors(&base(json!([{ "kind": "age", "years": 60, "amount": 1000 }]))).is_empty(),
         "60 Jahre = 2040-06 ist erlaubt"
@@ -91,10 +91,10 @@ fn fea41_ak3_earliest_rule_for_age_rows() {
     );
 }
 
-/// FEA-41/AK4, AK5: Guthaben 120'000, Zeile 2041 (Alter 61.5) mit 50'000: vor 120'000, Rest 70'000; im AHV-Bezug 70'000.
+/// #55/AK4, AK5: Guthaben 120'000, Zeile 2041 (Alter 61.5) mit 50'000: vor 120'000, Rest 70'000; im AHV-Bezug 70'000.
 /// Die Vorschau liefert ausserdem das Guthaben jedes Monats (für das Vorabfüllen, AK6/AK7: 2042-12 → 70'000).
 #[test]
-fn fea41_ak4_ak5_preview_shows_balances() {
+fn issue_55_ak4_ak5_preview_shows_balances() {
     let v = base(json!([{ "kind": "age", "years": 61.5, "amount": 50_000 }]));
     let out = api::preview(&v, Path::new("/"), None);
     assert!(out.error.is_none(), "{:?}", out.error);
@@ -116,9 +116,9 @@ fn fea41_ak4_ak5_preview_shows_balances() {
     assert!(saved.get("pillar3a").is_none());
 }
 
-/// FEA-41: Die Simulation zahlt nach Alter wie nach Datum aus; gleiche Zeitpunkte ergeben gleiche Ergebnisse.
+/// #55: Die Simulation zahlt nach Alter wie nach Datum aus; gleiche Zeitpunkte ergeben gleiche Ergebnisse.
 #[test]
-fn fea41_age_and_date_rows_give_the_same_result() {
+fn issue_55_age_and_date_rows_give_the_same_result() {
     let run = |v: Value| api::preview(&v, Path::new("/"), None).result.unwrap();
     let a = run(base(json!([{ "kind": "age", "years": 61.5, "amount": 50_000 }])));
     let d = run(base(json!([{ "date": "2041-12", "amount": 50_000 }])));
@@ -127,9 +127,9 @@ fn fea41_age_and_date_rows_give_the_same_result() {
     }
 }
 
-/// FEA-41/AK8: Ältere Zeilen nur mit Datum bleiben gültig, gelten als «Datum» und werden ohne «kind» geschrieben.
+/// #55/AK8: Ältere Zeilen nur mit Datum bleiben gültig, gelten als «Datum» und werden ohne «kind» geschrieben.
 #[test]
-fn fea41_ak8_older_rows_stay_dates() {
+fn issue_55_ak8_older_rows_stay_dates() {
     let v = base(json!([{ "date": "2041-01", "amount": 10_000, "use": "wealth" }]));
     assert!(errors(&v).is_empty());
     let plan: Plan = serde_json::from_value(v.clone()).unwrap();
@@ -144,9 +144,9 @@ fn fea41_ak8_older_rows_stay_dates() {
         .is_none());
 }
 
-/// FEA-41: Auszahlung vor dem Start wird auf den Start gelegt; mehrere Zeilen im selben Monat laufen in Planreihenfolge.
+/// #55: Auszahlung vor dem Start wird auf den Start gelegt; mehrere Zeilen im selben Monat laufen in Planreihenfolge.
 #[test]
-fn fea41_before_start_and_same_month_rows() {
+fn issue_55_before_start_and_same_month_rows() {
     let v = base(json!([
         { "date": "2040-06", "amount": 30_000 },
         { "date": "2040-06", "amount": 20_000 },
@@ -175,9 +175,9 @@ fn fea41_before_start_and_same_month_rows() {
     );
 }
 
-/// FEA-41: Zwei Personen haben je eine eigene Ansicht, Alter zählt ab der jeweiligen Geburt.
+/// #55: Zwei Personen haben je eine eigene Ansicht, Alter zählt ab der jeweiligen Geburt.
 #[test]
-fn fea41_two_people_each_get_a_view() {
+fn issue_55_two_people_each_get_a_view() {
     let mut v = base(json!([{ "kind": "age", "years": 61, "amount": 50_000 }]));
     v["household"]["persons"] = json!([
         { "id": "A", "name": "A", "birth": "1980-06" },

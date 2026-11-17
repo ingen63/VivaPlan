@@ -1,4 +1,4 @@
-//! FEA-51/FEA-52: Weltindex aus den JST-Daten und die Reihe «Welt (JST)».
+//! #67/#68: Weltindex aus den JST-Daten und die Reihe «Welt (JST)».
 //!
 //! Auszug und Reihe neu erzeugen: `JST_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^jst::/)'`.
 
@@ -34,7 +34,7 @@ fn extract_matches_the_database_file() {
     assert_eq!(raw.last_year(), 2020);
 }
 
-/// FEA-52/AK5: Die ausgelieferte Reihe «Welt (JST)» entsteht genau so aus dem Auszug und den SNB-Daten.
+/// #68/AK5: Die ausgelieferte Reihe «Welt (JST)» entsteht genau so aus dem Auszug und den SNB-Daten.
 #[test]
 fn shipped_world_series_matches_the_sources() {
     let ds = jst::world_dataset(&JstData::builtin(), &SnbData::builtin()).unwrap();
@@ -58,12 +58,12 @@ fn at(v: &[f64], y: i32) -> f64 {
     v[(y - jst::FIRST_YEAR) as usize]
 }
 
-/// FEA-51/AK3: Drei Jahre unabhängig nachgerechnet, direkt aus den Zeilen des Auszugs: Rendite je Land in CHF über die
+/// #67/AK3: Drei Jahre unabhängig nachgerechnet, direkt aus den Zeilen des Auszugs: Rendite je Land in CHF über die
 /// Kurse Ende Jahr, Gewicht = BIP pro Kopf × Bevölkerung des Vorjahres, Länder ohne Rendite fallen weg.
-/// Die Rohdaten und die Zwischenwerte der Jahre 1950, 1990 und 2008 stehen in `docs/FEA-51 FEA-52 Weltindex
+/// Die Rohdaten und die Zwischenwerte der Jahre 1950, 1990 und 2008 stehen in `docs/Weltindex
 /// JST.md` (Abschnitt «Stichjahre 1950, 1990, 2008»).
 #[test]
-fn fea51_ak3_three_years_by_hand() {
+fn issue_67_ak3_three_years_by_hand() {
     let d = JstData::builtin();
     let countries = [
         "CHE", "USA", "DEU", "FRA", "ITA", "ESP", "NLD", "BEL", "GBR", "JPN", "AUS",
@@ -88,10 +88,10 @@ fn fea51_ak3_three_years_by_hand() {
     assert!((at(&w.stocks, 2008) + 0.41).abs() < 0.01, "{}", at(&w.stocks, 2008));
 }
 
-/// FEA-51/AK1: Gewichte je Jahr: Summe 100 %, die USA ab 1950 rund die Hälfte; AK2: die fehlenden Länderjahre sind genau
+/// #67/AK1: Gewichte je Jahr: Summe 100 %, die USA ab 1950 rund die Hälfte; AK2: die fehlenden Länderjahre sind genau
 /// die dokumentierten.
 #[test]
-fn fea51_ak1_ak2_weights_and_gaps() {
+fn issue_67_ak1_ak2_weights_and_gaps() {
     let d = JstData::builtin();
     let all: Vec<&str> = jst::REGIONS.iter().flat_map(|r| r.countries.iter().copied()).collect();
     for year in jst::FIRST_YEAR..=2020 {
@@ -135,10 +135,10 @@ fn geo(v: impl Iterator<Item = f64>) -> f64 {
     (log / n).exp() - 1.0
 }
 
-/// FEA-51/AK4: Kennzahlen für den Vergleich mit DMS (Werte in `docs/FEA-51 FEA-52 Weltindex JST.md`).
+/// #67/AK4: Kennzahlen für den Vergleich mit DMS (Werte in `docs/Weltindex JST.md`).
 /// DMS (Global Investment Returns Yearbook 2021) nennt für 1900–2020 5,3 % reale Rendite pro Jahr in USD.
 #[test]
-fn fea51_ak4_figures_for_the_dms_comparison() {
+fn issue_67_ak4_figures_for_the_dms_comparison() {
     let d = JstData::builtin();
     let w = world();
     let ch = |y: i32| d.row("CHE", y).unwrap().xrusd.unwrap();
@@ -167,10 +167,10 @@ fn fea51_ak4_figures_for_the_dms_comparison() {
     );
 }
 
-/// FEA-52/AK2: Obligationen der Eidgenossenschaft: JST bis 1988, ab 1989 aus den SNB-Monatsrenditen; fortlaufend, ohne
+/// #68/AK2: Obligationen der Eidgenossenschaft: JST bis 1988, ab 1989 aus den SNB-Monatsrenditen; fortlaufend, ohne
 /// Lücke beim Übergang; 1915 der Coupon.
 #[test]
-fn fea52_ak2_ch_bonds_switch_from_jst_to_snb_without_a_gap() {
+fn issue_68_ak2_ch_bonds_switch_from_jst_to_snb_without_a_gap() {
     let d = JstData::builtin();
     let snb = SnbData::builtin();
     let (first, bonds) = jst::ch_bonds_yearly(&d, &snb).unwrap();
@@ -197,9 +197,9 @@ fn fea52_ak2_ch_bonds_switch_from_jst_to_snb_without_a_gap() {
     }
 }
 
-/// FEA-52/AK1, AK3, AK4: Reihe «Welt (JST)» 1900 bis 2020, jährlich, in CHF; Quelle, Zitate und Lizenz im Dateikopf.
+/// #68/AK1, AK3, AK4: Reihe «Welt (JST)» 1900 bis 2020, jährlich, in CHF; Quelle, Zitate und Lizenz im Dateikopf.
 #[test]
-fn fea52_world_series_range_and_source() {
+fn issue_68_world_series_range_and_source() {
     let w = world();
     assert_eq!(w.freq, Freq::Yearly);
     assert_eq!((w.first, w.last()), (YearMonth::new(1900, 1), YearMonth::new(2020, 12)));

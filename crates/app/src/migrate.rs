@@ -1,4 +1,4 @@
-//! FEA-34: Einmalige Übernahme der App-Daten des bisherigen Identifiers.
+//! #44: Einmalige Übernahme der App-Daten des bisherigen Identifiers.
 //!
 //! Der neue Bundle-Identifier ergibt neue Datenordner. Ist ein neuer Ordner leer oder fehlt er und gibt es den alten,
 //! kopiert der erste Start den alten Inhalt hinüber: Einstellungen mit der zuletzt geöffneten Datei und den
@@ -89,7 +89,7 @@ mod tests {
         d
     }
 
-    /// FEA-34/AK4: Einstellungen, Zeitreihen und Unterordner werden kopiert, der alte Ordner bleibt bestehen.
+    /// #44/AK4: Einstellungen, Zeitreihen und Unterordner werden kopiert, der alte Ordner bleibt bestehen.
     #[test]
     fn alter_ordner_wird_in_den_leeren_neuen_kopiert_und_bleibt_bestehen() {
         let root = tmp("copy");

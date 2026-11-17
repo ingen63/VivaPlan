@@ -2,7 +2,7 @@
 // getrennt in Kopfdaten (für die Liste) und Inhalt (Planung und Ergebnis). Es werden keine Daten gesendet.
 "use strict";
 const Runs = (() => {
-  // legacy: RetirementPlanner – Name der Datenbank bleibt, damit die übernommenen Ergebnisse sichtbar bleiben (FEA-34).
+  // legacy: RetirementPlanner – Name der Datenbank bleibt, damit die übernommenen Ergebnisse sichtbar bleiben (#44).
   const DB = "retirementplanner", META = "meta", DATA = "data";
   const mem = { meta: new Map(), data: new Map() };
   let dbp = null, memoryOnly = false;

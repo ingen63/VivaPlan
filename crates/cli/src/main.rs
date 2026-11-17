@@ -3,7 +3,7 @@
 mod devserver;
 mod optimize;
 
-// ISS-22: Speichergrenze je Testprozess (engine::test_alloc).
+// #116: Speichergrenze je Testprozess (engine::test_alloc).
 #[cfg(test)]
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;

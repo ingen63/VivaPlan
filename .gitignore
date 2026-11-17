@@ -3,7 +3,7 @@ target/
 .obsidian/
 __pycache__/
 
-# Lokale Artefakte, nie einchecken (FEA-35): Mutationsläufe (local/mutants.out), Berichte der Testqualität
+# Lokale Artefakte, nie einchecken (#48): Mutationsläufe (local/mutants.out), Berichte der Testqualität
 # (local/test-quality), eigene Planungen und alte Konfigurationen (local/eigene), Notizen zu Issues, Recherche
 local/
 
@@ -22,5 +22,5 @@ fuzz/artifacts/
 # Startdatei der Vorschau in der Claude-App, nur lokal
 .claude/launch.json
 
-# FEA-76: Shillers Originaltabelle ohne Lizenz, nur lokal (Download: shillerdata.com)
+# #94: Shillers Originaltabelle ohne Lizenz, nur lokal (Download: shillerdata.com)
 crates/engine/data/quellen/shiller-index.ods

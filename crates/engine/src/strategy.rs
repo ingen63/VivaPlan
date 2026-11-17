@@ -1,10 +1,10 @@
-//! FEA-53: Anlagestrategie. Die Planung wählt je einen Index für Aktien und Obligationen; daraus entsteht die Zeitreihe
+//! #69: Anlagestrategie. Die Planung wählt je einen Index für Aktien und Obligationen; daraus entsteht die Zeitreihe
 //! der Simulation.
 //!
 //! - Kombinationen, die es als ausgelieferte Reihe gibt, liefern genau diese Reihe (Datenbibliothek, sonst die
 //!   eingebaute): S&P 500 mit US-Obligationen = «Shiller CHF» (monatlich), S&P 500 mit Obligationen der
 //!   Eidgenossenschaft = «Shiller CHF + CH-Obligationen» (monatlich ab 1988).
-//! - Alle anderen Kombinationen sind jährlich (Entscheid zu FEA-53: jährlich, sobald ein Teil jährlich ist), über die
+//! - Alle anderen Kombinationen sind jährlich (Entscheid zu #69: jährlich, sobald ein Teil jährlich ist), über die
 //!   Jahre, für die alle Teile Werte haben. Monatsreihen werden zu Kalenderjahren verknüpft.
 //! - Teuerung aus der Quelle der Aktien; SARON (Jahresmittel) aus den SNB-Werten in «Shiller CHF».
 
@@ -183,7 +183,7 @@ pub fn dataset(s: &Investment, lib: Option<&Path>) -> Result<DataSet> {
     dataset_with_parts(s, lib).map(|(ds, _)| ds)
 }
 
-/// FEA-53/AK8: Aktien und Obligationen mit ihren eigenen Jahren (die Teuerung stammt aus der Quelle der Aktien).
+/// #69/AK8: Aktien und Obligationen mit ihren eigenen Jahren (die Teuerung stammt aus der Quelle der Aktien).
 fn parts(s: &Investment, stocks: (i32, i32), bonds: (i32, i32)) -> Vec<SeriesPart> {
     vec![
         SeriesPart {
@@ -227,7 +227,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
             ds.clone()
         };
         let stocks = years_of(&shiller);
-        // FEA-78: ganze Aktienreihe, monatlich wie der Bootstrap dieser Reihe
+        // #100: ganze Aktienreihe, monatlich wie der Bootstrap dieser Reihe
         ds.stock_series = Some(StockSeries {
             freq: Freq::Monthly,
             first: shiller.first,
@@ -364,7 +364,7 @@ pub fn from_reference(reference: &str, lib: Option<&Path>) -> Option<Result<Data
     Some(from_reference_with_parts(reference, lib)?.map(|(ds, _)| ds))
 }
 
-/// Wie [`from_reference`], mit den Teilen der Strategie und ihren eigenen Jahren (FEA-53/AK8).
+/// Wie [`from_reference`], mit den Teilen der Strategie und ihren eigenen Jahren (#69/AK8).
 pub fn from_reference_with_parts(reference: &str, lib: Option<&Path>) -> Option<Result<(DataSet, Vec<SeriesPart>)>> {
     let json = reference.strip_prefix(PREFIX)?;
     Some(

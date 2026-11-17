@@ -24,7 +24,7 @@
 //!
 //! Fixe Entnahmerate, Guardrails, VPW und Endowment bestimmen ab der Pensionierung der ersten Person die
 //! Lebenshaltung: jährliche Entnahme = Lebenshaltung + Wohnkosten − Einkommen und Renten (vor Steuern). Ein für einen
-//! Kauf reservierter Verkaufserlös zählt nicht zum Vermögen der Entnahme. Bei «3-Topf» mit Guardrails (FEA-05) steuern
+//! Kauf reservierter Verkaufserlös zählt nicht zum Vermögen der Entnahme. Bei «3-Topf» mit Guardrails (#6) steuern
 //! die Guardrails die Ausgaben und die Töpfe die Anlage; der Netto-Bedarf der Töpfe rechnet dann mit der
 //! Guardrails-Lebenshaltung.
 
@@ -56,7 +56,7 @@ pub enum EventKind {
     EmergencySale,
     MortgageRenewal,
     MortgageRepayment,
-    /// Wechsel von indirekter auf direkte Amortisation im Monat des AHV-Bezugs (FEA-36).
+    /// Wechsel von indirekter auf direkte Amortisation im Monat des AHV-Bezugs (#50).
     AmortizationSwitch,
     Pillar3aPayout,
     Buckets,
@@ -84,7 +84,7 @@ pub struct MonthRecord {
     pub pension_fund: f64,
     pub pillar3a: f64,
     pub total: f64,
-    /// Einzahlung in die Säule 3a in diesem Monat (zählt zu den Ausgaben, FEA-37).
+    /// Einzahlung in die Säule 3a in diesem Monat (zählt zu den Ausgaben, #52).
     pub pillar3a_in: f64,
     /// Einkommen inkl. Renten.
     pub income: f64,
@@ -96,7 +96,7 @@ pub struct MonthRecord {
     pub tax_wealth: f64,
     pub tax_capital: f64,
     pub tax_gain: f64,
-    /// FEA-85: Im Dezember veranlagte Einkommens- und Vermögenssteuer des Steuerjahres (bezahlt wird sie im Mai des
+    /// #109: Im Dezember veranlagte Einkommens- und Vermögenssteuer des Steuerjahres (bezahlt wird sie im Mai des
     /// Folgejahres, siehe `tax_income`/`tax_wealth`). Die Jahreswerte zeigen sie in der Zeile des Steuerjahres.
     pub assessed_income: f64,
     pub assessed_wealth: f64,
@@ -207,7 +207,7 @@ pub struct NeedBasis {
     pub year: i32,
     /// «Januar, geplant» oder «ab <Monat>, auf 12 Monate hochgerechnet».
     pub source: String,
-    /// Herkunft der Lebenshaltung: «geplant» oder «Guardrails» (FEA-05).
+    /// Herkunft der Lebenshaltung: «geplant» oder «Guardrails» (#6).
     pub living_source: String,
     pub living: f64,
     pub housing: f64,
@@ -219,7 +219,7 @@ pub struct NeedBasis {
     pub pk: f64,
     /// Erwerbseinkommen.
     pub earned: f64,
-    /// Einzahlungen in die Säule 3a (FEA-37).
+    /// Einzahlungen in die Säule 3a (#52).
     pub pillar3a: f64,
     /// Anzahl Monate, aus denen die Werte hochgerechnet wurden (12 = volles Jahr).
     pub months: u32,
@@ -339,13 +339,13 @@ pub struct SimResult {
     pub bucket_refills: Vec<BucketRefill>,
     /// Nur gefüllt, wenn mit `record = true` gerechnet wurde.
     pub records: Vec<MonthRecord>,
-    /// Auszahlungsplan der Säule 3a je Konto (FEA-41); nur mit `record = true`. Nicht Teil der gespeicherten
+    /// Auszahlungsplan der Säule 3a je Konto (#55); nur mit `record = true`. Nicht Teil der gespeicherten
     /// Ergebnisse, die Vorschau gibt ihn eigens weiter.
     #[serde(skip)]
     pub pillar3a: Vec<Pillar3aView>,
 }
 
-/// Säule 3a eines Kontos in der Vorschau (FEA-41).
+/// Säule 3a eines Kontos in der Vorschau (#55).
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3aView {
@@ -406,7 +406,7 @@ struct CTranche {
     amount: f64,
     periods: Vec<SPeriod>,
     repay_at: Option<YearMonth>,
-    /// Person (Index), in deren Säule 3a die indirekte Amortisation fliesst (FEA-37).
+    /// Person (Index), in deren Säule 3a die indirekte Amortisation fliesst (#52).
     account: usize,
 }
 
@@ -420,7 +420,7 @@ enum Trigger {
     SaleOf(usize),
 }
 
-/// Säule 3a einer Person (FEA-37).
+/// Säule 3a einer Person (#52).
 #[derive(Clone, Debug, Default)]
 struct CAccount {
     /// Zusatz für Ereignistexte bei zwei Personen.
@@ -469,7 +469,7 @@ struct CProp {
 struct PersonCfg {
     birth: YearMonth,
     income: Curve,
-    /// FEA-43: Einkommen in Preisen des Starts, mit dem Preisindex des Pfades fortgeschrieben.
+    /// #58: Einkommen in Preisen des Starts, mit dem Preisindex des Pfades fortgeschrieben.
     income_indexed: bool,
     pk_contribution: Curve,
     pk_interest: Curve,
@@ -532,7 +532,7 @@ pub struct Simulator {
     /// Plafonierung der AHV-Renten eines Ehepaars pro Monat.
     couple_cap: Option<f64>,
     spending: Curve,
-    /// FEA-39: Wohnanteil der erfassten Lebenshaltungskosten (Preise des Startmonats) und Faktor der Variation.
+    /// #53: Wohnanteil der erfassten Lebenshaltungskosten (Preise des Startmonats) und Faktor der Variation.
     housing_share: f64,
     spending_factor: f64,
     savings: Curve,
@@ -559,7 +559,7 @@ pub struct Simulator {
 
 impl Simulator {
     pub fn new(plan: &Plan) -> Result<Self> {
-        // Ältere Säule 3a an der Hypothek wie beim Laden übernehmen (FEA-37).
+        // Ältere Säule 3a an der Hypothek wie beim Laden übernehmen (#52).
         let normalized = crate::upgrade::normalized(plan);
         let plan: &Plan = &normalized;
         let errors: Vec<String> = validate::validate(plan)
@@ -576,7 +576,7 @@ impl Simulator {
             Strategy::FixedRate => Some(Rule::Fixed {
                 rate: w.fixed_rate.clone().unwrap_or_default().rate,
             }),
-            // FEA-05: Bei 3-Topf mit Guardrails steuern die Guardrails die Ausgaben, die Töpfe die Anlage.
+            // #6: Bei 3-Topf mit Guardrails steuern die Guardrails die Ausgaben, die Töpfe die Anlage.
             _ if w.strategy == Strategy::Guardrails || w.buckets_with_guardrails() => {
                 let g = w.guardrails.clone().unwrap_or_default();
                 Some(Rule::Guardrails {
@@ -676,7 +676,7 @@ impl Simulator {
                         ..Default::default()
                     },
                     Some(a) => {
-                        // FEA-41: Zeitpunkt als Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers.
+                        // #55: Zeitpunkt als Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers.
                         let mut payouts: Vec<_> = a
                             .payouts
                             .iter()
@@ -727,7 +727,7 @@ impl Simulator {
                 .transpose()?
                 .unwrap_or(Curve::constant(0.0)),
             stock_share: curve(&plan.wealth.stock_share)?,
-            // Einstellbar nur bei «Standard»; sonst feste Annahme (FEA-17).
+            // Einstellbar nur bei «Standard»; sonst feste Annahme (#18).
             reserve: if w.strategy == Strategy::Standard {
                 curve(&plan.wealth.reserve_months)?
             } else {
@@ -761,14 +761,14 @@ impl Simulator {
         })
     }
 
-    /// Geplante Lebenshaltung ohne Wohnkosten im Monat `m` in Preisen des Startmonats (FEA-39): erfasster Betrag
+    /// Geplante Lebenshaltung ohne Wohnkosten im Monat `m` in Preisen des Startmonats (#53): erfasster Betrag
     /// abzüglich Wohnanteil, mal Faktor der Variation.
     fn planned_living(&self, m: YearMonth) -> f64 {
         (self.spending.at(m) - self.housing_share) * self.spending_factor
     }
 
     /// Erwerbseinkommen des Haushalts in diesem Monat; `infl_idx` ist der Preisindex des Pfades seit dem Start. Steigt
-    /// das Einkommen einer Person mit der Teuerung (FEA-43), gilt ihr Betrag in Preisen des Starts.
+    /// das Einkommen einer Person mit der Teuerung (#58), gilt ihr Betrag in Preisen des Starts.
     fn earned(&self, m: YearMonth, infl_idx: f64) -> f64 {
         self.people
             .iter()
@@ -987,10 +987,10 @@ struct Run<'a> {
     year_income: f64,
     year_capital: f64,
     props: Vec<PropState>,
-    /// Guthaben der Säule 3a je Person und ob der Rest schon ausbezahlt ist (FEA-37).
+    /// Guthaben der Säule 3a je Person und ob der Rest schon ausbezahlt ist (#52).
     p3a: Vec<f64>,
     p3a_done: Vec<bool>,
-    /// Auszahlungsplan der Säule 3a je Konto für die Anzeige (FEA-41), nur mit `record`.
+    /// Auszahlungsplan der Säule 3a je Konto für die Anzeige (#55), nur mit `record`.
     p3a_view: Vec<Pillar3aView>,
     /// Einzahlung in die Säule 3a in diesem Monat.
     month_p3a_in: f64,
@@ -1018,7 +1018,7 @@ struct Run<'a> {
     /// Alle Töpfe leer, keine Immobilie mehr: Topf 1 darf negativ sein, Topf 2 und 3 sind stillgelegt.
     phase8: bool,
     /// Aktienindex am Ende jedes Monats (für die Rendite der letzten 12 Monate), beginnend mit dem Vorlauf des Pfads
-    /// (FEA-80): zuerst der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der Stand Ende Monat `k` liegt bei
+    /// (#103): zuerst der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der Stand Ende Monat `k` liegt bei
     /// `hist_off + k`.
     stock_hist: Vec<f64>,
     hist_off: usize,
@@ -1043,7 +1043,7 @@ struct Run<'a> {
     stock_prev_year: f64,
     stock_idx: f64,
     bond_idx: f64,
-    /// Laufende Wohnkosten dieses Monats (für die Lebenshaltung der Ausgabenregel im Netto-Bedarf, FEA-05).
+    /// Laufende Wohnkosten dieses Monats (für die Lebenshaltung der Ausgabenregel im Netto-Bedarf, #6).
     month_running: f64,
     /// Fixe Rate bzw. Guardrails: jährliche Entnahme (nominal), Startrate und ob sie gilt.
     budget: f64,
@@ -1176,7 +1176,7 @@ impl<'a> Run<'a> {
     }
 
     /// Mindestens eine Person mit Bezugsdatum ist pensioniert (Beginn der Entnahmephase für alle Strategien ausser
-    /// «Standard», FEA-05/FEA-33).
+    /// «Standard», #6/#47).
     fn any_retired(&self) -> bool {
         self.people
             .iter()
@@ -1739,7 +1739,7 @@ impl<'a> Run<'a> {
                     );
                     continue;
                 }
-                // FEA-36: Im Monat des AHV-Bezugs wechselt eine indirekt amortisierte Tranche auf direkt; als Ereignis
+                // #50: Im Monat des AHV-Bezugs wechselt eine indirekt amortisierte Tranche auf direkt; als Ereignis
                 // zeigen, wenn vorher indirekt amortisiert wurde und ab jetzt weiter amortisiert wird.
                 if k > 0 && b > 0.0 {
                     let a = t.account.min(s.accounts.len().saturating_sub(1));
@@ -1773,7 +1773,7 @@ impl<'a> Run<'a> {
                         running += x.amort_q / 3.0;
                         self.month_amort += x.amort_q / 3.0;
                         if m.is_quarter_end() {
-                            // FEA-36: Indirekt nur bis vor dem AHV-Bezug der Person; danach direkt.
+                            // #50: Indirekt nur bis vor dem AHV-Bezug der Person; danach direkt.
                             let a = t.account.min(s.accounts.len().saturating_sub(1));
                             let after_ahv = s.accounts.get(a).is_some_and(|c| c.ahv.is_some_and(|h| m >= h));
                             if x.direct || after_ahv || s.accounts.is_empty() {
@@ -1801,7 +1801,7 @@ impl<'a> Run<'a> {
         (cost, running)
     }
 
-    /// Säule 3a (FEA-37): Zins, Einzahlung bis vor dem AHV-Bezug, geplante Auszahlungen und Auszahlung des Rests im
+    /// Säule 3a (#52): Zins, Einzahlung bis vor dem AHV-Bezug, geplante Auszahlungen und Auszahlung des Rests im
     /// Monat des AHV-Bezugs. Liefert die Einzahlung des Monats (sie zählt zu den Ausgaben).
     fn pillar3a(&mut self, m: YearMonth) -> f64 {
         let s = self.s;
@@ -1958,7 +1958,7 @@ impl<'a> Run<'a> {
         let last = s.start.plus(s.months as i32 - 1);
         let (mut living, mut housing, mut ahv, mut pk, mut earned, mut p3a) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut n = 0u32;
-        // FEA-05: Steuert eine Ausgabenregel (Guardrails) die Ausgaben, kommt die Lebenshaltung aus ihr.
+        // #6: Steuert eine Ausgabenregel (Guardrails) die Ausgaben, kommt die Lebenshaltung aus ihr.
         let rule = s.dynamic.filter(|_| self.budget_on);
         for i in 0..(13 - m.month() as i32) {
             let mm = m.plus(i);
@@ -1999,7 +1999,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Aktienrendite für die Renditebedingung (FEA-80): die letzten 12 Monate einschliesslich des laufenden, als Verhältnis
+    /// Aktienrendite für die Renditebedingung (#103): die letzten 12 Monate einschliesslich des laufenden, als Verhältnis
     /// der Indexstände; der Vorlauf des Pfads liefert die Monate vor dem Start. Fehlt er ganz oder teilweise (Reihe beginnt
     /// erst später), gilt die Rendite seit dem frühesten bekannten Stand («seit Start»).
     fn stock_return(&self, k: usize) -> (f64, &'static str) {
@@ -2447,7 +2447,7 @@ impl<'a> Run<'a> {
 
     /// Jährliche Entnahme bei Pensionierung festlegen und jeden Januar anpassen.
     fn update_budget(&mut self, d: &Dynamic, m: YearMonth, infl_factor: f64) {
-        // FEA-05: Ein für einen Kauf reservierter Verkaufserlös zählt nicht zum Vermögen der Ausgabenregel.
+        // #6: Ein für einen Kauf reservierter Verkaufserlös zählt nicht zum Vermögen der Ausgabenregel.
         let liquid = (self.cash + self.stocks + self.bonds - self.reserved).max(0.0);
         if !self.budget_on {
             self.budget_on = true;
@@ -2543,7 +2543,7 @@ impl<'a> Run<'a> {
                     }
                 }
             }
-            // FEA-40: Vor der Pensionierung gilt keine Entnahmestrategie; die Bestände bei Simulationsstart werden
+            // #54: Vor der Pensionierung gilt keine Entnahmestrategie; die Bestände bei Simulationsstart werden
             // unverändert übernommen. Ist schon jemand pensioniert, teilt die Strategie wie bisher auf.
             if s.people.iter().any(|p| p.pk_at.is_some_and(|a| a <= m)) {
                 let gap = (s.planned_living(m) + running - s.earned(m, self.infl_idx)).max(0.0);
@@ -2671,7 +2671,7 @@ impl<'a> Run<'a> {
                 }
             }
             let (prop_cost, prop_running) = self.properties(k, m);
-            // FEA-37: Einzahlung in die Säule 3a zählt zu den Ausgaben (wie die Wohnkosten).
+            // #52: Einzahlung in die Säule 3a zählt zu den Ausgaben (wie die Wohnkosten).
             let p3a_in = self.pillar3a(m);
             self.month_p3a_in = p3a_in;
             if leftover {
@@ -2688,7 +2688,7 @@ impl<'a> Run<'a> {
             let ahv = self.ahv();
             let income = earned + pk_pension + ahv;
             let planned = s.planned_living(m) * self.infl_idx;
-            // FEA-05/FEA-33: Die Ausgabenregel gilt ab der Pensionierung der ersten Person.
+            // #6/#47: Die Ausgabenregel gilt ab der Pensionierung der ersten Person.
             let living = match s.dynamic {
                 Some(d) if self.any_retired() => {
                     self.update_budget(&d, m, infl_factor);
@@ -2779,7 +2779,7 @@ impl<'a> Run<'a> {
                     self.bucket_step(b, m, k, pay, one_off, housing_now);
                 }
                 _ => {
-                    // FEA-40: Vor der Pensionierung hält die App den Cash-Betrag der Planung (mit der Teuerung), der
+                    // #54: Vor der Pensionierung hält die App den Cash-Betrag der Planung (mit der Teuerung), der
                     // Überschuss geht ins Portfolio, ein Fehlbetrag wird aus dem Portfolio nachgefüllt. Ab der
                     // Pensionierung: Reserve der Strategie («Standard» wie erfasst, sonst 3 Monate).
                     // Ein für den Kauf im Folgemonat reservierter Verkaufserlös bleibt liquide (nicht angelegt).
@@ -2879,7 +2879,7 @@ impl<'a> Run<'a> {
     }
 }
 
-/// Indexstände des Vorlaufs (FEA-80): der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der letzte ist 1 (Stand
+/// Indexstände des Vorlaufs (#103): der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der letzte ist 1 (Stand
 /// beim Start). Platz für `months` weitere Monate.
 fn pre_levels(pre: &[f64], months: usize) -> Vec<f64> {
     let mut levels = Vec::with_capacity(pre.len() + 1 + months);
@@ -2922,7 +2922,7 @@ mod tests_schedule {
             .unwrap()
     }
 
-    // FEA-29: Perioden bis vor `limit`, Verlängerung bzw. Rückzahlung nach der letzten Periode.
+    // #40: Perioden bis vor `limit`, Verlängerung bzw. Rückzahlung nach der letzten Periode.
     #[test]
     fn periods_until_the_limit() {
         let a = YearMonth::new(2030, 1);
@@ -2972,7 +2972,7 @@ mod tests_pre_levels {
     use super::pre_levels;
 
     #[test]
-    fn fea80_pre_levels_walk_back_from_the_start_level() {
+    fn issue_103_pre_levels_walk_back_from_the_start_level() {
         // Vorlauf +10 %, dann +20 %: Start = 1, davor 1/1.2, davor 1/1.2/1.1.
         let l = pre_levels(&[0.10, 0.20], 3);
         assert_eq!(l.len(), 3);
@@ -2983,7 +2983,7 @@ mod tests_pre_levels {
     }
 
     #[test]
-    fn fea80_pre_levels_total_loss_stays_finite() {
+    fn issue_103_pre_levels_total_loss_stays_finite() {
         // Rendite -100 % darf nicht durch 0 teilen.
         let l = pre_levels(&[-1.0], 1);
         assert_eq!(l.len(), 2);

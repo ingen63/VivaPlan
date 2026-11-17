@@ -1,6 +1,6 @@
 name: Test quality
 on:
-  push:                           # FEA-28: Arbeit direkt auf main, der Push ist die Prüfstelle (statt Pull Request)
+  push:                           # #39: Arbeit direkt auf main, der Push ist die Prüfstelle (statt Pull Request)
     branches: [main]
   pull_request:
   schedule:
@@ -15,7 +15,7 @@ on:
 permissions:
   contents: read
   actions: read                   # für gh run list im changes-Job
-  issues: read                    # Übersichtsseite Testqualität liest die Issues (FEA-31)
+  issues: read                    # Übersichtsseite Testqualität liest die Issues (#42)
   pull-requests: read
 
 concurrency:
@@ -47,7 +47,7 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
 
-  # FEA-42: Der ganze Rust-Code ist mit rustfmt formatiert (rustfmt.toml); Abweichungen lassen den Lauf fehlschlagen.
+  # #56: Der ganze Rust-Code ist mit rustfmt formatiert (rustfmt.toml); Abweichungen lassen den Lauf fehlschlagen.
   format:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
         working-directory: fuzz
         run: cargo fmt --all --check
 
-  # FEA-70: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
+  # #88: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
   clippy:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-22.04      # wie tests-coverage (Tauri-Abhängigkeiten)
@@ -79,7 +79,7 @@ jobs:
         working-directory: fuzz
         run: cargo clippy --all-targets -- -D warnings
 
-  # FEA-69: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js) mit node --test, ohne Browser.
+  # #87: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js) mit node --test, ohne Browser.
   ui-unit:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
       - name: node --test
         run: node --test e2e/unit/*.test.js
 
-  # Einziger Lauf der Rust-Tests mit Abdeckung je Push (FEA-62; vorher zusätzlich coverage.yml).
+  # Einziger Lauf der Rust-Tests mit Abdeckung je Push (#80; vorher zusätzlich coverage.yml).
   # Harte Sperre: Liegt Engine oder App unter tools/coverage-min, schlägt der Schritt fehl.
   # Tests laufen mit nextest wie in make test und im pre-push-Hook: jeder Test in einem eigenen Prozess.
   # Unter cargo test teilen sich parallele Tests den prozessweiten Fortschritt und Abbruch (crates/engine/src/progress.rs).
@@ -150,7 +150,7 @@ jobs:
         if: ${{ !cancelled() && env.DIFF_BASE != '' }}
         continue-on-error: true
         run: python3 tools/coverage_diff.py lcov.info "$DIFF_BASE" >> "$GITHUB_STEP_SUMMARY"
-      # FEA-71: e2e läuft nur nächtlich (Job e2e); die Übersichtsseite zeigt das jüngste vorhandene Ergebnis.
+      # #89: e2e läuft nur nächtlich (Job e2e); die Übersichtsseite zeigt das jüngste vorhandene Ergebnis.
       - name: Oberflächentests der letzten Nacht holen
         if: ${{ !cancelled() }}
         continue-on-error: true
@@ -234,7 +234,7 @@ jobs:
         if: ${{ !cancelled() }}
         with: { name: mutants-diff, path: local/mutants.out/ }
 
-  # FEA-71: Oberflächentests (e2e/, Playwright) nächtlich und von Hand; nur bei neuem Commit wie die übrigen nächtlichen Jobs.
+  # #89: Oberflächentests (e2e/, Playwright) nächtlich und von Hand; nur bei neuem Commit wie die übrigen nächtlichen Jobs.
   # Dauer 20 bis 30 Minuten auf dem 2-Kern-Runner. Der Entwicklungsserver (vivaplan ui-dev) startet die Playwright-Konfiguration selbst.
   e2e:
     needs: changes
@@ -277,7 +277,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: taiki-e/install-action@v2
         with: { tool: cargo-fuzz }
-      # FEA-68: Der Korpus wächst von Nacht zu Nacht. Gespeichert wird je Lauf ein neuer Stand; geladen der jüngste.
+      # #86: Der Korpus wächst von Nacht zu Nacht. Gespeichert wird je Lauf ein neuer Stand; geladen der jüngste.
       - name: Korpus aus dem letzten Lauf
         uses: actions/cache@v4
         with:
@@ -286,12 +286,12 @@ jobs:
           restore-keys: fuzz-corpus-
       - name: Alle Fuzz-Targets je 5 Minuten
         run: |
-          # ISS-11: cargo-fuzz baut ohne --target für das Ziel, für das es selbst gebaut ist.
+          # #46: cargo-fuzz baut ohne --target für das Ziel, für das es selbst gebaut ist.
           # install-action lädt die musl-Fassung, und musl verträgt den AddressSanitizer nicht.
           # Deshalb ausdrücklich für den Host bauen (x86_64-unknown-linux-gnu).
           host=$(rustc +nightly -vV | sed -n 's/^host: //p')
           cd fuzz
-          # FEA-68: Neue Eingaben landen in corpus/<Ziel> (Cache); seeds/<Ziel> ist der Startkorpus im Repo.
+          # #86: Neue Eingaben landen in corpus/<Ziel> (Cache); seeds/<Ziel> ist der Startkorpus im Repo.
           # Ein Fund (Absturz, Panik) beendet den Lauf mit Fehler; die Eingabe liegt dann unter artifacts/.
           for t in $(cargo +nightly fuzz list); do
             mkdir -p "corpus/$t"

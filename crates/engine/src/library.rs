@@ -15,13 +15,13 @@ pub const PREFIX: &str = "library:";
 /// US-Aktien in CHF kombiniert mit Schweizer Bundesobligationen.
 pub const CH_BONDS_FILE: &str = "Shiller CHF + CH-Obligationen.csv";
 
-/// FEA-52: Welt-Aktienindex (JST, nach BIP gewichtet) mit Obligationen der Eidgenossenschaft, jährlich ab 1900.
+/// #68: Welt-Aktienindex (JST, nach BIP gewichtet) mit Obligationen der Eidgenossenschaft, jährlich ab 1900.
 pub const WORLD_FILE: &str = "Welt (JST).csv";
 
 /// Unterordner der Bibliothek mit den Quelldaten der SNB.
 pub const SOURCES_DIR: &str = "quellen";
 
-/// Zeitreihen, die mit dem Programm ausgeliefert werden. FEA-72: «Pictet CH» gehört nicht mehr dazu (keine offene
+/// Zeitreihen, die mit dem Programm ausgeliefert werden. #90: «Pictet CH» gehört nicht mehr dazu (keine offene
 /// Lizenz); eine früher angelegte Kopie im Bibliotheksordner bleibt unangetastet.
 pub const BUILTIN: [(&str, &str); 4] = [
     ("Shiller CHF.csv", include_str!("../data/Shiller CHF.csv")),
@@ -83,7 +83,7 @@ fn write_new(path: &Path, text: &str) -> Result<()> {
     std::fs::write(path, text).map_err(|e| Error::Io(format!("{}: {e}", path.display())))
 }
 
-/// FEA-53/AK8: Ein Teil einer Anlagestrategie mit seinen eigenen Jahren. Ist der Bereich grösser als der gemeinsame
+/// #69/AK8: Ein Teil einer Anlagestrategie mit seinen eigenen Jahren. Ist der Bereich grösser als der gemeinsame
 /// Zeitraum der Reihe, wird der Teil für die Simulation gekürzt.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -117,7 +117,7 @@ pub struct SeriesInfo {
     pub avg_inflation: f64,
     /// Teile der Anlagestrategie mit ihren eigenen Jahren (leer bei einer einzelnen Zeitreihe).
     pub parts: Vec<SeriesPart>,
-    /// FEA-78/79: Vorschlagswerte des parametrischen Modells (nur bei der Kurzinfo zur Planung).
+    /// #100/#101: Vorschlagswerte des parametrischen Modells (nur bei der Kurzinfo zur Planung).
     pub parametric: Option<crate::calibrate::Suggestion>,
 }
 
@@ -316,7 +316,7 @@ mod tests {
         );
         assert_eq!(resolve("x.csv", base, None).unwrap(), Path::new("/plaene/x.csv"));
         assert!(resolve("library:../x.csv", base, Some(lib)).is_err());
-        // FEA-29: jede der beiden Bedingungen allein genügt
+        // #40: jede der beiden Bedingungen allein genügt
         assert!(resolve("library:.x.csv", base, Some(lib)).is_err());
         assert!(resolve("library:a/x.csv", base, Some(lib)).is_err());
         assert!(resolve("library:a\\x.csv", base, Some(lib)).is_err());
@@ -346,7 +346,7 @@ mod tests {
         dir
     }
 
-    // FEA-29: Kurzinfo einer Monatsreihe mit SARON (erster und letzter Wert, NaN am Rand) und einer Jahresreihe.
+    // #40: Kurzinfo einer Monatsreihe mit SARON (erster und letzter Wert, NaN am Rand) und einer Jahresreihe.
     #[test]
     fn series_info_saron_range_and_frequency() {
         let monthly = DataSet::parse_csv(

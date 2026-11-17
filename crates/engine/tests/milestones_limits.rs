@@ -1,4 +1,4 @@
-//! FEA-38 (feste Meilensteine «AHV-Bezug» und «Bezug Pensionskasse» mit Grenzen) und FEA-24 (Grenzen aus den
+//! #51 (feste Meilensteine «AHV-Bezug» und «Bezug Pensionskasse» mit Grenzen) und #25 (Grenzen aus den
 //! Einstellungen). Erfundene Daten: Geburt 1980-06, Start 2030-01.
 
 use engine::api;
@@ -56,9 +56,9 @@ fn with_age(id: usize, years: f64) -> Value {
     v
 }
 
-/// FEA-38/AK2: Die Grenzen selbst sind gültig, Werte ausserhalb werden mit klarer Meldung abgelehnt.
+/// #51/AK2: Die Grenzen selbst sind gültig, Werte ausserhalb werden mit klarer Meldung abgelehnt.
 #[test]
-fn fea38_ak2_ages_within_limits() {
+fn issue_51_ak2_ages_within_limits() {
     assert!(errors(&base()).is_empty(), "{:?}", errors(&base()));
     for ok in [63.0, 65.0, 70.0] {
         assert!(errors(&with_age(2, ok)).is_empty(), "AHV {ok}");
@@ -92,9 +92,9 @@ fn fea38_ak2_ages_within_limits() {
     assert!(errors(&v).is_empty());
 }
 
-/// FEA-38/AK4: Geburt 1980-06: AHV-Bezug mit 65, 63 und 70 Jahren; Bezug Pensionskasse mit 58.
+/// #51/AK4: Geburt 1980-06: AHV-Bezug mit 65, 63 und 70 Jahren; Bezug Pensionskasse mit 58.
 #[test]
-fn fea38_ak4_months_of_the_milestones() {
+fn issue_51_ak4_months_of_the_milestones() {
     let month = |id: usize, years: f64, which: &str| {
         let p: Plan = serde_json::from_value(with_age(id, years)).unwrap();
         Resolver::new(&p).unwrap().milestone(which).unwrap()
@@ -105,9 +105,9 @@ fn fea38_ak4_months_of_the_milestones() {
     assert_eq!(month(1, 58.0, "retire"), YearMonth::new(2038, 6));
 }
 
-/// FEA-38/AK1, AK6: Fehlen die festen Meilensteine, gelten sie im Rechenkern mit 65 Jahren (auch für Person 2).
+/// #51/AK1, AK6: Fehlen die festen Meilensteine, gelten sie im Rechenkern mit 65 Jahren (auch für Person 2).
 #[test]
-fn fea38_ak1_milestones_always_exist() {
+fn issue_51_ak1_milestones_always_exist() {
     let mut v = base();
     v["milestones"] = json!([v["milestones"][0], v["milestones"][3]]);
     v["household"]["persons"] =
@@ -120,9 +120,9 @@ fn fea38_ak1_milestones_always_exist() {
     assert_eq!(r.milestone_name("retire2"), "Bezug Pensionskasse Person 2");
 }
 
-/// FEA-38/AK8, AK9: Warnung bei Erwerbseinkommen nach dem Bezug der Pensionskasse, mit Betrag.
+/// #51/AK8, AK9: Warnung bei Erwerbseinkommen nach dem Bezug der Pensionskasse, mit Betrag.
 #[test]
-fn fea38_ak8_ak9_income_after_the_pension_fund() {
+fn issue_51_ak8_ak9_income_after_the_pension_fund() {
     // Bezug Pensionskasse 2040-06 (60 Jahre), Einkommen 12'500 ab 2035-02 ohne spätere Zeile mit 0.
     let income = |rows: Value| {
         let mut v = with_age(1, 60.0);
@@ -153,14 +153,14 @@ fn fea38_ak8_ak9_income_after_the_pension_fund() {
     );
 }
 
-/// FEA-38: Die Warnung geht nicht Monat für Monat bis zum Ende; ein absurd fernes Ende hängt die Prüfung nicht auf.
+/// #51: Die Warnung geht nicht Monat für Monat bis zum Ende; ein absurd fernes Ende hängt die Prüfung nicht auf.
 #[test]
-fn fea38_income_warning_with_distant_end() {
+fn issue_51_income_warning_with_distant_end() {
     let mut v = with_age(1, 60.0);
     v["milestones"][3]["years"] = json!(100_000_000);
     v["flows"]["income"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "retire", "value": 0 },
         { "from": "2100-01", "value": 700 } ] });
-    // FEA-65: Die Prüfung sucht den Betrag über die Stützstellen und dauert Millisekunden. Ginge sie Monat für Monat
+    // #83: Die Prüfung sucht den Betrag über die Stützstellen und dauert Millisekunden. Ginge sie Monat für Monat
     // bis zum Ende (1,2 Mrd. Monate), bräuchte sie auf jedem Rechner viele Minuten. Die Grenze von 60 s fängt nur
     // dieses Hängen ab und hält auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
     let t = std::time::Instant::now();
@@ -169,9 +169,9 @@ fn fea38_income_warning_with_distant_end() {
     assert!(w.iter().any(|m| m.ends_with("noch 700 pro Monat.")), "{w:?}");
 }
 
-/// FEA-24/AK5, AK6: Die Grenzen kommen als Parameter aus den Einstellungen; ohne Angabe gelten die Standardwerte.
+/// #25/AK5, AK6: Die Grenzen kommen als Parameter aus den Einstellungen; ohne Angabe gelten die Standardwerte.
 #[test]
-fn fea24_ak6_limits_from_the_settings() {
+fn issue_25_ak6_limits_from_the_settings() {
     let mut v = with_age(1, 67.0);
     assert!(errors(&v)[0].contains("58 bis 65"));
     v["limits"] = json!({ "pkMax": 67 });

@@ -45,7 +45,7 @@ fn fixtures_import_and_run() {
     runs(&hist, &dir);
 }
 
-/// FEA-74: Alle `.json`-Dateien eines Ordners, nach Namen sortiert; fehlt der Ordner, ist die Liste leer.
+/// #92: Alle `.json`-Dateien eines Ordners, nach Namen sortiert; fehlt der Ordner, ist die Liste leer.
 fn json_files(dir: &Path) -> Vec<std::path::PathBuf> {
     let Ok(rd) = std::fs::read_dir(dir) else {
         return vec![];
@@ -58,9 +58,9 @@ fn json_files(dir: &Path) -> Vec<std::path::PathBuf> {
     files
 }
 
-/// FEA-74/AK1, AK2: Die Liste nimmt jede `.json`-Datei, ohne feste Namen, und ist leer, wenn der Ordner fehlt.
+/// #92/AK1, AK2: Die Liste nimmt jede `.json`-Datei, ohne feste Namen, und ist leer, wenn der Ordner fehlt.
 #[test]
-fn fea74_ak1_ak2_json_files_without_fixed_names() {
+fn issue_92_ak1_ak2_json_files_without_fixed_names() {
     let dir = std::env::temp_dir().join(format!("pp-eigene-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     assert!(json_files(&dir).is_empty(), "fehlender Ordner");
@@ -81,7 +81,7 @@ fn fea74_ak1_ak2_json_files_without_fixed_names() {
 
 /// Eigene Konfigurationen mit Immobilien in `local/eigene/` (nur lokal, von Git ausgeschlossen; fehlen sie,
 /// wird der Test übersprungen). Die Zeitreihe `./data/MSCI.csv` der Konfigurationen liegt in `local/eigene/data/`.
-/// FEA-74: geprüft wird jede `.json`-Datei des Ordners, ohne feste Dateinamen.
+/// #92: geprüft wird jede `.json`-Datei des Ordners, ohne feste Dateinamen.
 #[test]
 fn own_configs_with_real_estate() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../local/eigene");

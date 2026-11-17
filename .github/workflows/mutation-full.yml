@@ -1,7 +1,7 @@
 # Nur manuell starten (Actions → Mutation (full) → Run workflow): Ein voller Lauf braucht auf den
 # 2-Kern-Runnern eines privaten Repos viele Stunden und würde das Free-Kontingent (2000 Min./Monat) aufbrauchen.
 # Regelmässig läuft nur der Diff-Lauf in test-quality.yml; der volle Lauf lokal mit `make mutants`.
-# FEA-32: 16 Shards, Mutationsläufe mit dem nextest-Profil «mutants» ohne die schweren Tests (.cargo/mutants.toml)
+# #43: 16 Shards, Mutationsläufe mit dem nextest-Profil «mutants» ohne die schweren Tests (.cargo/mutants.toml)
 # und höchstens 2 Minuten je Mutant, damit jeder Shard mit Reserve unter der Zeitgrenze bleibt.
 name: Mutation (full)
 on:
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { pattern: "mutants-shard-*" }
       - run: |
-          # FEA-29: kein Mutation Score als Zielwert; die nicht erkannten Mutanten werden einzeln beurteilt
+          # #40: kein Mutation Score als Zielwert; die nicht erkannten Mutanten werden einzeln beurteilt
           jq -s '{caught: (map(.caught)|add), missed: (map(.missed)|add), timeout: (map(.timeout)|add), unviable: (map(.unviable)|add)}' \
              mutants-shard-*/outcomes.json > total.json
           jq -r '"### Mutationstest (voll)\ncaught \(.caught) · missed \(.missed) · timeout \(.timeout) · unviable \(.unviable)\n\nJeder nicht erkannte Mutant wird mit einem Test getötet oder mit Begründung ausgeschlossen (docs/TESTS.md, Abschnitt Mutationstests)."' total.json >> "$GITHUB_STEP_SUMMARY"

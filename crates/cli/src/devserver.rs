@@ -159,7 +159,7 @@ mod erased {
 
 #[cfg(test)]
 mod tests {
-    //! FEA-81/AK1: Der Dev-Server ohne Browser. `call` ist der Befehlsverteiler; `serve` und `handle` laufen auf 127.0.0.1.
+    //! #105/AK1: Der Dev-Server ohne Browser. `call` ist der Befehlsverteiler; `serve` und `handle` laufen auf 127.0.0.1.
     use super::*;
     use std::net::TcpStream;
     use std::time::Duration;
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn progress_and_cancel_follow_the_job_id() {
-        // FEA-83/AK2, FEA-83/AK4: Die Oberfläche gibt die Kennung beim Start mit und fragt damit Stand und Abbruch ab.
+        // #107/AK2, #107/AK4: Die Oberfläche gibt die Kennung beim Start mit und fragt damit Stand und Abbruch ab.
         let before = call_ok("progress_get", json!({ "jobId": 424242 }));
         assert_eq!(
             (before["id"].as_u64(), before["active"].as_bool()),

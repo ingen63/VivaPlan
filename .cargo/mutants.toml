@@ -1,10 +1,10 @@
-# FEA-82: Kommandozeile (ohne main.rs, reine Verdrahtung) und App sind im Lauf; die CLI-main.rs verteilt nur Befehle
-# ISS-22: test_alloc.rs ist die Speichergrenze der Testprogramme (Testinfrastruktur, nicht Teil der App). Ein Mutant darin
+# #106: Kommandozeile (ohne main.rs, reine Verdrahtung) und App sind im Lauf; die CLI-main.rs verteilt nur Befehle
+# #116: test_alloc.rs ist die Speichergrenze der Testprogramme (Testinfrastruktur, nicht Teil der App). Ein Mutant darin
 # veränderte den Speicherverwalter aller Tests und sagte nichts über die Tests der App aus.
 exclude_globs = ["crates/cli/src/main.rs", "crates/engine/src/test_alloc.rs"]
 test_tool = "nextest"
 
-# FEA-29: Begründet ausgeschlossene Mutanten. Zwei Arten:
+# #40: Begründet ausgeschlossene Mutanten. Zwei Arten:
 #  - gleichwertig: Das Ergebnis bleibt bei jeder Eingabe gleich (redundante Bedingung, Betrag 0, nie gelesener Wert).
 #  - Grenzfall: Der Mutant ändert nur das Verhalten bei exakter Gleichheit zweier gerechneter Frankenbeträge oder
 #    innerhalb der Rundungstoleranz von 0.005; fachlich ist das ohne Bedeutung, ein Test dafür prüfte Rundungszufälle.
@@ -78,7 +78,7 @@ exclude_re = [
     "sim\\.rs:\\d+:19: replace > with >= in Run<'a>::mark_reservation",
     # C2 und Notverkauf, während ein Verkaufserlös reserviert ist: Die Reservierung besteht nur im Verkaufsmonat; dass
     # die Töpfe im selben Monat nicht reichen und noch eine Immobilie im Besitz ist, setzt eine zweite Immobilie und
-    # einen Verkauf mit Folgekauf im selben Monat voraus. Bewusst nicht getestet (Entscheid zu FEA-29).
+    # einen Verkauf mit Folgekauf im selben Monat voraus. Bewusst nicht getestet (Entscheid zu #40).
     "sim\\.rs:\\d+:43: replace - with \\+ in Run<'a>::cover_payments",
     "sim\\.rs:\\d+:34: replace > with (==|>=|<) in Run<'a>::cover_payments",
     # PK-Kapitalbezug: Die Steuer t liegt zwischen 0 und dem Bezug, lump − t > 0 gilt genau dann, wenn lump + t > 0 bzw.
@@ -104,7 +104,7 @@ exclude_re = [
     "sim\\.rs:\\d+:23: replace > with >= in Run<'a>::execute",
     # Aufgebraucht: Rundungstoleranz 0.005 (≤ statt <).
     "sim\\.rs:\\d+:24: replace < with <= in Run<'a>::execute",
-    # --- FEA-97 (voller Lauf vom 16.11.2026), gleichwertig ---
+    # --- #124 (voller Lauf vom 16.11.2026), gleichwertig ---
     # Säule 3a: Eine Einzahlung von 0 erhöht das Guthaben um 0.
     "sim\\.rs:\\d+:33: replace > with >= in Run<'a>::pillar3a",
     # Korrelation: Die Abweichungen vom Mittelwert summieren sich zu 0; (x + mx)·(y − my) und (x − mx)·(y + my) ergeben
@@ -143,7 +143,7 @@ exclude_re = [
     # Prüfung: Eine indirekte Amortisation von 0 erhöht das Maximum nicht.
     "validate\\.rs:881:32: replace > with >= in check",
 
-    # --- FEA-97, Grenzfälle ---
+    # --- #124, Grenzfälle ---
     # Säule 3a: Wunschbetrag genau Guthaben + 0.005, Rest genau 0.005 (Rundungstoleranz).
     "sim\\.rs:\\d+:58: replace > with >= in Run<'a>::pillar3a",
     "sim\\.rs:\\d+:25: replace > with >= in Run<'a>::pillar3a",
@@ -156,7 +156,7 @@ exclude_re = [
     "validate\\.rs:377:26: replace < with <= in check",
     "validate\\.rs:937:40: replace > with >= in check",
     "validate\\.rs:1006:21: replace > with >= in check",
-    # FEA-82, App (`crates/app/src/main.rs`): Die folgenden Mutanten betreffen Aufrufe, die erst eine laufende Anwendung mit
+    # #106, App (`crates/app/src/main.rs`): Die folgenden Mutanten betreffen Aufrufe, die erst eine laufende Anwendung mit
     # Fenster, Betriebssystem-Dialog oder Ereignisschleife auslöst. Die Mock-Runtime von Tauri (`tauri::test`) kann sie nicht
     # erzeugen (`request_exit` ist dort nicht umgesetzt, `ExitRequestApi` hat keinen öffentlichen Konstruktor). Die
     # Entscheidungen dahinter (`ask_before_exit`, `Quit::must_ask`, `picked`, `save_with`) sind einzeln getestet.
@@ -179,16 +179,16 @@ exclude_re = [
     "main\\.rs:\\d+:\\d+: replace main with \\(\\)",
 ]
 
-# FEA-32: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).
+# #43: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).
 # Der Testlauf mit dem Profil «mutants» dauert wenige Sekunden; mit Mindestzeit 60 s und Faktor 1 gilt faktisch eine feste
-# Höchstdauer von 1 Minute (ISS-22: vorher 120 s; eine Endlosschleife belastet den Rechner so nur halb so lange). Ein Timeout zählt als erkannt (Endlosschleife). Mutationsläufe verwenden das nextest-Profil «mutants» (.config/nextest.toml) ohne die schweren Tests.
+# Höchstdauer von 1 Minute (#116: vorher 120 s; eine Endlosschleife belastet den Rechner so nur halb so lange). Ein Timeout zählt als erkannt (Endlosschleife). Mutationsläufe verwenden das nextest-Profil «mutants» (.config/nextest.toml) ohne die schweren Tests.
 minimum_test_timeout = 60.0
 timeout_multiplier = 1.0
 additional_cargo_test_args = ["--profile", "mutants"]
 
-# FEA-32: eigenes Build-Profil (Cargo.toml, [profile.mutants]): ohne Debug-Informationen und mit leichter Optimierung.
+# #43: eigenes Build-Profil (Cargo.toml, [profile.mutants]): ohne Debug-Informationen und mit leichter Optimierung.
 # Begründung und Messung stehen dort und in docs/TESTS.md.
 profile = "mutants"
 
-# FEA-35: Ergebnisse nach local/mutants.out statt ins Wurzelverzeichnis (local/ ist von Git ausgeschlossen).
+# #48: Ergebnisse nach local/mutants.out statt ins Wurzelverzeichnis (local/ ist von Git ausgeschlossen).
 output = "local"

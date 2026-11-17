@@ -1,4 +1,4 @@
-//! Speichergrenze für Testprozesse (ISS-22).
+//! Speichergrenze für Testprozesse (#116).
 //!
 //! Ein Mutant kann eine Schleife endlos machen, die Vektoren füllt (Beispiel: `k += len` wird `k *= len`). Ohne Grenze
 //! fordert dann jeder Testprozess in Sekunden Gigabytes an; bei mehreren parallelen Tests reicht das, um macOS zum
@@ -89,11 +89,11 @@ unsafe impl GlobalAlloc for Limited {
 mod tests {
     use super::*;
 
-    // ISS-22/AK2: Über der Grenze schlägt die Anforderung fehl, ohne den Zähler zu verändern; eine normale Anforderung
+    // #116/AK2: Über der Grenze schlägt die Anforderung fehl, ohne den Zähler zu verändern; eine normale Anforderung
     // gelingt und wird bei der Freigabe wieder abgezogen. Der Speicherverwalter ist in diesem Testprogramm der globale,
     // deshalb zählen andere Tests mit; geprüft wird nur, was diese Aufrufe am Zähler ändern.
     #[test]
-    fn iss_22_ak2_allocations_above_the_limit_fail_and_the_counter_stays_consistent() {
+    fn issue_116_ak2_allocations_above_the_limit_fail_and_the_counter_stays_consistent() {
         let huge = Layout::from_size_align(LIMIT + 1, 8).unwrap();
         unsafe {
             assert!(Limited.alloc(huge).is_null());
@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn iss_22_ak2_reserve_refuses_beyond_the_limit_and_accepts_small_requests() {
+    fn issue_116_ak2_reserve_refuses_beyond_the_limit_and_accepts_small_requests() {
         assert!(!Limited::reserve(LIMIT + 1));
         assert!(!Limited::reserve(usize::MAX)); // kein Überlauf des Zählers
         assert!(Limited::reserve(4096));
