@@ -618,7 +618,38 @@ pub fn write_plan(path: &Path, plan: &Value) -> crate::Result<()> {
         plan.to_mut()["format"] = Value::String(crate::model::FORMAT.into());
     }
     let text = serde_json::to_string_pretty(&plan).expect("serialisierbar");
-    std::fs::write(path, text).map_err(|e| crate::Error::Io(format!("{}: {e}", path.display())))
+    write_atomic(path, text.as_bytes()).map_err(|e| crate::Error::Io(format!("{}: {e}", path.display())))
+}
+
+/// #136: Schreibt zuerst in eine temporäre Datei im selben Ordner, bringt sie auf den Datenträger und ersetzt erst
+/// dann die Zieldatei. Schlägt etwas fehl, bleibt die bisherige Datei unverändert und die temporäre wird entfernt.
+/// Ist das Ziel ein symbolischer Link, wird die Datei ersetzt, auf die er zeigt (der Link bleibt).
+pub fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    let target = match std::fs::symlink_metadata(path) {
+        Ok(m) if m.file_type().is_symlink() => std::fs::canonicalize(path)?,
+        _ => path.to_path_buf(),
+    };
+    let dir = match target.parent() {
+        Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
+        _ => std::path::PathBuf::from("."),
+    };
+    let name = target
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let tmp = dir.join(format!(".{name}.{}.tmp", std::process::id()));
+    let result = (|| {
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(bytes)?;
+        f.sync_all()?;
+        drop(f);
+        std::fs::rename(&tmp, &target)
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    result
 }
 
 /// Optimierung der Entnahmestrategie (siehe [`crate::optimize`]).

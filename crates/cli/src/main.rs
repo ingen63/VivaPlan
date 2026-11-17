@@ -443,7 +443,8 @@ fn cmd_import(args: &[String]) -> R {
     let json = imp.plan.to_json();
     match opt(args, &["-o", "--out"]) {
         Some(out) => {
-            std::fs::write(&out, json)?;
+            // #136: atomar, eine vorhandene Datei bleibt bei einem Fehler unverändert
+            engine::api::write_atomic(Path::new(&out), json.as_bytes()).map_err(|e| format!("{out}: {e}"))?;
             eprintln!("Gespeichert: {out}");
         }
         None => println!("{json}"),

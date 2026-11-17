@@ -18,6 +18,7 @@ mod cancel;
 mod cash_housing;
 mod data;
 mod example_neu;
+mod files;
 mod golden;
 mod household;
 mod income_indexed;

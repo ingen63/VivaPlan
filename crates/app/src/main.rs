@@ -1290,6 +1290,31 @@ mod tests {
         assert!(e.as_str().unwrap().contains("p.vplan"));
     }
 
+    /// #136/AK4: Schlägt das Speichern fehl, meldet der Befehl den Fehler (die Oberfläche zeigt ihn und lässt die
+    /// Planung ungespeichert, e2e «#136/AK4»), und die vorhandene Datei behält den alten Inhalt.
+    #[cfg(unix)]
+    #[test]
+    fn issue_136_ak4_failed_save_reports_error_and_keeps_file() {
+        use std::os::unix::fs::PermissionsExt;
+        let (_app, w, _g) = setup();
+        let dir = tmp("save-readonly");
+        let file = dir.join("p.vplan");
+        let alt = json!({"format": "vivaplan/1", "marker": "alt"});
+        call(&w, "save_plan", json!({"plan": alt, "path": file.to_string_lossy()})).unwrap();
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
+        let e = call(
+            &w,
+            "save_plan",
+            json!({"plan": {"format": "vivaplan/1", "marker": "neu"}, "path": file.to_string_lossy()}),
+        )
+        .unwrap_err();
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(e.as_str().unwrap().contains("p.vplan"), "{e}");
+        assert_eq!(api::read_plan(&file).unwrap(), alt);
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1, "keine temporäre Datei");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     fn root() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
     }

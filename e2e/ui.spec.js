@@ -2008,7 +2008,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
             invoke: async (cmd, args = {}) => {
               window.__calls.push([cmd, args]);
               if (cmd === "startup_plan") return startup;
-              if (cmd === "save_plan") return window.__saveResult ?? null;
+              if (cmd === "save_plan") { if (window.__saveError) throw window.__saveError; return window.__saveResult ?? null; }
               if (["set_dirty", "quit_app", "settings_set", "set_window_title"].includes(cmd)) return null;
               if (cmd === "settings_get") return settings;
               const r = await fetch(`/api/${cmd}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(args) });
@@ -2109,6 +2109,26 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#ask")).toBeVisible();
       await expect(page.locator("#askText")).toContainText("Zuletzt geöffnete Datei nicht gefunden");
       await expect(page.locator("#askText")).toContainText("weg.vplan");
+    });
+
+    test("#136/AK4: Fehler beim Speichern: Meldung, die Planung bleibt ungespeichert", async ({ page }) => {
+      await openApp(page, { path: "/x/planung.vplan", plan: await plan(page), notice: null });
+      const calls = name => page.evaluate(n => window.__calls.filter(c => c[0] === n), name);
+      await field(page, "project.name").fill("Geändert");
+      await field(page, "project.name").blur();
+      await expect(page.locator("#dirty")).toHaveText("● ungespeichert");
+      // Die Desktop-App meldet den Fehler von write_plan als Text (Tauri-Befehl mit Result<_, String>).
+      const saveBtn = page.getByRole("button", { name: "Speichern", exact: true });
+      await page.evaluate(() => { window.__saveError = "/x/planung.vplan: Permission denied (os error 13)"; });
+      await saveBtn.click();
+      await expect.poll(async () => (await calls("save_plan")).length).toBe(1);
+      await expect(page.locator("#toast")).toContainText("Permission denied");
+      await expect(page.locator("#dirty")).toHaveText("● ungespeichert");
+      expect((await calls("set_dirty")).at(-1)[1].dirty).toBe(true);
+      // Gelingt es danach, gilt die Planung als gespeichert.
+      await page.evaluate(() => { window.__saveError = null; window.__saveResult = "/x/planung.vplan"; });
+      await saveBtn.click();
+      await expect(page.locator("#dirty")).toHaveText("");
     });
 
     test("Beenden: ohne Änderungen sofort, mit Änderungen Dialog Speichern/Verwerfen/Abbrechen", async ({ page }) => {

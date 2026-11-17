@@ -166,6 +166,8 @@ beim Speichern als neue `.vplan`-Datei geschrieben. Eine Datei ohne Kennung gilt
 Kommandozeile; im Browser des Entwicklungsservers wird sie abgelehnt). Jede andere Kennung (z. B. `vivaplan/2`) stammt
 aus einer neueren Version: Öffnen, `vivaplan run` und `vivaplan validate` lehnen sie mit der Meldung «Die Datei hat das
 Format «…». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.» ab (`model::check_format`, #144).
+Gespeichert wird atomar (`api::write_plan`, #136): zuerst in eine temporäre Datei im selben Ordner, dann ersetzt sie
+die Zieldatei; bei einem Fehler bleibt die bisherige Datei unverändert. Ein symbolischer Link bleibt, ersetzt wird sein Ziel.
 
 Alle Zeitpunkte sind Kalendermonate (`"2027-05"`) oder Verweise auf Meilensteine (`"retire"`), `"never"` = nie.
 Meilensteine sind ein Datum oder das Alter einer Person (`{"kind": "age", "person": "A", "years": 65}`).
