@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Übersichtsseite «Testqualität» (FEA-30, FEA-31).
+"""Übersichtsseite «Testqualität» (#41, #42).
 
 Erzeugt eine statische HTML-Seite (ohne Netzwerk, ohne externe Skripte oder Schriften) aus den vorhandenen
 Ergebnissen: nextest-JUnit, lcov, local/mutants.out, Playwright-JSON und (nur beim Erzeugen, über `gh`) den GitHub-Issues.
@@ -118,7 +118,7 @@ def read_mutants():
 def read_diff_coverage(lcov):
     try:
         from coverage_diff import changed_lines, read_lcov as parse
-        # Basis: im Workflow der Stand vor dem Push bzw. der Basis-Zweig (DIFF_BASE), lokal origin/main (FEA-28)
+        # Basis: im Workflow der Stand vor dem Push bzw. der Basis-Zweig (DIFF_BASE), lokal origin/main (#39)
         base = os.environ.get("DIFF_BASE") or "origin/main"
         changed = changed_lines(base, working_tree=True)
         if not changed:
@@ -157,32 +157,28 @@ def read_issues():
         return None
 
 
-MARK = re.compile(r"\b(FEA|ISS|GEN)-(\d+)/AK(\d+)\b", re.I)
-NAMEMARK = re.compile(r"\b(fea|iss|gen)_(\d+)_ak(\d+)", re.I)
-IDS = re.compile(r"\b(FEA|ISS|GEN)-(\d+)\b", re.I)
+MARK = re.compile(r"(?<![\w&])#(\d+)/AK(\d+)\b")
+NAMEMARK = re.compile(r"\bissue_(\d+)_ak(\d+)", re.I)
+IDS = re.compile(r"(?<![\w&])#(\d+)\b")
 DESCRIBE = re.compile(r"^(\s*)test\.describe(?:\.\w+)?\(\s*([\"'`])(.*?)\2")
 TESTNAME = re.compile(r"^\s*test(?:\.\w+)?\(\s*([\"'`])(.*?)\1")
 BARE_AK = re.compile(r"(?<![/\w])AK(\d+)\b")
 
 
-def norm_id(prefix, num):
-    """`FEA-07` und `FEA-7` sind dasselbe Issue (FEA-88/AK1)."""
-    return f"{prefix.upper()}-{int(num)}"
-
-
 def scan_marks(path, lines, marks):
-    """Kennzeichnungen einer Datei. In e2e-Dateien belegt ein Test mit `AKn` im Namen das Kriterium des Issues aus dem
-    umgebenden `test.describe` (nur wenn dessen Titel genau eine Issue-ID nennt, FEA-88/AK2)."""
-    stack = []  # (Einrückung, IDs) der offenen describe-Blöcke
+    """Kennzeichnungen einer Datei, {(Issue-Nummer, Kriterium): [Fundstellen]}. In e2e-Dateien belegt ein Test mit `AKn`
+    im Namen das Kriterium des Issues aus dem umgebenden `test.describe` (nur wenn dessen Titel genau eine Issue-Nummer
+    nennt, #113/AK2)."""
+    stack = []  # (Einrückung, Nummern) der offenen describe-Blöcke
     for i, line in enumerate(lines, 1):
         for rx in (MARK, NAMEMARK):
             for m in rx.finditer(line):
-                marks.setdefault((norm_id(m.group(1), m.group(2)), int(m.group(3))), []).append(f"{path}:{i}")
+                marks.setdefault((int(m.group(1)), int(m.group(2))), []).append(f"{path}:{i}")
         if not path.endswith(".js"):
             continue
         d = DESCRIBE.match(line)
         if d:
-            stack.append((len(d.group(1)), {norm_id(p, n) for p, n in IDS.findall(d.group(3))}))
+            stack.append((len(d.group(1)), {int(n) for n in IDS.findall(d.group(3))}))
             continue
         if stack and re.match(r"^\s*\}\);", line) and len(line) - len(line.lstrip()) == stack[-1][0]:
             stack.pop()
@@ -197,8 +193,8 @@ def scan_marks(path, lines, marks):
 
 
 def test_marks():
-    """Kennzeichnung der Tests: `FEA-100/AK2` (Kommentar, Testname), `fea_100_ak2_…` oder `AK2` im Testnamen innerhalb
-    eines `test.describe("FEA-100 …")`; {(ID, Nr): [Fundstellen]}."""
+    """Kennzeichnung der Tests: `#115/AK2` (Kommentar, Testname), `issue_115_ak2_…` oder `AK2` im Testnamen innerhalb
+    eines `test.describe("#115 …")`; {(Nummer, Kriterium): [Fundstellen]}."""
     files = []
     for pat in ("crates/engine/**/*.rs", "crates/cli/**/*.rs", "crates/app/src/**/*.rs", "e2e/*.js"):
         files += glob.glob(pat, recursive=True)
@@ -211,13 +207,8 @@ def test_marks():
     return marks
 
 
-def issue_id(title):
-    m = re.match(r"\s*(FEA|ISS|GEN)-(\d+)\b", title)
-    return norm_id(m.group(1), m.group(2)) if m else None
-
-
-# Prüfung auf Anweisung («Prüfe FEA-xx», CLAUDE.md): Kommentar «Prüfung …», «Erneute Prüfung …», «Nacharbeit AKn …» oder
-# «AKn erfüllt in <Commit>». Je Kriterium zählt die letzte Aussage (FEA-88/AK3).
+# Prüfung auf Anweisung («Prüfe #Nr», CLAUDE.md): Kommentar «Prüfung …», «Erneute Prüfung …», «Nacharbeit AKn …» oder
+# «AKn erfüllt in <Commit>». Je Kriterium zählt die letzte Aussage (#113/AK3).
 CHECK_HEAD = re.compile(r"^\W*(?:(?:Erneute )?Prüfung\b(?! vom \S+ durch den Anwender)|Nacharbeit AK\d+|AK\d+ (?:erfüllt|ok) in [0-9a-f]{7})", re.I)
 CHECK_LINE = re.compile(r"^\s*(?:[-*]\s+)?\**((?:AK\d+(?:\s*,\s*|\s+und\s+)?)+)\**[\s.:]*\**\s*(ok|erfüllt|ist belegt|nicht|offen|teilweise|überholt)?", re.I | re.M)
 CHECK_ALL = re.compile(r"\b(?:alle (?:\w+ )?Kriterien (?:sind )?(?:erfüllt|ok)|Ergebnis: \d+ von \d+ Kriterien ok)", re.I)
@@ -249,9 +240,9 @@ def requirements(issues, marks):
     """Je Kriterium die Art: test (gekennzeichneter Test), geprueft (Prüfung auf Anweisung), manuell (nur abgehakt), ohne."""
     rows = []
     for it in sorted(issues, key=lambda i: i["number"]):
-        iid = issue_id(it["title"])
+        iid = it["number"]
         crit = re.findall(r"^\s*- \[( |x|X)\] (.+)$", it["body"] or "", re.M)
-        if not iid or not crit:
+        if not crit:
             continue
         chk = checked(it.get("comments"), len(crit))
         items = []
@@ -271,14 +262,14 @@ def escapes(issues):
     rows = []
     for it in issues:
         labels = [l["name"] for l in it["labels"]]
-        found = [l for l in labels if l.startswith("gefunden:")]
+        found = [l for l in labels if l.startswith("found:")]
         if "bug" not in labels or not found:
             continue
         body = it["body"] or ""
         def para(key):
             m = re.search(r"\*\*" + key + r"[^*]*\*\*:?\s*(.+?)(?:\n\n|\Z)", body, re.S | re.I)
             return m.group(1).strip() if m else None
-        rows.append({"nr": it["number"], "title": it["title"], "found": found[0].split(":", 1)[1], "which": para("Welcher Test"), "reg": para("Regressionstest")})
+        rows.append({"nr": it["number"], "title": it["title"], "found": found[0].split(":", 1)[1].strip(), "which": para("Welcher Test"), "reg": para("Regressionstest")})
     return rows
 
 
@@ -416,7 +407,7 @@ def main():
     h.append(f"<h3>Property-Tests und Fuzzing</h3><p>Property-Tests: {pt['tests'] if pt['tests'] is not None else 'keine Daten'} Tests mit «proptest» im Namen, Fallzahl {E(pt['cases'])}.</p><p>Fuzzing: {len(fz['targets'])} Ziele ({E(', '.join(fz['targets']))}), {fz['crashes']} gespeicherte Abstürze in <code>fuzz/artifacts</code>; letzter Lauf: keine Daten (läuft nächtlich auf GitHub).</p></section>")
 
     # Anforderungsbezug
-    h.append(f"<section><h2>3 Anforderungsbezug {badge(st_r)}</h2><p class='rule'>Regel: erfüllt = jedes Abnahmekriterium ist durch einen gekennzeichneten Test belegt, geprüft oder abgehakt; Hinweis = es gibt Kriterien ohne Test, ohne Prüfung und ohne Haken; keine Daten = keine Verbindung zu GitHub (<code>gh</code>). Ein Test wird mit <code>FEA-100/AK2</code> im Kommentar oder Namen (<code>fea_100_ak2_…</code>) gekennzeichnet, in den Oberflächentests auch mit <code>AK2</code> im Testnamen innerhalb von <code>test.describe(\"FEA-100 …\")</code>; AK2 ist das zweite Kriterium des Issues. «Geprüft» heisst: in einer Prüfung auf Anweisung (Kommentar «Prüfung …» im Issue) als erfüllt festgehalten. «Nur manuell» heisst: abgehakt, ohne gekennzeichneten Test und ohne solche Prüfung.</p>")
+    h.append(f"<section><h2>3 Anforderungsbezug {badge(st_r)}</h2><p class='rule'>Regel: erfüllt = jedes Abnahmekriterium ist durch einen gekennzeichneten Test belegt, geprüft oder abgehakt; Hinweis = es gibt Kriterien ohne Test, ohne Prüfung und ohne Haken; keine Daten = keine Verbindung zu GitHub (<code>gh</code>). Ein Test wird mit <code>#115/AK2</code> im Kommentar oder Namen (<code>issue_115_ak2_…</code>) gekennzeichnet, in den Oberflächentests auch mit <code>AK2</code> im Testnamen innerhalb von <code>test.describe(\"#115 …\")</code>; AK2 ist das zweite Kriterium des Issues. «Geprüft» heisst: in einer Prüfung auf Anweisung (Kommentar «Prüfung …» im Issue) als erfüllt festgehalten. «Nur manuell» heisst: abgehakt, ohne gekennzeichneten Test und ohne solche Prüfung.</p>")
     if reqs is None:
         h.append("<p class='muted'>Keine Daten: <code>gh</code> ist nicht angemeldet oder nicht erreichbar.</p>")
     else:
@@ -429,7 +420,7 @@ def main():
     h.append("</section>")
 
     # Ergebnis
-    h.append(f"<section><h2>4 Ergebnis (durchgerutschte Fehler) {badge(st_e)}</h2><p class='rule'>Regel: Bug-Issues mit dem Label <code>gefunden:test</code>, <code>gefunden:abnahme</code> oder <code>gefunden:nutzung</code> (Fundort); erfüllt = jedes beantwortet «Welcher Test hätte ihn fangen müssen?» und nennt den Regressionstest; Hinweis = eine Antwort fehlt; keine Daten = keine Verbindung zu GitHub oder noch kein Fehler mit Fundort-Label erfasst.</p>")
+    h.append(f"<section><h2>4 Ergebnis (durchgerutschte Fehler) {badge(st_e)}</h2><p class='rule'>Regel: Bug-Issues mit dem Label <code>found: test</code>, <code>found: acceptance</code> oder <code>found: usage</code> (Fundort); erfüllt = jedes beantwortet «Welcher Test hätte ihn fangen müssen?» und nennt den Regressionstest; Hinweis = eine Antwort fehlt; keine Daten = keine Verbindung zu GitHub oder noch kein Fehler mit Fundort-Label erfasst.</p>")
     if esc is None:
         h.append("<p class='muted'>Keine Daten: <code>gh</code> ist nicht angemeldet oder nicht erreichbar.</p>")
     elif not esc:

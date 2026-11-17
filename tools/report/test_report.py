@@ -1,4 +1,4 @@
-"""Tests für die Übersichtsseite und die Diff-Abdeckung (FEA-28, FEA-30, FEA-31). Aufruf: python3 -m unittest discover tools/report"""
+"""Tests für die Übersichtsseite und die Diff-Abdeckung (#39, #41, #42). Aufruf: python3 -m unittest discover tools/report"""
 import os
 import sys
 import tempfile
@@ -12,7 +12,7 @@ import coverage_diff  # noqa: E402
 
 class Status(unittest.TestCase):
     def test_playwright_run_time_comes_from_the_run_not_from_the_file(self):
-        # FEA-71/AK3: results.json wird in der Pipeline heruntergeladen, die Dateizeit wäre die des Downloads
+        # #89/AK3: results.json wird in der Pipeline heruntergeladen, die Dateizeit wäre die des Downloads
         self.assertRegex(report.run_time("2026-11-14T22:01:05.375Z"), r"^\d\d\.\d\d\.\d{4} \d\d:\d\d$")
         self.assertIsNone(report.run_time(None))
         self.assertIsNone(report.run_time("kein Datum"))
@@ -31,7 +31,7 @@ class Status(unittest.TestCase):
         self.assertEqual(report.status_fit(pk(90, 85), mut(2)), report.HINT)
         self.assertEqual(report.status_fit(pk(90, 85), None), report.HINT)
         self.assertEqual(report.status_fit(pk(95, 79.9), mut(0)), report.FAIL)  # Pakete werden nicht gemittelt
-        self.assertEqual(report.status_fit(pk(95, 85, 79.9), mut(0)), report.FAIL)  # FEA-81/AK3: auch die Kommandozeile zählt
+        self.assertEqual(report.status_fit(pk(95, 85, 79.9), mut(0)), report.FAIL)  # #105/AK3: auch die Kommandozeile zählt
 
     def test_junit_with_a_failing_test_is_reported_by_name(self):
         xml = '<testsuites><testsuite><testcase classname="engine::x" name="kaputt" time="0.1"><failure/></testcase><testcase classname="engine::x" name="ok" time="0.2"/><testcase classname="engine::x" name="wackelt" time="0.3"><flakyFailure/></testcase></testsuite></testsuites>'
@@ -49,55 +49,70 @@ class Status(unittest.TestCase):
 
 
 class Requirements(unittest.TestCase):
-    ISSUE = {"number": 7, "title": "FEA-100 Beispiel", "state": "OPEN", "labels": [], "body": "Text\n\n- [ ] eins\n- [x] zwei\n- [ ] drei\n"}
+    ISSUE = {"number": 7, "title": "Beispiel", "state": "OPEN", "labels": [], "body": "Text\n\n- [ ] eins\n- [x] zwei\n- [ ] drei\n"}
 
     def test_two_of_three_criteria_with_a_marked_test(self):
-        marks = {("FEA-100", 1): ["a.rs:3"], ("FEA-100", 3): ["b.rs:9"]}
+        marks = {(7, 1): ["a.rs:3"], (7, 3): ["b.rs:9"]}
         rows = report.requirements([self.ISSUE], marks)
         kinds = [k for k, _, _ in rows[0]["items"]]
         self.assertEqual(kinds, ["test", "manuell", "test"])  # 2 von 3 belegt, das abgehakte nur manuell
 
-    def test_markers_in_comments_and_test_names(self):
-        self.assertEqual(report.MARK.search("// FEA-100/AK2 prüft").group(0), "FEA-100/AK2")
-        self.assertEqual(report.NAMEMARK.search("fn fea_100_ak2_rundung()").groups(), ("fea", "100", "2"))
+    def test_issue_117_ak5_markers_in_comments_and_test_names(self):
+        # #117/AK5: `#115/AK2` im Kommentar oder Testnamen, `issue_115_ak2_…` im Rust-Testnamen
+        self.assertEqual(report.MARK.search("// #115/AK2 prüft").groups(), ("115", "2"))
+        self.assertEqual(report.NAMEMARK.search("fn issue_115_ak2_rundung()").groups(), ("115", "2"))
+        marks = report.scan_marks("a.rs", ["// #7/AK1 prüft", "fn issue_7_ak3_rundung() {}"], {})
+        self.assertEqual(sorted(marks), [(7, 1), (7, 3)])
 
-    def test_fea_88_ak1_leading_zero_in_title_or_mark_is_the_same_issue(self):
-        issue = dict(self.ISSUE, title="FEA-07 Beispiel")
-        marks = report.scan_marks("e2e/x.spec.js", ['test("FEA-07/AK1 …", () => {});', "// FEA-7/AK3"], {})
-        kinds = [k for k, _, _ in report.requirements([issue], marks)[0]["items"]]
+    def test_issue_117_ak5_old_ids_are_no_longer_recognised(self):
+        # #117/AK5: die bisherigen Formen (Präfix mit Bindestrich und Nummer, als Rust-Name mit Unterstrich) zählen nicht
+        # mehr; HTML-Entitäten sind keine Nummer. Die alten Kennungen sind zusammengesetzt, damit `git grep` sie nicht findet.
+        src = ["// FE" "A-100/AK2", "fn fe" "a_100_ak2_x() {}", "// IS" "S-3/AK1", "x = '&#39;/AK1'"]
+        self.assertEqual(report.scan_marks("a.rs", src, {}), {})
+        self.assertEqual(report.scan_marks("e2e/x.spec.js", ['test.describe("FE" "A-56 alt", () => {', '  test("AK1 x", async () => {});', "});"], {}), {})
+
+    def test_leading_zero_in_a_mark_is_the_same_issue(self):
+        marks = report.scan_marks("e2e/x.spec.js", ['test("#07/AK1 …", () => {});', "// #7/AK3"], {})
+        kinds = [k for k, _, _ in report.requirements([self.ISSUE], marks)[0]["items"]]
         self.assertEqual(kinds, ["test", "manuell", "test"])
 
-    def test_fea_88_ak2_bare_ak_in_a_describe_block_with_one_issue_id(self):
-        src = ['test.describe("FEA-56 Ergebnis in Worten", () => {',
+    def test_issue_117_ak5_bare_ak_in_a_describe_block_with_one_issue_number(self):
+        src = ['test.describe("Ergebnis in Worten (#83)", () => {',
                '  test("AK1, AK3: mehrere Läufe", async () => {',
                '  });',
-               '  test.describe("Untergruppe ohne ID", () => {',
+               '  test.describe("Untergruppe ohne Nummer", () => {',
                '    test("AK2 im inneren Block", async () => {});',
                '  });',
                '});',
                'test("AK4 ausserhalb jedes Blocks", async () => {});',
-               'test.describe("FEA-54 und FEA-55", () => {',
+               'test.describe("#81 und #82", () => {',
                '  test("AK5 mehrdeutig", async () => {});',
                '});']
         marks = report.scan_marks("e2e/x.spec.js", src, {})
-        self.assertEqual(sorted(marks), [("FEA-56", 1), ("FEA-56", 2), ("FEA-56", 3)])
-        self.assertEqual(marks[("FEA-56", 1)], ["e2e/x.spec.js:2"])
+        self.assertEqual(sorted(marks), [(83, 1), (83, 2), (83, 3)])
+        self.assertEqual(marks[(83, 1)], ["e2e/x.spec.js:2"])
         # in Rust-Dateien gibt es keine describe-Blöcke
         self.assertEqual(report.scan_marks("a.rs", src, {}), {})
 
-    def test_fea_88_ak3_checked_criteria_count_as_checked_not_manual(self):
+    def test_issues_without_id_in_the_title_are_counted_by_number(self):
+        # #117/AK5: die Zuordnung läuft über die Nummer, nicht über den Titel
+        rows = report.requirements([dict(self.ISSUE, title="Titel ohne Präfix")], {(7, 2): ["t.rs:1"]})
+        self.assertEqual(rows[0]["nr"], 7)
+        self.assertEqual([k for k, _, _ in rows[0]["items"]], ["ohne", "test", "ohne"])
+
+    def test_issue_113_ak3_checked_criteria_count_as_checked_not_manual(self):
         c = lambda day, body: {"createdAt": f"{day}T10:00:00Z", "body": body}
         issue = dict(self.ISSUE, body="- [x] a\n- [x] b\n- [x] c\n- [x] d\n- [ ] e\n", comments=[
-            c("2026-11-15", "Prüfung FEA-100 (15.11.2026)\n\n- **AK1 erfüllt.** Test grün.\n- **AK2 nicht ganz erfüllt.** Rest.\n- AK3, AK4 ok: gelesen."),
+            c("2026-11-15", "Prüfung #7 (15.11.2026)\n\n- **AK1 erfüllt.** Test grün.\n- **AK2 nicht ganz erfüllt.** Rest.\n- AK3, AK4 ok: gelesen."),
             c("2026-11-16", "Nacharbeit AK2 in abc1234: erledigt.\n\n- **AK2 erfüllt.**"),
             c("2026-11-16", "Prüfung vom 16.11.2026 durch den Anwender in der App: AK4 ist in Ordnung."),
             c("2026-11-17", "**Erneute Prüfung**\n\n- AK3 offen: Gegenprobe fehlt."),
         ])
-        items = report.requirements([issue], {("FEA-100", 4): ["t.rs:1"]})[0]["items"]
+        items = report.requirements([issue], {(7, 4): ["t.rs:1"]})[0]["items"]
         self.assertEqual([k for k, _, _ in items], ["geprueft", "geprueft", "manuell", "test", "ohne"])
         self.assertEqual(items[1][2], ["Prüfung vom 16.11.2026"])
 
-    def test_fea_88_ak3_summary_comments_mark_all_criteria_except_the_listed_ones(self):
+    def test_issue_113_ak3_summary_comments_mark_all_criteria_except_the_listed_ones(self):
         summary = "Prüfung vom 15.11.2026 (Claude).\n\nErgebnis: 2 von 3 Kriterien ok.\n\nNicht (voll) belegt:\n- AK2 nicht geprüft: fehlt"
         self.assertEqual(sorted(report.checked([{"createdAt": "2026-11-15", "body": summary}], 3)), [1, 3])
         self.assertEqual(sorted(report.checked([{"createdAt": "2026-11-15", "body": "**Prüfung (Einzelprüfung auf Anweisung)**\n\nAlle drei Kriterien erfüllt:\n- AK1, AK2: x"}], 3)), [1, 2, 3])
@@ -105,12 +120,12 @@ class Requirements(unittest.TestCase):
         self.assertEqual(report.checked([{"createdAt": "2026-11-15", "body": "Umgesetzt in abc1234. Abnahme ausstehend.\n- AK1 erfüllt"}], 3), {})
 
     def test_escapes_list_found_where_and_regression_test(self):
-        bug = {"number": 9, "title": "ISS-9 x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "gefunden:nutzung"}],
+        bug = {"number": 9, "title": "Fehler x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
                "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** Ein Rundungstest.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
-        other = {"number": 10, "title": "ISS-10 y", "state": "OPEN", "labels": [{"name": "bug"}], "body": ""}
+        other = {"number": 10, "title": "Fehler y", "state": "OPEN", "labels": [{"name": "bug"}], "body": ""}
         rows = report.escapes([bug, other])
         self.assertEqual(len(rows), 1)
-        self.assertEqual((rows[0]["found"], rows[0]["which"], rows[0]["reg"]), ("nutzung", "Ein Rundungstest.", "crates/engine/tests/x.rs"))
+        self.assertEqual((rows[0]["found"], rows[0]["which"], rows[0]["reg"]), ("usage", "Ein Rundungstest.", "crates/engine/tests/x.rs"))
 
 
 class DiffCoverage(unittest.TestCase):
@@ -118,7 +133,7 @@ class DiffCoverage(unittest.TestCase):
         self.assertEqual(coverage_diff.ranges([5, 3, 4, 9]), "3–5, 9")
 
     def test_base_comes_from_diff_base(self):
-        # FEA-28: Im Workflow gibt DIFF_BASE den Stand vor dem Push vor; ohne Angabe gilt origin/main.
+        # #39: Im Workflow gibt DIFF_BASE den Stand vor dem Push vor; ohne Angabe gilt origin/main.
         with tempfile.NamedTemporaryFile("w", suffix=".info", delete=False) as f:
             f.write("SF:crates/engine/src/lib.rs\nDA:1,1\nend_of_record\n")
         old = os.environ.get("DIFF_BASE")
@@ -157,8 +172,8 @@ class Page(unittest.TestCase):
                 report.ROOT, report.sh, sys.argv = old_root, old_sh, old_argv
             return (root / "out" / "index.html").read_text(encoding="utf-8")
 
-    def test_fea_30_ak3_missed_mutants_are_listed_one_by_one_with_file_and_line(self):
-        # FEA-30/AK3
+    def test_issue_41_ak3_missed_mutants_are_listed_one_by_one_with_file_and_line(self):
+        # #41/AK3
         def setup(root):
             m = root / "local" / "mutants.out"
             m.mkdir(parents=True)
@@ -169,25 +184,25 @@ class Page(unittest.TestCase):
         self.assertIn("crates/engine/src/a.rs:12:5: replace f -&gt; bool with true", page)
         self.assertIn("crates/engine/src/b.rs:40:9: delete -", page)
 
-    def test_fea_30_ak4_without_a_mutation_run_the_area_says_no_data(self):
-        # FEA-30/AK4
+    def test_issue_41_ak4_without_a_mutation_run_the_area_says_no_data(self):
+        # #41/AK4
         page = self.render()
         self.assertIn("kein Mutationslauf vorhanden", page)
         self.assertNotIn("Traceback", page)
 
-    def test_fea_31_ak2_a_found_in_use_bug_shows_cause_and_regression_test(self):
-        # FEA-31/AK2
+    def test_issue_42_ak2_a_found_in_use_bug_shows_cause_and_regression_test(self):
+        # #42/AK2
         import json
-        bug = {"number": 9, "title": "ISS-9 x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "gefunden:nutzung"}],
+        bug = {"number": 9, "title": "Fehler x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
                "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** Ein Rundungstest.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
         page = self.render(gh=lambda cmd: json.dumps([bug]))
         ergebnis = page[page.index("4 Ergebnis"):page.index("Verlauf")]
-        self.assertIn("nutzung", ergebnis)
+        self.assertIn("usage", ergebnis)
         self.assertIn("Ein Rundungstest.", ergebnis)
         self.assertIn("crates/engine/tests/x.rs", ergebnis)
 
-    def test_fea_31_ak3_comparison_with_the_previous_version_shows_changes_per_figure(self):
-        # FEA-31/AK3
+    def test_issue_42_ak3_comparison_with_the_previous_version_shows_changes_per_figure(self):
+        # #42/AK3
         import json
         def setup(root):
             h = root / "local" / "test-quality" / "history"
@@ -202,8 +217,8 @@ class Page(unittest.TestCase):
         self.assertIn("Nicht erkannte Mutanten", verlauf)
         self.assertIn("3,0 ▲", verlauf)  # 5 → 2 nicht erkannte Mutanten: weniger ist besser
 
-    def test_fea_31_ak4_without_gh_the_two_layers_say_no_data_and_the_rest_stays_complete(self):
-        # FEA-31/AK4
+    def test_issue_42_ak4_without_gh_the_two_layers_say_no_data_and_the_rest_stays_complete(self):
+        # #42/AK4
         page = self.render(gh=None)
         self.assertEqual(page.count("<code>gh</code> ist nicht angemeldet oder nicht erreichbar"), 2)
         for abschnitt in ("1 Hygiene", "2 Angemessenheit", "3 Anforderungsbezug", "4 Ergebnis", "Verlauf"):
