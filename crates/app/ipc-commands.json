@@ -1,0 +1,35 @@
+{
+  "comment": "#142: Befehle der Oberfläche (crates/app/ui/api.js) mit Beispielargumenten, wie die Oberfläche sie sendet. compute: beantworten die Desktop-App (Tauri) und der Entwicklungsserver (engine::dispatch); der Vertragstest in crates/app/src/main.rs verlangt dieselbe Antwort (ohne elapsedMs und buildEpoch). compare «keys»: nur dieselben Felder (Messwerte). $plan = Beispielplanung mit festen Renditen, $planMc = Bootstrap mit 200 Pfaden. desktopOnly: nur in der Desktop-App (Dialoge, Einstellungen, Fenster).",
+  "compute": [
+    { "cmd": "app_info", "args": {}, "compare": "keys" },
+    { "cmd": "example_plan", "args": {} },
+    { "cmd": "library_list", "args": {} },
+    { "cmd": "opt_params", "args": { "plan": "$plan" } },
+    { "cmd": "validate", "args": { "plan": "$plan" } },
+    { "cmd": "upgrade_plan", "args": { "plan": "$plan" } },
+    { "cmd": "preview", "args": { "plan": "$plan", "path": null } },
+    { "cmd": "series_info", "args": { "path": "library:Shiller CHF.csv", "planPath": null } },
+    { "cmd": "bench_plan", "args": { "plan": "$plan", "path": null }, "compare": "keys" },
+    { "cmd": "run_simulation", "args": { "plan": "$plan", "path": null } },
+    { "cmd": "run_simulation", "args": { "plan": "$planMc", "path": null, "jobId": 4711 } },
+    { "cmd": "progress_get", "args": { "jobId": 4711 } },
+    { "cmd": "rerun_paths", "args": { "plan": "$planMc", "picks": [[0, 3], [0, 17]], "path": null } },
+    { "cmd": "optimize", "args": { "plan": "$planMc", "request": { "strategies": ["fixed_rate"], "paths": 100, "checkPaths": 100, "samples": 2, "maxRuin": 0.1, "seed": 1 }, "path": null, "jobId": 4712 } },
+    { "cmd": "cancel_job", "args": { "jobId": 4713 } }
+  ],
+  "desktopOnly": [
+    "settings_get",
+    "settings_set",
+    "startup_plan",
+    "set_dirty",
+    "quit_app",
+    "import_shiller",
+    "import_snb",
+    "open_plan",
+    "open_path",
+    "set_window_title",
+    "save_plan",
+    "import_legacy",
+    "pick_series"
+  ]
+}

@@ -5,7 +5,6 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use engine::api;
 use serde_json::{json, Value};
 
 pub fn serve(port: u16, ui: PathBuf, library: PathBuf) -> std::io::Result<()> {
@@ -85,76 +84,10 @@ fn content_type(p: &Path) -> &'static str {
     }
 }
 
-fn base_dir(args: &Value) -> PathBuf {
-    args.get("path")
-        .and_then(Value::as_str)
-        .and_then(|p| Path::new(p).parent().map(Path::to_path_buf))
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
-}
-
-/// Kennung der Berechnung (`jobId`), die die Oberfläche beim Start mitgibt.
-fn job_id(args: &Value) -> Option<u64> {
-    args.get("jobId").and_then(Value::as_u64)
-}
-
+/// #142: Die Rechenbefehle beantwortet derselbe Verteiler, den der Vertragstest der Desktop-App prüft
+/// (`engine::dispatch`); relative Pfade ohne Projektdatei gelten ab dem Arbeitsverzeichnis.
 fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
-    let plan = args.get("plan").cloned().unwrap_or(Value::Null);
-    let to = |v: &dyn erased::Ser| v.json();
-    let lib = Some(library);
-    Ok(match cmd {
-        "app_info" => serde_json::json!({ "version": env!("CARGO_PKG_VERSION"), "buildEpoch": null }),
-        "bench_plan" => to(&api::bench(&plan, &base_dir(args), lib)?),
-        "progress_get" => to(&match job_id(args) {
-            Some(id) => engine::progress::snapshot_of(id),
-            None => engine::progress::snapshot(),
-        }),
-        "cancel_job" => {
-            match job_id(args) {
-                Some(id) => {
-                    engine::progress::cancel_job(id);
-                }
-                None => engine::progress::cancel(),
-            }
-            Value::Null
-        }
-        "opt_params" => to(&api::opt_params(&plan)),
-        "example_plan" => api::example_plan(),
-        "validate" => to(&api::validate(&plan)),
-        "upgrade_plan" => to(&api::upgrade_plan(&plan)),
-        "preview" => to(&api::preview(&plan, &base_dir(args), lib)),
-        "run_simulation" => to(&api::run_as(job_id(args), &plan, &base_dir(args), lib)),
-        "rerun_paths" => {
-            let picks: Vec<(u32, usize)> =
-                serde_json::from_value(args.get("picks").cloned().unwrap_or_default()).map_err(|e| e.to_string())?;
-            to(&api::rerun_paths(&plan, &picks, &base_dir(args), lib))
-        }
-        "series_info" => {
-            let p = args.get("path").and_then(Value::as_str).ok_or("Pfad fehlt")?;
-            let cwd = std::env::current_dir().unwrap_or_default();
-            to(&api::series_info(p, &cwd, lib).map_err(|e| e.to_string())?)
-        }
-        "optimize" => {
-            let mut req = args.get("request").cloned().unwrap_or(json!({}));
-            if let (Some(id), Some(obj)) = (job_id(args), req.as_object_mut()) {
-                obj.insert("jobId".into(), id.into());
-            }
-            to(&api::optimize(&plan, &req, &base_dir(args), lib).map_err(|e| e.to_string())?)
-        }
-        "library_list" => to(&api::library_list(library).map_err(|e| e.to_string())?),
-        _ => return Err(format!("Befehl «{cmd}» gibt es nur in der Desktop-App")),
-    })
-}
-
-/// Kleine Hilfe, damit verschiedene Ergebnis-Typen einheitlich zu JSON werden.
-mod erased {
-    pub trait Ser {
-        fn json(&self) -> serde_json::Value;
-    }
-    impl<T: serde::Serialize> Ser for T {
-        fn json(&self) -> serde_json::Value {
-            serde_json::to_value(self).expect("serialisierbar")
-        }
-    }
+    engine::dispatch::call(cmd, args, library, &std::env::current_dir().unwrap_or_default())
 }
 
 #[cfg(test)]
@@ -178,7 +111,7 @@ mod tests {
 
     /// Kleine, schnelle Planung: feste Renditen, keine Szenarien.
     fn plan() -> Value {
-        let mut p = api::example_plan();
+        let mut p = engine::api::example_plan();
         p["returns"]["source"] = json!("fixed");
         p["scenarios"]["sweeps"] = json!([]);
         p
@@ -265,11 +198,18 @@ mod tests {
         assert!(e.contains("Spalte «Stocks» fehlt"), "{e}");
     }
 
+    /// #142: Ohne Projektdatei gelten relative Pfade ab dem Arbeitsverzeichnis (beim Test der Ordner `crates/cli`).
     #[test]
-    fn base_dir_is_the_folder_of_the_plan_file_or_the_working_directory() {
-        assert_eq!(base_dir(&json!({ "path": "/a/b/plan.vplan" })), PathBuf::from("/a/b"));
-        assert_eq!(base_dir(&json!({})), std::env::current_dir().unwrap());
-        assert_eq!(base_dir(&json!({ "path": 5 })), std::env::current_dir().unwrap());
+    fn relative_paths_without_a_plan_file_start_in_the_working_directory() {
+        let rel = "../engine/data/Shiller CHF.csv";
+        assert!(std::env::current_dir().unwrap().join(rel).is_file());
+        assert!(call("series_info", &json!({ "path": rel, "planPath": null }), &library()).is_ok());
+        assert!(call(
+            "series_info",
+            &json!({ "path": rel, "planPath": "/gibt/es/nicht/p.vplan" }),
+            &library()
+        )
+        .is_err());
     }
 
     #[test]

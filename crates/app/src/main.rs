@@ -1271,6 +1271,119 @@ mod tests {
         assert!(d.is_dir());
     }
 
+    /// #142: Antwort ohne Zeitfelder (Rechenzeit, Buildzeit).
+    fn without_times(v: &mut Value) {
+        match v {
+            Value::Object(o) => {
+                o.remove("elapsedMs");
+                o.remove("buildEpoch");
+                o.values_mut().for_each(without_times);
+            }
+            Value::Array(a) => a.iter_mut().for_each(without_times),
+            _ => {}
+        }
+    }
+
+    /// #142: Platzhalter der Tabelle durch kleine Planungen ersetzen.
+    fn table_args(args: &Value) -> Value {
+        let mut a = args.clone();
+        if let Some(p) = a.get("plan").and_then(Value::as_str) {
+            let mut plan = api::example_plan();
+            plan["scenarios"]["sweeps"] = json!([]);
+            match p {
+                "$plan" => plan["returns"]["source"] = json!("fixed"),
+                "$planMc" => {
+                    plan["returns"]["source"] = json!("bootstrap");
+                    plan["returns"]["bootstrap"] = json!({ "paths": 200, "block": 12, "seed": 1 });
+                }
+                other => panic!("unbekannter Platzhalter {other}"),
+            }
+            a["plan"] = plan;
+        }
+        a
+    }
+
+    fn ipc_table() -> Value {
+        serde_json::from_str(include_str!("../ipc-commands.json")).expect("Tabelle ist JSON")
+    }
+
+    /// #142/AK1, AK2, AK4: Jeder Rechenbefehl der Tabelle gibt über die Tauri-IPC (Argumente wie die Oberfläche sie
+    /// sendet, camelCase) dieselbe Antwort wie der Verteiler des Entwicklungsservers (`engine::dispatch::call`, den
+    /// `devserver::call` unverändert aufruft). Darin enthalten (AK4): `run_simulation` mit `jobId` und danach
+    /// `progress_get` mit derselben Kennung.
+    #[test]
+    fn issue_142_ak2_tauri_commands_answer_like_the_dev_server() {
+        let (app, w, _g) = setup();
+        let lib = library_dir(app.handle()).unwrap();
+        let table = ipc_table();
+        let entries = table["compute"].as_array().unwrap();
+        assert!(entries.len() >= 14);
+        let mut progress_checked = false;
+        for e in entries {
+            let cmd = e["cmd"].as_str().unwrap();
+            let args = table_args(&e["args"]);
+            let mut tauri = call(&w, cmd, args.clone()).map_err(|e| e.as_str().unwrap_or_default().to_string());
+            // Die IPC-Antwort kommt als JSON-Text; serde_json liest Gleitkommazahlen daraus nicht immer bitgenau
+            // (ohne `float_roundtrip`). Die Antwort des Verteilers nimmt deshalb denselben Weg über Text.
+            let mut dev = engine::dispatch::call(cmd, &args, &lib, &home())
+                .map(|v| serde_json::from_str::<Value>(&v.to_string()).unwrap());
+            for v in [&mut tauri, &mut dev].into_iter().flatten() {
+                without_times(v);
+            }
+            if e["compare"] == "keys" {
+                let keys = |r: &Result<Value, String>| -> Vec<String> {
+                    let mut k: Vec<String> = r.as_ref().unwrap().as_object().unwrap().keys().cloned().collect();
+                    k.sort();
+                    k
+                };
+                assert_eq!(keys(&tauri), keys(&dev), "{cmd}");
+            } else {
+                assert_eq!(tauri, dev, "{cmd} {args}");
+            }
+            assert!(tauri.is_ok(), "{cmd}: {tauri:?}");
+            if cmd == "progress_get" {
+                let p = tauri.as_ref().unwrap();
+                assert_eq!((p["id"].as_u64(), p["active"].as_bool()), (Some(4711), Some(false)));
+                assert!(p["done"].as_u64().unwrap() >= 200, "{p}");
+                progress_checked = true;
+            }
+        }
+        assert!(progress_checked);
+    }
+
+    /// #142/AK3: Die Tabelle nennt jeden Befehl aus `generate_handler!`, als Rechenbefehl oder als «nur Desktop-App»,
+    /// und keinen anderen. Ein neuer Befehl ohne Eintrag lässt den Test fehlschlagen (Gegenstück für den
+    /// Entwicklungsserver: `engine::dispatch`, Test `issue_142_ak3_…`).
+    #[test]
+    fn issue_142_ak3_table_lists_every_tauri_command() {
+        let src = include_str!("main.rs");
+        let start = src.find("generate_handler![").unwrap() + "generate_handler![".len();
+        let end = start + src[start..].find(']').unwrap();
+        let mut handler: Vec<String> = src[start..end]
+            .split(',')
+            .map(|c| c.trim().to_string())
+            .filter(|c| !c.is_empty())
+            .collect();
+        handler.sort();
+        let table = ipc_table();
+        let mut listed: Vec<String> = table["compute"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["cmd"].as_str().unwrap().to_string())
+            .chain(
+                table["desktopOnly"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|c| c.as_str().unwrap().to_string()),
+            )
+            .collect();
+        listed.sort();
+        listed.dedup();
+        assert_eq!(handler, listed);
+    }
+
     #[test]
     fn plan_speichern_mit_pfad_und_wieder_lesen() {
         let (_app, w, _g) = setup();
