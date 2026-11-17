@@ -1416,10 +1416,41 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #126/AK1 | Der Rechenkern liefert zu jedem Perzentil den realen Endwert (`endTotalReal`), Rust-Test gegen den Lauf des Perzentils. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_126_ak1_…» | 17.11.2026 ok (Test vergleicht die sechs Perzentile mit Detaillauf; die übrigen haben den Wert, entstehen im Code aber im selben Ausdruck) |
-| #126/AK2 | Karte «Endvermögen nach Perzentil» zeigt in heutiger Kaufkraft für jedes Perzentil einen Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, AK3: …» | 17.11.2026 ok |
-| #126/AK3 | Die Karte trägt in heutiger Kaufkraft den Hinweis der Karte «Kennzahlen». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, AK3: …» | 17.11.2026 ok |
+| #126/AK2 | Karte «Endvermögen nach Perzentil» zeigt in heutiger Kaufkraft für jedes Perzentil einen Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, #126/AK3, #129/AK2: …» | 17.11.2026 ok |
+| #126/AK3 | Die Karte trägt in heutiger Kaufkraft den Hinweis der Karte «Kennzahlen». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, #126/AK3, #129/AK2: …» | 17.11.2026 ok |
 | #126/AK4 | Perzentil-Zeilen der Kennzahlen-Karte unverändert. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); #115/#118/93 in [ui.spec.js](../e2e/ui.spec.js) | 17.11.2026 ok (Golden-Dateien nur Zeilen hinzugefügt: 120, keine entfernt) |
 | #126/AK5 | Hilfe und Doku nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/50-ergebnisse.md`) | 17.11.2026 ok |
+
+### #128 Vergleich: fehlende Perzentile älterer Ergebnisse ohne Vermerk, Hilfe zur Perzentil-Tabelle zu allgemein
+
+[Issue #128](https://github.com/ingen63/VivaPlan/issues/128) · geschlossen · Umsetzung: 8c3b4de
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #128/AK1 | Vermerk im Vergleich für ältere Ergebnisse ohne reale Werte je Perzentil; Detailläufe weiter mit Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#128/AK1, #128/AK2: …» | 17.11.2026 ok |
+| #128/AK2 | Oberflächentest mit Ergebnis ohne reale Werte je Perzentil: Vermerk und Rückfall. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#128/AK1, #128/AK2: …» | 17.11.2026 ok |
+| #128/AK3 | Hilfe beschreibt die reale Perzentil-Tabelle nur im Thema «Vergleich». | ☑ | **gilt** | kein Test (Durchsicht `hilfe/50-ergebnisse.md`) | 17.11.2026 ok |
+| #128/AK4 | Hinweistext in `app.js` einmal definiert. | ☑ | **gilt** | kein Test (Durchsicht `REAL_PCT_HINT`) | 17.11.2026 ok |
+
+### #129 Tests zum realen Endvermögen je Perzentil schärfen
+
+[Issue #129](https://github.com/ingen63/VivaPlan/issues/129) · geschlossen · Umsetzung: c9ea087, a140f88
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #129/AK1 | e2e-Test zu #126 im Bericht #126/AK2 und #126/AK3 zugeordnet. | ☑ | **gilt** | kein Test (`report.test_marks`) | 17.11.2026 ok |
+| #129/AK2 | e2e-Test prüft jede Ergebnisspalte, ein Laden der Ergebnisse. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, #126/AK3, #129/AK2: …» | 17.11.2026 ok |
+| #129/AK3 | Rust-Test prüft alle Perzentile gegen ihren Lauf. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_126_ak1_…» | 17.11.2026 ok |
+| #129/AK4 | Endlichkeitsprüfungen umfassen `end_total_real`. | ☑ | **gilt** | [robustness.rs](../crates/engine/tests/robustness.rs), [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) «stress_couple_four_properties_100_years», Fuzz-Ziel `run_plan` | 17.11.2026 ok (Stresstest mit `QA_PATHS=2000`; mit 50'000 Pfaden Abbruch an der Speichergrenze #116, unabhängig) |
+
+### #130 Szenarien ohne reales Endvermögen je Perzentil
+
+[Issue #130](https://github.com/ingen63/VivaPlan/issues/130) · geschlossen · Umsetzung: df40918
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #130/AK1 | Szenario-Perzentile ohne `endTotalReal`, Zusammenfassung mit. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_130_ak1_…» | 17.11.2026 ok |
+| #130/AK2 | Szenarientabelle, Optimum und Vergleich zeigen dieselben Werte. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); alle Oberflächentests | 17.11.2026 ok (Golden 09: nur 90 Zeilen `endTotalReal` entfernt) |
 
 ### #117 Issues nach GitHub-Konvention: Nummer statt eigener ID
 
