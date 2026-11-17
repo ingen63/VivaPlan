@@ -3626,6 +3626,29 @@ test.describe("Vergleich wie das Einzelergebnis (#115)", () => {
     await noErrors(page, errors);
   });
 
+  test("#128/AK1, #128/AK2: älteres Ergebnis ohne reale Werte je Perzentil zeigt die Detailläufe und einen Vermerk", async ({ page }) => {
+    const errors = await openCompare(page);
+    // erstes Ergebnis so ablegen, wie es vor #126 gespeichert wurde: reale Werte nur in den Detailläufen
+    const { name, want } = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], d = await Runs.get(m.id);
+      const b = structuredClone(d.result.batch);
+      b.summary.percentiles.forEach(p => delete p.endTotalReal);
+      await Runs.add(m, { ...d, result: { ...d.result, batch: b } });
+      const det = new Map(b.details.map(([q, r]) => [q, fmtInt(r.summary.endTotalReal)]));
+      return { name: m.name, want: b.summary.percentiles.slice().sort((x, y) => y.percent - x.percent).map(p => det.get(p.percent) ?? "–") };
+    });
+    expect(want.filter(v => v === "–").length).toBeGreaterThan(0);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
+    await expect(card.locator("table tr td:nth-child(2)")).toHaveText(want);
+    await expect(page.locator(".cmpnote")).toContainText(`(älteres Ergebnis): ${name}`);
+    await expect(page.locator(".cmpnote")).toContainText("nur für den schlechtesten Lauf");
+    // nominal kein Vermerk
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
+    await expect(page.locator(".cmpnote", { hasText: "nur für den schlechtesten Lauf" })).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
   test("#115/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
     const errors = await openCompare(page);
     await tab(page, "Verläufe");

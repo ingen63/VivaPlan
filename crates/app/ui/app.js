@@ -2264,6 +2264,8 @@ const resultZoomBar = () => {
   return `<div class="minizoom">${zoomButtons("res-zoom", resultZoom ? (resultZoom.years ?? -1) : 0)}<span>${note}</span></div>`;
 };
 const chartBox = (id, h = 300, zoom = false) => `${zoom ? resultZoomBar() : ""}<div class="chartwrap"><svg id="${id}" class="bigchart" style="height:${h}px"></svg><div id="${id}-tip" class="tip"></div></div>`;
+/** Hinweis zum Endvermögen je Perzentil in heutiger Kaufkraft (Vergleich, #126). */
+const REAL_PCT_HINT = "In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils";
 const FAN_LEGEND = legend([["--c1", "5.–95. Perzentil", ".25"], ["--c1", "25.–75. Perzentil", ".5"], ["--c1", "Median", null, "solid"], ["--warn", "1. und 99. Perzentil", null, "dashed"], ["--err", "Schlechtester Wert", null, "solid"]])
   + `<p class="hint">Die Linie «Schlechtester Wert» zeigt für jeden Monat den tiefsten Wert aller Läufe; das kann in jedem Monat ein anderer Lauf sein. Der einzelne schlechteste Lauf (nach Endvermögen) ist unter «Einzelne Läufe» abrufbar.</p>`;
 const pName = p => p === 0 ? "Schlechtester Lauf" : `${p}. Perzentil`;
@@ -3053,13 +3055,13 @@ const cmpSw = it => `<i class="sw" style="background:var(${it.color})"></i>`;
 const cmpReal = () => realView ? "heutige Kaufkraft (jedes Ergebnis mit seiner eigenen Inflation)" : "nominal";
 function cmpOverview(body, items) {
   const num = v => v == null || !Number.isFinite(v) ? "–" : fmtMio(v);
-  /** Endvermögen eines Perzentils: nominal aus der Zusammenfassung, real aus dem Lauf dieses Perzentils. */
+  /** Endvermögen eines Perzentils aus der Zusammenfassung, real umgerechnet mit der Teuerung des Laufs dieses Perzentils.
+   *  Ergebnisse vor #126 haben den realen Wert nur in den Detailläufen (0, 1, 5, 50, 95, 99). */
   const endAt = (it, q) => {
     if (it.single) return q === 50 ? (realView ? it.single.summary.endTotalReal : it.single.summary.endTotal) : null;
     if (!it.batch) return null;
     const pc = it.batch.summary.percentiles.find(p => p.percent === q);
     if (!realView) return pc?.endTotal ?? null;
-    // #126: real je Perzentil aus der Zusammenfassung; ältere gespeicherte Ergebnisse haben es nur in den Detailläufen
     return pc?.endTotalReal ?? it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
   };
   const notes = [];
@@ -3084,6 +3086,8 @@ function cmpOverview(body, items) {
   const bandOf = it => { if (!it.batch) return null; const b = it.batch.bands; return realView ? b.real || null : b; };
   const noReal = items.filter(it => it.batch && realView && !it.batch.bands.real);
   if (noReal.length) notes.push(`Ohne Werte in heutiger Kaufkraft (älteres Ergebnis): ${noReal.map(it => esc(it.name)).join(", ")}.`);
+  const partReal = realView ? items.filter(it => it.batch && it.batch.bands.real && it.batch.summary.percentiles.some(p => p.endTotalReal == null)) : [];
+  if (partReal.length) notes.push(`In heutiger Kaufkraft nur für den schlechtesten Lauf, das 1., 5., 50., 95. und 99. Perzentil (älteres Ergebnis): ${partReal.map(it => esc(it.name)).join(", ")}.`);
   const singles = items.filter(it => it.single);
   if (singles.length) notes.push(`Einzellauf ohne Perzentile (in der Bandbreite nur der eine Lauf; keine Perzentile, keine Wahrscheinlichkeit und kein Alter bei Erschöpfung): ${singles.map(it => esc(it.name)).join(", ")}.`);
   const fan = items.map(it => it.single ? { med: it.single.records.map(r => rv(r, r.total)) } : bandOf(it) ? { med: bandOf(it).p50, lo: bandOf(it).p5, hi: bandOf(it).p95 } : null);
@@ -3096,7 +3100,7 @@ function cmpOverview(body, items) {
   const qs = [...new Set(batches.flatMap(it => it.batch.summary.percentiles.map(p => p.percent)))].sort((a, b) => b - a);
   const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">Perzentil</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
     ${qs.map(q => `<tr><td class="l">${q === 0 ? "Schlechtester Lauf" : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
-      + (realView ? `<p class="hint">In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils; die Reihenfolge kann deshalb von der nominalen abweichen.</p>` : "")
+      + (realView ? `<p class="hint">${REAL_PCT_HINT}; die Reihenfolge kann deshalb von der nominalen abweichen.</p>` : "")
     : `<p class="hint" style="margin:0">Kein Ergebnis mit mehreren Läufen.</p>`;
   // Wahrscheinlichkeit, dass das Geld reicht
   const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);
@@ -3105,7 +3109,7 @@ function cmpOverview(body, items) {
   const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
   const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
   body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
-      + (realView ? `<p class="hint">In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils.</p>` : ""))
+      + (realView ? `<p class="hint">${REAL_PCT_HINT}.</p>` : ""))
     + cmpNote(notes)
     + (fanLines.length ? card("Bandbreite des Gesamtvermögens", `${cmpReal()} · durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil, gepunktet: 95. Perzentil`, chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
     + card("Endvermögen nach Perzentil", cmpReal(), pTable)
