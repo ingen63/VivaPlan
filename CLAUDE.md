@@ -6,6 +6,17 @@ Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick i
 
 Deutsch mit «ss» statt «ß» (Schweizer Rechtschreibung). Im Gespräch mit mir: Anrede «du». Texte der Oberfläche, Hilfe, Commits und Issues sind deutsch; Oberfläche und Hilfe sprechen die Nutzerinnen und Nutzer weiterhin mit «Sie» an.
 
+## Technik
+
+- **Rust** (Edition 2021), Workspace mit `crates/engine` (Rechenkern, Bibliothek), `crates/cli` (Kommandozeile `vivaplan`) und `crates/app` (Desktop-App); eigener Workspace in `fuzz/`.
+- **Desktop-App:** Tauri 2 (`tauri`, `tauri-plugin-dialog`).
+- **Oberfläche:** HTML, CSS und JavaScript ohne externe Bibliotheken und ohne Build-Schritt (`crates/app/ui/`).
+- **Rechenkern:** serde und serde_json (Projektdatei `.vplan` als JSON), schemars, rayon (parallele Monte-Carlo-Läufe), calamine (Import alter Konfigurationen).
+- **Tests:** cargo-nextest, proptest, cargo-fuzz, cargo-llvm-cov, cargo-mutants; Oberfläche mit Playwright (Node, `e2e/`).
+- **Werkzeuge:** Make, Shell und Python (`tools/`, Berichte und Abdeckung des geänderten Codes), GitHub Actions.
+
+Aufbau der Ordner und Rechenregeln: `docs/ENTWICKLUNG.md`.
+
 ## Anforderungen kommen aus GitHub Issues
 
 Jede Änderung hat ein Issue. Der Titel beginnt mit der ID (`FEA-100 …`, `ISS-12 …`), der Text enthält die Anforderung und die **Abnahmekriterien als Häkchen-Liste**. Die Abnahmekriterien sind die Prüfliste: Jedes Kriterium bekommt, wo möglich, einen Test.
