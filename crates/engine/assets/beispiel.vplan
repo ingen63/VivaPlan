@@ -314,6 +314,7 @@
       "stocks": 0.05
     },
     "parametric": {
+      "auto": true,
       "df": 6,
       "jumpLambda": 0.05,
       "jumpMu": -0.3,
