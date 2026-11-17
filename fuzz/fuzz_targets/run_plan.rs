@@ -118,6 +118,7 @@ fn keep_small(plan: &mut Value) {
 fn finite_result(r: &engine::sim::SimResult) -> bool {
     let s = &r.summary;
     s.end_total.is_finite()
+        && s.end_total_real.is_finite()
         && s.taxes_total.is_finite()
         && r.records.iter().all(|x| {
             [
@@ -154,7 +155,10 @@ fuzz_target!(|data: &[u8]| {
     if let Some(b) = &out.batch {
         assert!(
             b.details.iter().all(|(_, r)| finite_result(r))
-                && b.summary.percentiles.iter().all(|p| p.end_total.is_finite()),
+                && b.summary
+                    .percentiles
+                    .iter()
+                    .all(|p| p.end_total.is_finite() && p.end_total_real.is_some_and(f64::is_finite)),
             "ungültige Zahl: {}",
             serde_json::to_string(&plan).unwrap()
         );

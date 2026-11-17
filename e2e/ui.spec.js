@@ -3607,28 +3607,22 @@ test.describe("Vergleich wie das Einzelergebnis (#115)", () => {
     await noErrors(page, errors);
   });
 
-  test("#126/AK2, AK3: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt jedes Perzentil, mit Hinweis", async ({ page }) => {
+  test("#126/AK2, #126/AK3, #129/AK2: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt jedes Perzentil je Ergebnis, mit Hinweis", async ({ page }) => {
     const errors = await openCompare(page);
     const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
     await expect(card.locator(".hint")).toHaveCount(0);
     await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
-    const card2 = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
-    const rows = card2.locator("table tr");
-    const n = await page.evaluate(async () => {
-      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0];
-      return (await Runs.get(m.id)).result.batch.summary.percentiles.length;
-    });
-    expect(n).toBeGreaterThan(6);
-    await expect(rows).toHaveCount(n + 1);
-    // keine leere Zelle («–») in der ganzen Tabelle
-    await expect(card2.locator("table td", { hasText: "–" })).toHaveCount(0);
-    // Wert je Zeile = reales Endvermögen des Laufs dieses Perzentils (erstes Ergebnis, Spalte 1)
+    // je Ergebnis (Spalte) das reale Endvermögen des Laufs je Perzentil, Zeilen absteigend wie in der Tabelle
     const want = await page.evaluate(async () => {
-      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0];
-      return (await Runs.get(m.id)).result.batch.summary.percentiles.map(p => [p.percent, fmtInt(p.endTotalReal)]);
+      const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
+      return Promise.all(metas.map(async m => (await Runs.get(m.id)).result.batch.summary.percentiles
+        .slice().sort((a, b) => b.percent - a.percent).map(p => fmtInt(p.endTotalReal))));
     });
-    for (const [q, v] of want) await expect(card2.locator("table tr", { hasText: new RegExp("^" + (q === 0 ? "Schlechtester" : q + "\\.")) }).locator("td").nth(1)).toHaveText(v);
-    await expect(card2.locator(".hint")).toContainText("Laufs dieses Perzentils");
+    expect(want).toHaveLength(2);
+    for (let i = 0; i < want.length; i++) await expect(card.locator(`table tr td:nth-child(${i + 2})`)).toHaveText(want[i]);
+    await expect(card.locator(".hint")).toContainText("Laufs dieses Perzentils");
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
+    await expect(card.locator(".hint")).toHaveCount(0);
     await noErrors(page, errors);
   });
 

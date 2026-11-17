@@ -96,11 +96,12 @@ fn mutate(rng: &mut Rng, plan: &mut Value, destructive: bool) {
     }
 }
 
-/// serde_json schreibt NaN als null; deshalb die Zahlen direkt prüfen.
+/// serde_json schreibt NaN als null; deshalb die Zahlen direkt prüfen (#129/AK4: auch das reale Endvermögen).
 fn finite_result(r: &engine::sim::SimResult) -> bool {
     let s = &r.summary;
     [
         s.end_total,
+        s.end_total_real,
         s.end_liquid,
         s.min_liquid.min(0.0),
         s.pension_fund_monthly,
@@ -134,7 +135,10 @@ fn finite_run(out: &api::RunOut) -> bool {
     out.single.as_ref().is_none_or(finite_result)
         && out.batch.as_ref().is_none_or(|b| {
             b.details.iter().all(|(_, r)| finite_result(r))
-                && b.summary.percentiles.iter().all(|p| p.end_total.is_finite())
+                && b.summary
+                    .percentiles
+                    .iter()
+                    .all(|p| p.end_total.is_finite() && p.end_total_real.is_some_and(f64::is_finite))
                 && b.bands
                     .p50
                     .iter()

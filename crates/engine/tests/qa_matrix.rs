@@ -1448,7 +1448,12 @@ fn stress_couple_four_properties_100_years() {
     for (pct, d) in &b.details {
         check_books(d, &format!("Stress {pct}"));
     }
-    assert!(b.summary.percentiles.iter().all(|p| p.end_total.is_finite()));
+    // #129/AK4
+    assert!(b
+        .summary
+        .percentiles
+        .iter()
+        .all(|p| p.end_total.is_finite() && p.end_total_real.is_some_and(f64::is_finite)));
 }
 
 // ---------------------------------------------------------------------------------------------

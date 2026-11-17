@@ -1052,41 +1052,59 @@ fn issue_124_ak3_mortgage_interest_counts_for_the_reserve() {
     assert!((cash(0.012) - 12.0 * 1400.0).abs() < 1e-6, "mit Zins: {}", cash(0.012));
 }
 
-/// #126/AK1: Jedes Perzentil der Zusammenfassung trägt das reale Endvermögen seines Laufs. Parametrisch mit zufälliger
-/// Inflation: Die Läufe haben verschiedene Inflation, real und nominal unterscheiden sich je Lauf anders.
+/// #126/AK1, #129/AK3: Jedes Perzentil der Zusammenfassung trägt das reale Endvermögen seines Laufs. Parametrisch mit
+/// zufälliger Inflation: Die Läufe haben verschiedene Inflation, real und nominal unterscheiden sich je Lauf anders.
 #[test]
 fn issue_126_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
     let mut v = engine::api::example_plan();
     v["returns"]["source"] = json!("parametric");
-    v["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "jumpLambda": 0, "jumpMu": 0, "jumpSigma": 0, "seed": 3 });
+    v["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
     v["scenarios"]["sweeps"] = json!([]);
     let out = engine::api::run(&v, Path::new("/"), None);
     assert!(out.error.is_none(), "{:?}", out.error);
-    let b = out.batch.expect("mehrere Läufe");
-    let json = serde_json::to_value(&b.summary).unwrap();
-    let pcts = json["percentiles"].as_array().unwrap();
-    assert!(
-        pcts.len() > 6,
-        "alle Perzentile, nicht nur die der Detailläufe: {}",
-        pcts.len()
-    );
-    // Mit den Detailläufen (0, 1, 5, 50, 95, 99) vergleichbar: gleicher Lauf, gleicher realer Endwert.
-    let mut checked = 0;
-    for (q, run) in &b.details {
-        let p = pcts.iter().find(|p| p["percent"] == *q).expect("Perzentil");
-        let real = p["endTotalReal"].as_f64().expect("endTotalReal");
-        assert!(
-            (real - run.summary.end_total_real).abs() < 1e-6,
-            "{q}: {real} gegen {}",
-            run.summary.end_total_real
+    let pcts = out.batch.expect("mehrere Läufe").summary.percentiles;
+    assert_eq!(pcts.len(), 10);
+    // Jeden Perzentil-Lauf über seine Pfadnummer nachrechnen: gleicher Lauf, gleicher nominaler und realer Endwert.
+    let picks: Vec<(u32, usize)> = pcts.iter().map(|p| (p.percent, p.index)).collect();
+    let re = engine::api::rerun_paths(&v, &picks, Path::new("/"), None);
+    assert!(re.error.is_none(), "{:?}", re.error);
+    assert_eq!(re.details.len(), pcts.len());
+    for (p, (q, run)) in pcts.iter().zip(&re.details) {
+        assert_eq!(p.percent, *q);
+        assert_eq!(p.end_total.to_bits(), run.summary.end_total.to_bits(), "nominal {q}");
+        assert_eq!(
+            p.end_total_real.expect("real").to_bits(),
+            run.summary.end_total_real.to_bits(),
+            "real {q}"
         );
-        assert!((p["endTotal"].as_f64().unwrap() - run.summary.end_total).abs() < 1e-6);
-        checked += 1;
     }
-    assert_eq!(checked, 6);
-    // Auch die übrigen Perzentile haben einen Wert, und real ≠ nominal bei positiver Inflation.
-    assert!(pcts.iter().all(|p| p["endTotalReal"].is_f64()));
-    assert!(pcts.iter().any(|p| p["endTotalReal"] != p["endTotal"]));
+    // Zufällige Inflation: Das Verhältnis real zu nominal ist nicht in allen Läufen gleich.
+    let ratios: Vec<f64> = pcts
+        .iter()
+        .filter(|p| p.end_total != 0.0)
+        .map(|p| p.end_total_real.unwrap() / p.end_total)
+        .collect();
+    assert!(ratios.iter().any(|r| (r - ratios[0]).abs() > 1e-6), "{ratios:?}");
+}
+
+/// #130/AK1: Die Perzentile der Szenarien tragen kein reales Endvermögen, die Zusammenfassung des Laufs weiterhin schon.
+#[test]
+fn issue_130_ak1_scenario_percentiles_without_real_end_wealth() {
+    let mut v = engine::api::example_plan();
+    v["returns"]["source"] = json!("parametric");
+    v["returns"]["parametric"] = json!({ "paths": 20, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
+    let out = engine::api::run(&v, Path::new("/"), None);
+    assert!(out.error.is_none(), "{:?}", out.error);
+    let json = serde_json::to_value(&out).unwrap();
+    let sc = json["scenarios"]["results"].as_array().expect("Szenarien");
+    assert!(!sc.is_empty());
+    for p in sc.iter().flat_map(|r| r["percentiles"].as_array().unwrap()) {
+        assert!(p.get("endTotalReal").is_none(), "{p}");
+        assert!(p["endTotal"].is_f64());
+    }
+    let batch = json["batch"]["summary"]["percentiles"].as_array().expect("Lauf");
+    assert_eq!(batch.len(), 10);
+    assert!(batch.iter().all(|p| p["endTotalReal"].is_f64()));
 }
 
 /// #130/AK1: Die Perzentile der Szenarien tragen kein reales Endvermögen, die Zusammenfassung des Laufs weiterhin schon.
