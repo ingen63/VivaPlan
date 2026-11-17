@@ -255,6 +255,7 @@ Jede Tabelle hat Stufen aus **Betrag** und **Satz**. Dazwischen interpoliert die
 - **Sätze sind Dezimalzahlen:** 0.05 steht für 5 %, in der Oberfläche als Prozent eingetippt.
 - Der Steuerbetrag ist Satz × Betrag × Steuerfuss, auf Rappen gerundet.
 - **Grenzen:** Jeder Satz liegt zwischen 0 % und 100 %, jeder Betrag ist 0 oder grösser. Werte ausserhalb meldet die Prüfung am Feld.
+- **Steuer darf nicht sinken:** Ein höherer Betrag ergibt nie eine tiefere Steuer. Sinkt der Satz zwischen zwei Stufen so stark, dass Satz × Betrag kleiner wird, meldet die Prüfung eine **Warnung** an der betroffenen Stufe; gerechnet wird trotzdem. Meist ist dann ein Grenzsteuersatz statt des Durchschnittssatzes erfasst. Bei mehreren Kapitalbezügen im selben Jahr wird die Steuer auf einen weiteren Bezug in diesem Fall nie negativ, sondern 0.
 - **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet. Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
 - **Verheiratete:** Bei zwei Personen und angekreuztem «Verheiratet» können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
 - Gehen Sie von der **effektiven** Steuerbelastung aus, nicht vom Grenzsteuersatz. Der Steuerrechner Ihres Kantons liefert beides.

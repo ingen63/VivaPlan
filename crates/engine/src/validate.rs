@@ -8,6 +8,7 @@ use crate::model::{
     Strategy, Withdrawal,
 };
 use crate::resolve::{Curve, Resolver};
+use crate::tax;
 use crate::time::{TimeRef, YearMonth};
 
 /// Höchstes zulässiges Alter am Simulationsende.
@@ -50,6 +51,15 @@ impl Issues {
     fn err_at(&mut self, section: &'static str, field: impl Into<String>, message: impl Into<String>) {
         self.0.push(Issue {
             severity: Severity::Error,
+            section,
+            message: message.into(),
+            field: Some(field.into()),
+        });
+    }
+    /// Warnung an einem bestimmten Feld der Planung.
+    fn warn_at(&mut self, section: &'static str, field: impl Into<String>, message: impl Into<String>) {
+        self.0.push(Issue {
+            severity: Severity::Warning,
             section,
             message: message.into(),
             field: Some(field.into()),
@@ -603,6 +613,22 @@ fn check(plan: &Plan, v: &mut Issues) {
         tables.push(("couple.capital", "Kapitalbezugssteuer (Verheiratete)", &c.capital));
     }
     for (key, name, rows) in tables {
+        // #134: Die Steuer (Betrag × Satz) darf mit steigendem Betrag nicht fallen; nur eine Warnung, gerechnet wird.
+        if rows
+            .iter()
+            .all(|&(from, rate)| from.is_finite() && from >= 0.0 && (0.0..=1.0).contains(&rate))
+        {
+            if let Some(i) = tax::falling_row(rows) {
+                v.warn_at(
+                    "taxes",
+                    format!("taxes.{key}.{i}.1"),
+                    format!(
+                        "{name}, Stufe {}: Mit diesem Satz sinkt die Steuer, obwohl der Betrag steigt. Bitte prüfen Sie die Tabelle (Satz = Steuer geteilt durch Betrag, nicht Grenzsteuersatz).",
+                        i + 1
+                    ),
+                );
+            }
+        }
         for (i, &(from, rate)) in rows.iter().enumerate() {
             if !(from.is_finite() && from >= 0.0) {
                 v.err_at(

@@ -406,3 +406,39 @@ fn bands_and_percentiles_include_extremes() {
     let real = bands.real.as_ref().unwrap();
     assert!(real.min[last] <= real.p1[last]);
 }
+
+// #134/AK3: Kapitaltabelle [[0, 10 %], [300'000, 1 %]], zwei Kapitalbezüge im selben Jahr: A 200'000 im Januar,
+// B 300'000 im Oktober. Steuer auf 200'000 = 200'000 × 4 % = 8'000; auf zusammen 500'000 = 500'000 × 1 % = 5'000.
+// Der zweite Bezug ergab bisher −3'000; neu 0 (nie negativ). Die Prüfung warnt vor der Tabelle.
+#[test]
+fn issue_134_ak3_capital_tax_of_a_second_withdrawal_is_never_negative() {
+    let mut v = with_partner(base());
+    v["milestones"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "id": "retireB", "name": "Pensionierung B", "kind": "date", "date": "2030-10" }));
+    v["pension"]["pk"] = json!({ "capital": 200_000, "at": "retire", "lumpsum": 1.0, "conversion": 0.05 });
+    v["partner"]["pk"] = json!({ "capital": 300_000, "at": "retireB", "lumpsum": 1.0, "conversion": 0.05 });
+    v["taxes"] = json!({ "multiplier": 1.0, "income": [], "wealth": [], "capital": [[0, 0.10], [300_000, 0.01]] });
+    let res = run(v.clone());
+    assert!(
+        (res.records[0].taxes - 8_000.0).abs() < 0.01,
+        "{}",
+        res.records[0].taxes
+    );
+    assert!(res.records.iter().all(|r| r.taxes >= 0.0), "keine negative Steuer");
+    assert!(
+        res.records[9].taxes.abs() < 0.01,
+        "zweiter Bezug: {}",
+        res.records[9].taxes
+    );
+    assert!(
+        (res.summary.taxes_total - 8_000.0).abs() < 0.01,
+        "{}",
+        res.summary.taxes_total
+    );
+    let issues = validate::validate(&plan(v));
+    assert!(issues.iter().any(|i| i.severity == Severity::Warning
+        && i.field.as_deref() == Some("taxes.capital.1.1")
+        && i.message.contains("sinkt die Steuer")));
+}

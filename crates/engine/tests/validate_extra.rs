@@ -119,3 +119,37 @@ fn too_many_combinations_are_an_error_in_the_plan() {
     ] });
     assert!(has(&v, Severity::Error, "scenarios", "1'010'000 Kombinationen"));
 }
+
+// #134/AK4: Eine Satztabelle, bei der die Steuer (Betrag × Satz) mit steigendem Betrag fällt, meldet die Prüfung als
+// Warnung mit Feldbezug auf die Zeile; steigende Durchschnittssätze und die Beispielplanung bleiben ohne Meldung.
+#[test]
+fn issue_134_ak4_falling_tax_table_is_a_warning_at_the_row() {
+    let issues = |v: &Value| -> Vec<Issue> { api::validate(v) };
+    let falling = |i: &Issue| i.message.contains("sinkt die Steuer");
+
+    let mut v = base();
+    v["taxes"]["income"] = json!([[0, 0.0], [100_000, 0.10], [200_000, 0.15]]);
+    assert!(!issues(&v).iter().any(falling), "steigende Sätze");
+    assert!(!issues(&api::example_plan()).iter().any(falling), "Beispielplanung");
+
+    // [[0, 10 %], [300'000, 1 %]]: 200'000 → 8'000, 300'000 → 3'000
+    for (key, path) in [("wealth", "taxes.wealth.1.1"), ("capital", "taxes.capital.1.1")] {
+        let mut v = base();
+        v["taxes"][key] = json!([[0, 0.10], [300_000, 0.01]]);
+        let found: Vec<Issue> = issues(&v).into_iter().filter(falling).collect();
+        assert_eq!(found.len(), 1, "{key}: {found:?}");
+        assert_eq!(found[0].severity, Severity::Warning, "Warnung, kein Fehler");
+        assert_eq!((found[0].section, found[0].field.as_deref()), ("taxes", Some(path)));
+    }
+    // Tabellen für Verheiratete, Zeile in der erfassten Reihenfolge
+    let mut v = base();
+    v["taxes"]["couple"] = json!({ "income": [[300_000, 0.01], [0, 0.10]], "wealth": [], "capital": [] });
+    let found: Vec<Issue> = issues(&v).into_iter().filter(falling).collect();
+    assert_eq!(found[0].field.as_deref(), Some("taxes.couple.income.0.1"));
+    assert!(found[0].message.starts_with("Einkommenssteuer (Verheiratete), Stufe 1"));
+    // Ungültige Sätze sind schon ein Fehler: keine zusätzliche Warnung
+    let mut v = base();
+    v["taxes"]["income"] = json!([[0, 0.10], [300_000, -0.5]]);
+    assert!(!issues(&v).iter().any(falling));
+    assert!(has(&v, Severity::Error, "taxes", "Steuersatz muss zwischen"));
+}

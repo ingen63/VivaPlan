@@ -1219,7 +1219,8 @@ impl<'a> Run<'a> {
         let t = &self.s.taxes;
         let before = tax::tax(&t.capital, self.year_capital, t.multiplier);
         self.year_capital += amount;
-        tax::tax(&t.capital, self.year_capital, t.multiplier) - before
+        // #134: Bei einer Tabelle mit fallender Steuer (Warnung der Prüfung) wäre der Zuwachs negativ.
+        (tax::tax(&t.capital, self.year_capital, t.multiplier) - before).max(0.0)
     }
 
     fn sell(&mut self, i: usize, m: YearMonth, kind: EventKind) {

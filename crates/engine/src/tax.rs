@@ -24,6 +24,40 @@ pub fn rate_at(table: &[(f64, f64)], x: f64) -> f64 {
     t[t.len() - 1].1
 }
 
+/// #134: Fällt die Steuer `x × rate_at(table, x)` irgendwo, wenn der Betrag steigt? Liefert die Zeile (Index in der
+/// erfassten Reihenfolge), bei der sie fällt, sonst `None`.
+///
+/// Zwischen zwei Stufen ist der Satz linear, die Steuer also quadratisch und ihre Ableitung `r(x) + x × s` linear; es
+/// genügt, die Ableitung an beiden Enden des Abschnitts zu prüfen. Ausserhalb der Stufen ist der Satz konstant (≥ 0).
+/// Mehrere Stufen mit gleichem Betrag sind ein Sprung: [`rate_at`] nimmt auf der Stufe den Satz der ersten und gleich
+/// danach den der letzten dieser Zeilen (stabile Sortierung). Ist der letzte tiefer, fällt die Steuer.
+pub fn falling_row(table: &[(f64, f64)]) -> Option<usize> {
+    let mut idx: Vec<usize> = (0..table.len()).collect();
+    idx.sort_by(|&a, &b| table[a].0.total_cmp(&table[b].0));
+    const EPS: f64 = 1e-12;
+    let mut first = 0;
+    for k in 0..idx.len() {
+        let (x, r) = table[idx[k]];
+        if k > 0 && table[idx[k - 1]].0 != x {
+            first = k;
+        }
+        // Sprung am Ende einer Gruppe gleicher Beträge
+        let group_ends = k + 1 == idx.len() || table[idx[k + 1]].0 != x;
+        if group_ends && k > first && x > 0.0 && r < table[idx[first]].1 - EPS {
+            return Some(idx[k]);
+        }
+        // Abschnitt bis zur nächsten Stufe (von der letzten Zeile dieser Gruppe zur ersten der nächsten)
+        if group_ends && k + 1 < idx.len() {
+            let (x1, r1) = table[idx[k + 1]];
+            let s = (r1 - r) / (x1 - x);
+            if r + x * s < -EPS || r1 + x1 * s < -EPS {
+                return Some(idx[k + 1]);
+            }
+        }
+    }
+    None
+}
+
 /// Steuer = Betrag × Satz × Steuerfuss, auf Rappen gerundet.
 pub fn tax(table: &[(f64, f64)], x: f64, multiplier: f64) -> f64 {
     if x < 0.0 {
@@ -58,7 +92,8 @@ pub fn property_gain_tax_held(def: Option<&PropertyGainTax>, gain: f64, years: O
             None => def.duration_rates.iter().map(|&(_, r)| r).max_by(f64::total_cmp),
         }
         .unwrap_or(0.0);
-        return round2(gain * rate * factor * (1.0 - def.reduction));
+        // #134: nie negativ, auch bei einer Ermässigung über 100 %
+        return round2(gain * rate * factor * (1.0 - def.reduction)).max(0.0);
     }
     // Stufen in der erfassten Reihenfolge; über der letzten Stufe gilt deren Satz.
     let mut rest = gain;
@@ -81,7 +116,8 @@ pub fn property_gain_tax_held(def: Option<&PropertyGainTax>, gain: f64, years: O
             .max_by(|a, b| a.0.total_cmp(&b.0))
             .map_or(0.0, |&(_, change)| change)
     });
-    round2(tax * (1.0 + adjust) * factor * (1.0 - def.reduction))
+    // #134: nie negativ, auch bei negativen Sätzen oder einer Ermässigung über 100 %
+    round2(tax * (1.0 + adjust) * factor * (1.0 - def.reduction)).max(0.0)
 }
 
 pub fn round2(v: f64) -> f64 {
