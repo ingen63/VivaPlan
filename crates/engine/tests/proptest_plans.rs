@@ -273,6 +273,20 @@ fn check(v: &Value, repeat: bool) -> Result<(), TestCaseError> {
                 prop_assert!(r.stocks >= -1e-6 && r.bonds >= -1e-6, "negative Anlage im {}", r.month);
             }
         }
+        // #133/AK2: Veränderung des Gesamtvermögens = Geldflüsse und Bewertungsänderungen des Monats (Hauptbuch)
+        let mut prev = res.summary.start_total;
+        for r in &res.records {
+            let (delta, flows) = (r.total - prev, r.ledger.sum());
+            prop_assert!(
+                (delta - flows).abs() <= 0.01 + 1e-9 * r.total.abs(),
+                "Geldfluss im {}: Total ändert sich um {:.4}, Hauptbuch {:.4} ({:?})",
+                r.month,
+                delta,
+                flows,
+                r.ledger
+            );
+            prev = r.total;
+        }
         let taxes: f64 = res.records.iter().map(|r| r.taxes).sum();
         prop_assert!(
             (res.summary.taxes_total - taxes).abs() < 1e-6 * taxes.max(1.0),

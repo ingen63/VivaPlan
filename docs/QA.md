@@ -110,9 +110,12 @@ inklusive Kompilieren).
 
 ## Offene Punkte
 
-1. **Cashflow-Invariante mit Immobilien, Pensionskasse und 3a:** Die Monatsgleichung mit Renditen ist für Planungen ohne
-   diese Bestandteile geprüft. Mit ihnen fehlen im Monatsdatensatz die Einzelposten (PK-Zins, Hypothekarzins,
-   Kauf-/Verkaufsvorgänge), die Vermögensgleichung gilt dort aber (`random_plans_keep_books_balanced`).
+1. ~~**Cashflow-Invariante mit Immobilien, Pensionskasse und 3a**~~ – erledigt mit #133: Der Monatsdatensatz führt intern
+   ein Hauptbuch (`sim::Ledger`: Einkommen, Einmal- und Sparbeträge, Lebenshaltung, Wohnkosten, Amortisation, Steuern,
+   Rendite, PK-Beiträge und -Zins, 3a-Zins, Wertänderung der Liegenschaften, Umwandlung in die PK-Rente). Die Veränderung
+   des Gesamtvermögens muss jeden Monat genau dieser Summe entsprechen (±0.01 CHF), geprüft in `proptest_plans.rs`,
+   `qa_matrix.rs` (`check_books`) und für die Golden-Planungen. Die Gleichung «Total = Summe der Teile» allein war keine
+   Prüfung: `sim.rs` rechnet das Total genau so.
 2. **Oberfläche:** Die Dialoge der Desktop-App (Datei öffnen/speichern über das Betriebssystem, Menüleiste) lassen sich im
    Browser nicht prüfen; dort gelten Dateiauswahl und Download. Die Darstellung der Grafiken wird nur auf Vorhandensein
    und Tooltips geprüft, nicht pixelgenau.

@@ -71,6 +71,53 @@ pub struct Event {
     pub text: String,
 }
 
+/// #133: Geldflüsse und Bewertungsänderungen eines Monats. Die Veränderung des Gesamtvermögens gegenüber dem Vormonat
+/// ist genau [`Ledger::sum`]; alle übrigen Buchungen (Anlagen kaufen und verkaufen, Cash nachfüllen, Hypothek tilgen,
+/// Säule 3a einzahlen und auszahlen, Liegenschaft kaufen und verkaufen) sind Umbuchungen und ändern das Total nicht.
+/// Nur intern (Prüfung in den Tests), nicht im Ergebnis.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Ledger {
+    /// Erwerbseinkommen, PK-Rente und AHV.
+    pub income: f64,
+    /// Einmalbeträge (positiv: Zufluss, negativ: Ausgabe).
+    pub extras: f64,
+    /// Sparbeträge aus der Planung.
+    pub savings: f64,
+    /// Lebenshaltung (Abfluss, positiv gezählt).
+    pub living: f64,
+    /// Wohnkosten wie bezahlt: Miete, Nebenkosten, Hypothekarzins, Amortisation (Abfluss, positiv gezählt).
+    pub housing: f64,
+    /// Amortisation in den Wohnkosten: senkt die Hypothek oder erhöht die Säule 3a, bleibt also im Vermögen.
+    pub amortization: f64,
+    /// Alle bezahlten Steuern (Abfluss, positiv gezählt).
+    pub taxes: f64,
+    /// Rendite von Aktien und Obligationen.
+    pub market: f64,
+    /// Beiträge an die Pensionskasse.
+    pub pk_contributions: f64,
+    /// Zinsgutschrift der Pensionskasse (im Dezember und beim Bezug).
+    pub pk_interest: f64,
+    /// Zins der Säule 3a.
+    pub p3a_interest: f64,
+    /// Wertänderung der Liegenschaften (Teuerung).
+    pub revaluation: f64,
+    /// In eine Rente umgewandeltes PK-Kapital (verlässt das Vermögen, positiv gezählt).
+    pub annuity: f64,
+}
+
+impl Ledger {
+    /// Veränderung des Gesamtvermögens nach dem Hauptbuch.
+    pub fn sum(&self) -> f64 {
+        self.income + self.extras + self.savings - self.living - self.housing + self.amortization - self.taxes
+            + self.market
+            + self.pk_contributions
+            + self.pk_interest
+            + self.p3a_interest
+            + self.revaluation
+            - self.annuity
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MonthRecord {
@@ -118,6 +165,9 @@ pub struct MonthRecord {
     /// Wertentwicklung von Aktien und Obligationen seit Start (1 = Startmonat), nominal.
     pub stock_index: f64,
     pub bond_index: f64,
+    /// #133: Hauptbuch des Monats (nur intern, nicht im Ergebnis).
+    #[serde(skip)]
+    pub ledger: Ledger,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -1011,6 +1061,8 @@ struct Run<'a> {
     /// Einmalige Ausgaben dieses Monats ausserhalb der Ereignisse (Eigenmittel-Rest beim Kauf, Einmalzahlungen und
     /// Rückzahlungen der Hypothek). Sie gehören zu den Ausgaben des Monats und werden erst nach der Vorausschau bezahlt.
     month_out: f64,
+    /// #133: Hauptbuch des laufenden Monats.
+    ledger: Ledger,
     /// Gründe für den Sonderfall A in diesem Monat.
     a_reasons: Vec<String>,
     /// Reservierter Verkaufserlös für einen geplanten Kauf; liegt in `cash`, gehört aber zu keinem Topf.
@@ -1134,6 +1186,7 @@ impl<'a> Run<'a> {
             inflow3: 0.0,
             inflow_log: vec![],
             month_out: 0.0,
+            ledger: Ledger::default(),
             a_reasons: vec![],
             reserved: 0.0,
             phase8: false,
@@ -1207,6 +1260,14 @@ impl<'a> Run<'a> {
         }
     }
 
+    /// #133: Marktwert der Liegenschaften im Besitz.
+    fn active_worth(&self) -> f64 {
+        (0..self.props.len())
+            .filter(|&i| self.props[i].active)
+            .map(|i| self.worth(i))
+            .sum()
+    }
+
     fn equity(&self) -> f64 {
         (0..self.props.len())
             .filter(|&i| self.props[i].active)
@@ -1235,6 +1296,7 @@ impl<'a> Run<'a> {
             self.s.taxes.multiplier,
         );
         self.cash += worth - debt - gain_tax;
+        self.ledger.taxes += gain_tax;
         self.interest_settled += std::mem::take(&mut self.props[i].int_accr);
         self.event_tax += gain_tax;
         self.month_gain_tax += gain_tax;
@@ -1781,9 +1843,11 @@ impl<'a> Run<'a> {
                                 let a = x.amort_q.min(b);
                                 self.props[i].balances[j] -= a;
                                 cost += a;
+                                self.ledger.amortization += a;
                             } else {
                                 self.p3a[a] += x.amort_q;
                                 cost += x.amort_q;
+                                self.ledger.amortization += x.amort_q;
                             }
                         }
                     }
@@ -1812,6 +1876,7 @@ impl<'a> Run<'a> {
             if self.p3a_done[a] {
                 continue;
             }
+            self.ledger.p3a_interest += self.p3a[a] * c.rate_m;
             self.p3a[a] *= 1.0 + c.rate_m;
             if c.contribution_m > 0.0 && c.ahv.is_none_or(|h| m < h) {
                 self.p3a[a] += c.contribution_m;
@@ -1877,6 +1942,7 @@ impl<'a> Run<'a> {
         }
         self.p3a[a] -= gross;
         let t = self.capital_tax(gross);
+        self.ledger.taxes += t;
         self.event_tax += t;
         self.month_capital_tax += t;
         let mut net = gross - t;
@@ -2567,6 +2633,7 @@ impl<'a> Run<'a> {
             self.apply_reasons.clear();
             self.a_reasons.clear();
             self.month_out = 0.0;
+            self.ledger = Ledger::default();
             self.inflow_log.clear();
             self.strategy_started = false;
             self.reserved_cash = 0.0;
@@ -2584,7 +2651,9 @@ impl<'a> Run<'a> {
             // Teuerung monatlich mit der Inflation des Vormonats. Beträge gelten in Preisen des
             // Startmonats. AHV und Entnahmebudget folgen im Januar mit der aufgelaufenen Teuerung.
             if k > 0 {
+                let before = self.active_worth();
                 self.infl_idx *= (1.0 + self.path.inflation[k - 1]).max(0.0).powf(1.0 / 12.0);
+                self.ledger.revaluation += self.active_worth() - before;
             }
             if m.month() == 1 && k > 0 {
                 let factor = self.infl_idx / self.infl_idx_jan;
@@ -2608,6 +2677,7 @@ impl<'a> Run<'a> {
             for (em, amount, label) in &s.extras {
                 if *em == m {
                     self.cash += amount;
+                    self.ledger.extras += amount;
                     if *amount < 0.0 {
                         extras_out -= amount;
                     }
@@ -2622,15 +2692,18 @@ impl<'a> Run<'a> {
             for pi in 0..self.people.len() {
                 let c = &s.people[pi];
                 if !self.people[pi].retired && c.pk_at.is_some_and(|a| m >= a) {
-                    let pk = {
+                    let (pk, accrued) = {
                         let st = &mut self.people[pi];
                         st.retired = true;
-                        st.pk += st.pk_accrued;
-                        st.pk_accrued = 0.0;
-                        st.pk
+                        let accrued = std::mem::take(&mut st.pk_accrued);
+                        st.pk += accrued;
+                        (st.pk, accrued)
                     };
+                    self.ledger.pk_interest += accrued;
                     let lump = pk * c.pk_lumpsum;
                     let t = self.capital_tax(lump);
+                    self.ledger.taxes += t;
+                    self.ledger.annuity += pk - lump;
                     month_tax += t;
                     self.month_capital_tax += t;
                     self.cash += lump - t;
@@ -2704,11 +2777,16 @@ impl<'a> Run<'a> {
             };
             self.month_running = prop_running;
             self.cash += s.savings.at(m) + income - living - prop_cost - p3a_in;
+            self.ledger.income += income;
+            self.ledger.savings += s.savings.at(m);
+            self.ledger.living += living;
+            self.ledger.housing += prop_cost;
             self.year_income += income;
 
             // Rendite
             let wealth = self.cash + self.stocks + self.bonds;
             if wealth > 0.0 {
+                self.ledger.market += self.stocks * self.path.stocks[k] + self.bonds * self.path.bonds[k];
                 self.stocks *= 1.0 + self.path.stocks[k];
                 self.bonds *= 1.0 + self.path.bonds[k];
             }
@@ -2726,7 +2804,9 @@ impl<'a> Run<'a> {
                 if !st.retired {
                     st.pk_accrued += st.pk * c.pk_interest.at(m) / 12.0;
                     st.pk += c.pk_contribution.at(m);
+                    self.ledger.pk_contributions += c.pk_contribution.at(m);
                     if december {
+                        self.ledger.pk_interest += st.pk_accrued;
                         st.pk += st.pk_accrued;
                         st.pk_accrued = 0.0;
                     }
@@ -2762,6 +2842,7 @@ impl<'a> Run<'a> {
                 paid_wealth += std::mem::take(&mut self.pending_wealth);
             }
             self.cash -= paid;
+            self.ledger.taxes += paid;
             month_tax += paid;
             month_tax += std::mem::take(&mut self.event_tax);
             self.summary.taxes_total += month_tax;
@@ -2869,6 +2950,7 @@ impl<'a> Run<'a> {
                     price_index: self.infl_idx,
                     stock_index: self.stock_idx,
                     bond_index: self.bond_idx,
+                    ledger: self.ledger,
                 });
             }
         }

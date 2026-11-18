@@ -208,7 +208,9 @@ deshalb beim ersten Start eine Warnung.
 Die Rechenregeln sind in `docs/ENTWICKLUNG.md` Schritt für Schritt beschrieben. Jede Regel ist mit einem von Hand nachgerechneten
 Testfall belegt. Dazu kommen:
 
-- Prüfungen an Hunderten zufälliger Planungen (zum Beispiel muss das Gesamtvermögen immer der Summe seiner Teile entsprechen),
+- Prüfungen an Hunderten zufälliger Planungen (zum Beispiel ändert sich das Gesamtvermögen jeden Monat genau um Einnahmen,
+  Ausgaben, Steuern, Renditen und Zinsen: Kein Geld entsteht oder verschwindet, auch nicht bei Kauf und Verkauf von
+  Liegenschaften, Hypotheken, Pensionskasse und Säule 3a),
 - statistische Tests der Monte-Carlo-Pfade,
 - Robustheitstests mit absichtlich fehlerhaften Eingaben,
 - zehn eingecheckte Referenzplanungen (Golden Masters), die jede unbeabsichtigte Änderung der Ergebnisse melden,

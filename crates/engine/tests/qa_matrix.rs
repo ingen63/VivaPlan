@@ -77,6 +77,22 @@ fn check_books(res: &SimResult, ctx: &str) {
             r.total
         );
     }
+    // #133/AK2: Veränderung des Gesamtvermögens = Hauptbuch des Monats (Geldflüsse und Bewertungsänderungen). Nur
+    // für Läufe mit allen Monaten (Detail-Läufe einer Monte-Carlo-Rechnung beginnen ebenfalls beim Start).
+    if res.records.is_empty() {
+        return;
+    }
+    let mut prev = res.summary.start_total;
+    for r in &res.records {
+        let (delta, flows) = (r.total - prev, r.ledger.sum());
+        assert!(
+            (delta - flows).abs() <= 0.01 + 1e-9 * r.total.abs(),
+            "{ctx}: Geldfluss im {}: Total ändert sich um {delta:.4}, Hauptbuch {flows:.4} ({:?})",
+            r.month,
+            r.ledger
+        );
+        prev = r.total;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------

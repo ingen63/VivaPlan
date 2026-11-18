@@ -313,3 +313,31 @@ fn golden_detects_change_in_any_month() {
     assert_eq!(d.len(), 1, "{d:?}");
     assert!(d[0].starts_with(".single.recordSums.cash:"), "{d:?}");
 }
+
+/// #133/AK2: In allen zehn Golden-Planungen (Einzel- und Detail-Läufe) ändert sich das Gesamtvermögen jeden Monat genau um
+/// das Hauptbuch (Geldflüsse und Bewertungsänderungen).
+#[test]
+fn issue_133_ak2_golden_plans_keep_the_ledger() {
+    for (name, plan) in cases() {
+        let out = api::run(&plan, &dir(), Some(&library()));
+        assert!(out.error.is_none(), "{name}: {:?}", out.error);
+        let mut runs: Vec<&engine::sim::SimResult> = out.single.iter().collect();
+        if let Some(b) = &out.batch {
+            runs.extend(b.details.iter().map(|(_, d)| d));
+        }
+        assert!(!runs.is_empty(), "{name}");
+        for res in runs {
+            let mut prev = res.summary.start_total;
+            for r in &res.records {
+                let (delta, flows) = (r.total - prev, r.ledger.sum());
+                assert!(
+                    (delta - flows).abs() <= 0.01 + 1e-9 * r.total.abs(),
+                    "{name} {}: Total ändert sich um {delta:.4}, Hauptbuch {flows:.4} ({:?})",
+                    r.month,
+                    r.ledger
+                );
+                prev = r.total;
+            }
+        }
+    }
+}
