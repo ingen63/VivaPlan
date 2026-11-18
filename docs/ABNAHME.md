@@ -1452,6 +1452,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #130/AK1 | Szenario-Perzentile ohne `endTotalReal`, Zusammenfassung mit. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_130_ak1_…» | 17.11.2026 ok |
 | #130/AK2 | Szenarientabelle, Optimum und Vergleich zeigen dieselben Werte. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); alle Oberflächentests | 17.11.2026 ok (Golden 09: nur 90 Zeilen `endTotalReal` entfernt) |
 
+### #132 Monte Carlo parametrisch rechnet schneller
+
+[Issue #132](https://github.com/ingen63/VivaPlan/issues/132) · offen (`implemented`) · Umsetzung: 2f0d36a
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #132/AK1 | Referenzlauf: Musterplanung, Quelle «Monte Carlo parametrisch», 50'000 Pfade, Release-Build, Apple M1 Pro. Die Rechenzeit ist höchstens … | ☑ | **gilt** (Anforderung am 18.11.2026 von GPU auf Tempo umformuliert, Kommentar im Issue) | kein Test (Messung alt gegen neu, `batch::run_paths`) | 18.11.2026 ok (unter Last 2'954–2'997 gegen 1'445–1'511 ms, Verhältnis 0,50; ohne Last 0,46) |
+| #132/AK2 | Die Ergebnisse sind auf macOS, Windows und Linux gleich: Die Golden-Tests laufen auf allen drei Plattformen mit der heutigen Toleranz … | ☐ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 18.11.2026 nicht geprüft: nur macOS; Linux (Push) und Windows (`tests-os`) erst nach dem Push |
+| #132/AK3 | Gleiche Einstellungen und gleicher Zufallsstartwert ergeben weiterhin dieselben Ergebnisse, und die Detailansicht eines Perzentils zeigt … | ☑ | **gilt** | [rerun_paths.rs](../crates/engine/tests/rerun_paths.rs) «issue_132_ak3_…» | 18.11.2026 ok |
+| #132/AK4 | Die Verteilung der Renditen bleibt die des Modells (Mittelwert, Streuung, Fettschwänze `df`, Sprünge `jumpLambda`, `jumpMu`, `jumpSigma`); … | ☑ | **gilt** | [montecarlo.rs](../crates/engine/src/montecarlo.rs) «issue_132_ak4_…» (3 Tests) | 18.11.2026 ok |
+| #132/AK5 | Die übrigen Quellen (fix, historisch, alle Startzeitpunkte, Monte Carlo historisch) werden nicht langsamer (Messung im Issue). | ☑ | **gilt** | kein Test (Messung alt gegen neu) | 18.11.2026 ok (Ergebnisse bitgleich; Bootstrap +1 % im Rauschen) |
+| #132/AK6 | Die Golden-Dateien (`crates/engine/tests/golden/`) ändern sich nicht, oder die Änderung wird im Issue begründet. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 18.11.2026 ok (nur `08-parametrisch.json`, begründet im Issue) |
+| #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui.spec.js](../e2e/ui.spec.js) «AK7: …» | 18.11.2026 ok |
+| #132/AK8 | Keine Netzwerkzugriffe und keine Abhängigkeit von Grafiktreibern; `docs/ENTWICKLUNG.md` (Abschnitt Monte Carlo) beschreibt das Verfahren. | ☑ | **gilt** | kein Test (Durchsicht `Cargo.toml`, `docs/ENTWICKLUNG.md`) | 18.11.2026 ok |
+
 ### #133 Geldfluss-Erhaltung über alle Bestandteile prüfen
 
 [Issue #133](https://github.com/ingen63/VivaPlan/issues/133) · geschlossen · Umsetzung: b5640b1
