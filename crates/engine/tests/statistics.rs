@@ -146,6 +146,7 @@ fn issue_148_ak2_parametric_stock_returns_match_the_model() {
         jump_mu: jm,
         jump_sigma: js,
         auto: false,
+        ..Default::default()
     };
     let f = fixed();
     let g = Parametric {

@@ -545,6 +545,11 @@ pub struct ParametricParams {
     /// Merkmal (ältere Planungen), gelten die gespeicherten Werte.
     #[serde(default)]
     pub auto: bool,
+    /// #132: Verfahren der Zufallsziehung, mit dem die Planung zuletzt gespeichert wurde. Fehlt es (0), stammt die Planung
+    /// von vor #132, und `upgrade` nennt beim Öffnen die geänderte Rechnung. Gerechnet wird immer mit dem aktuellen
+    /// Verfahren [`crate::montecarlo::SAMPLER`].
+    #[serde(default)]
+    pub sampler: u32,
 }
 
 impl Default for ParametricParams {
@@ -559,6 +564,7 @@ impl Default for ParametricParams {
             jump_sigma: 0.15,
             seed: default_seed(),
             auto: false,
+            sampler: crate::montecarlo::SAMPLER,
         }
     }
 }

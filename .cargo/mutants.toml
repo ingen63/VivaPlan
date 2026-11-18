@@ -23,16 +23,15 @@ exclude_re = [
     # Historischer Pfad: Ein Monat bzw. Jahre mehr Fortschreibung als nötig; die zusätzlichen Werte werden nie gelesen.
     "market\\.rs:\\d+:48: replace - with [+/] in historical_path",
     "market\\.rs:\\d+:51: replace - with \\+ in historical_path",
-    # Zufallszahlen: Die Grenzen q = 0, q = 1 (Polar-Methode), u = Schranke (Gamma) und p = l (Poisson) treten mit
-    # Wahrscheinlichkeit 0 auf.
+    # Zufallszahlen: Die Grenzen q = 0, q = 1 (Polar-Methode), w = 1 (Student-t nach Bailey, #132) und p = l (Poisson)
+    # treten mit Wahrscheinlichkeit 0 auf.
     "montecarlo\\.rs:\\d+:18: replace > with >= in Rng::normal",
     "montecarlo\\.rs:\\d+:29: replace < with <= in Rng::normal",
-    "montecarlo\\.rs:\\d+:18: replace < with <= in Rng::gamma",
-    "montecarlo\\.rs:\\d+:55: replace < with <= in Rng::gamma",
+    "montecarlo\\.rs:\\d+:18: replace < with <= in Rng::student_t",
     "montecarlo\\.rs:\\d+:17: replace > with >= in Rng::poisson",
-    # Gamma: Die schnelle Annahme (Squeeze) ist eine untere Schranke der exakten Bedingung; ohne sie entscheidet die
-    # exakte Bedingung gleich, ohne zusätzliche Zufallszahlen.
-    "montecarlo\\.rs:\\d+:18: replace < with == in Rng::gamma",
+    # #132, Sprünge: Die Bedingung pk > 0 schützt nur davor, dass die Summe nach dem Unterlauf von pk unter u stehen
+    # bliebe; vorher erreicht die Summe bei jedem λ der Planung u (gleichwertig bis auf Wahrscheinlichkeit 0).
+    "montecarlo\\.rs:\\d+:30: replace > with >= in Jumps::today",
     # Block-Bootstrap: Grenze u = p_new mit Wahrscheinlichkeit 0.
     "montecarlo\\.rs:\\d+:38: replace < with <= in Bootstrap<'_>::positions",
     # Jahres-Bootstrap: Positionen für mehr Jahre als nötig; die Zufallszahlen danach werden nicht mehr verwendet.

@@ -321,6 +321,7 @@
       "jumpSigma": 0.15,
       "mu": 0.07,
       "paths": 50000,
+      "sampler": 1,
       "seed": 42,
       "sigma": 0.15
     },

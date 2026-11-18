@@ -77,30 +77,30 @@ impl Rng {
         }
     }
 
-    /// Gammaverteilt mit Form `k` und Skala 1 (Marsaglia-Tsang).
-    pub fn gamma(&mut self, k: f64) -> f64 {
-        if k < 1.0 {
-            let u = self.uniform().max(f64::MIN_POSITIVE);
-            return self.gamma(k + 1.0) * u.powf(1.0 / k);
-        }
-        let d = k - 1.0 / 3.0;
-        let c = 1.0 / (9.0 * d).sqrt();
-        loop {
-            let x = self.normal();
-            let v = (1.0 + c * x).powi(3);
-            if v <= 0.0 {
-                continue;
-            }
-            let u = self.uniform();
-            if u < 1.0 - 0.0331 * x.powi(4) || u.ln() < 0.5 * x * x + d * (1.0 - v + v.ln()) {
-                return d * v;
-            }
-        }
-    }
-
-    /// Student-t mit `df` Freiheitsgraden.
+    /// Student-t mit `df` > 0 Freiheitsgraden (#132: Polar-Methode von Bailey, 1994). Ein Punkt (u, v) gleichverteilt im
+    /// Einheitskreis, w = u² + v²; dann ist u·√(df·(w^(−2/df) − 1)/w) exakt t-verteilt. Ob der Punkt angenommen wird,
+    /// entscheidet reine Arithmetik (w < 1), ohne Funktionen der Mathematikbibliothek. Für die Vorgabe `df` = 6 ist
+    /// w^(−1/3) = 1/∛w, schneller als die allgemeine Potenz.
     pub fn student_t(&mut self, df: f64) -> f64 {
-        self.normal() / (2.0 * self.gamma(df / 2.0) / df).sqrt()
+        // u und v aus den oberen und unteren 32 Bit derselben Zufallszahl (Mitte der 2³² Stufen in (−1, 1)): halb so
+        // viele Aufrufe des Generators, die Auflösung 2⁻³¹ reicht für Tagesrenditen.
+        const STEP: f64 = 1.0 / (1u64 << 31) as f64;
+        loop {
+            let x = self.next_u64();
+            let u = ((x >> 32) as f64 + 0.5) * STEP - 1.0;
+            let v = ((x & 0xffff_ffff) as f64 + 0.5) * STEP - 1.0;
+            let w = u * u + v * v;
+            if w < 1.0 {
+                // df·(w^(−2/df) − 1)/w; bei df = 6 mit c = ∛w als 6·(1 − c)/(c·w), mit einer Division
+                let r = if df == 6.0 {
+                    let c = w.cbrt();
+                    6.0 * (1.0 - c) / (c * w)
+                } else {
+                    df * (w.powf(-2.0 / df) - 1.0) / w
+                };
+                return u * r.sqrt();
+            }
+        }
     }
 
     /// Poissonverteilt (für kleine Raten).
@@ -215,6 +215,11 @@ impl Bootstrap<'_> {
 
 // ---------- Parametrisch ----------
 
+/// #132: Verfahren der Zufallsziehung des parametrischen Modells (Student-t nach Bailey, Sprünge über den Abstand zum
+/// nächsten Sprungtag). Neue Planungen tragen es in `returns.parametric.sampler`; bei einer Änderung, die die Pfade
+/// ändert, erhöhen und in `upgrade` einen Hinweis ergänzen.
+pub const SAMPLER: u32 = 1;
+
 /// Handelstage pro Monat wie im bisherigen Programm.
 pub const TRADING_DAYS: usize = 21;
 
@@ -229,6 +234,59 @@ pub struct Parametric<'a> {
     pub months: usize,
     pub params: ParametricParams,
     pub correlated: Option<Correlated>,
+}
+
+/// #132: Kurssprünge, Poisson-verteilt mit Rate `lambda` je Tag. Statt jeden Tag eine Poisson-Zahl zu ziehen (bei der
+/// Vorgabe ist an rund 99,98 % der Tage keine), wird der Abstand bis zum nächsten Tag mit Sprung gezogen: Er ist
+/// geometrisch verteilt mit P(kein Sprung) = exp(−λ), also ⌊−ln U / λ⌋ mit U gleichverteilt in (0, 1]. An diesem Tag
+/// folgt die Anzahl aus der Poisson-Verteilung unter der Bedingung «mindestens ein Sprung». Die Verteilung der Sprünge
+/// je Tag ist dieselbe wie mit einer Poisson-Zahl je Tag.
+struct Jumps {
+    lambda: f64,
+    /// P(genau ein Sprung | mindestens einer) = λ·e^(−λ) / (1 − e^(−λ)).
+    first: f64,
+    /// Tage ohne Sprung bis zum nächsten Tag mit Sprung.
+    gap: u64,
+}
+
+impl Jumps {
+    fn new(lambda: f64, rng: &mut Rng) -> Jumps {
+        let mut j = Jumps {
+            lambda,
+            first: if lambda > 0.0 { lambda / lambda.exp_m1() } else { 0.0 },
+            gap: u64::MAX,
+        };
+        j.next_gap(rng);
+        j
+    }
+
+    fn next_gap(&mut self, rng: &mut Rng) {
+        if self.lambda > 0.0 {
+            let u = 1.0 - rng.uniform();
+            // `as` begrenzt sehr grosse Werte auf u64::MAX (dann kein Sprung mehr im Pfad)
+            self.gap = (-u.ln() / self.lambda) as u64;
+        }
+    }
+
+    /// Anzahl Sprünge an diesem Tag.
+    fn today(&mut self, rng: &mut Rng) -> u32 {
+        if self.gap > 0 {
+            // ohne Sprünge (λ = 0) bleibt der Abstand u64::MAX und erreicht nie 0
+            self.gap -= 1;
+            return 0;
+        }
+        // Anzahl ≥ 1 durch Inversion der bedingten Poisson-Verteilung
+        let u = rng.uniform();
+        let (mut k, mut pk) = (1u32, self.first);
+        let mut cdf = pk;
+        while u >= cdf && pk > 0.0 {
+            k += 1;
+            pk *= self.lambda / k as f64;
+            cdf += pk;
+        }
+        self.next_gap(rng);
+        k
+    }
 }
 
 /// Unterscheidet den Zufallsstrom für Obligationen und Inflation von dem der Aktien.
@@ -252,7 +310,8 @@ impl Parametric<'_> {
         let vol = q.sigma * dt.sqrt();
         let lambda = q.jump_lambda * dt;
         let mut p = MarketPath::with_capacity(format!("Zufallspfad {}", index + 1), self.months);
-        let month = |rng: &mut Rng| {
+        let mut jumps = Jumps::new(lambda, &mut rng);
+        let mut month = |rng: &mut Rng| {
             let mut log = 0.0;
             for _ in 0..TRADING_DAYS {
                 let z = if q.df > 0.0 {
@@ -261,21 +320,26 @@ impl Parametric<'_> {
                     rng.normal()
                 };
                 log += drift + vol * z;
-                if lambda > 0.0 {
-                    let jumps = rng.poisson(lambda);
-                    if jumps > 0 {
-                        // Wie bisher: eine Sprunghöhe, mit der Anzahl Sprünge potenziert.
-                        log += jumps as f64 * (q.jump_mu + q.jump_sigma * rng.normal());
-                    }
+                let n = jumps.today(rng);
+                if n > 0 {
+                    // Wie bisher: eine Sprunghöhe, mit der Anzahl Sprünge potenziert.
+                    log += n as f64 * (q.jump_mu + q.jump_sigma * rng.normal());
                 }
             }
-            log.exp() - 1.0
+            log
         };
         // Vorlauf (#103): 12 Monate aus demselben Zufallsstrom, vor dem Pfad gezogen
-        p.pre_stocks = (0..PRE_MONTHS).map(|_| month(&mut rng)).collect();
+        p.pre_stocks = (0..PRE_MONTHS).map(|_| month(&mut rng).exp() - 1.0).collect();
+        // Log-Renditen der Monate, für die Korrelation mit Obligationen und Inflation (#132: nicht aus der Rendite
+        // zurückgerechnet)
+        let mut logs = Vec::with_capacity(if self.correlated.is_some() { self.months } else { 0 });
         for k in 0..self.months {
             let m = self.start.plus(k as i32);
-            p.stocks.push(month(&mut rng));
+            let log = month(&mut rng);
+            if self.correlated.is_some() {
+                logs.push(log);
+            }
+            p.stocks.push(log.exp() - 1.0);
             p.saron.push(self.fixed.saron.at(m));
             if self.correlated.is_none() {
                 p.bonds.push(monthly(self.fixed.bonds.at(m)));
@@ -295,7 +359,7 @@ impl Parametric<'_> {
                     len > 0 && k == p.bonds.len(),
                     "Parametric::path: Schleife kommt nicht voran"
                 );
-                let log: f64 = p.stocks[k..k + len].iter().map(|r| (1.0 + r).ln()).sum();
+                let log: f64 = logs[k..k + len].iter().sum();
                 let (e1, e2) = (rng.normal(), rng.normal());
                 let (b, i) = c.draw(log, len, e1, e2);
                 for _ in 0..len {
@@ -338,8 +402,6 @@ mod tests {
         // Student-t mit df = 6: Varianz df/(df−2) = 1.5.
         let v: f64 = (0..n).map(|_| r.student_t(6.0).powi(2)).sum::<f64>() / n as f64;
         assert!((v - 1.5).abs() < 0.05, "{v}");
-        let g: f64 = (0..n).map(|_| r.gamma(0.5)).sum::<f64>() / n as f64;
-        assert!((g - 0.5).abs() < 0.01, "{g}");
         let p: f64 = (0..n).map(|_| r.poisson(0.3) as f64).sum::<f64>() / n as f64;
         assert!((p - 0.3).abs() < 0.01, "{p}");
         // Gleicher Startwert und Strom ⇒ gleiche Folge, anderer Strom ⇒ andere Folge.
@@ -411,6 +473,7 @@ mod tests {
             jump_sigma: 0.0,
             seed: 1,
             auto: false,
+            ..Default::default()
         };
         let g = Parametric {
             fixed: &f,
@@ -430,15 +493,6 @@ mod tests {
         let p = g.path(0);
         assert!((p.bonds[0] - monthly(0.02)).abs() < 1e-15);
         assert_eq!(p.inflation[0], 0.01);
-    }
-
-    // #40: Gamma mit Form < 1 hat viel Masse nahe 0: P(X < 0.01) = P(|Z| < √0.02) ≈ 0.1125 bei Form 0.5.
-    #[test]
-    fn gamma_below_one_has_mass_near_zero() {
-        let mut r = Rng::new(5, 0);
-        let n = 200_000;
-        let small = (0..n).filter(|_| r.gamma(0.5) < 0.01).count() as f64 / n as f64;
-        assert!((small - 0.1125).abs() < 0.005, "{small}");
     }
 
     #[test]
@@ -583,6 +637,107 @@ mod tests {
         assert!(p.stocks.windows(2).any(|w| w[0] != w[1]));
     }
 
+    /// Verteilungsfunktion der Student-t-Verteilung mit `df` ≥ 1, numerisch: Mit x = √df·tan θ ist die Dichte proportional
+    /// zu cos^(df−1) θ auf (−π/2, π/2) (Simpson-Regel).
+    fn t_cdf(df: f64, t: f64) -> f64 {
+        let integral = |b: f64| {
+            let (a, n) = (-std::f64::consts::FRAC_PI_2, 20_000);
+            let h = (b - a) / n as f64;
+            let f = |x: f64| x.cos().max(0.0).powf(df - 1.0);
+            let inner: f64 = (1..n)
+                .map(|i| f(a + i as f64 * h) * if i % 2 == 1 { 4.0 } else { 2.0 })
+                .sum();
+            (f(a) + inner + f(b)) * h / 3.0
+        };
+        integral((t / df.sqrt()).atan()) / integral(std::f64::consts::FRAC_PI_2)
+    }
+
+    // #132/AK4: Die Student-t-Ziehung (Bailey) hat die Verteilungsfunktion der t-Verteilung, für die Vorgabe df = 6
+    // (eigener Rechenweg mit ∛w), ganzzahlige und nicht ganzzahlige df sowie df ≤ 2 (unendliche Varianz).
+    #[test]
+    fn issue_132_ak4_student_t_matches_distribution() {
+        assert!((t_cdf(1.0, 1.0) - 0.75).abs() < 1e-9, "Cauchy");
+        assert!((t_cdf(2.0, 1.0) - (0.5 + 0.5 / 3f64.sqrt())).abs() < 1e-9);
+        let n = 200_000;
+        for (k, df) in [1.0, 2.0, 2.5, 4.5, 6.0, 30.0].into_iter().enumerate() {
+            let mut r = Rng::new(132, k as u64);
+            let xs: Vec<f64> = (0..n).map(|_| r.student_t(df)).collect();
+            assert!(xs.iter().all(|x| x.is_finite()), "df {df}");
+            for t in [-3.0, -1.5, -0.5, 0.0, 0.3, 1.0, 2.0, 4.0] {
+                let share = xs.iter().filter(|&&x| x <= t).count() as f64 / n as f64;
+                let exact = t_cdf(df, t);
+                assert!((share - exact).abs() < 0.005, "df {df}, t {t}: {share} statt {exact}");
+            }
+        }
+    }
+
+    // #132/AK4: Die Sprünge je Tag sind Poisson-verteilt, auch wenn nur der Abstand zum nächsten Sprungtag gezogen wird;
+    // ohne Sprünge (λ = 0) wird keine Zufallszahl verbraucht.
+    #[test]
+    fn issue_132_ak4_jumps_are_poisson_per_day() {
+        for (k, lambda) in [0.3, 0.02, 0.001].into_iter().enumerate() {
+            let mut r = Rng::new(132, 100 + k as u64);
+            let mut j = Jumps::new(lambda, &mut r);
+            let days = 2_000_000;
+            let mut count = [0usize; 4];
+            for _ in 0..days {
+                count[(j.today(&mut r) as usize).min(3)] += 1;
+            }
+            let pois = |m: i32| (-lambda).exp() * lambda.powi(m) / (1..=m).product::<i32>().max(1) as f64;
+            for (m, &c) in count.iter().enumerate().take(3) {
+                let exact = pois(m as i32);
+                let sd = (exact * (1.0 - exact) / days as f64).sqrt();
+                assert!(
+                    (c as f64 / days as f64 - exact).abs() < 5.0 * sd + 1e-7,
+                    "λ {lambda}, {m} Sprünge: {} statt {exact}",
+                    c as f64 / days as f64
+                );
+            }
+        }
+        let mut r = Rng::new(1, 0);
+        let mut j = Jumps::new(0.0, &mut r);
+        assert!((0..10_000).all(|_| j.today(&mut r) == 0));
+        assert_eq!(r.next_u64(), Rng::new(1, 0).next_u64(), "keine Zufallszahl verbraucht");
+    }
+
+    // #132/AK4: Jahres-Logrendite eines Pfades mit Kurssprüngen: Mittel (μ − σ²/2) + λ·μJ, Varianz σ² plus die der Sprünge
+    // (je Tag N·(μJ + σJ·Z) mit N Poisson(λ·dt): E[N²]·(μJ² + σJ²) − (E[N]·μJ)²).
+    #[test]
+    fn issue_132_ak4_path_with_jumps_matches_model() {
+        let f = fixed();
+        let (mu, sigma, lam, jm, js) = (0.07, 0.15, 2.0, -0.1, 0.05);
+        let g = Parametric {
+            fixed: &f,
+            start: YearMonth::new(2030, 1),
+            months: 12,
+            params: ParametricParams {
+                paths: 20_000,
+                mu,
+                sigma,
+                df: 4.5,
+                jump_lambda: lam,
+                jump_mu: jm,
+                jump_sigma: js,
+                seed: 3,
+                auto: false,
+                ..Default::default()
+            },
+            correlated: None,
+        };
+        let logs: Vec<f64> = (0..g.len())
+            .map(|i| g.path(i).stocks.iter().map(|r| (1.0 + r).ln()).sum())
+            .collect();
+        let n = logs.len() as f64;
+        let mean = logs.iter().sum::<f64>() / n;
+        let var = logs.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / n;
+        let days = (12 * TRADING_DAYS) as f64;
+        let l = lam / days;
+        let jump_var = days * ((l + l * l) * (jm * jm + js * js) - (l * jm).powi(2));
+        let (m0, v0) = (mu - 0.5 * sigma * sigma + lam * jm, sigma * sigma + jump_var);
+        assert!((mean - m0).abs() < 4.0 * (v0 / n).sqrt(), "{mean} statt {m0}");
+        assert!((var / v0 - 1.0).abs() < 0.05, "{var} statt {v0}");
+    }
+
     // Gleicher Startwert ⇒ gleiche Pfade, auch über Versionen. Eine bewusste Änderung des Zufallsgenerators oder
     // des Modells braucht wie die Golden-Dateien eine Begründung im Issue (dann die Werte neu setzen).
     #[test]
@@ -604,7 +759,8 @@ mod tests {
         let p = g.path(0);
         // Toleranz für kleine Unterschiede der Mathematikbibliothek zwischen Plattformen.
         // #103: Seit dem Vorlauf (12 Monate vor dem Pfad aus demselben Strom) beginnt der Pfad mit dem 13. Monat.
-        let expected = [-0.1760832325318339, -0.08742723973668332, -0.08198575085856707];
+        // #132: neue Werte (Student-t nach Bailey, Sprünge über den Abstand zum nächsten Sprungtag).
+        let expected = [-0.028948303776431428, 0.022424257414504822, 0.004603269924865483];
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
         }

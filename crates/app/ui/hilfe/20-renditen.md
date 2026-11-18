@@ -256,6 +256,8 @@ Monte Carlo ist Zufall, aber **reproduzierbar**. Pfad *i* entsteht immer aus dem
 
 - Gleiche Einstellungen und gleicher Startwert geben **genau dieselben Ergebnisse**.
 - Alle **Szenarien** verwenden dieselben Pfade. Auch bei der **Optimierung** sehen alle Kandidaten dieselben Pfade (die Prüfung am Schluss verwendet andere). So kommen Unterschiede von den Parametern, nicht vom Zufall.
+- Die Ergebnisse sind auf macOS, Windows und Linux dieselben.
+- Mit einer neuen Version kann sich das Verfahren ändern, mit dem die Zufallspfade entstehen. Die App nennt das beim Öffnen einer älteren Planung. So erzeugt «Monte Carlo parametrisch» die Pfade seit #132 schneller: Die Verteilung der Renditen bleibt gleich, die einzelnen Pfade sind aber andere, und das Ergebnis ändert sich leicht.
 - Ändern Sie den Startwert, wenn Sie prüfen wollen, ob Ihr Ergebnis vom Zufall abhängt. Schwankt die Erfolgsquote bei anderem Startwert um mehr als ein paar Zehntel Prozentpunkte, brauchen Sie mehr Pfade.
 
 ## @ret-data Datenquellen und ihre Eigenheiten

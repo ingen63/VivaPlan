@@ -3432,6 +3432,29 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
   });
 });
 
+// #132: schnellere Zufallsziehung des parametrischen Modells; ältere Planungen erhalten beim Öffnen einen Hinweis
+test.describe("Monte Carlo parametrisch rechnet schneller (#132)", () => {
+  test("AK7: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch»; neue Planungen tragen das Merkmal", async ({ page }) => {
+    const errors = await open(page);
+    expect(await page.evaluate(() => state.returns.parametric.sampler)).toBe(1);
+    const plan = await page.evaluate(() => {
+      const s = JSON.parse(JSON.stringify(state));
+      s.returns.source = "parametric";
+      s.returns.parametric = { paths: 100, mu: 0.05, sigma: 0.12, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, seed: 42, auto: false };
+      return s;
+    });
+    const file = path.join(os.tmpdir(), `issue132-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(plan));
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect(page.locator("#ask")).toBeVisible();
+    await expect(page.locator("#askText")).toContainText("Monte Carlo parametrisch erzeugt die Zufallspfade mit einem schnelleren Verfahren");
+    await page.locator("#ask button[value='ok']").click();
+    expect(await page.evaluate(() => [state.returns.parametric.sampler, state.returns.parametric.mu])).toEqual([1, 0.05]);
+    fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+});
+
 test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
   /** Die Rückfrage ist im Browser nur mit `askSaveDev` aktiv; die Planung wird ungespeichert markiert. */
   const prepare = (page, dev) => page.evaluate(dev => { Pref.set("askSaveDev", dev); Pref.set("askSaveBeforeRun", true); markDirty(); }, dev);

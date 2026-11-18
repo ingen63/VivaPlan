@@ -262,8 +262,9 @@ function normalize(p) {
   p.realestate.affordability ??= { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, wealthContribution: 0.03, maxLoanToValue: 0.8 };
   p.returns.extrapolation ??= { method: "fixed", range: 30 };
   p.returns.bootstrap ??= { paths: 50000, block: 12, seed: 42 };
-  // #100: neue Planungen folgen den Vorschlagswerten des Aktienindex (`auto`); ältere setzt upgrade_plan
-  p.returns.parametric ??= { paths: 50000, mu: 0.07, sigma: 0.15, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, auto: true };
+  // #100: neue Planungen folgen den Vorschlagswerten des Aktienindex (`auto`); ältere setzt upgrade_plan.
+  // #132: `sampler` = Verfahren der Zufallsziehung (montecarlo::SAMPLER); ältere Planungen kennzeichnet upgrade_plan
+  p.returns.parametric ??= { paths: 50000, mu: 0.07, sigma: 0.15, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, auto: true, sampler: 1 };
   p.returns.parametric.seed ??= 42; p.returns.bootstrap.seed ??= 42;
   p.returns.parametric.auto ??= p.returns.source !== "parametric";
   p.returns.fixed.saron ??= 0;
@@ -3205,6 +3206,7 @@ const PLAN_HIDDEN = [
   [/\.mode$/, "Art der Zeitreihe; verglichen werden die Werte"], [/^flows\.spendingIncludesHousing$/, "kein Eingabefeld"],
   [/^realestate\.affordability\.wealthContribution$/, "kein Eingabefeld"], [/^withdrawal\.buckets\.reserveMonths$/, "kein Eingabefeld"],
   [/^realestate\.properties\.\d+\.inflation$/, "älteres Feld, ersetzt durch «Wert/Nebenkosten mit Inflation anpassen»"],
+  [/^returns\.parametric\.sampler$/, "kein Eingabefeld (Verfahren der Zufallsziehung, #132)"],
 ];
 function cmpPlan(body, items, datas) {
   // Abschnitte in der Reihenfolge des Editors, darin die Bezeichnungen in der Reihenfolge ihres ersten Auftretens

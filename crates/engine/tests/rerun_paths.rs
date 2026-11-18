@@ -79,3 +79,58 @@ fn rerun_rejects_unknown_paths_and_bad_selection() {
     q["scenarios"]["select"] = json!([ { "value": 1 } ]);
     assert!(api::rerun_paths(&q, &[(50, 0)], Path::new("."), None).error.is_some());
 }
+
+// #132/AK3: Mit Student-t-Schocks und Kurssprüngen (die mit #132 schneller gezogen werden) ergeben gleiche Einstellungen
+// dieselben Ergebnisse, und jeder Lauf der Detailansicht ist der Pfad, der das Perzentil bestimmt hat: Sein Endvermögen
+// ist das des Perzentils, im Gesamtlauf wie in jeder Variationsstufe.
+#[test]
+fn issue_132_ak3_same_seed_same_results_and_detail_path() {
+    let mut v = plan();
+    v["returns"]["parametric"] = json!({ "paths": 200, "mu": 0.06, "sigma": 0.15, "df": 6, "jumpLambda": 2.0,
+        "jumpMu": -0.2, "jumpSigma": 0.1, "seed": 11 });
+    let ends = |run: &api::RunOut| -> Vec<(u32, usize, f64)> {
+        (0..run.scenarios.as_ref().unwrap().results.len())
+            .flat_map(|level| picks_of(run, level))
+            .collect()
+    };
+    let a = api::run(&v, Path::new("."), None);
+    assert!(a.error.is_none(), "{:?}", a.error);
+    let b = api::run(&v, Path::new("."), None);
+    assert_eq!(ends(&a), ends(&b), "gleicher Startwert, gleiche Ergebnisse");
+    let mut other = v.clone();
+    other["returns"]["parametric"]["seed"] = json!(12);
+    assert_ne!(ends(&a), ends(&api::run(&other, Path::new("."), None)));
+
+    let sc = a.scenarios.as_ref().unwrap();
+    for (level, r) in sc.results.iter().enumerate() {
+        let picks = picks_of(&a, level);
+        let mut q = v.clone();
+        q["scenarios"] = json!({ "sweeps": [], "select": [ { "param": sc.params[0], "value": r.values[0] } ] });
+        let out = api::rerun_paths(
+            &q,
+            &picks.iter().map(|&(p, i, _)| (p, i)).collect::<Vec<_>>(),
+            Path::new("."),
+            None,
+        );
+        assert!(out.error.is_none(), "{:?}", out.error);
+        for ((percent, sim), (p, _, end)) in out.details.iter().zip(&picks) {
+            assert_eq!(percent, p);
+            assert_eq!(sim.summary.end_total, *end, "Stufe {level}, Perzentil {p}");
+        }
+    }
+
+    // ohne Variationen: Detailläufe des Gesamtlaufs
+    v["scenarios"] = json!({ "sweeps": [] });
+    let run = api::run(&v, Path::new("."), None);
+    let batch = run.batch.as_ref().expect("mehrere Läufe");
+    for (percent, sim) in &batch.details {
+        let pc = batch
+            .summary
+            .percentiles
+            .iter()
+            .find(|p| p.percent == *percent)
+            .expect("Perzentil");
+        assert_eq!(sim.summary.end_total, pc.end_total, "Perzentil {percent}");
+    }
+    assert!(batch.details.len() >= 5);
+}

@@ -473,3 +473,49 @@ fn issue_101_ak5_same_seed_same_paths_and_unchanged_stocks() {
     }
     assert_ne!(with.path(0).bonds, with.path(1).bonds);
 }
+
+/// #132/AK7: Eine ältere Planung, die parametrisch rechnet, erhält einmalig einen Hinweis auf die anderen Zufallspfade;
+/// neue Planungen und andere Quellen nicht.
+#[test]
+fn issue_132_ak7_older_parametric_plans_get_a_note() {
+    let note = engine::upgrade::SAMPLER_NOTE;
+    // Stand nach #101 (mit `auto`), vor #132 (ohne `sampler`)
+    let old = json!({"paths": 100, "mu": 0.05, "sigma": 0.12, "df": 4, "jumpLambda": 0.1, "jumpMu": -0.2, "jumpSigma": 0.1,
+        "seed": 3, "auto": false});
+    let out = api::upgrade_plan(&plan_json("parametric", old.clone()));
+    assert!(out.notes.iter().any(|n| n == note), "{:?}", out.notes);
+    assert_eq!(
+        out.plan["returns"]["parametric"]["sampler"],
+        json!(engine::montecarlo::SAMPLER)
+    );
+    assert_eq!(
+        out.plan["returns"]["parametric"]["mu"],
+        json!(0.05),
+        "Parameter bleiben"
+    );
+    // nach dem Speichern kein Hinweis mehr
+    assert!(!api::upgrade_plan(&out.plan).notes.iter().any(|n| n == note));
+    // andere Quelle: Merkmal ohne Hinweis
+    let out = api::upgrade_plan(&plan_json("bootstrap", old.clone()));
+    assert!(!out.notes.iter().any(|n| n == note));
+    assert_eq!(
+        out.plan["returns"]["parametric"]["sampler"],
+        json!(engine::montecarlo::SAMPLER)
+    );
+    // vor #101: der Hinweis von #101 nennt die Änderung bereits, kein zweiter
+    let mut older = old.clone();
+    older.as_object_mut().unwrap().remove("auto");
+    let out = api::upgrade_plan(&plan_json("parametric", older));
+    assert!(out.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
+    assert!(!out.notes.iter().any(|n| n == note));
+    // neue Planungen (Vorlage, Beispiel) tragen das Merkmal und bleiben ohne Hinweis
+    let neu: serde_json::Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    for mut v in [neu, api::example_plan()] {
+        assert_eq!(
+            v["returns"]["parametric"]["sampler"],
+            json!(engine::montecarlo::SAMPLER)
+        );
+        v["returns"]["source"] = json!("parametric");
+        assert!(!api::upgrade_plan(&v).notes.iter().any(|n| n == note));
+    }
+}

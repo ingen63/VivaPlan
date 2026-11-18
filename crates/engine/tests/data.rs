@@ -206,6 +206,7 @@ fn parametric_jumps_have_expected_frequency() {
         jump_sigma: 0.0,
         seed: 3,
         auto: false,
+        ..Default::default()
     };
     let g = Parametric {
         fixed: &f,

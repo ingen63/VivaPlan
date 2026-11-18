@@ -91,12 +91,22 @@ sind das rund 23 Bytes je Pfad und Monat. Die Prüfung begrenzt deshalb Pfade ×
   Pro Monat endet ein Block mit Wahrscheinlichkeit 1/`block`, dann folgt ein zufälliger neuer Startmonat; am Ende
   der Reihe geht es am Anfang weiter. Aktien, Obligationen, Inflation und SARON stammen immer aus demselben
   historischen Monat. Bei Jahresreihen gilt die Blocklänge in Jahren (`block` / 12).
-- **`parametric`** (`{"paths", "mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma", "seed", "auto"}`): Aktienmodell
+- **`parametric`** (`{"paths", "mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma", "seed", "auto", "sampler"}`): Aktienmodell
   des bisherigen Programms in Tagesschritten (21 pro Monat): Log-Rendite (μ − σ²/2)·dt + σ·√dt·Z mit Student-t-Schocks Z
   (auf Varianz 1 skaliert, `df` = 0 → Normalverteilung) plus Poisson-Sprünge (Rate `jumpLambda` pro Jahr, Höhe
   log-normal mit `jumpMu`, `jumpSigma`). Der SARON folgt dem fixen Wert. Die Zeitreihe der Planung (Anlagestrategie)
   wird auch für `parametric` geladen (`batch::load_series`); ohne Reihe folgen auch Obligationen und Inflation den
   fixen Werten.
+- **Zufallsziehung des Aktienmodells (#132, `montecarlo::SAMPLER` = 1):** Student-t nach der Polar-Methode von Bailey:
+  (u, v) gleichverteilt im Einheitskreis, beide aus einer 64-Bit-Zufallszahl (je 32 Bit), w = u² + v², dann ist
+  u·√(df·(w^(−2/df) − 1)/w) exakt t-verteilt; bei `df` = 6 mit ∛w statt der allgemeinen Potenz. Ob ein Punkt angenommen
+  wird, entscheidet reine Arithmetik (w < 1), keine Funktion der Mathematikbibliothek. Kurssprünge: Statt jeden Tag eine
+  Poisson-Zahl zu ziehen, wird der Abstand zum nächsten Tag mit Sprung gezogen (geometrisch, ⌊−ln U / λ⌋) und an diesem
+  Tag die Anzahl unter der Bedingung «mindestens einer». Die Verteilung ist dieselbe wie vorher, die Pfade sind andere.
+  Gemessen (Apple M1 Pro, Musterplanung, 50'000 Pfade, Release): vorher 2,85 s, nachher 1,32 s; je Pfad auf einem Kern
+  Pfaderzeugung 373 → 139 µs, die Simulation bleibt bei rund 56 µs. `returns.parametric.sampler` hält das
+  Verfahren, mit dem die Planung gespeichert wurde; fehlt es, nennt `upgrade` beim Öffnen die anderen Pfade
+  (`SAMPLER_NOTE`, nur wenn die Planung parametrisch rechnet).
 - **Vorschlagswerte (#100, `calibrate.rs`):** aus der ganzen Aktienreihe des Index (`DataSet::stock_series`, nicht
   nur die gemeinsamen Jahre mit den Obligationen). Ziel sind die Jahresrenditen, wie der Bootstrap sie zieht: bei
   Jahresreihen die Jahre selbst, bei Monatsreihen (S&P 500 mit US- oder 10-jährigen Eidgenossen) eine feste

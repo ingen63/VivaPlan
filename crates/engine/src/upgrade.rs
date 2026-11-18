@@ -9,6 +9,8 @@
 //! - #69: Die gewählte Zeitreihe wird eine Anlagestrategie (Index für Aktien und Obligationen).
 //! - #100/#101: Das parametrische Modell erhält das Merkmal `auto` (Parameter folgen dem Aktienindex). Rechnet die
 //!   Planung parametrisch, bleiben ihre Parameter (`auto` = falsch) und ein Hinweis nennt die geänderte Rechnung.
+//! - #132: Das parametrische Modell erhält das Merkmal `sampler` (Verfahren der Zufallsziehung). Rechnet die Planung
+//!   parametrisch, nennt ein Hinweis die anderen Zufallspfade.
 
 use std::borrow::Cow;
 
@@ -67,6 +69,7 @@ pub fn upgrade(v: &mut Value) -> Vec<String> {
     strategy(v, &mut notes);
     pictet(v, &mut notes);
     parametric(v, &mut notes);
+    sampler(v, &mut notes);
     // #154: zuletzt, denn `housing` braucht eine lesbare Planung, und die Schritte davor können sie erst lesbar machen
     // (z. B. eine ungültige `returns.series`). Sonst holte erst das nächste Öffnen die Anpassung nach.
     housing(v, &mut notes);
@@ -98,6 +101,25 @@ fn parametric(v: &mut Value, notes: &mut Vec<String>) {
     }
     if active {
         notes.push(PARAMETRIC_NOTE.into());
+    }
+}
+
+/// #132/AK7: Hinweis beim Öffnen einer Planung, die vor #132 parametrisch rechnete.
+pub const SAMPLER_NOTE: &str = "Monte Carlo parametrisch erzeugt die Zufallspfade mit einem schnelleren Verfahren. Die Verteilung der Renditen bleibt gleich, die einzelnen Pfade sind aber andere. Das Ergebnis ändert sich deshalb leicht; mit demselben Zufallsstartwert bleibt es wiederholbar.";
+
+/// #132: Merkmal `sampler` für das parametrische Modell. Fehlt es, stammt die Planung von vor #132; rechnet sie
+/// parametrisch, erhält sie einen Hinweis (nicht zusätzlich zu [`PARAMETRIC_NOTE`], der die Änderung schon nennt).
+fn sampler(v: &mut Value, notes: &mut Vec<String>) {
+    let active = v.pointer("/returns/source").and_then(Value::as_str) == Some("parametric");
+    let Some(q) = v.pointer_mut("/returns/parametric").and_then(Value::as_object_mut) else {
+        return;
+    };
+    if q.contains_key("sampler") {
+        return;
+    }
+    q.insert("sampler".into(), json!(crate::montecarlo::SAMPLER));
+    if active && !notes.iter().any(|n| n == PARAMETRIC_NOTE) {
+        notes.push(SAMPLER_NOTE.into());
     }
 }
 
