@@ -111,3 +111,15 @@ fn rejects_garbage() {
     assert!(legacy::import("kein json", 2026, Path::new("."), "x").is_err());
     assert!(legacy::import("{}", 2026, Path::new("."), "x").is_err());
 }
+
+/// #161/AK1, AK2: Ein extremes Startalter (Fund des Fuzzers, ausserhalb des Bereichs von `i32`) bringt den Import nicht zum
+/// Absturz, weder negativ noch positiv. Die Eingabe ist genau der Fund vom 18.11.2026.
+#[test]
+fn issue_161_ak1_ak2_extreme_start_age_does_not_panic() {
+    let fund = "{  \"General\": {\"StartAge\": -566666666666666666666666666 \n}}\n";
+    let _ = legacy::import(fund, 2030, Path::new("."), "fuzz");
+    for age in ["-1e300", "1e300", "-2147483648", "2147483647", "-0.0"] {
+        let text = format!("{{\"General\": {{\"StartAge\": {age}}}}}");
+        let _ = legacy::import(&text, 2030, Path::new("."), "x");
+    }
+}

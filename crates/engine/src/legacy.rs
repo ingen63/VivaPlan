@@ -509,7 +509,9 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         },
     };
 
-    let birth = start.plus(-((start_age * 12.0).round_ties_even() as i32));
+    // #161: erst als Gleitkommazahl negieren, dann begrenzen. `as i32` kappt ein extremes Startalter auf `i32::MIN`;
+    // das Minus danach liefe über. So ergibt es wie `YearMonth::plus` einen sehr fernen Monat statt eines Absturzes.
+    let birth = start.plus((-start_age * 12.0).round_ties_even() as i32);
     let plan = Plan {
         format: FORMAT.into(),
         project: Project {
