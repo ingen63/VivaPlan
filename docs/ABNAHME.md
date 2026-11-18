@@ -1665,6 +1665,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #154/AK1 | Der Schritt `housing` läuft nach den Schritten, die die Planung lesbar machen; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «proptest_upgrade_is_idempotent» | 18.11.2026 ok |
 | #154/AK2 | Regressionstest mit dem verkleinerten Fall. | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_154_…» | 18.11.2026 ok |
 
+### #159 Nächtliche Läufe zuverlässig machen und von Hand vollständig startbar
+
+[Issue #159](https://github.com/ingen63/VivaPlan/issues/159) · offen, Nacharbeit (AK4) · Umsetzung: b46150f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #159/AK1 | Beim Start von Hand lassen sich alle nächtlichen Jobs ausführen, auch `fuzz` und `mutants-diff`; ohne die Eingabe bleibt der Start von Hand wie heute. | ☑ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847) (`nightly=true`) | 18.11.2026 ok |
+| #159/AK2 | Ein Push bricht einen laufenden nächtlichen Lauf (oder einen Start von Hand mit allen nächtlichen Jobs) nicht ab; | ☑ | **gilt** | Läufe 44280164629 (Push) und 44280201847 nebeneinander | 18.11.2026 ok (Abbruch des vorherigen Push-Laufs nur in der Konfiguration geprüft) |
+| #159/AK3 | Der Cron-Zeitpunkt liegt nicht zur vollen oder halben Stunde. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
+| #159/AK4 | `mutants-diff` schliesst auch nach zwei ausgefallenen Nächten innerhalb seines Zeitlimits ab; | ☐ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847), Job `mutants-diff` | 18.11.2026 nicht erfüllt: alle 4 Teile nach 120 Min. abgebrochen (245 Mutanten je Teil, rund 75 s je Mutant) |
+| #159/AK5 | `docs/TESTS.md` beschreibt, wie man die nächtlichen Jobs von Hand startet und dass `schedule` verspätet sein oder ausfallen kann. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
 ### #117 Issues nach GitHub-Konvention: Nummer statt eigener ID
 
 [Issue #117](https://github.com/ingen63/VivaPlan/issues/117) · geschlossen · Umsetzung: 4bd1a25, 4c29de1, 2eccce0
