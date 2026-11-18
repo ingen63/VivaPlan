@@ -47,9 +47,18 @@ jobs:
           cache-dependency-path: crates/app/package-lock.json
       - run: npm ci
         working-directory: crates/app
-      # RPM erlaubt in der Version keinen Bindestrich: bei Vorabversionen (1.0.0-beta.1) entfällt das .rpm.
-      - run: npx tauri build ${{ matrix.name == 'linux' && contains(github.ref_name, '-') && '--bundles deb,appimage' || '' }}
+      # RPM erlaubt in der Version keinen Bindestrich: bei Vorabversionen (1.0.0-beta.1) entfällt das .rpm. Massgebend
+      # ist die Version der App, nicht der Name des Tags (#141: beim Start von Hand heisst der Ref «main»).
+      - name: npx tauri build
+        shell: bash
         working-directory: crates/app
+        run: |
+          version=$(node -p "require('./tauri.conf.json').version")
+          if [ "${{ matrix.name }}" = linux ] && [[ "$version" == *-* ]]; then
+            npx tauri build --bundles deb,appimage
+          else
+            npx tauri build
+          fi
       # #141: Rauchtest vor dem Release-Entwurf: Die gebaute App öffnet Fenster und Webansicht, rechnet die
       # Beispielplanung und beendet sich (Code 0 = in Ordnung). Unter Linux in einer virtuellen Anzeige (xvfb);
       # unter Windows hat die App keine Konsole, die Meldung steht deshalb in VIVAPLAN_SMOKE_OUT.

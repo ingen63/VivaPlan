@@ -1063,6 +1063,14 @@ mod tests {
         (app, w, guard)
     }
 
+    /// #141: Herkunft der Oberfläche, wie Tauri sie prüft: unter Windows (WebView2) `http://tauri.localhost`, sonst
+    /// `tauri://localhost`. Mit der falschen Herkunft lehnt Tauri jeden Befehl ab («… not allowed»).
+    const APP_ORIGIN: &str = if cfg!(windows) {
+        "http://tauri.localhost"
+    } else {
+        "tauri://localhost"
+    };
+
     fn call(w: &WebviewWindow<MockRuntime>, cmd: &str, args: Value) -> Result<Value, Value> {
         tauri::test::get_ipc_response(
             w,
@@ -1070,7 +1078,7 @@ mod tests {
                 cmd: cmd.into(),
                 callback: CallbackFn(0),
                 error: CallbackFn(1),
-                url: "tauri://localhost".parse().unwrap(),
+                url: APP_ORIGIN.parse().unwrap(),
                 body: InvokeBody::Json(args),
                 headers: Default::default(),
                 invoke_key: INVOKE_KEY.to_string(),

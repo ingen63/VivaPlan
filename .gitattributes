@@ -1,0 +1,3 @@
+# #141: CSV-Dateien immer mit LF auschecken. Unter Windows setzt Git sonst CRLF, und Tests, die eine Datei
+# Byte für Byte mit erzeugtem Text vergleichen (jst::extract_matches_the_database_file), schlagen fehl.
+*.csv text eol=lf
