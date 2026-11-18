@@ -1943,6 +1943,24 @@ mod tests {
         call(&w, "settings_set", json!({"key": "issue_106Test", "value": null})).unwrap();
     }
 
+    /// #163/AK1: Der Datenordner gehört dem Testprozess (Prozesskennung im Namen) und ist nach dem Test entfernt.
+    #[test]
+    fn issue_163_ak1_datenordner_je_testprozess_und_nach_dem_test_entfernt() {
+        let (app, w, g) = setup();
+        let dir = app.path().app_data_dir().expect("Datenordner");
+        let pid = std::process::id().to_string();
+        assert!(
+            dir.to_string_lossy().contains(&format!(".test-{pid}")),
+            "{}",
+            dir.display()
+        );
+        call(&w, "settings_set", json!({"key": "issue_163Test", "value": 1})).unwrap();
+        assert!(dir.exists(), "Einstellungen müssen den Ordner angelegt haben");
+        assert_eq!(g.data.as_ref(), Some(&dir));
+        drop(g);
+        assert!(!dir.exists(), "Ordner bleibt nach dem Test zurück: {}", dir.display());
+    }
+
     #[test]
     fn issue_106_datenordner_nennen_den_identifier() {
         let (app, _w, _g) = setup();
