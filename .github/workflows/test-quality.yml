@@ -206,13 +206,15 @@ jobs:
     # der seit dem letzten erfolgreichen nächtlichen Lauf geänderten Zeilen.
     if: github.event_name == 'pull_request' || ((github.event_name == 'schedule' || inputs.nightly) && needs.changes.outputs.run == 'true')
     # #159: Nach ausgefallenen Nächten wächst der Vergleich; am 17.11.2026 brach ein Job nach 120 Minuten ab. Gewählt:
-    # Die Mutanten werden auf 4 Jobs verteilt (`--shard`, je 2 Kerne, also rund viermal so viele Mutanten im selben
-    # Zeitlimit), und die Basis liegt höchstens 3 Tage zurück. Damit reichen 120 Minuten auch nach zwei ausgefallenen
-    # Nächten; ältere Änderungen prüft der volle Lauf (`mutation-full.yml`, `make mutants`).
+    # Die Mutanten werden auf 16 Jobs verteilt (`--shard`, wie mutation-full.yml), die Basis liegt höchstens 3 Tage zurück,
+    # und der Build eines Mutanten ist inkrementell. Gemessen am 18.11.2026 mit 4 Teilen: 3 Tage Änderungen ergaben rund
+    # 980 Mutanten, rund 75 s je Mutant (Build rund 60 s ohne inkrementelles Übersetzen); 4 Teile brauchten rund 2½ Stunden.
+    # Mit 16 Teilen sind es rund 61 Mutanten oder 40 Minuten je Teil, auch nach zwei ausgefallenen Nächten innerhalb von
+    # 120 Minuten. Ältere Änderungen prüft der volle Lauf (`mutation-full.yml`, `make mutants`).
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     runs-on: ubuntu-24.04      # cargo-mutants braucht glibc 2.39 (22.04 hat 2.35)
     timeout-minutes: 120
     steps:
@@ -225,6 +227,9 @@ jobs:
         with: { tool: "cargo-mutants,nextest" }
       - name: Mutanten auf geänderten Zeilen
         env:
+          # #159: rust-cache und rust-toolchain setzen CARGO_INCREMENTAL=0 (für den Cache); ein Mutant ändert nur eine
+          # Stelle, inkrementell übersetzt sollte sein Build kürzer sein (nächster Lauf zeigt es). Gilt nur für diesen Schritt.
+          CARGO_INCREMENTAL: "1"
           EVENT: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           LAST: ${{ needs.changes.outputs.last }}
@@ -244,20 +249,20 @@ jobs:
             fi
             [ -n "$base" ] || base="HEAD~1"
           fi
-          echo "Basis für den Vergleich: $base (Teil ${{ matrix.shard }} von 4)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Basis für den Vergleich: $base (Teil ${{ matrix.shard }} von 16)" >> "$GITHUB_STEP_SUMMARY"
           # Nur Rust-Dateien: cargo mutants kann den Kopf einer umbenannten Markdown-Datei mit Umlaut nicht lesen
           # (git setzt den Pfad in Anführungszeichen mit Oktalcodes).
           git diff "$base"...HEAD -- '*.rs' > pr.diff
           if ! grep -q '\.rs$' <(git diff --name-only "$base"...HEAD); then
             echo "Keine Rust-Änderungen – keine Mutanten." >> "$GITHUB_STEP_SUMMARY"; exit 0
           fi
-          cargo mutants --in-diff pr.diff --no-shuffle -j 2 --shard ${{ matrix.shard }}/4
+          cargo mutants --in-diff pr.diff --no-shuffle -j 2 --shard ${{ matrix.shard }}/16
       - name: Mutations-Zusammenfassung
         if: ${{ !cancelled() }}
         run: |
           f=local/mutants.out/outcomes.json
           [ -f "$f" ] || exit 0
-          jq -r '"### Mutation testing (Teil ${{ matrix.shard }} von 4)\ncaught: \(.caught)  missed: \(.missed)  timeout: \(.timeout)  unviable: \(.unviable)"' "$f" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '"### Mutation testing (Teil ${{ matrix.shard }} von 16)\ncaught: \(.caught)  missed: \(.missed)  timeout: \(.timeout)  unviable: \(.unviable)"' "$f" >> "$GITHUB_STEP_SUMMARY"
           if [ -s local/mutants.out/missed.txt ]; then
             echo '#### Nicht erkannte Mutanten' >> "$GITHUB_STEP_SUMMARY"
             sed 's/^/- /' local/mutants.out/missed.txt >> "$GITHUB_STEP_SUMMARY"
