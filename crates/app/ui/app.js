@@ -3373,6 +3373,20 @@ Object.assign(ACTIONS, {
   if (initial.includes("gainzh")) { ACTIONS["gain-zh"](); History.reset(); }
   if (initial.includes("optset")) { state.optimization = optToPlan({ ...OPT_DEFAULT, maxRuin: 2, weightMedian: 70, maxVol: 12, strategies: ["guardrails", "vpw"] }); History.reset(); }
   renderSection(); refreshSeriesInfo(); refreshLibrary(); Steps.render();
+  // #141: Rauchtest der ausgelieferten App (`--smoke`): Beispielplanung mit festen Renditen rechnen und melden; ohne
+  // Haftungsausschluss und Willkommen, ohne Einstellungen zu schreiben. Die App beendet sich danach.
+  if (window.__VIVAPLAN_SMOKE__) {
+    let ok = false, message;
+    try {
+      const plan = await Engine.call("example_plan");
+      plan.returns.source = "fixed"; plan.scenarios.sweeps = [];
+      const r = await Engine.call("run_simulation", { plan, path: null });
+      ok = !r.error && !!r.single && r.single.records.length > 0 && window.__errors.length === 0;
+      message = r.error || (window.__errors.length ? window.__errors.join("; ") : `${r.single.records.length} Monate gerechnet`);
+    } catch (e) { message = errText(e); }
+    await Engine.call("smoke_done", { ok, message });
+    return;
+  }
   // #61: Haftungsausschluss vor allem anderen bestätigen (Desktop-App; im Browser nur mit dem Testzugang #disclaimer).
   if ((Engine.inApp || initial.includes("disclaimer")) && disclaimerPending()) {
     document.documentElement.dataset.disclaimer = "open";

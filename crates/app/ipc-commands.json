@@ -24,6 +24,7 @@
     "startup_plan",
     "set_dirty",
     "quit_app",
+    "smoke_done",
     "import_shiller",
     "import_snb",
     "open_plan",

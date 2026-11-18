@@ -281,6 +281,48 @@ fn quit_app<R: Runtime>(app: AppHandle<R>, quit: State<'_, Quit>) {
     app.exit(0);
 }
 
+/// #141: Rauchtest der ausgelieferten App (`--smoke`): Die Oberfläche startet, rechnet die Beispielplanung und meldet das
+/// Ergebnis mit `smoke_done`. Die App beendet sich dann mit Code 0 (in Ordnung) oder 1 (Fehler); ohne Meldung nach
+/// [`SMOKE_TIMEOUT`] mit Code 2.
+#[derive(Default)]
+struct Smoke(bool);
+
+const SMOKE_FLAG: &str = "--smoke";
+const SMOKE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+
+fn smoke_requested(args: impl IntoIterator<Item = OsString>) -> bool {
+    args.into_iter().skip(1).any(|a| a == SMOKE_FLAG)
+}
+
+/// Meldet das Ergebnis des Rauchtests auf der Konsole und, falls `VIVAPLAN_SMOKE_OUT` gesetzt ist, in dieser Datei
+/// (unter Windows hat die App keine Konsole).
+fn smoke_report(line: &str) {
+    println!("{line}");
+    if let Some(out) = std::env::var_os("VIVAPLAN_SMOKE_OUT") {
+        let _ = std::fs::write(out, format!("{line}\n"));
+    }
+}
+
+/// Ausgabe und Exit-Code des Rauchtests.
+fn smoke_outcome(ok: bool, message: &str) -> (String, i32) {
+    (
+        format!("VivaPlan-Rauchtest: {} – {message}", if ok { "ok" } else { "FEHLER" }),
+        if ok { 0 } else { 1 },
+    )
+}
+
+#[tauri::command]
+fn smoke_done<R: Runtime>(app: AppHandle<R>, quit: State<'_, Quit>, ok: bool, message: String) {
+    // Nur im Rauchtest (den Zustand setzt `main`); sonst ohne Wirkung.
+    if !app.try_state::<Smoke>().is_some_and(|s| s.0) {
+        return;
+    }
+    let (line, code) = smoke_outcome(ok, &message);
+    smoke_report(&line);
+    quit.confirmed.store(true, Ordering::SeqCst);
+    app.exit(code);
+}
+
 /// Meldet der Oberfläche «quit-requested», wenn ungespeicherte Änderungen vorliegen; `true` heisst: Beenden stoppen.
 fn ask_before_exit<R: Runtime>(app: &AppHandle<R>) -> bool {
     let ask = app.state::<Quit>().must_ask();
@@ -857,6 +899,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             startup_plan,
             set_dirty,
             quit_app,
+            smoke_done,
             import_shiller,
             import_snb,
             open_plan,
@@ -903,8 +946,14 @@ fn data_dirs<R: Runtime>(app: &AppHandle<R>) -> Vec<PathBuf> {
 /// Erstellt die im Konfigurationsfile beschriebenen Fenster (dort mit `create: false`, damit die App-Daten vor dem
 /// ersten Zugriff der Webansicht übernommen sind).
 fn create_windows<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
+    let smoke = app.try_state::<Smoke>().is_some_and(|s| s.0);
     for w in app.config().app.windows.clone() {
-        tauri::WebviewWindowBuilder::from_config(app.handle(), &w)?.build()?;
+        let mut b = tauri::WebviewWindowBuilder::from_config(app.handle(), &w)?;
+        if smoke {
+            // #141: Die Oberfläche erkennt den Rauchtest an dieser Variable (vor allen Skripten der Seite gesetzt).
+            b = b.initialization_script("window.__VIVAPLAN_SMOKE__ = true;");
+        }
+        b.build()?;
     }
     Ok(())
 }
@@ -919,12 +968,25 @@ fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::err
 
 fn main() {
     let given = plan_arg(std::env::args_os());
+    let smoke = smoke_requested(std::env::args_os());
     let app = configure(tauri::Builder::default())
+        .manage(Smoke(smoke))
         .setup(setup_app)
         .build(tauri::generate_context!())
         .expect("VivaPlan konnte nicht gestartet werden");
     if let Some(p) = given {
         app.state::<PendingOpen>().set(p);
+    }
+    if smoke {
+        // #141: Zeitgrenze, falls die Oberfläche nie meldet (z. B. Webansicht startet nicht)
+        std::thread::spawn(|| {
+            std::thread::sleep(SMOKE_TIMEOUT);
+            smoke_report(&format!(
+                "VivaPlan-Rauchtest: FEHLER – keine Meldung der Oberfläche nach {} s",
+                SMOKE_TIMEOUT.as_secs()
+            ));
+            std::process::exit(2);
+        });
     }
     app.run(on_run_event);
 }
@@ -1389,6 +1451,86 @@ mod tests {
         listed.sort();
         listed.dedup();
         assert_eq!(handler, listed);
+    }
+
+    /// #141: Startoption des Rauchtests, Ausgabe und Exit-Code.
+    #[test]
+    fn issue_141_ak4_smoke_option_and_outcome() {
+        let args = |a: &[&str]| a.iter().map(OsString::from).collect::<Vec<_>>();
+        assert!(smoke_requested(args(&["vivaplan-app", "--smoke"])));
+        assert!(!smoke_requested(args(&["vivaplan-app"])));
+        assert!(!smoke_requested(args(&["--smoke"])), "das Programm selbst zählt nicht");
+        assert_eq!(
+            smoke_outcome(true, "472 Monate gerechnet"),
+            ("VivaPlan-Rauchtest: ok – 472 Monate gerechnet".into(), 0)
+        );
+        assert_eq!(smoke_outcome(false, "x").1, 1);
+        // Ohne --smoke tut der Befehl nichts (die App läuft weiter)
+        let (_app, w, _g) = setup();
+        assert_eq!(
+            call(&w, "smoke_done", json!({"ok": false, "message": "x"})).unwrap(),
+            Value::Null
+        );
+    }
+
+    /// #141/AK3: Pfade unter Windows (Laufwerk, Backslash, UNC, Leerzeichen und Umlaute, .rplan → .vplan). Die Fälle
+    /// werden auf allen Systemen übersetzt, ausgeführt nur unter Windows (dort gelten Backslash und Laufwerk als Pfad).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    fn windows_path_cases() {
+        assert_eq!(
+            legacy_stem(r"C:\Users\Anna\Planungen\Alte Planung.rplan").as_deref(),
+            Some("Alte Planung")
+        );
+        assert_eq!(legacy_stem(r"C:\Users\Anna\Planungen\Planung.vplan"), None);
+        assert_eq!(
+            with_default_extension(PathBuf::from(r"C:\Daten\Pläne\Neue Planung")),
+            PathBuf::from(r"C:\Daten\Pläne\Neue Planung.vplan")
+        );
+        assert_eq!(
+            with_default_extension(PathBuf::from(r"D:\x\alt.rplan")),
+            PathBuf::from(r"D:\x\alt.vplan")
+        );
+        assert_eq!(
+            base_dir(Some(r"C:\Users\Zoë\Planung ü.vplan")),
+            PathBuf::from(r"C:\Users\Zoë")
+        );
+        assert_eq!(
+            base_dir(Some(r"\\server\share\p.vplan")),
+            PathBuf::from(r"\\server\share\")
+        );
+        assert_eq!(file_name(r"C:\a\b\Planung.vplan"), "Planung.vplan");
+        assert!(is_plan_file(Path::new(r"C:\a\P.VPLAN")));
+        let args = [
+            r"C:\Programme\VivaPlan\vivaplan-app.exe",
+            r"C:\Users\Anna\Planung ü.vplan",
+        ];
+        assert_eq!(
+            plan_arg(args.iter().map(OsString::from)),
+            Some(PathBuf::from(r"C:\Users\Anna\Planung ü.vplan"))
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn issue_141_ak3_windows_paths() {
+        windows_path_cases();
+    }
+
+    /// #141: Leerzeichen und Umlaute in Pfaden mit «/» (alle Systeme).
+    #[test]
+    fn paths_with_spaces_and_umlauts() {
+        assert_eq!(
+            legacy_stem("/Users/Zoë/Meine Pläne/Alte Planung.rplan").as_deref(),
+            Some("Alte Planung")
+        );
+        assert_eq!(
+            base_dir(Some("/Users/Zoë/Meine Pläne/p ü.vplan")),
+            PathBuf::from("/Users/Zoë/Meine Pläne")
+        );
+        assert_eq!(
+            with_default_extension(PathBuf::from("/Users/Zoë/Neue Planung")),
+            PathBuf::from("/Users/Zoë/Neue Planung.vplan")
+        );
     }
 
     #[test]

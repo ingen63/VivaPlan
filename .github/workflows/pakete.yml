@@ -50,6 +50,22 @@ jobs:
       # RPM erlaubt in der Version keinen Bindestrich: bei Vorabversionen (1.0.0-beta.1) entfällt das .rpm.
       - run: npx tauri build ${{ matrix.name == 'linux' && contains(github.ref_name, '-') && '--bundles deb,appimage' || '' }}
         working-directory: crates/app
+      # #141: Rauchtest vor dem Release-Entwurf: Die gebaute App öffnet Fenster und Webansicht, rechnet die
+      # Beispielplanung und beendet sich (Code 0 = in Ordnung). Unter Linux in einer virtuellen Anzeige (xvfb);
+      # unter Windows hat die App keine Konsole, die Meldung steht deshalb in VIVAPLAN_SMOKE_OUT.
+      - name: Rauchtest der App
+        shell: bash
+        env:
+          VIVAPLAN_SMOKE_OUT: ${{ runner.temp }}/rauchtest.txt
+        run: |
+          case "${{ matrix.name }}" in
+            linux)   sudo apt-get install -y xvfb >/dev/null && xvfb-run -a ./target/release/vivaplan-app --smoke ;;
+            windows) ./target/release/vivaplan-app.exe --smoke ;;
+            macos)   ./target/release/vivaplan-app --smoke ;;
+          esac
+          status=$?
+          cat "$VIVAPLAN_SMOKE_OUT" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || echo "keine Meldung der App" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit "$status"
       - uses: actions/upload-artifact@v4
         with:
           name: vivaplan-${{ matrix.name }}
