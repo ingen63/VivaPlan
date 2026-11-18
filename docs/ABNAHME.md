@@ -719,9 +719,9 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #89/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach #111; beim Aufräumen der Runs gelöscht, Ergebnis im Issue); zweite Prüfung 16.11.2026: noch kein Nachtlauf mit e2e; 17.11.2026 offen: GitHub hat am 16.11. und 17.11. keinen Nachtlauf gestartet (letzter schedule-Lauf 15.11., vor e2e) |
+| #89/AK1 | Ein nächtlicher Job führt `e2e/` aus (nur bei neuem Commit, wie die übrigen nächtlichen Jobs). | ☐ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 18.11.2026 offen: Job lief grün im [Lauf 44375155792](https://github.com/ingen63/VivaPlan/actions/runs/44375155792) (`nightly=true`), schedule-Lauf mit e2e fehlt; früher: 16.11.2026 teilweise: drei Läufe von Hand grün (43850404495, 43851543289, 43852527223, nach #111; beim Aufräumen der Runs gelöscht, Ergebnis im Issue); zweite Prüfung 16.11.2026: noch kein Nachtlauf mit e2e; 17.11.2026 offen: GitHub hat am 16.11. und 17.11. keinen Nachtlauf gestartet (letzter schedule-Lauf 15.11., vor e2e) |
 | #89/AK2 | Bei Fehlschlag sind Bericht und Traces als Artefakt abgelegt. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 16.11.2026 ok: Artefakt e2e-failure mit Bericht und Traces vorhanden (Lauf 43746959803) |
-| #89/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e (zweite Prüfung 16.11.2026 unverändert); 17.11.2026 offen: test_report.py lokal grün (18 Tests), weiterhin kein Nachtlauf mit e2e |
+| #89/AK3 | `e2e/results.json` fliesst in die Übersichtsseite ein. | ☐ | **gilt** | [test_report.py](../tools/report/test_report.py) | 18.11.2026 offen: Übersichtsseite des Laufs zeigt «keine Daten» (Änderung 26f98d1 noch nicht gepusht); früher: 16.11.2026 teilweise: Bericht liest die Datei, Artefakt e2e-results liegt vor; die Übersicht auf GitHub holt es nur aus Nachtläufen, noch keiner mit e2e (zweite Prüfung 16.11.2026 unverändert); 17.11.2026 offen: test_report.py lokal grün (18 Tests), weiterhin kein Nachtlauf mit e2e |
 
 ### #90 Pictet-Reihe aus App und Repository entfernen
 
@@ -814,15 +814,3 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #132/AK6 | Die Golden-Dateien (`crates/engine/tests/golden/`) ändern sich nicht, oder die Änderung wird im Issue begründet. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 18.11.2026 ok (nur `08-parametrisch.json`, begründet im Issue) |
 | #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui-abnahme.spec.js](../e2e/ui-abnahme.spec.js) «AK7: …» | 18.11.2026 ok |
 | #132/AK8 | Keine Netzwerkzugriffe und keine Abhängigkeit von Grafiktreibern; `docs/ENTWICKLUNG.md` (Abschnitt Monte Carlo) beschreibt das Verfahren. | ☑ | **gilt** | kein Test (Durchsicht `Cargo.toml`, `docs/ENTWICKLUNG.md`) | 18.11.2026 ok |
-
-### #159 Nächtliche Läufe zuverlässig machen und von Hand vollständig startbar
-
-[Issue #159](https://github.com/ingen63/VivaPlan/issues/159) · offen, Nacharbeit (AK4) · Umsetzung: b46150f
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #159/AK1 | Beim Start von Hand lassen sich alle nächtlichen Jobs ausführen, auch `fuzz` und `mutants-diff`; ohne die Eingabe bleibt der Start von Hand wie heute. | ☑ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847) (`nightly=true`) | 18.11.2026 ok |
-| #159/AK2 | Ein Push bricht einen laufenden nächtlichen Lauf (oder einen Start von Hand mit allen nächtlichen Jobs) nicht ab; | ☑ | **gilt** | Läufe 44280164629 (Push) und 44280201847 nebeneinander | 18.11.2026 ok (Abbruch des vorherigen Push-Laufs nur in der Konfiguration geprüft) |
-| #159/AK3 | Der Cron-Zeitpunkt liegt nicht zur vollen oder halben Stunde. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
-| #159/AK4 | `mutants-diff` schliesst auch nach zwei ausgefallenen Nächten innerhalb seines Zeitlimits ab; | ☐ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847), Job `mutants-diff` | 18.11.2026 nicht erfüllt: alle 4 Teile nach 120 Min. abgebrochen (245 Mutanten je Teil, rund 75 s je Mutant) |
-| #159/AK5 | `docs/TESTS.md` beschreibt, wie man die nächtlichen Jobs von Hand startet und dass `schedule` verspätet sein oder ausfallen kann. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |

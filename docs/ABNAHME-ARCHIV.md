@@ -874,6 +874,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #154/AK1 | Der Schritt `housing` läuft nach den Schritten, die die Planung lesbar machen; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «proptest_upgrade_is_idempotent» | 18.11.2026 ok |
 | #154/AK2 | Regressionstest mit dem verkleinerten Fall. | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_154_…» | 18.11.2026 ok |
 
+### #159 Nächtliche Läufe zuverlässig machen und von Hand vollständig startbar
+
+[Issue #159](https://github.com/ingen63/VivaPlan/issues/159) · geschlossen · Umsetzung: b46150f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #159/AK1 | Beim Start von Hand lassen sich alle nächtlichen Jobs ausführen, auch `fuzz` und `mutants-diff`; ohne die Eingabe bleibt der Start von Hand wie heute. | ☑ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847) (`nightly=true`) | 18.11.2026 ok |
+| #159/AK2 | Ein Push bricht einen laufenden nächtlichen Lauf (oder einen Start von Hand mit allen nächtlichen Jobs) nicht ab; | ☑ | **gilt** | Läufe 44280164629 (Push) und 44280201847 nebeneinander | 18.11.2026 ok (Abbruch des vorherigen Push-Laufs nur in der Konfiguration geprüft) |
+| #159/AK3 | Der Cron-Zeitpunkt liegt nicht zur vollen oder halben Stunde. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
+| #159/AK4 | `mutants-diff` schliesst auch nach zwei ausgefallenen Nächten innerhalb seines Zeitlimits ab; | ☑ | **gilt** | [Lauf 44375155792](https://github.com/ingen63/VivaPlan/actions/runs/44375155792), Job `mutants-diff` | 18.11.2026 ok: 16 Teile, alle grün, längster Teil rund 40 Min. (Limit 120) |
+| #159/AK5 | `docs/TESTS.md` beschreibt, wie man die nächtlichen Jobs von Hand startet und dass `schedule` verspätet sein oder ausfallen kann. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
 ### #160 Weniger Kontext bei der Arbeit mit Claude Code
 
 [Issue #160](https://github.com/ingen63/VivaPlan/issues/160) · geschlossen · Umsetzung: 5bdf2d5 (Beschreibung in `docs/TESTS.md` mit a4070d1)
@@ -888,3 +900,32 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #160/AK6 | Der Hook nach dem Commit (`.claude/hooks/after-commit.sh`) führt die Tests der geänderten Pakete selbst leise aus und meldet nur das … | ☑ | **gilt** | [test_after_commit.py](../tools/test_after_commit.py) «test_issue_160_ak6_…» | 18.11.2026 ok (dazu echter Lauf auf 2f0d36a: 82 s, 733 Tests, nur Zusammenfassung) |
 | #160/AK7 | Die Regeln zu Tests je Abnahmekriterium, Abdeckung (80 %), Mutanten und Dokumentation in `CLAUDE.md` bleiben unverändert. | ☑ | **gilt** | kein Test (Diff `CLAUDE.md` in 5bdf2d5) | 18.11.2026 ok |
 | #160/AK8 | `docs/TESTS.md` beschreibt das neue Make-Ziel und den geänderten Hook. | ☑ | **gilt** | kein Test (Durchsicht `docs/TESTS.md`) | 18.11.2026 ok |
+
+### #161 Import alter Konfiguration stürzt bei extremem Startalter ab
+
+[Issue #161](https://github.com/ingen63/VivaPlan/issues/161) · geschlossen · Umsetzung: e483d57
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #161/AK1 | Import mit extremem `General.StartAge` (±, auch ausserhalb `i32`) stürzt nicht ab. | ☑ | **gilt** | `legacy_import.rs` `issue_161_ak1_ak2_…` | 18.11.2026 ok |
+| #161/AK2 | Regressionstest liest genau die gefundene Eingabe ein. | ☑ | **gilt** | `legacy_import.rs` `issue_161_ak1_ak2_…` | 18.11.2026 ok |
+| #161/AK3 | Eingabe liegt im Startkorpus `fuzz/seeds/import_legacy/`. | ☑ | **gilt** | `issue-161-extremes-startalter` | 18.11.2026 ok; Fuzz-Lauf grün (Lauf 44375155792) |
+
+### #162 Nicht erkannte Mutanten in den Änderungen vom 15. bis 18.11.2026
+
+[Issue #162](https://github.com/ingen63/VivaPlan/issues/162) · geschlossen · Umsetzung: 23201ec
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #162/AK1 | Jeder genannte Mutant ist mit einem Test erkannt oder mit Begründung ausgeschlossen. | ☑ | **gilt** | 7 Tests `issue_162_ak1_…`, `.cargo/mutants.toml` | 18.11.2026 ok |
+| #162/AK2 | `cargo mutants --in-diff` meldet keinen dieser Mutanten mehr als nicht erkannt. | ☑ | **gilt** | [Lauf 44375155792](https://github.com/ingen63/VivaPlan/actions/runs/44375155792), `mutants-diff` (16 Teile) | 18.11.2026 ok: alle Teile grün |
+
+### #163 Tests der Desktop-App teilen sich den Datenordner und sind unzuverlässig
+
+[Issue #163](https://github.com/ingen63/VivaPlan/issues/163) · geschlossen · Umsetzung: e81169a, 67f4e4c
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #163/AK1 | Jeder Testprozess hat einen eigenen Datenordner; nach dem Test bleibt keiner zurück. | ☑ | **gilt** | `main.rs` Tests der App | 18.11.2026 ok: 93 Tests grün, keine Ordner übrig |
+| #163/AK2 | `issue_106_…` besteht in 20 Läufen hintereinander ohne Fehlversuch. | ☑ | **gilt** | `issue_106_einstellung_…` | 18.11.2026 ok: 20 von 20 |
+| #163/AK3 | Lauf auf GitHub (`tests-coverage`) ist ohne `FLKY`-Meldung grün. | ☑ | **gilt** | [Lauf 44375155792](https://github.com/ingen63/VivaPlan/actions/runs/44375155792) | 18.11.2026 ok |
