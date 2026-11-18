@@ -107,6 +107,19 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("data")
     }
 
+    /// #162/AK1: Die Antwort ist das serialisierte Ergebnis des Befehls, nicht leer. Der Vertragstest (#142) vergleicht
+    /// Desktop-App und Entwicklungsserver; liefern beide `null`, fiele das dort nicht auf.
+    #[test]
+    fn issue_162_ak1_answer_is_the_serialized_result() {
+        let plan: Value = serde_json::from_str(include_str!("../assets/beispiel.vplan")).unwrap();
+        let args = json!({ "plan": plan });
+        let issues = call("validate", &args, &lib(), Path::new("/")).unwrap();
+        assert_eq!(issues, serde_json::to_value(crate::api::validate(&plan)).unwrap());
+        assert!(issues.is_array());
+        let params = call("opt_params", &args, &lib(), Path::new("/")).unwrap();
+        assert!(params.as_array().is_some_and(|p| !p.is_empty()), "{params}");
+    }
+
     /// #142/AK3: Die Liste `COMMANDS` entspricht genau den Zweigen von `call` und den Rechenbefehlen der Tabelle.
     #[test]
     fn issue_142_ak3_commands_match_the_branches_and_the_table() {

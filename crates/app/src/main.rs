@@ -1481,6 +1481,22 @@ mod tests {
         );
     }
 
+    /// #162/AK1: `smoke_report` schreibt die Meldung des Rauchtests auch in die Datei aus `VIVAPLAN_SMOKE_OUT` (unter
+    /// Windows hat die App keine Konsole; `pakete.yml` liest die Datei).
+    #[test]
+    fn issue_162_ak1_smoke_report_writes_the_file() {
+        let out = std::env::temp_dir().join(format!("vivaplan-smoke-{}.txt", std::process::id()));
+        let _ = std::fs::remove_file(&out);
+        std::env::set_var("VIVAPLAN_SMOKE_OUT", &out);
+        smoke_report("VivaPlan-Rauchtest: ok – 472 Monate gerechnet");
+        std::env::remove_var("VIVAPLAN_SMOKE_OUT");
+        assert_eq!(
+            std::fs::read_to_string(&out).unwrap(),
+            "VivaPlan-Rauchtest: ok – 472 Monate gerechnet\n"
+        );
+        let _ = std::fs::remove_file(&out);
+    }
+
     /// #141/AK3: Pfade unter Windows (Laufwerk, Backslash, UNC, Leerzeichen und Umlaute, .rplan → .vplan). Die Fälle
     /// werden auf allen Systemen übersetzt, ausgeführt nur unter Windows (dort gelten Backslash und Laufwerk als Pfad).
     #[cfg_attr(not(windows), allow(dead_code))]

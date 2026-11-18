@@ -203,3 +203,23 @@ fn issue_139_ak3_usual_plans_stay_allowed_and_the_limit_is_exact() {
     assert!(too_many(&fixed).is_none());
     assert_eq!(engine::validate::MAX_PATH_MONTHS, 50_000_000);
 }
+
+// #162/AK1: Genau 50 Mio. Pfad-Monate sind erlaubt (40 Monate × 1'250'000 Pfade), ein Pfad mehr nicht. Die Zahl der Pfade
+// in der Meldung hat Tausendertrennzeichen, auch bei einer durch 3 teilbaren Stellenzahl (100'000, kein führender Apostroph).
+#[test]
+fn issue_162_ak1_exact_path_limit_and_thousands_separator() {
+    let forty = |paths| {
+        let mut v = mc("bootstrap", paths, 4);
+        v["milestones"][3]["date"] = json!("2033-04");
+        v
+    };
+    assert!(too_many(&forty(1_250_000)).is_none(), "genau 50 Mio. Pfad-Monate");
+    assert!(too_many(&forty(1_250_001)).is_some());
+    let i = too_many(&mc("parametric", 100_000, 100)).unwrap();
+    assert!(
+        i.message
+            .starts_with("Zu viele Pfade für den Speicher: 100'000 Pfade × 1200 Monate."),
+        "{}",
+        i.message
+    );
+}

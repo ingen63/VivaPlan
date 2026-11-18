@@ -446,6 +446,31 @@ fn one_off_payments_land_in_their_month() {
     assert_eq!(res.events.iter().filter(|e| e.kind == EventKind::Extra).count(), 4);
 }
 
+/// #162/AK1: Das Hauptbuch bucht jeden Geldfluss mit dem richtigen Vorzeichen: Einmalbeträge, Sparbeträge, Beiträge an die
+/// Pensionskasse, Zins bis zum Bezug mitten im Jahr und Kapitalbezug. Die Vermögensänderung jedes Monats muss dem
+/// Hauptbuch entsprechen (`check_books`).
+#[test]
+fn issue_162_ak1_ledger_books_every_flow() {
+    let mut v = base();
+    v["milestones"][1]["date"] = json!("2031-07");
+    v["flows"] = json!({ "income": 6000, "spending": 4000, "savings": 800, "extras": [
+        { "date": "2030-05", "amount": 100_000, "label": "Erbschaft" },
+        { "date": "2032-02", "amount": -20_000, "label": "Auto" } ] });
+    v["pension"]["pk"] = json!({ "capital": 500_000, "at": "retire", "lumpsum": 0.5, "conversion": 0.05,
+        "contribution": 1000, "interest": 0.02 });
+    let res = run(&v);
+    let sum = |f: fn(&engine::sim::Ledger) -> f64| res.records.iter().map(|r| f(&r.ledger)).sum::<f64>();
+    assert!(
+        sum(|l| l.extras) > 0.0 && sum(|l| l.savings) > 0.0,
+        "Einmalbeträge und Sparbeträge gebucht"
+    );
+    assert!(
+        sum(|l| l.pk_contributions) > 0.0 && sum(|l| l.pk_interest) > 0.0,
+        "PK-Beiträge und Zins gebucht"
+    );
+    check_books(&res, "Geldflüsse");
+}
+
 #[test]
 fn monthly_and_yearly_income_edge_cases() {
     for (income, spending) in [

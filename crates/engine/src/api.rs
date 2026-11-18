@@ -635,15 +635,7 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
         Ok(m) if m.file_type().is_symlink() => std::fs::canonicalize(path)?,
         _ => path.to_path_buf(),
     };
-    let dir = match target.parent() {
-        Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
-        _ => std::path::PathBuf::from("."),
-    };
-    let name = target
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    let tmp = dir.join(format!(".{name}.{}.tmp", std::process::id()));
+    let tmp = temp_path(&target);
     let result = (|| {
         let mut f = std::fs::File::create(&tmp)?;
         f.write_all(bytes)?;
@@ -655,6 +647,20 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
         let _ = std::fs::remove_file(&tmp);
     }
     result
+}
+
+/// #136: Temporäre Datei für [`write_atomic`] im Ordner der Zieldatei (nur dort ist das Ersetzen atomar und auf demselben
+/// Datenträger); ohne Ordner im Pfad im Arbeitsverzeichnis.
+fn temp_path(target: &Path) -> std::path::PathBuf {
+    let dir = match target.parent() {
+        Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
+        _ => std::path::PathBuf::from("."),
+    };
+    let name = target
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    dir.join(format!(".{name}.{}.tmp", std::process::id()))
 }
 
 /// Optimierung der Entnahmestrategie (siehe [`crate::optimize`]).
@@ -676,6 +682,22 @@ mod tests {
 
     fn example() -> Value {
         serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
+    }
+
+    /// #162/AK1: Die temporäre Datei liegt im Ordner der Zieldatei (sonst wäre das Ersetzen nicht atomar und schlüge
+    /// zwischen zwei Datenträgern fehl); ohne Ordner im Pfad im Arbeitsverzeichnis.
+    #[test]
+    fn issue_162_ak1_temporary_file_lies_next_to_the_target() {
+        let pid = std::process::id();
+        let dir = std::env::temp_dir().join("ordner");
+        assert_eq!(
+            temp_path(&dir.join("planung.vplan")),
+            dir.join(format!(".planung.vplan.{pid}.tmp"))
+        );
+        assert_eq!(
+            temp_path(Path::new("planung.vplan")),
+            Path::new(".").join(format!(".planung.vplan.{pid}.tmp"))
+        );
     }
 
     // #40: Vorschau beim parametrischen Modell: erwartete geometrische Aktienrendite exp(μ − σ²/2 + λ·μJ) − 1.

@@ -141,3 +141,17 @@ fn issue_134_ak4_falling_tables_are_found() {
         Some(2)
     );
 }
+
+/// #162/AK1: Grenzen der Erkennung, die die Beispiele von #134 nicht abdecken (Mutanten in `falling_row`).
+#[test]
+fn issue_162_ak1_falling_row_edges() {
+    // Sprung beim Betrag 0: Die Steuer ist dort 0, ein tieferer Satz danach lässt sie nicht fallen.
+    assert_eq!(falling_row(&[(0.0, 0.10), (0.0, 0.05), (100_000.0, 0.05)]), None);
+    // Gleicher Betrag mit gleichem Satz ist kein Sprung.
+    assert_eq!(falling_row(&[(100_000.0, 0.1), (100_000.0, 0.1)]), None);
+    // Satz überall 0: Ableitung 0 am Abschnittsende ist kein Fallen.
+    assert_eq!(falling_row(&[(0.0, 0.0), (100_000.0, 0.0)]), None);
+    // Nur am Anfang des Abschnitts fällt die Steuer (negativer Satz, steigende Ableitung): Die Prüfung am Anfang
+    // findet es, die am Ende nicht. Die Eingabeprüfung verlangt Sätze ≥ 0; `falling_row` gilt für jede Tabelle.
+    assert_eq!(falling_row(&[(1.0, -0.5), (11.0, 0.5)]), Some(1));
+}

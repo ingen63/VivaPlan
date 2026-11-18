@@ -176,6 +176,30 @@ exclude_re = [
     # Start der echten Anwendung (Fenster aus der Konfiguration, Dialoge, Menü): nur mit laufender Ereignisschleife.
     "main\\.rs:\\d+:\\d+: replace setup_app -> .* with .*",
     "main\\.rs:\\d+:\\d+: replace main with \\(\\)",
+    # Rauchtest (#141): `smoke_done` beendet die App mit `app.exit`, das die Mock-Runtime nicht umsetzt (wie `quit_app`).
+    # Die Teile sind getestet (`smoke_outcome`, `smoke_report`, ohne `--smoke` ohne Wirkung); den ganzen Ablauf prüft der
+    # Rauchtest in `pakete.yml` auf allen drei Systemen.
+    "main\\.rs:\\d+:\\d+: replace smoke_done with \\(\\)",
+    # Ereignisse der Laufzeit: Ausserhalb von macOS behandelt `on_run_event` nur `ExitRequested` (siehe oben,
+    # `ExitRequestApi` ohne öffentlichen Konstruktor); die Entscheidung steckt in `ask_before_exit`.
+    "main\\.rs:\\d+:\\d+: replace on_run_event with \\(\\)",
+
+    # --- #162 (mutants-diff vom 18.11.2026), gleichwertig ---
+    # Fallende Steuer, Sprung in einer Gruppe gleicher Beträge: Bei k = first vergleicht die Bedingung den Satz der Zeile mit
+    # sich selbst (r < r − EPS), das ist immer falsch.
+    "tax\\.rs:\\d+:28: replace > with >= in falling_row",
+    # Atomares Speichern: Für eine vorhandene gewöhnliche Datei zeigt `canonicalize` auf dieselbe Datei; eine neue Datei
+    # (kein Eintrag) erreicht den Zweig nicht.
+    "api\\.rs:\\d+:\\d+: replace match guard m\\.file_type\\(\\)\\.is_symlink\\(\\) with true in write_atomic",
+    # Speichergrenze: Die Prüfung kommt erst nach «Ende nach Start», es gibt also immer mindestens einen Monat; mit
+    # months = 0 wäre das Produkt 0 und die Bedingung ebenfalls falsch.
+    "validate\\.rs:215:19: replace > with >= in check",
+    # --- #162, Grenzfälle ---
+    # Fallende Steuer: Der Satz der letzten Zeile einer Gruppe liegt genau um die Toleranz EPS (1e-12) unter dem der
+    # ersten; bei gerechneten Sätzen kommt das nicht vor.
+    "tax\\.rs:\\d+:52: replace < with <= in falling_row",
+    # Fallende Steuer: Ableitung (Anfang bzw. Ende eines Abschnitts) genau −EPS.
+    "tax\\.rs:\\d+:(26|48): replace < with <= in falling_row",
 ]
 
 # #43: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).

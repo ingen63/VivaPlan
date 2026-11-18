@@ -240,6 +240,31 @@ fn issue_50_ak1_to_ak3_indirect_until_ahv_then_direct() {
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("15000 CHF")));
 }
 
+/// #162/AK1: Indirekte Amortisation in die Säule 3a bleibt im Vermögen: Die Vermögensänderung jedes Monats entspricht dem
+/// Hauptbuch, auch in den Quartalen mit Einzahlung in die 3a und nach dem Wechsel auf direkte Amortisation.
+#[test]
+fn issue_162_ak1_indirect_amortization_keeps_the_ledger() {
+    let mut v = base();
+    v["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2040-01") ] });
+    let r = run(&v);
+    let mut prev = r.summary.start_total;
+    for x in &r.records {
+        let (delta, flows) = (x.total - prev, x.ledger.sum());
+        assert!(
+            (delta - flows).abs() <= 0.01,
+            "{}: Total {delta:.4}, Hauptbuch {flows:.4} ({:?})",
+            x.month,
+            x.ledger
+        );
+        prev = x.total;
+    }
+    close(
+        rec(&r, 2040, 3).ledger.amortization,
+        750.0,
+        "Amortisation in die 3a im Hauptbuch",
+    );
+}
+
 /// #50/AK4: Eine Periode, die erst ab dem AHV-Bezug beginnt (Erneuerung), amortisiert direkt.
 #[test]
 fn issue_50_ak4_period_from_ahv_is_direct() {
