@@ -1566,14 +1566,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #141 Tests und Rauchtest unter Windows und macOS
 
-[Issue #141](https://github.com/ingen63/VivaPlan/issues/141) · offen · Umsetzung: 1ddc59d
+[Issue #141](https://github.com/ingen63/VivaPlan/issues/141) · geschlossen · Umsetzung: 1ddc59d
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #141/AK1 | Ein nächtlicher Job (nur nach neuem Commit, wie die übrigen nächtlichen Jobs) führt `cargo nextest run --workspace` unter … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
-| #141/AK2 | Die Golden Masters und `ods_reference` bestehen auf allen drei Betriebssystemen mit der heutigen Toleranz; | ☐ | **gilt** | Job `tests-os` (noch nicht gelaufen) | 18.11.2026 offen: erster Lauf von `tests-os` steht aus |
-| #141/AK3 | Tests für Pfade unter Windows (Laufwerksbuchstabe, Backslash, Leerzeichen und Umlaute im Namen, `.rplan` → `.vplan`) laufen im Windows-Job. | ☐ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 offen: läuft nur unter Windows (`tests-os`) |
-| #141/AK4 | Vor dem Release-Entwurf startet jedes Paket in einem Rauchtest: Die App öffnet die Beispielplanung, rechnet einen festen Lauf und … | ☐ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 teilweise: Rauchtest lokal unter macOS ok (Exit 0); Windows und Linux erst im nächsten Paketlauf |
+| #141/AK2 | Die Golden Masters und `ods_reference` bestehen auf allen drei Betriebssystemen mit der heutigen Toleranz; | ☑ | **gilt** | Jobs `tests-os` (Windows, macOS) und `tests-coverage` (Linux), [Lauf 44274654652](https://github.com/ingen63/VivaPlan/actions/runs/44274654652) | 18.11.2026 ok: `golden::` und `ods_reference::` auf allen drei Systemen grün |
+| #141/AK3 | Tests für Pfade unter Windows (Laufwerksbuchstabe, Backslash, Leerzeichen und Umlaute im Namen, `.rplan` → `.vplan`) laufen im Windows-Job. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok: `issue_141_ak3_windows_paths` grün in `tests-os (windows-latest)` |
+| #141/AK4 | Vor dem Release-Entwurf startet jedes Paket in einem Rauchtest: Die App öffnet die Beispielplanung, rechnet einen festen Lauf und … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs), [Lauf 44270687642](https://github.com/ingen63/VivaPlan/actions/runs/44270687642) | 18.11.2026 ok: Rauchtest auf Linux, macOS und Windows «ok – 472 Monate gerechnet» |
 | #141/AK5 | `docs/TESTS.md` nennt die Plattformen und die Jobs. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
 
 ### #142 Vertragstest zwischen Dev-Server und Tauri-Commands
@@ -1614,12 +1614,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #146 Golden Masters nächtlich im Release-Profil
 
-[Issue #146](https://github.com/ingen63/VivaPlan/issues/146) · offen · Umsetzung: 53dbf09
+[Issue #146](https://github.com/ingen63/VivaPlan/issues/146) · geschlossen · Umsetzung: 53dbf09
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #146/AK1 | Ein nächtlicher Job in `test-quality.yml` (nur nach neuem Commit, wie die übrigen nächtlichen Jobs) führt die Golden Masters … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
-| #146/AK2 | Die Golden Masters bestehen dort mit der heutigen Toleranz (1e-9 relativ), ohne `GOLDEN_UPDATE`. | ☐ | **gilt** | Job `release-golden` (noch nicht gelaufen); lokal Release-Profil | 18.11.2026 offen: lokal ok, Job auf GitHub noch nicht gelaufen |
+| #146/AK2 | Die Golden Masters bestehen dort mit der heutigen Toleranz (1e-9 relativ), ohne `GOLDEN_UPDATE`. | ☑ | **gilt** | Job `release-golden`, [Lauf 44274654652](https://github.com/ingen63/VivaPlan/actions/runs/44274654652) | 18.11.2026 ok: 9 Tests im Release-Profil grün, ohne `GOLDEN_UPDATE` |
 | #146/AK3 | Ein Fehlschlag lässt den Lauf fehlschlagen und ist in der Zusammenfassung sichtbar. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
 | #146/AK4 | `docs/TESTS.md` nennt den Job und den Grund. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
 
