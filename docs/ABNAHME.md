@@ -1454,11 +1454,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #133 Geldfluss-Erhaltung über alle Bestandteile prüfen
 
-[Issue #133](https://github.com/ingen63/VivaPlan/issues/133) · offen · Umsetzung: b5640b1
+[Issue #133](https://github.com/ingen63/VivaPlan/issues/133) · geschlossen · Umsetzung: b5640b1
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #133/AK1 | Der Monatsdatensatz (oder ein Testmodus des Rechenkerns) weist alle Geldflüsse und Bewertungsänderungen eines Monats einzeln aus: … | ☐ | **gilt** | kein Test (Durchsicht `sim::Ledger`) | 18.11.2026 teilweise: Rendite je Anlage, Hypothekarzins und Umbuchungen nicht einzeln (Entscheid offen) |
+| #133/AK1 | Der Monatsdatensatz (oder ein Testmodus des Rechenkerns) weist alle Geldflüsse und Bewertungsänderungen eines Monats einzeln aus: … | ☑ | **gilt** (Entscheid vom 18.11.2026: Umbuchungen und zusammengefasste Positionen angenommen) | kein Test (Durchsicht `sim::Ledger`) | 18.11.2026 ok (Entscheid des Anwenders) |
 | #133/AK2 | Ein Eigenschaftstest (proptest) prüft für zufällige Planungen mit Immobilien, Hypotheken, PK, 3a, Renditen ungleich 0 und allen … | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs), [proptest_plans.rs](../crates/engine/tests/proptest_plans.rs), [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) | 18.11.2026 ok |
 | #133/AK3 | Beispiel: Ein absichtlich doppelt gebuchter Verkaufserlös (Mutant in `sell`) lässt den Test fehlschlagen. | ☑ | **gilt** | Gegenprobe von Hand (Arbeitskopie, `sell` doppelt) | 18.11.2026 ok |
 | #133/AK4 | Die Golden-Dateien bleiben unverändert; | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
