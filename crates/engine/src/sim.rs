@@ -3079,3 +3079,32 @@ mod tests_pre_levels {
         assert_eq!(l[1], 1.0);
     }
 }
+
+#[cfg(test)]
+mod tests_ledger {
+    use super::*;
+
+    /// #133: Jedes Feld hat eine eigene Zweierpotenz, so ändert jedes falsche Vorzeichen die Summe.
+    #[test]
+    fn issue_133_ledger_sum_signs() {
+        let l = Ledger {
+            income: 1.0,
+            extras: 2.0,
+            savings: 4.0,
+            living: 8.0,
+            housing: 16.0,
+            amortization: 32.0,
+            taxes: 64.0,
+            market: 128.0,
+            pk_contributions: 256.0,
+            pk_interest: 512.0,
+            p3a_interest: 1024.0,
+            revaluation: 2048.0,
+            annuity: 4096.0,
+        };
+        let plus = 1.0 + 2.0 + 4.0 + 32.0 + 128.0 + 256.0 + 512.0 + 1024.0 + 2048.0;
+        let minus = 8.0 + 16.0 + 64.0 + 4096.0;
+        assert_eq!(l.sum(), plus - minus);
+        assert_eq!(Ledger::default().sum(), 0.0);
+    }
+}
