@@ -153,3 +153,53 @@ fn issue_134_ak4_falling_tax_table_is_a_warning_at_the_row() {
     assert!(!issues(&v).iter().any(falling));
     assert!(has(&v, Severity::Error, "taxes", "Steuersatz muss zwischen"));
 }
+
+/// #139: Monte-Carlo-Planung über `years` Jahre ab Januar 2030 mit `paths` Pfaden.
+fn mc(source: &str, paths: u64, years: i32) -> Value {
+    let mut v = base();
+    v["milestones"][3]["date"] = json!(format!("{}-12", 2029 + years));
+    v["returns"]["source"] = json!(source);
+    v["returns"]["strategy"] = json!({ "stocks": "sp500", "bonds": "usa" });
+    v["returns"][source] = if source == "bootstrap" {
+        json!({ "paths": paths, "block": 12, "seed": 1 })
+    } else {
+        json!({ "paths": paths, "mu": 0.07, "sigma": 0.15, "df": 6, "seed": 1 })
+    };
+    v
+}
+
+fn too_many(v: &Value) -> Option<Issue> {
+    api::validate(v)
+        .into_iter()
+        .find(|i| i.message.starts_with("Zu viele Pfade"))
+}
+
+// #139/AK1, AK2: 1'000'000 Pfade über 100 Jahre sind ein Fehler am Feld der Pfade, mit der höchsten möglichen Zahl
+// (50'000'000 / 1'200 = 41'666).
+#[test]
+fn issue_139_ak2_one_million_paths_over_100_years_are_an_error() {
+    for source in ["bootstrap", "parametric"] {
+        let i = too_many(&mc(source, 1_000_000, 100)).expect(source);
+        assert_eq!(i.severity, Severity::Error);
+        assert_eq!(i.field.as_deref(), Some(format!("returns.{source}.paths").as_str()));
+        assert_eq!(
+            i.message,
+            "Zu viele Pfade für den Speicher: 1'000'000 Pfade × 1200 Monate. Bei dieser Planungsdauer sind höchstens 41'666 Pfade möglich."
+        );
+    }
+}
+
+// #139/AK3: 50'000 Pfade über 30 Jahre (heute übliche Rechnung) bleiben erlaubt; genau an der Grenze ebenfalls, ein Pfad
+// mehr nicht. Feste und historische Renditen sind nicht betroffen.
+#[test]
+fn issue_139_ak3_usual_plans_stay_allowed_and_the_limit_is_exact() {
+    assert!(too_many(&mc("bootstrap", 50_000, 30)).is_none());
+    assert!(too_many(&mc("parametric", 50_000, 30)).is_none());
+    // 100 Jahre = 1'200 Monate: 41'666 × 1'200 = 49'999'200 ≤ 50 Mio., 41'667 × 1'200 = 50'000'400
+    assert!(too_many(&mc("bootstrap", 41_666, 100)).is_none());
+    assert!(too_many(&mc("bootstrap", 41_667, 100)).is_some());
+    let mut fixed = mc("bootstrap", 1_000_000, 100);
+    fixed["returns"]["source"] = json!("fixed");
+    assert!(too_many(&fixed).is_none());
+    assert_eq!(engine::validate::MAX_PATH_MONTHS, 50_000_000);
+}

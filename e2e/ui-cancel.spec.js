@@ -47,7 +47,8 @@ test.describe("Abbrechen laufender Berechnungen", () => {
     test.setTimeout(120_000);
     const errors = await open(page, "scenarios/bootstrap", { bench: true });
     await expect(page.locator("#est-run")).toContainText("Dauer:", { timeout: 30_000 });
-    await page.evaluate(() => { state.returns.bootstrap.paths = 1000000; });
+    // #139: 100'000 Pfade über die Beispielplanung (472 Monate) bleiben unter der Speichergrenze von 50 Mio. Pfad-Monaten
+    await page.evaluate(() => { state.returns.bootstrap.paths = 100000; });
     await page.evaluate(() => { runSimulation("overview", { noConfirm: true }); });
     await expect(page.locator("#jobCancel")).toBeVisible();
     await page.locator("#jobCancel").click();

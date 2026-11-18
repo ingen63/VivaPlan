@@ -13,6 +13,25 @@ use crate::time::{TimeRef, YearMonth};
 
 /// Höchstes zulässiges Alter am Simulationsende.
 const MAX_AGE: i32 = 120;
+
+/// #139: Höchstens so viele Pfad-Monate (Pfade × Monate der Planung) rechnet Monte Carlo. Gemessen (18.11.2026): rund
+/// 23 Bytes je Pfad und Monat (Bandbreiten nominal und real als `f32`, dazu Sortierspalten und Ergebnisse je Lauf); an
+/// der Grenze braucht die schwerste Testplanung (Ehepaar, vier Liegenschaften, 100 Jahre) rund 1,3 GB. Darüber stürzte
+/// die App bei 1'000'000 Pfaden aus Speichermangel ab.
+pub const MAX_PATH_MONTHS: u64 = 50_000_000;
+
+/// Ganzzahl mit Apostroph als Tausendertrennzeichen (40'000).
+fn fmt_count(n: u64) -> String {
+    let d = n.to_string();
+    let mut out = String::new();
+    for (i, c) in d.chars().enumerate() {
+        if i > 0 && (d.len() - i).is_multiple_of(3) {
+            out.push('\'');
+        }
+        out.push(c);
+    }
+    out
+}
 /// Längster erlaubter Personenname.
 const MAX_NAME: usize = 60;
 
@@ -177,6 +196,34 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
     if start.until(end) > 12 * 100 {
         v.err("milestones", "Der Simulationszeitraum ist länger als 100 Jahre.");
+    }
+    // #139: Speicher der Monte-Carlo-Rechnung begrenzen (Pfade × Monate)
+    let months = u64::try_from(start.until(end) + 1).unwrap_or(0);
+    let mc = match plan.returns.source {
+        ReturnSource::Bootstrap => Some((
+            "returns.bootstrap.paths",
+            plan.returns.bootstrap.clone().unwrap_or_default().paths,
+        )),
+        ReturnSource::Parametric => Some((
+            "returns.parametric.paths",
+            plan.returns.parametric.clone().unwrap_or_default().paths,
+        )),
+        _ => None,
+    };
+    if let Some((field, paths)) = mc {
+        let paths = paths as u64;
+        if months > 0 && paths.saturating_mul(months) > MAX_PATH_MONTHS {
+            let max = MAX_PATH_MONTHS / months;
+            v.err_at(
+                "returns",
+                field,
+                format!(
+                    "Zu viele Pfade für den Speicher: {} Pfade × {months} Monate. Bei dieser Planungsdauer sind höchstens {} Pfade möglich.",
+                    fmt_count(paths),
+                    fmt_count(max)
+                ),
+            );
+        }
     }
     for (i, p) in plan.household.persons.iter().enumerate() {
         let who = if p.name.trim().is_empty() {
@@ -1160,8 +1207,12 @@ mod tests {
                 v["returns"]["bootstrap"] = json!({"paths": paths, "block": block, "seed": 1});
             })
         };
+        // Die Spanne 1 bis 1'000'000 gilt; dass 1'000'000 Pfade bei dieser Planungsdauer zu viel Speicher brauchen,
+        // ist eine eigene Meldung (#139).
         assert!(
-            messages(&boot(1_000_000, 1.0)).is_empty(),
+            messages(&boot(1_000_000, 1.0))
+                .iter()
+                .all(|m| m.starts_with("Zu viele Pfade")),
             "{:?}",
             messages(&boot(1_000_000, 1.0))
         );

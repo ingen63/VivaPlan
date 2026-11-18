@@ -123,7 +123,7 @@ Der Bootstrap erzeugt **tausende neue Renditepfade**, indem er zufällige Abschn
 
 **Eingaben:**
 
-- **Anzahl Pfade:** Mehr Pfade geben glattere Zahlen, aber längere Rechenzeit. 10 000 genügen für eine erste Antwort, 50 000 für Perzentile am Rand (1. Perzentil, schlechtester Lauf). Die Erfolgsquote ist ein Zufallsergebnis: Bei 10 000 Pfaden ist sie auf etwa ±0.4 Prozentpunkte genau, bei 50 000 auf etwa ±0.2 (ungefähr zwei Standardfehler bei einer Erfolgsquote um 95 %).
+- **Anzahl Pfade:** Mehr Pfade geben glattere Zahlen, aber längere Rechenzeit. 10 000 genügen für eine erste Antwort, 50 000 für Perzentile am Rand (1. Perzentil, schlechtester Lauf). Die Erfolgsquote ist ein Zufallsergebnis: Bei 10 000 Pfaden ist sie auf etwa ±0.4 Prozentpunkte genau, bei 50 000 auf etwa ±0.2 (ungefähr zwei Standardfehler bei einer Erfolgsquote um 95 %). **Obergrenze:** Pfade × Monate der Planung höchstens 50 Mio., damit der Arbeitsspeicher reicht (bei 30 Jahren rund 138 000 Pfade, bei 100 Jahren 41 666). Darüber meldet die Prüfung einen Fehler am Feld mit der höchsten möglichen Zahl.
 - **Mittlere Blocklänge (Monate):** Wie lange zusammenhängende Abschnitte im Mittel sind.
   - **Kurz (1 bis 6):** Die Monate werden fast unabhängig gemischt. Das zerstört die Eigenschaft, dass auf schlechte Jahre oft weitere folgen (**Momentum und Erholung**), und macht die Pfade **zu glatt**.
   - **Lang (24 und mehr):** Die Pfade bleiben nah an der Geschichte, die Vielfalt sinkt.

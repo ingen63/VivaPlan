@@ -18,6 +18,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub const LIMIT: usize = 1536 << 20;
 
 static USED: AtomicUsize = AtomicUsize::new(0);
+/// #139: Höchster Stand von [`USED`] seit dem letzten [`Limited::reset_peak`].
+static PEAK: AtomicUsize = AtomicUsize::new(0);
 
 /// Speicherverwalter mit Obergrenze [`LIMIT`]; reicht alles an den Speicherverwalter des Systems weiter.
 pub struct Limited;
@@ -28,6 +30,16 @@ impl Limited {
         USED.load(Ordering::Relaxed)
     }
 
+    /// #139: Höchster belegter Speicher seit dem letzten [`Limited::reset_peak`] (für Speichertests).
+    pub fn peak() -> usize {
+        PEAK.load(Ordering::Relaxed)
+    }
+
+    /// #139: Setzt den Höchststand auf den zur Zeit belegten Speicher zurück.
+    pub fn reset_peak() {
+        PEAK.store(USED.load(Ordering::Relaxed), Ordering::Relaxed);
+    }
+
     /// Reserviert `size` Bytes im Zähler; `false`, wenn die Grenze überschritten würde (dann bleibt der Zähler gleich).
     fn reserve(size: usize) -> bool {
         let before = USED.fetch_add(size, Ordering::Relaxed);
@@ -35,6 +47,7 @@ impl Limited {
             USED.fetch_sub(size, Ordering::Relaxed);
             return false;
         }
+        PEAK.fetch_max(before + size, Ordering::Relaxed);
         true
     }
 }

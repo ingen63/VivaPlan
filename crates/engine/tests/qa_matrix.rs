@@ -1434,7 +1434,7 @@ fn stress_couple_four_properties_100_years() {
     let paths = std::env::var("QA_PATHS")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(50_000);
+        .unwrap_or(40_000); // #139: unter der Grenze von 50 Mio. Pfad-Monaten (40'000 × 1'200 = 48 Mio.)
     let v = stress_plan(paths);
     let t = std::time::Instant::now();
     let out = api::run(&v, Path::new("/"), Some(&library()));
@@ -1764,4 +1764,27 @@ fn holding_period_fields_roundtrip_and_old_files_still_load() {
     assert!(back["taxes"]["propertyGain"].get("duration").is_none());
     assert!(back["taxes"]["propertyGain"].get("exemptBelow").is_none());
     assert!(back["realestate"]["properties"][0].get("bought").is_none());
+}
+
+/// #139/AK4: Spitzenspeicher einer Rechnung genau an der Grenze (50 Mio. Pfad-Monate): schwerste Testplanung (Ehepaar,
+/// vier Liegenschaften mit je zwei Tranchen, 100 Jahre) mit 41'666 Pfaden. Gemessen über den Speicherverwalter der Tests
+/// (`engine::test_alloc`); er bleibt unter der Grenze der Testprozesse von 1,5 GB (gemessen 18.11.2026: 1'337 MB).
+/// Rund 8 s im Release-Profil, über eine Minute im Testprofil: läuft nächtlich im Job `release-golden`.
+#[test]
+#[ignore]
+fn issue_139_ak4_peak_memory_at_the_limit_stays_below_the_test_limit() {
+    use engine::test_alloc::{Limited, LIMIT};
+    let months: u64 = 100 * 12;
+    let paths = (engine::validate::MAX_PATH_MONTHS / months) as usize;
+    let v = stress_plan(paths);
+    assert!(
+        api::validate(&v).iter().all(|i| !i.message.contains("Zu viele Pfade")),
+        "an der Grenze erlaubt"
+    );
+    Limited::reset_peak();
+    let out = api::run(&v, Path::new("/"), Some(&library()));
+    let peak = Limited::peak();
+    println!("SPEICHER {paths} Pfade × {months} Monate: Spitze {} MB", peak >> 20);
+    assert!(out.error.is_none(), "{:?}", out.error);
+    assert!(peak < LIMIT, "Spitze {} MB", peak >> 20);
 }

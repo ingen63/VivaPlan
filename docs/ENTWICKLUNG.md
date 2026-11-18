@@ -81,6 +81,9 @@ Kommandozeile) hat Vorrang und wird beim Öffnen in der App zur Strategie.
 `returns.source` steuert die Läufe: `fixed` (ein Lauf), `historical` (ab `startDate`), `rolling`
 (jeder historische Startzeitpunkt, der den ganzen Zeitraum abdeckt), `bootstrap` und `parametric` (Monte Carlo).
 Alle Läufe werden parallel auf allen Kernen gerechnet; Monte-Carlo-Pfade entstehen erst im Lauf (wenig Speicher).
+Die Bandbreiten halten aber je Pfad und Monat das Vermögen (nominal und real, `f32`); zusammen mit den Ergebnissen je Lauf
+sind das rund 23 Bytes je Pfad und Monat. Die Prüfung begrenzt deshalb Pfade × Monate auf 50 Mio.
+(`validate::MAX_PATH_MONTHS`, #139; an der Grenze rund 1,3 GB bei der schwersten Testplanung).
 
 ## Monte Carlo
 

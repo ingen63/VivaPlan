@@ -300,6 +300,12 @@ jobs:
             grep -E '^ +(PASS|FAIL)|Summary' release-golden.log | sed 's/^/    /'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$status"
+      # #139: Speicher an der Grenze von 50 Mio. Pfad-Monaten und Stresstest (Ehepaar, 4 Liegenschaften, 100 Jahre,
+      # 40'000 Pfade). Beide sind im Testprofil zu langsam für jeden Push (#[ignore]), im Release-Profil Sekunden.
+      - name: Speichergrenze und Stresstest im Release-Profil
+        run: |
+          cargo nextest run --cargo-profile release -p vivaplan-engine --run-ignored only --no-capture \
+            -E 'test(/issue_139_ak4_peak_memory|stress_couple_four_properties_100_years/)'
 
   fuzz:
     needs: changes

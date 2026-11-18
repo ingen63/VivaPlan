@@ -53,10 +53,11 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     // Abbruch der Simulation
     let w = cancel_when_running();
     let t0 = Instant::now();
-    let r = api::run(&plan(300_000), Path::new("/"), Some(&lib));
+    // #139: 100'000 Pfade × 472 Monate = 47 Mio. Pfad-Monate, unter der Speichergrenze von 50 Mio.
+    let r = api::run(&plan(100_000), Path::new("/"), Some(&lib));
     let seen = w.join().unwrap();
     assert_eq!(r.error.as_deref(), Some("Abgebrochen"));
-    assert!(seen.total == 300_000 && seen.done < seen.total);
+    assert!(seen.total == 100_000 && seen.done < seen.total);
     // #83: Dass abgebrochen wurde, zeigen Fehlertext und Zähler. Die Zeitgrenze fängt nur ein Hängen ab; der Abbruch
     // selbst dauert Millisekunden, 60 s halten auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
     assert!(

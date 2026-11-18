@@ -103,7 +103,7 @@ Git prüfen. Die Ergebnisse sind über mehrere Läufe stabil (parallele Berechnu
 |---|---|
 | parametrisch, 30 Jahre, 1'000 / 10'000 / 50'000 Pfade | 0.07 s / 0.34 s / 1.8 s |
 | Bootstrap, 30 Jahre, 1'000 / 10'000 / 50'000 Pfade | 0.01 s / 0.12 s / 0.7 s |
-| Stresstest: Ehepaar, 4 Objekte mit je 2 Tranchen, 100 Jahre, 50'000 Pfade | 7.5 s, höchstens 0.8 GB Speicher, Bilanzen der Perzentil-Läufe stimmen |
+| Stresstest: Ehepaar, 4 Objekte mit je 2 Tranchen, 100 Jahre, 40'000 Pfade (#139: unter der Grenze von 50 Mio. Pfad-Monaten; mit 50'000 Pfaden brach er an der Speichergrenze der Tests ab) | 8.1 s, Bilanzen der Perzentil-Läufe stimmen; an der Grenze (41'666 Pfade) höchstens 1'337 MB (18.11.2026). Läuft nächtlich im Job `release-golden` |
 
 CPU-Auslastung wurde nicht separat erfasst (rayon nutzt alle Kerne; `time`: 101 s Benutzerzeit auf 37 s Wanduhr
 inklusive Kompilieren).
