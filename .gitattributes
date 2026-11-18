@@ -1,3 +1,6 @@
-# #141: CSV-Dateien immer mit LF auschecken. Unter Windows setzt Git sonst CRLF, und Tests, die eine Datei
-# Byte für Byte mit erzeugtem Text vergleichen (jst::extract_matches_the_database_file), schlagen fehl.
+# #141: Diese Dateien immer mit LF auschecken. Unter Windows setzt Git sonst CRLF, und Tests, die eine Datei
+# Byte für Byte vergleichen (jst::extract_matches_the_database_file, Prüfsumme in
+# legacy_format::rplan_bleibt_unveraendert_und_rechnet_wie_die_vplan), schlagen fehl.
 *.csv text eol=lf
+*.rplan text eol=lf
+*.vplan text eol=lf
