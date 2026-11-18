@@ -23,9 +23,18 @@
       "Bash(git log:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(rustfmt --check:*)"
+      "Bash(rustfmt --check:*)",
+      "Bash(make test-quiet)",
+      "Bash(make test)",
+      "Bash(cargo fmt:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(git status:*)",
+      "Bash(git show:*)"
     ],
-    "deny": [
-    ]
+    "deny": []
+  },
+  "env": {
+    "BASH_MAX_OUTPUT_LENGTH": "15000"
   }
 }

@@ -1,0 +1,759 @@
+// Oberflächentests von VivaPlan im Browser: Grafiken und Vergleich. Jeder Test startet mit der Beispielplanung.
+const { test, expect } = require("@playwright/test");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
+
+test.describe("Bezugslinie in den Grafiken (#114)", () => {
+  /** Bezugslinie einer Grafik: y-Lage und Strichbreite; dazu die y-Lage einer beschrifteten Rasterlinie. */
+  const refOf = (page, sel) => page.evaluate(sel => {
+    const svg = document.querySelector(sel), ref = svg.querySelector("line.ref");
+    const tickY = label => { const t = [...svg.querySelectorAll("text")].find(x => x.textContent === label); return t ? Number(t.getAttribute("y")) - 4 : null; };
+    const grid = [...svg.querySelectorAll("line:not(.ref):not(.hov)")].find(l => l.getAttribute("y1") === l.getAttribute("y2"));
+    return ref && { y: Number(ref.getAttribute("y1")), width: Number(ref.getAttribute("stroke-width")), gridWidth: Number(grid?.getAttribute("stroke-width") ?? 1), tickY };
+  }, sel);
+
+  test("#114/AK1, AK3, AK4: Nulllinie dicker, bei negativen Werten an der 0, hinter den Daten, ausserhalb des Bereichs keine", async ({ page }) => {
+    const errors = await open(page, "results/charts");
+    await expect(page.locator("#rc-wealth line.ref")).toHaveCount(1);
+    // Beispiel mit negativem Vermögen: −0.5 bis 3 Mio.; die dicke Linie liegt bei der Beschriftung «0»
+    const r = await page.evaluate(() => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.width = "600px"; svg.style.height = "240px"; document.body.appendChild(svg);
+      const values = Array.from({ length: 25 }, (_, i) => -0.5e6 + i * 3.5e6 / 24);
+      Charts.time(svg, null, { x: values.map((_, i) => i * 12), xFmt: m => m / 12, yFmt: v => String(v / 1e6), lines: [{ color: "--c1", values }], tip: () => "" });
+      const ref = svg.querySelector("line.ref"), zero = [...svg.querySelectorAll("text")].find(t => t.textContent === "0");
+      const kids = [...svg.children], refAt = kids.indexOf(ref), lineAt = kids.findIndex(k => k.tagName === "path");
+      // Bereich 1 bis 3 Mio. ohne 0 (wie nach einem Zoom): keine Bezugslinie
+      Charts.time(svg, null, { x: [0, 12, 24], xFmt: m => m, yFmt: String, range: [1e6, 3e6], lines: [{ color: "--c1", values: [1e6, 2e6, 3e6] }], tip: () => "" });
+      const outside = svg.querySelectorAll("line.ref").length;
+      svg.remove();
+      return { y: Number(ref.getAttribute("y1")), zeroY: Number(zero.getAttribute("y")) - 4, width: Number(ref.getAttribute("stroke-width")), behind: refAt < lineAt, outside };
+    });
+    expect(r.width).toBeGreaterThanOrEqual(2);
+    expect(Math.abs(r.y - r.zeroY)).toBeLessThan(0.5);
+    expect(r.behind).toBe(true);
+    expect(r.outside).toBe(0);
+    // Balken (Einnahmen und Ausgaben) und Minigrafik im Editor haben die Nulllinie ebenfalls
+    await expect(page.locator("#rc-flows line.ref")).toHaveCount(1);
+    await expect(page.locator("#chart line.ref")).toHaveCount(1);
+    const flows = await refOf(page, "#rc-flows");
+    expect(flows.width).toBeGreaterThan(flows.gridWidth);
+    await noErrors(page, errors);
+  });
+
+  test("#114/AK2: Aktien, Obligationen und Inflation: Linie bei 100 (linear und logarithmisch), bei 0 % in «Änderung in %»", async ({ page }) => {
+    const errors = await open(page, "results/charts");
+    await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
+    // linear: 100 liegt in der Mitte zwischen den Beschriftungen 0 und 200
+    let r = await refOf(page, "#rc-mkt");
+    const mid = await page.evaluate(() => {
+      const svg = document.querySelector("#rc-mkt"), y = l => Number([...svg.querySelectorAll("text")].find(t => t.textContent === l).getAttribute("y")) - 4;
+      return (y("0") + y("200")) / 2;
+    });
+    expect(Math.abs(r.y - mid)).toBeLessThan(0.5);
+    expect(r.width).toBeGreaterThanOrEqual(2);
+    // logarithmisch: die Linie liegt bei der Beschriftung «100»
+    await page.locator('button[data-action="mkt-log"][data-v="1"]').click();
+    await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
+    r = await refOf(page, "#rc-mkt");
+    const at100 = await page.evaluate(() => { const t = [...document.querySelectorAll("#rc-mkt text")].find(x => x.textContent === "100"); return t ? Number(t.getAttribute("y")) - 4 : null; });
+    expect(at100).not.toBeNull();
+    expect(Math.abs(r.y - at100)).toBeLessThan(0.5);
+    // Änderung in %: die Linie bei 0 %
+    await page.locator('button[data-action="mkt"][data-v="pct"]').click();
+    await expect(page.locator("#rc-mkt line.ref")).toHaveCount(1);
+    r = await refOf(page, "#rc-mkt");
+    const at0 = await page.evaluate(() => { const t = [...document.querySelectorAll("#rc-mkt text")].find(x => /^0 ?%$/.test(x.textContent.trim())); return t ? Number(t.getAttribute("y")) - 4 : null; });
+    expect(at0).not.toBeNull();
+    expect(Math.abs(r.y - at0)).toBeLessThan(0.5);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich wie das Einzelergebnis (#115)", () => {
+  /** Zwei Monte-Carlo-Ergebnisse (#runsflow), Vergleich offen und sichtbar. */
+  const openCompare = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+  const tab = (page, t) => page.locator(`button[data-action="cmp-tab"]`, { hasText: t }).click();
+
+  test("#115/AK1: Umschalter Nominal / Heutige Kaufkraft gilt für Kennzahlen, Grafiken und Jahreswerte, je Ergebnis mit seiner Inflation", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    await expect(page.locator("#resultsInfo")).toHaveText("heutige Kaufkraft");
+    await expect(page.locator("#resultsBody .card h3").first()).toContainText("heutige Kaufkraft");
+    // Kennzahl Median real = Endvermögen des Median-Laufs in heutiger Kaufkraft, je Ergebnis
+    const exp = await page.evaluate(async () => {
+      const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
+      return Promise.all(metas.map(async m => { const d = await Runs.get(m.id); return fmtMio(d.result.batch.details.find(([q]) => q === 50)[1].summary.endTotalReal); }));
+    });
+    const rows = page.locator("#resultsBody table").first().locator("tr");
+    for (let i = 0; i < exp.length; i++) await expect(rows.nth(i + 1).locator("td").nth(4)).toHaveText(exp[i]);
+    // Jahreswerte: Gesamtvermögen am Ende des ersten Jahres = nominal / Preisindex dieses Monats (Median-Lauf)
+    await tab(page, "Jahreswerte");
+    const want = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
+      const y = run.records[0].month.slice(0, 4), last = run.records.filter(r => r.month.startsWith(y)).pop();
+      return fmtInt(last.total / last.priceIndex);
+    });
+    await expect(page.locator(".cmpyear tr").nth(1).locator("td").nth(1)).toHaveText(want);
+    await tab(page, "Verläufe");
+    await expect(page.locator("#resultsBody .card h3", { hasText: "Gesamtvermögen" })).toContainText("heutige Kaufkraft");
+    await noErrors(page, errors);
+  });
+
+  test("#115/AK2: Übersicht mit Bandbreite, Endvermögen nach Perzentil, Wahrscheinlichkeit und Alter bei Erschöpfung je Ergebnis", async ({ page }) => {
+    const errors = await openCompare(page);
+    const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
+    for (const t of ["Kennzahlen", "Bandbreite des Gesamtvermögens", "Endvermögen nach Perzentil", "Wahrscheinlichkeit, dass das Geld reicht"])
+      expect(titles.some(x => x.startsWith(t)), t).toBe(true);
+    // Bandbreite: je Ergebnis Median, 5. und 95. Perzentil
+    await expect(page.locator("#cmp-wealth path")).toHaveCount(6);
+    await expect(page.locator("#cmp-surv path")).toHaveCount(2);
+    // Perzentile: eine Spalte je Ergebnis, Median wie in der Zusammenfassung
+    const pt = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("table");
+    await expect(pt.locator("tr").first().locator("th")).toHaveCount(3);
+    const med = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0];
+      return fmtInt((await Runs.get(m.id)).result.batch.summary.percentiles.find(p => p.percent === 50).endTotal);
+    });
+    await expect(pt.locator("tr", { hasText: /^50\./ }).locator("td").nth(1)).toHaveText(med);
+    if (titles.some(x => x.startsWith("Alter bei Erschöpfung"))) await expect(page.locator("#cmp-dep rect").first()).toBeAttached();
+    await noErrors(page, errors);
+  });
+
+  test("#126/AK2, #126/AK3, #129/AK2: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt jedes Perzentil je Ergebnis, mit Hinweis", async ({ page }) => {
+    const errors = await openCompare(page);
+    const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
+    await expect(card.locator(".hint")).toHaveCount(0);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    // je Ergebnis (Spalte) das reale Endvermögen des Laufs je Perzentil, Zeilen absteigend wie in der Tabelle
+    const want = await page.evaluate(async () => {
+      const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
+      return Promise.all(metas.map(async m => (await Runs.get(m.id)).result.batch.summary.percentiles
+        .slice().sort((a, b) => b.percent - a.percent).map(p => fmtInt(p.endTotalReal))));
+    });
+    expect(want).toHaveLength(2);
+    for (let i = 0; i < want.length; i++) await expect(card.locator(`table tr td:nth-child(${i + 2})`)).toHaveText(want[i]);
+    await expect(card.locator(".hint")).toContainText("Laufs dieses Perzentils");
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
+    await expect(card.locator(".hint")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("#128/AK1, #128/AK2: älteres Ergebnis ohne reale Werte je Perzentil zeigt die Detailläufe und einen Vermerk", async ({ page }) => {
+    const errors = await openCompare(page);
+    // erstes Ergebnis so ablegen, wie es vor #126 gespeichert wurde: reale Werte nur in den Detailläufen
+    const { name, want } = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], d = await Runs.get(m.id);
+      const b = structuredClone(d.result.batch);
+      b.summary.percentiles.forEach(p => delete p.endTotalReal);
+      await Runs.add(m, { ...d, result: { ...d.result, batch: b } });
+      const det = new Map(b.details.map(([q, r]) => [q, fmtInt(r.summary.endTotalReal)]));
+      return { name: m.name, want: b.summary.percentiles.slice().sort((x, y) => y.percent - x.percent).map(p => det.get(p.percent) ?? "–") };
+    });
+    expect(want.filter(v => v === "–").length).toBeGreaterThan(0);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
+    await expect(card.locator("table tr td:nth-child(2)")).toHaveText(want);
+    await expect(page.locator(".cmpnote")).toContainText(`(älteres Ergebnis): ${name}`);
+    await expect(page.locator(".cmpnote")).toContainText("nur für den schlechtesten Lauf");
+    // nominal kein Vermerk
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
+    await expect(page.locator(".cmpnote", { hasText: "nur für den schlechtesten Lauf" })).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("#115/AK3: Verläufe des Median-Laufs je Ergebnis überlagert, liquides Vermögen nach Anlage wählbar", async ({ page }) => {
+    const errors = await openCompare(page);
+    await tab(page, "Verläufe");
+    await expect(page.locator(".cmpnote").first()).toContainText("50. Perzentil (Median)");
+    const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
+    for (const t of ["Liquides Vermögen nach Anlage", "Einnahmen und Ausgaben pro Jahr", "Entnahme aus dem Vermögen", "Vorsorge", "Aktien, Obligationen und Inflation"])
+      expect(titles.some(x => x.startsWith(t)), t).toBe(true);
+    await expect(page.locator("#cmp-liq path")).toHaveCount(2);
+    await expect(page.locator("#cmp-mkt path")).toHaveCount(6);
+    await expect(page.locator("#cmp-mkt line.ref")).toHaveCount(1);
+    const d1 = await page.locator("#cmp-liq path").first().getAttribute("d");
+    await page.locator('button[data-action="cmp-liquid"][data-v="stocks"]').click();
+    await expect.poll(() => page.locator("#cmp-liq path").first().getAttribute("d")).not.toBe(d1);
+    await page.locator('button[data-action="cmp-flow"][data-v="out"]').click();
+    await expect(page.locator("#cmp-flows rect").first()).toBeAttached();
+    await noErrors(page, errors);
+  });
+
+  test("#115/AK4: Jahreswerte mit einer Spalte je Ergebnis stimmen mit den Jahreswerten des einzelnen Ergebnisses überein", async ({ page }) => {
+    const errors = await openCompare(page);
+    await tab(page, "Jahreswerte");
+    await expect(page.locator(".cmpyear tr").first().locator("th")).toHaveCount(3);
+    for (const [key, col] of [["total", 5], ["draw", 7], ["receipts", 8]]) {
+      await page.locator('select[data-action="cmp-year"]').selectOption(key);
+      // Tabelle «Jahreswerte» des Einzelergebnisses (Median-Lauf) für das zweite Ergebnis
+      const single = await page.evaluate(async col => {
+        const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[1], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
+        const div = document.createElement("div");
+        div.innerHTML = yearTable(run.records, { total: run.summary.startTotal, liquid: run.summary.startLiquid });
+        return [...div.querySelectorAll("table.yt tr")].slice(1).map(tr => tr.children[col].textContent);
+      }, col);
+      const cmp = await page.locator(".cmpyear tr").evaluateAll(trs => trs.slice(1).map(tr => tr.children[2].textContent));
+      // Die Tabelle des Einzelergebnisses lässt Beträge unter 0.5 leer
+      const norm = v => ["0", "-0", "–", ""].includes(v) ? "" : v;
+      expect(cmp.length).toBeGreaterThan(30);
+      expect(cmp.map(norm)).toEqual(single.map(norm));
+    }
+    await noErrors(page, errors);
+  });
+
+  test("#115/AK3, AK4: Lauf wählen: das gewählte Perzentil gilt für Verläufe und Jahreswerte aller Ergebnisse", async ({ page }) => {
+    const errors = await openCompare(page);
+    await tab(page, "Verläufe");
+    await expect(page.locator('button[data-action="cmp-p"][data-p="50"].on')).toBeAttached();
+    const d50 = await page.locator("#cmp-total path").first().getAttribute("d");
+    await page.locator('button[data-action="cmp-p"][data-p="5"]').click();
+    await expect(page.locator(".cmpnote").first()).toContainText("5. Perzentil");
+    await expect.poll(() => page.locator("#cmp-total path").first().getAttribute("d")).not.toBe(d50);
+    // Jahreswerte: dieselbe Auswahl; Gesamtvermögen = Tabelle des Einzelergebnisses für den Lauf des 5. Perzentils
+    await tab(page, "Jahreswerte");
+    await expect(page.locator('button[data-action="cmp-p"][data-p="5"].on')).toBeAttached();
+    const single = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 5)[1];
+      const div = document.createElement("div");
+      div.innerHTML = yearTable(run.records, { total: run.summary.startTotal, liquid: run.summary.startLiquid });
+      return [...div.querySelectorAll("table.yt tr")].slice(1).map(tr => tr.children[5].textContent);
+    });
+    const cmp = await page.locator(".cmpyear tr").evaluateAll(trs => trs.slice(1).map(tr => tr.children[1].textContent));
+    expect(cmp).toEqual(single);
+    await noErrors(page, errors);
+  });
+
+  test("#115/AK5: Einzellauf mit späterem Start: nach Jahren seit Start ausgerichtet, fehlende Grössen mit Vermerk", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.evaluate(async () => {
+      state.returns.source = "fixed";
+      state.milestones.find(m => m.id === "start").date = "2027-03";
+      await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
+      runsSel.clear(); (await Runs.list()).slice(0, 2).forEach(m => runsSel.add(m.id));
+      compareTab = "overview"; await compareRuns();
+    });
+    await expect(page.locator(".cmpnote")).toContainText("Einzellauf ohne Perzentile");
+    // Perzentile und Wahrscheinlichkeit nur für das Ergebnis mit mehreren Läufen
+    await expect(page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("tr").first().locator("th")).toHaveCount(2);
+    await expect(page.locator("#cmp-surv path")).toHaveCount(1);
+    // Bandbreite: Einzellauf als eine Linie, Monte Carlo mit drei
+    await expect(page.locator("#cmp-wealth path")).toHaveCount(4);
+    await tab(page, "Jahreswerte");
+    await expect(page.locator(".cmpyear tr").first().locator("th").first()).toHaveText("Jahr seit Start");
+    await expect(page.locator(".cmpyear tr").nth(1).locator("td").first()).toHaveText("1. Jahr");
+    await expect(page.locator(".cmpyear tr").nth(1).locator("td").nth(1)).toHaveAttribute("title", /^202[67]$/);
+    await noErrors(page, errors);
+  });
+
+  test("#115/AK6: Zoom gilt für alle Grafiken des Vergleichs und bleibt beim Wechsel der Registerkarte", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"]').first().click();
+    await expect(page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"].on').first()).toBeAttached();
+    await tab(page, "Verläufe");
+    await expect(page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"].on').first()).toBeAttached();
+    const xs = await page.locator("#cmp-total text").allInnerTexts();
+    expect(xs.filter(t => / J\.$/.test(t)).length).toBeLessThanOrEqual(3);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Kennzahlen im Vergleich sortieren (#118)", () => {
+  const openCompare = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+  const kpi = page => page.locator("table.cmpkpi");
+  const head = (page, t) => kpi(page).locator("th", { hasText: t });
+  /** Farben der Zeilen von oben nach unten (die Farbe gehört zum Ergebnis). */
+  const colors = page => kpi(page).locator("tr td:first-child i.sw").evaluateAll(l => l.map(x => x.getAttribute("style")));
+  /** Farben in der Reihenfolge des Medians (aufsteigend), berechnet aus den gespeicherten Ergebnissen. */
+  const byMedian = page => page.evaluate(async () => {
+    const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
+    const v = await Promise.all(metas.map(async (m, i) => ({ c: `background:var(${RUN_COLORS[i]})`, p: (await Runs.get(m.id)).result.batch.summary.percentiles.find(x => x.percent === 50).endTotal })));
+    return v.sort((a, b) => a.p - b.p).map(x => x.c);
+  });
+
+  test("#118/AK1, AK2, AK3: Klick auf den Spaltenkopf sortiert auf-, dann absteigend, mit Pfeil; andere Spalte wieder aufsteigend", async ({ page }) => {
+    const errors = await openCompare(page);
+    const asc = await byMedian(page);
+    expect(asc[0]).not.toBe(asc[1]);
+    const med = head(page, "Median");
+    await med.locator("button").click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "ascending");
+    await expect(head(page, "Median").locator(".sorti")).toHaveText("▲");
+    expect(await colors(page)).toEqual(asc);
+    await head(page, "Median").locator("button").click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
+    await expect(head(page, "Median").locator(".sorti")).toHaveText("▼");
+    expect(await colors(page)).toEqual([...asc].reverse());
+    // die übrigen Spalten zeigen ↕ und sind nicht sortiert
+    await expect(head(page, "Erfolgsquote")).toHaveAttribute("aria-sort", "none");
+    await expect(head(page, "Erfolgsquote").locator(".sorti")).toHaveText("↕");
+    await head(page, "5. Perzentil").locator("button").click();
+    await expect(head(page, "5. Perzentil")).toHaveAttribute("aria-sort", "ascending");
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "none");
+    await noErrors(page, errors);
+  });
+
+  test("#118/AK5: ohne Klick Reihenfolge der Liste; Sortierung bleibt beim Wechsel von Registerkarte und Kaufkraft, Farben bleiben beim Ergebnis", async ({ page }) => {
+    const errors = await openCompare(page);
+    await expect(kpi(page).locator('th[aria-sort="none"]')).toHaveCount(9);
+    expect(await colors(page)).toEqual(["background:var(--r1)", "background:var(--r2)"]);
+    const asc = await byMedian(page);
+    await head(page, "Median").locator("button").click();
+    await head(page, "Median").locator("button").click();
+    const desc = [...asc].reverse();
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Verläufe" }).click();
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Übersicht" }).click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
+    expect(await colors(page)).toEqual(desc);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    await expect(head(page, "Median")).toHaveAttribute("aria-sort", "descending");
+    // die übrigen Karten (hier: Endvermögen nach Perzentil) behalten die Reihenfolge der Liste
+    await expect(page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("th.cmph i.sw").first()).toHaveAttribute("style", /--r1\)/);
+    await noErrors(page, errors);
+  });
+
+  test("#118/AK6: Spaltenköpfe per Tastatur bedienbar und mit aria-sort", async ({ page }) => {
+    const errors = await openCompare(page);
+    await head(page, "Erfolgsquote").locator("button").focus();
+    await page.keyboard.press("Enter");
+    await expect(head(page, "Erfolgsquote")).toHaveAttribute("aria-sort", "ascending");
+    await head(page, "Erfolgsquote").locator("button").focus();
+    await page.keyboard.press(" ");
+    await expect(head(page, "Erfolgsquote")).toHaveAttribute("aria-sort", "descending");
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Name eines Ergebnisses mit Abkürzungen (#119)", () => {
+  test("#119/AK1, AK2, AK3: Name «Planung · Quelle · Strategie · Zeitpunkt», Zahl der Läufe in der Zeile darunter", async ({ page }) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    const meta = await page.evaluate(async () => (await Runs.list())[0]);
+    expect(meta.name).toMatch(/^.+ · MC hist\. · [^·]+ · \d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}$/);
+    expect(meta.name).not.toContain("Läufe");
+    const strat = await page.evaluate(m => STRAT_SHORT[m.strategy], meta);
+    expect(meta.name).toContain(` · ${strat} · `);
+    await expect(page.locator(`#resultsBody tr:has(input[data-id="${meta.id}"]) small`)).toContainText("500 Läufe");
+    // Szenarien statt Quelle, andere Quellen und Strategien
+    const t = await page.evaluate(() => [
+      runTitle("P", { kind: "scenarios", source: "bootstrap", strategy: "vpw" }, "2026-11-16T13:05:00Z"),
+      runTitle("P", { kind: "batch", source: "parametric", strategy: "three_buckets_guardrails" }, "2026-11-16T13:05:00Z"),
+      runTitle("P", { kind: "single", source: "fixed", strategy: "fixed_rate" }, "2026-11-16T13:05:00Z"),
+    ]);
+    expect(t[0]).toMatch(/^P · Szenarien · VPW · /);
+    expect(t[1]).toMatch(/^P · MC param\. · 3-Topf \+ Guard · /);
+    expect(t[2]).toMatch(/^P · Fix · Fixe Rate · /);
+    await noErrors(page, errors);
+  });
+
+  test("#119/AK4: jede Renditequelle und jede Strategie hat eine Abkürzung", async ({ page }) => {
+    const errors = await open(page);
+    const missing = await page.evaluate(() => [
+      ...SOURCES.map(s => s[0]).filter(k => !SOURCE_SHORT[k]),
+      ...[...STRATS.map(s => s[0]), "three_buckets_guardrails"].filter(k => !STRAT_SHORT[k]),
+    ]);
+    expect(missing).toEqual([]);
+    await noErrors(page, errors);
+  });
+
+  test("#119/AK5: gespeicherte Ergebnisse behalten ihren Namen", async ({ page }) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    // Eintrag einer älteren Version (Name im alten Aufbau), danach ein neues Ergebnis: der alte Name bleibt
+    const old = "Alt · 500 Läufe · Monte Carlo · historisch · 01.11.26, 10:00";
+    const id = await page.evaluate(async old => { const [m] = await Runs.list(); await Runs.update(m.id, { name: old }); return m.id; }, old);
+    await page.evaluate(async () => { await rememberRun(await Engine.call("run_simulation", { plan: state, path: null })); await openRuns(); });
+    const names = await page.evaluate(async () => (await Runs.list()).map(m => ({ id: m.id, name: m.name })));
+    expect(names.length).toBe(2);
+    expect(names.find(m => m.id === id).name).toBe(old);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich mit bis zu 10 Ergebnissen (#120)", () => {
+  /** n Ergebnisse als Kopien des ersten Monte-Carlo-Ergebnisses (mit leicht anderem Endvermögen), alle markiert. */
+  const withRuns = async (page, n) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    await page.evaluate(async n => {
+      const [m] = await Runs.list(), d = await Runs.get(m.id);
+      for (let i = 1; i < n; i++) await Runs.add({ ...m, id: `kopie-${i}`, name: `Kopie ${i}`, created: new Date(Date.parse(m.created) + i * 1000).toISOString() }, d);
+      await openRuns();
+    }, n);
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+  const selectAll = page => page.locator('input[data-action="runs-all"]').check();
+
+  test("#120/AK1, AK2: Vergleichen bei 2 bis 10 markierten aktiv; ab 11 gesperrt mit Hinweis, Markieren und Löschen bleiben möglich", async ({ page }) => {
+    const errors = await withRuns(page, 11);
+    const btn = page.locator('button[data-action="runs-compare"]');
+    await expect(btn).toHaveAttribute("title", "Zwei bis 10 Ergebnisse markieren");
+    await selectAll(page);
+    await expect(btn).toBeDisabled();
+    await expect(btn).toHaveText("Vergleichen (11)");
+    await expect(page.locator(".cmpmax")).toHaveText("Höchstens 10 Ergebnisse lassen sich vergleichen.");
+    await expect(page.locator('button[data-action="runs-delete"]')).toBeEnabled();
+    await page.locator('input[data-action="run-sel"]').first().uncheck();
+    await expect(btn).toBeEnabled();
+    await expect(page.locator(".cmpmax")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  for (const scheme of ["light", "dark"]) {
+    test(`#120/AK3: zehn unterscheidbare Farben, in allen Karten gleich (${scheme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      const errors = await withRuns(page, 10);
+      await selectAll(page);
+      await page.locator('button[data-action="runs-compare"]').click();
+      await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+      const rgb = await page.evaluate(() => RUN_COLORS.map(c => getComputedStyle(document.documentElement).getPropertyValue(c).trim()));
+      expect(new Set(rgb).size).toBe(10);
+      const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+      let min = Infinity;
+      for (let i = 0; i < 10; i++) for (let j = i + 1; j < 10; j++) min = Math.min(min, Math.hypot(...hex(rgb[i]).map((v, k) => v - hex(rgb[j])[k])));
+      expect(min).toBeGreaterThan(50);
+      // Kennzahlen und Perzentile: dieselbe Farbe je Ergebnis
+      const kpi = await page.locator("table.cmpkpi tr td:first-child i.sw").evaluateAll(l => l.map(x => x.getAttribute("style")));
+      const pt = await page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("th.cmph i.sw").evaluateAll(l => l.map(x => x.getAttribute("style")));
+      expect(kpi).toEqual(Array.from({ length: 10 }, (_, i) => `background:var(--r${i + 1})`));
+      expect(pt).toEqual(kpi);
+      await noErrors(page, errors);
+    });
+  }
+
+  test("#120/AK4: mit 10 Ergebnissen scrollen Tabellen und Balken waagrecht statt zu schrumpfen", async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 900 });
+    const errors = await withRuns(page, 10);
+    await selectAll(page);
+    await page.locator('button[data-action="runs-compare"]').click();
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    // Seite wird nicht breiter
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await expect(page.locator("table.cmpkpi")).toHaveCount(1);
+    expect(await page.locator("table.cmpkpi").evaluate(t => t.parentElement.classList.contains("tscroll"))).toBe(true);
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Verläufe" }).click();
+    const w = await page.locator("#cmp-flows rect:not(.hov)").evaluateAll(l => Math.min(...l.map(r => +r.getAttribute("width"))));
+    expect(w).toBeGreaterThanOrEqual(2);
+    expect(await page.locator("#cmp-flows").evaluate(s => s.parentElement.classList.contains("hscroll"))).toBe(true);
+    for (const t of ["Jahreswerte", "Planung", "Übersicht"]) {
+      await page.locator('button[data-action="cmp-tab"]', { hasText: t }).click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), t).toBe(true);
+    }
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Wahrscheinlichkeit: Achse 80–100 % oder 0–100 % (#121)", () => {
+  /** Unterste Beschriftung der y-Achse einer Grafik. */
+  const lowest = (page, sel) => page.locator(`${sel} text[text-anchor="end"]`).evaluateAll(l => l.map(t => t.textContent).sort((a, b) => parseFloat(a) - parseFloat(b))[0]);
+  const openSingle = async page => {
+    const errors = await open(page, "runsflow/mem/view");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
+    await page.evaluate(() => showResults(true));
+    await page.locator('button[data-action="rtab"][data-tab="charts"]').click();
+    await expect(page.locator("#mc-surv")).toBeAttached();
+    return errors;
+  };
+  const openCompare = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    return errors;
+  };
+
+  test("#121/AK1, AK2: Standard 80–100 % im Einzelergebnis und im Vergleich; der Schalter gilt in beiden und bleibt", async ({ page }) => {
+    const errors = await openSingle(page);
+    expect(await lowest(page, "#mc-surv")).toBe("80 %");
+    await expect(page.locator('button[data-action="surv-scale"].on')).toHaveText("80–100 %");
+    await page.locator('button[data-action="surv-scale"][data-v="0"]').click();
+    expect(await lowest(page, "#mc-surv")).toBe("0 %");
+    // Registerkarte wechseln und zurück: Wahl bleibt
+    await page.locator('button[data-action="rtab"][data-tab="overview"]').click();
+    await page.locator('button[data-action="rtab"][data-tab="charts"]').click();
+    expect(await lowest(page, "#mc-surv")).toBe("0 %");
+    // im Vergleich gilt dieselbe Wahl
+    await page.evaluate(async () => { (await Runs.list()).forEach(m => runsSel.add(m.id)); return compareRuns(); });
+    await expect(page.locator("#cmp-surv")).toBeAttached();
+    expect(await lowest(page, "#cmp-surv")).toBe("0 %");
+    await page.locator('button[data-action="surv-scale"][data-v="80"]').click();
+    expect(await lowest(page, "#cmp-surv")).toBe("80 %");
+    await noErrors(page, errors);
+  });
+
+  test("#121/AK3, AK4: unter 80 % abgeschnitten mit Hinweis, Tooltip mit echtem Wert", async ({ page }) => {
+    const errors = await openSingle(page);
+    await expect(page.locator(".survclip")).toHaveCount(0);
+    // Kurve künstlich auf 60 % fallen lassen
+    await page.evaluate(() => { const s = lastRun.batch.stats.survival; lastRun.batch.stats.survival = s.map((v, i) => i > s.length / 2 ? 0.6 : v); renderResults(lastRun); });
+    await expect(page.locator(".survclip")).toContainText("tiefster Wert 60 %");
+    expect(await page.locator("#mc-surv g.clipped path").count()).toBe(1);
+    expect(await page.locator("#mc-surv clipPath rect").count()).toBe(1);
+    // die Grafik muss im sichtbaren Bereich liegen, sonst erreicht die Maus sie nicht (Kopfzeile kann umbrechen)
+    await page.locator("#mc-surv").scrollIntoViewIfNeeded();
+    const box = await page.locator("#mc-surv").boundingBox();
+    await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
+    await expect(page.locator("#mc-surv-tip")).toContainText("60 %");
+    await page.locator('button[data-action="surv-scale"][data-v="0"]').click();
+    await expect(page.locator(".survclip")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("#121/AK3: im Vergleich Hinweis, wenn eine Kurve unter 80 % fällt", async ({ page }) => {
+    const errors = await openCompare(page);
+    await page.evaluate(async () => {
+      const [m] = (await Runs.list()).filter(m => runsSel.has(m.id)), d = await Runs.get(m.id);
+      d.result.batch.stats.survival = d.result.batch.stats.survival.map(v => Math.min(v, 0.7));
+      await Runs.add({ ...m, id: "tief", name: "tief" }, d); runsSel.add("tief"); await compareRuns();
+    });
+    await expect(page.locator(".survclip")).toContainText("tiefster Wert 70 %");
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich: Aktien, Obligationen und Inflation wie im Einzelergebnis (#122)", () => {
+  const openCharts = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Verläufe" }).click();
+    await expect(page.locator("#cmp-mkt")).toBeAttached();
+    return errors;
+  };
+  const card = page => page.locator("#resultsBody .card", { has: page.locator("#cmp-mkt") });
+  const labels = page => page.locator('#cmp-mkt text[text-anchor="end"]').allTextContents();
+
+  test("#122/AK1, AK3: Schalter Wertentwicklung / Änderung in %, linear / logarithmisch wie im Einzelergebnis", async ({ page }) => {
+    const errors = await openCharts(page);
+    await expect(card(page).locator('button[data-action="mkt"]')).toHaveText(["Wertentwicklung (Start = 100)", "Änderung in %"]);
+    await expect(card(page).locator('button[data-action="mkt-log"]')).toHaveText(["Linear", "Logarithmisch"]);
+    const lin = await labels(page);
+    await card(page).locator('button[data-action="mkt-log"][data-v="1"]').click();
+    const log = await labels(page);
+    expect(log).not.toEqual(lin);
+    // logarithmisch: Teilstriche 1-2-5 je Zehnerpotenz, «100» ist dabei
+    expect(log).toContain("100");
+    await expect(page.locator("#cmp-mkt line.ref")).toHaveCount(1);
+    await noErrors(page, errors);
+  });
+
+  test("#122/AK2, AK5, AK6: Änderung in % je Ergebnis wie im Einzelergebnis, Bezugslinie bei 0, auch in heutiger Kaufkraft", async ({ page }) => {
+    const errors = await openCharts(page);
+    await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
+    await expect(card(page).locator("h3")).toContainText("Änderung gegenüber dem Vorjahresmonat in %");
+    await expect(card(page).locator('button[data-action="mkt-log"]')).toHaveCount(0);
+    expect((await labels(page)).every(t => t.endsWith("%"))).toBe(true);
+    await expect(page.locator("#cmp-mkt path")).toHaveCount(6);
+    // Tooltip im 2. Jahr: Aktien = Änderung der letzten 12 Monate des Median-Laufs des ersten Ergebnisses
+    const want = await page.evaluate(async () => {
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], r = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1].records;
+      return (100 * (r[18].stockIndex / r[6].stockIndex - 1)).toLocaleString("de-CH", { maximumFractionDigits: 1 });
+    });
+    const box = await page.locator("#cmp-mkt").boundingBox();
+    const n = await page.evaluate(() => document.querySelector("#cmp-mkt path").getAttribute("d").split(/[ML]/).filter(Boolean).length);
+    // Monat 18 liegt bei 18/(n-1) der Zeichenfläche (L = 60, R = 14 im viewBox = Breite in px)
+    await page.mouse.move(box.x + 60 + 18 / (n - 1) * (box.width - 74), box.y + box.height / 2);
+    await expect(page.locator("#cmp-mkt-tip")).toContainText(`Aktien ${want} %`);
+    // Bezugslinie bei 0 %
+    const r = await page.evaluate(() => { const l = document.querySelector("#cmp-mkt line.ref"), t = [...document.querySelectorAll("#cmp-mkt text")].find(x => /^0 ?%$/.test(x.textContent.trim()));
+      return { y: +l.getAttribute("y1"), t: t ? +t.getAttribute("y") - 4 : null }; });
+    expect(r.t).not.toBeNull();
+    expect(Math.abs(r.y - r.t)).toBeLessThan(0.5);
+    // heutige Kaufkraft: Werte ändern sich, Darstellung bleibt
+    const nominal = await page.locator("#cmp-mkt path").first().getAttribute("d");
+    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
+    await expect(card(page).locator('button[data-action="mkt"][data-v="pct"]')).toHaveClass(/on/);
+    expect(await page.locator("#cmp-mkt path").first().getAttribute("d")).not.toBe(nominal);
+    await noErrors(page, errors);
+  });
+
+  test("#122/AK4: die Wahl gilt im Einzelergebnis und im Vergleich gemeinsam", async ({ page }) => {
+    const errors = await openCharts(page);
+    await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
+    expect(await page.evaluate(() => mktPct)).toBe(true);
+    // Einzelergebnis öffnen: dort ist «Änderung in %» gewählt
+    await page.evaluate(async () => { const [m] = await Runs.list(); await viewRun(m.id); });
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
+    await page.locator('button[data-action="rtab"][data-tab="runs"]').click();
+    await expect(page.locator('button[data-action="mkt"][data-v="pct"]')).toHaveClass(/on/);
+    await page.locator('button[data-action="mkt"][data-v="idx"]').click();
+    expect(await page.evaluate(() => mktPct)).toBe(false);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Vergleich: Unterschiede in der Planung mit Bezeichnungen (#123)", () => {
+  const openPlan = async page => {
+    const errors = await open(page, "runsflow/mem");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await page.evaluate(() => showResults(true));
+    await page.locator('button[data-action="cmp-tab"]', { hasText: "Planung" }).click();
+    await expect(page.locator("#resultsBody .card h3")).toContainText("Unterschiede in der Planung");
+    return errors;
+  };
+
+  test("#123/AK1, AK2, AK3: Bezeichnung mit Abschnitt, Werte wie im Editor, gruppiert nach Abschnitten", async ({ page }) => {
+    const errors = await openPlan(page);
+    // runsflow unterscheidet sich im Aktienanteil (30 %)
+    const t = page.locator("table.cmpplan");
+    const row = t.locator("tr", { hasText: "Aktienanteil" }).first();
+    await expect(row.locator("td").nth(2)).toHaveText("30 %");
+    await expect(row.locator("td").nth(1)).toHaveText(/^\d+(\.\d+)? %$/);
+    // Abschnitt als Gruppenzeile davor, keine internen Feldnamen und kein JSON
+    const groups = await t.locator("tr.grp th").allTextContents();
+    expect(groups.length).toBeGreaterThan(0);
+    const order = ["Haushalt", "Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Säule 3a", "Steuerannahmen", "Variationen"];
+    expect(groups.map(g => order.indexOf(g))).toEqual([...groups.map(g => order.indexOf(g))].sort((a, b) => a - b));
+    expect(groups.every(g => order.includes(g))).toBe(true);
+    const text = await t.innerText();
+    expect(text).not.toMatch(/\b[a-z]+[A-Z]?[a-z]*\.[a-z][A-Za-z]*\b/); // kein «wealth.stockShare»
+    expect(text).not.toMatch(/[{}]|"mode"/);
+    await expect(t.locator("code")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("#123/AK2, AK4: Auswahlfelder als Text, Listen mit Namen statt Index", async ({ page }) => {
+    const errors = await openPlan(page);
+    await page.evaluate(async () => {
+      const [a] = (await Runs.list()).filter(m => runsSel.has(m.id)), d = structuredClone(await Runs.get(a.id)), p = d.plan;
+      p.returns.source = "parametric";
+      const pr = p.realestate.properties[0]; if (pr) pr.name = "Ferienwohnung Test";
+      if (pr?.worth != null) pr.worth += 50000;
+      await Runs.add({ ...a, id: "geaendert", name: "geändert" }, d); runsSel.clear(); runsSel.add(a.id); runsSel.add("geaendert"); await compareRuns();
+    });
+    const t = page.locator("table.cmpplan");
+    const src = t.locator("tr").filter({ has: page.locator("td.l", { hasText: /^Renditequelle$/ }) });
+    await expect(src.locator("td")).toHaveCount(3);
+    expect((await src.locator("td").allTextContents()).slice(1).sort()).toEqual(["Monte Carlo · historisch", "Monte Carlo · parametrisch"]);
+    const props = await page.evaluate(async () => (await Runs.get("geaendert")).plan.realestate.properties.length);
+    if (props) await expect(t.locator("td", { hasText: /^Ferienwohnung Test: / }).first()).toBeAttached();
+    expect(await t.innerText()).not.toMatch(/properties|[a-z]\.\d+\./);
+    await noErrors(page, errors);
+  });
+
+  test("#123/AK5: jedes Feld der Beispielplanung hat eine Bezeichnung oder ist ausdrücklich ausgeblendet", async ({ page }) => {
+    const errors = await open(page);
+    const missing = await page.evaluate(() => {
+      const base0 = JSON.parse(JSON.stringify(state)), ctxs = [];
+      // Kontexte: jede Renditequelle × Strategie (3-Topf auch mit Guardrails), zwei Personen verheiratet, eigene Gewichtung,
+      // Meilensteine als Datum und als Alter, Immobilien als Besitz, geplant und Miete
+      for (const src of SOURCES.map(x => x[0])) for (const st of [...STRATS.map(x => x[0]), "tbg"]) {
+        const p = JSON.parse(JSON.stringify(base0)); p.returns.source = src;
+        p.withdrawal.strategy = st === "tbg" ? "three_buckets" : st; if (st === "tbg") p.withdrawal.buckets = { ...(p.withdrawal.buckets || {}), spending: "guardrails" };
+        ctxs.push(p);
+      }
+      const v = f => { const p = JSON.parse(JSON.stringify(base0)); f(p); ctxs.push(p); };
+      v(p => { p.household.persons.push({ ...p.household.persons[0], id: "p2x" }); p.household.married = true; (p.milestones || []).forEach(m => { if (m.person) m.person = "p2x"; }); });
+      v(p => { p.returns.series = null; p.returns.source = "bootstrap"; p.returns.strategy = { ...(p.returns.strategy || {}), stocks: "worldCustom" }; });
+      v(p => (p.milestones || []).forEach(m => { if (m.date) m.kind = "date"; }));
+      v(p => (p.milestones || []).forEach(m => { if (m.years != null) m.kind = "age"; }));
+      for (const status of ["owned", "planned", "rent"]) v(p => (p.realestate?.properties || []).forEach(pr => { pr.status = status; }));
+      const ENUM = ["repay", "renew", "saron", "fixed", "indirect", "direct", "date", "age", "owned", "planned", "rent", "wealth", "aargau", "zurich", "worldCustom"];
+      const covered = new Set(), keys = new Set();
+      for (const base of ctxs) {
+        const s0 = JSON.stringify(paramSections(base, true)), f = flat(base);
+        for (const [k, val] of Object.entries(f)) {
+          if (val === "[]" || val === "{}") continue;
+          keys.add(k); if (covered.has(k)) continue;
+          const cands = typeof val === "number" ? [val * 1.37 + 1] : typeof val === "boolean" ? [!val] : val === null ? [5, "2001-01"]
+            : typeof val === "string" ? (isYM(val) ? ["1999-07"] : [val + "x", ...ENUM.filter(e => e !== val), "p2x"]) : [];
+          for (const nv of cands) {
+            const p = JSON.parse(JSON.stringify(base)); setPath(p, k, nv);
+            try { if (JSON.stringify(paramSections(p, true)) !== s0) { covered.add(k); break; } } catch (e) { /* ungültiger Wert */ }
+          }
+        }
+      }
+      return [...keys].filter(k => !covered.has(k) && !PLAN_HIDDEN.some(([re]) => re.test(k)));
+    });
+    expect(missing).toEqual([]);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Kopfzeile des Ergebnisses mit dem Namen (#125)", () => {
+  const title = page => page.locator("#resultsTitle");
+
+  test("#125/AK1, AK3: frisch berechnet mit mehreren Läufen: «Name · 500 Läufe»", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 }); return runSimulation("overview", { noConfirm: true }); });
+    await expect(title(page).locator(".rtkind")).toHaveText("500 Läufe");
+    const name = await page.evaluate(async () => (await Runs.list())[0].name);
+    expect(name).toContain("MC hist.");
+    await expect(title(page).locator(".rtname")).toHaveText(name);
+    await expect(title(page)).toHaveText(`${name} · 500 Läufe`);
+    await expect(title(page)).toHaveAttribute("title", name);
+    await noErrors(page, errors);
+  });
+
+  test("#125/AK2: Einzellauf: Name vorne, danach «Einzellauf · …»", async ({ page }) => {
+    const errors = await open(page, "results");
+    await expect(title(page).locator(".rtname")).toBeAttached();
+    const name = await page.evaluate(async () => (await Runs.list())[0].name);
+    await expect(title(page).locator(".rtname")).toHaveText(name);
+    await expect(title(page).locator(".rtkind")).toHaveText(/^Einzellauf/);
+    await noErrors(page, errors);
+  });
+
+  test("#125/AK3, AK4: gespeichertes Ergebnis aus der Liste zeigt seinen (neuen) Namen", async ({ page }) => {
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    const id = await page.evaluate(async () => { const [m] = await Runs.list(); await Runs.update(m.id, { name: "Variante Aktien 30 %" }); return m.id; });
+    await page.evaluate(id => viewRun(id), id);
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
+    await expect(title(page)).toHaveText("Variante Aktien 30 % · 500 Läufe");
+    // zurück zur Liste: Kopfzeile ohne Namen und ohne Tooltip
+    await page.evaluate(() => openRuns());
+    await expect(title(page)).toHaveText("Gespeicherte Ergebnisse");
+    expect(await title(page).getAttribute("title")).toBeNull();
+    await noErrors(page, errors);
+  });
+
+  test("#125/AK5: langer Name wird gekürzt, die Anzahl der Läufe bleibt sichtbar, voller Name im Tooltip", async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 800 });
+    const errors = await open(page, "runsflow/mem/del");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
+    const long = "Sehr lange Bezeichnung einer Berechnung ".repeat(8).trim();
+    const id = await page.evaluate(async long => { const [m] = await Runs.list(); await Runs.update(m.id, { name: long }); return m.id; }, long);
+    await page.evaluate(id => viewRun(id), id);
+    await expect(title(page)).toHaveAttribute("title", long);
+    const r = await page.evaluate(() => { const n = document.querySelector("#resultsTitle .rtname"), k = document.querySelector("#resultsTitle .rtkind").getBoundingClientRect();
+      return { cut: n.scrollWidth > n.clientWidth, overflow: getComputedStyle(n).textOverflow, right: k.right, w: window.innerWidth, kw: k.width }; });
+    expect(r.cut).toBe(true);
+    expect(r.overflow).toBe("ellipsis");
+    expect(r.kw).toBeGreaterThan(0);
+    expect(r.right).toBeLessThanOrEqual(r.w);
+    await expect(title(page).locator(".rtkind")).toBeInViewport();
+    await noErrors(page, errors);
+  });
+
+  test("#125/AK6: ohne gespeicherten Namen bleibt die Kopfzeile wie bisher", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { Runs.add = async () => { throw new Error("Speicher voll (Test)"); }; state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 }); return runSimulation("overview", { noConfirm: true }); });
+    await expect(title(page)).toHaveText("500 Läufe");
+    await expect(title(page).locator(".rtname")).toHaveCount(0);
+    expect(await title(page).getAttribute("title")).toBeNull();
+    // erwartet: nur der gemeldete Speicherfehler
+    expect(errors.filter(e => !/Speicher voll/.test(e))).toEqual([]);
+    expect((await page.evaluate(() => window.__errors)).filter(e => !/Speicher voll/.test(String(e?.message ?? e)))).toEqual([]);
+  });
+});

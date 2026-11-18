@@ -47,8 +47,8 @@ den Rechenkern) und die Darstellung der Grafiken im Detail (Sichtkontrolle mit B
 Alle Dateien in `crates/engine/tests/` sind Module der einen Testdatei `all.rs` (#43); eine neue Datei muss dort
 eingetragen werden, sonst schlägt ein Test fehl.
 
-Die Bedienung der Oberfläche prüft Playwright in `e2e/` (176 Tests, Stand 16.11.2026: `ui.spec.js`, `optimum.spec.js`
-und getrennt `ui-cancel.spec.js`, weil der Abbruch für alle laufenden Berechnungen gilt; installiertes Google Chrome,
+Die Bedienung der Oberfläche prüft Playwright in `e2e/` (176 Tests, Stand 16.11.2026: `ui-*.spec.js` nach Bereichen, gemeinsame Hilfsfunktionen in `helpers.js`,
+`optimum.spec.js` und getrennt `ui-cancel.spec.js`, weil der Abbruch für alle laufenden Berechnungen gilt; installiertes Google Chrome,
 lokaler Entwicklungsserver).
 
 ### Oberflächentests unabhängig von der Rechnerlast (#111)

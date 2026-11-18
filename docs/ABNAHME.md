@@ -106,75 +106,8 @@ Vermerk «(Kommentar)» in der Liste. Änderungen an Kriterien per Kommentar sin
 
 ## Issues
 
-### #1 Steuern 2029→2030 steigen stärker als die Einnahmen (False Positive)
 
-[Issue #1](https://github.com/ingen63/VivaPlan/issues/1) · geschlossen, nicht geplant · Umsetzung: nicht vermerkt
-
-Fehlalarm (`invalid`), keine Kriterien.
-
-### #2 Kauf nach Verkauf einer Immobilie erfolgt erst Jahre später
-
-[Issue #2](https://github.com/ingen63/VivaPlan/issues/2) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/reference.rs:369](../crates/engine/tests/reference.rs#L369), [engine/tests/simulation.rs:961](../crates/engine/tests/simulation.rs#L961)
-
-Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
-
-### #3 Zeitleiste: Immobilienereignisse beschriften
-
-[Issue #3](https://github.com/ingen63/VivaPlan/issues/3) · geschlossen · Umsetzung: nicht vermerkt
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #3/AK1 | Mit `examples/Test 1.rplan` hat jedes Kauf-, Verkaufs- und Notverkaufsereignis eine Beschriftung. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
-| #3/AK2 | Keine zwei Beschriftungen überdecken sich. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
-| #3/AK3 | Ereignisse und Meilensteine sind ohne Farbunterscheidung auseinanderzuhalten. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
-| #3/AK4 | Bei mehr als 15 Ereignissen erscheinen nur Symbole, Text beim Hover. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
-| #3/AK5 | Ohne Ergebnis keine Ereignisse. | ☑ | **gilt** | [ui.spec.js:50](../e2e/ui.spec.js#L50) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
-
-### #4 Beim Start die letzte Planung öffnen
-
-[Issue #4](https://github.com/ingen63/VivaPlan/issues/4) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/example_neu.rs:1](../crates/engine/tests/example_neu.rs#L1), [ui.spec.js:1974](../e2e/ui.spec.js#L1974) (+3)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #4/AK1 | Planung öffnen, App beenden, neu starten: dieselbe Planung ist geladen, der Dateiname steht im Kopf. | ☑ | **gilt** | [app/main.rs:1964](../crates/app/src/main.rs#L1964), [app/main.rs:2005](../crates/app/src/main.rs#L2005), [ui.spec.js:2038](../e2e/ui.spec.js#L2038) | 15.11.2026 ok (Tests grün; echter Neustart vom Anwender geprüft) |
-| #4/AK2 | Speichern unter neuem Namen und Neustart: die neue Datei wird geöffnet. | ☑ | **gilt** | [app/main.rs:2020](../crates/app/src/main.rs#L2020), [app/main.rs:2005](../crates/app/src/main.rs#L2005) | 15.11.2026 ok (Tests grün; echter Neustart vom Anwender geprüft) |
-| #4/AK3 | Erststart ohne Merkung: Beispielplanung, kein Hinweis. | ☑ | **überholt**: durch #70 und #61: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `Neu.vplan`. | [app/main.rs:1919](../crates/app/src/main.rs#L1919), [ui.spec.js:2038](../e2e/ui.spec.js#L2038) | 15.11.2026 ok (Tests grün); ohne Hinweis, dazu Willkommensdialog (#70) |
-| #4/AK4 | Datei zwischen den Starts gelöscht: Beispielplanung und Hinweis «Zuletzt geöffnete Datei nicht gefunden». | ☑ | **gilt** | [app/main.rs:1977](../crates/app/src/main.rs#L1977), [ui.spec.js:2081](../e2e/ui.spec.js#L2081) | 15.11.2026 ok (Tests grün) |
-| #4/AK5 | «Neue Planung» ohne Speichern, dann Neustart: die zuletzt gespeicherte Planung wird geöffnet. | ☑ | **gilt** | kein Test (Code: «Neue Planung» ruft `remember_plan` nicht auf) | 15.11.2026 ok (Code gelesen) |
-| #4/AK6 | Beenden mit ungespeicherten Änderungen: Dialog mit Speichern, Verwerfen, Abbrechen; Abbrechen lässt die App offen. | ☑ | **gilt** | [app/main.rs:2042](../crates/app/src/main.rs#L2042), [ui.spec.js:2089](../e2e/ui.spec.js#L2089) | 15.11.2026 ok (Tests grün) |
-| #4/AK7 | Die Merkung enthält nur den Dateipfad und bleibt lokal. | ☑ | **gilt** | [app/main.rs:2005](../crates/app/src/main.rs#L2005) | 15.11.2026 ok (Code gelesen: `lastPlan` ist der Pfad) |
-| #4/AK8 | Die Beispielplanung enthält keine persönlichen Daten und ist ohne Fehler simulierbar. | ☑ | **gilt**: Beispielplanung heute `crates/engine/assets/beispiel.vplan`. | [app/main.rs:1094](../crates/app/src/main.rs#L1094), [app/main.rs:1486](../crates/app/src/main.rs#L1486), [app/main.rs:2061](../crates/app/src/main.rs#L2061) | 15.11.2026 ok (Tests grün) |
-
-### #5 Ergebnisse: Reiter «Parameter»
-
-[Issue #5](https://github.com/ingen63/VivaPlan/issues/5) · geschlossen · Umsetzung: nicht vermerkt
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #5/AK1 | Nach einem Lauf zeigt der Reiter alle Werte des Laufs; danach im Editor eine Zahl ändern: Der Reiter des bereits berechneten Ergebnisses bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) (prüft mehrere Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e grün) |
-| #5/AK2 | Ein gespeichertes Ergebnis zeigt nach dem Öffnen dieselbe Zusammenfassung wie beim Berechnen. | ☑ | **gilt** | [ui.spec.js:1286](../e2e/ui.spec.js#L1286) (prüft mehrere Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e grün; Gleichheit nicht Wert für Wert getestet, Code: gespeichert wird die Planung des Laufs) |
-| #5/AK3 | Nichts im Reiter ist editierbar. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) | 15.11.2026 ok (e2e grün) |
-| #5/AK4 | Test: je einen Parameter pro Editorabschnitt ändern, neu rechnen: Die beiden Zusammenfassungen unterscheiden sich an dieser Stelle. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) | 15.11.2026 ok (e2e grün) |
-| #5/AK5 | Ein altes Ergebnis ohne Parameter zeigt «Nicht verfügbar» und keinen Fehler. | ☑ | **gilt** | [ui.spec.js:1241](../e2e/ui.spec.js#L1241) | 15.11.2026 ok (e2e grün) |
-
-### #6 Guardrails und 3-Topf gemeinsam anwenden
-
-[Issue #6](https://github.com/ingen63/VivaPlan/issues/6) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/src/optimize.rs:1566](../crates/engine/src/optimize.rs#L1566), [engine/tests/buckets_guardrails.rs:1](../crates/engine/tests/buckets_guardrails.rs#L1) (+2)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #6/AK1 | Auf der Karte «3-Topf» kann «Ausgaben ab Pensionierung» zwischen «wie geplant» und «mit Guardrails steuern» gewählt werden; bei «mit Guardrails» erscheinen die Karten «Guardrails» und «Grenzen der Lebenshaltung». | ☑ | **gilt** | [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | 15.11.2026 ok (Test grün) |
-| #6/AK2 | Bei «mit Guardrails» bestimmen Startrate, Teuerung, Leitplanken und Grenzen die Lebenshaltung genau wie bei der Strategie «Guardrails»; bei gleichen Eingaben und gleichem Vermögensverlauf ist die Entnahme in beiden identisch. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:99](../crates/engine/tests/buckets_guardrails.rs#L99) | 15.11.2026 ok (Test grün) |
-| #6/AK3 | Die Guardrails (rein und kombiniert) starten mit der Pensionierung der ersten Person; in der Kombination gemeinsam mit den Töpfen. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:121](../crates/engine/tests/buckets_guardrails.rs#L121) | 15.11.2026 ok (Test grün) |
-| #6/AK4 | Ein für einen Kauf reservierter Verkaufserlös zählt für die Guardrails-Rate (rein und kombiniert) nicht zum Vermögen. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:156](../crates/engine/tests/buckets_guardrails.rs#L156) | 15.11.2026 ok (Test grün) |
-| #6/AK5 | Nach einem Zufluss rechnen die Guardrails (rein und kombiniert) die Entnahme neu; in der Kombination geht das Geld in Topf 3, und die Topfziele bleiben bis zum nächsten Januar. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:187](../crates/engine/tests/buckets_guardrails.rs#L187) | 15.11.2026 ok (Test grün) |
-| #6/AK6 | Netto-Bedarf und Topfziele werden aus der Guardrails-Lebenshaltung berechnet; die Tabelle «3-Topf-Strategie» nennt diese Quelle. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:228](../crates/engine/tests/buckets_guardrails.rs#L228) | 15.11.2026 ok (Test grün) |
-| #6/AK7 | Nach einer Kürzung durch die Leitplanke sinken die Ziele von Topf 1 und 2 in der nächsten Januar-Auffüllung entsprechend. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:276](../crates/engine/tests/buckets_guardrails.rs#L276) | 15.11.2026 ok (Test grün) |
-| #6/AK8 | Die Topf-Regeln (Januar-Auffüllung, A, B, C, Renditekriterium, Notverkauf, Phase 8) gelten unverändert. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:292](../crates/engine/tests/buckets_guardrails.rs#L292) | 15.11.2026 ok (Test grün) |
-| #6/AK9 | Planungen ohne das neue Feld rechnen unverändert, ausser mit der Strategie «Guardrails» bei zwei Personen mit verschiedenem Pensionierungsdatum oder mit reserviertem Verkaufserlös (Golden-Dateien unverändert, keine verwendet Guardrails). | ☑ | **gilt** | [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | 15.11.2026 ok (Test grün) |
-| #6/AK10 | Der Strategiename «3-Topf + Guardrails» erscheint in Ergebnissen, gespeicherten Ergebnissen, Vergleich und Tooltip (#11). | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:347](../crates/engine/tests/buckets_guardrails.rs#L347), [ui.spec.js:1866](../e2e/ui.spec.js#L1866) | 15.11.2026 ok (Test grün) |
-| #6/AK11 | Die Optimierung bietet «3-Topf + Guardrails» als eigene Strategie an (standardmässig nicht angewählt; untere Leitplanke und Anpassung standardmässig fix). | ☑ | **gilt** | [optimize_ranges.rs:177](../crates/engine/tests/optimize_ranges.rs#L177) | 15.11.2026 ok (Test: eigene Strategie, Leitplanke und Anpassung fix; nicht angewählt: ui.spec.js «#6») |
-| #6/AK12 | Hilfe, `BESCHREIBUNG.md` und Spezifikation beschreiben die Kombination. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `BESCHREIBUNG.md:100`, `hilfe/30-entnahme.md:104`; die Spezifikation entfällt mit #99) |
+Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen in [ABNAHME-ARCHIV.md](ABNAHME-ARCHIV.md); die Übersicht oben zählt beide Dateien. Nach einer Einzelprüfung, die ein Issue abschliesst, wandert sein Abschnitt dorthin.
 
 ### #7 Jahreswerte: Entnahmerate als Spalte
 
@@ -182,178 +115,70 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #7/AK1 | Entnahme 40'000 pro Jahr bei Total 1'000'000 und Liquid 500'000 am Jahresanfang ergibt 4.0 % bzw. 8.0 %. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 teilweise: Total-Spalte gerechnet; Liquid-Spalte nicht im Test |
-| #7/AK2 | Im ersten Jahr einer im November startenden Simulation: Entnahme der zwei Monate mal 6, geteilt durch das Startvermögen. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (erstes Jahr mit Startvermögen als Basis) |
-| #7/AK3 | Jahre mit Einkommen über den Ausgaben zeigen leere Zellen. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (leere Zellen bei Entnahme 0) |
-| #7/AK4 | Wechsel nominal/real ändert die Werte nicht. | ☑ | **gilt** | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (nominal gleich real in der Rate) |
-| #7/AK5 | Jede Zeile stimmt mit der manuellen Rechnung aus den Spalten «Entnahme», «Total» und «Liquid» (Test mit `examples/Test 1.rplan`). | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | [ui.spec.js:1296](../e2e/ui.spec.js#L1296) | 15.11.2026 ok (Zeilen stimmen mit der Rechnung aus Entnahme und Vermögen) |
-
-### #8 Jahreswerte: Steuerspalten einklappbar
-
-[Issue #8](https://github.com/ingen63/VivaPlan/issues/8) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:837](../e2e/ui.spec.js#L837)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #8/AK1 | Beim ersten Öffnen (ohne gespeicherte Wahl) zeigt die Jahrestabelle keine Spalte mit «Steuer». | ☑ | **gilt** | [ui.spec.js:837](../e2e/ui.spec.js#L837) | 15.11.2026 ok |
-| #8/AK2 | «Steuern anzeigen» blendet die fünf Spalten mit denselben Werten wie bisher ein, ein zweiter Klick blendet sie aus. | ☑ | **gilt** | [ui.spec.js:837](../e2e/ui.spec.js#L837) | 15.11.2026 ok (fünf Spalten, zweiter Klick blendet aus) |
-| #8/AK3 | Nach Neustart der App gilt die zuletzt gewählte Einstellung. | ☑ | **gilt** | [ui.spec.js:1221](../e2e/ui.spec.js#L1221) | 15.11.2026 ok (Wahl bleibt nach dem Neuladen) |
-| #8/AK4 | Kennzahl «Steuern total» bleibt sichtbar. | ☑ | **gilt** | [ui.spec.js:2958](../e2e/ui.spec.js#L2958) | 15.11.2026 ok (Test) |
-| #8/AK5 | Die Berechnung und ein allfälliger Export sind unverändert. | ☑ | **gilt** | [ui.spec.js:2958](../e2e/ui.spec.js#L2958) | 15.11.2026 ok (Test) |
-| #8/AK6 | Das Umschalten verschiebt keine anderen Spalten. | ☑ | **gilt** | [ui.spec.js:2958](../e2e/ui.spec.js#L2958) | 15.11.2026 ok (Test) |
-| #8/AK7 | Steht die gespeicherte Einstellung nicht zur Verfügung (zum Beispiel Datenverzeichnis nicht lesbar), gilt eingeklappt. | ☑ | **gilt** | [ui.spec.js:1221](../e2e/ui.spec.js#L1221) | 15.11.2026 ok (Speicher nicht lesbar: eingeklappt) |
-
-### #9 3-Topf-Herleitung aufklappbar in den Jahreswerten
-
-[Issue #9](https://github.com/ingen63/VivaPlan/issues/9) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:1196](../e2e/ui.spec.js#L1196)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #9/AK1 | Ein 3-Topf-Lauf hat keine Karte «3-Topf-Strategie, Herleitung …». | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (keine Karte) |
-| #9/AK2 | In den Jahreswerten lässt sich zu einem Jahr mit Auffüllung die Herleitung aufklappen, mit allen Angaben nach Abschnitt 10. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Herleitung mit Netto-Bedarf, PK-Rente, Kriterium, Umbuchungen) |
-| #9/AK3 | Jahre ohne Auffüllung haben keine Aufklapp-Zeile. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
-| #9/AK4 | Läufe ohne 3-Topf-Strategie zeigen keine Aufklapp-Zeilen. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
-| #9/AK5 | Der UI-Test zur Herleitung (`ui-tests/ui.spec.js:728`), die 3-Topf-Spezifikation (Abschnitt 10), die Hilfe und die Beschreibung sind nachgeführt. | ☑ | **gilt**: Einmalige Nachführung; der Test liegt heute in `e2e/ui.spec.js` (#48). | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Test, Hilfe und Beschreibung vorhanden) |
-| #9/AK6 | Beim Wechsel des gewählten Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs. | ☑ | **gilt** | [ui.spec.js:3013](../e2e/ui.spec.js#L3013) | 15.11.2026 ok (Test) |
-
-### #10 Ereignisliste ohne 3-Topf-Meldungen
-
-[Issue #10](https://github.com/ingen63/VivaPlan/issues/10) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:1196](../e2e/ui.spec.js#L1196)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #10/AK1 | Ein 3-Topf-Lauf zeigt in der Karte «Ereignisse» keine Zeile zu Auffüllung, Zufluss oder Reservierung. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Ereignisliste ohne «Topf 1») |
-| #10/AK2 | Pensionierung, Kapitalbezug, Käufe, Verkäufe, Notverkäufe, Defizitphase und Geld aufgebraucht stehen weiterhin in der Liste. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
-| #10/AK3 | Ein Lauf ohne 3-Topf-Strategie zeigt dieselbe Liste wie bisher. | ☑ | **gilt** | [ui.spec.js:2982](../e2e/ui.spec.js#L2982) | 15.11.2026 ok (Test) |
-| #10/AK4 | Jeder reservierte Verkaufserlös ist in den Jahreswerten unter der Herleitung (#9) zu finden. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Sichtprüfung vom Anwender) |
-| #10/AK5 | Zeitleiste und Grafikmarken sind unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Sichtprüfung vom Anwender) |
-| #10/AK6 | Der UI-Test, der 3-Topf-Ereignisse in der Liste erwartet, ist angepasst. | ☑ | **gilt** | [ui.spec.js:1183](../e2e/ui.spec.js#L1183) | 15.11.2026 ok (Test erwartet keine 3-Topf-Ereignisse mehr) |
+| #7/AK1 | Entnahme 40'000 pro Jahr bei Total 1'000'000 und Liquid 500'000 am Jahresanfang ergibt 4.0 % bzw. 8.0 %. | ☑ | **gilt** | [ui-ergebnisse.spec.js:475](../e2e/ui-ergebnisse.spec.js#L475) | 15.11.2026 teilweise: Total-Spalte gerechnet; Liquid-Spalte nicht im Test |
+| #7/AK2 | Im ersten Jahr einer im November startenden Simulation: Entnahme der zwei Monate mal 6, geteilt durch das Startvermögen. | ☑ | **gilt** | [ui-ergebnisse.spec.js:475](../e2e/ui-ergebnisse.spec.js#L475) | 15.11.2026 ok (erstes Jahr mit Startvermögen als Basis) |
+| #7/AK3 | Jahre mit Einkommen über den Ausgaben zeigen leere Zellen. | ☑ | **gilt** | [ui-ergebnisse.spec.js:475](../e2e/ui-ergebnisse.spec.js#L475) | 15.11.2026 ok (leere Zellen bei Entnahme 0) |
+| #7/AK4 | Wechsel nominal/real ändert die Werte nicht. | ☑ | **gilt** | [ui-ergebnisse.spec.js:475](../e2e/ui-ergebnisse.spec.js#L475) | 15.11.2026 ok (nominal gleich real in der Rate) |
+| #7/AK5 | Jede Zeile stimmt mit der manuellen Rechnung aus den Spalten «Entnahme», «Total» und «Liquid» (Test mit `examples/Test 1.rplan`). | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | [ui-ergebnisse.spec.js:475](../e2e/ui-ergebnisse.spec.js#L475) | 15.11.2026 ok (Zeilen stimmen mit der Rechnung aus Entnahme und Vermögen) |
 
 ### #11 Gespeicherte Ergebnisse: Strategie-Tooltip mit Parametern
 
-[Issue #11](https://github.com/ingen63/VivaPlan/issues/11) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:1879](../e2e/ui.spec.js#L1879)
+[Issue #11](https://github.com/ingen63/VivaPlan/issues/11) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-gespeichert.spec.js:295](../e2e/ui-gespeichert.spec.js#L295)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #11/AK1 | Mouseover über «3-Topf» zeigt Jahre Topf 1 und 2 und die Renditeschwelle mit den Werten des Ergebnisses (nicht der aktuellen Planung). | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Tooltip zeigt Werte des Ergebnisses, nicht der aktuellen Planung) |
-| #11/AK2 | Jede der sechs Strategien zeigt genau ihre Parameter. | ☑ | **gilt**: Heute sieben Strategien (#6: «3-Topf + Guardrails»). | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 teilweise: nur 3-Topf im Test |
-| #11/AK3 | Die Werte stimmen mit dem Reiter «Parameter» (#5) überein. | ☑ | **gilt** | [ui.spec.js:3038](../e2e/ui.spec.js#L3038) | 15.11.2026 ok (Test) |
-| #11/AK4 | Der Tooltip ist per Tastaturfokus erreichbar. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Tastaturfokus zeigt den Tooltip) |
-| #11/AK5 | Ein altes Ergebnis ohne Kurzform zeigt «Parameter nicht verfügbar», ohne Fehler. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok («Parameter nicht verfügbar») |
+| #11/AK1 | Mouseover über «3-Topf» zeigt Jahre Topf 1 und 2 und die Renditeschwelle mit den Werten des Ergebnisses (nicht der aktuellen Planung). | ☑ | **gilt** | [ui-gespeichert.spec.js:32](../e2e/ui-gespeichert.spec.js#L32) | 15.11.2026 ok (Tooltip zeigt Werte des Ergebnisses, nicht der aktuellen Planung) |
+| #11/AK2 | Jede der sechs Strategien zeigt genau ihre Parameter. | ☑ | **gilt**: Heute sieben Strategien (#6: «3-Topf + Guardrails»). | [ui-gespeichert.spec.js:32](../e2e/ui-gespeichert.spec.js#L32) | 15.11.2026 teilweise: nur 3-Topf im Test |
+| #11/AK3 | Die Werte stimmen mit dem Reiter «Parameter» (#5) überein. | ☑ | **gilt** | [ui-einstieg.spec.js:241](../e2e/ui-einstieg.spec.js#L241) | 15.11.2026 ok (Test) |
+| #11/AK4 | Der Tooltip ist per Tastaturfokus erreichbar. | ☑ | **gilt** | [ui-gespeichert.spec.js:32](../e2e/ui-gespeichert.spec.js#L32) | 15.11.2026 ok (Tastaturfokus zeigt den Tooltip) |
+| #11/AK5 | Ein altes Ergebnis ohne Kurzform zeigt «Parameter nicht verfügbar», ohne Fehler. | ☑ | **gilt** | [ui-gespeichert.spec.js:32](../e2e/ui-gespeichert.spec.js#L32) | 15.11.2026 ok («Parameter nicht verfügbar») |
 | #11/AK6 | Die Liste lädt nicht langsamer (Ergebnisdaten werden dafür nicht geladen). | ☑ | **gilt** | kein Test | 15.11.2026 ok (Prüfung in der App vom Anwender) |
-
-### #12 Gespeicherte Ergebnisse: Spalte «Zeitreihe» statt «Art»
-
-[Issue #12](https://github.com/ingen63/VivaPlan/issues/12) · geschlossen · Umsetzung: nicht vermerkt
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #12/AK1 | Liste und Vergleich haben keine Spalte «Art», aber eine Spalte «Zeitreihe». | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Spalte Zeitreihe, keine Spalte Art) |
-| #12/AK2 | Ein historisches oder Bootstrap-Ergebnis zeigt den Reihennamen ohne Pfad und «.csv». | ☑ | **gilt**: in der neuen Fassung (Kommentar in #12 vom 15.11.2026): Die Spalte «Zeitreihe» zeigt den Namen der Anlagestrategie bzw. der Reihe | [ui.spec.js:3059](../e2e/ui.spec.js#L3059) | 15.11.2026 ok (Test, in der neuen Fassung vom 15.11.2026) |
-| #12/AK3 | Feste und parametrische Ergebnisse zeigen «feste Renditen» bzw. «parametrisch» in Grau. | ☑ | **gilt** | [ui.spec.js:3059](../e2e/ui.spec.js#L3059) | 15.11.2026 ok (Test, auch Grau) |
-| #12/AK4 | Ein Ergebnis zeigt auch nach Änderung der Zeitreihe in der aktuellen Planung weiterhin die Zeitreihe von damals. | ☑ | **gilt**: Sinngemäss: Änderung der Anlagestrategie statt der Zeitreihe (#69). | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (Ergebnis behält die Werte von damals) |
-| #12/AK5 | Einzellauf, Szenarien und Anzahl Läufe sind weiterhin erkennbar (zweite Zeile in «Ergebnis»). | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok («Einzellauf» in der zweiten Zeile) |
-| #12/AK6 | Alte Einträge zeigen «–» ohne Fehler. | ☑ | **gilt** | [ui.spec.js:1616](../e2e/ui.spec.js#L1616) | 15.11.2026 ok (alte Einträge «–») |
 
 ### #13 Gespeicherte Ergebnisse: 5-%-Vermögen und Warnsymbol bei Notverkauf
 
-[Issue #13](https://github.com/ingen63/VivaPlan/issues/13) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:1658](../e2e/ui.spec.js#L1658)
+[Issue #13](https://github.com/ingen63/VivaPlan/issues/13) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #13/AK1 | Ein Monte-Carlo-Ergebnis zeigt «Erfolgsquote · 5 %: Betrag», der Betrag entspricht dem 5. Perzentil der Ergebnistabelle der Übersicht; der Median steht im Tooltip. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok («90 % · 5 %: 1.2 Mio», Median im Tooltip) |
-| #13/AK2 | Mit `examples/Test 1.rplan` und einem Notverkauf in mindestens 5 % der Läufe erscheint das Symbol, der Tooltip nennt Anteil und Anzahl Läufe. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. Im Issue nicht abgehakt. | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok (Tooltip nennt Anteil und Anzahl Läufe) |
-| #13/AK3 | Bei weniger als 5 % Läufen mit Notverkauf erscheint kein Symbol. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
-| #13/AK4 | Eine Planung ohne Notverkauf oder ohne Immobilien zeigt kein Symbol. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
-| #13/AK5 | Ein geplanter Verkauf löst das Symbol nicht aus. | ☑ | **gilt** | [ui.spec.js:3059](../e2e/ui.spec.js#L3059) | 15.11.2026 ok (Test) |
-| #13/AK6 | Ein Einzellauf mit Notverkauf zeigt das Symbol. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
-| #13/AK7 | Alte Einträge ohne Angabe werden fehlerfrei und ohne Symbol angezeigt. | ☑ | **gilt** | [ui.spec.js:1658](../e2e/ui.spec.js#L1658) | 15.11.2026 ok |
+| #13/AK1 | Ein Monte-Carlo-Ergebnis zeigt «Erfolgsquote · 5 %: Betrag», der Betrag entspricht dem 5. Perzentil der Ergebnistabelle der Übersicht; der Median steht im Tooltip. | ☑ | **gilt** | [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74) | 15.11.2026 ok («90 % · 5 %: 1.2 Mio», Median im Tooltip) |
+| #13/AK2 | Mit `examples/Test 1.rplan` und einem Notverkauf in mindestens 5 % der Läufe erscheint das Symbol, der Tooltip nennt Anteil und Anzahl Läufe. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. Im Issue nicht abgehakt. | [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74) | 15.11.2026 ok (Tooltip nennt Anteil und Anzahl Läufe) |
+| #13/AK3 | Bei weniger als 5 % Läufen mit Notverkauf erscheint kein Symbol. | ☑ | **gilt** | [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74) | 15.11.2026 ok |
+| #13/AK4 | Eine Planung ohne Notverkauf oder ohne Immobilien zeigt kein Symbol. | ☑ | **gilt** | [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74) | 15.11.2026 ok |
+| #13/AK5 | Ein geplanter Verkauf löst das Symbol nicht aus. | ☑ | **gilt** | [ui-einstieg.spec.js:262](../e2e/ui-einstieg.spec.js#L262) | 15.11.2026 ok (Test) |
+| #13/AK6 | Ein Einzellauf mit Notverkauf zeigt das Symbol. | ☑ | **gilt** | [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74) | 15.11.2026 ok |
+| #13/AK7 | Alte Einträge ohne Angabe werden fehlerfrei und ohne Symbol angezeigt. | ☑ | **gilt** | [ui-gespeichert.spec.js:74](../e2e/ui-gespeichert.spec.js#L74) | 15.11.2026 ok |
 | #13/AK8 | Wird in den Einstellungen (#25) eine andere Schwelle gewählt, gilt sie. | ☑ | **überholt**: durch #25: Die Schwelle ist keine Einstellung geworden und gilt fest mit 5 % (Kommentar in #25). | kein Test | nicht geprüft: überholt durch #25 (Schwelle fest 5 %) |
-
-### #14 Pflichteingaben prüfen und markieren
-
-[Issue #14](https://github.com/ingen63/VivaPlan/issues/14) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/mandatory_inputs.rs:1](../crates/engine/tests/mandatory_inputs.rs#L1), [ui.spec.js:437](../e2e/ui.spec.js#L437) (+1)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #14/AK1 | Leerer Name: Fehler am Feld, Start blockiert. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok |
-| #14/AK2 | Leeres oder ungültiges Geburtsdatum: Fehler am Feld, Start blockiert. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok |
-| #14/AK3 | Jede Zeile der Pflichtliste hat einen Test, der den Fehler auslöst und die Meldung prüft. | ☑ | **gilt** | [tests/mandatory_inputs.rs:1](../crates/engine/tests/mandatory_inputs.rs#L1) | 15.11.2026 ok |
-| #14/AK4 | Sind alle Pflichtfelder gültig, startet die Simulation wie bisher. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok |
-| #14/AK5 | Beim Blockieren führt der Verweis in den ersten Abschnitt mit Fehler. | ☑ | **gilt** | [ui.spec.js:437](../e2e/ui.spec.js#L437) | 15.11.2026 ok (Meldung nennt «Haushalt») |
-| #14/AK6 | Verkaufsdatum vor dem Simulationsstart: Warnung im Abschnitt Immobilien. | ☑ | **gilt** | [src/validate.rs:731](../crates/engine/src/validate.rs#L731) | 15.11.2026 ok (Warnung «Verkaufszeitpunkt liegt vor dem Simulationsstart» (Test in validate.rs:1295)) |
-| #14/AK7 | Die Liste in der Spezifikation stimmt mit den Prüfungen in der Engine überein. | ☑ | **gilt** | [tests/mandatory_inputs.rs:1](../crates/engine/tests/mandatory_inputs.rs#L1) | 15.11.2026 ok (jede Zeile der Liste hat einen Test) |
 
 ### #15 Meilensteine: «Verwendet» entfällt, Löschen mit Umstellung
 
-[Issue #15](https://github.com/ingen63/VivaPlan/issues/15) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:374](../e2e/ui.spec.js#L374), [ui.spec.js:413](../e2e/ui.spec.js#L413)
+[Issue #15](https://github.com/ingen63/VivaPlan/issues/15) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-start.spec.js:334](../e2e/ui-start.spec.js#L334), [ui-start.spec.js:373](../e2e/ui-start.spec.js#L373)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #15/AK1 | Keine Spalte «Verwendet». | ☑ | **gilt** | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok |
-| #15/AK2 | Meilenstein «AHV» löschen: Dialog nennt Verwendung und Datum; danach zeigt die AHV-Rente das feste Datum, die Rechnung liefert dieselben Zahlen wie vorher. | ☑ | **gilt** | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok (Dialog, Datum, gleiches Endvermögen) |
-| #15/AK3 | Bei «Alter von» wird das berechnete Datum eingetragen. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 ok |
-| #15/AK4 | Rückgängig stellt Meilenstein und Verwendungen wieder her. | ☑ | **gilt** | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok (Rückgängig) |
-| #15/AK5 | «Pensionierung», «Simulationsstart» und «Simulationsende» lassen sich nicht löschen. | ☑ | **gilt**: «Pensionierung» heisst seit #51 «Bezug Pensionskasse»; gesperrt sind heute Simulationsstart, Simulationsende, Bezug Pensionskasse und AHV-Bezug (#51/AK1). | [ui.spec.js:374](../e2e/ui.spec.js#L374) | 15.11.2026 ok |
-| #15/AK6 | Nicht verwendete Meilensteine lassen sich ohne Dialog löschen. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 ok |
-| #15/AK7 | Doppelter Zeitpunkt in einer Reihe: genau eine Zeile bleibt, mit Hinweis. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 ok |
-| #15/AK8 | Variation und Optimierung laufen nach dem Löschen eines anderen Meilensteins unverändert. | ☑ | **gilt** | [ui.spec.js:413](../e2e/ui.spec.js#L413) | 15.11.2026 teilweise: Parameter «Pensionierung» bleibt wählbar; Lauf nicht verglichen |
-
-### #16 «Altersguthaben heute» → «per Simulationsstart»
-
-[Issue #16](https://github.com/ingen63/VivaPlan/issues/16) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:114](../e2e/ui.spec.js#L114)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #16/AK1 | Bei Start 11.2026 heisst das Feld «Altersguthaben per Simulationsstart (11.2026)»; nach Änderung des Starts auf 03.2027 ändert sich der Text sofort. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
-| #16/AK2 | Die Bezeichnung gilt für beide Personen. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok (zwei Personen) |
-| #16/AK3 | «Altersguthaben heute» kommt in Editor, Hilfe und Beschreibung nicht mehr vor. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok (alte Bezeichnungen in Editor, Hilfe und Beschreibung nicht mehr gefunden (grep)) |
-| #16/AK4 | Oberflächentests sind nachgeführt. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
-
-### #17 «Bestände heute» → «per Simulationsstart»
-
-[Issue #17](https://github.com/ingen63/VivaPlan/issues/17) · geschlossen · Umsetzung: nicht vermerkt
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #17/AK1 | Karte und Einleitung tragen die neue Bezeichnung mit dem aktuellen Start. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
-| #17/AK2 | Die Felder 3a-Guthaben und Marktwert tragen die neue Bezeichnung. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
-| #17/AK3 | «Bestände heute», «Aktuelle Bestände», «Guthaben heute» und «Marktwert heute» kommen in Editor, Hilfe und Beschreibung nicht mehr vor. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok (alte Bezeichnungen nicht mehr gefunden (grep)) |
-| #17/AK4 | Oberflächentests sind nachgeführt. | ☑ | **gilt** | [ui.spec.js:114](../e2e/ui.spec.js#L114) | 15.11.2026 ok |
+| #15/AK1 | Keine Spalte «Verwendet». | ☑ | **gilt** | [ui-start.spec.js:334](../e2e/ui-start.spec.js#L334) | 15.11.2026 ok |
+| #15/AK2 | Meilenstein «AHV» löschen: Dialog nennt Verwendung und Datum; danach zeigt die AHV-Rente das feste Datum, die Rechnung liefert dieselben Zahlen wie vorher. | ☑ | **gilt** | [ui-start.spec.js:334](../e2e/ui-start.spec.js#L334) | 15.11.2026 ok (Dialog, Datum, gleiches Endvermögen) |
+| #15/AK3 | Bei «Alter von» wird das berechnete Datum eingetragen. | ☑ | **gilt** | [ui-start.spec.js:373](../e2e/ui-start.spec.js#L373) | 15.11.2026 ok |
+| #15/AK4 | Rückgängig stellt Meilenstein und Verwendungen wieder her. | ☑ | **gilt** | [ui-start.spec.js:334](../e2e/ui-start.spec.js#L334) | 15.11.2026 ok (Rückgängig) |
+| #15/AK5 | «Pensionierung», «Simulationsstart» und «Simulationsende» lassen sich nicht löschen. | ☑ | **gilt**: «Pensionierung» heisst seit #51 «Bezug Pensionskasse»; gesperrt sind heute Simulationsstart, Simulationsende, Bezug Pensionskasse und AHV-Bezug (#51/AK1). | [ui-start.spec.js:334](../e2e/ui-start.spec.js#L334) | 15.11.2026 ok |
+| #15/AK6 | Nicht verwendete Meilensteine lassen sich ohne Dialog löschen. | ☑ | **gilt** | [ui-start.spec.js:373](../e2e/ui-start.spec.js#L373) | 15.11.2026 ok |
+| #15/AK7 | Doppelter Zeitpunkt in einer Reihe: genau eine Zeile bleibt, mit Hinweis. | ☑ | **gilt** | [ui-start.spec.js:373](../e2e/ui-start.spec.js#L373) | 15.11.2026 ok |
+| #15/AK8 | Variation und Optimierung laufen nach dem Löschen eines anderen Meilensteins unverändert. | ☑ | **gilt** | [ui-start.spec.js:373](../e2e/ui-start.spec.js#L373) | 15.11.2026 teilweise: Parameter «Pensionierung» bleibt wählbar; Lauf nicht verglichen |
 
 ### #18 Liquiditätsreserve nur für die Strategie «Standard»
 
-[Issue #18](https://github.com/ingen63/VivaPlan/issues/18) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/reserve_standard_only.rs:1](../crates/engine/tests/reserve_standard_only.rs#L1), [ui.spec.js:1937](../e2e/ui.spec.js#L1937)
+[Issue #18](https://github.com/ingen63/VivaPlan/issues/18) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/reserve_standard_only.rs:1](../crates/engine/tests/reserve_standard_only.rs#L1), [ui-optimierung.spec.js:61](../e2e/ui-optimierung.spec.js#L61)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #18/AK1 | «Vermögen & Anlage» enthält die Reserve nicht mehr, die Karte «Standard» enthält sie. | ☑ | **gilt**: «Liquiditätsreserve» heisst seit #54 «Cash-Reserve». | [ui.spec.js:1937](../e2e/ui.spec.js#L1937) | 15.11.2026 ok |
+| #18/AK1 | «Vermögen & Anlage» enthält die Reserve nicht mehr, die Karte «Standard» enthält sie. | ☑ | **gilt**: «Liquiditätsreserve» heisst seit #54 «Cash-Reserve». | [ui-optimierung.spec.js:61](../e2e/ui-optimierung.spec.js#L61) | 15.11.2026 ok |
 | #18/AK2 | Eine Planung mit Strategie Standard und Reserve 6 liefert dieselben Ergebnisse wie vor der Änderung (Regressionstest mit den Golden-Dateien). | ☑ | **gilt** | [tests/reserve_standard_only.rs:39](../crates/engine/tests/reserve_standard_only.rs#L39) | 15.11.2026 ok (Standard rechnet mit der Reserve; Golden-Dateien grün) |
-| #18/AK3 | Eine Planung mit Guardrails und Reserve 6 rechnet mit 3 Monaten, der Hinweis erscheint beim Laden einmal. | ☑ | **überholt**: durch #74: Der Hinweis erscheint nur einmal, beim ersten Laden einer betroffenen Planung. | [ui.spec.js:1937](../e2e/ui.spec.js#L1937) | 15.11.2026 ok (Hinweis einmal (jetzt nach #74)) |
+| #18/AK3 | Eine Planung mit Guardrails und Reserve 6 rechnet mit 3 Monaten, der Hinweis erscheint beim Laden einmal. | ☑ | **überholt**: durch #74: Der Hinweis erscheint nur einmal, beim ersten Laden einer betroffenen Planung. | [ui-optimierung.spec.js:61](../e2e/ui-optimierung.spec.js#L61) | 15.11.2026 ok (Hinweis einmal (jetzt nach #74)) |
 | #18/AK4 | Die Optimierung bietet die Reserve weiterhin nur für Standard an. | ☑ | **gilt** | [optimize_ranges.rs:168](../crates/engine/tests/optimize_ranges.rs#L168) | 15.11.2026 ok (Test) |
-| #18/AK5 | Hilfe, Beschreibung und Tests sind nachgeführt. | ☑ | **gilt** | [ui.spec.js:1937](../e2e/ui.spec.js#L1937) | 15.11.2026 teilweise: Hilfe und Beschreibung nicht Satz für Satz verglichen |
-
-### #19 Zeitreihen-Erklärungen in ein Info-Popup
-
-[Issue #19](https://github.com/ingen63/VivaPlan/issues/19) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:138](../e2e/ui.spec.js#L138)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #19/AK1 | Die Karte «Zeitreihe» enthält unter der Tabelle keine festen Erklärungstexte mehr. | ☑ | **überholt**: durch #69: Die Karte «Zeitreihe» gibt es nicht mehr; die Erklärung steht im Info-Popup der Anlagestrategie. | kein Test | 15.11.2026 überholt, nicht geprüft |
-| #19/AK2 | Maus auf ⓘ öffnet das Popup mit dem bisherigen Text; Tastaturfokus und Klick öffnen es ebenfalls, Esc schliesst es. | ☑ | **gilt**: Heute für das Info-Popup der Anlagestrategie (Test #19/#69). | [ui.spec.js:138](../e2e/ui.spec.js#L138) | 15.11.2026 ok |
-| #19/AK3 | Das Popup bleibt offen, wenn die Maus hineinbewegt wird. | ☑ | **gilt**: Heute für das Info-Popup der Anlagestrategie. | [ui.spec.js:138](../e2e/ui.spec.js#L138) | 15.11.2026 ok |
-| #19/AK4 | Die Info zur gewählten Reihe bleibt sichtbar. | ☑ | **überholt**: durch den Kommentar im Issue (Info in der Tabellenzeile) und danach #69 (keine Tabelle der Reihen mehr). | kein Test | 15.11.2026 überholt, nicht geprüft |
-| #19/AK5 | Der Ordnerpfad lässt sich aus dem Popup kopieren. | ☑ | **überholt**: durch #69: Seit #69 gibt es keine eigenen Dateien und keinen Ordnerpfad mehr (Kommentar in #19 vom 15.11.2026) | kein Test | 15.11.2026 überholt, nicht geprüft |
-| #19/AK6 | Der Inhalt der Texte ist unverändert. | ☑ | **überholt**: durch den Kommentar im Issue (Texte gekürzt) und #69 (Texte zur Anlagestrategie). | kein Test | 15.11.2026 überholt, nicht geprüft |
-| #19/K1 (Kommentar) | Unter der Tabelle steht keine Zeile «Gewählt:» mehr; ein Fehler zur Reihe wird weiterhin angezeigt. | ☑ | **überholt**: durch #69: keine Tabelle der Reihen mehr. | kein Test | – |
-| #19/K2 (Kommentar) | Jede Reihe hat ein ⓘ; Maus, Tastaturfokus und Klick öffnen das Popup, Esc schliesst es. | ☑ | **überholt**: durch #69: keine Tabelle der Reihen mehr; das Popup gibt es je Anlagestrategie. | kein Test | – |
-| #19/K3 (Kommentar) | Jeder Popup-Text hat höchstens 2 Zeilen. | ☑ | **unklar**: Gilt die Grenze von 2 Zeilen auch für die Texte der Anlagestrategie? | kein Test | – |
-| #19/K4 (Kommentar) | Die Texte der vier mitgelieferten Reihen entsprechen dem Vorschlag oder der abgestimmten Fassung. | ☑ | **überholt**: durch #69 und #90: Die vier Reihen sind nicht mehr einzeln wählbar, Pictet ist entfernt. | kein Test | – |
-| #19/K5 (Kommentar) | Die vollständigen Quellenangaben (mit Stand der Daten) bleiben in den Dateien erhalten. | ☑ | **gilt** | kein Test | – |
-| #19/K6 (Kommentar) | Test und Hilfe nachgeführt. | ☑ | **gilt** | kein Test | – |
+| #18/AK5 | Hilfe, Beschreibung und Tests sind nachgeführt. | ☑ | **gilt** | [ui-optimierung.spec.js:61](../e2e/ui-optimierung.spec.js#L61) | 15.11.2026 teilweise: Hilfe und Beschreibung nicht Satz für Satz verglichen |
 
 ### #20 Optimierung: Ziel wählbar
 
-[Issue #20](https://github.com/ingen63/VivaPlan/issues/20) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/optimize_goal.rs:1](../crates/engine/tests/optimize_goal.rs#L1), [ui.spec.js:2176](../e2e/ui.spec.js#L2176)
+[Issue #20](https://github.com/ingen63/VivaPlan/issues/20) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/optimize_goal.rs:1](../crates/engine/tests/optimize_goal.rs#L1), [ui-optimierung.spec.js:300](../e2e/ui-optimierung.spec.js#L300)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -364,82 +189,24 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 | #20/AK5 | Planungen ohne Immobilien: Ziel 2 ist nicht wählbar (mit Hinweis). | ☑ | **gilt** | [tests/optimize_goal.rs:136](../crates/engine/tests/optimize_goal.rs#L136) | 15.11.2026 ok (Ziel 2 braucht eine Immobilie) |
 | #20/AK6 | Das Ziel steht in der Plandatei und in der Hilfe. | ☑ | **gilt** | [tests/optimize_goal.rs:155](../crates/engine/tests/optimize_goal.rs#L155) | 15.11.2026 ok (Ziel in der Plandatei; Hilfe nicht verglichen) |
 
-### #21 Variationen ohne feste Obergrenze, Warnung ab 60 s
-
-[Issue #21](https://github.com/ingen63/VivaPlan/issues/21) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:1363](../e2e/ui.spec.js#L1363)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #21/AK1 | Mit 1'001 Kombinationen (bisher abgelehnt) wird die Berechnung angeboten. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
-| #21/AK2 | Bei geschätzten 90 s erscheint die Warnung mit Dauer und Läufen; «Abbrechen» startet nichts, «Trotzdem starten» startet. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
-| #21/AK3 | Bei geschätzten 30 s keine Warnung. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
-| #21/AK4 | Die Zusammenfassung der Variationen nennt keine Grenze mehr ausser der technischen. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
-| #21/AK5 | 1'000'001 Kombinationen werden mit der technischen Meldung abgelehnt, ohne die App zu belasten. | ☑ | **gilt** | [ui.spec.js:1363](../e2e/ui.spec.js#L1363) | 15.11.2026 ok |
-| #21/AK6 | Abbrechen bleibt während der Berechnung möglich. | ☑ | **gilt** | [ui-cancel.spec.js:41](../e2e/ui-cancel.spec.js#L41) | 15.11.2026 ok (Abbrechen läuft (ui-cancel.spec.js:41)) |
-
-### #22 Legenden: gestrichelte Linien
-
-[Issue #22](https://github.com/ingen63/VivaPlan/issues/22) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:1446](../e2e/ui.spec.js#L1446)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #22/AK1 | In «Bandbreite des Gesamtvermögens» zeigt die Legende «1. und 99. Perzentil» als gestricheltes Linien-Symbol in der Farbe des Diagramms. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
-| #22/AK2 | Die Legende der Verteilung des Endvermögens nennt die fünf Perzentil-Linien mit gestricheltem Symbol. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
-| #22/AK3 | Übersicht und Grafiken zeigen dieselben Legenden. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok |
-| #22/AK4 | Jede Linie in den beiden Diagrammen hat einen Legendeneintrag und umgekehrt. | ☑ | **gilt** | [ui.spec.js:1446](../e2e/ui.spec.js#L1446) | 15.11.2026 ok (fünf gestrichelte Linien, Legende dazu) |
-| #22/AK5 | Die Legenden sind im hellen und dunklen Erscheinungsbild lesbar. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Sichtprüfung vom Anwender, hell und dunkel) |
-
-### #23 Übersicht: Immobilienverkäufe statt Notverkäufe und Einmalzahlungen
-
-[Issue #23](https://github.com/ingen63/VivaPlan/issues/23) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:934](../e2e/ui.spec.js#L934), [ui.spec.js:1331](../e2e/ui.spec.js#L1331)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #23/AK1 | Die Übersicht hat keine Karte und keine Spalte «Einmalzahlungen». | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
-| #23/AK2 | Die Spalte heisst «Immobilienverkäufe» und zeigt pro Verkauf eine Zeile «Haus: 05.2034». | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
-| #23/AK3 | Ein Notverkauf trägt das Warnsymbol, ein geplanter Verkauf nicht. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
-| #23/AK4 | Ein Lauf mit zwei Verkäufen zeigt zwei Zeilen. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
-| #23/AK5 | Die Kennzahlkarte «Notverkäufe» zeigt die Zahlen wie bisher. | ☑ | **gilt** | [ui.spec.js:3091](../e2e/ui.spec.js#L3091) | 15.11.2026 ok (Test) |
-| #23/AK6 | Planungen ohne Immobilien zeigen die Spalte nicht. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
-| #23/AK7 | Zahlen und Daten stimmen mit den Immobilienereignissen des jeweiligen Perzentil-Laufs überein. | ☑ | **gilt** | [ui.spec.js:1331](../e2e/ui.spec.js#L1331) | 15.11.2026 ok |
-
-### #24 Berechnete Variationen in «Einzelne Läufe» und «Jahreswerte» wählbar
-
-[Issue #24](https://github.com/ingen63/VivaPlan/issues/24) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/rerun_paths.rs:1](../crates/engine/tests/rerun_paths.rs#L1), [ui.spec.js:2140](../e2e/ui.spec.js#L2140)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #24/AK1 | Ein Monte-Carlo-Ergebnis mit zwei Variationen zeigt in «Einzelne Läufe» und «Jahreswerte» zwei Auswahlfelder mit den berechneten Stufen. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok |
-| #24/AK2 | Die Auswahl «Aktienanteil 30 %, Kapitalbezug 60 %» zeigt den 50.-Perzentil-Lauf dieser Stufe; sein Endvermögen stimmt mit dem Wert in der Szenarientabelle überein. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok |
-| #24/AK3 | Der Wechsel dauert wenige Sekunden und löst keinen vollständigen Durchlauf aus. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok (nur «rerun_paths», kein vollständiger Lauf) |
-| #24/AK4 | Die Auswahl wirkt in beiden Reitern; die anderen Reiter zeigen Planwerte mit Vermerk. | ☑ | **gilt** | [ui.spec.js:2141](../e2e/ui.spec.js#L2141) | 15.11.2026 ok |
-| #24/AK5 | Bei gespeicherten Ergebnissen funktioniert die Auswahl; bei abweichendem Endvermögen erscheint der Hinweis. | ☑ | **gilt** | [ui.spec.js:3102](../e2e/ui.spec.js#L3102) | 15.11.2026 ok (Test: Hinweis bei abweichendem Endvermögen; gespeicherte Ergebnisse laufen über dieselbe Funktion) |
-| #24/AK6 | Der Einzellauf mit Variationen funktioniert wie bisher. | ☑ | **gilt** | [ui.spec.js:3102](../e2e/ui.spec.js#L3102) | 15.11.2026 ok (Test) |
-
 ### #25 Einstellungen (Grenzen AHV-/PK-Bezug, Maximalbetrag 3a)
 
 [Issue #25](https://github.com/ingen63/VivaPlan/issues/25) · geschlossen · Umsetzung: `477381f` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/src/upgrade.rs:488](../crates/engine/src/upgrade.rs#L488), [engine/src/validate.rs:1475](../crates/engine/src/validate.rs#L1475) (+3)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #25/AK1 | Die App hat einen erreichbaren Bereich «Einstellungen» mit den fünf Einstellungen der Tabelle, je mit Beschriftung, Einheit und Standardwert. | ☑ | **gilt**: Laut Kommentar fünf Einstellungen (die Schwelle von #13 entfällt). | [engine/src/settings.rs:69](../crates/engine/src/settings.rs#L69), [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
-| #25/AK2 | Eine Änderung wird gespeichert und gilt nach einem Neustart der App weiterhin. Ohne gespeicherten Wert gilt der Standardwert. | ☑ | **gilt** | [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
-| #25/AK3 | Eine Schaltfläche «Standardwerte» setzt alle Einstellungen (nach Rückfrage) auf die Standardwerte zurück. | ☑ | **gilt** | [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
-| #25/AK4 | Prüfung der Eingabe: Die untere Grenze ist höchstens so gross wie die obere Grenze. Alter sind ganze Jahre. Der Maximalbetrag ist 0 oder mehr. Ein ungültiger Wert wird mit klarer Meldung abgelehnt und nicht gespeichert (Beispiel: untere Grenze AHV 71 bei oberer Grenze 70). | ☑ | **gilt** | [engine/src/settings.rs:83](../crates/engine/src/settings.rs#L83), [ui.spec.js:2297](../e2e/ui.spec.js#L2297) | 15.11.2026 ok (Test grün) |
+| #25/AK1 | Die App hat einen erreichbaren Bereich «Einstellungen» mit den fünf Einstellungen der Tabelle, je mit Beschriftung, Einheit und Standardwert. | ☑ | **gilt**: Laut Kommentar fünf Einstellungen (die Schwelle von #13 entfällt). | [engine/src/settings.rs:69](../crates/engine/src/settings.rs#L69), [ui-optimierung.spec.js:421](../e2e/ui-optimierung.spec.js#L421) | 15.11.2026 ok (Test grün) |
+| #25/AK2 | Eine Änderung wird gespeichert und gilt nach einem Neustart der App weiterhin. Ohne gespeicherten Wert gilt der Standardwert. | ☑ | **gilt** | [ui-optimierung.spec.js:421](../e2e/ui-optimierung.spec.js#L421) | 15.11.2026 ok (Test grün) |
+| #25/AK3 | Eine Schaltfläche «Standardwerte» setzt alle Einstellungen (nach Rückfrage) auf die Standardwerte zurück. | ☑ | **gilt** | [ui-optimierung.spec.js:421](../e2e/ui-optimierung.spec.js#L421) | 15.11.2026 ok (Test grün) |
+| #25/AK4 | Prüfung der Eingabe: Die untere Grenze ist höchstens so gross wie die obere Grenze. Alter sind ganze Jahre. Der Maximalbetrag ist 0 oder mehr. Ein ungültiger Wert wird mit klarer Meldung abgelehnt und nicht gespeichert (Beispiel: untere Grenze AHV 71 bei oberer Grenze 70). | ☑ | **gilt** | [engine/src/settings.rs:83](../crates/engine/src/settings.rs#L83), [ui-optimierung.spec.js:421](../e2e/ui-optimierung.spec.js#L421) | 15.11.2026 ok (Test grün) |
 | #25/AK5 | Die Grenzen für AHV-Bezug und Bezug Pensionskasse (#51) und der Maximalbetrag der 3a (#52) werden an einer Stelle aus den Einstellungen gelesen und dem Rechenkern als Parameter übergeben. Der Rechenkern kennt die Standardwerte als Rückfall (für Kommandozeile und Tests). | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169) | 15.11.2026 ok (Test grün) |
-| #25/AK6 | Beispiel: Obere Grenze Bezug Pensionskasse 67 statt 65: Ein Bezug mit 67 Jahren ist gültig, mit 68 wird er abgelehnt. Der Standard 65 des Meilensteins ändert sich dadurch nicht. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169), [ui.spec.js:2332](../e2e/ui.spec.js#L2332) | 15.11.2026 ok (Test grün) |
-| #25/AK7 | Die Einstellungen ändern keine Planungsdatei und kein gespeichertes Ergebnis. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das mit klarer Meldung (siehe #51). | ☑ | **gilt** | [ui.spec.js:3138](../e2e/ui.spec.js#L3138) | 15.11.2026 ok (Test) |
+| #25/AK6 | Beispiel: Obere Grenze Bezug Pensionskasse 67 statt 65: Ein Bezug mit 67 Jahren ist gültig, mit 68 wird er abgelehnt. Der Standard 65 des Meilensteins ändert sich dadurch nicht. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:169](../crates/engine/tests/milestones_limits.rs#L169), [ui-optimierung.spec.js:456](../e2e/ui-optimierung.spec.js#L456) | 15.11.2026 ok (Test grün) |
+| #25/AK7 | Die Einstellungen ändern keine Planungsdatei und kein gespeichertes Ergebnis. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das mit klarer Meldung (siehe #51). | ☑ | **gilt** | [ui-abnahme.spec.js:67](../e2e/ui-abnahme.spec.js#L67) | 15.11.2026 ok (Test) |
 | #25/AK8 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
-
-### #26 Repository öffentlich machen (Daten- und Plandateien bereinigen)
-
-[Issue #26](https://github.com/ingen63/VivaPlan/issues/26) · geschlossen · Umsetzung: nicht vermerkt
-
-Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 ### #27 Beenden mit ungespeicherten Änderungen fragt nicht nach
 
-[Issue #27](https://github.com/ingen63/VivaPlan/issues/27) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:2111](../e2e/ui.spec.js#L2111)
+[Issue #27](https://github.com/ingen63/VivaPlan/issues/27) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-optimierung.spec.js:235](../e2e/ui-optimierung.spec.js#L235)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -452,7 +219,7 @@ Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 ### #28 Immobilien: Verkauf auch bei «Kauf geplant» erfassen
 
-[Issue #28](https://github.com/ingen63/VivaPlan/issues/28) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:2271](../e2e/ui.spec.js#L2271)
+[Issue #28](https://github.com/ingen63/VivaPlan/issues/28) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-optimierung.spec.js:395](../e2e/ui-optimierung.spec.js#L395)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -466,7 +233,7 @@ Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 ### #29 «Neu» setzt die Planung nicht zurück
 
-[Issue #29](https://github.com/ingen63/VivaPlan/issues/29) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:92](../e2e/ui.spec.js#L92), [ui.spec.js:2207](../e2e/ui.spec.js#L2207)
+[Issue #29](https://github.com/ingen63/VivaPlan/issues/29) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-start.spec.js:52](../e2e/ui-start.spec.js#L52), [ui-optimierung.spec.js:331](../e2e/ui-optimierung.spec.js#L331)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -477,7 +244,7 @@ Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 ### #30 Meilenstein «Verkauf Haus» lässt sich nicht löschen
 
-[Issue #30](https://github.com/ingen63/VivaPlan/issues/30) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:374](../e2e/ui.spec.js#L374), [ui.spec.js:387](../e2e/ui.spec.js#L387)
+[Issue #30](https://github.com/ingen63/VivaPlan/issues/30) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-start.spec.js:334](../e2e/ui-start.spec.js#L334), [ui-start.spec.js:347](../e2e/ui-start.spec.js#L347)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -491,31 +258,25 @@ Keine Kriterien im Issue; die Aufgaben stehen in den Kommentaren.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #31/AK1 | Immobilie «Besitz» oder «Kauf geplant» ohne Grundstückgewinnsteuer: Fehler im Abschnitt Steuern mit Meldung, Start blockiert (Engine und Oberfläche). | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok (Engine- und Oberflächentest (#29)) |
-| #31/AK2 | Nur Mietobjekte oder keine Immobilie: kein Fehler. | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok |
-| #31/AK3 | Mit Vorlage oder eigenen Regeln (auch Satz 0 %): kein Fehler. | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok |
+| #31/AK1 | Immobilie «Besitz» oder «Kauf geplant» ohne Grundstückgewinnsteuer: Fehler im Abschnitt Steuern mit Meldung, Start blockiert (Engine und Oberfläche). | ☑ | **gilt** | [ui-optimierung.spec.js:332](../e2e/ui-optimierung.spec.js#L332) | 15.11.2026 ok (Engine- und Oberflächentest (#29)) |
+| #31/AK2 | Nur Mietobjekte oder keine Immobilie: kein Fehler. | ☑ | **gilt** | [ui-optimierung.spec.js:332](../e2e/ui-optimierung.spec.js#L332) | 15.11.2026 ok |
+| #31/AK3 | Mit Vorlage oder eigenen Regeln (auch Satz 0 %): kein Fehler. | ☑ | **gilt** | [ui-optimierung.spec.js:332](../e2e/ui-optimierung.spec.js#L332) | 15.11.2026 ok |
 | #31/AK4 | Die Pflichtliste (#14) in der Spezifikation und die Hilfe nennen die neue Pflicht. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Pflichtliste und Hilfe nicht Satz für Satz verglichen |
-| #31/AK5 | Test in der Engine und in der Oberfläche. | ☑ | **gilt** | [ui.spec.js:2208](../e2e/ui.spec.js#L2208) | 15.11.2026 ok |
+| #31/AK5 | Test in der Engine und in der Oberfläche. | ☑ | **gilt** | [ui-optimierung.spec.js:332](../e2e/ui-optimierung.spec.js#L332) | 15.11.2026 ok |
 
 ### #32 Immobilien: einheitliche Feldreihenfolge
 
-[Issue #32](https://github.com/ingen63/VivaPlan/issues/32) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:2236](../e2e/ui.spec.js#L2236)
+[Issue #32](https://github.com/ingen63/VivaPlan/issues/32) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-optimierung.spec.js:360](../e2e/ui-optimierung.spec.js#L360)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #32/AK1 | Reihenfolge und Plätze der Felder sind bei «Besitz» und «Kauf geplant» gleich. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
-| #32/AK2 | Der Marktwert steht bei «Besitz» in der Kopfzeile neben dem Namen und fehlt bei «Kauf geplant». | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
-| #32/AK3 | Beim Statuswechsel bleiben Name, Kaufpreis, Verkauf und Nebenkosten an ihrem Platz. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
-| #32/AK4 | Alle Felder bleiben erreichbar, erfasste Werte sind unverändert. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
-| #32/AK5 | Schmales Fenster: Marktwert unter dem Namen. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
-| #32/AK6 | Oberflächentest prüft die Reihenfolge. | ☑ | **gilt** | [ui.spec.js:2235](../e2e/ui.spec.js#L2235) | 15.11.2026 ok (Test grün) |
+| #32/AK1 | Reihenfolge und Plätze der Felder sind bei «Besitz» und «Kauf geplant» gleich. | ☑ | **gilt** | [ui-optimierung.spec.js:359](../e2e/ui-optimierung.spec.js#L359) | 15.11.2026 ok (Test grün) |
+| #32/AK2 | Der Marktwert steht bei «Besitz» in der Kopfzeile neben dem Namen und fehlt bei «Kauf geplant». | ☑ | **gilt** | [ui-optimierung.spec.js:359](../e2e/ui-optimierung.spec.js#L359) | 15.11.2026 ok (Test grün) |
+| #32/AK3 | Beim Statuswechsel bleiben Name, Kaufpreis, Verkauf und Nebenkosten an ihrem Platz. | ☑ | **gilt** | [ui-optimierung.spec.js:359](../e2e/ui-optimierung.spec.js#L359) | 15.11.2026 ok (Test grün) |
+| #32/AK4 | Alle Felder bleiben erreichbar, erfasste Werte sind unverändert. | ☑ | **gilt** | [ui-optimierung.spec.js:359](../e2e/ui-optimierung.spec.js#L359) | 15.11.2026 ok (Test grün) |
+| #32/AK5 | Schmales Fenster: Marktwert unter dem Namen. | ☑ | **gilt** | [ui-optimierung.spec.js:359](../e2e/ui-optimierung.spec.js#L359) | 15.11.2026 ok (Test grün) |
+| #32/AK6 | Oberflächentest prüft die Reihenfolge. | ☑ | **gilt** | [ui-optimierung.spec.js:359](../e2e/ui-optimierung.spec.js#L359) | 15.11.2026 ok (Test grün) |
 | #32/AK7 | Hilfe (`app/ui/hilfe/`) ist nachgeführt. | ☑ | **gilt**: Pfad heute `crates/app/ui/hilfe/` (#48). | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
-
-### #33 Mixed findings
-
-[Issue #33](https://github.com/ingen63/VivaPlan/issues/33) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [optimum.spec.js:50](../e2e/optimum.spec.js#L50), [optimum.spec.js:55](../e2e/optimum.spec.js#L55) (+1)
-
-Sammelbefund ohne Kriterien; die Punkte sind in #37 aufgenommen (dort AK3).
 
 ### #34 Optimum «≥ 100 %» bei Anteilen irreführend
 
@@ -554,7 +315,7 @@ Sammelbefund ohne Kriterien; die Punkte sind in #37 aufgenommen (dort AK3).
 
 ### #37 Abnahme-Befunde: Jahreswerte, Meilensteine, Texte
 
-[Issue #37](https://github.com/ingen63/VivaPlan/issues/37) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui.spec.js:284](../e2e/ui.spec.js#L284), [ui.spec.js:318](../e2e/ui.spec.js#L318) (+2)
+[Issue #37](https://github.com/ingen63/VivaPlan/issues/37) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [ui-start.spec.js:244](../e2e/ui-start.spec.js#L244), [ui-start.spec.js:278](../e2e/ui-start.spec.js#L278) (+2)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -654,12 +415,6 @@ Sammelbefund ohne Kriterien; die Punkte sind in #37 aufgenommen (dort AK3).
 | #44/AK7 | Die Git-Historie umbenannter Dateien bleibt erhalten (`git log --follow`). | ☑ | **überholt**: durch #26: Das öffentliche Repository beginnt mit einem einzigen Commit; die Historie liegt nur im alten, privaten Repository. | kein Test | 15.11.2026 überholt, nicht geprüft |
 | #44/AK8 | Das GitHub-Repository heisst `VivaPlan`, `origin` zeigt auf die neue Adresse, Push und Workflows funktionieren, im Repository verweist nichts mehr auf `RetirementPlanning` (ausser Weiterleitungs-Hinweis, falls gewünscht). | ☑ | **gilt**: Seit #26 ist `ingen63/VivaPlan` ein neues Repository; das alte heisst wieder `RetirementPlanning` und bleibt privat. | kein Test | nicht geprüft: Repository-Umbenennung nicht geprüft |
 
-### #45 Verwaltung, nicht öffentlich
-
-[Issue #45](https://github.com/ingen63/VivaPlan/issues/45) · geschlossen, nicht geplant · Umsetzung: nicht vermerkt
-
-Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
-
 ### #46 Nächtlicher Fuzz-Job baut für musl und bricht ab
 
 [Issue #46](https://github.com/ingen63/VivaPlan/issues/46) · geschlossen · Umsetzung: `b5c8990` (altes Repository)
@@ -669,18 +424,6 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #46/AK1 | Der Job `fuzz` übergibt das Ziel-Triple des Hosts ausdrücklich (`--target`), unabhängig davon, welche Fassung von cargo-fuzz installiert ist. | ☑ | **gilt** | kein Test | – |
 | #46/AK2 | Im nächsten nächtlichen Lauf (oder einem von Hand gestarteten Lauf) laufen `parse_csv`, `parse_snb` und `validate_plan` je 5 Minuten ohne Baufehler. | ☑ | **gilt** | kein Test | – |
 | #46/AK3 | Die Ursache ist im Workflow kommentiert. | ☑ | **gilt** | kein Test | – |
-
-### #47 Fixe Rate, VPW und Endowment ab erster Pensionierung
-
-[Issue #47](https://github.com/ingen63/VivaPlan/issues/47) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/buckets_guardrails.rs:1](../crates/engine/tests/buckets_guardrails.rs#L1), [engine/tests/buckets_guardrails.rs:413](../crates/engine/tests/buckets_guardrails.rs#L413)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #47/AK1 | Bei zwei Personen mit verschiedenem Pensionierungsdatum legen «Fixe Rate», «VPW» und «Endowment» die jährliche Entnahme im Monat der ersten Pensionierung fest (Rate × liquides Vermögen; bei VPW mit dem Alter der Hauptperson in diesem Monat). Ab diesem Monat gilt die Lebenshaltung der Strategie. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | 15.11.2026 ok (Test grün) |
-| #47/AK2 | Ein noch laufendes Erwerbseinkommen der zweiten Person zählt zu «Einkommen und Renten»: Lebenshaltung = Entnahme + Einkommen und Renten − Wohnkosten, wie bei Guardrails. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | 15.11.2026 ok (Test grün) |
-| #47/AK3 | Die Unter- und die Obergrenze der Lebenshaltung gelten ab demselben Monat. | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:416](../crates/engine/tests/buckets_guardrails.rs#L416) | 15.11.2026 ok (Test grün) |
-| #47/AK4 | Bei einer Person und bei zwei Personen mit gleichem Pensionierungsdatum ändert sich nichts (Regressionstest, Golden-Dateien unverändert). | ☑ | **gilt** | [engine/tests/buckets_guardrails.rs:452](../crates/engine/tests/buckets_guardrails.rs#L452) | 15.11.2026 ok (Test grün) |
-| #47/AK5 | Die Hilfe (Absatz «Wann gilt die Strategie?» und die Stellen der drei Strategien) und `BESCHREIBUNG.md` nennen den neuen Start. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/app/ui/hilfe/30-entnahme.md`) | 15.11.2026 ok («Wann gilt die Strategie?») |
 
 ### #48 Projektstruktur vereinfachen (Workspace mit crates/, docs/, tools/)
 
@@ -706,26 +449,9 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #50/AK1 | Bis zum Monat vor dem AHV-Bezug fliesst die Amortisation einer Tranche mit indirekter Amortisation (`amortMode: indirect`) in das 3a-Konto, wie bisher. | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | 15.11.2026 ok (Test grün) |
 | #50/AK2 | Ab dem Monat des AHV-Bezugs wird dieselbe Amortisation als direkte Amortisation behandelt: Sie verringert die Hypothek und wird nicht mehr in die Säule 3a eingezahlt. Der Betrag je Quartal bleibt gleich. | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | 15.11.2026 ok (Test grün) |
 | #50/AK3 | Beispiel mit erfundenen Zahlen: Hypothek 400'000, Tranche mit 750 pro Quartal indirekt, AHV-Bezug im Monat M. Vor M steigt der 3a-Saldo um 750 pro Quartal und die Hypothek bleibt 400'000. Ab M sinkt die Hypothek um 750 pro Quartal, und der 3a-Saldo bleibt unverändert (die Auszahlung des Rests in M ist Sache von #52). | ☑ | **gilt** | [engine/tests/pillar3a.rs:215](../crates/engine/tests/pillar3a.rs#L215) | 15.11.2026 ok (Test grün) |
-| #50/AK4 | Eine Tranche oder Periode, die erst ab dem AHV-Alter beginnt (auch eine Erneuerung), kann nicht indirekt amortisieren; sie wird direkt behandelt. Die Eingabemaske schaltet die Auswahl auf «direkt» und nennt den Grund. | ☑ | **gilt** | [engine/tests/pillar3a.rs:243](../crates/engine/tests/pillar3a.rs#L243), [ui.spec.js:2411](../e2e/ui.spec.js#L2411) | 15.11.2026 ok (Test grün) |
+| #50/AK4 | Eine Tranche oder Periode, die erst ab dem AHV-Alter beginnt (auch eine Erneuerung), kann nicht indirekt amortisieren; sie wird direkt behandelt. Die Eingabemaske schaltet die Auswahl auf «direkt» und nennt den Grund. | ☑ | **gilt** | [engine/tests/pillar3a.rs:243](../crates/engine/tests/pillar3a.rs#L243), [ui-planung.spec.js:52](../e2e/ui-planung.spec.js#L52) | 15.11.2026 ok (Test grün) |
 | #50/AK5 | Gibt es keine Person mit AHV-Bezug in der Planung, bleibt das Verhalten unverändert. Das ist in der Hilfe benannt. | ☑ | **gilt** | kein Test | nicht geprüft: nicht im Test |
 | #50/AK6 | Regressionstest für den Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfetexte (`app/ui/hilfe/`), `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Pfad heute `crates/app/ui/hilfe/` (#48). | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
-
-### #51 Meilensteine AHV-Bezug und Bezug Pensionskasse: immer vorhanden, nicht löschbar, Grenzen und Standard 65
-
-[Issue #51](https://github.com/ingen63/VivaPlan/issues/51) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/src/optimize.rs:1180](../crates/engine/src/optimize.rs#L1180), [engine/src/resolve.rs:185](../crates/engine/src/resolve.rs#L185) (+7)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #51/AK1 | Jede Person hat die Meilensteine «AHV-Bezug» und «Bezug Pensionskasse». Beide lassen sich in der Oberfläche nicht löschen (keine Löschen-Schaltfläche, Hinweis warum). | ☑ | **gilt** | [engine/src/upgrade.rs:496](../crates/engine/src/upgrade.rs#L496), [engine/tests/milestones_limits.rs:108](../crates/engine/tests/milestones_limits.rs#L108) (+2) | 15.11.2026 ok (Test grün) |
-| #51/AK2 | Beide lassen sich ändern (Alter oder Datum, wie die übrigen Meilensteine). Das Alter muss innerhalb der Grenzen liegen: AHV-Bezug 63 bis 70 Jahre, Bezug Pensionskasse 58 bis 65 Jahre. Die Grenzen selbst sind gültig (63 und 70, 58 und 65), ein Wert ausserhalb wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Die Grenzen sind seit #25 einstellbar; 63 bis 70 und 58 bis 65 sind die Standardwerte. | [engine/tests/milestones_limits.rs:59](../crates/engine/tests/milestones_limits.rs#L59), [ui.spec.js:631](../e2e/ui.spec.js#L631) (+1) | 15.11.2026 ok (Test grün) |
-| #51/AK3 | Neue Planung: Beide Meilensteine stehen auf 65 Jahren. | ☑ | **gilt** | [e2e/ui.spec.js](../e2e/ui.spec.js) (#51/AK3) | 15.11.2026 ok |
-| #51/AK4 | Beispiel: Geburt 1980-06. AHV-Bezug mit 65 liegt im Monat 2045-06, mit 63 im Monat 2043-06, mit 70 im Monat 2050-06. Bezug Pensionskasse mit 58 liegt im Monat 2038-06. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:95](../crates/engine/tests/milestones_limits.rs#L95) | 15.11.2026 ok (Test grün) |
-| #51/AK5 | Der Meilenstein «Pensionierung» heisst überall «Bezug Pensionskasse» (Oberfläche, Hilfe, Berichte). Die Id `retire` bleibt, damit Planungsdateien gültig bleiben. | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [ui.spec.js:2346](../e2e/ui.spec.js#L2346) | 15.11.2026 ok (Test grün) |
-| #51/AK6 | Ältere Planungsdateien ohne einen der beiden Meilensteine erhalten ihn beim Laden mit dem Standard 65. Liegt ein vorhandenes Alter ausserhalb der Grenzen, wird es auf die nächste Grenze gesetzt, mit Hinweis beim Laden (kein stiller Datenverlust). | ☑ | **gilt** | [engine/src/upgrade.rs:439](../crates/engine/src/upgrade.rs#L439), [engine/src/upgrade.rs:459](../crates/engine/src/upgrade.rs#L459) (+2) | 15.11.2026 ok (Test grün) |
-| #51/AK7 | Bis #25 umgesetzt ist, gelten die Grenzen fest. Die Stelle, die später die Einstellung liest, ist an einer Stelle gebündelt. | ☑ | **überholt**: durch #25: Die Grenzen kommen aus den Einstellungen. | kein Test | 15.11.2026 überholt, nicht geprüft |
-| #51/AK8 | Prüfung (Warnung, keine Sperre): Beträgt das Erwerbseinkommen im Monat des Bezugs der Pensionskasse oder danach mehr als 0, meldet die Prüfung eine Warnung mit dem Betrag, z. B. «Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (06.2040) noch 12'500 pro Monat.» Bei Einkommen 0 ab dem Bezug erscheint keine Warnung. Die Warnung steht in der Prüfung des Rechenkerns (`Severity::Warning`) und in der Oberfläche. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123), [ui.spec.js:2365](../e2e/ui.spec.js#L2365) | 15.11.2026 ok (Test grün) |
-| #51/AK9 | Beispiel mit erfundenen Zahlen: Einkommen 12'500 ab 2035-02 ohne spätere Zeile mit 0, Bezug Pensionskasse 2040-06: Es erscheint die Warnung mit 12'500. Mit einer Zeile «ab Bezug Pensionskasse: 0» erscheint keine Warnung. Mit einer Zeile «ab 2040-06: 3'000» lautet die Warnung 3'000. | ☑ | **gilt** | [engine/tests/milestones_limits.rs:123](../crates/engine/tests/milestones_limits.rs#L123) | 15.11.2026 ok (Test grün) |
-| #51/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt; Regressionstest im Rechenkern. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Hilfe, Beschreibung und Spezifikation stimmen überein) |
 
 ### #52 Säule 3a als eigenes Konto mit Auszahlungsplan, Rest spätestens im AHV-Alter
 
@@ -733,14 +459,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #52/AK1 | Die Oberfläche hat einen eigenen Abschnitt «Säule 3a» (nicht unter Immobilien, nicht unter Pensionskasse) mit Guthaben bei Simulationsstart und Verzinsung. | ☑ | **gilt** | [ui.spec.js:2372](../e2e/ui.spec.js#L2372) | 15.11.2026 ok (Test grün) |
-| #52/AK2 | Der Auszahlungsplan ist eine Liste aus Monat/Jahr und Betrag. Zeilen lassen sich hinzufügen und löschen. | ☑ | **gilt** | [ui.spec.js:2372](../e2e/ui.spec.js#L2372) | 15.11.2026 ok (Test grün) |
+| #52/AK1 | Die Oberfläche hat einen eigenen Abschnitt «Säule 3a» (nicht unter Immobilien, nicht unter Pensionskasse) mit Guthaben bei Simulationsstart und Verzinsung. | ☑ | **gilt** | [ui-planung.spec.js:13](../e2e/ui-planung.spec.js#L13) | 15.11.2026 ok (Test grün) |
+| #52/AK2 | Der Auszahlungsplan ist eine Liste aus Monat/Jahr und Betrag. Zeilen lassen sich hinzufügen und löschen. | ☑ | **gilt** | [ui-planung.spec.js:13](../e2e/ui-planung.spec.js#L13) | 15.11.2026 ok (Test grün) |
 | #52/AK3 | Beispiel mit erfundenen Zahlen: Guthaben 120'000, Plan 2041: 50'000 und 2042: 50'000, AHV-Bezug im Jahr 2045. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig (frühester Zeitpunkt 2041) und der Rest wird erst 2046 ausbezahlt. Ergebnis: Auszahlungen von 50'000 in 2041 und 2042 und Auszahlung des Rests (20'000 plus Zins) im Monat des AHV-Bezugs. Danach ist das Guthaben 0. | ☑ | **gilt** | [engine/tests/pillar3a.rs:62](../crates/engine/tests/pillar3a.rs#L62) | 15.11.2026 ok (Test grün) |
 | #52/AK4 | Ein Plan-Eintrag früher als 5 Jahre vor dem Meilenstein «AHV-Bezug» wird mit klarer Meldung abgelehnt (Validierung im Rechenkern und in der Oberfläche). Genau 5 Jahre vorher ist gültig. | ☑ | **gilt** | [engine/src/validate.rs:1397](../crates/engine/src/validate.rs#L1397) | 15.11.2026 ok (Test grün) |
 | #52/AK5 | Ist ein Betrag grösser als das Guthaben zum Zeitpunkt, wird nur das Guthaben ausbezahlt (Hinweis in den Ereignissen). | ☑ | **gilt** | [engine/src/validate.rs:1397](../crates/engine/src/validate.rs#L1397), [engine/tests/pillar3a.rs:102](../crates/engine/tests/pillar3a.rs#L102) | 15.11.2026 ok (Test grün) |
 | #52/AK6 | Jede Auszahlung ist ein Kapitalbezug mit Kapitalbezugssteuer; Bezüge im selben Jahr werden mit PK-Kapitalbezügen für die Progression zusammengerechnet (wie bisher). | ☑ | **gilt** | [engine/tests/pillar3a.rs:128](../crates/engine/tests/pillar3a.rs#L128) | 15.11.2026 ok (Test grün) |
 | #52/AK7 | Das 3a-Konto hat das Feld «Einzahlung pro Jahr» (Standard 0). Gültig sind Werte von 0 bis zum Maximalbetrag (7'258), beide Grenzen eingeschlossen. Ein negativer Wert oder ein Wert über dem Maximalbetrag wird mit klarer Meldung abgelehnt (Oberfläche und Validierung im Rechenkern). | ☑ | **gilt**: Der Maximalbetrag ist seit #25 einstellbar (Standard 7'258). | [validate.rs:1519](../crates/engine/src/validate.rs#L1519) | 15.11.2026 ok (Test) |
-| #52/AK8 | Die Einzahlung erhöht das 3a-Guthaben und zählt zu den Ausgaben: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme bzw. verringert den Überschuss und wirkt in den Ausgaben der Strategien (3-Topf, Guardrails, Netto-Bedarf). Die Einzahlung verteilt sich auf zwölf gleiche Monatsbeträge. Beispiel mit erfundenen Zahlen: Einzahlung 6'000 pro Jahr, Guthaben 10'000, Zins 0: nach einem Jahr 16'000, die Ausgaben des Jahres sind um 6'000 höher (500 pro Monat im Monatsdurchschnitt). | ☑ | **gilt** | [engine/tests/pillar3a.rs:146](../crates/engine/tests/pillar3a.rs#L146), [ui.spec.js:2396](../e2e/ui.spec.js#L2396) | 15.11.2026 ok (Test grün) |
+| #52/AK8 | Die Einzahlung erhöht das 3a-Guthaben und zählt zu den Ausgaben: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme bzw. verringert den Überschuss und wirkt in den Ausgaben der Strategien (3-Topf, Guardrails, Netto-Bedarf). Die Einzahlung verteilt sich auf zwölf gleiche Monatsbeträge. Beispiel mit erfundenen Zahlen: Einzahlung 6'000 pro Jahr, Guthaben 10'000, Zins 0: nach einem Jahr 16'000, die Ausgaben des Jahres sind um 6'000 höher (500 pro Monat im Monatsdurchschnitt). | ☑ | **gilt** | [engine/tests/pillar3a.rs:146](../crates/engine/tests/pillar3a.rs#L146), [ui-planung.spec.js:37](../e2e/ui-planung.spec.js#L37) | 15.11.2026 ok (Test grün) |
 | #52/AK9 | Einzahlungen enden spätestens im Monat vor dem Meilenstein «AHV-Bezug». Danach zahlt keine Einzahlung mehr ein (Hinweis in der Eingabe). | ☑ | **gilt** | [engine/tests/pillar3a.rs:173](../crates/engine/tests/pillar3a.rs#L173) | 15.11.2026 ok (Test grün) |
 | #52/AK10 | Die Einzahlungen und die indirekte Amortisation (#50) zusammen dürfen im Jahr den Maximalbetrag nicht überschreiten. Die Prüfung meldet eine Überschreitung mit klarer Warnung (keine Sperre). | ☑ | **gilt** | [validate.rs:1519](../crates/engine/src/validate.rs#L1519) | 15.11.2026 ok (Test) |
 | #52/AK11 | Der Maximalbetrag ist an einer Stelle gebündelt, damit #25 ihn später aus den Einstellungen liest. | ☑ | **überholt**: durch #25: Der Maximalbetrag kommt aus den Einstellungen. | kein Test | 15.11.2026 überholt, nicht geprüft |
@@ -748,93 +474,33 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #52/AK13 | Alte Planungsdateien (`realestate.properties[].mortgage.pillar3a` mit Guthaben, Zins, `payout`) werden beim Laden in das neue 3a-Konto übernommen: Guthaben und Zins bleiben erhalten, die frühere Auszahlung wird ein einzelner Plan-Eintrag über das ganze Guthaben, auf den frühesten erlaubten Zeitpunkt begrenzt, mit Hinweis beim Laden. Mehrere Immobilien mit je einer 3a werden zu einem Konto zusammengefasst (Hinweis). | ☑ | **gilt** | [engine/src/upgrade.rs:533](../crates/engine/src/upgrade.rs#L533), [engine/src/upgrade.rs:592](../crates/engine/src/upgrade.rs#L592) (+2) | 15.11.2026 ok (Test grün) |
 | #52/AK14 | Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
 
-### #53 Lebenshaltungskosten inklusive Wohnkosten, Simulation mit den echten Wohnkosten
-
-[Issue #53](https://github.com/ingen63/VivaPlan/issues/53) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/src/scenarios.rs:257](../crates/engine/src/scenarios.rs#L257), [engine/tests/cash_housing.rs:1](../crates/engine/tests/cash_housing.rs#L1) (+5)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #53/AK1 | Beschriftung und Hilfe der Lebenshaltungskosten sagen «inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)». | ☑ | **gilt** | [ui.spec.js:2451](../e2e/ui.spec.js#L2451) | 15.11.2026 ok (Test grün) |
-| #53/AK2 | Der Wohnanteil ist die Summe der simulierten Wohnkosten im Startmonat (Miete bzw. Hypothekarzins, Amortisation, Nebenkosten), mit der Teuerung fortgeschrieben. Er wird von jeder Zeile einer zeitabhängigen Lebenshaltung gleich abgezogen. | ☑ | **gilt** | [engine/src/housing.rs:99](../crates/engine/src/housing.rs#L99), [ui.spec.js:2451](../e2e/ui.spec.js#L2451) | 15.11.2026 ok (Test grün) |
-| #53/AK3 | Beispiel mit erfundenen Zahlen: Eingabe 8'000, Wohnkosten im Startmonat 2'000 (Zins 1'000, Amortisation 500, Nebenkosten 500), Teuerung 0. Die Simulation rechnet mit 6'000 Lebenshaltung plus den echten Wohnkosten; solange sich nichts ändert, sind die «Ausgaben total» 8'000. Steigt der Zins bei einer Erneuerung um 300, sind sie 8'300; bei einem Wechsel in eine Miete von 2'500 sind sie 8'500. | ☑ | **gilt** | [engine/src/housing.rs:99](../crates/engine/src/housing.rs#L99), [engine/tests/cash_housing.rs:70](../crates/engine/tests/cash_housing.rs#L70) | 15.11.2026 ok (Test grün) |
-| #53/AK4 | Ist der Wohnanteil grösser als eine Zeile der Lebenshaltung, meldet die Prüfung einen Fehler mit beiden Beträgen. | ☑ | **gilt** | [engine/tests/cash_housing.rs:85](../crates/engine/tests/cash_housing.rs#L85), [ui.spec.js:2459](../e2e/ui.spec.js#L2459) | 15.11.2026 ok (Test grün) |
-| #53/AK5 | Ohne Wohnkosten im Startmonat (keine Immobilie, keine Miete) ändert sich nichts. | ☑ | **gilt** | [engine/src/housing.rs:122](../crates/engine/src/housing.rs#L122), [engine/tests/cash_housing.rs:85](../crates/engine/tests/cash_housing.rs#L85) | 15.11.2026 ok (Test grün) |
-| #53/AK6 | Die Einzahlung in die Säule 3a (#52) ist nicht in der Eingabe enthalten und kommt wie bisher separat zu den Ausgaben. | ☑ | **gilt** | [engine/tests/cash_housing.rs:108](../crates/engine/tests/cash_housing.rs#L108) | 15.11.2026 ok (Test grün) |
-| #53/AK7 | Ältere Planungen (Lebenshaltung bisher ohne Wohnkosten) werden beim Öffnen umgerechnet (Wohnanteil zu jeder Zeile addiert), mit Hinweis, damit sich das Ergebnis nicht ändert. | ☑ | **gilt** | [engine/tests/cash_housing.rs:118](../crates/engine/tests/cash_housing.rs#L118), [ui.spec.js:2480](../e2e/ui.spec.js#L2480) | 15.11.2026 ok (Test grün) |
-| #53/AK8 | Jahreswerte («Ausgaben total», «Abweichung vom Plan»), Netto-Bedarf der 3-Topf-Strategie, Ausgabenregeln (Guardrails & Co.), Grenzen der Lebenshaltung und Ausgaben-Faktor der Variation verwenden die neue Aufteilung. Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [engine/tests/cash_housing.rs:158](../crates/engine/tests/cash_housing.rs#L158) | 15.11.2026 ok (Test grün) |
-
 ### #54 Cash getrennt vom Portfolio, Strategien erst ab Pensionierung, «Liquidität» heisst «Cash»
 
 [Issue #54](https://github.com/ingen63/VivaPlan/issues/54) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/cash_housing.rs:1](../crates/engine/tests/cash_housing.rs#L1), [engine/tests/cash_housing.rs:192](../crates/engine/tests/cash_housing.rs#L192) (+4)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #54/AK1 | Die Aktienquote gilt nur für Aktien und Obligationen; Cash ist nicht Teil davon. Beschriftung und Hilfe sagen das. | ☑ | **gilt** | [ui.spec.js:2470](../e2e/ui.spec.js#L2470) | 15.11.2026 ok (Test grün) |
+| #54/AK1 | Die Aktienquote gilt nur für Aktien und Obligationen; Cash ist nicht Teil davon. Beschriftung und Hilfe sagen das. | ☑ | **gilt** | [ui-planung.spec.js:111](../e2e/ui-planung.spec.js#L111) | 15.11.2026 ok (Test grün) |
 | #54/AK2 | Beispiel mit erfundenen Zahlen: Aktien 80'000, Obligationen 20'000, Cash 50'000, Aktienquote 80 %, keine Renditen, Einnahmen gleich Ausgaben: Bis zur Pensionierung bleiben Cash 50'000, Aktien 80'000, Obligationen 20'000 (kein Umschichten von Cash ins Portfolio). | ☑ | **gilt** | [engine/tests/cash_housing.rs:168](../crates/engine/tests/cash_housing.rs#L168) | 15.11.2026 ok (Test grün) |
 | #54/AK3 | Beispiel Überschuss: wie oben, aber 2'000 Einkommen mehr als Ausgaben pro Monat. Cash bleibt 50'000, die 2'000 gehen ins Portfolio (1'600 Aktien, 400 Obligationen). | ☑ | **gilt** | [engine/tests/cash_housing.rs:180](../crates/engine/tests/cash_housing.rs#L180) | 15.11.2026 ok (Test grün) |
-| #54/AK4 | Vor der Pensionierung gilt keine Entnahmestrategie, auch nicht «Standard»; die Liquiditäts- bzw. Cash-Reserve in Monaten wirkt erst ab der Pensionierung. | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214), [ui.spec.js:2470](../e2e/ui.spec.js#L2470) | 15.11.2026 ok (Test grün) |
+| #54/AK4 | Vor der Pensionierung gilt keine Entnahmestrategie, auch nicht «Standard»; die Liquiditäts- bzw. Cash-Reserve in Monaten wirkt erst ab der Pensionierung. | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214), [ui-planung.spec.js:111](../e2e/ui-planung.spec.js#L111) | 15.11.2026 ok (Test grün) |
 | #54/AK5 | Ab der Pensionierung: «Standard» mit der konfigurierten Cash-Reserve (Monate), alle anderen Strategien wie bisher (3 Monate bzw. 3-Topf mit ihren Töpfen). | ☑ | **gilt** | [engine/tests/cash_housing.rs:214](../crates/engine/tests/cash_housing.rs#L214) | 15.11.2026 ok (Test grün) |
 | #54/AK6 | «Liquidität…» heisst überall «Cash…» (Oberfläche, Hilfe, Jahreswerte, Grafiken, Berichte, Prüfmeldungen, Dokumentation). Die Feldnamen in der Planungsdatei bleiben (`wealth.cash`, `reserveMonths`), damit bestehende Dateien gültig bleiben. | ☑ | **gilt** | [docs.test.js:18](../e2e/unit/docs.test.js#L18) | 15.11.2026 ok (Test: «Liquidität» nur noch als Suchbegriff in den Stichwortzeilen der Hilfe) |
 | #54/AK7 | Beispiel Nachfüllen und Teuerung: Cash 50'000, Teuerung 2 % pro Jahr, Ausgaben 1'000 über den Einnahmen pro Monat: Cash wird jeden Monat aus dem Portfolio auf den mit der Teuerung fortgeschriebenen Betrag gebracht (nach einem Jahr rund 51'000). | ☑ | **gilt** | [tests/cash_housing.rs:194](../crates/engine/tests/cash_housing.rs#L194) | 15.11.2026 ok (Nachfüllen und Teuerung) |
-| #54/AK8 | Ältere Planungen rechnen nach dem neuen Verhalten; beim Öffnen weist ein Hinweis darauf hin, dass Cash vor der Pensionierung neu fest gehalten wird. | ☑ | **gilt** | [engine/tests/cash_housing.rs:143](../crates/engine/tests/cash_housing.rs#L143), [ui.spec.js:2480](../e2e/ui.spec.js#L2480) | 15.11.2026 ok (Test grün) |
+| #54/AK8 | Ältere Planungen rechnen nach dem neuen Verhalten; beim Öffnen weist ein Hinweis darauf hin, dass Cash vor der Pensionierung neu fest gehalten wird. | ☑ | **gilt** | [engine/tests/cash_housing.rs:143](../crates/engine/tests/cash_housing.rs#L143), [ui-planung.spec.js:121](../e2e/ui-planung.spec.js#L121) | 15.11.2026 ok (Test grün) |
 | #54/AK9 | Regressionstest im Rechenkern; Golden-Dateien ändern nur mit Begründung im Issue. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nicht Satz für Satz verglichen |
-
-### #55 Säule 3a: Auszahlungsplan mit Datum oder Alter, Guthaben anzeigen, Restbetrag vorabfüllen
-
-[Issue #55](https://github.com/ingen63/VivaPlan/issues/55) · geschlossen · Umsetzung: nicht vermerkt · Tests zum Issue ohne Kriterium: [engine/tests/pillar3a_plan.rs:1](../crates/engine/tests/pillar3a_plan.rs#L1), [engine/tests/pillar3a_plan.rs:119](../crates/engine/tests/pillar3a_plan.rs#L119) (+3)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #55/AK1 | Jede Zeile des Auszahlungsplans hat die Auswahl «Datum» oder «Alter». Beim Wechsel bleibt der Zeitpunkt gleich (wie bei Meilensteinen, #37). Daneben steht der berechnete Monat und das Alter. | ☑ | **gilt** | [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | 15.11.2026 ok (Test grün) |
-| #55/AK2 | Beispiel mit erfundenen Zahlen: Geburt 1980-06, Zeile «Alter 61.5» ergibt 12.2041; als «Datum» umgestellt steht 12.2041 im Feld. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:44](../crates/engine/tests/pillar3a_plan.rs#L44), [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | 15.11.2026 ok (Test grün) |
-| #55/AK3 | Die Regel «frühestens 5 Jahre vor dem AHV-Bezug» (#52) gilt auch für eine Zeile nach Alter; die Meldung steht am Feld. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:63](../crates/engine/tests/pillar3a_plan.rs#L63), [ui.spec.js:2534](../e2e/ui.spec.js#L2534) | 15.11.2026 ok (Test grün) |
-| #55/AK4 | Jede Zeile zeigt «Guthaben vor Auszahlung» und «Rest danach» aus der Vorschau; unter dem Plan steht das Guthaben, das im AHV-Bezug ausbezahlt wird. Ohne Vorschau (Fehler in der Planung) steht «–». | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:94](../crates/engine/tests/pillar3a_plan.rs#L94), [ui.spec.js:2534](../e2e/ui.spec.js#L2534) (+1) | 15.11.2026 ok (Test grün) |
-| #55/AK5 | Beispiel: Guthaben 120'000, Zins 0, keine Einzahlung, Zeile 2041 mit 50'000: vor 120'000, Rest 70'000; Rest im AHV-Bezug 70'000. | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:94](../crates/engine/tests/pillar3a_plan.rs#L94), [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | 15.11.2026 ok (Test grün) |
-| #55/AK6 | «+ Auszahlung» legt die neue Zeile ein Jahr nach der letzten an (ohne Zeile: frühester erlaubter Monat, 5 Jahre vor dem AHV-Bezug, nicht vor dem Start, höchstens im AHV-Bezug). Der Betrag ist das Guthaben laut Vorschau zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1'000. Er bleibt danach frei änderbar. | ☑ | **gilt** | [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | 15.11.2026 ok (Test grün) |
-| #55/AK7 | Beispiel: wie oben; «+ Auszahlung» ergibt eine Zeile 2042 mit 70'000. | ☑ | **gilt** | [ui.spec.js:2544](../e2e/ui.spec.js#L2544) | 15.11.2026 ok (Test grün) |
-| #55/AK8 | Ältere Planungen (Zeile nur mit Datum) bleiben gültig und erscheinen als «Datum». | ☑ | **gilt** | [engine/tests/pillar3a_plan.rs:130](../crates/engine/tests/pillar3a_plan.rs#L130), [ui.spec.js:2516](../e2e/ui.spec.js#L2516) | 15.11.2026 ok (Test grün) |
-| #55/AK9 | Regressionstest im Rechenkern für die Zeile nach Alter; Oberflächentest für Umschalten, Anzeige und Vorabfüllen. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [tests/pillar3a_plan.rs:46](../crates/engine/tests/pillar3a_plan.rs#L46) | 15.11.2026 ok (Regressionstests und Oberflächentest vorhanden) |
-
-### #56 Ganzes Projekt mit rustfmt formatieren, Formatierung prüfen, Agentenanleitung anpassen
-
-[Issue #56](https://github.com/ingen63/VivaPlan/issues/56) · geschlossen · Umsetzung: nicht vermerkt
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #56/AK1 | Im Wurzelverzeichnis liegt eine `rustfmt.toml` mit den gewählten Einstellungen (z. B. Zeilenlänge); sie gilt für alle Pakete. | ☑ | **gilt** | kein Test (Datei geprüft: `rustfmt.toml`) | 15.11.2026 ok (max_width = 120) |
-| #56/AK2 | `cargo fmt --all --check` meldet im ganzen Workspace keine Abweichung. | ☑ | **gilt** | kein Test | 15.11.2026 ok (cargo fmt --all --check meldet nichts) |
-| #56/AK3 | Die Umformatierung ist ein eigener Commit ohne inhaltliche Änderung; alle Rust-Tests (`make test`) laufen danach unverändert grün, die Golden-Dateien bleiben gleich. | ☑ | **gilt** | kein Test | 15.11.2026 vom Anwender geschlossen: nicht mehr belegbar (das öffentliche Repository hat nur einen Commit; die Tests laufen grün) |
-| #56/AK4 | Der Commit der Umformatierung steht in `.git-blame-ignore-revs`, damit `git blame` die fachlichen Änderungen zeigt. | ☑ | **überholt**: durch #26: Das öffentliche Repository hat die alte Historie nicht; `.git-blame-ignore-revs` ist entfernt. | kein Test | 15.11.2026 überholt, nicht geprüft |
-| #56/AK5 | Ein GitHub-Workflow (oder ein bestehender Job) prüft bei jedem Push `cargo fmt --all --check` und schlägt bei Abweichungen fehl. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Job format) |
-| #56/AK6 | `CLAUDE.md` beschreibt die neue Regel: Code wird mit `cargo fmt` formatiert, vor dem Commit läuft `cargo fmt --all --check`. | ☑ | **gilt** | kein Test (Datei geprüft: `CLAUDE.md`) | 15.11.2026 ok |
-| #56/AK7 | Die Sperre von `cargo fmt` in `.claude/settings.json` ist aufgehoben (bzw. auf das Nötige beschränkt). | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `.claude/settings.json` sperrt `cargo fmt` nicht mehr) |
-| #56/AK8 | Die Agentenanleitung `.claude/agents/rust-test-agent.md` und die Aufträge in `.claude/hooks/after-commit.sh` und `scripts/git-hooks/pre-push` sagen nicht mehr «Kein cargo fmt (das Projekt ist nicht rustfmt-formatiert)», sondern verlangen formatierten Code. | ☑ | **gilt**: Der Hook liegt heute unter `tools/git-hooks/pre-push`. | kein Test (Datei geprüft: `.claude/agents/rust-test-agent.md`) | 15.11.2026 ok (verlangt cargo fmt) |
-| #56/AK9 | Keine anderen Dokumente (`TESTS.md`, `QA.md`, `README.md`) beschreiben die alte Regel noch. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `TESTS.md`, `QA.md`, `README.md`, `ENTWICKLUNG.md` nennen keine alte Regel; sie gilt in `CLAUDE.md`) |
 
 ### #57 Fehlermeldung am Feld erst beim Verlassen, nicht während der Eingabe
 
-[Issue #57](https://github.com/ingen63/VivaPlan/issues/57) · geschlossen · Umsetzung: `88cf6fe`, `c6d2073` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:224](../e2e/ui.spec.js#L224), [ui.spec.js:457](../e2e/ui.spec.js#L457) (+7)
+[Issue #57](https://github.com/ingen63/VivaPlan/issues/57) · geschlossen · Umsetzung: `88cf6fe`, `c6d2073` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-start.spec.js:184](../e2e/ui-start.spec.js#L184), [ui-start.spec.js:417](../e2e/ui-start.spec.js#L417) (+7)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #57/AK1 | Solange ein Feld den Fokus hat, erscheint an diesem Feld keine neue Fehlermeldung (weder vom Rechenkern noch zu ungültiger Eingabe wie falschem Datumsformat). Beispiel: Alter 60 → 6 → 65 ohne Meldung. | ☑ | **gilt** | [ui.spec.js:2572](../e2e/ui.spec.js#L2572), [ui.spec.js:2613](../e2e/ui.spec.js#L2613) | – |
-| #57/AK2 | Beim Verlassen des Feldes (Tab, Klick daneben, Enter) erscheint die Meldung, wenn der Wert ungültig ist. Beispiel: Alter 6 eingeben und das Feld verlassen: Meldung «ausserhalb der Grenzen». | ☑ | **gilt** | [ui.spec.js:2572](../e2e/ui.spec.js#L2572), [ui.spec.js:2613](../e2e/ui.spec.js#L2613) | – |
-| #57/AK3 | Ist an einem Feld bereits eine Meldung sichtbar und wird der Wert gültig, verschwindet sie sofort, schon während der Eingabe. | ☑ | **gilt**: Neu gefasst per Kommentar: Eine sichtbare Meldung bleibt während der Eingabe stehen und verschwindet erst beim Verlassen. | [ui.spec.js:2572](../e2e/ui.spec.js#L2572) | – |
-| #57/AK4 | Die Vorschau, die Meldungen an anderen Feldern und die Prüfliste rechnen weiter bei jeder Eingabe; nur die Anzeige am aktiven Feld wartet. | ☑ | **gilt**: Neu gefasst per Kommentar: Solange ein Feld den Fokus hat, wartet alles (Vorschau, Meldungen, Prüfliste); Auswahllisten und Kästchen wirken sofort. | [ui.spec.js:2572](../e2e/ui.spec.js#L2572) | – |
+| #57/AK1 | Solange ein Feld den Fokus hat, erscheint an diesem Feld keine neue Fehlermeldung (weder vom Rechenkern noch zu ungültiger Eingabe wie falschem Datumsformat). Beispiel: Alter 60 → 6 → 65 ohne Meldung. | ☑ | **gilt** | [ui-planung.spec.js:213](../e2e/ui-planung.spec.js#L213), [ui-planung.spec.js:254](../e2e/ui-planung.spec.js#L254) | – |
+| #57/AK2 | Beim Verlassen des Feldes (Tab, Klick daneben, Enter) erscheint die Meldung, wenn der Wert ungültig ist. Beispiel: Alter 6 eingeben und das Feld verlassen: Meldung «ausserhalb der Grenzen». | ☑ | **gilt** | [ui-planung.spec.js:213](../e2e/ui-planung.spec.js#L213), [ui-planung.spec.js:254](../e2e/ui-planung.spec.js#L254) | – |
+| #57/AK3 | Ist an einem Feld bereits eine Meldung sichtbar und wird der Wert gültig, verschwindet sie sofort, schon während der Eingabe. | ☑ | **gilt**: Neu gefasst per Kommentar: Eine sichtbare Meldung bleibt während der Eingabe stehen und verschwindet erst beim Verlassen. | [ui-planung.spec.js:213](../e2e/ui-planung.spec.js#L213) | – |
+| #57/AK4 | Die Vorschau, die Meldungen an anderen Feldern und die Prüfliste rechnen weiter bei jeder Eingabe; nur die Anzeige am aktiven Feld wartet. | ☑ | **gilt**: Neu gefasst per Kommentar: Solange ein Feld den Fokus hat, wartet alles (Vorschau, Meldungen, Prüfliste); Auswahllisten und Kästchen wirken sofort. | [ui-planung.spec.js:213](../e2e/ui-planung.spec.js#L213) | – |
 | #57/AK5 | Oberflächentest für die drei Beispiele; Hilfe nachgeführt. | ☑ | **gilt** | kein Test | – |
-
-### #58 Erwerbseinkommen optional mit der Teuerung
-
-[Issue #58](https://github.com/ingen63/VivaPlan/issues/58) · geschlossen · Umsetzung: `ca1a939` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/income_indexed.rs:1](../crates/engine/tests/income_indexed.rs#L1), [engine/tests/income_indexed.rs:113](../crates/engine/tests/income_indexed.rs#L113) (+4)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #58/AK1 | Beim Erwerbseinkommen jeder Person gibt es eine Auswahl «steigt mit der Teuerung» (ja/nein). Ohne Angabe gilt «nein»; bestehende Planungen rechnen unverändert. | ☑ | **gilt** | [engine/tests/income_indexed.rs:52](../crates/engine/tests/income_indexed.rs#L52), [engine/tests/income_indexed.rs:189](../crates/engine/tests/income_indexed.rs#L189) (+1) | 15.11.2026 ok (Test grün) |
-| #58/AK2 | Mit «ja» wird jeder Wert, auch jede Zeile eines zeitabhängigen Einkommens, als Betrag in Preisen des Simulationsstarts verstanden und mit dem Preisindex der Simulation fortgeschrieben (wie die Lebenshaltung). | ☑ | **gilt** | [engine/tests/income_indexed.rs:72](../crates/engine/tests/income_indexed.rs#L72) | 15.11.2026 ok (Test grün) |
-| #58/AK3 | Beispiel mit erfundenen Zahlen: Einkommen 8'000 pro Monat, Teuerung 2 % pro Jahr, «ja»: nach 12 Monaten rund 8'160, nach 5 Jahren rund 8'830. Mit «nein» bleiben es 8'000. | ☑ | **gilt** | [engine/tests/income_indexed.rs:52](../crates/engine/tests/income_indexed.rs#L52) | 15.11.2026 ok (Test grün) |
-| #58/AK4 | Die Auswahl wirkt in allen Renditequellen (fix, historisch, Monte Carlo) mit dem jeweiligen Preisindex des Pfades. | ☑ | **gilt** | [engine/tests/income_indexed.rs:87](../crates/engine/tests/income_indexed.rs#L87) | 15.11.2026 ok (Test grün) |
-| #58/AK5 | Jahreswerte, Grafiken, Einkommenssteuer und die Warnung «Erwerbseinkommen nach dem Bezug der Pensionskasse» (#51) verwenden den angepassten Betrag. | ☑ | **gilt** | [engine/tests/income_indexed.rs:139](../crates/engine/tests/income_indexed.rs#L139) | 15.11.2026 ok (Test grün) |
-| #58/AK6 | Regressionstest im Rechenkern; Golden-Dateien ändern nicht (Vorgabe «nein»). Oberflächentest für die Auswahl. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Regressionstests und Oberflächentest vorhanden (E2633)) |
 
 ### #59 Einstellungen auf macOS im Programmmenü
 
@@ -861,40 +527,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #61 Haftungsausschluss: Bestätigung beim ersten Start, Fusszeile in den Ergebnissen, vollständiger Text im Info-Bereich
 
-[Issue #61](https://github.com/ingen63/VivaPlan/issues/61) · geschlossen · Umsetzung: `d713431` (altes Repository) · Tests zum Issue ohne Kriterium: [cli/tests/cli.rs:55](../crates/cli/tests/cli.rs#L55), [ui.spec.js:1977](../e2e/ui.spec.js#L1977) (+2)
+[Issue #61](https://github.com/ingen63/VivaPlan/issues/61) · geschlossen · Umsetzung: `d713431` (altes Repository) · Tests zum Issue ohne Kriterium: [cli/tests/cli.rs:55](../crates/cli/tests/cli.rs#L55), [ui-optimierung.spec.js:101](../e2e/ui-optimierung.spec.js#L101) (+2)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #61/AK1 | Beim ersten Start erscheint die Kurzfassung als Dialog. Weiter geht es erst, wenn das Kästchen «Ich habe den Hinweis gelesen und verstanden» angekreuzt und bestätigt ist; ohne Bestätigung ist die App nicht bedienbar. | ☑ | **gilt** | [ui.spec.js:2000](../e2e/ui.spec.js#L2000) | 15.11.2026 ok (Test grün) |
-| #61/AK2 | Die Bestätigung wird lokal gespeichert (wie die Einstellungen, nicht in der Planungsdatei); bei späteren Starts erscheint der Dialog nicht mehr. Ändert sich der Text (Versionsnummer des Hinweises), wird erneut gefragt. | ☑ | **gilt** | [ui.spec.js:2000](../e2e/ui.spec.js#L2000), [ui.spec.js:2029](../e2e/ui.spec.js#L2029) (+1) | 15.11.2026 ok (Test grün) |
-| #61/AK3 | Alle Ergebnisseiten (Übersicht, Grafiken, Ereignisse, Jahreswerte, Szenarien, Optimierung) zeigen unten die Fusszeile «Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.»; auch in Ausdruck bzw. PDF-Export, falls vorhanden. | ☑ | **gilt** | [ui.spec.js:2895](../e2e/ui.spec.js#L2895), [ui.spec.js:2908](../e2e/ui.spec.js#L2908) | 15.11.2026 ok (Test grün) |
-| #61/AK4 | Der vollständige Haftungsausschluss ist jederzeit erreichbar: im Dialog «Über …» (Menü und Hilfe) und als Seite in der Hilfe, mit Stand-Datum. | ☑ | **gilt** | [ui.spec.js:2921](../e2e/ui.spec.js#L2921) | 15.11.2026 ok (Test grün) |
+| #61/AK1 | Beim ersten Start erscheint die Kurzfassung als Dialog. Weiter geht es erst, wenn das Kästchen «Ich habe den Hinweis gelesen und verstanden» angekreuzt und bestätigt ist; ohne Bestätigung ist die App nicht bedienbar. | ☑ | **gilt** | [ui-optimierung.spec.js:124](../e2e/ui-optimierung.spec.js#L124) | 15.11.2026 ok (Test grün) |
+| #61/AK2 | Die Bestätigung wird lokal gespeichert (wie die Einstellungen, nicht in der Planungsdatei); bei späteren Starts erscheint der Dialog nicht mehr. Ändert sich der Text (Versionsnummer des Hinweises), wird erneut gefragt. | ☑ | **gilt** | [ui-optimierung.spec.js:124](../e2e/ui-optimierung.spec.js#L124), [ui-optimierung.spec.js:153](../e2e/ui-optimierung.spec.js#L153) (+1) | 15.11.2026 ok (Test grün) |
+| #61/AK3 | Alle Ergebnisseiten (Übersicht, Grafiken, Ereignisse, Jahreswerte, Szenarien, Optimierung) zeigen unten die Fusszeile «Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.»; auch in Ausdruck bzw. PDF-Export, falls vorhanden. | ☑ | **gilt** | [ui-einstieg.spec.js:98](../e2e/ui-einstieg.spec.js#L98), [ui-einstieg.spec.js:111](../e2e/ui-einstieg.spec.js#L111) | 15.11.2026 ok (Test grün) |
+| #61/AK4 | Der vollständige Haftungsausschluss ist jederzeit erreichbar: im Dialog «Über …» (Menü und Hilfe) und als Seite in der Hilfe, mit Stand-Datum. | ☑ | **gilt** | [ui-einstieg.spec.js:124](../e2e/ui-einstieg.spec.js#L124) | 15.11.2026 ok (Test grün) |
 | #61/AK5 | Oberflächentests für AK1 bis AK4 (erster Start, gespeicherte Bestätigung, neue Version fragt erneut, Fusszeile, Info-Bereich). Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Kommentar vom 14.11.2026: «AK-5. Nicht erfüllt.» Das Issue ist trotzdem geschlossen und abgehakt; nachprüfen. | kein Test | nicht geprüft: Kommentar im Issue: «AK-5 nicht erfüllt» |
-
-### #67 Eigener Welt-Aktienindex aus den JST-Daten nach BIP gewichtet, Vergleich mit DMS
-
-[Issue #67](https://github.com/ingen63/VivaPlan/issues/67) · geschlossen · Umsetzung: `2ccfc9e` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/jst.rs:1](../crates/engine/tests/jst.rs#L1), [engine/tests/jst.rs:63](../crates/engine/tests/jst.rs#L63) (+1)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #67/AK1 | Der Rechenweg ist beschrieben und aus den Rohdaten nachrechenbar: BIP in USD über den Wechselkurs, Gewicht = BIP-Anteil des Vorjahres, Umrechnung der Länderrenditen in CHF, Gewichte jährlich angepasst. | ☑ | **gilt** | [engine/tests/jst.rs:91](../crates/engine/tests/jst.rs#L91) | 15.11.2026 ok (Test grün) |
-| #67/AK2 | Fehlende Länder oder Jahre (zum Beispiel Deutschland 1945 ohne Wechselkurs) sind benannt; die Gewichte der übrigen Länder werden neu auf 100 % gerechnet. | ☑ | **gilt** | [engine/tests/jst.rs:91](../crates/engine/tests/jst.rs#L91) | 15.11.2026 ok (Test grün) |
-| #67/AK3 | Ein Test rechnet drei Jahre von Hand nach (Beispielwerte im Test). | ☑ | **gilt** | [engine/tests/jst.rs:61](../crates/engine/tests/jst.rs#L61) | 15.11.2026 ok (Test grün) |
-| #67/AK4 | Vergleich mit den DMS-Kennzahlen (Rendite, Schwankung, schlechtestes Jahr) mit einem Absatz Bewertung. Die DMS-Zahlen dienen nur dem Vergleich und werden nicht ausgeliefert. | ☑ | **gilt** | [engine/tests/jst.rs:138](../crates/engine/tests/jst.rs#L138) | 15.11.2026 ok (Test grün) |
-| #67/AK5 | Der Entscheid über Japan und Australien ist mit Begründung dokumentiert. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: `docs/Weltindex JST.md`, Abschnitt «Entscheid Japan und Australien») |
-| #67/AK6 | Ist die Abweichung zu DMS unerwartet gross, ist die Ursache beschrieben, bevor #68 beginnt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Durchsicht: dieselbe Datei, «Bewertung» zum Vergleich mit DMS) |
-
-### #68 Zeitreihen «Welt (JST)» und Schweizer Staatsanleihen aus SNB und JST
-
-[Issue #68](https://github.com/ingen63/VivaPlan/issues/68) · geschlossen · Umsetzung: `2ccfc9e` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/jst.rs:1](../crates/engine/tests/jst.rs#L1), [engine/tests/jst.rs:63](../crates/engine/tests/jst.rs#L63)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #68/AK1 | Die Reihe «Welt (JST)» beginnt 1900 und endet mit dem letzten JST-Jahr; Teuerung aus JST bzw. Landesindex (BFS). | ☑ | **gilt** | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | 15.11.2026 ok (Test grün) |
-| #68/AK2 | Obligationen: jährlich aus JST vor 1988, monatlich aus der SNB ab 1988; der Übergang ist im Test ohne Sprung geprüft. | ☑ | **gilt** | [engine/tests/jst.rs:170](../crates/engine/tests/jst.rs#L170) | 15.11.2026 ok (Test grün) |
-| #68/AK3 | `data/QUELLEN.md`, Dateikopf und Hilfe nennen die Quelle, die Zitate (Jordà, Schularick, Taylor 2017; Jordà et al. 2019), das Abrufdatum und die Lizenz CC BY-NC-SA 4.0. | ☑ | **gilt**: Die Datei liegt heute unter `crates/engine/data/QUELLEN.md`. | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | 15.11.2026 ok (Test grün) |
-| #68/AK4 | Die Reihen sind als Datei mit derselben Lizenz gekennzeichnet; in `QUELLEN.md` steht, dass die App kostenlos bleiben muss (nicht kommerziell). | ☑ | **gilt**: Wie AK3. | [engine/tests/jst.rs:200](../crates/engine/tests/jst.rs#L200) | 15.11.2026 ok (Test grün) |
-| #68/AK5 | Ein Golden-Test hält die Werte fest. | ☑ | **gilt** | [engine/tests/jst.rs:37](../crates/engine/tests/jst.rs#L37) | 15.11.2026 ok (Test grün) |
 
 ### #69 Anlagestrategie statt Renditewahl, Gewichtung von CH, EU und USA, Reiter «Renditen & Daten» entfällt
 
@@ -902,7 +543,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #69/AK1 | Der Reiter «Renditen & Daten» ist weg; die Strategie wird bei den Anlagen gewählt (Aktien und Obligationen getrennt). | ☑ | **gilt** | [ui.spec.js:167](../e2e/ui.spec.js#L167) | 15.11.2026 ok (Test grün) |
+| #69/AK1 | Der Reiter «Renditen & Daten» ist weg; die Strategie wird bei den Anlagen gewählt (Aktien und Obligationen getrennt). | ☑ | **gilt** | [ui-start.spec.js:127](../e2e/ui-start.spec.js#L127) | 15.11.2026 ok (Test grün) |
 | #69/AK2 | «Welt individuell»: Die Gewichte ergeben immer 100 %; ungültige Eingaben werden angezeigt. Beispiel: EU 40 % auf 20 % halbiert jeden EU-Länderanteil. | ☑ | **gilt** | [engine/tests/strategy.rs:60](../crates/engine/tests/strategy.rs#L60), [engine/tests/strategy.rs:82](../crates/engine/tests/strategy.rs#L82) (+1) | 15.11.2026 ok (Test grün) |
 | #69/AK3 | 100 % USA in «Welt individuell» ergibt dieselbe Reihe wie die USA-Reihe der Welt (JST) (Test). | ☑ | **gilt** | [engine/tests/strategy.rs:46](../crates/engine/tests/strategy.rs#L46) | 15.11.2026 ok (Test grün) |
 | #69/AK4 | Feste Renditen funktionieren wie bisher; der Import eigener CSV-Dateien ist entfernt, die Hilfe nennt das. | ☑ | **gilt**: Der Import eigener Zeitreihen ist entfernt; das betrifft auch #91. | [engine/tests/strategy.rs:242](../crates/engine/tests/strategy.rs#L242), [engine/tests/strategy.rs:407](../crates/engine/tests/strategy.rs#L407) (+1) | 15.11.2026 ok (Test grün) |
@@ -913,66 +554,52 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #70 Willkommensdialog beim ersten Start
 
-[Issue #70](https://github.com/ingen63/VivaPlan/issues/70) · geschlossen · Umsetzung: `7ba159d` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:2665](../e2e/ui.spec.js#L2665), [ui.spec.js:2671](../e2e/ui.spec.js#L2671)
+[Issue #70](https://github.com/ingen63/VivaPlan/issues/70) · geschlossen · Umsetzung: `7ba159d` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-planung.spec.js:306](../e2e/ui-planung.spec.js#L306), [ui-planung.spec.js:312](../e2e/ui-planung.spec.js#L312)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #70/AK1 | Beim allerersten Start (es gibt noch keine `einstellungen.json`) erscheint der Dialog «Willkommen bei VivaPlan». Er enthält einen Satz zum Zweck der App und drei Knöpfe: «Beispiel erkunden», «Eigene Planung beginnen» und «Leere Planung». | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934), [ui.spec.js:2672](../e2e/ui.spec.js#L2672) | 15.11.2026 ok (Test grün) |
-| #70/AK2 | «Beispiel erkunden» lässt die Beispielplanung geladen, wie heute, und öffnet die Hilfe beim Thema «Was VivaPlan kann» (`@start`). | ☑ | **gilt** | [ui.spec.js:2686](../e2e/ui.spec.js#L2686) | 15.11.2026 ok (Test grün) |
-| #70/AK3 | «Eigene Planung beginnen» lädt die Beispielplanung als Vorlage, öffnet den Abschnitt «Haushalt & Projekt» und blendet die Checkliste «Erste Schritte» ein (#71). Solange #71 noch nicht umgesetzt ist, öffnet sich stattdessen die Hilfe beim Schnellstart (`@quickstart`). | ☑ | **gilt**: Nacharbeit laut Kommentar: Die Checkliste wird in den Blick gescrollt und erhält den Fokus. | [ui.spec.js:2695](../e2e/ui.spec.js#L2695), [ui.spec.js:2803](../e2e/ui.spec.js#L2803) | 15.11.2026 ok (Test grün) |
-| #70/AK4 | «Leere Planung» wirkt genau wie Datei → Neu. | ☑ | **gilt** | [ui.spec.js:2709](../e2e/ui.spec.js#L2709) | 15.11.2026 ok (Test grün) |
-| #70/AK5 | Esc oder der Schliessen-Knopf wirken wie «Beispiel erkunden», nur ohne die Hilfe zu öffnen. | ☑ | **gilt** | [ui.spec.js:2719](../e2e/ui.spec.js#L2719) | 15.11.2026 ok (Test grün) |
+| #70/AK1 | Beim allerersten Start (es gibt noch keine `einstellungen.json`) erscheint der Dialog «Willkommen bei VivaPlan». Er enthält einen Satz zum Zweck der App und drei Knöpfe: «Beispiel erkunden», «Eigene Planung beginnen» und «Leere Planung». | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934), [ui-planung.spec.js:313](../e2e/ui-planung.spec.js#L313) | 15.11.2026 ok (Test grün) |
+| #70/AK2 | «Beispiel erkunden» lässt die Beispielplanung geladen, wie heute, und öffnet die Hilfe beim Thema «Was VivaPlan kann» (`@start`). | ☑ | **gilt** | [ui-planung.spec.js:327](../e2e/ui-planung.spec.js#L327) | 15.11.2026 ok (Test grün) |
+| #70/AK3 | «Eigene Planung beginnen» lädt die Beispielplanung als Vorlage, öffnet den Abschnitt «Haushalt & Projekt» und blendet die Checkliste «Erste Schritte» ein (#71). Solange #71 noch nicht umgesetzt ist, öffnet sich stattdessen die Hilfe beim Schnellstart (`@quickstart`). | ☑ | **gilt**: Nacharbeit laut Kommentar: Die Checkliste wird in den Blick gescrollt und erhält den Fokus. | [ui-planung.spec.js:336](../e2e/ui-planung.spec.js#L336), [helpers.js:45](../e2e/helpers.js#L45) | 15.11.2026 ok (Test grün) |
+| #70/AK4 | «Leere Planung» wirkt genau wie Datei → Neu. | ☑ | **gilt** | [ui-planung.spec.js:350](../e2e/ui-planung.spec.js#L350) | 15.11.2026 ok (Test grün) |
+| #70/AK5 | Esc oder der Schliessen-Knopf wirken wie «Beispiel erkunden», nur ohne die Hilfe zu öffnen. | ☑ | **gilt** | [ui-planung.spec.js:360](../e2e/ui-planung.spec.js#L360) | 15.11.2026 ok (Test grün) |
 | #70/AK6 | Bei späteren Starts erscheint der Dialog nicht mehr, auch nicht, wenn die zuletzt geöffnete Datei fehlt. | ☑ | **gilt** | [app/src/main.rs:1934](../crates/app/src/main.rs#L1934) | 15.11.2026 ok (Test grün) |
-| #70/AK7 | Hilfe → «Willkommen …» öffnet den Dialog jederzeit. Bei ungespeicherten Änderungen fragt die App vor dem Laden nach, wie bei Datei → Neu. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui.spec.js:2738](../e2e/ui.spec.js#L2738) | 15.11.2026 ok (Test grün) |
-| #70/AK8 | Der Dialog lässt sich ganz mit der Tastatur bedienen (Tab, Enter, Esc). | ☑ | **gilt** | [ui.spec.js:2719](../e2e/ui.spec.js#L2719) | 15.11.2026 ok (Test grün) |
+| #70/AK7 | Hilfe → «Willkommen …» öffnet den Dialog jederzeit. Bei ungespeicherten Änderungen fragt die App vor dem Laden nach, wie bei Datei → Neu. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui-planung.spec.js:379](../e2e/ui-planung.spec.js#L379) | 15.11.2026 ok (Test grün) |
+| #70/AK8 | Der Dialog lässt sich ganz mit der Tastatur bedienen (Tab, Enter, Esc). | ☑ | **gilt** | [ui-planung.spec.js:360](../e2e/ui-planung.spec.js#L360) | 15.11.2026 ok (Test grün) |
 | #70/AK9 | Die Hilfe (`00-einstieg.md`, `@bedienung`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
 
 ### #71 Checkliste «Erste Schritte» im Editor
 
-[Issue #71](https://github.com/ingen63/VivaPlan/issues/71) · geschlossen · Umsetzung: `7ba159d` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:2665](../e2e/ui.spec.js#L2665), [ui.spec.js:2753](../e2e/ui.spec.js#L2753)
+[Issue #71](https://github.com/ingen63/VivaPlan/issues/71) · geschlossen · Umsetzung: `7ba159d` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-planung.spec.js:306](../e2e/ui-planung.spec.js#L306), [ui-planung.spec.js:394](../e2e/ui-planung.spec.js#L394)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #71/AK1 | Im Editor gibt es einen Kasten «Erste Schritte» mit den acht Schritten des Schnellstarts: Haushalt & Projekt, Meilensteine, Vorsorge, Einnahmen & Ausgaben, Vermögen & Anlage, Renditen & Daten, Steuern, Simulation starten. | ☑ | **gilt**: Der sechste Schritt heisst seit #69 «Simulation» statt «Renditen & Daten» (Kommentar im Issue). | [ui.spec.js:2754](../e2e/ui.spec.js#L2754) | 15.11.2026 ok (Test grün) |
-| #71/AK2 | Ein Klick auf einen Schritt öffnet dessen Abschnitt. Das Zeichen ⓘ öffnet die Hilfe zum Schritt. | ☑ | **gilt** | [ui.spec.js:2763](../e2e/ui.spec.js#L2763) | 15.11.2026 ok (Test grün) |
-| #71/AK3 | Ein Abschnitt-Schritt gilt als erledigt, sobald darin mindestens ein Wert geändert wurde oder der Benutzer ihn von Hand abhakt. «Simulation starten» ist erledigt, sobald eine Simulation ohne Abbruch durchgelaufen ist. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772), [ui.spec.js:2790](../e2e/ui.spec.js#L2790) | 15.11.2026 ok (Test grün) |
-| #71/AK4 | Ein Haken bleibt, auch wenn die Änderung mit ⌘Z rückgängig gemacht wird. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772) | 15.11.2026 ok (Test grün) |
-| #71/AK5 | Der Fortschritt steht im Kopf des Kastens, zum Beispiel «3 von 8». | ☑ | **gilt** | [ui.spec.js:2754](../e2e/ui.spec.js#L2754) | 15.11.2026 ok (Test grün) |
-| #71/AK6 | Mit × lässt sich der Kasten ausblenden, über Hilfe → «Erste Schritte» wieder einblenden. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui.spec.js:2797](../e2e/ui.spec.js#L2797) | 15.11.2026 ok (Test grün) |
-| #71/AK7 | Sind alle acht Schritte erledigt, erscheint ein kurzer Hinweis. Danach klappt der Kasten zu. | ☑ | **gilt** | [ui.spec.js:2797](../e2e/ui.spec.js#L2797) | 15.11.2026 ok (Test grün) |
-| #71/AK8 | Wählt der Benutzer im Willkommensdialog (#70) «Eigene Planung beginnen», wird die Checkliste eingeblendet und zurückgesetzt, auch wenn er sie vorher ausgeblendet hatte. Alle Schritte stehen dann auf offen. | ☑ | **gilt** | [ui.spec.js:2813](../e2e/ui.spec.js#L2813) | 15.11.2026 ok (Test grün) |
-| #71/AK9 | Der Fortschritt wird in `einstellungen.json` gespeichert und gilt für den Benutzer, nicht für eine einzelne Planung. Das `.vplan`-Format bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:2772](../e2e/ui.spec.js#L2772) | 15.11.2026 ok (Test grün) |
+| #71/AK1 | Im Editor gibt es einen Kasten «Erste Schritte» mit den acht Schritten des Schnellstarts: Haushalt & Projekt, Meilensteine, Vorsorge, Einnahmen & Ausgaben, Vermögen & Anlage, Renditen & Daten, Steuern, Simulation starten. | ☑ | **gilt**: Der sechste Schritt heisst seit #69 «Simulation» statt «Renditen & Daten» (Kommentar im Issue). | [ui-planung.spec.js:395](../e2e/ui-planung.spec.js#L395) | 15.11.2026 ok (Test grün) |
+| #71/AK2 | Ein Klick auf einen Schritt öffnet dessen Abschnitt. Das Zeichen ⓘ öffnet die Hilfe zum Schritt. | ☑ | **gilt** | [ui-planung.spec.js:404](../e2e/ui-planung.spec.js#L404) | 15.11.2026 ok (Test grün) |
+| #71/AK3 | Ein Abschnitt-Schritt gilt als erledigt, sobald darin mindestens ein Wert geändert wurde oder der Benutzer ihn von Hand abhakt. «Simulation starten» ist erledigt, sobald eine Simulation ohne Abbruch durchgelaufen ist. | ☑ | **gilt** | [ui-planung.spec.js:413](../e2e/ui-planung.spec.js#L413), [ui-planung.spec.js:431](../e2e/ui-planung.spec.js#L431) | 15.11.2026 ok (Test grün) |
+| #71/AK4 | Ein Haken bleibt, auch wenn die Änderung mit ⌘Z rückgängig gemacht wird. | ☑ | **gilt** | [ui-planung.spec.js:413](../e2e/ui-planung.spec.js#L413) | 15.11.2026 ok (Test grün) |
+| #71/AK5 | Der Fortschritt steht im Kopf des Kastens, zum Beispiel «3 von 8». | ☑ | **gilt** | [ui-planung.spec.js:395](../e2e/ui-planung.spec.js#L395) | 15.11.2026 ok (Test grün) |
+| #71/AK6 | Mit × lässt sich der Kasten ausblenden, über Hilfe → «Erste Schritte» wieder einblenden. | ☑ | **gilt** | [app/src/main.rs:1956](../crates/app/src/main.rs#L1956), [ui-planung.spec.js:438](../e2e/ui-planung.spec.js#L438) | 15.11.2026 ok (Test grün) |
+| #71/AK7 | Sind alle acht Schritte erledigt, erscheint ein kurzer Hinweis. Danach klappt der Kasten zu. | ☑ | **gilt** | [ui-planung.spec.js:438](../e2e/ui-planung.spec.js#L438) | 15.11.2026 ok (Test grün) |
+| #71/AK8 | Wählt der Benutzer im Willkommensdialog (#70) «Eigene Planung beginnen», wird die Checkliste eingeblendet und zurückgesetzt, auch wenn er sie vorher ausgeblendet hatte. Alle Schritte stehen dann auf offen. | ☑ | **gilt** | [ui-einstieg.spec.js:16](../e2e/ui-einstieg.spec.js#L16) | 15.11.2026 ok (Test grün) |
+| #71/AK9 | Der Fortschritt wird in `einstellungen.json` gespeichert und gilt für den Benutzer, nicht für eine einzelne Planung. Das `.vplan`-Format bleibt unverändert. | ☑ | **gilt** | [ui-planung.spec.js:413](../e2e/ui-planung.spec.js#L413) | 15.11.2026 ok (Test grün) |
 | #71/AK10 | Die Hilfe, `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
 
 ### #72 Ergebnis in Worten in der Übersicht
 
-[Issue #72](https://github.com/ingen63/VivaPlan/issues/72) · geschlossen · Umsetzung: `7ba159d` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:2665](../e2e/ui.spec.js#L2665), [ui.spec.js:2825](../e2e/ui.spec.js#L2825)
+[Issue #72](https://github.com/ingen63/VivaPlan/issues/72) · geschlossen · Umsetzung: `7ba159d` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-planung.spec.js:306](../e2e/ui-planung.spec.js#L306), [ui-einstieg.spec.js:28](../e2e/ui-einstieg.spec.js#L28)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #72/AK1 | **Mehrere Läufe:** Die Einordnung steht in Klammern hinter der Zahl, zum Beispiel «In 87 % (mittel) der Läufe reicht das Vermögen bis 12.2055 (Alter 95).» Die Einordnung ist ein Link auf die Hilfe «Wie viel Erfolgsquote ist genug?» (`@r-overview`). Die Grenzen sind dieselben wie bei der Ampel: «hoch» ab 95 %, «mittel» von 80 % bis unter 95 %, «tief» unter 80 %. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826) | 15.11.2026 ok (Test grün) |
-| #72/AK2 | An den Grenzen gilt 95,0 % als «hoch» und 80,0 % als «mittel». Massgebend ist derselbe gerundete Wert, den die Kennzahl «Erfolgsquote» anzeigt. | ☑ | **gilt** | [ui.spec.js:2842](../e2e/ui.spec.js#L2842) | 15.11.2026 ok (Test grün) |
-| #72/AK3 | Geht in mindestens einem Lauf das Geld aus, folgt der Satz «Im ungünstigsten Lauf ist das Geld mit Alter … aufgebraucht.» Er nennt dasselbe Alter wie die Kennzahl «Früheste Erschöpfung». | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826) | 15.11.2026 ok (Test grün) |
-| #72/AK4 | **Ein einzelner Lauf:** «Das Vermögen reicht bis zum Ende der Planung und beträgt dann CHF ….» oder «Das Vermögen ist im 03.2049 (Alter 84) aufgebraucht.» | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
-| #72/AK5 | Beträge im Text folgen dem Umschalter «Nominal» bzw. «Heutige Kaufkraft». | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
-| #72/AK6 | Ein Hinweis auf den nächsten Schritt mit Link in die Hilfe: Liegt die Erfolgsquote unter 95 %, verweist er auf die Optimierung. Sonst verweist er auf die Szenarien. | ☑ | **gilt** | [ui.spec.js:2826](../e2e/ui.spec.js#L2826), [ui.spec.js:2868](../e2e/ui.spec.js#L2868) | 15.11.2026 ok (Test grün) |
-| #72/AK7 | Ergebnisse aus der Liste der Simulationen zeigen den Text ebenfalls. | ☑ | **gilt** | [ui.spec.js:2849](../e2e/ui.spec.js#L2849) | 15.11.2026 ok (Test grün) |
+| #72/AK1 | **Mehrere Läufe:** Die Einordnung steht in Klammern hinter der Zahl, zum Beispiel «In 87 % (mittel) der Läufe reicht das Vermögen bis 12.2055 (Alter 95).» Die Einordnung ist ein Link auf die Hilfe «Wie viel Erfolgsquote ist genug?» (`@r-overview`). Die Grenzen sind dieselben wie bei der Ampel: «hoch» ab 95 %, «mittel» von 80 % bis unter 95 %, «tief» unter 80 %. | ☑ | **gilt** | [ui-einstieg.spec.js:29](../e2e/ui-einstieg.spec.js#L29) | 15.11.2026 ok (Test grün) |
+| #72/AK2 | An den Grenzen gilt 95,0 % als «hoch» und 80,0 % als «mittel». Massgebend ist derselbe gerundete Wert, den die Kennzahl «Erfolgsquote» anzeigt. | ☑ | **gilt** | [ui-einstieg.spec.js:45](../e2e/ui-einstieg.spec.js#L45) | 15.11.2026 ok (Test grün) |
+| #72/AK3 | Geht in mindestens einem Lauf das Geld aus, folgt der Satz «Im ungünstigsten Lauf ist das Geld mit Alter … aufgebraucht.» Er nennt dasselbe Alter wie die Kennzahl «Früheste Erschöpfung». | ☑ | **gilt** | [ui-einstieg.spec.js:29](../e2e/ui-einstieg.spec.js#L29) | 15.11.2026 ok (Test grün) |
+| #72/AK4 | **Ein einzelner Lauf:** «Das Vermögen reicht bis zum Ende der Planung und beträgt dann CHF ….» oder «Das Vermögen ist im 03.2049 (Alter 84) aufgebraucht.» | ☑ | **gilt** | [ui-einstieg.spec.js:52](../e2e/ui-einstieg.spec.js#L52) | 15.11.2026 ok (Test grün) |
+| #72/AK5 | Beträge im Text folgen dem Umschalter «Nominal» bzw. «Heutige Kaufkraft». | ☑ | **gilt** | [ui-einstieg.spec.js:52](../e2e/ui-einstieg.spec.js#L52) | 15.11.2026 ok (Test grün) |
+| #72/AK6 | Ein Hinweis auf den nächsten Schritt mit Link in die Hilfe: Liegt die Erfolgsquote unter 95 %, verweist er auf die Optimierung. Sonst verweist er auf die Szenarien. | ☑ | **gilt** | [ui-einstieg.spec.js:29](../e2e/ui-einstieg.spec.js#L29), [ui-einstieg.spec.js:71](../e2e/ui-einstieg.spec.js#L71) | 15.11.2026 ok (Test grün) |
+| #72/AK7 | Ergebnisse aus der Liste der Simulationen zeigen den Text ebenfalls. | ☑ | **gilt** | [ui-einstieg.spec.js:52](../e2e/ui-einstieg.spec.js#L52) | 15.11.2026 ok (Test grün) |
 | #72/AK8 | Der Text entsteht in der Oberfläche aus den vorhandenen Kennzahlen. Der Rechenkern und die Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 vom Anwender geschlossen: nicht mehr belegbar (das öffentliche Repository hat nur einen Commit; die Golden-Tests laufen grün) |
 | #72/AK9 | Die Hilfe (`@r-overview`), `docs/BESCHREIBUNG.md` und die Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe und Beschreibung nennen es (grep) |
-
-### #73 Vermögen & Anlage: Quote von Aktien und Obligationen als Info neben den Beständen
-
-[Issue #73](https://github.com/ingen63/VivaPlan/issues/73) · geschlossen · Umsetzung: `c5167d7` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:1897](../e2e/ui.spec.js#L1897)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #73/AK1 | Aktien 80 000, Obligationen 20 000, Cash 50 000: neben «Aktien» steht «80 %», neben «Obligationen» «20 %». | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
-| #73/AK2 | Die Quote wird ganzzahlig gerundet (Aktien 1, Obligationen 2: «33 %» und «67 %»). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
-| #73/AK3 | Nach einer Änderung von Aktien oder Obligationen stimmt die Anzeige, sobald der Wert übernommen ist (beim Verlassen des Feldes, wie die übrigen Textfelder nach #57). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
-| #73/AK4 | Sind Aktien und Obligationen beide 0 oder leer, erscheint keine Quote (kein «NaN», kein «0 %»). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
-| #73/AK5 | Cash allein ändert die Quoten nicht (Beispiel AK1 mit Cash 0 oder 500 000: weiterhin 80 % / 20 %). | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
-| #73/AK6 | Die Quote wird nicht in der Planungsdatei gespeichert; Rechenergebnisse und Golden-Dateien bleiben unverändert. | ☑ | **gilt** | [ui.spec.js:1897](../e2e/ui.spec.js#L1897) | 15.11.2026 ok |
-| #73/AK7 | Die Hilfe zu den Beständen erwähnt die angezeigte Quote. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/app/ui/hilfe/10-editor.md`) | 15.11.2026 ok (Hilfe nennt die Quote) |
 
 ### #74 Hinweis zur Cash-Reserve nur einmal, beim ersten Laden einer betroffenen Planung
 
@@ -980,11 +607,11 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #74/AK1 | Das erste Laden einer betroffenen Planung nach dem Update (beim Start, über «Öffnen» oder per Doppelklick) zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | 15.11.2026 ok (Test grün) |
-| #74/AK2 | Jeder weitere Start mit derselben oder einer anderen betroffenen Planung: Kein Hinweis. | ☑ | **gilt** | [ui.spec.js:2057](../e2e/ui.spec.js#L2057) | 15.11.2026 ok (Test grün) |
-| #74/AK3 | Nachdem der Hinweis einmal erschienen ist, erscheint er auch beim Öffnen einer betroffenen Planung über «Öffnen» oder per Doppelklick nicht mehr. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959) | 15.11.2026 ok (Test grün) |
-| #74/AK4 | Nicht betroffene Planungen (z. B. Strategie «Standard») zeigen keinen Hinweis und zählen nicht als «gezeigt»: Beispiel: erster Start mit einer Planung «Standard» ohne Hinweis, danach Öffnen einer betroffenen Planung zeigt den Hinweis einmal. | ☑ | **gilt** | [ui.spec.js:2064](../e2e/ui.spec.js#L2064) | 15.11.2026 ok (Test grün) |
-| #74/AK5 | Dass der Hinweis gezeigt wurde, merkt sich die App in den lokalen Einstellungen (nicht in der Planungsdatei); die Planungsdatei bleibt unverändert. | ☑ | **gilt** | [ui.spec.js:1959](../e2e/ui.spec.js#L1959), [ui.spec.js:2049](../e2e/ui.spec.js#L2049) | 15.11.2026 ok (Test grün) |
+| #74/AK1 | Das erste Laden einer betroffenen Planung nach dem Update (beim Start, über «Öffnen» oder per Doppelklick) zeigt den Hinweis einmal. | ☑ | **gilt** | [ui-optimierung.spec.js:173](../e2e/ui-optimierung.spec.js#L173) | 15.11.2026 ok (Test grün) |
+| #74/AK2 | Jeder weitere Start mit derselben oder einer anderen betroffenen Planung: Kein Hinweis. | ☑ | **gilt** | [ui-optimierung.spec.js:181](../e2e/ui-optimierung.spec.js#L181) | 15.11.2026 ok (Test grün) |
+| #74/AK3 | Nachdem der Hinweis einmal erschienen ist, erscheint er auch beim Öffnen einer betroffenen Planung über «Öffnen» oder per Doppelklick nicht mehr. | ☑ | **gilt** | [ui-optimierung.spec.js:83](../e2e/ui-optimierung.spec.js#L83) | 15.11.2026 ok (Test grün) |
+| #74/AK4 | Nicht betroffene Planungen (z. B. Strategie «Standard») zeigen keinen Hinweis und zählen nicht als «gezeigt»: Beispiel: erster Start mit einer Planung «Standard» ohne Hinweis, danach Öffnen einer betroffenen Planung zeigt den Hinweis einmal. | ☑ | **gilt** | [ui-optimierung.spec.js:188](../e2e/ui-optimierung.spec.js#L188) | 15.11.2026 ok (Test grün) |
+| #74/AK5 | Dass der Hinweis gezeigt wurde, merkt sich die App in den lokalen Einstellungen (nicht in der Planungsdatei); die Planungsdatei bleibt unverändert. | ☑ | **gilt** | [ui-optimierung.spec.js:83](../e2e/ui-optimierung.spec.js#L83), [ui-optimierung.spec.js:173](../e2e/ui-optimierung.spec.js#L173) | 15.11.2026 ok (Test grün) |
 | #74/AK6 | Die Rechenergebnisse ändern sich nicht (der Hinweis ist nur eine Information); Golden-Dateien unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 vom Anwender geschlossen: nicht mehr belegbar (das öffentliche Repository hat nur einen Commit; die Golden-Tests laufen grün) |
 | #74/AK7 | Hilfe und Spezifikation (#18) beschreiben das neue Verhalten. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Hilfe nennt es (grep) |
 
@@ -1004,9 +631,9 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #76/AK1 | Bei den Obligationen gibt es die Wahl «CH kurzfristig» neben CH, CH Pictet und USA. Hilfe und Info-Fenster nennen Quelle, Zeitraum und dass die Rendite praktisch dem Geldmarktsatz entspricht. | ☑ | **gilt**: «CH Pictet» gibt es seit #90 nicht mehr. | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui.spec.js:178](../e2e/ui.spec.js#L178) | 15.11.2026 ok (Test grün) |
+| #76/AK1 | Bei den Obligationen gibt es die Wahl «CH kurzfristig» neben CH, CH Pictet und USA. Hilfe und Info-Fenster nennen Quelle, Zeitraum und dass die Rendite praktisch dem Geldmarktsatz entspricht. | ☑ | **gilt**: «CH Pictet» gibt es seit #90 nicht mehr. | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui-start.spec.js:138](../e2e/ui-start.spec.js#L138) | 15.11.2026 ok (Test grün) |
 | #76/AK2 | Die Jahresrenditen stammen bis 2020 aus der JST-Datenbank (`bill_rate`, Schweiz, lückenlos ab 1870, verwendet ab 1900) und danach aus einer Reihe der SNB. Der Übergang hat keine Lücke; ein Test rechnet ein Jahr vor und ein Jahr nach dem Übergang von Hand nach. | ☑ | **gilt** | [engine/tests/strategy.rs:343](../crates/engine/tests/strategy.rs#L343) | 15.11.2026 ok (Test grün) |
-| #76/AK3 | Eine Strategie mit «CH kurzfristig» rechnet jährlich über die gemeinsamen Jahre mit der gewählten Aktienreihe, wie die anderen gemischten Kombinationen (#69). | ☑ | **gilt** | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui.spec.js:178](../e2e/ui.spec.js#L178) | 15.11.2026 ok (Test grün) |
+| #76/AK3 | Eine Strategie mit «CH kurzfristig» rechnet jährlich über die gemeinsamen Jahre mit der gewählten Aktienreihe, wie die anderen gemischten Kombinationen (#69). | ☑ | **gilt** | [engine/tests/strategy.rs:369](../crates/engine/tests/strategy.rs#L369), [ui-start.spec.js:138](../e2e/ui-start.spec.js#L138) | 15.11.2026 ok (Test grün) |
 | #76/AK4 | Bestehende Planungen rechnen unverändert (Golden-Dateien ohne Änderung). | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: Golden-Dateien grün |
 | #76/AK5 | QUELLEN.md nennt Quelle, Abrufdatum und Lizenz der neuen Daten. | ☑ | **gilt** | kein Test (Datei geprüft: `crates/engine/data/QUELLEN.md`) | 15.11.2026 teilweise: Quellen genannt; Abrufdatum für SARON nicht gefunden |
 
@@ -1039,7 +666,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #79 Oberflächentests schlagen bei vollem Lauf fehl
 
-[Issue #79](https://github.com/ingen63/VivaPlan/issues/79) · geschlossen · Umsetzung: `62333d7` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-cancel.spec.js:27](../e2e/ui-cancel.spec.js#L27), [ui.spec.js:29](../e2e/ui.spec.js#L29) (+3)
+[Issue #79](https://github.com/ingen63/VivaPlan/issues/79) · geschlossen · Umsetzung: `62333d7` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-cancel.spec.js:27](../e2e/ui-cancel.spec.js#L27), [helpers.js:26](../e2e/helpers.js#L26) (+3)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
@@ -1056,45 +683,6 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #80/AK1 | Ein Push auf `main` startet genau einen Lauf der Rust-Tests mit Abdeckung. | ☑ | **gilt** | kein Test (Datei geprüft: `.github/workflows/test-quality.yml`) | 15.11.2026 ok (Datei) |
 | #80/AK2 | Liegt Engine oder App unter `tools/coverage-min`, schlägt der Lauf fehl (Beispiel: Schwelle vorübergehend 99). | ☑ | **gilt** | kein Test | 15.11.2026 ok (Schwelle 99: alle drei Pakete Exit 1) |
 | #80/AK3 | Doku (`docs/TESTS.md`, Kommentare in den Workflows) nennt nur noch den verbleibenden Workflow. | ☑ | **gilt** | kein Test (Datei geprüft: `docs/TESTS.md`) | 15.11.2026 ok (Durchsicht) |
-
-### #81 Invarianten- und Robustheitstests rechnen nachweislich genug Planungen
-
-[Issue #81](https://github.com/ingen63/VivaPlan/issues/81) · geschlossen · Umsetzung: siehe Kommentar im Issue
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #81/AK1 | `cash_flows_are_conserved_without_returns` und `buying_and_selling_at_book_value_keeps_total` schlagen fehl, wenn weniger als die Hälfte der Planungen gerechnet wurde. | ☑ | **gilt** | [invariants.rs:252](../crates/engine/tests/invariants.rs#L252) | 15.11.2026 ok (Test grün) |
-| #81/AK2 | `mutated_plans_never_crash` verlangt einen begründeten Mindestanteil (statt 40 von 600). | ☑ | **gilt** | [robustness.rs](../crates/engine/tests/robustness.rs) | 15.11.2026 ok (Test grün) |
-| #81/AK3 | Ist der Mindestanteil heute nicht erreicht, ist der Generator so angepasst, dass er erreicht wird. | ☑ | **gilt** | [robustness.rs](../crates/engine/tests/robustness.rs) | 15.11.2026 ok (Test grün) |
-
-### #82 Golden Masters erkennen Änderungen in jedem Monat
-
-[Issue #82](https://github.com/ingen63/VivaPlan/issues/82) · geschlossen · Umsetzung: siehe Kommentar im Issue
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #82/AK1 | Je Fall wird zusätzlich eine Prüfsumme (oder Summe) über alle Monatswerte gespeichert und verglichen. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 15.11.2026 ok (Test grün) |
-| #82/AK2 | `golden_cases_exercise_their_feature` prüft das frisch gerechnete Ergebnis. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 15.11.2026 ok (Test grün) |
-| #82/AK3 | Beispiel: Ein künstlich veränderter Wert im März lässt den Test fehlschlagen. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 15.11.2026 ok (Test grün) |
-
-### #83 Tests ohne feste Zeitgrenzen und feste Wartezeiten
-
-[Issue #83](https://github.com/ingen63/VivaPlan/issues/83) · geschlossen · Umsetzung: siehe Kommentar im Issue
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #83/AK1 | Rust-Tests prüfen keine absoluten Laufzeiten mehr, ausser in `#[ignore]`-Messungen; oder die Grenzen sind mit Begründung so gross, dass sie auf einem 2-Kern-Runner unter Abdeckungsmessung halten. | ☑ | **gilt** | kein Test (Durchsicht der Grenzen) | 15.11.2026 ok |
-| #83/AK2 | In `e2e/` ersetzt ein Warten auf einen Zustand jedes `waitForTimeout`, wo das möglich ist; die übrigen sind begründet. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/ui.spec.js`) | 15.11.2026 ok (fünf begründete Pausen) |
-
-### #84 Testdoku auf den Stand bringen
-
-[Issue #84](https://github.com/ingen63/VivaPlan/issues/84) · geschlossen · Umsetzung: siehe Kommentar im Issue
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #84/AK1 | `README.md`, `docs/TESTS.md`, `docs/QA.md` nennen `make test` (nextest) statt `cargo test`, mit Grund. | ☑ | **gilt** | kein Test (Dokumente geprüft) | 15.11.2026 ok |
-| #84/AK2 | Zahl der Oberflächentests, Abdeckung und Schichtentabelle (alle Dateien in `crates/engine/tests/`) stimmen. | ☑ | **gilt** | kein Test (Dokumente geprüft) | 15.11.2026 ok (Zahlen nicht neu gemessen) |
-| #84/AK3 | `tools/test-quality.sh` schreibt den Stand nur nach erfolgreichem Lauf (Fehlercode 3 von cargo-mutants = nicht erkannte Mutanten ausgenommen, mit Kommentar). | ☑ | **gilt** | kein Test (Skript gelesen) | 15.11.2026 ok (nicht ausgeführt) |
 
 ### #85 Zufällige Planungen über alle Renditequellen und Entnahmestrategien, mit Verkleinerung
 
@@ -1115,16 +703,6 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #86/AK1 | Neues Ziel verändert eine gültige Planung strukturiert und ruft `api::run` auf. | ☑ | **gilt** | kein Test (Fuzz-Ziel `fuzz/fuzz_targets/run_plan.rs`) | 15.11.2026 ok (clippy sauber) |
 | #86/AK2 | Ein Startkorpus liegt im Repo; der nächtliche Lauf speichert den Korpus zwischen (Cache). | ☐ | **gilt** | kein Test | 15.11.2026 teilweise: Korpus und Cache in der Datei; GitHub nicht gelaufen |
 | #86/AK3 | Ein Fund lässt den nächtlichen Lauf fehlschlagen und wird als Artefakt abgelegt (wie bisher). | ☐ | **gilt** | kein Test | 15.11.2026 teilweise: Konfiguration geprüft (Fuzz-Schritt schlägt fehl, Artefakt bei failure()); kein echter Fund erprobt |
-
-### #87 Unit-Tests für die Hilfsfunktionen der Oberfläche
-
-[Issue #87](https://github.com/ingen63/VivaPlan/issues/87) · geschlossen · Umsetzung: siehe Kommentar im Issue
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #87/AK1 | Reine Funktionen liegen in einem eigenen Modul. | ☑ | **gilt** | kein Test (Datei `crates/app/ui/util.js`) | 15.11.2026 ok |
-| #87/AK2 | `node --test` prüft sie, ohne Browser; Laufzeit unter 10 s. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) | 15.11.2026 ok (14 Tests in 0.12 s) |
-| #87/AK3 | Der Lauf ist in `test-quality.yml` eingebunden. | ☑ | **gilt** | kein Test (Datei geprüft: `test-quality.yml`) | 15.11.2026 ok (GitHub nicht gelaufen) |
 
 ### #88 clippy im Workflow
 
@@ -1147,14 +725,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #90 Pictet-Reihe aus App und Repository entfernen
 
-[Issue #90](https://github.com/ingen63/VivaPlan/issues/90) · geschlossen · Umsetzung: `6f1ab9e` (altes Repository) · Tests zum Issue ohne Kriterium: [ui.spec.js:200](../e2e/ui.spec.js#L200)
+[Issue #90](https://github.com/ingen63/VivaPlan/issues/90) · geschlossen · Umsetzung: `6f1ab9e` (altes Repository) · Tests zum Issue ohne Kriterium: [ui-start.spec.js:160](../e2e/ui-start.spec.js#L160)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #90/AK1 | `crates/engine/data/Pictet CH.csv` ist gelöscht; `git ls-files` findet keine Datei, deren Pfad `Pictet` enthält, und kein `include_str!` verweist mehr darauf. | ☑ | **gilt** | [engine/tests/library.rs:140](../crates/engine/tests/library.rs#L140) | 15.11.2026 ok (Test grün) |
-| #90/AK2 | Die Anlagestrategie bietet «Schweiz (Pictet)» weder bei den Aktien noch bei den Obligationen an (Auswahl in der Oberfläche, Strategieangaben des Rechenkerns). | ☑ | **gilt** | [ui.spec.js:258](../e2e/ui.spec.js#L258) | 15.11.2026 ok (Test grün) |
-| #90/AK3 | Eine Planung mit `"strategy": {"stocks": "chPictet", …}` öffnet ohne Fehler und erhält für die Aktien «Schweiz (JST)» (`chJst`); eine Planung mit `"bonds": "chPictet"` erhält «Eidgenossenschaft 10 Jahre» (`ch`). Ein Hinweis beim Öffnen nennt die Umstellung. | ☑ | **gilt** | [engine/tests/strategy.rs:475](../crates/engine/tests/strategy.rs#L475), [ui.spec.js:258](../e2e/ui.spec.js#L258) | 15.11.2026 ok (Test grün) |
-| #90/AK4 | Eine ältere Planung mit `"series": "library:Pictet CH.csv"` öffnet ohne Fehler, erhält `chJst` + `ch` und denselben Hinweis. | ☑ | **gilt** | [engine/tests/strategy.rs:185](../crates/engine/tests/strategy.rs#L185), [ui.spec.js:249](../e2e/ui.spec.js#L249) | 15.11.2026 ok (Test grün) |
+| #90/AK2 | Die Anlagestrategie bietet «Schweiz (Pictet)» weder bei den Aktien noch bei den Obligationen an (Auswahl in der Oberfläche, Strategieangaben des Rechenkerns). | ☑ | **gilt** | [ui-start.spec.js:218](../e2e/ui-start.spec.js#L218) | 15.11.2026 ok (Test grün) |
+| #90/AK3 | Eine Planung mit `"strategy": {"stocks": "chPictet", …}` öffnet ohne Fehler und erhält für die Aktien «Schweiz (JST)» (`chJst`); eine Planung mit `"bonds": "chPictet"` erhält «Eidgenossenschaft 10 Jahre» (`ch`). Ein Hinweis beim Öffnen nennt die Umstellung. | ☑ | **gilt** | [engine/tests/strategy.rs:475](../crates/engine/tests/strategy.rs#L475), [ui-start.spec.js:218](../e2e/ui-start.spec.js#L218) | 15.11.2026 ok (Test grün) |
+| #90/AK4 | Eine ältere Planung mit `"series": "library:Pictet CH.csv"` öffnet ohne Fehler, erhält `chJst` + `ch` und denselben Hinweis. | ☑ | **gilt** | [engine/tests/strategy.rs:185](../crates/engine/tests/strategy.rs#L185), [ui-start.spec.js:209](../e2e/ui-start.spec.js#L209) | 15.11.2026 ok (Test grün) |
 | #90/AK5 | Die App legt `Pictet CH.csv` nicht mehr im Datenordner an. Eine dort schon vorhandene Kopie wird weder gelöscht noch verändert und nicht mehr als mitgelieferte Reihe angeboten. | ☑ | **gilt** | [engine/tests/library.rs:140](../crates/engine/tests/library.rs#L140) | 15.11.2026 ok (Test grün) |
 | #90/AK6 | Hilfe (`20-renditen.md`, `10-editor.md`, `60-referenz.md`), `README.md`, `docs/BESCHREIBUNG.md`, `crates/engine/data/QUELLEN.md` und die Spezifikation #69 sind nachgeführt. Die Erwähnung von Pictet als Quelle der Schweizer JST-Aktienreihe darf bleiben. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: «Pictet» steht noch als Stichwort und als Quellenhinweis |
 | #90/AK7 | `make test` und die Oberflächentests (`e2e/`) laufen grün; die Abdeckung von Engine und App bleibt je mindestens 80 %; die Golden-Dateien (`crates/engine/tests/golden/`) bleiben unverändert. | ☑ | **gilt** | kein Test | 15.11.2026 teilweise: alle Tests heute grün; Abdeckung am 14.11.2026 |
@@ -1196,97 +774,6 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #97/AK5 | Überholte Kriterien werden in den Issues nicht geändert; die Liste schlägt vor, was zu tun ist (Kommentar im Issue oder neues Issue). | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
 | #97/AK6 | Die Auswahl der Issues ist reproduzierbar beschrieben (Abfrage mit `gh`), damit die Liste später nachgeführt werden kann. | ☑ | **gilt** | kein Test (Datei `docs/ABNAHME.md`) | 15.11.2026 ok |
 
-### #99 Ordner docs/spezifikation auflösen
-
-[Issue #99](https://github.com/ingen63/VivaPlan/issues/99) · geschlossen · Umsetzung: 9f23216
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #99/AK1 | `Pflichteingaben.md`, `Weltindex JST.md` und `VivaPlan in Claude (MCP).md` liegen unter gleichem Namen in `docs/` (mit `git mv`, damit die Historie folgt). | ☑ | **gilt** | kein Test (`git show --stat 9f23216`: Umbenennung) | 15.11.2026 ok |
-| #99/AK2 | Alle Verweise auf die verschobenen Dateien zeigen auf den neuen Pfad (Code, Tests, Hilfe, Doku, `CLAUDE.md`). `git grep "docs/spezifikation"` findet ausserhalb von `docs/ABNAHME.md` nichts mehr. | ☑ | **gilt** | kein Test (`git grep`) | 15.11.2026 ok |
-| #99/AK3 | Die vier entbehrlichen Dateien sind gelöscht. | ☑ | **gilt** | kein Test (`git show --stat 9f23216`) | 15.11.2026 ok |
-| #99/AK4 | Die Rechenregeln aus `3-topf-strategie-spezifikation.md` sind mit «Rechenregeln» in `docs/ENTWICKLUNG.md` abgeglichen; jede Abweichung ist im Issue aufgeführt und nachgetragen oder begründet verworfen. | ☑ | **gilt** | [engine/tests/buckets_need.rs](../crates/engine/tests/buckets_need.rs) (`issue_99_ak4_…`, `a_simulation_younger_than_12_months_…`) | 15.11.2026 ok (zwei Abweichungen entschieden: der Code gilt, in `ENTWICKLUNG.md` Punkt 8 nachgetragen) |
-| #99/AK5 | Vor dem Löschen steht im Issue je Datei der Beschreibungen umgesetzter Issues, wo ihr Inhalt steht oder dass er entfällt. | ☑ | **gilt** | kein Test (Kommentar im Issue) | 15.11.2026 ok |
-| #99/AK6 | `docs/spezifikation/` existiert nicht mehr. `CLAUDE.md` und `docs/ENTWICKLUNG.md` nennen den Ordner nicht mehr; der Satz zu `tools/github-issues/create.sh` in `CLAUDE.md` stimmt weiterhin. | ☑ | **gilt** | kein Test (Durchsicht) | 15.11.2026 ok (Satz zu `create.sh` sinngemäss, nicht wortgleich) |
-| #99/AK7 | `make test` und `make ui-unit` sind grün; `tools/ui-smoke.sh` meldet keine kaputten Hilfeverweise. | ☑ | **gilt** | `make test`, `make ui-unit`, `tools/ui-smoke.sh` | 15.11.2026 ok (636 Rust, 18 UI-Unit grün; `#helpcheck` 0 Probleme; voller Rauchtest unter Last mit Zeitüberschreitungen, einzeln grün) |
-
-### #103 Renditekriterium der 3-Topf-Strategie bei Simulationen unter 12 Monaten
-
-[Issue #103](https://github.com/ingen63/VivaPlan/issues/103) · geschlossen · Umsetzung: cdbe449, e3a53ba
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #103/AK1 | Die Regel für Simulationen unter 12 Monaten ist entschieden und im Issue als Kommentar mit Begründung festgehalten. | ☑ | **gilt** (Entscheid «letzte 12 Monate mit Vorlauf», Kommentar vom 16.11.2026) | kein Test (Kommentar im Issue) | 16.11.2026 ok |
-| #103/AK2 | Ein Test mit Start im Juli und bekannten Monatsrenditen belegt die gewählte Regel; der bisherige Test «seit Januar» ist ersetzt (angepasst im Kommentar vom 16.11.2026). | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) `issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run`, [sim_rules.rs](../crates/engine/tests/sim_rules.rs) `issue_103_the_pre_run_supplies_the_months_before_the_start` | 16.11.2026 ok |
-| #103/AK3 | `docs/ENTWICKLUNG.md` und die Hilfe zur 3-Topf-Strategie nennen dieselbe Regel. | ☑ | **gilt** | kein Test (Dateien geprüft: `docs/ENTWICKLUNG.md`, `hilfe/30-entnahme.md`) | 16.11.2026 ok |
-| #103/AK4 | Der Geltungsbereich der Hochrechnung im Startjahr ist festgelegt, getestet und in `docs/ENTWICKLUNG.md` beschrieben. | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) `issue_99_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawal_month` | 16.11.2026 ok |
-| #103/AK5 | Ändert sich ein Ergebnis der Golden-Dateien, steht die Begründung im Issue. | ☑ | **gilt** | `golden::golden_masters` (nur 08 geändert, Begründung im Issue) | 16.11.2026 ok |
-
-### #111 Oberflächentests unabhängig von der Rechnerlast
-
-[Issue #111](https://github.com/ingen63/VivaPlan/issues/111) · geschlossen · Umsetzung: a334c91, 200fc64
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #111/AK1 | Der Testzugang `#results/…` rechnet Bootstrap und Parametrisch mit 500 Pfaden und dem Zufallsstartwert 42; zwei Läufe mit derselben Adresse ergeben dieselben Kennzahlen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#111/AK1: …» | 16.11.2026 ok |
-| #111/AK2 | Mit dem Testzugang `#nobench` misst die App die Rechenzeit nicht; Anzeige «Dauer wird geschätzt…», keine Rückfrage «Lange Berechnung». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#111/AK2: …» (mit Gegenprobe) | 16.11.2026 ok |
-| #111/AK3 | `open()` setzt `#nobench` standardmässig; nur Tests, die die echte Messung prüfen, schalten sie ein. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/`) | 16.11.2026 ok |
-| #111/AK4 | Kein Test wartet fest (`waitForTimeout`, `setTimeout` in der Seite); #57-Prüfungen mit `page.clock` und Zählung der Anfragen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#57/…», «#18: Cash-Reserve …» | 16.11.2026 ok (Nacharbeit 200fc64) |
-| #111/AK5 | Ausser den Abbruchtests hat kein Test einen eigenen Timeout. | ☑ | **gilt** | kein Test (Durchsicht von `e2e/`) | 16.11.2026 ok |
-| #111/AK6 | Tests, die auf bestimmte Ereignisse angewiesen sind, finden diese mit 500 Pfaden. | ☑ | **gilt** | ganzer Satz `e2e/` | 16.11.2026 ok (ohne Anpassung) |
-| #111/AK7 | Die Oberflächentests laufen auf GitHub dreimal hintereinander grün. | ☑ | **gilt** | Läufe 43850404495, 43851543289, 43852527223 (beim Aufräumen der Runs am 16.11.2026 gelöscht, Ergebnis im Issue) | 16.11.2026 ok |
-| #111/AK8 | `docs/TESTS.md` beschreibt die Regel; `#nobench` und `page.clock` mit Zweck. | ☑ | **gilt** | kein Test (Datei geprüft) | 16.11.2026 ok |
-
-### #112 Klick ins Menü geht verloren, wenn gleichzeitig eine Vorschau eintrifft
-
-[Issue #112](https://github.com/ingen63/VivaPlan/issues/112) · geschlossen · Umsetzung: 9383d82
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #112/AK1 | Das Menü wird beim Eintreffen einer Vorschau nicht neu aufgebaut; nachgeführt werden nur Markierung und Zahlen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#112/AK1, AK2: …» | 16.11.2026 ok |
-| #112/AK2 | Ein Klick ins Menü mit Vorschau zwischen Drücken und Loslassen öffnet den Abschnitt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#112/AK1, AK2: …» (Gegenprobe mit altem Verhalten rot) | 16.11.2026 ok |
-| #112/AK3 | Die Prüfliste wird nur neu aufgebaut, wenn sich ihre Meldungen ändern; ein Klick auf eine Meldung geht nicht verloren. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#112/AK3: …» | 16.11.2026 ok |
-| #112/AK4 | Zahlen am Menü und Markierung des aktiven Abschnitts stimmen weiterhin. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#112/AK4: …», ganzer Satz `e2e/` | 16.11.2026 ok |
-
-### #113 Anforderungsbezug erkennt Prüfungen, describe-Blöcke und Nummern mit Null
-
-[Issue #113](https://github.com/ingen63/VivaPlan/issues/113) · geschlossen · Umsetzung: 3f6b3c7
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #113/AK1 | Kennzeichnungen werden unabhängig von führenden Nullen zugeordnet. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) `test_issue_113_ak1_…` | 16.11.2026 ok (auch auf echten Daten: #8 findet seine Tests) |
-| #113/AK2 | Ein Test mit `AKn` in einem `describe`-Block mit Issue-ID belegt das Kriterium n. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) `test_issue_113_ak2_…` | 16.11.2026 ok |
-| #113/AK3 | Ein in einer Prüfung als erfüllt festgehaltenes Kriterium zählt in der Spalte «geprüft». | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) `test_issue_113_ak3_…` (2 Tests) | 16.11.2026 ok (237 Kriterien «geprüft») |
-| #113/AK4 | Spalten «mit Test», «geprüft», «nur manuell», «ohne»; Aufklappliste mit Art und Datum der Prüfung. | ☑ | **gilt** | kein Test (Seite aus `report.py` durchgesehen) | 16.11.2026 ok |
-| #113/AK5 | Unittests in `tools/report/test_report.py` decken die drei Fälle ab. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) (18 Tests grün) | 16.11.2026 ok |
-| #113/AK6 | `docs/TESTS.md` beschreibt die Zuordnung. | ☑ | **gilt** | kein Test (Datei geprüft) | 16.11.2026 ok |
-
-### #114 Bezugslinie (0 bzw. 100) in den Ergebnisgrafiken dicker zeichnen
-
-[Issue #114](https://github.com/ingen63/VivaPlan/issues/114) · geschlossen · Umsetzung: 77a6423
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #114/AK1 | Nulllinie dicker in jeder Ergebnisgrafik mit 0 im Bereich, auch im Vergleich und in der Minigrafik. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#114/AK1, AK3, AK4: …» | 16.11.2026 ok |
-| #114/AK2 | Aktien, Obligationen und Inflation: dicke Linie bei 100 (linear, logarithmisch), bei 0 % in «Änderung in %». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#114/AK2: …» | 16.11.2026 ok |
-| #114/AK3 | Ausserhalb des gezeigten Bereichs keine Bezugslinie. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#114/AK1, AK3, AK4: …» | 16.11.2026 ok |
-| #114/AK4 | Bezugslinie hinter den Daten, hell und dunkel gut sichtbar. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#114/AK1, AK3, AK4: …» (Reihenfolge) | 16.11.2026 ok (hell und dunkel von Hand in der Vorschau) |
-| #114/AK5 | Ein Oberflächentest prüft die dicke Linie. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «Bezugslinie in den Grafiken (#114)» | 16.11.2026 ok |
-
-### #115 Vergleich der Ergebnisse an das Einzelergebnis angleichen
-
-[Issue #115](https://github.com/ingen63/VivaPlan/issues/115) · geschlossen · Umsetzung: f036687, c48e278
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #115/AK1 | Umschalter Nominal / Heutige Kaufkraft für Kennzahlen, Grafiken und Jahreswerte, je Ergebnis mit seiner Inflation. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#115/AK1: …» | 16.11.2026 ok |
-| #115/AK2 | Übersicht: Endvermögen nach Perzentil, Wahrscheinlichkeit, Alter bei Erschöpfung, Bandbreite je Ergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#115/AK2: …» | 16.11.2026 ok |
-| #115/AK3 | Verläufe je Ergebnis überlagert (erweitert um «Lauf wählen», Kommentar zu c48e278). | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#115/AK3: …», «#115/AK3, AK4: Lauf wählen …» | 16.11.2026 ok |
-| #115/AK4 | Jahreswerte mit einer Spalte je Ergebnis, gleich wie die Jahreswerte des Einzelergebnisses. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#115/AK4: …», «#115/AK3, AK4: Lauf wählen …» | 16.11.2026 ok |
-| #115/AK5 | Sonderfälle: Start verschieden, fehlende Grössen mit Vermerk. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#115/AK5: …» | 16.11.2026 ok |
-| #115/AK6 | Zoom und Registerkarten wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#115/AK6: …» | 16.11.2026 ok |
-| #115/AK7 | Hilfe «Ergebnisse vergleichen» nachgeführt; Oberflächentests für Umschalter, Grafiken und Jahreswerte. | ☑ | **gilt** | kein Test (Hilfe durchgesehen), Tests oben | 16.11.2026 ok |
-
 ### #116 Mutationslauf bringt den Mac zum Absturz (endlose Schleife füllt den Speicher)
 
 [Issue #116](https://github.com/ingen63/VivaPlan/issues/116) · geschlossen · Umsetzung: 51395f5
@@ -1300,157 +787,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #116/AK5 | Mutanten von `montecarlo.rs` laufen ohne Speicherwachstum durch. | ☑ | **gilt** | kein Test (Lauf mit `cargo mutants -f …`) | 16.11.2026 ok (im Issue abgehakt, nicht wiederholt) |
 | #116/AK6 | `docs/TESTS.md` beschreibt Grenze und Einstellungen. | ☑ | **gilt** | kein Test (Durchsicht) | 16.11.2026 ok |
 
-### #118 Vergleich: Kennzahlen nach Spalte sortieren (auf- und absteigend)
-
-[Issue #118](https://github.com/ingen63/VivaPlan/issues/118) · geschlossen · Umsetzung: db2e666
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #118/AK1 | Klick auf den Spaltenkopf sortiert aufsteigend, zweiter Klick absteigend, andere Spalte wieder aufsteigend. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#118/AK1, AK2, AK3: …» | 16.11.2026 ok |
-| #118/AK2 | Pfeil ▲/▼ in der sortierten Spalte, ↕ in den übrigen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#118/AK1, AK2, AK3: …» | 16.11.2026 ok |
-| #118/AK3 | Zahlen nach Wert, Daten nach Datum («keine» zuletzt), Texte alphabetisch. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «#118/AK3, AK4: …» | 16.11.2026 ok |
-| #118/AK4 | Fehlende Werte in beiden Richtungen am Ende. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «#118/AK3, AK4: …» | 16.11.2026 ok |
-| #118/AK5 | Ohne Klick Reihenfolge der Liste; Sortierung bleibt bei Registerkarte und Kaufkraft; Farben bleiben. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#118/AK5: …» | 16.11.2026 ok |
-| #118/AK6 | Spaltenköpfe per Tastatur bedienbar, mit `aria-sort`. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#118/AK6: …» | 16.11.2026 ok |
-| #118/AK7 | Hilfe beschreibt die Sortierung. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
-
 ### #119 Name eines Ergebnisses mit Abkürzung von Renditequelle und Strategie
 
 [Issue #119](https://github.com/ingen63/VivaPlan/issues/119) · geschlossen · Umsetzung: a48c37e, 7628f6f (Nacharbeit AK4)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #119/AK1 | Name «Planung · Quelle · Strategie · Datum, Zeit», Zahl der Läufe in der Zeile darunter. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#119/AK1, AK2, AK3: …» | 16.11.2026 ok |
-| #119/AK2 | Abkürzungen der Renditequelle, bei Szenarien «Szenarien». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#119/AK1, AK2, AK3: …» | 16.11.2026 ok |
-| #119/AK3 | Abkürzungen der Strategie. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#119/AK1, AK2, AK3: …», «#119/AK4: …» | 16.11.2026 ok |
-| #119/AK4 | Abkürzungen an einer Stelle, zusammen mit `SOURCES` bzw. `STRATS`; Test auf Vollständigkeit. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#119/AK4: …» | 16.11.2026 ok (nach Nacharbeit 7628f6f; vorher teilweise: bei `sourceName` statt bei `SOURCES`/`STRATS`) |
-| #119/AK5 | Gespeicherte Ergebnisse behalten ihren Namen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#119/AK5: …» | 16.11.2026 ok |
+| #119/AK1 | Name «Planung · Quelle · Strategie · Datum, Zeit», Zahl der Läufe in der Zeile darunter. | ☑ | **gilt** | [ui-vergleich.spec.js](../e2e/ui-vergleich.spec.js) «#119/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| #119/AK2 | Abkürzungen der Renditequelle, bei Szenarien «Szenarien». | ☑ | **gilt** | [ui-vergleich.spec.js](../e2e/ui-vergleich.spec.js) «#119/AK1, AK2, AK3: …» | 16.11.2026 ok |
+| #119/AK3 | Abkürzungen der Strategie. | ☑ | **gilt** | [ui-vergleich.spec.js](../e2e/ui-vergleich.spec.js) «#119/AK1, AK2, AK3: …», «#119/AK4: …» | 16.11.2026 ok |
+| #119/AK4 | Abkürzungen an einer Stelle, zusammen mit `SOURCES` bzw. `STRATS`; Test auf Vollständigkeit. | ☑ | **gilt** | [ui-vergleich.spec.js](../e2e/ui-vergleich.spec.js) «#119/AK4: …» | 16.11.2026 ok (nach Nacharbeit 7628f6f; vorher teilweise: bei `sourceName` statt bei `SOURCES`/`STRATS`) |
+| #119/AK5 | Gespeicherte Ergebnisse behalten ihren Namen. | ☑ | **gilt** | [ui-vergleich.spec.js](../e2e/ui-vergleich.spec.js) «#119/AK5: …» | 16.11.2026 ok |
 | #119/AK6 | Hilfe nennt Aufbau und Abkürzungen. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
-
-### #120 Vergleich auf 10 Ergebnisse erweitern und begrenzen
-
-[Issue #120](https://github.com/ingen63/VivaPlan/issues/120) · geschlossen · Umsetzung: 2f6e114
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #120/AK1 | «Vergleichen» aktiv bei 2 bis 10, sonst gesperrt; Tooltip nennt die Grenze. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#120/AK1, AK2: …» | 16.11.2026 ok |
-| #120/AK2 | Ab dem 11. markierten Ergebnis Hinweis; Markieren und Löschen bleiben möglich. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#120/AK1, AK2: …» | 16.11.2026 ok |
-| #120/AK3 | Zehn unterscheidbare Farben, hell und dunkel, überall gleich. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#120/AK3: …» (light, dark) | 16.11.2026 ok (Bildschirmfotos hell und dunkel) |
-| #120/AK4 | Mit 10 Ergebnissen lesbar: Tabellen und Balken scrollen waagrecht. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#120/AK4: …» | 16.11.2026 ok (Bildschirmfoto) |
-| #120/AK5 | Ein Oberflächentest vergleicht 10 Ergebnisse. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «Vergleich mit bis zu 10 Ergebnissen (#120)» | 16.11.2026 ok |
-| #120/AK6 | Hilfe nennt die Grenze von 10. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
-
-### #121 Wahrscheinlichkeit, dass das Geld reicht: Achse 80–100 %, umschaltbar auf 0–100 %
-
-[Issue #121](https://github.com/ingen63/VivaPlan/issues/121) · geschlossen · Umsetzung: 9b24b38
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #121/AK1 | Standard 80–100 % im Einzelergebnis und im Vergleich. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#121/AK1, AK2: …» | 16.11.2026 ok |
-| #121/AK2 | Schalter 80–100 % / 0–100 % gilt für beide Ansichten und bleibt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#121/AK1, AK2: …» | 16.11.2026 ok |
-| #121/AK3 | Unter 80 % abgeschnitten, Hinweis mit Verweis auf 0–100 %. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#121/AK3, AK4: …», «#121/AK3: im Vergleich …» | 16.11.2026 ok |
-| #121/AK4 | Tooltip zeigt den echten Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#121/AK3, AK4: …» | 16.11.2026 ok |
-| #121/AK5 | Hilfe beschreibt den Schalter. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
-
-### #122 Vergleich: Aktien, Obligationen und Inflation linear, logarithmisch oder in %
-
-[Issue #122](https://github.com/ingen63/VivaPlan/issues/122) · geschlossen · Umsetzung: 773898d
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #122/AK1 | Dieselben Schalter wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#122/AK1, AK3: …» | 16.11.2026 ok |
-| #122/AK2 | Änderung in % je Ergebnis wie im Einzelergebnis; Bezugslinie bei 0 bzw. 100. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#122/AK2, AK5, AK6: …» | 16.11.2026 ok |
-| #122/AK3 | Logarithmische Achse wie im Einzelergebnis. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#122/AK1, AK3: …» | 16.11.2026 ok |
-| #122/AK4 | Wahl gilt im Einzelergebnis und im Vergleich gemeinsam. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#122/AK4: …» | 16.11.2026 ok |
-| #122/AK5 | Tooltip je Ergebnis; Kennzeichnung der Linien bleibt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#122/AK2, AK5, AK6: …» | 16.11.2026 ok (Linienarten im Bildschirmfoto) |
-| #122/AK6 | Heutige Kaufkraft gilt in allen Darstellungen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#122/AK2, AK5, AK6: …» | 16.11.2026 ok |
-| #122/AK7 | Hilfe nachgeführt. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
-
-### #123 Vergleich: Unterschiede in der Planung mit Bezeichnungen statt internen Feldnamen
-
-[Issue #123](https://github.com/ingen63/VivaPlan/issues/123) · geschlossen · Umsetzung: 31c1d0f
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #123/AK1 | Bezeichnung wie im Editor mit Abschnitt, keine internen Feldnamen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#123/AK1, AK2, AK3: …» | 16.11.2026 ok (Bildschirmfoto) |
-| #123/AK2 | Werte wie im Editor (Prozente, Beträge, Auswahltext, zeitabhängige Werte lesbar). | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#123/AK1, AK2, AK3: …», «#123/AK2, AK4: …» | 16.11.2026 ok |
-| #123/AK3 | Gruppiert und sortiert nach den Abschnitten des Editors. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#123/AK1, AK2, AK3: …» | 16.11.2026 ok |
-| #123/AK4 | Listen mit Namen statt Index. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#123/AK2, AK4: …» | 16.11.2026 ok |
-| #123/AK5 | Felder ohne Bezeichnung erscheinen nicht; Test über alle Felder einer Beispielplanung. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#123/AK5: …» | 16.11.2026 ok |
-| #123/AK6 | Hilfe nachgeführt. | ☑ | **gilt** | kein Test (Hilfe durchgesehen) | 16.11.2026 ok |
-
-### #125 Kopfzeile des Ergebnisses mit dem Namen der Berechnung vor der Anzahl Läufe
-
-[Issue #125](https://github.com/ingen63/VivaPlan/issues/125) · geschlossen · Umsetzung: e37f43c
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #125/AK1 | Mehrere Läufe: «<Name> · <Anzahl> Läufe», Name des gespeicherten Ergebnisses. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#125/AK1, AK3: …» | 16.11.2026 ok |
-| #125/AK2 | Einzellauf: Name vorne, danach «Einzellauf · …». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#125/AK2: …» | 16.11.2026 ok |
-| #125/AK3 | Gilt für frisch berechnete und aus der Liste geöffnete Ergebnisse. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#125/AK1, AK3: …», «#125/AK3, AK4: …» | 16.11.2026 ok |
-| #125/AK4 | Nach dem Umbenennen zeigt die Kopfzeile den neuen Namen. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#125/AK3, AK4: …» | 16.11.2026 ok |
-| #125/AK5 | Langer Name gekürzt, Anzahl sichtbar, voller Name im Tooltip. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#125/AK5: …» | 16.11.2026 ok |
-| #125/AK6 | Ohne gespeicherten Namen bleibt die Kopfzeile wie heute. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#125/AK6: …» | 16.11.2026 ok |
-| #125/AK7 | Oberflächentest für frisches und geöffnetes Ergebnis; Hilfe nachgeführt. | ☑ | **gilt** | Tests oben; Hilfe `@r-overview` durchgesehen | 16.11.2026 ok |
-
-### #124 Nicht erkannte Mutanten aus dem vollen Mutationslauf
-
-[Issue #124](https://github.com/ingen63/VivaPlan/issues/124) · geschlossen · Umsetzung: 181eed4
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #124/AK1 | 3a-Konto der zweiten Person (`account_of`, `try_buy`). | ☑ | **gilt** | [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «issue_124_ak1_indirect_amortization_goes_to_the_second_person» | 17.11.2026 ok |
-| #124/AK2 | 3a-Einzahlungen im Ruhestand. | ☑ | **gilt** | [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «issue_124_ak2_…» | 17.11.2026 ok |
-| #124/AK3 | Hypothek: Einmalzahlung, Zinsen, `after_sales`, Amortisation beim AHV-Bezug. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs), [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «issue_124_ak3_…» | 17.11.2026 ok |
-| #124/AK4 | `progress::cancel` bricht eine Berechnung ab. | ☑ | **gilt** | [cancel.rs](../crates/engine/tests/cancel.rs) «issue_124_ak4_cancel_stops_every_running_job» | 17.11.2026 ok |
-| #124/AK5 | Kalibrierung: `corr`, `fit_moments`, `joint`. | ☑ | **gilt** | [calibrate.rs](../crates/engine/src/calibrate.rs) «issue_124_ak5_…»; `corr` begründet ausgeschlossen (gleichwertig) | 17.11.2026 ok (Abweichung begründet) |
-| #124/AK6 | Import alter Dateien: Standardalter 3a (`upgrade.rs`). | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_124_ak6_…»; unerreichbarer Zweig begründet ausgeschlossen | 17.11.2026 ok (Abweichung begründet) |
-| #124/AK7 | Prüfung der Planung: Warnungen 3a, `PayoutAt::is_date`. | ☑ | **gilt** | [validate.rs](../crates/engine/src/validate.rs) «issue_124_ak7_…» | 17.11.2026 ok |
-| #124/AK8 | Übrige Mutanten getötet oder begründet ausgeschlossen. | ☑ | **gilt** | `issue_124_ak8_…`, `.cargo/mutants.toml`, `docs/TESTS.md` | 17.11.2026 ok |
-| #124/AK9 | Voller Lauf ohne unbegründete nicht erkannte Mutanten. | ☑ | **gilt** | kein Test (voller Lauf vom 16.11.2026: 0 nicht erkannt) | 17.11.2026 ok (Lauf nicht wiederholt) |
-
-### #126 Vergleich: Endvermögen nach Perzentil in heutiger Kaufkraft zeigt nur sechs Perzentile
-
-[Issue #126](https://github.com/ingen63/VivaPlan/issues/126) · geschlossen · Umsetzung: 23d9807
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #126/AK1 | Der Rechenkern liefert zu jedem Perzentil den realen Endwert (`endTotalReal`), Rust-Test gegen den Lauf des Perzentils. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_126_ak1_…» | 17.11.2026 ok (Test vergleicht die sechs Perzentile mit Detaillauf; die übrigen haben den Wert, entstehen im Code aber im selben Ausdruck) |
-| #126/AK2 | Karte «Endvermögen nach Perzentil» zeigt in heutiger Kaufkraft für jedes Perzentil einen Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, #126/AK3, #129/AK2: …» | 17.11.2026 ok |
-| #126/AK3 | Die Karte trägt in heutiger Kaufkraft den Hinweis der Karte «Kennzahlen». | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, #126/AK3, #129/AK2: …» | 17.11.2026 ok |
-| #126/AK4 | Perzentil-Zeilen der Kennzahlen-Karte unverändert. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); #115/#118/93 in [ui.spec.js](../e2e/ui.spec.js) | 17.11.2026 ok (Golden-Dateien nur Zeilen hinzugefügt: 120, keine entfernt) |
-| #126/AK5 | Hilfe und Doku nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/50-ergebnisse.md`) | 17.11.2026 ok |
-
-### #128 Vergleich: fehlende Perzentile älterer Ergebnisse ohne Vermerk, Hilfe zur Perzentil-Tabelle zu allgemein
-
-[Issue #128](https://github.com/ingen63/VivaPlan/issues/128) · geschlossen · Umsetzung: 8c3b4de
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #128/AK1 | Vermerk im Vergleich für ältere Ergebnisse ohne reale Werte je Perzentil; Detailläufe weiter mit Wert. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#128/AK1, #128/AK2: …» | 17.11.2026 ok |
-| #128/AK2 | Oberflächentest mit Ergebnis ohne reale Werte je Perzentil: Vermerk und Rückfall. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#128/AK1, #128/AK2: …» | 17.11.2026 ok |
-| #128/AK3 | Hilfe beschreibt die reale Perzentil-Tabelle nur im Thema «Vergleich». | ☑ | **gilt** | kein Test (Durchsicht `hilfe/50-ergebnisse.md`) | 17.11.2026 ok |
-| #128/AK4 | Hinweistext in `app.js` einmal definiert. | ☑ | **gilt** | kein Test (Durchsicht `REAL_PCT_HINT`) | 17.11.2026 ok |
-
-### #129 Tests zum realen Endvermögen je Perzentil schärfen
-
-[Issue #129](https://github.com/ingen63/VivaPlan/issues/129) · geschlossen · Umsetzung: c9ea087, a140f88
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #129/AK1 | e2e-Test zu #126 im Bericht #126/AK2 und #126/AK3 zugeordnet. | ☑ | **gilt** | kein Test (`report.test_marks`) | 17.11.2026 ok |
-| #129/AK2 | e2e-Test prüft jede Ergebnisspalte, ein Laden der Ergebnisse. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) «#126/AK2, #126/AK3, #129/AK2: …» | 17.11.2026 ok |
-| #129/AK3 | Rust-Test prüft alle Perzentile gegen ihren Lauf. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_126_ak1_…» | 17.11.2026 ok |
-| #129/AK4 | Endlichkeitsprüfungen umfassen `end_total_real`. | ☑ | **gilt** | [robustness.rs](../crates/engine/tests/robustness.rs), [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) «stress_couple_four_properties_100_years», Fuzz-Ziel `run_plan` | 17.11.2026 ok (Stresstest mit `QA_PATHS=2000`; mit 50'000 Pfaden Abbruch an der Speichergrenze #116, unabhängig) |
-
-### #130 Szenarien ohne reales Endvermögen je Perzentil
-
-[Issue #130](https://github.com/ingen63/VivaPlan/issues/130) · geschlossen · Umsetzung: df40918
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #130/AK1 | Szenario-Perzentile ohne `endTotalReal`, Zusammenfassung mit. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_130_ak1_…» | 17.11.2026 ok |
-| #130/AK2 | Szenarientabelle, Optimum und Vergleich zeigen dieselben Werte. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); alle Oberflächentests | 17.11.2026 ok (Golden 09: nur 90 Zeilen `endTotalReal` entfernt) |
 
 ### #132 Monte Carlo parametrisch rechnet schneller
 
@@ -1464,206 +812,8 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #132/AK4 | Die Verteilung der Renditen bleibt die des Modells (Mittelwert, Streuung, Fettschwänze `df`, Sprünge `jumpLambda`, `jumpMu`, `jumpSigma`); … | ☑ | **gilt** | [montecarlo.rs](../crates/engine/src/montecarlo.rs) «issue_132_ak4_…» (3 Tests) | 18.11.2026 ok |
 | #132/AK5 | Die übrigen Quellen (fix, historisch, alle Startzeitpunkte, Monte Carlo historisch) werden nicht langsamer (Messung im Issue). | ☑ | **gilt** | kein Test (Messung alt gegen neu) | 18.11.2026 ok (Ergebnisse bitgleich; Bootstrap +1 % im Rauschen) |
 | #132/AK6 | Die Golden-Dateien (`crates/engine/tests/golden/`) ändern sich nicht, oder die Änderung wird im Issue begründet. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 18.11.2026 ok (nur `08-parametrisch.json`, begründet im Issue) |
-| #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui.spec.js](../e2e/ui.spec.js) «AK7: …» | 18.11.2026 ok |
+| #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui-abnahme.spec.js](../e2e/ui-abnahme.spec.js) «AK7: …» | 18.11.2026 ok |
 | #132/AK8 | Keine Netzwerkzugriffe und keine Abhängigkeit von Grafiktreibern; `docs/ENTWICKLUNG.md` (Abschnitt Monte Carlo) beschreibt das Verfahren. | ☑ | **gilt** | kein Test (Durchsicht `Cargo.toml`, `docs/ENTWICKLUNG.md`) | 18.11.2026 ok |
-
-### #133 Geldfluss-Erhaltung über alle Bestandteile prüfen
-
-[Issue #133](https://github.com/ingen63/VivaPlan/issues/133) · geschlossen · Umsetzung: b5640b1
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #133/AK1 | Der Monatsdatensatz (oder ein Testmodus des Rechenkerns) weist alle Geldflüsse und Bewertungsänderungen eines Monats einzeln aus: … | ☑ | **gilt** (Entscheid vom 18.11.2026: Umbuchungen und zusammengefasste Positionen angenommen) | kein Test (Durchsicht `sim::Ledger`) | 18.11.2026 ok (Entscheid des Anwenders) |
-| #133/AK2 | Ein Eigenschaftstest (proptest) prüft für zufällige Planungen mit Immobilien, Hypotheken, PK, 3a, Renditen ungleich 0 und allen … | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs), [proptest_plans.rs](../crates/engine/tests/proptest_plans.rs), [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) | 18.11.2026 ok |
-| #133/AK3 | Beispiel: Ein absichtlich doppelt gebuchter Verkaufserlös (Mutant in `sell`) lässt den Test fehlschlagen. | ☑ | **gilt** | Gegenprobe von Hand (Arbeitskopie, `sell` doppelt) | 18.11.2026 ok |
-| #133/AK4 | Die Golden-Dateien bleiben unverändert; | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
-| #133/AK5 | `docs/TESTS.md` und `docs/QA.md` (Offene Punkte 1) sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #134 Steuer nie negativ und monoton
-
-[Issue #134](https://github.com/ingen63/VivaPlan/issues/134) · geschlossen · Umsetzung: edc1f0c
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #134/AK1 | Eigenschaftstest: Für beliebige Tabellen mit nicht fallender Steuer gilt `tax::tax(t, a + d, m) >= tax::tax(t, a, m) >= 0` für alle a, d … | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) | 18.11.2026 ok |
-| #134/AK2 | Eigenschaftstest: `property_gain_tax_held` ist für jeden Gewinn, jede Besitzdauer (auch unbekannt) und beide Modelle (Zürich, Aargau) ≥ 0. | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) | 18.11.2026 ok |
-| #134/AK3 | Beispiel: Kapitaltabelle [[0, 0.08], [1'000'000, 0.02]], zwei Kapitalbezüge im selben Jahr (200'000 und 300'000): Die Steuer auf keinem … | ☑ | **gilt** (Beispiel per Kommentar vom 17.11.2026 korrigiert: [[0, 0.10], [300'000, 0.01]]) | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
-| #134/AK4 | Die Prüfung meldet eine Einkommens-, Vermögens- oder Kapitaltabelle, bei der die Steuer zwischen zwei Stufen fällt, mit Feldbezug; | ☑ | **gilt** (Präzisierung: Warnung, kein Fehler) | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs), [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
-| #134/AK5 | Hilfe (`crates/app/ui/hilfe/10-editor.md`, Steuern) nennt die neue Meldung. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/10-editor.md`) | 18.11.2026 ok |
-
-### #135 Absturz bei leerem Batch-Ergebnis nach frühem Abbruch
-
-[Issue #135](https://github.com/ingen63/VivaPlan/issues/135) · geschlossen · Umsetzung: b5a03dc
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #135/AK1 | `summarize` und `Bands::from_columns` liefern mit 0 Läufen ein Ergebnis ohne Panik; | ☑ | **gilt** | [batch.rs](../crates/engine/src/batch.rs) | 18.11.2026 ok |
-| #135/AK2 | Ein Test bricht eine Simulation ab, bevor der erste Block rechnet (`cancel_job` vor `run_as`), und erhält die Meldung «abgebrochen» ohne … | ☑ | **gilt** | [cancel.rs](../crates/engine/tests/cancel.rs) | 18.11.2026 ok |
-| #135/AK3 | Dasselbe gilt für Szenarien und Optimierung (Test oder begründet im Issue). | ☑ | **gilt** | kein Test (Durchsicht `api.rs`, `optimize.rs`) | 18.11.2026 ok |
-
-### #136 Planung atomar speichern
-
-[Issue #136](https://github.com/ingen63/VivaPlan/issues/136) · geschlossen · Umsetzung: 9153c90
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #136/AK1 | Die Planung wird zuerst in eine temporäre Datei im selben Ordner geschrieben und auf den Datenträger gebracht; | ☑ | **gilt** | [files.rs](../crates/engine/tests/files.rs) | 18.11.2026 ok |
-| #136/AK2 | Test: Schlägt das Schreiben fehl (z. | ☑ | **gilt** | [files.rs](../crates/engine/tests/files.rs) | 18.11.2026 ok |
-| #136/AK3 | Test: Nach einem Fehler bleibt keine temporäre Datei im Ordner zurück. | ☑ | **gilt** | [files.rs](../crates/engine/tests/files.rs) | 18.11.2026 ok |
-| #136/AK4 | In der Desktop-App erscheint bei einem Fehler beim Speichern eine Meldung, und die Planung gilt weiter als ungespeichert (Test in … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs), [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #136/AK5 | Gilt auch für «Speichern unter» und für die Kommandozeile, soweit sie Planungen schreibt. | ☑ | **gilt** | kein Test (Durchsicht `crates/cli/src/main.rs`) | 18.11.2026 ok |
-
-### #137 Fuzzing und Eigenschaftstests für Upgrade und Altimport
-
-[Issue #137](https://github.com/ingen63/VivaPlan/issues/137) · geschlossen · Umsetzung: 0701f24
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #137/AK1 | Neues Fuzz-Ziel `upgrade_plan`: beliebiges JSON → `api::upgrade_plan` → `api::validate`; | ☑ | **gilt** | Fuzz-Ziel `upgrade_plan` (Build) | 18.11.2026 ok |
-| #137/AK2 | Neues Fuzz-Ziel `import_legacy`: beliebiger Text → `api::import_legacy`; | ☑ | **gilt** | Fuzz-Ziel `import_legacy` (Build) | 18.11.2026 ok |
-| #137/AK3 | Beide Ziele laufen im nächtlichen Fuzz-Job von `test-quality.yml` mit; | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok (Schleife über `cargo fuzz list`; neue Ziele laufen ab der nächsten Nacht) |
-| #137/AK4 | proptest: Für zufällige Planungen gilt `upgrade_plan(upgrade_plan(x).plan)` ergibt dieselbe Planung und keine Hinweise. | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) | 18.11.2026 ok |
-| #137/AK5 | Test: Die Beispielplanung und jede Golden-Planung ergeben beim Nachführen keine Hinweise und keine Änderung. | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) | 18.11.2026 ok (Abweichung begründet: Golden-Planungen erst ab dem zweiten Nachführen ohne Änderung) |
-| #137/AK6 | `docs/TESTS.md` (Abschnitt «Fuzzing» und Schicht 5f) ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #138 Grundstückgewinnsteuer-Vorlagen gegen amtliche Beispiele prüfen
-
-[Issue #138](https://github.com/ingen63/VivaPlan/issues/138) · geschlossen · Umsetzung: feb956c
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #138/AK1 | Die Werte jeder Vorlage sind an einer einzigen Stelle definiert; | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok |
-| #138/AK2 | Je Vorlage gibt es mindestens drei Referenzfälle mit verschiedenen Besitzdauern, gerechnet mit `tax::property_gain_tax_held`. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok |
-| #138/AK3 | Beispiel Zürich: Gewinn 100'000 CHF, 10 volle Jahre Besitz, Steuerfuss-Option aus → Stufensteuer 29'400, Abzug 20 % → 23'520.00 CHF. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok (Abweichung begründet: kein amtlicher Rechner, gegen amtlichen Tarif nachgerechnet) |
-| #138/AK4 | Zürich: Fälle für den Zuschlag (unter 1 Jahr: +50 %, unter 2 Jahren: +25 %), die Freigrenze (Gewinn 4'999 → 0) und den höchsten Abzug … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_138_ak3_zurich_…» | 18.11.2026 ok |
-| #138/AK5 | Aargau: Fälle für 0, 10, 11 und 25 volle Jahre (40 %, 20 %, 19 %, 5 %). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok |
-| #138/AK6 | Ein Test prüft, dass die Vorlage, wie sie die Oberfläche übernimmt, dieselben Beträge ergibt (Parität Oberfläche ↔ Rechenkern). | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-
-### #139 Speichergrenze bei Monte Carlo
-
-[Issue #139](https://github.com/ingen63/VivaPlan/issues/139) · geschlossen · Umsetzung: 4128e09
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #139/AK1 | Die Prüfung meldet einen Fehler, wenn Pfade × Monate eine Grenze überschreitet. | ☑ | **gilt** | [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
-| #139/AK2 | Beispiel: 1'000'000 Pfade, Planungsdauer 100 Jahre → Fehler mit Feldbezug auf die Anzahl Pfade und einem Vorschlag für die höchste … | ☑ | **gilt** | [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
-| #139/AK3 | Beispiel: 50'000 Pfade, Planungsdauer 30 Jahre → kein Fehler (heute übliche Rechnung). | ☑ | **gilt** | [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
-| #139/AK4 | Ein Test misst den höchsten Speicherverbrauch (über `engine::test_alloc`) einer Rechnung genau an der Grenze, und dieser bleibt unter … | ☑ | **gilt** | [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) | 18.11.2026 ok |
-| #139/AK5 | Der Stresstest `stress_couple_four_properties_100_years` läuft wieder grün (mit einer Pfadzahl unter der Grenze) oder ist begründet … | ☑ | **gilt** | [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) «stress_couple_four_properties_100_years» | 18.11.2026 ok |
-| #139/AK6 | Die Hilfe (Abschnitt Monte Carlo) nennt die Grenze. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/20-renditen.md`) | 18.11.2026 ok |
-
-### #140 Zahleneingabe mit Punkt als Tausendertrennzeichen wird still um den Faktor 1000 falsch übernommen
-
-[Issue #140](https://github.com/ingen63/VivaPlan/issues/140) · geschlossen · Umsetzung: 0c4d328
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #140/AK1 | In Feldern mit einem Betrag in Währung wird eine Eingabe mit Punkt und genau drei folgenden Ziffern («1.234», «12.500», «1.234.567») … | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #140/AK2 | «0x10», «1e5» und «Infinity» werden in allen Zahlenfeldern abgelehnt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #140/AK3 | Unverändert gültig sind «1'234.50», «1’234,5», «12,5», «1 234», «-3» und in Prozent- und Jahresfeldern «1.25». | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «#140/AK3» | 18.11.2026 ok |
-| #140/AK4 | Unit-Tests in `e2e/unit/util.test.js` decken alle Beispiele dieser Liste ab; | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #140/AK5 | Die Hilfe (Eingabe von Zahlen) nennt die erlaubten Schreibweisen. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #141 Tests und Rauchtest unter Windows und macOS
-
-[Issue #141](https://github.com/ingen63/VivaPlan/issues/141) · geschlossen · Umsetzung: 1ddc59d
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #141/AK1 | Ein nächtlicher Job (nur nach neuem Commit, wie die übrigen nächtlichen Jobs) führt `cargo nextest run --workspace` unter … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
-| #141/AK2 | Die Golden Masters und `ods_reference` bestehen auf allen drei Betriebssystemen mit der heutigen Toleranz; | ☑ | **gilt** | Jobs `tests-os` (Windows, macOS) und `tests-coverage` (Linux), [Lauf 44274654652](https://github.com/ingen63/VivaPlan/actions/runs/44274654652) | 18.11.2026 ok: `golden::` und `ods_reference::` auf allen drei Systemen grün |
-| #141/AK3 | Tests für Pfade unter Windows (Laufwerksbuchstabe, Backslash, Leerzeichen und Umlaute im Namen, `.rplan` → `.vplan`) laufen im Windows-Job. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok: `issue_141_ak3_windows_paths` grün in `tests-os (windows-latest)` |
-| #141/AK4 | Vor dem Release-Entwurf startet jedes Paket in einem Rauchtest: Die App öffnet die Beispielplanung, rechnet einen festen Lauf und … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs), [Lauf 44270687642](https://github.com/ingen63/VivaPlan/actions/runs/44270687642) | 18.11.2026 ok: Rauchtest auf Linux, macOS und Windows «ok – 472 Monate gerechnet» |
-| #141/AK5 | `docs/TESTS.md` nennt die Plattformen und die Jobs. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #142 Vertragstest zwischen Dev-Server und Tauri-Commands
-
-[Issue #142](https://github.com/ingen63/VivaPlan/issues/142) · geschlossen · Umsetzung: b203250
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #142/AK1 | Eine gemeinsame Tabelle (eine Datei) nennt jeden Rechenbefehl, den beide Verteiler anbieten, mit Beispielargumenten, wie sie die … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok |
-| #142/AK2 | Ein Test schickt jeden Eintrag durch die Tauri-IPC der Mock-App (`get_ipc_response`) und durch `devserver::call` und verlangt dieselbe … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok |
-| #142/AK3 | Ein Test schlägt fehl, wenn ein Befehl in `generate_handler!` oder im Dev-Server dazukommt und in der Tabelle fehlt; | ☑ | **gilt** | [dispatch.rs](../crates/engine/src/dispatch.rs), [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok |
-| #142/AK4 | Beispiel: `run_simulation` mit `jobId` und anschliessend `progress_get` mit derselben Kennung liefern in beiden Verteilern denselben … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_142_ak2_…» | 18.11.2026 ok |
-| #142/AK5 | `docs/TESTS.md` (Schicht 6) nennt den Test. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #144 Unbekannte Formatversion beim Öffnen melden
-
-[Issue #144](https://github.com/ingen63/VivaPlan/issues/144) · geschlossen · Umsetzung: 4678dc0
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #144/AK1 | `"format": "vivaplan/1"`, `"pensionsplaner/1"` (alte Kennung) und eine fehlende Kennung öffnen wie heute. | ☑ | **gilt** | [legacy_format.rs](../crates/engine/tests/legacy_format.rs) | 18.11.2026 ok |
-| #144/AK2 | `"format": "vivaplan/2"` (und jede andere unbekannte Kennung) ergibt beim Öffnen eine Fehlermeldung, die die Kennung nennt und sagt, … | ☑ | **gilt** | [legacy_format.rs](../crates/engine/tests/legacy_format.rs), [main.rs](../crates/app/src/main.rs), [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #144/AK3 | Dasselbe gilt für die Kommandozeile (`vivaplan run`, `vivaplan validate`): Fehlercode ungleich 0 und dieselbe Meldung. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) | 18.11.2026 ok |
-| #144/AK4 | Rust-Tests für alle Fälle oben; | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #144/AK5 | `docs/ENTWICKLUNG.md` (Dateiformat) beschreibt die Regel. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #145 AHV-Plafond des Ehepaars steigt mit der doppelten Teuerung
-
-[Issue #145](https://github.com/ingen63/VivaPlan/issues/145) · geschlossen · Umsetzung: d6c9a73
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #145/AK1 | Der Plafond steigt im Januar um dieselbe Teuerung wie eine einzelne angepasste Rente, unabhängig davon, wie viele Personen eine Rente … | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
-| #145/AK2 | Referenztest mit dem Beispiel oben: Januar 2031 = 3'893.40, Januar 2033 = 4'130.51 (Toleranz 0.01 CHF). | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
-| #145/AK3 | Referenztest: nur eine der beiden Renten mit Teuerung, beide laufend: Plafond und Summe wie von Hand nachgerechnet (Rechnung im Kommentar). | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
-| #145/AK4 | Referenztest: Die zweite Rente beginnt später als die erste; | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
-| #145/AK5 | Ändern sich Golden-Dateien (z. | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
-
-### #146 Golden Masters nächtlich im Release-Profil
-
-[Issue #146](https://github.com/ingen63/VivaPlan/issues/146) · geschlossen · Umsetzung: 53dbf09
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #146/AK1 | Ein nächtlicher Job in `test-quality.yml` (nur nach neuem Commit, wie die übrigen nächtlichen Jobs) führt die Golden Masters … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
-| #146/AK2 | Die Golden Masters bestehen dort mit der heutigen Toleranz (1e-9 relativ), ohne `GOLDEN_UPDATE`. | ☑ | **gilt** | Job `release-golden`, [Lauf 44274654652](https://github.com/ingen63/VivaPlan/actions/runs/44274654652) | 18.11.2026 ok: 9 Tests im Release-Profil grün, ohne `GOLDEN_UPDATE` |
-| #146/AK3 | Ein Fehlschlag lässt den Lauf fehlschlagen und ist in der Zusammenfassung sichtbar. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-| #146/AK4 | `docs/TESTS.md` nennt den Job und den Grund. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #147 Gespeicherte Ergebnisse in IndexedDB testen
-
-[Issue #147](https://github.com/ingen63/VivaPlan/issues/147) · geschlossen · Umsetzung: 089585d
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #147/AK1 | Unit-Tests ohne Browser (`node --test` in `e2e/unit/`, mit einer IndexedDB-Nachbildung als reine Testabhängigkeit) prüfen `add`, `list` … | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#147/AK1» | 18.11.2026 ok |
-| #147/AK2 | Test: Bricht eine Transaktion ab (Kontingent erschöpft, nachgebildet), wird das Versprechen mit einem Fehler abgelehnt; | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
-| #147/AK3 | Test: Ist IndexedDB nicht verfügbar, fällt die Liste wie heute auf den Arbeitsspeicher zurück. | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#147/AK3» | 18.11.2026 ok |
-| #147/AK4 | Test: Ein gespeichertes Ergebnis einer älteren Version (ohne Felder, die später dazukamen, z. | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#147/AK4» | 18.11.2026 ok |
-| #147/AK5 | Der Job `ui-unit` in `test-quality.yml` führt die neuen Tests aus. | ☑ | **gilt** | Job `ui-unit` (GitHub, c702e99) | 18.11.2026 ok |
-
-### #148 Statistiktests der Renditepfade mit Vertrauensgrenzen
-
-[Issue #148](https://github.com/ingen63/VivaPlan/issues/148) · geschlossen · Umsetzung: 5d8e2ec
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #148/AK1 | Bootstrap: Mittelwert und Streuung der Jahresrenditen von Aktien, Obligationen und Inflation über die Pfade liegen innerhalb von 4 … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok (Präzisierung: Monatswerte statt Streuung der Jahresrendite, begründet) |
-| #148/AK2 | Parametrisch: Mittelwert und Streuung der Jahresrendite der Aktien liegen innerhalb von 4 Standardfehlern der Modellwerte (aus μ, σ und … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
-| #148/AK3 | Parametrisch: Die Korrelation zwischen Aktien und Obligationen sowie zwischen Aktien und Inflation liegt im 99-%-Vertrauensintervall … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
-| #148/AK4 | Beispiel: Eine künstlich um 1 Prozentpunkt pro Jahr verschobene Aktienrendite lässt den Test fehlschlagen (einmal von Hand gezeigt und … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) (in den Tests zu AK1–AK3) | 18.11.2026 ok |
-| #148/AK5 | Die Tests bleiben bei festem Startwert reproduzierbar und laufen im Standard unter 10 s; | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
-
-### #153 Mitgelieferte Planungen sind beim Aktienmodell nicht auf dem aktuellen Stand
-
-[Issue #153](https://github.com/ingen63/VivaPlan/issues/153) · geschlossen · Umsetzung: 0c6a760
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #153/AK1 | `beispiel.vplan` und `Neu.vplan` enthalten `"auto": true` bei `returns.parametric`; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «issue_137_ak5_…» | 18.11.2026 ok |
-| #153/AK2 | Ändern sich dadurch Ergebnisse von Tests (z. | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
-
-### #154 Nachführen holt die Wohnkosten-Anpassung erst beim zweiten Öffnen nach
-
-[Issue #154](https://github.com/ingen63/VivaPlan/issues/154) · geschlossen · Umsetzung: aa5bde3
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #154/AK1 | Der Schritt `housing` läuft nach den Schritten, die die Planung lesbar machen; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «proptest_upgrade_is_idempotent» | 18.11.2026 ok |
-| #154/AK2 | Regressionstest mit dem verkleinerten Fall. | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_154_…» | 18.11.2026 ok |
 
 ### #159 Nächtliche Läufe zuverlässig machen und von Hand vollständig startbar
 
@@ -1676,36 +826,3 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #159/AK3 | Der Cron-Zeitpunkt liegt nicht zur vollen oder halben Stunde. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
 | #159/AK4 | `mutants-diff` schliesst auch nach zwei ausgefallenen Nächten innerhalb seines Zeitlimits ab; | ☐ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847), Job `mutants-diff` | 18.11.2026 nicht erfüllt: alle 4 Teile nach 120 Min. abgebrochen (245 Mutanten je Teil, rund 75 s je Mutant) |
 | #159/AK5 | `docs/TESTS.md` beschreibt, wie man die nächtlichen Jobs von Hand startet und dass `schedule` verspätet sein oder ausfallen kann. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
-
-### #160 Weniger Kontext bei der Arbeit mit Claude Code
-
-[Issue #160](https://github.com/ingen63/VivaPlan/issues/160) · geschlossen · Umsetzung: 5bdf2d5 (Beschreibung in `docs/TESTS.md` mit a4070d1)
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #160/AK1 | Ein Make-Ziel (z. B. `make test-quiet`) führt dieselben Tests wie `make test` aus, gibt aber nur fehlgeschlagene und langsame Tests sowie … | ☑ | **gilt** | kein Test (Lauf `make test-quiet`, Probe mit rotem Test) | 18.11.2026 ok (6 Zeilen statt rund 740) |
-| #160/AK2 | `CLAUDE.md` (Abschnitt Tests) nennt: beim Arbeiten gezielte Tests, vor dem Commit einmal der volle Lauf über das leise Ziel. | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
-| #160/AK3 | `CLAUDE.md` (Abschnitt Regeln) nennt: Dateien über rund 500 Zeilen nur gezielt lesen; Golden-Dateien nie ganz lesen, … | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
-| #160/AK4 | `CLAUDE.md` nennt: keine neue Abhängigkeit (Crate, npm-Paket) ohne Rückfrage. | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
-| #160/AK5 | `CLAUDE.md` nennt eine Stopp-Regel: Ist ein Übersetzungs- oder Testfehler nach drei Versuchen nicht behoben, … | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
-| #160/AK6 | Der Hook nach dem Commit (`.claude/hooks/after-commit.sh`) führt die Tests der geänderten Pakete selbst leise aus und meldet nur das … | ☑ | **gilt** | [test_after_commit.py](../tools/test_after_commit.py) «test_issue_160_ak6_…» | 18.11.2026 ok (dazu echter Lauf auf 2f0d36a: 82 s, 733 Tests, nur Zusammenfassung) |
-| #160/AK7 | Die Regeln zu Tests je Abnahmekriterium, Abdeckung (80 %), Mutanten und Dokumentation in `CLAUDE.md` bleiben unverändert. | ☑ | **gilt** | kein Test (Diff `CLAUDE.md` in 5bdf2d5) | 18.11.2026 ok |
-| #160/AK8 | `docs/TESTS.md` beschreibt das neue Make-Ziel und den geänderten Hook. | ☑ | **gilt** | kein Test (Durchsicht `docs/TESTS.md`) | 18.11.2026 ok |
-
-### #117 Issues nach GitHub-Konvention: Nummer statt eigener ID
-
-[Issue #117](https://github.com/ingen63/VivaPlan/issues/117) · geschlossen · Umsetzung: 4bd1a25, 4c29de1, 2eccce0
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #117/AK1 | Kein Titel mit altem Präfix; genau ein Art-Label (`bug`, `enhancement`, `task`). | ☑ | **gilt** | kein Test (Abfrage mit `gh`) | 17.11.2026 ok |
-| #117/AK2 | `docs/ISSUE-IDS.md` nennt jede alte ID mit Nummer, doppelte vermerkt. | ☑ | **gilt** | kein Test (Abgleich mit den Titeln vor der Umstellung) | 17.11.2026 ok |
-| #117/AK3 | `git grep` findet alte IDs nur in `docs/ISSUE-IDS.md`. | ☑ | **gilt** | kein Test (`git grep`) | 17.11.2026 ok |
-| #117/AK4 | Dateinamen ohne alte ID, `tools/github-issues/` entfernt. | ☑ | **gilt** | kein Test (Durchsicht) | 17.11.2026 ok |
-| #117/AK5 | Bericht erkennt `#Nr/AKn`, `issue_Nr_akn_…` und `AKn` im `describe`; nicht weniger belegte Kriterien. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_117_ak5_…» | 17.11.2026 ok (508 belegt vorher und nachher) |
-| #117/AK6 | Dokumente und Vorlagen beschreiben die neue Konvention. | ☑ | **gilt** (Präzisierung 1: kein `Fixes`/`Closes`, Label `implemented`) | kein Test (Durchsicht) | 17.11.2026 ok |
-| #117/AK7 | Labels migriert, Anzahl je Label gleich, englische Beschreibungen. | ☑ | **gilt** | kein Test (Abfrage mit `gh`) | 17.11.2026 ok (Abweichung: `task` 6 → 4, damit jedes Issue genau ein Art-Label hat) |
-| #117/AK8 | Label `accepted` angelegt, `umgesetzt` gelöscht. | ☑ | **überholt** durch Präzisierung 1: `implemented` statt `accepted` | kein Test (Abfrage mit `gh`) | 17.11.2026 ok (`implemented` ersetzt `umgesetzt`) |
-| #117/AK9 | Keine alten Labels mehr im Repo. | ☑ | **gilt** (Präzisierung 2: Labels in Backticks, `gefunden:`) | kein Test (`git grep`) | 17.11.2026 ok |
-| #117/AK10 | `docs/ABNAHME.md` nach Nummer, Auswahl-Abfrage funktioniert. | ☑ | **gilt** | kein Test (Abfrage ausgeführt) | 17.11.2026 ok |
-| #117/AK11 | Alle Tests grün, `cargo fmt` sauber, Golden-Dateien unverändert. | ☑ | **gilt** | alle Testsuiten | 17.11.2026 ok |

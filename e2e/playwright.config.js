@@ -21,7 +21,7 @@ module.exports = defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "main", testMatch: ["ui.spec.js", "optimum.spec.js"] },
+    { name: "main", testMatch: "*.spec.js", testIgnore: "ui-cancel.spec.js" },
     { name: "cancel", testMatch: "ui-cancel.spec.js", dependencies: ["main"], fullyParallel: false, workers: 1 },
   ],
   webServer: {

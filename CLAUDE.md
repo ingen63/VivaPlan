@@ -1,77 +1,36 @@
 # Arbeitsanleitung für Claude Code
 
-Lokale Desktop-App (Tauri/Rust) für die Schweizer Pensionsplanung. Überblick in `docs/BESCHREIBUNG.md` und `README.md`, Technik und Rechenregeln in `docs/ENTWICKLUNG.md`, Tests in `docs/TESTS.md` und `docs/QA.md`, Spezifikationen in `docs/` (Pflichteingaben, Weltindex JST, MCP-Konzept).
+Lokale Desktop-App (Tauri 2/Rust) für die Schweizer Pensionsplanung. Workspace: `crates/engine` (Rechenkern), `crates/cli` (`vivaplan`), `crates/app` (Desktop-App, Oberfläche in `crates/app/ui/`: HTML/CSS/JS ohne Bibliotheken und ohne Build-Schritt); `fuzz/` ist ein eigener Workspace. Technik, Ordner und Rechenregeln: `docs/ENTWICKLUNG.md`; Überblick `docs/BESCHREIBUNG.md`; Tests `docs/TESTS.md`, `docs/QA.md`.
 
 ## Sprache
 
-Deutsch mit «ss» statt «ß» (Schweizer Rechtschreibung). Im Gespräch mit mir: Anrede «du». Texte der Oberfläche, Hilfe, Commits und Issues sind deutsch; Oberfläche und Hilfe sprechen die Nutzerinnen und Nutzer weiterhin mit «Sie» an.
-
-## Technik
-
-- **Rust** (Edition 2021), Workspace mit `crates/engine` (Rechenkern, Bibliothek), `crates/cli` (Kommandozeile `vivaplan`) und `crates/app` (Desktop-App); eigener Workspace in `fuzz/`.
-- **Desktop-App:** Tauri 2 (`tauri`, `tauri-plugin-dialog`).
-- **Oberfläche:** HTML, CSS und JavaScript ohne externe Bibliotheken und ohne Build-Schritt (`crates/app/ui/`).
-- **Rechenkern:** serde und serde_json (Projektdatei `.vplan` als JSON), schemars, rayon (parallele Monte-Carlo-Läufe), calamine (Import alter Konfigurationen).
-- **Tests:** cargo-nextest, proptest, cargo-fuzz, cargo-llvm-cov, cargo-mutants; Oberfläche mit Playwright (Node, `e2e/`).
-- **Werkzeuge:** Make, Shell und Python (`tools/`, Berichte und Abdeckung des geänderten Codes), GitHub Actions.
-
-Aufbau der Ordner und Rechenregeln: `docs/ENTWICKLUNG.md`.
-
-## Anforderungen kommen aus GitHub Issues
-
-Jede Änderung hat ein Issue. Es wird nur über seine GitHub-Nummer genannt (`#27`); der Titel hat kein Präfix, die Art steht im Label (`bug`, `enhancement`, `task`). Der Text enthält die Anforderung und die **Abnahmekriterien als Häkchen-Liste**. Die Abnahmekriterien sind die Prüfliste: Jedes Kriterium bekommt, wo möglich, einen Test.
-
-Gibt es zur Aufgabe kein Issue, zuerst fragen oder eines vorschlagen. Nichts umsetzen, was keine Anforderung hat.
+Deutsch mit «ss» statt «ß». Im Gespräch mit mir: «du». Oberfläche, Hilfe, Commits und Issues deutsch; Oberfläche und Hilfe sprechen die Nutzer mit «Sie» an.
 
 ## Ablauf pro Issue
 
-1. **Issue lesen** (`gh issue view <Nr>`). Ist etwas unklar oder widersprüchlich, nachfragen. Nicht still annehmen.
-2. **Direkt auf `main` arbeiten.** Das Projekt hat eine einzige Person, deshalb gibt es keine Feature-Branches und keine Pull Requests. Ein Branch ist die Ausnahme für grosse oder riskante Arbeiten und braucht deine Zustimmung.
-3. **Umsetzen**, klein und gezielt. Keine Änderungen ausserhalb des Issues. Gefundene Nebenbaustellen als neues Issue vorschlagen, nicht mitmachen.
-4. **Testen** (siehe unten). Jedes Abnahmekriterium prüfen und im Bericht nennen, was geprüft ist und was nicht.
-5. **Commit** mit der Issue-Nummer in Klammern, Imperativ oder Substantiv, ohne Punkt:
-   `Warnsymbol bei Notverkauf (#27)`. Das gilt für Teilschritte und für den abschliessenden Commit.
-   Eine Anforderung pro Commit (oder wenige Commits). Kein `Fixes #27` oder `Closes #27` in der Commit-Nachricht, denn
-   das schliesst das Issue beim Push von selbst; offen heisst «nicht abgenommen».
-   Nach dem Commit, der die Anforderung vollständig umsetzt, bekommt das Issue das Label `implemented` und einen Kommentar
-   «Umgesetzt in <Commit>. Abnahme ausstehend.» (`gh issue edit <Nr> --add-label implemented`, `gh issue comment`).
-   Teilschritte bekommen das Label nicht. Wird das Issue wieder geöffnet, weil etwas fehlt, kommt das Label weg, bis die
-   Nacharbeit committet ist.
-6. **Abnahme** macht der Mensch. Claude hakt die Kriterien im Issue **nicht** selbst ab und schliesst es nicht.
-   **Ausnahme: Einzelprüfung auf Anweisung** («Prüfe #27», Grundlage `docs/ABNAHME.md`). Dann prüft Claude die Kriterien
-   (vorhandene Tests laufen lassen, sonst von Hand) und hält das Ergebnis fest: Kommentar im Issue mit dem Ergebnis je
-   Kriterium, erfüllte Kriterien abhaken, das Issue schliessen, wenn alle erfüllt sind (sonst offen lassen und den Fehler
-   nennen), und in `docs/ABNAHME.md` die Spalten «Test» und «Geprüft» nachführen. Die Änderung an `docs/ABNAHME.md` wird
-   nur auf ausdrückliches Wort committet.
-7. **Push und Version** (Tag) nur auf ausdrückliches Wort.
+Jede Änderung hat ein GitHub-Issue (nur als `#27` nennen). Gibt es keines, zuerst fragen oder eines vorschlagen. Die Abnahmekriterien (Häkchen-Liste) sind die Prüfliste; jedes bekommt, wo möglich, einen Test. Issues anlegen/pflegen: Skill `issue-anlegen`.
 
-Commit und Push nur, wenn es ausdrücklich verlangt wird. Nie `--force`, nie die Git-Historie umschreiben. Die Hooks (`rust-test-agent`) und die GitHub-Workflows sind die Kontrolle anstelle eines Pull Requests.
+1. Issue lesen (`gh issue view <Nr>`). Unklares nachfragen, nicht still annehmen.
+2. Direkt auf `main` arbeiten (eine Person, keine Branches/PRs; ein Branch nur mit meiner Zustimmung).
+3. Klein und gezielt umsetzen, nichts ausserhalb des Issues. Nebenbaustellen als neues Issue vorschlagen.
+4. Testen; im Bericht je Kriterium nennen, was geprüft ist und was nicht.
+5. Commit mit Issue-Nummer in Klammern, Imperativ oder Substantiv, ohne Punkt: `Warnsymbol bei Notverkauf (#27)`. Kein `Fixes`/`Closes #27`. Nach dem Commit, der das Issue vollständig umsetzt: Skill `issue-umgesetzt`.
+6. Abnahme macht der Mensch: Kriterien nicht abhaken, Issue nicht schliessen. Ausnahme «Prüfe #27»: Skill `pruefe-issue`.
+7. Commit, Push und Version (Tag) nur auf ausdrückliches Wort. Nie `--force`, nie die Historie umschreiben.
 
 ## Tests
 
-- Alle Rust-Tests: `make test` (nextest); `make test-quiet` führt dieselben Tests aus und zeigt nur Fehlschläge, langsame Tests und die Zusammenfassung. Weitere Werkzeuge: `make coverage`, `make mutants`, `make proptest`, `make fuzz`, `make quality`.
-- Oberflächentests: `e2e/` (Playwright), Rauchtest `tools/ui-smoke.sh`.
-- Engine (`vivaplan-engine`), App (`vivaplan-app`) und Kommandozeile (`vivaplan-cli`) haben jeweils mindestens 80 % Zeilenabdeckung (Schwelle in `tools/coverage-min`). Die 80 % sind eine **Untergrenze**; zusätzlich zeigen `make coverage-diff` die Abdeckung des geänderten Codes und `make mutants-diff` die nicht erkannten Mutanten (jeder wird getestet oder begründet ausgeschlossen, kein Score-Ziel). Nach einem Commit testet der Hook die geänderten Pakete selbst und verlangt den Agenten `rust-test-agent` nur bei Fehlschlägen oder bei Rechenkern-Code ohne Test; vor einem Push läuft der Agent immer (Abdeckung, Mutanten).
-- Tests, die ein Abnahmekriterium belegen, nennen Issue und Kriterium (`#27/AK2` im Kommentar, `issue_27_ak2_…` im Rust-Testnamen, in `e2e/` `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`; `AK2` = zweites Häkchen). `make report` zeigt die Übersichtsseite Testqualität (Beschreibung in `docs/TESTS.md`).
-- Beim Arbeiten gezielt testen (`cargo nextest run -p <Paket> -E 'test(…)'`), vor dem Commit einmal der volle Lauf mit `make test-quiet`.
-- Änderungen am Rechenkern brauchen einen Regressionstest. Die Golden-Dateien (`crates/engine/tests/golden/`) dürfen nur mit Begründung im Issue ändern.
+- Beim Arbeiten gezielt (`cargo nextest run -p <Paket> -E 'test(…)'`), vor dem Commit `make test-quiet`. Oberfläche: `e2e/` (Playwright, gezielt mit `npx playwright test <Datei> -g "…"`), Rauchtest `tools/ui-smoke.sh`.
+- Untergrenze 80 % Zeilenabdeckung je Paket; `make coverage-diff`, `make mutants-diff` für den geänderten Code. Der Commit-Hook testet selbst und verlangt `rust-test-agent` nur bei Bedarf.
+- Tests zu einem Kriterium nennen es: `#27/AK2` im Kommentar, `issue_27_ak2_…` im Rust-Testnamen, in `e2e/` `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`.
+- Änderungen am Rechenkern brauchen einen Regressionstest. Golden-Dateien (`crates/engine/tests/golden/`) nur mit Begründung im Issue ändern.
 
 ## Regeln
 
-- Rust-Code wird mit `cargo fmt` formatiert (Einstellungen in `rustfmt.toml`). Vor jedem Commit `cargo fmt --all --check`
-  (und in `fuzz/` dasselbe, eigener Workspace); der Workflow «Test quality» prüft es bei jedem Push.
-- Keine Netzwerkzugriffe in der App. Alle Daten bleiben lokal.
-- **Keine privaten Daten** in Code, Tests, Issues, Commits oder Beispielplanungen: keine echten Namen, Adressen, Beträge oder Planungsdateien. Beispiele und Tests brauchen erfundene, neutrale Daten.
-- Hilfetexte (`crates/app/ui/hilfe/`), `docs/BESCHREIBUNG.md` und die Spezifikation im selben Zug nachführen, wenn sich Verhalten oder Begriffe ändern.
-- Rechenkern und Oberfläche getrennt halten: Berechnung in `crates/engine/`, Darstellung in `crates/app/ui/`.
+- `cargo fmt --all --check` vor jedem Commit (auch in `fuzz/`).
+- Keine Netzwerkzugriffe in der App; keine privaten Daten in Code, Tests, Issues, Commits oder Beispielen (nur erfundene Daten).
+- Hilfe (`crates/app/ui/hilfe/`), `docs/BESCHREIBUNG.md` und Spezifikation im selben Zug nachführen, wenn sich Verhalten oder Begriffe ändern.
+- Berechnung in `crates/engine/`, Darstellung in `crates/app/ui/`.
 - Keine neue Abhängigkeit (Crate, npm-Paket) ohne Rückfrage.
-- Wenig Kontext: Dateien über rund 500 Zeilen (z. B. `sim.rs`, `app.js`, `e2e/ui.spec.js`, `docs/ABNAHME.md`) nur gezielt
-  lesen (Suche, Zeilenbereich). Golden-Dateien nie ganz lesen; Abweichungen zeigt die Meldung von `golden_masters`, für
-  einen Vergleich ein kurzes Skript.
-- Stopp-Regel: Ist ein Übersetzungs- oder Testfehler nach drei Versuchen nicht behoben, kurz die Ursache nennen und nachfragen.
-
-## Issues anlegen und pflegen
-
-- Vorlagen liegen in `.github/ISSUE_TEMPLATE/` (Fehler, Funktion). Labels (englisch, GitHub-Konvention): Art `bug`, `enhancement` oder `task` (genau eines); Bereich `engine`, `ui`, `repo`; `implemented` (siehe Ablauf, Schritt 5); bei Fehlern zusätzlich der Fundort `found: test`, `found: acceptance` oder `found: usage`. Dazu die Standard-Labels von GitHub (`invalid`, `duplicate`, `wontfix`, `documentation` usw.). Die alten IDs (`FEA-…`, `ISS-…`, `GEN-…`) in der Git-Historie führt `docs/ISSUE-IDS.md` auf die Nummern. Meilensteine: «Nächste Version», «Später».
-- Eine Anforderung pro Issue. Die Abnahmekriterien nach dem Start nicht stillschweigend ändern: Änderungen als Kommentar mit Begründung.
-- Fehlalarme mit `invalid` als «not planned» schliessen, mit Begründung.
+- Wenig Kontext: Dateien über rund 500 Zeilen (`sim.rs`, `app.js`, `optimize.rs`, `validate.rs`, `docs/ABNAHME.md`) nur gezielt lesen (Suche, Zeilenbereich). Golden-Dateien nie ganz lesen. Breite Suchen über viele Dateien an den Agenten `Explore` geben.
+- Stopp-Regel: Übersetzungs- oder Testfehler nach drei Versuchen nicht behoben → Ursache nennen und nachfragen.
