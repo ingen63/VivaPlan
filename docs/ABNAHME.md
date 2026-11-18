@@ -1677,6 +1677,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #159/AK4 | `mutants-diff` schliesst auch nach zwei ausgefallenen Nächten innerhalb seines Zeitlimits ab; | ☐ | **gilt** | [Lauf 44280201847](https://github.com/ingen63/VivaPlan/actions/runs/44280201847), Job `mutants-diff` | 18.11.2026 nicht erfüllt: alle 4 Teile nach 120 Min. abgebrochen (245 Mutanten je Teil, rund 75 s je Mutant) |
 | #159/AK5 | `docs/TESTS.md` beschreibt, wie man die nächtlichen Jobs von Hand startet und dass `schedule` verspätet sein oder ausfallen kann. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
 
+### #160 Weniger Kontext bei der Arbeit mit Claude Code
+
+[Issue #160](https://github.com/ingen63/VivaPlan/issues/160) · geschlossen · Umsetzung: 5bdf2d5 (Beschreibung in `docs/TESTS.md` mit a4070d1)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #160/AK1 | Ein Make-Ziel (z. B. `make test-quiet`) führt dieselben Tests wie `make test` aus, gibt aber nur fehlgeschlagene und langsame Tests sowie … | ☑ | **gilt** | kein Test (Lauf `make test-quiet`, Probe mit rotem Test) | 18.11.2026 ok (6 Zeilen statt rund 740) |
+| #160/AK2 | `CLAUDE.md` (Abschnitt Tests) nennt: beim Arbeiten gezielte Tests, vor dem Commit einmal der volle Lauf über das leise Ziel. | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
+| #160/AK3 | `CLAUDE.md` (Abschnitt Regeln) nennt: Dateien über rund 500 Zeilen nur gezielt lesen; Golden-Dateien nie ganz lesen, … | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
+| #160/AK4 | `CLAUDE.md` nennt: keine neue Abhängigkeit (Crate, npm-Paket) ohne Rückfrage. | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
+| #160/AK5 | `CLAUDE.md` nennt eine Stopp-Regel: Ist ein Übersetzungs- oder Testfehler nach drei Versuchen nicht behoben, … | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`) | 18.11.2026 ok |
+| #160/AK6 | Der Hook nach dem Commit (`.claude/hooks/after-commit.sh`) führt die Tests der geänderten Pakete selbst leise aus und meldet nur das … | ☑ | **gilt** | [test_after_commit.py](../tools/test_after_commit.py) «test_issue_160_ak6_…» | 18.11.2026 ok (dazu echter Lauf auf 2f0d36a: 82 s, 733 Tests, nur Zusammenfassung) |
+| #160/AK7 | Die Regeln zu Tests je Abnahmekriterium, Abdeckung (80 %), Mutanten und Dokumentation in `CLAUDE.md` bleiben unverändert. | ☑ | **gilt** | kein Test (Diff `CLAUDE.md` in 5bdf2d5) | 18.11.2026 ok |
+| #160/AK8 | `docs/TESTS.md` beschreibt das neue Make-Ziel und den geänderten Hook. | ☑ | **gilt** | kein Test (Durchsicht `docs/TESTS.md`) | 18.11.2026 ok |
+
 ### #117 Issues nach GitHub-Konvention: Nummer statt eigener ID
 
 [Issue #117](https://github.com/ingen63/VivaPlan/issues/117) · geschlossen · Umsetzung: 4bd1a25, 4c29de1, 2eccce0
