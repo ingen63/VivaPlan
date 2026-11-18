@@ -1452,6 +1452,204 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #130/AK1 | Szenario-Perzentile ohne `endTotalReal`, Zusammenfassung mit. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_130_ak1_…» | 17.11.2026 ok |
 | #130/AK2 | Szenarientabelle, Optimum und Vergleich zeigen dieselben Werte. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); alle Oberflächentests | 17.11.2026 ok (Golden 09: nur 90 Zeilen `endTotalReal` entfernt) |
 
+### #133 Geldfluss-Erhaltung über alle Bestandteile prüfen
+
+[Issue #133](https://github.com/ingen63/VivaPlan/issues/133) · offen · Umsetzung: b5640b1
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #133/AK1 | Der Monatsdatensatz (oder ein Testmodus des Rechenkerns) weist alle Geldflüsse und Bewertungsänderungen eines Monats einzeln aus: … | ☐ | **gilt** | kein Test (Durchsicht `sim::Ledger`) | 18.11.2026 teilweise: Rendite je Anlage, Hypothekarzins und Umbuchungen nicht einzeln (Entscheid offen) |
+| #133/AK2 | Ein Eigenschaftstest (proptest) prüft für zufällige Planungen mit Immobilien, Hypotheken, PK, 3a, Renditen ungleich 0 und allen … | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs), [proptest_plans.rs](../crates/engine/tests/proptest_plans.rs), [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) | 18.11.2026 ok |
+| #133/AK3 | Beispiel: Ein absichtlich doppelt gebuchter Verkaufserlös (Mutant in `sell`) lässt den Test fehlschlagen. | ☑ | **gilt** | Gegenprobe von Hand (Arbeitskopie, `sell` doppelt) | 18.11.2026 ok |
+| #133/AK4 | Die Golden-Dateien bleiben unverändert; | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
+| #133/AK5 | `docs/TESTS.md` und `docs/QA.md` (Offene Punkte 1) sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #134 Steuer nie negativ und monoton
+
+[Issue #134](https://github.com/ingen63/VivaPlan/issues/134) · geschlossen · Umsetzung: edc1f0c
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #134/AK1 | Eigenschaftstest: Für beliebige Tabellen mit nicht fallender Steuer gilt `tax::tax(t, a + d, m) >= tax::tax(t, a, m) >= 0` für alle a, d … | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) | 18.11.2026 ok |
+| #134/AK2 | Eigenschaftstest: `property_gain_tax_held` ist für jeden Gewinn, jede Besitzdauer (auch unbekannt) und beide Modelle (Zürich, Aargau) ≥ 0. | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) | 18.11.2026 ok |
+| #134/AK3 | Beispiel: Kapitaltabelle [[0, 0.08], [1'000'000, 0.02]], zwei Kapitalbezüge im selben Jahr (200'000 und 300'000): Die Steuer auf keinem … | ☑ | **gilt** (Beispiel per Kommentar vom 17.11.2026 korrigiert: [[0, 0.10], [300'000, 0.01]]) | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
+| #134/AK4 | Die Prüfung meldet eine Einkommens-, Vermögens- oder Kapitaltabelle, bei der die Steuer zwischen zwei Stufen fällt, mit Feldbezug; | ☑ | **gilt** (Präzisierung: Warnung, kein Fehler) | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs), [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
+| #134/AK5 | Hilfe (`crates/app/ui/hilfe/10-editor.md`, Steuern) nennt die neue Meldung. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/10-editor.md`) | 18.11.2026 ok |
+
+### #135 Absturz bei leerem Batch-Ergebnis nach frühem Abbruch
+
+[Issue #135](https://github.com/ingen63/VivaPlan/issues/135) · geschlossen · Umsetzung: b5a03dc
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #135/AK1 | `summarize` und `Bands::from_columns` liefern mit 0 Läufen ein Ergebnis ohne Panik; | ☑ | **gilt** | [batch.rs](../crates/engine/src/batch.rs) | 18.11.2026 ok |
+| #135/AK2 | Ein Test bricht eine Simulation ab, bevor der erste Block rechnet (`cancel_job` vor `run_as`), und erhält die Meldung «abgebrochen» ohne … | ☑ | **gilt** | [cancel.rs](../crates/engine/tests/cancel.rs) | 18.11.2026 ok |
+| #135/AK3 | Dasselbe gilt für Szenarien und Optimierung (Test oder begründet im Issue). | ☑ | **gilt** | kein Test (Durchsicht `api.rs`, `optimize.rs`) | 18.11.2026 ok |
+
+### #136 Planung atomar speichern
+
+[Issue #136](https://github.com/ingen63/VivaPlan/issues/136) · geschlossen · Umsetzung: 9153c90
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #136/AK1 | Die Planung wird zuerst in eine temporäre Datei im selben Ordner geschrieben und auf den Datenträger gebracht; | ☑ | **gilt** | [files.rs](../crates/engine/tests/files.rs) | 18.11.2026 ok |
+| #136/AK2 | Test: Schlägt das Schreiben fehl (z. | ☑ | **gilt** | [files.rs](../crates/engine/tests/files.rs) | 18.11.2026 ok |
+| #136/AK3 | Test: Nach einem Fehler bleibt keine temporäre Datei im Ordner zurück. | ☑ | **gilt** | [files.rs](../crates/engine/tests/files.rs) | 18.11.2026 ok |
+| #136/AK4 | In der Desktop-App erscheint bei einem Fehler beim Speichern eine Meldung, und die Planung gilt weiter als ungespeichert (Test in … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs), [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #136/AK5 | Gilt auch für «Speichern unter» und für die Kommandozeile, soweit sie Planungen schreibt. | ☑ | **gilt** | kein Test (Durchsicht `crates/cli/src/main.rs`) | 18.11.2026 ok |
+
+### #137 Fuzzing und Eigenschaftstests für Upgrade und Altimport
+
+[Issue #137](https://github.com/ingen63/VivaPlan/issues/137) · geschlossen · Umsetzung: 0701f24
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #137/AK1 | Neues Fuzz-Ziel `upgrade_plan`: beliebiges JSON → `api::upgrade_plan` → `api::validate`; | ☑ | **gilt** | Fuzz-Ziel `upgrade_plan` (Build) | 18.11.2026 ok |
+| #137/AK2 | Neues Fuzz-Ziel `import_legacy`: beliebiger Text → `api::import_legacy`; | ☑ | **gilt** | Fuzz-Ziel `import_legacy` (Build) | 18.11.2026 ok |
+| #137/AK3 | Beide Ziele laufen im nächtlichen Fuzz-Job von `test-quality.yml` mit; | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok (Schleife über `cargo fuzz list`; neue Ziele laufen ab der nächsten Nacht) |
+| #137/AK4 | proptest: Für zufällige Planungen gilt `upgrade_plan(upgrade_plan(x).plan)` ergibt dieselbe Planung und keine Hinweise. | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) | 18.11.2026 ok |
+| #137/AK5 | Test: Die Beispielplanung und jede Golden-Planung ergeben beim Nachführen keine Hinweise und keine Änderung. | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) | 18.11.2026 ok (Abweichung begründet: Golden-Planungen erst ab dem zweiten Nachführen ohne Änderung) |
+| #137/AK6 | `docs/TESTS.md` (Abschnitt «Fuzzing» und Schicht 5f) ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #138 Grundstückgewinnsteuer-Vorlagen gegen amtliche Beispiele prüfen
+
+[Issue #138](https://github.com/ingen63/VivaPlan/issues/138) · geschlossen · Umsetzung: feb956c
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #138/AK1 | Die Werte jeder Vorlage sind an einer einzigen Stelle definiert; | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok |
+| #138/AK2 | Je Vorlage gibt es mindestens drei Referenzfälle mit verschiedenen Besitzdauern, gerechnet mit `tax::property_gain_tax_held`. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok |
+| #138/AK3 | Beispiel Zürich: Gewinn 100'000 CHF, 10 volle Jahre Besitz, Steuerfuss-Option aus → Stufensteuer 29'400, Abzug 20 % → 23'520.00 CHF. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok (Abweichung begründet: kein amtlicher Rechner, gegen amtlichen Tarif nachgerechnet) |
+| #138/AK4 | Zürich: Fälle für den Zuschlag (unter 1 Jahr: +50 %, unter 2 Jahren: +25 %), die Freigrenze (Gewinn 4'999 → 0) und den höchsten Abzug … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_138_ak3_zurich_…» | 18.11.2026 ok |
+| #138/AK5 | Aargau: Fälle für 0, 10, 11 und 25 volle Jahre (40 %, 20 %, 19 %, 5 %). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) | 18.11.2026 ok |
+| #138/AK6 | Ein Test prüft, dass die Vorlage, wie sie die Oberfläche übernimmt, dieselben Beträge ergibt (Parität Oberfläche ↔ Rechenkern). | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+
+### #139 Speichergrenze bei Monte Carlo
+
+[Issue #139](https://github.com/ingen63/VivaPlan/issues/139) · geschlossen · Umsetzung: 4128e09
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #139/AK1 | Die Prüfung meldet einen Fehler, wenn Pfade × Monate eine Grenze überschreitet. | ☑ | **gilt** | [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
+| #139/AK2 | Beispiel: 1'000'000 Pfade, Planungsdauer 100 Jahre → Fehler mit Feldbezug auf die Anzahl Pfade und einem Vorschlag für die höchste … | ☑ | **gilt** | [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
+| #139/AK3 | Beispiel: 50'000 Pfade, Planungsdauer 30 Jahre → kein Fehler (heute übliche Rechnung). | ☑ | **gilt** | [validate_extra.rs](../crates/engine/tests/validate_extra.rs) | 18.11.2026 ok |
+| #139/AK4 | Ein Test misst den höchsten Speicherverbrauch (über `engine::test_alloc`) einer Rechnung genau an der Grenze, und dieser bleibt unter … | ☑ | **gilt** | [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) | 18.11.2026 ok |
+| #139/AK5 | Der Stresstest `stress_couple_four_properties_100_years` läuft wieder grün (mit einer Pfadzahl unter der Grenze) oder ist begründet … | ☑ | **gilt** | [qa_matrix.rs](../crates/engine/tests/qa_matrix.rs) «stress_couple_four_properties_100_years» | 18.11.2026 ok |
+| #139/AK6 | Die Hilfe (Abschnitt Monte Carlo) nennt die Grenze. | ☑ | **gilt** | kein Test (Durchsicht `hilfe/20-renditen.md`) | 18.11.2026 ok |
+
+### #140 Zahleneingabe mit Punkt als Tausendertrennzeichen wird still um den Faktor 1000 falsch übernommen
+
+[Issue #140](https://github.com/ingen63/VivaPlan/issues/140) · geschlossen · Umsetzung: 0c4d328
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #140/AK1 | In Feldern mit einem Betrag in Währung wird eine Eingabe mit Punkt und genau drei folgenden Ziffern («1.234», «12.500», «1.234.567») … | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #140/AK2 | «0x10», «1e5» und «Infinity» werden in allen Zahlenfeldern abgelehnt. | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #140/AK3 | Unverändert gültig sind «1'234.50», «1’234,5», «12,5», «1 234», «-3» und in Prozent- und Jahresfeldern «1.25». | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «#140/AK3» | 18.11.2026 ok |
+| #140/AK4 | Unit-Tests in `e2e/unit/util.test.js` decken alle Beispiele dieser Liste ab; | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #140/AK5 | Die Hilfe (Eingabe von Zahlen) nennt die erlaubten Schreibweisen. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #141 Tests und Rauchtest unter Windows und macOS
+
+[Issue #141](https://github.com/ingen63/VivaPlan/issues/141) · offen · Umsetzung: 1ddc59d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #141/AK1 | Ein nächtlicher Job (nur nach neuem Commit, wie die übrigen nächtlichen Jobs) führt `cargo nextest run --workspace` unter … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
+| #141/AK2 | Die Golden Masters und `ods_reference` bestehen auf allen drei Betriebssystemen mit der heutigen Toleranz; | ☐ | **gilt** | Job `tests-os` (noch nicht gelaufen) | 18.11.2026 offen: erster Lauf von `tests-os` steht aus |
+| #141/AK3 | Tests für Pfade unter Windows (Laufwerksbuchstabe, Backslash, Leerzeichen und Umlaute im Namen, `.rplan` → `.vplan`) laufen im Windows-Job. | ☐ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 offen: läuft nur unter Windows (`tests-os`) |
+| #141/AK4 | Vor dem Release-Entwurf startet jedes Paket in einem Rauchtest: Die App öffnet die Beispielplanung, rechnet einen festen Lauf und … | ☐ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 teilweise: Rauchtest lokal unter macOS ok (Exit 0); Windows und Linux erst im nächsten Paketlauf |
+| #141/AK5 | `docs/TESTS.md` nennt die Plattformen und die Jobs. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #142 Vertragstest zwischen Dev-Server und Tauri-Commands
+
+[Issue #142](https://github.com/ingen63/VivaPlan/issues/142) · geschlossen · Umsetzung: b203250
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #142/AK1 | Eine gemeinsame Tabelle (eine Datei) nennt jeden Rechenbefehl, den beide Verteiler anbieten, mit Beispielargumenten, wie sie die … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok |
+| #142/AK2 | Ein Test schickt jeden Eintrag durch die Tauri-IPC der Mock-App (`get_ipc_response`) und durch `devserver::call` und verlangt dieselbe … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok |
+| #142/AK3 | Ein Test schlägt fehl, wenn ein Befehl in `generate_handler!` oder im Dev-Server dazukommt und in der Tabelle fehlt; | ☑ | **gilt** | [dispatch.rs](../crates/engine/src/dispatch.rs), [main.rs](../crates/app/src/main.rs) | 18.11.2026 ok |
+| #142/AK4 | Beispiel: `run_simulation` mit `jobId` und anschliessend `progress_get` mit derselben Kennung liefern in beiden Verteilern denselben … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_142_ak2_…» | 18.11.2026 ok |
+| #142/AK5 | `docs/TESTS.md` (Schicht 6) nennt den Test. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #144 Unbekannte Formatversion beim Öffnen melden
+
+[Issue #144](https://github.com/ingen63/VivaPlan/issues/144) · geschlossen · Umsetzung: 4678dc0
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #144/AK1 | `"format": "vivaplan/1"`, `"pensionsplaner/1"` (alte Kennung) und eine fehlende Kennung öffnen wie heute. | ☑ | **gilt** | [legacy_format.rs](../crates/engine/tests/legacy_format.rs) | 18.11.2026 ok |
+| #144/AK2 | `"format": "vivaplan/2"` (und jede andere unbekannte Kennung) ergibt beim Öffnen eine Fehlermeldung, die die Kennung nennt und sagt, … | ☑ | **gilt** | [legacy_format.rs](../crates/engine/tests/legacy_format.rs), [main.rs](../crates/app/src/main.rs), [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #144/AK3 | Dasselbe gilt für die Kommandozeile (`vivaplan run`, `vivaplan validate`): Fehlercode ungleich 0 und dieselbe Meldung. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) | 18.11.2026 ok |
+| #144/AK4 | Rust-Tests für alle Fälle oben; | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #144/AK5 | `docs/ENTWICKLUNG.md` (Dateiformat) beschreibt die Regel. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #145 AHV-Plafond des Ehepaars steigt mit der doppelten Teuerung
+
+[Issue #145](https://github.com/ingen63/VivaPlan/issues/145) · geschlossen · Umsetzung: d6c9a73
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #145/AK1 | Der Plafond steigt im Januar um dieselbe Teuerung wie eine einzelne angepasste Rente, unabhängig davon, wie viele Personen eine Rente … | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
+| #145/AK2 | Referenztest mit dem Beispiel oben: Januar 2031 = 3'893.40, Januar 2033 = 4'130.51 (Toleranz 0.01 CHF). | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
+| #145/AK3 | Referenztest: nur eine der beiden Renten mit Teuerung, beide laufend: Plafond und Summe wie von Hand nachgerechnet (Rechnung im Kommentar). | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
+| #145/AK4 | Referenztest: Die zweite Rente beginnt später als die erste; | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) | 18.11.2026 ok |
+| #145/AK5 | Ändern sich Golden-Dateien (z. | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
+
+### #146 Golden Masters nächtlich im Release-Profil
+
+[Issue #146](https://github.com/ingen63/VivaPlan/issues/146) · offen · Umsetzung: 53dbf09
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #146/AK1 | Ein nächtlicher Job in `test-quality.yml` (nur nach neuem Commit, wie die übrigen nächtlichen Jobs) führt die Golden Masters … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 18.11.2026 ok |
+| #146/AK2 | Die Golden Masters bestehen dort mit der heutigen Toleranz (1e-9 relativ), ohne `GOLDEN_UPDATE`. | ☐ | **gilt** | Job `release-golden` (noch nicht gelaufen); lokal Release-Profil | 18.11.2026 offen: lokal ok, Job auf GitHub noch nicht gelaufen |
+| #146/AK3 | Ein Fehlschlag lässt den Lauf fehlschlagen und ist in der Zusammenfassung sichtbar. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+| #146/AK4 | `docs/TESTS.md` nennt den Job und den Grund. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
+
+### #147 Gespeicherte Ergebnisse in IndexedDB testen
+
+[Issue #147](https://github.com/ingen63/VivaPlan/issues/147) · geschlossen · Umsetzung: 089585d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #147/AK1 | Unit-Tests ohne Browser (`node --test` in `e2e/unit/`, mit einer IndexedDB-Nachbildung als reine Testabhängigkeit) prüfen `add`, `list` … | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#147/AK1» | 18.11.2026 ok |
+| #147/AK2 | Test: Bricht eine Transaktion ab (Kontingent erschöpft, nachgebildet), wird das Versprechen mit einem Fehler abgelehnt; | ☑ | **gilt** | [ui.spec.js](../e2e/ui.spec.js) | 18.11.2026 ok |
+| #147/AK3 | Test: Ist IndexedDB nicht verfügbar, fällt die Liste wie heute auf den Arbeitsspeicher zurück. | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#147/AK3» | 18.11.2026 ok |
+| #147/AK4 | Test: Ein gespeichertes Ergebnis einer älteren Version (ohne Felder, die später dazukamen, z. | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#147/AK4» | 18.11.2026 ok |
+| #147/AK5 | Der Job `ui-unit` in `test-quality.yml` führt die neuen Tests aus. | ☑ | **gilt** | Job `ui-unit` (GitHub, c702e99) | 18.11.2026 ok |
+
+### #148 Statistiktests der Renditepfade mit Vertrauensgrenzen
+
+[Issue #148](https://github.com/ingen63/VivaPlan/issues/148) · geschlossen · Umsetzung: 5d8e2ec
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #148/AK1 | Bootstrap: Mittelwert und Streuung der Jahresrenditen von Aktien, Obligationen und Inflation über die Pfade liegen innerhalb von 4 … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok (Präzisierung: Monatswerte statt Streuung der Jahresrendite, begründet) |
+| #148/AK2 | Parametrisch: Mittelwert und Streuung der Jahresrendite der Aktien liegen innerhalb von 4 Standardfehlern der Modellwerte (aus μ, σ und … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
+| #148/AK3 | Parametrisch: Die Korrelation zwischen Aktien und Obligationen sowie zwischen Aktien und Inflation liegt im 99-%-Vertrauensintervall … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
+| #148/AK4 | Beispiel: Eine künstlich um 1 Prozentpunkt pro Jahr verschobene Aktienrendite lässt den Test fehlschlagen (einmal von Hand gezeigt und … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) (in den Tests zu AK1–AK3) | 18.11.2026 ok |
+| #148/AK5 | Die Tests bleiben bei festem Startwert reproduzierbar und laufen im Standard unter 10 s; | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
+
+### #153 Mitgelieferte Planungen sind beim Aktienmodell nicht auf dem aktuellen Stand
+
+[Issue #153](https://github.com/ingen63/VivaPlan/issues/153) · geschlossen · Umsetzung: 0c6a760
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #153/AK1 | `beispiel.vplan` und `Neu.vplan` enthalten `"auto": true` bei `returns.parametric`; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «issue_137_ak5_…» | 18.11.2026 ok |
+| #153/AK2 | Ändern sich dadurch Ergebnisse von Tests (z. | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
+
+### #154 Nachführen holt die Wohnkosten-Anpassung erst beim zweiten Öffnen nach
+
+[Issue #154](https://github.com/ingen63/VivaPlan/issues/154) · geschlossen · Umsetzung: aa5bde3
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #154/AK1 | Der Schritt `housing` läuft nach den Schritten, die die Planung lesbar machen; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «proptest_upgrade_is_idempotent» | 18.11.2026 ok |
+| #154/AK2 | Regressionstest mit dem verkleinerten Fall. | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_154_…» | 18.11.2026 ok |
+
 ### #117 Issues nach GitHub-Konvention: Nummer statt eigener ID
 
 [Issue #117](https://github.com/ingen63/VivaPlan/issues/117) · geschlossen · Umsetzung: 4bd1a25, 4c29de1, 2eccce0
