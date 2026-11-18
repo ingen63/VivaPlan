@@ -1042,13 +1042,38 @@ mod tests {
         }
     }
 
-    type Serial = std::sync::MutexGuard<'static, ()>;
+    /// Hält die Sperre `SERIAL` und entfernt am Ende des Tests den Datenordner des Testprozesses.
+    struct Serial {
+        _lock: std::sync::MutexGuard<'static, ()>,
+        data: Option<PathBuf>,
+    }
+
+    impl Drop for Serial {
+        fn drop(&mut self) {
+            if let Some(d) = &self.data {
+                let _ = std::fs::remove_dir_all(d);
+            }
+        }
+    }
+
+    /// #159: Jeder Testprozess hat einen eigenen Datenordner (Einstellungen, zuletzt geöffnete Planung). nextest startet
+    /// jeden Test in einem eigenen Prozess; die Sperre `SERIAL` gilt nur innerhalb eines Prozesses. Mit einem gemeinsamen
+    /// Ordner überschrieb ein gleichzeitig laufender Test die Einstellungen (Lesen, Ändern, Schreiben), und
+    /// `issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen` schlug zufällig fehl.
+    fn test_context() -> tauri::Context<MockRuntime> {
+        let mut ctx = mock_context(noop_assets());
+        let id = format!("{}.test-{}", ctx.config().identifier, std::process::id());
+        ctx.config_mut().identifier = id;
+        ctx
+    }
 
     fn setup_with(fake: FakeDialogs) -> (App<MockRuntime>, WebviewWindow<MockRuntime>, Serial, Arc<FakeDialogs>) {
-        let guard = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        let app = configure(mock_builder())
-            .build(mock_context(noop_assets()))
-            .expect("App baut");
+        let lock = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let app = configure(mock_builder()).build(test_context()).expect("App baut");
+        let guard = Serial {
+            _lock: lock,
+            data: app.path().app_data_dir().ok(),
+        };
         let fake = Arc::new(fake);
         let picker: Picker = fake.clone();
         app.manage(picker);
