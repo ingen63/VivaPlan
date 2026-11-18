@@ -256,7 +256,17 @@ jobs:
           if ! grep -q '\.rs$' <(git diff --name-only "$base"...HEAD); then
             echo "Keine Rust-Änderungen – keine Mutanten." >> "$GITHUB_STEP_SUMMARY"; exit 0
           fi
-          cargo mutants --in-diff pr.diff --no-shuffle -j 2 --shard ${{ matrix.shard }}/16
+          status=0
+          cargo mutants --in-diff pr.diff --no-shuffle -j 2 --shard ${{ matrix.shard }}/16 || status=$?
+          # #159: Ein Timeout zählt als erkannt (docs/TESTS.md, Endlosschleife). cargo mutants endet bei Timeouts mit
+          # Code 3, auch wenn es zusätzlich nicht erkannte Mutanten gibt (dann ebenfalls 3, sonst 2). Massgebend ist
+          # deshalb die Zahl der nicht erkannten Mutanten; andere Codes (z. B. 4, Basislauf rot) bleiben Fehler.
+          if [ "$status" = 2 ] || [ "$status" = 3 ]; then
+            missed=$(jq '.missed' local/mutants.out/outcomes.json)
+            [ "$missed" = 0 ] && exit 0
+            exit 2
+          fi
+          exit "$status"
       - name: Mutations-Zusammenfassung
         if: ${{ !cancelled() }}
         run: |
