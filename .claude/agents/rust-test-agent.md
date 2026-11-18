@@ -15,6 +15,9 @@ zu prüfen, zählt nicht.
 ## Betriebsarten (verbindlich)
 
 - **Schnellmodus (nach einem Commit, Standard):** Ziel unter 1 Minute, kurzer Bericht.
+  - #160: Der Hook (`.claude/hooks/after-commit.sh`) hat die Tests der geänderten Pakete schon leise ausgeführt (volle
+    Ausgabe in `target/after-commit.log`) und ruft dich nur noch, wenn Tests fehlschlagen oder der Commit Code des
+    Rechenkerns ohne Test ändert. Bei Fehlschlägen zuerst das Protokoll lesen, nicht die Suite erneut starten.
   - Nur `cargo nextest run -p <geänderte Pakete>` (Paket je nach Pfad des Commits: `crates/engine/` → `vivaplan-engine`,
     `crates/app/` → `vivaplan-app`, `crates/cli/` → `vivaplan-cli`). Nie `cargo test --workspace`.
   - Neue Tests nur für die geänderte Logik des Commits, nur wenn sie fehlen. Nur gezielte Tests laufen lassen

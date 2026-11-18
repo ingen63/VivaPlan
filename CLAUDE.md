@@ -49,10 +49,11 @@ Commit und Push nur, wenn es ausdrücklich verlangt wird. Nie `--force`, nie die
 
 ## Tests
 
-- Alle Rust-Tests: `make test` (nextest). Weitere Werkzeuge: `make coverage`, `make mutants`, `make proptest`, `make fuzz`, `make quality`.
+- Alle Rust-Tests: `make test` (nextest); `make test-quiet` führt dieselben Tests aus und zeigt nur Fehlschläge, langsame Tests und die Zusammenfassung. Weitere Werkzeuge: `make coverage`, `make mutants`, `make proptest`, `make fuzz`, `make quality`.
 - Oberflächentests: `e2e/` (Playwright), Rauchtest `tools/ui-smoke.sh`.
-- Engine (`vivaplan-engine`), App (`vivaplan-app`) und Kommandozeile (`vivaplan-cli`) haben jeweils mindestens 80 % Zeilenabdeckung (Schwelle in `tools/coverage-min`). Die 80 % sind eine **Untergrenze**; zusätzlich zeigen `make coverage-diff` die Abdeckung des geänderten Codes und `make mutants-diff` die nicht erkannten Mutanten (jeder wird getestet oder begründet ausgeschlossen, kein Score-Ziel). Nach einem Commit und vor einem Push läuft der Agent `rust-test-agent` über die Hooks.
+- Engine (`vivaplan-engine`), App (`vivaplan-app`) und Kommandozeile (`vivaplan-cli`) haben jeweils mindestens 80 % Zeilenabdeckung (Schwelle in `tools/coverage-min`). Die 80 % sind eine **Untergrenze**; zusätzlich zeigen `make coverage-diff` die Abdeckung des geänderten Codes und `make mutants-diff` die nicht erkannten Mutanten (jeder wird getestet oder begründet ausgeschlossen, kein Score-Ziel). Nach einem Commit testet der Hook die geänderten Pakete selbst und verlangt den Agenten `rust-test-agent` nur bei Fehlschlägen oder bei Rechenkern-Code ohne Test; vor einem Push läuft der Agent immer (Abdeckung, Mutanten).
 - Tests, die ein Abnahmekriterium belegen, nennen Issue und Kriterium (`#27/AK2` im Kommentar, `issue_27_ak2_…` im Rust-Testnamen, in `e2e/` `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`; `AK2` = zweites Häkchen). `make report` zeigt die Übersichtsseite Testqualität (Beschreibung in `docs/TESTS.md`).
+- Beim Arbeiten gezielt testen (`cargo nextest run -p <Paket> -E 'test(…)'`), vor dem Commit einmal der volle Lauf mit `make test-quiet`.
 - Änderungen am Rechenkern brauchen einen Regressionstest. Die Golden-Dateien (`crates/engine/tests/golden/`) dürfen nur mit Begründung im Issue ändern.
 
 ## Regeln
@@ -63,6 +64,11 @@ Commit und Push nur, wenn es ausdrücklich verlangt wird. Nie `--force`, nie die
 - **Keine privaten Daten** in Code, Tests, Issues, Commits oder Beispielplanungen: keine echten Namen, Adressen, Beträge oder Planungsdateien. Beispiele und Tests brauchen erfundene, neutrale Daten.
 - Hilfetexte (`crates/app/ui/hilfe/`), `docs/BESCHREIBUNG.md` und die Spezifikation im selben Zug nachführen, wenn sich Verhalten oder Begriffe ändern.
 - Rechenkern und Oberfläche getrennt halten: Berechnung in `crates/engine/`, Darstellung in `crates/app/ui/`.
+- Keine neue Abhängigkeit (Crate, npm-Paket) ohne Rückfrage.
+- Wenig Kontext: Dateien über rund 500 Zeilen (z. B. `sim.rs`, `app.js`, `e2e/ui.spec.js`, `docs/ABNAHME.md`) nur gezielt
+  lesen (Suche, Zeilenbereich). Golden-Dateien nie ganz lesen; Abweichungen zeigt die Meldung von `golden_masters`, für
+  einen Vergleich ein kurzes Skript.
+- Stopp-Regel: Ist ein Übersetzungs- oder Testfehler nach drei Versuchen nicht behoben, kurz die Ursache nennen und nachfragen.
 
 ## Issues anlegen und pflegen
 

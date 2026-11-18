@@ -1,5 +1,8 @@
-.PHONY: test ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report
+.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report
 test:        ; cargo nextest run --workspace
+# #160: dieselben Tests, aber nur Fehlschläge, langsame Tests und die Zusammenfassung (für Claude Code: wenig Kontext)
+QUIET = --status-level fail --final-status-level slow --hide-progress-bar --cargo-quiet
+test-quiet:  ; cargo nextest run --workspace $(QUIET)
 # #87: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
 # #147: runs.test.js braucht fake-indexeddb (e2e/node_modules)
 ui-unit:     ; [ -d e2e/node_modules/fake-indexeddb ] || (cd e2e && npm ci); node --test e2e/unit/*.test.js
