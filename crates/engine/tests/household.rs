@@ -442,3 +442,99 @@ fn issue_134_ak3_capital_tax_of_a_second_withdrawal_is_never_negative() {
         && i.field.as_deref() == Some("taxes.capital.1.1")
         && i.message.contains("the tax falls")));
 }
+
+// ---------------------------------------------------------------------------------------------
+// #155: Lump sums of a married couple, taxed together per calendar year
+// ---------------------------------------------------------------------------------------------
+
+/// #155: Married couple from January 2030, A draws 200'000 at `date_a`, B 300'000 at `date_b`, both fully as a
+/// lump sum. Capital table [[0, 4 %], [1'000'000, 8 %]] (rate interpolated linearly), multiplier 1, no other
+/// taxes, flows or wealth. `married` is set explicitly: #150 taxes unmarried couples per person.
+fn issue_155_married_lump_sums(date_a: &str, date_b: &str) -> SimResult {
+    let mut v = crate::plan_builder::PlanBuilder::new("Test")
+        .couple("1967-01")
+        .married(true)
+        .set(
+            "partner",
+            json!({ "income": 0, "ahv": { "monthly": 0, "at": "never" },
+                "pk": { "capital": 300_000, "at": "pkB", "lumpsum": 1.0, "conversion": 0.05 } }),
+        )
+        .set(
+            "taxes",
+            json!({ "multiplier": 1.0, "income": [], "wealth": [], "capital": [[0, 0.04], [1_000_000, 0.08]] }),
+        )
+        .build();
+    v["pension"]["pk"] = json!({ "capital": 200_000, "at": "pkA", "lumpsum": 1.0, "conversion": 0.05 });
+    let milestones = v["milestones"].as_array_mut().unwrap();
+    milestones.push(json!({ "id": "pkA", "name": "Bezug A", "kind": "date", "date": date_a }));
+    milestones.push(json!({ "id": "pkB", "name": "Bezug B", "kind": "date", "date": date_b }));
+    run(v)
+}
+
+/// Capital tax deducted per month index (0 = January 2030), only months with a deduction.
+fn capital_tax_months(res: &SimResult) -> Vec<(usize, f64)> {
+    res.records
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| r.tax_capital != 0.0)
+        .map(|(k, r)| (k, r.tax_capital))
+        .collect()
+}
+
+fn assert_months(actual: &[(usize, f64)], expected: &[(usize, f64)]) {
+    assert_eq!(actual.len(), expected.len(), "{actual:?}");
+    for (&(k, t), &(ke, te)) in actual.iter().zip(expected) {
+        assert_eq!(k, ke, "{actual:?}");
+        assert!((t - te).abs() < 0.01, "Monat {k}: {t} statt {te}");
+    }
+}
+
+// #155/AK1: Both lump sums in 2030 (March, October). Tax on the year's sum 500'000 × 6 % = 30'000;
+// first payout 200'000 × 4.8 % = 9'600, second = 30'000 − 9'600 = 20'400, each deducted in its month.
+#[test]
+fn issue_155_ak1_married_lump_sums_in_the_same_year_are_taxed_together() {
+    let res = issue_155_married_lump_sums("2030-03", "2030-10");
+    let months = capital_tax_months(&res);
+    assert_months(&months, &[(2, 9_600.0), (9, 20_400.0)]);
+    // Deducted in the month of the payout: also in the month's total tax.
+    assert!(
+        (res.records[2].taxes - 9_600.0).abs() < 0.01,
+        "{}",
+        res.records[2].taxes
+    );
+    assert!(
+        (res.records[9].taxes - 20_400.0).abs() < 0.01,
+        "{}",
+        res.records[9].taxes
+    );
+    let year: f64 = res.records[..12].iter().map(|r| r.tax_capital).sum();
+    assert!((year - 30_000.0).abs() < 0.01, "Jahressumme {year}");
+    assert!(
+        (res.summary.lumpsum_tax - 30_000.0).abs() < 0.01,
+        "{}",
+        res.summary.lumpsum_tax
+    );
+    assert!(
+        (res.summary.lumpsum_net - 470_000.0).abs() < 0.01,
+        "{}",
+        res.summary.lumpsum_net
+    );
+}
+
+// #155/AK2: Lump sums in two years (March 2030, October 2031): each year is taxed on its own.
+// 2030: 200'000 × 4.8 % = 9'600; 2031: 300'000 × 5.2 % = 15'600; together 25'200 instead of 30'000.
+#[test]
+fn issue_155_ak2_married_lump_sums_in_different_years_are_taxed_per_year() {
+    let res = issue_155_married_lump_sums("2030-03", "2031-10");
+    let months = capital_tax_months(&res);
+    assert_months(&months, &[(2, 9_600.0), (21, 15_600.0)]);
+    let y2030: f64 = res.records[..12].iter().map(|r| r.tax_capital).sum();
+    let y2031: f64 = res.records[12..24].iter().map(|r| r.tax_capital).sum();
+    assert!((y2030 - 9_600.0).abs() < 0.01, "2030: {y2030}");
+    assert!((y2031 - 15_600.0).abs() < 0.01, "2031: {y2031}");
+    assert!(
+        (res.summary.lumpsum_tax - 25_200.0).abs() < 0.01,
+        "{}",
+        res.summary.lumpsum_tax
+    );
+}

@@ -60,6 +60,13 @@ impl PlanBuilder {
         self
     }
 
+    /// Marital status of the household (`household.married`).
+    #[allow(dead_code)] // building block for further test files
+    pub fn married(mut self, married: bool) -> Self {
+        self.0["household"]["married"] = json!(married);
+        self
+    }
+
     /// Income and spending per month.
     pub fn flows(mut self, income: impl Into<Value>, spending: impl Into<Value>) -> Self {
         self.0["flows"] = json!({ "income": income.into(), "spending": spending.into() });
