@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 pub fn serve(port: u16, ui: PathBuf, library: PathBuf) -> std::io::Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
     println!(
-        "Oberfläche: http://127.0.0.1:{port}/  (Ordner {}, Datenbibliothek {})",
+        "User interface: http://127.0.0.1:{port}/  (folder {}, data library {})",
         ui.display(),
         library.display()
     );
@@ -21,7 +21,7 @@ pub fn serve(port: u16, ui: PathBuf, library: PathBuf) -> std::io::Result<()> {
         let (ui, library) = (ui.clone(), library.clone());
         std::thread::spawn(move || {
             if let Err(e) = handle(stream, &ui, &library) {
-                eprintln!("Anfrage fehlgeschlagen: {e}");
+                eprintln!("Request failed: {e}");
             }
         });
     }
@@ -65,7 +65,7 @@ fn handle(mut stream: TcpStream, ui: &Path, library: &Path) -> std::io::Result<(
         let file = ui.join(rel);
         match (rel.contains(".."), std::fs::read(&file)) {
             (false, Ok(data)) => ("200 OK", content_type(&file), data),
-            _ => ("404 Not Found", "text/plain", b"nicht gefunden".to_vec()),
+            _ => ("404 Not Found", "text/plain", b"not found".to_vec()),
         }
     };
     write!(stream, "HTTP/1.1 {status}\r\nContent-Type: {ctype}; charset=utf-8\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n", out.len())?;
@@ -183,17 +183,17 @@ mod tests {
         let lib = library();
         let err = |cmd: &str, args: Value| call(cmd, &args, &lib).unwrap_err();
         assert!(err("rerun_paths", json!({ "plan": plan(), "picks": "x" })).contains("invalid type"));
-        assert_eq!(err("series_info", json!({})), "Pfad fehlt");
+        assert_eq!(err("series_info", json!({})), "Path missing");
         // #171: the answer carries text, code and parameters as an object
         assert_eq!(
             super::error_body(&err("open_dialog", json!({}))),
-            json!({ "error": "Befehl «open_dialog» gibt es nur in der Desktop-App", "code": "command_desktop_only", "params": { "cmd": "open_dialog" } })
+            json!({ "error": "Command “open_dialog” is only available in the desktop app", "code": "command_desktop_only", "params": { "cmd": "open_dialog" } })
         );
         assert!(!err("series_info", json!({ "path": "/does/not/exist.csv" })).is_empty());
         assert!(!err("optimize", json!({ "plan": plan(), "request": "nonsense" })).is_empty());
         assert_eq!(
             err("open_dialog", json!({})),
-            "Befehl «open_dialog» gibt es nur in der Desktop-App"
+            "Command “open_dialog” is only available in the desktop app"
         );
     }
 
@@ -207,7 +207,7 @@ mod tests {
             &library(),
         )
         .unwrap_err();
-        assert!(e.contains("Spalte «Stocks» fehlt"), "{e}");
+        assert!(e.contains("column “Stocks” missing"), "{e}");
     }
 
     /// #142: without a plan file, relative paths start in the working directory (in the test the folder `crates/cli`).
@@ -286,7 +286,7 @@ mod tests {
         assert!(serde_json::from_str::<Value>(&body).unwrap()["household"].is_object());
         let (st, body) = request(port, "POST /api/does_not_exist HTTP/1.1", "no json");
         assert_eq!(st, "HTTP/1.1 400 Bad Request");
-        assert!(body.contains("gibt es nur in der Desktop-App"), "{body}");
+        assert!(body.contains("is only available in the desktop app"), "{body}");
         // GET on /api/ is not a request to the dispatcher
         assert_eq!(
             request(port, "GET /api/example_plan HTTP/1.1", "").0,

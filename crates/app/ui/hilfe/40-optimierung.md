@@ -241,4 +241,4 @@ vivaplan optimize <planung.vplan> [Optionen]
 | `--strategy a,b` | Strategien (`standard`, `three_buckets`, `guardrails`, `fixed_rate`, `vpw`, `endowment`) |
 | `--json <datei>` | Ergebnis als JSON speichern |
 
-Sind in der Planung Einstellungen gespeichert, gelten sie als Ausgangspunkt. Jede angegebene Option überschreibt sie. Die **Bandbreiten der Parameter** (`optimization.ranges`) liest der Befehl immer aus der Planung; im Terminal gibt es dafür keine Optionen. Die Ausgabe zeigt je Strategie die Parameter und die Kennzahlen aus Suche und Prüfung.
+Sind in der Planung Einstellungen gespeichert, gelten sie als Ausgangspunkt. Jede angegebene Option überschreibt sie. Die **Bandbreiten der Parameter** (`optimization.ranges`) liest der Befehl immer aus der Planung; im Terminal gibt es dafür keine Optionen. Die Ausgabe zeigt je Strategie die Parameter und die Kennzahlen aus Suche und Prüfung; sie ist englisch (siehe [Kommandozeile](#ref-cli)).

@@ -204,7 +204,8 @@ Ergebnisübersicht beginnt mit dem Ergebnis in Worten: Erfolgsquote mit Einordnu
 Lauf und ein Vorschlag für den nächsten Schritt.
 
 Für Fortgeschrittene gibt es eine Kommandozeile: rechnen, prüfen, optimieren, Monatswerte exportieren, Daten
-importieren und die Rechenleistung messen. Das Dateiformat ist als JSON-Schema dokumentiert. Konfigurationen eines
+importieren und die Rechenleistung messen. Sie gibt Texte, Meldungen und Ereignisse auf Englisch aus (#176), Zahlen und
+Daten im Schweizer Format. Das Dateiformat ist als JSON-Schema dokumentiert. Konfigurationen eines
 früheren Programms lassen sich importieren.
 
 ## Installation

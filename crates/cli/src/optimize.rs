@@ -12,7 +12,7 @@ fn num(args: &[String], name: &str) -> Result<Option<f64>, Box<dyn std::error::E
     option(args, &[name])
         .map(|s| s.replace(',', ".").trim_end_matches('%').parse::<f64>())
         .transpose()
-        .map_err(|_| format!("{name}: Zahl erwartet").into())
+        .map_err(|_| format!("{name}: number expected").into())
 }
 
 fn pct1(v: f64) -> String {
@@ -21,7 +21,7 @@ fn pct1(v: f64) -> String {
 
 fn metrics_line(label: &str, m: &opt::Metrics) -> String {
     format!(
-        "    {label:<12} Ruin {:>7}   Median {:>9}   P10 {:>9}   Schwankung {:>7}   Entnahmerate {:>6}   Notverkauf {:>6}",
+        "    {label:<12} Ruin {:>7}   Median {:>9}   P10 {:>9}   Volatility {:>7}   Withdrawal rate {:>6}   Emergency sale {:>6}",
         pct1(m.ruin),
         chf(m.median),
         chf(m.p10),
@@ -35,9 +35,9 @@ fn outcome_text(o: &Outcome, obj: &Objective) -> String {
     let ok = if o.feasible {
         ""
     } else if obj.goal == Goal::KeepProperty {
-        "  – Nebenbedingungen NICHT eingehalten (Ruingrenze oder Mindestkonsum)"
+        "  – constraints NOT met (ruin limit or minimum consumption)"
     } else {
-        "  – Ruingrenze NICHT eingehalten"
+        "  – ruin limit NOT met"
     };
     let params: Vec<String> = o
         .params
@@ -52,18 +52,18 @@ fn outcome_text(o: &Outcome, obj: &Objective) -> String {
         .collect();
     let target = if obj.goal == Goal::KeepProperty {
         format!(
-            "    Ziel (Prüfung): ungeplanter Immobilienverkauf in {} der Läufe",
+            "    Goal (check): unplanned property sale in {} of the runs",
             pct1(o.validated.emergency_share)
         )
     } else {
-        format!("    Ziel (Prüfung): {} pro Jahr", chf(o.validated.score(obj)))
+        format!("    Goal (check): {} per year", chf(o.validated.score(obj)))
     };
     format!(
         "\n{}{ok}\n    {}\n{}\n{}\n{target}",
         o.strategy,
         params.join(", "),
-        metrics_line("Optimierung", &o.fitted),
-        metrics_line("Prüfung", &o.validated)
+        metrics_line("Optimization", &o.fitted),
+        metrics_line("Check", &o.validated)
     )
 }
 
@@ -78,7 +78,7 @@ fn request_from(plan: &Plan, args: &[String]) -> Result<Request, Box<dyn std::er
         req.goal = match g.as_str() {
             "1" | "consumption" => Goal::Consumption,
             "2" | "keepProperty" | "keep-property" => Goal::KeepProperty,
-            _ => return Err("--goal: 1 (consumption) oder 2 (keepProperty) erwartet".into()),
+            _ => return Err("--goal: 1 (consumption) or 2 (keepProperty) expected".into()),
         };
     }
     if let Some(v) = num(args, "--min-consumption")? {
@@ -115,18 +115,18 @@ fn request_from(plan: &Plan, args: &[String]) -> Result<Request, Box<dyn std::er
 }
 
 pub fn cmd_optimize(args: &[String]) -> R {
-    let path = positional(args).ok_or("Projektdatei fehlt")?;
+    let path = positional(args).ok_or("Project file missing")?;
     let base_dir = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
     let base = api::read_plan(Path::new(path))?;
     let plan: Plan = serde_json::from_value(base.clone())?;
     if matches!(plan.returns.source, ReturnSource::Fixed | ReturnSource::Historical) {
         eprintln!(
-            "Hinweis: Mit der Renditequelle «{}» gibt es nur einen Pfad; Ruin ist dann 0 % oder 100 %. \
-             Für sinnvolle Ergebnisse Bootstrap, parametrisch oder rollierend wählen.",
+            "Note: with the return source “{}” there is only one path; ruin is then 0 % or 100 %. \
+             For meaningful results, choose bootstrap, parametric or rolling.",
             if plan.returns.source == ReturnSource::Fixed {
-                "fix"
+                "fixed"
             } else {
-                "historisch"
+                "historical"
             }
         );
     }
@@ -135,50 +135,50 @@ pub fn cmd_optimize(args: &[String]) -> R {
     let report = opt::run_request(&base, &base_dir, Some(&library_dir(args)), &req)?;
 
     println!(
-        "Optimierung von «{path}»: Pensionierung {}, {} Pfade (Suche), {} (Prüfung)",
+        "Optimization of “{path}”: retirement {}, {} paths (search), {} (check)",
         report.retire, report.fit_paths, report.check_paths
     );
     if obj.goal == Goal::KeepProperty {
         println!(
-            "Ziel 2 «Kein Notverkauf von Immobilien»: möglichst wenige ungeplante Verkäufe, bei Gleichstand geringste Ruinwahrscheinlichkeit; \
-             Nebenbedingungen: Ruin ≤ {}, Median des Konsums ≥ {} der geplanten Ausgaben",
+            "Goal 2 “No emergency sale of real estate”: as few unplanned sales as possible, on a tie the lowest probability of ruin; \
+             constraints: ruin ≤ {}, median consumption ≥ {} of the planned spending",
             pct1(obj.max_ruin),
             pct1(obj.min_consumption)
         );
     } else {
         println!(
-            "Ziel: Ruin ≤ {}{}; maximiere {:.0} % Median + {:.0} % P10 des realen Konsums, Abzug {:.0} × Schwankung{}",
+            "Goal: ruin ≤ {}{}; maximize {:.0} % median + {:.0} % P10 of real consumption, minus {:.0} × volatility{}",
             pct1(obj.max_ruin),
             obj.ruin_age
-                .map_or(" (bis Simulationsende)".to_string(), |a| format!(" bis Alter {a}")),
+                .map_or(" (until the simulation end)".to_string(), |a| format!(" until age {a}")),
             obj.weight_median * 100.0,
             (1.0 - obj.weight_median) * 100.0,
             obj.vol_weight,
             obj.max_vol
-                .map_or(String::new(), |v| format!("; Schwankung ≤ {}", pct1(v)))
+                .map_or(String::new(), |v| format!("; volatility ≤ {}", pct1(v)))
         );
     }
-    println!("Konsum in Preisen des Startmonats, pro Jahr, inkl. Wohnkosten, vor Steuern.");
-    println!("\nAusgangslage ({}, unverändert)", report.reference.strategy);
-    println!("{}", metrics_line("Prüfung", &report.reference.metrics));
+    println!("Consumption in prices of the start month, per year, incl. housing costs, before taxes.");
+    println!("\nStarting point ({}, unchanged)", report.reference.strategy);
+    println!("{}", metrics_line("Check", &report.reference.metrics));
     for o in &report.outcomes {
         println!("{}", outcome_text(o, &obj));
     }
     if let Some(best) = report.outcomes.first() {
         println!(
-            "\nBeste Strategie nach der Prüfung: {}{}",
+            "\nBest strategy after the check: {}{}",
             best.strategy,
             if best.feasible {
                 ""
             } else {
-                " (keine hält die Ruingrenze ein)"
+                " (none meets the ruin limit)"
             }
         );
     }
-    println!("Rechenzeit: {:.1} s", report.elapsed_ms / 1e3);
+    println!("Computing time: {:.1} s", report.elapsed_ms / 1e3);
     if let Some(json) = option(args, &["--json"]) {
         std::fs::write(&json, serde_json::to_string_pretty(&report.outcomes)?)?;
-        println!("Ergebnis: {json}");
+        println!("Result: {json}");
     }
     Ok(())
 }
@@ -274,7 +274,7 @@ mod tests {
         let goal = request_from(&plan(), &args(&["p.vplan", "--goal", "3"])).unwrap_err();
         assert!(goal.to_string().contains("--goal"));
         let n = request_from(&plan(), &args(&["p.vplan", "--paths", "many"])).unwrap_err();
-        assert_eq!(n.to_string(), "--paths: Zahl erwartet");
+        assert_eq!(n.to_string(), "--paths: number expected");
         for g in ["1", "consumption"] {
             assert_eq!(
                 request_from(&plan(), &args(&["p.vplan", "--goal", g])).unwrap().goal,
@@ -291,13 +291,13 @@ mod tests {
 
     #[test]
     fn metrics_line_shows_all_six_figures() {
-        let l = metrics_line("Prüfung", &metrics(0.02));
-        assert!(l.starts_with("    Prüfung"), "{l}");
+        let l = metrics_line("Check", &metrics(0.02));
+        assert!(l.starts_with("    Check"), "{l}");
         for part in [
             "Ruin   2.0 %",
-            "Schwankung   5.0 %",
-            "Entnahmerate  4.0 %",
-            "Notverkauf 12.5 %",
+            "Volatility   5.0 %",
+            "Withdrawal rate  4.0 %",
+            "Emergency sale 12.5 %",
         ] {
             assert!(l.contains(part), "{part} in {l}");
         }
@@ -315,21 +315,18 @@ mod tests {
             ok.starts_with("\nGuardrails\n    Startrate 4.5 %, Topf 1 2.5\n"),
             "{ok}"
         );
-        assert!(ok.contains("Optimierung") && ok.contains("Prüfung"));
-        assert!(ok.contains("Ziel (Prüfung): ") && ok.ends_with(" pro Jahr"), "{ok}");
-        assert!(!ok.contains("NICHT"));
+        assert!(ok.contains("Optimization") && ok.contains("Check"));
+        assert!(ok.contains("Goal (check): ") && ok.ends_with(" per year"), "{ok}");
+        assert!(!ok.contains("NOT"));
         let bad = outcome_text(&outcome(false), &consumption);
-        assert!(
-            bad.starts_with("\nGuardrails  – Ruingrenze NICHT eingehalten\n"),
-            "{bad}"
-        );
+        assert!(bad.starts_with("\nGuardrails  – ruin limit NOT met\n"), "{bad}");
         let bad_keep = outcome_text(&outcome(false), &keep);
-        assert!(bad_keep.contains("Nebenbedingungen NICHT eingehalten"), "{bad_keep}");
+        assert!(bad_keep.contains("constraints NOT met"), "{bad_keep}");
         assert!(
-            bad_keep.ends_with("ungeplanter Immobilienverkauf in 12.5 % der Läufe"),
+            bad_keep.ends_with("unplanned property sale in 12.5 % of the runs"),
             "{bad_keep}"
         );
         // without a violated constraint, goal 2 shows no warning
-        assert!(!outcome_text(&outcome(true), &keep).contains("NICHT"));
+        assert!(!outcome_text(&outcome(true), &keep).contains("NOT"));
     }
 }

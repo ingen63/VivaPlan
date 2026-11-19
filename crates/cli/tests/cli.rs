@@ -55,9 +55,9 @@ fn plan_file(dir: &Path, source: &str, extra: impl Fn(&mut serde_json::Value)) -
 fn usage_and_schema() {
     let o = run(&[]);
     assert_eq!(o.status.code(), Some(2));
-    assert!(text(&o).contains("Verwendung"));
+    assert!(text(&o).contains("Usage"));
     // #61: short form of the disclaimer in one line
-    assert!(text(&o).contains("Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung."));
+    assert!(text(&o).contains("Model calculation without guarantee. No financial or tax advice."));
     let o = run(&["schema"]);
     assert!(o.status.success());
     let schema: serde_json::Value = serde_json::from_slice(&o.stdout).unwrap();
@@ -98,7 +98,7 @@ fn run_single_with_outputs() {
     let t = text(&o);
     assert!(o.status.success(), "{t}");
     assert!(
-        t.contains("Vermögen am Ende") && t.contains("Ereignisse:") && t.contains("(Alter "),
+        t.contains("Wealth at the end") && t.contains("Events:") && t.contains("(age "),
         "{t}"
     );
     assert!(std::fs::read_to_string(&csv).unwrap().lines().count() > 300);
@@ -116,7 +116,7 @@ fn run_batches() {
         let t = text(&o);
         assert!(o.status.success(), "{src}: {t}");
         if src != "historical" {
-            assert!(t.contains("Läufe") && t.contains("Perzentil"), "{src}: {t}");
+            assert!(t.contains("runs") && t.contains("percentile"), "{src}: {t}");
             assert!(std::fs::read_to_string(&json).unwrap().contains("successRate"));
         }
     }
@@ -128,7 +128,7 @@ fn validate_and_errors() {
     let ok = plan_file(&d, "fixed", |_| {});
     let o = run(&["validate", &ok]);
     assert!(o.status.success(), "{}", text(&o));
-    assert!(text(&o).contains("gültig"));
+    assert!(text(&o).contains("valid"));
     // Without a series and without an investment strategy (#69), the returns for `rolling` are missing.
     let bad = plan_file(&d, "rolling", |v| {
         v["returns"]["series"] = serde_json::Value::Null;
@@ -136,12 +136,12 @@ fn validate_and_errors() {
     });
     let o = run(&["validate", &bad]);
     assert!(!o.status.success());
-    assert!(text(&o).contains("FEHLER"));
+    assert!(text(&o).contains("ERROR"));
     let o = run(&["run", "does-not-exist.vplan"]);
     assert!(!o.status.success());
-    assert!(text(&o).contains("Fehler"));
+    assert!(text(&o).contains("Error"));
     let o = run(&["validate"]);
-    assert!(text(&o).contains("Projektdatei fehlt"));
+    assert!(text(&o).contains("Project file missing"));
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn bench_runs_paths() {
     let p = plan_file(&d, "fixed", |_| {});
     let o = run(&["bench", &p, "--paths", "200"]);
     assert!(o.status.success(), "{}", text(&o));
-    assert!(text(&o).contains("200 Läufe"));
+    assert!(text(&o).contains("200 runs"));
 }
 
 #[test]
@@ -189,7 +189,7 @@ fn library_import_commands() {
         let o = run(&["import-shiller", shiller.to_str().unwrap(), "--library", l]);
         assert!(o.status.success(), "{}", text(&o));
         assert!(
-            text(&o).contains("Geschrieben: Shiller CHF + CH-Obligationen.csv"),
+            text(&o).contains("Written: Shiller CHF + CH-Obligationen.csv"),
             "{}",
             text(&o)
         );
@@ -199,11 +199,11 @@ fn library_import_commands() {
     let cube = root().join("crates/engine/data/quellen/snb-zimoma.csv");
     let o = run(&["import-snb", cube.to_str().unwrap(), "--library", l]);
     assert!(o.status.success(), "{}", text(&o));
-    assert!(text(&o).contains("zimoma übernommen"));
+    assert!(text(&o).contains("zimoma imported"));
     let o = run(&["import-snb", "--library", l]);
-    assert!(text(&o).contains("SNB-Datei fehlt"));
+    assert!(text(&o).contains("SNB file missing"));
     let o = run(&["import-shiller", "--library", l]);
-    assert!(text(&o).contains("Shiller-Datei fehlt"));
+    assert!(text(&o).contains("Shiller file missing"));
 }
 
 // ---------- Development server ----------
@@ -282,11 +282,11 @@ fn dev_server_serves_ui_and_api() {
     let (_, b) = http(p, "POST", "/api/series_info", r#"{"path": "library:Shiller CHF.csv"}"#);
     assert!(b.contains("\"currency\":\"CHF\""), "{b}");
     let (h, b) = http(p, "POST", "/api/series_info", "{}");
-    assert!(h.contains("400") && b.contains("Pfad fehlt"));
+    assert!(h.contains("400") && b.contains("Path missing"));
     let (_, b) = http(p, "POST", "/api/library_list", "{}");
     assert!(b.contains("Shiller USD.csv"));
     let (h, b) = http(p, "POST", "/api/open_plan", "{}");
-    assert!(h.contains("400") && b.contains("Desktop-App"));
+    assert!(h.contains("400") && b.contains("desktop app"));
 }
 
 #[test]
@@ -311,7 +311,7 @@ fn optimize_compares_strategies_and_respects_ruin_limit() {
     let t = text(&o);
     assert!(o.status.success(), "{t}");
     assert!(
-        t.contains("Ausgangslage") && t.contains("Fixe Rate") && t.contains("Guardrails"),
+        t.contains("Starting point") && t.contains("Fixe Rate") && t.contains("Guardrails"),
         "{t}"
     );
     let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
@@ -333,11 +333,11 @@ fn optimize_uses_saved_settings_and_options_override_them() {
         });
     });
     let t = text(&run(&["optimize", &f]));
-    assert!(t.contains("Ruin ≤ 2.0 % bis Alter 90"), "{t}");
+    assert!(t.contains("ruin ≤ 2.0 % until age 90"), "{t}");
     assert!(t.contains("Fixe Rate") && !t.contains("Guardrails"), "{t}");
     let t = text(&run(&["optimize", &f, "--max-ruin", "8", "--strategy", "vpw"]));
     assert!(
-        t.contains("Ruin ≤ 8.0 %") && t.contains("VPW") && !t.contains("Fixe Rate"),
+        t.contains("ruin ≤ 8.0 %") && t.contains("VPW") && !t.contains("Fixe Rate"),
         "{t}"
     );
 }
@@ -350,14 +350,14 @@ fn optimize_goal_two_needs_a_property_and_is_selectable() {
     // Goal 2 with the example plan's property
     let t = text(&run(&["optimize", &f, "--goal", "2", "--min-consumption", "50"]));
     assert!(
-        t.contains("Ziel 2 «Kein Notverkauf von Immobilien»") && t.contains("ungeplanter Immobilienverkauf"),
+        t.contains("Goal 2 “No emergency sale of real estate”") && t.contains("unplanned property sale"),
         "{t}"
     );
     // Invalid goal
     assert!(!run(&["optimize", &f, "--goal", "9"]).status.success());
     // Goal 1 chosen explicitly: as before
     let t = text(&run(&["optimize", &f, "--goal", "1"]));
-    assert!(t.contains("Ziel: Ruin"), "{t}");
+    assert!(t.contains("Goal: ruin"), "{t}");
     // Without a property: error message
     let g = plan_file(&d, "bootstrap", |p| {
         p["optimization"] = settings.clone();
@@ -376,7 +376,7 @@ fn issue_144_ak3_cli_rejects_an_unknown_format() {
         let o = run(&[cmd, &newer]);
         assert!(!o.status.success(), "{cmd}: {}", text(&o));
         assert!(
-            text(&o).contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"),
+            text(&o).contains("The file has the format “vivaplan/2”. It requires a newer version of VivaPlan"),
             "{cmd}: {}",
             text(&o)
         );

@@ -18,27 +18,27 @@ use engine::sim::{SimResult, Simulator};
 use engine::validate::{self, Severity};
 
 const USAGE: &str = "\
-VivaPlan – Rechenkern
+VivaPlan – calculation engine
 
-Verwendung:
-  vivaplan run <planung.vplan> [--csv <datei>] [--json <datei>] [--events]
-  vivaplan validate <planung.vplan>
-  vivaplan import-legacy <config.json> --start-year <JJJJ> [-o <planung.vplan>] [--base <verzeichnis>]
-  vivaplan bench <planung.vplan> [--paths <anzahl>]
-  vivaplan optimize <planung.vplan> [--strategy all|standard|three_buckets|guardrails|fixed_rate|vpw|endowment]
+Usage:
+  vivaplan run <plan.vplan> [--csv <file>] [--json <file>] [--events]
+  vivaplan validate <plan.vplan>
+  vivaplan import-legacy <config.json> --start-year <YYYY> [-o <plan.vplan>] [--base <directory>]
+  vivaplan bench <plan.vplan> [--paths <count>]
+  vivaplan optimize <plan.vplan> [--strategy all|standard|three_buckets|guardrails|fixed_rate|vpw|endowment]
         [--goal 1|2] [--min-consumption 90] [--max-ruin 5] [--ruin-age 95] [--weight-median 0.5] [--vol-weight 1] [--max-vol 10]
-        [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json <datei>]
+        [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json <file>]
   vivaplan schema
   vivaplan --version
-  vivaplan library [--library <ordner>]          (Zeitreihen der Datenbibliothek)
-  vivaplan import-shiller <ie_data.xls|.xlsx|.ods> [--library <ordner>]
-  vivaplan import-snb <würfel.csv>… [--library <ordner>]   (devkum, plkopr, zimoma, rendoblim von data.snb.ch)
-  vivaplan ui-dev [--port 8787] [--ui <ordner>] [--library <ordner>]   (Oberfläche im Browser, nur lokal)
+  vivaplan library [--library <folder>]          (time series of the data library)
+  vivaplan import-shiller <ie_data.xls|.xlsx|.ods> [--library <folder>]
+  vivaplan import-snb <cube.csv>… [--library <folder>]   (devkum, plkopr, zimoma, rendoblim from data.snb.ch)
+  vivaplan ui-dev [--port 8787] [--ui <folder>] [--library <folder>]   (user interface in the browser, local only)
 
-Die Datenbibliothek ist ohne --library der Ordner crates/engine/data/ des Projekts; Planungen verweisen
-mit «library:<datei>» darauf.
+Without --library, the data library is the folder crates/engine/data/ of the project; plans refer to it
+with “library:<file>”. Messages and events are in English.
 
-Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.
+Model calculation without guarantee. No financial or tax advice.
 ";
 
 fn main() -> ExitCode {
@@ -76,7 +76,7 @@ fn main() -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("Fehler: {e}");
+            eprintln!("Error: {e}");
             ExitCode::FAILURE
         }
     }
@@ -123,7 +123,7 @@ fn pct(v: f64) -> String {
 fn print_report(r: &engine::library::ImportReport) {
     for (file, i) in &r.written {
         println!(
-            "Geschrieben: {file}  ({} – {}, {} Monate{}; Aktien {}, Obligationen {}, Inflation {} pro Jahr)",
+            "Written: {file}  ({} – {}, {} months{}; stocks {}, bonds {}, inflation {} per year)",
             i.first,
             i.last,
             i.entries,
@@ -136,20 +136,20 @@ fn print_report(r: &engine::library::ImportReport) {
         );
     }
     for n in &r.notes {
-        println!("Hinweis: {n}");
+        println!("Note: {n}");
     }
 }
 
 fn cmd_library(args: &[String]) -> R {
     let dir = library_dir(args);
-    println!("Datenbibliothek: {}", dir.display());
+    println!("Data library: {}", dir.display());
     for e in engine::api::library_list(&dir)?.entries {
         match (&e.info, &e.error) {
             (Some(i), _) => println!(
-                "  {:<28} {:<4} {} {} – {}{}  Aktien {}, Obligationen {}, Inflation {}",
+                "  {:<28} {:<4} {} {} – {}{}  stocks {}, bonds {}, inflation {}",
                 e.file,
                 i.currency.as_deref().unwrap_or("?"),
-                if i.monthly { "monatlich" } else { "jährlich " },
+                if i.monthly { "monthly" } else { "yearly " },
                 i.first,
                 i.last,
                 if i.has_saron { " · SARON" } else { "" },
@@ -157,7 +157,7 @@ fn cmd_library(args: &[String]) -> R {
                 pct(i.avg_bonds),
                 pct(i.avg_inflation)
             ),
-            (None, Some(err)) => println!("  {:<28} FEHLER: {err}", e.file),
+            (None, Some(err)) => println!("  {:<28} ERROR: {err}", e.file),
             _ => {}
         }
     }
@@ -165,7 +165,7 @@ fn cmd_library(args: &[String]) -> R {
 }
 
 fn cmd_import_shiller(args: &[String]) -> R {
-    let file = positional(args).ok_or("Shiller-Datei fehlt")?;
+    let file = positional(args).ok_or("Shiller file missing")?;
     let r = engine::api::import_shiller(&library_dir(args), Path::new(file))?;
     print_report(&r);
     Ok(())
@@ -174,7 +174,7 @@ fn cmd_import_shiller(args: &[String]) -> R {
 fn cmd_import_snb(args: &[String]) -> R {
     let files: Vec<PathBuf> = positionals(args).into_iter().map(PathBuf::from).collect();
     if files.is_empty() {
-        return Err("SNB-Datei fehlt".into());
+        return Err("SNB file missing".into());
     }
     let r = engine::api::import_snb(&library_dir(args), &files)?;
     print_report(&r);
@@ -225,9 +225,9 @@ fn print_issues(plan: &Plan) -> bool {
     let issues = validate::validate(plan);
     for i in &issues {
         let tag = if i.severity == Severity::Error {
-            "FEHLER "
+            "ERROR  "
         } else {
-            "Hinweis"
+            "Note   "
         };
         println!("  {tag} [{}] {}", i.section, i.message);
     }
@@ -235,17 +235,17 @@ fn print_issues(plan: &Plan) -> bool {
 }
 
 fn cmd_validate(args: &[String]) -> R {
-    let path = positional(args).ok_or("Projektdatei fehlt")?;
+    let path = positional(args).ok_or("Project file missing")?;
     let (plan, _) = load(path)?;
     if print_issues(&plan) {
-        return Err("Die Planung enthält Fehler.".into());
+        return Err("The plan contains errors.".into());
     }
-    println!("Planung ist gültig.");
+    println!("The plan is valid.");
     Ok(())
 }
 
 fn cmd_run(args: &[String]) -> R {
-    let path = positional(args).ok_or("Projektdatei fehlt")?;
+    let path = positional(args).ok_or("Project file missing")?;
     let (plan, base) = load(path)?;
     print_issues(&plan);
     let t0 = Instant::now();
@@ -260,42 +260,42 @@ fn cmd_run(args: &[String]) -> R {
         let dt = t1.elapsed();
         print_single(&sim, &res, args.iter().any(|a| a == "--events"));
         println!(
-            "\nRechenzeit: {:.3} ms (Vorbereitung {:.3} ms)",
+            "\nComputing time: {:.3} ms (preparation {:.3} ms)",
             dt.as_secs_f64() * 1e3,
             prep.as_secs_f64() * 1e3
         );
         if let Some(csv) = opt(args, &["--csv"]) {
             write_csv(&csv, &res)?;
-            println!("Monatswerte: {csv}");
+            println!("Monthly values: {csv}");
         }
         if let Some(json) = opt(args, &["--json"]) {
             std::fs::write(&json, serde_json::to_string_pretty(&res)?)?;
-            println!("Ergebnis: {json}");
+            println!("Result: {json}");
         }
     } else {
         let t1 = Instant::now();
         let results = batch::run_paths(&sim, &paths);
         let dt = t1.elapsed();
         let s = batch::summarize(&results);
-        println!("{} Läufe ({})", s.runs, plan.returns.source_label());
+        println!("{} runs ({})", s.runs, plan.returns.source_label());
         println!(
-            "Vermögen reicht bis zum Ende in {:.1} % der Läufe",
+            "Wealth lasts until the end in {:.1} % of the runs",
             s.success_rate * 100.0
         );
         if let Some((m, label)) = &s.earliest_depletion {
-            println!("Früheste Erschöpfung: {m} (Alter {:.1}) – {label}", sim.age_at(*m));
+            println!("Earliest depletion: {m} (age {:.1}) – {label}", sim.age_at(*m));
         }
-        println!("\nGesamtvermögen am Ende (nominal):");
+        println!("\nTotal wealth at the end (nominal):");
         for p in &s.percentiles {
             let name = if p.percent == 0 {
-                "Schlechtester Lauf".to_string()
+                "Worst run".to_string()
             } else {
-                format!("{:>3}. Perzentil", p.percent)
+                format!("{:>3}th percentile", p.percent)
             };
             println!("  {name:<18} {:>15}  {}", chf(p.end_total), p.label);
         }
         println!(
-            "\nRechenzeit: {:.1} ms für {} Läufe ({:.1} µs pro Lauf, {} Kerne)",
+            "\nComputing time: {:.1} ms for {} runs ({:.1} µs per run, {} cores)",
             dt.as_secs_f64() * 1e3,
             s.runs,
             dt.as_secs_f64() * 1e6 / s.runs as f64,
@@ -310,7 +310,7 @@ fn cmd_run(args: &[String]) -> R {
 
 /// Runs the first return path N times in parallel (load as in a Monte Carlo simulation).
 fn cmd_bench(args: &[String]) -> R {
-    let path = positional(args).ok_or("Projektdatei fehlt")?;
+    let path = positional(args).ok_or("Project file missing")?;
     let n: usize = opt(args, &["--paths"]).map_or(Ok(50_000), |s| s.parse())?;
     let (plan, base) = load(path)?;
     let sim = Simulator::new(&plan)?;
@@ -321,7 +321,7 @@ fn cmd_bench(args: &[String]) -> R {
     let results = batch::run_all(&sim, &paths);
     let dt = t0.elapsed();
     println!(
-        "{n} Läufe à {} Monate in {:.0} ms ({:.1} µs pro Lauf, {} Kerne); Kontrolle: {}",
+        "{n} runs of {} months in {:.0} ms ({:.1} µs per run, {} cores); check: {}",
         sim.months(),
         dt.as_secs_f64() * 1e3,
         dt.as_secs_f64() * 1e6 / n as f64,
@@ -342,11 +342,11 @@ impl SourceLabel for engine::model::Returns {
     fn source_label(&self) -> &'static str {
         use engine::model::ReturnSource::*;
         match self.source {
-            Fixed => "fixe Renditen",
-            Historical => "historisch",
-            Rolling => "alle historischen Startzeitpunkte",
-            Bootstrap => "Monte Carlo historisch",
-            Parametric => "Monte Carlo parametrisch",
+            Fixed => "fixed returns",
+            Historical => "historical",
+            Rolling => "all historical start dates",
+            Bootstrap => "Monte Carlo from history",
+            Parametric => "parametric Monte Carlo",
         }
     }
 }
@@ -356,7 +356,7 @@ fn print_single(sim: &Simulator, res: &SimResult, events: bool) {
     println!("{}  ·  {} – {}", res.label, sim.start, sim.end);
     println!(
         "\n{:>7} {:>6} {:>14} {:>14} {:>14} {:>12} {:>14}",
-        "Jahr", "Alter", "Liquid", "Immobilien", "Pensionskasse", "Säule 3a", "Total"
+        "Year", "Age", "Liquid", "Real estate", "Pension fund", "Pillar 3a", "Total"
     );
     for (i, r) in res.records.iter().enumerate() {
         if r.month.is_december() || i == 0 || i + 1 == res.records.len() {
@@ -374,27 +374,27 @@ fn print_single(sim: &Simulator, res: &SimResult, events: bool) {
     }
     println!();
     if let Some(t) = s.total_at_retirement {
-        println!("Vermögen bei Pensionierung:   {}", chf(t));
+        println!("Wealth at retirement:         {}", chf(t));
     }
     println!(
-        "Kapitalbezug PK netto:        {} (Steuer {})",
+        "Pension fund lump sum net:    {} (tax {})",
         chf(s.lumpsum_net),
         chf(s.lumpsum_tax)
     );
-    println!("PK-Rente pro Monat:           {}", chf(s.pension_fund_monthly));
-    println!("Vermögen am Ende:             {}", chf(s.end_total));
-    println!("Steuern total:                {}", chf(s.taxes_total));
+    println!("Pension fund annuity / month: {}", chf(s.pension_fund_monthly));
+    println!("Wealth at the end:            {}", chf(s.end_total));
+    println!("Taxes total:                  {}", chf(s.taxes_total));
     match s.depleted {
-        Some(m) => println!("Vermögen aufgebraucht:        {m} (Alter {:.1})", sim.age_at(m)),
-        None => println!("Vermögen reicht bis zum Ende."),
+        Some(m) => println!("Wealth depleted:              {m} (age {:.1})", sim.age_at(m)),
+        None => println!("Wealth lasts until the end."),
     }
     if let Some(m) = s.min_liquid_month {
-        println!("Tiefstes liquides Vermögen:   {} ({m})", chf(s.min_liquid));
+        println!("Lowest liquid wealth:         {} ({m})", chf(s.min_liquid));
     }
     if events {
-        println!("\nEreignisse:");
+        println!("\nEvents:");
         for e in &res.events {
-            println!("  {} (Alter {:.1})  {}", e.month, sim.age_at(e.month), e.text);
+            println!("  {} (age {:.1})  {}", e.month, sim.age_at(e.month), e.text);
         }
     }
 }
@@ -426,8 +426,8 @@ fn write_csv(path: &str, res: &SimResult) -> R {
 }
 
 fn cmd_import(args: &[String]) -> R {
-    let path = positional(args).ok_or("config.json fehlt")?;
-    let year: i32 = opt(args, &["--start-year"]).ok_or("--start-year fehlt")?.parse()?;
+    let path = positional(args).ok_or("config.json missing")?;
+    let year: i32 = opt(args, &["--start-year"]).ok_or("--start-year missing")?.parse()?;
     let base = opt(args, &["--base"])
         .map(PathBuf::from)
         .unwrap_or(std::env::current_dir()?);
@@ -438,14 +438,14 @@ fn cmd_import(args: &[String]) -> R {
         .unwrap_or_default();
     let imp = engine::legacy::import(&text, year, &base, &name)?;
     for n in &imp.notes {
-        eprintln!("Hinweis: {n}");
+        eprintln!("Note: {n}");
     }
     let json = imp.plan.to_json();
     match opt(args, &["-o", "--out"]) {
         Some(out) => {
             // #136: atomic; an existing file stays unchanged on error
             engine::api::write_atomic(Path::new(&out), json.as_bytes()).map_err(|e| format!("{out}: {e}"))?;
-            eprintln!("Gespeichert: {out}");
+            eprintln!("Saved: {out}");
         }
         None => println!("{json}"),
     }

@@ -74,8 +74,8 @@ verlangt ihn aber.
   Eingaben unabhängig von der Sprache. Neue Zahlen immer über diese Funktionen formatieren.
 - **Feste Meilensteine** (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`) speichern keinen Namen; die Oberfläche zeigt
   `milestone.<id>` aus der Tabelle (`msLabel`). `upgrade.rs` entfernt die deutschen Standardnamen älterer Dateien, ein
-  eigener Name von Start oder Ende bleibt. Der Rechenkern setzt für Meldungen und Ereignisse den deutschen Namen anhand
-  der `id` ein (`Milestone::label`, bis #176); als Parameter einer Meldung ist ein fester Meilenstein die Meldung
+  eigener Name von Start oder Ende bleibt (`model::stored_milestone_name`). Der Rechenkern setzt für Meldungen und
+  Ereignisse den englischen Namen anhand der `id` ein (`Milestone::label`, `model::fixed_milestone_name`, #176); als Parameter einer Meldung ist ein fester Meilenstein die Meldung
   `milestone_<id>` (`Milestone::name_arg`, `model::fixed_milestone_message`), die Oberfläche übersetzt sie.
 - **Prüfungen:** `tools/check_ui_texts.py` (in `make test-quiet`, `make ui-texts`, Job `english`) meldet deutsche Texte
   in `crates/app/ui/*.js`, `index.html` und `crates/app/src/*.rs` ausserhalb der Tabelle; Ausnahme mit
@@ -87,7 +87,7 @@ verlangt ihn aber.
 
 Jede Meldung, die der Rechenkern an die Oberfläche gibt, ist eine `message::Message`: ein stabiler Code (englisch,
 snake_case, z. B. `pillar3a_over_max`), Parameter als Werte (Zahlen, Namen, Monate `JJJJ-MM`, Listen und verschachtelte
-Meldungen, nie formatierter Text) und der daraus gebildete deutsche Text. Dazu gehören Prüfmeldungen (`Issue`:
+Meldungen, nie formatierter Text) und der daraus gebildete englische Text (seit #176). Dazu gehören Prüfmeldungen (`Issue`:
 `message`, `code`, `params`), Ereignistexte der Simulation (`Event`: `text`, `code`, `params`), Gründe und Hinweise in
 den Ergebnissen (`PropertyEvent.reason`/`note`, `Renewal.emergencySale`, `BucketRefill.reason`/`returnBasis`,
 `NeedBasis.source`), die Bezeichnung des Laufs (`label`, z. B. `path_bootstrap`), die Basis der Vorschau (`basis`),
@@ -95,7 +95,8 @@ Hinweise von `upgrade_plan`, `import_legacy`, `import_shiller`/`import_snb` (`no
 (`Error::Invalid`/`Io` tragen eine Meldung, `Error::message()`; `error` in den Antworten). Als eigenes Objekt
 erscheint eine Meldung als `{ "code", "params", "text" }`.
 
-- **Tabelle:** `crates/engine/src/message.rs`, Makro `codes!` am Ende: Code ⇒ deutsche Vorlage (Enum `Code`, ein
+- **Tabelle:** `crates/engine/src/message.rs`, Makro `codes!` am Ende: Code ⇒ englische Vorlage, dieselbe wie
+  `engine.<code>` in `en.json` (Enum `Code`, ein
   Tippfehler im Code ist ein Übersetzungsfehler). Aufbau mit `msg!(code, name = wert, …)`. Platzhalter `{name}` oder
   `{name:format}`: ohne Format Text, Zahl, Liste (", ") oder verschachtelte Meldung; `int` gerundet mit `'`
   (12'500), `fix0`–`fix2` feste Nachkommastellen, `pct0`–`pct2` Anteil × 100, `ym` Monat als MM.JJJJ, `lines` Liste
@@ -109,17 +110,25 @@ erscheint eine Meldung als `{ "code", "params", "text" }`.
   in der Desktop-App als Meldung (`CmdError`), vom Entwicklungsserver als `{error, code, params}`; `api.js` macht daraus
   einen `Error` mit `code` und `params`, `errText` übersetzt ihn. Die Oberfläche wertet keine Texte des Rechenkerns
   mehr aus, nur Codes (`isCancelled`: `cancelled`, `randomPath`: `path_bootstrap`/`path_random`).
-- **Kommandozeile und Golden-Dateien** verwenden den deutschen Text; bis #176 bleibt er unverändert. Der
+- **Kommandozeile und Golden-Dateien** verwenden den englischen Text (#176). Die Kommandozeile gibt auch ihre eigenen
+  Texte (Hilfe, Überschriften, Fehler) englisch aus, Zahlen im Schweizer Format; Namen aus dem Katalog der Optimierung
+  und der Zeitreihen (`optimize::param_defs`, `strategy_name`, `strategy::label`) sind noch deutsch. Der
   Golden-Vergleich (`crates/engine/tests/golden.rs`, `without_codes`) entfernt `code` und `params` und vergleicht eine
-  alleinstehende Meldung mit ihrem Text.
+  alleinstehende Meldung mit ihrem Text. Die Golden-Dateien wurden mit #176 einmal neu erzeugt; `make golden-numbers
+  BASE=<rev>` (`tools/golden_numbers.py`) vergleicht zwei Stände ohne Textfelder (Zahlen, Schlüssel, Listenlängen,
+  Monate).
+- **Englische Texte:** Eine Korrektur einer englischen Vorlage gilt für `en.json` und `codes!` gemeinsam (Test AK1);
+  danach Beispieldatei neu schreiben und Golden-Dateien neu erzeugen.
 - **Tests (AK3):** `issue_171_ak3_examples_file_is_current` (Rechenkern) schreibt je Code ein Beispiel
   (`message::example`: Werte nach Format der Platzhalter) nach `e2e/unit/engine-messages.json`; ein neuer Code macht
   die Datei veraltet (neu schreiben mit `MESSAGES_UPDATE=1 cargo nextest run -p vivaplan-engine -E
   'test(issue_171_ak3)'`). `e2e/unit/engine-messages.test.js` rendert jedes Beispiel mit `engineText` und der Tabelle
-  und verlangt genau den Text des Rechenkerns; `issue_171_ak3_engine_codes_render_the_engine_text` (App, in
-  `make test-quiet`) prüft dasselbe mit `message::render` und meldet Schlüssel `engine.*` ohne Code.
-- **Neue Meldung:** Code und Vorlage in `codes!`, gleicher Schlüssel `engine.<code>` in `de.json` (und den übrigen
-  Tabellen), Beispieldatei neu schreiben.
+  `en` und verlangt genau den Text des Rechenkerns (#176/AK1);
+  `issue_171_ak3_engine_codes_render_the_engine_text` (App, in `make test-quiet`) prüft dasselbe mit `message::render`
+  gegen `en.json` und meldet Schlüssel `engine.*` ohne Code. `e2e/ui-sprache.spec.js` (#176/AK4) prüft, dass die
+  deutsche Oberfläche keinen englischen Text des Rechenkerns zeigt.
+- **Neue Meldung:** Code und englische Vorlage in `codes!`, gleicher Schlüssel `engine.<code>` in `en.json` (gleiche
+  Vorlage), `de.json` und den übrigen Tabellen, Beispieldatei neu schreiben.
 
 ## Desktop-App
 

@@ -48,7 +48,7 @@ Fall daneben.
 - 🗂️ **Simulationen vergleichen:** jede Simulation wird mit der Planung von damals gespeichert
 - ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein Handbuch mit Suche
 - 🌐 **Deutsch und Englisch:** Oberfläche, Menüs und Meldungen in beiden Sprachen (Wahl unter *Ansicht → Sprache*);
-  Zahlen immer im Schweizer Format. Die Hilfe ist vorerst deutsch.
+  Zahlen immer im Schweizer Format. Die Hilfe ist vorerst deutsch, die Kommandozeile gibt englische Texte aus.
 
 Die ausführliche Beschreibung steht in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG.md).
 
@@ -98,7 +98,7 @@ Abdeckung von mindestens 80 % je Paket, Mutationstests und Fuzzing.
 
 ```sh
 cargo build --release
-target/release/vivaplan run crates/engine/assets/beispiel.vplan --events
+target/release/vivaplan run crates/engine/assets/beispiel.vplan --events   # Ausgabe englisch (#176)
 make test        # alle Rust-Tests mit nextest (nicht cargo test; Grund in docs/TESTS.md)
 ```
 

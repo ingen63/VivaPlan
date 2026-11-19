@@ -69,6 +69,8 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `import-legacy <config.json>` | Konfiguration des früheren Programms als Ausgangspunkt übernehmen |
 | `ui-dev` | Oberfläche im Browser, nur lokal (Entwicklung) |
 
+Die Kommandozeile gibt ihre Texte, Meldungen und Ereignisse auf Englisch aus, unabhängig von der Sprache der Oberfläche; Zahlen und Daten stehen im Schweizer Format.
+
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV
 
