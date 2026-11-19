@@ -26,7 +26,7 @@ Fest vorgegeben sind **Simulationsstart** und **Simulationsende**. Dazu hat **je
 | **Bezug Pensionskasse** (bisher «Pensionierung») | Bezug von Rente und Kapital der Pensionskasse, Start der Entnahmestrategie | 58 bis 65 Jahre | 65 |
 | **AHV-Bezug** | Beginn der AHV-Rente; Ende der Einzahlungen und der indirekten Amortisation in die [Säule 3a](#s-pillar3a), Auszahlung des Rests | 63 bis 70 Jahre | 65 |
 
-Sie lassen sich nicht löschen, ihr Zeitpunkt ist aber frei wählbar (Alter oder Datum), solange er innerhalb der Grenzen liegt; die Grenzen selbst sind erlaubt. Die Grenzen sind in den [Einstellungen](#f-settings) änderbar. Bei zwei Personen heissen sie «Bezug Pensionskasse Person 2» und «AHV-Bezug Person 2». Das **Ende des Erwerbseinkommens** ist kein Meilenstein: Sie legen es im [Einkommen](#s-flows) fest. Ist das Erwerbseinkommen nach dem Bezug der Pensionskasse noch grösser als 0, zeigt die Prüfung eine Warnung mit dem Betrag.
+Sie lassen sich nicht löschen, ihr Zeitpunkt ist aber frei wählbar (Alter oder Datum), solange er innerhalb der Grenzen liegt; die Grenzen selbst sind erlaubt. Die Grenzen sind in den [Einstellungen](#f-settings) änderbar. Bei zwei Personen heissen sie «Bezug Pensionskasse Person 2» und «AHV-Bezug Person 2». Die Namen der festen Meilensteine erscheinen in der gewählten Sprache und werden nicht in der Planungsdatei gespeichert. Das **Ende des Erwerbseinkommens** ist kein Meilenstein: Sie legen es im [Einkommen](#s-flows) fest. Ist das Erwerbseinkommen nach dem Bezug der Pensionskasse noch grösser als 0, zeigt die Prüfung eine Warnung mit dem Betrag.
 
 Eigene Meilensteine fügen Sie mit «+ Meilenstein» hinzu, zum Beispiel «Verkauf Haus» oder «Kinder ausgezogen».
 
@@ -75,15 +75,18 @@ Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in d
 > Beispiel: Guthaben 120 000, Auszahlungen 2041 und 2042 je 50 000, AHV-Bezug 2045: Der Rest von 20 000 (plus Zins) wird im Monat des AHV-Bezugs ausbezahlt. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig, und der Rest kommt 2046.
 
 ## @f-settings Einstellungen
-Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte
+Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache
 
 Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Linux Menü «Datei → Einstellungen…» (Ctrl+,), oder die Schaltfläche «Einstellungen» oben. Die Einstellungen gelten für **alle Planungen auf diesem Gerät** und werden lokal gespeichert, **nicht in der Planungsdatei**.
 
 | Einstellung | Standard |
 |---|---|
+| Sprache | wie System |
 | AHV-Bezug: untere und obere Grenze | 63 und 70 Jahre |
 | Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
 | Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
+
+**Sprache:** «wie System» folgt der Sprache des Betriebssystems (beim ersten Start; ohne Region, fr_FR gilt als Französisch), sonst gilt die gewählte Sprache. Angeboten werden nur Sprachen, die es schon gibt; fehlt die Sprache des Systems, gilt Deutsch. Dieselbe Wahl steht im Menü «Ansicht → Sprache». Ein Wechsel wirkt sofort, auch auf die Menüs; die Planung, ungespeicherte Änderungen und die Ansicht bleiben. Zahlen, Beträge und Daten erscheinen in jeder Sprache im Schweizer Format (1'234'567.50, 2.5 %, 03.2040), und die Planungsdatei ist in jeder Sprache dieselbe.
 
 Die untere Grenze darf nicht über der oberen liegen, Alter sind ganze Jahre, der Maximalbetrag ist 0 oder mehr. «Standardwerte» setzt alles nach Rückfrage zurück. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das; dieselbe Planung kann deshalb auf einem anderen Gerät mit anderen Einstellungen eine Meldung ergeben. Die Kommandozeile verwendet immer die Standardwerte.
 

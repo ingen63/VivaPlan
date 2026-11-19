@@ -101,6 +101,10 @@ jobs:
         run: python3 -m unittest discover -s tools -p 'test_check_english.py'
       - name: Keine deutschen Kommentare und Testnamen
         run: ./tools/check-english.sh --gate
+      - name: Tests der Texttabellen-Prüfung (#170/AK1)
+        run: python3 -m unittest discover -s tools -p 'test_check_ui_texts.py'
+      - name: Keine deutschen Oberflächentexte ausserhalb der Texttabelle (#170/AK1)
+        run: python3 tools/check_ui_texts.py
 
   # #88: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
   clippy:

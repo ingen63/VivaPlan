@@ -48,6 +48,14 @@ auch in `make test-quiet` (`--gate`). Regeln, Ausnahmen und Übergangsliste in
 Übergangsliste) laufen mit gestellten Quelldateien in einem temporären Git-Repo:
 `python3 -m unittest discover -s tools -p 'test_check_english.py'`.
 
+**Mehrsprachigkeit (#170):** `tools/check_ui_texts.py` (`make ui-texts`, in `make test-quiet` und im Job `english`)
+meldet deutsche Texte in `crates/app/ui/*.js`, `index.html` und `crates/app/src/*.rs` ausserhalb der Texttabelle; Tests
+des Skripts: `python3 -m unittest discover -s tools -p 'test_check_ui_texts.py'`. Der Rust-Test
+`issue_170_ak4_tables_are_complete` vergleicht jede Tabelle in `crates/app/ui/i18n/` mit `de.json`.
+`e2e/ui-sprache.spec.js` prüft Sprachwahl, Rückfall auf Deutsch, Schweizer Zahlenformat und gleiche Dateien mit einer
+Pseudo-Sprache (alle Texte mit «Ⓔ» markiert); die übrigen Oberflächentests starten ausdrücklich in Deutsch
+(`locale: "de-CH"`, `helpers.open` prüft `lang="de-CH"`).
+
 **Nächtliche Läufe von Hand starten (#159):** Die nächtlichen Jobs von `test-quality.yml` (`tests-os`, `e2e`,
 `release-golden`, `mutants-diff`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen um 02:17 UTC, nur nach einem neuen
 Commit. GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs

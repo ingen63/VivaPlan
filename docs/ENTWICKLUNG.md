@@ -23,7 +23,7 @@ Projektdatei und die Rechenregeln Schritt für Schritt. Was die App kann, steht 
 ## Sprache im Code
 
 Code, Kommentare, Bezeichner und Testnamen sind englisch; Oberflächentexte, Hilfe, Doku, Issues und Commits sind
-deutsch (#165). Bis zur Mehrsprachigkeit (#62) stehen die Oberflächentexte deutsch in Zeichenketten; sie sprechen die
+deutsch (#165). Die Oberflächentexte stehen seit #170 in Texttabellen (siehe «Mehrsprachigkeit»); sie sprechen die
 Nutzer mit «Sie» an. Die englischen Namen für Schweizer Fachbegriffe legt [`GLOSSAR.md`](GLOSSAR.md) fest; Schweizer
 Kürzel (AHV, PK, 3a, SARON …) bleiben als Bezeichner erlaubt. Serialisierte Namen (Schlüssel der Projektdatei,
 Ergebnisfelder, IPC-Befehle, `data-*`-Attribute, CSS-Klassen) bleiben unverändert, auch wenn sie deutsch sind.
@@ -44,6 +44,42 @@ und Zeile (Rust, JavaScript, Python, Shell):
   Ist die Liste leer, läuft die Prüfung in `make test-quiet` und im Workflow (Job `english`) mit (Option `--gate`);
   bis dahin laufen dort nur die Tests des Skripts.
 
+## Mehrsprachigkeit (#62, #170)
+
+Alle Texte der Oberfläche, der Tastenkürzel-Übersicht, der Grafiken, der Zeitleiste, der nativen Menüs und der
+Dateidialoge stehen in Texttabellen je Sprache: `crates/app/ui/i18n/<sprache>.json`, flache Schlüssel nach Bereich
+(`menu.file.open`, `results.overview` …), Platzhalter `{name}`, Werte dürfen einfaches HTML enthalten (`<b>`, `<br>`).
+`crates/app/ui/i18n/languages.json` nennt die vorhandenen Sprachen, jede in ihrer eigenen Sprache. Bis #172 gibt es nur
+`de.json`. Neue Texte kommen sofort als Schlüssel in die Tabelle, nie als Zeichenkette in den Code.
+
+- **Oberfläche:** `i18n.js` lädt die Tabellen ohne Build-Schritt (`fetch`) und danach die übrigen Skripte der Seite
+  (Attribut `data-load` in `index.html`). `tr("results.runsN", { runs })` liefert den Text, `I18n.format` ersetzt
+  Platzhalter. Statische Texte in `index.html` tragen `data-i18n="…"` (Inhalt) bzw. `data-i18n-title`, `-aria-label`,
+  `-placeholder`. Konstanten mit Texten werden mit `onLanguage(() => X = …)` definiert und nach einem Wechsel neu
+  gesetzt; danach zeichnet `redrawTexts` (app.js) alles neu, Planung, ungespeicherte Änderungen und Ansicht bleiben.
+  Ein unbekannter Schlüssel erscheint als Schlüssel und zählt als Fehler der Oberfläche (`window.__errors`).
+- **Desktop-App:** `crates/app/src/i18n.rs` bindet die Tabellen mit `include_str!` ein (native Menüs, Dateidialoge;
+  eine neue Sprache braucht dort eine Zeile in `TABLES`). Das Menü «Ansicht → Sprache» zeigt «wie System» und die
+  vorhandenen Sprachen mit Häkchen; ein Klick meldet `language-<wahl>` an die Oberfläche. Nach jedem Wechsel meldet die
+  Oberfläche Sprache und Wahl mit `set_menu_language`, die App baut die Menüs neu. Die Startmeldung kommt als Schlüssel
+  mit Dateiname (`startup.notFound`, `startup.unreadable`).
+- **Sprachwahl:** Einstellung `language` (`settings_get`/`settings_set`, im Browser `localStorage` `rp.settings`), nie in
+  der Planungsdatei: `system` (Vorgabe) oder ein Sprachcode. Beim allerersten Start (noch keine Einstellungsdatei, #70)
+  liefert die App die Systemsprache (`first_start_language`, Crate `sys-locale`), sonst gilt bei «wie System»
+  `navigator.languages`. Nur die Sprache zählt, nicht die Region (fr_FR → fr); ohne Tabelle gilt Deutsch.
+- **Zahlen und Daten** bleiben in jeder Sprache im Schweizer Format: `fmtInt`, `fmtMoney`, `fmtPct`, `ymShow` in
+  `util.js` formatieren mit `toLocaleString("de-CH")` (1'234'567.50, 2.5 %, 03.2040), `parseAmount`/`parseNum` lesen
+  Eingaben unabhängig von der Sprache. Neue Zahlen immer über diese Funktionen formatieren.
+- **Feste Meilensteine** (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`) speichern keinen Namen; die Oberfläche zeigt
+  `milestone.<id>` aus der Tabelle (`msLabel`). `upgrade.rs` entfernt die deutschen Standardnamen älterer Dateien, ein
+  eigener Name von Start oder Ende bleibt. Der Rechenkern setzt für Meldungen und Ereignisse den deutschen Namen anhand
+  der `id` ein (`Milestone::label`, bis #176).
+- **Prüfungen:** `tools/check_ui_texts.py` (in `make test-quiet`, `make ui-texts`, Job `english`) meldet deutsche Texte
+  in `crates/app/ui/*.js`, `index.html` und `crates/app/src/*.rs` ausserhalb der Tabelle; Ausnahme mit
+  `i18n: allow (Grund)` auf der Zeile. Der Rust-Test `issue_170_ak4_tables_are_complete` vergleicht die Schlüssel
+  aller Tabellen mit `de.json` (vorhanden, nicht leer, gleiche Platzhalter). `e2e/ui-sprache.spec.js` prüft Wechsel,
+  Rückfall und Formate mit einer Pseudo-Sprache.
+
 ## Desktop-App
 
 ```sh
@@ -62,7 +98,7 @@ Die Hooks gelten nach `git config core.hooksPath tools/git-hooks`.
 Zum Testen der Oberfläche im Browser (ohne Dateidialoge): `vivaplan ui-dev` aus dem Projektordner starten
 und <http://127.0.0.1:8787/> öffnen; der Server lauscht nur lokal.
 
-**Bedienung:** Menü und Tastenkürzel (macOS ⌘, sonst Ctrl): ⌘N neu, ⌘O öffnen, ⌘S speichern, ⇧⌘S speichern unter,
+**Bedienung:** Menüs Datei, Bearbeiten, Ansicht (Sprache) und Hilfe; Tastenkürzel (macOS ⌘, sonst Ctrl): ⌘N neu, ⌘O öffnen, ⌘S speichern, ⇧⌘S speichern unter,
 ⌘I alte config.json importieren, ⌘↩ Simulation starten, Esc zurück zum Editor, ⌘Z / ⇧⌘Z rückgängig / wiederholen
 (ganze Planung), ⌘1 … ⌘0 Abschnitt bzw. Registerkarte, ⌘↑ / ⌘↓ voriger / nächster Abschnitt, ⌘/ Übersicht.
 
@@ -209,7 +245,9 @@ die Zieldatei; bei einem Fehler bleibt die bisherige Datei unverändert. Ein sym
 
 Alle Zeitpunkte sind Kalendermonate (`"2027-05"`) oder Verweise auf Meilensteine (`"retire"`), `"never"` = nie.
 Meilensteine sind ein Datum oder das Alter einer Person (`{"kind": "age", "person": "A", "years": 65}`).
-`start` und `end` sind Pflicht. Zeitabhängige Werte sind eine Zahl oder
+`start` und `end` sind Pflicht. Die festen Meilensteine (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`) haben
+keinen `name`; die Oberfläche zeigt ihren Namen in der gewählten Sprache (#170). Die Datei enthält keine Texte der
+Oberfläche, eine Planung ist in jeder Sprache dieselbe Datei. Zeitabhängige Werte sind eine Zahl oder
 `{"mode": "timed", "rows": [{"from": "start", "value": 9500}, {"from": "retire", "value": 8500}]}`.
 Beträge gelten pro Monat, Sätze pro Jahr als Dezimalzahl (0.05 = 5 %). Das vollständige Format liefert `vivaplan schema`.
 

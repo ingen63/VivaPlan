@@ -36,9 +36,9 @@ function parseNum(s) {
 const ambiguousThousands = s => /\d\.\d{3}(?!\d)/.test(String(s).replace(/[’'\s]/g, ""));
 /** Amount (CHF) or integer (e.g. number of paths): like `parseNum`, but ambiguous inputs yield null. */
 function parseAmount(s) { return ambiguousThousands(s) ? null : parseNum(s); }
-const AMBIGUOUS_TEXT = "Mehrdeutige Zahl: Ist der Punkt ein Tausendertrennzeichen? Bitte ohne Punkt (1234) oder mit Apostroph (1'234) eingeben.";
+const ambiguousText = () => tr("input.ambiguous");
 const fmtInt = v => Math.round(v).toLocaleString("de-CH");
-function fmtMio(v) { return Math.abs(v) >= 1e6 ? `${(v / 1e6).toLocaleString("de-CH", { maximumFractionDigits: 2 })} Mio` : `${fmtInt(v / 1000)}k`; }
+function fmtMio(v) { return Math.abs(v) >= 1e6 ? tr("fmt.mio", { v: (v / 1e6).toLocaleString("de-CH", { maximumFractionDigits: 2 }) }) : `${fmtInt(v / 1000)}k`; }
 /** Share as a percentage without sign (0.05 → «5»). */
 const fmtPct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 3 })}`;
 /** Number from a field of the optimization; otherwise the default `d`. */
@@ -68,13 +68,13 @@ const seriesShort = p => baseName(String(p || "").replace(/^library:/, "")).repl
 // ---------- Duration ----------
 /** Short duration in seconds: «unter 1 s», «45 s», «12 min», «2,5 h». */
 function fmtShort(sec) {
-  if (sec < 1) return "unter 1 s";
+  if (sec < 1) return tr("fmt.underOneSecond");
   if (sec < 90) return `${Math.round(sec)} s`;
   if (sec < 5400) return `${Math.round(sec / 60)} min`;
   return `${(sec / 3600).toLocaleString("de-CH", { maximumFractionDigits: 1 })} h`;
 }
 /** «ca. 12 s (7 s bis 20 s)»: rough estimate with a range, because the search steps of the optimization depend on the case. */
-const fmtEstimate = (sec, spread = [0.6, 1.6]) => sec < 1 ? "<b>unter 1 Sekunde</b>" : `ca. <b>${fmtShort(sec)}</b> <span class="computed">(meist ${fmtShort(sec * spread[0])} bis ${fmtShort(sec * spread[1])})</span>`;
+const fmtEstimate = (sec, spread = [0.6, 1.6]) => sec < 1 ? tr("fmt.underOneSecondLong") : `${tr("fmt.approx")} <b>${fmtShort(sec)}</b> <span class="computed">${tr("fmt.estimateRange", { short: fmtShort(sec * spread[0]), short2: fmtShort(sec * spread[1]) })}</span>`;
 /**
  * Estimated duration of the optimization in seconds from the measurement `b` ({ us, gen, fixedPaths }: µs per run, of which generating
  * the path, fixed number of paths), the settings `c` ({ paths, checkPaths, strategies }) and the sum of the
@@ -108,12 +108,12 @@ function sortBy(list, valOf, dir = 1) {
 /** Format ids this version opens; «pensionsplaner/1» is the old id (legacy: RetirementPlanner). */
 const KNOWN_FORMATS = ["vivaplan/1", "pensionsplaner/1"];
 /** Message for an unknown format id; the same text as in the engine (`model::unknown_format`). */
-const unknownFormatText = f => `Die Datei hat das Format «${f}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.`;
+const unknownFormatText = f => tr("file.unknownFormat", { f });
 
 if (typeof module !== "undefined") {
   module.exports = {
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
     rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
-    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, AMBIGUOUS_TEXT,
+    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText,
   };
 }

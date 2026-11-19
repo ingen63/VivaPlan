@@ -227,11 +227,12 @@ test.describe("Additional acceptance tests", () => {
     const errors = await open(page);
     const ms = await page.evaluate(() => {
       const p = blankPlan(JSON.parse(JSON.stringify(state)));
-      return p.milestones.filter(m => m.id === "ahv" || m.id === "retire").map(m => ({ id: m.id, name: m.name, kind: m.kind, years: m.years }));
+      return p.milestones.filter(m => m.id === "ahv" || m.id === "retire").map(m => ({ id: m.id, name: m.name, label: msLabel(m), kind: m.kind, years: m.years }));
     });
     expect(ms).toEqual(expect.arrayContaining([
-      { id: "retire", name: "Bezug Pensionskasse", kind: "age", years: 65 },
-      { id: "ahv", name: "AHV-Bezug", kind: "age", years: 65 },
+      // #170/AK8: no stored name; the name comes from the text table by the id
+      { id: "retire", name: undefined, label: "Bezug Pensionskasse", kind: "age", years: 65 },
+      { id: "ahv", name: undefined, label: "AHV-Bezug", kind: "age", years: 65 },
     ]));
     expect(ms).toHaveLength(2);
     // and it appears like this in the user interface: «Neue Planung» shows both milestones with age 65

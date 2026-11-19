@@ -16,6 +16,8 @@ async function open(page, hash = "", { bench = false } = {}) {
   const h = bench ? hash : [hash, "nobench"].filter(Boolean).join("/");
   await page.goto("/" + (h ? "#" + h : ""));
   await page.waitForSelector("html[data-ready='1']");
+  // #170/AK7: the tests start explicitly in German (system language de-CH, playwright.config.js)
+  await expect(page.locator("html")).toHaveAttribute("lang", "de-CH");
   await expect(page.locator("#chart path").first()).toBeAttached();
   return errors;
 }

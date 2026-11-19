@@ -61,14 +61,14 @@ test.describe("Start and navigation", () => {
   test("#29: New loads an empty plan with default values", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
-    await page.waitForFunction(() => state.project.name === "Neue Planung");
+    await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0); // #170: no project name in a new plan
     const out = await page.evaluate(() => ({
       name: state.project.name, person: state.household.persons, ms: state.milestones.map(m => m.id), start: state.milestones[0].date,
       cash: state.wealth.cash + state.wealth.stocks + state.wealth.bonds, props: state.realestate.properties.length, sweeps: state.scenarios.sweeps.length,
       income: state.flows.income, spending: state.flows.spending, extras: state.flows.extras.length, pk: state.pension.pk.capital, partner: !!state.partner,
       now: new Date().getFullYear() * 12 + new Date().getMonth(), file: document.getElementById("fileName").textContent,
     }));
-    expect(out.name).toBe("Neue Planung");
+    expect(out.name).toBe("");
     expect(out.person).toHaveLength(1);
     expect(out.person[0].name).toBe("");
     expect(out.ms).toEqual(["start", "retire", "ahv", "end"]);
@@ -407,7 +407,7 @@ test.describe("Start and navigation", () => {
   test("#14: required fields with asterisk, error at the field, start and optimization blocked until everything is valid", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
-    await page.waitForFunction(() => state.project.name === "Neue Planung");
+    await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0); // #170: no project name in a new plan
     // Asterisk at name and birth
     const name = page.locator("#main label.field", { has: page.locator('input[data-path="household.persons.0.name"]') });
     await expect(name.locator(".req")).toHaveText("*");

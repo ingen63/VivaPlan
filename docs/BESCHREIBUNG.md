@@ -70,7 +70,7 @@ Der Editor führt durch zwölf Abschnitte:
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 
-**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Grenzen für AHV-Bezug und Bezug Pensionskasse und der
+**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Grenzen für AHV-Bezug und Bezug Pensionskasse und der
 Maximalbetrag der Säule 3a. Sie gelten für alle Planungen auf dem Gerät und werden nicht in der Planungsdatei
 gespeichert. Ältere Planungsdateien werden beim Öffnen übernommen (feste Meilensteine, Säule 3a als eigenes Konto); ein
 Dialog nennt jede Änderung.
@@ -186,6 +186,13 @@ Eine **kontextabhängige Hilfe** öffnet auf **F1** rechts neben dem Editor und 
 oder der Grafik, an der man gerade arbeitet. Das Handbuch mit Suche erklärt jeden Abschnitt, vor allem die Renditen und die
 Optimierung ausführlich. Menüs und die üblichen Tastenkürzel (neu, öffnen, speichern, Simulation starten, Rückgängig,
 Wiederholen, Wechsel der Abschnitte) sind vorhanden, ebenso ein «Über»-Fenster mit Version und Buildzeit.
+
+**Sprache:** Die Oberfläche bezieht alle Texte aus Texttabellen je Sprache (#170). Beim ersten Start gilt die Sprache des
+Betriebssystems (ohne Region, fr_FR → Französisch); fehlt die Sprache, gilt Deutsch. Gewählt wird sie im Menü
+«Ansicht → Sprache» oder in den Einstellungen («wie System» oder eine vorhandene Sprache); der Wechsel wirkt sofort, auch
+auf die Menüs, und lässt Planung, ungespeicherte Änderungen und Ansicht unverändert. Die Wahl gilt für das Gerät, nicht
+für die Planung. Zahlen, Beträge und Daten bleiben in jeder Sprache im Schweizer Format (1'234'567.50 CHF, 2.5 %,
+03.2040). Vorerst gibt es nur Deutsch; Englisch, Französisch und Italienisch folgen (#172–#175).
 
 **Einstieg für neue Benutzer:** Beim allerersten Start fragt ein Willkommensdialog, ob man das Beispiel erkunden, eine
 eigene Planung beginnen oder leer starten möchte (wieder über *Hilfe → Willkommen …*). Die Checkliste «Erste Schritte»

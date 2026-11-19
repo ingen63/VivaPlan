@@ -20,7 +20,7 @@ test("#54/AK6: «Liquidität» occurs in the user interface, help and documentat
   // Excluded are the lists that quote old titles and criteria (acceptance list, old issue IDs, #117).
   const history = ["ABNAHME.md", "ISSUE-IDS.md"];
   const files = [
-    ...walk(path.join(ROOT, "crates/app/ui"), [".js", ".html", ".md", ".css"]),
+    ...walk(path.join(ROOT, "crates/app/ui"), [".js", ".html", ".md", ".css", ".json"]), // #170: texts in i18n/*.json
     ...walk(path.join(ROOT, "docs"), [".md"]).filter(p => !history.includes(path.basename(p))),
     path.join(ROOT, "README.md"), path.join(ROOT, "CLAUDE.md"),
   ];

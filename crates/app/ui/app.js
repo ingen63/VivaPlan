@@ -4,28 +4,30 @@
 const MAX_COMBINATIONS = 1_000_000;
 /** From this estimated computing time (seconds) on, the app asks before starting. */
 const LONG_RUN_SECONDS = 60;
-const SWEEP_PARAMS = [
-  { id: "wealth.stockShare", label: "Aktienanteil", type: "pct", def: [0.3, 1.0, 0.1] },
-  { id: "pension.pk.lumpsum", label: "Kapitalbezug Pensionskasse", type: "pct", def: [0, 1, 0.25] },
-  { id: "returns.startDate", label: "Historischer Startmonat", type: "month", def: ["1970-01", "2010-01", 12] },
-  { id: "milestone.retire", label: "Datum Bezug Pensionskasse", type: "month", def: ["2026-09", "2028-03", 3] },
-  { id: "flows.spendingFactor", label: "Ausgaben-Faktor", type: "pct", def: [0.9, 1.1, 0.05] },
-  { id: "withdrawal.rate", label: "Entnahmerate (fixe Rate / Guardrails-Start)", type: "pct", def: [0.03, 0.05, 0.005] }
-];
-const SECTIONS = [
-  { id: "general", title: "Haushalt & Projekt" },
-  { id: "milestones", title: "Meilensteine" },
-  { id: "pension", title: "Vorsorge" },
-  { id: "pillar3a", title: "Säule 3a" },
-  { id: "flows", title: "Einnahmen & Ausgaben" },
-  { id: "wealth", title: "Vermögen & Anlage" },
-  { id: "returns", title: "Simulation" },
-  { id: "withdrawal", title: "Entnahmestrategie" },
-  { id: "optimize", title: "Optimierung" },
-  { id: "taxes", title: "Steuern" },
-  { id: "realestate", title: "Immobilien" },
-  { id: "scenarios", title: "Szenarien & Simulation" }
-];
+let SWEEP_PARAMS;
+onLanguage(() => SWEEP_PARAMS = [
+  { id: "wealth.stockShare", label: tr("sweep.stockShare"), type: "pct", def: [0.3, 1.0, 0.1] },
+  { id: "pension.pk.lumpsum", label: tr("sweep.pkLumpsum"), type: "pct", def: [0, 1, 0.25] },
+  { id: "returns.startDate", label: tr("sweep.histStart"), type: "month", def: ["1970-01", "2010-01", 12] },
+  { id: "milestone.retire", label: tr("sweep.retireDate"), type: "month", def: ["2026-09", "2028-03", 3] },
+  { id: "flows.spendingFactor", label: tr("sweep.spendingFactor"), type: "pct", def: [0.9, 1.1, 0.05] },
+  { id: "withdrawal.rate", label: tr("sweep.withdrawalRate"), type: "pct", def: [0.03, 0.05, 0.005] }
+]);
+let SECTIONS;
+onLanguage(() => SECTIONS = [
+  { id: "general", title: tr("section.general") },
+  { id: "milestones", title: tr("section.milestones") },
+  { id: "pension", title: tr("section.pension") },
+  { id: "pillar3a", title: tr("section.pillar3a") },
+  { id: "flows", title: tr("section.flows") },
+  { id: "wealth", title: tr("section.wealth") },
+  { id: "returns", title: tr("section.returns") },
+  { id: "withdrawal", title: tr("section.withdrawal") },
+  { id: "optimize", title: tr("section.optimize") },
+  { id: "taxes", title: tr("section.taxes") },
+  { id: "realestate", title: tr("section.realestate") },
+  { id: "scenarios", title: tr("section.scenarios") }
+]);
 
 let previewBasis = null;
 let state = null, currentPath = null, dirty = false, seriesInfo = null, lastRun = null, library = null;
@@ -47,7 +49,7 @@ function closeInfoPops() {
 document.addEventListener("focusout", e => e.target.closest?.(".infopop")?.classList.remove("closed"));
 document.addEventListener("mouseout", e => { const p = e.target.closest?.(".infopop"); if (p && !p.contains(e.relatedTarget)) p.classList.remove("closed"); });
 /** Info icon (ⓘ) with popup: opens on mouse, keyboard focus and click, stays open as long as mouse or focus are on it, Esc closes. */
-const infoPop = (html, cls = "") => `<span class="infopop" tabindex="0" role="button" aria-label="Erklärung anzeigen" aria-haspopup="true" data-action="info-toggle">ⓘ<span class="infobody ${cls}" role="tooltip">${html}</span></span>`;
+const infoPop = (html, cls = "") => `<span class="infopop" tabindex="0" role="button" aria-label="${tr("common.showInfo")}" aria-haspopup="true" data-action="info-toggle">ⓘ<span class="infobody ${cls}" role="tooltip">${html}</span></span>`;
 /** Short explanation of a series (at most 2 lines): `# Info:` of the file, otherwise source and notes, shortened; without details no icon. */
 function seriesTip(i) {
   const text = i?.info || [i?.source, ...(i?.notes || [])].filter(Boolean).join(" ");
@@ -78,7 +80,10 @@ const startM = () => msMonth("start");
 const endM = () => msMonth("end");
 function ageAt(m, pid) { return (m - ym2i(person(pid ?? state.household.persons[0].id).birth)) / 12; }
 const ageStr = m => ageAt(m).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-function msName(ref) { if (ref === "never") return "nie"; if (ref === "afterSale") return "nach Verkauf"; if (saleOf(ref)) return `nach Verkauf von ${propById(saleOf(ref))?.name ?? "?"}`; if (isYM(ref)) return ymShow(ref); return state.milestones.find(m => m.id === ref)?.name ?? "?"; }
+/** #170/AK8: the fixed milestones store no name; it comes from the text table by the id. */
+const FIXED_MS_IDS = ["start", "end", "retire", "ahv", "retire2", "ahv2"];
+const msLabel = ms => (ms && FIXED_MS_IDS.includes(ms.id) ? tr(`milestone.${ms.id}`) : ms?.name);
+function msName(ref) { if (ref === "never") return tr("ref.never"); if (ref === "afterSale") return tr("ref.afterSale"); if (saleOf(ref)) return tr("ref.afterSaleOf", { propById: propById(saleOf(ref))?.name ?? "?" }); if (isYM(ref)) return ymShow(ref); return msLabel(state.milestones.find(m => m.id === ref)) ?? "?"; }
 
 function seriesAt(ser, m) {
   if (!ser) return 0;
@@ -95,7 +100,7 @@ const tax = (table, x) => x <= 0 ? 0 : x * rateAt(table, x) * (+state.taxes.mult
 const saron = () => +state.returns.fixed.saron || 0;
 const perRate = d => d.type === "saron" ? Math.max(0, saron() + (+d.margin || 0)) : +d.rate || 0;
 const newPeriod = (o = {}) => ({ type: "fixed", term: 5, rate: 0.015, margin: 0.009, amort: 0, amortMode: "direct", ...o });
-const newMortgage = () => ({ tranches: [ { name: "Tranche 1", amount: 400000, after: "renew", periods: [newPeriod({ term: 10 })] } ] });
+const newMortgage = () => ({ tranches: [ { name: tr("mortgage.tranche1"), amount: 400000, after: "renew", periods: [newPeriod({ term: 10 })] } ] });
 
 function trancheSchedule(p, t) {
   if (p.status === "rent" || !t?.periods?.length) return [];
@@ -177,10 +182,10 @@ function collectIssues() {
   const v = lastIssues.map(i => ({ sev: i.severity === "error" ? "err" : "warn", sec: i.section, text: esc(i.message) }));
   if (previewError && !v.some(x => x.sev === "err")) v.push({ sev: "err", sec: "general", text: esc(previewError) });
   const sc = seriesInfo && !seriesInfo.error && state.returns.source !== "fixed" && seriesInfo.currency;
-  if (sc && sc !== cur()) v.push({ sev: "warn", sec: "returns", text: `Die Zeitreihe ist in ${esc(sc)}, die Planung in ${esc(cur())}. Renditen und Inflation gelten dann für ${esc(sc)}.` });
+  if (sc && sc !== cur()) v.push({ sev: "warn", sec: "returns", text: tr("issues.seriesCurrency", { sc: esc(sc), esc: esc(cur()), sc2: esc(sc) }) });
   if (lastSim) {
-    if (lastSim.depleted !== null) v.push({ sev: "err", sec: "flows", text: `Vorschau: Vermögen aufgebraucht im ${ymShow(i2ym(lastSim.depleted))} (Alter ${ageStr(lastSim.depleted)}).` });
-    for (const ev of lastSim.events) if (ev.kind === "emergencySale") v.push({ sev: "warn", sec: "realestate", text: `Vorschau: Notverkauf im ${ymShow(i2ym(ev.m))} (Alter ${ageStr(ev.m)}).` });
+    if (lastSim.depleted !== null) v.push({ sev: "err", sec: "flows", text: tr("issues.previewDepleted", { ymShow: ymShow(i2ym(lastSim.depleted)), depleted: ageStr(lastSim.depleted) }) });
+    for (const ev of lastSim.events) if (ev.kind === "emergencySale") v.push({ sev: "warn", sec: "realestate", text: tr("issues.previewEmergency", { ymShow: ymShow(i2ym(ev.m)), m: ageStr(ev.m) }) });
   }
   return v;
 }
@@ -189,7 +194,8 @@ function collectIssues() {
 const SERIES_PATHS = ["flows.income", "flows.spending", "pension.pk.contribution", "pension.pk.interest", "wealth.stockShare", "wealth.reserveMonths", "realestate.emergencyMonths",
   "partner.income", "partner.pk.contribution", "partner.pk.interest"];
 /** #58: Labels of the choice for the earned income of each person. */
-const INCOME_INDEXED = "Steigt mit der Teuerung (Beträge in heutigen Preisen)";
+let INCOME_INDEXED;
+onLanguage(() => INCOME_INDEXED = tr("flows.incomeIndexed"));
 const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeIndexed: true,
   pk: { capital: 0, at: "retire2", lumpsum: 0, conversion: 0.05, contribution: { mode: "const", value: 0 }, interest: { mode: "const", value: 0.01 } },
   ahv: { monthly: 2000, at: "ahv2", indexed: true } });
@@ -212,8 +218,10 @@ function reserveDiffers(p) {
  * asked again. The full text is in the help (`hilfe/00-einstieg.md`, section «@disclaimer»).
  */
 const DISCLAIMER_VERSION = 1, DISCLAIMER_KEY = "disclaimerAccepted";
-const DISCLAIMER_SHORT = "VivaPlan ist ein kostenloses Hilfsmittel zur persönlichen Planung. Alle Ergebnisse sind Modellrechnungen auf Basis Ihrer Eingaben und vereinfachter Annahmen. Sie können Fehler enthalten und ersetzen keine Finanz-, Steuer- oder Rechtsberatung. Prüfen Sie wichtige Entscheidungen mit einer Fachperson. Die Nutzung erfolgt auf eigene Verantwortung.";
-const DISCLAIMER_FOOT = "Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.";
+let DISCLAIMER_SHORT;
+onLanguage(() => DISCLAIMER_SHORT = tr("disclaimer.short"));
+let DISCLAIMER_FOOT;
+onLanguage(() => DISCLAIMER_FOOT = tr("disclaimer.foot"));
 const disclaimerPending = () => Pref.get(DISCLAIMER_KEY, 0) !== DISCLAIMER_VERSION;
 /** Shows the short version until the box is ticked and «Weiter» is pressed (Esc does not close the dialog). */
 function disclaimerGate() {
@@ -235,7 +243,7 @@ const RESERVE_NOTICE_KEY = "reserveNoticeShown";
 async function reserveNotice(p) {
   if (!reserveDiffers(p) || Pref.get(RESERVE_NOTICE_KEY, false)) return;
   Pref.set(RESERVE_NOTICE_KEY, true);
-  await ask("Hinweis zur Cash-Reserve", `<p>Diese Planung verwendet eine andere Entnahmestrategie als «Standard» und eine Cash-Reserve ungleich ${FIXED_RESERVE_MONTHS} Monaten. Die Reserve ist neu ein Parameter der Strategie «Standard»; alle anderen Strategien rechnen mit einer festen Reserve von ${FIXED_RESERVE_MONTHS} Monaten.</p><p>Die Ergebnisse dieser Planung können sich dadurch leicht ändern. Die gespeicherte Reserve bleibt in der Datei erhalten und gilt wieder, sobald Sie zu «Standard» wechseln.</p>`);
+  await ask(tr("reserve.title"), `<p>${tr("reserve.text", { fixedReserveMonths: FIXED_RESERVE_MONTHS, fixedReserveMonths2: FIXED_RESERVE_MONTHS })}</p><p>${tr("reserve.note")}</p>`);
 }
 function normalize(p) {
   delete p.conventions;
@@ -286,7 +294,7 @@ function normalize(p) {
     pr.inflationValue ??= pr.inflation; pr.inflationFixCosts ??= pr.inflation; pr.inflationRent ??= true;
     if (pr.status === "rent") continue;
     pr.mortgage ??= { tranches: [] };
-    for (const t of pr.mortgage.tranches) { t.name ??= "Tranche"; t.after ??= "renew"; t.periods = t.periods.map(d => newPeriod(d)); }
+    for (const t of pr.mortgage.tranches) { t.name ??= tr("mortgage.tranche"); t.after ??= "renew"; t.periods = t.periods.map(d => newPeriod(d)); }
   }
   return p;
 }
@@ -303,7 +311,7 @@ async function adopt(plan) {
   return notes;
 }
 async function showNotes(notes) {
-  if (notes?.length) await ask("Hinweise zur Planung", `<p>Die Planung wurde auf den aktuellen Stand gebracht:</p><ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>`);
+  if (notes?.length) await ask(tr("notes.title"), `<p>${tr("notes.intro")}</p><ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>`);
 }
 
 async function refreshLibrary() {
@@ -348,7 +356,7 @@ async function refreshSeriesInfo() {
 }
 
 // ---------- Form building blocks ----------
-const UNIT = { chf: () => cur(), chfopt: () => cur(), pct: () => "%", months: () => "Monate", years: () => "Jahre", num: () => "" };
+const UNIT = { chf: () => cur(), chfopt: () => cur(), pct: () => "%", months: () => tr("unit.months"), years: () => tr("unit.years"), num: () => "" };
 function showVal(type, v) {
   if (type === "chf") return fmtInt(v ?? 0);
   if (type === "chfopt") return v == null ? "" : fmtInt(v);
@@ -360,7 +368,7 @@ function showVal(type, v) {
 const REQUIRED_PATHS = [/^household\.persons\.\d\.(name|birth)$/, /^household\.ahvCoupleCap$/, /^(partner|pension)\.pk\.(capital|conversion|lumpsum)$/,
   /^(partner|pension)\.ahv\.monthly$/, /^wealth\.(stocks|bonds|cash)$/, /^taxes\.multiplier$/];
 const isRequired = path => REQUIRED_PATHS.some(r => r.test(path));
-const reqMark = path => isRequired(path) ? ` <span class="req" title="Pflichtfeld">*</span>` : "";
+const reqMark = path => isRequired(path) ? ` <span class="req" title="${tr("field.required")}">*</span>` : "";
 /** Values entered by the user that cannot be read (field path → section and message); the plan keeps the last valid value. */
 const invalidFields = new Map();
 /** Shows error messages of the engine and invalid inputs directly at the field. */
@@ -404,14 +412,14 @@ async function blockedByErrors() {
   const first = errs[0], sec = SECTIONS.find(s => s.id === first.section) || SECTIONS[0];
   if (!$("#results").hidden) showResults(false);
   goto(sec.id);
-  toast(`Die Planung hat ${errs.length} Fehler. Erster Fehler im Abschnitt «${sec.title}»: ${first.message}`);
+  toast(tr("errors.blocked", { length: errs.length, title: sec.title, message: first.message }));
   document.documentElement.dataset.blocked = String(errs.length);
   return true;
 }
 function F(path, label, type = "chf", o = {}) {
   const v = getP(path), unit = o.unit ?? (UNIT[type] ? UNIT[type]() : "");
   const cls = ["chf", "chfopt", "pct", "num", "months", "years"].includes(type) ? "num" : "";
-  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""} value="${esc(showVal(type, v))}" ${type === "month" ? 'placeholder="MM.JJJJ"' : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
+  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""} value="${esc(showVal(type, v))}" ${type === "month" ? `placeholder="${tr("input.datePlaceholder")}"` : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
   if (o.bare) return input;
   return `<label class="field"><span>${label}${reqMark(path)}</span>${input}${o.hint ? `<span class="computed">${o.hint}</span>` : ""}</label>`;
 }
@@ -422,81 +430,81 @@ function Sel(path, opts, o = {}) {
 function Chk(path, label) { return `<label class="check"><input type="checkbox" data-path="${path}" data-type="bool" ${getP(path) ? "checked" : ""}> ${label}</label>`; }
 function Ref(path, o = {}) {
   const v = getP(path), date = isYM(v);
-  const opts = state.milestones.map(ms => `<option value="${ms.id}" ${ms.id === v ? "selected" : ""}>${esc(ms.name)}</option>`).join("");
+  const opts = state.milestones.map(ms => `<option value="${ms.id}" ${ms.id === v ? "selected" : ""}>${esc(msLabel(ms))}</option>`).join("");
   return `<div class="refwrap"><select class="plain" data-path="${path}" data-type="ref">
-    ${o.never ? `<option value="never" ${v === "never" ? "selected" : ""}>nie</option>` : ""}
-    ${o.afterSale ? `<option value="afterSale" ${v === "afterSale" ? "selected" : ""}>nach Verkauf der letzten Immobilie</option>` : ""}
-    ${o.afterSale ? state.realestate.properties.filter(q => q.status !== "rent" && q.id !== o.self).map(q => `<option value="afterSale:${esc(q.id)}" ${v === "afterSale:" + q.id ? "selected" : ""}>nach Verkauf von «${esc(q.name)}»</option>`).join("") : ""}
-    <optgroup label="Meilenstein">${opts}</optgroup>
-    <option value="__date" ${date ? "selected" : ""}>Fixes Datum…</option></select>
+    ${o.never ? `<option value="never" ${v === "never" ? "selected" : ""}>${tr("ref.never")}</option>` : ""}
+    ${o.afterSale ? `<option value="afterSale" ${v === "afterSale" ? "selected" : ""}>${tr("ref.afterLastSale")}</option>` : ""}
+    ${o.afterSale ? state.realestate.properties.filter(q => q.status !== "rent" && q.id !== o.self).map(q => `<option value="afterSale:${esc(q.id)}" ${v === "afterSale:" + q.id ? "selected" : ""}>${tr("ref.afterSaleOfName", { name: esc(q.name) })}</option>`).join("") : ""}
+    <optgroup label="${tr("ref.milestone")}">${opts}</optgroup>
+    <option value="__date" ${date ? "selected" : ""}>${tr("ref.fixedDate")}</option></select>
     ${date ? F(path, "", "month", { bare: true }) : ""}</div>`;
 }
 function Series(path, label, type, note = "") {
   const s = getP(path), timed = s.mode === "timed";
   let body;
-  if (!timed) body = `<div class="rows">${F(path + ".value", "Wert", type)}</div>`;
-  else body = `<div class="rows">${s.rows.map((r, i) => `<div class="row"><span class="ab">ab</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="Zeile entfernen" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
-    <div><button class="btn small" data-action="row-add" data-path="${path}.rows">+ Zeile</button></div></div>`;
+  if (!timed) body = `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
+  else body = `<div class="rows">${s.rows.map((r, i) => `<div class="row"><span class="ab">${tr("common.from")}</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
+    <div><button class="btn small" data-action="row-add" data-path="${path}.rows">${tr("series.addRow")}</button></div></div>`;
   return `<div class="series"><div class="shead"><span class="t">${label}</span><span class="computed">${note}</span>
-    <div class="seg"><button class="${timed ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">Konstant</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">Zeitabhängig</button></div></div>
+    <div class="seg"><button class="${timed ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">${tr("series.constant")}</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">${tr("series.timeDependent")}</button></div></div>
     <div class="sbody">${body}<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
-      <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>Mausrad: zoomen · Ziehen: verschieben</span></div></div></div></div>`;
+      <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>${tr("series.zoomHint")}</span></div></div></div></div>`;
 }
 const C = (key, arg = "") => `<span class="computed" data-computed="${key}" data-arg="${arg}"></span>`;
 
 // ---------- Sections ----------
 const R = {};
 R.general = () => `
-  <h2>Haushalt & Projekt</h2><p class="lead">Grunddaten der Planung. Pflichtfelder sind mit <span class="req">*</span> gekennzeichnet. Alle Zeitangaben erfolgen als Monat und Jahr (MM.JJJJ); das Alter wird daraus berechnet.</p>
-  <div class="card"><h3>Projekt</h3><div class="grid2">${F("project.name", "Projektname", "text")}
-    <label class="field"><span>Währung</span>${Sel("project.currency", [["CHF", "CHF – Schweizer Franken"], ["EUR", "EUR – Euro"], ["USD", "USD – US-Dollar"]], { rerender: 1 })}</label></div>
-    <p class="hint">Alle Beträge werden in der Projektwährung erfasst. Die Indizes der Anlagestrategie sind in CHF; bei einer anderen Projektwährung erscheint ein Hinweis.</p></div>
-  <div class="card"><h3>Personen</h3><div class="persons">
-    <div class="person">${state.partner ? `<b>Person 1</b>` : ""}${F("household.persons.0.name", "Name", "text")}${F("household.persons.0.birth", "Geburt", "month")}${C("age0")}</div>
+  <h2>${tr("section.general")}</h2><p class="lead">${tr("general.intro")}</p>
+  <div class="card"><h3>${tr("general.project")}</h3><div class="grid2">${F("project.name", tr("general.projectName"), "text")}
+    <label class="field"><span>${tr("general.currency")}</span>${Sel("project.currency", [["CHF", tr("general.chf")], ["EUR", tr("general.eur")], ["USD", tr("general.usd")]], { rerender: 1 })}</label></div>
+    <p class="hint">${tr("general.currencyHint")}</p></div>
+  <div class="card"><h3>${tr("general.persons")}</h3><div class="persons">
+    <div class="person">${state.partner ? `<b>${tr("general.person1")}</b>` : ""}${F("household.persons.0.name", tr("general.name"), "text")}${F("household.persons.0.birth", tr("general.birth"), "month")}${C("age0")}</div>
     ${state.partner
-      ? `<div class="person"><div class="phead"><b>Person 2</b><button class="btn ghost small" data-action="partner-del" title="Zweite Person entfernen">✕</button></div>${F("household.persons.1.name", "Name", "text")}${F("household.persons.1.birth", "Geburt", "month")}${C("age1")}</div>`
-      : `<div class="person ghost"><button class="btn" data-action="partner-add">+ Zweite Person</button><span class="computed">Double Income: eigenes Einkommen, eigene Pensionskasse und AHV</span></div>`}
+      ? `<div class="person"><div class="phead"><b>${tr("general.person2")}</b><button class="btn ghost small" data-action="partner-del" title="${tr("general.removePerson2")}">✕</button></div>${F("household.persons.1.name", tr("general.name"), "text")}${F("household.persons.1.birth", tr("general.birth"), "month")}${C("age1")}</div>`
+      : `<div class="person ghost"><button class="btn" data-action="partner-add">${tr("general.addPerson2")}</button><span class="computed">${tr("general.doubleIncome")}</span></div>`}
   </div>
-  ${state.partner ? `<div style="margin-top:14px">${Chk("household.married", "Verheiratet (Ehepaar-Regeln)")}</div>
-    <div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", "AHV-Renten zusammen höchstens, pro Monat", "chf") : ""}</div>
-    <p class="hint">${state.household.married ? "Verheiratet: Sind beide AHV-Renten fällig, werden sie zusammen auf den angegebenen Betrag begrenzt (150 % der Maximalrente). Steuern werden gemeinsam berechnet; unter «Steuern» können eigene Tabellen für Verheiratete hinterlegt werden." : "Nicht verheiratet: AHV-Renten werden nicht begrenzt; Steuern werden gemeinsam nach den Tabellen unter «Steuern» berechnet."} Vermögen und Ausgaben gelten für den Haushalt. Hinterlassenenrenten werden nicht berechnet.</p>` : ""}</div>
-  <div class="card"><h3>Simulationszeitraum</h3>
-    <div class="grid2"><div>Start: ${C("ms", "start")}</div><div>Ende: ${C("ms", "end")}</div></div>
-    <p class="hint">Start und Ende sind Meilensteine. <a href="#" data-action="goto" data-sec="milestones">In Meilensteine bearbeiten →</a></p></div>`;
+  ${state.partner ? `<div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
+    <div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
+    <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>` : ""}</div>
+  <div class="card"><h3>${tr("general.period")}</h3>
+    <div class="grid2"><div>${tr("general.start", { c: C("ms", "start") })}</div><div>${tr("general.end", { c: C("ms", "end") })}</div></div>
+    <p class="hint">${tr("general.periodHint")}</p></div>`;
 
 R.milestones = () => { const l = limits(); return `
-  <h2>Meilensteine</h2><p class="lead">Benannte Zeitpunkte, auf die sich alle anderen Eingaben beziehen können («ab Bezug Pensionskasse»). Verschiebt sich ein Meilenstein, verschieben sich alle Werte, die ihn verwenden.</p>
-  <div class="card"><table class="tbl"><tr><th>Name</th><th>Festgelegt als</th><th>Wert</th><th>Ergibt</th><th></th></tr>
+  <h2>${tr("section.milestones")}</h2><p class="lead">${tr("milestones.intro")}</p>
+  <div class="card"><table class="tbl"><tr><th>${tr("milestones.name")}</th><th>${tr("milestones.kind")}</th><th>${tr("milestones.value")}</th><th>${tr("milestones.result")}</th><th></th></tr>
   ${state.milestones.map((ms, i) => { const sys = sysMs(ms); return `<tr class="${ms.id === flashId ? "flash" : ""}">
-    <td>${sys ? `<span title="Fester Meilenstein; der Name lässt sich nicht ändern.">${esc(ms.name)}</span><br><span class="computed">${sys.kind === "ahv" ? `${l.ahvMin} bis ${l.ahvMax}` : `${l.pkMin} bis ${l.pkMax}`} Jahre</span>` : F(`milestones.${i}.name`, "", "text", { bare: true })}</td>
-    <td>${Sel(`milestones.${i}.kind`, [["date", "Datum"], ["age", "Alter von"]], { rerender: 1 })}</td>
-    <td style="width:190px">${ms.kind === "date" ? F(`milestones.${i}.date`, "", "month", { bare: true }) : `<div class="refwrap">${sys ? `<span class="computed" style="padding:8px 4px">${esc(person(ms.person).name || "Person " + (sys.index + 1))}</span>` : Sel(`milestones.${i}.person`, state.household.persons.map(p => [p.id, p.name]))}${F(`milestones.${i}.years`, "", "years", { bare: true, unit: "J." })}</div>`}</td>
+    <td>${FIXED_MS_IDS.includes(ms.id) && !sys ? `<span title="${tr("milestones.fixedTitle")}">${esc(msLabel(ms))}</span>` : sys ? `<span title="${tr("milestones.fixedTitle")}">${esc(msLabel(ms))}</span><br><span class="computed">${sys.kind === "ahv" ? tr("milestones.ahvRange", { ahvMin: l.ahvMin, ahvMax: l.ahvMax }) : tr("milestones.pkRange", { pkMin: l.pkMin, pkMax: l.pkMax })} ${tr("unit.years")}</span>` : F(`milestones.${i}.name`, "", "text", { bare: true })}</td>
+    <td>${Sel(`milestones.${i}.kind`, [["date", tr("milestones.date")], ["age", tr("milestones.ageOf")]], { rerender: 1 })}</td>
+    <td style="width:190px">${ms.kind === "date" ? F(`milestones.${i}.date`, "", "month", { bare: true }) : `<div class="refwrap">${sys ? `<span class="computed" style="padding:8px 4px">${esc(person(ms.person).name || tr("milestones.person") + (sys.index + 1))}</span>` : Sel(`milestones.${i}.person`, state.household.persons.map(p => [p.id, p.name]))}${F(`milestones.${i}.years`, "", "years", { bare: true, unit: tr("unit.yearsShort") })}</div>`}</td>
     <td>${C("ms", ms.id)}</td>
-    <td>${msLocked(ms) ? `<button class="btn ghost small" disabled title="${esc(sys ? `«${ms.name}» ist für jede Person fest vorhanden und lässt sich nicht löschen; der Zeitpunkt ist innerhalb der Grenzen frei wählbar.` : "Simulationsstart und -ende lassen sich nicht löschen.")}">✕</button>`
-      : `<button class="btn ghost small" data-action="ms-del" data-i="${i}" title="Löschen">✕</button>`}</td></tr>`; }).join("")}
-  </table><div style="margin-top:10px"><button class="btn small" data-action="ms-add">+ Meilenstein</button></div>
-  <p class="hint">Alter wird mit Dezimalstellen akzeptiert, z. B. 64.5 Jahre = 64 Jahre und 6 Monate.</p>
-  <p class="hint">«Bezug Pensionskasse» (${l.pkMin} bis ${l.pkMax} Jahre) und «AHV-Bezug» (${l.ahvMin} bis ${l.ahvMax} Jahre) sind für jede Person fest vorhanden und lassen sich nicht löschen. Die Grenzen sind in den <a href="#" data-action="settings">Einstellungen</a> änderbar. Das Ende des Erwerbseinkommens legen Sie unter «Einnahmen &amp; Ausgaben» fest.</p></div>`; };
+    <td>${msLocked(ms) ? `<button class="btn ghost small" disabled title="${esc(sys ? tr("milestones.fixedPerPerson", { name: msLabel(ms) }) : tr("milestones.startEndFixed"))}">✕</button>`
+      : `<button class="btn ghost small" data-action="ms-del" data-i="${i}" title="${tr("milestones.delete")}">✕</button>`}</td></tr>`; }).join("")}
+  </table><div style="margin-top:10px"><button class="btn small" data-action="ms-add">${tr("milestones.add")}</button></div>
+  <p class="hint">${tr("milestones.ageHint")}</p>
+  <p class="hint">${tr("milestones.limitsHint", { pkMin: l.pkMin, pkMax: l.pkMax, ahvMin: l.ahvMin, ahvMax: l.ahvMax })}</p></div>`; };
 
 function PensionCards(root, who) {
   const pk = `${root === "partner" ? "partner" : "pension"}.pk`, ahv = `${root === "partner" ? "partner" : "pension"}.ahv`, t = who ? ` · ${esc(who)}` : "";
-  return `<div class="card"><h3>Pensionskasse${t}</h3><div class="grid2">
-    ${F(`${pk}.capital`, `Altersguthaben per Simulationsstart (${startTxt()})`, "chf")}
+  return `<div class="card"><h3>${tr("pension.pkTitle", { v: t })}</h3><div class="grid2">
+    ${F(`${pk}.capital`, tr("pension.pkCapital", { startTxt: startTxt() }), "chf")}
     ${fixedAt(root === "partner" ? 1 : 0, "pk")}
-    ${F(`${pk}.lumpsum`, "Anteil Kapitalbezug", "pct")}
-    ${F(`${pk}.conversion`, "Umwandlungssatz", "pct")}</div>
-    <div style="margin-top:14px">${Series(`${pk}.contribution`, "Beiträge pro Monat", "chf")}${Series(`${pk}.interest`, "Verzinsung pro Jahr", "pct")}</div></div>
-  <div class="card"><h3>AHV${t}</h3><div class="grid2">${F(`${ahv}.monthly`, "Rente pro Monat bei Bezugsbeginn", "chf")}
+    ${F(`${pk}.lumpsum`, tr("pension.lumpsum"), "pct")}
+    ${F(`${pk}.conversion`, tr("pension.conversion"), "pct")}</div>
+    <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></div>
+  <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2">${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf")}
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
-    <div style="margin-top:10px">${Chk(`${ahv}.indexed`, "Rente jährlich an die Teuerung anpassen")}</div></div>`;
+    <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>`;
 }
 /** #51: Pension fund and AHV start at the fixed milestones of the person. */
 function fixedAt(index, kind) {
   const id = index ? (kind === "pk" ? "retire2" : "ahv2") : (kind === "pk" ? "retire" : "ahv");
-  return `<label class="field"><span>Bezug ab</span><span class="computed" style="padding:8px 0">Meilenstein «${esc(state.milestones.find(m => m.id === id)?.name ?? id)}» · ${C("ms", id)} · <a href="#" data-action="goto" data-sec="milestones">ändern</a></span></label>`;
+  return `<label class="field"><span>${tr("pension.payoutFrom")}</span><span class="computed" style="padding:8px 0">${tr("pension.fixedAtText", { esc: esc(msLabel(state.milestones.find(m => m.id === id)) ?? id), c: C("ms", id) })}</span></label>`;
 }
 R.pension = () => `
-  <h2>Vorsorge</h2><p class="lead">Pensionskasse (2. Säule) und AHV (1. Säule)${state.partner ? " für beide Personen" : ""}. Die Säule 3a hat einen eigenen Abschnitt.</p>
+  <h2>${tr("section.pension")}</h2><p class="lead">${tr("pension.subtitle")}${state.partner ? tr("pension.bothPersons") : ""}${tr("pension.pillar3aSeparate")}</p>
   ${PensionCards("pension", state.partner ? state.household.persons[0].name : "")}
   ${state.partner ? PensionCards("partner", state.household.persons[1].name) : ""}
   <p class="hint">${C("pkresult")}</p>`;
@@ -517,99 +525,103 @@ const p3aViewOf = pid => lastSim?.p3aView?.find(v => v.person === pid) ?? null;
 R.pillar3a = () => {
   const l = limits();
   const cards = state.household.persons.slice(0, 2).map((pp, pi) => {
-    const k = state.pillar3a.findIndex(a => a.person === pp.id), who = state.household.persons.length > 1 ? ` · ${esc(pp.name || "Person " + (pi + 1))}` : "";
+    const k = state.pillar3a.findIndex(a => a.person === pp.id), who = state.household.persons.length > 1 ? ` · ${esc(pp.name || tr("pillar3a.person") + (pi + 1))}` : "";
     const ahvId = pi ? "ahv2" : "ahv", ahv = msMonth(ahvId);
-    if (k < 0) return `<div class="card"><h3>Säule 3a${who}</h3><p class="hint">Kein 3a-Konto erfasst.</p><button class="btn small" data-action="p3a-add" data-person="${esc(pp.id)}">+ 3a-Konto</button></div>`;
+    if (k < 0) return `<div class="card"><h3>${tr("pillar3a.title", { who })}</h3><p class="hint">${tr("pillar3a.none")}</p><button class="btn small" data-action="p3a-add" data-person="${esc(pp.id)}">${tr("pillar3a.add")}</button></div>`;
     const A = `pillar3a.${k}`, acc = state.pillar3a[k];
-    const uses = hasIndirectFor(pp.id) ? [["wealth", "Ins freie Vermögen"], ["repay", "Hypothek zurückzahlen"]] : [["wealth", "Ins freie Vermögen"]];
+    const uses = hasIndirectFor(pp.id) ? [["wealth", tr("pillar3a.toWealth")], ["repay", tr("pillar3a.repayMortgage")]] : [["wealth", tr("pillar3a.toWealth")]];
     const earliest = Number.isFinite(ahv) ? ymShow(i2ym(ahv - 60)) : "?";
     const events = (lastSim?.p3a || []).filter(e => state.household.persons.length < 2 || e.text.includes(`(${pp.name})`));
-    return `<div class="card"><h3>Säule 3a${who}<button class="btn ghost small" style="float:right" data-action="list-del" data-path="pillar3a" data-i="${k}" title="3a-Konto entfernen">✕</button></h3>
-      <div class="grid3">${F(A + ".balance", `Guthaben per Simulationsstart (${startTxt()})`, "chf")}${F(A + ".rate", "Verzinsung / Rendite p.a.", "pct")}
-        ${F(A + ".contribution", "Einzahlung pro Jahr", "chf", { hint: `0 bis ${fmtInt(l.pillar3aMax)}; monatlich ein Zwölftel bis vor dem AHV-Bezug (${Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?"}); zählt zu den Ausgaben` })}</div>
-      <h4>Auszahlungsplan</h4>
-      <table class="tbl"><tr><th>Zeitpunkt</th><th>Ergibt</th><th>Betrag</th><th>Verwendung</th><th title="aus der Vorschau">Guthaben vor Auszahlung → Rest danach</th><th></th></tr>
+    return `<div class="card"><h3>${tr("pillar3a.title", { who })}<button class="btn ghost small" style="float:right" data-action="list-del" data-path="pillar3a" data-i="${k}" title="${tr("pillar3a.remove")}">✕</button></h3>
+      <div class="grid3">${F(A + ".balance", tr("pillar3a.balance", { startTxt: startTxt() }), "chf")}${F(A + ".rate", tr("pillar3a.interest"), "pct")}
+        ${F(A + ".contribution", tr("pillar3a.contribution"), "chf", { hint: tr("pillar3a.contributionHint", { pillar3aMax: fmtInt(l.pillar3aMax), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) })}</div>
+      <h4>${tr("pillar3a.payoutPlan")}</h4>
+      <table class="tbl"><tr><th>${tr("pillar3a.when")}</th><th>${tr("pillar3a.result")}</th><th>${tr("pillar3a.amount")}</th><th>${tr("pillar3a.use")}</th><th title="${tr("pillar3a.fromPreview")}">${tr("pillar3a.balanceAfter")}</th><th></th></tr>
       ${(acc.payouts || []).map((x, j) => {
         const P = `${A}.payouts.${j}`;
-        return `<tr data-p3a-row="${j}"><td style="width:220px"><div class="refwrap">${Sel(P + ".kind", [["date", "Datum"], ["age", "Alter"]], { rerender: 1 })}${x.kind === "age" ? F(P + ".years", "", "years", { bare: true, unit: "J." }) : F(P + ".date", "", "month", { bare: true })}</div></td>
+        return `<tr data-p3a-row="${j}"><td style="width:220px"><div class="refwrap">${Sel(P + ".kind", [["date", tr("pillar3a.date")], ["age", tr("pillar3a.age")]], { rerender: 1 })}${x.kind === "age" ? F(P + ".years", "", "years", { bare: true, unit: tr("unit.yearsShort") }) : F(P + ".date", "", "month", { bare: true })}</div></td>
         <td>${C("p3aat", `${k}.${j}`)}</td>
         <td style="width:170px">${F(P + ".amount", "", "chfopt", { bare: true })}</td>
         <td>${Sel(P + ".use", uses)}</td>
         <td style="white-space:nowrap">${C("p3apay", `${k}.${j}`)}</td>
-        <td><button class="btn ghost small" data-action="list-del" data-path="${A}.payouts" data-i="${j}" title="Zeile entfernen">✕</button></td></tr>`;
+        <td><button class="btn ghost small" data-action="list-del" data-path="${A}.payouts" data-i="${j}" title="${tr("series.removeRow")}">✕</button></td></tr>`;
       }).join("")}</table>
-      <div style="margin-top:10px"><button class="btn small" data-action="p3a-payout-add" data-k="${k}">+ Auszahlung</button></div>
+      <div style="margin-top:10px"><button class="btn small" data-action="p3a-payout-add" data-k="${k}">${tr("pillar3a.addPayout")}</button></div>
       <p class="hint">${C("p3arest", k)}</p>
-      <div class="grid2" style="margin-top:10px"><label class="field"><span>Rest im AHV-Bezug (${Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?"})</span>${Sel(A + ".use", uses)}</label></div>
-      <p class="hint">Auszahlungen frühestens 5 Jahre vor dem AHV-Bezug (ab ${earliest}); ohne Betrag wird das ganze Guthaben ausbezahlt. Der Rest wird spätestens im Monat des AHV-Bezugs ausbezahlt. Jede Auszahlung ist ein Kapitalbezug (Kapitalbezugssteuer, im selben Jahr mit dem PK-Kapitalbezug zusammengerechnet). «Hypothek zurückzahlen» gibt es nur mit einer Tranche mit indirekter Amortisation in dieses Konto.</p>
-      <p class="hint">${lastSim ? (events.length ? events.map(e => `Vorschau ${ymShow(i2ym(e.m))}: ${esc(e.text)}`).join("<br>") : "Vorschau: keine Auszahlung im Simulationszeitraum.") : ""}</p></div>`;
+      <div class="grid2" style="margin-top:10px"><label class="field"><span>${tr("pillar3a.restAtAhv", { ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" })}</span>${Sel(A + ".use", uses)}</label></div>
+      <p class="hint">${tr("pillar3a.payoutHint", { earliest })}</p>
+      <p class="hint">${lastSim ? (events.length ? events.map(e => tr("pillar3a.preview", { ymShow: ymShow(i2ym(e.m)), text: esc(e.text) })).join("<br>") : tr("pillar3a.previewNone")) : ""}</p></div>`;
   }).join("");
-  return `<h2>Säule 3a</h2><p class="lead">Gebundene Vorsorge je Person: Guthaben, Einzahlung und Auszahlungsplan. Die indirekte Amortisation einer Hypothek fliesst bis zum AHV-Bezug in dieses Konto.</p>${cards}
-    <p class="hint">Der Maximalbetrag der Einzahlung (${fmtInt(l.pillar3aMax)} pro Jahr, zusammen mit der indirekten Amortisation) ist in den <a href="#" data-action="settings">Einstellungen</a> änderbar.</p>`;
+  return `<h2>${tr("section.pillar3a")}</h2><p class="lead">${tr("pillar3a.intro")}</p>${cards}
+    <p class="hint">${tr("pillar3a.maxHint", { pillar3aMax: fmtInt(l.pillar3aMax) })}</p>`;
 };
 
 R.flows = () => `
-  <h2>Einnahmen & Ausgaben</h2><p class="lead">Monatliche Beträge. Ausgaben werden in heutigen Preisen erfasst und mit der Inflation fortgeschrieben.</p>
-  <div class="card">${Series("flows.income", state.partner ? `Erwerbseinkommen netto / Monat · ${esc(state.household.persons[0].name)}` : "Erwerbseinkommen netto / Monat", "chf")}
+  <h2>${tr("section.flows")}</h2><p class="lead">${tr("flows.intro")}</p>
+  <div class="card">${Series("flows.income", state.partner ? tr("flows.incomeOf", { esc: esc(state.household.persons[0].name) }) : tr("flows.income"), "chf")}
     <div style="margin:-4px 0 12px">${Chk("flows.incomeIndexed", INCOME_INDEXED)}</div>
-    ${state.partner ? `${Series("partner.income", `Erwerbseinkommen netto / Monat · ${esc(state.household.persons[1].name)}`, "chf")}
+    ${state.partner ? `${Series("partner.income", tr("flows.incomeOf", { esc: esc(state.household.persons[1].name) }), "chf")}
     <div style="margin:-4px 0 12px">${Chk("partner.incomeIndexed", INCOME_INDEXED)}</div>` : ""}
-    ${Series("flows.spending", "Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)", "chf", state.partner ? "Haushalt, in heutigen Preisen" : "in heutigen Preisen")}
+    ${Series("flows.spending", tr("flows.spending"), "chf", state.partner ? tr("flows.spendingNote") : tr("flows.todayPrices"))}
     <p class="hint">${C("housingshare")}</p></div>
-  <div class="card"><h3>Einmalige Beträge <span class="sub">positiv = Zufluss, negativ = Ausgabe</span></h3>
-    <table class="tbl"><tr><th>Datum</th><th>Betrag</th><th>Beschreibung</th><th></th></tr>
+  <div class="card"><h3>${tr("flows.oneOff")} <span class="sub">${tr("flows.oneOffHint")}</span></h3>
+    <table class="tbl"><tr><th>${tr("flows.date")}</th><th>${tr("flows.amount")}</th><th>${tr("flows.description")}</th><th></th></tr>
     ${state.flows.extras.map((x, i) => `<tr><td style="width:130px">${F(`flows.extras.${i}.date`, "", "month", { bare: true })}</td><td style="width:200px">${F(`flows.extras.${i}.amount`, "", "chf", { bare: true })}</td><td>${F(`flows.extras.${i}.label`, "", "text", { bare: true })}</td>
       <td><button class="btn ghost small" data-action="list-del" data-path="flows.extras" data-i="${i}">✕</button></td></tr>`).join("")}</table>
-    <div style="margin-top:10px"><button class="btn small" data-action="extra-add">+ Einmaliger Betrag</button></div></div>`;
+    <div style="margin-top:10px"><button class="btn small" data-action="extra-add">${tr("flows.addOneOff")}</button></div></div>`;
 
 R.wealth = () => `
-  <h2>Vermögen & Anlage</h2><p class="lead">Bestände per Simulationsstart und Aufteilung des Portfolios.</p>
-  <div class="card"><h3>Bestände per Simulationsstart (${startTxt()})</h3><div class="grid3">${F("wealth.stocks", "Aktien", "chf", { hint: C("wquote", "stocks") })}${F("wealth.bonds", "Obligationen", "chf", { hint: C("wquote", "bonds") })}${F("wealth.cash", "Cash", "chf")}</div>
+  <h2>${tr("section.wealth")}</h2><p class="lead">${tr("wealth.intro")}</p>
+  <div class="card"><h3>${tr("wealth.balances", { startTxt: startTxt() })}</h3><div class="grid3">${F("wealth.stocks", tr("wealth.stocks"), "chf", { hint: C("wquote", "stocks") })}${F("wealth.bonds", tr("wealth.bonds"), "chf", { hint: C("wquote", "bonds") })}${F("wealth.cash", tr("wealth.cash"), "chf")}</div>
     <p class="hint">${C("wealthsum")}</p></div>
-  <div class="card">${Series("wealth.stockShare", "Aktienquote (Aktien am Portfolio aus Aktien und Obligationen)", "pct")}
-    <p class="hint">Cash zählt nicht zum Portfolio. Bis zur Pensionierung (Bezug Pensionskasse der ersten Person) hält die App so viel Cash wie oben erfasst, mit der Teuerung fortgeschrieben; ein Überschuss geht nach der Aktienquote ins Portfolio, ein Fehlbetrag wird daraus nachgefüllt. Ab der Pensionierung bestimmt die Entnahmestrategie das Cash: «Standard» mit der Cash-Reserve (Abschnitt «Entnahmestrategie»), alle anderen mit ${FIXED_RESERVE_MONTHS} Monaten bzw. die 3-Topf-Strategie mit ihren Töpfen.</p></div>
+  <div class="card">${Series("wealth.stockShare", tr("wealth.stockShare"), "pct")}
+    <p class="hint">${tr("wealth.cashHint", { fixedReserveMonths: FIXED_RESERVE_MONTHS })}</p></div>
   ${strategyCard()}`;
 
 /** #69: Indices of the investment strategy: [key, name, explanation]. */
-const STOCK_INDICES = [
-  ["worldJst", "Welt (JST)", "Aktien von 11 Ländern (Schweiz, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Jährlich 1900–2020."],
-  ["worldCustom", "Welt individuell (JST)", "Wie «Welt (JST)», aber mit eigenen Gewichten für Schweiz, USA, EU und Asien-Pazifik. Jährlich 1900–2020."],
-  ["chJst", "Schweiz (JST)", "Schweizer Aktien (Gesamtrendite). Jährlich 1900–2020."],
-  ["sp500", "S&P 500 (Shiller)", "US-Aktien in CHF, ohne Währungsabsicherung. Monatlich ab 1922."]
-];
-const BOND_INDICES = [
-  ["ch", "Eidgenossenschaft 10 Jahre", "10-jährige Obligationen der Eidgenossenschaft: JST bis 1988, danach SNB. Jährlich 1900–2024; mit S&P 500 monatlich ab 1988."],
-  ["usa", "USA 10 Jahre (Shiller)", "10-jährige US-Staatsanleihen in CHF, ohne Währungsabsicherung. Monatlich ab 1922."],
-  ["chShort", "Eidgenossenschaft kurzfristig", "Kurzfristige Papiere der Eidgenossenschaft (etwa 3 Monate): JST bis 2020, danach SARON. Rendite praktisch wie der Geldmarktsatz, kaum Schwankung. Jährlich 1900–2025."]
-];
+let STOCK_INDICES;
+onLanguage(() => STOCK_INDICES = [
+  ["worldJst", tr("index.world"), tr("index.worldDesc")],
+  ["worldCustom", tr("index.worldCustom"), tr("index.worldCustomDesc")],
+  ["chJst", tr("index.swiss"), tr("index.swissDesc")],
+  ["sp500", tr("index.sp500"), tr("index.sp500Desc")]
+]);
+let BOND_INDICES;
+onLanguage(() => BOND_INDICES = [
+  ["ch", tr("index.confed10"), tr("index.confed10Desc")],
+  ["usa", tr("index.us10"), tr("index.us10Desc")],
+  ["chShort", tr("index.confedShort"), tr("index.confedShortDesc")]
+]);
 const REGION_KEYS = ["ch", "usa", "eu", "apac"];
 function strategyCard() {
   const s = state.returns.strategy, desc = (list, k) => esc(list.find(x => x[0] === k)?.[2] || "");
-  const weights = s.stocks !== "worldCustom" ? "" : `<div class="grid2">${F("returns.strategy.weights.ch", "Schweiz", "pct")}${F("returns.strategy.weights.usa", "USA", "pct")}
-      ${F("returns.strategy.weights.eu", "EU", "pct", { hint: "Deutschland, Frankreich, Italien, Spanien, Niederlande, Belgien, Grossbritannien" })}${F("returns.strategy.weights.apac", "Asien-Pazifik", "pct", { hint: "Japan, Australien" })}</div>
+  const weights = s.stocks !== "worldCustom" ? "" : `<div class="grid2">${F("returns.strategy.weights.ch", tr("strategy.swiss"), "pct")}${F("returns.strategy.weights.usa", "USA", "pct")}
+      ${F("returns.strategy.weights.eu", "EU", "pct", { hint: tr("strategy.eu") })}${F("returns.strategy.weights.apac", tr("strategy.apac"), "pct", { hint: tr("strategy.apacCountries") })}</div>
     <span data-path="returns.strategy.weights"></span>
-    <p class="hint">${C("wsum")} Innerhalb der EU und von Asien-Pazifik sind die Länder nach BIP gewichtet. Ändert sich das Gewicht der EU, ändert sich der Anteil jedes EU-Landes im gleichen Verhältnis (EU 40 % statt 20 %: jedes EU-Land doppelt so viel).</p>`;
-  const info = infoPop(`<p>Die Rendite von Aktien und Obligationen stammt aus den gewählten Indizes; die Methode (fixe Renditen, historischer Verlauf, Monte Carlo) steht unter «Simulation».</p>
-    <p>Ist ein Teil jährlich, rechnet die Strategie mit Jahreswerten über die Jahre, für die beide Indizes Werte haben. Alle Indizes sind in CHF; die Teuerung kommt aus der Quelle der Aktien.</p>
-    <p>Die JST-Daten (Jordà-Schularick-Taylor Macrohistory Database) stehen unter der Lizenz CC BY-NC-SA 4.0.</p>`);
-  return `<div class="card"><h3>Anlagestrategie ${info}</h3>
-    <div class="grid2"><label class="field"><span>Aktien</span>${Sel("returns.strategy.stocks", STOCK_INDICES.map(([k, l]) => [k, l]), { rerender: 1 })}<span class="computed">${desc(STOCK_INDICES, s.stocks)}</span></label>
-      <label class="field"><span>Obligationen</span>${Sel("returns.strategy.bonds", BOND_INDICES.map(([k, l]) => [k, l]), { rerender: 1 })}<span class="computed">${desc(BOND_INDICES, s.bonds)}</span></label></div>
+    <p class="hint">${tr("strategy.weightsHint", { c: C("wsum") })}</p>`;
+  const info = infoPop(`<p>${tr("strategy.info")}</p>
+    <p>${tr("strategy.annualHint")}</p>
+    <p>${tr("strategy.jstLicense")}</p>`);
+  return `<div class="card"><h3>${tr("strategy.title", { info })}</h3>
+    <div class="grid2"><label class="field"><span>${tr("strategy.stocks")}</span>${Sel("returns.strategy.stocks", STOCK_INDICES.map(([k, l]) => [k, l]), { rerender: 1 })}<span class="computed">${desc(STOCK_INDICES, s.stocks)}</span></label>
+      <label class="field"><span>${tr("strategy.bonds")}</span>${Sel("returns.strategy.bonds", BOND_INDICES.map(([k, l]) => [k, l]), { rerender: 1 })}<span class="computed">${desc(BOND_INDICES, s.bonds)}</span></label></div>
     ${weights}
     <p class="hint">${C("strategyinfo")}</p>
-    <div class="libbtns"><button class="btn small" data-action="import-shiller">Shiller-Daten aktualisieren…</button>
-      <button class="btn small" data-action="import-snb">SNB-Daten aktualisieren…</button></div></div>`;
+    <div class="libbtns"><button class="btn small" data-action="import-shiller">${tr("strategy.updateShiller")}</button>
+      <button class="btn small" data-action="import-snb">${tr("strategy.updateSnb")}</button></div></div>`;
 }
 
-const SOURCES = [
-  ["fixed", "Fixe Renditen", "Konstante Jahresrenditen. Gut für schnelle Abschätzungen.", true],
-  ["historical", "Historisch ab Startzeitpunkt", "Ein historischer Verlauf ab einem gewählten Jahr bzw. Monat.", true],
-  ["rolling", "Alle historischen Startzeitpunkte", "Jeder mögliche Start wird gerechnet (ersetzt «Iteration»).", true],
-  ["bootstrap", "Monte Carlo · historisch", "Zufällige Blöcke aus der Zeitreihe (Länge zufällig), alle Werte aus demselben Monat.", true],
-  ["parametric", "Monte Carlo · parametrisch", "Aktien mit Student-t-Verteilung und Kurssprüngen, Obligationen und Inflation mit der Korrelation der Anlagestrategie.", true]
-];
+let SOURCES;
+onLanguage(() => SOURCES = [
+  ["fixed", tr("source.fixed"), tr("source.fixedDesc"), true],
+  ["historical", tr("source.historical"), tr("source.historicalDesc"), true],
+  ["rolling", tr("source.rolling"), tr("source.rollingDesc"), true],
+  ["bootstrap", tr("source.bootstrap"), tr("source.bootstrapDesc"), true],
+  ["parametric", tr("source.parametric"), tr("source.parametricDesc"), true]
+]);
 /** #119: Abbreviation of each return source for the name of a saved result. */
-const SOURCE_SHORT = { fixed: "Fix", historical: "Hist.", rolling: "Alle Starts", bootstrap: "MC hist.", parametric: "MC param." };
+let SOURCE_SHORT;
+onLanguage(() => SOURCE_SHORT = { fixed: tr("source.fixedShort"), historical: tr("source.historicalShort"), rolling: tr("source.rollingShort"), bootstrap: "MC hist.", parametric: "MC param." });
 const paramJoint = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.joint ?? null : null;
 /** Which inputs are actually used with the chosen source. */
 function returnsUse() {
@@ -636,74 +648,76 @@ function returnsUse() {
 }
 R.returns = () => {
   const r = state.returns, src = r.source, u = returnsUse();
-  const fields = [u.fixedStocks && F("returns.fixed.stocks", "Aktien", "pct"), u.fixedBonds && F("returns.fixed.bonds", "Obligationen", "pct"),
-    u.fixedInflation && F("returns.fixed.inflation", "Inflation", "pct"), u.fixedSaron && F("returns.fixed.saron", "SARON (für SARON-Hypotheken)", "pct")].filter(Boolean);
-  const fixedTitle = { fixed: "Fixe Renditen pro Jahr", parametric: u.fixedBonds ? "Obligationen, Inflation und SARON pro Jahr" : "SARON pro Jahr" }[src]
-    || (u.fixedStocks ? "Werte für die Fortschreibung pro Jahr" : "SARON pro Jahr");
-  const fixedHint = src === "fixed" ? "" : src === "parametric" ? (u.fixedBonds ? "Ohne Zeitreihe erzeugt das Modell nur Aktienrenditen; diese Werte gelten konstant." : "Der SARON gilt konstant.")
-    : [u.fixedStocks && "Aktien, Obligationen und Inflation gelten, nachdem die Zeitreihe endet.", u.fixedSaron && "Der SARON gilt ausserhalb des SARON-Zeitraums der Zeitreihe."].filter(Boolean).join(" ");
+  const fields = [u.fixedStocks && F("returns.fixed.stocks", tr("wealth.stocks"), "pct"), u.fixedBonds && F("returns.fixed.bonds", tr("wealth.bonds"), "pct"),
+    u.fixedInflation && F("returns.fixed.inflation", tr("returns.inflation"), "pct"), u.fixedSaron && F("returns.fixed.saron", tr("returns.saron"), "pct")].filter(Boolean);
+  const fixedTitle = { fixed: tr("returns.fixedTitle"), parametric: u.fixedBonds ? tr("returns.bondsInflSaron") : tr("returns.saronYear") }[src]
+    || (u.fixedStocks ? tr("returns.extrapolation") : tr("returns.saronYear"));
+  const fixedHint = src === "fixed" ? "" : src === "parametric" ? (u.fixedBonds ? tr("returns.stocksOnly") : tr("returns.saronConst"))
+    : [u.fixedStocks && tr("returns.afterSeries"), u.fixedSaron && tr("returns.saronOutside")].filter(Boolean).join(" ");
   const fixed = fields.length ? `<div class="card"><h3>${fixedTitle}</h3><div class="grid2">${fields.join("")}</div>${fixedHint ? `<p class="hint">${fixedHint}</p>` : ""}</div>` : "";
-  const series = u.series ? `<div class="card"><h3>Renditen aus der Anlagestrategie</h3><p style="margin:0">${C("strategyinfo")} <a href="#" data-action="goto" data-sec="wealth">Ändern unter «Vermögen &amp; Anlage»</a></p></div>` : "";
+  const series = u.series ? `<div class="card"><h3>${tr("returns.fromStrategy")}</h3><p style="margin:0">${tr("returns.changeStrategy", { c: C("strategyinfo") })}</p></div>` : "";
   let params = "";
-  if (src === "historical") params = `<div class="card"><h3>Start</h3><div class="grid2">${F("returns.startDate", "Historischer Startmonat", "month")}</div>
-    <p class="hint">Der Simulationsstart ${C("ms", "start")} wird auf diesen historischen Zeitpunkt gelegt. Bei Jahresdaten zählt nur das Jahr.</p></div>`;
-  if (src === "rolling") params = `<div class="card"><h3>Durchlauf</h3><p style="margin:0">${C("rolling")}</p></div>`;
-  if (src === "bootstrap") params = `<div class="card"><h3>Bootstrap</h3><div class="grid3">${F("returns.bootstrap.paths", "Anzahl Pfade", "num", { int: true })}${F("returns.bootstrap.block", "Mittlere Blocklänge", "months")}${F("returns.bootstrap.seed", "Zufallsstartwert", "num", { int: true })}</div>
-    <p class="hint">Jeder Pfad wird aus Abschnitten der Zeitreihe zusammengesetzt. Ein Abschnitt endet in jedem Monat mit Wahrscheinlichkeit 1 / Blocklänge, dann folgt ein zufälliger neuer Startmonat (stationärer Bootstrap). Aktien, Obligationen, Inflation und SARON stammen immer aus demselben historischen Monat; Krisen behalten so ihren Verlauf. Bei Jahresdaten gilt die Blocklänge in ganzen Jahren.</p>
-    <p class="hint">Gleicher Zufallsstartwert ⇒ gleiche Pfade. Szenarien verwenden dieselben Pfade, damit Unterschiede von den Parametern stammen.</p></div>`;
+  if (src === "historical") params = `<div class="card"><h3>${tr("returns.start")}</h3><div class="grid2">${F("returns.startDate", tr("sweep.histStart"), "month")}</div>
+    <p class="hint">${tr("returns.startHint", { c: C("ms", "start") })}</p></div>`;
+  if (src === "rolling") params = `<div class="card"><h3>${tr("returns.run")}</h3><p style="margin:0">${C("rolling")}</p></div>`;
+  if (src === "bootstrap") params = `<div class="card"><h3>${tr("returns.bootstrap")}</h3><div class="grid3">${F("returns.bootstrap.paths", tr("returns.paths"), "num", { int: true })}${F("returns.bootstrap.block", tr("returns.blockLength"), "months")}${F("returns.bootstrap.seed", tr("returns.seed"), "num", { int: true })}</div>
+    <p class="hint">${tr("returns.bootstrapHint")}</p>
+    <p class="hint">${tr("returns.seedHint")}</p></div>`;
   if (src === "parametric") {
     const P = (k, label) => F("returns.parametric." + k, label, PARAM_KEYS[k], { hint: C("psug", k) });
-    params = `<div class="card"><h3>Aktienmodell</h3><p class="hint" style="margin-top:0">${C("pauto")}</p><div class="grid3">${F("returns.parametric.paths", "Anzahl Pfade", "num", { int: true })}${P("mu", "Erwartete Rendite (Drift)")}${P("sigma", "Volatilität")}
-    ${P("df", "Freiheitsgrade (Fat Tails)")}${P("jumpLambda", "Kurssprünge pro Jahr")}${P("jumpMu", "Mittlere Sprunghöhe (log)")}
-    ${P("jumpSigma", "Streuung der Sprunghöhe")}${F("returns.parametric.seed", "Zufallsstartwert", "num", { int: true })}</div>
-    <p class="hint">Tagesschritte (21 pro Monat), Student-t-Schocks auf Varianz 1 skaliert (0 Freiheitsgrade = Normalverteilung), Poisson-Kurssprünge. Eine Sprunghöhe von −30 % (log) entspricht etwa −26 % Kursverlust.</p></div>
-    <div class="card"><h3>Obligationen und Inflation <span class="sub">aus der Anlagestrategie, nur Anzeige</span></h3><div id="paramJoint">${C("pjoint")}</div></div>`;
+    params = `<div class="card"><h3>${tr("returns.stockModel")}</h3><p class="hint" style="margin-top:0">${C("pauto")}</p><div class="grid3">${F("returns.parametric.paths", tr("returns.paths"), "num", { int: true })}${P("mu", tr("returns.drift"))}${P("sigma", tr("returns.volatility"))}
+    ${P("df", tr("returns.dof"))}${P("jumpLambda", tr("returns.jumps"))}${P("jumpMu", tr("returns.jumpMu"))}
+    ${P("jumpSigma", tr("returns.jumpSigma"))}${F("returns.parametric.seed", tr("returns.seed"), "num", { int: true })}</div>
+    <p class="hint">${tr("returns.modelHint")}</p></div>
+    <div class="card"><h3>${tr("returns.bondsInfl")} <span class="sub">${tr("returns.displayOnly")}</span></h3><div id="paramJoint">${C("pjoint")}</div></div>`;
   }
-  const extra = !u.extrapolate ? "" : `<div class="card"><h3>Fortschreibung <span class="sub">die Zeitreihe endet vor dem Simulationsende</span></h3>
-    <div class="grid2"><label class="field"><span>Methode</span>${Sel("returns.extrapolation.method", [["fixed", "Fixe Werte"], ["average", "Gleitender Durchschnitt"], ["geometric", "Gleitender geometrischer Durchschnitt"]], { rerender: 1 })}</label>
-    ${r.extrapolation.method === "fixed" ? "" : F("returns.extrapolation.range", "Durchschnitt über", "num", { unit: "Jahre", int: true })}</div></div>`;
-  return `<h2>Simulation</h2><p class="lead">Wie die Renditen und die Inflation über die Zeit verlaufen: fixe Werte, ein historischer Verlauf oder Monte Carlo. Die Indizes wählen Sie bei der Anlagestrategie unter «Vermögen &amp; Anlage». Angezeigt sind nur die Angaben, die für die gewählte Methode gelten.</p>
+  const extra = !u.extrapolate ? "" : `<div class="card"><h3>${tr("returns.extrapolationTitle")} <span class="sub">${tr("returns.seriesEnds")}</span></h3>
+    <div class="grid2"><label class="field"><span>${tr("returns.method")}</span>${Sel("returns.extrapolation.method", [["fixed", tr("returns.fixedValues")], ["average", tr("returns.movingAvg")], ["geometric", tr("returns.movingGeoAvg")]], { rerender: 1 })}</label>
+    ${r.extrapolation.method === "fixed" ? "" : F("returns.extrapolation.range", tr("returns.avgOver"), "num", { unit: tr("unit.years"), int: true })}</div></div>`;
+  return `<h2>${tr("section.returns")}</h2><p class="lead">${tr("returns.intro")}</p>
     <div class="card"><div class="choices">${SOURCES.map(([k, t, d, ok]) => `<div class="choice ${k === src ? "on" : ""} ${ok ? "" : "off"}" ${ok ? `data-action="set" data-path="returns.source" data-value="${k}"` : ""}><b>${t}</b><small>${d}</small></div>`).join("")}</div></div>
     ${series}${params}${extra}${fixed}
-    <p class="hint">Die Teuerung wirkt jeden Monat (Jahresinflation geometrisch auf Monate umgerechnet); die AHV wird im Januar angepasst. ${src !== "fixed" ? `Die Vorschau rechts rechnet einen Lauf mit konstanten Werten: ${C("basis")}` : ""}</p>`;
+    <p class="hint">${tr("returns.inflationHint")} ${src !== "fixed" ? tr("returns.previewBasis", { c: C("basis") }) : ""}</p>`;
 };
 
-const STRATS = [
-  ["standard", "Standard", "Cash-Reserve in Monaten der ungedeckten Ausgaben, Rest nach Aktienanteil investiert, monatliches Rebalancing.", true],
-  ["three_buckets", "3-Topf-Strategie", "Ab Pensionierung: Topf 1 Cash, Topf 2 Obligationen, Topf 3 Aktien. Nachfüllen im Januar und nach Zuflüssen, Notauffüllung von Topf 1 unterjährig.", true],
-  ["guardrails", "Guardrails", "Ab Pensionierung: Startentnahme in % des Vermögens, danach mit der Teuerung angepasst; Leitplanken kürzen oder erhöhen die Ausgaben (Guyton-Klinger).", true],
-  ["fixed_rate", "Fixe Entnahmerate", "Ab Pensionierung gibt der Haushalt jedes Jahr im Januar einen festen Anteil des liquiden Vermögens aus.", true],
-  ["vpw", "Variable Prozententnahme (VPW)", "Jedes Jahr wird der Anteil des Vermögens entnommen, der es bis zum Planungsalter gleichmässig aufbraucht; der Anteil steigt mit dem Alter.", true],
-  ["endowment", "Endowment-Regel", "Entnahme = Vorjahr mit Teuerung, gemischt mit einer Rate des aktuellen Vermögens (Yale/Tobin). Glättet die Ausgaben.", true]
-];
+let STRATS;
+onLanguage(() => STRATS = [
+  ["standard", tr("strat.standard"), tr("strat.standardDesc"), true],
+  ["three_buckets", tr("strat.buckets"), tr("strat.bucketsDesc"), true],
+  ["guardrails", tr("strat.guardrails"), tr("strat.guardrailsDesc"), true],
+  ["fixed_rate", tr("strat.fixedRate"), tr("strat.fixedRateDesc"), true],
+  ["vpw", tr("strat.vpw"), tr("strat.vpwDesc"), true],
+  ["endowment", tr("strat.endowment"), tr("strat.endowmentDesc"), true]
+]);
 /** #119: Abbreviation of each strategy (3 buckets with guardrails separately) for the name of a saved result. */
-const STRAT_SHORT = { standard: "Standard", three_buckets: "3-Topf", three_buckets_guardrails: "3-Topf + Guard", guardrails: "Guardrails", fixed_rate: "Fixe Rate", vpw: "VPW", endowment: "Endowment" };
+let STRAT_SHORT;
+onLanguage(() => STRAT_SHORT = { standard: tr("strat.standard"), three_buckets: tr("strat.bucketsShort"), three_buckets_guardrails: tr("strat.bucketsGuardShort"), guardrails: tr("strat.guardrails"), fixed_rate: tr("strat.fixedRateShort"), vpw: "VPW", endowment: tr("strat.endowmentShort") });
 R.withdrawal = () => {
   const w = state.withdrawal;
-  return `<h2>Entnahmestrategie</h2><p class="lead">Wie nach der Pensionierung Geld aus dem Vermögen entnommen und umgeschichtet wird.</p>
+  return `<h2>${tr("section.withdrawal")}</h2><p class="lead">${tr("withdrawal.intro")}</p>
   <div class="card"><div class="choices">${STRATS.map(([k, t, d, ok]) => `<div class="choice ${k === w.strategy ? "on" : ""} ${ok ? "" : "off"}" ${ok ? `data-action="set" data-path="withdrawal.strategy" data-value="${k}"` : ""}><b>${t}</b><small>${d}</small></div>`).join("")}</div></div>
-  ${w.strategy === "three_buckets" ? `<div class="card"><h3>Töpfe</h3><div class="grid3">${F("withdrawal.buckets.cashYears", "Topf 1 · Cash", "years")}${F("withdrawal.buckets.bondYears", "Topf 2 · Obligationen", "years")}${F("withdrawal.buckets.refillThreshold", "Aus Topf 3 nur verkaufen, wenn Aktienrendite (12 Monate) ≥", "pct")}${F("withdrawal.buckets.reserveMonths", "Reserve in Topf 1 unterjährig", "months")}</div>
+  ${w.strategy === "three_buckets" ? `<div class="card"><h3>${tr("withdrawal.buckets")}</h3><div class="grid3">${F("withdrawal.buckets.cashYears", tr("withdrawal.bucket1"), "years")}${F("withdrawal.buckets.bondYears", tr("withdrawal.bucket2"), "years")}${F("withdrawal.buckets.refillThreshold", tr("withdrawal.sellRule"), "pct")}${F("withdrawal.buckets.reserveMonths", tr("withdrawal.reserveIntra"), "months")}</div>
     <div class="buckets">
-      <div class="bucket"><div class="bn">Topf 1 · Cash</div><div class="bv">${C("bucket", "cash")}</div><div class="bar" style="background:var(--c3)"></div></div>
-      <div class="bucket"><div class="bn">Topf 2 · Obligationen</div><div class="bv">${C("bucket", "bond")}</div><div class="bar" style="background:var(--c2)"></div></div>
-      <div class="bucket"><div class="bn">Topf 3 · Aktien</div><div class="bv">${C("bucket", "stock")}</div><div class="bar" style="background:var(--c1)"></div></div></div>
-    <p class="hint">Aufteilung bei Pensionierung gemäss Vorschau (fixe Renditen). Die Töpfe sind Jahre der <b>ungedeckten</b> Ausgaben (Ausgaben inkl. Wohnkosten − Einkommen und Renten).</p>
-    <p class="hint">Regeln: Topf 1 zahlt die laufenden Ausgaben. Jeden Januar wird Topf 1 aus Topf 2 auf das Ziel gebracht, Topf 2 aus den Aktien – aber nur, wenn die Aktien im Vorjahr mindestens die Schwelle erreicht haben. Überschüsse fliessen in die Aktien. Reicht Topf 1 zwischendurch nicht, wird aus Topf 2 und dann aus den Aktien entnommen. Vor der Pensionierung gilt die Cash-Regel aus «Vermögen & Anlage».</p>
-    <div class="grid2"><label class="field"><span>Ausgaben ab Pensionierung</span>${Sel("withdrawal.buckets.spending", [["planned", "wie geplant"], ["guardrails", "mit Guardrails steuern"]], { rerender: 1 })}</label></div>
-    <p class="hint">${bucketsGuardrails() ? "Die Guardrails bestimmen die Lebenshaltung, die Töpfe die Anlage. Die Topfziele rechnen mit der Lebenshaltung der Guardrails." : "Die Ausgaben bleiben wie geplant. Mit Guardrails folgen sie dem Vermögen, die Töpfe bleiben."}</p></div>
+      <div class="bucket"><div class="bn">${tr("withdrawal.bucket1")}</div><div class="bv">${C("bucket", "cash")}</div><div class="bar" style="background:var(--c3)"></div></div>
+      <div class="bucket"><div class="bn">${tr("withdrawal.bucket2")}</div><div class="bv">${C("bucket", "bond")}</div><div class="bar" style="background:var(--c2)"></div></div>
+      <div class="bucket"><div class="bn">${tr("withdrawal.bucket3")}</div><div class="bv">${C("bucket", "stock")}</div><div class="bar" style="background:var(--c1)"></div></div></div>
+    <p class="hint">${tr("withdrawal.splitHint")}</p>
+    <p class="hint">${tr("withdrawal.rulesHint")}</p>
+    <div class="grid2"><label class="field"><span>${tr("withdrawal.spending")}</span>${Sel("withdrawal.buckets.spending", [["planned", tr("withdrawal.asPlanned")], ["guardrails", tr("withdrawal.withGuardrails")]], { rerender: 1 })}</label></div>
+    <p class="hint">${bucketsGuardrails() ? tr("withdrawal.guardrailsHint") : tr("withdrawal.plannedHint")}</p></div>
     ${bucketsGuardrails() ? GuardrailsCard() + WithdrawalLimits() : ""}`
-    : w.strategy === "fixed_rate" ? `<div class="card"><h3>Fixe Entnahmerate</h3><div class="grid3">${F("withdrawal.fixedRate.rate", "Entnahmerate pro Jahr", "pct")}</div>
+    : w.strategy === "fixed_rate" ? `<div class="card"><h3>${tr("strat.fixedRate")}</h3><div class="grid3">${F("withdrawal.fixedRate.rate", tr("withdrawal.rate"), "pct")}</div>
       <p class="hint">${C("wdinit")}</p>
-      <p class="hint">Jeden Januar (und bei Pensionierung) wird die Jahresentnahme neu auf diese Rate des liquiden Vermögens gesetzt. Die Entnahme ist <b>Lebenshaltung + Wohnkosten − Einkommen und Renten</b> (vor Steuern): Die Lebenshaltung ergibt sich daraus und folgt dem Vermögen; geplante Ausgaben gelten nur bis zur Pensionierung. Das Vermögen wird so nie ganz aufgebraucht – dafür schwanken die Ausgaben. Mit einer Untergrenze lässt sich das begrenzen.</p></div>${WithdrawalLimits()}`
+      <p class="hint">${tr("withdrawal.fixedRateHint")}</p></div>${WithdrawalLimits()}`
     : w.strategy === "guardrails" ? GuardrailsCard() + WithdrawalLimits()
-    : w.strategy === "vpw" ? `<div class="card"><h3>Variable Prozententnahme <span class="sub">VPW</span></h3><div class="grid2">${F("withdrawal.vpw.horizonAge", "Vermögen soll reichen bis Alter", "num", { unit: "J." })}${F("withdrawal.vpw.realReturn", "Angenommene Realrendite pro Jahr", "pct")}</div>
+    : w.strategy === "vpw" ? `<div class="card"><h3>${tr("withdrawal.vpw")} <span class="sub">VPW</span></h3><div class="grid2">${F("withdrawal.vpw.horizonAge", tr("withdrawal.untilAge"), "num", { unit: tr("unit.yearsShort") })}${F("withdrawal.vpw.realReturn", tr("withdrawal.realReturn"), "pct")}</div>
       <p class="hint">${C("wdinit")}</p>
-      <p class="hint">Jeden Januar wird der Anteil des liquiden Vermögens entnommen, der es bei der angenommenen Realrendite bis zum Planungsalter gleichmässig aufbraucht (Annuität). Der Anteil steigt mit dem Alter; im Planungsalter wäre alles aufgebraucht. Die Ausgaben folgen dem Vermögen und schwanken entsprechend. Eine Untergrenze begrenzt das.</p></div>${WithdrawalLimits()}`
-    : w.strategy === "endowment" ? `<div class="card"><h3>Endowment-Regel <span class="sub">Yale / Tobin</span></h3><div class="grid2">${F("withdrawal.endowment.rate", "Zielrate des Vermögens", "pct")}${F("withdrawal.endowment.smoothing", "Gewicht des aktuellen Vermögens", "pct")}</div>
+      <p class="hint">${tr("withdrawal.vpwHint")}</p></div>${WithdrawalLimits()}`
+    : w.strategy === "endowment" ? `<div class="card"><h3>${tr("strat.endowment")} <span class="sub">${tr("withdrawal.yale")}</span></h3><div class="grid2">${F("withdrawal.endowment.rate", tr("withdrawal.targetRate"), "pct")}${F("withdrawal.endowment.smoothing", tr("withdrawal.weight"), "pct")}</div>
       <p class="hint">${C("wdinit")}</p>
-      <p class="hint">Entnahme im Januar = (1 − Gewicht) × Vorjahresentnahme mit Teuerung + Gewicht × Zielrate × aktuelles Vermögen. Bei 100 % entspricht das der fixen Rate, bei kleinem Gewicht schwankt die Entnahme wenig, folgt dem Vermögen aber langsam.</p></div>${WithdrawalLimits()}`
-    : `<div class="card"><h3>Standard</h3>${Series("wealth.reserveMonths", "Cash-Reserve", "months", "ab der Pensionierung, Monate der ungedeckten Ausgaben (Ausgaben − Einkommen)")}
-      <p class="hint">Der Aktienanteil steht unter <a href="#" data-action="goto" data-sec="wealth">Vermögen & Anlage</a>. Alle anderen Strategien rechnen mit einer festen Reserve von ${FIXED_RESERVE_MONTHS} Monaten.</p></div>`}`;
+      <p class="hint">${tr("withdrawal.endowmentHint")}</p></div>${WithdrawalLimits()}`
+    : `<div class="card"><h3>${tr("strat.standard")}</h3>${Series("wealth.reserveMonths", tr("withdrawal.reserve"), "months", tr("withdrawal.reserveHint"))}
+      <p class="hint">${tr("withdrawal.stockShareHint", { fixedReserveMonths: FIXED_RESERVE_MONTHS })}</p></div>`}`;
 };
 
 /** #6: 3 buckets whose spending is controlled by the guardrails. */
@@ -711,23 +725,24 @@ const bucketsGuardrails = (w = state.withdrawal) => w?.strategy === "three_bucke
 /** Key of the withdrawal strategy of a plan; 3 buckets with guardrails has its own (as in the optimization). */
 const stratKey = w => bucketsGuardrails(w) ? "three_buckets_guardrails" : w?.strategy;
 function GuardrailsCard() {
-  return `<div class="card"><h3>Guardrails <span class="sub">nach Guyton-Klinger</span></h3><div class="grid2">${F("withdrawal.guardrails.initialRate", "Startrate bei Pensionierung", "pct")}${F("withdrawal.guardrails.adjust", "Anpassung bei Leitplanke", "pct")}
-      ${F("withdrawal.guardrails.upper", "Obere Leitplanke (Rate höher als Startrate um)", "pct")}${F("withdrawal.guardrails.lower", "Untere Leitplanke (Rate tiefer als Startrate um)", "pct")}</div>
+  return `<div class="card"><h3>${tr("strat.guardrails")} <span class="sub">${tr("guardrails.subtitle")}</span></h3><div class="grid2">${F("withdrawal.guardrails.initialRate", tr("guardrails.startRate"), "pct")}${F("withdrawal.guardrails.adjust", tr("guardrails.adjust"), "pct")}
+      ${F("withdrawal.guardrails.upper", tr("guardrails.upper"), "pct")}${F("withdrawal.guardrails.lower", tr("guardrails.lower"), "pct")}</div>
       <p class="hint">${C("wdinit")}</p>
-      <p class="hint">Bei der Pensionierung der ersten Person wird die Startrate auf das liquide Vermögen angewendet (ohne einen für einen Kauf reservierten Verkaufserlös). Jeden Januar wird die Entnahme mit der Teuerung angepasst – ausser nach einem Verlustjahr der Aktien, solange die aktuelle Rate über der Startrate liegt. Übersteigt die aktuelle Rate (Entnahme / Vermögen) die Startrate um die obere Leitplanke, wird die Entnahme gekürzt; liegt sie um die untere Leitplanke darunter, wird sie erhöht. Entnahme = <b>Lebenshaltung + Wohnkosten − Einkommen und Renten</b> (vor Steuern).</p></div>`;
+      <p class="hint">${tr("guardrails.hint")}</p></div>`;
 }
 function WithdrawalLimits() {
-  return `<div class="card"><h3>Grenzen der Lebenshaltung <span class="sub">Anteil der geplanten Ausgaben, 0 = keine Grenze</span></h3><div class="grid2">${F("withdrawal.floor", "Untergrenze", "pct")}${F("withdrawal.ceiling", "Obergrenze", "pct")}</div>
-    <p class="hint">Beispiel: Untergrenze 80 % – die Lebenshaltung sinkt nie unter 80 % der geplanten Ausgaben (in heutigen Preisen, mit der Teuerung angepasst), auch wenn die Strategie weniger erlauben würde. Dann kann das Vermögen aufgebraucht werden.</p></div>`;
+  return `<div class="card"><h3>${tr("limits.title")} <span class="sub">${tr("limits.hint")}</span></h3><div class="grid2">${F("withdrawal.floor", tr("limits.lower"), "pct")}${F("withdrawal.ceiling", tr("limits.upper"), "pct")}</div>
+    <p class="hint">${tr("limits.example")}</p></div>`;
 }
 function TaxTable(key, label, xlabel) {
-  return `<div class="series"><div class="shead"><span class="t">${label}</span></div><div class="sbody"><div><table class="tbl"><tr><th>ab ${xlabel}</th><th>Steuersatz</th><th></th></tr>
+  return `<div class="series"><div class="shead"><span class="t">${label}</span></div><div class="sbody"><div><table class="tbl"><tr><th>${tr("taxTable.from", { xlabel })}</th><th>${tr("taxTable.rate")}</th><th></th></tr>
   ${getP("taxes." + key).map((r, i) => `<tr><td>${F(`taxes.${key}.${i}.0`, "", "chf", { bare: true })}</td><td>${F(`taxes.${key}.${i}.1`, "", "pct", { bare: true })}</td><td><button class="btn ghost small" data-action="list-del" data-path="taxes.${key}" data-i="${i}">✕</button></td></tr>`).join("")}</table>
-  <div style="margin-top:8px"><button class="btn small" data-action="tax-add" data-key="${key}">+ Stufe</button></div></div>
+  <div style="margin-top:8px"><button class="btn small" data-action="tax-add" data-key="${key}">${tr("taxTable.addStep")}</button></div></div>
   <svg class="mini" data-taxmini="${key}" viewBox="0 0 300 64" preserveAspectRatio="none" style="height:110px"></svg></div></div>`;
 }
 // ---------- Optimization ----------
-const OPT_STRATS = [["standard", "Standard"], ["three_buckets", "3-Topf"], ["three_buckets_guardrails", "3-Topf + Guardrails"], ["guardrails", "Guardrails"], ["fixed_rate", "Fixe Rate"], ["vpw", "VPW"], ["endowment", "Endowment"]];
+let OPT_STRATS;
+onLanguage(() => OPT_STRATS = [["standard", tr("strat.standard")], ["three_buckets", tr("strat.bucketsShort")], ["three_buckets_guardrails", tr("opt.bucketsGuardrails")], ["guardrails", tr("strat.guardrails")], ["fixed_rate", tr("strat.fixedRateShort")], ["vpw", "VPW"], ["endowment", tr("strat.endowmentShort")]]);
 const OPT_DEFAULT = { goal: "consumption", minConsumption: 90, maxRuin: 5, ruinAge: "", weightMedian: 50, volWeight: 1, maxVol: "", paths: 5000, checkPaths: 10000, samples: 30, strategies: OPT_STRATS.map(x => x[0]).filter(k => k !== "three_buckets_guardrails"), ranges: {} };
 let optCfg = { ...OPT_DEFAULT };
 const OPT_ACTIONS = {};
@@ -769,7 +784,7 @@ let job = null;
 let jobSeq = Date.now();
 /** HTML of the progress display; `jobTick` fills it during the calculation. */
 const jobCard = (title, note = "") => `<div class="card job"><h3 style="margin:0">${title}</h3><progress id="jobBar" max="1000" value="0"></progress>
-  <div class="row"><span class="hint" id="jobTxt" style="margin:0">Startet…</span><button class="btn small" data-action="job-cancel" id="jobCancel">Abbrechen</button></div>${note ? `<p class="hint" style="margin:0">${note}</p>` : ""}</div>`;
+  <div class="row"><span class="hint" id="jobTxt" style="margin:0">${tr("job.starting")}</span><button class="btn small" data-action="job-cancel" id="jobCancel">${tr("job.cancel")}</button></div>${note ? `<p class="hint" style="margin:0">${note}</p>` : ""}</div>`;
 async function jobTick() {
   if (!job) return;
   let p; try { p = await Engine.call("progress_get", { jobId: job.id }); } catch { return; }
@@ -777,7 +792,7 @@ async function jobTick() {
   if (!job || !bar || !txt) return;
   const frac = p.total > 0 ? Math.min(0.99, p.done / p.total) : 0, el = (performance.now() - job.t0) / 1000;
   bar.value = Math.round(frac * 1000);
-  txt.textContent = p.cancelled ? "Wird abgebrochen…" : `${Math.round(frac * 100)} % · ${fmtShort(el)} vergangen` + (frac > 0.05 && el > 2 ? ` · noch ca. ${fmtShort(el / frac - el)}` : "");
+  txt.textContent = p.cancelled ? tr("job.cancelling") : tr("job.elapsed", { pct: Math.round(frac * 100), elapsed: fmtShort(el) }) + (frac > 0.05 && el > 2 ? ` ${tr("job.remaining", { short: fmtShort(el / frac - el) })}` : "");
 }
 /** Runs `fn` and shows the progress meanwhile; returns `undefined` if it was cancelled. */
 async function withJob(fn) {
@@ -785,7 +800,7 @@ async function withJob(fn) {
   job.timer = setInterval(jobTick, 250); document.documentElement.dataset.job = "on";
   try { return await fn(); } finally { clearInterval(job.timer); job = null; document.documentElement.dataset.job = "off"; }
 }
-const isCancelled = e => errText(e) === "Abgebrochen";
+const isCancelled = e => errText(e) === "Abgebrochen"; // i18n: allow (message of the engine, code in #171)
 const jobCancel = async () => {
   const b = document.getElementById("jobCancel"); if (b) b.disabled = true;
   try { await Engine.call("cancel_job", { jobId: job?.id }); } catch (e) { toast(errText(e)); }
@@ -811,23 +826,23 @@ function scenSeconds() {
 function updateEstimates() {
   const o = document.getElementById("est-opt"), sc = document.getElementById("est-scen");
   const er = document.getElementById("est-run");
-  if (er) { const { sec } = bench.us == null ? { sec: null } : scenSeconds(); er.textContent = sec == null ? "" : sec < 1 ? "Dauer: unter 1 s" : `Dauer: ca. ${fmtShort(sec)}`; }
-  const wait = bench.error ? `Dauer nicht schätzbar (${esc(bench.error)}).` : bench.us == null ? "Dauer wird geschätzt…" : null;
+  if (er) { const { sec } = bench.us == null ? { sec: null } : scenSeconds(); er.textContent = sec == null ? "" : sec < 1 ? tr("estimate.underOne") : tr("estimate.approx", { sec: fmtShort(sec) }); }
+  const wait = bench.error ? tr("estimate.notPossible", { error: esc(bench.error) }) : bench.us == null ? tr("estimate.running") : null;
   if (o) {
     const c = document.getElementById("opt-maxRuin") ? readOptCfg() : optFromPlan();
     o.innerHTML = wait ?? (c.strategies.length && c.paths > 0 && c.checkPaths > 0
-      ? `Geschätzte Dauer der Optimierung: ${fmtEstimate(optSeconds(c))}. Sie steigt mit der Anzahl Pfade, Startpunkte und Strategien.` : "");
+      ? tr("estimate.optimization", { estimate: fmtEstimate(optSeconds(c)) }) : "");
   }
   const ew = document.getElementById("est-warn");
   if (ew) {
     const sec = bench.us == null ? null : scenSeconds().sec, slow = sec != null && sec > SLOW_RUN_SECONDS;
     ew.innerHTML = slow ? "⚠" : "";
-    ew.title = slow ? `Die geschätzte Rechenzeit beträgt ca. ${fmtShort(sec)} und liegt über ${SLOW_RUN_SECONDS} s.` : "";
+    ew.title = slow ? tr("estimate.slowRun", { sec: fmtShort(sec), slowRunSeconds: SLOW_RUN_SECONDS }) : "";
     ew.setAttribute("role", slow ? "img" : "presentation"); ew.setAttribute("aria-label", ew.title);
   }
   if (sc) {
     const { runs, sec } = scenSeconds(), plain = !state.scenarios.sweeps.length;
-    sc.innerHTML = wait ?? `Geschätzte Dauer ${plain ? "der Simulation" : "von «Simulation starten» (Szenarien)"}: ${fmtEstimate(sec, [0.7, 1.5])}${plain ? "" : `, ${fmtInt(runs)} Läufe`}.`;
+    sc.innerHTML = wait ?? `${tr("estimate.title")} ${plain ? tr("estimate.simulation") : tr("estimate.scenarios")}: ${fmtEstimate(sec, [0.7, 1.5])}${plain ? "" : tr("estimate.runs", { runs: fmtInt(runs) })}.`;
   }
 }
 async function ensureBench() {
@@ -869,18 +884,18 @@ const rangeShow = (d, v) => d.percent ? optRound(v * 100) : v;
 const rangeUnit = d => d.unit === "%" ? "%" : d.unit;
 const variedParams = s => s.params.filter(d => !rangeOf(s.key, d).fixed);
 function optRangesHtml() {
-  if (!optCat.data) return `<p class="hint">Parameter werden geladen…</p>`;
+  if (!optCat.data) return `<p class="hint">${tr("optRanges.loading")}</p>`;
   return optCat.data.map(s => {
     const n = variedParams(s).length, sel = optCfg.strategies.includes(s.key);
     const rows = s.params.map(d => {
       const r = rangeOf(s.key, d), id = `optR-${s.key}-${d.key}`, off = r.fixed ? "disabled" : "";
       return `<tr><td>${esc(d.label)}</td><td class="r">${d.current == null ? "–" : `${fmtNum(rangeShow(d, d.current))} ${rangeUnit(d)}`}</td>
-        <td><label class="check"><input type="checkbox" id="${id}-var" ${r.fixed ? "" : "checked"}> variieren</label></td>
-        <td style="white-space:nowrap">von <input class="num" id="${id}-lo" value="${rangeShow(d, r.lo)}" ${off} style="width:68px"> bis <input class="num" id="${id}-hi" value="${rangeShow(d, r.hi)}" ${off} style="width:68px"> ${rangeUnit(d)}</td></tr>`;
+        <td><label class="check"><input type="checkbox" id="${id}-var" ${r.fixed ? "" : "checked"}> ${tr("optRanges.vary")}</label></td>
+        <td style="white-space:nowrap">${tr("optRanges.from")} <input class="num" id="${id}-lo" value="${rangeShow(d, r.lo)}" ${off} style="width:68px"> ${tr("optRanges.to")} <input class="num" id="${id}-hi" value="${rangeShow(d, r.hi)}" ${off} style="width:68px"> ${rangeUnit(d)}</td></tr>`;
     }).join("");
-    return `<details class="optrange" ${sel ? "" : "style=\"opacity:.7\""}><summary><b>${esc(s.name)}</b> <span class="computed">${n === 0 ? "alle Parameter fix" : `${n} von ${s.params.length} Parametern variiert`}${sel ? "" : " · Strategie nicht gewählt"}</span></summary>
-      <table class="tbl"><tr><th>Parameter</th><th class="r">in der Planung</th><th></th><th>Bandbreite der Suche</th></tr>${rows}</table>
-      <div style="margin:6px 0 10px"><button class="btn small" data-action="opt-range-reset" data-s="${s.key}">Standard-Bandbreiten</button></div></details>`;
+    return `<details class="optrange" ${sel ? "" : "style=\"opacity:.7\""}><summary><b>${esc(s.name)}</b> <span class="computed">${n === 0 ? tr("optRanges.allFixed") : tr("optRanges.varied", { n, length: s.params.length })}${sel ? "" : tr("optRanges.notChosen")}</span></summary>
+      <table class="tbl"><tr><th>${tr("optRanges.params")}</th><th class="r">${tr("optRanges.inPlan")}</th><th></th><th>${tr("optRanges.range")}</th></tr>${rows}</table>
+      <div style="margin:6px 0 10px"><button class="btn small" data-action="opt-range-reset" data-s="${s.key}">${tr("optRanges.defaults")}</button></div></details>`;
   }).join("");
 }
 function onRangeInput(e) {
@@ -896,7 +911,7 @@ function onRangeInput(e) {
   optCfg.ranges = { ...(optCfg.ranges ?? {}), [sk]: { ...(optCfg.ranges?.[sk] ?? {}), [pk]: next } };
   saveOptCfg(); updateEstimates();
   const s = optCat.data.find(x => x.key === sk), sum = e.target.closest("details")?.querySelector("summary .computed");
-  if (sum) { const n = variedParams(s).length; sum.textContent = (n === 0 ? "alle Parameter fix" : `${n} von ${s.params.length} Parametern variiert`) + (optCfg.strategies.includes(sk) ? "" : " · Strategie nicht gewählt"); }
+  if (sum) { const n = variedParams(s).length; sum.textContent = (n === 0 ? tr("optRanges.allFixed") : tr("optRanges.varied", { n, length: s.params.length })) + (optCfg.strategies.includes(sk) ? "" : tr("optRanges.notChosen")); }
 }
 document.addEventListener("change", e => { if (/^optR-/.test(e.target.id || "") && e.target.closest("#main")) onRangeInput(e); });
 OPT_ACTIONS["opt-range-reset"] = d => {
@@ -912,67 +927,67 @@ function optResultKeep(r, q, stale) {
   const row = (name, m, extra, cls = "") => `<tr class="${cls}"><td><b>${esc(name)}</b></td><td class="r"><b>${pctTxt(m.emergencyShare)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td>
     <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td><td>${extra}</td></tr>`;
   const none = !r.outcomes.some(x => x.feasible);
-  return `<div class="card"><h3>Ergebnis · Ziel 2 «Kein Notverkauf von Immobilien» <span class="sub">geprüft auf ${fmtInt(r.checkPaths)} unabhängigen Pfaden · Konsum pro Jahr in Preisen ${ymShow(i2ym(startM()))}</span></h3>
-    ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">Die Planung wurde seit dieser Optimierung geändert – bitte neu starten.</p>` : ""}
-    ${none ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">Keine Strategie erfüllt die Nebenbedingungen (Ruin höchstens ${pctTxt(q.maxRuin)}, Median des Konsums mindestens ${pctTxt(q.minConsumption)} der geplanten Ausgaben). Angezeigt ist die Strategie, die ihnen am nächsten kommt.</p>` : ""}
-    <div class="tscroll"><table class="tbl"><tr><th>Strategie</th><th class="r" title="Anteil der Läufe mit mindestens einem ungeplanten Immobilienverkauf (Notverkauf)">Ungeplanter Verkauf</th><th class="r">Ruin</th><th class="r">Median Konsum</th><th class="r" title="Median des Konsums im Verhältnis zu den geplanten Ausgaben">Anteil der Planung</th><th></th></tr>
-    ${row(`Ausgangslage (${r.reference.strategy})`, r.reference.metrics, "wie in der Planung")}
+  return `<div class="card"><h3>${tr("optResult.titleGoal2")} <span class="sub">${tr("optResult.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
+    ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : ""}
+    ${none ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.none", { maxRuin: pctTxt(q.maxRuin), minConsumption: pctTxt(q.minConsumption) })}</p>` : ""}
+    <div class="tscroll"><table class="tbl"><tr><th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th><th></th></tr>
+    ${row(tr("optResult.reference", { strategy: r.reference.strategy }), r.reference.metrics, tr("optResult.asInPlan"))}
     ${r.outcomes.map((x, i) => row(x.strategy + (i === 0 && x.feasible ? " ★" : ""), x.validated,
-      `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">Nebenbedingungen nicht eingehalten</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">In Planung übernehmen</button></div>`, x.feasible ? "" : "off")).join("")}
+      `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">${tr("optResult.constraintsViolated")}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div>`, x.feasible ? "" : "off")).join("")}
     </table></div>
-    <p class="hint">Reihenfolge: zuerst der geringste Anteil an Läufen mit ungeplantem Verkauf, bei Gleichstand die geringere Ruinwahrscheinlichkeit. Ruin = Anteil der Pfade, in denen das Vermögen${q.ruinAge ? ` bis Alter ${q.ruinAge}` : " bis zum Simulationsende"} aufgebraucht ist. Rechenzeit ${(r.elapsedMs / 1000).toFixed(1)} s. Dies ist eine Modellrechnung, keine Anlageberatung.</p></div>`;
+    <p class="hint">${tr("optResult.order")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optResult.footer", { v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
 }
 R.optimize = () => {
   optCfg = optFromPlan();
   const o = lastOpt, stale = o && optKey() !== o.planJson;
   const single = ["fixed", "historical"].includes(state.returns.source);
   let res = "";
-  if (optBusy) res = jobCard("Optimierung läuft…", "Je nach Anzahl Pfade und Strategien dauert das einige Sekunden bis eine Minute. Die Berechnung läuft lokal auf diesem Rechner.");
+  if (optBusy) res = jobCard(tr("optimize.running"), tr("optimize.runningHint"));
   else if (optError) res = `<div class="card errcard">${esc(optError)}</div>`;
   else if (o) {
     const r = o.report, q = o.req, w = q.weightMedian;
     const goal = m => (w * m.median + (1 - w) * m.p10) * Math.max(0, 1 - q.volWeight * m.volatility);
     const best = Math.max(1, goal(r.reference.metrics), ...r.outcomes.map(x => goal(x.validated)));
     if (q.goal === "keepProperty") res = optResultKeep(r, q, stale);
-    else res = `<div class="card"><h3>Ergebnis <span class="sub">geprüft auf ${fmtInt(r.checkPaths)} unabhängigen Pfaden · Konsum pro Jahr in Preisen ${ymShow(i2ym(startM()))}, inkl. Wohnkosten, vor Steuern</span></h3>
-      ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">Die Planung wurde seit dieser Optimierung geändert – bitte neu starten.</p>` : ""}
-      <div class="tscroll"><table class="tbl"><tr><th>Strategie</th><th class="r">Ruin</th><th class="r">Median</th><th class="r">P10</th><th class="r">Schwankung</th><th class="r">Ziel</th><th class="r" title="Entnahme für Lebenshaltung und Wohnen minus Einnahmen (vor Steuern) im ersten Jahr der Pensionierung, in Prozent des liquiden Vermögens (Median über die Pfade)">Entnahmerate</th><th>Parameter</th></tr>
-      ${optMetricsRow(`Ausgangslage (${r.reference.strategy})`, r.reference.metrics, goal(r.reference.metrics), best, "wie in der Planung", r.reference.metrics.ruin > q.maxRuin ? "" : "")}
+    else res = `<div class="card"><h3>${tr("optimize.result")} <span class="sub">${tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
+      ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : ""}
+      <div class="tscroll"><table class="tbl"><tr><th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th><th>${tr("optRanges.params")}</th></tr>
+      ${optMetricsRow(tr("optResult.reference", { strategy: r.reference.strategy }), r.reference.metrics, goal(r.reference.metrics), best, tr("optResult.asInPlan"), r.reference.metrics.ruin > q.maxRuin ? "" : "")}
       ${r.outcomes.map((x, i) => optMetricsRow(x.strategy + (i === 0 && x.feasible ? " ★" : ""), x.validated, goal(x.validated), best,
-        `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">Ruingrenze nicht eingehalten</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">In Planung übernehmen</button></div>`, x.feasible ? "" : "off")).join("")}
+        `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">${tr("optimize.ruinViolated")}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div>`, x.feasible ? "" : "off")).join("")}
       </table></div>
-      <p class="hint">Ruin = Anteil der Pfade, in denen das Vermögen${q.ruinAge ? ` bis Alter ${q.ruinAge}` : " bis zum Simulationsende"} aufgebraucht ist (Grenze ${pctTxt(q.maxRuin)}). Median und P10: mittlerer bzw. schlechter Jahreskonsum über alle Pfade und Jahre ab der Pensionierung. Schwankung: mittlere Änderung des Jahreskonsums gegenüber dem Vorjahr. Ziel = (${Math.round(w * 100)} % Median + ${Math.round((1 - w) * 100)} % P10) × (1 − ${q.volWeight} × Schwankung); Strategien, die die Ruingrenze nicht einhalten, sind ausgegraut. Fixe Parameter (unter «Parameter der Strategien») bleiben wie in der Planung, auch Untergrenze und Obergrenze der Lebenshaltung, wenn Sie sie nicht variieren lassen.</p>
-      <p class="hint">Gesucht wurde auf ${fmtInt(r.fitPaths)} Pfaden (Zufallssuche und lokale Verfeinerung, mit Sicherheitsabstand zur Ruingrenze), geprüft auf anderen Pfaden. Rechenzeit ${(r.elapsedMs / 1000).toFixed(1)} s. Ein Optimum gilt nur für diese Eingaben und Renditen – am besten mit einer zweiten Renditequelle (Bootstrap und parametrisch) gegenprüfen. Dies ist eine Modellrechnung, keine Anlageberatung.</p></div>`;
+      <p class="hint">${tr("optimize.ruinDef")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optimize.ruinFooter", { maxRuin: pctTxt(q.maxRuin), round: Math.round(w * 100), round2: Math.round((1 - w) * 100), volWeight: q.volWeight })}</p>
+      <p class="hint">${tr("optimize.searchFooter", { fitPaths: fmtInt(r.fitPaths), v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
   }
-  return `<h2>Optimierung</h2><p class="lead">Beste Entnahmestrategie für dieses Basisszenario: Der Ruin soll unter der Grenze bleiben, der Konsum möglichst hoch und gleichmässig sein.</p>
-  ${single ? `<div class="card errcard">Die Renditequelle «${state.returns.source === "fixed" ? "fixe Renditen" : "historischer Verlauf"}» ergibt nur einen Pfad – Ruin ist dann 0 % oder 100 %. Bitte unter «Simulation» Monte Carlo oder rollierende Verläufe wählen.</div>` : ""}
-  <div class="card"><h3>Ziel</h3>
-    <label class="field" style="max-width:520px"><span>Optimierungsziel</span><select class="plain" id="opt-goal">
-      <option value="consumption" ${optCfg.goal === "consumption" ? "selected" : ""}>1 · Konsum bei begrenztem Ruinrisiko</option>
-      <option value="keepProperty" ${optCfg.goal === "keepProperty" ? "selected" : ""} ${hasProperties() ? "" : "disabled"}>2 · Kein Notverkauf von Immobilien</option></select>
-      ${hasProperties() ? "" : `<span class="computed">Ziel 2 braucht mindestens eine Immobilie in der Planung.</span>`}</label>
+  return `<h2>${tr("section.optimize")}</h2><p class="lead">${tr("optimize.intro")}</p>
+  ${single ? `<div class="card errcard">${tr("optimize.singlePathPre")}${state.returns.source === "fixed" ? tr("optimize.fixedReturns") : tr("optimize.historicalPath")}${tr("optimize.singlePathPost")}</div>` : ""}
+  <div class="card"><h3>${tr("optimize.goal")}</h3>
+    <label class="field" style="max-width:520px"><span>${tr("optimize.goalTitle2")}</span><select class="plain" id="opt-goal">
+      <option value="consumption" ${optCfg.goal === "consumption" ? "selected" : ""}>${tr("optimize.goal1")}</option>
+      <option value="keepProperty" ${optCfg.goal === "keepProperty" ? "selected" : ""} ${hasProperties() ? "" : "disabled"}>${tr("optimize.goal2")}</option></select>
+      ${hasProperties() ? "" : `<span class="computed">${tr("optimize.goal2NeedsProperty")}</span>`}</label>
     <div class="grid3" style="margin-top:10px">
-    ${optInput("maxRuin", "Höchste Ruinwahrscheinlichkeit", "%")}
-    ${optInput("ruinAge", "Ruin zählt bis Alter", "J.", "leer = bis Simulationsende")}
-    ${optCfg.goal === "keepProperty" ? optInput("minConsumption", "Mindestkonsum (Median)", "%", "Anteil der geplanten Ausgaben ab Pensionierung")
-      : `${optInput("weightMedian", "Gewicht des Medians im Konsumziel", "%", "Rest: 10-%-Perzentil")}
-    ${optInput("volWeight", "Abzug für Schwankung", "×", "0 = ignorieren")}
-    ${optInput("maxVol", "Höchste Schwankung", "%", "leer = keine Grenze")}`}</div>
-    ${optCfg.goal === "keepProperty" ? `<p class="hint">Gesucht wird die Strategie mit dem geringsten Anteil an Läufen, in denen eine Immobilie ungeplant (Notverkauf) verkauft wird. Bei gleichem Anteil entscheidet die geringere Ruinwahrscheinlichkeit.</p>` : ""}
-    <h3 style="margin-top:14px">Strategien</h3>
+    ${optInput("maxRuin", tr("optimize.maxRuin"), "%")}
+    ${optInput("ruinAge", tr("optimize.ruinAge"), tr("unit.yearsShort"), tr("optimize.ruinAgeHint"))}
+    ${optCfg.goal === "keepProperty" ? optInput("minConsumption", tr("optimize.minConsumption"), "%", tr("optimize.minConsumptionHint"))
+      : `${optInput("weightMedian", tr("optimize.weightMedian"), "%", tr("optimize.weightMedianHint"))}
+    ${optInput("volWeight", tr("optimize.volWeight"), "×", tr("optimize.volWeightHint"))}
+    ${optInput("maxVol", tr("optimize.maxVol"), "%", tr("optimize.maxVolHint"))}`}</div>
+    ${optCfg.goal === "keepProperty" ? `<p class="hint">${tr("optimize.goal2Intro")}</p>` : ""}
+    <h3 style="margin-top:14px">${tr("optimize.strategies")}</h3>
     <div style="display:flex;flex-wrap:wrap;gap:6px 20px">${OPT_STRATS.map(([k, t]) => `<label class="check"><input type="checkbox" id="optS-${k}" ${optCfg.strategies.includes(k) ? "checked" : ""}> ${t}</label>`).join("")}</div>
-    <h3 style="margin-top:14px">Parameter der Strategien</h3>
-    <p class="hint" style="margin:0 0 6px">Je Strategie legen Sie fest, welche Parameter fix auf dem Wert der Planung bleiben und welche in welcher Bandbreite variiert werden. Die Bandbreite gilt in der Einheit des Parameters: Jahre in Jahren, Prozent in Prozent.</p>
+    <h3 style="margin-top:14px">${tr("optimize.strategyParams")}</h3>
+    <p class="hint" style="margin:0 0 6px">${tr("optimize.strategyParamsHint")}</p>
     ${optRangesHtml()}
-    <details style="margin-top:12px"><summary class="hint">Erweitert</summary><div class="grid3" style="margin-top:8px">
-      ${optInput("paths", "Pfade für die Suche", "", "mehr = genauer, langsamer")}${optInput("checkPaths", "Pfade für die Prüfung", "")}${optInput("samples", "Zufällige Startpunkte pro Strategie", "")}</div></details>
-    <div style="margin-top:14px"><button class="btn primary" data-action="opt-run" ${optBusy || single ? "disabled" : ""}>${optBusy ? "Läuft…" : "Optimierung starten"}</button></div>
+    <details style="margin-top:12px"><summary class="hint">${tr("optimize.advanced")}</summary><div class="grid3" style="margin-top:8px">
+      ${optInput("paths", tr("optimize.fitPaths"), "", tr("optimize.fitPathsHint"))}${optInput("checkPaths", tr("optimize.checkPaths"), "")}${optInput("samples", tr("optimize.samples"), "")}</div></details>
+    <div style="margin-top:14px"><button class="btn primary" data-action="opt-run" ${optBusy || single ? "disabled" : ""}>${optBusy ? tr("optimize.runningShort") : tr("optimize.start")}</button></div>
     <p class="hint est" id="est-opt" style="margin:8px 0 0"></p></div>
   ${res}${o && !optBusy && !optError ? `<footer class="rfoot" id="optFoot">${esc(DISCLAIMER_FOOT)}</footer>` : ""}`;
 };
 /** #140: Integer of the optimization; «50.000» is ambiguous and is not taken as 50 (the previous value stays). */
 function optInt(text, prev) {
-  if (ambiguousThousands(text)) { toast(AMBIGUOUS_TEXT); return prev; }
+  if (ambiguousThousands(text)) { toast(ambiguousText()); return prev; }
   return Math.round(optNum(text, prev));
 }
 function readOptCfg() {
@@ -986,14 +1001,14 @@ function readOptCfg() {
 OPT_ACTIONS["opt-run"] = async () => {
   if (await blockedByErrors()) return;
   const c = readOptCfg();
-  if (!c.strategies.length) return toast("Bitte mindestens eine Strategie wählen.");
+  if (!c.strategies.length) return toast(tr("optimize.chooseStrategy"));
   const req = { goal: c.goal, minConsumption: c.minConsumption / 100, strategies: c.strategies, maxRuin: c.maxRuin / 100, ruinAge: c.ruinAge === "" ? null : optNum(c.ruinAge, null), weightMedian: clamp(c.weightMedian / 100, 0, 1),
     volWeight: c.volWeight, maxVol: c.maxVol === "" ? null : optNum(c.maxVol, 0) / 100, paths: c.paths, checkPaths: c.checkPaths, samples: c.samples, seed: 1, ranges: c.ranges };
   saveOptCfg();
   optBusy = true; optError = null; renderSection();
   const planJson = optKey();
   try { const report = await withJob(() => Engine.call("optimize", { plan: state, request: req, path: currentPath, jobId: job.id })); lastOpt = { report, req, planJson }; }
-  catch (e) { if (isCancelled(e)) toast("Optimierung abgebrochen."); else optError = errText(e); }
+  catch (e) { if (isCancelled(e)) toast(tr("optimize.cancelled")); else optError = errText(e); }
   optBusy = false;
   if (current === "optimize") renderSection();
   document.documentElement.dataset.optimized = optError ? "error" : "ok";
@@ -1005,7 +1020,7 @@ OPT_ACTIONS["opt-apply"] = d => {
   state.wealth.stockShare = pt.wealth.stockShare;
   state.wealth.reserveMonths = pt.wealth.reserveMonths;
   markDirty(); lastOpt.planJson = optKey(); renderSection();
-  toast(`Strategie «${x.strategy}» mit den optimierten Parametern in die Planung übernommen.`);
+  toast(tr("optimize.applied", { strategy: x.strategy }));
 };
 
 // ----- Property gains tax (rules per canton, editable) -----
@@ -1016,30 +1031,30 @@ const GAIN_ZH = () => structuredClone(gainTemplates.zurich);
 const GAIN_AG = () => structuredClone(gainTemplates.aargau);
 function gainCard() {
   const g = state.taxes.propertyGain, P = "taxes.propertyGain";
-  const head = `<h3>Grundstückgewinnsteuer</h3>`;
-  const btns = (del) => `<button class="btn small" data-action="gain-zh">Vorlage Kanton Zürich übernehmen</button> <button class="btn small" data-action="gain-ag">Vorlage Kanton Aargau übernehmen</button>${del ? ` <button class="btn small" data-action="gain-del">Regeln entfernen</button>` : ""}`;
+  const head = `<h3>${tr("gain.title")}</h3>`;
+  const btns = (del) => `<button class="btn small" data-action="gain-zh">${tr("gain.templateZh")}</button> <button class="btn small" data-action="gain-ag">${tr("gain.templateAg")}</button>${del ? ` <button class="btn small" data-action="gain-del">${tr("gain.remove")}</button>` : ""}`;
   const needed = state.realestate.properties.some(p => p.status !== "rent");
   if (!g) return `<div class="card${needed ? " errcard" : ""}">${head}<p class="hint" style="margin:0 0 8px">${needed
-    ? `<b>Pflicht:</b> Die Planung enthält eine Immobilie im Besitz oder mit geplantem Kauf. Bitte Vorlage Zürich, Vorlage Aargau oder eigene Regeln erfassen (auch mit Satz 0 %), sonst lässt sich die Simulation nicht starten.`
-    : `Ohne Immobilie im Besitz oder mit geplantem Kauf sind keine Regeln nötig. Die Regeln sind je Kanton verschieden.`}</p>
-    ${btns(false)} <button class="btn small" data-action="gain-own">Eigene Regeln erfassen</button></div>`;
+    ? tr("gain.required")
+    : tr("gain.notRequired")}</p>
+    ${btns(false)} <button class="btn small" data-action="gain-own">${tr("gain.custom")}</button></div>`;
   const rows = (key, cols) => (g[key] ?? []).map((r, i) => `<tr><td>${F(`${P}.${key}.${i}.0`, "", cols[0], { bare: true, unit: cols[2] })}</td><td>${F(`${P}.${key}.${i}.1`, "", "pct", { bare: true })}</td>
     <td><button class="btn ghost small" data-action="list-del" data-path="${P}.${key}" data-i="${i}">✕</button></td></tr>`).join("");
   const aargau = g.model === "aargau";
-  const model = `<div class="seg" style="margin-bottom:10px"><button class="${aargau ? "" : "on"}" data-action="gain-model" data-v="zurich">Modell Zürich</button><button class="${aargau ? "on" : ""}" data-action="gain-model" data-v="aargau">Modell Aargau (eigene Eingabe)</button></div>`;
+  const model = `<div class="seg" style="margin-bottom:10px"><button class="${aargau ? "" : "on"}" data-action="gain-model" data-v="zurich">${tr("gain.modelZh")}</button><button class="${aargau ? "on" : ""}" data-action="gain-model" data-v="aargau">${tr("gain.modelAg")}</button></div>`;
   const tables = aargau
-    ? `<div><table class="tbl"><tr><th>Besitzdauer ab vollen Jahren</th><th>Steuersatz auf den Gewinn</th><th></th></tr>${rows("durationRates", ["num", "", "J."])}</table>
-      <div style="margin-top:8px"><button class="btn small" data-action="gain-add" data-key="durationRates">+ Zeile</button></div>
-      <p class="hint">Der Steuersatz hängt von der Besitzdauer ab und gilt für den ganzen Gewinn (Modell Aargau, § 109 StG: 40 % im ersten Besitzjahr, danach sinkend bis 5 %). Es gilt die letzte Zeile, deren Jahre erreicht sind. Die Besitzdauer folgt aus dem Kaufdatum der Immobilie; ohne Kaufdatum gilt der höchste Satz.</p></div>`
-    : `<div class="grid2"><div><table class="tbl"><tr><th>Stufe: Gewinnteil bis</th><th>Steuersatz</th><th></th></tr>${rows("brackets", ["chf", "", cur()])}</table>
-      <div style="margin-top:8px"><button class="btn small" data-action="gain-add" data-key="brackets">+ Stufe</button></div>
-      <p class="hint">Der Gewinn wird stufenweise besteuert: Die erste Stufe gilt für die ersten Franken, die nächste für die weiteren usw. Über der letzten Stufe gilt deren Satz.</p></div>
-    <div><table class="tbl"><tr><th>Besitzdauer ab vollen Jahren</th><th>Zuschlag / Abzug</th><th></th></tr>${rows("duration", ["num", "", "J."])}</table>
-      <div style="margin-top:8px"><button class="btn small" data-action="gain-add" data-key="duration">+ Zeile</button></div>
-      <p class="hint">Veränderung der Steuer nach Besitzdauer: positiv = Zuschlag (Kurzbesitz), negativ = Abzug (lange Besitzdauer). Es gilt die letzte Zeile, deren Jahre erreicht sind. Die Besitzdauer folgt aus dem Kaufdatum der Immobilie.</p></div></div>`;
+    ? `<div><table class="tbl"><tr><th>${tr("gain.holdingYears")}</th><th>${tr("gain.rate")}</th><th></th></tr>${rows("durationRates", ["num", "", tr("unit.yearsShort")])}</table>
+      <div style="margin-top:8px"><button class="btn small" data-action="gain-add" data-key="durationRates">${tr("series.addRow")}</button></div>
+      <p class="hint">${tr("gain.zhHint")}</p></div>`
+    : `<div class="grid2"><div><table class="tbl"><tr><th>${tr("gain.step")}</th><th>${tr("taxTable.rate")}</th><th></th></tr>${rows("brackets", ["chf", "", cur()])}</table>
+      <div style="margin-top:8px"><button class="btn small" data-action="gain-add" data-key="brackets">${tr("taxTable.addStep")}</button></div>
+      <p class="hint">${tr("gain.agHint")}</p></div>
+    <div><table class="tbl"><tr><th>${tr("gain.holdingYears")}</th><th>${tr("gain.surcharge")}</th><th></th></tr>${rows("duration", ["num", "", tr("unit.yearsShort")])}</table>
+      <div style="margin-top:8px"><button class="btn small" data-action="gain-add" data-key="duration">${tr("series.addRow")}</button></div>
+      <p class="hint">${tr("gain.surchargeHint")}</p></div></div>`;
   return `<div class="card">${head}${model}${tables}
-    <div class="grid3" style="margin-top:10px">${F(P + ".exemptBelow", "Gewinne unter … sind steuerfrei", "chf")}${F(P + ".reduction", "Feste Ermässigung", "pct")}</div>
-    <div style="margin-top:10px">${Chk(P + ".useMultiplier", "Mit dem Steuerfuss (Kanton + Gemeinde) multiplizieren")}</div>
+    <div class="grid3" style="margin-top:10px">${F(P + ".exemptBelow", tr("gain.exempt"), "chf")}${F(P + ".reduction", tr("gain.reduction"), "pct")}</div>
+    <div style="margin-top:10px">${Chk(P + ".useMultiplier", tr("gain.multiplier"))}</div>
     <div style="margin-top:10px">${btns(true)}</div></div>`;
 }
 Object.assign(OPT_ACTIONS, {
@@ -1059,16 +1074,17 @@ Object.assign(OPT_ACTIONS, {
     markDirty(); renderSection();
   }
 });
-R.taxes = () => `<h2>Steuern</h2><p class="lead">Einfache Satztabellen; zwischen den Stufen wird linear interpoliert und mit dem Steuerfuss multipliziert.</p>
-  <div class="card"><div class="grid3">${F("taxes.multiplier", "Steuerfuss (Kanton + Gemeinde)", "num", { unit: "×" })}</div></div>
-  <div class="card">${TaxTable("income", "Einkommenssteuer", "Einkommen")}${TaxTable("wealth", "Vermögenssteuer", "Vermögen")}${TaxTable("capital", "Kapitalbezugssteuer", "Kapitalbezug")}</div>
+R.taxes = () => `<h2>${tr("section.taxes")}</h2><p class="lead">${tr("taxes.intro")}</p>
+  <div class="card"><div class="grid3">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div></div>
+  <div class="card">${TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income"))}${TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"))}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}</div>
   ${gainCard()}
-  ${state.partner && state.household.married ? `<div class="card"><h3>Verheiratete</h3>
-    <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> Eigene Tabellen für Verheiratete verwenden</label>
-    <p class="hint">Ohne eigene Tabellen gelten die obigen für den ganzen Haushalt (gemeinsames Einkommen und Vermögen). Die Tabellen für Verheiratete ersetzen sie bei zwei Personen.</p>
-    ${state.taxes.couple ? TaxTable("couple.income", "Einkommenssteuer (Verheiratete)", "Einkommen") + TaxTable("couple.wealth", "Vermögenssteuer (Verheiratete)", "Vermögen") + TaxTable("couple.capital", "Kapitalbezugssteuer (Verheiratete)", "Kapitalbezug") : ""}</div>` : ""}`;
+  ${state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
+    <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
+    <p class="hint">${tr("taxes.marriedHint")}</p>
+    ${state.taxes.couple ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : ""}</div>` : ""}`;
 
-const PSTAT = [["owned", "Besitz"], ["planned", "Kauf geplant"], ["rent", "Miete geplant"]];
+let PSTAT;
+onLanguage(() => PSTAT = [["owned", tr("property.owned")], ["planned", tr("property.planned")], ["rent", tr("property.rent")]]);
 /** #50: Period that only starts from the AHV payout (then only direct amortization). */
 function periodAfterAhv(p, t, k) {
   const r = trancheSchedule(p, t).find(x => x.i === k);
@@ -1078,73 +1094,73 @@ function MortgageUI(p, i) {
   const M = `realestate.properties.${i}.mortgage`, mg = p.mortgage, multi = mg.tranches.length > 1, owned = p.status === "owned";
   const anyIndirect = mg.tranches.some(t => t.periods.some(d => d.amortMode === "indirect" && d.amort > 0));
   const maxLoan = !owned && mg.amountMode === "maxLoan";
-  const mode = owned ? "" : `<div class="grid2" style="margin-bottom:10px"><label class="field"><span>Hypothek beim Kauf</span>${Sel(M + ".amountMode", [["fixed", "Betrag wie erfasst"], ["maxLoan", "80 % des Kaufpreises (Minimum Eigenmittel), gekürzt falls nicht tragbar"]], { rerender: 1 })}</label></div>
-    ${maxLoan && multi ? `<p class="hint" style="margin-top:-4px">Die Hypothek wird im Verhältnis der Anteile auf die Tranchen verteilt.</p>` : ""}`;
+  const mode = owned ? "" : `<div class="grid2" style="margin-bottom:10px"><label class="field"><span>${tr("mortgage.atPurchase")}</span>${Sel(M + ".amountMode", [["fixed", tr("mortgage.asEntered")], ["maxLoan", tr("mortgage.eightyPct")]], { rerender: 1 })}</label></div>
+    ${maxLoan && multi ? `<p class="hint" style="margin-top:-4px">${tr("mortgage.splitHint")}</p>` : ""}`;
   const tranches = mg.tranches.map((t, ti) => {
     const T = `${M}.tranches.${ti}`;
     const rows = t.periods.map((d, k) => {
       const D = `${T}.periods.${k}`;
-      return `<tr><td style="white-space:nowrap">${k ? `Anschl. ${k}` : owned ? "Laufend" : "Erste"}</td>
-        <td>${Sel(D + ".type", [["fixed", "Fest"], ["saron", "SARON"]], { rerender: 1 })}</td>
-        <td>${F(D + ".term", "", "years", { bare: true, unit: "J." })}</td>
-        <td>${d.type === "saron" ? F(D + ".margin", "", "pct", { bare: true, unit: "% Marge" }) : F(D + ".rate", "", "pct", { bare: true })}</td>
-        <td><div class="refwrap">${F(D + ".amort", "", "chf", { bare: true })}${periodAfterAhv(p, t, k) ? `<span class="computed" style="padding:8px 4px" title="Ab dem AHV-Bezug ist nur direkte Amortisation möglich.">direkt (ab AHV)</span>` : Sel(D + ".amortMode", [["direct", "direkt"], ["indirect", "indirekt"]], { rerender: 1 })}</div></td>
+      return `<tr><td style="white-space:nowrap">${k ? tr("mortgage.followUp", { k }) : owned ? tr("mortgage.current") : tr("mortgage.first")}</td>
+        <td>${Sel(D + ".type", [["fixed", tr("mortgage.fixed")], ["saron", "SARON"]], { rerender: 1 })}</td>
+        <td>${F(D + ".term", "", "years", { bare: true, unit: tr("unit.yearsShort") })}</td>
+        <td>${d.type === "saron" ? F(D + ".margin", "", "pct", { bare: true, unit: tr("mortgage.margin") }) : F(D + ".rate", "", "pct", { bare: true })}</td>
+        <td><div class="refwrap">${F(D + ".amort", "", "chf", { bare: true })}${periodAfterAhv(p, t, k) ? `<span class="computed" style="padding:8px 4px" title="${tr("mortgage.directOnly")}">${tr("mortgage.directFromAhv")}</span>` : Sel(D + ".amortMode", [["direct", tr("mortgage.direct")], ["indirect", tr("mortgage.indirect")]], { rerender: 1 })}</div></td>
         <td style="white-space:nowrap">${C("mrow", `${i}:${ti}:${k}`)}</td>
-        <td>${k ? `<button class="btn ghost small" data-action="list-del" data-path="${T}.periods" data-i="${k}" title="Periode entfernen">✕</button>` : ""}</td></tr>`;
+        <td>${k ? `<button class="btn ghost small" data-action="list-del" data-path="${T}.periods" data-i="${k}" title="${tr("mortgage.removePeriod")}">✕</button>` : ""}</td></tr>`;
     }).join("");
     return `<div class="tranche">
-      ${multi ? `<div class="thead">${F(T + ".name", "", "text", { bare: true })}<button class="btn ghost small" data-action="list-del" data-path="${M}.tranches" data-i="${ti}" title="Tranche entfernen">✕</button></div>` : ""}
-      <div class="grid3">${maxLoan ? (multi ? F(T + ".amount", "Anteil (Verhältnis)", "num") : `<label class="field"><span>Betrag bei Kauf</span><span class="computed" style="padding:8px 0">wird beim Kauf berechnet</span></label>`) : F(T + ".amount", owned ? "Betrag heute" : "Betrag bei Kauf", "chf")}
-        ${owned ? F(T + ".start", "Beginn der laufenden Periode", "month") : `<label class="field"><span>Beginn</span><span class="computed" style="padding:8px 0">beim Kauf (${esc(msName(p.buy))})</span></label>`}
-        <label class="field"><span>Nach der letzten Periode</span>${Sel(T + ".after", [["renew", "Wie letzte Periode verlängern"], ["repay", "Restschuld zurückzahlen"]])}</label>
-        ${state.household.persons.length > 1 && t.periods.some(d => d.amortMode === "indirect") ? `<label class="field"><span>Säule 3a für die indirekte Amortisation</span>${Sel(T + ".pillar3a", state.household.persons.map(q => [q.id, q.name || q.id]))}</label>` : ""}</div>
-      <div style="overflow-x:auto"><table class="tbl mtbl"><colgroup><col style="width:68px"><col style="width:90px"><col style="width:72px"><col style="width:112px"><col style="width:206px"><col><col style="width:28px"></colgroup><tr><th>Periode</th><th>Art</th><th>Laufzeit</th><th>Zins p.a.</th><th>Amortisation pro Quartal</th><th>Zeitraum / Restschuld</th><th></th></tr>${rows}</table></div>
-      <div style="margin-top:8px"><button class="btn small" data-action="period-add" data-i="${i}" data-t="${ti}">+ Anschlusshypothek</button></div></div>`;
+      ${multi ? `<div class="thead">${F(T + ".name", "", "text", { bare: true })}<button class="btn ghost small" data-action="list-del" data-path="${M}.tranches" data-i="${ti}" title="${tr("mortgage.removeTranche")}">✕</button></div>` : ""}
+      <div class="grid3">${maxLoan ? (multi ? F(T + ".amount", tr("mortgage.share"), "num") : `<label class="field"><span>${tr("mortgage.amountAtPurchase")}</span><span class="computed" style="padding:8px 0">${tr("mortgage.computedAtPurchase")}</span></label>`) : F(T + ".amount", owned ? tr("mortgage.amountToday") : tr("mortgage.amountAtPurchase"), "chf")}
+        ${owned ? F(T + ".start", tr("mortgage.currentStart"), "month") : `<label class="field"><span>${tr("mortgage.start")}</span><span class="computed" style="padding:8px 0">${tr("mortgage.atPurchaseDate", { esc: esc(msName(p.buy)) })}</span></label>`}
+        <label class="field"><span>${tr("mortgage.afterLast")}</span>${Sel(T + ".after", [["renew", tr("mortgage.extend")], ["repay", tr("mortgage.repay")]])}</label>
+        ${state.household.persons.length > 1 && t.periods.some(d => d.amortMode === "indirect") ? `<label class="field"><span>${tr("mortgage.pillar3a")}</span>${Sel(T + ".pillar3a", state.household.persons.map(q => [q.id, q.name || q.id]))}</label>` : ""}</div>
+      <div style="overflow-x:auto"><table class="tbl mtbl"><colgroup><col style="width:68px"><col style="width:90px"><col style="width:72px"><col style="width:112px"><col style="width:206px"><col><col style="width:28px"></colgroup><tr><th>${tr("mortgage.period")}</th><th>${tr("mortgage.type")}</th><th>${tr("mortgage.term")}</th><th>${tr("mortgage.rate")}</th><th>${tr("mortgage.amortQuarter")}</th><th>${tr("mortgage.periodDebt")}</th><th></th></tr>${rows}</table></div>
+      <div style="margin-top:8px"><button class="btn small" data-action="period-add" data-i="${i}" data-t="${ti}">${tr("mortgage.addFollowUp")}</button></div></div>`;
   }).join("");
-  const p3a = anyIndirect ? `<p class="hint">Indirekte Amortisation fliesst in die <a href="#" data-action="goto" data-sec="pillar3a">Säule 3a</a> und ist nur bis zum AHV-Bezug möglich; ab dem AHV-Bezug wird direkt amortisiert. Perioden, die ab dem AHV-Bezug beginnen, amortisieren immer direkt.</p>` : "";
-  return `<h4>Hypothek</h4>${mode}${tranches}
-    <div style="margin:4px 0 0"><button class="btn small" data-action="tranche-add" data-i="${i}">+ Tranche (Aufteilung)</button></div>
+  const p3a = anyIndirect ? `<p class="hint">${tr("mortgage.indirectHint")}</p>` : "";
+  return `<h4>${tr("mortgage.title")}</h4>${mode}${tranches}
+    <div style="margin:4px 0 0"><button class="btn small" data-action="tranche-add" data-i="${i}">${tr("mortgage.addTranche")}</button></div>
     <p class="hint">${C("mort", i)}</p>${p3a}`;
 }
-R.realestate = () => `<h2>Immobilien</h2><p class="lead">Eigene, geplante und gemietete Objekte. Kauf- und Verkaufszeitpunkte können Meilensteine sein.</p>
-  <div class="card"><h3>Notverkauf</h3>${Series("realestate.emergencyMonths", "Schwelle", "months", "Notverkauf, wenn das liquide Vermögen weniger Monate ungedeckter Ausgaben deckt")}
-    <p class="hint">Nach dem Verkauf der letzten Immobilie wird ein Objekt mit Kauf «nach Verkauf» gekauft, sofern tragbar; sonst beginnen die Mieten «nach Verkauf».</p></div>
-  <div class="card"><h3>Tragbarkeit <span class="sub">für Käufe «nach Verkauf»</span></h3><div class="grid3">
-    ${F("realestate.affordability.sustainability", "Höchstens vom Einkommen", "pct")}${F("realestate.affordability.imputedRate", "Kalkulatorischer Zins", "pct")}${F("realestate.affordability.fixCosts", "Nebenkosten p.a. (vom Preis)", "pct")}
-    ${F("realestate.affordability.maxLoanToValue", "Höchste Belehnung", "pct")}</div>
-    <p class="hint">Angerechnet wird nur das Einkommen (Erwerb und Renten), nicht die Entnahme aus dem Vermögen. Reicht es nicht, wird die Hypothek gekürzt; die Simulation zeigt die Einmalrückzahlung beim Kauf als Ereignis.</p></div>
+R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("realestate.intro")}</p>
+  <div class="card"><h3>${tr("realestate.emergency")}</h3>${Series("realestate.emergencyMonths", tr("realestate.threshold"), "months", tr("realestate.emergencyHint"))}
+    <p class="hint">${tr("realestate.afterSaleHint")}</p></div>
+  <div class="card"><h3>${tr("realestate.affordability")} <span class="sub">${tr("realestate.forAfterSale")}</span></h3><div class="grid3">
+    ${F("realestate.affordability.sustainability", tr("realestate.maxIncomeShare"), "pct")}${F("realestate.affordability.imputedRate", tr("realestate.imputedRate"), "pct")}${F("realestate.affordability.fixCosts", tr("realestate.costs"), "pct")}
+    ${F("realestate.affordability.maxLoanToValue", tr("realestate.maxLtv"), "pct")}</div>
+    <p class="hint">${tr("realestate.affordabilityHint")}</p></div>
   ${state.realestate.properties.map((p, i) => {
     const P = `realestate.properties.${i}`;
     let body = "";
-    if (p.status === "rent") body = `<div class="grid2"><label class="field"><span>Miete ab</span>${Ref(P + ".from", { afterSale: true, self: p.id })}</label>${F(P + ".rent", "Miete pro Monat (heutiger Wert)", "chf")}</div>
-      <div style="margin-top:10px">${Chk(P + ".inflationRent", "Miete mit Inflation anpassen")}</div>`;
+    if (p.status === "rent") body = `<div class="grid2"><label class="field"><span>${tr("realestate.rentFrom")}</span>${Ref(P + ".from", { afterSale: true, self: p.id })}</label>${F(P + ".rent", tr("realestate.rentMonth"), "chf")}</div>
+      <div style="margin-top:10px">${Chk(P + ".inflationRent", tr("realestate.rentIndexed"))}</div>`;
     else body = `<div class="grid2 pgrid">
-      ${p.status === "owned" ? F(P + ".bought", "Kaufdatum", "month") : `<label class="field"><span>Kauf ab</span>${Ref(P + ".buy", { afterSale: true, self: p.id })}</label>`}
-      ${F(P + ".price", p.status === "owned" ? "Kaufpreis (bezahlt)" : "Kaufpreis", "chf")}
-      <label class="field"><span>Verkauf ab</span>${Ref(P + ".sell", { never: true })}</label>
-      ${F(P + ".fixCosts", "Nebenkosten / Monat", "chf")}</div>
-      <div class="grid3" style="margin-top:10px">${Chk(P + ".inflationValue", "Wert mit Inflation anpassen")}${Chk(P + ".inflationFixCosts", "Nebenkosten mit Inflation anpassen")}</div>
+      ${p.status === "owned" ? F(P + ".bought", tr("realestate.buyDate"), "month") : `<label class="field"><span>${tr("realestate.buyFrom")}</span>${Ref(P + ".buy", { afterSale: true, self: p.id })}</label>`}
+      ${F(P + ".price", p.status === "owned" ? tr("realestate.pricePaid") : tr("realestate.price"), "chf")}
+      <label class="field"><span>${tr("realestate.sellFrom")}</span>${Ref(P + ".sell", { never: true })}</label>
+      ${F(P + ".fixCosts", tr("realestate.costsMonth"), "chf")}</div>
+      <div class="grid3" style="margin-top:10px">${Chk(P + ".inflationValue", tr("realestate.valueIndexed"))}${Chk(P + ".inflationFixCosts", tr("realestate.costsIndexed"))}</div>
       ${MortgageUI(p, i)}`;
     return `<div class="prop"><div class="phead">${F(P + ".name", "", "text", { bare: true })}
-      ${p.status === "owned" ? `<div class="pworth">${F(P + ".worth", `Marktwert per Simulationsstart (${startTxt()})`, "chf")}</div>` : ""}
+      ${p.status === "owned" ? `<div class="pworth">${F(P + ".worth", tr("realestate.marketValue", { startTxt: startTxt() }), "chf")}</div>` : ""}
       <div class="seg">${PSTAT.map(([k, l]) => `<button class="${p.status === k ? "on" : ""}" data-action="pstat" data-i="${i}" data-v="${k}">${l}</button>`).join("")}</div>
-      <button class="btn ghost small" data-action="list-del" data-path="realestate.properties" data-i="${i}" title="Objekt entfernen">✕</button></div>${body}</div>`;
+      <button class="btn ghost small" data-action="list-del" data-path="realestate.properties" data-i="${i}" title="${tr("realestate.remove")}">✕</button></div>${body}</div>`;
   }).join("")}
-  <button class="btn" data-action="prop-add">+ Objekt</button>`;
+  <button class="btn" data-action="prop-add">${tr("realestate.add")}</button>`;
 
-R.scenarios = () => `<h2>Szenarien & Simulation</h2><p class="lead">Parameter, die systematisch variiert werden.</p>
-  <div class="card"><p style="margin:0">«Simulation starten» rechnet die Planung wie erfasst und zusätzlich jede Kombination der Variationen mit allen Renditepfaden. Die Ergebnisse erscheinen als Tabelle in der Ergebnisansicht.</p></div>
-  <div class="card"><h3>Variationen</h3><table class="tbl"><tr><th>Parameter</th><th>Von</th><th>Bis</th><th>Schritt</th><th>Läufe</th><th></th></tr>
+R.scenarios = () => `<h2>${tr("section.scenarios")}</h2><p class="lead">${tr("scenarios.intro")}</p>
+  <div class="card"><p style="margin:0">${tr("scenarios.runHint")}</p></div>
+  <div class="card"><h3>${tr("scenarios.variations")}</h3><table class="tbl"><tr><th>${tr("scenarios.param")}</th><th>${tr("scenarios.from")}</th><th>${tr("scenarios.to")}</th><th>${tr("scenarios.step")}</th><th>${tr("scenarios.runs")}</th><th></th></tr>
   ${state.scenarios.sweeps.map((s, i) => {
     const t = SWEEP_PARAMS.find(p => p.id === s.param)?.type || "pct", P = `scenarios.sweeps.${i}`;
     return `<tr><td>${Sel(P + ".param", SWEEP_PARAMS.map(p => [p.id, p.label]), { rerender: 1 })}</td><td>${F(P + ".from", "", t, { bare: true })}</td><td>${F(P + ".to", "", t, { bare: true })}</td>
-      <td>${F(P + ".step", "", t === "month" ? "months" : t, { bare: true, unit: t === "month" ? "Mt." : undefined })}</td><td>${C("sweep", i)}</td>
+      <td>${F(P + ".step", "", t === "month" ? "months" : t, { bare: true, unit: t === "month" ? tr("unit.monthsShort") : undefined })}</td><td>${C("sweep", i)}</td>
       <td><button class="btn ghost small" data-action="list-del" data-path="scenarios.sweeps" data-i="${i}">✕</button></td></tr>`;
   }).join("")}</table>
-  <div style="margin-top:10px"><button class="btn small" data-action="sweep-add">+ Variation</button></div></div>
-  <div class="card"><h3>Umfang</h3><p style="margin:0">${C("runs")} <span id="est-warn" class="timewarn"></span></p>
+  <div style="margin-top:10px"><button class="btn small" data-action="sweep-add">${tr("scenarios.add")}</button></div></div>
+  <div class="card"><h3>${tr("scenarios.size")}</h3><p style="margin:0">${C("runs")} <span id="est-warn" class="timewarn"></span></p>
     <p class="hint est" id="est-scen" style="margin:6px 0 0"></p>
-    <p class="hint">Der Rechenkern verteilt die Läufe auf alle Prozessorkerne. Die Ergebnisse (Perzentile, Erfolgswahrscheinlichkeit) erscheinen in einer eigenen Ergebnisansicht.</p></div>`;
+    <p class="hint">${tr("scenarios.coresHint")}</p></div>`;
 
 // ---------- Computed displays ----------
 function sweepCount(s) {
@@ -1165,7 +1181,7 @@ const COMPUTED = {
   p3aat: a => {
     const [k, j] = a.split(".").map(Number), acc = state.pillar3a[k], x = acc?.payouts[j];
     const m = x ? payoutMonth(x, acc.person) : NaN;
-    return Number.isFinite(m) ? `<span data-p3a="at"><b>${ymShow(i2ym(m))}</b> · Alter ${ageAt(m, acc.person).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>` : `<span data-p3a="at">ungültig</span>`;
+    return Number.isFinite(m) ? `<span data-p3a="at">${tr("computed.msAge", { ymShow: ymShow(i2ym(m)), m: ageAt(m, acc.person).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</span>` : `<span data-p3a="at">${tr("computed.invalid")}</span>`;
   },
   p3apay: a => {
     const [k, j] = a.split(".").map(Number), pv = p3aViewOf(state.pillar3a[k]?.person)?.payouts.find(o => o.index === j);
@@ -1174,77 +1190,77 @@ const COMPUTED = {
   p3arest: k => {
     const acc = state.pillar3a[+k], pi = state.household.persons.findIndex(q => q.id === acc?.person), ahv = msMonth(pi === 1 ? "ahv2" : "ahv");
     const view = p3aViewOf(acc?.person);
-    return `Guthaben, das im AHV-Bezug (${Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?"}) ausbezahlt wird: <b data-p3a="rest">${view ? fmtInt(view.rest?.amount ?? 0) + " " + cur() : "–"}</b>`;
+    return `${tr("computed.pillar3aRest", { ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" })} <b data-p3a="rest">${view ? fmtInt(view.rest?.amount ?? 0) + " " + cur() : "–"}</b>`;
   },
   housingshare: () => {
     if (!state.flows.spendingIncludesHousing) return "";
     const w = lastSim?.housingShare;
-    return `Enthält die Wohnkosten (Miete bzw. Zins, Amortisation, Nebenkosten). Wohnanteil zum Simulationsstart: <b>${w != null ? fmtMoney(Math.round(w)) : "–"}</b> pro Monat; er wird von jeder Zeile abgezogen, gerechnet wird mit den simulierten Wohnkosten.`;
+    return tr("computed.spendingHousing", { v: w != null ? fmtMoney(Math.round(w)) : "–" });
   },
-  ms: id => { const m = msMonth(id); return Number.isFinite(m) ? `<b>${ymShow(i2ym(m))}</b> · Alter ${ageStr(m)}` : "ungültig"; },
-  age1: () => { const s = startM(); return Number.isFinite(s) && state.household.persons[1] ? `Alter bei Simulationsstart: <b>${ageAt(s, state.household.persons[1].id).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</b>` : ""; },
-  wdinit: () => { const e = lastSim?.events.find(x => x.kind === "withdrawal"); return e ? `Vorschau: ${esc(e.label)} (${ymShow(i2ym(e.m))}).` : "Vorschau: keine Entnahme im Simulationszeitraum (Pensionierung ausserhalb?)."; },
-  age0: () => { const s = startM(); return Number.isFinite(s) ? `Alter bei Simulationsstart: <b>${ageStr(s)}</b>` : ""; },
-  pkresult: () => lastSim ? `${state.partner ? "Haushalt, bei Pensionierung" : "Bei Pensionierung"}: Kapitalbezug netto <b>${fmtMoney(lastSim.lumpNet)}</b> (Steuer ${fmtMoney(lastSim.lumpTax)}), Rente <b>${fmtMoney(lastSim.pkPension)}</b> / Monat.` : "",
+  ms: id => { const m = msMonth(id); return Number.isFinite(m) ? tr("computed.msAge", { ymShow: ymShow(i2ym(m)), m: ageStr(m) }) : tr("computed.invalid"); },
+  age1: () => { const s = startM(); return Number.isFinite(s) && state.household.persons[1] ? tr("computed.ageAtStart", { s: ageAt(s, state.household.persons[1].id).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : ""; },
+  wdinit: () => { const e = lastSim?.events.find(x => x.kind === "withdrawal"); return e ? tr("computed.preview", { label: esc(e.label), ymShow: ymShow(i2ym(e.m)) }) : tr("computed.previewNone"); },
+  age0: () => { const s = startM(); return Number.isFinite(s) ? tr("computed.ageAtStart", { s: ageStr(s) }) : ""; },
+  pkresult: () => lastSim ? `${state.partner ? tr("computed.householdAtRetire") : tr("computed.atRetire")}${tr("computed.pkAtRetire", { lumpNet: fmtMoney(lastSim.lumpNet), lumpTax: fmtMoney(lastSim.lumpTax), pkPension: fmtMoney(lastSim.pkPension) })}` : "",
   // #73: Share of stocks or bonds in the portfolio (without cash), integer; without a portfolio no value.
   wquote: arg => {
     const w = state.wealth, s = Math.max(0, +w.stocks || 0), b = Math.max(0, +w.bonds || 0);
-    return s + b > 0 ? `${Math.round(100 * (arg === "stocks" ? s : b) / (s + b))} % des Portfolios` : "";
+    return s + b > 0 ? tr("computed.portfolioShare", { round: Math.round(100 * (arg === "stocks" ? s : b) / (s + b)) }) : "";
   },
-  wealthsum: () => { const w = state.wealth; return `Total <b>${fmtMoney(w.stocks + w.bonds + w.cash)}</b>`; },
+  wealthsum: () => { const w = state.wealth; return tr("computed.total", { money: fmtMoney(w.stocks + w.bonds + w.cash) }); },
   rolling: () => {
-    if (!seriesInfo) return "Die Zeitreihe der Anlagestrategie wird geladen.";
+    if (!seriesInfo) return tr("computed.seriesLoading");
     if (seriesInfo.error) return `<span style="color:var(--err)">${esc(seriesInfo.error)}</span>`;
-    return `<b>${fmtInt(rollingCount())}</b> Startzeitpunkte decken den Zeitraum von ${((endM() - startM()) / 12).toFixed(1)} Jahren vollständig ab.`;
+    return tr("computed.rollingCover", { int: fmtInt(rollingCount()), v: ((endM() - startM()) / 12).toFixed(1) });
   },
   // #69: Sum of the weights of «Welt individuell»
   wsum: () => {
     const w = state.returns.strategy?.weights || {}, sum = REGION_KEYS.reduce((a, k) => a + (+w[k] || 0), 0);
-    return `Summe <b${Math.abs(sum - 1) > 1e-6 ? ' style="color:var(--err)"' : ""}>${fmtPct(sum)} %</b> (muss 100 % ergeben).`;
+    return `${tr("computed.sum")} <b${Math.abs(sum - 1) > 1e-6 ? ' style="color:var(--err)"' : ""}>${tr("computed.sumMust", { sum: fmtPct(sum) })}`;
   },
   // #69: Short info on the time series of the strategy
   strategyinfo: () => {
     const i = seriesInfo;
     if (!i) return "";
-    if (i.error) return i.error.includes("Gewichte") ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // weights: message at the field
+    if (i.error) return i.error.includes(tr("computed.weights")) ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // weights: message at the field
     const p = v => v == null || Number.isNaN(v) ? "–" : `${(v * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
     // #69/AK8: The means apply to the common period; a longer index is cut to it.
     const from = +String(i.first).slice(0, 4), to = +String(i.last).slice(0, 4), span = `${from}–${to}`;
     const cut = (i.parts || []).filter(x => x.first < from || x.last > to);
-    const clip = cut.length ? `<span class="cliphint" id="strategyClip">⚠ ${cut.map(x => `${esc(x.label)} reichen von ${x.first} bis ${x.last}`).join(", ")} und werden auf den gemeinsamen Zeitraum ${span} gekürzt. Die Simulation (Monte Carlo und historische Verläufe) nutzt nur diesen Zeitraum.</span>` : "";
-    return `${i.monthly ? "Monatlich" : "Jährlich"} ${ymShow(i.first)} – ${ymShow(i.last)}. Mittlere Jahresrendite${i.parts?.length ? ` im gemeinsamen Zeitraum ${span} von Aktien und Obligationen` : ""}: Aktien <b>${p(i.avgStocks)}</b>, Obligationen <b>${p(i.avgBonds)}</b>, Teuerung <b>${p(i.avgInflation)}</b>. ${seriesTip(i)}${clip}`;
+    const clip = cut.length ? `<span class="cliphint" id="strategyClip">⚠ ${cut.map(x => tr("computed.seriesRange", { label: esc(x.label), first: x.first, last: x.last })).join(", ")} ${tr("computed.commonRange", { span })}</span>` : "";
+    return `${i.monthly ? tr("computed.monthly") : tr("computed.annual")} ${tr("computed.indexRange", { first: ymShow(i.first), last: ymShow(i.last) })}${i.parts?.length ? ` ${tr("computed.inCommon", { span })}` : ""}${tr("computed.averages", { avgStocks: p(i.avgStocks), avgBonds: p(i.avgBonds), avgInflation: p(i.avgInflation), i: seriesTip(i), clip })}`;
   },
   seriesinfo: () => {
     if (!seriesInfo) return "";
     if (seriesInfo.error) return `<span style="color:var(--err)">${esc(seriesInfo.error)}</span>`;
     return "";
   },
-  basis: () => esc(previewBasis || "die fixen Werte."),
+  basis: () => esc(previewBasis || tr("computed.fixedValues")),
   // #100: Suggested value next to a field of the stock model (only with own values)
   psug: k => {
     const q = state.returns.parametric, s = paramSuggestion();
-    return !s || q.auto ? "" : `Vorschlag: ${fmtParam(k, s[k])}`;
+    return !s || q.auto ? "" : tr("computed.suggestion", { k: fmtParam(k, s[k]) });
   },
   pauto: () => {
     const q = state.returns.parametric, s = paramSuggestion();
-    if (!seriesInfo) return "Die Vorschlagswerte werden geladen.";
-    if (!s) return "Für diese Zeitreihe gibt es keine Vorschlagswerte; es gelten die eingegebenen Werte.";
+    if (!seriesInfo) return tr("computed.suggestionLoading");
+    if (!s) return tr("computed.noSuggestion");
     const st = state.returns.strategy, y = seriesInfo.parametric.stockYears;
     const name = state.returns.series ? seriesShort(state.returns.series) : STOCK_INDICES.find(x => x[0] === st?.stocks)?.[1] ?? "–";
-    return q.auto ? `Die Werte folgen dem Aktienindex <b>${esc(name)}</b>: Vorschlagswerte aus den Jahren ${y[0]}–${y[1]}, so gewählt, dass die Jahresrenditen dem historischen Bootstrap entsprechen. Ändern Sie einen Wert, gelten Ihre eigenen Werte.`
-      : `Eigene Werte. Neben den Feldern stehen die Vorschlagswerte für <b>${esc(name)}</b>. <button class="btn small" data-action="param-suggest">Vorschlagswerte übernehmen</button>`;
+    return q.auto ? tr("computed.followIndex", { name: esc(name), v: y[0], v2: y[1] })
+      : `${tr("computed.ownValues", { name: esc(name) })} <button class="btn small" data-action="param-suggest">${tr("computed.adoptSuggestion")}</button>`;
   },
   // #101: Mean, spread and correlation of stocks, bonds and inflation of the series
   pjoint: () => {
     const j = paramJoint();
     if (!seriesInfo) return "";
-    if (!j) return "Ohne Zeitreihe gelten für Obligationen und Inflation die fixen Werte.";
+    if (!j) return tr("computed.noSeries");
     const p = v => `${(v * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
     const c = v => v.toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace("-", "−");
-    const names = ["Aktien", "Obligationen", "Inflation"];
-    return `<table class="tbl num"><thead><tr><th>Korrelation</th>${names.map(n => `<th>${n}</th>`).join("")}<th>Mittel</th><th>Streuung</th></tr></thead><tbody>
-      ${names.map((n, a) => `<tr><td>${n}</td>${names.map((_, b) => `<td>${a === b ? "1" : c(j.corr[a][b])}</td>`).join("")}<td>${a === 1 ? p(j.bondsMean) : a === 2 ? p(j.inflationMean) : "Modell"}</td><td>${a === 1 ? p(j.bondsSd) : a === 2 ? p(j.inflationSd) : "Modell"}</td></tr>`).join("")}</tbody></table>
-      <p class="hint">Jahreswerte ${j.first}–${j.last} der Reihe, die auch der historische Bootstrap verwendet. Jedes Jahr ziehen Obligationen und Inflation einen Wert, der mit der Aktienrendite desselben Jahres korreliert ist; die Jahre sind voneinander unabhängig. Der SARON bleibt fix.</p>`;
+    const names = [tr("wealth.stocks"), tr("wealth.bonds"), tr("returns.inflation")];
+    return `<table class="tbl num"><thead><tr><th>${tr("computed.correlation")}</th>${names.map(n => `<th>${n}</th>`).join("")}<th>${tr("computed.mean")}</th><th>${tr("computed.spread")}</th></tr></thead><tbody>
+      ${names.map((n, a) => `<tr><td>${n}</td>${names.map((_, b) => `<td>${a === b ? "1" : c(j.corr[a][b])}</td>`).join("")}<td>${a === 1 ? p(j.bondsMean) : a === 2 ? p(j.inflationMean) : tr("computed.model")}</td><td>${a === 1 ? p(j.bondsSd) : a === 2 ? p(j.inflationSd) : tr("computed.model")}</td></tr>`).join("")}</tbody></table>
+      <p class="hint">${tr("computed.jointYears", { first: j.first, last: j.last })}</p>`;
   },
   bucket: k => {
     const rm = refMonth(state.pension.pk.at); if (!lastSim) return "–";
@@ -1254,17 +1270,17 @@ const COMPUTED = {
   mrow: a => {
     const [i, ti, k] = a.split(":").map(Number), p = state.realestate.properties[i];
     const r = trancheSchedule(p, p.mortgage.tranches[ti]).find(x => x.i === k);
-    if (!r) return `<span style="color:var(--faint)">${refMonth(p.buy) === Infinity ? "beginnt beim Kauf" : "nach Verkauf / Simulationsende"}</span>`;
+    if (!r) return `<span style="color:var(--faint)">${refMonth(p.buy) === Infinity ? tr("computed.startsAtPurchase") : tr("computed.afterSaleEnd")}</span>`;
     if (p.mortgage.amountMode === "maxLoan" && p.status !== "owned") return `${ymShow(i2ym(r.start))} – ${ymShow(i2ym(r.end))}`;
     const span = `${ymShow(i2ym(r.start))} – ${ymShow(i2ym(r.end))}`;
-    if (r.past) return `${span} <span style="color:var(--faint)">· abgelaufen</span>`;
-    return `${span}${r.d.type === "saron" ? ` · ${fmtPct(r.rate)} %` : ""}<br><b>${fmtMoney(r.a1)}</b>${!r.direct && r.q ? ` <span style="color:var(--faint)">(+ 3a${r.toAhv ? " bis AHV" : ""})</span>` : ""}`;
+    if (r.past) return `${span} <span style="color:var(--faint)">· ${tr("computed.expired")}</span>`;
+    return `${span}${r.d.type === "saron" ? ` · ${fmtPct(r.rate)} %` : ""}<br><b>${fmtMoney(r.a1)}</b>${!r.direct && r.q ? ` <span style="color:var(--faint)">(+ 3a${r.toAhv ? tr("computed.untilAhv") : ""})</span>` : ""}`;
   },
   mort: i => {
     const p = state.realestate.properties[i]; if (!p?.mortgage) return "";
     if (p.status !== "owned" && p.mortgage.amountMode === "maxLoan") {
       const a = state.realestate.affordability;
-      return `Hypothek beim Kauf höchstens <b>${fmtMoney(p.price * a.maxLoanToValue)}</b> (${fmtPct(a.maxLoanToValue)} % von ${fmtMoney(p.price)}, ohne Teuerung); gekürzt, falls die Tragbarkeit nicht reicht (Einmalrückzahlung aus dem Vermögen). Die Simulation zeigt den Betrag als Ereignis.`;
+      return tr("computed.maxLoan", { money: fmtMoney(p.price * a.maxLoanToValue), maxLoanToValue: fmtPct(a.maxLoanToValue), price: fmtMoney(p.price) });
     }
     const base = p.status === "owned" ? p.worth : p.price, total = mortTotal(p), multi = p.mortgage.tranches.length > 1;
     let interest = 0, direct = 0, indirect = 0; const parts = [];
@@ -1272,25 +1288,26 @@ const COMPUTED = {
       const sch = trancheSchedule(p, t), cur = sch.find(x => !x.past), last = sch[sch.length - 1];
       if (cur) {
         interest += cur.a0 * cur.rate / 12; if (cur.direct) direct += cur.q; else indirect += cur.q;
-        let s = `${multi ? `${esc(t.name)}: ` : ""}${p.status === "owned" ? "laufend" : "erste Periode"} bis <b>${ymShow(i2ym(cur.end))}</b>`;
-        if (p.status === "owned") s += ` (Restlaufzeit ${((cur.end - cur.from) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })} J.)`;
-        if (last && t.after === "repay" && last.end <= endM()) s += `, danach Rückzahlung von ${fmtMoney(last.a1 ?? t.amount)}`;
-        else if (last?.renewal) s += ", danach Verlängerung zu gleichen Konditionen";
+        let s = `${multi ? `${esc(t.name)}: ` : ""}${p.status === "owned" ? "laufend" : tr("computed.firstPeriod")} ${tr("computed.until", { ymShow: ymShow(i2ym(cur.end)) })}`;
+        if (p.status === "owned") s += ` ${tr("computed.remaining", { v: ((cur.end - cur.from) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 }) })}`;
+        if (last && t.after === "repay" && last.end <= endM()) s += tr("computed.thenRepay", { money: fmtMoney(last.a1 ?? t.amount) });
+        else if (last?.renewal) s += tr("computed.thenExtend");
         parts.push(s);
       }
     }
-    return `Total <b>${fmtMoney(total)}</b> · Belehnung <b>${(total / base * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %</b> · Zins ${p.status === "owned" ? "heute" : "beim Kauf"} <b>${fmtMoney(interest)}</b> / Monat · Amortisation pro Quartal: ${fmtMoney(direct)} direkt${indirect ? `, ${fmtMoney(indirect)} indirekt` : ""}<br>${parts.join("<br>")}`;
+    return `${tr("computed.mortgageTotal", { total: fmtMoney(total), v: (total / base * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }) })} ${p.status === "owned" ? tr("computed.today") : tr("computed.atPurchase")} ${tr("computed.interestMonth", { interest: fmtMoney(interest), direct: fmtMoney(direct) })}${indirect ? `, ${tr("computed.indirect", { amount: fmtMoney(indirect) })}` : ""}<br>${parts.join("<br>")}`;
   },
   sweep: i => fmtInt(sweepCount(state.scenarios.sweeps[i])),
   runs: () => {
     const sw = state.scenarios.sweeps.map(sweepCount), combos = sw.reduce((a, b) => a * b, 1), per = runsPerScenario();
-    const over = combos > MAX_COMBINATIONS ? ` <span style="color:var(--err)">· technische Grenze: höchstens ${fmtInt(MAX_COMBINATIONS)} Kombinationen möglich (jetzt ${fmtInt(combos)})</span>` : "";
-    return `${sw.length ? sw.map(fmtInt).join(" × ") + " Kombinationen" : "1 Szenario"} × ${fmtInt(per)} ${per === 1 ? "Lauf" : "Läufe"} = <b>${fmtInt(combos * per)} Simulationsläufe</b>${over}`;
+    const over = combos > MAX_COMBINATIONS ? ` <span style="color:var(--err)">${tr("computed.maxCombos", { maxCombinations: fmtInt(MAX_COMBINATIONS), combos: fmtInt(combos) })}</span>` : "";
+    return `${sw.length ? sw.map(fmtInt).join(" × ") + tr("computed.combos") : tr("computed.oneScenario")} × ${fmtInt(per)} ${per === 1 ? tr("computed.run") : tr("computed.runs")} ${tr("computed.totalRuns", { int: fmtInt(combos * per), over })}`;
   }
 };
 /** Section of the editor for a main key of the plan (for the messages when deleting a milestone). */
-const SECTION_OF = { household: "Haushalt & Projekt", pension: "Vorsorge", partner: "Vorsorge", pillar3a: "Säule 3a", flows: "Einnahmen & Ausgaben", wealth: "Vermögen & Anlage", returns: "Simulation",
-  withdrawal: "Entnahmestrategie", optimization: "Optimierung", taxes: "Steuern", realestate: "Immobilien", scenarios: "Szenarien & Simulation" };
+let SECTION_OF;
+onLanguage(() => SECTION_OF = { household: tr("section.general"), pension: tr("section.pension"), partner: tr("section.pension"), pillar3a: tr("section.pillar3a"), flows: tr("section.flows"), wealth: tr("section.wealth"), returns: tr("section.returns"),
+  withdrawal: tr("section.withdrawal"), optimization: tr("section.optimize"), taxes: tr("section.taxes"), realestate: tr("section.realestate"), scenarios: tr("section.scenarios") });
 /** Uses of a milestone outside the milestone table: [{ section, set(value) }]. */
 function milestoneRefs(id) {
   const out = [];
@@ -1298,7 +1315,7 @@ function milestoneRefs(id) {
     if (!o || typeof o !== "object") return;
     for (const [k, v] of Object.entries(o)) {
       if (top === "" && k === "milestones") continue;
-      if (v === id) out.push({ section: SECTION_OF[top || k] || "Planung", parent: o, key: k });
+      if (v === id) out.push({ section: SECTION_OF[top || k] || tr("refs.plan"), parent: o, key: k });
       else walk(v, top || k);
     }
   };
@@ -1322,7 +1339,7 @@ function renderNav(vals) {
   const nav = $("#nav");
   if (nav.querySelectorAll("a[data-sec]").length !== SECTIONS.length)
     nav.innerHTML = SECTIONS.map((s, i) => `<a data-action="goto" data-sec="${s.id}"><span class="num">${i + 1}</span>${s.title}</a>`).join("")
-      + `<div class="navfoot">Daten bleiben lokal auf diesem Rechner. Keine Verbindung ins Internet.</div>`;
+      + `<div class="navfoot">${tr("nav.localData")}</div>`;
   for (const a of nav.querySelectorAll("a[data-sec]")) {
     const id = a.dataset.sec, e = vals.filter(v => v.sec === id && v.sev === "err").length, w = vals.filter(v => v.sec === id && v.sev === "warn").length;
     a.classList.toggle("active", id === current);
@@ -1349,7 +1366,7 @@ function renderDerived() {
   if (!state) return;
   const vals = collectIssues();
   renderNav(vals); renderVal(vals); renderTimeline(); renderChart("#chart", "#tip", lastSim); renderKpis();
-  $("#previewSub").textContent = `${previewBasis ? previewBasis.replace(/^Vorschau mit /, "Einzellauf mit ").replace(/\.$/, "") : "Einzellauf mit fixen Renditen"} · bei jeder Änderung neu gerechnet`;
+  $("#previewSub").textContent = `${previewBasis ? previewBasis.replace(/^Vorschau mit /, tr("derived.singleWith")).replace(/\.$/, "") : tr("derived.singleFixed")} ${tr("derived.live")}`;
   document.querySelectorAll("[data-computed]").forEach(el => { el.innerHTML = COMPUTED[el.dataset.computed](el.dataset.arg); });
   document.querySelectorAll("svg[data-mini]").forEach(drawMini);
   document.querySelectorAll("svg[data-taxmini]").forEach(drawTaxMini);
@@ -1361,20 +1378,20 @@ function renderVal(vals) {
   const order = { err: 0, warn: 1 };
   vals.sort((a, b) => order[a.sev] - order[b.sev]);
   const html = vals.length ? vals.map(v => `<li class="${v.sev}" data-action="goto" data-sec="${v.sec}"><span class="ic">${v.sev === "err" ? "!" : "▲"}</span><span>${v.text}</span><span class="sec">${SECTIONS.find(s => s.id === v.sec).title}</span></li>`).join("")
-    : `<li class="ok"><span class="ic">✓</span><span>Keine Fehler gefunden.</span></li>`;
+    : `<li class="ok"><span class="ic">✓</span><span>${tr("validation.noErrors")}</span></li>`;
   // #112: only rebuild if the messages change (otherwise a click on a message would be lost)
   if (html !== renderVal.html) { $("#val").innerHTML = html; renderVal.html = html; }
 }
 
 function renderKpis() {
   const s = lastSim, k = $("#kpis");
-  if (!s) { k.innerHTML = `<div class="kpi bad"><div class="k">Vorschau</div><div class="v">–</div><div class="s">${previewError ? "siehe Prüfung" : "wird gerechnet…"}</div></div>`; return; }
+  if (!s) { k.innerHTML = `<div class="kpi bad"><div class="k">${tr("kpi.preview")}</div><div class="v">–</div><div class="s">${previewError ? tr("kpi.seeValidation") : tr("kpi.computing")}</div></div>`; return; }
   const last = s.total[s.total.length - 1], e = endM();
   k.innerHTML = `
-    <div class="kpi"><div class="k">Vermögen bei Pensionierung</div><div class="v">${s.totalAtRetire != null ? fmtMio(s.totalAtRetire) : "–"}</div><div class="s">${ymShow(i2ym(s.retireM))}</div></div>
-    <div class="kpi ${last > 0 ? "good" : "bad"}"><div class="k">Vermögen am Ende</div><div class="v">${fmtMio(last)}</div><div class="s">Alter ${ageStr(e)}, nominal</div></div>
-    <div class="kpi ${s.depleted !== null ? "bad" : "good"}"><div class="k">Geld reicht bis</div><div class="v">${s.depleted !== null ? "Alter " + ageStr(s.depleted) : "Ende ✓"}</div><div class="s">${s.depleted !== null ? ymShow(i2ym(s.depleted)) : "über den ganzen Zeitraum"}</div></div>
-    <div class="kpi"><div class="k">Tiefstes liquides Vermögen</div><div class="v">${fmtMio(Math.max(0, s.minLiquid))}</div><div class="s">Alter ${ageStr(s.minLiquidM)}</div></div>`;
+    <div class="kpi"><div class="k">${tr("kpi.wealthAtRetire")}</div><div class="v">${s.totalAtRetire != null ? fmtMio(s.totalAtRetire) : "–"}</div><div class="s">${ymShow(i2ym(s.retireM))}</div></div>
+    <div class="kpi ${last > 0 ? "good" : "bad"}"><div class="k">${tr("kpi.wealthAtEnd")}</div><div class="v">${fmtMio(last)}</div><div class="s">${tr("kpi.ageNominal", { e: ageStr(e) })}</div></div>
+    <div class="kpi ${s.depleted !== null ? "bad" : "good"}"><div class="k">${tr("kpi.moneyLasts")}</div><div class="v">${s.depleted !== null ? tr("kpi.age") + ageStr(s.depleted) : tr("kpi.endOk")}</div><div class="s">${s.depleted !== null ? ymShow(i2ym(s.depleted)) : tr("kpi.wholePeriod")}</div></div>
+    <div class="kpi"><div class="k">${tr("kpi.minLiquid")}</div><div class="v">${fmtMio(Math.max(0, s.minLiquid))}</div><div class="s">${tr("kpi.ageAt", { minLiquidM: ageStr(s.minLiquidM) })}</div></div>`;
 }
 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -1410,7 +1427,7 @@ function renderChart(svgSel, tipSel, s) {
     const i = clamp(Math.round((px - L) / (W - L - Rr) * (n - 1)), 0, n - 1), hov = svg.querySelector("#hov");
     hov.setAttribute("x1", x(i)); hov.setAttribute("x2", x(i)); hov.setAttribute("visibility", "visible");
     const tip = $(tipSel); tip.style.display = "block";
-    tip.innerHTML = `<b>${ymShow(i2ym(s.m[i]))}</b> · Alter ${ageStr(s.m[i])}<br>Total ${fmtMoney(s.total[i])}<br><span style="color:var(--c1)">■</span> Liquid ${fmtMoney(s.liquid[i])}<br><span style="color:var(--c2)">■</span> Immobilien ${fmtMoney(s.prop[i])}<br><span style="color:var(--c3)">■</span> Vorsorge ${fmtMoney(s.pk[i])}`;
+    tip.innerHTML = `${tr("chart.tip", { ymShow: ymShow(i2ym(s.m[i])), ageStr: ageStr(s.m[i]), money: fmtMoney(s.total[i]) })}<br><span style="color:var(--c1)">■</span> ${tr("chart.liquid", { money: fmtMoney(s.liquid[i]) })}<br><span style="color:var(--c2)">■</span> ${tr("chart.property", { money: fmtMoney(s.prop[i]) })}<br><span style="color:var(--c3)">■</span> ${tr("chart.pension", { money: fmtMoney(s.pk[i]) })}`;
     const left = x(i) * r.width / W; tip.style.left = (left > r.width / 2 ? left - tip.offsetWidth - 10 : left + 10) + "px"; tip.style.top = "8px";
   };
   svg.onmouseleave = () => { $(tipSel).style.display = "none"; svg.querySelector("#hov")?.setAttribute("visibility", "hidden"); };
@@ -1418,20 +1435,20 @@ function renderChart(svgSel, tipSel, s) {
 
 function renderTimeline() {
   const svg = $("#tl"), W = svg.clientWidth || 900, s0 = startM(), e = endM();
-  $("#tlRange").textContent = Number.isFinite(s0) && e > s0 ? `${ymShow(i2ym(s0))} – ${ymShow(i2ym(e))} · ${((e - s0) / 12).toFixed(1)} Jahre` : "Zeitraum ungültig";
+  $("#tlRange").textContent = Number.isFinite(s0) && e > s0 ? tr("timeline.range", { ymShow: ymShow(i2ym(s0)), ymShow2: ymShow(i2ym(e)), v: ((e - s0) / 12).toFixed(1) }) : tr("timeline.invalid");
   if (!(e > s0)) { svg.innerHTML = ""; return; }
   const P = 14, x = m => P + (m - s0) / (e - s0) * (W - 2 * P), base = 66;
   let h = `<line x1="${P}" x2="${W - P}" y1="${base}" y2="${base}" stroke="${css("--border")}" stroke-width="4" stroke-linecap="round"/>`;
   const ret = refMonth(state.pension.pk.at);
   if (ret > s0 && ret < e) h += `<line x1="${x(ret)}" x2="${W - P}" y1="${base}" y2="${base}" stroke="${css("--accent")}" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>`;
-  for (let y = Math.ceil(s0 / 60) * 5; y * 12 <= e; y += 5) { const m = y * 12; h += `<line x1="${x(m)}" x2="${x(m)}" y1="${base + 4}" y2="${base + 9}" stroke="${css("--faint")}"/><text x="${x(m)}" y="${base + 21}" font-size="10.5" text-anchor="middle" fill="${css("--faint")}">${y} · ${Math.round(ageAt(m))} J.</text>`; }
-  for (const xx of state.flows.extras) { const m = ym2i(xx.date); if (m >= s0 && m <= e) h += `<rect x="${x(m) - 3.5}" y="${base - 3.5}" width="7" height="7" transform="rotate(45 ${x(m)} ${base})" fill="${css("--warn")}"><title>${esc(xx.label)}: ${fmtMoney(xx.amount)} (${ymShow(xx.date)}, Alter ${ageStr(m)})</title></rect>`; }
-  for (const ev of lastSim?.events || []) if (ev.tick) h += `<line x1="${x(ev.m)}" x2="${x(ev.m)}" y1="${base - 8}" y2="${base + 8}" stroke="${css("--c2")}" stroke-width="2.5"><title>${esc(ev.label)} (${ymShow(i2ym(ev.m))}, Alter ${ageStr(ev.m)})</title></line>`;
-  if (lastSim?.depleted != null) { const m = lastSim.depleted; h += `<line x1="${x(m)}" x2="${x(m)}" y1="${base - 9}" y2="${base + 9}" stroke="${css("--err")}" stroke-width="3"><title>Geld aufgebraucht</title></line>`; }
+  for (let y = Math.ceil(s0 / 60) * 5; y * 12 <= e; y += 5) { const m = y * 12; h += `<line x1="${x(m)}" x2="${x(m)}" y1="${base + 4}" y2="${base + 9}" stroke="${css("--faint")}"/><text x="${x(m)}" y="${base + 21}" font-size="10.5" text-anchor="middle" fill="${css("--faint")}">${y} · ${Math.round(ageAt(m))} ${tr("unit.yearsShort")}</text>`; }
+  for (const xx of state.flows.extras) { const m = ym2i(xx.date); if (m >= s0 && m <= e) h += `<rect x="${x(m) - 3.5}" y="${base - 3.5}" width="7" height="7" transform="rotate(45 ${x(m)} ${base})" fill="${css("--warn")}"><title>${tr("timeline.payout", { label: esc(xx.label), amount: fmtMoney(xx.amount), date: ymShow(xx.date), m: ageStr(m) })}</title></rect>`; }
+  for (const ev of lastSim?.events || []) if (ev.tick) h += `<line x1="${x(ev.m)}" x2="${x(ev.m)}" y1="${base - 8}" y2="${base + 8}" stroke="${css("--c2")}" stroke-width="2.5"><title>${tr("timeline.event", { label: esc(ev.label), ymShow: ymShow(i2ym(ev.m)), m: ageStr(ev.m) })}</title></line>`;
+  if (lastSim?.depleted != null) { const m = lastSim.depleted; h += `<line x1="${x(m)}" x2="${x(m)}" y1="${base - 9}" y2="${base + 9}" stroke="${css("--err")}" stroke-width="3"><title>${tr("timeline.depleted")}</title></line>`; }
   const items = state.milestones.map(ms => ({ ms, m: msMonth(ms.id) })).filter(o => Number.isFinite(o.m)).sort((a, b) => a.m - b.m);
   const lanes = [-Infinity, -Infinity, -Infinity];
   for (const { ms, m } of items) {
-    const label = `${ms.name} · ${ymShow(i2ym(m))}`, w = label.length * 6.3 + 6, px = x(clamp(m, s0, e));
+    const label = `${msLabel(ms)} · ${ymShow(i2ym(m))}`, w = label.length * 6.3 + 6, px = x(clamp(m, s0, e));
     const anchorEnd = px + w > W - P;
     const lx0 = anchorEnd ? px - w : px;
     let lane = lanes.findIndex(r => r < lx0 - 6); if (lane < 0) lane = lanes.indexOf(Math.min(...lanes));
@@ -1439,13 +1456,13 @@ function renderTimeline() {
     const ly = 14 + lane * 15;
     h += `<g class="ms" data-action="ms-goto" data-id="${ms.id}"><line x1="${px}" x2="${px}" y1="${ly + 3}" y2="${base}" stroke="${css("--faint")}" stroke-width="1"/>
       <circle cx="${px}" cy="${base}" r="6" fill="${css(ms.fixed ? "--muted" : "--accent")}" stroke="${css("--panel")}" stroke-width="2"/>
-      <text class="lbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11.5" text-anchor="${anchorEnd ? "end" : "start"}" fill="${css("--text")}"><tspan font-weight="600">${esc(ms.name)}</tspan> <tspan fill="${css("--muted")}">${ymShow(i2ym(m))} · ${ageStr(m)} J.</tspan></text>
+      <text class="lbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11.5" text-anchor="${anchorEnd ? "end" : "start"}" fill="${css("--text")}"><tspan font-weight="600">${esc(msLabel(ms))}</tspan> <tspan fill="${css("--muted")}">${ymShow(i2ym(m))} · ${ageStr(m)} ${tr("unit.yearsShort")}</tspan></text>
       <rect x="${lx0}" y="${ly - 12}" width="${w}" height="16" fill="transparent"/></g>`;
   }
   // Property events (only with a simulation result): triangle below the line, label underneath, staggered.
   // Shape and position distinguish them from the milestones (circle on the line, label above).
   const pev = (lastSim?.propEvents || []).filter(o => o.m >= s0 && o.m <= e).sort((a, b) => a.m - b.m);
-  const TL_EV = { purchase: "Kauf", sale: "Verkauf", emergencySale: "Notverkauf" }, compact = pev.length > 15;
+  const TL_EV = { purchase: tr("timeline.buy"), sale: tr("timeline.sell"), emergencySale: tr("timeline.emergency") }, compact = pev.length > 15;
   const evLanes = [-Infinity, -Infinity, -Infinity], top = 104;
   for (const o of pev) {
     const label = `${TL_EV[o.kind]} ${o.property} ${ymShow(i2ym(o.m))}`, w = label.length * 6.1 + 6, px = x(o.m), color = css(o.kind === "emergencySale" ? "--warn" : "--ok");
@@ -1453,7 +1470,7 @@ function renderTimeline() {
     let lane = evLanes.findIndex(r => r < lx0 - 6); if (lane < 0) lane = evLanes.indexOf(Math.min(...evLanes));
     evLanes[lane] = lx0 + w;
     const ly = top + lane * 14;
-    h += `<g class="pev" data-kind="${o.kind}"><title>${esc(label)} (Alter ${ageStr(o.m)})</title>
+    h += `<g class="pev" data-kind="${o.kind}"><title>${tr("timeline.eventAge", { label: esc(label), m: ageStr(o.m) })}</title>
       ${compact ? "" : `<line x1="${px}" x2="${px}" y1="${base + 12}" y2="${ly - 9}" stroke="${color}" stroke-width="1" stroke-opacity=".6"/>`}
       <path d="M${px},${base + 3} l-5,9 h10 z" fill="${color}" stroke="${css("--panel")}" stroke-width="1.5"/>
       ${compact ? "" : `<text class="pelbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11" text-anchor="${anchorEnd ? "end" : "start"}" fill="${color}">${esc(label)}</text>`}</g>`;
@@ -1465,7 +1482,8 @@ function renderTimeline() {
 /** Visible range per mini chart (month indices); without an entry the whole period. */
 const miniZoom = {};
 /** Shared by editor and result charts: zoom buttons, default «the first N years» and visible range. */
-const ZOOMS = [["0", "Alles"], ["10", "10 J."], ["5", "5 J."], ["2", "2 J."]];
+let ZOOMS;
+onLanguage(() => ZOOMS = [["0", tr("zoom.all")], ...["10", "5", "2"].map(y => [y, `${y} ${tr("unit.yearsShort")}`])]);
 const zoomButtons = (action, active, attrs = "") => ZOOMS.map(([y, l]) => `<button data-action="${action}" ${attrs} data-years="${y}" class="${String(active ?? 0) === y ? "on" : ""}">${l}</button>`).join("");
 const presetZoom = years => (years ? { from: startM(), to: Math.min(endM(), startM() + years * 12), years } : null);
 function zoomRange(z) {
@@ -1475,7 +1493,7 @@ function zoomRange(z) {
   return [from, from + span];
 }
 const miniRange = path => zoomRange(miniZoom[path]);
-function miniValue(t, v) { return t === "pct" ? fmtPct(v) + " %" : t === "months" ? `${v} Mt.` : t === "years" ? `${v} J.` : fmtInt(v); }
+function miniValue(t, v) { return t === "pct" ? fmtPct(v) + " %" : t === "months" ? `${v} ${tr("unit.monthsShort")}` : t === "years" ? `${v} ${tr("unit.yearsShort")}` : fmtInt(v); }
 function drawMini(svg) {
   const path = svg.dataset.mini, ser = getP(path), t = svg.dataset.type;
   if (!ser || !(endM() > startM())) { svg.innerHTML = ""; return; }
@@ -1499,7 +1517,7 @@ function drawMini(svg) {
   for (const m of state.milestones) {
     if (m.fixed) continue;
     const mm = msMonth(m.id);
-    if (mm > a && mm < b) g += `<line x1="${X(mm)}" x2="${X(mm)}" y1="${T}" y2="${H - Bm}" stroke="${css("--accent")}" stroke-opacity=".35" stroke-dasharray="2 3"><title>${esc(m.name)}</title></line>`;
+    if (mm > a && mm < b) g += `<line x1="${X(mm)}" x2="${X(mm)}" y1="${T}" y2="${H - Bm}" stroke="${css("--accent")}" stroke-opacity=".35" stroke-dasharray="2 3"><title>${esc(msLabel(m))}</title></line>`;
   }
   const dots = pts.slice(1).map((m, i) => `<circle cx="${X(m)}" cy="${Y(vals[i + 1])}" r="3" fill="${css("--accent")}"/>`).join("");
   svg.innerHTML = g + `<path d="${d}V${H - Bm}H0Z" fill="${css("--accent")}" fill-opacity=".12"/><path d="${d}" fill="none" stroke="${css("--accent")}" stroke-width="2"/>${dots}
@@ -1533,7 +1551,7 @@ function drawMini(svg) {
     const m = monthAt(ev), hov = svg.querySelector(".hov");
     hov.setAttribute("x1", X(m)); hov.setAttribute("x2", X(m)); hov.setAttribute("visibility", "visible");
     tip.style.display = "block";
-    tip.innerHTML = `${ymShow(i2ym(m))} · Alter ${ageStr(m)}<br><b>${miniValue(t, seriesAt(ser, m))}</b>`;
+    tip.innerHTML = tr("mini.tip", { ymShow: ymShow(i2ym(m)), m: ageStr(m), v: miniValue(t, seriesAt(ser, m)) });
     const left = X(m) * svg.getBoundingClientRect().width / W;
     tip.style.left = (left > W / 2 ? left - tip.offsetWidth - 8 : left + 8) + "px"; tip.style.top = "4px";
   };
@@ -1545,13 +1563,13 @@ function drawTaxMini(svg) {
   for (let i = 0; i <= N; i++) vals.push(rateAt(t, xmax * i / N));
   const ymax = Math.max(...vals, 1e-9), Y = v => 58 - v / ymax * 50;
   const d = vals.map((v, i) => `${i ? "L" : "M"}${i * 3},${Y(v).toFixed(2)}`).join("");
-  svg.innerHTML = `<path d="${d}" fill="none" stroke="${css("--accent")}" stroke-width="2" vector-effect="non-scaling-stroke"/><text x="4" y="11" font-size="10" fill="${css("--muted")}">Satz bis ${fmtPct(ymax)} %</text>`;
+  svg.innerHTML = `<path d="${d}" fill="none" stroke="${css("--accent")}" stroke-width="2" vector-effect="non-scaling-stroke"/><text x="4" y="11" font-size="10" fill="${css("--muted")}">${tr("mini.rateUpTo", { ymax: fmtPct(ymax) })}</text>`;
 }
 
 // ---------- Events ----------
 /** Tells the desktop app whether there are unsaved changes (for the question when quitting). */
 function pushDirty() { if (Engine.inApp) Engine.call("set_dirty", { dirty }).catch(() => {}); }
-function markDirty() { dirty = true; $("#dirty").textContent = "● ungespeichert"; pushDirty(); History.note(); stepTouched(); }
+function markDirty() { dirty = true; $("#dirty").textContent = tr("file.unsaved"); pushDirty(); History.note(); stepTouched(); }
 
 // ---------- Undo / redo ----------
 /** History of the plan as JSON snapshots; quick inputs are merged. */
@@ -1572,10 +1590,10 @@ const History = {
     if (this.pos < 0 || !this.stack[this.pos]) return;
     const o = JSON.parse(this.stack[this.pos]); f(o); this.stack[this.pos] = JSON.stringify(o);
   },
-  undo() { this.commit(); if (this.pos <= 0) return toast("Nichts mehr rückgängig zu machen."); this.pos--; this.apply(); },
-  redo() { this.commit(); if (this.pos >= this.stack.length - 1) return toast("Nichts zu wiederholen."); this.pos++; this.apply(); },
+  undo() { this.commit(); if (this.pos <= 0) return toast(tr("history.nothingUndo")); this.pos--; this.apply(); },
+  redo() { this.commit(); if (this.pos >= this.stack.length - 1) return toast(tr("history.nothingRedo")); this.pos++; this.apply(); },
   apply() {
-    state = JSON.parse(this.stack[this.pos]); invalidFields.clear(); dirty = true; $("#dirty").textContent = "● ungespeichert"; pushDirty();
+    state = JSON.parse(this.stack[this.pos]); invalidFields.clear(); dirty = true; $("#dirty").textContent = tr("file.unsaved"); pushDirty();
     if (!$("#results").hidden) showResults(false);
     renderSection(); refreshSeriesInfo();
   }
@@ -1584,14 +1602,15 @@ const History = {
 // ---------- Keyboard shortcuts ----------
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const MOD = IS_MAC ? "⌘" : "Ctrl+", SHIFT = IS_MAC ? "⇧" : "Shift+";
-const SHORTCUTS = [
-  [`${MOD}N`, "Neue Planung", "new"], [`${MOD}O`, "Öffnen", "open"], [`${MOD}S`, "Speichern", "save"], [`${SHIFT}${MOD}S`, "Speichern unter", "saveas"],
-  [`${MOD}I`, "Alte config.json importieren", "import"], [`${MOD},`, "Einstellungen", "settings"], [`${MOD}↩`, "Simulation starten", "run"], ["Esc", "Zurück zum Editor", "back"],
-  [`${MOD}Z`, "Rückgängig", "undo"], [`${SHIFT}${MOD}Z`, "Wiederholen", "redo"],
-  [`${MOD}1 … ${MOD}9, ${MOD}0`, "Abschnitt 1–10 im Editor bzw. Registerkarte in den Ergebnissen", null],
-  [`${MOD}↑ / ${MOD}↓`, "Vorheriger / nächster Abschnitt", null], [`${MOD}/`, "Diese Übersicht", "help"],
-  ["F1", "Hilfe zum aktuellen Thema (Feld, Abschnitt, Grafik)", null], [`${SHIFT}${MOD}?`, "Handbuch", null]
-];
+let SHORTCUTS;
+onLanguage(() => SHORTCUTS = [
+  [`${MOD}N`, tr("shortcuts.new"), "new"], [`${MOD}O`, tr("shortcuts.open"), "open"], [`${MOD}S`, tr("shortcuts.save"), "save"], [`${SHIFT}${MOD}S`, tr("shortcuts.saveAs"), "saveas"],
+  [`${MOD}I`, tr("shortcuts.import"), "import"], [`${MOD},`, tr("shortcuts.settings"), "settings"], [`${MOD}↩`, tr("shortcuts.run"), "run"], ["Esc", tr("shortcuts.back"), "back"],
+  [`${MOD}Z`, tr("shortcuts.undo"), "undo"], [`${SHIFT}${MOD}Z`, tr("shortcuts.redo"), "redo"],
+  [`${MOD}1 … ${MOD}9, ${MOD}0`, tr("shortcuts.sections"), null],
+  [`${MOD}↑ / ${MOD}↓`, tr("shortcuts.prevNext"), null], [`${MOD}/`, tr("shortcuts.overview"), "help"],
+  ["F1", tr("shortcuts.helpTopic"), null], [`${SHIFT}${MOD}?`, tr("shortcuts.manual"), null]
+]);
 let lastCommand = { id: "", t: 0 };
 /** Runs a command (menu of the desktop app or keyboard); a duplicate trigger is ignored. */
 function command(id) {
@@ -1603,7 +1622,7 @@ function command(id) {
   if ($("#disclaimer").open) return;
   if (id === "undo") return History.undo();
   if (id === "redo") return History.redo();
-  if (id === "help") return ask("Tastenkürzel", `<div class="kbd">${SHORTCUTS.map(([k, t]) => `<kbd>${esc(k)}</kbd><span>${esc(t)}</span>`).join("")}</div>`);
+  if (id === "help") return ask(tr("shortcuts.title"), `<div class="kbd">${SHORTCUTS.map(([k, t]) => `<kbd>${esc(k)}</kbd><span>${esc(t)}</span>`).join("")}</div>`);
   if (id === "about") return showAbout();
   if (id === "welcome") return showWelcome();
   if (id === "steps") return Steps.show();
@@ -1613,13 +1632,13 @@ function command(id) {
 async function showAbout() {
   let info = null;
   try { info = await Engine.call("app_info"); } catch { /* without the engine no details */ }
-  const built = info?.buildEpoch ? new Date(info.buildEpoch * 1000).toLocaleString("de-CH", { dateStyle: "medium", timeStyle: "medium" }) : "nicht bekannt (Entwicklungsserver)";
-  ask("Über VivaPlan", `<p style="margin-top:0">Pensionsplanung für die Schweiz: Monat für Monat durchgerechnet, mit Monte Carlo und Szenarien.</p>
-    <table class="tbl" id="aboutTbl"><tr><td class="l">Version</td><td class="l"><b>${esc(info?.version ?? "unbekannt")}</b></td></tr>
-    <tr><td class="l">Gebaut am</td><td class="l"><b>${esc(built)}</b></td></tr>
-    <tr><td class="l">Website</td><td class="l">vivaplan-app.ch</td></tr></table>
-    <p class="hint">Alle Daten bleiben auf diesem Rechner. Die App verbindet sich nie mit dem Internet.</p>
-    <p class="hint" id="aboutDisclaimer">${esc(DISCLAIMER_FOOT)} <a href="#" data-action="about-disclaimer">Vollständiger Haftungsausschluss</a></p>`);
+  const built = info?.buildEpoch ? new Date(info.buildEpoch * 1000).toLocaleString("de-CH", { dateStyle: "medium", timeStyle: "medium" }) : tr("about.unknownBuild");
+  ask(tr("about.title"), `<p style="margin-top:0">${tr("about.tagline")}</p>
+    <table class="tbl" id="aboutTbl"><tr><td class="l">${tr("about.version")}</td><td class="l"><b>${esc(info?.version ?? "unbekannt")}</b></td></tr>
+    <tr><td class="l">${tr("about.built")}</td><td class="l"><b>${esc(built)}</b></td></tr>
+    <tr><td class="l">${tr("about.website")}</td><td class="l">vivaplan-app.ch</td></tr></table>
+    <p class="hint">${tr("about.local")}</p>
+    <p class="hint" id="aboutDisclaimer">${tr("about.disclaimer", { disclaimerFoot: esc(DISCLAIMER_FOOT) })}</p>`);
 }
 function gotoIndex(i) {
   if (!$("#results").hidden) { const b = [...document.querySelectorAll('[data-action="rtab"]')][i]; if (b) b.click(); return; }
@@ -1645,7 +1664,7 @@ if (window.__TAURI__?.event) window.__TAURI__.event.listen("menu", ev => command
 /** Quitting with unsaved changes: save, discard or cancel. */
 async function confirmQuit() {
   if (dirty) {
-    const r = await ask("Ungespeicherte Änderungen", "Die Planung hat ungespeicherte Änderungen. Vor dem Beenden speichern?", null, "Speichern", "Verwerfen");
+    const r = await ask(tr("quit.title"), tr("quit.text"), null, tr("quit.save"), tr("quit.discard"));
     if (r === null) return;
     if (r === true) { await save(false); if (dirty) return; }
   }
@@ -1653,12 +1672,12 @@ async function confirmQuit() {
 }
 if (window.__TAURI__?.event) window.__TAURI__.event.listen("quit-requested", confirmQuit);
 async function importData(cmd, title, help) {
-  if (!Engine.inApp) return toast(`Der Import ist in der Desktop-App verfügbar (oder: vivaplan ${cmd.replace("_", "-")}).`);
-  if (!await ask(`${title} aktualisieren`, `<p>${help}</p><p>Weiter zur Dateiauswahl?</p>`)) return;
+  if (!Engine.inApp) return toast(tr("import.appOnly", { replace: cmd.replace("_", "-") }));
+  if (!await ask(tr("import.title", { title }), `<p>${help}</p><p>${tr("import.continue")}</p>`)) return;
   try {
     const r = await Engine.call(cmd); if (!r) return;
-    const lines = r.written.map(([f, i]) => `<p><b>${esc(f)}</b>: ${ymShow(i.first)} – ${ymShow(i.last)}${i.saronRange ? `, SARON bis ${ymShow(i.saronRange[1])}` : ""}</p>`);
-    await ask("Import abgeschlossen", [...lines, ...r.notes.map(n => `<p>${esc(n)}</p>`)].join("") || "<p>Keine Dateien geändert.</p>");
+    const lines = r.written.map(([f, i]) => `<p><b>${esc(f)}</b>: ${ymShow(i.first)} – ${ymShow(i.last)}${i.saronRange ? tr("import.saronUntil", { ymShow: ymShow(i.saronRange[1]) }) : ""}</p>`);
+    await ask(tr("import.done"), [...lines, ...r.notes.map(n => `<p>${esc(n)}</p>`)].join("") || tr("import.nothingChanged"));
     await refreshLibrary(); refreshSeriesInfo();
   } catch (e) { toast(errText(e)); }
 }
@@ -1689,7 +1708,7 @@ function onEdit(el) {
   if (typing) holdField(el);
   if (v === null) {
     const ambiguous = (["chf", "chfopt"].includes(el.dataset.type) || el.dataset.int) && ambiguousThousands(el.value);
-    invalidFields.set(path, { section: current, message: el.dataset.type === "month" ? "Ungültiges Datum (MM.JJJJ)." : ambiguous ? AMBIGUOUS_TEXT : "Ungültige Zahl." });
+    invalidFields.set(path, { section: current, message: el.dataset.type === "month" ? tr("input.invalidDate") : ambiguous ? ambiguousText() : tr("input.invalidNumber") });
     if (!typing) { el.classList.add("invalid"); applyFieldIssues(); }
     return;
   }
@@ -1743,13 +1762,15 @@ document.addEventListener("focusout", e => {
 function blankPlan(base, now = new Date()) {
   const p = JSON.parse(JSON.stringify(base)), cur = now.getFullYear() * 12 + now.getMonth(), start = i2ym(cur);
   const zero = { mode: "const", value: 0 };
-  p.project = { ...p.project, name: "Neue Planung" };
+  // #170/AK8: no texts of the user interface in the file (the same new plan in every language); the header
+  // shows «Neue Planung» as long as there is no file name.
+  p.project = { ...p.project, name: "" };
   p.household = { persons: [{ id: "A", name: "", birth: i2ym(cur - 60 * 12) }] };
   p.milestones = [
-    { id: "start", name: "Simulationsstart", kind: "date", date: start, fixed: true },
-    { id: "retire", name: "Bezug Pensionskasse", kind: "age", person: "A", years: 65 },
-    { id: "ahv", name: "AHV-Bezug", kind: "age", person: "A", years: 65 },
-    { id: "end", name: "Simulationsende", kind: "age", person: "A", years: 95, fixed: true },
+    { id: "start", kind: "date", date: start, fixed: true },
+    { id: "retire", kind: "age", person: "A", years: 65 },
+    { id: "ahv", kind: "age", person: "A", years: 65 },
+    { id: "end", kind: "age", person: "A", years: 95, fixed: true },
   ];
   delete p.partner;
   p.pillar3a = [];
@@ -1780,22 +1801,22 @@ const ACTIONS = {
     if (d.path === "realestate.properties") {
       const id = state.realestate.properties[+d.i].id;
       const users = state.realestate.properties.filter(q => q.buy === "afterSale:" + id || q.from === "afterSale:" + id);
-      if (users.length) return toast(`Wird noch verwendet von: ${users.map(q => q.name).join(", ")}.`);
+      if (users.length) return toast(tr("actions.stillUsedBy", { map: users.map(q => q.name).join(", ") }));
     }
     getP(d.path).splice(+d.i, 1); markDirty(); renderSection();
   },
-  "extra-add": () => { state.flows.extras.push({ date: i2ym(startM() + 12), amount: -10000, label: "Neuer Betrag" }); markDirty(); renderSection(); },
+  "extra-add": () => { state.flows.extras.push({ date: i2ym(startM() + 12), amount: -10000, label: tr("actions.newAmount") }); markDirty(); renderSection(); },
   "tax-add": d => { const t = getP("taxes." + d.key), last = t[t.length - 1] || [0, 0]; t.push([last[0] * 2 || 100000, last[1]]); markDirty(); renderSection(); },
-  "ms-add": () => { state.milestones.splice(state.milestones.length - 1, 0, { id: "ms" + Date.now().toString(36), name: "Neuer Meilenstein", kind: "date", date: i2ym(startM() + 60) }); markDirty(); renderSection(); },
+  "ms-add": () => { state.milestones.splice(state.milestones.length - 1, 0, { id: "ms" + Date.now().toString(36), name: tr("actions.newMilestone"), kind: "date", date: i2ym(startM() + 60) }); markDirty(); renderSection(); },
   "ms-del": async d => {
     const ms = state.milestones[+d.i];
     if (!ms || msLocked(ms)) return;
     const refs = milestoneRefs(ms.id);
     if (!refs.length) { state.milestones.splice(+d.i, 1); markDirty(); renderSection(); return; }
     const m = msMonth(ms.id);
-    if (!Number.isFinite(m)) return toast(`«${ms.name}» hat kein gültiges Datum und lässt sich nicht umstellen.`);
+    if (!Number.isFinite(m)) return toast(tr("actions.noValidDate", { name: msLabel(ms) }));
     const date = i2ym(m), sections = [...new Set(refs.map(r => r.section))];
-    const ok = await ask("Meilenstein löschen", `«${esc(ms.name)}» wird in ${refs.length} ${refs.length === 1 ? "Eingabe" : "Eingaben"} verwendet (Abschnitte: ${sections.map(esc).join(", ")}). Beim Löschen werden diese Eingaben auf das feste Datum ${ymShow(date)} umgestellt.`, null, "Löschen und umstellen");
+    const ok = await ask(tr("actions.deleteMilestone"), `${tr("actions.usedIn", { name: esc(msLabel(ms)), length: refs.length })} ${refs.length === 1 ? tr("actions.input") : tr("actions.inputs")} ${tr("actions.usedInTail", { esc: sections.map(esc).join(", "), date: ymShow(date) })}`, null, tr("actions.deleteAndSwitch"));
     if (!ok) return;
     History.commit();
     for (const r of refs) r.parent[r.key] = date;
@@ -1813,7 +1834,7 @@ const ACTIONS = {
     state.milestones.splice(+d.i, 1);
     fix(state);
     markDirty(); History.commit(); renderSection();
-    toast(`${refs.length} ${refs.length === 1 ? "Eingabe" : "Eingaben"} auf ${ymShow(date)} umgestellt.${dups ? ` Doppelter Zeitpunkt in einer Reihe: nur die spätere Zeile bleibt (${dups} entfernt).` : ""}`);
+    toast(`${refs.length} ${refs.length === 1 ? tr("actions.input") : tr("actions.inputs")} ${tr("actions.switchedTo", { date: ymShow(date) })}${dups ? ` ${tr("actions.duplicateDate", { dups })}` : ""}`);
   },
   "p3a-add": d => { state.pillar3a.push(newAccount(d.person)); markDirty(); renderSection(); },
   "p3a-payout-add": d => {
@@ -1833,10 +1854,10 @@ const ACTIONS = {
   settings: () => showSettings(),
   "partner-add": () => {
     const a = state.household.persons[0], id = a.id === "B" ? "C" : "B";
-    state.household.persons.push({ id, name: "Person 2", birth: a.birth });
+    state.household.persons.push({ id, name: tr("general.person2"), birth: a.birth });
     state.partner = newPartner();
     const at = state.milestones.length - 1;
-    state.milestones.splice(at, 0, { id: "retire2", name: "Bezug Pensionskasse Person 2", kind: "age", person: id, years: 65 }, { id: "ahv2", name: "AHV-Bezug Person 2", kind: "age", person: id, years: 65 });
+    state.milestones.splice(at, 0, { id: "retire2", kind: "age", person: id, years: 65 }, { id: "ahv2", kind: "age", person: id, years: 65 });
     markDirty(); renderSection();
   },
   "partner-del": () => {
@@ -1844,7 +1865,7 @@ const ACTIONS = {
     state.partner = null;
     const own = state.milestones.filter(m => m.kind === "age" && m.person === b.id);
     const used = own.find(m => countRefs(m.id));
-    if (used) { state.partner = saved; return toast(`«${used.name}» wird noch verwendet; bitte zuerst dort ersetzen.`); }
+    if (used) { state.partner = saved; return toast(tr("actions.usedReplaceFirst", { name: msLabel(used) })); }
     state.milestones = state.milestones.filter(m => !own.includes(m));
     state.household.persons.splice(1, 1); delete state.partner; delete state.taxes.couple;
     state.pillar3a = state.pillar3a.filter(a => a.person !== b.id);
@@ -1863,17 +1884,17 @@ const ACTIONS = {
     if (d.v === "planned") { p.buy ??= "retire"; p.sell ??= "never"; }
     markDirty(); renderSection();
   },
-  "prop-add": () => { state.realestate.properties.push({ id: newPropId(), name: "Neues Objekt", status: "planned", buy: "retire", sell: "never", price: 800000, fixCosts: 400, inflation: true, inflationValue: true, inflationFixCosts: true, inflationRent: true, mortgage: newMortgage() }); markDirty(); renderSection(); },
+  "prop-add": () => { state.realestate.properties.push({ id: newPropId(), name: tr("actions.newProperty"), status: "planned", buy: "retire", sell: "never", price: 800000, fixCosts: 400, inflation: true, inflationValue: true, inflationFixCosts: true, inflationRent: true, mortgage: newMortgage() }); markDirty(); renderSection(); },
   "period-add": d => { const ps = state.realestate.properties[+d.i].mortgage.tranches[+d.t].periods, last = ps[ps.length - 1]; ps.push(newPeriod(last ? { ...last, term: 5 } : {})); markDirty(); renderSection(); },
   "tranche-add": d => {
     const p = state.realestate.properties[+d.i], ts = p.mortgage.tranches;
-    ts.push({ name: `Tranche ${ts.length + 1}`, amount: 100000, ...(p.status === "owned" ? { start: i2ym(startM()) } : {}), after: "renew", periods: [newPeriod()] });
+    ts.push({ name: tr("actions.trancheN", { v: ts.length + 1 }), amount: 100000, ...(p.status === "owned" ? { start: i2ym(startM()) } : {}), after: "renew", periods: [newPeriod()] });
     markDirty(); renderSection();
   },
   "sweep-add": () => { const sp = SWEEP_PARAMS.find(p => !state.scenarios.sweeps.some(s => s.param === p.id)) || SWEEP_PARAMS[0]; state.scenarios.sweeps.push({ param: sp.id, from: sp.def[0], to: sp.def[1], step: sp.def[2] }); markDirty(); renderSection(); },
   json: () => { $("#dlgPre").textContent = JSON.stringify(state, null, 2); $("#dlg").showModal(); },
   close: () => $("#dlg").close(),
-  copy: () => { navigator.clipboard?.writeText(JSON.stringify(state, null, 2)).then(() => toast("In die Zwischenablage kopiert."), () => toast("Kopieren nicht möglich.")); },
+  copy: () => { navigator.clipboard?.writeText(JSON.stringify(state, null, 2)).then(() => toast(tr("actions.copied")), () => toast(tr("actions.copyFailed"))); },
   download: () => download(),
   new: async () => {
     if (!await confirmDiscard()) return;
@@ -1887,21 +1908,21 @@ const ACTIONS = {
   save: () => save(false),
   saveas: () => save(true),
   import: async () => {
-    if (!Engine.inApp) return toast("Der Import alter Konfigurationen ist in der Desktop-App verfügbar.");
+    if (!Engine.inApp) return toast(tr("actions.importAppOnly"));
     if (!await confirmDiscard()) return;
-    const y = await ask("Alte config.json importieren", "Das alte Format kennt nur Startalter und Startmonat. In welchem <b>Kalenderjahr</b> beginnt die Simulation?", String(new Date().getFullYear()));
+    const y = await ask(tr("actions.importTitle"), tr("actions.importStartYear"), String(new Date().getFullYear()));
     if (!y) return;
-    if (!/^\d{4}$/.test(y)) return toast("Bitte ein Jahr wie 2026 eingeben.");
+    if (!/^\d{4}$/.test(y)) return toast(tr("actions.enterYear"));
     try {
       const r = await Engine.call("import_legacy", { startYear: +y }); if (!r) return;
       const notes = [...r.notes, ...await adopt(r.plan)]; setFile(null, true); History.reset(); goto("general"); refreshSeriesInfo();
-      if (notes.length) await ask("Hinweise zum Import", notes.map(n => `<p>${esc(n)}</p>`).join(""));
+      if (notes.length) await ask(tr("actions.importNotes"), notes.map(n => `<p>${esc(n)}</p>`).join(""));
     } catch (e) { toast(errText(e)); }
   },
-  "import-shiller": () => importData("import_shiller", "Shiller-Daten",
-    "Die neueste Datei <code>ie_data.xls</code> gibt es auf der Website von Robert Shiller (Yale). Der Import ersetzt «Shiller USD.csv» und «Shiller CHF.csv» in der Bibliothek."),
-  "import-snb": () => importData("import_snb", "SNB-Daten",
-    "Auf data.snb.ch die Datenwürfel <b>devkum</b> (Devisenkurse), <b>plkopr</b> (Landesindex der Konsumentenpreise), <b>zimoma</b> (SARON) bzw. <b>rendoblim</b> (Renditen der Eidgenossenschaft) als CSV herunterladen und hier wählen (eine oder mehrere Dateien). Die CHF-Reihen werden danach neu berechnet."),
+  "import-shiller": () => importData("import_shiller", tr("actions.shiller"),
+    tr("actions.shillerHint")),
+  "import-snb": () => importData("import_snb", tr("actions.snb"),
+    tr("actions.snbHint")),
   run: () => runSimulation(),
   help: () => command("help"),
   about: () => command("about"),
@@ -1942,7 +1963,7 @@ const ACTIONS = {
 async function showOpened(r) {
   if (!r) return;
   const notes = await adopt(r.plan); setFile(r.path); History.reset(); goto("general"); refreshSeriesInfo();
-  toast(`«${baseName(r.path)}» geöffnet.`);
+  toast(tr("file.opened", { path: baseName(r.path) }));
   await showNotes(notes);
   await reserveNotice(state);
 }
@@ -1956,22 +1977,43 @@ function showTitle(name) {
   document.title = name ? `VivaPlan - ${name}` : "VivaPlan";
   if (Engine.inApp) Engine.call("set_window_title", { path: currentPath }).catch(() => {});
 }
+/** File name in the header; without a file «Neue Planung» in the current language (#170). */
+function showFileName(name) {
+  const el = $("#fileName");
+  if (name) { delete el.dataset.i18n; el.textContent = name; } else { el.dataset.i18n = "shortcuts.new"; el.textContent = tr("shortcuts.new"); }
+}
+/** #170: After a change of language everything is drawn again in the new language; plan, unsaved changes and the
+ *  view (section, results tab, time range) stay as they are. */
+function redrawTexts() {
+  if (!state) return;
+  $("#dirty").textContent = dirty ? tr("file.unsaved") : "";
+  $("#disclaimerText").textContent = DISCLAIMER_SHORT;
+  $("#nav").innerHTML = ""; // built again with the section titles by renderSection → refresh
+  renderSection();
+  Steps.render();
+  if (!$("#results").hidden) {
+    if (compareOpen) compareRuns();
+    else if (lastRun) renderResults(lastRun);
+    else openRuns();
+  }
+}
+I18n.onChange(redrawTexts);
 function setFile(path, isDirty = false) {
   currentPath = path; dirty = isDirty;
   showTitle(path ? baseName(path) : null);
-  $("#fileName").textContent = path ? baseName(path) : "Neue Planung";
-  $("#dirty").textContent = isDirty ? "● ungespeichert" : "";
+  showFileName(path ? baseName(path) : null);
+  $("#dirty").textContent = isDirty ? tr("file.unsaved") : "";
   pushDirty();
 }
 async function confirmDiscard() {
-  return !dirty || !!await ask("Ungespeicherte Änderungen", "Die aktuelle Planung hat ungespeicherte Änderungen. Trotzdem fortfahren?");
+  return !dirty || !!await ask(tr("quit.title"), tr("file.discardText"));
 }
 async function save(as) {
   if (!Engine.inApp) { download(); setFile(currentPath); return; }
   try {
     const p = await Engine.call("save_plan", { plan: state, path: as ? null : currentPath });
     if (!p) return;
-    setFile(p); toast(`Gespeichert: ${baseName(p)}`);
+    setFile(p); toast(tr("file.saved", { p: baseName(p) }));
   } catch (e) { toast(errText(e)); }
 }
 /** Own dialog (instead of prompt/confirm). With `value` there is an input field. */
@@ -1990,7 +2032,7 @@ function ask(title, html, value = null, okLabel = "OK", discardLabel = null) {
 function download() {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }));
-  a.download = (state.project.name || "planung").replace(/[^\w\-äöüÄÖÜ ]/g, "") + ".vplan"; a.click();
+  a.download = (state.project.name || tr("file.defaultName")).replace(/[^\w\-äöüÄÖÜ ]/g, "") + ".vplan"; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 Object.assign(ACTIONS, OPT_ACTIONS, { "job-cancel": jobCancel });
@@ -2011,13 +2053,13 @@ $("#fileInput").addEventListener("change", async e => {
     const obj = JSON.parse(await f.text());
     // #44: old format id pensionsplaner/1 stays readable (legacy: RetirementPlanner). #144: another format id comes
     // from a newer version and is rejected with its own message.
-    if (typeof obj?.format === "string" && !KNOWN_FORMATS.includes(obj.format)) throw new Error(unknownFormatText(obj.format));
+    if (typeof obj?.format === "string" && !KNOWN_FORMATS.includes(obj.format)) throw Object.assign(new Error(unknownFormatText(obj.format)), { unknownFormat: true });
     if (!KNOWN_FORMATS.includes(obj?.format)) throw 0;
-    const notes = await adopt(obj); setFile(null); History.reset(); $("#fileName").textContent = f.name; showTitle(f.name); goto("general"); refreshSeriesInfo();
-    toast(`«${f.name}» geöffnet.`);
+    const notes = await adopt(obj); setFile(null); History.reset(); showFileName(f.name); showTitle(f.name); goto("general"); refreshSeriesInfo();
+    toast(tr("file.opened", { path: f.name }));
     await showNotes(notes);
     await reserveNotice(state);
-  } catch (err) { toast(err instanceof Error && err.message.startsWith("Die Datei hat das Format") ? err.message : "Datei ist keine Projektdatei im neuen Format."); }
+  } catch (err) { toast(err?.unknownFormat ? err.message : tr("file.notProject")); }
   e.target.value = "";
 });
 window.addEventListener("resize", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
@@ -2026,9 +2068,10 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { re
 // ---------- Settings (#25) ----------
 /** Default values of the settings; the engine knows the same ones (crates/engine/src/settings.rs). */
 const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258 };
-const LIMIT_FIELDS = [["ahvMin", "AHV-Bezug: untere Grenze", "Jahre"], ["ahvMax", "AHV-Bezug: obere Grenze", "Jahre"],
-  ["pkMin", "Bezug Pensionskasse: untere Grenze", "Jahre"], ["pkMax", "Bezug Pensionskasse: obere Grenze", "Jahre"],
-  ["pillar3aMax", "Säule 3a: Maximalbetrag der Einzahlung pro Jahr", null]];
+let LIMIT_FIELDS;
+onLanguage(() => LIMIT_FIELDS = [["ahvMin", tr("limits.ahvMin"), tr("unit.years")], ["ahvMax", tr("limits.ahvMax"), tr("unit.years")],
+  ["pkMin", tr("limits.pkMin"), tr("unit.years")], ["pkMax", tr("limits.pkMax"), tr("unit.years")],
+  ["pillar3aMax", tr("limits.pillar3aMax"), null]]);
 /** Applicable limits: saved values, otherwise the defaults. They apply to all plans on this device. */
 function limits() {
   const saved = Pref.get("limits", null), l = { ...LIMIT_DEFAULTS };
@@ -2039,18 +2082,20 @@ Engine.limits = limits;
 /** Validation as in the engine (`Limits::problems`). */
 function limitProblems(l) {
   const out = [], whole = x => Number.isInteger(x) && x >= 0 && x <= 130;
-  for (const [what, lo, hi] of [["AHV-Bezug", l.ahvMin, l.ahvMax], ["Bezug Pensionskasse", l.pkMin, l.pkMax]]) {
-    if (!whole(lo) || !whole(hi)) out.push(`${what}: Die Grenzen müssen ganze Jahre zwischen 0 und 130 sein.`);
-    else if (lo > hi) out.push(`${what}: Die untere Grenze (${lo}) liegt über der oberen Grenze (${hi}).`);
+  for (const [what, lo, hi] of [[tr("limits.ahv"), l.ahvMin, l.ahvMax], [tr("limits.pk"), l.pkMin, l.pkMax]]) {
+    if (!whole(lo) || !whole(hi)) out.push(tr("limits.wholeYears", { what }));
+    else if (lo > hi) out.push(tr("limits.lowAboveHigh", { what, lo, hi }));
   }
-  if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push("Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.");
+  if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push(tr("limits.pillar3aNegative"));
   return out;
 }
 /** #110: Question about saving before the simulation (default: on). */
 const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
-function settingsFields(l) {
-  return `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> Vor der Simulation fragen, ob die Planung gespeichert werden soll</label>`
-    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(k === "pillar3aMax" ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">Standard ${k === "pillar3aMax" ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k]}</span></label>`).join("");
+function settingsFields(l, language = I18n.choice()) {
+  const langs = [[I18n.SYSTEM, tr("language.system")], ...Object.entries(I18n.languages())];
+  return `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
+    + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
+    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(k === "pillar3aMax" ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: k === "pillar3aMax" ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("");
 }
 function readSettings() {
   const l = {};
@@ -2068,14 +2113,17 @@ $("#settingsSave").addEventListener("click", e => {
   const l = readSettings(), problems = limitProblems(l);
   if (problems.length) { e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>"); return; }
   Pref.set("limits", l); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
-  $("#settings").close(); toast("Einstellungen gespeichert.");
-  renderSection();
+  const language = $("#set-language").value;
+  $("#settings").close();
+  // #170: a new language draws everything again (also the section)
+  if (language !== I18n.choice()) I18n.use(language).then(() => toast(tr("settings.saved")), e => noteError(errText(e)));
+  else { toast(tr("settings.saved")); renderSection(); }
 });
 $("#settingsDefaults").addEventListener("click", async e => {
   e.preventDefault();
-  if (!await ask("Standardwerte", "Alle Einstellungen auf die Standardwerte zurücksetzen?", null, "Zurücksetzen")) return;
+  if (!await ask(tr("settings.defaults"), tr("settings.resetAsk"), null, tr("settings.reset"))) return;
   Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("askSaveBeforeRun", true);
-  $("#settingsBody").innerHTML = settingsFields(limits()); $("#settingsErr").textContent = "";
+  $("#settingsBody").innerHTML = settingsFields(limits(), I18n.SYSTEM); $("#settingsErr").textContent = "";
   renderSection();
 });
 
@@ -2113,7 +2161,7 @@ async function confirmLongRun() {
   if (bench.us == null) return true;
   const { runs, sec } = scenSeconds();
   if (!(sec > LONG_RUN_SECONDS)) return true;
-  return !!await ask("Lange Berechnung", `Die Berechnung dauert voraussichtlich ca. <b>${esc(fmtShort(sec))}</b> (${fmtInt(runs)} ${runs === 1 ? "Simulationslauf" : "Simulationsläufe"}). Sie lässt sich während der Berechnung abbrechen.`, null, "Trotzdem starten");
+  return !!await ask(tr("run.longTitle"), `${tr("run.longText", { esc: esc(fmtShort(sec)), runs: fmtInt(runs) })} ${runs === 1 ? tr("run.run") : tr("run.runs")}${tr("run.longTail")}`, null, tr("run.startAnyway"));
 }
 /**
  * #110: If the plan has unsaved changes, the app asks before the simulation whether to save.
@@ -2122,7 +2170,7 @@ async function confirmLongRun() {
  */
 async function confirmSaveBeforeRun() {
   if (!dirty || !askSaveOn() || !(Engine.inApp || Pref.get("askSaveDev", false))) return true;
-  const r = await ask("Planung speichern?", `Die Planung hat ungespeicherte Änderungen${currentPath ? "" : " und noch keinen Dateinamen"}. Vor der Simulation speichern?`, null, "Speichern", "Ohne Speichern simulieren");
+  const r = await ask(tr("run.saveTitle"), `${tr("run.saveText")}${currentPath ? "" : tr("run.noFileName")}${tr("run.saveTail")}`, null, tr("quit.save"), tr("run.withoutSaving"));
   if (r === null) return false;
   if (r === true) { await save(false); if (dirty) return false; }
   return true;
@@ -2144,59 +2192,60 @@ async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
   if (!await confirmSaveBeforeRun()) return;
   if (!noConfirm && !await confirmLongRun()) return;
   unpark(); showResults(true); resultTab = tab; detailP = 50; resetVariation(); lastRunName = null;
-  plainTitle("Simulation läuft…"); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
-  $("#resultsBody").innerHTML = jobCard("Simulation läuft…", "Die Berechnung läuft lokal auf diesem Rechner.");
+  plainTitle(tr("run.running")); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
+  $("#resultsBody").innerHTML = jobCard(tr("run.running"), tr("run.local"));
   try {
     const planAtRun = JSON.parse(JSON.stringify(state));
     lastRun = await withJob(() => Engine.call("run_simulation", { plan: state, path: currentPath, jobId: job.id }));
     lastRunPlan = planAtRun;
-    if (isCancelled(lastRun.error)) { lastRun = null; showResults(false); return toast("Simulation abgebrochen."); }
+    if (isCancelled(lastRun.error)) { lastRun = null; showResults(false); return toast(tr("run.cancelled")); }
     renderResults(lastRun); document.documentElement.dataset.rendered = resultTab; rememberRun(lastRun);
     if (!lastRun.error) Steps.mark("run"); }
-  catch (e) { plainTitle("Fehler"); $("#resultsBody").innerHTML = `<div class="card errcard">${esc(errText(e))}</div>`; }
+  catch (e) { plainTitle(tr("run.error")); $("#resultsBody").innerHTML = `<div class="card errcard">${esc(errText(e))}</div>`; }
 }
 const kpi = (k, v, s = "", cls = "") => `<div class="kpi ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
 /** Legend; entry [color, text, opacity, line style]: with line style «solid» or «dashed» a line symbol instead of the box. */
 const legend = items => `<div class="legend">${items.map(([c, t, o, line]) => `<span>${line
   ? `<svg class="lsym" width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><line x1="0" x2="22" y1="5" y2="5" stroke="var(${c})" stroke-width="2" ${line === "dashed" ? 'stroke-dasharray="5 3"' : ""}/></svg>`
   : `<i style="background:var(${c})${o ? `;opacity:${o}` : ""}"></i>`}${t}</span>`).join("")}</div>`;
-const WEALTH_LEGEND = legend([["--c1", "Liquides Vermögen"], ["--c2", "Immobilien (netto)"], ["--c3", "Vorsorge (PK, 3a)"]]);
-const atAge = month => `${ymShow(month)} (Alter ${ageStr(ym2i(month))})`;
+let WEALTH_LEGEND;
+onLanguage(() => WEALTH_LEGEND = legend([["--c1", tr("legend.liquid")], ["--c2", tr("legend.propertyNet")], ["--c3", tr("legend.pension")]]));
+const atAge = month => tr("results.atAge", { month: ymShow(month), ageStr: ageStr(ym2i(month)) });
 /** Does the plan have mortgages whose renewal is checked for affordability? */
 const hasProperties = () => state.realestate.properties.some(p => p.status !== "rent");
 /** Property sales of a run, one row «Name: MM.YYYY» per sale; emergency sales with warning icon, without a sale «–». */
 function propertySales(res) {
   const sales = (res?.propertyEvents || []).filter(e => e.kind === "sale" || e.kind === "emergencySale").sort((a, b) => ym2i(a.month) - ym2i(b.month));
-  return sales.length ? sales.map(e => `<div>${esc(e.property)}: ${ymShow(e.month)}${e.kind === "emergencySale" ? ` ${houseWarn("Notverkauf")}` : ""}</div>`).join("") : "–";
+  return sales.length ? sales.map(e => `<div>${esc(e.property)}: ${ymShow(e.month)}${e.kind === "emergencySale" ? ` ${houseWarn(tr("timeline.emergency"))}` : ""}</div>`).join("") : "–";
 }
 /** Property events of a run, chronological: purchase, sale, emergency sale (with reason) and mortgage renewal with their amounts. */
 function propertyEvents(res) {
   const evs = [...(res.propertyEvents || [])].sort((a, b) => ym2i(a.month) - ym2i(b.month));
   const n = v => fmtInt(v), part = (label, v) => `<span class="pe"><span class="k">${label}</span> ${v}</span>`;
-  const TYPE = { purchase: "Kauf", sale: "Verkauf", emergencySale: "Notverkauf", renewal: "Hypothekenerneuerung" };
+  const TYPE = { purchase: tr("timeline.buy"), sale: tr("timeline.sell"), emergencySale: tr("timeline.emergency"), renewal: tr("propEvents.renewal") };
   const detail = e => {
-    if (e.kind === "purchase") return [part("Kaufpreis", n(e.price)), part("Eigenmittel", n(e.equity)), part("Hypothek", n(e.mortgage))];
+    if (e.kind === "purchase") return [part(tr("propEvents.price"), n(e.price)), part(tr("propEvents.equity"), n(e.equity)), part(tr("propEvents.mortgage"), n(e.mortgage))];
     if (e.kind === "sale" || e.kind === "emergencySale") {
-      const p = [part("Verkaufserlös", n(e.proceeds)), part("abgelöste Hypothek", n(e.debtRepaid))];
-      if (e.gainTax > 0) p.push(part("Grundstückgewinnsteuer", n(e.gainTax)));
-      p.push(part("Nettoerlös", `<b>${n(e.net)}</b>`));
-      if (e.reason) p.push(part("Grund", `<span class="bad">${esc(e.reason)}</span>`));
-      if (e.note) p.push(part("Hinweis", esc(e.note)));
+      const p = [part(tr("propEvents.proceeds"), n(e.proceeds)), part(tr("propEvents.mortgageRepaid"), n(e.debtRepaid))];
+      if (e.gainTax > 0) p.push(part(tr("propEvents.gainTax"), n(e.gainTax)));
+      p.push(part(tr("propEvents.netProceeds"), `<b>${n(e.net)}</b>`));
+      if (e.reason) p.push(part(tr("propEvents.reason"), `<span class="bad">${esc(e.reason)}</span>`));
+      if (e.note) p.push(part(tr("propEvents.note"), esc(e.note)));
       return p;
     }
-    const p = [part("Tragbarkeit", e.affordable ? "gegeben" : `<span class="bad">nicht gegeben</span>`)];
-    if (e.reason) p.push(part("Hypothek", `<span class="bad">nicht erneuert</span> (${n(e.debtBefore)}), Notverkauf: ${esc(e.reason)}`));
-    else p.push(part("Hypothek vorher / nachher", `${n(e.debtBefore)} / ${n(e.debtAfter)}`));
-    if (e.lumpSum > 0) p.push(part("Einmalzahlung (Tragbarkeit)", `<b>${n(e.lumpSum)}</b>`));
-    if (e.rate != null) p.push(part("Zinssatz", `${(e.rate * 100).toLocaleString("de-CH", { maximumFractionDigits: 2 })} %`));
+    const p = [part(tr("propEvents.affordability"), e.affordable ? "gegeben" : `<span class="bad">${tr("propEvents.notGiven")}</span>`)];
+    if (e.reason) p.push(part(tr("propEvents.mortgage"), `<span class="bad">${tr("propEvents.notRenewed")}</span> ${tr("propEvents.emergencyReason", { debtBefore: n(e.debtBefore), reason: esc(e.reason) })}`));
+    else p.push(part(tr("propEvents.debtBeforeAfter"), `${n(e.debtBefore)} / ${n(e.debtAfter)}`));
+    if (e.lumpSum > 0) p.push(part(tr("propEvents.oneOffAffordability"), `<b>${n(e.lumpSum)}</b>`));
+    if (e.rate != null) p.push(part(tr("propEvents.rate"), `${(e.rate * 100).toLocaleString("de-CH", { maximumFractionDigits: 2 })} %`));
     return p;
   };
   const body = evs.length
-    ? `<div class="tscroll"><table class="tbl"><tr><th class="l">Zeitpunkt</th><th class="l">Ereignis</th><th class="l">Immobilie</th><th class="l">Beträge in ${cur()}</th></tr>
+    ? `<div class="tscroll"><table class="tbl"><tr><th class="l">${tr("propEvents.when")}</th><th class="l">${tr("propEvents.event")}</th><th class="l">${tr("propEvents.property")}</th><th class="l">${tr("propEvents.amountsIn", { cur: cur() })}</th></tr>
       ${evs.map(e => `<tr><td class="l">${atAge(e.month)}</td><td class="l ${e.kind === "emergencySale" ? "bad" : ""}">${TYPE[e.kind]}</td><td class="l">${esc(e.property)}</td><td class="l pes">${detail(e).join("")}</td></tr>`).join("")}</table></div>
-      <p class="hint">Beträge nominal. Bei jeder Hypothekenerneuerung wird die Tragbarkeit mit dem Einkommen geprüft. Ist sie nicht gegeben, zahlt die Simulation die minimal nötige Einmalzahlung aus dem Vermögen, sofern das Vermögen danach nicht negativ ist und das Notverkaufskriterium nicht auslöst. Sonst wird die Hypothek nicht erneuert und ein Notverkauf eingeleitet. Eigenmittel beim Kauf = Kaufpreis − Hypothek.</p>`
-    : `<p class="hint" style="margin:0">Keine Immobilienereignisse.</p>`;
-  return card("Immobilien", "Kauf, Verkauf, Notverkauf und Hypothekenerneuerung", body);
+      <p class="hint">${tr("propEvents.nominalHint")}</p>`
+    : `<p class="hint" style="margin:0">${tr("propEvents.none")}</p>`;
+  return card(tr("section.realestate"), tr("propEvents.subtitle"), body);
 }
 /**
  * 3-bucket strategy: derivation of the bucket sizes (spending, deducted income, net need, targets), return criterion,
@@ -2206,38 +2255,38 @@ function propertyEvents(res) {
 function bucketDerivation(rs) {
   const n = v => fmtInt(v);
   const pct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`;
-  const CASE = { Januar: "Januar-Auffüllung", A: "A · Start / PK-Kapitalbezug / Neustart", B: "B · Zufluss", C1: "C1 · Vorausschau, Kriterium erfüllt", C2: "C2 · Vorausschau, Kriterium nicht erfüllt" };
-  const side = x => (x === 0 ? "extern" : x === 4 ? "Reservierung" : `Topf ${x}`);
+  const CASE = { Januar: tr("buckets.januaryRefill"), A: tr("buckets.triggerA"), B: tr("buckets.triggerB"), C1: tr("buckets.triggerC1"), C2: tr("buckets.triggerC2") };
+  const side = x => (x === 0 ? "extern" : x === 4 ? tr("buckets.reservation") : tr("buckets.bucketN", { x }));
   const rows = rs.map(r => {
     const b = r.basis, inflow = r.trigger === "B";
-    const cond = inflow ? "–" : r.conditionIgnored ? `<small>ignoriert</small>` : `${r.conditionMet ? "erfüllt" : `<span class="bad">nicht erfüllt</span>`}<br><small>${pct(r.stockReturn)} (${esc(r.returnBasis)}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
+    const cond = inflow ? "–" : r.conditionIgnored ? `<small>${tr("buckets.ignored")}</small>` : `${r.conditionMet ? tr("buckets.met") : `<span class="bad">${tr("buckets.notMet")}</span>`}<br><small>${pct(r.stockReturn)} (${esc(r.returnBasis)}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
     const moves = r.moves?.length ? r.moves.map(x => `${side(x.from)} → ${side(x.to)}: ${n(x.amount)}`).join("<br>") : "–";
-    const basis = inflow ? `<td colspan="8" class="l"><small>keine Auffüllung von Topf 1 und 2</small></td>`
-      : `<td>${n(b.living)}${b.livingSource === "Guardrails" ? "<br><small>Guardrails</small>" : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${n(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
+    const basis = inflow ? `<td colspan="8" class="l"><small>${tr("buckets.noRefill")}</small></td>`
+      : `<td>${n(b.living)}${b.livingSource === tr("strat.guardrails") ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${n(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
     const targets = inflow ? "<td>–</td><td>–</td>" : `<td>${n(r.target1)}</td><td>${n(r.target2)}</td>`;
-    const passed = (r.trigger === "A" || r.trigger === "C1") && r.passedMonths > 0 ? `<br><small>Ziele um ${r.passedMonths} Monate gekürzt</small>` : "";
+    const passed = (r.trigger === "A" || r.trigger === "C1") && r.passedMonths > 0 ? `<br><small>${tr("buckets.targetsShortened", { passedMonths: r.passedMonths })}</small>` : "";
     const base = inflow || !b.source ? "" : `<br><small>${esc(b.source)}</small>`;
     return `<tr><td class="l">${atAge(r.month)}</td><td class="l"><b>${esc(CASE[r.trigger] || r.trigger)}</b><br><small>${esc(r.reason)}</small>${base}${passed}</td>
       ${basis}${targets}<td class="l">${cond}</td>
-      <td class="l">${moves}${r.payment > 0 && r.trigger !== "B" ? `<br><small>vor den Ausgaben des Monats (${n(r.payment)})</small>` : ""}</td>
+      <td class="l">${moves}${r.payment > 0 && r.trigger !== "B" ? `<br><small>${tr("buckets.beforeSpending", { payment: n(r.payment) })}</small>` : ""}</td>
       <td>${n(r.before[0])} / ${n(r.before[1])} / ${n(r.before[2])}</td><td>${n(r.after[0])} / ${n(r.after[1])} / ${n(r.after[2])}</td></tr>`;
   }).join("");
-  return `<div class="tscroll"><table class="tbl num"><tr><th class="l">Zeitpunkt</th><th class="l">Ausgelöst durch</th>
-      <th title="Geplante Lebenshaltung; bei 3-Topf mit Guardrails die Lebenshaltung der Guardrails (vermerkt)">Lebenshaltung</th><th>Wohnen</th><th title="Einzahlungen in die Säule 3a">3a</th><th title="Steuer auf dem (hochgerechneten) Jahreseinkommen">Einkommens&shy;steuer</th><th title="abgezogene Einnahmen: AHV-Rente pro Jahr">AHV</th><th title="abgezogene Einnahmen: PK-Rente pro Jahr">PK-Rente</th><th title="abgezogene Einnahmen: Erwerbseinkommen pro Jahr">Erwerb</th><th title="Lebenshaltung + Wohnen + 3a + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen">Netto-Bedarf</th>
-      <th>Ziel Topf 1</th><th>Ziel Topf 2</th><th class="l" title="Aktienrendite der letzten 12 Monate (vor dem Start aus dem Vorlauf des Renditepfads) gegenüber der Schwelle: Nur bei erfüllter Bedingung wird in der Januar-Auffüllung und in C1 aus Topf 3 verkauft. A und C2 ignorieren sie.">Renditekriterium</th><th class="l" title="Umbuchungen zwischen den Töpfen">Umbuchungen</th><th title="Topf 1 / Topf 2 / Topf 3 vor der Auffüllung">Vorher T1 / T2 / T3</th><th title="Topf 1 / Topf 2 / Topf 3 nach der Auffüllung">Nachher T1 / T2 / T3</th></tr>${rows}</table></div>`;
+  return `<div class="tscroll"><table class="tbl num"><tr><th class="l">${tr("buckets.when")}</th><th class="l">${tr("buckets.trigger")}</th>
+      <th title="${tr("buckets.livingTitle")}">${tr("buckets.living")}</th><th>${tr("buckets.housing")}</th><th title="${tr("buckets.pillar3aTitle")}">3a</th><th title="${tr("buckets.incomeTaxTitle")}">${tr("buckets.incomeTax")}</th><th title="${tr("buckets.ahvTitle")}">${tr("common.ahv")}</th><th title="${tr("buckets.pkTitle")}">${tr("buckets.pkPension")}</th><th title="${tr("buckets.earnedTitle")}">${tr("buckets.earned")}</th><th title="${tr("buckets.netNeedTitle")}">${tr("buckets.netNeed")}</th>
+      <th>${tr("buckets.target1")}</th><th>${tr("buckets.target2")}</th><th class="l" title="${tr("buckets.criterionTitle")}">${tr("buckets.criterion")}</th><th class="l" title="${tr("buckets.transfersTitle")}">${tr("buckets.transfers")}</th><th title="${tr("buckets.beforeTitle")}">${tr("buckets.before")}</th><th title="${tr("buckets.afterTitle")}">${tr("buckets.after")}</th></tr>${rows}</table></div>`;
 }
-const bucketHint = () => `<p class="hint">Beträge in ${cur()}, nominal, pro Jahr; die Topfstände gelten vor den Ausgaben des Monats. <b>Netto-Bedarf</b> = Lebenshaltung + Wohnen (ohne Amortisation) + Einzahlung in die Säule 3a + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen, aus den geplanten Werten des laufenden Jahres (bei 3-Topf mit Guardrails: Lebenshaltung gemäss Guardrails, nach Unter- und Obergrenze); einmalige Ausgaben, Anschaffungen, Käufe und Sondersteuern zählen nicht. Ziel Topf 1 und 2 = Jahre × Netto-Bedarf. <b>Januar-Auffüllung:</b> Topf 1 zuerst aus Topf 2, der Rest aus Topf 3, danach Topf 2 aus Topf 3; ist das Renditekriterium nicht erfüllt, wird nichts aus Topf 3 verkauft und Topf 2 nicht nachgefüllt. Ein Überschuss in Topf 1 oder 2 geht in Topf 3. <b>A:</b> beim Start der Entnahmephase (erste Pensionierung), bei einem PK-Kapitalbezug und beim Neustart nach «alle Töpfe leer»: Das Vermögen (Kapitalbezug) geht zuerst in Topf 3, dann wie im Januar ohne Renditekriterium; die Ziele sind um die vergangenen Monate des Jahres gekürzt, der Netto-Bedarf aus den Monaten ab dem Auslöser auf 12 Monate hochgerechnet. <b>B:</b> Zuflüsse gehen direkt an ihr Ziel und erscheinen als Buchung «extern → Topf 3» (einmalige Zuflüsse, 3a, Verkaufserlöse ohne Folgekauf, Notverkäufe), «extern → Reservierung» (Verkauf mit Kauf im Folgemonat) oder «Reservierung → Topf 3» (Überschuss nach dem Kauf); Topf 1 und 2 werden nicht aufgefüllt. «Vorher» zeigt den Stand vor dem Zufluss. <b>C (Vorausschau):</b> Deckt Topf 1 die Ausgaben des Monats nicht, gilt bei erfülltem Renditekriterium <b>C1</b>: Ablauf wie die Januar-Auffüllung, die Ziele um die seit Januar vergangenen Monate gekürzt und das Ziel von Topf 1 um die einmaligen Ausgaben des Monats erhöht, ohne Überschussbuchung in Topf 3. Bei nicht erfülltem Kriterium gilt <b>C2</b>: Topf 1 wird aus Topf 2, dann Topf 3 so aufgefüllt, dass er die Ausgaben deckt und danach noch (Min(Reserve, Monate bis Januar) − 1) Monatsbedarfe enthält; Topf 2 wird nicht aufgefüllt. Die Überschussbuchung in Topf 3 gibt es nur in der Januar-Auffüllung. Reichen alle Töpfe nicht, wird eine Immobilie notverkauft; ohne Immobilie darf Topf 1 negativ werden, bis das Vermögen wieder positiv ist.</p>`;
+const bucketHint = () => `<p class="hint">${tr("buckets.hint", { cur: cur() })}</p>`;
 /** 3-bucket bookkeeping (refills, inflows, reservations) is in the yearly values; the messages of the deficit phase stay. */
 const isBucketBooking = e => (e.kind === "buckets" && !/^3-Topf: alle Töpfe leer/.test(e.text))
   || (state.withdrawal.strategy === "three_buckets" && e.kind === "withdrawal" && /reserviert für Kauf im Folgemonat/.test(e.text));
 function eventList(evs) {
   evs = evs.filter(e => !isBucketBooking(e));
-  return evs.length ? `<ul class="evlist">${evs.map(e => `<li><span>${atAge(e.month)}</span><span>${esc(e.text)}</span></li>`).join("")}</ul>` : `<p class="hint" style="margin:0">Keine Ereignisse.</p>`;
+  return evs.length ? `<ul class="evlist">${evs.map(e => `<li><span>${atAge(e.month)}</span><span>${esc(e.text)}</span></li>`).join("")}</ul>` : `<p class="hint" style="margin:0">${tr("results.noEvents")}</p>`;
 }
 /** Amount nominal or in prices of the start month. */
 const rv = (r, x) => realView ? x / r.priceIndex : x;
-const realNote = () => realView ? `in heutiger Kaufkraft (Preise ${ymShow(i2ym(startM()))})` : "nominal";
-const xLabel = m => `${m / 12} · ${Math.round(ageAt(m))} J.`;
+const realNote = () => realView ? tr("results.real", { ymShow: ymShow(i2ym(startM())) }) : tr("results.nominalLower");
+const xLabel = m => `${m / 12} · ${Math.round(ageAt(m))} ${tr("unit.yearsShort")}`;
 const card = (title, sub, body, cls = "") => `<div class="card ${cls}"><h3>${title}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>${body}</div>`;
 /**
  * Zoom of the result charts, shared by all: { from, to, years } in months since plan start; `years` is the chosen
@@ -2264,15 +2313,17 @@ const zoomAbs = (a, b) => setCustomZoom(a - startM(), b - startM());
 /** Zoom buttons of the result charts; the same state in all charts. After a mouse selection no button is active. */
 const resultZoomBar = () => {
   const custom = resultZoom && resultZoom.years == null, v = resultView();
-  const note = custom ? `Benutzerdefiniert: ${((v[0] - startM()) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })} – ${((v[1] - startM()) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })} J. nach Start` : "Bereich mit der Maus aufziehen · gilt für alle Ergebnisgrafiken";
+  const note = custom ? tr("results.customZoom", { v: ((v[0] - startM()) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 }), v2: ((v[1] - startM()) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 }) }) : tr("results.zoomHint");
   return `<div class="minizoom">${zoomButtons("res-zoom", resultZoom ? (resultZoom.years ?? -1) : 0)}<span>${note}</span></div>`;
 };
 const chartBox = (id, h = 300, zoom = false) => `${zoom ? resultZoomBar() : ""}<div class="chartwrap"><svg id="${id}" class="bigchart" style="height:${h}px"></svg><div id="${id}-tip" class="tip"></div></div>`;
 /** Note on the final wealth per percentile in today's purchasing power (comparison, #126). */
-const REAL_PCT_HINT = "In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils";
-const FAN_LEGEND = legend([["--c1", "5.–95. Perzentil", ".25"], ["--c1", "25.–75. Perzentil", ".5"], ["--c1", "Median", null, "solid"], ["--warn", "1. und 99. Perzentil", null, "dashed"], ["--err", "Schlechtester Wert", null, "solid"]])
-  + `<p class="hint">Die Linie «Schlechtester Wert» zeigt für jeden Monat den tiefsten Wert aller Läufe; das kann in jedem Monat ein anderer Lauf sein. Der einzelne schlechteste Lauf (nach Endvermögen) ist unter «Einzelne Läufe» abrufbar.</p>`;
-const pName = p => p === 0 ? "Schlechtester Lauf" : `${p}. Perzentil`;
+let REAL_PCT_HINT;
+onLanguage(() => REAL_PCT_HINT = tr("results.realPctHint"));
+let FAN_LEGEND;
+onLanguage(() => FAN_LEGEND = legend([["--c1", tr("fan.p5to95"), ".25"], ["--c1", tr("fan.p25to75"), ".5"], ["--c1", tr("fan.median"), null, "solid"], ["--warn", tr("fan.p1p99"), null, "dashed"], ["--err", tr("fan.worst"), null, "solid"]])
+  + `<p class="hint">${tr("fan.worstHint")}</p>`);
+const pName = p => p === 0 ? tr("fan.worstRun") : tr("fan.percentile", { p });
 const pctTxt = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`;
 
 /**
@@ -2312,30 +2363,30 @@ function yearTable(recs, start, refills = []) {
   const tx = showTaxCols, cols = 12 + (tx ? 5 : 0);
   const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);
   const rows = yearValues(recs, start).map(v => {
-    const y = v.y, part = v.months < 12 ? `<span title="Unvollständiges Jahr: ${v.months} Monate" style="color:var(--muted)">*</span>` : "";
+    const y = v.y, part = v.months < 12 ? `<span title="${tr("yearTable.partialYear", { months: v.months })}" style="color:var(--muted)">*</span>` : "";
     const rf = refillsOf(y), open = bucketOpen.has(y);
-    const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="Herleitung der 3-Topf-Auffüllungen dieses Jahres ${open ? "ausblenden" : "anzeigen"}">${open ? "▾" : "▸"}</button>` : "";
+    const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? "ausblenden" : "anzeigen" })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
       ${tx ? `${cell(v.taxIncome)}${cell(v.taxWealth)}${cell(v.taxCapital)}${cell(v.taxGain)}${cell(v.taxTotal, true)}` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
-  const taxHint = tx ? ` Die <b>Steuern</b> stehen in der Zeile des <b>Steuerjahres</b>, für das sie gelten: Einkommens- und Vermögenssteuer werden im Dezember veranlagt, aber erst im Mai des Folgejahres bezahlt (der Cash-Bestand sinkt erst dann). Kapitalbezugs- und Grundstückgewinnsteuer stehen im Jahr des Bezugs bzw. Verkaufs. Die Steuer des letzten, unvollständigen Jahres fehlt, wenn die Planung vor Dezember endet. Die Summe über alle Jahre bleibt gleich.` : "";
-  return `<div class="seg" style="margin-bottom:8px"><button class="${tx ? "on" : ""}" data-action="tax-cols" aria-pressed="${tx}" title="Spalten mit den Steuern des Jahres ein- oder ausblenden">${tx ? "Steuern ausblenden" : "Steuern anzeigen"}</button></div>
-    <div class="tscroll"><table class="tbl num yt"><tr><th>Jahr</th><th>Alter</th><th title="Vermögen am Jahresende: liquide Mittel">Liquid</th><th title="Vermögen am Jahresende: Immobilien abzüglich Hypotheken">Immobilien</th><th title="Vermögen am Jahresende: Pensionskasse und Säule 3a">Vorsorge</th><th title="Vermögen am Jahresende: Summe">Total</th>
-      <th title="Monatsdurchschnitt des Jahres: geplante Ausgaben plus Miete bzw. Hypothekarzins, Amortisation und übrige Wohnkosten, plus Einzahlung in die Säule 3a">Ausgaben total</th><th title="Monatsdurchschnitt des Jahres: was dem Vermögen entnommen wird (tatsächliche Ausgaben minus Einkommen, vor Steuern)">Entnahme</th><th title="Monatsdurchschnitt des Jahres: Einkommen plus Entnahme aus dem Vermögen">Einkommen total</th><th title="Jährliche Entnahme / Gesamtvermögen am Jahresanfang (Total des Vorjahres)">Entnahmerate</th>
-      <th title="Monatsdurchschnitt des Jahres: Einkommen total minus Ausgaben total. 0 = wie geplant, negativ = Kürzung gegenüber dem Plan, positiv = höhere Ausgaben als geplant">Abweichung vom Plan</th><th title="Veränderung des Preisindex im Kalenderjahr (im ersten Jahr seit Start)">Inflation<br>pro Jahr</th>
-      ${tx ? `<th class="tx" title="Steuer des Steuerjahres der Zeile (veranlagt im Dezember, bezahlt im Mai des Folgejahres); Kapitalbezugs- und Grundstückgewinnsteuer im Jahr des Bezugs bzw. Verkaufs.">Steuer<br>Einkommen</th><th class="tx">Steuer<br>Vermögen</th><th class="tx">Steuer<br>Kapital Bezug</th><th class="tx">Steuer<br>Grundstück</th><th class="tx">Steuer<br>Total</th>` : ""}</tr>${rows}</table></div>
-    <p class="hint">Die <b>Vermögen</b> (Liquid, Immobilien, Vorsorge, Total) sind <b>Stände am Jahresende</b>. <b>Ausgaben total</b>, <b>Entnahme</b>, <b>Einkommen total</b> und <b>Abweichung vom Plan</b> sind <b>Monatsdurchschnitte</b> des Kalenderjahrs.${taxHint} <b>Ausgaben total</b> = geplante Ausgaben aus der Planung plus Miete bzw. Hypothekarzins und übrige Wohnkosten plus Einzahlung in die Säule 3a. <b>Entnahme</b> = was dem Vermögen entnommen wird (tatsächliche Ausgaben minus Einkommen, vor Steuern). <b>Einkommen total</b> = Einkommen plus Entnahme. <b>Abweichung vom Plan</b> = Einkommen total − Ausgaben total: bei 0 verläuft alles wie geplant; bei Guardrails &amp; Co. zeigt ein negativer Wert, um wie viel die Strategie die Ausgaben kürzt. <b>Inflation pro Jahr</b> = Veränderung des Preisindex im Kalenderjahr (im ersten Jahr seit Simulationsstart). <b>Entnahmerate</b> = jährliche Entnahme / Gesamtvermögen am Jahresanfang. Die jährliche Entnahme ist die Summe der Monatsentnahmen des Jahres (bei unvollständigen Jahren der Monatsdurchschnitt mal 12), das Vermögen am Jahresanfang der Wert des Vorjahres, im ersten Jahr der Stand zum Simulationsstart; gerechnet wird immer mit nominalen Werten. Ist die Entnahme null oder negativ, bleibt die Zelle leer; ist das Vermögen null oder negativ, steht «–». Ein Stern (*) kennzeichnet ein unvollständiges Jahr (erstes und letztes).</p>${refills.length ? `<p class="hint"><b>3-Topf-Strategie:</b> Jahre mit Auffüllung haben vorn einen Pfeil (▸); er klappt die Herleitung der Topfgrössen und der Auffüllungen dieses Jahres auf.</p>${bucketHint()}` : ""}`;
+  const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
+  return `<div class="seg" style="margin-bottom:8px"><button class="${tx ? "on" : ""}" data-action="tax-cols" aria-pressed="${tx}" title="${tr("yearTable.taxToggleTitle")}">${tx ? tr("yearTable.hideTaxes") : tr("yearTable.showTaxes")}</button></div>
+    <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
+      <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th><th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
+      <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
+      ${tx ? `<th class="tx" title="${tr("yearTable.taxTitle")}">${tr("yearTable.taxIncome")}</th><th class="tx">${tr("yearTable.taxWealth")}</th><th class="tx">${tr("yearTable.taxLumpsum")}</th><th class="tx">${tr("yearTable.taxProperty")}</th><th class="tx">${tr("yearTable.taxTotal")}</th>` : ""}</tr>${rows}</table></div>
+    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {
   const dep = s.depleted ? ym2i(s.depleted) : null;
   return `<div class="rkpis">
-    ${kpi("Vermögen bei Pensionierung", s.totalAtRetirement != null ? fmtMio(s.totalAtRetirement) : "–", ymShow(i2ym(refMonth(state.pension.pk.at))))}
-    ${kpi("Vermögen am Ende", fmtMio(realView ? s.endTotalReal : s.endTotal), `Alter ${ageStr(endM())}, ${realView ? "heutige Kaufkraft" : "nominal"}`, s.endTotal > 0 ? "good" : "bad")}
-    ${kpi("Geld reicht bis", dep !== null ? "Alter " + ageStr(dep) : "Ende ✓", dep !== null ? ymShow(s.depleted) : "über den ganzen Zeitraum", dep !== null ? "bad" : "good")}
-    ${kpi("PK-Rente", fmtMoney(s.pensionFundMonthly), `pro Monat · Kapital netto ${fmtMio(s.lumpsumNet)}`)}
-    ${kpi("Steuern total", fmtMio(s.taxesTotal), "Einkommen, Vermögen, Kapital, Grundstückgewinn")}</div>`;
+    ${kpi(tr("kpi.wealthAtRetire"), s.totalAtRetirement != null ? fmtMio(s.totalAtRetirement) : "–", ymShow(i2ym(refMonth(state.pension.pk.at))))}
+    ${kpi(tr("kpi.wealthAtEnd"), fmtMio(realView ? s.endTotalReal : s.endTotal), `${tr("single.ageAt", { ageStr: ageStr(endM()) })} ${realView ? tr("single.todayPower") : tr("results.nominalLower")}`, s.endTotal > 0 ? "good" : "bad")}
+    ${kpi(tr("kpi.moneyLasts"), dep !== null ? tr("kpi.age") + ageStr(dep) : tr("kpi.endOk"), dep !== null ? ymShow(s.depleted) : tr("kpi.wholePeriod"), dep !== null ? "bad" : "good")}
+    ${kpi(tr("single.pkPension"), fmtMoney(s.pensionFundMonthly), tr("single.pkSub", { lumpsumNet: fmtMio(s.lumpsumNet) }))}
+    ${kpi(tr("single.taxesTotal"), fmtMio(s.taxesTotal), tr("single.taxesSub"))}</div>`;
 }
 
 /** Sums per calendar year for the bar charts. */
@@ -2355,48 +2406,48 @@ function yearly(recs) {
 /** Charts of a single run (single run or percentile run). */
 function runChartsHtml(res, p) {
   const recs = res.records, hasProp = recs.some(r => r.propertyValue > 0), hasPk = recs.some(r => r.pensionFund > 0 || r.pillar3a > 0);
-  return card("Vermögensverlauf", realNote(), chartBox(`${p}-wealth`, 300, true) + WEALTH_LEGEND)
-    + card("Liquides Vermögen nach Anlage", realNote(), `<div class="seg" style="margin-bottom:8px"><button class="${compPercent ? "" : "on"}" data-action="comp" data-v="0">Beträge</button><button class="${compPercent ? "on" : ""}" data-action="comp" data-v="1">Anteile in %</button></div>`
-      + chartBox(`${p}-comp`, 300, true) + legend([["--c1", "Aktien"], ["--c2", "Obligationen"], ["--c3", "Cash"]]))
-    + card("Einnahmen und Ausgaben pro Jahr", realNote(), chartBox(`${p}-flows`, 300, true)
-      + legend([["--c2", "Erwerbseinkommen"], ["--c1", "PK-Rente"], ["--c4", "AHV"], ["--c3", "Lebenshaltung"], ["--warn", "Wohnkosten"], ["--err", "Steuern"]])
-      + `<p class="hint">Linke Säule Einnahmen, rechte Säule Ausgaben. Kalenderjahre; das erste und letzte Jahr sind unvollständig.</p>`)
-    + card("Entnahme aus dem Vermögen", "pro Jahr: Ausgaben inkl. Steuern − Einnahmen, im Verhältnis zum liquiden Vermögen", chartBox(`${p}-draw`, 260, true)
-      + `<p class="hint">Die Entnahmerate zeigt, welcher Anteil des liquiden Vermögens pro Jahr verbraucht wird (Faustregel: unter 4 % gilt als nachhaltig).</p>`)
-    + (hasProp ? card("Immobilien", realNote(), chartBox(`${p}-prop`, 260, true) + legend([["--c2", "Marktwert"], ["--err", "Hypothek"], ["--c1", "Eigenkapital"]])) : "")
-    + (hasPk ? card("Vorsorge", realNote(), chartBox(`${p}-pk`, 240, true) + legend([["--c3", "Pensionskasse"], ["--c2", "Säule 3a"]])) : "")
-    + card("Aktien, Obligationen und Inflation", `${mktPct ? "Änderung gegenüber dem Vorjahresmonat in %" : "Wertentwicklung seit Start = 100"}, ${realNote()}`,
+  return card(tr("runCharts.wealth"), realNote(), chartBox(`${p}-wealth`, 300, true) + WEALTH_LEGEND)
+    + card(tr("runCharts.liquidByAsset"), realNote(), `<div class="seg" style="margin-bottom:8px"><button class="${compPercent ? "" : "on"}" data-action="comp" data-v="0">${tr("runCharts.amounts")}</button><button class="${compPercent ? "on" : ""}" data-action="comp" data-v="1">${tr("runCharts.shares")}</button></div>`
+      + chartBox(`${p}-comp`, 300, true) + legend([["--c1", tr("wealth.stocks")], ["--c2", tr("wealth.bonds")], ["--c3", tr("wealth.cash")]]))
+    + card(tr("runCharts.flows"), realNote(), chartBox(`${p}-flows`, 300, true)
+      + legend([["--c2", tr("runCharts.earned")], ["--c1", tr("single.pkPension")], ["--c4", tr("common.ahv")], ["--c3", tr("runCharts.living")], ["--warn", tr("runCharts.housing")], ["--err", tr("section.taxes")]])
+      + `<p class="hint">${tr("runCharts.flowsHint")}</p>`)
+    + card(tr("runCharts.withdrawal"), tr("runCharts.withdrawalSub"), chartBox(`${p}-draw`, 260, true)
+      + `<p class="hint">${tr("runCharts.withdrawalHint")}</p>`)
+    + (hasProp ? card(tr("section.realestate"), realNote(), chartBox(`${p}-prop`, 260, true) + legend([["--c2", tr("runCharts.marketValue")], ["--err", tr("runCharts.mortgage")], ["--c1", tr("runCharts.equity")]])) : "")
+    + (hasPk ? card(tr("section.pension"), realNote(), chartBox(`${p}-pk`, 240, true) + legend([["--c3", tr("runCharts.pk")], ["--c2", tr("section.pillar3a")]])) : "")
+    + card(tr("runCharts.returns"), `${mktPct ? tr("runCharts.change") : tr("runCharts.index")}, ${realNote()}`,
       mktSwitch()
       + chartBox(`${p}-mkt`, 240, true)
-      + legend([["--c1", "Aktien"], ["--c2", "Obligationen"], ["--muted", "Inflation (Preisindex)"]])
-      + `<p class="hint">${mktPct ? "Änderung der letzten 12 Monate in Prozent (die ersten 12 Monate haben noch keinen Wert). Die logarithmische Darstellung gibt es nur bei der Wertentwicklung. " : "Verlauf der Renditen dieses Laufs als Index (Start = 100, Ausschüttungen wiederangelegt); die Inflation läuft als Preisindex mit. Logarithmisch zeigen gleiche Abstände gleiche prozentuale Änderungen. "}Im Tooltip steht zusätzlich die Änderung der letzten 12 Monate, bei der Inflation in Klammern.</p>`);
+      + legend([["--c1", tr("wealth.stocks")], ["--c2", tr("wealth.bonds")], ["--muted", tr("runCharts.inflationIndex")]])
+      + `<p class="hint">${mktPct ? tr("runCharts.changeHint") : tr("runCharts.indexHint")}${tr("runCharts.tooltipHint")}</p>`);
 }
 function drawRunCharts(res, p) {
   const recs = res.records, x = recs.map(r => ym2i(r.month));
-  const tipHead = i => `<b>${ymShow(recs[i].month)}</b> · Alter ${ageStr(x[i])}<br>`;
+  const tipHead = i => `${tr("runTip.head", { ymShow: ymShow(recs[i].month), ageStr: ageStr(x[i]) })}<br>`;
   const marks = res.events.filter(e => ["retirement", "ahvStart", "sale", "emergencySale", "purchase", "depleted"].includes(e.kind)).map(e => ({ x: ym2i(e.month), label: `${atAge(e.month)}: ${e.text}`, color: e.kind === "depleted" || e.kind === "emergencySale" ? "--err" : "--muted" }));
   const w = k => recs.map(r => rv(r, k(r)));
   Charts.time($(`#${p}-wealth`), $(`#${p}-wealth-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: fmtMio, marks,
     stack: [{ color: "--c3", values: w(r => Math.max(0, r.pensionFund + r.pillar3a)) }, { color: "--c2", values: w(r => Math.max(0, r.propertyEquity)) }, { color: "--c1", values: w(r => Math.max(0, r.liquid)) }],
-    tip: i => tipHead(i) + `Total ${fmtMoney(rv(recs[i], recs[i].total))}<br><span style="color:var(--c1)">■</span> Liquid ${fmtMoney(rv(recs[i], recs[i].liquid))}<br><span style="color:var(--c2)">■</span> Immobilien ${fmtMoney(rv(recs[i], recs[i].propertyEquity))}<br><span style="color:var(--c3)">■</span> Vorsorge ${fmtMoney(rv(recs[i], recs[i].pensionFund + recs[i].pillar3a))}` });
+    tip: i => tipHead(i) + `${tr("runTip.total", { money: fmtMoney(rv(recs[i], recs[i].total)) })}<br><span style="color:var(--c1)">■</span> ${tr("runTip.liquid", { money: fmtMoney(rv(recs[i], recs[i].liquid)) })}<br><span style="color:var(--c2)">■</span> ${tr("runTip.property", { money: fmtMoney(rv(recs[i], recs[i].propertyEquity)) })}<br><span style="color:var(--c3)">■</span> ${tr("runTip.pension", { money: fmtMoney(rv(recs[i], recs[i].pensionFund + recs[i].pillar3a)) })}` });
   Charts.time($(`#${p}-comp`), $(`#${p}-comp-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: fmtMio, percent: compPercent,
     stack: [{ color: "--c3", values: w(r => r.cash) }, { color: "--c2", values: w(r => r.bonds) }, { color: "--c1", values: w(r => r.stocks) }],
     tip: i => { const r = recs[i], t = Math.max(1, r.cash + r.bonds + r.stocks), q = v => compPercent ? `${(Math.max(0, v) / t * 100).toFixed(1)} %` : fmtMoney(rv(r, v));
-      return tipHead(i) + `<span style="color:var(--c1)">■</span> Aktien ${q(r.stocks)}<br><span style="color:var(--c2)">■</span> Obligationen ${q(r.bonds)}<br><span style="color:var(--c3)">■</span> Cash ${q(r.cash)}`; } });
+      return tipHead(i) + `<span style="color:var(--c1)">■</span> ${tr("runTip.stocks", { stocks: q(r.stocks) })}<br><span style="color:var(--c2)">■</span> ${tr("runTip.bonds", { bonds: q(r.bonds) })}<br><span style="color:var(--c3)">■</span> ${tr("runTip.cash", { cash: q(r.cash) })}`; } });
   // Bar charts: only the years that touch the zoom range
   const view = resultView(), allYears = yearly(recs);
   const ys = view ? allYears.filter(a => +a.y * 12 + 11 >= view[0] && +a.y * 12 <= view[1]) : allYears;
   Charts.bars($(`#${p}-flows`), $(`#${p}-flows-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: fmtMio,
     series: [{ group: "in", color: "--c2", values: ys.map(a => a.earned) }, { group: "in", color: "--c1", values: ys.map(a => a.pk) }, { group: "in", color: "--c4", values: ys.map(a => a.ahv) },
       { group: "out", color: "--c3", values: ys.map(a => a.living) }, { group: "out", color: "--warn", values: ys.map(a => a.housing) }, { group: "out", color: "--c4", values: ys.map(a => a.p3a) }, { group: "out", color: "--err", values: ys.map(a => a.taxes) }],
-    tip: i => { const a = ys[i]; return `<b>${a.y}</b> (${a.months} Monate)<br>Einnahmen ${fmtMoney(a.earned + a.pk + a.ahv)}<br>· Erwerb ${fmtMoney(a.earned)}<br>· PK-Rente ${fmtMoney(a.pk)}<br>· AHV ${fmtMoney(a.ahv)}<br>Ausgaben ${fmtMoney(a.living + a.housing + a.p3a + a.taxes)}<br>· Lebenshaltung ${fmtMoney(a.living)}<br>· Wohnen ${fmtMoney(a.housing)}<br>${a.p3a ? `· Säule 3a ${fmtMoney(a.p3a)}<br>` : ""}· Steuern ${fmtMoney(a.taxes)}`; } });
+    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.earned + a.pk + a.ahv), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.living + a.housing + a.p3a + a.taxes), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${tr("runTip.taxes", { taxes: fmtMoney(a.taxes) })}`; } });
   const rate = ys.map(a => a.liquidStart > 0 ? Math.max(0, a.draw) / a.liquidStart * 12 / a.months : 0);
   Charts.bars($(`#${p}-draw`), $(`#${p}-draw-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: v => `${(v * 100).toFixed(1)} %`,
     series: [{ color: "--accent", values: rate }],
-    tip: i => `<b>${ys[i].y}</b><br>Entnahme ${fmtMoney(Math.max(0, ys[i].draw))}<br>Liquides Vermögen zu Jahresbeginn ${fmtMoney(ys[i].liquidStart)}<br><b>Entnahmerate ${pctTxt(rate[i])}</b> (auf 12 Monate)` });
+    tip: i => tr("runTip.withdrawal", { v: ys[i].y, money: fmtMoney(Math.max(0, ys[i].draw)), money2: fmtMoney(ys[i].liquidStart), pctTxt: pctTxt(rate[i]) }) });
   Charts.time($(`#${p}-prop`), $(`#${p}-prop-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: fmtMio, marks,
     lines: [{ color: "--c2", values: w(r => r.propertyValue) }, { color: "--err", values: w(r => r.mortgage) }, { color: "--c1", values: w(r => r.propertyEquity), dash: "5 3" }],
-    tip: i => tipHead(i) + `Marktwert ${fmtMoney(rv(recs[i], recs[i].propertyValue))}<br>Hypothek ${fmtMoney(rv(recs[i], recs[i].mortgage))}<br>Eigenkapital ${fmtMoney(rv(recs[i], recs[i].propertyEquity))}` });
+    tip: i => tipHead(i) + tr("runTip.property2", { money: fmtMoney(rv(recs[i], recs[i].propertyValue)), money2: fmtMoney(rv(recs[i], recs[i].mortgage)), money3: fmtMoney(rv(recs[i], recs[i].propertyEquity)) }) });
   const idx = (k, i) => 100 * recs[i][k] / (realView ? recs[i].priceIndex : 1);
   const last12 = (k, i) => { const a = i >= 12 ? recs[i - 12][k] / (realView ? recs[i - 12].priceIndex : 1) : 1, b = recs[i][k] / (realView ? recs[i].priceIndex : 1); return b / a - 1; };
   const infl12 = i => i >= 12 ? recs[i].priceIndex / recs[i - 12].priceIndex - 1 : NaN;
@@ -2412,11 +2463,11 @@ function drawRunCharts(res, p) {
     lines: mktPct
       ? [{ color: "--c1", values: all.map(i => pct12("stockIndex", i)) }, { color: "--c2", values: all.map(i => pct12("bondIndex", i)) }, { color: "--muted", dash: "5 3", width: 1.5, values: all.map(i => 100 * infl12(i)) }]
       : [{ color: "--c1", values: all.map(i => idx("stockIndex", i)) }, { color: "--c2", values: all.map(i => idx("bondIndex", i)) }, { color: "--muted", dash: "5 3", width: 1.5, values: all.map(priceIdx) }],
-    tip: i => tipHead(i) + (mktPct ? "" : `<span style="color:var(--c1)">■</span> Aktien ${idx("stockIndex", i).toFixed(1)} (12 Monate ${stockTxt("stockIndex", i)})<br><span style="color:var(--c2)">■</span> Obligationen ${idx("bondIndex", i).toFixed(1)} (12 Monate ${stockTxt("bondIndex", i)})<br><span style="color:var(--muted)">■</span> Preisindex ${priceIdx(i).toFixed(1)} (Inflation 12 Monate ${inflTxt(i)})`)
-      + (mktPct ? `<span style="color:var(--c1)">■</span> Aktien ${stockTxt("stockIndex", i)}<br><span style="color:var(--c2)">■</span> Obligationen ${stockTxt("bondIndex", i)}<br><span style="color:var(--muted)">■</span> Inflation ${inflTxt(i)}` : "") });
+    tip: i => tipHead(i) + (mktPct ? "" : `<span style="color:var(--c1)">■</span> ${tr("runTip.stocksIdx", { idx: idx("stockIndex", i).toFixed(1), stockTxt: stockTxt("stockIndex", i) })}<br><span style="color:var(--c2)">■</span> ${tr("runTip.bondsIdx", { idx: idx("bondIndex", i).toFixed(1), stockTxt: stockTxt("bondIndex", i) })}<br><span style="color:var(--muted)">■</span> ${tr("runTip.priceIdx", { i: priceIdx(i).toFixed(1), i2: inflTxt(i) })}`)
+      + (mktPct ? `<span style="color:var(--c1)">■</span> ${tr("runTip.stocksChange", { stockTxt: stockTxt("stockIndex", i) })}<br><span style="color:var(--c2)">■</span> ${tr("runTip.bondsChange", { stockTxt: stockTxt("bondIndex", i) })}<br><span style="color:var(--muted)">■</span> ${tr("runTip.inflation", { i: inflTxt(i) })}` : "") });
   Charts.time($(`#${p}-pk`), $(`#${p}-pk-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: fmtMio,
     lines: [{ color: "--c3", values: w(r => r.pensionFund) }, { color: "--c2", values: w(r => r.pillar3a) }],
-    tip: i => tipHead(i) + `Pensionskasse ${fmtMoney(rv(recs[i], recs[i].pensionFund))}<br>Säule 3a ${fmtMoney(rv(recs[i], recs[i].pillar3a))}` });
+    tip: i => tipHead(i) + tr("runTip.pension2", { money: fmtMoney(rv(recs[i], recs[i].pensionFund)), money2: fmtMoney(rv(recs[i], recs[i].pillar3a)) }) });
 }
 
 // ---------- Monte Carlo and multiple runs ----------
@@ -2433,37 +2484,37 @@ let survFull = false;
 const survRange = () => [survFull ? 0 : SURV_LO, 100];
 const survSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${survFull ? "" : "on"}" data-action="surv-scale" data-v="80">80–100 %</button><button class="${survFull ? "on" : ""}" data-action="surv-scale" data-v="0">0–100 %</button></div>`;
 const survClipNote = min => !survFull && min < SURV_LO
-  ? `<p class="hint survclip">Die Kurve fällt unter ${SURV_LO} % (tiefster Wert ${min.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %) und ist unten abgeschnitten. «0–100 %» zeigt sie ganz.</p>` : "";
+  ? `<p class="hint survclip">${tr("batch.survClip", { survLo: SURV_LO, toLocaleString: min.toLocaleString("de-CH", { maximumFractionDigits: 1 }) })}</p>` : "";
 /** #122: Switches of the chart «Aktien, Obligationen und Inflation», the same in the single result and in the comparison. */
-const mktSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${mktPct ? "" : "on"}" data-action="mkt" data-v="idx">Wertentwicklung (Start = 100)</button><button class="${mktPct ? "on" : ""}" data-action="mkt" data-v="pct">Änderung in %</button></div>`
-  + (mktPct ? "" : ` <div class="seg" style="margin-bottom:8px"><button class="${mktLog ? "" : "on"}" data-action="mkt-log" data-v="0">Linear</button><button class="${mktLog ? "on" : ""}" data-action="mkt-log" data-v="1">Logarithmisch</button></div>`);
+const mktSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${mktPct ? "" : "on"}" data-action="mkt" data-v="idx">${tr("batch.index")}</button><button class="${mktPct ? "on" : ""}" data-action="mkt" data-v="pct">${tr("batch.change")}</button></div>`
+  + (mktPct ? "" : ` <div class="seg" style="margin-bottom:8px"><button class="${mktLog ? "" : "on"}" data-action="mkt-log" data-v="0">${tr("batch.linear")}</button><button class="${mktLog ? "on" : ""}" data-action="mkt-log" data-v="1">${tr("batch.log")}</button></div>`);
 function batchChartsHtml(b) {
   const st = b.stats;
-  return card("Bandbreite des Gesamtvermögens", `${realNote()}, über alle Läufe`, chartBox("mc-fan", 300, true)
+  return card(tr("batch.band"), tr("batch.overRuns", { realNote: realNote() }), chartBox("mc-fan", 300, true)
       + FAN_LEGEND)
-    + card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", survSwitch() + chartBox("mc-surv", 260, true) + survClipNote(Math.min(...st.survival) * 100))
-    + card("Verteilung des Endvermögens", realNote(), chartBox("mc-end", 260) + legend([["--text", "1., 5., 50. (Median), 95. und 99. Perzentil", null, "dashed"]]))
-    + (st.atRetirement ? card("Verteilung des Vermögens bei Pensionierung", "nominal", chartBox("mc-ret", 240)) : "")
-    + (st.depletionAges.length ? card("Alter bei Erschöpfung", "Anzahl Läufe, in denen das Vermögen in diesem Altersjahr aufgebraucht ist", chartBox("mc-dep", 220)) : "");
+    + card(tr("batch.survival"), tr("batch.survivalSub"), survSwitch() + chartBox("mc-surv", 260, true) + survClipNote(Math.min(...st.survival) * 100))
+    + card(tr("batch.endDist"), realNote(), chartBox("mc-end", 260) + legend([["--text", tr("batch.endDistSub"), null, "dashed"]]))
+    + (st.atRetirement ? card(tr("batch.retireDist"), tr("results.nominalLower"), chartBox("mc-ret", 240)) : "")
+    + (st.depletionAges.length ? card(tr("batch.depletionAge"), tr("batch.depletionSub"), chartBox("mc-dep", 220)) : "");
 }
 function drawBatchCharts(b) {
   const bands = realView && b.bands.real ? b.bands.real : b.bands, x = bands.months.map(ym2i), st = b.stats;
   Charts.time($("#mc-fan"), $("#mc-fan-tip"), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: fmtMio,
     bands: [{ lo: bands.p5, hi: bands.p95, color: "--c1", opacity: 0.18 }, { lo: bands.p25, hi: bands.p75, color: "--c1", opacity: 0.35 }],
     lines: [{ color: "--c1", values: bands.p50 }, { color: "--warn", dash: "5 3", width: 1.5, values: bands.p99 }, { color: "--warn", dash: "5 3", width: 1.5, values: bands.p1 }, { color: "--err", width: 1.5, values: bands.min }],
-    tip: i => `<b>${ymShow(bands.months[i])}</b> · Alter ${ageStr(x[i])}<br>99. ${fmtMoney(bands.p99[i])}<br>95. ${fmtMoney(bands.p95[i])}<br>75. ${fmtMoney(bands.p75[i])}<br><b>Median ${fmtMoney(bands.p50[i])}</b><br>25. ${fmtMoney(bands.p25[i])}<br>5. ${fmtMoney(bands.p5[i])}<br>1. ${fmtMoney(bands.p1[i])}<br><span style="color:var(--err)">Schlechtester ${fmtMoney(bands.min[i])}</span>` });
+    tip: i => `${tr("batch.bandTip", { ymShow: ymShow(bands.months[i]), ageStr: ageStr(x[i]), money: fmtMoney(bands.p99[i]), money2: fmtMoney(bands.p95[i]), money3: fmtMoney(bands.p75[i]), money4: fmtMoney(bands.p50[i]), money5: fmtMoney(bands.p25[i]), money6: fmtMoney(bands.p5[i]), money7: fmtMoney(bands.p1[i]) })}<br><span style="color:var(--err)">${tr("batch.worstTip", { money: fmtMoney(bands.min[i]) })}</span>` });
   const surv = st.survival.map(v => v * 100);
   Charts.time($("#mc-surv"), $("#mc-surv-tip"), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: v => `${v} %`, range: survRange(),
     lines: [{ color: "--ok", values: surv }],
-    tip: i => `<b>${ymShow(bands.months[i])}</b> · Alter ${ageStr(x[i])}<br>Geld reicht in <b>${surv[i].toLocaleString("de-CH", { maximumFractionDigits: 1 })} %</b> der Läufe` });
+    tip: i => tr("batch.survivalTip", { ymShow: ymShow(bands.months[i]), ageStr: ageStr(x[i]), v: surv[i].toLocaleString("de-CH", { maximumFractionDigits: 1 }) }) });
   const h = realView ? st.endTotalReal : st.endTotal;
-  const marks = [[0.01, "1."], [0.05, "5."], [0.5, "Median"], [0.95, "95."], [0.99, "99."]].map(([q, l]) => ({ value: histQuantile(h, q), label: l }));
+  const marks = [[0.01, "1."], [0.05, "5."], [0.5, tr("fan.median")], [0.95, "95."], [0.99, "99."]].map(([q, l]) => ({ value: histQuantile(h, q), label: l }));
   Charts.histogram($("#mc-end"), $("#mc-end-tip"), h, { xFmt: fmtMio, marks });
-  Charts.histogram($("#mc-ret"), $("#mc-ret-tip"), st.atRetirement, { xFmt: fmtMio, color: "--c2", marks: [{ value: histQuantile(st.atRetirement, 0.5), label: "Median" }] });
+  Charts.histogram($("#mc-ret"), $("#mc-ret-tip"), st.atRetirement, { xFmt: fmtMio, color: "--c2", marks: [{ value: histQuantile(st.atRetirement, 0.5), label: tr("fan.median") }] });
   const runs = b.summary.runs;
   Charts.bars($("#mc-dep"), $("#mc-dep-tip"), { cats: st.depletionAges.map(([a]) => String(a)), yFmt: v => fmtInt(v),
     series: [{ color: "--err", values: st.depletionAges.map(([, n]) => n) }],
-    tip: i => `Alter <b>${st.depletionAges[i][0]}</b><br>${fmtInt(st.depletionAges[i][1])} Läufe (${pctTxt(st.depletionAges[i][1] / runs)})` });
+    tip: i => tr("batch.depletionTip", { v: st.depletionAges[i][0], int: fmtInt(st.depletionAges[i][1]), pctTxt: pctTxt(st.depletionAges[i][1] / runs) }) });
 }
 
 // ---------- Scenarios ----------
@@ -2497,7 +2548,7 @@ function optimumValueText(item) {
   const v = t === "pct" && typeof item.v === "number" ? Math.round(item.v * 1000) / 1000 : item.v;
   const s = SWEEP_SHOW[t](v);
   const pre = { exact: "", approx: "≈ ", below: "< ", atLeast: "≥ ", edgeLow: "≤ ", edgeHigh: "≥ " }[item.kind] ?? "";
-  return pre + s + (item.reaches ? "" : " (reicht nirgends)");
+  return pre + s + (item.reaches ? "" : tr("optimum.nowhere"));
 }
 /** Optimal values of all variations for the percentile (from the scenarios); empty without variations. */
 function optimumText(sc, percent) {
@@ -2525,16 +2576,16 @@ function variationPicker(r) {
     const t = sweepType(p), now = sweepNow(p), cur = variationSel?.[i];
     const vals = [...new Set(sc.results.filter(x => !x.error).map(x => JSON.stringify(x.values[i])))].map(JSON.parse);
     return `<label class="field"><span>${esc(sweepLabel(p))}</span><select data-action="var-sel" data-i="${i}">
-      <option value="plan" ${cur == null ? "selected" : ""}>Planwert${now != null ? ` (${SWEEP_SHOW[t](now)})` : ""}</option>
+      <option value="plan" ${cur == null ? "selected" : ""}>${tr("variation.planValue")}${now != null ? ` (${SWEEP_SHOW[t](now)})` : ""}</option>
       ${vals.map(v => `<option value="${esc(JSON.stringify(v))}" ${JSON.stringify(v) === JSON.stringify(cur) ? "selected" : ""}>${SWEEP_SHOW[t](v)}</option>`).join("")}</select></label>`;
   }).join("");
   const opt = optimumText(sc, 50);
-  const sub = r.single ? "Einzellauf: Grafiken, Kennzahlen und Jahreswerte gelten für die gewählte Stufe"
-    : "Einzelne Läufe und Jahreswerte zeigen die Läufe der gewählten Stufe; die übrigen Reiter zeigen die Planwerte";
-  return card("Variation wählen", sub,
+  const sub = r.single ? tr("variation.singleHint")
+    : tr("variation.batchHint");
+  return card(tr("variation.choose"), sub,
     `<div class="grid3">${selects}</div>
-    <p class="computed" style="margin:8px 0 0">${opt ? `Optimum: <b>${esc(opt)}</b> ` : ""}${o && o.items.every(it => it.grid != null) ? `<button class="btn small" data-action="var-opt" title="Den Lauf des optimalen Variationsschritts anzeigen">Optimum anzeigen</button>` : ""}
-    ${variationSel ? `<button class="btn small" data-action="var-plan" title="Zurück zu den Planwerten">Planwerte</button>` : ""}</p>`);
+    <p class="computed" style="margin:8px 0 0">${opt ? `${tr("variation.optimum", { opt: esc(opt) })} ` : ""}${o && o.items.every(it => it.grid != null) ? `<button class="btn small" data-action="var-opt" title="${tr("variation.showOptimumTitle")}">${tr("variation.showOptimum")}</button>` : ""}
+    ${variationSel ? `<button class="btn small" data-action="var-plan" title="${tr("variation.backTitle")}">${tr("variation.planValues")}</button>` : ""}</p>`);
 }
 const sameValue = (a, b) => typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < 1e-9 : JSON.stringify(a) === JSON.stringify(b);
 /** Calculated step for a selection; variations not chosen apply with their plan value. */
@@ -2550,7 +2601,7 @@ async function pickBatchVariation(sel) {
     const level = levelOf(sc, variationSel);
     if (!level || !level.percentiles?.length) {
       variationSel = null;
-      toast("Diese Kombination wurde nicht berechnet; bitte eine Stufe der Variationen wählen.");
+      toast(tr("variation.notComputed"));
       return renderResults(lastRun);
     }
     const picks = level.percentiles.filter(p => [0, 1, 5, 50, 95, 99].includes(p.percent)).map(p => [p.percent, p.index]);
@@ -2558,7 +2609,7 @@ async function pickBatchVariation(sel) {
     plan.scenarios = { sweeps: [], select: sc.params.map((p, i) => ({ param: p, value: variationSel[i] ?? sweepNow(p) })) };
     let out;
     try { out = await Engine.call("rerun_paths", { plan, picks, path: currentPath }); } catch (e) { out = { error: errText(e) }; }
-    if (out.error) { variationSel = null; toast("Die Läufe der Variation konnten nicht gerechnet werden: " + out.error); return renderResults(lastRun); }
+    if (out.error) { variationSel = null; toast(tr("variation.batchFailed") + out.error); return renderResults(lastRun); }
     // If a final wealth differs from the saved value (e.g. changed time series), the display stays available, with a notice
     const off = out.details.filter(([pc, res]) => {
       const e = level.percentiles.find(p => p.percent === pc)?.endTotal;
@@ -2577,7 +2628,7 @@ async function pickVariation(sel) {
     const plan = JSON.parse(JSON.stringify(state));
     plan.scenarios = { sweeps: [], select: sc.params.map((p, i) => (variationSel[i] == null ? null : { param: p, value: variationSel[i] })).filter(Boolean) };
     const out = await Engine.call("run_simulation", { plan, path: currentPath });
-    if (out.error || !out.single) { variationSel = null; toast("Die Variation konnte nicht gerechnet werden: " + (out.error || "kein Ergebnis")); }
+    if (out.error || !out.single) { variationSel = null; toast(tr("variation.failed") + (out.error || tr("variation.noResult"))); }
     else variationRuns.set(selKey(variationSel), out.single);
   }
   renderResults(lastRun);
@@ -2600,27 +2651,27 @@ function scenarioTable(sc) {
       <td class="${cls}">${single ? (ok ? "✓" : "✗") : pctTxt(ok)}</td>
       <td>${r.atRetirement != null ? fmtInt(r.atRetirement) : "–"}</td>
       ${single ? `<td colspan="3">${fmtInt(realView ? r.p50Real : r.p50)}</td>` : `<td>${fmtInt(r.p5)}</td><td><b>${fmtInt(realView ? r.p50Real : r.p50)}</b></td><td>${fmtInt(r.p95)}</td>`}
-      <td>${r.earliestDepletion ? `Alter ${ageStr(ym2i(r.earliestDepletion))}` : "–"}</td></tr>`;
+      <td>${r.earliestDepletion ? tr("kpi.ageAt", { minLiquidM: ageStr(ym2i(r.earliestDepletion)) }) : "–"}</td></tr>`;
   }).join("");
   const heads = sc.params.map(p => `<th class="l">${esc(sweepLabel(p))}</th>`).join("");
-  return card("Szenarien", `${fmtInt(sc.results.length)} Kombinationen × ${fmtInt(sc.results[0]?.runs || 0)} ${single ? "Lauf" : "Läufe"}`,
-    `<div class="tscroll"><table class="tbl num sctbl"><tr>${heads}<th>${single ? "Reicht" : "Erfolgsquote"}</th><th>Vermögen bei Pensionierung${single ? "" : " (Median)"}</th>${single ? `<th colspan="3">Endvermögen</th>` : `<th>Ende 5. Perz.</th><th>Ende Median${realView ? " (heutige Kaufkraft)" : ""}</th><th>Ende 95. Perz.</th>`}<th>Früheste Erschöpfung</th></tr>${rows}</table></div>
-    <p class="hint">Beträge nominal in ${cur()}${realView ? ", Median am Ende in heutiger Kaufkraft" : ""}. Hervorgehoben: höchste Erfolgsquote. Alle Szenarien verwenden dieselben Renditepfade.</p>`);
+  return card(tr("scen.title"), `${tr("scen.combos", { length: fmtInt(sc.results.length), int: fmtInt(sc.results[0]?.runs || 0) })} ${single ? tr("computed.run") : tr("computed.runs")}`,
+    `<div class="tscroll"><table class="tbl num sctbl"><tr>${heads}<th>${single ? tr("scen.enough") : tr("scen.successRate")}</th><th>${tr("kpi.wealthAtRetire")}${single ? "" : tr("scen.median")}</th>${single ? `<th colspan="3">${tr("scen.endWealth")}</th>` : `<th>${tr("scen.endP5")}</th><th>${tr("scen.endMedian")}${realView ? tr("scen.todayPower") : ""}</th><th>${tr("scen.endP95")}</th>`}<th>${tr("scen.earliestDepletion")}</th></tr>${rows}</table></div>
+    <p class="hint">${tr("scen.nominalIn", { cur: cur() })}${realView ? tr("scen.medianReal") : ""}${tr("scen.footer")}</p>`);
 }
 const sweepNames = sc => sc.params.map(p => esc(sweepLabel(p))).join(" × ");
 function scenarioChartsHtml(sc) {
   const ok = sc.results.filter(r => !r.error);
   if (!ok.length) return "";
-  const variation = `<div class="card"><p style="margin:0"><b>Dargestellte ${sc.params.length === 1 ? "Variation" : "Variationen"}:</b> ${sweepNames(sc)}</p></div>`;
+  const variation = `<div class="card"><p style="margin:0"><b>${tr("scen.shown")} ${sc.params.length === 1 ? tr("scen.variation") : tr("scen.variations")}:</b> ${sweepNames(sc)}</p></div>`;
   if (sc.params.length === 1) {
     const single = ok.every(r => r.runs <= 1);
-    return variation + (single ? "" : card("Erfolgsquote je Variante", `Variation: ${esc(sweepLabel(sc.params[0]))}`, chartBox("sc-succ", 240)))
-      + card("Endvermögen je Variante", `Variation: ${esc(sweepLabel(sc.params[0]))} · ${realView ? "Median in heutiger Kaufkraft" : "nominal, Median mit 5.–95. Perzentil"}`, chartBox("sc-end", 280))
-      + card("Vermögen bei Pensionierung je Variante", `Variation: ${esc(sweepLabel(sc.params[0]))} · Median, nominal`, chartBox("sc-ret", 220));
+    return variation + (single ? "" : card(tr("scen.successPerVariant"), tr("scen.variationLabel", { esc: esc(sweepLabel(sc.params[0])) }), chartBox("sc-succ", 240)))
+      + card(tr("scen.endPerVariant"), `${tr("scen.variationLabelSep", { esc: esc(sweepLabel(sc.params[0])) })} ${realView ? tr("scen.medianToday") : tr("scen.nominalBand")}`, chartBox("sc-end", 280))
+      + card(tr("scen.retirePerVariant"), tr("scen.variationMedian", { esc: esc(sweepLabel(sc.params[0])) }), chartBox("sc-ret", 220));
   }
-  if (sc.params.length === 2) return variation + card("Erfolgsquote", `Variationen: ${sweepNames(sc)}`, heat(sc, r => r.successRate, pctTxt, "high"))
-    + card("Endvermögen (Median)", `Variationen: ${sweepNames(sc)} · ${realNote()}`, heat(sc, r => realView ? r.p50Real : r.p50, fmtMio, "high"));
-  return card("Grafiken", "", `<p class="hint" style="margin:0">Grafiken gibt es für eine oder zwei Variationen; bei ${sc.params.length} Variationen siehe Tabelle.</p>`);
+  if (sc.params.length === 2) return variation + card(tr("scen.successRate"), tr("scen.variationsLabel", { sc: sweepNames(sc) }), heat(sc, r => r.successRate, pctTxt, "high"))
+    + card(tr("scen.endMedianTitle"), tr("scen.variationsReal", { sc: sweepNames(sc), realNote: realNote() }), heat(sc, r => realView ? r.p50Real : r.p50, fmtMio, "high"));
+  return card(tr("scen.charts"), "", `<p class="hint" style="margin:0">${tr("scen.chartsLimit", { length: sc.params.length })}</p>`);
 }
 function heat(sc, f, fmt, good, range) {
   const [p1, p2] = sc.params, t1 = sweepType(p1), t2 = sweepType(p2);
@@ -2635,13 +2686,13 @@ function drawScenarioCharts(sc) {
   const ok = sc.results.filter(r => !r.error), xs = ok.map(r => SWEEP_SHOW[sweepType(sc.params[0])](r.values[0]));
   const head = i => `<b>${esc(sweepLabel(sc.params[0]))}: ${xs[i]}</b><br>`;
   Charts.category($("#sc-succ"), $("#sc-succ-tip"), { xs, yFmt: v => `${v} %`, range: [Math.max(0, Math.min(90, Math.floor((Math.min(...ok.map(r => r.successRate * 100)) - 2) / 5) * 5)), 100],
-    lines: [{ color: "--ok", values: ok.map(r => r.successRate * 100) }], tip: i => head(i) + `Erfolgsquote ${pctTxt(ok[i].successRate)}` });
+    lines: [{ color: "--ok", values: ok.map(r => r.successRate * 100) }], tip: i => head(i) + tr("scen.successTip", { pctTxt: pctTxt(ok[i].successRate) }) });
   Charts.category($("#sc-end"), $("#sc-end-tip"), { xs, yFmt: fmtMio,
     bands: realView ? [] : [{ lo: ok.map(r => r.p5), hi: ok.map(r => r.p95), color: "--c1", opacity: 0.18 }],
     lines: [{ color: "--c1", values: ok.map(r => realView ? r.p50Real : r.p50) }],
-    tip: i => head(i) + (realView ? `Median ${fmtMoney(ok[i].p50Real)}` : `95. ${fmtMoney(ok[i].p95)}<br><b>Median ${fmtMoney(ok[i].p50)}</b><br>5. ${fmtMoney(ok[i].p5)}`) });
+    tip: i => head(i) + (realView ? tr("scen.medianTip", { money: fmtMoney(ok[i].p50Real) }) : tr("scen.bandTip", { money: fmtMoney(ok[i].p95), money2: fmtMoney(ok[i].p50), money3: fmtMoney(ok[i].p5) })) });
   Charts.category($("#sc-ret"), $("#sc-ret-tip"), { xs, yFmt: fmtMio, lines: [{ color: "--c2", values: ok.map(r => r.atRetirement ?? 0) }],
-    tip: i => head(i) + `Vermögen bei Pensionierung ${fmtMoney(ok[i].atRetirement ?? 0)}` });
+    tip: i => head(i) + tr("scen.retireTip", { money: fmtMoney(ok[i].atRetirement ?? 0) }) });
 }
 
 // ---------- Layout ----------
@@ -2661,66 +2712,66 @@ function verdictHtml(r, sg) {
   if (sg) {
     const s = sg.summary;
     weak = !!s.depleted;
-    lines.push(weak ? `Das Vermögen ist im ${ymShow(s.depleted)} (Alter ${ageStr(ym2i(s.depleted))}) aufgebraucht.`
-      : `Das Vermögen reicht bis zum Ende der Planung und beträgt dann <b>${fmtMoney(realView ? s.endTotalReal : s.endTotal)}</b>${realView ? " in heutiger Kaufkraft" : ""}.`);
+    lines.push(weak ? tr("verdict.depleted", { depleted: ymShow(s.depleted), ageStr: ageStr(ym2i(s.depleted)) })
+      : `${tr("verdict.lasts", { money: fmtMoney(realView ? s.endTotalReal : s.endTotal) })}${realView ? tr("verdict.real") : ""}.`);
   } else {
     const s = r.batch.summary, ed = s.earliestDepletion, end = endM(), cls = rateClass(s.successRate);
     weak = cls !== "hoch";
-    lines.push(`In <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", cls, "Wie viel Erfolgsquote ist genug?")}) der Läufe reicht das Vermögen bis ${ymShow(i2ym(end))} (Alter ${ageStr(end)}).`);
-    if (ed) lines.push(`Im ungünstigsten Lauf ist das Geld mit Alter ${ageStr(ym2i(ed[0]))} aufgebraucht.`);
+    lines.push(`In <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", cls, tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
+    if (ed) lines.push(tr("verdict.worstDepleted", { ageStr: ageStr(ym2i(ed[0])) }));
   }
   const next = weak
-    ? `Nächster Schritt: Die ${helpLink("s-optimize", "Optimierung")} sucht eine Entnahmestrategie, die besser zu Ihren Zielen passt.`
-    : `Nächster Schritt: Mit ${helpLink("s-scenarios", "Szenarien")} prüfen Sie, wie stark das Ergebnis von Ausgaben, Aktienanteil oder Kapitalbezug abhängt.`;
+    ? `${tr("verdict.nextOptPre")} ${helpLink("s-optimize", tr("section.optimize"))} ${tr("verdict.nextOptPost")}`
+    : `${tr("verdict.nextScenPre")} ${helpLink("s-scenarios", tr("scen.title"))} ${tr("verdict.nextScenPost")}`;
   return `<div class="card verdict" id="verdict"><p>${lines.join(" ")}</p><p class="next">${next}</p></div>`;
 }
 function renderResults(r) {
   compareOpen = false;
   const info = `${r.elapsedMs < 1 ? r.elapsedMs.toFixed(2) : r.elapsedMs.toFixed(0)} ms`;
   if (r.error) {
-    plainTitle("Simulation nicht möglich"); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
+    plainTitle(tr("results.notPossible")); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
     $("#resultsBody").innerHTML = `<div class="card errcard"><p style="margin-top:0">${esc(r.error)}</p>
       <ul class="val">${r.issues.filter(i => i.severity === "error").map(i => `<li class="err" data-action="back"><span class="ic">!</span><span>${esc(i.message)}</span></li>`).join("")}</ul></div>`;
     return;
   }
-  const tabs = [["overview", "Übersicht"], ["charts", "Grafiken"]];
-  if (r.batch) tabs.push(["runs", "Einzelne Läufe"]);
-  if (r.scenarios) tabs.push(["scenarios", "Szenarien"]);
-  tabs.push(["table", "Jahreswerte"], ["params", "Parameter"]);
+  const tabs = [["overview", tr("results.overview")], ["charts", tr("scen.charts")]];
+  if (r.batch) tabs.push(["runs", tr("results.runs")]);
+  if (r.scenarios) tabs.push(["scenarios", tr("scen.title")]);
+  tabs.push(["table", tr("results.yearValues")], ["params", tr("optRanges.params")]);
   if (!tabs.some(([k]) => k === resultTab)) resultTab = "overview";
   // Single run with variations: chosen step (otherwise the plan run)
   const sg = r.single ? singleOf(r) : null;
-  setResultsTitle(sg ? ["Einzellauf", runInfo(sg.label), r.scenarios ? selectedVariationText() : ""].filter(Boolean).join(" · ") : `${fmtInt(r.batch.summary.runs)} Läufe`);
+  setResultsTitle(sg ? [tr("results.single"), runInfo(sg.label), r.scenarios ? selectedVariationText() : ""].filter(Boolean).join(" · ") : tr("results.runsN", { runs: fmtInt(r.batch.summary.runs) }));
   const varied = r.batch && r.scenarios && !!variationSel;
   $("#resultsPick").innerHTML = r.single && r.scenarios ? variationPicker(r)
     : r.batch && r.scenarios && (resultTab === "runs" || resultTab === "table") ? variationPicker(r)
-    : varied && resultTab !== "params" ? `<div class="card variednote"><span class="muted">Planwerte, nicht die gewählte Variation (${esc(selectedVariationText())}). Die gewählte Stufe zeigen «Einzelne Läufe» und «Jahreswerte».</span></div>` : "";
-  $("#resultsInfo").textContent = sg ? `1 Lauf · ${info}` : info;
+    : varied && resultTab !== "params" ? `<div class="card variednote"><span class="muted">${tr("results.planValuesNote", { esc: esc(selectedVariationText()) })}</span></div>` : "";
+  $("#resultsInfo").textContent = sg ? tr("results.oneRun", { info }) : info;
   $("#resultsTabs").innerHTML = `<div class="seg tabs">${tabs.map(([k, t], i) => `<button class="${k === resultTab ? "on" : ""}" data-action="rtab" data-tab="${k}" title="${t} (${MOD}${i + 1})">${t}</button>`).join("")}</div>
-    <div class="seg"><button class="${realView ? "" : "on"}" data-action="real" data-v="0" title="Beträge wie sie dann anfallen">Nominal</button><button class="${realView ? "on" : ""}" data-action="real" data-v="1" title="Beträge in Preisen des Simulationsstarts (um die Teuerung bereinigt)">Heutige Kaufkraft</button></div>`;
+    <div class="seg"><button class="${realView ? "" : "on"}" data-action="real" data-v="0" title="${tr("results.nominalTitle")}">${tr("results.nominal")}</button><button class="${realView ? "on" : ""}" data-action="real" data-v="1" title="${tr("results.realTitle")}">${tr("results.realLabel")}</button></div>`;
   const body = $("#resultsBody");
   const detailRun = () => sg || (r.batch && (detailsOf(r).find(([q]) => q === detailP)?.[1] || detailsOf(r)[0][1]));
   if (resultTab === "overview") {
     if (sg) {
       const res = sg;
-      body.innerHTML = verdictHtml(r, res) + singleKpis(res.summary) + card("Vermögensverlauf", realNote(), chartBox("ov-wealth", 300, true) + WEALTH_LEGEND) + propertyEvents(res) + card("Ereignisse", "", eventList(res.events));
+      body.innerHTML = verdictHtml(r, res) + singleKpis(res.summary) + card(tr("runCharts.wealth"), realNote(), chartBox("ov-wealth", 300, true) + WEALTH_LEGEND) + propertyEvents(res) + card(tr("results.events"), "", eventList(res.events));
       drawRunCharts({ ...res, records: res.records }, "ov");
     } else {
       const b = r.batch, s = b.summary, pc = q => s.percentiles.find(x => x.percent === q), ed = s.earliestDepletion;
       body.innerHTML = verdictHtml(r, null) + `<div class="rkpis">
-        ${kpi("Erfolgsquote", pctTxt(s.successRate), "Vermögen reicht bis zum Ende", s.successRate >= 0.95 ? "good" : s.successRate < 0.8 ? "bad" : "")}
-        ${kpi("Endvermögen Median", fmtMio(pc(50).endTotal), esc(percentInfo(r, 50, pc(50).label)))}
-        ${kpi("Endvermögen 5. Perzentil", fmtMio(pc(5).endTotal), esc(percentInfo(r, 5, pc(5).label)), pc(5).endTotal > 0 ? "" : "bad")}
-        ${kpi("Endvermögen 1. Perzentil", fmtMio(pc(1).endTotal), esc(percentInfo(r, 1, pc(1).label)), pc(1).endTotal > 0 ? "" : "bad")}
-        ${kpi("Schlechtester Lauf", fmtMio(pc(0).endTotal), esc(percentInfo(r, 0, pc(0).label)), pc(0).endTotal > 0 ? "" : "bad")}
-        ${kpi("Endvermögen 95. Perzentil", fmtMio(pc(95).endTotal), esc(percentInfo(r, 95, pc(95).label)))}
-        ${kpi("Endvermögen 99. Perzentil", fmtMio(pc(99).endTotal), esc(percentInfo(r, 99, pc(99).label)))}
-        ${kpi("Früheste Erschöpfung", ed ? "Alter " + ageStr(ym2i(ed[0])) : "keine", ed ? `${ymShow(ed[0])} · ${esc(ed[1])}` : "in keinem Lauf", ed ? "bad" : "good")}
-        ${hasProperties() ? kpi("Notverkäufe", `${fmtInt(s.emergencySaleRuns)} Läufe`, `${pctTxt(s.emergencySaleRuns / s.runs)} der Läufe${s.affordabilitySaleRuns ? `, davon ${fmtInt(s.affordabilitySaleRuns)} wegen fehlender Tragbarkeit bei der Erneuerung` : ""}`, s.emergencySaleRuns > 0 ? "bad" : "good") : ""}</div>`
-        + card("Bandbreite des Gesamtvermögens", `${realNote()}, über alle Läufe`, chartBox("mc-fan", 300, true) + FAN_LEGEND)
-        + card("Endvermögen nach Perzentil", "nominal", `<table class="tbl num"><tr><th class="l">Perzentil</th><th>Endvermögen</th>${hasProperties() ? `<th class="l" title="Alle Verkäufe von Immobilien in diesem Lauf mit Monat; Notverkäufe (Notverkaufskriterium oder fehlende Tragbarkeit bei einer Hypothekenerneuerung) tragen das Warnsymbol">Immobilienverkäufe</th>` : ""}<th class="l">Variation</th></tr>
-          ${s.percentiles.map(p => `<tr><td class="l">${p.percent === 0 ? "Schlechtester Lauf" : p.percent + "."}</td><td>${fmtInt(p.endTotal)}</td>${hasProperties() ? `<td class="l">${propertySales(b.details.find(([q]) => q === p.percent)?.[1])}</td>` : ""}<td class="l">${esc(percentInfo(r, p.percent, p.label))}</td></tr>`).join("")}</table>
-          ${r.scenarios ? `<p class="hint">Variation: optimaler Wert je Perzentil aus den Szenarien. «≈» ist zwischen zwei Schritten interpoliert, «&lt;» und «≥» zeigen, dass der Bereich der Variation nicht reicht bzw. ausgeschöpft ist; bei einem Anteil steht 0 % oder 100 % ohne Zeichen, denn mehr oder weniger gibt es nicht. Ausgaben-Faktor: höchster Wert, bei dem das Vermögen bis zum Ende reicht; Aktienanteil und Kapitalbezug: tragbarer Wert mit dem höchsten Endvermögen.</p>` : ""}`);
+        ${kpi(tr("scen.successRate"), pctTxt(s.successRate), tr("results.lastsToEnd"), s.successRate >= 0.95 ? "good" : s.successRate < 0.8 ? "bad" : "")}
+        ${kpi(tr("results.endMedian"), fmtMio(pc(50).endTotal), esc(percentInfo(r, 50, pc(50).label)))}
+        ${kpi(tr("results.endP5"), fmtMio(pc(5).endTotal), esc(percentInfo(r, 5, pc(5).label)), pc(5).endTotal > 0 ? "" : "bad")}
+        ${kpi(tr("results.endP1"), fmtMio(pc(1).endTotal), esc(percentInfo(r, 1, pc(1).label)), pc(1).endTotal > 0 ? "" : "bad")}
+        ${kpi(tr("fan.worstRun"), fmtMio(pc(0).endTotal), esc(percentInfo(r, 0, pc(0).label)), pc(0).endTotal > 0 ? "" : "bad")}
+        ${kpi(tr("results.endP95"), fmtMio(pc(95).endTotal), esc(percentInfo(r, 95, pc(95).label)))}
+        ${kpi(tr("results.endP99"), fmtMio(pc(99).endTotal), esc(percentInfo(r, 99, pc(99).label)))}
+        ${kpi(tr("scen.earliestDepletion"), ed ? tr("kpi.age") + ageStr(ym2i(ed[0])) : tr("results.none"), ed ? `${ymShow(ed[0])} · ${esc(ed[1])}` : tr("results.inNoRun"), ed ? "bad" : "good")}
+        ${hasProperties() ? kpi(tr("results.emergencySales"), tr("results.runsN", { runs: fmtInt(s.emergencySaleRuns) }), `${tr("results.ofRuns", { pctTxt: pctTxt(s.emergencySaleRuns / s.runs) })}${s.affordabilitySaleRuns ? tr("results.affordabilityPart", { affordabilitySaleRuns: fmtInt(s.affordabilitySaleRuns) }) : ""}`, s.emergencySaleRuns > 0 ? "bad" : "good") : ""}</div>`
+        + card(tr("batch.band"), tr("batch.overRuns", { realNote: realNote() }), chartBox("mc-fan", 300, true) + FAN_LEGEND)
+        + card(tr("results.endByPercentile"), tr("results.nominalLower"), `<table class="tbl num"><tr><th class="l">${tr("results.percentile")}</th><th>${tr("scen.endWealth")}</th>${hasProperties() ? `<th class="l" title="${tr("results.salesTitle")}">${tr("results.sales")}</th>` : ""}<th class="l">${tr("scen.variation")}</th></tr>
+          ${s.percentiles.map(p => `<tr><td class="l">${p.percent === 0 ? tr("fan.worstRun") : p.percent + "."}</td><td>${fmtInt(p.endTotal)}</td>${hasProperties() ? `<td class="l">${propertySales(b.details.find(([q]) => q === p.percent)?.[1])}</td>` : ""}<td class="l">${esc(percentInfo(r, p.percent, p.label))}</td></tr>`).join("")}</table>
+          ${r.scenarios ? `<p class="hint">${tr("results.variationHint")}</p>` : ""}`);
       drawBatchCharts(b);
     }
   } else if (resultTab === "charts") {
@@ -2729,7 +2780,7 @@ function renderResults(r) {
   } else if (resultTab === "runs") {
     const res = detailRun();
     $("#resultsPick").innerHTML = (r.scenarios ? variationPicker(r) : "") + runPicker(r, res);
-    body.innerHTML = runChartsHtml(res, "dr") + propertyEvents(res) + card("Ereignisse", "", eventList(res.events));
+    body.innerHTML = runChartsHtml(res, "dr") + propertyEvents(res) + card(tr("results.events"), "", eventList(res.events));
     drawRunCharts(res, "dr");
   } else if (resultTab === "scenarios") {
     body.innerHTML = scenarioTable(r.scenarios) + scenarioChartsHtml(r.scenarios);
@@ -2740,10 +2791,10 @@ function renderResults(r) {
     const res = detailRun();
     if (r.batch) $("#resultsPick").innerHTML = (r.scenarios ? variationPicker(r) : "") + runPicker(r, res);
     const info = r.batch ? [pName(detailP), percentInfo(r, detailP, res.label)].filter(Boolean).join(" · ") : "";
-    body.innerHTML = card("Jahreswerte", `${realNote()}, Beträge in ${cur()}${info ? ` · ${esc(info)}` : ""}`, yearTable(res.records, { total: res.summary.startTotal, liquid: res.summary.startLiquid }, res.bucketRefills || []), "yearcard");
+    body.innerHTML = card(tr("results.yearValues"), `${tr("results.realAmounts", { realNote: realNote(), cur: cur() })}${info ? ` · ${esc(info)}` : ""}`, yearTable(res.records, { total: res.summary.startTotal, liquid: res.summary.startLiquid }, res.bucketRefills || []), "yearcard");
   }
-  if (savedView) $("#resultsPick").insertAdjacentHTML("afterbegin", `<div class="card savedbar"><span>Gespeichertes Ergebnis vom <b>${esc(runDate(savedView.created))}</b> · ${esc(savedView.name)}. Es gilt die Planung von damals.</span><span class="spacer"></span>
-    <button class="btn small" data-action="runs-open">← Zur Liste</button><button class="btn small primary" data-action="run-restore" title="Die Planung dieses Ergebnisses in den Editor laden">Planung in den Editor übernehmen</button></div>`);
+  if (savedView) $("#resultsPick").insertAdjacentHTML("afterbegin", `<div class="card savedbar"><span>${tr("results.savedNote", { esc: esc(runDate(savedView.created)), name: esc(savedView.name) })}</span><span class="spacer"></span>
+    <button class="btn small" data-action="runs-open">${tr("results.backToList")}</button><button class="btn small primary" data-action="run-restore" title="${tr("results.adoptPlanTitle")}">${tr("results.adoptPlan")}</button></div>`);
 }
 /**
  * Parameters of a plan as sections [title, [[label, value], …]], structured like the editor sections.
@@ -2754,102 +2805,102 @@ function renderResults(r) {
 function paramSections(plan, full = false) {
   const c = plan.project?.currency || "";
   const money = v => v == null ? "–" : `${fmtInt(v)} ${c}`, pc = v => v == null ? "–" : `${fmtPct(v)} %`, num = v => v == null ? "–" : String(v);
-  const yn = v => v ? "ja" : "nein";
-  const msName = id => plan.milestones?.find(m => m.id === id)?.name;
+  const yn = v => v ? tr("common.yes") : tr("common.no");
+  const msName = id => msLabel(plan.milestones?.find(m => m.id === id));
   const at = r => isYM(r) ? ymShow(r) : (msName(r) ?? String(r ?? "–"));
   const ser = (v, f) => !v || typeof v !== "object" ? (v == null ? "–" : f(v))
-    : v.mode === "const" ? f(v.value) : (v.rows || []).map(r => `ab ${at(r.from)}: ${f(r.value)}`).join("; ") || "–";
-  const table = rows => (rows || []).map(([x, r]) => `ab ${fmtInt(x)}: ${fmtPct(r)} %`).join("; ") || "–";
+    : v.mode === "const" ? f(v.value) : (v.rows || []).map(r => tr("params.fromValue", { from: at(r.from), value: f(r.value) })).join("; ") || "–";
+  const table = rows => (rows || []).map(([x, r]) => tr("params.fromValue", { from: fmtInt(x), value: `${fmtPct(r)} %` })).join("; ") || "–";
   const out = [];
   const persons = plan.household?.persons || [];
-  out.push(["Haushalt", [["Währung", c], ...persons.map((p, i) => [`Person ${i + 1}: Geburt`, ymShow(p.birth)]),
-    ...(persons.length > 1 ? [["Verheiratet", yn(plan.household?.married)], ...(plan.household?.married ? [["AHV-Renten zusammen höchstens, pro Monat", money(plan.household.ahvCoupleCap)]] : [])] : [])]]);
-  out.push(["Meilensteine", (plan.milestones || []).map(m => [m.name, m.kind === "date" ? ymShow(m.date) : `Alter ${m.years} J. (Person ${Math.max(1, persons.findIndex(p => p.id === m.person) + 1)})`])]);
+  out.push([tr("params.household"), [[tr("general.currency"), c], ...persons.map((p, i) => [tr("params.personBirth", { v: i + 1 }), ymShow(p.birth)]),
+    ...(persons.length > 1 ? [[tr("params.married"), yn(plan.household?.married)], ...(plan.household?.married ? [[tr("general.ahvCap"), money(plan.household.ahvCoupleCap)]] : [])] : [])]]);
+  out.push([tr("section.milestones"), (plan.milestones || []).map(m => [m.name, m.kind === "date" ? ymShow(m.date) : tr("params.ageOfPerson", { years: m.years, max: Math.max(1, persons.findIndex(p => p.id === m.person) + 1) })])]);
   const pens = (pre, o, ahv) => [
-    [`${pre}Pensionskasse: Kapital`, money(o.pk?.capital)], [`${pre}Pensionskasse: Bezug ab`, at(o.pk?.at)], [`${pre}Kapitalbezug`, pc(o.pk?.lumpsum)],
-    [`${pre}Umwandlungssatz`, pc(o.pk?.conversion)], [`${pre}PK-Beitrag pro Monat`, ser(o.pk?.contribution, money)], [`${pre}PK-Zins`, ser(o.pk?.interest, pc)],
-    [`${pre}AHV pro Monat`, money(ahv?.monthly)], [`${pre}AHV ab`, at(ahv?.at)], [`${pre}AHV indexiert`, yn(ahv?.indexed)]];
+    [tr("params.pkCapital", { pre }), money(o.pk?.capital)], [tr("params.pkFrom", { pre }), at(o.pk?.at)], [tr("params.lumpsum", { pre }), pc(o.pk?.lumpsum)],
+    [tr("params.conversion", { pre }), pc(o.pk?.conversion)], [tr("params.pkContribution", { pre }), ser(o.pk?.contribution, money)], [tr("params.pkInterest", { pre }), ser(o.pk?.interest, pc)],
+    [tr("params.ahvMonth", { pre }), money(ahv?.monthly)], [tr("params.ahvFrom", { pre }), at(ahv?.at)], [tr("params.ahvIndexed", { pre }), yn(ahv?.indexed)]];
   const part = plan.partner;
-  out.push(["Vorsorge", [...pens(part ? "Person 1: " : "", plan.pension || {}, plan.pension?.ahv),
-    ...(part ? pens("Person 2: ", part, part.ahv) : [])]]);
-  out.push(["Einnahmen und Ausgaben", [["Einkommen pro Monat", ser(plan.flows?.income, money)], ...(part ? [["Einkommen Person 2 pro Monat", ser(part.income, money)]] : []),
-    ["Ausgaben pro Monat", ser(plan.flows?.spending, money)],
-    ...(plan.flows?.extras || []).map(e => [`Einmalbetrag ${ymShow(e.date)}${e.label ? " " + e.label : ""}`, money(e.amount)])]]);
+  out.push([tr("section.pension"), [...pens(part ? tr("params.person1") : "", plan.pension || {}, plan.pension?.ahv),
+    ...(part ? pens(tr("params.person2"), part, part.ahv) : [])]]);
+  out.push([tr("params.flows"), [[tr("params.incomeMonth"), ser(plan.flows?.income, money)], ...(part ? [[tr("params.income2Month"), ser(part.income, money)]] : []),
+    [tr("params.spendingMonth"), ser(plan.flows?.spending, money)],
+    ...(plan.flows?.extras || []).map(e => [tr("params.oneOff", { date: ymShow(e.date), v: e.label ? " " + e.label : "" }), money(e.amount)])]]);
   const w = plan.wealth || {};
-  out.push(["Vermögen und Anlage", [["Aktien", money(w.stocks)], ["Obligationen", money(w.bonds)], ["Cash", money(w.cash)],
-    ["Aktienanteil", ser(w.stockShare, pc)]]]);
+  out.push([tr("params.wealth"), [[tr("wealth.stocks"), money(w.stocks)], [tr("wealth.bonds"), money(w.bonds)], [tr("wealth.cash"), money(w.cash)],
+    [tr("sweep.stockShare"), ser(w.stockShare, pc)]]]);
   const r = plan.returns || {}, f = r.fixed || {};
   const src = r.source;
-  const rrows = [["Renditequelle", sourceName(src)]];
-  if (src === "fixed") rrows.push(["Aktien pro Jahr", pc(f.stocks)], ["Obligationen pro Jahr", pc(f.bonds)], ["Inflation pro Jahr", pc(f.inflation)], ["SARON", pc(f.saron)]);
+  const rrows = [[tr("params.source"), sourceName(src)]];
+  if (src === "fixed") rrows.push([tr("params.stocksYear"), pc(f.stocks)], [tr("params.bondsYear"), pc(f.bonds)], [tr("params.inflationYear"), pc(f.inflation)], ["SARON", pc(f.saron)]);
   else {
-    if (r.series && src !== "parametric") rrows.push(["Zeitreihe", seriesShort(r.series)]);
+    if (r.series && src !== "parametric") rrows.push([tr("params.series"), seriesShort(r.series)]);
     else if (r.strategy && src !== "parametric") {
       const name = (list, k) => list.find(x => x[0] === k)?.[1] ?? k, st = r.strategy, wt = st.weights || {};
-      rrows.push(["Aktien (Anlagestrategie)", name(STOCK_INDICES, st.stocks)], ["Obligationen (Anlagestrategie)", name(BOND_INDICES, st.bonds)]);
-      if (st.stocks === "worldCustom") rrows.push(["Gewichte", `Schweiz ${pc(wt.ch)}, USA ${pc(wt.usa)}, EU ${pc(wt.eu)}, Asien-Pazifik ${pc(wt.apac)}`]);
+      rrows.push([tr("params.stocksStrategy"), name(STOCK_INDICES, st.stocks)], [tr("params.bondsStrategy"), name(BOND_INDICES, st.bonds)]);
+      if (st.stocks === "worldCustom") rrows.push([tr("computed.weights"), tr("params.weightsText", { ch: pc(wt.ch), usa: pc(wt.usa), eu: pc(wt.eu), apac: pc(wt.apac) })]);
     }
-    if (src === "historical") rrows.push(["Historischer Startmonat", ymShow(r.startDate)]);
-    if (src === "bootstrap") rrows.push(["Pfade", num(r.bootstrap?.paths)], ["Blocklänge (Monate)", num(r.bootstrap?.block)], ["Zufallsstartwert", num(r.bootstrap?.seed)]);
+    if (src === "historical") rrows.push([tr("sweep.histStart"), ymShow(r.startDate)]);
+    if (src === "bootstrap") rrows.push([tr("params.paths"), num(r.bootstrap?.paths)], [tr("params.blockLength"), num(r.bootstrap?.block)], [tr("returns.seed"), num(r.bootstrap?.seed)]);
     if (src === "parametric") { const q = r.parametric || {};
-      rrows.push(["Pfade", num(q.paths)], ["Parameter", q.auto ? "Vorschlagswerte des Aktienindex" : "eigene Werte"], ["Erwartete Aktienrendite", pc(q.mu)], ["Schwankung", pc(q.sigma)], ["Freiheitsgrade", num(q.df)], ["Kurssprünge pro Jahr", num(q.jumpLambda)], ["Sprunghöhe (Mittel)", pc(q.jumpMu)], ["Sprunghöhe (Streuung)", pc(q.jumpSigma)], ["Zufallsstartwert", num(q.seed)]);
+      rrows.push([tr("params.paths"), num(q.paths)], [tr("optRanges.params"), q.auto ? tr("params.suggestedValues") : tr("params.ownValues")], [tr("params.expectedReturn"), pc(q.mu)], [tr("optimize.volatility"), pc(q.sigma)], [tr("params.dof"), num(q.df)], [tr("returns.jumps"), num(q.jumpLambda)], [tr("params.jumpMean"), pc(q.jumpMu)], [tr("params.jumpSpread"), pc(q.jumpSigma)], [tr("returns.seed"), num(q.seed)]);
       if (r.strategy) { const st = r.strategy, name = (list, k) => list.find(x => x[0] === k)?.[1] ?? k;
-        rrows.push(["Aktien (Anlagestrategie)", name(STOCK_INDICES, st.stocks)], ["Obligationen und Inflation", `zufällig, korreliert gemäss ${name(BOND_INDICES, st.bonds)}`]); }
-      else rrows.push(["Obligationen pro Jahr", pc(f.bonds)], ["Inflation pro Jahr", pc(f.inflation)]); }
-    if (r.extrapolation) rrows.push(["Fortschreibung", `${r.extrapolation.method ?? "–"}${r.extrapolation.range ? ` (${r.extrapolation.range} J.)` : ""}`]);
+        rrows.push([tr("params.stocksStrategy"), name(STOCK_INDICES, st.stocks)], [tr("returns.bondsInfl"), tr("params.randomCorrelated", { bondIndices: name(BOND_INDICES, st.bonds) })]); }
+      else rrows.push([tr("params.bondsYear"), pc(f.bonds)], [tr("params.inflationYear"), pc(f.inflation)]); }
+    if (r.extrapolation) rrows.push([tr("returns.extrapolationTitle"), `${r.extrapolation.method ?? "–"}${r.extrapolation.range ? ` (${r.extrapolation.range} ${tr("unit.yearsShort")})` : ""}`]);
   }
-  out.push(["Renditequelle und Zeitreihe", rrows]);
-  out.push(["Entnahmestrategie", [["Strategie", stratName(stratKey(plan.withdrawal))], ...stratParams(plan)]]);
+  out.push([tr("params.sourceSeries"), rrows]);
+  out.push([tr("section.withdrawal"), [[tr("optResult.strategy"), stratName(stratKey(plan.withdrawal))], ...stratParams(plan)]]);
   const props = plan.realestate?.properties || [];
-  const STATUS = { owned: "im Besitz", planned: "geplant", rent: "Miete" };
-  out.push(["Immobilien", [["Notverkauf bei Vermögen unter (Monate Ausgaben)", ser(plan.realestate?.emergencyMonths, num)], ...props.flatMap(p => {
-    const nm = p.name || "Immobilie";
-    return [[`${nm}: Status`, STATUS[p.status] || p.status], ...(p.price != null ? [[`${nm}: Kaufpreis`, money(p.price)]] : []), ...(p.worth != null ? [[`${nm}: Marktwert`, money(p.worth)]] : []),
-      ...(p.buy ? [[`${nm}: Kauf`, at(p.buy)]] : []), ...(p.sell ? [[`${nm}: Verkauf`, at(p.sell)]] : []),
-      ...(p.fixCosts != null ? [[`${nm}: Nebenkosten pro Monat`, money(p.fixCosts)]] : []), ...(p.rent != null ? [[`${nm}: Miete pro Monat`, money(p.rent)]] : []),
-      ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || "Tranche"}`, `${money(t.amount)}${t.start ? ` ab ${ymShow(t.start)}` : ""}; ${(t.periods || []).map(d => `${d.type === "saron" ? "SARON" : "fix"} ${num(d.term)} J., Zins ${pc(d.rate)}, Marge ${pc(d.margin)}, Amortisation ${money(d.amort)} (${d.amortMode === "indirect" ? "indirekt" : "direkt"})`).join(" → ")}`]),
+  const STATUS = { owned: tr("params.owned"), planned: tr("params.planned"), rent: tr("params.rent") };
+  out.push([tr("section.realestate"), [[tr("params.emergencyBelow"), ser(plan.realestate?.emergencyMonths, num)], ...props.flatMap(p => {
+    const nm = p.name || tr("params.property");
+    return [[tr("params.status", { nm }), STATUS[p.status] || p.status], ...(p.price != null ? [[tr("params.price", { nm }), money(p.price)]] : []), ...(p.worth != null ? [[tr("params.marketValue", { nm }), money(p.worth)]] : []),
+      ...(p.buy ? [[tr("params.buy", { nm }), at(p.buy)]] : []), ...(p.sell ? [[tr("params.sell", { nm }), at(p.sell)]] : []),
+      ...(p.fixCosts != null ? [[tr("params.costsMonth", { nm }), money(p.fixCosts)]] : []), ...(p.rent != null ? [[tr("params.rentMonth", { nm }), money(p.rent)]] : []),
+      ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}`, `${money(t.amount)}${t.start ? ` ${tr("common.fromDate", { date: ymShow(t.start) })}` : ""}; ${(t.periods || []).map(d => tr("params.periodText", { v: d.type === "saron" ? "SARON" : tr("mortgage.fixedLower"), term: num(d.term), rate: pc(d.rate), margin: pc(d.margin), amort: money(d.amort), v2: d.amortMode === "indirect" ? tr("mortgage.indirect") : tr("mortgage.direct") })).join(" → ")}`]),
     ];
   })]]);
-  out.push(["Säule 3a", (plan.pillar3a || []).flatMap(a => {
+  out.push([tr("section.pillar3a"), (plan.pillar3a || []).flatMap(a => {
     const nm = (plan.household?.persons || []).find(q => q.id === a.person)?.name || a.person;
-    return [[`${nm}: Guthaben, Zins, Einzahlung pro Jahr`, `${money(a.balance)}, ${pc(a.rate)}, ${money(a.contribution ?? 0)}`],
-      ...(a.payouts || []).map(x => [`${nm}: Auszahlung ${x.kind === "age" ? `mit ${x.years} J.` : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : "ganzes Guthaben"} (${x.use === "repay" ? "Hypothek" : "Vermögen"})`])];
+    return [[tr("params.pillar3aText", { nm }), `${money(a.balance)}, ${pc(a.rate)}, ${money(a.contribution ?? 0)}`],
+      ...(a.payouts || []).map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")})`])];
   })]);
   const t = plan.taxes || {}, g = t.propertyGain;
-  out.push(["Steuerannahmen", [["Steuerfuss", num(t.multiplier)], ["Einkommenssteuer", table(t.income)], ["Vermögenssteuer", table(t.wealth)], ["Kapitalbezugssteuer", table(t.capital)],
-    ["Grundstückgewinnsteuer", g ? `${g.model === "aargau" ? "Modell Aargau" : "Stufen"}, Ermässigung ${pc(g.reduction ?? 0)}${g.exemptBelow ? `, steuerfrei unter ${money(g.exemptBelow)}` : ""}` : "keine"]]]);
-  out.push(["Variationen", (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), `${SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from} bis ${SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to}, Schritt ${sw.step}`]) : [["Variationen", "keine"]]]);
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)], [tr("taxes.lumpsumTax"), table(t.capital)],
+    [tr("gain.title"), g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
+  out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
   if (full) {
     const add = (title, rows) => { const sec = out.find(x => x[0] === title); if (sec) sec[1].push(...rows); else if (rows.length) out.push([title, rows]); };
     const a = plan.realestate?.affordability || {};
-    add("Immobilien", [["Tragbarkeit: Höchstens vom Einkommen", pc(a.sustainability)], ["Tragbarkeit: Kalkulatorischer Zins", pc(a.imputedRate)],
-      ["Tragbarkeit: Nebenkosten p.a. (vom Preis)", pc(a.fixCosts)], ["Tragbarkeit: Höchste Belehnung", pc(a.maxLoanToValue)],
-      ...props.flatMap(p => { const nm = p.name || "Immobilie"; return [
-        ...(p.status === "owned" ? [[`${nm}: Kaufdatum`, ymShow(p.bought)]] : []),
-        ...(p.status === "rent" ? [[`${nm}: Miete ab`, at(p.from)], [`${nm}: Miete mit Inflation anpassen`, yn(p.inflationRent)]]
-          : [[`${nm}: Wert mit Inflation anpassen`, yn(p.inflationValue)], [`${nm}: Nebenkosten mit Inflation anpassen`, yn(p.inflationFixCosts)]]),
-        ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || "Tranche"}: nach der letzten Periode`, t.after === "repay" ? "Restschuld zurückzahlen" : "wie letzte Periode verlängern"])]; })]);
-    add("Säule 3a", (plan.pillar3a || []).map(x => [`${(plan.household?.persons || []).find(q => q.id === x.person)?.name || x.person}: Rest im AHV-Bezug`, x.use === "repay" ? "Hypothek" : "Vermögen"]));
+    add(tr("section.realestate"), [[tr("params.affIncome"), pc(a.sustainability)], [tr("params.affRate"), pc(a.imputedRate)],
+      [tr("params.affCosts"), pc(a.fixCosts)], [tr("params.affLtv"), pc(a.maxLoanToValue)],
+      ...props.flatMap(p => { const nm = p.name || tr("params.property"); return [
+        ...(p.status === "owned" ? [[tr("params.buyDate", { nm }), ymShow(p.bought)]] : []),
+        ...(p.status === "rent" ? [[tr("params.rentFrom", { nm }), at(p.from)], [tr("params.rentIndexed", { nm }), yn(p.inflationRent)]]
+          : [[tr("params.valueIndexed", { nm }), yn(p.inflationValue)], [tr("params.costsIndexed", { nm }), yn(p.inflationFixCosts)]]),
+        ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}${tr("params.afterLast")}`, t.after === "repay" ? tr("mortgage.repay") : tr("params.extendLower")])]; })]);
+    add(tr("section.pillar3a"), (plan.pillar3a || []).map(x => [tr("params.restAtAhv", { v: (plan.household?.persons || []).find(q => q.id === x.person)?.name || x.person }), x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")]));
     // Time-dependent values of the strategy as a list instead of «zeitabhängig», so that differences are visible
-    const ws = plan.wealth || {}, strat = out.find(x => x[0] === "Entnahmestrategie");
-    if (strat) strat[1] = strat[1].map(([k, v]) => k === "Cash-Reserve" ? [k, ser(ws.reserveMonths, x => `${x} Monate`)] : k.startsWith("Aktienanteil") ? [k, ser(ws.stockShare, pc)] : [k, v]);
-    if (g) add("Steuerannahmen", [["Grundstückgewinnsteuer mit dem Steuerfuss multiplizieren", yn(g.useMultiplier)],
-      ...(g.durationRates?.length ? [["Grundstückgewinnsteuer nach Besitzdauer", g.durationRates.map(([y, r]) => `ab ${y} J.: ${fmtPct(r)} %`).join("; ")]] : [])]);
+    const ws = plan.wealth || {}, strat = out.find(x => x[0] === tr("section.withdrawal"));
+    if (strat) strat[1] = strat[1].map(([k, v]) => k === tr("withdrawal.reserve") ? [k, ser(ws.reserveMonths, x => tr("params.months", { x }))] : k.startsWith(tr("sweep.stockShare")) ? [k, ser(ws.stockShare, pc)] : [k, v]);
+    if (g) add(tr("params.taxAssumptions"), [[tr("params.gainMultiplier"), yn(g.useMultiplier)],
+      ...(g.durationRates?.length ? [[tr("params.gainHolding"), g.durationRates.map(([y, r]) => tr("params.holdingRate", { y, rate: fmtPct(r) })).join("; ")]] : [])]);
   }
   return out;
 }
 /** Tab «Parameter»: read-only summary of the plan in the state of the run. */
 function paramsHtml(plan) {
-  if (!plan) return card("Parameter", "", `<p style="margin:0">Nicht verfügbar.</p>`);
-  return `<p class="hint" style="margin:0 0 10px">Die Parameter im Stand dieses Laufs (nicht der aktuelle Stand im Editor). Nur zur Ansicht.</p>`
+  if (!plan) return card(tr("optRanges.params"), "", `<p style="margin:0">${tr("params.notAvailable")}</p>`);
+  return `<p class="hint" style="margin:0 0 10px">${tr("params.snapshotHint")}</p>`
     + paramSections(plan).map(([title, rows]) => card(title, "", `<table class="tbl params">${rows.map(([k, v]) => `<tr><td class="l">${esc(k)}</td><td class="l">${esc(v)}</td></tr>`).join("")}</table>`)).join("");
 }
 /** Selection of the run (percentile) together with the values of the variations; sits above the scrolling area. */
 function runPicker(r, res) {
   const info = [pName(detailP), percentInfo(r, detailP, res.label)].filter(Boolean).join(" · ");
-  return card("Lauf wählen", "", `<div class="seg">${detailsOf(r).map(([p]) => `<button class="${p === detailP ? "on" : ""}" data-action="detail" data-p="${p}">${pName(p)}</button>`).join("")}</div>
-    ${batchRuns()?.off?.length ? `<p class="hint" style="color:var(--warn,#b45309)">Hinweis: Das Endvermögen von ${batchRuns().off.map(pName).join(", ")} weicht von der Szenarientabelle ab (zum Beispiel, weil sich eine Zeitreihe geändert hat). Die Anzeige bleibt verfügbar.</p>` : ""}
-    <p class="computed" style="margin-bottom:0"><b>${esc(info)}</b> · Endvermögen ${fmtMoney(res.summary.endTotal)}${res.summary.depleted ? ` · aufgebraucht ${atAge(res.summary.depleted)}` : ""}</p>`);
+  return card(tr("runPicker.title"), "", `<div class="seg">${detailsOf(r).map(([p]) => `<button class="${p === detailP ? "on" : ""}" data-action="detail" data-p="${p}">${pName(p)}</button>`).join("")}</div>
+    ${batchRuns()?.off?.length ? `<p class="hint" style="color:var(--warn,#b45309)">${tr("runPicker.deviates", { batchRuns: batchRuns().off.map(pName).join(", ") })}</p>` : ""}
+    <p class="computed" style="margin-bottom:0">${tr("runPicker.info", { info: esc(info), endTotal: fmtMoney(res.summary.endTotal) })}${res.summary.depleted ? ` · ${tr("runPicker.depleted", { atAge: atAge(res.summary.depleted) })}` : ""}</p>`);
 }
 function showDetail(p) { detailP = p; bucketOpen.clear(); if (lastRun) renderResults(lastRun); }
 
@@ -2859,30 +2910,30 @@ let savedView = null, parkedState = null;
 const CMP_MAX = 10;
 const runsSel = new Set(), RUN_COLORS = Array.from({ length: CMP_MAX }, (_, i) => `--r${i + 1}`);
 const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" });
-const stratName = id => id === "three_buckets_guardrails" ? "3-Topf + Guardrails" : STRATS.find(x => x[0] === id)?.[1] || id;
+const stratName = id => id === "three_buckets_guardrails" ? tr("opt.bucketsGuardrails") : STRATS.find(x => x[0] === id)?.[1] || id;
 const sourceName = id => SOURCES.find(x => x[0] === id)?.[1] || id;
 /** Name of a new result: plan · source (for scenarios «Szenarien») · strategy · date, time. */
-const runTitle = (base, m, iso) => [base, m.kind === "scenarios" ? "Szenarien" : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
+const runTitle = (base, m, iso) => [base, m.kind === "scenarios" ? tr("scen.title") : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
 /** While viewing a saved simulation its plan applies; the editor state is set aside meanwhile. */
 function unpark() { if (parkedState) { state = parkedState; parkedState = null; } savedView = null; }
 /** Value of a time series of the plan as text: constant → value, otherwise «zeitabhängig». */
-const serTxt = (v, f) => v && typeof v === "object" ? (v.mode === "const" ? f(v.value) : "zeitabhängig") : v == null ? "–" : f(v);
+const serTxt = (v, f) => v && typeof v === "object" ? (v.mode === "const" ? f(v.value) : tr("runs.timeDependent")) : v == null ? "–" : f(v);
 /** Parameters of the withdrawal strategy of a plan as pairs [label, value] (labels and units as in the editor). */
 function stratParams(plan) {
-  const w = plan.withdrawal || {}, ws = plan.wealth || {}, pc = v => `${fmtPct(v)} %`, yrs = v => `${v} J.`;
-  const share = (label = "Aktienanteil") => [label, serTxt(ws.stockShare, pc)];
-  const limit = v => v ? pc(v) : "keine";
+  const w = plan.withdrawal || {}, ws = plan.wealth || {}, pc = v => `${fmtPct(v)} %`, yrs = v => `${v} ${tr("unit.yearsShort")}`;
+  const share = (label = tr("sweep.stockShare")) => [label, serTxt(ws.stockShare, pc)];
+  const limit = v => v ? pc(v) : tr("results.none");
   const g = w.guardrails || {};
-  const guard = () => [["Startrate bei Pensionierung", pc(g.initialRate)], ["Obere Leitplanke", pc(g.upper)], ["Untere Leitplanke", pc(g.lower)], ["Anpassung bei Leitplanke", pc(g.adjust)], ["Untergrenze", limit(w.floor)], ["Obergrenze", limit(w.ceiling)]];
+  const guard = () => [[tr("guardrails.startRate"), pc(g.initialRate)], [tr("stratParams.upper"), pc(g.upper)], [tr("stratParams.lower"), pc(g.lower)], [tr("guardrails.adjust"), pc(g.adjust)], [tr("limits.lower"), limit(w.floor)], [tr("limits.upper"), limit(w.ceiling)]];
   switch (w.strategy) {
     case "three_buckets": { const b = w.buckets || {};
-      return [["Topf 1 · Cash", yrs(b.cashYears)], ["Topf 2 · Obligationen", yrs(b.bondYears)], ["Aus Topf 3 nur verkaufen, wenn Aktienrendite (12 Monate) ≥", pc(b.refillThreshold ?? 0)], ...(ws.stockShare != null ? [share("Aktienanteil Restvermögen")] : []),
+      return [[tr("withdrawal.bucket1"), yrs(b.cashYears)], [tr("withdrawal.bucket2"), yrs(b.bondYears)], [tr("withdrawal.sellRule"), pc(b.refillThreshold ?? 0)], ...(ws.stockShare != null ? [share(tr("stratParams.stockShareRest"))] : []),
         ...(bucketsGuardrails(w) ? guard() : [])]; }
     case "guardrails": return [...guard(), share()];
-    case "fixed_rate": return [["Entnahmerate pro Jahr", pc((w.fixedRate || {}).rate)], share()];
-    case "vpw": { const v = w.vpw || {}; return [["Vermögen soll reichen bis Alter", `${v.horizonAge} J.`], ["Angenommene Realrendite pro Jahr", pc(v.realReturn)], share()]; }
-    case "endowment": { const e = w.endowment || {}; return [["Zielrate des Vermögens", pc(e.rate)], ["Gewicht des aktuellen Vermögens", pc(e.smoothing)], share()]; }
-    default: return [share(), ["Cash-Reserve", serTxt(ws.reserveMonths, v => `${v} Monate`)]];
+    case "fixed_rate": return [[tr("withdrawal.rate"), pc((w.fixedRate || {}).rate)], share()];
+    case "vpw": { const v = w.vpw || {}; return [[tr("withdrawal.untilAge"), `${v.horizonAge} ${tr("unit.yearsShort")}`], [tr("withdrawal.realReturn"), pc(v.realReturn)], share()]; }
+    case "endowment": { const e = w.endowment || {}; return [[tr("withdrawal.targetRate"), pc(e.rate)], [tr("withdrawal.weight"), pc(e.smoothing)], share()]; }
+    default: return [share(), [tr("withdrawal.reserve"), serTxt(ws.reserveMonths, v => tr("params.months", { x: v }))]];
   }
 }
 /** Name of the time series used (without folder and extension); `null` if the return source has no time series. */
@@ -2893,21 +2944,21 @@ function seriesLabel() {
 }
 /** Display of the column «Zeitreihe» (header data without a value: «–»). */
 const seriesCell = m => m.seriesName === undefined ? "–" : m.seriesName ? esc(m.seriesName)
-  : m.source === "fixed" ? `<span class="muted">feste Renditen</span>` : m.source === "parametric" ? `<span class="muted">parametrisch</span>` : "–";
+  : m.source === "fixed" ? `<span class="muted">${tr("runs.fixedReturns")}</span>` : m.source === "parametric" ? `<span class="muted">${tr("runs.parametric")}</span>` : "–";
 /** Share of runs with an emergency sale from which the warning icon appears (configurable later, #25). */
 const EMERGENCY_WARN_SHARE = 0.05;
 /** Warning icon (house with warning sign) for the unplanned sale of a property; `tip` is the tooltip. */
 const houseWarn = tip => `<span class="hwarn" role="img" aria-label="${esc(tip)}" title="${esc(tip)}">🏠⚠️</span>`;
 /** Icon in the list of results: single run with emergency sale, Monte Carlo from the threshold; old entries without a value: none. */
 function emergencyMark(m) {
-  if (m.kind === "single") return m.emergencySaleRuns > 0 ? ` ${houseWarn("Notverkauf einer Immobilie in diesem Lauf")}` : "";
+  if (m.kind === "single") return m.emergencySaleRuns > 0 ? ` ${houseWarn(tr("runs.emergencyOne"))}` : "";
   if (m.kind !== "batch" || !(m.runs > 0) || !(m.emergencySaleRuns > 0)) return "";
   const share = m.emergencySaleRuns / m.runs;
-  return share >= EMERGENCY_WARN_SHARE ? ` ${houseWarn(`Notverkauf einer Immobilie in ${pctTxt(share)} der Läufe (${fmtInt(m.emergencySaleRuns)} von ${fmtInt(m.runs)} Läufen)`)}` : "";
+  return share >= EMERGENCY_WARN_SHARE ? ` ${houseWarn(tr("runs.emergencyShare", { share: pctTxt(share), emergencySaleRuns: fmtInt(m.emergencySaleRuns), runs: fmtInt(m.runs) }))}` : "";
 }
 /** Strategy name with the parameters of the result as tooltip (also reachable by keyboard). */
 const stratCell = (m, cls = "") => {
-  const tip = m.params ? m.params.map(([k, v]) => `${k}: ${v}`).join("\n") : "Parameter nicht verfügbar";
+  const tip = m.params ? m.params.map(([k, v]) => `${k}: ${v}`).join("\n") : tr("runs.paramsNA");
   return `<td class="ptip${cls}" tabindex="0" data-tip="${esc(tip)}" aria-label="${esc(stratName(m.strategy) + ": " + tip.replace(/\n/g, ", "))}">${esc(stratName(m.strategy))}</td>`;
 };
 function runMeta(r) {
@@ -2919,12 +2970,12 @@ function runMeta(r) {
   }
   return { ...base, kind: "scenarios", runs: r.scenarios.results.length };
 }
-const runKind = m => m.kind === "single" ? "Einzellauf" : m.kind === "scenarios" ? `Szenarien (${m.runs} Varianten)` : `${fmtInt(m.runs)} Läufe · ${sourceName(m.source)}`;
+const runKind = m => m.kind === "single" ? tr("results.single") : m.kind === "scenarios" ? tr("runs.scenariosN", { runs: m.runs }) : tr("runs.runsSource", { runs: fmtInt(m.runs), source: sourceName(m.source) });
 async function rememberRun(r) {
   if (r.error || (!r.single && !r.batch && !r.scenarios)) return;
   try {
     const plan = JSON.parse(JSON.stringify(state)), m = runMeta(r);
-    const base = (currentPath && baseName(currentPath).replace(/\.[rv]plan$/, "")) || plan.project.name || "Planung";
+    const base = (currentPath && baseName(currentPath).replace(/\.[rv]plan$/, "")) || plan.project.name || tr("refs.plan");
     const now = new Date().toISOString();
     const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
     await Runs.add(meta, { plan, result: r });
@@ -2933,43 +2984,43 @@ async function rememberRun(r) {
     document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
   } catch (e) {
     // #147: report visibly (e.g. browser storage full); the user interface stays usable, the result stays displayed
-    toast("Ergebnis nicht in der Liste gespeichert: " + errText(e));
-    noteError("Ergebnis nicht gespeichert: " + errText(e));
+    toast(tr("runs.notListed") + errText(e));
+    noteError(tr("runs.notSaved") + errText(e));
   }
 }
 let runsIds = [];
 function runsBar() {
   const k = runsSel.size, n = runsIds.length, canCompare = k >= 2 && k <= CMP_MAX;
-  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-compare" ${canCompare ? "" : "disabled"} title="Zwei bis ${CMP_MAX} Ergebnisse markieren">Vergleichen (${k})</button>${k > CMP_MAX ? `<span class="cmpmax hint" role="status">Höchstens ${CMP_MAX} Ergebnisse lassen sich vergleichen.</span>` : ""}
-    <button class="btn small" data-action="runs-delete" ${k < 1 ? "disabled" : ""}>Markierte löschen (${k})</button>
-    <button class="btn small" data-action="runs-delete-all" ${n < 1 ? "disabled" : ""}>Alle löschen</button>`;
+  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-compare" ${canCompare ? "" : "disabled"} title="${tr("runs.compareTitle", { cmpMax: CMP_MAX })}">${tr("runs.compare", { k })}</button>${k > CMP_MAX ? `<span class="cmpmax hint" role="status">${tr("runs.compareMax", { cmpMax: CMP_MAX })}</span>` : ""}
+    <button class="btn small" data-action="runs-delete" ${k < 1 ? "disabled" : ""}>${tr("runs.deleteMarked", { k })}</button>
+    <button class="btn small" data-action="runs-delete-all" ${n < 1 ? "disabled" : ""}>${tr("runs.deleteAll")}</button>`;
   const all = document.querySelector('input[data-action="runs-all"]');
   if (all) { all.checked = n > 0 && k === n; all.indeterminate = k > 0 && k < n; }
 }
 async function openRuns() {
   showResults(true); lastRun = null; savedView = null; compareOpen = false;
-  plainTitle("Gespeicherte Ergebnisse");
+  plainTitle(tr("runs.title"));
   let list = [];
   try { list = await Runs.list(); } catch (e) { noteError(errText(e)); }
   for (const id of [...runsSel]) if (!list.some(m => m.id === id)) runsSel.delete(id);
   runsIds = list.map(m => m.id);
-  $("#resultsInfo").textContent = `${list.length} ${list.length === 1 ? "Eintrag" : "Einträge"} · nur auf diesem Rechner`;
+  $("#resultsInfo").textContent = `${list.length} ${list.length === 1 ? tr("runs.entry") : tr("runs.entries")} ${tr("runs.localOnly")}`;
   runsBar();
-  const cell = m => (m.kind === "batch" ? `<span title="Median ${fmtMio(m.end50)}">${pctTxt(m.successRate)} · 5 %: ${fmtMio(m.end5)}</span>` : m.kind === "single" ? `Endvermögen ${fmtMio(m.endTotal)}` : "–") + emergencyMark(m);
+  const cell = m => (m.kind === "batch" ? `<span title="${tr("runs.medianTitle", { end50: fmtMio(m.end50) })}">${pctTxt(m.successRate)} · 5 %: ${fmtMio(m.end5)}</span>` : m.kind === "single" ? tr("runs.endWealth", { endTotal: fmtMio(m.endTotal) }) : "–") + emergencyMark(m);
   $("#resultsBody").innerHTML = list.length ? `<div class="card"><table class="tbl" id="runsTbl">
-    <tr><th><input type="checkbox" data-action="runs-all" title="Alle markieren oder Markierung aufheben"></th><th>Name</th><th>Notiz</th><th>Datum</th><th>Zeitreihe</th><th>Strategie</th><th>Ergebnis</th><th></th></tr>
-    ${list.map(m => `<tr><td><input type="checkbox" data-action="run-sel" data-id="${m.id}" ${runsSel.has(m.id) ? "checked" : ""} title="Zum Vergleichen (2 bis ${CMP_MAX}) oder Löschen markieren"></td>
-      <td><input class="runedit" data-id="${m.id}" data-f="name" value="${esc(m.name)}" title="Name ändern"></td>
-      <td><input class="runedit" data-id="${m.id}" data-f="note" value="${esc(m.note)}" placeholder="Notiz…"></td>
+    <tr><th><input type="checkbox" data-action="runs-all" title="${tr("runs.markAllTitle")}"></th><th>${tr("runs.name")}</th><th>${tr("runs.note")}</th><th>${tr("runs.date")}</th><th>${tr("runs.series")}</th><th>${tr("runs.strategy")}</th><th>${tr("runs.result")}</th><th></th></tr>
+    ${list.map(m => `<tr><td><input type="checkbox" data-action="run-sel" data-id="${m.id}" ${runsSel.has(m.id) ? "checked" : ""} title="${tr("runs.markTitle", { cmpMax: CMP_MAX })}"></td>
+      <td><input class="runedit" data-id="${m.id}" data-f="name" value="${esc(m.name)}" title="${tr("runs.renameTitle")}"></td>
+      <td><input class="runedit" data-id="${m.id}" data-f="note" value="${esc(m.note)}" placeholder="${tr("runs.notePlaceholder")}"></td>
       <td>${esc(runDate(m.created))}</td><td>${seriesCell(m)}</td>${stratCell(m)}<td>${cell(m)}<br><small class="muted">${esc(runKind(m))}</small></td>
-      <td style="white-space:nowrap"><button class="btn small" data-action="run-view" data-id="${m.id}">Öffnen</button> <button class="btn small" data-action="run-del" data-id="${m.id}" title="Dieses Ergebnis löschen">Löschen</button></td></tr>`).join("")}
-    </table><p class="hint">Jedes Ergebnis wird automatisch hier abgelegt, mit der Planung von damals. Name und Notiz lassen sich direkt in der Liste ändern. Zum Löschen beliebig viele Einträge markieren (oder oben «Alle löschen»); zum Vergleichen zwei bis ${CMP_MAX} Einträge markieren.</p></div>`
-    : `<div class="card"><p style="margin:0">Noch kein Ergebnis vorhanden. Jedes Ergebnis erscheint nach dem Start einer Simulation automatisch in dieser Liste.</p></div>`;
+      <td style="white-space:nowrap"><button class="btn small" data-action="run-view" data-id="${m.id}">${tr("runs.open")}</button> <button class="btn small" data-action="run-del" data-id="${m.id}" title="${tr("runs.deleteTitle")}">${tr("runs.delete")}</button></td></tr>`).join("")}
+    </table><p class="hint">${tr("runs.hint", { cmpMax: CMP_MAX })}</p></div>`
+    : `<div class="card"><p style="margin:0">${tr("runs.empty")}</p></div>`;
   document.documentElement.dataset.rendered = "runs";
 }
 async function viewRun(id) {
   const [meta] = (await Runs.list()).filter(m => m.id === id), data = await Runs.get(id);
-  if (!meta || !data) { toast("Das Ergebnis ist nicht mehr vorhanden."); return openRuns(); }
+  if (!meta || !data) { toast(tr("runs.gone")); return openRuns(); }
   resetVariation();
   if (!parkedState) parkedState = state;
   state = normalize(JSON.parse(JSON.stringify(data.plan)));
@@ -2989,11 +3040,15 @@ const flat = (o, p = "", out = {}) => {
 let compareTab = "overview", cmpYearKey = "total", cmpLiquid = "liquid", cmpFlow = "in", cmpP = 50;
 /** #118: Sorting of the key figures in the comparison: { col, dir } (dir 1 ascending, −1 descending); null = order of the list. */
 let cmpSort = null;
-const CMP_TABS = [["overview", "Übersicht"], ["charts", "Verläufe"], ["table", "Jahreswerte"], ["plan", "Planung"]];
-const CMP_YEAR = [["total", "Gesamtvermögen (Total)"], ["liquid", "Liquides Vermögen"], ["property", "Immobilien"], ["pension", "Vorsorge"],
-  ["receipts", "Einkommen total"], ["spending", "Ausgaben total"], ["draw", "Entnahme"], ["rate", "Entnahmerate"], ["taxTotal", "Steuern total"]];
-const CMP_LIQUID = [["liquid", "Total"], ["stocks", "Aktien"], ["bonds", "Obligationen"], ["cash", "Cash"]];
-const CMP_FLOW = [["in", "Einnahmen"], ["out", "Ausgaben"], ["taxes", "Steuern"]];
+let CMP_TABS;
+onLanguage(() => CMP_TABS = [["overview", tr("results.overview")], ["charts", tr("cmp.courses")], ["table", tr("results.yearValues")], ["plan", tr("refs.plan")]]);
+let CMP_YEAR;
+onLanguage(() => CMP_YEAR = [["total", tr("cmp.totalWealth")], ["liquid", tr("legend.liquid")], ["property", tr("section.realestate")], ["pension", tr("section.pension")],
+  ["receipts", tr("yearTable.income")], ["spending", tr("yearTable.spending")], ["draw", tr("yearTable.withdrawal")], ["rate", tr("yearTable.rate")], ["taxTotal", tr("single.taxesTotal")]]);
+let CMP_LIQUID;
+onLanguage(() => CMP_LIQUID = [["liquid", tr("yearTable.total")], ["stocks", tr("wealth.stocks")], ["bonds", tr("wealth.bonds")], ["cash", tr("wealth.cash")]]);
+let CMP_FLOW;
+onLanguage(() => CMP_FLOW = [["in", tr("cmp.income")], ["out", tr("cmp.spending")], ["taxes", tr("section.taxes")]]);
 /**
  * What a saved result provides for the comparison. `run` is the run for trajectories and yearly values: for a single run
  * this one, for multiple runs the run of the chosen percentile (`cmpP`, like «Lauf wählen» in the single result); if this
@@ -3011,17 +3066,17 @@ function cmpPicker(items) {
   const qs = [...new Set(items.filter(it => it.batch).flatMap(it => (it.batch.details || []).map(([p]) => p)))].sort((a, b) => a - b);
   if (!qs.length) return "";
   if (!qs.includes(cmpP)) cmpP = qs.includes(50) ? 50 : qs[0];
-  return card("Lauf wählen", "gilt für alle Ergebnisse mit mehreren Läufen", `<div class="seg">${qs.map(p => `<button class="${p === cmpP ? "on" : ""}" data-action="cmp-p" data-p="${p}">${pName(p)}</button>`).join("")}</div>`);
+  return card(tr("runPicker.title"), tr("cmp.pickerSub"), `<div class="seg">${qs.map(p => `<button class="${p === cmpP ? "on" : ""}" data-action="cmp-p" data-p="${p}">${pName(p)}</button>`).join("")}</div>`);
 }
 /** Which run is shown per result, with a remark on single runs and missing percentiles. */
 function cmpRunNotes(items) {
   const runs = items.filter(it => it.run), out = [];
-  if (runs.some(it => it.batch)) out.push(`Bei mehreren Läufen: ${pName(cmpP)}${cmpP === 50 ? " (Median)" : ""}.`);
+  if (runs.some(it => it.batch)) out.push(`${tr("cmp.multiRuns", { cmpP: pName(cmpP) })}${cmpP === 50 ? tr("cmp.median") : ""}.`);
   const singles = runs.filter(it => it.single);
-  if (singles.length) out.push(`Einzellauf (ohne Perzentile): ${singles.map(it => esc(it.name)).join(", ")}.`);
+  if (singles.length) out.push(tr("cmp.singleNoPct", { map: singles.map(it => esc(it.name)).join(", ") }));
   const miss = runs.filter(it => it.pMissing);
-  if (miss.length) out.push(`Ohne ${pName(cmpP)}, deshalb Median-Lauf: ${miss.map(it => esc(it.name)).join(", ")}.`);
-  items.filter(it => !it.run).forEach(it => out.push(`Ohne Lauf (nur Szenarien): ${esc(it.name)}.`));
+  if (miss.length) out.push(tr("cmp.withoutPct", { cmpP: pName(cmpP), map: miss.map(it => esc(it.name)).join(", ") }));
+  items.filter(it => !it.run).forEach(it => out.push(tr("cmp.noRun", { name: esc(it.name) })));
   return out;
 }
 const cmpSel = (action, opts, cur) => `<div class="seg" style="margin-bottom:8px">${opts.map(([k, t]) => `<button class="${k === cur ? "on" : ""}" data-action="${action}" data-v="${k}">${t}</button>`).join("")}</div>`;
@@ -3030,8 +3085,8 @@ const cmpLegend = items => legend(items.map(it => [it.color, esc(it.name)]));
 /** Series of equal length (months since start); missing months stay gaps. */
 const cmpPad = (n, v) => Array.from({ length: n }, (_, k) => k < v.length ? v[k] : NaN);
 const cmpX = n => Array.from({ length: n }, (_, k) => k);
-const cmpTime = (id, n, lines, tip, extra = {}) => Charts.time($(`#${id}`), $(`#${id}-tip`), { x: cmpX(n), xFmt: m => `${m / 12} J.`,
-  view: resultZoom ? [resultZoom.from, resultZoom.to] : null, onZoom: setCustomZoom, lines, tip: k => `<b>Jahr ${(k / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })}</b>${tip(k)}`, ...extra });
+const cmpTime = (id, n, lines, tip, extra = {}) => Charts.time($(`#${id}`), $(`#${id}-tip`), { x: cmpX(n), xFmt: m => `${m / 12} ${tr("unit.yearsShort")}`,
+  view: resultZoom ? [resultZoom.from, resultZoom.to] : null, onZoom: setCustomZoom, lines, tip: k => tr("cmp.yearTip", { v: (k / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 }), k: tip(k) }), ...extra });
 const cmpRow = (it, v, f) => Number.isFinite(v) ? `<br><span style="color:var(${it.color})">■</span> ${esc(it.name)}: ${f(v)}` : "";
 /** Calendar years equal: year number; otherwise «n. Jahr» since start (the year number is in the tooltip of the cell). */
 function cmpYears(items, valuesOf) {
@@ -3039,7 +3094,7 @@ function cmpYears(items, valuesOf) {
   const firsts = per.filter(Boolean).map(v => v[0]?.y);
   const same = firsts.every(y => y === firsts[0]);
   const n = Math.max(0, ...per.map(v => v ? v.length : 0));
-  return { per, n, same, label: k => same ? (per.find(v => v && v[k])?.[k].y ?? "") : `${k + 1}. Jahr` };
+  return { per, n, same, label: k => same ? (per.find(v => v && v[k])?.[k].y ?? "") : tr("cmp.yearN", { v: k + 1 }) };
 }
 async function compareRuns() {
   const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse().slice(0, CMP_MAX);
@@ -3047,11 +3102,11 @@ async function compareRuns() {
   lastRun = null; savedView = null; compareOpen = true;
   const items = metas.map((m, i) => cmpItem(m, datas[i], i));
   if (!CMP_TABS.some(([k]) => k === compareTab)) compareTab = "overview";
-  plainTitle(`Vergleich von ${metas.length} Ergebnissen`); $("#resultsInfo").textContent = realView ? "heutige Kaufkraft" : "nominal";
+  plainTitle(tr("cmp.title", { length: metas.length })); $("#resultsInfo").textContent = realView ? tr("single.todayPower") : tr("results.nominalLower");
   $("#resultsPick").innerHTML = "";
-  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-open">← Zur Liste</button>
+  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-open">${tr("results.backToList")}</button>
     <div class="seg tabs">${CMP_TABS.map(([k, t]) => `<button class="${k === compareTab ? "on" : ""}" data-action="cmp-tab" data-tab="${k}">${t}</button>`).join("")}</div>
-    <div class="seg"><button class="${realView ? "" : "on"}" data-action="real" data-v="0" title="Beträge wie sie dann anfallen">Nominal</button><button class="${realView ? "on" : ""}" data-action="real" data-v="1" title="Beträge in Preisen des jeweiligen Simulationsstarts (jedes Ergebnis mit seiner eigenen Inflation)">Heutige Kaufkraft</button></div>`;
+    <div class="seg"><button class="${realView ? "" : "on"}" data-action="real" data-v="0" title="${tr("results.nominalTitle")}">${tr("results.nominal")}</button><button class="${realView ? "on" : ""}" data-action="real" data-v="1" title="${tr("cmp.realTitle")}">${tr("results.realLabel")}</button></div>`;
   const body = $("#resultsBody");
   if (compareTab === "overview") cmpOverview(body, items);
   else if (compareTab === "charts") cmpCharts(body, items);
@@ -3060,7 +3115,7 @@ async function compareRuns() {
   document.documentElement.dataset.rendered = "compare";
 }
 const cmpSw = it => `<i class="sw" style="background:var(${it.color})"></i>`;
-const cmpReal = () => realView ? "heutige Kaufkraft (jedes Ergebnis mit seiner eigenen Inflation)" : "nominal";
+const cmpReal = () => realView ? tr("cmp.realNote") : tr("results.nominalLower");
 function cmpOverview(body, items) {
   const num = v => v == null || !Number.isFinite(v) ? "–" : fmtMio(v);
   /** Final wealth of a percentile from the summary, converted to real with the inflation of the run of this percentile.
@@ -3076,28 +3131,28 @@ function cmpOverview(body, items) {
   // #118: Key figures sortable by column; colors and order of the other cards stay
   const depAt = it => { const d = it.single ? it.single.summary.depleted : it.batch ? it.batch.summary.earliestDepletion?.[0] : undefined;
     return !it.single && !it.batch ? null : d ? ym2i(d) : Infinity; };
-  const cols = [["name", "Ergebnis", "l", it => it.name], ["series", "Zeitreihe", "l", it => it.m.seriesName || (it.m.source === "fixed" ? "feste Renditen" : it.m.source === "parametric" ? "parametrisch" : null)],
-    ["strat", "Strategie", "l", it => stratName(it.m.strategy)], ["succ", "Erfolgsquote", "r", it => it.batch ? it.batch.summary.successRate : null],
-    ["p50", "Median bzw. Endvermögen", "r", it => endAt(it, 50)], ["p5", "5. Perzentil", "r", it => endAt(it, 5)], ["p1", "1. Perzentil", "r", it => endAt(it, 1)],
-    ["p0", "Schlechtester Lauf", "r", it => endAt(it, 0)], ["dep", "Früheste Erschöpfung", "r", depAt]];
+  const cols = [["name", tr("runs.result"), "l", it => it.name], ["series", tr("runs.series"), "l", it => it.m.seriesName || (it.m.source === "fixed" ? tr("runs.fixedReturns") : it.m.source === "parametric" ? tr("runs.parametric") : null)],
+    ["strat", tr("runs.strategy"), "l", it => stratName(it.m.strategy)], ["succ", tr("scen.successRate"), "r", it => it.batch ? it.batch.summary.successRate : null],
+    ["p50", tr("cmp.medianOrEnd"), "r", it => endAt(it, 50)], ["p5", tr("cmp.p5"), "r", it => endAt(it, 5)], ["p1", tr("cmp.p1"), "r", it => endAt(it, 1)],
+    ["p0", tr("fan.worstRun"), "r", it => endAt(it, 0)], ["dep", tr("scen.earliestDepletion"), "r", depAt]];
   const sc = cmpSort && cols.find(c => c[0] === cmpSort.col);
   const sorted = sc ? sortBy(items, sc[3], cmpSort.dir) : items;
   const head = cols.map(([k, t, al]) => { const on = sc && sc[0] === k, dir = on ? cmpSort.dir : 0;
-    return `<th class="${al} sorth" aria-sort="${dir > 0 ? "ascending" : dir < 0 ? "descending" : "none"}"><button class="sortbtn" data-action="cmp-sort" data-col="${k}" title="Nach ${esc(t)} sortieren${on ? (dir > 0 ? " (absteigend)" : " (aufsteigend)") : ""}">${t}<span class="sorti${on ? " on" : ""}" aria-hidden="true">${dir > 0 ? "▲" : dir < 0 ? "▼" : "↕"}</span></button></th>`; }).join("");
+    return `<th class="${al} sorth" aria-sort="${dir > 0 ? "ascending" : dir < 0 ? "descending" : "none"}"><button class="sortbtn" data-action="cmp-sort" data-col="${k}" title="${tr("cmp.sortTitle", { v: esc(t), v2: on ? (dir > 0 ? tr("cmp.descending") : tr("cmp.ascending")) : "" })}">${t}<span class="sorti${on ? " on" : ""}" aria-hidden="true">${dir > 0 ? "▲" : dir < 0 ? "▼" : "↕"}</span></button></th>`; }).join("");
   const rows = sorted.map(it => { const m = it.m; return `<tr><td class="l">${cmpSw(it)}${esc(m.name)}<br><small class="muted">${esc(runKind(m))}</small></td><td class="l">${seriesCell(m)}</td>${stratCell(m, " l")}
     <td class="r">${it.batch ? pctTxt(it.batch.summary.successRate) : "–"}</td>
     <td class="r">${num(endAt(it, 50))}</td><td class="r">${num(endAt(it, 5))}</td><td class="r">${num(endAt(it, 1))}</td><td class="r">${num(endAt(it, 0))}</td>
-    <td class="r">${it.single ? (it.single.summary.depleted ? ymShow(it.single.summary.depleted) : "keine") : it.batch ? (it.batch.summary.earliestDepletion ? ymShow(it.batch.summary.earliestDepletion[0]) : "keine") : "–"}</td></tr>`; }).join("");
+    <td class="r">${it.single ? (it.single.summary.depleted ? ymShow(it.single.summary.depleted) : tr("results.none")) : it.batch ? (it.batch.summary.earliestDepletion ? ymShow(it.batch.summary.earliestDepletion[0]) : tr("results.none")) : "–"}</td></tr>`; }).join("");
   const scen = items.filter(it => it.scenariosOnly);
-  if (scen.length) notes.push(`Nur als Kennzahl (Ergebnis mit Szenarien ohne Einzel- oder Monte-Carlo-Lauf): ${scen.map(it => esc(it.name)).join(", ")}.`);
+  if (scen.length) notes.push(tr("cmp.onlyKpi", { map: scen.map(it => esc(it.name)).join(", ") }));
   // Range: median (or single run) and 5th/95th percentile
   const bandOf = it => { if (!it.batch) return null; const b = it.batch.bands; return realView ? b.real || null : b; };
   const noReal = items.filter(it => it.batch && realView && !it.batch.bands.real);
-  if (noReal.length) notes.push(`Ohne Werte in heutiger Kaufkraft (älteres Ergebnis): ${noReal.map(it => esc(it.name)).join(", ")}.`);
+  if (noReal.length) notes.push(tr("cmp.noReal", { map: noReal.map(it => esc(it.name)).join(", ") }));
   const partReal = realView ? items.filter(it => it.batch && it.batch.bands.real && it.batch.summary.percentiles.some(p => p.endTotalReal == null)) : [];
-  if (partReal.length) notes.push(`In heutiger Kaufkraft nur für den schlechtesten Lauf, das 1., 5., 50., 95. und 99. Perzentil (älteres Ergebnis): ${partReal.map(it => esc(it.name)).join(", ")}.`);
+  if (partReal.length) notes.push(tr("cmp.partReal", { map: partReal.map(it => esc(it.name)).join(", ") }));
   const singles = items.filter(it => it.single);
-  if (singles.length) notes.push(`Einzellauf ohne Perzentile (in der Bandbreite nur der eine Lauf; keine Perzentile, keine Wahrscheinlichkeit und kein Alter bei Erschöpfung): ${singles.map(it => esc(it.name)).join(", ")}.`);
+  if (singles.length) notes.push(tr("cmp.singleNoBand", { map: singles.map(it => esc(it.name)).join(", ") }));
   const fan = items.map(it => it.single ? { med: it.single.records.map(r => rv(r, r.total)) } : bandOf(it) ? { med: bandOf(it).p50, lo: bandOf(it).p5, hi: bandOf(it).p95 } : null);
   const n = Math.max(0, ...fan.map(f => f ? f.med.length : 0));
   const fanLines = [];
@@ -3106,25 +3161,25 @@ function cmpOverview(body, items) {
   // Percentiles: all percentiles of the results as rows
   const batches = items.filter(it => it.batch);
   const qs = [...new Set(batches.flatMap(it => it.batch.summary.percentiles.map(p => p.percent)))].sort((a, b) => b - a);
-  const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">Perzentil</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
-    ${qs.map(q => `<tr><td class="l">${q === 0 ? "Schlechtester Lauf" : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
-      + (realView ? `<p class="hint">${REAL_PCT_HINT}; die Reihenfolge kann deshalb von der nominalen abweichen.</p>` : "")
-    : `<p class="hint" style="margin:0">Kein Ergebnis mit mehreren Läufen.</p>`;
+  const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">${tr("results.percentile")}</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
+    ${qs.map(q => `<tr><td class="l">${q === 0 ? tr("fan.worstRun") : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
+      + (realView ? `<p class="hint">${tr("cmp.realOrder", { realPctHint: REAL_PCT_HINT })}</p>` : "")
+    : `<p class="hint" style="margin:0">${tr("cmp.noMulti")}</p>`;
   // Probability that the money lasts
   const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);
   const ns = Math.max(0, ...surv.map(v => v ? v.length : 0));
   // Age at depletion: share of runs per year of age (results with different numbers of runs stay comparable)
   const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
   const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
-  body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
+  body.innerHTML = card(tr("cmp.kpis"), tr("cmp.endWealth", { cmpReal: cmpReal() }), `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
       + (realView ? `<p class="hint">${REAL_PCT_HINT}.</p>` : ""))
     + cmpNote(notes)
-    + (fanLines.length ? card("Bandbreite des Gesamtvermögens", `${cmpReal()} · durchgezogen: Median bzw. Einzellauf, gestrichelt: 5. Perzentil, gepunktet: 95. Perzentil`, chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
-    + card("Endvermögen nach Perzentil", cmpReal(), pTable)
-    + (batches.length ? card("Wahrscheinlichkeit, dass das Geld reicht", "Anteil der Läufe, in denen das Vermögen bis zu diesem Zeitpunkt reicht", survSwitch() + chartBox("cmp-surv", 260, true) + cmpLegend(batches)
+    + (fanLines.length ? card(tr("batch.band"), tr("cmp.bandSub", { cmpReal: cmpReal() }), chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
+    + card(tr("results.endByPercentile"), cmpReal(), pTable)
+    + (batches.length ? card(tr("batch.survival"), tr("batch.survivalSub"), survSwitch() + chartBox("cmp-surv", 260, true) + cmpLegend(batches)
       + survClipNote(Math.min(...surv.filter(Boolean).flat()))) : "")
-    + (batches.length ? card("Alter bei Erschöpfung", "Anteil der Läufe, in denen das Vermögen in diesem Altersjahr aufgebraucht ist",
-      ages.length ? chartBox("cmp-dep", 220) + cmpLegend(batches) : `<p class="hint" style="margin:0">In keinem Lauf aufgebraucht.</p>`) : "");
+    + (batches.length ? card(tr("batch.depletionAge"), tr("cmp.depletionSub"),
+      ages.length ? chartBox("cmp-dep", 220) + cmpLegend(batches) : `<p class="hint" style="margin:0">${tr("cmp.noDepletion")}</p>`) : "");
   if (fanLines.length) cmpTime("cmp-wealth", n, fanLines, k => fan.map((f, j) => f ? cmpRow(items[j], cmpPad(n, f.med)[k], fmtMoney) : "").join(""), { yFmt: fmtMio });
   if (batches.length) cmpTime("cmp-surv", ns, surv.map((v, j) => v && { color: items[j].color, values: cmpPad(ns, v) }).filter(Boolean),
     k => surv.map((v, j) => v ? cmpRow(items[j], cmpPad(ns, v)[k], x => `${x.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`) : "").join(""), { yFmt: v => `${v} %`, range: survRange() });
@@ -3132,13 +3187,13 @@ function cmpOverview(body, items) {
     const shares = batches.map(depShare);
     Charts.bars($("#cmp-dep"), $("#cmp-dep-tip"), { cats: ages.map(String), minBar: 3, yFmt: v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`,
       series: batches.map((it, j) => ({ group: String(j), color: it.color, values: shares[j] })),
-      tip: k => `Alter <b>${ages[k]}</b>` + batches.map((it, j) => cmpRow(it, shares[j][k], pctTxt)).join("") });
+      tip: k => tr("cmp.ageTip", { v: ages[k] }) + batches.map((it, j) => cmpRow(it, shares[j][k], pctTxt)).join("") });
   }
 }
 function cmpCharts(body, items) {
   const runs = items.filter(it => it.run);
   const notes = cmpRunNotes(items);
-  if (!runs.length) { body.innerHTML = cmpNote(notes) || `<p class="hint">Keine Verläufe vorhanden.</p>`; return; }
+  if (!runs.length) { body.innerHTML = cmpNote(notes) || `<p class="hint">${tr("cmp.noCourses")}</p>`; return; }
   const hasProp = runs.filter(it => it.run.records.some(r => r.propertyValue > 0)), hasPk = runs.filter(it => it.run.records.some(r => r.pensionFund > 0 || r.pillar3a > 0));
   const noProp = runs.filter(it => !hasProp.includes(it)), noPk = runs.filter(it => !hasPk.includes(it));
   const n = Math.max(...runs.map(it => it.run.records.length));
@@ -3152,13 +3207,13 @@ function cmpCharts(body, items) {
   const cats = Array.from({ length: yrs.n }, (_, k) => String(yrs.label(k)));
   const idx = (it, key) => cmpPad(n, it.run.records.map(r => 100 * r[key] / (realView ? r.priceIndex : 1)));
   body.innerHTML = cmpPicker(items) + cmpNote(notes)
-    + card("Gesamtvermögen", cmpReal(), chartBox("cmp-total", 280, true) + cmpLegend(runs))
-    + card("Liquides Vermögen nach Anlage", cmpReal(), cmpSel("cmp-liquid", CMP_LIQUID, cmpLiquid) + chartBox("cmp-liq", 280, true) + cmpLegend(runs))
-    + card("Einnahmen und Ausgaben pro Jahr", `${cmpReal()} · Kalenderjahre, das erste und letzte Jahr sind unvollständig`, cmpSel("cmp-flow", CMP_FLOW, cmpFlow) + chartBox("cmp-flows", 260) + cmpLegend(runs))
-    + card("Entnahme aus dem Vermögen", "pro Jahr: Ausgaben inkl. Steuern − Einnahmen, im Verhältnis zum liquiden Vermögen", chartBox("cmp-draw", 240) + cmpLegend(runs))
-    + (hasProp.length ? card("Immobilien", `${cmpReal()} · Eigenkapital (Marktwert − Hypothek)`, chartBox("cmp-prop", 240, true) + cmpLegend(hasProp) + cmpNote(noProp.length ? [`Ohne Immobilie: ${noProp.map(it => esc(it.name)).join(", ")}.`] : [])) : "")
-    + (hasPk.length ? card("Vorsorge", `${cmpReal()} · Pensionskasse und Säule 3a`, chartBox("cmp-pk", 240, true) + cmpLegend(hasPk) + cmpNote(noPk.length ? [`Ohne Vorsorgevermögen: ${noPk.map(it => esc(it.name)).join(", ")}.`] : [])) : "")
-    + card("Aktien, Obligationen und Inflation", `${mktPct ? "Änderung gegenüber dem Vorjahresmonat in %" : "Wertentwicklung seit Start = 100"}, ${cmpReal()} · durchgezogen: Aktien, gestrichelt: Obligationen, gepunktet: Inflation${mktPct ? "" : " (Preisindex)"}`,
+    + card(tr("cmp.totalWealthShort"), cmpReal(), chartBox("cmp-total", 280, true) + cmpLegend(runs))
+    + card(tr("runCharts.liquidByAsset"), cmpReal(), cmpSel("cmp-liquid", CMP_LIQUID, cmpLiquid) + chartBox("cmp-liq", 280, true) + cmpLegend(runs))
+    + card(tr("runCharts.flows"), tr("cmp.flowsSub", { cmpReal: cmpReal() }), cmpSel("cmp-flow", CMP_FLOW, cmpFlow) + chartBox("cmp-flows", 260) + cmpLegend(runs))
+    + card(tr("runCharts.withdrawal"), tr("runCharts.withdrawalSub"), chartBox("cmp-draw", 240) + cmpLegend(runs))
+    + (hasProp.length ? card(tr("section.realestate"), tr("cmp.equitySub", { cmpReal: cmpReal() }), chartBox("cmp-prop", 240, true) + cmpLegend(hasProp) + cmpNote(noProp.length ? [tr("cmp.noProperty", { map: noProp.map(it => esc(it.name)).join(", ") })] : [])) : "")
+    + (hasPk.length ? card(tr("section.pension"), tr("cmp.pensionSub", { cmpReal: cmpReal() }), chartBox("cmp-pk", 240, true) + cmpLegend(hasPk) + cmpNote(noPk.length ? [tr("cmp.noPension", { map: noPk.map(it => esc(it.name)).join(", ") })] : [])) : "")
+    + card(tr("runCharts.returns"), `${mktPct ? tr("runCharts.change") : tr("runCharts.index")}${tr("cmp.returnsSub", { cmpReal: cmpReal() })}${mktPct ? "" : tr("cmp.priceIndexSuffix")}`,
       mktSwitch() + chartBox("cmp-mkt", 260, true) + cmpLegend(runs));
   const money = (id, f, list = runs) => cmpTime(id, n, list.map(it => ({ color: it.color, values: series(it, f) })), k => list.map(it => cmpRow(it, series(it, f)[k], fmtMoney)).join(""), { yFmt: fmtMio });
   money("cmp-total", r => r.total);
@@ -3179,8 +3234,8 @@ function cmpCharts(body, items) {
   const mk = [];
   runs.forEach((it, j) => mk.push({ color: it.color, values: mser[j].s }, { color: it.color, dash: "6 3", width: 1.5, values: mser[j].b }, { color: it.color, dash: "2 3", width: 1.2, values: mser[j].p }));
   const f1 = v => Number.isFinite(v) ? v.toLocaleString("de-CH", { maximumFractionDigits: 1 }) + (mktPct ? " %" : "") : "–";
-  cmpTime("cmp-mkt", n, mk, k => runs.map((it, j) => cmpRow(it, mser[j].s[k], () => mktPct ? `Aktien ${f1(mser[j].s[k])}, Obligationen ${f1(mser[j].b[k])}, Inflation ${f1(mser[j].p[k])}`
-    : `Aktien ${f1(mser[j].s[k])}, Obligationen ${f1(mser[j].b[k])}, Preisindex ${f1(mser[j].p[k])}`)).join(""),
+  cmpTime("cmp-mkt", n, mk, k => runs.map((it, j) => cmpRow(it, mser[j].s[k], () => mktPct ? tr("cmp.returnsTipChange", { f1: f1(mser[j].s[k]), f12: f1(mser[j].b[k]), f13: f1(mser[j].p[k]) })
+    : tr("cmp.returnsTipIndex", { f1: f1(mser[j].s[k]), f12: f1(mser[j].b[k]), f13: f1(mser[j].p[k]) }))).join(""),
     { ref: mktPct ? 0 : 100, log: mktLog && !mktPct, yFmt: mktPct ? v => `${v.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %` : v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }) });
 }
 function cmpTable(body, items) {
@@ -3190,24 +3245,25 @@ function cmpTable(body, items) {
   const cell = (v, y) => `<td title="${esc(String(y))}">${key === "rate" ? rateTxt(v) : !Number.isFinite(v) ? "–" : fmtInt(v)}</td>`;
   const notes = cmpRunNotes(items);
   const rows = Array.from({ length: yrs.n }, (_, k) => `<tr><td>${yrs.label(k)}</td>${yrs.per.map(v => v[k] ? cell(v[k][key], v[k].y) : "<td>–</td>").join("")}</tr>`).join("");
-  body.innerHTML = cmpPicker(items) + cmpNote(notes) + card("Jahreswerte", `${label} · ${cmpReal()}, Beträge in ${cur()}${runs.some(it => it.batch) ? ` · ${pName(cmpP)}` : ""}`,
-    `<label class="field" style="max-width:320px"><span>Grösse</span><select data-action="cmp-year">${CMP_YEAR.map(([k, t]) => `<option value="${k}" ${k === key ? "selected" : ""}>${t}</option>`).join("")}</select></label>
-    <div class="tscroll"><table class="tbl num yt cmpyear"><tr><th>${yrs.same ? "Jahr" : "Jahr seit Start"}</th>${runs.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${rows}</table></div>
-    <p class="hint">Dieselben Werte wie in den Jahreswerten der einzelnen Ergebnisse: Vermögen sind Stände am Jahresende, Einkommen, Ausgaben und Entnahme Monatsdurchschnitte des Kalenderjahrs, Steuern die Summe des Steuerjahres.${yrs.same ? "" : " Die Ergebnisse beginnen in verschiedenen Jahren und sind nach Jahren seit dem Start ausgerichtet; die Jahreszahl steht im Tooltip der Zelle."}</p>`, "yearcard");
+  body.innerHTML = cmpPicker(items) + cmpNote(notes) + card(tr("results.yearValues"), `${tr("cmp.tableSub", { label, cmpReal: cmpReal(), cur: cur() })}${runs.some(it => it.batch) ? ` · ${pName(cmpP)}` : ""}`,
+    `<label class="field" style="max-width:320px"><span>${tr("cmp.measure")}</span><select data-action="cmp-year">${CMP_YEAR.map(([k, t]) => `<option value="${k}" ${k === key ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+    <div class="tscroll"><table class="tbl num yt cmpyear"><tr><th>${yrs.same ? tr("yearTable.year") : tr("cmp.yearSinceStart")}</th>${runs.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${rows}</table></div>
+    <p class="hint">${tr("cmp.tableHint")}${yrs.same ? "" : tr("cmp.tableYearsHint")}</p>`, "yearcard");
 }
 document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
 /**
  * #123: Fields of the plan that do not appear in the comparison (technical or without an input field), with reason. All other
  * inputs are shown by `paramSections(plan, true)` with the labels of the editor; a user interface test checks the coverage.
  */
-const PLAN_HIDDEN = [
-  [/^format$/, "Dateiformat"], [/^project\.name$/, "Name der Planung, steht im Namen des Ergebnisses"], [/(^|\.)id$/, "interne Kennung"],
-  [/^household\.persons\.\d+\.name$/, "Personennamen werden absichtlich nicht gezeigt"], [/^milestones\.\d+\.fixed$/, "fester Meilenstein (nicht löschbar)"],
-  [/\.mode$/, "Art der Zeitreihe; verglichen werden die Werte"], [/^flows\.spendingIncludesHousing$/, "kein Eingabefeld"],
-  [/^realestate\.affordability\.wealthContribution$/, "kein Eingabefeld"], [/^withdrawal\.buckets\.reserveMonths$/, "kein Eingabefeld"],
-  [/^realestate\.properties\.\d+\.inflation$/, "älteres Feld, ersetzt durch «Wert/Nebenkosten mit Inflation anpassen»"],
-  [/^returns\.parametric\.sampler$/, "kein Eingabefeld (Verfahren der Zufallsziehung, #132)"],
-];
+let PLAN_HIDDEN;
+onLanguage(() => PLAN_HIDDEN = [
+  [/^format$/, tr("planHidden.format")], [/^project\.name$/, tr("planHidden.name")], [/(^|\.)id$/, tr("planHidden.id")],
+  [/^household\.persons\.\d+\.name$/, tr("planHidden.persons")], [/^milestones\.\d+\.fixed$/, tr("planHidden.fixedMilestone")],
+  [/\.mode$/, tr("planHidden.seriesKind")], [/^flows\.spendingIncludesHousing$/, tr("planHidden.noField")],
+  [/^realestate\.affordability\.wealthContribution$/, tr("planHidden.noField")], [/^withdrawal\.buckets\.reserveMonths$/, tr("planHidden.noField")],
+  [/^realestate\.properties\.\d+\.inflation$/, tr("planHidden.legacyField")],
+  [/^returns\.parametric\.sampler$/, tr("planHidden.sampling")],
+]);
 function cmpPlan(body, items, datas) {
   // Sections in the order of the editor, within them the labels in the order of their first occurrence
   const secs = new Map();
@@ -3218,10 +3274,10 @@ function cmpPlan(body, items, datas) {
   }));
   const groups = [...secs].map(([title, m]) => [title, [...m].filter(([, vs]) => datas.some((_, j) => (vs[j] ?? "—") !== (vs[0] ?? "—")))]).filter(([, rows]) => rows.length);
   const n = groups.reduce((a, [, rows]) => a + rows.length, 0), cols = items.length + 1;
-  body.innerHTML = card("Unterschiede in der Planung", "gegenüber dem ersten Ergebnis in der Reihenfolge der Liste, mit den Bezeichnungen des Editors",
-    n ? `<div class="tscroll"><table class="tbl cmpplan"><tr><th class="l">Eingabe</th>${items.map(it => `<th class="l cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
+  body.innerHTML = card(tr("cmpPlan.title"), tr("cmpPlan.sub"),
+    n ? `<div class="tscroll"><table class="tbl cmpplan"><tr><th class="l">${tr("cmpPlan.input")}</th>${items.map(it => `<th class="l cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
       ${groups.map(([title, rows]) => `<tr class="grp"><th class="l" colspan="${cols}">${esc(title)}</th></tr>${rows.map(([k, vs]) => `<tr><td class="l">${esc(k)}</td>${items.map((_, j) => `<td class="l">${esc(vs[j] ?? "—")}</td>`).join("")}</tr>`).join("")}`).join("")}</table></div>`
-      : `<p style="margin:0">Die Planungen sind identisch.</p>`);
+      : `<p style="margin:0">${tr("cmpPlan.identical")}</p>`);
 }
 Object.assign(ACTIONS, {
   "runs-open": () => openRuns(),
@@ -3238,25 +3294,25 @@ Object.assign(ACTIONS, {
   },
   "runs-delete-all": async () => {
     const n = runsIds.length; if (!n) return;
-    if (!await ask("Alle Ergebnisse löschen", `Alle ${n} gespeicherten ${n === 1 ? "Ergebnis wird" : "Ergebnisse werden"} gelöscht. Das lässt sich nicht rückgängig machen.`)) return;
+    if (!await ask(tr("runsDelete.allTitle"), `${tr("runsDelete.allText", { n })} ${n === 1 ? tr("runsDelete.resultIs") : tr("runsDelete.resultsAre")} ${tr("runsDelete.deletedTail")}`)) return;
     await Runs.remove([...runsIds]); runsSel.clear(); openRuns();
   },
   "runs-compare": () => compareRuns(),
   "run-del": async d => {
     const [m] = (await Runs.list()).filter(x => x.id === d.id);
-    if (!await ask("Ergebnis löschen", `«${esc(m?.name || "")}» wird gelöscht. Das lässt sich nicht rückgängig machen.`)) return;
+    if (!await ask(tr("runsDelete.oneTitle"), tr("runsDelete.oneText", { esc: esc(m?.name || "") }))) return;
     await Runs.remove([d.id]); runsSel.delete(d.id); openRuns();
   },
   "runs-delete": async () => {
     const ids = [...runsSel]; if (!ids.length) return;
-    if (!await ask("Ergebnisse löschen", `${ids.length} markierte ${ids.length === 1 ? "Ergebnis wird" : "Ergebnisse werden"} gelöscht. Das lässt sich nicht rückgängig machen.`)) return;
+    if (!await ask(tr("runsDelete.markedTitle"), `${tr("runsDelete.markedText", { length: ids.length })} ${ids.length === 1 ? tr("runsDelete.resultIs") : tr("runsDelete.resultsAre")} ${tr("runsDelete.deletedTail")}`)) return;
     await Runs.remove(ids); runsSel.clear(); openRuns();
   },
   "run-restore": async () => {
     if (!await confirmDiscard()) return;
     parkedState = null; savedView = null; lastRun = null;
     showResults(false); setFile(null, true); History.reset(); goto("general"); refreshSeriesInfo();
-    toast("Planung des gespeicherten Ergebnisses geladen.");
+    toast(tr("runsDelete.planLoaded"));
   }
 });
 document.addEventListener("change", e => {
@@ -3286,9 +3342,10 @@ async function showWelcome() {
   Steps.reset();
 }
 /** Steps of the checklist: the sections of the quick start and finally «Simulation starten». */
-const STEPS = [["general", "s-general"], ["milestones", "s-milestones"], ["pension", "s-pension"], ["flows", "s-flows"],
+let STEPS;
+onLanguage(() => STEPS = [["general", "s-general"], ["milestones", "s-milestones"], ["pension", "s-pension"], ["flows", "s-flows"],
   ["wealth", "s-wealth"], ["returns", "s-returns"], ["taxes", "s-taxes"], ["run", "quickstart"]]
-  .map(([id, topic]) => ({ id, topic, title: SECTIONS.find(s => s.id === id)?.title ?? "Simulation starten" }));
+  .map(([id, topic]) => ({ id, topic, title: SECTIONS.find(s => s.id === id)?.title ?? tr("shortcuts.run") })));
 /**
  * Checklist «Erste Schritte». The progress applies to the user (setting «firstSteps»), not to a plan.
  * A section is done as soon as a value in it was changed or it was ticked by hand; undo does not remove the
@@ -3306,7 +3363,7 @@ const Steps = {
     if (on === v.done.includes(id)) return;
     v.done = on ? [...v.done, id] : v.done.filter(x => x !== id);
     const all = STEPS.every(s => v.done.includes(s.id));
-    if (all && !v.complete) { v.complete = true; toast("Alle ersten Schritte erledigt. Die Checkliste ist jetzt zugeklappt."); return this.put(v, false); }
+    if (all && !v.complete) { v.complete = true; toast(tr("steps.allDone")); return this.put(v, false); }
     this.put(v);
   },
   show() { const v = this.get(); v.hidden = false; this.put(v, true); this.reveal(); },
@@ -3324,12 +3381,12 @@ const Steps = {
     const v = this.get(), was = el.querySelector("details");
     if (open === undefined) open = was ? was.open : !v.complete;
     el.hidden = v.hidden;
-    el.innerHTML = `<details${open ? " open" : ""}><summary>Erste Schritte <span class="prog" id="stepsProg">${v.done.length} von ${STEPS.length}</span>
-      <button type="button" class="x" data-action="steps-hide" title="Ausblenden (wieder einblenden: Hilfe → Erste Schritte)" aria-label="Erste Schritte ausblenden">✕</button></summary>
+    el.innerHTML = `<details${open ? " open" : ""}><summary>${tr("steps.title")} <span class="prog" id="stepsProg">${tr("steps.progress", { length: v.done.length, length2: STEPS.length })}</span>
+      <button type="button" class="x" data-action="steps-hide" title="${tr("steps.hideTitle")}" aria-label="${tr("steps.hideLabel")}">✕</button></summary>
       <ol>${STEPS.map((s, i) => { const done = v.done.includes(s.id); return `<li class="${done ? "done" : ""}" data-step="${s.id}">
         <input type="checkbox" data-action="steps-check" data-step="${s.id}"${done ? " checked" : ""} aria-label="${esc(s.title)} erledigt">
-        <a data-action="steps-go" data-step="${s.id}">${i + 1}. ${esc(s.title)}</a><button type="button" class="hq" data-help="${s.topic}" title="Hilfe zu diesem Schritt" aria-label="Hilfe">ⓘ</button></li>`; }).join("")}</ol>
-      ${v.complete ? `<p class="stepsdone">✓ Alle Schritte erledigt.</p>` : ""}</details>`;
+        <a data-action="steps-go" data-step="${s.id}">${i + 1}. ${esc(s.title)}</a><button type="button" class="hq" data-help="${s.topic}" title="${tr("steps.helpTitle")}" aria-label="${tr("steps.helpLabel")}">ⓘ</button></li>`; }).join("")}</ol>
+      ${v.complete ? `<p class="stepsdone">${tr("steps.doneAll")}</p>` : ""}</details>`;
   },
 };
 /** A change in the editor ticks the section in which it happens. */
@@ -3356,7 +3413,7 @@ Object.assign(ACTIONS, {
     if (Engine.inApp) startup = await Engine.call("startup_plan");
     var startNotes = await adopt(startup ? startup.plan : await Engine.call("example_plan"));
     gainTemplates = await Engine.call("gain_templates");
-  } catch (e) { document.body.innerHTML = `<p style="padding:24px">Der Rechenkern ist nicht erreichbar: ${esc(errText(e))}</p>`; return; }
+  } catch (e) { document.body.innerHTML = `<p style="padding:24px">${tr("boot.engineUnreachable", { esc: esc(errText(e)) })}</p>`; return; }
   for (const src of ["historical", "rolling", "bootstrap", "parametric"]) if (initial.includes(src)) state.returns.source = src;
   if (initial.includes("buckets")) state.withdrawal.strategy = "three_buckets";
   if (initial.includes("fixedrate")) state.withdrawal.strategy = "fixed_rate";
@@ -3368,7 +3425,6 @@ Object.assign(ACTIONS, {
   // #111: Results in test access with 500 paths and a fixed random seed: fast and the same in every run. The tests
   // check display and flow; 50 000 paths made them depend on the computer's load.
   if (initial[0] === "results") for (const k of ["bootstrap", "parametric"]) Object.assign(state.returns[k], { paths: 500, seed: 42 });
-  if (!IS_MAC) document.querySelectorAll("[title]").forEach(el => { el.title = el.title.replace(/⇧⌘/g, "Ctrl+Shift+").replace(/⌘↩/g, "Ctrl+Enter").replace(/⌘/g, "Ctrl+"); });
   setFile(startup?.path ?? null); History.reset();
   if (initial.includes("partner")) { ACTIONS["partner-add"](); state.partner.income = { mode: "const", value: 3000 }; History.reset(); }
   if (initial.includes("nosweep")) state.scenarios.sweeps = [];
@@ -3384,7 +3440,7 @@ Object.assign(ACTIONS, {
       plan.returns.source = "fixed"; plan.scenarios.sweeps = [];
       const r = await Engine.call("run_simulation", { plan, path: null });
       ok = !r.error && !!r.single && r.single.records.length > 0 && window.__errors.length === 0;
-      message = r.error || (window.__errors.length ? window.__errors.join("; ") : `${r.single.records.length} Monate gerechnet`);
+      message = r.error || (window.__errors.length ? window.__errors.join("; ") : `${r.single.records.length} Monate gerechnet`); // i18n: allow (message of the smoke test, only in the log)
     } catch (e) { message = errText(e); }
     await Engine.call("smoke_done", { ok, message });
     return;
@@ -3398,7 +3454,8 @@ Object.assign(ACTIONS, {
   // #70: Welcome dialog at the very first start, after the disclaimer (test access in the browser: #welcome). This is remembered immediately so that it
   // does not come back even if the app is quit without a choice.
   if (startup?.first || initial[0] === "welcome") { Pref.set("welcomeShown", true); showWelcome(); }
-  if (startup?.notice) ask("Planung beim Start", `<p>${esc(startup.notice)}</p>`);
+  // #170: the app reports the notice as key of the text table with the file name
+  if (startup?.notice) ask(tr("boot.startupTitle"), `<p>${esc(tr(startup.notice.key, { file: startup.notice.file }))}</p>`);
   else if (startup?.path) { await showNotes(startNotes); reserveNotice(state); }
   // Test access: change a setting and check that it ends up in the plan
   if (initial.includes("optedit")) {

@@ -42,9 +42,9 @@ Die Prüfung rechts unten zeigt Fehler und Hinweise, noch bevor Sie rechnen. Feh
 > Tipp: Drücken Sie **F1** in einem Eingabefeld, dann erscheint genau die Hilfe zu diesem Feld.
 
 ## @bedienung Bedienung und Tastenkürzel
-Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1
+Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache
 
-- **Datei:** Neu (eine **leere Planung mit Standardwerten**: Start im aktuellen Monat, eine Person ohne Namen, keine Beträge und Immobilien; Renditen, Steuertabellen und Strategieparameter übernehmen die Standardwerte), Öffnen, Speichern, Speichern unter. Eine Planung ist eine einzelne Datei mit der Endung `.vplan`. Sie lässt sich kopieren und archivieren.
+- **Datei:** Neu (eine **leere Planung mit Standardwerten**: Start im aktuellen Monat, ohne Projektname, eine Person ohne Namen, keine Beträge und Immobilien; Renditen, Steuertabellen und Strategieparameter übernehmen die Standardwerte), Öffnen, Speichern, Speichern unter. Eine Planung ist eine einzelne Datei mit der Endung `.vplan`. Sie lässt sich kopieren und archivieren.
 - **Start und Beenden:** Die Desktop-App öffnet beim Start die Planung, die Sie zuletzt geöffnet oder gespeichert haben; der Dateiname steht im Kopf. Gibt es keine, ist die Datei verschwunden oder nicht lesbar, öffnet sie die mitgelieferte **Beispielplanung** (mit Hinweis auf den Dateinamen, ausser beim allerersten Start). Die Beispielplanung gilt als neue, ungespeicherte Planung: «Speichern» fragt nach einem Ort, sie wird nie überschrieben. Beim Beenden mit ungespeicherten Änderungen (Schliessen-Knopf des Fensters, ⌘Q bzw. Ctrl+Q oder Datei → Beenden) fragt die App, ob Sie speichern, verwerfen oder abbrechen wollen. «Abbrechen» lässt die App offen; bricht die Ortsabfrage beim Speichern ab, bleibt sie ebenfalls offen. Gemerkt wird nur der Dateipfad, lokal im Datenordner der App.
 - **Speichern vor der Simulation:** Hat die Planung ungespeicherte Änderungen, fragt die Desktop-App vor jeder Simulation, ob Sie speichern wollen: «Speichern» (bei einer neuen Planung mit Ortsabfrage), «Ohne Speichern simulieren» oder «Abbrechen». Die Rückfrage lässt sich in den Einstellungen abschalten.
 - **Willkommen:** Beim allerersten Start fragt die App, wie Sie beginnen möchten: **Beispiel erkunden** (lädt die Beispielplanung und öffnet die Hilfe [Was VivaPlan kann](#start)), **Eigene Planung beginnen** (lädt die Beispielplanung als Vorlage, öffnet «Haushalt & Projekt» und setzt die Checkliste [Erste Schritte](#quickstart) zurück) oder **Leere Planung** (wie Datei → Neu). Esc schliesst den Dialog ohne Änderung. Danach erscheint er nicht mehr von selbst; *Hilfe → Willkommen …* öffnet ihn jederzeit, bei ungespeicherten Änderungen mit Rückfrage. Wird die App mit einer Datei gestartet (Doppelklick), erscheint er nicht.
@@ -53,6 +53,7 @@ Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1
 - **Hilfe:** **F1** öffnet die Hilfe zum aktuellen Thema (je nachdem, wo Sie gerade sind: Feld, Abschnitt, Ergebnisgrafik). Der Knopf «? Hilfe» und die Zeichen ⓘ neben Feldern tun dasselbe. ⌘⇧? öffnet das Inhaltsverzeichnis, Esc schliesst die Hilfe.
 - **Zeitleiste:** Über dem Editor zeigt sie alle Meilensteine. Ein Klick darauf öffnet die Meilensteine. Unter der Linie stehen die **Immobilienereignisse** der Vorschau (grüne Dreiecke für Kauf und Verkauf, orange für Notverkäufe) mit Kurzbeschriftung wie «Kauf Wohnung 09.2027». Bei mehr als 15 Ereignissen erscheinen nur die Symbole, der Text steht dann im Tooltip.
 - **Zeitabhängige Werte:** Viele Beträge lassen sich als Konstante oder als Abfolge von Werten erfassen, siehe [Zeitabhängige Werte](#f-timed).
+- **Sprache:** Menü *Ansicht → Sprache* oder die [Einstellungen](#f-settings). Der Wechsel wirkt sofort; Planung und Ansicht bleiben.
 
 Die vollständige Liste der Tastenkürzel steht im Menü *Hilfe → Tastenkürzel* und im [Referenzkapitel](#ref-shortcuts).
 

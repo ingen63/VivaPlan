@@ -80,6 +80,7 @@ fn content_type(p: &Path) -> &'static str {
         Some("svg") => "image/svg+xml",
         Some("png") => "image/png",
         Some("md") => "text/markdown",
+        Some("json") => "application/json",
         _ => "application/octet-stream",
     }
 }

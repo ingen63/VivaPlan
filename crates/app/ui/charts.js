@@ -276,7 +276,7 @@ const Charts = (() => {
       const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * f.W / r.width;
       const v = lo + (px - f.L) / (f.W - f.L - f.R) * (hi - lo), i = Math.max(0, Math.min(n - 1, Math.floor((v - lo) / ((hi - lo) / n))));
       const hov = svg.querySelector(".hov"); hov.setAttribute("x", f.x(hist.edges[i])); hov.setAttribute("width", f.x(hist.edges[i + 1]) - f.x(hist.edges[i])); hov.setAttribute("visibility", "visible");
-      tipAt(svg, tip, f, f.x(hist.edges[i + 1]), `${o.xFmt(hist.edges[i])} – ${o.xFmt(hist.edges[i + 1])}<br><b>${(hist.counts[i] / total * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %</b> der Läufe (${hist.counts[i].toLocaleString("de-CH")})`);
+      tipAt(svg, tip, f, f.x(hist.edges[i + 1]), tr("chart.histTip", { xFmt: o.xFmt(hist.edges[i]), xFmt2: o.xFmt(hist.edges[i + 1]), v: (hist.counts[i] / total * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }), v2: hist.counts[i].toLocaleString("de-CH") }));
     };
     svg.onmouseleave = () => hideTip(svg, tip);
   }

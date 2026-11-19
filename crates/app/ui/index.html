@@ -304,25 +304,25 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
 <body>
 <header>
   <span class="brand">VivaPlan</span>
-  <span class="file" id="fileName">Neue Planung</span><span class="dirty" id="dirty"></span>
+  <span class="file" id="fileName"></span><span class="dirty" id="dirty"></span>
   <span class="spacer"></span>
-  <button class="btn" data-action="new" title="Neue Planung (⌘N)">Neu</button>
-  <button class="btn" data-action="open" title="Öffnen (⌘O)">Öffnen…</button>
-  <button class="btn" data-action="save" title="Speichern (⌘S)">Speichern</button>
-  <button class="btn" data-action="saveas" title="Speichern unter (⇧⌘S)">Speichern unter…</button>
-  <button class="btn" data-action="import" title="Alte config.json importieren (⌘I)">Importieren…</button>
-  <button class="btn" data-action="json">Datei ansehen</button>
-  <button class="btn" data-action="help" title="Tastenkürzel (⌘/)">Tastenkürzel</button>
-  <button class="btn" data-action="settings" title="Einstellungen (⌘,)">Einstellungen</button>
-  <button class="btn" data-action="runs-open" title="Gespeicherte Ergebnisse ansehen und vergleichen">Ergebnisse</button>
-  <span id="est-run" title="Grobe Schätzung der Rechenzeit"></span>
-  <button class="btn primary" data-action="run" title="Simulation starten (⌘↩)">Simulation starten ▸</button>
+  <button class="btn" data-action="new" data-i18n-title="page.newTitle" data-i18n="page.new"></button>
+  <button class="btn" data-action="open" data-i18n-title="page.openTitle" data-i18n="page.open"></button>
+  <button class="btn" data-action="save" data-i18n-title="page.saveTitle" data-i18n="quit.save"></button>
+  <button class="btn" data-action="saveas" data-i18n-title="page.saveAsTitle" data-i18n="page.saveAs"></button>
+  <button class="btn" data-action="import" data-i18n-title="page.importTitle" data-i18n="page.import"></button>
+  <button class="btn" data-action="json" data-i18n="page.viewFile"></button>
+  <button class="btn" data-action="help" data-i18n-title="page.shortcutsTitle" data-i18n="shortcuts.title"></button>
+  <button class="btn" data-action="settings" data-i18n-title="page.settingsTitle" data-i18n="shortcuts.settings"></button>
+  <button class="btn" data-action="runs-open" data-i18n-title="page.runsTitle" data-i18n="page.runs"></button>
+  <span id="est-run" data-i18n-title="page.estimateTitle"></span>
+  <button class="btn primary" data-action="run" data-i18n-title="page.runTitle" data-i18n="page.run"></button>
   <!-- legacy: RetirementPlanner – .rplan stays readable (#44) -->
   <input type="file" id="fileInput" accept=".json,.vplan,.rplan" hidden>
 </header>
 
 <div id="timeline">
-  <div class="tl-head"><span>Zeitleiste · Klick auf einen Meilenstein zum Bearbeiten</span><span id="tlRange"></span></div>
+  <div class="tl-head"><span data-i18n="page.timeline"></span><span id="tlRange"></span></div>
   <svg id="tl" height="96"></svg>
 </div>
 
@@ -330,74 +330,70 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
   <nav id="nav"></nav>
   <main id="main"></main>
   <aside>
-    <h3>Vorschau Vermögensverlauf</h3>
-    <div class="sub" id="previewSub">Einzellauf mit fixen Renditen · bei jeder Änderung neu gerechnet</div>
+    <h3 data-i18n="aside.preview"></h3>
+    <div class="sub" id="previewSub"></div>
     <div id="chartwrap"><svg id="chart"></svg><div id="tip"></div></div>
     <div class="legend">
-      <span><i style="background:var(--c1)"></i>Liquides Vermögen</span>
-      <span><i style="background:var(--c2)"></i>Immobilien (netto)</span>
-      <span><i style="background:var(--c3)"></i>Vorsorge (PK, 3a)</span>
+      <span><i style="background:var(--c1)"></i><span data-i18n="legend.liquid"></span></span>
+      <span><i style="background:var(--c2)"></i><span data-i18n="legend.propertyNet"></span></span>
+      <span><i style="background:var(--c3)"></i><span data-i18n="legend.pension"></span></span>
     </div>
     <div class="kpis" id="kpis"></div>
     <div id="steps" hidden></div>
-    <h3>Prüfung</h3>
-    <div class="sub">Fehler und Hinweise zur Konfiguration</div>
+    <h3 data-i18n="aside.validation"></h3>
+    <div class="sub" data-i18n="aside.validationSub"></div>
     <ul class="val" id="val"></ul>
   </aside>
 </div>
 
 <section id="results" hidden>
-  <div class="rbar"><button class="btn" data-action="back" title="Zurück zum Editor (Esc)">← Zurück zum Editor</button><button class="btn" data-action="runs-open" title="Gespeicherte Ergebnisse ansehen und vergleichen">Ergebnisse</button><b id="resultsTitle">Ergebnis</b><span id="resultsInfo" class="computed"></span><span class="spacer"></span><span id="resultsTabs" class="rtabs"></span></div>
+  <div class="rbar"><button class="btn" data-action="back" data-i18n-title="page.backTitle" data-i18n="page.back"></button><button class="btn" data-action="runs-open" data-i18n-title="page.runsTitle" data-i18n="page.runs"></button><b id="resultsTitle" data-i18n="runs.result"></b><span id="resultsInfo" class="computed"></span><span class="spacer"></span><span id="resultsTabs" class="rtabs"></span></div>
   <div id="resultsPick"></div>
   <div id="resultsBody"></div>
-  <footer class="rfoot" id="resultsFoot">Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.</footer>
+  <footer class="rfoot" id="resultsFoot" data-i18n="disclaimer.foot"></footer>
 </section>
 
 <dialog id="ask"><form method="dialog" class="askform">
   <b id="askTitle"></b><div id="askText"></div><input id="askInput" class="askinput">
-  <div class="askbtns"><button class="btn primary" value="ok">OK</button><button class="btn" value="discard" hidden>Verwerfen</button><button class="btn" value="cancel">Abbrechen</button></div>
+  <div class="askbtns"><button class="btn primary" value="ok" data-i18n="page.ok"></button><button class="btn" value="discard" hidden data-i18n="quit.discard"></button><button class="btn" value="cancel" data-i18n="job.cancel"></button></div>
 </form></dialog>
 
 <dialog id="welcome" aria-labelledby="welcomeTitle"><form method="dialog" class="welcome">
-  <h2 id="welcomeTitle">Willkommen bei VivaPlan</h2>
-  <p>VivaPlan rechnet Ihre finanzielle Zukunft Monat für Monat durch und zeigt, wie sicher das Geld bis ans Ende der Planung reicht. Alle Daten bleiben auf diesem Rechner.</p>
-  <p>Wie möchten Sie beginnen?</p>
+  <h2 id="welcomeTitle" data-i18n="welcome.title"></h2>
+  <p data-i18n="welcome.intro"></p>
+  <p data-i18n="welcome.question"></p>
   <div class="wchoices">
-    <button value="explore" autofocus><b>Beispiel erkunden</b><span>Die Beispielplanung ansehen und die Hilfe «Was VivaPlan kann» lesen.</span></button>
-    <button value="own"><b>Eigene Planung beginnen</b><span>Die Beispielplanung Schritt für Schritt auf Ihre Verhältnisse anpassen, mit der Checkliste «Erste Schritte».</span></button>
-    <button value="blank"><b>Leere Planung</b><span>Mit einer leeren Planung und den Standardwerten beginnen (wie Datei → Neu).</span></button>
+    <button value="explore" autofocus><b data-i18n="welcome.explore"></b><span data-i18n="welcome.exploreText"></span></button>
+    <button value="own"><b data-i18n="welcome.own"></b><span data-i18n="welcome.ownText"></span></button>
+    <button value="blank"><b data-i18n="welcome.blank"></b><span data-i18n="welcome.blankText"></span></button>
   </div>
 </form></dialog>
 
 <dialog id="disclaimer" aria-labelledby="disclaimerTitle"><form method="dialog" class="askform">
-  <h2 id="disclaimerTitle">Hinweis vor der Nutzung</h2>
+  <h2 id="disclaimerTitle" data-i18n="disclaimer.title"></h2>
   <p id="disclaimerText"></p>
-  <label class="disclaimerok"><input type="checkbox" id="disclaimerCheck"> Ich habe den Hinweis gelesen und verstanden.</label>
-  <div class="askbtns"><button class="btn primary" id="disclaimerOk" value="ok" disabled>Weiter</button></div>
+  <label class="disclaimerok"><input type="checkbox" id="disclaimerCheck"> <span data-i18n="disclaimer.check"></span></label>
+  <div class="askbtns"><button class="btn primary" id="disclaimerOk" value="ok" disabled data-i18n="disclaimer.continue"></button></div>
 </form></dialog>
 
 <dialog id="settings"><form method="dialog" class="askform">
-  <b>Einstellungen</b>
-  <div class="computed">Gelten für alle Planungen auf diesem Gerät und werden nicht in der Planungsdatei gespeichert.</div>
+  <b data-i18n="shortcuts.settings"></b>
+  <div class="computed" data-i18n="settings.hint"></div>
   <div id="settingsBody" class="grid2"></div><div id="settingsErr" style="color:var(--err)"></div>
-  <div class="askbtns"><button class="btn primary" id="settingsSave" value="ok">Speichern</button><button class="btn" id="settingsDefaults" type="button">Standardwerte</button><button class="btn" value="cancel">Abbrechen</button></div>
+  <div class="askbtns"><button class="btn primary" id="settingsSave" value="ok" data-i18n="quit.save"></button><button class="btn" id="settingsDefaults" type="button" data-i18n="settings.defaults"></button><button class="btn" value="cancel" data-i18n="job.cancel"></button></div>
 </form></dialog>
 
 <dialog id="dlg">
-  <div class="dh"><b>Projektdatei (neues Format)</b>
-    <button class="btn small" data-action="copy">Kopieren</button>
-    <button class="btn small" data-action="download">Herunterladen</button>
-    <button class="btn small" data-action="close">Schliessen</button></div>
+  <div class="dh"><b data-i18n="dlg.title"></b>
+    <button class="btn small" data-action="copy" data-i18n="dlg.copy"></button>
+    <button class="btn small" data-action="download" data-i18n="dlg.download"></button>
+    <button class="btn small" data-action="close" data-i18n="dlg.close"></button></div>
   <pre id="dlgPre"></pre>
 </dialog>
 <div id="toast"></div>
 
-<script src="util.js"></script>
+<!-- #170: i18n.js loads the text tables and then the remaining scripts of the page. -->
 <script src="api.js"></script>
-<script src="charts.js"></script>
-<script src="runs.js"></script>
-<script src="optimum.js"></script>
-<script src="app.js"></script>
-<script src="help.js"></script>
+<script src="i18n.js" data-load="util.js charts.js runs.js optimum.js app.js help.js"></script>
 </body>
 </html>

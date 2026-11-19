@@ -53,7 +53,7 @@ test.describe("#70 Welcome dialog", () => {
     // active before; therefore wait for the plan itself instead of only for the navigation.
     // Features of the empty plan from File → New: no name, no amounts, no real estate
     await expect.poll(() => page.evaluate(() => [state.project.name, state.household.persons.length, state.household.persons[0].name,
-      state.flows.spending.value, state.wealth.stocks, state.realestate.properties.length])).toEqual(["Neue Planung", 1, "", 0, 0, 0]);
+      state.flows.spending.value, state.wealth.stocks, state.realestate.properties.length])).toEqual(["", 1, "", 0, 0, 0]); // #170: no project name (no texts in the file)
     await expect(page.locator("#nav a.active")).toContainText("Haushalt & Projekt");
     await noErrors(page, errors);
   });

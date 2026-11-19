@@ -2,7 +2,7 @@
 // The texts are in `hilfe/*.md` (offline, shipped with the app). A topic starts with «## @id Title».
 "use strict";
 const Help = (() => {
-  const CHAPTERS = ["00-einstieg", "10-editor", "20-renditen", "30-entnahme", "40-optimierung", "50-ergebnisse", "60-referenz"];
+  const CHAPTERS = ["00-einstieg", "10-editor", "20-renditen", "30-entnahme", "40-optimierung", "50-ergebnisse", "60-referenz"]; // i18n: allow (file names of the help, per language in #173)
   /** Input field (data-path) → topic; the first matching row applies. */
   const FIELD_TOPICS = [
     [/^returns\.source$/, "f-ret-source"], [/^returns\.fixed\./, "f-ret-fixed"], [/^returns\.startDate$/, "f-ret-historical"],
@@ -23,18 +23,19 @@ const Help = (() => {
   const OPT_TOPICS = [[/^opt-(maxRuin|ruinAge)$/, "o-goal"], [/^opt-weightMedian$/, "o-consumption"], [/^opt-(volWeight|maxVol)$/, "o-vol"],
     [/^opt-(paths|checkPaths|samples)$/, "o-advanced"], [/^optS-/, "o-strategies"], [/^optR-/, "o-ranges"]];
   /** Card headings (start of the text) → topic. */
-  const HEADING_TOPICS = [
-    ["Pensionskasse", "f-pk"], ["AHV", "f-ahv"], ["Säule 3a", "s-pillar3a"], ["Töpfe", "f-wd-three_buckets"], ["Notverkauf", "f-re-emergency"], ["Tragbarkeit", "f-re-afford"],
-    ["Variationen", "f-sweep"], ["Zeitreihe", "f-ret-series"], ["Anlagestrategie", "f-ret-series"], ["Renditen aus der Anlagestrategie", "f-ret-series"], ["Fortschreibung", "f-ret-extrapolation"], ["Bootstrap", "f-ret-bootstrap"],
-    ["Aktienmodell", "f-ret-parametric"], ["Fixe Renditen", "f-ret-fixed"], ["Durchlauf", "f-ret-rolling"], ["Ziel", "o-goal"], ["Strategien", "o-strategies"], ["Parameter der Strategien", "o-ranges"],
-    ["Standard", "f-wd-standard"], ["Grenzen der Lebenshaltung", "f-wd-limits"], ["Fixe Entnahmerate", "f-wd-fixed_rate"], ["Guardrails", "f-wd-guardrails"], ["Variable Prozententnahme", "f-wd-vpw"], ["Endowment", "f-wd-endowment"],
-    ["Grundstückgewinnsteuer", "f-tax-gain"], ["Verheiratete", "f-tax-tables"], ["Einkommenssteuer", "f-tax-tables"], ["Steuerfuss", "f-tax-multiplier"],
-    ["Bandbreite des Gesamtvermögens", "r-fan"], ["Wahrscheinlichkeit, dass das Geld reicht", "r-survival"], ["Verteilung des Endvermögens", "r-hist"],
-    ["Verteilung des Vermögens bei Pensionierung", "r-hist"], ["Alter bei Erschöpfung", "r-depletion"], ["Endvermögen nach Perzentil", "r-percentiles"],
-    ["Aktien und Obligationen", "r-markets"], ["Vermögensverlauf", "r-wealth"], ["Entnahme aus dem Vermögen", "r-draw"], ["Ereignisse", "r-events"],
-    ["Lauf wählen", "r-runs"], ["Erfolgsquote je Variante", "r-scenarios"], ["Endvermögen je Variante", "r-scenarios"], ["Jahreswerte", "r-table"],
-    ["Kennzahlen", "r-compare"], ["Gesamtvermögen im Vergleich", "r-compare"], ["Unterschiede in der Planung", "r-compare"], ["Ergebnis", "o-read"], ["Liquides Vermögen nach Anlage", "r-comp"], ["Einnahmen und Ausgaben pro Jahr", "r-flows"], ["Immobilien", "r-prop"], ["Vorsorge", "r-pk"]
-  ];
+  let HEADING_TOPICS;
+  onLanguage(() => HEADING_TOPICS = [
+    [tr("runCharts.pk"), "f-pk"], [tr("common.ahv"), "f-ahv"], [tr("section.pillar3a"), "s-pillar3a"], [tr("withdrawal.buckets"), "f-wd-three_buckets"], [tr("realestate.emergency"), "f-re-emergency"], [tr("realestate.affordability"), "f-re-afford"],
+    [tr("scen.variations"), "f-sweep"], [tr("params.series"), "f-ret-series"], [tr("strategy.title", { info: "" }).trim(), "f-ret-series"], [tr("returns.fromStrategy"), "f-ret-series"], [tr("returns.extrapolationTitle"), "f-ret-extrapolation"], [tr("returns.bootstrap"), "f-ret-bootstrap"],
+    [tr("returns.stockModel"), "f-ret-parametric"], [tr("source.fixed"), "f-ret-fixed"], [tr("returns.run"), "f-ret-rolling"], [tr("optimize.goal"), "o-goal"], [tr("optimize.strategies"), "o-strategies"], [tr("optimize.strategyParams"), "o-ranges"],
+    [tr("strat.standard"), "f-wd-standard"], [tr("limits.title"), "f-wd-limits"], [tr("strat.fixedRate"), "f-wd-fixed_rate"], [tr("strat.guardrails"), "f-wd-guardrails"], [tr("withdrawal.vpw"), "f-wd-vpw"], [tr("strat.endowmentShort"), "f-wd-endowment"],
+    [tr("gain.title"), "f-tax-gain"], [tr("taxes.married"), "f-tax-tables"], [tr("taxes.incomeTax"), "f-tax-tables"], [tr("params.multiplier"), "f-tax-multiplier"],
+    [tr("batch.band"), "r-fan"], [tr("batch.survival"), "r-survival"], [tr("batch.endDist"), "r-hist"],
+    [tr("batch.retireDist"), "r-hist"], [tr("batch.depletionAge"), "r-depletion"], [tr("results.endByPercentile"), "r-percentiles"],
+    [tr("helpHeading.markets"), "r-markets"], [tr("runCharts.wealth"), "r-wealth"], [tr("runCharts.withdrawal"), "r-draw"], [tr("results.events"), "r-events"],
+    [tr("runPicker.title"), "r-runs"], [tr("scen.successPerVariant"), "r-scenarios"], [tr("scen.endPerVariant"), "r-scenarios"], [tr("results.yearValues"), "r-table"],
+    [tr("cmp.kpis"), "r-compare"], [tr("helpHeading.compare"), "r-compare"], [tr("cmpPlan.title"), "r-compare"], [tr("optimize.result"), "o-read"], [tr("runCharts.liquidByAsset"), "r-comp"], [tr("runCharts.flows"), "r-flows"], [tr("section.realestate"), "r-prop"], [tr("section.pension"), "r-pk"]
+  ]);
   const topics = new Map(), chapters = [];
   let loading = null, hist = [], pos = -1, panel = null;
   const $h = s => panel.querySelector(s);
@@ -101,7 +102,7 @@ const Help = (() => {
   }
   function load() {
     return loading ||= Promise.all(CHAPTERS.map(async f => {
-      const r = await fetch(`hilfe/${f}.md`); if (!r.ok) throw new Error(`hilfe/${f}.md: ${r.status}`);
+      const r = await fetch(`hilfe/${f}.md`); if (!r.ok) throw new Error(`hilfe/${f}.md: ${r.status}`); // i18n: allow (path of the help files)
       return parse(f, await r.text());
     })).then(list => { chapters.push(...list); }, e => { loading = null; throw e; });
   }
@@ -110,10 +111,10 @@ const Help = (() => {
   function build() {
     if (panel) return;
     const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "help.css"; document.head.append(css);
-    panel = document.createElement("aside"); panel.id = "help"; panel.hidden = true; panel.setAttribute("aria-label", "Hilfe");
-    panel.innerHTML = `<div class="hh"><button type="button" data-h="back" title="Zurück">←</button><button type="button" data-h="fwd" title="Vorwärts">→</button>
-      <button type="button" data-h="toc" title="Inhaltsverzeichnis">☰</button><input type="search" id="helpSearch" placeholder="Hilfe durchsuchen…" aria-label="Hilfe durchsuchen">
-      <button type="button" data-h="close" title="Schliessen (Esc)">✕</button></div><div class="hb" id="helpBody"></div>`;
+    panel = document.createElement("aside"); panel.id = "help"; panel.hidden = true; panel.setAttribute("aria-label", tr("help.title"));
+    panel.innerHTML = `<div class="hh"><button type="button" data-h="back" data-i18n-title="help.back" title="${tr("help.back")}">←</button><button type="button" data-h="fwd" data-i18n-title="help.forward" title="${tr("help.forward")}">→</button>
+      <button type="button" data-h="toc" data-i18n-title="help.toc" title="${tr("help.toc")}">☰</button><input type="search" id="helpSearch" data-i18n-placeholder="help.searchPlaceholder" data-i18n-aria-label="help.searchLabel" placeholder="${tr("help.searchPlaceholder")}" aria-label="${tr("help.searchLabel")}">
+      <button type="button" data-h="close" data-i18n-title="help.close" title="${tr("help.close")}">✕</button></div><div class="hb" id="helpBody"></div>`;
     document.body.append(panel);
     panel.addEventListener("click", e => {
       const a = e.target.closest("[data-topic]"); if (a) { e.preventDefault(); return show(a.dataset.topic); }
@@ -129,7 +130,7 @@ const Help = (() => {
     return (s ? "…" : "") + esc(plain.slice(s, j)) + `<mark>${esc(plain.slice(j, j + q.length))}</mark>` + esc(plain.slice(j + q.length, j + q.length + 90)) + "…";
   };
   function view(id) {
-    if (id === "toc") return `<div class="toc"><h1>Handbuch</h1><p>Hilfe zum aktuellen Thema: <b>F1</b>. Hier das ganze Handbuch.</p>${chapters.map(c => `<h3>${esc(c.title)}</h3>${c.topics.map(t => `<a data-topic="${t.id}">${esc(t.title)}</a>`).join("")}`).join("")}</div>`;
+    if (id === "toc") return `<div class="toc"><h1>${tr("help.manual")}</h1><p>${tr("help.manualIntro")}</p>${chapters.map(c => `<h3>${esc(c.title)}</h3>${c.topics.map(t => `<a data-topic="${t.id}">${esc(t.title)}</a>`).join("")}`).join("")}</div>`;
     if (id.startsWith("search:")) {
       const q = id.slice(7).toLowerCase(), words = q.split(/\s+/).filter(Boolean);
       const hits = [...topics.values()].map(t => {
@@ -137,15 +138,15 @@ const Help = (() => {
         const score = words.reduce((s, w) => s + (t.title.toLowerCase().includes(w) ? 5 : 0) + (t.keywords.toLowerCase().includes(w) ? 3 : 0) + Math.min(5, t.text.split(w).length - 1), 0);
         return { t, score };
       }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 25);
-      return `<h1>Suche: «${esc(id.slice(7))}»</h1>` + (hits.length ? hits.map(({ t }) => `<div class="hit"><a data-topic="${t.id}"><b>${esc(t.title)}</b></a><small>${esc(t.chapter.title)}</small><small>${snippet(t, words[0])}</small></div>`).join("") : "<p>Nichts gefunden. Versuchen Sie einen anderen Begriff.</p>");
+      return `<h1>${tr("help.search", { esc: esc(id.slice(7)) })}</h1>` + (hits.length ? hits.map(({ t }) => `<div class="hit"><a data-topic="${t.id}"><b>${esc(t.title)}</b></a><small>${esc(t.chapter.title)}</small><small>${snippet(t, words[0])}</small></div>`).join("") : tr("help.noHits"));
     }
     const t = topics.get(id);
-    if (!t) return `<h1>Thema nicht gefunden</h1><p>Zu «${esc(id)}» gibt es noch keinen Hilfetext. <a data-topic="toc">Zum Handbuch</a></p>`;
+    if (!t) return `<h1>${tr("help.notFound")}</h1><p>${tr("help.notFoundText", { id: esc(id) })}</p>`;
     return `<div class="crumb">${esc(t.chapter.title)}</div><h1>${esc(t.title)}</h1>${render(t.md)}`;
   }
   async function draw(id, keepSearch = false) {
     build(); panel.hidden = false; document.body.classList.add("help-open");
-    try { await load(); } catch (e) { $h("#helpBody").innerHTML = `<h1>Hilfe nicht verfügbar</h1><p>${esc(e.message)}</p>`; return; }
+    try { await load(); } catch (e) { $h("#helpBody").innerHTML = `<h1>${tr("help.unavailable")}</h1><p>${esc(e.message)}</p>`; return; }
     $h("#helpBody").innerHTML = view(id); $h("#helpBody").scrollTop = 0;
     if (!keepSearch) $h("#helpSearch").value = id.startsWith("search:") ? id.slice(7) : "";
     $h('[data-h="back"]').disabled = pos <= 0; $h('[data-h="fwd"]').disabled = pos >= hist.length - 1;
@@ -185,7 +186,7 @@ const Help = (() => {
   const openContext = () => show(contextTopic());
 
   // ----- Buttons at fields and headings -----
-  const hq = topic => `<button type="button" class="hq" data-help="${topic}" title="Hilfe zu diesem Thema" aria-label="Hilfe">ⓘ</button>`;
+  const hq = topic => `<button type="button" class="hq" data-help="${topic}" data-i18n-title="help.topicTitle" title="${tr("help.topicTitle")}" data-i18n-aria-label="help.title" aria-label="${tr("help.title")}">ⓘ</button>`;
   function put(container, where, topic) {
     if (!container || container.querySelector(":scope > .hq, :scope > * > .hq")) return;
     where.insertAdjacentHTML("beforeend", hq(topic));
@@ -208,7 +209,7 @@ const Help = (() => {
       }
     }
     for (const h of document.querySelectorAll("aside h3")) {
-      if (!h.querySelector(".hq") && /^(Prüfung|Vorschau)/.test(h.textContent.trim())) h.insertAdjacentHTML("beforeend", hq("ref-checks"));
+      if (!h.querySelector(".hq") && [tr("aside.validation"), tr("aside.preview")].some(t => h.textContent.trim().startsWith(t))) h.insertAdjacentHTML("beforeend", hq("ref-checks"));
     }
     for (const root of [main, body]) {
       if (!root) continue;
@@ -228,12 +229,12 @@ const Help = (() => {
   async function check() {
     await load();
     const problems = [];
-    for (const [, id] of [...FIELD_TOPICS, ...OPT_TOPICS, ...HEADING_TOPICS]) if (!topics.has(id)) problems.push(`Thema fehlt: ${id}`);
-    for (const id of ["general", "milestones", "pension", "pillar3a", "flows", "wealth", "returns", "withdrawal", "optimize", "taxes", "realestate", "scenarios"]) if (!topics.has("s-" + id)) problems.push(`Abschnitt ohne Thema: s-${id}`);
-    for (const id of ["overview", "charts", "runs", "scenarios", "table", "list", "compare"]) if (!topics.has("r-" + id)) problems.push(`Ergebnisansicht ohne Thema: r-${id}`);
-    for (const k of ["fixed", "historical", "rolling", "bootstrap", "parametric"]) if (!topics.has("f-ret-" + k)) problems.push(`Quelle ohne Thema: f-ret-${k}`);
-    for (const k of ["standard", "three_buckets", "guardrails", "fixed_rate", "vpw", "endowment"]) if (!topics.has("f-wd-" + k)) problems.push(`Strategie ohne Thema: f-wd-${k}`);
-    for (const t of topics.values()) for (const m of t.md.matchAll(/\]\(#([\w-]+)\)/g)) if (!topics.has(m[1])) problems.push(`Verweis ins Leere: ${t.id} → ${m[1]}`);
+    for (const [, id] of [...FIELD_TOPICS, ...OPT_TOPICS, ...HEADING_TOPICS]) if (!topics.has(id)) problems.push(`Thema fehlt: ${id}`); // i18n: allow (check of the help for the tests)
+    for (const id of ["general", "milestones", "pension", "pillar3a", "flows", "wealth", "returns", "withdrawal", "optimize", "taxes", "realestate", "scenarios"]) if (!topics.has("s-" + id)) problems.push(`Abschnitt ohne Thema: s-${id}`); // i18n: allow (check of the help for the tests)
+    for (const id of ["overview", "charts", "runs", "scenarios", "table", "list", "compare"]) if (!topics.has("r-" + id)) problems.push(`Ergebnisansicht ohne Thema: r-${id}`); // i18n: allow (check of the help for the tests)
+    for (const k of ["fixed", "historical", "rolling", "bootstrap", "parametric"]) if (!topics.has("f-ret-" + k)) problems.push(`Quelle ohne Thema: f-ret-${k}`); // i18n: allow (check of the help for the tests)
+    for (const k of ["standard", "three_buckets", "guardrails", "fixed_rate", "vpw", "endowment"]) if (!topics.has("f-wd-" + k)) problems.push(`Strategie ohne Thema: f-wd-${k}`); // i18n: allow (check of the help for the tests)
+    for (const t of topics.values()) for (const m of t.md.matchAll(/\]\(#([\w-]+)\)/g)) if (!topics.has(m[1])) problems.push(`Verweis ins Leere: ${t.id} → ${m[1]}`); // i18n: allow (check of the help for the tests)
     return problems;
   }
 
@@ -246,9 +247,9 @@ const Help = (() => {
     else if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "?" || e.key === "/")) { e.preventDefault(); show("toc"); }
     else if (e.key === "Escape" && isOpen() && e.target.closest?.("#help")) { e.preventDefault(); e.stopPropagation(); close(); }
   }, true);
-  window.addEventListener("DOMContentLoaded", () => {
+  const init = () => {
     document.querySelector('header [data-action="runs-open"]')?.insertAdjacentHTML("beforebegin",
-      `<button class="btn" id="helpBtn" type="button" title="Hilfe zum aktuellen Thema (F1)">? Hilfe</button>`);
+      `<button class="btn" id="helpBtn" type="button" data-i18n-title="help.buttonTitle" data-i18n="help.button" title="${tr("help.buttonTitle")}">${tr("help.button")}</button>`);
     document.getElementById("helpBtn")?.addEventListener("click", () => isOpen() ? close() : openContext());
     watch(); schedule();
     window.__TAURI__?.event?.listen("menu", ev => { if (ev.payload === "helpctx") openContext(); else if (ev.payload === "manual") show("toc"); });
@@ -256,6 +257,8 @@ const Help = (() => {
     if (open) show(open[1]);
     if (location.hash.startsWith("#helpcheck")) check().then(p => { document.documentElement.dataset.helpProblems = p.length; if (p.length) document.documentElement.dataset.helpFirst = p[0]; document.documentElement.dataset.rendered = "help"; })
       .catch(e => { document.documentElement.dataset.helpProblems = "x"; document.documentElement.dataset.helpFirst = String(e.message); document.documentElement.dataset.rendered = "help"; });
-  });
+  };
+  // #170: the scripts are loaded by i18n.js after the page, so the page may be loaded already.
+  if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", init); else init();
   return { show, close, openContext, check, topics };
 })();

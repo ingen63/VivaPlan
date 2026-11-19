@@ -1,5 +1,6 @@
 // #147: Unit tests of the results list (crates/app/ui/runs.js) against real IndexedDB behavior (fake-indexeddb, only a
 // test dependency), without a browser. The user interface tests use the list only in memory (test access «mem»).
+require("./tr.js"); // #170: texts from the text table
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { IDBFactory, IDBTransaction: FDBTransaction } = require("fake-indexeddb");

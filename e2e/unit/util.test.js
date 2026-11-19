@@ -2,6 +2,7 @@
 // Run: `node --test e2e/unit/` (or `make ui-unit`).
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+require("./tr.js"); // #170: texts from the text table
 const u = require("../../crates/app/ui/util.js");
 
 // Thousands separator ' or ’ depending on the ICU version
@@ -160,7 +161,7 @@ test("#140/AK1: amount and integer do not take a dot with three digits as a deci
     assert.equal(u.parseAmount(t), null, t);
     assert.equal(u.ambiguousThousands(t), true, t);
   }
-  assert.match(u.AMBIGUOUS_TEXT, /Tausendertrennzeichen/);
+  assert.match(u.ambiguousText(), /Tausendertrennzeichen/);
 });
 
 test("#140/AK2: exponent, hex and text notation are rejected in all number fields", () => {

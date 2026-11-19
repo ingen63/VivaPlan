@@ -15,7 +15,7 @@ module.exports = defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     channel: "chrome",
     viewport: { width: 1440, height: 1000 },
-    locale: "de-CH",
+    locale: "de-CH", // #170/AK7: system language German; the user interface starts in German
     acceptDownloads: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",

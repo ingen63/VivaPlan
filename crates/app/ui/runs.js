@@ -8,7 +8,7 @@ const Runs = (() => {
   let dbp = null, memoryOnly = false;
   const open = () => dbp ||= new Promise((res, rej) => {
     try {
-      if (memoryOnly) throw new Error("nur Arbeitsspeicher");
+      if (memoryOnly) throw new Error("nur Arbeitsspeicher"); // i18n: allow (internal, never shown)
       const q = indexedDB.open(DB, 1);
       q.onupgradeneeded = () => { q.result.createObjectStore(META, { keyPath: "id" }); q.result.createObjectStore(DATA, { keyPath: "id" }); };
       q.onsuccess = () => res(q.result);
@@ -25,7 +25,7 @@ const Runs = (() => {
       t.onerror = () => rej(t.error);
       // #147: An aborted transaction (e.g. storage quota exhausted) does not always report «error»; without
       // `onabort` the promise would stay pending and the user interface would wait forever.
-      t.onabort = () => rej(t.error || new Error("Speichern im Browserspeicher abgebrochen"));
+      t.onabort = () => rej(t.error || new Error(tr("runs.storageAborted")));
     });
   }
   const req = (r, f) => { r.onsuccess = () => { f.result = r.result; }; return f; };

@@ -71,7 +71,9 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
     await expect(page.locator('#main select[data-path="pension.pk.at"]')).toHaveCount(0);
     // Second person: own fixed milestones
     await page.evaluate(() => ACTIONS["partner-add"]());
-    expect(await page.evaluate(() => state.milestones.filter(m => m.id.endsWith("2")).map(m => m.name))).toEqual(["Bezug Pensionskasse Person 2", "AHV-Bezug Person 2"]);
+    // #170/AK8: no stored name; the name comes from the text table by the id
+    expect(await page.evaluate(() => state.milestones.filter(m => m.id.endsWith("2")).map(m => [m.name, msLabel(m)])))
+      .toEqual([[undefined, "Bezug Pensionskasse Person 2"], [undefined, "AHV-Bezug Person 2"]]);
     await noErrors(page, errors);
   });
 
@@ -431,7 +433,7 @@ test.describe("Earned income with inflation (#58)", () => {
   test("#58: new plans and a new second person with rises with inflation", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
-    await page.waitForFunction(() => state.project.name === "Neue Planung");
+    await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0); // #170: no project name in a new plan
     expect(await page.evaluate(() => state.flows.incomeIndexed)).toBe(true);
     await nav(page, "Einnahmen & Ausgaben");
     await expect(page.locator('input[data-path="flows.incomeIndexed"]')).toBeChecked();

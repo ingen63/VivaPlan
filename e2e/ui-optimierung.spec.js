@@ -161,7 +161,7 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
               window.__calls.push([cmd, args]);
               if (cmd === "startup_plan") return startup;
               if (cmd === "save_plan") { if (window.__saveError) throw window.__saveError; return window.__saveResult ?? null; }
-              if (["set_dirty", "quit_app", "settings_set", "set_window_title"].includes(cmd)) return null;
+              if (["set_dirty", "quit_app", "settings_set", "set_window_title", "set_menu_language", "first_start_language"].includes(cmd)) return null;
               if (cmd === "settings_get") return settings;
               const r = await fetch(`/api/${cmd}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(args) });
               const j = await r.json(); if (!r.ok) throw new Error(j.error); return j;
@@ -256,7 +256,7 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
     });
 
     test("file missing: example plan as new plan with notice and file name", async ({ page }) => {
-      await openApp(page, { path: null, plan: await plan(page), notice: "Zuletzt geöffnete Datei nicht gefunden: weg.vplan. Es wird die Beispielplanung geöffnet." });
+      await openApp(page, { path: null, plan: await plan(page), notice: { key: "startup.notFound", file: "weg.vplan" } });
       await expect(page.locator("#fileName")).toHaveText("Neue Planung");
       await expect(page.locator("#ask")).toBeVisible();
       await expect(page.locator("#askText")).toContainText("Zuletzt geöffnete Datei nicht gefunden");
