@@ -1,32 +1,32 @@
-//! Die Monatssimulation.
+//! The monthly simulation.
 //!
-//! Reihenfolge pro Kalendermonat:
-//! 1. Teuerung: jeden Monat mit (1 + Inflation)^(1/12) (Ausgaben, Mieten, Immobilienwerte); die AHV
-//!    folgt im Januar mit der seit dem letzten Januar aufgelaufenen Teuerung.
-//! 2. Ereignisse: einmalige Beträge, Pensionierung (Kapitalbezug, Rente), AHV-Beginn, Immobilien
-//!    (Notverkauf aus dem Vormonat, Kauf oder Miete nach Verkauf, Kauf, Hypothekarperioden,
-//!    Amortisation, Verkauf), Säule 3a.
-//! 3. Geldflüsse: Einkommen, Renten, Zuflüsse minus Lebenshaltung und Wohnkosten → Cash.
-//!    Die Lebenshaltung enthält weder Miete noch Hypothekarzinsen; Zinsen laufen monatlich auf und
-//!    werden mit der Amortisation am Quartalsende (März, Juni, September, Dezember) bezahlt.
-//! 4. Rendite auf Aktien und Obligationen (sofern das Portfolio positiv ist).
-//! 5. Pensionskasse: Beiträge; im Dezember Verzinsung.
-//! 6. Dezember: Einkommens- und Vermögenssteuer des Jahres veranlagen; bezahlt im Mai des Folgejahres
-//!    (eine offene Steuer wird im letzten Planmonat beglichen).
-//! 7. Notverkauf prüfen (wird im Folgemonat ausgeführt).
-//! 8. Entnahmestrategie: «Standard» (Cash-Reserve, Rest nach Aktienanteil, monatlich) oder ab
-//!    Pensionierung «3-Topf» (Cash, Obligationen, Aktien; Nachfüllen im Januar).
+//! Order per calendar month:
+//! 1. Inflation: every month by (1 + inflation)^(1/12) (spending, rents, property values); AHV
+//!    follows in January with the inflation accrued since the previous January.
+//! 2. Events: one-off amounts, retirement (lump sum, pension), AHV start, properties
+//!    (emergency sale from the previous month, purchase or rent after a sale, purchase, mortgage periods,
+//!    amortization, sale), pillar 3a.
+//! 3. Cash flows: income, pensions, inflows minus living costs and housing costs → cash.
+//!    Living costs include neither rent nor mortgage interest; interest accrues monthly and
+//!    is paid together with amortization at quarter end (March, June, September, December).
+//! 4. Returns on stocks and bonds (as long as the portfolio is positive).
+//! 5. Pension fund: contributions; interest in December.
+//! 6. December: assess the year's income and wealth tax; paid in May of the following year
+//!    (an open tax is settled in the last month of the plan).
+//! 7. Check for an emergency sale (carried out in the following month).
+//! 8. Withdrawal strategy: «Standard» (cash reserve, the rest by stock share, monthly) or from
+//!    retirement «3-Topf» (cash, bonds, stocks; refill in January).
 //!
-//! Zweite Person: Einkommen, Pensionskasse und AHV laufen pro Person; Steuern, Vermögen und
-//! Ausgaben gelten für den Haushalt. Die Entnahmestrategien (ausser «Standard») beginnen, sobald die erste
-//! Person mit Bezugsdatum pensioniert ist. Sind beide Renten der AHV fällig, werden sie bei Verheirateten
-//! auf `household.ahvCoupleCap` plafoniert.
+//! Second person: income, pension fund and AHV run per person; taxes, wealth and
+//! spending apply to the household. The withdrawal strategies (except «Standard») start as soon as the first
+//! person with a payout date is retired. Once both AHV pensions are due, they are capped for married couples
+//! at `household.ahvCoupleCap`.
 //!
-//! Fixe Entnahmerate, Guardrails, VPW und Endowment bestimmen ab der Pensionierung der ersten Person die
-//! Lebenshaltung: jährliche Entnahme = Lebenshaltung + Wohnkosten − Einkommen und Renten (vor Steuern). Ein für einen
-//! Kauf reservierter Verkaufserlös zählt nicht zum Vermögen der Entnahme. Bei «3-Topf» mit Guardrails (#6) steuern
-//! die Guardrails die Ausgaben und die Töpfe die Anlage; der Netto-Bedarf der Töpfe rechnet dann mit der
-//! Guardrails-Lebenshaltung.
+//! Fixed withdrawal rate, guardrails, VPW and endowment determine living costs from the first person's retirement:
+//! annual withdrawal = living costs + housing costs − income and pensions (before taxes). Sale proceeds reserved
+//! for a purchase do not count towards the wealth used for withdrawals. With «3-Topf» and guardrails (#6) the
+//! guardrails steer spending and the buckets steer investment; the buckets' net need is then based on the
+//! guardrails' living costs.
 
 use serde::Serialize;
 
@@ -41,7 +41,7 @@ use crate::time::YearMonth;
 use crate::validate::{self, Severity};
 use crate::{Error, Result};
 
-/// Feste Cash-Reserve (Monate) für alle Strategien ausser «Standard».
+/// Fixed cash reserve (months) for all strategies except «Standard».
 pub const FIXED_RESERVE_MONTHS: f64 = 3.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -56,7 +56,7 @@ pub enum EventKind {
     EmergencySale,
     MortgageRenewal,
     MortgageRepayment,
-    /// Wechsel von indirekter auf direkte Amortisation im Monat des AHV-Bezugs (#50).
+    /// Switch from indirect to direct amortization in the month of the AHV payout (#50).
     AmortizationSwitch,
     Pillar3aPayout,
     Buckets,
@@ -71,42 +71,42 @@ pub struct Event {
     pub text: String,
 }
 
-/// #133: Geldflüsse und Bewertungsänderungen eines Monats. Die Veränderung des Gesamtvermögens gegenüber dem Vormonat
-/// ist genau [`Ledger::sum`]; alle übrigen Buchungen (Anlagen kaufen und verkaufen, Cash nachfüllen, Hypothek tilgen,
-/// Säule 3a einzahlen und auszahlen, Liegenschaft kaufen und verkaufen) sind Umbuchungen und ändern das Total nicht.
-/// Nur intern (Prüfung in den Tests), nicht im Ergebnis.
+/// #133: Cash flows and valuation changes of one month. The change in total wealth against the previous month
+/// is exactly [`Ledger::sum`]; all other bookings (buying and selling investments, refilling cash, repaying the
+/// mortgage, paying into and out of pillar 3a, buying and selling property) are transfers and leave the total unchanged.
+/// Internal only (checked in the tests), not part of the result.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Ledger {
-    /// Erwerbseinkommen, PK-Rente und AHV.
+    /// Earned income, PK pension and AHV.
     pub income: f64,
-    /// Einmalbeträge (positiv: Zufluss, negativ: Ausgabe).
+    /// One-off amounts (positive: inflow, negative: expense).
     pub extras: f64,
-    /// Sparbeträge aus der Planung.
+    /// Savings from the plan.
     pub savings: f64,
-    /// Lebenshaltung (Abfluss, positiv gezählt).
+    /// Living costs (outflow, counted positive).
     pub living: f64,
-    /// Wohnkosten wie bezahlt: Miete, Nebenkosten, Hypothekarzins, Amortisation (Abfluss, positiv gezählt).
+    /// Housing costs as paid: rent, fix costs, mortgage interest, amortization (outflow, counted positive).
     pub housing: f64,
-    /// Amortisation in den Wohnkosten: senkt die Hypothek oder erhöht die Säule 3a, bleibt also im Vermögen.
+    /// Amortization within housing costs: lowers the mortgage or raises pillar 3a, so it stays in wealth.
     pub amortization: f64,
-    /// Alle bezahlten Steuern (Abfluss, positiv gezählt).
+    /// All taxes paid (outflow, counted positive).
     pub taxes: f64,
-    /// Rendite von Aktien und Obligationen.
+    /// Returns on stocks and bonds.
     pub market: f64,
-    /// Beiträge an die Pensionskasse.
+    /// Contributions to the pension fund.
     pub pk_contributions: f64,
-    /// Zinsgutschrift der Pensionskasse (im Dezember und beim Bezug).
+    /// Interest credited by the pension fund (in December and at payout).
     pub pk_interest: f64,
-    /// Zins der Säule 3a.
+    /// Pillar 3a interest.
     pub p3a_interest: f64,
-    /// Wertänderung der Liegenschaften (Teuerung).
+    /// Change in property value (inflation).
     pub revaluation: f64,
-    /// In eine Rente umgewandeltes PK-Kapital (verlässt das Vermögen, positiv gezählt).
+    /// PK capital converted into a pension (leaves wealth, counted positive).
     pub annuity: f64,
 }
 
 impl Ledger {
-    /// Veränderung des Gesamtvermögens nach dem Hauptbuch.
+    /// Change in total wealth according to the ledger.
     pub fn sum(&self) -> f64 {
         self.income + self.extras + self.savings - self.living - self.housing + self.amortization - self.taxes
             + self.market
@@ -131,41 +131,41 @@ pub struct MonthRecord {
     pub pension_fund: f64,
     pub pillar3a: f64,
     pub total: f64,
-    /// Einzahlung in die Säule 3a in diesem Monat (zählt zu den Ausgaben, #52).
+    /// Pillar 3a contribution this month (counts as spending, #52).
     pub pillar3a_in: f64,
-    /// Einkommen inkl. Renten.
+    /// Income including pensions.
     pub income: f64,
-    /// Lebenshaltung inkl. Wohnkosten.
+    /// Living costs including housing costs.
     pub spending: f64,
     pub taxes: f64,
-    /// Aufschlüsselung der Steuern des Monats: Einkommen, Vermögen, Kapitalbezug (PK, 3a), Grundstückgewinn.
+    /// Breakdown of the month's taxes: income, wealth, lump sum (PK, 3a), property gain.
     pub tax_income: f64,
     pub tax_wealth: f64,
     pub tax_capital: f64,
     pub tax_gain: f64,
-    /// #109: Im Dezember veranlagte Einkommens- und Vermögenssteuer des Steuerjahres (bezahlt wird sie im Mai des
-    /// Folgejahres, siehe `tax_income`/`tax_wealth`). Die Jahreswerte zeigen sie in der Zeile des Steuerjahres.
+    /// #109: Income and wealth tax assessed in December for the tax year (paid in May of the
+    /// following year, see `tax_income`/`tax_wealth`). The yearly values show it in the row of the tax year.
     pub assessed_income: f64,
     pub assessed_wealth: f64,
-    /// Geplante Lebenshaltung aus der Planung (nominal, ohne Wohnkosten).
+    /// Planned living costs from the plan (nominal, without housing costs).
     pub planned_spending: f64,
-    /// Entnahme aus dem Vermögen: tatsächliche Lebenshaltung und Wohnkosten minus Einkommen (vor Steuern).
-    /// Bei Guardrails & Co. legt die Strategie sie fest, sonst folgt sie den geplanten Ausgaben.
+    /// Withdrawal from wealth: actual living costs and housing costs minus income (before taxes).
+    /// With guardrails and similar strategies the strategy sets it, otherwise it follows the planned spending.
     pub withdrawal: f64,
-    /// Aufschlüsselung: Erwerbseinkommen, PK-Rente, AHV, Wohnkosten (Zins, Amortisation, Nebenkosten, Miete).
+    /// Breakdown: earned income, PK pension, AHV, housing costs (interest, amortization, fix costs, rent).
     pub earned: f64,
     pub pk_pension: f64,
     pub ahv: f64,
     pub housing: f64,
-    /// Marktwert der Immobilien und Hypotheken.
+    /// Market value of the properties and mortgages.
     pub property_value: f64,
     pub mortgage: f64,
-    /// Teuerungsindex seit Start (1 = Preise des Startmonats); Wert / Index = heutige Kaufkraft.
+    /// Price index since the start (1 = prices of the start month); value / index = today's purchasing power.
     pub price_index: f64,
-    /// Wertentwicklung von Aktien und Obligationen seit Start (1 = Startmonat), nominal.
+    /// Performance of stocks and bonds since the start (1 = start month), nominal.
     pub stock_index: f64,
     pub bond_index: f64,
-    /// #133: Hauptbuch des Monats (nur intern, nicht im Ergebnis).
+    /// #133: Ledger of the month (internal only, not part of the result).
     #[serde(skip)]
     pub ledger: Ledger,
 }
@@ -176,26 +176,26 @@ pub enum PropertyEventKind {
     Purchase,
     Sale,
     EmergencySale,
-    /// Erneuerung einer Hypothekarperiode (auch mit Einmalzahlung oder nicht erneuert wegen Notverkauf).
+    /// Renewal of a mortgage period (also with a lump sum, or not renewed because of an emergency sale).
     Renewal,
 }
 
-/// Immobilienereignis mit den Beträgen: Kauf, Verkauf, Notverkauf und Hypothekenerneuerung in einer Liste.
-/// Nicht zutreffende Beträge fehlen.
+/// Property event with its amounts: purchase, sale, emergency sale and mortgage renewal in one list.
+/// Amounts that do not apply are missing.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PropertyEvent {
     pub month: YearMonth,
     pub kind: PropertyEventKind,
     pub property: String,
-    /// Kauf: Kaufpreis, Eigenmittel (Preis − Hypothek) und Hypothek.
+    /// Purchase: price, equity (price − mortgage) and mortgage.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub price: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub equity: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mortgage: Option<f64>,
-    /// Verkauf, Notverkauf: Verkaufserlös (Marktwert), abgelöste Hypothek, Grundstückgewinnsteuer, Nettoerlös.
+    /// Sale, emergency sale: sale proceeds (market value), mortgage paid off, property gain tax, net proceeds.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proceeds: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -204,7 +204,7 @@ pub struct PropertyEvent {
     pub gain_tax: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub net: Option<f64>,
-    /// Erneuerung: Tragbarkeit, Hypothek vorher und nachher, Einmalzahlung, Zinssatz der neuen Periode (Durchschnitt der Tranchen).
+    /// Renewal: affordability, mortgage before and after, lump sum, rate of the new period (average of the tranches).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub affordable: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -215,10 +215,10 @@ pub struct PropertyEvent {
     pub lump_sum: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rate: Option<f64>,
-    /// Notverkauf: Grund («Vermögen < 0» oder «Notverkaufskriterium»); bei einer Erneuerung der Grund, warum sie nicht erfolgt.
+    /// Emergency sale: reason («Vermögen < 0» or «Notverkaufskriterium»); for a renewal, why it did not happen.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    /// Verkauf: was mit dem Erlös geschieht («Verkaufserlös reserviert für Kauf im Folgemonat» bzw. Entnahmestrategie sofort angewendet).
+    /// Sale: what happens to the proceeds («Verkaufserlös reserviert für Kauf im Folgemonat» or withdrawal strategy applied at once).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
 }
@@ -247,31 +247,31 @@ impl PropertyEvent {
     }
 }
 
-/// Grundlage der Topfgrössen bei der 3-Topf-Strategie: Netto-Bedarf pro Jahr = Lebenshaltung + Wohnen +
-/// Einkommenssteuer − regelmässige Einnahmen (AHV, PK-Rente, Erwerbseinkommen). Nicht enthalten: einmalige Ausgaben,
-/// Amortisationen, Immobilienkäufe, Sondersteuern (Grundstückgewinn-, Kapitalbezugs-, Vermögenssteuer).
+/// Basis of the bucket sizes in the 3-bucket strategy: net need per year = living costs + housing +
+/// income tax − regular income (AHV, PK pension, earned income). Not included: one-off expenses,
+/// amortization, property purchases, special taxes (property gain, lump sum and wealth tax).
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NeedBasis {
-    /// Bezugsjahr der Werte.
+    /// Reference year of the values.
     pub year: i32,
-    /// «Januar, geplant» oder «ab <Monat>, auf 12 Monate hochgerechnet».
+    /// «Januar, geplant» or «ab <Monat>, auf 12 Monate hochgerechnet».
     pub source: String,
-    /// Herkunft der Lebenshaltung: «geplant» oder «Guardrails» (#6).
+    /// Source of the living costs: «geplant» or «Guardrails» (#6).
     pub living_source: String,
     pub living: f64,
     pub housing: f64,
-    /// Einkommenssteuer auf dem (hochgerechneten) Jahreseinkommen.
+    /// Income tax on the (extrapolated) annual income.
     pub income_tax: f64,
-    /// AHV-Rente.
+    /// AHV pension.
     pub ahv: f64,
-    /// PK-Rente.
+    /// PK pension.
     pub pk: f64,
-    /// Erwerbseinkommen.
+    /// Earned income.
     pub earned: f64,
-    /// Einzahlungen in die Säule 3a (#52).
+    /// Pillar 3a contributions (#52).
     pub pillar3a: f64,
-    /// Anzahl Monate, aus denen die Werte hochgerechnet wurden (12 = volles Jahr).
+    /// Number of months the values were extrapolated from (12 = full year).
     pub months: u32,
 }
 
@@ -279,17 +279,17 @@ impl NeedBasis {
     pub fn expenses(&self) -> f64 {
         self.living + self.housing + self.income_tax + self.pillar3a
     }
-    /// Regelmässige Einnahmen: Renten und Erwerbseinkommen.
+    /// Regular income: pensions and earned income.
     pub fn receipts(&self) -> f64 {
         self.ahv + self.pk + self.earned
     }
-    /// Netto-Bedarf pro Jahr; nie negativ.
+    /// Net need per year; never negative.
     pub fn need(&self) -> f64 {
         (self.expenses() - self.receipts()).max(0.0)
     }
 }
 
-/// Umbuchung zwischen den Töpfen (1 = Cash, 2 = Obligationen, 3 = Aktien; 0 = von ausserhalb, z. B. ein Zufluss).
+/// Transfer between the buckets (1 = cash, 2 = bonds, 3 = stocks; 0 = from outside, e.g. an inflow).
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BucketMove {
@@ -298,71 +298,71 @@ pub struct BucketMove {
     pub amount: f64,
 }
 
-/// Eine Anwendung der 3-Topf-Strategie (Januar-Auffüllung, Sonderfall A, B oder C) mit Herleitung, Renditekriterium,
-/// Umbuchungen und Topfständen.
+/// One application of the 3-bucket strategy (January refill, special case A, B or C) with derivation, return
+/// criterion, transfers and bucket balances.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BucketRefill {
     pub month: YearMonth,
-    /// Beschreibung des Anlasses.
+    /// Description of the occasion.
     pub reason: String,
-    /// Ausgelöster Fall: «Januar», «A», «B» oder «C».
+    /// Case triggered: «Januar», «A», «B» or «C».
     pub trigger: String,
-    /// Bei A: bereits vergangene Monate des Jahres, um die die Zielgrössen reduziert sind (sonst 0).
+    /// For A: months of the year already past, by which the target sizes are reduced (otherwise 0).
     pub passed_months: u32,
     pub basis: NeedBasis,
     pub need: f64,
     pub target1: f64,
     pub target2: f64,
-    /// Aktienrendite für die Renditebedingung (letzte 12 Monate, mit dem Vorlauf vor dem Start) und ihre Grundlage.
+    /// Stock return for the return condition (last 12 months, including the lead-in before the start) and its basis.
     pub stock_return: f64,
     pub return_basis: String,
     pub threshold: f64,
-    /// Aktienrendite ≥ Schwelle (Verkäufe aus Topf 3 sind erlaubt). Bei A und C wird das Kriterium ignoriert.
+    /// Stock return ≥ threshold (sales from bucket 3 are allowed). For A and C the criterion is ignored.
     pub condition_met: bool,
-    /// Das Kriterium wurde ignoriert (A, B und C).
+    /// The criterion was ignored (A, B and C).
     pub condition_ignored: bool,
     pub moves: Vec<BucketMove>,
-    /// Ausgaben dieses Monats (laufende und einmalige), die nach der Auffüllung aus Topf 1 bezahlt werden.
+    /// This month's expenses (ongoing and one-off), paid from bucket 1 after the refill.
     pub payment: f64,
-    /// Stand Topf 1 (Cash), Topf 2 (Obligationen), Topf 3 (Aktien) vor und nach der Auffüllung, jeweils vor den
-    /// Ausgaben des Monats.
+    /// Balance of bucket 1 (cash), bucket 2 (bonds), bucket 3 (stocks) before and after the refill, each before the
+    /// month's expenses.
     pub before: [f64; 3],
     pub after: [f64; 3],
 }
 
-/// Prüfung der Tragbarkeit bei der Erneuerung einer Hypothekarperiode.
+/// Affordability check at the renewal of a mortgage period.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Renewal {
     pub month: YearMonth,
     pub property: String,
-    /// Die Hypothek war tragbar (keine Massnahme nötig).
+    /// The mortgage was affordable (no action needed).
     pub affordable: bool,
-    /// Einmalzahlung aus dem Vermögen (0, wenn keine nötig oder keine möglich war).
+    /// Lump sum from wealth (0 if none was needed or none was possible).
     pub lump_sum: f64,
     pub debt_before: f64,
-    /// Hypothek nach der Erneuerung (bei Notverkauf unverändert, die Immobilie wird im Folgemonat verkauft).
+    /// Mortgage after the renewal (unchanged on an emergency sale; the property is sold in the following month).
     pub debt_after: f64,
-    /// Grund des Notverkaufs: «Vermögen < 0» oder «Notverkaufskriterium»; `None`: kein Notverkauf.
+    /// Reason for the emergency sale: «Vermögen < 0» or «Notverkaufskriterium»; `None`: no emergency sale.
     pub emergency_sale: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Summary {
-    /// Notverkäufe in diesem Lauf (aus beliebigem Grund).
+    /// Emergency sales in this run (for any reason).
     pub emergency_sales: usize,
-    /// Einmalzahlungen wegen fehlender Tragbarkeit bei Erneuerungen.
+    /// Lump sums because of insufficient affordability at renewals.
     pub lump_sums: usize,
-    /// Notverkäufe wegen fehlender Tragbarkeit bei Erneuerungen.
+    /// Emergency sales because of insufficient affordability at renewals.
     pub affordability_sales: usize,
     pub end_total: f64,
     pub end_liquid: f64,
-    /// Gesamtvermögen und liquides Vermögen zum Simulationsstart (vor dem ersten Monat), nominal.
+    /// Total wealth and liquid wealth at the start of the simulation (before the first month), nominal.
     pub start_total: f64,
     pub start_liquid: f64,
-    /// Erster Monat ohne liquides Vermögen und ohne Immobilien.
+    /// First month without liquid wealth and without property.
     pub depleted: Option<YearMonth>,
     pub total_at_retirement: Option<f64>,
     pub min_liquid: f64,
@@ -371,7 +371,7 @@ pub struct Summary {
     pub lumpsum_net: f64,
     pub lumpsum_tax: f64,
     pub taxes_total: f64,
-    /// Gesamtvermögen am Ende in Preisen des Startmonats.
+    /// Total wealth at the end in prices of the start month.
     pub end_total_real: f64,
 }
 
@@ -381,36 +381,36 @@ pub struct SimResult {
     pub label: String,
     pub summary: Summary,
     pub events: Vec<Event>,
-    /// Alle Erneuerungen von Hypothekarperioden mit dem Ergebnis der Tragbarkeitsprüfung.
+    /// All renewals of mortgage periods with the result of the affordability check.
     pub renewals: Vec<Renewal>,
-    /// Alle Immobilienereignisse (Kauf, Verkauf, Notverkauf, Erneuerung) in zeitlicher Reihenfolge.
+    /// All property events (purchase, sale, emergency sale, renewal) in chronological order.
     pub property_events: Vec<PropertyEvent>,
-    /// Anwendungen der 3-Topf-Strategie mit Herleitung (leer bei anderen Strategien).
+    /// Applications of the 3-bucket strategy with derivation (empty for other strategies).
     pub bucket_refills: Vec<BucketRefill>,
-    /// Nur gefüllt, wenn mit `record = true` gerechnet wurde.
+    /// Only filled when computed with `record = true`.
     pub records: Vec<MonthRecord>,
-    /// Auszahlungsplan der Säule 3a je Konto (#55); nur mit `record = true`. Nicht Teil der gespeicherten
-    /// Ergebnisse, die Vorschau gibt ihn eigens weiter.
+    /// Pillar 3a payout plan per account (#55); only with `record = true`. Not part of the saved
+    /// results; the preview passes it on separately.
     #[serde(skip)]
     pub pillar3a: Vec<Pillar3aView>,
 }
 
-/// Säule 3a eines Kontos in der Vorschau (#55).
+/// Pillar 3a of one account in the preview (#55).
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3aView {
     pub person: String,
-    /// Guthaben jedes Monats ab Simulationsstart vor den Auszahlungen dieses Monats, bis zum AHV-Bezug.
+    /// Balance of every month from the simulation start before that month's payouts, up to the AHV payout.
     pub balances: Vec<f64>,
     pub payouts: Vec<Pillar3aPayoutView>,
-    /// Auszahlung des Rests im AHV-Bezug.
+    /// Payout of the remainder at the AHV payout.
     pub rest: Option<Pillar3aRest>,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3aPayoutView {
-    /// Zeile im Auszahlungsplan der Planung.
+    /// Row in the payout plan of the plan.
     pub index: usize,
     pub month: YearMonth,
     pub before: f64,
@@ -426,7 +426,7 @@ pub struct Pillar3aRest {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Kompilierte Planung
+// Compiled plan
 // ---------------------------------------------------------------------------------------------
 
 #[derive(Clone, Debug)]
@@ -456,34 +456,34 @@ struct CTranche {
     amount: f64,
     periods: Vec<SPeriod>,
     repay_at: Option<YearMonth>,
-    /// Person (Index), in deren Säule 3a die indirekte Amortisation fliesst (#52).
+    /// Person (index) whose pillar 3a receives the indirect amortization (#52).
     account: usize,
 }
 
-/// Zeitpunkt, der sich aus einem Verkauf während der Simulation ergibt.
+/// Point in time that results from a sale during the simulation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Trigger {
     None,
-    /// Nach dem Verkauf der letzten eigenen Immobilie.
+    /// After the sale of the last owned property.
     LastSale,
-    /// Nach dem Verkauf einer bestimmten Immobilie (Index).
+    /// After the sale of a specific property (index).
     SaleOf(usize),
 }
 
-/// Säule 3a einer Person (#52).
+/// Pillar 3a of one person (#52).
 #[derive(Clone, Debug, Default)]
 struct CAccount {
-    /// Zusatz für Ereignistexte bei zwei Personen.
+    /// Suffix for event texts with two persons.
     who: String,
     balance: f64,
     rate_m: f64,
-    /// Einzahlung pro Monat (ein Zwölftel der Jahreseinzahlung), bis vor dem AHV-Bezug.
+    /// Contribution per month (one twelfth of the annual contribution), until before the AHV payout.
     contribution_m: f64,
-    /// Person (Id), für die Anzeige des Auszahlungsplans.
+    /// Person (id), for displaying the payout plan.
     person: String,
-    /// Geplante Auszahlungen: Monat, Betrag (fehlt: ganzes Guthaben), Hypothek zurückzahlen, Zeile im Plan.
+    /// Planned payouts: month, amount (missing: whole balance), repay mortgage, row in the plan.
     payouts: Vec<(YearMonth, Option<f64>, bool, usize)>,
-    /// AHV-Bezug: Ende der Einzahlungen und der indirekten Amortisation, Auszahlung des Rests.
+    /// AHV payout: end of contributions and of indirect amortization, payout of the remainder.
     ahv: Option<YearMonth>,
     rest_repay: bool,
 }
@@ -504,22 +504,22 @@ struct CProp {
     rent_from: Option<YearMonth>,
     rent_until: Option<YearMonth>,
     rent: f64,
-    /// Kauf bzw. Miete «nach Verkauf».
+    /// Purchase or rent «nach Verkauf».
     buy_trigger: Trigger,
     rent_trigger: Trigger,
-    /// Hypothek bei Kauf: höchste Belehnung statt erfasster Beträge.
+    /// Mortgage at purchase: maximum loan-to-value instead of the entered amounts.
     max_loan: bool,
-    /// Perioden, wenn der Kaufzeitpunkt im Voraus feststeht (Besitz, geplanter Kauf mit Datum).
+    /// Periods, if the purchase date is known in advance (owned, planned purchase with date).
     tranches: Vec<CTranche>,
-    /// Definition für Käufe «nach Verkauf»; die Perioden entstehen erst beim Kauf.
+    /// Definition for purchases «nach Verkauf»; the periods are created only at the purchase.
     tranche_defs: Vec<Tranche>,
 }
 
-/// Einkommen und Vorsorge einer Person.
+/// Income and pension of one person.
 struct PersonCfg {
     birth: YearMonth,
     income: Curve,
-    /// #58: Einkommen in Preisen des Starts, mit dem Preisindex des Pfades fortgeschrieben.
+    /// #58: Income in prices of the start, extrapolated with the path's price index.
     income_indexed: bool,
     pk_contribution: Curve,
     pk_interest: Curve,
@@ -553,7 +553,7 @@ enum Rule {
     },
 }
 
-/// Anteil des Vermögens, der es in `years` Jahren bei Realrendite `r` gleichmässig aufbraucht.
+/// Share of wealth that uses it up evenly in `years` years at real return `r`.
 fn vpw_rate(r: f64, years: f64) -> f64 {
     let n = years.max(1.0);
     let rate = if r.abs() < 1e-9 {
@@ -564,7 +564,7 @@ fn vpw_rate(r: f64, years: f64) -> f64 {
     rate.clamp(0.0, 1.0)
 }
 
-/// Fixe Entnahmerate oder Guardrails.
+/// Fixed withdrawal rate or guardrails.
 #[derive(Clone, Copy, Debug)]
 struct Dynamic {
     rule: Rule,
@@ -577,12 +577,12 @@ pub struct Simulator {
     pub start: YearMonth,
     pub end: YearMonth,
     months: usize,
-    /// Hauptperson, danach (falls vorhanden) die zweite Person.
+    /// Main person, then (if present) the second person.
     people: Vec<PersonCfg>,
-    /// Plafonierung der AHV-Renten eines Ehepaars pro Monat.
+    /// Cap on a married couple's AHV pensions per month.
     couple_cap: Option<f64>,
     spending: Curve,
-    /// #53: Wohnanteil der erfassten Lebenshaltungskosten (Preise des Startmonats) und Faktor der Variation.
+    /// #53: Housing share of the entered living costs (prices of the start month) and factor of the variation.
     housing_share: f64,
     spending_factor: f64,
     savings: Curve,
@@ -594,22 +594,22 @@ pub struct Simulator {
     cash0: f64,
     extras: Vec<(YearMonth, f64, String)>,
     props: Vec<CProp>,
-    /// Säule 3a je Person (Index wie `people`).
+    /// Pillar 3a per person (index as in `people`).
     accounts: Vec<CAccount>,
-    /// Ids der Personen (für die Zuordnung der Tranchen zur Säule 3a).
+    /// Ids of the persons (for assigning the tranches to pillar 3a).
     person_ids: Vec<String>,
     taxes: crate::model::Taxes,
     pub fixed: crate::market::FixedCurves,
     pub source: ReturnSource,
     afford: Affordability,
-    /// 3-Topf-Strategie ab Pensionierung.
+    /// 3-bucket strategy from retirement.
     buckets: Option<Buckets>,
     dynamic: Option<Dynamic>,
 }
 
 impl Simulator {
     pub fn new(plan: &Plan) -> Result<Self> {
-        // Ältere Säule 3a an der Hypothek wie beim Laden übernehmen (#52).
+        // Take over older pillar 3a on the mortgage as when loading (#52).
         let normalized = crate::upgrade::normalized(plan);
         let plan: &Plan = &normalized;
         let errors: Vec<String> = validate::validate(plan)
@@ -626,7 +626,7 @@ impl Simulator {
             Strategy::FixedRate => Some(Rule::Fixed {
                 rate: w.fixed_rate.clone().unwrap_or_default().rate,
             }),
-            // #6: Bei 3-Topf mit Guardrails steuern die Guardrails die Ausgaben, die Töpfe die Anlage.
+            // #6: With «3-Topf» and guardrails, the guardrails steer spending and the buckets steer investment.
             _ if w.strategy == Strategy::Guardrails || w.buckets_with_guardrails() => {
                 let g = w.guardrails.clone().unwrap_or_default();
                 Some(Rule::Guardrails {
@@ -706,7 +706,7 @@ impl Simulator {
             .iter()
             .map(|p| compile_property(p, plan, &r, end))
             .collect::<Result<Vec<_>>>()?;
-        // Säule 3a: ein Konto je Person (ohne Angabe leer), damit die indirekte Amortisation immer ein Ziel hat.
+        // Pillar 3a: one account per person (empty if not given), so indirect amortization always has a target.
         let accounts = persons
             .iter()
             .take(people.len())
@@ -726,7 +726,7 @@ impl Simulator {
                         ..Default::default()
                     },
                     Some(a) => {
-                        // #55: Zeitpunkt als Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers.
+                        // #55: Point in time as a date or as the age of the account holder.
                         let mut payouts: Vec<_> = a
                             .payouts
                             .iter()
@@ -777,7 +777,7 @@ impl Simulator {
                 .transpose()?
                 .unwrap_or(Curve::constant(0.0)),
             stock_share: curve(&plan.wealth.stock_share)?,
-            // Einstellbar nur bei «Standard»; sonst feste Annahme (#18).
+            // Adjustable only with «Standard»; otherwise a fixed assumption (#18).
             reserve: if w.strategy == Strategy::Standard {
                 curve(&plan.wealth.reserve_months)?
             } else {
@@ -787,7 +787,7 @@ impl Simulator {
             stocks0: plan.wealth.stocks,
             bonds0: plan.wealth.bonds,
             cash0: plan.wealth.cash,
-            // Beträge vor dem Start werden im Startmonat gebucht.
+            // Amounts before the start are booked in the start month.
             extras: plan
                 .flows
                 .extras
@@ -811,14 +811,14 @@ impl Simulator {
         })
     }
 
-    /// Geplante Lebenshaltung ohne Wohnkosten im Monat `m` in Preisen des Startmonats (#53): erfasster Betrag
-    /// abzüglich Wohnanteil, mal Faktor der Variation.
+    /// Planned living costs without housing costs in month `m` in prices of the start month (#53): entered amount
+    /// minus housing share, times the factor of the variation.
     fn planned_living(&self, m: YearMonth) -> f64 {
         (self.spending.at(m) - self.housing_share) * self.spending_factor
     }
 
-    /// Erwerbseinkommen des Haushalts in diesem Monat; `infl_idx` ist der Preisindex des Pfades seit dem Start. Steigt
-    /// das Einkommen einer Person mit der Teuerung (#58), gilt ihr Betrag in Preisen des Starts.
+    /// Earned income of the household in this month; `infl_idx` is the path's price index since the start. If a
+    /// person's income rises with inflation (#58), their amount is in prices of the start.
     fn earned(&self, m: YearMonth, infl_idx: f64) -> f64 {
         self.people
             .iter()
@@ -826,7 +826,7 @@ impl Simulator {
             .sum()
     }
 
-    /// Letzter Bezug einer Pensionskasse (Pensionierung des Haushalts).
+    /// Last payout of a pension fund (retirement of the household).
     pub fn retire_at(&self) -> Option<YearMonth> {
         self.people.iter().filter_map(|p| p.pk_at).max()
     }
@@ -835,7 +835,7 @@ impl Simulator {
         self.months
     }
 
-    /// Geplante Einzahlungen in die Säule 3a im Monat `m` (bis vor dem AHV-Bezug der Person).
+    /// Planned pillar 3a contributions in month `m` (until before the person's AHV payout).
     fn pillar3a_contribution(&self, m: YearMonth) -> f64 {
         self.accounts
             .iter()
@@ -939,7 +939,7 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
     })
 }
 
-/// Person (Index), in deren Säule 3a die indirekte Amortisation einer Tranche fliesst; ohne Angabe die erste Person.
+/// Person (index) whose pillar 3a receives a tranche's indirect amortization; if not given, the first person.
 fn account_of(t: &Tranche, plan: &Plan) -> usize {
     t.pillar3a
         .as_deref()
@@ -948,8 +948,8 @@ fn account_of(t: &Tranche, plan: &Plan) -> usize {
         .min(1)
 }
 
-/// Perioden einer Tranche ab `first` bis vor `limit`; nach der letzten definierten Periode wird
-/// verlängert (`renew`) oder die Restschuld am Ende zurückbezahlt (`repay`).
+/// Periods of a tranche from `first` until before `limit`; after the last defined period the mortgage is
+/// renewed (`renew`) or the remaining debt is repaid at the end (`repay`).
 fn schedule(t: &crate::model::Tranche, first: YearMonth, limit: YearMonth) -> CTranche {
     let mut periods = vec![];
     let mut m = first;
@@ -987,26 +987,26 @@ fn schedule(t: &crate::model::Tranche, first: YearMonth, limit: YearMonth) -> CT
 }
 
 // ---------------------------------------------------------------------------------------------
-// Ein Lauf
+// One run
 // ---------------------------------------------------------------------------------------------
 
 struct PropState {
     active: bool,
     done: bool,
     price_paid: f64,
-    /// Kaufmonat (für die Besitzdauer); bei Besitz ohne Datum unbekannt.
+    /// Purchase month (for the holding period); unknown for owned property without a date.
     bought: Option<YearMonth>,
     balances: Vec<f64>,
     emergency_pending: bool,
-    /// Grund des eingeleiteten Notverkaufs.
+    /// Reason for the emergency sale that was initiated.
     emergency_reason: Option<String>,
-    /// Perioden eines Kaufs «nach Verkauf».
+    /// Periods of a purchase «nach Verkauf».
     sched: Option<Vec<CTranche>>,
-    /// Monat des Verkaufs.
+    /// Month of the sale.
     sold: Option<YearMonth>,
-    /// Kauf «nach Verkauf von …» wurde versucht.
+    /// Purchase «nach Verkauf von …» was attempted.
     attempted: bool,
-    /// Aufgelaufene, noch nicht bezahlte Hypothekarzinsen (fällig am Quartalsende).
+    /// Accrued mortgage interest not yet paid (due at quarter end).
     int_accr: f64,
 }
 
@@ -1018,18 +1018,18 @@ struct Run<'a> {
     stocks: f64,
     bonds: f64,
     people: Vec<PersonState>,
-    /// AHV-Teuerung seit dem ersten Bezug (für die Plafonierung bei Ehepaaren).
+    /// AHV inflation since the first payout (for the cap on married couples).
     ahv_scale: f64,
-    /// Steuern aus Ereignissen des Monats (3a-Auszahlung, Grundstückgewinn).
+    /// Taxes from the month's events (3a payout, property gain).
     event_tax: f64,
     infl_idx: f64,
-    /// Teuerungsindex beim letzten Januar bzw. Start (Basis der jährlichen Anpassungen).
+    /// Price index at the last January or the start (basis of the annual adjustments).
     infl_idx_jan: f64,
-    /// Bei einem Verkauf mitten im Quartal fällig gewordene Hypothekarzinsen.
+    /// Mortgage interest that fell due on a sale in the middle of a quarter.
     interest_settled: f64,
-    /// Veranlagte, noch nicht bezahlte Einkommens- und Vermögenssteuer.
+    /// Assessed income and wealth tax not yet paid.
     tax_pending: f64,
-    /// Anteile von `tax_pending` (Einkommens- und Vermögenssteuer) und Steuern des laufenden Monats nach Art.
+    /// Shares of `tax_pending` (income and wealth tax) and of the current month's taxes by kind.
     pending_income: f64,
     pending_wealth: f64,
     month_capital_tax: f64,
@@ -1037,77 +1037,77 @@ struct Run<'a> {
     year_income: f64,
     year_capital: f64,
     props: Vec<PropState>,
-    /// Guthaben der Säule 3a je Person und ob der Rest schon ausbezahlt ist (#52).
+    /// Pillar 3a balance per person and whether the remainder has already been paid out (#52).
     p3a: Vec<f64>,
     p3a_done: Vec<bool>,
-    /// Auszahlungsplan der Säule 3a je Konto für die Anzeige (#55), nur mit `record`.
+    /// Pillar 3a payout plan per account for display (#55), only with `record`.
     p3a_view: Vec<Pillar3aView>,
-    /// Einzahlung in die Säule 3a in diesem Monat.
+    /// Pillar 3a contribution in this month.
     month_p3a_in: f64,
-    /// Monat, in dem nach dem Verkauf der letzten Immobilie gekauft oder gemietet wird.
+    /// Month in which, after the sale of the last property, a property is bought or rented.
     after_sale: Option<YearMonth>,
     renting: bool,
     events: Vec<Event>,
     renewals: Vec<Renewal>,
     property_events: Vec<PropertyEvent>,
     bucket_refills: Vec<BucketRefill>,
-    /// Grundlage der Topfgrössen des laufenden Jahres (im Januar bzw. beim Auslöser A festgelegt).
+    /// Basis of the bucket sizes of the current year (set in January or at trigger A).
     basis: Option<NeedBasis>,
-    /// Externe Zuflüsse dieses Monats, die nach den Renditen in Topf 3 gebucht werden (bis dahin in `cash`).
+    /// External inflows of this month that are booked into bucket 3 after the returns (until then in `cash`).
     inflow3: f64,
-    /// Buchungsjournal der Zuflüsse dieses Monats (von, nach, Betrag, Anlass); 0 = extern, 4 = Reservierung. Wird mit
-    /// `flush_inflow` ins Protokoll geschrieben.
+    /// Booking journal of this month's inflows (from, to, amount, occasion); 0 = external, 4 = reservation. Written to
+    /// the log by `flush_inflow`.
     inflow_log: Vec<(u8, u8, f64, String)>,
-    /// Einmalige Ausgaben dieses Monats ausserhalb der Ereignisse (Eigenmittel-Rest beim Kauf, Einmalzahlungen und
-    /// Rückzahlungen der Hypothek). Sie gehören zu den Ausgaben des Monats und werden erst nach der Vorausschau bezahlt.
+    /// One-off expenses of this month outside the events (rest of the equity at a purchase, lump sums and
+    /// mortgage repayments). They belong to the month's expenses and are paid only after the look-ahead.
     month_out: f64,
-    /// #133: Hauptbuch des laufenden Monats.
+    /// #133: Ledger of the current month.
     ledger: Ledger,
-    /// Gründe für den Sonderfall A in diesem Monat.
+    /// Reasons for special case A in this month.
     a_reasons: Vec<String>,
-    /// Reservierter Verkaufserlös für einen geplanten Kauf; liegt in `cash`, gehört aber zu keinem Topf.
+    /// Reserved sale proceeds for a planned purchase; held in `cash`, but belongs to no bucket.
     reserved: f64,
-    /// Alle Töpfe leer, keine Immobilie mehr: Topf 1 darf negativ sein, Topf 2 und 3 sind stillgelegt.
+    /// All buckets empty, no property left: bucket 1 may be negative, buckets 2 and 3 are shut down.
     phase8: bool,
-    /// Aktienindex am Ende jedes Monats (für die Rendite der letzten 12 Monate), beginnend mit dem Vorlauf des Pfads
-    /// (#103): zuerst der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der Stand Ende Monat `k` liegt bei
-    /// `hist_off + k`.
+    /// Stock index at the end of every month (for the return of the last 12 months), starting with the path's lead-in
+    /// (#103): first the level before the first lead-in month, then one per lead-in month; the level at the end of
+    /// month `k` is at `hist_off + k`.
     stock_hist: Vec<f64>,
     hist_off: usize,
-    /// Anteil der Amortisation an den laufenden Wohnkosten dieses Monats (gehört nicht zum Bedarf).
+    /// Amortization share of this month's ongoing housing costs (not part of the need).
     month_amort: f64,
-    /// Anlässe, bei denen die Entnahmestrategie in diesem Monat sofort angewendet wird (Zuflüsse, Verkauf ohne Folgekauf).
+    /// Occasions on which the withdrawal strategy is applied at once in this month (inflows, sale without a follow-up purchase).
     apply_reasons: Vec<String>,
-    /// Die Entnahmestrategie wird in diesem Monat zusätzlich zur Januar-Anwendung angewendet.
+    /// The withdrawal strategy is applied this month in addition to the January application.
     apply_now: bool,
-    /// Die Strategie hat in diesem Monat erstmals begonnen (Pensionierung); das steht schon im Protokoll.
+    /// The strategy started for the first time this month (retirement); this is already in the log.
     strategy_started: bool,
-    /// Monat, in dem ein Verkaufserlös für einen Kauf im Folgemonat reserviert wurde.
+    /// Month in which sale proceeds were reserved for a purchase in the following month.
     reserved_sale: Option<YearMonth>,
-    /// Reservierter Verkaufserlös des laufenden Monats (bleibt liquide, wird nicht angelegt).
+    /// Reserved sale proceeds of the current month (stay liquid, are not invested).
     reserved_cash: f64,
     records: Vec<MonthRecord>,
     summary: Summary,
-    /// 3-Topf: Töpfe sind aufgeteilt (ab Pensionierung).
+    /// «3-Topf»: buckets are split (from retirement).
     buckets_on: bool,
-    /// Aktienrendite im laufenden Kalenderjahr (Faktor) und im Vorjahr.
+    /// Stock return in the current calendar year (factor) and in the previous year.
     stock_year: f64,
     stock_prev_year: f64,
     stock_idx: f64,
     bond_idx: f64,
-    /// Laufende Wohnkosten dieses Monats (für die Lebenshaltung der Ausgabenregel im Netto-Bedarf, #6).
+    /// Ongoing housing costs of this month (for the living costs of the spending rule in the net need, #6).
     month_running: f64,
-    /// Fixe Rate bzw. Guardrails: jährliche Entnahme (nominal), Startrate und ob sie gilt.
+    /// Fixed rate or guardrails: annual withdrawal (nominal), initial rate and whether it applies.
     budget: f64,
     budget_rate0: f64,
     budget_on: bool,
 }
 
-/// Pensionskasse und AHV einer Person im Lauf.
+/// Pension fund and AHV of one person in the run.
 #[derive(Clone, Debug, Default)]
 struct PersonState {
     pk: f64,
-    /// Aufgelaufener PK-Zins, gutgeschrieben im Dezember bzw. beim Bezug.
+    /// Accrued PK interest, credited in December or at payout.
     pk_accrued: f64,
     retired: bool,
     pk_pension: f64,
@@ -1219,7 +1219,7 @@ impl<'a> Run<'a> {
         self.people.iter().map(|p| p.pk_pension).sum()
     }
 
-    /// AHV-Renten des Haushalts; bei Ehepaaren zusammen höchstens die Plafonierung.
+    /// AHV pensions of the household; for married couples together at most the cap.
     fn ahv(&self) -> f64 {
         let sum: f64 = self.people.iter().map(|p| p.ahv).sum();
         match self.s.couple_cap {
@@ -1228,7 +1228,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Mindestens eine Person mit Bezugsdatum ist pensioniert (Beginn der Entnahmephase für alle Strategien ausser
+    /// At least one person with a payout date is retired (start of the withdrawal phase for all strategies except
     /// «Standard», #6/#47).
     fn any_retired(&self) -> bool {
         self.people
@@ -1237,7 +1237,7 @@ impl<'a> Run<'a> {
             .any(|(p, c)| c.pk_at.is_some() && p.retired)
     }
 
-    /// Betrag mit Währung für Ereignistexte.
+    /// Amount with currency for event texts.
     fn money(&self, v: f64) -> String {
         format!("{v:.0} {}", self.s.currency)
     }
@@ -1260,7 +1260,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// #133: Marktwert der Liegenschaften im Besitz.
+    /// #133: Market value of the owned properties.
     fn active_worth(&self) -> f64 {
         (0..self.props.len())
             .filter(|&i| self.props[i].active)
@@ -1275,19 +1275,19 @@ impl<'a> Run<'a> {
             .sum()
     }
 
-    /// Kapitalbezüge im selben Kalenderjahr werden für den Satz zusammengerechnet.
+    /// Lump sums in the same calendar year are added together for the rate.
     fn capital_tax(&mut self, amount: f64) -> f64 {
         let t = &self.s.taxes;
         let before = tax::tax(&t.capital, self.year_capital, t.multiplier);
         self.year_capital += amount;
-        // #134: Bei einer Tabelle mit fallender Steuer (Warnung der Prüfung) wäre der Zuwachs negativ.
+        // #134: With a table whose tax falls (warning of the validation) the increment would be negative.
         (tax::tax(&t.capital, self.year_capital, t.multiplier) - before).max(0.0)
     }
 
     fn sell(&mut self, i: usize, m: YearMonth, kind: EventKind) {
         let worth = self.worth(i);
         let debt: f64 = self.props[i].balances.iter().sum();
-        // Besitzdauer in vollen Jahren; bei Besitz ohne Kaufdatum unbekannt (kein Zu- oder Abschlag).
+        // Holding period in full years; unknown for owned property without a purchase date (no surcharge or reduction).
         let years = self.props[i].bought.map(|b| b.until(m).max(0) / 12);
         let gain_tax = tax::property_gain_tax_held(
             self.s.taxes.property_gain.as_ref(),
@@ -1330,8 +1330,8 @@ impl<'a> Run<'a> {
             self.summary.emergency_sales += 1;
             pe.reason = Some(reason.unwrap_or_else(|| "Notverkaufskriterium".into()));
         }
-        // Folgekauf im nächsten Monat: Erlös reservieren, die Entnahmestrategie erst nach dem Kauf anwenden.
-        // Sonst wird die Strategie im Verkaufsmonat sofort angewendet.
+        // Follow-up purchase next month: reserve the proceeds, apply the withdrawal strategy only after the purchase.
+        // Otherwise the strategy is applied at once in the month of the sale.
         let net = worth - debt - gain_tax;
         if net > 0.0 {
             if self.follow_up_purchase(i, m) {
@@ -1367,8 +1367,8 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Ist im Monat nach dem Verkauf von Immobilie `sold` (Monat `m`) der Kauf einer anderen Immobilie geplant?
-    /// Zählt der feste Kaufmonat M+1 und Käufe «nach Verkauf» dieser Immobilie bzw. der letzten Immobilie.
+    /// Is a purchase of another property planned in the month after the sale of property `sold` (month `m`)?
+    /// Counts the fixed purchase month M+1 and purchases «nach Verkauf» of this property or of the last property.
     fn follow_up_purchase(&self, sold: usize, m: YearMonth) -> bool {
         let other_active = self.props.iter().enumerate().any(|(j, p)| j != sold && p.active);
         self.s.props.iter().enumerate().any(|(j, p)| {
@@ -1387,9 +1387,9 @@ impl<'a> Run<'a> {
         })
     }
 
-    /// Käufe «nach Verkauf von …» im Monat nach dem jeweiligen Verkauf. Danach, falls keine
-    /// Immobilie mehr im Besitz ist: die nächste Immobilie «nach Verkauf» kaufen, sofern tragbar und
-    /// finanzierbar; sonst beginnen die Mieten «nach Verkauf».
+    /// Purchases «nach Verkauf von …» in the month after the respective sale. Afterwards, if no
+    /// property is owned any more: buy the next property «nach Verkauf», if affordable and
+    /// financeable; otherwise the rents «nach Verkauf» start.
     fn after_sales(&mut self, m: YearMonth) {
         let s = self.s;
         for i in 0..s.props.len() {
@@ -1402,8 +1402,8 @@ impl<'a> Run<'a> {
             }
             self.props[i].attempted = true;
             if !self.try_buy(i, m) {
-                // Kauf nicht finanzierbar: Der Kauf entfällt, die Folgeregeln greifen im Folgemonat
-                // (Miete «nach Verkauf» dieser Immobilie, weitere Käufe «nach Verkauf» davon).
+                // Purchase not financeable: the purchase is dropped, the follow-up rules apply in the following month
+                // (rent «nach Verkauf» of this property, further purchases «nach Verkauf» of it).
                 self.props[i].done = true;
                 self.props[i].sold = Some(m);
                 let text = format!(
@@ -1442,9 +1442,9 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Laufende Wohnkosten pro Monat (Zins, Amortisation, Nebenkosten) aller aktiven Immobilien, um das
-    /// Notverkaufskriterium nach einer Einmalzahlung zu schätzen. Die Salden der Immobilie `only` werden
-    /// mit `keep` skaliert; ihre Tranchen kommen von `only_tranches` (sie sind während der Erneuerung herausgenommen).
+    /// Ongoing housing costs per month (interest, amortization, fix costs) of all active properties, to estimate the
+    /// emergency sale criterion after a lump sum. The balances of property `only` are scaled
+    /// by `keep`; its tranches come from `only_tranches` (they are taken out during the renewal).
     fn running_estimate(&self, m: YearMonth, k: usize, only: usize, only_tranches: &[CTranche], keep: f64) -> f64 {
         let s = self.s;
         let saron = self.path.saron[k];
@@ -1477,7 +1477,7 @@ impl<'a> Run<'a> {
         total
     }
 
-    /// Zinssatz der neuen Periode: Durchschnitt der Tranchen, gewichtet mit ihren Salden (mal `keep`).
+    /// Rate of the new period: average of the tranches, weighted by their balances (times `keep`).
     fn renewal_rate(&self, i: usize, m: YearMonth, k: usize, tranches: &[CTranche], keep: f64) -> f64 {
         let saron = self.path.saron[k];
         let (mut sum, mut weighted) = (0.0, 0.0);
@@ -1500,7 +1500,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Hält eine Erneuerung im Protokoll fest (`renewals`) und in der gemeinsamen Liste der Immobilienereignisse.
+    /// Records a renewal in the log (`renewals`) and in the common list of property events.
     fn push_renewal(&mut self, record: Renewal, rate: f64) {
         let mut pe = PropertyEvent::new(record.month, PropertyEventKind::Renewal, &record.property);
         pe.affordable = Some(record.affordable);
@@ -1513,14 +1513,14 @@ impl<'a> Run<'a> {
         self.renewals.push(record);
     }
 
-    /// Tragbarkeit bei der Erneuerung einer Hypothekarperiode (kalkulatorischer Zins, nur Einkommen).
-    /// - Tragbar: nichts zu tun.
-    /// - Nicht tragbar: minimale Einmalzahlung, damit sie es wieder ist. Sie wird aus dem Vermögen bezahlt
-    ///   und die Hypothek reduziert erneuert, wenn das Vermögen danach >= 0 ist **und** das Notverkaufskriterium
-    ///   nach der Zahlung nicht ausgelöst wird (geschätzt mit den geplanten Ausgaben und den Wohnkosten nach der Zahlung).
-    /// - Sonst: keine Zahlung, die Hypothek wird nicht erneuert und ein Notverkauf eingeleitet (Folgemonat).
+    /// Affordability at the renewal of a mortgage period (imputed rate, income only).
+    /// - Affordable: nothing to do.
+    /// - Not affordable: minimal lump sum so that it is affordable again. It is paid from wealth
+    ///   and the mortgage is renewed at a reduced amount if wealth is >= 0 afterwards **and** the emergency sale
+    ///   criterion is not triggered after the payment (estimated with the planned spending and the housing costs after the payment).
+    /// - Otherwise: no payment, the mortgage is not renewed and an emergency sale is initiated (following month).
     ///
-    /// Gibt `true` zurück, wenn die Hypothek erneuert wird.
+    /// Returns `true` if the mortgage is renewed.
     fn renewal_affordability(&mut self, i: usize, m: YearMonth, k: usize, tranches: &[CTranche]) -> bool {
         let s = self.s;
         let p = &s.props[i];
@@ -1554,7 +1554,7 @@ impl<'a> Run<'a> {
         }
         let liquid = self.cash + self.stocks + self.bonds;
         let keep = max / debt;
-        // Nach der Zahlung: Vermögen >= 0 und Notverkaufskriterium nicht ausgelöst?
+        // After the payment: wealth >= 0 and emergency sale criterion not triggered?
         let reason = if liquid - lump < 0.0 {
             Some("Vermögen < 0")
         } else {
@@ -1598,8 +1598,8 @@ impl<'a> Run<'a> {
         true
     }
 
-    /// Kauf mit Tragbarkeitsprüfung. Ist die gewünschte Hypothek nicht tragbar, wird sie gekürzt
-    /// und die Differenz aus dem Vermögen bezahlt, sofern es reicht.
+    /// Purchase with affordability check. If the desired mortgage is not affordable, it is reduced
+    /// and the difference is paid from wealth, as far as it suffices.
     fn try_buy(&mut self, i: usize, m: YearMonth) -> bool {
         let s = self.s;
         let p = &s.props[i];
@@ -1607,19 +1607,19 @@ impl<'a> Run<'a> {
         let price = if p.infl_value { p.price * self.infl_idx } else { p.price };
         let entered: f64 = p.tranche_defs.iter().map(|t| t.amount).sum();
         let liquid = self.cash + self.stocks + self.bonds;
-        // Tragbarkeit: nur Einkommen (Erwerb, Renten), keine Entnahme aus dem Vermögen.
+        // Affordability: income only (earned income, pensions), no withdrawal from wealth.
         let income = (s.earned(m, self.infl_idx) + self.pk_pension() + self.ahv()) * 12.0;
         let fix = if p.fix_costs > 0.0 {
             p.fix_costs * 12.0
         } else {
             price * a.fix_costs
         };
-        // Gewünschte Hypothek: höchste Belehnung oder die erfassten Beträge, höchstens die Belehnungsgrenze.
+        // Desired mortgage: maximum loan-to-value or the entered amounts, at most the loan-to-value limit.
         let ltv = price * a.max_loan_to_value;
         let cap = if p.max_loan { ltv } else { entered.min(ltv) };
         let max = ((a.sustainability * income - fix) / a.imputed_rate).max(0.0);
         let mortgage = cap.min(max);
-        // Einmalrückzahlung: Teil der gewünschten Hypothek, der für die Tragbarkeit aus dem Vermögen bezahlt wird.
+        // One-off repayment: part of the desired mortgage paid from wealth for affordability.
         let lump = cap - mortgage;
         if liquid < price - mortgage {
             self.event(
@@ -1634,7 +1634,7 @@ impl<'a> Run<'a> {
             );
             return false;
         }
-        // Die Hypothek wird im Verhältnis der erfassten Beträge auf die Tranchen verteilt.
+        // The mortgage is split across the tranches in proportion to the entered amounts.
         let n = p.tranche_defs.len().max(1) as f64;
         let share = |t: &Tranche| {
             if entered > 0.0 {
@@ -1689,7 +1689,7 @@ impl<'a> Run<'a> {
         true
     }
 
-    /// Wohnkosten dieses Monats (inkl. Amortisation) und geglättete laufende Kosten für die Reserve.
+    /// Housing costs of this month (including amortization) and smoothed ongoing costs for the reserve.
     fn properties(&mut self, k: usize, m: YearMonth) -> (f64, f64) {
         let s = self.s;
         let saron = self.path.saron[k];
@@ -1759,15 +1759,15 @@ impl<'a> Run<'a> {
             let fix = p.fix_costs * if p.infl_fix_costs { self.infl_idx } else { 1.0 };
             cost += fix;
             running += fix;
-            // Perioden eines Kaufs «nach Verkauf» liegen im Laufzustand; kurz herausnehmen.
+            // Periods of a purchase «nach Verkauf» are held in the run state; take them out briefly.
             let dynamic = self.props[i].sched.take();
             let tranches = dynamic.as_deref().unwrap_or(&p.tranches);
-            // Erneuert eine Tranche ihre Periode, prüft die Bank die Tragbarkeit der ganzen Hypothek neu.
+            // When a tranche renews its period, the bank re-checks the affordability of the whole mortgage.
             let renews = k > 0
                 && tranches.iter().enumerate().any(|(j, t)| {
                     self.props[i].balances[j] > 0.0 && t.periods.iter().any(|x| x.index > 0 && x.start == m)
                 });
-            // Nicht tragbar und nicht bezahlbar: Die Hypothek wird nicht erneuert (Notverkauf eingeleitet).
+            // Not affordable and not payable: the mortgage is not renewed (emergency sale initiated).
             let renewed = !renews || self.renewal_affordability(i, m, k, tranches);
             for (j, t) in tranches.iter().enumerate() {
                 let per = t.periods.iter().find(|x| x.start <= m && m < x.end);
@@ -1802,8 +1802,8 @@ impl<'a> Run<'a> {
                     );
                     continue;
                 }
-                // #50: Im Monat des AHV-Bezugs wechselt eine indirekt amortisierte Tranche auf direkt; als Ereignis
-                // zeigen, wenn vorher indirekt amortisiert wurde und ab jetzt weiter amortisiert wird.
+                // #50: In the month of the AHV payout an indirectly amortized tranche switches to direct; shown as an event
+                // if it was amortized indirectly before and amortization continues from now on.
                 if k > 0 && b > 0.0 {
                     let a = t.account.min(s.accounts.len().saturating_sub(1));
                     if let Some(c) = s.accounts.get(a).filter(|c| c.ahv == Some(m)) {
@@ -1836,7 +1836,7 @@ impl<'a> Run<'a> {
                         running += x.amort_q / 3.0;
                         self.month_amort += x.amort_q / 3.0;
                         if m.is_quarter_end() {
-                            // #50: Indirekt nur bis vor dem AHV-Bezug der Person; danach direkt.
+                            // #50: Indirect only until before the person's AHV payout; direct afterwards.
                             let a = t.account.min(s.accounts.len().saturating_sub(1));
                             let after_ahv = s.accounts.get(a).is_some_and(|c| c.ahv.is_some_and(|h| m >= h));
                             if x.direct || after_ahv || s.accounts.is_empty() {
@@ -1854,7 +1854,7 @@ impl<'a> Run<'a> {
                 }
             }
             self.props[i].sched = dynamic;
-            // Zinsen werden monatlich aufgelaufen und am Quartalsende bezahlt (am Planende der Rest).
+            // Interest accrues monthly and is paid at quarter end (the remainder at the end of the plan).
             if m.is_quarter_end() || k + 1 == s.months {
                 cost += std::mem::take(&mut self.props[i].int_accr);
             }
@@ -1866,8 +1866,8 @@ impl<'a> Run<'a> {
         (cost, running)
     }
 
-    /// Säule 3a (#52): Zins, Einzahlung bis vor dem AHV-Bezug, geplante Auszahlungen und Auszahlung des Rests im
-    /// Monat des AHV-Bezugs. Liefert die Einzahlung des Monats (sie zählt zu den Ausgaben).
+    /// Pillar 3a (#52): interest, contribution until before the AHV payout, planned payouts and payout of the remainder in
+    /// the month of the AHV payout. Returns the month's contribution (it counts as spending).
     fn pillar3a(&mut self, m: YearMonth) -> f64 {
         let s = self.s;
         let mut paid_in = 0.0;
@@ -1933,8 +1933,8 @@ impl<'a> Run<'a> {
         paid_in
     }
 
-    /// Auszahlung aus der Säule 3a mit Kapitalbezugssteuer; auf Wunsch zuerst an die Tranchen mit indirekter
-    /// Amortisation in dieses Konto, der Rest ins Vermögen.
+    /// Payout from pillar 3a with lump-sum tax; if requested, first to the tranches with indirect
+    /// amortization into this account, the rest into wealth.
     fn pay_out_3a(&mut self, a: usize, m: YearMonth, gross: f64, repay: bool, what: &str) {
         let s = self.s;
         if gross <= 0.0 {
@@ -1991,8 +1991,8 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// AHV- und PK-Rente im Monat `mm` für die Planung des laufenden Jahres: laufende Renten wie heute, noch nicht
-    /// begonnene ab ihrem Datum (PK-Rente aus dem heutigen Guthaben geschätzt).
+    /// AHV and PK pension in month `mm` for planning the current year: running pensions as today, those not yet
+    /// started from their date (PK pension estimated from today's balance).
     fn pensions_at(&self, mm: YearMonth) -> (f64, f64) {
         let (mut ahv, mut pk) = (0.0, 0.0);
         for (st, c) in self.people.iter().zip(&self.s.people) {
@@ -2018,14 +2018,14 @@ impl<'a> Run<'a> {
         (ahv, pk)
     }
 
-    /// Netto-Bedarf aus den geplanten Werten des laufenden Jahres ab Monat `m` bis Dezember (höchstens bis zum Planende),
-    /// auf 12 Monate hochgerechnet. `housing_now` sind die laufenden Wohnkosten ohne Amortisation dieses Monats.
+    /// Net need from the planned values of the current year from month `m` until December (at most until the end of the plan),
+    /// extrapolated to 12 months. `housing_now` are this month's ongoing housing costs without amortization.
     fn plan_basis(&self, m: YearMonth, housing_now: f64, source: String) -> NeedBasis {
         let s = self.s;
         let last = s.start.plus(s.months as i32 - 1);
         let (mut living, mut housing, mut ahv, mut pk, mut earned, mut p3a) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut n = 0u32;
-        // #6: Steuert eine Ausgabenregel (Guardrails) die Ausgaben, kommt die Lebenshaltung aus ihr.
+        // #6: If a spending rule (guardrails) steers spending, the living costs come from it.
         let rule = s.dynamic.filter(|_| self.budget_on);
         for i in 0..(13 - m.month() as i32) {
             let mm = m.plus(i);
@@ -2066,12 +2066,12 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Aktienrendite für die Renditebedingung (#103): die letzten 12 Monate einschliesslich des laufenden, als Verhältnis
-    /// der Indexstände; der Vorlauf des Pfads liefert die Monate vor dem Start. Fehlt er ganz oder teilweise (Reihe beginnt
-    /// erst später), gilt die Rendite seit dem frühesten bekannten Stand («seit Start»).
+    /// Stock return for the return condition (#103): the last 12 months including the current one, as the ratio
+    /// of the index levels; the path's lead-in supplies the months before the start. If it is missing entirely or partly (series
+    /// starts later), the return since the earliest known level applies («seit Start»).
     fn stock_return(&self, k: usize) -> (f64, &'static str) {
         let h = &self.stock_hist;
-        // Vor dem Renditeschritt des Monats (Vorschau) fehlt der laufende Monat: dann gilt der letzte vorhandene
+        // Before the month's return step (preview) the current month is missing: then the last available one applies
         let i = (self.hist_off + k).min(h.len() - 1);
         if i >= 12 {
             (h[i] / h[i - 12] - 1.0, "letzte 12 Monate")
@@ -2080,7 +2080,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Bucht `amount` von Topf `from` nach Topf `to` um und hält es fest (1 = Cash, 2 = Obligationen, 3 = Aktien).
+    /// Transfers `amount` from bucket `from` to bucket `to` and records it (1 = cash, 2 = bonds, 3 = stocks).
     fn bucket_move(&mut self, from: u8, to: u8, amount: f64, moves: &mut Vec<BucketMove>) {
         if amount <= 1e-9 {
             return;
@@ -2098,18 +2098,18 @@ impl<'a> Run<'a> {
         moves.push(BucketMove { from, to, amount });
     }
 
-    /// Zufluss in das Cash. Bei aktiver 3-Topf-Strategie gehört er in Topf 3 (Sonderfall B).
+    /// Inflow into cash. With an active 3-bucket strategy it belongs in bucket 3 (special case B).
     fn inflow(&mut self, amount: f64, why: &str) {
         self.cash += amount;
         self.mark_inflow(amount, why);
     }
 
-    /// Vermerkt einen bereits in `cash` gebuchten Zufluss für Topf 3; die Umbuchung folgt nach den Renditen.
+    /// Notes an inflow already booked in `cash` for bucket 3; the transfer follows after the returns.
     fn mark_inflow(&mut self, amount: f64, why: &str) {
         self.mark_inflow_from(0, amount, why);
     }
 
-    /// Wie `mark_inflow`; `from` ist 0 (extern) oder 4 (Reservierung).
+    /// Like `mark_inflow`; `from` is 0 (external) or 4 (reservation).
     fn mark_inflow_from(&mut self, from: u8, amount: f64, why: &str) {
         if amount > 0.0 && self.buckets_active() {
             self.inflow3 += amount;
@@ -2117,28 +2117,28 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Verkaufserlös, der für einen Kauf im Folgemonat reserviert wird (gehört zu keinem Topf).
+    /// Sale proceeds reserved for a purchase in the following month (belong to no bucket).
     fn mark_reservation(&mut self, amount: f64, why: &str) {
         if amount > 0.0 && self.buckets_active() {
             self.inflow_log.push((0, 4, amount, why.to_string()));
         }
     }
 
-    /// Die 3-Topf-Strategie läuft und Topf 2 und 3 sind nicht stillgelegt.
+    /// The 3-bucket strategy is running and buckets 2 and 3 are not shut down.
     fn buckets_active(&self) -> bool {
         self.s.buckets.is_some() && self.buckets_on && !self.phase8
     }
 
-    /// Eigenmittel eines Kaufs: zuerst aus der Reservierung, der Rest belastet Topf 1.
+    /// Equity of a purchase: first from the reservation, the rest is charged to bucket 1.
     fn pay_equity(&mut self, equity: f64) {
         self.cash -= equity;
         let from_reservation = self.reserved.min(equity.max(0.0));
         self.reserved -= from_reservation;
-        // Der Rest ist eine einmalige Ausgabe dieses Monats: vorgemerkt, nicht sofort aus Topf 1 bezahlt
+        // The rest is a one-off expense of this month: noted, not paid from bucket 1 at once
         self.month_out += equity - from_reservation;
     }
 
-    /// Protokolleintrag der 3-Topf-Strategie.
+    /// Log entry of the 3-bucket strategy.
     #[allow(clippy::too_many_arguments)]
     fn log_buckets(
         &mut self,
@@ -2181,10 +2181,10 @@ impl<'a> Run<'a> {
         });
     }
 
-    /// Sonderfall B: Zuflüsse ins Protokoll schreiben und die Beträge für Topf 3 von `cash` nach Topf 3 buchen (keine
-    /// Auffüllung von Topf 1 oder 2). Das Protokoll zeigt Topf 1 ohne den Zufluss, der Zufluss erscheint als Buchung
-    /// «extern → Topf 3», «extern → Reservierung» oder «Reservierung → Topf 3».
-    /// `shift` rechnet den Stand von Topf 1 im Protokoll auf «vor den Ausgaben» um (0, wenn `cash` schon so geführt wird).
+    /// Special case B: write inflows to the log and book the amounts for bucket 3 from `cash` to bucket 3 (no
+    /// refill of bucket 1 or 2). The log shows bucket 1 without the inflow; the inflow appears as the booking
+    /// «extern → Topf 3», «extern → Reservierung» or «Reservierung → Topf 3».
+    /// `shift` converts the balance of bucket 1 in the log to «before expenses» (0 if `cash` is already kept that way).
     fn flush_inflow(&mut self, b: &Buckets, m: YearMonth, k: usize, pay: f64, shift: f64) {
         let amount = std::mem::take(&mut self.inflow3);
         let log = std::mem::take(&mut self.inflow_log);
@@ -2193,9 +2193,9 @@ impl<'a> Run<'a> {
         }
         let t1 = self.cash + shift - amount;
         let t = self.target_pair(b, 0, 0.0);
-        // Herkunft eines Zuflusses: 0 = extern, 4 = Reservierung
+        // Source of an inflow: 0 = external, 4 = reservation
         let name = |x: u8| if x == 0 { "extern" } else { "Reservierung" };
-        // Reservierungen (extern → Reservierung): kein Topf ändert sich
+        // Reservations (external → reservation): no bucket changes
         for (from, to, amt, why) in log.iter().filter(|x| x.1 == 4) {
             let st = [t1, self.bonds, self.stocks];
             let text = format!("3-Topf Zufluss in die Reservierung ({why}): {}", self.money(*amt));
@@ -2261,17 +2261,17 @@ impl<'a> Run<'a> {
         );
     }
 
-    /// Zielgrössen von Topf 1 und 2, um `passed` bereits vergangene Monate des Jahres reduziert.
-    /// Das Ziel von Topf 1 enthält zusätzlich die einmaligen Ausgaben `one_off` dieses Monats.
+    /// Target sizes of buckets 1 and 2, reduced by `passed` months of the year already past.
+    /// The target of bucket 1 also includes this month's one-off expenses `one_off`.
     fn target_pair(&self, b: &Buckets, passed: u32, one_off: f64) -> (f64, f64) {
         let need = self.basis.as_ref().map_or(0.0, NeedBasis::need);
         let t = |years: f64| (years * 12.0 - f64::from(passed)).max(0.0) / 12.0 * need;
         (t(b.cash_years) + one_off, t(b.bond_years))
     }
 
-    /// Gemeinsame Auffüllung der Töpfe für die Januar-Auffüllung, den Sonderfall A und C1. Nur in der Januar-Auffüllung
-    /// (`surplus`) geht ein Überschuss in Topf 1 oder 2 in Topf 3. Topf 1 wird zuerst aus Topf 2 aufgefüllt. Verkäufe aus Topf 3 (Rest für Topf 1, dann Topf 2) nur,
-    /// wenn das Renditekriterium erfüllt ist oder ignoriert wird (`ignore`).
+    /// Common refill of the buckets for the January refill, special case A and C1. Only in the January refill
+    /// (`surplus`) does a surplus in bucket 1 or 2 go to bucket 3. Bucket 1 is refilled from bucket 2 first. Sales from bucket 3 (rest for bucket 1, then bucket 2) only
+    /// if the return criterion is met or ignored (`ignore`).
     fn fill_pots(
         &mut self,
         b: &Buckets,
@@ -2285,7 +2285,7 @@ impl<'a> Run<'a> {
         let (ret, ret_basis) = self.stock_return(k);
         let met = ret >= b.refill_threshold;
         let sell_ok = met || ignore;
-        // Überschussbuchung in Topf 3 nur bei der Januar-Auffüllung
+        // Surplus booking into bucket 3 only at the January refill
         if surplus && self.cash > t1 {
             self.bucket_move(1, 3, self.cash - t1, &mut moves);
         }
@@ -2345,15 +2345,15 @@ impl<'a> Run<'a> {
         );
     }
 
-    /// Sonderfall C: Deckt Topf 1 die Ausgaben dieses Monats nicht (`pay` sind bereits abgebucht), hängt der Ablauf vom
-    /// Renditekriterium ab.
-    /// **C1** (erfüllt): wie die Januar-Auffüllung (Topf 1 aus Topf 2, Rest aus Topf 3, dann Topf 2 aus Topf 3), die Ziele um
-    /// die seit Januar vergangenen Monate gekürzt, das Ziel von Topf 1 plus die einmaligen Ausgaben `one_off`; keine
-    /// Überschussbuchung. Deckt Topf 1 danach die Ausgaben immer noch nicht, folgt C2.
-    /// **C2** (nicht erfüllt): Topf 1 wird aus Topf 2, dann Topf 3 so aufgefüllt, dass er die Ausgaben deckt und danach
-    /// noch (Min(Reserve, Monate bis Januar) − 1) Monatsbedarfe enthält; Topf 2 wird nicht aufgefüllt.
-    /// Reicht das nicht, wird eine Immobilie notverkauft (Erlös in Topf 3, dann C erneut); ohne Immobilie beginnt die
-    /// Phase 8 (Topf 1 darf negativ sein, Topf 2 und 3 sind stillgelegt).
+    /// Special case C: if bucket 1 does not cover this month's expenses (`pay` are already deducted), the procedure
+    /// depends on the return criterion.
+    /// **C1** (met): like the January refill (bucket 1 from bucket 2, rest from bucket 3, then bucket 2 from bucket 3), the targets
+    /// reduced by the months passed since January, the target of bucket 1 plus the one-off expenses `one_off`; no
+    /// surplus booking. If bucket 1 still does not cover the expenses afterwards, C2 follows.
+    /// **C2** (not met): bucket 1 is refilled from bucket 2, then bucket 3, so that it covers the expenses and afterwards
+    /// still holds (min(reserve, months until January) − 1) monthly needs; bucket 2 is not refilled.
+    /// If that is not enough, a property is sold in an emergency sale (proceeds into bucket 3, then C again); without property
+    /// phase 8 starts (bucket 1 may be negative, buckets 2 and 3 are shut down).
     fn cover_payments(&mut self, b: &Buckets, m: YearMonth, k: usize, pay: f64, one_off: f64) {
         for _ in 0..=self.props.len() {
             if self.cash - self.reserved >= -0.005 {
@@ -2361,7 +2361,7 @@ impl<'a> Run<'a> {
             }
             let (ret, _) = self.stock_return(k);
             if ret >= b.refill_threshold {
-                // C1: Ablauf der Januar-Auffüllung auf dem Stand vor den Ausgaben
+                // C1: procedure of the January refill on the balance before the expenses
                 let passed = m.month() - 1;
                 self.cash -= self.reserved;
                 self.cash += pay;
@@ -2381,7 +2381,7 @@ impl<'a> Run<'a> {
                     return;
                 }
             }
-            // C2 (auch als Rückfall, wenn C1 nicht reicht)
+            // C2 (also as fallback when C1 is not enough)
             let free = self.cash - self.reserved;
             let month_need = self.basis.as_ref().map_or(0.0, NeedBasis::need) / 12.0;
             let months_to_jan = f64::from(13 - m.month());
@@ -2412,7 +2412,7 @@ impl<'a> Run<'a> {
             if free_after >= -0.005 {
                 return;
             }
-            // Topf 2 und 3 reichen nicht: Notverkauf einer Immobilie, sonst Phase 8
+            // Buckets 2 and 3 are not enough: emergency sale of a property, otherwise phase 8
             if let Some(i) = self.props.iter().position(|p| p.active) {
                 self.props[i].emergency_reason = Some("Topf 1, 2 und 3 reichen für die Ausgaben nicht".into());
                 self.sell(i, m, EventKind::EmergencySale);
@@ -2433,12 +2433,12 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// 3-Topf-Strategie für diesen Monat, nach Renditen und Steuern. `pay` sind die Ausgaben des Monats (laufende und
-    /// einmalige), die schon von `cash` abgezogen sind. Die Entscheidungen gelten für den Stand vor diesen Ausgaben
-    /// (Reihenfolge: Einnahmen, Käufe, Zuflüsse B, Januar-Auffüllung oder A, Vorausschau C, Ausgaben); die Umbuchungen
-    /// selbst folgen erst nach den Renditen.
+    /// 3-bucket strategy for this month, after returns and taxes. `pay` are the month's expenses (ongoing and
+    /// one-off), already deducted from `cash`. The decisions apply to the balance before these expenses
+    /// (order: income, purchases, inflows B, January refill or A, look-ahead C, expenses); the transfers
+    /// themselves follow only after the returns.
     fn bucket_step(&mut self, b: &Buckets, m: YearMonth, k: usize, pay: f64, one_off: f64, housing_now: f64) {
-        // Phase 8: nur Topf 1 zählt; sobald das Vermögen wieder positiv ist, beginnt A neu
+        // Phase 8: only bucket 1 counts; as soon as wealth is positive again, A starts anew
         let mut collect = false;
         if self.phase8 {
             if self.cash - self.reserved < 0.0 {
@@ -2454,7 +2454,7 @@ impl<'a> Run<'a> {
             self.buckets_on = true;
             self.a_reasons.push("Start der Entnahmephase".into());
         }
-        // Stand vor den Ausgaben des Monats; die Reservierung gehört zu keinem Topf
+        // Balance before the month's expenses; the reservation belongs to no bucket
         self.cash -= self.reserved;
         self.cash += pay;
         self.flush_inflow(b, m, k, pay, 0.0);
@@ -2474,7 +2474,7 @@ impl<'a> Run<'a> {
             let before = [self.cash, self.bonds, self.stocks];
             let mut moves: Vec<BucketMove> = vec![];
             if collect {
-                // Gesamtes liquides Vermögen zuerst in Topf 3
+                // All liquid wealth into bucket 3 first
                 self.bucket_move(1, 3, self.cash.max(0.0), &mut moves);
                 self.bucket_move(2, 3, self.bonds.max(0.0), &mut moves);
             }
@@ -2497,8 +2497,8 @@ impl<'a> Run<'a> {
         self.cover_payments(b, m, k, pay, one_off);
     }
 
-    /// Lebenshaltung eines Monats nach der Ausgabenregel: Entnahme / 12 + Sparen + Einkommen und Renten − Wohnkosten,
-    /// begrenzt durch Unter- und Obergrenze (Anteile der geplanten Ausgaben).
+    /// Living costs of one month by the spending rule: withdrawal / 12 + savings + income and pensions − housing costs,
+    /// limited by floor and ceiling (shares of the planned spending).
     fn rule_living(&self, d: &Dynamic, m: YearMonth, income: f64, housing: f64) -> f64 {
         let s = self.s;
         let planned = s.planned_living(m) * self.infl_idx;
@@ -2512,9 +2512,9 @@ impl<'a> Run<'a> {
         l
     }
 
-    /// Jährliche Entnahme bei Pensionierung festlegen und jeden Januar anpassen.
+    /// Set the annual withdrawal at retirement and adjust it every January.
     fn update_budget(&mut self, d: &Dynamic, m: YearMonth, infl_factor: f64) {
-        // #6: Ein für einen Kauf reservierter Verkaufserlös zählt nicht zum Vermögen der Ausgabenregel.
+        // #6: Sale proceeds reserved for a purchase do not count towards the wealth of the spending rule.
         let liquid = (self.cash + self.stocks + self.bonds - self.reserved).max(0.0);
         if !self.budget_on {
             self.budget_on = true;
@@ -2559,7 +2559,7 @@ impl<'a> Run<'a> {
                 upper, lower, adjust, ..
             } => {
                 let current = |b: f64| if liquid > 0.0 { b / liquid } else { f64::INFINITY };
-                // Nach einem Verlustjahr keine Teuerungsanpassung, solange die Rate über der Startrate liegt.
+                // After a losing year no inflation adjustment while the rate is above the initial rate.
                 if !(self.stock_prev_year < 0.0 && current(self.budget) > self.budget_rate0) {
                     self.budget *= infl_factor;
                 }
@@ -2595,7 +2595,7 @@ impl<'a> Run<'a> {
 
     fn execute(mut self) -> SimResult {
         let s = self.s;
-        // Startaufteilung mit den Werten des Startmonats.
+        // Initial split with the values of the start month.
         {
             let m = s.start;
             let mut running = 0.0;
@@ -2610,8 +2610,8 @@ impl<'a> Run<'a> {
                     }
                 }
             }
-            // #54: Vor der Pensionierung gilt keine Entnahmestrategie; die Bestände bei Simulationsstart werden
-            // unverändert übernommen. Ist schon jemand pensioniert, teilt die Strategie wie bisher auf.
+            // #54: Before retirement no withdrawal strategy applies; the holdings at the simulation start are
+            // taken over unchanged. If someone is already retired, the strategy splits as before.
             if s.people.iter().any(|p| p.pk_at.is_some_and(|a| a <= m)) {
                 let gap = (s.planned_living(m) + running - s.earned(m, self.infl_idx)).max(0.0);
                 self.rebalance(gap * s.reserve.at(m), s.stock_share.at(m).clamp(0.0, 1.0));
@@ -2628,8 +2628,8 @@ impl<'a> Run<'a> {
         for k in 0..s.months {
             let m = s.start.plus(k as i32);
             let december = m.is_december();
-            // Neuer Monat: Anlässe für die sofortige Anwendung der Entnahmestrategie sammeln; ein im Vormonat
-            // reservierter Verkaufserlös wird nach dem Kauf (unten, danach Strategie) auf den Überschuss angewendet.
+            // New month: collect occasions for applying the withdrawal strategy at once; sale proceeds reserved in the
+            // previous month are applied to the surplus after the purchase (below, then the strategy).
             self.apply_reasons.clear();
             self.a_reasons.clear();
             self.month_out = 0.0;
@@ -2648,8 +2648,8 @@ impl<'a> Run<'a> {
             self.month_capital_tax = 0.0;
             self.month_gain_tax = 0.0;
             let mut infl_factor = 1.0;
-            // Teuerung monatlich mit der Inflation des Vormonats. Beträge gelten in Preisen des
-            // Startmonats. AHV und Entnahmebudget folgen im Januar mit der aufgelaufenen Teuerung.
+            // Inflation monthly with the previous month's inflation. Amounts are in prices of the
+            // start month. AHV and the withdrawal budget follow in January with the accrued inflation.
             if k > 0 {
                 let before = self.active_worth();
                 self.infl_idx *= (1.0 + self.path.inflation[k - 1]).max(0.0).powf(1.0 / 12.0);
@@ -2659,7 +2659,7 @@ impl<'a> Run<'a> {
                 let factor = self.infl_idx / self.infl_idx_jan;
                 self.infl_idx_jan = self.infl_idx;
                 infl_factor = factor;
-                // #145: Der Plafond steigt einmal je Januar, sobald mindestens eine angepasste Rente läuft (nicht je Person).
+                // #145: The cap rises once per January as soon as at least one indexed pension is running (not per person).
                 let mut indexed = false;
                 for (st, c) in self.people.iter_mut().zip(&s.people) {
                     if st.ahv_started && c.ahv_indexed {
@@ -2672,7 +2672,7 @@ impl<'a> Run<'a> {
                 }
             }
 
-            // Ereignisse
+            // Events
             let mut extras_out = 0.0;
             for (em, amount, label) in &s.extras {
                 if *em == m {
@@ -2750,24 +2750,24 @@ impl<'a> Run<'a> {
                 }
             }
             let (prop_cost, prop_running) = self.properties(k, m);
-            // #52: Einzahlung in die Säule 3a zählt zu den Ausgaben (wie die Wohnkosten).
+            // #52: The pillar 3a contribution counts as spending (like housing costs).
             let p3a_in = self.pillar3a(m);
             self.month_p3a_in = p3a_in;
             if leftover {
-                // Überschuss der Reservierung nach dem Kauf: in Topf 3
+                // Surplus of the reservation after the purchase: into bucket 3
                 let rest = std::mem::take(&mut self.reserved);
                 self.mark_inflow_from(4, rest, "Überschuss der Reservierung nach dem Kauf");
             }
-            // Reihenfolge im Monat: Zuflüsse, Käufe/Verkäufe (oben), dann die Strategie; einmal pro Monat, auch im Januar.
+            // Order within the month: inflows, purchases/sales (above), then the strategy; once per month, also in January.
             self.apply_now = !self.apply_reasons.is_empty();
 
-            // Geldflüsse
+            // Cash flows
             let earned = s.earned(m, self.infl_idx);
             let pk_pension = self.pk_pension();
             let ahv = self.ahv();
             let income = earned + pk_pension + ahv;
             let planned = s.planned_living(m) * self.infl_idx;
-            // #6/#47: Die Ausgabenregel gilt ab der Pensionierung der ersten Person.
+            // #6/#47: The spending rule applies from the retirement of the first person.
             let living = match s.dynamic {
                 Some(d) if self.any_retired() => {
                     self.update_budget(&d, m, infl_factor);
@@ -2783,7 +2783,7 @@ impl<'a> Run<'a> {
             self.ledger.housing += prop_cost;
             self.year_income += income;
 
-            // Rendite
+            // Returns
             let wealth = self.cash + self.stocks + self.bonds;
             if wealth > 0.0 {
                 self.ledger.market += self.stocks * self.path.stocks[k] + self.bonds * self.path.bonds[k];
@@ -2799,7 +2799,7 @@ impl<'a> Run<'a> {
                 self.stock_year = 1.0;
             }
 
-            // Pensionskasse: Zins monatlich auf dem Guthaben zu Monatsbeginn, gutgeschrieben im Dezember
+            // Pension fund: interest monthly on the balance at the start of the month, credited in December
             for (st, c) in self.people.iter_mut().zip(&s.people) {
                 if !st.retired {
                     st.pk_accrued += st.pk * c.pk_interest.at(m) / 12.0;
@@ -2813,7 +2813,7 @@ impl<'a> Run<'a> {
                 }
             }
 
-            // Steuern
+            // Taxes
             let mut paid = 0.0;
             let (mut paid_income, mut paid_wealth) = (0.0, 0.0);
             let (mut assessed_income, mut assessed_wealth) = (0.0, 0.0);
@@ -2847,7 +2847,7 @@ impl<'a> Run<'a> {
             month_tax += std::mem::take(&mut self.event_tax);
             self.summary.taxes_total += month_tax;
 
-            // Notverkauf prüfen (mit den Renten nach einer allfälligen Indexierung)
+            // Check for an emergency sale (with the pensions after any indexing)
             let liquid = self.cash + self.stocks + self.bonds;
             let shortfall = living + prop_running + p3a_in - (earned + self.pk_pension() + self.ahv());
             if liquid - s.emergency.at(m) * shortfall < 0.0 && !self.props.iter().any(|p| p.emergency_pending) {
@@ -2857,7 +2857,7 @@ impl<'a> Run<'a> {
                 }
             }
 
-            // Entnahmestrategie: «3-Topf» ab Pensionierung, sonst «Standard»
+            // Withdrawal strategy: «3-Topf» from retirement, otherwise «Standard»
             match &s.buckets {
                 Some(b) if self.any_retired() => {
                     let one_off = extras_out + self.month_out;
@@ -2866,10 +2866,10 @@ impl<'a> Run<'a> {
                     self.bucket_step(b, m, k, pay, one_off, housing_now);
                 }
                 _ => {
-                    // #54: Vor der Pensionierung hält die App den Cash-Betrag der Planung (mit der Teuerung), der
-                    // Überschuss geht ins Portfolio, ein Fehlbetrag wird aus dem Portfolio nachgefüllt. Ab der
-                    // Pensionierung: Reserve der Strategie («Standard» wie erfasst, sonst 3 Monate).
-                    // Ein für den Kauf im Folgemonat reservierter Verkaufserlös bleibt liquide (nicht angelegt).
+                    // #54: Before retirement the app keeps the plan's cash amount (with inflation); the
+                    // surplus goes into the portfolio, a shortfall is refilled from the portfolio. From
+                    // retirement: the strategy's reserve («Standard» as entered, otherwise 3 months).
+                    // Sale proceeds reserved for the purchase in the following month stay liquid (not invested).
                     let target = if self.any_retired() {
                         s.reserve.at(m) * shortfall.max(0.0)
                     } else {
@@ -2879,13 +2879,13 @@ impl<'a> Run<'a> {
                     self.rebalance(reserve, s.stock_share.at(m).clamp(0.0, 1.0));
                 }
             }
-            // Zusätzliche Anwendung ausserhalb des Januars protokollieren (im Januar wendet die Strategie ohnehin an).
+            // Log an additional application outside January (in January the strategy applies anyway).
             if self.apply_now && m.month() != 1 && !self.strategy_started && s.dynamic.is_some() && self.any_retired() {
                 let text = format!("Entnahmestrategie angewendet nach {}", self.apply_reasons.join(", "));
                 self.event(m, EventKind::Withdrawal, text);
             }
 
-            // Auswertung (ein Notverkauf in der 3-Topf-Strategie hat das Cash verändert)
+            // Evaluation (an emergency sale in the 3-bucket strategy has changed the cash)
             let liquid = self.cash + self.stocks + self.bonds;
             let equity = self.equity();
             let p3a: f64 = self.p3a.iter().sum();
@@ -2895,7 +2895,7 @@ impl<'a> Run<'a> {
                 self.summary.min_liquid = liquid;
                 self.summary.min_liquid_month = Some(m);
             }
-            // Aufgebraucht: Schulden oder keine Mittel mehr für ungedeckte Ausgaben.
+            // Depleted: debt or no more funds for uncovered expenses.
             if (liquid < -0.005 || (liquid <= 0.005 && shortfall > 0.0))
                 && self.summary.depleted.is_none()
                 && !self.props.iter().any(|p| p.active)
@@ -2967,8 +2967,8 @@ impl<'a> Run<'a> {
     }
 }
 
-/// Indexstände des Vorlaufs (#103): der Stand vor dem ersten Vorlaufmonat, dann je Vorlaufmonat; der letzte ist 1 (Stand
-/// beim Start). Platz für `months` weitere Monate.
+/// Index levels of the lead-in (#103): the level before the first lead-in month, then one per lead-in month; the last is 1
+/// (level at the start). Room for `months` further months.
 fn pre_levels(pre: &[f64], months: usize) -> Vec<f64> {
     let mut levels = Vec::with_capacity(pre.len() + 1 + months);
     levels.push(1.0);
@@ -2987,9 +2987,9 @@ mod tests_withdrawal {
     #[test]
     fn vpw_rate_is_annuity_factor() {
         assert!((vpw_rate(0.0, 25.0) - 0.04).abs() < 1e-12);
-        // 30 Jahre bei 3 %: bekannter Annuitätenfaktor 0.0510
+        // 30 years at 3 %: known annuity factor 0.0510
         assert!((vpw_rate(0.03, 30.0) - 0.051019).abs() < 1e-5);
-        // im letzten Jahr wird alles entnommen, nie mehr als das Vermögen
+        // in the last year everything is withdrawn, never more than the wealth
         assert!(vpw_rate(0.02, 0.0) <= 1.0 && vpw_rate(0.02, 0.5) <= 1.0);
         assert!(vpw_rate(0.02, 20.0) > vpw_rate(0.02, 30.0));
     }
@@ -3010,7 +3010,7 @@ mod tests_schedule {
             .unwrap()
     }
 
-    // #40: Perioden bis vor `limit`, Verlängerung bzw. Rückzahlung nach der letzten Periode.
+    // #40: Periods until before `limit`, renewal or repayment after the last period.
     #[test]
     fn periods_until_the_limit() {
         let a = YearMonth::new(2030, 1);
@@ -3030,10 +3030,10 @@ mod tests_schedule {
             ]
         );
         assert_eq!(s.repay_at, None);
-        // Eine Periode, die genau an der Grenze endet: keine weitere
+        // A period that ends exactly at the limit: no further one
         let s = schedule(&tranche(&[(1.0, 0.01)], "renew"), a, YearMonth::new(2032, 1));
         assert_eq!(s.periods.len(), 2);
-        // Rückzahlung: am Ende der letzten Periode, wenn sie vor der Grenze liegt
+        // Repayment: at the end of the last period if it lies before the limit
         let s = schedule(
             &tranche(&[(1.0, 0.01), (2.0, 0.02)], "repay"),
             a,
@@ -3046,7 +3046,7 @@ mod tests_schedule {
             YearMonth::new(2033, 1),
         );
         assert_eq!(s.repay_at, None);
-        // Höchstens 1000 Perioden
+        // At most 1000 periods
         let s = schedule(&tranche(&[(1.0 / 12.0, 0.01)], "renew"), a, YearMonth::new(2200, 1));
         assert_eq!(s.periods.len(), 1000);
         assert!(schedule(&tranche(&[], "renew"), a, YearMonth::new(2036, 1))
@@ -3061,7 +3061,7 @@ mod tests_pre_levels {
 
     #[test]
     fn issue_103_pre_levels_walk_back_from_the_start_level() {
-        // Vorlauf +10 %, dann +20 %: Start = 1, davor 1/1.2, davor 1/1.2/1.1.
+        // Lead-in +10 %, then +20 %: start = 1, before that 1/1.2, before that 1/1.2/1.1.
         let l = pre_levels(&[0.10, 0.20], 3);
         assert_eq!(l.len(), 3);
         assert!((l[2] - 1.0).abs() < 1e-12);
@@ -3072,7 +3072,7 @@ mod tests_pre_levels {
 
     #[test]
     fn issue_103_pre_levels_total_loss_stays_finite() {
-        // Rendite -100 % darf nicht durch 0 teilen.
+        // A return of -100 % must not divide by 0.
         let l = pre_levels(&[-1.0], 1);
         assert_eq!(l.len(), 2);
         assert!(l[0].is_finite() && l[0] > 1e6);
@@ -3084,7 +3084,7 @@ mod tests_pre_levels {
 mod tests_ledger {
     use super::*;
 
-    /// #133: Jedes Feld hat eine eigene Zweierpotenz, so ändert jedes falsche Vorzeichen die Summe.
+    /// #133: Every field has its own power of two, so every wrong sign changes the sum.
     #[test]
     fn issue_133_ledger_sum_signs() {
         let l = Ledger {
