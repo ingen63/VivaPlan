@@ -9,15 +9,15 @@
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 4350 CHF / Monat"
+        "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 4350 CHF / month"
       },
       {
         "kind": "ahvStart",
         "month": "2030-01",
-        "text": "AHV-Rente 2300 CHF / Monat"
+        "text": "AHV pension 2300 CHF / month"
       }
     ],
-    "label": "Fixe Renditen",
+    "label": "Fixed returns",
     "propertyEvents": [],
     "recordSums": {
       "age": 23237.5,

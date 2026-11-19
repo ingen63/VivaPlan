@@ -6530,15 +6530,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2039-06",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Zufallspfad 110",
+          "label": "Random path 110",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -8616,15 +8616,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2037-06",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Zufallspfad 169",
+          "label": "Random path 169",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -10702,15 +10702,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2035-07",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Zufallspfad 78",
+          "label": "Random path 78",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -12788,15 +12788,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2039-12",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Zufallspfad 86",
+          "label": "Random path 86",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -14874,15 +14874,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2042-04",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Zufallspfad 64",
+          "label": "Random path 64",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -16960,15 +16960,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2047-01",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Zufallspfad 19",
+          "label": "Random path 19",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -19734,7 +19734,7 @@
       "affordabilitySaleRuns": 0,
       "earliestDepletion": [
         "2035-03",
-        "Zufallspfad 10"
+        "Random path 10"
       ],
       "emergencySaleRuns": 0,
       "lumpSumRuns": 0,
@@ -19746,7 +19746,7 @@
           "endTotal": -2844901.0820429325,
           "endTotalReal": -956821.9949311295,
           "index": 109,
-          "label": "Zufallspfad 110",
+          "label": "Random path 110",
           "lumpSums": 0,
           "percent": 0
         },
@@ -19757,7 +19757,7 @@
           "endTotal": -2721481.774350203,
           "endTotalReal": -976512.6857557055,
           "index": 168,
-          "label": "Zufallspfad 169",
+          "label": "Random path 169",
           "lumpSums": 0,
           "percent": 1
         },
@@ -19768,7 +19768,7 @@
           "endTotal": -2340084.535687194,
           "endTotalReal": -1190022.512098939,
           "index": 77,
-          "label": "Zufallspfad 78",
+          "label": "Random path 78",
           "lumpSums": 0,
           "percent": 5
         },
@@ -19779,7 +19779,7 @@
           "endTotal": -2141642.01603536,
           "endTotalReal": -1004765.8127129326,
           "index": 0,
-          "label": "Zufallspfad 1",
+          "label": "Random path 1",
           "lumpSums": 0,
           "percent": 10
         },
@@ -19790,7 +19790,7 @@
           "endTotal": -1954221.3272855044,
           "endTotalReal": -925659.1029115584,
           "index": 195,
-          "label": "Zufallspfad 196",
+          "label": "Random path 196",
           "lumpSums": 0,
           "percent": 25
         },
@@ -19801,7 +19801,7 @@
           "endTotal": -1714300.2396051215,
           "endTotalReal": -1091795.3652297794,
           "index": 85,
-          "label": "Zufallspfad 86",
+          "label": "Random path 86",
           "lumpSums": 0,
           "percent": 50
         },
@@ -19812,7 +19812,7 @@
           "endTotal": -1496893.4982836626,
           "endTotalReal": -1181249.5624101327,
           "index": 137,
-          "label": "Zufallspfad 138",
+          "label": "Random path 138",
           "lumpSums": 0,
           "percent": 75
         },
@@ -19823,7 +19823,7 @@
           "endTotal": -1304105.9304040503,
           "endTotalReal": -917511.5410886639,
           "index": 32,
-          "label": "Zufallspfad 33",
+          "label": "Random path 33",
           "lumpSums": 0,
           "percent": 90
         },
@@ -19834,7 +19834,7 @@
           "endTotal": -1171375.7264443857,
           "endTotalReal": -1023206.7192006332,
           "index": 63,
-          "label": "Zufallspfad 64",
+          "label": "Random path 64",
           "lumpSums": 0,
           "percent": 95
         },
@@ -19845,7 +19845,7 @@
           "endTotal": -849601.0749529742,
           "endTotalReal": -819214.1386732091,
           "index": 18,
-          "label": "Zufallspfad 19",
+          "label": "Random path 19",
           "lumpSums": 0,
           "percent": 99
         }

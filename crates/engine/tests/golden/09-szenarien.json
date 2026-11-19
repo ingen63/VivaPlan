@@ -6530,15 +6530,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 200000 CHF (Steuer 2800 CHF), Rente 833 CHF / Monat"
+              "text": "Pension fund payout: lump sum 200000 CHF (tax 2800 CHF), pension 833 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2043-07",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 78",
+          "label": "Bootstrap path 78",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -8616,15 +8616,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 200000 CHF (Steuer 2800 CHF), Rente 833 CHF / Monat"
+              "text": "Pension fund payout: lump sum 200000 CHF (tax 2800 CHF), pension 833 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2041-11",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 8",
+          "label": "Bootstrap path 8",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -10702,15 +10702,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 200000 CHF (Steuer 2800 CHF), Rente 833 CHF / Monat"
+              "text": "Pension fund payout: lump sum 200000 CHF (tax 2800 CHF), pension 833 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2041-01",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 3",
+          "label": "Bootstrap path 3",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -12788,15 +12788,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 200000 CHF (Steuer 2800 CHF), Rente 833 CHF / Monat"
+              "text": "Pension fund payout: lump sum 200000 CHF (tax 2800 CHF), pension 833 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2050-03",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 39",
+          "label": "Bootstrap path 39",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -14874,10 +14874,10 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 200000 CHF (Steuer 2800 CHF), Rente 833 CHF / Monat"
+              "text": "Pension fund payout: lump sum 200000 CHF (tax 2800 CHF), pension 833 CHF / month"
             }
           ],
-          "label": "Bootstrap-Pfad 86",
+          "label": "Bootstrap path 86",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -16955,10 +16955,10 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 200000 CHF (Steuer 2800 CHF), Rente 833 CHF / Monat"
+              "text": "Pension fund payout: lump sum 200000 CHF (tax 2800 CHF), pension 833 CHF / month"
             }
           ],
-          "label": "Bootstrap-Pfad 48",
+          "label": "Bootstrap path 48",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -19740,7 +19740,7 @@
       "affordabilitySaleRuns": 0,
       "earliestDepletion": [
         "2039-07",
-        "Bootstrap-Pfad 90"
+        "Bootstrap path 90"
       ],
       "emergencySaleRuns": 0,
       "lumpSumRuns": 0,
@@ -19752,7 +19752,7 @@
           "endTotal": -1925242.2647902684,
           "endTotalReal": -747052.9617134149,
           "index": 77,
-          "label": "Bootstrap-Pfad 78",
+          "label": "Bootstrap path 78",
           "lumpSums": 0,
           "percent": 0
         },
@@ -19763,7 +19763,7 @@
           "endTotal": -1822455.5003061849,
           "endTotalReal": -781714.8039280528,
           "index": 7,
-          "label": "Bootstrap-Pfad 8",
+          "label": "Bootstrap path 8",
           "lumpSums": 0,
           "percent": 1
         },
@@ -19774,7 +19774,7 @@
           "endTotal": -1491979.5169607995,
           "endTotalReal": -751020.8597087578,
           "index": 2,
-          "label": "Bootstrap-Pfad 3",
+          "label": "Bootstrap path 3",
           "lumpSums": 0,
           "percent": 5
         },
@@ -19785,7 +19785,7 @@
           "endTotal": -1270483.8790016817,
           "endTotalReal": -636749.3312478671,
           "index": 55,
-          "label": "Bootstrap-Pfad 56",
+          "label": "Bootstrap path 56",
           "lumpSums": 0,
           "percent": 10
         },
@@ -19796,7 +19796,7 @@
           "endTotal": -1041309.8586604578,
           "endTotalReal": -476841.7673187851,
           "index": 49,
-          "label": "Bootstrap-Pfad 50",
+          "label": "Bootstrap path 50",
           "lumpSums": 0,
           "percent": 25
         },
@@ -19807,7 +19807,7 @@
           "endTotal": -581693.8456727485,
           "endTotalReal": -458739.21386396507,
           "index": 38,
-          "label": "Bootstrap-Pfad 39",
+          "label": "Bootstrap path 39",
           "lumpSums": 0,
           "percent": 50
         },
@@ -19818,7 +19818,7 @@
           "endTotal": 729693.3474617157,
           "endTotalReal": 403806.7290328348,
           "index": 36,
-          "label": "Bootstrap-Pfad 37",
+          "label": "Bootstrap path 37",
           "lumpSums": 0,
           "percent": 75
         },
@@ -19829,7 +19829,7 @@
           "endTotal": 1860130.001196126,
           "endTotalReal": 1495095.1699350416,
           "index": 35,
-          "label": "Bootstrap-Pfad 36",
+          "label": "Bootstrap path 36",
           "lumpSums": 0,
           "percent": 90
         },
@@ -19840,7 +19840,7 @@
           "endTotal": 3869535.6082337676,
           "endTotalReal": 2419411.727900167,
           "index": 85,
-          "label": "Bootstrap-Pfad 86",
+          "label": "Bootstrap path 86",
           "lumpSums": 0,
           "percent": 95
         },
@@ -19851,7 +19851,7 @@
           "endTotal": 9347220.957607701,
           "endTotalReal": 5759635.091586913,
           "index": 47,
-          "label": "Bootstrap-Pfad 48",
+          "label": "Bootstrap path 48",
           "lumpSums": 0,
           "percent": 99
         }
@@ -19883,7 +19883,7 @@
             "emergencySales": 0,
             "endTotal": -1782260.4464793531,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 0
           },
@@ -19893,7 +19893,7 @@
             "emergencySales": 0,
             "endTotal": -1508692.4444039871,
             "index": 37,
-            "label": "Bootstrap-Pfad 38",
+            "label": "Bootstrap path 38",
             "lumpSums": 0,
             "percent": 1
           },
@@ -19903,7 +19903,7 @@
             "emergencySales": 0,
             "endTotal": -1299996.278830048,
             "index": 78,
-            "label": "Bootstrap-Pfad 79",
+            "label": "Bootstrap path 79",
             "lumpSums": 0,
             "percent": 5
           },
@@ -19913,7 +19913,7 @@
             "emergencySales": 0,
             "endTotal": -1142494.8201306728,
             "index": 50,
-            "label": "Bootstrap-Pfad 51",
+            "label": "Bootstrap path 51",
             "lumpSums": 0,
             "percent": 10
           },
@@ -19923,7 +19923,7 @@
             "emergencySales": 0,
             "endTotal": -919962.3274912401,
             "index": 93,
-            "label": "Bootstrap-Pfad 94",
+            "label": "Bootstrap path 94",
             "lumpSums": 0,
             "percent": 25
           },
@@ -19933,7 +19933,7 @@
             "emergencySales": 0,
             "endTotal": -511266.19352647464,
             "index": 51,
-            "label": "Bootstrap-Pfad 52",
+            "label": "Bootstrap path 52",
             "lumpSums": 0,
             "percent": 50
           },
@@ -19943,7 +19943,7 @@
             "emergencySales": 0,
             "endTotal": -22251.74133041786,
             "index": 70,
-            "label": "Bootstrap-Pfad 71",
+            "label": "Bootstrap path 71",
             "lumpSums": 0,
             "percent": 75
           },
@@ -19953,7 +19953,7 @@
             "emergencySales": 0,
             "endTotal": 557703.1828258224,
             "index": 0,
-            "label": "Bootstrap-Pfad 1",
+            "label": "Bootstrap path 1",
             "lumpSums": 0,
             "percent": 90
           },
@@ -19963,7 +19963,7 @@
             "emergencySales": 0,
             "endTotal": 952635.9893378207,
             "index": 39,
-            "label": "Bootstrap-Pfad 40",
+            "label": "Bootstrap path 40",
             "lumpSums": 0,
             "percent": 95
           },
@@ -19973,7 +19973,7 @@
             "emergencySales": 0,
             "endTotal": 1875457.3493777728,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20000,7 +20000,7 @@
             "emergencySales": 0,
             "endTotal": -2111973.647383718,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20010,7 +20010,7 @@
             "emergencySales": 0,
             "endTotal": -1795107.1889537629,
             "index": 37,
-            "label": "Bootstrap-Pfad 38",
+            "label": "Bootstrap path 38",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20020,7 +20020,7 @@
             "emergencySales": 0,
             "endTotal": -1549644.5393570142,
             "index": 78,
-            "label": "Bootstrap-Pfad 79",
+            "label": "Bootstrap path 79",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20030,7 +20030,7 @@
             "emergencySales": 0,
             "endTotal": -1407187.0299019737,
             "index": 48,
-            "label": "Bootstrap-Pfad 49",
+            "label": "Bootstrap path 49",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20040,7 +20040,7 @@
             "emergencySales": 0,
             "endTotal": -1186147.5955143576,
             "index": 93,
-            "label": "Bootstrap-Pfad 94",
+            "label": "Bootstrap path 94",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20050,7 +20050,7 @@
             "emergencySales": 0,
             "endTotal": -803965.0776508496,
             "index": 51,
-            "label": "Bootstrap-Pfad 52",
+            "label": "Bootstrap path 52",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20060,7 +20060,7 @@
             "emergencySales": 0,
             "endTotal": -434516.8235217265,
             "index": 65,
-            "label": "Bootstrap-Pfad 66",
+            "label": "Bootstrap path 66",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20070,7 +20070,7 @@
             "emergencySales": 0,
             "endTotal": 34897.18734142815,
             "index": 52,
-            "label": "Bootstrap-Pfad 53",
+            "label": "Bootstrap path 53",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20080,7 +20080,7 @@
             "emergencySales": 0,
             "endTotal": 434926.61299863143,
             "index": 23,
-            "label": "Bootstrap-Pfad 24",
+            "label": "Bootstrap path 24",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20090,7 +20090,7 @@
             "emergencySales": 0,
             "endTotal": 1149219.2072622338,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20117,7 +20117,7 @@
             "emergencySales": 0,
             "endTotal": -2420509.4573779954,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20127,7 +20127,7 @@
             "emergencySales": 0,
             "endTotal": -2120835.859081593,
             "index": 5,
-            "label": "Bootstrap-Pfad 6",
+            "label": "Bootstrap path 6",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20137,7 +20137,7 @@
             "emergencySales": 0,
             "endTotal": -1794129.042520897,
             "index": 78,
-            "label": "Bootstrap-Pfad 79",
+            "label": "Bootstrap path 79",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20147,7 +20147,7 @@
             "emergencySales": 0,
             "endTotal": -1686445.8819164003,
             "index": 56,
-            "label": "Bootstrap-Pfad 57",
+            "label": "Bootstrap path 57",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20157,7 +20157,7 @@
             "emergencySales": 0,
             "endTotal": -1459860.5484897066,
             "index": 31,
-            "label": "Bootstrap-Pfad 32",
+            "label": "Bootstrap path 32",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20167,7 +20167,7 @@
             "emergencySales": 0,
             "endTotal": -1082121.0866459403,
             "index": 69,
-            "label": "Bootstrap-Pfad 70",
+            "label": "Bootstrap path 70",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20177,7 +20177,7 @@
             "emergencySales": 0,
             "endTotal": -746749.4772936717,
             "index": 67,
-            "label": "Bootstrap-Pfad 68",
+            "label": "Bootstrap path 68",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20187,7 +20187,7 @@
             "emergencySales": 0,
             "endTotal": -385600.014991965,
             "index": 42,
-            "label": "Bootstrap-Pfad 43",
+            "label": "Bootstrap path 43",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20197,7 +20197,7 @@
             "emergencySales": 0,
             "endTotal": 40844.32924626924,
             "index": 39,
-            "label": "Bootstrap-Pfad 40",
+            "label": "Bootstrap path 40",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20207,7 +20207,7 @@
             "emergencySales": 0,
             "endTotal": 670676.0050934863,
             "index": 35,
-            "label": "Bootstrap-Pfad 36",
+            "label": "Bootstrap path 36",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20234,7 +20234,7 @@
             "emergencySales": 0,
             "endTotal": -1603363.1246332885,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20244,7 +20244,7 @@
             "emergencySales": 0,
             "endTotal": -1373776.9892686983,
             "index": 7,
-            "label": "Bootstrap-Pfad 8",
+            "label": "Bootstrap path 8",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20254,7 +20254,7 @@
             "emergencySales": 0,
             "endTotal": -1223816.8470507592,
             "index": 4,
-            "label": "Bootstrap-Pfad 5",
+            "label": "Bootstrap path 5",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20264,7 +20264,7 @@
             "emergencySales": 0,
             "endTotal": -1037036.573386058,
             "index": 1,
-            "label": "Bootstrap-Pfad 2",
+            "label": "Bootstrap path 2",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20274,7 +20274,7 @@
             "emergencySales": 0,
             "endTotal": -749428.2553663487,
             "index": 68,
-            "label": "Bootstrap-Pfad 69",
+            "label": "Bootstrap path 69",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20284,7 +20284,7 @@
             "emergencySales": 0,
             "endTotal": -198762.99508635866,
             "index": 25,
-            "label": "Bootstrap-Pfad 26",
+            "label": "Bootstrap path 26",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20294,7 +20294,7 @@
             "emergencySales": 0,
             "endTotal": 974987.5494840955,
             "index": 42,
-            "label": "Bootstrap-Pfad 43",
+            "label": "Bootstrap path 43",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20304,7 +20304,7 @@
             "emergencySales": 0,
             "endTotal": 2113700.935346526,
             "index": 3,
-            "label": "Bootstrap-Pfad 4",
+            "label": "Bootstrap path 4",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20314,7 +20314,7 @@
             "emergencySales": 0,
             "endTotal": 3109625.6147969533,
             "index": 26,
-            "label": "Bootstrap-Pfad 27",
+            "label": "Bootstrap path 27",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20324,7 +20324,7 @@
             "emergencySales": 0,
             "endTotal": 7517482.044274854,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20351,7 +20351,7 @@
             "emergencySales": 0,
             "endTotal": -1984500.4416306422,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20361,7 +20361,7 @@
             "emergencySales": 0,
             "endTotal": -1799436.9599885433,
             "index": 7,
-            "label": "Bootstrap-Pfad 8",
+            "label": "Bootstrap path 8",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20371,7 +20371,7 @@
             "emergencySales": 0,
             "endTotal": -1492081.5168816384,
             "index": 2,
-            "label": "Bootstrap-Pfad 3",
+            "label": "Bootstrap path 3",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20381,7 +20381,7 @@
             "emergencySales": 0,
             "endTotal": -1385948.1008477493,
             "index": 48,
-            "label": "Bootstrap-Pfad 49",
+            "label": "Bootstrap path 49",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20391,7 +20391,7 @@
             "emergencySales": 0,
             "endTotal": -1063294.882709629,
             "index": 62,
-            "label": "Bootstrap-Pfad 63",
+            "label": "Bootstrap path 63",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20401,7 +20401,7 @@
             "emergencySales": 0,
             "endTotal": -635199.3240307203,
             "index": 13,
-            "label": "Bootstrap-Pfad 14",
+            "label": "Bootstrap path 14",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20411,7 +20411,7 @@
             "emergencySales": 0,
             "endTotal": 305738.9475077393,
             "index": 63,
-            "label": "Bootstrap-Pfad 64",
+            "label": "Bootstrap path 64",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20421,7 +20421,7 @@
             "emergencySales": 0,
             "endTotal": 1393758.4909446256,
             "index": 3,
-            "label": "Bootstrap-Pfad 4",
+            "label": "Bootstrap path 4",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20431,7 +20431,7 @@
             "emergencySales": 0,
             "endTotal": 2496100.5430883067,
             "index": 26,
-            "label": "Bootstrap-Pfad 27",
+            "label": "Bootstrap path 27",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20441,7 +20441,7 @@
             "emergencySales": 0,
             "endTotal": 6219774.701678494,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20468,7 +20468,7 @@
             "emergencySales": 0,
             "endTotal": -2316209.2943073204,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20478,7 +20478,7 @@
             "emergencySales": 0,
             "endTotal": -2162045.5835669334,
             "index": 7,
-            "label": "Bootstrap-Pfad 8",
+            "label": "Bootstrap path 8",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20488,7 +20488,7 @@
             "emergencySales": 0,
             "endTotal": -1791650.7487009664,
             "index": 37,
-            "label": "Bootstrap-Pfad 38",
+            "label": "Bootstrap path 38",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20498,7 +20498,7 @@
             "emergencySales": 0,
             "endTotal": -1638470.541944802,
             "index": 48,
-            "label": "Bootstrap-Pfad 49",
+            "label": "Bootstrap path 49",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20508,7 +20508,7 @@
             "emergencySales": 0,
             "endTotal": -1410804.8115159627,
             "index": 31,
-            "label": "Bootstrap-Pfad 32",
+            "label": "Bootstrap path 32",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20518,7 +20518,7 @@
             "emergencySales": 0,
             "endTotal": -897340.5429663848,
             "index": 38,
-            "label": "Bootstrap-Pfad 39",
+            "label": "Bootstrap path 39",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20528,7 +20528,7 @@
             "emergencySales": 0,
             "endTotal": -301471.30815566867,
             "index": 40,
-            "label": "Bootstrap-Pfad 41",
+            "label": "Bootstrap path 41",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20538,7 +20538,7 @@
             "emergencySales": 0,
             "endTotal": 701269.3596685415,
             "index": 44,
-            "label": "Bootstrap-Pfad 45",
+            "label": "Bootstrap path 45",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20548,7 +20548,7 @@
             "emergencySales": 0,
             "endTotal": 1674530.5112878457,
             "index": 86,
-            "label": "Bootstrap-Pfad 87",
+            "label": "Bootstrap path 87",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20558,7 +20558,7 @@
             "emergencySales": 0,
             "endTotal": 4925353.409680827,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20585,7 +20585,7 @@
             "emergencySales": 0,
             "endTotal": -1475484.967664597,
             "index": 7,
-            "label": "Bootstrap-Pfad 8",
+            "label": "Bootstrap path 8",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20595,7 +20595,7 @@
             "emergencySales": 0,
             "endTotal": -1379497.4535325547,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20605,7 +20605,7 @@
             "emergencySales": 0,
             "endTotal": -1212693.3856406976,
             "index": 75,
-            "label": "Bootstrap-Pfad 76",
+            "label": "Bootstrap path 76",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20615,7 +20615,7 @@
             "emergencySales": 0,
             "endTotal": -995179.2879928852,
             "index": 1,
-            "label": "Bootstrap-Pfad 2",
+            "label": "Bootstrap path 2",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20625,7 +20625,7 @@
             "emergencySales": 0,
             "endTotal": -745611.3296432758,
             "index": 53,
-            "label": "Bootstrap-Pfad 54",
+            "label": "Bootstrap path 54",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20635,7 +20635,7 @@
             "emergencySales": 0,
             "endTotal": 612623.7692030042,
             "index": 38,
-            "label": "Bootstrap-Pfad 39",
+            "label": "Bootstrap path 39",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20645,7 +20645,7 @@
             "emergencySales": 0,
             "endTotal": 2742548.9531090027,
             "index": 8,
-            "label": "Bootstrap-Pfad 9",
+            "label": "Bootstrap path 9",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20655,7 +20655,7 @@
             "emergencySales": 0,
             "endTotal": 5311676.896484214,
             "index": 21,
-            "label": "Bootstrap-Pfad 22",
+            "label": "Bootstrap path 22",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20665,7 +20665,7 @@
             "emergencySales": 0,
             "endTotal": 8423609.366526315,
             "index": 97,
-            "label": "Bootstrap-Pfad 98",
+            "label": "Bootstrap path 98",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20675,7 +20675,7 @@
             "emergencySales": 0,
             "endTotal": 21585446.541619614,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20702,7 +20702,7 @@
             "emergencySales": 0,
             "endTotal": -1870262.2266288875,
             "index": 7,
-            "label": "Bootstrap-Pfad 8",
+            "label": "Bootstrap path 8",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20712,7 +20712,7 @@
             "emergencySales": 0,
             "endTotal": -1797441.1003092546,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20722,7 +20722,7 @@
             "emergencySales": 0,
             "endTotal": -1500659.6375098436,
             "index": 2,
-            "label": "Bootstrap-Pfad 3",
+            "label": "Bootstrap path 3",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20732,7 +20732,7 @@
             "emergencySales": 0,
             "endTotal": -1335981.5001456698,
             "index": 89,
-            "label": "Bootstrap-Pfad 90",
+            "label": "Bootstrap path 90",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20742,7 +20742,7 @@
             "emergencySales": 0,
             "endTotal": -1007633.1547304274,
             "index": 53,
-            "label": "Bootstrap-Pfad 54",
+            "label": "Bootstrap path 54",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20752,7 +20752,7 @@
             "emergencySales": 0,
             "endTotal": -240112.9576374549,
             "index": 10,
-            "label": "Bootstrap-Pfad 11",
+            "label": "Bootstrap path 11",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20762,7 +20762,7 @@
             "emergencySales": 0,
             "endTotal": 2013586.5557735774,
             "index": 8,
-            "label": "Bootstrap-Pfad 9",
+            "label": "Bootstrap path 9",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20772,7 +20772,7 @@
             "emergencySales": 0,
             "endTotal": 3917061.1593553927,
             "index": 41,
-            "label": "Bootstrap-Pfad 42",
+            "label": "Bootstrap path 42",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20782,7 +20782,7 @@
             "emergencySales": 0,
             "endTotal": 6833480.9167211745,
             "index": 85,
-            "label": "Bootstrap-Pfad 86",
+            "label": "Bootstrap path 86",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20792,7 +20792,7 @@
             "emergencySales": 0,
             "endTotal": 19249207.141026966,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }
@@ -20819,7 +20819,7 @@
             "emergencySales": 0,
             "endTotal": -2225077.228918882,
             "index": 7,
-            "label": "Bootstrap-Pfad 8",
+            "label": "Bootstrap path 8",
             "lumpSums": 0,
             "percent": 0
           },
@@ -20829,7 +20829,7 @@
             "emergencySales": 0,
             "endTotal": -2184495.1087703602,
             "index": 77,
-            "label": "Bootstrap-Pfad 78",
+            "label": "Bootstrap path 78",
             "lumpSums": 0,
             "percent": 1
           },
@@ -20839,7 +20839,7 @@
             "emergencySales": 0,
             "endTotal": -1766748.3980269795,
             "index": 2,
-            "label": "Bootstrap-Pfad 3",
+            "label": "Bootstrap path 3",
             "lumpSums": 0,
             "percent": 5
           },
@@ -20849,7 +20849,7 @@
             "emergencySales": 0,
             "endTotal": -1645227.2507348685,
             "index": 48,
-            "label": "Bootstrap-Pfad 49",
+            "label": "Bootstrap path 49",
             "lumpSums": 0,
             "percent": 10
           },
@@ -20859,7 +20859,7 @@
             "emergencySales": 0,
             "endTotal": -1304780.7654506909,
             "index": 49,
-            "label": "Bootstrap-Pfad 50",
+            "label": "Bootstrap path 50",
             "lumpSums": 0,
             "percent": 25
           },
@@ -20869,7 +20869,7 @@
             "emergencySales": 0,
             "endTotal": -711254.1775951437,
             "index": 18,
-            "label": "Bootstrap-Pfad 19",
+            "label": "Bootstrap path 19",
             "lumpSums": 0,
             "percent": 50
           },
@@ -20879,7 +20879,7 @@
             "emergencySales": 0,
             "endTotal": 1103071.1101038617,
             "index": 65,
-            "label": "Bootstrap-Pfad 66",
+            "label": "Bootstrap path 66",
             "lumpSums": 0,
             "percent": 75
           },
@@ -20889,7 +20889,7 @@
             "emergencySales": 0,
             "endTotal": 3250823.179205844,
             "index": 41,
-            "label": "Bootstrap-Pfad 42",
+            "label": "Bootstrap path 42",
             "lumpSums": 0,
             "percent": 90
           },
@@ -20899,7 +20899,7 @@
             "emergencySales": 0,
             "endTotal": 5175524.126732639,
             "index": 85,
-            "label": "Bootstrap-Pfad 86",
+            "label": "Bootstrap path 86",
             "lumpSums": 0,
             "percent": 95
           },
@@ -20909,7 +20909,7 @@
             "emergencySales": 0,
             "endTotal": 16910193.684300404,
             "index": 47,
-            "label": "Bootstrap-Pfad 48",
+            "label": "Bootstrap path 48",
             "lumpSums": 0,
             "percent": 99
           }

@@ -3,7 +3,7 @@
   "error": null,
   "issues": [
     {
-      "message": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (01.2030) noch 12'000 pro Monat.",
+      "message": "After the pension fund payout (01.2030), earned income is still 12'000 per month.",
       "section": "flows",
       "severity": "warning"
     }
@@ -15,40 +15,40 @@
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+        "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
       },
       {
         "kind": "pillar3aPayout",
         "month": "2030-01",
-        "text": "Säule 3a: Auszahlung des Rests beim AHV-Bezug 40033 CHF, Steuer 112 CHF, an Hypothek 0 CHF"
+        "text": "Pillar 3a: Payout of the remainder at the start of the AHV pension 40033 CHF, tax 112 CHF, to mortgage 0 CHF"
       },
       {
         "kind": "mortgageRenewal",
         "month": "2035-01",
-        "text": "Neue Hypothekarperiode Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
       },
       {
         "kind": "mortgageRepayment",
         "month": "2036-01",
-        "text": "Rückzahlung Hypothek Haus: 200000 CHF"
+        "text": "Mortgage repayment Haus: 200000 CHF"
       },
       {
         "kind": "mortgageRenewal",
         "month": "2040-01",
-        "text": "Neue Hypothekarperiode Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
       },
       {
         "kind": "mortgageRenewal",
         "month": "2045-01",
-        "text": "Neue Hypothekarperiode Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
       },
       {
         "kind": "mortgageRenewal",
         "month": "2050-01",
-        "text": "Neue Hypothekarperiode Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
       }
     ],
-    "label": "Fixe Renditen",
+    "label": "Fixed returns",
     "propertyEvents": [
       {
         "affordable": true,

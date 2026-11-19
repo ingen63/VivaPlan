@@ -1,4 +1,4 @@
-.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts
+.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers
 test:        ; cargo nextest run --workspace
 # #160: dieselben Tests, aber nur Fehlschläge, langsame Tests und die Zusammenfassung (für Claude Code: wenig Kontext)
 QUIET = --status-level fail --final-status-level slow --hide-progress-bar --cargo-quiet
@@ -14,6 +14,8 @@ network-free:; python3 -m unittest discover -s tools -p 'test_check_network_free
 english:     ; python3 -m unittest discover -s tools -p 'test_check_english.py' && ./tools/check-english.sh
 # #170: deutsche Oberflächentexte ausserhalb der Texttabelle (crates/app/ui/i18n/de.json), samt Tests des Skripts
 ui-texts:    ; python3 -m unittest discover -s tools -p 'test_check_ui_texts.py' && python3 tools/check_ui_texts.py
+# #176/AK2: Golden-Dateien gegenüber BASE (Vorgabe HEAD) ohne Textfelder vergleichen, samt Tests des Skripts
+golden-numbers:; python3 -m unittest discover -s tools -p 'test_golden_numbers.py' && python3 tools/golden_numbers.py --base $${BASE:-HEAD}
 # #88: wie im Workflow, Warnungen sind Fehler
 clippy:      ; cargo clippy --workspace --all-targets -- -D warnings && cd fuzz && cargo clippy --all-targets -- -D warnings
 coverage:    ; cargo llvm-cov nextest --workspace --html --open

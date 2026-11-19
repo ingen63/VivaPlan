@@ -9,20 +9,20 @@
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+        "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
       },
       {
         "kind": "pillar3aPayout",
         "month": "2030-01",
-        "text": "Säule 3a: Auszahlung des Rests beim AHV-Bezug 40033 CHF, Steuer 112 CHF, an Hypothek 0 CHF"
+        "text": "Pillar 3a: Payout of the remainder at the start of the AHV pension 40033 CHF, tax 112 CHF, to mortgage 0 CHF"
       },
       {
         "kind": "emergencySale",
         "month": "2030-10",
-        "text": "Notverkauf Haus: Wert 1007491 CHF, Hypothek 500000 CHF, Grundstückgewinnsteuer 0 CHF"
+        "text": "Emergency sale Haus: value 1007491 CHF, mortgage 500000 CHF, property gains tax 0 CHF"
       }
     ],
-    "label": "Fixe Renditen",
+    "label": "Fixed returns",
     "propertyEvents": [
       {
         "debtRepaid": 500000.0,
@@ -30,10 +30,10 @@
         "kind": "emergencySale",
         "month": "2030-10",
         "net": 507490.6638441911,
-        "note": "Entnahmestrategie angewendet (kein Folgekauf)",
+        "note": "Withdrawal strategy applied (no subsequent purchase)",
         "proceeds": 1007490.6638441911,
         "property": "Haus",
-        "reason": "Notverkaufskriterium"
+        "reason": "Emergency sale criterion"
       }
     ],
     "recordSums": {

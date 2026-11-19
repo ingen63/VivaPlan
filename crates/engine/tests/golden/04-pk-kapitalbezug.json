@@ -9,15 +9,15 @@
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse: Kapitalbezug 900000 CHF (Steuer 56700 CHF), Rente 0 CHF / Monat"
+        "text": "Pension fund payout: lump sum 900000 CHF (tax 56700 CHF), pension 0 CHF / month"
       },
       {
         "kind": "ahvStart",
         "month": "2030-01",
-        "text": "AHV-Rente 2300 CHF / Monat"
+        "text": "AHV pension 2300 CHF / month"
       }
     ],
-    "label": "Fixe Renditen",
+    "label": "Fixed returns",
     "propertyEvents": [],
     "recordSums": {
       "age": 23237.5,

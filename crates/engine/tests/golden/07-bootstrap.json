@@ -6530,15 +6530,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2037-10",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 137",
+          "label": "Bootstrap path 137",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -8616,15 +8616,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2039-11",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 78",
+          "label": "Bootstrap path 78",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -10702,15 +10702,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2039-06",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 76",
+          "label": "Bootstrap path 76",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -12788,15 +12788,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2042-12",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 83",
+          "label": "Bootstrap path 83",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -14874,15 +14874,15 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             },
             {
               "kind": "depleted",
               "month": "2054-08",
-              "text": "Vermögen aufgebraucht"
+              "text": "Wealth depleted"
             }
           ],
-          "label": "Bootstrap-Pfad 24",
+          "label": "Bootstrap path 24",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -16960,10 +16960,10 @@
             {
               "kind": "retirement",
               "month": "2030-01",
-              "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+              "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
             }
           ],
-          "label": "Bootstrap-Pfad 22",
+          "label": "Bootstrap path 22",
           "propertyEvents": [],
           "recordSums": {
             "age": 28785.0,
@@ -19745,7 +19745,7 @@
       "affordabilitySaleRuns": 0,
       "earliestDepletion": [
         "2036-10",
-        "Bootstrap-Pfad 3"
+        "Bootstrap path 3"
       ],
       "emergencySaleRuns": 0,
       "lumpSumRuns": 0,
@@ -19757,7 +19757,7 @@
           "endTotal": -2822105.230368966,
           "endTotalReal": -1041482.7978418982,
           "index": 136,
-          "label": "Bootstrap-Pfad 137",
+          "label": "Bootstrap path 137",
           "lumpSums": 0,
           "percent": 0
         },
@@ -19768,7 +19768,7 @@
           "endTotal": -2473935.368392092,
           "endTotalReal": -959962.6903298921,
           "index": 77,
-          "label": "Bootstrap-Pfad 78",
+          "label": "Bootstrap path 78",
           "lumpSums": 0,
           "percent": 1
         },
@@ -19779,7 +19779,7 @@
           "endTotal": -2226439.606608804,
           "endTotalReal": -1015680.8585088546,
           "index": 75,
-          "label": "Bootstrap-Pfad 76",
+          "label": "Bootstrap path 76",
           "lumpSums": 0,
           "percent": 5
         },
@@ -19790,7 +19790,7 @@
           "endTotal": -2076346.8666524985,
           "endTotalReal": -994062.0379453874,
           "index": 37,
-          "label": "Bootstrap-Pfad 38",
+          "label": "Bootstrap path 38",
           "lumpSums": 0,
           "percent": 10
         },
@@ -19801,7 +19801,7 @@
           "endTotal": -1764265.6417556743,
           "endTotalReal": -866719.1756280507,
           "index": 84,
-          "label": "Bootstrap-Pfad 85",
+          "label": "Bootstrap path 85",
           "lumpSums": 0,
           "percent": 25
         },
@@ -19812,7 +19812,7 @@
           "endTotal": -1467353.9365746994,
           "endTotalReal": -936300.0523572337,
           "index": 82,
-          "label": "Bootstrap-Pfad 83",
+          "label": "Bootstrap path 83",
           "lumpSums": 0,
           "percent": 50
         },
@@ -19823,7 +19823,7 @@
           "endTotal": -1203227.4667105956,
           "endTotalReal": -841801.4227454462,
           "index": 72,
-          "label": "Bootstrap-Pfad 73",
+          "label": "Bootstrap path 73",
           "lumpSums": 0,
           "percent": 75
         },
@@ -19834,7 +19834,7 @@
           "endTotal": -771276.949613712,
           "endTotalReal": -497367.43294983567,
           "index": 131,
-          "label": "Bootstrap-Pfad 132",
+          "label": "Bootstrap path 132",
           "lumpSums": 0,
           "percent": 90
         },
@@ -19845,7 +19845,7 @@
           "endTotal": -453833.56969548063,
           "endTotalReal": -311240.01505731436,
           "index": 23,
-          "label": "Bootstrap-Pfad 24",
+          "label": "Bootstrap path 24",
           "lumpSums": 0,
           "percent": 95
         },
@@ -19856,7 +19856,7 @@
           "endTotal": 577292.7461666116,
           "endTotalReal": 403520.47327425785,
           "index": 21,
-          "label": "Bootstrap-Pfad 22",
+          "label": "Bootstrap path 22",
           "lumpSums": 0,
           "percent": 99
         }

@@ -9,10 +9,10 @@
       {
         "kind": "retirement",
         "month": "2033-01",
-        "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+        "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
       }
     ],
-    "label": "Fixe Renditen",
+    "label": "Fixed returns",
     "propertyEvents": [],
     "recordSums": {
       "age": 8395.0,

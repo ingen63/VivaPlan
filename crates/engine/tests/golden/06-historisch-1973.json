@@ -9,15 +9,15 @@
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse: Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+        "text": "Pension fund payout: lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
       },
       {
         "kind": "depleted",
         "month": "2035-12",
-        "text": "Vermögen aufgebraucht"
+        "text": "Wealth depleted"
       }
     ],
-    "label": "Historisch ab 01.1973",
+    "label": "Historical from 01.1973",
     "propertyEvents": [],
     "recordSums": {
       "age": 23237.5,

@@ -3,7 +3,7 @@
   "error": null,
   "issues": [
     {
-      "message": "B: Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (06.2032) noch 2'500 pro Monat.",
+      "message": "B: After the pension fund payout (06.2032), earned income is still 2'500 per month.",
       "section": "flows",
       "severity": "warning"
     }
@@ -15,25 +15,25 @@
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse (Person 1): Kapitalbezug 0 CHF (Steuer 0 CHF), Rente 0 CHF / Monat"
+        "text": "Pension fund payout (person 1): lump sum 0 CHF (tax 0 CHF), pension 0 CHF / month"
       },
       {
         "kind": "ahvStart",
         "month": "2030-01",
-        "text": "AHV-Rente (Person 1) 2400 CHF / Monat"
+        "text": "AHV pension (person 1) 2400 CHF / month"
       },
       {
         "kind": "retirement",
         "month": "2030-01",
-        "text": "Bezug Pensionskasse (Person 2): Kapitalbezug 105000 CHF (Steuer 772 CHF), Rente 1021 CHF / Monat"
+        "text": "Pension fund payout (person 2): lump sum 105000 CHF (tax 772 CHF), pension 1021 CHF / month"
       },
       {
         "kind": "ahvStart",
         "month": "2030-01",
-        "text": "AHV-Rente (Person 2) 1800 CHF / Monat"
+        "text": "AHV pension (person 2) 1800 CHF / month"
       }
     ],
-    "label": "Fixe Renditen",
+    "label": "Fixed returns",
     "propertyEvents": [],
     "recordSums": {
       "age": 13042.5,
