@@ -1,13 +1,13 @@
-//! Optimierung der Entnahmestrategie für ein festes Basisszenario.
+//! Optimization of the withdrawal strategy for a fixed base scenario.
 //!
-//! Ziel: Ruinwahrscheinlichkeit bis zu einem Alter unter einer Grenze halten und dabei den realen
-//! Konsum (Median und 10-%-Perzentil über alle Pfade und Jahre ab der Pensionierung) möglichst hoch,
-//! seine Schwankung von Jahr zu Jahr möglichst klein machen.
+//! Goal: keep the probability of ruin up to an age below a limit while making real
+//! consumption (median and 10 % percentile over all paths and years from retirement) as high as possible
+//! and its year-to-year fluctuation as small as possible.
 //!
-//! Ablauf: Parameter einer Strategie per Zufallssuche und anschliessender Mustersuche (Koordinaten-
-//! suche mit schrumpfender Schrittweite) auf einer Menge Renditepfade verbessern, dann das Ergebnis
-//! auf einer zweiten, unabhängigen Pfadmenge (anderer Startwert) prüfen. Alle Kandidaten sehen
-//! dieselben Pfade, damit Unterschiede von den Parametern stammen.
+//! Procedure: improve a strategy's parameters by random search followed by pattern search (coordinate
+//! search with shrinking step size) on a set of return paths, then check the result
+//! on a second, independent set of paths (different seed). All candidates see
+//! the same paths, so differences come from the parameters.
 
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -18,21 +18,21 @@ use crate::sim::{SimResult, Simulator};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Zielvorgaben.
+/// Targets.
 #[derive(Clone, Debug)]
 pub struct Objective {
-    /// Höchste erlaubte Ruinwahrscheinlichkeit (0.05 = 5 %).
+    /// Highest allowed probability of ruin (0.05 = 5 %).
     pub max_ruin: f64,
     pub goal: Goal,
-    /// Ziel «Kein Notverkauf von Immobilien»: Mindestanteil der geplanten Ausgaben, den der Median des Konsums erreichen muss.
+    /// Goal «Kein Notverkauf von Immobilien»: minimum share of the planned spending the median consumption must reach.
     pub min_consumption: f64,
-    /// Ruin zählt nur bis zu diesem Alter der Hauptperson (`None` = bis zum Simulationsende).
+    /// Ruin counts only up to this age of the main person (`None` = until the end of the simulation).
     pub ruin_age: Option<f64>,
-    /// Gewicht des Medians im Konsumziel; der Rest geht auf das 10-%-Perzentil.
+    /// Weight of the median in the consumption goal; the rest goes to the 10 % percentile.
     pub weight_median: f64,
-    /// Abzug für die Schwankung: Ziel × (1 − `vol_weight` × Schwankung).
+    /// Penalty for fluctuation: goal × (1 − `vol_weight` × fluctuation).
     pub vol_weight: f64,
-    /// Höchste erlaubte Schwankung (mittlere absolute Jahresänderung, 0.1 = 10 %).
+    /// Highest allowed fluctuation (mean absolute annual change, 0.1 = 10 %).
     pub max_vol: Option<f64>,
 }
 
@@ -50,31 +50,31 @@ impl Default for Objective {
     }
 }
 
-/// Kennzahlen einer Strategie über alle Pfade. Konsum in Preisen des Startmonats pro Jahr.
+/// Metrics of a strategy over all paths. Consumption in prices of the start month per year.
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Metrics {
     pub runs: usize,
-    /// Anteil der Pfade, in denen das Vermögen bis zum Ziel-Alter aufgebraucht ist.
+    /// Share of paths in which wealth is depleted by the target age.
     pub ruin: f64,
-    /// Median des Jahreskonsums (alle Pfade und Jahre ab Pensionierung).
+    /// Median of annual consumption (all paths and years from retirement).
     pub median: f64,
-    /// 10-%-Perzentil des Jahreskonsums.
+    /// 10 % percentile of annual consumption.
     pub p10: f64,
-    /// Mittlere absolute Änderung des Jahreskonsums gegenüber dem Vorjahr, Mittel über die Pfade.
+    /// Mean absolute change of annual consumption against the previous year, averaged over the paths.
     pub volatility: f64,
-    /// Entnahmerate im ersten Jahr der Pensionierung: Entnahme aus dem Vermögen (Lebenshaltung und Wohnkosten
-    /// minus Einnahmen, vor Steuern) im Verhältnis zum liquiden Vermögen bei Beginn; Median über die Pfade.
+    /// Withdrawal rate in the first year of retirement: withdrawal from wealth (living costs and housing costs
+    /// minus income, before taxes) relative to liquid wealth at the start; median over the paths.
     pub draw_rate: f64,
-    /// Anteil der Pfade mit mindestens einem ungeplanten Immobilienverkauf (Notverkauf).
+    /// Share of paths with at least one unplanned property sale (emergency sale).
     pub emergency_share: f64,
-    /// Median der geplanten Ausgaben pro Jahr ab Pensionierung (inkl. Wohnkosten, Preise des Startmonats).
+    /// Median of the planned spending per year from retirement (including housing costs, prices of the start month).
     pub planned: f64,
 }
 
 impl Metrics {
-    /// Zielwert (höher ist besser), ohne Nebenbedingungen. Ziel 1: Konsum pro Jahr. Ziel 2: weniger ungeplante
-    /// Verkäufe vor geringerer Ruinwahrscheinlichkeit (der Anteil wiegt so viel, dass die Ruin nur bei Gleichstand zählt).
+    /// Objective value (higher is better), without constraints. Goal 1: consumption per year. Goal 2: fewer unplanned
+    /// sales before a lower probability of ruin (the share weighs so much that ruin only counts on a tie).
     pub fn score(&self, o: &Objective) -> f64 {
         if o.goal == Goal::KeepProperty {
             return -(self.emergency_share * 1e6 + self.ruin);
@@ -83,7 +83,7 @@ impl Metrics {
         (w * self.median + (1.0 - w) * self.p10) * (1.0 - o.vol_weight * self.volatility).max(0.0)
     }
 
-    /// Verletzung der Nebenbedingungen (0 = erfüllt).
+    /// Violation of the constraints (0 = met).
     pub fn violation(&self, o: &Objective) -> f64 {
         let ruin = (self.ruin - o.max_ruin).max(0.0);
         if o.goal == Goal::KeepProperty {
@@ -101,8 +101,8 @@ impl Metrics {
         self.violation(o) <= 1e-12
     }
 
-    /// Vergleichswert: zulässige Kandidaten nach Ziel, unzulässige darunter nach Verletzung.
-    /// Bei gleichem Ziel (z. B. fixe Ausgaben) gewinnt die kleinere Ruinwahrscheinlichkeit.
+    /// Comparison value: feasible candidates by objective, infeasible ones below them by violation.
+    /// With the same objective (e.g. fixed spending) the smaller probability of ruin wins.
     fn fitness(&self, o: &Objective) -> f64 {
         let v = self.violation(o);
         if v > 1e-12 {
@@ -115,21 +115,21 @@ impl Metrics {
     }
 }
 
-/// Ein einstellbarer Parameter mit Standard-Bandbreite der Suche.
+/// An adjustable parameter with the default search range.
 #[derive(Clone, Copy, Debug)]
 pub struct ParamDef {
     pub key: &'static str,
     pub label: &'static str,
     pub lo: f64,
     pub hi: f64,
-    /// Ausgabe als Prozent.
+    /// Displayed as percent.
     pub percent: bool,
-    /// Einheit der Anzeige: `%`, `Jahre`, `Monate` oder `Alter`.
+    /// Display unit: `%`, `Jahre`, `Monate` or `Alter`.
     pub unit: &'static str,
-    /// Äusserste zulässige Grenzen für selbst gewählte Bandbreiten.
+    /// Outermost allowed limits for user-chosen ranges.
     pub min: f64,
     pub max: f64,
-    /// Ohne Angabe in der Planung bleibt der Parameter fix.
+    /// If not given in the plan, the parameter stays fixed.
     pub fixed: bool,
 }
 
@@ -156,7 +156,7 @@ const fn p(
 }
 
 impl ParamDef {
-    /// Anzeigename mit Einheit, soweit sie nicht Prozent ist.
+    /// Display name with unit, unless it is percent.
     fn shown(&self) -> String {
         if self.percent {
             self.label.into()
@@ -173,11 +173,11 @@ impl ParamDef {
 
 const STOCK_SHARE: ParamDef = p("stockShare", "Aktienanteil", 0.1, 1.0, "%", 0.0, 1.0);
 
-/// Bandbreiten je Strategie und Parameter (Schlüssel der Strategie, dann des Parameters).
+/// Ranges per strategy and parameter (key of the strategy, then of the parameter).
 pub type Ranges = std::collections::BTreeMap<String, std::collections::BTreeMap<String, crate::model::ParamRange>>;
 
-/// Strategie der Optimierung: die Entnahmestrategien der Planung und dazu 3-Topf mit Guardrails (#6), die in der
-/// Planung «3-Topf» mit `buckets.spending = "guardrails"` ist.
+/// Strategy of the optimization: the withdrawal strategies of the plan plus «3-Topf» with guardrails (#6), which in the
+/// plan is «3-Topf» with `buckets.spending = "guardrails"`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OptStrategy {
     Standard,
@@ -190,7 +190,7 @@ pub enum OptStrategy {
 }
 
 impl OptStrategy {
-    /// Strategie einer Planung.
+    /// Strategy of a plan.
     pub fn of(w: &crate::model::Withdrawal) -> Self {
         use crate::model::Strategy;
         match w.strategy {
@@ -241,7 +241,7 @@ pub fn all_strategies() -> [OptStrategy; 7] {
     ]
 }
 
-/// Parameter, die für eine Strategie optimiert werden. Floor und Ceiling bleiben wie in der Planung.
+/// Parameters optimized for a strategy. Floor and ceiling stay as in the plan.
 pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
     let floor = p("floor", "Untergrenze der Lebenshaltung", 0.5, 1.0, "%", 0.0, 2.0).fixed();
     let ceiling = p("ceiling", "Obergrenze der Lebenshaltung", 1.0, 1.5, "%", 0.0, 5.0).fixed();
@@ -276,7 +276,7 @@ pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
             ceiling,
         ],
         OptStrategy::ThreeBuckets => bucket_defs().to_vec(),
-        // #6: Töpfe und Guardrails; untere Leitplanke und Anpassung sind standardmässig fix.
+        // #6: Buckets and guardrails; lower guardrail and adjustment are fixed by default.
         OptStrategy::ThreeBucketsGuardrails => {
             let mut v = bucket_defs().to_vec();
             v.extend([
@@ -308,8 +308,8 @@ const fn bucket_defs() -> [ParamDef; 3] {
     ]
 }
 
-/// Parameter einer Strategie nach den Einstellungen: `(variiert, fix)`. Variierte Parameter tragen
-/// die gewählte Bandbreite; fixe behalten den Wert der Planung.
+/// Parameters of a strategy according to the settings: `(varied, fixed)`. Varied parameters carry
+/// the chosen range; fixed ones keep the value of the plan.
 pub fn split_defs(s: OptStrategy, ranges: &Ranges) -> Result<(Vec<ParamDef>, Vec<ParamDef>)> {
     let (mut varied, mut fixed) = (vec![], vec![]);
     for mut d in param_defs(s) {
@@ -353,7 +353,7 @@ pub fn split_defs(s: OptStrategy, ranges: &Ranges) -> Result<(Vec<ParamDef>, Vec
     Ok((varied, fixed))
 }
 
-/// Angaben zu einem Parameter für die Oberfläche.
+/// Details of a parameter for the user interface.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogParam {
@@ -365,9 +365,9 @@ pub struct CatalogParam {
     pub hi: f64,
     pub min: f64,
     pub max: f64,
-    /// Ohne eigene Einstellung bleibt der Parameter fix.
+    /// Without a setting of its own the parameter stays fixed.
     pub fixed: bool,
-    /// Wert in der Planung (`None`: nicht gesetzt, die Strategie nimmt ihren Standardwert).
+    /// Value in the plan (`None`: not set, the strategy uses its default value).
     pub current: Option<f64>,
 }
 
@@ -379,7 +379,7 @@ pub struct CatalogStrategy {
     pub params: Vec<CatalogParam>,
 }
 
-/// Alle Strategien mit ihren Parametern, Standard-Bandbreiten und den Werten der Planung.
+/// All strategies with their parameters, default ranges and the values of the plan.
 pub fn catalog(plan: &Value) -> Vec<CatalogStrategy> {
     all_strategies()
         .into_iter()
@@ -406,7 +406,7 @@ pub fn catalog(plan: &Value) -> Vec<CatalogStrategy> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Planung (JSON) anpassen
+// Adjust the plan (JSON)
 // ---------------------------------------------------------------------------------------------
 
 fn last_value(series: &Value) -> Option<f64> {
@@ -420,7 +420,7 @@ fn last_value(series: &Value) -> Option<f64> {
     }
 }
 
-/// Setzt den Wert ab der Pensionierung; frühere Einträge bleiben.
+/// Sets the value from retirement; earlier entries remain.
 fn set_from_retirement(series: &mut Value, retire: &str, v: f64) {
     let mut rows: Vec<Value> = match &*series {
         Value::Object(o) => match o.get("rows") {
@@ -457,7 +457,7 @@ fn current(plan: &Value, key: &str) -> Option<f64> {
     }
 }
 
-/// Standardwert eines Parameters, wenn die Planung für die Strategie nichts festlegt.
+/// Default value of a parameter if the plan does not set anything for the strategy.
 fn model_default(key: &str) -> Option<f64> {
     use crate::model::{Buckets, Endowment, FixedRate, Guardrails, Vpw};
     let (b, g, v, e) = (
@@ -519,7 +519,7 @@ fn set(plan: &mut Value, key: &str, v: f64, retire: &str) {
     }
 }
 
-/// Planung mit Strategie und Parametern.
+/// Plan with strategy and parameters.
 pub fn with_params(base: &Value, strategy: OptStrategy, defs: &[ParamDef], x: &[f64], retire: YearMonth) -> Value {
     let mut v = base.clone();
     let combined = strategy == OptStrategy::ThreeBucketsGuardrails;
@@ -528,7 +528,7 @@ pub fn with_params(base: &Value, strategy: OptStrategy, defs: &[ParamDef], x: &[
     } else {
         strategy_key(strategy)
     });
-    // #6: Die Ausgabenregel der Töpfe folgt der Strategie, nicht der Planung.
+    // #6: The buckets' spending rule follows the strategy, not the plan.
     if v["withdrawal"]["buckets"].is_object() || combined {
         if !v["withdrawal"]["buckets"].is_object() {
             v["withdrawal"]["buckets"] = json!({"cashYears": 2.0, "bondYears": 6.0, "refillThreshold": 0.0});
@@ -544,19 +544,19 @@ pub fn with_params(base: &Value, strategy: OptStrategy, defs: &[ParamDef], x: &[
 }
 
 // ---------------------------------------------------------------------------------------------
-// Kennzahlen
+// Metrics
 // ---------------------------------------------------------------------------------------------
 
 struct PathStats {
     ruined: bool,
-    /// Realer Konsum pro Jahr (12-Monats-Blöcke ab Pensionierung).
+    /// Real consumption per year (12-month blocks from retirement).
     annual: Vec<f64>,
     vol: f64,
-    /// Entnahmerate im ersten Jahr ab Pensionierung.
+    /// Withdrawal rate in the first year from retirement.
     draw_rate: f64,
-    /// Mindestens ein Notverkauf in diesem Lauf.
+    /// At least one emergency sale in this run.
     emergency: bool,
-    /// Geplante Ausgaben pro Jahr (real, inkl. Wohnkosten), gleiche Blöcke wie `annual`.
+    /// Planned spending per year (real, including housing costs), same blocks as `annual`.
     planned: Vec<f64>,
 }
 
@@ -565,7 +565,7 @@ fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective
         Some(age) => sim.age_at(m) <= age,
         None => true,
     });
-    // Nach der Erschöpfung zählt nur noch, was das Einkommen deckt.
+    // After depletion only what income covers counts.
     let depleted = res.summary.depleted;
     let mut annual = Vec::new();
     let mut planned = Vec::new();
@@ -597,7 +597,7 @@ fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective
     } else {
         changes.iter().sum::<f64>() / changes.len() as f64
     };
-    // Entnahme der ersten 12 Monate ab Pensionierung im Verhältnis zum liquiden Vermögen davor.
+    // Withdrawal of the first 12 months from retirement relative to the liquid wealth before.
     let first: Vec<_> = res.records.iter().filter(|r| r.month >= retire).take(12).collect();
     let draw_rate = first.first().map_or(0.0, |r| {
         let start = r.liquid + r.spending - r.income + r.taxes;
@@ -625,7 +625,7 @@ fn quantile(sorted: &[f64], q: f64) -> f64 {
     sorted[((sorted.len() - 1) as f64 * q).round() as usize]
 }
 
-/// Rechnet eine Planung mit allen Pfaden und fasst zusammen.
+/// Runs a plan with all paths and summarizes.
 pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
     let sim = Simulator::new(plan)?;
     let retire = sim
@@ -661,7 +661,7 @@ pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Suche
+// Search
 // ---------------------------------------------------------------------------------------------
 
 struct Rng(u64);
@@ -677,28 +677,28 @@ impl Rng {
     }
 }
 
-/// Ergebnis der Optimierung einer Strategie.
+/// Result of optimizing one strategy.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Outcome {
     pub strategy: String,
-    /// Parameter (Schlüssel, Anzeigename, Wert, als Prozent).
+    /// Parameters (key, display name, value, as percent).
     pub params: Vec<(String, String, f64, bool)>,
-    /// Fixe Parameter mit ihrem Wert aus der Planung (gleiche Form wie `params`).
+    /// Fixed parameters with their value from the plan (same form as `params`).
     pub fixed: Vec<(String, String, f64, bool)>,
-    /// Kennzahlen auf den Pfaden der Optimierung.
+    /// Metrics on the optimization paths.
     pub fitted: Metrics,
-    /// Kennzahlen auf unabhängigen Pfaden.
+    /// Metrics on independent paths.
     pub validated: Metrics,
     pub feasible: bool,
     pub evaluations: usize,
-    /// Strategie und Anlageparameter der Planung (`withdrawal`, `wealth.stockShare`, `wealth.reserveMonths`),
-    /// zum Übernehmen in die Planung.
+    /// Strategy and investment parameters of the plan (`withdrawal`, `wealth.stockShare`, `wealth.reserveMonths`),
+    /// to be taken over into the plan.
     pub patch: Value,
 }
 
 pub struct Settings {
-    /// Zufällige Startpunkte.
+    /// Random starting points.
     pub samples: usize,
     pub seed: u64,
 }
@@ -707,14 +707,14 @@ fn parse_plan(v: &Value) -> Result<Plan> {
     serde_json::from_value(v.clone()).map_err(|e| Error::Invalid(e.to_string()))
 }
 
-/// Pfade der Optimierung: `fit` für die Suche, `check` für die unabhängige Prüfung.
+/// Paths of the optimization: `fit` for the search, `check` for the independent check.
 pub struct PathSets<'a, 'p> {
     pub fit: &'a Paths<'p>,
     pub check: &'a Paths<'p>,
 }
 
-/// Zielvorgaben der Suche auf `n` Pfaden. Die Suche nutzt die Ruingrenze sonst bis zum Anschlag aus und trifft auf
-/// neuen Pfaden darüber (Zufallsfehler der Schätzung): Sicherheitsabstand von 1,5 Standardfehlern.
+/// Targets of the search on `n` paths. Otherwise the search exhausts the ruin limit to the full and exceeds it on
+/// new paths (random error of the estimate): safety margin of 1.5 standard errors.
 fn fit_objective(o: &Objective, n: usize) -> Objective {
     let n = n.max(1) as f64;
     let margin = 1.5 * (o.max_ruin * (1.0 - o.max_ruin) / n).sqrt();
@@ -724,8 +724,8 @@ fn fit_objective(o: &Objective, n: usize) -> Objective {
     }
 }
 
-/// Startpunkte der Suche: Werte der Planung (soweit vorhanden), Mitte des Bereichs, Zufall.
-/// Der Wert der Planung zählt nur, wenn er in der gewählten Bandbreite liegt (sonst Mitte).
+/// Starting points of the search: values of the plan (where present), middle of the range, random.
+/// The value of the plan only counts if it lies within the chosen range (otherwise the middle).
 fn start_points(base: &Value, defs: &[ParamDef], st: &Settings) -> Vec<Vec<f64>> {
     let mid = |d: &ParamDef| (d.lo + d.hi) / 2.0;
     let mut starts: Vec<Vec<f64>> = vec![defs
@@ -736,7 +736,7 @@ fn start_points(base: &Value, defs: &[ParamDef], st: &Settings) -> Vec<Vec<f64>>
                 .unwrap_or(mid(d))
         })
         .collect()];
-    // Ohne variierte Parameter gibt es nur die Planung selbst zu prüfen.
+    // Without varied parameters only the plan itself is left to check.
     if defs.is_empty() {
         return starts;
     }
@@ -748,9 +748,9 @@ fn start_points(base: &Value, defs: &[ParamDef], st: &Settings) -> Vec<Vec<f64>>
     starts
 }
 
-/// Sucht das Maximum von `eval` innerhalb der Grenzen `bounds` (je Parameter unten, oben): Der beste Startpunkt ist
-/// der Ausgangswert, danach folgt eine Mustersuche (je Achse ± Schritt, bei Misserfolg Schritt halbieren).
-/// Ergebnis: Parameter, Zusatzwert von `eval` und Fitness des besten Punkts.
+/// Searches the maximum of `eval` within the limits `bounds` (lower, upper per parameter): the best starting point is
+/// the initial value, followed by a pattern search (± step per axis, halve the step on failure).
+/// Result: parameters, extra value of `eval` and fitness of the best point.
 fn search<T>(
     starts: Vec<Vec<f64>>,
     bounds: &[(f64, f64)],
@@ -798,7 +798,7 @@ fn search<T>(
     Ok((bx, bm, bf))
 }
 
-/// Optimiert eine Strategie mit den Pfaden `paths`.
+/// Optimizes a strategy with the paths `paths`.
 pub fn optimize_strategy(
     base: &Value,
     strategy: OptStrategy,
@@ -851,7 +851,7 @@ pub fn optimize_strategy(
 }
 
 // ---------------------------------------------------------------------------------------------
-// Auftrag von CLI und Oberfläche
+// Request from the CLI and the user interface
 // ---------------------------------------------------------------------------------------------
 
 fn d_ruin() -> f64 {
@@ -876,16 +876,16 @@ fn d_seed() -> u64 {
     1
 }
 
-/// Einstellungen einer Optimierung (JSON der Oberfläche; Anteile als Zahl, 0.05 = 5 %).
+/// Settings of an optimization (JSON of the user interface; shares as numbers, 0.05 = 5 %).
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Request {
-    /// Schlüssel der Strategien (`guardrails`, `vpw` …); leer = alle.
+    /// Keys of the strategies (`guardrails`, `vpw` …); empty = all.
     pub strategies: Vec<String>,
     pub max_ruin: f64,
-    /// Ziel der Optimierung (Standard: Konsum).
+    /// Goal of the optimization (default: consumption).
     pub goal: Goal,
-    /// Ziel «Kein Notverkauf von Immobilien»: Mindestanteil der geplanten Ausgaben für den Median des Konsums.
+    /// Goal «Kein Notverkauf von Immobilien»: minimum share of the planned spending for the median consumption.
     pub min_consumption: f64,
     pub ruin_age: Option<f64>,
     pub weight_median: f64,
@@ -895,9 +895,9 @@ pub struct Request {
     pub check_paths: usize,
     pub samples: usize,
     pub seed: u64,
-    /// Bandbreiten und fixe Parameter je Strategie (siehe [`split_defs`]).
+    /// Ranges and fixed parameters per strategy (see [`split_defs`]).
     pub ranges: Ranges,
-    /// Kennung der Berechnung für Fortschritt und Abbruch (von der Oberfläche gewählt; sonst vergibt die Engine eine).
+    /// Id of the computation for progress and cancellation (chosen by the user interface; otherwise the engine assigns one).
     pub job_id: Option<crate::progress::JobId>,
 }
 
@@ -976,7 +976,7 @@ impl Request {
     }
 }
 
-/// Die Planung, wie sie ist, auf den Prüfpfaden.
+/// The plan as it is, on the check paths.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Reference {
@@ -994,7 +994,7 @@ pub struct Report {
     pub check_paths: usize,
     pub source: String,
     pub reference: Reference,
-    /// Beste zuerst: zulässige nach Ziel, unzulässige nach geringster Verletzung.
+    /// Best first: feasible ones by objective, infeasible ones by smallest violation.
     pub outcomes: Vec<Outcome>,
     pub elapsed_ms: f64,
 }
@@ -1011,7 +1011,7 @@ fn with_paths(base: &Value, n: usize, seed_offset: u64) -> Value {
     v
 }
 
-/// Typische Zahl der Auswertungen der Mustersuche (nur für die Fortschrittsanzeige).
+/// Typical number of evaluations of the pattern search (only for the progress display).
 fn search_evals(s: OptStrategy) -> u64 {
     match strategy_key(s) {
         "standard" => 22,
@@ -1024,9 +1024,9 @@ fn search_evals(s: OptStrategy) -> u64 {
     }
 }
 
-/// Geschätzte Zahl der Läufe für die Fortschrittsanzeige: je Strategie Startpunkte plus Mustersuche
-/// (Erfahrungswerte, anteilig zu den variierten Parametern) auf den Suchpfaden, dazu die Prüfpfade für jede Strategie
-/// und für die Planung selbst.
+/// Estimated number of runs for the progress display: per strategy starting points plus pattern search
+/// (empirical values, proportional to the varied parameters) on the search paths, plus the check paths for every strategy
+/// and for the plan itself.
 fn progress_total(req: &Request, strategies: &[OptStrategy]) -> Result<u64> {
     let mut search = 0;
     for s in strategies {
@@ -1041,7 +1041,7 @@ fn progress_total(req: &Request, strategies: &[OptStrategy]) -> Result<u64> {
     Ok(search * req.paths as u64 + (strategies.len() as u64 + 1) * req.check_paths as u64)
 }
 
-/// Rangfolge der Ergebnisse: zulässige nach Ziel auf den Prüfpfaden, unzulässige darunter nach geringster Verletzung.
+/// Ranking of the results: feasible ones by objective on the check paths, infeasible ones below by smallest violation.
 fn rank(o: &Outcome, obj: &Objective) -> f64 {
     if o.feasible {
         o.validated.score(obj)
@@ -1050,8 +1050,8 @@ fn rank(o: &Outcome, obj: &Objective) -> f64 {
     }
 }
 
-/// Sucht für die gewählten Strategien die besten Parameter. `base_dir`: Ordner der Projektdatei,
-/// `library`: Datenbibliothek.
+/// Searches the best parameters for the chosen strategies. `base_dir`: folder of the project file,
+/// `library`: data library.
 pub fn run_request(
     base: &Value,
     base_dir: &std::path::Path,
@@ -1094,7 +1094,7 @@ pub fn run_request(
     let p_fit = parse_plan(&with_paths(base, req.paths, 0))?;
     let p_check = parse_plan(&with_paths(base, req.check_paths, 7919))?;
     let data = batch::load_series(&plan, base_dir, library)?;
-    // Pfade der Suche einmal erzeugen, damit nicht jeder Kandidat sie neu berechnet.
+    // Create the search paths once, so that not every candidate recomputes them.
     let fit = match batch::path_source(&p_fit, &sim, data.as_ref())? {
         Paths::List(v) => Paths::List(v),
         other => Paths::List(other.iter_owned().collect()),
@@ -1177,11 +1177,11 @@ mod tests {
 
     // ---- #40 ----
 
-    /// Erfundene Planung ohne Steuern, Teuerung und Renditen: Start 2026-11, Pensionierung 2031-11, Ende 2061-11,
-    /// Ausgaben 1000 pro Monat, Vermögen nur als Bargeld.
+    /// Made-up plan without taxes, inflation and returns: start 2026-11, retirement 2031-11, end 2061-11,
+    /// spending 1000 per month, wealth as cash only.
     fn calm(cash: f64) -> Value {
         let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
-        // Bezug der Pensionskasse auch nach 65 (der Test verschiebt ihn); die Grenzen prüft #51 anderswo.
+        // Pension fund payout also after 65 (the test moves it); #51 checks the limits elsewhere.
         v["limits"] = json!({"pkMax": 130, "ahvMax": 130});
         v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
         v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
@@ -1230,9 +1230,9 @@ mod tests {
         assert_eq!(m.score(&keep), -(0.1 * 1e6 + 0.02));
         let enough = Metrics { planned: 100.0, ..m };
         assert_eq!(enough.fitness(&keep), enough.score(&keep));
-        // Median 100 von geplanten 120 ⇒ 0.9 − 0.8333 fehlen
+        // Median 100 of planned 120 ⇒ 0.9 − 0.8333 missing
         assert!((m.violation(&keep) - (0.9 - 100.0 / 120.0)).abs() < 1e-12);
-        // Ruin 0.08 bei Grenze 0.05, Schwankung 0.15 bei Grenze 0.1
+        // Ruin 0.08 at limit 0.05, fluctuation 0.15 at limit 0.1
         let bad = Metrics {
             ruin: 0.08,
             volatility: 0.15,
@@ -1245,7 +1245,7 @@ mod tests {
         };
         assert!((bad.violation(&o) - 0.08).abs() < 1e-12);
         assert!((bad.fitness(&o) - -1e9 * 1.08).abs() < 1e-3);
-        // Eine Verletzung von genau 1e-12 gilt noch als erfüllt.
+        // A violation of exactly 1e-12 still counts as met.
         let tiny = Metrics {
             ruin: 1e-12,
             volatility: 0.0,
@@ -1304,7 +1304,7 @@ mod tests {
 
     #[test]
     fn retirement_rows_and_current_values() {
-        // Datumseinträge vor der Pensionierung und andere Verweise bleiben; «retire» und spätere Daten fallen weg.
+        // Date entries before retirement and other references remain; «retire» and later dates are dropped.
         let mut s = json!({"mode": "timed", "rows": [
             {"from": "start", "value": 0.1}, {"from": "end", "value": 0.15}, {"from": "pension", "value": 0.2},
             {"from": "2026-03", "value": 0.3}, {"from": "retire", "value": 0.4}, {"from": "2030-01", "value": 0.5}]});
@@ -1377,7 +1377,7 @@ mod tests {
     #[test]
     fn set_writes_each_parameter() {
         let retire = "2031-11";
-        // Fehlende Abschnitte entstehen mit Vorgabewerten.
+        // Missing sections are created with default values.
         let mut p = json!({"wealth": {"stockShare": 0.5, "reserveMonths": 6}, "withdrawal": {}});
         for (k, x) in [
             ("stockShare", 0.7),
@@ -1413,7 +1413,7 @@ mod tests {
         );
         assert_eq!(p["withdrawal"]["vpw"], json!({"horizonAge": 100.0, "realReturn": 0.01}));
         assert_eq!(p["withdrawal"]["endowment"], json!({"rate": 0.05, "smoothing": 0.3}));
-        // Vorhandene Abschnitte behalten ihre übrigen Werte.
+        // Existing sections keep their other values.
         set(&mut p, "lower", 0.25, retire);
         set(&mut p, "cashYears", 3.0, retire);
         set(&mut p, "horizonAge", 95.0, retire);
@@ -1429,7 +1429,7 @@ mod tests {
 
     #[test]
     fn path_statistics() {
-        // Viel Vermögen: jedes Jahr 12'000 Konsum, keine Schwankung; Entnahmerate 12'000 / Vermögen vor der Pensionierung.
+        // Plenty of wealth: 12'000 consumption every year, no fluctuation; withdrawal rate 12'000 / wealth before retirement.
         let (sim, res) = run_calm(1_000_000.0);
         let retire = sim.retire_at().unwrap();
         let st = path_stats(&sim, &res, retire, &Objective::default());
@@ -1439,12 +1439,12 @@ mod tests {
         assert_eq!(st.vol, 0.0);
         assert!((st.draw_rate - 12_000.0 / 940_000.0).abs() < 1e-12);
 
-        // 100'000: ab Februar 2035 (Alter 68.25) aufgebraucht, danach zählt nur, was das Einkommen (0) deckt.
+        // 100'000: depleted from February 2035 (age 68.25), afterwards only what income (0) covers counts.
         let (sim, res) = run_calm(100_000.0);
         let st = path_stats(&sim, &res, retire, &Objective::default());
         assert!(st.ruined);
         assert_eq!(&st.annual[..5], &[12_000.0, 12_000.0, 12_000.0, 3_000.0, 0.0]);
-        // Änderungen 0, 0, 0.75, 1 (Jahre mit 0 zählen nicht als Ausgangswert)
+        // Changes 0, 0, 0.75, 1 (years with 0 do not count as a starting value)
         assert!((st.vol - 1.75 / 4.0).abs() < 1e-12);
         assert!((st.draw_rate - 12_000.0 / 40_000.0).abs() < 1e-12);
         let ruin_until = |age: f64| {
@@ -1461,11 +1461,11 @@ mod tests {
         };
         assert!(ruin_until(68.25) && !ruin_until(68.0));
 
-        // Ohne Vermögen bei der Pensionierung: Entnahmerate 0
+        // Without wealth at retirement: withdrawal rate 0
         let (sim, res) = run_calm(60_000.0);
         assert_eq!(path_stats(&sim, &res, retire, &Objective::default()).draw_rate, 0.0);
 
-        // Mit AHV (500) und Steuern im ersten Monat (Pensionierung im Mai 2032): Vermögen vor dem Monat aus dem Vormonat.
+        // With AHV (500) and taxes in the first month (retirement in May 2032): wealth before the month from the previous month.
         let mut v = calm(500_000.0);
         v["pension"]["ahv"]["monthly"] = json!(500);
         v["taxes"]["income"] = json!([[0, 0.1]]);
@@ -1481,7 +1481,7 @@ mod tests {
 
     #[test]
     fn path_statistics_in_real_terms_with_rent() {
-        // Teuerung 2 %, Miete 500 (mit der Teuerung): Konsum und Plan jedes Jahr real 12 × (1000 + 500).
+        // Inflation 2 %, rent 500 (indexed): consumption and plan real 12 × (1000 + 500) every year.
         let mut v = calm(1_000_000.0);
         v["returns"]["fixed"]["inflation"] = json!(0.02);
         v["flows"]["spendingIncludesHousing"] = json!(false);
@@ -1502,7 +1502,7 @@ mod tests {
         }
     }
 
-    /// Zielfunktion, die die geprüften Punkte aufzeichnet.
+    /// Objective function that records the points checked.
     fn traced<'a>(f: impl Fn(f64) -> f64 + 'a, seen: &'a mut Vec<f64>) -> impl FnMut(&[f64]) -> Result<((), f64)> + 'a {
         move |x: &[f64]| {
             seen.push(x[0]);
@@ -1512,7 +1512,7 @@ mod tests {
 
     #[test]
     fn search_takes_the_best_start_point() {
-        // Plateaus ohne Steigung: Von einem Startpunkt aus kommt die Suche nicht weiter, der beste Start entscheidet.
+        // Plateaus without slope: from one starting point the search gets nowhere, the best start decides.
         let plateau = |x: f64| {
             if x > 0.85 {
                 2.0
@@ -1525,14 +1525,14 @@ mod tests {
         let mut seen = Vec::new();
         let starts = vec![vec![0.5], vec![0.9], vec![0.1], vec![0.95], vec![-3.0]];
         let (x, _, f) = search(starts, &[(0.0, 1.0)], traced(plateau, &mut seen)).unwrap();
-        // Bei gleicher Fitness gilt der frühere Startpunkt; Startpunkte ausserhalb werden begrenzt.
+        // With equal fitness the earlier starting point wins; starting points outside are clamped.
         assert_eq!((x, f), (vec![0.9], 2.0));
         assert_eq!(&seen[..5], &[0.5, 0.9, 0.1, 0.95, 0.0]);
     }
 
     #[test]
     fn search_steps_and_directions() {
-        // Ohne Verbesserung: je Achse +20 %, dann −20 % der Bandbreite (hier 0.5 bis 2.5), danach halbe Schritte bis 1.25 %.
+        // Without improvement: +20 %, then −20 % of the range per axis (here 0.5 to 2.5), then half steps down to 1.25 %.
         let bounds = [(0.5, 2.5)];
         let mut seen = Vec::new();
         let (x, _, _) = search(vec![vec![1.0]], &bounds, traced(|_| 0.0, &mut seen)).unwrap();
@@ -1543,11 +1543,11 @@ mod tests {
             assert!((v - 1.0 - d).abs() < 1e-12, "{seen:?}");
         }
 
-        // Die erste Verbesserung wird genommen: Zuerst geht es nach oben bis an die Grenze.
+        // The first improvement is taken: first it goes up to the limit.
         let (x, _, _) = search(vec![vec![1.0]], &bounds, |x: &[f64]| Ok(((), (x[0] - 1.0).powi(2)))).unwrap();
         assert_eq!(x, vec![2.5]);
 
-        // Ein Maximum innerhalb wird auf einen Schritt genau gefunden (in beide Richtungen).
+        // A maximum inside is found to within one step (in both directions).
         for peak in [0.87, 2.11] {
             let (x, _, _) = search(vec![vec![1.0]], &bounds, |x: &[f64]| Ok(((), -(x[0] - peak).powi(2)))).unwrap();
             assert!((x[0] - peak).abs() <= 0.025, "{x:?} statt {peak}");
@@ -1562,17 +1562,17 @@ mod tests {
             check_paths: 1000,
             ..Default::default()
         };
-        // Fixe Rate: 10 Stichproben + Planung + Mitte + 14 Schritte, dazu Prüfung von Strategie und Planung.
+        // Fixed rate: 10 samples + plan + middle + 14 steps, plus checking strategy and plan.
         assert_eq!(
             progress_total(&req, &[OptStrategy::FixedRate]).unwrap(),
             26 * 100 + 2 * 1000
         );
-        // Alle: 7 × 12 Startpunkte + 22 + 14 + 46 + 110 + 40 + 74 + 90 Schritte (#6: 3-Topf + Guardrails)
+        // All: 7 × 12 starting points + 22 + 14 + 46 + 110 + 40 + 74 + 90 steps (#6: «3-Topf» + guardrails)
         assert_eq!(
             progress_total(&req, &all_strategies()).unwrap(),
             (84 + 396) * 100 + 8 * 1000
         );
-        // Ein festgehaltener Parameter von zweien: halbe Schrittzahl; alle fest: ein Lauf.
+        // One of two parameters held fixed: half the number of steps; all fixed: one run.
         let fix = |keys: &[&str]| -> Ranges {
             [(
                 "fixed_rate".to_string(),
@@ -1650,19 +1650,19 @@ mod tests {
 
     #[test]
     fn search_margin_and_start_points() {
-        // 1,5 Standardfehler bei 100 Pfaden: 1.5 × √(0.05 × 0.95 / 100)
+        // 1.5 standard errors at 100 paths: 1.5 × √(0.05 × 0.95 / 100)
         let o = Objective::default();
         let f = fit_objective(&o, 100);
         assert!((f.max_ruin - (0.05 - 1.5 * (0.05f64 * 0.95 / 100.0).sqrt())).abs() < 1e-15);
         assert_eq!(fit_objective(&o, 1).max_ruin, 0.0);
         assert_eq!(fit_objective(&o, 0).max_ruin, 0.0);
 
-        let defs = param_defs(OptStrategy::FixedRate)[..2].to_vec(); // Rate 2–8 %, Aktienanteil 10–100 %
+        let defs = param_defs(OptStrategy::FixedRate)[..2].to_vec(); // rate 2–8 %, stock share 10–100 %
         let plan = json!({"withdrawal": {"fixedRate": {"rate": 0.03}}, "wealth": {"stockShare": 1.5}});
         let st = Settings { samples: 20, seed: 4 };
         let s = start_points(&plan, &defs, &st);
         assert_eq!(s.len(), 22);
-        // Wert der Planung (Aktienanteil ausserhalb ⇒ Mitte), dann die Mitte
+        // Value of the plan (stock share outside ⇒ middle), then the middle
         assert_eq!(s[0], vec![0.03, 0.55]);
         assert_eq!(s[1], vec![0.05, 0.55]);
         for x in &s[2..] {
@@ -1673,14 +1673,14 @@ mod tests {
         };
         assert!(spread(0) && spread(1));
         assert_eq!(start_points(&plan, &[], &st).len(), 1);
-        // Zufällige Startpunkte aus Rng(Saat XOR 0xA5A5_5A5A); Saat 10 überschneidet die Bits der Konstante.
+        // Random starting points from Rng(seed XOR 0xA5A5_5A5A); seed 10 overlaps the bits of the constant.
         let s = start_points(&plan, &defs, &Settings { samples: 1, seed: 10 });
         let mut r = Rng(10 ^ 0xA5A5_5A5A);
         let at = |d: &ParamDef, u: f64| d.lo + (d.hi - d.lo) * u;
         assert_eq!(s[2], vec![at(&defs[0], r.next()), at(&defs[1], r.next())]);
     }
 
-    // Die Mustersuche findet das Optimum der Entnahmerate (feines Raster zum Vergleich).
+    // The pattern search finds the optimum of the withdrawal rate (fine grid for comparison).
     #[test]
     fn search_finds_the_optimum() {
         let mut f = calm(400_000.0);
@@ -1805,13 +1805,13 @@ mod tests {
             }
         )
         .contains("Anzahl Pfade"));
-        // Ziel 1 braucht keine Immobilie (die unbekannte Strategie beendet den Auftrag danach).
+        // Goal 1 needs no property (the unknown strategy ends the request afterwards).
         let unknown = || Request {
             strategies: vec!["x".into()],
             ..Default::default()
         };
         assert!(err(&plain, unknown()).contains("Unbekannte Strategie"));
-        // Ziel 2 braucht eine Immobilie, die keine Miete ist, und einen Mindestkonsum zwischen 0 und 200 %.
+        // Goal 2 needs a property that is not rented, and a minimum consumption between 0 and 200 %.
         let keep = |min: f64| Request {
             goal: Goal::KeepProperty,
             min_consumption: min,
@@ -1848,7 +1848,7 @@ mod tests {
     fn ranking_of_outcomes() {
         let o = Objective::default();
         assert!((rank(&outcome(true, 0.01), &o) - outcome(true, 0.01).validated.score(&o)).abs() < 1e-12);
-        // Unzulässig: −1e9 × (1 + Verletzung)
+        // Infeasible: −1e9 × (1 + violation)
         assert!((rank(&outcome(false, 0.15), &o) - -1e9 * 1.1).abs() < 1e-3);
         assert!(rank(&outcome(false, 0.10), &o) > rank(&outcome(false, 0.15), &o));
     }
@@ -1882,7 +1882,7 @@ mod tests {
         let rep = run_request(&v, std::path::Path::new("."), None, &r).unwrap();
         let outer_ms = t.elapsed().as_secs_f64() * 1e3;
         assert_eq!((rep.fit_paths, rep.check_paths, rep.outcomes.len()), (2, 2, 1));
-        // Gemessene Zeit in Millisekunden, höchstens so lang wie der ganze Aufruf.
+        // Measured time in milliseconds, at most as long as the whole call.
         assert!(
             rep.elapsed_ms > 0.01 && rep.elapsed_ms <= outer_ms,
             "{} > {outer_ms}",
