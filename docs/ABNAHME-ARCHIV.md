@@ -874,6 +874,26 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #154/AK1 | Der Schritt `housing` läuft nach den Schritten, die die Planung lesbar machen; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «proptest_upgrade_is_idempotent» | 18.11.2026 ok |
 | #154/AK2 | Regressionstest mit dem verkleinerten Fall. | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_154_…» | 18.11.2026 ok |
 
+### #157 Netzwerkfreiheit automatisch prüfen
+
+[Issue #157](https://github.com/ingen63/VivaPlan/issues/157) · geschlossen · Umsetzung: c6c1ac4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #157/AK1 | Test oder Workflow-Schritt prüft mit `cargo tree` (App, Engine, Kommandozeile, ohne Entwicklungsabhängigkeiten), dass keine Netzwerk-Bibliothek aus einer Sperrliste enthalten ist; ein Treffer lässt die Prüfung fehlschlagen. | ☑ | **gilt** (sechs Desktop-Ziele statt aller Ziele, Entscheid im Issue) | [check-network-free.sh](../tools/check-network-free.sh), [test_check_network_free.py](../tools/test_check_network_free.py) (#157/AK1), Job `network-free` in `test-quality.yml` | 19.11.2026 ok (Skript und Tests grün; Job auf GitHub vor dem Push noch nicht gelaufen) |
+| #157/AK2 | Test prüft die CSP in `crates/app/tauri.conf.json`: `connect-src` erlaubt nur `'self'` und die IPC-Quellen. | ☑ | **gilt** | [app/tests/csp.rs](../crates/app/tests/csp.rs) «issue_157_ak2_…» (2 Tests) | 19.11.2026 ok |
+| #157/AK3 | `docs/TESTS.md` nennt die Prüfung. | ☑ | **gilt** | kein Test (Durchsicht `docs/TESTS.md`) | 19.11.2026 ok |
+
+### #158 Gemeinsamer Plan-Builder für Rust-Tests und Aufteilung von ui.spec.js
+
+[Issue #158](https://github.com/ingen63/VivaPlan/issues/158) · geschlossen · Umsetzung: 2a92011 (AK2 bereits in 268d31a)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #158/AK1 | Gemeinsamer Plan-Builder unter `crates/engine/tests/`, in `all.rs` eingebunden, kennt die Pflichtfelder, Bausteine für Person, Paar, Immobilie, Monte Carlo parametrisch/Bootstrap; die mehrfach vorhandenen Planungen nutzen ihn. | ☑ | **gilt** | [plan_builder.rs](../crates/engine/tests/plan_builder.rs), genutzt in `simulation.rs`, `optimize_goal.rs`, `rerun_paths.rs`, `qa_matrix.rs` | 19.11.2026 ok (Paar und Immobilie nur durchgesehen, noch nicht genutzt) |
+| #158/AK2 | `e2e/ui.spec.js` nach Bereichen aufgeteilt, gemeinsame Hilfen in eigener Datei. | ☑ | **gilt** | kein Test (Durchsicht: 11 Spec-Dateien, `e2e/helpers.js`) | 19.11.2026 ok |
+| #158/AK3 | Anzahl und Ergebnis der Tests bleiben gleich; Zuordnung zu Abnahmekriterien im Bericht ändert sich nicht. | ☑ | **gilt** | kein Test (Vergleich vor/nach dem Commit) | 19.11.2026 ok (454 `#[test]` und 623 nextest-Einträge vorher wie nachher, keine Namen oder Kennungen geändert, Integrationstests grün; `make report` nicht ausgeführt) |
+
 ### #159 Nächtliche Läufe zuverlässig machen und von Hand vollständig startbar
 
 [Issue #159](https://github.com/ingen63/VivaPlan/issues/159) · geschlossen · Umsetzung: b46150f
