@@ -961,3 +961,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #165/AK3 | Ein Prüfskript (`tools/check-english.sh`, Ziel `make english`) meldet deutsche Kommentare und Testnamen mit Datei und Zeile; Oberflächentexte und Golden-Dateien ausgenommen. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak3_…» (10 Tests) | 19.11.2026 ok: Tests grün; `--all` auf dem Repo meldet 3926 Zeilen mit Datei:Zeile |
 | #165/AK4 | Übergangsliste noch nicht umgestellter Pfade; ist sie leer, läuft die Prüfung in `make test-quiet` und im Workflow mit. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_…» (6 Tests) | 19.11.2026 ok: `make test-quiet` ruft `--gate` auf (übersprungen, 6 Pfade); Job `english` in `test-quality.yml` (YAML gültig, auf GitHub noch nicht gelaufen) |
 | #165/AK5 | Tests des Skripts (Treffer, kein Treffer, Ausnahmen) wie bei `check-network-free.sh`. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) (16 Tests) | 19.11.2026 ok |
+
+### #169 Code intern englisch: Kommandozeile, fuzz und tools
+
+[Issue #169](https://github.com/ingen63/VivaPlan/issues/169) · geschlossen · Umsetzung: da91d7b, 190c6b4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #169/AK1 | `tools/check-english.sh` meldet für `crates/cli/`, `fuzz/`, `tools/` keine Treffer; die Pfade sind aus der Übergangsliste entfernt. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_transition_list_holds_unconverted_paths»; `tools/check-english.sh --all crates/cli fuzz tools` | 19.11.2026 ok: keine Treffer in 65 Dateien; Übergangsliste nur noch Engine, App, e2e |
+| #169/AK2 | Bezeichner und Testnamen folgen dem Glossar; Kriterien-Bezüge bleiben erhalten (`#27/AK2`, `issue_27_ak2_…`, `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`). | ☑ | **gilt** | kein Test (Vergleich der Kennungen vor und nach der Umstellung) | 19.11.2026 ok: `#Nr/AKn`, `issue_Nr_akn`, `test_akN` in den drei Pfaden vor 0bfc0e7 und nach 190c6b4 identisch |
+| #169/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests), Python-Tests in `tools/` (27) und `tools/report` (20) | 19.11.2026 ok: alles grün, Golden-Dateien unverändert; im Produktivcode der Kommandozeile nur Kommentare geändert, Abdeckung `vivaplan-cli` 95,8 % |
+| #169/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Durchsicht des Diffs) | 19.11.2026 ok: keine Ausgabe der Kommandozeile und keine Meldung der Skripte geändert; nur Testdaten und Panik-Meldungen in Tests englisch |
