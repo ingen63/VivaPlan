@@ -1,8 +1,8 @@
-//! #40: Einzelregeln des Rechenkerns mit nachgerechneten Werten (Entnahmestrategien, Immobilien, Hypotheken,
-//! 3-Topf-Strategie, Monatsablauf). Jeder Test deckt Fälle ab, die sonst kein Test prüft.
+//! #40: Single rules of the calculation engine with recomputed values (withdrawal strategies, properties, mortgages,
+//! 3-bucket strategy, monthly procedure). Every test covers cases no other test checks.
 //!
-//! Grundplanung (erfunden): Start 2026-11, Geburt 1966-11, Pensionierung und AHV 2031-11 (Alter 65), Ende 2061-11;
-//! ohne Steuern, Teuerung und Renditen, Ausgaben 1000 pro Monat, Vermögen 1'000'000 als Bargeld.
+//! Base plan (made up): start 2026-11, birth 1966-11, retirement and AHV 2031-11 (age 65), end 2061-11;
+//! without taxes, inflation and returns, spending 1000 per month, wealth 1'000'000 as cash.
 
 use engine::market::MarketPath;
 use engine::model::Plan;
@@ -15,9 +15,9 @@ fn base() -> Value {
     v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
     v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
     v["flows"]["spending"] = json!(1000);
-    // Die Regeln hier rechnen die Wohnkosten zusätzlich zu den Ausgaben (#53 prüft crates/engine/tests/cash_housing.rs).
+    // The rules here count housing costs in addition to spending (#53 is checked by crates/engine/tests/cash_housing.rs).
     v["flows"]["spendingIncludesHousing"] = json!(false);
-    // Einkommen nominal gleich, wie die Regeln hier gerechnet sind (#58 prüft crates/engine/tests/income_indexed.rs).
+    // Income stays the same in nominal terms, as the rules here are computed (#58 is checked by crates/engine/tests/income_indexed.rs).
     v["flows"]["incomeIndexed"] = json!(false);
     v["wealth"] = json!({"stocks": 0, "bonds": 0, "cash": 1_000_000, "stockShare": 0, "reserveMonths": 0});
     v
@@ -27,7 +27,7 @@ fn ym(y: i32, m: u32) -> YearMonth {
     YearMonth::new(y, m)
 }
 
-/// Rechnet die Planung mit den fixen Werten; `f` darf den Renditepfad anpassen.
+/// Runs the plan with the fixed values; `f` may adjust the return path.
 fn run_with(v: &Value, f: impl FnOnce(&mut MarketPath, YearMonth)) -> SimResult {
     let plan: Plan = serde_json::from_value(crate::any_age(v.clone())).unwrap();
     let sim = Simulator::new(&plan).unwrap();
@@ -48,7 +48,7 @@ fn close(a: f64, b: f64, what: &str) {
     assert!((a - b).abs() < 1e-6 * b.abs().max(1.0), "{what}: {a} != {b}");
 }
 
-/// Annuitätenfaktor: Anteil, der ein Vermögen in `n` Jahren bei Rendite `r` aufbraucht.
+/// Annuity factor: share that uses up wealth in `n` years at return `r`.
 fn annuity(r: f64, n: f64) -> f64 {
     r / (1.0 - (1.0 + r).powf(-n))
 }
@@ -58,7 +58,7 @@ fn index(start: YearMonth, m: YearMonth) -> usize {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Entnahmestrategien
+// Withdrawal strategies
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -67,10 +67,10 @@ fn vpw_uses_the_remaining_years() {
     v["withdrawal"]["strategy"] = json!("vpw");
     v["withdrawal"]["vpw"] = json!({"horizonAge": 100, "realReturn": 0.02});
     let r = run(&v);
-    // Pensionierung: 60 Monate zu 1000 ausgegeben, 35 Jahre bis Alter 100
+    // Retirement: 60 months of 1000 spent, 35 years until age 100
     let b0 = annuity(0.02, 35.0) * 940_000.0;
     close(rec(&r, 2031, 11).spending, b0 / 12.0, "Nov 2031");
-    // Januar: neu mit dem Vermögen nach zwei Monaten und 100 − (65 + 2/12) Jahren
+    // January: anew with the wealth after two months and 100 − (65 + 2/12) years
     let b1 = annuity(0.02, 100.0 - (65.0 + 2.0 / 12.0)) * (940_000.0 - b0 / 6.0);
     close(rec(&r, 2032, 1).spending, b1 / 12.0, "Jan 2032");
 }
@@ -90,7 +90,7 @@ fn endowment_smooths_with_inflation() {
     close(rec(&r, 2032, 1).spending, b1 / 12.0, "Jan 2032");
 }
 
-/// Guardrails 4 %, Leitplanken ±20 %, Anpassung 10 %, Teuerung 12 %; Aktienrendite im Dezember 2031 wie angegeben.
+/// Guardrails 4 %, guardrails ±20 %, adjustment 10 %, inflation 12 %; stock return in December 2031 as given.
 fn guardrails(december: f64) -> (f64, f64, f64) {
     let mut v = base();
     v["returns"]["fixed"]["inflation"] = json!(0.12);
@@ -112,14 +112,14 @@ fn guardrails_without_change_follow_inflation() {
 
 #[test]
 fn guardrails_cut_after_a_loss_without_inflation() {
-    // Verlustjahr und Rate über der Startrate: keine Teuerung; Rate über 4.8 % ⇒ 10 % weniger
+    // Losing year and rate above the initial rate: no inflation; rate above 4.8 % ⇒ 10 % less
     let (b0, _, b1) = guardrails(-0.3);
     close(b1, b0 * 0.9, "gekürzt");
 }
 
 #[test]
 fn guardrails_raise_after_a_gain() {
-    // Gewinnjahr: Teuerung; Rate unter 3.2 % ⇒ 10 % mehr
+    // Winning year: inflation; rate below 3.2 % ⇒ 10 % more
     let (b0, f, b1) = guardrails(0.5);
     close(b1, b0 * f * 1.1, "erhöht");
 }
@@ -138,14 +138,14 @@ fn guardrails_events() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 3-Topf-Strategie: Netto-Bedarf, Renditekriterium, Auffüllung
+// 3-bucket strategy: net need, return criterion, refill
 // ---------------------------------------------------------------------------------------------
 
 fn buckets(v: &mut Value, cash_years: f64, bond_years: f64, threshold: f64) {
     v["withdrawal"]["strategy"] = json!("three_buckets");
     v["withdrawal"]["buckets"] =
         json!({"cashYears": cash_years, "bondYears": bond_years, "refillThreshold": threshold});
-    // Ohne Cash-Topf (0 Jahre) hält C2 keine Monatsbedarfe zurück: Topf 1 wird jeden Monat nachgefüllt.
+    // Without a cash bucket (0 years) C2 holds back no monthly needs: bucket 1 is refilled every month.
     if cash_years == 0.0 {
         v["withdrawal"]["buckets"]["reserveMonths"] = json!(1);
     }
@@ -166,8 +166,8 @@ fn refill<'a>(r: &'a SimResult, trigger: &str, y: i32, m: u32) -> &'a engine::si
         })
 }
 
-/// Ehepaar: A (PK 800'000 ab Pensionierung 2031-11), B (PK 600'000 ab 2031-12, Zins 1.2 %); AHV je 2500 ab 2031-11,
-/// zusammen plafoniert auf 3780.
+/// Married couple: A (PK 800'000 from retirement 2031-11), B (PK 600'000 from 2031-12, interest 1.2 %); AHV 2500 each from 2031-11,
+/// capped together at 3780.
 fn couple() -> Value {
     let mut v = base();
     v["household"]["persons"] =
@@ -184,21 +184,21 @@ fn couple() -> Value {
 fn need_counts_pensions_that_start_later_in_the_year() {
     let r = run(&couple());
     let a = refill(&r, "A", 2031, 11);
-    // November und Dezember, auf 12 Monate hochgerechnet (× 6)
+    // November and December, extrapolated to 12 months (× 6)
     assert_eq!(a.basis.months, 2);
     assert_eq!(a.basis.source, "ab 11.2031, auf 12 Monate hochgerechnet");
     let pa = rec(&r, 2031, 11).pk_pension;
     let pb = rec(&r, 2031, 12).pk_pension - pa;
     assert!(pa > 0.0 && pb > 0.0);
     close(a.basis.pk, 6.0 * (2.0 * pa + pb), "PK-Renten");
-    // AHV zusammen 5000, plafoniert auf 3780
+    // AHV together 5000, capped at 3780
     close(a.basis.ahv, 12.0 * 3780.0, "AHV plafoniert");
     close(a.basis.living, 12_000.0, "Lebenshaltung");
 }
 
 #[test]
 fn need_estimates_a_later_pension_from_todays_capital() {
-    // B bezieht die PK ab April 2032 (Kapitalbezug 25 %, ohne Zins): 600'000 × 0.75 × 5 % / 12 = 1875 ab April.
+    // B draws the PK from April 2032 (lump sum 25 %, without interest): 600'000 × 0.75 × 5 % / 12 = 1875 from April.
     let mut v = couple();
     v["partner"]["pk"] =
         json!({"capital": 600_000, "at": "2032-04", "lumpsum": 0.25, "conversion": 0.05, "interest": 0});
@@ -211,7 +211,7 @@ fn need_estimates_a_later_pension_from_todays_capital() {
 
 #[test]
 fn need_counts_the_planned_earned_income() {
-    // B verdient 1000 pro Monat; Bedarf ab November 2031 aus zwei Monaten, auf 12 hochgerechnet.
+    // B earns 1000 per month; need from November 2031 from two months, extrapolated to 12.
     let mut v = couple();
     v["partner"]["income"] = json!(1000);
     let r = run(&v);
@@ -229,7 +229,7 @@ fn need_uses_the_indexed_ahv_cap() {
     let j = refill(&r, "Januar", 2032, 1);
     assert_eq!(j.basis.months, 12);
     assert_eq!(j.basis.source, "Januar, geplant");
-    // Plafond mit der Teuerung angepasst, wie die ausbezahlte AHV im Januar
+    // Cap adjusted with inflation, like the AHV paid out in January
     assert!(rec(&r, 2032, 1).ahv > 3780.0 * 1.1);
     close(j.basis.ahv, 12.0 * rec(&r, 2032, 1).ahv, "AHV");
 }
@@ -250,7 +250,7 @@ fn stock_return_over_the_last_twelve_months() {
     let mut v = base();
     v["wealth"]["stockShare"] = json!(1);
     buckets(&mut v, 1.0, 1.0, -1.0);
-    // Aktien +1 % pro Monat 2032, +2 % pro Monat 2031
+    // Stocks +1 % per month 2032, +2 % per month 2031
     let r = run_with(&v, |p, start| {
         for (k, x) in p.stocks.iter_mut().enumerate() {
             let m = start.plus(k as i32);
@@ -268,21 +268,21 @@ fn stock_return_over_the_last_twelve_months() {
     close(j.stock_return, 1.01f64.powi(11) * 1.0 - 1.0, "Feb 2032 bis Jan 2033");
 }
 
-/// #103: In den ersten 12 Monaten der Simulation liefert der Vorlauf des Renditepfads die Monate vor dem Start; das
-/// Kriterium misst immer die letzten 12 Monate einschliesslich des laufenden.
+/// #103: In the first 12 months of the simulation the lead-in of the return path supplies the months before the start; the
+/// criterion always measures the last 12 months including the current one.
 #[test]
 fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
-    // Start November 2026, Pensionierung im Januar 2027 (3. Monat)
+    // Start November 2026, retirement in January 2027 (3rd month)
     let mut v = base();
     v["wealth"]["stockShare"] = json!(1);
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Pensionierung", "date": "2027-01"});
     buckets(&mut v, 1.0, 1.0, -1.0);
     let set = |p: &mut MarketPath| {
         p.stocks[0] = 0.10; // November 2026
-        p.stocks[1] = 0.20; // Dezember 2026
-        p.stocks[2] = 0.05; // Januar 2027
+        p.stocks[1] = 0.20; // December 2026
+        p.stocks[2] = 0.05; // January 2027
     };
-    // Vorlauf Februar bis Oktober 2026 je +1 %, davor (Nov. 2025 bis Jan. 2026) −50 %: zählt nicht mehr
+    // Lead-in February to October 2026 +1 % each, before that (Nov 2025 to Jan 2026) −50 %: no longer counts
     let r = run_with(&v, |p, _| {
         set(p);
         p.pre_stocks = [vec![-0.5; 3], vec![0.01; 9]].concat();
@@ -295,7 +295,7 @@ fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
         "Feb 2026 bis Jan 2027",
     );
 
-    // Ohne Vorlauf (Reihe beginnt beim Start): Rendite seit dem Start
+    // Without a lead-in (series starts at the start): return since the start
     let r = run_with(&v, |p, _| {
         set(p);
         p.pre_stocks.clear();
@@ -304,7 +304,7 @@ fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
     assert_eq!(a.return_basis, "seit Start");
     close(a.stock_return, 1.1 * 1.2 * 1.05 - 1.0, "Nov 2026 bis Jan 2027");
 
-    // Teilweiser Vorlauf (zwei Monate): seit dem frühesten bekannten Stand
+    // Partial lead-in (two months): since the earliest known level
     let r = run_with(&v, |p, _| {
         set(p);
         p.pre_stocks = vec![0.03, -0.02];
@@ -319,12 +319,12 @@ fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Hypotheken: Tragbarkeit bei der Erneuerung
+// Mortgages: affordability at renewal
 // ---------------------------------------------------------------------------------------------
 
-/// Pensionierung und AHV im Januar 2027; Einkommen 10'000 + PK-Rente 1'000 + AHV 1'500 = 12'500 pro Monat.
-/// Tragbarkeit: 25 % des Einkommens, kalkulatorischer Zins 6.25 % ⇒ tragbar = (0.25 × 150'000 − Nebenkosten) / 0.0625.
-/// Haus mit einer Tranche ab 2025-11; die zweite Periode beginnt im November 2027.
+/// Retirement and AHV in January 2027; income 10'000 + PK pension 1'000 + AHV 1'500 = 12'500 per month.
+/// Affordability: 25 % of income, imputed rate 6.25 % ⇒ affordable = (0.25 × 150'000 − fix costs) / 0.0625.
+/// House with one tranche from 2025-11; the second period starts in November 2027.
 fn renewal_plan(amount: f64, periods: Value) -> Value {
     let mut v = base();
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Pensionierung", "date": "2027-01"});
@@ -349,14 +349,14 @@ fn two_periods() -> Value {
 
 #[test]
 fn renewal_needs_a_lump_sum_of_fifty_rappen() {
-    // tragbar (0.25 × 12'500 × 12 − 1'200) / 0.0625 = 580'800; es fehlen 0.50
+    // affordable (0.25 × 12'500 × 12 − 1'200) / 0.0625 = 580'800; 0.50 is missing
     let r = run(&renewal_plan(580_800.5, two_periods()));
     let n = &r.renewals[0];
     assert_eq!(n.month, ym(2027, 11));
     assert!(!n.affordable);
     assert_eq!((n.lump_sum, n.debt_before, n.debt_after), (0.5, 580_800.5, 580_800.0));
     assert_eq!(r.summary.lump_sums, 1);
-    // Mit 0.50 weniger Schuld ist sie tragbar.
+    // With 0.50 less debt it is affordable.
     let r = run(&renewal_plan(580_800.0, two_periods()));
     assert!(r.renewals[0].affordable && r.renewals[0].lump_sum == 0.0);
     assert_eq!(r.summary.lump_sums, 0);
@@ -385,7 +385,7 @@ fn renewal_rate_is_weighted_by_the_balances() {
 
 #[test]
 fn renewal_without_any_affordable_debt_repays_everything() {
-    // Kein Einkommen: tragbar 0, die ganze Schuld wird aus dem Vermögen bezahlt; Satz der leeren Hypothek 0.
+    // No income: affordable 0, the whole debt is paid from wealth; rate of the empty mortgage 0.
     let mut v = renewal_plan(200_000.0, two_periods());
     v["flows"]["income"] = json!(0);
     v["pension"]["pk"]["capital"] = json!(0);
@@ -403,7 +403,7 @@ fn renewal_without_any_affordable_debt_repays_everything() {
 
 #[test]
 fn renewal_fails_when_the_lump_sum_exceeds_the_wealth() {
-    // Vermögen etwa 33'000 (30'000 plus wenig Überschuss), nötig wären 100'000
+    // Wealth about 33'000 (30'000 plus a small surplus), 100'000 would be needed
     let mut v = renewal_plan(680_800.0, two_periods());
     v["wealth"]["cash"] = json!(30_000);
     v["flows"]["spending"] = json!(11_000);
@@ -418,7 +418,7 @@ fn renewal_fails_when_the_lump_sum_exceeds_the_wealth() {
         .any(|e| e.kind == EventKind::EmergencySale && e.month == ym(2027, 12)));
 }
 
-/// Wie `renewal_plan` mit Teuerung 12 %, Nebenkosten mit Teuerung, Amortisation 300 pro Quartal und Ausgaben 20'000.
+/// Like `renewal_plan` with inflation 12 %, fix costs with inflation, amortization 300 per quarter and spending 20'000.
 fn criterion_plan(emergency_months: f64) -> Value {
     let mut v = renewal_plan(700_000.0, two_periods());
     v["returns"]["fixed"]["inflation"] = json!(0.12);
@@ -437,17 +437,17 @@ fn criterion_plan(emergency_months: f64) -> Value {
 
 #[test]
 fn renewal_checks_the_emergency_criterion_after_the_payment() {
-    // Erster Lauf ohne Kriterium: Vermögen vor der Erneuerung, Teuerung und Schuld messen.
+    // First run without criterion: measure wealth before the renewal, inflation and debt.
     let r = run(&criterion_plan(0.0));
     let n = &r.renewals[0];
     let pi = rec(&r, 2027, 11).price_index;
     assert!(pi > 1.05);
     let liquid = rec(&r, 2027, 10).liquid;
-    // Nebenkosten 100 pro Monat mit Teuerung; tragbar = (37'500 − 1'200 × Teuerung) / 0.0625
+    // Fix costs 100 per month with inflation; affordable = (37'500 − 1'200 × inflation) / 0.0625
     let max = (0.25 * 12_500.0 * 12.0 - 1200.0 * pi) / 0.0625;
     let lump = n.debt_before - max;
     assert!((n.lump_sum - lump).abs() < 1e-6, "{} statt {lump}", n.lump_sum);
-    // Fehlbetrag pro Monat nach der Zahlung: Ausgaben + Nebenkosten + Zins 3 % auf der neuen Schuld + Amortisation − Einkommen
+    // Shortfall per month after the payment: spending + fix costs + interest 3 % on the new debt + amortization − income
     let shortfall = 20_000.0 * pi + 100.0 * pi + max * 0.03 / 12.0 + 100.0 - 12_500.0;
     let critical = (liquid - lump) / shortfall;
     assert!(critical > 1.0, "{critical}");
@@ -461,8 +461,8 @@ fn renewal_checks_the_emergency_criterion_after_the_payment() {
     );
 }
 
-/// Tranche «T0» über 600 mit direkter Amortisation 300 pro Quartal (Dezember 2026 und März 2027): ab März 2027
-/// abbezahlt, die Amortisation bleibt aber in jeder Periode erfasst. Perioden wie `two_periods` (neue Periode 2027-11).
+/// Tranche «T0» of 600 with direct amortization 300 per quarter (December 2026 and March 2027): paid off from March 2027,
+/// but the amortization stays entered in every period. Periods like `two_periods` (new period 2027-11).
 fn paid_tranche() -> Value {
     let mut periods = two_periods();
     for p in periods.as_array_mut().unwrap() {
@@ -474,7 +474,7 @@ fn paid_tranche() -> Value {
 
 #[test]
 fn paid_off_tranche_does_not_count_in_the_emergency_criterion() {
-    // Wie oben, mit einer zusätzlichen abbezahlten Tranche: Ihre Amortisation zählt im geschätzten Fehlbetrag nicht.
+    // As above, with an additional paid-off tranche: its amortization does not count in the estimated shortfall.
     let plan = |emergency_months: f64| {
         let mut v = criterion_plan(emergency_months);
         v["realestate"]["properties"][0]["mortgage"]["tranches"]
@@ -495,7 +495,7 @@ fn paid_off_tranche_does_not_count_in_the_emergency_criterion() {
     let liquid = rec(&r, 2027, 10).liquid;
     let max = (0.25 * 12_500.0 * 12.0 - 1200.0 * pi) / 0.0625;
     let lump = n.debt_before - max;
-    // Nur die Amortisation von T1 (100 pro Monat), nicht die von T0
+    // Only the amortization of T1 (100 per month), not that of T0
     let shortfall = 20_000.0 * pi + 100.0 * pi + max * 0.03 / 12.0 + 100.0 - 12_500.0;
     let critical = (liquid - lump) / shortfall;
     assert_eq!(run(&plan(critical * (1.0 - 1e-7))).renewals[0].emergency_sale, None);
@@ -509,8 +509,8 @@ fn paid_off_tranche_does_not_count_in_the_emergency_criterion() {
 
 #[test]
 fn new_period_of_a_paid_off_tranche_is_no_renewal() {
-    // T1 (900'000, Periode bis 2035-11) ist nicht tragbar (tragbar 580'800), wird aber erst 2035 erneuert. Die neue
-    // Periode der abbezahlten T0 im November 2027 löst keine Prüfung der Tragbarkeit aus.
+    // T1 (900'000, period until 2035-11) is not affordable (affordable 580'800), but is only renewed in 2035. The new
+    // period of the paid-off T0 in November 2027 triggers no affordability check.
     let mut v = renewal_plan(900_000.0, json!([{"type": "fixed", "term": 10, "rate": 0.02}]));
     v["realestate"]["properties"][0]["mortgage"]["tranches"]
         .as_array_mut()
@@ -526,10 +526,10 @@ fn new_period_of_a_paid_off_tranche_is_no_renewal() {
     );
 }
 
-/// Kette von Verkäufen in der 3-Topf-Strategie mit Phase 8: A (900'000, ohne Schuld) wird im Januar 2030 verkauft, B
-/// (500'000, Hypothek 400'000) im Februar 2030 gekauft; C (9 Mio., nicht finanzierbar) soll nach dem Verkauf von B
-/// folgen. Einmalausgaben im Januar und Februar 2030 leeren die Töpfe: Phase 8 beginnt im Verkaufsmonat von A und dauert
-/// nach dem Kauf von B an (Topf 1 −1000). Einkommen 12'500, Ausgaben 12'500 und ab Februar 2030 18'500 pro Monat.
+/// Chain of sales in the 3-bucket strategy with phase 8: A (900'000, without debt) is sold in January 2030, B
+/// (500'000, mortgage 400'000) bought in February 2030; C (9 million, not financeable) is to follow after the sale of B.
+/// One-off expenses in January and February 2030 empty the buckets: phase 8 starts in the month A is sold and lasts
+/// after the purchase of B (bucket 1 −1000). Income 12'500, spending 12'500 and from February 2030 18'500 per month.
 fn phase8_chain() -> Value {
     let mut v = estate(json!([
         owned("A", "2030-01", json!({})),
@@ -548,9 +548,9 @@ fn phase8_chain() -> Value {
 
 #[test]
 fn restart_after_phase_eight_does_not_count_the_reserved_proceeds() {
-    // Im März 2030 wird B notverkauft (Vermögen negativ); der Erlös von 100'000 ist für C reserviert. Topf 1 ist mit dem
-    // Erlös positiv, ohne ihn negativ: Phase 8 endet erst im April, wenn der Kauf von C entfallen und die Reservierung
-    // aufgelöst ist.
+    // In March 2030 B is sold in an emergency sale (wealth negative); the proceeds of 100'000 are reserved for C. Bucket 1 is
+    // positive with the proceeds and negative without them: phase 8 only ends in April, when the purchase of C is dropped and the
+    // reservation is released.
     let r = run(&phase8_chain());
     let phase8: Vec<_> = r
         .events
@@ -581,10 +581,10 @@ fn restart_after_phase_eight_does_not_count_the_reserved_proceeds() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Immobilien: Kauf, Verkauf, Folgekauf, Miete, Amortisation, Säule 3a
+// Properties: purchase, sale, follow-up purchase, rent, amortization, pillar 3a
 // ---------------------------------------------------------------------------------------------
 
-/// Wie `renewal_plan` (Einkommen 12'500 pro Monat ab 2027), mit den angegebenen Immobilien.
+/// Like `renewal_plan` (income 12'500 per month from 2027), with the given properties.
 fn estate(props: Value) -> Value {
     let mut v = renewal_plan(0.0, json!([]));
     v["realestate"]["properties"] = props;
@@ -609,7 +609,7 @@ fn purchase(r: &SimResult) -> &engine::sim::PropertyEvent {
 
 #[test]
 fn purchase_with_highest_loan_is_limited_by_affordability() {
-    // Nebenkosten 1 % von 800'000 = 8'000; tragbar (37'500 − 8'000) / 0.0625 = 472'000 (statt 640'000), Rest aus dem Vermögen.
+    // Fix costs 1 % of 800'000 = 8'000; affordable (37'500 − 8'000) / 0.0625 = 472'000 (instead of 640'000), the rest from wealth.
     let half = json!({"name": "A", "amount": 0, "periods": [{"type": "fixed", "term": 10, "rate": 0.02}]});
     let mut b = half.clone();
     b["name"] = json!("B");
@@ -623,7 +623,7 @@ fn purchase_with_highest_loan_is_limited_by_affordability() {
         (e.month, e.price, e.mortgage, e.equity),
         (ym(2030, 1), Some(800_000.0), Some(472_000.0), Some(328_000.0))
     );
-    // Ohne Beträge je Tranche: je die Hälfte
+    // Without amounts per tranche: half each
     assert_eq!(rec(&r, 2030, 1).mortgage, 472_000.0);
 }
 
@@ -637,11 +637,11 @@ fn purchase_prices_follow_inflation() {
     let pi = rec(&r, 2030, 1).price_index;
     let e = purchase(&r);
     assert!((e.price.unwrap() - 800_000.0 * pi).abs() < 1e-6);
-    // Einkommen im Kaufmonat (AHV inzwischen mit der Teuerung angepasst)
+    // Income in the purchase month (AHV meanwhile adjusted with inflation)
     let income = 12.0 * rec(&r, 2030, 1).income;
     assert!(income > 150_000.0);
     assert!((e.mortgage.unwrap() - (0.25 * income - 0.01 * 800_000.0 * pi) / 0.0625).abs() < 1e-6);
-    // Kauf mit erfassten Beträgen (Datum fest): ebenfalls zum teuerungsbereinigten Preis
+    // Purchase with entered amounts (fixed date): also at the inflation-adjusted price
     let fixed = json!({"tranches": [{"name": "A", "amount": 400_000, "periods": [{"type": "fixed", "term": 10, "rate": 0.02}]}]});
     let mut v = estate(json!([planned(800_000.0, "2030-01", fixed)]));
     v["returns"]["fixed"]["inflation"] = json!(0.12);
@@ -673,7 +673,7 @@ fn sale_followed_by_a_purchase_keeps_the_proceeds_liquid() {
     assert!(s.gain_tax.unwrap() > 0.0 && net > 0.0);
     assert_eq!(s.net, Some(net));
     assert_eq!(s.note.as_deref(), Some(RESERVED));
-    // Der reservierte Erlös bleibt als Bargeld (Reserve 0 Monate)
+    // The reserved proceeds stay as cash (reserve 0 months)
     assert!(
         (rec(&r, 2030, 1).cash - net).abs() < 1e-6,
         "{} statt {net}",
@@ -688,12 +688,12 @@ fn note_after_sale(props: Value) -> Option<String> {
 #[test]
 fn follow_up_purchase_after_a_specific_or_the_last_sale() {
     let alt = owned("alt", "2030-01", json!({}));
-    // nach Verkauf von «alt»
+    // after the sale of «alt»
     assert_eq!(
         note_after_sale(json!([alt.clone(), planned(500_000.0, "afterSale:alt", json!(null))])).as_deref(),
         Some(RESERVED)
     );
-    // nach Verkauf einer anderen Immobilie: kein Folgekauf
+    // after the sale of another property: no follow-up purchase
     let other = owned("andere", "never", json!({}));
     assert_ne!(
         note_after_sale(json!([
@@ -704,13 +704,13 @@ fn follow_up_purchase_after_a_specific_or_the_last_sale() {
         .as_deref(),
         Some(RESERVED)
     );
-    // nach dem letzten Verkauf; eine spätere Miete zählt nicht als Besitz
+    // after the last sale; a later rent does not count as ownership
     let rent = json!({"name": "Miete", "status": "rent", "price": 0, "fixCosts": 0, "inflation": false, "from": "2050-01", "rent": 1000});
     assert_eq!(
         note_after_sale(json!([alt.clone(), rent, planned(500_000.0, "afterSale", json!(null))])).as_deref(),
         Some(RESERVED)
     );
-    // … solange eine andere Immobilie im Besitz bleibt, aber nicht
+    // … as long as another property stays owned, though, it does not
     assert_ne!(
         note_after_sale(json!([
             alt.clone(),
@@ -724,7 +724,7 @@ fn follow_up_purchase_after_a_specific_or_the_last_sale() {
 
 #[test]
 fn purchase_after_an_emergency_sale_follows_in_the_next_month() {
-    // Notverkaufskriterium sofort erfüllt ⇒ Notverkauf im zweiten Monat (Dezember 2026), Kauf im Januar 2027
+    // Emergency sale criterion met at once ⇒ emergency sale in the second month (December 2026), purchase in January 2027
     let mut v = estate(json!([
         owned("alt", "never", json!({})),
         planned(500_000.0, "afterSale:alt", json!(null))
@@ -771,7 +771,7 @@ fn failed_purchase_does_not_start_the_rent_while_another_property_is_owned() {
 
 #[test]
 fn lowest_liquidity_is_dated_to_the_first_month() {
-    // Einkommen = Ausgaben: Das Vermögen bleibt gleich, der tiefste Stand gilt ab dem ersten Monat.
+    // Income = spending: wealth stays the same, the lowest level applies from the first month.
     let mut v = base();
     v["flows"]["income"] = json!(1000);
     v["pension"]["pk"]["capital"] = json!(0);
@@ -787,7 +787,7 @@ fn lowest_liquidity_is_dated_to_the_first_month() {
 
 #[test]
 fn sale_without_proceeds_does_not_apply_the_strategy() {
-    // Wert = Schuld, kein Gewinn: Erlös 0 ⇒ keine Anwendung der Entnahmestrategie im März
+    // Value = debt, no gain: proceeds 0 ⇒ the withdrawal strategy is not applied in March
     let mortgage = json!({"tranches": [{"name": "T", "amount": 900_000, "start": "2025-11", "periods": [{"type": "fixed", "term": 10, "rate": 0.0}]}]});
     let mut alt = owned("alt", "2030-03", json!({"mortgage": mortgage}));
     alt["price"] = json!(900_000);
@@ -809,11 +809,11 @@ fn rent_ends_before_the_until_month() {
     assert_eq!(rec(&r, 2030, 1).housing, 0.0);
 }
 
-/// Haus im Besitz mit Nebenkosten 50, Hypothek 600 mit direkter Amortisation 300 pro Quartal (nach zwei Quartalen
-/// abbezahlt), Rückzahlung der Restschuld 2028-11; Reserve 1 Monat, alles in Aktien.
+/// Owned house with fix costs 50, mortgage 600 with direct amortization 300 per quarter (paid off after two quarters),
+/// repayment of the remaining debt 2028-11; reserve 1 month, everything in stocks.
 fn amortized() -> Value {
     let mut v = base();
-    // #54: Die Reserve der Strategie gilt erst ab der Pensionierung; hier beginnt sie mit dem Start.
+    // #54: The strategy's reserve only applies from retirement; here it starts at the start.
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Bezug Pensionskasse", "date": "2026-11"});
     v["wealth"]["stockShare"] = json!(1);
     v["wealth"]["reserveMonths"] = json!(1);
@@ -827,11 +827,11 @@ fn amortized() -> Value {
 #[test]
 fn running_costs_include_amortization_only_while_there_is_debt() {
     let r = run(&amortized());
-    // Reserve = Ausgaben 1000 + Nebenkosten 50 + Amortisation 100 pro Monat, solange Schuld besteht
+    // Reserve = spending 1000 + fix costs 50 + amortization 100 per month, as long as debt exists
     close(rec(&r, 2026, 12).cash, 1150.0, "mit Amortisation");
     assert_eq!(rec(&r, 2027, 6).mortgage, 0.0);
     close(rec(&r, 2027, 8).cash, 1050.0, "ohne Schuld");
-    // Keine Rückzahlung von 0
+    // No repayment of 0
     assert!(!r.events.iter().any(|e| e.kind == EventKind::MortgageRepayment));
 }
 
@@ -851,10 +851,10 @@ fn pillar3a_collects_indirect_amortization_and_pays_out() {
         owned("leer", "never", json!({"mortgage": empty}))
     ]);
     let r = run(&v);
-    // Dezember 2026, März, Juni, September, Dezember 2027: fünf Einzahlungen
+    // December 2026, March, June, September, December 2027: five contributions
     assert_eq!(rec(&r, 2026, 12).pillar3a, 300.0);
     assert_eq!(rec(&r, 2027, 12).pillar3a, 1500.0);
-    // Das leere Konto ohne indirekte Amortisation entfällt beim Übernehmen (#52); im Januar 2028 eine Auszahlung.
+    // The empty account without indirect amortization is dropped on takeover (#52); one payout in January 2028.
     let payouts: Vec<_> = r
         .events
         .iter()
@@ -865,16 +865,16 @@ fn pillar3a_collects_indirect_amortization_and_pays_out() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Monatsablauf
+// Monthly procedure
 // ---------------------------------------------------------------------------------------------
 
 #[test]
 fn initial_split_reserves_the_running_costs() {
-    // Haus: Nebenkosten 1000, Hypothek 120'000 (Periode ab 2026-11 zu 2 %, vorher 5 %), Amortisation 300 pro Quartal.
-    // Lücke = Ausgaben 2000 + (1000 + 200 Zins + 100 Amortisation) − Erwerb 500 = 2800; Reserve 12 Monate = 33'600.
-    // Eine geplante Immobilie (noch nicht gekauft) zählt nicht.
+    // House: fix costs 1000, mortgage 120'000 (period from 2026-11 at 2 %, before that 5 %), amortization 300 per quarter.
+    // Gap = spending 2000 + (1000 + 200 interest + 100 amortization) − earned income 500 = 2800; reserve 12 months = 33'600.
+    // A planned property (not yet bought) does not count.
     let mut v = base();
-    // #54: Die Reserve der Strategie gilt erst ab der Pensionierung; hier beginnt sie mit dem Start.
+    // #54: The strategy's reserve only applies from retirement; here it starts at the start.
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Bezug Pensionskasse", "date": "2026-11"});
     v["flows"]["spending"] = json!(2000);
     v["flows"]["income"] = json!(500);
@@ -890,7 +890,7 @@ fn initial_split_reserves_the_running_costs() {
         owned("haus", "never", json!({"fixCosts": 1000, "mortgage": mortgage})),
         later
     ]);
-    // Aktien +10 % im ersten Monat: nur der angelegte Teil wächst.
+    // Stocks +10 % in the first month: only the invested part grows.
     let r = run_with(&v, |p, _| p.stocks[0] = 0.10);
     let expected = (1_000_000.0 - 33_600.0) * 1.1 + 33_600.0 + 500.0 - 2000.0 - 1000.0;
     close(rec(&r, 2026, 11).liquid, expected, "Ende November 2026");
@@ -913,7 +913,7 @@ fn zero_extra_does_not_apply_the_strategy() {
 
 #[test]
 fn dynamic_living_adds_savings_and_subtracts_housing() {
-    // Fixe Rate 4 % auf 820'000 (60 Monate zu 1000 + 2000 Miete); Konsum = Budget/12 + Sparbetrag 300 − Miete 2000
+    // Fixed rate 4 % on 820'000 (60 months of 1000 + 2000 rent); consumption = budget/12 + savings 300 − rent 2000
     let mut v = base();
     v["withdrawal"]["strategy"] = json!("fixed_rate");
     v["flows"]["savings"] = json!(300);
@@ -926,7 +926,7 @@ fn dynamic_living_adds_savings_and_subtracts_housing() {
         "vor der Pensionierung",
     );
     let budget = 0.04 * rec(&r, 2031, 10).liquid;
-    // Die Ausgaben im Protokoll enthalten die Miete: Konsum (Budget/12 + 300 − 2000) + 2000
+    // Spending in the log includes the rent: consumption (budget/12 + 300 − 2000) + 2000
     close(rec(&r, 2031, 11).spending, budget / 12.0 + 300.0, "Ausgaben");
     close(rec(&r, 2031, 11).housing, 2000.0, "Miete");
 }
@@ -937,10 +937,10 @@ fn indices_lowest_liquidity_and_depletion() {
     v["flows"]["spending"] = json!(0);
     let r = run_with(&v, |p, _| p.bonds.iter_mut().for_each(|x| *x = 0.01));
     close(rec(&r, 2027, 1).bond_index, 1.01f64.powi(3), "Obligationenindex");
-    // Gleichbleibende Cash: tiefster Stand im ersten Monat
+    // Constant cash: lowest level in the first month
     assert_eq!(r.summary.min_liquid_month, Some(ym(2026, 11)));
 
-    // Schulden bei gedeckten Ausgaben: aufgebraucht ab Start
+    // Debt with covered spending: depleted from the start
     let mut v = base();
     v["wealth"]["cash"] = json!(-10_000);
     v["flows"]["income"] = json!(2000);
@@ -950,7 +950,7 @@ fn indices_lowest_liquidity_and_depletion() {
 
 #[test]
 fn lump_sum_after_tax_goes_to_pot_three() {
-    // Person B bezieht im Juni 2032 die Hälfte von 600'000 als Kapital (Steuer 5 %), während die Töpfe schon laufen.
+    // Person B draws half of 600'000 as capital in June 2032 (tax 5 %), while the buckets are already running.
     let mut v = couple();
     v["partner"]["pk"] = json!({"capital": 600_000, "at": "2032-06", "lumpsum": 0.5, "conversion": 0.05});
     v["taxes"]["capital"] = json!([[0, 0.05]]);
@@ -962,13 +962,13 @@ fn lump_sum_after_tax_goes_to_pot_three() {
         vec![(0, 3, 285_000.0)]
     );
     assert!(refill(&r, "A", 2032, 6).reason.contains("PK-Kapitalbezug"));
-    // Ohne Kapitalbezug kein Anlass «PK-Kapitalbezug»
+    // Without a lump sum no occasion «PK-Kapitalbezug»
     let r = run(&couple());
     assert!(!r.bucket_refills.iter().any(|x| x.reason.contains("PK-Kapitalbezug")));
 }
 
 // ---------------------------------------------------------------------------------------------
-// 3-Topf-Strategie: Januar-Auffüllung, Anlass A, Reservierung
+// 3-bucket strategy: January refill, occasion A, reservation
 // ---------------------------------------------------------------------------------------------
 
 fn spending_from_2032(v: &mut Value, before: f64, after: f64) {
@@ -978,7 +978,7 @@ fn spending_from_2032(v: &mut Value, before: f64, after: f64) {
 
 #[test]
 fn january_refill_moves_surplus_to_pot_three() {
-    // Bedarf sinkt im Januar 2032 von 36'000 auf 12'000: Topf 1 und 2 haben zu viel, der Überschuss geht in Topf 3.
+    // Need falls in January 2032 from 36'000 to 12'000: buckets 1 and 2 have too much, the surplus goes to bucket 3.
     let mut v = base();
     spending_from_2032(&mut v, 3000.0, 1000.0);
     buckets(&mut v, 2.0, 2.0, -1.0);
@@ -999,7 +999,7 @@ fn january_refill_moves_surplus_to_pot_three() {
 
 #[test]
 fn january_refill_fills_pot_two_from_stocks() {
-    // Bedarf steigt im Januar 2032 von 12'000 auf 36'000: Topf 1 zuerst aus Topf 2, dann Topf 2 aus Topf 3.
+    // Need rises in January 2032 from 12'000 to 36'000: bucket 1 first from bucket 2, then bucket 2 from bucket 3.
     let mut v = base();
     spending_from_2032(&mut v, 1000.0, 3000.0);
     buckets(&mut v, 1.0, 5.0, -1.0);
@@ -1026,7 +1026,7 @@ fn start_in_january_needs_no_extrapolation() {
 
 #[test]
 fn sale_proceeds_for_a_purchase_are_reserved() {
-    // Pensioniert, 3-Topf; Verkauf März 2033 (Erlös 900'000), Kauf April 2033 für 300'000 ohne Hypothek.
+    // Retired, «3-Topf»; sale March 2033 (proceeds 900'000), purchase April 2033 for 300'000 without a mortgage.
     let mut v = base();
     buckets(&mut v, 1.0, 1.0, -1.0);
     v["taxes"]["propertyGain"] = json!({"brackets": [[0, 0]]});
@@ -1043,9 +1043,9 @@ fn sale_proceeds_for_a_purchase_are_reserved() {
         into.moves.iter().map(|m| (m.from, m.to, m.amount)).collect::<Vec<_>>(),
         vec![(0, 4, 900_000.0)]
     );
-    // Der Verkaufserlös verändert die Töpfe im Verkaufsmonat nicht
+    // The sale proceeds do not change the buckets in the month of the sale
     assert_eq!(into.before, into.after);
-    // Nach dem Kauf: Rest der Reservierung nach Topf 3
+    // After the purchase: rest of the reservation to bucket 3
     let rest = r
         .bucket_refills
         .iter()
@@ -1056,7 +1056,7 @@ fn sale_proceeds_for_a_purchase_are_reserved() {
         vec![(4, 3, 600_000.0)]
     );
     assert!(rest.reason.contains("Überschuss der Reservierung"));
-    // Vermögen bleibt erhalten: Cash = Vormonat + Erlös − Kaufpreis − Ausgaben
+    // Wealth is preserved: cash = previous month + proceeds − price − spending
     close(
         rec(&r, 2033, 4).liquid,
         rec(&r, 2033, 2).liquid + 900_000.0 - 300_000.0 - 2.0 * 1000.0,
@@ -1073,7 +1073,7 @@ fn sale_proceeds_for_a_purchase_are_reserved() {
 
 #[test]
 fn inflows_before_the_first_bucket_step_are_not_logged_separately() {
-    // Zufluss und Verkauf mit Folgekauf im Monat der Pensionierung: Anlass A sammelt alles, kein eigener Eintrag B.
+    // Inflow and sale with follow-up purchase in the month of retirement: occasion A collects everything, no entry B of its own.
     let mut v = base();
     buckets(&mut v, 1.0, 1.0, -1.0);
     v["flows"]["extras"] = json!([{"date": "2031-11", "amount": 50_000, "label": "Erbe"}]);
@@ -1096,7 +1096,7 @@ fn inflow_to_pot_three_is_logged_with_the_pots_before() {
     v["flows"]["extras"] = json!([{"date": "2033-03", "amount": 50_000, "label": "Erbe"}]);
     let r = run(&v);
     let b = refill(&r, "B", 2033, 3);
-    // Stände vor den Ausgaben des Monats (ohne Einnahmen gleich dem Vormonatsende)
+    // Balances before the month's expenses (without income equal to the end of the previous month)
     close(b.before[0], rec(&r, 2033, 2).cash, "Topf 1");
     close(b.before[2], rec(&r, 2033, 2).stocks, "Topf 3");
     close(b.after[2], b.before[2] + 50_000.0, "Topf 3 nachher");
@@ -1119,7 +1119,7 @@ fn reservation_used_up_completely_leaves_nothing_for_pot_three() {
     assert!(!r.bucket_refills.iter().any(|x| x.moves.iter().any(|m| m.from == 4)));
 }
 
-/// 3-Topf ohne Cash-Topf: Topf 1 deckt die Ausgaben jeden Monat erst nach der Vorausschau C.
+/// «3-Topf» without a cash bucket: bucket 1 covers the expenses every month only after the look-ahead C.
 fn lean_buckets() -> Value {
     let mut v = base();
     buckets(&mut v, 0.0, 1.0, -1.0);
@@ -1127,7 +1127,7 @@ fn lean_buckets() -> Value {
     v
 }
 
-/// Auslöser und Bewegungen (von Topf, nach Topf, Betrag) eines Monats.
+/// Triggers and movements (from bucket, to bucket, amount) of one month.
 type Moves = Vec<(String, Vec<(u8, u8, i64)>)>;
 
 fn c_moves(r: &SimResult, m: YearMonth) -> Moves {
@@ -1148,7 +1148,7 @@ fn c_moves(r: &SimResult, m: YearMonth) -> Moves {
 
 #[test]
 fn reservation_does_not_change_the_pots() {
-    // Mit Verkauf (Erlös reserviert) und Kauf im Folgemonat wie ohne Immobilien: dieselben Umbuchungen der Vorausschau C.
+    // With a sale (proceeds reserved) and purchase in the following month as without properties: the same transfers of look-ahead C.
     let plain = run(&lean_buckets());
     let mut v = lean_buckets();
     v["realestate"]["properties"] = json!([
@@ -1164,7 +1164,7 @@ fn reservation_does_not_change_the_pots() {
 
 #[test]
 fn equity_beyond_the_reservation_is_a_one_off_payment() {
-    // Erlös 900'000 reserviert, Kauf für 1'000'000: 100'000 kommen aus den Töpfen und zählen als einmalige Ausgabe.
+    // Proceeds 900'000 reserved, purchase for 1'000'000: 100'000 come from the buckets and count as a one-off expense.
     let mut v = lean_buckets();
     v["realestate"]["properties"] = json!([
         owned("alt", "2033-03", json!({})),
@@ -1180,8 +1180,8 @@ fn equity_beyond_the_reservation_is_a_one_off_payment() {
     pots_follow_the_moves(&r);
 }
 
-/// Jede protokollierte Auffüllung: Töpfe nachher = vorher + Zuflüsse − Abflüsse (Topf 1/2/3 = Index 0/1/2; 0 = extern,
-/// 4 = Reservierung zählen nicht als Topf).
+/// Every logged refill: buckets after = before + inflows − outflows (bucket 1/2/3 = index 0/1/2; 0 = external,
+/// 4 = reservation do not count as buckets).
 fn pots_follow_the_moves(r: &SimResult) {
     assert!(
         r.bucket_refills.iter().any(|x| x.trigger == "C2"),
@@ -1205,8 +1205,8 @@ fn pots_follow_the_moves(r: &SimResult) {
 
 #[test]
 fn lump_sums_and_repayments_are_one_off_payments() {
-    // Erneuerung mit Einmalzahlung 0.50 bzw. Rückzahlung der Restschuld: beide in der Zahlung des Monats.
-    // Ausgaben 20'000 über dem Einkommen von 12'500, damit Topf 1 jeden Monat nachgefüllt wird.
+    // Renewal with a lump sum of 0.50 or repayment of the remaining debt: both in the month's payment.
+    // Spending 20'000 above the income of 12'500, so bucket 1 is refilled every month.
     let mut v = renewal_plan(580_800.5, two_periods());
     v["flows"]["spending"] = json!(20_000);
     buckets(&mut v, 0.0, 1.0, -1.0);
@@ -1216,7 +1216,7 @@ fn lump_sums_and_repayments_are_one_off_payments() {
         .iter()
         .find(|x| x.month == ym(2027, 11) && x.trigger.starts_with('C'))
         .unwrap();
-    // Ausgaben 20'000 + Nebenkosten 100 + Zins (im November nicht fällig) + Einmalzahlung 0.50
+    // Spending 20'000 + fix costs 100 + interest (not due in November) + lump sum 0.50
     close(c.payment, 20_000.0 + 100.0 + 0.5, "Zahlung mit Einmalzahlung");
 
     let mut v = amortized();
@@ -1234,8 +1234,8 @@ fn lump_sums_and_repayments_are_one_off_payments() {
 
 #[test]
 fn housing_need_excludes_amortization() {
-    // Wohnkosten im Bedarf: Nebenkosten 50 + Zins 0, ohne Amortisation 100 pro Monat (Periode bis 2036, direkt und
-    // indirekt)
+    // Housing costs in the need: fix costs 50 + interest 0, without amortization 100 per month (period until 2036, direct and
+    // indirect)
     for mode in ["direct", "indirect"] {
         let mut v = amortized();
         let t = &mut v["realestate"]["properties"][0]["mortgage"]["tranches"][0];
@@ -1251,7 +1251,7 @@ fn housing_need_excludes_amortization() {
 
 #[test]
 fn indirect_amortization_is_paid_from_the_wealth() {
-    // 300 pro Quartal in die Säule 3a: Das liquide Vermögen sinkt um die Einzahlungen.
+    // 300 per quarter into pillar 3a: liquid wealth falls by the contributions.
     let with = |amort: f64| {
         let mut v = amortized();
         let t = &mut v["realestate"]["properties"][0]["mortgage"]["tranches"][0];
@@ -1271,13 +1271,13 @@ fn indirect_amortization_is_paid_from_the_wealth() {
 
 #[test]
 fn renewal_details() {
-    // Einzelne Tranche: Ereignis ohne Tranchennamen
+    // Single tranche: event without a tranche name
     let r = run(&renewal_plan(300_000.0, two_periods()));
     assert!(r
         .events
         .iter()
         .any(|e| e.kind == EventKind::MortgageRenewal && e.text.starts_with("Neue Hypothekarperiode Haus: 3.00 %")));
-    // Abbezahlte Tranche: keine Erneuerung, keine Prüfung
+    // Paid-off tranche: no renewal, no check
     let mut v = renewal_plan(600.0, two_periods());
     for p in v["realestate"]["properties"][0]["mortgage"]["tranches"][0]["periods"]
         .as_array_mut()
@@ -1288,7 +1288,7 @@ fn renewal_details() {
     let r = run(&v);
     assert!(r.renewals.is_empty());
     assert!(!r.events.iter().any(|e| e.kind == EventKind::MortgageRenewal));
-    // Kauf mit Datum: Die erste Periode ist keine Erneuerung
+    // Purchase with a date: the first period is not a renewal
     let fixed = json!({"tranches": [{"name": "A", "amount": 400_000, "periods": [{"type": "fixed", "term": 10, "rate": 0.02}]}]});
     let r = run(&estate(json!([planned(800_000.0, "2030-01", fixed)])));
     assert!(!r
@@ -1299,7 +1299,7 @@ fn renewal_details() {
 
 #[test]
 fn no_renewal_in_the_month_of_the_sale() {
-    // Periode endet im November 2027, Verkauf im selben Monat: keine Erneuerung (auch keine Tragbarkeitsprüfung).
+    // Period ends in November 2027, sale in the same month: no renewal (and no affordability check).
     let mut v = renewal_plan(580_800.5, two_periods());
     v["realestate"]["properties"][0]["sell"] = json!("2027-11");
     let r = run(&v);

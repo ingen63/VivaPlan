@@ -1,7 +1,7 @@
-//! QA-Testplan (siehe docs/QA.md): Fälle der Testmatrix, die die anderen Testdateien nicht abdecken –
-//! Eingabeprüfung, Planungsdauer, Meilensteine, Vorsorge, altersabhängige Ausgaben, Anlage- und
-//! Entnahmeparameter, Reproduzierbarkeit, Szenarien, Dateien und Lasttests.
-//! Jeder Test rechnet seine Erwartung unabhängig vom Rechenkern von Hand nach.
+//! QA test plan (see docs/QA.md): cases of the test matrix that the other test files do not cover –
+//! input validation, plan duration, milestones, pension, age-dependent spending, investment and
+//! withdrawal parameters, reproducibility, scenarios, files and load tests.
+//! Every test recomputes its expectation by hand, independently of the calculation engine.
 
 use std::path::Path;
 
@@ -46,7 +46,7 @@ fn errors(v: &Value) -> Vec<String> {
         .collect()
 }
 
-/// Bilanz-Invarianten eines Laufs (Plan: Vermögensgleichung, Abweichung ≤ 0.01 CHF).
+/// Balance invariants of a run (plan: wealth equation, deviation ≤ 0.01 CHF).
 fn check_books(res: &SimResult, ctx: &str) {
     for r in &res.records {
         for x in [
@@ -70,8 +70,8 @@ fn check_books(res: &SimResult, ctx: &str) {
             r.total
         );
     }
-    // #133/AK2: Veränderung des Gesamtvermögens = Hauptbuch des Monats (Geldflüsse und Bewertungsänderungen). Nur
-    // für Läufe mit allen Monaten (Detail-Läufe einer Monte-Carlo-Rechnung beginnen ebenfalls beim Start).
+    // #133/AK2: Change of total wealth = ledger of the month (cash flows and valuation changes). Only
+    // for runs with all months (detail runs of a Monte Carlo computation also start at the start).
     if res.records.is_empty() {
         return;
     }
@@ -89,7 +89,7 @@ fn check_books(res: &SimResult, ctx: &str) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Haushalt und Projekt
+// Household and project
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -105,7 +105,7 @@ fn planning_horizons_30_60_100_years() {
             res.records.last().unwrap().month,
             YearMonth::new(2029 + years as i32, 12)
         );
-        // 1'000'000 − 12'000 × Jahre
+        // 1'000'000 − 12'000 × years
         let expected = 1_000_000.0 - 12_000.0 * years as f64;
         assert!(
             (res.summary.end_total - expected).abs() < 0.01,
@@ -144,7 +144,7 @@ fn end_before_start_is_a_validation_error_and_blocks_calculation() {
     assert!(!errors(&v).is_empty());
     let out = api::run(&v, Path::new("/"), None);
     assert!(out.error.is_some() && out.single.is_none() && out.batch.is_none());
-    // Ende = Start ist ebenfalls ungültig
+    // End = start is also invalid
     v["milestones"][2]["date"] = json!("2030-01");
     assert!(!errors(&v).is_empty());
 }
@@ -165,7 +165,7 @@ fn age_over_120_is_reported() {
         !api::validate(&v).is_empty(),
         "Alter 180 am Start wird nicht beanstandet"
     );
-    // Alter-Meilenstein über 120
+    // Age milestone above 120
     let mut v = base();
     v["milestones"][2] = json!({ "id": "end", "name": "Ende", "kind": "age", "person": "A", "years": 125 });
     assert!(
@@ -194,7 +194,7 @@ fn empty_required_fields_block_calculation() {
             "«{path}» fehlt, aber es wurde gerechnet"
         );
     }
-    // Pflichtfelder in Unterobjekten
+    // Required fields in sub-objects
     let mut v = base();
     v["household"]["persons"][0].as_object_mut().unwrap().remove("birth");
     assert!(api::run(&v, Path::new("/"), None).error.is_some());
@@ -210,7 +210,7 @@ fn empty_required_fields_block_calculation() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Meilensteine
+// Milestones
 // ---------------------------------------------------------------------------------------------
 
 fn event_month(res: &SimResult, kind: EventKind) -> Option<YearMonth> {
@@ -219,7 +219,7 @@ fn event_month(res: &SimResult, kind: EventKind) -> Option<YearMonth> {
 
 #[test]
 fn retirement_by_date_and_by_age_agree() {
-    // Geboren 1965-01, Pensionierung mit 62 = 2027-01 → Start davor
+    // Born 1965-01, retirement at 62 = 2027-01 → start before it
     let mut by_date = base();
     by_date["milestones"][0]["date"] = json!("2026-01");
     by_date["milestones"][1]["date"] = json!("2027-01");
@@ -247,7 +247,7 @@ fn ahv_by_date_and_by_age_start_in_the_same_month() {
     v["pension"]["ahv"] = json!({ "monthly": 2000, "at": "ahv" });
     let by_age = run(&v);
     assert_eq!(event_month(&by_age, EventKind::AhvStart), Some(YearMonth::new(2030, 1)));
-    // Geburt 1965-01 + 65 Jahre = 2030-01: Alter in der Ereignisliste = Alter im Monatsdatensatz
+    // Birth 1965-01 + 65 years = 2030-01: age in the event list = age in the monthly record
     assert!((by_age.records[0].age - 65.0).abs() < 1e-9, "{}", by_age.records[0].age);
     let mut w = v.clone();
     w["milestones"][3] = json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2030-01" });
@@ -256,7 +256,7 @@ fn ahv_by_date_and_by_age_start_in_the_same_month() {
 
 #[test]
 fn moving_retirement_moves_all_dependent_values() {
-    // Einkommen bis Pensionierung, PK-Rente und AHV ab Pensionierung bzw. mit 65.
+    // Income until retirement, PK pension and AHV from retirement or at 65.
     let make = |retire: &str| {
         let mut v = base();
         v["milestones"][0]["date"] = json!("2026-01");
@@ -274,7 +274,7 @@ fn moving_retirement_moves_all_dependent_values() {
         Some(YearMonth::new(2028, 1))
     );
     assert_eq!(event_month(&late, EventKind::Retirement), Some(YearMonth::new(2030, 1)));
-    // Einkommen: Monate vor der Pensionierung × 8000; Rente: 600'000 × 5 % / 12 = 2'500 ab dann
+    // Income: months before retirement × 8000; pension: 600'000 × 5 % / 12 = 2'500 from then on
     for (res, months) in [(&early, 24usize), (&late, 48usize)] {
         let earned: f64 = res.records.iter().map(|r| r.earned).sum();
         assert!((earned - 8000.0 * months as f64).abs() < 0.01, "{earned}");
@@ -312,12 +312,12 @@ fn several_milestones_are_ordered_independently() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Vorsorge
+// Pension
 // ---------------------------------------------------------------------------------------------
 
 #[test]
 fn pension_fund_pension_is_capital_times_conversion() {
-    // (Kapital, Anteil Kapitalbezug) – sehr klein, normal, 50/50, sehr gross
+    // (capital, lump-sum share) – very small, normal, 50/50, very large
     for (capital, lump) in [
         (1.0, 0.0),
         (1000.0, 1.0),
@@ -339,9 +339,9 @@ fn pension_fund_pension_is_capital_times_conversion() {
             res.summary.pension_fund_monthly
         );
         assert!((res.records[0].pk_pension - expected).abs() < 1e-6);
-        // ohne Steuern: Kapitalbezug brutto = netto
+        // without taxes: lump sum gross = net
         assert!((res.summary.lumpsum_net - capital * lump).abs() < 1e-6);
-        // Bilanz: PK-Guthaben + Kapital + Rente bleiben erhalten
+        // Balance: PK balance + capital + pension are preserved
         let n = res.records.len() as f64;
         let total = capital * lump + expected * n;
         assert!((res.summary.end_total - (total + res.records.last().unwrap().pension_fund)).abs() < 0.01);
@@ -356,7 +356,7 @@ fn pillar_3a_payout_variants() {
         v["wealth"]["cash"] = json!(0);
         v["flows"]["spending"] = json!(0);
         v["milestones"][1]["date"] = json!("2032-01");
-        // AHV-Bezug 2035-06: alle Auszahlungen liegen innerhalb der 5 Jahre davor (#52).
+        // AHV payout 2035-06: all payouts lie within the 5 years before it (#52).
         v["milestones"].as_array_mut().unwrap().insert(
             2,
             json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2035-06" }),
@@ -411,7 +411,7 @@ fn ahv_fixed_and_indexed() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Einnahmen und Ausgaben
+// Income and spending
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -439,9 +439,9 @@ fn one_off_payments_land_in_their_month() {
     assert_eq!(res.events.iter().filter(|e| e.kind == EventKind::Extra).count(), 4);
 }
 
-/// #162/AK1: Das Hauptbuch bucht jeden Geldfluss mit dem richtigen Vorzeichen: Einmalbeträge, Sparbeträge, Beiträge an die
-/// Pensionskasse, Zins bis zum Bezug mitten im Jahr und Kapitalbezug. Die Vermögensänderung jedes Monats muss dem
-/// Hauptbuch entsprechen (`check_books`).
+/// #162/AK1: The ledger books every cash flow with the right sign: one-off amounts, savings, contributions to the
+/// pension fund, interest until a payout in the middle of the year and lump sum. The change in wealth of every month must
+/// match the ledger (`check_books`).
 #[test]
 fn issue_162_ak1_ledger_books_every_flow() {
     let mut v = base();
@@ -483,7 +483,7 @@ fn monthly_and_yearly_income_edge_cases() {
             assert!(res.records.iter().all(|r| r.total.is_finite()));
         }
     }
-    // Einkommen: 12 × Monatswert = Jahreswert
+    // Income: 12 × monthly value = annual value
     let mut v = base();
     v["flows"] = json!({ "income": 1500, "spending": 0 });
     let res = run(&v);
@@ -499,7 +499,7 @@ fn negative_spending_or_income_is_not_silently_accepted() {
         let mut v = base();
         v["flows"] = flows;
         let res = run(&v);
-        // Entweder Prüfung meldet es, oder die Bilanz geht trotzdem genau auf.
+        // Either the validation reports it, or the balance still adds up exactly.
         assert!(
             !api::validate(&v).is_empty() || {
                 check_books(&res, "negativ");
@@ -529,7 +529,7 @@ fn age_dependent_spending_switches_in_the_exact_month() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Vermögen und Anlage
+// Wealth and investment
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -558,7 +558,7 @@ fn liquidity_reserve_is_kept() {
         v["wealth"] = json!({ "stocks": 1_000_000, "bonds": 0, "cash": 0, "stockShare": 1, "reserveMonths": months });
         v["flows"]["spending"] = json!(5000);
         let res = run(&v);
-        // Reserve = Monate × (Ausgaben − Einkommen), solange das Vermögen reicht.
+        // Reserve = months × (spending − income), as long as wealth lasts.
         let target = (months * 5000.0_f64).min(1_000_000.0);
         let r = &res.records[0];
         assert!(
@@ -583,7 +583,7 @@ fn fixed_withdrawal_rates() {
             (res.records[0].spending - 1_000_000.0 * rate / 12.0).abs() < 1e-6,
             "Rate {rate}"
         );
-        // Januar des Folgejahres: Rate vom Restvermögen
+        // January of the following year: rate on the remaining wealth
         let jan = res.records[12].spending;
         let wealth = res.records[11].total;
         assert!(
@@ -595,9 +595,9 @@ fn fixed_withdrawal_rates() {
     }
 }
 
-/// Berechnungsbasis der Entnahmerate ist nur das liquide Vermögen (Cash + Aktien + Obligationen):
-/// 100'000 + 600'000 + 300'000 = 1'000'000. Die Immobilie (1'000'000, ohne Hypothek) zählt nicht mit.
-/// Startentnahme 4 % = 40'000 pro Jahr, nicht 80'000 (Basis 2'000'000).
+/// The basis of the withdrawal rate is only liquid wealth (cash + stocks + bonds):
+/// 100'000 + 600'000 + 300'000 = 1'000'000. The property (1'000'000, without a mortgage) does not count.
+/// Initial withdrawal 4 % = 40'000 per year, not 80'000 (basis 2'000'000).
 #[test]
 fn withdrawal_rate_base_excludes_property() {
     for withdrawal in [
@@ -673,7 +673,7 @@ fn three_buckets_rebalance_only_in_january() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Immobilien
+// Properties
 // ---------------------------------------------------------------------------------------------
 
 fn house(status: &str) -> Value {
@@ -691,7 +691,7 @@ fn existing_property_value_and_costs() {
     let r = &res.records[0];
     assert!((r.property_value - 1_000_000.0).abs() < 0.01 && (r.mortgage - 500_000.0).abs() < 0.01);
     assert!((r.property_equity - 500_000.0).abs() < 0.01);
-    // Wohnkosten: Nebenkosten 1200 pro Monat; Zins 500'000 × 1.5 % / 12 = 625 pro Monat, bezahlt am Quartalsende
+    // Housing costs: fix costs 1200 per month; interest 500'000 × 1.5 % / 12 = 625 per month, paid at quarter end
     assert!((r.housing - 1200.0).abs() < 0.01, "Wohnkosten Januar {}", r.housing);
     assert!((res.records[1].housing - 1200.0).abs() < 0.01, "Wohnkosten Februar");
     assert!(
@@ -716,7 +716,7 @@ fn property_purchase_during_simulation() {
     let before = &res.records[ev.unwrap().plus(-1).until(YearMonth::new(2030, 1)).unsigned_abs() as usize];
     let after = res.records.iter().find(|r| r.month == YearMonth::new(2032, 1)).unwrap();
     assert_eq!(before.property_value, 0.0);
-    // Eigenmittel 300'000 fliessen ab, dazu im Kaufmonat die Nebenkosten (1200); der Zins folgt erst im März
+    // Equity of 300'000 flows out, plus the fix costs (1200) in the purchase month; interest follows only in March
     assert!(
         (before.liquid - after.liquid - 301_200.0).abs() < 0.01,
         "{} → {}",
@@ -786,7 +786,7 @@ fn fixed_mortgage_terms_renew_on_schedule() {
         let mut v = base();
         v["milestones"][2]["date"] = json!("2045-12");
         v["flows"]["spending"] = json!(0);
-        v["flows"]["income"] = json!(10_000); // Hypothek bleibt bei der Erneuerung tragbar (keine Einmalrückzahlung)
+        v["flows"]["income"] = json!(10_000); // mortgage stays affordable at renewal (no one-off repayment)
         let mut h = house("owned");
         h["mortgage"]["tranches"][0]["periods"] = json!([
             { "type": "fixed", "term": term, "rate": 0.01 }, { "type": "fixed", "term": 30, "rate": 0.03 } ]);
@@ -795,7 +795,7 @@ fn fixed_mortgage_terms_renew_on_schedule() {
         let res = run(&v);
         let months: Vec<_> = res.records.iter().map(|r| r.housing).collect();
         let switch = term as usize * 12;
-        // Zinsen fallen am Quartalsende an: Dezember vor dem Wechsel, März danach (je drei Monate)
+        // Interest is due at quarter end: December before the switch, March after it (three months each)
         let (a, b) = (months[switch - 1], months[switch + 2]);
         assert!(
             (a - (3.0 * 500_000.0 * 0.01 / 12.0 + 1200.0)).abs() < 0.01,
@@ -826,12 +826,12 @@ fn saron_mortgage_rate_is_saron_plus_margin() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Steuern
+// Taxes
 // ---------------------------------------------------------------------------------------------
 
 #[test]
 fn tax_tables_interpolate_linearly_below_inside_above() {
-    // Einkommenssteuer-Tabelle: (Einkommen, Satz) – Satz wird zwischen den Stufen linear interpoliert.
+    // Income tax table: (income, rate) – the rate is interpolated linearly between the brackets.
     let table = json!([[0, 0.0], [100_000, 0.10], [200_000, 0.20]]);
     for (income, expected_rate) in [
         (50_000.0, 0.05),
@@ -907,7 +907,7 @@ fn capital_tax_on_lump_sum_interpolates() {
 
 #[test]
 fn property_gain_tax_on_sale() {
-    // Gewinn = Verkaufspreis − Einstandspreis = 1'000'000 − 800'000 = 200'000
+    // gain = sale price − purchase price = 1'000'000 − 800'000 = 200'000
     let mut v = base();
     v["flows"]["spending"] = json!(0);
     let mut h = house("owned");
@@ -923,7 +923,7 @@ fn property_gain_tax_on_sale() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Historische Simulation und Datenbibliothek
+// Historical simulation and data library
 // ---------------------------------------------------------------------------------------------
 
 fn library() -> std::path::PathBuf {
@@ -952,7 +952,7 @@ fn historical_crisis_start_months_use_the_monthly_data() {
         let paths = batch::market_paths(&p, &sim, Some(&ds)).unwrap();
         assert_eq!(paths.len(), 1);
         let res = sim.run(&paths[0], true);
-        // Jede Monatsrendite stammt aus der Reihe; Aktienbestand = 100'000 × Produkt der Renditen
+        // Every monthly return comes from the series; stock holding = 100'000 × product of the returns
         let mut expected = 100_000.0;
         for (k, r) in res.records.iter().enumerate() {
             expected *= 1.0 + paths[0].stocks[k];
@@ -1113,9 +1113,9 @@ fn parametric_paths_are_finite_and_plausible() {
 
 #[test]
 fn statistics_are_stable_across_path_counts() {
-    // Mittelwert und Erfolgsquote dürfen sich bei Verzehnfachung der Pfade nur wenig ändern. Der Mittelwert ist der
-    // der Perzentile ohne den schlechtesten und den besten Lauf: Diese Extreme wachsen mit der Anzahl Pfade (seit
-    // #101 mit zufälliger Inflation deutlich).
+    // Mean and success rate may change only a little when the paths are multiplied by ten. The mean is that
+    // of the percentiles without the worst and the best run: these extremes grow with the number of paths (markedly since
+    // #101 with random inflation).
     let small = mc_summary(&mc_plan("parametric", 1000, 11));
     let large = mc_summary(&mc_plan("parametric", 10_000, 12));
     let inner = |e: &[f64]| e[1..e.len() - 1].iter().sum::<f64>() / (e.len() - 2) as f64;
@@ -1130,7 +1130,7 @@ fn statistics_are_stable_across_path_counts() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Szenarien
+// Scenarios
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -1148,7 +1148,7 @@ fn scenario_grid_is_complete_and_matches_single_runs() {
     let sc = out.scenarios.unwrap();
     assert_eq!(sc.results.len(), 3 * 3 * 3 * 3, "nicht alle Kombinationen gerechnet");
     assert!(sc.results.iter().all(|r| r.error.is_none() && r.runs == 100));
-    // Konsistenz: einzelne Punkte stimmen mit separaten Einzelläufen überein
+    // Consistency: single points match separate single runs
     for k in [0usize, 17, 40, 80] {
         let r = &sc.results[k];
         let mut w = v.clone();
@@ -1190,7 +1190,7 @@ fn two_dimensional_heatmap_is_gapless() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Auswertung
+// Evaluation
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -1208,7 +1208,7 @@ fn percentile_runs_match_their_paths_and_yearly_values_aggregate() {
         let last = detail.records.last().unwrap();
         assert_eq!(last.total.to_bits(), detail.summary.end_total.to_bits());
         check_books(detail, &format!("Perzentil {pct}"));
-        // Jahreswerte: Summe der Monatswerte (Ausgaben) bzw. Dezemberwert (Bestand)
+        // Annual values: sum of the monthly values (spending) or December value (holding)
         let first_year = detail.records[0].month.year();
         let yearly: f64 = detail
             .records
@@ -1269,7 +1269,7 @@ fn file_roundtrip_is_semantically_identical() {
             std::fs::read_to_string(&p1).unwrap(),
             std::fs::read_to_string(&p2).unwrap()
         );
-        // Das Modell verliert nichts: Plan → JSON → Plan
+        // The model loses nothing: plan → JSON → plan
         let m: Plan = serde_json::from_value(loaded.clone()).unwrap();
         let back: Plan = serde_json::from_value(serde_json::to_value(&m).unwrap()).unwrap();
         assert_eq!(serde_json::to_value(&m).unwrap(), serde_json::to_value(&back).unwrap());
@@ -1279,13 +1279,13 @@ fn file_roundtrip_is_semantically_identical() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Cashflow-Invariante mit Renditen und Steuern
+// Cash flow invariant with returns and taxes
 // ---------------------------------------------------------------------------------------------
 
-/// Monatlich muss gelten (ohne Immobilien, Pensionskasse und 3a):
-/// Total = Total des Vormonats + Sparen + Einnahmen + Einmalbeträge − Ausgaben − Steuern + Renditen,
-/// mit Rendite = Aktien(Vormonat) × r_Aktien + Obligationen(Vormonat) × r_Obligationen (nur bei positivem
-/// Vermögen). Umschichtungen, Reserve und Töpfe dürfen das Total nicht verändern. Abweichung ≤ 0.01 CHF.
+/// Every month the following must hold (without properties, pension fund and 3a):
+/// total = total of the previous month + savings + income + one-off amounts − spending − taxes + returns,
+/// with return = stocks(previous month) × r_stocks + bonds(previous month) × r_bonds (only with positive
+/// wealth). Reallocations, reserve and buckets must not change the total. Deviation ≤ 0.01 CHF.
 #[test]
 fn monthly_cash_flow_identity_with_returns_and_taxes() {
     use engine::montecarlo::Rng;
@@ -1393,7 +1393,7 @@ fn monthly_cash_flow_identity_with_returns_and_taxes() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Last (Stresstest und Messung; mit `cargo test --release -- --ignored --nocapture`)
+// Load (stress test and measurement; with `cargo test --release -- --ignored --nocapture`)
 // ---------------------------------------------------------------------------------------------
 
 fn stress_plan(paths: usize) -> Value {
@@ -1466,7 +1466,7 @@ fn stress_couple_four_properties_100_years() {
     let paths = std::env::var("QA_PATHS")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(40_000); // #139: unter der Grenze von 50 Mio. Pfad-Monaten (40'000 × 1'200 = 48 Mio.)
+        .unwrap_or(40_000); // #139: below the limit of 50 million path-months (40'000 × 1'200 = 48 million)
     let v = stress_plan(paths);
     let t = std::time::Instant::now();
     let out = api::run(&v, Path::new("/"), Some(&library()));
@@ -1489,10 +1489,10 @@ fn stress_couple_four_properties_100_years() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Zeitpunkte nach Schweizer Praxis: Einkommenssteuer, Teuerung, AHV-Anpassung
+// Points in time according to Swiss practice: income tax, inflation, AHV adjustment
 // ---------------------------------------------------------------------------------------------
 
-/// Einkommenssteuer: einmal pro Jahr auf dem Einkommen des Steuerjahrs, bezahlt im Mai des Folgejahres.
+/// Income tax: once a year on the income of the tax year, paid in May of the following year.
 #[test]
 
 fn income_tax_is_assessed_yearly_and_paid_in_may_of_next_year() {
@@ -1507,7 +1507,7 @@ fn income_tax_is_assessed_yearly_and_paid_in_may_of_next_year() {
     for r in taxed.iter().filter(|r| r.month != res.records.last().unwrap().month) {
         assert_eq!(r.month.month(), 5, "Steuer in {} statt im Mai", r.month);
     }
-    // Steuerjahr 2030 (72'000 × 10 %) wird im Mai 2031 bezahlt, im Dezember 2030 noch nichts
+    // Tax year 2030 (72'000 × 10 %) is paid in May 2031, nothing yet in December 2030
     let dec = res
         .records
         .iter()
@@ -1518,8 +1518,8 @@ fn income_tax_is_assessed_yearly_and_paid_in_may_of_next_year() {
     assert!((may.taxes - 7_200.0).abs() < 0.01, "Mai 2031: {}", may.taxes);
 }
 
-/// #109/AK5: Die veranlagte Steuer steht im Dezember des Steuerjahres, bezahlt wird sie im Mai des Folgejahres;
-/// über alle Monate ist die Summe der veranlagten gleich der Summe der bezahlten Steuer.
+/// #109/AK5: The assessed tax is in December of the tax year; it is paid in May of the following year;
+/// over all months the sum of the assessed tax equals the sum of the paid tax.
 #[test]
 fn issue_109_ak5_assessed_tax_is_booked_in_the_tax_year() {
     let mut v = base();
@@ -1556,7 +1556,7 @@ fn issue_109_ak5_assessed_tax_is_booked_in_the_tax_year() {
     assert!((sum(&|r| r.assessed_income) - sum(&|r| r.tax_income)).abs() < 0.01);
 }
 
-/// Teuerung: wirkt jeden Monat (1 + i)^(1/12), nicht als Sprung im Januar.
+/// Inflation: acts every month as (1 + i)^(1/12), not as a jump in January.
 #[test]
 
 fn inflation_is_applied_every_month() {
@@ -1575,7 +1575,7 @@ fn inflation_is_applied_every_month() {
     }
 }
 
-/// AHV-Anpassung: nur im Januar, mit der Teuerung des Vorjahres; AHV-Rente sonst unverändert.
+/// AHV adjustment: only in January, with the previous year's inflation; otherwise the AHV pension is unchanged.
 #[test]
 fn indexed_ahv_changes_only_in_january() {
     let mut v = base();
@@ -1608,13 +1608,13 @@ fn indexed_ahv_changes_only_in_january() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Lebenshaltung ohne Wohnkosten; Hypothekarzinsen quartalsweise
+// Living costs without housing costs; mortgage interest quarterly
 // ---------------------------------------------------------------------------------------------
 
-/// Die angegebene Lebenshaltung enthält weder Miete noch Hypothekarzinsen: Ausgaben = Lebenshaltung + Wohnkosten.
+/// The given living costs include neither rent nor mortgage interest: spending = living costs + housing costs.
 #[test]
 fn living_costs_exclude_rent_and_mortgage_interest() {
-    // Miete
+    // Rent
     let mut v = base();
     v["realestate"] = json!({ "properties": [
         { "id": "r", "name": "Wohnung", "status": "rent", "rent": 2_000, "from": "2030-01" } ] });
@@ -1635,7 +1635,7 @@ fn living_costs_exclude_rent_and_mortgage_interest() {
     }
     let last = &res.records[11];
     assert!((res.records[0].liquid - last.liquid - 11.0 * 7_000.0).abs() < 0.01);
-    // Eigenheim mit Hypothek: Lebenshaltung bleibt 5000, Zinsen kommen hinzu
+    // Own home with a mortgage: living costs stay 5000, interest is added
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house("owned") ] });
     let res = run(&v);
@@ -1648,13 +1648,13 @@ fn living_costs_exclude_rent_and_mortgage_interest() {
             r.housing
         );
     }
-    // Jahreszins 500'000 × 1.5 % + Nebenkosten 14'400, nur an anderen Monaten verteilt
+    // Annual interest 500'000 × 1.5 % + fix costs 14'400, distributed only over other months
     let year: f64 = res.records.iter().take(12).map(|r| r.housing).sum();
     assert!((year - (7_500.0 + 14_400.0)).abs() < 0.01, "Wohnkosten Jahr {year}");
 }
 
-/// Hypothekarzinsen und Amortisation werden quartalsweise bezahlt. Beginnt die Hypothek im April,
-/// ist die erste Zinszahlung trotzdem im Juni fällig (für April bis Juni).
+/// Mortgage interest and amortization are paid quarterly. If the mortgage starts in April,
+/// the first interest payment is still due in June (for April to June).
 #[test]
 fn mortgage_interest_is_paid_quarterly_first_payment_in_june() {
     let mut v = base();
@@ -1672,13 +1672,13 @@ fn mortgage_interest_is_paid_quarterly_first_payment_in_june() {
     for m in [4, 5] {
         assert!(at(2030, m).housing.abs() < 0.01, "Monat {m}: {}", at(2030, m).housing);
     }
-    // Juni: Zins April, Mai, Juni plus erste Amortisation
+    // June: interest for April, May, June plus the first amortization
     assert!(
         (at(2030, 6).housing - (3.0 * monthly + 1_500.0)).abs() < 0.01,
         "Juni {}",
         at(2030, 6).housing
     );
-    // Zinsen aller Nicht-Quartalsmonate sind null, im Quartalsmonat drei Monate (Restschuld sinkt um 1500)
+    // Interest of all non-quarter months is zero, in the quarter month three months (remaining debt falls by 1500)
     for r in res
         .records
         .iter()
@@ -1701,7 +1701,7 @@ fn mortgage_interest_is_paid_quarterly_first_payment_in_june() {
     check_books(&res, "Hypothek ab April");
 }
 
-/// Verkauf mitten im Quartal: die bis dahin aufgelaufenen Zinsen werden mit dem Verkauf bezahlt, nicht verschenkt.
+/// Sale in the middle of a quarter: the interest accrued until then is paid with the sale, not given away.
 #[test]
 fn accrued_interest_is_settled_on_sale_and_at_plan_end() {
     let mut v = base();
@@ -1714,9 +1714,9 @@ fn accrued_interest_is_settled_on_sale_and_at_plan_end() {
     let res = run(&v);
     let monthly = 500_000.0 * 0.015 / 12.0;
     let total: f64 = res.records.iter().map(|r| r.housing).sum();
-    // Januar bis Mai: fünf Monatszinsen (März bezahlt drei, Verkauf im Mai die übrigen zwei)
+    // January to May: five monthly interest amounts (March pays three, the sale in May the other two)
     assert!((total - 5.0 * monthly).abs() < 0.01, "Zinsen total {total}");
-    // Plan endet im Februar: der offene Zins wird im letzten Monat bezahlt
+    // Plan ends in February: the open interest is paid in the last month
     let mut v = base();
     v["flows"]["spending"] = json!(0);
     v["milestones"][2]["date"] = json!("2030-02");
@@ -1728,7 +1728,7 @@ fn accrued_interest_is_settled_on_sale_and_at_plan_end() {
     assert!((total - 2.0 * monthly).abs() < 0.01, "Zinsen bis Planende {total}");
 }
 
-// ---------- Grundstückgewinnsteuer mit Besitzdauer: Prüfung und Dateiformat ----------
+// ---------- Property gain tax with holding period: validation and file format ----------
 
 fn with_gain_tax(duration: Value, bought: Option<&str>) -> Value {
     let mut v = base();
@@ -1741,7 +1741,7 @@ fn with_gain_tax(duration: Value, bought: Option<&str>) -> Value {
     v
 }
 
-/// Ungültige Besitzdauer-Tabellen (negative Jahre, Abzug ab 100 %) blockieren die Berechnung.
+/// Invalid holding period tables (negative years, reduction from 100 %) block the computation.
 #[test]
 fn invalid_holding_period_table_is_an_error() {
     for bad in [json!([[-1, 0.5]]), json!([[5, -1.0]]), json!([[5, -1.5]])] {
@@ -1758,7 +1758,7 @@ fn invalid_holding_period_table_is_an_error() {
     assert!(errors(&with_gain_tax(json!([[0, 0.5], [5, -0.05]]), Some("2020-01"))).is_empty());
 }
 
-/// Fehlendes Kaufdatum: Warnung (nur mit Besitzdauer-Tabelle), keine Sperre; mit Datum oder ohne Tabelle keine Warnung.
+/// Missing purchase date: warning (only with a holding period table), no block; with a date or without a table no warning.
 #[test]
 fn missing_purchase_date_warns_only_with_a_holding_period_table() {
     let warns = |v: &Value| {
@@ -1774,8 +1774,8 @@ fn missing_purchase_date_warns_only_with_a_holding_period_table() {
     assert!(errors(&v).is_empty() && api::run(&v, Path::new("/"), None).error.is_none());
 }
 
-/// Dateiformat: Kaufdatum und neue Felder der Steuer bleiben beim Speichern und Laden erhalten;
-/// leere Tabelle und Freigrenze 0 werden nicht geschrieben, ältere Dateien ohne die Felder bleiben lesbar.
+/// File format: purchase date and new fields of the tax are preserved when saving and loading;
+/// an empty table and an exemption limit of 0 are not written, older files without the fields stay readable.
 #[test]
 fn holding_period_fields_roundtrip_and_old_files_still_load() {
     let v = with_gain_tax(json!([[0, 0.5], [5, -0.05]]), Some("2020-01"));
@@ -1798,10 +1798,10 @@ fn holding_period_fields_roundtrip_and_old_files_still_load() {
     assert!(back["realestate"]["properties"][0].get("bought").is_none());
 }
 
-/// #139/AK4: Spitzenspeicher einer Rechnung genau an der Grenze (50 Mio. Pfad-Monate): schwerste Testplanung (Ehepaar,
-/// vier Liegenschaften mit je zwei Tranchen, 100 Jahre) mit 41'666 Pfaden. Gemessen über den Speicherverwalter der Tests
-/// (`engine::test_alloc`); er bleibt unter der Grenze der Testprozesse von 1,5 GB (gemessen 18.11.2026: 1'337 MB).
-/// Rund 8 s im Release-Profil, über eine Minute im Testprofil: läuft nächtlich im Job `release-golden`.
+/// #139/AK4: Peak memory of a computation exactly at the limit (50 million path-months): heaviest test plan (married couple,
+/// four properties with two tranches each, 100 years) with 41'666 paths. Measured via the allocator of the tests
+/// (`engine::test_alloc`); it stays below the limit of the test processes of 1.5 GB (measured 18.11.2026: 1'337 MB).
+/// About 8 s in the release profile, over a minute in the test profile: runs nightly in the job `release-golden`.
 #[test]
 #[ignore]
 fn issue_139_ak4_peak_memory_at_the_limit_stays_below_the_test_limit() {
