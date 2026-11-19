@@ -1,9 +1,9 @@
-// Hilfe: Panel rechts, kontextabhängig über F1, «?»-Knöpfe an Feldern und Überschriften, Suche.
-// Die Texte liegen in hilfe/*.md (offline, mit der App ausgeliefert). Ein Thema beginnt mit «## @kennung Titel».
+// Help: panel on the right, context-sensitive via F1, «?» buttons at fields and headings, search.
+// The texts are in `hilfe/*.md` (offline, shipped with the app). A topic starts with «## @id Title».
 "use strict";
 const Help = (() => {
   const CHAPTERS = ["00-einstieg", "10-editor", "20-renditen", "30-entnahme", "40-optimierung", "50-ergebnisse", "60-referenz"];
-  /** Eingabefeld (data-path) → Thema; die erste passende Zeile gilt. */
+  /** Input field (data-path) → topic; the first matching row applies. */
   const FIELD_TOPICS = [
     [/^returns\.source$/, "f-ret-source"], [/^returns\.fixed\./, "f-ret-fixed"], [/^returns\.startDate$/, "f-ret-historical"],
     [/^returns\.bootstrap\./, "f-ret-bootstrap"], [/^returns\.parametric\./, "f-ret-parametric"], [/^returns\.extrapolation\./, "f-ret-extrapolation"],
@@ -19,10 +19,10 @@ const Help = (() => {
     [/^scenarios\.sweeps/, "f-sweep"], [/^milestones\./, "s-milestones"], [/^pillar3a\./, "s-pillar3a"],
     [/^flows\.(income|spending)\b/, "f-timed"], [/^partner\.income\b/, "f-timed"]
   ];
-  /** Eingabefelder der Optimierung (ohne data-path) → Thema. */
+  /** Input fields of the optimization (without data-path) → topic. */
   const OPT_TOPICS = [[/^opt-(maxRuin|ruinAge)$/, "o-goal"], [/^opt-weightMedian$/, "o-consumption"], [/^opt-(volWeight|maxVol)$/, "o-vol"],
     [/^opt-(paths|checkPaths|samples)$/, "o-advanced"], [/^optS-/, "o-strategies"], [/^optR-/, "o-ranges"]];
-  /** Kartenüberschriften (Anfang des Texts) → Thema. */
+  /** Card headings (start of the text) → topic. */
   const HEADING_TOPICS = [
     ["Pensionskasse", "f-pk"], ["AHV", "f-ahv"], ["Säule 3a", "s-pillar3a"], ["Töpfe", "f-wd-three_buckets"], ["Notverkauf", "f-re-emergency"], ["Tragbarkeit", "f-re-afford"],
     ["Variationen", "f-sweep"], ["Zeitreihe", "f-ret-series"], ["Anlagestrategie", "f-ret-series"], ["Renditen aus der Anlagestrategie", "f-ret-series"], ["Fortschreibung", "f-ret-extrapolation"], ["Bootstrap", "f-ret-bootstrap"],
@@ -40,7 +40,7 @@ const Help = (() => {
   const $h = s => panel.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  // ----- Markdown (kleine Teilmenge) -----
+  // ----- Markdown (small subset) -----
   const inline = s => esc(s)
     .replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
     .replace(/\[([^\]]+)\]\(#([\w-]+)\)/g, '<a data-topic="$2">$1</a>');
@@ -84,7 +84,7 @@ const Help = (() => {
     return out.join("");
   }
 
-  // ----- Laden -----
+  // ----- Loading -----
   function parse(chapterId, text) {
     const lines = text.split("\n"), ch = { id: chapterId, title: chapterId, topics: [] };
     let cur = null;
@@ -106,7 +106,7 @@ const Help = (() => {
     })).then(list => { chapters.push(...list); }, e => { loading = null; throw e; });
   }
 
-  // ----- Anzeige -----
+  // ----- Display -----
   function build() {
     if (panel) return;
     const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "help.css"; document.head.append(css);
@@ -153,7 +153,7 @@ const Help = (() => {
   }
   function show(id, keepSearch = false) {
     if (hist[pos] !== id) {
-      // Suchanfragen beim Tippen ersetzen den letzten Eintrag, damit «Zurück» nicht jeden Buchstaben durchläuft.
+      // Search queries while typing replace the last entry so that «Zurück» does not step through every letter.
       if (id.startsWith("search:") && hist[pos]?.startsWith("search:")) hist[pos] = id;
       else { hist = hist.slice(0, pos + 1); hist.push(id); pos = hist.length - 1; }
     }
@@ -163,7 +163,7 @@ const Help = (() => {
   function close() { if (!panel) return; panel.hidden = true; document.body.classList.remove("help-open"); delete document.documentElement.dataset.help; }
   const isOpen = () => !!panel && !panel.hidden;
 
-  // ----- Kontext -----
+  // ----- Context -----
   const topicFor = (list, key) => list.find(([re]) => re.test(key))?.[1];
   const fieldTopic = path => topicFor(FIELD_TOPICS, path);
   function contextTopic() {
@@ -184,7 +184,7 @@ const Help = (() => {
   }
   const openContext = () => show(contextTopic());
 
-  // ----- Knöpfe an Feldern und Überschriften -----
+  // ----- Buttons at fields and headings -----
   const hq = topic => `<button type="button" class="hq" data-help="${topic}" title="Hilfe zu diesem Thema" aria-label="Hilfe">ⓘ</button>`;
   function put(container, where, topic) {
     if (!container || container.querySelector(":scope > .hq, :scope > * > .hq")) return;
@@ -224,7 +224,7 @@ const Help = (() => {
   const obs = new MutationObserver(schedule);
   const watch = () => { for (const id of ["main", "resultsBody"]) { const n = document.getElementById(id); if (n) obs.observe(n, { childList: true, subtree: true }); } };
 
-  // ----- Prüfung (für den Oberflächentest) -----
+  // ----- Check (for the user interface test) -----
   async function check() {
     await load();
     const problems = [];
@@ -252,7 +252,7 @@ const Help = (() => {
     document.getElementById("helpBtn")?.addEventListener("click", () => isOpen() ? close() : openContext());
     watch(); schedule();
     window.__TAURI__?.event?.listen("menu", ev => { if (ev.payload === "helpctx") openContext(); else if (ev.payload === "manual") show("toc"); });
-    const open = /helpopen\/([\w-]+)/.exec(location.hash); // Testzugang: …/helpopen/<thema>
+    const open = /helpopen\/([\w-]+)/.exec(location.hash); // test access: …/helpopen/<topic>
     if (open) show(open[1]);
     if (location.hash.startsWith("#helpcheck")) check().then(p => { document.documentElement.dataset.helpProblems = p.length; if (p.length) document.documentElement.dataset.helpFirst = p[0]; document.documentElement.dataset.rendered = "help"; })
       .catch(e => { document.documentElement.dataset.helpProblems = "x"; document.documentElement.dataset.helpFirst = String(e.message); document.documentElement.dataset.rendered = "help"; });

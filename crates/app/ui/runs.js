@@ -1,8 +1,8 @@
-// Liste der durchgeführten Simulationen. Gespeichert wird lokal im Browserspeicher der App (IndexedDB),
-// getrennt in Kopfdaten (für die Liste) und Inhalt (Planung und Ergebnis). Es werden keine Daten gesendet.
+// List of the simulations run. Stored locally in the app's browser storage (IndexedDB),
+// separated into header data (for the list) and content (plan and result). No data is sent.
 "use strict";
 const Runs = (() => {
-  // legacy: RetirementPlanner – Name der Datenbank bleibt, damit die übernommenen Ergebnisse sichtbar bleiben (#44).
+  // legacy: RetirementPlanner – the name of the database stays so that the results taken over stay visible (#44).
   const DB = "retirementplanner", META = "meta", DATA = "data";
   const mem = { meta: new Map(), data: new Map() };
   let dbp = null, memoryOnly = false;
@@ -15,7 +15,7 @@ const Runs = (() => {
       q.onerror = () => rej(q.error);
     } catch (e) { rej(e); }
   });
-  /** Ohne IndexedDB (z. B. gesperrter Speicher) bleibt die Liste bis zum Schliessen im Arbeitsspeicher. */
+  /** Without IndexedDB (e.g. blocked storage) the list stays in memory until closing. */
   async function run(stores, mode, fn, fallback) {
     let db;
     try { db = await open(); } catch { return fallback(); }
@@ -23,20 +23,20 @@ const Runs = (() => {
       const t = db.transaction(stores, mode), out = fn(...stores.map(s => t.objectStore(s)));
       t.oncomplete = () => res(out.result);
       t.onerror = () => rej(t.error);
-      // #147: Eine abgebrochene Transaktion (z. B. Speicherkontingent erschöpft) meldet nicht immer «error»; ohne
-      // `onabort` bliebe das Versprechen offen und die Oberfläche wartete ohne Ende.
+      // #147: An aborted transaction (e.g. storage quota exhausted) does not always report «error»; without
+      // `onabort` the promise would stay pending and the user interface would wait forever.
       t.onabort = () => rej(t.error || new Error("Speichern im Browserspeicher abgebrochen"));
     });
   }
   const req = (r, f) => { r.onsuccess = () => { f.result = r.result; }; return f; };
   return {
-    /** Für die Oberflächentests (Chrome ohne Fenster schliesst IndexedDB-Abfragen nicht ab). */
+    /** For the user interface tests (headless Chrome does not complete IndexedDB queries). */
     memoryOnly() { memoryOnly = true; dbp = null; },
     async add(meta, data) {
       await run([META, DATA], "readwrite", (m, d) => { m.put(meta); d.put({ id: meta.id, ...data }); return {}; },
         () => { mem.meta.set(meta.id, meta); mem.data.set(meta.id, { id: meta.id, ...data }); });
     },
-    /** Kopfdaten, neueste zuerst. */
+    /** Header data, newest first. */
     async list() {
       const all = await run([META], "readonly", m => req(m.getAll(), {}), () => [...mem.meta.values()]);
       return (all || []).sort((a, b) => b.created.localeCompare(a.created));
@@ -57,5 +57,5 @@ const Runs = (() => {
     }
   };
 })();
-// #147: für die Unit-Tests (node --test mit fake-indexeddb)
+// #147: for the unit tests (node --test with fake-indexeddb)
 if (typeof module !== "undefined") module.exports = { Runs };

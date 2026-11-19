@@ -1,5 +1,5 @@
-// Diagramme als SVG ohne externe Bibliotheken: Linien und Bänder, gestapelte Flächen, Balken,
-// Histogramm und Heatmap. Farben kommen aus den CSS-Variablen, damit Hell- und Dunkelmodus passen.
+// Charts as SVG without external libraries: lines and bands, stacked areas, bars,
+// histogram and heatmap. Colors come from the CSS variables so that light and dark mode fit.
 "use strict";
 const Charts = (() => {
   const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -9,7 +9,7 @@ const Charts = (() => {
     const raw = max / n, p = Math.pow(10, Math.floor(Math.log10(raw || 1)));
     return [1, 2, 2.5, 5, 10].map(x => x * p).find(x => raw <= x) || p * 10;
   }
-  /** Skala über [lo, hi] mit «schönen» Teilstrichen; 0 wird einbezogen, wenn sinnvoll. */
+  /** Scale over [lo, hi] with «nice» ticks; 0 is included if sensible. */
   function scale(lo, hi, withZero = true) {
     if (withZero) { lo = Math.min(0, lo); hi = Math.max(0, hi); }
     if (!(hi > lo)) { hi = lo + 1; }
@@ -17,7 +17,7 @@ const Charts = (() => {
     for (let v = a; v <= b + s * 1e-6; v += s) ticks.push(Math.abs(v) < s * 1e-9 ? 0 : v);
     return { lo: a, hi: b, ticks };
   }
-  /** Logarithmische Skala mit Teilstrichen bei 1, 2 und 5 je Zehnerpotenz; lo/hi im Log-Raum. */
+  /** Logarithmic scale with ticks at 1, 2 and 5 per power of ten; lo/hi in log space. */
   function logScale(values) {
     const v = values.filter(x => x > 0);
     if (!v.length) return { lo: 0, hi: 1, ticks: [1, 10] };
@@ -40,8 +40,8 @@ const Charts = (() => {
     }).join("");
   }
   /**
-   * Bezugslinie (#114): die Linie, an der ein Ergebnis kippt (meist 0, im Index 100), dicker als das Raster und hinter
-   * den Daten. `at` ist die Position im Skalenraum (bei logarithmischer Skala log10); ausserhalb des Bereichs keine Linie.
+   * Reference line (#114): the line at which a result tips over (usually 0, 100 for an index), thicker than the grid and behind
+   * the data. `at` is the position in scale space (log10 for a logarithmic scale); outside the range no line.
    */
   function refLine(f, ys, at, y) {
     if (!Number.isFinite(at) || at < ys.lo - 1e-9 * Math.abs(ys.hi - ys.lo) || at > ys.hi + 1e-9 * Math.abs(ys.hi - ys.lo)) return "";
@@ -58,19 +58,19 @@ const Charts = (() => {
     if (tip) tip.style.display = "none";
     svg.querySelector(".hov")?.setAttribute("visibility", "hidden");
   }
-  /** Pfad durch die Punkte; Lücken (NaN) unterbrechen die Linie. */
+  /** Path through the points; gaps (NaN) interrupt the line. */
   const pathOf = pts => { let s = "", pen = false; for (const [x, y] of pts) { if (!Number.isFinite(y)) { pen = false; continue; } s += `${pen ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`; pen = true; } return s; };
 
   /**
-   * Zeitachse mit Linien, Bändern und optional gestapelten Flächen.
-   * o = { x: [Monatsindex], xFmt, yFmt, lines: [{label, color, values, dash, width}],
+   * Time axis with lines, bands and optionally stacked areas.
+   * o = { x: [month index], xFmt, yFmt, lines: [{label, color, values, dash, width}],
    *       bands: [{lo, hi, color, opacity, label}], stack: [{label, color, values}], percent,
-   *       marks: [{x, color, label}], tip: (i) => html, yMin, ref: Bezugslinie (Standard 0, null = keine) }
+   *       marks: [{x, color, label}], tip: (i) => html, yMin, ref: reference line (default 0, null = none) }
    */
   /**
-   * Bereichsauswahl per Maus: Mit gedrückter Taste einen waagrechten Bereich aufziehen (hervorgehoben),
-   * beim Loslassen ruft `done(von, bis)` mit den Indizes auf. `at(px)` liefert den Index zu einer Pixelposition,
-   * `span(von, bis)` die Pixelgrenzen des Rechtecks.
+   * Range selection by mouse: with the button pressed drag a horizontal range (highlighted);
+   * on release calls `done(from, to)` with the indices. `at(px)` returns the index for a pixel position,
+   * `span(from, to)` the pixel bounds of the rectangle.
    */
   function selectable(svg, tip, f, at, span, done) {
     svg.style.cursor = "crosshair";
@@ -110,7 +110,7 @@ const Charts = (() => {
       window.addEventListener("mouseup", up);
     };
   }
-  /** Ausschnitt `view` = [von, bis] (Monatsindizes): alle Reihen werden auf diesen Bereich gekürzt. */
+  /** Section `view` = [from, to] (month indices): all series are cut to this range. */
   function windowed(o) {
     const lo = o.x.findIndex(v => v >= o.view[0]);
     let hi = -1;
@@ -140,11 +140,11 @@ const Charts = (() => {
     const all = [...(o.lines || []).flatMap(l => l.values), ...(o.bands || []).flatMap(b => [...b.lo, ...b.hi]), ...(stackTop ? stackTop[stackTop.length - 1] : [])].filter(Number.isFinite);
     const ys = o.log ? logScale(all) : o.percent ? scale(0, 100) : o.range ? scale(o.range[0], o.range[1], false) : scale(o.yMin ?? Math.min(...all), Math.max(...all));
     f.x = i => f.L + i / (n - 1) * (f.W - f.L - f.R);
-    // Logarithmisch: ys.lo/ys.hi liegen im Log-Raum, nicht positive Werte bleiben Lücken.
+    // Logarithmic: ys.lo/ys.hi are in log space, non-positive values stay gaps.
     const pos = o.log ? v => (v > 0 ? Math.log10(v) : NaN) : v => v;
     f.y = v => f.T + (1 - (pos(v) - ys.lo) / (ys.hi - ys.lo)) * (f.H - f.T - f.B);
     let h = grid(f, ys, o.percent ? v => `${v} %` : o.yFmt);
-    // Bezugslinie: `ref` (Standard 0, null = keine)
+    // Reference line: `ref` (default 0, null = none)
     const ref = o.ref === undefined ? 0 : o.ref;
     if (ref != null) h += refLine(f, ys, pos(ref), f.y(ref));
     let lastLabel = -1e9;
@@ -154,7 +154,7 @@ const Charts = (() => {
         lastLabel = f.x(i);
       }
     }
-    // #121: Bei fester Achse (range) werden Werte ausserhalb am Rand abgeschnitten, nicht verzerrt
+    // #121: With a fixed axis (range) values outside are clipped at the edge, not distorted
     const clip = o.range ? `clip-${svg.id || "t"}` : null;
     if (clip) h += `<clipPath id="${clip}"><rect x="${f.L}" y="${f.T - 2}" width="${f.W - f.L - f.R}" height="${f.H - f.T - f.B + 4}"/></clipPath><g class="clipped" clip-path="url(#${clip})">`;
     for (const b of o.bands || []) {
@@ -187,13 +187,13 @@ const Charts = (() => {
       tipAt(svg, tip, f, f.x(i), o.tip(i));
     };
     svg.onmouseleave = () => { if (!svg.classList.contains("selecting")) hideTip(svg, tip); };
-    // Bereich aufziehen = zoomen; Auswahlen unter einem Jahr (12 Monatsindizes) zählen als Klick und werden ignoriert
+    // Dragging a range = zoom; selections under one year (12 month indices) count as a click and are ignored
     if (o.onZoom) selectable(svg, tip, f, idx, (a, b) => [f.x(a), f.x(b)], (a, b) => { if (o.x[b] - o.x[a] >= 12) o.onZoom(o.x[a], o.x[b]); });
   }
 
   /**
-   * Balken je Kategorie; `series` mit `group` werden innerhalb der Gruppe gestapelt, Gruppen stehen nebeneinander.
-   * o = { cats: [Text], series: [{label, color, values, group}], yFmt, tip: (i) => html, line: {label, color, values} }
+   * Bars per category; `series` with `group` are stacked within the group, groups stand side by side.
+   * o = { cats: [text], series: [{label, color, values, group}], yFmt, tip: (i) => html, line: {label, color, values} }
    */
   function bars(svg, tip, o) {
     if (!svg) return;
@@ -201,7 +201,7 @@ const Charts = (() => {
     const n = o.cats.length;
     if (!n) { svg.innerHTML = ""; return; }
     const groups = [...new Set(o.series.map(s => s.group ?? s.label))];
-    // #120: Mindestbreite eines Balkens (o.minBar, px); reicht die Breite nicht, wird die Grafik breiter und scrollt waagrecht
+    // #120: Minimum width of a bar (o.minBar, px); if the width is not enough, the chart gets wider and scrolls horizontally
     if (o.minBar) {
       svg.style.width = ""; svg.parentElement?.classList.remove("hscroll");
       const need = f.L + f.R + n * o.minBar * groups.length / 0.8;
@@ -244,11 +244,11 @@ const Charts = (() => {
       tipAt(svg, tip, f, f.L + (i + 0.5) * slot, o.tip(i));
     };
     svg.onmouseleave = () => { if (!svg.classList.contains("selecting")) hideTip(svg, tip); };
-    // Mehrere Jahre aufziehen = zoomen (ein einzelner Balken zählt als Klick)
+    // Dragging several years = zoom (a single bar counts as a click)
     if (o.onSelect) selectable(svg, tip, f, idx, (a, b) => [f.L + a * slot, f.L + (b + 1) * slot], (a, b) => { if (b > a) o.onSelect(a, b); });
   }
 
-  /** Histogramm aus {edges, counts}; `marks` = [{value, label, color}] als senkrechte Linien. */
+  /** Histogram from {edges, counts}; `marks` = [{value, label, color}] as vertical lines. */
   function histogram(svg, tip, hist, o) {
     if (!svg) return;
     if (!hist) { svg.innerHTML = ""; return; }
@@ -261,7 +261,7 @@ const Charts = (() => {
       const p = hist.counts[i] / total * 100, x0 = f.x(hist.edges[i]), x1 = f.x(hist.edges[i + 1]);
       h += `<rect x="${(x0 + 0.5).toFixed(1)}" y="${f.y(p).toFixed(1)}" width="${Math.max(0.5, x1 - x0 - 1).toFixed(1)}" height="${(f.y(0) - f.y(p)).toFixed(1)}" fill="${color(o.color || "--c1")}" fill-opacity=".75"/>`;
     }
-    // Bezugslinie (#114): hier liegt der Wert auf der waagrechten Achse, also senkrecht bei 0 (z. B. Endvermögen 0)
+    // Reference line (#114): here the value is on the horizontal axis, so vertical at 0 (e.g. final wealth 0)
     if (lo <= 0 && hi >= 0) h += `<line class="ref" x1="${f.x(0)}" x2="${f.x(0)}" y1="${f.T}" y2="${f.H - f.B}" stroke="${cssv("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
     const sx = scale(lo, hi, false);
     for (const v of sx.ticks) if (v >= lo && v <= hi) h += `<text x="${f.x(v)}" y="${f.H - 8}" text-anchor="middle" font-size="10.5" fill="${cssv("--muted")}">${o.xFmt(v)}</text>`;
@@ -281,7 +281,7 @@ const Charts = (() => {
     svg.onmouseleave = () => hideTip(svg, tip);
   }
 
-  /** Linien über einer Zahlen- bzw. Kategorienachse (Szenarien); o = { xs: [Text], lines, bands, yFmt, tip } */
+  /** Lines over a number or category axis (scenarios); o = { xs: [text], lines, bands, yFmt, tip } */
   function category(svg, tip, o) {
     if (!svg) return;
     const f = frame(svg, o.margin), n = o.xs.length;
@@ -313,14 +313,14 @@ const Charts = (() => {
     svg.onmouseleave = () => hideTip(svg, tip);
   }
 
-  /** Heatmap als Tabelle: o = { xs, ys, value: (xi, yi) => Zahl, fmt, lo, hi, good: "high" | "low" } */
+  /** Heatmap as a table: o = { xs, ys, value: (xi, yi) => number, fmt, lo, hi, good: "high" | "low" } */
   function heatmap(o) {
     const vals = []; o.ys.forEach((_, yi) => o.xs.forEach((_, xi) => vals.push(o.value(xi, yi))));
     const fin = vals.filter(Number.isFinite), lo = o.lo ?? Math.min(...fin), hi = o.hi ?? Math.max(...fin);
     const cell = v => {
       if (!Number.isFinite(v)) return `<td class="hm na">–</td>`;
       let t = hi > lo ? (v - lo) / (hi - lo) : 1; if (o.good === "low") t = 1 - t;
-      // rot (schlecht) → gelb → grün (gut), mit genügend Kontrast für dunkle Schrift
+      // red (bad) → yellow → green (good), with enough contrast for dark text
       const hue = Math.round(t * 120);
       return `<td class="hm" style="background:hsl(${hue} 65% 72%)">${o.fmt(v)}</td>`;
     };

@@ -1,4 +1,4 @@
-/* Hilfe-Panel rechts, Kurzinfo-Knöpfe neben den Feldern */
+/* Help panel on the right, short info buttons next to the fields */
 #help{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100vw;z-index:30;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border);box-shadow:-6px 0 24px rgba(0,0,0,.12)}
 #help[hidden]{display:none}
 body.help-open{padding-right:440px}

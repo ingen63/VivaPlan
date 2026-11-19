@@ -1,14 +1,14 @@
-// Optimaler Parameterwert je Perzentil aus den Ergebnissen der Variationen (Szenarien).
-// Es werden nur die bereits gerechneten Variationsschritte verwendet; zwischen den Schritten wird nur
-// dort interpoliert, wo das eindeutig ist (höchster tragbarer Wert). Reine Funktionen ohne Zugriff auf die Seite.
+// Optimal parameter value per percentile from the results of the variations (scenarios).
+// Only the variation steps already calculated are used; between the steps it only
+// interpolates where this is unambiguous (highest sustainable value). Pure functions without access to the page.
 "use strict";
 const Optimum = (() => {
   /**
-   * Kriterium je Parameter:
-   *  - "sustainable": höchster Wert, bei dem das Vermögen bis zum Ende reicht (mehr Konsum = höherer Wert);
-   *  - "bestEnd": Vorrang haben Werte, bei denen das Vermögen reicht; darunter gilt das höchste Endvermögen,
-   *    reicht es nirgends, das späteste Alter der Erschöpfung;
-   *  - kein Eintrag: Kriterium nicht sinnvoll, es wird kein Optimum angezeigt.
+   * Criterion per parameter:
+   *  - "sustainable": highest value at which the wealth lasts until the end (more consumption = higher value);
+   *  - "bestEnd": values at which the wealth lasts take precedence; among them the highest final wealth applies,
+   *    if it lasts nowhere, the latest age of depletion;
+   *  - no entry: criterion not meaningful, no optimum is shown.
    */
   const MODE = {
     "flows.spendingFactor": "sustainable",
@@ -17,7 +17,7 @@ const Optimum = (() => {
   };
   const modeOf = param => MODE[param] ?? null;
 
-  /** Endvermögen und Erschöpfung des Laufs am Perzentil `percent` eines Szenarios; null, wenn nicht vorhanden. */
+  /** Final wealth and depletion of the run at percentile `percent` of a scenario; null if not present. */
   function cellOf(result, percent) {
     if (!result || result.error) return null;
     const p = (result.percentiles || []).find(x => x.percent === percent);
@@ -25,7 +25,7 @@ const Optimum = (() => {
   }
   const byValue = (a, b) => (a.v < b.v ? -1 : a.v > b.v ? 1 : 0);
 
-  /** Höchster tragbarer Wert auf einer Linie von Punkten {v, end, ok, depleted}, aufsteigend nach v. */
+  /** Highest sustainable value on a line of points {v, end, ok, depleted}, ascending by v. */
   function highestSustainable(points) {
     const pts = [...points].sort(byValue);
     if (!pts.length) return null;
@@ -34,25 +34,25 @@ const Optimum = (() => {
     if (i < 0) return { v: pts[0].v, kind: "below", at: pts[0] };
     if (i === pts.length - 1) return { v: pts[i].v, kind: "atLeast", at: pts[i] };
     const a = pts[i], b = pts[i + 1];
-    // Übergang zwischen zwei Schritten: Wert, bei dem das (vorzeichenbehaftete) Endvermögen genau 0 wäre.
+    // Transition between two steps: value at which the (signed) final wealth would be exactly 0.
     if (typeof a.v === "number" && typeof b.v === "number" && a.end >= 0 && b.end < 0) {
       return { v: a.v + (b.v - a.v) * a.end / (a.end - b.end), kind: "approx", at: a };
     }
     return { v: a.v, kind: "exact", at: a };
   }
 
-  /** Bester Punkt: tragbar vor nicht tragbar, dann höchstes Endvermögen; sonst spätestes Erschöpfungsalter. */
+  /** Best point: sustainable before not sustainable, then highest final wealth; otherwise latest depletion age. */
   function bestPoint(points) {
     const ok = points.filter(p => p.ok);
     if (ok.length) return { p: ok.reduce((a, b) => (b.end > a.end ? b : a)), reaches: true };
     return { p: points.reduce((a, b) => (b.depleted > a.depleted || (b.depleted === a.depleted && b.end > a.end) ? b : a)), reaches: false };
   }
 
-  /** Anteile haben natürliche Grenzen (0 % und 100 %); dort ist der Rand des Bereichs das echte Maximum bzw. Minimum. */
+  /** Shares have natural limits (0 % and 100 %); there the edge of the range is the true maximum or minimum. */
   const SHARES = new Set(["wealth.stockShare", "pension.pk.lumpsum"]);
   const naturalBound = (param, v) => SHARES.has(param) && (v === 0 || v === 1);
 
-  /** Randkennzeichnung, wenn der beste Wert am Rand des untersuchten Bereichs liegt (ausser an einer natürlichen Grenze). */
+  /** Edge mark if the best value lies at the edge of the examined range (except at a natural limit). */
   function edgeKind(values, v, param) {
     const vs = [...new Set(values)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     if (vs.length < 2 || naturalBound(param, v)) return "exact";
@@ -60,11 +60,11 @@ const Optimum = (() => {
   }
 
   /**
-   * Optimum für das Perzentil `percent`. `sc` = { params, results } der Szenarien.
-   * Ergebnis: { items: [{ param, v, grid, kind, reaches }] } mit kind: exact | approx | below | atLeast | edgeLow | edgeHigh | na;
-   * `grid` ist der berechnete Variationsschritt, der dem Optimum entspricht (bei «approx» der letzte tragbare Schritt),
-   * damit ein Lauf dafür ausgewählt werden kann;
-   * null, wenn keine Szenarien oder keine Perzentil-Daten vorliegen.
+   * Optimum for percentile `percent`. `sc` = { params, results } of the scenarios.
+   * Result: { items: [{ param, v, grid, kind, reaches }] } with kind: exact | approx | below | atLeast | edgeLow | edgeHigh | na;
+   * `grid` is the calculated variation step that corresponds to the optimum (for «approx» the last sustainable step),
+   * so that a run can be selected for it;
+   * null if there are no scenarios or no percentile data.
    */
   function find(sc, percent) {
     if (!sc?.params?.length || !sc.results?.length) return null;
@@ -88,7 +88,7 @@ const Optimum = (() => {
     if (sc.params.length === 2) {
       const fi = modes.indexOf("sustainable"), oi = fi < 0 ? -1 : 1 - fi;
       if (fi >= 0 && modes[oi] !== "sustainable") {
-        // Für jeden Wert des anderen Parameters den höchsten tragbaren Faktor bestimmen, dann die Kombination mit dem höchsten.
+        // For each value of the other parameter determine the highest sustainable factor, then the combination with the highest.
         const others = [...new Set(rows.map(x => JSON.stringify(x.r.values[oi])))].map(JSON.parse);
         const lines = others.map(o => {
           const pts = rows.filter(x => JSON.stringify(x.r.values[oi]) === JSON.stringify(o)).map(x => ({ ...point(x), v: x.r.values[fi] }));
@@ -111,7 +111,7 @@ const Optimum = (() => {
       const values = [0, 1].map(k => rows.map(x => x.r.values[k]));
       return { items: [0, 1].map(k => ({ param: sc.params[k], v: p.vals[k], grid: p.vals[k], kind: edgeKind(values[k], p.vals[k], sc.params[k]), reaches })) };
     }
-    return null; // mehr als zwei Variationen: kein Optimum
+    return null; // more than two variations: no optimum
   }
 
   return { find, modeOf, MODE, highestSustainable, bestPoint };

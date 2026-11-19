@@ -10,7 +10,7 @@
   --border:#e2e5ea; --accent:#2f6fdf; --accent-soft:#e8f0fd; --warn:#b7791f; --warn-soft:#fdf4e3;
   --err:#c53030; --err-soft:#fde8e8; --ok:#2f855a; --ok-soft:#e6f4ec;
   --c1:#2f6fdf; --c2:#14a38b; --c3:#a4abb8; --c4:#8b5cf6; --grid:#eceef2; --shadow:0 1px 2px rgba(16,24,40,.06);
-  /* #120: zehn Farben für die Ergebnisse im Vergleich */
+  /* #120: ten colors for the results in the comparison */
   --r1:#2f6fdf; --r2:#14a38b; --r3:#e8590c; --r4:#8b5cf6; --r5:#d6336c; --r6:#8c6d1f; --r7:#5c940d; --r8:#c92a2a; --r9:#495057; --r10:#f59f00;
 }
 @media (prefers-color-scheme: dark){
@@ -120,7 +120,7 @@ table.tbl td.r,table.tbl th.r{text-align:right;font-variant-numeric:tabular-nums
 table.tbl{width:100%;border-collapse:collapse}
 table.tbl th{font-size:12px;color:var(--muted);font-weight:500;text-align:left;padding:4px 6px;border-bottom:1px solid var(--border)}
 table.tbl td{padding:5px 6px;border-bottom:1px solid var(--grid);vertical-align:middle}
-/* Tabellenkopf der Ergebnisse bleibt beim Scrollen oben stehen; breite/lange Tabellen scrollen in ihrem Rahmen */
+/* The table header of the results stays at the top when scrolling; wide/long tables scroll within their frame */
 .tscroll{overflow:auto;max-height:75vh}
 #resultsBody table.tbl th{position:sticky;top:0;z-index:2;background:var(--panel);box-shadow:0 1px 0 var(--border)}
 table.yt{font-size:12px}table.yt th,table.yt td{padding:4px 5px}table.yt td{white-space:nowrap}table.yt.num th{white-space:normal;vertical-align:bottom;line-height:1.25}table.yt td:first-child{text-align:left}table.yt th.tx{padding:4px 3px;white-space:nowrap}
@@ -221,7 +221,7 @@ td.ptip:hover::after,td.ptip:focus::after{display:block}
 .val li .sec{margin-left:auto;color:var(--muted);font-size:11.5px;white-space:nowrap}
 
 dialog{border:1px solid var(--border);border-radius:12px;background:var(--panel);color:var(--text);padding:0;width:min(760px,92vw);max-height:84vh}
-/* #70 Willkommensdialog, #71 Erste Schritte, #72 Ergebnis in Worten */
+/* #70 welcome dialog, #71 first steps, #72 result in words */
 #welcome{width:min(560px,92vw)}
 .welcome{display:flex;flex-direction:column;gap:12px;padding:20px 22px}
 .welcome h2{margin:0;font-size:18px}
@@ -272,7 +272,7 @@ dialog pre{margin:0;padding:14px 16px;overflow:auto;max-height:66vh;font:12px/1.
 .bigchart{width:100%;height:320px;display:block}
 .chartwrap{position:relative}.chartwrap.hscroll{overflow-x:auto}.cmpmax{margin:0 0 0 8px;align-self:center}
 table.num td,table.num th{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-/* #115: Spaltenköpfe des Vergleichs (lange Namen der Ergebnisse) umbrechen */
+/* #115: wrap the column headers of the comparison (long names of the results) */
 th.sorth{padding:0}th.sorth .sortbtn{all:unset;box-sizing:border-box;display:flex;gap:4px;align-items:baseline;width:100%;padding:4px 6px;cursor:pointer;font:inherit;color:inherit}th.r.sorth .sortbtn{justify-content:flex-end}th.sorth .sortbtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}th.sorth .sorti{opacity:.35;font-size:10px}th.sorth .sorti.on{opacity:1;color:var(--text)}
 #resultsBody table.cmpplan tr.grp th{padding-top:12px;color:var(--text);font-weight:600;position:static;box-shadow:none}
 table.num th.cmph{white-space:normal;vertical-align:bottom;min-width:110px;max-width:220px}
@@ -317,7 +317,7 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
   <button class="btn" data-action="runs-open" title="Gespeicherte Ergebnisse ansehen und vergleichen">Ergebnisse</button>
   <span id="est-run" title="Grobe Schätzung der Rechenzeit"></span>
   <button class="btn primary" data-action="run" title="Simulation starten (⌘↩)">Simulation starten ▸</button>
-  <!-- legacy: RetirementPlanner – .rplan bleibt lesbar (#44) -->
+  <!-- legacy: RetirementPlanner – .rplan stays readable (#44) -->
   <input type="file" id="fileInput" accept=".json,.vplan,.rplan" hidden>
 </header>
 

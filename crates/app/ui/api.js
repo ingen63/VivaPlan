@@ -1,17 +1,17 @@
-// Verbindung zum Rechenkern: in der Desktop-App über Tauri, im Browser über den lokalen
-// Entwicklungsserver (`vivaplan ui-dev`). Es werden keine Daten ins Internet gesendet.
+// Connection to the engine: in the desktop app via Tauri, in the browser via the local
+// development server (`vivaplan ui-dev`). No data is sent to the internet.
 "use strict";
-// Fehler der Oberfläche zählen (für die automatischen Oberflächentests sichtbar als data-errors).
+// Counts errors of the user interface (visible to the automated user interface tests as data-errors).
 window.__errors = [];
 const noteError = msg => { window.__errors.push(String(msg)); document.documentElement.dataset.errors = window.__errors.length; document.documentElement.dataset.lastError = String(msg).slice(0, 300); };
 window.addEventListener("error", e => noteError(e.message));
 window.addEventListener("unhandledrejection", e => noteError(e.reason?.message || e.reason));
 const Engine = {
   inApp: !!(window.__TAURI__ && window.__TAURI__.core),
-  /** #25: Grenzen aus den Einstellungen (setzt app.js); sie gehen bei jedem Aufruf mit der Planung mit. */
+  /** #25: Limits from the settings (set by app.js); they are sent with the plan on every call. */
   limits: () => null,
   async call(cmd, args = {}) {
-    // Die Grenzen gehören nicht zur Planung: nie mitspeichern.
+    // The limits do not belong to the plan: never save them with it.
     const limits = this.limits();
     if (limits && args.plan && typeof args.plan === "object" && cmd !== "save_plan") args = { ...args, plan: { ...args.plan, limits } };
     if (this.inApp) return window.__TAURI__.core.invoke(cmd, args);
