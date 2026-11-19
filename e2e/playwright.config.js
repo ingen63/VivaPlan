@@ -1,5 +1,5 @@
-// Oberflächentests (Playwright). Startet den lokalen Entwicklungsserver und nutzt das installierte
-// Google Chrome (kein Browser-Download). Es werden keine Daten ins Internet gesendet.
+// User interface tests (Playwright). Starts the local development server and uses the installed
+// Google Chrome (no browser download). No data is sent to the internet.
 const { defineConfig } = require("@playwright/test");
 
 const PORT = process.env.PORT || 8812;
@@ -9,7 +9,7 @@ module.exports = defineConfig({
   timeout: 90_000,
   expect: { timeout: 30_000 },
   fullyParallel: true,
-  workers: process.env.CI ? 2 : 4, // der GitHub-Runner hat 2 Kerne; mit 4 Workern fehlte dem Entwicklungsserver die Rechenzeit (Lauf 43746959803)
+  workers: process.env.CI ? 2 : 4, // the GitHub runner has 2 cores; with 4 workers the development server lacked computing time (run 43746959803)
   reporter: [["list"], ["json", { outputFile: "results.json" }], ["html", { open: "never" }]],
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,

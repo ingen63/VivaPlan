@@ -1,10 +1,10 @@
-// #87: Unit-Tests der reinen Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser.
-// Ausführen: `node --test e2e/unit/` (oder `make ui-unit`).
+// #87: Unit tests of the pure helper functions of the user interface (crates/app/ui/util.js), without a browser.
+// Run: `node --test e2e/unit/` (or `make ui-unit`).
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const u = require("../../crates/app/ui/util.js");
 
-// Tausendertrennzeichen je nach ICU-Stand ' oder ’
+// Thousands separator ' or ’ depending on the ICU version
 const T = "['’]";
 
 test("#87/AK2: esc maskiert HTML-Sonderzeichen", () => {
@@ -119,11 +119,11 @@ test("#87/AK2: Dauer kurz und als Schätzung mit Spanne", () => {
 test("#87/AK2: Dauerschätzung der Optimierung", () => {
   const b = { us: 100, gen: 20, fixedPaths: null };
   const c = { paths: 1000, checkPaths: 2000, strategies: ["standard", "vpw"] };
-  // 50 Auswertungen × 1000 Pfade × 80 µs + 1000 × 20 µs + 3 × 2000 × 100 µs = 4.62 s
+  // 50 evaluations × 1000 paths × 80 µs + 1000 × 20 µs + 3 × 2000 × 100 µs = 4.62 s
   assert.equal(u.optSecondsFor(b, c, 50), 4.62);
-  // feste Anzahl Pfade (rollierende Zeitfenster) ersetzt beide Pfadzahlen: 50×300×80 + 300×20 + 3×300×100 µs
+  // fixed number of paths (rolling time windows) replaces both path counts: 50×300×80 + 300×20 + 3×300×100 µs
   assert.equal(u.optSecondsFor({ ...b, fixedPaths: 300 }, c, 50), 1.296);
-  // Erzeugen teurer als der ganze Lauf: Rechenanteil mindestens 0.1 µs
+  // generating costs more than the whole run: computing share at least 0.1 µs
   assert.ok(u.optSecondsFor({ us: 10, gen: 50, fixedPaths: null }, c, 10) > 0);
 });
 
@@ -142,9 +142,9 @@ test("#118/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehl
   assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v, -1), [100, 10, 9, 2, null]);
   assert.deepEqual(u.sortBy(["b", undefined, "Ä", "a"], v), ["a", "Ä", "b", undefined]);
   assert.deepEqual(u.sortBy([NaN, 1, "", 3], v, -1), [3, 1, NaN, ""]);
-  // «keine Erschöpfung» als Infinity gilt als spätester Wert
+  // «keine Erschöpfung» as Infinity counts as the latest value
   assert.deepEqual(u.sortBy([Infinity, 24000, 23990], v), [23990, 24000, Infinity]);
-  // stabil: gleiche Werte behalten ihre Reihenfolge
+  // stable: equal values keep their order
   const l = [{ k: 1, n: "x" }, { k: 0, n: "y" }, { k: 1, n: "z" }];
   assert.deepEqual(u.sortBy(l, o => o.k).map(o => o.n), ["y", "x", "z"]);
   assert.deepEqual(u.sortBy(l, o => o.k, -1).map(o => o.n), ["x", "z", "y"]);
@@ -177,7 +177,7 @@ test("#140/AK3: gültige Schreibweisen bleiben gültig", () => {
     assert.equal(u.parseNum(t), v, t);
     assert.equal(u.parseAmount(t), v, t);
   }
-  // Prozent- und Jahresfelder lesen mit parseNum: «1.25» bleibt 1.25, auch «12.500» (12.5 %)
+  // percent and year fields read with parseNum: «1.25» stays 1.25, also «12.500» (12.5 %)
   assert.equal(u.parseNum("1.25"), 1.25);
   assert.equal(u.parseNum("12.500"), 12.5);
   assert.equal(u.optNum("2,5", 1), 2.5);

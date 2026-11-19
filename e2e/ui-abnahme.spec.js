@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Ergänzende Abnahmetests, Monte Carlo, Vorschau. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: additional acceptance tests, Monte Carlo, preview. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -6,7 +6,7 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-// Abnahmekriterien, die vorher keinen eigenen Test hatten (Abnahmeliste docs/ABNAHME.md, Spalte «Test»)
+// Acceptance criteria that had no test of their own before (acceptance list docs/ABNAHME.md, column «Test»)
 test.describe("Ergänzende Abnahmetests", () => {
   const setThreeBuckets = (strategy) => page => page.evaluate(async strategy => {
     state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -21,7 +21,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await expect(resultKpi(page, "Steuern total")).toBeVisible();
     const kpi = await resultKpi(page, "Steuern total").textContent();
     await page.getByRole("button", { name: "Jahreswerte" }).click();
-    // Inhalt der Tabelle ohne die Steuerspalten (Spaltenköpfe mit Klasse tx) und Grösse des Ergebnisses
+    // Content of the table without the tax columns (column headers with class tx) and size of the result
     const snap = () => page.evaluate(() => {
       const t = document.querySelector("#resultsBody table.yt");
       const heads = [...t.rows[0].cells];
@@ -32,11 +32,11 @@ test.describe("Ergänzende Abnahmetests", () => {
     await page.locator('button[data-action="tax-cols"]').click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
     const open5 = await snap();
-    expect(open5.head).toEqual(closed.head);          // AK6: dieselben Spalten in derselben Reihenfolge
-    expect(open5.rows).toEqual(closed.rows);          // AK6: dieselben Werte darin
-    expect(open5.run).toBe(closed.run);               // AK5: das Ergebnis ist unverändert
+    expect(open5.head).toEqual(closed.head);          // AK6: the same columns in the same order
+    expect(open5.rows).toEqual(closed.rows);          // AK6: the same values in them
+    expect(open5.run).toBe(closed.run);               // AK5: the result is unchanged
     await page.getByRole("button", { name: "Übersicht" }).click();
-    await expect(resultKpi(page, "Steuern total")).toHaveText(kpi);   // AK4: auch bei ausgeklappten Spalten
+    await expect(resultKpi(page, "Steuern total")).toHaveText(kpi);   // AK4: also with expanded columns
     await noErrors(page, errors);
   });
 
@@ -61,9 +61,9 @@ test.describe("Ergänzende Abnahmetests", () => {
     let positive = 0;
     for (const r of t) {
       const [ink, verm, kap, gain, total] = r.cells;
-      expect(Math.abs(ink - r.ai)).toBeLessThanOrEqual(1);       // AK1: veranlagt im Steuerjahr der Zeile
+      expect(Math.abs(ink - r.ai)).toBeLessThanOrEqual(1);       // AK1: assessed in the tax year of the row
       expect(Math.abs(verm - r.aw)).toBeLessThanOrEqual(1);
-      expect(Math.abs(kap - r.kap)).toBeLessThanOrEqual(1);      // AK3: im Jahr des Bezugs
+      expect(Math.abs(kap - r.kap)).toBeLessThanOrEqual(1);      // AK3: in the year of the withdrawal
       expect(Math.abs(gain - r.gain)).toBeLessThanOrEqual(1);
       expect(Math.abs(total - (ink + verm + kap + gain))).toBeLessThanOrEqual(2);   // AK2
       if (ink > 0) positive++;
@@ -74,14 +74,14 @@ test.describe("Ergänzende Abnahmetests", () => {
 
   test("#9/AK3, #9/AK4, #10/AK2, #10/AK3: Aufklapp-Zeilen nur in Jahren mit Auffüllung, Ereignisliste behält alles ausser den 3-Topf-Buchungen", async ({ page }) => {
     const errors = await open(page);
-    // 3-Topf: genau ein Schalter je Jahr mit Auffüllung
+    // 3-bucket: exactly one toggle per year with refill
     await setThreeBuckets("three_buckets")(page);
     const t = await page.evaluate(() => {
       const evs = lastRun.single.events, shown = evs.filter(e => !isBucketBooking(e));
       return { years: new Set(lastRun.single.bucketRefills.map(r => r.month.slice(0, 4))).size, all: evs.length, shown: shown.length, texts: shown.map(e => e.text), booked: evs.filter(e => isBucketBooking(e)).map(e => e.text) };
     });
     const items = page.locator("#resultsBody .evlist li");
-    await expect(items).toHaveCount(t.shown);                       // #10/AK2: alles ausser den Buchungen steht in der Liste
+    await expect(items).toHaveCount(t.shown);                       // #10/AK2: everything except the bookings is in the list
     expect(t.shown).toBeLessThan(t.all);
     const listed = await items.locator("span:nth-child(2)").allTextContents();
     expect(listed).toEqual(t.texts);
@@ -91,9 +91,9 @@ test.describe("Ergänzende Abnahmetests", () => {
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     const rows = await page.locator("#resultsBody table.yt tr").count();
     const toggles = await page.locator('button[data-action="bk-toggle"]').count();
-    expect(toggles).toBe(t.years);                                  // #9/AK3: nur Jahre mit Auffüllung
+    expect(toggles).toBe(t.years);                                  // #9/AK3: only years with refill
     expect(rows - 1).toBeGreaterThan(toggles);
-    // Ohne 3-Topf: keine Aufklapp-Zeilen, die Ereignisliste ist vollständig wie bisher
+    // Without 3-bucket: no expandable rows, the event list is complete as before
     await setThreeBuckets("standard")(page);
     const all = await page.evaluate(() => lastRun.single.events.length);
     await expect(page.locator("#resultsBody .evlist li")).toHaveCount(all);   // #10/AK3
@@ -120,10 +120,10 @@ test.describe("Ergänzende Abnahmetests", () => {
       await page.locator('button[data-action="bk-toggle"]').first().click();
       const text = await page.locator("#resultsBody tr.bk").first().innerText();
       const first = await page.evaluate(p => detailsOf(lastRun).find(([q]) => q === p)[1].bucketRefills[0].need, p);
-      expect(text.replace(/['’]/g, "")).toContain(String(Math.round(first)));      // Netto-Bedarf des angezeigten Laufs
+      expect(text.replace(/['’]/g, "")).toContain(String(Math.round(first)));      // Net need of the displayed run
       seen.push(first);
     }
-    expect(new Set(seen).size).toBeGreaterThan(1);                  // die drei Läufe zeigen nicht dieselbe Herleitung
+    expect(new Set(seen).size).toBeGreaterThan(1);                  // the three runs do not show the same derivation
     await noErrors(page, errors);
   });
 
@@ -159,20 +159,20 @@ test.describe("Ergänzende Abnahmetests", () => {
       await add("hist", { source: "historical", seriesName: label, emergencySaleRuns: 0 });
       await add("fix", { source: "fixed", seriesName: null, emergencySaleRuns: 0 });
       await add("par", { source: "parametric", seriesName: null, emergencySaleRuns: 0 });
-      // geplanter Verkauf (Tragbarkeit, Einmalzahlung) in allen Läufen, aber kein Notverkauf
+      // planned sale (affordability, lump-sum payment) in all runs, but no emergency sale
       await add("geplant", { source: "bootstrap", seriesName: label, emergencySaleRuns: 0, affordabilitySaleRuns: 50, lumpSumRuns: 50 });
       await openRuns();
       return label;
     });
     expect(label).toBeTruthy();
-    expect(label).not.toMatch(/[\\/]|\.csv/i);                          // AK2: Name ohne Pfad und Endung
+    expect(label).not.toMatch(/[\\/]|\.csv/i);                          // AK2: name without path and extension
     const row = id => page.locator("#runsTbl tr", { has: page.locator(`input.runedit[value="${id}"]`) });
     await expect(row("hist").locator("td").nth(4)).toHaveText(label);
     for (const [id, text] of [["fix", "feste Renditen"], ["par", "parametrisch"]]) {
       const cell = row(id).locator("span.muted", { hasText: text });
       await expect(cell).toHaveCount(1);                                   // AK3
       const colors = await cell.evaluate(el => [getComputedStyle(el).color, getComputedStyle(el.closest("td")).color]);
-      expect(colors[0]).not.toBe(colors[1]);                               // grau, nicht in der Textfarbe
+      expect(colors[0]).not.toBe(colors[1]);                               // gray, not in the text color
     }
     await expect(row("geplant").locator(".hwarn")).toHaveCount(0);        // #13/AK5
     await noErrors(page, errors);
@@ -193,7 +193,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.returns.bootstrap.paths = 100;
       state.scenarios.sweeps = [{ param: "wealth.stockShare", from: 0.3, to: 0.6, step: 0.3 }, { param: "pension.pk.lumpsum", from: 0.2, to: 0.6, step: 0.4 }];
-      // Einzellauf (AK6): die gewählte Stufe zeigt den Lauf dieser Stufe, so wie ihn die Szenarientabelle nennt
+      // Single run (AK6): the selected level shows the run of this level, as the scenario table names it
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       resetVariation(); resultTab = "runs"; showResults(true); renderResults(lastRun);
       const selects = document.querySelectorAll('select[data-action="var-sel"]').length;
@@ -202,7 +202,7 @@ test.describe("Ergänzende Abnahmetests", () => {
       const shown = singleOf(lastRun).summary.endTotal;
       await pickVariation([null, null]);
       const back = singleOf(lastRun) === lastRun.single;
-      // Abweichendes Endvermögen (AK5): als hätte sich seit dem Speichern etwas geändert
+      // Different final wealth (AK5): as if something had changed since saving
       state.returns.source = "bootstrap";
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       resetVariation(); resultTab = "runs"; showResults(true); renderResults(lastRun);
@@ -218,7 +218,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     expect(out.selects).toBe(2);
     expect(out.shown).toBeCloseTo(out.p50, 4);
     expect(out.back).toBe(true);
-    expect(out.clean).toBe(false);                                   // ohne Abweichung kein Hinweis
+    expect(out.clean).toBe(false);                                   // no difference, no notice
     expect(out.hint).toContain("weicht von der Szenarientabelle ab");
     await noErrors(page, errors);
   });
@@ -234,7 +234,7 @@ test.describe("Ergänzende Abnahmetests", () => {
       { id: "ahv", name: "AHV-Bezug", kind: "age", years: 65 },
     ]));
     expect(ms).toHaveLength(2);
-    // und sie erscheint so in der Oberfläche: «Neue Planung» zeigt beide Meilensteine mit Alter 65
+    // and it appears like this in the user interface: «Neue Planung» shows both milestones with age 65
     await page.evaluate(() => { state = blankPlan(JSON.parse(JSON.stringify(state))); goto("milestones"); });
     for (const id of ["retire", "ahv"]) {
       await expect((await msRow(page, id)).locator("input[data-type=years]")).toHaveValue("65");
@@ -245,7 +245,7 @@ test.describe("Ergänzende Abnahmetests", () => {
   test("#25/AK7: Einstellungen ändern die Planung nicht; liegt sie ausserhalb der neuen Grenzen, meldet die Prüfung es", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.pillar3a[0].contribution = 7500; renderSection(); });
-    await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(1);   // über 7'258
+    await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(1);   // above 7'258
     const before = await page.evaluate(() => JSON.stringify(state));
     const setMax = async v => {
       await page.locator('header button[data-action="settings"]').click();
@@ -254,23 +254,23 @@ test.describe("Ergänzende Abnahmetests", () => {
       await expect(page.locator("#settings")).toBeHidden();
     };
     await setMax("8000");
-    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);                           // Planung unverändert
-    await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(0);   // innerhalb der neuen Grenze
+    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);                           // plan unchanged
+    await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(0);   // within the new limit
     await setMax("5000");
     expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);
     await expect(page.locator("#val li.err", { hasText: "Maximalbetrag von 5'000" })).toHaveCount(1);
-    await setMax("7258");                                                                            // Standard wieder herstellen
+    await setMax("7258");                                                                            // restore the default
     await noErrors(page, errors);
   });
 });
 
 // ---------------------------------------------------------------------------------------------
-// #100: Aktienparameter je Aktienindex; #101: Obligationen und Inflation mit Korrelation je Index
+// #100: stock parameters per stock index; #101: bonds and inflation with correlation per index
 test.describe("#100/#101: Monte Carlo parametrisch", () => {
   const KEYS = ["mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma"];
   const params = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, state.returns.parametric[x]])), KEYS);
   const suggestion = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, seriesInfo.parametric.stocks[x]])), KEYS);
-  /** Aktienindex unter «Vermögen & Anlage» wählen und zurück zur Simulation. */
+  /** Select the stock index under «Vermögen & Anlage» and go back to the simulation. */
   async function chooseStocks(page, value, bonds) {
     await nav(page, "Vermögen & Anlage");
     await page.locator('select[data-path="returns.strategy.stocks"]').selectOption(value);
@@ -298,7 +298,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
     const sp = await params(page);
     expect(sp).toEqual(await suggestion(page));
     expect(sp.mu).not.toBe(ch.mu);
-    // Neben den Feldern keine Vorschläge, solange die Werte dem Index folgen
+    // No suggestions next to the fields as long as the values follow the index
     expect((await page.locator('#main [data-computed="psug"]').allInnerTexts()).join("")).toBe("");
     await noErrors(page, errors);
   });
@@ -313,7 +313,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
     await chooseStocks(page, "chJst");
     const own = await params(page), sug = await suggestion(page);
     expect(own.mu).toBe(0.05);
-    expect(own.sigma).not.toBe(sug.sigma); // Volatilität von «Welt (JST)», nicht von «Schweiz (JST)»
+    expect(own.sigma).not.toBe(sug.sigma); // Volatility of «Welt (JST)», not of «Schweiz (JST)»
     await expect(page.locator('#main [data-computed="pauto"]')).toContainText("Eigene Werte");
     const hints = await page.locator('#main [data-computed="psug"]').allInnerTexts();
     expect(hints).toHaveLength(6);
@@ -361,7 +361,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
   });
 });
 
-// #132: schnellere Zufallsziehung des parametrischen Modells; ältere Planungen erhalten beim Öffnen einen Hinweis
+// #132: faster random draws of the parametric model; older plans get a notice when opened
 test.describe("Monte Carlo parametrisch rechnet schneller (#132)", () => {
   test("AK7: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch»; neue Planungen tragen das Merkmal", async ({ page }) => {
     const errors = await open(page);
@@ -385,17 +385,17 @@ test.describe("Monte Carlo parametrisch rechnet schneller (#132)", () => {
 });
 
 test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
-  /** Die Rückfrage ist im Browser nur mit `askSaveDev` aktiv; die Planung wird ungespeichert markiert. */
+  /** In the browser the question is only active with `askSaveDev`; the plan is marked as unsaved. */
   const prepare = (page, dev) => page.evaluate(dev => { Pref.set("askSaveDev", dev); Pref.set("askSaveBeforeRun", true); markDirty(); }, dev);
 
   test("#110/AK1, AK2, AK3, AK5: Rückfrage vor der Simulation bei ungespeicherten Änderungen", async ({ page }) => {
     const errors = await open(page);
-    // AK3: ohne Änderungen keine Rückfrage
+    // AK3: no changes, no question
     await page.evaluate(() => { Pref.set("askSaveDev", true); runSimulation("overview", { noConfirm: true }); });
     await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
     await expect(page.locator("#resultsBody")).toBeVisible();
     await page.evaluate(() => showResults(false));
-    // AK1, AK2: Abbrechen startet nichts, die Planung bleibt ungespeichert
+    // AK1, AK2: cancel starts nothing, the plan stays unsaved
     await prepare(page, true);
     await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
     await expect(page.locator("#ask")).toHaveAttribute("open", "");
@@ -405,12 +405,12 @@ test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
     await page.evaluate(() => window.__ran);
     await expect(page.locator("#results")).toBeHidden();
     expect(await page.evaluate(() => dirty)).toBe(true);
-    // AK2: «Ohne Speichern simulieren» rechnet und lässt die Planung ungespeichert
+    // AK2: «Ohne Speichern simulieren» computes and leaves the plan unsaved
     await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
     await page.locator('#ask button[value="discard"]').click();
     await expect(page.locator("#resultsBody")).toBeVisible();
     expect(await page.evaluate(() => dirty)).toBe(true);
-    // AK5: abgeschaltet, keine Rückfrage
+    // AK5: switched off, no question
     await page.evaluate(() => { showResults(false); Pref.set("askSaveBeforeRun", false); runSimulation("overview", { noConfirm: true }); });
     await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
     await expect(page.locator("#resultsBody")).toBeVisible();
@@ -421,7 +421,7 @@ test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
     const errors = await open(page);
     await prepare(page, true);
     await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
-    // AK1: drei Schaltflächen; AK4: eine Planung ohne Dateinamen sagt das in der Frage (im Browser ohne eigenen Dialog: Download)
+    // AK1: three buttons; AK4: a plan without a file name says so in the question (in the browser without its own dialog: download)
     await expect(page.locator('#ask button[value="ok"]')).toHaveText("Speichern");
     await expect(page.locator('#ask button[value="discard"]')).toHaveText("Ohne Speichern simulieren");
     await expect(page.locator('#ask button[value="cancel"]')).toBeVisible();
@@ -475,9 +475,9 @@ test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
     const api = [];
     page.on("request", r => { const u = new URL(r.url()); if (u.pathname.startsWith("/api/")) api.push(u.pathname); });
     await page.clock.install();
-    const errors = await open(page, "scenarios"); // open() setzt #nobench
+    const errors = await open(page, "scenarios"); // open() sets #nobench
     await page.evaluate(() => { setP("flows.spendingFactor", 1.01); renderDerived(); });
-    await page.clock.runFor(2000); // Verzögerung der Messung (800 ms) sicher vorbei
+    await page.clock.runFor(2000); // delay of the measurement (800 ms) safely over
     await expect(page.locator("#est-scen")).toHaveText("Dauer wird geschätzt…");
     await page.locator('button[data-action="run"]').click();
     await expect(page.locator("#results")).toBeVisible();
@@ -497,7 +497,7 @@ test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
-  /** Drückt die Maustaste auf `loc`, lässt die App wie beim Eintreffen einer Vorschau neu zeichnen und lässt dann los. */
+  /** Presses the mouse button on `loc`, lets the app redraw as when a preview arrives and then releases. */
   const clickDuringPreview = async (page, loc) => {
     await loc.scrollIntoViewIfNeeded();
     const b = await loc.boundingBox();
@@ -525,7 +525,7 @@ test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
 
   test("#112/AK3: Klick auf eine Meldung der Prüfliste bei unveränderter Liste", async ({ page }) => {
     const errors = await open(page, "wealth");
-    await previewIdle(page); // die Liste nach der ersten Vorschau; danach ändert sie sich nicht mehr
+    await previewIdle(page); // the list after the first preview; it does not change after that
     const item = page.locator("#val li[data-sec]").first();
     await expect(item).toBeVisible();
     const sec = await item.getAttribute("data-sec");

@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Eingaben, Meilensteine, Rückgängig, Dateien. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: inputs, milestones, undo, files. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -24,7 +24,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
 
   test("Live-Vorschau stimmt mit der endgültigen Simulation überein", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
-    // Testzugang rechnet direkt; zurück in den Editor, Wert merken, erneut rechnen und vergleichen.
+    // Test access computes directly; back to the editor, remember the value, compute again and compare.
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const finalEnd = await resultKpi(page, "Vermögen am Ende").textContent();
     const finalRet = await resultKpi(page, "Vermögen bei Pensionierung").textContent();
@@ -56,11 +56,11 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     const endRow = await msRow(page, "end");
     await endRow.locator("select").first().selectOption("date");
     await endRow.locator("input[data-type=month]").fill("01.2000");
-    await endRow.locator("input[data-type=month]").press("Tab"); // #57: Prüfung beim Verlassen (#111: nicht auf eine Vorschau warten)
+    await endRow.locator("input[data-type=month]").press("Tab"); // #57: check on leaving (#111: do not wait for a preview)
     await expect(page.locator("#val li.err").first()).toBeVisible();
     await expect(page.locator("#nav a .badge.err").first()).toBeVisible();
     await page.keyboard.press(`${MOD}+Enter`);
-    // #14: Der Start ist gesperrt, die Meldung nennt die Fehlerzahl, der Verweis führt in den betroffenen Abschnitt
+    // #14: Start is blocked, the message names the number of errors, the link leads to the affected section
     await expect(page.locator("#toast")).toContainText("Die Planung hat 1 Fehler");
     await expect(page.locator("#toast")).toContainText("Meilensteine");
     await expect(page.locator("#results")).toBeHidden();
@@ -72,7 +72,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     const errors = await open(page);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("01.2999");
-    await birth.press("Tab"); // #57: Prüfliste erst beim Verlassen
+    await birth.press("Tab"); // #57: check list only on leaving
     await expect(page.locator("#val li.err").first()).toBeVisible();
     await birth.fill("01.1850");
     await birth.press("Tab");
@@ -121,7 +121,7 @@ test.describe("Meilensteine", () => {
     await row.locator("select").first().selectOption("date");
     const date = row.locator("input[data-type=month]");
     await date.fill("01.2030");
-    await date.press("Tab"); // #57: berechnete Werte erst beim Verlassen
+    await date.press("Tab"); // #57: derived values only on leaving
     const result = row.locator('[data-computed="ms"]');
     await expect(result).toContainText("01.2030");
     const age1 = await result.textContent();
@@ -129,7 +129,7 @@ test.describe("Meilensteine", () => {
     await date.press("Tab");
     await expect(result).toContainText("01.2029");
     expect(await result.textContent()).not.toBe(age1);
-    // Vorschau und Zeitleiste folgen dem neuen Datum
+    // Preview and timeline follow the new date
     await expect(kpiValue(page, "Vermögen bei Pensionierung").locator("xpath=../div[@class='s']")).toHaveText("01.2029");
     await expect(page.locator("#val li.err")).toHaveCount(0);
     await noErrors(page, errors);
@@ -141,7 +141,7 @@ test.describe("Meilensteine", () => {
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("date");
     await row.locator("input[data-type=month]").fill("01.2060");
-    await row.locator("input[data-type=month]").press("Tab"); // #57: Prüfung beim Verlassen
+    await row.locator("input[data-type=month]").press("Tab"); // #57: check on leaving
     await expect(page.locator("#val li.err").first()).toContainText("«Bezug Pensionskasse»: Alter 89.6 liegt ausserhalb der Grenzen 58 bis 65 Jahre");
     await expect(page.locator("#kpis .kpi")).toHaveCount(1);
     await expect(page.locator("#kpis .kpi .s")).toHaveText("siehe Prüfung");
@@ -154,7 +154,7 @@ test.describe("Meilensteine", () => {
     const row = await msRow(page, "retire");
     await row.locator("select").first().selectOption("age");
     await row.locator("input[data-type=years]").fill("64");
-    await row.locator("input[data-type=years]").press("Tab"); // #57: gerechnet wird beim Verlassen
+    await row.locator("input[data-type=years]").press("Tab"); // #57: computed on leaving
     await expect(row.locator('[data-computed="ms"]')).toContainText("Alter 64.0");
     const byAge = await row.locator('[data-computed="ms"]').textContent();
     const m = /(\d{2}\.\d{4})/.exec(byAge)[1];
@@ -281,7 +281,7 @@ test.describe("Dateien", () => {
         await expect(page.locator("#toast")).toContainText(`Die Datei hat das Format «${format}». Sie braucht eine neuere Version von VivaPlan`);
         await expect(field(page, "project.name")).toHaveValue("Bleibt");
       }
-      // AK1: die geltende und die alte Kennung öffnen wie bisher
+      // AK1: the current and the old identifier open as before
       for (const format of ["vivaplan/1", "pensionsplaner/1"]) {
         fs.writeFileSync(file, JSON.stringify({ ...plan, format, project: { name: `Kennung ${format}` } }));
         await page.locator("#fileInput").setInputFiles(file);

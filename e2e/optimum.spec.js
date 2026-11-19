@@ -1,8 +1,8 @@
-// Optimaler Parameterwert je Perzentil aus den Variationen (crates/app/ui/optimum.js), ohne Browser.
+// Optimal parameter value per percentile from the variations (crates/app/ui/optimum.js), without a browser.
 const { test, expect } = require("@playwright/test");
 const Optimum = require("../crates/app/ui/optimum.js");
 
-/** Szenario-Ergebnis mit Perzentilen: `cells` = { prozent: [Endvermögen, Erschöpfungsmonat|null] }. */
+/** Scenario result with percentiles: `cells` = { percent: [final wealth, depletion month|null] }. */
 const res = (values, cells) => ({
   values,
   percentiles: Object.entries(cells).map(([percent, [endTotal, depleted]]) => ({ percent: +percent, endTotal, depleted })),
@@ -13,7 +13,7 @@ const range = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1];
 
 test.describe("Optimum je Perzentil", () => {
   test("Ausgabefaktor: höchster tragbarer Wert, zwischen zwei Schritten interpoliert", () => {
-    // 1. Perzentil: bei 70 % Endvermögen +30'000, bei 80 % −90'000 (aufgebraucht) → Nullstelle bei 72.5 %
+    // 1st percentile: at 70 % final wealth +30'000, at 80 % −90'000 (depleted) → zero crossing at 72.5 %
     const sc = one(SPEND, range.map(v => [v, { 1: v <= 0.7 ? [(0.7 - v) * 1e5 + 30_000, null] : [30_000 - (v - 0.7) * 1.2e6, "2046-05"] }]));
     const o = Optimum.find(sc, 1);
     expect(o.items).toHaveLength(1);
@@ -47,22 +47,22 @@ test.describe("Optimum je Perzentil", () => {
     const sc = one("wealth.stockShare", [
       [0.3, { 1: [-300, "2041-03"] }], [0.5, { 1: [-200, "2044-07"] }], [0.7, { 1: [-100, "2046-01"] }], [1.0, { 1: [-50, "2049-09"] }]]);
     const o = Optimum.find(sc, 1).items[0];
-    // 100 % ist die natürliche Grenze eines Anteils, kein ausgeschöpfter Bereich (#34)
+    // 100 % is the natural limit of a share, not an exhausted range (#34)
     expect(o).toMatchObject({ v: 1.0, kind: "exact", reaches: false });
   });
 
-  // Kriterien: #34/AK1 #34/AK2 #34/AK3 #34/AK4 #34/AK6
+  // Criteria: #34/AK1 #34/AK2 #34/AK3 #34/AK4 #34/AK6
   test("#34: Anteil an der natürlichen Grenze 0 % / 100 % ohne «≥» / «≤», sonst weiter Randkennzeichnung", () => {
     const lump = rows => ({ params: ["pension.pk.lumpsum"], results: rows.map(([v, e]) => res([v], { 5: [e, null] })) });
     expect(Optimum.find(lump([[0, 100], [0.5, 200], [1, 900]]), 5).items[0]).toMatchObject({ v: 1, kind: "exact" });
     expect(Optimum.find(lump([[0, 900], [0.5, 200], [1, 100]]), 5).items[0]).toMatchObject({ v: 0, kind: "exact" });
-    // Bereich 0 bis 50 %: der Rand 50 % ist keine natürliche Grenze
+    // Range 0 to 50 %: the edge 50 % is not a natural limit
     expect(Optimum.find(lump([[0, 100], [0.25, 200], [0.5, 900]]), 5).items[0]).toMatchObject({ v: 0.5, kind: "edgeHigh" });
     expect(Optimum.find(lump([[0.5, 900], [0.75, 200], [1, 100]]), 5).items[0]).toMatchObject({ v: 0.5, kind: "edgeLow" });
-    // Zwei Variationen: Aktienanteil 100 % neben dem Ausgaben-Faktor
+    // Two variations: stock share 100 % next to the spending factor
     const two = { params: [SPEND, "wealth.stockShare"], results: [[0.9, 0.5], [0.9, 1], [1, 0.5], [1, 1]].map(([f, a]) => res([f, a], { 5: [a === 1 ? 500 : 100, null] })) };
     expect(Optimum.find(two, 5).items[1]).toMatchObject({ v: 1, kind: "exact" });
-    // Ausgaben-Faktor am oberen Rand: weiterhin «≥»
+    // Spending factor at the upper edge: still «≥»
     expect(Optimum.find(two, 5).items[0]).toMatchObject({ kind: "atLeast" });
   });
 
@@ -79,7 +79,7 @@ test.describe("Optimum je Perzentil", () => {
   });
 
   test("zwei Variationen mit Ausgabefaktor: je Wert des anderen Parameters der höchste tragbare Faktor, dann die beste Kombination", () => {
-    // Pro Aktienanteil kippt das 1. Perzentil bei einem anderen Faktor: 30 % → ab 1.0, 60 % → zwischen 0.9 und 1.0, 100 % → ab 0.7
+    // Per stock share the 1st percentile tips at a different factor: 30 % → from 1.0, 60 % → between 0.9 and 1.0, 100 % → from 0.7
     const limit = { 0.3: 0.85, 0.6: 0.95, 1: 0.65 };
     const results = [];
     for (const share of [0.3, 0.6, 1]) for (const f of [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]) {
@@ -92,7 +92,7 @@ test.describe("Optimum je Perzentil", () => {
     expect(f.param).toBe(SPEND);
     expect(f.kind).toBe("approx");
     expect(f.v).toBeCloseTo(0.95, 9);
-    // Reihenfolge der Parameter spielt keine Rolle
+    // The order of the parameters does not matter
     const swapped = Optimum.find({ params: [SPEND, "wealth.stockShare"], results: results.map(r => ({ ...r, values: [r.values[1], r.values[0]] })) }, 1);
     expect(swapped.items[0]).toMatchObject({ param: SPEND, kind: "approx" });
     expect(swapped.items[1]).toMatchObject({ param: "wealth.stockShare", v: 0.6 });
@@ -103,7 +103,7 @@ test.describe("Optimum je Perzentil", () => {
     for (const share of [0.3, 0.6]) for (const f of [0.5, 0.6]) results.push(res([share, f], { 1: [-100 * share, share === 0.6 ? "2048-01" : "2041-01"] }));
     const o = Optimum.find({ params: ["wealth.stockShare", SPEND], results }, 1);
     expect(o.items[1]).toMatchObject({ kind: "below", v: 0.5, reaches: false });
-    expect(o.items[0].v).toBe(0.6); // Der Wert, bei dem es am längsten reicht
+    expect(o.items[0].v).toBe(0.6); // The value at which the money lasts longest
   });
 
   test("zwei Variationen ohne Ausgabefaktor: beste Kombination nach denselben Kriterien", () => {

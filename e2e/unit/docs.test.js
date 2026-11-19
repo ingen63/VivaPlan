@@ -1,4 +1,4 @@
-// Prüfungen an Texten und Dokumenten, ohne Browser. Ausführen: `node --test e2e/unit/` (oder `make ui-unit`).
+// Checks on texts and documents, without a browser. Run: `node --test e2e/unit/` (or `make ui-unit`).
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -16,8 +16,8 @@ const walk = (dir, ext, out = []) => {
 const rel = p => path.relative(ROOT, p);
 
 test("#54/AK6: «Liquidität» kommt in Oberfläche, Hilfe und Dokumentation nur als Suchbegriff vor", () => {
-  // Erlaubt sind die Stichwortzeilen der Hilfe («Stichworte: …»): Wer noch «Liquidität» sucht, findet «Cash».
-  // Ausgenommen sind die Listen, die alte Titel und Kriterien zitieren (Abnahmeliste, alte Issue-IDs, #117).
+  // Allowed are the keyword lines of the help («Stichworte: …»): whoever still searches for «Liquidität» finds «Cash».
+  // Excluded are the lists that quote old titles and criteria (acceptance list, old issue IDs, #117).
   const history = ["ABNAHME.md", "ISSUE-IDS.md"];
   const files = [
     ...walk(path.join(ROOT, "crates/app/ui"), [".js", ".html", ".md", ".css"]),
@@ -64,19 +64,19 @@ test("#93/AK1, #93/AK3: alle Stellen nennen dieselbe Programmversion, das Change
     "crates/app/package.json": JSON.parse(read("crates/app/package.json")).version,
   };
   const v = versions["Cargo.toml"];
-  assert.match(v, /^\d+\.\d+\.\d+(-beta\.\d+)?$/); // Vorabversionen nur als «-beta.N»
+  assert.match(v, /^\d+\.\d+\.\d+(-beta\.\d+)?$/); // Pre-release versions only as «-beta.N»
   for (const [f, x] of Object.entries(versions)) assert.equal(x, v, f);
-  // Cargo.lock: die eigenen Pakete tragen dieselbe Version
+  // Cargo.lock: the own packages carry the same version
   for (const lock of ["Cargo.lock", "fuzz/Cargo.lock"]) {
     for (const m of read(lock).matchAll(/name = "(vivaplan-[a-z]+)"\nversion = "([^"]+)"/g)) {
       if (m[1] !== "vivaplan-fuzz") assert.equal(m[2], v, `${lock}: ${m[1]}`);
     }
   }
-  // Ein Abschnitt «Nächste Version» (noch nicht veröffentlichte Änderungen) steht vor den Versionen und zählt nicht mit.
+  // A section «Nächste Version» (changes not yet released) comes before the versions and does not count.
   const heads = [...read("CHANGELOG.md").matchAll(/^## (.+)$/gm)].map(m => m[1]).filter(h => h !== "Nächste Version");
   assert.ok(heads[0].startsWith(`Version ${v}`), `oberster Abschnitt: ${heads[0]}`);
   assert.equal(heads.at(-1), "Version 0.8.0: erster öffentlicher Stand");
-  // Seit 0.8.0 (Neustart der Nummerierung) nur 0.8.x und 1.0.0-beta.N; keine Einträge des früheren Projekts (1.1.x).
+  // Since 0.8.0 (restart of the numbering) only 0.8.x and 1.0.0-beta.N; no entries of the earlier project (1.1.x).
   assert.ok(heads.every(h => /^Version (0\.8\.\d+|1\.0\.0-beta\.\d+)\b/.test(h)), "keine Einträge zu früheren Versionen (1.1.x)");
   assert.equal(fs.existsSync(path.join(ROOT, "docs/release-notes-1.1.3.md")), false);
 });

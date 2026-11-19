@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Gespeicherte Ergebnisse, Grundstückgewinnsteuer. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: saved results, real estate gains tax. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -9,7 +9,7 @@ const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, result
 test.describe("Gespeicherte Ergebnisse", () => {
   test("#147/AK2: Kann die Liste das Ergebnis nicht speichern, erscheint eine Meldung, und die Oberfläche bleibt bedienbar", async ({ page }) => {
     const errors = await open(page);
-    // Nachbildung: Der Browserspeicher ist voll (IndexedDB bricht die Transaktion ab).
+    // Simulation: the browser storage is full (IndexedDB aborts the transaction).
     await page.evaluate(() => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       Runs.add = async () => { throw new Error("QuotaExceededError"); };
@@ -17,7 +17,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
     await page.locator('button[data-action="run"]').click();
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     await expect(page.locator("#toast")).toContainText("Ergebnis nicht in der Liste gespeichert: QuotaExceededError");
-    // weiter bedienbar: zurück in den Editor
+    // still usable: back to the editor
     await page.keyboard.press("Escape");
     await expect(field(page, "project.name")).toBeVisible();
     expect(errors).toEqual([]);
@@ -27,7 +27,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
   test("zwei Läufe ablegen und vergleichen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
-    // #115: Die Karte «Gesamtvermögen im Vergleich» heisst jetzt «Bandbreite des Gesamtvermögens»; der Titel nennt den Vergleich
+    // #115: The card «Gesamtvermögen im Vergleich» is now called «Bandbreite des Gesamtvermögens»; the title names the comparison
     await expect(page.locator("#resultsTitle")).toContainText("Vergleich von 2 Ergebnissen");
     await expect(page.locator("#resultsBody")).toContainText("Kennzahlen");
     await noErrors(page, errors);
@@ -43,12 +43,12 @@ test.describe("Gespeicherte Ergebnisse", () => {
   test("Simulationen einzeln markieren und löschen, alle markieren, alle löschen", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
-    // Drei weitere Einträge ablegen, dann Liste neu öffnen: 4 Einträge
+    // Store three more entries, then reopen the list: 4 entries
     await page.evaluate(async () => { for (let i = 0; i < 3; i++) await rememberRun(await Engine.call("run_simulation", { plan: state, path: null })); await openRuns(); });
     const rows = page.locator("#runsTbl tr:not(:first-child)");
     await expect(rows).toHaveCount(4);
     const ask = async () => { await expect(page.locator("#ask")).toBeVisible(); await page.locator("#ask button[value='ok']").click(); };
-    // Einzelne markieren und löschen
+    // Mark single entries and delete them
     await expect(page.locator('button[data-action="runs-delete"]')).toBeDisabled();
     await rows.nth(0).locator('input[data-action="run-sel"]').check();
     await rows.nth(1).locator('input[data-action="run-sel"]').check();
@@ -56,13 +56,13 @@ test.describe("Gespeicherte Ergebnisse", () => {
     await page.locator('button[data-action="runs-delete"]').click();
     await ask();
     await expect(rows).toHaveCount(2);
-    // Alle markieren (mehr als der Vergleich zulässt ist erlaubt), Vergleichen bleibt gesperrt wenn < 2
+    // Mark all (more than the comparison permits is allowed), comparing stays blocked if < 2
     await page.locator('input[data-action="runs-all"]').check();
     await expect(page.locator('#runsTbl input[data-action="run-sel"]:checked')).toHaveCount(2);
     await expect(page.locator('button[data-action="runs-compare"]')).toBeEnabled();
     await page.locator('input[data-action="runs-all"]').uncheck();
     await expect(page.locator('#runsTbl input[data-action="run-sel"]:checked')).toHaveCount(0);
-    // Alle löschen
+    // Delete all
     await page.locator('button[data-action="runs-delete-all"]').click();
     await ask();
     await expect(page.locator("#resultsBody")).toContainText("Noch kein Ergebnis");
@@ -79,10 +79,10 @@ test.describe("Gespeicherte Ergebnisse", () => {
       state.withdrawal.strategy = "three_buckets";
       state.withdrawal.buckets = { cashYears: 3, bondYears: 4, refillThreshold: 0.02, reserveMonths: 3 };
       await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
-      // Eintrag aus einer früheren Version ohne Zeitreihe und Parameter
+      // Entry from an earlier version without time series and parameters
       await Runs.add({ id: "alt", created: "2020-01-01T00:00:00.000Z", name: "Alt", note: "", kind: "single", runs: 1, endTotal: 1, source: "historical", strategy: "guardrails" },
         { plan: JSON.parse(JSON.stringify(state)), result: lastRun });
-      // Strategie des Planes ändern: das gespeicherte Ergebnis behält seine Parameter
+      // Change the strategy of the plan: the saved result keeps its parameters
       state.withdrawal.buckets.cashYears = 9;
       await openRuns();
     });
@@ -103,9 +103,9 @@ test.describe("Gespeicherte Ergebnisse", () => {
     const old = rows.filter({ hasText: "Guardrails" }).first();
     await expect(old.locator("td").nth(4)).toHaveText("–");
     expect(await old.locator("td.ptip").getAttribute("data-tip")).toBe("Parameter nicht verfügbar");
-    // Vergleich: gleiche Spalten
+    // Comparison: same columns
     await page.evaluate(() => { runsSel.clear(); runsSel.add(runsIds[0]); runsSel.add(runsIds[1]); return compareRuns(); });
-    // #118: der Spaltenkopf trägt zusätzlich den Sortierpfeil
+    // #118: the column header carries the sort arrow in addition
     const cmp = (await page.locator("#resultsBody table").first().locator("tr:first-child th").allInnerTexts()).map(t => t.replace(/[▲▼↕]/g, "").trim());
     expect(cmp).toContain("Zeitreihe");
     expect(cmp).not.toContain("Art");
@@ -172,12 +172,12 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await expect(field(page, "taxes.propertyGain.duration.18.1")).toBeVisible();
     await expect(field(page, "taxes.propertyGain.exemptBelow")).toHaveValue(/5.?000/);
     expect(await page.evaluate(() => state.taxes.propertyGain.duration.length)).toBe(19);
-    // Zeile ergänzen und löschen
+    // Add a row and delete it
     await page.locator('button[data-action="gain-add"][data-key="duration"]').click();
     expect(await page.evaluate(() => state.taxes.propertyGain.duration.length)).toBe(20);
     await page.locator('button[data-action="list-del"][data-path="taxes.propertyGain.duration"]').last().click();
     expect(await page.evaluate(() => state.taxes.propertyGain.duration.length)).toBe(19);
-    // Wert ändern landet in der Planung
+    // A changed value ends up in the plan
     await field(page, "taxes.propertyGain.exemptBelow").fill("8000");
     await field(page, "taxes.propertyGain.exemptBelow").blur();
     expect(await page.evaluate(() => state.taxes.propertyGain.exemptBelow)).toBe(8000);
@@ -201,10 +201,10 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     expect(v.durationRates[24][1]).toBeCloseTo(0.06, 9);
     expect(v.durationRates[25]).toEqual([25, 0.05]);
     await expect(field(page, "taxes.propertyGain.durationRates.25.1")).toBeVisible();
-    // Steuerfuss-Option
+    // Tax rate option
     await page.locator('input[data-path="taxes.propertyGain.useMultiplier"]').check();
     expect((await g()).useMultiplier).toBe(true);
-    // Zeile ergänzen, Modell wechseln und zurück
+    // Add a row, switch the model and back
     await page.locator('button[data-action="gain-add"][data-key="durationRates"]').click();
     expect((await g()).durationRates.length).toBe(27);
     await page.locator('button[data-action="gain-model"][data-v="zurich"]').click();
@@ -214,7 +214,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await expect(field(page, "taxes.propertyGain.brackets.0.1")).toBeVisible();
     await page.locator('button[data-action="gain-model"][data-v="aargau"]').click();
     expect((await g()).model).toBe("aargau");
-    // Eigene Regeln basieren auf dem Modell Aargau
+    // Own rules are based on the model Aargau
     await page.locator('button[data-action="gain-del"]').click();
     await page.locator('button[data-action="gain-own"]').click();
     v = await g();
@@ -269,7 +269,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await field(page, "realestate.properties.0.bought").blur();
     expect(await page.evaluate(() => state.realestate.properties[0].bought)).toBe("2015-06");
     await expect(page.locator("body")).not.toContainText("Kaufdatum fehlt");
-    // geplante Immobilie: kein Feld (Kaufdatum ergibt sich aus dem Kauf)
+    // planned property: no field (the purchase date follows from the purchase)
     await page.evaluate(() => { state.realestate.properties[0].status = "planned"; renderSection(); });
     await expect(field(page, "realestate.properties.0.bought")).toHaveCount(0);
     await noErrors(page, errors);
@@ -290,7 +290,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     const half = await total();
     await page.evaluate(() => { state.taxes.propertyGain.duration = [[0, 1.0]]; });
     const full = await total();
-    // Zuschlag von 50 % bzw. 100 % in den ersten 12 Monaten: die Steuer wächst mit dem Zuschlag
+    // Surcharge of 50 % or 100 % in the first 12 months: the tax grows with the surcharge
     expect(half).toBeGreaterThan(plain);
     expect(full).toBeGreaterThan(half);
     await noErrors(page, errors);

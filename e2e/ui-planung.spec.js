@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Einstellungen und Planungsfelder. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: settings and plan fields. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -16,13 +16,13 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
       await expect(dlg).toContainText(t);
     await expect(page.locator("#set-pkMin")).toHaveValue("58");
     await expect(page.locator("#set-pillar3aMax")).toHaveValue("7'258");
-    // AK4: untere Grenze über der oberen wird abgelehnt und nicht gespeichert
+    // AK4: a lower limit above the upper one is rejected and not saved
     await page.locator("#set-ahvMin").fill("71");
     await page.locator("#settingsSave").click();
     await expect(page.locator("#settingsErr")).toContainText("AHV-Bezug: Die untere Grenze (71) liegt über der oberen Grenze (70).");
     await expect(dlg).toBeVisible();
     expect(await page.evaluate(() => limits().ahvMin)).toBe(63);
-    // AK2: gültige Änderung gilt nach dem Neuladen weiter
+    // AK2: a valid change still applies after reloading
     await page.locator("#set-ahvMin").fill("63");
     await page.locator("#set-pkMax").fill("67");
     await page.locator("#settingsSave").click();
@@ -30,9 +30,9 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await page.reload();
     await page.waitForSelector("html[data-ready='1']");
     expect(await page.evaluate(() => limits().pkMax)).toBe(67);
-    // Die Grenzen gehören nicht zur Planung
+    // The limits are not part of the plan
     expect(await page.evaluate(() => "limits" in state)).toBe(false);
-    // AK3: Standardwerte nach Rückfrage
+    // AK3: default values after a question
     await page.keyboard.press(`${MOD}+,`);
     await expect(dlg).toBeVisible();
     await page.locator("#settingsDefaults").click();
@@ -50,7 +50,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await years.fill("67");
     await expect(page.locator("#val li.err")).toHaveCount(0);
     await years.fill("68");
-    await years.press("Tab"); // #57: Meldung am Feld erst beim Verlassen
+    await years.press("Tab"); // #57: message at the field only on leaving
     await expect(page.locator("#val li.err").first()).toContainText("«Bezug Pensionskasse»: Alter 68 liegt ausserhalb der Grenzen 58 bis 67 Jahre (Einstellungen).");
     await expect(row).toContainText("Alter 68 liegt ausserhalb");
     await noErrors(page, errors);
@@ -69,7 +69,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await expect(page.locator("#main")).toContainText("Meilenstein «Bezug Pensionskasse»");
     await expect(page.locator("#main")).toContainText("Meilenstein «AHV-Bezug»");
     await expect(page.locator('#main select[data-path="pension.pk.at"]')).toHaveCount(0);
-    // Zweite Person: eigene feste Meilensteine
+    // Second person: own fixed milestones
     await page.evaluate(() => ACTIONS["partner-add"]());
     expect(await page.evaluate(() => state.milestones.filter(m => m.id.endsWith("2")).map(m => m.name))).toEqual(["Bezug Pensionskasse Person 2", "AHV-Bezug Person 2"]);
     await noErrors(page, errors);
@@ -92,15 +92,15 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     expect(await page.evaluate(() => state.pillar3a[0].payouts.length)).toBe(before + 1);
     await field(page, `pillar3a.0.payouts.${before}.amount`).fill("50000");
     expect(await page.evaluate(n => state.pillar3a[0].payouts[n].amount, before)).toBe(50000);
-    // Leer = ganzes Guthaben
+    // Empty = whole balance
     await field(page, `pillar3a.0.payouts.${before}.amount`).fill("");
     expect(await page.evaluate(n => "amount" in state.pillar3a[0].payouts[n] && state.pillar3a[0].payouts[n].amount !== undefined, before)).toBe(false);
     await page.locator(`button[data-action="list-del"][data-path="pillar3a.0.payouts"]`).last().click();
     expect(await page.evaluate(() => state.pillar3a[0].payouts.length)).toBe(before);
-    // AK4: Auszahlung mehr als 5 Jahre vor dem AHV-Bezug ist ein Fehler
+    // AK4: a payout more than 5 years before the AHV start is an error
     await page.evaluate(() => { state.pillar3a[0].payouts[0].date = "2028-01"; renderSection(); });
     await expect(page.locator("#val li.err").first()).toContainText("liegt mehr als 5 Jahre vor dem AHV-Bezug");
-    // AK7: Einzahlung über dem Maximalbetrag
+    // AK7: contribution above the maximum amount
     await page.evaluate(() => { state.pillar3a[0].payouts[0].date = "2031-01"; state.pillar3a[0].contribution = 8000; renderSection(); });
     await expect(page.locator("#val li.err").first()).toContainText("Die Einzahlung muss zwischen 0 und dem Maximalbetrag von 7'258 pro Jahr liegen");
     await noErrors(page, errors);
@@ -164,7 +164,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
   test("#53/AK1, AK2: Beschriftung inklusive Wohnkosten, Hinweis mit dem Wohnanteil zum Simulationsstart", async ({ page }) => {
     const errors = await open(page, "flows");
     await expect(page.locator("#main")).toContainText("Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)");
-    // Beispielplanung: Wohnkosten zum Simulationsstart 1'700 pro Monat
+    // Example plan: housing costs at the simulation start 1'700 per month
     await expect(page.locator("#main .hint").filter({ hasText: "Wohnanteil zum Simulationsstart" })).toContainText("1'700");
     await noErrors(page, errors);
   });
@@ -214,7 +214,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
-  // Erfundenes Beispiel: Geburt 1980-06 (AHV-Bezug 06.2045, frühestens 06.2040), Guthaben 120'000, Zins 0, keine Einzahlung.
+  // Invented example: birth 1980-06 (AHV start 06.2045, earliest 06.2040), balance 120'000, interest 0, no contribution.
   const setup = async (page, payouts) => {
     await page.evaluate(p => {
       state.household.persons[0].birth = "1980-06";
@@ -230,14 +230,14 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 61.5, amount: 50000, use: "wealth" }, { date: "2043-01", amount: 1000, use: "wealth" }]);
     await expect(at(page, 0)).toHaveText("12.2041 · Alter 61.5");
-    // AK8: Zeile nur mit Datum erscheint als «Datum»
+    // AK8: a row with only a date appears as «Datum»
     await expect(page.locator('select[data-path="pillar3a.0.payouts.1.kind"]')).toHaveValue("date");
     await expect(at(page, 1)).toHaveText("01.2043 · Alter 62.6");
-    // AK2: Alter 61.5 → Datum 12.2041
+    // AK2: age 61.5 → date 12.2041
     await page.locator('select[data-path="pillar3a.0.payouts.0.kind"]').selectOption("date");
     await expect(field(page, "pillar3a.0.payouts.0.date")).toHaveValue("12.2041");
     expect(await page.evaluate(() => state.pillar3a[0].payouts[0])).toEqual({ amount: 50000, use: "wealth", date: "2041-12" });
-    // und zurück
+    // and back
     await page.locator('select[data-path="pillar3a.0.payouts.0.kind"]').selectOption("age");
     await expect(field(page, "pillar3a.0.payouts.0.years")).toHaveValue("61.5");
     await expect(at(page, 0)).toHaveText("12.2041 · Alter 61.5");
@@ -260,16 +260,16 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
     await expect(val(page, 0, "before")).toHaveText("120'000");
     await expect(val(page, 0, "after")).toHaveText("70'000");
     await expect(page.locator('#main [data-p3a="rest"]')).toHaveText(/^70'000/);
-    // AK7: ein Jahr später, Rest 70'000 (gleiche Art wie die letzte Zeile)
+    // AK7: one year later, remainder 70'000 (same kind as the last row)
     await page.locator('button[data-action="p3a-payout-add"]').click();
     expect(await page.evaluate(() => state.pillar3a[0].payouts[1])).toEqual({ use: "wealth", kind: "age", years: 62.5, amount: 70000 });
     await expect(at(page, 1)).toHaveText("12.2042 · Alter 62.5");
-    // Der Betrag bleibt änderbar
+    // The amount stays editable
     await field(page, "pillar3a.0.payouts.1.amount").fill("20000");
     expect(await page.evaluate(() => state.pillar3a[0].payouts[1].amount)).toBe(20000);
-    await field(page, "pillar3a.0.payouts.1.amount").press("Tab"); // #57: Vorschau beim Verlassen (#111)
+    await field(page, "pillar3a.0.payouts.1.amount").press("Tab"); // #57: preview on leaving (#111)
     await expect(page.locator('#main [data-p3a="rest"]')).toHaveText(/^50'000/);
-    // Ohne Zeile: frühester erlaubter Monat (06.2040) mit dem ganzen Guthaben, abgerundet auf 1'000
+    // Without a row: earliest allowed month (06.2040) with the whole balance, rounded down to 1'000
     await setup(page, []);
     await page.evaluate(() => { state.pillar3a[0].balance = 120400; refresh(); });
     await expect(page.locator('#main [data-p3a="rest"]')).toHaveText(/^120'400/);
@@ -283,10 +283,10 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
 test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
   const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
   /**
-   * #111: Geprüft wird, dass während einer Pause in der Eingabe nichts geschieht. Statt fest zu warten, läuft die Seite mit
-   * der Uhr von Playwright (page.clock): `pause()` stellt sie um 800 ms vor und führt dabei jeden fälligen Timer aus (Vorschau
-   * nach 120 ms, Sammelzeit des Rückgängig-Verlaufs 400 ms), unabhängig von der Rechnerlast. Zusätzlich zählt die Seite die
-   * Anfragen an den Rechenkern: Während der Eingabe darf keine starten.
+   * #111: Checks that nothing happens during a pause in the input. Instead of waiting a fixed time, the page runs with
+   * the clock of Playwright (page.clock): `pause()` advances it by 800 ms and runs every due timer (preview
+   * after 120 ms, collection time of the undo history 400 ms), independent of the machine load. In addition the page counts the
+   * requests to the engine: none may start during the input.
    */
   async function openWithClock(page, hash) {
     await page.clock.install();
@@ -308,8 +308,8 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
     const end = kpiValue(page, "Vermögen am Ende");
     await expect(end).not.toHaveText("–");
     const before = await end.textContent();
-    // AK1, AK4: Ziffer für Ziffer, mit Pause: keine Meldung am Feld, keine in der Prüfliste, Vorschau unverändert,
-    // keine Anfrage an den Rechenkern (pause).
+    // AK1, AK4: digit by digit, with a pause: no message at the field, none in the check list, preview unchanged,
+    // no request to the engine (pause).
     await previewIdle(page); await apiCalls(page);
     await years.click(); await years.press("End");
     await years.press("Backspace"); await years.press("Backspace"); await years.type("6");
@@ -317,15 +317,15 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
     await expect(ferr(years)).toHaveCount(0);
     await expect(page.locator("#val li.err")).toHaveCount(0);
     await expect(end).toHaveText(before);
-    await years.type("3"); // 63: gültig, der Wert ist übernommen, gerechnet wird erst beim Verlassen
+    await years.type("3"); // 63: valid, the value is taken over, computed only on leaving
     await pause(page);
     expect(await page.evaluate(n => state.milestones[n].years, i)).toBe(63);
     await expect(end).toHaveText(before);
     await years.press("Tab");
     await expect(end).not.toHaveText(before);
     await expect(ferr(years)).toHaveCount(0);
-    // AK2: Alter 6 eingeben: erst beim Verlassen Meldung am Feld und in der Prüfliste
-    await previewIdle(page); await apiCalls(page); // Rechnungen nach dem Verlassen des Felds sind erlaubt, gezählt wird ab der nächsten Eingabe
+    // AK2: enter age 6: message at the field and in the check list only on leaving
+    await previewIdle(page); await apiCalls(page); // Computations after leaving the field are allowed, counting starts with the next input
     await years.fill("6");
     await pause(page);
     await expect(ferr(years)).toHaveCount(0);
@@ -333,7 +333,7 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
     await years.press("Tab");
     await expect(ferr(years)).toContainText("ausserhalb der Grenzen");
     await expect(page.locator("#val li.err").first()).toContainText("AHV-Bezug");
-    // AK3: zurück ins Feld, gültig machen: Die Meldung bleibt während der Eingabe und verschwindet beim Verlassen
+    // AK3: back into the field, make it valid: the message stays during input and disappears on leaving
     await previewIdle(page); await apiCalls(page);
     await years.click(); await years.press("End"); await years.type("5");
     await pause(page);
@@ -374,7 +374,7 @@ test.describe("Zahleneingabe mit Punkt als Tausendertrennzeichen (#140)", () => 
     await expect(ferr(cash)).toContainText("Mehrdeutige Zahl");
     await expect(cash).toHaveClass(/invalid/);
     expect(await page.evaluate(() => state.wealth.cash)).toBe(before);
-    // Mit Apostroph wird derselbe Betrag übernommen
+    // With an apostrophe the same amount is taken over
     await cash.fill("12'500");
     await cash.press("Tab");
     await expect(cash).not.toHaveClass(/invalid/);
@@ -408,9 +408,9 @@ test.describe("Erwerbseinkommen mit der Teuerung (#58)", () => {
     const errors = await open(page, "flows");
     const own = page.locator('input[data-path="flows.incomeIndexed"]');
     await expect(own).toBeVisible();
-    await expect(own).not.toBeChecked(); // Beispielplanung ohne Angabe: «nein»
-    await expect(page.locator('input[data-path="partner.incomeIndexed"]')).toHaveCount(0); // ohne zweite Person
-    // Genauer Endwert der Vorschau (die Kennzahl ist gerundet)
+    await expect(own).not.toBeChecked(); // Example plan without a value: «nein»
+    await expect(page.locator('input[data-path="partner.incomeIndexed"]')).toHaveCount(0); // without a second person
+    // Exact final value of the preview (the key figure is rounded)
     const endValue = () => page.evaluate(() => lastSim?.total.at(-1));
     await expect(kpiValue(page, "Vermögen am Ende")).not.toHaveText("–");
     const before = await endValue();
@@ -419,7 +419,7 @@ test.describe("Erwerbseinkommen mit der Teuerung (#58)", () => {
     await expect.poll(endValue).not.toBe(before);
     await own.uncheck();
     await expect.poll(endValue).toBe(before);
-    // Zweite Person: eigene Auswahl, neu mit «ja»
+    // Second person: own selection, new with «ja»
     await nav(page, "Haushalt & Projekt");
     await page.getByRole("button", { name: "+ Zweite Person" }).click();
     await nav(page, "Einnahmen & Ausgaben");

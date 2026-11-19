@@ -1,4 +1,4 @@
-// Gemeinsame Hilfsfunktionen der Oberflächentests (e2e/ui-*.spec.js).
+// Shared helper functions of the user interface tests (e2e/ui-*.spec.js).
 const { expect } = require("@playwright/test");
 
 const MOD = process.platform === "darwin" ? "Meta" : "Control";
@@ -6,9 +6,9 @@ const SECTIONS = ["Haushalt & Projekt", "Meilensteine", "Vorsorge", "Säule 3a",
   "Simulation", "Entnahmestrategie", "Optimierung", "Steuern", "Immobilien", "Szenarien & Simulation"];
 
 /**
- * Öffnet die Oberfläche (optional mit Testzugang über die Adresse) und sammelt JavaScript-Fehler.
- * #111: ohne Messung der Rechenzeit (#nobench), denn sie liefe sonst in jedem Test im Hintergrund mit und machte ihn von
- * der Rechnerlast abhängig. Tests, die die echte Messung prüfen, öffnen mit `{ bench: true }`.
+ * Opens the user interface (optionally with test access via the address) and collects JavaScript errors.
+ * #111: without measuring the computing time (#nobench), since it would otherwise run in the background of every test and
+ * make it depend on the machine load. Tests that check the real measurement open with `{ bench: true }`.
  */
 async function open(page, hash = "", { bench = false } = {}) {
   const errors = [];
@@ -24,20 +24,20 @@ const noErrors = async (page, errors) => {
   expect(await page.evaluate(() => window.__errors)).toEqual([]);
 };
 const field = (page, p) => page.locator(`input[data-path="${p}"]`);
-/** #111: wartet, bis keine Vorschau mehr aussteht (sonst nimmt eine verzögerte Vorschau die nächste Eingabe halb mit). */
+/** #111: waits until no preview is pending any more (otherwise a delayed preview half takes along the next input). */
 const previewIdle = page => expect(page.locator("html")).toHaveAttribute("data-preview", "idle");
-/** #111: Klick ins Menü. Jede Vorschau zeichnet das Menü neu; ein Klick, der in eine Vorschau fällt, ginge verloren. */
+/** #111: click into the menu. Every preview redraws the menu; a click that falls into a preview would get lost. */
 const nav = async (page, title) => { await previewIdle(page); await page.locator("#nav a", { hasText: title }).first().click(); };
 const kpiValue = (page, label) => page.locator(`#kpis .kpi:has(.k:text-is("${label}")) .v`);
 const resultKpi = (page, label) => page.locator(`#resultsBody .kpi:has(.k:text-is("${label}")) .v`);
 const parseNum = s => Number(s.replace(/[’'\sk]/g, ""));
-/** Stellt die Optimierung ein (z. B. kleine Rechnung) und gibt zurück, was in den Feldern steht. Die Werte gehen über die
- *  Planung (`state.optimization`), denn `saveOptCfg` liest die Felder und überschreibt ein direkt gesetztes `optCfg` (#79). */
+/** Sets up the optimization (e.g. small computation) and returns what is in the fields. The values go through the
+ *  plan (`state.optimization`), since `saveOptCfg` reads the fields and overwrites a directly set `optCfg` (#79). */
 const setOpt = (page, cfg) => page.evaluate(cfg => { state.optimization = optToPlan({ ...optCfg, ...cfg }); renderSection(); return readOptCfg(); }, cfg);
-/** Tabellenzeile eines Meilensteins (Name steht in einem Eingabefeld, deshalb über den Index der ID). */
+/** Table row of a milestone (the name is in an input field, therefore via the index of the ID). */
 async function msRow(page, id) {
   const i = await page.evaluate(id => state.milestones.findIndex(m => m.id === id), id);
-  // Feste Meilensteine (#51) haben keinen änderbaren Namen; jede Zeile hat aber die Auswahl «Festgelegt als».
+  // Fixed milestones (#51) have no editable name; every row has the selection «Festgelegt als», though.
   return page.locator(`#main table.tbl tr:has(select[data-path="milestones.${i}.kind"])`);
 }
 

@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Willkommen, Erste Schritte, Ergebnis in Worten, Haftung. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: welcome, first steps, result in words, liability. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -6,7 +6,7 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-// #70 Willkommensdialog, #71 Erste Schritte, #72 Ergebnis in Worten
+// #70 welcome dialog, #71 first steps, #72 result in words
 
 test.describe("#70 Willkommensdialog", () => {
   test("AK1: erscheint beim ersten Start (Testzugang) mit drei Wahlmöglichkeiten, sonst nicht", async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe("#70 Willkommensdialog", () => {
     await expect(welcome(page)).toHaveAttribute("open", "");
     await expect(welcome(page).locator("h2")).toHaveText("Willkommen bei VivaPlan");
     await expect(welcome(page).locator(".wchoices button b")).toHaveText(["Beispiel erkunden", "Eigene Planung beginnen", "Leere Planung"]);
-    // AK6: Der erste Start ist sofort gemerkt.
+    // AK6: The first start is remembered immediately.
     expect((await prefs(page)).welcomeShown).toBe(true);
     await noErrors(page, errors);
   });
@@ -33,7 +33,7 @@ test.describe("#70 Willkommensdialog", () => {
   });
 
   test("AK3: «Eigene Planung beginnen» öffnet «Haushalt & Projekt» und blendet die Checkliste ein", async ({ page }) => {
-    // Fensterhöhe wie die Desktop-App: Die Checkliste steht unter Vorschau und Kennzahlen und muss in den Blick gescrollt werden.
+    // Window height like the desktop app: the checklist is below the preview and key figures and must be scrolled into view.
     await page.setViewportSize({ width: 1440, height: 900 });
     const errors = await open(page, "welcome");
     await welcome(page).getByRole("button", { name: /Eigene Planung beginnen/ }).click();
@@ -49,9 +49,9 @@ test.describe("#70 Willkommensdialog", () => {
   test("AK4: «Leere Planung» wirkt wie Datei → Neu", async ({ page }) => {
     const errors = await open(page, "welcome");
     await welcome(page).getByRole("button", { name: /Leere Planung/ }).click();
-    // #95: «Neu» übernimmt die leere Planung erst nach zwei Aufrufen an den Rechenkern. «Haushalt & Projekt» ist schon
-    // vorher aktiv; deshalb auf die Planung selbst warten statt nur auf die Navigation.
-    // Merkmale der leeren Planung von Datei → Neu: kein Name, keine Beträge, keine Immobilien
+    // #95: «Neu» takes over the empty plan only after two calls to the engine. «Haushalt & Projekt» is already
+    // active before; therefore wait for the plan itself instead of only for the navigation.
+    // Features of the empty plan from File → New: no name, no amounts, no real estate
     await expect.poll(() => page.evaluate(() => [state.project.name, state.household.persons.length, state.household.persons[0].name,
       state.flows.spending.value, state.wealth.stocks, state.realestate.properties.length])).toEqual(["Neue Planung", 1, "", 0, 0, 0]);
     await expect(page.locator("#nav a.active")).toContainText("Haushalt & Projekt");
@@ -66,7 +66,7 @@ test.describe("#70 Willkommensdialog", () => {
     await expect(page.locator("#help")).toBeHidden();
     expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);
     await noErrors(page, errors);
-    // Tastatur: der erste Knopf hat den Fokus, Tab geht zum zweiten, Enter wählt ihn.
+    // Keyboard: the first button has the focus, Tab moves to the second, Enter selects it.
     await page.goto("about:blank");
     errors = await open(page, "welcome");
     await expect(welcome(page).getByRole("button", { name: /Beispiel erkunden/ })).toBeFocused();
@@ -119,7 +119,7 @@ test.describe("#71 Erste Schritte", () => {
     await expect(page.locator("#stepsProg")).toHaveText("1 von 8");
     await page.evaluate(() => History.undo());
     await expect(steps(page).locator('li[data-step="general"]')).toHaveClass(/done/);
-    // Von Hand abhaken und wieder lösen
+    // Check off by hand and clear again
     await steps(page).locator('li[data-step="taxes"] input').check();
     await expect(page.locator("#stepsProg")).toHaveText("2 von 8");
     await steps(page).locator('li[data-step="taxes"] input').uncheck();
@@ -142,7 +142,7 @@ test.describe("#71 Erste Schritte", () => {
     await expect(steps(page)).toBeHidden();
     await page.evaluate(() => command("steps"));
     await expect(steps(page)).toBeVisible();
-    await expect(steps(page)).toBeInViewport({ ratio: 0.95 }); // #70/AK3: in den Blick gescrollt
+    await expect(steps(page)).toBeInViewport({ ratio: 0.95 }); // #70/AK3: scrolled into view
     for (const id of ["general", "milestones", "pension", "flows", "wealth", "returns", "taxes", "run"])
       await steps(page).locator(`li[data-step="${id}"] input`).check();
     await expect(page.locator("#stepsProg")).toHaveText("8 von 8");
@@ -198,7 +198,7 @@ test.describe("#72 Ergebnis in Worten", () => {
     await page.getByRole("button", { name: "Heutige Kaufkraft" }).click();
     const real = await page.evaluate(() => fmtMoney(lastRun.single.summary.endTotalReal));
     await expect(v).toContainText(`beträgt dann ${real} in heutiger Kaufkraft.`);
-    // Ausgaben so hoch, dass das Geld nicht reicht
+    // Spending so high that the money does not last
     await page.evaluate(async () => { showResults(false); state.flows.spending = { mode: "const", value: 60000 }; await runSimulation("overview", { noConfirm: true }); });
     const dep = await page.evaluate(() => lastRun.single.summary.depleted);
     expect(dep).toBeTruthy();
@@ -216,7 +216,7 @@ test.describe("#72 Ergebnis in Worten", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// #61 Haftungsausschluss: Fusszeile der Ergebnisse und vollständiger Text
+// #61 Disclaimer: footer of the results and full text
 test.describe("#61 Haftungsausschluss", () => {
   const FOOT = "Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.";
   const prefs = page => page.evaluate(() => JSON.parse(localStorage.getItem("rp.settings") || "{}"));
@@ -242,7 +242,7 @@ test.describe("#61 Haftungsausschluss", () => {
       await expect(page.locator("#resultsFoot")).toBeVisible();
       await expect(page.locator("#resultsFoot")).toHaveText(FOOT);
     }
-    // gespeicherte Ergebnisse (Liste) liegen in derselben Ansicht
+    // saved results (list) are in the same view
     await expect(page.locator("#results .rfoot")).toHaveCount(1);
     await noErrors(page, errors);
   });
@@ -250,7 +250,7 @@ test.describe("#61 Haftungsausschluss", () => {
   test("AK3: Fusszeile unter dem Ergebnis der Optimierung", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap");
     await expect(page.locator("#optFoot")).toHaveCount(0);
-    // kleine Rechnung: nur die Fusszeile wird geprüft, nicht das Ergebnis
+    // small computation: only the footer is checked, not the result
     const small = { paths: 50, checkPaths: 50, samples: 1, strategies: ["fixed_rate"] };
     expect(await setOpt(page, small)).toMatchObject(small); // #79
     await page.locator('button[data-action="opt-run"]').click();
@@ -272,7 +272,7 @@ test.describe("#61 Haftungsausschluss", () => {
       "5. Haftung.", "6. Daten.", "7. Anwendbares Recht."]) await expect(body).toContainText(h);
     await expect(body).toContainText("VivaPlan wird aus der Schweiz unentgeltlich zur Verfügung gestellt.");
     await expect(body).toContainText("Stand: 13. November 2026");
-    // auch über die Suche der Hilfe
+    // also via the search of the help
     await page.evaluate(() => Help.show("disclaimer"));
     await expect(helpTitle(page)).toHaveText("Haftungsausschluss");
     await noErrors(page, errors);

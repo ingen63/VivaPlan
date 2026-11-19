@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Optimierung. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: optimization. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -21,7 +21,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     expect(r.cashYears.fixed).toBe(true);
     expect(r.bondYears.hi).toBe(2);
     await expect(page.locator("details.optrange summary .computed").nth(1)).toContainText("Parametern variiert");
-    // eingeklappt/ausgeklappt zeigen alle Strategien; Standard-Bandbreiten löschen die Änderungen
+    // collapsed/expanded show all strategies; default ranges delete the changes
     await page.locator('button[data-action="opt-range-reset"][data-s="three_buckets"]').click();
     expect(await page.evaluate(() => state.optimization?.ranges?.three_buckets)).toBeUndefined();
     await noErrors(page, errors);
@@ -30,7 +30,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   test("Optimierung läuft mit Fortschritt, Entnahmerate erscheint im Ergebnis", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap/optset");
     const small = { paths: 300, checkPaths: 500, samples: 6, strategies: ["fixed_rate"] };
-    expect(await setOpt(page, small)).toMatchObject(small); // #79: die kleine Rechnung kommt wirklich in den Feldern an
+    expect(await setOpt(page, small)).toMatchObject(small); // #79: the small computation really arrives in the fields
     await page.locator('button[data-action="opt-run"]').click();
     await expect(page.locator("#main .job progress")).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("data-job", "off");
@@ -42,7 +42,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     const errors = await open(page);
     await page.evaluate(() => { state.withdrawal.strategy = "three_buckets"; delete state.withdrawal.buckets.spending; goto("withdrawal"); });
     const sel = page.locator('#main select[data-path="withdrawal.buckets.spending"]');
-    // AK1: Standard «wie geplant», ohne Guardrails- und Grenzen-Karte
+    // AK1: default «wie geplant», without guardrails and limits card
     await expect(sel).toHaveValue("planned");
     await expect(page.locator('#main input[data-path="withdrawal.guardrails.initialRate"]')).toHaveCount(0);
     await expect(page.locator('#main input[data-path="withdrawal.floor"]')).toHaveCount(0);
@@ -51,18 +51,18 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await expect(page.locator('#main input[data-path="withdrawal.floor"]')).toBeVisible();
     await expect(page.locator('#main input[data-path="withdrawal.buckets.cashYears"]')).toBeVisible();
     expect(await page.evaluate(() => state.withdrawal.buckets.spending)).toBe("guardrails");
-    // AK9: Name und Parameter (Tooltip #11) mit Töpfen und Guardrails
+    // AK9: name and parameters (tooltip #11) with buckets and guardrails
     const info = await page.evaluate(() => ({ name: stratName(stratKey(state.withdrawal)), params: stratParams(state).map(x => x[0]) }));
     expect(info.name).toBe("3-Topf + Guardrails");
     expect(info.params).toEqual(expect.arrayContaining(["Topf 1 · Cash", "Startrate bei Pensionierung", "Untergrenze"]));
     expect(await page.evaluate(() => stratName(stratKey({ strategy: "three_buckets", buckets: { spending: "planned" } })))).toBe("3-Topf-Strategie");
-    // AK10: In der Optimierung angeboten, standardmässig nicht gewählt
+    // AK10: offered in the optimization, not selected by default
     await page.evaluate(() => { delete state.optimization; goto("optimize"); });
     const box = page.locator("#optS-three_buckets_guardrails");
     await expect(box).toBeAttached();
     await expect(box).not.toBeChecked();
     await expect(page.locator("#optS-three_buckets")).toBeChecked();
-    // Zurück auf «wie geplant»: Karten verschwinden
+    // Back to «wie geplant»: cards disappear
     await page.evaluate(() => goto("withdrawal"));
     await sel.selectOption("planned");
     await expect(page.locator('#main input[data-path="withdrawal.guardrails.initialRate"]')).toHaveCount(0);
@@ -78,14 +78,14 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await set("wealth.stocks", "80000"); await set("wealth.bonds", "20000"); await set("wealth.cash", "50000");
     await expect(quote("wealth.stocks")).toHaveText("80 % des Portfolios");
     await expect(quote("wealth.bonds")).toHaveText("20 % des Portfolios");
-    // AK5: Cash ändert die Quoten nicht
+    // AK5: cash does not change the ratios
     for (const c of ["0", "500000"]) {
       await set("wealth.cash", c);
       await expect(quote("wealth.stocks")).toHaveText("80 % des Portfolios");
       await expect(quote("wealth.bonds")).toHaveText("20 % des Portfolios");
     }
-    // AK3: während der Eingabe unverändert, nach dem Verlassen des Feldes nachgeführt
-    await previewIdle(page); // #111: keine Vorschau des vorigen Schritts mehr unterwegs
+    // AK3: unchanged during input, updated after leaving the field
+    await previewIdle(page); // #111: no preview of the previous step on its way any more
     await field(page, "wealth.stocks").fill("60000");
     await expect(quote("wealth.stocks")).toHaveText("80 % des Portfolios");
     await field(page, "wealth.stocks").blur();
@@ -95,14 +95,14 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await set("wealth.stocks", "1"); await set("wealth.bonds", "2");
     await expect(quote("wealth.stocks")).toHaveText("33 % des Portfolios");
     await expect(quote("wealth.bonds")).toHaveText("67 % des Portfolios");
-    // AK4: beide 0 bzw. leer: keine Quote
+    // AK4: both 0 or empty: no ratio
     await set("wealth.stocks", "0"); await set("wealth.bonds", "0");
     await expect(quote("wealth.stocks")).toHaveText("");
     await expect(quote("wealth.bonds")).toHaveText("");
     await set("wealth.stocks", ""); await set("wealth.bonds", "");
     await expect(quote("wealth.stocks")).toHaveText("");
     await expect(page.locator("#main")).not.toContainText("NaN");
-    // AK6: die Quote steht nicht in der Planung
+    // AK6: the ratio is not stored in the plan
     const example = await (await page.request.post("/api/example_plan", { data: {} })).json();
     const keys = Object.keys(await page.evaluate(() => state.wealth));
     expect(keys.filter(k => !(k in example.wealth))).toEqual([]);
@@ -112,17 +112,17 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
 
   test("#18: Cash-Reserve nur in der Karte «Standard»; Hinweis beim Laden bei anderer Strategie und Reserve ≠ 3", async ({ page }) => {
     const errors = await open(page);
-    // (1) «Vermögen & Anlage» enthält die Reserve nicht mehr, die Karte «Standard» schon
+    // (1) «Vermögen & Anlage» no longer contains the reserve, the card «Standard» does
     await page.evaluate(() => goto("wealth"));
     await expect(page.locator("#main")).toContainText("Aktienquote (Aktien am Portfolio aus Aktien und Obligationen)");
     await expect(page.locator("#main")).not.toContainText("Cash-Reserve (Monate");
     await expect(page.locator('#main [data-path="wealth.reserveMonths"], #main [data-series="wealth.reserveMonths"]')).toHaveCount(0);
     await page.evaluate(() => { state.withdrawal.strategy = "standard"; goto("withdrawal"); });
     await expect(page.locator('#main input[data-path^="wealth.reserveMonths"]').first()).toBeVisible();
-    // andere Strategie: keine Reserve einstellbar
+    // other strategy: no reserve can be set
     await page.evaluate(() => { state.withdrawal.strategy = "guardrails"; goto("withdrawal"); });
     await expect(page.locator('#main input[data-path^="wealth.reserveMonths"]')).toHaveCount(0);
-    // (3) Planung mit Guardrails und Reserve 6: Hinweis beim Laden, einmal
+    // (3) plan with guardrails and reserve 6: notice on loading, once
     const plan = await page.evaluate(() => { const s = JSON.parse(JSON.stringify(state)); s.withdrawal.strategy = "guardrails"; s.wealth.reserveMonths = { mode: "const", value: 6 }; return s; });
     const file = path.join(os.tmpdir(), `fea17-${process.pid}.vplan`);
     fs.writeFileSync(file, JSON.stringify(plan));
@@ -132,15 +132,15 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await expect(page.locator("#askText")).toContainText("3 Monaten");
     await page.locator('#ask button[value="ok"]').click();
     await expect(page.locator("#ask")).toBeHidden();
-    // #74/AK3, AK5: einmal gezeigt, gemerkt in den Einstellungen; erneutes Öffnen zeigt keinen Hinweis
+    // #74/AK3, AK5: shown once, remembered in the settings; opening again shows no notice
     expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(true);
     await page.locator("#fileInput").setInputFiles(file);
     await expect(page.locator("#fileName")).toHaveText(path.basename(file));
-    // #111/AK4: Der Handler leert das Dateifeld erst nach den Hinweisen (showNotes, reserveNotice). Erschiene der Hinweis,
-    // bliebe er beim Dialog stehen und das Feld gefüllt.
+    // #111/AK4: The handler clears the file field only after the notices (showNotes, reserveNotice). If the notice appeared,
+    // it would stay at the dialog and the field would stay filled.
     await expect(page.locator("#fileInput")).toHaveValue("");
     await expect(page.locator("#ask")).toBeHidden();
-    // Standard mit Reserve 6: kein Hinweis; der gespeicherte Wert bleibt
+    // Standard with reserve 6: no notice; the saved value remains
     expect(await page.evaluate(() => reserveDiffers({ withdrawal: { strategy: "standard" }, wealth: { reserveMonths: { mode: "const", value: 6 } } }))).toBe(false);
     expect(await page.evaluate(() => reserveDiffers({ withdrawal: { strategy: "vpw" }, wealth: { reserveMonths: { mode: "const", value: 3 } } }))).toBe(false);
     expect(await page.evaluate(() => reserveDiffers({ withdrawal: { strategy: "vpw" }, wealth: { reserveMonths: { mode: "rows", rows: [{ value: 3 }, { value: 12 }] } } }))).toBe(true);
@@ -150,9 +150,9 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   });
 
   test.describe("#4: Start mit zuletzt geöffneter Planung, Rückfrage beim Beenden (Desktop-App simuliert)", () => {
-    /** Simuliert die Desktop-App: Befehle der Tauri-Schicht werden nachgebildet, alle anderen gehen an den Rechenkern. */
+    /** Simulates the desktop app: commands of the Tauri layer are emulated, all others go to the engine. */
     async function openApp(page, startup, settings = {}) {
-      settings = { disclaimerAccepted: 1, ...settings }; // #61: Haftungsausschluss gilt als bestätigt, ausser ein Test sagt anders
+      settings = { disclaimerAccepted: 1, ...settings }; // #61: The disclaimer counts as confirmed unless a test says otherwise
       await page.addInitScript(([startup, settings]) => {
         window.__calls = [];
         window.__TAURI__ = {
@@ -183,7 +183,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(d).toContainText("VivaPlan ist ein kostenloses Hilfsmittel zur persönlichen Planung.");
       await expect(d).toContainText("Prüfen Sie wichtige Entscheidungen mit einer Fachperson.");
       await expect(d).toContainText("Ich habe den Hinweis gelesen und verstanden.");
-      // Die Bedienung wartet, bis bestätigt ist
+      // The controls wait until it is confirmed
       await expect(page.locator("html")).not.toHaveAttribute("data-ready", "1");
       await expect(ok).toBeDisabled();
       await page.keyboard.press("Escape");
@@ -200,7 +200,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("html")).toHaveAttribute("data-ready", "1");
       const set = await page.evaluate(() => window.__calls.filter(([c]) => c === "settings_set").map(([, a]) => a));
       expect(set).toContainEqual({ key: "disclaimerAccepted", value: 1 });
-      // nicht in der Planung
+      // not in the plan
       expect(JSON.stringify(await page.evaluate(() => state))).not.toContain("disclaimer");
     });
 
@@ -221,7 +221,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(field(page, "project.name")).toHaveValue("Gemerkte Planung");
     });
 
-    /** Planung mit Guardrails und Reserve 6 Monate (betroffen vom Hinweis zur Cash-Reserve). */
+    /** Plan with guardrails and a reserve of 6 months (affected by the notice on the cash reserve). */
     const affected = async page => { const p = await plan(page); p.withdrawal.strategy = "guardrails"; p.wealth.reserveMonths = { mode: "const", value: 6 }; return p; };
 
     test("#74/AK1, AK5: erster Start mit betroffener Planung zeigt den Hinweis einmal und merkt ihn in den Einstellungen", async ({ page }) => {
@@ -235,14 +235,14 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     test("#74/AK2: weiterer Start mit betroffener Planung zeigt keinen Hinweis", async ({ page }) => {
       await openApp(page, { path: "/x/Alt.vplan", plan: await affected(page), notice: null }, { reserveNoticeShown: true });
       await expect(page.locator("#fileName")).toHaveText("Alt.vplan");
-      // #83: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
+      // #83: openApp waits for data-ready; the app sets it only after deciding on the notice
       await expect(page.locator("#ask")).toBeHidden();
     });
 
     test("#74/AK4: nicht betroffene Planung zählt nicht; die erste betroffene zeigt den Hinweis, die nächste nicht", async ({ page }) => {
       await openApp(page, { path: "/x/Standard.vplan", plan: await plan(page), notice: null });
       await expect(page.locator("#fileName")).toHaveText("Standard.vplan");
-      // #83: openApp wartet auf data-ready; das setzt die App erst nach dem Entscheid über den Hinweis
+      // #83: openApp waits for data-ready; the app sets it only after deciding on the notice
       await expect(page.locator("#ask")).toBeHidden();
       expect(await page.evaluate(() => Pref.get("reserveNoticeShown", false))).toBe(false);
       const p = await affected(page);
@@ -250,7 +250,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#askTitle")).toHaveText("Hinweis zur Cash-Reserve");
       await page.locator('#ask button[value="ok"]').click();
       await expect(page.locator("#ask")).toBeHidden();
-      // #83: reserveNotice entscheidet synchron und öffnet den Dialog synchron; kein Warten nötig
+      // #83: reserveNotice decides synchronously and opens the dialog synchronously; no waiting needed
       await page.evaluate(p => { reserveNotice(p); }, p);
       await expect(page.locator("#ask")).toBeHidden();
     });
@@ -269,7 +269,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await field(page, "project.name").fill("Geändert");
       await field(page, "project.name").blur();
       await expect(page.locator("#dirty")).toHaveText("● ungespeichert");
-      // Die Desktop-App meldet den Fehler von write_plan als Text (Tauri-Befehl mit Result<_, String>).
+      // The desktop app reports the error of write_plan as text (Tauri command with Result<_, String>).
       const saveBtn = page.getByRole("button", { name: "Speichern", exact: true });
       await page.evaluate(() => { window.__saveError = "/x/planung.vplan: Permission denied (os error 13)"; });
       await saveBtn.click();
@@ -277,7 +277,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#toast")).toContainText("Permission denied");
       await expect(page.locator("#dirty")).toHaveText("● ungespeichert");
       expect((await calls("set_dirty")).at(-1)[1].dirty).toBe(true);
-      // Gelingt es danach, gilt die Planung als gespeichert.
+      // If it succeeds afterwards, the plan counts as saved.
       await page.evaluate(() => { window.__saveError = null; window.__saveResult = "/x/planung.vplan"; });
       await saveBtn.click();
       await expect(page.locator("#dirty")).toHaveText("");
@@ -286,10 +286,10 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     test("Beenden: ohne Änderungen sofort, mit Änderungen Dialog Speichern/Verwerfen/Abbrechen", async ({ page }) => {
       await openApp(page, { path: null, plan: await plan(page), notice: null });
       const calls = name => page.evaluate(n => window.__calls.filter(c => c[0] === n), name);
-      // ohne Änderungen: direkt beenden
+      // without changes: quit directly
       await page.evaluate(() => { window.__listeners["quit-requested"](); });
       await expect.poll(async () => (await calls("quit_app")).length).toBe(1);
-      // mit Änderungen meldet die Oberfläche den Zustand und fragt
+      // with changes the user interface reports the state and asks
       await field(page, "project.name").fill("Geändert");
       await field(page, "project.name").blur();
       await expect.poll(async () => (await calls("set_dirty")).some(c => c[1].dirty === true)).toBe(true);
@@ -297,7 +297,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#ask")).toBeVisible();
       await expect(page.locator('#ask button[value="ok"]')).toHaveText("Speichern");
       await expect(page.locator('#ask button[value="discard"]')).toBeVisible();
-      // Abbrechen: bleibt offen
+      // Cancel: stays open
       await page.locator('#ask button[value="cancel"]').click();
       await expect(page.locator("#ask")).toBeHidden();
       expect((await calls("quit_app")).length).toBe(1);
@@ -314,7 +314,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await page.locator('#ask button[value="ok"]').click();
       await expect.poll(async () => (await calls("save_plan")).length).toBe(1);
       await expect(page.locator("#ask")).toBeHidden();
-      expect((await calls("quit_app")).length).toBe(0);   // Ortsabfrage abgebrochen: App bleibt offen
+      expect((await calls("quit_app")).length).toBe(0);   // location dialog cancelled: app stays open
       await page.evaluate(() => { window.__saveResult = "/x/gespeichert.vplan"; window.__listeners["quit-requested"](); });
       await page.locator('#ask button[value="ok"]').click();
       await expect.poll(async () => (await calls("quit_app")).length).toBe(1);
@@ -362,9 +362,9 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       return { selects, calls, endShown, expected, tableHasPicker, note, back: variationSel, shown };
     });
     expect(out.selects).toBe(2);
-    expect(out.calls).toEqual(["rerun_paths"]);                 // keine vollständige Neuberechnung
-    expect(out.endShown).toBeCloseTo(out.expected, 4);          // stimmt mit der Szenarientabelle überein
-    expect(out.tableHasPicker).toBe(2);                          // gilt auch in «Jahreswerte»
+    expect(out.calls).toEqual(["rerun_paths"]);                 // no full recomputation
+    expect(out.endShown).toBeCloseTo(out.expected, 4);          // matches the scenario table
+    expect(out.tableHasPicker).toBe(2);                          // also applies in «Jahreswerte»
     expect(out.note).toContain("Planwerte, nicht die gewählte Variation");
     expect(out.back).toBeNull();
     await noErrors(page, errors);
@@ -372,12 +372,12 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
 
   test("#20: Zielauswahl, Ziel 2 «Kein Notverkauf von Immobilien» wird gespeichert, gerechnet und mit Anteil ungeplanter Verkäufe angezeigt", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap");
-    // (1) Auswahl vorhanden, Standard ist Ziel 1, der Plan speichert nichts Zusätzliches
+    // (1) selection present, default is goal 1, the plan stores nothing additional
     await expect(page.locator("#opt-goal")).toHaveValue("consumption");
     await expect(page.locator("#opt-weightMedian")).toBeVisible();
     expect(await page.evaluate(() => state.optimization?.goal)).toBeUndefined();
     await expect(page.locator("#opt-goal option[value=keepProperty]")).toHaveText("2 · Kein Notverkauf von Immobilien");
-    // Ziel 2 wählen: Mindestkonsum erscheint, Konsumgewichte entfallen, Wert steht in der Planung
+    // Select goal 2: minimum consumption appears, consumption weights disappear, value is stored in the plan
     await page.locator("#opt-goal").selectOption("keepProperty");
     await expect(page.locator("#opt-minConsumption")).toBeVisible();
     await expect(page.locator("#opt-weightMedian")).toHaveCount(0);
@@ -390,11 +390,11 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await expect(page.locator("html")).toHaveAttribute("data-job", "off");
     await expect(page.locator("#main th", { hasText: "Ungeplanter Verkauf" })).toBeVisible();
     await expect(page.locator("#main h3", { hasText: "Ziel 2" })).toBeVisible();
-    // Reihenfolge: Anteil ungeplanter Verkäufe aufsteigend (zulässige Strategien)
+    // Order: share of unplanned sales ascending (admissible strategies)
     const shares = await page.evaluate(() => lastOpt.report.outcomes.filter(x => x.feasible).map(x => x.validated.emergencyShare));
     expect([...shares].sort((a, b) => a - b)).toEqual(shares);
     expect(await page.evaluate(() => lastOpt.report.goal)).toBe("keepProperty");
-    // (5) ohne Immobilien ist Ziel 2 nicht wählbar
+    // (5) without real estate goal 2 cannot be selected
     await page.evaluate(() => { state.realestate.properties = []; renderSection(); });
     await expect(page.locator('#opt-goal option[value="keepProperty"]')).toBeDisabled();
     await noErrors(page, errors);
@@ -402,7 +402,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
 
   test("#29: Grundstückgewinnsteuer ist Pflicht bei Immobilie im Besitz oder mit geplantem Kauf, nicht bei Miete; Start blockiert", async ({ page }) => {
     const errors = await open(page);
-    // Beispielplanung mit Besitz-Immobilie, aber ohne Regeln: Fehler im Abschnitt Steuern, Start blockiert
+    // Example plan with an owned property but without rules: error in the tax section, start blocked
     const res = await page.evaluate(async () => {
       delete state.taxes.propertyGain;
       const blocked = await blockedByErrors();
@@ -419,7 +419,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     expect(res.msg).toContain("Grundstückgewinnsteuer fehlt");
     expect(res.rentOnly).toBe(0);
     expect(res.none).toBe(0);
-    // Mit Vorlage ist die Pflicht erfüllt; die Karte zeigt ohne Regeln den Hinweis «Pflicht»
+    // With a template the requirement is met; without rules the card shows the notice «Pflicht»
     await page.reload(); await page.waitForSelector("html[data-ready='1']");
     await page.evaluate(() => { delete state.taxes.propertyGain; goto("taxes"); });
     await expect(page.locator("#main .errcard")).toContainText("Pflicht");
@@ -428,7 +428,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  // Kriterien: #32/AK1 #32/AK2 #32/AK3 #32/AK4 #32/AK5 #32/AK6
+  // Criteria: #32/AK1 #32/AK2 #32/AK3 #32/AK4 #32/AK5 #32/AK6
   test("#32: Immobilien mit gleicher Feldreihenfolge bei Besitz und Kauf geplant, Marktwert in der Kopfzeile", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
@@ -439,13 +439,13 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     const prop = page.locator("#main .prop").first();
     const labels = async () => (await prop.locator(".pgrid > label.field > span:first-child").allInnerTexts()).map(t => t.replace(/\s*ⓘ$/, ""));
     const slots = () => prop.locator(".pgrid > *").evaluateAll(els => { const g = els[0].parentElement.getBoundingClientRect(); return els.map(e => Math.round(e.getBoundingClientRect().left - g.left) + "," + (e.getBoundingClientRect().top - g.top > 40 ? "unten" : "oben")); });
-    // Besitz: Marktwert in der Kopfzeile, Raster Kaufdatum · Kaufpreis (bezahlt) · Verkauf ab · Nebenkosten
+    // Owned: market value in the header row, grid purchase date · purchase price (paid) · sale from · additional costs
     await expect(prop.locator(".phead")).toContainText("Marktwert per Simulationsstart");
     await expect(prop.locator(".pgrid")).not.toContainText("Marktwert");
     expect(await labels()).toEqual(["Kaufdatum", "Kaufpreis (bezahlt)", "Verkauf ab", "Nebenkosten / Monat"]);
     const owned = await slots();
     const before = await page.evaluate(() => JSON.stringify(state.realestate.properties[0]));
-    // Statuswechsel: gleiche Plätze, Marktwert fehlt in der Kopfzeile, erfasste Werte bleiben
+    // Status change: same places, market value missing in the header row, entered values remain
     await prop.locator('[data-action="pstat"][data-v="planned"]').click();
     await expect(prop.locator(".phead")).not.toContainText("Marktwert");
     expect(await labels()).toEqual(["Kauf ab", "Kaufpreis", "Verkauf ab", "Nebenkosten / Monat"]);
@@ -456,7 +456,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     expect(await labels()).toEqual(["Kaufdatum", "Kaufpreis (bezahlt)", "Verkauf ab", "Nebenkosten / Monat"]);
     expect(await page.evaluate(() => JSON.stringify(state.realestate.properties[0]))).toContain('"worth":500000');
     expect(before).toContain('"worth":500000');
-    // Schmales Fenster: Marktwert unter dem Namen
+    // Narrow window: market value below the name
     const rel = () => prop.locator(".phead").evaluate(h => { const w = h.querySelector(".pworth").getBoundingClientRect(), n = h.querySelector(".inp").getBoundingClientRect(); return { below: w.top >= n.bottom - 2, same: Math.abs(w.top - n.top) < 40 }; });
     expect(await rel()).toMatchObject({ same: true });
     await page.setViewportSize({ width: 420, height: 800 });
@@ -467,21 +467,21 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   test("#28: Bei «Kauf geplant» gibt es «Verkauf ab» (Vorgabe nie); Verkauf vor oder im Kaufmonat ist ein Fehler am Feld", async ({ page }) => {
     const errors = await open(page, "realestate");
     const i = await page.evaluate(() => { state.realestate.properties.push({ id: "zz", name: "Testobjekt", status: "planned", buy: "2030-06", price: 400000, fixCosts: 0, mortgage: newMortgage() }); renderSection(); return state.realestate.properties.length - 1; });
-    // Feld mit Vorgabe «nie»
+    // Field with default «nie»
     const sel = page.locator(`select[data-path="realestate.properties.${i}.sell"]`);
     await expect(sel).toBeVisible();
     await expect(sel).toHaveValue("never");
     await expect(page.locator(`.prop:has(input[data-path="realestate.properties.${i}.name"]) label.field span`, { hasText: "Verkauf ab" })).toBeVisible();
-    // Datum wählbar; Verkauf vor dem Kauf: Fehler am Feld, Start blockiert
+    // Date selectable; sale before the purchase: error at the field, start blocked
     await page.evaluate(i => { state.realestate.properties[i].sell = "2030-03"; }, i);
     const errs = await page.evaluate(async i => (await planErrors()).filter(e => e.field === `realestate.properties.${i}.sell`), i);
     expect(errs).toHaveLength(1);
     expect(errs[0].message).toContain("nach «Kauf ab»");
     expect(await page.evaluate(() => blockedByErrors())).toBe(true);
-    // Verkauf nach dem Kauf: kein Fehler am Feld
+    // Sale after the purchase: no error at the field
     await page.evaluate(i => { state.realestate.properties[i].sell = "2035-03"; }, i);
     expect(await page.evaluate(async i => (await planErrors()).filter(e => e.field === `realestate.properties.${i}.sell`).length, i)).toBe(0);
-    // Wechsel auf «Besitz» behält den erfassten Verkauf
+    // Switching to «Besitz» keeps the entered sale
     await page.evaluate(i => ACTIONS.pstat({ i, v: "owned" }), i);
     expect(await page.evaluate(i => state.realestate.properties[i].sell, i)).toBe("2035-03");
     await noErrors(page, errors);

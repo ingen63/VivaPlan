@@ -1,4 +1,4 @@
-// Oberflächentests von VivaPlan im Browser: Ergebnisse und Darstellung. Jeder Test startet mit der Beispielplanung.
+// User interface tests of VivaPlan in the browser: results and display. Every test starts with the example plan.
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
@@ -15,7 +15,7 @@ test.describe("Ergebnisse", () => {
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     const last = page.locator("#resultsBody table.tbl tr").last();
     const total = parseNum(await last.locator("td").nth(5).textContent());
-    // Kennzahl in Mio oder k gerundet; Tabelle in CHF – Rundung prüfen
+    // Key figure rounded in Mio or k; table in CHF – check the rounding
     const shown = end.includes("Mio") ? parseFloat(end.replace(",", ".")) * 1e6 : parseNum(end) * 1e3;
     expect(Number.isFinite(shown), `Kennzahl «${end}»`).toBe(true);
     expect(Math.abs(total - shown) / Math.max(1, shown)).toBeLessThan(0.006);
@@ -52,7 +52,7 @@ test.describe("Ergebnisse", () => {
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     const header = page.locator("#resultsBody table.yt tr").first();
     await expect(header).toContainText("Inflation");
-    // #8: Steuerspalten sind standardmässig eingeklappt, die Schaltfläche blendet sie ein und aus
+    // #8: Tax columns are collapsed by default, the button shows and hides them
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(0);
     await expect(header).not.toContainText("Steuer");
     await page.locator('button[data-action="tax-cols"]').click();
@@ -70,7 +70,7 @@ test.describe("Ergebnisse", () => {
   test("Einzelne Läufe: Auswahl bleibt stehen, nur der Inhalt scrollt; Variation statt Pfadname", async ({ page }) => {
     const errors = await open(page, "results/bootstrap/runs");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
-    // Auswahl «Lauf wählen» liegt ausserhalb des scrollenden Bereichs
+    // Selection «Lauf wählen» is outside the scrolling area
     await expect(page.locator("#resultsPick")).toContainText("Lauf wählen");
     await expect(page.locator("#resultsBody")).not.toContainText("Lauf wählen");
     const ov = await page.evaluate(() => ["#results", "#resultsPick", "#resultsBody"].map(s => getComputedStyle(document.querySelector(s)).overflowY));
@@ -79,9 +79,9 @@ test.describe("Ergebnisse", () => {
     const pick = await page.locator("#resultsPick").boundingBox();
     await page.locator("#resultsBody").evaluate(el => { el.scrollTop = 1200; });
     expect((await page.locator("#resultsPick").boundingBox()).y).toBe(pick.y);
-    // kein Name des Zufallspfads
+    // no name of the random path
     await expect(page.locator("#results")).not.toContainText(/Bootstrap-Pfad|Zufallspfad/);
-    // Perzentil und Wert der Variation stehen in der Auswahl
+    // Percentile and value of the variation are in the selection
     await page.evaluate(async () => {
       state.returns.bootstrap.paths = 200;
       state.scenarios.sweeps = [{ param: "wealth.stockShare", from: 0.3, to: 0.6, step: 0.1 }];
@@ -99,7 +99,7 @@ test.describe("Ergebnisse", () => {
       state.returns.bootstrap.paths = 300;
       state.flows.spending = JSON.parse(JSON.stringify(state.flows.spending));
       const rows = state.flows.spending.rows ?? [];
-      // so knapp, dass schlechte Läufe aufgebraucht werden: Lebenshaltung ohne die Wohnkosten (1'700 im Beispiel, #53) × 1.6
+      // so tight that bad runs are depleted: living costs without the housing costs (1'700 in the example, #53) × 1.6
       rows.forEach(r => { r.value = (r.value - 1700) * 1.6 + 1700; });
       state.scenarios.sweeps = [{ param: "flows.spendingFactor", from: 0.5, to: 1.1, step: 0.1 }];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
@@ -111,9 +111,9 @@ test.describe("Ergebnisse", () => {
     const row = n => out.cells.find(c => c[0] === `${n}.`);
     for (const [p, text] of out.expected) {
       expect(text).toMatch(/^Ausgaben-Faktor (≈ |< |≥ )?\d+(\.\d+)? %$/);
-      expect(row(p).at(-1)).toBe(text); // Spalte «Variation» ist die letzte
+      expect(row(p).at(-1)).toBe(text); // Column «Variation» is the last one
     }
-    // Die Anzeige ist nicht mehr für alle Perzentile derselbe Wert, und nicht der Wert der Planung (100 %)
+    // The display is no longer the same value for all percentiles, and not the value of the plan (100 %)
     const shown = out.expected.map(([, t]) => t);
     expect(new Set(shown).size).toBeGreaterThan(1);
     expect(out.one.depleted, "1. Perzentil ist in der Basisplanung aufgebraucht").toBeTruthy();
@@ -129,7 +129,7 @@ test.describe("Ergebnisse", () => {
       state.scenarios.sweeps = [];
       setP("flows.income", { mode: "const", value: 6000 });
       setP("flows.spending", { mode: "const", value: 0 });
-      state.flows.spendingIncludesHousing = false; // Wohnkosten zusätzlich (#53)
+      state.flows.spendingIncludesHousing = false; // housing costs in addition (#53)
       state.wealth.cash = 2000000;
       state.realestate.properties = [{ id: "h", name: "Haus", status: "owned", price: 500000, worth: 800000, sell: "never", fixCosts: 0,
         inflation: false, mortgage: { tranches: [{ name: "T", amount: 400000, start: "2026-03", after: "renew", periods: [{ type: "fixed", term: 1, rate: 0.01 }] }] } }];
@@ -144,10 +144,10 @@ test.describe("Ergebnisse", () => {
     });
     expect(out.single).toContain("Immobilien");
     expect(out.single).toContain("Hypothekenerneuerung");
-    expect(out.single).not.toContain("Hypothekenerneuerungen"); // Abschnitt heisst «Immobilien»
+    expect(out.single).not.toContain("Hypothekenerneuerungen"); // section is called «Immobilien»
     expect(out.single).toMatch(/nicht gegeben/);
     expect(out.single).toContain("Einmalrückzahlung Hypothek Haus");
-    // #23: keine Einmalzahlungen mehr in der Übersicht, Kennzahl «Notverkäufe» bleibt, Spalte «Immobilienverkäufe»
+    // #23: no more lump-sum payments in the overview, key figure «Notverkäufe» remains, column «Immobilienverkäufe»
     expect(out.batch).not.toContain("Einmalzahlungen");
     expect(out.batch).toContain("Notverkäufe");
     expect(out.batch).toContain("Immobilienverkäufe");
@@ -163,13 +163,13 @@ test.describe("Ergebnisse", () => {
     const errors = await open(page, "results/charts/nosweep");
     const r = await page.evaluate(() => {
       const total = endM() - startM(), out = { total };
-      resultZoom = null; stepZoom(5); out.fresh = { ...resultZoom };               // Mitte der ganzen Laufzeit
-      setCustomZoom(10 * 12, 20 * 12); out.custom = { ...resultZoom };              // Mausauswahl 10–20 J.
-      stepZoom(5); out.centered = { ...resultZoom };                                // 5 J. um die Mitte (15 J.)
+      resultZoom = null; stepZoom(5); out.fresh = { ...resultZoom };               // middle of the whole period
+      setCustomZoom(10 * 12, 20 * 12); out.custom = { ...resultZoom };              // mouse selection 10–20 years
+      stepZoom(5); out.centered = { ...resultZoom };                                // 5 years around the middle (15 years)
       stepZoom(10); out.ten = { ...resultZoom };
-      setCustomZoom(12, 36); stepZoom(5); out.nearStart = { ...resultZoom };        // Mitte 2 J. → verschoben statt abgeschnitten
+      setCustomZoom(12, 36); stepZoom(5); out.nearStart = { ...resultZoom };        // middle 2 years → shifted instead of cut off
       setCustomZoom(total - 36, total - 12); stepZoom(5); out.nearEnd = { ...resultZoom };
-      stepZoom(100); out.tooLong = resultZoom;                                      // länger als die Simulation → alles
+      stepZoom(100); out.tooLong = resultZoom;                                      // longer than the simulation → everything
       stepZoom(2); stepZoom(0); out.all = resultZoom;
       return out;
     });
@@ -190,16 +190,16 @@ test.describe("Ergebnisse", () => {
     const bars = () => page.locator("#resultsBody .minizoom");
     const n = await bars().count();
     expect(n).toBeGreaterThanOrEqual(5);
-    // Ausgangslage: «Alles» überall aktiv
+    // Starting point: «Alles» active everywhere
     expect(await page.locator("#resultsBody .minizoom button.on").allTextContents()).toEqual(Array(n).fill("Alles"));
     await page.locator("#rc-comp").scrollIntoViewIfNeeded();
     const box = await page.locator("#rc-comp").boundingBox();
     const y = box.y + box.height / 2;
     const before = await page.evaluate(() => document.querySelector("#rc-comp path").getAttribute("d").length);
-    // zu kleine Auswahl (ein Klick) wird ignoriert
+    // a selection that is too small (one click) is ignored
     await page.mouse.move(box.x + box.width * 0.5, y); await page.mouse.down(); await page.mouse.move(box.x + box.width * 0.5 + 3, y); await page.mouse.up();
     expect(await page.evaluate(() => resultZoom)).toBeNull();
-    // Bereich aufziehen: während des Ziehens ist er hervorgehoben
+    // drag a range: it is highlighted while dragging
     await page.mouse.move(box.x + box.width * 0.30, y);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width * 0.45, y, { steps: 5 });
@@ -212,25 +212,25 @@ test.describe("Ergebnisse", () => {
     expect(z.years).toBeNull();
     expect(z.to - z.from).toBeGreaterThan(12);
     expect(z.to - z.from).toBeLessThan(z.total * 0.45);
-    // alle Grafiken zeigen jetzt «benutzerdefiniert», keine Schaltfläche aktiv
+    // all charts now show «benutzerdefiniert», no button active
     await expect(page.locator("#resultsBody .minizoom button.on")).toHaveCount(0);
     await expect(page.locator("#resultsBody .minizoom span").first()).toContainText("Benutzerdefiniert");
     const after = await page.evaluate(() => document.querySelector("#rc-comp path").getAttribute("d").length);
     expect(after).toBeLessThan(before);
-    // Registerkarten: Übersicht zeigt denselben Zoom, Wechsel behält ihn
+    // Tabs: overview shows the same zoom, switching keeps it
     await page.getByRole("button", { name: "Übersicht" }).click();
     expect(await page.evaluate(() => resultZoom.from)).toBe(z.from);
     await expect(page.locator("#resultsBody .minizoom span").first()).toContainText("Benutzerdefiniert");
     await page.getByRole("button", { name: "Grafiken" }).click();
     expect(await page.evaluate(() => resultZoom.to)).toBe(z.to);
-    // «5 J.» danach: 5 Jahre um die Mitte des bisherigen Bereichs
+    // «5 J.» afterwards: 5 years around the middle of the previous range
     await page.locator('#resultsBody button[data-action="res-zoom"][data-years="5"]').first().click();
     const five = await page.evaluate(() => ({ ...resultZoom }));
     const mid = (z.from + z.to) / 2;
     expect(five.to - five.from).toBe(60);
     expect(Math.abs((five.from + five.to) / 2 - mid)).toBeLessThanOrEqual(1);
     expect(await page.locator("#resultsBody .minizoom button.on").allTextContents()).toEqual(Array(n).fill("5 J."));
-    // Balkendiagramm: mehrere Jahre aufziehen zoomt ebenfalls
+    // Bar chart: dragging over several years zooms as well
     await page.locator('#resultsBody button[data-action="res-zoom"][data-years="0"]').first().click();
     await page.locator("#rc-flows").scrollIntoViewIfNeeded();
     const fb = await page.locator("#rc-flows").boundingBox();
@@ -242,7 +242,7 @@ test.describe("Ergebnisse", () => {
     await page.locator('#resultsBody button[data-action="res-zoom"][data-years="0"]').first().click();
     expect(await page.evaluate(() => resultZoom)).toBeNull();
     expect(await page.locator("#resultsBody .minizoom button.on").allTextContents()).toEqual(Array(n).fill("Alles"));
-    // Editor-Minigrafiken: eigener Zoom, nicht gekoppelt
+    // Editor mini charts: own zoom, not linked
     await page.locator('#resultsBody button[data-action="res-zoom"][data-years="10"]').first().click();
     await page.keyboard.press("Escape");
     await expect(page.locator("#results")).toBeHidden();
@@ -286,9 +286,9 @@ test.describe("Ergebnisse", () => {
     expect(out.pick).toContain("Optimum:");
     expect(out.pick).toContain("Ausgaben-Faktor");
     expect(out.t50).toContain("Ausgaben-Faktor 50 %");
-    // Der Lauf der Stufe 50 % ist derselbe wie in den Szenarien (kein Näherungswert)
+    // The run of level 50 % is the same as in the scenarios (no approximation)
     expect(Math.abs(out.end50 - out.scen50)).toBeLessThan(1);
-    expect(out.end50).toBeGreaterThan(out.planEnd); // weniger Ausgaben → mehr Endvermögen
+    expect(out.end50).toBeGreaterThan(out.planEnd); // less spending → more final wealth
     expect(out.back).toBe(out.planEnd);
     expect(out.optText).toMatch(/^Ausgaben-Faktor /);
     await noErrors(page, errors);
@@ -310,7 +310,7 @@ test.describe("Ergebnisse", () => {
     expect(out.single.pick).toBe("");
     expect(out.single.title).toBe("Einzellauf · Fixe Renditen");
     expect(out.hasBatch).toBe(true);
-    expect(out.mcPick).toBe(""); // bei Monte-Carlo keine Stufenauswahl
+    expect(out.mcPick).toBe(""); // no level selection with Monte Carlo
     expect(out.table).toMatch(/Variation/);
     expect(out.table).toMatch(/Ausgaben-Faktor (≈ |< |≥ )?\d/);
     await noErrors(page, errors);
@@ -320,9 +320,9 @@ test.describe("Ergebnisse", () => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
-      state.taxes.propertyGain = { brackets: [], reduction: 0 };   // Pflicht bei Immobilien; Satz 0 %, damit die Beträge unverändert bleiben
+      state.taxes.propertyGain = { brackets: [], reduction: 0 };   // required with real estate; rate 0 % so that the amounts stay unchanged
       setP("flows.income", { mode: "const", value: 6000 }); setP("flows.spending", { mode: "const", value: 0 });
-      state.flows.spendingIncludesHousing = false; // Wohnkosten zusätzlich (#53)
+      state.flows.spendingIncludesHousing = false; // housing costs in addition (#53)
       state.wealth.cash = 2000000;
       const house = (extra = {}) => ({ id: "h", name: "Haus", status: "owned", price: 500000, worth: 800000, sell: "never", fixCosts: 0, inflation: false,
         mortgage: { tranches: [{ name: "T", amount: 400000, start: "2026-03", after: "renew", periods: [{ type: "fixed", term: 1, rate: 0.01 }] }] }, ...extra });
@@ -343,25 +343,25 @@ test.describe("Ergebnisse", () => {
       res.emergency = await show([house()]);
       return res;
     });
-    // ohne Immobilien
+    // without real estate
     expect(out.none.text).toContain("Keine Immobilienereignisse");
-    // Verkauf: Erlös, abgelöste Hypothek, Nettoerlös
+    // Sale: proceeds, repaid mortgage, net proceeds
     expect(out.sale.text).toContain("Verkauf");
     expect(out.sale.text).toMatch(/Verkaufserlös\s+800'000/);
     expect(out.sale.text).toMatch(/abgelöste Hypothek\s+400'000/);
     expect(out.sale.text).toMatch(/Nettoerlös\s+400'000/);
     expect(out.sale.text).toContain("Entnahmestrategie angewendet (kein Folgekauf)");
-    // Kauf: Preis, Eigenmittel, Hypothek
+    // Purchase: price, own funds, mortgage
     expect(out.buy.text).toContain("Kauf");
     expect(out.buy.text).toMatch(/Kaufpreis\s+600'000/);
     expect(out.buy.text).toMatch(/Eigenmittel\s+300'000/);
     expect(out.buy.text).toMatch(/Hypothek\s+300'000/);
-    // Erneuerung mit Einmalzahlung: vorher/nachher, Zahlung, Zinssatz
+    // Renewal with lump-sum payment: before/after, payment, interest rate
     expect(out.lump.text).toContain("Hypothekenerneuerung");
     expect(out.lump.text).toMatch(/Hypothek vorher \/ nachher\s+400'000 \/ 320'000/);
     expect(out.lump.text).toMatch(/Einmalzahlung \(Tragbarkeit\)\s+80'000/);
     expect(out.lump.text).toMatch(/Zinssatz\s+1 %/);
-    // Notverkauf mit Grund, in zeitlicher Reihenfolge nach der nicht erfolgten Erneuerung
+    // Emergency sale with reason, in chronological order after the renewal that did not take place
     expect(out.emergency.text).toContain("Notverkauf");
     expect(out.emergency.text).toContain("Vermögen < 0");
     const kinds = out.emergency.events.map(e => e.kind);
@@ -405,7 +405,7 @@ test.describe("Ergebnisse", () => {
       const r = lastRun.single.bucketRefills;
       return { cards, n: r.length, first: r[0], jan: r.find(x => x.trigger === "Januar") };
     });
-    // #9: keine eigene Karte; #10: keine 3-Topf-Buchungen in der Ereignisliste
+    // #9: no card of its own; #10: no 3-bucket bookings in the event list
     expect(out.cards.some(t => t.startsWith("3-Topf-Strategie"))).toBe(false);
     await expect(page.locator("#resultsBody .evlist")).not.toContainText("Topf 1");
     await page.getByRole("button", { name: "Jahreswerte" }).click();
@@ -441,7 +441,7 @@ test.describe("Ergebnisse", () => {
     await expect(page.locator("button[data-action='rtab'][data-tab='table']")).toBeVisible();
     await page.locator("button[data-action='rtab'][data-tab='table']").click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
-    // Speicher nicht lesbar: eingeklappt
+    // storage not readable: collapsed
     await page.evaluate(() => localStorage.setItem("rp.settings", "kein json"));
     await page.reload();
     await page.waitForSelector("html[data-ready='1']");
@@ -457,17 +457,17 @@ test.describe("Ergebnisse", () => {
     await expect(body).toContainText("Haushalt");
     for (const t of ["Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Steuerannahmen", "Variationen"]) await expect(body).toContainText(t);
     await expect(body).toContainText("Geburt");
-    await expect(body).not.toContainText("Person A"); // Namen gehören nicht dazu
+    await expect(body).not.toContainText("Person A"); // names are not part of it
     await expect(body.locator("input, select, textarea")).toHaveCount(0);
     const text = async () => (await body.innerText()).replace(/^ⓘ\n/gm, "");
     const before = await text();
     expect(before).not.toContain("[object");
-    // Editor ändern: das berechnete Ergebnis behält seine Parameter
+    // Change the editor: the computed result keeps its parameters
     await page.evaluate(() => { state.wealth.cash += 12345; state.taxes.multiplier = 7; });
     await page.locator("button[data-action='rtab'][data-tab='overview']").click();
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
     expect(await text()).toBe(before);
-    // Je Editorabschnitt ein Parameter ändern: nur dieser Abschnitt der Zusammenfassung ändert sich
+    // Change one parameter per editor section: only this section of the summary changes
     const diffs = await page.evaluate(() => {
       const base = JSON.parse(JSON.stringify(lastRunPlan)), sum = p => Object.fromEntries(paramSections(p).map(([t, r]) => [t, JSON.stringify(r)]));
       const mut = {
@@ -487,7 +487,7 @@ test.describe("Ergebnisse", () => {
       return out;
     });
     for (const [k, changed] of Object.entries(diffs)) expect(changed, k).toEqual([k]);
-    // Ergebnis ohne gespeicherte Planung
+    // Result without a saved plan
     await page.evaluate(() => { lastRunPlan = null; renderResults(lastRun); });
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
     await expect(body).toContainText("Nicht verfügbar");
@@ -571,7 +571,7 @@ test.describe("Ergebnisse", () => {
   test("#21: Variationen ohne feste Grenze (technisch 1'000'000), Warnung vor langen Berechnungen", async ({ page }) => {
     const errors = await open(page, "scenarios");
     const run = async sweeps => {
-      // #83: renderSection und renderDerived zeichnen synchron; kein Warten nötig
+      // #83: renderSection and renderDerived draw synchronously; no waiting needed
       await page.evaluate(s => { state.scenarios.sweeps = s; renderSection(); renderDerived(); }, sweeps);
       return page.evaluate(async () => {
         const out = await Engine.call("validate", { plan: state });
@@ -579,16 +579,16 @@ test.describe("Ergebnisse", () => {
       });
     };
     const sw = (param, from, to, step = 0.1) => ({ param, from, to, step });
-    // 1'100 Kombinationen (früher abgelehnt): erlaubt, keine Grenzmeldung
+    // 1'100 combinations (rejected earlier): allowed, no limit message
     const many = await run([sw("wealth.stockShare", 0, 1), sw("pension.pk.lumpsum", 0, 0.9), sw("flows.spendingFactor", 1, 1.9)]);
     expect(many.text).not.toContain("Grenze");
     expect(many.text).toContain("1'100");
     expect(many.errors.filter(e => e.includes("Kombinationen"))).toEqual([]);
-    // über 1'000'000: technische Meldung, ohne die App zu belasten
+    // above 1'000'000: technical message, without burdening the app
     const over = await run([sw("wealth.stockShare", 0, 1, 0.01), sw("pension.pk.lumpsum", 0, 0.99, 0.01), sw("flows.spendingFactor", 1, 1.99, 0.01)]);
     expect(over.text).toContain("technische Grenze");
     expect(over.errors).toContain("Die Variationen ergeben 1'010'000 Kombinationen; höchstens 1'000'000 sind technisch möglich.");
-    // Warnung ab einer Minute geschätzter Rechenzeit
+    // Warning from one minute of estimated computing time
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
     const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); }, sec);
     await fake(90);
@@ -603,7 +603,7 @@ test.describe("Ergebnisse", () => {
     await page.locator('button[data-action="run"]').click();
     await page.locator("#ask button[value='ok']").click();
     await expect(page.locator("#results")).toBeVisible();
-    // 30 s: keine Rückfrage
+    // 30 s: no question
     await page.evaluate(() => showResults(false));
     await fake(30);
     await page.locator('button[data-action="run"]').click();
@@ -623,7 +623,7 @@ test.describe("Ergebnisse", () => {
     const text = await page.locator("#results").innerText();
     expect(text).not.toMatch(/Simulationen/);
     await expect(page.locator("#resultsBody")).toContainText("Noch kein Ergebnis");
-    // «Simulation starten» bleibt die Aktion
+    // «Simulation starten» remains the action
     await expect(page.locator('button[data-action="run"]')).toContainText("Simulation starten");
     await noErrors(page, errors);
   });
@@ -659,7 +659,7 @@ test.describe("Ergebnisse", () => {
     const fan = (await dashes()).find(l => l.text.includes("Schlechtester Wert"));
     expect(fan.text).toContain("1. und 99. Perzentil");
     expect(fan.dashed).toBe(1);
-    expect(fan.solid).toBe(2); // Median und schlechtester Wert
+    expect(fan.solid).toBe(2); // median and worst value
     await page.getByRole("button", { name: "Grafiken" }).click();
     await expect(page.locator("#mc-end path, #mc-end rect").first()).toBeAttached();
     const all = await dashes();
@@ -667,7 +667,7 @@ test.describe("Ergebnisse", () => {
     expect({ ...fan2, text: "" }).toEqual({ ...fan, text: "" });
     const end = all.find(l => l.text.includes("95. und 99. Perzentil"));
     expect(end.dashed).toBe(1);
-    // Die senkrechten gestrichelten Linien im Histogramm: fünf, jede mit Legendeneintrag (ein Eintrag für die Linienart)
+    // The vertical dashed lines in the histogram: five, each with a legend entry (one entry for the line style)
     expect(await page.locator("#mc-end line[stroke-dasharray]").count()).toBe(5);
     await expect(page.locator("#resultsBody")).not.toContainText("Gestrichelt: 1., 5., 50.");
     await noErrors(page, errors);
@@ -682,7 +682,7 @@ test.describe("Ergebnisse", () => {
     const rows = page.locator("#resultsBody table.tbl tr", { hasText: "." });
     const labels = await page.locator("#resultsBody table.tbl td.l").allTextContents();
     for (const p of ["Schlechtester Lauf", "5.", "50.", "95."]) expect(labels).toContain(p);
-    // Perzentil-Reihenfolge der Endvermögen
+    // Percentile order of the final wealth
     const vals = [];
     for (const p of ["5.", "50.", "95."]) {
       const row = page.locator("#resultsBody table.tbl tr", { has: page.locator(`td.l:text-is("${p}")`) });
