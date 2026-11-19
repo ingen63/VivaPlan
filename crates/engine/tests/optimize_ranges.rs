@@ -1,4 +1,4 @@
-//! Bandbreiten und fixe Parameter der Optimierung.
+//! Ranges and fixed parameters of the optimization.
 
 use std::path::Path;
 
@@ -56,7 +56,7 @@ fn value(o: &engine::optimize::Outcome, key: &str) -> f64 {
 
 #[test]
 fn fixed_parameters_keep_the_plan_value_and_varied_ones_stay_in_their_range() {
-    // Beispiel des Auftrags: Topf 1 fix, Topf 2 von 0 bis 2 Jahre, Nachfüllschwelle von -30 % bis +10 %.
+    // Example of the request: bucket 1 fixed, bucket 2 from 0 to 2 years, refill threshold from -30 % to +10 %.
     let r = ranges(
         "three_buckets",
         &[
@@ -73,7 +73,7 @@ fn fixed_parameters_keep_the_plan_value_and_varied_ones_stay_in_their_range() {
     assert!((0.0..=2.0).contains(&bond), "{bond}");
     let thr = value(o, "refillThreshold");
     assert!((-0.3..=0.1).contains(&thr), "{thr}");
-    // Die Übernahme in die Planung enthält den fixen Wert unverändert.
+    // The takeover into the plan contains the fixed value unchanged.
     assert_eq!(o.patch["withdrawal"]["buckets"]["cashYears"], json!(3.0));
 }
 
@@ -108,7 +108,7 @@ fn invalid_ranges_are_reported() {
         .unwrap_err()
         .to_string();
     assert!(e.contains("muss zwischen"), "{e}");
-    // Die Prüfung der Planung meldet es ebenfalls, bevor etwas gerechnet wird.
+    // The validation of the plan also reports it before anything is computed.
     let mut p = plan();
     p["optimization"] = json!({ "ranges": { "guardrails": { "initialRate": { "lo": 0.08, "hi": 0.02 } } } });
     let issues = api::validate(&p);
@@ -134,7 +134,7 @@ fn ranges_are_saved_with_the_plan_and_reach_the_request() {
         range(None, Some(0.0), Some(2.0))
     );
     assert_eq!(req.ranges["three_buckets"]["cashYears"].fixed, Some(true));
-    // ohne Bandbreiten wird nichts geschrieben
+    // without ranges nothing is written
     let plain = engine::model::OptimizerSettings::default();
     assert!(!serde_json::to_string(&plain).unwrap().contains("ranges"));
 }
@@ -148,7 +148,7 @@ fn catalog_lists_every_parameter_with_unit_and_plan_value() {
     assert_eq!((cash.unit, cash.current, cash.percent), ("Jahre", Some(3.0), false));
     let refill = b.params.iter().find(|p| p.key == "refillThreshold").unwrap();
     assert_eq!((refill.unit, refill.percent), ("%", true));
-    // Ober- und Untergrenze der Lebenshaltung sind wählbar, aber ohne eigene Einstellung fix
+    // Ceiling and floor of the living costs can be chosen, but are fixed without a setting of their own
     let g = c.iter().find(|s| s.key == "guardrails").unwrap();
     assert!(g
         .params
@@ -156,7 +156,7 @@ fn catalog_lists_every_parameter_with_unit_and_plan_value() {
         .filter(|p| p.fixed)
         .map(|p| p.key)
         .eq(["floor", "ceiling"]));
-    // jeder Parameter hat eine Standard-Bandbreite innerhalb der äussersten Grenzen
+    // every parameter has a default range within the outermost limits
     for s in &c {
         for p in &s.params {
             assert!(p.min <= p.lo && p.lo < p.hi && p.hi <= p.max, "{}/{}", s.key, p.key);
@@ -166,7 +166,7 @@ fn catalog_lists_every_parameter_with_unit_and_plan_value() {
 
 #[test]
 fn issue_18_ak4_only_standard_offers_the_reserve_to_the_optimisation() {
-    // #18/AK4: Die Reserve (reserveMonths) ist nur bei «Standard» ein Parameter der Optimierung.
+    // #18/AK4: The reserve (reserveMonths) is a parameter of the optimization only with «Standard».
     for s in catalog(&plan()) {
         let offers = s.params.iter().any(|p| p.key == "reserveMonths");
         assert_eq!(offers, s.key == "standard", "{}", s.key);
@@ -175,7 +175,7 @@ fn issue_18_ak4_only_standard_offers_the_reserve_to_the_optimisation() {
 
 #[test]
 fn issue_6_ak11_three_buckets_with_guardrails_is_its_own_strategy_with_two_fixed_parameters() {
-    // #6/AK11: eigene Strategie in der Optimierung; untere Leitplanke und Anpassung sind standardmässig fix.
+    // #6/AK11: strategy of its own in the optimization; lower guardrail and adjustment are fixed by default.
     let c = catalog(&plan());
     let s = c.iter().find(|s| s.key == "three_buckets_guardrails").unwrap();
     assert_eq!(s.name, "3-Topf + Guardrails");
@@ -187,13 +187,13 @@ fn issue_6_ak11_three_buckets_with_guardrails_is_its_own_strategy_with_two_fixed
         let p = s.params.iter().find(|p| p.key == key).unwrap();
         assert!(p.fixed, "{key} ist standardmässig fix");
     }
-    // sie kommt neben der einfachen 3-Topf-Strategie vor, nicht an deren Stelle
+    // it occurs next to the simple 3-bucket strategy, not in its place
     assert!(c.iter().any(|s| s.key == "three_buckets"));
 }
 
 #[test]
 fn results_show_the_withdrawal_rate_of_the_first_retirement_year() {
-    // Fixe Rate von 4 %: Die Entnahme im ersten Jahr liegt nahe bei 4 % des liquiden Vermögens.
+    // Fixed rate of 4 %: the withdrawal in the first year is close to 4 % of liquid wealth.
     let r = ranges(
         "fixed_rate",
         &[

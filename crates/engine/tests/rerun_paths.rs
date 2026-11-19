@@ -1,4 +1,4 @@
-//! #24: Läufe einer Variationsstufe werden aus den Pfadnummern nachgerechnet und stimmen mit der Szenarientabelle überein.
+//! #24: Runs of a variation step are recomputed from the path numbers and match the scenario table.
 
 use engine::api;
 use serde_json::{json, Value};
@@ -78,9 +78,9 @@ fn rerun_rejects_unknown_paths_and_bad_selection() {
     assert!(api::rerun_paths(&q, &[(50, 0)], Path::new("."), None).error.is_some());
 }
 
-// #132/AK3: Mit Student-t-Schocks und Kurssprüngen (die mit #132 schneller gezogen werden) ergeben gleiche Einstellungen
-// dieselben Ergebnisse, und jeder Lauf der Detailansicht ist der Pfad, der das Perzentil bestimmt hat: Sein Endvermögen
-// ist das des Perzentils, im Gesamtlauf wie in jeder Variationsstufe.
+// #132/AK3: With Student-t shocks and price jumps (drawn faster since #132) equal settings give
+// the same results, and every run of the detail view is the path that determined the percentile: its end wealth
+// is that of the percentile, in the overall run as in every variation step.
 #[test]
 fn issue_132_ak3_same_seed_same_results_and_detail_path() {
     let mut v = plan();
@@ -117,7 +117,7 @@ fn issue_132_ak3_same_seed_same_results_and_detail_path() {
         }
     }
 
-    // ohne Variationen: Detailläufe des Gesamtlaufs
+    // without variations: detail runs of the overall run
     v["scenarios"] = json!({ "sweeps": [] });
     let run = api::run(&v, Path::new("."), None);
     let batch = run.batch.as_ref().expect("mehrere Läufe");

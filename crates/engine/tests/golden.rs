@@ -1,8 +1,8 @@
-//! Golden-Master-Tests: zehn feste Planungen, deren Ergebnisse in `tests/golden/*.json` liegen.
-//! Jede Abweichung lässt den Test fehlschlagen. Gewollte Änderungen übernehmen mit
-//! `GOLDEN_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'` und die Differenz der JSON-Dateien prüfen.
-//! Gespeichert sind die Monatswerte jedes Januars und Julis, der letzte Monat und je Zahlenfeld die Summe über alle
-//! Monate (`recordSums`, #82).
+//! Golden master tests: ten fixed plans whose results are in `tests/golden/*.json`.
+//! Every deviation makes the test fail. Take over intended changes with
+//! `GOLDEN_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'` and check the diff of the JSON files.
+//! Stored are the monthly values of every January and July, the last month and, per numeric field, the sum over all
+//! months (`recordSums`, #82).
 
 use std::path::{Path, PathBuf};
 
@@ -17,7 +17,7 @@ fn library() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("data")
 }
 
-/// 10 Jahre ab Januar 2030, Pensionierung am Start, keine Renditen, Teuerung und Steuern.
+/// 10 years from January 2030, retirement at the start, no returns, inflation and taxes.
 fn base() -> Value {
     crate::any_age(json!({
         "project": { "name": "Golden", "currency": "CHF" },
@@ -96,7 +96,7 @@ pub(crate) fn cases() -> Vec<(&'static str, Value)> {
 
     let mut estate = long_horizon(base(), "2054-12");
     estate["realestate"] = json!({ "emergencyMonths": 6, "properties": [ house() ] });
-    estate["flows"]["income"] = json!(12_000); // genug Einkommen, damit die Hypothek bei jeder Erneuerung tragbar bleibt
+    estate["flows"]["income"] = json!(12_000); // enough income so that the mortgage stays affordable at every renewal
 
     let mut historical = long_horizon(base(), "2054-12");
     historical["returns"]["source"] = json!("historical");
@@ -109,7 +109,7 @@ pub(crate) fn cases() -> Vec<(&'static str, Value)> {
         { "param": "wealth.stockShare", "from": 0.2, "to": 0.8, "step": 0.3 },
         { "param": "flows.spendingFactor", "from": 0.9, "to": 1.1, "step": 0.1 } ] });
 
-    // Notverkauf: kaum Cash, hohe Ausgaben, Haus mit Hypothek
+    // Emergency sale: hardly any cash, high spending, house with a mortgage
     let mut emergency = base();
     emergency["wealth"] = json!({ "stocks": 0, "bonds": 0, "cash": 25_000, "stockShare": 0.5, "reserveMonths": 0 });
     emergency["flows"]["spending"] = json!(4500);
@@ -129,9 +129,9 @@ pub(crate) fn cases() -> Vec<(&'static str, Value)> {
     ]
 }
 
-/// Ergebnis ohne Laufzeit; Monatswerte auf jeden Januar, jeden Juli und den letzten Monat verdichtet.
-/// Neben jeder verdichteten Liste steht `recordSums`: je Zahlenfeld die Summe über alle Monate (#82), damit auch
-/// eine Änderung in einem nicht gespeicherten Monat auffällt.
+/// Result without running time; monthly values condensed to every January, every July and the last month.
+/// Next to every condensed list is `recordSums`: per numeric field the sum over all months (#82), so that
+/// a change in a month not stored also shows.
 fn snapshot(plan: &Value) -> Value {
     let out = api::run(plan, &library(), Some(&library()));
     assert!(out.error.is_none(), "{:?}", out.error);
@@ -141,7 +141,7 @@ fn snapshot(plan: &Value) -> Value {
     v
 }
 
-/// Summe je Zahlenfeld über alle Monate.
+/// Sum per numeric field over all months.
 fn record_sums(records: &[Value]) -> Value {
     let mut sums = serde_json::Map::new();
     for r in records {
@@ -190,7 +190,7 @@ fn thin(v: &mut Value) {
     }
 }
 
-/// Zahlen mit 1e-9 relativer Toleranz (und 1e-6 absolut), alles andere exakt.
+/// Numbers with 1e-9 relative tolerance (and 1e-6 absolute), everything else exactly.
 fn diff(path: &str, a: &Value, b: &Value, out: &mut Vec<String>) {
     match (a, b) {
         (Value::Number(x), Value::Number(y)) => {
@@ -251,11 +251,11 @@ fn golden_masters() {
     assert!(failures.is_empty(), "\n{}", failures.join("\n"));
 }
 
-/// Die Golden Masters sind selbst plausibel: sie müssen alle Fälle abdecken und den jeweiligen Zweck zeigen.
+/// The golden masters are plausible themselves: they must cover all cases and show their respective purpose.
 #[test]
 fn golden_cases_exercise_their_feature() {
-    // #82/AK2: das frisch gerechnete Ergebnis prüfen, nicht die eingecheckten Dateien
-    // (sonst bestünde der Test auch, wenn GOLDEN_UPDATE=1 ein falsches Ergebnis übernommen hat).
+    // #82/AK2: check the freshly computed result, not the checked-in files
+    // (otherwise the test would also pass if GOLDEN_UPDATE=1 had taken over a wrong result).
     let all = cases();
     let get = |n: &str| -> Value { snapshot(&all.iter().find(|(name, _)| *name == n).unwrap().1) };
     let has_event = |v: &Value, kind: &str| {
@@ -294,8 +294,8 @@ fn golden_cases_exercise_their_feature() {
     assert_eq!(get("09-szenarien")["scenarios"]["results"].as_array().unwrap().len(), 9);
 }
 
-/// #82/AK3: Eine Änderung in einem Monat, der nicht als Monatswert gespeichert ist (März), fällt über die
-/// Summen auf.
+/// #82/AK3: A change in a month that is not stored as a monthly value (March) shows via the
+/// sums.
 #[test]
 fn golden_detects_change_in_any_month() {
     let (_, plan) = cases().swap_remove(0);
@@ -314,8 +314,8 @@ fn golden_detects_change_in_any_month() {
     assert!(d[0].starts_with(".single.recordSums.cash:"), "{d:?}");
 }
 
-/// #133/AK2: In allen zehn Golden-Planungen (Einzel- und Detail-Läufe) ändert sich das Gesamtvermögen jeden Monat genau um
-/// das Hauptbuch (Geldflüsse und Bewertungsänderungen).
+/// #133/AK2: In all ten golden plans (single and detail runs) total wealth changes every month by exactly
+/// the ledger (cash flows and valuation changes).
 #[test]
 fn issue_133_ak2_golden_plans_keep_the_ledger() {
     for (name, plan) in cases() {

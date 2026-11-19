@@ -1,5 +1,5 @@
-//! #18: Die Cash-Reserve (`wealth.reserveMonths`) wirkt nur bei der Strategie «Standard».
-//! Alle anderen Strategien rechnen mit einer festen Reserve von 3 Monaten.
+//! #18: The cash reserve (`wealth.reserveMonths`) only takes effect with the strategy «Standard».
+//! All other strategies compute with a fixed reserve of 3 months.
 
 use engine::batch;
 use engine::model::Plan;
@@ -12,7 +12,7 @@ fn base(strategy: Value, reserve: f64) -> Value {
         "household": { "persons": [ { "id": "A", "name": "A", "birth": "1970-01" } ] },
         "milestones": [
             { "id": "start", "name": "Start", "kind": "date", "date": "2030-01" },
-            // #54: Strategie und Reserve gelten ab der Pensionierung; sie beginnt hier mit dem Start.
+            // #54: Strategy and reserve apply from retirement; here it starts at the start.
             { "id": "retire", "name": "Pensionierung", "kind": "date", "date": "2030-01" },
             { "id": "end", "name": "Ende", "kind": "date", "date": "2036-12" }
         ],

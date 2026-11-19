@@ -1,8 +1,8 @@
-//! Entnahmestrategie bei Mittelzuflüssen: Zuflüsse (einmalige Beträge, PK-Auszahlung, Verkaufserlöse) wenden die
-//! Strategie im Zuflussmonat sofort an, nicht erst im Januar. Ein Verkaufserlös, für den im Folgemonat ein Kauf
-//! geplant ist, wird reserviert; die Strategie folgt dann nach dem Kauf.
+//! Withdrawal strategy with inflows of funds: inflows (one-off amounts, PK payout, sale proceeds) apply the
+//! strategy at once in the month of the inflow, not only in January. Sale proceeds for which a purchase is
+//! planned in the following month are reserved; the strategy then follows after the purchase.
 //!
-//! Strategie «Fixe Rate» 4 %: Entnahme pro Monat = 4 % des liquiden Vermögens / 12 (ohne Renditen, Steuern, Teuerung).
+//! Strategy «Fixe Rate» 4 %: withdrawal per month = 4 % of liquid wealth / 12 (without returns, taxes, inflation).
 
 use engine::batch;
 use engine::model::Plan;
@@ -45,7 +45,7 @@ fn rec(res: &SimResult, y: i32, m: u32) -> &engine::sim::MonthRecord {
         .expect("Monat")
 }
 
-/// Entnahme dieses Monats (monatlicher Anteil der jährlichen Entnahme).
+/// Withdrawal of this month (monthly share of the annual withdrawal).
 fn spent(res: &SimResult, y: i32, m: u32) -> f64 {
     rec(res, y, m).spending
 }
@@ -73,13 +73,13 @@ fn flat(buy: Value) -> Value {
 
 #[test]
 fn pk_payout_in_january_is_unchanged() {
-    // Pensionierung = Start im Januar: die Strategie beginnt mit dem Kapitalbezug, keine zusätzliche Anwendung.
+    // Retirement = start in January: the strategy starts with the lump sum, no additional application.
     let mut v = base();
     v["pension"]["pk"] = json!({ "capital": 500_000, "at": "retire", "lumpsum": 1.0, "conversion": 0 });
     let res = run(v);
     close(spent(&res, 2030, 1), 0.04 * 1_500_000.0 / 12.0, "Entnahme Januar");
     assert!(applied(&res, 2030, 1).is_empty());
-    // Februar: unverändert 4 % des Vermögens vom Januar-Budget
+    // February: unchanged 4 % of the wealth from the January budget
     close(spent(&res, 2030, 2), 0.04 * 1_500_000.0 / 12.0, "Entnahme Februar");
 }
 
@@ -89,7 +89,7 @@ fn pk_payout_in_july_starts_the_strategy_with_the_lump_sum() {
     v["milestones"][1]["date"] = json!("2030-07");
     v["pension"]["pk"] = json!({ "capital": 500_000, "at": "retire", "lumpsum": 1.0, "conversion": 0 });
     let res = run(v);
-    // Die Strategie beginnt im Juli (Pensionierung) und enthält den Kapitalbezug sofort
+    // The strategy starts in July (retirement) and includes the lump sum at once
     close(spent(&res, 2030, 7), 0.04 * 1_500_000.0 / 12.0, "Entnahme Juli");
     assert!(res.events.iter().any(|e| e.month == YearMonth::new(2030, 7)
         && e.kind == EventKind::Withdrawal
@@ -166,7 +166,7 @@ fn sale_in_june_with_purchase_in_july_reserves_the_proceeds_and_applies_after_th
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house("2030-06"), flat(json!("2030-07")) ] });
     let res = run(v);
-    // Juni: keine Anwendung, Erlös reserviert (Entnahme bleibt beim alten Budget)
+    // June: no application, proceeds reserved (withdrawal stays at the old budget)
     assert!(applied(&res, 2030, 6).is_empty());
     close(spent(&res, 2030, 6), 0.04 * 1_000_000.0 / 12.0, "Juni: altes Budget");
     let sale = res
@@ -179,7 +179,7 @@ fn sale_in_june_with_purchase_in_july_reserves_the_proceeds_and_applies_after_th
         .events
         .iter()
         .any(|e| e.month == YearMonth::new(2030, 6) && e.text.contains("reserviert")));
-    // Juli: zuerst der Kauf (Eigenmittel 300'000), danach die Strategie auf das verbleibende liquide Vermögen
+    // July: first the purchase (equity 300'000), then the strategy on the remaining liquid wealth
     let buy = res
         .property_events
         .iter()
@@ -235,7 +235,7 @@ fn sale_in_december_with_purchase_in_january_buys_first_and_applies_once() {
         .find(|e| e.kind == PropertyEventKind::Purchase)
         .unwrap();
     assert_eq!(buy.month, YearMonth::new(2031, 1));
-    // Januar: ein Budget, berechnet nach dem Kauf (nicht doppelt, kein zusätzlicher Eintrag)
+    // January: one budget, computed after the purchase (not twice, no additional entry)
     let liquid_dec = rec(&res, 2030, 12).liquid;
     close(
         spent(&res, 2031, 1),
@@ -259,7 +259,7 @@ fn three_bucket_strategy_books_an_inflow_into_pot_3_only() {
     let res = run(v);
     let june = rec(&res, 2030, 6);
     let july = rec(&res, 2030, 7);
-    // Sonderfall B: Der Zufluss geht ganz in Topf 3, Topf 1 und 2 werden nicht aufgefüllt
+    // Special case B: the inflow goes entirely to bucket 3, buckets 1 and 2 are not refilled
     assert!(july.cash <= june.cash, "Cash {} nach dem Zufluss", july.cash);
     assert!((july.bonds - june.bonds).abs() < 1e-6);
     assert!(july.stocks >= june.stocks + 900_000.0 - 1.0, "Zufluss in Aktien");
@@ -299,7 +299,7 @@ fn three_bucket_sale_in_december_and_purchase_in_january_reserves_buys_first_and
         .find(|e| e.kind == PropertyEventKind::Purchase)
         .unwrap();
     assert_eq!(buy.month, YearMonth::new(2031, 1));
-    // Dezember: Der Erlös geht direkt in die Reservierung (extern → Reservierung), nicht in einen Topf; Topf 1 bleibt unverändert
+    // December: the proceeds go directly into the reservation (external → reservation), not into a bucket; bucket 1 stays unchanged
     let dec: Vec<_> = res
         .bucket_refills
         .iter()
@@ -313,7 +313,7 @@ fn three_bucket_sale_in_december_and_purchase_in_january_reserves_buys_first_and
         "Topf 1 enthält den Erlös nicht: {}",
         dec[0].before[0]
     );
-    // Januar: Überschuss der Reservierung (800'000 Erlös − 300'000 Eigenmittel = 500'000) in Topf 3
+    // January: surplus of the reservation (800'000 proceeds − 300'000 equity = 500'000) into bucket 3
     let b = res
         .bucket_refills
         .iter()
@@ -325,7 +325,7 @@ fn three_bucket_sale_in_december_and_purchase_in_january_reserves_buys_first_and
         "{:?}",
         b.moves
     );
-    // die Januar-Auffüllung kommt nach dem Kauf: Eigenmittel wurden aus der Reservierung bezahlt, nicht aus Topf 1
+    // the January refill comes after the purchase: equity was paid from the reservation, not from bucket 1
     let jan = res
         .bucket_refills
         .iter()
@@ -364,7 +364,7 @@ fn three_bucket_purchase_remainder_is_covered_by_c_and_never_burdens_pot_1_befor
         .find(|e| e.kind == PropertyEventKind::Purchase)
         .expect("Kauf");
     assert_eq!(buy.month, YearMonth::new(2031, 4));
-    // Die Eigenmittel (300'000) sind eine einmalige Ausgabe des Monats: C deckt sie, Topf 1 ist nie vorher negativ
+    // The equity (300'000) is a one-off expense of the month: C covers it, bucket 1 is never negative before
     let c = res
         .bucket_refills
         .iter()

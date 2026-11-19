@@ -1,4 +1,4 @@
-//! Datenbibliothek: Import der Shiller-Daten und Rechnen mit den ausgelieferten Zeitreihen.
+//! Data library: import of the Shiller data and computing with the bundled series.
 
 use std::path::{Path, PathBuf};
 
@@ -11,11 +11,11 @@ fn data_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("data")
 }
 
-/// Die ausgelieferten Reihen entstehen genau so aus crates/engine/data/quellen/shiller-index.ods und den SNB-Auszügen.
+/// The bundled series are created exactly like this from crates/engine/data/quellen/shiller-index.ods and the SNB extracts.
 #[test]
 fn shipped_series_match_import() {
     let shiller = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/quellen/shiller-index.ods");
-    // #94: die Originaltabelle liegt nur lokal; ohne sie wird der Test übersprungen.
+    // #94: the original spreadsheet only exists locally; without it the test is skipped.
     if !shiller.exists() {
         eprintln!("übersprungen: {} fehlt (#94)", shiller.display());
         return;
@@ -38,7 +38,7 @@ fn shipped_series_match_import() {
         (ch.first, ch.last()),
         (YearMonth::new(1988, 2), YearMonth::new(2025, 7))
     );
-    // Oktober 2008: Monatsdurchschnitt S&P 968 gegenüber 1217 im September, also rund −20 %.
+    // October 2008: monthly average S&P 968 against 1217 in September, so about −20 %.
     let i = (YearMonth::new(2008, 10).0 - usd.first.0) as usize;
     assert!((usd.stocks[i] + 0.20).abs() < 0.01, "{}", usd.stocks[i]);
 }
@@ -57,7 +57,7 @@ fn plan_uses_library_reference() {
         .iter()
         .any(|i| i.message.contains("Währung") || i.message.contains(" in USD")));
 
-    // Welt (JST): jährliche Reihe ab 1900 mit Rolling-Läufen.
+    // World (JST): annual series from 1900 with rolling runs.
     plan["returns"]["series"] = json!("library:Welt (JST).csv");
     let out = api::run(&plan, Path::new("/"), Some(&data_dir()));
     assert!(out.error.is_none(), "{:?}", out.error);
@@ -67,7 +67,7 @@ fn plan_uses_library_reference() {
         .iter()
         .any(|i| i.message.contains("Währung") || i.message.contains(" in USD")));
 
-    // USD-Reihe in einer CHF-Planung: Hinweis.
+    // USD series in a CHF plan: warning.
     plan["returns"]["series"] = json!("library:Shiller USD.csv");
     let out = api::run(&plan, Path::new("/"), Some(&data_dir()));
     assert!(out
@@ -75,7 +75,7 @@ fn plan_uses_library_reference() {
         .iter()
         .any(|i| i.section == "returns" && i.message.contains("in USD")));
 
-    // Ohne Bibliotheksordner: verständlicher Fehler.
+    // Without a library folder: understandable error.
     let out = api::run(&plan, Path::new("/"), None);
     assert!(out.error.unwrap().contains("Datenbibliothek"));
 }
@@ -96,7 +96,7 @@ fn saron_gaps_use_fixed_value() {
         .unwrap()
         .unwrap();
     let path = &batch::market_paths(&p, &sim, Some(&ds)).unwrap()[0];
-    // Bis 05.1999 kein SARON in der Reihe → fixer Wert, danach die SNB-Werte.
+    // Until 05.1999 no SARON in the series → fixed value, afterwards the SNB values.
     let k_may99 = (YearMonth::new(1999, 5).0 - YearMonth::new(1990, 1).0) as usize;
     assert_eq!(path.saron[0], 0.0123);
     assert_eq!(path.saron[k_may99], 0.0123);
@@ -126,7 +126,7 @@ fn seed_and_list() {
     assert_eq!(chf.currency.as_deref(), Some("CHF"));
     assert_eq!(chf.saron_range.unwrap().0, YearMonth::new(1999, 6));
     assert_eq!(list[2].reference, "library:Shiller CHF.csv");
-    // Vorhandene Dateien bleiben beim erneuten Anlegen unverändert.
+    // Existing files stay unchanged when created again.
     std::fs::write(dir.join("Shiller USD.csv"), "eigene Daten").unwrap();
     library::seed(&dir).unwrap();
     assert_eq!(
@@ -137,8 +137,8 @@ fn seed_and_list() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// #90/AK1, AK5: Pictet wird nicht mehr mitgeliefert und nicht mehr angelegt. Eine früher angelegte Kopie im
-/// Bibliotheksordner bleibt unverändert und gilt nicht mehr als mitgelieferte Reihe (keine Kurzinfo von dort).
+/// #90/AK1, AK5: Pictet is no longer bundled and no longer created. A copy created earlier in the
+/// library folder stays unchanged and no longer counts as a bundled series (no short info from there).
 #[test]
 fn issue_90_ak5_pictet_is_not_seeded_and_an_old_copy_stays() {
     assert!(library::BUILTIN.iter().all(|(f, _)| !f.contains("Pictet")));

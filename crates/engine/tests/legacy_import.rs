@@ -1,5 +1,5 @@
-//! Import alter `config.json`: Ergebnis ist eine gültige, rechenbare Planung. (Das frühere Programm ist
-//! keine Referenz für die Werte; geprüft wird die Übernahme der Angaben.)
+//! Import of old `config.json`: the result is a valid plan that can be computed. (The previous program is
+//! not a reference for the values; what is checked is the takeover of the data.)
 
 use std::path::Path;
 
@@ -45,7 +45,7 @@ fn fixtures_import_and_run() {
     runs(&hist, &dir);
 }
 
-/// #92: Alle `.json`-Dateien eines Ordners, nach Namen sortiert; fehlt der Ordner, ist die Liste leer.
+/// #92: All `.json` files of a folder, sorted by name; if the folder is missing, the list is empty.
 fn json_files(dir: &Path) -> Vec<std::path::PathBuf> {
     let Ok(rd) = std::fs::read_dir(dir) else {
         return vec![];
@@ -58,7 +58,7 @@ fn json_files(dir: &Path) -> Vec<std::path::PathBuf> {
     files
 }
 
-/// #92/AK1, AK2: Die Liste nimmt jede `.json`-Datei, ohne feste Namen, und ist leer, wenn der Ordner fehlt.
+/// #92/AK1, AK2: The list takes every `.json` file, without fixed names, and is empty if the folder is missing.
 #[test]
 fn issue_92_ak1_ak2_json_files_without_fixed_names() {
     let dir = std::env::temp_dir().join(format!("pp-eigene-{}", std::process::id()));
@@ -79,9 +79,9 @@ fn issue_92_ak1_ak2_json_files_without_fixed_names() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// Eigene Konfigurationen mit Immobilien in `local/eigene/` (nur lokal, von Git ausgeschlossen; fehlen sie,
-/// wird der Test übersprungen). Die Zeitreihe `./data/MSCI.csv` der Konfigurationen liegt in `local/eigene/data/`.
-/// #92: geprüft wird jede `.json`-Datei des Ordners, ohne feste Dateinamen.
+/// Own configurations with properties in `local/eigene/` (local only, excluded from Git; if they are missing,
+/// the test is skipped). The series `./data/MSCI.csv` of the configurations is in `local/eigene/data/`.
+/// #92: every `.json` file of the folder is checked, without fixed file names.
 #[test]
 fn own_configs_with_real_estate() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../local/eigene");
@@ -112,8 +112,8 @@ fn rejects_garbage() {
     assert!(legacy::import("{}", 2026, Path::new("."), "x").is_err());
 }
 
-/// #161/AK1, AK2: Ein extremes Startalter (Fund des Fuzzers, ausserhalb des Bereichs von `i32`) bringt den Import nicht zum
-/// Absturz, weder negativ noch positiv. Die Eingabe ist genau der Fund vom 18.11.2026.
+/// #161/AK1, AK2: An extreme start age (fuzzer finding, outside the range of `i32`) does not crash the
+/// import, neither negative nor positive. The input is exactly the finding of 18.11.2026.
 #[test]
 fn issue_161_ak1_ak2_extreme_start_age_does_not_panic() {
     let fund = "{  \"General\": {\"StartAge\": -566666666666666666666666666 \n}}\n";

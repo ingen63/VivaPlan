@@ -1,4 +1,4 @@
-//! #4: Die mitgelieferte Beispielplanung `crates/engine/assets/Neu.vplan` ist lesbar, ohne Fehler und simulierbar.
+//! #4: The bundled example plan `crates/engine/assets/Neu.vplan` is readable, without errors and can be simulated.
 
 use engine::api;
 use engine::model::Plan;

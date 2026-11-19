@@ -1,5 +1,5 @@
-//! #136: Planungen werden atomar gespeichert. Die vorhandene Datei bleibt bei jedem Fehler unverändert, und es bleibt
-//! keine temporäre Datei im Ordner zurück.
+//! #136: Plans are saved atomically. On any error the existing file stays unchanged, and no
+//! temporary file remains in the folder.
 
 use std::path::{Path, PathBuf};
 
@@ -28,7 +28,7 @@ fn entries(d: &Path) -> Vec<String> {
     v
 }
 
-/// #136/AK1: Erfolgreiches Speichern ersetzt den Inhalt, im Ordner liegt danach nur die Planung.
+/// #136/AK1: Successful saving replaces the content; afterwards only the plan is in the folder.
 #[test]
 fn issue_136_ak1_saving_replaces_the_file_and_leaves_nothing_else() {
     let d = dir("ok");
@@ -40,8 +40,8 @@ fn issue_136_ak1_saving_replaces_the_file_and_leaves_nothing_else() {
     let _ = std::fs::remove_dir_all(&d);
 }
 
-/// #136/AK2, AK3: Schlägt das Schreiben fehl (schreibgeschützter Ordner), gibt `write_plan` einen Fehler mit dem Pfad,
-/// die bisherige Datei hat den alten Inhalt, und es bleibt keine temporäre Datei zurück.
+/// #136/AK2, AK3: If writing fails (read-only folder), `write_plan` returns an error with the path,
+/// the previous file has the old content, and no temporary file remains.
 #[cfg(unix)]
 #[test]
 fn issue_136_ak2_failed_write_keeps_the_previous_file() {
@@ -58,8 +58,8 @@ fn issue_136_ak2_failed_write_keeps_the_previous_file() {
     let _ = std::fs::remove_dir_all(&d);
 }
 
-/// #136/AK3: Die temporäre Datei entsteht, das Ersetzen schlägt aber fehl (am Ziel liegt ein Ordner): Fehler, und die
-/// temporäre Datei ist wieder entfernt.
+/// #136/AK3: The temporary file is created, but the replacement fails (a folder is at the target): error, and the
+/// temporary file is removed again.
 #[test]
 fn issue_136_ak3_failed_replace_removes_the_temporary_file() {
     let d = dir("replace");
@@ -72,7 +72,7 @@ fn issue_136_ak3_failed_replace_removes_the_temporary_file() {
     let _ = std::fs::remove_dir_all(&d);
 }
 
-/// Entscheid zu #136: Ist die Datei ein symbolischer Link, wird die Datei ersetzt, auf die er zeigt; der Link bleibt.
+/// Decision on #136: If the file is a symbolic link, the file it points to is replaced; the link stays.
 #[cfg(unix)]
 #[test]
 fn issue_136_saving_through_a_symlink_replaces_its_target() {

@@ -1,7 +1,7 @@
-//! #55: Auszahlungsplan der Säule 3a mit Datum oder Alter, Anzeige des Guthabens aus der Vorschau.
+//! #55: Pillar 3a payout plan by date or age, display of the balance from the preview.
 //!
-//! Erfundene Planung: Geburt 1980-06, Start 2040-01, AHV-Bezug mit 65 Jahren (2045-06), frühestens 5 Jahre davor
-//! (2040-06); keine Renditen, keine Teuerung, keine Steuern.
+//! Made-up plan: birth 1980-06, start 2040-01, AHV payout at 65 years (2045-06), at the earliest 5 years before it
+//! (2040-06); no returns, no inflation, no taxes.
 
 use engine::api;
 use engine::model::{PayoutAt, Plan};
@@ -41,14 +41,14 @@ fn errors(v: &Value) -> Vec<(Option<String>, String)> {
         .collect()
 }
 
-/// #55/AK2: Geburt 1980-06, Alter 61.5 ergibt 12.2041.
+/// #55/AK2: Birth 1980-06, age 61.5 gives 12.2041.
 #[test]
 fn issue_55_ak2_age_gives_the_month() {
     let plan: Plan = serde_json::from_value(base(json!([{ "kind": "age", "years": 61.5, "amount": 50_000 }]))).unwrap();
     let x = &plan.pillar3a[0].payouts[0];
     assert_eq!(x.kind, PayoutAt::Age);
     assert_eq!(x.month(Some(ym(1980, 6))), Some(ym(2041, 12)));
-    // ohne Geburt, ohne Alter oder mit absurdem Alter: kein Monat
+    // without birth, without age or with an absurd age: no month
     assert_eq!(x.month(None), None);
     let bad: Plan = serde_json::from_value(base(
         json!([{ "kind": "age", "years": 1e9 }, { "kind": "age" }, { "kind": "date" }]),
@@ -60,7 +60,7 @@ fn issue_55_ak2_age_gives_the_month() {
         .all(|x| x.month(Some(ym(1980, 6))).is_none()));
 }
 
-/// #55/AK3: «frühestens 5 Jahre vor dem AHV-Bezug» gilt auch nach Alter; die Meldung steht am Feld «years».
+/// #55/AK3: «frühestens 5 Jahre vor dem AHV-Bezug» also applies by age; the message is at the field «years».
 #[test]
 fn issue_55_ak3_earliest_rule_for_age_rows() {
     assert!(
@@ -71,10 +71,10 @@ fn issue_55_ak3_earliest_rule_for_age_rows() {
     assert_eq!(e.len(), 1, "{e:?}");
     assert_eq!(e[0].0.as_deref(), Some("pillar3a.0.payouts.0.years"));
     assert_eq!(e[0].1, "Säule 3a: Die Auszahlung im 05.2040 liegt mehr als 5 Jahre vor dem AHV-Bezug (06.2045); frühestens im 06.2040.");
-    // Als Datum: dieselbe Regel am Feld «date»
+    // As a date: the same rule at the field «date»
     let e = errors(&base(json!([{ "date": "2040-05", "amount": 1000 }])));
     assert_eq!(e[0].0.as_deref(), Some("pillar3a.0.payouts.0.date"));
-    // Fehlendes Alter bzw. Datum ist ein Fehler am Feld
+    // A missing age or date is an error at the field
     let e = errors(&base(json!([{ "kind": "age" }, { "kind": "date" }])));
     assert_eq!(
         e,
@@ -91,8 +91,8 @@ fn issue_55_ak3_earliest_rule_for_age_rows() {
     );
 }
 
-/// #55/AK4, AK5: Guthaben 120'000, Zeile 2041 (Alter 61.5) mit 50'000: vor 120'000, Rest 70'000; im AHV-Bezug 70'000.
-/// Die Vorschau liefert ausserdem das Guthaben jedes Monats (für das Vorabfüllen, AK6/AK7: 2042-12 → 70'000).
+/// #55/AK4, AK5: Balance 120'000, row 2041 (age 61.5) with 50'000: before 120'000, remainder 70'000; at the AHV payout 70'000.
+/// The preview also returns the balance of every month (for pre-filling, AK6/AK7: 2042-12 → 70'000).
 #[test]
 fn issue_55_ak4_ak5_preview_shows_balances() {
     let v = base(json!([{ "kind": "age", "years": 61.5, "amount": 50_000 }]));
@@ -105,18 +105,18 @@ fn issue_55_ak4_ak5_preview_shows_balances() {
     assert_eq!((p.before, p.paid, p.after), (120_000.0, 50_000.0, 70_000.0));
     let rest = view.rest.as_ref().unwrap();
     assert_eq!((rest.month, rest.amount), (ym(2045, 6), 70_000.0));
-    // Guthaben vor den Auszahlungen jedes Monats ab Start bis zum AHV-Bezug
+    // Balance before the payouts of every month from the start until the AHV payout
     let at = |m: YearMonth| view.balances[ym(2040, 1).until(m) as usize];
     assert_eq!(at(ym(2040, 1)), 120_000.0);
     assert_eq!(at(ym(2041, 12)), 120_000.0);
     assert_eq!(at(ym(2042, 12)), 70_000.0);
     assert_eq!(view.balances.len(), ym(2040, 1).until(ym(2045, 6)) as usize + 1);
-    // In gespeicherten Ergebnissen erscheint der Plan nicht (Golden-Dateien unverändert).
+    // The plan does not appear in saved results (golden files unchanged).
     let saved = serde_json::to_value(out.result.as_ref().unwrap()).unwrap();
     assert!(saved.get("pillar3a").is_none());
 }
 
-/// #55: Die Simulation zahlt nach Alter wie nach Datum aus; gleiche Zeitpunkte ergeben gleiche Ergebnisse.
+/// #55: The simulation pays out by age as by date; equal points in time give equal results.
 #[test]
 fn issue_55_age_and_date_rows_give_the_same_result() {
     let run = |v: Value| api::preview(&v, Path::new("/"), None).result.unwrap();
@@ -127,7 +127,7 @@ fn issue_55_age_and_date_rows_give_the_same_result() {
     }
 }
 
-/// #55/AK8: Ältere Zeilen nur mit Datum bleiben gültig, gelten als «Datum» und werden ohne «kind» geschrieben.
+/// #55/AK8: Older rows with a date only stay valid, count as «Datum» and are written without «kind».
 #[test]
 fn issue_55_ak8_older_rows_stay_dates() {
     let v = base(json!([{ "date": "2041-01", "amount": 10_000, "use": "wealth" }]));
@@ -144,7 +144,7 @@ fn issue_55_ak8_older_rows_stay_dates() {
         .is_none());
 }
 
-/// #55: Auszahlung vor dem Start wird auf den Start gelegt; mehrere Zeilen im selben Monat laufen in Planreihenfolge.
+/// #55: A payout before the start is moved to the start; several rows in the same month run in plan order.
 #[test]
 fn issue_55_before_start_and_same_month_rows() {
     let v = base(json!([
@@ -159,11 +159,11 @@ fn issue_55_before_start_and_same_month_rows() {
     assert_eq!(p.iter().map(|x| x.index).collect::<Vec<_>>(), vec![0, 1, 2, 3]);
     assert_eq!((p[0].before, p[0].paid, p[0].after), (120_000.0, 30_000.0, 90_000.0));
     assert_eq!((p[1].before, p[1].paid, p[1].after), (90_000.0, 20_000.0, 70_000.0));
-    // Mehr als das Guthaben wird auf das Guthaben begrenzt
+    // More than the balance is limited to the balance
     assert_eq!((p[2].before, p[2].paid, p[2].after), (70_000.0, 70_000.0, 0.0));
     assert_eq!(view.rest.as_ref().unwrap().amount, 0.0);
 
-    // Ein Datum vor dem Start (2040-06, Start 2040-09) wird auf den Start gelegt
+    // A date before the start (2040-06, start 2040-09) is moved to the start
     let mut v = base(json!([{ "date": "2040-06", "amount": 40_000 }]));
     v["milestones"][0]["date"] = json!("2040-09");
     let out = api::preview(&v, Path::new("/"), None);
@@ -175,7 +175,7 @@ fn issue_55_before_start_and_same_month_rows() {
     );
 }
 
-/// #55: Zwei Personen haben je eine eigene Ansicht, Alter zählt ab der jeweiligen Geburt.
+/// #55: Two persons each have their own view; the age counts from the respective birth.
 #[test]
 fn issue_55_two_people_each_get_a_view() {
     let mut v = base(json!([{ "kind": "age", "years": 61, "amount": 50_000 }]));

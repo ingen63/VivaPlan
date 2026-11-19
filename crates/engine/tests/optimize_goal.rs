@@ -1,5 +1,5 @@
-//! #20: Zielauswahl der Optimierung. Ziel 1 (Konsum) bleibt unverändert, Ziel 2 («Kein Notverkauf von Immobilien») ordnet nach dem
-//! Anteil der Läufe mit ungeplantem Immobilienverkauf und bei Gleichstand nach der Ruinwahrscheinlichkeit.
+//! #20: Goal selection of the optimization. Goal 1 (consumption) stays unchanged, goal 2 («Kein Notverkauf von Immobilien») ranks by the
+//! share of runs with an unplanned property sale and on a tie by the probability of ruin.
 
 use engine::model::{Goal, OptimizerSettings};
 use engine::optimize::{run_request, Metrics, Objective, Request};
@@ -45,10 +45,10 @@ fn goal_one_is_the_default_and_scores_consumption_as_before() {
     assert_eq!(OptimizerSettings::default().goal, Goal::Consumption);
     assert_eq!(OptimizerSettings::default().min_consumption, 0.9);
     let o = Objective::default();
-    // 0.5 × Median + 0.5 × P10, Abzug 1 × Schwankung (hier 0)
+    // 0.5 × median + 0.5 × P10, penalty 1 × fluctuation (here 0)
     let m = metrics(100_000.0, 0.01, 0.3, 120_000.0);
     assert!((m.score(&o) - 90_000.0).abs() < 1e-9);
-    // Ziel 1 kennt keine Mindestkonsum-Bedingung
+    // Goal 1 knows no minimum consumption condition
     assert!(m.feasible(&Objective {
         min_consumption: 0.99,
         ..o
@@ -87,7 +87,7 @@ fn goal_two_constraints_are_ruin_limit_and_minimum_consumption() {
         !metrics(95_000.0, 0.06, 0.0, 100_000.0).feasible(&o),
         "Ruin über der Grenze"
     );
-    // Je grösser die Verletzung, desto weiter hinten
+    // The larger the violation, the further back
     assert!(
         metrics(50_000.0, 0.02, 0.0, 100_000.0).violation(&o) > metrics(85_000.0, 0.02, 0.0, 100_000.0).violation(&o)
     );
@@ -116,7 +116,7 @@ fn goal_two_report_is_sorted_by_emergency_share() {
             b.ruin
         );
     }
-    // Ziel 1 liefert dieselben Kennzahlen-Felder, ordnet aber nach Konsum
+    // Goal 1 returns the same metrics fields but ranks by consumption
     let one = run_request(&base, Path::new("."), None, &request(Goal::Consumption)).expect("Optimierung");
     assert_eq!(one.goal, Goal::Consumption);
     let fp = |r: &engine::optimize::Report| {
@@ -126,7 +126,7 @@ fn goal_two_report_is_sorted_by_emergency_share() {
             .map(|o| o.validated.emergency_share)
             .fold(f64::INFINITY, f64::min)
     };
-    // Ziel 2 findet höchstens so viele ungeplante Verkäufe wie Ziel 1
+    // Goal 2 finds at most as many unplanned sales as goal 1
     assert!(fp(&report) <= fp(&one) + 1e-12 || report.outcomes.iter().all(|o| !o.feasible));
 }
 
@@ -145,7 +145,7 @@ fn goal_two_needs_a_property_and_a_sensible_minimum() {
         .unwrap_err()
         .to_string()
         .contains("Immobilie"));
-    // Ziel 1 braucht keine Immobilie
+    // Goal 1 needs no property
     assert!(run_request(&base, Path::new("."), None, &request(Goal::Consumption)).is_ok());
 }
 

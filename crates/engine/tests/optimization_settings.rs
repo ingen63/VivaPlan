@@ -1,4 +1,4 @@
-//! Gespeicherte Einstellungen der Optimierung in der Planung.
+//! Saved settings of the optimization in the plan.
 
 use engine::api;
 use engine::model::{OptimizerSettings, Plan};
@@ -20,7 +20,7 @@ fn settings_round_trip_with_the_plan() {
     let o = p.optimization.clone().unwrap();
     assert_eq!((o.max_ruin, o.ruin_age, o.max_vol), (0.02, Some(90.0), Some(0.12)));
     assert_eq!(o.strategies, ["guardrails", "vpw"]);
-    // Speichern und wieder lesen ergibt dieselben Einstellungen.
+    // Saving and reading again gives the same settings.
     let back = Plan::from_json(&p.to_json()).unwrap();
     assert_eq!(back.optimization, Some(o));
 }

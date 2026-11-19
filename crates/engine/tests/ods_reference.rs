@@ -1,7 +1,7 @@
-//! Referenzrechnung «Test Retirement.ods» (Altprogramm als Tabelle, Golden Reference).
-//! Blatt 1: Renditen 0 %, Blatt 2: 5 % Rendite (ab Ereignis «Derisk» halbiert) und 10 % PK-Zins.
-//! Zeile r der Tabelle entspricht dem Monat r − 3 ab Januar 2030; Spalte E ist das Vermögen.
-//! Die Erwartungen werden aus den berechneten Werten der Tabelle gelesen.
+//! Reference computation «Test Retirement.ods» (old program as a spreadsheet, golden reference).
+//! Sheet 1: returns 0 %, sheet 2: 5 % return (halved from the event «Derisk») and 10 % PK interest.
+//! Row r of the spreadsheet corresponds to month r − 3 from January 2030; column E is the wealth.
+//! The expectations are read from the computed values of the spreadsheet.
 
 use std::path::{Path, PathBuf};
 
@@ -24,7 +24,7 @@ impl Sheet {
         assert_eq!(range.start(), Some((0, 0)));
         Sheet(range.rows().map(|r| r.to_vec()).collect())
     }
-    /// Zelle in Tabellenschreibweise: Spalte A = 0, Zeile 1 = erste Zeile.
+    /// Cell in spreadsheet notation: column A = 0, row 1 = first row.
     fn num(&self, col: char, row: usize) -> f64 {
         match self.0.get(row - 1).and_then(|r| r.get(col as usize - 'A' as usize)) {
             Some(Data::Float(f)) => *f,
@@ -41,7 +41,7 @@ impl Sheet {
     fn rows(&self) -> usize {
         self.0.len()
     }
-    /// Zeile mit dem Ereignis in Spalte A.
+    /// Row with the event in column A.
     fn event_row(&self, name: &str) -> usize {
         (3..=self.rows())
             .find(|&r| self.text('A', r) == name)
@@ -53,7 +53,7 @@ fn month(k: usize) -> String {
     format!("{}-{:02}", 2030 + k / 12, 1 + k % 12)
 }
 
-/// Dieselbe Planung wie das Blatt: Zeile r ⇒ Monat r − 3.
+/// The same plan as the sheet: row r ⇒ month r − 3.
 fn plan_of(s: &Sheet, pk_interest: f64) -> (Value, usize, usize, usize, usize) {
     let k = |row: usize| row - 3;
     let (early, legal, amort) = (
@@ -119,8 +119,8 @@ fn close(a: f64, b: f64, what: &str) {
     );
 }
 
-/// Blatt 1 (ohne Rendite): alle 604 Monate stimmen auf den Rappen, auch nach Amortisation und Hausverkauf
-/// (die Tabelle schneidet das Vermögen nicht mehr bei 0 ab und verkauft das Haus nur einmal).
+/// Sheet 1 (without return): all 604 months match to the centime, also after amortization and the house sale
+/// (the spreadsheet no longer cuts wealth off at 0 and sells the house only once).
 #[test]
 fn sheet1_matches_month_by_month_over_the_whole_horizon() {
     let s = Sheet::load("Sheet1");
@@ -132,12 +132,12 @@ fn sheet1_matches_month_by_month_over_the_whole_horizon() {
     for (k, &l) in liquid.iter().enumerate() {
         close(l, s.num('E', k + 3), &format!("Monat {} (Zeile {})", month(k), k + 3));
     }
-    // Bei der Amortisation ist das Vermögen kurz negativ (Hypothek 500'000 > Vermögen); der Verkauf deckt es.
+    // At the amortization wealth is briefly negative (mortgage 500'000 > wealth); the sale covers it.
     assert!(s.num('E', amort + 3) < 0.0 && liquid[amort] < 0.0);
 }
 
-/// Das Haus wird genau einmal verkauft (früher doppelt, weil das Flag «Sold» nicht gesetzt wurde), und der Verkauf
-/// bringt nach der Amortisation den vollen Marktwert (Eigenkapital + Hypothek).
+/// The house is sold exactly once (previously twice, because the flag «Sold» was not set), and the sale
+/// brings the full market value after the amortization (equity + mortgage).
 #[test]
 fn sheet1_sells_the_house_exactly_once_for_the_full_value() {
     let s = Sheet::load("Sheet1");
@@ -149,7 +149,7 @@ fn sheet1_sells_the_house_exactly_once_for_the_full_value() {
     assert!((r + 1..=s.rows()).all(|x| s.num('T', x) == 0.0 && s.num('Q', x) == 0.0));
 }
 
-/// Die Rente richtet sich nach dem Restkapital (1 − Kapitalbezugsanteil), nicht nach dem Bezugsanteil.
+/// The pension depends on the remaining capital (1 − lump-sum share), not on the payout share.
 #[test]
 fn sheet1_pension_is_based_on_the_remaining_capital() {
     let s = Sheet::load("Sheet1");
@@ -160,7 +160,7 @@ fn sheet1_pension_is_based_on_the_remaining_capital() {
     assert!((s.num('M', r) - capital * share).abs() < 0.01);
 }
 
-/// Blatt 2 (5 % Rendite, ab Zeile 153 halbiert): bis zur Pensionierung monatsgenau gleich.
+/// Sheet 2 (5 % return, halved from row 153): exactly the same month by month until retirement.
 #[test]
 fn sheet2_matches_until_early_retirement() {
     let s = Sheet::load("Sheet2");
@@ -171,9 +171,9 @@ fn sheet2_matches_until_early_retirement() {
     }
 }
 
-/// Blatt 2, PK-Zins 10 %: die Tabelle schreibt den Zins nur in den Januar-Zeilen gut, und zwar auf Guthaben
-/// plus Beitrag. Das Programm verzinst monatlich auf dem Guthaben zu Monatsbeginn und schreibt im Dezember gut.
-/// Beide Verfahren ergeben ein ähnliches, nicht gleiches Kapital; der Unterschied wird hier festgehalten.
+/// Sheet 2, PK interest 10 %: the spreadsheet credits the interest only in the January rows, namely on balance
+/// plus contribution. The program accrues interest monthly on the balance at the start of the month and credits it in December.
+/// Both methods give a similar, not equal capital; the difference is recorded here.
 #[test]
 fn sheet2_pension_capital_differs_only_by_interest_convention() {
     let s = Sheet::load("Sheet2");
@@ -190,7 +190,7 @@ fn sheet2_pension_capital_differs_only_by_interest_convention() {
         rel * 100.0
     );
     assert!(rel.abs() < 0.10, "Abweichung {:.2} %", rel * 100.0);
-    // Ohne PK-Zins gäbe es keinen Unterschied: Blatt 1 (J = 0) stimmt auf den Rappen
+    // Without PK interest there would be no difference: sheet 1 (J = 0) matches to the centime
 }
 
 fn errors(v: &Value) -> Vec<String> {

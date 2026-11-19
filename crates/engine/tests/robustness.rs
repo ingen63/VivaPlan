@@ -1,5 +1,5 @@
-//! Robustheit: zufällig verfälschte Planungen dürfen den Rechenkern nicht zum Absturz bringen.
-//! Erlaubt sind Prüfmeldungen und Fehlertexte, nicht aber Abstürze oder ungültige Zahlen.
+//! Robustness: randomly corrupted plans must not crash the calculation engine.
+//! Validation messages and error texts are allowed, but not crashes or invalid numbers.
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::Path;
@@ -27,8 +27,8 @@ fn leaves(v: &Value, path: String, out: &mut Vec<String>) {
     out.push(path);
 }
 
-/// Verfälscht 1 bis 4 Stellen der Planung. `destructive`: beliebige Stellen, auch Typwechsel und gelöschte Felder
-/// (prüft das Lesen und die Eingabeprüfung). Sonst nur Zahlen durch Extremwerte (prüft die Rechnung selbst, #81).
+/// Corrupts 1 to 4 places of the plan. `destructive`: any places, also type changes and deleted fields
+/// (checks reading and the input validation). Otherwise only numbers by extreme values (checks the computation itself, #81).
 fn mutate(rng: &mut Rng, plan: &mut Value, destructive: bool) {
     let mut paths = vec![];
     leaves(plan, String::new(), &mut paths);
@@ -65,13 +65,13 @@ fn mutate(rng: &mut Rng, plan: &mut Value, destructive: bool) {
         ];
         let kind = if destructive { rng.below(10) } else { rng.below(7) };
         let replacement = match (kind, &current) {
-            // meist typgerecht ersetzen, damit die Planung lesbar bleibt
+            // mostly replace by the same type, so that the plan stays readable
             (0..=6, Value::Number(_)) => numbers[rng.below(numbers.len())].clone(),
             (0..=6, Value::String(_)) => strings[rng.below(strings.len())].clone(),
             (0..=6, Value::Array(a)) if !a.is_empty() => json!([]),
             (7, _) => [json!(null), json!([]), json!({}), json!(1), json!("x")][rng.below(5)].clone(),
             (8, _) | (9, _) => {
-                // Feld löschen
+                // delete the field
                 let (parent, key) = p.rsplit_once('/').unwrap();
                 match plan.pointer_mut(parent) {
                     Some(Value::Object(o)) => {
@@ -96,7 +96,7 @@ fn mutate(rng: &mut Rng, plan: &mut Value, destructive: bool) {
     }
 }
 
-/// serde_json schreibt NaN als null; deshalb die Zahlen direkt prüfen (#129/AK4: auch das reale Endvermögen).
+/// serde_json writes NaN as null; hence check the numbers directly (#129/AK4: also the real end wealth).
 fn finite_result(r: &engine::sim::SimResult) -> bool {
     let s = &r.summary;
     [
@@ -162,7 +162,7 @@ fn mutated_plans_never_crash() {
     base["scenarios"]["sweeps"] = json!([{ "param": "wealth.stockShare", "from": 0.4, "to": 0.6, "step": 0.1 }]);
     let mut rng = Rng::new(99, 0);
     let sources = ["fixed", "historical", "rolling", "bootstrap", "parametric"];
-    // gerechnet ohne Fehler: [nur Zahlen verfälscht, beliebig verfälscht]
+    // computed without error: [only numbers corrupted, corrupted arbitrarily]
     let mut ran = [0u64; 2];
     for n in 0..MUTANTS {
         let mut plan = base.clone();
@@ -192,12 +192,12 @@ fn mutated_plans_never_crash() {
         );
     }
     eprintln!("gerechnet: {ran:?} von je {}", MUTANTS / 2);
-    // #81/AK2: Mindestanteile, gemessen am 14.11.2026 (nach #98): 97 und 69 von je 300.
-    // Nur Zahlen verfälscht: Extremwerte weist die Eingabeprüfung oft ab (gewollt); ein Viertel gerechnet heisst, dass
-    // die Rechnung mindestens 75 Planungen mit Extremwerten durchläuft. Sinkt der Anteil darunter, prüft der Test vor
-    // allem noch die Eingabeprüfung und sollte andere Extremwerte wählen.
-    // Beliebig verfälscht: Diese Hälfte prüft vor allem Lesen und Eingabeprüfung; ein Zehntel muss trotzdem rechnen,
-    // damit auch Planungen mit falschen Verweisen und fehlenden Feldern bis in die Simulation kommen.
+    // #81/AK2: Minimum shares, measured on 14.11.2026 (after #98): 97 and 69 of 300 each.
+    // Only numbers corrupted: the input validation often rejects extreme values (intended); a quarter computed means that
+    // the computation goes through at least 75 plans with extreme values. If the share falls below that, the test mainly
+    // checks the input validation and should choose other extreme values.
+    // Corrupted arbitrarily: this half mainly checks reading and the input validation; a tenth must still compute,
+    // so that plans with wrong references and missing fields also reach the simulation.
     let half = MUTANTS / 2;
     assert!(
         ran[0] * 4 >= half,

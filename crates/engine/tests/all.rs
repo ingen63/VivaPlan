@@ -1,13 +1,13 @@
-//! Einzige Testdatei der Integrationstests (#43). Jede Datei in `crates/engine/tests/` ist hier ein Modul.
+//! Single test file of the integration tests (#43). Every file in `crates/engine/tests/` is a module here.
 //!
-//! Grund: Cargo baut sonst je Datei ein eigenes Programm. Bei einem Mutationslauf wurden so pro Mutant 25 Programme
-//! neu übersetzt, gebunden und zum Auflisten der Tests gestartet; das Binden und der erste Start (macOS prüft jedes
-//! neue Programm) kosteten ein Vielfaches der eigentlichen Tests. Mit einem Programm bleiben dieselben Tests, nur
-//! heissen sie `<datei>::<test>` (Beispiel: `cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'`).
+//! Reason: otherwise Cargo builds a program of its own per file. In a mutation run 25 programs were thus
+//! recompiled, linked and started to list the tests per mutant; linking and the first start (macOS checks every
+//! new program) cost a multiple of the actual tests. With one program the tests stay the same, only
+//! they are called `<file>::<test>` (example: `cargo nextest run -p vivaplan-engine -E 'test(/^golden::/)'`).
 //!
-//! Eine neue Testdatei muss hier eingetragen werden. Der Test am Ende schlägt fehl, wenn eine Datei fehlt.
+//! A new test file must be registered here. The test at the end fails if a file is missing.
 
-// #116: Speichergrenze je Testprozess, damit ein Mutant mit endloser Schleife den Rechner nicht lahmlegt.
+// #116: Memory limit per test process, so a mutant with an endless loop does not paralyse the machine.
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
 
@@ -54,15 +54,15 @@ mod strategy;
 mod upgrade_api;
 mod validate_extra;
 
-/// Testplanungen, die nicht #51 prüfen, verwenden teils Alter ausserhalb der Grenzen für «AHV-Bezug» und «Bezug
-/// Pensionskasse» (zum Beispiel ein Bezug mit 75 Jahren). Für sie gelten offene Grenzen; die Grenzen selbst prüfen die
-/// Tests in `validate_extra.rs` und `settings.rs`.
+/// Test plans that do not check #51 partly use ages outside the limits for the milestones
+/// «AHV-Bezug» and «Bezug Pensionskasse» (for example a payout at 75 years). Open limits apply to them; the limits themselves are checked by the
+/// tests in `validate_extra.rs` and `settings.rs`.
 pub fn any_age(mut v: serde_json::Value) -> serde_json::Value {
     v["limits"] = serde_json::json!({ "ahvMin": 0, "ahvMax": 130, "pkMin": 0, "pkMax": 130 });
     v
 }
 
-/// #43: Keine Testdatei darf unbemerkt aus dem Lauf fallen (`autotests = false` in `crates/engine/Cargo.toml`).
+/// #43: No test file may drop out of the run unnoticed (`autotests = false` in `crates/engine/Cargo.toml`).
 #[test]
 fn every_test_file_is_a_module_of_this_binary() {
     use std::collections::BTreeSet;

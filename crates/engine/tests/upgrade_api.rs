@@ -1,5 +1,5 @@
-//! #25/#52/#51: `api::upgrade_plan` bringt eine ältere Planung auf den aktuellen Stand und gibt die
-//! Einstellungen (`limits`) nicht weiter.
+//! #25/#52/#51: `api::upgrade_plan` brings an older plan up to date and does not pass on the
+//! settings (`limits`).
 
 use engine::api;
 use serde_json::json;

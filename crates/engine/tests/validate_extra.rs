@@ -1,4 +1,4 @@
-//! Zusätzliche Prüfungen der Validierung: Person 2, Monte-Carlo-Grenzen, Warnungen zu Strategie und Variationen.
+//! Additional checks of the validation: person 2, Monte Carlo limits, warnings about strategy and variations.
 
 use engine::api;
 use engine::validate::{Issue, Severity};
@@ -120,8 +120,8 @@ fn too_many_combinations_are_an_error_in_the_plan() {
     assert!(has(&v, Severity::Error, "scenarios", "1'010'000 Kombinationen"));
 }
 
-// #134/AK4: Eine Satztabelle, bei der die Steuer (Betrag × Satz) mit steigendem Betrag fällt, meldet die Prüfung als
-// Warnung mit Feldbezug auf die Zeile; steigende Durchschnittssätze und die Beispielplanung bleiben ohne Meldung.
+// #134/AK4: The validation reports a rate table in which the tax (amount × rate) falls with a rising amount as a
+// warning referring to the row; rising average rates and the example plan stay without a message.
 #[test]
 fn issue_134_ak4_falling_tax_table_is_a_warning_at_the_row() {
     let issues = |v: &Value| -> Vec<Issue> { api::validate(v) };
@@ -141,20 +141,20 @@ fn issue_134_ak4_falling_tax_table_is_a_warning_at_the_row() {
         assert_eq!(found[0].severity, Severity::Warning, "Warnung, kein Fehler");
         assert_eq!((found[0].section, found[0].field.as_deref()), ("taxes", Some(path)));
     }
-    // Tabellen für Verheiratete, Zeile in der erfassten Reihenfolge
+    // Tables for married couples, row in the entered order
     let mut v = base();
     v["taxes"]["couple"] = json!({ "income": [[300_000, 0.01], [0, 0.10]], "wealth": [], "capital": [] });
     let found: Vec<Issue> = issues(&v).into_iter().filter(falling).collect();
     assert_eq!(found[0].field.as_deref(), Some("taxes.couple.income.0.1"));
     assert!(found[0].message.starts_with("Einkommenssteuer (Verheiratete), Stufe 1"));
-    // Ungültige Sätze sind schon ein Fehler: keine zusätzliche Warnung
+    // Invalid rates are already an error: no additional warning
     let mut v = base();
     v["taxes"]["income"] = json!([[0, 0.10], [300_000, -0.5]]);
     assert!(!issues(&v).iter().any(falling));
     assert!(has(&v, Severity::Error, "taxes", "Steuersatz muss zwischen"));
 }
 
-/// #139: Monte-Carlo-Planung über `years` Jahre ab Januar 2030 mit `paths` Pfaden.
+/// #139: Monte Carlo plan over `years` years from January 2030 with `paths` paths.
 fn mc(source: &str, paths: u64, years: i32) -> Value {
     let mut v = base();
     v["milestones"][3]["date"] = json!(format!("{}-12", 2029 + years));
@@ -174,7 +174,7 @@ fn too_many(v: &Value) -> Option<Issue> {
         .find(|i| i.message.starts_with("Zu viele Pfade"))
 }
 
-// #139/AK1, AK2: 1'000'000 Pfade über 100 Jahre sind ein Fehler am Feld der Pfade, mit der höchsten möglichen Zahl
+// #139/AK1, AK2: 1'000'000 paths over 100 years are an error at the field of the paths, with the highest possible number
 // (50'000'000 / 1'200 = 41'666).
 #[test]
 fn issue_139_ak2_one_million_paths_over_100_years_are_an_error() {
@@ -189,13 +189,13 @@ fn issue_139_ak2_one_million_paths_over_100_years_are_an_error() {
     }
 }
 
-// #139/AK3: 50'000 Pfade über 30 Jahre (heute übliche Rechnung) bleiben erlaubt; genau an der Grenze ebenfalls, ein Pfad
-// mehr nicht. Feste und historische Renditen sind nicht betroffen.
+// #139/AK3: 50'000 paths over 30 years (a usual computation today) stay allowed; exactly at the limit too, one path
+// more not. Fixed and historical returns are not affected.
 #[test]
 fn issue_139_ak3_usual_plans_stay_allowed_and_the_limit_is_exact() {
     assert!(too_many(&mc("bootstrap", 50_000, 30)).is_none());
     assert!(too_many(&mc("parametric", 50_000, 30)).is_none());
-    // 100 Jahre = 1'200 Monate: 41'666 × 1'200 = 49'999'200 ≤ 50 Mio., 41'667 × 1'200 = 50'000'400
+    // 100 years = 1'200 months: 41'666 × 1'200 = 49'999'200 ≤ 50 million, 41'667 × 1'200 = 50'000'400
     assert!(too_many(&mc("bootstrap", 41_666, 100)).is_none());
     assert!(too_many(&mc("bootstrap", 41_667, 100)).is_some());
     let mut fixed = mc("bootstrap", 1_000_000, 100);
@@ -204,8 +204,8 @@ fn issue_139_ak3_usual_plans_stay_allowed_and_the_limit_is_exact() {
     assert_eq!(engine::validate::MAX_PATH_MONTHS, 50_000_000);
 }
 
-// #162/AK1: Genau 50 Mio. Pfad-Monate sind erlaubt (40 Monate × 1'250'000 Pfade), ein Pfad mehr nicht. Die Zahl der Pfade
-// in der Meldung hat Tausendertrennzeichen, auch bei einer durch 3 teilbaren Stellenzahl (100'000, kein führender Apostroph).
+// #162/AK1: Exactly 50 million path-months are allowed (40 months × 1'250'000 paths), one path more not. The number of paths
+// in the message has thousands separators, also with a number of digits divisible by 3 (100'000, no leading apostrophe).
 #[test]
 fn issue_162_ak1_exact_path_limit_and_thousands_separator() {
     let forty = |paths| {

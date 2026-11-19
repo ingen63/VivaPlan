@@ -1,23 +1,23 @@
-//! Eigenschaften der Parser und des CSV-Formats für beliebige Eingaben.
-//! Fallzahl über `PROPTEST_CASES` steuerbar.
+//! Properties of the parsers and the CSV format for arbitrary inputs.
+//! Number of cases controllable via `PROPTEST_CASES`.
 
 use engine::market::DataSet;
 use proptest::prelude::*;
 
 proptest! {
-    /// Beliebiger Text darf den CSV-Parser nie zum Absturz bringen.
+    /// Arbitrary text must never crash the CSV parser.
     #[test]
     fn proptest_parse_csv_never_panics(text in "\\PC{0,400}") {
         let _ = DataSet::parse_csv("x", &text);
     }
 
-    /// Beliebiger Text darf den SNB-Parser nie zum Absturz bringen.
+    /// Arbitrary text must never crash the SNB parser.
     #[test]
     fn proptest_parse_snb_never_panics(text in "\\PC{0,400}") {
         let _ = engine::import::parse_snb(&text);
     }
 
-    /// Round-Trip: Was `to_csv` schreibt, liest `parse_csv` wieder ein (Jahreswerte).
+    /// Round trip: what `to_csv` writes, `parse_csv` reads back (annual values).
     #[test]
     fn proptest_csv_round_trip(
         first in 1900i32..2100,
@@ -38,7 +38,7 @@ proptest! {
         }
     }
 
-    /// Der Jahres- in Monatssatz-Umrechner liefert nie eine ungültige Zahl und rechnet sich zurück.
+    /// The converter from annual to monthly rate never returns an invalid number and converts back.
     #[test]
     fn proptest_monthly_rate(y in -5.0f64..5.0) {
         let m = engine::market::monthly(y);

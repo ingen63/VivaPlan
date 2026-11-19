@@ -1,5 +1,5 @@
-//! Fortschritt und Abbruch langer Berechnungen. Fortschritt und Abbruch gelten prozessweit: Jeder Test braucht einen
-//! eigenen Prozess (nextest); parallel im selben Prozess würden sich die Tests gegenseitig abbrechen.
+//! Progress and cancellation of long computations. Progress and cancellation apply process-wide: every test needs a
+//! process of its own (nextest); in parallel in the same process the tests would cancel each other.
 
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -16,7 +16,7 @@ fn plan(paths: u64) -> serde_json::Value {
     p
 }
 
-/// Wartet, bis die Berechnung läuft und gezählt hat, und verlangt dann den Abbruch.
+/// Waits until the computation runs and has counted, then requests the cancellation.
 fn cancel_when_running() -> std::thread::JoinHandle<progress::Progress> {
     std::thread::spawn(|| {
         let t0 = Instant::now();
@@ -36,13 +36,13 @@ fn cancel_when_running() -> std::thread::JoinHandle<progress::Progress> {
 fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");
 
-    // normaler Lauf: Fortschritt ist danach nicht mehr aktiv, alle Läufe sind gezählt
+    // normal run: progress is no longer active afterwards, all runs are counted
     let r = api::run(&plan(400), Path::new("/"), Some(&lib));
     assert!(r.error.is_none(), "{:?}", r.error);
     let p = progress::snapshot();
     assert!(!p.active && !p.cancelled && p.done == 400 && p.total == 400, "{p:?}");
 
-    // mit Variationen zählen die Läufe aller Szenarien dazu
+    // with variations the runs of all scenarios are counted too
     let mut sw = plan(100);
     sw["scenarios"]["sweeps"] = json!([{ "param": "flows.spendingFactor", "from": 0.9, "to": 1.1, "step": 0.1 }]);
     let r = api::run(&sw, Path::new("/"), Some(&lib));
@@ -50,16 +50,16 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let p = progress::snapshot();
     assert!(p.done == 400 && p.total == 400, "{p:?}");
 
-    // Abbruch der Simulation
+    // Cancellation of the simulation
     let w = cancel_when_running();
     let t0 = Instant::now();
-    // #139: 100'000 Pfade × 472 Monate = 47 Mio. Pfad-Monate, unter der Speichergrenze von 50 Mio.
+    // #139: 100'000 paths × 472 months = 47 million path-months, below the memory limit of 50 million.
     let r = api::run(&plan(100_000), Path::new("/"), Some(&lib));
     let seen = w.join().unwrap();
     assert_eq!(r.error.as_deref(), Some("Abgebrochen"));
     assert!(seen.total == 100_000 && seen.done < seen.total);
-    // #83: Dass abgebrochen wurde, zeigen Fehlertext und Zähler. Die Zeitgrenze fängt nur ein Hängen ab; der Abbruch
-    // selbst dauert Millisekunden, 60 s halten auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
+    // #83: Error text and counter show that it was cancelled. The time limit only catches a hang; the cancellation
+    // itself takes milliseconds, 60 s also hold on a 2-core runner under coverage measurement.
     assert!(
         t0.elapsed() < Duration::from_secs(60),
         "Abbruch kam zu spät: {:?}",
@@ -67,23 +67,23 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     );
     assert!(!progress::snapshot().active);
 
-    // #104: Der Abbruch gilt nur für die laufende Berechnung. Die Messung der Rechenzeit (`bench`) läuft ohne eigene
-    // Berechnung; nach einem Abbruch muss sie trotzdem alle Läufe rechnen (vorher: 0,0006 µs je Lauf statt einiger µs).
+    // #104: The cancellation only applies to the running computation. The measurement of the computing time (`bench`) runs without a
+    // computation of its own; after a cancellation it must still compute all runs (previously: 0.0006 µs per run instead of a few µs).
     let b = api::bench(&plan(300), Path::new("/"), Some(&lib)).unwrap();
     assert!(b.us_per_run > 0.1, "{b:?}");
 
-    // danach läuft die nächste Berechnung wieder normal (der Abbruch gilt nur einmal)
+    // afterwards the next computation runs normally again (the cancellation applies only once)
     let r = api::run(&plan(200), Path::new("/"), Some(&lib));
     assert!(r.error.is_none(), "{:?}", r.error);
 
-    // Abbruch der Optimierung
+    // Cancellation of the optimization
     let w = cancel_when_running();
     let t0 = Instant::now();
     let req = json!({ "strategies": ["standard", "guardrails"], "paths": 20000, "checkPaths": 20000, "samples": 30, "seed": 1 });
     let e = api::optimize(&plan(200), &req, Path::new("/"), Some(&lib)).unwrap_err();
     w.join().unwrap();
     assert_eq!(e.to_string(), "Abgebrochen");
-    // #83: wie oben, nur gegen ein Hängen.
+    // #83: as above, only against a hang.
     assert!(
         t0.elapsed() < Duration::from_secs(60),
         "Abbruch kam zu spät: {:?}",
@@ -92,8 +92,8 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     assert!(!progress::snapshot().active);
 }
 
-/// #124/AK4: `cancel()` bricht jede laufende Berechnung ab, eine beendete nicht. Kurz, damit der Abbruch auch im
-/// Mutationslauf geprüft wird (der Test oben ist dort zu lang). Wie dieser braucht er einen eigenen Prozess (nextest).
+/// #124/AK4: `cancel()` cancels every running computation, not a finished one. Short, so that the cancellation is also
+/// checked in the mutation run (the test above is too long there). Like that one it needs a process of its own (nextest).
 #[test]
 fn issue_124_ak4_cancel_stops_every_running_job() {
     let running = progress::start_as(None, 10);
@@ -107,10 +107,10 @@ fn issue_124_ak4_cancel_stops_every_running_job() {
     assert!(!progress::snapshot_of(finished_id).cancelled);
 }
 
-/// #135/AK2: Abbruch, bevor der erste Block rechnet. Eine Berechnung lässt sich erst abbrechen, wenn ihr Job läuft
-/// (`api::run_as` legt ihn selbst an); deshalb steht hier der Job des Tests und `batch::run_with_bands` direkt, genau
-/// wie in `api::run_as` nach der letzten Abbruchprüfung. `progress::par_map` bricht vor dem ersten Block ab und
-/// liefert keine Läufe; die Bandbreite bleibt ohne Panik (vorher `len() - 1` auf einer leeren Spalte).
+/// #135/AK2: Cancellation before the first block computes. A computation can only be cancelled once its job runs
+/// (`api::run_as` creates it itself); hence the test's job and `batch::run_with_bands` are used directly here, exactly
+/// as in `api::run_as` after the last cancellation check. `progress::par_map` cancels before the first block and
+/// returns no runs; the bands stay without a panic (previously `len() - 1` on an empty column).
 #[test]
 fn issue_135_ak2_cancel_before_the_first_block_does_not_panic() {
     let mut v = api::example_plan();

@@ -1,6 +1,6 @@
-//! #137: Nachführen älterer Planungen (`api::upgrade_plan`, läuft bei jedem Öffnen) ist idempotent: Ein zweiter Lauf
-//! ändert nichts und meldet nichts, auch bei verfälschten oder unvollständigen Planungen. Fallzahl über
-//! `PROPTEST_CASES` (nächtlich 10'000, `make proptest`).
+//! #137: Updating older plans (`api::upgrade_plan`, runs on every opening) is idempotent: a second run
+//! changes nothing and reports nothing, also for corrupted or incomplete plans. Number of cases via
+//! `PROPTEST_CASES` (nightly 10'000, `make proptest`).
 
 use engine::api;
 use proptest::prelude::*;
@@ -12,8 +12,8 @@ const REGRESSIONS: &str = concat!(
     "/tests/proptest-regressions/proptest_upgrade.txt"
 );
 
-/// Ausgangsplanungen: Beispiel, neue Planung, eine Datei im alten Format und die zehn Golden-Planungen (bewusst knapp,
-/// ohne feste Meilensteine je Person).
+/// Initial plans: example, new plan, a file in the old format and the ten golden plans (deliberately terse,
+/// without fixed milestones per person).
 fn bases() -> Vec<Value> {
     let mut v = vec![
         api::example_plan(),
@@ -24,7 +24,7 @@ fn bases() -> Vec<Value> {
     v
 }
 
-/// JSON-Pointer aller Knoten und Blätter.
+/// JSON pointers of all nodes and leaves.
 fn pointers(v: &Value, path: String, out: &mut Vec<String>) {
     match v {
         Value::Object(o) => o
@@ -41,11 +41,11 @@ fn pointers(v: &Value, path: String, out: &mut Vec<String>) {
     }
 }
 
-/// Verfälscht ein Feld: löschen, null, Zahl, Text, leere Liste oder leeres Objekt.
+/// Corrupts a field: delete, null, number, text, empty list or empty object.
 fn mutate(plan: &mut Value, at: usize, kind: u8, n: f64) {
     let mut ps = vec![];
     pointers(plan, String::new(), &mut ps);
-    // Die Grenzen (`limits`) stammen aus den geprüften Einstellungen des Geräts, nicht aus der Datei: nicht verfälschen.
+    // The limits (`limits`) come from the checked settings of the device, not from the file: do not corrupt them.
     ps.retain(|p| !p.starts_with("/limits"));
     let Some(p) = ps.get(at % ps.len().max(1)).cloned() else {
         return;
@@ -89,9 +89,9 @@ fn mutate(plan: &mut Value, at: usize, kind: u8, n: f64) {
     }
 }
 
-/// Die Grenzen (`limits`, Einstellungen des Geräts) gehören nicht zur Planung: Die Oberfläche schickt sie bei jedem
-/// Aufruf mit, `upgrade_plan` entfernt sie aus dem Ergebnis. Der zweite Lauf bekommt deshalb dieselben Grenzen wie der
-/// erste (die Golden-Planungen tragen über `any_age` weite Grenzen).
+/// The limits (`limits`, settings of the device) do not belong to the plan: the user interface sends them with every
+/// call, `upgrade_plan` removes them from the result. Hence the second run gets the same limits as the
+/// first (the golden plans carry wide limits via `any_age`).
 fn with_limits_of(original: &Value, upgraded: &Value) -> Value {
     let mut v = upgraded.clone();
     if let (Some(l), Some(o)) = (original.get("limits"), v.as_object_mut()) {
@@ -106,7 +106,7 @@ proptest! {
         ..ProptestConfig::default()
     })]
 
-    /// #137/AK4: Nach dem ersten Nachführen ändert ein zweites nichts und meldet nichts.
+    /// #137/AK4: After the first update a second one changes nothing and reports nothing.
     #[test]
     fn proptest_upgrade_is_idempotent(
         base in 0..13usize,
@@ -123,9 +123,9 @@ proptest! {
     }
 }
 
-/// #137/AK5: Die mitgelieferten Planungen sind auf dem aktuellen Stand: Nachführen ändert nichts und meldet nichts.
-/// Die Golden-Planungen sind bewusst knapp (Meilensteine als Datum, ohne feste Meilensteine je Person); für sie gilt die
-/// Idempotenz (zweiter Lauf ohne Änderung), geprüft im Test unten und im Eigenschaftstest oben.
+/// #137/AK5: The bundled plans are up to date: updating changes nothing and reports nothing.
+/// The golden plans are deliberately terse (milestones as dates, without fixed milestones per person); for them
+/// idempotence applies (second run without a change), checked in the test below and in the property test above.
 #[test]
 fn issue_137_ak5_shipped_plans_need_no_upgrade() {
     for (name, plan) in [

@@ -1,7 +1,7 @@
-//! #58: Erwerbseinkommen optional mit der Teuerung.
+//! #58: Earned income optionally indexed to inflation.
 //!
-//! Erfundene Planung: Geburt 1980-01, Start 2040-01, Bezug Pensionskasse und AHV-Bezug mit 65 (2045-01), keine
-//! Renditen, keine Steuern; Teuerung wo vermerkt.
+//! Made-up plan: birth 1980-01, start 2040-01, pension fund payout and AHV payout at 65 (2045-01), no
+//! returns, no taxes; inflation where noted.
 
 use engine::api;
 use engine::model::Plan;
@@ -49,8 +49,8 @@ fn close(a: f64, b: f64, what: &str) {
     assert!((a - b).abs() < 1e-6, "{what}: {a} statt {b}");
 }
 
-/// #58/AK1, AK3: 8'000 pro Monat, Teuerung 2 %: mit «ja» nach 12 Monaten 8'160, nach 5 Jahren 8'832.64; mit «nein»
-/// (auch ohne Angabe) bleiben es 8'000.
+/// #58/AK1, AK3: 8'000 per month, inflation 2 %: with «ja» 8'160 after 12 months, 8'832.64 after 5 years; with «nein»
+/// (also if not given) it stays 8'000.
 #[test]
 fn issue_58_ak1_ak3_income_follows_inflation() {
     let mut v = base(0.02);
@@ -69,7 +69,7 @@ fn issue_58_ak1_ak3_income_follows_inflation() {
     close(rec(&run(&v), 2045, 1).earned, 8000.0, "«nein»");
 }
 
-/// #58/AK2: Jede Zeile eines zeitabhängigen Einkommens gilt in Preisen des Starts.
+/// #58/AK2: Every row of a time-dependent income is in prices of the start.
 #[test]
 fn issue_58_ak2_timed_rows_are_in_start_prices() {
     let mut v = base(0.02);
@@ -84,14 +84,14 @@ fn issue_58_ak2_timed_rows_are_in_start_prices() {
     );
 }
 
-/// #58/AK4: Auf jedem Pfad wächst das Einkommen mit dem Preisindex dieses Pfades, genau wie die Lebenshaltung.
+/// #58/AK4: On every path the income grows with the price index of that path, exactly like the living costs.
 #[test]
 fn issue_58_ak4_follows_the_price_index_of_any_path() {
     let mut v = base(0.0);
     v["flows"]["incomeIndexed"] = json!(true);
     let s = sim(&v);
     let mut path = engine::market::fixed_path(&s.fixed, s.start, s.months());
-    // Teuerung wie auf einem historischen oder zufälligen Pfad: jeden Monat anders, auch negativ.
+    // Inflation as on a historical or random path: different every month, also negative.
     for (k, x) in path.inflation.iter_mut().enumerate() {
         *x = [0.03, -0.01, 0.08, 0.0, 0.015][k % 5];
     }
@@ -110,7 +110,7 @@ fn issue_58_ak4_follows_the_price_index_of_any_path() {
     assert!(grew, "Teuerung wirkt");
 }
 
-/// #58: Die Auswahl gilt pro Person; die zweite Person hat ihre eigene.
+/// #58: The choice applies per person; the second person has their own.
 #[test]
 fn issue_58_one_choice_per_person() {
     let mut v = base(0.02);
@@ -136,8 +136,8 @@ fn issue_58_one_choice_per_person() {
     );
 }
 
-/// #58/AK5: Einkommenssteuer auf dem angepassten Einkommen; die Warnung nach dem Bezug der Pensionskasse nennt
-/// den Betrag in Preisen des Starts.
+/// #58/AK5: Income tax on the adjusted income; the warning after the pension fund payout names
+/// the amount in prices of the start.
 #[test]
 fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
     let mut v = base(0.02);
@@ -154,10 +154,10 @@ fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
     let (e0, t0) = year(&plain, 2042);
     let (e1, t1) = year(&indexed, 2042);
     assert!(e1 > e0 + 1000.0, "{e1} / {e0}");
-    // Die Steuer eines Jahres wird im Folgejahr bezahlt: 10 % des Einkommens 2041 bzw. 2042.
+    // The tax of a year is paid in the following year: 10 % of the income 2041 or 2042.
     let (p0, _) = year(&plain, 2041);
     let (p1, _) = year(&indexed, 2041);
-    // Steuern auf Rappen gerundet
+    // Taxes rounded to centimes
     assert!(
         (t0 - p0 * 0.1).abs() < 0.01,
         "Steuer ohne Teuerung: {t0} statt {}",
@@ -186,7 +186,7 @@ fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
     );
 }
 
-/// #58/AK1: «nein» wird nicht geschrieben (ältere Dateien bleiben gleich), «ja» schon.
+/// #58/AK1: «nein» is not written (older files stay the same), «ja» is.
 #[test]
 fn issue_58_ak1_written_only_when_set() {
     let mut v = base(0.0);
@@ -201,7 +201,7 @@ fn issue_58_ak1_written_only_when_set() {
         serde_json::to_value(&plan).unwrap()["flows"]["incomeIndexed"],
         json!(true)
     );
-    // Neue Planungen: «ja» (Entscheid zu #58)
+    // New plans: «ja» (decision on #58)
     let neu: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     assert!(neu.flows.income_indexed);
 }

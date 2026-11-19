@@ -1,5 +1,5 @@
-//! #44: Planungen im alten Format (Endung `.rplan`, Kennung `pensionsplaner/1`) bleiben lesbar
-//! (legacy: RetirementPlanner). Neue Dateien tragen die Kennung `vivaplan/1`.
+//! #44: Plans in the old format (extension `.rplan`, identifier `pensionsplaner/1`) stay readable
+//! (legacy: RetirementPlanner). New files carry the identifier `vivaplan/1`.
 
 use std::path::Path;
 
@@ -12,7 +12,7 @@ fn dir() -> &'static Path {
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
-    // Kleine SHA-256-Umsetzung, damit der Test ohne zusätzliche Abhängigkeit auskommt.
+    // Small SHA-256 implementation, so that the test needs no additional dependency.
     const K: [u32; 64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
         0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -72,15 +72,15 @@ fn sha256_hex(bytes: &[u8]) -> String {
     h.iter().map(|x| format!("{x:08x}")).collect()
 }
 
-/// Ergebnis eines Laufs ohne die gemessene Rechenzeit.
+/// Result of a run without the measured computing time.
 fn result(plan: &Value) -> Value {
     let mut r = serde_json::to_value(api::run(plan, dir(), Some(&dir().join("data")))).unwrap();
     r.as_object_mut().unwrap().remove("elapsedMs");
     r
 }
 
-/// #44/AK3: Die alte .rplan-Datei ist unverändert (Prüfsumme), öffnet mit identischen Werten wie die .vplan und
-/// ergibt dieselben Ergebnisse.
+/// #44/AK3: The old .rplan file is unchanged (checksum), opens with values identical to the .vplan and
+/// gives the same results.
 #[test]
 fn rplan_bleibt_unveraendert_und_rechnet_wie_die_vplan() {
     let alt = dir().join("tests/fixtures/planung-altformat.rplan");
@@ -99,7 +99,7 @@ fn rplan_bleibt_unveraendert_und_rechnet_wie_die_vplan() {
     assert_eq!(result(&rplan), result(&neu));
 }
 
-/// #44: Neue Dateien schreiben `vivaplan/1`, auch wenn die Planung noch die alte Kennung trägt.
+/// #44: New files write `vivaplan/1`, even if the plan still carries the old identifier.
 #[test]
 fn schreiben_setzt_die_neue_kennung() {
     assert_eq!(FORMAT, "vivaplan/1");
@@ -113,7 +113,7 @@ fn schreiben_setzt_die_neue_kennung() {
     let mut ohne_kennung = alt.clone();
     ohne_kennung["format"] = Value::String(FORMAT.into());
     assert_eq!(wieder, ohne_kennung);
-    // Eine andere Kennung bleibt beim Schreiben, wie sie ist; lesen lässt sie sich seit #144 nicht mehr.
+    // Another identifier stays as it is when writing; since #144 it can no longer be read.
     api::write_plan(&f, &serde_json::json!({"format": "x/2"})).unwrap();
     let text: Value = serde_json::from_str(&std::fs::read_to_string(&f).unwrap()).unwrap();
     assert_eq!(text["format"], "x/2");
@@ -133,8 +133,8 @@ fn sha256_stimmt() {
     );
 }
 
-/// #44: Das Upgrade ersetzt nur die alte Kennung, und zwar ohne Hinweis; fehlende, fremde oder nicht textuelle
-/// Kennungen und Nicht-Objekte bleiben unverändert.
+/// #44: The upgrade only replaces the old identifier, and without a note; missing, foreign or non-text
+/// identifiers and non-objects stay unchanged.
 #[test]
 fn upgrade_ersetzt_nur_die_alte_kennung() {
     let alt = api::upgrade_plan(&serde_json::json!({"format": LEGACY_FORMAT}));
@@ -152,7 +152,7 @@ fn upgrade_ersetzt_nur_die_alte_kennung() {
     assert_eq!(kein_objekt.plan, serde_json::json!([LEGACY_FORMAT]));
 }
 
-/// #44: Beim Schreiben bleiben Planungen ohne Kennung, mit Nicht-Text-Kennung und Nicht-Objekte unverändert.
+/// #44: When writing, plans without an identifier, with a non-text identifier and non-objects stay unchanged.
 #[test]
 fn schreiben_erfindet_keine_kennung() {
     let d = std::env::temp_dir().join(format!("vivaplan-legacy-format-b-{}", std::process::id()));
@@ -170,8 +170,8 @@ fn schreiben_erfindet_keine_kennung() {
     let _ = std::fs::remove_dir_all(&d);
 }
 
-// #144/AK1, AK2: Gültig sind «vivaplan/1», die alte Kennung und keine Kennung. Jede andere Kennung lehnen
-// `read_plan` (Öffnen in der Desktop-App), `Plan::from_json` (Kommandozeile) und `validate` mit der Meldung ab.
+// #144/AK1, AK2: Valid are «vivaplan/1», the old identifier and no identifier. Every other identifier is rejected by
+// `read_plan` (opening in the desktop app), `Plan::from_json` (command line) and `validate` with the message.
 #[test]
 fn issue_144_ak2_unknown_format_is_rejected_on_open() {
     let d = std::env::temp_dir().join(format!("vivaplan-format-{}", std::process::id()));

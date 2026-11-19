@@ -1,5 +1,5 @@
-//! Invarianten an vielen zufällig erzeugten Planungen (reproduzierbar über den Startwert):
-//! keine ungültigen Zahlen, Bilanzen gehen auf, gleiche Eingaben ergeben gleiche Ergebnisse.
+//! Invariants on many randomly generated plans (reproducible via the seed):
+//! no invalid numbers, balances add up, equal inputs give equal results.
 
 use engine::batch;
 use engine::model::Plan;
@@ -28,7 +28,7 @@ impl Gen {
     fn pick<'a>(&mut self, xs: &[&'a str]) -> &'a str {
         xs[self.0.below(xs.len())]
     }
-    /// Konstant oder zeitabhängig mit Meilensteinen und Daten.
+    /// Constant or time-dependent with milestones and dates.
     fn series(&mut self, a: f64, b: f64) -> Value {
         if self.chance(0.5) {
             return json!(self.f(a, b));
@@ -158,7 +158,7 @@ impl Gen {
                 "properties": (0..self.i(0, 3) as usize).map(|k| self.property(k)).collect::<Vec<_>>() }
         }));
         if quiet {
-            // Für die Bilanzprüfung: ohne Renditen, Steuern, Pensionskasse und Immobilien.
+            // For the balance check: without returns, taxes, pension fund and properties.
             v["returns"]["fixed"]["stocks"] = json!(0);
             v["returns"]["fixed"]["bonds"] = json!(0);
             v["pension"]["pk"]["capital"] = json!(0);
@@ -245,16 +245,16 @@ fn random_plans_keep_books_balanced() {
         if let Some(d) = s.depleted {
             assert!(d >= sim.start && d <= sim.end);
         }
-        // Gleiche Eingaben ⇒ gleiche Ergebnisse.
+        // Equal inputs ⇒ equal results.
         let (_, again) = run(&v).unwrap();
         assert_eq!(again.summary.end_total.to_bits(), s.end_total.to_bits(), "{}", ctx());
     }
     assert!(ran > PLANS / 2, "nur {ran} von {PLANS} Planungen ohne Prüffehler");
 }
 
-/// Ohne Renditen, Steuern, PK und Immobilien ändert sich das Cash genau um die Geldflüsse:
-/// Einkommen (inkl. Renten) + weitere Zuflüsse + einmalige Beträge − Ausgaben. Umschichtungen
-/// (Reserve, Töpfe) dürfen nichts verändern.
+/// Without returns, taxes, PK and properties the cash changes by exactly the cash flows:
+/// income (including pensions) + further inflows + one-off amounts − spending. Reallocations
+/// (reserve, buckets) must not change anything.
 #[test]
 fn cash_flows_are_conserved_without_returns() {
     let mut g = Gen(Rng::new(7, 2));
@@ -287,11 +287,11 @@ fn cash_flows_are_conserved_without_returns() {
         }
     }
     eprintln!("gerechnet: {ran} von {PLANS}");
-    // #81/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
+    // #81/AK1: Plans with validation errors are skipped; at least half must be computed.
     assert!(ran > PLANS / 2, "nur {ran} von {PLANS} Planungen ohne Prüffehler");
 }
 
-/// Kauf und Verkauf zum Buchwert ohne Kosten ändern das Gesamtvermögen nicht.
+/// Purchase and sale at book value without costs do not change total wealth.
 #[test]
 fn buying_and_selling_at_book_value_keeps_total() {
     const N: u64 = 100;
@@ -306,8 +306,8 @@ fn buying_and_selling_at_book_value_keeps_total() {
         v["flows"] = json!({ "income": 0, "spending": 0 });
         v["pension"]["ahv"]["monthly"] = json!(0);
         v["returns"]["fixed"]["inflation"] = json!(0);
-        // #81/AK3: Ohne Grundstückgewinnsteuer scheiterte jede Planung an der Prüfung (Pflicht seit der Prüfung auf
-        // Immobilien im Besitz oder mit geplantem Kauf); der Test rechnete keine einzige. Satz 0 % zählt als gesetzt.
+        // #81/AK3: Without the property gain tax every plan failed the validation (required since the check for
+        // owned properties or planned purchases); the test computed not a single one. A rate of 0 % counts as set.
         v["taxes"]["propertyGain"] = json!({ "brackets": [[1e9, 0.0]] });
         v["realestate"] = json!({ "properties": [ {
             "id": "a", "name": "A", "status": "planned", "buy": g.month(2028, 2030), "sell": g.month(2031, 2034),
@@ -321,6 +321,6 @@ fn buying_and_selling_at_book_value_keeps_total() {
         }
     }
     eprintln!("gerechnet: {ran} von {N}");
-    // #81/AK1: Planungen mit Prüffehlern werden übersprungen; mindestens die Hälfte muss gerechnet sein.
+    // #81/AK1: Plans with validation errors are skipped; at least half must be computed.
     assert!(ran > N / 2, "nur {ran} von {N} Planungen ohne Prüffehler");
 }

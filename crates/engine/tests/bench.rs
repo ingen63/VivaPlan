@@ -1,4 +1,4 @@
-//! Messung der Rechenzeit pro Lauf (Grundlage der Dauerschätzung in der Oberfläche).
+//! Measurement of the computing time per run (basis of the duration estimate in the user interface).
 
 use std::path::Path;
 
@@ -39,9 +39,9 @@ fn bench_measures_one_run_for_each_source() {
 #[test]
 fn bench_caps_the_number_of_paths_and_reports_errors() {
     let mut p = plan("bootstrap");
-    // #83: Mit einer Milliarde Pfaden bräuchte eine Messung ohne Begrenzung auf jedem Rechner Stunden; begrenzt
-    // auf 1000 Pfade dauert sie lokal unter einer Sekunde und auch auf einem 2-Kern-Runner unter Abdeckungsmessung
-    // nur Sekunden. Die Grenze von 120 s trennt beides sicher, ohne von der Geschwindigkeit des Rechners abzuhängen.
+    // #83: With a billion paths a measurement without a limit would need hours on any machine; limited
+    // to 1000 paths it takes less than a second locally and only seconds even on a 2-core runner under coverage
+    // measurement. The limit of 120 s separates both safely without depending on the speed of the machine.
     p["returns"]["bootstrap"]["paths"] = json!(1_000_000_000);
     let t0 = std::time::Instant::now();
     api::bench(&p, Path::new("/"), Some(&data_dir())).unwrap();
@@ -49,7 +49,7 @@ fn bench_caps_the_number_of_paths_and_reports_errors() {
         t0.elapsed().as_secs_f64() < 120.0,
         "Messung darf nicht von der Pfadzahl abhängen"
     );
-    // ohne Bibliothek: verständlicher Fehler statt Absturz
+    // without a library: understandable error instead of a crash
     assert!(api::bench(&plan("bootstrap"), Path::new("/"), None)
         .unwrap_err()
         .contains("Datenbibliothek"));

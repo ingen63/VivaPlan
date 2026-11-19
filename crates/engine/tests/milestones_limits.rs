@@ -1,5 +1,5 @@
-//! #51 (feste Meilensteine «AHV-Bezug» und «Bezug Pensionskasse» mit Grenzen) und #25 (Grenzen aus den
-//! Einstellungen). Erfundene Daten: Geburt 1980-06, Start 2030-01.
+//! #51 (fixed milestones «AHV-Bezug» and «Bezug Pensionskasse» with limits) and #25 (limits from the
+//! settings). Made-up data: birth 1980-06, start 2030-01.
 
 use engine::api;
 use engine::model::Plan;
@@ -56,7 +56,7 @@ fn with_age(id: usize, years: f64) -> Value {
     v
 }
 
-/// #51/AK2: Die Grenzen selbst sind gültig, Werte ausserhalb werden mit klarer Meldung abgelehnt.
+/// #51/AK2: The limits themselves are valid; values outside are rejected with a clear message.
 #[test]
 fn issue_51_ak2_ages_within_limits() {
     assert!(errors(&base()).is_empty(), "{:?}", errors(&base()));
@@ -75,7 +75,7 @@ fn issue_51_ak2_ages_within_limits() {
     assert!(errors(&with_age(1, 57.0))[0]
         .contains("«Bezug Pensionskasse»: Alter 57 liegt ausserhalb der Grenzen 58 bis 65"));
     assert!(errors(&with_age(1, 65.5))[0].contains("Alter 65.5 liegt ausserhalb"));
-    // Die Meldung steht am Feld des Meilensteins.
+    // The message is at the field of the milestone.
     let i = issues(&with_age(1, 66.0))
         .into_iter()
         .find(|i| i.severity == Severity::Error)
@@ -84,7 +84,7 @@ fn issue_51_ak2_ages_within_limits() {
         (i.section, i.field.as_deref()),
         ("milestones", Some("milestones.1.years"))
     );
-    // Als Datum erfasst: dieselben Grenzen.
+    // Entered as a date: the same limits.
     let mut v = base();
     v["milestones"][1] = json!({ "id": "retire", "name": "Bezug Pensionskasse", "kind": "date", "date": "2038-05" });
     assert!(errors(&v)[0].contains("Alter 57.9 liegt ausserhalb"));
@@ -92,7 +92,7 @@ fn issue_51_ak2_ages_within_limits() {
     assert!(errors(&v).is_empty());
 }
 
-/// #51/AK4: Geburt 1980-06: AHV-Bezug mit 65, 63 und 70 Jahren; Bezug Pensionskasse mit 58.
+/// #51/AK4: Birth 1980-06: AHV payout at 65, 63 and 70 years; pension fund payout at 58.
 #[test]
 fn issue_51_ak4_months_of_the_milestones() {
     let month = |id: usize, years: f64, which: &str| {
@@ -105,7 +105,7 @@ fn issue_51_ak4_months_of_the_milestones() {
     assert_eq!(month(1, 58.0, "retire"), YearMonth::new(2038, 6));
 }
 
-/// #51/AK1, AK6: Fehlen die festen Meilensteine, gelten sie im Rechenkern mit 65 Jahren (auch für Person 2).
+/// #51/AK1, AK6: If the fixed milestones are missing, they apply in the calculation engine at 65 years (also for person 2).
 #[test]
 fn issue_51_ak1_milestones_always_exist() {
     let mut v = base();
@@ -120,10 +120,10 @@ fn issue_51_ak1_milestones_always_exist() {
     assert_eq!(r.milestone_name("retire2"), "Bezug Pensionskasse Person 2");
 }
 
-/// #51/AK8, AK9: Warnung bei Erwerbseinkommen nach dem Bezug der Pensionskasse, mit Betrag.
+/// #51/AK8, AK9: Warning about earned income after the pension fund payout, with the amount.
 #[test]
 fn issue_51_ak8_ak9_income_after_the_pension_fund() {
-    // Bezug Pensionskasse 2040-06 (60 Jahre), Einkommen 12'500 ab 2035-02 ohne spätere Zeile mit 0.
+    // Pension fund payout 2040-06 (60 years), income 12'500 from 2035-02 without a later row with 0.
     let income = |rows: Value| {
         let mut v = with_age(1, 60.0);
         v["flows"]["income"] = json!({ "mode": "timed", "rows": rows });
@@ -136,11 +136,11 @@ fn issue_51_ak8_ak9_income_after_the_pension_fund() {
     assert!(!w.iter().any(|m| m.contains(TEXT)), "{w:?}");
     let w = income(json!([{ "from": "2035-02", "value": 12_500 }, { "from": "2040-06", "value": 3000 }]));
     assert!(w.contains(&format!("{TEXT} 3'000 pro Monat.")), "{w:?}");
-    // Nur eine Warnung, kein Fehler
+    // Only a warning, no error
     let mut v = with_age(1, 60.0);
     v["flows"]["income"] = json!(12_500);
     assert!(errors(&v).is_empty());
-    // Zwei Personen: die Warnung nennt die Person
+    // Two persons: the warning names the person
     v["household"]["persons"] =
         json!([{ "id": "A", "name": "Anna", "birth": "1980-06" }, { "id": "B", "name": "Ben", "birth": "1982-01" }]);
     v["partner"] = json!({ "income": 2000, "pk": { "capital": 0, "at": "retire2", "lumpsum": 0, "conversion": 0 },
@@ -153,23 +153,23 @@ fn issue_51_ak8_ak9_income_after_the_pension_fund() {
     );
 }
 
-/// #51: Die Warnung geht nicht Monat für Monat bis zum Ende; ein absurd fernes Ende hängt die Prüfung nicht auf.
+/// #51: The warning does not go month by month until the end; an absurdly distant end does not hang the validation.
 #[test]
 fn issue_51_income_warning_with_distant_end() {
     let mut v = with_age(1, 60.0);
     v["milestones"][3]["years"] = json!(100_000_000);
     v["flows"]["income"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "retire", "value": 0 },
         { "from": "2100-01", "value": 700 } ] });
-    // #83: Die Prüfung sucht den Betrag über die Stützstellen und dauert Millisekunden. Ginge sie Monat für Monat
-    // bis zum Ende (1,2 Mrd. Monate), bräuchte sie auf jedem Rechner viele Minuten. Die Grenze von 60 s fängt nur
-    // dieses Hängen ab und hält auch auf einem 2-Kern-Runner unter Abdeckungsmessung.
+    // #83: The validation looks for the amount via the grid points and takes milliseconds. If it went month by month
+    // until the end (1.2 billion months), it would need many minutes on any machine. The limit of 60 s only catches
+    // this hang and also holds on a 2-core runner under coverage measurement.
     let t = std::time::Instant::now();
     let w = warnings(&v);
     assert!(t.elapsed().as_secs() < 60, "Prüfung dauert zu lange");
     assert!(w.iter().any(|m| m.ends_with("noch 700 pro Monat.")), "{w:?}");
 }
 
-/// #25/AK5, AK6: Die Grenzen kommen als Parameter aus den Einstellungen; ohne Angabe gelten die Standardwerte.
+/// #25/AK5, AK6: The limits come as parameters from the settings; if not given, the default values apply.
 #[test]
 fn issue_25_ak6_limits_from_the_settings() {
     let mut v = with_age(1, 67.0);
@@ -184,13 +184,13 @@ fn issue_25_ak6_limits_from_the_settings() {
             "«Bezug Pensionskasse»: Alter 68 liegt ausserhalb der Grenzen 58 bis 67 Jahre (Einstellungen).".to_string()
         ]
     );
-    // Ungültige Einstellungen werden gemeldet
+    // Invalid settings are reported
     let mut bad = base();
     bad["limits"] = json!({ "ahvMin": 71 });
     assert!(errors(&bad)
         .iter()
         .any(|m| m.contains("Einstellungen: AHV-Bezug: Die untere Grenze (71) liegt über der oberen Grenze (70).")));
-    // Die Grenzen gehören nicht zur Planung: beim Schreiben fehlen sie.
+    // The limits do not belong to the plan: they are missing when writing.
     let p: Plan = serde_json::from_value(v.clone()).unwrap();
     assert!(serde_json::to_value(&p).unwrap().get("limits").is_none());
 }

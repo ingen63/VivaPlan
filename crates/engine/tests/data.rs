@@ -1,5 +1,5 @@
-//! Daten und Statistik: Import gegen die Originalspalten, CSV-Robustheit, Verteilungen der
-//! Monte-Carlo-Pfade, gleiche Pfade in allen Szenarien.
+//! Data and statistics: import against the original columns, CSV robustness, distributions of the
+//! Monte Carlo paths, the same paths in all scenarios.
 
 use std::path::{Path, PathBuf};
 
@@ -12,8 +12,8 @@ use engine::time::YearMonth;
 use engine::{api, import, market};
 use serde_json::json;
 
-/// #94: Shillers Originaltabelle liegt nur lokal (nicht im Repository). Fehlt sie, gibt es `None`, und der Test
-/// wird mit einer Meldung übersprungen.
+/// #94: Shiller's original spreadsheet only exists locally (not in the repository). If it is missing, `None` is returned, and the test
+/// is skipped with a message.
 fn shiller_file() -> Option<PathBuf> {
     let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/quellen/shiller-index.ods");
     if p.exists() {
@@ -32,8 +32,8 @@ fn num(c: Option<&Data>) -> Option<f64> {
     }
 }
 
-/// Unabhängige Kontrolle des Shiller-Imports mit den Rohspalten: Aktien = (P + D/12) / P₋₁ − 1,
-/// Obligationen = Shillers «Monthly Total Bond Returns» des Vormonats (Spalte R), Inflation = CPI / CPI₋₁₂ − 1.
+/// Independent check of the Shiller import with the raw columns: stocks = (P + D/12) / P₋₁ − 1,
+/// bonds = Shiller's «Monthly Total Bond Returns» of the previous month (column R), inflation = CPI / CPI₋₁₂ − 1.
 #[test]
 fn shiller_import_matches_raw_columns() {
     let Some(shiller) = shiller_file() else {
@@ -96,8 +96,8 @@ fn csv_parser_is_robust() {
     }
 }
 
-/// #60/AK1, AK2: Jahreszahlen ausserhalb 1000 bis 9999 ergeben eine Fehlermeldung mit Zeilennummer statt eines
-/// Absturzes (Fund des Fuzzers `parse_csv`: Überlauf in `YearMonth::new`).
+/// #60/AK1, AK2: Year numbers outside 1000 to 9999 give an error message with the line number instead of a
+/// crash (finding of the fuzzer `parse_csv`: overflow in `YearMonth::new`).
 #[test]
 fn issue_60_extreme_years_are_errors_not_crashes() {
     let err = |year: &str| {
@@ -111,7 +111,7 @@ fn issue_60_extreme_years_are_errors_not_crashes() {
             "{year}: {e}"
         );
     }
-    // Mit «-» gilt der Wert als Monatsdatum und wird dort abgelehnt.
+    // With «-» the value counts as a month date and is rejected there.
     for year in ["-2147483648", "-1"] {
         let e = err(year);
         assert!(
@@ -119,7 +119,7 @@ fn issue_60_extreme_years_are_errors_not_crashes() {
             "{year}: {e}"
         );
     }
-    // Grenzen gültig, auch als Folge
+    // Limits valid, also as a sequence
     let ds = DataSet::parse_csv("t", "Years,Stocks,Bonds,Inflation\n1000,0,0,0\n1001,0,0,0\n").unwrap();
     assert_eq!(
         (ds.freq, ds.len(), ds.first),
@@ -131,7 +131,7 @@ fn issue_60_extreme_years_are_errors_not_crashes() {
             .first,
         YearMonth::new(9999, 1)
     );
-    // AK2: Monatsindex überläuft nicht, auch direkt mit extremen Jahren
+    // AK2: the month index does not overflow, also directly with extreme years
     assert_eq!(YearMonth::new(i32::MAX, 12), YearMonth(i32::MAX));
     assert_eq!(YearMonth::new(i32::MIN, 1), YearMonth(i32::MIN));
     assert_eq!(YearMonth::new(2000, 1).plus(-1), YearMonth::new(1999, 12));
@@ -146,8 +146,8 @@ fn fixed() -> market::FixedCurves {
     }
 }
 
-/// Über viele Pfade entspricht der Bootstrap der Verteilung der Reihe: gleicher Mittelwert,
-/// gleiche Streuung der Monatsrenditen, mittlere Blocklänge wie eingestellt.
+/// Over many paths the bootstrap matches the distribution of the series: same mean,
+/// same spread of the monthly returns, mean block length as set.
 #[test]
 fn bootstrap_reproduces_marginal_distribution() {
     let ds = DataSet::load_csv(&Path::new(env!("CARGO_MANIFEST_DIR")).join("data/Shiller CHF.csv")).unwrap();
@@ -192,7 +192,7 @@ fn bootstrap_reproduces_marginal_distribution() {
     assert!((avg_block - 24.0).abs() < 1.5, "mittlere Blocklänge {avg_block}");
 }
 
-/// Kurssprünge: im Mittel `jumpLambda` pro Jahr, Höhe ≈ e^jumpMu.
+/// Price jumps: on average `jumpLambda` per year, size ≈ e^jumpMu.
 #[test]
 fn parametric_jumps_have_expected_frequency() {
     let f = fixed();
@@ -228,8 +228,8 @@ fn parametric_jumps_have_expected_frequency() {
     assert!((r - ((-0.3f64).exp() - 1.0)).abs() < 1e-9);
 }
 
-/// Ein Szenario ohne Änderung (eine einzige Kombination mit dem Ausgangswert) ergibt dasselbe wie
-/// die Planung selbst: gleiche Pfade, gleiche Kennzahlen.
+/// A scenario without a change (a single combination with the initial value) gives the same as
+/// the plan itself: same paths, same metrics.
 #[test]
 fn scenario_with_base_value_equals_base_run() {
     let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");
@@ -254,7 +254,7 @@ fn scenario_with_base_value_equals_base_run() {
     assert_eq!(sc.p50, p50);
 }
 
-/// Bandbreiten sind pro Monat geordnet (5. ≤ 25. ≤ 50. ≤ 75. ≤ 95. Perzentil).
+/// Bands are ordered per month (5th ≤ 25th ≤ 50th ≤ 75th ≤ 95th percentile).
 #[test]
 fn bands_are_ordered() {
     let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");
