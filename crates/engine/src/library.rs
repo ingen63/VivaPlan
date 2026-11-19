@@ -412,7 +412,7 @@ mod tests {
         let r = import_shiller_raw(&dir, &raw).unwrap();
         assert_eq!(r.written.len(), 3);
         assert_eq!(r.notes.len(), 1, "{:?}", r.notes);
-        assert!(r.notes[0].contains("Die CHF-Reihe endet"));
+        assert!(r.notes[0].contains("The CHF series ends"));
         assert!(dir.join("Shiller USD.csv").exists() && dir.join(CH_BONDS_FILE).exists());
 
         // If the series does not extend beyond the SNB data, there is no warning.

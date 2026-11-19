@@ -211,25 +211,25 @@ mod tests {
         assert_eq!(tables, languages().len());
     }
 
-    /// #171/AK3: Every message code of the engine has its template `engine.<code>` in the German table, and the
-    /// template renders the example of the engine to exactly the German text of the engine. Keys `engine.*` without a
-    /// code are not allowed. (The test of the user interface `e2e/unit/engine-messages.test.js` checks the same with
+    /// #171/AK3, #176/AK1: Every message code of the engine has its template `engine.<code>` in the English table, and
+    /// the template renders the example of the engine to exactly the (English) text of the engine. Keys `engine.*`
+    /// without a code are not allowed. (The test of the user interface `e2e/unit/engine-messages.test.js` checks the same with
     /// `engineText` of util.js.)
     #[test]
     fn issue_171_ak3_engine_codes_render_the_engine_text() {
         use engine::message::{example, render, Code};
-        let de = &parsed()["de"];
+        let en = &parsed()["en"];
         let mut wrong = vec![];
         for &code in Code::ALL {
             let key = format!("engine.{}", code.as_str());
             let m = example(code);
-            match de.get(&key) {
+            match en.get(&key) {
                 Some(t) if render(t, m.args()) == m.text() => {}
                 other => wrong.push(format!("{key}: {other:?}")),
             }
         }
         assert!(wrong.is_empty(), "{wrong:#?}");
-        let stale: Vec<&String> = de
+        let stale: Vec<&String> = en
             .keys()
             .filter(|k| k.strip_prefix("engine.").is_some_and(|c| Code::parse(c).is_none()))
             .collect();

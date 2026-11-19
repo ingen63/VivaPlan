@@ -397,7 +397,7 @@ mod tests {
         assert_eq!(weight_issue(&w(0.25, 0.25, 0.25, 0.25)), None);
         assert_eq!(weight_issue(&RegionWeights::default()), None);
         assert!(weight_issue(&w(0.5, 0.5, 0.5, 0.0)).unwrap().contains("150 %"));
-        assert!(weight_issue(&w(1.2, -0.2, 0.0, 0.0)).unwrap().contains("zwischen"));
+        assert!(weight_issue(&w(1.2, -0.2, 0.0, 0.0)).unwrap().contains("between"));
         assert!(weight_issue(&w(f64::NAN, 1.0, 0.0, 0.0)).is_some());
     }
 

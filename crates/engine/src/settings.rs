@@ -84,12 +84,12 @@ mod tests {
             f(&mut l);
             l.problems()
         };
-        assert!(bad(|l| l.ahv_min = 71.0)[0].contains("untere Grenze (71) liegt über der oberen Grenze (70)"));
+        assert!(bad(|l| l.ahv_min = 71.0)[0].contains("lower limit (71) is above the upper limit (70)"));
         assert!(bad(|l| l.ahv_min = 70.0).is_empty(), "untere = obere Grenze ist gültig");
-        assert!(bad(|l| l.pk_max = 64.5)[0].contains("ganze Jahre"));
-        assert!(bad(|l| l.pk_min = -1.0)[0].contains("ganze Jahre"));
-        assert!(bad(|l| l.pillar3a_max = -1.0)[0].contains("0 oder mehr"));
-        assert!(bad(|l| l.pillar3a_max = f64::NAN)[0].contains("0 oder mehr"));
+        assert!(bad(|l| l.pk_max = 64.5)[0].contains("whole years"));
+        assert!(bad(|l| l.pk_min = -1.0)[0].contains("whole years"));
+        assert!(bad(|l| l.pillar3a_max = -1.0)[0].contains("0 or more"));
+        assert!(bad(|l| l.pillar3a_max = f64::NAN)[0].contains("0 or more"));
         assert!(bad(|l| l.pillar3a_max = 0.0).is_empty());
     }
 }

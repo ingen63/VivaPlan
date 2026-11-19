@@ -625,7 +625,7 @@ mod tests {
         let e = SnbData::from_cubes(std::slice::from_ref(&unknown))
             .unwrap_err()
             .to_string();
-        assert!(e.contains("wird nicht verwendet"), "{e}");
+        assert!(e.contains("is not used"), "{e}");
         assert!(SnbData::extract_csv(&unknown).is_err());
 
         // Extract and back: the same series for each of the four cubes.

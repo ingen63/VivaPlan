@@ -102,12 +102,12 @@ fn invalid_ranges_are_reported() {
     let e = run_request(&plan(), Path::new("/"), Some(&lib()), &request("guardrails", bad))
         .unwrap_err()
         .to_string();
-    assert!(e.contains("Startrate") && e.contains("ungültig"), "{e}");
+    assert!(e.contains("Startrate") && e.contains("invalid"), "{e}");
     let out = ranges("three_buckets", &[("cashYears", range(None, Some(0.0), Some(99.0)))]);
     let e = split_defs(engine::optimize::OptStrategy::ThreeBuckets, &out)
         .unwrap_err()
         .to_string();
-    assert!(e.contains("muss zwischen"), "{e}");
+    assert!(e.contains("must be between"), "{e}");
     // The validation of the plan also reports it before anything is computed.
     let mut p = plan();
     p["optimization"] = json!({ "ranges": { "guardrails": { "initialRate": { "lo": 0.08, "hi": 0.02 } } } });

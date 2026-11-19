@@ -1,19 +1,21 @@
-// #171: Messages of the engine in the user interface. The engine writes an example of every code (code, German
-// template, parameters, German text) to engine-messages.json (Rust test `issue_171_ak3_examples_file_is_current`);
-// here `engineText` of util.js renders each example with the text table and must give exactly the text of the engine.
+// #171: Messages of the engine in the user interface. The engine writes an example of every code (code, English
+// template, parameters, English text since #176) to engine-messages.json (Rust test
+// `issue_171_ak3_examples_file_is_current`); here `engineText` of util.js renders each example with the English text
+// table and must give exactly the text of the engine.
 // Run: `node --test e2e/unit/` (or `make ui-unit`).
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { de } = require("./tr.js");
+const en = require("../../crates/app/ui/i18n/en.json");
 const u = require("../../crates/app/ui/util.js");
 const examples = require("./engine-messages.json");
 
 const lookup = table => key => table[key];
 
-test("#171/AK3: the German table renders every example to the text of the engine", () => {
+test("#176/AK1: the English table renders every example to the text of the engine", () => {
   assert.ok(examples.length > 300, `${examples.length}`);
   const wrong = examples
-    .map(e => ({ code: e.code, got: u.engineText({ code: e.code, params: e.params, text: "" }, lookup(de)), want: e.text }))
+    .map(e => ({ code: e.code, got: u.engineText({ code: e.code, params: e.params, text: "" }, lookup(en)), want: e.text }))
     .filter(x => x.got !== x.want);
   assert.deepEqual(wrong, []);
 });
@@ -21,6 +23,7 @@ test("#171/AK3: the German table renders every example to the text of the engine
 test("#171/AK3: every code has a template in the table, and every engine key has a code", () => {
   const codes = new Set(examples.map(e => e.code));
   assert.deepEqual(examples.filter(e => !(`engine.${e.code}` in de)).map(e => e.code), []);
+  assert.deepEqual(examples.filter(e => en[`engine.${e.code}`] !== e.template).map(e => e.code), []);
   assert.deepEqual(Object.keys(de).filter(k => k.startsWith("engine.") && !codes.has(k.slice(7))), []);
 });
 

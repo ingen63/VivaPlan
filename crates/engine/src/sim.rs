@@ -218,7 +218,7 @@ pub struct PropertyEvent {
     pub lump_sum: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rate: Option<f64>,
-    /// Emergency sale: reason («Vermögen < 0» or «Notverkaufskriterium»); for a renewal, why it did not happen.
+    /// Emergency sale: reason («wealth < 0» or «emergency sale criterion»); for a renewal, why it did not happen.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<Message>,
     /// Sale: what happens to the proceeds («Verkaufserlös reserviert für Kauf im Folgemonat» or withdrawal strategy applied at once).
@@ -347,7 +347,7 @@ pub struct Renewal {
     pub debt_before: f64,
     /// Mortgage after the renewal (unchanged on an emergency sale; the property is sold in the following month).
     pub debt_after: f64,
-    /// Reason for the emergency sale: «Vermögen < 0» or «Notverkaufskriterium»; `None`: no emergency sale.
+    /// Reason for the emergency sale: «wealth < 0» or «emergency sale criterion»; `None`: no emergency sale.
     pub emergency_sale: Option<Message>,
 }
 
@@ -473,9 +473,9 @@ enum Trigger {
     SaleOf(usize),
 }
 
-/// #171: Basis of the stock return of the 3-bucket strategy as a message («letzte 12 Monate», «seit Start»).
+/// #171: Basis of the stock return of the 3-bucket strategy as a message («last 12 months», «since start»).
 fn return_basis(basis: &str) -> Message {
-    if basis == "seit Start" {
+    if basis == "since start" {
         msg!(return_since_start)
     } else {
         msg!(return_last_12_months)
@@ -1571,14 +1571,14 @@ impl<'a> Run<'a> {
         let keep = max / debt;
         // After the payment: wealth >= 0 and emergency sale criterion not triggered?
         let reason = if liquid - lump < 0.0 {
-            Some("Vermögen < 0")
+            Some("wealth < 0")
         } else {
             let shortfall =
                 s.planned_living(m) * self.infl_idx + self.running_estimate(m, k, i, tranches, keep) - income_m;
-            (liquid - lump - s.emergency.at(m) * shortfall < 0.0).then_some("Notverkaufskriterium")
+            (liquid - lump - s.emergency.at(m) * shortfall < 0.0).then_some("emergency sale criterion")
         };
         if let Some(reason) = reason {
-            let below_zero = reason == "Vermögen < 0";
+            let below_zero = reason == "wealth < 0";
             let reason = if below_zero {
                 msg!(reason_wealth_negative)
             } else {
@@ -2120,15 +2120,15 @@ impl<'a> Run<'a> {
 
     /// Stock return for the return condition (#103): the last 12 months including the current one, as the ratio
     /// of the index levels; the path's lead-in supplies the months before the start. If it is missing entirely or partly (series
-    /// starts later), the return since the earliest known level applies («seit Start»).
+    /// starts later), the return since the earliest known level applies («since start»).
     fn stock_return(&self, k: usize) -> (f64, &'static str) {
         let h = &self.stock_hist;
         // Before the month's return step (preview) the current month is missing: then the last available one applies
         let i = (self.hist_off + k).min(h.len() - 1);
         if i >= 12 {
-            (h[i] / h[i - 12] - 1.0, "letzte 12 Monate")
+            (h[i] / h[i - 12] - 1.0, "last 12 months")
         } else {
-            (h[i] / h[0] - 1.0, "seit Start")
+            (h[i] / h[0] - 1.0, "since start")
         }
     }
 

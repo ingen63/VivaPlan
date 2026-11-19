@@ -92,7 +92,7 @@ fn more_than_two_persons_is_an_error() {
     let issues = validate::validate(&plan(v));
     assert!(issues
         .iter()
-        .any(|i| i.severity == Severity::Error && i.message.contains("zwei")));
+        .any(|i| i.severity == Severity::Error && i.message.contains("two")));
 }
 
 #[test]
@@ -298,7 +298,7 @@ fn guardrails_cut_spending_when_rate_gets_too_high() {
     let cuts = res
         .events
         .iter()
-        .filter(|e| e.kind == EventKind::Withdrawal && e.text.contains("gekürzt"))
+        .filter(|e| e.kind == EventKind::Withdrawal && e.text.contains("cut by"))
         .count();
     assert!(cuts >= 1);
 }
@@ -317,7 +317,7 @@ fn guardrails_raise_spending_after_strong_markets() {
     assert!(res
         .events
         .iter()
-        .any(|e| e.kind == EventKind::Withdrawal && e.text.contains("erhöht")));
+        .any(|e| e.kind == EventKind::Withdrawal && e.text.contains("raised by")));
     assert!(res.records[24].spending > res.records[0].spending);
 }
 
@@ -440,5 +440,5 @@ fn issue_134_ak3_capital_tax_of_a_second_withdrawal_is_never_negative() {
     let issues = validate::validate(&plan(v));
     assert!(issues.iter().any(|i| i.severity == Severity::Warning
         && i.field.as_deref() == Some("taxes.capital.1.1")
-        && i.message.contains("sinkt die Steuer")));
+        && i.message.contains("the tax falls")));
 }

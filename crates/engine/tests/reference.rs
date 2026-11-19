@@ -347,7 +347,7 @@ fn planned_property_is_sold_at_its_sale_date() {
         .iter()
         .any(|e| e.kind == EventKind::Sale && e.month == YearMonth::new(2031, 3)));
     close(month(&res, 2031, 3).liquid, 1_000_000.0, "nach Verkauf");
-    close(month(&res, 2031, 3).property_equity, 0.0, "keine Immobilie mehr");
+    close(month(&res, 2031, 3).property_equity, 0.0, "no property left");
 }
 
 /// A purchase date before the simulation start is never reached: the validation reports it.
@@ -361,7 +361,7 @@ fn planned_purchase_before_start_is_reported() {
     assert!(
         issues
             .iter()
-            .any(|i| i.section == "realestate" && i.message.contains("vor dem Simulationsstart")),
+            .any(|i| i.section == "realestate" && i.message.contains("before the simulation start")),
         "{issues:?}"
     );
 }
@@ -376,7 +376,7 @@ fn sale_before_start_is_reported_as_a_warning() {
     let issues = validate::validate(&plan(v));
     let hit = issues
         .iter()
-        .find(|i| i.section == "realestate" && i.message.contains("Verkaufszeitpunkt liegt vor dem Simulationsstart"));
+        .find(|i| i.section == "realestate" && i.message.contains("the sale date is before the simulation start"));
     assert!(
         hit.is_some_and(|i| i.severity == validate::Severity::Warning),
         "{issues:?}"
@@ -550,7 +550,7 @@ fn aargau_without_rates_has_no_tax_and_is_flagged() {
     assert!(
         issues
             .iter()
-            .any(|i| i.severity == Severity::Error && i.message.contains("ungültig")),
+            .any(|i| i.severity == Severity::Error && i.message.contains("invalid")),
         "{issues:?}"
     );
 }
@@ -564,7 +564,7 @@ fn aargau_warns_about_missing_purchase_date() {
     assert!(
         issues
             .iter()
-            .any(|i| i.severity == Severity::Warning && i.message.contains("Kaufdatum")),
+            .any(|i| i.severity == Severity::Warning && i.message.contains("purchase date")),
         "{issues:?}"
     );
 }

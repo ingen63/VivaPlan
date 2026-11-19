@@ -1814,7 +1814,7 @@ mod tests {
             .err()
             .unwrap()
             .text()
-            .contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"));
+            .contains("The file has the format “vivaplan/2”. It requires a newer version of VivaPlan"));
         // Old config.json is rejected.
         let old_config = dir.join("alt.json");
         std::fs::write(&old_config, r#"{"General": {}}"#).unwrap();
@@ -1822,7 +1822,7 @@ mod tests {
             .err()
             .unwrap()
             .text()
-            .contains("Alte config.json"));
+            .contains("Import old config.json"));
         // No JSON, missing file, path that cannot be converted.
         let broken = dir.join("k.vplan");
         std::fs::write(&broken, "{").unwrap();

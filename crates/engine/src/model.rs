@@ -199,9 +199,10 @@ pub struct Person {
     pub birth: YearMonth,
 }
 
-/// Name of the milestone «Bezug Pensionskasse» (formerly «Pensionierung», #51).
+/// German name of the milestone `retire` as older plans stored it (formerly «Pensionierung», #51); only for the
+/// upgrade, the engine names it in English (#176).
 pub const PK_NAME: &str = "Bezug Pensionskasse";
-/// Name of the milestone «AHV-Bezug».
+/// German name of the milestone `ahv` as older plans stored it (upgrade only).
 pub const AHV_NAME: &str = "AHV-Bezug";
 
 /// Fixed milestones of a person (#51): ids for «Bezug Pensionskasse» and «AHV-Bezug». First person `retire`
@@ -214,7 +215,8 @@ pub fn person_milestones(index: usize) -> (&'static str, &'static str) {
     }
 }
 
-/// Display name of a fixed milestone of person `index` (second person with a suffix).
+/// German name of a fixed milestone of person `index` as older plans stored it (second person with a suffix;
+/// upgrade only).
 pub fn person_milestone_name(base: &str, index: usize) -> String {
     if index == 0 {
         base.to_string()
@@ -223,15 +225,14 @@ pub fn person_milestone_name(base: &str, index: usize) -> String {
     }
 }
 
-/// Name of the milestone «Simulationsstart».
+/// German name of the milestone `start` as older plans stored it (upgrade only).
 pub const START_NAME: &str = "Simulationsstart";
-/// Name of the milestone «Simulationsende».
+/// German name of the milestone `end` as older plans stored it (upgrade only).
 pub const END_NAME: &str = "Simulationsende";
 
-/// #170: German default name of a fixed milestone (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`). Plans store
-/// no name for them, the user interface shows the name from its text table by the id; the engine still uses the
-/// German name in its texts (until #176).
-pub fn fixed_milestone_name(id: &str) -> Option<String> {
+/// #170: German default name of a fixed milestone as older plans stored it (`start`, `end`, `retire`, `ahv`,
+/// `retire2`, `ahv2`); the upgrade removes it.
+pub fn stored_milestone_name(id: &str) -> Option<String> {
     match id {
         "start" => Some(START_NAME.to_string()),
         "end" => Some(END_NAME.to_string()),
@@ -242,6 +243,13 @@ pub fn fixed_milestone_name(id: &str) -> Option<String> {
                 .or_else(|| (id == ahv).then(|| person_milestone_name(AHV_NAME, i)))
         }),
     }
+}
+
+/// #176: Default name of a fixed milestone in the texts of the engine (English, the text of
+/// [`fixed_milestone_message`]). Plans store no name for them; the user interface shows the name from its text
+/// table by the id.
+pub fn fixed_milestone_name(id: &str) -> Option<String> {
+    fixed_milestone_message(id).map(|m| m.to_string())
 }
 
 /// #171: Name of a fixed milestone as a message (the user interface translates it).
@@ -272,8 +280,8 @@ pub struct Milestone {
 }
 
 impl Milestone {
-    /// Name in the texts of the engine: the stored name, for a fixed milestone without a name its German default
-    /// name (#170), otherwise the id.
+    /// Name in the texts of the engine: the stored name, for a fixed milestone without a name its default name
+    /// (#170, English since #176), otherwise the id.
     pub fn label(&self) -> std::borrow::Cow<'_, str> {
         if !self.name.is_empty() {
             return std::borrow::Cow::Borrowed(&self.name);

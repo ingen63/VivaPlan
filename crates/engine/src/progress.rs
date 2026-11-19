@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering::Relaxed};
 use std::sync::{Arc, Mutex};
 
 /// Message by which the user interface recognizes a cancellation.
-pub const CANCELLED: &str = "Abgebrochen";
+pub const CANCELLED: &str = "Cancelled";
 
 /// Id of a computation. The user interface can choose it itself and pass it at the start; otherwise the engine assigns one.
 pub type JobId = u64;

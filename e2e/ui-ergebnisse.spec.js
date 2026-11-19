@@ -575,7 +575,7 @@ test.describe("Results", () => {
       await page.evaluate(s => { state.scenarios.sweeps = s; renderSection(); renderDerived(); }, sweeps);
       return page.evaluate(async () => {
         const out = await Engine.call("validate", { plan: state });
-        return { text: document.querySelector('[data-computed="runs"]')?.innerText || "", errors: out.filter(i => i.severity === "error").map(i => i.message) };
+        return { text: document.querySelector('[data-computed="runs"]')?.innerText || "", errors: out.filter(i => i.severity === "error").map(i => msgText(i)) };
       });
     };
     const sw = (param, from, to, step = 0.1) => ({ param, from, to, step });

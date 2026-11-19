@@ -476,7 +476,7 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
     await page.evaluate(i => { state.realestate.properties[i].sell = "2030-03"; }, i);
     const errs = await page.evaluate(async i => (await planErrors()).filter(e => e.field === `realestate.properties.${i}.sell`), i);
     expect(errs).toHaveLength(1);
-    expect(errs[0].message).toContain("nach «Kauf ab»");
+    expect(await page.evaluate(e => msgText(e), errs[0])).toContain("nach «Kauf ab»");
     expect(await page.evaluate(() => blockedByErrors())).toBe(true);
     // Sale after the purchase: no error at the field
     await page.evaluate(i => { state.realestate.properties[i].sell = "2035-03"; }, i);

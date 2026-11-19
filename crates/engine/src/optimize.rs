@@ -1786,7 +1786,7 @@ mod tests {
                 ..Default::default()
             }
         )
-        .contains("Anzahl Pfade"));
+        .contains("number of paths"));
         assert!(err(
             &plain,
             Request {
@@ -1794,26 +1794,26 @@ mod tests {
                 ..Default::default()
             }
         )
-        .contains("Anzahl Pfade"));
+        .contains("number of paths"));
         // Goal 1 needs no property (the unknown strategy ends the request afterwards).
         let unknown = || Request {
             strategies: vec!["x".into()],
             ..Default::default()
         };
-        assert!(err(&plain, unknown()).contains("Unbekannte Strategie"));
+        assert!(err(&plain, unknown()).contains("Unknown strategy"));
         // Goal 2 needs a property that is not rented, and a minimum consumption between 0 and 200 %.
         let keep = |min: f64| Request {
             goal: Goal::KeepProperty,
             min_consumption: min,
             ..unknown()
         };
-        assert!(err(&plain, keep(0.9)).contains("mindestens einer Immobilie"));
+        assert!(err(&plain, keep(0.9)).contains("at least one property"));
         let mut rent = calm(100_000.0);
         rent["realestate"]["properties"] = json!([{"name": "Miete", "status": "rent", "price": 0, "fixCosts": 0, "inflation": false, "from": "start", "rent": 1000}]);
-        assert!(err(&rent, keep(0.9)).contains("mindestens einer Immobilie"));
+        assert!(err(&rent, keep(0.9)).contains("at least one property"));
         let owned = emergency_plan();
-        assert!(err(&owned, keep(2.5)).contains("Mindestkonsum"));
-        assert!(err(&owned, keep(0.9)).contains("Unbekannte Strategie"));
+        assert!(err(&owned, keep(2.5)).contains("minimum consumption"));
+        assert!(err(&owned, keep(0.9)).contains("Unknown strategy"));
     }
 
     fn outcome(feasible: bool, ruin: f64) -> Outcome {

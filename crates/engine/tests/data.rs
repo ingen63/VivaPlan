@@ -84,9 +84,9 @@ fn csv_parser_is_robust() {
     assert_eq!((ds.freq, ds.len()), (Freq::Monthly, 2));
     assert!(ds.saron.as_ref().unwrap()[0].is_nan());
     for (bad, why) in [
-        ("", "leer"),
+        ("", "empty"),
         ("Date,Stocks,Bonds\n2000-01,0,0\n", "Inflation fehlt"),
-        ("Date,Stocks,Bonds,Inflation\n2000-01,0,0,0\n2000-03,0,0,0\n", "Lücke"),
+        ("Date,Stocks,Bonds,Inflation\n2000-01,0,0,0\n2000-03,0,0,0\n", "gaps"),
         ("Date,Stocks,Bonds,Inflation\n2000-01,0,x,0\n", "keine Zahl"),
         ("Date,Stocks,Bonds,Inflation\n2000-13,0,0,0\n", "Monat 13"),
         ("Years,Stocks,Bonds,Inflation\n2000,0,0,0\n2000-02,0,0,0\n", "gemischt"),
@@ -107,7 +107,7 @@ fn issue_60_extreme_years_are_errors_not_crashes() {
     for year in ["99999999999", "2147483647", "999", "10000", "0"] {
         let e = err(year);
         assert!(
-            e.contains("Zeile 2") && e.contains(&format!("«{year}» ist kein Jahr (1000 bis 9999)")),
+            e.contains("line 2") && e.contains(&format!("“{year}” is not a year (1000 to 9999)")),
             "{year}: {e}"
         );
     }
@@ -115,7 +115,7 @@ fn issue_60_extreme_years_are_errors_not_crashes() {
     for year in ["-2147483648", "-1"] {
         let e = err(year);
         assert!(
-            e.contains("Zeile 2") && e.contains("kein gültiger Monat"),
+            e.contains("line 2") && e.contains("is not a valid month"),
             "{year}: {e}"
         );
     }

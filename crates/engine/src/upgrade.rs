@@ -17,7 +17,7 @@ use std::borrow::Cow;
 use serde_json::{json, Map, Value};
 
 use crate::message::Message;
-use crate::model::{fixed_milestone_name, person_milestone_name, person_milestones, Plan, AHV_NAME, PK_NAME};
+use crate::model::{person_milestone_name, person_milestones, stored_milestone_name, Plan, AHV_NAME, PK_NAME};
 use crate::settings::{Limits, DEFAULT_AGE};
 use crate::time::YearMonth;
 
@@ -78,7 +78,7 @@ pub fn upgrade(v: &mut Value) -> Vec<Message> {
 }
 
 /// #101: Note when opening a plan that computed parametrically before #100/#101.
-pub const PARAMETRIC_NOTE: &str = "Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig, korreliert mit den Aktien gemäss der Anlagestrategie (bisher fixe Werte). Ihre Parameter des Aktienmodells bleiben; die Vorschlagswerte für den Aktienindex stehen im Reiter «Simulation». Das Ergebnis ändert sich.";
+pub const PARAMETRIC_NOTE: &str = "Parametric Monte Carlo now also draws bonds and inflation at random, correlated with stocks according to the investment strategy (previously fixed values). Your parameters of the stock model are kept; the suggested values for the stock index are on the “Simulation” tab. The result changes.";
 
 /// #100/#101: Flag `auto` for the parameters of the stock model. Plans that compute parametrically keep their
 /// values (with a note, #101/AK6); for all others the values were not in use and from now on follow the
@@ -106,7 +106,7 @@ fn parametric(v: &mut Value, notes: &mut Vec<Message>) {
 }
 
 /// #132/AK7: Note when opening a plan that computed parametrically before #132.
-pub const SAMPLER_NOTE: &str = "Monte Carlo parametrisch erzeugt die Zufallspfade mit einem schnelleren Verfahren. Die Verteilung der Renditen bleibt gleich, die einzelnen Pfade sind aber andere. Das Ergebnis ändert sich deshalb leicht; mit demselben Zufallsstartwert bleibt es wiederholbar.";
+pub const SAMPLER_NOTE: &str = "Parametric Monte Carlo now generates the random paths with a faster method. The distribution of returns stays the same, but the individual paths are different. The result therefore changes slightly; with the same random seed it remains repeatable.";
 
 /// #132: Flag `sampler` for the parametric model. If it is missing, the plan dates from before #132; if it computes
 /// parametrically, it gets a note (not in addition to [`PARAMETRIC_NOTE`], which already names the change).
@@ -181,7 +181,7 @@ fn strategy(v: &mut Value, notes: &mut Vec<Message>) {
 }
 
 /// #69: Note if a plan used the series in USD.
-pub const STRATEGY_USD_NOTE: &str = "Die Zeitreihe «Shiller USD» (in USD) wird durch die Anlagestrategie S&P 500 mit US-Obligationen in CHF ersetzt; alle Strategien rechnen in CHF. Das Ergebnis ändert sich.";
+pub const STRATEGY_USD_NOTE: &str = "The time series “Shiller USD” (in USD) is replaced by the investment strategy S&P 500 with US bonds in CHF; all strategies calculate in CHF. The result changes.";
 
 /// #44: The old format identifier (legacy: RetirementPlanner) is replaced by the new one; the content stays the same,
 /// hence without a note.
@@ -192,7 +192,7 @@ fn format(v: &mut Value) {
 }
 
 /// #54: Note when opening an older plan; the result may change.
-pub const CASH_NOTE: &str = "Cash wird neu bis zur Pensionierung (Bezug Pensionskasse) auf dem erfassten Betrag gehalten, mit der Teuerung fortgeschrieben; ein Überschuss geht ins Portfolio. Die Entnahmestrategie, auch «Standard» mit ihrer Cash-Reserve, gilt erst ab der Pensionierung. Das Ergebnis kann sich deshalb ändern.";
+pub const CASH_NOTE: &str = "Cash is now kept at the amount entered until retirement (pension fund payout), adjusted for inflation; a surplus goes to the portfolio. The withdrawal strategy, including “Standard” with its cash reserve, only applies from retirement. The result may therefore change.";
 
 /// #53: Older plans entered the living costs without housing costs. The housing share at the simulation start is added to
 /// every value, so that the result stays the same.
@@ -247,7 +247,7 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
         if !matches!(id, "start" | "end") {
             continue;
         }
-        let default = fixed_milestone_name(id);
+        let default = stored_milestone_name(id);
         if ms.get("name").and_then(Value::as_str) == default.as_deref() {
             if let Some(o) = ms.as_object_mut() {
                 o.remove("name");
@@ -520,15 +520,15 @@ mod tests {
         assert!(
             notes
                 .iter()
-                .any(|n| n == "Der Meilenstein «AHV-Bezug» fehlte und steht neu auf 65 Jahren."),
+                .any(|n| n == "The milestone “AHV pension start” was missing and is now set to 65 years."),
             "{notes:?}"
         );
         assert!(notes
             .iter()
-            .any(|n| n == "Der Meilenstein «Pensionierung» heisst neu «Bezug Pensionskasse»."));
+            .any(|n| n == "The milestone “Pensionierung” is now called “Pension fund payout”."));
         assert!(notes
             .iter()
-            .any(|n| n == "Die AHV-Rente beginnt neu am Meilenstein «AHV-Bezug» (bisher «never»)."));
+            .any(|n| n == "The AHV pension now starts at the milestone “AHV pension start” (previously “never”)."));
         // Second run: nothing left to do
         assert!(upgrade(&mut v).is_empty());
     }
@@ -550,14 +550,16 @@ mod tests {
         assert_eq!(ms(&v, "ahv")["kind"], "age");
         assert!(ms(&v, "ahv").get("date").is_none());
         assert!(
-            notes.iter().any(|n| n
-                == "«Bezug Pensionskasse» lag bei 55 Jahren, ausserhalb der Grenzen 58 bis 65 Jahre; neu 58 Jahre."),
+            notes
+                .iter()
+                .any(|n| n
+                    == "“Pension fund payout” was at 55 years, outside the limits of 58 to 65 years; now 58 years."),
             "{notes:?}"
         );
         assert!(
-            notes
-                .iter()
-                .any(|n| n == "«AHV-Bezug» lag bei 72 Jahren, ausserhalb der Grenzen 63 bis 70 Jahre; neu 70 Jahre."),
+            notes.iter().any(
+                |n| n == "“AHV pension start” was at 72 years, outside the limits of 63 to 70 years; now 70 years."
+            ),
             "{notes:?}"
         );
         // #25: Limits from the settings
@@ -569,7 +571,7 @@ mod tests {
     }
 
     // #170/AK8: opening an older file removes the German default names of the fixed milestones; a name of its own
-    // stays; the second run changes nothing. The engine uses the German default name by the id.
+    // stays; the second run changes nothing. The engine uses the English default name by the id (#176).
     #[test]
     fn issue_170_ak8_default_names_of_fixed_milestones_are_removed() {
         let mut v = plan();
@@ -586,7 +588,7 @@ mod tests {
             { "id": "end", "name": "Planende", "kind": "date", "date": "2060-12", "fixed": true }
         ]);
         let notes = upgrade(&mut v);
-        assert!(notes.iter().all(|n| !n.contains("heisst neu")), "{notes:?}");
+        assert!(notes.iter().all(|n| !n.contains("is now called")), "{notes:?}");
         for id in ["start", "retire", "ahv", "retire2", "ahv2"] {
             assert!(ms(&v, id).get("name").is_none(), "{id}");
         }
@@ -595,17 +597,17 @@ mod tests {
         let before = v.clone();
         assert!(upgrade(&mut v).is_empty());
         assert_eq!(v, before);
-        // The engine reads the plan and names the fixed milestones in German (texts unchanged until #176)
+        // The engine reads the plan and names the fixed milestones in English (#176)
         let milestones: Vec<crate::model::Milestone> = serde_json::from_value(v["milestones"].clone()).unwrap();
         let labels: Vec<String> = milestones.iter().map(|m| m.label().into_owned()).collect();
         assert_eq!(
             labels,
             [
-                "Simulationsstart",
-                "Bezug Pensionskasse",
-                "AHV-Bezug",
-                "Bezug Pensionskasse Person 2",
-                "AHV-Bezug Person 2",
+                "Simulation start",
+                "Pension fund payout",
+                "AHV pension start",
+                "Pension fund payout person 2",
+                "AHV pension start person 2",
                 "Hausverkauf",
                 "Planende"
             ]
@@ -639,7 +641,7 @@ mod tests {
         );
         assert!(notes
             .iter()
-            .any(|n| n.contains("bezieht sich neu auf das Alter der eigenen Person")));
+            .any(|n| n.contains("now refers to the age of its own person")));
     }
 
     fn with_legacy(pa: Value, amort: &str) -> Value {
@@ -667,7 +669,7 @@ mod tests {
         assert!(
             notes
                 .iter()
-                .any(|n| n.contains("Auszahlung des ganzen Guthabens im 06.2040")),
+                .any(|n| n.contains("the whole balance is paid out in 06.2040")),
             "{notes:?}"
         );
         // Too early: limited to the earliest point in time
@@ -679,7 +681,7 @@ mod tests {
         assert_eq!(v["pillar3a"][0]["payouts"][0]["date"], "2040-06");
         assert!(notes
             .iter()
-            .any(|n| n.contains("lag mehr als 5 Jahre vor dem AHV-Bezug und ist neu im 06.2040")));
+            .any(|n| n.contains("was more than 5 years before the start of the AHV pension and is now in 06.2040")));
         // After the AHV payout or «nie»: no plan entry, remainder at the AHV payout
         for payout in ["2050-01", "never"] {
             let mut v = with_legacy(
@@ -698,7 +700,7 @@ mod tests {
         assert_eq!(v["pillar3a"][0]["use"], "wealth");
         assert!(notes
             .iter()
-            .any(|n| n.contains("setzt neu eine Tranche mit indirekter Amortisation voraus")));
+            .any(|n| n.contains("now requires a tranche with indirect amortization")));
         // An empty account without indirect amortization is dropped silently
         let mut v = with_legacy(
             json!({ "balance": 0, "rate": 0, "payout": "retire", "use": "repay" }),
@@ -722,7 +724,7 @@ mod tests {
         assert_eq!(v["pillar3a"].as_array().unwrap().len(), 1);
         assert_eq!(v["pillar3a"][0]["balance"], 15_000.0);
         assert_eq!(v["pillar3a"][0]["payouts"].as_array().unwrap().len(), 2);
-        assert!(notes.iter().any(|n| n.contains("zu einem Konto zusammengefasst")));
+        assert!(notes.iter().any(|n| n.contains("combined into one account")));
     }
 
     // Unusable data does not lead to a crash.
@@ -742,7 +744,7 @@ mod tests {
         v["milestones"][1]["years"] = json!(58);
         let notes = upgrade(&mut v);
         assert_eq!(ms(&v, "retire")["years"], 58);
-        assert!(!notes.iter().any(|n| n.contains("ausserhalb der Grenzen")), "{notes:?}");
+        assert!(!notes.iter().any(|n| n.contains("outside the limits")), "{notes:?}");
 
         for payout in [None, Some("never"), Some("unbekannt")] {
             let mut v = plan();
@@ -754,13 +756,13 @@ mod tests {
                 "tranches": [ { "amount": 100_000, "periods": [ { "amort": 0, "amortMode": "indirect" } ] } ] } } ] });
             let notes = upgrade(&mut v);
             assert!(
-                notes.iter().any(|n| n == "Die Säule 3a von «Haus» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt."),
+                notes.iter().any(|n| n == "The pillar 3a of “Haus” is now a separate 3a account (section “Pillar 3a”); without a payout date, the balance is paid out in the month the AHV pension starts."),
                 "{payout:?}: {notes:?}"
             );
             assert_eq!(v["pillar3a"][0]["use"], "wealth", "Amortisation 0: nicht indirekt");
             assert!(notes
                 .iter()
-                .any(|n| n.contains("setzt neu eine Tranche mit indirekter Amortisation voraus")));
+                .any(|n| n.contains("now requires a tranche with indirect amortization")));
         }
 
         let mut v = plan();

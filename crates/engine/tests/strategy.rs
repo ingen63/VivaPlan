@@ -196,14 +196,14 @@ fn issue_69_ak5_old_series_become_strategies() {
         let strategy_notes: Vec<&engine::message::Message> = out
             .notes
             .iter()
-            .filter(|n| n.contains("Zeitreihe") || n.contains("Pictet"))
+            .filter(|n| n.contains("time series") || n.contains("Pictet"))
             .collect();
         assert_eq!(!strategy_notes.is_empty(), note, "{series:?}: {:?}", out.notes);
     }
     assert!(api::upgrade_plan(&plan_with(Some("x/MSCI.csv")))
         .notes
         .iter()
-        .any(|n| n.contains("«x/MSCI.csv»")));
+        .any(|n| n.contains("“x/MSCI.csv”")));
     // An existing strategy stays unchanged
     let mut v = plan_with(None);
     v["returns"]["strategy"] =
@@ -266,7 +266,7 @@ fn issue_69_strategy_info_and_new_plans() {
     let series_error = |v: &Value| {
         api::validate(v)
             .iter()
-            .any(|i| i.message.contains("Zeitreihe gewählt sein"))
+            .any(|i| i.message.contains("requires a time series"))
     };
     for src in ["rolling", "bootstrap"] {
         v["returns"]["source"] = json!(src);
@@ -335,7 +335,7 @@ fn issue_69_ak8_parts_without_cut_and_reference_errors() {
 
     let bad = format!("{}{{kaputt", strategy::PREFIX);
     let err = strategy::from_reference_with_parts(&bad, None).unwrap().unwrap_err();
-    assert!(err.to_string().contains("Strategie nicht lesbar"), "{err}");
+    assert!(err.to_string().contains("Strategy cannot be read"), "{err}");
     assert!(strategy::from_reference_with_parts("library:x.csv", None).is_none());
 }
 
@@ -459,12 +459,7 @@ fn issue_69_preview_uses_the_averages_of_the_strategy_series() {
     let basis = out.basis.expect("Vorschau nennt ihre Grundlage");
     let pct = |x: f64| format!("{:.1} %", x * 100.0);
     assert!(
-        basis.contains(&format!(
-            "Aktien {}, Obligationen {}, Inflation {}",
-            pct(s),
-            pct(b),
-            pct(i)
-        )),
+        basis.contains(&format!("stocks {}, bonds {}, inflation {}", pct(s), pct(b), pct(i))),
         "{basis}"
     );
     // Without series and strategy no basis (preview with the fixed values)
@@ -492,17 +487,20 @@ fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
             out.plan["returns"]["strategy"],
             json!({ "stocks": want_stocks, "bonds": want_bonds })
         );
-        let notes: Vec<&engine::message::Message> =
-            out.notes.iter().filter(|n| n.contains("«Schweiz (Pictet)»")).collect();
+        let notes: Vec<&engine::message::Message> = out
+            .notes
+            .iter()
+            .filter(|n| n.contains("“Switzerland (Pictet)”"))
+            .collect();
         assert_eq!(notes.len(), 1, "{:?}", out.notes);
         assert_eq!(
-            notes[0].contains("für die Aktien «Schweiz (JST)»"),
+            notes[0].contains("“Switzerland (JST)” for the stocks"),
             with_stocks,
             "{}",
             notes[0]
         );
         assert_eq!(
-            notes[0].contains("für die Obligationen «Eidgenossenschaft 10 Jahre»"),
+            notes[0].contains("“Swiss Confederation 10 years” for the bonds"),
             with_bonds,
             "{}",
             notes[0]
@@ -550,5 +548,5 @@ fn issue_124_ak8_common_years_of_the_indices() {
     assert_eq!((d.first, d.stocks.len()), (YearMonth::new(last, 1), 1));
     assert_eq!(d.saron.as_deref().map(|s| s.len()), Some(1));
     assert!((d.saron.unwrap()[0] - 0.02).abs() < 1e-12, "SARON im einzigen Jahr");
-    assert!(e.unwrap_err().to_string().contains("keine gemeinsamen Jahre"));
+    assert!(e.unwrap_err().to_string().contains("no years in common"));
 }

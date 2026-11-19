@@ -78,7 +78,8 @@ fn issue_52_ak3_payout_plan_and_rest_at_ahv() {
         vec![ym(2041, 1), ym(2042, 1), ym(2045, 1)]
     );
     assert!(
-        p[2].1.contains("Auszahlung des Rests beim AHV-Bezug 20000 CHF"),
+        p[2].1
+            .contains("Payout of the remainder at the start of the AHV pension 20000 CHF"),
         "{}",
         p[2].1
     );
@@ -106,16 +107,15 @@ fn issue_52_ak5_amount_larger_than_balance() {
     v["pillar3a"] =
         json!([{ "person": "A", "balance": 30_000, "rate": 0, "payouts": [{ "date": "2041-06", "amount": 50_000 }] }]);
     let r = run(&v);
-    close(rec(&r, 2041, 6).pillar3a, 0.0, "leer");
+    close(rec(&r, 2041, 6).pillar3a, 0.0, "empty");
     let p = payouts(&r);
     assert!(
         p.iter()
-            .any(|x| x.0 == ym(2041, 6) && x.1.contains("Geplant 50000 CHF, das Guthaben reicht nur für 30000 CHF")),
+            .any(|x| x.0 == ym(2041, 6) && x.1.contains("planned 50000 CHF, the balance only covers 30000 CHF")),
         "{p:?}"
     );
     assert!(
-        p.iter()
-            .any(|x| x.0 == ym(2041, 6) && x.1.contains("Auszahlung 30000 CHF")),
+        p.iter().any(|x| x.0 == ym(2041, 6) && x.1.contains("Payout 30000 CHF")),
         "{p:?}"
     );
     assert!(!p.iter().any(|x| x.0 == ym(2045, 1)), "kein Rest mehr");
@@ -156,7 +156,7 @@ fn issue_52_ak8_contribution_counts_as_expense() {
         let (a, b) = (rec(&with, 2040, m), rec(&without, 2040, m));
         close(a.pillar3a_in, 500.0, "Einzahlung des Monats");
         close(a.spending - b.spending, 500.0, "Ausgaben");
-        close(a.withdrawal - b.withdrawal, 500.0, "Entnahme");
+        close(a.withdrawal - b.withdrawal, 500.0, "Withdrawal");
     }
     close(
         rec(&without, 2040, 12).liquid - rec(&with, 2040, 12).liquid,
@@ -177,7 +177,7 @@ fn issue_52_ak9_contributions_end_before_ahv() {
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": 1200 }]);
     let r = run(&v);
     close(rec(&r, 2044, 12).pillar3a_in, 100.0, "Dezember 2044");
-    close(rec(&r, 2045, 1).pillar3a_in, 0.0, "AHV-Bezug");
+    close(rec(&r, 2045, 1).pillar3a_in, 0.0, "AHV pension start");
     assert!(r
         .records
         .iter()
@@ -299,7 +299,7 @@ fn issue_50_switch_to_direct_is_an_event() {
         switches(&r),
         vec![(
             ym(2045, 1),
-            "Amortisation Hypothek Haus ab AHV-Bezug direkt statt über die Säule 3a: 3000 CHF pro Jahr".to_string()
+            "Amortization of mortgage Haus from the start of the AHV pension direct instead of via pillar 3a: 3000 CHF per year".to_string()
         )]
     );
     // Renewal from the AHV payout (indirect before): also a switch.
@@ -314,7 +314,7 @@ fn issue_50_switch_to_direct_is_an_event() {
     v["pension"]["ahv"]["monthly"] = json!(5000);
     let r = run(&v);
     assert_eq!(switches(&r).iter().map(|x| x.0).collect::<Vec<_>>(), vec![ym(2045, 1)]);
-    assert!(switches(&r)[0].1.contains("4000 CHF pro Jahr"), "{:?}", switches(&r));
+    assert!(switches(&r)[0].1.contains("4000 CHF per year"), "{:?}", switches(&r));
     // No switch: direct from the beginning, indirect only from the AHV payout (AK4) or start after the AHV payout.
     v["realestate"]["properties"][0] = house(
         json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "direct" }]),
@@ -342,8 +342,8 @@ fn issue_52_payout_repays_the_indirect_tranche() {
     v["pillar3a"] = json!([{ "person": "A", "balance": 10_000, "rate": 0, "use": "repay" }]);
     let r = run(&v);
     // Remainder at the AHV payout: 10'000 + 20 × 750 = 25'000 to the mortgage
-    close(rec(&r, 2045, 1).property_equity, 425_000.0, "Rückzahlung");
-    assert!(payouts(&r).iter().any(|x| x.1.contains("an Hypothek 25000 CHF")));
+    close(rec(&r, 2045, 1).property_equity, 425_000.0, "repayment");
+    assert!(payouts(&r).iter().any(|x| x.1.contains("to mortgage 25000 CHF")));
 }
 
 /// #52/AK13: An old pillar 3a on the mortgage is taken over when computing as when loading.
@@ -361,9 +361,9 @@ fn issue_52_ak13_legacy_pillar3a_of_a_mortgage() {
     close(
         rec(&r, 2042, 6).property_equity,
         417_500.0,
-        "Auszahlung des ganzen Guthabens",
+        "the whole balance is paid out",
     );
-    close(rec(&r, 2042, 6).pillar3a, 0.0, "leer");
+    close(rec(&r, 2042, 6).pillar3a, 0.0, "empty");
     // Afterwards indirect again until the AHV payout, remainder 2045-01: 10 quarters × 750
     assert!(payouts(&r)
         .iter()
@@ -520,7 +520,7 @@ fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
         switches(&run(&v)),
         vec![(
             ym(2045, 1),
-            "Amortisation Hypothek Haus (T1) ab AHV-Bezug direkt statt über die Säule 3a: 3000 CHF pro Jahr"
+            "Amortization of mortgage Haus (T1) from the start of the AHV pension direct instead of via pillar 3a: 3000 CHF per year"
                 .to_string()
         )]
     );
@@ -541,12 +541,12 @@ fn issue_124_ak2_planned_payout_in_the_ahv_month_and_exact_amount() {
         "{p:?}"
     );
     assert!(p[1].1.contains("50000 CHF") && p[2].1.contains("50000 CHF"), "{p:?}");
-    assert!(!p.iter().any(|x| x.1.contains("reicht nur")), "{p:?}");
+    assert!(!p.iter().any(|x| x.1.contains("only covers")), "{p:?}");
 
     v["pillar3a"] = json!([{ "person": "A", "balance": 50_000, "rate": 0, "payouts": [
         { "date": "2041-01", "amount": 50_000 } ] }]);
     let p = payouts(&run(&v));
-    assert!(!p.iter().any(|x| x.1.contains("reicht nur")), "{p:?}");
+    assert!(!p.iter().any(|x| x.1.contains("only covers")), "{p:?}");
 }
 
 /// Withdrawal phase from the start (retirement at 60), AHV payout at 65 (2045-01), 3a contribution 2'400 per year.
@@ -629,7 +629,7 @@ fn issue_124_ak2_need_with_contribution() {
         r.bucket_refills
             .iter()
             .find(|b| b.month == ym(y, m) && (m != 1 || b.trigger == "Januar"))
-            .expect("Auffüllung")
+            .expect("refill")
             .clone()
     };
     let r = run_b(2400.0, false);

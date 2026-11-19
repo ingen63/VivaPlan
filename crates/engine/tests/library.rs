@@ -77,7 +77,7 @@ fn plan_uses_library_reference() {
 
     // Without a library folder: understandable error.
     let out = api::run(&plan, Path::new("/"), None);
-    assert!(out.error.unwrap().contains("Datenbibliothek"));
+    assert!(out.error.unwrap().contains("data library"));
 }
 
 #[test]

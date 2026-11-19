@@ -78,7 +78,7 @@ test.describe("Additional acceptance tests", () => {
     await setThreeBuckets("three_buckets")(page);
     const t = await page.evaluate(() => {
       const evs = lastRun.single.events, shown = evs.filter(e => !isBucketBooking(e));
-      return { years: new Set(lastRun.single.bucketRefills.map(r => r.month.slice(0, 4))).size, all: evs.length, shown: shown.length, texts: shown.map(e => e.text), booked: evs.filter(e => isBucketBooking(e)).map(e => e.text) };
+      return { years: new Set(lastRun.single.bucketRefills.map(r => r.month.slice(0, 4))).size, all: evs.length, shown: shown.length, texts: shown.map(e => msgText(e)), booked: evs.filter(e => isBucketBooking(e)).map(e => msgText(e)) };
     });
     const items = page.locator("#resultsBody .evlist li");
     await expect(items).toHaveCount(t.shown);                       // #10/AK2: everything except the bookings is in the list

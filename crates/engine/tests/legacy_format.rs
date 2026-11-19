@@ -204,7 +204,7 @@ fn issue_144_ak2_unknown_format_is_rejected_on_open() {
     ] {
         plan["format"] = bad;
         let msg = format!(
-            "Die Datei hat das Format «{shown}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet."
+            "The file has the format “{shown}”. It requires a newer version of VivaPlan and will not be opened."
         );
         std::fs::write(&file, plan.to_string()).unwrap();
         let e = api::read_plan(&file).unwrap_err().to_string();

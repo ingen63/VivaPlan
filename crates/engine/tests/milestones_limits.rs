@@ -69,12 +69,11 @@ fn issue_51_ak2_ages_within_limits() {
     let e = errors(&with_age(2, 62.0));
     assert_eq!(
         e,
-        vec!["«AHV-Bezug»: Alter 62 liegt ausserhalb der Grenzen 63 bis 70 Jahre (Einstellungen).".to_string()]
+        vec!["“AHV pension start”: age 62 is outside the limits of 63 to 70 years (settings).".to_string()]
     );
-    assert!(errors(&with_age(2, 71.0))[0].contains("Alter 71 liegt ausserhalb der Grenzen 63 bis 70"));
-    assert!(errors(&with_age(1, 57.0))[0]
-        .contains("«Bezug Pensionskasse»: Alter 57 liegt ausserhalb der Grenzen 58 bis 65"));
-    assert!(errors(&with_age(1, 65.5))[0].contains("Alter 65.5 liegt ausserhalb"));
+    assert!(errors(&with_age(2, 71.0))[0].contains("age 71 is outside the limits of 63 to 70"));
+    assert!(errors(&with_age(1, 57.0))[0].contains("“Pension fund payout”: age 57 is outside the limits of 58 to 65"));
+    assert!(errors(&with_age(1, 65.5))[0].contains("age 65.5 is outside"));
     // The message is at the field of the milestone.
     let i = issues(&with_age(1, 66.0))
         .into_iter()
@@ -87,7 +86,7 @@ fn issue_51_ak2_ages_within_limits() {
     // Entered as a date: the same limits.
     let mut v = base();
     v["milestones"][1] = json!({ "id": "retire", "name": "Bezug Pensionskasse", "kind": "date", "date": "2038-05" });
-    assert!(errors(&v)[0].contains("Alter 57.9 liegt ausserhalb"));
+    assert!(errors(&v)[0].contains("age 57.9 is outside"));
     v["milestones"][1]["date"] = json!("2038-06");
     assert!(errors(&v).is_empty());
 }
@@ -117,7 +116,7 @@ fn issue_51_ak1_milestones_always_exist() {
     assert_eq!(r.milestone("retire").unwrap(), YearMonth::new(2045, 6));
     assert_eq!(r.milestone("ahv").unwrap(), YearMonth::new(2045, 6));
     assert_eq!(r.milestone("ahv2").unwrap(), YearMonth::new(2047, 1));
-    assert_eq!(r.milestone_name("retire2"), "Bezug Pensionskasse Person 2");
+    assert_eq!(r.milestone_name("retire2"), "Pension fund payout person 2");
 }
 
 /// #51/AK8, AK9: Warning about earned income after the pension fund payout, with the amount.
@@ -129,13 +128,13 @@ fn issue_51_ak8_ak9_income_after_the_pension_fund() {
         v["flows"]["income"] = json!({ "mode": "timed", "rows": rows });
         warnings(&v)
     };
-    const TEXT: &str = "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (06.2040) noch";
+    const TEXT: &str = "After the pension fund payout (06.2040), earned income is still";
     let w = income(json!([{ "from": "start", "value": 8000 }, { "from": "2035-02", "value": 12_500 }]));
-    assert!(w.contains(&format!("{TEXT} 12'500 pro Monat.")), "{w:?}");
+    assert!(w.contains(&format!("{TEXT} 12'500 per month.")), "{w:?}");
     let w = income(json!([{ "from": "2035-02", "value": 12_500 }, { "from": "retire", "value": 0 }]));
     assert!(!w.iter().any(|m| m.contains(TEXT)), "{w:?}");
     let w = income(json!([{ "from": "2035-02", "value": 12_500 }, { "from": "2040-06", "value": 3000 }]));
-    assert!(w.contains(&format!("{TEXT} 3'000 pro Monat.")), "{w:?}");
+    assert!(w.contains(&format!("{TEXT} 3'000 per month.")), "{w:?}");
     // Only a warning, no error
     let mut v = with_age(1, 60.0);
     v["flows"]["income"] = json!(12_500);
@@ -147,8 +146,8 @@ fn issue_51_ak8_ak9_income_after_the_pension_fund() {
         "ahv": { "monthly": 0, "at": "ahv2" } });
     let w = warnings(&v);
     assert!(
-        w.iter().any(|m| m
-            .starts_with("Ben: Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (01.2047) noch 2'000")),
+        w.iter()
+            .any(|m| m.starts_with("Ben: After the pension fund payout (01.2047), earned income is still 2'000")),
         "{w:?}"
     );
 }
@@ -166,30 +165,28 @@ fn issue_51_income_warning_with_distant_end() {
     let t = std::time::Instant::now();
     let w = warnings(&v);
     assert!(t.elapsed().as_secs() < 60, "Prüfung dauert zu lange");
-    assert!(w.iter().any(|m| m.ends_with("noch 700 pro Monat.")), "{w:?}");
+    assert!(w.iter().any(|m| m.ends_with("still 700 per month.")), "{w:?}");
 }
 
 /// #25/AK5, AK6: The limits come as parameters from the settings; if not given, the default values apply.
 #[test]
 fn issue_25_ak6_limits_from_the_settings() {
     let mut v = with_age(1, 67.0);
-    assert!(errors(&v)[0].contains("58 bis 65"));
+    assert!(errors(&v)[0].contains("58 to 65"));
     v["limits"] = json!({ "pkMax": 67 });
     assert!(errors(&v).is_empty(), "67 gültig mit oberer Grenze 67");
     let mut v68 = with_age(1, 68.0);
     v68["limits"] = json!({ "pkMax": 67 });
     assert_eq!(
         errors(&v68),
-        vec![
-            "«Bezug Pensionskasse»: Alter 68 liegt ausserhalb der Grenzen 58 bis 67 Jahre (Einstellungen).".to_string()
-        ]
+        vec!["“Pension fund payout”: age 68 is outside the limits of 58 to 67 years (settings).".to_string()]
     );
     // Invalid settings are reported
     let mut bad = base();
     bad["limits"] = json!({ "ahvMin": 71 });
     assert!(errors(&bad)
         .iter()
-        .any(|m| m.contains("Einstellungen: AHV-Bezug: Die untere Grenze (71) liegt über der oberen Grenze (70).")));
+        .any(|m| m.contains("Settings: AHV pension start: the lower limit (71) is above the upper limit (70).")));
     // The limits do not belong to the plan: they are missing when writing.
     let p: Plan = serde_json::from_value(v.clone()).unwrap();
     assert!(serde_json::to_value(&p).unwrap().get("limits").is_none());
@@ -241,8 +238,8 @@ fn issue_170_ak8_fixed_milestones_without_name_give_the_same_results_and_texts()
     };
     let (a, b) = (texts(&early(unnamed.clone())), texts(&early(named.clone())));
     assert_eq!(a, b);
-    assert!(a.iter().any(|t| t.contains("«Bezug Pensionskasse»")), "{a:?}");
-    // German default names of all fixed milestones
+    assert!(a.iter().any(|t| t.contains("“Pension fund payout”")), "{a:?}");
+    // English default names of all fixed milestones (#176)
     let names: Vec<_> = ["start", "end", "retire", "ahv", "retire2", "ahv2", "sale"]
         .iter()
         .map(|id| engine::model::fixed_milestone_name(id))
@@ -250,12 +247,12 @@ fn issue_170_ak8_fixed_milestones_without_name_give_the_same_results_and_texts()
     assert_eq!(
         names,
         [
-            Some("Simulationsstart".to_string()),
-            Some("Simulationsende".to_string()),
-            Some("Bezug Pensionskasse".to_string()),
-            Some("AHV-Bezug".to_string()),
-            Some("Bezug Pensionskasse Person 2".to_string()),
-            Some("AHV-Bezug Person 2".to_string()),
+            Some("Simulation start".to_string()),
+            Some("Simulation end".to_string()),
+            Some("Pension fund payout".to_string()),
+            Some("AHV pension start".to_string()),
+            Some("Pension fund payout person 2".to_string()),
+            Some("AHV pension start person 2".to_string()),
             None
         ]
     );

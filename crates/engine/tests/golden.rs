@@ -143,7 +143,7 @@ fn snapshot(plan: &Value) -> Value {
 }
 
 /// #171/AK4: The comparison ignores the message codes: `code` and `params` are removed, and a message standing alone
-/// (`{code, params, text}`, for example a reason or a label) becomes its German text as in the golden files.
+/// (`{code, params, text}`, for example a reason or a label) becomes its text as in the golden files (English since #176).
 fn without_codes(v: &mut Value) {
     match v {
         Value::Object(m) => {

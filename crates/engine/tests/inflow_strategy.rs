@@ -53,7 +53,7 @@ fn spent(res: &SimResult, y: i32, m: u32) -> f64 {
 fn applied(res: &SimResult, y: i32, m: u32) -> Vec<&str> {
     res.events
         .iter()
-        .filter(|e| e.month == YearMonth::new(y, m) && e.text.starts_with("Entnahmestrategie angewendet"))
+        .filter(|e| e.month == YearMonth::new(y, m) && e.text.starts_with("Withdrawal strategy applied"))
         .map(|e| e.text.as_str())
         .collect()
 }
@@ -93,7 +93,7 @@ fn pk_payout_in_july_starts_the_strategy_with_the_lump_sum() {
     close(spent(&res, 2030, 7), 0.04 * 1_500_000.0 / 12.0, "Entnahme Juli");
     assert!(res.events.iter().any(|e| e.month == YearMonth::new(2030, 7)
         && e.kind == EventKind::Withdrawal
-        && e.text.starts_with("Entnahme ")));
+        && e.text.starts_with("Withdrawal ")));
     assert!(
         applied(&res, 2030, 7).is_empty(),
         "kein zweiter Eintrag für den Beginn der Strategie"
@@ -155,7 +155,7 @@ fn sale_in_june_without_follow_up_purchase_applies_the_strategy_in_june() {
         .find(|e| e.kind == PropertyEventKind::Sale)
         .unwrap();
     assert!(
-        sale.note.as_deref().unwrap().contains("kein Folgekauf"),
+        sale.note.as_deref().unwrap().contains("no subsequent purchase"),
         "{:?}",
         sale.note
     );
@@ -174,11 +174,11 @@ fn sale_in_june_with_purchase_in_july_reserves_the_proceeds_and_applies_after_th
         .iter()
         .find(|e| e.kind == PropertyEventKind::Sale)
         .unwrap();
-    assert!(sale.note.as_deref().unwrap().contains("reserviert"), "{:?}", sale.note);
+    assert!(sale.note.as_deref().unwrap().contains("reserved"), "{:?}", sale.note);
     assert!(res
         .events
         .iter()
-        .any(|e| e.month == YearMonth::new(2030, 6) && e.text.contains("reserviert")));
+        .any(|e| e.month == YearMonth::new(2030, 6) && e.text.contains("reserved")));
     // July: first the purchase (equity 300'000), then the strategy on the remaining liquid wealth
     let buy = res
         .property_events
@@ -194,7 +194,7 @@ fn sale_in_june_with_purchase_in_july_reserves_the_proceeds_and_applies_after_th
     );
     let ev = applied(&res, 2030, 7);
     assert_eq!(ev.len(), 1);
-    assert!(ev[0].contains("Überschuss aus dem Verkaufserlös"), "{}", ev[0]);
+    assert!(ev[0].contains("Surplus from the sale proceeds"), "{}", ev[0]);
 }
 
 #[test]
@@ -214,7 +214,7 @@ fn sale_in_june_with_purchase_in_september_is_no_follow_up_purchase() {
         .iter()
         .find(|e| e.kind == PropertyEventKind::Sale)
         .unwrap();
-    assert!(sale.note.as_deref().unwrap().contains("kein Folgekauf"));
+    assert!(sale.note.as_deref().unwrap().contains("no subsequent purchase"));
 }
 
 #[test]
@@ -228,7 +228,7 @@ fn sale_in_december_with_purchase_in_january_buys_first_and_applies_once() {
         .iter()
         .find(|e| e.kind == PropertyEventKind::Sale)
         .unwrap();
-    assert!(sale.note.as_deref().unwrap().contains("reserviert"));
+    assert!(sale.note.as_deref().unwrap().contains("reserved"));
     let buy = res
         .property_events
         .iter()
@@ -292,7 +292,7 @@ fn three_bucket_sale_in_december_and_purchase_in_january_reserves_buys_first_and
         .iter()
         .find(|e| e.kind == PropertyEventKind::Sale)
         .unwrap();
-    assert!(sale.note.as_deref().unwrap().contains("reserviert"));
+    assert!(sale.note.as_deref().unwrap().contains("reserved"));
     let buy = res
         .property_events
         .iter()
@@ -318,7 +318,7 @@ fn three_bucket_sale_in_december_and_purchase_in_january_reserves_buys_first_and
         .bucket_refills
         .iter()
         .find(|r| r.month == YearMonth::new(2031, 1) && r.trigger == "B")
-        .expect("Überschuss");
+        .expect("Surplus");
     assert_eq!((b.moves[0].from, b.moves[0].to), (4, 3), "Reservierung → Topf 3");
     assert!(
         (b.moves[0].amount - (800_000.0 - buy.equity.unwrap())).abs() < 1.0,

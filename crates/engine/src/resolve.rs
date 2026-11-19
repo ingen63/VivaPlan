@@ -36,13 +36,14 @@ impl Resolver {
         // they apply with the default age.
         for (i, p) in plan.household.persons.iter().take(2).enumerate() {
             let (pk, ahv) = crate::model::person_milestones(i);
-            for (id, base) in [(pk, crate::model::PK_NAME), (ahv, crate::model::AHV_NAME)] {
+            for id in [pk, ahv] {
                 if !milestones.contains_key(id) {
                     milestones.insert(
                         id.to_string(),
                         p.birth.plus((crate::settings::DEFAULT_AGE * 12.0) as i32),
                     );
-                    names.insert(id.to_string(), crate::model::person_milestone_name(base, i));
+                    let name = crate::model::fixed_milestone_name(id).unwrap_or_else(|| id.to_string());
+                    names.insert(id.to_string(), name);
                 }
             }
         }

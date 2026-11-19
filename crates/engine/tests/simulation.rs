@@ -239,7 +239,7 @@ fn validation_reports_errors() {
     v["flows"]["spending"] = json!({ "mode": "timed", "rows": [ { "from": "nirgends", "value": 1 } ] });
     let p = plan(v);
     let issues = validate::validate(&p);
-    assert!(issues.iter().any(|i| i.message.contains("Kapitalbezug")));
+    assert!(issues.iter().any(|i| i.message.contains("lump sum")));
     assert!(issues.iter().any(|i| i.message.contains("nirgends")));
     assert!(Simulator::new(&p).is_err());
 }
@@ -308,7 +308,7 @@ fn affordability_counts_only_income_and_reports_the_lump_sum_repayment() {
         (low - high).abs() < 1e-6,
         "Vermögen darf die Tragbarkeit nicht verändern: {low} gegen {high}"
     );
-    assert!(text.contains("Einmalrückzahlung") && text.contains("CHF"), "{text}");
+    assert!(text.contains("one-off repayment") && text.contains("CHF"), "{text}");
     assert!(!text.contains("Amortisation"), "{text}");
 }
 
@@ -316,7 +316,7 @@ fn affordability_counts_only_income_and_reports_the_lump_sum_repayment() {
 fn no_lump_sum_repayment_when_the_mortgage_is_sustainable() {
     let res = run(&after_sale_plan(100_000.0, 10_000.0, 500_000.0));
     let buy = res.events.iter().find(|e| e.kind == EventKind::Purchase).expect("Kauf");
-    assert!(!buy.text.contains("Einmalrückzahlung"), "{}", buy.text);
+    assert!(!buy.text.contains("one-off repayment"), "{}", buy.text);
 }
 
 /// House with a mortgage of 400'000 (period 1 until the end of 2030, renewal in January 2031) and the given income and wealth.
@@ -362,7 +362,7 @@ fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
     assert!(r.affordable && r.lump_sum == 0.0 && r.emergency_sale.is_none());
     assert!((r.debt_after - 400_000.0).abs() < 1e-6);
     assert_eq!((a.summary.lump_sums, a.summary.affordability_sales), (0, 0));
-    assert!(a.events.iter().any(|e| e.text.starts_with("Neue Hypothekarperiode")));
+    assert!(a.events.iter().any(|e| e.text.starts_with("New mortgage period")));
 
     // 2. Not affordable, lump sum possible: income 6'000 → affordable 320'000, payment 80'000, renewal with 320'000
     let b = renewal_case(6_000.0, 2_000_000.0, 0.0, 6.0);
@@ -373,26 +373,26 @@ fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
     assert!(b
         .events
         .iter()
-        .any(|e| e.text.starts_with("Neue Hypothekarperiode") && e.text.contains("320000")));
+        .any(|e| e.text.starts_with("New mortgage period") && e.text.contains("320000")));
     assert!(!b.events.iter().any(|e| e.kind == EventKind::EmergencySale));
 
     // 3. The lump sum would bring wealth below 0: income 2'000 → payment 400'000, wealth 10'000
     let c = renewal_case(2_000.0, 10_000.0, 0.0, 6.0);
     let r = jan_2031(&c);
     assert!(!r.affordable && r.lump_sum == 0.0);
-    assert_eq!(r.emergency_sale.as_deref(), Some("Vermögen < 0"));
+    assert_eq!(r.emergency_sale.as_deref(), Some("Wealth < 0"));
     assert_eq!((c.summary.lump_sums, c.summary.affordability_sales), (0, 1));
     assert!(
         !c.events
             .iter()
-            .any(|e| e.month == YearMonth::new(2031, 1) && e.text.starts_with("Neue Hypothekarperiode")),
-        "nicht erneuert"
+            .any(|e| e.month == YearMonth::new(2031, 1) && e.text.starts_with("New mortgage period")),
+        "not renewed"
     );
     assert_eq!(
         c.events
             .iter()
             .find(|e| e.kind == EventKind::EmergencySale)
-            .expect("Notverkauf")
+            .expect("emergency sale")
             .month,
         YearMonth::new(2031, 2)
     );
@@ -402,9 +402,9 @@ fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
     let d = renewal_case(6_000.0, 120_000.0, 8_000.0, 6.0);
     let r = jan_2031(&d);
     assert!(!r.affordable && r.lump_sum == 0.0);
-    assert_eq!(r.emergency_sale.as_deref(), Some("Notverkaufskriterium"), "{r:?}");
+    assert_eq!(r.emergency_sale.as_deref(), Some("Emergency sale criterion"), "{r:?}");
     assert_eq!((d.summary.lump_sums, d.summary.affordability_sales), (0, 1));
-    assert!(d.events.iter().any(|e| e.text.contains("Notverkaufskriterium")));
+    assert!(d.events.iter().any(|e| e.text.contains("emergency sale criterion")));
     // Without an emergency sale threshold the same payment is made
     let d0 = renewal_case(6_000.0, 120_000.0, 8_000.0, 0.0);
     assert!((jan_2031(&d0).lump_sum - 80_000.0).abs() < 1e-6);
@@ -449,8 +449,8 @@ fn renewal_checks_affordability_with_income_only() {
     let ev = res
         .events
         .iter()
-        .find(|e| e.text.contains("Einmalrückzahlung"))
-        .expect("Einmalrückzahlung");
+        .find(|e| e.text.contains("One-off mortgage repayment"))
+        .expect("One-off mortgage repayment");
     assert_eq!(ev.month, YearMonth::new(2031, 1), "{}", ev.text);
     assert!(ev.text.contains("CHF"), "{}", ev.text);
     assert!(debt_in(&res, 2030, 12) > 399_000.0);
@@ -482,8 +482,8 @@ fn renewal_reduces_only_the_unaffordable_part() {
     let ev = res
         .events
         .iter()
-        .find(|e| e.text.contains("Einmalrückzahlung"))
-        .expect("Einmalrückzahlung");
+        .find(|e| e.text.contains("One-off mortgage repayment"))
+        .expect("One-off mortgage repayment");
     assert!(ev.text.contains("80000 CHF"), "{}", ev.text);
     assert!(
         (debt_in(&res, 2031, 1) - 320_000.0).abs() < 1.0,
@@ -495,7 +495,7 @@ fn renewal_reduces_only_the_unaffordable_part() {
 #[test]
 fn renewal_without_affordability_problem_has_no_lump_sum() {
     let res = run(&renewal_plan(20_000.0, 2_000_000.0));
-    assert!(!res.events.iter().any(|e| e.text.contains("Einmalrückzahlung")));
+    assert!(!res.events.iter().any(|e| e.text.contains("One-off mortgage repayment")));
     assert!((debt_in(&res, 2031, 1) - 400_000.0).abs() < 1.0);
 }
 
@@ -505,11 +505,14 @@ fn renewal_triggers_an_emergency_sale_when_the_wealth_cannot_pay_the_lump_sum() 
     let ev = res
         .events
         .iter()
-        .find(|e| e.text.contains("nicht mehr tragbar"))
+        .find(|e| e.text.contains("no longer affordable"))
         .expect("Hinweis");
     assert_eq!(ev.month, YearMonth::new(2031, 1));
-    assert!(ev.text.contains("Notverkauf"), "{}", ev.text);
-    assert!(!res.events.iter().any(|e| e.text.starts_with("Einmalrückzahlung")));
+    assert!(ev.text.contains("emergency sale"), "{}", ev.text);
+    assert!(!res
+        .events
+        .iter()
+        .any(|e| e.text.starts_with("One-off mortgage repayment")));
     assert!(
         debt_in(&res, 2031, 1) > 399_000.0,
         "Hypothek bleibt bis zum Verkauf unverändert"
@@ -519,7 +522,7 @@ fn renewal_triggers_an_emergency_sale_when_the_wealth_cannot_pay_the_lump_sum() 
         .events
         .iter()
         .find(|e| e.kind == EventKind::EmergencySale)
-        .expect("Notverkauf");
+        .expect("emergency sale");
     assert_eq!(sale.month, YearMonth::new(2031, 2));
     assert!(debt_in(&res, 2031, 2) < 1.0);
     let liquid = |y, m| {
@@ -606,7 +609,7 @@ fn emergency_sale_then_rent() {
         .events
         .iter()
         .find(|e| e.kind == EventKind::EmergencySale)
-        .expect("Notverkauf");
+        .expect("emergency sale");
     let rent = res
         .events
         .iter()
@@ -879,18 +882,18 @@ fn property_events_emergency_sale_from_renewal_names_the_reason() {
     // Wealth is not enough for the lump sum → renewal not carried out, emergency sale in the following month
     let res = renewal_case(2_000.0, 10_000.0, 0.0, 6.0);
     let ren = of_kind(&res, PropertyEventKind::Renewal);
-    assert_eq!(ren[0].reason.as_deref(), Some("Vermögen < 0"));
+    assert_eq!(ren[0].reason.as_deref(), Some("Wealth < 0"));
     let sale = of_kind(&res, PropertyEventKind::EmergencySale);
     assert_eq!(sale.len(), 1);
     assert_eq!(sale[0].month, YearMonth::new(2031, 2));
-    assert_eq!(sale[0].reason.as_deref(), Some("Vermögen < 0"));
+    assert_eq!(sale[0].reason.as_deref(), Some("Wealth < 0"));
     assert!((sale[0].proceeds.unwrap() - 800_000.0).abs() < 1e-6);
     assert!((sale[0].debt_repaid.unwrap() - 400_000.0).abs() < 1e-6);
     assert_eq!(res.summary.emergency_sales, 1);
     // Emergency sale criterion after the payment
     let d = renewal_case(6_000.0, 120_000.0, 8_000.0, 6.0);
     let sale = of_kind(&d, PropertyEventKind::EmergencySale);
-    assert_eq!(sale[0].reason.as_deref(), Some("Notverkaufskriterium"));
+    assert_eq!(sale[0].reason.as_deref(), Some("Emergency sale criterion"));
 }
 
 #[test]
@@ -904,7 +907,7 @@ fn property_events_regular_emergency_sale_uses_the_criterion() {
     let res = run(&plan(v));
     let sale = of_kind(&res, PropertyEventKind::EmergencySale);
     assert_eq!(sale.len(), 1, "{:?}", res.property_events);
-    assert_eq!(sale[0].reason.as_deref(), Some("Notverkaufskriterium"));
+    assert_eq!(sale[0].reason.as_deref(), Some("Emergency sale criterion"));
     assert!(sale[0].net.unwrap() > 0.0);
     assert_eq!(res.summary.emergency_sales, 1);
 }
@@ -961,23 +964,23 @@ fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
     let sale = res
         .events
         .iter()
-        .find(|e| e.text.starts_with("Verkauf Haus"))
+        .find(|e| e.text.starts_with("Sale Haus"))
         .expect("Verkauf");
     assert_eq!(sale.month, YearMonth::new(2030, 6));
     let failed = res
         .events
         .iter()
-        .find(|e| e.text.contains("nicht möglich"))
+        .find(|e| e.text.contains("not possible: equity"))
         .expect("Kauf nicht möglich");
     assert_eq!(failed.month, YearMonth::new(2030, 7));
     let dropped = res
         .events
         .iter()
-        .find(|e| e.text.contains("entfällt"))
+        .find(|e| e.text.contains("dropped"))
         .expect("Folgeregel");
     assert_eq!(dropped.month, YearMonth::new(2030, 7));
     // No property bought, rent from August 2030 (index 7), no housing costs before
-    assert!(res.events.iter().all(|e| !e.text.starts_with("Kauf Wohnung:")));
+    assert!(res.events.iter().all(|e| !e.text.starts_with("Purchase Wohnung:")));
     assert!(res.records[6].housing.abs() < 1e-9, "Juli: noch keine Miete");
     assert!(
         (res.records[7].housing - 2_000.0).abs() < 1e-6,

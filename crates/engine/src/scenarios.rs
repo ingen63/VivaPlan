@@ -225,7 +225,7 @@ mod tests {
         let err = count_combinations(&too_many).unwrap_err().to_string();
         assert_eq!(
             err,
-            "Die Variationen ergeben 1'010'000 Kombinationen; höchstens 1'000'000 sind technisch möglich."
+            "The variations result in 1'010'000 combinations; at most 1'000'000 are technically possible."
         );
         assert!(combinations(&too_many).is_err());
         // exactly 1'000'000 are allowed

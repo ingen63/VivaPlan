@@ -697,12 +697,12 @@ mod tests {
         // #101: with an investment strategy also the means of bonds and inflation of the series
         let basis = out.basis.unwrap();
         assert!(
-            basis.starts_with("Vorschau mit der erwarteten Aktienrendite des Modells (1.0 % pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen "),
+            basis.starts_with("Preview with the model's expected stock return (1.0 % per year) and the averages of the time series: bonds "),
             "{basis}"
         );
         v["returns"]["parametric"]["mu"] = json!(0.16);
         let out = preview(&v, Path::new("."), None);
-        assert!(out.basis.unwrap().contains("(9.4 % pro Jahr)"));
+        assert!(out.basis.unwrap().contains("(9.4 % per year)"));
         // Without a series only the stock return
         let mut w = v.clone();
         w["returns"]["strategy"]["stocks"] = json!("worldCustom");
@@ -710,12 +710,12 @@ mod tests {
         let out = preview(&w, Path::new("."), None);
         assert_eq!(
             out.basis.as_deref(),
-            Some("Vorschau mit der erwarteten Aktienrendite des Modells (9.4 % pro Jahr).")
+            Some("Preview with the model's expected stock return (9.4 % per year).")
         );
         // #100: with «auto» the suggested values of the stock index instead of the saved ones
         v["returns"]["parametric"]["auto"] = json!(true);
         let out = preview(&v, Path::new("."), None);
-        assert!(!out.basis.unwrap().contains("(9.4 % pro Jahr)"));
+        assert!(!out.basis.unwrap().contains("(9.4 % per year)"));
 
         // Fixed returns: no information, even if a series is still entered.
         let mut v = example();
@@ -744,7 +744,7 @@ mod tests {
         ds.meta.currency = Some("USD".into());
         let i = currency_issue(&ds, "CHF").unwrap();
         assert_eq!(i.severity, Severity::Warning);
-        assert!(i.message.contains("«Reihe» ist in USD"), "{}", i.message);
+        assert!(i.message.contains("“Reihe” is in USD"), "{}", i.message);
     }
 
     // Progress: runs of the plan plus runs of all variations; measured time in milliseconds.

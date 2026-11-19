@@ -71,7 +71,7 @@ fn rerun_rejects_unknown_paths_and_bad_selection() {
     let mut q = plan();
     q["scenarios"] = json!({ "sweeps": [], "select": [ { "param": "wealth.stockShare", "value": 0.3 } ] });
     let out = api::rerun_paths(&q, &[(50, 9_999)], Path::new("."), None);
-    assert!(out.error.unwrap().contains("Pfadnummer"));
+    assert!(out.error.unwrap().contains("Path number"));
     q["scenarios"]["select"] = json!([ { "param": "gibt.es.nicht", "value": 1 } ]);
     assert!(api::rerun_paths(&q, &[(50, 0)], Path::new("."), None).error.is_some());
     q["scenarios"]["select"] = json!([ { "value": 1 } ]);

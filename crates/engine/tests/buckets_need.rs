@@ -309,7 +309,7 @@ fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run(
     // Lead-in −1 % per month: 0.99⁵ × 1.02⁶ − 1 = +7.1 % ≥ 5 % → met, bucket 3 is sold
     let res = run_pre(-0.01);
     let j = january(&res, 2031);
-    assert_eq!(j.return_basis, "letzte 12 Monate");
+    assert_eq!(j.return_basis, "last 12 months");
     close(
         j.stock_return,
         0.99f64.powi(5) * 1.02f64.powi(6) - 1.0,
@@ -331,7 +331,7 @@ fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run(
 
     // From the 13th month the criterion only measures months of the path
     let j = january(&res, 2032);
-    assert_eq!(j.return_basis, "letzte 12 Monate");
+    assert_eq!(j.return_basis, "last 12 months");
     close(j.stock_return, 0.0, "Februar 2031 bis Januar 2032");
     never_negative(&res);
 }
@@ -345,7 +345,7 @@ fn start_in_march_reduces_the_targets_by_two_months_and_extrapolates_the_need() 
     let a = find(&res, "A", 2030, 3);
     assert_eq!(a.passed_months, 2);
     assert_eq!(a.basis.months, 10);
-    assert!(a.basis.source.contains("hochgerechnet"));
+    assert!(a.basis.source.contains("extrapolated"));
     close(a.need, 44_000.0, "Netto-Bedarf auf 12 Monate hochgerechnet");
     close(a.target1, (24.0 - 2.0) / 12.0 * 44_000.0, "Ziel Topf 1");
     close(a.target2, (12.0 - 2.0) / 12.0 * 44_000.0, "Ziel Topf 2");
@@ -384,7 +384,7 @@ fn a_later_pension_fund_withdrawal_goes_to_pot_3_and_triggers_a_with_reduced_tar
     assert!((b.moves[0].amount - 200_000.0).abs() < 1.0, "{:?}", b.moves);
     assert_eq!((b.moves[0].from, b.moves[0].to), (0, 3));
     let a = find(&res, "A", 2030, 7);
-    assert!(a.reason.contains("PK-Kapitalbezug"), "{}", a.reason);
+    assert!(a.reason.contains("PK lump sum"), "{}", a.reason);
     assert_eq!(a.passed_months, 6);
     assert!(a.condition_ignored);
     close(
@@ -411,8 +411,8 @@ fn issue_99_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawa
     let a = find(&res, "A", 2030, 7);
     assert_eq!(a.basis.year, 2030);
     assert_eq!(a.basis.months, 6, "Juli bis Dezember");
-    assert!(a.basis.source.starts_with("ab 07.2030"), "{}", a.basis.source);
-    assert!(a.basis.source.contains("hochgerechnet"), "{}", a.basis.source);
+    assert!(a.basis.source.starts_with("from 07.2030"), "{}", a.basis.source);
+    assert!(a.basis.source.contains("extrapolated"), "{}", a.basis.source);
     close(a.need, a.basis.need(), "Bedarf aus der neuen Grundlage");
     // until December this basis applies; only January determines the need anew
     for r in res
@@ -422,7 +422,7 @@ fn issue_99_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawa
     {
         assert_eq!(r.basis.source, a.basis.source, "{} {}", r.trigger, r.month);
     }
-    assert_eq!(january(&res, 2031).basis.source, "Januar, geplant");
+    assert_eq!(january(&res, 2031).basis.source, "January, planned");
 }
 
 #[test]
@@ -531,7 +531,7 @@ fn earned_income_is_deducted_from_the_need() {
     v["flows"]["income"] = json!(3_000); // 36'000 per year
     let res = run(v);
     let r = january(&res, 2031);
-    close(r.basis.earned, 36_000.0, "Erwerbseinkommen");
+    close(r.basis.earned, 36_000.0, "earned income");
     close(r.basis.ahv + r.basis.pk, 84_000.0, "Renten");
     close(r.basis.income_tax, 120_000.0 * 4_000.0 / 84_000.0, "Einkommenssteuer");
     close(
@@ -577,7 +577,7 @@ fn all_pots_empty_with_a_property_sells_it_puts_the_proceeds_into_pot_3_and_cove
         .property_events
         .iter()
         .find(|e| e.net.is_some_and(|n| n > 0.0))
-        .expect("Notverkauf");
+        .expect("emergency sale");
     let b = find(&res, "B", sale.month.year(), sale.month.month());
     assert_eq!((b.moves[0].from, b.moves[0].to), (0, 3), "Erlös in Topf 3");
     never_negative(&res);
@@ -596,7 +596,7 @@ fn all_pots_empty_without_a_property_goes_negative_takes_inflows_into_pot_1_and_
     assert!(res
         .events
         .iter()
-        .any(|e| e.kind == EventKind::Buckets && e.text.contains("alle Töpfe leer")));
+        .any(|e| e.kind == EventKind::Buckets && e.text.contains("all buckets empty")));
     let neg = res.records.iter().filter(|r| r.cash < -1.0).count();
     assert!(neg > 5, "Topf 1 im Minus: {neg} Monate");
     for r in res.records.iter().filter(|r| r.cash < -1.0) {
@@ -609,8 +609,8 @@ fn all_pots_empty_without_a_property_goes_negative_takes_inflows_into_pot_1_and_
     let a = res
         .bucket_refills
         .iter()
-        .find(|r| r.trigger == "A" && r.reason.contains("Neustart"))
-        .expect("Neustart");
+        .find(|r| r.trigger == "A" && r.reason.contains("restart"))
+        .expect("restart");
     assert!(a.after.iter().all(|x| *x >= 0.0), "{:?}", a.after);
     close(a.after[0], a.target1, "Topf 1 wird wieder auf das Ziel gebracht");
     let after: Vec<_> = res

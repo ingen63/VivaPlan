@@ -173,16 +173,14 @@ fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
         api::validate(v)
             .into_iter()
             .map(|i| i.message.to_string())
-            .filter(|m| m.contains("Erwerbseinkommen"))
+            .filter(|m| m.contains("earned income"))
             .collect()
     };
-    assert_eq!(warn(&v), vec!["Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (01.2045) noch 8'000 pro Monat in Preisen des Simulationsstarts.".to_string()]);
+    assert_eq!(warn(&v), vec!["After the pension fund payout (01.2045), earned income is still 8'000 per month in prices at the simulation start.".to_string()]);
     v["flows"]["incomeIndexed"] = json!(false);
     assert_eq!(
         warn(&v),
-        vec![
-            "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (01.2045) noch 8'000 pro Monat.".to_string()
-        ]
+        vec!["After the pension fund payout (01.2045), earned income is still 8'000 per month.".to_string()]
     );
 }
 

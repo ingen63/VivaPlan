@@ -176,7 +176,7 @@ test.describe("Living costs including housing and cash (#53, #54)", () => {
     const issues = await page.evaluate(async () => {
       const s = JSON.parse(JSON.stringify(state));
       s.flows.spending = { mode: "const", value: 1000 };
-      return (await Engine.call("validate", { plan: s })).map(i => i.message);
+      return (await Engine.call("validate", { plan: s })).map(i => msgText(i));
     });
     expect(issues).toContain("Die Lebenshaltungskosten (1'000) sind kleiner als die Wohnkosten zum Simulationsstart (1'700), die sie enthalten.");
     await noErrors(page, errors);

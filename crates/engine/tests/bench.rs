@@ -52,6 +52,6 @@ fn bench_caps_the_number_of_paths_and_reports_errors() {
     // without a library: understandable error instead of a crash
     assert!(api::bench(&plan("bootstrap"), Path::new("/"), None)
         .unwrap_err()
-        .contains("Datenbibliothek"));
+        .contains("data library"));
     assert!(api::bench(&json!({"x": 1}), Path::new("/"), None).is_err());
 }

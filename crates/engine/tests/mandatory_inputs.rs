@@ -56,25 +56,25 @@ fn valid_base_plan_has_no_errors() {
 fn household_needs_one_or_two_persons() {
     let mut v = base();
     v["household"]["persons"] = json!([]);
-    assert_error(&v, "general", "Mindestens eine Person", None);
+    assert_error(&v, "general", "At least one person", None);
     let mut v = base();
     v["household"]["persons"] = json!([
         { "id": "A", "name": "A", "birth": "1965-01" }, { "id": "B", "name": "B", "birth": "1965-01" }, { "id": "C", "name": "C", "birth": "1965-01" }]);
-    assert_error(&v, "general", "höchstens zwei Personen", None);
+    assert_error(&v, "general", "At most two persons", None);
 }
 
 #[test]
 fn person_needs_a_valid_birth_date() {
     let mut v = base();
     v["household"]["persons"][0]["birth"] = json!("2031-01");
-    assert_error(&v, "general", "Geburtsdatum", Some("household.persons.0.birth"));
+    assert_error(&v, "general", "date of birth", Some("household.persons.0.birth"));
     let mut v = base();
     v["household"]["persons"][0]["birth"] = json!("1900-01");
-    assert_error(&v, "general", "über 120 Jahre", Some("household.persons.0.birth"));
+    assert_error(&v, "general", "over 120 years", Some("household.persons.0.birth"));
     // Without the date the plan cannot be loaded
     let mut v = base();
     v["household"]["persons"][0].as_object_mut().unwrap().remove("birth");
-    assert_error(&v, "general", "unvollständig", None);
+    assert_error(&v, "general", "incomplete", None);
 }
 
 #[test]
@@ -82,11 +82,11 @@ fn person_needs_a_name_of_at_most_sixty_characters() {
     for name in ["", "   "] {
         let mut v = base();
         v["household"]["persons"][0]["name"] = json!(name);
-        assert_error(&v, "general", "Der Name fehlt", Some("household.persons.0.name"));
+        assert_error(&v, "general", "the name is missing", Some("household.persons.0.name"));
     }
     let mut v = base();
     v["household"]["persons"][0]["name"] = json!("x".repeat(61));
-    assert_error(&v, "general", "höchstens 60 Zeichen", Some("household.persons.0.name"));
+    assert_error(&v, "general", "at most 60 characters", Some("household.persons.0.name"));
     let mut ok = base();
     ok["household"]["persons"][0]["name"] = json!("x".repeat(60));
     assert!(!issues(&ok)
@@ -100,7 +100,7 @@ fn person_needs_a_name_of_at_most_sixty_characters() {
     assert_error(
         &v,
         "general",
-        "Person 2: Der Name fehlt",
+        "Person 2: the name is missing",
         Some("household.persons.1.name"),
     );
 }
@@ -109,7 +109,7 @@ fn person_needs_a_name_of_at_most_sixty_characters() {
 fn ahv_cap_must_be_positive() {
     let mut v = base();
     v["household"]["ahvCoupleCap"] = json!(0);
-    assert_error(&v, "pension", "Plafonierung der AHV-Renten", None);
+    assert_error(&v, "pension", "cap on AHV pensions", None);
 }
 
 #[test]
@@ -119,24 +119,24 @@ fn milestones_start_and_end_are_required_and_ordered() {
     assert_error(&v, "milestones", "start", None);
     let mut v = base();
     v["milestones"][3]["date"] = json!("2029-12");
-    assert_error(&v, "milestones", "Simulationsende muss nach dem Start", None);
+    assert_error(&v, "milestones", "simulation end must be after the start", None);
     let mut v = base();
     v["milestones"][3]["date"] = json!("2131-01");
-    assert_error(&v, "milestones", "länger als 100 Jahre", None);
+    assert_error(&v, "milestones", "longer than 100 years", None);
 }
 
 #[test]
 fn age_milestones_must_be_between_zero_and_130() {
     let mut v = base();
     v["milestones"][1] = json!({ "id": "retire", "name": "Pensionierung", "kind": "age", "person": "A", "years": 131 });
-    assert_error(&v, "milestones", "Alter 131 ist nicht möglich", None);
+    assert_error(&v, "milestones", "age 131 is not possible", None);
 }
 
 #[test]
 fn pension_fund_lump_sum_is_between_zero_and_one_hundred_percent() {
     let mut v = base();
     v["pension"]["pk"]["lumpsum"] = json!(1.5);
-    assert_error(&v, "pension", "Kapitalbezug muss zwischen 0 % und 100 %", None);
+    assert_error(&v, "pension", "lump sum must be between 0 % and 100 %", None);
 }
 
 #[test]
@@ -149,7 +149,7 @@ fn required_sections_must_be_present() {
         } else {
             v[path].as_object_mut().unwrap().remove(key);
         }
-        assert_error(&v, "general", "unvollständig", None);
+        assert_error(&v, "general", "incomplete", None);
     }
 }
 
@@ -157,38 +157,38 @@ fn required_sections_must_be_present() {
 fn income_and_spending_series_need_valid_entries() {
     let mut v = base();
     v["flows"]["income"] = json!({ "mode": "timed", "rows": [] });
-    assert_error(&v, "flows", "Einkommen: keine Einträge", None);
+    assert_error(&v, "flows", "Income: no entries", None);
     let mut v = base();
     v["flows"]["spending"] = json!({ "mode": "timed", "rows": [ { "from": "gibtsnicht", "value": 100 } ] });
-    assert_error(&v, "flows", "Ausgaben", None);
+    assert_error(&v, "flows", "Spending", None);
     let mut v = base();
     v["wealth"]["stockShare"] = json!(2.0);
-    assert_error(&v, "wealth", "Aktienanteil: Werte müssen zwischen", None);
+    assert_error(&v, "wealth", "Stock allocation: values must be between", None);
 }
 
 #[test]
 fn return_source_needs_its_inputs() {
     let mut v = base();
     v["returns"]["source"] = json!("historical");
-    assert_error(&v, "returns", "Zeitreihe gewählt sein", None);
+    assert_error(&v, "returns", "require a time series", None);
     let mut v = base();
     v["returns"]["source"] = json!("historical");
     v["returns"]["series"] = json!("library:x.csv");
-    assert_error(&v, "returns", "Startmonat fehlt", None);
+    assert_error(&v, "returns", "start month is missing", None);
     let mut v = base();
     v["returns"]["source"] = json!("bootstrap");
     v["returns"]["series"] = json!("library:x.csv");
     v["returns"]["bootstrap"] = json!({ "paths": 0, "block": 12, "seed": 1 });
-    assert_error(&v, "returns", "Anzahl Pfade", None);
+    assert_error(&v, "returns", "number of paths", None);
     v["returns"]["bootstrap"] = json!({ "paths": 10, "block": 0, "seed": 1 });
-    assert_error(&v, "returns", "Blocklänge", None);
+    assert_error(&v, "returns", "block length", None);
     let mut v = base();
     v["returns"]["source"] = json!("parametric");
     v["returns"]["parametric"] = json!({ "paths": 10, "mu": 0.07, "sigma": 0.15, "df": 1, "jumpLambda": 0.1, "jumpMu": 0, "jumpSigma": 0, "seed": 1 });
-    assert_error(&v, "returns", "Freiheitsgrade", None);
+    assert_error(&v, "returns", "degrees of freedom", None);
     v["returns"]["parametric"]["df"] = json!(6);
     v["returns"]["parametric"]["sigma"] = json!(-1);
-    assert_error(&v, "returns", "Volatilität", None);
+    assert_error(&v, "returns", "Volatility", None);
 }
 
 #[test]
@@ -196,11 +196,11 @@ fn withdrawal_strategies_need_valid_parameters() {
     let cases = [
         (
             json!({ "strategy": "three_buckets", "buckets": { "cashYears": -1, "bondYears": 2 } }),
-            "Töpfe dürfen nicht negativ",
+            "buckets must not be negative",
         ),
         (
             json!({ "strategy": "fixed_rate", "fixedRate": { "rate": 1.5 } }),
-            "Entnahmerate muss zwischen",
+            "withdrawal rate must be between",
         ),
         (
             json!({ "strategy": "vpw", "vpw": { "horizonAge": 0, "realReturn": 0.02 } }),
@@ -212,23 +212,23 @@ fn withdrawal_strategies_need_valid_parameters() {
         ),
         (
             json!({ "strategy": "guardrails", "guardrails": { "initialRate": 1.5, "upper": 0.2, "lower": 0.2, "adjust": 0.1 } }),
-            "Startrate",
+            "initial rate",
         ),
         (
             json!({ "strategy": "guardrails", "guardrails": { "initialRate": 0.05, "upper": -0.2, "lower": 0.2, "adjust": 0.1 } }),
-            "Leitplanken",
+            "guardrails must be",
         ),
         (
             json!({ "strategy": "guardrails", "guardrails": { "initialRate": 0.05, "upper": 0.2, "lower": 0.2, "adjust": 1.5 } }),
-            "Anpassung",
+            "adjustment",
         ),
         (
             json!({ "strategy": "fixed_rate", "fixedRate": { "rate": 0.04 }, "floor": 0.9, "ceiling": 0.5 }),
-            "Untergrenze der Ausgaben liegt über der Obergrenze",
+            "spending floor is above the ceiling",
         ),
         (
             json!({ "strategy": "fixed_rate", "fixedRate": { "rate": 0.04 }, "floor": -0.1 }),
-            "dürfen nicht negativ sein",
+            "must not be negative",
         ),
     ];
     for (w, text) in cases {
@@ -260,7 +260,7 @@ fn properties_need_their_inputs() {
             json!({ "mortgage": { "tranches": [ { "name": "T1", "amount": 300_000, "periods": [] } ] } }),
         )),
         "realestate",
-        "keine Hypothekarperiode",
+        "no mortgage period",
         None,
     );
     // Mortgage higher than the purchase price (planned property)
@@ -269,21 +269,21 @@ fn properties_need_their_inputs() {
     assert_error(
         &with(planned),
         "realestate",
-        "Hypothek ist höher als der Kaufpreis",
+        "the mortgage is higher than the purchase price",
         None,
     );
     // Purchase after the sale of a property that does not exist
     let after =
         json!({ "id": "w", "name": "Wohnung", "status": "planned", "buy": "afterSale:gibtsnicht", "price": 500_000 });
-    assert_error(&with(after), "realestate", "gibt es nicht mehr", None);
+    assert_error(&with(after), "realestate", "no longer exists", None);
     // Duplicate id
     let mut v = base();
     v["realestate"] = json!({ "properties": [house(json!({})), house(json!({ "name": "Haus 2" }))] });
-    assert_error(&v, "realestate", "doppelt vergeben", None);
+    assert_error(&v, "realestate", "used more than once", None);
     // Rent without start and without amount
     let rent = json!({ "id": "m", "name": "Miete", "status": "rent" });
-    assert_error(&with(rent.clone()), "realestate", "«Miete ab» fehlt", None);
-    assert_error(&with(rent), "realestate", "Miete fehlt", None);
+    assert_error(&with(rent.clone()), "realestate", "“Rent from” is missing", None);
+    assert_error(&with(rent), "realestate", "rent is missing", None);
 }
 
 #[test]
@@ -291,17 +291,22 @@ fn pillar_3a_is_checked() {
     // #52: Pillar 3a is an account of its own (section «Säule 3a»).
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 2.0 }]);
-    assert_error(&v, "pillar3a", "Der Zins muss zwischen", Some("pillar3a.0.rate"));
+    assert_error(
+        &v,
+        "pillar3a",
+        "the interest rate must be between",
+        Some("pillar3a.0.rate"),
+    );
 }
 
 #[test]
 fn property_gain_tax_rules_must_be_valid() {
     let mut v = base();
     v["taxes"]["propertyGain"] = json!({ "model": "aargau", "durationRates": [], "brackets": [], "reduction": 0 });
-    assert_error(&v, "taxes", "kein Steuersatz nach Besitzdauer", None);
+    assert_error(&v, "taxes", "no tax rate by holding period", None);
     let mut v = base();
     v["taxes"]["propertyGain"] = json!({ "model": "zurich", "brackets": [], "reduction": 0, "duration": [[-1, 0.1]] });
-    assert_error(&v, "taxes", "Besitzdauer", None);
+    assert_error(&v, "taxes", "holding period", None);
 }
 
 #[test]
@@ -322,7 +327,7 @@ fn with_property(status: &str) -> Value {
 fn property_gain_tax_is_mandatory_for_owned_and_planned_properties() {
     for status in ["owned", "planned"] {
         let v = with_property(status);
-        assert_error(&v, "taxes", "Grundstückgewinnsteuer fehlt", None);
+        assert_error(&v, "taxes", "Property gains tax missing", None);
         // The simulation also rejects the plan (start blocked)
         let out = api::run(&v, std::path::Path::new("."), None);
         assert!(out.error.is_some(), "{status}: Simulation müsste abgewiesen werden");
@@ -333,10 +338,10 @@ fn property_gain_tax_is_mandatory_for_owned_and_planned_properties() {
 fn rented_properties_and_no_property_do_not_need_property_gain_tax() {
     assert!(!issues(&with_property("rent"))
         .iter()
-        .any(|i| i.message.contains("Grundstückgewinnsteuer fehlt")));
+        .any(|i| i.message.contains("Property gains tax missing")));
     assert!(!issues(&base())
         .iter()
-        .any(|i| i.message.contains("Grundstückgewinnsteuer fehlt")));
+        .any(|i| i.message.contains("Property gains tax missing")));
 }
 
 #[test]
@@ -346,13 +351,13 @@ fn any_property_gain_rules_satisfy_the_requirement_even_with_zero_rate() {
     v["taxes"]["propertyGain"] = json!({ "brackets": [], "reduction": 0.0 });
     assert!(!issues(&v)
         .iter()
-        .any(|i| i.message.contains("Grundstückgewinnsteuer fehlt")));
+        .any(|i| i.message.contains("Property gains tax missing")));
     // Aargau template
     let mut v = with_property("planned");
     v["taxes"]["propertyGain"] = json!({ "model": "aargau", "durationRates": [[0, 0.4], [5, 0.2]] });
     assert!(!issues(&v)
         .iter()
-        .any(|i| i.message.contains("Grundstückgewinnsteuer fehlt")));
+        .any(|i| i.message.contains("Property gains tax missing")));
 }
 
 fn has_sell_error(v: &Value, field: &str) -> bool {
@@ -381,7 +386,7 @@ fn sale_must_come_after_the_purchase() {
     assert_error(
         &plan(planned("2030-06", json!("2030-06"))),
         "realestate",
-        "nach «Kauf ab»",
+        "after “Purchase from”",
         Some(f),
     );
     assert!(!has_sell_error(&plan(planned("2030-06", json!("2030-07"))), f));
@@ -405,7 +410,7 @@ fn sale_must_come_after_the_purchase() {
     assert_error(
         &plan(owned("2020-05", "2019-01")),
         "realestate",
-        "nach dem Kaufdatum",
+        "after the purchase date",
         Some(f),
     );
     assert!(!has_sell_error(&plan(owned("2020-05", "2031-01")), f));
@@ -461,7 +466,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
         assert_error(
             &v,
             "taxes",
-            "Stufe 2: Der Steuersatz muss zwischen 0 % und 100 % liegen.",
+            "bracket 2: the tax rate must be between 0 % and 100 %.",
             Some(&format!("taxes.{key}.1.1")),
         );
     }
@@ -471,7 +476,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
     assert_error(
         &v,
         "taxes",
-        "Einkommenssteuer, Stufe 1: Der Betrag muss 0 oder grösser sein.",
+        "Income tax, bracket 1: the amount must be 0 or greater.",
         Some("taxes.income.0.0"),
     );
     // AK1, AK2: tables for married couples
@@ -480,13 +485,13 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
     assert_error(
         &v,
         "taxes",
-        "Vermögenssteuer (Verheiratete), Stufe 1: Der Steuersatz",
+        "Wealth tax (married), bracket 1: the tax rate",
         Some("taxes.couple.wealth.0.1"),
     );
     assert_error(
         &v,
         "taxes",
-        "Kapitalbezugssteuer (Verheiratete), Stufe 1: Der Betrag",
+        "Lump-sum tax (married), bracket 1: the amount",
         Some("taxes.couple.capital.0.0"),
     );
     // AK3: tax multiplier below 0 or above 10, at the field
@@ -496,7 +501,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
         assert_error(
             &v,
             "taxes",
-            "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
+            "Tax multiplier: the factor must be between 0 and 10.",
             Some("taxes.multiplier"),
         );
     }

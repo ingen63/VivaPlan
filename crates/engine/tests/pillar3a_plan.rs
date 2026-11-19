@@ -70,7 +70,7 @@ fn issue_55_ak3_earliest_rule_for_age_rows() {
     let e = errors(&base(json!([{ "kind": "age", "years": 59.9, "amount": 1000 }])));
     assert_eq!(e.len(), 1, "{e:?}");
     assert_eq!(e[0].0.as_deref(), Some("pillar3a.0.payouts.0.years"));
-    assert_eq!(e[0].1, "Säule 3a: Die Auszahlung im 05.2040 liegt mehr als 5 Jahre vor dem AHV-Bezug (06.2045); frühestens im 06.2040.");
+    assert_eq!(e[0].1, "Pillar 3a: the payout in 05.2040 is more than 5 years before the start of the AHV pension (06.2045); at the earliest in 06.2040.");
     // As a date: the same rule at the field «date»
     let e = errors(&base(json!([{ "date": "2040-05", "amount": 1000 }])));
     assert_eq!(e[0].0.as_deref(), Some("pillar3a.0.payouts.0.date"));
@@ -81,11 +81,11 @@ fn issue_55_ak3_earliest_rule_for_age_rows() {
         vec![
             (
                 Some("pillar3a.0.payouts.0.years".into()),
-                "Säule 3a: Das Alter (0 bis 150 Jahre) der 1. Auszahlung fehlt oder ist ungültig.".into()
+                "Pillar 3a: the age (0 to 150 years) of payout no. 1 is missing or invalid.".into()
             ),
             (
                 Some("pillar3a.0.payouts.1.date".into()),
-                "Säule 3a: Das Datum der 2. Auszahlung fehlt oder ist ungültig.".into()
+                "Pillar 3a: the date of payout no. 2 is missing or invalid.".into()
             ),
         ]
     );

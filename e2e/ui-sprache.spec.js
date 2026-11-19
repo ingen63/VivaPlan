@@ -237,16 +237,18 @@ test.describe("Messages of the engine (#171)", () => {
       plan.pillar3a = [{ person: plan.household.persons[0].id, balance: 1000, rate: 0, contribution: 99999, payouts: [] }];
       const issues = await Engine.call("validate", { plan });
       const run = await Engine.call("run_simulation", { plan: state });
+      const de = await (await fetch("i18n/de.json")).json();
       return {
         issues: issues.map(i => [i.code, msgText(i), i.message]),
-        events: run.single.events.map(e => [msgText(e), e.text]),
+        events: run.single.events.map(e => [msgText(e), engineText(e, k => de[k]), e.text]),
         label: msgText(run.single.label),
         unknown: msgText({ code: "no_such_code", params: {}, text: "Text des Rechenkerns" }),
       };
     });
     const rate = out.issues.find(i => i[0] === "withdrawal_rate_high");
     expect(rate[1]).toBe("ⒺEine Entnahmerate von 9.0 % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch.");
-    expect(rate[2]).toBe("Eine Entnahmerate von 9.0 % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch.");
+    // #176/AK1: the engine itself sends the English text; the user interface does not show it
+    expect(rate[2]).toBe("A withdrawal rate of 9.0 % is high; wealth shrinks quickly over a longer period.");
     // nested message (account) and amounts with thousands separator '
     const p3a = out.issues.find(i => i[0] === "pillar3a_contribution_range");
     expect(p3a[1]).toMatch(/^ⒺⒺSäule 3a: Die Einzahlung muss zwischen 0 und dem Maximalbetrag von \d{1,3}('\d{3})* pro Jahr/);
@@ -257,6 +259,30 @@ test.describe("Messages of the engine (#171)", () => {
     // the list of the validation shows the translated text
     await page.evaluate(() => { state.withdrawal.strategy = "fixed_rate"; state.withdrawal.fixedRate = { rate: 0.09 }; refresh(); });
     await expect(page.locator("#val")).toContainText(`${MARK}Eine Entnahmerate von 9.0 % ist hoch`);
+    await noErrors(page, errors);
+  });
+
+  test("#176/AK4: the German user interface shows no English text of the engine (results, events, checks)", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.withdrawal.strategy = "fixed_rate"; state.withdrawal.fixedRate = { rate: 0.09 }; refresh(); });
+    await expect(page.locator("#val")).toContainText("Eine Entnahmerate von 9.0 % ist hoch");
+    const out = await page.evaluate(async () => {
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resultTab = "events"; showResults(true); renderResults(lastRun);
+      const issues = await Engine.call("validate", { plan: state });
+      const de = await (await fetch("i18n/de.json")).json();
+      // English texts sent along by the engine that differ from the German rendering
+      const sent = [...lastRun.single.events, ...issues, lastRun.single.label]
+        .filter(m => m && m.code && m.text !== undefined ? true : m && m.message !== undefined)
+        .map(m => [m.text ?? m.message, engineText(m, k => de[k])])
+        .filter(([en, ger]) => en !== ger && en.length >= 12).map(([en]) => en);
+      return { sent, shown: document.querySelector("#resultsBody").textContent + "\n" + document.querySelector("#val").textContent,
+        events: document.querySelectorAll("#resultsBody .evlist li").length };
+    });
+    expect(out.sent.length).toBeGreaterThan(5);
+    expect(out.events).toBeGreaterThan(0);
+    expect(out.shown).toContain("Eine Entnahmerate von 9.0 % ist hoch");
+    for (const en of out.sent) expect(out.shown.includes(en), en).toBe(false);
     await noErrors(page, errors);
   });
 

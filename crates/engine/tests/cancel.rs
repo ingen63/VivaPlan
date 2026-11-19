@@ -56,7 +56,7 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     // #139: 100'000 paths × 472 months = 47 million path-months, below the memory limit of 50 million.
     let r = api::run(&plan(100_000), Path::new("/"), Some(&lib));
     let seen = w.join().unwrap();
-    assert_eq!(r.error.as_deref(), Some("Abgebrochen"));
+    assert_eq!(r.error.as_deref(), Some("Cancelled"));
     assert!(seen.total == 100_000 && seen.done < seen.total);
     // #83: Error text and counter show that it was cancelled. The time limit only catches a hang; the cancellation
     // itself takes milliseconds, 60 s also hold on a 2-core runner under coverage measurement.
@@ -82,7 +82,7 @@ fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let req = json!({ "strategies": ["standard", "guardrails"], "paths": 20000, "checkPaths": 20000, "samples": 30, "seed": 1 });
     let e = api::optimize(&plan(200), &req, Path::new("/"), Some(&lib)).unwrap_err();
     w.join().unwrap();
-    assert_eq!(e.to_string(), "Abgebrochen");
+    assert_eq!(e.to_string(), "Cancelled");
     // #83: as above, only against a hang.
     assert!(
         t0.elapsed() < Duration::from_secs(60),

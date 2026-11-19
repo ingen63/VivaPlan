@@ -138,13 +138,13 @@ fn goal_two_needs_a_property_and_a_sensible_minimum() {
     assert!(run_request(&base, Path::new("."), None, &req)
         .unwrap_err()
         .to_string()
-        .contains("Mindestkonsum"));
+        .contains("minimum consumption"));
     base["realestate"]["properties"] = json!([]);
     req.min_consumption = 0.9;
     assert!(run_request(&base, Path::new("."), None, &req)
         .unwrap_err()
         .to_string()
-        .contains("Immobilie"));
+        .contains("property"));
     // Goal 1 needs no property
     assert!(run_request(&base, Path::new("."), None, &request(Goal::Consumption)).is_ok());
 }

@@ -89,7 +89,7 @@ fn issue_53_ak4_ak5_check_and_no_housing() {
     v["realestate"] = json!({ "properties": [ house("never") ] });
     v["flows"]["spending"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "2044-01", "value": 1999 } ] });
     let e = errors(&v);
-    assert_eq!(e, vec!["Die Lebenshaltungskosten (1'999) sind kleiner als die Wohnkosten zum Simulationsstart (2'000), die sie enthalten.".to_string()]);
+    assert_eq!(e, vec!["Living expenses (1'999) are lower than the housing costs at the simulation start (2'000) that they include.".to_string()]);
     let i = engine::api::validate(&v)
         .into_iter()
         .find(|i| i.message.contains("1'999"))
@@ -128,7 +128,8 @@ fn issue_53_ak7_upgrade_keeps_the_result() {
     assert!(
         out.notes
             .iter()
-            .any(|n| n.contains("Die Wohnkosten zum Simulationsstart (2000 pro Monat) sind zu jedem Wert addiert")),
+            .any(|n| n
+                .contains("The housing costs at the simulation start (2000 per month) have been added to each value")),
         "{:?}",
         out.notes
     );

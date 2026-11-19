@@ -114,14 +114,14 @@ fn guardrails_without_change_follow_inflation() {
 fn guardrails_cut_after_a_loss_without_inflation() {
     // Losing year and rate above the initial rate: no inflation; rate above 4.8 % ⇒ 10 % less
     let (b0, _, b1) = guardrails(-0.3);
-    close(b1, b0 * 0.9, "gekürzt");
+    close(b1, b0 * 0.9, "cut by");
 }
 
 #[test]
 fn guardrails_raise_after_a_gain() {
     // Winning year: inflation; rate below 3.2 % ⇒ 10 % more
     let (b0, f, b1) = guardrails(0.5);
-    close(b1, b0 * f * 1.1, "erhöht");
+    close(b1, b0 * f * 1.1, "raised by");
 }
 
 #[test]
@@ -134,7 +134,7 @@ fn guardrails_events() {
     assert!(r
         .events
         .iter()
-        .any(|e| e.kind == EventKind::Withdrawal && e.month == ym(2032, 1) && e.text.contains("gekürzt")));
+        .any(|e| e.kind == EventKind::Withdrawal && e.month == ym(2032, 1) && e.text.contains("cut by")));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ fn need_counts_pensions_that_start_later_in_the_year() {
     let a = refill(&r, "A", 2031, 11);
     // November and December, extrapolated to 12 months (× 6)
     assert_eq!(a.basis.months, 2);
-    assert_eq!(a.basis.source, "ab 11.2031, auf 12 Monate hochgerechnet");
+    assert_eq!(a.basis.source, "from 11.2031, extrapolated to 12 months");
     let pa = rec(&r, 2031, 11).pk_pension;
     let pb = rec(&r, 2031, 12).pk_pension - pa;
     assert!(pa > 0.0 && pb > 0.0);
@@ -218,7 +218,7 @@ fn need_counts_the_planned_earned_income() {
     let a = refill(&r, "A", 2031, 11);
     let earned = rec(&r, 2031, 11).earned + rec(&r, 2031, 12).earned;
     assert!(earned > 0.0);
-    close(a.basis.earned, 6.0 * earned, "Erwerbseinkommen");
+    close(a.basis.earned, 6.0 * earned, "earned income");
 }
 
 #[test]
@@ -228,7 +228,7 @@ fn need_uses_the_indexed_ahv_cap() {
     let r = run(&v);
     let j = refill(&r, "Januar", 2032, 1);
     assert_eq!(j.basis.months, 12);
-    assert_eq!(j.basis.source, "Januar, geplant");
+    assert_eq!(j.basis.source, "January, planned");
     // Cap adjusted with inflation, like the AHV paid out in January
     assert!(rec(&r, 2032, 1).ahv > 3780.0 * 1.1);
     close(j.basis.ahv, 12.0 * rec(&r, 2032, 1).ahv, "AHV");
@@ -264,7 +264,7 @@ fn stock_return_over_the_last_twelve_months() {
         }
     });
     let j = refill(&r, "Januar", 2033, 1);
-    assert_eq!(j.return_basis, "letzte 12 Monate");
+    assert_eq!(j.return_basis, "last 12 months");
     close(j.stock_return, 1.01f64.powi(11) * 1.0 - 1.0, "Feb 2032 bis Jan 2033");
 }
 
@@ -288,7 +288,7 @@ fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
         p.pre_stocks = [vec![-0.5; 3], vec![0.01; 9]].concat();
     });
     let a = refill(&r, "A", 2027, 1);
-    assert_eq!(a.return_basis, "letzte 12 Monate");
+    assert_eq!(a.return_basis, "last 12 months");
     close(
         a.stock_return,
         1.01f64.powi(9) * 1.1 * 1.2 * 1.05 - 1.0,
@@ -301,7 +301,7 @@ fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
         p.pre_stocks.clear();
     });
     let a = refill(&r, "A", 2027, 1);
-    assert_eq!(a.return_basis, "seit Start");
+    assert_eq!(a.return_basis, "since start");
     close(a.stock_return, 1.1 * 1.2 * 1.05 - 1.0, "Nov 2026 bis Jan 2027");
 
     // Partial lead-in (two months): since the earliest known level
@@ -310,7 +310,7 @@ fn issue_103_the_pre_run_supplies_the_months_before_the_start() {
         p.pre_stocks = vec![0.03, -0.02];
     });
     let a = refill(&r, "A", 2027, 1);
-    assert_eq!(a.return_basis, "seit Start");
+    assert_eq!(a.return_basis, "since start");
     close(
         a.stock_return,
         1.03 * 0.98 * 1.1 * 1.2 * 1.05 - 1.0,
@@ -409,7 +409,7 @@ fn renewal_fails_when_the_lump_sum_exceeds_the_wealth() {
     v["flows"]["spending"] = json!(11_000);
     let r = run(&v);
     let n = &r.renewals[0];
-    assert_eq!(n.emergency_sale.as_deref(), Some("Vermögen < 0"));
+    assert_eq!(n.emergency_sale.as_deref(), Some("Wealth < 0"));
     assert_eq!((n.lump_sum, n.debt_after), (0.0, 680_800.0));
     assert_eq!(r.summary.affordability_sales, 1);
     assert!(r
@@ -457,7 +457,7 @@ fn renewal_checks_the_emergency_criterion_after_the_payment() {
     let above = run(&criterion_plan(critical * (1.0 + 1e-7)));
     assert_eq!(
         above.renewals[0].emergency_sale.as_deref(),
-        Some("Notverkaufskriterium")
+        Some("Emergency sale criterion")
     );
 }
 
@@ -503,7 +503,7 @@ fn paid_off_tranche_does_not_count_in_the_emergency_criterion() {
         run(&plan(critical * (1.0 + 1e-7))).renewals[0]
             .emergency_sale
             .as_deref(),
-        Some("Notverkaufskriterium")
+        Some("Emergency sale criterion")
     );
 }
 
@@ -555,7 +555,7 @@ fn restart_after_phase_eight_does_not_count_the_reserved_proceeds() {
     let phase8: Vec<_> = r
         .events
         .iter()
-        .filter(|e| e.text.contains("alle Töpfe leer"))
+        .filter(|e| e.text.contains("all buckets empty"))
         .map(|e| e.month)
         .collect();
     assert_eq!(phase8.first(), Some(&ym(2030, 1)));
@@ -574,7 +574,7 @@ fn restart_after_phase_eight_does_not_count_the_reserved_proceeds() {
     let restart: Vec<_> = r
         .bucket_refills
         .iter()
-        .filter(|x| x.reason.contains("Neustart nach Phase 8"))
+        .filter(|x| x.reason.contains("restart after phase 8"))
         .map(|x| x.month)
         .collect();
     assert_eq!(restart.first(), Some(&ym(2030, 4)), "{restart:?}");
@@ -659,7 +659,7 @@ fn sale(r: &SimResult) -> &engine::sim::PropertyEvent {
         .expect("Verkauf")
 }
 
-const RESERVED: &str = "Verkaufserlös reserviert für Kauf im Folgemonat";
+const RESERVED: &str = "Sale proceeds reserved for a purchase in the following month";
 
 #[test]
 fn sale_followed_by_a_purchase_keeps_the_proceeds_liquid() {
@@ -756,9 +756,9 @@ fn failed_purchase_after_sale_starts_the_rent() {
     assert!(r
         .events
         .iter()
-        .any(|e| e.kind == EventKind::Purchase && e.text.contains("Kauf Neu entfällt")));
+        .any(|e| e.kind == EventKind::Purchase && e.text.contains("Purchase Neu dropped")));
     let start = r.events.iter().find(|e| e.kind == EventKind::RentStart).unwrap();
-    assert_eq!(start.text, "Miete ab jetzt: Wohnung");
+    assert_eq!(start.text, "Renting from now on: Wohnung");
 }
 
 #[test]
@@ -774,7 +774,7 @@ fn failed_purchase_does_not_start_the_rent_while_another_property_is_owned() {
     assert!(r
         .events
         .iter()
-        .any(|e| e.kind == EventKind::Purchase && e.text.contains("Kauf Neu entfällt")));
+        .any(|e| e.kind == EventKind::Purchase && e.text.contains("Purchase Neu dropped")));
     assert!(!r.events.iter().any(|e| e.kind == EventKind::RentStart));
 }
 
@@ -807,7 +807,7 @@ fn sale_without_proceeds_does_not_apply_the_strategy() {
     assert!(!r
         .events
         .iter()
-        .any(|e| e.month == ym(2030, 3) && e.text.starts_with("Entnahmestrategie angewendet")));
+        .any(|e| e.month == ym(2030, 3) && e.text.starts_with("Withdrawal strategy applied")));
 }
 
 #[test]
@@ -857,7 +857,7 @@ fn pillar3a_collects_indirect_amortization_and_pays_out() {
         "pillar3a": {"balance": 0, "rate": 0, "payout": "2028-01", "use": "wealth"}});
     v["realestate"]["properties"] = json!([
         owned("haus", "never", json!({"mortgage": mortgage})),
-        owned("leer", "never", json!({"mortgage": empty}))
+        owned("empty", "never", json!({"mortgage": empty}))
     ]);
     let r = run(&v);
     // December 2026, March, June, September, December 2027: five contributions
@@ -914,7 +914,7 @@ fn zero_extra_does_not_apply_the_strategy() {
     let applied = |m: YearMonth| {
         r.events
             .iter()
-            .any(|e| e.month == m && e.text.starts_with("Entnahmestrategie angewendet"))
+            .any(|e| e.month == m && e.text.starts_with("Withdrawal strategy applied"))
     };
     assert!(!applied(ym(2032, 3)));
     assert!(applied(ym(2032, 5)));
@@ -970,10 +970,10 @@ fn lump_sum_after_tax_goes_to_pot_three() {
         b.moves.iter().map(|m| (m.from, m.to, m.amount)).collect::<Vec<_>>(),
         vec![(0, 3, 285_000.0)]
     );
-    assert!(refill(&r, "A", 2032, 6).reason.contains("PK-Kapitalbezug"));
+    assert!(refill(&r, "A", 2032, 6).reason.contains("PK lump sum"));
     // Without a lump sum no occasion «PK-Kapitalbezug»
     let r = run(&couple());
-    assert!(!r.bucket_refills.iter().any(|x| x.reason.contains("PK-Kapitalbezug")));
+    assert!(!r.bucket_refills.iter().any(|x| x.reason.contains("PK lump sum")));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1029,7 +1029,7 @@ fn start_in_january_needs_no_extrapolation() {
     buckets(&mut v, 1.0, 1.0, -1.0);
     let r = run(&v);
     let a = refill(&r, "A", 2032, 1);
-    assert_eq!(a.basis.source, "ab 01.2032");
+    assert_eq!(a.basis.source, "from 01.2032");
     assert_eq!(a.basis.months, 12);
 }
 
@@ -1064,7 +1064,7 @@ fn sale_proceeds_for_a_purchase_are_reserved() {
         rest.moves.iter().map(|m| (m.from, m.to, m.amount)).collect::<Vec<_>>(),
         vec![(4, 3, 600_000.0)]
     );
-    assert!(rest.reason.contains("Überschuss der Reservierung"));
+    assert!(rest.reason.contains("Surplus of the reservation"));
     // Wealth is preserved: cash = previous month + proceeds − price − spending
     close(
         rec(&r, 2033, 4).liquid,
@@ -1112,7 +1112,7 @@ fn inflow_to_pot_three_is_logged_with_the_pots_before() {
     assert!(r
         .events
         .iter()
-        .any(|e| e.month == ym(2033, 3) && e.text.starts_with("3-Topf extern nach Topf 3 («Erbe»)")));
+        .any(|e| e.month == ym(2033, 3) && e.text.starts_with("3 buckets external to bucket 3 (“Erbe”)")));
 }
 
 #[test]
@@ -1285,7 +1285,7 @@ fn renewal_details() {
     assert!(r
         .events
         .iter()
-        .any(|e| e.kind == EventKind::MortgageRenewal && e.text.starts_with("Neue Hypothekarperiode Haus: 3.00 %")));
+        .any(|e| e.kind == EventKind::MortgageRenewal && e.text.starts_with("New mortgage period Haus: 3.00 %")));
     // Paid-off tranche: no renewal, no check
     let mut v = renewal_plan(600.0, two_periods());
     for p in v["realestate"]["properties"][0]["mortgage"]["tranches"][0]["periods"]

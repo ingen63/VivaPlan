@@ -1002,7 +1002,7 @@ mod tests {
         };
         assert_eq!(
             serde_json::to_value(&i).unwrap(),
-            json!({ "severity": "error", "section": "general", "message": "Person 2: Der Name fehlt (Pflichtangabe).",
+            json!({ "severity": "error", "section": "general", "message": "Person 2: the name is missing (required).",
                 "code": "person_name_missing", "params": { "n": 2 }, "field": "household.persons.1.name" })
         );
     }
@@ -1033,36 +1033,36 @@ mod tests {
     #[test]
     fn period_birth_and_milestones() {
         assert!(messages(&base()).is_empty(), "{:?}", messages(&base()));
-        const LONG: &str = "länger als 100 Jahre";
+        const LONG: &str = "longer than 100 years";
         assert!(!has(&with(|v| set_end(v, "2126-11")), LONG));
         assert!(has(&with(|v| set_end(v, "2126-12")), LONG));
         // Birth in the start month is possible
         assert!(!has(
             &with(|v| v["household"]["persons"][0]["birth"] = json!("2026-11")),
-            "nach dem Simulationsstart"
+            "after the simulation start"
         ));
         assert!(has(
             &with(|v| v["household"]["persons"][0]["birth"] = json!("2026-12")),
-            "nach dem Simulationsstart"
+            "after the simulation start"
         ));
         // exactly 120 years at the end
-        const OLD: &str = "über 120 Jahre alt";
+        const OLD: &str = "over 120 years old";
         assert!(!has(&with(|v| set_end(v, "2086-11")), OLD));
         assert!(has(&with(|v| set_end(v, "2086-12")), OLD));
         // Milestones before the start or after the end; the end itself is allowed
         let ms =
             |d: &str| with(|v| v["milestones"][2] = json!({"id": "ahv", "kind": "date", "name": "AHV", "date": d}));
-        assert!(has(&ms("2026-10"), "liegt vor dem Simulationsstart"));
-        assert!(!has(&ms("2061-11"), "liegt nach dem Simulationsende"));
-        assert!(has(&ms("2061-12"), "liegt nach dem Simulationsende"));
+        assert!(has(&ms("2026-10"), "is before the simulation start"));
+        assert!(!has(&ms("2061-11"), "is after the simulation end"));
+        assert!(has(&ms("2061-12"), "is after the simulation end"));
     }
 
     #[test]
     fn pension_series_and_extras() {
-        const HIGH: &str = "Umwandlungssatz 9.00 %";
+        const HIGH: &str = "Conversion rate of 9.00 %";
         assert!(!has(
             &with(|v| v["pension"]["pk"]["conversion"] = json!(0.08)),
-            "ungewöhnlich hoch"
+            "unusually high"
         ));
         assert!(has(&with(|v| v["pension"]["pk"]["conversion"] = json!(0.09)), HIGH));
         let partner = |c: f64| {
@@ -1073,10 +1073,10 @@ mod tests {
                                       "ahv": {"monthly": 0, "at": "ahv", "indexed": true}});
             })
         };
-        assert!(!has(&partner(0.08), "ungewöhnlich hoch"));
-        assert!(has(&partner(0.09), "Person 2: Umwandlungssatz 9.00 %"));
+        assert!(!has(&partner(0.08), "unusually high"));
+        assert!(has(&partner(0.09), "Person 2: conversion rate of 9.00 %"));
         // Series only after the start: warning; from the start: none
-        const LATE: &str = "kein Wert ab Simulationsstart";
+        const LATE: &str = "no value from the simulation start";
         let income = |from: &str| {
             with(|v| v["flows"]["income"] = json!({"mode": "timed", "rows": [{"from": from, "value": 1}]}))
         };
@@ -1084,8 +1084,8 @@ mod tests {
         assert!(!has(&income("2026-11"), LATE));
         assert!(!has(&income("2020-01"), LATE));
         let extra = |d: &str| with(|v| v["flows"]["extras"] = json!([{"date": d, "amount": 1000, "label": "Erbe"}]));
-        assert!(!has(&extra("2061-11"), "«Erbe» liegt nach"));
-        assert!(has(&extra("2061-12"), "«Erbe» liegt nach"));
+        assert!(!has(&extra("2061-11"), "“Erbe” is after"));
+        assert!(has(&extra("2061-12"), "“Erbe” is after"));
     }
 
     #[test]
@@ -1102,12 +1102,12 @@ mod tests {
         assert!(
             messages(&boot(1_000_000, 1.0))
                 .iter()
-                .all(|m| m.starts_with("Zu viele Pfade")),
+                .all(|m| m.starts_with("Too many paths")),
             "{:?}",
             messages(&boot(1_000_000, 1.0))
         );
-        assert!(has(&boot(1_000_001, 1.0), "Anzahl Pfade"));
-        assert!(has(&boot(10, 0.9), "Blocklänge"));
+        assert!(has(&boot(1_000_001, 1.0), "number of paths"));
+        assert!(has(&boot(10, 0.9), "block length"));
         let para = |sigma: f64, js: f64, jl: f64| {
             with(|v| {
                 v["returns"]["source"] = json!("parametric");
@@ -1115,7 +1115,7 @@ mod tests {
                     json!({"paths": 10, "mu": 0.05, "sigma": sigma, "df": 0, "jumpSigma": js, "jumpLambda": jl});
             })
         };
-        const NEG: &str = "dürfen nicht negativ sein";
+        const NEG: &str = "must not be negative";
         assert!(!has(&para(0.0, 0.0, 0.0), NEG));
         assert!(has(&para(-0.1, 0.0, 0.0), NEG));
         assert!(has(&para(0.1, -0.1, 0.0), NEG));
@@ -1130,7 +1130,7 @@ mod tests {
                 f(&mut v["withdrawal"]);
             })
         };
-        const MANY: &str = "mehr als 15 Jahre";
+        const MANY: &str = "more than 15 years";
         assert!(!has(
             &w("three_buckets", &|x| x["buckets"] =
                 json!({"cashYears": 10, "bondYears": 5})),
@@ -1143,11 +1143,11 @@ mod tests {
         ));
         assert!(!has(
             &w("fixed_rate", &|x| x["fixedRate"] = json!({"rate": 0.07})),
-            "ist hoch"
+            "is high"
         ));
         assert!(has(
             &w("fixed_rate", &|x| x["fixedRate"] = json!({"rate": 0.08})),
-            "Entnahmerate von 8.0 % ist hoch"
+            "withdrawal rate of 8.0 % is high"
         ));
         const VPW: &str = "VPW:";
         assert!(!has(&w("vpw", &|_| {}), VPW));
@@ -1158,7 +1158,7 @@ mod tests {
         assert!(!has(&w("endowment", &|_| {}), END));
         assert!(has(&w("endowment", &|x| x["endowment"]["smoothing"] = json!(1.5)), END));
         assert!(has(&w("endowment", &|x| x["endowment"]["rate"] = json!(0)), END));
-        const RAILS: &str = "Leitplanken";
+        const RAILS: &str = "guardrails must be";
         let g = |upper: f64, lower: f64| {
             w("guardrails", &move |x| {
                 x["guardrails"]["upper"] = json!(upper);
@@ -1170,7 +1170,7 @@ mod tests {
         assert!(has(&g(0.2, -0.1), RAILS));
         assert!(has(&g(0.2, 1.0), RAILS));
         assert!(!has(&g(0.2, 0.99), RAILS));
-        const ABOVE: &str = "Untergrenze der Ausgaben liegt über";
+        const ABOVE: &str = "spending floor is above";
         let fc = |floor: f64, ceiling: f64| {
             w("fixed_rate", &move |x| {
                 x["floor"] = json!(floor);
@@ -1184,7 +1184,7 @@ mod tests {
 
     #[test]
     fn scenarios_and_optimization() {
-        const START: &str = "wirkt nur mit der Quelle «Historisch";
+        const START: &str = "only has an effect with the source “Historical";
         let sweep = |source: &str| {
             with(|v| {
                 v["returns"]["source"] = json!(source);
@@ -1196,7 +1196,7 @@ mod tests {
         };
         assert!(has(&sweep("rolling"), START));
         assert!(!has(&sweep("historical"), START));
-        const PATHS: &str = "Anzahl Pfade muss grösser als 0";
+        const PATHS: &str = "number of paths must be greater than 0";
         let opt = |paths: u64, check: u64| with(|v| v["optimization"] = json!({"paths": paths, "checkPaths": check}));
         assert!(!has(&opt(100, 100), PATHS));
         assert!(has(&opt(0, 100), PATHS));
@@ -1235,15 +1235,15 @@ mod tests {
         };
         assert!(has(
             &aargau(json!([[0, 1.5]]), "aargau"),
-            "Besitzdauer und Steuersatz sind ungültig"
+            "holding period and tax rate are invalid"
         ));
         assert!(has(
             &aargau(json!([[-1, 0.2]]), "aargau"),
-            "Besitzdauer und Steuersatz sind ungültig"
+            "holding period and tax rate are invalid"
         ));
-        assert!(!has(&aargau(json!([[0, 0.2]]), "aargau"), "sind ungültig"));
+        assert!(!has(&aargau(json!([[0, 0.2]]), "aargau"), "are invalid"));
         // Purchase date missing: warning only in the Aargau model with rates (or with surcharges/reductions)
-        const BOUGHT: &str = "Das Kaufdatum fehlt";
+        const BOUGHT: &str = "the purchase date is missing";
         assert!(has(&aargau(json!([[0, 0.2]]), "aargau"), BOUGHT));
         assert!(!has(&aargau(json!([[0, 0.2]]), "zurich"), BOUGHT));
     }
@@ -1256,19 +1256,19 @@ mod tests {
                 json!({"id": "m", "name": "Miete", "status": "rent", "price": 0, "fixCosts": 0, "inflation": false, "from": "start", "rent": 2000}),
             ])
         };
-        assert!(has(&own("afterSale:h"), "Kauf nach dem eigenen Verkauf"));
-        assert!(has(&own("afterSale:m"), "«Miete» ist eine Miete"));
-        assert!(!has(&own("2030-01"), "Miete und wird nie"));
-        const EARLY_SELL: &str = "Verkaufszeitpunkt liegt vor dem Simulationsstart";
+        assert!(has(&own("afterSale:h"), "a purchase after its own sale"));
+        assert!(has(&own("afterSale:m"), "“Miete” is rented"));
+        assert!(!has(&own("2030-01"), "rented and is never"));
+        const EARLY_SELL: &str = "the sale date is before the simulation start";
         let sell = |d: &str| with_props(vec![house("owned", json!({"sell": d, "worth": 1}))]);
         assert!(has(&sell("2026-10"), EARLY_SELL));
         assert!(!has(&sell("2026-11"), EARLY_SELL));
-        const EARLY_BUY: &str = "Kaufzeitpunkt liegt vor dem Simulationsstart";
+        const EARLY_BUY: &str = "the purchase date is before the simulation start";
         let buy = |d: &str| with_props(vec![house("planned", json!({"buy": d}))]);
         assert!(has(&buy("2026-10"), EARLY_BUY));
         assert!(!has(&buy("2026-11"), EARLY_BUY));
-        assert!(!has(&buy("2030-01"), "nie gekauft"));
-        const NO_BUY: &str = "kein Kaufzeitpunkt";
+        assert!(!has(&buy("2030-01"), "never bought"));
+        const NO_BUY: &str = "no purchase date";
         assert!(has(&buy("never"), NO_BUY));
         assert!(has(&with_props(vec![house("planned", json!({}))]), NO_BUY));
         assert!(!has(&buy("afterSale"), NO_BUY));
@@ -1284,14 +1284,14 @@ mod tests {
                 "mortgage": {"amountMode": mode, "tranches": [tranche(amount, None, fixed.clone())]}}),
             )])
         };
-        const HIGHER: &str = "Hypothek ist höher als der Kaufpreis";
-        const LTV: &str = "Belehnung über 80 %";
+        const HIGHER: &str = "the mortgage is higher than the purchase price";
+        const LTV: &str = "loan-to-value above 80 %";
         assert!(has(&planned(1_000_001.0, "fixed"), HIGHER));
         assert!(!has(&planned(1_000_000.0, "fixed"), HIGHER));
         assert!(has(&planned(800_001.0, "fixed"), LTV));
         assert!(!has(&planned(800_000.0, "fixed"), LTV));
         assert!(!has(&planned(0.9, "maxLoan"), LTV));
-        assert!(!has(&planned(0.9, "maxLoan"), "gilt nur für geplante Käufe"));
+        assert!(!has(&planned(0.9, "maxLoan"), "only applies to planned purchases"));
         let owned = |mode: &str, tranches: Value| {
             with_props(vec![house(
                 "owned",
@@ -1301,7 +1301,7 @@ mod tests {
         };
         assert!(has(
             &owned("maxLoan", json!([tranche(1.0, Some("2026-01"), fixed.clone())])),
-            "gilt nur für geplante Käufe"
+            "only applies to planned purchases"
         ));
         // Price and loan-to-value are checked only for planned purchases.
         let high = owned("fixed", json!([tranche(1_200_000.0, Some("2026-01"), fixed.clone())]));
@@ -1309,22 +1309,22 @@ mod tests {
         // Start of the period for owned property
         assert!(has(
             &owned("fixed", json!([tranche(1.0, None, fixed.clone())])),
-            "Haus: Beginn der laufenden Periode fehlt"
+            "Haus: start of the current period missing"
         ));
         assert!(has(
             &owned("fixed", json!([tranche(1.0, Some("2026-12"), fixed.clone())])),
-            "Beginn liegt nach dem Simulationsstart"
+            "the start is after the simulation start"
         ));
         assert!(!has(
             &owned("fixed", json!([tranche(1.0, Some("2026-11"), fixed.clone())])),
-            "Beginn liegt nach"
+            "the start is after"
         ));
         // With several tranches the name of the tranche is in the message
         let mut t2 = tranche(1.0, None, fixed.clone());
         t2["name"] = json!("T2");
         assert!(has(
             &owned("fixed", json!([tranche(1.0, Some("2026-01"), fixed.clone()), t2])),
-            "Haus, T2: Beginn der laufenden Periode fehlt"
+            "Haus, T2: start of the current period missing"
         ));
     }
 
@@ -1339,27 +1339,27 @@ mod tests {
         };
         assert!(!has(
             &owned(json!([{"type": "fixed", "term": 100, "rate": 0.02}])),
-            "über 100 Jahre"
+            "over 100 years"
         ));
         assert!(has(
             &owned(json!([{"type": "fixed", "term": 101, "rate": 0.02}])),
-            "Periode 1: Laufzeit über 100 Jahre"
+            "period 1: term over 100 years"
         ));
         assert!(!has(
             &owned(json!([{"type": "fixed", "term": 5, "rate": 0.1}])),
-            "ungewöhnlich hoch"
+            "unusually high"
         ));
         assert!(has(
             &owned(json!([{"type": "fixed", "term": 5, "rate": 0.11}])),
-            "Zins 11.00 % ist ungewöhnlich hoch"
+            "interest rate of 11.00 % is unusually high"
         ));
         assert!(!has(
             &owned(json!([{"type": "saron", "term": 5, "rate": 0.2, "margin": 0.03}])),
-            "ungewöhnlich hoch"
+            "unusually high"
         ));
         assert!(has(
             &owned(json!([{"type": "saron", "term": 5, "margin": 0.031}])),
-            "SARON-Marge 3.10 %"
+            "SARON margin of 3.10 %"
         ));
         assert!(!has(
             &owned(json!([{"type": "fixed", "term": 5, "rate": 0.2, "margin": 0.05}])),
@@ -1370,12 +1370,12 @@ mod tests {
         let ind = |term: f64, amort: f64, mode: &str| {
             owned(json!([{"type": "fixed", "term": term, "rate": 0.01, "amort": amort, "amortMode": mode}]))
         };
-        const MAX: &str = "übersteigen zusammen den Maximalbetrag";
+        const MAX: &str = "together exceed the maximum amount";
         // 3a maximum 7258 per year = 1814.5 per quarter
         assert!(!has(&ind(3.0, 1814.5, "indirect"), MAX));
         assert!(has(
             &ind(3.0, 1815.0, "indirect"),
-            "indirekte Amortisation (7'260) übersteigen zusammen den Maximalbetrag von 7'258"
+            "indirect amortization (7'260) together exceed the maximum amount of 7'258"
         ));
         assert!(!has(&ind(3.0, 1815.0, "direct"), MAX));
         // Period ended before the start: does not count
@@ -1413,26 +1413,27 @@ mod tests {
                 json!({"person": "A", "balance": 10_000, "rate": 0.01, "payouts": [{"date": date, "amount": 5000}]}),
             )
         };
-        const EARLY: &str = "liegt mehr als 5 Jahre vor dem AHV-Bezug (11.2031); frühestens im 11.2026";
+        const EARLY: &str =
+            "is more than 5 years before the start of the AHV pension (11.2031); at the earliest in 11.2026";
         assert!(!has(&pay("2026-11"), EARLY), "genau 5 Jahre vorher ist gültig");
         assert!(has(&pay("2026-10"), EARLY));
         assert!(messages(&pay("2026-10"))
             .iter()
-            .any(|m| m.contains("Säule 3a: Die Auszahlung im 10.2026")));
-        assert!(has(&pay("2031-12"), "liegt nach dem AHV-Bezug"));
-        assert!(!has(&pay("2031-11"), "liegt nach dem AHV-Bezug"));
+            .any(|m| m.contains("Pillar 3a: the payout in 10.2026")));
+        assert!(has(&pay("2031-12"), "is after the start of the AHV pension"));
+        assert!(!has(&pay("2031-11"), "is after the start of the AHV pension"));
         let zero =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": 0}]}));
-        assert!(has(&zero, "muss grösser als 0 sein"));
+        assert!(has(&zero, "must be greater than 0"));
         // #88: a negative amount is also invalid (condition `b.is_nan() || b <= 0.0`).
         let negative =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": -1}]}));
-        assert!(has(&negative, "muss grösser als 0 sein"));
+        assert!(has(&negative, "must be greater than 0"));
         let positive =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": 0.01}]}));
-        assert!(!has(&positive, "muss grösser als 0 sein"));
+        assert!(!has(&positive, "must be greater than 0"));
         let whole = with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01"}]}));
-        assert!(!has(&whole, "muss grösser als 0 sein"), "ohne Betrag: ganzes Guthaben");
+        assert!(!has(&whole, "must be greater than 0"), "ohne Betrag: ganzes Guthaben");
     }
 
     // #52: Account, interest, usage, PK lump sum in the same year.
@@ -1440,23 +1441,26 @@ mod tests {
     fn pillar3a_account() {
         assert!(has(
             &with_3a(json!({"person": "X", "balance": 1, "rate": 0})),
-            "Die Person «X» gibt es nicht"
+            "the person “X” does not exist"
         ));
         assert!(has(
             &with(|v| v["pillar3a"] = json!([{"person": "A"}, {"person": "A"}])),
-            "nur ein 3a-Konto"
+            "only one 3a account"
         ));
         assert!(has(
             &with_3a(json!({"person": "A", "balance": -1})),
-            "Guthaben darf nicht negativ"
+            "balance must not be negative"
         ));
-        assert!(has(&with_3a(json!({"person": "A", "rate": 1.5})), "Zins muss zwischen"));
+        assert!(has(
+            &with_3a(json!({"person": "A", "rate": 1.5})),
+            "interest rate must be between"
+        ));
         assert!(has(
             &with_3a(json!({"person": "A", "use": "repay"})),
-            "setzt eine Tranche mit indirekter Amortisation voraus"
+            "requires a tranche with indirect amortization"
         ));
         assert!(
-            !has(&with_3a(json!({"person": "A"})), "setzt eine Tranche"),
+            !has(&with_3a(json!({"person": "A"})), "requires a tranche"),
             "Vorgabe: ins freie Vermögen"
         );
         let indirect = |use_: &str| {
@@ -1469,13 +1473,13 @@ mod tests {
             v["pillar3a"] = json!([{"person": "A", "use": use_, "payouts": [{"date": "2030-01", "use": use_}]}]);
             v
         };
-        assert!(!has(&indirect("repay"), "setzt eine Tranche"));
+        assert!(!has(&indirect("repay"), "requires a tranche"));
         let same = |date: &str, lumpsum: f64| {
             let mut v = with_3a(json!({"person": "A", "payouts": [{"date": date}]}));
             v["pension"]["pk"]["lumpsum"] = json!(lumpsum);
             v
         };
-        const SAME: &str = "im selben Jahr";
+        const SAME: &str = "in the same year";
         assert!(has(&same("2031-03", 0.5), SAME));
         assert!(!has(&same("2031-03", 0.0), SAME));
         assert!(!has(&same("2030-12", 0.5), SAME));
@@ -1485,7 +1489,7 @@ mod tests {
     #[test]
     fn pillar3a_contribution() {
         let c = |x: f64| with_3a(json!({"person": "A", "contribution": x}));
-        const RANGE: &str = "Die Einzahlung muss zwischen 0 und dem Maximalbetrag von 7'258 pro Jahr liegen";
+        const RANGE: &str = "the contribution must be between 0 and the maximum amount of 7'258 per year";
         assert!(!has(&c(0.0), RANGE));
         assert!(!has(&c(7258.0), RANGE));
         assert!(has(&c(7258.5), RANGE));
@@ -1493,7 +1497,7 @@ mod tests {
         // Maximum from the settings (#25)
         let mut higher = c(7500.0);
         higher["limits"] = json!({"pillar3aMax": 8000});
-        assert!(!has(&higher, "Die Einzahlung muss"));
+        assert!(!has(&higher, "the contribution must"));
         // Contribution and indirect amortization together: warning, no block
         let mut both = with_props(vec![house(
             "owned",
@@ -1502,17 +1506,17 @@ mod tests {
                 json!([{"type": "fixed", "term": 3, "rate": 0.01, "amort": 1000, "amortMode": "indirect"}]))]}}),
         )]);
         both["pillar3a"] = json!([{"person": "A", "contribution": 3258}]);
-        assert!(!has(&both, "übersteigen zusammen"));
+        assert!(!has(&both, "together exceed"));
         both["pillar3a"][0]["contribution"] = json!(3259);
         let w = Plan::from_json(&both.to_string()).unwrap();
         let hit = validate(&w)
             .into_iter()
-            .find(|i| i.message.contains("übersteigen zusammen"))
+            .find(|i| i.message.contains("together exceed"))
             .unwrap();
         assert_eq!(hit.severity, Severity::Warning);
         assert!(hit
             .message
-            .contains("Einzahlung (3'259) und indirekte Amortisation (4'000)"));
+            .contains("contribution (3'259) and indirect amortization (4'000)"));
     }
 
     // --- #124/AK7: Pillar 3a with two persons, hint «Hypothek zurückzahlen», amounts in francs ---
@@ -1547,7 +1551,7 @@ mod tests {
             "worth": 800_000, "sell": "never", "fixCosts": 0, "mortgage": { "tranches": [t] } } ]);
     }
 
-    const OVER: &str = "Einzahlung (0) und indirekte Amortisation (8'000) übersteigen zusammen den Maximalbetrag";
+    const OVER: &str = "contribution (0) and indirect amortization (8'000) together exceed the maximum amount";
 
     #[test]
     fn issue_124_ak7_indirect_amortization_per_person() {
@@ -1556,19 +1560,21 @@ mod tests {
             couple(v);
             indirect_house(v, Some("B"), 2000.0);
         });
-        assert!(has(&v, &format!("Säule 3a Ben: {OVER}")), "{:?}", messages(&v));
-        assert!(!has(&v, "Säule 3a Anna"), "{:?}", messages(&v));
+        assert!(has(&v, &format!("Pillar 3a Ben: {OVER}")), "{:?}", messages(&v));
+        assert!(!has(&v, "Pillar 3a Anna"), "{:?}", messages(&v));
         // A has an account, B does not: for B the warning without an account still applies.
         let v = with(|v| {
             couple(v);
             indirect_house(v, Some("B"), 2000.0);
             v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0 }]);
         });
-        assert!(has(&v, &format!("Säule 3a Ben: {OVER}")), "{:?}", messages(&v));
+        assert!(has(&v, &format!("Pillar 3a Ben: {OVER}")), "{:?}", messages(&v));
         // One person: without names.
         let v = with(|v| indirect_house(v, None, 2000.0));
         assert!(
-            messages(&v).iter().any(|m| m.starts_with(&format!("Säule 3a: {OVER}"))),
+            messages(&v)
+                .iter()
+                .any(|m| m.starts_with(&format!("Pillar 3a: {OVER}"))),
             "{:?}",
             messages(&v)
         );
@@ -1576,8 +1582,7 @@ mod tests {
 
     #[test]
     fn issue_124_ak7_repay_needs_an_indirect_tranche() {
-        const REPAY: &str =
-            "«Hypothek zurückzahlen» (Auszahlung im 01.2032) setzt eine Tranche mit indirekter Amortisation voraus";
+        const REPAY: &str = "“Repay mortgage” (payout in 01.2032) requires a tranche with indirect amortization";
         let account = |usage: &str| {
             json!([{ "person": "B", "balance": 10_000, "rate": 0,
                 "payouts": [{ "date": "2032-01", "amount": 5_000, "use": usage }] }])
@@ -1586,12 +1591,12 @@ mod tests {
             couple(v);
             v["pillar3a"] = account("repay");
         });
-        assert!(has(&v, &format!("Säule 3a Ben: {REPAY}")), "{:?}", messages(&v));
+        assert!(has(&v, &format!("Pillar 3a Ben: {REPAY}")), "{:?}", messages(&v));
         let v = with(|v| {
             couple(v);
             v["pillar3a"] = account("wealth");
         });
-        assert!(!has(&v, "Hypothek zurückzahlen"), "{:?}", messages(&v));
+        assert!(!has(&v, "Repay mortgage"), "{:?}", messages(&v));
     }
 
     #[test]

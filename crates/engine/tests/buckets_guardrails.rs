@@ -110,7 +110,7 @@ fn issue_6_ak2_combined_spends_like_pure_guardrails() {
     let cuts = |r: &SimResult| {
         withdrawal_events(r)
             .into_iter()
-            .filter(|(_, t)| t.contains("gekürzt"))
+            .filter(|(_, t)| t.contains("cut by"))
             .map(|(m, _)| m)
             .collect::<Vec<_>>()
     };
@@ -127,7 +127,7 @@ fn issue_6_ak3_guardrails_start_with_the_first_retirement() {
         let b0 = RATE * rec(&r, 2031, 10).liquid;
         let first = withdrawal_events(&r)
             .into_iter()
-            .find(|(_, t)| t.starts_with("Entnahme"))
+            .find(|(_, t)| t.starts_with("Withdrawal"))
             .expect("Startentnahme");
         assert_eq!(first.0, ym(2031, 11));
         let nov = rec(&r, 2031, 11);
@@ -170,7 +170,7 @@ fn issue_6_ak4_reserved_proceeds_do_not_count_for_the_rate() {
         let (a, b) = (run(&plain), run(&sold));
         assert!(withdrawal_events(&b)
             .iter()
-            .any(|(m, t)| *m == ym(2031, 11) && t.contains("reserviert")));
+            .any(|(m, t)| *m == ym(2031, 11) && t.contains("reserved")));
         close(
             rec(&b, 2031, 11).withdrawal,
             rec(&a, 2031, 11).withdrawal,
@@ -179,7 +179,7 @@ fn issue_6_ak4_reserved_proceeds_do_not_count_for_the_rate() {
         close(
             rec(&b, 2031, 11).withdrawal * 12.0,
             RATE * 940_000.0,
-            "4.3 % von 940'000",
+            "4.3 % of 940'000",
         );
     }
 }
@@ -203,7 +203,7 @@ fn issue_6_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
         assert!(r
             .events
             .iter()
-            .any(|e| e.month == ym(2032, 5) && e.text.starts_with("Entnahmestrategie angewendet")));
+            .any(|e| e.month == ym(2032, 5) && e.text.starts_with("Withdrawal strategy applied")));
     }
     let b = refill(&c, "B", 2032, 5);
     assert_eq!(
@@ -279,7 +279,7 @@ fn issue_6_ak7_targets_follow_a_cut() {
     let r = run(&combined(base()));
     let (cut, _) = withdrawal_events(&r)
         .into_iter()
-        .find(|(_, t)| t.contains("gekürzt"))
+        .find(|(_, t)| t.contains("cut by"))
         .expect("Kürzung");
     assert_eq!(cut.month(), 1);
     let now = refill(&r, "Januar", cut.year(), 1);
@@ -333,11 +333,11 @@ fn issue_6_validation_of_the_guardrails_and_limits() {
     assert!(errors(&combined(base())).is_empty());
     let mut v = combined(base());
     v["withdrawal"]["guardrails"]["initialRate"] = json!(0);
-    assert!(errors(&v).iter().any(|m| m.contains("Startrate")));
+    assert!(errors(&v).iter().any(|m| m.contains("initial rate")));
     let mut v = combined(base());
     v["withdrawal"]["floor"] = json!(1.2);
     v["withdrawal"]["ceiling"] = json!(1.1);
-    assert!(errors(&v).iter().any(|m| m.contains("Untergrenze")));
+    assert!(errors(&v).iter().any(|m| m.contains("spending floor")));
     // Without guardrails their parameters are not checked with «3-Topf»
     v["withdrawal"]["buckets"]["spending"] = json!("planned");
     v["withdrawal"]["guardrails"]["initialRate"] = json!(0);
@@ -431,7 +431,7 @@ fn issue_47_dynamic_strategies_start_with_the_first_retirement() {
         let r = run(&v);
         let first = withdrawal_events(&r)
             .into_iter()
-            .find(|(_, t)| t.starts_with("Entnahme"))
+            .find(|(_, t)| t.starts_with("Withdrawal"))
             .expect("Startentnahme");
         assert_eq!(first.0, ym(2031, 11), "{key}");
         let nov = rec(&r, 2031, 11);

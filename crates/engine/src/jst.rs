@@ -572,21 +572,21 @@ mod tests {
             Err(Error::Invalid(m)) => m,
             other => panic!("Fehler erwartet: {other:?}"),
         };
-        assert!(msg(JstData::from_rows(&[])).contains("leer"));
+        assert!(msg(JstData::from_rows(&[])).contains("empty"));
         let mut no_iso = header();
         no_iso.remove(1);
-        assert!(msg(JstData::from_rows(&[no_iso])).contains("«iso»"));
+        assert!(msg(JstData::from_rows(&[no_iso])).contains("“iso”"));
         let mut no_bill = header();
         no_bill.pop();
-        assert!(msg(JstData::from_rows(&[no_bill])).contains("«bill_rate»"));
+        assert!(msg(JstData::from_rows(&[no_bill])).contains("“bill_rate”"));
         // Only header row or only foreign countries
-        assert!(msg(JstData::from_rows(&[header()])).contains("keine Werte"));
+        assert!(msg(JstData::from_rows(&[header()])).contains("no values"));
         let other = vec![header(), raw_row(Data::Int(2000), s("XXX"), empty8())];
-        assert!(msg(JstData::from_rows(&other)).contains("keine Werte"));
+        assert!(msg(JstData::from_rows(&other)).contains("no values"));
         // Header cells that are not text count as unnamed
         let mut odd = header();
         odd[0] = Data::Int(5);
-        assert!(msg(JstData::from_rows(&[odd])).contains("«year»"));
+        assert!(msg(JstData::from_rows(&[odd])).contains("“year”"));
     }
 
     #[test]
@@ -644,7 +644,7 @@ mod tests {
         let d = data("1900,CHE,1,1,1,,,,,\n"); // neither bond_tr nor bond_rate
         let mut snb = SnbData::default();
         months(&mut snb, (1901, 1), (1901, 12), 2.0); // switch 1902
-        assert!(msg(ch_bonds_yearly(&d, &snb)).contains("Obligationen Schweiz 1900"));
+        assert!(msg(ch_bonds_yearly(&d, &snb)).contains("Swiss bonds 1900"));
     }
 
     #[test]

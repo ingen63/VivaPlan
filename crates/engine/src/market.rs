@@ -519,7 +519,7 @@ mod tests {
     #[test]
     fn rejects_garbage() {
         let err = DataSet::parse_csv("t", "Years,Stocks,Bonds,Inflation\n2000,+AC0-0.1,0,0\n").unwrap_err();
-        assert!(err.to_string().contains("Zeile 2"));
+        assert!(err.to_string().contains("line 2"));
     }
 
     #[test]

@@ -153,7 +153,7 @@ mod tests {
             assert!(!COMMANDS.contains(&c), "{c}");
             assert!(call(c, &json!({}), &lib(), Path::new("/"))
                 .unwrap_err()
-                .contains("nur in der Desktop-App"));
+                .contains("only available in the desktop app"));
         }
     }
 
@@ -162,12 +162,12 @@ mod tests {
     fn every_command_is_answered() {
         for c in COMMANDS {
             if let Err(e) = call(c, &json!({ "plan": {}, "path": "x/p.vplan" }), &lib(), Path::new("/")) {
-                assert!(!e.contains("nur in der Desktop-App"), "{c}: {e}");
+                assert!(!e.contains("only available in the desktop app"), "{c}: {e}");
             }
         }
         assert_eq!(
             call("series_info", &json!({}), &lib(), Path::new("/")).unwrap_err(),
-            "Pfad fehlt"
+            "Path missing"
         );
         assert!(call("rerun_paths", &json!({ "picks": "x" }), &lib(), Path::new("/")).is_err());
         assert_eq!(

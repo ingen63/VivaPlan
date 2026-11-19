@@ -601,7 +601,7 @@ mod tests {
 
         // Pension fund: two lump sums ⇒ one payout of 50 % with a note
         assert_eq!(p.pension.pk.lumpsum, 0.5);
-        assert!(r.notes.iter().any(|n| n.contains("Mehrere Kapitalbezüge")));
+        assert!(r.notes.iter().any(|n| n.contains("Multiple lump-sum withdrawals")));
         assert_eq!(
             js(&p.pension.pk.contribution),
             json!({"mode": "timed", "rows": [{"from": "2030-01", "value": 1000.0}, {"from": "2032-07", "value": 0.0}]})
@@ -641,7 +641,7 @@ mod tests {
             (q.paths, q.mu, q.sigma, q.df, q.jump_lambda, q.jump_mu, q.jump_sigma),
             (500, 0.08, 0.2, 5.0, 0.1, -0.2, 0.25)
         );
-        assert!(r.notes.iter().any(|n| n.contains("Monte Carlo übernommen")));
+        assert!(r.notes.iter().any(|n| n.contains("Monte Carlo imported")));
 
         // Taxes: tables sorted, property gain tax with reduction
         assert_eq!(p.taxes.multiplier, 1.5);
@@ -654,8 +654,8 @@ mod tests {
 
         // Properties: unknown status ignored with a note
         assert_eq!(p.realestate.properties.len(), 3);
-        assert!(r.notes.iter().any(|n| n.contains("«Zelt»")));
-        assert!(r.notes.iter().any(|n| n.contains("näherungsweise")));
+        assert!(r.notes.iter().any(|n| n.contains("“Zelt”")));
+        assert!(r.notes.iter().any(|n| n.contains("approximately")));
         assert_eq!(js(&p.realestate.emergency_months), json!(3.0));
         let house = &p.realestate.properties[0];
         assert_eq!(house.status, PropertyStatus::Owned);
@@ -696,13 +696,9 @@ mod tests {
         assert_eq!(c.key_age("64.5").unwrap(), 64.5);
         // Only one brace: not a reference but an invalid age.
         for k in ["{Pension.EarlyRetirement", "Pension.EarlyRetirement}"] {
-            assert!(c.key_age(k).unwrap_err().to_string().contains("ist kein Alter"), "{k}");
+            assert!(c.key_age(k).unwrap_err().to_string().contains("is not an age"), "{k}");
         }
-        assert!(c
-            .key_age("{Fehlt}")
-            .unwrap_err()
-            .to_string()
-            .contains("nicht definiert"));
+        assert!(c.key_age("{Fehlt}").unwrap_err().to_string().contains("not defined"));
     }
 
     // Defaults and other variants of the same data.
@@ -725,8 +721,8 @@ mod tests {
             .iter()
             .any(|m| m.id == "end" && matches!(m.kind, MilestoneKind::Date { date } if date == ym(2060, 1))));
         assert_eq!(p.pension.pk.lumpsum, 0.3);
-        assert!(!r.notes.iter().any(|n| n.contains("Mehrere Kapitalbezüge")));
-        assert!(r.notes.iter().any(|n| n.contains("«Iteration»")));
+        assert!(!r.notes.iter().any(|n| n.contains("Multiple lump-sum withdrawals")));
+        assert!(r.notes.iter().any(|n| n.contains("“Iteration”")));
         assert_eq!(p.returns.source, ReturnSource::Historical);
         assert_eq!(p.returns.start_date, Some(ym(1990, 1)));
         assert_eq!(p.returns.extrapolation.method, ExtrapolationMethod::Geometric);

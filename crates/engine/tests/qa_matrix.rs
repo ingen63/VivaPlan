@@ -777,7 +777,7 @@ fn emergency_sale_is_logged_and_raises_liquidity() {
     let i = res.records.iter().position(|r| r.month == ev.month).unwrap();
     assert!(res.records[i].liquid > res.records[i - 1].liquid, "Cash steigt nicht");
     assert_eq!(res.records[i].property_value, 0.0);
-    check_books(&res, "Notverkauf");
+    check_books(&res, "emergency sale");
 }
 
 #[test]
@@ -1028,7 +1028,7 @@ fn csv_import_error_cases() {
             "Date,Stocks,Bonds,Inflation\n2000-01,0.01,0,0\n2000-05,0.02,0,0\n"
         ))
         .is_err(),
-        "Lücke"
+        "gaps"
     );
     assert!(
         DataSet::load_csv(&write(
@@ -1747,7 +1747,7 @@ fn invalid_holding_period_table_is_an_error() {
     for bad in [json!([[-1, 0.5]]), json!([[5, -1.0]]), json!([[5, -1.5]])] {
         let v = with_gain_tax(bad.clone(), Some("2020-01"));
         assert!(
-            errors(&v).iter().any(|m| m.contains("Besitzdauer")),
+            errors(&v).iter().any(|m| m.contains("holding period")),
             "{bad}: kein Fehler"
         );
         assert!(
@@ -1764,7 +1764,7 @@ fn missing_purchase_date_warns_only_with_a_holding_period_table() {
     let warns = |v: &Value| {
         api::validate(v)
             .into_iter()
-            .filter(|i| i.severity == Severity::Warning && i.message.contains("Kaufdatum"))
+            .filter(|i| i.severity == Severity::Warning && i.message.contains("purchase date"))
             .count()
     };
     assert_eq!(warns(&with_gain_tax(json!([[0, 0.5]]), None)), 1);
@@ -1810,7 +1810,7 @@ fn issue_139_ak4_peak_memory_at_the_limit_stays_below_the_test_limit() {
     let paths = (engine::validate::MAX_PATH_MONTHS / months) as usize;
     let v = stress_plan(paths);
     assert!(
-        api::validate(&v).iter().all(|i| !i.message.contains("Zu viele Pfade")),
+        api::validate(&v).iter().all(|i| !i.message.contains("Too many paths")),
         "an der Grenze erlaubt"
     );
     Limited::reset_peak();
