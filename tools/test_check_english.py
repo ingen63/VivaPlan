@@ -238,13 +238,13 @@ class ExemptionsTest(unittest.TestCase):
 
 
 class TransitionTest(unittest.TestCase):
-    FILES = {"crates/app/src/main.rs": "// Entnahme pro Monat\n", "crates/demo/src/lib.rs": "// per month\n"}
+    FILES = {"e2e/demo.spec.js": "// Entnahme pro Monat\n", "crates/demo/src/lib.rs": "// per month\n"}
 
     # #165/AK4: The transition list holds all paths not yet converted.
     def test_ak4_transition_list_holds_unconverted_paths(self):
         self.assertEqual(
             sorted(check_english.PENDING),
-            sorted(["crates/app/", "e2e/"]),
+            sorted(["e2e/"]),
         )
 
     # #165/AK4: Paths on the transition list are skipped; --all checks them anyway.
@@ -254,7 +254,7 @@ class TransitionTest(unittest.TestCase):
         self.assertIn("transition list", r.stdout)
         r = check(self.FILES, "--all")
         self.assertEqual(r.returncode, 1)
-        self.assertEqual(hits(r), ["crates/app/src/main.rs:1: comment: // Entnahme pro Monat"])
+        self.assertEqual(hits(r), ["e2e/demo.spec.js:1: comment: // Entnahme pro Monat"])
 
     # #165/AK4: An explicit path limits the check, e.g. to one package during its conversion.
     def test_ak4_explicit_path(self):
@@ -280,7 +280,7 @@ class TransitionTest(unittest.TestCase):
             check_english.PENDING = saved
             repo.close()
         self.assertEqual(code, 1)
-        self.assertIn("crates/app/src/main.rs:1: comment: // Entnahme pro Monat", out.getvalue())
+        self.assertIn("e2e/demo.spec.js:1: comment: // Entnahme pro Monat", out.getvalue())
 
     # #165/AK4: Wrong usage is an error of its own (2), not a silent pass.
     def test_ak4_usage_error(self):

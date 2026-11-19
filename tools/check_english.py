@@ -19,10 +19,9 @@ import re
 import subprocess
 import sys
 
-# Paths not yet converted to English (transition). Every package conversion removes its path (#167, #168; #169 and #166 done).
+# Paths not yet converted to English (transition). Every package conversion removes its path (#168; #169, #166 and #167 done).
 # With an empty list, the check runs in `make test-quiet` and in the workflow (option --gate).
 PENDING = [
-    "crates/app/",
     "e2e/",
 ]
 
