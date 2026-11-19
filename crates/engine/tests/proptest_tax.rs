@@ -1,5 +1,5 @@
-//! #134: Steuern sind nie negativ, und ein höherer Betrag ergibt nie eine tiefere Steuer. Fallzahl über `PROPTEST_CASES`
-//! (nächtlich 10'000, `make proptest`).
+//! #134: Taxes are never negative, and a higher amount never gives a lower tax. Number of cases via `PROPTEST_CASES`
+//! (nightly 10'000, `make proptest`).
 
 use engine::model::{GainModel, PropertyGainTax};
 use engine::tax::{falling_row, property_gain_tax_held, rate_at, tax};
@@ -11,7 +11,7 @@ const REGRESSIONS: &str = concat!(
     "/tests/proptest-regressions/proptest_tax.txt"
 );
 
-/// Satztabelle wie in der Eingabeprüfung erlaubt: Beträge ≥ 0, Sätze 0–100 %, beliebige Reihenfolge, auch doppelte Beträge.
+/// Rate table as allowed by the input validation: amounts ≥ 0, rates 0–100 %, any order, also duplicate amounts.
 fn table() -> impl Strategy<Value = Vec<(f64, f64)>> {
     prop::collection::vec(
         (
@@ -49,13 +49,13 @@ fn gain_def() -> impl Strategy<Value = PropertyGainTax> {
         )
 }
 
-/// Steuer ohne Rundung und ohne Steuerfuss.
+/// Tax without rounding and without tax multiplier.
 fn raw(t: &[(f64, f64)], x: f64) -> f64 {
     x * rate_at(t, x)
 }
 
-/// Fällt die Steuer irgendwo? Unabhängig von `falling_row` geprüft: an jeder Stufe gleich danach (Sprung) und je
-/// Abschnitt zwischen dem Scheitel der Parabel `x × (a + s x)` (dort ist die Steuer am höchsten) und dem Abschnittsende.
+/// Does the tax fall anywhere? Checked independently of `falling_row`: at every bracket right after it (jump) and per
+/// section between the vertex of the parabola `x × (a + s x)` (where the tax is highest) and the end of the section.
 fn really_falls(t: &[(f64, f64)]) -> bool {
     let mut xs: Vec<f64> = t.iter().map(|r| r.0).collect();
     xs.sort_by(f64::total_cmp);
@@ -65,7 +65,7 @@ fn really_falls(t: &[(f64, f64)]) -> bool {
         .any(|&x| x > 0.0 && raw(t, x * (1.0 + 1e-12)) < raw(t, x) - 1e-9 * x.max(1.0));
     let inner = xs.windows(2).any(|w| {
         let (x0, x1) = (w[0], w[1]);
-        // knapp nach der Stufe: dort gilt schon der Satz der letzten Zeile mit diesem Betrag
+        // just after the bracket: there the rate of the last row with this amount already applies
         let after = x0 + (x1 - x0) * 1e-9;
         let (r0, r1) = (rate_at(t, after), rate_at(t, x1));
         let s = (r1 - r0) / (x1 - after);
@@ -83,8 +83,8 @@ proptest! {
         ..ProptestConfig::default()
     })]
 
-    // #134/AK1: Für Tabellen ohne fallende Steuer ist die Steuer ≥ 0 und steigt mit dem Betrag (Rundung auf Rappen:
-    // Toleranz 0.01). Zugleich prüft der Test die Erkennung `falling_row`: Meldet sie nichts, darf die Steuer nicht fallen.
+    // #134/AK1: For tables without a falling tax the tax is ≥ 0 and rises with the amount (rounding to centimes:
+    // tolerance 0.01). At the same time the test checks the detection `falling_row`: if it reports nothing, the tax must not fall.
     #[test]
     fn proptest_tax_never_falls_without_warning(
         t in table(), a in 0.0..3_000_000.0f64, d in 0.0..500_000.0f64, m in 0.0..=10.0f64
@@ -95,13 +95,13 @@ proptest! {
         prop_assert!(hi + 0.01 >= lo, "Steuer fällt von {lo} ({a}) auf {hi} ({})", a + d);
     }
 
-    // #134/AK4: Die Erkennung stimmt mit dem tatsächlichen Verlauf überein, in beide Richtungen.
+    // #134/AK4: The detection matches the actual course, in both directions.
     #[test]
     fn proptest_falling_row_matches_the_tax_curve(t in table()) {
         prop_assert_eq!(falling_row(&t).is_some(), really_falls(&t), "{:?}", t);
     }
 
-    // #134/AK2: Grundstückgewinnsteuer ist für jeden Gewinn, jede Besitzdauer (auch unbekannt) und beide Modelle ≥ 0.
+    // #134/AK2: Property gain tax is ≥ 0 for every gain, every holding period (also unknown) and both models.
     #[test]
     fn proptest_property_gain_tax_never_negative(
         def in gain_def(), gain in -1_000_000.0..5_000_000.0f64, years in proptest::option::of(0..45i32), m in 0.0..=10.0f64
@@ -111,27 +111,27 @@ proptest! {
     }
 }
 
-// #134/AK4: Beispiele für die Erkennung. Durchschnittssätze, die mit dem Betrag steigen, sind in Ordnung; ein Satz, der
-// schneller sinkt, als der Betrag steigt, lässt die Steuer fallen.
+// #134/AK4: Examples for the detection. Average rates that rise with the amount are fine; a rate that
+// falls faster than the amount rises makes the tax fall.
 #[test]
 fn issue_134_ak4_falling_tables_are_found() {
     assert_eq!(falling_row(&[]), None);
     assert_eq!(falling_row(&[(0.0, 0.0), (200_000.0, 0.15)]), None);
-    // [[0, 8 %], [1 Mio, 2 %]] (erstes Beispiel des Issues): Steuer x × (0.08 − 0.06 x / 1 Mio) steigt bis 666'667 und fällt
-    // danach (Ableitung bei 1 Mio: 0.02 − 0.06 = −0.04)
+    // [[0, 8 %], [1 million, 2 %]] (first example of the issue): tax x × (0.08 − 0.06 x / 1 million) rises up to 666'667 and falls
+    // afterwards (derivative at 1 million: 0.02 − 0.06 = −0.04)
     assert_eq!(falling_row(&[(0.0, 0.08), (1_000_000.0, 0.02)]), Some(1));
-    // Beispiel aus dem Kommentar zu #134: [[0, 10 %], [300'000, 1 %]] → 200'000: 8'000, 300'000: 3'000
+    // Example from the comment on #134: [[0, 10 %], [300'000, 1 %]] → 200'000: 8'000, 300'000: 3'000
     assert_eq!(
         falling_row(&[(300_000.0, 0.01), (0.0, 0.10)]),
         Some(0),
         "Zeile in erfasster Reihenfolge"
     );
-    // leicht fallender Satz, Steuer steigt noch: [[100'000, 10 %], [200'000, 9 %]] → Ableitung bei 200'000: 0.09 − 0.02 = 0.07
+    // slightly falling rate, tax still rises: [[100'000, 10 %], [200'000, 9 %]] → derivative at 200'000: 0.09 − 0.02 = 0.07
     assert_eq!(falling_row(&[(100_000.0, 0.10), (200_000.0, 0.09)]), None);
-    // Sprung: gleicher Betrag, tieferer Satz
+    // Jump: same amount, lower rate
     assert_eq!(falling_row(&[(0.0, 0.0), (50_000.0, 0.10), (50_000.0, 0.05)]), Some(2));
     assert_eq!(falling_row(&[(50_000.0, 0.05), (50_000.0, 0.10)]), None);
-    // Gruppe gleicher Beträge: zählt erster gegen letzter Satz (rate_at), nicht die Zeilen dazwischen
+    // Group of equal amounts: first against last rate counts (rate_at), not the rows in between
     assert_eq!(
         falling_row(&[(100_000.0, 0.7), (100_000.0, 0.0), (100_000.0, 0.9)]),
         None
@@ -142,16 +142,16 @@ fn issue_134_ak4_falling_tables_are_found() {
     );
 }
 
-/// #162/AK1: Grenzen der Erkennung, die die Beispiele von #134 nicht abdecken (Mutanten in `falling_row`).
+/// #162/AK1: Limits of the detection not covered by the examples of #134 (mutants in `falling_row`).
 #[test]
 fn issue_162_ak1_falling_row_edges() {
-    // Sprung beim Betrag 0: Die Steuer ist dort 0, ein tieferer Satz danach lässt sie nicht fallen.
+    // Jump at amount 0: the tax is 0 there; a lower rate afterwards does not make it fall.
     assert_eq!(falling_row(&[(0.0, 0.10), (0.0, 0.05), (100_000.0, 0.05)]), None);
-    // Gleicher Betrag mit gleichem Satz ist kein Sprung.
+    // The same amount with the same rate is not a jump.
     assert_eq!(falling_row(&[(100_000.0, 0.1), (100_000.0, 0.1)]), None);
-    // Satz überall 0: Ableitung 0 am Abschnittsende ist kein Fallen.
+    // Rate 0 everywhere: derivative 0 at the end of the section is no fall.
     assert_eq!(falling_row(&[(0.0, 0.0), (100_000.0, 0.0)]), None);
-    // Nur am Anfang des Abschnitts fällt die Steuer (negativer Satz, steigende Ableitung): Die Prüfung am Anfang
-    // findet es, die am Ende nicht. Die Eingabeprüfung verlangt Sätze ≥ 0; `falling_row` gilt für jede Tabelle.
+    // The tax falls only at the start of the section (negative rate, rising derivative): the check at the start
+    // finds it, the one at the end does not. The input validation requires rates ≥ 0; `falling_row` applies to every table.
     assert_eq!(falling_row(&[(1.0, -0.5), (11.0, 0.5)]), Some(1));
 }

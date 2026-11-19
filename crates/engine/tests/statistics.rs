@@ -1,6 +1,6 @@
-//! #148: Statistiktests der Renditepfade mit Vertrauensgrenzen statt fester Prozentsätze. Jede Grenze ist aus der
-//! Stichprobengrösse gerechnet (4 Standardfehler bzw. 99-%-Intervall); feste Startwerte, deshalb reproduzierbar.
-//! Jeder Test zeigt zudem, dass eine um 1 Prozentpunkt pro Jahr verschobene Aktienrendite die Grenze verletzen würde.
+//! #148: Statistical tests of the return paths with confidence limits instead of fixed percentages. Every limit is computed
+//! from the sample size (4 standard errors or 99 % interval); fixed seeds, therefore reproducible.
+//! Every test also shows that a stock return shifted by 1 percentage point per year would violate the limit.
 
 use std::path::{Path, PathBuf};
 
@@ -43,18 +43,18 @@ fn mean(v: &[f64]) -> f64 {
     v.iter().sum::<f64>() / v.len() as f64
 }
 
-/// Stichprobenvarianz (n − 1).
+/// Sample variance (n − 1).
 fn var(v: &[f64]) -> f64 {
     let m = mean(v);
     v.iter().map(|x| (x - m).powi(2)).sum::<f64>() / (v.len() - 1) as f64
 }
 
-/// Liegt `est` innerhalb von 4 Standardfehlern von `expected`?
+/// Is `est` within 4 standard errors of `expected`?
 fn within(est: f64, expected: f64, se: f64) -> bool {
     (est - expected).abs() < 4.0 * se
 }
 
-/// Jahres-Logrenditen der Aktien, Jahreswerte von Obligationen und Inflation je Kalenderjahr aller Pfade.
+/// Annual log returns of the stocks, annual values of bonds and inflation per calendar year of all paths.
 fn years(paths: &[MarketPath]) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
     let (mut s, mut b, mut i) = (vec![], vec![], vec![]);
     for p in paths {
@@ -68,15 +68,15 @@ fn years(paths: &[MarketPath]) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
     (s, b, i)
 }
 
-/// Name, Werte der Quelle und Werte eines Pfades.
+/// Name, values of the source and values of a path.
 type Series = (&'static str, Vec<f64>, fn(&MarketPath) -> Vec<f64>);
 
-/// #148/AK1: Bootstrap (zirkuläre Blöcke, mittlere Länge 12 Monate). Jeder Monat der Quelle ist gleich wahrscheinlich,
-/// deshalb gilt für die Monatswerte: Mittelwert und Streuung (um das Mittel der Quelle) entsprechen der Quelle. Geprüft
-/// je Reihe (Aktien als Log-Rendite, Obligationen, Inflation) mit dem Mittel über die Pfade; die Pfade sind unabhängig,
-/// der Standardfehler kommt aus der Streuung der Pfadmittel. Die mittlere Jahres-Logrendite der Aktien ist das 12-fache
-/// der monatlichen und damit mitgeprüft. Die Streuung der Jahresrendite hängt von der Autokorrelation ab, die der
-/// Block-Bootstrap nur innerhalb der Blöcke erhält; sie ist hier bewusst nicht mit der Quelle verglichen.
+/// #148/AK1: Bootstrap (circular blocks, mean length 12 months). Every month of the source is equally likely,
+/// so for the monthly values: mean and spread (around the mean of the source) match the source. Checked
+/// per series (stocks as log return, bonds, inflation) with the mean over the paths; the paths are independent,
+/// the standard error comes from the spread of the path means. The mean annual log return of the stocks is 12 times
+/// the monthly one and thus checked too. The spread of the annual return depends on the autocorrelation, which the
+/// block bootstrap only keeps within the blocks; it is deliberately not compared with the source here.
 #[test]
 fn issue_148_ak1_bootstrap_keeps_mean_and_spread_of_the_source() {
     let d = dataset();
@@ -118,7 +118,7 @@ fn issue_148_ak1_bootstrap_keeps_mean_and_spread_of_the_source() {
             "{name}: Varianz {v} statt {pop_var} (SE {se_v})"
         );
         if name == "Aktien" {
-            // Jahres-Logrendite: 12 × Monatsmittel; 1 Prozentpunkt pro Jahr ≈ ln(1.01) läge ausserhalb der Grenze
+            // Annual log return: 12 × monthly mean; 1 percentage point per year ≈ ln(1.01) would lie outside the limit
             assert!(within(12.0 * m, 12.0 * mu, 12.0 * se_m));
             assert!(
                 !within(12.0 * m + 0.01_f64.ln_1p(), 12.0 * mu, 12.0 * se_m),
@@ -128,11 +128,11 @@ fn issue_148_ak1_bootstrap_keeps_mean_and_spread_of_the_source() {
     }
 }
 
-/// #148/AK2: Parametrisch (Student-t mit 6 Freiheitsgraden, Kurssprünge). Jahres-Logrendite L = Summe von 252
-/// Tagesschritten mit Drift (μ − σ²/2)/252, Schock σ/√252 · t (Varianz 1) und Sprüngen n · (μ_J + σ_J · Z),
-/// n ~ Poisson(λ/252). Daraus E[L] = μ − σ²/2 + λ · μ_J und
-/// Var[L] = σ² + 252 · [(a + a²)(σ_J² + μ_J²) − a² μ_J²] mit a = λ/252.
-/// Standardfehler: Mittel √(s²/N), Varianz √((m₄ − s⁴)/N) mit dem vierten zentralen Moment der Stichprobe.
+/// #148/AK2: Parametric (Student-t with 6 degrees of freedom, price jumps). Annual log return L = sum of 252
+/// daily steps with drift (μ − σ²/2)/252, shock σ/√252 · t (variance 1) and jumps n · (μ_J + σ_J · Z),
+/// n ~ Poisson(λ/252). Hence E[L] = μ − σ²/2 + λ · μ_J and
+/// Var[L] = σ² + 252 · [(a + a²)(σ_J² + μ_J²) − a² μ_J²] with a = λ/252.
+/// Standard error: mean √(s²/N), variance √((m₄ − s⁴)/N) with the fourth central moment of the sample.
 #[test]
 fn issue_148_ak2_parametric_stock_returns_match_the_model() {
     let (mu, sigma, lambda, jm, js) = (0.07, 0.15, 0.3, -0.10, 0.10);
@@ -170,14 +170,14 @@ fn issue_148_ak2_parametric_stock_returns_match_the_model() {
     assert!(!within(m + 0.01_f64.ln_1p(), e, se_m), "Test zu schwach: SE {se_m}");
 }
 
-/// Fisher-z: Liegt die Korrelation `r` aus `n` Paaren im 99-%-Intervall um `rho`?
+/// Fisher z: is the correlation `r` from `n` pairs within the 99 % interval around `rho`?
 fn corr_ok(r: f64, rho: f64, n: usize) -> bool {
     (r.atanh() - rho.atanh()).abs() < 2.576 / ((n - 3) as f64).sqrt()
 }
 
-/// #148/AK3: Parametrisch mit korrelierten Obligationen und Inflation (#101, Vorschlagswerte der Reihe). Die Jahreswerte
-/// hängen linear an der standardisierten Jahres-Logrendite der Aktien: corr(Obligationen, L) = a_b,
-/// corr(Inflation, L) = a_i, corr(Obligationen, Inflation) = a_b · a_i + l11 · l21 (`calibrate::Correlated`).
+/// #148/AK3: Parametric with correlated bonds and inflation (#101, suggested values of the series). The annual values
+/// depend linearly on the standardized annual log return of the stocks: corr(bonds, L) = a_b,
+/// corr(inflation, L) = a_i, corr(bonds, inflation) = a_b · a_i + l11 · l21 (`calibrate::Correlated`).
 #[test]
 fn issue_148_ak3_parametric_correlations_match_the_model() {
     let d = dataset();
@@ -212,7 +212,7 @@ fn issue_148_ak3_parametric_correlations_match_the_model() {
     for (name, r, rho) in expected {
         assert!(corr_ok(r, rho, n), "{name}: {r:.4} statt {rho:.4}");
     }
-    // Mittel und Streuung von Obligationen und Inflation wie in der Reihe (4 Standardfehler)
+    // Mean and spread of bonds and inflation as in the series (4 standard errors)
     for (name, v, (m0, s0)) in [("Obligationen", &b, c.bonds), ("Inflation", &i, c.inflation)] {
         let (m, s2) = (mean(v), var(v));
         assert!(within(m, m0, (s2 / n as f64).sqrt()), "{name}: Mittel {m} statt {m0}");

@@ -1,11 +1,11 @@
-//! #14: Jede Zeile der Liste der Pflichteingaben (`docs/Pflichteingaben.md`) hat einen Test, der den
-//! Fehler auslöst und die Meldung prüft.
+//! #14: Every row of the list of required inputs (`docs/Pflichteingaben.md`) has a test that triggers the
+//! error and checks the message.
 
 use engine::api;
 use engine::validate::{Issue, Severity};
 use serde_json::{json, Value};
 
-/// Gültige Minimalplanung: 2 Jahre ab Januar 2030, ein Haushalt mit einer Person.
+/// Valid minimal plan: 2 years from January 2030, a household with one person.
 fn base() -> Value {
     crate::any_age(json!({
         "project": { "name": "Test" },
@@ -31,7 +31,7 @@ fn issues(v: &Value) -> Vec<Issue> {
     api::validate(v)
 }
 
-/// Die Planung hat einen Fehler im Abschnitt `section`, dessen Meldung `text` enthält (und am Feld `field`, falls angegeben).
+/// The plan has an error in section `section` whose message contains `text` (and at field `field`, if given).
 fn assert_error(v: &Value, section: &str, text: &str, field: Option<&str>) {
     let all = issues(v);
     let hit = all.iter().find(|i| {
@@ -71,7 +71,7 @@ fn person_needs_a_valid_birth_date() {
     let mut v = base();
     v["household"]["persons"][0]["birth"] = json!("1900-01");
     assert_error(&v, "general", "über 120 Jahre", Some("household.persons.0.birth"));
-    // Fehlt das Datum, lässt sich die Planung nicht laden
+    // Without the date the plan cannot be loaded
     let mut v = base();
     v["household"]["persons"][0].as_object_mut().unwrap().remove("birth");
     assert_error(&v, "general", "unvollständig", None);
@@ -92,7 +92,7 @@ fn person_needs_a_name_of_at_most_sixty_characters() {
     assert!(!issues(&ok)
         .iter()
         .any(|i| i.field.as_deref() == Some("household.persons.0.name")));
-    // Die zweite Person wird ebenso geprüft
+    // The second person is checked the same way
     let mut v = base();
     v["household"]["persons"] =
         json!([{ "id": "A", "name": "A", "birth": "1965-01" }, { "id": "B", "name": "", "birth": "1965-01" }]);
@@ -141,7 +141,7 @@ fn pension_fund_lump_sum_is_between_zero_and_one_hundred_percent() {
 
 #[test]
 fn required_sections_must_be_present() {
-    // AHV-Rente, Vermögen und Steuern «müssen vorhanden sein»: sonst lässt sich die Planung nicht laden.
+    // AHV pension, wealth and taxes «müssen vorhanden sein»: otherwise the plan cannot be loaded.
     for (path, key) in [("pension", "ahv"), ("wealth", "stocks"), ("", "taxes")] {
         let mut v = base();
         if path.is_empty() {
@@ -254,7 +254,7 @@ fn properties_need_their_inputs() {
         v["realestate"] = json!({ "properties": [p] });
         v
     };
-    // Hypothekentranche ohne Periode
+    // Mortgage tranche without a period
     assert_error(
         &with(house(
             json!({ "mortgage": { "tranches": [ { "name": "T1", "amount": 300_000, "periods": [] } ] } }),
@@ -263,7 +263,7 @@ fn properties_need_their_inputs() {
         "keine Hypothekarperiode",
         None,
     );
-    // Hypothek höher als der Kaufpreis (geplante Immobilie)
+    // Mortgage higher than the purchase price (planned property)
     let planned = json!({ "id": "w", "name": "Wohnung", "status": "planned", "buy": "2030-06", "price": 100_000,
         "mortgage": { "tranches": [ { "name": "T1", "amount": 300_000, "periods": [ { "term": 10, "rate": 0.01 } ] } ] } });
     assert_error(
@@ -272,15 +272,15 @@ fn properties_need_their_inputs() {
         "Hypothek ist höher als der Kaufpreis",
         None,
     );
-    // Kauf nach Verkauf einer Immobilie, die es nicht gibt
+    // Purchase after the sale of a property that does not exist
     let after =
         json!({ "id": "w", "name": "Wohnung", "status": "planned", "buy": "afterSale:gibtsnicht", "price": 500_000 });
     assert_error(&with(after), "realestate", "gibt es nicht mehr", None);
-    // Kennung doppelt
+    // Duplicate id
     let mut v = base();
     v["realestate"] = json!({ "properties": [house(json!({})), house(json!({ "name": "Haus 2" }))] });
     assert_error(&v, "realestate", "doppelt vergeben", None);
-    // Miete ohne Beginn und ohne Betrag
+    // Rent without start and without amount
     let rent = json!({ "id": "m", "name": "Miete", "status": "rent" });
     assert_error(&with(rent.clone()), "realestate", "«Miete ab» fehlt", None);
     assert_error(&with(rent), "realestate", "Miete fehlt", None);
@@ -288,7 +288,7 @@ fn properties_need_their_inputs() {
 
 #[test]
 fn pillar_3a_is_checked() {
-    // #52: Die Säule 3a ist ein eigenes Konto (Abschnitt «Säule 3a»).
+    // #52: Pillar 3a is an account of its own (section «Säule 3a»).
     let mut v = base();
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 2.0 }]);
     assert_error(&v, "pillar3a", "Der Zins muss zwischen", Some("pillar3a.0.rate"));
@@ -323,7 +323,7 @@ fn property_gain_tax_is_mandatory_for_owned_and_planned_properties() {
     for status in ["owned", "planned"] {
         let v = with_property(status);
         assert_error(&v, "taxes", "Grundstückgewinnsteuer fehlt", None);
-        // Auch die Simulation weist die Planung ab (Start blockiert)
+        // The simulation also rejects the plan (start blocked)
         let out = api::run(&v, std::path::Path::new("."), None);
         assert!(out.error.is_some(), "{status}: Simulation müsste abgewiesen werden");
     }
@@ -341,13 +341,13 @@ fn rented_properties_and_no_property_do_not_need_property_gain_tax() {
 
 #[test]
 fn any_property_gain_rules_satisfy_the_requirement_even_with_zero_rate() {
-    // Eigene Regeln mit Satz 0 %
+    // Own rules with a rate of 0 %
     let mut v = with_property("owned");
     v["taxes"]["propertyGain"] = json!({ "brackets": [], "reduction": 0.0 });
     assert!(!issues(&v)
         .iter()
         .any(|i| i.message.contains("Grundstückgewinnsteuer fehlt")));
-    // Vorlage Aargau
+    // Aargau template
     let mut v = with_property("planned");
     v["taxes"]["propertyGain"] = json!({ "model": "aargau", "durationRates": [[0, 0.4], [5, 0.2]] });
     assert!(!issues(&v)
@@ -375,7 +375,7 @@ fn sale_must_come_after_the_purchase() {
     };
     let planned = |buy: &str, sell: Value| json!({ "id": "w", "name": "Wohnung", "status": "planned", "buy": buy, "sell": sell, "price": 500_000 });
     let f = "realestate.properties.0.sell";
-    // Kauf geplant: Verkauf davor, im selben Monat und danach
+    // Purchase planned: sale before, in the same month and after
     assert!(has_sell_error(&plan(planned("2030-06", json!("2030-03"))), f));
     assert!(has_sell_error(&plan(planned("2030-06", json!("2030-06"))), f));
     assert_error(
@@ -385,21 +385,21 @@ fn sale_must_come_after_the_purchase() {
         Some(f),
     );
     assert!(!has_sell_error(&plan(planned("2030-06", json!("2030-07"))), f));
-    // Vorgabe «nie» und fehlender Verkauf: kein Fehler
+    // Default «nie» and missing sale: no error
     assert!(!has_sell_error(&plan(planned("2030-06", json!("never"))), f));
     let mut no_sell = planned("2030-06", json!(null));
     no_sell.as_object_mut().unwrap().remove("sell");
     assert!(!has_sell_error(&plan(no_sell), f));
-    // Meilenstein als Verkaufszeitpunkt (Pensionierung 2040-01 liegt nach dem Kauf; «start» 2030-01 davor)
+    // Milestone as sale date (retirement 2040-01 is after the purchase; «start» 2030-01 before it)
     assert!(!has_sell_error(&plan(planned("2030-06", json!("retire"))), f));
     assert!(has_sell_error(&plan(planned("2030-06", json!("start"))), f));
-    // Kauf «nach Verkauf von …»: keine Prüfung des Datums
+    // Purchase «nach Verkauf von …»: no check of the date
     let mut after = planned("afterSale:haus", json!("2030-03"));
     after["id"] = json!("w");
     let mut v = base();
     v["realestate"] = json!({ "properties": [house(json!({ "sell": "2030-02" })), after] });
     assert!(!has_sell_error(&with_gain(v), "realestate.properties.1.sell"));
-    // Besitz: Verkauf gegenüber dem Kaufdatum
+    // Owned: sale against the purchase date
     let owned = |bought: &str, sell: &str| house(json!({ "bought": bought, "sell": sell }));
     assert!(has_sell_error(&plan(owned("2020-05", "2020-05")), f));
     assert_error(
@@ -410,7 +410,7 @@ fn sale_must_come_after_the_purchase() {
     );
     assert!(!has_sell_error(&plan(owned("2020-05", "2031-01")), f));
     assert!(!has_sell_error(&plan(owned("2020-05", "never")), f));
-    // Miete verkauft nie
+    // Rent never sells
     let rent =
         json!({ "id": "m", "name": "Miete", "status": "rent", "from": "2030-06", "rent": 1000, "sell": "2030-01" });
     assert!(!has_sell_error(&plan(rent), f));
@@ -418,7 +418,7 @@ fn sale_must_come_after_the_purchase() {
 
 #[test]
 fn planned_property_is_sold_at_the_chosen_date() {
-    // Die Engine verkauft ein geplantes Objekt zum gewählten Zeitpunkt (Ereignis «Verkauf»).
+    // The engine sells a planned property at the chosen date (event «Verkauf»).
     let mut v = base();
     v["milestones"][3]["date"] = json!("2033-12");
     v["wealth"]["cash"] = json!(1_000_000);
@@ -438,7 +438,7 @@ fn planned_property_is_sold_at_the_chosen_date() {
     );
 }
 
-/// #98/AK1–AK3: Steuerfuss und Satztabellen (auch Verheiratete) werden geprüft; Grenzwerte gelten als gültig.
+/// #98/AK1–AK3: Tax multiplier and rate tables (also married) are checked; limit values count as valid.
 #[test]
 fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
     let errors = |v: &Value| -> Vec<String> {
@@ -448,13 +448,13 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
             .map(|i| i.message)
             .collect()
     };
-    // Grenzwerte: Satz 0 % und 100 %, Betrag 0, Steuerfuss 0 und 10
+    // Limit values: rate 0 % and 100 %, amount 0, tax multiplier 0 and 10
     for m in [0.0, 10.0] {
         let mut v = base();
         v["taxes"] = json!({ "multiplier": m, "income": [[0, 0.0], [1e6, 1.0]], "wealth": [[0, 0.0]], "capital": [] });
         assert!(errors(&v).is_empty(), "{m}: {:?}", errors(&v));
     }
-    // AK1: Satz unter 0 % oder über 100 %, am Feld
+    // AK1: rate below 0 % or above 100 %, at the field
     for (rate, key) in [(-0.01, "wealth"), (1.01, "income"), (-1e15, "capital")] {
         let mut v = base();
         v["taxes"][key] = json!([[0, 0.0], [100_000, rate]]);
@@ -465,7 +465,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
             Some(&format!("taxes.{key}.1.1")),
         );
     }
-    // AK2: negativer Betrag, am Feld
+    // AK2: negative amount, at the field
     let mut v = base();
     v["taxes"]["income"] = json!([[-1, 0.1]]);
     assert_error(
@@ -474,7 +474,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
         "Einkommenssteuer, Stufe 1: Der Betrag muss 0 oder grösser sein.",
         Some("taxes.income.0.0"),
     );
-    // AK1, AK2: Tabellen für Verheiratete
+    // AK1, AK2: tables for married couples
     let mut v = base();
     v["taxes"]["couple"] = json!({ "income": [], "wealth": [[0, -0.001]], "capital": [[-5, 0.0]] });
     assert_error(
@@ -489,7 +489,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
         "Kapitalbezugssteuer (Verheiratete), Stufe 1: Der Betrag",
         Some("taxes.couple.capital.0.0"),
     );
-    // AK3: Steuerfuss unter 0 oder über 10, am Feld
+    // AK3: tax multiplier below 0 or above 10, at the field
     for m in [-0.1, 10.5] {
         let mut v = base();
         v["taxes"]["multiplier"] = json!(m);

@@ -1,10 +1,10 @@
-//! #85: Bilanz-Invarianten an zufälligen Planungen über alle Renditequellen, alle sechs Entnahmestrategien (dazu
-//! 3-Topf mit Guardrails) und Haushalte mit Partner. Der Generator ist eine proptest-Strategie: Ein Fehlschlag wird auf
-//! eine möglichst kleine Planung verkleinert und in `tests/proptest-regressions/proptest_plans.txt` gespeichert; dort
-//! gespeicherte Fälle laufen bei jedem Testlauf zuerst.
+//! #85: Balance invariants on random plans over all return sources, all six withdrawal strategies (plus
+//! «3-Topf» with guardrails) and households with a partner. The generator is a proptest strategy: a failure is shrunk to
+//! a plan as small as possible and stored in `tests/proptest-regressions/proptest_plans.txt`; cases stored
+//! there run first in every test run.
 //!
-//! Fallzahl über `PROPTEST_CASES` (Standard 256, nächtlich 10'000). Monte-Carlo-Fälle rechnen 20 Pfade. Die Fälle mit
-//! Zeitreihen und Monte Carlo stehen in einem eigenen Test, der im Profil `mutants` nicht läuft (`.config/nextest.toml`).
+//! Number of cases via `PROPTEST_CASES` (default 256, nightly 10'000). Monte Carlo cases compute 20 paths. The cases with
+//! series and Monte Carlo are in a test of their own that does not run in the profile `mutants` (`.config/nextest.toml`).
 
 use std::path::{Path, PathBuf};
 
@@ -21,10 +21,10 @@ fn library() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("data")
 }
 
-/// Renditequellen; die ersten beiden rechnen einen Pfad ohne Zeitreihe bzw. mit einer, die übrigen mehrere Pfade.
+/// Return sources; the first two compute one path without a series or with one, the others several paths.
 const LIGHT_SOURCES: [&str; 2] = ["fixed", "historical"];
 const HEAVY_SOURCES: [&str; 3] = ["rolling", "bootstrap", "parametric"];
-/// Alle sechs Strategien; `three_buckets_guardrails` ist 3-Topf mit Ausgaben nach Guardrails (#6).
+/// All six strategies; `three_buckets_guardrails` is «3-Topf» with spending by guardrails (#6).
 const STRATEGIES: [&str; 7] = [
     "standard",
     "three_buckets",
@@ -35,9 +35,9 @@ const STRATEGIES: [&str; 7] = [
     "endowment",
 ];
 
-/// Zweite Person: Geburtsjahr, Erwerbseinkommen, PK-Kapital, Kapitalanteil, AHV-Rente, verheiratet.
+/// Second person: birth year, earned income, PK capital, capital share, AHV pension, married.
 type Partner = (i32, f64, f64, f64, f64, bool);
-/// Immobilie: Besitz (sonst Miete), Preis, Hypothek in Prozent des Preises, Verkaufsjahr (0 = nie).
+/// Property: owned (otherwise rent), price, mortgage in percent of the price, sale year (0 = never).
 type Property = (bool, f64, f64, i32);
 
 #[derive(Clone, Debug)]
@@ -134,7 +134,7 @@ fn params(sources: &'static [&'static str]) -> impl Strategy<Value = Params> {
         )
 }
 
-/// Planung aus den Parametern. Steuern einfach, aber vorhanden; Monte Carlo mit 20 Pfaden.
+/// Plan from the parameters. Taxes simple but present; Monte Carlo with 20 paths.
 fn plan(p: &Params) -> Value {
     let retire = (p.birth + p.retire_age).max(p.start);
     let (strategy, spending) = match p.strategy {
@@ -213,7 +213,7 @@ fn plan(p: &Params) -> Value {
     v
 }
 
-/// Rechnet alle Pfade der Planung; `None`, wenn die Eingabeprüfung einen Fehler meldet.
+/// Runs all paths of the plan; `None` if the input validation reports an error.
 fn run(v: &Value) -> Option<(Simulator, Vec<SimResult>)> {
     let p: Plan = serde_json::from_value(v.clone()).expect("erzeugte Planung ist lesbar");
     if validate::validate(&p).iter().any(|i| i.severity == Severity::Error) {
@@ -222,17 +222,17 @@ fn run(v: &Value) -> Option<(Simulator, Vec<SimResult>)> {
     let sim = Simulator::new(&p).expect("ohne Prüffehler muss der Simulator starten");
     let data = batch::load_series(&p, Path::new("/"), Some(&library())).expect("Zeitreihe ist lesbar");
     let paths = batch::path_source(&p, &sim, data.as_ref()).expect("Pfade entstehen");
-    // Rollierende Zeitfenster haben einen Pfad je historischem Startmonat (Hunderte); davon 20 gleichmässig verteilte.
+    // Rolling time windows have one path per historical start month (hundreds); of these 20 evenly spaced ones.
     let step = paths.len().div_ceil(20).max(1);
     let picked: Vec<usize> = (0..paths.len()).step_by(step).collect();
     let results = picked.par_iter().map(|&i| sim.run(&paths.get(i), true)).collect();
     Some((sim, results))
 }
 
-/// Die Bilanz-Invarianten aus `invariants.rs` für jeden Pfad.
+/// The balance invariants from `invariants.rs` for every path.
 fn check(v: &Value, repeat: bool) -> Result<(), TestCaseError> {
     let Some((sim, results)) = run(v) else {
-        // Der Generator soll gültige Planungen erzeugen; seltene Prüffehler (zum Beispiel Tragbarkeit) überspringen.
+        // The generator should create valid plans; skip rare validation errors (for example affordability).
         return Err(TestCaseError::reject("Prüffehler"));
     };
     prop_assert!(!results.is_empty());
@@ -273,7 +273,7 @@ fn check(v: &Value, repeat: bool) -> Result<(), TestCaseError> {
                 prop_assert!(r.stocks >= -1e-6 && r.bonds >= -1e-6, "negative Anlage im {}", r.month);
             }
         }
-        // #133/AK2: Veränderung des Gesamtvermögens = Geldflüsse und Bewertungsänderungen des Monats (Hauptbuch)
+        // #133/AK2: Change of total wealth = cash flows and valuation changes of the month (ledger)
         let mut prev = res.summary.start_total;
         for r in &res.records {
             let (delta, flows) = (r.total - prev, r.ledger.sum());
@@ -296,8 +296,8 @@ fn check(v: &Value, repeat: bool) -> Result<(), TestCaseError> {
             prop_assert!(d >= sim.start && d <= sim.end);
         }
     }
-    // Gleiche Eingaben ⇒ gleiche Ergebnisse. Nur bei einem Pfad: Die Wiederholbarkeit von Monte Carlo prüft
-    // `qa_matrix.rs`, und die zweite Rechnung verdoppelte hier die Laufzeit.
+    // Same inputs ⇒ same results. Only with one path: the repeatability of Monte Carlo is checked by
+    // `qa_matrix.rs`, and the second computation would double the running time here.
     if !repeat {
         return Ok(());
     }
@@ -308,8 +308,8 @@ fn check(v: &Value, repeat: bool) -> Result<(), TestCaseError> {
     Ok(())
 }
 
-/// #85/AK1: Ablage der verkleinerten Fehlschläge. Der Standard (`SourceParallel`) sucht `lib.rs` oder `main.rs` und
-/// findet bei Integrationstests keine, deshalb der Pfad ausdrücklich.
+/// #85/AK1: Storage of the shrunk failures. The default (`SourceParallel`) looks for `lib.rs` or `main.rs` and
+/// finds none for integration tests, hence the explicit path.
 const REGRESSIONS: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/tests/proptest-regressions/proptest_plans.txt"
@@ -321,13 +321,13 @@ proptest! {
         ..ProptestConfig::default()
     })]
 
-    /// #85/AK1, AK2: fixe Renditen und historischer Verlauf (ein Pfad), alle Strategien, mit und ohne Partner.
+    /// #85/AK1, AK2: fixed returns and historical course (one path), all strategies, with and without a partner.
     #[test]
     fn proptest_plans_keep_books_balanced(p in params(&LIGHT_SOURCES)) {
         check(&plan(&p), true)?;
     }
 
-    /// #85/AK2, AK3: rollierende Zeitfenster, Bootstrap und parametrisches Monte Carlo (20 Pfade); nicht im Profil
+    /// #85/AK2, AK3: rolling time windows, bootstrap and parametric Monte Carlo (20 paths); not in the profile
     /// `mutants`.
     #[test]
     fn proptest_plans_monte_carlo_keep_books_balanced(p in params(&HEAVY_SOURCES)) {

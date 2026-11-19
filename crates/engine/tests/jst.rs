@@ -1,6 +1,6 @@
-//! #67/#68: Weltindex aus den JST-Daten und die Reihe «Welt (JST)».
+//! #67/#68: World index from the JST data and the series «Welt (JST)».
 //!
-//! Auszug und Reihe neu erzeugen: `JST_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^jst::/)'`.
+//! Regenerate extract and series: `JST_UPDATE=1 cargo nextest run -p vivaplan-engine -E 'test(/^jst::/)'`.
 
 use std::path::{Path, PathBuf};
 
@@ -17,7 +17,7 @@ fn update() -> bool {
     std::env::var("JST_UPDATE").is_ok()
 }
 
-/// Der ausgelieferte Auszug entspricht der Rohdatei der Datenbank.
+/// The bundled extract matches the raw file of the database.
 #[test]
 fn extract_matches_the_database_file() {
     let raw = JstData::read_xlsx(&data_dir().join("quellen").join(jst::XLSX)).unwrap();
@@ -34,7 +34,7 @@ fn extract_matches_the_database_file() {
     assert_eq!(raw.last_year(), 2020);
 }
 
-/// #68/AK5: Die ausgelieferte Reihe «Welt (JST)» entsteht genau so aus dem Auszug und den SNB-Daten.
+/// #68/AK5: The bundled series «Welt (JST)» is created exactly like this from the extract and the SNB data.
 #[test]
 fn shipped_world_series_matches_the_sources() {
     let ds = jst::world_dataset(&JstData::builtin(), &SnbData::builtin()).unwrap();
@@ -53,15 +53,15 @@ fn world() -> DataSet {
     DataSet::load_csv(&data_dir().join("Welt (JST).csv")).unwrap()
 }
 
-/// Wert der Reihe im Jahr `y`.
+/// Value of the series in year `y`.
 fn at(v: &[f64], y: i32) -> f64 {
     v[(y - jst::FIRST_YEAR) as usize]
 }
 
-/// #67/AK3: Drei Jahre unabhängig nachgerechnet, direkt aus den Zeilen des Auszugs: Rendite je Land in CHF über die
-/// Kurse Ende Jahr, Gewicht = BIP pro Kopf × Bevölkerung des Vorjahres, Länder ohne Rendite fallen weg.
-/// Die Rohdaten und die Zwischenwerte der Jahre 1950, 1990 und 2008 stehen in `docs/Weltindex
-/// JST.md` (Abschnitt «Stichjahre 1950, 1990, 2008»).
+/// #67/AK3: Three years recomputed independently, directly from the rows of the extract: return per country in CHF via the
+/// rates at the end of the year, weight = GDP per capita × population of the previous year, countries without a return drop out.
+/// The raw data and the intermediate values of the years 1950, 1990 and 2008 are in `docs/Weltindex
+/// JST.md` (section «Stichjahre 1950, 1990, 2008»).
 #[test]
 fn issue_67_ak3_three_years_by_hand() {
     let d = JstData::builtin();
@@ -84,12 +84,12 @@ fn issue_67_ak3_three_years_by_hand() {
         }
         assert!((at(&w.stocks, year) - sum / weights).abs() < 1e-9, "{year}");
     }
-    // Zur Kontrolle von Hand: 2008 verlor der Weltindex in CHF rund 41 % (Finanzkrise und starker Franken).
+    // For a check by hand: in 2008 the world index in CHF lost about 41 % (financial crisis and strong franc).
     assert!((at(&w.stocks, 2008) + 0.41).abs() < 0.01, "{}", at(&w.stocks, 2008));
 }
 
-/// #67/AK1: Gewichte je Jahr: Summe 100 %, die USA ab 1950 rund die Hälfte; AK2: die fehlenden Länderjahre sind genau
-/// die dokumentierten.
+/// #67/AK1: Weights per year: sum 100 %, the USA from 1950 about half; AK2: the missing country-years are exactly
+/// the documented ones.
 #[test]
 fn issue_67_ak1_ak2_weights_and_gaps() {
     let d = JstData::builtin();
@@ -125,7 +125,7 @@ fn issue_67_ak1_ak2_weights_and_gaps() {
     );
 }
 
-/// Geometrisches Mittel pro Jahr.
+/// Geometric mean per year.
 fn geo(v: impl Iterator<Item = f64>) -> f64 {
     let (mut log, mut n) = (0.0, 0.0);
     for r in v {
@@ -135,15 +135,15 @@ fn geo(v: impl Iterator<Item = f64>) -> f64 {
     (log / n).exp() - 1.0
 }
 
-/// #67/AK4: Kennzahlen für den Vergleich mit DMS (Werte in `docs/Weltindex JST.md`).
-/// DMS (Global Investment Returns Yearbook 2021) nennt für 1900–2020 5,3 % reale Rendite pro Jahr in USD.
+/// #67/AK4: Metrics for the comparison with DMS (values in `docs/Weltindex JST.md`).
+/// DMS (Global Investment Returns Yearbook 2021) gives 5.3 % real return per year in USD for 1900–2020.
 #[test]
 fn issue_67_ak4_figures_for_the_dms_comparison() {
     let d = JstData::builtin();
     let w = world();
     let ch = |y: i32| d.row("CHE", y).unwrap().xrusd.unwrap();
     let us_cpi = |y: i32| d.row("USA", y).unwrap().cpi.unwrap();
-    // CHF → USD: × (USD je CHF heute / USD je CHF Vorjahr); real mit der US-Teuerung.
+    // CHF → USD: × (USD per CHF today / USD per CHF previous year); real with US inflation.
     let real_usd: Vec<f64> = (jst::FIRST_YEAR..=2020)
         .map(|y| (1.0 + at(&w.stocks, y)) * (ch(y - 1) / ch(y)) / (us_cpi(y) / us_cpi(y - 1)) - 1.0)
         .collect();
@@ -154,7 +154,7 @@ fn issue_67_ak4_figures_for_the_dms_comparison() {
     let mean = real_usd.iter().sum::<f64>() / real_usd.len() as f64;
     let sd = (real_usd.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / real_usd.len() as f64).sqrt();
     assert!((sd - 0.168).abs() < 0.005, "Schwankung: {sd}");
-    // Nominal in CHF und real in CHF
+    // Nominal in CHF and real in CHF
     let nominal = geo(w.stocks.iter().copied());
     let real_chf = geo(w
         .stocks
@@ -167,8 +167,8 @@ fn issue_67_ak4_figures_for_the_dms_comparison() {
     );
 }
 
-/// #68/AK2: Obligationen der Eidgenossenschaft: JST bis 1988, ab 1989 aus den SNB-Monatsrenditen; fortlaufend, ohne
-/// Lücke beim Übergang; 1915 der Coupon.
+/// #68/AK2: Swiss Confederation bonds: JST until 1988, from 1989 from the SNB monthly returns; continuous, without
+/// a gap at the transition; 1915 the coupon.
 #[test]
 fn issue_68_ak2_ch_bonds_switch_from_jst_to_snb_without_a_gap() {
     let d = JstData::builtin();
@@ -191,13 +191,13 @@ fn issue_68_ak2_ch_bonds_switch_from_jst_to_snb_without_a_gap() {
     };
     assert!((at(&bonds, 1989) - snb_year(1989)).abs() < 1e-12);
     assert!((at(&bonds, 2024) - snb_year(2024)).abs() < 1e-12);
-    // Gleiche Grössenordnung beidseits des Übergangs: keine Einheit vertauscht (Prozent statt Dezimalzahl).
+    // The same order of magnitude on both sides of the transition: no unit swapped (percent instead of decimal).
     for y in 1985..=1992 {
         assert!(at(&bonds, y).abs() < 0.2, "{y}: {}", at(&bonds, y));
     }
 }
 
-/// #68/AK1, AK3, AK4: Reihe «Welt (JST)» 1900 bis 2020, jährlich, in CHF; Quelle, Zitate und Lizenz im Dateikopf.
+/// #68/AK1, AK3, AK4: Series «Welt (JST)» 1900 to 2020, annual, in CHF; source, citations and licence in the file header.
 #[test]
 fn issue_68_world_series_range_and_source() {
     let w = world();
@@ -216,7 +216,7 @@ fn issue_68_world_series_range_and_source() {
         assert!(src.contains(part), "Quelle ohne «{part}»");
     }
     assert!(w.meta.notes.iter().any(|n| n.contains("nicht kommerziell")));
-    // Teuerung: Schweizer Konsumentenpreise der Datenbank
+    // Inflation: Swiss consumer prices of the database
     let d = JstData::builtin();
     assert!((at(&w.inflation, 1975) - d.ch_inflation(1975).unwrap()).abs() < 1e-9);
 }

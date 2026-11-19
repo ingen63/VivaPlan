@@ -1,7 +1,7 @@
-//! #53 (Lebenshaltung inklusive Wohnkosten) und #54 (Cash getrennt vom Portfolio, Strategien ab Pensionierung).
+//! #53 (living costs including housing costs) and #54 (cash separate from the portfolio, strategies from retirement).
 //!
-//! Erfundene Planung: Geburt 1980-01, Start 2040-01, Bezug Pensionskasse und AHV-Bezug mit 65 (2045-01), keine
-//! Renditen, keine Teuerung (ausser wo vermerkt), keine Steuern.
+//! Made-up plan: birth 1980-01, start 2040-01, pension fund payout and AHV payout at 65 (2045-01), no
+//! returns, no inflation (except where noted), no taxes.
 
 use engine::model::Plan;
 use engine::sim::{MonthRecord, SimResult, Simulator};
@@ -41,7 +41,7 @@ fn close(a: f64, b: f64, what: &str) {
     assert!((a - b).abs() < 1e-6, "{what}: {a} statt {b}");
 }
 
-/// «Ausgaben total» eines Jahres wie in den Jahreswerten: geplante Lebenshaltung + Wohnkosten + 3a, Monatsdurchschnitt.
+/// «Ausgaben total» of a year as in the annual values: planned living costs + housing costs + 3a, monthly average.
 fn spending_total(r: &SimResult, y: i32) -> f64 {
     let rs: Vec<_> = r.records.iter().filter(|x| x.month.year() == y).collect();
     rs.iter()
@@ -58,8 +58,8 @@ fn errors(v: &Value) -> Vec<String> {
         .collect()
 }
 
-/// Haus: Nebenkosten 500, Hypothek 600'000 zu 2 % (Zins 1'000), Amortisation 1'500 pro Quartal (500 pro Monat),
-/// indirekt, damit die Schuld und damit der Zins gleich bleiben. Erneuerung 2042-01 zu 2.6 % (Zins 1'300).
+/// House: fix costs 500, mortgage 600'000 at 2 % (interest 1'000), amortization 1'500 per quarter (500 per month),
+/// indirect, so the debt and thus the interest stay the same. Renewal 2042-01 at 2.6 % (interest 1'300).
 fn house(sell: &str) -> Value {
     json!({ "id": "h", "name": "Haus", "status": "owned", "price": 1_000_000, "worth": 1_000_000, "fixCosts": 500, "sell": sell,
         "mortgage": { "tranches": [ { "name": "T", "amount": 600_000, "start": "2037-01", "periods": [
@@ -67,12 +67,12 @@ fn house(sell: &str) -> Value {
             { "type": "fixed", "term": 10, "rate": 0.026, "amort": 1500, "amortMode": "indirect" } ] } ] } })
 }
 
-/// #53/AK3: Eingabe 8'000 inklusive Wohnkosten 2'000: Ausgaben total 8'000; Zins +300 ergibt 8'300; Miete 2'500
-/// nach dem Verkauf ergibt 8'500.
+/// #53/AK3: Input 8'000 including housing costs 2'000: total spending 8'000; interest +300 gives 8'300; rent 2'500
+/// after the sale gives 8'500.
 #[test]
 fn issue_53_ak3_real_housing_costs_replace_the_share() {
     let mut v = base();
-    v["flows"]["income"] = json!(20_000); // tragbar bei der Erneuerung
+    v["flows"]["income"] = json!(20_000); // affordable at renewal
     v["realestate"] = json!({ "properties": [ house("2043-01"),
         { "name": "Miete", "status": "rent", "from": "afterSale", "rent": 2500 } ] });
     let r = run(&v);
@@ -82,7 +82,7 @@ fn issue_53_ak3_real_housing_costs_replace_the_share() {
     close(spending_total(&r, 2044), 8500.0, "mit Miete");
 }
 
-/// #53/AK4, AK5: Wohnanteil grösser als eine Zeile ist ein Fehler; ohne Wohnkosten ändert sich nichts.
+/// #53/AK4, AK5: A housing share larger than a row is an error; without housing costs nothing changes.
 #[test]
 fn issue_53_ak4_ak5_check_and_no_housing() {
     let mut v = base();
@@ -97,15 +97,15 @@ fn issue_53_ak4_ak5_check_and_no_housing() {
     assert_eq!(i.field.as_deref(), Some("flows.spending.rows.1.value"));
     v["flows"]["spending"]["rows"][1]["value"] = json!(2000);
     assert!(errors(&v).is_empty(), "genau der Wohnanteil ist gültig");
-    // AK2: gleicher Abzug für jede Zeile
+    // AK2: same deduction for every row
     let r = run(&v);
     close(rec(&r, 2044, 1).planned_spending, 0.0, "2'000 − 2'000");
-    // AK5: ohne Immobilie und Miete
+    // AK5: without property and rent
     let r = run(&base());
     close(rec(&r, 2040, 1).planned_spending, 8000.0, "ohne Wohnkosten");
 }
 
-/// #53/AK6: Die 3a-Einzahlung ist nicht in der Eingabe enthalten und kommt dazu.
+/// #53/AK6: The 3a contribution is not contained in the input and is added.
 #[test]
 fn issue_53_ak6_pillar3a_stays_separate() {
     let mut v = base();
@@ -115,7 +115,7 @@ fn issue_53_ak6_pillar3a_stays_separate() {
     close(spending_total(&r, 2041), 8100.0, "8'000 + 100 Säule 3a");
 }
 
-/// #53/AK7: Ältere Planungen werden beim Öffnen umgerechnet; das Ergebnis bleibt gleich.
+/// #53/AK7: Older plans are converted on opening; the result stays the same.
 #[test]
 fn issue_53_ak7_upgrade_keeps_the_result() {
     let mut old = base();
@@ -136,11 +136,11 @@ fn issue_53_ak7_upgrade_keeps_the_result() {
     for (x, y) in a.records.iter().zip(&b.records) {
         close(x.total, y.total, &x.month.to_string());
     }
-    // Zweites Öffnen: nichts mehr zu tun
+    // Second opening: nothing left to do
     assert!(engine::api::upgrade_plan(&out.plan).notes.is_empty());
 }
 
-/// #54/AK8: Eine ältere Planung bekommt beim Öffnen den Hinweis zur Cash-Regel, auch ohne Wohnkosten; einmal.
+/// #54/AK8: An older plan gets the note about the cash rule on opening, also without housing costs; once.
 #[test]
 fn issue_54_ak8_note_for_older_plans() {
     let mut old = base();
@@ -155,7 +155,7 @@ fn issue_54_ak8_note_for_older_plans() {
     );
 }
 
-/// #53/AK8: Der Ausgaben-Faktor der Variation gilt für die Lebenshaltung ohne Wohnen.
+/// #53/AK8: The spending factor of the variation applies to the living costs without housing.
 #[test]
 fn issue_53_ak8_spending_factor_on_living_without_housing() {
     let mut v = base();
@@ -165,7 +165,7 @@ fn issue_53_ak8_spending_factor_on_living_without_housing() {
     close(rec(&r, 2040, 1).planned_spending, 3000.0, "0.5 × (8'000 − 2'000)");
 }
 
-/// #54/AK2: Einnahmen gleich Ausgaben: bis zur Pensionierung bleiben die Bestände wie erfasst.
+/// #54/AK2: Income equal to spending: until retirement the holdings stay as entered.
 #[test]
 fn issue_54_ak2_holdings_unchanged_before_retirement() {
     let r = run(&base());
@@ -177,7 +177,7 @@ fn issue_54_ak2_holdings_unchanged_before_retirement() {
     }
 }
 
-/// #54/AK3: Überschuss 2'000 pro Monat geht ins Portfolio (1'600 Aktien, 400 Obligationen), Cash bleibt.
+/// #54/AK3: A surplus of 2'000 per month goes into the portfolio (1'600 stocks, 400 bonds), cash stays.
 #[test]
 fn issue_54_ak3_surplus_goes_to_the_portfolio() {
     let mut v = base();
@@ -189,7 +189,7 @@ fn issue_54_ak3_surplus_goes_to_the_portfolio() {
     close(x.bonds, 20_400.0, "Obligationen");
 }
 
-/// #54: Fehlbetrag wird aus dem Portfolio nachgefüllt; der Cash-Betrag folgt der Teuerung.
+/// #54: A shortfall is refilled from the portfolio; the cash amount follows inflation.
 #[test]
 fn issue_54_refill_and_inflation() {
     let mut v = base();
@@ -211,7 +211,7 @@ fn issue_54_refill_and_inflation() {
     );
 }
 
-/// #54/AK4, AK5: Die Cash-Reserve von «Standard» wirkt erst ab der Pensionierung.
+/// #54/AK4, AK5: The cash reserve of «Standard» only takes effect from retirement.
 #[test]
 fn issue_54_ak4_ak5_reserve_only_after_retirement() {
     let mut v = base();

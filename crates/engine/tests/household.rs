@@ -1,4 +1,4 @@
-//! Zweite Person (Double Income, Ehepaar-Regeln), Entnahmestrategien und Auswertung über alle Läufe.
+//! Second person (double income, rules for married couples), withdrawal strategies and evaluation over all runs.
 
 use std::path::Path;
 
@@ -9,7 +9,7 @@ use engine::sim::{EventKind, SimResult, Simulator};
 use engine::validate::{self, Severity};
 use serde_json::{json, Value};
 
-/// 10 Jahre ab Januar 2030, keine Renditen, keine Inflation, keine Steuern, Pensionierung am Start.
+/// 10 years from January 2030, no returns, no inflation, no taxes, retirement at the start.
 fn base() -> Value {
     json!({
         "project": { "name": "Test" },
@@ -55,7 +55,7 @@ fn run(v: Value) -> SimResult {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Zweite Person
+// Second person
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -68,7 +68,7 @@ fn partner_income_adds_to_household() {
     let r = &res.records[0];
     assert!((r.earned - 5_000.0).abs() < 1e-9);
     assert!((r.income - 5_000.0).abs() < 1e-9);
-    // Einkommen deckt die Ausgaben: Vermögen bleibt.
+    // Income covers spending: wealth stays.
     assert!((res.summary.end_total - 1_000_000.0).abs() < 1e-6);
 }
 
@@ -104,7 +104,7 @@ fn each_person_retires_on_own_date_and_lump_sums_are_added() {
         .push(json!({ "id": "retireB", "name": "Pensionierung B", "kind": "age", "person": "B", "years": 66 }));
     v["milestones"][1]["date"] = json!("2031-01");
     v["pension"]["pk"] = json!({ "capital": 500_000, "at": "retire", "lumpsum": 0.0, "conversion": 0.06 });
-    // B ist 2 Jahre jünger: 66 Jahre = Januar 2033
+    // B is 2 years younger: 66 years = January 2033
     v["partner"]["pk"] = json!({ "capital": 300_000, "at": "retireB", "lumpsum": 1.0, "conversion": 0.06 });
     v["taxes"]["capital"] = json!([[0, 0.1]]);
     let res = run(v);
@@ -112,7 +112,7 @@ fn each_person_retires_on_own_date_and_lump_sums_are_added() {
     assert_eq!(retirements.len(), 2);
     assert_eq!(retirements[0].month.to_string(), "01.2031");
     assert_eq!(retirements[1].month.to_string(), "01.2033");
-    // Rente A: 500'000 × 6 % / 12 = 2'500; Kapital B netto 270'000
+    // Pension A: 500'000 × 6 % / 12 = 2'500; capital B net 270'000
     assert!((res.summary.pension_fund_monthly - 2_500.0).abs() < 1e-6);
     assert!((res.summary.lumpsum_net - 270_000.0).abs() < 1e-6);
 }
@@ -126,19 +126,19 @@ fn couple_ahv_is_capped_but_single_pension_is_not() {
     let res = run(v.clone());
     assert!((res.records[0].ahv - 3_780.0).abs() < 1e-9, "{}", res.records[0].ahv);
 
-    // Nur eine Rente fällig: keine Kürzung.
+    // Only one pension due: no cut.
     v["partner"]["ahv"]["at"] = json!("never");
     let res = run(v.clone());
     assert!((res.records[0].ahv - 2_520.0).abs() < 1e-9);
 
-    // Nicht verheiratet: keine Plafonierung.
+    // Not married: no cap.
     v["partner"]["ahv"]["at"] = json!("start");
     v["household"]["married"] = json!(false);
     let res = run(v);
     assert!((res.records[0].ahv - 5_040.0).abs() < 1e-9);
 }
 
-/// #145: Ehepaar mit Plafond 3'780 und Teuerung 3 % (fix); AHV im Monat `k` (0 = Januar 2030).
+/// #145: Married couple with cap 3'780 and inflation 3 % (fixed); AHV in month `k` (0 = January 2030).
 fn capped_ahv(a_indexed: bool, b_indexed: bool, b_at: &str) -> SimResult {
     let mut v = with_partner(base());
     v["milestones"]
@@ -156,8 +156,8 @@ fn ahv_in(res: &SimResult, k: usize) -> f64 {
     res.records[k].ahv
 }
 
-// #145/AK1, AK2: Beide Renten mit Teuerung: Der Plafond steigt je Januar einmal um 3 %, nicht um 3 % je Person.
-// 01.2031: 3'780 × 1.03 = 3'893.40; 01.2033: 3'780 × 1.03³ = 4'130.51 (vorher 4'010.20 und 4'513.52).
+// #145/AK1, AK2: Both pensions indexed: the cap rises once per January by 3 %, not by 3 % per person.
+// 01.2031: 3'780 × 1.03 = 3'893.40; 01.2033: 3'780 × 1.03³ = 4'130.51 (previously 4'010.20 and 4'513.52).
 #[test]
 fn issue_145_ak2_couple_cap_follows_inflation_once_per_year() {
     let res = capped_ahv(true, true, "start");
@@ -166,13 +166,13 @@ fn issue_145_ak2_couple_cap_follows_inflation_once_per_year() {
     assert!((ahv_in(&res, 36) - 4_130.51).abs() < 0.01, "{}", ahv_in(&res, 36));
 }
 
-// #145/AK3: Nur die Rente von A mit Teuerung, beide laufen. 01.2031: A = 2'520 × 1.03 = 2'595.60, B = 2'520 fest,
-// Summe 5'115.60; Plafond 3'780 × 1.03 = 3'893.40 → 3'893.40. Ohne Plafond (unverheiratet) die volle Summe.
+// #145/AK3: Only the pension of A indexed, both running. 01.2031: A = 2'520 × 1.03 = 2'595.60, B = 2'520 fixed,
+// sum 5'115.60; cap 3'780 × 1.03 = 3'893.40 → 3'893.40. Without a cap (unmarried) the full sum.
 #[test]
 fn issue_145_ak3_cap_with_only_one_indexed_pension() {
     let res = capped_ahv(true, false, "start");
     assert!((ahv_in(&res, 12) - 3_893.40).abs() < 0.01, "{}", ahv_in(&res, 12));
-    // Plafond greift erst, wenn er die Summe unterschreitet: A 1'000 mit Teuerung, B 2'000 fest.
+    // The cap only applies when it is below the sum: A 1'000 indexed, B 2'000 fixed.
     let mut v = with_partner(base());
     v["returns"]["fixed"]["inflation"] = json!(0.03);
     v["pension"]["ahv"] = json!({ "monthly": 1_000, "at": "start", "indexed": true });
@@ -183,9 +183,9 @@ fn issue_145_ak3_cap_with_only_one_indexed_pension() {
     assert!((ahv_in(&res, 12) - 3_030.0).abs() < 0.01, "{}", ahv_in(&res, 12));
 }
 
-// #145/AK4: Die zweite Rente beginnt im Januar 2032. 01.2031: nur A, 2'520 × 1.03 = 2'595.60 (unter dem Plafond).
-// 01.2032: A = 2'520 × 1.03² = 2'673.47, B beginnt mit 2'520; Summe 5'193.47, Plafond 3'780 × 1.03² = 4'010.20.
-// 01.2033: beide angepasst, Plafond 3'780 × 1.03³ = 4'130.51 (vorher 4'254.42).
+// #145/AK4: The second pension starts in January 2032. 01.2031: only A, 2'520 × 1.03 = 2'595.60 (below the cap).
+// 01.2032: A = 2'520 × 1.03² = 2'673.47, B starts with 2'520; sum 5'193.47, cap 3'780 × 1.03² = 4'010.20.
+// 01.2033: both adjusted, cap 3'780 × 1.03³ = 4'130.51 (previously 4'254.42).
 #[test]
 fn issue_145_ak4_cap_when_second_pension_starts_later() {
     let res = capped_ahv(true, true, "b_ahv");
@@ -226,7 +226,7 @@ fn single_person_plan_ignores_couple_settings() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Entnahmestrategien
+// Withdrawal strategies
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -234,10 +234,10 @@ fn fixed_rate_sets_spending_from_wealth() {
     let mut v = base();
     v["withdrawal"] = json!({ "strategy": "fixed_rate", "fixedRate": { "rate": 0.04 } });
     let res = run(v);
-    // 4 % von 1'000'000 = 40'000 pro Jahr = 3'333.33 pro Monat (statt 5'000 geplant)
+    // 4 % of 1'000'000 = 40'000 per year = 3'333.33 per month (instead of 5'000 planned)
     assert!((res.records[0].spending - 40_000.0 / 12.0).abs() < 1e-6);
     assert!((res.records[11].spending - 40_000.0 / 12.0).abs() < 1e-6);
-    // Januar: 4 % des verbleibenden Vermögens (960'000)
+    // January: 4 % of the remaining wealth (960'000)
     assert!(
         (res.records[12].spending - 38_400.0 / 12.0).abs() < 1e-6,
         "{}",
@@ -255,13 +255,13 @@ fn fixed_rate_counts_income_and_floor_applies() {
     v["flows"]["income"] = json!(1_000);
     v["withdrawal"] = json!({ "strategy": "fixed_rate", "fixedRate": { "rate": 0.04 } });
     let res = run(v.clone());
-    // Lebenshaltung = Entnahme + Einkommen
+    // Living costs = withdrawal + income
     assert!((res.records[0].spending - (40_000.0 / 12.0 + 1_000.0)).abs() < 1e-6);
-    // Untergrenze 100 % der geplanten Ausgaben, Obergrenze nicht gesetzt
+    // Floor 100 % of the planned spending, ceiling not set
     v["withdrawal"]["floor"] = json!(1.0);
     let res = run(v.clone());
     assert!((res.records[0].spending - 5_000.0).abs() < 1e-6);
-    // Obergrenze 50 %
+    // ceiling 50 %
     v["withdrawal"].as_object_mut().unwrap().remove("floor");
     v["withdrawal"]["ceiling"] = json!(0.5);
     let res = run(v);
@@ -291,8 +291,8 @@ fn guardrails_cut_spending_when_rate_gets_too_high() {
     let res = run(v);
     let monthly = |year: usize| res.records[year * 12].spending * 12.0;
     assert!((monthly(0) - 50_000.0).abs() < 1e-6);
-    // Ohne Rendite und Teuerung steigt die Rate von 5 % auf über 6 % ab dem 5. Jahr
-    // (Vermögen 800'000 → 6.25 %): Kürzung um 10 % auf 45'000.
+    // Without return and inflation the rate rises from 5 % to over 6 % from the 5th year
+    // (wealth 800'000 → 6.25 %): cut by 10 % to 45'000.
     assert!((monthly(3) - 50_000.0).abs() < 1e-6);
     assert!((monthly(4) - 45_000.0).abs() < 1e-6, "{}", monthly(4));
     let cuts = res
@@ -333,7 +333,7 @@ fn guardrails_follow_inflation() {
         "guardrails": { "initialRate": 0.04, "upper": 0.9, "lower": 0.9, "adjust": 0.1 }
     });
     let res = run(v);
-    // Leitplanken weit weg: Entnahme wächst mit der Teuerung
+    // Guardrails far away: the withdrawal grows with inflation
     let a = res.records[0].spending;
     let b = res.records[12].spending;
     assert!((b / a - 1.02).abs() < 1e-9, "{}", b / a);
@@ -357,7 +357,7 @@ fn invalid_strategy_parameters_are_reported() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Auswertung
+// Evaluation
 // ---------------------------------------------------------------------------------------------
 
 #[test]
@@ -407,9 +407,9 @@ fn bands_and_percentiles_include_extremes() {
     assert!(real.min[last] <= real.p1[last]);
 }
 
-// #134/AK3: Kapitaltabelle [[0, 10 %], [300'000, 1 %]], zwei Kapitalbezüge im selben Jahr: A 200'000 im Januar,
-// B 300'000 im Oktober. Steuer auf 200'000 = 200'000 × 4 % = 8'000; auf zusammen 500'000 = 500'000 × 1 % = 5'000.
-// Der zweite Bezug ergab bisher −3'000; neu 0 (nie negativ). Die Prüfung warnt vor der Tabelle.
+// #134/AK3: Capital table [[0, 10 %], [300'000, 1 %]], two lump sums in the same year: A 200'000 in January,
+// B 300'000 in October. Tax on 200'000 = 200'000 × 4 % = 8'000; on 500'000 together = 500'000 × 1 % = 5'000.
+// The second payout used to give −3'000; now 0 (never negative). The validation warns about the table.
 #[test]
 fn issue_134_ak3_capital_tax_of_a_second_withdrawal_is_never_negative() {
     let mut v = with_partner(base());
