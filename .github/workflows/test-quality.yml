@@ -75,6 +75,20 @@ jobs:
         working-directory: fuzz
         run: cargo fmt --all --check
 
+  # #157: Netzwerkfreiheit. cargo tree (ohne Entwicklungsabhängigkeiten, alle Desktop-Ziele) darf keine Bibliothek aus der
+  # Sperrliste in tools/check-network-free.sh enthalten; ein Treffer lässt den Lauf fehlschlagen.
+  network-free:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Tests des Prüfskripts (#157/AK1)
+        run: python3 -m unittest discover -s tools -p 'test_check_network_free.py'
+      - name: Keine Netzwerk-Bibliothek in den Abhängigkeiten
+        run: ./tools/check-network-free.sh
+
   # #88: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
   clippy:
     if: github.event_name != 'schedule'

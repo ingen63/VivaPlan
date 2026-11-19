@@ -1,4 +1,4 @@
-.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report
+.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free
 test:        ; cargo nextest run --workspace
 # #160: dieselben Tests, aber nur Fehlschläge, langsame Tests und die Zusammenfassung (für Claude Code: wenig Kontext)
 QUIET = --status-level fail --final-status-level slow --hide-progress-bar --cargo-quiet
@@ -6,6 +6,8 @@ test-quiet:  ; cargo nextest run --workspace $(QUIET)
 # #87: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
 # #147: runs.test.js braucht fake-indexeddb (e2e/node_modules)
 ui-unit:     ; [ -d e2e/node_modules/fake-indexeddb ] || (cd e2e && npm ci); node --test e2e/unit/*.test.js
+# #157: keine Netzwerk-Bibliothek in den Abhängigkeiten (cargo tree, Sperrliste), samt Tests des Skripts
+network-free:; python3 -m unittest discover -s tools -p 'test_check_network_free.py' && ./tools/check-network-free.sh
 # #88: wie im Workflow, Warnungen sind Fehler
 clippy:      ; cargo clippy --workspace --all-targets -- -D warnings && cd fuzz && cargo clippy --all-targets -- -D warnings
 coverage:    ; cargo llvm-cov nextest --workspace --html --open

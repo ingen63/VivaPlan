@@ -29,6 +29,18 @@ Schnittstellen. Ziel: mindestens 80 % Zeilenabdeckung je Paket (`vivaplan-engine
 Release-Entwurf startet `pakete.yml` jedes gebaute Programm mit `--smoke`: Fenster und Webansicht öffnen, Beispielplanung
 rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`).
 
+**Netzwerkfreiheit (#157):** Die App verspricht, keine Netzwerkzugriffe zu machen. Zwei Prüfungen belegen das
+automatisch. `tools/check-network-free.sh` (`make network-free`, Job `network-free` in `test-quality.yml` bei jedem Push)
+führt `cargo tree -e normal,build` für `vivaplan-app`, `vivaplan-engine` und `vivaplan-cli` aus, ohne
+Entwicklungsabhängigkeiten, je Desktop-Ziel (Linux, Windows, macOS, je x86_64 und aarch64), und schlägt fehl, sobald ein
+Crate der Sperrliste im Skript vorkommt (u. a. `reqwest`, `hyper`, `h2`, `ureq`, `curl`, `tokio-tungstenite`,
+`tauri-plugin-http`, `tauri-plugin-updater`). Verglichen werden exakte Crate-Namen, keine Teilstrings (`dispatch2` ist
+nicht `h2`). Nicht `--target all`: `tauri` zieht für Android und iOS `reqwest` und `hyper` herein, für Mobilgeräte wird
+aber nicht gebaut. Dass ein Treffer wirklich fehlschlägt, prüfen die Tests des Skripts mit gestellten Listen
+(`--liste DATEI`): `python3 -m unittest discover -s tools -p 'test_check_network_free.py'`. Dazu prüft
+`crates/app/tests/csp.rs` (`issue_157_ak2_…`) die Content-Security-Policy in `crates/app/tauri.conf.json`: `connect-src`
+enthält nur `'self'` und die IPC-Quellen `ipc:` und `http://ipc.localhost`, keine externen Adressen.
+
 **Nächtliche Läufe von Hand starten (#159):** Die nächtlichen Jobs von `test-quality.yml` (`tests-os`, `e2e`,
 `release-golden`, `mutants-diff`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen um 02:17 UTC, nur nach einem neuen
 Commit. GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs
@@ -85,6 +97,7 @@ make test                                        # Schichten 1–6 (Rust), mit n
 make test-quiet                                  # dasselbe, nur Fehlschläge und Zusammenfassung (#160)
 make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test, ohne Browser)
 make clippy                                      # clippy, Warnungen sind Fehler (wie im Workflow, #88)
+make network-free                                # keine Netzwerk-Bibliothek in den Abhängigkeiten (#157)
 tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
 (cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 176 Tests)
 make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)
