@@ -6,8 +6,8 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Gespeicherte Ergebnisse", () => {
-  test("#147/AK2: Kann die Liste das Ergebnis nicht speichern, erscheint eine Meldung, und die Oberfläche bleibt bedienbar", async ({ page }) => {
+test.describe("Saved results", () => {
+  test("#147/AK2: if the list cannot store the result, a message appears and the user interface stays usable", async ({ page }) => {
     const errors = await open(page);
     // Simulation: the browser storage is full (IndexedDB aborts the transaction).
     await page.evaluate(() => {
@@ -24,7 +24,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
     expect(await page.evaluate(() => window.__errors)).toEqual(["Ergebnis nicht gespeichert: QuotaExceededError"]);
   });
 
-  test("zwei Läufe ablegen und vergleichen", async ({ page }) => {
+  test("store two runs and compare them", async ({ page }) => {
     const errors = await open(page, "runsflow/mem");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
     // #115: The card «Gesamtvermögen im Vergleich» is now called «Bandbreite des Gesamtvermögens»; the title names the comparison
@@ -33,14 +33,14 @@ test.describe("Gespeicherte Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("gespeicherte Simulation ansehen", async ({ page }) => {
+  test("view a saved simulation", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/view");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
     await expect(page.locator("#resultsBody svg path").first()).toBeAttached();
     await noErrors(page, errors);
   });
 
-  test("Simulationen einzeln markieren und löschen, alle markieren, alle löschen", async ({ page }) => {
+  test("mark simulations one by one and delete them, mark all, delete all", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     // Store three more entries, then reopen the list: 4 entries
@@ -70,7 +70,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Liste und Vergleich: Spalte Zeitreihe statt Art, Strategie-Tooltip mit den Parametern des Ergebnisses, alte Einträge ohne Angabe", async ({ page }) => {
+  test("list and comparison: time series column instead of kind, strategy tooltip with the parameters of the result, old entries without a value", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
@@ -112,7 +112,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("#13: Liste zeigt «Erfolgsquote · 5 %» statt Median und das Warnsymbol für ungeplante Immobilienverkäufe ab 5 % der Läufe", async ({ page }) => {
+  test("#13: list shows success rate · 5 % instead of the median and the warning symbol for unplanned real estate sales from 5 % of the runs", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
@@ -142,7 +142,7 @@ test.describe("Gespeicherte Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("gespeicherte Simulation löschen", async ({ page }) => {
+  test("delete a saved simulation", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await expect(page.locator("#resultsBody table tr:not(:first-child)")).toHaveCount(1);
@@ -151,8 +151,8 @@ test.describe("Gespeicherte Ergebnisse", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
-  test("#138/AK6: Übernommene Vorlagen entsprechen genau den Vorlagen des Rechenkerns", async ({ page }) => {
+test.describe("Real estate gains tax and purchase date", () => {
+  test("#138/AK6: taken-over templates match the templates of the engine exactly", async ({ page }) => {
     const errors = await open(page, "taxes");
     const t = await (await page.request.post("/api/gain_templates", { data: {} })).json();
     for (const [btn, key] of [["gain-zh", "zurich"], ["gain-ag", "aargau"]]) {
@@ -163,7 +163,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await noErrors(page, errors);
   });
 
-  test("Vorlage Zürich übernehmen, Tabellen bearbeiten, Regeln entfernen", async ({ page }) => {
+  test("take over the Zurich template, edit tables, remove rules", async ({ page }) => {
     const errors = await open(page, "taxes");
     await page.evaluate(() => { delete state.taxes.propertyGain; renderSection(); });
     await expect(page.locator("#main")).toContainText("Pflicht");
@@ -188,7 +188,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await noErrors(page, errors);
   });
 
-  test("Vorlage Aargau, Modellwechsel und Steuerfuss-Option", async ({ page }) => {
+  test("Aargau template, model switch and tax rate option", async ({ page }) => {
     const errors = await open(page, "taxes");
     await page.locator('button[data-action="gain-ag"]').click();
     const g = () => page.evaluate(() => state.taxes.propertyGain);
@@ -223,7 +223,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await noErrors(page, errors);
   });
 
-  test("Aargau: Verkauf nach 5 Jahren wird mit dem Satz der Besitzdauer besteuert", async ({ page }) => {
+  test("Aargau: a sale after 5 years is taxed at the rate of the holding period", async ({ page }) => {
     const errors = await open(page, "taxes");
     const total = rate => page.evaluate(async rate => {
       const plan = JSON.parse(JSON.stringify(state));
@@ -238,7 +238,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await noErrors(page, errors);
   });
 
-  test("Immobilien: Inflation für Wert, Nebenkosten und Miete einzeln wählbar", async ({ page }) => {
+  test("real estate: inflation for value, additional costs and rent selectable separately", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
       state.realestate.properties = [
@@ -256,7 +256,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await noErrors(page, errors);
   });
 
-  test("Kaufdatum nur bei Immobilien im Besitz; Warnung ohne Kaufdatum, Rückgängig stellt die Regeln wieder her", async ({ page }) => {
+  test("purchase date only for owned real estate; warning without purchase date, undo restores the rules", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
       state.taxes.propertyGain = GAIN_ZH();
@@ -275,7 +275,7 @@ test.describe("Grundstückgewinnsteuer und Kaufdatum", () => {
     await noErrors(page, errors);
   });
 
-  test("Besitzdauer verändert den Verkauf: Simulation mit und ohne Zuschlag", async ({ page }) => {
+  test("holding period changes the sale: simulation with and without surcharge", async ({ page }) => {
     const errors = await open(page, "taxes");
     const total = () => page.evaluate(async () => {
       const r = await Engine.call("run_simulation", { plan: state, path: null });

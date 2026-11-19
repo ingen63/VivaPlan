@@ -15,7 +15,7 @@ const walk = (dir, ext, out = []) => {
 };
 const rel = p => path.relative(ROOT, p);
 
-test("#54/AK6: «Liquidität» kommt in Oberfläche, Hilfe und Dokumentation nur als Suchbegriff vor", () => {
+test("#54/AK6: «Liquidität» occurs in the user interface, help and documentation only as a search term", () => { // check-english: allow (searched term)
   // Allowed are the keyword lines of the help («Stichworte: …»): whoever still searches for «Liquidität» finds «Cash».
   // Excluded are the lists that quote old titles and criteria (acceptance list, old issue IDs, #117).
   const history = ["ABNAHME.md", "ISSUE-IDS.md"];
@@ -33,13 +33,13 @@ test("#54/AK6: «Liquidität» kommt in Oberfläche, Hilfe und Dokumentation nur
   assert.deepEqual(hits, []);
 });
 
-test("#54/AK6: die Feldnamen der Planungsdatei bleiben (wealth.cash, reserveMonths)", () => {
+test("#54/AK6: the field names of the plan file remain (wealth.cash, reserveMonths)", () => {
   const ui = fs.readFileSync(path.join(ROOT, "crates/app/ui/app.js"), "utf8");
   assert.match(ui, /wealth\.cash/);
   assert.match(ui, /reserveMonths/);
 });
 
-test("#48/AK7: Verweise in README, CLAUDE.md und docs/ auf Dateien im Repository führen nicht ins Leere", () => {
+test("#48/AK7: links in README, CLAUDE.md and docs/ to files in the repository do not lead nowhere", () => {
   const files = [path.join(ROOT, "README.md"), path.join(ROOT, "CLAUDE.md"), ...walk(path.join(ROOT, "docs"), [".md"])];
   const dead = [];
   for (const f of files) {
@@ -54,7 +54,7 @@ test("#48/AK7: Verweise in README, CLAUDE.md und docs/ auf Dateien im Repository
   assert.deepEqual(dead, []);
 });
 
-test("#93/AK1, #93/AK3: alle Stellen nennen dieselbe Programmversion, das Changelog beginnt mit ihr", () => {
+test("#93/AK1, #93/AK3: all places name the same program version, the changelog starts with it", () => {
   const read = f => fs.readFileSync(path.join(ROOT, f), "utf8");
   const toml = f => read(f).match(/^version\s*=\s*"([^"]+)"/m)?.[1];
   const versions = {
@@ -74,9 +74,9 @@ test("#93/AK1, #93/AK3: alle Stellen nennen dieselbe Programmversion, das Change
   }
   // A section «Nächste Version» (changes not yet released) comes before the versions and does not count.
   const heads = [...read("CHANGELOG.md").matchAll(/^## (.+)$/gm)].map(m => m[1]).filter(h => h !== "Nächste Version");
-  assert.ok(heads[0].startsWith(`Version ${v}`), `oberster Abschnitt: ${heads[0]}`);
+  assert.ok(heads[0].startsWith(`Version ${v}`), `top section: ${heads[0]}`);
   assert.equal(heads.at(-1), "Version 0.8.0: erster öffentlicher Stand");
   // Since 0.8.0 (restart of the numbering) only 0.8.x and 1.0.0-beta.N; no entries of the earlier project (1.1.x).
-  assert.ok(heads.every(h => /^Version (0\.8\.\d+|1\.0\.0-beta\.\d+)\b/.test(h)), "keine Einträge zu früheren Versionen (1.1.x)");
+  assert.ok(heads.every(h => /^Version (0\.8\.\d+|1\.0\.0-beta\.\d+)\b/.test(h)), "no entries for earlier versions (1.1.x)");
   assert.equal(fs.existsSync(path.join(ROOT, "docs/release-notes-1.1.3.md")), false);
 });

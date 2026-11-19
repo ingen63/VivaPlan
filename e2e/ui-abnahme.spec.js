@@ -7,7 +7,7 @@ const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, result
 
 // ---------------------------------------------------------------------------------------------
 // Acceptance criteria that had no test of their own before (acceptance list docs/ABNAHME.md, column «Test»)
-test.describe("Ergänzende Abnahmetests", () => {
+test.describe("Additional acceptance tests", () => {
   const setThreeBuckets = (strategy) => page => page.evaluate(async strategy => {
     state.returns.source = "fixed"; state.scenarios.sweeps = [];
     state.withdrawal.strategy = strategy;
@@ -16,7 +16,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     resetVariation(); resultTab = "overview"; showResults(true); renderResults(lastRun);
   }, strategy);
 
-  test("#8/AK4, #8/AK5, #8/AK6: Steuern total bleibt sichtbar, Berechnung unverändert, Umschalten verschiebt keine Spalte", async ({ page }) => {
+  test("#8/AK4, #8/AK5, #8/AK6: total taxes stays visible, computation unchanged, toggling moves no column", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(resultKpi(page, "Steuern total")).toBeVisible();
     const kpi = await resultKpi(page, "Steuern total").textContent();
@@ -40,7 +40,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#109/AK1, AK2, AK3: Steuer des Steuerjahres in der Zeile des Jahres, Total ist die Summe, Kapital- und Grundstückgewinnsteuer im Jahr des Bezugs", async ({ page }) => {
+  test("#109/AK1, AK2, AK3: tax of the tax year in the row of the year, total is the sum, capital and real estate gains tax in the year of the withdrawal", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     await page.locator('button[data-action="tax-cols"]').click();
@@ -72,7 +72,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#9/AK3, #9/AK4, #10/AK2, #10/AK3: Aufklapp-Zeilen nur in Jahren mit Auffüllung, Ereignisliste behält alles ausser den 3-Topf-Buchungen", async ({ page }) => {
+  test("#9/AK3, #9/AK4, #10/AK2, #10/AK3: expandable rows only in years with refill, event list keeps everything except the 3-bucket bookings", async ({ page }) => {
     const errors = await open(page);
     // 3-bucket: exactly one toggle per year with refill
     await setThreeBuckets("three_buckets")(page);
@@ -103,7 +103,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#9/AK6: beim Wechsel des Einzellaufs zeigt die Tabelle die Herleitung des neuen Laufs", async ({ page }) => {
+  test("#9/AK6: when switching the single run the table shows the derivation of the new run", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(async () => {
       state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 60; state.scenarios.sweeps = [];
@@ -127,7 +127,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#11/AK3: die Parameter im Tooltip stimmen mit dem Reiter «Entnahmestrategie» überein", async ({ page }) => {
+  test("#11/AK3: the parameters in the tooltip match the withdrawal strategy tab", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await page.evaluate(async () => {
@@ -147,7 +147,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#12/AK2, #12/AK3, #13/AK5: Zeitreihe ohne Pfad und .csv, feste und parametrische Renditen in Grau, geplanter Verkauf ohne Warnsymbol", async ({ page }) => {
+  test("#12/AK2, #12/AK3, #13/AK5: time series without path and .csv, fixed and parametric returns in gray, planned sale without warning symbol", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/del");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     const label = await page.evaluate(async () => {
@@ -178,7 +178,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#23/AK5: die Kennzahlkarte «Notverkäufe» zeigt Läufe und Anteil wie bisher", async ({ page }) => {
+  test("#23/AK5: the key figure card for emergency sales shows runs and share as before", async ({ page }) => {
     const errors = await open(page, "results/bootstrap");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const s = await page.evaluate(() => ({ n: lastRun.batch.summary.emergencySaleRuns, runs: lastRun.batch.summary.runs, text: fmtInt(lastRun.batch.summary.emergencySaleRuns), pct: pctTxt(lastRun.batch.summary.emergencySaleRuns / lastRun.batch.summary.runs) }));
@@ -188,7 +188,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#24/AK5, #24/AK6: Hinweis bei abweichendem Endvermögen; Einzellauf mit Variationen wie bisher", async ({ page }) => {
+  test("#24/AK5, #24/AK6: notice on different final wealth; single run with variations as before", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.returns.bootstrap.paths = 100;
@@ -223,7 +223,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#51/AK3: neue Planung hat «AHV-Bezug» und «Bezug Pensionskasse» mit 65 Jahren", async ({ page }) => {
+  test("#51/AK3: a new plan has the AHV start and the pension fund withdrawal at age 65", async ({ page }) => {
     const errors = await open(page);
     const ms = await page.evaluate(() => {
       const p = blankPlan(JSON.parse(JSON.stringify(state)));
@@ -242,7 +242,7 @@ test.describe("Ergänzende Abnahmetests", () => {
     await noErrors(page, errors);
   });
 
-  test("#25/AK7: Einstellungen ändern die Planung nicht; liegt sie ausserhalb der neuen Grenzen, meldet die Prüfung es", async ({ page }) => {
+  test("#25/AK7: settings do not change the plan; if it lies outside the new limits, the check reports it", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.pillar3a[0].contribution = 7500; renderSection(); });
     await expect(page.locator("#val li.err", { hasText: "Die Einzahlung muss" })).toHaveCount(1);   // above 7'258
@@ -266,7 +266,7 @@ test.describe("Ergänzende Abnahmetests", () => {
 
 // ---------------------------------------------------------------------------------------------
 // #100: stock parameters per stock index; #101: bonds and inflation with correlation per index
-test.describe("#100/#101: Monte Carlo parametrisch", () => {
+test.describe("#100/#101: parametric Monte Carlo", () => {
   const KEYS = ["mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma"];
   const params = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, state.returns.parametric[x]])), KEYS);
   const suggestion = page => page.evaluate(k => Object.fromEntries(k.map(x => [x, seriesInfo.parametric.stocks[x]])), KEYS);
@@ -286,7 +286,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
     return errors;
   }
 
-  test("#100/AK4: neue Planung, Wechsel des Aktienindex setzt die Vorschlagswerte des neuen Index", async ({ page }) => {
+  test("#100/AK4: new plan, switching the stock index sets the suggested values of the new index", async ({ page }) => {
     const errors = await parametric(page);
     expect(await page.evaluate(() => state.returns.parametric.auto)).toBe(true);
     await chooseStocks(page, "chJst");
@@ -303,7 +303,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
     await noErrors(page, errors);
   });
 
-  test("#100/AK5: eigene Werte bleiben beim Wechsel des Index, daneben die Vorschlagswerte; «Vorschlagswerte übernehmen»", async ({ page }) => {
+  test("#100/AK5: own values remain when switching the index, the suggested values next to them; button to take over the suggested values", async ({ page }) => {
     const errors = await parametric(page);
     await chooseStocks(page, "worldJst");
     const mu = field(page, "returns.parametric.mu");
@@ -324,7 +324,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
     await noErrors(page, errors);
   });
 
-  test("#101/AK4: Matrix der Korrelation im Reiter «Simulation», abhängig von Aktien und Obligationen", async ({ page }) => {
+  test("#101/AK4: correlation matrix in the simulation tab, depending on stocks and bonds", async ({ page }) => {
     const errors = await parametric(page);
     const table = page.locator("#paramJoint table");
     await chooseStocks(page, "worldJst", "ch");
@@ -341,7 +341,7 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
     await noErrors(page, errors);
   });
 
-  test("#101/AK6: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch», eigene Werte bleiben", async ({ page }) => {
+  test("#101/AK6: notice when opening an older plan with parametric Monte Carlo, own values remain", async ({ page }) => {
     const errors = await open(page);
     const plan = await page.evaluate(() => {
       const s = JSON.parse(JSON.stringify(state));
@@ -362,8 +362,8 @@ test.describe("#100/#101: Monte Carlo parametrisch", () => {
 });
 
 // #132: faster random draws of the parametric model; older plans get a notice when opened
-test.describe("Monte Carlo parametrisch rechnet schneller (#132)", () => {
-  test("AK7: Hinweis beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch»; neue Planungen tragen das Merkmal", async ({ page }) => {
+test.describe("Parametric Monte Carlo computes faster (#132)", () => {
+  test("AK7: notice when opening an older plan with parametric Monte Carlo; new plans carry the flag", async ({ page }) => {
     const errors = await open(page);
     expect(await page.evaluate(() => state.returns.parametric.sampler)).toBe(1);
     const plan = await page.evaluate(() => {
@@ -384,11 +384,11 @@ test.describe("Monte Carlo parametrisch rechnet schneller (#132)", () => {
   });
 });
 
-test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
+test.describe("Question about saving before the simulation (#110)", () => {
   /** In the browser the question is only active with `askSaveDev`; the plan is marked as unsaved. */
   const prepare = (page, dev) => page.evaluate(dev => { Pref.set("askSaveDev", dev); Pref.set("askSaveBeforeRun", true); markDirty(); }, dev);
 
-  test("#110/AK1, AK2, AK3, AK5: Rückfrage vor der Simulation bei ungespeicherten Änderungen", async ({ page }) => {
+  test("#110/AK1, AK2, AK3, AK5: question before the simulation with unsaved changes", async ({ page }) => {
     const errors = await open(page);
     // AK3: no changes, no question
     await page.evaluate(() => { Pref.set("askSaveDev", true); runSimulation("overview", { noConfirm: true }); });
@@ -417,7 +417,7 @@ test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
     await noErrors(page, errors);
   });
 
-  test("#110/AK1, AK2, AK4: «Speichern» speichert zuerst und startet danach; neue Planung ohne Dateinamen", async ({ page }) => {
+  test("#110/AK1, AK2, AK4: save saves first and starts afterwards; new plan without a file name", async ({ page }) => {
     const errors = await open(page);
     await prepare(page, true);
     await page.evaluate(() => { window.__ran = runSimulation("overview", { noConfirm: true }); });
@@ -435,7 +435,7 @@ test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
     await noErrors(page, errors);
   });
 
-  test("#110/AK5: die Einstellung steht im Dialog «Einstellungen» und bleibt erhalten", async ({ page }) => {
+  test("#110/AK5: the setting is in the settings dialog and is kept", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => showSettings());
     const box = page.locator("#set-askSave");
@@ -453,8 +453,8 @@ test.describe("Rückfrage zum Speichern vor der Simulation (#110)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
-  test("#111/AK1: #results rechnet Bootstrap mit 500 Pfaden und Startwert 42; zwei Läufe ergeben dieselben Kennzahlen", async ({ page }) => {
+test.describe("Test access for load-independent tests (#111)", () => {
+  test("#111/AK1: #results computes bootstrap with 500 paths and seed 42; two runs yield the same key figures", async ({ page }) => {
     const kpis = async () => {
       await open(page, "results/bootstrap/nosweep");
       await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
@@ -471,7 +471,7 @@ test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
     expect(await kpis()).toEqual(a);
   });
 
-  test("#111/AK2: #nobench misst die Rechenzeit nicht, zeigt «Dauer wird geschätzt…» und rechnet ohne Rückfrage", async ({ page }) => {
+  test("#111/AK2: #nobench does not measure the computing time, shows the estimating message and computes without a question", async ({ page }) => {
     const api = [];
     page.on("request", r => { const u = new URL(r.url()); if (u.pathname.startsWith("/api/")) api.push(u.pathname); });
     await page.clock.install();
@@ -486,7 +486,7 @@ test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
     await noErrors(page, errors);
   });
 
-  test("#111/AK2: ohne #nobench misst die App die Rechenzeit (Gegenprobe)", async ({ page }) => {
+  test("#111/AK2: without #nobench the app measures the computing time (cross-check)", async ({ page }) => {
     const bench = page.waitForRequest(r => new URL(r.url()).pathname === "/api/bench_plan");
     const errors = await open(page, "scenarios", { bench: true });
     await bench;
@@ -496,7 +496,7 @@ test.describe("Testzugänge für lastunabhängige Tests (#111)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
+test.describe("Click into the menu during a preview (#112)", () => {
   /** Presses the mouse button on `loc`, lets the app redraw as when a preview arrives and then releases. */
   const clickDuringPreview = async (page, loc) => {
     await loc.scrollIntoViewIfNeeded();
@@ -507,7 +507,7 @@ test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
     await page.mouse.up();
   };
 
-  test("#112/AK1, AK2: Menüeinträge bleiben dieselben Elemente; der Klick öffnet den Abschnitt", async ({ page }) => {
+  test("#112/AK1, AK2: menu entries stay the same elements; the click opens the section", async ({ page }) => {
     const errors = await open(page);
     await previewIdle(page);
     const same = await page.evaluate(() => {
@@ -523,7 +523,7 @@ test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
     await noErrors(page, errors);
   });
 
-  test("#112/AK3: Klick auf eine Meldung der Prüfliste bei unveränderter Liste", async ({ page }) => {
+  test("#112/AK3: click on a message of the check list while the list is unchanged", async ({ page }) => {
     const errors = await open(page, "wealth");
     await previewIdle(page); // the list after the first preview; it does not change after that
     const item = page.locator("#val li[data-sec]").first();
@@ -535,7 +535,7 @@ test.describe("Klick ins Menü während einer Vorschau (#112)", () => {
     await noErrors(page, errors);
   });
 
-  test("#112/AK4: Zahl der Fehler am Menü erscheint und verschwindet", async ({ page }) => {
+  test("#112/AK4: number of errors at the menu appears and disappears", async ({ page }) => {
     const errors = await open(page);
     const badge = page.locator("#nav a", { hasText: "Haushalt" }).locator(".badge.err");
     await expect(badge).toHaveCount(0);

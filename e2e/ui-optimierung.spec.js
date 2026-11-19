@@ -6,8 +6,8 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
-  test("Parameter fix oder variiert; Standard-Bandbreiten stellen wieder her", async ({ page }) => {
+test.describe("Optimization: ranges, withdrawal rate, progress", () => {
+  test("parameters fixed or varied; default ranges restore", async ({ page }) => {
     const errors = await open(page, "optimize");
     await page.waitForSelector("#optR-three_buckets-cashYears-var", { state: "attached" });
     await page.locator("details.optrange:has(#optR-three_buckets-cashYears-var) summary").click();
@@ -27,7 +27,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("Optimierung läuft mit Fortschritt, Entnahmerate erscheint im Ergebnis", async ({ page }) => {
+  test("optimization runs with progress, withdrawal rate appears in the result", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap/optset");
     const small = { paths: 300, checkPaths: 500, samples: 6, strategies: ["fixed_rate"] };
     expect(await setOpt(page, small)).toMatchObject(small); // #79: the small computation really arrives in the fields
@@ -38,7 +38,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#6/AK1, AK9, AK10: 3-Topf mit Guardrails – Auswahl, Karten, Name, Tooltip und Optimierung", async ({ page }) => {
+  test("#6/AK1, AK9, AK10: 3-bucket with guardrails – selection, cards, name, tooltip and optimization", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.withdrawal.strategy = "three_buckets"; delete state.withdrawal.buckets.spending; goto("withdrawal"); });
     const sel = page.locator('#main select[data-path="withdrawal.buckets.spending"]');
@@ -69,7 +69,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#73: Quote von Aktien und Obligationen neben den Beständen", async ({ page }) => {
+  test("#73: ratio of stocks and bonds next to the holdings", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => goto("wealth"));
     const quote = p => page.locator(`label.field:has(input[data-path="${p}"]) [data-computed="wquote"]`);
@@ -110,7 +110,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#18: Cash-Reserve nur in der Karte «Standard»; Hinweis beim Laden bei anderer Strategie und Reserve ≠ 3", async ({ page }) => {
+  test("#18: cash reserve only in the default card; notice on loading with another strategy and reserve ≠ 3", async ({ page }) => {
     const errors = await open(page);
     // (1) «Vermögen & Anlage» no longer contains the reserve, the card «Standard» does
     await page.evaluate(() => goto("wealth"));
@@ -149,7 +149,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test.describe("#4: Start mit zuletzt geöffneter Planung, Rückfrage beim Beenden (Desktop-App simuliert)", () => {
+  test.describe("#4: start with the plan opened last, question on quitting (desktop app simulated)", () => {
     /** Simulates the desktop app: commands of the Tauri layer are emulated, all others go to the engine. */
     async function openApp(page, startup, settings = {}) {
       settings = { disclaimerAccepted: 1, ...settings }; // #61: The disclaimer counts as confirmed unless a test says otherwise
@@ -175,7 +175,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     }
     const plan = async page => (await (await page.request.post("/api/example_plan", { data: {} })).json());
 
-    test("#61/AK1, AK2: Haftungsausschluss beim ersten Start; ohne Häkchen und mit Esc geht es nicht weiter; Bestätigung in den Einstellungen", async ({ page }) => {
+    test("#61/AK1, AK2: disclaimer on the first start; without the check mark and with Esc it does not continue; confirmation in the settings", async ({ page }) => {
       const p = await plan(page);
       await openApp(page, { path: null, plan: p, notice: null, first: true }, { disclaimerAccepted: null });
       const d = page.locator("#disclaimer"), ok = page.locator("#disclaimerOk");
@@ -204,7 +204,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       expect(JSON.stringify(await page.evaluate(() => state))).not.toContain("disclaimer");
     });
 
-    test("#61/AK2: bestätigte Version fragt nicht mehr, eine ältere Version fragt erneut", async ({ page }) => {
+    test("#61/AK2: a confirmed version does not ask any more, an older version asks again", async ({ page }) => {
       const p = await plan(page);
       await openApp(page, { path: "/x/A.vplan", plan: p, notice: null }, { disclaimerAccepted: 1 });
       await expect(page.locator("#disclaimer")).not.toHaveAttribute("open", "");
@@ -212,7 +212,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#disclaimer")).toHaveAttribute("open", "");
     });
 
-    test("gemerkte Datei: Name im Kopf, kein Hinweis; ohne Merkung Beispielplanung als «Neue Planung»", async ({ page }) => {
+    test("remembered file: name in the header, no notice; without one the example plan as new plan", async ({ page }) => {
       const p = await plan(page);
       p.project.name = "Gemerkte Planung";
       await openApp(page, { path: "/x/Familie.vplan", plan: p, notice: null });
@@ -224,7 +224,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     /** Plan with guardrails and a reserve of 6 months (affected by the notice on the cash reserve). */
     const affected = async page => { const p = await plan(page); p.withdrawal.strategy = "guardrails"; p.wealth.reserveMonths = { mode: "const", value: 6 }; return p; };
 
-    test("#74/AK1, AK5: erster Start mit betroffener Planung zeigt den Hinweis einmal und merkt ihn in den Einstellungen", async ({ page }) => {
+    test("#74/AK1, AK5: first start with an affected plan shows the notice once and remembers it in the settings", async ({ page }) => {
       await openApp(page, { path: "/x/Alt.vplan", plan: await affected(page), notice: null });
       await expect(page.locator("#ask")).toBeVisible();
       await expect(page.locator("#askTitle")).toHaveText("Hinweis zur Cash-Reserve");
@@ -232,14 +232,14 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       expect(set).toContainEqual({ key: "reserveNoticeShown", value: true });
     });
 
-    test("#74/AK2: weiterer Start mit betroffener Planung zeigt keinen Hinweis", async ({ page }) => {
+    test("#74/AK2: a further start with an affected plan shows no notice", async ({ page }) => {
       await openApp(page, { path: "/x/Alt.vplan", plan: await affected(page), notice: null }, { reserveNoticeShown: true });
       await expect(page.locator("#fileName")).toHaveText("Alt.vplan");
       // #83: openApp waits for data-ready; the app sets it only after deciding on the notice
       await expect(page.locator("#ask")).toBeHidden();
     });
 
-    test("#74/AK4: nicht betroffene Planung zählt nicht; die erste betroffene zeigt den Hinweis, die nächste nicht", async ({ page }) => {
+    test("#74/AK4: an unaffected plan does not count; the first affected one shows the notice, the next one does not", async ({ page }) => {
       await openApp(page, { path: "/x/Standard.vplan", plan: await plan(page), notice: null });
       await expect(page.locator("#fileName")).toHaveText("Standard.vplan");
       // #83: openApp waits for data-ready; the app sets it only after deciding on the notice
@@ -255,7 +255,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#ask")).toBeHidden();
     });
 
-    test("Datei fehlt: Beispielplanung als «Neue Planung» mit Hinweis und Dateiname", async ({ page }) => {
+    test("file missing: example plan as new plan with notice and file name", async ({ page }) => {
       await openApp(page, { path: null, plan: await plan(page), notice: "Zuletzt geöffnete Datei nicht gefunden: weg.vplan. Es wird die Beispielplanung geöffnet." });
       await expect(page.locator("#fileName")).toHaveText("Neue Planung");
       await expect(page.locator("#ask")).toBeVisible();
@@ -263,7 +263,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#askText")).toContainText("weg.vplan");
     });
 
-    test("#136/AK4: Fehler beim Speichern: Meldung, die Planung bleibt ungespeichert", async ({ page }) => {
+    test("#136/AK4: error when saving: message, the plan stays unsaved", async ({ page }) => {
       await openApp(page, { path: "/x/planung.vplan", plan: await plan(page), notice: null });
       const calls = name => page.evaluate(n => window.__calls.filter(c => c[0] === n), name);
       await field(page, "project.name").fill("Geändert");
@@ -283,7 +283,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await expect(page.locator("#dirty")).toHaveText("");
     });
 
-    test("Beenden: ohne Änderungen sofort, mit Änderungen Dialog Speichern/Verwerfen/Abbrechen", async ({ page }) => {
+    test("quit: without changes immediately, with changes dialog save/discard/cancel", async ({ page }) => {
       await openApp(page, { path: null, plan: await plan(page), notice: null });
       const calls = name => page.evaluate(n => window.__calls.filter(c => c[0] === n), name);
       // without changes: quit directly
@@ -306,7 +306,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
       await page.locator('#ask button[value="discard"]').click();
       await expect.poll(async () => (await calls("quit_app")).length).toBe(2);
     });
-    test("Beenden: Speichern beendet erst nach erfolgreichem Speichern; bricht die Ortsabfrage ab, bleibt die App offen (#27)", async ({ page }) => {
+    test("quit: save quits only after saving successfully; if the location dialog is cancelled, the app stays open (#27)", async ({ page }) => {
       await openApp(page, { path: null, plan: await plan(page), notice: null });
       const calls = name => page.evaluate(n => window.__calls.filter(c => c[0] === n), name);
       await field(page, "project.name").fill("Geändert"); await field(page, "project.name").blur();
@@ -322,7 +322,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     });
   });
 
-  test("Meilenstein von «Datum» auf «Alter von» umstellen setzt Person und Jahre (Planung bleibt gültig)", async ({ page }) => {
+  test("switching a milestone from date to age sets person and years (plan stays valid)", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => goto("milestones"));
     const i = await page.evaluate(() => state.milestones.findIndex(m => m.id === "retire"));
@@ -335,7 +335,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#24: Stufe der Variationen in «Einzelne Läufe» und «Jahreswerte» wählen, ohne Neuberechnung aller Pfade", async ({ page }) => {
+  test("#24: select the level of the variations in single runs and annual values without recomputing all paths", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 200;
@@ -370,7 +370,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#20: Zielauswahl, Ziel 2 «Kein Notverkauf von Immobilien» wird gespeichert, gerechnet und mit Anteil ungeplanter Verkäufe angezeigt", async ({ page }) => {
+  test("#20: goal selection, goal 2 (no emergency sale of real estate) is saved, computed and displayed with the share of unplanned sales", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap");
     // (1) selection present, default is goal 1, the plan stores nothing additional
     await expect(page.locator("#opt-goal")).toHaveValue("consumption");
@@ -400,7 +400,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#29: Grundstückgewinnsteuer ist Pflicht bei Immobilie im Besitz oder mit geplantem Kauf, nicht bei Miete; Start blockiert", async ({ page }) => {
+  test("#29: real estate gains tax is required for owned real estate or a planned purchase, not for rent; start blocked", async ({ page }) => {
     const errors = await open(page);
     // Example plan with an owned property but without rules: error in the tax section, start blocked
     const res = await page.evaluate(async () => {
@@ -429,7 +429,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
   });
 
   // Criteria: #32/AK1 #32/AK2 #32/AK3 #32/AK4 #32/AK5 #32/AK6
-  test("#32: Immobilien mit gleicher Feldreihenfolge bei Besitz und Kauf geplant, Marktwert in der Kopfzeile", async ({ page }) => {
+  test("#32: real estate with the same field order when owned and purchase planned, market value in the header row", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
       state.taxes.propertyGain = GAIN_ZH();
@@ -464,7 +464,7 @@ test.describe("Optimierung: Bandbreiten, Entnahmerate, Fortschritt", () => {
     await noErrors(page, errors);
   });
 
-  test("#28: Bei «Kauf geplant» gibt es «Verkauf ab» (Vorgabe nie); Verkauf vor oder im Kaufmonat ist ein Fehler am Feld", async ({ page }) => {
+  test("#28: with purchase planned there is a sale-from field (default never); a sale before or in the purchase month is an error at the field", async ({ page }) => {
     const errors = await open(page, "realestate");
     const i = await page.evaluate(() => { state.realestate.properties.push({ id: "zz", name: "Testobjekt", status: "planned", buy: "2030-06", price: 400000, fixCosts: 0, mortgage: newMortgage() }); renderSection(); return state.realestate.properties.length - 1; });
     // Field with default «nie»

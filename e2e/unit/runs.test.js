@@ -13,7 +13,7 @@ function fresh(idb = new IDBFactory()) {
 }
 const meta = (id, created, extra = {}) => ({ id, created, name: `Lauf ${id}`, note: "", ...extra });
 
-test("#147/AK1: add, list (neueste zuerst), get, update und remove; Kopfdaten und Inhalt getrennt", async () => {
+test("#147/AK1: add, list (newest first), get, update and remove; header data and content separate", async () => {
   const Runs = fresh();
   await Runs.add(meta("a", "2026-11-01T10:00:00Z"), { plan: { p: 1 }, result: { r: 1 } });
   await Runs.add(meta("b", "2026-11-02T10:00:00Z"), { plan: { p: 2 }, result: { r: 2 } });
@@ -35,7 +35,7 @@ test("#147/AK1: add, list (neueste zuerst), get, update und remove; Kopfdaten un
   assert.deepEqual((await again.list()).map(m => m.id), ["b"]);
 });
 
-test("#147/AK2: Abgebrochene Transaktion (z. B. Kontingent erschöpft) lehnt das Versprechen ab", async () => {
+test("#147/AK2: an aborted transaction (e.g. quota exhausted) rejects the promise", async () => {
   const Runs = fresh();
   await Runs.list(); // create the database
   const orig = FDBTransaction.prototype.objectStore;
@@ -56,7 +56,7 @@ test("#147/AK2: Abgebrochene Transaktion (z. B. Kontingent erschöpft) lehnt das
   }
 });
 
-test("#147/AK3: Ohne IndexedDB bleibt die Liste im Arbeitsspeicher", async () => {
+test("#147/AK3: without IndexedDB the list stays in memory", async () => {
   const Runs = fresh(undefined);
   await Runs.add(meta("m", "2026-11-04T10:00:00Z"), { plan: { p: 3 }, result: {} });
   assert.deepEqual((await Runs.list()).map(m => m.id), ["m"]);
@@ -67,7 +67,7 @@ test("#147/AK3: Ohne IndexedDB bleibt die Liste im Arbeitsspeicher", async () =>
   assert.equal((await Runs.list()).length, 0);
 });
 
-test("#147/AK4: Ein Ergebnis einer älteren Version (ohne spätere Felder) lässt sich lesen", async () => {
+test("#147/AK4: a result of an older version (without later fields) can be read", async () => {
   const Runs = fresh();
   // before #126: percentiles without endTotalReal, range without real
   const old = { plan: { format: "pensionsplaner/1" }, result: { batch: { summary: { percentiles: [{ percent: 50, endTotal: 1 }] }, bands: { p50: [1] } } } };

@@ -25,8 +25,8 @@ const noErrors = async (page, errors) => {
   expect(await page.evaluate(() => window.__errors)).toEqual([]);
 };
 
-test.describe("Abbrechen laufender Berechnungen", () => {
-  test("Abbrechen beendet eine laufende Optimierung", async ({ page }) => {
+test.describe("Cancel running computations", () => {
+  test("cancel ends a running optimization", async ({ page }) => {
     test.setTimeout(120_000);
     const errors = await open(page, "optimize/bootstrap/optset");
     // Set via the plan: saveOptCfg reads the fields and would overwrite a directly set optCfg (#79)
@@ -43,7 +43,7 @@ test.describe("Abbrechen laufender Berechnungen", () => {
     await noErrors(page, errors);
   });
 
-  test("Simulation zeigt die Dauer am Knopf und lässt sich abbrechen", async ({ page }) => {
+  test("simulation shows the duration on the button and can be cancelled", async ({ page }) => {
     test.setTimeout(120_000);
     const errors = await open(page, "scenarios/bootstrap", { bench: true });
     await expect(page.locator("#est-run")).toContainText("Dauer:", { timeout: 30_000 });

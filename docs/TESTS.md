@@ -42,7 +42,8 @@ aber nicht gebaut. Dass ein Treffer wirklich fehlschlägt, prüfen die Tests des
 enthält nur `'self'` und die IPC-Quellen `ipc:` und `http://ipc.localhost`, keine externen Adressen.
 
 **Code intern englisch (#165):** `tools/check-english.sh` (`make english`, Job `english` in `test-quality.yml`) meldet
-deutsche Kommentare und Testnamen mit Datei und Zeile; Regeln, Ausnahmen und Übergangsliste in
+deutsche Kommentare und Testnamen mit Datei und Zeile; seit #168 ist die Übergangsliste leer und die Prüfung läuft
+auch in `make test-quiet` (`--gate`). Regeln, Ausnahmen und Übergangsliste in
 [`ENTWICKLUNG.md`](ENTWICKLUNG.md#sprache-im-code). Die Tests des Skripts (Treffer, kein Treffer, Ausnahmen,
 Übergangsliste) laufen mit gestellten Quelldateien in einem temporären Git-Repo:
 `python3 -m unittest discover -s tools -p 'test_check_english.py'`.

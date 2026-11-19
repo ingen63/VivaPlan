@@ -6,8 +6,8 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Ergebnisse", () => {
-  test("Einzellauf: Übersicht, Grafiken und Jahreswerte stimmen überein", async ({ page }) => {
+test.describe("Results", () => {
+  test("single run: overview, charts and annual values match", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     await expect(page.locator("#ov-wealth path").first()).toBeAttached();
@@ -24,7 +24,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Jahreswerte: eine Zeile pro Kalenderjahr, Alter steigt in Schritten von einem Jahr", async ({ page }) => {
+  test("annual values: one row per calendar year, age rises in steps of one year", async ({ page }) => {
     const errors = await open(page, "results/table/nosweep");
     const rows = page.locator("#resultsBody table.tbl tr:not(:first-child)");
     const n = await rows.count();
@@ -38,7 +38,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Einzellauf: Marktgrafik mit Inflation, logarithmisch und in Prozent; Jahreswerte mit Inflation", async ({ page }) => {
+  test("single run: market chart with inflation, logarithmic and in percent; annual values with inflation", async ({ page }) => {
     const errors = await open(page, "results/charts/nosweep");
     await expect(page.locator("#rc-mkt path").first()).toBeAttached();
     await expect(page.locator("#resultsBody")).toContainText("Inflation (Preisindex)");
@@ -67,7 +67,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Einzelne Läufe: Auswahl bleibt stehen, nur der Inhalt scrollt; Variation statt Pfadname", async ({ page }) => {
+  test("single runs: selection stays in place, only the content scrolls; variation instead of path name", async ({ page }) => {
     const errors = await open(page, "results/bootstrap/runs");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     // Selection «Lauf wählen» is outside the scrolling area
@@ -92,7 +92,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Perzentil-Tabelle zeigt je Perzentil den optimalen Wert der Variation (Ausgaben-Faktor)", async ({ page }) => {
+  test("percentile table shows the optimal value of the variation per percentile (spending factor)", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "bootstrap";
@@ -122,7 +122,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Hypothekenerneuerung: Protokoll im Einzellauf, Zähler und Spalten bei mehreren Läufen", async ({ page }) => {
+  test("mortgage renewal: log in the single run, counter and columns with several runs", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed";
@@ -159,7 +159,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Zoom-Schaltflächen: zentriert auf den aktuellen Bereich, im Zeitraum gehalten, «Alles» setzt zurück", async ({ page }) => {
+  test("zoom buttons: centered on the current range, kept within the period, all resets", async ({ page }) => {
     const errors = await open(page, "results/charts/nosweep");
     const r = await page.evaluate(() => {
       const total = endM() - startM(), out = { total };
@@ -185,7 +185,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Zoom per Maus: Bereich aufziehen (sichtbar hervorgehoben), alle Grafiken und Registerkarten zoomen mit, Schaltfläche danach nicht aktiv", async ({ page }) => {
+  test("zoom by mouse: drag a range (visibly highlighted), all charts and tabs zoom along, no button active afterwards", async ({ page }) => {
     const errors = await open(page, "results/charts/nosweep");
     const bars = () => page.locator("#resultsBody .minizoom");
     const n = await bars().count();
@@ -253,7 +253,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Zoom wirkt auf die Daten der Grafik und auf die Balkendiagramme", async ({ page }) => {
+  test("zoom acts on the data of the chart and on the bar charts", async ({ page }) => {
     const errors = await open(page, "results/charts/nosweep");
     const bars = () => page.evaluate(() => document.querySelectorAll("#rc-flows rect").length);
     const all = await bars();
@@ -264,7 +264,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Einzellauf mit Variationen: Auswahl der Stufe, Optimum, gleiche Anzeige wie bei Monte-Carlo", async ({ page }) => {
+  test("single run with variations: selection of the level, optimum, same display as with Monte Carlo", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed";
@@ -294,7 +294,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Einzellauf ohne Variationen: keine Variationsauswahl; Monte-Carlo mit Variation unverändert", async ({ page }) => {
+  test("single run without variations: no variation selection; Monte Carlo with variation unchanged", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -316,7 +316,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Abschnitt «Immobilien»: Kauf, Verkauf, Erneuerung mit Einmalzahlung und Notverkauf mit Beträgen; ohne Ereignisse ein Hinweis", async ({ page }) => {
+  test("real estate section: purchase, sale, renewal with lump-sum payment and emergency sale with amounts; a notice without events", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -370,7 +370,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Tabellenkopf der Ergebnisse bleibt beim Scrollen oben stehen", async ({ page }) => {
+  test("table header of the results stays at the top when scrolling", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -393,7 +393,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("3-Topf: Herleitung der Topfgrössen (Netto-Bedarf, Ziele, Kriterium, Fall, Umbuchungen) aufklappbar in den Jahreswerten, nicht mehr als eigene Karte", async ({ page }) => {
+  test("3-bucket: derivation of the bucket sizes (net need, targets, criterion, case, transfers) expandable in the annual values, no longer a card of its own", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -430,7 +430,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Steuerspalten: die Wahl bleibt nach dem Neuladen erhalten, ohne Speicher gilt eingeklappt", async ({ page }) => {
+  test("tax columns: the choice is kept after reloading, without storage collapsed applies", async ({ page }) => {
     const errors = await open(page, "results/charts/nosweep");
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(0);
@@ -450,7 +450,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Reiter Parameter: Stand des Laufs, schreibgeschützt, je Editorabschnitt ein Parameter wirkt, alte Ergebnisse «Nicht verfügbar»", async ({ page }) => {
+  test("parameters tab: state of the run, read-only, one parameter per editor section takes effect, old results not available", async ({ page }) => {
     const errors = await open(page, "results/charts/nosweep");
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
     const body = page.locator("#resultsBody");
@@ -494,7 +494,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Gespeichertes Ergebnis zeigt im Reiter Parameter die Planung von damals", async ({ page }) => {
+  test("saved result shows the plan of that time in the parameters tab", async ({ page }) => {
     const errors = await open(page, "runsflow/mem/view");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
@@ -503,7 +503,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Jahreswerte: Entnahmerate (Jahresentnahme / Vermögen am Jahresanfang), nominal wie real", async ({ page }) => {
+  test("annual values: withdrawal rate (annual withdrawal / wealth at the start of the year), nominal and real", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
@@ -537,7 +537,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("#23: Immobilienverkäufe je Perzentil-Lauf mit Datum, Notverkäufe mit Warnsymbol, ohne Immobilien keine Spalte", async ({ page }) => {
+  test("#23: real estate sales per percentile run with date, emergency sales with warning symbol, no column without real estate", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       const lines = html => { const d = document.createElement("div"); d.innerHTML = html; return [...d.querySelectorAll("div")].map(x => ({ text: x.textContent.replace(/\s+/g, " ").trim(), warn: !!x.querySelector(".hwarn") })); };
@@ -568,7 +568,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("#21: Variationen ohne feste Grenze (technisch 1'000'000), Warnung vor langen Berechnungen", async ({ page }) => {
+  test("#21: variations without a fixed limit (technically 1'000'000), warning before long computations", async ({ page }) => {
     const errors = await open(page, "scenarios");
     const run = async sweeps => {
       // #83: renderSection and renderDerived draw synchronously; no waiting needed
@@ -612,7 +612,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Umbenennung: «Ergebnisse» statt «Simulationen» in Kopfzeile, Ergebnisansicht und Liste", async ({ page }) => {
+  test("renaming: results instead of simulations in the header, result view and list", async ({ page }) => {
     const errors = await open(page);
     const btn = page.locator('button[data-action="runs-open"]').first();
     await expect(btn).toHaveText("Ergebnisse");
@@ -628,7 +628,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Tooltips erscheinen beim Überfahren der Vorschau", async ({ page }) => {
+  test("tooltips appear when hovering over the preview", async ({ page }) => {
     const errors = await open(page);
     const box = await page.locator("#chart").boundingBox();
     await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
@@ -639,7 +639,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Nominal und heutige Kaufkraft unterscheiden sich", async ({ page }) => {
+  test("nominal and today's purchasing power differ", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const nominal = await resultKpi(page, "Vermögen am Ende").textContent();
@@ -650,7 +650,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("#22: Legenden zeigen gestrichelte Linien als gestricheltes Symbol (Übersicht und Grafiken)", async ({ page }) => {
+  test("#22: legends show dashed lines as a dashed symbol (overview and charts)", async ({ page }) => {
     const errors = await open(page, "results/bootstrap");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const dashes = () => page.evaluate(() => [...document.querySelectorAll("#resultsBody .legend")].map(l => ({
@@ -673,7 +673,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Monte Carlo: Kennzahlen, Perzentile und einzelne Läufe", async ({ page }) => {
+  test("Monte Carlo: key figures, percentiles and single runs", async ({ page }) => {
     const errors = await open(page, "results/bootstrap/runs");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs");
     await expect(page.getByRole("button", { name: "Einzelne Läufe" })).toHaveClass(/|/);
@@ -694,7 +694,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Szenarien: Heatmap ist vollständig", async ({ page }) => {
+  test("scenarios: heatmap is complete", async ({ page }) => {
     const errors = await open(page, "results/bootstrap/scenarios/sweep2");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "scenarios");
     const heat = page.locator("table.heat, #resultsBody svg").first();
@@ -710,7 +710,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("Escape führt aus den Ergebnissen zurück in den Editor", async ({ page }) => {
+  test("Escape leads from the results back to the editor", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     await page.keyboard.press("Escape");
@@ -719,7 +719,7 @@ test.describe("Ergebnisse", () => {
     await noErrors(page, errors);
   });
 
-  test("jede Renditequelle lässt sich rechnen", async ({ page }) => {
+  test("every return source can be computed", async ({ page }) => {
     for (const src of ["fixed", "historical", "rolling", "bootstrap", "parametric"]) {
       const errors = await open(page, `results/${src}`);
       await expect(page.locator("html")).toHaveAttribute("data-rendered", /.+/);
@@ -731,9 +731,9 @@ test.describe("Ergebnisse", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Darstellung", () => {
+test.describe("Display", () => {
   for (const [name, width, height] of [["Desktop", 1440, 900], ["Laptop", 1180, 800], ["Tablet", 820, 1000], ["Handy", 390, 800]]) {
-    test(`Responsiveness ${name} (${width} px): nichts läuft über den Rand`, async ({ page }) => {
+    test(`responsiveness ${name} (${width} px): nothing overflows the edge`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       const errors = await open(page);
       for (const i of [0, 3, 4, 8]) {
@@ -747,7 +747,7 @@ test.describe("Darstellung", () => {
     });
   }
 
-  test("Dunkelmodus: Grafik und Text bleiben lesbar", async ({ page }) => {
+  test("dark mode: chart and text stay readable", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     const errors = await open(page);
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -759,7 +759,7 @@ test.describe("Darstellung", () => {
     await noErrors(page, errors);
   });
 
-  test("Browserfenster verkleinern zeichnet die Vorschau neu", async ({ page }) => {
+  test("shrinking the browser window redraws the preview", async ({ page }) => {
     const errors = await open(page);
     const d1 = await page.locator("#chart path").first().getAttribute("d");
     await page.setViewportSize({ width: 1000, height: 800 });

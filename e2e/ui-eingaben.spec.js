@@ -6,8 +6,8 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
-  test("Vorschau rechnet beim Verlassen des Feldes neu (#57)", async ({ page }) => {
+test.describe("Inputs, check and live preview", () => {
+  test("preview recomputes on leaving the field (#57)", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Vermögen & Anlage");
     const before = await kpiValue(page, "Vermögen am Ende").textContent();
@@ -22,7 +22,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await noErrors(page, errors);
   });
 
-  test("Live-Vorschau stimmt mit der endgültigen Simulation überein", async ({ page }) => {
+  test("live preview matches the final simulation", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     // Test access computes directly; back to the editor, remember the value, compute again and compare.
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
@@ -35,7 +35,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await noErrors(page, errors);
   });
 
-  test("ungültige Eingaben werden markiert und gemeldet", async ({ page }) => {
+  test("invalid inputs are marked and reported", async ({ page }) => {
     const errors = await open(page);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("13.1970");
@@ -50,7 +50,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await noErrors(page, errors);
   });
 
-  test("Simulationsende vor Start: Fehler im Menü, keine Berechnung", async ({ page }) => {
+  test("simulation end before start: error in the menu, no computation", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Meilensteine");
     const endRow = await msRow(page, "end");
@@ -68,7 +68,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await noErrors(page, errors);
   });
 
-  test("Geburtsdatum in der Zukunft und Alter über 120 werden gemeldet", async ({ page }) => {
+  test("birth date in the future and age above 120 are reported", async ({ page }) => {
     const errors = await open(page);
     const birth = field(page, "household.persons.0.birth");
     await birth.fill("01.2999");
@@ -83,7 +83,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await noErrors(page, errors);
   });
 
-  test("leerer Projektname und leere Zahlen führen nicht zum Absturz", async ({ page }) => {
+  test("empty project name and empty numbers do not lead to a crash", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("");
     await field(page, "project.name").press("Tab");
@@ -98,7 +98,7 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
     await noErrors(page, errors);
   });
 
-  test("Zweite Person hinzufügen und entfernen", async ({ page }) => {
+  test("add and remove a second person", async ({ page }) => {
     const errors = await open(page);
     await page.getByRole("button", { name: "+ Zweite Person" }).click();
     await expect(page.locator(".person", { hasText: "Person 2" })).toBeVisible();
@@ -113,8 +113,8 @@ test.describe("Eingaben, Prüfung und Live-Vorschau", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Meilensteine", () => {
-  test("Pensionierung verschieben: abhängige Werte folgen", async ({ page }) => {
+test.describe("Milestones", () => {
+  test("moving the retirement: dependent values follow", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
@@ -135,7 +135,7 @@ test.describe("Meilensteine", () => {
     await noErrors(page, errors);
   });
 
-  test("#51/AK2: Bezug Pensionskasse ausserhalb der Grenzen: Fehler am Feld statt Zahlen", async ({ page }) => {
+  test("#51/AK2: pension fund withdrawal outside the limits: error at the field instead of numbers", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
@@ -148,7 +148,7 @@ test.describe("Meilensteine", () => {
     await noErrors(page, errors);
   });
 
-  test("Meilenstein nach Alter und nach Datum ergeben denselben Monat", async ({ page }) => {
+  test("milestone by age and by date yield the same month", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Meilensteine");
     const row = await msRow(page, "retire");
@@ -167,10 +167,10 @@ test.describe("Meilensteine", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Rückgängig und Wiederholen", () => {
+test.describe("Undo and redo", () => {
   const reset = page => page.evaluate(() => { lastCommand = { id: "", t: 0 }; });
 
-  test("100 Aktionen vollständig zurück- und wiederherstellen", async ({ page }) => {
+  test("undo and redo 100 actions completely", async ({ page }) => {
     const errors = await open(page);
     const name = field(page, "project.name");
     const original = await name.inputValue();
@@ -189,7 +189,7 @@ test.describe("Rückgängig und Wiederholen", () => {
     await noErrors(page, errors);
   });
 
-  test("über Abschnittswechsel hinweg", async ({ page }) => {
+  test("across section changes", async ({ page }) => {
     const errors = await open(page);
     const name = await field(page, "project.name").inputValue();
     await field(page, "project.name").fill("Eins");
@@ -209,7 +209,7 @@ test.describe("Rückgängig und Wiederholen", () => {
     await noErrors(page, errors);
   });
 
-  test("nach Laden einer Datei beginnt der Verlauf neu", async ({ page }) => {
+  test("after loading a file the history starts anew", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("Vorher");
     await page.evaluate(() => History.commit());
@@ -227,7 +227,7 @@ test.describe("Rückgängig und Wiederholen", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Dateien", () => {
+test.describe("Files", () => {
   async function saveToFile(page, name) {
     const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Speichern", exact: true }).click()]);
     const file = path.join(os.tmpdir(), name);
@@ -235,7 +235,7 @@ test.describe("Dateien", () => {
     return { file, suggested: dl.suggestedFilename() };
   }
 
-  test("Speichern, Öffnen und Roundtrip ergeben identische Daten", async ({ page }) => {
+  test("save, open and roundtrip yield identical data", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("Roundtrip Test");
     const a = await saveToFile(page, `qa-rt-a-${process.pid}.vplan`);
@@ -255,7 +255,7 @@ test.describe("Dateien", () => {
     await noErrors(page, errors);
   });
 
-  test("Öffnen einer fremden oder defekten Datei wird abgelehnt", async ({ page }) => {
+  test("opening a foreign or broken file is rejected", async ({ page }) => {
     const errors = await open(page);
     const bad = path.join(os.tmpdir(), `qa-bad-${process.pid}.vplan`);
     for (const text of ["", "kein json", "{}", JSON.stringify({ format: 9 })]) {
@@ -268,8 +268,8 @@ test.describe("Dateien", () => {
     await noErrors(page, errors);
   });
 
-  test.describe("Unbekannte Formatversion beim Öffnen (#144)", () => {
-    test("AK2, AK4: Eine Datei aus einer neueren Version wird mit Kennung in der Meldung abgelehnt", async ({ page }) => {
+  test.describe("Unknown format version when opening (#144)", () => {
+    test("AK2, AK4: a file from a newer version is rejected with the identifier in the message", async ({ page }) => {
       const errors = await open(page);
       await field(page, "project.name").fill("Bleibt");
       await field(page, "project.name").press("Tab");
@@ -293,7 +293,7 @@ test.describe("Dateien", () => {
     });
   });
 
-  test("Neu fragt bei ungespeicherten Änderungen nach", async ({ page }) => {
+  test("New asks back when there are unsaved changes", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("Geändert");
     await expect(page.locator("#dirty")).toContainText("ungespeichert");
@@ -308,7 +308,7 @@ test.describe("Dateien", () => {
     await noErrors(page, errors);
   });
 
-  test("Projektdatei ansehen zeigt das aktuelle JSON", async ({ page }) => {
+  test("view project file shows the current JSON", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("Sichtbar");
     await page.getByRole("button", { name: "Datei ansehen" }).click();

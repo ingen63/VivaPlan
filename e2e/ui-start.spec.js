@@ -5,8 +5,8 @@ const os = require("os");
 const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
-test.describe("Start und Navigation", () => {
-  test("Seite startet ohne Fehler, Vorschau und Prüfung erscheinen", async ({ page }) => {
+test.describe("Start and navigation", () => {
+  test("page starts without errors, preview and check appear", async ({ page }) => {
     const errors = await open(page);
     await expect(page).toHaveTitle("VivaPlan");
     await expect(page.locator("#nav a")).toHaveCount(SECTIONS.length);
@@ -16,7 +16,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("Zeitleiste: Immobilienereignisse mit Beschriftung, gestaffelt, von Meilensteinen unterscheidbar; ab 16 nur Symbole; ohne Ergebnis keine", async ({ page }) => {
+  test("timeline: real estate events with labels, staggered, distinguishable from milestones; from 16 only symbols; none without a result", async ({ page }) => {
     const errors = await open(page);
     await expect(page.locator("#timeline svg g.pev").first()).toBeAttached();
     const labels = await page.$$eval("#timeline svg g.pev text.pelbl", ts => ts.map(t => t.textContent));
@@ -58,7 +58,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#29: «Neu» lädt eine leere Planung mit Standardwerten", async ({ page }) => {
+  test("#29: New loads an empty plan with default values", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
@@ -80,7 +80,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#16/#17: Bestände, Guthaben und Marktwert heissen «per Simulationsstart (MM.JJJJ)» und folgen dem Start", async ({ page }) => {
+  test("#16/#17: holdings, balances and market value are labeled as of the simulation start (MM.YYYY) and follow the start", async ({ page }) => {
     const errors = await open(page, "wealth");
     const start = async () => page.evaluate(() => startTxt());
     const s1 = await start();
@@ -104,7 +104,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#19/#69: Erklärung der Anlagestrategie im Info-Popup (Maus, Fokus, Klick, Esc, kopierbar)", async ({ page }) => {
+  test("#19/#69: explanation of the investment strategy in the info popup (mouse, focus, click, Esc, copyable)", async ({ page }) => {
     const errors = await open(page, "wealth");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
     const pop = card.locator("h3 .infopop"), body = pop.locator(".infobody");
@@ -133,7 +133,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#69/AK1: Strategie bei den Anlagen, Reiter «Simulation» ohne Wahl der Zeitreihe und ohne eigene Dateien", async ({ page }) => {
+  test("#69/AK1: strategy with the investments, simulation tab without a choice of the time series and without own files", async ({ page }) => {
     const errors = await open(page, "wealth");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
     const stocks = card.locator('select[data-path="returns.strategy.stocks"]'), bonds = card.locator('select[data-path="returns.strategy.bonds"]');
@@ -161,7 +161,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#69/AK8: Mittelwerte im gemeinsamen Zeitraum, Hinweis bei gekürztem Index, ohne Kürzung kein Hinweis", async ({ page }) => {
+  test("#69/AK8: means over the common period, notice on a shortened index, no notice without shortening", async ({ page }) => {
     const errors = await open(page, "wealth");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
     const stocks = card.locator('select[data-path="returns.strategy.stocks"]'), bonds = card.locator('select[data-path="returns.strategy.bonds"]');
@@ -182,7 +182,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#69/AK2: «Welt individuell»: Gewichte zusammen 100 %, sonst Fehler beim Feld", async ({ page }) => {
+  test("#69/AK2: custom world: weights add up to 100 %, otherwise an error at the field", async ({ page }) => {
     const errors = await open(page, "wealth");
     await page.locator('select[data-path="returns.strategy.stocks"]').selectOption("worldCustom");
     const card = page.locator("#main .card", { has: page.locator("h3", { hasText: "Anlagestrategie" }) });
@@ -204,7 +204,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#69/AK5: ältere Planung mit Zeitreihe wird beim Öffnen zur Strategie, mit Hinweis bei eigenen Dateien", async ({ page }) => {
+  test("#69/AK5: an older plan with a time series becomes a strategy when opened, with a notice for own files", async ({ page }) => {
     const errors = await open(page, "general");
     const out = await page.evaluate(async () => {
       const r = [];
@@ -225,7 +225,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#90/AK2, AK3: keine Wahl «Schweiz (Pictet)»; eine Planung mit Pictet öffnet mit Schweiz (JST) und Eidgenossenschaft und einem Hinweis", async ({ page }) => {
+  test("#90/AK2, AK3: no Pictet choice; a plan with Pictet opens with Switzerland (JST) and Swiss federal bonds and a notice", async ({ page }) => {
     const errors = await open(page, "wealth");
     await expect(page.locator('select[data-path^="returns.strategy"] option[value="chPictet"]')).toHaveCount(0);
     const out = await page.evaluate(async () => {
@@ -239,7 +239,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#34: Optimum eines Anteils an der Grenze 100 % / 0 % ohne «≥» / «≤»", async ({ page }) => {
+  test("#34: optimum of a share at the limit 100 % / 0 % without «≥» / «≤»", async ({ page }) => {
     const errors = await open(page, "milestones");
     const t = await page.evaluate(() => [
       { param: "pension.pk.lumpsum", v: 1, kind: "exact", reaches: true },
@@ -251,7 +251,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#37: Jahreswerte ohne Spaltengruppen, Einkommen und Ausgaben geplant; Spaltenreihenfolge mit Entnahme; Titel zentriert und fett; Knopf «Steuern anzeigen» sichtbar", async ({ page }) => {
+  test("#37: annual values without column groups, income and spending planned; column order with withdrawal; title centered and bold; show taxes button visible", async ({ page }) => {
     const errors = await open(page, "results/table/nosweep");
     const head = page.locator("#resultsBody table.yt tr").first();
     const cols = (await head.locator("th").allInnerTexts()).map(t => t.replace(/\s+/g, " ").trim());
@@ -285,7 +285,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#37: Zeitreihe in den Parametern ohne «library:»", async ({ page }) => {
+  test("#37: time series in the parameters without «library:»", async ({ page }) => {
     const errors = await open(page);
     const t = await page.evaluate(() => [seriesShort("library:Shiller CHF + CH-Obligationen.csv"), seriesShort("library:Welt (JST)"), seriesShort("/tmp/x/Eigene.csv")]);
     expect(t).toEqual(["Shiller CHF + CH-Obligationen", "Welt (JST)", "Eigene"]);
@@ -298,7 +298,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#37: Wechsel Datum ↔ Alter von übernimmt den Wert aus «Ergibt»", async ({ page }) => {
+  test("#37: switching date ↔ age takes over the value from the derived field", async ({ page }) => {
     const errors = await open(page, "milestones");
     const i = await page.evaluate(() => state.milestones.findIndex(m => m.id === "ahv"));
     const row = await msRow(page, "ahv");
@@ -323,7 +323,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#37: Warnsymbol in der Karte «Umfang» ab 90 s geschätzter Rechenzeit", async ({ page }) => {
+  test("#37: warning symbol in the scope card from 90 s of estimated computing time", async ({ page }) => {
     const errors = await open(page, "scenarios");
     await page.evaluate(() => { state.scenarios.sweeps = []; state.returns.source = "fixed"; renderSection(); });
     const fake = sec => page.evaluate(sec => { Object.assign(bench, { key: benchKey(), us: sec * 1e6, fixedPaths: 1, error: null }); updateEstimates(); }, sec);
@@ -341,7 +341,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#15/#30, #51/AK1: Meilensteine ohne Spalte «Verwendet», verwendete lassen sich mit Umstellung auf das Datum löschen, Start/Ende/Bezug Pensionskasse/AHV-Bezug gesperrt", async ({ page }) => {
+  test("#15/#30, #51/AK1: milestones without a used column, used ones can be deleted with reassignment to the date, start/end/pension fund withdrawal/AHV start locked", async ({ page }) => {
     const errors = await open(page, "milestones");
     await expect(page.locator("#main table.tbl").first()).not.toContainText("Verwendet");
     const rows = () => page.locator("#main table.tbl tr:has(select[data-path^='milestones.'])");
@@ -380,7 +380,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#15: Meilenstein «Alter von» wird auf das berechnete Datum umgestellt, unbenutzte ohne Dialog gelöscht, doppelter Zeitpunkt in einer Reihe", async ({ page }) => {
+  test("#15: an age milestone is switched to the computed date, unused ones deleted without dialog, duplicate point in time in a series", async ({ page }) => {
     const errors = await open(page, "milestones");
     // «AHV-Bezug» is fixed (#51); the check uses an own milestone «Alter von».
     await page.evaluate(() => { state.milestones.splice(state.milestones.length - 1, 0, { id: "kids", name: "Kinder ausgezogen", kind: "age", person: "A", years: 62 }); renderSection(); });
@@ -404,7 +404,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("#14: Pflichtfelder mit Sternchen, Fehler am Feld, Start und Optimierung gesperrt bis alles gültig ist", async ({ page }) => {
+  test("#14: required fields with asterisk, error at the field, start and optimization blocked until everything is valid", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");
@@ -442,7 +442,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("alle Abschnitte per Klick und per Tastatur erreichbar", async ({ page }) => {
+  test("all sections reachable by click and by keyboard", async ({ page }) => {
     const errors = await open(page);
     for (let i = 0; i < SECTIONS.length; i++) {
       await page.locator("#nav a").nth(i).click();
@@ -459,7 +459,7 @@ test.describe("Start und Navigation", () => {
     await noErrors(page, errors);
   });
 
-  test("Tastenkürzel-Übersicht und «Über»-Dialog", async ({ page }) => {
+  test("shortcut overview and about dialog", async ({ page }) => {
     const errors = await open(page);
     await page.getByRole("button", { name: "Tastenkürzel" }).click();
     await expect(page.locator("#ask")).toBeVisible();

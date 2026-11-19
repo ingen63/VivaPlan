@@ -6,8 +6,8 @@ const path = require("path");
 const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #51)", () => {
-  test("#25/AK1–AK4: Einstellungen anzeigen, prüfen, speichern, nach Neuladen behalten, Standardwerte", async ({ page }) => {
+test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", () => {
+  test("#25/AK1–AK4: show, check and save settings, keep them after reloading, default values", async ({ page }) => {
     const errors = await open(page);
     await page.locator('header button[data-action="settings"]').click();
     const dlg = page.locator("#settings");
@@ -42,7 +42,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await noErrors(page, errors);
   });
 
-  test("#25/AK6, #51/AK2: obere Grenze Bezug Pensionskasse 67: 67 gültig, 68 abgelehnt", async ({ page }) => {
+  test("#25/AK6, #51/AK2: upper limit pension fund withdrawal 67: 67 valid, 68 rejected", async ({ page }) => {
     const errors = await open(page, "milestones");
     await page.evaluate(() => Pref.set("limits", { ...LIMIT_DEFAULTS, pkMax: 67 }));
     const row = await msRow(page, "retire");
@@ -56,7 +56,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await noErrors(page, errors);
   });
 
-  test("#51/AK1, AK5: feste Meilensteine mit festem Namen und eigener Person; Pensionskasse und AHV beginnen dort", async ({ page }) => {
+  test("#51/AK1, AK5: fixed milestones with a fixed name and own person; pension fund and AHV start there", async ({ page }) => {
     const errors = await open(page, "milestones");
     for (const id of ["retire", "ahv"]) {
       const row = await msRow(page, id);
@@ -75,14 +75,14 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await noErrors(page, errors);
   });
 
-  test("#51/AK8: Warnung bei Erwerbseinkommen nach dem Bezug der Pensionskasse", async ({ page }) => {
+  test("#51/AK8: warning on earned income after the pension fund withdrawal", async ({ page }) => {
     const errors = await open(page, "flows");
     await page.evaluate(() => { state.flows.income = { mode: "const", value: 12500 }; renderSection(); });
     await expect(page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" })).toContainText("noch 12'500 pro Monat");
     await noErrors(page, errors);
   });
 
-  test("#52/AK1, AK2: Abschnitt Säule 3a mit Konto, Einzahlung und Auszahlungsplan", async ({ page }) => {
+  test("#52/AK1, AK2: pillar 3a section with account, contribution and payout plan", async ({ page }) => {
     const errors = await open(page, "pillar3a");
     await expect(page.locator("#main h2")).toContainText("Säule 3a");
     await expect(field(page, "pillar3a.0.balance")).toBeVisible();
@@ -106,7 +106,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await noErrors(page, errors);
   });
 
-  test("#52/AK8: Einzahlung erscheint in «Ausgaben total» der Jahreswerte", async ({ page }) => {
+  test("#52/AK8: the contribution appears in total spending of the annual values", async ({ page }) => {
     const errors = await open(page);
     const total = async contribution => {
       await page.evaluate(c => { state.returns.source = "fixed"; state.scenarios.sweeps = []; state.pillar3a[0].contribution = c; }, contribution);
@@ -121,7 +121,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await noErrors(page, errors);
   });
 
-  test("#50/AK4: Periode ab dem AHV-Bezug amortisiert direkt", async ({ page }) => {
+  test("#50/AK4: period from the AHV start amortizes directly", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {
       const t = state.realestate.properties[0].mortgage.tranches[1];
@@ -133,7 +133,7 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
     await noErrors(page, errors);
   });
 
-  test("#51/AK6, #52/AK13: ältere Datei wird beim Öffnen übernommen, ein Dialog nennt die Änderungen", async ({ page }) => {
+  test("#51/AK6, #52/AK13: an older file is taken over when opened, a dialog names the changes", async ({ page }) => {
     const errors = await open(page);
     const plan = await page.evaluate(() => {
       const s = JSON.parse(JSON.stringify(state));
@@ -160,8 +160,8 @@ test.describe("Einstellungen, feste Meilensteine und Säule 3a (#25, #50, #52, #
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
-  test("#53/AK1, AK2: Beschriftung inklusive Wohnkosten, Hinweis mit dem Wohnanteil zum Simulationsstart", async ({ page }) => {
+test.describe("Living costs including housing and cash (#53, #54)", () => {
+  test("#53/AK1, AK2: label including housing costs, notice with the housing share at the simulation start", async ({ page }) => {
     const errors = await open(page, "flows");
     await expect(page.locator("#main")).toContainText("Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)");
     // Example plan: housing costs at the simulation start 1'700 per month
@@ -169,7 +169,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
     await noErrors(page, errors);
   });
 
-  test("#53/AK4: Lebenshaltung kleiner als der Wohnanteil ist ein Fehler mit beiden Beträgen", async ({ page }) => {
+  test("#53/AK4: living costs smaller than the housing share are an error with both amounts", async ({ page }) => {
     const errors = await open(page);
     const issues = await page.evaluate(async () => {
       const s = JSON.parse(JSON.stringify(state));
@@ -180,7 +180,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
     await noErrors(page, errors);
   });
 
-  test("#54/AK1, AK4: Aktienquote ohne Cash; Hinweis zur Cash-Regel vor und ab der Pensionierung", async ({ page }) => {
+  test("#54/AK1, AK4: stock ratio without cash; notice on the cash rule before and from retirement", async ({ page }) => {
     const errors = await open(page, "wealth");
     await expect(page.locator("#main")).toContainText("Aktienquote (Aktien am Portfolio aus Aktien und Obligationen)");
     await expect(page.locator("#main")).toContainText("Cash zählt nicht zum Portfolio");
@@ -190,7 +190,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
     await noErrors(page, errors);
   });
 
-  test("#53/AK7, #54/AK8: ältere Datei: Wohnanteil addiert, Hinweise zu Wohnkosten und Cash", async ({ page }) => {
+  test("#53/AK7, #54/AK8: older file: housing share added, notices on housing costs and cash", async ({ page }) => {
     const errors = await open(page);
     const plan = await page.evaluate(() => {
       const s = JSON.parse(JSON.stringify(state));
@@ -213,7 +213,7 @@ test.describe("Lebenshaltung inklusive Wohnen und Cash (#53, #54)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
+test.describe("Pillar 3a: payout plan with date or age (#55)", () => {
   // Invented example: birth 1980-06 (AHV start 06.2045, earliest 06.2040), balance 120'000, interest 0, no contribution.
   const setup = async (page, payouts) => {
     await page.evaluate(p => {
@@ -226,7 +226,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
   const at = (page, j) => page.locator(`tr[data-p3a-row="${j}"] [data-p3a="at"]`);
   const val = (page, j, which) => page.locator(`tr[data-p3a-row="${j}"] [data-p3a="${which}"]`);
 
-  test("#55/AK1, AK2, AK8: Datum oder Alter; Monat und Alter daneben; beim Wechsel bleibt der Zeitpunkt; alte Zeilen sind «Datum»", async ({ page }) => {
+  test("#55/AK1, AK2, AK8: date or age; month and age next to it; switching keeps the point in time; old rows are dates", async ({ page }) => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 61.5, amount: 50000, use: "wealth" }, { date: "2043-01", amount: 1000, use: "wealth" }]);
     await expect(at(page, 0)).toHaveText("12.2041 · Alter 61.5");
@@ -244,7 +244,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
     await noErrors(page, errors);
   });
 
-  test("#55/AK3, AK4: frühestens 5 Jahre vor dem AHV-Bezug auch nach Alter; ohne Vorschau steht «–»", async ({ page }) => {
+  test("#55/AK3, AK4: at the earliest 5 years before the AHV start also by age; without a preview a dash is shown", async ({ page }) => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 59.9, amount: 50000, use: "wealth" }]);
     await expect(page.locator("#val li.err").first()).toContainText("Die Auszahlung im 05.2040 liegt mehr als 5 Jahre vor dem AHV-Bezug (06.2045)");
@@ -254,7 +254,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
     await noErrors(page, errors);
   });
 
-  test("#55/AK4–AK7: Guthaben vor und nach der Auszahlung, Rest im AHV-Bezug; «+ Auszahlung» füllt Zeitpunkt und Betrag vor", async ({ page }) => {
+  test("#55/AK4–AK7: balance before and after the payout, remainder at the AHV start; adding a payout prefills point in time and amount", async ({ page }) => {
     const errors = await open(page);
     await setup(page, [{ kind: "age", years: 61.5, amount: 50000, use: "wealth" }]);
     await expect(val(page, 0, "before")).toHaveText("120'000");
@@ -280,7 +280,7 @@ test.describe("Säule 3a: Auszahlungsplan mit Datum oder Alter (#55)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
+test.describe("Error message at the field only on leaving (#57)", () => {
   const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
   /**
    * #111: Checks that nothing happens during a pause in the input. Instead of waiting a fixed time, the page runs with
@@ -301,7 +301,7 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
   const apiCalls = page => page.evaluate(() => window.__api.splice(0));
   const pause = async page => { await page.clock.runFor(800); expect(await apiCalls(page)).toEqual([]); };
 
-  test("#57/AK1–AK4: Während der Eingabe wartet alles; beim Verlassen Meldung, Vorschau und Prüfliste neu", async ({ page }) => {
+  test("#57/AK1–AK4: during input everything waits; on leaving message, preview and check list anew", async ({ page }) => {
     const errors = await openWithClock(page, "milestones");
     const i = await page.evaluate(() => state.milestones.findIndex(m => m.id === "ahv"));
     const years = field(page, `milestones.${i}.years`);
@@ -346,7 +346,7 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
     await noErrors(page, errors);
   });
 
-  test("#57/AK1, AK2: ungültige Zahl erst beim Verlassen bzw. mit Enter gemeldet", async ({ page }) => {
+  test("#57/AK1, AK2: an invalid number is reported only on leaving or with Enter", async ({ page }) => {
     const errors = await openWithClock(page, "wealth");
     await previewIdle(page); await apiCalls(page);
     const cash = field(page, "wealth.cash");
@@ -362,10 +362,10 @@ test.describe("Fehlermeldung am Feld erst beim Verlassen (#57)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe("Zahleneingabe mit Punkt als Tausendertrennzeichen (#140)", () => {
+test.describe("Number input with a dot as thousands separator (#140)", () => {
   const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
 
-  test("AK1, AK4: Betrag «12.500» wird mit Meldung abgelehnt, der bisherige Wert bleibt", async ({ page }) => {
+  test("AK1, AK4: amount «12.500» is rejected with a message, the previous value remains", async ({ page }) => {
     const errors = await open(page, "wealth");
     const cash = field(page, "wealth.cash");
     const before = await page.evaluate(() => state.wealth.cash);
@@ -382,7 +382,7 @@ test.describe("Zahleneingabe mit Punkt als Tausendertrennzeichen (#140)", () => 
     await noErrors(page, errors);
   });
 
-  test("AK1, AK2: Anzahl Pfade «50.000» und «1e5» werden abgelehnt, Prozent «1.25» bleibt gültig", async ({ page }) => {
+  test("AK1, AK2: number of paths «50.000» and «1e5» are rejected, percent «1.25» stays valid", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.returns.source = "bootstrap"; });
     await nav(page, "Simulation");
@@ -403,8 +403,8 @@ test.describe("Zahleneingabe mit Punkt als Tausendertrennzeichen (#140)", () => 
   });
 });
 
-test.describe("Erwerbseinkommen mit der Teuerung (#58)", () => {
-  test("#58/AK1: Auswahl je Person, Vorschau rechnet sofort neu", async ({ page }) => {
+test.describe("Earned income with inflation (#58)", () => {
+  test("#58/AK1: selection per person, preview recomputes immediately", async ({ page }) => {
     const errors = await open(page, "flows");
     const own = page.locator('input[data-path="flows.incomeIndexed"]');
     await expect(own).toBeVisible();
@@ -428,7 +428,7 @@ test.describe("Erwerbseinkommen mit der Teuerung (#58)", () => {
     await noErrors(page, errors);
   });
 
-  test("#58: neue Planungen und neue zweite Person mit «steigt mit der Teuerung»", async ({ page }) => {
+  test("#58: new plans and a new second person with rises with inflation", async ({ page }) => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "Neue Planung");

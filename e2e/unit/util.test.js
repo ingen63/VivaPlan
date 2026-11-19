@@ -7,19 +7,19 @@ const u = require("../../crates/app/ui/util.js");
 // Thousands separator ' or ’ depending on the ICU version
 const T = "['’]";
 
-test("#87/AK2: esc maskiert HTML-Sonderzeichen", () => {
+test("#87/AK2: esc escapes HTML special characters", () => {
   assert.equal(u.esc('<a href="x">&</a>'), "&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;");
   assert.equal(u.esc(null), "");
   assert.equal(u.esc(5), "5");
 });
 
-test("clamp begrenzt auf den Bereich", () => {
+test("clamp limits to the range", () => {
   assert.equal(u.clamp(5, 0, 3), 3);
   assert.equal(u.clamp(-1, 0, 3), 0);
   assert.equal(u.clamp(2, 0, 3), 2);
 });
 
-test("Monate: ym2i und i2ym sind zueinander invers, ungültige Eingaben ergeben NaN", () => {
+test("months: ym2i and i2ym are inverse to each other, invalid inputs yield NaN", () => {
   assert.equal(u.ym2i("2030-01"), 2030 * 12);
   assert.equal(u.ym2i("2030-12"), 2030 * 12 + 11);
   assert.ok(Number.isNaN(u.ym2i("2030-1")));
@@ -30,7 +30,7 @@ test("Monate: ym2i und i2ym sind zueinander invers, ungültige Eingaben ergeben 
   assert.equal(u.isYM(203007), false);
 });
 
-test("Monate: Anzeige MM.JJJJ und Eingabe M.JJJJ oder MM/JJJJ", () => {
+test("months: display MM.YYYY and input M.YYYY or MM/YYYY", () => {
   assert.equal(u.ymShow("2030-07"), "07.2030");
   assert.equal(u.ymShow("x"), "—");
   assert.equal(u.parseShow("7.2030"), "2030-07");
@@ -40,7 +40,7 @@ test("Monate: Anzeige MM.JJJJ und Eingabe M.JJJJ oder MM/JJJJ", () => {
   assert.equal(u.parseShow("2030-07"), null);
 });
 
-test("quarterEnds zählt März, Juni, September und Dezember", () => {
+test("quarterEnds counts March, June, September and December", () => {
   const jan = u.ym2i("2030-01");
   assert.equal(u.quarterEnds(jan, jan + 12), 4);
   assert.equal(u.quarterEnds(jan, jan + 2), 0);
@@ -48,7 +48,7 @@ test("quarterEnds zählt März, Juni, September und Dezember", () => {
   assert.equal(u.quarterEnds(jan + 5, jan + 5), 0);
 });
 
-test("parseNum liest Tausendertrennzeichen und Dezimalkomma, Leeres ist null", () => {
+test("parseNum reads thousands separators and decimal comma, empty is null", () => {
   assert.equal(u.parseNum("1'234'567"), 1234567);
   assert.equal(u.parseNum("1’234.5"), 1234.5);
   assert.equal(u.parseNum("12,5"), 12.5);
@@ -60,7 +60,7 @@ test("parseNum liest Tausendertrennzeichen und Dezimalkomma, Leeres ist null", (
   assert.equal(u.parseNum("1e400"), null);
 });
 
-test("Zahlenformate: ganze Zahlen, Millionen, Prozent", () => {
+test("number formats: integers, millions, percent", () => {
   assert.match(u.fmtInt(1234567.4), new RegExp(`^1${T}234${T}567$`));
   assert.equal(u.fmtMio(2_500_000), "2.5 Mio");
   assert.equal(u.fmtMio(-1_000_000), "-1 Mio");
@@ -69,24 +69,24 @@ test("Zahlenformate: ganze Zahlen, Millionen, Prozent", () => {
   assert.equal(u.fmtPct(0.012345), "1.235");
 });
 
-test("optNum und optRound", () => {
+test("optNum and optRound", () => {
   assert.equal(u.optNum("2,5", 1), 2.5);
   assert.equal(u.optNum("", 7), 7);
   assert.equal(u.optNum("x", 7), 7);
   assert.equal(u.optRound(0.1 + 0.2), 0.3);
 });
 
-test("rateAt interpoliert linear und setzt ausserhalb konstant fort", () => {
+test("rateAt interpolates linearly and continues constantly outside", () => {
   const t = [[100_000, 0.1], [0, 0.0]];
   assert.equal(u.rateAt(t, -5), 0);
   assert.equal(u.rateAt(t, 0), 0);
   assert.equal(u.rateAt(t, 50_000), 0.05);
   assert.equal(u.rateAt(t, 1e9), 0.1);
   assert.equal(u.rateAt([], 1000), 0);
-  assert.deepEqual(t, [[100_000, 0.1], [0, 0.0]], "die Tabelle bleibt unverändert");
+  assert.deepEqual(t, [[100_000, 0.1], [0, 0.0]], "the table stays unchanged");
 });
 
-test("#87/AK2: Pfadzugriff getPath und setPath", () => {
+test("#87/AK2: path access getPath and setPath", () => {
   const o = { a: { b: [{ c: 1 }] } };
   assert.equal(u.getPath(o, "a.b.0.c"), 1);
   assert.equal(u.getPath(o, "a.x.y"), undefined);
@@ -96,7 +96,7 @@ test("#87/AK2: Pfadzugriff getPath und setPath", () => {
   assert.deepEqual(o, { a: { b: [{ c: 5 }], d: "neu" } });
 });
 
-test("Dateinamen: baseName und seriesShort", () => {
+test("file names: baseName and seriesShort", () => {
   assert.equal(u.baseName("/x/y/Planung.vplan"), "Planung.vplan");
   assert.equal(u.baseName("C:\\x\\Planung.vplan"), "Planung.vplan");
   assert.equal(u.baseName(null), "");
@@ -104,7 +104,7 @@ test("Dateinamen: baseName und seriesShort", () => {
   assert.equal(u.seriesShort("/daten/Eigene.CSV"), "Eigene");
 });
 
-test("#87/AK2: Dauer kurz und als Schätzung mit Spanne", () => {
+test("#87/AK2: duration short and as an estimate with a range", () => {
   assert.equal(u.fmtShort(0.4), "unter 1 s");
   assert.equal(u.fmtShort(45.4), "45 s");
   assert.equal(u.fmtShort(89), "89 s");
@@ -116,7 +116,7 @@ test("#87/AK2: Dauer kurz und als Schätzung mit Spanne", () => {
   assert.match(u.fmtEstimate(100, [0.7, 1.5]), /ca\. <b>2 min<\/b>.*meist 70 s bis 3 min/);
 });
 
-test("#87/AK2: Dauerschätzung der Optimierung", () => {
+test("#87/AK2: duration estimate of the optimization", () => {
   const b = { us: 100, gen: 20, fixedPaths: null };
   const c = { paths: 1000, checkPaths: 2000, strategies: ["standard", "vpw"] };
   // 50 evaluations × 1000 paths × 80 µs + 1000 × 20 µs + 3 × 2000 × 100 µs = 4.62 s
@@ -127,7 +127,7 @@ test("#87/AK2: Dauerschätzung der Optimierung", () => {
   assert.ok(u.optSecondsFor({ us: 10, gen: 50, fixedPaths: null }, c, 10) > 0);
 });
 
-test("Stufen einer Variation, auch über Monate", () => {
+test("levels of a variation, also over months", () => {
   assert.equal(u.sweepSteps(0.4, 0.6, 0.1), 3);
   assert.equal(u.sweepSteps(0.2, 0.8, 0.3), 3);
   assert.equal(u.sweepSteps(1, 0, 0.1), 0);
@@ -136,7 +136,7 @@ test("Stufen einer Variation, auch über Monate", () => {
   assert.equal(u.sweepSteps("2031-01", "2030-01", 6, true), 0);
 });
 
-test("#118/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehlende Werte immer am Ende", () => {
+test("#118/AK3, AK4: sortBy sorts numbers by value, texts alphabetically, missing values always at the end", () => {
   const v = x => x;
   assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v), [2, 9, 10, 100, null]);
   assert.deepEqual(u.sortBy([10, 9, 100, null, 2], v, -1), [100, 10, 9, 2, null]);
@@ -150,12 +150,12 @@ test("#118/AK3, AK4: sortBy sortiert Zahlen nach Wert, Texte nach Alphabet, fehl
   assert.deepEqual(u.sortBy(l, o => o.k, -1).map(o => o.n), ["x", "z", "y"]);
 });
 
-test("#144/AK2: Meldung bei unbekannter Formatkennung nennt die Kennung", () => {
+test("#144/AK2: message on an unknown format identifier names the identifier", () => {
   assert.deepEqual(u.KNOWN_FORMATS, ["vivaplan/1", "pensionsplaner/1"]);
   assert.equal(u.unknownFormatText("vivaplan/2"), "Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.");
 });
 
-test("#140/AK1: Betrag und Ganzzahl nehmen einen Punkt mit drei Ziffern nicht als Dezimalzahl", () => {
+test("#140/AK1: amount and integer do not take a dot with three digits as a decimal number", () => {
   for (const t of ["1.234", "12.500", "1.234.567", "50.000", "-1.250", "1'234.567"]) {
     assert.equal(u.parseAmount(t), null, t);
     assert.equal(u.ambiguousThousands(t), true, t);
@@ -163,7 +163,7 @@ test("#140/AK1: Betrag und Ganzzahl nehmen einen Punkt mit drei Ziffern nicht al
   assert.match(u.AMBIGUOUS_TEXT, /Tausendertrennzeichen/);
 });
 
-test("#140/AK2: Exponent-, Hex- und Textschreibweise werden in allen Zahlenfeldern abgelehnt", () => {
+test("#140/AK2: exponent, hex and text notation are rejected in all number fields", () => {
   for (const t of ["0x10", "1e5", "1E5", "Infinity", "-Infinity", "NaN", "12abc", "1.2.3", "--1"]) {
     assert.equal(u.parseNum(t), null, t);
     assert.equal(u.parseAmount(t), null, t);
@@ -171,7 +171,7 @@ test("#140/AK2: Exponent-, Hex- und Textschreibweise werden in allen Zahlenfelde
   }
 });
 
-test("#140/AK3: gültige Schreibweisen bleiben gültig", () => {
+test("#140/AK3: valid notations stay valid", () => {
   const cases = { "1'234.50": 1234.5, "1’234,5": 1234.5, "12,5": 12.5, "1 234": 1234, "-3": -3, "+4": 4, "1234": 1234, "0.5": 0.5, ".5": 0.5, "7258": 7258 };
   for (const [t, v] of Object.entries(cases)) {
     assert.equal(u.parseNum(t), v, t);

@@ -237,50 +237,60 @@ class ExemptionsTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
+def run_with_pending(files, pending, *args):
+    """Runs the check in-process with `pending` as transition list; returns (exit code, output)."""
+    repo = Repo(files)
+    saved = check_english.PENDING
+    check_english.PENDING = pending
+    try:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = check_english.main([*args, "--root", str(repo.root)])
+    finally:
+        check_english.PENDING = saved
+        repo.close()
+    return code, out.getvalue()
+
+
 class TransitionTest(unittest.TestCase):
     FILES = {"e2e/demo.spec.js": "// Entnahme pro Monat\n", "crates/demo/src/lib.rs": "// per month\n"}
+    HIT = "e2e/demo.spec.js:1: comment: // Entnahme pro Monat"
 
-    # #165/AK4: The transition list holds all paths not yet converted.
-    def test_ak4_transition_list_holds_unconverted_paths(self):
-        self.assertEqual(
-            sorted(check_english.PENDING),
-            sorted(["e2e/"]),
-        )
+    # #165/AK4, #168/AK1: All paths are converted; the transition list is empty.
+    def test_ak4_transition_list_is_empty(self):
+        self.assertEqual(check_english.PENDING, [])
 
     # #165/AK4: Paths on the transition list are skipped; --all checks them anyway.
     def test_ak4_pending_paths_are_skipped(self):
-        r = check(self.FILES)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertIn("transition list", r.stdout)
-        r = check(self.FILES, "--all")
-        self.assertEqual(r.returncode, 1)
-        self.assertEqual(hits(r), ["e2e/demo.spec.js:1: comment: // Entnahme pro Monat"])
+        code, out = run_with_pending(self.FILES, ["e2e/"])
+        self.assertEqual(code, 0, out)
+        self.assertIn("transition list", out)
+        code, out = run_with_pending(self.FILES, ["e2e/"], "--all")
+        self.assertEqual(code, 1)
+        self.assertIn(self.HIT, out)
 
     # #165/AK4: An explicit path limits the check, e.g. to one package during its conversion.
     def test_ak4_explicit_path(self):
-        r = check(self.FILES, "--all", "crates/demo")
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        code, out = run_with_pending(self.FILES, ["e2e/"], "--all", "crates/demo")
+        self.assertEqual(code, 0, out)
 
     # #165/AK4: --gate (make test-quiet, workflow) skips while the list is not empty ...
     def test_ak4_gate_skips_while_list_not_empty(self):
-        r = check(self.FILES, "--gate")
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertIn("skipped", r.stdout)
+        code, out = run_with_pending(self.FILES, ["e2e/"], "--gate")
+        self.assertEqual(code, 0, out)
+        self.assertIn("skipped", out)
 
     # #165/AK4: ... and checks everything once the list is empty.
     def test_ak4_gate_checks_with_empty_list(self):
-        repo = Repo(self.FILES)
-        saved = check_english.PENDING
-        check_english.PENDING = []
-        try:
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
-                code = check_english.main(["--gate", "--root", str(repo.root)])
-        finally:
-            check_english.PENDING = saved
-            repo.close()
+        code, out = run_with_pending(self.FILES, [], "--gate")
         self.assertEqual(code, 1)
-        self.assertIn("e2e/demo.spec.js:1: comment: // Entnahme pro Monat", out.getvalue())
+        self.assertIn(self.HIT, out)
+
+    # #165/AK4, #168/AK1: With the real (empty) list, the script itself checks e2e/ under --gate.
+    def test_ak4_gate_checks_e2e_with_real_list(self):
+        r = check(self.FILES, "--gate")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertEqual(hits(r), [self.HIT])
 
     # #165/AK4: Wrong usage is an error of its own (2), not a silent pass.
     def test_ak4_usage_error(self):

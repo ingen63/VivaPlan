@@ -8,8 +8,8 @@ const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, result
 // ---------------------------------------------------------------------------------------------
 // #70 welcome dialog, #71 first steps, #72 result in words
 
-test.describe("#70 Willkommensdialog", () => {
-  test("AK1: erscheint beim ersten Start (Testzugang) mit drei Wahlmöglichkeiten, sonst nicht", async ({ page }) => {
+test.describe("#70 Welcome dialog", () => {
+  test("AK1: appears on the first start (test access) with three choices, otherwise not", async ({ page }) => {
     let errors = await open(page);
     await expect(welcome(page)).not.toHaveAttribute("open", "");
     await noErrors(page, errors);
@@ -23,7 +23,7 @@ test.describe("#70 Willkommensdialog", () => {
     await noErrors(page, errors);
   });
 
-  test("AK2: «Beispiel erkunden» lädt die Beispielplanung und öffnet die Hilfe «Was VivaPlan kann»", async ({ page }) => {
+  test("AK2: explore example loads the example plan and opens the help page on what VivaPlan can do", async ({ page }) => {
     const errors = await open(page, "welcome");
     await welcome(page).getByRole("button", { name: /Beispiel erkunden/ }).click();
     await expect(welcome(page)).not.toHaveAttribute("open", "");
@@ -32,7 +32,7 @@ test.describe("#70 Willkommensdialog", () => {
     await noErrors(page, errors);
   });
 
-  test("AK3: «Eigene Planung beginnen» öffnet «Haushalt & Projekt» und blendet die Checkliste ein", async ({ page }) => {
+  test("AK3: start own plan opens the household and project section and shows the checklist", async ({ page }) => {
     // Window height like the desktop app: the checklist is below the preview and key figures and must be scrolled into view.
     await page.setViewportSize({ width: 1440, height: 900 });
     const errors = await open(page, "welcome");
@@ -46,7 +46,7 @@ test.describe("#70 Willkommensdialog", () => {
     await noErrors(page, errors);
   });
 
-  test("AK4: «Leere Planung» wirkt wie Datei → Neu", async ({ page }) => {
+  test("AK4: empty plan acts like File → New", async ({ page }) => {
     const errors = await open(page, "welcome");
     await welcome(page).getByRole("button", { name: /Leere Planung/ }).click();
     // #95: «Neu» takes over the empty plan only after two calls to the engine. «Haushalt & Projekt» is already
@@ -58,7 +58,7 @@ test.describe("#70 Willkommensdialog", () => {
     await noErrors(page, errors);
   });
 
-  test("AK5, AK8: Esc schliesst ohne Änderung und ohne Hilfe; Tab und Enter wählen", async ({ page }) => {
+  test("AK5, AK8: Esc closes without a change and without help; Tab and Enter select", async ({ page }) => {
     let errors = await open(page, "welcome");
     const before = await page.evaluate(() => JSON.stringify(state));
     await page.keyboard.press("Escape");
@@ -77,7 +77,7 @@ test.describe("#70 Willkommensdialog", () => {
     await noErrors(page, errors);
   });
 
-  test("AK7: Hilfe → «Willkommen …» öffnet den Dialog; bei ungespeicherten Änderungen fragt die App nach", async ({ page }) => {
+  test("AK7: Help → Welcome opens the dialog; with unsaved changes the app asks back", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("Geändert");
     await field(page, "project.name").press("Tab");
@@ -92,8 +92,8 @@ test.describe("#70 Willkommensdialog", () => {
   });
 });
 
-test.describe("#71 Erste Schritte", () => {
-  test("AK1, AK5: acht Schritte des Schnellstarts mit Fortschritt", async ({ page }) => {
+test.describe("#71 First steps", () => {
+  test("AK1, AK5: eight steps of the quick start with progress", async ({ page }) => {
     const errors = await open(page);
     await expect(steps(page)).toBeVisible();
     await expect(steps(page).locator("li a")).toHaveText(["1. Haushalt & Projekt", "2. Meilensteine", "3. Vorsorge", "4. Einnahmen & Ausgaben",
@@ -102,7 +102,7 @@ test.describe("#71 Erste Schritte", () => {
     await noErrors(page, errors);
   });
 
-  test("AK2: Klick öffnet den Abschnitt, ⓘ die Hilfe zum Schritt", async ({ page }) => {
+  test("AK2: click opens the section, ⓘ the help on the step", async ({ page }) => {
     const errors = await open(page);
     await steps(page).getByText("3. Vorsorge").click();
     await expect(page.locator("#nav a.active")).toContainText("Vorsorge");
@@ -111,7 +111,7 @@ test.describe("#71 Erste Schritte", () => {
     await noErrors(page, errors);
   });
 
-  test("AK3, AK4, AK9: Änderung oder Haken erledigt einen Schritt, Rückgängig nimmt ihn nicht weg, gespeichert nur in den Einstellungen", async ({ page }) => {
+  test("AK3, AK4, AK9: a change or a check mark completes a step, undo does not remove it, saved only in the settings", async ({ page }) => {
     const errors = await open(page);
     await field(page, "project.name").fill("Geändert");
     await field(page, "project.name").press("Tab");
@@ -129,14 +129,14 @@ test.describe("#71 Erste Schritte", () => {
     await noErrors(page, errors);
   });
 
-  test("AK3: «Simulation starten» ist nach einer Simulation erledigt, nicht nach einem Abbruch", async ({ page }) => {
+  test("AK3: the start simulation step is completed after a simulation, not after a cancel", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     expect((await prefs(page)).firstSteps.done).toEqual(["run"]);
     await noErrors(page, errors);
   });
 
-  test("AK6, AK7: ausblenden, über das Menü einblenden; alles erledigt klappt zu", async ({ page }) => {
+  test("AK6, AK7: hide, show via the menu; everything completed collapses", async ({ page }) => {
     const errors = await open(page);
     await steps(page).locator("button.x").click();
     await expect(steps(page)).toBeHidden();
@@ -152,7 +152,7 @@ test.describe("#71 Erste Schritte", () => {
     await noErrors(page, errors);
   });
 
-  test("AK8: «Eigene Planung beginnen» blendet die Checkliste ein und setzt sie zurück", async ({ page }) => {
+  test("AK8: start own plan shows the checklist and resets it", async ({ page }) => {
     const errors = await open(page);
     await steps(page).locator('li[data-step="taxes"] input').check();
     await steps(page).locator("button.x").click();
@@ -164,8 +164,8 @@ test.describe("#71 Erste Schritte", () => {
   });
 });
 
-test.describe("#72 Ergebnis in Worten", () => {
-  test("AK1, AK3, AK6: mehrere Läufe mit Einordnung, ungünstigster Lauf und nächster Schritt", async ({ page }) => {
+test.describe("#72 Result in words", () => {
+  test("AK1, AK3, AK6: several runs with classification, worst run and next step", async ({ page }) => {
     const errors = await open(page, "results/bootstrap/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const v = page.locator("#verdict");
@@ -181,14 +181,14 @@ test.describe("#72 Ergebnis in Worten", () => {
     await noErrors(page, errors);
   });
 
-  test("AK2: Grenzen der Einordnung am angezeigten, gerundeten Wert", async ({ page }) => {
+  test("AK2: limits of the classification at the displayed, rounded value", async ({ page }) => {
     const errors = await open(page);
     expect(await page.evaluate(() => [0.95, 0.9496, 0.9494, 0.8, 0.7996, 0.7994, 0].map(rateClass)))
       .toEqual(["hoch", "hoch", "mittel", "mittel", "mittel", "tief", "tief"]);
     await noErrors(page, errors);
   });
 
-  test("AK4, AK5, AK7: Einzellauf, Beträge folgen Nominal/Kaufkraft, erschöpftes Vermögen verweist auf die Optimierung", async ({ page }) => {
+  test("AK4, AK5, AK7: single run, amounts follow nominal/purchasing power, depleted wealth refers to the optimization", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const v = page.locator("#verdict");
@@ -207,7 +207,7 @@ test.describe("#72 Ergebnis in Worten", () => {
     await noErrors(page, errors);
   });
 
-  test("AK6: gespeicherte Ergebnisse aus der Liste zeigen den Text", async ({ page }) => {
+  test("AK6: saved results from the list show the text", async ({ page }) => {
     const errors = await open(page, "runsflow/view/mem");
     await expect(page.locator(".savedbar")).toBeVisible();
     await expect(page.locator("#verdict")).toContainText("der Läufe reicht das Vermögen bis");
@@ -217,12 +217,12 @@ test.describe("#72 Ergebnis in Worten", () => {
 
 // ---------------------------------------------------------------------------------------------
 // #61 Disclaimer: footer of the results and full text
-test.describe("#61 Haftungsausschluss", () => {
+test.describe("#61 Disclaimer", () => {
   const FOOT = "Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.";
   const prefs = page => page.evaluate(() => JSON.parse(localStorage.getItem("rp.settings") || "{}"));
   const helpTitle = page => page.locator("#help:not([hidden]) #helpBody h1").first();
 
-  test("AK2: im Browser mit Testzugang einmal bestätigen, danach gespeichert (Browserspeicher)", async ({ page }) => {
+  test("AK2: in the browser with test access confirm once, saved afterwards (browser storage)", async ({ page }) => {
     await page.goto("/#disclaimer");
     await page.waitForSelector("html[data-disclaimer='open']");
     await page.locator("#disclaimerCheck").check();
@@ -234,7 +234,7 @@ test.describe("#61 Haftungsausschluss", () => {
     await expect(page.locator("#disclaimer")).not.toHaveAttribute("open", "");
   });
 
-  test("AK3: Fusszeile auf allen Ergebnisseiten", async ({ page }) => {
+  test("AK3: footer on all result pages", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("#results")).toBeVisible();
     for (const tab of await page.locator('[data-action="rtab"]').all()) {
@@ -247,7 +247,7 @@ test.describe("#61 Haftungsausschluss", () => {
     await noErrors(page, errors);
   });
 
-  test("AK3: Fusszeile unter dem Ergebnis der Optimierung", async ({ page }) => {
+  test("AK3: footer below the result of the optimization", async ({ page }) => {
     const errors = await open(page, "optimize/bootstrap");
     await expect(page.locator("#optFoot")).toHaveCount(0);
     // small computation: only the footer is checked, not the result
@@ -259,7 +259,7 @@ test.describe("#61 Haftungsausschluss", () => {
     await noErrors(page, errors);
   });
 
-  test("AK4: vollständiger Text im Dialog «Über VivaPlan» erreichbar und als Seite der Hilfe, mit Stand", async ({ page }) => {
+  test("AK4: full text reachable in the about dialog and as a help page, with date", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => command("about"));
     await expect(page.locator("#ask")).toHaveAttribute("open", "");

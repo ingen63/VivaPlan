@@ -28,7 +28,8 @@ Nutzer mit «Sie» an. Die englischen Namen für Schweizer Fachbegriffe legt [`G
 Kürzel (AHV, PK, 3a, SARON …) bleiben als Bezeichner erlaubt. Serialisierte Namen (Schlüssel der Projektdatei,
 Ergebnisfelder, IPC-Befehle, `data-*`-Attribute, CSS-Klassen) bleiben unverändert, auch wenn sie deutsch sind.
 
-Neuer und geänderter Code ist sofort englisch. Bestehender Code wird je Paket umgestellt (#169, #166, #167, #168).
+Neuer und geänderter Code ist sofort englisch. Der bestehende Code ist je Paket umgestellt (#169, #166, #167, #168); die
+Übergangsliste ist leer, die Prüfung läuft deshalb auch in `make test-quiet` und im Workflow (`--gate`).
 Die Prüfung `make english` (`tools/check-english.sh`, Regeln in `tools/check_english.py`) meldet deutsche Kommentare
 (auch Doku-Kommentare und Python-Docstrings) und deutsche Testnamen in `crates/`, `e2e/`, `fuzz/` und `tools/` mit Datei
 und Zeile (Rust, JavaScript, Python, Shell):
@@ -415,7 +416,7 @@ Die Testqualität wird auf mehreren Ebenen gemessen (Details und Schichten: `doc
 |---|---|---|---|
 | Ausführung | cargo-nextest (Profil `ci`, Wiederholungen, flaky = Fehler) | `make test` | `junit.xml` |
 | Statische Prüfung | clippy mit `-D warnings` (Workspace und `fuzz/`, Job `clippy`) | `make clippy` | Log des Laufs |
-| Sprache im Code | `tools/check-english.sh` (Job `english`, ab leerer Übergangsliste auch in `make test-quiet`) | `make english` | Datei:Zeile im Log |
+| Sprache im Code | `tools/check-english.sh` (Job `english` und `make test-quiet`, Übergangsliste leer seit #168) | `make english` | Datei:Zeile im Log |
 | Abdeckung | cargo-llvm-cov (Gate: Zeilen ≥ 80 % je Paket, `tools/coverage-min`) | `make coverage` | HTML, LCOV, Cobertura |
 | Wirksamkeit | cargo-mutants (PR und nächtlich: nur geänderte Zeilen seit dem letzten erfolgreichen nächtlichen Lauf; voll: lokal oder manuell in Actions) | `make mutants`, `make mutants-diff` | `local/mutants.out/` (`missed.txt`) |
 | Eingabebreite | proptest (`crates/engine/tests/proptest_parsers.rs`, zufällige Planungen in `proptest_plans.rs`), cargo-fuzz (`fuzz/`, ganze Rechnung im Ziel `run_plan`) | `make proptest`, `make fuzz` | Fehlerfälle, Korpora |
