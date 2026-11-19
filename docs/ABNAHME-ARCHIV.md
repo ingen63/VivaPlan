@@ -962,6 +962,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #165/AK4 | Übergangsliste noch nicht umgestellter Pfade; ist sie leer, läuft die Prüfung in `make test-quiet` und im Workflow mit. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_…» (6 Tests) | 19.11.2026 ok: `make test-quiet` ruft `--gate` auf (übersprungen, 6 Pfade); Job `english` in `test-quality.yml` (YAML gültig, auf GitHub noch nicht gelaufen) |
 | #165/AK5 | Tests des Skripts (Treffer, kein Treffer, Ausnahmen) wie bei `check-network-free.sh`. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) (16 Tests) | 19.11.2026 ok |
 
+### #166 Code intern englisch: Rechenkern
+
+[Issue #166](https://github.com/ingen63/VivaPlan/issues/166) · geschlossen · Umsetzung: 0bd9e13 … 82be2e0 (Kommentare je Datei, 9730888 Bezeichner und Testnamen)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #166/AK1 | `tools/check-english.sh` meldet für `crates/engine/` keine Treffer; die Pfade sind aus der Übergangsliste entfernt. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_transition_list_holds_unconverted_paths»; `tools/check-english.sh --all crates/engine` | 19.11.2026 ok: keine Treffer in 88 Dateien; Übergangsliste nur noch App, e2e |
+| #166/AK2 | Bezeichner und Testnamen folgen dem Glossar; Kriterien-Bezüge bleiben erhalten (`#27/AK2`, `issue_27_ak2_…`, `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`). | ☑ | **gilt** | kein Test (Vergleich der Kennungen vor und nach der Umstellung) | 19.11.2026 ok: `#Nr/AKn`, `issue_Nr_akn` in `crates/engine` vor 06dd6ba und nach 82be2e0 identisch; Modul `example_neu` nach der Vorlage `Neu.vplan` benannt |
+| #166/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests), [test_check_english.py](../tools/test_check_english.py) (16 Tests) | 19.11.2026 ok: alles grün, Golden-Dateien unverändert; Abdeckung vorher/nachher Engine 99,06/99,13 %, Kommandozeile 96,07/96,45 %, App 91,38/91,33 % (App unverändert, Unterschied durch lokale `shiller-index.ods`) |
+| #166/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Vergleich aller String-Literale vor und nach der Umstellung) | 19.11.2026 ok: einziger Unterschied das Formatargument `{ferien:?}` → `{holiday:?}`; Assert-Meldungen in Tests bleiben deutsch |
+
 ### #169 Code intern englisch: Kommandozeile, fuzz und tools
 
 [Issue #169](https://github.com/ingen63/VivaPlan/issues/169) · geschlossen · Umsetzung: da91d7b, 190c6b4
