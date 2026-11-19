@@ -73,12 +73,51 @@ Dateidialoge stehen in Texttabellen je Sprache: `crates/app/ui/i18n/<sprache>.js
 - **Feste Meilensteine** (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`) speichern keinen Namen; die Oberfläche zeigt
   `milestone.<id>` aus der Tabelle (`msLabel`). `upgrade.rs` entfernt die deutschen Standardnamen älterer Dateien, ein
   eigener Name von Start oder Ende bleibt. Der Rechenkern setzt für Meldungen und Ereignisse den deutschen Namen anhand
-  der `id` ein (`Milestone::label`, bis #176).
+  der `id` ein (`Milestone::label`, bis #176); als Parameter einer Meldung ist ein fester Meilenstein die Meldung
+  `milestone_<id>` (`Milestone::name_arg`, `model::fixed_milestone_message`), die Oberfläche übersetzt sie.
 - **Prüfungen:** `tools/check_ui_texts.py` (in `make test-quiet`, `make ui-texts`, Job `english`) meldet deutsche Texte
   in `crates/app/ui/*.js`, `index.html` und `crates/app/src/*.rs` ausserhalb der Tabelle; Ausnahme mit
   `i18n: allow (Grund)` auf der Zeile. Der Rust-Test `issue_170_ak4_tables_are_complete` vergleicht die Schlüssel
   aller Tabellen mit `de.json` (vorhanden, nicht leer, gleiche Platzhalter). `e2e/ui-sprache.spec.js` prüft Wechsel,
   Rückfall und Formate mit einer Pseudo-Sprache.
+
+### Meldungscodes des Rechenkerns (#171)
+
+Jede Meldung, die der Rechenkern an die Oberfläche gibt, ist eine `message::Message`: ein stabiler Code (englisch,
+snake_case, z. B. `pillar3a_over_max`), Parameter als Werte (Zahlen, Namen, Monate `JJJJ-MM`, Listen und verschachtelte
+Meldungen, nie formatierter Text) und der daraus gebildete deutsche Text. Dazu gehören Prüfmeldungen (`Issue`:
+`message`, `code`, `params`), Ereignistexte der Simulation (`Event`: `text`, `code`, `params`), Gründe und Hinweise in
+den Ergebnissen (`PropertyEvent.reason`/`note`, `Renewal.emergencySale`, `BucketRefill.reason`/`returnBasis`,
+`NeedBasis.source`), die Bezeichnung des Laufs (`label`, z. B. `path_bootstrap`), die Basis der Vorschau (`basis`),
+Hinweise von `upgrade_plan`, `import_legacy`, `import_shiller`/`import_snb` (`notes`) und alle Fehler
+(`Error::Invalid`/`Io` tragen eine Meldung, `Error::message()`; `error` in den Antworten). Als eigenes Objekt
+erscheint eine Meldung als `{ "code", "params", "text" }`.
+
+- **Tabelle:** `crates/engine/src/message.rs`, Makro `codes!` am Ende: Code ⇒ deutsche Vorlage (Enum `Code`, ein
+  Tippfehler im Code ist ein Übersetzungsfehler). Aufbau mit `msg!(code, name = wert, …)`. Platzhalter `{name}` oder
+  `{name:format}`: ohne Format Text, Zahl, Liste (", ") oder verschachtelte Meldung; `int` gerundet mit `'`
+  (12'500), `fix0`–`fix2` feste Nachkommastellen, `pct0`–`pct2` Anteil × 100, `ym` Monat als MM.JJJJ, `lines` Liste
+  zeilenweise. Geldbeträge der Ereignisse sind Zahlen mit `{x:fix0} {currency}` (Parameter `currency`). Parameter
+  sind `message::Arg` (Zahl, Text, Liste, Meldung), keine JSON-Maps: Läufe mit vielen Pfaden erzeugen viele
+  Ereignisse; der Text entsteht erst bei Gebrauch, und `batch::run_all`/`run_paths`/`run_with_bands` behalten nur
+  Zusammenfassung und Bezeichnung (`summary_only`), damit die Ereignislisten parallel freigegeben werden.
+- **Oberfläche:** dieselben Vorlagen stehen als `engine.<code>` in `crates/app/ui/i18n/<sprache>.json`. `engineText` in
+  `util.js` (Aufruf `msgText(m)`) formatiert genau wie der Rechenkern (auch Rundung bei Gleichstand auf die gerade
+  Ziffer wie `format!`); fehlt der Code in der Tabelle, erscheint der mitgelieferte `text`. Fehler der Befehle kommen
+  in der Desktop-App als Meldung (`CmdError`), vom Entwicklungsserver als `{error, code, params}`; `api.js` macht daraus
+  einen `Error` mit `code` und `params`, `errText` übersetzt ihn. Die Oberfläche wertet keine Texte des Rechenkerns
+  mehr aus, nur Codes (`isCancelled`: `cancelled`, `randomPath`: `path_bootstrap`/`path_random`).
+- **Kommandozeile und Golden-Dateien** verwenden den deutschen Text; bis #176 bleibt er unverändert. Der
+  Golden-Vergleich (`crates/engine/tests/golden.rs`, `without_codes`) entfernt `code` und `params` und vergleicht eine
+  alleinstehende Meldung mit ihrem Text.
+- **Tests (AK3):** `issue_171_ak3_examples_file_is_current` (Rechenkern) schreibt je Code ein Beispiel
+  (`message::example`: Werte nach Format der Platzhalter) nach `e2e/unit/engine-messages.json`; ein neuer Code macht
+  die Datei veraltet (neu schreiben mit `MESSAGES_UPDATE=1 cargo nextest run -p vivaplan-engine -E
+  'test(issue_171_ak3)'`). `e2e/unit/engine-messages.test.js` rendert jedes Beispiel mit `engineText` und der Tabelle
+  und verlangt genau den Text des Rechenkerns; `issue_171_ak3_engine_codes_render_the_engine_text` (App, in
+  `make test-quiet`) prüft dasselbe mit `message::render` und meldet Schlüssel `engine.*` ohne Code.
+- **Neue Meldung:** Code und Vorlage in `codes!`, gleicher Schlüssel `engine.<code>` in `de.json` (und den übrigen
+  Tabellen), Beispieldatei neu schreiben.
 
 ## Desktop-App
 

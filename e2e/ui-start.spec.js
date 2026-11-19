@@ -212,7 +212,7 @@ test.describe("Start and navigation", () => {
         const plan = JSON.parse(JSON.stringify(state));
         delete plan.returns.strategy; plan.returns.series = series;
         const notes = await adopt(plan);
-        r.push({ strategy: state.returns.strategy, series: state.returns.series, notes });
+        r.push({ strategy: state.returns.strategy, series: state.returns.series, notes: notes.map(msgText) }); // #171: notes are messages
       }
       return r;
     });
@@ -232,7 +232,7 @@ test.describe("Start and navigation", () => {
       const plan = JSON.parse(JSON.stringify(state));
       plan.returns.strategy = { stocks: "chPictet", bonds: "chPictet" };
       const notes = await adopt(plan);
-      return { strategy: state.returns.strategy, notes };
+      return { strategy: state.returns.strategy, notes: notes.map(msgText) }; // #171: notes are messages
     });
     expect(out.strategy).toMatchObject({ stocks: "chJst", bonds: "ch" });
     expect(out.notes.join(" ")).toContain("für die Aktien «Schweiz (JST)» und für die Obligationen «Eidgenossenschaft 10 Jahre»");

@@ -110,10 +110,54 @@ const KNOWN_FORMATS = ["vivaplan/1", "pensionsplaner/1"];
 /** Message for an unknown format id; the same text as in the engine (`model::unknown_format`). */
 const unknownFormatText = f => tr("file.unknownFormat", { f });
 
+// #171: Messages of the engine `{code, params, text}`. The text comes from the text table (key `engine.<code>`), formatted
+// exactly as the engine renders its German text (crates/engine/src/message.rs): placeholder `{name}` or `{name:format}`;
+// without a format a text as is, a number as printed by the engine, a list joined by ", ", a nested message from its
+// own template; `int` rounded with thousands separator ', `fix0`–`fix2` fixed decimals (ties to even, as in Rust),
+// `pct0`–`pct2` the same for a fraction × 100, `ym` a month YYYY-MM as MM.YYYY, `lines` a list one per line.
+// Unknown code (or no table entry): the text sent along. `lookup(key)` returns the template or undefined.
+
+/** Rounded integer with thousands separator ' (12'500), like `message::group` of the engine. */
+function groupInt(v) {
+  const n = Math.sign(v) * Math.round(Math.abs(v));
+  return (n < 0 ? "-" : "") + String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+}
+
+/** `x.toFixed(d)`, but an exact tie is rounded to the even digit like `format!("{:.d}")` in Rust. */
+function fixedEven(x, d) {
+  const r = x.toFixed(d);
+  if (!Number.isFinite(x)) return r;
+  const long = x.toFixed(d + 60), dot = long.indexOf("."), keep = d === 0 ? dot : dot + 1 + d;
+  return /^50*$/.test(long.slice(d === 0 ? dot + 1 : keep)) && /[13579]$/.test(r) ? long.slice(0, keep) : r;
+}
+
+function engineValue(v, format, lookup) {
+  if (v === null || v === undefined) return "";
+  if (Array.isArray(v)) return v.map(x => engineValue(x, format, lookup)).join(format === "lines" ? "\n" : ", ");
+  if (typeof v === "object") return engineText(v, lookup);
+  if (typeof v === "string") {
+    const i = v.indexOf("-");
+    return format === "ym" && i >= 0 ? `${v.slice(i + 1)}.${v.slice(0, i)}` : v;
+  }
+  if (typeof v !== "number") return String(v);
+  if (format === "int") return groupInt(v);
+  const f = /^(fix|pct)([012])$/.exec(format);
+  return f ? fixedEven(f[1] === "pct" ? v * 100 : v, +f[2]) : String(v);
+}
+
+function engineText(m, lookup) {
+  if (m === null || m === undefined) return "";
+  if (typeof m !== "object") return String(m);
+  const template = m.code ? lookup(`engine.${m.code}`) : undefined;
+  if (template === undefined) return String(m.text ?? m.message ?? "");
+  const params = m.params || {};
+  return template.replace(/\{(\w+)(?::(\w+))?\}/g, (all, k, f) => (k in params ? engineValue(params[k], f || "", lookup) : all));
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
     rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
-    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText,
+    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText, engineText, groupInt, fixedEven,
   };
 }

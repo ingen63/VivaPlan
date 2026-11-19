@@ -172,7 +172,7 @@ mod tests {
                 .split('{')
                 .skip(1)
                 .filter_map(|p| p.split_once('}').map(|(n, _)| n.to_string()))
-                .filter(|n| !n.is_empty() && n.chars().all(|c| c.is_alphanumeric() || c == '_'))
+                .filter(|n| !n.is_empty() && n.chars().all(|c| c.is_alphanumeric() || c == '_' || c == ':'))
                 .collect();
             v.sort();
             v
@@ -189,7 +189,12 @@ mod tests {
             let t = read(&name);
             let missing: Vec<&String> = de.keys().filter(|k| !t.contains_key(*k)).collect();
             let extra: Vec<&String> = t.keys().filter(|k| !de.contains_key(*k)).collect();
-            let empty: Vec<&String> = t.iter().filter(|(_, v)| v.trim().is_empty()).map(|(k, _)| k).collect();
+            // #171: `engine.empty` is empty in every language (default of an engine field without a text).
+            let empty: Vec<&String> = t
+                .iter()
+                .filter(|(k, v)| v.trim().is_empty() && !de[*k].is_empty())
+                .map(|(k, _)| k)
+                .collect();
             let params: Vec<&String> = t
                 .iter()
                 .filter(|(k, v)| de.get(*k).is_some_and(|d| placeholders(d) != placeholders(v)))
@@ -201,6 +206,31 @@ mod tests {
             assert!(params.is_empty(), "{name}: andere Platzhalter {params:?}");
         }
         assert_eq!(tables, languages().len());
+    }
+
+    /// #171/AK3: Every message code of the engine has its template `engine.<code>` in the German table, and the
+    /// template renders the example of the engine to exactly the German text of the engine. Keys `engine.*` without a
+    /// code are not allowed. (The test of the user interface `e2e/unit/engine-messages.test.js` checks the same with
+    /// `engineText` of util.js.)
+    #[test]
+    fn issue_171_ak3_engine_codes_render_the_engine_text() {
+        use engine::message::{example, render, Code};
+        let de = &parsed()["de"];
+        let mut wrong = vec![];
+        for &code in Code::ALL {
+            let key = format!("engine.{}", code.as_str());
+            let m = example(code);
+            match de.get(&key) {
+                Some(t) if render(t, m.args()) == m.text() => {}
+                other => wrong.push(format!("{key}: {other:?}")),
+            }
+        }
+        assert!(wrong.is_empty(), "{wrong:#?}");
+        let stale: Vec<&String> = de
+            .keys()
+            .filter(|k| k.strip_prefix("engine.").is_some_and(|c| Code::parse(c).is_none()))
+            .collect();
+        assert!(stale.is_empty(), "{stale:?}");
     }
 
     #[test]

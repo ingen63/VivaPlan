@@ -129,8 +129,13 @@ const I18n = (() => {
     if (m) use(m[1]).catch(e => report(e.message));
   });
 
+  /** #171: Text of a message of the engine (`{code, params, text}`) in the current language (`engineText`, util.js). */
+  const message = m => engineText(m, key => table[key] ?? base[key]);
+
   return {
-    SYSTEM, tr, format, shortcuts, use, boot, applyStatic, languageOf, pick,
+    SYSTEM, tr, format, shortcuts, use, boot, applyStatic, languageOf, pick, message,
+    /** Template of a key without formatting (undefined if the key is missing, without a report). */
+    text: key => table[key] ?? base[key],
     language: () => lang,
     choice: () => choice,
     languages: () => ({ ...languages }),
@@ -141,6 +146,7 @@ const I18n = (() => {
   };
 })();
 const tr = I18n.tr;
+const msgText = m => I18n.message(m);
 const onLanguage = define => I18n.onLanguage(define);
 // The page names the scripts to load after the tables (attribute `data-load`; no inline script because of the CSP).
 I18n.boot((document.currentScript?.dataset.load || "").split(/\s+/).filter(Boolean));

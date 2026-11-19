@@ -10,6 +10,10 @@ Meldung einem Feld zugeordnet ist, Spalte «Feld»), die Abschnittsliste zeigt d
 und «Optimieren» sind blockiert, solange Fehler vorliegen («Die Planung hat N Fehler»); der Verweis führt in den ersten
 betroffenen Abschnitt.
 
+Jede Meldung trägt neben dem deutschen Text `message` einen Meldungscode `code` und die Parameter `params` (#171); die
+Oberfläche zeigt den Text aus ihrer Texttabelle (`engine.<code>`). Die Codes und ihre Vorlagen stehen in
+`crates/engine/src/message.rs` (siehe `docs/ENTWICKLUNG.md`, «Meldungscodes des Rechenkerns»).
+
 ## Immer nötig
 
 | Bereich | Eingabe | Fehlermeldung (Auszug) | Feld | Test |

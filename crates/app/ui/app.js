@@ -143,8 +143,8 @@ function adapt(r) {
     out.m.push(ym2i(x.month)); out.liquid.push(liquid); out.prop.push(prop); out.pk.push(pk); out.total.push(liquid + prop + pk);
   }
   for (const e of r.events) {
-    out.events.push({ m: ym2i(e.month), label: e.text, kind: e.kind, tick: TICK_KINDS.includes(e.kind), bad: e.kind === "emergencySale" || e.kind === "depleted" });
-    if (e.kind === "pillar3aPayout") out.p3a.push({ m: ym2i(e.month), text: e.text });
+    out.events.push({ m: ym2i(e.month), label: msgText(e), kind: e.kind, tick: TICK_KINDS.includes(e.kind), bad: e.kind === "emergencySale" || e.kind === "depleted" });
+    if (e.kind === "pillar3aPayout") out.p3a.push({ m: ym2i(e.month), text: msgText(e) });
   }
   // Purchase, sale and emergency sale of properties for the timeline
   out.propEvents = (r.propertyEvents || []).filter(e => e.kind !== "renewal").map(e => ({ m: ym2i(e.month), kind: e.kind, property: e.property }));
@@ -179,8 +179,8 @@ function requestPreview() {
 
 /** Validation messages of the engine plus notes from the preview. */
 function collectIssues() {
-  const v = lastIssues.map(i => ({ sev: i.severity === "error" ? "err" : "warn", sec: i.section, text: esc(i.message) }));
-  if (previewError && !v.some(x => x.sev === "err")) v.push({ sev: "err", sec: "general", text: esc(previewError) });
+  const v = lastIssues.map(i => ({ sev: i.severity === "error" ? "err" : "warn", sec: i.section, text: esc(msgText(i)) }));
+  if (previewError && !v.some(x => x.sev === "err")) v.push({ sev: "err", sec: "general", text: esc(errText(previewError)) });
   const sc = seriesInfo && !seriesInfo.error && state.returns.source !== "fixed" && seriesInfo.currency;
   if (sc && sc !== cur()) v.push({ sev: "warn", sec: "returns", text: tr("issues.seriesCurrency", { sc: esc(sc), esc: esc(cur()), sc2: esc(sc) }) });
   if (lastSim) {
@@ -311,7 +311,7 @@ async function adopt(plan) {
   return notes;
 }
 async function showNotes(notes) {
-  if (notes?.length) await ask(tr("notes.title"), `<p>${tr("notes.intro")}</p><ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>`);
+  if (notes?.length) await ask(tr("notes.title"), `<p>${tr("notes.intro")}</p><ul>${notes.map(n => `<li>${esc(msgText(n))}</li>`).join("")}</ul>`);
 }
 
 async function refreshLibrary() {
@@ -347,7 +347,7 @@ async function refreshSeriesInfo() {
   seriesInfoRef = s;
   if (s) {
     try { seriesInfo = await Engine.call("series_info", { path: s, planPath: currentPath }); }
-    catch (e) { seriesInfo = { error: errText(e) }; }
+    catch (e) { seriesInfo = { error: errText(e), code: e?.code }; }
   }
   if (seriesInfoRef !== s) return; // a newer query is running
   followSuggestion();
@@ -390,7 +390,7 @@ function releaseField(el) {
 function applyFieldIssues() {
   document.querySelectorAll("#main .ferr").forEach(e => e.remove());
   const msgs = new Map();
-  for (const i of lastIssues) if (i.field && i.severity === "error" && !msgs.has(i.field)) msgs.set(i.field, i.message);
+  for (const i of lastIssues) if (i.field && i.severity === "error" && !msgs.has(i.field)) msgs.set(i.field, msgText(i));
   for (const [path, i] of invalidFields) msgs.set(path, i.message);
   if (heldField) { if (!msgs.has(heldField)) heldShown = false; else if (!heldShown) msgs.delete(heldField); }
   for (const [path, text] of msgs) {
@@ -412,7 +412,7 @@ async function blockedByErrors() {
   const first = errs[0], sec = SECTIONS.find(s => s.id === first.section) || SECTIONS[0];
   if (!$("#results").hidden) showResults(false);
   goto(sec.id);
-  toast(tr("errors.blocked", { length: errs.length, title: sec.title, message: first.message }));
+  toast(tr("errors.blocked", { length: errs.length, title: sec.title, message: msgText(first) }));
   document.documentElement.dataset.blocked = String(errs.length);
   return true;
 }
@@ -800,7 +800,7 @@ async function withJob(fn) {
   job.timer = setInterval(jobTick, 250); document.documentElement.dataset.job = "on";
   try { return await fn(); } finally { clearInterval(job.timer); job = null; document.documentElement.dataset.job = "off"; }
 }
-const isCancelled = e => errText(e) === "Abgebrochen"; // i18n: allow (message of the engine, code in #171)
+const isCancelled = e => e?.code === "cancelled"; // #171: by the code of the message
 const jobCancel = async () => {
   const b = document.getElementById("jobCancel"); if (b) b.disabled = true;
   try { await Engine.call("cancel_job", { jobId: job?.id }); } catch (e) { toast(errText(e)); }
@@ -1222,7 +1222,7 @@ const COMPUTED = {
   strategyinfo: () => {
     const i = seriesInfo;
     if (!i) return "";
-    if (i.error) return i.error.includes(tr("computed.weights")) ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // weights: message at the field
+    if (i.error) return ["weights_range", "weights_sum"].includes(i.code) ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // weights: message at the field
     const p = v => v == null || Number.isNaN(v) ? "–" : `${(v * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
     // #69/AK8: The means apply to the common period; a longer index is cut to it.
     const from = +String(i.first).slice(0, 4), to = +String(i.last).slice(0, 4), span = `${from}–${to}`;
@@ -1235,7 +1235,7 @@ const COMPUTED = {
     if (seriesInfo.error) return `<span style="color:var(--err)">${esc(seriesInfo.error)}</span>`;
     return "";
   },
-  basis: () => esc(previewBasis || tr("computed.fixedValues")),
+  basis: () => esc(previewBasis ? msgText(previewBasis) : tr("computed.fixedValues")),
   // #100: Suggested value next to a field of the stock model (only with own values)
   psug: k => {
     const q = state.returns.parametric, s = paramSuggestion();
@@ -1366,7 +1366,9 @@ function renderDerived() {
   if (!state) return;
   const vals = collectIssues();
   renderNav(vals); renderVal(vals); renderTimeline(); renderChart("#chart", "#tip", lastSim); renderKpis();
-  $("#previewSub").textContent = `${previewBasis ? previewBasis.replace(/^Vorschau mit /, tr("derived.singleWith")).replace(/\.$/, "") : tr("derived.singleFixed")} ${tr("derived.live")}`;
+  // #171: the basis of the preview (message of the engine) as subtitle «Einzellauf mit …» (keys `derived.<code>`)
+  const sub = previewBasis ? engineText(previewBasis, key => I18n.text(key.replace(/^engine\./, "derived."))) : tr("derived.singleFixed");
+  $("#previewSub").textContent = `${sub} ${tr("derived.live")}`;
   document.querySelectorAll("[data-computed]").forEach(el => { el.innerHTML = COMPUTED[el.dataset.computed](el.dataset.arg); });
   document.querySelectorAll("svg[data-mini]").forEach(drawMini);
   document.querySelectorAll("svg[data-taxmini]").forEach(drawTaxMini);
@@ -1677,7 +1679,7 @@ async function importData(cmd, title, help) {
   try {
     const r = await Engine.call(cmd); if (!r) return;
     const lines = r.written.map(([f, i]) => `<p><b>${esc(f)}</b>: ${ymShow(i.first)} – ${ymShow(i.last)}${i.saronRange ? tr("import.saronUntil", { ymShow: ymShow(i.saronRange[1]) }) : ""}</p>`);
-    await ask(tr("import.done"), [...lines, ...r.notes.map(n => `<p>${esc(n)}</p>`)].join("") || tr("import.nothingChanged"));
+    await ask(tr("import.done"), [...lines, ...r.notes.map(n => `<p>${esc(msgText(n))}</p>`)].join("") || tr("import.nothingChanged"));
     await refreshLibrary(); refreshSeriesInfo();
   } catch (e) { toast(errText(e)); }
 }
@@ -1916,7 +1918,7 @@ const ACTIONS = {
     try {
       const r = await Engine.call("import_legacy", { startYear: +y }); if (!r) return;
       const notes = [...r.notes, ...await adopt(r.plan)]; setFile(null, true); History.reset(); goto("general"); refreshSeriesInfo();
-      if (notes.length) await ask(tr("actions.importNotes"), notes.map(n => `<p>${esc(n)}</p>`).join(""));
+      if (notes.length) await ask(tr("actions.importNotes"), notes.map(n => `<p>${esc(msgText(n))}</p>`).join(""));
     } catch (e) { toast(errText(e)); }
   },
   "import-shiller": () => importData("import_shiller", tr("actions.shiller"),
@@ -2229,12 +2231,12 @@ function propertyEvents(res) {
       const p = [part(tr("propEvents.proceeds"), n(e.proceeds)), part(tr("propEvents.mortgageRepaid"), n(e.debtRepaid))];
       if (e.gainTax > 0) p.push(part(tr("propEvents.gainTax"), n(e.gainTax)));
       p.push(part(tr("propEvents.netProceeds"), `<b>${n(e.net)}</b>`));
-      if (e.reason) p.push(part(tr("propEvents.reason"), `<span class="bad">${esc(e.reason)}</span>`));
-      if (e.note) p.push(part(tr("propEvents.note"), esc(e.note)));
+      if (e.reason) p.push(part(tr("propEvents.reason"), `<span class="bad">${esc(msgText(e.reason))}</span>`));
+      if (e.note) p.push(part(tr("propEvents.note"), esc(msgText(e.note))));
       return p;
     }
     const p = [part(tr("propEvents.affordability"), e.affordable ? "gegeben" : `<span class="bad">${tr("propEvents.notGiven")}</span>`)];
-    if (e.reason) p.push(part(tr("propEvents.mortgage"), `<span class="bad">${tr("propEvents.notRenewed")}</span> ${tr("propEvents.emergencyReason", { debtBefore: n(e.debtBefore), reason: esc(e.reason) })}`));
+    if (e.reason) p.push(part(tr("propEvents.mortgage"), `<span class="bad">${tr("propEvents.notRenewed")}</span> ${tr("propEvents.emergencyReason", { debtBefore: n(e.debtBefore), reason: esc(msgText(e.reason)) })}`));
     else p.push(part(tr("propEvents.debtBeforeAfter"), `${n(e.debtBefore)} / ${n(e.debtAfter)}`));
     if (e.lumpSum > 0) p.push(part(tr("propEvents.oneOffAffordability"), `<b>${n(e.lumpSum)}</b>`));
     if (e.rate != null) p.push(part(tr("propEvents.rate"), `${(e.rate * 100).toLocaleString("de-CH", { maximumFractionDigits: 2 })} %`));
@@ -2259,14 +2261,14 @@ function bucketDerivation(rs) {
   const side = x => (x === 0 ? "extern" : x === 4 ? tr("buckets.reservation") : tr("buckets.bucketN", { x }));
   const rows = rs.map(r => {
     const b = r.basis, inflow = r.trigger === "B";
-    const cond = inflow ? "–" : r.conditionIgnored ? `<small>${tr("buckets.ignored")}</small>` : `${r.conditionMet ? tr("buckets.met") : `<span class="bad">${tr("buckets.notMet")}</span>`}<br><small>${pct(r.stockReturn)} (${esc(r.returnBasis)}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
+    const cond = inflow ? "–" : r.conditionIgnored ? `<small>${tr("buckets.ignored")}</small>` : `${r.conditionMet ? tr("buckets.met") : `<span class="bad">${tr("buckets.notMet")}</span>`}<br><small>${pct(r.stockReturn)} (${esc(msgText(r.returnBasis))}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
     const moves = r.moves?.length ? r.moves.map(x => `${side(x.from)} → ${side(x.to)}: ${n(x.amount)}`).join("<br>") : "–";
     const basis = inflow ? `<td colspan="8" class="l"><small>${tr("buckets.noRefill")}</small></td>`
-      : `<td>${n(b.living)}${b.livingSource === tr("strat.guardrails") ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${n(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
+      : `<td>${n(b.living)}${b.livingSource === "Guardrails" ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${n(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
     const targets = inflow ? "<td>–</td><td>–</td>" : `<td>${n(r.target1)}</td><td>${n(r.target2)}</td>`;
     const passed = (r.trigger === "A" || r.trigger === "C1") && r.passedMonths > 0 ? `<br><small>${tr("buckets.targetsShortened", { passedMonths: r.passedMonths })}</small>` : "";
-    const base = inflow || !b.source ? "" : `<br><small>${esc(b.source)}</small>`;
-    return `<tr><td class="l">${atAge(r.month)}</td><td class="l"><b>${esc(CASE[r.trigger] || r.trigger)}</b><br><small>${esc(r.reason)}</small>${base}${passed}</td>
+    const base = inflow || !b.source ? "" : `<br><small>${esc(msgText(b.source))}</small>`;
+    return `<tr><td class="l">${atAge(r.month)}</td><td class="l"><b>${esc(CASE[r.trigger] || r.trigger)}</b><br><small>${esc(msgText(r.reason))}</small>${base}${passed}</td>
       ${basis}${targets}<td class="l">${cond}</td>
       <td class="l">${moves}${r.payment > 0 && r.trigger !== "B" ? `<br><small>${tr("buckets.beforeSpending", { payment: n(r.payment) })}</small>` : ""}</td>
       <td>${n(r.before[0])} / ${n(r.before[1])} / ${n(r.before[2])}</td><td>${n(r.after[0])} / ${n(r.after[1])} / ${n(r.after[2])}</td></tr>`;
@@ -2277,11 +2279,11 @@ function bucketDerivation(rs) {
 }
 const bucketHint = () => `<p class="hint">${tr("buckets.hint", { cur: cur() })}</p>`;
 /** 3-bucket bookkeeping (refills, inflows, reservations) is in the yearly values; the messages of the deficit phase stay. */
-const isBucketBooking = e => (e.kind === "buckets" && !/^3-Topf: alle Töpfe leer/.test(e.text))
-  || (state.withdrawal.strategy === "three_buckets" && e.kind === "withdrawal" && /reserviert für Kauf im Folgemonat/.test(e.text));
+const isBucketBooking = e => (e.kind === "buckets" && e.code !== "event_buckets_empty")
+  || (state.withdrawal.strategy === "three_buckets" && e.kind === "withdrawal" && e.code === "event_sale_reserved");
 function eventList(evs) {
   evs = evs.filter(e => !isBucketBooking(e));
-  return evs.length ? `<ul class="evlist">${evs.map(e => `<li><span>${atAge(e.month)}</span><span>${esc(e.text)}</span></li>`).join("")}</ul>` : `<p class="hint" style="margin:0">${tr("results.noEvents")}</p>`;
+  return evs.length ? `<ul class="evlist">${evs.map(e => `<li><span>${atAge(e.month)}</span><span>${esc(msgText(e))}</span></li>`).join("")}</ul>` : `<p class="hint" style="margin:0">${tr("results.noEvents")}</p>`;
 }
 /** Amount nominal or in prices of the start month. */
 const rv = (r, x) => realView ? x / r.priceIndex : x;
@@ -2425,7 +2427,7 @@ function runChartsHtml(res, p) {
 function drawRunCharts(res, p) {
   const recs = res.records, x = recs.map(r => ym2i(r.month));
   const tipHead = i => `${tr("runTip.head", { ymShow: ymShow(recs[i].month), ageStr: ageStr(x[i]) })}<br>`;
-  const marks = res.events.filter(e => ["retirement", "ahvStart", "sale", "emergencySale", "purchase", "depleted"].includes(e.kind)).map(e => ({ x: ym2i(e.month), label: `${atAge(e.month)}: ${e.text}`, color: e.kind === "depleted" || e.kind === "emergencySale" ? "--err" : "--muted" }));
+  const marks = res.events.filter(e => ["retirement", "ahvStart", "sale", "emergencySale", "purchase", "depleted"].includes(e.kind)).map(e => ({ x: ym2i(e.month), label: `${atAge(e.month)}: ${msgText(e)}`, color: e.kind === "depleted" || e.kind === "emergencySale" ? "--err" : "--muted" }));
   const w = k => recs.map(r => rv(r, k(r)));
   Charts.time($(`#${p}-wealth`), $(`#${p}-wealth-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, yFmt: fmtMio, marks,
     stack: [{ color: "--c3", values: w(r => Math.max(0, r.pensionFund + r.pillar3a)) }, { color: "--c2", values: w(r => Math.max(0, r.propertyEquity)) }, { color: "--c1", values: w(r => Math.max(0, r.liquid)) }],
@@ -2539,8 +2541,8 @@ function variationText() {
   }).filter(Boolean).join(", ");
 }
 /** Random paths have no meaningful label; for a single run the values of the variations are shown instead. */
-const randomPath = label => /^(Bootstrap-Pfad|Zufallspfad) \d+$/.test(label || "");
-const runInfo = label => randomPath(label) ? variationText() : label;
+const randomPath = label => ["path_bootstrap", "path_random"].includes(label?.code);
+const runInfo = label => randomPath(label) ? variationText() : msgText(label);
 /** Optimal value of a variation for a percentile, readable: «73 %» (step), «≈ 73 %» (interpolated), «< 50 %», «≥ 110 %». */
 function optimumValueText(item) {
   if (item.kind === "na") return "–";
@@ -2609,7 +2611,7 @@ async function pickBatchVariation(sel) {
     plan.scenarios = { sweeps: [], select: sc.params.map((p, i) => ({ param: p, value: variationSel[i] ?? sweepNow(p) })) };
     let out;
     try { out = await Engine.call("rerun_paths", { plan, picks, path: currentPath }); } catch (e) { out = { error: errText(e) }; }
-    if (out.error) { variationSel = null; toast(tr("variation.batchFailed") + out.error); return renderResults(lastRun); }
+    if (out.error) { variationSel = null; toast(tr("variation.batchFailed") + esc(errText(out.error))); return renderResults(lastRun); }
     // If a final wealth differs from the saved value (e.g. changed time series), the display stays available, with a notice
     const off = out.details.filter(([pc, res]) => {
       const e = level.percentiles.find(p => p.percent === pc)?.endTotal;
@@ -2638,7 +2640,7 @@ document.addEventListener("change", e => {
   pickVariation([...document.querySelectorAll('select[data-action="var-sel"]')].map(el => (el.value === "plan" ? null : JSON.parse(el.value))));
 });
 /** Row for a percentile: optimal variation values, for historical runs additionally the start month. */
-const percentInfo = (r, percent, label) => [optimumText(r.scenarios, percent), randomPath(label) ? "" : label].filter(Boolean).join(" · ");
+const percentInfo = (r, percent, label) => [optimumText(r.scenarios, percent), randomPath(label) ? "" : msgText(label)].filter(Boolean).join(" · ");
 function scenarioTable(sc) {
   const types = sc.params.map(sweepType);
   const best = Math.max(...sc.results.map(r => r.error ? -1 : r.successRate));
@@ -2730,8 +2732,8 @@ function renderResults(r) {
   const info = `${r.elapsedMs < 1 ? r.elapsedMs.toFixed(2) : r.elapsedMs.toFixed(0)} ms`;
   if (r.error) {
     plainTitle(tr("results.notPossible")); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
-    $("#resultsBody").innerHTML = `<div class="card errcard"><p style="margin-top:0">${esc(r.error)}</p>
-      <ul class="val">${r.issues.filter(i => i.severity === "error").map(i => `<li class="err" data-action="back"><span class="ic">!</span><span>${esc(i.message)}</span></li>`).join("")}</ul></div>`;
+    $("#resultsBody").innerHTML = `<div class="card errcard"><p style="margin-top:0">${esc(errText(r.error))}</p>
+      <ul class="val">${r.issues.filter(i => i.severity === "error").map(i => `<li class="err" data-action="back"><span class="ic">!</span><span>${esc(msgText(i))}</span></li>`).join("")}</ul></div>`;
     return;
   }
   const tabs = [["overview", tr("results.overview")], ["charts", tr("scen.charts")]];
@@ -3440,7 +3442,7 @@ Object.assign(ACTIONS, {
       plan.returns.source = "fixed"; plan.scenarios.sweeps = [];
       const r = await Engine.call("run_simulation", { plan, path: null });
       ok = !r.error && !!r.single && r.single.records.length > 0 && window.__errors.length === 0;
-      message = r.error || (window.__errors.length ? window.__errors.join("; ") : `${r.single.records.length} Monate gerechnet`); // i18n: allow (message of the smoke test, only in the log)
+      message = (r.error && errText(r.error)) || (window.__errors.length ? window.__errors.join("; ") : `${r.single.records.length} Monate gerechnet`); // i18n: allow (message of the smoke test, only in the log)
     } catch (e) { message = errText(e); }
     await Engine.call("smoke_done", { ok, message });
     return;

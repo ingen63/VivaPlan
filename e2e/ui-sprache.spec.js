@@ -223,3 +223,45 @@ test.describe("Multilingual user interface (#170)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Messages of the engine (#171)", () => {
+  test("AK2: messages of the engine come from the table of the current language, numbers in the Swiss format", async ({ page }) => {
+    await pseudoLanguage(page);
+    const errors = await openApp(page, { settings: { language: "en" } });
+    expect(await lang(page)).toBe("en");
+    const out = await page.evaluate(async () => {
+      const plan = JSON.parse(JSON.stringify(state));
+      plan.withdrawal.strategy = "fixed_rate"; plan.withdrawal.fixedRate = { rate: 0.09 };
+      plan.pillar3a = [{ person: plan.household.persons[0].id, balance: 1000, rate: 0, contribution: 99999, payouts: [] }];
+      const issues = await Engine.call("validate", { plan });
+      const run = await Engine.call("run_simulation", { plan: state });
+      return {
+        issues: issues.map(i => [i.code, msgText(i), i.message]),
+        events: run.single.events.map(e => [msgText(e), e.text]),
+        label: msgText(run.single.label),
+        unknown: msgText({ code: "no_such_code", params: {}, text: "Text des Rechenkerns" }),
+      };
+    });
+    const rate = out.issues.find(i => i[0] === "withdrawal_rate_high");
+    expect(rate[1]).toBe("ⒺEine Entnahmerate von 9.0 % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch.");
+    expect(rate[2]).toBe("Eine Entnahmerate von 9.0 % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch.");
+    // nested message (account) and amounts with thousands separator '
+    const p3a = out.issues.find(i => i[0] === "pillar3a_contribution_range");
+    expect(p3a[1]).toMatch(/^ⒺⒺSäule 3a: Die Einzahlung muss zwischen 0 und dem Maximalbetrag von \d{1,3}('\d{3})* pro Jahr/);
+    expect(out.events.length).toBeGreaterThan(0);
+    for (const [shown, german] of out.events) expect(shown.startsWith(MARK) && shown.replaceAll(MARK, "") === german, `${shown} / ${german}`).toBe(true);
+    expect(out.label).toBe(`${MARK}Fixe Renditen`);
+    expect(out.unknown).toBe("Text des Rechenkerns");
+    // the list of the validation shows the translated text
+    await page.evaluate(() => { state.withdrawal.strategy = "fixed_rate"; state.withdrawal.fixedRate = { rate: 0.09 }; refresh(); });
+    await expect(page.locator("#val")).toContainText(`${MARK}Eine Entnahmerate von 9.0 % ist hoch`);
+    await noErrors(page, errors);
+  });
+
+  test("AK2: the cancellation of a computation is recognized by its code, not by the German text", async ({ page }) => {
+    const errors = await open(page, "general");
+    const out = await page.evaluate(() => [isCancelled({ code: "cancelled", params: {}, text: "x" }), isCancelled(Object.assign(new Error("x"), { code: "cancelled" })), isCancelled("Abgebrochen")]);
+    expect(out).toEqual([true, true, false]);
+    await noErrors(page, errors);
+  });
+});

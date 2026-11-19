@@ -14,15 +14,21 @@ const Engine = {
     // The limits do not belong to the plan: never save them with it.
     const limits = this.limits();
     if (limits && args.plan && typeof args.plan === "object" && cmd !== "save_plan") args = { ...args, plan: { ...args.plan, limits } };
-    if (this.inApp) return window.__TAURI__.core.invoke(cmd, args);
+    if (this.inApp) return window.__TAURI__.core.invoke(cmd, args).catch(e => { throw engineError(e); });
     const r = await fetch(`/api/${cmd}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(args)
     });
     const j = await r.json();
-    if (!r.ok) throw new Error(j.error || r.statusText);
+    if (!r.ok) throw j.code ? engineError({ code: j.code, params: j.params, text: j.error }) : new Error(j.error || r.statusText);
     return j;
   }
 };
-const errText = e => typeof e === "string" ? e : (e && e.message) || String(e);
+// #171: An error of the engine arrives as a message `{code, params, text}` (desktop app) or as `{error, code, params}`
+// (development server); it becomes an Error with `code` and `params`, so that `errText` can translate it.
+function engineError(e) {
+  if (!e || typeof e !== "object" || !e.code) return e;
+  return Object.assign(new Error(e.text ?? e.code), { code: e.code, params: e.params || {}, text: e.text });
+}
+const errText = e => typeof e === "string" ? e : e?.code ? msgText(e) : (e && e.message) || String(e);
