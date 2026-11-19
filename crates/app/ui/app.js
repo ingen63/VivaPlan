@@ -1696,7 +1696,7 @@ function onEdit(el) {
   invalidFields.delete(path);
   if (!typing) el.classList.remove("invalid");
   const kindMs = /^milestones\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
-  const ergibt = kindMs ? msMonth(kindMs.id) : NaN; // point in time before the change (column «Ergibt»)
+  const resulting = kindMs ? msMonth(kindMs.id) : NaN; // point in time before the change (column «Ergibt»)
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
   setP(path, v); markDirty();
@@ -1713,8 +1713,8 @@ function onEdit(el) {
     if (v === "age") {
       if (sysMs(m)) m.person = state.household.persons[sysMs(m).index]?.id;
       m.person ??= state.household.persons[0]?.id;
-      m.years = Number.isFinite(ergibt) ? Math.round((ergibt - ym2i(person(m.person).birth)) / 12 * 100) / 100 : m.years ?? 65;
-    } else m.date = Number.isFinite(ergibt) ? i2ym(ergibt) : m.date ?? i2ym(startM() + 60);
+      m.years = Number.isFinite(resulting) ? Math.round((resulting - ym2i(person(m.person).birth)) / 12 * 100) / 100 : m.years ?? 65;
+    } else m.date = Number.isFinite(resulting) ? i2ym(resulting) : m.date ?? i2ym(startM() + 60);
   }
   if (kindPay) { // #55: as with milestones the point in time stays the same on change
     if (v === "age") { kindPay.years = Number.isFinite(payAt) ? Math.round(ageAt(payAt, payPid) * 100) / 100 : 60; delete kindPay.date; }
