@@ -1,4 +1,4 @@
-//! Prüfung einer Planung: Fehler verhindern die Simulation, Hinweise nicht.
+//! Validation of a plan: errors prevent the simulation, warnings do not.
 
 use serde::Serialize;
 
@@ -11,16 +11,16 @@ use crate::resolve::{Curve, Resolver};
 use crate::tax;
 use crate::time::{TimeRef, YearMonth};
 
-/// Höchstes zulässiges Alter am Simulationsende.
+/// Highest allowed age at the end of the simulation.
 const MAX_AGE: i32 = 120;
 
-/// #139: Höchstens so viele Pfad-Monate (Pfade × Monate der Planung) rechnet Monte Carlo. Gemessen (18.11.2026): rund
-/// 23 Bytes je Pfad und Monat (Bandbreiten nominal und real als `f32`, dazu Sortierspalten und Ergebnisse je Lauf); an
-/// der Grenze braucht die schwerste Testplanung (Ehepaar, vier Liegenschaften, 100 Jahre) rund 1,3 GB. Darüber stürzte
-/// die App bei 1'000'000 Pfaden aus Speichermangel ab.
+/// #139: Monte Carlo computes at most this many path-months (paths × months of the plan). Measured (18.11.2026): about
+/// 23 bytes per path and month (bands nominal and real as `f32`, plus sort columns and results per run); at
+/// the limit the heaviest test plan (married couple, four properties, 100 years) needs about 1.3 GB. Above it the
+/// app crashed at 1'000'000 paths for lack of memory.
 pub const MAX_PATH_MONTHS: u64 = 50_000_000;
 
-/// Ganzzahl mit Apostroph als Tausendertrennzeichen (40'000).
+/// Integer with apostrophe as thousands separator (40'000).
 fn fmt_count(n: u64) -> String {
     let d = n.to_string();
     let mut out = String::new();
@@ -32,7 +32,7 @@ fn fmt_count(n: u64) -> String {
     }
     out
 }
-/// Längster erlaubter Personenname.
+/// Longest allowed person name.
 const MAX_NAME: usize = 60;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -45,12 +45,12 @@ pub enum Severity {
 #[derive(Clone, Debug, Serialize)]
 pub struct Issue {
     pub severity: Severity,
-    /// Abschnitt im Editor (`general`, `milestones`, `pension`, `flows`, `wealth`, `returns`,
+    /// Section in the editor (`general`, `milestones`, `pension`, `flows`, `wealth`, `returns`,
     /// `withdrawal`, `optimize`, `taxes`, `realestate`).
     pub section: &'static str,
     pub message: String,
-    /// Pfad des betroffenen Feldes in der Planung (zum Beispiel `household.persons.0.name`); die Oberfläche zeigt die
-    /// Meldung dann direkt am Feld.
+    /// Path of the affected field in the plan (for example `household.persons.0.name`); the user interface then shows the
+    /// message right at the field.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
 }
@@ -66,7 +66,7 @@ impl Issues {
             field: None,
         });
     }
-    /// Fehler an einem bestimmten Feld der Planung.
+    /// Error at a specific field of the plan.
     fn err_at(&mut self, section: &'static str, field: impl Into<String>, message: impl Into<String>) {
         self.0.push(Issue {
             severity: Severity::Error,
@@ -75,7 +75,7 @@ impl Issues {
             field: Some(field.into()),
         });
     }
-    /// Warnung an einem bestimmten Feld der Planung.
+    /// Warning at a specific field of the plan.
     fn warn_at(&mut self, section: &'static str, field: impl Into<String>, message: impl Into<String>) {
         self.0.push(Issue {
             severity: Severity::Warning,
@@ -96,13 +96,13 @@ impl Issues {
 
 pub fn validate(plan: &Plan) -> Vec<Issue> {
     let mut v = Issues(vec![]);
-    // Ältere Säule 3a an der Hypothek wie beim Laden übernehmen (#52).
+    // Take over older pillar 3a on the mortgage as when loading (#52).
     let plan = crate::upgrade::normalized(plan);
     check(&plan, &mut v);
     v.0
 }
 
-/// Parameter der Guardrails (Strategie «Guardrails» und 3-Topf mit Guardrails).
+/// Parameters of the guardrails (strategy «Guardrails» and «3-Topf» with guardrails).
 fn check_guardrails(v: &mut Issues, w: &Withdrawal) {
     let g = w.guardrails.clone().unwrap_or_default();
     if !(g.initial_rate > 0.0 && g.initial_rate <= 1.0) {
@@ -119,7 +119,7 @@ fn check_guardrails(v: &mut Issues, w: &Withdrawal) {
     }
 }
 
-/// Unter- und Obergrenze der Lebenshaltung.
+/// Floor and ceiling of the living costs.
 fn check_limits(v: &mut Issues, w: &Withdrawal) {
     if w.floor.is_some_and(|f| f < 0.0) || w.ceiling.is_some_and(|c| c < 0.0) {
         v.err(
@@ -197,7 +197,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     if start.until(end) > 12 * 100 {
         v.err("milestones", "Der Simulationszeitraum ist länger als 100 Jahre.");
     }
-    // #139: Speicher der Monte-Carlo-Rechnung begrenzen (Pfade × Monate)
+    // #139: Limit the memory of the Monte Carlo computation (paths × months)
     let months = u64::try_from(start.until(end) + 1).unwrap_or(0);
     let mc = match plan.returns.source {
         ReturnSource::Bootstrap => Some((
@@ -254,7 +254,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 v.err("milestones", format!("«{}»: Alter {years} ist nicht möglich.", ms.name));
             }
         }
-        // Start und Ende selbst liegen nie davor bzw. danach.
+        // Start and end themselves never lie before or after.
         let Ok(m) = r.milestone(&ms.id) else { continue };
         if m < start {
             v.warn(
@@ -307,7 +307,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     };
 
-    // Vorsorge
+    // Pension
     let pk = &plan.pension.pk;
     let retire = resolve(v, "pension", "Bezug Pensionskasse", &pk.at);
     resolve(v, "pension", "AHV-Bezug", &plan.pension.ahv.at);
@@ -364,7 +364,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     let pk_lumpsum = [pk.lumpsum, plan.partner.as_ref().map_or(0.0, |q| q.pk.lumpsum)];
     let retire = retire_dates.iter().flatten().max().copied();
 
-    // #51: Feste Meilensteine je Person innerhalb der Grenzen aus den Einstellungen (#25).
+    // #51: Fixed milestones per person within the limits from the settings (#25).
     let lim = plan.limits;
     for problem in lim.problems() {
         v.err("general", format!("Einstellungen: {problem}"));
@@ -389,7 +389,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 }
             }
         }
-        // #51: Erwerbseinkommen nach dem Bezug der Pensionskasse (Warnung).
+        // #51: Earned income after the pension fund payout (warning).
         let (income, indexed) = if i == 0 {
             (Some(&plan.flows.income), plan.flows.income_indexed)
         } else {
@@ -398,7 +398,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 plan.partner.as_ref().is_some_and(|q| q.income_indexed),
             )
         };
-        // #58: Mit der Teuerung steht der Betrag in Preisen des Starts (die Teuerung hängt vom Pfad ab).
+        // #58: Indexed to inflation, the amount is in prices of the start (inflation depends on the path).
         let prices = if indexed {
             " in Preisen des Simulationsstarts"
         } else {
@@ -424,10 +424,10 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Geldflüsse und Vermögen
+    // Cash flows and wealth
     series(v, "flows", "Einkommen", &plan.flows.income, None);
     series(v, "flows", "Ausgaben", &plan.flows.spending, None);
-    // #53: Die Lebenshaltungskosten enthalten die Wohnkosten; jede Zeile muss mindestens den Wohnanteil enthalten.
+    // #53: Living costs include housing costs; every row must contain at least the housing share.
     if plan.flows.spending_includes_housing {
         let w = crate::housing::start_housing(plan, &r);
         let check = |v: &mut Issues, field: String, x: f64| {
@@ -474,7 +474,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Renditen
+    // Returns
     let ret = &plan.returns;
     series(v, "returns", "Aktienrendite", &ret.fixed.stocks, Some((-0.99, 10.0)));
     series(
@@ -486,7 +486,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     );
     series(v, "returns", "Inflation", &ret.fixed.inflation, Some((-0.99, 10.0)));
     series(v, "returns", "SARON", &ret.fixed.saron, Some((-0.99, 10.0)));
-    // #69: Gewichte von «Welt individuell»
+    // #69: Weights of «Welt individuell»
     if let Some(st) = ret
         .strategy
         .as_ref()
@@ -556,7 +556,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                     "Die 3-Topf-Strategie beginnt mit der Pensionierung; ohne Bezugsdatum gilt durchgehend «Standard».",
                 );
             }
-            // #6: Steuern die Guardrails die Ausgaben, gelten ihre Prüfungen und die der Grenzen.
+            // #6: If the guardrails steer spending, their checks and those of the limits apply.
             if plan.withdrawal.buckets_with_guardrails() {
                 check_guardrails(v, &plan.withdrawal);
                 check_limits(v, &plan.withdrawal);
@@ -601,7 +601,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Szenarien
+    // Scenarios
     match crate::scenarios::parse(&plan.scenarios.sweeps)
         .and_then(|sw| crate::scenarios::count_combinations(&sw).map(|_| sw))
     {
@@ -619,7 +619,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Gespeicherte Einstellungen der Optimierung
+    // Saved settings of the optimization
     if let Some(o) = &plan.optimization {
         if !(0.0..=1.0).contains(&o.max_ruin) {
             v.warn(
@@ -637,8 +637,8 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // #98: Steuerfuss und Satztabellen (Einkommen, Vermögen, Kapitalbezug, auch Verheiratete). Ohne Prüfung ergab
-    // ein Satz von −10¹⁵ ungültige Zahlen in der Simulation.
+    // #98: Tax multiplier and rate tables (income, wealth, lump sum, also married). Without the check a
+    // rate of −10¹⁵ produced invalid numbers in the simulation.
     let t = &plan.taxes;
     if !(0.0..=10.0).contains(&t.multiplier) {
         v.err_at(
@@ -647,7 +647,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
         );
     }
-    /// Schlüssel im Pfad, Name in der Meldung, Stufen [(Betrag, Satz)].
+    /// Key in the path, name in the message, brackets [(amount, rate)].
     type Table<'a> = (&'a str, &'a str, &'a [(f64, f64)]);
     let mut tables: Vec<Table> = vec![
         ("income", "Einkommenssteuer", &t.income),
@@ -660,7 +660,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         tables.push(("couple.capital", "Kapitalbezugssteuer (Verheiratete)", &c.capital));
     }
     for (key, name, rows) in tables {
-        // #134: Die Steuer (Betrag × Satz) darf mit steigendem Betrag nicht fallen; nur eine Warnung, gerechnet wird.
+        // #134: The tax (amount × rate) must not fall with a rising amount; only a warning, the computation runs.
         if rows
             .iter()
             .all(|&(from, rate)| from.is_finite() && from >= 0.0 && (0.0..=1.0).contains(&rate))
@@ -697,8 +697,8 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Grundstückgewinnsteuer ist Pflicht, sobald eine Immobilie mit Status «Besitz» oder «Kauf geplant» vorkommt
-    // (Mietobjekte lösen sie nicht aus). Regeln mit Satz 0 % zählen als gesetzt.
+    // The property gain tax is required as soon as a property with status «Besitz» or «Kauf geplant» occurs
+    // (rented properties do not trigger it). Rules with a rate of 0 % count as set.
     if plan.taxes.property_gain.is_none()
         && plan
             .realestate
@@ -712,7 +712,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         );
     }
 
-    // Grundstückgewinnsteuer: Zu- und Abschläge nach Besitzdauer brauchen das Kaufdatum
+    // Property gain tax: surcharges and reductions by holding period need the purchase date
     if let Some(g) = &plan.taxes.property_gain {
         if g.duration
             .iter()
@@ -749,7 +749,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Immobilien
+    // Properties
     let mut indirect_per_person = [0.0f64; 2];
     series(
         v,
@@ -758,7 +758,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         &plan.realestate.emergency_months,
         None,
     );
-    // Verweise «nach Verkauf von …» prüfen.
+    // Check references «nach Verkauf von …».
     let mut ids = std::collections::HashSet::new();
     for p in &plan.realestate.properties {
         if let Some(id) = &p.id {
@@ -804,8 +804,8 @@ fn check(plan: &Plan, v: &mut Issues) {
                     format!("{n}: Verkaufszeitpunkt liegt vor dem Simulationsstart – das Objekt wird nicht zu diesem Zeitpunkt verkauft. Der Verkauf müsste im Simulationszeitraum liegen."),
                 );
             }
-            // Der Verkauf muss nach dem Kauf liegen (Besitz: Kaufdatum, Kauf geplant: «Kauf ab»). Ein Kauf «nach Verkauf von …»
-            // ist beim Erfassen nicht bestimmbar (`buy` fehlt dann), dort entfällt die Prüfung.
+            // The sale must come after the purchase (owned: purchase date, purchase planned: «Kauf ab»). A purchase «nach Verkauf von …»
+            // cannot be determined at entry (`buy` is then missing); the check is skipped there.
             let bought = match p.status {
                 PropertyStatus::Owned => p.bought,
                 PropertyStatus::Planned => buy,
@@ -865,7 +865,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 format!("{n}: «80 % des Kaufpreises» gilt nur für geplante Käufe; es zählen die erfassten Beträge."),
             );
         }
-        // Bei «80 % des Kaufpreises» sind die Beträge nur Anteile und werden nicht mit dem Preis verglichen.
+        // With «80 % des Kaufpreises» the amounts are only shares and are not compared with the price.
         if !max_loan && p.status == PropertyStatus::Planned {
             if total > p.price {
                 v.err("realestate", format!("{n}: Hypothek ist höher als der Kaufpreis."));
@@ -900,7 +900,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             } else {
                 buy
             };
-            // #52: Konto der indirekten Amortisation; #50: indirekt nur bis vor dem AHV-Bezug dieser Person.
+            // #52: Account of the indirect amortization; #50: indirect only until before this person's AHV payout.
             let account = match &t.pillar3a {
                 None => Some(0),
                 Some(id) => {
@@ -965,7 +965,7 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
 
-    // Säule 3a (#52): Konten, Einzahlung, Auszahlungsplan; Maximalbetrag mit der indirekten Amortisation.
+    // Pillar 3a (#52): accounts, contribution, payout plan; maximum amount together with the indirect amortization.
     let lim = plan.limits;
     for (k, acc) in plan.pillar3a.iter().enumerate() {
         let f = |name: &str| format!("pillar3a.{k}.{name}");
@@ -1019,12 +1019,12 @@ fn check(plan: &Plan, v: &mut Issues) {
             );
         }
         let repay_possible = indirect > 0.0;
-        // Ohne Tranche mit indirekter Amortisation gibt es nichts zurückzuzahlen: Die Auszahlung geht ins Vermögen.
+        // Without a tranche with indirect amortization there is nothing to repay: the payout goes into wealth.
         if acc.usage == PayoutUse::Repay && !repay_possible {
             v.warn("pillar3a", format!("{who}: «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation voraus; der Rest geht ins freie Vermögen."));
         }
         for (j, x) in acc.payouts.iter().enumerate() {
-            // #55: Zeitpunkt als Datum oder Alter; die Meldung steht am jeweiligen Feld.
+            // #55: Point in time as a date or age; the message is at the respective field.
             let at_field = match x.kind {
                 PayoutAt::Date => format!("pillar3a.{k}.payouts.{j}.date"),
                 PayoutAt::Age => format!("pillar3a.{k}.payouts.{j}.years"),
@@ -1070,7 +1070,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             }
         }
     }
-    // Indirekte Amortisation ohne erfasstes 3a-Konto: Maximalbetrag trotzdem prüfen.
+    // Indirect amortization without an entered 3a account: check the maximum amount anyway.
     for (i, p) in plan.household.persons.iter().take(2).enumerate() {
         if plan.pillar3a.iter().any(|a| a.person == p.id) {
             continue;
@@ -1094,7 +1094,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
 }
 
-/// Betrag mit Tausendertrennzeichen («12'500»).
+/// Amount with thousands separator («12'500»).
 fn chf(v: f64) -> String {
     let n = v.round() as i64;
     let digits = n.unsigned_abs().to_string();
@@ -1117,7 +1117,7 @@ mod tests {
     use super::*;
     use serde_json::{json, Value};
 
-    // Beispielplanung: Start 2026-11, Geburt 1966-11, Pensionierung und AHV 2031-11, Ende 2061-11.
+    // Example plan: start 2026-11, birth 1966-11, retirement and AHV 2031-11, end 2061-11.
     fn base() -> Value {
         serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
     }
@@ -1125,7 +1125,7 @@ mod tests {
         let plan: Plan = serde_json::from_value(v.clone()).unwrap();
         validate(&plan).into_iter().map(|i| i.message).collect()
     }
-    /// Ob eine Meldung den Text enthält.
+    /// Whether a message contains the text.
     fn has(v: &Value, text: &str) -> bool {
         messages(v).iter().any(|m| m.contains(text))
     }
@@ -1139,14 +1139,14 @@ mod tests {
             json!({"id": "end", "kind": "date", "name": "Simulationsende", "date": date, "fixed": true});
     }
 
-    // #40: Grenzwerte der Prüfungen (der Grenzwert selbst ist jeweils erlaubt).
+    // #40: Limit values of the checks (the limit value itself is allowed in each case).
     #[test]
     fn period_birth_and_milestones() {
         assert!(messages(&base()).is_empty(), "{:?}", messages(&base()));
         const LONG: &str = "länger als 100 Jahre";
         assert!(!has(&with(|v| set_end(v, "2126-11")), LONG));
         assert!(has(&with(|v| set_end(v, "2126-12")), LONG));
-        // Geburt im Startmonat ist möglich
+        // Birth in the start month is possible
         assert!(!has(
             &with(|v| v["household"]["persons"][0]["birth"] = json!("2026-11")),
             "nach dem Simulationsstart"
@@ -1155,11 +1155,11 @@ mod tests {
             &with(|v| v["household"]["persons"][0]["birth"] = json!("2026-12")),
             "nach dem Simulationsstart"
         ));
-        // genau 120 Jahre am Ende
+        // exactly 120 years at the end
         const OLD: &str = "über 120 Jahre alt";
         assert!(!has(&with(|v| set_end(v, "2086-11")), OLD));
         assert!(has(&with(|v| set_end(v, "2086-12")), OLD));
-        // Meilensteine vor dem Start bzw. nach dem Ende; das Ende selbst ist erlaubt
+        // Milestones before the start or after the end; the end itself is allowed
         let ms =
             |d: &str| with(|v| v["milestones"][2] = json!({"id": "ahv", "kind": "date", "name": "AHV", "date": d}));
         assert!(has(&ms("2026-10"), "liegt vor dem Simulationsstart"));
@@ -1185,7 +1185,7 @@ mod tests {
         };
         assert!(!has(&partner(0.08), "ungewöhnlich hoch"));
         assert!(has(&partner(0.09), "Person 2: Umwandlungssatz 9.00 %"));
-        // Zeitreihe erst nach dem Start: Hinweis; ab Start: keiner
+        // Series only after the start: warning; from the start: none
         const LATE: &str = "kein Wert ab Simulationsstart";
         let income = |from: &str| {
             with(|v| v["flows"]["income"] = json!({"mode": "timed", "rows": [{"from": from, "value": 1}]}))
@@ -1207,8 +1207,8 @@ mod tests {
                 v["returns"]["bootstrap"] = json!({"paths": paths, "block": block, "seed": 1});
             })
         };
-        // Die Spanne 1 bis 1'000'000 gilt; dass 1'000'000 Pfade bei dieser Planungsdauer zu viel Speicher brauchen,
-        // ist eine eigene Meldung (#139).
+        // The range 1 to 1'000'000 applies; that 1'000'000 paths need too much memory for this plan duration
+        // is a separate message (#139).
         assert!(
             messages(&boot(1_000_000, 1.0))
                 .iter()
@@ -1352,7 +1352,7 @@ mod tests {
             "Besitzdauer und Steuersatz sind ungültig"
         ));
         assert!(!has(&aargau(json!([[0, 0.2]]), "aargau"), "sind ungültig"));
-        // Kaufdatum fehlt: Hinweis nur im Modell Aargau mit Sätzen (bzw. mit Zu-/Abschlägen)
+        // Purchase date missing: warning only in the Aargau model with rates (or with surcharges/reductions)
         const BOUGHT: &str = "Das Kaufdatum fehlt";
         assert!(has(&aargau(json!([[0, 0.2]]), "aargau"), BOUGHT));
         assert!(!has(&aargau(json!([[0, 0.2]]), "zurich"), BOUGHT));
@@ -1413,10 +1413,10 @@ mod tests {
             &owned("maxLoan", json!([tranche(1.0, Some("2026-01"), fixed.clone())])),
             "gilt nur für geplante Käufe"
         ));
-        // Preis und Belehnung werden nur bei geplanten Käufen geprüft.
+        // Price and loan-to-value are checked only for planned purchases.
         let high = owned("fixed", json!([tranche(1_200_000.0, Some("2026-01"), fixed.clone())]));
         assert!(!has(&high, LTV) && !has(&high, HIGHER));
-        // Beginn der Periode bei Besitz
+        // Start of the period for owned property
         assert!(has(
             &owned("fixed", json!([tranche(1.0, None, fixed.clone())])),
             "Haus: Beginn der laufenden Periode fehlt"
@@ -1429,7 +1429,7 @@ mod tests {
             &owned("fixed", json!([tranche(1.0, Some("2026-11"), fixed.clone())])),
             "Beginn liegt nach"
         ));
-        // Bei mehreren Tranchen steht der Name der Tranche in der Meldung
+        // With several tranches the name of the tranche is in the message
         let mut t2 = tranche(1.0, None, fixed.clone());
         t2["name"] = json!("T2");
         assert!(has(
@@ -1476,26 +1476,26 @@ mod tests {
             "SARON-Marge"
         ));
 
-        // #50/#52: Indirekte Amortisation zählt bis vor dem AHV-Bezug (2031-11) zum 3a-Maximalbetrag.
+        // #50/#52: Indirect amortization counts towards the 3a maximum until before the AHV payout (2031-11).
         let ind = |term: f64, amort: f64, mode: &str| {
             owned(json!([{"type": "fixed", "term": term, "rate": 0.01, "amort": amort, "amortMode": mode}]))
         };
         const MAX: &str = "übersteigen zusammen den Maximalbetrag";
-        // 3a-Maximalbetrag 7258 pro Jahr = 1814.5 pro Quartal
+        // 3a maximum 7258 per year = 1814.5 per quarter
         assert!(!has(&ind(3.0, 1814.5, "indirect"), MAX));
         assert!(has(
             &ind(3.0, 1815.0, "indirect"),
             "indirekte Amortisation (7'260) übersteigen zusammen den Maximalbetrag von 7'258"
         ));
         assert!(!has(&ind(3.0, 1815.0, "direct"), MAX));
-        // Periode vor dem Start beendet: zählt nicht
+        // Period ended before the start: does not count
         let ended = with_props(vec![house(
             "owned",
             json!({"sell": "never", "worth": 1,
             "mortgage": {"tranches": [tranche(1.0, Some("2010-01"), json!([{"type": "fixed", "term": 5, "rate": 0.01, "amort": 5000, "amortMode": "indirect"}]))]}}),
         )]);
         assert!(!has(&ended, MAX));
-        // Grenze: Eine Periode, die genau im Startmonat 2026-11 endet, zählt nicht mehr, einen Monat später schon.
+        // Limit: a period ending exactly in the start month 2026-11 no longer counts, one month later it does.
         let ends = |from: &str| {
             with_props(vec![house(
                 "owned",
@@ -1505,17 +1505,17 @@ mod tests {
         };
         assert!(!has(&ends("2021-11"), MAX));
         assert!(has(&ends("2021-12"), MAX));
-        // #50: Eine Periode ab dem AHV-Bezug ist direkt und zählt nicht; einen Monat davor schon.
+        // #50: A period from the AHV payout is direct and does not count; one month before it does.
         assert!(!has(&ends("2031-11"), MAX));
         assert!(has(&ends("2031-10"), MAX));
     }
 
-    /// Planung mit 3a-Konto der Person (Beispiel «Neu»: Start 2026-11, Geburt 1966-11, AHV-Bezug 2031-11).
+    /// Plan with a 3a account of the person (example «Neu»: start 2026-11, birth 1966-11, AHV payout 2031-11).
     fn with_3a(account: Value) -> Value {
         with(|v| v["pillar3a"] = json!([account]))
     }
 
-    // #52/AK4, AK5: Auszahlungsplan frühestens 5 Jahre vor dem AHV-Bezug, Betrag grösser als 0.
+    // #52/AK4, AK5: Payout plan at the earliest 5 years before the AHV payout, amount greater than 0.
     #[test]
     fn pillar3a_payout_plan() {
         let pay = |date: &str| {
@@ -1534,7 +1534,7 @@ mod tests {
         let zero =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": 0}]}));
         assert!(has(&zero, "muss grösser als 0 sein"));
-        // #88: negativer Betrag ist ebenfalls ungültig (Bedingung `b.is_nan() || b <= 0.0`).
+        // #88: a negative amount is also invalid (condition `b.is_nan() || b <= 0.0`).
         let negative =
             with_3a(json!({"person": "A", "balance": 1, "rate": 0, "payouts": [{"date": "2030-01", "amount": -1}]}));
         assert!(has(&negative, "muss grösser als 0 sein"));
@@ -1545,7 +1545,7 @@ mod tests {
         assert!(!has(&whole, "muss grösser als 0 sein"), "ohne Betrag: ganzes Guthaben");
     }
 
-    // #52: Konto, Zins, Verwendung, PK-Kapitalbezug im selben Jahr.
+    // #52: Account, interest, usage, PK lump sum in the same year.
     #[test]
     fn pillar3a_account() {
         assert!(has(
@@ -1591,7 +1591,7 @@ mod tests {
         assert!(!has(&same("2030-12", 0.5), SAME));
     }
 
-    // #52/AK7 und #52/AK10: Einzahlung zwischen 0 und dem Maximalbetrag (Einstellungen), mit der indirekten Amortisation zusammen (Warnung, keine Sperre).
+    // #52/AK7 and #52/AK10: Contribution between 0 and the maximum (settings), together with the indirect amortization (warning, no block).
     #[test]
     fn pillar3a_contribution() {
         let c = |x: f64| with_3a(json!({"person": "A", "contribution": x}));
@@ -1600,11 +1600,11 @@ mod tests {
         assert!(!has(&c(7258.0), RANGE));
         assert!(has(&c(7258.5), RANGE));
         assert!(has(&c(-1.0), RANGE));
-        // Maximalbetrag aus den Einstellungen (#25)
+        // Maximum from the settings (#25)
         let mut higher = c(7500.0);
         higher["limits"] = json!({"pillar3aMax": 8000});
         assert!(!has(&higher, "Die Einzahlung muss"));
-        // Einzahlung und indirekte Amortisation zusammen: Warnung, keine Sperre
+        // Contribution and indirect amortization together: warning, no block
         let mut both = with_props(vec![house(
             "owned",
             json!({"sell": "never", "worth": 1,
@@ -1625,9 +1625,9 @@ mod tests {
             .contains("Einzahlung (3'259) und indirekte Amortisation (4'000)"));
     }
 
-    // --- #124/AK7: Säule 3a mit zwei Personen, Hinweis «Hypothek zurückzahlen», Frankenbeträge ---
+    // --- #124/AK7: Pillar 3a with two persons, hint «Hypothek zurückzahlen», amounts in francs ---
 
-    /// Zweite Person B (Geburt 1970-11, AHV-Bezug 2035-11).
+    /// Second person B (birth 1970-11, AHV payout 2035-11).
     fn couple(v: &mut Value) {
         v["household"]["persons"] = json!([
             { "id": "A", "name": "Anna", "birth": "1966-11" },
@@ -1646,7 +1646,7 @@ mod tests {
             "ahv": { "monthly": 0, "at": "ahv2" } });
     }
 
-    /// Haus mit einer Tranche, indirekt amortisiert mit `amort` pro Quartal in die Säule 3a von `person`.
+    /// House with one tranche, indirectly amortized with `amort` per quarter into the pillar 3a of `person`.
     fn indirect_house(v: &mut Value, person: Option<&str>, amort: f64) {
         let mut t = json!({ "name": "T", "amount": 400_000, "start": "2026-11",
             "periods": [ { "type": "fixed", "term": 10, "rate": 0.01, "amort": amort, "amortMode": "indirect" } ] });
@@ -1661,21 +1661,21 @@ mod tests {
 
     #[test]
     fn issue_124_ak7_indirect_amortization_per_person() {
-        // Tranche in die 3a von B (8'000 pro Jahr): Die Warnung nennt B, nicht A.
+        // Tranche into the 3a of B (8'000 per year): the warning names B, not A.
         let v = with(|v| {
             couple(v);
             indirect_house(v, Some("B"), 2000.0);
         });
         assert!(has(&v, &format!("Säule 3a Ben: {OVER}")), "{:?}", messages(&v));
         assert!(!has(&v, "Säule 3a Anna"), "{:?}", messages(&v));
-        // A hat ein Konto, B nicht: Für B gilt die Warnung ohne Konto weiterhin.
+        // A has an account, B does not: for B the warning without an account still applies.
         let v = with(|v| {
             couple(v);
             indirect_house(v, Some("B"), 2000.0);
             v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0 }]);
         });
         assert!(has(&v, &format!("Säule 3a Ben: {OVER}")), "{:?}", messages(&v));
-        // Eine Person: ohne Namen.
+        // One person: without names.
         let v = with(|v| indirect_house(v, None, 2000.0));
         assert!(
             messages(&v).iter().any(|m| m.starts_with(&format!("Säule 3a: {OVER}"))),
