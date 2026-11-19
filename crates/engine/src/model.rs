@@ -1,6 +1,6 @@
-//! Das Datenmodell einer Planung (Projektdatei `.vplan`, JSON).
+//! The data model of a plan (project file `.vplan`, JSON).
 //!
-//! Beträge sind monatlich, Sätze jährlich als Dezimalzahl (0.05 = 5 %), sofern nicht anders vermerkt.
+//! Amounts are monthly, rates annual as decimals (0.05 = 5 %), unless noted otherwise.
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -8,14 +8,14 @@ use serde::{Deserialize, Serialize};
 use crate::time::{TimeRef, YearMonth};
 
 pub const FORMAT: &str = "vivaplan/1";
-/// legacy: RetirementPlanner – Kennung älterer Dateien; beim Lesen gültig, geschrieben wird [`FORMAT`].
+/// legacy: RetirementPlanner – identifier of older files; valid when reading, [`FORMAT`] is written.
 pub const LEGACY_FORMAT: &str = "pensionsplaner/1";
 
 fn default_format() -> String {
     FORMAT.to_string()
 }
 
-/// #144: Meldung bei einer Formatkennung, die diese Version nicht kennt (derselbe Text wie `unknownFormatText` in
+/// #144: Message for a format identifier this version does not know (the same text as `unknownFormatText` in
 /// `crates/app/ui/util.js`).
 pub fn unknown_format(format: &str) -> String {
     format!(
@@ -23,8 +23,8 @@ pub fn unknown_format(format: &str) -> String {
     )
 }
 
-/// #144: Prüft die Formatkennung einer Planung. Gültig sind [`FORMAT`], [`LEGACY_FORMAT`] und keine Kennung; jede andere
-/// stammt aus einer neueren Version (oder ist keine Planung) und wird abgelehnt.
+/// #144: Checks the format identifier of a plan. Valid are [`FORMAT`], [`LEGACY_FORMAT`] and no identifier; any other
+/// comes from a newer version (or is not a plan) and is rejected.
 pub fn check_format(plan: &serde_json::Value) -> Result<(), crate::Error> {
     match plan.get("format") {
         None => Ok(()),
@@ -49,7 +49,7 @@ pub struct Plan {
     pub household: Household,
     pub milestones: Vec<Milestone>,
     pub pension: Pension,
-    /// Zweite Person (Double Income): eigenes Einkommen, Pensionskasse und AHV.
+    /// Second person (double income): own income, pension fund and AHV.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partner: Option<Partner>,
     pub flows: Flows,
@@ -62,68 +62,68 @@ pub struct Plan {
     pub realestate: RealEstate,
     #[serde(default)]
     pub scenarios: Scenarios,
-    /// Gespeicherte Einstellungen der Optimierung (Oberfläche und `optimize`).
+    /// Saved settings of the optimization (user interface and `optimize`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optimization: Option<OptimizerSettings>,
-    /// Säule 3a, höchstens ein Konto je Person (#52).
+    /// Pillar 3a, at most one account per person (#52).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pillar3a: Vec<Pillar3aAccount>,
-    /// Anwendungsweite Grenzen aus den Einstellungen (#25). Die Oberfläche gibt sie bei jedem Aufruf mit; sie
-    /// gehören nicht zur Planung und werden nie gespeichert. Fehlen sie, gelten die Standardwerte.
+    /// Application-wide limits from the settings (#25). The user interface passes them with every call; they
+    /// do not belong to the plan and are never saved. If they are missing, the default values apply.
     #[serde(default, skip_serializing)]
     #[schemars(skip)]
     pub limits: crate::settings::Limits,
 }
 
-/// Ziel der Optimierung.
+/// Goal of the optimization.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Goal {
-    /// Ziel 1: Konsum bei begrenztem Ruinrisiko.
+    /// Goal 1: consumption with a limited risk of ruin.
     #[default]
     Consumption,
-    /// Ziel 2: Kein Notverkauf von Immobilien, also möglichst wenige ungeplante Verkäufe (Notverkäufe).
+    /// Goal 2: no emergency sale of properties, i.e. as few unplanned sales (emergency sales) as possible.
     KeepProperty,
 }
 
-/// Einstellungen der Optimierung. Anteile als Zahl (0.05 = 5 %); `strategies` leer = alle.
+/// Settings of the optimization. Shares as numbers (0.05 = 5 %); `strategies` empty = all.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", default)]
 pub struct OptimizerSettings {
-    /// Höchste erlaubte Ruinwahrscheinlichkeit.
+    /// Highest allowed probability of ruin.
     pub max_ruin: f64,
-    /// Ziel der Optimierung (Standard: Konsum).
+    /// Goal of the optimization (default: consumption).
     pub goal: Goal,
-    /// Ziel «Kein Notverkauf von Immobilien»: Der Median des Jahreskonsums beträgt mindestens diesen Anteil der geplanten Ausgaben.
+    /// Goal «Kein Notverkauf von Immobilien»: the median annual consumption is at least this share of the planned spending.
     pub min_consumption: f64,
-    /// Ruin zählt nur bis zu diesem Alter der Hauptperson (`None` = bis zum Simulationsende).
+    /// Ruin counts only up to this age of the main person (`None` = until the end of the simulation).
     pub ruin_age: Option<f64>,
-    /// Gewicht des Medians im Konsumziel (0 bis 1); der Rest geht auf das 10-%-Perzentil.
+    /// Weight of the median in the consumption goal (0 to 1); the rest goes to the 10 % percentile.
     pub weight_median: f64,
-    /// Abzug für die Schwankung des Konsums.
+    /// Penalty for the fluctuation of consumption.
     pub vol_weight: f64,
-    /// Höchste erlaubte Schwankung (`None` = keine Grenze).
+    /// Highest allowed fluctuation (`None` = no limit).
     pub max_vol: Option<f64>,
-    /// Pfade der Suche und der Prüfung, zufällige Startpunkte je Strategie.
+    /// Paths of the search and of the check, random starting points per strategy.
     pub paths: usize,
     pub check_paths: usize,
     pub samples: usize,
-    /// Schlüssel der Strategien (`guardrails`, `vpw` …).
+    /// Keys of the strategies (`guardrails`, `vpw` …).
     pub strategies: Vec<String>,
-    /// Bandbreiten der Parameter je Strategie (Schlüssel der Strategie, dann des Parameters).
-    /// Ohne Eintrag gelten die Standard-Bandbreiten.
+    /// Ranges of the parameters per strategy (key of the strategy, then of the parameter).
+    /// Without an entry the default ranges apply.
     #[serde(skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub ranges: std::collections::BTreeMap<String, std::collections::BTreeMap<String, ParamRange>>,
 }
 
-/// Bandbreite eines Parameters in der Optimierung, in der Einheit des Parameters
-/// (Jahre in Jahren, Anteile als Zahl: 0.05 = 5 %).
+/// Range of a parameter in the optimization, in the parameter's unit
+/// (years in years, shares as numbers: 0.05 = 5 %).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ParamRange {
-    /// Der Parameter bleibt auf dem Wert der Planung und wird nicht variiert.
+    /// The parameter stays at the plan's value and is not varied.
     pub fixed: Option<bool>,
-    /// Untere und obere Grenze der Suche; ohne Angabe die Standard-Bandbreite.
+    /// Lower and upper limit of the search; if not given, the default range.
     pub lo: Option<f64>,
     pub hi: Option<f64>,
 }
@@ -161,12 +161,12 @@ fn default_currency() -> String {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Household {
-    /// Erste Person = Hauptperson (`pension`, `flows.income`), zweite Person = `partner`.
+    /// First person = main person (`pension`, `flows.income`), second person = `partner`.
     pub persons: Vec<Person>,
-    /// Verheiratet: Ehepaar-Regeln (AHV-Plafonierung, Steuertabellen für Verheiratete).
+    /// Married: rules for couples (AHV cap, tax tables for married couples).
     #[serde(default = "yes")]
     pub married: bool,
-    /// Plafonierung der beiden AHV-Renten zusammen pro Monat (150 % der Maximalrente).
+    /// Cap on the two AHV pensions together per month (150 % of the maximum pension).
     #[serde(default = "default_couple_cap")]
     pub ahv_couple_cap: f64,
 }
@@ -174,19 +174,19 @@ pub struct Household {
 fn yes() -> bool {
     true
 }
-/// 150 % der AHV-Maximalrente von 2 520 CHF (Stand 2025).
+/// 150 % of the AHV maximum pension of 2 520 CHF (as of 2025).
 fn default_couple_cap() -> f64 {
     3780.0
 }
 
-/// Einkommen und Vorsorge der zweiten Person; Altersangaben beziehen sich auf `household.persons[1]`.
+/// Income and pension of the second person; ages refer to `household.persons[1]`.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Partner {
-    /// Erwerbseinkommen netto pro Monat (steuerbar).
+    /// Net earned income per month (taxable).
     #[serde(default)]
     pub income: Series,
-    /// #58: Das Erwerbseinkommen steigt mit der Teuerung (Beträge in Preisen des Simulationsstarts); fehlt: nein.
+    /// #58: Earned income rises with inflation (amounts in prices of the simulation start); missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_indexed: bool,
     pub pk: PensionFund,
@@ -201,13 +201,13 @@ pub struct Person {
     pub birth: YearMonth,
 }
 
-/// Name des Meilensteins «Bezug Pensionskasse» (bisher «Pensionierung», #51).
+/// Name of the milestone «Bezug Pensionskasse» (formerly «Pensionierung», #51).
 pub const PK_NAME: &str = "Bezug Pensionskasse";
-/// Name des Meilensteins «AHV-Bezug».
+/// Name of the milestone «AHV-Bezug».
 pub const AHV_NAME: &str = "AHV-Bezug";
 
-/// Feste Meilensteine einer Person (#51): Ids für «Bezug Pensionskasse» und «AHV-Bezug». Erste Person `retire`
-/// und `ahv`, zweite Person `retire2` und `ahv2`. Sie sind immer vorhanden und nicht löschbar.
+/// Fixed milestones of a person (#51): ids for «Bezug Pensionskasse» and «AHV-Bezug». First person `retire`
+/// and `ahv`, second person `retire2` and `ahv2`. They always exist and cannot be deleted.
 pub fn person_milestones(index: usize) -> (&'static str, &'static str) {
     if index == 0 {
         ("retire", "ahv")
@@ -216,7 +216,7 @@ pub fn person_milestones(index: usize) -> (&'static str, &'static str) {
     }
 }
 
-/// Anzeigename eines festen Meilensteins der Person `index` (zweite Person mit Zusatz).
+/// Display name of a fixed milestone of person `index` (second person with a suffix).
 pub fn person_milestone_name(base: &str, index: usize) -> String {
     if index == 0 {
         base.to_string()
@@ -225,7 +225,7 @@ pub fn person_milestone_name(base: &str, index: usize) -> String {
     }
 }
 
-/// Benannter Zeitpunkt. `start` und `end` müssen vorhanden sein.
+/// Named point in time. `start` and `end` must exist.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Milestone {
@@ -242,12 +242,12 @@ pub struct Milestone {
 pub enum MilestoneKind {
     /// Fixes Datum.
     Date { date: YearMonth },
-    /// Alter einer Person (Dezimaljahre, 64.5 = 64 Jahre 6 Monate).
+    /// Age of a person (decimal years, 64.5 = 64 years 6 months).
     Age { person: String, years: f64 },
 }
 
-/// Ein Wert, der konstant ist oder sich ab bestimmten Zeitpunkten ändert.
-/// Eine reine Zahl gilt als konstanter Wert.
+/// A value that is constant or changes from certain points in time.
+/// A plain number counts as a constant value.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum Series {
@@ -295,34 +295,34 @@ pub struct Pension {
     pub ahv: Ahv,
 }
 
-/// Pensionskasse (2. Säule).
+/// Pension fund (2nd pillar).
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PensionFund {
-    /// Altersguthaben bei Simulationsstart.
+    /// Retirement capital at the start of the simulation.
     pub capital: f64,
-    /// Zeitpunkt des Bezugs (Rente und Kapital).
+    /// Point in time of the payout (pension and capital).
     pub at: TimeRef,
-    /// Anteil Kapitalbezug 0..1.
+    /// Lump-sum share 0..1.
     pub lumpsum: f64,
-    /// Umwandlungssatz für den Rentenanteil.
+    /// Conversion rate for the pension share.
     pub conversion: f64,
-    /// Beiträge pro Monat bis zum Bezug.
+    /// Contributions per month until the payout.
     #[serde(default)]
     pub contribution: Series,
-    /// Verzinsung pro Jahr, gutgeschrieben im Dezember.
+    /// Interest per year, credited in December.
     #[serde(default)]
     pub interest: Series,
 }
 
-/// AHV (1. Säule).
+/// AHV (1st pillar).
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Ahv {
-    /// Monatsrente bei Bezugsbeginn.
+    /// Monthly pension at the start of payout.
     pub monthly: f64,
     pub at: TimeRef,
-    /// Jährliche Anpassung an die Inflation (im Dezember).
+    /// Annual adjustment to inflation (in December).
     #[serde(default)]
     pub indexed: bool,
 }
@@ -330,30 +330,30 @@ pub struct Ahv {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Flows {
-    /// Erwerbseinkommen netto pro Monat (steuerbar).
+    /// Net earned income per month (taxable).
     #[serde(default)]
     pub income: Series,
-    /// #58: Das Erwerbseinkommen steigt mit der Teuerung (Beträge in Preisen des Simulationsstarts); fehlt: nein.
+    /// #58: Earned income rises with inflation (amounts in prices of the simulation start); missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_indexed: bool,
-    /// Lebenshaltungskosten pro Monat in Preisen bei Simulationsstart.
+    /// Living costs per month in prices at the simulation start.
     pub spending: Series,
-    /// #53: Die Lebenshaltungskosten enthalten Miete bzw. Wohnkosten. Die Simulation zieht den Wohnanteil
-    /// (Wohnkosten im Startmonat, siehe [`crate::housing`]) ab und rechnet mit den simulierten Wohnkosten. Fehlt das
-    /// Feld (ältere Planungen), gelten die Lebenshaltungskosten ohne Wohnkosten.
+    /// #53: Living costs include rent or housing costs. The simulation deducts the housing share
+    /// (housing costs in the start month, see [`crate::housing`]) and computes with the simulated housing costs. If the
+    /// field is missing (older plans), the living costs apply without housing costs.
     #[serde(default, skip_serializing_if = "is_false")]
     pub spending_includes_housing: bool,
-    /// Faktor auf die Lebenshaltung ohne Wohnen (Variation «Ausgaben-Faktor»); fehlt: 1.
+    /// Factor on the living costs without housing (variation «Ausgaben-Faktor»); missing: 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub spending_factor: Option<f64>,
-    /// Weitere Zuflüsse pro Monat (nicht steuerbar).
+    /// Further inflows per month (not taxable).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub savings: Option<Series>,
     #[serde(default)]
     pub extras: Vec<Extra>,
 }
 
-/// Einmaliger Betrag; positiv = Zufluss.
+/// One-off amount; positive = inflow.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Extra {
@@ -369,9 +369,9 @@ pub struct Wealth {
     pub stocks: f64,
     pub bonds: f64,
     pub cash: f64,
-    /// Aktienanteil am investierten Vermögen 0..1.
+    /// Stock share of the invested wealth 0..1.
     pub stock_share: Series,
-    /// Cash-Reserve in Monaten der ungedeckten Ausgaben.
+    /// Cash reserve in months of uncovered spending.
     #[serde(default)]
     pub reserve_months: Series,
 }
@@ -386,41 +386,41 @@ pub enum ReturnSource {
     Parametric,
 }
 
-/// #69: Index für die Aktien der Anlagestrategie.
+/// #69: Index for the stocks of the investment strategy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum StockIndex {
-    /// Schweizer Aktien (JST), jährlich ab 1900.
+    /// Swiss stocks (JST), annual from 1900.
     ChJst,
-    /// Welt-Aktienindex (JST, nach BIP gewichtet), jährlich ab 1900.
+    /// World stock index (JST, weighted by GDP), annual from 1900.
     WorldJst,
-    /// Welt mit eigenen Gewichten der Regionen (JST), jährlich ab 1900.
+    /// World with custom weights of the regions (JST), annual from 1900.
     WorldCustom,
-    /// S&P 500 (Shiller) in CHF, monatlich ab 1922.
+    /// S&P 500 (Shiller) in CHF, monthly from 1922.
     Sp500,
 }
 
-/// #69: Index für die Obligationen der Anlagestrategie.
+/// #69: Index for the bonds of the investment strategy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum BondIndex {
-    /// 10-jährige Obligationen der Eidgenossenschaft (JST bis 1988, danach SNB).
+    /// 10-year Swiss Confederation bonds (JST until 1988, SNB afterwards).
     Ch,
-    /// 10-jährige US-Staatsanleihen (Shiller) in CHF.
+    /// 10-year US Treasury bonds (Shiller) in CHF.
     Usa,
-    /// #76: kurzfristige Papiere der Eidgenossenschaft (etwa 3 Monate): JST bis 2020, danach SARON.
+    /// #76: short-term Swiss Confederation paper (about 3 months): JST until 2020, SARON afterwards.
     ChShort,
 }
 
-/// #69: Gewichte der Regionen für «Welt individuell» (Anteile, zusammen 1).
+/// #69: Weights of the regions for «Welt individuell» (shares, together 1).
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegionWeights {
     pub ch: f64,
     pub usa: f64,
-    /// Deutschland, Frankreich, Italien, Spanien, Niederlande, Belgien, Grossbritannien (unter sich nach BIP gewichtet).
+    /// Germany, France, Italy, Spain, Netherlands, Belgium, United Kingdom (weighted by GDP among themselves).
     pub eu: f64,
-    /// Japan und Australien (unter sich nach BIP gewichtet).
+    /// Japan and Australia (weighted by GDP among themselves).
     pub apac: f64,
 }
 
@@ -435,13 +435,13 @@ impl Default for RegionWeights {
     }
 }
 
-/// #69: Anlagestrategie: woher die Renditen von Aktien und Obligationen stammen.
+/// #69: Investment strategy: where the returns of stocks and bonds come from.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Investment {
     pub stocks: StockIndex,
     pub bonds: BondIndex,
-    /// Nur für [`StockIndex::WorldCustom`].
+    /// Only for [`StockIndex::WorldCustom`].
     #[serde(default)]
     pub weights: RegionWeights,
 }
@@ -461,24 +461,24 @@ impl Default for Investment {
 pub struct Returns {
     pub source: ReturnSource,
     pub fixed: FixedReturns,
-    /// #69: Anlagestrategie; gilt, wenn `series` fehlt.
+    /// #69: Investment strategy; applies if `series` is missing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub strategy: Option<Investment>,
-    /// Zeitreihe (Pfad zur CSV-Datei, relativ zur Projektdatei); ältere Planungen (vor #69).
+    /// Series (path to the CSV file, relative to the project file); older plans (before #69).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub series: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub saron_series: Option<String>,
-    /// Historischer Startmonat (Quelle `historical`).
+    /// Historical start month (source `historical`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start_date: Option<YearMonth>,
-    /// Fortschreibung, wenn die Zeitreihe vor dem Simulationsende endet.
+    /// Extrapolation if the series ends before the end of the simulation.
     #[serde(default)]
     pub extrapolation: Extrapolation,
-    /// Monte Carlo aus der Historie (Quelle `bootstrap`).
+    /// Monte Carlo from history (source `bootstrap`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bootstrap: Option<BootstrapParams>,
-    /// Monte Carlo mit Aktienmodell (Quelle `parametric`).
+    /// Monte Carlo with a stock model (source `parametric`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parametric: Option<ParametricParams>,
 }
@@ -493,16 +493,16 @@ fn default_block() -> f64 {
     12.0
 }
 
-/// Stationärer Bootstrap: Blöcke zufälliger Länge aus der Zeitreihe.
+/// Stationary bootstrap: blocks of random length from the series.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct BootstrapParams {
     #[serde(default = "default_paths")]
     pub paths: usize,
-    /// Mittlere Blocklänge in Monaten.
+    /// Mean block length in months.
     #[serde(default = "default_block")]
     pub block: f64,
-    /// Startwert des Zufallsgenerators (gleicher Wert ⇒ gleiche Pfade).
+    /// Seed of the random number generator (same value ⇒ same paths).
     #[serde(default = "default_seed")]
     pub seed: u64,
 }
@@ -517,37 +517,37 @@ impl Default for BootstrapParams {
     }
 }
 
-/// Aktienmodell des bisherigen Programms: Student-t-Schocks und Kurssprünge, Tagesschritte. Mit einer Zeitreihe
-/// (Anlagestrategie) sind Obligationen und Inflation zufällig und mit den Aktien korreliert (#101), sonst folgen sie
-/// wie der SARON den fixen Werten.
+/// Stock model of the previous program: Student-t shocks and price jumps, daily steps. With a series
+/// (investment strategy) bonds and inflation are random and correlated with the stocks (#101), otherwise they follow
+/// the fixed values like SARON.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ParametricParams {
     #[serde(default = "default_paths")]
     pub paths: usize,
-    /// Erwartete Jahresrendite (Drift).
+    /// Expected annual return (drift).
     pub mu: f64,
-    /// Jahresvolatilität.
+    /// Annual volatility.
     pub sigma: f64,
-    /// Freiheitsgrade der Student-t-Verteilung (0 = Normalverteilung).
+    /// Degrees of freedom of the Student-t distribution (0 = normal distribution).
     pub df: f64,
-    /// Erwartete Anzahl Kurssprünge pro Jahr.
+    /// Expected number of price jumps per year.
     #[serde(default)]
     pub jump_lambda: f64,
-    /// Mittlere logarithmische Sprunghöhe (−0.3 ≈ −26 %).
+    /// Mean logarithmic jump size (−0.3 ≈ −26 %).
     #[serde(default)]
     pub jump_mu: f64,
     #[serde(default)]
     pub jump_sigma: f64,
     #[serde(default = "default_seed")]
     pub seed: u64,
-    /// #100: Die Modellparameter folgen den Vorschlagswerten des Aktienindex (nicht von Hand geändert). Fehlt das
-    /// Merkmal (ältere Planungen), gelten die gespeicherten Werte.
+    /// #100: The model parameters follow the suggested values of the stock index (not changed by hand). If the
+    /// flag is missing (older plans), the saved values apply.
     #[serde(default)]
     pub auto: bool,
-    /// #132: Verfahren der Zufallsziehung, mit dem die Planung zuletzt gespeichert wurde. Fehlt es (0), stammt die Planung
-    /// von vor #132, und `upgrade` nennt beim Öffnen die geänderte Rechnung. Gerechnet wird immer mit dem aktuellen
-    /// Verfahren [`crate::montecarlo::SAMPLER`].
+    /// #132: Sampling method with which the plan was last saved. If it is missing (0), the plan dates
+    /// from before #132, and `upgrade` mentions the changed computation on opening. The computation always uses the current
+    /// method [`crate::montecarlo::SAMPLER`].
     #[serde(default)]
     pub sampler: u32,
 }
@@ -569,7 +569,7 @@ impl Default for ParametricParams {
     }
 }
 
-/// Jahreswerte. Im Modus `fixed` die Renditen; sonst Ersatzwerte (z. B. SARON ohne Zeitreihe).
+/// Annual values. In `fixed` mode the returns; otherwise substitute values (e.g. SARON without a series).
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FixedReturns {
@@ -584,7 +584,7 @@ pub struct FixedReturns {
 #[serde(rename_all = "camelCase")]
 pub struct Extrapolation {
     pub method: ExtrapolationMethod,
-    /// Anzahl Jahre für Durchschnitte.
+    /// Number of years for averages.
     pub range: usize,
 }
 
@@ -600,11 +600,11 @@ impl Default for Extrapolation {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ExtrapolationMethod {
-    /// Fixe Werte aus `returns.fixed`.
+    /// Fixed values from `returns.fixed`.
     Fixed,
-    /// Gleitender arithmetischer Durchschnitt.
+    /// Moving arithmetic average.
     Average,
-    /// Gleitender geometrischer Durchschnitt.
+    /// Moving geometric average.
     Geometric,
 }
 
@@ -623,16 +623,16 @@ pub struct Withdrawal {
     pub vpw: Option<Vpw>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endowment: Option<Endowment>,
-    /// Untergrenze der Lebenshaltung (Anteil der geplanten Ausgaben, 0 = keine); nur Guardrails und fixe Rate.
+    /// Floor of the living costs (share of the planned spending, 0 = none); only guardrails and fixed rate.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub floor: Option<f64>,
-    /// Obergrenze der Lebenshaltung (Anteil der geplanten Ausgaben, 0 = keine).
+    /// Ceiling of the living costs (share of the planned spending, 0 = none).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ceiling: Option<f64>,
 }
 
-/// Fixe Entnahmerate: ab Pensionierung wird jedes Jahr im Januar dieser Anteil des liquiden Vermögens
-/// ausgegeben (Lebenshaltung + Wohnkosten − Einkommen und Renten, vor Steuern).
+/// Fixed withdrawal rate: from retirement, every January this share of liquid wealth is
+/// spent (living costs + housing costs − income and pensions, before taxes).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FixedRate {
@@ -645,17 +645,17 @@ impl Default for FixedRate {
     }
 }
 
-/// Guardrails nach Guyton-Klinger: Startentnahme in Prozent des Vermögens bei Pensionierung, danach
-/// jährlich mit der Teuerung angepasst. Übersteigt die aktuelle Rate die Startrate um `upper`, wird um
-/// `adjust` gekürzt; unterschreitet sie die Startrate um `lower`, wird um `adjust` erhöht.
+/// Guardrails after Guyton-Klinger: initial withdrawal in percent of wealth at retirement, afterwards
+/// adjusted annually with inflation. If the current rate exceeds the initial rate by `upper`, it is
+/// cut by `adjust`; if it falls below the initial rate by `lower`, it is raised by `adjust`.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Guardrails {
     pub initial_rate: f64,
-    /// Obere Leitplanke: relative Abweichung der Rate nach oben (0.2 = 20 %).
+    /// Upper guardrail: relative upward deviation of the rate (0.2 = 20 %).
     pub upper: f64,
     pub lower: f64,
-    /// Anpassung der Ausgaben beim Erreichen einer Leitplanke (0.1 = 10 %).
+    /// Adjustment of spending when a guardrail is reached (0.1 = 10 %).
     pub adjust: f64,
 }
 
@@ -670,14 +670,14 @@ impl Default for Guardrails {
     }
 }
 
-/// Variable Prozententnahme (VPW): jedes Jahr im Januar wird der Anteil des liquiden Vermögens entnommen,
-/// der es bis zum Planungsalter gleichmässig aufbraucht (Annuität mit der angenommenen Realrendite).
+/// Variable percentage withdrawal (VPW): every January the share of liquid wealth is withdrawn
+/// that uses it up evenly by the planning age (annuity with the assumed real return).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Vpw {
-    /// Alter der Hauptperson, bis zu dem das Vermögen reichen soll.
+    /// Age of the main person up to which wealth should last.
     pub horizon_age: f64,
-    /// Angenommene reale Jahresrendite des Vermögens (0.02 = 2 %).
+    /// Assumed real annual return of wealth (0.02 = 2 %).
     pub real_return: f64,
 }
 
@@ -690,13 +690,13 @@ impl Default for Vpw {
     }
 }
 
-/// Endowment-Regel (Yale/Tobin): Entnahme = (1 − `smoothing`) × Vorjahresentnahme mit Teuerung
-/// + `smoothing` × `rate` × aktuelles Vermögen. Glättet Schwankungen des Vermögens.
+/// Endowment rule (Yale/Tobin): withdrawal = (1 − `smoothing`) × previous year's withdrawal with inflation
+/// + `smoothing` × `rate` × current wealth. Smooths fluctuations of wealth.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Endowment {
     pub rate: f64,
-    /// Gewicht des aktuellen Vermögens (0 = nur Vorjahr mit Teuerung, 1 = fixe Rate).
+    /// Weight of current wealth (0 = previous year with inflation only, 1 = fixed rate).
     pub smoothing: f64,
 }
 
@@ -709,35 +709,35 @@ impl Default for Endowment {
     }
 }
 
-/// 3-Topf-Strategie ab Pensionierung. Ziele in Jahren der ungedeckten Ausgaben (Ausgaben − Einkommen).
+/// 3-bucket strategy from retirement. Targets in years of uncovered spending (spending − income).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Buckets {
-    /// Topf 1: Cash.
+    /// Bucket 1: cash.
     pub cash_years: f64,
-    /// Topf 2: Obligationen.
+    /// Bucket 2: bonds.
     pub bond_years: f64,
-    /// Renditekriterium: Aus Topf 3 wird in der Januar-Auffüllung nur verkauft, wenn die Aktienrendite der letzten 12 Monate mindestens so hoch ist.
+    /// Return criterion: in the January refill bucket 3 is sold only if the stock return of the last 12 months is at least this high.
     #[serde(default)]
     pub refill_threshold: f64,
-    /// Unterjährige Auffüllung von Topf 1 (Fall C): Nach den Ausgaben des Monats bleiben mindestens so viele Monatsbedarfe
-    /// minus einer in Topf 1 (höchstens die Monate bis Januar).
+    /// Refill of bucket 1 during the year (case C): after the month's expenses at least this many monthly needs
+    /// minus one remain in bucket 1 (at most the months until January).
     #[serde(default = "default_reserve_months")]
     pub reserve_months: f64,
-    /// #6: Ausgaben ab Pensionierung wie geplant oder mit Guardrails gesteuert (Parameter aus `withdrawal.guardrails`,
-    /// Grenzen aus `withdrawal.floor` und `withdrawal.ceiling`).
+    /// #6: Spending from retirement as planned or steered by guardrails (parameters from `withdrawal.guardrails`,
+    /// limits from `withdrawal.floor` and `withdrawal.ceiling`).
     #[serde(default, skip_serializing_if = "BucketSpending::is_planned")]
     pub spending: BucketSpending,
 }
 
-/// Ausgabenregel der 3-Topf-Strategie (#6).
+/// Spending rule of the 3-bucket strategy (#6).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum BucketSpending {
-    /// Geplante Ausgaben.
+    /// Planned spending.
     #[default]
     Planned,
-    /// Guardrails nach Guyton-Klinger.
+    /// Guardrails after Guyton-Klinger.
     Guardrails,
 }
 
@@ -764,7 +764,7 @@ impl Default for Buckets {
 }
 
 impl Withdrawal {
-    /// #6: 3-Topf-Strategie, deren Ausgaben die Guardrails steuern.
+    /// #6: 3-bucket strategy whose spending is steered by the guardrails.
     pub fn buckets_with_guardrails(&self) -> bool {
         self.strategy == Strategy::ThreeBuckets
             && self
@@ -777,7 +777,7 @@ impl Withdrawal {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Strategy {
-    /// Cash-Reserve, Rest nach Aktienanteil investiert, monatliches Rebalancing.
+    /// Cash reserve, the rest invested by stock share, monthly rebalancing.
     #[default]
     Standard,
     ThreeBuckets,
@@ -787,20 +787,20 @@ pub enum Strategy {
     Endowment,
 }
 
-/// Steuertabellen: Paare `[ab Betrag, Satz]`, linear interpoliert, multipliziert mit `multiplier`.
+/// Tax tables: pairs `[from amount, rate]`, interpolated linearly, multiplied by `multiplier`.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Taxes {
-    /// Steuerfuss (Kanton + Gemeinde).
+    /// Tax multiplier (canton + municipality).
     #[serde(default = "one")]
     pub multiplier: f64,
     pub income: Vec<(f64, f64)>,
     pub wealth: Vec<(f64, f64)>,
-    /// Kapitalbezüge (PK, 3a); Bezüge im selben Jahr werden zusammengerechnet.
+    /// Lump sums (PK, 3a); payouts in the same year are added together.
     pub capital: Vec<(f64, f64)>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub property_gain: Option<PropertyGainTax>,
-    /// Tabellen für Verheiratete; gelten, wenn die Planung eine zweite Person hat und `household.married`.
+    /// Tables for married couples; apply if the plan has a second person and `household.married`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub couple: Option<TaxTables>,
 }
@@ -813,42 +813,42 @@ pub struct TaxTables {
     pub capital: Vec<(f64, f64)>,
 }
 
-/// Modell der Grundstückgewinnsteuer.
+/// Model of the property gain tax.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum GainModel {
-    /// Stufentarif auf den Gewinn, dann Zu- oder Abschlag nach Besitzdauer (Kanton Zürich).
+    /// Bracket tariff on the gain, then surcharge or reduction by holding period (canton of Zurich).
     #[default]
     Zurich,
-    /// Direkter Steuersatz auf den Gewinn nach Besitzdauer (Kanton Aargau, § 109 StG).
+    /// Direct tax rate on the gain by holding period (canton of Aargau, § 109 StG).
     Aargau,
 }
 
-/// Grundstückgewinnsteuer. Modell Zürich: Stufen `[Breite der Stufe, Satz]`, danach Zu- oder
-/// Abschlag nach Besitzdauer. Modell Aargau: Satz je Besitzdauer. Die Regeln unterscheiden sich je Kanton.
+/// Property gain tax. Zurich model: brackets `[width of the bracket, rate]`, then surcharge or
+/// reduction by holding period. Aargau model: rate per holding period. The rules differ per canton.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PropertyGainTax {
     #[serde(default)]
     pub model: GainModel,
-    /// Modell Aargau: Paare `[ab vollen Jahren, Steuersatz auf den Gewinn]`. Es gilt die letzte Zeile,
-    /// deren Jahre erreicht sind. Ohne Kaufdatum gilt der höchste Satz.
+    /// Aargau model: pairs `[from full years, tax rate on the gain]`. The last row whose years are reached
+    /// applies. Without a purchase date the highest rate applies.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub duration_rates: Vec<(f64, f64)>,
-    /// Die Steuer zusätzlich mit dem Steuerfuss (`taxes.multiplier`) multiplizieren.
+    /// Additionally multiply the tax by the tax multiplier (`taxes.multiplier`).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub use_multiplier: bool,
     #[serde(default)]
     pub brackets: Vec<(f64, f64)>,
-    /// Feste Ermässigung der Steuer, unabhängig von der Besitzdauer (0.5 = 50 %).
+    /// Fixed reduction of the tax, independent of the holding period (0.5 = 50 %).
     #[serde(default)]
     pub reduction: f64,
-    /// Zu- und Abschläge nach Besitzdauer: Paare `[ab vollen Jahren, Änderung der Steuer]`
-    /// (0.5 = Zuschlag von 50 %, −0.2 = Abzug von 20 %). Es gilt die letzte Zeile, deren Jahre
-    /// erreicht sind. Ohne Kaufdatum der Immobilie wird nichts angepasst.
+    /// Surcharges and reductions by holding period: pairs `[from full years, change of the tax]`
+    /// (0.5 = surcharge of 50 %, −0.2 = reduction of 20 %). The last row whose years are reached
+    /// applies. Without a purchase date of the property nothing is adjusted.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub duration: Vec<(f64, f64)>,
-    /// Gewinne unter diesem Betrag bleiben steuerfrei (0 = keine Freigrenze).
+    /// Gains below this amount stay tax-free (0 = no exemption limit).
     #[serde(default, skip_serializing_if = "is_zero")]
     pub exempt_below: f64,
 }
@@ -860,27 +860,27 @@ fn is_zero(v: &f64) -> bool {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RealEstate {
-    /// Notverkauf, wenn das liquide Vermögen die ungedeckten Ausgaben dieser Anzahl Monate nicht mehr deckt.
+    /// Emergency sale if liquid wealth no longer covers the uncovered spending of this number of months.
     #[serde(default)]
     pub emergency_months: Series,
     #[serde(default)]
     pub properties: Vec<Property>,
-    /// Tragbarkeit für Käufe «nach Verkauf».
+    /// Affordability for purchases «nach Verkauf».
     #[serde(default)]
     pub affordability: Affordability,
 }
 
-/// Tragbarkeitsrechnung der Banken: (kalkulatorischer Zins × Hypothek + Nebenkosten) höchstens
-/// `sustainability` × Jahreseinkommen (Erwerb und Renten, ohne Entnahme aus dem Vermögen); Hypothek höchstens 80 %.
-/// Reicht das nicht, wird die Hypothek gekürzt (Einmalrückzahlung aus dem Vermögen).
+/// Banks' affordability calculation: (imputed rate × mortgage + fix costs) at most
+/// `sustainability` × annual income (earned income and pensions, without withdrawal from wealth); mortgage at most 80 %.
+/// If that is not enough, the mortgage is reduced (one-off repayment from wealth).
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Affordability {
     pub sustainability: f64,
     pub imputed_rate: f64,
-    /// Nebenkosten pro Jahr in Prozent des Kaufpreises.
+    /// Fix costs per year in percent of the purchase price.
     pub fix_costs: f64,
-    /// Nicht mehr verwendet (die Tragbarkeit rechnet nur mit dem Einkommen); bleibt für ältere Dateien erhalten.
+    /// No longer used (affordability only uses income); kept for older files.
     pub wealth_contribution: f64,
     pub max_loan_to_value: f64,
 }
@@ -908,44 +908,44 @@ pub enum PropertyStatus {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Property {
-    /// Eindeutige Kennung, damit andere Objekte darauf verweisen können («nach Verkauf von …»).
+    /// Unique id, so that other objects can refer to it («nach Verkauf von …»).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     pub name: String,
     pub status: PropertyStatus,
-    /// Kaufpreis (Besitz: bezahlter Preis, für die Grundstückgewinnsteuer).
+    /// Purchase price (owned: price paid, for the property gain tax).
     #[serde(default)]
     pub price: f64,
-    /// Marktwert heute (nur Besitz).
+    /// Market value today (owned only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub worth: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub buy: Option<TimeRef>,
-    /// Kaufdatum (Besitz): bestimmt die Besitzdauer bei der Grundstückgewinnsteuer.
+    /// Purchase date (owned): determines the holding period for the property gain tax.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bought: Option<YearMonth>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sell: Option<TimeRef>,
-    /// Miete ab (Status `rent`).
+    /// Rent from (status `rent`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from: Option<TimeRef>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub until: Option<TimeRef>,
-    /// Miete pro Monat in Preisen bei Simulationsstart.
+    /// Rent per month in prices at the simulation start.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rent: Option<f64>,
     #[serde(default)]
     pub fix_costs: f64,
-    /// Wert und Nebenkosten mit der Inflation anpassen (älteres Feld; gilt, wo die Einzelwahl fehlt).
+    /// Adjust value and fix costs with inflation (older field; applies where the individual choice is missing).
     #[serde(default)]
     pub inflation: bool,
-    /// Wert mit der Inflation anpassen (fehlt: `inflation`).
+    /// Adjust the value with inflation (missing: `inflation`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inflation_value: Option<bool>,
-    /// Nebenkosten mit der Inflation anpassen (fehlt: `inflation`).
+    /// Adjust fix costs with inflation (missing: `inflation`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inflation_fix_costs: Option<bool>,
-    /// Miete mit der Inflation anpassen (fehlt: ja).
+    /// Adjust rent with inflation (missing: yes).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inflation_rent: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -955,12 +955,12 @@ pub struct Property {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Mortgage {
-    /// Hypothek bei Kauf: erfasste Beträge oder maximale Belehnung (Minimum Eigenmittel).
+    /// Mortgage at purchase: entered amounts or maximum loan-to-value (minimum equity).
     #[serde(default)]
     pub amount_mode: AmountMode,
     pub tranches: Vec<Tranche>,
-    /// Veraltet (vor #52): Säule 3a an der Hypothek. Wird beim Laden in [`Plan::pillar3a`] übernommen
-    /// (siehe [`crate::upgrade`]) und danach nicht mehr verwendet.
+    /// Deprecated (before #52): pillar 3a on the mortgage. Taken over into [`Plan::pillar3a`] when loading
+    /// (see [`crate::upgrade`]) and not used afterwards.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pillar3a: Option<Pillar3a>,
 }
@@ -968,21 +968,21 @@ pub struct Mortgage {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum AmountMode {
-    /// Beträge der Tranchen wie erfasst.
+    /// Amounts of the tranches as entered.
     #[default]
     Fixed,
-    /// Höchste Belehnung (`affordability.maxLoanToValue`, also Minimum an Eigenmitteln), gekürzt,
-    /// falls nicht tragbar. Die Beträge der Tranchen gelten dann als Anteile.
+    /// Maximum loan-to-value (`affordability.maxLoanToValue`, i.e. minimum equity), reduced
+    /// if not affordable. The amounts of the tranches then count as shares.
     MaxLoan,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum AfterLast {
-    /// Letzte Periode zu gleichen Konditionen verlängern.
+    /// Renew the last period on the same terms.
     #[default]
     Renew,
-    /// Restschuld aus dem Vermögen zurückzahlen.
+    /// Repay the remaining debt from wealth.
     Repay,
 }
 
@@ -991,15 +991,15 @@ pub enum AfterLast {
 pub struct Tranche {
     #[serde(default)]
     pub name: String,
-    /// Betrag heute (Besitz) bzw. beim Kauf (geplant).
+    /// Amount today (owned) or at purchase (planned).
     pub amount: f64,
-    /// Beginn der laufenden Periode (nur Besitz).
+    /// Start of the current period (owned only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<YearMonth>,
     #[serde(default)]
     pub after: AfterLast,
     pub periods: Vec<Period>,
-    /// Person (Id), in deren Säule 3a die indirekte Amortisation fliesst (#52); fehlt: erste Person.
+    /// Person (id) whose pillar 3a receives the indirect amortization (#52); missing: first person.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pillar3a: Option<String>,
 }
@@ -1017,7 +1017,7 @@ pub enum RateKind {
 pub enum AmortMode {
     #[default]
     Direct,
-    /// Einzahlung in die Säule 3a statt Reduktion der Schuld.
+    /// Contribution into pillar 3a instead of reducing the debt.
     Indirect,
 }
 
@@ -1026,15 +1026,15 @@ pub enum AmortMode {
 pub struct Period {
     #[serde(rename = "type", default)]
     pub kind: RateKind,
-    /// Laufzeit in Jahren.
+    /// Term in years.
     pub term: f64,
-    /// Fester Zins p.a. (Art `fixed`).
+    /// Fixed interest p.a. (kind `fixed`).
     #[serde(default)]
     pub rate: f64,
-    /// Marge p.a. auf den SARON (Art `saron`).
+    /// Margin p.a. on SARON (kind `saron`).
     #[serde(default)]
     pub margin: f64,
-    /// Amortisation pro Quartal (fällig März, Juni, September, Dezember).
+    /// Amortization per quarter (due March, June, September, December).
     #[serde(default)]
     pub amort: f64,
     #[serde(default)]
@@ -1049,7 +1049,7 @@ pub enum PayoutUse {
     Wealth,
 }
 
-/// Veraltete Säule 3a an der Hypothek (vor #52); nur noch zum Laden älterer Dateien.
+/// Deprecated pillar 3a on the mortgage (before #52); only for loading older files.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3a {
@@ -1064,31 +1064,31 @@ fn wealth_use() -> PayoutUse {
     PayoutUse::Wealth
 }
 
-/// Säule 3a einer Person (#52): Guthaben bei Simulationsstart, Einzahlung und Auszahlungsplan. Der Rest wird
-/// spätestens im Monat des Meilensteins «AHV-Bezug» der Person ausbezahlt.
+/// Pillar 3a of a person (#52): balance at the simulation start, contribution and payout plan. The remainder is
+/// paid out at the latest in the month of the person's milestone «AHV-Bezug».
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3aAccount {
-    /// Person (Id aus `household.persons`).
+    /// Person (id from `household.persons`).
     pub person: String,
-    /// Guthaben bei Simulationsstart.
+    /// Balance at the simulation start.
     #[serde(default)]
     pub balance: f64,
-    /// Verzinsung bzw. Rendite pro Jahr.
+    /// Interest or return per year.
     #[serde(default)]
     pub rate: f64,
-    /// Einzahlung pro Jahr (0 bis Maximalbetrag), monatlich ein Zwölftel, bis vor dem AHV-Bezug. Zählt zu den Ausgaben.
+    /// Contribution per year (0 to the maximum), monthly one twelfth, until before the AHV payout. Counts as spending.
     #[serde(default)]
     pub contribution: f64,
-    /// Geplante Auszahlungen, frühestens 5 Jahre vor dem AHV-Bezug.
+    /// Planned payouts, at the earliest 5 years before the AHV payout.
     #[serde(default)]
     pub payouts: Vec<Pillar3aPayout>,
-    /// Verwendung des Rests im Monat des AHV-Bezugs.
+    /// Usage of the remainder in the month of the AHV payout.
     #[serde(rename = "use", default = "wealth_use")]
     pub usage: PayoutUse,
 }
 
-/// Zeitpunkt einer 3a-Auszahlung (#55): fixes Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers.
+/// Point in time of a 3a payout (#55): fixed date or age of the account holder.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PayoutAt {
@@ -1103,20 +1103,20 @@ impl PayoutAt {
     }
 }
 
-/// Geplante Auszahlung aus der Säule 3a.
+/// Planned payout from pillar 3a.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Pillar3aPayout {
-    /// «date» (Vorgabe, auch für ältere Planungen) oder «age».
+    /// «date» (default, also for older plans) or «age».
     #[serde(default, skip_serializing_if = "PayoutAt::is_date")]
     pub kind: PayoutAt,
-    /// Monat der Auszahlung bei `kind = date`.
+    /// Month of the payout with `kind = date`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub date: Option<YearMonth>,
-    /// Alter in Dezimaljahren bei `kind = age` (61.5 = 61 Jahre 6 Monate).
+    /// Age in decimal years with `kind = age` (61.5 = 61 years 6 months).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub years: Option<f64>,
-    /// Betrag; fehlt: das ganze Guthaben.
+    /// Amount; missing: the whole balance.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub amount: Option<f64>,
     #[serde(rename = "use", default = "wealth_use")]
@@ -1124,7 +1124,7 @@ pub struct Pillar3aPayout {
 }
 
 impl Pillar3aPayout {
-    /// Monat der Auszahlung; `None`, wenn Datum bzw. Alter fehlt oder das Alter nicht zwischen 0 und 150 Jahren liegt.
+    /// Month of the payout; `None` if date or age is missing or the age is not between 0 and 150 years.
     pub fn month(&self, birth: Option<YearMonth>) -> Option<YearMonth> {
         match self.kind {
             PayoutAt::Date => self.date,
@@ -1162,7 +1162,7 @@ mod tests {
 
     const EXAMPLE: &str = include_str!("../assets/Neu.vplan");
 
-    // #40: Vorgabewerte beim Lesen und knappe Ausgabe beim Schreiben.
+    // #40: Default values when reading and compact output when writing.
     #[test]
     fn defaults_when_reading() {
         let mut v: serde_json::Value = serde_json::from_str(EXAMPLE).unwrap();
@@ -1213,7 +1213,7 @@ mod tests {
         );
     }
 
-    // #124/AK7: Eine Auszahlung nach Alter behält beim Speichern ihre Art; die Art «date» (Vorgabe) wird weggelassen.
+    // #124/AK7: A payout by age keeps its kind when saving; the kind «date» (default) is omitted.
     #[test]
     fn issue_124_ak7_payout_kind_is_saved_only_for_age() {
         let age: Pillar3aPayout = serde_json::from_value(json!({"kind": "age", "years": 61.5})).unwrap();
