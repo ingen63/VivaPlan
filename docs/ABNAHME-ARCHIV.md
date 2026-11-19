@@ -984,6 +984,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #167/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests), Playwright (221), `e2e/unit` (27), `tools/ui-smoke.sh`, [test_check_english.py](../tools/test_check_english.py) (16) | 19.11.2026 ok: alles grün, Golden-Dateien unverändert; Abdeckung App vorher/nachher 90,96/90,95 %, Produktivcode gleich abgedeckt (Unterschied nur im Testzweig der lokalen `shiller-index.ods`) |
 | #167/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Durchsicht aller geänderten Zeilen mit String-Literalen) | 19.11.2026 ok: nur Testdaten-Pfade und eine Assert-Meldung in `csp.rs` geändert; übrige Assert-Meldungen in Tests bleiben deutsch |
 
+### #168 Code intern englisch: Oberflächentests
+
+[Issue #168](https://github.com/ingen63/VivaPlan/issues/168) · geschlossen · Umsetzung: aee429e (Kommentare), c98b1d0 (Testtitel, Übergangsliste leer)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #168/AK1 | `tools/check-english.sh` meldet für `e2e/` keine Treffer; die Pfade sind aus der Übergangsliste entfernt. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_transition_list_is_empty», «test_ak4_gate_checks_e2e_with_real_list»; `tools/check-english.sh --all e2e`, `--gate` | 19.11.2026 ok: keine Treffer in 18 Dateien (`e2e/`) bzw. 205 Dateien (`--gate`); Übergangsliste leer, `--gate` läuft in `make test-quiet` und im Job `english`; ein Fehlalarm markiert (Suchbegriff «Liquidität» in `docs.test.js`) |
+| #168/AK2 | Bezeichner und Testnamen folgen dem Glossar; Kriterien-Bezüge bleiben erhalten (`#27/AK2`, `issue_27_ak2_…`, `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`). | ☑ | **gilt** | kein Test (Vergleich der Kennungen vor und nach der Umstellung mit `scan_marks` aus `tools/report/report.py`) | 19.11.2026 ok: 179 Kriterien-Bezüge in `e2e/` vor 4a14360 und nach c98b1d0 identisch (inkl. Anzahl Fundstellen); Bezeichner waren bereits englisch; Zeilennummern unverändert |
+| #168/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests + Englisch-Prüfung), Playwright (221), `e2e/unit` (27), `tools/ui-smoke.sh`, [test_check_english.py](../tools/test_check_english.py) (17) | 19.11.2026 ok: alles grün, gleiche Testanzahl wie vorher; `crates/` und Golden-Dateien unverändert, daher Abdeckung je Paket gleich |
+| #168/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Vergleich aller Zeilen ohne Kommentare und Testtitel) | 19.11.2026 ok: ausser Kommentaren und Titeln nur drei Assert-Meldungen in `e2e/unit` geändert; Suchen nach Oberflächentexten, `data-*`, CSS-Klassen/IDs, IPC-Namen und Planungsschlüssel unverändert |
+
 ### #169 Code intern englisch: Kommandozeile, fuzz und tools
 
 [Issue #169](https://github.com/ingen63/VivaPlan/issues/169) · geschlossen · Umsetzung: da91d7b, 190c6b4
