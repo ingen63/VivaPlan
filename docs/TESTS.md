@@ -41,6 +41,12 @@ aber nicht gebaut. Dass ein Treffer wirklich fehlschlägt, prüfen die Tests des
 `crates/app/tests/csp.rs` (`issue_157_ak2_…`) die Content-Security-Policy in `crates/app/tauri.conf.json`: `connect-src`
 enthält nur `'self'` und die IPC-Quellen `ipc:` und `http://ipc.localhost`, keine externen Adressen.
 
+**Code intern englisch (#165):** `tools/check-english.sh` (`make english`, Job `english` in `test-quality.yml`) meldet
+deutsche Kommentare und Testnamen mit Datei und Zeile; Regeln, Ausnahmen und Übergangsliste in
+[`ENTWICKLUNG.md`](ENTWICKLUNG.md#sprache-im-code). Die Tests des Skripts (Treffer, kein Treffer, Ausnahmen,
+Übergangsliste) laufen mit gestellten Quelldateien in einem temporären Git-Repo:
+`python3 -m unittest discover -s tools -p 'test_check_english.py'`.
+
 **Nächtliche Läufe von Hand starten (#159):** Die nächtlichen Jobs von `test-quality.yml` (`tests-os`, `e2e`,
 `release-golden`, `mutants-diff`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen um 02:17 UTC, nur nach einem neuen
 Commit. GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs
@@ -98,6 +104,7 @@ make test-quiet                                  # dasselbe, nur Fehlschläge un
 make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test, ohne Browser)
 make clippy                                      # clippy, Warnungen sind Fehler (wie im Workflow, #88)
 make network-free                                # keine Netzwerk-Bibliothek in den Abhängigkeiten (#157)
+make english                                     # deutsche Kommentare und Testnamen (#165)
 tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
 (cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 176 Tests)
 make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)

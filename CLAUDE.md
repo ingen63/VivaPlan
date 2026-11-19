@@ -6,7 +6,7 @@ Lokale Desktop-App (Tauri 2/Rust) für die Schweizer Pensionsplanung. Workspace:
 
 Deutsch mit «ss» statt «ß». Im Gespräch mit mir: «du». Commits, Issues und Entwicklerdoku (`docs/`, diese Datei) deutsch.
 
-- Code intern englisch: Bezeichner, Kommentare, Doku-Kommentare, Testnamen; Fachbegriffe nach `docs/GLOSSAR.md` (#165). Neuer und geänderter Code sofort englisch; bestehender Code wird je Paket umgestellt (#166–#169).
+- Code intern englisch: Bezeichner, Kommentare, Doku-Kommentare, Testnamen; Fachbegriffe nach `docs/GLOSSAR.md` (#165). Neuer und geänderter Code sofort englisch; bestehender Code wird je Paket umgestellt (#166–#169). Prüfung: `make english`.
 - Mehrsprachigkeit (de, en, fr, it) ist geplant (#62). Bis dahin sind Oberfläche und Hilfe deutsch; sie sprechen die Nutzer mit «Sie» an. Zahlen und Daten in jeder Sprache im Schweizer Format.
 
 ## Ablauf pro Issue

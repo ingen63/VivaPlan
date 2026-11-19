@@ -89,6 +89,19 @@ jobs:
       - name: Keine Netzwerk-Bibliothek in den Abhängigkeiten
         run: ./tools/check-network-free.sh
 
+  # #165: Code intern englisch. Die Tests des Prüfskripts laufen immer; die Prüfung selbst (--gate) erst, wenn die
+  # Übergangsliste in tools/check_english.py leer ist.
+  english:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests des Prüfskripts (#165/AK5)
+        run: python3 -m unittest discover -s tools -p 'test_check_english.py'
+      - name: Keine deutschen Kommentare und Testnamen
+        run: ./tools/check-english.sh --gate
+
   # #88: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
   clippy:
     if: github.event_name != 'schedule'

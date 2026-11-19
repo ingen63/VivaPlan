@@ -17,8 +17,31 @@ Projektdatei und die Rechenregeln Schritt für Schritt. Was die App kann, steht 
 | `e2e/` | Oberflächentests (Playwright) |
 | `fuzz/` | Fuzzing (cargo-fuzz, eigener Workspace) |
 | `tools/` | Skripte: Git-Hooks, Build und Installation, Rauchtest `ui-smoke.sh`, Testqualität, Übersichtsseite, Issues |
-| `docs/` | Beschreibung, Teststrategie ([`docs/TESTS.md`](TESTS.md)), QA-Bericht, Spezifikationen (Pflichteingaben, Weltindex JST, MCP-Konzept) |
+| `docs/` | Beschreibung, Glossar der Fachbegriffe ([`docs/GLOSSAR.md`](GLOSSAR.md)), Teststrategie ([`docs/TESTS.md`](TESTS.md)), QA-Bericht, Spezifikationen (Pflichteingaben, Weltindex JST, MCP-Konzept) |
 | `local/` | Nur lokal (von Git ausgeschlossen): Mutationsläufe, Berichte der Testqualität, eigene Planungen und alte Konfigurationen (`local/eigene/`), Notizen |
+
+## Sprache im Code
+
+Code, Kommentare, Bezeichner und Testnamen sind englisch; Oberflächentexte, Hilfe, Doku, Issues und Commits sind
+deutsch (#165). Bis zur Mehrsprachigkeit (#62) stehen die Oberflächentexte deutsch in Zeichenketten; sie sprechen die
+Nutzer mit «Sie» an. Die englischen Namen für Schweizer Fachbegriffe legt [`GLOSSAR.md`](GLOSSAR.md) fest; Schweizer
+Kürzel (AHV, PK, 3a, SARON …) bleiben als Bezeichner erlaubt. Serialisierte Namen (Schlüssel der Projektdatei,
+Ergebnisfelder, IPC-Befehle, `data-*`-Attribute, CSS-Klassen) bleiben unverändert, auch wenn sie deutsch sind.
+
+Neuer und geänderter Code ist sofort englisch. Bestehender Code wird je Paket umgestellt (#169, #166, #167, #168).
+Die Prüfung `make english` (`tools/check-english.sh`, Regeln in `tools/check_english.py`) meldet deutsche Kommentare
+(auch Doku-Kommentare und Python-Docstrings) und deutsche Testnamen in `crates/`, `e2e/`, `fuzz/` und `tools/` mit Datei
+und Zeile (Rust, JavaScript, Python, Shell):
+
+- Deutsch ist ein Text mit Umlaut oder ß, mit einem Wort aus der Wortliste oder mit einer typisch deutschen Endung
+  (`-ung`, `-keit`, `-iert` …). Die Erkennung ist eine Heuristik; fehlt ein Wort, wird es in der Liste ergänzt.
+- Nicht geprüft: Zeichenketten (Oberflächentexte), andere Bezeichner als Testnamen, `crates/engine/tests/golden/`.
+  In Kommentaren zählen Code in Backticks, Beschriftungen in «…», URLs und Wörter in Grossbuchstaben nicht.
+- Fehlalarm: Zeile mit `check-english: allow` markieren (im Kommentar derselben Zeile).
+- Übergang: `PENDING` in `tools/check_english.py` listet die noch nicht umgestellten Pfade; sie werden übersprungen.
+  Jede Paket-Umstellung entfernt ihren Pfad. Den Stand eines Pakets zeigt `tools/check-english.sh --all crates/cli`.
+  Ist die Liste leer, läuft die Prüfung in `make test-quiet` und im Workflow (Job `english`) mit (Option `--gate`);
+  bis dahin laufen dort nur die Tests des Skripts.
 
 ## Desktop-App
 
@@ -69,6 +92,7 @@ $B import-snb devkum.csv rendoblim.csv           # SNB-Daten aktualisieren, CHF-
 make test                                        # alle Tests (nextest, Grund in docs/TESTS.md)
 make ui-unit                                     # Hilfsfunktionen der Oberfläche (node --test)
 make clippy                                      # clippy ohne Warnungen (läuft bei jedem Push)
+make english                                     # Code intern englisch: deutsche Kommentare und Testnamen (#165)
 tools/ui-smoke.sh                                # Oberflächentest
 cargo llvm-cov --workspace --exclude vivaplan-app --summary-only   # Testabdeckung
 ```
@@ -391,6 +415,7 @@ Die Testqualität wird auf mehreren Ebenen gemessen (Details und Schichten: `doc
 |---|---|---|---|
 | Ausführung | cargo-nextest (Profil `ci`, Wiederholungen, flaky = Fehler) | `make test` | `junit.xml` |
 | Statische Prüfung | clippy mit `-D warnings` (Workspace und `fuzz/`, Job `clippy`) | `make clippy` | Log des Laufs |
+| Sprache im Code | `tools/check-english.sh` (Job `english`, ab leerer Übergangsliste auch in `make test-quiet`) | `make english` | Datei:Zeile im Log |
 | Abdeckung | cargo-llvm-cov (Gate: Zeilen ≥ 80 % je Paket, `tools/coverage-min`) | `make coverage` | HTML, LCOV, Cobertura |
 | Wirksamkeit | cargo-mutants (PR und nächtlich: nur geänderte Zeilen seit dem letzten erfolgreichen nächtlichen Lauf; voll: lokal oder manuell in Actions) | `make mutants`, `make mutants-diff` | `local/mutants.out/` (`missed.txt`) |
 | Eingabebreite | proptest (`crates/engine/tests/proptest_parsers.rs`, zufällige Planungen in `proptest_plans.rs`), cargo-fuzz (`fuzz/`, ganze Rechnung im Ziel `run_plan`) | `make proptest`, `make fuzz` | Fehlerfälle, Korpora |
