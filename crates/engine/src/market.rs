@@ -1,4 +1,4 @@
-//! Renditepfade: fixe Werte, historische Zeitreihen (jährlich oder monatlich) und deren Fortschreibung.
+//! Return paths: fixed values, historical series (annual or monthly) and their extrapolation.
 
 use std::collections::VecDeque;
 use std::path::Path;
@@ -15,26 +15,26 @@ pub enum Freq {
     Monthly,
 }
 
-/// Eine historische Zeitreihe. Jahreswerte sind Jahresrenditen; Monatswerte sind Monatsrenditen,
-/// ausser Inflation und SARON: diese sind immer Jahressätze. Fehlende SARON-Werte sind `NaN`
-/// (dort gilt der fixe Wert).
+/// A historical series. Annual values are annual returns; monthly values are monthly returns,
+/// except inflation and SARON: these are always annual rates. Missing SARON values are `NaN`
+/// (the fixed value applies there).
 #[derive(Clone, Debug, Default)]
 pub struct DataSet {
     pub name: String,
     pub meta: Meta,
     pub freq: Freq,
-    /// Erster Monat (bei Jahresdaten: Januar des ersten Jahres).
+    /// First month (for annual data: January of the first year).
     pub first: YearMonth,
     pub stocks: Vec<f64>,
     pub bonds: Vec<f64>,
     pub inflation: Vec<f64>,
     pub saron: Option<Vec<f64>>,
-    /// #100: ganze Aktienreihe des Index (auch über die gemeinsamen Jahre mit den Obligationen hinaus), in der
-    /// Häufigkeit, die der Bootstrap verwendet; für die Vorschlagswerte des parametrischen Modells.
+    /// #100: whole stock series of the index (also beyond the years in common with the bonds), in the
+    /// frequency the bootstrap uses; for the suggested values of the parametric model.
     pub stock_series: Option<StockSeries>,
 }
 
-/// #100: Aktienrenditen eines Index (Monats- oder Jahresrenditen ab `first`).
+/// #100: Stock returns of an index (monthly or annual returns from `first`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct StockSeries {
     pub freq: Freq,
@@ -42,15 +42,15 @@ pub struct StockSeries {
     pub values: Vec<f64>,
 }
 
-/// Angaben aus den Kommentarzeilen am Anfang der CSV-Datei (`# Titel: …`, `# Währung: CHF`, …).
+/// Data from the comment lines at the start of the CSV file (`# Titel: …`, `# Währung: CHF`, …).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Meta {
     pub title: Option<String>,
     pub currency: Option<String>,
     pub source: Option<String>,
-    /// Kurze Erklärung der Reihe (höchstens 2 Zeilen) für das Info-Popup (`# Info: …`).
+    /// Short explanation of the series (at most 2 lines) for the info popup (`# Info: …`).
     pub info: Option<String>,
-    /// Übrige Kommentarzeilen (`# Hinweis: …` oder ohne Schlüssel).
+    /// Other comment lines (`# Hinweis: …` or without a key).
     pub notes: Vec<String>,
 }
 
@@ -105,9 +105,9 @@ impl DataSet {
         DataSet::parse_csv(&name, &text)
     }
 
-    /// CSV mit Kopfzeile. Erste Spalte: Jahr (`1990`) oder Monat (`1990-01`).
-    /// Weitere Spalten nach Namen: Stocks/Aktien, Bonds/Obligationen, Inflation, Saron (darf leer sein).
-    /// Zeilen mit `#` am Anfang sind Kommentare; vor der Kopfzeile enthalten sie die [`Meta`]-Angaben.
+    /// CSV with a header row. First column: year (`1990`) or month (`1990-01`).
+    /// Further columns by name: `Stocks`/`Aktien`, `Bonds`/`Obligationen`, `Inflation`, `Saron` (may be empty).
+    /// Lines starting with `#` are comments; before the header row they contain the [`Meta`] data.
     pub fn parse_csv(name: &str, text: &str) -> Result<DataSet> {
         let mut meta = Meta::default();
         let mut lines = text
@@ -152,7 +152,7 @@ impl DataSet {
             let (m, freq) = if date.contains('-') {
                 (date.parse::<YearMonth>().map_err(|e| bad(&e))?, Freq::Monthly)
             } else {
-                // #60: Jahre wie bei Monatsdaten vierstellig; sonst überläuft der Monatsindex.
+                // #60: Years four digits as with monthly data; otherwise the month index overflows.
                 let y: i32 = date
                     .parse()
                     .ok()
@@ -192,7 +192,7 @@ impl DataSet {
         Ok(ds)
     }
 
-    /// CSV im Format von [`DataSet::parse_csv`], mit den Meta-Angaben als Kommentarzeilen.
+    /// CSV in the format of [`DataSet::parse_csv`], with the meta data as comment lines.
     pub fn to_csv(&self) -> String {
         let mut out = String::new();
         self.meta.write(&mut out);
@@ -230,13 +230,13 @@ impl DataSet {
         out
     }
 
-    /// Währung gemäss Meta-Angabe.
+    /// Currency according to the meta data.
     pub fn currency(&self) -> Option<&str> {
         self.meta.currency.as_deref()
     }
 
-    /// Mittlere Jahreswerte über die ganze Reihe: geometrische Rendite Aktien und Obligationen,
-    /// geometrische Inflation (aus den Jahressätzen bzw. bei Monatsdaten aus den Dezemberwerten).
+    /// Mean annual values over the whole series: geometric return of stocks and bonds,
+    /// geometric inflation (from the annual rates, or for monthly data from the December values).
     pub fn averages(&self) -> (f64, f64, f64) {
         let per_year = if self.freq == Freq::Monthly { 12.0 } else { 1.0 };
         let years = self.len() as f64 / per_year;
@@ -263,7 +263,7 @@ impl DataSet {
         self.stocks.is_empty()
     }
 
-    /// Letzter Monat mit Daten (bei Jahresdaten: Dezember des letzten Jahres).
+    /// Last month with data (for annual data: December of the last year).
     pub fn last(&self) -> YearMonth {
         match self.freq {
             Freq::Yearly => YearMonth::new(self.first.year() + self.len() as i32 - 1, 12),
@@ -272,30 +272,30 @@ impl DataSet {
     }
 }
 
-/// Werte pro Simulationsmonat `k` (0 = Start).
+/// Values per simulation month `k` (0 = start).
 #[derive(Clone, Debug)]
 pub struct MarketPath {
     pub label: String,
-    /// Monatsrenditen.
+    /// Monthly returns.
     pub stocks: Vec<f64>,
     pub bonds: Vec<f64>,
-    /// Jahressätze.
+    /// Annual rates.
     pub inflation: Vec<f64>,
     pub saron: Vec<f64>,
-    /// Vorlauf (#103): Aktien-Monatsrenditen der bis zu 12 Monate vor dem Start, der älteste zuerst. Er dient nur dem
-    /// Renditekriterium der 3-Topf-Strategie (letzte 12 Monate) und ändert kein Vermögen.
+    /// Lead-in (#103): monthly stock returns of up to 12 months before the start, the oldest first. It only serves the
+    /// return criterion of the 3-bucket strategy (last 12 months) and changes no wealth.
     pub pre_stocks: Vec<f64>,
 }
 
-/// Anzahl Monate Vorlauf vor dem Simulationsstart (#103).
+/// Number of lead-in months before the simulation start (#103).
 pub const PRE_MONTHS: usize = 12;
 
-/// Jahressatz → Monatssatz; Sätze unter −100 % gelten als −100 % (statt einer ungültigen Zahl).
+/// Annual rate → monthly rate; rates below −100 % count as −100 % (instead of an invalid number).
 pub fn monthly(yearly: f64) -> f64 {
     (1.0 + yearly).max(0.0).powf(1.0 / 12.0) - 1.0
 }
 
-/// Kurven für fixe Werte (Jahressätze).
+/// Curves for fixed values (annual rates).
 pub struct FixedCurves {
     pub stocks: Curve,
     pub bonds: Curve,
@@ -312,7 +312,7 @@ pub fn fixed_path(c: &FixedCurves, start: YearMonth, months: usize) -> MarketPat
         p.inflation.push(c.inflation.at(m));
         p.saron.push(c.saron.at(m));
     }
-    // Vorlauf mit dem Satz des Startmonats (vor dem Start ist keine Kurve definiert)
+    // Lead-in with the rate of the start month (no curve is defined before the start)
     p.pre_stocks = vec![monthly(c.stocks.at(start)); PRE_MONTHS];
     p
 }
@@ -337,9 +337,9 @@ impl MarketPath {
     }
 }
 
-/// Historischer Pfad. Bei Jahresdaten gilt pro Kalenderjahr der Simulation ein Jahreswert, beginnend
-/// mit dem Jahr von `hist_start`; bei Monatsdaten läuft die Reihe ab `hist_start` Monat für Monat.
-/// Reicht die Reihe nicht bis zum Simulationsende, wird sie gemäss `ex` fortgeschrieben.
+/// Historical path. With annual data one annual value applies per calendar year of the simulation, starting
+/// with the year of `hist_start`; with monthly data the series runs month by month from `hist_start`.
+/// If the series does not reach the end of the simulation, it is extrapolated according to `ex`.
 pub fn historical_path(
     ds: &DataSet,
     hist_start: YearMonth,
@@ -362,7 +362,7 @@ pub fn historical_path(
         Freq::Monthly => format!("Historisch ab {hist_start}"),
     };
     let mut p = MarketPath::with_capacity(label, months);
-    // Fortschreibung mit fixen Werten: die Werte des jeweiligen Monats (zeitabhängig möglich).
+    // Extrapolation with fixed values: the values of the respective month (may depend on time).
     let fixed_ex = ex.method == ExtrapolationMethod::Fixed;
     match ds.freq {
         Freq::Yearly => {
@@ -385,7 +385,7 @@ pub fn historical_path(
                 p.inflation.push(infl[i]);
                 p.saron.push(or_fixed(saron.as_deref(), i, || fixed.saron.at(m)));
             }
-            // Vorlauf: die Monate vor dem Start gehören wie im Pfad zum Jahreswert ihres Kalenderjahres
+            // Lead-in: the months before the start belong, as in the path, to the annual value of their calendar year
             for j in (1..=PRE_MONTHS as i32).rev() {
                 let m = sim_start.plus(-j);
                 let i = offset as i64 + (m.year() - sim_start.year()) as i64;
@@ -401,7 +401,7 @@ pub fn historical_path(
             let fm = |c: &Curve| monthly(c.at(sim_start));
             let stocks = extend(&ds.stocks, needed, ex, fm(&fixed.stocks), 12);
             let bonds = extend(&ds.bonds, needed, ex, fm(&fixed.bonds), 12);
-            // Inflation monatlich als Jahressatz geliefert; für die Fortschreibung genügt der Jahressatz.
+            // Inflation delivered monthly as an annual rate; for the extrapolation the annual rate suffices.
             let infl = extend(&ds.inflation, needed, ex, fixed.inflation.at(sim_start), 12);
             let saron = ds
                 .saron
@@ -420,7 +420,7 @@ pub fn historical_path(
                     fixed.saron.at(sim_start.plus(k as i32))
                 }));
             }
-            // Vorlauf: die echten Monate vor dem historischen Start, soweit die Reihe sie enthält
+            // Lead-in: the real months before the historical start, as far as the series contains them
             let from = (offset - PRE_MONTHS as i32).max(0) as usize;
             p.pre_stocks.extend_from_slice(&ds.stocks[from..offset as usize]);
         }
@@ -428,7 +428,7 @@ pub fn historical_path(
     Ok(p)
 }
 
-/// Alle historischen Startzeitpunkte, für die die Reihe den ganzen Simulationszeitraum abdeckt.
+/// All historical start dates for which the series covers the whole simulation period.
 pub fn rolling_starts(ds: &DataSet, sim_start: YearMonth, months: usize) -> Vec<YearMonth> {
     let sim_end = sim_start.plus(months as i32 - 1);
     match ds.freq {
@@ -450,7 +450,7 @@ pub fn rolling_starts(ds: &DataSet, sim_start: YearMonth, months: usize) -> Vec<
     }
 }
 
-/// Wert `i` der Reihe; fehlt die Reihe oder der Wert (`NaN`), gilt der fixe Wert.
+/// Value `i` of the series; if the series or the value (`NaN`) is missing, the fixed value applies.
 fn or_fixed(values: Option<&[f64]>, i: usize, fixed: impl FnOnce() -> f64) -> f64 {
     match values.map(|v| v[i]) {
         Some(v) if !v.is_nan() => v,
@@ -458,15 +458,15 @@ fn or_fixed(values: Option<&[f64]>, i: usize, fixed: impl FnOnce() -> f64) -> f6
     }
 }
 
-/// Verlängert `values` auf `needed` Einträge (längere Reihen bleiben unverändert). `per_year` = Werte pro Jahr (für das
-/// Durchschnittsfenster `ex.range` Jahre).
+/// Extends `values` to `needed` entries (longer series stay unchanged). `per_year` = values per year (for the
+/// averaging window of `ex.range` years).
 fn extend(values: &[f64], needed: usize, ex: &Extrapolation, fixed: f64, per_year: usize) -> Vec<f64> {
     let mut out = values.to_vec();
     if out.len() >= needed {
         return out;
     }
     let range = (ex.range.max(1) * per_year).min(values.len().max(1));
-    // Fenster der letzten `range` Werte (bei `Fixed` unbenutzt).
+    // Window of the last `range` values (unused with `Fixed`).
     let mut window: VecDeque<f64> = values[values.len().saturating_sub(range)..].iter().copied().collect();
     while out.len() < needed {
         let v = match ex.method {
@@ -530,7 +530,7 @@ mod tests {
             inflation: Curve::constant(0.0),
             saron: Curve::constant(0.0),
         };
-        // Start im November 2030: Nov/Dez nutzen 2000, ab Januar 2031 das Jahr 2001.
+        // Start in November 2030: Nov/Dec use 2000, from January 2031 the year 2001.
         let p = historical_path(
             &ds,
             YearMonth::new(2000, 11),
@@ -545,8 +545,8 @@ mod tests {
         assert_eq!(rolling_starts(&ds, YearMonth::new(2030, 11), 3).len(), 2);
     }
 
-    /// #103: Vorlauf bei Jahresdaten nach Kalenderjahr: Start November 2030 mit dem Jahr 2001 ⇒ November und Dezember
-    /// 2029 aus 2000, Januar bis Oktober 2030 aus 2001; ohne Vorjahr in der Reihe nur die Monate des Startjahres.
+    /// #103: Lead-in with annual data by calendar year: start November 2030 with the year 2001 ⇒ November and December
+    /// 2029 from 2000, January to October 2030 from 2001; without a previous year in the series only the months of the start year.
     #[test]
     fn issue_103_yearly_pre_run_by_calendar_year() {
         let ds = DataSet::parse_csv("t", CSV).unwrap();
@@ -573,7 +573,7 @@ mod tests {
         close(p.pre_stocks[0], monthly(0.1));
     }
 
-    /// #103: Vorlauf bei Monatsdaten: die echten 12 Monate vor dem historischen Start, am Anfang der Reihe weniger.
+    /// #103: Lead-in with monthly data: the real 12 months before the historical start, fewer at the start of the series.
     #[test]
     fn issue_103_monthly_pre_run_takes_the_months_before_the_start() {
         let ds = DataSet {
@@ -597,7 +597,7 @@ mod tests {
         assert!(path(YearMonth::new(2000, 1)).pre_stocks.is_empty());
     }
 
-    /// #103: Fixe Renditen: Vorlauf mit dem Satz des Startmonats.
+    /// #103: Fixed returns: lead-in with the rate of the start month.
     #[test]
     fn issue_103_fixed_pre_run_uses_the_start_rate() {
         let mut c = flat();
@@ -619,7 +619,7 @@ mod tests {
         assert!((a - b).abs() < 1e-12, "{a} != {b}");
     }
 
-    // #40: Name, leere Reihe, Mittelwerte für Jahres- und Monatsreihen.
+    // #40: Name, empty series, means for annual and monthly series.
     #[test]
     fn name_empty_and_averages() {
         let y = DataSet::parse_csv("Jahre", CSV).unwrap();
@@ -630,7 +630,7 @@ mod tests {
         close(b, (1.02f64 * 1.03 * 1.01).powf(1.0 / 3.0) - 1.0);
         close(i, (1.01f64 * 1.02 * 1.0).powf(1.0 / 3.0) - 1.0);
 
-        // 24 Monate ab Januar 2000: Aktien 1 % pro Monat, Inflation (Jahressatz) im Dezember 2 % bzw. 5 %.
+        // 24 months from January 2000: stocks 1 % per month, inflation (annual rate) in December 2 % or 5 %.
         let mut csv = String::from("Date,Stocks,Bonds,Inflation\n");
         for k in 0..24 {
             let m = YearMonth::new(2000, 1).plus(k);
@@ -646,7 +646,7 @@ mod tests {
         close(s, 1.01f64.powi(12) - 1.0);
         close(b, 1.002f64.powi(12) - 1.0);
         close(i, (1.02f64 * 1.05).sqrt() - 1.0);
-        // Ohne Dezember keine Inflation
+        // Without December no inflation
         let short = DataSet::parse_csv("k", "Date,Stocks,Bonds,Inflation\n2000-01,0.01,0,0.02\n").unwrap();
         assert!(short.averages().2.is_nan());
     }
@@ -667,12 +667,12 @@ mod tests {
             method: ExtrapolationMethod::Average,
             range: 30,
         };
-        // Jahresreihe ab dem ersten Jahr: 3 Jahre Daten, 5 Jahre Simulation.
+        // Annual series from the first year: 3 years of data, 5 years of simulation.
         let ds = DataSet::parse_csv("t", CSV).unwrap();
         let p = historical_path(&ds, YearMonth::new(2000, 1), YearMonth::new(2030, 1), 60, &avg, &flat()).unwrap();
         assert_eq!(p.stocks.len(), 60);
         close(p.stocks[36], monthly((0.1 - 0.1 + 0.2) / 3.0));
-        // Monatsreihe ab dem ersten Monat: 3 Monate Daten, 5 Monate Simulation.
+        // Monthly series from the first month: 3 months of data, 5 months of simulation.
         let m = DataSet::parse_csv(
             "m",
             "Date,Stocks,Bonds,Inflation\n2000-01,0.01,0,0\n2000-02,0.02,0,0\n2000-03,0.03,0,0\n",
@@ -685,9 +685,9 @@ mod tests {
     #[test]
     fn rolling_starts_need_the_whole_period() {
         let ds = DataSet::parse_csv("t", CSV).unwrap();
-        // 2 Kalenderjahre: Starts 2000 und 2001
+        // 2 calendar years: starts 2000 and 2001
         assert_eq!(rolling_starts(&ds, YearMonth::new(2030, 1), 24).len(), 2);
-        // 3 Kalenderjahre (genau die Länge der Reihe): ein Start
+        // 3 calendar years (exactly the length of the series): one start
         assert_eq!(
             rolling_starts(&ds, YearMonth::new(2030, 1), 36),
             vec![YearMonth::new(2000, 1)]
@@ -704,7 +704,7 @@ mod tests {
 
     #[test]
     fn extension_window_length_and_methods() {
-        // Monatswerte: Fenster = range Jahre × 12 Werte.
+        // Monthly values: window = range years × 12 values.
         let mut v = vec![0.0; 12];
         v.extend([0.12; 12]);
         let avg = Extrapolation {

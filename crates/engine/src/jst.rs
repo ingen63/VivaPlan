@@ -1,15 +1,15 @@
-//! #67: Jordà-Schularick-Taylor Macrohistory Database (Release 6, Jahreswerte bis 2020).
+//! #67: Jordà-Schularick-Taylor Macrohistory Database (Release 6, annual values until 2020).
 //!
-//! Aus den Länderwerten entstehen Aktien- und Obligationenrenditen in CHF (ohne Währungsabsicherung) und daraus nach
-//! BIP gewichtete Regionen und ein Welt-Aktienindex. Die Rohdaten (`data/quellen/JSTdatasetR6.xlsx`) stehen unter
-//! der Lizenz CC BY-NC-SA 4.0; ausgeliefert wird ein Auszug der benötigten Spalten (`data/quellen/jst-r6.csv`).
+//! From the country values, stock and bond returns in CHF (without currency hedging) are derived, and from them
+//! GDP-weighted regions and a world stock index. The raw data (`data/quellen/JSTdatasetR6.xlsx`) is under
+//! the licence CC BY-NC-SA 4.0; an extract of the required columns is bundled (`data/quellen/jst-r6.csv`).
 //!
-//! Rechenweg (`docs/Weltindex JST.md`):
-//! - Rendite in CHF: `(1 + r) × k(t) / k(t−1) − 1` mit `k` = CHF je Einheit Landeswährung (aus den Kursen gegenüber
-//!   dem USD, `xrusd`).
-//! - Gewicht eines Landes im Jahr `t`: reales BIP des Vorjahres (BIP pro Kopf nach Maddison × Bevölkerung). Die
-//!   nominale BIP-Spalte ist je Land unterschiedlich skaliert und taugt nicht für einen Vergleich.
-//! - Länder ohne Rendite in einem Jahr fallen in diesem Jahr weg; die übrigen Gewichte ergeben wieder 100 %.
+//! Computation (`docs/Weltindex JST.md`):
+//! - Return in CHF: `(1 + r) × k(t) / k(t−1) − 1` with `k` = CHF per unit of local currency (from the rates against
+//!   the USD, `xrusd`).
+//! - Weight of a country in year `t`: real GDP of the previous year (GDP per capita after Maddison × population). The
+//!   nominal GDP column is scaled differently per country and is not suitable for a comparison.
+//! - Countries without a return in a year drop out in that year; the remaining weights add up to 100 % again.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -21,13 +21,13 @@ use crate::market::{DataSet, Freq, Meta};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Rohdatei der Datenbank (Ordner `quellen` der Bibliothek).
+/// Raw file of the database (folder `quellen` of the library).
 pub const XLSX: &str = "JSTdatasetR6.xlsx";
-/// Auszug der benötigten Spalten, mit dem Programm ausgeliefert.
+/// Extract of the required columns, bundled with the program.
 pub const EXTRACT: &str = "jst-r6.csv";
 const BUILTIN: &str = include_str!("../data/quellen/jst-r6.csv");
 
-/// Spalten des Auszugs (nach Jahr und Land).
+/// Columns of the extract (after year and country).
 const COLUMNS: [&str; 8] = [
     "pop",
     "rgdpmad",
@@ -39,21 +39,21 @@ const COLUMNS: [&str; 8] = [
     "bill_rate",
 ];
 
-/// Quellenangabe (Zitate gemäss macrohistory.net).
+/// Source reference (citations according to macrohistory.net).
 pub const SOURCE: &str = "Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, abgerufen 13.11.2026), Lizenz CC BY-NC-SA 4.0. Zitate: Jordà, Schularick, Taylor (2017), «Macrofinancial History and the New Business Cycle Facts», NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), «The Rate of Return on Everything, 1870–2015», Quarterly Journal of Economics";
 
-/// Werte eines Landes in einem Jahr (fehlend = `None`).
+/// Values of a country in one year (missing = `None`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Row {
     pub pop: Option<f64>,
     pub rgdpmad: Option<f64>,
-    /// Landeswährung je USD, Ende Jahr.
+    /// Local currency per USD, end of year.
     pub xrusd: Option<f64>,
     pub cpi: Option<f64>,
     pub eq_tr: Option<f64>,
     pub bond_tr: Option<f64>,
     pub bond_rate: Option<f64>,
-    /// #76: Rendite kurzfristiger Staatspapiere (etwa 3 Monate), als Anteil.
+    /// #76: Return of short-term government paper (about 3 months), as a share.
     pub bill_rate: Option<f64>,
 }
 
@@ -85,7 +85,7 @@ impl Row {
     }
 }
 
-/// Eine Region aus Ländern (ISO-Codes wie in der Datenbank).
+/// A region of countries (ISO codes as in the database).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Region {
     pub id: &'static str,
@@ -103,32 +103,32 @@ pub const USA: Region = Region {
     name: "USA",
     countries: &["USA"],
 };
-/// «EU» gemäss #69: Deutschland, Frankreich, Italien, Spanien, Niederlande, Belgien, Grossbritannien.
+/// «EU» according to #69: Germany, France, Italy, Spain, Netherlands, Belgium, United Kingdom.
 pub const EU: Region = Region {
     id: "eu",
     name: "EU",
     countries: &["DEU", "FRA", "ITA", "ESP", "NLD", "BEL", "GBR"],
 };
-/// Asien-Pazifik: Japan und Australien (die einzigen Länder der Region in der Datenbank).
+/// Asia-Pacific: Japan and Australia (the only countries of the region in the database).
 pub const APAC: Region = Region {
     id: "apac",
     name: "Asien-Pazifik",
     countries: &["JPN", "AUS"],
 };
-/// Regionen des Weltindexes (#67).
+/// Regions of the world index (#67).
 pub const REGIONS: [Region; 4] = [SWITZERLAND, USA, EU, APAC];
 
-/// Erstes Jahr des Weltindexes: ab 1900 haben alle Regionen Aktienrenditen.
+/// First year of the world index: from 1900 all regions have stock returns.
 pub const FIRST_YEAR: i32 = 1900;
 
-/// Länderjahre, die nicht verwendet werden.
+/// Country-years that are not used.
 pub const EXCLUDED: [(&str, i32, &str); 1] = [(
     "DEU",
     1923,
     "Hyperinflation: Der Wechselkurs der Datenbank passt im Jahr 1923 nicht zur Jahresrendite (in USD ergäben sich +830 %).",
 )];
 
-/// Welche Rendite.
+/// Which return.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Asset {
     Stocks,
@@ -159,7 +159,7 @@ fn all_countries() -> impl Iterator<Item = &'static str> {
 }
 
 impl JstData {
-    /// Liest die Tabelle der Datenbank (`JSTdatasetR6.xlsx`, erstes Blatt).
+    /// Reads the table of the database (`JSTdatasetR6.xlsx`, first sheet).
     pub fn read_xlsx(path: &Path) -> Result<JstData> {
         let mut wb = open_workbook_auto(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
         let range = wb
@@ -170,7 +170,7 @@ impl JstData {
         JstData::from_rows(&rows)
     }
 
-    /// Erste Zeile: Spaltennamen (`year`, `iso` und die Spalten des Auszugs). Nur die Länder der Regionen.
+    /// First row: column names (`year`, `iso` and the columns of the extract). Only the countries of the regions.
     pub fn from_rows(rows: &[Vec<Data>]) -> Result<JstData> {
         let header: Vec<String> = rows
             .first()
@@ -213,7 +213,7 @@ impl JstData {
         Ok(d)
     }
 
-    /// Auszug im CSV-Format (`year,iso,pop,…`), leere Zellen für fehlende Werte.
+    /// Extract in CSV format (`year,iso,pop,…`), empty cells for missing values.
     pub fn to_csv(&self) -> String {
         let mut out = format!("year,iso,{}\n", COLUMNS.join(","));
         for ((iso, year), row) in &self.rows {
@@ -261,7 +261,7 @@ impl JstData {
         Ok(d)
     }
 
-    /// Der ausgelieferte Auszug.
+    /// The bundled extract.
     pub fn builtin() -> JstData {
         JstData::parse_csv(BUILTIN).expect("ausgelieferter JST-Auszug ist gültig")
     }
@@ -270,18 +270,18 @@ impl JstData {
         self.rows.get(&(iso.to_string(), year))
     }
 
-    /// Letztes Jahr mit Werten.
+    /// Last year with values.
     pub fn last_year(&self) -> i32 {
         self.rows.keys().map(|(_, y)| *y).max().unwrap_or(FIRST_YEAR)
     }
 
-    /// CHF je Einheit Landeswährung, Ende Jahr.
+    /// CHF per unit of local currency, end of year.
     fn chf_per_lcu(&self, iso: &str, year: i32) -> Option<f64> {
         Some(self.row("CHE", year)?.xrusd? / self.row(iso, year)?.xrusd?)
     }
 
-    /// Jahresrendite eines Landes in CHF (ohne Währungsabsicherung); `None` bei fehlenden Angaben oder einem
-    /// ausgeschlossenen Länderjahr ([`EXCLUDED`]).
+    /// Annual return of a country in CHF (without currency hedging); `None` for missing data or an
+    /// excluded country-year ([`EXCLUDED`]).
     pub fn chf_return(&self, iso: &str, year: i32, asset: Asset) -> Option<f64> {
         if EXCLUDED.iter().any(|(c, y, _)| *c == iso && *y == year) {
             return None;
@@ -294,13 +294,13 @@ impl JstData {
         Some((1.0 + r) * self.chf_per_lcu(iso, year)? / self.chf_per_lcu(iso, year - 1)? - 1.0)
     }
 
-    /// Gewicht eines Landes im Jahr `year`: reales BIP des Vorjahres (BIP pro Kopf nach Maddison × Bevölkerung).
+    /// Weight of a country in year `year`: real GDP of the previous year (GDP per capita after Maddison × population).
     pub fn gdp_weight(&self, iso: &str, year: i32) -> Option<f64> {
         let r = self.row(iso, year - 1)?;
         Some(r.rgdpmad? * r.pop?).filter(|w| *w > 0.0)
     }
 
-    /// Nach BIP gewichtete Rendite in CHF über die Länder mit Werten; `None`, wenn keines Werte hat.
+    /// GDP-weighted return in CHF over the countries with values; `None` if none has values.
     pub fn weighted(&self, countries: &[&str], year: i32, asset: Asset) -> Option<f64> {
         let (mut sum, mut weights) = (0.0, 0.0);
         for c in countries {
@@ -312,7 +312,7 @@ impl JstData {
         (weights > 0.0).then(|| sum / weights)
     }
 
-    /// Gewichte (Anteile, Summe 1) der Länder mit Werten im Jahr `year`.
+    /// Weights (shares, sum 1) of the countries with values in year `year`.
     pub fn weights(&self, countries: &[&str], year: i32, asset: Asset) -> Vec<(String, f64)> {
         let w: Vec<(String, f64)> = countries
             .iter()
@@ -323,7 +323,7 @@ impl JstData {
         w.into_iter().map(|(c, v)| (c, v / total)).collect()
     }
 
-    /// Länderjahre ohne Rendite im Zeitraum (sie fallen aus der Gewichtung).
+    /// Country-years without a return in the period (they drop out of the weighting).
     pub fn gaps(&self, countries: &[&str], from: i32, to: i32, asset: Asset) -> Vec<(String, i32)> {
         (from..=to)
             .flat_map(|y| countries.iter().map(move |c| (c.to_string(), y)))
@@ -331,7 +331,7 @@ impl JstData {
             .collect()
     }
 
-    /// Aktienrenditen einer Region in CHF, Jahr für Jahr ab [`FIRST_YEAR`] bis zum letzten Jahr der Daten.
+    /// Stock returns of a region in CHF, year by year from [`FIRST_YEAR`] to the last year of the data.
     pub fn region_stocks(&self, countries: &[&str]) -> Result<Vec<f64>> {
         (FIRST_YEAR..=self.last_year())
             .map(|y| {
@@ -345,21 +345,21 @@ impl JstData {
             .collect()
     }
 
-    /// Teuerung in der Schweiz (Konsumentenpreise, Jahresmittel gegenüber Vorjahr).
+    /// Inflation in Switzerland (consumer prices, annual average against the previous year).
     pub fn ch_inflation(&self, year: i32) -> Option<f64> {
         Some(self.row("CHE", year)?.cpi? / self.row("CHE", year - 1)?.cpi? - 1.0)
     }
 }
 
-/// Erstes Jahr, für das die SNB-Renditen ein ganzes Kalenderjahr abdecken (Dezember des Vorjahres bis Dezember).
+/// First year for which the SNB yields cover a whole calendar year (December of the previous year to December).
 fn snb_first_full_year(snb: &SnbData) -> Option<i32> {
-    // Ein ganzes Jahr braucht die Rendite vom Dezember des Vorjahres.
+    // A whole year needs the yield of December of the previous year.
     Some(snb.ch_yield10.keys().next()?.year() + 1)
 }
 
-/// #68: Gesamtrendite 10-jähriger Obligationen der Eidgenossenschaft pro Kalenderjahr: aus JST bis zum Jahr vor dem
-/// ersten ganzen SNB-Jahr, danach aus den monatlichen SNB-Renditen (Monatsrenditen zum Jahr verknüpft). 1915 fehlt in
-/// JST (Börse geschlossen); dort gilt der Coupon (`bond_rate`) als Rendite. Liefert das erste Jahr und die Werte.
+/// #68: Total return of 10-year Swiss Confederation bonds per calendar year: from JST until the year before the
+/// first whole SNB year, afterwards from the monthly SNB yields (monthly returns linked to the year). 1915 is missing in
+/// JST (exchange closed); there the coupon (`bond_rate`) counts as the return. Returns the first year and the values.
 pub fn ch_bonds_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> {
     let switch = snb_first_full_year(snb).ok_or_else(|| invalid("SNB-Renditen der Eidgenossenschaft fehlen"))?;
     let y = &snb.ch_yield10;
@@ -389,9 +389,9 @@ pub fn ch_bonds_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> 
     Ok((FIRST_YEAR, out))
 }
 
-/// #76: Rendite kurzfristiger Papiere der Eidgenossenschaft (etwa 3 Monate) pro Kalenderjahr: aus JST (`bill_rate`)
-/// ab [`FIRST_YEAR`] bis zum letzten JST-Jahr, danach das Jahresmittel des SARON (SNB, nur ganze Jahre). Bei so kurzer
-/// Laufzeit entspricht die Rendite dem Satz; Kursschwankungen fallen weg. Liefert das erste Jahr und die Werte.
+/// #76: Return of short-term Swiss Confederation paper (about 3 months) per calendar year: from JST (`bill_rate`)
+/// from [`FIRST_YEAR`] to the last JST year, afterwards the annual average of SARON (SNB, whole years only). With such a short
+/// term the return equals the rate; price fluctuations drop out. Returns the first year and the values.
 pub fn ch_short_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> {
     let switch = jst.last_year() + 1;
     let mut out = vec![];
@@ -414,11 +414,11 @@ pub fn ch_short_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> 
     Ok((FIRST_YEAR, out))
 }
 
-/// Erklärung der Reihe «Welt (JST)» (höchstens 2 Zeilen).
+/// Explanation of the series «Welt (JST)» (at most 2 lines).
 pub const INFO_WORLD: &str = "Welt-Aktienindex aus den JST-Daten (CH, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Obligationen: Eidgenossenschaft 10 Jahre. Teuerung: CH.";
 
-/// #68: Jahresreihe «Welt (JST)» in CHF: Aktien = Weltindex (alle Regionen, nach BIP gewichtet), Obligationen =
-/// 10-jährige Obligationen der Eidgenossenschaft ([`ch_bonds_yearly`]), Teuerung = Schweizer Konsumentenpreise (JST).
+/// #68: Annual series «Welt (JST)» in CHF: stocks = world index (all regions, GDP-weighted), bonds =
+/// 10-year Swiss Confederation bonds ([`ch_bonds_yearly`]), inflation = Swiss consumer prices (JST).
 pub fn world_dataset(jst: &JstData, snb: &SnbData) -> Result<DataSet> {
     let countries: Vec<&str> = all_countries().collect();
     let stocks = jst.region_stocks(&countries)?;
@@ -471,7 +471,7 @@ mod tests {
 
     #[test]
     fn chf_return_converts_with_year_end_rates() {
-        // CHF 2 je USD → 2.2; Land: 4 je USD → 4 (CHF je Einheit 0.5 → 0.55, +10 %).
+        // CHF 2 per USD → 2.2; country: 4 per USD → 4 (CHF per unit 0.5 → 0.55, +10 %).
         let d = data(
             "1999,CHE,1,1,2,100,0,0,,\n2000,CHE,1,1,2.2,102,0.05,0.01,,\n1999,USA,1,1,4,,,,,\n2000,USA,1,1,4,,0.2,,,\n",
         );
@@ -483,7 +483,7 @@ mod tests {
 
     #[test]
     fn weights_use_real_gdp_of_the_previous_year_and_skip_missing_countries() {
-        // Vorjahr: CHE 1 × 10 = 10, USA 3 × 10 = 30 → 25 % / 75 %
+        // Previous year: CHE 1 × 10 = 10, USA 3 × 10 = 30 → 25 % / 75 %
         let d = data(
             "1999,CHE,10,1,1,,,,,\n2000,CHE,99,99,1,,0.1,,,\n1999,USA,10,3,1,,,,,\n2000,USA,1,1,1,,0.3,,,\n1999,DEU,10,5,1,,,,,\n2000,DEU,1,1,1,,,,,\n",
         );
@@ -523,7 +523,7 @@ mod tests {
         h
     }
 
-    /// Zeile der Rohtabelle: Jahr, Land und die acht Werte.
+    /// Row of the raw table: year, country and the eight values.
     fn raw_row(year: Data, iso: Data, values: [Data; 8]) -> Vec<Data> {
         let mut r = vec![year, iso];
         r.extend(values);
@@ -539,13 +539,13 @@ mod tests {
         let mut vals = empty8();
         vals[0] = Data::Float(1.5); // pop
         vals[1] = Data::Int(7); // rgdpmad
-        vals[2] = s(" 2.5 "); // xrusd als Text
-        vals[3] = s("keine Zahl"); // cpi: unlesbarer Text → fehlt
-        vals[4] = Data::Float(f64::NAN); // eq_tr: nicht endlich → fehlt
-        vals[5] = Data::Bool(true); // bond_tr: anderer Zellentyp → fehlt
+        vals[2] = s(" 2.5 "); // xrusd as text
+        vals[3] = s("keine Zahl"); // cpi: unreadable text → missing
+        vals[4] = Data::Float(f64::NAN); // eq_tr: not finite → missing
+        vals[5] = Data::Bool(true); // bond_tr: other cell type → missing
 
-        // Reihenfolge: Hauptzeile, Jahr als Ganzzahl und Land mit Leerzeichen, Land ausserhalb der Regionen,
-        // Land kein Text, ohne Jahr, Jahr unlesbar, kurze Zeile ohne Land
+        // Order: main row, year as integer and country with spaces, country outside the regions,
+        // country not text, without year, year unreadable, short row without country
         let rows = vec![
             header(),
             raw_row(Data::Float(2000.0), s("CHE"), vals),
@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(d.row("USA", 2001), Some(&Row::default()));
         assert_eq!(d.last_year(), 2001);
         assert!(d.row("XXX", 2000).is_none() && d.row("DEU", 2000).is_none() && d.row("FRA", 2000).is_none());
-        // Text im Jahr wird als Zahl gelesen
+        // Text in the year is read as a number
         let rows = vec![header(), raw_row(s("1999"), s("CHE"), empty8())];
         assert!(JstData::from_rows(&rows).unwrap().row("CHE", 1999).is_some());
     }
@@ -583,11 +583,11 @@ mod tests {
         let mut no_bill = header();
         no_bill.pop();
         assert!(msg(JstData::from_rows(&[no_bill])).contains("«bill_rate»"));
-        // Nur Kopfzeile oder nur fremde Länder
+        // Only header row or only foreign countries
         assert!(msg(JstData::from_rows(&[header()])).contains("keine Werte"));
         let other = vec![header(), raw_row(Data::Int(2000), s("XXX"), empty8())];
         assert!(msg(JstData::from_rows(&other)).contains("keine Werte"));
-        // Kopfzellen, die kein Text sind, zählen als unbenannt
+        // Header cells that are not text count as unnamed
         let mut odd = header();
         odd[0] = Data::Int(5);
         assert!(msg(JstData::from_rows(&[odd])).contains("«year»"));
@@ -600,13 +600,13 @@ mod tests {
 
     #[test]
     fn region_stocks_name_the_missing_year() {
-        // Nur 1900 hat eine Rendite; 1901 fehlt → Fehler mit Land und Jahr
+        // Only 1900 has a return; 1901 is missing → error with country and year
         let d = data("1899,CHE,1,1,1,,,,,\n1900,CHE,1,1,1,,0.1,,,\n1901,CHE,1,1,1,,,,,\n");
         match d.region_stocks(&["CHE"]) {
             Err(Error::Invalid(m)) => assert!(m.contains("CHE") && m.contains("1901"), "{m}"),
             other => panic!("Fehler erwartet: {other:?}"),
         }
-        // Ohne Lücke: ein Wert je Jahr ab FIRST_YEAR bis zum letzten Jahr
+        // Without a gap: one value per year from FIRST_YEAR to the last year
         let d = data("1899,CHE,1,1,1,,,,,\n1900,CHE,1,1,1,,0.1,,,\n1901,CHE,1,1,1,,0.2,,,\n");
         assert_eq!(d.region_stocks(&["CHE"]).unwrap().len(), 2);
     }
@@ -621,7 +621,7 @@ mod tests {
 
     #[test]
     fn ch_bonds_use_jst_before_and_snb_months_from_the_switch_year() {
-        // SNB ab Januar 1901 → erstes ganzes Jahr 1902; 1900 und 1901 aus JST (1901 ohne bond_tr → Coupon)
+        // SNB from January 1901 → first whole year 1902; 1900 and 1901 from JST (1901 without bond_tr → coupon)
         let d = data("1900,CHE,1,1,1,,,0.07,0.03,\n1901,CHE,1,1,1,,,,0.04,\n");
         let mut snb = SnbData::default();
         months(&mut snb, (1901, 1), (1902, 12), 2.0);
@@ -630,7 +630,7 @@ mod tests {
         assert_eq!((v[0], v[1]), (0.07, 0.04));
         let monthly = 1.0 + bond_return(0.02, 0.02);
         assert!((v[2] - (monthly.powi(12) - 1.0)).abs() < 1e-12, "{}", v[2]);
-        // Die Zinsen sind in Prozent angegeben: 2 % → 0.02, nicht 2
+        // The rates are given in percent: 2 % → 0.02, not 2
         assert!(v[2].abs() < 0.5);
     }
 
@@ -643,11 +643,11 @@ mod tests {
         };
         assert!(msg(ch_bonds_yearly(&d, &SnbData::default())).contains("SNB"));
         let mut snb = SnbData::default();
-        months(&mut snb, (1902, 1), (1903, 12), 2.0); // Wechsel 1903; JST-Jahr 1901 fehlt
+        months(&mut snb, (1902, 1), (1903, 12), 2.0); // switch 1903; JST year 1901 missing
         assert!(msg(ch_bonds_yearly(&d, &snb)).contains("1901"));
-        let d = data("1900,CHE,1,1,1,,,,,\n"); // weder bond_tr noch bond_rate
+        let d = data("1900,CHE,1,1,1,,,,,\n"); // neither bond_tr nor bond_rate
         let mut snb = SnbData::default();
-        months(&mut snb, (1901, 1), (1901, 12), 2.0); // Wechsel 1902
+        months(&mut snb, (1901, 1), (1901, 12), 2.0); // switch 1902
         assert!(msg(ch_bonds_yearly(&d, &snb)).contains("Obligationen Schweiz 1900"));
     }
 
@@ -655,7 +655,7 @@ mod tests {
     fn ch_short_uses_bill_rate_then_the_yearly_mean_of_saron_in_percent() {
         let d = data("1900,CHE,1,1,1,,,,,0.03\n1901,CHE,1,1,1,,,,,0.04\n");
         let mut snb = SnbData::default();
-        // 1902: Jahresmittel (6 × 1 + 6 × 3) / 12 = 2 % → 0.02; 1903 unvollständig → Ende
+        // 1902: annual average (6 × 1 + 6 × 3) / 12 = 2 % → 0.02; 1903 incomplete → end
         for m in 1..=12 {
             snb.saron
                 .insert(YearMonth::new(1902, m), if m <= 6 { 1.0 } else { 3.0 });
@@ -666,7 +666,7 @@ mod tests {
         assert_eq!(v.len(), 3);
         assert_eq!((v[0], v[1]), (0.03, 0.04));
         assert!((v[2] - 0.02).abs() < 1e-12, "{}", v[2]);
-        // Fehlt bill_rate in einem JST-Jahr, nennt der Fehler das Jahr
+        // If bill_rate is missing in a JST year, the error names the year
         let d = data("1900,CHE,1,1,1,,,,,0.03\n1901,CHE,1,1,1,,,,,\n");
         match ch_short_yearly(&d, &snb) {
             Err(Error::Invalid(m)) => assert!(m.contains("1901"), "{m}"),

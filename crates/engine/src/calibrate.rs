@@ -1,14 +1,14 @@
-//! #100 und #101: Vorschlagswerte für «Monte Carlo (parametrisch)» aus den Jahresrenditen der Anlagestrategie.
+//! #100 and #101: Suggested values for «Monte Carlo (parametrisch)» from the annual returns of the investment strategy.
 //!
-//! - **Aktien (#100):** Aus der ganzen Jahresreihe des Aktienindex (nicht nur den gemeinsamen Jahren mit den
-//!   Obligationen). Freiheitsgrade (6) und Streuung der Sprunghöhe (15 %) bleiben fest. Für jede Kombination aus
-//!   Sprungrate und Sprunghöhe eines Rasters ergeben sich μ und σ geschlossen aus Mittelwert und Streuung der
-//!   Jahresrenditen; gewählt wird die Kombination, deren 5 %-Quantil und geometrisches Mittel der Reihe am nächsten
-//!   kommen. Die Jahresrendite des Modells ist dabei eine Poisson-Mischung von Lognormalverteilungen (die 252
-//!   Student-t-Tagesschritte eines Jahres sind zusammen praktisch normalverteilt).
-//! - **Obligationen und Inflation (#101):** Mittelwert, Streuung und die 3×3-Korrelation (Aktien, Obligationen,
-//!   Inflation) der Jahreswerte aus derselben Reihe, die der historische Bootstrap verwendet. Die Jahre sind
-//!   voneinander unabhängig.
+//! - **Stocks (#100):** From the whole annual series of the stock index (not only the years in common with the
+//!   bonds). Degrees of freedom (6) and the spread of the jump size (15 %) stay fixed. For every combination of
+//!   jump rate and jump size of a grid, μ and σ follow in closed form from the mean and spread of the
+//!   annual returns; the combination whose 5 % quantile and geometric mean come closest to the series is
+//!   chosen. The model's annual return is a Poisson mixture of lognormal distributions (the 252
+//!   Student-t daily steps of a year are practically normally distributed together).
+//! - **Bonds and inflation (#101):** Mean, spread and the 3×3 correlation (stocks, bonds,
+//!   inflation) of the annual values from the same series the historical bootstrap uses. The years are
+//!   independent of each other.
 
 use serde::Serialize;
 
@@ -16,24 +16,24 @@ use crate::market::{DataSet, Freq, StockSeries};
 use crate::model::ParametricParams;
 use crate::montecarlo::Rng;
 
-/// Freiheitsgrade der Student-t-Schocks in den Vorschlagswerten.
+/// Degrees of freedom of the Student-t shocks in the suggested values.
 pub const DF: f64 = 6.0;
-/// Streuung der Sprunghöhe in den Vorschlagswerten.
+/// Spread of the jump size in the suggested values.
 pub const JUMP_SIGMA: f64 = 0.15;
-/// Mindestanzahl Jahre für Vorschlagswerte.
+/// Minimum number of years for suggested values.
 pub const MIN_YEARS: usize = 10;
 
-// ---------- Kennzahlen einer Jahresreihe ----------
+// ---------- Metrics of an annual series ----------
 
-/// Kennzahlen von Jahresrenditen; die Streuung wie beim Bootstrap (Ziehen mit Zurücklegen, Nenner n).
+/// Metrics of annual returns; the spread as in the bootstrap (drawing with replacement, denominator n).
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Moments {
     pub mean: f64,
     pub sd: f64,
-    /// Geometrisches Mittel exp(Mittel von ln(1 + r)) − 1.
+    /// Geometric mean exp(mean of ln(1 + r)) − 1.
     pub geo: f64,
-    /// 5 %-Quantil (linear interpoliert).
+    /// 5 % quantile (linearly interpolated).
     pub q5: f64,
 }
 
@@ -41,13 +41,13 @@ pub fn mean(x: &[f64]) -> f64 {
     x.iter().sum::<f64>() / x.len() as f64
 }
 
-/// Standardabweichung mit Nenner n.
+/// Standard deviation with denominator n.
 pub fn sd(x: &[f64]) -> f64 {
     let m = mean(x);
     (x.iter().map(|v| (v - m).powi(2)).sum::<f64>() / x.len() as f64).sqrt()
 }
 
-/// Korrelation nach Pearson; 0 bei konstanter Reihe.
+/// Pearson correlation; 0 for a constant series.
 pub fn corr(a: &[f64], b: &[f64]) -> f64 {
     let (ma, mb) = (mean(a), mean(b));
     let cov: f64 = a.iter().zip(b).map(|(x, y)| (x - ma) * (y - mb)).sum();
@@ -60,7 +60,7 @@ pub fn corr(a: &[f64], b: &[f64]) -> f64 {
     }
 }
 
-/// Quantil mit linearer Interpolation zwischen den sortierten Werten (wie numpy).
+/// Quantile with linear interpolation between the sorted values (like numpy).
 pub fn quantile(x: &[f64], p: f64) -> f64 {
     let mut s = x.to_vec();
     s.sort_by(f64::total_cmp);
@@ -78,9 +78,9 @@ pub fn moments(x: &[f64]) -> Moments {
     }
 }
 
-// ---------- Jahresrendite des Aktienmodells ----------
+// ---------- Annual return of the stock model ----------
 
-/// Standardnormalverteilung (Verteilungsfunktion), relative Genauigkeit etwa 1e-7.
+/// Standard normal distribution (cumulative distribution function), relative accuracy about 1e-7.
 fn phi(x: f64) -> f64 {
     let z = x.abs() / std::f64::consts::SQRT_2;
     let t = 1.0 / (1.0 + 0.5 * z);
@@ -101,8 +101,8 @@ fn phi(x: f64) -> f64 {
     }
 }
 
-/// Log-Jahresrendite L des Aktienmodells als Mischung: mit k Sprüngen (Gewicht Poisson(λ)) normalverteilt mit
-/// Mittel μ − σ²/2 + k·μJ und Varianz σ² + k·σJ².
+/// Log annual return L of the stock model as a mixture: with k jumps (weight Poisson(λ)) normally distributed with
+/// mean μ − σ²/2 + k·μJ and variance σ² + k·σJ².
 #[derive(Clone, Debug)]
 pub struct YearModel {
     comps: Vec<(f64, f64, f64)>,
@@ -127,14 +127,14 @@ impl YearModel {
         YearModel { comps }
     }
 
-    /// Erwartung und Streuung von L.
+    /// Expectation and spread of L.
     pub fn log_moments(&self) -> (f64, f64) {
         let m: f64 = self.comps.iter().map(|(w, m, _)| w * m).sum();
         let e2: f64 = self.comps.iter().map(|(w, m, v)| w * (v + m * m)).sum();
         (m, (e2 - m * m).max(0.0).sqrt())
     }
 
-    /// Kennzahlen der einfachen Jahresrendite exp(L) − 1.
+    /// Metrics of the simple annual return exp(L) − 1.
     pub fn moments(&self) -> Moments {
         let e1: f64 = self.comps.iter().map(|(w, m, v)| w * (m + v / 2.0).exp()).sum();
         let e2: f64 = self.comps.iter().map(|(w, m, v)| w * (2.0 * m + 2.0 * v).exp()).sum();
@@ -162,7 +162,7 @@ impl YearModel {
             .sum()
     }
 
-    /// Quantil der einfachen Jahresrendite.
+    /// Quantile of the simple annual return.
     pub fn quantile(&self, p: f64) -> f64 {
         let (mut lo, mut hi) = (-10.0, 10.0);
         for _ in 0..100 {
@@ -176,7 +176,7 @@ impl YearModel {
         (0.5 * (lo + hi)).exp() - 1.0
     }
 
-    /// Korrelation zwischen der einfachen Rendite exp(L) − 1 und L.
+    /// Correlation between the simple return exp(L) − 1 and L.
     pub fn corr_simple_log(&self) -> f64 {
         let (lm, ls) = self.log_moments();
         let e1: f64 = self.comps.iter().map(|(w, m, v)| w * (m + v / 2.0).exp()).sum();
@@ -195,9 +195,9 @@ impl YearModel {
     }
 }
 
-// ---------- #100: Aktienparameter ----------
+// ---------- #100: Stock parameters ----------
 
-/// Vorschlagswerte für das Aktienmodell.
+/// Suggested values for the stock model.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StockFit {
@@ -210,7 +210,7 @@ pub struct StockFit {
 }
 
 impl StockFit {
-    /// Setzt die Modellparameter (Anzahl Pfade und Startwert bleiben).
+    /// Sets the model parameters (number of paths and seed stay).
     pub fn apply(&self, q: &mut ParametricParams) {
         q.mu = self.mu;
         q.sigma = self.sigma;
@@ -231,7 +231,7 @@ fn round_to(x: f64, step: f64) -> f64 {
     (x / step).round() * step
 }
 
-/// Vorschlagswerte aus Jahresrenditen; `None` bei weniger als [`MIN_YEARS`] Jahren oder ohne passende Kombination.
+/// Suggested values from annual returns; `None` with fewer than [`MIN_YEARS`] years or without a fitting combination.
 pub fn fit_stocks(years: &[f64]) -> Option<StockFit> {
     if years.len() < MIN_YEARS || years.iter().any(|r| !r.is_finite() || *r <= -1.0) {
         return None;
@@ -239,7 +239,7 @@ pub fn fit_stocks(years: &[f64]) -> Option<StockFit> {
     fit_moments(&moments(years))
 }
 
-/// Vorschlagswerte zu Ziel-Kennzahlen der Jahresrendite.
+/// Suggested values for target metrics of the annual return.
 pub fn fit_moments(t: &Moments) -> Option<StockFit> {
     let js = JUMP_SIGMA;
     let mut best: Option<(f64, StockFit)> = None;
@@ -248,9 +248,9 @@ pub fn fit_moments(t: &Moments) -> Option<StockFit> {
         for j in 1..=10 {
             let jm = -0.05 * j as f64;
             if l == 0 && j > 1 {
-                break; // ohne Sprünge spielt die Sprunghöhe keine Rolle
+                break; // without jumps the jump size does not matter
             }
-            // E[1 + R] = e^μ · Φ und E[(1 + R)²] = e^(2μ + σ²) · Ψ (Φ, Ψ: Beitrag der Sprünge)
+            // E[1 + R] = e^μ · Φ and E[(1 + R)²] = e^(2μ + σ²) · Ψ (Φ, Ψ: contribution of the jumps)
             let phi1 = (lam * ((jm + js * js / 2.0).exp() - 1.0)).exp();
             let psi = (lam * ((2.0 * jm + 2.0 * js * js).exp() - 1.0)).exp();
             let emu = (1.0 + t.mean) / phi1;
@@ -279,10 +279,10 @@ pub fn fit_moments(t: &Moments) -> Option<StockFit> {
     best.map(|(_, f)| f)
 }
 
-// ---------- #101: Obligationen und Inflation ----------
+// ---------- #101: Bonds and inflation ----------
 
-/// Jahreswerte einer Reihe: Aktien und Obligationen zu Kalenderjahren verknüpft, Inflation im Dezember (Jahressatz).
-/// Jahresreihen bleiben, wie sie sind.
+/// Annual values of a series: stocks and bonds linked to calendar years, inflation in December (annual rate).
+/// Annual series stay as they are.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct YearlyTriples {
     pub first: i32,
@@ -313,7 +313,7 @@ pub fn yearly(ds: &DataSet) -> YearlyTriples {
     }
 }
 
-/// Mittelwert, Streuung und Korrelation von Aktien, Obligationen und Inflation (Jahreswerte).
+/// Mean, spread and correlation of stocks, bonds and inflation (annual values).
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Joint {
@@ -323,7 +323,7 @@ pub struct Joint {
     pub bonds_sd: f64,
     pub inflation_mean: f64,
     pub inflation_sd: f64,
-    /// Reihenfolge Aktien, Obligationen, Inflation.
+    /// Order stocks, bonds, inflation.
     pub corr: [[f64; 3]; 3],
 }
 
@@ -355,19 +355,19 @@ pub fn joint(y: &YearlyTriples) -> Option<Joint> {
     })
 }
 
-/// Obligationen und Inflation eines Jahres, bedingt auf die standardisierte Log-Jahresrendite der Aktien z:
-/// (zB, zI) = a·z + L·(e1, e2) mit unabhängigen Standardnormalen e1, e2. Die Faktoren a sind so gewählt, dass die
-/// Korrelation mit der einfachen Aktienrendite der Reihe entspricht (geteilt durch corr(exp(L) − 1, L)).
+/// Bonds and inflation of a year, conditional on the standardized log annual return of the stocks z:
+/// (zB, zI) = a·z + L·(e1, e2) with independent standard normals e1, e2. The factors a are chosen so that the
+/// correlation matches the simple stock return of the series (divided by corr(exp(L) − 1, L)).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correlated {
-    /// Erwartung und Streuung der Log-Jahresrendite der Aktien.
+    /// Expectation and spread of the log annual return of the stocks.
     pub log_mean: f64,
     pub log_sd: f64,
     pub bonds: (f64, f64),
     pub inflation: (f64, f64),
     pub a_bonds: f64,
     pub a_inflation: f64,
-    /// Untere Dreiecksmatrix der Restkovarianz: l11, l21, l22.
+    /// Lower triangular matrix of the residual covariance: l11, l21, l22.
     pub l: (f64, f64, f64),
 }
 
@@ -397,7 +397,7 @@ impl Correlated {
         }
     }
 
-    /// Jahreswerte (Obligationen, Inflation) zur Log-Rendite der Aktien `log` über `months` Monate des Jahres.
+    /// Annual values (bonds, inflation) for the log return of the stocks `log` over `months` months of the year.
     pub fn draw(&self, log: f64, months: usize, e1: f64, e2: f64) -> (f64, f64) {
         let f = months as f64 / 12.0;
         let z = if self.log_sd > 0.0 {
@@ -414,25 +414,25 @@ impl Correlated {
     }
 }
 
-// ---------- Vorschlag für eine Reihe ----------
+// ---------- Suggestion for a series ----------
 
-/// Vorschlagswerte zu einer Reihe (Anzeige im Reiter «Simulation»).
+/// Suggested values for a series (displayed in the tab «Simulation»).
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Suggestion {
     pub stocks: Option<StockFit>,
-    /// Jahre der Aktienreihe, aus der die Aktienparameter stammen.
+    /// Years of the stock series the stock parameters come from.
     pub stock_years: Option<(i32, i32)>,
     pub joint: Option<Joint>,
 }
 
-/// Anzahl Jahre der Stichprobe, mit der die Jahresverteilung des Bootstraps auf Monatsdaten bestimmt wird.
+/// Number of years of the sample used to determine the annual distribution of the bootstrap on monthly data.
 pub const BOOTSTRAP_YEARS: usize = 100_000;
 
-/// Jahresrenditen, wie sie der historische Bootstrap aus einer Aktienreihe zieht. Jahresreihe: die Jahre selbst (der
-/// Bootstrap zieht ganze Jahre). Monatsreihe: eine feste Stichprobe von [`BOOTSTRAP_YEARS`] Jahren aus Blöcken mit
-/// mittlerer Länge 12 Monate (Standard des Bootstraps); Monate aus verschiedenen Zeiten ergeben dabei mildere
-/// Extremjahre als die Kalenderjahre.
+/// Annual returns as the historical bootstrap draws them from a stock series. Annual series: the years themselves (the
+/// bootstrap draws whole years). Monthly series: a fixed sample of [`BOOTSTRAP_YEARS`] years from blocks with
+/// a mean length of 12 months (default of the bootstrap); months from different times yield milder
+/// extreme years than the calendar years.
 pub fn bootstrap_years(s: &StockSeries) -> Vec<f64> {
     match s.freq {
         Freq::Yearly => s.values.clone(),
@@ -461,7 +461,7 @@ pub fn bootstrap_years(s: &StockSeries) -> Vec<f64> {
     }
 }
 
-/// Ganze Aktienreihe des Index, sonst die Aktien der Reihe selbst.
+/// Whole stock series of the index, otherwise the stocks of the series itself.
 fn stock_series(ds: &DataSet) -> StockSeries {
     ds.stock_series.clone().unwrap_or_else(|| StockSeries {
         freq: ds.freq,
@@ -485,14 +485,14 @@ pub fn suggestion(ds: &DataSet) -> Suggestion {
     }
 }
 
-/// Parameter, mit denen das Modell rechnet: bei `auto` die Vorschlagswerte der Reihe (#100), sonst die
-/// gespeicherten; dazu die Korrelation mit Obligationen und Inflation, sofern es eine Reihe gibt (#101).
+/// Parameters the model computes with: with `auto` the suggested values of the series (#100), otherwise the
+/// saved ones; plus the correlation with bonds and inflation, if there is a series (#101).
 pub fn resolve(q: &ParametricParams, data: Option<&DataSet>) -> (ParametricParams, Option<Correlated>) {
     let mut q = q.clone();
     let Some(ds) = data else {
         return (q, None);
     };
-    // Die Aktienparameter nur bei `auto` bestimmen (bei Monatsreihen kostet die Stichprobe einige Millisekunden)
+    // Determine the stock parameters only with `auto` (with monthly series the sample costs a few milliseconds)
     if q.auto {
         if let Some(f) = fit_stocks(&bootstrap_years(&stock_series(ds))) {
             f.apply(&mut q);
@@ -519,7 +519,7 @@ mod tests {
         let m = moments(&[0.1, -0.1, 0.2, 0.0]);
         assert!((m.mean - 0.05).abs() < 1e-12);
         assert!((m.sd - (0.0125f64).sqrt()).abs() < 1e-12);
-        // Quantil linear: (n − 1)·0.05 = 0.15 zwischen −0.1 und 0.0
+        // Linear quantile: (n − 1)·0.05 = 0.15 between −0.1 and 0.0
         assert!((m.q5 - (-0.085)).abs() < 1e-12);
         assert!((quantile(&[3.0, 1.0, 2.0], 0.5) - 2.0).abs() < 1e-12);
         assert_eq!(corr(&[1.0, 1.0], &[1.0, 2.0]), 0.0);
@@ -547,7 +547,7 @@ mod tests {
 
     #[test]
     fn fit_reproduces_mean_sd_geo_and_q5() {
-        // Erfundene Reihe mit Crash-Jahren
+        // Made-up series with crash years
         let years: Vec<f64> = (0..100)
             .map(|i| match i % 20 {
                 0 => -0.35,
@@ -581,17 +581,17 @@ mod tests {
         let q = ParametricParams::default();
         let c = Correlated::new(&j, &q);
         let ym = YearModel::new(&q);
-        // Restvarianz plus erklärter Teil ergibt 1
+        // Residual variance plus explained part gives 1
         assert!((c.a_bonds.powi(2) + c.l.0.powi(2) - 1.0).abs() < 1e-12);
         assert!((c.a_inflation.powi(2) + c.l.1.powi(2) + c.l.2.powi(2) - 1.0).abs() < 1e-12);
         let k = ym.corr_simple_log();
         assert!((c.a_bonds * k - 0.3).abs() < 1e-12);
         assert!((c.a_inflation * k + 0.2).abs() < 1e-12);
         assert!((c.a_bonds * c.a_inflation + c.l.0 * c.l.1 - (-0.5)).abs() < 1e-12);
-        // Mittelwerte bei z = 0
+        // Means at z = 0
         let (b, i) = c.draw(c.log_mean, 12, 0.0, 0.0);
         assert!((b - 0.04).abs() < 1e-12 && (i - 0.02).abs() < 1e-12);
-        // Halbes Jahr: Erwartung halbiert, Streuung mit √½
+        // Half a year: expectation halved, spread with √½
         let (b, _) = c.draw(c.log_mean * 0.5 + c.log_sd * 0.5f64.sqrt(), 6, 0.0, 0.0);
         assert!((b - (0.04 + 0.06 * c.a_bonds)).abs() < 1e-12);
     }
@@ -639,7 +639,7 @@ mod tests {
         assert_eq!((q.paths, q.seed, q.auto), (auto.paths, auto.seed, true));
         let (q, c) = resolve(&auto, None);
         assert_eq!((q, c), (auto, None));
-        // Ganze Aktienreihe des Index vor den gemeinsamen Jahren
+        // Whole stock series of the index before the common years
         let mut ds2 = ds.clone();
         ds2.stock_series = Some(StockSeries {
             freq: Freq::Yearly,
@@ -667,7 +667,7 @@ mod bootstrap_tests {
         let y = bootstrap_years(&s);
         assert_eq!(y.len(), BOOTSTRAP_YEARS);
         assert_eq!(y, bootstrap_years(&s), "feste Stichprobe");
-        // Jedes Jahr ist ein Produkt von 12 Monaten aus 1.02 und 0.99
+        // Every year is a product of 12 months of 1.02 and 0.99
         assert!(y
             .iter()
             .all(|r| *r > 0.99f64.powi(12) - 1.0 - 1e-12 && *r < 1.02f64.powi(12) - 1.0 + 1e-12));
@@ -685,8 +685,8 @@ mod bootstrap_tests {
         assert_eq!(bootstrap_years(&yearly).len(), 240);
     }
 
-    // #124/AK5: Grenzen der Eingaben. Genau MIN_YEARS Jahre (bzw. 12 × MIN_YEARS Monate) genügen; eine Rendite von
-    // −100 % oder eine unvollständige Reihe ergibt keinen Vorschlag; `last` ist das letzte Jahr der Reihe.
+    // #124/AK5: Limits of the inputs. Exactly MIN_YEARS years (or 12 × MIN_YEARS months) suffice; a return of
+    // −100 % or an incomplete series gives no suggestion; `last` is the last year of the series.
     #[test]
     fn issue_124_ak5_input_limits() {
         let years: Vec<f64> = (0..MIN_YEARS).map(|i| if i % 3 == 0 { -0.1 } else { 0.12 }).collect();
@@ -730,8 +730,8 @@ mod bootstrap_tests {
         );
     }
 
-    // #124/AK5: Ohne Streuung ist die Jahresrendite fest: Das Quantil ist e^μ − 1. Ohne Streuung der Aktien bleiben
-    // Obligationen und Inflation beim Mittelwert der Reihe (z = 0).
+    // #124/AK5: Without spread the annual return is fixed: the quantile is e^μ − 1. Without spread of the stocks
+    // bonds and inflation stay at the mean of the series (z = 0).
     #[test]
     fn issue_124_ak5_model_without_spread() {
         let q = ParametricParams {
@@ -760,9 +760,9 @@ mod bootstrap_tests {
         assert_eq!(c.draw(0.4, 12, 0.0, 0.0), (0.03, 0.01));
     }
 
-    // #124/AK5: Wahl des Rasters. Eine Reihe ohne Ausreisser passt am besten ohne Sprünge (λ = 0); für Reihen mit
-    // Crash-Jahren gewichtet die Fehlerfunktion das 5 %-Quantil (1 %), die Mittel und die Streuung (0.2 %): Ergebnis als
-    // Regression.
+    // #124/AK5: Choice of the grid. A series without outliers fits best without jumps (λ = 0); for series with
+    // crash years the error function weights the 5 % quantile (1 %), the means and the spread (0.2 %): result as a
+    // regression.
     #[test]
     fn issue_124_ak5_grid_choice() {
         let calm = YearModel::new(
@@ -789,7 +789,7 @@ mod bootstrap_tests {
         let got = [f.mu, f.sigma, f.jump_lambda, f.jump_mu, f.jump_sigma];
         let want = [0.139, 0.119, 0.27, -0.25, JUMP_SIGMA];
         assert!(got.iter().zip(want).all(|(a, b)| (a - b).abs() < 1e-9), "{f:?}");
-        // Hier entscheidet die Abweichung der Streuung (μ und σ sind auf 0.0005 gerundet und treffen sie nicht genau).
+        // Here the deviation of the spread decides (μ and σ are rounded to 0.0005 and do not hit it exactly).
         let steep = Moments {
             mean: 0.12,
             sd: 0.16,

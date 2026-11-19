@@ -1,4 +1,4 @@
-//! Auflösen von Meilensteinen und Zeitbezügen; zeitabhängige Werte als schnelle Nachschlagekurven.
+//! Resolving milestones and time references; time-dependent values as fast lookup curves.
 
 use std::collections::HashMap;
 
@@ -35,8 +35,8 @@ impl Resolver {
             }
             names.insert(ms.id.clone(), ms.name.clone());
         }
-        // #51: Die festen Meilensteine jeder Person sind immer vorhanden; fehlen sie (ältere Planungen, Tests),
-        // gelten sie mit dem Standardalter.
+        // #51: The fixed milestones of every person always exist; if they are missing (older plans, tests),
+        // they apply with the default age.
         for (i, p) in plan.household.persons.iter().take(2).enumerate() {
             let (pk, ahv) = crate::model::person_milestones(i);
             for (id, base) in [(pk, crate::model::PK_NAME), (ahv, crate::model::AHV_NAME)] {
@@ -67,7 +67,7 @@ impl Resolver {
         self.names.get(id).map(String::as_str).unwrap_or(id)
     }
 
-    /// `None` bedeutet «nie» (bzw. «nach Verkauf», das erst während der Simulation feststeht).
+    /// `None` means «nie» (or «nach Verkauf», which is only known during the simulation).
     pub fn resolve(&self, r: &TimeRef) -> Result<Option<YearMonth>> {
         if r.is_never() || r.is_dynamic() {
             return Ok(None);
@@ -86,7 +86,7 @@ impl Resolver {
     }
 }
 
-/// Stufenfunktion über Kalendermonate: der zuletzt gültige Wert, vor dem ersten Eintrag 0.
+/// Step function over calendar months: the last valid value, 0 before the first entry.
 #[derive(Clone, Debug)]
 pub struct Curve {
     points: Vec<(i32, f64)>,
@@ -109,7 +109,7 @@ impl Curve {
                         points.push((m.0, row.value));
                     }
                 }
-                // Stabil sortieren: bei gleichem Monat gilt der spätere Eintrag.
+                // Sort stably: for the same month the later entry applies.
                 points.sort_by_key(|p| p.0);
                 Ok(Curve { points })
             }
@@ -123,7 +123,7 @@ impl Curve {
         }
     }
 
-    /// Erster Wert über `eps` zwischen `from` und `to` (beide inklusive), ohne Monat für Monat zu gehen.
+    /// First value above `eps` between `from` and `to` (both inclusive), without going month by month.
     pub fn first_above(&self, from: YearMonth, to: YearMonth, eps: f64) -> Option<f64> {
         if from > to {
             return None;
@@ -133,7 +133,7 @@ impl Curve {
             .find(|x| *x > eps)
     }
 
-    /// Erster Monat, ab dem ein Wert gilt (`None` bei konstanten Werten).
+    /// First month from which a value applies (`None` for constant values).
     pub fn first(&self) -> Option<i32> {
         self.points.first().map(|p| p.0).filter(|m| *m != i32::MIN)
     }
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(Curve::constant(5.0).at(YearMonth(-100)), 5.0);
     }
 
-    // #40: Namen, Geburtsdaten, erster gültiger Monat und Werte einer Kurve.
+    // #40: Names, birth dates, first valid month and values of a curve.
     #[test]
     fn names_births_first_and_values() {
         let r = Resolver {
@@ -182,24 +182,24 @@ mod tests {
         assert_eq!(Curve { points: vec![] }.first(), None);
     }
 
-    // #51: erster Wert über der Schwelle im Bereich (beide Ränder inklusive).
+    // #51: first value above the threshold in the range (both edges inclusive).
     #[test]
     fn first_above_checks_range_edges_and_eps() {
         let c = Curve {
             points: vec![(10, 0.0), (20, 0.005), (30, 7.0), (40, 9.0)],
         };
-        // Ausgangswert bei `from` zählt (hier 0 vor dem ersten Eintrag).
+        // The initial value at `from` counts (here 0 before the first entry).
         assert_eq!(c.first_above(YearMonth(5), YearMonth(15), 0.005), None);
-        // Wert genau auf eps ist nicht darüber.
+        // A value exactly at eps is not above it.
         assert_eq!(c.first_above(YearMonth(20), YearMonth(25), 0.005), None);
-        // Eintrag genau am oberen Rand zählt, der erste Treffer wird geliefert.
+        // An entry exactly at the upper edge counts; the first hit is returned.
         assert_eq!(c.first_above(YearMonth(10), YearMonth(30), 0.005), Some(7.0));
         assert_eq!(c.first_above(YearMonth(10), YearMonth(29), 0.005), None);
-        // Wert, der schon bei `from` gilt (Eintrag vor `from`).
+        // A value that already applies at `from` (entry before `from`).
         assert_eq!(c.first_above(YearMonth(35), YearMonth(35), 0.005), Some(7.0));
-        // Eintrag genau bei `from` ist über `at(from)` enthalten, nicht doppelt nötig.
+        // An entry exactly at `from` is contained in `at(from)`, not needed twice.
         assert_eq!(c.first_above(YearMonth(40), YearMonth(40), 0.005), Some(9.0));
-        // from > to: leer.
+        // from > to: empty.
         assert_eq!(c.first_above(YearMonth(40), YearMonth(10), -1.0), None);
         assert_eq!(
             Curve::constant(2.0).first_above(YearMonth(0), YearMonth(0), 1.0),

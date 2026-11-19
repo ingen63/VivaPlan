@@ -1,26 +1,26 @@
-//! Anwendungsweite Einstellungen, die der Rechenkern braucht (#25).
+//! Application-wide settings the calculation engine needs (#25).
 //!
-//! Die Oberfläche speichert sie lokal (nicht in der Planungsdatei) und gibt sie bei jedem Aufruf als `limits` in der
-//! Planung mit. Fehlen sie (Kommandozeile, Tests), gelten die Standardwerte dieser Datei. Alle Stellen, die eine Grenze
-//! brauchen, lesen sie aus [`Limits`].
+//! The user interface stores them locally (not in the plan file) and passes them with every call as `limits` in the
+//! plan. If they are missing (command line, tests), the default values of this file apply. All places that need a limit
+//! read it from [`Limits`].
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// Standard des Meilensteins «AHV-Bezug» und «Bezug Pensionskasse» in Jahren (#51).
+/// Default of the milestones «AHV-Bezug» and «Bezug Pensionskasse» in years (#51).
 pub const DEFAULT_AGE: f64 = 65.0;
 
-/// Grenzen für die Meilensteine «AHV-Bezug» und «Bezug Pensionskasse» und Maximalbetrag der Säule 3a.
+/// Limits for the milestones «AHV-Bezug» and «Bezug Pensionskasse» and the pillar 3a maximum.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Limits {
-    /// AHV-Bezug: untere und obere Grenze in Jahren.
+    /// AHV payout: lower and upper limit in years.
     pub ahv_min: f64,
     pub ahv_max: f64,
-    /// Bezug Pensionskasse: untere und obere Grenze in Jahren.
+    /// Pension fund payout: lower and upper limit in years.
     pub pk_min: f64,
     pub pk_max: f64,
-    /// Maximalbetrag der Einzahlung in die Säule 3a pro Jahr.
+    /// Maximum pillar 3a contribution per year.
     pub pillar3a_max: f64,
 }
 
@@ -37,7 +37,7 @@ impl Default for Limits {
 }
 
 impl Limits {
-    /// Fehler in den Einstellungen selbst (Oberfläche und Prüfung). Leer = gültig.
+    /// Errors in the settings themselves (user interface and validation). Empty = valid.
     pub fn problems(&self) -> Vec<String> {
         let mut out = vec![];
         let whole = |x: f64| x.fract() == 0.0 && (0.0..=130.0).contains(&x);
@@ -66,7 +66,7 @@ impl Limits {
 mod tests {
     use super::*;
 
-    // #25/AK1: Standardwerte der Einstellungen.
+    // #25/AK1: Default values of the settings.
     #[test]
     fn defaults() {
         let l = Limits::default();
@@ -75,12 +75,12 @@ mod tests {
             (63.0, 70.0, 58.0, 65.0, 7258.0)
         );
         assert!(l.problems().is_empty());
-        // Fehlende Felder: Standardwert.
+        // Missing fields: default value.
         let p: Limits = serde_json::from_str(r#"{"pkMax": 67}"#).unwrap();
         assert_eq!((p.pk_max, p.ahv_min), (67.0, 63.0));
     }
 
-    // #25/AK4: Prüfung der Eingabe.
+    // #25/AK4: Validation of the input.
     #[test]
     fn problems() {
         let bad = |f: fn(&mut Limits)| {

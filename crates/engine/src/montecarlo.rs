@@ -1,18 +1,18 @@
-//! Monte Carlo: zufällige Renditepfade aus der Historie (stationärer Bootstrap) oder aus einem
-//! parametrischen Aktienmodell (Student-t mit Kurssprüngen, wie das bisherige Programm).
+//! Monte Carlo: random return paths from history (stationary bootstrap) or from a
+//! parametric stock model (Student-t with price jumps, like the previous program).
 //!
-//! Die Pfade werden erst beim Rechnen erzeugt, Pfad `i` immer aus dem Startwert und `i`. Dadurch
-//! braucht auch eine Simulation mit 50'000 Pfaden wenig Speicher, und jeder Pfad lässt sich für die
-//! Detailansicht exakt wiederholen.
+//! The paths are generated only while computing, path `i` always from the seed and `i`. Thus
+//! even a simulation with 50'000 paths needs little memory, and every path can be repeated exactly
+//! for the detail view.
 
 use crate::calibrate::Correlated;
 use crate::market::{monthly, DataSet, FixedCurves, Freq, MarketPath, PRE_MONTHS};
 use crate::model::{BootstrapParams, ParametricParams};
 use crate::time::YearMonth;
 
-// ---------- Zufallszahlen ----------
+// ---------- Random numbers ----------
 
-/// xoshiro256** mit splitmix64-Initialisierung: schnell, gute Qualität, reproduzierbar.
+/// xoshiro256** with splitmix64 initialization: fast, good quality, reproducible.
 #[derive(Clone, Debug)]
 pub struct Rng {
     s: [u64; 4],
@@ -28,7 +28,7 @@ fn splitmix(x: &mut u64) -> u64 {
 }
 
 impl Rng {
-    /// Eigener Zufallsstrom pro (Startwert, Pfadnummer).
+    /// Own random stream per (seed, path number).
     pub fn new(seed: u64, stream: u64) -> Rng {
         let mut x = seed ^ stream.wrapping_mul(0xd134_2543_de82_ef95);
         Rng {
@@ -50,17 +50,17 @@ impl Rng {
         result
     }
 
-    /// Gleichverteilt in [0, 1).
+    /// Uniformly distributed in [0, 1).
     pub fn uniform(&mut self) -> f64 {
         (self.next_u64() >> 11) as f64 * (1.0 / (1u64 << 53) as f64)
     }
 
-    /// Ganze Zahl in 0..n.
+    /// Integer in 0..n.
     pub fn below(&mut self, n: usize) -> usize {
         ((self.next_u64() as u128 * n as u128) >> 64) as usize
     }
 
-    /// Standardnormalverteilt (Polar-Methode, das zweite Ergebnis wird aufbewahrt).
+    /// Standard normally distributed (polar method, the second result is kept).
     pub fn normal(&mut self) -> f64 {
         if let Some(z) = self.spare.take() {
             return z;
@@ -77,13 +77,13 @@ impl Rng {
         }
     }
 
-    /// Student-t mit `df` > 0 Freiheitsgraden (#132: Polar-Methode von Bailey, 1994). Ein Punkt (u, v) gleichverteilt im
-    /// Einheitskreis, w = u² + v²; dann ist u·√(df·(w^(−2/df) − 1)/w) exakt t-verteilt. Ob der Punkt angenommen wird,
-    /// entscheidet reine Arithmetik (w < 1), ohne Funktionen der Mathematikbibliothek. Für die Vorgabe `df` = 6 ist
-    /// w^(−1/3) = 1/∛w, schneller als die allgemeine Potenz.
+    /// Student-t with `df` > 0 degrees of freedom (#132: polar method of Bailey, 1994). A point (u, v) uniformly distributed in the
+    /// unit circle, w = u² + v²; then u·√(df·(w^(−2/df) − 1)/w) is exactly t-distributed. Whether the point is accepted is
+    /// decided by plain arithmetic (w < 1), without functions of the math library. For the default `df` = 6,
+    /// w^(−1/3) = 1/∛w, faster than the general power.
     pub fn student_t(&mut self, df: f64) -> f64 {
-        // u und v aus den oberen und unteren 32 Bit derselben Zufallszahl (Mitte der 2³² Stufen in (−1, 1)): halb so
-        // viele Aufrufe des Generators, die Auflösung 2⁻³¹ reicht für Tagesrenditen.
+        // u and v from the upper and lower 32 bits of the same random number (middle of the 2³² steps in (−1, 1)): half as
+        // many calls of the generator; the resolution 2⁻³¹ suffices for daily returns.
         const STEP: f64 = 1.0 / (1u64 << 31) as f64;
         loop {
             let x = self.next_u64();
@@ -91,7 +91,7 @@ impl Rng {
             let v = ((x & 0xffff_ffff) as f64 + 0.5) * STEP - 1.0;
             let w = u * u + v * v;
             if w < 1.0 {
-                // df·(w^(−2/df) − 1)/w; bei df = 6 mit c = ∛w als 6·(1 − c)/(c·w), mit einer Division
+                // df·(w^(−2/df) − 1)/w; with df = 6 and c = ∛w as 6·(1 − c)/(c·w), with one division
                 let r = if df == 6.0 {
                     let c = w.cbrt();
                     6.0 * (1.0 - c) / (c * w)
@@ -103,7 +103,7 @@ impl Rng {
         }
     }
 
-    /// Poissonverteilt (für kleine Raten).
+    /// Poisson distributed (for small rates).
     pub fn poisson(&mut self, lambda: f64) -> u32 {
         let l = (-lambda).exp();
         let mut k = 0;
@@ -116,11 +116,11 @@ impl Rng {
     }
 }
 
-// ---------- Stationärer Bootstrap ----------
+// ---------- Stationary bootstrap ----------
 
-/// Zufällige Pfade aus Blöcken der historischen Reihe. Die Blocklänge ist geometrisch verteilt
-/// (Mittelwert `block` Monate); Aktien, Obligationen, Inflation und SARON stammen immer aus demselben
-/// Monat bzw. Jahr. Am Ende der Reihe geht es am Anfang weiter (zirkulär).
+/// Random paths from blocks of the historical series. The block length is geometrically distributed
+/// (mean `block` months); stocks, bonds, inflation and SARON always come from the same
+/// month or year. At the end of the series it continues at the beginning (circular).
 pub struct Bootstrap<'a> {
     pub data: &'a DataSet,
     pub fixed: &'a FixedCurves,
@@ -138,7 +138,7 @@ impl Bootstrap<'_> {
         self.params.paths == 0
     }
 
-    /// Folge historischer Positionen (Monate bzw. Jahre der Reihe).
+    /// Sequence of historical positions (months or years of the series).
     fn positions(&self, rng: &mut Rng, count: usize, mean_len: f64) -> Vec<usize> {
         let n = self.data.len();
         let p_new = 1.0 / mean_len.max(1.0);
@@ -171,7 +171,7 @@ impl Bootstrap<'_> {
         match ds.freq {
             Freq::Monthly => {
                 let pos = self.positions(&mut rng, self.months, self.params.block);
-                // Vorlauf: die echten Monate vor dem ersten Block (zirkulär wie der Bootstrap)
+                // Lead-in: the real months before the first block (circular like the bootstrap)
                 let n = ds.len();
                 p.pre_stocks = (1..=PRE_MONTHS)
                     .rev()
@@ -186,11 +186,11 @@ impl Bootstrap<'_> {
                 }
             }
             Freq::Yearly => {
-                // Ein Jahreswert pro Kalenderjahr der Simulation; Blocklänge in Jahren.
+                // One annual value per calendar year of the simulation; block length in years.
                 let end = self.start.plus(self.months as i32 - 1);
                 let years = (end.year() - self.start.year() + 1) as usize;
                 let pos = self.positions(&mut rng, years, self.params.block / 12.0);
-                // Vorlauf: Monate im Startjahr vor dem Start aus dem ersten Jahr, die übrigen aus dem Jahr davor (zirkulär)
+                // Lead-in: months in the start year before the start from the first year, the others from the year before (circular)
                 let n = ds.len();
                 p.pre_stocks = (1..=PRE_MONTHS as i32)
                     .rev()
@@ -213,21 +213,21 @@ impl Bootstrap<'_> {
     }
 }
 
-// ---------- Parametrisch ----------
+// ---------- Parametric ----------
 
-/// #132: Verfahren der Zufallsziehung des parametrischen Modells (Student-t nach Bailey, Sprünge über den Abstand zum
-/// nächsten Sprungtag). Neue Planungen tragen es in `returns.parametric.sampler`; bei einer Änderung, die die Pfade
-/// ändert, erhöhen und in `upgrade` einen Hinweis ergänzen.
+/// #132: Sampling method of the parametric model (Student-t after Bailey, jumps via the distance to the
+/// next jump day). New plans store it in `returns.parametric.sampler`; increase it on a change that changes the
+/// paths and add a note in `upgrade`.
 pub const SAMPLER: u32 = 1;
 
-/// Handelstage pro Monat wie im bisherigen Programm.
+/// Trading days per month as in the previous program.
 pub const TRADING_DAYS: usize = 21;
 
-/// Aktien: geometrische Brownsche Bewegung mit Student-t-Schocks (auf Varianz 1 skaliert) und
-/// Poisson-Kurssprüngen, in Tagesschritten gerechnet und zu Monatsrenditen zusammengefasst.
-/// Obligationen und Inflation: mit `correlated` je Kalenderjahr zufällig und mit der Aktienrendite des Jahres
-/// korreliert (#101), aus einem eigenen Zufallsstrom, damit die Aktienpfade gleich bleiben; sonst wie der SARON
-/// die fixen Werte.
+/// Stocks: geometric Brownian motion with Student-t shocks (scaled to variance 1) and
+/// Poisson price jumps, computed in daily steps and combined into monthly returns.
+/// Bonds and inflation: with `correlated` random per calendar year and correlated with the year's stock return
+/// (#101), from a random stream of their own, so the stock paths stay the same; otherwise, like SARON,
+/// the fixed values.
 pub struct Parametric<'a> {
     pub fixed: &'a FixedCurves,
     pub start: YearMonth,
@@ -236,16 +236,16 @@ pub struct Parametric<'a> {
     pub correlated: Option<Correlated>,
 }
 
-/// #132: Kurssprünge, Poisson-verteilt mit Rate `lambda` je Tag. Statt jeden Tag eine Poisson-Zahl zu ziehen (bei der
-/// Vorgabe ist an rund 99,98 % der Tage keine), wird der Abstand bis zum nächsten Tag mit Sprung gezogen: Er ist
-/// geometrisch verteilt mit P(kein Sprung) = exp(−λ), also ⌊−ln U / λ⌋ mit U gleichverteilt in (0, 1]. An diesem Tag
-/// folgt die Anzahl aus der Poisson-Verteilung unter der Bedingung «mindestens ein Sprung». Die Verteilung der Sprünge
-/// je Tag ist dieselbe wie mit einer Poisson-Zahl je Tag.
+/// #132: Price jumps, Poisson distributed with rate `lambda` per day. Instead of drawing a Poisson number every day (with the
+/// default there is none on about 99.98 % of the days), the distance to the next day with a jump is drawn: it is
+/// geometrically distributed with P(no jump) = exp(−λ), i.e. ⌊−ln U / λ⌋ with U uniformly distributed in (0, 1]. On that day
+/// the count follows from the Poisson distribution conditional on «at least one jump». The distribution of the jumps
+/// per day is the same as with one Poisson number per day.
 struct Jumps {
     lambda: f64,
-    /// P(genau ein Sprung | mindestens einer) = λ·e^(−λ) / (1 − e^(−λ)).
+    /// P(exactly one jump | at least one) = λ·e^(−λ) / (1 − e^(−λ)).
     first: f64,
-    /// Tage ohne Sprung bis zum nächsten Tag mit Sprung.
+    /// Days without a jump until the next day with a jump.
     gap: u64,
 }
 
@@ -263,19 +263,19 @@ impl Jumps {
     fn next_gap(&mut self, rng: &mut Rng) {
         if self.lambda > 0.0 {
             let u = 1.0 - rng.uniform();
-            // `as` begrenzt sehr grosse Werte auf u64::MAX (dann kein Sprung mehr im Pfad)
+            // `as` clamps very large values to u64::MAX (then no further jump in the path)
             self.gap = (-u.ln() / self.lambda) as u64;
         }
     }
 
-    /// Anzahl Sprünge an diesem Tag.
+    /// Number of jumps on this day.
     fn today(&mut self, rng: &mut Rng) -> u32 {
         if self.gap > 0 {
-            // ohne Sprünge (λ = 0) bleibt der Abstand u64::MAX und erreicht nie 0
+            // without jumps (λ = 0) the distance stays u64::MAX and never reaches 0
             self.gap -= 1;
             return 0;
         }
-        // Anzahl ≥ 1 durch Inversion der bedingten Poisson-Verteilung
+        // Count ≥ 1 by inversion of the conditional Poisson distribution
         let u = rng.uniform();
         let (mut k, mut pk) = (1u32, self.first);
         let mut cdf = pk;
@@ -289,7 +289,7 @@ impl Jumps {
     }
 }
 
-/// Unterscheidet den Zufallsstrom für Obligationen und Inflation von dem der Aktien.
+/// Distinguishes the random stream for bonds and inflation from that of the stocks.
 const JOINT_STREAM: u64 = 0x6a09_e667_f3bc_c908;
 
 impl Parametric<'_> {
@@ -322,16 +322,16 @@ impl Parametric<'_> {
                 log += drift + vol * z;
                 let n = jumps.today(rng);
                 if n > 0 {
-                    // Wie bisher: eine Sprunghöhe, mit der Anzahl Sprünge potenziert.
+                    // As before: one jump size, raised to the power of the number of jumps.
                     log += n as f64 * (q.jump_mu + q.jump_sigma * rng.normal());
                 }
             }
             log
         };
-        // Vorlauf (#103): 12 Monate aus demselben Zufallsstrom, vor dem Pfad gezogen
+        // Lead-in (#103): 12 months from the same random stream, drawn before the path
         p.pre_stocks = (0..PRE_MONTHS).map(|_| month(&mut rng).exp() - 1.0).collect();
-        // Log-Renditen der Monate, für die Korrelation mit Obligationen und Inflation (#132: nicht aus der Rendite
-        // zurückgerechnet)
+        // Log returns of the months, for the correlation with bonds and inflation (#132: not recomputed from the
+        // return)
         let mut logs = Vec::with_capacity(if self.correlated.is_some() { self.months } else { 0 });
         for k in 0..self.months {
             let m = self.start.plus(k as i32);
@@ -350,11 +350,11 @@ impl Parametric<'_> {
             let mut rng = Rng::new(q.seed ^ JOINT_STREAM, index as u64);
             let mut k = 0;
             while k < self.months {
-                // Monate dieses Kalenderjahres in der Simulation
+                // Months of this calendar year in the simulation
                 let m = self.start.plus(k as i32);
                 let len = (13 - m.month() as usize).min(self.months - k);
-                // #116: Jeder Durchgang kommt voran, und `k` zählt die schon geschriebenen Monate. Sonst würde ein
-                // Fehler (oder ein Mutant wie `k *= len`) die Schleife endlos machen und den Speicher füllen.
+                // #116: Every pass makes progress, and `k` counts the months already written. Otherwise an
+                // error (or a mutant like `k *= len`) would make the loop endless and fill the memory.
                 debug_assert!(
                     len > 0 && k == p.bonds.len(),
                     "Parametric::path: Schleife kommt nicht voran"
@@ -399,12 +399,12 @@ mod tests {
         }
         assert!((s1 / n as f64).abs() < 0.01);
         assert!((s2 / n as f64 - 1.0).abs() < 0.01);
-        // Student-t mit df = 6: Varianz df/(df−2) = 1.5.
+        // Student-t with df = 6: variance df/(df−2) = 1.5.
         let v: f64 = (0..n).map(|_| r.student_t(6.0).powi(2)).sum::<f64>() / n as f64;
         assert!((v - 1.5).abs() < 0.05, "{v}");
         let p: f64 = (0..n).map(|_| r.poisson(0.3) as f64).sum::<f64>() / n as f64;
         assert!((p - 0.3).abs() < 0.01, "{p}");
-        // Gleicher Startwert und Strom ⇒ gleiche Folge, anderer Strom ⇒ andere Folge.
+        // Same seed and stream ⇒ same sequence, different stream ⇒ different sequence.
         assert_eq!(Rng::new(7, 3).next_u64(), Rng::new(7, 3).next_u64());
         assert_ne!(Rng::new(7, 3).next_u64(), Rng::new(7, 4).next_u64());
     }
@@ -440,7 +440,7 @@ mod tests {
         };
         let p = b.path(3);
         assert_eq!(p.stocks.len(), 600);
-        // #103: Vorlauf = die 12 echten Monate vor dem ersten Block (zirkulär)
+        // #103: Lead-in = the 12 real months before the first block (circular)
         let i0 = p.stocks[0] as usize;
         let pre: Vec<f64> = (1..=12).rev().map(|j| ((i0 + n - j) % n) as f64).collect();
         assert_eq!(p.pre_stocks, pre);
@@ -454,7 +454,7 @@ mod tests {
                 jumps += 1;
             }
         }
-        // Mittlere Blocklänge 12 Monate ⇒ etwa 50 neue Blöcke in 600 Monaten.
+        // Mean block length 12 months ⇒ about 50 new blocks in 600 months.
         assert!((30..75).contains(&jumps), "{jumps}");
         assert_eq!(b.path(3).stocks, p.stocks, "reproduzierbar");
         assert_ne!(b.path(4).stocks, p.stocks);
@@ -482,7 +482,7 @@ mod tests {
             params: q,
             correlated: None,
         };
-        // Jahres-Logrendite: Mittel (mu − σ²/2), Standardabweichung σ.
+        // Annual log return: mean (mu − σ²/2), standard deviation σ.
         let logs: Vec<f64> = (0..g.len())
             .map(|i| g.path(i).stocks.iter().map(|r| (1.0 + r).ln()).sum())
             .collect();
@@ -525,8 +525,8 @@ mod tests {
         assert!(p(0).is_empty() && !p(3).is_empty());
     }
 
-    /// #103: Jahresreihe, Start im Juli: Januar bis Juni des Startjahres aus dem ersten gezogenen Jahr, Juli bis
-    /// Dezember des Vorjahres aus dem Jahr davor (zirkulär).
+    /// #103: Annual series, start in July: January to June of the start year from the first year drawn, July to
+    /// December of the previous year from the year before (circular).
     #[test]
     fn issue_103_yearly_bootstrap_pre_run_by_calendar_year() {
         let n = 20;
@@ -568,7 +568,7 @@ mod tests {
         assert!(wrapped, "kein Pfad beginnt am Anfang der Reihe");
     }
 
-    // Jahresreihe: ein Wert pro Kalenderjahr, Blocklänge in Jahren (block / 12).
+    // Annual series: one value per calendar year, block length in years (block / 12).
     #[test]
     fn yearly_bootstrap_block_length_in_years() {
         let n = 50;
@@ -598,7 +598,7 @@ mod tests {
         for k in 0..b.len() {
             let p = b.path(k);
             for y in 0..30 {
-                // innerhalb eines Jahres derselbe Wert
+                // within a year the same value
                 assert_eq!(p.stocks[12 * y], p.stocks[12 * y + 11]);
             }
             for y in 1..30 {
@@ -612,7 +612,7 @@ mod tests {
                 }
             }
         }
-        // Mittlere Blocklänge 10 Jahre ⇒ neuer Block mit Wahrscheinlichkeit 0.1; Folgejahr sonst 0.9 + 0.1/50.
+        // Mean block length 10 years ⇒ new block with probability 0.1; otherwise the following year 0.9 + 0.1/50.
         let share = follow as f64 / steps as f64;
         assert!((share - 0.902).abs() < 0.03, "{share}");
     }
@@ -637,8 +637,8 @@ mod tests {
         assert!(p.stocks.windows(2).any(|w| w[0] != w[1]));
     }
 
-    /// Verteilungsfunktion der Student-t-Verteilung mit `df` ≥ 1, numerisch: Mit x = √df·tan θ ist die Dichte proportional
-    /// zu cos^(df−1) θ auf (−π/2, π/2) (Simpson-Regel).
+    /// Cumulative distribution function of the Student-t distribution with `df` ≥ 1, numerically: with x = √df·tan θ the density is
+    /// proportional to cos^(df−1) θ on (−π/2, π/2) (Simpson's rule).
     fn t_cdf(df: f64, t: f64) -> f64 {
         let integral = |b: f64| {
             let (a, n) = (-std::f64::consts::FRAC_PI_2, 20_000);
@@ -652,8 +652,8 @@ mod tests {
         integral((t / df.sqrt()).atan()) / integral(std::f64::consts::FRAC_PI_2)
     }
 
-    // #132/AK4: Die Student-t-Ziehung (Bailey) hat die Verteilungsfunktion der t-Verteilung, für die Vorgabe df = 6
-    // (eigener Rechenweg mit ∛w), ganzzahlige und nicht ganzzahlige df sowie df ≤ 2 (unendliche Varianz).
+    // #132/AK4: The Student-t draw (Bailey) has the distribution function of the t-distribution, for the default df = 6
+    // (separate computation with ∛w), integer and non-integer df and df ≤ 2 (infinite variance).
     #[test]
     fn issue_132_ak4_student_t_matches_distribution() {
         assert!((t_cdf(1.0, 1.0) - 0.75).abs() < 1e-9, "Cauchy");
@@ -671,8 +671,8 @@ mod tests {
         }
     }
 
-    // #132/AK4: Die Sprünge je Tag sind Poisson-verteilt, auch wenn nur der Abstand zum nächsten Sprungtag gezogen wird;
-    // ohne Sprünge (λ = 0) wird keine Zufallszahl verbraucht.
+    // #132/AK4: The jumps per day are Poisson distributed, even though only the distance to the next jump day is drawn;
+    // without jumps (λ = 0) no random number is used.
     #[test]
     fn issue_132_ak4_jumps_are_poisson_per_day() {
         for (k, lambda) in [0.3, 0.02, 0.001].into_iter().enumerate() {
@@ -700,8 +700,8 @@ mod tests {
         assert_eq!(r.next_u64(), Rng::new(1, 0).next_u64(), "keine Zufallszahl verbraucht");
     }
 
-    // #132/AK4: Jahres-Logrendite eines Pfades mit Kurssprüngen: Mittel (μ − σ²/2) + λ·μJ, Varianz σ² plus die der Sprünge
-    // (je Tag N·(μJ + σJ·Z) mit N Poisson(λ·dt): E[N²]·(μJ² + σJ²) − (E[N]·μJ)²).
+    // #132/AK4: Annual log return of a path with price jumps: mean (μ − σ²/2) + λ·μJ, variance σ² plus that of the jumps
+    // (per day N·(μJ + σJ·Z) with N Poisson(λ·dt): E[N²]·(μJ² + σJ²) − (E[N]·μJ)²).
     #[test]
     fn issue_132_ak4_path_with_jumps_matches_model() {
         let f = fixed();
@@ -738,8 +738,8 @@ mod tests {
         assert!((var / v0 - 1.0).abs() < 0.05, "{var} statt {v0}");
     }
 
-    // Gleicher Startwert ⇒ gleiche Pfade, auch über Versionen. Eine bewusste Änderung des Zufallsgenerators oder
-    // des Modells braucht wie die Golden-Dateien eine Begründung im Issue (dann die Werte neu setzen).
+    // Same seed ⇒ same paths, also across versions. A deliberate change of the random number generator or
+    // of the model needs, like the golden files, a justification in the issue (then set the values anew).
     #[test]
     fn parametric_paths_are_stable_across_versions() {
         let f = fixed();
@@ -757,14 +757,14 @@ mod tests {
             correlated: None,
         };
         let p = g.path(0);
-        // Toleranz für kleine Unterschiede der Mathematikbibliothek zwischen Plattformen.
-        // #103: Seit dem Vorlauf (12 Monate vor dem Pfad aus demselben Strom) beginnt der Pfad mit dem 13. Monat.
-        // #132: neue Werte (Student-t nach Bailey, Sprünge über den Abstand zum nächsten Sprungtag).
+        // Tolerance for small differences of the math library between platforms.
+        // #103: Since the lead-in (12 months before the path from the same stream) the path starts with the 13th month.
+        // #132: new values (Student-t after Bailey, jumps via the distance to the next jump day).
         let expected = [-0.028948303776431428, 0.022424257414504822, 0.004603269924865483];
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
         }
-        // Ohne Sprünge und mit Normalverteilung (es werden keine Zufallszahlen für Sprünge gezogen).
+        // Without jumps and with a normal distribution (no random numbers are drawn for jumps).
         let q = ParametricParams {
             paths: 1,
             df: 0.0,
@@ -783,8 +783,8 @@ mod tests {
         for (a, b) in p.stocks.iter().zip(expected) {
             assert!((a - b).abs() < 1e-9, "{:?}", p.stocks);
         }
-        // #103: Der Vorlauf sind die 12 Monate davor aus demselben Strom; seine ersten Monate sind die früheren Werte
-        // des Pfads (vor #103 der Pfad selbst).
+        // #103: The lead-in is the 12 months before from the same stream; its first months are the earlier values
+        // of the path (before #103 the path itself).
         assert_eq!(p.pre_stocks.len(), PRE_MONTHS);
         let before = [0.06842020080156996, 0.08498775592559737, 0.0484071107147952];
         for (a, b) in p.pre_stocks.iter().zip(before) {

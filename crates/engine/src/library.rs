@@ -1,5 +1,5 @@
-//! Datenbibliothek: ein Ordner mit Zeitreihen (CSV). Planungen verweisen mit `library:<datei>`
-//! darauf, unabhängig davon, wo die Projektdatei liegt.
+//! Data library: a folder with series (CSV). Plans refer to it with `library:<file>`,
+//! independent of where the project file is.
 
 use std::path::{Path, PathBuf};
 
@@ -12,17 +12,17 @@ use crate::{Error, Result};
 
 pub const PREFIX: &str = "library:";
 
-/// US-Aktien in CHF kombiniert mit Schweizer Bundesobligationen.
+/// US stocks in CHF combined with Swiss federal bonds.
 pub const CH_BONDS_FILE: &str = "Shiller CHF + CH-Obligationen.csv";
 
-/// #68: Welt-Aktienindex (JST, nach BIP gewichtet) mit Obligationen der Eidgenossenschaft, jährlich ab 1900.
+/// #68: World stock index (JST, GDP-weighted) with Swiss Confederation bonds, annual from 1900.
 pub const WORLD_FILE: &str = "Welt (JST).csv";
 
-/// Unterordner der Bibliothek mit den Quelldaten der SNB.
+/// Subfolder of the library with the SNB source data.
 pub const SOURCES_DIR: &str = "quellen";
 
-/// Zeitreihen, die mit dem Programm ausgeliefert werden. #90: «Pictet CH» gehört nicht mehr dazu (keine offene
-/// Lizenz); eine früher angelegte Kopie im Bibliotheksordner bleibt unangetastet.
+/// Series bundled with the program. #90: «Pictet CH» is no longer part of it (no open
+/// licence); a copy created earlier in the library folder stays untouched.
 pub const BUILTIN: [(&str, &str); 4] = [
     ("Shiller CHF.csv", include_str!("../data/Shiller CHF.csv")),
     (CH_BONDS_FILE, include_str!("../data/Shiller CHF + CH-Obligationen.csv")),
@@ -30,7 +30,7 @@ pub const BUILTIN: [(&str, &str); 4] = [
     (WORLD_FILE, include_str!("../data/Welt (JST).csv")),
 ];
 
-/// `# Info:` der ausgelieferten Reihe mit diesem Namen (Dateiname ohne Endung); für Dateien, die vor der Angabe angelegt wurden.
+/// `# Info:` of the bundled series with this name (file name without extension); for files created before the field existed.
 fn builtin_info(name: &str) -> Option<String> {
     let (_, text) = BUILTIN
         .iter()
@@ -38,8 +38,8 @@ fn builtin_info(name: &str) -> Option<String> {
     crate::market::DataSet::parse_csv(name, text).ok()?.meta.info
 }
 
-/// Pfad zu einer Zeitreihe: `library:<datei>` im Bibliotheksordner, sonst absolut oder relativ
-/// zum Verzeichnis der Projektdatei.
+/// Path to a series: `library:<file>` in the library folder, otherwise absolute or relative
+/// to the directory of the project file.
 pub fn resolve(series: &str, base_dir: &Path, library: Option<&Path>) -> Result<PathBuf> {
     if let Some(file) = series.strip_prefix(PREFIX) {
         let lib = library.ok_or_else(|| {
@@ -62,7 +62,7 @@ pub fn resolve(series: &str, base_dir: &Path, library: Option<&Path>) -> Result<
     })
 }
 
-/// Legt fehlende ausgelieferte Zeitreihen und SNB-Quelldaten an; vorhandene Dateien bleiben unverändert.
+/// Creates missing bundled series and SNB source data; existing files stay unchanged.
 pub fn seed(dir: &Path) -> Result<()> {
     let io = |e: std::io::Error| Error::Io(format!("{}: {e}", dir.display()));
     let src = dir.join(SOURCES_DIR);
@@ -83,12 +83,12 @@ fn write_new(path: &Path, text: &str) -> Result<()> {
     std::fs::write(path, text).map_err(|e| Error::Io(format!("{}: {e}", path.display())))
 }
 
-/// #69/AK8: Ein Teil einer Anlagestrategie mit seinen eigenen Jahren. Ist der Bereich grösser als der gemeinsame
-/// Zeitraum der Reihe, wird der Teil für die Simulation gekürzt.
+/// #69/AK8: A part of an investment strategy with its own years. If the range is larger than the common
+/// period of the series, the part is cut for the simulation.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SeriesPart {
-    /// Zum Beispiel «Obligationen Eidgenossenschaft 10 Jahre».
+    /// For example «Obligationen Eidgenossenschaft 10 Jahre».
     pub label: String,
     pub first: i32,
     pub last: i32,
@@ -101,7 +101,7 @@ pub struct SeriesInfo {
     pub title: Option<String>,
     pub currency: Option<String>,
     pub source: Option<String>,
-    /// Kurze Erklärung (höchstens 2 Zeilen): `# Info:` der Datei, bei ausgelieferten Reihen ohne eigene Angabe die ausgelieferte.
+    /// Short explanation (at most 2 lines): `# Info:` of the file; for bundled series without their own, the bundled one.
     pub info: Option<String>,
     pub notes: Vec<String>,
     pub monthly: bool,
@@ -109,15 +109,15 @@ pub struct SeriesInfo {
     pub last: YearMonth,
     pub entries: usize,
     pub has_saron: bool,
-    /// Erster und letzter Monat mit SARON-Wert.
+    /// First and last month with a SARON value.
     pub saron_range: Option<(YearMonth, YearMonth)>,
-    /// Mittlere Jahresrendite (geometrisch) Aktien, Obligationen; mittlere Inflation.
+    /// Mean annual return (geometric) of stocks, bonds; mean inflation.
     pub avg_stocks: f64,
     pub avg_bonds: f64,
     pub avg_inflation: f64,
-    /// Teile der Anlagestrategie mit ihren eigenen Jahren (leer bei einer einzelnen Zeitreihe).
+    /// Parts of the investment strategy with their own years (empty for a single series).
     pub parts: Vec<SeriesPart>,
-    /// #100/#101: Vorschlagswerte des parametrischen Modells (nur bei der Kurzinfo zur Planung).
+    /// #100/#101: Suggested values of the parametric model (only in the short info about the plan).
     pub parametric: Option<crate::calibrate::Suggestion>,
 }
 
@@ -158,14 +158,14 @@ impl SeriesInfo {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entry {
-    /// Verweis für die Planung (`library:<datei>`).
+    /// Reference for the plan (`library:<file>`).
     pub reference: String,
     pub file: String,
     pub info: Option<SeriesInfo>,
     pub error: Option<String>,
 }
 
-/// Alle Zeitreihen im Bibliotheksordner, nach Dateiname sortiert.
+/// All series in the library folder, sorted by file name.
 pub fn list(dir: &Path) -> Result<Vec<Entry>> {
     let rd = std::fs::read_dir(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
     let mut files: Vec<PathBuf> = rd
@@ -191,7 +191,7 @@ pub fn list(dir: &Path) -> Result<Vec<Entry>> {
         .collect())
 }
 
-/// SNB-Quelldaten der Bibliothek (`quellen/snb-*.csv`), sonst die eingebauten.
+/// SNB source data of the library (`quellen/snb-*.csv`), otherwise the built-in data.
 pub fn snb_data(dir: &Path) -> Result<SnbData> {
     let src = dir.join(SOURCES_DIR);
     let mut cubes: Vec<SnbCube> = import::BUILTIN_SNB
@@ -201,7 +201,7 @@ pub fn snb_data(dir: &Path) -> Result<SnbData> {
     if let Ok(rd) = std::fs::read_dir(&src) {
         let mut files: Vec<PathBuf> = rd.filter_map(|e| e.ok().map(|e| e.path())).collect();
         files.sort();
-        // Nur die Dateien des SNB-Imports (`snb-<würfel>.csv`); daneben liegen andere Quellen (JST-Auszug).
+        // Only the files of the SNB import (`snb-<cube>.csv`); other sources lie next to them (JST extract).
         let snb_file = |p: &&PathBuf| {
             p.extension().is_some_and(|x| x == "csv")
                 && p.file_name().is_some_and(|n| n.to_string_lossy().starts_with("snb-"))
@@ -216,7 +216,7 @@ pub fn snb_data(dir: &Path) -> Result<SnbData> {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportReport {
-    /// Geschriebene Dateien (Name in der Bibliothek) mit Kurzinfo.
+    /// Written files (name in the library) with short info.
     pub written: Vec<(String, SeriesInfo)>,
     pub notes: Vec<String>,
 }
@@ -227,12 +227,12 @@ fn write_series(dir: &Path, file: &str, ds: &DataSet) -> Result<(String, SeriesI
     Ok((file.to_string(), SeriesInfo::of(ds)))
 }
 
-/// Shiller-Datei importieren: schreibt «Shiller USD.csv» und «Shiller CHF.csv» in die Bibliothek.
+/// Import a Shiller file: writes «Shiller USD.csv» and «Shiller CHF.csv» into the library.
 pub fn import_shiller(dir: &Path, shiller: &Path) -> Result<ImportReport> {
     import_shiller_raw(dir, &import::read_shiller(shiller)?)
 }
 
-/// Wie [`import_shiller`], mit den bereits gelesenen Spalten (ohne Tabellendatei testbar).
+/// Like [`import_shiller`], with the columns already read (testable without a spreadsheet file).
 fn import_shiller_raw(dir: &Path, raw: &import::ShillerRaw) -> Result<ImportReport> {
     let usd = import::shiller_dataset(raw)?;
     let snb = snb_data(dir)?;
@@ -255,7 +255,7 @@ fn import_shiller_raw(dir: &Path, raw: &import::ShillerRaw) -> Result<ImportRepo
     })
 }
 
-/// SNB-Würfel (CSV von data.snb.ch) übernehmen und die CHF-Reihen neu berechnen.
+/// Take over SNB cubes (CSV from data.snb.ch) and recompute the CHF series.
 pub fn import_snb(dir: &Path, files: &[PathBuf]) -> Result<ImportReport> {
     let src = dir.join(SOURCES_DIR);
     std::fs::create_dir_all(&src).map_err(|e| Error::Io(format!("{}: {e}", src.display())))?;
@@ -297,7 +297,7 @@ mod tests {
                 "{file}: Info zu lang für 2 Zeilen ({})",
                 info.chars().count()
             );
-            // Dateien ohne Info (älter als die Angabe) erhalten die ausgelieferte
+            // Files without info (older than the field) get the bundled one
             let name = file.strip_suffix(".csv").unwrap();
             assert_eq!(builtin_info(name).as_deref(), Some(info.as_str()));
         }
@@ -316,7 +316,7 @@ mod tests {
         );
         assert_eq!(resolve("x.csv", base, None).unwrap(), Path::new("/plaene/x.csv"));
         assert!(resolve("library:../x.csv", base, Some(lib)).is_err());
-        // #40: jede der beiden Bedingungen allein genügt
+        // #40: each of the two conditions alone suffices
         assert!(resolve("library:.x.csv", base, Some(lib)).is_err());
         assert!(resolve("library:a/x.csv", base, Some(lib)).is_err());
         assert!(resolve("library:a\\x.csv", base, Some(lib)).is_err());
@@ -346,7 +346,7 @@ mod tests {
         dir
     }
 
-    // #40: Kurzinfo einer Monatsreihe mit SARON (erster und letzter Wert, NaN am Rand) und einer Jahresreihe.
+    // #40: Short info of a monthly series with SARON (first and last value, NaN at the edge) and of an annual series.
     #[test]
     fn series_info_saron_range_and_frequency() {
         let monthly = DataSet::parse_csv(
@@ -394,10 +394,10 @@ mod tests {
         assert_eq!(snb_data(&dir).unwrap().usd_chf, builtin.usd_chf);
         std::fs::create_dir_all(dir.join(SOURCES_DIR)).unwrap();
         std::fs::write(dir.join(SOURCES_DIR).join("liesmich.txt"), "keine SNB-Datei").unwrap();
-        // Andere Quellen im Ordner (JST-Auszug) sind keine SNB-Dateien.
+        // Other sources in the folder (JST extract) are not SNB files.
         std::fs::write(dir.join(SOURCES_DIR).join("jst-r6.csv"), "year,iso\n").unwrap();
         assert_eq!(snb_data(&dir).unwrap().cpi, builtin.cpi);
-        // Eine eigene Datei ersetzt die eingebaute Reihe.
+        // A file of its own replaces the built-in series.
         std::fs::write(
             dir.join(SOURCES_DIR).join("snb-plkopr.csv"),
             "\"CubeId\";\"plkopr\"\n\n\"Date\";\"D0\";\"Value\"\n\"2000-01\";\"LD2010100\";\"100\"\n",
@@ -411,7 +411,7 @@ mod tests {
     fn shiller_import_notes_when_snb_data_end_earlier() {
         let dir = scratch("shiller");
         let mut raw = import::ShillerRaw::default();
-        // 2020-01 bis 2099-12: länger als die eingebauten SNB-Daten.
+        // 2020-01 to 2099-12: longer than the built-in SNB data.
         for i in 0..960 {
             let m = YearMonth::new(2020, 1).plus(i);
             raw.cpi.insert(m, 100.0 + i as f64);
@@ -424,7 +424,7 @@ mod tests {
         assert!(r.notes[0].contains("Die CHF-Reihe endet"));
         assert!(dir.join("Shiller USD.csv").exists() && dir.join(CH_BONDS_FILE).exists());
 
-        // Reicht die Reihe nicht über die SNB-Daten hinaus, gibt es keinen Hinweis.
+        // If the series does not extend beyond the SNB data, there is no warning.
         let snb = import::SnbData::builtin();
         let snb_end = *snb
             .usd_chf

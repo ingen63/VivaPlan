@@ -1,9 +1,9 @@
-//! Fortschritt und Abbruch langer Berechnungen (Simulation, Szenarien, Optimierung).
+//! Progress and cancellation of long computations (simulation, scenarios, optimization).
 //!
-//! Jede Berechnung ist ein [`Job`] mit eigener Kennung, eigenem Abbruch und eigenem Zähler (#107). Der Job der
-//! laufenden Berechnung hängt am Thread, der sie aufgerufen hat; [`par_map`], [`tick`] und [`cancelled`] wirken auf ihn.
-//! Ohne Job (zum Beispiel bei der Messung der Rechenzeit) gibt es weder Abbruch noch Zähler (#104). Gezählt werden
-//! Läufe (ein Lauf = ein Renditepfad durch die Planung).
+//! Every computation is a [`Job`] with its own id, its own cancellation and its own counter (#107). The job of the
+//! running computation is attached to the thread that called it; [`par_map`], [`tick`] and [`cancelled`] act on it.
+//! Without a job (for example when measuring the computing time) there is neither cancellation nor a counter (#104).
+//! Runs are counted (one run = one return path through the plan).
 
 use rayon::prelude::*;
 use serde::Serialize;
@@ -12,10 +12,10 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering::Relaxed};
 use std::sync::{Arc, Mutex};
 
-/// Meldung, an der die Oberfläche einen Abbruch erkennt.
+/// Message by which the user interface recognizes a cancellation.
 pub const CANCELLED: &str = "Abgebrochen";
 
-/// Kennung einer Berechnung. Die Oberfläche kann sie selbst wählen und beim Start mitgeben; sonst vergibt die Engine eine.
+/// Id of a computation. The user interface can choose it itself and pass it at the start; otherwise the engine assigns one.
 pub type JobId = u64;
 
 struct State {
@@ -38,9 +38,9 @@ impl State {
     }
 }
 
-/// Vom Menschen oder der Oberfläche nicht vergebene Kennungen zählen ab 1 hoch; die Oberfläche nimmt grosse Zahlen.
+/// Ids not assigned by a person or the user interface count up from 1; the user interface uses large numbers.
 static NEXT: AtomicU64 = AtomicU64::new(1);
-/// Laufende Jobs und der zuletzt beendete (für die letzte Abfrage des Stands).
+/// Running jobs and the one finished last (for the last query of the status).
 static JOBS: Mutex<Vec<Arc<State>>> = Mutex::new(Vec::new());
 
 thread_local! {
@@ -62,12 +62,12 @@ pub struct Progress {
     pub active: bool,
     pub cancelled: bool,
     pub done: u64,
-    /// Geschätzte Gesamtzahl der Läufe (bei der Optimierung nur grob).
+    /// Estimated total number of runs (only rough for the optimization).
     pub total: u64,
 }
 
-/// Beendet die Berechnung beim Verlassen des Gültigkeitsbereichs, auch bei Fehlern. Der Job gehört dem Thread, der ihn
-/// gestartet hat (deshalb nicht `Send`).
+/// Finishes the computation when leaving the scope, also on errors. The job belongs to the thread that
+/// started it (hence not `Send`).
 pub struct Job {
     state: Arc<State>,
     previous: Option<Arc<State>>,
@@ -88,13 +88,13 @@ impl Drop for Job {
     }
 }
 
-/// Beginnt eine Berechnung mit `total` geschätzten Läufen und eigener Kennung.
+/// Starts a computation with `total` estimated runs and its own id.
 pub fn start(total: u64) -> Job {
     start_as(None, total)
 }
 
-/// Wie [`start`], mit einer von der Oberfläche gewählten Kennung. Eine noch laufende Berechnung mit derselben Kennung
-/// bleibt unberührt, die neue bekommt dann eine eigene.
+/// Like [`start`], with an id chosen by the user interface. A still running computation with the same id
+/// stays untouched; the new one then gets an id of its own.
 pub fn start_as(id: Option<JobId>, total: u64) -> Job {
     let mut list = jobs();
     list.retain(|j| j.active.load(Relaxed));
@@ -137,15 +137,15 @@ pub fn tick(n: u64) {
     }
 }
 
-/// Verlangt den Abbruch aller laufenden Berechnungen (wirkt nur, solange eine läuft).
+/// Requests the cancellation of all running computations (only has an effect while one is running).
 pub fn cancel() {
     for j in jobs().iter().filter(|j| j.active.load(Relaxed)) {
         j.cancel.store(true, Relaxed);
     }
 }
 
-/// Verlangt den Abbruch der Berechnung mit dieser Kennung; andere Berechnungen laufen weiter. `false`, wenn keine
-/// Berechnung mit dieser Kennung läuft.
+/// Requests the cancellation of the computation with this id; other computations continue. `false` if no
+/// computation with this id is running.
 pub fn cancel_job(id: JobId) -> bool {
     match jobs().iter().find(|j| j.id == id && j.active.load(Relaxed)) {
         Some(j) => {
@@ -156,12 +156,12 @@ pub fn cancel_job(id: JobId) -> bool {
     }
 }
 
-/// Ist für die Berechnung dieses Threads ein Abbruch verlangt? Ohne Job und nach dessen Ende nie (#104).
+/// Has a cancellation been requested for this thread's computation? Never without a job or after its end (#104).
 pub fn cancelled() -> bool {
     current().is_some_and(|j| j.active.load(Relaxed) && j.cancel.load(Relaxed))
 }
 
-/// Stand der zuletzt gestarteten Berechnung (laufend oder beendet).
+/// Status of the computation started last (running or finished).
 pub fn snapshot() -> Progress {
     jobs().last().map_or(
         Progress {
@@ -175,7 +175,7 @@ pub fn snapshot() -> Progress {
     )
 }
 
-/// Stand der Berechnung mit dieser Kennung; unbekannt oder noch nicht gestartet: nicht aktiv, null.
+/// Status of the computation with this id; unknown or not yet started: not active, zero.
 pub fn snapshot_of(id: JobId) -> Progress {
     jobs().iter().find(|j| j.id == id).map_or(
         Progress {
@@ -189,8 +189,8 @@ pub fn snapshot_of(id: JobId) -> Progress {
     )
 }
 
-/// `f(0..n)` parallel, in Blöcken: nach jedem Block wird der Fortschritt gezählt und ein Abbruch
-/// geprüft. Nach einem Abbruch ist das Ergebnis unvollständig; der Aufrufer prüft [`cancelled`].
+/// `f(0..n)` in parallel, in blocks: after every block the progress is counted and a cancellation
+/// checked. After a cancellation the result is incomplete; the caller checks [`cancelled`].
 pub fn par_map<T, F>(n: usize, f: F) -> Vec<T>
 where
     T: Send,
@@ -215,12 +215,12 @@ where
 mod tests {
     use super::*;
 
-    // #107/AK5: Jeder Test benutzt eigene Kennungen und liest nur den Stand seiner Berechnung (`snapshot_of`); der
-    // Abbruch gilt je Kennung (`cancel_job`) und der Thread-Job ist threadlokal. Die Tests stören sich daher nicht, auch
-    // wenn sie im selben Prozess laufen. Die prozessweiten Aufrufe `cancel()` (alle Berechnungen) und `snapshot()`
-    // (zuletzt gestartete) prüft `crates/engine/tests/cancel.rs` mit einer echten Berechnung.
+    // #107/AK5: Every test uses its own ids and reads only the status of its computation (`snapshot_of`); the
+    // cancellation applies per id (`cancel_job`) and the thread job is thread-local. So the tests do not interfere, even
+    // when they run in the same process. The process-wide calls `cancel()` (all computations) and `snapshot()`
+    // (started last) are checked by `crates/engine/tests/cancel.rs` with a real computation.
 
-    // #40: Zähler und Gesamtzahl einer Berechnung.
+    // #40: Counter and total of a computation.
     #[test]
     fn counters_follow_the_job() {
         let job = start_as(Some(3001), 10);
@@ -237,7 +237,7 @@ mod tests {
         assert!(!snapshot_of(id).active);
     }
 
-    // #104: Nach dem Ende der Berechnung wirkt ein Abbruch nicht mehr; eine Rechnung ohne Job läuft ganz durch.
+    // #104: After the end of the computation a cancellation has no effect; a computation without a job runs to the end.
     #[test]
     fn a_cancel_does_not_outlive_its_job() {
         let job = start_as(Some(3002), 10);
@@ -245,13 +245,13 @@ mod tests {
         assert!(cancel_job(id));
         assert!(cancelled() && snapshot_of(id).cancelled);
         drop(job);
-        // Die Marke wirkt nicht mehr (der Stand bleibt nur bis zum Start der nächsten Berechnung abfragbar).
+        // The flag no longer has an effect (the status can only be queried until the next computation starts).
         assert!(!cancelled());
         assert_eq!(par_map(1_000, |i| i).len(), 1_000);
         assert!(!cancel_job(id), "beendet: kein Abbruch mehr möglich");
     }
 
-    // Vollständiger Lauf: Ergebnis in Reihenfolge, jeder Lauf genau einmal gezählt.
+    // Complete run: result in order, every run counted exactly once.
     #[test]
     fn par_map_keeps_order_and_counts_every_run_once() {
         let job = start_as(Some(3003), 0);
@@ -261,8 +261,8 @@ mod tests {
         assert_eq!(snapshot_of(job.id()).done, n as u64);
     }
 
-    // Abbruch im ersten Block: Der Block wird fertig gerechnet, danach endet die Schleife.
-    // Blockgrösse = max(n / 100, Threads × 4, 1).
+    // Cancellation in the first block: the block is computed to the end, then the loop ends.
+    // Block size = max(n / 100, threads × 4, 1).
     #[test]
     fn a_cancel_in_the_first_block_ends_after_that_block() {
         let threads = rayon::current_num_threads();
@@ -281,8 +281,8 @@ mod tests {
         }
     }
 
-    // #107/AK2, #107/AK3: Zwei Berechnungen gleichzeitig beeinflussen sich nicht. Dieser Test braucht nur Kennungen
-    // und `cancel_job`, nie das globale `cancel()`.
+    // #107/AK2, #107/AK3: Two simultaneous computations do not affect each other. This test only needs ids
+    // and `cancel_job`, never the global `cancel()`.
     #[test]
     fn two_jobs_run_side_by_side_and_cancel_one() {
         use std::sync::mpsc::channel;
@@ -292,7 +292,7 @@ mod tests {
         let (go_tx, go_rx) = channel::<()>();
         let a = std::thread::spawn(move || {
             let _job = start_as(Some(1001), 100);
-            par_map(10, |i| i); // zählt mit, bevor der Abbruch kommt
+            par_map(10, |i| i); // counts along before the cancellation comes
             a_ready_tx.send(()).unwrap();
             while !cancelled() {
                 par_map(1_000, |i| i);
@@ -317,7 +317,7 @@ mod tests {
             "{seen_a:?}"
         );
         assert!(seen_a.done > 0 && seen_a.total == 100);
-        // B ist unberührt und rechnet vollständig
+        // B is untouched and computes completely
         assert!(!snapshot_of(1002).cancelled);
         go_tx.send(()).unwrap();
         let (len, b_cancelled, seen_b) = b.join().unwrap();
@@ -326,11 +326,11 @@ mod tests {
             (seen_b.id, seen_b.cancelled, seen_b.done, seen_b.total),
             (1002, false, 5_000, 5_000)
         );
-        // Nach dem Ende wirkt cancel_job nicht mehr
+        // After the end cancel_job has no effect any more
         assert!(!cancel_job(1001) && !cancel_job(1002));
     }
 
-    // #107/AK1: Eine bereits vergebene Kennung wird nicht doppelt benutzt; verschachtelte Jobs stellen den äusseren wieder her.
+    // #107/AK1: An id already assigned is not used twice; nested jobs restore the outer one.
     #[test]
     fn ids_are_unique_and_jobs_nest() {
         let outer = start_as(Some(2001), 10);
@@ -343,7 +343,7 @@ mod tests {
         tick(2);
         assert_eq!(snapshot_of(2001).done, 2);
         drop(outer);
-        tick(5); // ohne Job: wirkungslos (und kein Absturz)
+        tick(5); // without a job: no effect (and no crash)
         assert!(!cancelled());
     }
 }

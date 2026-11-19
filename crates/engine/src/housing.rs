@@ -1,15 +1,15 @@
-//! Wohnanteil der Lebenshaltungskosten (#53).
+//! Housing share of the living costs (#53).
 //!
-//! Die erfassten Lebenshaltungskosten enthalten Miete bzw. die monatlichen Immobilienkosten. Für die Simulation wird
-//! der darin enthaltene Wohnanteil abgezogen und durch die simulierten Wohnkosten ersetzt. Der Wohnanteil sind die
-//! Wohnkosten im Startmonat als Monatsdurchschnitt: Miete, Nebenkosten, Hypothekarzins (Schuld × Satz / 12) und
-//! Amortisation (Quartalsbetrag / 3), direkt und indirekt. Der SARON ist der fixe Wert der Planung im Startmonat.
+//! The entered living costs include rent or the monthly property costs. For the simulation the
+//! housing share contained in them is deducted and replaced by the simulated housing costs. The housing share is the
+//! housing costs in the start month as a monthly average: rent, fix costs, mortgage interest (debt × rate / 12) and
+//! amortization (quarterly amount / 3), direct and indirect. SARON is the plan's fixed value in the start month.
 
 use crate::model::{AfterLast, Plan, PropertyStatus, RateKind};
 use crate::resolve::{Curve, Resolver};
 use crate::time::YearMonth;
 
-/// Wohnkosten im Startmonat in Preisen des Startmonats (0 ohne Immobilie und Miete).
+/// Housing costs in the start month in prices of the start month (0 without property and rent).
 pub fn start_housing(plan: &Plan, r: &Resolver) -> f64 {
     let Ok(start) = r.milestone("start") else { return 0.0 };
     let saron = Curve::compile(&plan.returns.fixed.saron, r)
@@ -20,7 +20,7 @@ pub fn start_housing(plan: &Plan, r: &Resolver) -> f64 {
         let resolve = |t: &Option<crate::time::TimeRef>| t.as_ref().and_then(|t| r.resolve(t).ok().flatten());
         match p.status {
             PropertyStatus::Rent => {
-                // Miete «nach Verkauf» steht beim Start noch nicht fest und zählt nicht.
+                // Rent «nach Verkauf» is not yet known at the start and does not count.
                 let from = resolve(&p.from);
                 let until = resolve(&p.until);
                 if from.is_some_and(|f| f <= start) && until.is_none_or(|u| start < u) {
@@ -43,7 +43,7 @@ pub fn start_housing(plan: &Plan, r: &Resolver) -> f64 {
                 for t in &mg.tranches {
                     let Some(mut m) = first.or(t.start) else { continue };
                     let mut i = 0usize;
-                    // Periode, die den Startmonat enthält
+                    // Period that contains the start month
                     while !t.periods.is_empty() && i < 1000 {
                         if i >= t.periods.len() && t.after == AfterLast::Repay {
                             break;
@@ -96,30 +96,30 @@ mod tests {
         start_housing(&p, &Resolver::new(&p).unwrap())
     }
 
-    // #53/AK2, AK3: Zins 1'000, Amortisation 500, Nebenkosten 500 = Wohnanteil 2'000.
+    // #53/AK2, AK3: interest 1'000, amortization 500, fix costs 500 = housing share 2'000.
     #[test]
     fn issue_53_owned_property() {
         let house = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 500, "sell": "never",
             "mortgage": { "tranches": [ { "amount": 600_000, "start": "2035-01",
                 "periods": [ { "type": "fixed", "term": 10, "rate": 0.02, "amort": 1500 } ] } ] } }]);
         assert!((w(house) - 2000.0).abs() < 1e-9);
-        // SARON mit Marge: 600'000 × (1 % + 1 %) / 12 = 1'000
+        // SARON with margin: 600'000 × (1 % + 1 %) / 12 = 1'000
         let saron = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 0,
             "mortgage": { "tranches": [ { "amount": 600_000, "start": "2039-01",
                 "periods": [ { "type": "saron", "term": 5, "margin": 0.01 } ] } ] } }]);
         assert!((w(saron) - 1000.0).abs() < 1e-9);
-        // Zweite Periode enthält den Start; abgelaufene Tranche mit Rückzahlung zählt nicht
+        // The second period contains the start; an expired tranche with repayment does not count
         let later = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 0,
             "mortgage": { "tranches": [
                 { "amount": 120_000, "start": "2030-01", "periods": [ { "term": 5, "rate": 0.05 }, { "term": 10, "rate": 0.01 } ] },
                 { "amount": 120_000, "start": "2030-01", "after": "repay", "periods": [ { "term": 5, "rate": 0.05 } ] } ] } }]);
         assert!((w(later) - 100.0).abs() < 1e-9);
-        // Verkauft vor dem Start oder im Startmonat: keine Wohnkosten
+        // Sold before the start or in the start month: no housing costs
         let sold = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 500, "sell": "2040-01" }]);
         assert_eq!(w(sold), 0.0);
     }
 
-    // #53/AK5: Miete ab Start zählt, spätere Miete, Miete «nach Verkauf» und geplanter Kauf später nicht.
+    // #53/AK5: Rent from the start counts; later rent, rent «nach Verkauf» and a later planned purchase do not.
     #[test]
     fn issue_53_rent_and_planned() {
         assert_eq!(
@@ -149,13 +149,13 @@ mod tests {
         assert_eq!(w(json!([])), 0.0);
     }
 
-    // #124/AK8: Grenzen der Perioden und der Miete. Eine Periode, die genau im Startmonat endet, zählt nicht mehr; eine
-    // Tranche «zurückzahlen» zählt, solange ihre Periode läuft; eine Tranche ohne Perioden trägt nichts bei; eine Miete
-    // bis nach dem Start zählt.
+    // #124/AK8: Limits of the periods and the rent. A period ending exactly in the start month no longer counts; a
+    // tranche «zurückzahlen» counts as long as its period runs; a tranche without periods contributes nothing; a rent
+    // until after the start counts.
     #[test]
     fn issue_124_ak8_period_and_rent_limits() {
         let tranche = |t: serde_json::Value| json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 0, "mortgage": { "tranches": [t] } }]);
-        // 120'000 × 1 % / 12 = 100 (zweite Periode ab 2040-01), nicht 120'000 × 5 % / 12 = 500
+        // 120'000 × 1 % / 12 = 100 (second period from 2040-01), not 120'000 × 5 % / 12 = 500
         let ends_at_start = tranche(
             json!({ "amount": 120_000, "start": "2030-01", "periods": [ { "term": 10, "rate": 0.05 }, { "term": 10, "rate": 0.01 } ] }),
         );

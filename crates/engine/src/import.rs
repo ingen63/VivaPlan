@@ -1,9 +1,9 @@
-//! Import von Zeitreihen: Shiller-Daten (Excel/ODS), SNB-Datenwürfel (CSV) und Umrechnung in CHF.
+//! Import of series: Shiller data (Excel/ODS), SNB data cubes (CSV) and conversion to CHF.
 //!
-//! Shiller («Irrational Exuberance», `ie_data.xls`): S&P Composite und 10-jährige US-Staatsanleihen,
-//! monatlich ab 1871 in USD. Die SNB-Würfel liefern den Kurs USD/CHF (`devkum`), den Landesindex der
-//! Konsumentenpreise (`plkopr`), den SARON (`zimoma`) und die Renditen der Obligationen der
-//! Eidgenossenschaft (`rendoblim`).
+//! Shiller («Irrational Exuberance», `ie_data.xls`): S&P Composite and 10-year US Treasury bonds,
+//! monthly from 1871 in USD. The SNB cubes supply the USD/CHF rate (`devkum`), the Swiss consumer
+//! price index (`plkopr`), SARON (`zimoma`) and the yields of Swiss Confederation
+//! bonds (`rendoblim`).
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -14,7 +14,7 @@ use crate::market::{DataSet, Freq, Meta};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Monatswerte mit Lücken.
+/// Monthly values with gaps.
 pub type Monthly = BTreeMap<YearMonth, f64>;
 
 fn invalid(s: impl Into<String>) -> Error {
@@ -23,17 +23,17 @@ fn invalid(s: impl Into<String>) -> Error {
 
 // ---------- Shiller ----------
 
-/// Die benötigten Spalten der Shiller-Tabelle, Monat für Monat.
+/// The required columns of the Shiller table, month by month.
 #[derive(Clone, Debug, Default)]
 pub struct ShillerRaw {
     pub cpi: Monthly,
-    /// Real Total Return Price (Aktien inkl. Dividenden, real).
+    /// Real Total Return Price (stocks including dividends, real).
     pub real_tr_price: Monthly,
     /// Real Total Bond Returns (Index, real).
     pub real_tr_bonds: Monthly,
 }
 
-/// Liest das Blatt «Data» der Shiller-Datei (`.xls`, `.xlsx` oder `.ods`).
+/// Reads the sheet «Data» of the Shiller file (`.xls`, `.xlsx` or `.ods`).
 pub fn read_shiller(path: &Path) -> Result<ShillerRaw> {
     let mut wb = open_workbook_auto(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
     let range = wb
@@ -60,7 +60,7 @@ fn cell_num(c: Option<&Data>) -> Option<f64> {
     .filter(|v: &f64| v.is_finite())
 }
 
-/// Shiller schreibt den Monat als Dezimalzahl: 1871.01 = Januar, 2025.1 = Oktober.
+/// Shiller writes the month as a decimal number: 1871.01 = January, 2025.1 = October.
 fn shiller_month(v: f64) -> Option<YearMonth> {
     let y = v.floor();
     let m = ((v - y) * 100.0).round() as u32;
@@ -68,7 +68,7 @@ fn shiller_month(v: f64) -> Option<YearMonth> {
 }
 
 pub fn parse_shiller(rows: &[Vec<Data>]) -> Result<ShillerRaw> {
-    // Kopfzeile: erste Spalte «Date»; die Spaltennamen stehen über mehrere Zeilen verteilt.
+    // Header row: first column «Date»; the column names are spread over several rows.
     let head = rows
         .iter()
         .position(|r| r.first().is_some_and(|c| cell_text(c) == "Date"))
@@ -122,8 +122,8 @@ pub fn parse_shiller(rows: &[Vec<Data>]) -> Result<ShillerRaw> {
     Ok(raw)
 }
 
-/// Monatliche Reihe in USD: nominale Monatsrenditen (Gesamtrendite aus den realen Indizes × CPI),
-/// Inflation als Veränderung des CPI gegenüber dem Vorjahresmonat.
+/// Monthly series in USD: nominal monthly returns (total return from the real indices × CPI),
+/// inflation as the change of the CPI against the same month of the previous year.
 pub fn shiller_dataset(raw: &ShillerRaw) -> Result<DataSet> {
     let ok = |m: YearMonth| {
         [&raw.cpi, &raw.real_tr_price, &raw.real_tr_bonds]
@@ -132,7 +132,7 @@ pub fn shiller_dataset(raw: &ShillerRaw) -> Result<DataSet> {
     };
     let first_data = *raw.cpi.keys().next().expect("geprüft");
     let last_data = *raw.cpi.keys().next_back().expect("geprüft");
-    // Erster Monat mit Vormonat und Vorjahresmonat; letzter Monat ohne Lücke bis dahin.
+    // First month with a previous month and a previous-year month; last month without a gap until then.
     let first = first_data.plus(12);
     let mut ds = DataSet {
         name: "Shiller USD".into(),
@@ -164,7 +164,7 @@ pub fn shiller_dataset(raw: &ShillerRaw) -> Result<DataSet> {
     Ok(ds)
 }
 
-// Kurze Erklärungen der ausgelieferten Reihen (`# Info:` in den Dateien unter crates/engine/data/).
+// Short explanations of the bundled series (`# Info:` in the files under crates/engine/data/).
 const INFO_USD: &str =
     "Shiller: S&P Composite und 10-jährige US-Staatsanleihen in USD, Gesamtrendite inkl. Dividenden. Teuerung: US-CPI.";
 const INFO_CHF: &str = "Shiller: S&P Composite und 10-jährige US-Staatsanleihen, in CHF umgerechnet (SNB-Wechselkurs), ohne Währungsabsicherung. Teuerung: Landesindex, SARON ab 06.1999.";
@@ -172,12 +172,12 @@ const INFO_CH_BONDS: &str = "Shiller: US-Aktien (S&P Composite) in CHF, ohne Wä
 
 // ---------- SNB ----------
 
-/// Ein Datenwürfel der SNB (CSV-Download von data.snb.ch): Werte pro Dimensions-Kombination.
+/// A data cube of the SNB (CSV download from data.snb.ch): values per combination of dimensions.
 #[derive(Clone, Debug, Default)]
 pub struct SnbCube {
     pub id: String,
     pub published: Option<String>,
-    /// Schlüssel: Dimensionswerte mit «/» verbunden, z. B. `M0/USD1`.
+    /// Key: dimension values joined with «/», e.g. `M0/USD1`.
     pub series: BTreeMap<String, Monthly>,
 }
 
@@ -234,18 +234,18 @@ pub fn parse_snb(text: &str) -> Result<SnbCube> {
     Ok(cube)
 }
 
-/// Die SNB-Reihen für die Umrechnung in CHF.
+/// The SNB series for the conversion to CHF.
 #[derive(Clone, Debug, Default)]
 pub struct SnbData {
-    /// CHF für 1 USD, Monatsmittel.
+    /// CHF per 1 USD, monthly average.
     pub usd_chf: Monthly,
-    /// Landesindex der Konsumentenpreise.
+    /// Swiss consumer price index.
     pub cpi: Monthly,
-    /// SARON in Prozent (Monatswert).
+    /// SARON in percent (monthly value).
     pub saron: Monthly,
-    /// Rendite 10-jähriger Obligationen der Eidgenossenschaft in Prozent (Monatswert).
+    /// Yield of 10-year Swiss Confederation bonds in percent (monthly value).
     pub ch_yield10: Monthly,
-    /// Publikationsdatum pro Würfel, für die Quellenangabe.
+    /// Publication date per cube, for the source reference.
     pub published: BTreeMap<String, String>,
 }
 
@@ -254,7 +254,7 @@ const CUBE_CPI: (&str, &str) = ("plkopr", "LD2010100");
 const CUBE_SARON: (&str, &str) = ("zimoma", "SARON");
 const CUBE_BONDS: (&str, &str) = ("rendoblim", "10J");
 
-/// Eingebaute SNB-Daten (Auszug der benötigten Reihen), damit der Import ohne Download funktioniert.
+/// Built-in SNB data (extract of the required series), so the import works without a download.
 pub const BUILTIN_SNB: [(&str, &str); 4] = [
     ("snb-devkum.csv", include_str!("../data/quellen/snb-devkum.csv")),
     ("snb-plkopr.csv", include_str!("../data/quellen/snb-plkopr.csv")),
@@ -263,7 +263,7 @@ pub const BUILTIN_SNB: [(&str, &str); 4] = [
 ];
 
 impl SnbData {
-    /// Übernimmt die benötigten Reihen aus den Würfeln; ein späterer Würfel ersetzt einen früheren.
+    /// Takes over the required series from the cubes; a later cube replaces an earlier one.
     pub fn from_cubes(cubes: &[SnbCube]) -> Result<SnbData> {
         let mut d = SnbData::default();
         for c in cubes {
@@ -298,7 +298,7 @@ impl SnbData {
         SnbData::from_cubes(&cubes).expect("eingebaute SNB-Daten sind vollständig")
     }
 
-    /// Nur die benötigten Reihen, im SNB-Format (für `crates/engine/data/quellen`).
+    /// Only the required series, in SNB format (for `crates/engine/data/quellen`).
     pub fn extract_csv(cube: &SnbCube) -> Result<String> {
         let key = [CUBE_FX, CUBE_CPI, CUBE_SARON, CUBE_BONDS]
             .iter()
@@ -323,9 +323,9 @@ impl SnbData {
     }
 }
 
-/// Rechnet eine Monatsreihe in USD in CHF um: Renditen × Veränderung des Kurses USD/CHF (ohne
-/// Währungsabsicherung), Inflation aus dem Landesindex (Vorjahresmonat), SARON in Spalte «Saron»
-/// (vor dessen Einführung leer). Die Reihe beginnt im ersten Monat, für den alle Angaben vorliegen.
+/// Converts a monthly series in USD to CHF: returns × change of the USD/CHF rate (without
+/// currency hedging), inflation from the consumer price index (same month of the previous year), SARON in column «Saron»
+/// (empty before its introduction). The series starts in the first month for which all data is available.
 pub fn to_chf(usd: &DataSet, snb: &SnbData) -> Result<DataSet> {
     if usd.freq != Freq::Monthly {
         return Err(invalid("Die Umrechnung in CHF ist nur für Monatsreihen möglich."));
@@ -390,20 +390,20 @@ pub fn to_chf(usd: &DataSet, snb: &SnbData) -> Result<DataSet> {
     Ok(ds)
 }
 
-/// Monatsrendite einer 10-jährigen Obligation zu pari (jährlicher Coupon = Rendite des Vormonats `y0`),
-/// einen Monat später zur Rendite `y1` bewertet, plus aufgelaufener Coupon. Gleiches Vorgehen wie
-/// Shiller für die US-Staatsanleihen. Renditen als Dezimalzahl, auch negativ.
+/// Monthly return of a 10-year bond at par (annual coupon = yield of the previous month `y0`),
+/// valued one month later at yield `y1`, plus accrued coupon. Same procedure as
+/// Shiller for the US Treasury bonds. Yields as decimals, also negative.
 pub fn bond_return(y0: f64, y1: f64) -> f64 {
     let n = 10.0 - 1.0 / 12.0;
     let disc = (1.0 + y1).powf(-n);
-    // Barwert der Coupons: Rentenbarwertfaktor, für Renditen nahe 0 als Grenzwert n.
+    // Present value of the coupons: annuity factor, for yields close to 0 the limit n.
     let annuity = if y1.abs() < 1e-9 { n } else { (1.0 - disc) / y1 };
     y0 * annuity + disc - 1.0 + y0 / 12.0
 }
 
-/// Ersetzt die Obligationen einer CHF-Monatsreihe durch 10-jährige Obligationen der
-/// Eidgenossenschaft (Gesamtrendite aus den SNB-Renditen). Die Reihe wird auf den Zeitraum gekürzt,
-/// für den beide Angaben vorliegen.
+/// Replaces the bonds of a CHF monthly series by 10-year Swiss Confederation
+/// bonds (total return from the SNB yields). The series is cut to the period
+/// for which both are available.
 pub fn with_ch_bonds(chf: &DataSet, snb: &SnbData) -> Result<DataSet> {
     if chf.freq != Freq::Monthly || chf.currency() != Some("CHF") {
         return Err(invalid(
@@ -493,7 +493,7 @@ mod tests {
             vec![s(""), s("Consumer"), s("Real Total"), s("Real Total")],
             vec![s("Date"), s("CPI"), s("Return Price"), s("Bond Returns")],
         ];
-        // CPI steigt 1 % pro Monat; realer Aktienindex +2 %, realer Obligationenindex konstant.
+        // CPI rises 1 % per month; real stock index +2 %, real bond index constant.
         for i in 0..14 {
             let m = 2000.0 + (i % 12 + 1) as f64 / 100.0 + (i / 12) as f64;
             rows.push(vec![
@@ -532,7 +532,7 @@ mod tests {
         assert!((chf.inflation[0] - 0.02).abs() < 1e-12);
         assert!(chf.saron.as_ref().unwrap()[0].is_nan());
         assert_eq!(chf.currency(), Some("CHF"));
-        // Hin und zurück über CSV.
+        // Round trip through CSV.
         let back = DataSet::parse_csv("x", &chf.to_csv()).unwrap();
         assert_eq!(back.meta, chf.meta);
         assert!((back.stocks[0] - chf.stocks[0]).abs() < 1e-9);
@@ -550,17 +550,17 @@ mod tests {
 
     #[test]
     fn par_bond_returns() {
-        // Unveränderte Rendite: Kurs bleibt bei pari, Ertrag = ein Monatscoupon.
+        // Unchanged yield: price stays at par, income = one monthly coupon.
         for y in [0.04, 0.0, -0.005] {
             assert!((bond_return(y, y) - y / 12.0).abs() < 1e-12, "{y}");
         }
-        // Rendite steigt um 1 Prozentpunkt: Verlust etwa Duration (~8.5) × 1 %.
+        // Yield rises by 1 percentage point: loss about duration (~8.5) × 1 %.
         let r = bond_return(0.02, 0.03);
         assert!(r < -0.08 && r > -0.09, "{r}");
     }
 
     fn shiller_rows(months: usize) -> Vec<Vec<Data>> {
-        // Kopfzeile in der ersten Zeile (keine Zeilen darüber).
+        // Header in the first row (no rows above it).
         let mut rows = vec![vec![
             s("Date"),
             s("CPI"),
@@ -574,7 +574,7 @@ mod tests {
         rows
     }
 
-    // #40: Zellen als Ganzzahl oder Text; Kopfzeile ganz oben; Werte ≤ 0 fehlen; mindestens 13 Monate.
+    // #40: Cells as integer or text; header at the very top; values ≤ 0 are missing; at least 13 months.
     #[test]
     fn shiller_cells_header_and_minimum() {
         assert_eq!(cell_num(Some(&Data::Int(7))), Some(7.0));
@@ -596,7 +596,7 @@ mod tests {
     #[test]
     fn shiller_dataset_stops_at_the_first_gap() {
         let mut rows = shiller_rows(20);
-        rows[17][2] = f(0.0); // Aktienindex fehlt im Mai 2001
+        rows[17][2] = f(0.0); // stock index missing in May 2001
         let ds = shiller_dataset(&parse_shiller(&rows).unwrap()).unwrap();
         assert_eq!(ds.name, "Shiller USD");
         assert_eq!(ds.first, YearMonth::new(2001, 1));
@@ -630,7 +630,7 @@ mod tests {
         assert!(e.contains("wird nicht verwendet"), "{e}");
         assert!(SnbData::extract_csv(&unknown).is_err());
 
-        // Auszug und zurück: dieselbe Reihe für jeden der vier Würfel.
+        // Extract and back: the same series for each of the four cubes.
         for (_, text) in BUILTIN_SNB {
             let cube = parse_snb(text).unwrap();
             let back = parse_snb(&SnbData::extract_csv(&cube).unwrap()).unwrap();
@@ -658,7 +658,7 @@ mod tests {
         assert_eq!(chf.name, "Shiller CHF");
         let ch = with_ch_bonds(&chf, &snb).unwrap();
         assert_eq!(ch.name, "Shiller CHF + CH-Obligationen");
-        // Eine Monatsreihe in USD lässt sich nicht kombinieren.
+        // A monthly series in USD cannot be combined.
         let mut in_usd = usd.clone();
         in_usd.meta.currency = Some("USD".into());
         assert!(with_ch_bonds(&in_usd, &snb).is_err());

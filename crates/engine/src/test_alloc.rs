@@ -1,46 +1,46 @@
-//! Speichergrenze für Testprozesse (#116).
+//! Memory limit for test processes (#116).
 //!
-//! Ein Mutant kann eine Schleife endlos machen, die Vektoren füllt (Beispiel: `k += len` wird `k *= len`). Ohne Grenze
-//! fordert dann jeder Testprozess in Sekunden Gigabytes an; bei mehreren parallelen Tests reicht das, um macOS zum
-//! Stillstand und zu einer Kernel-Panic zu bringen. macOS kennt keine Speichergrenze je Prozess (`ulimit -v` wirkt nicht).
+//! A mutant can make a loop that fills vectors endless (example: `k += len` becomes `k *= len`). Without a limit
+//! every test process then requests gigabytes within seconds; with several parallel tests that is enough to bring macOS to a
+//! standstill and a kernel panic. macOS has no memory limit per process (`ulimit -v` has no effect).
 //!
-//! Deshalb setzen die Testprogramme von Engine, App und Kommandozeile [`Limited`] als globalen Speicherverwalter. Er zählt
-//! die belegten Bytes und lässt eine Anforderung über [`LIMIT`] fehlschlagen. Rust bricht den Prozess dann sofort ab
-//! («memory allocation of … bytes failed»), der Test schlägt fehl und der Mutant gilt als erkannt.
+//! Therefore the test programs of engine, app and command line set [`Limited`] as the global allocator. It counts
+//! the allocated bytes and lets a request above [`LIMIT`] fail. Rust then aborts the process at once
+//! («memory allocation of … bytes failed»), the test fails and the mutant counts as caught.
 //!
-//! Die App selbst verwendet den Speicherverwalter des Systems; nur Testprogramme setzen diesen hier.
+//! The app itself uses the system allocator; only test programs set this one.
 
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-/// Höchstens belegter Speicher je Testprozess. Der schwerste Test braucht rund 0,7 GB (`make test`), die Tests des
-/// Mutationsprofils höchstens 0,2 GB.
+/// Maximum allocated memory per test process. The heaviest test needs about 0.7 GB (`make test`), the tests of the
+/// mutation profile at most 0.2 GB.
 pub const LIMIT: usize = 1536 << 20;
 
 static USED: AtomicUsize = AtomicUsize::new(0);
-/// #139: Höchster Stand von [`USED`] seit dem letzten [`Limited::reset_peak`].
+/// #139: Peak of [`USED`] since the last [`Limited::reset_peak`].
 static PEAK: AtomicUsize = AtomicUsize::new(0);
 
-/// Speicherverwalter mit Obergrenze [`LIMIT`]; reicht alles an den Speicherverwalter des Systems weiter.
+/// Allocator with the upper limit [`LIMIT`]; passes everything on to the system allocator.
 pub struct Limited;
 
 impl Limited {
-    /// Zur Zeit belegte Bytes (für Tests).
+    /// Currently allocated bytes (for tests).
     pub fn used() -> usize {
         USED.load(Ordering::Relaxed)
     }
 
-    /// #139: Höchster belegter Speicher seit dem letzten [`Limited::reset_peak`] (für Speichertests).
+    /// #139: Peak allocated memory since the last [`Limited::reset_peak`] (for memory tests).
     pub fn peak() -> usize {
         PEAK.load(Ordering::Relaxed)
     }
 
-    /// #139: Setzt den Höchststand auf den zur Zeit belegten Speicher zurück.
+    /// #139: Resets the peak to the currently allocated memory.
     pub fn reset_peak() {
         PEAK.store(USED.load(Ordering::Relaxed), Ordering::Relaxed);
     }
 
-    /// Reserviert `size` Bytes im Zähler; `false`, wenn die Grenze überschritten würde (dann bleibt der Zähler gleich).
+    /// Reserves `size` bytes in the counter; `false` if the limit would be exceeded (then the counter stays the same).
     fn reserve(size: usize) -> bool {
         let before = USED.fetch_add(size, Ordering::Relaxed);
         if before.saturating_add(size) > LIMIT {
@@ -52,7 +52,7 @@ impl Limited {
     }
 }
 
-// SAFETY: Alle Aufrufe gehen unverändert an `System`; der Zähler ändert nichts an Zeigern oder Layouts.
+// SAFETY: All calls go unchanged to `System`; the counter changes nothing about pointers or layouts.
 unsafe impl GlobalAlloc for Limited {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         if !Self::reserve(layout.size()) {
@@ -102,9 +102,9 @@ unsafe impl GlobalAlloc for Limited {
 mod tests {
     use super::*;
 
-    // #116/AK2: Über der Grenze schlägt die Anforderung fehl, ohne den Zähler zu verändern; eine normale Anforderung
-    // gelingt und wird bei der Freigabe wieder abgezogen. Der Speicherverwalter ist in diesem Testprogramm der globale,
-    // deshalb zählen andere Tests mit; geprüft wird nur, was diese Aufrufe am Zähler ändern.
+    // #116/AK2: Above the limit the request fails without changing the counter; a normal request
+    // succeeds and is subtracted again on release. The allocator is the global one in this test program,
+    // so other tests count along; only what these calls change in the counter is checked.
     #[test]
     fn issue_116_ak2_allocations_above_the_limit_fail_and_the_counter_stays_consistent() {
         let huge = Layout::from_size_align(LIMIT + 1, 8).unwrap();
@@ -118,7 +118,7 @@ mod tests {
         unsafe {
             let p = Limited.alloc(small);
             assert!(!p.is_null());
-            // Vergrössern über die Grenze schlägt fehl, der alte Block bleibt gültig.
+            // Growing beyond the limit fails, the old block stays valid.
             assert!(Limited.realloc(p, small, LIMIT + 1).is_null());
             let q = Limited.realloc(p, small, 2 << 20);
             assert!(!q.is_null());
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn issue_116_ak2_reserve_refuses_beyond_the_limit_and_accepts_small_requests() {
         assert!(!Limited::reserve(LIMIT + 1));
-        assert!(!Limited::reserve(usize::MAX)); // kein Überlauf des Zählers
+        assert!(!Limited::reserve(usize::MAX)); // no overflow of the counter
         assert!(Limited::reserve(4096));
         USED.fetch_sub(4096, Ordering::Relaxed);
     }

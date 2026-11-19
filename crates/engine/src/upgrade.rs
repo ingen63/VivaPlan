@@ -1,16 +1,16 @@
-//! Übernahme älterer Planungen beim Laden (#52, #51).
+//! Takeover of older plans when loading (#52, #51).
 //!
-//! [`upgrade`] arbeitet auf dem JSON der Planung, wie die Oberfläche es hält, und liefert Hinweise für jede Änderung,
-//! damit nichts still verloren geht:
-//! - Jede Person erhält die festen Meilensteine «Bezug Pensionskasse» und «AHV-Bezug» (Standard 65 Jahre); ein Alter
-//!   ausserhalb der Grenzen aus den Einstellungen wird auf die nächste Grenze gesetzt.
-//! - Pensionskasse und AHV-Rente beziehen sich auf diese Meilensteine.
-//! - Die Säule 3a an einer Hypothek wird ein eigenes 3a-Konto der ersten Person mit einem Auszahlungsplan.
-//! - #69: Die gewählte Zeitreihe wird eine Anlagestrategie (Index für Aktien und Obligationen).
-//! - #100/#101: Das parametrische Modell erhält das Merkmal `auto` (Parameter folgen dem Aktienindex). Rechnet die
-//!   Planung parametrisch, bleiben ihre Parameter (`auto` = falsch) und ein Hinweis nennt die geänderte Rechnung.
-//! - #132: Das parametrische Modell erhält das Merkmal `sampler` (Verfahren der Zufallsziehung). Rechnet die Planung
-//!   parametrisch, nennt ein Hinweis die anderen Zufallspfade.
+//! [`upgrade`] works on the plan's JSON as the user interface holds it and returns a note for every change,
+//! so that nothing is lost silently:
+//! - Every person gets the fixed milestones «Bezug Pensionskasse» and «AHV-Bezug» (default 65 years); an age
+//!   outside the limits from the settings is set to the nearest limit.
+//! - Pension fund and AHV pension refer to these milestones.
+//! - The pillar 3a on a mortgage becomes a 3a account of its own of the first person with a payout plan.
+//! - #69: The chosen series becomes an investment strategy (index for stocks and bonds).
+//! - #100/#101: The parametric model gets the flag `auto` (parameters follow the stock index). If the
+//!   plan computes parametrically, its parameters stay (`auto` = false) and a note names the changed computation.
+//! - #132: The parametric model gets the flag `sampler` (sampling method). If the plan computes
+//!   parametrically, a note names the different random paths.
 
 use std::borrow::Cow;
 
@@ -29,7 +29,7 @@ fn fmt_age(y: f64) -> String {
     s.strip_suffix(".0").map(str::to_string).unwrap_or(s)
 }
 
-/// Monat eines Meilensteins aus dem JSON (Datum oder Alter einer Person).
+/// Month of a milestone from the JSON (date or age of a person).
 fn milestone_month(ms: &Value, births: &[(String, YearMonth)]) -> Option<YearMonth> {
     match ms.get("kind").and_then(Value::as_str) {
         Some("date") => ms.get("date").and_then(ym),
@@ -43,7 +43,7 @@ fn milestone_month(ms: &Value, births: &[(String, YearMonth)]) -> Option<YearMon
     }
 }
 
-/// Bringt eine Planung auf den aktuellen Stand; die Hinweise beschreiben jede Änderung.
+/// Brings a plan up to date; the notes describe every change.
 pub fn upgrade(v: &mut Value) -> Vec<String> {
     let mut notes = vec![];
     if !v.is_object() {
@@ -70,18 +70,18 @@ pub fn upgrade(v: &mut Value) -> Vec<String> {
     pictet(v, &mut notes);
     parametric(v, &mut notes);
     sampler(v, &mut notes);
-    // #154: zuletzt, denn `housing` braucht eine lesbare Planung, und die Schritte davor können sie erst lesbar machen
-    // (z. B. eine ungültige `returns.series`). Sonst holte erst das nächste Öffnen die Anpassung nach.
+    // #154: last, because `housing` needs a readable plan, and the steps before can only make it readable
+    // (e.g. an invalid `returns.series`). Otherwise only the next opening would catch up on the adjustment.
     housing(v, &mut notes);
     notes
 }
 
-/// #101: Hinweis beim Öffnen einer Planung, die vor #100/#101 parametrisch rechnete.
+/// #101: Note when opening a plan that computed parametrically before #100/#101.
 pub const PARAMETRIC_NOTE: &str = "Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig, korreliert mit den Aktien gemäss der Anlagestrategie (bisher fixe Werte). Ihre Parameter des Aktienmodells bleiben; die Vorschlagswerte für den Aktienindex stehen im Reiter «Simulation». Das Ergebnis ändert sich.";
 
-/// #100/#101: Merkmal `auto` für die Parameter des Aktienmodells. Planungen, die parametrisch rechnen, behalten ihre
-/// Werte (mit Hinweis, #101/AK6); bei allen anderen waren die Werte nicht in Gebrauch und folgen künftig dem
-/// Aktienindex.
+/// #100/#101: Flag `auto` for the parameters of the stock model. Plans that compute parametrically keep their
+/// values (with a note, #101/AK6); for all others the values were not in use and from now on follow the
+/// stock index.
 fn parametric(v: &mut Value, notes: &mut Vec<String>) {
     let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
         return;
@@ -92,7 +92,7 @@ fn parametric(v: &mut Value, notes: &mut Vec<String>) {
         Some(q) => {
             q.insert("auto".into(), json!(!active));
         }
-        // ohne gespeicherte Werte rechnete sie mit den bisherigen Standardwerten; diese bleiben
+        // without saved values it computed with the previous default values; these stay
         None if active => {
             let q = serde_json::to_value(crate::model::ParametricParams::default()).unwrap_or_default();
             ret.insert("parametric".into(), q);
@@ -104,11 +104,11 @@ fn parametric(v: &mut Value, notes: &mut Vec<String>) {
     }
 }
 
-/// #132/AK7: Hinweis beim Öffnen einer Planung, die vor #132 parametrisch rechnete.
+/// #132/AK7: Note when opening a plan that computed parametrically before #132.
 pub const SAMPLER_NOTE: &str = "Monte Carlo parametrisch erzeugt die Zufallspfade mit einem schnelleren Verfahren. Die Verteilung der Renditen bleibt gleich, die einzelnen Pfade sind aber andere. Das Ergebnis ändert sich deshalb leicht; mit demselben Zufallsstartwert bleibt es wiederholbar.";
 
-/// #132: Merkmal `sampler` für das parametrische Modell. Fehlt es, stammt die Planung von vor #132; rechnet sie
-/// parametrisch, erhält sie einen Hinweis (nicht zusätzlich zu [`PARAMETRIC_NOTE`], der die Änderung schon nennt).
+/// #132: Flag `sampler` for the parametric model. If it is missing, the plan dates from before #132; if it computes
+/// parametrically, it gets a note (not in addition to [`PARAMETRIC_NOTE`], which already names the change).
 fn sampler(v: &mut Value, notes: &mut Vec<String>) {
     let active = v.pointer("/returns/source").and_then(Value::as_str) == Some("parametric");
     let Some(q) = v.pointer_mut("/returns/parametric").and_then(Value::as_object_mut) else {
@@ -123,8 +123,8 @@ fn sampler(v: &mut Value, notes: &mut Vec<String>) {
     }
 }
 
-/// #90: Der Index «Schweiz (Pictet)» wird nicht mehr mitgeliefert. Aktien «Schweiz (Pictet)» werden
-/// «Schweiz (JST)», Obligationen «Schweiz (Pictet)» werden «Eidgenossenschaft 10 Jahre», mit Hinweis.
+/// #90: The index «Schweiz (Pictet)» is no longer bundled. Stocks «Schweiz (Pictet)» become
+/// «Schweiz (JST)», bonds «Schweiz (Pictet)» become «Eidgenossenschaft 10 Jahre», with a note.
 fn pictet(v: &mut Value, notes: &mut Vec<String>) {
     let Some(s) = v.pointer_mut("/returns/strategy").and_then(Value::as_object_mut) else {
         return;
@@ -146,11 +146,11 @@ fn pictet(v: &mut Value, notes: &mut Vec<String>) {
     }
 }
 
-/// #90: Schlüssel des früheren Index «Schweiz (Pictet)» in der Plandatei.
+/// #90: Key of the former index «Schweiz (Pictet)» in the plan file.
 const PICTET_KEY: &str = "chPictet";
 
-/// #69: Die Zeitreihe einer älteren Planung wird die Anlagestrategie mit denselben Werten. Reihen ohne
-/// entsprechende Strategie (in USD oder eigene Dateien) werden ersetzt, mit Hinweis.
+/// #69: The series of an older plan becomes the investment strategy with the same values. Series without
+/// a matching strategy (in USD or own files) are replaced, with a note.
 fn strategy(v: &mut Value, notes: &mut Vec<String>) {
     let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
         return;
@@ -162,7 +162,7 @@ fn strategy(v: &mut Value, notes: &mut Vec<String>) {
     let (stocks, bonds) = match series.as_deref() {
         None | Some("library:Shiller CHF.csv") => ("sp500", "usa"),
         Some("library:Shiller CHF + CH-Obligationen.csv") => ("sp500", "ch"),
-        // #90: wird anschliessend in `pictet` ersetzt (mit Hinweis).
+        // #90: replaced afterwards in `pictet` (with a note).
         Some("library:Pictet CH.csv") => (PICTET_KEY, PICTET_KEY),
         Some("library:Welt (JST).csv") => ("worldJst", "ch"),
         Some("library:Shiller USD.csv") => {
@@ -180,22 +180,22 @@ fn strategy(v: &mut Value, notes: &mut Vec<String>) {
     ret.insert("strategy".into(), json!({ "stocks": stocks, "bonds": bonds }));
 }
 
-/// #69: Hinweis, wenn eine Planung die Reihe in USD verwendete.
+/// #69: Note if a plan used the series in USD.
 pub const STRATEGY_USD_NOTE: &str = "Die Zeitreihe «Shiller USD» (in USD) wird durch die Anlagestrategie S&P 500 mit US-Obligationen in CHF ersetzt; alle Strategien rechnen in CHF. Das Ergebnis ändert sich.";
 
-/// #44: Die alte Format-Kennung (legacy: RetirementPlanner) wird durch die neue ersetzt; der Inhalt bleibt gleich,
-/// deshalb ohne Hinweis.
+/// #44: The old format identifier (legacy: RetirementPlanner) is replaced by the new one; the content stays the same,
+/// hence without a note.
 fn format(v: &mut Value) {
     if v.get("format").and_then(Value::as_str) == Some(crate::model::LEGACY_FORMAT) {
         v["format"] = Value::String(crate::model::FORMAT.into());
     }
 }
 
-/// #54: Hinweis beim Öffnen einer älteren Planung; das Ergebnis kann sich ändern.
+/// #54: Note when opening an older plan; the result may change.
 pub const CASH_NOTE: &str = "Cash wird neu bis zur Pensionierung (Bezug Pensionskasse) auf dem erfassten Betrag gehalten, mit der Teuerung fortgeschrieben; ein Überschuss geht ins Portfolio. Die Entnahmestrategie, auch «Standard» mit ihrer Cash-Reserve, gilt erst ab der Pensionierung. Das Ergebnis kann sich deshalb ändern.";
 
-/// #53: Ältere Planungen erfassten die Lebenshaltung ohne Wohnkosten. Der Wohnanteil zum Simulationsstart wird zu
-/// jedem Wert addiert, damit das Ergebnis gleich bleibt.
+/// #53: Older plans entered the living costs without housing costs. The housing share at the simulation start is added to
+/// every value, so that the result stays the same.
 fn housing(v: &mut Value, notes: &mut Vec<String>) {
     if v.pointer("/flows/spendingIncludesHousing").and_then(Value::as_bool) == Some(true) || v.get("flows").is_none() {
         return;
@@ -208,7 +208,7 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
     };
     let w = crate::housing::start_housing(&plan, &r);
     v["flows"]["spendingIncludesHousing"] = json!(true);
-    // #54/AK8: gleiche Kennzeichnung einer älteren Planung (vor #53/#54).
+    // #54/AK8: same marking of an older plan (before #53/#54).
     notes.push(CASH_NOTE.to_string());
     if w <= 0.0 {
         return;
@@ -239,7 +239,7 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
     ));
 }
 
-/// #51: feste Meilensteine je Person, Namen und Grenzen.
+/// #51: fixed milestones per person, names and limits.
 fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, notes: &mut Vec<String>) {
     if !v.get("milestones").is_some_and(Value::is_array) {
         v["milestones"] = json!([]);
@@ -256,7 +256,7 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
                 .iter_mut()
                 .find(|m| m.get("id").and_then(Value::as_str) == Some(id))
             else {
-                // Vor dem Simulationsende einfügen, sonst am Schluss.
+                // Insert before the end of the simulation, otherwise at the end.
                 let at = list
                     .iter()
                     .position(|m| m.get("id").and_then(Value::as_str) == Some("end"))
@@ -313,7 +313,7 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
     }
 }
 
-/// #51: Pensionskasse und AHV-Rente beziehen sich auf die festen Meilensteine der Person.
+/// #51: Pension fund and AHV pension refer to the fixed milestones of the person.
 fn pension_refs(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<String>) {
     for (i, base) in [(0usize, "/pension"), (1usize, "/partner")] {
         if i >= births.len() {
@@ -334,7 +334,7 @@ fn pension_refs(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<S
     }
 }
 
-/// #52: Säule 3a an einer Hypothek wird ein eigenes 3a-Konto der ersten Person.
+/// #52: Pillar 3a on a mortgage becomes a 3a account of its own of the first person.
 fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<String>) {
     let Some((pid, _)) = births.first().cloned() else {
         return;
@@ -346,7 +346,7 @@ fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Strin
         let list = v.get("milestones").and_then(Value::as_array);
         match list.and_then(|l| l.iter().find(|m| m.get("id").and_then(Value::as_str) == Some(r))) {
             Some(ms) => milestone_month(ms, births),
-            // Fester Meilenstein der ersten Person, der in der Datei fehlt: Standardalter.
+            // Fixed milestone of the first person missing in the file: default age.
             None if r == person_milestones(0).0 || r == person_milestones(0).1 => {
                 births.first().map(|b| b.1.plus((DEFAULT_AGE * 12.0) as i32))
             }
@@ -370,7 +370,7 @@ fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Strin
                     })
             });
             if let Some(Value::Object(pa)) = mg.remove("pillar3a") {
-                // Ein leeres Konto ohne indirekte Amortisation trägt nichts bei (die Oberfläche legte es früher an).
+                // An empty account without indirect amortization contributes nothing (the user interface used to create it).
                 if !indirect && pa.get("balance").and_then(Value::as_f64).unwrap_or(0.0) <= 0.0 {
                     continue;
                 }
@@ -442,8 +442,8 @@ fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Strin
     }
 }
 
-/// Planung mit veralteter Säule 3a an der Hypothek: übernommen wie beim Laden (für Aufrufe mit fertigen Planungen,
-/// etwa aus Tests). Sonst unverändert.
+/// Plan with deprecated pillar 3a on the mortgage: taken over as when loading (for calls with finished plans,
+/// e.g. from tests). Otherwise unchanged.
 pub fn normalized(plan: &Plan) -> Cow<'_, Plan> {
     let legacy = plan
         .realestate
@@ -456,7 +456,7 @@ pub fn normalized(plan: &Plan) -> Cow<'_, Plan> {
     let mut v = serde_json::to_value(plan).expect("serialisierbar");
     let births: Vec<(String, YearMonth)> = plan.household.persons.iter().map(|p| (p.id.clone(), p.birth)).collect();
     pillar3a(&mut v, &births, &mut vec![]);
-    // Unmögliche Werte (etwa ein Alter von einer Milliarde Jahren) lassen sich nicht übernehmen; die Prüfung meldet sie.
+    // Impossible values (such as an age of a billion years) cannot be taken over; the validation reports them.
     match serde_json::from_value::<Plan>(v) {
         Ok(mut p) => {
             p.limits = plan.limits;
@@ -491,7 +491,7 @@ mod tests {
             .unwrap()
     }
 
-    // #51/AK5, AK6: fehlender AHV-Bezug mit 65 vor dem Ende, «Pensionierung» heisst «Bezug Pensionskasse».
+    // #51/AK5, AK6: missing AHV payout at 65 before the end, «Pensionierung» is called «Bezug Pensionskasse».
     #[test]
     fn issue_51_ak6_missing_milestones_and_names() {
         let mut v = plan();
@@ -507,11 +507,11 @@ mod tests {
         );
         assert!(notes.contains(&"Der Meilenstein «Pensionierung» heisst neu «Bezug Pensionskasse».".to_string()));
         assert!(notes.contains(&"Die AHV-Rente beginnt neu am Meilenstein «AHV-Bezug» (bisher «never»).".to_string()));
-        // Zweiter Lauf: nichts mehr zu tun
+        // Second run: nothing left to do
         assert!(upgrade(&mut v).is_empty());
     }
 
-    // #51/AK6: Alter ausserhalb der Grenzen wird auf die nächste Grenze gesetzt, mit Hinweis.
+    // #51/AK6: An age outside the limits is set to the nearest limit, with a note.
     #[test]
     fn issue_51_ak6_ages_outside_the_limits() {
         let mut v = plan();
@@ -540,7 +540,7 @@ mod tests {
             ),
             "{notes:?}"
         );
-        // #25: Grenzen aus den Einstellungen
+        // #25: Limits from the settings
         let mut v = plan();
         v["milestones"][1]["years"] = json!(55);
         v["limits"] = json!({ "pkMin": 50 });
@@ -548,7 +548,7 @@ mod tests {
         assert_eq!(ms(&v, "retire")["years"], 55);
     }
 
-    // #51/AK1: zweite Person erhält eigene Meilensteine; Bezüge von Person 2 zeigen darauf.
+    // #51/AK1: the second person gets milestones of their own; the payouts of person 2 point to them.
     #[test]
     fn issue_51_second_person() {
         let mut v = plan();
@@ -561,7 +561,7 @@ mod tests {
             (v["partner"]["pk"]["at"].as_str(), v["partner"]["ahv"]["at"].as_str()),
             (Some("retire2"), Some("ahv2"))
         );
-        // Meilenstein der falschen Person: auf die eigene Person mit 65 Jahren
+        // Milestone of the wrong person: moved to the own person at 65 years
         let mut v = plan();
         v["household"]["persons"] = json!([{ "id": "A", "birth": "1980-06" }, { "id": "B", "birth": "1982-01" }]);
         v["milestones"].as_array_mut().unwrap().insert(
@@ -585,10 +585,10 @@ mod tests {
         v
     }
 
-    // #52/AK13: Säule 3a an der Hypothek wird ein Konto der ersten Person mit Auszahlungsplan.
+    // #52/AK13: Pillar 3a on the mortgage becomes an account of the first person with a payout plan.
     #[test]
     fn issue_52_ak13_legacy_pillar3a() {
-        // AHV-Bezug 2045-06 (65); frühester Bezug 2040-06.
+        // AHV payout 2045-06 (65); earliest payout 2040-06.
         let mut v = with_legacy(
             json!({ "balance": 40_000, "rate": 0.01, "payout": "retire", "use": "repay" }),
             "indirect",
@@ -606,7 +606,7 @@ mod tests {
                 .any(|n| n.contains("Auszahlung des ganzen Guthabens im 06.2040")),
             "{notes:?}"
         );
-        // Zu früh: auf den frühesten Zeitpunkt begrenzt
+        // Too early: limited to the earliest point in time
         let mut v = with_legacy(
             json!({ "balance": 1, "rate": 0, "payout": "2035-01", "use": "wealth" }),
             "indirect",
@@ -616,7 +616,7 @@ mod tests {
         assert!(notes
             .iter()
             .any(|n| n.contains("lag mehr als 5 Jahre vor dem AHV-Bezug und ist neu im 06.2040")));
-        // Nach dem AHV-Bezug oder «nie»: kein Plan-Eintrag, Rest im AHV-Bezug
+        // After the AHV payout or «nie»: no plan entry, remainder at the AHV payout
         for payout in ["2050-01", "never"] {
             let mut v = with_legacy(
                 json!({ "balance": 1, "rate": 0, "payout": payout, "use": "wealth" }),
@@ -625,7 +625,7 @@ mod tests {
             upgrade(&mut v);
             assert_eq!(v["pillar3a"][0]["payouts"], json!([]), "{payout}");
         }
-        // «Hypothek zurückzahlen» ohne indirekte Amortisation: ins freie Vermögen, mit Hinweis
+        // «Hypothek zurückzahlen» without indirect amortization: into free wealth, with a note
         let mut v = with_legacy(
             json!({ "balance": 5, "rate": 0, "payout": "retire", "use": "repay" }),
             "direct",
@@ -635,7 +635,7 @@ mod tests {
         assert!(notes
             .iter()
             .any(|n| n.contains("setzt neu eine Tranche mit indirekter Amortisation voraus")));
-        // Leeres Konto ohne indirekte Amortisation entfällt still
+        // An empty account without indirect amortization is dropped silently
         let mut v = with_legacy(
             json!({ "balance": 0, "rate": 0, "payout": "retire", "use": "repay" }),
             "direct",
@@ -644,7 +644,7 @@ mod tests {
         assert!(v.get("pillar3a").is_none());
     }
 
-    // #52/AK13: mehrere Immobilien mit 3a werden zu einem Konto zusammengefasst.
+    // #52/AK13: several properties with 3a are combined into one account.
     #[test]
     fn issue_52_ak13_two_legacy_accounts_are_merged() {
         let mut v = with_legacy(
@@ -661,7 +661,7 @@ mod tests {
         assert!(notes.iter().any(|n| n.contains("zu einem Konto zusammengefasst")));
     }
 
-    // Unbrauchbare Daten führen nicht zum Absturz.
+    // Unusable data does not lead to a crash.
     #[test]
     fn odd_input() {
         assert!(upgrade(&mut json!(null)).is_empty());
@@ -669,9 +669,9 @@ mod tests {
         assert!(upgrade(&mut v).is_empty());
     }
 
-    // #124/AK6: Ein Alter genau auf der Grenze bleibt (kein Hinweis). Eine Säule 3a an der Hypothek ohne
-    // Auszahlungszeitpunkt (oder mit unbekanntem Meilenstein) wird im AHV-Bezug ausbezahlt; «Hypothek zurückzahlen» setzt
-    // eine indirekte Amortisation über 0 voraus. Eine Planung, die nicht parametrisch rechnet, bekommt keine Parameter.
+    // #124/AK6: An age exactly at the limit stays (no note). A pillar 3a on the mortgage without a
+    // payout date (or with an unknown milestone) is paid out at the AHV payout; «Hypothek zurückzahlen» requires
+    // an indirect amortization above 0. A plan that does not compute parametrically gets no parameters.
     #[test]
     fn issue_124_ak6_limits_pillar3a_and_parametric() {
         let mut v = plan();
@@ -705,8 +705,8 @@ mod tests {
         assert!(v["returns"].get("parametric").is_none());
     }
 
-    // #154: Eine ungültige Zeitreihe (`returns.series` kein Text) macht die Planung erst nach dem Schritt `strategy`
-    // lesbar. Die Anpassung der Wohnkosten (#53/#54) geschieht trotzdem im ersten Lauf; der zweite ändert nichts.
+    // #154: An invalid series (`returns.series` not text) makes the plan readable only after the step `strategy`.
+    // The adjustment of the housing costs (#53/#54) still happens in the first run; the second changes nothing.
     #[test]
     fn issue_154_housing_runs_after_the_plan_became_readable() {
         let mut v = crate::api::example_plan();

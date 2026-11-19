@@ -1,8 +1,8 @@
-//! Rechenkern von VivaPlan.
+//! Calculation engine of VivaPlan.
 //!
-//! Ablauf: [`model::Plan`] laden → [`sim::Simulator::new`] (prüft und kompiliert die Planung) →
-//! Renditepfade aus [`market`] erzeugen → [`sim::Simulator::run`] pro Pfad oder
-//! [`batch::run_all`] für viele Pfade parallel.
+//! Flow: load [`model::Plan`] → [`sim::Simulator::new`] (validates and compiles the plan) →
+//! generate return paths from [`market`] → [`sim::Simulator::run`] per path or
+//! [`batch::run_all`] for many paths in parallel.
 
 pub mod api;
 pub mod batch;
@@ -32,20 +32,20 @@ pub mod validate;
 
 use std::fmt;
 
-// #116: Speichergrenze je Testprozess (siehe `test_alloc`).
+// #116: Memory limit per test process (see `test_alloc`).
 #[cfg(test)]
 #[global_allocator]
 static TEST_ALLOC: test_alloc::Limited = test_alloc::Limited;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Error {
-    /// Die Planung ist unvollständig oder widersprüchlich.
+    /// The plan is incomplete or contradictory.
     Invalid(String),
-    /// Eine Datei konnte nicht gelesen werden.
+    /// A file could not be read.
     Io(String),
-    /// Funktion ist in dieser Etappe noch nicht umgesetzt.
+    /// Function is not yet implemented in this stage.
     NotImplemented(String),
-    /// Die Berechnung wurde abgebrochen.
+    /// The computation was cancelled.
     Cancelled,
 }
 
@@ -64,14 +64,14 @@ impl std::error::Error for Error {}
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// JSON-Schema der Projektdatei (für die Prüfung im Editor und als Dokumentation).
+/// JSON schema of the project file (for validation in the editor and as documentation).
 pub fn schema_json() -> String {
     serde_json::to_string_pretty(&schemars::schema_for!(model::Plan)).expect("Schema ist serialisierbar")
 }
 
 #[cfg(test)]
 mod tests {
-    // #40: Das Schema beschreibt die Projektdatei.
+    // #40: The schema describes the project file.
     #[test]
     fn schema_describes_the_plan() {
         let v: serde_json::Value = serde_json::from_str(&super::schema_json()).unwrap();

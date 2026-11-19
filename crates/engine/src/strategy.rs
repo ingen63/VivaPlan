@@ -1,12 +1,12 @@
-//! #69: Anlagestrategie. Die Planung wählt je einen Index für Aktien und Obligationen; daraus entsteht die Zeitreihe
-//! der Simulation.
+//! #69: Investment strategy. The plan chooses one index each for stocks and bonds; from them the series of the
+//! simulation is built.
 //!
-//! - Kombinationen, die es als ausgelieferte Reihe gibt, liefern genau diese Reihe (Datenbibliothek, sonst die
-//!   eingebaute): S&P 500 mit US-Obligationen = «Shiller CHF» (monatlich), S&P 500 mit Obligationen der
-//!   Eidgenossenschaft = «Shiller CHF + CH-Obligationen» (monatlich ab 1988).
-//! - Alle anderen Kombinationen sind jährlich (Entscheid zu #69: jährlich, sobald ein Teil jährlich ist), über die
-//!   Jahre, für die alle Teile Werte haben. Monatsreihen werden zu Kalenderjahren verknüpft.
-//! - Teuerung aus der Quelle der Aktien; SARON (Jahresmittel) aus den SNB-Werten in «Shiller CHF».
+//! - Combinations that exist as a bundled series give exactly that series (data library, otherwise the
+//!   built-in one): S&P 500 with US bonds = «Shiller CHF» (monthly), S&P 500 with Swiss Confederation
+//!   bonds = «Shiller CHF + CH-Obligationen» (monthly from 1988).
+//! - All other combinations are annual (decision on #69: annual as soon as one part is annual), over the
+//!   years for which all parts have values. Monthly series are linked to calendar years.
+//! - Inflation from the source of the stocks; SARON (annual average) from the SNB values in «Shiller CHF».
 
 use std::path::Path;
 
@@ -17,7 +17,7 @@ use crate::model::{BondIndex, Investment, RegionWeights, StockIndex};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Verweis einer Strategie an Stelle einer Zeitreihe (Kurzinfo in der Oberfläche): `strategy:` + JSON der Strategie.
+/// Reference of a strategy instead of a series (short info in the user interface): `strategy:` + JSON of the strategy.
 pub const PREFIX: &str = "strategy:";
 
 fn invalid(s: impl Into<String>) -> Error {
@@ -41,7 +41,7 @@ pub fn bond_name(b: BondIndex) -> &'static str {
     }
 }
 
-/// Kurzer Name der Strategie.
+/// Short name of the strategy.
 pub fn label(s: &Investment) -> String {
     let stocks = match s.stocks {
         StockIndex::WorldCustom => {
@@ -60,7 +60,7 @@ pub fn label(s: &Investment) -> String {
     format!("Aktien {stocks}, Obligationen {}", bond_name(s.bonds))
 }
 
-/// Fehler in den Gewichten von «Welt individuell»: jedes zwischen 0 und 100 %, zusammen 100 %.
+/// Errors in the weights of «Welt individuell»: each between 0 and 100 %, together 100 %.
 pub fn weight_issue(w: &RegionWeights) -> Option<String> {
     let all = [w.ch, w.usa, w.eu, w.apac];
     if all.iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v)) {
@@ -75,7 +75,7 @@ pub fn weight_issue(w: &RegionWeights) -> Option<String> {
     })
 }
 
-/// Ausgelieferte Reihe aus der Datenbibliothek (falls vorhanden), sonst die eingebaute.
+/// Bundled series from the data library (if present), otherwise the built-in one.
 fn builtin_series(file: &str, lib: Option<&Path>) -> Result<DataSet> {
     if let Some(p) = lib.map(|d| d.join(file)).filter(|p| p.exists()) {
         return DataSet::load_csv(&p);
@@ -87,7 +87,7 @@ fn builtin_series(file: &str, lib: Option<&Path>) -> Result<DataSet> {
     DataSet::parse_csv(file.trim_end_matches(".csv"), text)
 }
 
-/// Jahreswerte ab einem Jahr.
+/// Annual values from a year.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Yearly {
     pub(crate) first: i32,
@@ -103,7 +103,7 @@ impl Yearly {
     }
 }
 
-/// Monatsrenditen zu Kalenderjahren verknüpft (nur ganze Jahre).
+/// Monthly returns linked to calendar years (whole years only).
 pub(crate) fn compound_years(first: YearMonth, monthly: &[f64]) -> Yearly {
     let mut out = Yearly {
         first: if first.month() == 1 {
@@ -122,8 +122,8 @@ pub(crate) fn compound_years(first: YearMonth, monthly: &[f64]) -> Yearly {
     out
 }
 
-/// Jahreswert aus Monatswerten, die schon Jahressätze sind (Inflation: Dezember gegenüber Vorjahr; SARON: Mittel
-/// der zwölf Monate, `NaN` wenn ein Monat fehlt).
+/// Annual value from monthly values that are already annual rates (inflation: December against the previous year; SARON: mean
+/// of the twelve months, `NaN` if a month is missing).
 pub(crate) fn yearly_rates(first: YearMonth, monthly: &[f64], december_only: bool) -> Yearly {
     let c = compound_years(first, monthly);
     let start = (c.first * 12 - first.0) as usize;
@@ -150,7 +150,7 @@ fn yearly_of(ds: &DataSet, col: &[f64]) -> Yearly {
     }
 }
 
-/// Aktien einer Region (Länder nach BIP gewichtet), ab 1900.
+/// Stocks of a region (countries weighted by GDP), from 1900.
 fn region(jst: &JstData, countries: &[&str]) -> Result<Yearly> {
     Ok(Yearly {
         first: jst::FIRST_YEAR,
@@ -158,7 +158,7 @@ fn region(jst: &JstData, countries: &[&str]) -> Result<Yearly> {
     })
 }
 
-/// «Welt individuell»: jedes Jahr die Regionen mit den festen Gewichten (jährlich angepasst).
+/// «Welt individuell»: every year the regions with the fixed weights (rebalanced annually).
 fn custom_world(jst: &JstData, w: &RegionWeights) -> Result<Yearly> {
     let parts = [
         (w.ch, jst::SWITZERLAND),
@@ -178,12 +178,12 @@ fn custom_world(jst: &JstData, w: &RegionWeights) -> Result<Yearly> {
     })
 }
 
-/// Die Zeitreihe zur Strategie. `lib`: Ordner der Datenbibliothek (für neuere Shiller- und SNB-Daten).
+/// The series for the strategy. `lib`: folder of the data library (for newer Shiller and SNB data).
 pub fn dataset(s: &Investment, lib: Option<&Path>) -> Result<DataSet> {
     dataset_with_parts(s, lib).map(|(ds, _)| ds)
 }
 
-/// #69/AK8: Aktien und Obligationen mit ihren eigenen Jahren (die Teuerung stammt aus der Quelle der Aktien).
+/// #69/AK8: Stocks and bonds with their own years (inflation comes from the source of the stocks).
 fn parts(s: &Investment, stocks: (i32, i32), bonds: (i32, i32)) -> Vec<SeriesPart> {
     vec![
         SeriesPart {
@@ -199,12 +199,12 @@ fn parts(s: &Investment, stocks: (i32, i32), bonds: (i32, i32)) -> Vec<SeriesPar
     ]
 }
 
-/// Jahre einer Reihe (erstes und letztes Jahr mit Werten).
+/// Years of a series (first and last year with values).
 fn years_of(ds: &DataSet) -> (i32, i32) {
     (ds.first.year(), ds.last().year())
 }
 
-/// Die Zeitreihe zur Strategie und ihre Teile mit den eigenen Jahren; die Reihe umfasst die gemeinsamen Jahre.
+/// The series for the strategy and its parts with their own years; the series covers the common years.
 pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet, Vec<SeriesPart>)> {
     if s.stocks == StockIndex::WorldCustom {
         if let Some(e) = weight_issue(&s.weights) {
@@ -220,14 +220,14 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
         let mut ds = builtin_series(file, lib)?;
         ds.name = label(s);
         let own = years_of(&ds);
-        // S&P 500 mit Obligationen der Eidgenossenschaft: die Aktien reichen weiter zurück als die SNB-Renditen.
+        // S&P 500 with Swiss Confederation bonds: the stocks go back further than the SNB yields.
         let shiller = if s.bonds == BondIndex::Ch {
             builtin_series("Shiller CHF.csv", lib)?
         } else {
             ds.clone()
         };
         let stocks = years_of(&shiller);
-        // #100: ganze Aktienreihe, monatlich wie der Bootstrap dieser Reihe
+        // #100: whole stock series, monthly like the bootstrap of this series
         ds.stock_series = Some(StockSeries {
             freq: Freq::Monthly,
             first: shiller.first,
@@ -359,12 +359,12 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
     Ok((ds, parts))
 }
 
-/// Zeitreihe zu einem Verweis `strategy:<JSON>`; `None`, wenn der Verweis keine Strategie ist.
+/// Series for a reference `strategy:<JSON>`; `None` if the reference is not a strategy.
 pub fn from_reference(reference: &str, lib: Option<&Path>) -> Option<Result<DataSet>> {
     Some(from_reference_with_parts(reference, lib)?.map(|(ds, _)| ds))
 }
 
-/// Wie [`from_reference`], mit den Teilen der Strategie und ihren eigenen Jahren (#69/AK8).
+/// Like [`from_reference`], with the parts of the strategy and their own years (#69/AK8).
 pub fn from_reference_with_parts(reference: &str, lib: Option<&Path>) -> Option<Result<(DataSet, Vec<SeriesPart>)>> {
     let json = reference.strip_prefix(PREFIX)?;
     Some(
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn compound_years_takes_whole_calendar_years_only() {
-        // Start im März: das erste ganze Jahr beginnt im folgenden Januar.
+        // Start in March: the first whole year starts in the following January.
         let monthly = vec![0.01; 10 + 24 + 5];
         let y = compound_years(YearMonth::new(2000, 3), &monthly);
         assert_eq!((y.first, y.values.len()), (2001, 2));

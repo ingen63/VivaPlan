@@ -1,8 +1,8 @@
-//! Import einer Konfiguration des bisherigen Python-Programms (`config.json`, altersbasiert).
+//! Import of a configuration of the previous Python program (`config.json`, age-based).
 //!
-//! Alter werden über das Startalter und den Startmonat in Kalendermonate umgerechnet; dafür braucht es
-//! das Kalenderjahr des Simulationsstarts. Abweichungen gegenüber dem alten Modell (v. a. Immobilien)
-//! werden in `notes` gemeldet.
+//! Ages are converted to calendar months via the start age and the start month; this needs
+//! the calendar year of the simulation start. Deviations from the old model (mainly properties)
+//! are reported in `notes`.
 
 use std::path::Path;
 
@@ -57,7 +57,7 @@ impl<'a> Ctx<'a> {
         self.f(path).unwrap_or(default)
     }
 
-    /// Ersetzt `{Pfad}` in Schlüsseln durch den Wert an diesem Pfad (wie `replace_variables`).
+    /// Replaces `{path}` in keys by the value at that path (like `replace_variables`).
     fn key_age(&self, key: &str) -> Result<f64> {
         let k = key.trim();
         let resolved = if k.starts_with('{') && k.ends_with('}') {
@@ -69,7 +69,7 @@ impl<'a> Ctx<'a> {
         Ok(resolved)
     }
 
-    /// Wie `age2months` im alten Programm (Python rundet halbe Monate zur geraden Zahl).
+    /// Like `age2months` in the old program (Python rounds half months to the even number).
     fn month_of_age(&self, age: f64) -> YearMonth {
         self.start
             .plus(((age - self.start_age) * 12.0).round_ties_even() as i32)
@@ -123,8 +123,8 @@ impl<'a> Ctx<'a> {
     }
 }
 
-/// `start_year`: Kalenderjahr des Simulationsstarts (das alte Format kennt nur den Startmonat).
-/// `base_dir`: Verzeichnis, gegen das relative Pfade (z. B. `./data/MSCI.csv`) aufgelöst werden.
+/// `start_year`: calendar year of the simulation start (the old format only knows the start month).
+/// `base_dir`: directory against which relative paths (e.g. `./data/MSCI.csv`) are resolved.
 pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Result<LegacyImport> {
     let root: Value = serde_json::from_str(text).map_err(|e| Error::Invalid(format!("config.json: {e}")))?;
     if node(&root, "General").is_none() {
@@ -178,7 +178,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         },
     ];
 
-    // Pensionskasse
+    // Pension fund
     let lumpsum = match c.get("Pension.Private.LumpsumRatio") {
         Some(Value::Object(o)) => {
             if o.len() > 1 {
@@ -208,7 +208,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         },
     };
 
-    // Geldflüsse
+    // Cash flows
     let mut extras = vec![];
     match c.get("MoneyFlows.Extra") {
         Some(Value::Object(o)) => {
@@ -237,20 +237,20 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     }
     let flows = Flows {
         income: c.series_or_zero("MoneyFlows.Income")?,
-        // Im alten Programm blieb das Einkommen nominal gleich (#58).
+        // In the old program the income stayed the same in nominal terms (#58).
         income_indexed: false,
         spending: c.series_or_zero("MoneyFlows.Spendings")?,
         savings: c.series("MoneyFlows.Savings", |x| x)?,
         extras,
-        // Im alten Programm waren die Ausgaben ohne Wohnkosten; die Übernahme beim Öffnen rechnet um (#53).
+        // In the old program spending was without housing costs; the takeover on opening converts it (#53).
         spending_includes_housing: false,
         spending_factor: None,
     };
 
-    // Vermögen
+    // Wealth
     let stocks = c.f_or("WealthManagement.Stocks", 0.0);
     let bonds = c.f_or("WealthManagement.Bonds", 0.0);
-    // Ohne Wert ab Start galt im alten Programm das heutige Verhältnis Aktien/Obligationen.
+    // Without a value from the start, the old program used today's ratio of stocks to bonds.
     let initial_share = if stocks + bonds > 0.0 {
         stocks / (stocks + bonds)
     } else {
@@ -280,7 +280,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         reserve_months: c.series_or_zero("WealthManagement.CashThresholdMonths")?,
     };
 
-    // Renditen
+    // Returns
     let yearly = truthy(c.get("WealthManagement.YearlyPerformance"), true);
     let to_yearly = move |x: f64| if yearly { x } else { (1.0 + x).powi(12) - 1.0 };
     let fixed = FixedReturns {
@@ -293,7 +293,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         inflation: c.series("WealthManagement.Inflation", |x| x)?.unwrap_or_default(),
         saron: Series::Number(0.0),
     };
-    // «----» (kein historisches Jahr) ist keine Zahl und ergibt damit ebenfalls `None`.
+    // «----» (no historical year) is not a number and therefore also gives `None`.
     let hist_year = c.get("WealthManagement.HistoricalYear").and_then(num);
     let extrapolation = Extrapolation {
         method: match c.get("WealthManagement.Extrapolation").and_then(Value::as_str) {
@@ -359,7 +359,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         _ => {}
     }
 
-    // Steuern
+    // Taxes
     let sales = c.table("Taxes.Sales");
     let taxes = Taxes {
         multiplier: c.f_or("Taxes.TaxRate", 2.0),
@@ -374,7 +374,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         couple: None,
     };
 
-    // Immobilien (näherungsweise)
+    // Properties (approximately)
     let props_json: Vec<Map<String, Value>> = c
         .get("RealEstate.Properties")
         .and_then(Value::as_array)
@@ -413,7 +413,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 pillar3a: None,
             })
         };
-        // Ohne Kaufalter kaufte bzw. mietete das alte Programm nach dem Verkauf der letzten Immobilie.
+        // Without a purchase age the old program bought or rented after the sale of the last property.
         let after_sale = || {
             if buy_after_sell {
                 TimeRef::after_sale()
@@ -509,8 +509,8 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         },
     };
 
-    // #161: erst als Gleitkommazahl negieren, dann begrenzen. `as i32` kappt ein extremes Startalter auf `i32::MIN`;
-    // das Minus danach liefe über. So ergibt es wie `YearMonth::plus` einen sehr fernen Monat statt eines Absturzes.
+    // #161: negate as a floating-point number first, then clamp. `as i32` caps an extreme start age at `i32::MIN`;
+    // the minus afterwards would overflow. This way it gives a very distant month like `YearMonth::plus` instead of a crash.
     let birth = start.plus((-start_age * 12.0).round_ties_even() as i32);
     let plan = Plan {
         format: FORMAT.into(),
@@ -559,8 +559,8 @@ mod tests {
         serde_json::to_value(x).unwrap()
     }
 
-    // #40: Umrechnung einer erfundenen Konfiguration des früheren Programms, Feld für Feld.
-    // Start Januar 2030 mit Alter 60 ⇒ Alter a entspricht 2030-01 + (a − 60) × 12 Monaten.
+    // #40: Conversion of a made-up configuration of the previous program, field by field.
+    // Start January 2030 at age 60 ⇒ age a corresponds to 2030-01 + (a − 60) × 12 months.
     #[test]
     fn full_config() {
         let cfg = json!({
@@ -609,7 +609,7 @@ mod tests {
         assert_eq!(date("end"), ym(2040, 1));
         assert_eq!(p.household.persons[0].birth, ym(1970, 1));
 
-        // Pensionskasse: zwei Kapitalbezüge ⇒ ein Bezug von 50 % mit Hinweis
+        // Pension fund: two lump sums ⇒ one payout of 50 % with a note
         assert_eq!(p.pension.pk.lumpsum, 0.5);
         assert!(r.notes.iter().any(|n| n.contains("Mehrere Kapitalbezüge")));
         assert_eq!(
@@ -618,7 +618,7 @@ mod tests {
         );
         assert_eq!(js(&p.pension.pk.interest), json!(0.01));
 
-        // Geldflüsse: Beträge 0 fallen weg, Daten vor dem Start gelten ab Start
+        // Cash flows: amounts of 0 are dropped, dates before the start apply from the start
         assert_eq!(
             js(&p.flows.income),
             json!({"mode": "timed", "rows": [{"from": "2030-01", "value": 8000.0}, {"from": "2032-07", "value": 0.0}]})
@@ -628,7 +628,7 @@ mod tests {
         let extras: Vec<_> = p.flows.extras.iter().map(|e| (e.date, e.amount)).collect();
         assert_eq!(extras, vec![(ym(2030, 1), -5000.0), (ym(2031, 1), 10000.0)]);
 
-        // Vermögen: Anteil Aktien vor dem ersten Eintrag = heutiges Verhältnis 300/(300+100)
+        // Wealth: stock share before the first entry = today's ratio 300/(300+100)
         assert_eq!(p.wealth.cash, 1.0);
         assert_eq!(
             js(&p.wealth.stock_share),
@@ -636,7 +636,7 @@ mod tests {
         );
         assert_eq!(js(&p.wealth.reserve_months), json!(6.0));
 
-        // Renditen: Monatswerte in Jahreswerte umgerechnet, Inflation unverändert
+        // Returns: monthly values converted to annual values, inflation unchanged
         let stocks = js(&p.returns.fixed.stocks).as_f64().unwrap();
         assert!((stocks - (1.01f64.powi(12) - 1.0)).abs() < 1e-12);
         let bonds = js(&p.returns.fixed.bonds)["rows"][0]["value"].as_f64().unwrap();
@@ -653,7 +653,7 @@ mod tests {
         );
         assert!(r.notes.iter().any(|n| n.contains("Monte Carlo übernommen")));
 
-        // Steuern: Tabellen sortiert, Grundstückgewinnsteuer mit Ermässigung
+        // Taxes: tables sorted, property gain tax with reduction
         assert_eq!(p.taxes.multiplier, 1.5);
         assert_eq!(p.taxes.income, vec![(0.0, 0.0), (100000.0, 0.1)]);
         assert_eq!(p.taxes.wealth, vec![(0.0, 0.001)]);
@@ -662,7 +662,7 @@ mod tests {
         assert_eq!(g.brackets, vec![(0.0, 0.3), (50000.0, 0.2)]);
         assert_eq!(g.reduction, 0.1);
 
-        // Immobilien: unbekannter Status mit Hinweis ignoriert
+        // Properties: unknown status ignored with a note
         assert_eq!(p.realestate.properties.len(), 3);
         assert!(r.notes.iter().any(|n| n.contains("«Zelt»")));
         assert!(r.notes.iter().any(|n| n.contains("näherungsweise")));
@@ -672,7 +672,7 @@ mod tests {
         assert_eq!(haus.worth, Some(1_500_000.0));
         assert!(haus.inflation);
         assert_eq!(haus.fix_costs, 1_200_000.0 * 0.01 / 12.0);
-        // Verkauf mit 70 = Simulationsende: noch ein Datum
+        // Sale at 70 = end of simulation: still a date
         assert_eq!(haus.sell, Some(TimeRef::date(ym(2040, 1))));
         let t = &haus.mortgage.as_ref().unwrap().tranches[0];
         assert_eq!((t.amount, t.start), (600000.0, Some(ym(2028, 1))));
@@ -680,7 +680,7 @@ mod tests {
             (t.periods[0].rate, t.periods[0].term, t.periods[0].amort),
             (0.02, 5.0, 3000.0)
         );
-        // Kauf mit 71 liegt nach dem Ende: nie
+        // Purchase at 71 is after the end: never
         let wohnung = &p.realestate.properties[1];
         assert_eq!(wohnung.buy, Some(TimeRef::never()));
         assert!(!wohnung.inflation);
@@ -691,7 +691,7 @@ mod tests {
         assert_eq!(miete.from, Some(TimeRef::date(ym(2036, 1))));
     }
 
-    // Altersschlüssel: Verweis nur mit beiden geschweiften Klammern.
+    // Age keys: a reference only with both curly braces.
     #[test]
     fn age_keys_need_both_braces() {
         let root = json!({"Pension": {"EarlyRetirement": 63}});
@@ -704,7 +704,7 @@ mod tests {
         };
         assert_eq!(c.key_age(" {Pension.EarlyRetirement} ").unwrap(), 63.0);
         assert_eq!(c.key_age("64.5").unwrap(), 64.5);
-        // Nur eine Klammer: kein Verweis, sondern ein ungültiges Alter.
+        // Only one brace: not a reference but an invalid age.
         for k in ["{Pension.EarlyRetirement", "Pension.EarlyRetirement}"] {
             assert!(c.key_age(k).unwrap_err().to_string().contains("ist kein Alter"), "{k}");
         }
@@ -715,7 +715,7 @@ mod tests {
             .contains("nicht definiert"));
     }
 
-    // Vorgaben und andere Varianten derselben Angaben.
+    // Defaults and other variants of the same data.
     #[test]
     fn defaults_and_variants() {
         let r = imp(json!({
@@ -729,7 +729,7 @@ mod tests {
             "RealEstate": {"BuyAfterSell": false, "Properties": [{"Name": "Später", "Price": 400000}]}
         }));
         let p = &r.plan;
-        // Ohne Endalter: 30 Jahre
+        // Without an end age: 30 years
         assert!(p
             .milestones
             .iter()
@@ -740,12 +740,12 @@ mod tests {
         assert_eq!(p.returns.source, ReturnSource::Historical);
         assert_eq!(p.returns.start_date, Some(ym(1990, 1)));
         assert_eq!(p.returns.extrapolation.method, ExtrapolationMethod::Geometric);
-        // «false» als Text gilt als Monatswert
+        // «false» as text counts as a monthly value
         let stocks = js(&p.returns.fixed.stocks).as_f64().unwrap();
         assert!((stocks - (1.05f64.powi(12) - 1.0)).abs() < 1e-12);
         let extras: Vec<_> = p.flows.extras.iter().map(|e| (e.date, e.amount)).collect();
         assert_eq!(extras, vec![(ym(2030, 1), 7000.0)]);
-        // Erster Eintrag ab Start: kein zusätzlicher Eintrag; ohne Vermögen Anteil 0.5 als Vorgabe
+        // First entry from the start: no additional entry; without wealth share 0.5 as the default
         assert_eq!(
             js(&p.wealth.stock_share),
             json!({"mode": "timed", "rows": [{"from": "2030-01", "value": 0.6}]})
@@ -778,7 +778,7 @@ mod tests {
         };
         assert_eq!(share(100.0, 300.0), json!(0.25));
         assert_eq!(share(0.0, 100.0), json!(0.0));
-        // Monte Carlo ohne Angaben: Vorgaben des früheren Programms
+        // Monte Carlo without data: defaults of the previous program
         let q = imp(json!({"General": {}, "MonteCarlo": {}}))
             .plan
             .returns

@@ -1,7 +1,7 @@
-//! JSON-Schnittstelle für die Oberfläche (Desktop-App und lokaler Entwicklungsserver).
+//! JSON interface for the user interface (desktop app and local development server).
 //!
-//! Alle Funktionen nehmen die Planung als JSON-Wert entgegen, wie der Editor sie hält, und liefern
-//! serialisierbare Ergebnisse. Fehler in der Planung werden als Prüfmeldungen zurückgegeben.
+//! All functions take the plan as a JSON value, as the editor holds it, and return
+//! serializable results. Errors in the plan are returned as validation messages.
 
 use std::borrow::Cow;
 use std::path::Path;
@@ -18,8 +18,8 @@ use crate::scenarios::{self, ScenarioResult};
 use crate::sim::{SimResult, Simulator};
 use crate::validate::{self, Issue, Severity};
 
-/// Beispielplanung für «Neu».
-/// #138: Vorlagen der Grundstückgewinnsteuer (Zürich, Aargau), einzige Quelle für Oberfläche und Tests.
+/// Example plan for «Neu».
+/// #138: Templates of the property gain tax (Zurich, Aargau), single source for the user interface and tests.
 pub fn gain_templates() -> Value {
     serde_json::from_str(include_str!("../assets/gain-templates.json")).expect("Vorlagen sind gültig")
 }
@@ -37,15 +37,15 @@ fn parse(plan: &Value) -> Result<Plan, Issue> {
     })
 }
 
-/// Ergebnis von [`upgrade_plan`]: Planung auf dem aktuellen Stand und Hinweise zu jeder Änderung.
+/// Result of [`upgrade_plan`]: plan brought up to date and a note on every change.
 #[derive(Serialize)]
 pub struct UpgradeOut {
     pub plan: Value,
     pub notes: Vec<String>,
 }
 
-/// Ältere Planung beim Laden auf den aktuellen Stand bringen (#52, #51). Die Grenzen kommen als `limits` in der
-/// Planung mit (Einstellungen, #25); sie werden nicht übernommen.
+/// Bring an older plan up to date when loading (#52, #51). The limits come along as `limits` in the
+/// plan (settings, #25); they are not taken over.
 pub fn upgrade_plan(plan: &Value) -> UpgradeOut {
     let mut v = plan.clone();
     let notes = crate::upgrade::upgrade(&mut v);
@@ -76,9 +76,9 @@ pub struct PreviewOut {
     pub issues: Vec<Issue>,
     pub result: Option<SimResult>,
     pub error: Option<String>,
-    /// Womit die Vorschau rechnet, falls nicht mit den fixen Werten (z. B. Durchschnitt der Reihe).
+    /// What the preview computes with, if not with the fixed values (e.g. average of the series).
     pub basis: Option<String>,
-    /// Auszahlungsplan der Säule 3a je Konto (#55).
+    /// Pillar 3a payout plan per account (#55).
     pub pillar3a: Vec<crate::sim::Pillar3aView>,
 }
 
@@ -86,14 +86,14 @@ fn pct(v: f64) -> String {
     format!("{:.1} %", v * 100.0)
 }
 
-/// Die Vorschau rechnet einen Lauf mit konstanten Renditen. Bei Zeitreihen sind das deren mittlere
-/// Jahresrenditen, beim parametrischen Modell die erwartete geometrische Aktienrendite.
+/// The preview computes one run with constant returns. For series these are their mean
+/// annual returns, for the parametric model the expected geometric stock return.
 fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Option<String> {
     use crate::model::Series;
     match p.returns.source {
         ReturnSource::Fixed => None,
         ReturnSource::Parametric => {
-            // #100/#101: mit Zeitreihe die Vorschlagswerte (bei «auto») und die Mittel von Obligationen und Inflation
+            // #100/#101: with a series the suggested values (with «auto») and the means of bonds and inflation
             let ds = crate::batch::returns_series(p, base_dir, library).ok().flatten();
             let (q, _) = crate::calibrate::resolve(&p.returns.parametric.clone().unwrap_or_default(), ds.as_ref());
             let g = (q.mu - 0.5 * q.sigma * q.sigma + q.jump_lambda * q.jump_mu).exp() - 1.0;
@@ -134,7 +134,7 @@ fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Opt
     }
 }
 
-/// Einzellauf mit konstanten Renditen für die Live-Vorschau im Editor.
+/// Single run with constant returns for the live preview in the editor.
 pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> PreviewOut {
     let mut p = match parse(plan) {
         Ok(p) => p,
@@ -179,11 +179,11 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
 pub struct RunOut {
     pub issues: Vec<Issue>,
     pub error: Option<String>,
-    /// Bei genau einem Lauf: der Lauf mit allen Monatswerten.
+    /// With exactly one run: the run with all monthly values.
     pub single: Option<SimResult>,
-    /// Bei mehreren Läufen: Kennzahlen, Bandbreite und ausgewählte Läufe im Detail.
+    /// With several runs: metrics, bands and selected runs in detail.
     pub batch: Option<BatchOut>,
-    /// Bei Variationen: Kennzahlen pro Kombination.
+    /// With variations: metrics per combination.
     pub scenarios: Option<ScenariosOut>,
     pub elapsed_ms: f64,
 }
@@ -191,7 +191,7 @@ pub struct RunOut {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScenariosOut {
-    /// Variierte Parameter (z. B. `wealth.stockShare`).
+    /// Varied parameters (e.g. `wealth.stockShare`).
     pub params: Vec<String>,
     pub results: Vec<ScenarioResult>,
 }
@@ -202,43 +202,43 @@ pub struct BatchOut {
     pub summary: BatchSummary,
     pub bands: Bands,
     pub stats: batch::BatchStats,
-    /// Läufe beim schlechtesten Endvermögen (0) sowie beim 1., 5., 50., 95. und 99. Perzentil, mit Monatswerten.
+    /// Runs at the worst end wealth (0) and at the 1st, 5th, 50th, 95th and 99th percentile, with monthly values.
     pub details: Vec<(u32, SimResult)>,
 }
 
-/// Parameter aller Strategien mit Standard-Bandbreiten und den Werten der Planung (für die Optimierung).
+/// Parameters of all strategies with default ranges and the values of the plan (for the optimization).
 pub fn opt_params(plan: &Value) -> Vec<crate::optimize::CatalogStrategy> {
     crate::optimize::catalog(plan)
 }
 
-/// Rechenzeit pro Lauf auf diesem Rechner, als Grundlage für Dauerschätzungen.
+/// Computing time per run on this machine, as the basis for duration estimates.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BenchOut {
-    /// Mikrosekunden pro Lauf (alle Kerne zusammen), inklusive Erzeugen des Renditepfads.
+    /// Microseconds per run (all cores together), including generating the return path.
     pub us_per_run: f64,
-    /// Davon das Erzeugen des Renditepfads (bei Monte Carlo; sonst nahe 0).
+    /// Of which generating the return path (with Monte Carlo; otherwise close to 0).
     pub us_generate: f64,
     pub cores: usize,
-    /// Monate pro Lauf.
+    /// Months per run.
     pub months: usize,
-    /// Anzahl Läufe, wenn sie durch die Quelle feststeht (alle historischen Startzeitpunkte), sonst `None`.
+    /// Number of runs if fixed by the source (all historical start dates), otherwise `None`.
     pub fixed_paths: Option<usize>,
 }
 
-/// Durchgänge über alle `n` Pfade und Anzahl Läufe einer Messung: mindestens 2000 Läufe.
+/// Passes over all `n` paths and number of runs of one measurement: at least 2000 runs.
 fn bench_runs(n: usize) -> (usize, usize) {
     const MIN_RUNS: usize = 2000;
     let reps = MIN_RUNS.div_ceil(n);
     (reps, n * reps)
 }
 
-/// Mikrosekunden pro Stück aus einer Dauer in Sekunden.
+/// Microseconds per item from a duration in seconds.
 fn micros_each(seconds: f64, count: usize) -> f64 {
     seconds * 1e6 / count as f64
 }
 
-/// Misst, wie lange ein Lauf der Planung dauert (einige tausend Läufe, meist unter einer Sekunde).
+/// Measures how long one run of the plan takes (a few thousand runs, usually under one second).
 pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<BenchOut, String> {
     let mut v = plan.clone();
     for key in ["bootstrap", "parametric"] {
@@ -253,7 +253,7 @@ pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<Be
     let paths = batch::path_source(&p, &sim, data.as_ref()).map_err(|e| e.to_string())?;
     let n = paths.len();
     let (reps, runs) = bench_runs(n);
-    // Bei nur einem Pfad (fixe Renditen, historischer Verlauf) denselben Pfad mehrfach rechnen.
+    // With only one path (fixed returns, historical course) compute the same path several times.
     let single = (n == 1).then(|| vec![paths.get(0).into_owned(); reps]);
     let pass = || match &single {
         Some(repeated) => {
@@ -270,7 +270,7 @@ pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<Be
         pass();
         t0.elapsed().as_secs_f64()
     };
-    // Der erste Durchgang wärmt Threads und Zwischenspeicher auf; der schnellere zählt.
+    // The first pass warms up threads and caches; the faster one counts.
     let dt = timed().min(timed());
     let gen_pass = || {
         use rayon::prelude::*;
@@ -289,8 +289,8 @@ pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<Be
     })
 }
 
-/// Wendet `scenarios.select` (Liste aus `{param, value}`) auf eine Kopie der Planung an und entfernt die
-/// Variationen. `None`, wenn keine Auswahl vorliegt.
+/// Applies `scenarios.select` (list of `{param, value}`) to a copy of the plan and removes the
+/// variations. `None` if there is no selection.
 fn select_variation(plan: &Value) -> crate::Result<Option<Value>> {
     let Some(sel) = plan["scenarios"]["select"].as_array() else {
         return Ok(None);
@@ -309,14 +309,14 @@ fn select_variation(plan: &Value) -> crate::Result<Option<Value>> {
     Ok(Some(v))
 }
 
-/// Simulation gemäss `returns.source`. `base_dir`: Verzeichnis der Projektdatei (für Zeitreihen),
-/// `library`: Ordner der Datenbibliothek.
+/// Simulation according to `returns.source`. `base_dir`: directory of the project file (for series),
+/// `library`: folder of the data library.
 pub fn run(plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
     run_as(None, plan, base_dir, library)
 }
 
-/// Wie [`run`], als Berechnung mit der Kennung `job` (Abbruch und Fortschritt gelten nur für sie); ohne Angabe vergibt die
-/// Engine eine.
+/// Like [`run`], as a computation with the id `job` (cancellation and progress apply only to it); if not given, the
+/// engine assigns one.
 pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
     let t0 = Instant::now();
     let fail = |issues, e: String| RunOut {
@@ -327,7 +327,7 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
         scenarios: None,
         elapsed_ms: 0.0,
     };
-    // Eine einzelne Variationsstufe rechnen: `scenarios.select` = [{param, value}] ersetzt die Variationen.
+    // Compute a single variation step: `scenarios.select` = [{param, value}] replaces the variations.
     let selected;
     let plan = match select_variation(plan) {
         Ok(Some(v)) => {
@@ -410,17 +410,17 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
     }
 }
 
-/// Nachgerechnete Läufe einer Variationsstufe (#24).
+/// Recomputed runs of a variation step (#24).
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RerunOut {
     pub error: Option<String>,
-    /// Pro Eintrag der Anfrage: Perzentil und der Lauf mit allen Monatswerten.
+    /// Per entry of the request: percentile and the run with all monthly values.
     pub details: Vec<(u32, SimResult)>,
 }
 
-/// Rechnet einzelne Läufe einer Variationsstufe nach, ohne alle Pfade zu simulieren: `plan.scenarios.select` wählt die
-/// Stufe, `picks` sind Paare aus Perzentil und Pfadnummer (`Percentile.index` der Szenarien).
+/// Recomputes single runs of a variation step without simulating all paths: `plan.scenarios.select` selects the
+/// step, `picks` are pairs of percentile and path number (`Percentile.index` of the scenarios).
 pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, library: Option<&Path>) -> RerunOut {
     let fail = |e: String| RerunOut {
         error: Some(e),
@@ -452,8 +452,8 @@ pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, librar
     }
 }
 
-/// Jede Kombination der Variationen mit allen Renditepfaden. Monte-Carlo-Pfade sind in allen
-/// Szenarien dieselben (gleicher Startwert), damit Unterschiede von den Parametern stammen.
+/// Every combination of the variations with all return paths. Monte Carlo paths are the same in all
+/// scenarios (same seed), so differences come from the parameters.
 fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: usize) -> crate::Result<ScenariosOut> {
     let sweeps = scenarios::parse(&p.scenarios.sweeps)?;
     let combos = scenarios::combinations(&sweeps)?;
@@ -496,7 +496,7 @@ fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: u
                     p50_real: real.get(real.len() / 2).copied().unwrap_or(0.0),
                     at_retirement: at_ret.get(at_ret.len() / 2).copied(),
                     earliest_depletion: s.earliest_depletion.map(|(m, _)| m),
-                    // #130: ohne reales Endvermögen je Perzentil, die Szenarien zeigen es nicht
+                    // #130: without real end wealth per percentile, the scenarios do not show it
                     percentiles: s
                         .percentiles
                         .into_iter()
@@ -529,7 +529,7 @@ fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: u
     Ok(ScenariosOut { params, results })
 }
 
-/// Hinweis, wenn die Zeitreihe in einer anderen Währung vorliegt als die Planung.
+/// Warning if the series is in a different currency than the plan.
 pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
     let c = ds.currency()?;
     (!c.eq_ignore_ascii_case(plan_currency)).then(|| Issue {
@@ -543,8 +543,8 @@ pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
     })
 }
 
-/// Kurzinfo zu einer Zeitreihe (für die Anzeige im Editor).
-/// `series` ist ein Verweis auf eine Datei oder eine Anlagestrategie (`strategy:<JSON>`, #69).
+/// Short info about a series (for display in the editor).
+/// `series` is a reference to a file or an investment strategy (`strategy:<JSON>`, #69).
 pub fn series_info(series: &str, base_dir: &Path, library: Option<&Path>) -> crate::Result<SeriesInfo> {
     let (ds, parts) = match crate::strategy::from_reference_with_parts(series, library) {
         Some(r) => r?,
@@ -566,7 +566,7 @@ pub struct LibraryOut {
     pub entries: Vec<library::Entry>,
 }
 
-/// Inhalt der Datenbibliothek; legt fehlende ausgelieferte Zeitreihen an.
+/// Content of the data library; creates missing bundled series.
 pub fn library_list(library: &Path) -> crate::Result<LibraryOut> {
     library::seed(library)?;
     Ok(LibraryOut {
@@ -591,7 +591,7 @@ pub struct ImportOut {
     pub notes: Vec<String>,
 }
 
-/// Alte `config.json` umwandeln; relative Datenpfade gelten ab `base_dir`.
+/// Convert an old `config.json`; relative data paths start at `base_dir`.
 pub fn import_legacy(text: &str, start_year: i32, base_dir: &Path, name: &str) -> crate::Result<ImportOut> {
     let imp = crate::legacy::import(text, start_year, base_dir, name)?;
     Ok(ImportOut {
@@ -600,7 +600,7 @@ pub fn import_legacy(text: &str, start_year: i32, base_dir: &Path, name: &str) -
     })
 }
 
-/// Projektdatei lesen; erkennt alte `config.json` nicht automatisch (dafür `import_legacy`).
+/// Read a project file; does not detect an old `config.json` automatically (use `import_legacy` for that).
 pub fn read_plan(path: &Path) -> crate::Result<Value> {
     let text = std::fs::read_to_string(path).map_err(|e| crate::Error::Io(format!("{}: {e}", path.display())))?;
     let v: Value =
@@ -611,12 +611,12 @@ pub fn read_plan(path: &Path) -> crate::Result<Value> {
                 .into(),
         ));
     }
-    // #144: Datei einer neueren Version nicht still öffnen
+    // #144: do not open a file of a newer version silently
     crate::model::check_format(&v).map_err(|e| crate::Error::Invalid(format!("{}: {e}", path.display())))?;
     Ok(v)
 }
 
-/// Schreibt die Planung; eine alte Format-Kennung (legacy: RetirementPlanner) wird dabei durch die neue ersetzt.
+/// Writes the plan; an old format identifier (legacy: RetirementPlanner) is replaced by the new one.
 pub fn write_plan(path: &Path, plan: &Value) -> crate::Result<()> {
     let mut plan = Cow::Borrowed(plan);
     if plan.get("format").and_then(Value::as_str) == Some(crate::model::LEGACY_FORMAT) {
@@ -626,9 +626,9 @@ pub fn write_plan(path: &Path, plan: &Value) -> crate::Result<()> {
     write_atomic(path, text.as_bytes()).map_err(|e| crate::Error::Io(format!("{}: {e}", path.display())))
 }
 
-/// #136: Schreibt zuerst in eine temporäre Datei im selben Ordner, bringt sie auf den Datenträger und ersetzt erst
-/// dann die Zieldatei. Schlägt etwas fehl, bleibt die bisherige Datei unverändert und die temporäre wird entfernt.
-/// Ist das Ziel ein symbolischer Link, wird die Datei ersetzt, auf die er zeigt (der Link bleibt).
+/// #136: Writes to a temporary file in the same folder first, flushes it to disk and only then replaces
+/// the target file. If something fails, the previous file stays unchanged and the temporary one is removed.
+/// If the target is a symbolic link, the file it points to is replaced (the link stays).
 pub fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
     use std::io::Write;
     let target = match std::fs::symlink_metadata(path) {
@@ -649,8 +649,8 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
     result
 }
 
-/// #136: Temporäre Datei für [`write_atomic`] im Ordner der Zieldatei (nur dort ist das Ersetzen atomar und auf demselben
-/// Datenträger); ohne Ordner im Pfad im Arbeitsverzeichnis.
+/// #136: Temporary file for [`write_atomic`] in the folder of the target file (only there is the replacement atomic and on the same
+/// disk); without a folder in the path, in the working directory.
 fn temp_path(target: &Path) -> std::path::PathBuf {
     let dir = match target.parent() {
         Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
@@ -663,7 +663,7 @@ fn temp_path(target: &Path) -> std::path::PathBuf {
     dir.join(format!(".{name}.{}.tmp", std::process::id()))
 }
 
-/// Optimierung der Entnahmestrategie (siehe [`crate::optimize`]).
+/// Optimization of the withdrawal strategy (see [`crate::optimize`]).
 pub fn optimize(
     plan: &Value,
     request: &Value,
@@ -684,8 +684,8 @@ mod tests {
         serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
     }
 
-    /// #162/AK1: Die temporäre Datei liegt im Ordner der Zieldatei (sonst wäre das Ersetzen nicht atomar und schlüge
-    /// zwischen zwei Datenträgern fehl); ohne Ordner im Pfad im Arbeitsverzeichnis.
+    /// #162/AK1: The temporary file is in the folder of the target file (otherwise the replacement would not be atomic and would fail
+    /// between two disks); without a folder in the path, in the working directory.
     #[test]
     fn issue_162_ak1_temporary_file_lies_next_to_the_target() {
         let pid = std::process::id();
@@ -700,7 +700,7 @@ mod tests {
         );
     }
 
-    // #40: Vorschau beim parametrischen Modell: erwartete geometrische Aktienrendite exp(μ − σ²/2 + λ·μJ) − 1.
+    // #40: Preview with the parametric model: expected geometric stock return exp(μ − σ²/2 + λ·μJ) − 1.
     #[test]
     fn preview_basis_for_each_source() {
         let mut v = example();
@@ -709,7 +709,7 @@ mod tests {
             json!({"paths": 10, "mu": 0.08, "sigma": 0.2, "df": 6, "jumpLambda": 0.5, "jumpMu": -0.1});
         // 0.08 − 0.02 − 0.05 = 0.01 ⇒ e^0.01 − 1 ≈ 1.005 %
         let out = preview(&v, Path::new("."), None);
-        // #101: mit Anlagestrategie dazu die Mittel von Obligationen und Inflation der Reihe
+        // #101: with an investment strategy also the means of bonds and inflation of the series
         let basis = out.basis.unwrap();
         assert!(
             basis.starts_with("Vorschau mit der erwarteten Aktienrendite des Modells (1.0 % pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen "),
@@ -718,7 +718,7 @@ mod tests {
         v["returns"]["parametric"]["mu"] = json!(0.16);
         let out = preview(&v, Path::new("."), None);
         assert!(out.basis.unwrap().contains("(9.4 % pro Jahr)"));
-        // Ohne Zeitreihe nur die Aktienrendite
+        // Without a series only the stock return
         let mut w = v.clone();
         w["returns"]["strategy"]["stocks"] = json!("worldCustom");
         w["returns"]["strategy"]["weights"] = json!({"ch": 1.0, "usa": 1.0, "eu": 0.0, "apac": 0.0});
@@ -727,12 +727,12 @@ mod tests {
             out.basis.as_deref(),
             Some("Vorschau mit der erwarteten Aktienrendite des Modells (9.4 % pro Jahr).")
         );
-        // #100: mit «auto» die Vorschlagswerte des Aktienindex statt der gespeicherten
+        // #100: with «auto» the suggested values of the stock index instead of the saved ones
         v["returns"]["parametric"]["auto"] = json!(true);
         let out = preview(&v, Path::new("."), None);
         assert!(!out.basis.unwrap().contains("(9.4 % pro Jahr)"));
 
-        // Fixe Renditen: keine Angabe, auch wenn noch eine Zeitreihe eingetragen ist.
+        // Fixed returns: no information, even if a series is still entered.
         let mut v = example();
         v["returns"]["source"] = json!("fixed");
         v["returns"]["series"] = json!("library:Shiller CHF.csv");
@@ -762,7 +762,7 @@ mod tests {
         assert!(i.message.contains("«Reihe» ist in USD"), "{}", i.message);
     }
 
-    // Fortschritt: Läufe der Planung plus Läufe aller Variationen; gemessene Zeit in Millisekunden.
+    // Progress: runs of the plan plus runs of all variations; measured time in milliseconds.
     #[test]
     fn progress_total_and_elapsed_time() {
         let mut v = example();
@@ -783,7 +783,7 @@ mod tests {
         assert!(out.elapsed_ms > 0.01 && out.elapsed_ms < 900.0, "{}", out.elapsed_ms);
     }
 
-    // Messung: mindestens 2000 Läufe; Umrechnung in Mikrosekunden.
+    // Measurement: at least 2000 runs; conversion to microseconds.
     #[test]
     fn bench_run_counts_and_units() {
         assert_eq!(bench_runs(1), (2000, 2000));
@@ -793,8 +793,8 @@ mod tests {
         assert_eq!(micros_each(0.5, 1000), 500.0);
     }
 
-    // Läufe kosten Zeit (Mikrosekunden pro Lauf > 0), bei einem und bei vielen Pfaden; die Zahl der Pfade steht nur
-    // bei «rolling» fest.
+    // Runs take time (microseconds per run > 0), with one and with many paths; the number of paths is fixed only
+    // with «rolling».
     #[test]
     fn bench_measures_runs() {
         let mut v = example();
@@ -808,7 +808,7 @@ mod tests {
         let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");
         let b = bench(&v, Path::new("."), Some(&lib)).unwrap();
         assert!(b.fixed_paths.is_some_and(|n| n > 100), "{b:?}");
-        // Gleiche Planung, gleich lange Läufe: pro Lauf ähnlich viel Zeit wie bei einem Pfad (grosszügige Grenze)
+        // Same plan, runs of the same length: per run about as much time as with one path (generous limit)
         assert!(b.us_per_run > 0.2 * single, "{b:?}, ein Pfad {single}");
     }
 }

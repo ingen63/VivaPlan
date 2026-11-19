@@ -1,4 +1,4 @@
-//! Renditepfade zu einer Planung erzeugen und viele Läufe parallel rechnen.
+//! Generate return paths for a plan and compute many runs in parallel.
 
 use std::borrow::Cow;
 use std::path::Path;
@@ -13,8 +13,8 @@ use crate::sim::{SimResult, Simulator};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Lädt die Zeitreihe der Planung, wenn die Renditequelle eine braucht; siehe [`returns_series`]. Das parametrische
-/// Modell braucht sie für die Vorschlagswerte und die Korrelation mit Obligationen und Inflation (#100, #101).
+/// Loads the plan's series if the return source needs one; see [`returns_series`]. The parametric
+/// model needs it for the suggested values and the correlation with bonds and inflation (#100, #101).
 pub fn load_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Result<Option<DataSet>> {
     if !matches!(
         plan.returns.source,
@@ -25,9 +25,9 @@ pub fn load_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Resu
     returns_series(plan, base_dir, library)
 }
 
-/// Zeitreihe der Planung, unabhängig von der Renditequelle: aus `series`, falls gesetzt (ältere Planungen und die
-/// Kommandozeile; relative Pfade ab dem Verzeichnis der Projektdatei, `library:<datei>` in der Datenbibliothek), sonst
-/// aus der Anlagestrategie (#69). Beim Öffnen in der App wird `series` zur Strategie (`upgrade`).
+/// Series of the plan, independent of the return source: from `series` if set (older plans and the
+/// command line; relative paths from the directory of the project file, `library:<file>` in the data library), otherwise
+/// from the investment strategy (#69). When opened in the app, `series` becomes the strategy (`upgrade`).
 pub fn returns_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Result<Option<DataSet>> {
     if let Some(s) = &plan.returns.series {
         return DataSet::load_csv(&crate::library::resolve(s, base_dir, library)?).map(Some);
@@ -39,7 +39,7 @@ pub fn returns_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> R
         .transpose()
 }
 
-/// Alle Renditepfade gemäss `returns.source`.
+/// All return paths according to `returns.source`.
 pub fn market_paths(plan: &Plan, sim: &Simulator, data: Option<&DataSet>) -> Result<Vec<MarketPath>> {
     let n = sim.months();
     let need =
@@ -79,8 +79,8 @@ pub fn market_paths(plan: &Plan, sim: &Simulator, data: Option<&DataSet>) -> Res
     }
 }
 
-/// Renditepfade einer Simulation: fest (fix, historisch, alle Startzeitpunkte) oder bei Monte Carlo
-/// erst beim Rechnen erzeugt.
+/// Return paths of a simulation: fixed (fixed, historical, all start dates) or, with Monte Carlo,
+/// generated only while computing.
 pub enum Paths<'a> {
     List(Vec<MarketPath>),
     Bootstrap(Bootstrap<'a>),
@@ -113,7 +113,7 @@ impl Paths<'_> {
     }
 }
 
-/// Wie [`market_paths`], Monte-Carlo-Pfade aber ohne sie vorab zu erzeugen.
+/// Like [`market_paths`], but without generating Monte Carlo paths in advance.
 pub fn path_source<'a>(plan: &Plan, sim: &'a Simulator, data: Option<&'a DataSet>) -> Result<Paths<'a>> {
     let limit = |n: usize| {
         if n == 0 || n > 1_000_000 {
@@ -155,12 +155,12 @@ pub fn path_source<'a>(plan: &Plan, sim: &'a Simulator, data: Option<&'a DataSet
     }
 }
 
-/// Rechnet alle Pfade parallel auf allen Prozessorkernen (ohne Monatsverläufe).
+/// Computes all paths in parallel on all processor cores (without monthly records).
 pub fn run_all(sim: &Simulator, paths: &[MarketPath]) -> Vec<SimResult> {
     paths.par_iter().map(|p| sim.run(p, false)).collect()
 }
 
-/// Wie [`run_all`] für eine [`Paths`]-Quelle; Monte-Carlo-Pfade entstehen dabei erst im Lauf.
+/// Like [`run_all`] for a [`Paths`] source; Monte Carlo paths are only created during the run.
 pub fn run_paths(sim: &Simulator, paths: &Paths) -> Vec<SimResult> {
     crate::progress::par_map(paths.len(), |i| sim.run(&paths.get(i), false))
 }
@@ -170,19 +170,19 @@ pub fn run_paths(sim: &Simulator, paths: &Paths) -> Vec<SimResult> {
 pub struct Percentile {
     pub percent: u32,
     pub end_total: f64,
-    /// Endvermögen dieses Laufs in heutiger Kaufkraft (mit der eigenen Inflation des Laufs; #126). Fehlt in den
-    /// Perzentilen der Szenarien, die es nicht anzeigen (#130).
+    /// End wealth of this run in today's purchasing power (with the run's own inflation; #126). Missing in the
+    /// percentiles of the scenarios, which do not show it (#130).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub end_total_real: Option<f64>,
     pub label: String,
-    /// Index des Laufs (bzw. Renditepfads).
+    /// Index of the run (or return path).
     pub index: usize,
-    /// Erster Monat ohne Mittel in diesem Lauf (`None`: das Vermögen reicht bis zum Ende).
+    /// First month without funds in this run (`None`: wealth lasts until the end).
     pub depleted: Option<YearMonth>,
-    /// Einmalzahlungen bzw. Notverkäufe wegen fehlender Tragbarkeit bei Hypothekenerneuerungen in diesem Lauf.
+    /// Lump sums or emergency sales because of insufficient affordability at mortgage renewals in this run.
     pub lump_sums: usize,
     pub affordability_sales: usize,
-    /// Notverkäufe in diesem Lauf (aus beliebigem Grund).
+    /// Emergency sales in this run (for any reason).
     pub emergency_sales: usize,
 }
 
@@ -190,14 +190,14 @@ pub struct Percentile {
 #[serde(rename_all = "camelCase")]
 pub struct BatchSummary {
     pub runs: usize,
-    /// Anteil der Läufe, in denen das Vermögen bis zum Ende reicht.
+    /// Share of runs in which wealth lasts until the end.
     pub success_rate: f64,
     pub percentiles: Vec<Percentile>,
     pub earliest_depletion: Option<(YearMonth, String)>,
-    /// Anzahl Läufe mit mindestens einer Einmalzahlung bzw. einem Notverkauf wegen fehlender Tragbarkeit bei Erneuerungen.
+    /// Number of runs with at least one lump sum or emergency sale because of insufficient affordability at renewals.
     pub lump_sum_runs: usize,
     pub affordability_sale_runs: usize,
-    /// Anzahl Läufe mit mindestens einem Notverkauf (aus beliebigem Grund).
+    /// Number of runs with at least one emergency sale (for any reason).
     pub emergency_sale_runs: usize,
 }
 
@@ -205,7 +205,7 @@ pub fn summarize(results: &[SimResult]) -> BatchSummary {
     let n = results.len();
     let mut order: Vec<usize> = (0..n).collect();
     order.sort_by(|&a, &b| results[a].summary.end_total.total_cmp(&results[b].summary.end_total));
-    // 0 = schlechtester Lauf
+    // 0 = worst run
     let percentiles = [0, 1, 5, 10, 25, 50, 75, 90, 95, 99]
         .into_iter()
         .filter(|_| n > 0)
@@ -240,12 +240,12 @@ pub fn summarize(results: &[SimResult]) -> BatchSummary {
     }
 }
 
-/// Bandbreite des Gesamtvermögens pro Monat über alle Läufe (Perzentile 1, 5, 25, 50, 75, 95, 99 und
-/// das Minimum), nominal und in Preisen des Startmonats (`real`).
+/// Bands of total wealth per month over all runs (percentiles 1, 5, 25, 50, 75, 95, 99 and
+/// the minimum), nominal and in prices of the start month (`real`).
 #[derive(Clone, Debug, Serialize)]
 pub struct Bands {
     pub months: Vec<YearMonth>,
-    /// Schlechtester Wert des Monats über alle Läufe (kann von Monat zu Monat ein anderer Lauf sein).
+    /// Worst value of the month over all runs (may be a different run from month to month).
     pub min: Vec<f64>,
     pub p1: Vec<f64>,
     pub p5: Vec<f64>,
@@ -277,7 +277,7 @@ impl Bands {
             column.clear();
             column.extend(runs.iter().map(|t| t[k]));
             column.sort_by(f32::total_cmp);
-            // #135: ohne Läufe (Abbruch vor dem ersten Block) 0, wie beim Minimum
+            // #135: without runs (cancelled before the first block) 0, as for the minimum
             let q = |p: f64| {
                 column
                     .len()
@@ -297,7 +297,7 @@ impl Bands {
     }
 }
 
-/// Häufigkeitsverteilung: `counts[i]` Werte im Intervall [`edges[i]`, `edges[i + 1]`).
+/// Frequency distribution: `counts[i]` values in the interval [`edges[i]`, `edges[i + 1]`).
 #[derive(Clone, Debug, Serialize)]
 pub struct Histogram {
     pub edges: Vec<f64>,
@@ -305,7 +305,7 @@ pub struct Histogram {
 }
 
 impl Histogram {
-    /// `bins` gleich breite Klassen zwischen dem 1. und 99. Perzentil; Ausreisser in den Randklassen.
+    /// `bins` classes of equal width between the 1st and 99th percentile; outliers in the edge classes.
     pub fn of(values: &[f64], bins: usize) -> Option<Histogram> {
         let mut v: Vec<f64> = values.iter().copied().filter(|x| x.is_finite()).collect();
         if v.is_empty() || bins == 0 {
@@ -325,16 +325,16 @@ impl Histogram {
     }
 }
 
-/// Auswertungen über alle Läufe für die Grafiken.
+/// Evaluations over all runs for the charts.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchStats {
-    /// Anteil der Läufe, in denen das Vermögen bis zum jeweiligen Monat reicht (wie `bands.months`).
+    /// Share of runs in which wealth lasts until the respective month (like `bands.months`).
     pub survival: Vec<f64>,
     pub end_total: Option<Histogram>,
     pub end_total_real: Option<Histogram>,
     pub at_retirement: Option<Histogram>,
-    /// Anzahl Läufe nach Alter (ganze Jahre) bei Erschöpfung.
+    /// Number of runs by age (whole years) at depletion.
     pub depletion_ages: Vec<(u32, usize)>,
 }
 
@@ -366,7 +366,7 @@ pub fn stats(sim: &Simulator, results: &[SimResult]) -> BatchStats {
     }
 }
 
-/// Wie [`run_all`], zusätzlich mit der Bandbreite pro Monat.
+/// Like [`run_all`], additionally with the bands per month.
 pub fn run_with_bands(sim: &Simulator, paths: &Paths) -> (Vec<SimResult>, Bands) {
     let runs: Vec<(SimResult, Vec<f32>, Vec<f32>)> = crate::progress::par_map(paths.len(), |i| {
         let mut r = sim.run(&paths.get(i), true);
@@ -409,7 +409,7 @@ mod tests {
         }
     }
 
-    // #40: Anzahl Pfade zwischen 1 und 1'000'000 (Grenzen eingeschlossen); `is_empty` folgt der Länge.
+    // #40: Number of paths between 1 and 1'000'000 (limits included); `is_empty` follows the length.
     #[test]
     fn path_count_limits() {
         let mut v: serde_json::Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
@@ -418,7 +418,7 @@ mod tests {
             let mut v = v.clone();
             v["returns"]["parametric"] = serde_json::json!({"paths": n, "mu": 0.07, "sigma": 0.15, "df": 6});
             let plan: Plan = serde_json::from_value(v).unwrap();
-            // `Simulator::new` lehnt ungültige Pfadzahlen schon ab; hier wird die Grenze in `path_source` geprüft.
+            // `Simulator::new` already rejects invalid path counts; here the limit is checked in `path_source`.
             let mut ok = plan.clone();
             ok.returns.parametric = None;
             let sim = Simulator::new(&ok).unwrap();
@@ -454,8 +454,8 @@ mod tests {
         assert_eq!(s.percentiles.len(), 10);
     }
 
-    // #135/AK1: Bandbreite mit 0, 1 und 2 Läufen. Ohne Läufe sind alle Werte 0 (vorher Panik durch `len() - 1`).
-    // Mit 2 Läufen [1, 3]: Index = round(p × 1), also bis p25 der erste, ab p50 der zweite Lauf (round(0.5) = 1).
+    // #135/AK1: Bands with 0, 1 and 2 runs. Without runs all values are 0 (previously a panic from `len() - 1`).
+    // With 2 runs [1, 3]: index = round(p × 1), so up to p25 the first, from p50 the second run (round(0.5) = 1).
     #[test]
     fn issue_135_ak1_bands_with_zero_one_and_two_runs() {
         let months = vec![YearMonth::new(2030, 1), YearMonth::new(2030, 2)];
@@ -482,7 +482,7 @@ mod tests {
         assert!(Histogram::of(&[1.0, 2.0], 0).is_none());
         assert!(Histogram::of(&[], 3).is_none());
         assert!(Histogram::of(&[f64::NAN], 3).is_none());
-        // Alle Werte gleich: Klassenbreite 1.
+        // All values equal: class width 1.
         let h = Histogram::of(&[5.0, 5.0], 2).unwrap();
         assert_eq!(h.edges, vec![5.0, 6.0, 7.0]);
         assert_eq!(h.counts, vec![2, 0]);

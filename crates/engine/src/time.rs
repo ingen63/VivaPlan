@@ -1,4 +1,4 @@
-//! Kalendermonate und Zeitbezüge («ab Pensionierung», «2027-05», «nie»).
+//! Calendar months and time references («ab Pensionierung», «2027-05», «nie»).
 
 use std::fmt;
 use std::str::FromStr;
@@ -8,13 +8,13 @@ use schemars::schema::{InstanceType, Schema, SchemaObject, StringValidation};
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// Ein Kalendermonat, intern als fortlaufender Index `Jahr * 12 + (Monat - 1)`.
-/// In Dateien als `"JJJJ-MM"`, in Meldungen als `MM.JJJJ`.
+/// A calendar month, internally as a running index `year * 12 + (month - 1)`.
+/// In files as `"YYYY-MM"`, in messages as `MM.YYYY`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct YearMonth(pub i32);
 
 impl YearMonth {
-    /// Überlaufsicher (#60): extreme Jahre ergeben einen sehr fernen Monat statt eines Absturzes.
+    /// Overflow-safe (#60): extreme years give a very distant month instead of a crash.
     pub fn new(year: i32, month: u32) -> Self {
         YearMonth(year.saturating_mul(12).saturating_add(month as i32 - 1))
     }
@@ -24,18 +24,18 @@ impl YearMonth {
     pub fn month(self) -> u32 {
         (self.0.rem_euclid(12) + 1) as u32
     }
-    /// Überlaufsicher: extreme Eingaben ergeben einen sehr fernen Monat statt eines Absturzes.
+    /// Overflow-safe: extreme inputs give a very distant month instead of a crash.
     pub fn plus(self, months: i32) -> Self {
         YearMonth(self.0.saturating_add(months))
     }
-    /// Anzahl Monate von `self` bis `other` (positiv, wenn `other` später liegt).
+    /// Number of months from `self` to `other` (positive if `other` is later).
     pub fn until(self, other: YearMonth) -> i32 {
         other.0.saturating_sub(self.0)
     }
     pub fn is_december(self) -> bool {
         self.month() == 12
     }
-    /// Ende eines Quartals (März, Juni, September, Dezember).
+    /// End of a quarter (March, June, September, December).
     pub fn is_quarter_end(self) -> bool {
         self.month().is_multiple_of(3)
     }
@@ -94,14 +94,14 @@ impl JsonSchema for YearMonth {
     }
 }
 
-/// Verweis auf einen Zeitpunkt: Meilenstein-ID, fixes Datum `"JJJJ-MM"` oder `"never"`.
+/// Reference to a point in time: milestone id, fixed date `"YYYY-MM"` or `"never"`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(transparent)]
 pub struct TimeRef(pub String);
 
 impl TimeRef {
     pub const NEVER: &'static str = "never";
-    /// Kauf bzw. Miete, sobald die letzte eigene Immobilie verkauft ist.
+    /// Purchase or rent as soon as the last owned property is sold.
     pub const AFTER_SALE: &'static str = "afterSale";
 
     pub fn milestone(id: &str) -> Self {
@@ -126,15 +126,15 @@ impl TimeRef {
     pub fn after_sale_of(id: &str) -> Self {
         TimeRef(format!("{}:{id}", Self::AFTER_SALE))
     }
-    /// Die Immobilien-ID bei `"afterSale:<id>"`.
+    /// The property id with `"afterSale:<id>"`.
     pub fn sale_of(&self) -> Option<&str> {
         self.0.strip_prefix("afterSale:")
     }
-    /// Zeitpunkt, der erst während der Simulation feststeht.
+    /// Point in time that is only known during the simulation.
     pub fn is_dynamic(&self) -> bool {
         self.is_after_sale() || self.sale_of().is_some()
     }
-    /// Das fixe Datum, falls der Verweis eines ist.
+    /// The fixed date, if the reference is one.
     pub fn as_date(&self) -> Option<YearMonth> {
         if self.0.len() == 7 && self.0.as_bytes()[4] == b'-' {
             self.0.parse().ok()

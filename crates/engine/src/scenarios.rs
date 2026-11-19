@@ -1,5 +1,5 @@
-//! Szenario-Variationen: einzelne Parameter der Planung systematisch variieren und jede Kombination
-//! mit allen Renditepfaden rechnen.
+//! Scenario variations: vary single parameters of the plan systematically and compute every combination
+//! with all return paths.
 
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -7,11 +7,11 @@ use serde_json::{json, Value};
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
-/// Technische Obergrenze der Kombinationen pro Simulation (Speicherschutz). Darunter gibt es keine feste Grenze;
-/// die Oberfläche warnt vor langen Rechenzeiten.
+/// Technical upper limit of the combinations per simulation (memory protection). Below it there is no fixed limit;
+/// the user interface warns about long computing times.
 pub const MAX_COMBINATIONS: usize = 1_000_000;
 
-/// Zahl mit Hochkomma als Tausendertrennzeichen (1'000'000).
+/// Number with apostrophe as thousands separator (1'000'000).
 fn grouped(n: usize) -> String {
     let s = n.to_string();
     let mut out = String::new();
@@ -24,7 +24,7 @@ fn grouped(n: usize) -> String {
     out
 }
 
-/// Ein variierter Parameter mit seinen Werten (Zahl oder Monat `JJJJ-MM`).
+/// A varied parameter with its values (number or month `YYYY-MM`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sweep {
     pub param: String,
@@ -44,7 +44,7 @@ fn is_month(param: &str) -> bool {
     matches!(param, "returns.startDate" | "milestone.retire")
 }
 
-/// Liest `scenarios.sweeps` (`{param, from, to, step}`; bei Monaten `step` in Monaten).
+/// Reads `scenarios.sweeps` (`{param, from, to, step}`; for months `step` in months).
 pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
     let bad = |s: String| Error::Invalid(format!("Variation: {s}"));
     sweeps
@@ -62,7 +62,7 @@ pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
             if step <= 0.0 {
                 return Err(bad(format!("{param}: Schritt muss grösser als 0 sein")));
             }
-            // Ein Wert mehr als erlaubt, damit `count_combinations` die Überschreitung meldet.
+            // One value more than allowed, so that `count_combinations` reports the excess.
             let cap = MAX_COMBINATIONS + 1;
             let values: Vec<Value> = if is_month(&param) {
                 let ym = |k: &str| -> Result<YearMonth> {
@@ -91,7 +91,7 @@ pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
                     .map(|i| a + i as f64 * step)
                     .take_while(|v| *v <= b + step * 1e-9)
                     .take(cap)
-                    // Rundung, damit 0.1-Schritte als 0.3, 0.4 … erscheinen.
+                    // Rounding, so that 0.1 steps appear as 0.3, 0.4 …
                     .map(|v| json!((v * 1e9).round() / 1e9))
                     .collect()
             };
@@ -103,7 +103,7 @@ pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
         .collect()
 }
 
-/// Zahl der Kombinationen, ohne sie anzulegen; mehr als [`MAX_COMBINATIONS`] sind ein Fehler.
+/// Number of combinations, without creating them; more than [`MAX_COMBINATIONS`] is an error.
 pub fn count_combinations(sweeps: &[Sweep]) -> Result<usize> {
     let mut n: usize = 1;
     for s in sweeps {
@@ -123,7 +123,7 @@ pub fn count_combinations(sweeps: &[Sweep]) -> Result<usize> {
     Ok(n)
 }
 
-/// Alle Kombinationen (kartesisches Produkt), jede als Liste der Werte in der Reihenfolge der Variationen.
+/// All combinations (Cartesian product), each as a list of values in the order of the variations.
 pub fn combinations(sweeps: &[Sweep]) -> Result<Vec<Vec<Value>>> {
     count_combinations(sweeps)?;
     let mut out = vec![vec![]];
@@ -142,14 +142,14 @@ pub fn combinations(sweeps: &[Sweep]) -> Result<Vec<Vec<Value>>> {
     Ok(out)
 }
 
-/// Setzt einen variierten Wert in der Planung (JSON).
+/// Sets a varied value in the plan (JSON).
 pub fn apply(plan: &mut Value, param: &str, value: &Value) -> Result<()> {
     let missing = |what: &str| Error::Invalid(format!("Variation {param}: {what} fehlt in der Planung"));
     match param {
         "wealth.stockShare" => plan["wealth"]["stockShare"] = value.clone(),
         "pension.pk.lumpsum" => plan["pension"]["pk"]["lumpsum"] = value.clone(),
         "returns.startDate" => plan["returns"]["startDate"] = value.clone(),
-        // Entnahmerate der fixen Rate bzw. Startrate der Guardrails
+        // Withdrawal rate of the fixed rate or initial rate of the guardrails
         "withdrawal.rate" => {
             plan["withdrawal"]["fixedRate"] = json!({ "rate": value });
             if plan["withdrawal"]["guardrails"].is_object() {
@@ -166,7 +166,7 @@ pub fn apply(plan: &mut Value, param: &str, value: &Value) -> Result<()> {
         }
         "flows.spendingFactor" => {
             let f = value.as_f64().ok_or_else(|| missing("Faktor"))?;
-            // #53: Der Faktor gilt für die Lebenshaltung ohne Wohnen (bei älteren Planungen dasselbe wie bisher).
+            // #53: The factor applies to the living costs without housing (for older plans the same as before).
             plan["flows"]["spendingFactor"] = json!(f);
         }
         _ => return Err(Error::Invalid(format!("unbekannter Parameter «{param}»"))),
@@ -174,26 +174,26 @@ pub fn apply(plan: &mut Value, param: &str, value: &Value) -> Result<()> {
     Ok(())
 }
 
-/// Kennzahlen eines Szenarios.
+/// Metrics of a scenario.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScenarioResult {
-    /// Werte der Variationen (Reihenfolge wie `params`).
+    /// Values of the variations (order as in `params`).
     pub values: Vec<Value>,
     pub runs: usize,
     pub success_rate: f64,
-    /// Gesamtvermögen am Ende: 5., 50. und 95. Perzentil.
+    /// Total wealth at the end: 5th, 50th and 95th percentile.
     pub p5: f64,
     pub p50: f64,
     pub p95: f64,
-    /// Median des Endvermögens in Preisen des Startmonats.
+    /// Median end wealth in prices of the start month.
     pub p50_real: f64,
-    /// Median des Gesamtvermögens bei Pensionierung.
+    /// Median total wealth at retirement.
     pub at_retirement: Option<f64>,
     pub earliest_depletion: Option<YearMonth>,
-    /// Endvermögen und Erschöpfung der Läufe an den Perzentilen (0 = schlechtester Lauf); Grundlage für das Optimum je Perzentil.
+    /// End wealth and depletion of the runs at the percentiles (0 = worst run); basis for the optimum per percentile.
     pub percentiles: Vec<crate::batch::Percentile>,
-    /// Fehler, falls das Szenario nicht gerechnet werden konnte (z. B. Startmonat ausserhalb der Reihe).
+    /// Error if the scenario could not be computed (e.g. start month outside the series).
     pub error: Option<String>,
 }
 
@@ -221,7 +221,7 @@ mod tests {
     fn combinations_are_limited_only_technically_to_one_million() {
         let sweep =
             |param: &str, from: f64, to: f64, step: f64| json!({"param": param, "from": from, "to": to, "step": step});
-        // 11 × 10 × 10 = 1100: früher abgelehnt, jetzt erlaubt
+        // 11 × 10 × 10 = 1100: rejected earlier, allowed now
         let many = parse(&[
             sweep("wealth.stockShare", 0.0, 1.0, 0.1),
             sweep("pension.pk.lumpsum", 0.0, 0.9, 0.1),
@@ -230,7 +230,7 @@ mod tests {
         .unwrap();
         assert_eq!(count_combinations(&many).unwrap(), 1100);
         assert_eq!(combinations(&many).unwrap().len(), 1100);
-        // 101 × 100 × 100 = 1'010'000: über der technischen Grenze, ohne die Kombinationen anzulegen
+        // 101 × 100 × 100 = 1'010'000: above the technical limit, without creating the combinations
         let too_many = parse(&[
             sweep("wealth.stockShare", 0.0, 1.0, 0.01),
             sweep("pension.pk.lumpsum", 0.0, 0.99, 0.01),
@@ -243,7 +243,7 @@ mod tests {
             "Die Variationen ergeben 1'010'000 Kombinationen; höchstens 1'000'000 sind technisch möglich."
         );
         assert!(combinations(&too_many).is_err());
-        // genau 1'000'000 sind erlaubt
+        // exactly 1'000'000 are allowed
         assert_eq!(grouped(1_000_000), "1'000'000");
         assert_eq!(grouped(999), "999");
     }
@@ -254,7 +254,7 @@ mod tests {
             "milestones": [{"id": "retire", "name": "Pensionierung", "kind": "age", "person": "A", "years": 64}],
             "flows": {"spending": {"mode": "timed", "rows": [{"from": "start", "value": 1000}, {"from": "retire", "value": 800}]}}
         });
-        // #53: Der Faktor steht als eigenes Feld (gilt für die Lebenshaltung ohne Wohnen); die Reihe bleibt.
+        // #53: The factor is a field of its own (applies to the living costs without housing); the series stays.
         apply(&mut p, "flows.spendingFactor", &json!(1.1)).unwrap();
         assert_eq!(p["flows"]["spendingFactor"], 1.1);
         assert_eq!(p["flows"]["spending"]["rows"][1]["value"], 800);
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(p["milestones"][0]["kind"], "date");
     }
 
-    // #40: Startmonat und Entnahmerate (fixe Rate und Startrate der Guardrails).
+    // #40: Start month and withdrawal rate (fixed rate and initial rate of the guardrails).
     #[test]
     fn apply_start_date_and_withdrawal_rate() {
         let mut p = json!({"returns": {}, "withdrawal": {"guardrails": {"initialRate": 0.04}}});
@@ -278,7 +278,7 @@ mod tests {
         assert!(apply(&mut p, "x", &json!(1)).is_err());
     }
 
-    // #40: Genau 1'000'000 Werte sind erlaubt, ein Wert mehr nicht; längere Bereiche werden beim Anlegen gekappt.
+    // #40: Exactly 1'000'000 values are allowed, one value more is not; longer ranges are capped when created.
     #[test]
     fn one_million_values_is_the_limit() {
         let sweep =

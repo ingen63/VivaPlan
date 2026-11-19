@@ -1,8 +1,8 @@
-//! #142: Verteiler der Rechenbefehle mit den Argumenten, wie die Oberfläche sie sendet (`crates/app/ui/api.js`).
+//! #142: Dispatcher of the compute commands with the arguments as the user interface sends them (`crates/app/ui/api.js`).
 //!
-//! Der Entwicklungsserver (`vivaplan ui-dev`, Grundlage der Oberflächentests) beantwortet `/api/<befehl>` hiermit. Die
-//! Desktop-App hat eigene Tauri-Befehle; der Vertragstest in `crates/app/src/main.rs` schickt jeden Eintrag der Tabelle
-//! `crates/app/ipc-commands.json` durch die Tauri-IPC und durch [`call`] und verlangt dieselbe Antwort.
+//! The development server (`vivaplan ui-dev`, basis of the user interface tests) answers `/api/<command>` with it. The
+//! desktop app has its own Tauri commands; the contract test in `crates/app/src/main.rs` sends every entry of the table
+//! `crates/app/ipc-commands.json` through the Tauri IPC and through [`call`] and requires the same answer.
 
 use std::path::{Path, PathBuf};
 
@@ -11,8 +11,8 @@ use serde_json::{json, Value};
 
 use crate::{api, progress};
 
-/// Alle Befehle, die [`call`] beantwortet. Befehle mit Dateidialog, Einstellungen oder Fenster gibt es nur in der
-/// Desktop-App.
+/// All commands that [`call`] answers. Commands with a file dialog, settings or windows exist only in the
+/// desktop app.
 pub const COMMANDS: &[&str] = &[
     "app_info",
     "bench_plan",
@@ -31,7 +31,7 @@ pub const COMMANDS: &[&str] = &[
     "library_list",
 ];
 
-/// Ordner einer Datei im Argument `key` (Projektdatei der Planung); ohne Angabe `fallback`.
+/// Folder of a file in the argument `key` (project file of the plan); if not given, `fallback`.
 fn dir_of(args: &Value, key: &str, fallback: &Path) -> PathBuf {
     args.get(key)
         .and_then(Value::as_str)
@@ -39,7 +39,7 @@ fn dir_of(args: &Value, key: &str, fallback: &Path) -> PathBuf {
         .unwrap_or_else(|| fallback.to_path_buf())
 }
 
-/// Kennung der Berechnung (`jobId`), die die Oberfläche beim Start mitgibt.
+/// Id of the computation (`jobId`) that the user interface passes at the start.
 fn job_id(args: &Value) -> Option<u64> {
     args.get("jobId").and_then(Value::as_u64)
 }
@@ -48,8 +48,8 @@ fn to(v: &impl Serialize) -> Value {
     serde_json::to_value(v).expect("serialisierbar")
 }
 
-/// Beantwortet einen Rechenbefehl. `library` ist die Datenbibliothek, `fallback` der Ordner für relative Pfade, wenn
-/// die Planung noch nicht gespeichert ist (Desktop-App: Benutzerordner, Entwicklungsserver: Arbeitsverzeichnis).
+/// Answers a compute command. `library` is the data library, `fallback` the folder for relative paths if
+/// the plan has not been saved yet (desktop app: user folder, development server: working directory).
 pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<Value, String> {
     let plan = args.get("plan").cloned().unwrap_or(Value::Null);
     let base = || dir_of(args, "path", fallback);
@@ -84,7 +84,7 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
         }
         "series_info" => {
             let p = args.get("path").and_then(Value::as_str).ok_or("Pfad fehlt")?;
-            // #142: wie die Desktop-App relativ zum Ordner der Projektdatei (`planPath`)
+            // #142: like the desktop app, relative to the folder of the project file (`planPath`)
             to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib).map_err(|e| e.to_string())?)
         }
         "optimize" => {
@@ -107,8 +107,8 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("data")
     }
 
-    /// #162/AK1: Die Antwort ist das serialisierte Ergebnis des Befehls, nicht leer. Der Vertragstest (#142) vergleicht
-    /// Desktop-App und Entwicklungsserver; liefern beide `null`, fiele das dort nicht auf.
+    /// #162/AK1: The answer is the serialized result of the command, not empty. The contract test (#142) compares
+    /// desktop app and development server; if both returned `null`, it would not notice there.
     #[test]
     fn issue_162_ak1_answer_is_the_serialized_result() {
         let plan: Value = serde_json::from_str(include_str!("../assets/beispiel.vplan")).unwrap();
@@ -120,7 +120,7 @@ mod tests {
         assert!(params.as_array().is_some_and(|p| !p.is_empty()), "{params}");
     }
 
-    /// #142/AK3: Die Liste `COMMANDS` entspricht genau den Zweigen von `call` und den Rechenbefehlen der Tabelle.
+    /// #142/AK3: The list `COMMANDS` matches exactly the branches of `call` and the compute commands of the table.
     #[test]
     fn issue_142_ak3_commands_match_the_branches_and_the_table() {
         let src = include_str!("dispatch.rs");
@@ -153,7 +153,7 @@ mod tests {
         }
     }
 
-    /// #142: Jeder Befehl ist erreichbar (keine Meldung «nur in der Desktop-App»); fehlende Argumente sind Fehler.
+    /// #142: Every command is reachable (no message «nur in der Desktop-App»); missing arguments are errors.
     #[test]
     fn every_command_is_answered() {
         for c in COMMANDS {
@@ -176,8 +176,8 @@ mod tests {
         );
     }
 
-    /// #142: `series_info` liest einen relativen Pfad im Ordner der Projektdatei (`planPath`), ohne Projektdatei im
-    /// Ersatzordner; `path` der Planung zählt hier nicht.
+    /// #142: `series_info` reads a relative path in the folder of the project file (`planPath`), without a project file in
+    /// the fallback folder; the plan's `path` does not count here.
     #[test]
     fn series_info_is_relative_to_the_plan_file() {
         let d = std::env::temp_dir().join(format!("vivaplan-dispatch-{}", std::process::id()));
@@ -198,7 +198,7 @@ mod tests {
             &d.join("plan"),
         );
         assert!(fb.is_ok(), "{fb:?}");
-        // Ohne Projektdatei gilt der Ersatzordner; dort gibt es die Datei nicht
+        // Without a project file the fallback folder applies; the file does not exist there
         assert!(call(
             "series_info",
             &json!({ "path": "s.csv", "planPath": null }),
@@ -209,7 +209,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
     }
 
-    /// #142: Kennung und Ordner aus den Argumenten.
+    /// #142: Id and folder from the arguments.
     #[test]
     fn arguments_are_read_like_the_user_interface_sends_them() {
         assert_eq!(job_id(&json!({ "jobId": 42 })), Some(42));
