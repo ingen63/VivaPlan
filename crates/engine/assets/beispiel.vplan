@@ -65,21 +65,18 @@
       "date": "2026-03",
       "fixed": true,
       "id": "start",
-      "kind": "date",
-      "name": "Simulationsstart"
+      "kind": "date"
     },
     {
       "date": "2027-05",
       "id": "retire",
       "kind": "age",
-      "name": "Bezug Pensionskasse",
       "person": "A",
       "years": 58
     },
     {
       "id": "ahv",
       "kind": "age",
-      "name": "AHV-Bezug",
       "person": "A",
       "years": 65
     },
@@ -95,7 +92,6 @@
       "fixed": true,
       "id": "end",
       "kind": "age",
-      "name": "Simulationsende",
       "person": "A",
       "years": 95
     }

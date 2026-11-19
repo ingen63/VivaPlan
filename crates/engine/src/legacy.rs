@@ -150,13 +150,13 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     let milestones = vec![
         Milestone {
             id: "start".into(),
-            name: "Simulationsstart".into(),
+            name: String::new(), // #170: fixed milestone, name by id
             kind: MilestoneKind::Date { date: start },
             fixed: true,
         },
         Milestone {
             id: "retire".into(),
-            name: crate::model::PK_NAME.into(),
+            name: String::new(), // #170: fixed milestone, name by id
             kind: MilestoneKind::Date {
                 date: c.month_of_age(early),
             },
@@ -164,7 +164,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         },
         Milestone {
             id: "ahv".into(),
-            name: "AHV-Bezug".into(),
+            name: String::new(), // #170: fixed milestone, name by id
             kind: MilestoneKind::Date {
                 date: c.month_of_age(legal),
             },
@@ -172,7 +172,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         },
         Milestone {
             id: "end".into(),
-            name: "Simulationsende".into(),
+            name: String::new(), // #170: fixed milestone, name by id
             kind: MilestoneKind::Date { date: c.end },
             fixed: true,
         },

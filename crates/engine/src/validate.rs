@@ -251,7 +251,10 @@ fn check(plan: &Plan, v: &mut Issues) {
     for ms in &plan.milestones {
         if let MilestoneKind::Age { years, .. } = &ms.kind {
             if !(0.0..=130.0).contains(years) {
-                v.err("milestones", format!("«{}»: Alter {years} ist nicht möglich.", ms.name));
+                v.err(
+                    "milestones",
+                    format!("«{}»: Alter {years} ist nicht möglich.", ms.label()),
+                );
             }
         }
         // Start and end themselves never lie before or after.
@@ -259,12 +262,12 @@ fn check(plan: &Plan, v: &mut Issues) {
         if m < start {
             v.warn(
                 "milestones",
-                format!("«{}» ({m}) liegt vor dem Simulationsstart.", ms.name),
+                format!("«{}» ({m}) liegt vor dem Simulationsstart.", ms.label()),
             );
         } else if m > end {
             v.warn(
                 "milestones",
-                format!("«{}» ({m}) liegt nach dem Simulationsende.", ms.name),
+                format!("«{}» ({m}) liegt nach dem Simulationsende.", ms.label()),
             );
         }
     }

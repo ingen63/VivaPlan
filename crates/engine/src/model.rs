@@ -225,16 +225,50 @@ pub fn person_milestone_name(base: &str, index: usize) -> String {
     }
 }
 
+/// Name of the milestone «Simulationsstart».
+pub const START_NAME: &str = "Simulationsstart";
+/// Name of the milestone «Simulationsende».
+pub const END_NAME: &str = "Simulationsende";
+
+/// #170: German default name of a fixed milestone (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`). Plans store
+/// no name for them, the user interface shows the name from its text table by the id; the engine still uses the
+/// German name in its texts (until #176).
+pub fn fixed_milestone_name(id: &str) -> Option<String> {
+    match id {
+        "start" => Some(START_NAME.to_string()),
+        "end" => Some(END_NAME.to_string()),
+        _ => (0..2).find_map(|i| {
+            let (pk, ahv) = person_milestones(i);
+            (id == pk)
+                .then(|| person_milestone_name(PK_NAME, i))
+                .or_else(|| (id == ahv).then(|| person_milestone_name(AHV_NAME, i)))
+        }),
+    }
+}
+
 /// Named point in time. `start` and `end` must exist.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Milestone {
     pub id: String,
+    /// Empty for the fixed milestones (#170): their name comes from the id, see [`Milestone::label`].
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
     #[serde(flatten)]
     pub kind: MilestoneKind,
     #[serde(default, skip_serializing_if = "is_false")]
     pub fixed: bool,
+}
+
+impl Milestone {
+    /// Name in the texts of the engine: the stored name, for a fixed milestone without a name its German default
+    /// name (#170), otherwise the id.
+    pub fn label(&self) -> std::borrow::Cow<'_, str> {
+        if !self.name.is_empty() {
+            return std::borrow::Cow::Borrowed(&self.name);
+        }
+        fixed_milestone_name(&self.id).map_or(std::borrow::Cow::Borrowed(self.id.as_str()), std::borrow::Cow::Owned)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]

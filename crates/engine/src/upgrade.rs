@@ -16,7 +16,7 @@ use std::borrow::Cow;
 
 use serde_json::{json, Map, Value};
 
-use crate::model::{person_milestone_name, person_milestones, Plan, AHV_NAME, PK_NAME};
+use crate::model::{fixed_milestone_name, person_milestone_name, person_milestones, Plan, AHV_NAME, PK_NAME};
 use crate::settings::{Limits, DEFAULT_AGE};
 use crate::time::YearMonth;
 
@@ -239,10 +239,23 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
     ));
 }
 
-/// #51: fixed milestones per person, names and limits.
+/// #51: fixed milestones per person, names and limits. #170: the fixed milestones store no name; the German
+/// default names of `start` and `end` are removed, a name of its own stays.
 fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, notes: &mut Vec<String>) {
     if !v.get("milestones").is_some_and(Value::is_array) {
         v["milestones"] = json!([]);
+    }
+    for ms in v["milestones"].as_array_mut().expect("Liste") {
+        let id = ms.get("id").and_then(Value::as_str).unwrap_or("");
+        if !matches!(id, "start" | "end") {
+            continue;
+        }
+        let default = fixed_milestone_name(id);
+        if ms.get("name").and_then(Value::as_str) == default.as_deref() {
+            if let Some(o) = ms.as_object_mut() {
+                o.remove("name");
+            }
+        }
     }
     for (i, (pid, birth)) in births.iter().take(2).enumerate() {
         let (pk, ahv) = person_milestones(i);
@@ -263,7 +276,7 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
                     .unwrap_or(list.len());
                 list.insert(
                     at,
-                    json!({ "id": id, "name": name, "kind": "age", "person": pid, "years": DEFAULT_AGE }),
+                    json!({ "id": id, "kind": "age", "person": pid, "years": DEFAULT_AGE }),
                 );
                 notes.push(format!(
                     "Der Meilenstein «{name}» fehlte und steht neu auf {} Jahren.",
@@ -271,10 +284,13 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
                 ));
                 continue;
             };
+            // #170: no stored name; the name comes from the id (#51: an older name is replaced with a note)
             let old_name = ms.get("name").and_then(Value::as_str).unwrap_or("").to_string();
-            if old_name != name {
-                ms["name"] = json!(name);
+            if !old_name.is_empty() && old_name != name {
                 notes.push(format!("Der Meilenstein «{old_name}» heisst neu «{name}»."));
+            }
+            if let Some(o) = ms.as_object_mut() {
+                o.remove("name");
             }
             let other_person = ms.get("kind").and_then(Value::as_str) == Some("age")
                 && ms.get("person").and_then(Value::as_str) != Some(pid.as_str());
@@ -498,7 +514,9 @@ mod tests {
         let notes = upgrade(&mut v);
         assert_eq!(ms(&v, "ahv")["years"], 65.0);
         assert_eq!(v["milestones"][2]["id"], "ahv", "vor dem Ende eingefügt");
-        assert_eq!(ms(&v, "retire")["name"], "Bezug Pensionskasse");
+        // #170: the fixed milestone keeps no name (the user interface takes it from the text table)
+        assert!(ms(&v, "retire").get("name").is_none());
+        assert!(ms(&v, "ahv").get("name").is_none());
         assert_eq!(ms(&v, "retire")["years"], 60, "Alter innerhalb der Grenzen bleibt");
         assert_eq!(v["pension"]["ahv"]["at"], "ahv");
         assert!(
@@ -548,6 +566,50 @@ mod tests {
         assert_eq!(ms(&v, "retire")["years"], 55);
     }
 
+    // #170/AK8: opening an older file removes the German default names of the fixed milestones; a name of its own
+    // stays; the second run changes nothing. The engine uses the German default name by the id.
+    #[test]
+    fn issue_170_ak8_default_names_of_fixed_milestones_are_removed() {
+        let mut v = plan();
+        v["household"]["persons"] =
+            json!([{ "id": "A", "name": "A", "birth": "1980-06" }, { "id": "B", "name": "B", "birth": "1982-01" }]);
+        v["partner"] = json!({ "pk": { "at": "retire2" }, "ahv": { "at": "ahv2" } });
+        v["milestones"] = json!([
+            { "id": "start", "name": "Simulationsstart", "kind": "date", "date": "2026-01", "fixed": true },
+            { "id": "retire", "name": "Bezug Pensionskasse", "kind": "age", "person": "A", "years": 65 },
+            { "id": "ahv", "name": "AHV-Bezug", "kind": "age", "person": "A", "years": 65 },
+            { "id": "retire2", "name": "Bezug Pensionskasse Person 2", "kind": "age", "person": "B", "years": 65 },
+            { "id": "ahv2", "name": "AHV-Bezug Person 2", "kind": "age", "person": "B", "years": 65 },
+            { "id": "sale", "name": "Hausverkauf", "kind": "date", "date": "2040-01" },
+            { "id": "end", "name": "Planende", "kind": "date", "date": "2060-12", "fixed": true }
+        ]);
+        let notes = upgrade(&mut v);
+        assert!(notes.iter().all(|n| !n.contains("heisst neu")), "{notes:?}");
+        for id in ["start", "retire", "ahv", "retire2", "ahv2"] {
+            assert!(ms(&v, id).get("name").is_none(), "{id}");
+        }
+        assert_eq!(ms(&v, "end")["name"], "Planende", "eigener Name bleibt");
+        assert_eq!(ms(&v, "sale")["name"], "Hausverkauf");
+        let before = v.clone();
+        assert!(upgrade(&mut v).is_empty());
+        assert_eq!(v, before);
+        // The engine reads the plan and names the fixed milestones in German (texts unchanged until #176)
+        let milestones: Vec<crate::model::Milestone> = serde_json::from_value(v["milestones"].clone()).unwrap();
+        let labels: Vec<String> = milestones.iter().map(|m| m.label().into_owned()).collect();
+        assert_eq!(
+            labels,
+            [
+                "Simulationsstart",
+                "Bezug Pensionskasse",
+                "AHV-Bezug",
+                "Bezug Pensionskasse Person 2",
+                "AHV-Bezug Person 2",
+                "Hausverkauf",
+                "Planende"
+            ]
+        );
+    }
+
     // #51/AK1: the second person gets milestones of their own; the payouts of person 2 point to them.
     #[test]
     fn issue_51_second_person() {
@@ -555,7 +617,7 @@ mod tests {
         v["household"]["persons"] = json!([{ "id": "A", "birth": "1980-06" }, { "id": "B", "birth": "1982-01" }]);
         v["partner"] = json!({ "pk": { "at": "retire" }, "ahv": { "at": "ahv" } });
         upgrade(&mut v);
-        assert_eq!(ms(&v, "retire2")["name"], "Bezug Pensionskasse Person 2");
+        assert!(ms(&v, "retire2").get("name").is_none());
         assert_eq!(ms(&v, "ahv2")["person"], "B");
         assert_eq!(
             (v["partner"]["pk"]["at"].as_str(), v["partner"]["ahv"]["at"].as_str()),

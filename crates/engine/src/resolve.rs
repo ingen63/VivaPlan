@@ -22,7 +22,7 @@ impl Resolver {
                 MilestoneKind::Date { date } => *date,
                 MilestoneKind::Age { person, years } => {
                     let birth = births.get(person).ok_or_else(|| {
-                        Error::Invalid(format!("Meilenstein «{}»: unbekannte Person «{person}»", ms.name))
+                        Error::Invalid(format!("Meilenstein «{}»: unbekannte Person «{person}»", ms.label()))
                     })?;
                     birth.plus((years * 12.0).round() as i32)
                 }
@@ -33,7 +33,7 @@ impl Resolver {
                     ms.id
                 )));
             }
-            names.insert(ms.id.clone(), ms.name.clone());
+            names.insert(ms.id.clone(), ms.label().into_owned());
         }
         // #51: The fixed milestones of every person always exist; if they are missing (older plans, tests),
         // they apply with the default age.

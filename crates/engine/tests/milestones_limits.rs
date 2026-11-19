@@ -194,3 +194,64 @@ fn issue_25_ak6_limits_from_the_settings() {
     let p: Plan = serde_json::from_value(v.clone()).unwrap();
     assert!(serde_json::to_value(&p).unwrap().get("limits").is_none());
 }
+
+/// #170/AK8: the fixed milestones store no name; the engine uses the German default name by the id, so that results,
+/// messages and event texts stay the same as with the names stored (golden files unchanged until #176).
+#[test]
+fn issue_170_ak8_fixed_milestones_without_name_give_the_same_results_and_texts() {
+    let mut named = api::example_plan();
+    named["returns"]["source"] = json!("fixed");
+    named["scenarios"]["sweeps"] = json!([]);
+    // the shipped example stores no names for the fixed milestones
+    for ms in named["milestones"].as_array().unwrap() {
+        let id = ms["id"].as_str().unwrap();
+        assert_eq!(
+            ms.get("name").is_none(),
+            engine::model::fixed_milestone_name(id).is_some(),
+            "{id}"
+        );
+    }
+    let unnamed = named.clone();
+    for ms in named["milestones"].as_array_mut().unwrap() {
+        if let Some(n) = engine::model::fixed_milestone_name(ms["id"].as_str().unwrap()) {
+            ms["name"] = json!(n);
+        }
+    }
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let library = dir.join("data");
+    let run = |p: &Value| serde_json::to_value(api::run(p, dir, Some(&library))).unwrap();
+    let (a, b) = (run(&unnamed), run(&named));
+    assert!(a["single"]["records"].as_array().is_some_and(|r| !r.is_empty()));
+    assert_eq!(a["single"], b["single"]);
+    assert_eq!(a["issues"], b["issues"]);
+    // messages with a milestone name: payout of the pension fund before the start
+    let early = |mut v: Value| {
+        v["milestones"][1] =
+            json!({ "id": "retire", "kind": "date", "date": "1990-01", "name": v["milestones"][1]["name"] });
+        if v["milestones"][1]["name"].is_null() {
+            v["milestones"][1].as_object_mut().unwrap().remove("name");
+        }
+        v
+    };
+    let texts = |v: &Value| api::validate(v).into_iter().map(|i| i.message).collect::<Vec<_>>();
+    let (a, b) = (texts(&early(unnamed.clone())), texts(&early(named.clone())));
+    assert_eq!(a, b);
+    assert!(a.iter().any(|t| t.contains("«Bezug Pensionskasse»")), "{a:?}");
+    // German default names of all fixed milestones
+    let names: Vec<_> = ["start", "end", "retire", "ahv", "retire2", "ahv2", "sale"]
+        .iter()
+        .map(|id| engine::model::fixed_milestone_name(id))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            Some("Simulationsstart".to_string()),
+            Some("Simulationsende".to_string()),
+            Some("Bezug Pensionskasse".to_string()),
+            Some("AHV-Bezug".to_string()),
+            Some("Bezug Pensionskasse Person 2".to_string()),
+            Some("AHV-Bezug Person 2".to_string()),
+            None
+        ]
+    );
+}
