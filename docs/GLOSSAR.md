@@ -235,3 +235,126 @@ Wörter in Grossbuchstaben nicht.
 | Einstellungen | `settings` | |
 | Vergleich | `compare` | |
 | gespeicherte Ergebnisse | `saved_runs` | |
+
+## Englisch (Oberflächenbegriffe)
+
+Begriffe der englischen Oberfläche (#172, Tabelle `crates/app/ui/i18n/en.json`). Schweizer Fachbegriffe werden
+englisch umschrieben, das Schweizer Kürzel steht in Klammern; Schreibweise amerikanisch (*optimization*,
+*amortization*, *gray*). Die Wörter folgen den Code-Bezeichnern der Tabellen oben.
+
+**Regeln**
+
+- Volle Form mit Kürzel in Überschriften, Einleitungen und Erklärungen, z. B. «old-age pension (AHV)», «pension fund
+  (BVG)»; in kurzen Beschriftungen, Tabellenköpfen und Ereignissen genügt die Kurzform («AHV pension», «pension fund»,
+  «PK pension»).
+- Kürzel bleiben unübersetzt: AHV, BVG, PK, 3a, SARON, SNB, JST, VPW, StG, CHF.
+- Zahlen, Beträge und Daten bleiben im Schweizer Format (1'234'567.50 CHF, 2.5 %, MM.YYYY); das Datumsmuster heisst
+  englisch «MM.YYYY».
+- Inhalte der Planung (Namen von Personen, Meilensteinen, Objekten, Projekt) werden nicht übersetzt.
+- Namen der Indizes werden übersetzt («World (JST)», «Switzerland (JST)», «Swiss Confederation 10 years»), die
+  Bezeichner der Strategien im Code nicht (`standard`, `three_buckets` …).
+- Anrede: direkt mit «you», Befehle im Imperativ («Start simulation», «Save as…»).
+
+| Deutsch | Englisch (Oberfläche) | Kurzform / Bemerkung |
+|---|---|---|
+| AHV, AHV-Rente | old-age pension (AHV) | AHV pension |
+| AHV-Bezug (Meilenstein) | AHV pension start | |
+| Plafonierung (Ehepaar) | cap on AHV pensions for couples | |
+| 1. / 2. Säule | pillar 1 / pillar 2 | |
+| Pensionskasse | pension fund (BVG) | pension fund; in Zusammensetzungen PK |
+| Bezug Pensionskasse (Meilenstein) | pension fund payout | |
+| PK-Rente | PK pension | Rente aus der Pensionskasse |
+| Kapitalbezug | lump sum, lump-sum withdrawal | |
+| Altersguthaben | retirement savings | |
+| Umwandlungssatz | conversion rate | |
+| Säule 3a, 3a-Konto | pillar 3a, 3a account | |
+| gebundene Vorsorge | tied pension provision | |
+| Vorsorge(vermögen) | pension assets | Abschnitt «Pensions» |
+| Einzahlung, Auszahlung (3a) | contribution, payout | |
+| Pensionierung | retirement | |
+| Simulationsstart, -ende | simulation start, simulation end | |
+| Meilenstein | milestone | |
+| Haushalt | household | |
+| Erwerbseinkommen | earned income | |
+| Lebenshaltungskosten, Lebenshaltung | living expenses | |
+| Ausgaben | spending | |
+| Wohnkosten | housing costs | |
+| Einmaliger Betrag | one-off amount | |
+| Zufluss | inflow | |
+| ungedeckte Ausgaben, Netto-Bedarf | uncovered spending, net need | |
+| Teuerung, Inflation | inflation | «adjusted for inflation» für «mit der Teuerung angepasst» |
+| in heutigen Preisen, heutige Kaufkraft | in today's prices, today's purchasing power | |
+| Vermögen | wealth | |
+| liquides Vermögen | liquid wealth | |
+| Gesamtvermögen, Endvermögen | total wealth, final wealth | |
+| Aktien, Obligationen | stocks, bonds | |
+| Aktienanteil, Aktienquote | stock allocation | |
+| Anlagestrategie | investment strategy | |
+| Zeitreihe | time series | |
+| Renditequelle | return source | |
+| Fortschreibung | extrapolation | |
+| Zufallsstartwert | random seed | |
+| Cash-Reserve | cash reserve | |
+| Entnahme, Entnahmerate | withdrawal, withdrawal rate | |
+| Entnahmestrategie | withdrawal strategy | |
+| fixe Entnahmerate | fixed withdrawal rate | |
+| Leitplanke, Guardrails | guardrail, guardrails | |
+| Startrate | initial rate | |
+| Untergrenze, Obergrenze | floor, ceiling | |
+| 3-Topf-Strategie, Topf | 3-bucket strategy, bucket | Topf 1/2/3: bucket 1/2/3 |
+| Auffüllung, Januar-Auffüllung | refill, January refill | |
+| Vorausschau | look-ahead | |
+| Renditekriterium | return criterion | |
+| Reservierung | reservation | |
+| Variable Prozententnahme | variable percentage withdrawal (VPW) | |
+| Planungsalter | planning age | |
+| Realrendite | real return | |
+| Immobilie, Objekt | property; Abschnitt «Real estate» | |
+| Besitz, Kauf geplant, Miete geplant | owned, purchase planned, rent planned | |
+| Kaufpreis, Marktwert | purchase price, market value | |
+| Eigenmittel, Eigenkapital | equity | |
+| Nebenkosten | fixed costs | |
+| Verkaufserlös, Nettoerlös | sale proceeds, net proceeds | |
+| Notverkauf, Notverkaufskriterium | emergency sale, emergency sale criterion | |
+| Hypothek, Anschlusshypothek | mortgage, follow-up mortgage | |
+| Tranche, Periode, Laufzeit | tranche, period, term | |
+| Festhypothek, SARON-Hypothek | fixed, SARON mortgage | |
+| Marge | margin | |
+| Erneuerung, Rückzahlung | renewal, repayment | |
+| Einmalzahlung, Einmalrückzahlung | one-off payment, one-off repayment | |
+| Amortisation (direkt, indirekt) | amortization (direct, indirect) | |
+| Belehnung | loan-to-value | |
+| Tragbarkeit | affordability | |
+| kalkulatorischer Zins | imputed interest rate | |
+| Steuerfuss | tax multiplier | |
+| Stufe (Steuertabelle) | bracket | |
+| Einkommens-, Vermögenssteuer | income tax, wealth tax | |
+| Kapitalbezugssteuer | lump-sum tax | |
+| Grundstückgewinnsteuer | property gains tax | |
+| Besitzdauer | holding period | |
+| Zuschlag, Abzug, Ermässigung | surcharge, reduction | |
+| Verheiratete | married (couples) | |
+| Kanton, Gemeinde | canton, municipality | Modell Zürich/Aargau: Zurich/Aargau model |
+| Planung | plan | |
+| Projektdatei | project file | |
+| Ergebnis, gespeicherte Ergebnisse | result, saved results | |
+| Lauf, Einzellauf, Einzelne Läufe | run, single run, individual runs | |
+| Pfad | path | |
+| Perzentil | percentile | 5. Perzentil: 5th percentile |
+| Median | median | |
+| Erfolgsquote | success rate | |
+| Erschöpfung, aufgebraucht | depletion, depleted | |
+| Ruin, Ruinwahrscheinlichkeit | ruin, probability of ruin | |
+| Schwankung | volatility | |
+| Konsum | consumption | |
+| Szenario, Variation, Variante | scenario, variation, variant | |
+| Stufe (Variation) | step | |
+| Ereignis | event | |
+| Jahreswerte, Kennzahlen | yearly values, key figures | |
+| Vorschau | preview | |
+| Prüfung, Fehler, Hinweis | validation, error, warning / note | |
+| Optimierung, Ziel, Nebenbedingung | optimization, goal, constraint | |
+| Einstellungen | settings | |
+| Hilfe, Handbuch, Erste Schritte | help, manual, getting started | |
+| Tastenkürzel | keyboard shortcuts | |
+| wie System | as system | Sprachwahl |

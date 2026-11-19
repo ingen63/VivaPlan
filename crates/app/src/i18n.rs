@@ -15,7 +15,10 @@ pub const SETTING: &str = "language";
 const LANGUAGES: &str = include_str!("../ui/i18n/languages.json");
 /// Text tables per language. A new language needs its file in `ui/i18n/`, an entry in `languages.json` and a row here
 /// (the test `every_language_has_a_compiled_table` checks that the three agree).
-const TABLES: &[(&str, &str)] = &[("de", include_str!("../ui/i18n/de.json"))];
+const TABLES: &[(&str, &str)] = &[
+    ("de", include_str!("../ui/i18n/de.json")),
+    ("en", include_str!("../ui/i18n/en.json")),
+];
 
 /// Order of the languages in menus and settings.
 const ORDER: [&str; 4] = ["de", "en", "fr", "it"];

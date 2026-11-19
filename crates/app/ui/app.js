@@ -1288,7 +1288,7 @@ const COMPUTED = {
       const sch = trancheSchedule(p, t), cur = sch.find(x => !x.past), last = sch[sch.length - 1];
       if (cur) {
         interest += cur.a0 * cur.rate / 12; if (cur.direct) direct += cur.q; else indirect += cur.q;
-        let s = `${multi ? `${esc(t.name)}: ` : ""}${p.status === "owned" ? "laufend" : tr("computed.firstPeriod")} ${tr("computed.until", { ymShow: ymShow(i2ym(cur.end)) })}`;
+        let s = `${multi ? `${esc(t.name)}: ` : ""}${p.status === "owned" ? tr("computed.currentPeriod") : tr("computed.firstPeriod")} ${tr("computed.until", { ymShow: ymShow(i2ym(cur.end)) })}`;
         if (p.status === "owned") s += ` ${tr("computed.remaining", { v: ((cur.end - cur.from) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 }) })}`;
         if (last && t.after === "repay" && last.end <= endM()) s += tr("computed.thenRepay", { money: fmtMoney(last.a1 ?? t.amount) });
         else if (last?.renewal) s += tr("computed.thenExtend");
@@ -1636,7 +1636,7 @@ async function showAbout() {
   try { info = await Engine.call("app_info"); } catch { /* without the engine no details */ }
   const built = info?.buildEpoch ? new Date(info.buildEpoch * 1000).toLocaleString("de-CH", { dateStyle: "medium", timeStyle: "medium" }) : tr("about.unknownBuild");
   ask(tr("about.title"), `<p style="margin-top:0">${tr("about.tagline")}</p>
-    <table class="tbl" id="aboutTbl"><tr><td class="l">${tr("about.version")}</td><td class="l"><b>${esc(info?.version ?? "unbekannt")}</b></td></tr>
+    <table class="tbl" id="aboutTbl"><tr><td class="l">${tr("about.version")}</td><td class="l"><b>${esc(info?.version ?? tr("about.unknownVersion"))}</b></td></tr>
     <tr><td class="l">${tr("about.built")}</td><td class="l"><b>${esc(built)}</b></td></tr>
     <tr><td class="l">${tr("about.website")}</td><td class="l">vivaplan-app.ch</td></tr></table>
     <p class="hint">${tr("about.local")}</p>
@@ -2235,7 +2235,7 @@ function propertyEvents(res) {
       if (e.note) p.push(part(tr("propEvents.note"), esc(msgText(e.note))));
       return p;
     }
-    const p = [part(tr("propEvents.affordability"), e.affordable ? "gegeben" : `<span class="bad">${tr("propEvents.notGiven")}</span>`)];
+    const p = [part(tr("propEvents.affordability"), e.affordable ? tr("propEvents.given") : `<span class="bad">${tr("propEvents.notGiven")}</span>`)];
     if (e.reason) p.push(part(tr("propEvents.mortgage"), `<span class="bad">${tr("propEvents.notRenewed")}</span> ${tr("propEvents.emergencyReason", { debtBefore: n(e.debtBefore), reason: esc(msgText(e.reason)) })}`));
     else p.push(part(tr("propEvents.debtBeforeAfter"), `${n(e.debtBefore)} / ${n(e.debtAfter)}`));
     if (e.lumpSum > 0) p.push(part(tr("propEvents.oneOffAffordability"), `<b>${n(e.lumpSum)}</b>`));
@@ -2258,7 +2258,7 @@ function bucketDerivation(rs) {
   const n = v => fmtInt(v);
   const pct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`;
   const CASE = { Januar: tr("buckets.januaryRefill"), A: tr("buckets.triggerA"), B: tr("buckets.triggerB"), C1: tr("buckets.triggerC1"), C2: tr("buckets.triggerC2") };
-  const side = x => (x === 0 ? "extern" : x === 4 ? tr("buckets.reservation") : tr("buckets.bucketN", { x }));
+  const side = x => (x === 0 ? tr("buckets.external") : x === 4 ? tr("buckets.reservation") : tr("buckets.bucketN", { x }));
   const rows = rs.map(r => {
     const b = r.basis, inflow = r.trigger === "B";
     const cond = inflow ? "–" : r.conditionIgnored ? `<small>${tr("buckets.ignored")}</small>` : `${r.conditionMet ? tr("buckets.met") : `<span class="bad">${tr("buckets.notMet")}</span>`}<br><small>${pct(r.stockReturn)} (${esc(msgText(r.returnBasis))}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
@@ -2367,7 +2367,7 @@ function yearTable(recs, start, refills = []) {
   const rows = yearValues(recs, start).map(v => {
     const y = v.y, part = v.months < 12 ? `<span title="${tr("yearTable.partialYear", { months: v.months })}" style="color:var(--muted)">*</span>` : "";
     const rf = refillsOf(y), open = bucketOpen.has(y);
-    const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? "ausblenden" : "anzeigen" })}">${open ? "▾" : "▸"}</button>` : "";
+    const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
       ${tx ? `${cell(v.taxIncome)}${cell(v.taxWealth)}${cell(v.taxCapital)}${cell(v.taxGain)}${cell(v.taxTotal, true)}` : ""}</tr>`
@@ -2719,7 +2719,7 @@ function verdictHtml(r, sg) {
   } else {
     const s = r.batch.summary, ed = s.earliestDepletion, end = endM(), cls = rateClass(s.successRate);
     weak = cls !== "hoch";
-    lines.push(`In <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", cls, tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
+    lines.push(`In <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", tr(`verdict.rate_${cls}`), tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
     if (ed) lines.push(tr("verdict.worstDepleted", { ageStr: ageStr(ym2i(ed[0])) }));
   }
   const next = weak
@@ -3386,7 +3386,7 @@ const Steps = {
     el.innerHTML = `<details${open ? " open" : ""}><summary>${tr("steps.title")} <span class="prog" id="stepsProg">${tr("steps.progress", { length: v.done.length, length2: STEPS.length })}</span>
       <button type="button" class="x" data-action="steps-hide" title="${tr("steps.hideTitle")}" aria-label="${tr("steps.hideLabel")}">✕</button></summary>
       <ol>${STEPS.map((s, i) => { const done = v.done.includes(s.id); return `<li class="${done ? "done" : ""}" data-step="${s.id}">
-        <input type="checkbox" data-action="steps-check" data-step="${s.id}"${done ? " checked" : ""} aria-label="${esc(s.title)} erledigt">
+        <input type="checkbox" data-action="steps-check" data-step="${s.id}"${done ? " checked" : ""} aria-label="${tr("steps.doneLabel", { title: esc(s.title) })}">
         <a data-action="steps-go" data-step="${s.id}">${i + 1}. ${esc(s.title)}</a><button type="button" class="hq" data-help="${s.topic}" title="${tr("steps.helpTitle")}" aria-label="${tr("steps.helpLabel")}">ⓘ</button></li>`; }).join("")}</ol>
       ${v.complete ? `<p class="stepsdone">${tr("steps.doneAll")}</p>` : ""}</details>`;
   },

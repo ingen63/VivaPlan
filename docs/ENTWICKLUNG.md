@@ -49,8 +49,10 @@ und Zeile (Rust, JavaScript, Python, Shell):
 Alle Texte der Oberfläche, der Tastenkürzel-Übersicht, der Grafiken, der Zeitleiste, der nativen Menüs und der
 Dateidialoge stehen in Texttabellen je Sprache: `crates/app/ui/i18n/<sprache>.json`, flache Schlüssel nach Bereich
 (`menu.file.open`, `results.overview` …), Platzhalter `{name}`, Werte dürfen einfaches HTML enthalten (`<b>`, `<br>`).
-`crates/app/ui/i18n/languages.json` nennt die vorhandenen Sprachen, jede in ihrer eigenen Sprache. Bis #172 gibt es nur
-`de.json`. Neue Texte kommen sofort als Schlüssel in die Tabelle, nie als Zeichenkette in den Code.
+`crates/app/ui/i18n/languages.json` nennt die vorhandenen Sprachen, jede in ihrer eigenen Sprache: `de.json` und
+`en.json` (#172; Begriffe nach dem Abschnitt Englisch in `docs/GLOSSAR.md`). Neue Texte kommen sofort als Schlüssel in
+alle Tabellen, nie als Zeichenkette in den Code; der englische Text darf vorläufig sein, der Vollständigkeitstest
+verlangt ihn aber.
 
 - **Oberfläche:** `i18n.js` lädt die Tabellen ohne Build-Schritt (`fetch`) und danach die übrigen Skripte der Seite
   (Attribut `data-load` in `index.html`). `tr("results.runsN", { runs })` liefert den Text, `I18n.format` ersetzt

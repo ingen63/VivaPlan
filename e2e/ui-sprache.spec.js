@@ -1,6 +1,7 @@
-// #170: Multilingual user interface – text tables, choice of language, menus. Until #172 only the German table
-// exists; the tests add a pseudo language «en» (every German text with the prefix «Ⓔ») by intercepting the requests
-// for the tables, so that switching, fallback and formats can be checked without a real translation.
+// #170: Multilingual user interface – text tables, choice of language, menus. The tests of #170 and #171 replace the
+// table «en» by a pseudo language (every German text with the prefix «Ⓔ») by intercepting the requests for the
+// tables, so that switching, fallback and formats are checked independently of the translation. #172 checks the real
+// English table.
 const { test, expect } = require("@playwright/test");
 const { open, noErrors } = require("./helpers");
 
@@ -47,7 +48,8 @@ const lang = page => page.locator("html").getAttribute("data-language");
 
 test.describe("Multilingual user interface (#170)", () => {
   test("AK7: with another system language the user interface falls back to German", async ({ browser }) => {
-    for (const locale of ["fr-FR", "ja-JP", "en-US"]) {
+    // #172: English has its own table since then, so only languages without a table fall back
+    for (const locale of ["fr-FR", "ja-JP", "pt-BR"]) {
       const ctx = await browser.newContext({ locale });
       const page = await ctx.newPage();
       const errors = [];
@@ -263,5 +265,57 @@ test.describe("Messages of the engine (#171)", () => {
     const out = await page.evaluate(() => [isCancelled({ code: "cancelled", params: {}, text: "x" }), isCancelled(Object.assign(new Error("x"), { code: "cancelled" })), isCancelled("Abgebrochen")]);
     expect(out).toEqual([true, true, false]);
     await noErrors(page, errors);
+  });
+});
+
+test.describe("English user interface (#172)", () => {
+  test("AK1, AK3: system language en: editor, results, settings, menus and messages in English, numbers in the Swiss format", async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: "en-US" });
+    const page = await ctx.newPage();
+    const errors = await openApp(page, { settings: { language: "system" } });
+    expect(await lang(page)).toBe("en");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-CH");
+    // Menus: the app rebuilds the native menus in English (texts: Rust test issue_172_ak3_menus_and_dialogs_in_english)
+    expect(await calls(page, "set_menu_language")).toContainEqual({ language: "en", choice: "system" });
+
+    // Editor
+    await expect(page.locator("#nav a").first()).toContainText("Household & project");
+    await expect(page.locator("#nav")).toContainText("Wealth & investment");
+    await expect(page.locator("header")).toContainText("Start simulation");
+    await page.evaluate(() => goto("wealth"));
+    await expect(page.locator("#main")).toContainText("Stock allocation (stocks in the portfolio of stocks and bonds)");
+    await expect(page.locator('input[data-path="wealth.stocks"]')).toHaveValue(/^\d{1,3}(['’]\d{3})+$/);
+    await page.evaluate(() => goto("pension"));
+    await expect(page.locator("#main")).toContainText("Pension fund (BVG, pillar 2) and old-age pension (AHV, pillar 1)");
+    await expect(page.locator("#tlRange")).toHaveText(/^\d\d\.\d{4} – \d\d\.\d{4} · \d+\.\d years$/);
+    await expect(page.locator("#kpis")).toContainText("Wealth at retirement");
+
+    // Messages of the engine: validation list and a message with an amount (thousands separator ')
+    await page.evaluate(() => { state.withdrawal.strategy = "fixed_rate"; state.withdrawal.fixedRate = { rate: 0.09 }; refresh(); });
+    await expect(page.locator("#val")).toContainText("A withdrawal rate of 9.0 % is high; wealth shrinks quickly over a longer period.");
+    const p3a = await page.evaluate(async () => {
+      const plan = JSON.parse(JSON.stringify(state));
+      plan.pillar3a = [{ person: plan.household.persons[0].id, balance: 1000, rate: 0, contribution: 99999, payouts: [] }];
+      return (await Engine.call("validate", { plan })).filter(i => i.code === "pillar3a_contribution_range").map(msgText);
+    });
+    expect(p3a[0]).toMatch(/^Pillar 3a: the contribution must be between 0 and the maximum amount of \d{1,3}('\d{3})+ per year \(settings\)\.$/);
+
+    // Results: title from the engine label, tabs, key figures and yearly values
+    await page.evaluate(() => { state.returns.source = "fixed"; state.scenarios.sweeps = []; });
+    await page.evaluate(() => runSimulation("overview", { noConfirm: true }));
+    await expect(page.locator("#resultsTabs button")).toHaveText(["Overview", "Charts", "Yearly values", "Parameters", "Nominal", "Today's purchasing power"]);
+    await expect(page.locator("#results")).toContainText("Single run · Fixed returns");
+    await expect(page.locator("#resultsBody")).toContainText("Wealth at the end");
+    await page.locator("#resultsTabs button", { hasText: "Yearly values" }).click();
+    await expect(page.locator("#resultsBody table.yt tr").first()).toContainText("Total spending");
+    await expect(page.locator("#resultsBody table.yt td").filter({ hasText: /^-?\d{1,3}(['’]\d{3})+$/ }).first()).toBeAttached();
+
+    // Settings
+    await page.evaluate(() => command("settings"));
+    await expect(page.locator("#set-language")).toHaveValue("system");
+    await expect(page.locator("#set-language option")).toHaveText(["as system", "Deutsch", "English"]);
+    await expect(page.locator("body")).toContainText("Apply to all plans on this device and are not saved in the plan file.");
+    await noErrors(page, errors);
+    await ctx.close();
   });
 });

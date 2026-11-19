@@ -47,6 +47,8 @@ Fall daneben.
 - 🕰️ **Was wäre gewesen:** «Wie wäre es mir ergangen, wenn ich 1973 pensioniert worden wäre?»
 - 🗂️ **Simulationen vergleichen:** jede Simulation wird mit der Planung von damals gespeichert
 - ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein Handbuch mit Suche
+- 🌐 **Deutsch und Englisch:** Oberfläche, Menüs und Meldungen in beiden Sprachen (Wahl unter *Ansicht → Sprache*);
+  Zahlen immer im Schweizer Format. Die Hilfe ist vorerst deutsch.
 
 Die ausführliche Beschreibung steht in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG.md).
 
