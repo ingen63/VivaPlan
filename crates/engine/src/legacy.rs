@@ -667,28 +667,28 @@ mod tests {
         assert!(r.notes.iter().any(|n| n.contains("«Zelt»")));
         assert!(r.notes.iter().any(|n| n.contains("näherungsweise")));
         assert_eq!(js(&p.realestate.emergency_months), json!(3.0));
-        let haus = &p.realestate.properties[0];
-        assert_eq!(haus.status, PropertyStatus::Owned);
-        assert_eq!(haus.worth, Some(1_500_000.0));
-        assert!(haus.inflation);
-        assert_eq!(haus.fix_costs, 1_200_000.0 * 0.01 / 12.0);
+        let house = &p.realestate.properties[0];
+        assert_eq!(house.status, PropertyStatus::Owned);
+        assert_eq!(house.worth, Some(1_500_000.0));
+        assert!(house.inflation);
+        assert_eq!(house.fix_costs, 1_200_000.0 * 0.01 / 12.0);
         // Sale at 70 = end of simulation: still a date
-        assert_eq!(haus.sell, Some(TimeRef::date(ym(2040, 1))));
-        let t = &haus.mortgage.as_ref().unwrap().tranches[0];
+        assert_eq!(house.sell, Some(TimeRef::date(ym(2040, 1))));
+        let t = &house.mortgage.as_ref().unwrap().tranches[0];
         assert_eq!((t.amount, t.start), (600000.0, Some(ym(2028, 1))));
         assert_eq!(
             (t.periods[0].rate, t.periods[0].term, t.periods[0].amort),
             (0.02, 5.0, 3000.0)
         );
         // Purchase at 71 is after the end: never
-        let wohnung = &p.realestate.properties[1];
-        assert_eq!(wohnung.buy, Some(TimeRef::never()));
-        assert!(!wohnung.inflation);
-        assert_eq!(wohnung.mortgage.as_ref().map(|m| m.tranches.len()), None);
-        let miete = &p.realestate.properties[2];
-        assert_eq!(miete.status, PropertyStatus::Rent);
-        assert_eq!(miete.rent, Some(2500.0));
-        assert_eq!(miete.from, Some(TimeRef::date(ym(2036, 1))));
+        let flat = &p.realestate.properties[1];
+        assert_eq!(flat.buy, Some(TimeRef::never()));
+        assert!(!flat.inflation);
+        assert_eq!(flat.mortgage.as_ref().map(|m| m.tranches.len()), None);
+        let rental = &p.realestate.properties[2];
+        assert_eq!(rental.status, PropertyStatus::Rent);
+        assert_eq!(rental.rent, Some(2500.0));
+        assert_eq!(rental.from, Some(TimeRef::date(ym(2036, 1))));
     }
 
     // Age keys: a reference only with both curly braces.

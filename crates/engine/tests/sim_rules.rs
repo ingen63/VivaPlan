@@ -664,8 +664,8 @@ const RESERVED: &str = "Verkaufserlös reserviert für Kauf im Folgemonat";
 #[test]
 fn sale_followed_by_a_purchase_keeps_the_proceeds_liquid() {
     let mortgage = json!({"tranches": [{"name": "T", "amount": 300_000, "start": "2025-11", "periods": [{"type": "fixed", "term": 10, "rate": 0.0}]}]});
-    let alt = owned("alt", "2030-01", json!({"mortgage": mortgage}));
-    let mut v = estate(json!([alt, planned(500_000.0, "2030-02", json!(null))]));
+    let old_home = owned("alt", "2030-01", json!({"mortgage": mortgage}));
+    let mut v = estate(json!([old_home, planned(500_000.0, "2030-02", json!(null))]));
     v["taxes"]["propertyGain"] = json!({"brackets": [[0, 0.1]]});
     let r = run(&v);
     let s = sale(&r);
@@ -687,17 +687,21 @@ fn note_after_sale(props: Value) -> Option<String> {
 
 #[test]
 fn follow_up_purchase_after_a_specific_or_the_last_sale() {
-    let alt = owned("alt", "2030-01", json!({}));
+    let old_home = owned("alt", "2030-01", json!({}));
     // after the sale of «alt»
     assert_eq!(
-        note_after_sale(json!([alt.clone(), planned(500_000.0, "afterSale:alt", json!(null))])).as_deref(),
+        note_after_sale(json!([
+            old_home.clone(),
+            planned(500_000.0, "afterSale:alt", json!(null))
+        ]))
+        .as_deref(),
         Some(RESERVED)
     );
     // after the sale of another property: no follow-up purchase
     let other = owned("andere", "never", json!({}));
     assert_ne!(
         note_after_sale(json!([
-            alt.clone(),
+            old_home.clone(),
             other.clone(),
             planned(500_000.0, "afterSale:andere", json!(null))
         ]))
@@ -707,13 +711,18 @@ fn follow_up_purchase_after_a_specific_or_the_last_sale() {
     // after the last sale; a later rent does not count as ownership
     let rent = json!({"name": "Miete", "status": "rent", "price": 0, "fixCosts": 0, "inflation": false, "from": "2050-01", "rent": 1000});
     assert_eq!(
-        note_after_sale(json!([alt.clone(), rent, planned(500_000.0, "afterSale", json!(null))])).as_deref(),
+        note_after_sale(json!([
+            old_home.clone(),
+            rent,
+            planned(500_000.0, "afterSale", json!(null))
+        ]))
+        .as_deref(),
         Some(RESERVED)
     );
     // … as long as another property stays owned, though, it does not
     assert_ne!(
         note_after_sale(json!([
-            alt.clone(),
+            old_home.clone(),
             other,
             planned(500_000.0, "afterSale", json!(null))
         ]))
@@ -789,9 +798,9 @@ fn lowest_liquidity_is_dated_to_the_first_month() {
 fn sale_without_proceeds_does_not_apply_the_strategy() {
     // Value = debt, no gain: proceeds 0 ⇒ the withdrawal strategy is not applied in March
     let mortgage = json!({"tranches": [{"name": "T", "amount": 900_000, "start": "2025-11", "periods": [{"type": "fixed", "term": 10, "rate": 0.0}]}]});
-    let mut alt = owned("alt", "2030-03", json!({"mortgage": mortgage}));
-    alt["price"] = json!(900_000);
-    let mut v = estate(json!([alt]));
+    let mut old_home = owned("alt", "2030-03", json!({"mortgage": mortgage}));
+    old_home["price"] = json!(900_000);
+    let mut v = estate(json!([old_home]));
     v["withdrawal"]["strategy"] = json!("fixed_rate");
     let r = run(&v);
     assert_eq!(sale(&r).net, Some(0.0));

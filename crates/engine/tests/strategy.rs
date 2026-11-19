@@ -258,9 +258,9 @@ fn issue_69_strategy_info_and_new_plans() {
     assert_eq!(i.currency.as_deref(), Some("CHF"));
     assert!(i.title.unwrap().contains("Schweiz (JST)"));
     assert!(api::series_info("strategy:{kaputt", Path::new("."), None).is_err());
-    let neu: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
-    assert_eq!(neu.returns.strategy, Some(Investment::default()));
-    assert!(neu.returns.series.is_none());
+    let new_plan: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    assert_eq!(new_plan.returns.strategy, Some(Investment::default()));
+    assert!(new_plan.returns.series.is_none());
     // With a strategy «rolling» or «bootstrap» no longer needs a series; without both it is an error.
     let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     let series_error = |v: &Value| {

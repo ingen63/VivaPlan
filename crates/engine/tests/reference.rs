@@ -591,7 +591,7 @@ fn gain_tax_multiplier_applies_only_when_flagged() {
 }
 
 #[test]
-fn aargau_sale_uses_steuerfuss_and_holding_period() {
+fn aargau_sale_uses_tax_multiplier_and_holding_period() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ {
         "name": "Haus", "status": "owned", "price": 400_000, "worth": 500_000, "bought": "2025-06", "sell": "2030-06"

@@ -82,37 +82,37 @@ fn result(plan: &Value) -> Value {
 /// #44/AK3: The old .rplan file is unchanged (checksum), opens with values identical to the .vplan and
 /// gives the same results.
 #[test]
-fn rplan_bleibt_unveraendert_und_rechnet_wie_die_vplan() {
-    let alt = dir().join("tests/fixtures/planung-altformat.rplan");
+fn rplan_stays_unchanged_and_computes_like_the_vplan() {
+    let old = dir().join("tests/fixtures/planung-altformat.rplan");
     assert_eq!(
-        sha256_hex(&std::fs::read(&alt).unwrap()),
+        sha256_hex(&std::fs::read(&old).unwrap()),
         "7024ac6dea1691efda90b191cbc807aa8232c1b0bad2f054b1596f603b36c2e1",
         "Die Testdatei im alten Format darf nicht verändert werden"
     );
-    let rplan = api::read_plan(&alt).unwrap();
+    let rplan = api::read_plan(&old).unwrap();
     assert_eq!(rplan["format"], LEGACY_FORMAT);
-    let neu = api::read_plan(&dir().join("assets/beispiel.vplan")).unwrap();
-    assert_eq!(neu["format"], FORMAT);
+    let new_plan = api::read_plan(&dir().join("assets/beispiel.vplan")).unwrap();
+    assert_eq!(new_plan["format"], FORMAT);
     let upgraded = api::upgrade_plan(&rplan).plan;
     assert_eq!(upgraded["format"], FORMAT);
-    assert_eq!(upgraded, api::upgrade_plan(&neu).plan);
-    assert_eq!(result(&rplan), result(&neu));
+    assert_eq!(upgraded, api::upgrade_plan(&new_plan).plan);
+    assert_eq!(result(&rplan), result(&new_plan));
 }
 
 /// #44: New files write `vivaplan/1`, even if the plan still carries the old identifier.
 #[test]
-fn schreiben_setzt_die_neue_kennung() {
+fn writing_sets_the_new_identifier() {
     assert_eq!(FORMAT, "vivaplan/1");
     let d = std::env::temp_dir().join(format!("vivaplan-legacy-format-{}", std::process::id()));
     std::fs::create_dir_all(&d).unwrap();
     let f = d.join("neu.vplan");
-    let alt = api::read_plan(&dir().join("tests/fixtures/planung-altformat.rplan")).unwrap();
-    api::write_plan(&f, &alt).unwrap();
-    let wieder = api::read_plan(&f).unwrap();
-    assert_eq!(wieder["format"], FORMAT);
-    let mut ohne_kennung = alt.clone();
-    ohne_kennung["format"] = Value::String(FORMAT.into());
-    assert_eq!(wieder, ohne_kennung);
+    let old = api::read_plan(&dir().join("tests/fixtures/planung-altformat.rplan")).unwrap();
+    api::write_plan(&f, &old).unwrap();
+    let reread = api::read_plan(&f).unwrap();
+    assert_eq!(reread["format"], FORMAT);
+    let mut expected = old.clone();
+    expected["format"] = Value::String(FORMAT.into());
+    assert_eq!(reread, expected);
     // Another identifier stays as it is when writing; since #144 it can no longer be read.
     api::write_plan(&f, &serde_json::json!({"format": "x/2"})).unwrap();
     let text: Value = serde_json::from_str(&std::fs::read_to_string(&f).unwrap()).unwrap();
@@ -122,7 +122,7 @@ fn schreiben_setzt_die_neue_kennung() {
 }
 
 #[test]
-fn sha256_stimmt() {
+fn sha256_is_correct() {
     assert_eq!(
         sha256_hex(b"abc"),
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
@@ -136,25 +136,25 @@ fn sha256_stimmt() {
 /// #44: The upgrade only replaces the old identifier, and without a note; missing, foreign or non-text
 /// identifiers and non-objects stay unchanged.
 #[test]
-fn upgrade_ersetzt_nur_die_alte_kennung() {
-    let alt = api::upgrade_plan(&serde_json::json!({"format": LEGACY_FORMAT}));
-    assert_eq!(alt.plan["format"], FORMAT);
-    assert!(alt.notes.is_empty(), "der Kennungswechsel wird nicht gemeldet");
-    let neu = api::upgrade_plan(&serde_json::json!({"format": FORMAT}));
-    assert_eq!(neu.plan["format"], FORMAT);
-    let fremd = api::upgrade_plan(&serde_json::json!({"format": "x/2"}));
-    assert_eq!(fremd.plan["format"], "x/2");
-    let zahl = api::upgrade_plan(&serde_json::json!({"format": 5}));
-    assert_eq!(zahl.plan["format"], 5);
-    let ohne = api::upgrade_plan(&serde_json::json!({"a": 1}));
-    assert!(ohne.plan.get("format").is_none(), "keine Kennung wird erfunden");
-    let kein_objekt = api::upgrade_plan(&serde_json::json!([LEGACY_FORMAT]));
-    assert_eq!(kein_objekt.plan, serde_json::json!([LEGACY_FORMAT]));
+fn upgrade_replaces_only_the_old_identifier() {
+    let old = api::upgrade_plan(&serde_json::json!({"format": LEGACY_FORMAT}));
+    assert_eq!(old.plan["format"], FORMAT);
+    assert!(old.notes.is_empty(), "der Kennungswechsel wird nicht gemeldet");
+    let new_plan = api::upgrade_plan(&serde_json::json!({"format": FORMAT}));
+    assert_eq!(new_plan.plan["format"], FORMAT);
+    let foreign = api::upgrade_plan(&serde_json::json!({"format": "x/2"}));
+    assert_eq!(foreign.plan["format"], "x/2");
+    let number = api::upgrade_plan(&serde_json::json!({"format": 5}));
+    assert_eq!(number.plan["format"], 5);
+    let missing = api::upgrade_plan(&serde_json::json!({"a": 1}));
+    assert!(missing.plan.get("format").is_none(), "keine Kennung wird erfunden");
+    let not_object = api::upgrade_plan(&serde_json::json!([LEGACY_FORMAT]));
+    assert_eq!(not_object.plan, serde_json::json!([LEGACY_FORMAT]));
 }
 
 /// #44: When writing, plans without an identifier, with a non-text identifier and non-objects stay unchanged.
 #[test]
-fn schreiben_erfindet_keine_kennung() {
+fn writing_invents_no_identifier() {
     let d = std::env::temp_dir().join(format!("vivaplan-legacy-format-b-{}", std::process::id()));
     std::fs::create_dir_all(&d).unwrap();
     let f = d.join("x.vplan");

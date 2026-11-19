@@ -566,13 +566,13 @@ fn renewal_with_several_properties_and_tranches_and_without_balance() {
         "Vermögen reicht: Einmalzahlung statt Notverkauf"
     );
     // Holiday home: tranche 1 is amortized, tranche 2 (about 18'000) is affordable
-    let ferien = res
+    let holiday = res
         .renewals
         .iter()
         .find(|r| r.month == YearMonth::new(2031, 1) && r.property == "Ferienhaus")
         .unwrap();
-    assert!(ferien.affordable && ferien.lump_sum == 0.0, "{ferien:?}");
-    assert!(ferien.debt_before < 20_000.0);
+    assert!(holiday.affordable && holiday.lump_sum == 0.0, "{holiday:?}");
+    assert!(holiday.debt_before < 20_000.0);
     assert!(
         !res.renewals
             .iter()
