@@ -1,5 +1,5 @@
-//! Referenzfälle: kleine Planungen, deren Ergebnis von Hand nachgerechnet ist (Rechnung im Kommentar).
-//! Sie prüfen die fachlichen Regeln unabhängig von der Umsetzung.
+//! Reference cases: small plans whose result is recomputed by hand (computation in the comment).
+//! They check the domain rules independently of the implementation.
 
 use engine::batch;
 use engine::model::Plan;
@@ -9,7 +9,7 @@ use engine::time::YearMonth;
 use engine::validate::{self, Severity};
 use serde_json::{json, Value};
 
-/// Ab Januar 2030 bis Dezember 2031, keine Renditen, keine Inflation, keine Steuern.
+/// From January 2030 to December 2031, no returns, no inflation, no taxes.
 fn base() -> Value {
     json!({
         "project": { "name": "Referenz" },
@@ -52,10 +52,10 @@ fn month(res: &SimResult, y: i32, m: u32) -> &engine::sim::MonthRecord {
         .expect("Monat im Zeitraum")
 }
 
-// ---------- Teuerung ----------
+// ---------- Inflation ----------
 
-/// Start im März: Die Ausgaben sind in Preisen vom März erfasst; die Teuerung wirkt jeden Monat.
-/// Im Januar sind erst 10 Monate vergangen, also gilt 1.1^(10/12); ab dem nächsten Januar ein volles Jahr.
+/// Start in March: spending is entered in March prices; inflation acts every month.
+/// In January only 10 months have passed, so 1.1^(10/12) applies; from the next January a full year.
 #[test]
 fn indexation_runs_monthly_from_start() {
     let mut v = base();
@@ -76,10 +76,10 @@ fn indexation_runs_monthly_from_start() {
     close(month(&res, 2032, 1).spending, 1_000.0 * f * 1.1, "Januar 2032");
 }
 
-// ---------- Pensionskasse ----------
+// ---------- Pension fund ----------
 
-/// Zins wird monatlich auf dem Guthaben zu Monatsbeginn aufgezinst und im Dezember gutgeschrieben.
-/// Beiträge 1'000 pro Monat ab 0: Zins = Σ (1'000 × k) × 2 % / 12 für k = 0 … 11 = 110.
+/// Interest accrues monthly on the balance at the start of the month and is credited in December.
+/// Contributions 1'000 per month from 0: interest = Σ (1'000 × k) × 2 % / 12 for k = 0 … 11 = 110.
 #[test]
 fn pension_fund_interest_accrues_monthly() {
     let mut v = base();
@@ -89,8 +89,8 @@ fn pension_fund_interest_accrues_monthly() {
     close(month(&res, 2030, 12).pension_fund, 12_000.0 + 110.0, "PK Ende 2030");
 }
 
-/// Bezug im Juli: Zins für Januar bis Juni (6 Monate) wird beim Bezug gutgeschrieben.
-/// 100'000 × 2 % × 6/12 = 1'000 → Kapital 101'000, alles als Kapital bezogen, Steuer 5 %.
+/// Payout in July: interest for January to June (6 months) is credited at the payout.
+/// 100'000 × 2 % × 6/12 = 1'000 → capital 101'000, all drawn as capital, tax 5 %.
 #[test]
 fn pension_fund_pro_rata_interest_at_retirement() {
     let mut v = base();
@@ -104,16 +104,16 @@ fn pension_fund_pro_rata_interest_at_retirement() {
     close(month(&res, 2030, 7).pension_fund, 0.0, "PK leer");
 }
 
-// ---------- Steuern ----------
+// ---------- Taxes ----------
 
-/// PK-Bezug 100'000 im Juni und 3a-Auszahlung 50'000 im September desselben Jahres: Satz aus der
-/// Summe. Tabelle 0 → 0 %, 200'000 → 10 %: 100'000 zu 5 % = 5'000; 150'000 zu 7.5 % = 11'250,
-/// also 6'250 auf die 3a-Auszahlung. Beide Steuern zählen in «Steuern total».
+/// PK payout 100'000 in June and 3a payout 50'000 in September of the same year: rate from the
+/// sum. Table 0 → 0 %, 200'000 → 10 %: 100'000 at 5 % = 5'000; 150'000 at 7.5 % = 11'250,
+/// so 6'250 on the 3a payout. Both taxes count in «Steuern total».
 #[test]
 fn capital_withdrawals_in_same_year_are_combined_and_counted() {
     let mut v = base();
     v["milestones"][1]["date"] = json!("2030-06");
-    // AHV-Bezug 2035-01: die 3a-Auszahlung im September 2030 ist erlaubt (#52).
+    // AHV payout 2035-01: the 3a payout in September 2030 is allowed (#52).
     v["milestones"].as_array_mut().unwrap().insert(
         2,
         json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2035-01" }),
@@ -133,8 +133,8 @@ fn capital_withdrawals_in_same_year_are_combined_and_counted() {
     close(res.summary.taxes_total, 11_250.0, "Steuern total");
 }
 
-/// Grundstückgewinnsteuer: Stufen in der erfassten Reihenfolge, über der letzten Stufe gilt deren Satz.
-/// Gewinn 30'000 mit [4'000 zu 10 %, 6'000 zu 20 %, danach 30 %]: 400 + 1'200 + 20'000 × 30 % = 7'600.
+/// Property gain tax: brackets in the entered order; above the last bracket its rate applies.
+/// Gain 30'000 with [4'000 at 10 %, 6'000 at 20 %, then 30 %]: 400 + 1'200 + 20'000 × 30 % = 7'600.
 #[test]
 fn property_gain_tax_brackets_in_order_and_open_ended() {
     let def = engine::model::PropertyGainTax {
@@ -147,7 +147,7 @@ fn property_gain_tax_brackets_in_order_and_open_ended() {
         7_600.0,
         "mit offener Stufe",
     );
-    // Ohne offene letzte Stufe: Rest zum letzten Satz.
+    // Without an open last bracket: the rest at the last rate.
     let def = engine::model::PropertyGainTax {
         brackets: vec![(10_000.0, 0.30), (4_000.0, 0.10)],
         reduction: 0.0,
@@ -161,7 +161,7 @@ fn property_gain_tax_brackets_in_order_and_open_ended() {
     );
 }
 
-/// Verkauf mit Gewinn: Grundstückgewinnsteuer wird gebucht und in «Steuern total» gezählt.
+/// Sale with a gain: property gain tax is booked and counted in «Steuern total».
 #[test]
 fn property_gain_tax_is_counted() {
     let mut v = base();
@@ -175,7 +175,7 @@ fn property_gain_tax_is_counted() {
     close(res.summary.taxes_total, 20_000.0, "Steuern total");
 }
 
-/// Kanton Zürich (Tarif § 225 StG, StA eForm. 225.1, Stand 09/2025).
+/// Canton of Zurich (tariff § 225 StG, StA eForm. 225.1, as of 09/2025).
 fn zurich() -> Value {
     let mut duration = vec![json!([0, 0.5]), json!([1, 0.25]), json!([2, 0.0])];
     for y in 5..=20 {
@@ -187,7 +187,7 @@ fn zurich() -> Value {
     })
 }
 
-/// Steuerbeträge der Zürcher Tabelle (Grundtarif) und Freigrenze.
+/// Tax amounts of the Zurich table (basic tariff) and exemption limit.
 #[test]
 fn zurich_base_tariff_matches_the_official_table() {
     let def: engine::model::PropertyGainTax = serde_json::from_value(zurich()).unwrap();
@@ -211,7 +211,7 @@ fn zurich_base_tariff_matches_the_official_table() {
     );
 }
 
-/// Zu- und Abschläge nach Besitzdauer in vollen Jahren.
+/// Surcharges and reductions by holding period in full years.
 #[test]
 fn zurich_holding_period_adjustments() {
     let def: engine::model::PropertyGainTax = serde_json::from_value(zurich()).unwrap();
@@ -240,7 +240,7 @@ fn zurich_holding_period_adjustments() {
     );
 }
 
-/// Verkauf: Die Besitzdauer folgt aus Kauf- und Verkaufsmonat.
+/// Sale: the holding period follows from the purchase and sale months.
 #[test]
 fn property_gain_tax_uses_the_holding_period() {
     let sell = |bought: Option<&str>| {
@@ -265,7 +265,7 @@ fn property_gain_tax_uses_the_holding_period() {
     close(sell(Some("2029-12")), full * 1.5, "weniger als 1 Jahr");
 }
 
-/// Die Steuern jedes Monats sind nach Art aufgeschlüsselt und ergeben zusammen den Monatsbetrag.
+/// The taxes of every month are broken down by kind and add up to the monthly amount.
 #[test]
 fn taxes_are_split_by_kind() {
     let mut v = base();
@@ -291,7 +291,7 @@ fn taxes_are_split_by_kind() {
     close(sum(&|r| r.tax_capital), 300_000.0 * 0.05, "Kapitalbezugssteuer");
     close(sum(&|r| r.tax_gain), 100_000.0 * 0.2, "Grundstückgewinnsteuer");
     assert!(sum(&|r| r.tax_income) > 0.0 && sum(&|r| r.tax_wealth) > 0.0);
-    // Einkommens- und Vermögenssteuer werden im Mai bezahlt
+    // Income and wealth tax are paid in May
     assert!(res
         .records
         .iter()
@@ -305,8 +305,8 @@ fn taxes_are_split_by_kind() {
     );
 }
 
-/// Eine in der Simulation gekaufte Immobilie zählt ab dem Kaufmonat: Kauf März 2030, Verkauf Juni 2031
-/// sind 1 volles Jahr (Zuschlag 25 %), Verkauf Februar 2032 sind 1 volles Jahr, Verkauf März 2032 2 Jahre (kein Zuschlag).
+/// A property bought during the simulation counts from the purchase month: purchase March 2030, sale June 2031
+/// is 1 full year (surcharge 25 %), sale February 2032 is 1 full year, sale March 2032 2 years (no surcharge).
 #[test]
 fn planned_property_holding_period_starts_at_purchase() {
     let total = |sell: &str, duration: Value| {
@@ -329,9 +329,9 @@ fn planned_property_holding_period_starts_at_purchase() {
     }
 }
 
-// ---------- Immobilien ----------
+// ---------- Properties ----------
 
-/// Eine während der Simulation gekaufte Immobilie wird zum geplanten Verkaufsdatum verkauft.
+/// A property bought during the simulation is sold at the planned sale date.
 #[test]
 fn planned_property_is_sold_at_its_sale_date() {
     let mut v = base();
@@ -350,7 +350,7 @@ fn planned_property_is_sold_at_its_sale_date() {
     close(month(&res, 2031, 3).property_equity, 0.0, "keine Immobilie mehr");
 }
 
-/// Ein Kaufdatum vor dem Simulationsstart wird nie erreicht: die Prüfung meldet es.
+/// A purchase date before the simulation start is never reached: the validation reports it.
 #[test]
 fn planned_purchase_before_start_is_reported() {
     let mut v = base();
@@ -366,7 +366,7 @@ fn planned_purchase_before_start_is_reported() {
     );
 }
 
-/// #2: Ein Verkaufsdatum vor dem Simulationsstart wird nie erreicht: die Prüfung warnt (kein Fehler).
+/// #2: A sale date before the simulation start is never reached: the validation warns (no error).
 #[test]
 fn sale_before_start_is_reported_as_a_warning() {
     let mut v = base();
@@ -381,7 +381,7 @@ fn sale_before_start_is_reported_as_a_warning() {
         hit.is_some_and(|i| i.severity == validate::Severity::Warning),
         "{issues:?}"
     );
-    // Ein Verkauf im Zeitraum bleibt ohne Hinweis
+    // A sale within the period stays without a warning
     let mut ok = base();
     ok["realestate"] = json!({ "properties": [ {
         "name": "Haus", "status": "owned", "price": 500_000, "worth": 600_000, "sell": "2031-06"
@@ -391,7 +391,7 @@ fn sale_before_start_is_reported_as_a_warning() {
         .any(|i| i.message.contains("Verkaufszeitpunkt")));
 }
 
-/// Hypothekarzins pro Monat = Schuld × Satz / 12; SARON wird bei 0 begrenzt, dann die Marge dazu.
+/// Mortgage interest per month = debt × rate / 12; SARON is floored at 0, then the margin is added.
 #[test]
 fn mortgage_interest_and_saron_floor() {
     let mut v = base();
@@ -405,14 +405,14 @@ fn mortgage_interest_and_saron_floor() {
         ] }
     } ] });
     let res = run(v);
-    // 240'000 × 1.5 % / 12 + 120'000 × (0 % + 0.9 %) / 12 = 300 + 90 pro Monat, bezahlt am Quartalsende
+    // 240'000 × 1.5 % / 12 + 120'000 × (0 % + 0.9 %) / 12 = 300 + 90 per month, paid at quarter end
     close(month(&res, 2030, 1).spending, 0.0, "Januar: noch kein Zins fällig");
     close(month(&res, 2030, 3).spending, 3.0 * 390.0, "Zins 1. Quartal");
 }
 
-// ---------- Vermögen aufgebraucht ----------
+// ---------- Wealth depleted ----------
 
-/// Ohne liquides Vermögen, aber mit gedeckten Ausgaben ist das Vermögen nicht «aufgebraucht».
+/// Without liquid wealth but with covered spending, wealth is not «aufgebraucht».
 #[test]
 fn zero_wealth_with_covered_spending_is_not_depleted() {
     let mut v = base();
@@ -423,7 +423,7 @@ fn zero_wealth_with_covered_spending_is_not_depleted() {
     assert!(!res.events.iter().any(|e| e.kind == EventKind::Depleted));
 }
 
-/// Mit ungedeckten Ausgaben: aufgebraucht im Monat, in dem das Cash 0 erreicht.
+/// With uncovered spending: depleted in the month in which cash reaches 0.
 #[test]
 fn depleted_when_liquidity_runs_out() {
     let mut v = base();
@@ -433,9 +433,9 @@ fn depleted_when_liquidity_runs_out() {
     assert_eq!(res.summary.depleted, Some(YearMonth::new(2030, 3)));
 }
 
-// ---------- Erfolgsquote ----------
+// ---------- Success rate ----------
 
-/// Ein Lauf mit Notverkauf, der danach reicht, gilt als erfolgreich; einer ohne Geld am Ende nicht.
+/// A run with an emergency sale that suffices afterwards counts as successful; one without money at the end does not.
 #[test]
 fn success_rate_counts_runs_that_last() {
     let mut v = base();
@@ -446,7 +446,7 @@ fn success_rate_counts_runs_that_last() {
     assert_eq!(s.success_rate, 0.0);
 }
 
-// ---------- Prüfung ----------
+// ---------- Validation ----------
 
 #[test]
 fn example_plan_has_no_errors() {
@@ -458,10 +458,10 @@ fn example_plan_has_no_errors() {
     assert!(errs.is_empty(), "{errs:?}");
 }
 
-// ---------- Zeitreihen ----------
+// ---------- Series ----------
 
-/// Endet die Zeitreihe vor dem Simulationsende, gelten bei «Fixe Werte» die fixen Werte des
-/// jeweiligen Monats – auch wenn sie zeitabhängig sind.
+/// If the series ends before the end of the simulation, with «Fixe Werte» the fixed values of the
+/// respective month apply – even if they depend on time.
 #[test]
 fn extrapolation_with_fixed_values_follows_timed_curve() {
     use engine::market::{self, DataSet};
@@ -480,15 +480,15 @@ fn extrapolation_with_fixed_values_follows_timed_curve() {
     let p = plan(v);
     let sim = Simulator::new(&p).unwrap();
     let path = &batch::market_paths(&p, &sim, Some(&ds)).unwrap()[0];
-    // 2030, 2031: Reihe; ab 2032 Fortschreibung mit dem fixen Wert des Monats (0 % ab 07.2031).
+    // 2030, 2031: series; from 2032 extrapolation with the month's fixed value (0 % from 07.2031).
     let k = |y: i32, m: u32| (YearMonth::new(y, m).0 - YearMonth::new(2030, 1).0) as usize;
     assert!((path.stocks[k(2031, 12)] - market::monthly(0.1)).abs() < 1e-15);
     assert_eq!(path.stocks[k(2032, 1)], 0.0);
 }
 
-// ---------- Grundstückgewinnsteuer Aargau, Steuerfuss, Inflation je Immobilie ----------
+// ---------- Property gain tax Aargau, tax multiplier, inflation per property ----------
 
-/// Kanton Aargau (§ 109 StG): direkter Satz auf den Gewinn nach Besitzdauer in vollen Jahren.
+/// Canton of Aargau (§ 109 StG): direct rate on the gain by holding period in full years.
 fn aargau() -> Value {
     let mut rates = vec![];
     for y in 0..=10 {
@@ -519,7 +519,7 @@ fn aargau_rate_depends_on_full_years_held() {
             &format!("{years} Jahre"),
         );
     }
-    // Ohne Kaufdatum gilt der höchste Satz; Gewinn <= 0 bleibt steuerfrei.
+    // Without a purchase date the highest rate applies; a gain <= 0 stays tax-free.
     close(
         tax::property_gain_tax_held(Some(&def), 100_000.0, None, 1.0),
         40_000.0,
@@ -600,7 +600,7 @@ fn aargau_sale_uses_steuerfuss_and_holding_period() {
     g["useMultiplier"] = json!(true);
     v["taxes"]["propertyGain"] = g;
     v["taxes"]["multiplier"] = json!(1.1);
-    // 5 volle Jahre: 30 % von 100'000, mal Steuerfuss 1.1
+    // 5 full years: 30 % of 100'000, times tax multiplier 1.1
     close(run(v).summary.taxes_total, 33_000.0, "Steuern total");
 }
 
@@ -662,7 +662,7 @@ fn value_and_fix_costs_inflation_are_independent() {
     assert!(v_both.housing > 1_050.0);
 }
 
-// ---------- Vorlagen der Grundstückgewinnsteuer (#138) ----------
+// ---------- Templates of the property gain tax (#138) ----------
 
 fn template(name: &str) -> engine::model::PropertyGainTax {
     serde_json::from_value(engine::api::gain_templates()[name].clone()).expect("Vorlage passt zum Modell")
@@ -672,14 +672,14 @@ fn gain(name: &str, profit: f64, years: i32) -> f64 {
     tax::property_gain_tax_held(Some(&template(name)), profit, Some(years), 1.0)
 }
 
-/// #138/AK2, AK3, AK4: Vorlage Zürich gegen das amtliche Tarifblatt «Tarif für die Grundstückgewinnsteuer, Kanton Zürich»
-/// (§ 225 StG, StA eForm. 225.1, Stand 09.25, www.steueramt.zh.ch). Teil B des Blatts nennt den Grundtarif: Gewinn
-/// 5'000 → 550, 30'000 → 5'900, 50'000 → 11'900, 100'000 → 29'400, 150'000 → 49'400. Teil A: Zuschlag 50 % (unter 1 Jahr)
-/// bzw. 25 % (unter 2 Jahren), Ermässigung 5 % nach 5 vollen Jahren, je Jahr 3 Prozentpunkte mehr, 50 % ab 20 Jahren;
-/// Gewinne unter 5'000 sind steuerfrei.
+/// #138/AK2, AK3, AK4: Zurich template against the official tariff sheet «Tarif für die Grundstückgewinnsteuer, Kanton Zürich»
+/// (§ 225 StG, StA eForm. 225.1, as of 09.25, www.steueramt.zh.ch). Part B of the sheet gives the basic tariff: gain
+/// 5'000 → 550, 30'000 → 5'900, 50'000 → 11'900, 100'000 → 29'400, 150'000 → 49'400. Part A: surcharge 50 % (under 1 year)
+/// or 25 % (under 2 years), reduction 5 % after 5 full years, 3 percentage points more per year, 50 % from 20 years;
+/// gains under 5'000 are tax-free.
 #[test]
 fn issue_138_ak3_zurich_template_matches_the_official_tariff() {
-    // Grundtarif (2 bis 4 volle Jahre: weder Zuschlag noch Ermässigung)
+    // Basic tariff (2 to 4 full years: neither surcharge nor reduction)
     for (profit, official) in [
         (5_000.0, 550.0),
         (30_000.0, 5_900.0),
@@ -689,24 +689,24 @@ fn issue_138_ak3_zurich_template_matches_the_official_tariff() {
     ] {
         assert_eq!(gain("zurich", profit, 3), official, "Grundtarif {profit}");
     }
-    // AK3, Beispiel: 100'000 nach 10 vollen Jahren: 29'400 × (1 − 20 %) = 23'520.00
+    // AK3, example: 100'000 after 10 full years: 29'400 × (1 − 20 %) = 23'520.00
     assert_eq!(gain("zurich", 100_000.0, 10), 23_520.0);
-    // Zuschlag: unter 1 Jahr 29'400 × 1.5 = 44'100; unter 2 Jahren 29'400 × 1.25 = 36'750
+    // Surcharge: under 1 year 29'400 × 1.5 = 44'100; under 2 years 29'400 × 1.25 = 36'750
     assert_eq!(gain("zurich", 100_000.0, 0), 44_100.0);
     assert_eq!(gain("zurich", 100_000.0, 1), 36_750.0);
-    // Ermässigung: 5 volle Jahre 11'900 × 0.95 = 11'305; 18 Jahre 29'400 × 0.56 = 16'464; 20 und 30 Jahre 49'400 × 0.5
+    // Reduction: 5 full years 11'900 × 0.95 = 11'305; 18 years 29'400 × 0.56 = 16'464; 20 and 30 years 49'400 × 0.5
     assert_eq!(gain("zurich", 50_000.0, 5), 11_305.0);
     assert_eq!(gain("zurich", 100_000.0, 18), 16_464.0);
     assert_eq!(gain("zurich", 150_000.0, 20), 24_700.0);
     assert_eq!(gain("zurich", 150_000.0, 30), 24_700.0);
-    // Freigrenze: unter 5'000 steuerfrei, ab 5'000 der volle Tarif
+    // Exemption limit: under 5'000 tax-free, from 5'000 the full tariff
     assert_eq!(gain("zurich", 4_999.0, 3), 0.0);
     assert_eq!(gain("zurich", 5_000.0, 3), 550.0);
 }
 
-/// #138/AK2, AK5: Vorlage Aargau gegen den Tarif des Kantons (§ 109 StG, ag.ch «Grundstückgewinnsteuer», publiziert
-/// 01.07.2025): 40 % bis zum vollendeten 1. Besitzjahr, je Jahr 2 Prozentpunkte weniger bis 20 % (bis zum vollendeten
-/// 11. Besitzjahr), dann je Jahr 1 Prozentpunkt weniger, 5 % ab dem vollendeten 25. Besitzjahr. Besitzdauer in vollen Jahren.
+/// #138/AK2, AK5: Aargau template against the canton's tariff (§ 109 StG, ag.ch «Grundstückgewinnsteuer», published
+/// 01.07.2025): 40 % until the completed 1st year of ownership, 2 percentage points less per year down to 20 % (until the completed
+/// 11th year of ownership), then 1 percentage point less per year, 5 % from the completed 25th year of ownership. Holding period in full years.
 #[test]
 fn issue_138_ak5_aargau_template_matches_the_official_tariff() {
     for (years, rate) in [
@@ -721,13 +721,13 @@ fn issue_138_ak5_aargau_template_matches_the_official_tariff() {
     ] {
         assert_eq!(gain("aargau", 100_000.0, years), 100_000.0 * rate, "{years} Jahre");
     }
-    // Ohne Kaufdatum gilt der höchste Satz
+    // Without a purchase date the highest rate applies
     let t = tax::property_gain_tax_held(Some(&template("aargau")), 100_000.0, None, 1.0);
     assert_eq!(t, 40_000.0);
 }
 
-/// #138/AK1: Die Vorlagen stehen nur im Rechenkern; die Oberfläche lädt sie mit dem Befehl `gain_templates` und enthält
-/// keine eigenen Sätze mehr.
+/// #138/AK1: The templates exist only in the calculation engine; the user interface loads them with the command `gain_templates` and contains
+/// no rates of its own any more.
 #[test]
 fn issue_138_ak1_templates_have_a_single_source() {
     let ui = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../app/ui/app.js")).unwrap();

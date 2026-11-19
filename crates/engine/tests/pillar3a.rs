@@ -1,7 +1,7 @@
-//! #52 (Säule 3a als eigenes Konto) und #50 (indirekte Amortisation nur bis zum AHV-Bezug).
+//! #52 (pillar 3a as an account of its own) and #50 (indirect amortization only until the AHV payout).
 //!
-//! Erfundene, von Hand nachrechenbare Planung: Geburt 2000-01 (Alter = Jahr − 2000), Start 2040-01, keine Renditen,
-//! keine Teuerung, keine Steuern (ausser wo vermerkt). AHV-Bezug mit 65 Jahren im Januar 2045.
+//! Made-up plan that can be recomputed by hand: birth 2000-01 (age = year − 2000), start 2040-01, no returns,
+//! no inflation, no taxes (except where noted). AHV payout at 65 in January 2045.
 
 use engine::model::Plan;
 use engine::sim::{EventKind, MonthRecord, SimResult, Simulator};
@@ -59,7 +59,7 @@ fn payouts(r: &SimResult) -> Vec<(YearMonth, String)> {
         .collect()
 }
 
-/// #52/AK3: Guthaben 120'000, Plan 2041 und 2042 je 50'000, AHV-Bezug 2045: Rest 20'000 im Monat des AHV-Bezugs.
+/// #52/AK3: Balance 120'000, plan 2041 and 2042 50'000 each, AHV payout 2045: remainder 20'000 in the month of the AHV payout.
 #[test]
 fn issue_52_ak3_payout_plan_and_rest_at_ahv() {
     let mut v = base();
@@ -82,14 +82,14 @@ fn issue_52_ak3_payout_plan_and_rest_at_ahv() {
         "{}",
         p[2].1
     );
-    // Das Geld fliesst ins Vermögen (keine Steuern): Januar 2041 + 50'000 − 1'000 Ausgaben.
+    // The money flows into wealth (no taxes): January 2041 + 50'000 − 1'000 spending.
     close(
         rec(&r, 2041, 1).liquid - rec(&r, 2040, 12).liquid,
         49_000.0,
         "Zufluss 2041",
     );
 
-    // AHV-Bezug ein Jahr später (2046-01): Plan bleibt gültig, der Rest kommt 2046.
+    // AHV payout one year later (2046-01): the plan stays valid, the remainder comes in 2046.
     v["milestones"][2]["years"] = json!(66);
     let r = run(&v);
     assert_eq!(
@@ -99,7 +99,7 @@ fn issue_52_ak3_payout_plan_and_rest_at_ahv() {
     close(rec(&r, 2045, 12).pillar3a, 20_000.0, "bis 2046");
 }
 
-/// #52/AK5: Ein Betrag grösser als das Guthaben zahlt nur das Guthaben aus, mit Hinweis in den Ereignissen.
+/// #52/AK5: An amount larger than the balance only pays out the balance, with a note in the events.
 #[test]
 fn issue_52_ak5_amount_larger_than_balance() {
     let mut v = base();
@@ -119,19 +119,19 @@ fn issue_52_ak5_amount_larger_than_balance() {
         "{p:?}"
     );
     assert!(!p.iter().any(|x| x.0 == ym(2045, 1)), "kein Rest mehr");
-    // Ohne Betrag: das ganze Guthaben
+    // Without an amount: the whole balance
     v["pillar3a"][0]["payouts"] = json!([{ "date": "2041-06" }]);
     let r = run(&v);
     close(rec(&r, 2041, 6).pillar3a, 0.0, "ganzes Guthaben");
 }
 
-/// #52/AK6: Jede Auszahlung ist ein Kapitalbezug; im selben Jahr wie der PK-Kapitalbezug zusammengerechnet.
+/// #52/AK6: Every payout is a lump sum; added together with the PK lump sum in the same year.
 #[test]
 fn issue_52_ak6_capital_tax_with_pk_lump_sum_in_the_same_year() {
     let mut v = base();
-    // Satz linear zwischen den Stützstellen: 100'000 → 5 %, 200'000 → 10 %.
+    // Rate linear between the grid points: 100'000 → 5 %, 200'000 → 10 %.
     v["taxes"]["capital"] = json!([[0, 0.0], [200_000, 0.10]]);
-    v["milestones"][1]["years"] = json!(61); // Bezug Pensionskasse 2041-01
+    v["milestones"][1]["years"] = json!(61); // pension fund payout 2041-01
     v["pension"]["pk"] = json!({ "capital": 100_000, "at": "retire", "lumpsum": 1, "conversion": 0 });
     v["pillar3a"] = json!([{ "person": "A", "balance": 100_000, "rate": 0, "payouts": [{ "date": "2041-06" }] }]);
     let r = run(&v);
@@ -143,7 +143,7 @@ fn issue_52_ak6_capital_tax_with_pk_lump_sum_in_the_same_year() {
     );
 }
 
-/// #52/AK8: Die Einzahlung erhöht das Guthaben und zählt zu den Ausgaben (500 pro Monat bei 6'000 pro Jahr).
+/// #52/AK8: The contribution raises the balance and counts as spending (500 per month with 6'000 per year).
 #[test]
 fn issue_52_ak8_contribution_counts_as_expense() {
     let mut v = base();
@@ -170,7 +170,7 @@ fn issue_52_ak8_contribution_counts_as_expense() {
     );
 }
 
-/// #52/AK9: Einzahlungen enden im Monat vor dem AHV-Bezug.
+/// #52/AK9: Contributions end in the month before the AHV payout.
 #[test]
 fn issue_52_ak9_contributions_end_before_ahv() {
     let mut v = base();
@@ -183,17 +183,17 @@ fn issue_52_ak9_contributions_end_before_ahv() {
         .iter()
         .filter(|x| x.month >= ym(2045, 1))
         .all(|x| x.pillar3a_in == 0.0 && x.pillar3a == 0.0));
-    // 5 Jahre × 1'200 werden im AHV-Bezug ausbezahlt
+    // 5 years × 1'200 are paid out at the AHV payout
     assert!(payouts(&r)
         .iter()
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("6000 CHF")));
 }
 
-/// #52: Die Einzahlung gehört zum Netto-Bedarf der 3-Topf-Strategie.
+/// #52: The contribution belongs to the net need of the 3-bucket strategy.
 #[test]
 fn issue_52_contribution_is_part_of_the_net_need() {
     let mut v = base();
-    v["milestones"][1]["years"] = json!(60); // Entnahmephase ab Start
+    v["milestones"][1]["years"] = json!(60); // withdrawal phase from the start
     v["withdrawal"] =
         json!({ "strategy": "three_buckets", "buckets": { "cashYears": 1, "bondYears": 1, "refillThreshold": -1 } });
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": 2400 }]);
@@ -212,13 +212,13 @@ fn house(periods: Value, start: &str) -> Value {
         "mortgage": { "tranches": [ { "name": "T", "amount": 400_000, "start": start, "periods": periods } ] } })
 }
 
-/// #50/AK1–AK3: Hypothek 400'000, 750 pro Quartal indirekt, AHV-Bezug M = 2045-01.
+/// #50/AK1–AK3: Mortgage 400'000, 750 per quarter indirect, AHV payout M = 2045-01.
 #[test]
 fn issue_50_ak1_to_ak3_indirect_until_ahv_then_direct() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2040-01") ] });
     let r = run(&v);
-    // Vor M: 3a +750 pro Quartal, Hypothek bleibt 400'000 (Wert 800'000 − Schuld = Eigenkapital).
+    // Before M: 3a +750 per quarter, mortgage stays 400'000 (value 800'000 − debt = equity).
     close(rec(&r, 2040, 3).pillar3a, 750.0, "März 2040");
     close(
         rec(&r, 2044, 12).pillar3a,
@@ -226,7 +226,7 @@ fn issue_50_ak1_to_ak3_indirect_until_ahv_then_direct() {
         "20 Quartale bis Dezember 2044",
     );
     close(rec(&r, 2044, 12).property_equity, 400_000.0, "Schuld unverändert");
-    // M: Rest ausbezahlt; danach sinkt die Hypothek um 750 pro Quartal, die 3a bleibt leer.
+    // M: remainder paid out; afterwards the mortgage falls by 750 per quarter, the 3a stays empty.
     close(rec(&r, 2045, 1).pillar3a, 0.0, "Rest im AHV-Bezug");
     close(
         rec(&r, 2045, 3).property_equity,
@@ -240,8 +240,8 @@ fn issue_50_ak1_to_ak3_indirect_until_ahv_then_direct() {
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("15000 CHF")));
 }
 
-/// #162/AK1: Indirekte Amortisation in die Säule 3a bleibt im Vermögen: Die Vermögensänderung jedes Monats entspricht dem
-/// Hauptbuch, auch in den Quartalen mit Einzahlung in die 3a und nach dem Wechsel auf direkte Amortisation.
+/// #162/AK1: Indirect amortization into pillar 3a stays in wealth: the change in wealth of every month matches the
+/// ledger, also in the quarters with a contribution into the 3a and after the switch to direct amortization.
 #[test]
 fn issue_162_ak1_indirect_amortization_keeps_the_ledger() {
     let mut v = base();
@@ -265,15 +265,15 @@ fn issue_162_ak1_indirect_amortization_keeps_the_ledger() {
     );
 }
 
-/// #50/AK4: Eine Periode, die erst ab dem AHV-Bezug beginnt (Erneuerung), amortisiert direkt.
+/// #50/AK4: A period that only starts from the AHV payout (renewal) amortizes directly.
 #[test]
 fn issue_50_ak4_period_from_ahv_is_direct() {
     let mut v = base();
-    // Erste Periode bis 2045-01 ohne Amortisation, die Erneuerung ab 2045-01 indirekt erfasst.
+    // First period until 2045-01 without amortization, the renewal from 2045-01 entered as indirect.
     v["realestate"] = json!({ "properties": [ house(json!([
         { "type": "fixed", "term": 5, "rate": 0, "amort": 0 },
         { "type": "fixed", "term": 10, "rate": 0, "amort": 1000, "amortMode": "indirect" } ]), "2040-01") ],
-        // Tragbarkeit bei der Erneuerung gegeben (ohne Einkommen sonst Einmalrückzahlung)
+        // Affordability at renewal given (without income otherwise a one-off repayment)
         "affordability": { "sustainability": 1, "imputedRate": 0, "fixCosts": 0, "wealthContribution": 0, "maxLoanToValue": 1 } });
     v["pension"]["ahv"]["monthly"] = json!(5000);
     let r = run(&v);
@@ -289,7 +289,7 @@ fn switches(r: &SimResult) -> Vec<(YearMonth, String)> {
         .collect()
 }
 
-/// #50: Der Wechsel von indirekter auf direkte Amortisation im AHV-Bezug erscheint einmal in den Ereignissen.
+/// #50: The switch from indirect to direct amortization at the AHV payout appears once in the events.
 #[test]
 fn issue_50_switch_to_direct_is_an_event() {
     let mut v = base();
@@ -302,7 +302,7 @@ fn issue_50_switch_to_direct_is_an_event() {
             "Amortisation Hypothek Haus ab AHV-Bezug direkt statt über die Säule 3a: 3000 CHF pro Jahr".to_string()
         )]
     );
-    // Erneuerung ab dem AHV-Bezug (vorher indirekt): ebenfalls ein Wechsel.
+    // Renewal from the AHV payout (indirect before): also a switch.
     v["realestate"]["properties"][0] = house(
         json!([
         { "type": "fixed", "term": 5, "rate": 0, "amort": 750, "amortMode": "indirect" },
@@ -315,7 +315,7 @@ fn issue_50_switch_to_direct_is_an_event() {
     let r = run(&v);
     assert_eq!(switches(&r).iter().map(|x| x.0).collect::<Vec<_>>(), vec![ym(2045, 1)]);
     assert!(switches(&r)[0].1.contains("4000 CHF pro Jahr"), "{:?}", switches(&r));
-    // Kein Wechsel: direkt von Anfang an, indirekt erst ab dem AHV-Bezug (AK4) oder Start nach dem AHV-Bezug.
+    // No switch: direct from the beginning, indirect only from the AHV payout (AK4) or start after the AHV payout.
     v["realestate"]["properties"][0] = house(
         json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "direct" }]),
         "2040-01",
@@ -329,24 +329,24 @@ fn issue_50_switch_to_direct_is_an_event() {
     );
     assert!(switches(&run(&v)).is_empty());
     let mut late = base();
-    late["milestones"][0]["date"] = json!("2045-01"); // Start = AHV-Bezug
+    late["milestones"][0]["date"] = json!("2045-01"); // start = AHV payout
     late["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2045-01") ] });
     assert!(switches(&run(&late)).is_empty());
 }
 
-/// #52: Auszahlung «Hypothek zurückzahlen» zahlt zuerst die Tranche mit indirekter Amortisation zurück.
+/// #52: Payout «Hypothek zurückzahlen» first repays the tranche with indirect amortization.
 #[test]
 fn issue_52_payout_repays_the_indirect_tranche() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2040-01") ] });
     v["pillar3a"] = json!([{ "person": "A", "balance": 10_000, "rate": 0, "use": "repay" }]);
     let r = run(&v);
-    // Rest im AHV-Bezug: 10'000 + 20 × 750 = 25'000 an die Hypothek
+    // Remainder at the AHV payout: 10'000 + 20 × 750 = 25'000 to the mortgage
     close(rec(&r, 2045, 1).property_equity, 425_000.0, "Rückzahlung");
     assert!(payouts(&r).iter().any(|x| x.1.contains("an Hypothek 25000 CHF")));
 }
 
-/// #52/AK13: Eine alte Säule 3a an der Hypothek wird beim Rechnen wie beim Laden übernommen.
+/// #52/AK13: An old pillar 3a on the mortgage is taken over when computing as when loading.
 #[test]
 fn issue_52_ak13_legacy_pillar3a_of_a_mortgage() {
     let mut v = base();
@@ -357,20 +357,20 @@ fn issue_52_ak13_legacy_pillar3a_of_a_mortgage() {
     h["mortgage"]["pillar3a"] = json!({ "balance": 10_000, "rate": 0, "payout": "2042-06", "use": "repay" });
     v["realestate"] = json!({ "properties": [h] });
     let r = run(&v);
-    // 2042-06: 10'000 + 10 Quartale × 750 = 17'500 an die Hypothek
+    // 2042-06: 10'000 + 10 quarters × 750 = 17'500 to the mortgage
     close(
         rec(&r, 2042, 6).property_equity,
         417_500.0,
         "Auszahlung des ganzen Guthabens",
     );
     close(rec(&r, 2042, 6).pillar3a, 0.0, "leer");
-    // Danach weiter indirekt bis zum AHV-Bezug, Rest 2045-01: 10 Quartale × 750
+    // Afterwards indirect again until the AHV payout, remainder 2045-01: 10 quarters × 750
     assert!(payouts(&r)
         .iter()
         .any(|x| x.0 == ym(2045, 1) && x.1.contains("7500 CHF")));
 }
 
-/// #52/AK12: Die Pensionskasse enthält kein 3a-Guthaben; in den Auswertungen stehen beide getrennt.
+/// #52/AK12: The pension fund contains no 3a balance; the evaluations show both separately.
 #[test]
 fn issue_52_ak12_pension_fund_and_pillar3a_are_kept_apart() {
     let mut v = base();
@@ -379,13 +379,13 @@ fn issue_52_ak12_pension_fund_and_pillar3a_are_kept_apart() {
     let r = run(&v);
     close(rec(&r, 2040, 1).pension_fund, 200_000.0, "Pensionskasse ohne 3a");
     close(rec(&r, 2040, 1).pillar3a, 50_000.0, "Säule 3a für sich");
-    // Das 3a-Guthaben zählt auch nicht zum liquiden Vermögen (Cash 1'000'000 abzüglich der Ausgaben des Monats)
+    // The 3a balance also does not count towards liquid wealth (cash 1'000'000 minus the month's spending)
     close(rec(&r, 2040, 1).liquid, 999_000.0, "liquid ohne 3a und PK");
 }
 
-// --- #124: Tests zu nicht erkannten Mutanten des vollen Mutationslaufs ---
+// --- #124: Tests for undetected mutants of the full mutation run ---
 
-/// Zwei Personen: B (Geburt 1983-01) bezieht die AHV im Januar 2048, A im Januar 2045; Planende 2049-12.
+/// Two persons: B (birth 1983-01) draws AHV in January 2048, A in January 2045; end of plan 2049-12.
 fn couple() -> Value {
     let mut v = base();
     v["household"]["persons"] = json!([
@@ -401,13 +401,13 @@ fn couple() -> Value {
     v
 }
 
-/// Tragbarkeit immer gegeben (ohne Einkommen sonst Einmalrückzahlung beim Kauf und bei der Erneuerung).
+/// Affordability always given (without income otherwise a one-off repayment at purchase and at renewal).
 fn affordable() -> Value {
     json!({ "sustainability": 1, "imputedRate": 0, "fixCosts": 0, "wealthContribution": 0, "maxLoanToValue": 1 })
 }
 
-/// #124/AK1: Die indirekte Amortisation fliesst in die Säule 3a der Person, die an der Tranche steht (hier B), und wird
-/// bei deren AHV-Bezug ausbezahlt, nicht bei dem der ersten Person. Gilt für eine Immobilie im Besitz und für einen Kauf.
+/// #124/AK1: The indirect amortization flows into the pillar 3a of the person named on the tranche (here B), and is
+/// paid out at their AHV payout, not at that of the first person. Applies to an owned property and to a purchase.
 #[test]
 fn issue_124_ak1_indirect_amortization_goes_to_the_second_person() {
     let indirect = json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]);
@@ -416,14 +416,14 @@ fn issue_124_ak1_indirect_amortization_goes_to_the_second_person() {
     let mut v = couple();
     v["realestate"] = json!({ "properties": [owned] });
     let r = run(&v);
-    // Bis Dezember 2047 32 Quartale à 750 im 3a von B; nichts wird im AHV-Bezug von A (2045-01) ausbezahlt.
+    // Until December 2047 32 quarters of 750 in the 3a of B; nothing is paid out at the AHV payout of A (2045-01).
     close(rec(&r, 2045, 1).pillar3a, 15_000.0, "AHV-Bezug A: 3a von B bleibt");
     close(rec(&r, 2047, 12).pillar3a, 24_000.0, "vor dem AHV-Bezug B");
     close(rec(&r, 2048, 1).pillar3a, 0.0, "Rest im AHV-Bezug B");
     assert_eq!(payouts(&r).iter().map(|x| x.0).collect::<Vec<_>>(), vec![ym(2048, 1)]);
     assert_eq!(switches(&r).iter().map(|x| x.0).collect::<Vec<_>>(), vec![ym(2048, 1)]);
 
-    // Kauf im Januar 2041 mit derselben Tranche: ebenfalls ins 3a von B (Ende 2047: 28 Quartale).
+    // Purchase in January 2041 with the same tranche: also into the 3a of B (end of 2047: 28 quarters).
     let mut bought = house(indirect, "2041-01");
     bought["status"] = json!("planned");
     bought["buy"] = json!("2041-01");
@@ -435,7 +435,7 @@ fn issue_124_ak1_indirect_amortization_goes_to_the_second_person() {
     close(rec(&r, 2047, 12).pillar3a, 21_000.0, "vor dem AHV-Bezug B");
     assert_eq!(payouts(&r).iter().map(|x| x.0).collect::<Vec<_>>(), vec![ym(2048, 1)]);
 
-    // Kauf «nach Verkauf» (Januar 2041, nach dem Verkauf eines anderen Hauses im Dezember 2040): ebenfalls ins 3a von B.
+    // Purchase «nach Verkauf» (January 2041, after the sale of another house in December 2040): also into the 3a of B.
     bought["buy"] = json!("afterSale");
     let old = json!({ "name": "Alt", "status": "owned", "price": 300_000, "worth": 300_000, "sell": "2040-12", "fixCosts": 0 });
     let mut v = couple();
@@ -453,18 +453,18 @@ fn issue_124_ak1_indirect_amortization_goes_to_the_second_person() {
     close(rec(&r, 2047, 12).pillar3a, 21_000.0, "vor dem AHV-Bezug B");
 }
 
-/// #124/AK3: Wechsel auf direkte Amortisation beim AHV-Bezug nur, wenn vorher wirklich indirekt amortisiert wurde,
-/// ab jetzt weiter amortisiert wird und noch Schuld besteht; mit mehreren Tranchen nennt das Ereignis die Tranche.
+/// #124/AK3: Switch to direct amortization at the AHV payout only if it was really amortized indirectly before,
+/// amortization continues from now on and debt remains; with several tranches the event names the tranche.
 #[test]
 fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
-    // Mit AHV-Rente ist die Erneuerung im AHV-Bezug tragbar (ohne Einkommen: Notverkauf statt Wechsel).
+    // With an AHV pension the renewal at the AHV payout is affordable (without income: emergency sale instead of a switch).
     let p = |periods: Value| {
         let mut v = base();
         v["realestate"] = json!({ "properties": [house(periods, "2040-01")], "affordability": affordable() });
         v["pension"]["ahv"]["monthly"] = json!(5000);
         v
     };
-    // Gegenprobe: vorher indirekt, danach weiter amortisiert: Wechsel.
+    // Cross-check: indirect before, amortized further afterwards: switch.
     let v = p(json!([
         { "type": "fixed", "term": 5, "rate": 0, "amort": 750, "amortMode": "indirect" },
         { "type": "fixed", "term": 10, "rate": 0, "amort": 1000, "amortMode": "indirect" } ]));
@@ -472,18 +472,18 @@ fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
         switches(&run(&v)).iter().map(|x| x.0).collect::<Vec<_>>(),
         vec![ym(2045, 1)]
     );
-    // Vorher indirekt, aber mit Amortisation 0: kein Wechsel.
+    // Indirect before, but with amortization 0: no switch.
     let v = p(json!([
         { "type": "fixed", "term": 5, "rate": 0, "amort": 0, "amortMode": "indirect" },
         { "type": "fixed", "term": 10, "rate": 0, "amort": 1000, "amortMode": "indirect" } ]));
     assert!(switches(&run(&v)).is_empty(), "vorher nichts amortisiert");
-    // Vorher indirekt amortisiert, ab dem AHV-Bezug keine Amortisation mehr: kein Wechsel.
+    // Amortized indirectly before, no amortization from the AHV payout: no switch.
     let v = p(json!([
         { "type": "fixed", "term": 5, "rate": 0, "amort": 750, "amortMode": "indirect" },
         { "type": "fixed", "term": 10, "rate": 0, "amort": 0, "amortMode": "indirect" } ]));
     assert!(switches(&run(&v)).is_empty(), "danach nichts amortisiert");
 
-    // Tranche vor dem AHV-Bezug ganz zurückbezahlt (Auszahlung der 3a an die Hypothek): kein Wechsel mehr.
+    // Tranche fully repaid before the AHV payout (payout of the 3a to the mortgage): no switch any more.
     let mut v = base();
     let mut h = house(
         json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]),
@@ -497,13 +497,13 @@ fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
     close(rec(&r, 2042, 1).mortgage, 0.0, "Tranche zurückbezahlt");
     assert!(switches(&r).is_empty(), "{:?}", switches(&r));
 
-    // Planung beginnt im AHV-Bezug, die Tranche lief schon vorher indirekt: Der Wechsel liegt vor der Planung.
+    // The plan starts at the AHV payout, the tranche already ran indirectly before: the switch lies before the plan.
     let mut v = base();
     v["milestones"][0]["date"] = json!("2045-01");
     v["realestate"] = json!({ "properties": [house(json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]), "2035-01")] });
     assert!(switches(&run(&v)).is_empty());
 
-    // Zwei Tranchen: Das Ereignis nennt die Tranche.
+    // Two tranches: the event names the tranche.
     let mut v = base();
     let mut h = house(
         json!([{ "type": "fixed", "term": 20, "rate": 0, "amort": 750, "amortMode": "indirect" }]),
@@ -526,8 +526,8 @@ fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
     );
 }
 
-/// #124/AK2: Eine geplante Auszahlung im Monat des AHV-Bezugs wird als eigene Auszahlung gebucht, der Rest danach.
-/// Ein geplanter Betrag, der genau dem Guthaben entspricht, löst keinen Hinweis «reicht nur» aus.
+/// #124/AK2: A planned payout in the month of the AHV payout is booked as a payout of its own, the remainder afterwards.
+/// A planned amount that exactly matches the balance triggers no note «reicht nur».
 #[test]
 fn issue_124_ak2_planned_payout_in_the_ahv_month_and_exact_amount() {
     let mut v = base();
@@ -549,7 +549,7 @@ fn issue_124_ak2_planned_payout_in_the_ahv_month_and_exact_amount() {
     assert!(!p.iter().any(|x| x.1.contains("reicht nur")), "{p:?}");
 }
 
-/// Entnahmephase ab Start (Pensionierung mit 60), AHV-Bezug mit 65 (2045-01), Einzahlung in die 3a 2'400 pro Jahr.
+/// Withdrawal phase from the start (retirement at 60), AHV payout at 65 (2045-01), 3a contribution 2'400 per year.
 fn retired_with_contribution(contribution: f64) -> Value {
     let mut v = base();
     v["milestones"][1]["years"] = json!(60);
@@ -557,11 +557,11 @@ fn retired_with_contribution(contribution: f64) -> Value {
     v
 }
 
-/// #124/AK2: Ab der Pensionierung zählt die Einzahlung in die 3a weiter zu den Ausgaben: in der Reserve der
-/// Strategie «Standard», in den Ausgaben der 3-Topf-Strategie und als Wohn- bzw. Fixkosten der Guardrails.
+/// #124/AK2: From retirement the 3a contribution keeps counting as spending: in the reserve of the
+/// strategy «Standard», in the spending of the 3-bucket strategy and as housing or fixed costs of the guardrails.
 #[test]
 fn issue_124_ak2_contribution_after_retirement_is_an_expense() {
-    // Standard: Reserve 12 Monate des Fehlbetrags (Ausgaben 1'000 + Einzahlung 200), der Rest in Aktien.
+    // Standard: reserve 12 months of the shortfall (spending 1'000 + contribution 200), the rest in stocks.
     let standard = |c: f64| {
         let mut v = retired_with_contribution(c);
         v["wealth"]["stockShare"] = json!(1);
@@ -572,7 +572,7 @@ fn issue_124_ak2_contribution_after_retirement_is_an_expense() {
     close(rec(&with, 2041, 6).cash, 12.0 * 1200.0, "Reserve mit Einzahlung");
     close(rec(&without, 2041, 6).cash, 12.0 * 1000.0, "Reserve ohne Einzahlung");
 
-    // 3-Topf: Die Einzahlung ist Teil der Ausgaben des Monats.
+    // «3-Topf»: the contribution is part of the month's spending.
     let buckets = |c: f64| {
         let mut v = retired_with_contribution(c);
         v["withdrawal"] = json!({ "strategy": "three_buckets", "buckets": { "cashYears": 1, "bondYears": 1, "refillThreshold": -1 } });
@@ -584,14 +584,14 @@ fn issue_124_ak2_contribution_after_retirement_is_an_expense() {
         18.0 * 200.0,
         "18 Einzahlungen weniger liquid",
     );
-    // Topf 1 nach der Januar-Auffüllung: Ziel um 12 × 200 höher, die Ausgaben des Monats um 200.
+    // Bucket 1 after the January refill: target higher by 12 × 200, the month's spending by 200.
     close(
         rec(&with, 2041, 1).cash - rec(&without, 2041, 1).cash,
         2400.0 - 200.0,
         "Topf 1 im Januar",
     );
 
-    // Guardrails: Die Einzahlung wird wie die Wohnkosten von der Entnahme abgezogen; die Lebenshaltung sinkt um 200.
+    // Guardrails: the contribution is deducted from the withdrawal like the housing costs; living costs fall by 200.
     let guardrails = |c: f64| {
         let mut v = retired_with_contribution(c);
         v["withdrawal"] = json!({ "strategy": "guardrails",
@@ -611,8 +611,8 @@ fn issue_124_ak2_contribution_after_retirement_is_an_expense() {
     );
 }
 
-/// #124/AK2: Netto-Bedarf der 3-Topf-Strategie mit Einzahlung in die 3a: ab Juli auf 12 Monate hochgerechnet, mit
-/// Guardrails-Lebenshaltung und im Jahr des AHV-Bezugs ohne Einzahlung (sie endet vor dem AHV-Bezug).
+/// #124/AK2: Net need of the 3-bucket strategy with a 3a contribution: extrapolated to 12 months from July, with
+/// guardrails living costs and without contribution in the year of the AHV payout (it ends before the AHV payout).
 #[test]
 fn issue_124_ak2_need_with_contribution() {
     let run_b = |c: f64, guardrails: bool| {
@@ -637,10 +637,10 @@ fn issue_124_ak2_need_with_contribution() {
     assert_eq!(jul.basis.months, 6);
     close(jul.basis.pillar3a, 2400.0, "6 Monate auf 12 hochgerechnet");
     close(refill(&r, 2044, 1).basis.pillar3a, 2400.0, "letztes volles Jahr");
-    // Im Januar 2045 zählen zwei Auffüllungen: zuerst der Zufluss aus der 3a (Bedarf wie bisher), dann die geplante.
+    // In January 2045 two refills count: first the inflow from the 3a (need as before), then the planned one.
     close(refill(&r, 2045, 1).basis.pillar3a, 0.0, "Jahr des AHV-Bezugs");
 
-    // Guardrails: Die Entnahme bleibt beim Budget, die Lebenshaltung im Netto-Bedarf ist um 12 × 200 kleiner.
+    // Guardrails: the withdrawal stays at the budget, the living costs in the net need are smaller by 12 × 200.
     let r = run_b(2400.0, true);
     let a = refill(&r, 2041, 1);
     assert_eq!(a.basis.living_source, "Guardrails");

@@ -1,4 +1,4 @@
-//! Verhaltenstests des Rechenkerns an kleinen, von Hand nachrechenbaren Planungen.
+//! Behaviour tests of the calculation engine on small plans that can be recomputed by hand.
 
 use std::path::Path;
 
@@ -12,7 +12,7 @@ use serde_json::{json, Value};
 
 use crate::plan_builder::PlanBuilder;
 
-/// Minimale Planung: 2 Jahre ab Januar 2030, keine Renditen, keine Inflation, keine Steuern.
+/// Minimal plan: 2 years from January 2030, no returns, no inflation, no taxes.
 fn base() -> Value {
     PlanBuilder::new("Test").dates("2030-01", "2040-01", "2031-12").build()
 }
@@ -80,7 +80,7 @@ fn pension_fund_lumpsum_and_annuity() {
     assert!((s.lumpsum_tax - 20_000.0).abs() < 1e-6);
     assert!((s.lumpsum_net - 380_000.0).abs() < 1e-6);
     assert!((s.pension_fund_monthly - 3_000.0).abs() < 1e-6);
-    // Juni bis Dezember: 7 Monatsrenten
+    // June to December: 7 monthly pensions
     assert!((res.records[11].liquid - (380_000.0 + 7.0 * 3_000.0)).abs() < 1e-6);
 }
 
@@ -116,7 +116,7 @@ fn direct_amortization_each_quarter_and_repayment() {
     } ] }));
     let res = run(&p);
     let r = &res.records;
-    // Periode 01.2029 – 01.2031, danach Rückzahlung der Restschuld
+    // Period 01.2029 – 01.2031, then repayment of the remaining debt
     assert!(
         (r[0].property_equity - (800_000.0 - 100_000.0)).abs() < 1e-6,
         "Januar: keine Amortisation"
@@ -134,7 +134,7 @@ fn direct_amortization_each_quarter_and_repayment() {
         .events
         .iter()
         .any(|e| e.kind == EventKind::MortgageRepayment && e.month == YearMonth::new(2031, 1)));
-    // Zins wird am Quartalsende bezahlt: Januar nichts, März drei Monate à 100'000 × 1.2 % / 12
+    // Interest is paid at quarter end: nothing in January, in March three months of 100'000 × 1.2 % / 12
     assert!(r[0].spending.abs() < 1e-9);
     assert!(
         (r[2].spending - (3.0 * 100.0 + 1_000.0)).abs() < 1e-9,
@@ -154,7 +154,7 @@ fn indirect_amortization_goes_to_pillar_3a() {
         ],
         "pillar3a": { "balance": 10_000, "rate": 0.0, "payout": "2031-06", "use": "repay" }
     }));
-    // AHV-Bezug 2035-01: bis dahin indirekt (#50), Auszahlung 2031-06 erlaubt (#52).
+    // AHV payout 2035-01: indirect until then (#50), payout 2031-06 allowed (#52).
     p.milestones.push(
         serde_json::from_value(json!({ "id": "ahv", "name": "AHV", "kind": "date", "date": "2035-01" })).unwrap(),
     );
@@ -162,7 +162,7 @@ fn indirect_amortization_goes_to_pillar_3a() {
     let r = &res.records;
     assert!((r[11].pillar3a - 16_000.0).abs() < 1e-6, "4 Quartale à 1'500");
     assert!((r[11].property_equity - 400_000.0).abs() < 1e-6, "Schuld bleibt gleich");
-    // Auszahlung Juni 2031 nach der Juni-Einzahlung: 10'000 + 6 × 1'500 = 19'000, zahlt T2 zurück
+    // Payout June 2031 after the June contribution: 10'000 + 6 × 1'500 = 19'000, repays T2
     let june = &r[17];
     assert_eq!(june.pillar3a, 0.0);
     assert!((june.property_equity - (800_000.0 - 300_000.0 - 81_000.0)).abs() < 1e-6);
@@ -195,7 +195,7 @@ fn planned_purchase_and_scheduled_sale() {
     ] });
     let res = run(&plan(v));
     let jan = &res.records[12];
-    // Verkauf +600'000, Kauf −(500'000 − 200'000)
+    // Sale +600'000, purchase −(500'000 − 200'000)
     assert!((jan.liquid - 1_300_000.0).abs() < 1e-6);
     assert!((jan.property_equity - 300_000.0).abs() < 1e-6);
 }
@@ -216,7 +216,7 @@ fn rolling_runs_every_start_year_in_parallel() {
     for (path, res) in paths.iter().zip(&parallel) {
         assert_eq!(sim.run(path, false).summary.end_total, res.summary.end_total);
     }
-    // Erster Lauf: Jahre 1956 und 1957
+    // First run: years 1956 and 1957
     let expected = 100_000.0 * (1.0 + ds.stocks[0]) * (1.0 + ds.stocks[1]);
     assert!((parallel[0].summary.end_total - expected).abs() < 1e-6);
     assert_eq!(market::rolling_starts(&ds, sim.start, sim.months()).len(), paths.len());
@@ -254,7 +254,7 @@ fn example_plan_runs_and_roundtrips() {
     assert_eq!(run(&again).summary.end_total, res.summary.end_total);
 }
 
-/// Haus, das im Januar 2031 verkauft wird; danach geplante Wohnung «nach Verkauf» und Miete.
+/// House sold in January 2031; afterwards a planned flat «nach Verkauf» and rent.
 fn after_sale_plan(cash: f64, income: f64, flat_price: f64) -> Plan {
     let mut v = base();
     v["wealth"]["cash"] = json!(cash);
@@ -285,7 +285,7 @@ fn buys_next_property_after_sale_if_affordable() {
 
 #[test]
 fn reduces_mortgage_when_not_sustainable() {
-    // Tragbar sind nur aus dem Einkommen (1/3 × Jahreseinkommen − Nebenkosten) / 5 %; das Vermögen zählt nicht.
+    // Affordable from income only: (1/3 × annual income − fix costs) / 5 %; wealth does not count.
     let res = run(&after_sale_plan(300_000.0, 2_000.0, 500_000.0));
     let buy = res.events.iter().find(|e| e.kind == EventKind::Purchase).expect("Kauf");
     let debt = 500_000.0 - res.records[13].property_equity;
@@ -293,7 +293,7 @@ fn reduces_mortgage_when_not_sustainable() {
     assert!((debt - 40_000.0).abs() < 1.0, "gekürzte Hypothek {debt}: {}", buy.text);
 }
 
-/// Hypothek nach dem Kauf (Kaufpreis minus Eigenkapital der Wohnung im Februar 2031).
+/// Mortgage after the purchase (price minus equity of the flat in February 2031).
 fn debt_after_buy(cash: f64) -> (f64, String) {
     let res = run(&after_sale_plan(cash, 2_000.0, 500_000.0));
     let buy = res.events.iter().find(|e| e.kind == EventKind::Purchase).expect("Kauf");
@@ -319,7 +319,7 @@ fn no_lump_sum_repayment_when_the_mortgage_is_sustainable() {
     assert!(!buy.text.contains("Einmalrückzahlung"), "{}", buy.text);
 }
 
-/// Haus mit Hypothek 400'000 (Periode 1 bis Ende 2030, Erneuerung im Januar 2031) und gegebenem Einkommen und Vermögen.
+/// House with a mortgage of 400'000 (period 1 until the end of 2030, renewal in January 2031) and the given income and wealth.
 fn renewal_plan(income: f64, cash: f64) -> Plan {
     let mut v = base();
     v["wealth"]["cash"] = json!(cash);
@@ -332,8 +332,8 @@ fn renewal_plan(income: f64, cash: f64) -> Plan {
     plan(v)
 }
 
-/// Vier Fälle der Tragbarkeitsprüfung bei der Erneuerung (Hypothek 400'000, Haus 800'000, Erneuerung Januar 2031).
-/// `emergency_months`: Schwelle des Notverkaufskriteriums; `spending`: Ausgaben pro Monat.
+/// Four cases of the affordability check at renewal (mortgage 400'000, house 800'000, renewal January 2031).
+/// `emergency_months`: threshold of the emergency sale criterion; `spending`: spending per month.
 fn renewal_case(income: f64, cash: f64, spending: f64, emergency_months: f64) -> engine::sim::SimResult {
     let mut v = base();
     v["wealth"]["cash"] = json!(cash);
@@ -356,7 +356,7 @@ fn jan_2031(res: &engine::sim::SimResult) -> &engine::sim::Renewal {
 
 #[test]
 fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
-    // 1. Tragbar: Einkommen 20'000/Monat → normale Erneuerung
+    // 1. Affordable: income 20'000/month → normal renewal
     let a = renewal_case(20_000.0, 2_000_000.0, 0.0, 6.0);
     let r = jan_2031(&a);
     assert!(r.affordable && r.lump_sum == 0.0 && r.emergency_sale.is_none());
@@ -364,7 +364,7 @@ fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
     assert_eq!((a.summary.lump_sums, a.summary.affordability_sales), (0, 0));
     assert!(a.events.iter().any(|e| e.text.starts_with("Neue Hypothekarperiode")));
 
-    // 2. Nicht tragbar, Einmalzahlung möglich: Einkommen 6'000 → tragbar 320'000, Zahlung 80'000, Erneuerung mit 320'000
+    // 2. Not affordable, lump sum possible: income 6'000 → affordable 320'000, payment 80'000, renewal with 320'000
     let b = renewal_case(6_000.0, 2_000_000.0, 0.0, 6.0);
     let r = jan_2031(&b);
     assert!(!r.affordable && r.emergency_sale.is_none());
@@ -376,7 +376,7 @@ fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
         .any(|e| e.text.starts_with("Neue Hypothekarperiode") && e.text.contains("320000")));
     assert!(!b.events.iter().any(|e| e.kind == EventKind::EmergencySale));
 
-    // 3. Einmalzahlung würde das Vermögen unter 0 bringen: Einkommen 2'000 → Zahlung 400'000, Vermögen 10'000
+    // 3. The lump sum would bring wealth below 0: income 2'000 → payment 400'000, wealth 10'000
     let c = renewal_case(2_000.0, 10_000.0, 0.0, 6.0);
     let r = jan_2031(&c);
     assert!(!r.affordable && r.lump_sum == 0.0);
@@ -397,15 +397,15 @@ fn renewal_cases_affordable_lump_sum_and_two_emergency_sales() {
         YearMonth::new(2031, 2)
     );
 
-    // 4. Zahlung möglich (Vermögen danach >= 0), aber danach löst das Notverkaufskriterium aus:
-    //    Einkommen 6'000, Ausgaben 8'000 → Vermögen im Januar 2031 rund 92'000, Zahlung 80'000 → Rest 12'000; 6 × Fehlbetrag (8'000 + Zins − 6'000) ≈ 13'600 > Rest
+    // 4. Payment possible (wealth >= 0 afterwards), but afterwards the emergency sale criterion triggers:
+    //    income 6'000, spending 8'000 → wealth in January 2031 about 92'000, payment 80'000 → rest 12'000; 6 × shortfall (8'000 + interest − 6'000) ≈ 13'600 > rest
     let d = renewal_case(6_000.0, 120_000.0, 8_000.0, 6.0);
     let r = jan_2031(&d);
     assert!(!r.affordable && r.lump_sum == 0.0);
     assert_eq!(r.emergency_sale.as_deref(), Some("Notverkaufskriterium"), "{r:?}");
     assert_eq!((d.summary.lump_sums, d.summary.affordability_sales), (0, 1));
     assert!(d.events.iter().any(|e| e.text.contains("Notverkaufskriterium")));
-    // Ohne Notverkaufsschwelle wird dieselbe Zahlung geleistet
+    // Without an emergency sale threshold the same payment is made
     let d0 = renewal_case(6_000.0, 120_000.0, 8_000.0, 0.0);
     assert!((jan_2031(&d0).lump_sum - 80_000.0).abs() < 1e-6);
 }
@@ -443,8 +443,8 @@ fn debt_in(res: &engine::sim::SimResult, y: i32, m: u32) -> f64 {
 
 #[test]
 fn renewal_checks_affordability_with_income_only() {
-    // Einkommen 2'000/Monat: tragbar sind (1/3 × 24'000 − 1 % × 800'000 Nebenkosten) / 5 % = 0
-    // → die ganze Hypothek (400'000) wird im Januar 2031 zurückbezahlt.
+    // Income 2'000/month: affordable is (1/3 × 24'000 − 1 % × 800'000 fix costs) / 5 % = 0
+    // → the whole mortgage (400'000) is repaid in January 2031.
     let res = run(&renewal_plan(2_000.0, 2_000_000.0));
     let ev = res
         .events
@@ -459,7 +459,7 @@ fn renewal_checks_affordability_with_income_only() {
         "Hypothek nach Erneuerung {}",
         debt_in(&res, 2031, 1)
     );
-    // Das Vermögen sinkt um die Einmalrückzahlung.
+    // Wealth falls by the one-off repayment.
     let before = res
         .records
         .iter()
@@ -477,7 +477,7 @@ fn renewal_checks_affordability_with_income_only() {
 
 #[test]
 fn renewal_reduces_only_the_unaffordable_part() {
-    // Einkommen 6'000/Monat: (1/3 × 72'000 − 8'000) / 5 % = 320'000 tragbar → 80'000 Einmalrückzahlung.
+    // Income 6'000/month: (1/3 × 72'000 − 8'000) / 5 % = 320'000 affordable → 80'000 one-off repayment.
     let res = run(&renewal_plan(6_000.0, 2_000_000.0));
     let ev = res
         .events
@@ -514,7 +514,7 @@ fn renewal_triggers_an_emergency_sale_when_the_wealth_cannot_pay_the_lump_sum() 
         debt_in(&res, 2031, 1) > 399_000.0,
         "Hypothek bleibt bis zum Verkauf unverändert"
     );
-    // Der Notverkauf folgt im Folgemonat: Hypothek zurückgezahlt, Erlös im Vermögen.
+    // The emergency sale follows in the following month: mortgage repaid, proceeds in wealth.
     let sale = res
         .events
         .iter()
@@ -565,7 +565,7 @@ fn renewal_with_several_properties_and_tranches_and_without_balance() {
         haus.emergency_sale.is_none(),
         "Vermögen reicht: Einmalzahlung statt Notverkauf"
     );
-    // Ferienhaus: Tranche 1 ist amortisiert, Tranche 2 (rund 18'000) ist tragbar
+    // Holiday home: tranche 1 is amortized, tranche 2 (about 18'000) is affordable
     let ferien = res
         .renewals
         .iter()
@@ -630,7 +630,7 @@ fn buys_after_sale_of_a_specific_property() {
     let res = run(&plan(v));
     let buy = res.events.iter().find(|e| e.kind == EventKind::Purchase).expect("Kauf");
     assert_eq!(buy.month, YearMonth::new(2031, 2), "{}", buy.text);
-    // Ferienwohnung 250'000 + Wohnung 500'000 − 300'000
+    // Holiday flat 250'000 + flat 500'000 − 300'000
     assert!((res.records[13].property_equity - 450_000.0).abs() < 1e-6);
 }
 
@@ -655,7 +655,7 @@ fn max_loan_takes_eighty_percent_split_by_shares() {
         (june.property_equity - 100_000.0).abs() < 1e-6,
         "Hypothek 400'000 = 80 %"
     );
-    // Zins Juni: 300'000 × 1 % / 12 + 100'000 × 1.5 % / 12 + Nebenkosten 400
+    // Interest June: 300'000 × 1 % / 12 + 100'000 × 1.5 % / 12 + fix costs 400
     assert!((june.spending - (250.0 + 125.0 + 400.0)).abs() < 1e-6);
 }
 
@@ -694,21 +694,21 @@ fn three_buckets(threshold: f64) -> Value {
 #[test]
 fn three_buckets_split_and_refill_in_january() {
     let res = run(&plan(three_buckets(0.0)));
-    // Pensionierung im Januar 2030: Auslöser A, alles in Topf 3, dann 12'000 / 24'000 / 64'000 (vor der Zahlung von 1'000).
+    // Retirement in January 2030: trigger A, everything in bucket 3, then 12'000 / 24'000 / 64'000 (before the payment of 1'000).
     let first = &res.bucket_refills[0];
     assert_eq!(first.trigger, "A");
     assert_eq!(first.after, [12_000.0, 24_000.0, 64_000.0]);
     let r = &res.records[0];
     assert_eq!((r.cash, r.bonds, r.stocks), (11_000.0, 24_000.0, 64_000.0));
     assert!(res.events.iter().any(|e| e.kind == EventKind::Buckets));
-    // Bis Dezember zahlt nur Topf 1 (12'000 reichen für 12 Zahlungen).
+    // Until December only bucket 1 pays (12'000 suffice for 12 payments).
     let dec = &res.records[11];
     assert_eq!((dec.cash, dec.bonds, dec.stocks), (0.0, 24_000.0, 64_000.0));
-    // Januar 2031: Topf 1 wird bis 12'000 aus Topf 2 aufgefüllt, Topf 2 danach wieder aus Topf 3 auf 24'000.
+    // January 2031: bucket 1 is refilled up to 12'000 from bucket 2, bucket 2 afterwards again from bucket 3 up to 24'000.
     let jan = &res.records[12];
     assert_eq!((jan.cash, jan.bonds, jan.stocks), (11_000.0, 24_000.0, 52_000.0));
 
-    // Schwelle 1 % nicht erreicht (Rendite 0 %): Es wird nichts aus Topf 3 verkauft, Topf 1 kommt aus Topf 2.
+    // Threshold 1 % not reached (return 0 %): nothing is sold from bucket 3, bucket 1 comes from bucket 2.
     let res = run(&plan(three_buckets(0.01)));
     let jan = &res.records[12];
     assert_eq!((jan.cash, jan.bonds, jan.stocks), (11_000.0, 12_000.0, 64_000.0));
@@ -716,18 +716,18 @@ fn three_buckets_split_and_refill_in_january() {
 
 #[test]
 fn three_buckets_top_up_pot_1_before_the_payment_from_bonds_then_stocks() {
-    // Schwelle 1 %: Das Renditekriterium ist nicht erfüllt, also gilt C2
+    // Threshold 1 %: the return criterion is not met, so C2 applies
     let mut v = three_buckets(0.01);
     v["withdrawal"]["buckets"]["cashYears"] = json!(0);
     v["withdrawal"]["buckets"]["bondYears"] = json!(0.25);
     let res = run(&plan(v));
-    // Topf 1 hat kein Ziel und deckt die Zahlung von 1'000 nicht (Fall C): Er wird so aufgefüllt, dass er sie deckt und
-    // danach noch (3 − 1) Monatsbedarfe enthält, zuerst aus Topf 2 (3'000), danach aus den Aktien.
+    // Bucket 1 has no target and does not cover the payment of 1'000 (case C): it is refilled so that it covers it and
+    // afterwards still holds (3 − 1) monthly needs, first from bucket 2 (3'000), then from the stocks.
     let jan = &res.records[0];
     assert_eq!((jan.cash, jan.bonds, jan.stocks), (2_000.0, 0.0, 97_000.0));
     let mar = &res.records[2];
     assert_eq!((mar.cash, mar.bonds, mar.stocks), (0.0, 0.0, 97_000.0));
-    // April: Topf 1 deckt die Zahlung nicht, Topf 2 ist leer und wird unterjährig nicht aufgefüllt → aus Topf 3
+    // April: bucket 1 does not cover the payment, bucket 2 is empty and is not refilled during the year → from bucket 3
     let apr = &res.records[3];
     assert_eq!((apr.cash, apr.bonds, apr.stocks), (2_000.0, 0.0, 94_000.0));
     let c: Vec<_> = res.bucket_refills.iter().filter(|r| r.trigger == "C2").collect();
@@ -753,7 +753,7 @@ fn monte_carlo_sources_run() {
     let (results, bands) = batch::run_with_bands(&sim, &paths);
     assert_eq!(results.len(), 200);
     assert_eq!(bands.p50.len(), sim.months());
-    // Jahresdaten: jeder Monat eines Kalenderjahres hat dieselbe Rendite aus der Reihe.
+    // Annual data: every month of a calendar year has the same return from the series.
     let p0 = paths.get(0);
     assert_eq!(p0.stocks[0], p0.stocks[11]);
     assert!(ds
@@ -769,7 +769,7 @@ fn monte_carlo_sources_run() {
     let results = batch::run_all(&sim, &paths.iter_owned().collect::<Vec<_>>());
     let summary = batch::summarize(&results);
     assert_eq!(summary.runs, 2000);
-    // Ohne Entnahmen: Median nach 2 Jahren nahe 100'000 × e^(2 × (7 % − 1.125 %)).
+    // Without withdrawals: median after 2 years close to 100'000 × e^(2 × (7 % − 1.125 %)).
     let median = summary.percentiles.iter().find(|x| x.percent == 50).unwrap().end_total;
     assert!((median / 100_000.0 - (2.0 * 0.05875f64).exp()).abs() < 0.03, "{median}");
 }
@@ -785,7 +785,7 @@ fn one_variation_step_can_be_selected_for_a_single_run() {
         assert!(out.error.is_none(), "{:?}", out.error);
         out.single.expect("Einzellauf").summary.end_total
     };
-    // Auswahl 0.5: gleich wie eine Planung mit halben Ausgaben, und ohne weitere Szenarien
+    // Selection 0.5: the same as a plan with half the spending, and without further scenarios
     let mut selected = v.clone();
     selected["scenarios"]["select"] = json!([ { "param": "flows.spendingFactor", "value": 0.5 } ]);
     let out = engine::api::run(&selected, Path::new("."), None);
@@ -794,16 +794,16 @@ fn one_variation_step_can_be_selected_for_a_single_run() {
     halved["wealth"]["cash"] = json!(500_000);
     halved["flows"]["spending"] = json!(1_500);
     assert!((end_total(&selected) - end_total(&halved)).abs() < 1e-6);
-    // Ohne Auswahl bleiben die Variationen erhalten
+    // Without a selection the variations are preserved
     let out = engine::api::run(&v, Path::new("."), None);
     assert_eq!(out.scenarios.expect("Szenarien").results.len(), 3);
-    // Unbekannter Parameter: Fehler
+    // Unknown parameter: error
     let mut bad = v.clone();
     bad["scenarios"]["select"] = json!([ { "param": "gibt.es.nicht", "value": 1 } ]);
     assert!(engine::api::run(&bad, Path::new("."), None).error.is_some());
 }
 
-// ---------- Immobilienereignisse (Kauf, Verkauf, Notverkauf, Erneuerung) in einer Liste ----------
+// ---------- Property events (purchase, sale, emergency sale, renewal) in one list ----------
 
 use engine::sim::{PropertyEvent, PropertyEventKind};
 
@@ -824,7 +824,7 @@ fn property_events_purchase_after_sale_carries_price_equity_and_mortgage() {
         (e.equity.unwrap() - 200_000.0).abs() < 1e-6,
         "Eigenmittel = Preis − Hypothek"
     );
-    // Der Verkauf des Hauses davor steht ebenfalls in der Liste, davor
+    // The sale of the house before it is also in the list, before it
     let sale = of_kind(&res, PropertyEventKind::Sale);
     assert_eq!(sale.len(), 1);
     assert_eq!(sale[0].property, "Haus");
@@ -868,7 +868,7 @@ fn property_events_renewal_with_lump_sum_shows_before_after_and_rate() {
     assert!((e.lump_sum.unwrap() - 80_000.0).abs() < 1e-6);
     assert!((e.rate.unwrap() - 0.01).abs() < 1e-12, "Zinssatz der neuen Periode");
     assert!(e.reason.is_none());
-    // Tragbar: Erneuerung ohne Einmalzahlung
+    // Affordable: renewal without a lump sum
     let ok = renewal_case(20_000.0, 2_000_000.0, 0.0, 6.0);
     let e = of_kind(&ok, PropertyEventKind::Renewal)[0].clone();
     assert_eq!((e.affordable, e.lump_sum), (Some(true), None));
@@ -876,7 +876,7 @@ fn property_events_renewal_with_lump_sum_shows_before_after_and_rate() {
 
 #[test]
 fn property_events_emergency_sale_from_renewal_names_the_reason() {
-    // Vermögen reicht nicht für die Einmalzahlung → Erneuerung nicht erfolgt, Notverkauf im Folgemonat
+    // Wealth is not enough for the lump sum → renewal not carried out, emergency sale in the following month
     let res = renewal_case(2_000.0, 10_000.0, 0.0, 6.0);
     let ren = of_kind(&res, PropertyEventKind::Renewal);
     assert_eq!(ren[0].reason.as_deref(), Some("Vermögen < 0"));
@@ -887,7 +887,7 @@ fn property_events_emergency_sale_from_renewal_names_the_reason() {
     assert!((sale[0].proceeds.unwrap() - 800_000.0).abs() < 1e-6);
     assert!((sale[0].debt_repaid.unwrap() - 400_000.0).abs() < 1e-6);
     assert_eq!(res.summary.emergency_sales, 1);
-    // Notverkaufskriterium nach der Zahlung
+    // Emergency sale criterion after the payment
     let d = renewal_case(6_000.0, 120_000.0, 8_000.0, 6.0);
     let sale = of_kind(&d, PropertyEventKind::EmergencySale);
     assert_eq!(sale[0].reason.as_deref(), Some("Notverkaufskriterium"));
@@ -933,7 +933,7 @@ fn property_events_planned_purchase_at_a_fixed_date() {
 
 #[test]
 fn summary_reports_total_and_liquid_wealth_at_simulation_start() {
-    // Bestände 100 + 200 + 300 = 600 liquid, keine Ausgaben, keine Renditen: Start- und Endstand sind gleich.
+    // Holdings 100 + 200 + 300 = 600 liquid, no spending, no returns: start and end balance are equal.
     let mut v = base();
     v["wealth"]["stocks"] = json!(100_000);
     v["wealth"]["bonds"] = json!(200_000);
@@ -944,8 +944,8 @@ fn summary_reports_total_and_liquid_wealth_at_simulation_start() {
     assert!((res.summary.end_total - res.summary.start_total).abs() < 1e-6);
 }
 
-/// #2: Ist der Kauf «nach Verkauf» nicht finanzierbar, entfällt er sofort und die Folgeregeln greifen:
-/// Die Miete «nach Verkauf» der Wohnung beginnt im Monat danach (statt nie).
+/// #2: If the purchase «nach Verkauf» is not financeable, it is dropped at once and the follow-up rules apply:
+/// the rent «nach Verkauf» of the flat starts in the month after (instead of never).
 #[test]
 fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
     let mut v = base();
@@ -976,7 +976,7 @@ fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
         .find(|e| e.text.contains("entfällt"))
         .expect("Folgeregel");
     assert_eq!(dropped.month, YearMonth::new(2030, 7));
-    // Keine Immobilie gekauft, Miete ab August 2030 (Index 7), davor keine Wohnkosten
+    // No property bought, rent from August 2030 (index 7), no housing costs before
     assert!(res.events.iter().all(|e| !e.text.starts_with("Kauf Wohnung:")));
     assert!(res.records[6].housing.abs() < 1e-9, "Juli: noch keine Miete");
     assert!(
@@ -986,7 +986,7 @@ fn unaffordable_purchase_after_sale_triggers_the_follow_up_rent() {
     );
 }
 
-/// #124/AK3: Die Einmalrückzahlung bei der Erneuerung kommt aus dem liquiden Vermögen (Fall 2 oben: 80'000).
+/// #124/AK3: The one-off repayment at renewal comes from liquid wealth (case 2 above: 80'000).
 #[test]
 fn issue_124_ak3_lump_sum_is_paid_from_liquid_wealth() {
     let r = renewal_case(6_000.0, 2_000_000.0, 0.0, 6.0);
@@ -997,7 +997,7 @@ fn issue_124_ak3_lump_sum_is_paid_from_liquid_wealth() {
             .expect("Monat")
     };
     let (dec, jan) = (at(2030, 12), at(2031, 1));
-    // Einkommen 6'000 des Monats, Einmalzahlung 80'000; die Zinsen laufen im Januar nur auf.
+    // Income 6'000 of the month, lump sum 80'000; the interest only accrues in January.
     assert!(
         (dec.liquid - jan.liquid - 74_000.0).abs() < 1e-6,
         "{} → {}",
@@ -1012,8 +1012,8 @@ fn issue_124_ak3_lump_sum_is_paid_from_liquid_wealth() {
     );
 }
 
-/// #124/AK3: Nach der Pensionierung hält «Standard» die Reserve für die laufenden Kosten; die Hypothekarzinsen
-/// gehören dazu (Hypothek 400'000 zu 1.2 %: 400 pro Monat, Reserve 12 Monate).
+/// #124/AK3: After retirement «Standard» keeps the reserve for the ongoing costs; mortgage interest
+/// belongs to them (mortgage 400'000 at 1.2 %: 400 per month, reserve 12 months).
 #[test]
 fn issue_124_ak3_mortgage_interest_counts_for_the_reserve() {
     let cash = |rate: f64| {
@@ -1038,8 +1038,8 @@ fn issue_124_ak3_mortgage_interest_counts_for_the_reserve() {
     assert!((cash(0.012) - 12.0 * 1400.0).abs() < 1e-6, "mit Zins: {}", cash(0.012));
 }
 
-/// #126/AK1, #129/AK3: Jedes Perzentil der Zusammenfassung trägt das reale Endvermögen seines Laufs. Parametrisch mit
-/// zufälliger Inflation: Die Läufe haben verschiedene Inflation, real und nominal unterscheiden sich je Lauf anders.
+/// #126/AK1, #129/AK3: Every percentile of the summary carries the real end wealth of its run. Parametric with
+/// random inflation: the runs have different inflation; real and nominal differ differently per run.
 #[test]
 fn issue_126_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
     let mut v = engine::api::example_plan();
@@ -1050,7 +1050,7 @@ fn issue_126_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
     assert!(out.error.is_none(), "{:?}", out.error);
     let pcts = out.batch.expect("mehrere Läufe").summary.percentiles;
     assert_eq!(pcts.len(), 10);
-    // Jeden Perzentil-Lauf über seine Pfadnummer nachrechnen: gleicher Lauf, gleicher nominaler und realer Endwert.
+    // Recompute every percentile run via its path number: same run, same nominal and real end value.
     let picks: Vec<(u32, usize)> = pcts.iter().map(|p| (p.percent, p.index)).collect();
     let re = engine::api::rerun_paths(&v, &picks, Path::new("/"), None);
     assert!(re.error.is_none(), "{:?}", re.error);
@@ -1064,7 +1064,7 @@ fn issue_126_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
             "real {q}"
         );
     }
-    // Zufällige Inflation: Das Verhältnis real zu nominal ist nicht in allen Läufen gleich.
+    // Random inflation: the ratio of real to nominal is not the same in all runs.
     let ratios: Vec<f64> = pcts
         .iter()
         .filter(|p| p.end_total != 0.0)
@@ -1073,7 +1073,7 @@ fn issue_126_ak1_percentiles_carry_the_real_end_wealth_of_their_run() {
     assert!(ratios.iter().any(|r| (r - ratios[0]).abs() > 1e-6), "{ratios:?}");
 }
 
-/// #130/AK1: Die Perzentile der Szenarien tragen kein reales Endvermögen, die Zusammenfassung des Laufs weiterhin schon.
+/// #130/AK1: The percentiles of the scenarios carry no real end wealth, the summary of the run still does.
 #[test]
 fn issue_130_ak1_scenario_percentiles_without_real_end_wealth() {
     let mut v = engine::api::example_plan();
