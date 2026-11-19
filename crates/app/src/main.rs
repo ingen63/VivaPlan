@@ -3,6 +3,7 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod i18n;
 mod migrate;
 
 // #116: memory limit per test process (engine::test_alloc).
@@ -19,7 +20,7 @@ use engine::api;
 use engine::validate::Issue;
 use serde::Serialize;
 use serde_json::Value;
-use tauri::menu::{Menu, MenuEvent, MenuItemBuilder, SubmenuBuilder};
+use tauri::menu::{CheckMenuItemBuilder, Menu, MenuEvent, MenuItemBuilder, Submenu, SubmenuBuilder};
 use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Emitter, Manager, RunEvent, Runtime, State, WindowEvent};
 use tauri_plugin_dialog::{DialogExt, FilePath};
@@ -49,13 +50,13 @@ fn library_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
 
 /// Creates the subfolder «Zeitreihen» in the data directory (if needed) and returns it.
 fn ensure_library_dir(data_dir: &Path) -> Result<PathBuf, String> {
-    let dir = data_dir.join("Zeitreihen");
+    let dir = data_dir.join("Zeitreihen"); // i18n: allow (folder name)
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(dir)
 }
 
 /// File with the user interface settings in the data directory (settings only, no plan data).
-const SETTINGS_FILE: &str = "einstellungen.json";
+const SETTINGS_FILE: &str = "einstellungen.json"; // i18n: allow (file name)
 
 /// Reads the settings; a missing or unreadable file yields empty settings (the defaults apply).
 fn read_settings(data_dir: &Path) -> serde_json::Map<String, Value> {
@@ -102,8 +103,15 @@ const EXAMPLE_RESOURCE: &str = "Neu.vplan";
 struct Startup {
     path: Option<String>,
     plan: Value,
-    notice: Option<String>,
+    notice: Option<Notice>,
     first: bool,
+}
+
+/// #170: notice as key of the text table with the file name; the user interface shows it in its language.
+#[derive(Serialize, Debug, PartialEq)]
+struct Notice {
+    key: &'static str,
+    file: String,
 }
 
 fn file_name(path: &str) -> String {
@@ -132,17 +140,17 @@ fn startup_from(data_dir: &Path, given: Option<PathBuf>, example: impl FnOnce() 
             first,
         };
     };
-    let fallback = |why: &str| Startup {
+    let fallback = |key: &'static str| Startup {
         path: None,
         plan: example(),
-        notice: Some(format!(
-            "{why}: {}. Es wird die Beispielplanung geöffnet.",
-            file_name(last)
-        )),
+        notice: Some(Notice {
+            key,
+            file: file_name(last),
+        }),
         first: false,
     };
     if !Path::new(last).is_file() {
-        return fallback("Zuletzt geöffnete Datei nicht gefunden");
+        return fallback("startup.notFound");
     }
     match api::read_plan(Path::new(last)) {
         Ok(plan) => Startup {
@@ -151,7 +159,7 @@ fn startup_from(data_dir: &Path, given: Option<PathBuf>, example: impl FnOnce() 
             notice: None,
             first: false,
         },
-        Err(_) => fallback("Zuletzt geöffnete Datei nicht lesbar"),
+        Err(_) => fallback("startup.unreadable"),
     }
 }
 
@@ -306,7 +314,7 @@ fn smoke_report(line: &str) {
 /// Output and exit code of the smoke test.
 fn smoke_outcome(ok: bool, message: &str) -> (String, i32) {
     (
-        format!("VivaPlan-Rauchtest: {} – {message}", if ok { "ok" } else { "FEHLER" }),
+        format!("VivaPlan-Rauchtest: {} – {message}", if ok { "ok" } else { "FEHLER" }), // i18n: allow (smoke test, only in the log)
         if ok { 0 } else { 1 },
     )
 }
@@ -366,7 +374,8 @@ fn quit_from_menu<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
-/// Description of a file dialog: title and file filters (name and extensions).
+/// Description of a file dialog: title and file filters (name and extensions). Title and filter name are keys of the
+/// text table (#170).
 struct Dialog {
     title: &'static str,
     filter: &'static str,
@@ -374,33 +383,33 @@ struct Dialog {
 }
 
 const SHILLER_DIALOG: Dialog = Dialog {
-    title: "Shiller-Daten importieren (ie_data.xls)",
-    filter: "Tabelle",
+    title: "dialog.shiller",
+    filter: "dialog.shillerFilter",
     extensions: &["xls", "xlsx", "ods"],
 };
 const SNB_DIALOG: Dialog = Dialog {
-    title: "SNB-Daten importieren (devkum, plkopr, zimoma, rendoblim)",
-    filter: "SNB-Datenwürfel (CSV)",
+    title: "dialog.snb",
+    filter: "dialog.snbFilter",
     extensions: &["csv"],
 };
 const OPEN_DIALOG: Dialog = Dialog {
-    title: "Planung öffnen",
-    filter: "VivaPlan-Plan",
+    title: "dialog.open",
+    filter: "dialog.planFilter",
     extensions: &["vplan", "rplan", "json"], // legacy: RetirementPlanner (rplan)
 };
 const SAVE_DIALOG: Dialog = Dialog {
-    title: "Planung speichern",
-    filter: "VivaPlan-Plan",
+    title: "dialog.save",
+    filter: "dialog.planFilter",
     extensions: &["vplan"],
 };
 const LEGACY_DIALOG: Dialog = Dialog {
-    title: "Alte config.json importieren",
-    filter: "Konfiguration",
+    title: "dialog.legacy",
+    filter: "dialog.legacyFilter",
     extensions: &["json"],
 };
 const SERIES_DIALOG: Dialog = Dialog {
-    title: "Zeitreihe wählen",
-    filter: "Zeitreihe (CSV)",
+    title: "dialog.series",
+    filter: "dialog.seriesFilter",
     extensions: &["csv"],
 };
 
@@ -420,11 +429,12 @@ struct NativeDialogs<R: Runtime>(AppHandle<R>);
 
 impl<R: Runtime> NativeDialogs<R> {
     fn builder(&self, dialog: &Dialog) -> tauri_plugin_dialog::FileDialogBuilder<R> {
+        let lang = self.0.state::<i18n::UiLanguage>().language();
         self.0
             .dialog()
             .file()
-            .set_title(dialog.title)
-            .add_filter(dialog.filter, dialog.extensions)
+            .set_title(i18n::tr(&lang, dialog.title))
+            .add_filter(i18n::tr(&lang, dialog.filter), dialog.extensions)
     }
 }
 
@@ -452,12 +462,12 @@ fn path_string(p: FilePath) -> Result<PathBuf, String> {
     p.into_path().map_err(|e| e.to_string())
 }
 
-/// Suggested file name (without extension) from the project name.
-fn plan_name(plan: &Value) -> &str {
+/// Suggested file name (without extension) from the project name, otherwise `default`.
+fn plan_name<'a>(plan: &'a Value, default: &'a str) -> &'a str {
     plan.pointer("/project/name")
         .and_then(Value::as_str)
         .filter(|s| !s.trim().is_empty())
-        .unwrap_or("Planung")
+        .unwrap_or(default)
 }
 
 /// Adds the extension «vplan» if the chosen path has none; «.rplan» becomes «.vplan» so that an old file
@@ -691,7 +701,8 @@ async fn save_plan<R: Runtime>(
     plan: Value,
     path: Option<String>,
 ) -> Result<Option<String>, String> {
-    let saved = save_with(&plan, path, |name| {
+    let default = i18n::tr(&app.state::<i18n::UiLanguage>().language(), "dialog.planName");
+    let saved = save_with(&plan, path, &default, |name| {
         dialogs.save_file(&SAVE_DIALOG, &format!("{name}.vplan"))
     })?;
     if let Some(p) = &saved {
@@ -706,13 +717,14 @@ async fn save_plan<R: Runtime>(
 fn save_with(
     plan: &Value,
     path: Option<String>,
+    default_name: &str,
     pick: impl FnOnce(&str) -> Option<FilePath>,
 ) -> Result<Option<String>, String> {
     let legacy = path.as_deref().and_then(legacy_stem);
     let target = match path {
         Some(p) if legacy.is_none() => Some(PathBuf::from(p)),
         _ => {
-            let name = legacy.unwrap_or_else(|| plan_name(plan).to_string());
+            let name = legacy.unwrap_or_else(|| plan_name(plan, default_name).to_string());
             picked(|| pick(&name), |file| Ok(with_default_extension(path_string(file)?)))?
         }
     };
@@ -753,26 +765,26 @@ async fn pick_series(dialogs: State<'_, Picker>) -> Result<Option<String>, Strin
     picked(|| dialogs.pick_file(&SERIES_DIALOG), series_choice)
 }
 
-/// A menu entry: id, label and keyboard shortcut (empty = none).
+/// A menu entry: id, key of the text table and keyboard shortcut (empty = none).
 type Entry = (&'static str, &'static str, &'static str);
 
 /// Separator in the menu tables.
 const SEP: Entry = ("", "", "");
 
 const FILE_MENU: [Entry; 8] = [
-    ("new", "Neue Planung", "CmdOrCtrl+N"),
-    ("open", "Öffnen…", "CmdOrCtrl+O"),
+    ("new", "menu.file.new", "CmdOrCtrl+N"),
+    ("open", "menu.file.open", "CmdOrCtrl+O"),
     SEP,
-    ("save", "Speichern", "CmdOrCtrl+S"),
-    ("saveas", "Speichern unter…", "CmdOrCtrl+Shift+S"),
+    ("save", "menu.file.save", "CmdOrCtrl+S"),
+    ("saveas", "menu.file.saveAs", "CmdOrCtrl+Shift+S"),
     SEP,
-    ("import", "Alte config.json importieren…", "CmdOrCtrl+I"),
-    ("run", "Simulation starten", "CmdOrCtrl+Enter"),
+    ("import", "menu.file.import", "CmdOrCtrl+I"),
+    ("run", "menu.file.run", "CmdOrCtrl+Enter"),
 ];
 
 /// #25: application-wide settings (limits for AHV payout, pension fund payout, maximum amount pillar 3a).
 /// #59: on macOS in the application menu, on Windows and Linux at the end of «Datei».
-const SETTINGS: Entry = ("settings", "Einstellungen…", "CmdOrCtrl+,");
+const SETTINGS: Entry = ("settings", "menu.settings", "CmdOrCtrl+,");
 
 /// Entries of the menu «Datei» per system (without «Beenden», which follows as a system entry).
 fn file_entries() -> Vec<Entry> {
@@ -785,8 +797,8 @@ fn file_entries() -> Vec<Entry> {
 }
 
 const EDIT_MENU: [Entry; 3] = [
-    ("undo", "Rückgängig", "CmdOrCtrl+Z"),
-    ("redo", "Wiederholen", "CmdOrCtrl+Shift+Z"),
+    ("undo", "menu.edit.undo", "CmdOrCtrl+Z"),
+    ("redo", "menu.edit.redo", "CmdOrCtrl+Shift+Z"),
     SEP,
 ];
 
@@ -796,79 +808,157 @@ const QUIT_ID: &str = "quit";
 /// Own rows of the application menu (macOS): «Über» and «Einstellungen…» with separators; the rest are
 /// system entries.
 #[cfg(target_os = "macos")]
-const APP_MENU: [Entry; 4] = [("about", "Über VivaPlan", ""), SEP, SETTINGS, SEP];
+const APP_MENU: [Entry; 4] = [("about", "menu.about", ""), SEP, SETTINGS, SEP];
 
-const FILE_TITLE: &str = "Datei";
-const QUIT_TEXT: &str = "Beenden";
-const EDIT_TITLE: &str = "Bearbeiten";
-const HELP_TITLE: &str = "Hilfe";
+const FILE_TITLE: &str = "menu.file";
+const QUIT_TEXT: &str = "menu.quit";
+const EDIT_TITLE: &str = "menu.edit";
+const VIEW_TITLE: &str = "menu.view";
+const HELP_TITLE: &str = "menu.help";
 
 /// #70/#71: «Willkommen …» opens the welcome dialog, «Erste Schritte» shows the checklist.
 const HELP_MENU: [Entry; 8] = [
-    ("helpctx", "Hilfe zum aktuellen Thema", "F1"),
-    ("manual", "Handbuch", "CmdOrCtrl+Shift+/"),
-    ("help", "Tastenkürzel", "CmdOrCtrl+/"),
+    ("helpctx", "menu.help.topic", "F1"),
+    ("manual", "menu.help.manual", "CmdOrCtrl+Shift+/"),
+    ("help", "menu.help.shortcuts", "CmdOrCtrl+/"),
     SEP,
-    ("welcome", "Willkommen …", ""),
-    ("steps", "Erste Schritte", ""),
+    ("welcome", "menu.help.welcome", ""),
+    ("steps", "menu.help.steps", ""),
     SEP,
-    ("about", "Über VivaPlan", ""),
+    ("about", "menu.about", ""),
 ];
 
-/// Builds a submenu from a table.
+/// Builds a submenu from a table; `title` is already translated, the entries are translated into `lang`.
 fn submenu<'a, R: Runtime>(
     app: &'a AppHandle<R>,
+    lang: &str,
     title: &str,
     entries: &[Entry],
 ) -> tauri::Result<SubmenuBuilder<'a, R, AppHandle<R>>> {
     let mut b = SubmenuBuilder::new(app, title);
-    for (id, text, key) in entries {
+    for (id, key, accel) in entries {
         if id.is_empty() {
             b = b.separator();
             continue;
         }
-        let mut item = MenuItemBuilder::with_id(*id, *text);
-        if !key.is_empty() {
-            item = item.accelerator(*key);
+        let mut item = MenuItemBuilder::with_id(*id, i18n::tr(lang, key));
+        if !accel.is_empty() {
+            item = item.accelerator(*accel);
         }
         b = b.item(&item.build(app)?);
     }
     Ok(b)
 }
 
-/// Menu with the usual keyboard shortcuts. Own entries report to the user interface as event «menu» with their
-/// id; cut, copy and paste are handled by the system.
-fn menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    let quit = MenuItemBuilder::with_id(QUIT_ID, QUIT_TEXT)
+/// Prefix of the ids of the entries in «Ansicht → Sprache»; the user interface handles them (`language-<choice>`).
+const LANGUAGE_ID: &str = "language-";
+
+/// #170/AK9: entries of «Ansicht → Sprache»: «wie System» and the available languages, each named in its own
+/// language; the active choice is checked. (id, text, checked)
+fn language_entries(lang: &str, choice: &str) -> Vec<(String, String, bool)> {
+    std::iter::once((i18n::SYSTEM.to_string(), i18n::tr(lang, "language.system")))
+        .chain(i18n::languages())
+        .map(|(code, text)| (format!("{LANGUAGE_ID}{code}"), text, code == choice))
+        .collect()
+}
+
+/// Submenu «Sprache» with check marks.
+fn language_menu<R: Runtime>(app: &AppHandle<R>, lang: &str, choice: &str) -> tauri::Result<Submenu<R>> {
+    let mut b = SubmenuBuilder::new(app, i18n::tr(lang, "menu.view.language"));
+    for (i, (id, text, checked)) in language_entries(lang, choice).into_iter().enumerate() {
+        if i == 1 {
+            b = b.separator();
+        }
+        b = b.item(&CheckMenuItemBuilder::with_id(id, text).checked(checked).build(app)?);
+    }
+    b.build()
+}
+
+/// Menu with the usual keyboard shortcuts, in the language `lang`; `choice` is checked in «Ansicht → Sprache».
+/// Own entries report to the user interface as event «menu» with their id; cut, copy and paste are handled by
+/// the system.
+fn menu<R: Runtime>(app: &AppHandle<R>, lang: &str, choice: &str) -> tauri::Result<Menu<R>> {
+    let tr = |key: &str| i18n::tr(lang, key);
+    let quit = MenuItemBuilder::with_id(QUIT_ID, tr(QUIT_TEXT))
         .accelerator("CmdOrCtrl+Q")
         .build(app)?;
     #[cfg(not(target_os = "macos"))]
-    let file = submenu(app, FILE_TITLE, &file_entries())?
+    let file = submenu(app, lang, &tr(FILE_TITLE), &file_entries())?
         .separator()
         .item(&quit)
         .build()?;
     #[cfg(target_os = "macos")]
-    let file = submenu(app, FILE_TITLE, &file_entries())?.build()?;
-    let edit = submenu(app, EDIT_TITLE, &EDIT_MENU)?
+    let file = submenu(app, lang, &tr(FILE_TITLE), &file_entries())?.build()?;
+    let edit = submenu(app, lang, &tr(EDIT_TITLE), &EDIT_MENU)?
         .cut()
         .copy()
         .paste()
         .select_all()
         .build()?;
-    let help = submenu(app, HELP_TITLE, &HELP_MENU)?.build()?;
+    let view = SubmenuBuilder::new(app, tr(VIEW_TITLE))
+        .item(&language_menu(app, lang, choice)?)
+        .build()?;
+    let help = submenu(app, lang, &tr(HELP_TITLE), &HELP_MENU)?.build()?;
     #[cfg(target_os = "macos")]
     {
-        let app_menu = submenu(app, PRODUCT, &APP_MENU)?
+        let app_menu = submenu(app, lang, PRODUCT, &APP_MENU)?
             .hide()
             .hide_others()
             .show_all()
             .separator()
             .item(&quit)
             .build()?;
-        Menu::with_items(app, &[&app_menu, &file, &edit, &help])
+        Menu::with_items(app, &[&app_menu, &file, &edit, &view, &help])
     }
     #[cfg(not(target_os = "macos"))]
-    Menu::with_items(app, &[&file, &edit, &help])
+    Menu::with_items(app, &[&file, &edit, &view, &help])
+}
+
+/// #170/AK2: language of the operating system, but only at the very first start (no settings file yet, see #70).
+/// Later the user interface takes the languages of the web view for the choice «wie System».
+#[tauri::command]
+async fn first_start_language<R: Runtime>(app: AppHandle<R>) -> Result<Option<String>, String> {
+    let data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(first_start_language_in(&data, i18n::system_language))
+}
+
+fn first_start_language_in(data_dir: &Path, system: impl FnOnce() -> String) -> Option<String> {
+    (!data_dir.join(SETTINGS_FILE).exists()).then(system)
+}
+
+/// Marker: the native menu is installed (real application, not the tests with the mock runtime).
+struct MenuInstalled;
+
+/// #170/AK3, AK9: the user interface reports language and choice after every change (settings or menu
+/// «Ansicht → Sprache»); file dialogs and menus follow at once.
+#[tauri::command]
+async fn set_menu_language<R: Runtime>(
+    app: AppHandle<R>,
+    ui: State<'_, i18n::UiLanguage>,
+    language: String,
+    choice: String,
+) -> Result<(), String> {
+    ui.set(&language, &choice);
+    if app.try_state::<MenuInstalled>().is_some() {
+        let (handle, lang, choice) = (app.clone(), ui.language(), ui.choice());
+        app.run_on_main_thread(move || {
+            if let Ok(m) = menu(&handle, &lang, &choice) {
+                let _ = handle.set_menu(m);
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Language of the menus at the start, before the user interface reports its own: the saved choice, otherwise the
+/// language of the operating system.
+fn startup_language(data_dir: &Path) -> i18n::UiLanguage {
+    let settings = read_settings(data_dir);
+    i18n::startup(
+        settings.get(i18n::SETTING).and_then(Value::as_str),
+        i18n::system_language,
+    )
 }
 
 /// Builds the application (plugins, menu, commands); separate from `main` so that it is testable with the mock runtime.
@@ -877,6 +967,10 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
         .plugin(tauri_plugin_dialog::init())
         .manage(Quit::default())
         .manage(PendingOpen::default())
+        .manage(i18n::UiLanguage::new(
+            i18n::FALLBACK.to_string(),
+            i18n::SYSTEM.to_string(),
+        ))
         .on_window_event(on_window_event)
         .invoke_handler(tauri::generate_handler![
             app_info,
@@ -896,6 +990,8 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             library_list,
             settings_get,
             settings_set,
+            first_start_language,
+            set_menu_language,
             startup_plan,
             set_dirty,
             quit_app,
@@ -922,8 +1018,14 @@ fn forward_menu_event<R: Runtime>(app: &AppHandle<R>, ev: MenuEvent) {
 /// Sets the menu and menu events; needs the main thread of the operating system and is therefore only active in
 /// the real application (not in the tests with the mock runtime).
 fn install_menu<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::error::Error>> {
-    let m = menu(app.handle())?;
+    let ui = app.state::<i18n::UiLanguage>();
+    if let Ok(data) = app.path().app_data_dir() {
+        let start = startup_language(&data);
+        ui.set(&start.language(), &start.choice());
+    }
+    let m = menu(app.handle(), &ui.language(), &ui.choice())?;
     app.set_menu(m)?;
+    app.manage(MenuInstalled);
     app.on_menu_event(forward_menu_event);
     Ok(())
 }
@@ -973,7 +1075,7 @@ fn main() {
         .manage(Smoke(smoke))
         .setup(setup_app)
         .build(tauri::generate_context!())
-        .expect("VivaPlan konnte nicht gestartet werden");
+        .expect("VivaPlan konnte nicht gestartet werden"); // i18n: allow (start error, only in the log)
     if let Some(p) = given {
         app.state::<PendingOpen>().set(p);
     }
@@ -982,7 +1084,7 @@ fn main() {
         std::thread::spawn(|| {
             std::thread::sleep(SMOKE_TIMEOUT);
             smoke_report(&format!(
-                "VivaPlan-Rauchtest: FEHLER – keine Meldung der Oberfläche nach {} s",
+                "VivaPlan-Rauchtest: FEHLER – keine Meldung der Oberfläche nach {} s", // i18n: allow (smoke test, only in the log)
                 SMOKE_TIMEOUT.as_secs()
             ));
             std::process::exit(2);
@@ -1016,7 +1118,9 @@ mod tests {
 
     impl FakeDialogs {
         fn note(&self, kind: &str, d: &Dialog, name: &str) {
-            let line = format!("{kind}|{}|{}|{}|{name}", d.title, d.filter, d.extensions.join(","));
+            // #170: title and filter are keys of the text table; the native dialog shows them in German here
+            let (title, filter) = (i18n::tr("de", d.title), i18n::tr("de", d.filter));
+            let line = format!("{kind}|{title}|{filter}|{}|{name}", d.extensions.join(","));
             self.asked.lock().unwrap().push(line);
         }
 
@@ -1160,13 +1264,16 @@ mod tests {
     #[test]
     fn plan_name_falls_back_to_default() {
         assert_eq!(
-            plan_name(&json!({"project": {"name": "Meine Planung"}})),
+            plan_name(&json!({"project": {"name": "Meine Planung"}}), "Planung"),
             "Meine Planung"
         );
-        assert_eq!(plan_name(&json!({"project": {"name": "  "}})), "Planung");
-        assert_eq!(plan_name(&json!({"project": {"name": 5}})), "Planung");
-        assert_eq!(plan_name(&json!({})), "Planung");
-        assert_eq!(plan_name(&json!({"project": {"name": "Zürich ✓"}})), "Zürich ✓");
+        assert_eq!(plan_name(&json!({"project": {"name": "  "}}), "Planung"), "Planung");
+        assert_eq!(plan_name(&json!({"project": {"name": 5}}), "Planung"), "Planung");
+        assert_eq!(plan_name(&json!({}), "Planung"), "Planung");
+        assert_eq!(
+            plan_name(&json!({"project": {"name": "Zürich ✓"}}), "Planung"),
+            "Zürich ✓"
+        );
     }
 
     #[test]
@@ -1733,18 +1840,27 @@ mod tests {
         v
     }
 
+    /// #170: menu entry with its German text from the text table.
+    fn de(e: &Entry) -> (&'static str, String, &'static str) {
+        (e.0, i18n::tr("de", e.1), e.2)
+    }
+
     /// #59/AK1–AK4: settings on macOS in the application menu, otherwise at the end of «Datei»; exactly once.
     #[test]
     fn issue_59_settings_per_system() {
         let n = own_entries().iter().filter(|e| e.0 == "settings").count();
         assert_eq!(n, 1, "Einstellungen genau einmal");
-        assert_eq!(SETTINGS, ("settings", "Einstellungen…", "CmdOrCtrl+,"));
+        assert_eq!(de(&SETTINGS), ("settings", "Einstellungen…".into(), "CmdOrCtrl+,"));
         let file = file_entries();
         #[cfg(target_os = "macos")]
         {
-            assert_eq!(APP_MENU, [("about", "Über VivaPlan", ""), SEP, SETTINGS, SEP]);
+            assert_eq!(APP_MENU, [("about", "menu.about", ""), SEP, SETTINGS, SEP]);
+            assert_eq!(de(&APP_MENU[0]), ("about", "Über VivaPlan".into(), ""));
             assert!(!file.contains(&SETTINGS), "nicht im Menü «Datei»");
-            assert_eq!(file.last(), Some(&("run", "Simulation starten", "CmdOrCtrl+Enter")));
+            assert_eq!(
+                de(file.last().unwrap()),
+                ("run", "Simulation starten".into(), "CmdOrCtrl+Enter")
+            );
         }
         #[cfg(not(target_os = "macos"))]
         assert_eq!(
@@ -1792,7 +1908,7 @@ mod tests {
     fn save_with_answer(plan: &Value, path: Option<String>, answer: Option<FilePath>) -> Saved {
         let mut was_asked = false;
         let mut suggestion = String::new();
-        let r = save_with(plan, path, |n| {
+        let r = save_with(plan, path, "Planung", |n| {
             was_asked = true;
             suggestion = n.to_string();
             answer
@@ -2049,7 +2165,8 @@ mod tests {
 
     #[test]
     fn menu_titles_and_application_menu() {
-        assert_eq!([FILE_TITLE, EDIT_TITLE, HELP_TITLE], ["Datei", "Bearbeiten", "Hilfe"]);
+        let titles = [FILE_TITLE, EDIT_TITLE, VIEW_TITLE, HELP_TITLE].map(|k| i18n::tr("de", k));
+        assert_eq!(titles, ["Datei", "Bearbeiten", "Ansicht", "Hilfe"]);
         #[cfg(target_os = "macos")]
         {
             assert_eq!(APP_MENU[0].0, "about");
@@ -2112,9 +2229,14 @@ mod tests {
             (&SERIES_DIALOG, "Zeitreihe wählen", "Zeitreihe (CSV)", "csv"),
         ];
         for (d, title, filter, ext) in cases {
+            // #170: the German texts come from the text table
             assert_eq!(
-                (d.title, d.filter, d.extensions.join(",")),
-                (title, filter, ext.to_string())
+                (
+                    i18n::tr("de", d.title),
+                    i18n::tr("de", d.filter),
+                    d.extensions.join(",")
+                ),
+                (title.to_string(), filter.to_string(), ext.to_string())
             );
         }
     }
@@ -2430,8 +2552,9 @@ mod tests {
     /// #70/AK7, #71/AK6: menu «Hilfe» has «Willkommen …» and «Erste Schritte».
     #[test]
     fn issue_70_issue_71_help_menu() {
-        assert!(HELP_MENU.contains(&("welcome", "Willkommen …", "")));
-        assert!(HELP_MENU.contains(&("steps", "Erste Schritte", "")));
+        let help: Vec<_> = HELP_MENU.iter().map(de).collect();
+        assert!(help.contains(&("welcome", "Willkommen …".into(), "")));
+        assert!(help.contains(&("steps", "Erste Schritte".into(), "")));
     }
 
     #[test]
@@ -2456,7 +2579,15 @@ mod tests {
         assert!(s.path.is_none());
         assert_eq!(s.plan["marker"], "beispiel");
         let n = s.notice.unwrap();
-        assert!(n.contains("nicht gefunden") && n.contains("weg.vplan"), "{n}");
+        // #170: the notice is a key of the text table with the file name; the user interface translates it
+        assert_eq!(
+            n,
+            Notice {
+                key: "startup.notFound",
+                file: "weg.vplan".into()
+            }
+        );
+        assert!(i18n::tr("de", n.key).contains("nicht gefunden"));
         // The remembered path is kept
         assert_eq!(read_settings(&dir)[LAST_PLAN_KEY], json!(f.to_string_lossy()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -2470,7 +2601,7 @@ mod tests {
         write_setting(&dir, LAST_PLAN_KEY, json!(f.to_string_lossy())).unwrap();
         let s = startup_from(&dir, None, example_stub);
         assert!(s.path.is_none());
-        assert!(s.notice.unwrap().contains("nicht lesbar"));
+        assert_eq!(s.notice.unwrap().key, "startup.unreadable");
         assert_eq!(read_settings(&dir)[LAST_PLAN_KEY], json!(f.to_string_lossy()));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -2593,12 +2724,70 @@ mod tests {
         app.state::<Quit>().dirty.store(false, Ordering::SeqCst);
     }
 
+    /// #170/AK9: «Ansicht → Sprache» lists «wie System» and every available language in its own language; the
+    /// choice is checked, and only the choice.
+    #[test]
+    fn issue_170_ak9_language_menu_entries() {
+        let langs = i18n::languages();
+        for choice in std::iter::once(i18n::SYSTEM.to_string()).chain(langs.iter().map(|(c, _)| c.clone())) {
+            let e = language_entries("de", &choice);
+            assert_eq!(e.len(), langs.len() + 1);
+            assert_eq!(e[0].0, "language-system");
+            assert_eq!(e[0].1, "wie System");
+            for ((id, text, _), (code, name)) in e[1..].iter().zip(&langs) {
+                assert_eq!(id, &format!("language-{code}"));
+                assert_eq!(text, name, "jede Sprache in ihrer eigenen Sprache");
+            }
+            let checked: Vec<&str> = e.iter().filter(|x| x.2).map(|x| x.0.as_str()).collect();
+            assert_eq!(checked, [format!("language-{choice}")]);
+        }
+        assert!(langs.iter().any(|(c, n)| c == "de" && n == "Deutsch"));
+    }
+
+    /// #170/AK3, AK9: the user interface reports language and choice; menus (rebuilt in the real app, which needs the
+    /// main thread of the system and is therefore not testable here) and file dialogs follow.
+    #[test]
+    fn issue_170_ak9_ui_reports_language_and_choice() {
+        let (app, w, _g) = setup();
+        // the user interface reports the choice: language state for menus and dialogs
+        call(&w, "set_menu_language", json!({ "language": "de-CH", "choice": "de" })).unwrap();
+        let ui = app.state::<i18n::UiLanguage>();
+        assert_eq!((ui.language(), ui.choice()), ("de".to_string(), "de".to_string()));
+        call(
+            &w,
+            "set_menu_language",
+            json!({ "language": "ja", "choice": i18n::SYSTEM }),
+        )
+        .unwrap();
+        assert_eq!(
+            (ui.language(), ui.choice()),
+            ("de".to_string(), i18n::SYSTEM.to_string())
+        );
+    }
+
+    /// #170/AK2: only at the very first start (no settings file, #70) the app reports the system language; the menus
+    /// start in the saved choice, otherwise in the system language.
+    #[test]
+    fn issue_170_ak2_first_start_language_and_menu_language_at_startup() {
+        let dir = tmp("first-language");
+        assert_eq!(first_start_language_in(&dir, || "fr".into()), Some("fr".to_string()));
+        let l = startup_language(&dir);
+        assert_eq!(l.choice(), i18n::SYSTEM);
+        write_setting(&dir, i18n::SETTING, json!("de")).unwrap();
+        assert_eq!(first_start_language_in(&dir, || "fr".into()), None);
+        let l = startup_language(&dir);
+        assert_eq!((l.language(), l.choice()), ("de".to_string(), "de".to_string()));
+        write_setting(&dir, i18n::SETTING, json!(i18n::SYSTEM)).unwrap();
+        assert_eq!(startup_language(&dir).choice(), i18n::SYSTEM);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn quit_has_its_own_id_and_shortcut() {
         for (id, _, _) in &own_entries() {
             assert_ne!(*id, QUIT_ID);
         }
-        assert_eq!(QUIT_TEXT, "Beenden");
+        assert_eq!(i18n::tr("de", QUIT_TEXT), "Beenden");
     }
 
     // #124/AK8: The windows from the configuration (there `create: false`) are only created at the start of the app.

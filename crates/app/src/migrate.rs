@@ -71,7 +71,7 @@ pub fn take_over_all(pairs: &[(PathBuf, PathBuf)]) -> Vec<PathBuf> {
             Ok(true) => Some(new.clone()),
             Ok(false) => None,
             Err(e) => {
-                eprintln!("App-Daten aus {} nicht übernommen: {e}", old.display());
+                eprintln!("App-Daten aus {} nicht übernommen: {e}", old.display()); // i18n: allow (log)
                 None
             }
         })

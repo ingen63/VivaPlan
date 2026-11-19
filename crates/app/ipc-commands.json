@@ -21,6 +21,8 @@
   "desktopOnly": [
     "settings_get",
     "settings_set",
+    "first_start_language",
+    "set_menu_language",
     "startup_plan",
     "set_dirty",
     "quit_app",
