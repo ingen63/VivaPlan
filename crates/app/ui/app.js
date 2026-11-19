@@ -1,8 +1,8 @@
-// Oberfläche von VivaPlan: Editor, Live-Vorschau und Ergebnisansicht.
+// VivaPlan user interface: editor, live preview and results view.
 "use strict";
-/** Technische Obergrenze der Kombinationen der Variationen (wie im Rechenkern, Speicherschutz). */
+/** Technical upper limit of the combinations of the variations (as in the engine, memory protection). */
 const MAX_COMBINATIONS = 1_000_000;
-/** Ab dieser geschätzten Rechenzeit (Sekunden) fragt die App vor dem Start nach. */
+/** From this estimated computing time (seconds) on, the app asks before starting. */
 const LONG_RUN_SECONDS = 60;
 const SWEEP_PARAMS = [
   { id: "wealth.stockShare", label: "Aktienanteil", type: "pct", def: [0.3, 1.0, 0.1] },
@@ -29,15 +29,15 @@ const SECTIONS = [
 
 let previewBasis = null;
 let state = null, currentPath = null, dirty = false, seriesInfo = null, lastRun = null, library = null;
-/** Planung, mit der `lastRun` berechnet wurde (Stand des Laufs, nicht des Editors); `null`: nicht bekannt. */
+/** Plan with which `lastRun` was calculated (state of the run, not of the editor); `null`: not known. */
 let lastRunPlan = null;
 let current = "general";
 let flashId = null;
 let lastSim = null;
 
-// ---------- Hilfsfunktionen ----------
+// ---------- Helpers ----------
 const $ = s => document.querySelector(s);
-/** Schliesst offene Info-Popups (auch bei Maus- oder Tastaturfokus); `true`, wenn eines offen war. */
+/** Closes open info popups (also on mouse or keyboard focus); `true` if one was open. */
 function closeInfoPops() {
   const shown = p => p.classList.contains("open") || p.matches(":hover, :focus-within");
   const pops = [...document.querySelectorAll(".infopop")].filter(shown), was = pops.length > 0;
@@ -46,23 +46,23 @@ function closeInfoPops() {
 }
 document.addEventListener("focusout", e => e.target.closest?.(".infopop")?.classList.remove("closed"));
 document.addEventListener("mouseout", e => { const p = e.target.closest?.(".infopop"); if (p && !p.contains(e.relatedTarget)) p.classList.remove("closed"); });
-/** Info-Symbol (ⓘ) mit Popup: öffnet bei Maus, Tastaturfokus und Klick, bleibt offen solange Maus oder Fokus darauf sind, Esc schliesst. */
+/** Info icon (ⓘ) with popup: opens on mouse, keyboard focus and click, stays open as long as mouse or focus are on it, Esc closes. */
 const infoPop = (html, cls = "") => `<span class="infopop" tabindex="0" role="button" aria-label="Erklärung anzeigen" aria-haspopup="true" data-action="info-toggle">ⓘ<span class="infobody ${cls}" role="tooltip">${html}</span></span>`;
-/** Kurze Erklärung einer Reihe (höchstens 2 Zeilen): `# Info:` der Datei, sonst Quelle und Hinweise, gekürzt; ohne Angaben kein Symbol. */
+/** Short explanation of a series (at most 2 lines): `# Info:` of the file, otherwise source and notes, shortened; without details no icon. */
 function seriesTip(i) {
   const text = i?.info || [i?.source, ...(i?.notes || [])].filter(Boolean).join(" ");
   return text ? infoPop(`<span class="two">${esc(text)}</span>`, "short") : "";
 }
-/** Simulationsstart als MM.JJJJ für Bezeichnungen («… per Simulationsstart (11.2026)»). */
+/** Simulation start as MM.YYYY for labels («… per Simulationsstart (11.2026)»). */
 const startTxt = () => ymShow(i2ym(startM()));
 const cur = () => state.project.currency;
 const fmtMoney = v => `${fmtInt(v)} ${cur()}`;
 
-// Pfadzugriff auf die Planung (getPath, setPath in util.js)
+// Path access to the plan (getPath, setPath in util.js)
 function getP(path) { return getPath(state, path); }
 function setP(path, v) { setPath(state, path, v); }
 
-// ---------- Meilensteine & Zeit ----------
+// ---------- Milestones & time ----------
 function person(id) { return state.household.persons.find(p => p.id === id) || state.household.persons[0]; }
 function msMonth(id) {
   const ms = state.milestones.find(m => m.id === id);
@@ -89,9 +89,9 @@ function seriesAt(ser, m) {
 }
 const tax = (table, x) => x <= 0 ? 0 : x * rateAt(table, x) * (+state.taxes.multiplier || 1);
 
-// Hypothek: eine oder mehrere Tranchen, jede mit einer Abfolge von Perioden. Die erste Periode beginnt am
-// Startdatum (bzw. beim Kauf), jede weitere am Ende der vorherigen. Amortisation als fixer Betrag pro Quartal,
-// fällig Ende März/Juni/September/Dezember; direkt (reduziert die Schuld) oder indirekt (Einzahlung in die Säule 3a).
+// Mortgage: one or more tranches, each with a sequence of periods. The first period starts at the
+// start date (or at the purchase), each further one at the end of the previous one. Amortization as a fixed amount per quarter,
+// due at the end of March/June/September/December; direct (reduces the debt) or indirect (contribution to pillar 3a).
 const saron = () => +state.returns.fixed.saron || 0;
 const perRate = d => d.type === "saron" ? Math.max(0, saron() + (+d.margin || 0)) : +d.rate || 0;
 const newPeriod = (o = {}) => ({ type: "fixed", term: 5, rate: 0.015, margin: 0.009, amort: 0, amortMode: "direct", ...o });
@@ -104,7 +104,7 @@ function trancheSchedule(p, t) {
   if (!Number.isFinite(m) || !(e > s0)) return [];
   const lim = planned ? e + 1 : Math.min(e + 1, refMonth(p.sell));
   const out = []; let amount = +t.amount || 0;
-  // #50: Indirekte Amortisation nur bis vor dem AHV-Bezug der Person der Säule 3a, danach direkt.
+  // #50: Indirect amortization only until before the AHV payout of the pillar 3a person, direct afterwards.
   const ahv = msMonth(ahvIdOf(t.pillar3a));
   for (let i = 0; i < 100 && m < lim; i++) {
     if (i >= t.periods.length && t.after !== "renew") break;
@@ -122,14 +122,14 @@ function trancheSchedule(p, t) {
 }
 const mortTotal = p => (p.mortgage?.tranches || []).reduce((a, t) => a + (+t.amount || 0), 0);
 
-// ---------- Rechenkern ----------
+// ---------- Engine ----------
 let lastIssues = [], previewError = null, previewSeq = 0, previewTimer = 0;
 const TICK_KINDS = ["mortgageRenewal", "mortgageRepayment", "amortizationSwitch", "pillar3aPayout", "rentStart"];
 
-/** Ergebnis des Rechenkerns in die Form bringen, die Grafiken und Anzeigen verwenden. */
+/** Brings the engine result into the form used by charts and displays. */
 function adapt(r) {
   const out = { m: [], liquid: [], prop: [], pk: [], total: [], pots: [], events: [], p3a: [], label: r.label };
-  // #53: Wohnanteil = erfasste Lebenshaltung im Startmonat − Lebenshaltung ohne Wohnen der Simulation
+  // #53: housing share = entered spending in the start month − spending without housing of the simulation
   const r0 = r.records[0];
   out.housingShare = r0 && state.flows.spendingIncludesHousing ? seriesAt(state.flows.spending, ym2i(r0.month)) * (state.flows.spendingFactor ?? 1) - r0.plannedSpending : 0;
   for (const x of r.records) {
@@ -141,7 +141,7 @@ function adapt(r) {
     out.events.push({ m: ym2i(e.month), label: e.text, kind: e.kind, tick: TICK_KINDS.includes(e.kind), bad: e.kind === "emergencySale" || e.kind === "depleted" });
     if (e.kind === "pillar3aPayout") out.p3a.push({ m: ym2i(e.month), text: e.text });
   }
-  // Kauf, Verkauf und Notverkauf von Immobilien für die Zeitleiste
+  // Purchase, sale and emergency sale of properties for the timeline
   out.propEvents = (r.propertyEvents || []).filter(e => e.kind !== "renewal").map(e => ({ m: ym2i(e.month), kind: e.kind, property: e.property }));
   const s = r.summary;
   out.depleted = s.depleted ? ym2i(s.depleted) : null;
@@ -151,7 +151,7 @@ function adapt(r) {
   return out;
 }
 
-/** `data-preview` auf <html>: «pending», solange eine Vorschau aussteht, sonst «idle» (#111: Signal für die Oberflächentests). */
+/** `data-preview` on <html>: «pending» while a preview is outstanding, otherwise «idle» (#111: signal for the user interface tests). */
 function requestPreview() {
   requestPreview.n ??= 0;
   clearTimeout(previewTimer);
@@ -168,11 +168,11 @@ function requestPreview() {
       previewError = errText(e); lastSim = null;
     }
     renderDerived();
-    if (req === requestPreview.n) document.documentElement.dataset.preview = "idle"; // keine neuere Anfrage
+    if (req === requestPreview.n) document.documentElement.dataset.preview = "idle"; // no newer request
   }, 120);
 }
 
-/** Prüfmeldungen des Rechenkerns plus Hinweise aus der Vorschau. */
+/** Validation messages of the engine plus notes from the preview. */
 function collectIssues() {
   const v = lastIssues.map(i => ({ sev: i.severity === "error" ? "err" : "warn", sec: i.section, text: esc(i.message) }));
   if (previewError && !v.some(x => x.sev === "err")) v.push({ sev: "err", sec: "general", text: esc(previewError) });
@@ -185,10 +185,10 @@ function collectIssues() {
   return v;
 }
 
-/** Fehlende Teile ergänzen, damit der Editor jede gültige Projektdatei anzeigen kann. */
+/** Adds missing parts so that the editor can show every valid project file. */
 const SERIES_PATHS = ["flows.income", "flows.spending", "pension.pk.contribution", "pension.pk.interest", "wealth.stockShare", "wealth.reserveMonths", "realestate.emergencyMonths",
   "partner.income", "partner.pk.contribution", "partner.pk.interest"];
-/** #58: Beschriftung der Auswahl beim Erwerbseinkommen jeder Person. */
+/** #58: Labels of the choice for the earned income of each person. */
 const INCOME_INDEXED = "Steigt mit der Teuerung (Beträge in heutigen Preisen)";
 const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeIndexed: true,
   pk: { capital: 0, at: "retire2", lumpsum: 0, conversion: 0.05, contribution: { mode: "const", value: 0 }, interest: { mode: "const", value: 0.01 } },
@@ -199,7 +199,7 @@ function newPropId(p = state) {
   return id;
 }
 const FIXED_RESERVE_MONTHS = 3;
-// #18: Planungen mit anderer Strategie als «Standard» und einer Reserve ungleich 3 Monaten rechnen mit 3 Monaten.
+// #18: Plans with a strategy other than «Standard» and a reserve other than 3 months calculate with 3 months.
 function reserveDiffers(p) {
   if ((p.withdrawal?.strategy ?? "standard") === "standard") return false;
   const r = p.wealth?.reserveMonths;
@@ -207,15 +207,15 @@ function reserveDiffers(p) {
   return vals.some(v => v !== FIXED_RESERVE_MONTHS);
 }
 /**
- * #61: Haftungsausschluss. Die Kurzfassung muss beim ersten Start bestätigt werden; die Bestätigung liegt in den
- * Einstellungen (nicht in der Planung) mit der Version des Textes. Ändert sich der Text, die Version erhöhen: Dann wird
- * erneut gefragt. Der vollständige Text steht in der Hilfe (`hilfe/00-einstieg.md`, Abschnitt «@disclaimer»).
+ * #61: Disclaimer. The short version must be confirmed at the first start; the confirmation is stored in the
+ * settings (not in the plan) with the version of the text. If the text changes, increase the version: then the user is
+ * asked again. The full text is in the help (`hilfe/00-einstieg.md`, section «@disclaimer»).
  */
 const DISCLAIMER_VERSION = 1, DISCLAIMER_KEY = "disclaimerAccepted";
 const DISCLAIMER_SHORT = "VivaPlan ist ein kostenloses Hilfsmittel zur persönlichen Planung. Alle Ergebnisse sind Modellrechnungen auf Basis Ihrer Eingaben und vereinfachter Annahmen. Sie können Fehler enthalten und ersetzen keine Finanz-, Steuer- oder Rechtsberatung. Prüfen Sie wichtige Entscheidungen mit einer Fachperson. Die Nutzung erfolgt auf eigene Verantwortung.";
 const DISCLAIMER_FOOT = "Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.";
 const disclaimerPending = () => Pref.get(DISCLAIMER_KEY, 0) !== DISCLAIMER_VERSION;
-/** Zeigt die Kurzfassung, bis das Kästchen angekreuzt und «Weiter» gedrückt ist (Esc schliesst den Dialog nicht). */
+/** Shows the short version until the box is ticked and «Weiter» is pressed (Esc does not close the dialog). */
 function disclaimerGate() {
   const d = $("#disclaimer"), check = $("#disclaimerCheck"), ok = $("#disclaimerOk");
   $("#disclaimerText").textContent = DISCLAIMER_SHORT;
@@ -230,7 +230,7 @@ function disclaimerGate() {
     d.returnValue = ""; d.showModal();
   });
 }
-/** #74: Einstellung «Hinweis zur Cash-Reserve gezeigt»; der Hinweis erscheint nur beim ersten Laden einer betroffenen Planung. */
+/** #74: Setting «notice about the cash reserve shown»; the notice appears only when an affected plan is loaded for the first time. */
 const RESERVE_NOTICE_KEY = "reserveNoticeShown";
 async function reserveNotice(p) {
   if (!reserveDiffers(p) || Pref.get(RESERVE_NOTICE_KEY, false)) return;
@@ -247,7 +247,7 @@ function normalize(p) {
   p.withdrawal.vpw ??= { horizonAge: 100, realReturn: 0.02 };
   p.withdrawal.endowment ??= { rate: 0.04, smoothing: 0.3 };
   p.withdrawal.floor ??= 0; p.withdrawal.ceiling ??= 0;
-  // Meilenstein «Alter von» ohne Person (entsteht beim Umschalten von «Datum»): erste Person verwenden
+  // Milestone «Alter von» without a person (created when switching from «Datum»): use the first person
   for (const m of p.milestones || []) if (m.kind === "age") { m.person ??= p.household?.persons?.[0]?.id; m.years ??= 65; }
   p.household.married ??= true; p.household.ahvCoupleCap ??= 3780;
   if (!p.household.persons[1]) delete p.partner;
@@ -262,13 +262,13 @@ function normalize(p) {
   p.realestate.affordability ??= { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, wealthContribution: 0.03, maxLoanToValue: 0.8 };
   p.returns.extrapolation ??= { method: "fixed", range: 30 };
   p.returns.bootstrap ??= { paths: 50000, block: 12, seed: 42 };
-  // #100: neue Planungen folgen den Vorschlagswerten des Aktienindex (`auto`); ältere setzt upgrade_plan.
-  // #132: `sampler` = Verfahren der Zufallsziehung (montecarlo::SAMPLER); ältere Planungen kennzeichnet upgrade_plan
+  // #100: new plans follow the suggested values of the stock index (`auto`); upgrade_plan sets older ones.
+  // #132: `sampler` = method of random sampling (montecarlo::SAMPLER); upgrade_plan marks older plans
   p.returns.parametric ??= { paths: 50000, mu: 0.07, sigma: 0.15, df: 6, jumpLambda: 0.05, jumpMu: -0.3, jumpSigma: 0.15, auto: true, sampler: 1 };
   p.returns.parametric.seed ??= 42; p.returns.bootstrap.seed ??= 42;
   p.returns.parametric.auto ??= p.returns.source !== "parametric";
   p.returns.fixed.saron ??= 0;
-  // #69: Anlagestrategie (ältere Planungen: aus der Zeitreihe übernommen, siehe upgrade_plan)
+  // #69: investment strategy (older plans: taken over from the time series, see upgrade_plan)
   p.returns.strategy ??= { stocks: "worldJst", bonds: "ch" };
   p.returns.strategy.weights ??= { ch: 0.2, usa: 0.4, eu: 0.3, apac: 0.1 };
   for (const k of ["stocks", "bonds", "inflation", "saron"]) {
@@ -292,13 +292,13 @@ function normalize(p) {
 }
 
 /**
- * Geladene Planung übernehmen: zuerst auf den aktuellen Stand bringen (#52, #51; Hinweise anzeigen), dann
- * normalisieren. Liefert die Hinweise.
+ * Takes over a loaded plan: first bring it up to date (#52, #51; show notes), then
+ * normalize it. Returns the notes.
  */
 async function adopt(plan) {
   let notes = [];
   try { const r = await Engine.call("upgrade_plan", { plan }); plan = r.plan; notes = r.notes || []; }
-  catch { /* ohne Rechenkern: unverändert übernehmen */ }
+  catch { /* without the engine: take over unchanged */ }
   state = normalize(plan);
   return notes;
 }
@@ -312,18 +312,18 @@ async function refreshLibrary() {
   if (current === "returns") renderSection();
 }
 
-/** #69: Verweis auf die Zeitreihe der Planung: die Anlagestrategie (`strategy:<JSON>`), bei älteren Planungen die Datei. */
+/** #69: Reference to the time series of the plan: the investment strategy (`strategy:<JSON>`), for older plans the file. */
 function seriesRef() {
   const r = state.returns;
   return r.series || (r.strategy ? "strategy:" + JSON.stringify(r.strategy) : null);
 }
-// #100: Parameter des Aktienmodells mit Vorschlagswerten je Aktienindex (Feld → Darstellung)
+// #100: Parameters of the stock model with suggested values per stock index (field → display)
 const PARAM_KEYS = { mu: "pct", sigma: "pct", df: "num", jumpLambda: "num", jumpMu: "pct", jumpSigma: "pct" };
 const paramSuggestion = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.stocks ?? null : null;
 const fmtParam = (k, v) => PARAM_KEYS[k] === "pct" ? `${fmtPct(v)} %` : (+v).toLocaleString("de-CH", { maximumFractionDigits: 2 });
-/** #100: Folgen die Parameter dem Index (`auto`), die Vorschlagswerte des gewählten Index übernehmen. Ohne
- *  Änderungsmarke und ohne eigenen Schritt im Verlauf (der aktuelle Schritt erhält dieselben Werte): Der Rechenkern
- *  rechnet bei `auto` ohnehin mit den Vorschlagswerten. */
+/** #100: If the parameters follow the index (`auto`), take over the suggested values of the chosen index. Without
+ *  change mark and without a step of its own in the history (the current step gets the same values): the engine
+ *  calculates with the suggested values anyway when `auto` is set. */
 function followSuggestion() {
   const q = state?.returns.parametric, s = paramSuggestion();
   if (!q?.auto || !s) return;
@@ -341,13 +341,13 @@ async function refreshSeriesInfo() {
     try { seriesInfo = await Engine.call("series_info", { path: s, planPath: currentPath }); }
     catch (e) { seriesInfo = { error: errText(e) }; }
   }
-  if (seriesInfoRef !== s) return; // eine neuere Abfrage läuft
+  if (seriesInfoRef !== s) return; // a newer query is running
   followSuggestion();
-  // Welche Felder «Simulation» zeigt, hängt von der Zeitreihe ab.
+  // Which fields «Simulation» shows depends on the time series.
   if (current === "returns") renderSection(); else renderDerived();
 }
 
-// ---------- Formular-Bausteine ----------
+// ---------- Form building blocks ----------
 const UNIT = { chf: () => cur(), chfopt: () => cur(), pct: () => "%", months: () => "Monate", years: () => "Jahre", num: () => "" };
 function showVal(type, v) {
   if (type === "chf") return fmtInt(v ?? 0);
@@ -356,16 +356,16 @@ function showVal(type, v) {
   if (type === "month") return ymShow(v);
   return v ?? "";
 }
-// ---------- Pflichteingaben (#14; Liste in docs/Pflichteingaben.md) ----------
+// ---------- Required inputs (#14; list in docs/Pflichteingaben.md) ----------
 const REQUIRED_PATHS = [/^household\.persons\.\d\.(name|birth)$/, /^household\.ahvCoupleCap$/, /^(partner|pension)\.pk\.(capital|conversion|lumpsum)$/,
   /^(partner|pension)\.ahv\.monthly$/, /^wealth\.(stocks|bonds|cash)$/, /^taxes\.multiplier$/];
 const isRequired = path => REQUIRED_PATHS.some(r => r.test(path));
 const reqMark = path => isRequired(path) ? ` <span class="req" title="Pflichtfeld">*</span>` : "";
-/** Vom Benutzer eingegebene, nicht lesbare Werte (Feldpfad → Abschnitt und Meldung); die Planung behält den letzten gültigen Wert. */
+/** Values entered by the user that cannot be read (field path → section and message); the plan keeps the last valid value. */
 const invalidFields = new Map();
-/** Fehlermeldungen des Rechenkerns und ungültige Eingaben direkt am Feld anzeigen. */
-// #57: Solange in ein Feld getippt wird, wartet alles (Vorschau, berechnete Werte, Meldungen, Prüfliste); erst beim
-// Verlassen (Tab, Klick daneben, Enter) wird neu gerechnet und die Meldung am Feld gezeigt oder entfernt.
+/** Shows error messages of the engine and invalid inputs directly at the field. */
+// #57: While typing in a field, everything waits (preview, computed values, messages, checklist); only when
+// leaving it (Tab, click elsewhere, Enter) is the plan recalculated and the message at the field shown or removed.
 let heldField = null, heldShown = false, pendingRefresh = false;
 function holdField(el) {
   if (heldField === el.dataset.path) return;
@@ -390,14 +390,14 @@ function applyFieldIssues() {
     if (el) (el.closest(".inp") || el).insertAdjacentHTML("afterend", `<span class="ferr" role="alert">${esc(text)}</span>`);
   }
 }
-/** Alle Fehler der Planung: ungültige Eingaben und Fehler des Rechenkerns (frisch geprüft). */
+/** All errors of the plan: invalid inputs and errors of the engine (freshly validated). */
 async function planErrors() {
   const list = [...invalidFields].map(([field, i]) => ({ section: i.section, message: i.message, field }));
   try { for (const i of await Engine.call("validate", { plan: state })) if (i.severity === "error") list.push(i); }
   catch (e) { list.push({ section: "general", message: errText(e) }); }
   return list;
 }
-/** `true` (mit Meldung und Sprung zum ersten Fehler), wenn die Planung Fehler hat: «Simulation starten» und «Optimieren» sind dann gesperrt. */
+/** `true` (with a message and a jump to the first error) if the plan has errors: «Simulation starten» and «Optimieren» are then blocked. */
 async function blockedByErrors() {
   const errs = await planErrors();
   if (!errs.length) return false;
@@ -444,7 +444,7 @@ function Series(path, label, type, note = "") {
 }
 const C = (key, arg = "") => `<span class="computed" data-computed="${key}" data-arg="${arg}"></span>`;
 
-// ---------- Abschnitte ----------
+// ---------- Sections ----------
 const R = {};
 R.general = () => `
   <h2>Haushalt & Projekt</h2><p class="lead">Grunddaten der Planung. Pflichtfelder sind mit <span class="req">*</span> gekennzeichnet. Alle Zeitangaben erfolgen als Monat und Jahr (MM.JJJJ); das Alter wird daraus berechnet.</p>
@@ -490,7 +490,7 @@ function PensionCards(root, who) {
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
     <div style="margin-top:10px">${Chk(`${ahv}.indexed`, "Rente jährlich an die Teuerung anpassen")}</div></div>`;
 }
-/** #51: Pensionskasse und AHV beginnen an den festen Meilensteinen der Person. */
+/** #51: Pension fund and AHV start at the fixed milestones of the person. */
 function fixedAt(index, kind) {
   const id = index ? (kind === "pk" ? "retire2" : "ahv2") : (kind === "pk" ? "retire" : "ahv");
   return `<label class="field"><span>Bezug ab</span><span class="computed" style="padding:8px 0">Meilenstein «${esc(state.milestones.find(m => m.id === id)?.name ?? id)}» · ${C("ms", id)} · <a href="#" data-action="goto" data-sec="milestones">ändern</a></span></label>`;
@@ -501,14 +501,14 @@ R.pension = () => `
   ${state.partner ? PensionCards("partner", state.household.persons[1].name) : ""}
   <p class="hint">${C("pkresult")}</p>`;
 
-// ---------- Säule 3a (#52) ----------
+// ---------- Pillar 3a (#52) ----------
 const newAccount = person => ({ person, balance: 0, rate: 0.01, contribution: 0, payouts: [], use: "wealth" });
-/** Id des Meilensteins «AHV-Bezug» der Person (Tranche ohne Angabe: erste Person). */
+/** Id of the milestone «AHV-Bezug» of the person (tranche without a person: first person). */
 const ahvIdOf = pid => state.household.persons.findIndex(p => p.id === pid) === 1 ? "ahv2" : "ahv";
-/** «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation in dieses Konto voraus. */
+/** «Hypothek zurückzahlen» requires a tranche with indirect amortization into this account. */
 const hasIndirectFor = pid => state.realestate.properties.some(p => p.status !== "rent" && (p.mortgage?.tranches || []).some(t =>
   (t.pillar3a ?? state.household.persons[0].id) === pid && t.periods.some(d => d.amortMode === "indirect" && +d.amort > 0)));
-// #55: Monat einer 3a-Auszahlung (Datum oder Alter der Kontoinhaberin bzw. des Kontoinhabers).
+// #55: Month of a 3a payout (date or age of the account holder).
 function payoutMonth(x, pid) {
   if (x.kind === "age") { const b = ym2i(person(pid).birth), y = +x.years; return Number.isFinite(b) && x.years !== "" && x.years != null && Number.isFinite(y) ? b + Math.round(y * 12) : NaN; }
   return ym2i(x.date);
@@ -570,7 +570,7 @@ R.wealth = () => `
     <p class="hint">Cash zählt nicht zum Portfolio. Bis zur Pensionierung (Bezug Pensionskasse der ersten Person) hält die App so viel Cash wie oben erfasst, mit der Teuerung fortgeschrieben; ein Überschuss geht nach der Aktienquote ins Portfolio, ein Fehlbetrag wird daraus nachgefüllt. Ab der Pensionierung bestimmt die Entnahmestrategie das Cash: «Standard» mit der Cash-Reserve (Abschnitt «Entnahmestrategie»), alle anderen mit ${FIXED_RESERVE_MONTHS} Monaten bzw. die 3-Topf-Strategie mit ihren Töpfen.</p></div>
   ${strategyCard()}`;
 
-/** #69: Indizes der Anlagestrategie: [Schlüssel, Name, Erklärung]. */
+/** #69: Indices of the investment strategy: [key, name, explanation]. */
 const STOCK_INDICES = [
   ["worldJst", "Welt (JST)", "Aktien von 11 Ländern (Schweiz, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Jährlich 1900–2020."],
   ["worldCustom", "Welt individuell (JST)", "Wie «Welt (JST)», aber mit eigenen Gewichten für Schweiz, USA, EU und Asien-Pazifik. Jährlich 1900–2020."],
@@ -608,15 +608,15 @@ const SOURCES = [
   ["bootstrap", "Monte Carlo · historisch", "Zufällige Blöcke aus der Zeitreihe (Länge zufällig), alle Werte aus demselben Monat.", true],
   ["parametric", "Monte Carlo · parametrisch", "Aktien mit Student-t-Verteilung und Kurssprüngen, Obligationen und Inflation mit der Korrelation der Anlagestrategie.", true]
 ];
-/** #119: Abkürzung jeder Renditequelle für den Namen eines gespeicherten Ergebnisses. */
+/** #119: Abbreviation of each return source for the name of a saved result. */
 const SOURCE_SHORT = { fixed: "Fix", historical: "Hist.", rolling: "Alle Starts", bootstrap: "MC hist.", parametric: "MC param." };
 const paramJoint = () => seriesInfo && !seriesInfo.error ? seriesInfo.parametric?.joint ?? null : null;
-/** Welche Eingaben bei der gewählten Quelle tatsächlich verwendet werden. */
+/** Which inputs are actually used with the chosen source. */
 function returnsUse() {
   const r = state.returns, src = r.source, i = seriesInfo && !seriesInfo.error ? seriesInfo : null;
   const usesSaron = state.realestate.properties.some(p => p.status !== "rent" && (p.mortgage?.tranches || []).some(t => t.periods.some(d => d.type === "saron")));
   const withSeries = ["historical", "rolling", "bootstrap"].includes(src);
-  // SARON aus der Reihe: nur ausserhalb ihres SARON-Zeitraums gilt der fixe Wert.
+  // SARON from the series: only outside its SARON period the fixed value applies.
   const saronGap = !i || !i.saronRange || i.saronRange[0] > i.first || i.saronRange[1] < i.last;
   let extrapolate = false;
   if (src === "historical") {
@@ -627,7 +627,7 @@ function returnsUse() {
     series: withSeries,
     extrapolate,
     fixedStocks: src === "fixed" || (extrapolate && r.extrapolation.method === "fixed"),
-    // #101: Das parametrische Modell zieht Obligationen und Inflation aus der Reihe; fix nur ohne Reihe.
+    // #101: The parametric model takes bonds and inflation from the series; fixed only without a series.
     fixedBonds: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
     fixedInflation: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
     fixedSaron: usesSaron && (!withSeries || saronGap || extrapolate),
@@ -676,7 +676,7 @@ const STRATS = [
   ["vpw", "Variable Prozententnahme (VPW)", "Jedes Jahr wird der Anteil des Vermögens entnommen, der es bis zum Planungsalter gleichmässig aufbraucht; der Anteil steigt mit dem Alter.", true],
   ["endowment", "Endowment-Regel", "Entnahme = Vorjahr mit Teuerung, gemischt mit einer Rate des aktuellen Vermögens (Yale/Tobin). Glättet die Ausgaben.", true]
 ];
-/** #119: Abkürzung jeder Strategie (3-Topf mit Guardrails eigens) für den Namen eines gespeicherten Ergebnisses. */
+/** #119: Abbreviation of each strategy (3 buckets with guardrails separately) for the name of a saved result. */
 const STRAT_SHORT = { standard: "Standard", three_buckets: "3-Topf", three_buckets_guardrails: "3-Topf + Guard", guardrails: "Guardrails", fixed_rate: "Fixe Rate", vpw: "VPW", endowment: "Endowment" };
 R.withdrawal = () => {
   const w = state.withdrawal;
@@ -706,9 +706,9 @@ R.withdrawal = () => {
       <p class="hint">Der Aktienanteil steht unter <a href="#" data-action="goto" data-sec="wealth">Vermögen & Anlage</a>. Alle anderen Strategien rechnen mit einer festen Reserve von ${FIXED_RESERVE_MONTHS} Monaten.</p></div>`}`;
 };
 
-/** #6: 3-Topf, deren Ausgaben die Guardrails steuern. */
+/** #6: 3 buckets whose spending is controlled by the guardrails. */
 const bucketsGuardrails = (w = state.withdrawal) => w?.strategy === "three_buckets" && w.buckets?.spending === "guardrails";
-/** Schlüssel der Entnahmestrategie einer Planung; 3-Topf mit Guardrails hat einen eigenen (wie in der Optimierung). */
+/** Key of the withdrawal strategy of a plan; 3 buckets with guardrails has its own (as in the optimization). */
 const stratKey = w => bucketsGuardrails(w) ? "three_buckets_guardrails" : w?.strategy;
 function GuardrailsCard() {
   return `<div class="card"><h3>Guardrails <span class="sub">nach Guyton-Klinger</span></h3><div class="grid2">${F("withdrawal.guardrails.initialRate", "Startrate bei Pensionierung", "pct")}${F("withdrawal.guardrails.adjust", "Anpassung bei Leitplanke", "pct")}
@@ -726,13 +726,13 @@ function TaxTable(key, label, xlabel) {
   <div style="margin-top:8px"><button class="btn small" data-action="tax-add" data-key="${key}">+ Stufe</button></div></div>
   <svg class="mini" data-taxmini="${key}" viewBox="0 0 300 64" preserveAspectRatio="none" style="height:110px"></svg></div></div>`;
 }
-// ---------- Optimierung ----------
+// ---------- Optimization ----------
 const OPT_STRATS = [["standard", "Standard"], ["three_buckets", "3-Topf"], ["three_buckets_guardrails", "3-Topf + Guardrails"], ["guardrails", "Guardrails"], ["fixed_rate", "Fixe Rate"], ["vpw", "VPW"], ["endowment", "Endowment"]];
 const OPT_DEFAULT = { goal: "consumption", minConsumption: 90, maxRuin: 5, ruinAge: "", weightMedian: 50, volWeight: 1, maxVol: "", paths: 5000, checkPaths: 10000, samples: 30, strategies: OPT_STRATS.map(x => x[0]).filter(k => k !== "three_buckets_guardrails"), ranges: {} };
 let optCfg = { ...OPT_DEFAULT };
 const OPT_ACTIONS = {};
 let lastOpt = null, optBusy = false, optError = null;
-// Die Einstellungen liegen in der Planung (`optimization`, Anteile als Dezimalzahl) und werden mit ihr gespeichert.
+// The settings are stored in the plan (`optimization`, shares as decimals) and are saved with it.
 function optFromPlan() {
   const o = state.optimization; if (!o) return { ...OPT_DEFAULT };
   const d = OPT_DEFAULT;
@@ -746,7 +746,7 @@ function optToPlan(c) {
     maxVol: c.maxVol === "" ? null : optRound(optNum(c.maxVol, 0) / 100), paths: c.paths, checkPaths: c.checkPaths, samples: c.samples, strategies: c.strategies,
     ...(Object.keys(c.ranges ?? {}).length ? { ranges: c.ranges } : {}) };
 }
-/** Schlüssel der Planung ohne die Optimierungs-Einstellungen: Sie ändern das Ergebnis einer früheren Optimierung nicht. */
+/** Key of the plan without the optimization settings: they do not change the result of an earlier optimization. */
 const optKey = () => JSON.stringify({ ...state, optimization: undefined });
 function saveOptCfg() {
   const next = optToPlan(readOptCfg());
@@ -759,15 +759,15 @@ document.addEventListener("change", e => {
 document.addEventListener("input", e => { if (e.target?.id && /^opt-/.test(e.target.id) && e.target.closest("#main")) updateEstimates(); });
 document.addEventListener("change", e => { if (e.target?.id && /^optS-/.test(e.target.id) && e.target.closest("#main")) updateEstimates(); });
 
-// ---------- Dauerschätzung ----------
-// Gemessen wird die Zeit eines Laufs dieser Planung auf diesem Rechner (Befehl bench_plan). Daraus rechnen wir die Läufe
-// hoch, die Szenarien und Optimierung brauchen. Die Suchschritte je Strategie stammen aus Messungen mit 30 Startpunkten.
+// ---------- Duration estimate ----------
+// We measure the time of one run of this plan on this computer (command bench_plan). From it we extrapolate the runs
+// that scenarios and optimization need. The search steps per strategy come from measurements with 30 starting points.
 const OPT_SEARCH_EVALS = { standard: 22, fixed_rate: 14, three_buckets: 46, three_buckets_guardrails: 110, endowment: 40, vpw: 74, guardrails: 90 };
-// ----- Fortschritt und Abbruch laufender Berechnungen -----
+// ----- Progress and cancelling of running calculations -----
 let job = null;
-/** Kennung der nächsten Berechnung; mit der Zeit begonnen, damit sie nach einem Neuladen nicht mit einer alten zusammenfällt. */
+/** Id of the next calculation; starts from the time so that after a reload it does not coincide with an old one. */
 let jobSeq = Date.now();
-/** HTML der Fortschrittsanzeige; `jobTick` füllt sie während der Berechnung. */
+/** HTML of the progress display; `jobTick` fills it during the calculation. */
 const jobCard = (title, note = "") => `<div class="card job"><h3 style="margin:0">${title}</h3><progress id="jobBar" max="1000" value="0"></progress>
   <div class="row"><span class="hint" id="jobTxt" style="margin:0">Startet…</span><button class="btn small" data-action="job-cancel" id="jobCancel">Abbrechen</button></div>${note ? `<p class="hint" style="margin:0">${note}</p>` : ""}</div>`;
 async function jobTick() {
@@ -779,7 +779,7 @@ async function jobTick() {
   bar.value = Math.round(frac * 1000);
   txt.textContent = p.cancelled ? "Wird abgebrochen…" : `${Math.round(frac * 100)} % · ${fmtShort(el)} vergangen` + (frac > 0.05 && el > 2 ? ` · noch ca. ${fmtShort(el / frac - el)}` : "");
 }
-/** Führt `fn` aus und zeigt dabei den Fortschritt; gibt `undefined` zurück, wenn abgebrochen wurde. */
+/** Runs `fn` and shows the progress meanwhile; returns `undefined` if it was cancelled. */
 async function withJob(fn) {
   job = { t0: performance.now(), id: ++jobSeq };
   job.timer = setInterval(jobTick, 250); document.documentElement.dataset.job = "on";
@@ -790,11 +790,11 @@ const jobCancel = async () => {
   const b = document.getElementById("jobCancel"); if (b) b.disabled = true;
   try { await Engine.call("cancel_job", { jobId: job?.id }); } catch (e) { toast(errText(e)); }
 };
-// `off`: Testzugang #nobench (#111). Ohne Messung zeigt die App «Dauer wird geschätzt…» und rechnet ohne Rückfrage.
+// `off`: test access #nobench (#111). Without a measurement the app shows «Dauer wird geschätzt…» and calculates without asking.
 const bench = { key: "", us: null, gen: 0, fixedPaths: null, cores: 0, busy: false, error: null, off: false };
 const benchKey = () => JSON.stringify({ ...state, optimization: undefined, scenarios: undefined });
-/** Die Pfade der Suche werden einmal erzeugt und dann je Kandidat nur gerechnet; die Prüfpfade entstehen bei jeder Auswertung neu. */
-/** Auswertungen je Strategie; mit weniger variierten Parametern sind es weniger Suchschritte. */
+/** The paths of the search are generated once and then only calculated per candidate; the check paths are created anew for every evaluation. */
+/** Evaluations per strategy; with fewer varied parameters there are fewer search steps. */
 function optEvals(k, c) {
   const s = optCat.data?.find(x => x.key === k), search = OPT_SEARCH_EVALS[k] ?? 60;
   if (!s) return c.samples + 2 + search;
@@ -802,7 +802,7 @@ function optEvals(k, c) {
   return varied === 0 ? 1 : c.samples + 2 + search * varied / usual;
 }
 function optSeconds(c) { return optSecondsFor(bench, c, c.strategies.reduce((a, k) => a + optEvals(k, c), 0)); }
-/** Geschätzte Rechenzeit, ab der in der Karte «Umfang» ein Warnsymbol erscheint (die Rückfrage vor dem Start hat ihre eigene Grenze). */
+/** Estimated computing time from which a warning icon appears in the card «Umfang» (the question before the start has its own limit). */
 const SLOW_RUN_SECONDS = 90;
 function scenSeconds() {
   const sw = state.scenarios.sweeps, per = bench.fixedPaths ?? runsPerScenario(), combos = sw.map(sweepCount).reduce((a, b) => a * b, 1);
@@ -842,13 +842,13 @@ async function ensureBench() {
   updateEstimates();
   if (benchKey() !== bench.key) scheduleBench();
 }
-/** Die Messung läuft kurz nach der letzten Änderung, damit sie beim Tippen nicht ständig startet. */
+/** The measurement runs shortly after the last change so that it does not start constantly while typing. */
 function scheduleBench() { if (bench.off) return; clearTimeout(scheduleBench.t); scheduleBench.t = setTimeout(ensureBench, 800); }
 function optInput(id, label, unit, hint = "") {
   return `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="opt-${id}" value="${esc(optCfg[id])}">${unit ? `<span class="unit">${unit}</span>` : ""}</div>${hint ? `<span class="computed">${hint}</span>` : ""}</label>`;
 }
-// ----- Parameter der Strategien: fix oder in einer Bandbreite variieren -----
-// Der Katalog (Befehl opt_params) nennt je Strategie die Parameter mit Einheit, Standard-Bandbreite und Wert der Planung.
+// ----- Parameters of the strategies: fixed or varied within a range -----
+// The catalog (command opt_params) lists per strategy the parameters with unit, default range and value of the plan.
 const optCat = { key: "", data: null, busy: false };
 const optCatKey = () => JSON.stringify([state.withdrawal, state.wealth.stockShare, state.wealth.reserveMonths]);
 async function ensureOptCatalog() {
@@ -907,7 +907,7 @@ function optMetricsRow(name, m, goal, best, extra = "", cls = "") {
   return `<tr class="${cls}"><td><b>${esc(name)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td><td class="r">${fmtInt(m.p10)}</td><td class="r">${pctTxt(m.volatility)}</td>
     <td class="r">${fmtInt(goal)}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td><td>${extra}</td></tr>`;
 }
-/** Ergebnis für Ziel 2 «Kein Notverkauf von Immobilien»: je Strategie der Anteil der Läufe mit ungeplantem Verkauf. */
+/** Result for goal 2 «Kein Notverkauf von Immobilien»: per strategy the share of runs with an unplanned sale. */
 function optResultKeep(r, q, stale) {
   const row = (name, m, extra, cls = "") => `<tr class="${cls}"><td><b>${esc(name)}</b></td><td class="r"><b>${pctTxt(m.emergencyShare)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td>
     <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td><td>${extra}</td></tr>`;
@@ -970,7 +970,7 @@ R.optimize = () => {
     <p class="hint est" id="est-opt" style="margin:8px 0 0"></p></div>
   ${res}${o && !optBusy && !optError ? `<footer class="rfoot" id="optFoot">${esc(DISCLAIMER_FOOT)}</footer>` : ""}`;
 };
-/** #140: Ganzzahl der Optimierung; «50.000» ist mehrdeutig und wird nicht als 50 übernommen (bisheriger Wert bleibt). */
+/** #140: Integer of the optimization; «50.000» is ambiguous and is not taken as 50 (the previous value stays). */
 function optInt(text, prev) {
   if (ambiguousThousands(text)) { toast(AMBIGUOUS_TEXT); return prev; }
   return Math.round(optNum(text, prev));
@@ -1008,9 +1008,9 @@ OPT_ACTIONS["opt-apply"] = d => {
   toast(`Strategie «${x.strategy}» mit den optimierten Parametern in die Planung übernommen.`);
 };
 
-// ----- Grundstückgewinnsteuer (Regeln je Kanton, editierbar) -----
-/** #138: Vorlagen der Grundstückgewinnsteuer aus dem Rechenkern (crates/engine/assets/gain-templates.json): Zürich
- *  (Tarif § 225 StG, StA eForm. 225.1, Stand 09/2025) und Aargau (§ 109 StG). Geladen beim Start. */
+// ----- Property gains tax (rules per canton, editable) -----
+/** #138: Templates of the property gains tax from the engine (crates/engine/assets/gain-templates.json): Zurich
+ *  (tariff § 225 StG, StA eForm. 225.1, as of 09/2025) and Aargau (§ 109 StG). Loaded at startup. */
 let gainTemplates = null;
 const GAIN_ZH = () => structuredClone(gainTemplates.zurich);
 const GAIN_AG = () => structuredClone(gainTemplates.aargau);
@@ -1069,7 +1069,7 @@ R.taxes = () => `<h2>Steuern</h2><p class="lead">Einfache Satztabellen; zwischen
     ${state.taxes.couple ? TaxTable("couple.income", "Einkommenssteuer (Verheiratete)", "Einkommen") + TaxTable("couple.wealth", "Vermögenssteuer (Verheiratete)", "Vermögen") + TaxTable("couple.capital", "Kapitalbezugssteuer (Verheiratete)", "Kapitalbezug") : ""}</div>` : ""}`;
 
 const PSTAT = [["owned", "Besitz"], ["planned", "Kauf geplant"], ["rent", "Miete geplant"]];
-/** #50: Periode, die erst ab dem AHV-Bezug beginnt (dann nur direkte Amortisation). */
+/** #50: Period that only starts from the AHV payout (then only direct amortization). */
 function periodAfterAhv(p, t, k) {
   const r = trancheSchedule(p, t).find(x => x.i === k);
   return !!r && r.start >= msMonth(ahvIdOf(t.pillar3a));
@@ -1146,7 +1146,7 @@ R.scenarios = () => `<h2>Szenarien & Simulation</h2><p class="lead">Parameter, d
     <p class="hint est" id="est-scen" style="margin:6px 0 0"></p>
     <p class="hint">Der Rechenkern verteilt die Läufe auf alle Prozessorkerne. Die Ergebnisse (Perzentile, Erfolgswahrscheinlichkeit) erscheinen in einer eigenen Ergebnisansicht.</p></div>`;
 
-// ---------- Berechnete Anzeigen ----------
+// ---------- Computed displays ----------
 function sweepCount(s) {
   return sweepSteps(s.from, s.to, s.step, SWEEP_PARAMS.find(p => p.id === s.param)?.type === "month");
 }
@@ -1161,7 +1161,7 @@ function runsPerScenario() {
   return { fixed: 1, historical: 1, rolling: rollingCount(), bootstrap: r.bootstrap.paths, parametric: r.parametric.paths }[r.source];
 }
 const COMPUTED = {
-  // #55: Auszahlungsplan der Säule 3a (Zeile «k.j»): Monat und Alter, Guthaben vor und nach der Auszahlung aus der Vorschau.
+  // #55: Payout plan of pillar 3a (row «k.j»): month and age, balance before and after the payout from the preview.
   p3aat: a => {
     const [k, j] = a.split(".").map(Number), acc = state.pillar3a[k], x = acc?.payouts[j];
     const m = x ? payoutMonth(x, acc.person) : NaN;
@@ -1186,7 +1186,7 @@ const COMPUTED = {
   wdinit: () => { const e = lastSim?.events.find(x => x.kind === "withdrawal"); return e ? `Vorschau: ${esc(e.label)} (${ymShow(i2ym(e.m))}).` : "Vorschau: keine Entnahme im Simulationszeitraum (Pensionierung ausserhalb?)."; },
   age0: () => { const s = startM(); return Number.isFinite(s) ? `Alter bei Simulationsstart: <b>${ageStr(s)}</b>` : ""; },
   pkresult: () => lastSim ? `${state.partner ? "Haushalt, bei Pensionierung" : "Bei Pensionierung"}: Kapitalbezug netto <b>${fmtMoney(lastSim.lumpNet)}</b> (Steuer ${fmtMoney(lastSim.lumpTax)}), Rente <b>${fmtMoney(lastSim.pkPension)}</b> / Monat.` : "",
-  // #73: Anteil von Aktien bzw. Obligationen am Portfolio (ohne Cash), ganzzahlig; ohne Portfolio keine Angabe.
+  // #73: Share of stocks or bonds in the portfolio (without cash), integer; without a portfolio no value.
   wquote: arg => {
     const w = state.wealth, s = Math.max(0, +w.stocks || 0), b = Math.max(0, +w.bonds || 0);
     return s + b > 0 ? `${Math.round(100 * (arg === "stocks" ? s : b) / (s + b))} % des Portfolios` : "";
@@ -1197,18 +1197,18 @@ const COMPUTED = {
     if (seriesInfo.error) return `<span style="color:var(--err)">${esc(seriesInfo.error)}</span>`;
     return `<b>${fmtInt(rollingCount())}</b> Startzeitpunkte decken den Zeitraum von ${((endM() - startM()) / 12).toFixed(1)} Jahren vollständig ab.`;
   },
-  // #69: Summe der Gewichte von «Welt individuell»
+  // #69: Sum of the weights of «Welt individuell»
   wsum: () => {
     const w = state.returns.strategy?.weights || {}, sum = REGION_KEYS.reduce((a, k) => a + (+w[k] || 0), 0);
     return `Summe <b${Math.abs(sum - 1) > 1e-6 ? ' style="color:var(--err)"' : ""}>${fmtPct(sum)} %</b> (muss 100 % ergeben).`;
   },
-  // #69: Kurzinfo der Zeitreihe zur Strategie
+  // #69: Short info on the time series of the strategy
   strategyinfo: () => {
     const i = seriesInfo;
     if (!i) return "";
-    if (i.error) return i.error.includes("Gewichte") ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // Gewichte: Meldung am Feld
+    if (i.error) return i.error.includes("Gewichte") ? "" : `<span style="color:var(--err)">${esc(i.error)}</span>`; // weights: message at the field
     const p = v => v == null || Number.isNaN(v) ? "–" : `${(v * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
-    // #69/AK8: Die Mittelwerte gelten für den gemeinsamen Zeitraum; ein längerer Index wird darauf gekürzt.
+    // #69/AK8: The means apply to the common period; a longer index is cut to it.
     const from = +String(i.first).slice(0, 4), to = +String(i.last).slice(0, 4), span = `${from}–${to}`;
     const cut = (i.parts || []).filter(x => x.first < from || x.last > to);
     const clip = cut.length ? `<span class="cliphint" id="strategyClip">⚠ ${cut.map(x => `${esc(x.label)} reichen von ${x.first} bis ${x.last}`).join(", ")} und werden auf den gemeinsamen Zeitraum ${span} gekürzt. Die Simulation (Monte Carlo und historische Verläufe) nutzt nur diesen Zeitraum.</span>` : "";
@@ -1220,7 +1220,7 @@ const COMPUTED = {
     return "";
   },
   basis: () => esc(previewBasis || "die fixen Werte."),
-  // #100: Vorschlagswert neben einem Feld des Aktienmodells (nur bei eigenen Werten)
+  // #100: Suggested value next to a field of the stock model (only with own values)
   psug: k => {
     const q = state.returns.parametric, s = paramSuggestion();
     return !s || q.auto ? "" : `Vorschlag: ${fmtParam(k, s[k])}`;
@@ -1234,7 +1234,7 @@ const COMPUTED = {
     return q.auto ? `Die Werte folgen dem Aktienindex <b>${esc(name)}</b>: Vorschlagswerte aus den Jahren ${y[0]}–${y[1]}, so gewählt, dass die Jahresrenditen dem historischen Bootstrap entsprechen. Ändern Sie einen Wert, gelten Ihre eigenen Werte.`
       : `Eigene Werte. Neben den Feldern stehen die Vorschlagswerte für <b>${esc(name)}</b>. <button class="btn small" data-action="param-suggest">Vorschlagswerte übernehmen</button>`;
   },
-  // #101: Mittel, Streuung und Korrelation von Aktien, Obligationen und Inflation der Reihe
+  // #101: Mean, spread and correlation of stocks, bonds and inflation of the series
   pjoint: () => {
     const j = paramJoint();
     if (!seriesInfo) return "";
@@ -1288,10 +1288,10 @@ const COMPUTED = {
     return `${sw.length ? sw.map(fmtInt).join(" × ") + " Kombinationen" : "1 Szenario"} × ${fmtInt(per)} ${per === 1 ? "Lauf" : "Läufe"} = <b>${fmtInt(combos * per)} Simulationsläufe</b>${over}`;
   }
 };
-/** Abschnitt des Editors zu einem Hauptschlüssel der Planung (für die Meldungen beim Löschen eines Meilensteins). */
+/** Section of the editor for a main key of the plan (for the messages when deleting a milestone). */
 const SECTION_OF = { household: "Haushalt & Projekt", pension: "Vorsorge", partner: "Vorsorge", pillar3a: "Säule 3a", flows: "Einnahmen & Ausgaben", wealth: "Vermögen & Anlage", returns: "Simulation",
   withdrawal: "Entnahmestrategie", optimization: "Optimierung", taxes: "Steuern", realestate: "Immobilien", scenarios: "Szenarien & Simulation" };
-/** Verwendungen eines Meilensteins ausserhalb der Meilenstein-Tabelle: [{ section, set(wert) }]. */
+/** Uses of a milestone outside the milestone table: [{ section, set(value) }]. */
 function milestoneRefs(id) {
   const out = [];
   const walk = (o, top) => {
@@ -1306,17 +1306,17 @@ function milestoneRefs(id) {
   return out;
 }
 const countRefs = id => milestoneRefs(id).length;
-/** #51: feste Meilensteine einer Person («Bezug Pensionskasse», «AHV-Bezug»); `null` für alle anderen. */
+/** #51: Fixed milestones of a person («Bezug Pensionskasse», «AHV-Bezug»); `null` for all others. */
 const SYS_MS = { retire: { kind: "pk", index: 0 }, ahv: { kind: "ahv", index: 0 }, retire2: { kind: "pk", index: 1 }, ahv2: { kind: "ahv", index: 1 } };
 const sysMs = ms => SYS_MS[ms.id] ?? null;
-/** Start, Ende und die festen Meilensteine jeder Person lassen sich nicht löschen. */
+/** Start, end and the fixed milestones of each person cannot be deleted. */
 const msLocked = ms => !!ms.fixed || !!sysMs(ms);
 
 // ---------- Rendering ----------
 /**
- * #112: Das Menü wird einmal aufgebaut und danach nur nachgeführt (aktiver Abschnitt, Zahl der Fehler und Warnungen).
- * Ein Neuaufbau bei jeder Vorschau ersetzte die Einträge; fiel er zwischen Drücken und Loslassen der Maustaste, ging der
- * Klick verloren.
+ * #112: The menu is built once and afterwards only updated (active section, number of errors and warnings).
+ * Rebuilding it on every preview replaced the entries; if that happened between pressing and releasing the mouse button, the
+ * click was lost.
  */
 function renderNav(vals) {
   const nav = $("#nav");
@@ -1362,7 +1362,7 @@ function renderVal(vals) {
   vals.sort((a, b) => order[a.sev] - order[b.sev]);
   const html = vals.length ? vals.map(v => `<li class="${v.sev}" data-action="goto" data-sec="${v.sec}"><span class="ic">${v.sev === "err" ? "!" : "▲"}</span><span>${v.text}</span><span class="sec">${SECTIONS.find(s => s.id === v.sec).title}</span></li>`).join("")
     : `<li class="ok"><span class="ic">✓</span><span>Keine Fehler gefunden.</span></li>`;
-  // #112: nur neu aufbauen, wenn sich die Meldungen ändern (sonst ginge ein Klick auf eine Meldung verloren)
+  // #112: only rebuild if the messages change (otherwise a click on a message would be lost)
   if (html !== renderVal.html) { $("#val").innerHTML = html; renderVal.html = html; }
 }
 
@@ -1391,7 +1391,7 @@ function renderChart(svgSel, tipSel, s) {
   let g = "";
   for (let v = 0; v <= top + 1e-6; v += step) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10.5" fill="${css("--muted")}">${fmtMio(v)}</text>`;
   for (let i = 0; i < n; i++) { const mm = s.m[i]; if (mm % 60 === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="${css("--muted")}">${mm / 12}</text>`; }
-  // #114: Bezugslinie bei 0 wie in den Ergebnisgrafiken
+  // #114: Reference line at 0 as in the result charts
   g += `<line class="ref" x1="${L}" x2="${W - Rr}" y1="${y(0)}" y2="${y(0)}" stroke="${css("--text")}" stroke-opacity=".6" stroke-width="2"/>`;
   const stack = [s.pk, s.prop, s.liquid], cols = ["--c3", "--c2", "--c1"];
   let base = new Array(n).fill(0), areas = "";
@@ -1442,8 +1442,8 @@ function renderTimeline() {
       <text class="lbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11.5" text-anchor="${anchorEnd ? "end" : "start"}" fill="${css("--text")}"><tspan font-weight="600">${esc(ms.name)}</tspan> <tspan fill="${css("--muted")}">${ymShow(i2ym(m))} · ${ageStr(m)} J.</tspan></text>
       <rect x="${lx0}" y="${ly - 12}" width="${w}" height="16" fill="transparent"/></g>`;
   }
-  // Immobilienereignisse (nur mit Simulationsergebnis): Dreieck unter der Linie, Beschriftung darunter, gestaffelt.
-  // Form und Lage unterscheiden sie von den Meilensteinen (Kreis auf der Linie, Beschriftung darüber).
+  // Property events (only with a simulation result): triangle below the line, label underneath, staggered.
+  // Shape and position distinguish them from the milestones (circle on the line, label above).
   const pev = (lastSim?.propEvents || []).filter(o => o.m >= s0 && o.m <= e).sort((a, b) => a.m - b.m);
   const TL_EV = { purchase: "Kauf", sale: "Verkauf", emergencySale: "Notverkauf" }, compact = pev.length > 15;
   const evLanes = [-Infinity, -Infinity, -Infinity], top = 104;
@@ -1462,9 +1462,9 @@ function renderTimeline() {
   svg.innerHTML = h;
 }
 
-/** Sichtbarer Bereich je Mini-Grafik (Monatsindizes); ohne Eintrag der ganze Zeitraum. */
+/** Visible range per mini chart (month indices); without an entry the whole period. */
 const miniZoom = {};
-/** Gemeinsam für Editor- und Ergebnisgrafiken: Zoom-Schaltflächen, Vorgabe «die ersten N Jahre» und sichtbarer Bereich. */
+/** Shared by editor and result charts: zoom buttons, default «the first N years» and visible range. */
 const ZOOMS = [["0", "Alles"], ["10", "10 J."], ["5", "5 J."], ["2", "2 J."]];
 const zoomButtons = (action, active, attrs = "") => ZOOMS.map(([y, l]) => `<button data-action="${action}" ${attrs} data-years="${y}" class="${String(active ?? 0) === y ? "on" : ""}">${l}</button>`).join("");
 const presetZoom = years => (years ? { from: startM(), to: Math.min(endM(), startM() + years * 12), years } : null);
@@ -1481,7 +1481,7 @@ function drawMini(svg) {
   if (!ser || !(endM() > startM())) { svg.innerHTML = ""; return; }
   const [a, b] = miniRange(path), W = svg.clientWidth || 220, H = svg.clientHeight || 96, T = 14, Bm = 16;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  // Exakte Stufen: Wert am Anfang des Ausschnitts und bei jeder Änderung darin.
+  // Exact steps: value at the start of the section and at every change within it.
   const changes = ser.mode === "timed" ? ser.rows.map(r => refMonth(r.from)).filter(m => m > a && m <= b) : [];
   const pts = [a, ...[...new Set(changes)].sort((x, y) => x - y)], vals = pts.map(m => seriesAt(ser, m));
   const max = Math.max(...vals, 1e-9), min = Math.min(0, ...vals);
@@ -1548,13 +1548,13 @@ function drawTaxMini(svg) {
   svg.innerHTML = `<path d="${d}" fill="none" stroke="${css("--accent")}" stroke-width="2" vector-effect="non-scaling-stroke"/><text x="4" y="11" font-size="10" fill="${css("--muted")}">Satz bis ${fmtPct(ymax)} %</text>`;
 }
 
-// ---------- Ereignisse ----------
-/** Meldet der Desktop-App, ob ungespeicherte Änderungen vorliegen (für die Rückfrage beim Beenden). */
+// ---------- Events ----------
+/** Tells the desktop app whether there are unsaved changes (for the question when quitting). */
 function pushDirty() { if (Engine.inApp) Engine.call("set_dirty", { dirty }).catch(() => {}); }
 function markDirty() { dirty = true; $("#dirty").textContent = "● ungespeichert"; pushDirty(); History.note(); stepTouched(); }
 
-// ---------- Rückgängig / Wiederholen ----------
-/** Verlauf der Planung als JSON-Schnappschüsse; schnelle Eingaben werden zusammengefasst. */
+// ---------- Undo / redo ----------
+/** History of the plan as JSON snapshots; quick inputs are merged. */
 const History = {
   stack: [], pos: -1, timer: 0,
   reset() { clearTimeout(this.timer); this.stack = [JSON.stringify(state)]; this.pos = 0; invalidFields.clear(); },
@@ -1567,7 +1567,7 @@ const History = {
     if (this.stack.length > 200) this.stack.shift();
     this.pos = this.stack.length - 1;
   },
-  /** Ändert den aktuellen Schritt, ohne einen neuen anzulegen (abgeleitete Werte, #100). */
+  /** Changes the current step without creating a new one (derived values, #100). */
   patch(f) {
     if (this.pos < 0 || !this.stack[this.pos]) return;
     const o = JSON.parse(this.stack[this.pos]); f(o); this.stack[this.pos] = JSON.stringify(o);
@@ -1581,7 +1581,7 @@ const History = {
   }
 };
 
-// ---------- Tastenkürzel ----------
+// ---------- Keyboard shortcuts ----------
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const MOD = IS_MAC ? "⌘" : "Ctrl+", SHIFT = IS_MAC ? "⇧" : "Shift+";
 const SHORTCUTS = [
@@ -1593,7 +1593,7 @@ const SHORTCUTS = [
   ["F1", "Hilfe zum aktuellen Thema (Feld, Abschnitt, Grafik)", null], [`${SHIFT}${MOD}?`, "Handbuch", null]
 ];
 let lastCommand = { id: "", t: 0 };
-/** Führt einen Befehl aus (Menü der Desktop-App oder Tastatur); doppelte Auslösung wird ignoriert. */
+/** Runs a command (menu of the desktop app or keyboard); a duplicate trigger is ignored. */
 function command(id) {
   const now = performance.now();
   if (lastCommand.id === id && now - lastCommand.t < 250) return;
@@ -1612,7 +1612,7 @@ function command(id) {
 }
 async function showAbout() {
   let info = null;
-  try { info = await Engine.call("app_info"); } catch { /* ohne Rechenkern keine Angaben */ }
+  try { info = await Engine.call("app_info"); } catch { /* without the engine no details */ }
   const built = info?.buildEpoch ? new Date(info.buildEpoch * 1000).toLocaleString("de-CH", { dateStyle: "medium", timeStyle: "medium" }) : "nicht bekannt (Entwicklungsserver)";
   ask("Über VivaPlan", `<p style="margin-top:0">Pensionsplanung für die Schweiz: Monat für Monat durchgerechnet, mit Monte Carlo und Szenarien.</p>
     <table class="tbl" id="aboutTbl"><tr><td class="l">Version</td><td class="l"><b>${esc(info?.version ?? "unbekannt")}</b></td></tr>
@@ -1640,9 +1640,9 @@ document.addEventListener("keydown", e => {
     if (SECTIONS[i]) goto(SECTIONS[i].id);
   }
 });
-// Menü der Desktop-App
+// Menu of the desktop app
 if (window.__TAURI__?.event) window.__TAURI__.event.listen("menu", ev => command(ev.payload));
-/** Beenden mit ungespeicherten Änderungen: speichern, verwerfen oder abbrechen. */
+/** Quitting with unsaved changes: save, discard or cancel. */
 async function confirmQuit() {
   if (dirty) {
     const r = await ask("Ungespeicherte Änderungen", "Die Planung hat ungespeicherte Änderungen. Vor dem Beenden speichern?", null, "Speichern", "Verwerfen");
@@ -1671,7 +1671,7 @@ function readInput(el) {
   if (t === "select" || t === "radio" || t === "text") return el.value;
   if (t === "month") return parseShow(el.value);
   if (t === "chfopt" && el.value.trim() === "") return undefined;
-  // #140: Beträge und Ganzzahlen nehmen «1.234» nicht als 1.234
+  // #140: Amounts and integers do not take «1.234» as 1.234
   const v = t === "chf" || t === "chfopt" || el.dataset.int ? parseAmount(el.value) : parseNum(el.value);
   if (v === null) return null;
   return t === "pct" ? v / 100 : v;
@@ -1684,7 +1684,7 @@ function onEdit(el) {
     markDirty(); renderSection(); return;
   }
   const v = readInput(el);
-  // #57: nur Textfelder warten; Kästchen und Optionsfelder wirken sofort
+  // #57: only text fields wait; checkboxes and radio buttons take effect immediately
   const typing = document.activeElement === el && el.matches("input:not([type=checkbox]):not([type=radio])");
   if (typing) holdField(el);
   if (v === null) {
@@ -1696,27 +1696,27 @@ function onEdit(el) {
   invalidFields.delete(path);
   if (!typing) el.classList.remove("invalid");
   const kindMs = /^milestones\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
-  const ergibt = kindMs ? msMonth(kindMs.id) : NaN; // Zeitpunkt vor dem Wechsel (Spalte «Ergibt»)
+  const ergibt = kindMs ? msMonth(kindMs.id) : NaN; // point in time before the change (column «Ergibt»)
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
   setP(path, v); markDirty();
-  // #100: eine eigene Eingabe im Aktienmodell beendet das Folgen der Vorschlagswerte
+  // #100: an own input in the stock model ends following the suggested values
   if (/^returns\.parametric\.(mu|sigma|df|jumpLambda|jumpMu|jumpSigma)$/.test(path)) state.returns.parametric.auto = false;
   if (/\.amortMode$/.test(path) && v === "indirect") {
-    // #52: Die indirekte Amortisation braucht ein 3a-Konto (erste Person bzw. gewählte Person der Tranche).
+    // #52: Indirect amortization needs a 3a account (first person or chosen person of the tranche).
     const t = getP(path.split(".").slice(0, 6).join(".")), pid = t?.pillar3a ?? state.household.persons[0].id;
     if (!state.pillar3a.some(a => a.person === pid)) state.pillar3a.push(newAccount(pid));
   }
-  if (/^milestones\.\d+\.kind$/.test(path)) { // «Alter von» braucht Person und Jahre, «Datum» ein Datum
+  if (/^milestones\.\d+\.kind$/.test(path)) { // «Alter von» needs a person and years, «Datum» a date
     const m = getP(path.replace(/\.kind$/, ""));
-    // Der Zeitpunkt bleibt derselbe: «Alter von» übernimmt das Alter, «Datum» das Datum aus der Spalte «Ergibt»
+    // The point in time stays the same: «Alter von» takes over the age, «Datum» the date from the column «Ergibt»
     if (v === "age") {
       if (sysMs(m)) m.person = state.household.persons[sysMs(m).index]?.id;
       m.person ??= state.household.persons[0]?.id;
       m.years = Number.isFinite(ergibt) ? Math.round((ergibt - ym2i(person(m.person).birth)) / 12 * 100) / 100 : m.years ?? 65;
     } else m.date = Number.isFinite(ergibt) ? i2ym(ergibt) : m.date ?? i2ym(startM() + 60);
   }
-  if (kindPay) { // #55: wie bei Meilensteinen bleibt der Zeitpunkt beim Wechsel gleich
+  if (kindPay) { // #55: as with milestones the point in time stays the same on change
     if (v === "age") { kindPay.years = Number.isFinite(payAt) ? Math.round(ageAt(payAt, payPid) * 100) / 100 : 60; delete kindPay.date; }
     else { kindPay.date = i2ym(Number.isFinite(payAt) ? payAt : startM()); delete kindPay.years; delete kindPay.kind; }
   }
@@ -1737,8 +1737,8 @@ document.addEventListener("focusout", e => {
 });
 
 /**
- * Leere Planung mit Standardwerten für «Neu»: Start im aktuellen Monat, eine Person ohne Namen, keine Beträge, keine
- * Immobilien, keine Variationen. Renditen, Steuertabellen und Strategieparameter behalten die Standardwerte der Vorlage.
+ * Empty plan with default values for «Neu»: start in the current month, one person without a name, no amounts, no
+ * properties, no variations. Returns, tax tables and strategy parameters keep the default values of the template.
  */
 function blankPlan(base, now = new Date()) {
   const p = JSON.parse(JSON.stringify(base)), cur = now.getFullYear() * 12 + now.getMonth(), start = i2ym(cur);
@@ -1766,7 +1766,7 @@ const ACTIONS = {
   goto: d => goto(d.sec),
   "ms-goto": d => { flashId = d.id; goto("milestones"); flashId = null; },
   set: d => { setP(d.path, d.value); markDirty(); renderSection(); if (d.path === "returns.source") refreshSeriesInfo(); },
-  // #100: wieder den Vorschlagswerten des Aktienindex folgen
+  // #100: follow the suggested values of the stock index again
   "param-suggest": () => { state.returns.parametric.auto = true; followSuggestion(); markDirty(); renderSection(); },
   "series-mode": d => {
     const s = getP(d.path); if (s.mode === d.mode) return;
@@ -1799,7 +1799,7 @@ const ACTIONS = {
     if (!ok) return;
     History.commit();
     for (const r of refs) r.parent[r.key] = date;
-    // Zeitreihen: gleicher Zeitpunkt in mehreren Zeilen → die spätere Zeile gilt
+    // Time series: same point in time in several rows → the later row applies
     let dups = 0;
     const fix = o => {
       if (!o || typeof o !== "object") return;
@@ -1817,8 +1817,8 @@ const ACTIONS = {
   },
   "p3a-add": d => { state.pillar3a.push(newAccount(d.person)); markDirty(); renderSection(); },
   "p3a-payout-add": d => {
-    // #55: ein Jahr nach der letzten Zeile (ohne Zeile: frühester erlaubter Monat), höchstens im AHV-Bezug; Betrag
-    // = Guthaben laut Vorschau zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1'000.
+    // #55: one year after the last row (without a row: earliest allowed month), at most at the AHV payout; amount
+    // = balance according to the preview at that point in time after the earlier payouts, rounded down to 1'000.
     const a = state.pillar3a[+d.k], pi = state.household.persons.findIndex(q => q.id === a.person), ahv = msMonth(pi === 1 ? "ahv2" : "ahv");
     const s0 = startM(), months = a.payouts.map(x => payoutMonth(x, a.person)).filter(Number.isFinite);
     let m = months.length ? Math.max(...months) + 12 : Math.max(s0, Number.isFinite(ahv) ? ahv - 60 : s0);
@@ -1905,28 +1905,28 @@ const ACTIONS = {
   run: () => runSimulation(),
   help: () => command("help"),
   about: () => command("about"),
-  // #61/AK4: aus dem Dialog «Über VivaPlan» zum vollständigen Haftungsausschluss in der Hilfe
+  // #61/AK4: from the dialog «Über VivaPlan» to the full disclaimer in the help
   "about-disclaimer": () => { $("#ask").close(); Help.show("disclaimer"); },
   back: () => showResults(false),
   detail: d => showDetail(+d.p),
   rtab: d => { resultTab = d.tab; renderResults(lastRun); },
   real: d => { realView = d.v === "1"; redrawResults(); },
   "surv-scale": d => { survFull = d.v === "0"; redrawResults(); },
-  // #115: Registerkarten und Auswahlen im Vergleich
+  // #115: Tabs and selections in the comparison
   "cmp-tab": d => { compareTab = d.tab; compareRuns(); },
   "cmp-liquid": d => { cmpLiquid = d.v; compareRuns(); },
   "cmp-flow": d => { cmpFlow = d.v; compareRuns(); },
   "cmp-p": d => { cmpP = +d.p; compareRuns(); },
-  // #118: erster Klick aufsteigend, jeder weitere kehrt die Richtung um
+  // #118: first click ascending, each further one reverses the direction
   "cmp-sort": d => { cmpSort = cmpSort?.col === d.col ? { col: d.col, dir: -cmpSort.dir } : { col: d.col, dir: 1 }; compareRuns(); },
   "bk-toggle": d => { bucketOpen.has(d.y) ? bucketOpen.delete(d.y) : bucketOpen.add(d.y); renderResults(lastRun); },
   "info-toggle": (d, el) => { const open = !el.classList.contains("open"); document.querySelectorAll(".infopop.open").forEach(x => x.classList.remove("open")); if (open) el.classList.add("open"); },
   "tax-cols": () => { showTaxCols = !showTaxCols; Pref.set("showTaxCols", showTaxCols); renderResults(lastRun); },
   comp: d => { compPercent = d.v === "1"; renderResults(lastRun); },
-  // #122: gilt im Einzelergebnis und im Vergleich
+  // #122: applies in the single result and in the comparison
   mkt: d => { mktPct = d.v === "pct"; redrawResults(); },
   "mkt-log": d => { mktLog = d.v === "1"; redrawResults(); },
-  // Zoom der Ergebnisgrafiken: gilt für alle Registerkarten und bleibt beim Wechsel erhalten
+  // Zoom of the result charts: applies to all tabs and is kept when switching
   "var-opt": () => { const o = Optimum.find(lastRun?.scenarios, 50); if (o) pickVariation(o.items.map(it => it.grid)); },
   "var-plan": () => pickVariation(state.scenarios.sweeps.map(() => null)),
   "res-zoom": d => { stepZoom(+d.years); redrawResults(); },
@@ -1938,7 +1938,7 @@ const ACTIONS = {
     renderDerived();
   }
 };
-/** Übernimmt eine geöffnete Planung ({path, plan}) in den Editor. */
+/** Takes over an opened plan ({path, plan}) into the editor. */
 async function showOpened(r) {
   if (!r) return;
   const notes = await adopt(r.plan); setFile(r.path); History.reset(); goto("general"); refreshSeriesInfo();
@@ -1946,12 +1946,12 @@ async function showOpened(r) {
   await showNotes(notes);
   await reserveNotice(state);
 }
-// #44: Doppelklick auf eine Planung im Finder, während die App läuft.
+// #44: Double-click on a plan in the Finder while the app is running.
 if (window.__TAURI__?.event) window.__TAURI__.event.listen("open-file", async ev => {
   if (!await confirmDiscard()) return;
   try { await showOpened(await Engine.call("open_path", { path: ev.payload })); } catch (e) { toast(errText(e)); }
 });
-/** #44: Fenstertitel «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan». */
+/** #44: Window title «VivaPlan - ‹file name›», without a file just «VivaPlan». */
 function showTitle(name) {
   document.title = name ? `VivaPlan - ${name}` : "VivaPlan";
   if (Engine.inApp) Engine.call("set_window_title", { path: currentPath }).catch(() => {});
@@ -1974,7 +1974,7 @@ async function save(as) {
     setFile(p); toast(`Gespeichert: ${baseName(p)}`);
   } catch (e) { toast(errText(e)); }
 }
-/** Eigener Dialog (statt prompt/confirm). Mit `value` gibt es ein Eingabefeld. */
+/** Own dialog (instead of prompt/confirm). With `value` there is an input field. */
 function ask(title, html, value = null, okLabel = "OK", discardLabel = null) {
   return new Promise(res => {
     const d = $("#ask"), inp = $("#askInput"), dis = d.querySelector('button[value="discard"]');
@@ -1982,7 +1982,7 @@ function ask(title, html, value = null, okLabel = "OK", discardLabel = null) {
     d.querySelector('button[value="ok"]').textContent = okLabel;
     $("#askTitle").textContent = title; $("#askText").innerHTML = html;
     inp.hidden = value === null; inp.value = value ?? ""; d.returnValue = "";
-    // #111: Das Ereignis «close» kommt verzögert. Ist der Dialog schon wieder offen (nächste Frage), gehört es zur vorherigen.
+    // #111: The event «close» arrives late. If the dialog is already open again (next question), it belongs to the previous one.
     d.onclose = () => { if (!d.open) res(d.returnValue === "discard" ? "discard" : d.returnValue === "ok" ? (value === null ? true : inp.value.trim()) : null); };
     d.showModal(); if (value !== null) inp.select();
   });
@@ -1996,12 +1996,12 @@ function download() {
 Object.assign(ACTIONS, OPT_ACTIONS, { "job-cancel": jobCancel });
 document.addEventListener("change", e => { if (/^opt(S)?-/.test(e.target.id || "")) readOptCfg(); });
 document.addEventListener("click", e => {
-  // Klick ausserhalb schliesst geöffnete Info-Popups; im Popup bleibt Text markier- und kopierbar.
+  // A click outside closes open info popups; inside the popup text stays selectable and copyable.
   if (!e.target.closest(".infopop")) document.querySelectorAll(".infopop.open").forEach(x => x.classList.remove("open"));
   if (e.target.closest(".infobody")) return;
   const el = e.target.closest("[data-action]"); if (!el) return;
   const fn = ACTIONS[el.dataset.action]; if (!fn) return;
-  // Kontrollkästchen behalten ihren Zustand (preventDefault würde das Häkchen zurücksetzen).
+  // Checkboxes keep their state (preventDefault would reset the tick).
   if (el.type !== "checkbox") e.preventDefault();
   fn(el.dataset, el);
 });
@@ -2009,8 +2009,8 @@ $("#fileInput").addEventListener("change", async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const obj = JSON.parse(await f.text());
-    // #44: alte Kennung pensionsplaner/1 bleibt lesbar (legacy: RetirementPlanner). #144: eine andere Kennung stammt
-    // aus einer neueren Version und wird mit eigener Meldung abgelehnt.
+    // #44: old format id pensionsplaner/1 stays readable (legacy: RetirementPlanner). #144: another format id comes
+    // from a newer version and is rejected with its own message.
     if (typeof obj?.format === "string" && !KNOWN_FORMATS.includes(obj.format)) throw new Error(unknownFormatText(obj.format));
     if (!KNOWN_FORMATS.includes(obj?.format)) throw 0;
     const notes = await adopt(obj); setFile(null); History.reset(); $("#fileName").textContent = f.name; showTitle(f.name); goto("general"); refreshSeriesInfo();
@@ -2023,20 +2023,20 @@ $("#fileInput").addEventListener("change", async e => {
 window.addEventListener("resize", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
 
-// ---------- Einstellungen (#25) ----------
-/** Standardwerte der Einstellungen; der Rechenkern kennt dieselben (crates/engine/src/settings.rs). */
+// ---------- Settings (#25) ----------
+/** Default values of the settings; the engine knows the same ones (crates/engine/src/settings.rs). */
 const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258 };
 const LIMIT_FIELDS = [["ahvMin", "AHV-Bezug: untere Grenze", "Jahre"], ["ahvMax", "AHV-Bezug: obere Grenze", "Jahre"],
   ["pkMin", "Bezug Pensionskasse: untere Grenze", "Jahre"], ["pkMax", "Bezug Pensionskasse: obere Grenze", "Jahre"],
   ["pillar3aMax", "Säule 3a: Maximalbetrag der Einzahlung pro Jahr", null]];
-/** Geltende Grenzen: gespeicherte Werte, sonst die Standardwerte. Sie gelten für alle Planungen dieses Geräts. */
+/** Applicable limits: saved values, otherwise the defaults. They apply to all plans on this device. */
 function limits() {
   const saved = Pref.get("limits", null), l = { ...LIMIT_DEFAULTS };
   if (saved && typeof saved === "object") for (const k of Object.keys(LIMIT_DEFAULTS)) if (Number.isFinite(saved[k])) l[k] = saved[k];
   return l;
 }
 Engine.limits = limits;
-/** Prüfung wie im Rechenkern (`Limits::problems`). */
+/** Validation as in the engine (`Limits::problems`). */
 function limitProblems(l) {
   const out = [], whole = x => Number.isInteger(x) && x >= 0 && x <= 130;
   for (const [what, lo, hi] of [["AHV-Bezug", l.ahvMin, l.ahvMax], ["Bezug Pensionskasse", l.pkMin, l.pkMax]]) {
@@ -2046,7 +2046,7 @@ function limitProblems(l) {
   if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push("Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.");
   return out;
 }
-/** #110: Rückfrage zum Speichern vor der Simulation (Standard: ein). */
+/** #110: Question about saving before the simulation (default: on). */
 const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
 function settingsFields(l) {
   return `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> Vor der Simulation fragen, ob die Planung gespeichert werden soll</label>`
@@ -2054,11 +2054,11 @@ function settingsFields(l) {
 }
 function readSettings() {
   const l = {};
-  // #140: Der Höchstbetrag der Säule 3a ist ein Betrag («7.258» ist mehrdeutig)
+  // #140: The maximum amount of pillar 3a is an amount («7.258» is ambiguous)
   for (const [k] of LIMIT_FIELDS) { const t = $("#set-" + k).value, v = k === "pillar3aMax" ? parseAmount(t) : parseNum(t); l[k] = v === null ? NaN : v; }
   return l;
 }
-/** Dialog «Einstellungen»: gilt für alle Planungen, wird lokal gespeichert, nie in der Planungsdatei. */
+/** Dialog «Einstellungen»: applies to all plans, is stored locally, never in the plan file. */
 function showSettings() {
   const d = $("#settings");
   $("#settingsBody").innerHTML = settingsFields(limits()); $("#settingsErr").textContent = "";
@@ -2079,10 +2079,10 @@ $("#settingsDefaults").addEventListener("click", async e => {
   renderSection();
 });
 
-// ---------- Ergebnisansicht ----------
+// ---------- Results view ----------
 /**
- * Dauerhafte Einstellungen der Oberfläche. In der Desktop-App liegen sie als Datei im Datenverzeichnis (Befehle
- * `settings_get`/`settings_set`), im Browser-Entwicklungsmodus im Browserspeicher. Nicht lesbar: es gelten die Standardwerte.
+ * Persistent settings of the user interface. In the desktop app they are a file in the data directory (commands
+ * `settings_get`/`settings_set`), in the browser development mode in browser storage. Not readable: the defaults apply.
  */
 const Pref = {
   cache: {},
@@ -2093,12 +2093,12 @@ const Pref = {
   get(key, fallback) { return key in this.cache ? this.cache[key] : fallback; },
   set(key, value) {
     this.cache[key] = value;
-    if (Engine.inApp) Engine.call("settings_set", { key, value }).catch(() => { /* gilt dann nur für diese Sitzung */ });
-    else try { localStorage.setItem("rp.settings", JSON.stringify(this.cache)); } catch { /* wie oben */ }
+    if (Engine.inApp) Engine.call("settings_set", { key, value }).catch(() => { /* then applies only to this session */ });
+    else try { localStorage.setItem("rp.settings", JSON.stringify(this.cache)); } catch { /* as above */ }
   },
 };
 let showTaxCols = false;
-/** Jahre, deren 3-Topf-Herleitung in den Jahreswerten aufgeklappt ist. */
+/** Years whose 3-bucket derivation is expanded in the yearly values. */
 const bucketOpen = new Set();
 let resultTab = "overview", realView = false, compPercent = false, detailP = 50, mktPct = false, mktLog = false, resultZoom = null, compareOpen = false;
 function showResults(on) {
@@ -2107,7 +2107,7 @@ function showResults(on) {
   if (on) $("#resultsPick").innerHTML = "";
   if (!on) { lastRun = null; renderDerived(); }
 }
-/** Fragt vor einer Berechnung über ${LONG_RUN_SECONDS} s geschätzter Dauer nach; `false`, wenn der Benutzer abbricht. */
+/** Asks before a calculation of more than ${LONG_RUN_SECONDS} s estimated duration; `false` if the user cancels. */
 async function confirmLongRun() {
   if (bench.us == null) await ensureBench();
   if (bench.us == null) return true;
@@ -2116,9 +2116,9 @@ async function confirmLongRun() {
   return !!await ask("Lange Berechnung", `Die Berechnung dauert voraussichtlich ca. <b>${esc(fmtShort(sec))}</b> (${fmtInt(runs)} ${runs === 1 ? "Simulationslauf" : "Simulationsläufe"}). Sie lässt sich während der Berechnung abbrechen.`, null, "Trotzdem starten");
 }
 /**
- * #110: Hat die Planung ungespeicherte Änderungen, fragt die App vor der Simulation, ob gespeichert werden soll.
- * Nur in der Desktop-App (im Browser ist «Speichern» ein Download); `askSaveDev` in den Einstellungen schaltet es für Tests ein.
- * `false`, wenn der Benutzer abbricht oder das Speichern nicht zustande kommt.
+ * #110: If the plan has unsaved changes, the app asks before the simulation whether to save.
+ * Only in the desktop app (in the browser «Speichern» is a download); `askSaveDev` in the settings turns it on for tests.
+ * `false` if the user cancels or saving does not succeed.
  */
 async function confirmSaveBeforeRun() {
   if (!dirty || !askSaveOn() || !(Engine.inApp || Pref.get("askSaveDev", false))) return true;
@@ -2127,8 +2127,8 @@ async function confirmSaveBeforeRun() {
   if (r === true) { await save(false); if (dirty) return false; }
   return true;
 }
-// #125: Kopfzeile der Ergebnisse. Bei einem Ergebnis zuerst sein Name (gespeichert bzw. eben abgelegt), dann die Art
-// des Laufs; der Name wird gekürzt und steht voll im Tooltip. Ohne Namen nur die Art.
+// #125: Header of the results. For a result first its name (saved or just stored), then the kind
+// of run; the name is shortened and is shown in full in the tooltip. Without a name only the kind.
 let lastRunName = null, resultHead = "";
 function plainTitle(t) { const el = $("#resultsTitle"); el.textContent = t; el.removeAttribute("title"); }
 function setResultsTitle(head = resultHead) {
@@ -2156,20 +2156,20 @@ async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
   catch (e) { plainTitle("Fehler"); $("#resultsBody").innerHTML = `<div class="card errcard">${esc(errText(e))}</div>`; }
 }
 const kpi = (k, v, s = "", cls = "") => `<div class="kpi ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
-/** Legende; Eintrag [Farbe, Text, Deckkraft, Linienart]: mit Linienart «solid» oder «dashed» ein Linien-Symbol statt des Kästchens. */
+/** Legend; entry [color, text, opacity, line style]: with line style «solid» or «dashed» a line symbol instead of the box. */
 const legend = items => `<div class="legend">${items.map(([c, t, o, line]) => `<span>${line
   ? `<svg class="lsym" width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><line x1="0" x2="22" y1="5" y2="5" stroke="var(${c})" stroke-width="2" ${line === "dashed" ? 'stroke-dasharray="5 3"' : ""}/></svg>`
   : `<i style="background:var(${c})${o ? `;opacity:${o}` : ""}"></i>`}${t}</span>`).join("")}</div>`;
 const WEALTH_LEGEND = legend([["--c1", "Liquides Vermögen"], ["--c2", "Immobilien (netto)"], ["--c3", "Vorsorge (PK, 3a)"]]);
 const atAge = month => `${ymShow(month)} (Alter ${ageStr(ym2i(month))})`;
-/** Hat die Planung Hypotheken, deren Erneuerung auf Tragbarkeit geprüft wird? */
+/** Does the plan have mortgages whose renewal is checked for affordability? */
 const hasProperties = () => state.realestate.properties.some(p => p.status !== "rent");
-/** Verkäufe von Immobilien eines Laufs, je Verkauf eine Zeile «Name: MM.JJJJ»; Notverkäufe mit Warnsymbol, ohne Verkauf «–». */
+/** Property sales of a run, one row «Name: MM.YYYY» per sale; emergency sales with warning icon, without a sale «–». */
 function propertySales(res) {
   const sales = (res?.propertyEvents || []).filter(e => e.kind === "sale" || e.kind === "emergencySale").sort((a, b) => ym2i(a.month) - ym2i(b.month));
   return sales.length ? sales.map(e => `<div>${esc(e.property)}: ${ymShow(e.month)}${e.kind === "emergencySale" ? ` ${houseWarn("Notverkauf")}` : ""}</div>`).join("") : "–";
 }
-/** Immobilienereignisse eines Laufs, chronologisch: Kauf, Verkauf, Notverkauf (mit Grund) und Hypothekenerneuerung mit ihren Beträgen. */
+/** Property events of a run, chronological: purchase, sale, emergency sale (with reason) and mortgage renewal with their amounts. */
 function propertyEvents(res) {
   const evs = [...(res.propertyEvents || [])].sort((a, b) => ym2i(a.month) - ym2i(b.month));
   const n = v => fmtInt(v), part = (label, v) => `<span class="pe"><span class="k">${label}</span> ${v}</span>`;
@@ -2199,9 +2199,9 @@ function propertyEvents(res) {
   return card("Immobilien", "Kauf, Verkauf, Notverkauf und Hypothekenerneuerung", body);
 }
 /**
- * 3-Topf-Strategie: Herleitung der Topfgrössen (Ausgaben, abgezogene Einnahmen, Netto-Bedarf, Ziele), Renditekriterium,
- * ausgelöster Fall (Januar, A, B, C), Umbuchungen und Topfstände vor und nach der Auffüllung (jeweils vor den Ausgaben des Monats).
- * Die Auffüllungen eines Jahres erscheinen aufklappbar in den Jahreswerten (`yearTable`).
+ * 3-bucket strategy: derivation of the bucket sizes (spending, deducted income, net need, targets), return criterion,
+ * triggered case (January, A, B, C), transfers and bucket balances before and after the refill (each before the spending of the month).
+ * The refills of a year appear expandable in the yearly values (`yearTable`).
  */
 function bucketDerivation(rs) {
   const n = v => fmtInt(v);
@@ -2227,25 +2227,25 @@ function bucketDerivation(rs) {
       <th>Ziel Topf 1</th><th>Ziel Topf 2</th><th class="l" title="Aktienrendite der letzten 12 Monate (vor dem Start aus dem Vorlauf des Renditepfads) gegenüber der Schwelle: Nur bei erfüllter Bedingung wird in der Januar-Auffüllung und in C1 aus Topf 3 verkauft. A und C2 ignorieren sie.">Renditekriterium</th><th class="l" title="Umbuchungen zwischen den Töpfen">Umbuchungen</th><th title="Topf 1 / Topf 2 / Topf 3 vor der Auffüllung">Vorher T1 / T2 / T3</th><th title="Topf 1 / Topf 2 / Topf 3 nach der Auffüllung">Nachher T1 / T2 / T3</th></tr>${rows}</table></div>`;
 }
 const bucketHint = () => `<p class="hint">Beträge in ${cur()}, nominal, pro Jahr; die Topfstände gelten vor den Ausgaben des Monats. <b>Netto-Bedarf</b> = Lebenshaltung + Wohnen (ohne Amortisation) + Einzahlung in die Säule 3a + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen, aus den geplanten Werten des laufenden Jahres (bei 3-Topf mit Guardrails: Lebenshaltung gemäss Guardrails, nach Unter- und Obergrenze); einmalige Ausgaben, Anschaffungen, Käufe und Sondersteuern zählen nicht. Ziel Topf 1 und 2 = Jahre × Netto-Bedarf. <b>Januar-Auffüllung:</b> Topf 1 zuerst aus Topf 2, der Rest aus Topf 3, danach Topf 2 aus Topf 3; ist das Renditekriterium nicht erfüllt, wird nichts aus Topf 3 verkauft und Topf 2 nicht nachgefüllt. Ein Überschuss in Topf 1 oder 2 geht in Topf 3. <b>A:</b> beim Start der Entnahmephase (erste Pensionierung), bei einem PK-Kapitalbezug und beim Neustart nach «alle Töpfe leer»: Das Vermögen (Kapitalbezug) geht zuerst in Topf 3, dann wie im Januar ohne Renditekriterium; die Ziele sind um die vergangenen Monate des Jahres gekürzt, der Netto-Bedarf aus den Monaten ab dem Auslöser auf 12 Monate hochgerechnet. <b>B:</b> Zuflüsse gehen direkt an ihr Ziel und erscheinen als Buchung «extern → Topf 3» (einmalige Zuflüsse, 3a, Verkaufserlöse ohne Folgekauf, Notverkäufe), «extern → Reservierung» (Verkauf mit Kauf im Folgemonat) oder «Reservierung → Topf 3» (Überschuss nach dem Kauf); Topf 1 und 2 werden nicht aufgefüllt. «Vorher» zeigt den Stand vor dem Zufluss. <b>C (Vorausschau):</b> Deckt Topf 1 die Ausgaben des Monats nicht, gilt bei erfülltem Renditekriterium <b>C1</b>: Ablauf wie die Januar-Auffüllung, die Ziele um die seit Januar vergangenen Monate gekürzt und das Ziel von Topf 1 um die einmaligen Ausgaben des Monats erhöht, ohne Überschussbuchung in Topf 3. Bei nicht erfülltem Kriterium gilt <b>C2</b>: Topf 1 wird aus Topf 2, dann Topf 3 so aufgefüllt, dass er die Ausgaben deckt und danach noch (Min(Reserve, Monate bis Januar) − 1) Monatsbedarfe enthält; Topf 2 wird nicht aufgefüllt. Die Überschussbuchung in Topf 3 gibt es nur in der Januar-Auffüllung. Reichen alle Töpfe nicht, wird eine Immobilie notverkauft; ohne Immobilie darf Topf 1 negativ werden, bis das Vermögen wieder positiv ist.</p>`;
-/** 3-Topf-Buchhaltung (Auffüllungen, Zuflüsse, Reservierungen) steht in den Jahreswerten; die Meldungen der Defizitphase bleiben. */
+/** 3-bucket bookkeeping (refills, inflows, reservations) is in the yearly values; the messages of the deficit phase stay. */
 const isBucketBooking = e => (e.kind === "buckets" && !/^3-Topf: alle Töpfe leer/.test(e.text))
   || (state.withdrawal.strategy === "three_buckets" && e.kind === "withdrawal" && /reserviert für Kauf im Folgemonat/.test(e.text));
 function eventList(evs) {
   evs = evs.filter(e => !isBucketBooking(e));
   return evs.length ? `<ul class="evlist">${evs.map(e => `<li><span>${atAge(e.month)}</span><span>${esc(e.text)}</span></li>`).join("")}</ul>` : `<p class="hint" style="margin:0">Keine Ereignisse.</p>`;
 }
-/** Betrag nominal oder in Preisen des Startmonats. */
+/** Amount nominal or in prices of the start month. */
 const rv = (r, x) => realView ? x / r.priceIndex : x;
 const realNote = () => realView ? `in heutiger Kaufkraft (Preise ${ymShow(i2ym(startM()))})` : "nominal";
 const xLabel = m => `${m / 12} · ${Math.round(ageAt(m))} J.`;
 const card = (title, sub, body, cls = "") => `<div class="card ${cls}"><h3>${title}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>${body}</div>`;
 /**
- * Zoom der Ergebnisgrafiken, gemeinsam für alle: { from, to, years } in Monaten seit Planstart; `years` ist die gewählte
- * Breite einer Schaltfläche, bei einer Mausauswahl null (benutzerdefiniert); null = ganzer Zeitraum.
+ * Zoom of the result charts, shared by all: { from, to, years } in months since plan start; `years` is the chosen
+ * width of a button, null for a mouse selection (custom); null = whole period.
  */
 const resultView = () => (resultZoom ? [startM() + resultZoom.from, startM() + resultZoom.to] : null);
 const redrawResults = () => { if (compareOpen) compareRuns(); else if (lastRun) renderResults(lastRun); };
-/** Schaltfläche «N J.»: Breite N Jahre, zentriert auf die Mitte des aktuellen Bereichs (ohne Zoom: der Laufzeit), im Zeitraum gehalten. */
+/** Button «N J.»: width N years, centered on the middle of the current range (without zoom: of the duration), kept within the period. */
 function stepZoom(years) {
   const total = endM() - startM(), w = years * 12;
   if (!years || w >= total) { resultZoom = null; return; }
@@ -2253,7 +2253,7 @@ function stepZoom(years) {
   const from = clamp(Math.round(mid - w / 2), 0, total - w);
   resultZoom = { from, to: from + w, years };
 }
-/** Mausauswahl (Monate seit Planstart): Auswahlen unter einem Jahr werden ignoriert, die ganze Laufzeit setzt zurück. */
+/** Mouse selection (months since plan start): selections under one year are ignored, the whole duration resets. */
 function setCustomZoom(from, to) {
   const total = endM() - startM(), a = Math.max(0, Math.round(from)), b = Math.min(total, Math.round(to));
   if (b - a < 12) return;
@@ -2261,14 +2261,14 @@ function setCustomZoom(from, to) {
   redrawResults();
 }
 const zoomAbs = (a, b) => setCustomZoom(a - startM(), b - startM());
-/** Zoom-Schaltflächen der Ergebnisgrafiken; derselbe Zustand in allen Grafiken. Nach einer Mausauswahl ist keine Schaltfläche aktiv. */
+/** Zoom buttons of the result charts; the same state in all charts. After a mouse selection no button is active. */
 const resultZoomBar = () => {
   const custom = resultZoom && resultZoom.years == null, v = resultView();
   const note = custom ? `Benutzerdefiniert: ${((v[0] - startM()) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })} – ${((v[1] - startM()) / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })} J. nach Start` : "Bereich mit der Maus aufziehen · gilt für alle Ergebnisgrafiken";
   return `<div class="minizoom">${zoomButtons("res-zoom", resultZoom ? (resultZoom.years ?? -1) : 0)}<span>${note}</span></div>`;
 };
 const chartBox = (id, h = 300, zoom = false) => `${zoom ? resultZoomBar() : ""}<div class="chartwrap"><svg id="${id}" class="bigchart" style="height:${h}px"></svg><div id="${id}-tip" class="tip"></div></div>`;
-/** Hinweis zum Endvermögen je Perzentil in heutiger Kaufkraft (Vergleich, #126). */
+/** Note on the final wealth per percentile in today's purchasing power (comparison, #126). */
 const REAL_PCT_HINT = "In heutiger Kaufkraft gilt je Perzentil das Endvermögen des Laufs dieses Perzentils";
 const FAN_LEGEND = legend([["--c1", "5.–95. Perzentil", ".25"], ["--c1", "25.–75. Perzentil", ".5"], ["--c1", "Median", null, "solid"], ["--warn", "1. und 99. Perzentil", null, "dashed"], ["--err", "Schlechtester Wert", null, "solid"]])
   + `<p class="hint">Die Linie «Schlechtester Wert» zeigt für jeden Monat den tiefsten Wert aller Läufe; das kann in jedem Monat ein anderer Lauf sein. Der einzelne schlechteste Lauf (nach Endvermögen) ist unter «Einzelne Läufe» abrufbar.</p>`;
@@ -2276,13 +2276,13 @@ const pName = p => p === 0 ? "Schlechtester Lauf" : `${p}. Perzentil`;
 const pctTxt = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`;
 
 /**
- * Jahreswerte: Bestände am Jahresende, Geldflüsse als Monatsdurchschnitt des Jahres, Steuern als Jahressumme.
- * `start`: Gesamt- und liquides Vermögen zum Simulationsstart (Grundlage der Entnahmerate im ersten Jahr).
- * `refills`: 3-Topf-Auffüllungen des Laufs; Jahre mit Auffüllung haben eine aufklappbare Zeile mit der Herleitung.
+ * Yearly values: balances at year end, flows as the monthly average of the year, taxes as yearly sum.
+ * `start`: total and liquid wealth at the simulation start (basis of the withdrawal rate in the first year).
+ * `refills`: 3-bucket refills of the run; years with a refill have an expandable row with the derivation.
  */
 /**
- * Werte der Jahreswerte je Kalenderjahr (nominal oder in heutiger Kaufkraft je nach Umschalter). Grundlage der Tabelle
- * «Jahreswerte» und der Jahreswerte im Vergleich (#115), damit beide dieselben Zahlen zeigen.
+ * Values of the yearly values per calendar year (nominal or in today's purchasing power depending on the toggle). Basis of the table
+ * «Jahreswerte» and of the yearly values in the comparison (#115), so that both show the same numbers.
  */
 function yearValues(recs, start) {
   const by = new Map();
@@ -2292,11 +2292,11 @@ function yearValues(recs, start) {
   return [...by.entries()].map(([y, rs]) => {
     const last = rs[rs.length - 1];
     const planned = avg(rs, r => r.plannedSpending), housing = avg(rs, r => r.housing), income = avg(rs, r => r.income), draw = avg(rs, r => r.withdrawal);
-    // #52: Einzahlungen in die Säule 3a zählen zu den Ausgaben.
+    // #52: Contributions to pillar 3a count as spending.
     const p3aIn = avg(rs, r => r.pillar3aIn ?? 0);
     const spending = planned + housing + p3aIn, receipts = income + draw;
     const prev = prevLast ? prevLast.priceIndex : 1;
-    /** Entnahmerate: jährliche Entnahme (nominal, unvollständige Jahre auf 12 Monate hochgerechnet) / Vermögen am Jahresanfang. */
+    /** Withdrawal rate: yearly withdrawal (nominal, incomplete years extrapolated to 12 months) / wealth at the start of the year. */
     const yearDraw = rs.reduce((a, r) => a + r.withdrawal, 0) / rs.length * 12;
     const baseTotal = prevLast ? prevLast.total : start?.total;
     prevLast = last;
@@ -2338,7 +2338,7 @@ function singleKpis(s) {
     ${kpi("Steuern total", fmtMio(s.taxesTotal), "Einkommen, Vermögen, Kapital, Grundstückgewinn")}</div>`;
 }
 
-/** Summen pro Kalenderjahr für die Balkendiagramme. */
+/** Sums per calendar year for the bar charts. */
 function yearly(recs) {
   const by = new Map();
   for (const r of recs) {
@@ -2352,7 +2352,7 @@ function yearly(recs) {
   return [...by.values()].map(a => ({ ...a, draw: a.living + a.housing + a.p3a + a.taxes - a.earned - a.pk - a.ahv }));
 }
 
-/** Diagramme eines einzelnen Laufs (Einzellauf oder Perzentil-Lauf). */
+/** Charts of a single run (single run or percentile run). */
 function runChartsHtml(res, p) {
   const recs = res.records, hasProp = recs.some(r => r.propertyValue > 0), hasPk = recs.some(r => r.pensionFund > 0 || r.pillar3a > 0);
   return card("Vermögensverlauf", realNote(), chartBox(`${p}-wealth`, 300, true) + WEALTH_LEGEND)
@@ -2383,7 +2383,7 @@ function drawRunCharts(res, p) {
     stack: [{ color: "--c3", values: w(r => r.cash) }, { color: "--c2", values: w(r => r.bonds) }, { color: "--c1", values: w(r => r.stocks) }],
     tip: i => { const r = recs[i], t = Math.max(1, r.cash + r.bonds + r.stocks), q = v => compPercent ? `${(Math.max(0, v) / t * 100).toFixed(1)} %` : fmtMoney(rv(r, v));
       return tipHead(i) + `<span style="color:var(--c1)">■</span> Aktien ${q(r.stocks)}<br><span style="color:var(--c2)">■</span> Obligationen ${q(r.bonds)}<br><span style="color:var(--c3)">■</span> Cash ${q(r.cash)}`; } });
-  // Balkendiagramme: nur die Jahre, die den Zoombereich berühren
+  // Bar charts: only the years that touch the zoom range
   const view = resultView(), allYears = yearly(recs);
   const ys = view ? allYears.filter(a => +a.y * 12 + 11 >= view[0] && +a.y * 12 <= view[1]) : allYears;
   Charts.bars($(`#${p}-flows`), $(`#${p}-flows-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: fmtMio,
@@ -2406,7 +2406,7 @@ function drawRunCharts(res, p) {
   const stockTxt = (k, i) => i >= 12 ? pctTxt(last12(k, i)) : "–";
   const all = recs.map((_, i) => i);
   Charts.time($(`#${p}-mkt`), $(`#${p}-mkt-tip`), { x, xFmt: xLabel, view: resultView(), onZoom: zoomAbs, marks, log: mktLog && !mktPct,
-    // #114: Bezugslinie bei Start = 100 bzw. bei 0 % Änderung
+    // #114: Reference line at start = 100 or at 0 % change
     ref: mktPct ? 0 : 100,
     yFmt: mktPct ? v => `${v.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %` : v => v.toLocaleString("de-CH", { maximumFractionDigits: 0 }),
     lines: mktPct
@@ -2419,22 +2419,22 @@ function drawRunCharts(res, p) {
     tip: i => tipHead(i) + `Pensionskasse ${fmtMoney(rv(recs[i], recs[i].pensionFund))}<br>Säule 3a ${fmtMoney(rv(recs[i], recs[i].pillar3a))}` });
 }
 
-// ---------- Monte Carlo und mehrere Läufe ----------
+// ---------- Monte Carlo and multiple runs ----------
 function histQuantile(h, q) {
   if (!h) return NaN;
   const total = h.counts.reduce((a, b) => a + b, 0); let acc = 0;
   for (let i = 0; i < h.counts.length; i++) { acc += h.counts[i]; if (acc >= q * total) return (h.edges[i] + h.edges[i + 1]) / 2; }
   return h.edges[h.edges.length - 1];
 }
-// #121: Achse der Grafik «Wahrscheinlichkeit, dass das Geld reicht»: Standard 80–100 %, umschaltbar auf 0–100 %;
-// die Wahl gilt im Einzelergebnis und im Vergleich, bis sie geändert wird.
+// #121: Axis of the chart «Wahrscheinlichkeit, dass das Geld reicht»: default 80–100 %, switchable to 0–100 %;
+// the choice applies in the single result and in the comparison until it is changed.
 const SURV_LO = 80;
 let survFull = false;
 const survRange = () => [survFull ? 0 : SURV_LO, 100];
 const survSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${survFull ? "" : "on"}" data-action="surv-scale" data-v="80">80–100 %</button><button class="${survFull ? "on" : ""}" data-action="surv-scale" data-v="0">0–100 %</button></div>`;
 const survClipNote = min => !survFull && min < SURV_LO
   ? `<p class="hint survclip">Die Kurve fällt unter ${SURV_LO} % (tiefster Wert ${min.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %) und ist unten abgeschnitten. «0–100 %» zeigt sie ganz.</p>` : "";
-/** #122: Schalter der Grafik «Aktien, Obligationen und Inflation», im Einzelergebnis und im Vergleich dieselben. */
+/** #122: Switches of the chart «Aktien, Obligationen und Inflation», the same in the single result and in the comparison. */
 const mktSwitch = () => `<div class="seg" style="margin-bottom:8px"><button class="${mktPct ? "" : "on"}" data-action="mkt" data-v="idx">Wertentwicklung (Start = 100)</button><button class="${mktPct ? "on" : ""}" data-action="mkt" data-v="pct">Änderung in %</button></div>`
   + (mktPct ? "" : ` <div class="seg" style="margin-bottom:8px"><button class="${mktLog ? "" : "on"}" data-action="mkt-log" data-v="0">Linear</button><button class="${mktLog ? "on" : ""}" data-action="mkt-log" data-v="1">Logarithmisch</button></div>`);
 function batchChartsHtml(b) {
@@ -2466,11 +2466,11 @@ function drawBatchCharts(b) {
     tip: i => `Alter <b>${st.depletionAges[i][0]}</b><br>${fmtInt(st.depletionAges[i][1])} Läufe (${pctTxt(st.depletionAges[i][1] / runs)})` });
 }
 
-// ---------- Szenarien ----------
+// ---------- Scenarios ----------
 const SWEEP_SHOW = { pct: v => `${fmtPct(v)} %`, month: v => ymShow(v) };
 const sweepType = p => SWEEP_PARAMS.find(x => x.id === p)?.type || "pct";
 const sweepLabel = p => SWEEP_PARAMS.find(x => x.id === p)?.label || p;
-/** Aktueller Wert eines Variationsparameters in der Planung (undefined, wenn er nicht als Einzelwert vorliegt). */
+/** Current value of a variation parameter in the plan (undefined if it is not present as a single value). */
 function sweepNow(id) {
   const one = v => (v && typeof v === "object" ? (v.mode === "const" ? v.value : undefined) : v);
   if (id === "wealth.stockShare") return one(state.wealth.stockShare);
@@ -2480,17 +2480,17 @@ function sweepNow(id) {
   if (id === "withdrawal.rate") return state.withdrawal.fixedRate?.rate;
   if (id === "milestone.retire") { const m = state.milestones.find(x => x.id === "retire"); return m?.kind === "date" ? m.date : undefined; }
 }
-/** Die Werte der Variationen, die für diesen Lauf gelten (z. B. «Aktienanteil 60 %, Pensionierungsdatum 03.2027»). */
+/** The values of the variations that apply to this run (e.g. «Aktienanteil 60 %, Pensionierungsdatum 03.2027»). */
 function variationText() {
   return state.scenarios.sweeps.map(s => {
     const v = sweepNow(s.param);
     return v == null ? null : `${sweepLabel(s.param)} ${SWEEP_SHOW[sweepType(s.param)](v)}`;
   }).filter(Boolean).join(", ");
 }
-/** Zufallspfade haben keine aussagekräftige Bezeichnung; beim Einzellauf stehen stattdessen die Werte der Variationen. */
+/** Random paths have no meaningful label; for a single run the values of the variations are shown instead. */
 const randomPath = label => /^(Bootstrap-Pfad|Zufallspfad) \d+$/.test(label || "");
 const runInfo = label => randomPath(label) ? variationText() : label;
-/** Optimaler Wert einer Variation für ein Perzentil, lesbar: «73 %» (Schritt), «≈ 73 %» (interpoliert), «< 50 %», «≥ 110 %». */
+/** Optimal value of a variation for a percentile, readable: «73 %» (step), «≈ 73 %» (interpolated), «< 50 %», «≥ 110 %». */
 function optimumValueText(item) {
   if (item.kind === "na") return "–";
   const t = sweepType(item.param);
@@ -2499,20 +2499,20 @@ function optimumValueText(item) {
   const pre = { exact: "", approx: "≈ ", below: "< ", atLeast: "≥ ", edgeLow: "≤ ", edgeHigh: "≥ " }[item.kind] ?? "";
   return pre + s + (item.reaches ? "" : " (reicht nirgends)");
 }
-/** Optimale Werte aller Variationen für das Perzentil (aus den Szenarien); leer ohne Variationen. */
+/** Optimal values of all variations for the percentile (from the scenarios); empty without variations. */
 function optimumText(sc, percent) {
   const o = Optimum.find(sc, percent);
   return o ? o.items.map(it => `${sweepLabel(it.param)} ${optimumValueText(it)}`).join(", ") : "";
 }
-// ----- Einzellauf mit Variationen: eine Variationsstufe wählen und ihren Lauf ansehen -----
-let variationSel = null;          // gewählte Werte je Variation (null = Planwerte)
-const variationRuns = new Map();  // Auswahl → Ergebnis des Einzellaufs dieser Stufe
+// ----- Single run with variations: choose a variation step and view its run -----
+let variationSel = null;          // chosen values per variation (null = plan values)
+const variationRuns = new Map();  // selection → result of the single run of this step
 const selKey = sel => JSON.stringify(sel);
 const singleOf = r => (variationSel && variationRuns.get(selKey(variationSel))) || r.single;
 const batchRuns = () => variationSel && variationRuns.get(selKey(variationSel));
 const detailsOf = r => batchRuns()?.details || r.batch.details;
 const resetVariation = () => { variationSel = null; variationRuns.clear(); };
-/** Werte der Variationen für diesen Lauf: die gewählte Stufe, sonst die Planwerte. */
+/** Values of the variations for this run: the chosen step, otherwise the plan values. */
 function selectedVariationText() {
   return state.scenarios.sweeps.map((s, i) => {
     const v = variationSel?.[i] ?? sweepNow(s.param);
@@ -2537,12 +2537,12 @@ function variationPicker(r) {
     ${variationSel ? `<button class="btn small" data-action="var-plan" title="Zurück zu den Planwerten">Planwerte</button>` : ""}</p>`);
 }
 const sameValue = (a, b) => typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < 1e-9 : JSON.stringify(a) === JSON.stringify(b);
-/** Berechnete Stufe zu einer Auswahl; nicht gewählte Variationen gelten mit ihrem Planwert. */
+/** Calculated step for a selection; variations not chosen apply with their plan value. */
 function levelOf(sc, sel) {
   const want = sc.params.map((p, i) => sel[i] ?? sweepNow(p));
   return sc.results.find(x => !x.error && x.values.every((v, i) => sameValue(v, want[i])));
 }
-/** Einzelne Läufe und Jahreswerte einer Stufe: die Läufe der Perzentile werden aus den gespeicherten Pfadnummern nachgerechnet. */
+/** Single runs and yearly values of a step: the runs of the percentiles are recalculated from the saved path numbers. */
 async function pickBatchVariation(sel) {
   const sc = lastRun.scenarios;
   variationSel = sel.every(v => v == null) ? null : sel;
@@ -2559,7 +2559,7 @@ async function pickBatchVariation(sel) {
     let out;
     try { out = await Engine.call("rerun_paths", { plan, picks, path: currentPath }); } catch (e) { out = { error: errText(e) }; }
     if (out.error) { variationSel = null; toast("Die Läufe der Variation konnten nicht gerechnet werden: " + out.error); return renderResults(lastRun); }
-    // Weicht ein Endvermögen vom gespeicherten Wert ab (z. B. geänderte Zeitreihe), bleibt die Anzeige verfügbar, mit Hinweis
+    // If a final wealth differs from the saved value (e.g. changed time series), the display stays available, with a notice
     const off = out.details.filter(([pc, res]) => {
       const e = level.percentiles.find(p => p.percent === pc)?.endTotal;
       return e != null && Math.abs(res.summary.endTotal - e) > 1e-6 * Math.max(1, Math.abs(e));
@@ -2586,7 +2586,7 @@ document.addEventListener("change", e => {
   if (!e.target.matches?.('select[data-action="var-sel"]')) return;
   pickVariation([...document.querySelectorAll('select[data-action="var-sel"]')].map(el => (el.value === "plan" ? null : JSON.parse(el.value))));
 });
-/** Zeile zu einem Perzentil: optimale Variationswerte, bei historischen Läufen zusätzlich der Startmonat. */
+/** Row for a percentile: optimal variation values, for historical runs additionally the start month. */
 const percentInfo = (r, percent, label) => [optimumText(r.scenarios, percent), randomPath(label) ? "" : label].filter(Boolean).join(" · ");
 function scenarioTable(sc) {
   const types = sc.params.map(sweepType);
@@ -2644,17 +2644,17 @@ function drawScenarioCharts(sc) {
     tip: i => head(i) + `Vermögen bei Pensionierung ${fmtMoney(ok[i].atRetirement ?? 0)}` });
 }
 
-// ---------- Aufbau ----------
+// ---------- Layout ----------
 /**
- * #72: Einordnung der Erfolgsquote mit den Grenzen der Ampel. Massgebend ist der angezeigte, auf 0,1 % gerundete Wert:
- * 95,0 % ist «hoch», 80,0 % «mittel».
+ * #72: Classification of the success rate with the limits of the traffic light. Decisive is the displayed value rounded to 0.1 %:
+ * 95.0 % is «hoch», 80.0 % «mittel».
  */
 function rateClass(rate) {
   const shown = Number((rate * 100).toFixed(1));
   return shown >= 95 ? "hoch" : shown >= 80 ? "mittel" : "tief";
 }
 const helpLink = (topic, text, title = "") => `<a data-action="help-topic" data-topic="${topic}"${title ? ` title="${esc(title)}"` : ""}>${text}</a>`;
-/** #72: Ergebnis in Worten über den Kennzahlen der Übersicht, gebildet aus denselben Werten wie die Kennzahlen. */
+/** #72: Result in words above the key figures of the overview, formed from the same values as the key figures. */
 function verdictHtml(r, sg) {
   const lines = [];
   let weak;
@@ -2688,7 +2688,7 @@ function renderResults(r) {
   if (r.scenarios) tabs.push(["scenarios", "Szenarien"]);
   tabs.push(["table", "Jahreswerte"], ["params", "Parameter"]);
   if (!tabs.some(([k]) => k === resultTab)) resultTab = "overview";
-  // Einzellauf mit Variationen: gewählte Stufe (sonst der Planlauf)
+  // Single run with variations: chosen step (otherwise the plan run)
   const sg = r.single ? singleOf(r) : null;
   setResultsTitle(sg ? ["Einzellauf", runInfo(sg.label), r.scenarios ? selectedVariationText() : ""].filter(Boolean).join(" · ") : `${fmtInt(r.batch.summary.runs)} Läufe`);
   const varied = r.batch && r.scenarios && !!variationSel;
@@ -2746,10 +2746,10 @@ function renderResults(r) {
     <button class="btn small" data-action="runs-open">← Zur Liste</button><button class="btn small primary" data-action="run-restore" title="Die Planung dieses Ergebnisses in den Editor laden">Planung in den Editor übernehmen</button></div>`);
 }
 /**
- * Parameter einer Planung als Abschnitte [Titel, [[Bezeichnung, Wert], …]], gegliedert wie die Editorabschnitte.
- * Personennamen fehlen absichtlich (nur der Geburtsmonat), technische Werte nur, soweit sie das Ergebnis reproduzierbar machen.
- * `full` (#123, Vergleich der Planungen): zusätzlich die übrigen Eingaben des Editors (Tragbarkeit, Teuerung der
- * Immobilien, Ende der Hypothek, Rest der Säule 3a, Grundstückgewinnsteuer nach Besitzdauer).
+ * Parameters of a plan as sections [title, [[label, value], …]], structured like the editor sections.
+ * Person names are intentionally missing (only the birth month), technical values only as far as they make the result reproducible.
+ * `full` (#123, comparison of the plans): additionally the remaining inputs of the editor (affordability, inflation of the
+ * properties, end of the mortgage, rest of pillar 3a, property gains tax by holding period).
  */
 function paramSections(plan, full = false) {
   const c = plan.project?.currency || "";
@@ -2830,7 +2830,7 @@ function paramSections(plan, full = false) {
           : [[`${nm}: Wert mit Inflation anpassen`, yn(p.inflationValue)], [`${nm}: Nebenkosten mit Inflation anpassen`, yn(p.inflationFixCosts)]]),
         ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || "Tranche"}: nach der letzten Periode`, t.after === "repay" ? "Restschuld zurückzahlen" : "wie letzte Periode verlängern"])]; })]);
     add("Säule 3a", (plan.pillar3a || []).map(x => [`${(plan.household?.persons || []).find(q => q.id === x.person)?.name || x.person}: Rest im AHV-Bezug`, x.use === "repay" ? "Hypothek" : "Vermögen"]));
-    // Zeitabhängige Werte der Strategie als Liste statt «zeitabhängig», damit Unterschiede sichtbar sind
+    // Time-dependent values of the strategy as a list instead of «zeitabhängig», so that differences are visible
     const ws = plan.wealth || {}, strat = out.find(x => x[0] === "Entnahmestrategie");
     if (strat) strat[1] = strat[1].map(([k, v]) => k === "Cash-Reserve" ? [k, ser(ws.reserveMonths, x => `${x} Monate`)] : k.startsWith("Aktienanteil") ? [k, ser(ws.stockShare, pc)] : [k, v]);
     if (g) add("Steuerannahmen", [["Grundstückgewinnsteuer mit dem Steuerfuss multiplizieren", yn(g.useMultiplier)],
@@ -2838,13 +2838,13 @@ function paramSections(plan, full = false) {
   }
   return out;
 }
-/** Reiter «Parameter»: schreibgeschützte Zusammenfassung der Planung im Stand des Laufs. */
+/** Tab «Parameter»: read-only summary of the plan in the state of the run. */
 function paramsHtml(plan) {
   if (!plan) return card("Parameter", "", `<p style="margin:0">Nicht verfügbar.</p>`);
   return `<p class="hint" style="margin:0 0 10px">Die Parameter im Stand dieses Laufs (nicht der aktuelle Stand im Editor). Nur zur Ansicht.</p>`
     + paramSections(plan).map(([title, rows]) => card(title, "", `<table class="tbl params">${rows.map(([k, v]) => `<tr><td class="l">${esc(k)}</td><td class="l">${esc(v)}</td></tr>`).join("")}</table>`)).join("");
 }
-/** Auswahl des Laufs (Perzentil) samt den Werten der Variationen; steht oberhalb des scrollenden Bereichs. */
+/** Selection of the run (percentile) together with the values of the variations; sits above the scrolling area. */
 function runPicker(r, res) {
   const info = [pName(detailP), percentInfo(r, detailP, res.label)].filter(Boolean).join(" · ");
   return card("Lauf wählen", "", `<div class="seg">${detailsOf(r).map(([p]) => `<button class="${p === detailP ? "on" : ""}" data-action="detail" data-p="${p}">${pName(p)}</button>`).join("")}</div>
@@ -2853,21 +2853,21 @@ function runPicker(r, res) {
 }
 function showDetail(p) { detailP = p; bucketOpen.clear(); if (lastRun) renderResults(lastRun); }
 
-// ---------- Gespeicherte Simulationen ----------
+// ---------- Saved simulations ----------
 let savedView = null, parkedState = null;
-/** #120: Höchstzahl der Ergebnisse im Vergleich; jedes hat eine eigene Farbe (--r1 … --r10 in index.html). */
+/** #120: Maximum number of results in the comparison; each has its own color (--r1 … --r10 in index.html). */
 const CMP_MAX = 10;
 const runsSel = new Set(), RUN_COLORS = Array.from({ length: CMP_MAX }, (_, i) => `--r${i + 1}`);
 const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" });
 const stratName = id => id === "three_buckets_guardrails" ? "3-Topf + Guardrails" : STRATS.find(x => x[0] === id)?.[1] || id;
 const sourceName = id => SOURCES.find(x => x[0] === id)?.[1] || id;
-/** Name eines neuen Ergebnisses: Planung · Quelle (bei Szenarien «Szenarien») · Strategie · Datum, Zeit. */
+/** Name of a new result: plan · source (for scenarios «Szenarien») · strategy · date, time. */
 const runTitle = (base, m, iso) => [base, m.kind === "scenarios" ? "Szenarien" : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
-/** Beim Ansehen einer gespeicherten Simulation gilt deren Planung; der Editor-Stand wird solange zurückgestellt. */
+/** While viewing a saved simulation its plan applies; the editor state is set aside meanwhile. */
 function unpark() { if (parkedState) { state = parkedState; parkedState = null; } savedView = null; }
-/** Wert einer Zeitreihe der Planung als Text: konstant → Wert, sonst «zeitabhängig». */
+/** Value of a time series of the plan as text: constant → value, otherwise «zeitabhängig». */
 const serTxt = (v, f) => v && typeof v === "object" ? (v.mode === "const" ? f(v.value) : "zeitabhängig") : v == null ? "–" : f(v);
-/** Parameter der Entnahmestrategie einer Planung als Paare [Bezeichnung, Wert] (Bezeichnungen und Einheiten wie im Editor). */
+/** Parameters of the withdrawal strategy of a plan as pairs [label, value] (labels and units as in the editor). */
 function stratParams(plan) {
   const w = plan.withdrawal || {}, ws = plan.wealth || {}, pc = v => `${fmtPct(v)} %`, yrs = v => `${v} J.`;
   const share = (label = "Aktienanteil") => [label, serTxt(ws.stockShare, pc)];
@@ -2885,27 +2885,27 @@ function stratParams(plan) {
     default: return [share(), ["Cash-Reserve", serTxt(ws.reserveMonths, v => `${v} Monate`)]];
   }
 }
-/** Name der verwendeten Zeitreihe (ohne Ordner und Endung); `null`, wenn die Renditequelle keine Zeitreihe hat. */
+/** Name of the time series used (without folder and extension); `null` if the return source has no time series. */
 function seriesLabel() {
   const r = state.returns;
   if (r.source === "fixed" || r.source === "parametric" || !seriesRef()) return null;
   return (seriesInfo && !seriesInfo.error && (seriesInfo.title || seriesInfo.name)) || (r.series ? seriesShort(r.series) : null);
 }
-/** Anzeige der Spalte «Zeitreihe» (Kopfdaten ohne Angabe: «–»). */
+/** Display of the column «Zeitreihe» (header data without a value: «–»). */
 const seriesCell = m => m.seriesName === undefined ? "–" : m.seriesName ? esc(m.seriesName)
   : m.source === "fixed" ? `<span class="muted">feste Renditen</span>` : m.source === "parametric" ? `<span class="muted">parametrisch</span>` : "–";
-/** Anteil der Läufe mit Notverkauf, ab dem das Warnsymbol erscheint (später einstellbar, #25). */
+/** Share of runs with an emergency sale from which the warning icon appears (configurable later, #25). */
 const EMERGENCY_WARN_SHARE = 0.05;
-/** Warnsymbol (Haus mit Warnzeichen) für den ungeplanten Verkauf einer Immobilie; `tip` ist der Tooltip. */
+/** Warning icon (house with warning sign) for the unplanned sale of a property; `tip` is the tooltip. */
 const houseWarn = tip => `<span class="hwarn" role="img" aria-label="${esc(tip)}" title="${esc(tip)}">🏠⚠️</span>`;
-/** Symbol in der Liste der Ergebnisse: Einzellauf mit Notverkauf, Monte Carlo ab der Schwelle; alte Einträge ohne Angabe: keines. */
+/** Icon in the list of results: single run with emergency sale, Monte Carlo from the threshold; old entries without a value: none. */
 function emergencyMark(m) {
   if (m.kind === "single") return m.emergencySaleRuns > 0 ? ` ${houseWarn("Notverkauf einer Immobilie in diesem Lauf")}` : "";
   if (m.kind !== "batch" || !(m.runs > 0) || !(m.emergencySaleRuns > 0)) return "";
   const share = m.emergencySaleRuns / m.runs;
   return share >= EMERGENCY_WARN_SHARE ? ` ${houseWarn(`Notverkauf einer Immobilie in ${pctTxt(share)} der Läufe (${fmtInt(m.emergencySaleRuns)} von ${fmtInt(m.runs)} Läufen)`)}` : "";
 }
-/** Strategiename mit den Parametern des Ergebnisses als Tooltip (auch per Tastatur erreichbar). */
+/** Strategy name with the parameters of the result as tooltip (also reachable by keyboard). */
 const stratCell = (m, cls = "") => {
   const tip = m.params ? m.params.map(([k, v]) => `${k}: ${v}`).join("\n") : "Parameter nicht verfügbar";
   return `<td class="ptip${cls}" tabindex="0" data-tip="${esc(tip)}" aria-label="${esc(stratName(m.strategy) + ": " + tip.replace(/\n/g, ", "))}">${esc(stratName(m.strategy))}</td>`;
@@ -2928,11 +2928,11 @@ async function rememberRun(r) {
     const now = new Date().toISOString();
     const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
     await Runs.add(meta, { plan, result: r });
-    // #125: das eben gezeigte Ergebnis bekommt seinen Namen in die Kopfzeile
+    // #125: the result just shown gets its name into the header
     if (lastRun === r && !savedView) { lastRunName = meta.name; if (resultHead) setResultsTitle(); }
     document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
   } catch (e) {
-    // #147: sichtbar melden (z. B. Browserspeicher voll); die Oberfläche bleibt bedienbar, das Ergebnis bleibt angezeigt
+    // #147: report visibly (e.g. browser storage full); the user interface stays usable, the result stays displayed
     toast("Ergebnis nicht in der Liste gespeichert: " + errText(e));
     noteError("Ergebnis nicht gespeichert: " + errText(e));
   }
@@ -2982,12 +2982,12 @@ const flat = (o, p = "", out = {}) => {
   else out[p] = o;
   return out;
 };
-// ---------- Vergleich gespeicherter Ergebnisse (#115) ----------
-// Registerkarten wie beim Einzelergebnis: Übersicht (Kennzahlen, Bandbreite, Perzentile, Wahrscheinlichkeit, Erschöpfung),
-// Verläufe (Grafiken des Einzellaufs bzw. Median-Laufs), Jahreswerte (eine Spalte je Ergebnis) und Planung (Unterschiede).
-// Die Ergebnisse werden nach Monaten bzw. Jahren seit ihrem Start ausgerichtet.
+// ---------- Comparison of saved results (#115) ----------
+// Tabs as for the single result: overview (key figures, range, percentiles, probability, depletion),
+// trajectories (charts of the single run or median run), yearly values (one column per result) and plan (differences).
+// The results are aligned by months or years since their start.
 let compareTab = "overview", cmpYearKey = "total", cmpLiquid = "liquid", cmpFlow = "in", cmpP = 50;
-/** #118: Sortierung der Kennzahlen im Vergleich: { col, dir } (dir 1 auf-, −1 absteigend); null = Reihenfolge der Liste. */
+/** #118: Sorting of the key figures in the comparison: { col, dir } (dir 1 ascending, −1 descending); null = order of the list. */
 let cmpSort = null;
 const CMP_TABS = [["overview", "Übersicht"], ["charts", "Verläufe"], ["table", "Jahreswerte"], ["plan", "Planung"]];
 const CMP_YEAR = [["total", "Gesamtvermögen (Total)"], ["liquid", "Liquides Vermögen"], ["property", "Immobilien"], ["pension", "Vorsorge"],
@@ -2995,9 +2995,9 @@ const CMP_YEAR = [["total", "Gesamtvermögen (Total)"], ["liquid", "Liquides Ver
 const CMP_LIQUID = [["liquid", "Total"], ["stocks", "Aktien"], ["bonds", "Obligationen"], ["cash", "Cash"]];
 const CMP_FLOW = [["in", "Einnahmen"], ["out", "Ausgaben"], ["taxes", "Steuern"]];
 /**
- * Was ein gespeichertes Ergebnis für den Vergleich hergibt. `run` ist der Lauf für Verläufe und Jahreswerte: beim Einzellauf
- * dieser, bei mehreren Läufen der Lauf des gewählten Perzentils (`cmpP`, wie «Lauf wählen» im Einzelergebnis); fehlt dieses
- * Perzentil, der Median-Lauf (`pMissing`).
+ * What a saved result provides for the comparison. `run` is the run for trajectories and yearly values: for a single run
+ * this one, for multiple runs the run of the chosen percentile (`cmpP`, like «Lauf wählen» in the single result); if this
+ * percentile is missing, the median run (`pMissing`).
  */
 function cmpItem(m, d, i) {
   const res = d?.result || {}, batch = res.batch || null, single = res.single || null;
@@ -3006,14 +3006,14 @@ function cmpItem(m, d, i) {
   const run = single || exact || (batch && (det(50) || batch.details?.[0]?.[1])) || null;
   return { m, i, color: RUN_COLORS[i], name: m.name, batch, single, run, pMissing: !!batch && !exact, scenariosOnly: !batch && !single };
 }
-/** Auswahl des Perzentils für Verläufe und Jahreswerte; nur bei Ergebnissen mit mehreren Läufen. */
+/** Selection of the percentile for trajectories and yearly values; only for results with multiple runs. */
 function cmpPicker(items) {
   const qs = [...new Set(items.filter(it => it.batch).flatMap(it => (it.batch.details || []).map(([p]) => p)))].sort((a, b) => a - b);
   if (!qs.length) return "";
   if (!qs.includes(cmpP)) cmpP = qs.includes(50) ? 50 : qs[0];
   return card("Lauf wählen", "gilt für alle Ergebnisse mit mehreren Läufen", `<div class="seg">${qs.map(p => `<button class="${p === cmpP ? "on" : ""}" data-action="cmp-p" data-p="${p}">${pName(p)}</button>`).join("")}</div>`);
 }
-/** Welcher Lauf je Ergebnis gezeigt wird, mit Vermerk zu Einzelläufen und fehlenden Perzentilen. */
+/** Which run is shown per result, with a remark on single runs and missing percentiles. */
 function cmpRunNotes(items) {
   const runs = items.filter(it => it.run), out = [];
   if (runs.some(it => it.batch)) out.push(`Bei mehreren Läufen: ${pName(cmpP)}${cmpP === 50 ? " (Median)" : ""}.`);
@@ -3027,13 +3027,13 @@ function cmpRunNotes(items) {
 const cmpSel = (action, opts, cur) => `<div class="seg" style="margin-bottom:8px">${opts.map(([k, t]) => `<button class="${k === cur ? "on" : ""}" data-action="${action}" data-v="${k}">${t}</button>`).join("")}</div>`;
 const cmpNote = list => list.length ? `<p class="hint cmpnote">${list.join(" ")}</p>` : "";
 const cmpLegend = items => legend(items.map(it => [it.color, esc(it.name)]));
-/** Gleich lange Reihen (Monate seit Start); fehlende Monate bleiben Lücken. */
+/** Series of equal length (months since start); missing months stay gaps. */
 const cmpPad = (n, v) => Array.from({ length: n }, (_, k) => k < v.length ? v[k] : NaN);
 const cmpX = n => Array.from({ length: n }, (_, k) => k);
 const cmpTime = (id, n, lines, tip, extra = {}) => Charts.time($(`#${id}`), $(`#${id}-tip`), { x: cmpX(n), xFmt: m => `${m / 12} J.`,
   view: resultZoom ? [resultZoom.from, resultZoom.to] : null, onZoom: setCustomZoom, lines, tip: k => `<b>Jahr ${(k / 12).toLocaleString("de-CH", { maximumFractionDigits: 1 })}</b>${tip(k)}`, ...extra });
 const cmpRow = (it, v, f) => Number.isFinite(v) ? `<br><span style="color:var(${it.color})">■</span> ${esc(it.name)}: ${f(v)}` : "";
-/** Kalenderjahre gleich: Jahreszahl; sonst «n. Jahr» seit Start (die Jahreszahl steht im Tooltip der Zelle). */
+/** Calendar years equal: year number; otherwise «n. Jahr» since start (the year number is in the tooltip of the cell). */
 function cmpYears(items, valuesOf) {
   const per = items.map(it => it.run ? valuesOf(it) : null);
   const firsts = per.filter(Boolean).map(v => v[0]?.y);
@@ -3063,8 +3063,8 @@ const cmpSw = it => `<i class="sw" style="background:var(${it.color})"></i>`;
 const cmpReal = () => realView ? "heutige Kaufkraft (jedes Ergebnis mit seiner eigenen Inflation)" : "nominal";
 function cmpOverview(body, items) {
   const num = v => v == null || !Number.isFinite(v) ? "–" : fmtMio(v);
-  /** Endvermögen eines Perzentils aus der Zusammenfassung, real umgerechnet mit der Teuerung des Laufs dieses Perzentils.
-   *  Ergebnisse vor #126 haben den realen Wert nur in den Detailläufen (0, 1, 5, 50, 95, 99). */
+  /** Final wealth of a percentile from the summary, converted to real with the inflation of the run of this percentile.
+   *  Results before #126 have the real value only in the detail runs (0, 1, 5, 50, 95, 99). */
   const endAt = (it, q) => {
     if (it.single) return q === 50 ? (realView ? it.single.summary.endTotalReal : it.single.summary.endTotal) : null;
     if (!it.batch) return null;
@@ -3073,7 +3073,7 @@ function cmpOverview(body, items) {
     return pc?.endTotalReal ?? it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
   };
   const notes = [];
-  // #118: Kennzahlen nach Spalte sortierbar; Farben und Reihenfolge der übrigen Karten bleiben
+  // #118: Key figures sortable by column; colors and order of the other cards stay
   const depAt = it => { const d = it.single ? it.single.summary.depleted : it.batch ? it.batch.summary.earliestDepletion?.[0] : undefined;
     return !it.single && !it.batch ? null : d ? ym2i(d) : Infinity; };
   const cols = [["name", "Ergebnis", "l", it => it.name], ["series", "Zeitreihe", "l", it => it.m.seriesName || (it.m.source === "fixed" ? "feste Renditen" : it.m.source === "parametric" ? "parametrisch" : null)],
@@ -3090,7 +3090,7 @@ function cmpOverview(body, items) {
     <td class="r">${it.single ? (it.single.summary.depleted ? ymShow(it.single.summary.depleted) : "keine") : it.batch ? (it.batch.summary.earliestDepletion ? ymShow(it.batch.summary.earliestDepletion[0]) : "keine") : "–"}</td></tr>`; }).join("");
   const scen = items.filter(it => it.scenariosOnly);
   if (scen.length) notes.push(`Nur als Kennzahl (Ergebnis mit Szenarien ohne Einzel- oder Monte-Carlo-Lauf): ${scen.map(it => esc(it.name)).join(", ")}.`);
-  // Bandbreite: Median (bzw. Einzellauf) und 5./95. Perzentil
+  // Range: median (or single run) and 5th/95th percentile
   const bandOf = it => { if (!it.batch) return null; const b = it.batch.bands; return realView ? b.real || null : b; };
   const noReal = items.filter(it => it.batch && realView && !it.batch.bands.real);
   if (noReal.length) notes.push(`Ohne Werte in heutiger Kaufkraft (älteres Ergebnis): ${noReal.map(it => esc(it.name)).join(", ")}.`);
@@ -3103,17 +3103,17 @@ function cmpOverview(body, items) {
   const fanLines = [];
   fan.forEach((f, k) => { if (!f) return; fanLines.push({ color: items[k].color, values: cmpPad(n, f.med) });
     if (f.lo) fanLines.push({ color: items[k].color, dash: "5 3", width: 1.2, values: cmpPad(n, f.lo) }, { color: items[k].color, dash: "2 3", width: 1.2, values: cmpPad(n, f.hi) }); });
-  // Perzentile: alle Perzentile der Ergebnisse als Zeilen
+  // Percentiles: all percentiles of the results as rows
   const batches = items.filter(it => it.batch);
   const qs = [...new Set(batches.flatMap(it => it.batch.summary.percentiles.map(p => p.percent)))].sort((a, b) => b - a);
   const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">Perzentil</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
     ${qs.map(q => `<tr><td class="l">${q === 0 ? "Schlechtester Lauf" : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
       + (realView ? `<p class="hint">${REAL_PCT_HINT}; die Reihenfolge kann deshalb von der nominalen abweichen.</p>` : "")
     : `<p class="hint" style="margin:0">Kein Ergebnis mit mehreren Läufen.</p>`;
-  // Wahrscheinlichkeit, dass das Geld reicht
+  // Probability that the money lasts
   const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);
   const ns = Math.max(0, ...surv.map(v => v ? v.length : 0));
-  // Alter bei Erschöpfung: Anteil der Läufe je Altersjahr (Ergebnisse mit verschieden vielen Läufen bleiben vergleichbar)
+  // Age at depletion: share of runs per year of age (results with different numbers of runs stay comparable)
   const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
   const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
   body.innerHTML = card("Kennzahlen", `Endvermögen ${cmpReal()}`, `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
@@ -3144,7 +3144,7 @@ function cmpCharts(body, items) {
   const n = Math.max(...runs.map(it => it.run.records.length));
   const series = (it, f) => cmpPad(n, it.run.records.map(r => rv(r, f(r))));
   const LQ = { liquid: r => r.liquid, stocks: r => r.stocks, bonds: r => r.bonds, cash: r => r.cash };
-  // Jahresgrössen der Balken: Einnahmen, Ausgaben, Steuern; Entnahmerate wie im Einzelergebnis
+  // Yearly values of the bars: income, spending, taxes; withdrawal rate as in the single result
   const yrs = cmpYears(runs, it => yearly(it.run.records));
   const flowOf = a => cmpFlow === "in" ? a.earned + a.pk + a.ahv : cmpFlow === "out" ? a.living + a.housing + a.p3a + a.taxes : a.taxes;
   const rateOf = a => a.liquidStart > 0 ? Math.max(0, a.draw) / a.liquidStart * 12 / a.months : 0;
@@ -3170,7 +3170,7 @@ function cmpCharts(body, items) {
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, flows[j][k], fmtMoney)).join("") });
   Charts.bars($("#cmp-draw"), $("#cmp-draw-tip"), { cats, yFmt: v => `${(v * 100).toFixed(1)} %`, minBar: 3, series: runs.map((it, j) => ({ group: String(j), color: it.color, values: rates[j].map(v => Number.isFinite(v) ? v : 0) })),
     tip: k => `<b>${cats[k]}</b>` + runs.map((it, j) => cmpRow(it, rates[j][k], pctTxt)).join("") });
-  // #122: wie im Einzelergebnis Wertentwicklung (linear oder logarithmisch) oder Änderung der letzten 12 Monate in %
+  // #122: as in the single result, performance (linear or logarithmic) or change over the last 12 months in %
   const real = (r, k) => r[k] / (realView ? r.priceIndex : 1);
   const chg = (it, k) => cmpPad(n, it.run.records.map((r, i) => i >= 12 ? 100 * (real(r, k) / real(it.run.records[i - 12], k) - 1) : NaN));
   const infl = it => cmpPad(n, it.run.records.map((r, i) => i >= 12 ? 100 * (r.priceIndex / it.run.records[i - 12].priceIndex - 1) : NaN));
@@ -3197,8 +3197,8 @@ function cmpTable(body, items) {
 }
 document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
 /**
- * #123: Felder der Planung, die im Vergleich nicht erscheinen (technisch oder ohne Eingabefeld), mit Grund. Alle übrigen
- * Eingaben zeigt `paramSections(plan, true)` mit den Bezeichnungen des Editors; ein Oberflächentest prüft die Abdeckung.
+ * #123: Fields of the plan that do not appear in the comparison (technical or without an input field), with reason. All other
+ * inputs are shown by `paramSections(plan, true)` with the labels of the editor; a user interface test checks the coverage.
  */
 const PLAN_HIDDEN = [
   [/^format$/, "Dateiformat"], [/^project\.name$/, "Name der Planung, steht im Namen des Ergebnisses"], [/(^|\.)id$/, "interne Kennung"],
@@ -3209,7 +3209,7 @@ const PLAN_HIDDEN = [
   [/^returns\.parametric\.sampler$/, "kein Eingabefeld (Verfahren der Zufallsziehung, #132)"],
 ];
 function cmpPlan(body, items, datas) {
-  // Abschnitte in der Reihenfolge des Editors, darin die Bezeichnungen in der Reihenfolge ihres ersten Auftretens
+  // Sections in the order of the editor, within them the labels in the order of their first occurrence
   const secs = new Map();
   datas.forEach((d, j) => paramSections(d.plan || {}, true).forEach(([title, rows]) => {
     if (!secs.has(title)) secs.set(title, new Map());
@@ -3264,16 +3264,16 @@ document.addEventListener("change", e => {
   Runs.update(el.dataset.id, { [el.dataset.f]: el.value.trim() });
 });
 
-// ---------- Willkommen (#70) und Erste Schritte (#71) ----------
-/** Lädt die Beispielplanung als neue, ungespeicherte Planung (nach Rückfrage bei ungespeicherten Änderungen). */
+// ---------- Welcome (#70) and first steps (#71) ----------
+/** Loads the example plan as a new, unsaved plan (after asking if there are unsaved changes). */
 async function loadExample() {
   if (!await confirmDiscard()) return false;
   await adopt(await Engine.call("example_plan")); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
   return true;
 }
 /**
- * Willkommensdialog: beim allerersten Start und über Hilfe → «Willkommen …». Esc oder Schliessen lässt alles, wie es ist
- * (beim ersten Start ist das die Beispielplanung, also wie «Beispiel erkunden», nur ohne Hilfe).
+ * Welcome dialog: at the very first start and via «Hilfe → Willkommen …». Esc or closing leaves everything as it is
+ * (at the first start that is the example plan, i.e. like «Beispiel erkunden», only without help).
  */
 async function showWelcome() {
   const d = $("#welcome"); if (d.open) return;
@@ -3285,14 +3285,14 @@ async function showWelcome() {
   if (choice === "explore") return Help.show("start");
   Steps.reset();
 }
-/** Schritte der Checkliste: die Abschnitte des Schnellstarts und zuletzt «Simulation starten». */
+/** Steps of the checklist: the sections of the quick start and finally «Simulation starten». */
 const STEPS = [["general", "s-general"], ["milestones", "s-milestones"], ["pension", "s-pension"], ["flows", "s-flows"],
   ["wealth", "s-wealth"], ["returns", "s-returns"], ["taxes", "s-taxes"], ["run", "quickstart"]]
   .map(([id, topic]) => ({ id, topic, title: SECTIONS.find(s => s.id === id)?.title ?? "Simulation starten" }));
 /**
- * Checkliste «Erste Schritte». Der Fortschritt gilt für den Benutzer (Einstellung «firstSteps»), nicht für eine Planung.
- * Ein Abschnitt ist erledigt, sobald darin ein Wert geändert oder er von Hand abgehakt wurde; Rückgängig nimmt den Haken
- * nicht weg. «Simulation starten» ist erledigt nach einer Simulation ohne Abbruch.
+ * Checklist «Erste Schritte». The progress applies to the user (setting «firstSteps»), not to a plan.
+ * A section is done as soon as a value in it was changed or it was ticked by hand; undo does not remove the
+ * tick. «Simulation starten» is done after a simulation without cancel.
  */
 const Steps = {
   get() {
@@ -3300,7 +3300,7 @@ const Steps = {
     return { done: Array.isArray(v.done) ? v.done.filter(id => STEPS.some(s => s.id === id)) : [], hidden: v.hidden === true, complete: v.complete === true };
   },
   put(v, open) { Pref.set("firstSteps", v); this.render(open); },
-  /** Hakt einen Schritt ab; sind damit alle erledigt, kommt einmal ein Hinweis und die Liste klappt zu. */
+  /** Ticks a step; if all are done with it, a notice appears once and the list collapses. */
   mark(id, on = true) {
     const v = this.get();
     if (on === v.done.includes(id)) return;
@@ -3312,13 +3312,13 @@ const Steps = {
   show() { const v = this.get(); v.hidden = false; this.put(v, true); this.reveal(); },
   hide() { const v = this.get(); v.hidden = true; this.put(v); },
   reset() { this.put({ done: [], hidden: false, complete: false }, true); this.reveal(); },
-  /** Die Liste steht unter Vorschau und Kennzahlen, oft ausserhalb des sichtbaren Bereichs: dorthin scrollen, Fokus auf den Kopf. */
+  /** The list sits below the preview and key figures, often outside the visible area: scroll there, focus on the header. */
   reveal() {
     const el = $("#steps"); if (!el || el.hidden) return;
     el.scrollIntoView({ block: "nearest" });
     el.querySelector("summary")?.focus({ preventScroll: true });
   },
-  /** `open`: aufgeklappt (true), zugeklappt (false) oder wie bisher (undefined; Standard: offen, bis alles erledigt ist). */
+  /** `open`: expanded (true), collapsed (false) or as before (undefined; default: open until everything is done). */
   render(open) {
     const el = $("#steps"); if (!el) return;
     const v = this.get(), was = el.querySelector("details");
@@ -3332,7 +3332,7 @@ const Steps = {
       ${v.complete ? `<p class="stepsdone">✓ Alle Schritte erledigt.</p>` : ""}</details>`;
   },
 };
-/** Eine Änderung im Editor hakt den Abschnitt ab, in dem sie geschieht. */
+/** A change in the editor ticks the section in which it happens. */
 function stepTouched() {
   if ($(".layout").hidden || !STEPS.some(s => s.id === current)) return;
   if (!Steps.get().done.includes(current)) Steps.mark(current);
@@ -3352,7 +3352,7 @@ Object.assign(ACTIONS, {
   if (SECTIONS.some(s => s.id === initial[0])) current = initial[0];
   let startup = null;
   try {
-    // Desktop-App: zuletzt geöffnete Planung, sonst die mitgelieferte Beispielplanung (#4)
+    // Desktop app: plan last opened, otherwise the bundled example plan (#4)
     if (Engine.inApp) startup = await Engine.call("startup_plan");
     var startNotes = await adopt(startup ? startup.plan : await Engine.call("example_plan"));
     gainTemplates = await Engine.call("gain_templates");
@@ -3363,10 +3363,10 @@ Object.assign(ACTIONS, {
   if (initial.includes("vpw")) state.withdrawal.strategy = "vpw";
   if (initial.includes("endowment")) state.withdrawal.strategy = "endowment";
   if (initial.includes("guardrails")) state.withdrawal.strategy = "guardrails";
-  // #111: Testzugang ohne Messung der Rechenzeit; sie liefe sonst in jedem Test im Hintergrund mit
+  // #111: Test access without measuring the computing time; otherwise it would run in the background in every test
   if (initial.includes("nobench")) bench.off = true;
-  // #111: Ergebnisse im Testzugang mit 500 Pfaden und festem Zufallsstartwert: schnell und bei jedem Lauf gleich. Die Tests
-  // prüfen Darstellung und Ablauf; 50 000 Pfade machten sie von der Rechnerlast abhängig.
+  // #111: Results in test access with 500 paths and a fixed random seed: fast and the same in every run. The tests
+  // check display and flow; 50 000 paths made them depend on the computer's load.
   if (initial[0] === "results") for (const k of ["bootstrap", "parametric"]) Object.assign(state.returns[k], { paths: 500, seed: 42 });
   if (!IS_MAC) document.querySelectorAll("[title]").forEach(el => { el.title = el.title.replace(/⇧⌘/g, "Ctrl+Shift+").replace(/⌘↩/g, "Ctrl+Enter").replace(/⌘/g, "Ctrl+"); });
   setFile(startup?.path ?? null); History.reset();
@@ -3375,8 +3375,8 @@ Object.assign(ACTIONS, {
   if (initial.includes("gainzh")) { ACTIONS["gain-zh"](); History.reset(); }
   if (initial.includes("optset")) { state.optimization = optToPlan({ ...OPT_DEFAULT, maxRuin: 2, weightMedian: 70, maxVol: 12, strategies: ["guardrails", "vpw"] }); History.reset(); }
   renderSection(); refreshSeriesInfo(); refreshLibrary(); Steps.render();
-  // #141: Rauchtest der ausgelieferten App (`--smoke`): Beispielplanung mit festen Renditen rechnen und melden; ohne
-  // Haftungsausschluss und Willkommen, ohne Einstellungen zu schreiben. Die App beendet sich danach.
+  // #141: Smoke test of the shipped app (`--smoke`): calculate the example plan with fixed returns and report; without
+  // disclaimer and welcome, without writing settings. The app then exits.
   if (window.__VIVAPLAN_SMOKE__) {
     let ok = false, message;
     try {
@@ -3389,24 +3389,24 @@ Object.assign(ACTIONS, {
     await Engine.call("smoke_done", { ok, message });
     return;
   }
-  // #61: Haftungsausschluss vor allem anderen bestätigen (Desktop-App; im Browser nur mit dem Testzugang #disclaimer).
+  // #61: Confirm the disclaimer before everything else (desktop app; in the browser only with the test access #disclaimer).
   if ((Engine.inApp || initial.includes("disclaimer")) && disclaimerPending()) {
     document.documentElement.dataset.disclaimer = "open";
     await disclaimerGate();
     document.documentElement.dataset.disclaimer = "ok";
   }
-  // #70: Willkommensdialog beim allerersten Start, nach dem Haftungsausschluss (Testzugang im Browser: #welcome). Gemerkt wird das sofort, damit er
-  // auch dann nicht wiederkommt, wenn die App ohne Wahl beendet wird.
+  // #70: Welcome dialog at the very first start, after the disclaimer (test access in the browser: #welcome). This is remembered immediately so that it
+  // does not come back even if the app is quit without a choice.
   if (startup?.first || initial[0] === "welcome") { Pref.set("welcomeShown", true); showWelcome(); }
   if (startup?.notice) ask("Planung beim Start", `<p>${esc(startup.notice)}</p>`);
   else if (startup?.path) { await showNotes(startNotes); reserveNotice(state); }
-  // Testzugang: Einstellung ändern und prüfen, dass sie in der Planung landet
+  // Test access: change a setting and check that it ends up in the plan
   if (initial.includes("optedit")) {
     const el = $("#opt-maxRuin"); el.value = "3"; el.dispatchEvent(new Event("change", { bubbles: true }));
     document.documentElement.dataset.optsaved = JSON.stringify(state.optimization);
     document.documentElement.dataset.optdirty = dirty ? "1" : "0";
   }
-  // Testzugang: Bandbreiten bearbeiten (Topf 1 fix, Topf 2 von 0 bis 2 Jahre, Nachfüllschwelle −30 % bis +10 %)
+  // Test access: edit ranges (bucket 1 fixed, bucket 2 from 0 to 2 years, refill threshold −30 % to +10 %)
   if (initial.includes("rangeedit")) (async () => {
     while (!optCat.data) await new Promise(r => setTimeout(r, 50));
     const set = (id, v) => { const el = document.getElementById(id); el[el.type === "checkbox" ? "checked" : "value"] = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
@@ -3416,15 +3416,15 @@ Object.assign(ACTIONS, {
     document.documentElement.dataset.dirtyr = dirty ? "1" : "0";
     document.documentElement.dataset.rangesum = document.querySelector("details.optrange:nth-of-type(2) summary .computed")?.textContent ?? "";
   })();
-  // Entwicklungs- und Testzugang: #results/<quelle>/<registerkarte>/real
+  // Development and test access: #results/<source>/<tab>/real
   if (initial.includes("real")) realView = true;
   if (initial.includes("sweep2")) state.scenarios.sweeps.push({ param: "flows.spendingFactor", from: 0.9, to: 1.1, step: 0.1 });
   if (initial.includes("nosweep")) state.scenarios.sweeps = [];
   if (initial.includes("mem")) Runs.memoryOnly();
   if (initial[0] === "about") showAbout();
   if (initial[0] === "runs") openRuns();
-  // Testzugang: zwei Simulationen ablegen, dann vergleichen (…/view: erste ansehen, …/del: eine löschen). 500 statt 50 000 Pfade mit
-  // festem Startwert wie #results (#111): Die Tests prüfen Liste, Vergleich und Darstellung, keine Kennzahlen (#79).
+  // Test access: store two simulations, then compare (…/view: view the first, …/del: delete one). 500 instead of 50 000 paths with
+  // a fixed seed like #results (#111): the tests check list, comparison and display, not key figures (#79).
   if (initial[0] === "runsflow") (async () => {
     state.returns.source = "bootstrap"; Object.assign(state.returns.bootstrap, { paths: 500, seed: 42 });
     await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
