@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Abdeckung des geänderten Codes (#39).
+"""Coverage of the changed code (#39).
 
-Liest eine lcov-Datei und vergleicht sie mit den geänderten Rust-Zeilen gegenüber einem Basis-Commit.
-Ausgabe als Markdown (für die GitHub-Zusammenfassung und das Terminal). Ein Hinweis, keine Sperre: Der Aufruf
-endet immer mit Exit-Code 0, ausser bei falscher Bedienung.
+Reads an lcov file and compares it with the Rust lines changed since a base commit.
+Output as Markdown (for the GitHub summary and the terminal). A hint, not a gate: the call
+always ends with exit code 0, except on wrong usage.
 
-Aufruf: coverage_diff.py <lcov.info> [<Basis, Vorgabe origin/main>]
-Mit der Basis wird `git diff -U0 <Basis>...HEAD` verwendet; ohne Commits seit der Basis zusätzlich der Arbeitsbaum
-(`git diff -U0 <Basis>`), damit der lokale Befehl auch ungespeicherte Änderungen zeigt.
+Usage: coverage_diff.py <lcov.info> [<base, default origin/main>]
+With the base, `git diff -U0 <base>...HEAD` is used; in addition the working tree (`git diff -U0 <base>`),
+so that the local command also shows uncommitted changes.
 """
 import re
 import subprocess
@@ -16,7 +16,7 @@ from collections import defaultdict
 
 
 def changed_lines(base, working_tree):
-    """Geänderte bzw. neue Zeilen je Rust-Datei: {Pfad: Menge von Zeilennummern}."""
+    """Changed or new lines per Rust file: {path: set of line numbers}."""
     spec = [base] if working_tree else [f"{base}...HEAD"]
     out = subprocess.run(["git", "diff", "-U0", "--no-color", *spec, "--", "*.rs"], capture_output=True, text=True, check=True).stdout
     files, cur = defaultdict(set), None
@@ -31,7 +31,7 @@ def changed_lines(base, working_tree):
 
 
 def read_lcov(path):
-    """Ausführbare Zeilen je Datei: {Pfad (relativ zum Repository): {Zeile: Treffer}}."""
+    """Executable lines per file: {path (relative to the repository): {line: hits}}."""
     root = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip() + "/"
     data, cur = {}, None
     for line in open(path, encoding="utf-8"):

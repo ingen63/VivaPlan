@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# #157: Prüft, dass keine Netzwerk-Bibliothek in den Abhängigkeiten der App steckt (Versprechen «keine Netzwerkzugriffe»).
+# #157: checks that no network library is among the app's dependencies (promise «keine Netzwerkzugriffe»).
 #
-# Aufruf:  tools/check-network-free.sh               cargo tree für die drei Pakete und alle Desktop-Ziele
-#          tools/check-network-free.sh --liste DATEI  prüft eine gestellte Liste im Format von cargo tree (Testmodus)
+# Usage:  tools/check-network-free.sh               cargo tree for the three packages and all desktop targets
+#         tools/check-network-free.sh `--liste` FILE  checks a given list in cargo tree format (test mode)
 #
-# Geprüft werden nur normale und Build-Abhängigkeiten (-e normal,build), keine Entwicklungsabhängigkeiten.
-# Ziele: die Desktop-Plattformen, für die gebaut wird (pakete.yml), je x86_64 und aarch64. Nicht `--target all`:
-# tauri zieht für Android/iOS reqwest und hyper herein; für Mobilgeräte wird nicht gebaut.
-# Vergleich über exakte Crate-Namen (erstes Feld je Zeile), keine Teilstrings: `dispatch2` trifft nicht `h2`.
-# Fehlercode: 0 kein Treffer, 1 Treffer, 2 Aufruf- oder cargo-Fehler.
+# Only normal and build dependencies are checked (-e normal,build), no dev dependencies.
+# Targets: the desktop platforms that are built (pakete.yml), x86_64 and aarch64 each. Not `--target all`:
+# tauri pulls in reqwest and hyper for Android/iOS; mobile devices are not built.
+# Comparison by exact crate names (first field per line), no substrings: `dispatch2` does not match `h2`.
+# Exit code: 0 no hit, 1 hits, 2 usage or cargo error.
 set -euo pipefail
 
 SPERRLISTE=(
@@ -23,7 +23,7 @@ ZIELE=(
   x86_64-apple-darwin aarch64-apple-darwin
 )
 
-# Liest Zeilen «name vX.Y.Z …» von stdin und meldet jeden Sperrlisten-Treffer genau einmal.
+# Reads lines `name vX.Y.Z …` from stdin and reports every blocklist hit exactly once.
 pruefe() {
   awk -v sperre="${SPERRLISTE[*]}" '
     BEGIN { n = split(sperre, s, " "); for (i = 1; i <= n; i++) gesperrt[s[i]] = 1 }

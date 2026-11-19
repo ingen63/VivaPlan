@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Git-Hook: läuft lokal nach jedem Commit.
-# Ändert der Commit etwas an der App (Rechenkern, Oberfläche, Cargo-Dateien), wird die
-# Desktop-App im Hintergrund gebaut und in /Applications installiert (tools/build-install.sh).
-# Der Commit wartet nicht darauf. Protokoll: target/build-install.log
-# Abschalten für einen Commit: BUILD_INSTALL=0 git commit ...
+# Git hook: runs locally after every commit.
+# If the commit changes something in the app (calculation engine, user interface, Cargo files), the
+# desktop app is built in the background and installed in /Applications (tools/build-install.sh).
+# The commit does not wait for it. Log: target/build-install.log
+# Switch off for one commit: BUILD_INSTALL=0 git commit ...
 # Installation: git config core.hooksPath tools/git-hooks
 
 [ "${BUILD_INSTALL:-1}" = "0" ] && exit 0
@@ -11,7 +11,7 @@
 
 root="$(git rev-parse --show-toplevel)"
 
-# Nur bauen, wenn sich etwas ändert, das in die App kommt (Tests und Dokumentation nicht)
+# Build only if something changes that goes into the app (not tests and documentation)
 if ! git diff-tree --root --no-commit-id --name-only -r HEAD \
      | grep -E '^(crates/(app|engine)/|Cargo\.(toml|lock)$)' \
      | grep -vqE '(^|/)tests/'; then

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Baut die Desktop-App (nur macOS) und ersetzt /Applications/VivaPlan.app.
-# Wird vom Git-Hook post-commit im Hintergrund gestartet, geht aber auch von Hand:
+# Builds the desktop app (macOS only) and replaces /Applications/VivaPlan.app.
+# Started in the background by the git hook post-commit, but also works by hand:
 #   tools/build-install.sh
-# Läuft schon ein Build, wird nur vorgemerkt; der laufende Build baut danach noch einmal,
-# damit am Schluss immer der neueste Commit installiert ist.
-# Protokoll: target/build-install.log
+# If a build is already running, a new one is only queued; the running build then builds once more,
+# so that the newest commit is always installed in the end.
+# Log: target/build-install.log
 
 set -uo pipefail
 
@@ -21,7 +21,7 @@ pending="$root/target/.build-install.pending"
 
 mkdir -p "$root/target"
 
-# Nur ein Build gleichzeitig; ein weiterer Aufruf merkt sich den Wunsch vor
+# Only one build at a time; a further call queues the request
 if ! mkdir "$lock" 2>/dev/null; then
   touch "$pending"
   echo "build-install: Build läuft bereits, neuer Build ist vorgemerkt."
@@ -43,7 +43,7 @@ while :; do
     exit 1
   fi
 
-  # Erst daneben kopieren, dann austauschen: bei einem Fehler bleibt die alte App erhalten
+  # Copy next to it first, then swap: on error the old app stays
   tmp="/Applications/.$app_name.neu"
   rm -rf "$tmp"
   if ditto "$bundle" "$tmp" && rm -rf "$dest" && mv "$tmp" "$dest"; then

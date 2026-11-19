@@ -1,4 +1,4 @@
-"""Tests für die Übersichtsseite und die Diff-Abdeckung (#39, #41, #42). Aufruf: python3 -m unittest discover tools/report"""
+"""Tests for the overview page and the diff coverage (#39, #41, #42). Usage: python3 -m unittest discover tools/report"""
 import os
 import sys
 import tempfile
@@ -6,13 +6,13 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
-import report  # noqa: E402  (wechselt in das Repository-Verzeichnis)
+import report  # noqa: E402  (changes into the repository directory)
 import coverage_diff  # noqa: E402
 
 
 class Status(unittest.TestCase):
     def test_playwright_run_time_comes_from_the_run_not_from_the_file(self):
-        # #89/AK3: results.json wird in der Pipeline heruntergeladen, die Dateizeit wäre die des Downloads
+        # #89/AK3: results.json is downloaded in the pipeline; the file time would be that of the download
         self.assertRegex(report.run_time("2026-11-14T22:01:05.375Z"), r"^\d\d\.\d\d\.\d{4} \d\d:\d\d$")
         self.assertIsNone(report.run_time(None))
         self.assertIsNone(report.run_time("kein Datum"))
@@ -30,8 +30,8 @@ class Status(unittest.TestCase):
         self.assertEqual(report.status_fit(pk(90, 85), mut(0)), report.OK)
         self.assertEqual(report.status_fit(pk(90, 85), mut(2)), report.HINT)
         self.assertEqual(report.status_fit(pk(90, 85), None), report.HINT)
-        self.assertEqual(report.status_fit(pk(95, 79.9), mut(0)), report.FAIL)  # Pakete werden nicht gemittelt
-        self.assertEqual(report.status_fit(pk(95, 85, 79.9), mut(0)), report.FAIL)  # #105/AK3: auch die Kommandozeile zählt
+        self.assertEqual(report.status_fit(pk(95, 79.9), mut(0)), report.FAIL)  # packages are not averaged
+        self.assertEqual(report.status_fit(pk(95, 85, 79.9), mut(0)), report.FAIL)  # #105/AK3: the command line counts too
 
     def test_junit_with_a_failing_test_is_reported_by_name(self):
         xml = '<testsuites><testsuite><testcase classname="engine::x" name="kaputt" time="0.1"><failure/></testcase><testcase classname="engine::x" name="ok" time="0.2"/><testcase classname="engine::x" name="wackelt" time="0.3"><flakyFailure/></testcase></testsuite></testsuites>'
@@ -55,18 +55,18 @@ class Requirements(unittest.TestCase):
         marks = {(7, 1): ["a.rs:3"], (7, 3): ["b.rs:9"]}
         rows = report.requirements([self.ISSUE], marks)
         kinds = [k for k, _, _ in rows[0]["items"]]
-        self.assertEqual(kinds, ["test", "manuell", "test"])  # 2 von 3 belegt, das abgehakte nur manuell
+        self.assertEqual(kinds, ["test", "manuell", "test"])  # 2 of 3 covered, the ticked one only manually
 
     def test_issue_117_ak5_markers_in_comments_and_test_names(self):
-        # #117/AK5: `#115/AK2` im Kommentar oder Testnamen, `issue_115_ak2_…` im Rust-Testnamen
+        # #117/AK5: `#115/AK2` in a comment or test name, `issue_115_ak2_…` in a Rust test name
         self.assertEqual(report.MARK.search("// #115/AK2 prüft").groups(), ("115", "2"))
         self.assertEqual(report.NAMEMARK.search("fn issue_115_ak2_rundung()").groups(), ("115", "2"))
         marks = report.scan_marks("a.rs", ["// #7/AK1 prüft", "fn issue_7_ak3_rundung() {}"], {})
         self.assertEqual(sorted(marks), [(7, 1), (7, 3)])
 
     def test_issue_117_ak5_old_ids_are_no_longer_recognised(self):
-        # #117/AK5: die bisherigen Formen (Präfix mit Bindestrich und Nummer, als Rust-Name mit Unterstrich) zählen nicht
-        # mehr; HTML-Entitäten sind keine Nummer. Die alten Kennungen sind zusammengesetzt, damit `git grep` sie nicht findet.
+        # #117/AK5: the former forms (prefix with hyphen and number, as a Rust name with underscore) no longer count;
+        # HTML entities are not a number. The old ids are concatenated so that `git grep` does not find them.
         src = ["// FE" "A-100/AK2", "fn fe" "a_100_ak2_x() {}", "// IS" "S-3/AK1", "x = '&#39;/AK1'"]
         self.assertEqual(report.scan_marks("a.rs", src, {}), {})
         self.assertEqual(report.scan_marks("e2e/x.spec.js", ['test.describe("FE" "A-56 alt", () => {', '  test("AK1 x", async () => {});', "});"], {}), {})
@@ -91,11 +91,11 @@ class Requirements(unittest.TestCase):
         marks = report.scan_marks("e2e/x.spec.js", src, {})
         self.assertEqual(sorted(marks), [(83, 1), (83, 2), (83, 3)])
         self.assertEqual(marks[(83, 1)], ["e2e/x.spec.js:2"])
-        # in Rust-Dateien gibt es keine describe-Blöcke
+        # Rust files have no describe blocks
         self.assertEqual(report.scan_marks("a.rs", src, {}), {})
 
     def test_issues_without_id_in_the_title_are_counted_by_number(self):
-        # #117/AK5: die Zuordnung läuft über die Nummer, nicht über den Titel
+        # #117/AK5: the mapping uses the number, not the title
         rows = report.requirements([dict(self.ISSUE, title="Titel ohne Präfix")], {(7, 2): ["t.rs:1"]})
         self.assertEqual(rows[0]["nr"], 7)
         self.assertEqual([k for k, _, _ in rows[0]["items"]], ["ohne", "test", "ohne"])
@@ -133,7 +133,7 @@ class DiffCoverage(unittest.TestCase):
         self.assertEqual(coverage_diff.ranges([5, 3, 4, 9]), "3–5, 9")
 
     def test_base_comes_from_diff_base(self):
-        # #39: Im Workflow gibt DIFF_BASE den Stand vor dem Push vor; ohne Angabe gilt origin/main.
+        # #39: in the workflow DIFF_BASE sets the state before the push; without it, origin/main applies.
         with tempfile.NamedTemporaryFile("w", suffix=".info", delete=False) as f:
             f.write("SF:crates/engine/src/lib.rs\nDA:1,1\nend_of_record\n")
         old = os.environ.get("DIFF_BASE")
@@ -142,7 +142,7 @@ class DiffCoverage(unittest.TestCase):
             self.assertEqual(report.read_diff_coverage(f.name)["base"], "HEAD")
             os.environ.pop("DIFF_BASE")
             r = report.read_diff_coverage(f.name)
-            self.assertTrue(r is None or r["base"] == "origin/main")  # ohne origin/main (flacher Klon) keine Angabe
+            self.assertTrue(r is None or r["base"] == "origin/main")  # without origin/main (shallow clone) no value
         finally:
             os.unlink(f.name)
             if old is not None:
@@ -150,7 +150,7 @@ class DiffCoverage(unittest.TestCase):
 
 
 class Page(unittest.TestCase):
-    """Die ganze Seite wird in einem leeren Arbeitsordner erzeugt (ohne Zugriff auf das Repository und auf GitHub)."""
+    """The whole page is created in an empty working folder (without access to the repository and to GitHub)."""
 
     def render(self, setup=None, gh=None):
         with tempfile.TemporaryDirectory() as d:
@@ -215,7 +215,7 @@ class Page(unittest.TestCase):
         verlauf = page[page.index("<h2>Verlauf</h2>"):]
         self.assertIn("Vergleich mit Version 9.9.8", verlauf)
         self.assertIn("Nicht erkannte Mutanten", verlauf)
-        self.assertIn("3,0 ▲", verlauf)  # 5 → 2 nicht erkannte Mutanten: weniger ist besser
+        self.assertIn("3,0 ▲", verlauf)  # 5 → 2 missed mutants: fewer is better
 
     def test_issue_42_ak4_without_gh_the_two_layers_say_no_data_and_the_rest_stays_complete(self):
         # #42/AK4

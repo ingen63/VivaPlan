@@ -1,10 +1,10 @@
-"""Tests für den Claude-Code-Hook nach einem Commit (.claude/hooks/after-commit.sh, #160).
+"""Tests for the Claude Code hook after a commit (.claude/hooks/after-commit.sh, #160).
 
-Aufruf: python3 -m unittest discover -s tools -p 'test_after_commit.py'
+Usage: python3 -m unittest discover -s tools -p 'test_after_commit.py'
 
-Jeder Test legt ein kleines Git-Repository an und ersetzt `cargo` durch ein Skript, das seine Argumente aufschreibt und
-eine Zusammenfassung wie nextest ausgibt. So wird geprüft, welche Pakete der Hook testet und was er Claude meldet, ohne
-die echten Tests laufen zu lassen.
+Every test creates a small git repository and replaces `cargo` with a script that records its arguments and
+prints a summary like nextest. This checks which packages the hook tests and what it reports to Claude, without
+running the real tests.
 """
 import json
 import os
@@ -47,7 +47,7 @@ class AfterCommitHook(unittest.TestCase):
         self.write("docs/README.md", "Anfang\n")
         self.write("fuzz/src/lib.rs", "// Anfang\n")
         self.commit("Anfang")
-        # Der erste Commit gilt als geprüft
+        # The first commit counts as checked
         self.run_hook(exit_code=0)
         self.args.unlink(missing_ok=True)
 
@@ -91,7 +91,7 @@ class AfterCommitHook(unittest.TestCase):
     def cargo_calls(self):
         return self.args.read_text().splitlines() if self.args.exists() else []
 
-    # #160/AK6: grüne Tests mit Test im Commit: nur die Zusammenfassung, kein Subagent
+    # #160/AK6: green tests with a test in the commit: only the summary, no subagent
     def test_issue_160_ak6_green_with_test_reports_summary_only(self):
         self.append("crates/engine/src/lib.rs", "fn f() {}\n#[test]\nfn t() {}\n")
         self.commit("Rechenkern mit Test")
@@ -106,7 +106,7 @@ class AfterCommitHook(unittest.TestCase):
         self.assertIn("nextest run --workspace", calls[0])
         self.assertIn("--status-level fail", calls[0])
 
-    # #160/AK6: Rechenkern ohne Test im Commit verlangt den Subagenten
+    # #160/AK6: an engine change without a test in the commit asks for the subagent
     def test_issue_160_ak6_engine_change_without_test_asks_for_agent(self):
         self.append("crates/engine/src/lib.rs", "fn g() {}\n")
         self.commit("Rechenkern ohne Test")
@@ -115,7 +115,7 @@ class AfterCommitHook(unittest.TestCase):
         self.assertIn("rust-test-agent", out["reason"])
         self.assertIn("ohne neuen oder geänderten Test", out["reason"])
 
-    # #160/AK6: Ein geänderter Integrationstest zählt als Test
+    # #160/AK6: a changed integration test counts as a test
     def test_issue_160_ak6_integration_test_counts_as_test(self):
         self.append("crates/engine/src/lib.rs", "fn h() {}\n")
         self.append("crates/engine/tests/all.rs", "// neuer Test\n")
@@ -123,7 +123,7 @@ class AfterCommitHook(unittest.TestCase):
         out = self.run_hook()
         self.assertNotIn("decision", out)
 
-    # #160/AK6: Fehlschläge verlangen den Subagenten und nennen die Tests
+    # #160/AK6: failures ask for the subagent and name the tests
     def test_issue_160_ak6_failures_ask_for_agent_with_failed_tests(self):
         self.append("crates/cli/src/main.rs", "fn k() {}\n")
         self.commit("Kommandozeile")
@@ -134,7 +134,7 @@ class AfterCommitHook(unittest.TestCase):
         self.assertIn("rust-test-agent", out["reason"])
         self.assertIn("1 failed", out["reason"])
 
-    # #160/AK6: nur die geänderten Pakete (ohne Rechenkern: kein --workspace)
+    # #160/AK6: only the changed packages (without the engine: no --workspace)
     def test_issue_160_ak6_only_changed_packages(self):
         self.append("crates/app/src/main.rs", "fn a() {}\n")
         self.append("crates/cli/src/main.rs", "fn c() {}\n")
@@ -162,7 +162,7 @@ class AfterCommitHook(unittest.TestCase):
         self.append("crates/cli/src/main.rs", "fn e() {}\n")
         self.commit("Kommandozeile")
         self.assertIsNotNone(self.run_hook())
-        # z. B. ein fehlgeschlagener `git commit` danach: HEAD unverändert
+        # e.g. a failed `git commit` afterwards: HEAD unchanged
         self.assertIsNone(self.run_hook())
         self.assertEqual(len(self.cargo_calls()), 1)
 

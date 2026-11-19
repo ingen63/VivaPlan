@@ -1,6 +1,6 @@
-//! Schnittstellentests: alle Befehle der Kommandozeile und der lokale Entwicklungsserver.
+//! Interface tests: all command line commands and the local development server.
 
-// #116: Speichergrenze je Testprozess (engine::test_alloc).
+// #116: memory limit per test process (engine::test_alloc).
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
 
@@ -37,7 +37,7 @@ fn text(o: &Output) -> String {
     )
 }
 
-/// Beispielplanung mit angepassten Renditen als Datei.
+/// Example plan with adjusted returns, as a file.
 fn plan_file(dir: &Path, source: &str, extra: impl Fn(&mut serde_json::Value)) -> String {
     let mut v: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(root().join("crates/engine/assets/beispiel.vplan")).unwrap())
@@ -56,7 +56,7 @@ fn usage_and_schema() {
     let o = run(&[]);
     assert_eq!(o.status.code(), Some(2));
     assert!(text(&o).contains("Verwendung"));
-    // #61: Kurzfassung des Haftungsausschlusses in einer Zeile
+    // #61: short form of the disclaimer in one line
     assert!(text(&o).contains("Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung."));
     let o = run(&["schema"]);
     assert!(o.status.success());
@@ -64,7 +64,7 @@ fn usage_and_schema() {
     assert!(schema["properties"]["returns"].is_object());
 }
 
-// #93/AK2: `vivaplan --version` nennt die Version des Arbeitsbereichs (Cargo.toml, `version = "…"` unter `[workspace.package]`).
+// #93/AK2: `vivaplan --version` prints the workspace version (Cargo.toml, `version = "…"` under `[workspace.package]`).
 #[test]
 fn version_is_printed() {
     let ws = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
@@ -129,7 +129,7 @@ fn validate_and_errors() {
     let o = run(&["validate", &ok]);
     assert!(o.status.success(), "{}", text(&o));
     assert!(text(&o).contains("gültig"));
-    // Ohne Zeitreihe und ohne Anlagestrategie (#69) fehlen die Renditen für «rolling».
+    // Without a series and without an investment strategy (#69), the returns for `rolling` are missing.
     let bad = plan_file(&d, "rolling", |v| {
         v["returns"]["series"] = serde_json::Value::Null;
         v["returns"].as_object_mut().unwrap().remove("strategy");
@@ -183,7 +183,7 @@ fn library_import_commands() {
     let o = run(&["library", "--library", l]);
     assert!(o.status.success(), "{}", text(&o));
     assert!(text(&o).contains("Shiller CHF.csv") && text(&o).contains("CHF"));
-    // #94: die Originaltabelle liegt nur lokal; ohne sie entfällt dieser Teil.
+    // #94: the original table exists only locally; without it this part is skipped.
     let shiller = root().join("crates/engine/data/quellen/shiller-index.ods");
     if shiller.exists() {
         let o = run(&["import-shiller", shiller.to_str().unwrap(), "--library", l]);
@@ -206,7 +206,7 @@ fn library_import_commands() {
     assert!(text(&o).contains("Shiller-Datei fehlt"));
 }
 
-// ---------- Entwicklungsserver ----------
+// ---------- Development server ----------
 
 struct Server(Child, u16);
 
@@ -228,8 +228,8 @@ fn server() -> Server {
             .unwrap(),
         port,
     );
-    // #83: Warten auf den Zustand (Port offen) statt fester Wartezeit; bis 30 s, damit auch ein langsamer Runner
-    // unter Abdeckungsmessung den Server starten kann.
+    // #83: wait for the state (port open) instead of a fixed delay; up to 30 s, so that a slow runner
+    // under coverage measurement can start the server too.
     for _ in 0..600 {
         if TcpStream::connect(("127.0.0.1", port)).is_ok() {
             return srv;
@@ -347,18 +347,18 @@ fn optimize_goal_two_needs_a_property_and_is_selectable() {
     let d = tmp("optimize-goal");
     let settings = serde_json::json!({ "paths": 100, "checkPaths": 100, "samples": 1, "strategies": ["fixed_rate"] });
     let f = plan_file(&d, "parametric", |p| p["optimization"] = settings.clone());
-    // Ziel 2 mit Immobilie der Beispielplanung
+    // Goal 2 with the example plan's property
     let t = text(&run(&["optimize", &f, "--goal", "2", "--min-consumption", "50"]));
     assert!(
         t.contains("Ziel 2 «Kein Notverkauf von Immobilien»") && t.contains("ungeplanter Immobilienverkauf"),
         "{t}"
     );
-    // Ungültiges Ziel
+    // Invalid goal
     assert!(!run(&["optimize", &f, "--goal", "9"]).status.success());
-    // Ziel 1 ausdrücklich gewählt: wie bisher
+    // Goal 1 chosen explicitly: as before
     let t = text(&run(&["optimize", &f, "--goal", "1"]));
     assert!(t.contains("Ziel: Ruin"), "{t}");
-    // Ohne Immobilie: Fehlermeldung
+    // Without a property: error message
     let g = plan_file(&d, "bootstrap", |p| {
         p["optimization"] = settings.clone();
         p["realestate"]["properties"] = serde_json::json!([]);
@@ -366,8 +366,8 @@ fn optimize_goal_two_needs_a_property_and_is_selectable() {
     assert!(!run(&["optimize", &g, "--goal", "2"]).status.success());
 }
 
-// #144/AK3: `run` und `validate` lehnen eine Datei aus einer neueren Version ab (Fehlercode ungleich 0, Meldung mit der
-// Kennung); die geltende und die alte Kennung sowie eine Datei ohne Kennung rechnen wie bisher.
+// #144/AK3: `run` and `validate` reject a file from a newer version (non-zero exit code, message with the
+// format id); the current and the old format id and a file without one calculate as before.
 #[test]
 fn issue_144_ak3_cli_rejects_an_unknown_format() {
     let d = tmp("format");

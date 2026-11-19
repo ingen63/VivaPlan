@@ -1,4 +1,4 @@
-//! Befehl `optimize`: beste Entnahmestrategie für ein Basisszenario suchen.
+//! Command `optimize`: search the best withdrawal strategy for a base scenario.
 
 use std::path::Path;
 
@@ -67,9 +67,9 @@ fn outcome_text(o: &Outcome, obj: &Objective) -> String {
     )
 }
 
-/// Anfrage aus den gespeicherten Einstellungen der Planung und den Optionen der Kommandozeile.
+/// Request from the plan's saved settings and the command line options.
 fn request_from(plan: &Plan, args: &[String]) -> Result<Request, Box<dyn std::error::Error>> {
-    // Gespeicherte Einstellungen der Planung gelten als Ausgangspunkt, Optionen überschreiben sie.
+    // The plan's saved settings are the starting point; options override them.
     let mut req = plan.optimization.as_ref().map_or_else(Request::default, Request::from);
     if let Some(v) = num(args, "--max-ruin")? {
         req.max_ruin = v / 100.0;
@@ -185,7 +185,7 @@ pub fn cmd_optimize(args: &[String]) -> R {
 
 #[cfg(test)]
 mod tests {
-    //! #106: Optionen und Ausgabe des Befehls `optimize`, ohne die Optimierung selbst zu rechnen.
+    //! #106: options and output of the command `optimize`, without running the optimization itself.
     use super::*;
     use engine::optimize::Metrics;
 
@@ -329,7 +329,7 @@ mod tests {
             bad_keep.ends_with("ungeplanter Immobilienverkauf in 12.5 % der Läufe"),
             "{bad_keep}"
         );
-        // ohne Verletzung der Nebenbedingungen steht bei Ziel 2 keine Warnung
+        // without a violated constraint, goal 2 shows no warning
         assert!(!outcome_text(&outcome(true), &keep).contains("NICHT"));
     }
 }

@@ -1,6 +1,6 @@
-//! #86: Fuzz-Ziel für die ganze Rechnung. Die Eingabe verändert die Beispielplanung strukturiert (je vier Bytes:
-//! zwei für das Feld, eines für die Art der Änderung, eines für den Wert) und ruft `api::run` auf. Abstürze und ungültige Zahlen im Ergebnis
-//! sind Funde. Damit ein Lauf schnell bleibt, rechnet Monte Carlo höchstens 255 Pfade und es gibt keine Variationen.
+//! #86: fuzz target for the whole calculation. The input changes the example plan in a structured way (four bytes each:
+//! two for the field, one for the kind of change, one for the value) and calls `api::run`. Crashes and invalid numbers in the
+//! result are findings. To keep a run fast, Monte Carlo calculates at most 255 paths and there are no sweeps.
 #![no_main]
 use std::path::Path;
 
@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 
 const LIBRARY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../crates/engine/data");
 
-/// Pfade aller Blätter und Knoten der Planung (JSON-Pointer).
+/// Paths of all leaves and nodes of the plan (JSON pointers).
 fn leaves(v: &Value, path: String, out: &mut Vec<String>) {
     match v {
         Value::Object(o) => {
@@ -38,7 +38,7 @@ fn base() -> Value {
     p
 }
 
-/// Ersetzt, löscht oder vertauscht ein Feld.
+/// Replaces or removes a field.
 fn mutate(plan: &mut Value, field: u16, kind: u8, value: u8) {
     let mut paths = vec![];
     leaves(plan, String::new(), &mut paths);
@@ -103,7 +103,7 @@ fn mutate(plan: &mut Value, field: u16, kind: u8, value: u8) {
     }
 }
 
-/// Höchstens 255 Pfade und keine Variationen, damit ein Lauf Millisekunden dauert.
+/// At most 255 paths and no sweeps, so that a run takes milliseconds.
 fn keep_small(plan: &mut Value) {
     for key in ["bootstrap", "parametric"] {
         if let Some(n) = plan["returns"][key]["paths"].as_f64() {

@@ -1,9 +1,9 @@
-//! Kommandozeile für den Rechenkern (bis die Desktop-App steht; auch für Tests und Vergleiche).
+//! Command line for the calculation engine (until the desktop app is ready; also for tests and comparisons).
 
 mod devserver;
 mod optimize;
 
-// #116: Speichergrenze je Testprozess (engine::test_alloc).
+// #116: memory limit per test process (engine::test_alloc).
 #[cfg(test)]
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
@@ -308,7 +308,7 @@ fn cmd_run(args: &[String]) -> R {
     Ok(())
 }
 
-/// Rechnet den ersten Renditepfad N-mal parallel (Last wie bei einer Monte-Carlo-Simulation).
+/// Runs the first return path N times in parallel (load as in a Monte Carlo simulation).
 fn cmd_bench(args: &[String]) -> R {
     let path = positional(args).ok_or("Projektdatei fehlt")?;
     let n: usize = opt(args, &["--paths"]).map_or(Ok(50_000), |s| s.parse())?;
@@ -443,7 +443,7 @@ fn cmd_import(args: &[String]) -> R {
     let json = imp.plan.to_json();
     match opt(args, &["-o", "--out"]) {
         Some(out) => {
-            // #136: atomar, eine vorhandene Datei bleibt bei einem Fehler unverändert
+            // #136: atomic; an existing file stays unchanged on error
             engine::api::write_atomic(Path::new(&out), json.as_bytes()).map_err(|e| format!("{out}: {e}"))?;
             eprintln!("Gespeichert: {out}");
         }

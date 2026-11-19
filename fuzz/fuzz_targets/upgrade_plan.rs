@@ -1,5 +1,5 @@
-//! #137: Fuzz-Ziel für das Nachführen älterer Planungen (läuft bei jedem Öffnen). Beliebiges JSON geht durch
-//! `api::upgrade_plan` und danach durch `api::validate`; ein Absturz ist ein Fund. Startkorpus: `fuzz/seeds/upgrade_plan/`.
+//! #137: fuzz target for upgrading older plans (runs on every open). Any JSON goes through
+//! `api::upgrade_plan` and then through `api::validate`; a crash is a finding. Seed corpus: `fuzz/seeds/upgrade_plan/`.
 #![no_main]
 use libfuzzer_sys::fuzz_target;
 

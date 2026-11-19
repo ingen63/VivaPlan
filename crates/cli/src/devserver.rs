@@ -1,5 +1,5 @@
-//! Lokaler Entwicklungsserver: liefert die Oberfläche aus `crates/app/ui` und beantwortet `/api/<befehl>`
-//! wie die Desktop-App. Lauscht nur auf 127.0.0.1; Dateidialoge gibt es hier nicht.
+//! Local development server: serves the user interface from `crates/app/ui` and answers `/api/<command>`
+//! like the desktop app. Listens on 127.0.0.1 only; there are no file dialogs here.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -14,8 +14,8 @@ pub fn serve(port: u16, ui: PathBuf, library: PathBuf) -> std::io::Result<()> {
         ui.display(),
         library.display()
     );
-    // Eine Anfrage pro Thread: Während einer langen Berechnung muss die Oberfläche den
-    // Fortschritt abfragen und den Abbruch senden können.
+    // One request per thread: during a long calculation the user interface must be able to
+    // poll the progress and send the cancellation.
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
         let (ui, library) = (ui.clone(), library.clone());
@@ -84,20 +84,20 @@ fn content_type(p: &Path) -> &'static str {
     }
 }
 
-/// #142: Die Rechenbefehle beantwortet derselbe Verteiler, den der Vertragstest der Desktop-App prüft
-/// (`engine::dispatch`); relative Pfade ohne Projektdatei gelten ab dem Arbeitsverzeichnis.
+/// #142: the calculation commands are answered by the same dispatcher that the desktop app's contract test checks
+/// (`engine::dispatch`); without a plan file, relative paths start in the working directory.
 fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
     engine::dispatch::call(cmd, args, library, &std::env::current_dir().unwrap_or_default())
 }
 
 #[cfg(test)]
 mod tests {
-    //! #105/AK1: Der Dev-Server ohne Browser. `call` ist der Befehlsverteiler; `serve` und `handle` laufen auf 127.0.0.1.
+    //! #105/AK1: the dev server without a browser. `call` is the command dispatcher; `serve` and `handle` run on 127.0.0.1.
     use super::*;
     use std::net::TcpStream;
     use std::time::Duration;
 
-    /// Eigene Datenbibliothek je Test (`library_list` legt dort die ausgelieferten Zeitreihen an).
+    /// Separate data library per test (`library_list` creates the shipped series there).
     fn library() -> PathBuf {
         tmp(&format!("lib-{:?}", std::thread::current().id()).replace(['(', ')'], ""))
     }
@@ -109,7 +109,7 @@ mod tests {
         d
     }
 
-    /// Kleine, schnelle Planung: feste Renditen, keine Szenarien.
+    /// Small, fast plan: fixed returns, no scenarios.
     fn plan() -> Value {
         let mut p = engine::api::example_plan();
         p["returns"]["source"] = json!("fixed");
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn progress_and_cancel_follow_the_job_id() {
-        // #107/AK2, #107/AK4: Die Oberfläche gibt die Kennung beim Start mit und fragt damit Stand und Abbruch ab.
+        // #107/AK2, #107/AK4: the user interface passes the id at the start and uses it to poll progress and cancel.
         let before = call_ok("progress_get", json!({ "jobId": 424242 }));
         assert_eq!(
             (before["id"].as_u64(), before["active"].as_bool()),
@@ -162,8 +162,9 @@ mod tests {
             (after["active"].as_bool(), after["cancelled"].as_bool()),
             (Some(false), Some(false))
         );
-        assert!(after["total"].as_u64().unwrap() >= 1, "{after}"); // der Job dieser Kennung hat gerechnet
-                                                                   // ohne Kennung: die zuletzt gestartete Berechnung; Abbruch ohne Kennung trifft alle laufenden
+        // the job with this id has calculated
+        assert!(after["total"].as_u64().unwrap() >= 1, "{after}");
+        // without an id: the most recently started calculation; cancelling without an id hits all running ones
         assert_eq!(call_ok("progress_get", json!({}))["id"], json!(424242));
         assert!(call_ok("cancel_job", json!({})).is_null());
         let o = call_ok("optimize", json!({ "plan": plan(), "request": {}, "jobId": 424243 }));
@@ -198,7 +199,7 @@ mod tests {
         assert!(e.contains("Spalte «Stocks» fehlt"), "{e}");
     }
 
-    /// #142: Ohne Projektdatei gelten relative Pfade ab dem Arbeitsverzeichnis (beim Test der Ordner `crates/cli`).
+    /// #142: without a plan file, relative paths start in the working directory (in the test the folder `crates/cli`).
     #[test]
     fn relative_paths_without_a_plan_file_start_in_the_working_directory() {
         let rel = "../engine/data/Shiller CHF.csv";
@@ -228,7 +229,7 @@ mod tests {
         }
     }
 
-    /// Eine Anfrage an den laufenden Server; gibt Statuszeile und Rumpf zurück.
+    /// One request to the running server; returns the status line and the body.
     fn request(port: u16, head: &str, body: &str) -> (String, String) {
         let mut s = (0..100)
             .find_map(|_| {
@@ -275,7 +276,7 @@ mod tests {
         let (st, body) = request(port, "POST /api/gibt_es_nicht HTTP/1.1", "kein json");
         assert_eq!(st, "HTTP/1.1 400 Bad Request");
         assert!(body.contains("gibt es nur in der Desktop-App"), "{body}");
-        // GET auf /api/ ist keine Anfrage an den Verteiler
+        // GET on /api/ is not a request to the dispatcher
         assert_eq!(
             request(port, "GET /api/example_plan HTTP/1.1", "").0,
             "HTTP/1.1 404 Not Found"

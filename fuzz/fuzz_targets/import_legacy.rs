@@ -1,5 +1,5 @@
-//! #137: Fuzz-Ziel für den Import alter `config.json`. Beliebiger Text geht durch `api::import_legacy`; ein Absturz ist
-//! ein Fund. Datenpfade der alten Konfiguration gelten ab einem leeren Ordner, gelesen wird nur. Startkorpus:
+//! #137: fuzz target for the import of old `config.json` files. Any text goes through `api::import_legacy`; a crash is
+//! a finding. Data paths of the old configuration start in an empty folder; files are only read. Seed corpus:
 //! `fuzz/seeds/import_legacy/`.
 #![no_main]
 use std::path::Path;

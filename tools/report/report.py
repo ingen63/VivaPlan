@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Übersichtsseite «Testqualität» (#41, #42).
+"""Overview page «Testqualität» (test quality, #41, #42).
 
-Erzeugt eine statische HTML-Seite (ohne Netzwerk, ohne externe Skripte oder Schriften) aus den vorhandenen
-Ergebnissen: nextest-JUnit, lcov, local/mutants.out, Playwright-JSON und (nur beim Erzeugen, über `gh`) den GitHub-Issues.
-Es gibt keine Gesamtnote; jede Schicht hat ihren eigenen Status nach der auf der Seite genannten Regel.
+Creates a static HTML page (no network, no external scripts or fonts) from the existing
+results: nextest JUnit, lcov, local/mutants.out, Playwright JSON and (only while generating, via `gh`) the GitHub issues.
+There is no overall grade; every layer has its own status according to the rule stated on the page.
 
-Aufruf: report.py [--out <Ordner>] [--summary]
-  --out      Ausgabeordner (Vorgabe local/test-quality/report)
-  --summary  zusätzlich eine Kurzfassung als Markdown auf die Standardausgabe (GitHub-Lauf-Zusammenfassung)
+Usage: report.py [--out <folder>] [--summary]
+  --out      output folder (default local/test-quality/report)
+  --summary  additionally a short Markdown summary on standard output (GitHub run summary)
 """
 import glob
 import html
@@ -75,7 +75,7 @@ def read_junit():
 
 
 def run_time(iso):
-    """Beginn eines Playwright-Laufs (ISO 8601, UTC) als lokale Zeit; ungültig oder fehlend: None."""
+    """Start of a Playwright run (ISO 8601, UTC) as local time; invalid or missing: None."""
     try:
         return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone().strftime("%d.%m.%Y %H:%M")
     except (AttributeError, ValueError):
@@ -90,7 +90,7 @@ def read_playwright():
     return {"when": run_time(s.get("startTime")) or when(f), "ok": s.get("expected", 0), "failed": s.get("unexpected", 0), "flaky": s.get("flaky", 0), "skipped": s.get("skipped", 0)}
 
 
-# ---------- Angemessenheit ----------
+# ---------- Adequacy ----------
 def read_lcov():
     lcov = ROOT / "local" / "test-quality" / "lcov.info"
     if sh("cargo", "llvm-cov", "report", "--lcov", "--output-path", str(lcov), check=True) is None and not lcov.exists():
@@ -118,7 +118,7 @@ def read_mutants():
 def read_diff_coverage(lcov):
     try:
         from coverage_diff import changed_lines, read_lcov as parse
-        # Basis: im Workflow der Stand vor dem Push bzw. der Basis-Zweig (DIFF_BASE), lokal origin/main (#39)
+        # Base: in the workflow the state before the push or the base branch (DIFF_BASE), locally origin/main (#39)
         base = os.environ.get("DIFF_BASE") or "origin/main"
         changed = changed_lines(base, working_tree=True)
         if not changed:
@@ -148,7 +148,7 @@ def fuzz_info():
     return {"targets": targets, "crashes": crashes}
 
 
-# ---------- Anforderungsbezug und Ergebnis (nur über gh) ----------
+# ---------- Requirements traceability and outcome (only via gh) ----------
 def read_issues():
     out = sh("gh", "issue", "list", "--state", "all", "--limit", "500", "--json", "number,title,state,labels,body,comments", check=True)
     try:
@@ -166,10 +166,10 @@ BARE_AK = re.compile(r"(?<![/\w])AK(\d+)\b")
 
 
 def scan_marks(path, lines, marks):
-    """Kennzeichnungen einer Datei, {(Issue-Nummer, Kriterium): [Fundstellen]}. In e2e-Dateien belegt ein Test mit `AKn`
-    im Namen das Kriterium des Issues aus dem umgebenden `test.describe` (nur wenn dessen Titel genau eine Issue-Nummer
-    nennt, #113/AK2)."""
-    stack = []  # (Einrückung, Nummern) der offenen describe-Blöcke
+    """Marks of one file, {(issue number, criterion): [locations]}. In e2e files a test with `AKn` in its name
+    covers the criterion of the issue from the enclosing `test.describe` (only if its title names exactly one issue
+    number, #113/AK2)."""
+    stack = []  # (indentation, numbers) of the open describe blocks
     for i, line in enumerate(lines, 1):
         for rx in (MARK, NAMEMARK):
             for m in rx.finditer(line):
@@ -193,8 +193,8 @@ def scan_marks(path, lines, marks):
 
 
 def test_marks():
-    """Kennzeichnung der Tests: `#115/AK2` (Kommentar, Testname), `issue_115_ak2_…` oder `AK2` im Testnamen innerhalb
-    eines `test.describe("#115 …")`; {(Nummer, Kriterium): [Fundstellen]}."""
+    """Test marks: `#115/AK2` (comment, test name), `issue_115_ak2_…` or `AK2` in the test name inside
+    a `test.describe("#115 …")`; {(number, criterion): [locations]}."""
     files = []
     for pat in ("crates/engine/**/*.rs", "crates/cli/**/*.rs", "crates/app/src/**/*.rs", "e2e/*.js"):
         files += glob.glob(pat, recursive=True)
@@ -207,8 +207,8 @@ def test_marks():
     return marks
 
 
-# Prüfung auf Anweisung («Prüfe #Nr», CLAUDE.md): Kommentar «Prüfung …», «Erneute Prüfung …», «Nacharbeit AKn …» oder
-# «AKn erfüllt in <Commit>». Je Kriterium zählt die letzte Aussage (#113/AK3).
+# Check on instruction («Prüfe #Nr», CLAUDE.md): comment «Prüfung …», «Erneute Prüfung …», «Nacharbeit AKn …» or
+# «AKn erfüllt in <Commit>». Per criterion the last statement counts (#113/AK3).
 CHECK_HEAD = re.compile(r"^\W*(?:(?:Erneute )?Prüfung\b(?! vom \S+ durch den Anwender)|Nacharbeit AK\d+|AK\d+ (?:erfüllt|ok) in [0-9a-f]{7})", re.I)
 CHECK_LINE = re.compile(r"^\s*(?:[-*]\s+)?\**((?:AK\d+(?:\s*,\s*|\s+und\s+)?)+)\**[\s.:]*\**\s*(ok|erfüllt|ist belegt|nicht|offen|teilweise|überholt)?", re.I | re.M)
 CHECK_ALL = re.compile(r"\b(?:alle (?:\w+ )?Kriterien (?:sind )?(?:erfüllt|ok)|Ergebnis: \d+ von \d+ Kriterien ok)", re.I)
@@ -216,7 +216,7 @@ POSITIVE = ("ok", "erfüllt", "ist belegt")
 
 
 def checked(comments, n_crit):
-    """{Nr des Kriteriums: Datum der Prüfung} aus den Prüfkommentaren eines Issues."""
+    """{criterion number: date of the check} from the check comments of an issue."""
     res = {}
     for c in sorted(comments or [], key=lambda c: c.get("createdAt", "")):
         body = c.get("body") or ""
@@ -237,7 +237,7 @@ def checked(comments, n_crit):
 
 
 def requirements(issues, marks):
-    """Je Kriterium die Art: test (gekennzeichneter Test), geprueft (Prüfung auf Anweisung), manuell (nur abgehakt), ohne."""
+    """Per criterion the kind: `test` (marked test), `geprueft` (check on instruction), `manuell` (only ticked), `ohne` (none)."""
     rows = []
     for it in sorted(issues, key=lambda i: i["number"]):
         iid = it["number"]
@@ -273,7 +273,7 @@ def escapes(issues):
     return rows
 
 
-# ---------- Verlauf ----------
+# ---------- History ----------
 def history(version_, metrics):
     d = ROOT / "local" / "test-quality" / "history"
     d.mkdir(parents=True, exist_ok=True)
@@ -283,7 +283,7 @@ def history(version_, metrics):
     return prev
 
 
-# ---------- Statusregeln ----------
+# ---------- Status rules ----------
 def status_hygiene(junit):
     if not junit:
         return NODATA
@@ -386,7 +386,7 @@ def main():
         h.append("<p class='muted'>Oberfläche (Playwright): keine Daten (<code>e2e/results.json</code> fehlt; <code>npx playwright test</code> erzeugt sie).</p>")
     h.append("</section>")
 
-    # Angemessenheit
+    # Adequacy
     h.append(f"<section><h2>2 Angemessenheit {badge(st_f)}</h2><p class='rule'>Regel: erfüllt = alle drei Pakete mindestens {MIN_COVERAGE:.0f} % Zeilenabdeckung und keine nicht erkannten Mutanten; Hinweis = Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf vorhanden; nicht erfüllt = ein Paket unter {MIN_COVERAGE:.0f} %; keine Daten = keine Abdeckung vorhanden.</p>")
     if cov:
         h.append("<h3>Zeilenabdeckung je Paket</h3>" + table(["Paket", "Abdeckung", "Untergrenze", "Zeilen"], [
@@ -406,7 +406,7 @@ def main():
     pt, fz = proptest_info(junit), fuzz_info()
     h.append(f"<h3>Property-Tests und Fuzzing</h3><p>Property-Tests: {pt['tests'] if pt['tests'] is not None else 'keine Daten'} Tests mit «proptest» im Namen, Fallzahl {E(pt['cases'])}.</p><p>Fuzzing: {len(fz['targets'])} Ziele ({E(', '.join(fz['targets']))}), {fz['crashes']} gespeicherte Abstürze in <code>fuzz/artifacts</code>; letzter Lauf: keine Daten (läuft nächtlich auf GitHub).</p></section>")
 
-    # Anforderungsbezug
+    # Requirements traceability
     h.append(f"<section><h2>3 Anforderungsbezug {badge(st_r)}</h2><p class='rule'>Regel: erfüllt = jedes Abnahmekriterium ist durch einen gekennzeichneten Test belegt, geprüft oder abgehakt; Hinweis = es gibt Kriterien ohne Test, ohne Prüfung und ohne Haken; keine Daten = keine Verbindung zu GitHub (<code>gh</code>). Ein Test wird mit <code>#115/AK2</code> im Kommentar oder Namen (<code>issue_115_ak2_…</code>) gekennzeichnet, in den Oberflächentests auch mit <code>AK2</code> im Testnamen innerhalb von <code>test.describe(\"#115 …\")</code>; AK2 ist das zweite Kriterium des Issues. «Geprüft» heisst: in einer Prüfung auf Anweisung (Kommentar «Prüfung …» im Issue) als erfüllt festgehalten. «Nur manuell» heisst: abgehakt, ohne gekennzeichneten Test und ohne solche Prüfung.</p>")
     if reqs is None:
         h.append("<p class='muted'>Keine Daten: <code>gh</code> ist nicht angemeldet oder nicht erreichbar.</p>")
@@ -419,7 +419,7 @@ def main():
         h.append(table(["Issue", "mit Test", "geprüft", "nur manuell", "ohne"], rows, num=(1, 2, 3, 4)))
     h.append("</section>")
 
-    # Ergebnis
+    # Outcome (escaped bugs)
     h.append(f"<section><h2>4 Ergebnis (durchgerutschte Fehler) {badge(st_e)}</h2><p class='rule'>Regel: Bug-Issues mit dem Label <code>found: test</code>, <code>found: acceptance</code> oder <code>found: usage</code> (Fundort); erfüllt = jedes beantwortet «Welcher Test hätte ihn fangen müssen?» und nennt den Regressionstest; Hinweis = eine Antwort fehlt; keine Daten = keine Verbindung zu GitHub oder noch kein Fehler mit Fundort-Label erfasst.</p>")
     if esc is None:
         h.append("<p class='muted'>Keine Daten: <code>gh</code> ist nicht angemeldet oder nicht erreichbar.</p>")
@@ -429,7 +429,7 @@ def main():
         h.append(table(["Issue", "Gefunden bei", "Welcher Test hätte ihn fangen müssen?", "Regressionstest"], [(f"#{e['nr']} {E(e['title'])}", E(e["found"]), E(e["which"] or "–"), E(e["reg"] or "–")) for e in esc]))
     h.append("</section>")
 
-    # Verlauf
+    # History
     rows = []
     cur = metrics
     for key, label, better in (("coverage_engine", "Abdeckung Engine", True), ("coverage_app", "Abdeckung App", True), ("missed", "Nicht erkannte Mutanten", False), ("flaky", "Flaky Tests", False), ("criteria_share", "Kriterien mit Test (Anteil)", True), ("criteria_checked", "Kriterien geprüft (Anteil)", True)):
