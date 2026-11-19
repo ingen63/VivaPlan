@@ -56,7 +56,7 @@ fn handle(mut stream: TcpStream, ui: &Path, library: &Path) -> std::io::Result<(
             Err(e) => (
                 "400 Bad Request",
                 "application/json",
-                json!({ "error": e }).to_string().into_bytes(),
+                error_body(&e).to_string().into_bytes(),
             ),
         }
     } else {
@@ -85,9 +85,14 @@ fn content_type(p: &Path) -> &'static str {
     }
 }
 
+/// #171: Answer to a failed command: German text, code and parameters of the message (the user interface translates it).
+fn error_body(e: &engine::message::Message) -> Value {
+    json!({ "error": e.text(), "code": e.code(), "params": e.params() })
+}
+
 /// #142: the calculation commands are answered by the same dispatcher that the desktop app's contract test checks
 /// (`engine::dispatch`); without a plan file, relative paths start in the working directory.
-fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, String> {
+fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, engine::message::Message> {
     engine::dispatch::call(cmd, args, library, &std::env::current_dir().unwrap_or_default())
 }
 
@@ -179,6 +184,11 @@ mod tests {
         let err = |cmd: &str, args: Value| call(cmd, &args, &lib).unwrap_err();
         assert!(err("rerun_paths", json!({ "plan": plan(), "picks": "x" })).contains("invalid type"));
         assert_eq!(err("series_info", json!({})), "Pfad fehlt");
+        // #171: the answer carries text, code and parameters as an object
+        assert_eq!(
+            super::error_body(&err("open_dialog", json!({}))),
+            json!({ "error": "Befehl «open_dialog» gibt es nur in der Desktop-App", "code": "command_desktop_only", "params": { "cmd": "open_dialog" } })
+        );
         assert!(!err("series_info", json!({ "path": "/does/not/exist.csv" })).is_empty());
         assert!(!err("optimize", json!({ "plan": plan(), "request": "nonsense" })).is_empty());
         assert_eq!(

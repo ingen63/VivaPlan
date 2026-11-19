@@ -16,6 +16,7 @@ use std::borrow::Cow;
 
 use serde_json::{json, Map, Value};
 
+use crate::message::Message;
 use crate::model::{fixed_milestone_name, person_milestone_name, person_milestones, Plan, AHV_NAME, PK_NAME};
 use crate::settings::{Limits, DEFAULT_AGE};
 use crate::time::YearMonth;
@@ -24,9 +25,9 @@ fn ym(v: &Value) -> Option<YearMonth> {
     serde_json::from_value(v.clone()).ok()
 }
 
-fn fmt_age(y: f64) -> String {
-    let s = format!("{y:.1}");
-    s.strip_suffix(".0").map(str::to_string).unwrap_or(s)
+/// #171: Age with at most one decimal as a parameter (65, 62.5).
+fn age_value(y: f64) -> f64 {
+    (y * 10.0).round() / 10.0
 }
 
 /// Month of a milestone from the JSON (date or age of a person).
@@ -44,7 +45,7 @@ fn milestone_month(ms: &Value, births: &[(String, YearMonth)]) -> Option<YearMon
 }
 
 /// Brings a plan up to date; the notes describe every change.
-pub fn upgrade(v: &mut Value) -> Vec<String> {
+pub fn upgrade(v: &mut Value) -> Vec<Message> {
     let mut notes = vec![];
     if !v.is_object() {
         return notes;
@@ -82,7 +83,7 @@ pub const PARAMETRIC_NOTE: &str = "Monte Carlo parametrisch rechnet neu auch Obl
 /// #100/#101: Flag `auto` for the parameters of the stock model. Plans that compute parametrically keep their
 /// values (with a note, #101/AK6); for all others the values were not in use and from now on follow the
 /// stock index.
-fn parametric(v: &mut Value, notes: &mut Vec<String>) {
+fn parametric(v: &mut Value, notes: &mut Vec<Message>) {
     let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
         return;
     };
@@ -100,7 +101,7 @@ fn parametric(v: &mut Value, notes: &mut Vec<String>) {
         None => {}
     }
     if active {
-        notes.push(PARAMETRIC_NOTE.into());
+        notes.push(msg!(note_parametric));
     }
 }
 
@@ -109,7 +110,7 @@ pub const SAMPLER_NOTE: &str = "Monte Carlo parametrisch erzeugt die Zufallspfad
 
 /// #132: Flag `sampler` for the parametric model. If it is missing, the plan dates from before #132; if it computes
 /// parametrically, it gets a note (not in addition to [`PARAMETRIC_NOTE`], which already names the change).
-fn sampler(v: &mut Value, notes: &mut Vec<String>) {
+fn sampler(v: &mut Value, notes: &mut Vec<Message>) {
     let active = v.pointer("/returns/source").and_then(Value::as_str) == Some("parametric");
     let Some(q) = v.pointer_mut("/returns/parametric").and_then(Value::as_object_mut) else {
         return;
@@ -119,30 +120,31 @@ fn sampler(v: &mut Value, notes: &mut Vec<String>) {
     }
     q.insert("sampler".into(), json!(crate::montecarlo::SAMPLER));
     if active && !notes.iter().any(|n| n == PARAMETRIC_NOTE) {
-        notes.push(SAMPLER_NOTE.into());
+        notes.push(msg!(note_sampler));
     }
 }
 
 /// #90: The index «Schweiz (Pictet)» is no longer bundled. Stocks «Schweiz (Pictet)» become
 /// «Schweiz (JST)», bonds «Schweiz (Pictet)» become «Eidgenossenschaft 10 Jahre», with a note.
-fn pictet(v: &mut Value, notes: &mut Vec<String>) {
+fn pictet(v: &mut Value, notes: &mut Vec<Message>) {
     let Some(s) = v.pointer_mut("/returns/strategy").and_then(Value::as_object_mut) else {
         return;
     };
     let mut parts = vec![];
     if s.get("stocks").and_then(Value::as_str) == Some(PICTET_KEY) {
         s.insert("stocks".into(), json!("chJst"));
-        parts.push("für die Aktien «Schweiz (JST)»");
+        parts.push(msg!(note_pictet_stocks));
     }
     if s.get("bonds").and_then(Value::as_str) == Some(PICTET_KEY) {
         s.insert("bonds".into(), json!("ch"));
-        parts.push("für die Obligationen «Eidgenossenschaft 10 Jahre»");
+        parts.push(msg!(note_pictet_bonds));
     }
     if !parts.is_empty() {
-        notes.push(format!(
-            "Der Index «Schweiz (Pictet)» wird aus Lizenzgründen nicht mehr mitgeliefert. Die Anlagestrategie verwendet jetzt {}; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich.",
-            parts.join(" und ")
-        ));
+        notes.push(if parts.len() > 1 {
+            msg!(note_pictet_both, first = parts[0], second = parts[1])
+        } else {
+            msg!(note_pictet, parts = parts[0])
+        });
     }
 }
 
@@ -151,7 +153,7 @@ const PICTET_KEY: &str = "chPictet";
 
 /// #69: The series of an older plan becomes the investment strategy with the same values. Series without
 /// a matching strategy (in USD or own files) are replaced, with a note.
-fn strategy(v: &mut Value, notes: &mut Vec<String>) {
+fn strategy(v: &mut Value, notes: &mut Vec<Message>) {
     let Some(ret) = v.get_mut("returns").and_then(Value::as_object_mut) else {
         return;
     };
@@ -166,14 +168,12 @@ fn strategy(v: &mut Value, notes: &mut Vec<String>) {
         Some("library:Pictet CH.csv") => (PICTET_KEY, PICTET_KEY),
         Some("library:Welt (JST).csv") => ("worldJst", "ch"),
         Some("library:Shiller USD.csv") => {
-            notes.push(STRATEGY_USD_NOTE.into());
+            notes.push(msg!(note_strategy_usd));
             ("sp500", "usa")
         }
         Some(other) => {
             let name = other.strip_prefix(crate::library::PREFIX).unwrap_or(other);
-            notes.push(format!(
-                "Die eigene Zeitreihe «{name}» wird nicht mehr unterstützt. Die Anlagestrategie ist jetzt «Welt (JST)» mit Obligationen der Eidgenossenschaft; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich."
-            ));
+            notes.push(msg!(note_own_series, name = name));
             ("worldJst", "ch")
         }
     };
@@ -196,7 +196,7 @@ pub const CASH_NOTE: &str = "Cash wird neu bis zur Pensionierung (Bezug Pensions
 
 /// #53: Older plans entered the living costs without housing costs. The housing share at the simulation start is added to
 /// every value, so that the result stays the same.
-fn housing(v: &mut Value, notes: &mut Vec<String>) {
+fn housing(v: &mut Value, notes: &mut Vec<Message>) {
     if v.pointer("/flows/spendingIncludesHousing").and_then(Value::as_bool) == Some(true) || v.get("flows").is_none() {
         return;
     }
@@ -209,7 +209,7 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
     let w = crate::housing::start_housing(&plan, &r);
     v["flows"]["spendingIncludesHousing"] = json!(true);
     // #54/AK8: same marking of an older plan (before #53/#54).
-    notes.push(CASH_NOTE.to_string());
+    notes.push(msg!(note_cash));
     if w <= 0.0 {
         return;
     }
@@ -233,15 +233,12 @@ fn housing(v: &mut Value, notes: &mut Vec<String>) {
             }
         }
     }
-    notes.push(format!(
-        "Die Lebenshaltungskosten enthalten neu die Wohnkosten. Die Wohnkosten zum Simulationsstart ({:.0} pro Monat) sind zu jedem Wert addiert; das Ergebnis bleibt gleich.",
-        w
-    ));
+    notes.push(msg!(note_spending_includes_housing, housing = w));
 }
 
 /// #51: fixed milestones per person, names and limits. #170: the fixed milestones store no name; the German
 /// default names of `start` and `end` are removed, a name of its own stays.
-fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, notes: &mut Vec<String>) {
+fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, notes: &mut Vec<Message>) {
     if !v.get("milestones").is_some_and(Value::is_array) {
         v["milestones"] = json!([]);
     }
@@ -264,6 +261,7 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
             (ahv, AHV_NAME, limits.ahv_min, limits.ahv_max),
         ] {
             let name = person_milestone_name(base, i);
+            let name_msg = crate::model::fixed_milestone_message(id);
             let list = v["milestones"].as_array_mut().expect("Liste");
             let Some(ms) = list
                 .iter_mut()
@@ -278,16 +276,17 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
                     at,
                     json!({ "id": id, "kind": "age", "person": pid, "years": DEFAULT_AGE }),
                 );
-                notes.push(format!(
-                    "Der Meilenstein «{name}» fehlte und steht neu auf {} Jahren.",
-                    fmt_age(DEFAULT_AGE)
+                notes.push(msg!(
+                    note_milestone_added,
+                    name = name_msg,
+                    years = age_value(DEFAULT_AGE)
                 ));
                 continue;
             };
             // #170: no stored name; the name comes from the id (#51: an older name is replaced with a note)
             let old_name = ms.get("name").and_then(Value::as_str).unwrap_or("").to_string();
             if !old_name.is_empty() && old_name != name {
-                notes.push(format!("Der Meilenstein «{old_name}» heisst neu «{name}»."));
+                notes.push(msg!(note_milestone_renamed, old = old_name, name = name_msg));
             }
             if let Some(o) = ms.as_object_mut() {
                 o.remove("name");
@@ -312,17 +311,15 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
                 o.insert("person".into(), json!(pid));
                 o.insert("years".into(), json!(years));
                 notes.push(match age {
-                    Some(a) => format!(
-                        "«{name}» lag bei {} Jahren, ausserhalb der Grenzen {} bis {} Jahre; neu {} Jahre.",
-                        fmt_age(a),
-                        fmt_age(lo),
-                        fmt_age(hi),
-                        fmt_age(years)
+                    Some(a) => msg!(
+                        note_milestone_age_limited,
+                        name = name_msg,
+                        age = age_value(a),
+                        lo = age_value(lo),
+                        hi = age_value(hi),
+                        years = age_value(years)
                     ),
-                    None => format!(
-                        "«{name}» bezieht sich neu auf das Alter der eigenen Person ({} Jahre).",
-                        fmt_age(years)
-                    ),
+                    None => msg!(note_milestone_own_person, name = name_msg, years = age_value(years)),
                 });
             }
         }
@@ -330,28 +327,32 @@ fn milestones(v: &mut Value, births: &[(String, YearMonth)], limits: &Limits, no
 }
 
 /// #51: Pension fund and AHV pension refer to the fixed milestones of the person.
-fn pension_refs(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<String>) {
+fn pension_refs(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Message>) {
     for (i, base) in [(0usize, "/pension"), (1usize, "/partner")] {
         if i >= births.len() {
             continue;
         }
         let (pk, ahv) = person_milestones(i);
-        for (key, id, what) in [("pk", pk, "Der Bezug der Pensionskasse"), ("ahv", ahv, "Die AHV-Rente")] {
+        for (key, id) in [("pk", pk), ("ahv", ahv)] {
             let Some(o) = v.pointer_mut(&format!("{base}/{key}")).and_then(Value::as_object_mut) else {
                 continue;
             };
             let old = o.get("at").and_then(Value::as_str).unwrap_or("").to_string();
             if old != id {
                 o.insert("at".into(), json!(id));
-                let ms = person_milestone_name(if key == "pk" { PK_NAME } else { AHV_NAME }, i);
-                notes.push(format!("{what} beginnt neu am Meilenstein «{ms}» (bisher «{old}»)."));
+                let ms = crate::model::fixed_milestone_message(id);
+                notes.push(if key == "pk" {
+                    msg!(note_pk_reference, milestone = ms, old = old)
+                } else {
+                    msg!(note_ahv_reference, milestone = ms, old = old)
+                });
             }
         }
     }
 }
 
 /// #52: Pillar 3a on a mortgage becomes a 3a account of its own of the first person.
-fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<String>) {
+fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Message>) {
     let Some((pid, _)) = births.first().cloned() else {
         return;
     };
@@ -406,31 +407,28 @@ fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Strin
         let mut usage = pa.get("use").and_then(Value::as_str).unwrap_or("repay").to_string();
         if usage == "repay" && !indirect {
             usage = "wealth".into();
-            notes.push(format!(
-                "Säule 3a von «{name}»: «Hypothek zurückzahlen» setzt neu eine Tranche mit indirekter Amortisation voraus; die Auszahlung geht ins freie Vermögen."
-            ));
+            notes.push(msg!(note_pillar3a_repay_to_wealth, name = name));
         }
         let payout = pa.get("payout").and_then(Value::as_str).unwrap_or("never").to_string();
         let mut entry = None;
-        let mut text = format!("Die Säule 3a von «{name}» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»)");
+        let text;
         match (month_of(v, &payout), ahv_at) {
             (Some(m), Some(a)) if m >= a => {
-                text += "; der Rest wird im Monat des AHV-Bezugs ausbezahlt";
+                text = msg!(note_pillar3a_account_rest_at_ahv, name = name);
             }
             (Some(m), Some(a)) => {
                 let earliest = a.plus(-60);
                 let date = m.max(earliest);
                 if date > m {
-                    text +=
-                        &format!("; die Auszahlung ({m}) lag mehr als 5 Jahre vor dem AHV-Bezug und ist neu im {date}");
+                    text = msg!(note_pillar3a_account_moved, name = name, old = m, date = date);
                 } else {
-                    text += &format!("; Auszahlung des ganzen Guthabens im {date}");
+                    text = msg!(note_pillar3a_account_payout, name = name, date = date);
                 }
                 entry = Some(json!({ "date": date, "use": usage }));
             }
-            _ => text += "; ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt",
+            _ => text = msg!(note_pillar3a_account_no_date, name = name),
         }
-        notes.push(text + ".");
+        notes.push(text);
         let list = v["pillar3a"].as_array_mut().expect("Liste");
         match list
             .iter_mut()
@@ -445,9 +443,9 @@ fn pillar3a(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Strin
                     }
                     acc["payouts"].as_array_mut().expect("Liste").push(e);
                 }
-                notes.push(format!(
-                    "Mehrere 3a-Guthaben sind zu einem Konto zusammengefasst (Zins des ersten Kontos: {:.2} %).",
-                    acc.get("rate").and_then(Value::as_f64).unwrap_or(0.0) * 100.0
+                notes.push(msg!(
+                    note_pillar3a_merged,
+                    rate = acc.get("rate").and_then(Value::as_f64).unwrap_or(0.0)
                 ));
             }
             None => list.push(json!({
@@ -520,11 +518,17 @@ mod tests {
         assert_eq!(ms(&v, "retire")["years"], 60, "Alter innerhalb der Grenzen bleibt");
         assert_eq!(v["pension"]["ahv"]["at"], "ahv");
         assert!(
-            notes.contains(&"Der Meilenstein «AHV-Bezug» fehlte und steht neu auf 65 Jahren.".to_string()),
+            notes
+                .iter()
+                .any(|n| n == "Der Meilenstein «AHV-Bezug» fehlte und steht neu auf 65 Jahren."),
             "{notes:?}"
         );
-        assert!(notes.contains(&"Der Meilenstein «Pensionierung» heisst neu «Bezug Pensionskasse».".to_string()));
-        assert!(notes.contains(&"Die AHV-Rente beginnt neu am Meilenstein «AHV-Bezug» (bisher «never»).".to_string()));
+        assert!(notes
+            .iter()
+            .any(|n| n == "Der Meilenstein «Pensionierung» heisst neu «Bezug Pensionskasse»."));
+        assert!(notes
+            .iter()
+            .any(|n| n == "Die AHV-Rente beginnt neu am Meilenstein «AHV-Bezug» (bisher «never»)."));
         // Second run: nothing left to do
         assert!(upgrade(&mut v).is_empty());
     }
@@ -546,16 +550,14 @@ mod tests {
         assert_eq!(ms(&v, "ahv")["kind"], "age");
         assert!(ms(&v, "ahv").get("date").is_none());
         assert!(
-            notes.contains(
-                &"«Bezug Pensionskasse» lag bei 55 Jahren, ausserhalb der Grenzen 58 bis 65 Jahre; neu 58 Jahre."
-                    .to_string()
-            ),
+            notes.iter().any(|n| n
+                == "«Bezug Pensionskasse» lag bei 55 Jahren, ausserhalb der Grenzen 58 bis 65 Jahre; neu 58 Jahre."),
             "{notes:?}"
         );
         assert!(
-            notes.contains(
-                &"«AHV-Bezug» lag bei 72 Jahren, ausserhalb der Grenzen 63 bis 70 Jahre; neu 70 Jahre.".to_string()
-            ),
+            notes
+                .iter()
+                .any(|n| n == "«AHV-Bezug» lag bei 72 Jahren, ausserhalb der Grenzen 63 bis 70 Jahre; neu 70 Jahre."),
             "{notes:?}"
         );
         // #25: Limits from the settings
@@ -752,7 +754,7 @@ mod tests {
                 "tranches": [ { "amount": 100_000, "periods": [ { "amort": 0, "amortMode": "indirect" } ] } ] } } ] });
             let notes = upgrade(&mut v);
             assert!(
-                notes.contains(&"Die Säule 3a von «Haus» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt.".to_string()),
+                notes.iter().any(|n| n == "Die Säule 3a von «Haus» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt."),
                 "{payout:?}: {notes:?}"
             );
             assert_eq!(v["pillar3a"][0]["use"], "wealth", "Amortisation 0: nicht indirekt");

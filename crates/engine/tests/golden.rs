@@ -137,8 +137,31 @@ fn snapshot(plan: &Value) -> Value {
     assert!(out.error.is_none(), "{:?}", out.error);
     let mut v = serde_json::to_value(&out).unwrap();
     v.as_object_mut().unwrap().remove("elapsedMs");
+    without_codes(&mut v);
     thin(&mut v);
     v
+}
+
+/// #171/AK4: The comparison ignores the message codes: `code` and `params` are removed, and a message standing alone
+/// (`{code, params, text}`, for example a reason or a label) becomes its German text as in the golden files.
+fn without_codes(v: &mut Value) {
+    match v {
+        Value::Object(m) => {
+            if m.contains_key("code") && m.contains_key("params") {
+                m.remove("code");
+                m.remove("params");
+                if m.len() == 1 {
+                    if let Some(t) = m.get("text").cloned() {
+                        *v = t;
+                        return;
+                    }
+                }
+            }
+            m.values_mut().for_each(without_codes);
+        }
+        Value::Array(a) => a.iter_mut().for_each(without_codes),
+        _ => {}
+    }
 }
 
 /// Sum per numeric field over all months.

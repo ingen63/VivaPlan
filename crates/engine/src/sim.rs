@@ -31,6 +31,7 @@
 use serde::Serialize;
 
 use crate::market::MarketPath;
+use crate::message::Message;
 use crate::model::{
     Affordability, AfterLast, AmortMode, AmountMode, Buckets, PayoutUse, Plan, Property, PropertyStatus, RateKind,
     ReturnSource, Strategy, Tranche,
@@ -68,7 +69,9 @@ pub enum EventKind {
 pub struct Event {
     pub month: YearMonth,
     pub kind: EventKind,
-    pub text: String,
+    /// #171: Serialized as `text` (German), `code` and `params`.
+    #[serde(flatten)]
+    pub text: Message,
 }
 
 /// #133: Cash flows and valuation changes of one month. The change in total wealth against the previous month
@@ -217,10 +220,10 @@ pub struct PropertyEvent {
     pub rate: Option<f64>,
     /// Emergency sale: reason («Vermögen < 0» or «Notverkaufskriterium»); for a renewal, why it did not happen.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
+    pub reason: Option<Message>,
     /// Sale: what happens to the proceeds («Verkaufserlös reserviert für Kauf im Folgemonat» or withdrawal strategy applied at once).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub note: Option<String>,
+    pub note: Option<Message>,
 }
 
 impl PropertyEvent {
@@ -256,7 +259,7 @@ pub struct NeedBasis {
     /// Reference year of the values.
     pub year: i32,
     /// «Januar, geplant» or «ab <Monat>, auf 12 Monate hochgerechnet».
-    pub source: String,
+    pub source: Message,
     /// Source of the living costs: «geplant» or «Guardrails» (#6).
     pub living_source: String,
     pub living: f64,
@@ -305,7 +308,7 @@ pub struct BucketMove {
 pub struct BucketRefill {
     pub month: YearMonth,
     /// Description of the occasion.
-    pub reason: String,
+    pub reason: Message,
     /// Case triggered: «Januar», «A», «B» or «C».
     pub trigger: String,
     /// For A: months of the year already past, by which the target sizes are reduced (otherwise 0).
@@ -316,7 +319,7 @@ pub struct BucketRefill {
     pub target2: f64,
     /// Stock return for the return condition (last 12 months, including the lead-in before the start) and its basis.
     pub stock_return: f64,
-    pub return_basis: String,
+    pub return_basis: Message,
     pub threshold: f64,
     /// Stock return ≥ threshold (sales from bucket 3 are allowed). For A and C the criterion is ignored.
     pub condition_met: bool,
@@ -345,7 +348,7 @@ pub struct Renewal {
     /// Mortgage after the renewal (unchanged on an emergency sale; the property is sold in the following month).
     pub debt_after: f64,
     /// Reason for the emergency sale: «Vermögen < 0» or «Notverkaufskriterium»; `None`: no emergency sale.
-    pub emergency_sale: Option<String>,
+    pub emergency_sale: Option<Message>,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -378,7 +381,7 @@ pub struct Summary {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SimResult {
-    pub label: String,
+    pub label: Message,
     pub summary: Summary,
     pub events: Vec<Event>,
     /// All renewals of mortgage periods with the result of the affordability check.
@@ -470,11 +473,20 @@ enum Trigger {
     SaleOf(usize),
 }
 
+/// #171: Basis of the stock return of the 3-bucket strategy as a message («letzte 12 Monate», «seit Start»).
+fn return_basis(basis: &str) -> Message {
+    if basis == "seit Start" {
+        msg!(return_since_start)
+    } else {
+        msg!(return_last_12_months)
+    }
+}
+
 /// Pillar 3a of one person (#52).
 #[derive(Clone, Debug, Default)]
 struct CAccount {
-    /// Suffix for event texts with two persons.
-    who: String,
+    /// Suffix for event texts with two persons (` (name)` as a message, otherwise empty).
+    who: crate::message::Arg,
     balance: f64,
     rate_m: f64,
     /// Contribution per month (one twelfth of the annual contribution), until before the AHV payout.
@@ -612,13 +624,13 @@ impl Simulator {
         // Take over older pillar 3a on the mortgage as when loading (#52).
         let normalized = crate::upgrade::normalized(plan);
         let plan: &Plan = &normalized;
-        let errors: Vec<String> = validate::validate(plan)
+        let errors: Vec<Message> = validate::validate(plan)
             .into_iter()
             .filter(|i| i.severity == Severity::Error)
             .map(|i| i.message)
             .collect();
         if !errors.is_empty() {
-            return Err(Error::Invalid(errors.join("\n")));
+            return Err(Error::Invalid(msg!(plan_errors, errors = errors)));
         }
         let w = &plan.withdrawal;
         let buckets = (w.strategy == Strategy::ThreeBuckets).then(|| w.buckets.clone().unwrap_or_default());
@@ -713,9 +725,9 @@ impl Simulator {
             .enumerate()
             .map(|(i, person)| {
                 let who = if people.len() > 1 {
-                    format!(" ({})", person.name)
+                    crate::message::arg(&msg!(suffix_name, name = person.name))
                 } else {
-                    String::new()
+                    crate::message::Arg::Null
                 };
                 let ahv = r.milestone(crate::model::person_milestones(i).1).ok();
                 match plan.pillar3a.iter().find(|a| a.person == person.id) {
@@ -875,9 +887,9 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
             };
             for t in &mg.tranches {
                 let first = match p.status {
-                    PropertyStatus::Owned => t.start.ok_or_else(|| {
-                        Error::Invalid(format!("{}: Beginn der laufenden Hypothekarperiode fehlt", p.name))
-                    })?,
+                    PropertyStatus::Owned => t
+                        .start
+                        .ok_or_else(|| Error::Invalid(msg!(tranche_period_start_missing, name = p.name)))?,
                     _ => match buy {
                         Some(b) => b,
                         None => continue,
@@ -902,7 +914,7 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
                 .iter()
                 .position(|q| q.id.as_deref() == Some(id))
                 .map(Trigger::SaleOf)
-                .ok_or_else(|| Error::Invalid(format!("{}: Immobilie «{id}» gibt es nicht", p.name))),
+                .ok_or_else(|| Error::Invalid(msg!(property_reference_missing, name = p.name, id = id))),
         }
     };
     Ok(CProp {
@@ -999,7 +1011,7 @@ struct PropState {
     balances: Vec<f64>,
     emergency_pending: bool,
     /// Reason for the emergency sale that was initiated.
-    emergency_reason: Option<String>,
+    emergency_reason: Option<Message>,
     /// Periods of a purchase «nach Verkauf».
     sched: Option<Vec<CTranche>>,
     /// Month of the sale.
@@ -1057,14 +1069,14 @@ struct Run<'a> {
     inflow3: f64,
     /// Booking journal of this month's inflows (from, to, amount, occasion); 0 = external, 4 = reservation. Written to
     /// the log by `flush_inflow`.
-    inflow_log: Vec<(u8, u8, f64, String)>,
+    inflow_log: Vec<(u8, u8, f64, Message)>,
     /// One-off expenses of this month outside the events (rest of the equity at a purchase, lump sums and
     /// mortgage repayments). They belong to the month's expenses and are paid only after the look-ahead.
     month_out: f64,
     /// #133: Ledger of the current month.
     ledger: Ledger,
     /// Reasons for special case A in this month.
-    a_reasons: Vec<String>,
+    a_reasons: Vec<Message>,
     /// Reserved sale proceeds for a planned purchase; held in `cash`, but belongs to no bucket.
     reserved: f64,
     /// All buckets empty, no property left: bucket 1 may be negative, buckets 2 and 3 are shut down.
@@ -1077,7 +1089,7 @@ struct Run<'a> {
     /// Amortization share of this month's ongoing housing costs (not part of the need).
     month_amort: f64,
     /// Occasions on which the withdrawal strategy is applied at once in this month (inflows, sale without a follow-up purchase).
-    apply_reasons: Vec<String>,
+    apply_reasons: Vec<Message>,
     /// The withdrawal strategy is applied this month in addition to the January application.
     apply_now: bool,
     /// The strategy started for the first time this month (retirement); this is already in the log.
@@ -1237,12 +1249,7 @@ impl<'a> Run<'a> {
             .any(|(p, c)| c.pk_at.is_some() && p.retired)
     }
 
-    /// Amount with currency for event texts.
-    fn money(&self, v: f64) -> String {
-        format!("{v:.0} {}", self.s.currency)
-    }
-
-    fn event(&mut self, month: YearMonth, kind: EventKind, text: String) {
+    fn event(&mut self, month: YearMonth, kind: EventKind, text: Message) {
         self.events.push(Event { month, kind, text });
     }
 
@@ -1307,11 +1314,7 @@ impl<'a> Run<'a> {
         ps.emergency_pending = false;
         ps.sold = Some(m);
         ps.balances.iter_mut().for_each(|b| *b = 0.0);
-        let label = if kind == EventKind::EmergencySale {
-            "Notverkauf"
-        } else {
-            "Verkauf"
-        };
+        let emergency = kind == EventKind::EmergencySale;
         let name = self.s.props[i].name.clone();
         let mut pe = PropertyEvent::new(
             m,
@@ -1328,7 +1331,7 @@ impl<'a> Run<'a> {
         pe.net = Some(worth - debt - gain_tax);
         if kind == EventKind::EmergencySale {
             self.summary.emergency_sales += 1;
-            pe.reason = Some(reason.unwrap_or_else(|| "Notverkaufskriterium".into()));
+            pe.reason = Some(reason.unwrap_or_else(|| msg!(reason_emergency_criterion)));
         }
         // Follow-up purchase next month: reserve the proceeds, apply the withdrawal strategy only after the purchase.
         // Otherwise the strategy is applied at once in the month of the sale.
@@ -1338,29 +1341,44 @@ impl<'a> Run<'a> {
                 self.reserved_sale = Some(m);
                 self.reserved_cash += net;
                 self.reserved += net;
-                self.mark_reservation(net, &format!("Verkauf {name}"));
-                pe.note = Some("Verkaufserlös reserviert für Kauf im Folgemonat".into());
-                let text = format!(
-                    "Verkaufserlös {name} ({}) reserviert für Kauf im Folgemonat",
-                    self.money(net)
+                self.mark_reservation(net, msg!(why_sale, name = name));
+                pe.note = Some(msg!(note_sale_reserved));
+                let text = msg!(
+                    event_sale_reserved,
+                    name = name,
+                    amount = net,
+                    currency = self.s.currency
                 );
                 self.event(m, EventKind::Withdrawal, text);
             } else {
-                self.apply_reasons.push(format!("Verkauf {name}, kein Folgekauf"));
-                pe.note = Some("Entnahmestrategie angewendet (kein Folgekauf)".into());
-                self.mark_inflow(net, &format!("Verkauf {name}"));
+                self.apply_reasons.push(msg!(reason_sale_no_follow_up, name = name));
+                pe.note = Some(msg!(note_withdrawal_applied));
+                self.mark_inflow(net, msg!(why_sale, name = name));
             }
         }
         self.property_events.push(pe);
         self.event(
             m,
             kind,
-            format!(
-                "{label} {name}: Wert {}, Hypothek {}, Grundstückgewinnsteuer {}",
-                self.money(worth),
-                self.money(debt),
-                self.money(gain_tax)
-            ),
+            if emergency {
+                msg!(
+                    event_emergency_sale,
+                    name = name,
+                    value = worth,
+                    debt = debt,
+                    tax = gain_tax,
+                    currency = self.s.currency
+                )
+            } else {
+                msg!(
+                    event_sale,
+                    name = name,
+                    value = worth,
+                    debt = debt,
+                    tax = gain_tax,
+                    currency = self.s.currency
+                )
+            },
         );
         if !self.props.iter().any(|p| p.active) {
             self.after_sale = Some(m.plus(1));
@@ -1406,10 +1424,7 @@ impl<'a> Run<'a> {
                 // (rent «nach Verkauf» of this property, further purchases «nach Verkauf» of it).
                 self.props[i].done = true;
                 self.props[i].sold = Some(m);
-                let text = format!(
-                    "Kauf {} entfällt: Folgeregeln (Miete, weitere Käufe «nach Verkauf») gelten ab dem Folgemonat",
-                    s.props[i].name
-                );
+                let text = msg!(event_purchase_dropped, name = s.props[i].name);
                 self.event(m, EventKind::Purchase, text);
                 if !self.props.iter().any(|p| p.active) {
                     self.after_sale.get_or_insert(m);
@@ -1438,7 +1453,7 @@ impl<'a> Run<'a> {
                 .filter(|p| p.rent_trigger == Trigger::LastSale)
                 .map(|p| p.name.as_str())
                 .collect();
-            self.event(m, EventKind::RentStart, format!("Miete ab jetzt: {}", names.join(", ")));
+            self.event(m, EventKind::RentStart, msg!(event_rent_start, names = names));
         }
     }
 
@@ -1563,20 +1578,33 @@ impl<'a> Run<'a> {
             (liquid - lump - s.emergency.at(m) * shortfall < 0.0).then_some("Notverkaufskriterium")
         };
         if let Some(reason) = reason {
-            let why = if reason == "Vermögen < 0" {
-                format!("Vermögen {} reicht nicht", self.money(liquid))
+            let below_zero = reason == "Vermögen < 0";
+            let reason = if below_zero {
+                msg!(reason_wealth_negative)
             } else {
-                "danach würde das Notverkaufskriterium auslösen".to_string()
+                msg!(reason_emergency_criterion)
             };
-            let text = format!(
-                "Hypothek {name} nicht mehr tragbar: Einmalzahlung {} nötig, {why}; Hypothek nicht erneuert, Notverkauf eingeleitet",
-                self.money(lump)
-            );
+            let text = if below_zero {
+                msg!(
+                    event_mortgage_unaffordable_wealth,
+                    name = name,
+                    lump = lump,
+                    wealth = liquid,
+                    currency = self.s.currency
+                )
+            } else {
+                msg!(
+                    event_mortgage_unaffordable_criterion,
+                    name = name,
+                    lump = lump,
+                    currency = self.s.currency
+                )
+            };
             self.event(m, EventKind::MortgageRenewal, text);
             self.props[i].emergency_pending = true;
-            self.props[i].emergency_reason = Some(reason.to_string());
+            self.props[i].emergency_reason = Some(reason.clone());
             self.summary.affordability_sales += 1;
-            record.emergency_sale = Some(reason.to_string());
+            record.emergency_sale = Some(reason);
             let rate = self.renewal_rate(i, m, k, tranches, 1.0);
             self.push_renewal(record, rate);
             return false;
@@ -1586,10 +1614,12 @@ impl<'a> Run<'a> {
         self.cash -= lump;
         self.month_out += lump;
         self.summary.lump_sums += 1;
-        let text = format!(
-            "Einmalrückzahlung Hypothek {name} für die Tragbarkeit: {}, Hypothek neu {}",
-            self.money(lump),
-            self.money(max)
+        let text = msg!(
+            event_mortgage_lump_sum,
+            name = name,
+            lump = lump,
+            debt = max,
+            currency = self.s.currency
         );
         self.event(m, EventKind::MortgageRenewal, text);
         record.lump_sum = lump;
@@ -1625,11 +1655,12 @@ impl<'a> Run<'a> {
             self.event(
                 m,
                 EventKind::Purchase,
-                format!(
-                    "Kauf {} nicht möglich: Eigenmittel {} nötig, vorhanden {}",
-                    p.name,
-                    self.money(price - mortgage),
-                    self.money(liquid)
+                msg!(
+                    event_purchase_impossible,
+                    name = p.name,
+                    needed = (price - mortgage),
+                    available = liquid,
+                    currency = self.s.currency
                 ),
             );
             return false;
@@ -1674,17 +1705,24 @@ impl<'a> Run<'a> {
         self.event(
             m,
             EventKind::Purchase,
-            format!(
-                "Kauf {}: Preis {}, Hypothek {}{}",
-                p.name,
-                self.money(price),
-                self.money(mortgage),
-                if lump >= 0.5 {
-                    format!(", Einmalrückzahlung {} für die Tragbarkeit", self.money(lump))
-                } else {
-                    String::new()
-                }
-            ),
+            if lump >= 0.5 {
+                msg!(
+                    event_purchase_lump_sum,
+                    name = p.name,
+                    price = price,
+                    mortgage = mortgage,
+                    lump = lump,
+                    currency = self.s.currency
+                )
+            } else {
+                msg!(
+                    event_purchase,
+                    name = p.name,
+                    price = price,
+                    mortgage = mortgage,
+                    currency = self.s.currency
+                )
+            },
         );
         true
     }
@@ -1730,11 +1768,12 @@ impl<'a> Run<'a> {
                     self.event(
                         m,
                         EventKind::Purchase,
-                        format!(
-                            "Kauf {}: Preis {}, Hypothek {}",
-                            p.name,
-                            self.money(price),
-                            self.money(debt)
+                        msg!(
+                            event_purchase,
+                            name = p.name,
+                            price = price,
+                            mortgage = debt,
+                            currency = self.s.currency
                         ),
                     );
                 }
@@ -1775,18 +1814,20 @@ impl<'a> Run<'a> {
                 if let Some(x) = per {
                     if x.index > 0 && x.start == m && b > 0.0 && k > 0 && renewed {
                         let tn = if tranches.len() > 1 {
-                            format!(" ({})", t.name)
+                            crate::message::arg(&msg!(suffix_name, name = t.name))
                         } else {
-                            String::new()
+                            crate::message::Arg::Null
                         };
                         self.event(
                             m,
                             EventKind::MortgageRenewal,
-                            format!(
-                                "Neue Hypothekarperiode {}{tn}: {:.2} %, {}",
-                                p.name,
-                                x.rate(saron) * 100.0,
-                                self.money(b)
+                            msg!(
+                                event_mortgage_period,
+                                name = p.name,
+                                tranche = tn,
+                                rate = x.rate(saron),
+                                amount = b,
+                                currency = self.s.currency
                             ),
                         );
                     }
@@ -1798,7 +1839,12 @@ impl<'a> Run<'a> {
                     self.event(
                         m,
                         EventKind::MortgageRepayment,
-                        format!("Rückzahlung Hypothek {}: {}", p.name, self.money(b)),
+                        msg!(
+                            event_mortgage_repaid,
+                            name = p.name,
+                            amount = b,
+                            currency = self.s.currency
+                        ),
                     );
                     continue;
                 }
@@ -1810,18 +1856,20 @@ impl<'a> Run<'a> {
                         let was_indirect = t.periods.iter().any(|x| !x.direct && x.amort_q > 0.0 && x.start < m);
                         if let Some(x) = per.filter(|x| x.amort_q > 0.0 && was_indirect) {
                             let tn = if tranches.len() > 1 {
-                                format!(" ({})", t.name)
+                                crate::message::arg(&msg!(suffix_name, name = t.name))
                             } else {
-                                String::new()
+                                crate::message::Arg::Null
                             };
                             self.event(
                                 m,
                                 EventKind::AmortizationSwitch,
-                                format!(
-                                    "Amortisation Hypothek {}{tn} ab AHV-Bezug{} direkt statt über die Säule 3a: {} pro Jahr",
-                                    p.name,
-                                    c.who,
-                                    self.money(x.amort_q * 4.0)
+                                msg!(
+                                    event_amortization_direct,
+                                    name = p.name,
+                                    tranche = tn,
+                                    who = c.who,
+                                    amount = (x.amort_q * 4.0),
+                                    currency = self.s.currency
                                 ),
                             );
                         }
@@ -1895,15 +1943,16 @@ impl<'a> Run<'a> {
                     self.event(
                         m,
                         EventKind::Pillar3aPayout,
-                        format!(
-                            "Säule 3a{}: Geplant {}, das Guthaben reicht nur für {}",
-                            c.who,
-                            self.money(want),
-                            self.money(available)
+                        msg!(
+                            event_pillar3a_short,
+                            who = c.who,
+                            planned = want,
+                            available = available,
+                            currency = self.s.currency
                         ),
                     );
                 }
-                self.pay_out_3a(a, m, gross, repay, "Auszahlung");
+                self.pay_out_3a(a, m, gross, repay, msg!(payout));
                 if self.record {
                     let after = self.p3a[a];
                     self.p3a_view[a].payouts.push(Pillar3aPayoutView {
@@ -1918,7 +1967,7 @@ impl<'a> Run<'a> {
             if c.ahv.is_some_and(|h| m >= h) {
                 let rest = self.p3a[a];
                 if rest > 0.005 {
-                    self.pay_out_3a(a, m, rest, c.rest_repay, "Auszahlung des Rests beim AHV-Bezug");
+                    self.pay_out_3a(a, m, rest, c.rest_repay, msg!(payout_rest));
                 }
                 if self.record {
                     self.p3a_view[a].rest = Some(Pillar3aRest {
@@ -1935,7 +1984,7 @@ impl<'a> Run<'a> {
 
     /// Payout from pillar 3a with lump-sum tax; if requested, first to the tranches with indirect
     /// amortization into this account, the rest into wealth.
-    fn pay_out_3a(&mut self, a: usize, m: YearMonth, gross: f64, repay: bool, what: &str) {
+    fn pay_out_3a(&mut self, a: usize, m: YearMonth, gross: f64, repay: bool, what: Message) {
         let s = self.s;
         if gross <= 0.0 {
             return;
@@ -1963,16 +2012,19 @@ impl<'a> Run<'a> {
                 }
             }
         }
-        self.inflow(net, "Auszahlung Säule 3a");
+        self.inflow(net, msg!(why_pillar3a));
         let who = s.accounts[a].who.clone();
         self.event(
             m,
             EventKind::Pillar3aPayout,
-            format!(
-                "Säule 3a{who}: {what} {}, Steuer {}, an Hypothek {}",
-                self.money(gross),
-                self.money(t),
-                self.money(repaid)
+            msg!(
+                event_pillar3a_payout,
+                who = who,
+                what = what,
+                amount = gross,
+                tax = t,
+                repaid = repaid,
+                currency = self.s.currency
             ),
         );
     }
@@ -2020,7 +2072,7 @@ impl<'a> Run<'a> {
 
     /// Net need from the planned values of the current year from month `m` until December (at most until the end of the plan),
     /// extrapolated to 12 months. `housing_now` are this month's ongoing housing costs without amortization.
-    fn plan_basis(&self, m: YearMonth, housing_now: f64, source: String) -> NeedBasis {
+    fn plan_basis(&self, m: YearMonth, housing_now: f64, source: Message) -> NeedBasis {
         let s = self.s;
         let last = s.start.plus(s.months as i32 - 1);
         let (mut living, mut housing, mut ahv, mut pk, mut earned, mut p3a) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -2099,28 +2151,28 @@ impl<'a> Run<'a> {
     }
 
     /// Inflow into cash. With an active 3-bucket strategy it belongs in bucket 3 (special case B).
-    fn inflow(&mut self, amount: f64, why: &str) {
+    fn inflow(&mut self, amount: f64, why: Message) {
         self.cash += amount;
         self.mark_inflow(amount, why);
     }
 
     /// Notes an inflow already booked in `cash` for bucket 3; the transfer follows after the returns.
-    fn mark_inflow(&mut self, amount: f64, why: &str) {
+    fn mark_inflow(&mut self, amount: f64, why: Message) {
         self.mark_inflow_from(0, amount, why);
     }
 
     /// Like `mark_inflow`; `from` is 0 (external) or 4 (reservation).
-    fn mark_inflow_from(&mut self, from: u8, amount: f64, why: &str) {
+    fn mark_inflow_from(&mut self, from: u8, amount: f64, why: Message) {
         if amount > 0.0 && self.buckets_active() {
             self.inflow3 += amount;
-            self.inflow_log.push((from, 3, amount, why.to_string()));
+            self.inflow_log.push((from, 3, amount, why));
         }
     }
 
     /// Sale proceeds reserved for a purchase in the following month (belong to no bucket).
-    fn mark_reservation(&mut self, amount: f64, why: &str) {
+    fn mark_reservation(&mut self, amount: f64, why: Message) {
         if amount > 0.0 && self.buckets_active() {
-            self.inflow_log.push((0, 4, amount, why.to_string()));
+            self.inflow_log.push((0, 4, amount, why));
         }
     }
 
@@ -2146,7 +2198,7 @@ impl<'a> Run<'a> {
         m: YearMonth,
         k: usize,
         trigger: &str,
-        reason: String,
+        reason: Message,
         passed: u32,
         ignored: bool,
         targets: (f64, f64),
@@ -2154,7 +2206,7 @@ impl<'a> Run<'a> {
         payment: f64,
         before: [f64; 3],
         after: [f64; 3],
-        text: String,
+        text: Message,
     ) {
         let (ret, ret_basis) = self.stock_return(k);
         let basis = self.basis.clone().unwrap_or_default();
@@ -2170,7 +2222,7 @@ impl<'a> Run<'a> {
             target1: targets.0,
             target2: targets.1,
             stock_return: ret,
-            return_basis: ret_basis.to_string(),
+            return_basis: return_basis(ret_basis),
             threshold: b.refill_threshold,
             condition_met: ret >= b.refill_threshold,
             condition_ignored: ignored,
@@ -2194,17 +2246,22 @@ impl<'a> Run<'a> {
         let t1 = self.cash + shift - amount;
         let t = self.target_pair(b, 0, 0.0);
         // Source of an inflow: 0 = external, 4 = reservation
-        let name = |x: u8| if x == 0 { "extern" } else { "Reservierung" };
+
         // Reservations (external → reservation): no bucket changes
         for (from, to, amt, why) in log.iter().filter(|x| x.1 == 4) {
             let st = [t1, self.bonds, self.stocks];
-            let text = format!("3-Topf Zufluss in die Reservierung ({why}): {}", self.money(*amt));
+            let text = msg!(
+                event_buckets_reservation_inflow,
+                why = why,
+                amount = (*amt),
+                currency = self.s.currency
+            );
             self.log_buckets(
                 b,
                 m,
                 k,
                 "B",
-                format!("Zufluss in die Reservierung ({why})"),
+                msg!(reason_reservation_inflow, why = why),
                 0,
                 true,
                 t,
@@ -2223,7 +2280,7 @@ impl<'a> Run<'a> {
         if to3.is_empty() {
             return;
         }
-        let why = to3.iter().map(|x| x.3.clone()).collect::<Vec<_>>().join(", ");
+        let why: Vec<Message> = to3.iter().map(|x| x.3.clone()).collect();
         let moves: Vec<BucketMove> = to3
             .iter()
             .map(|x| BucketMove {
@@ -2236,20 +2293,34 @@ impl<'a> Run<'a> {
         self.cash -= amount;
         self.stocks += amount;
         let after = [t1, self.bonds, self.stocks];
-        let text = format!(
-            "3-Topf {} nach Topf 3 ({why}): {}; Topf 1/2/3 nachher {} / {} / {}",
-            if to3.iter().all(|x| x.0 == 4) { name(4) } else { name(0) },
-            self.money(amount),
-            self.money(after[0]),
-            self.money(after[1]),
-            self.money(after[2])
-        );
+        let (amount_v, a1, a2, a3) = (amount, after[0], after[1], after[2]);
+        let text = if to3.iter().all(|x| x.0 == 4) {
+            msg!(
+                event_buckets_inflow_reservation,
+                why = why,
+                amount = amount_v,
+                pot1 = a1,
+                pot2 = a2,
+                pot3 = a3,
+                currency = self.s.currency
+            )
+        } else {
+            msg!(
+                event_buckets_inflow_external,
+                why = why,
+                amount = amount_v,
+                pot1 = a1,
+                pot2 = a2,
+                pot3 = a3,
+                currency = self.s.currency
+            )
+        };
         self.log_buckets(
             b,
             m,
             k,
             "B",
-            format!("Zufluss nach Topf 3 ({why})"),
+            msg!(reason_inflow_pot3, why = why),
             0,
             true,
             t,
@@ -2277,7 +2348,7 @@ impl<'a> Run<'a> {
         b: &Buckets,
         m: YearMonth,
         k: usize,
-        (trigger, reason, passed, ignore, pay): (&str, String, u32, bool, f64),
+        (trigger, reason, passed, ignore, pay): (&str, Message, u32, bool, f64),
         (one_off, surplus): (f64, bool),
         (before, mut moves): ([f64; 3], Vec<BucketMove>),
     ) {
@@ -2303,30 +2374,42 @@ impl<'a> Run<'a> {
         let basis = self.basis.clone().unwrap_or_default();
         let after = [self.cash, self.bonds, self.stocks];
         let crit = if ignore {
-            "Kriterium ignoriert".to_string()
+            msg!(criterion_ignored)
         } else {
-            format!(
-                "Aktienrendite {:.1} % ({}) {} Schwelle {:.1} %",
-                ret * 100.0,
-                ret_basis,
-                if met { "≥" } else { "<" },
-                b.refill_threshold * 100.0
-            )
+            let basis = return_basis(ret_basis);
+            if met {
+                msg!(
+                    criterion_met,
+                    stock_return = ret,
+                    basis = basis,
+                    threshold = b.refill_threshold
+                )
+            } else {
+                msg!(
+                    criterion_not_met,
+                    stock_return = ret,
+                    basis = basis,
+                    threshold = b.refill_threshold
+                )
+            }
         };
-        let text = format!(
-            "3-Topf aufgefüllt ({reason}): Netto-Bedarf {} (Ausgaben {} − Einnahmen {}, {}); Ziel Topf 1 {}, Topf 2 {}; {crit}; Topf 1/2/3 vorher {} / {} / {}, nachher {} / {} / {}",
-            self.money(basis.need()),
-            self.money(basis.expenses()),
-            self.money(basis.receipts()),
-            basis.source,
-            self.money(t1),
-            self.money(t2),
-            self.money(before[0]),
-            self.money(before[1]),
-            self.money(before[2]),
-            self.money(after[0]),
-            self.money(after[1]),
-            self.money(after[2])
+        let text = msg!(
+            event_buckets_refill,
+            reason = reason,
+            need = (basis.need()),
+            expenses = (basis.expenses()),
+            receipts = (basis.receipts()),
+            source = basis.source,
+            target1 = t1,
+            target2 = t2,
+            criterion = crit,
+            before1 = before[0],
+            before2 = before[1],
+            before3 = before[2],
+            after1 = after[0],
+            after2 = after[1],
+            after3 = after[2],
+            currency = self.s.currency
         );
         self.log_buckets(
             b,
@@ -2366,7 +2449,7 @@ impl<'a> Run<'a> {
                 self.cash -= self.reserved;
                 self.cash += pay;
                 let before = [self.cash, self.bonds, self.stocks];
-                let why = format!("Vorausschau: Topf 1 deckt die Ausgaben des Monats nicht, Renditekriterium erfüllt ({passed} Monate seit Januar)");
+                let why = msg!(reason_lookahead_met, passed = passed);
                 self.fill_pots(
                     b,
                     m,
@@ -2394,19 +2477,20 @@ impl<'a> Run<'a> {
             self.bucket_move(3, 1, rest.min(self.stocks.max(0.0)), &mut moves);
             let free_after = self.cash - self.reserved;
             if !moves.is_empty() {
-                let text = format!(
-                    "3-Topf C2 Auffüllung Topf 1 vor der Zahlung (Topf 1 deckt die Ausgaben {} nicht): Topf 1/2/3 vorher {} / {} / {}, nachher {} / {} / {}",
-                    self.money(pay),
-                    self.money(before[0]),
-                    self.money(before[1]),
-                    self.money(before[2]),
-                    self.money(free_after + pay),
-                    self.money(self.bonds),
-                    self.money(self.stocks)
+                let text = msg!(
+                    event_buckets_c2,
+                    payment = pay,
+                    before1 = before[0],
+                    before2 = before[1],
+                    before3 = before[2],
+                    after1 = (free_after + pay),
+                    after2 = self.bonds,
+                    after3 = self.stocks,
+                    currency = self.s.currency
                 );
                 let t = self.target_pair(b, 0, 0.0);
                 let after = [free_after + pay, self.bonds, self.stocks];
-                let why = format!("Vorausschau: Topf 1 deckt die Ausgaben des Monats nicht, Renditekriterium nicht erfüllt ({months_to_jan} Monate bis Januar)");
+                let why = msg!(reason_lookahead_not_met, months = months_to_jan);
                 self.log_buckets(b, m, k, "C2", why, 0, false, t, moves, pay, before, after, text);
             }
             if free_after >= -0.005 {
@@ -2414,7 +2498,7 @@ impl<'a> Run<'a> {
             }
             // Buckets 2 and 3 are not enough: emergency sale of a property, otherwise phase 8
             if let Some(i) = self.props.iter().position(|p| p.active) {
-                self.props[i].emergency_reason = Some("Topf 1, 2 und 3 reichen für die Ausgaben nicht".into());
+                self.props[i].emergency_reason = Some(msg!(reason_pots_insufficient));
                 self.sell(i, m, EventKind::EmergencySale);
                 if self.reserved > 0.0 {
                     self.reserved = 0.0;
@@ -2423,10 +2507,7 @@ impl<'a> Run<'a> {
                 self.flush_inflow(b, m, k, pay, pay);
             } else {
                 self.phase8 = true;
-                let text = format!(
-                    "3-Topf: alle Töpfe leer, keine Immobilie mehr – Topf 1 ist im Minus ({}), Topf 2 und 3 sind stillgelegt",
-                    self.money(self.cash)
-                );
+                let text = msg!(event_buckets_empty, cash = self.cash, currency = self.s.currency);
                 self.event(m, EventKind::Buckets, text);
                 return;
             }
@@ -2445,14 +2526,13 @@ impl<'a> Run<'a> {
                 return;
             }
             self.phase8 = false;
-            self.a_reasons
-                .push("Vermögen wieder positiv (Neustart nach Phase 8)".into());
+            self.a_reasons.push(msg!(reason_wealth_positive_again));
             collect = true;
         }
         if !self.buckets_on {
             collect = true;
             self.buckets_on = true;
-            self.a_reasons.push("Start der Entnahmephase".into());
+            self.a_reasons.push(msg!(reason_withdrawal_start));
         }
         // Balance before the month's expenses; the reservation belongs to no bucket
         self.cash -= self.reserved;
@@ -2460,15 +2540,11 @@ impl<'a> Run<'a> {
         self.flush_inflow(b, m, k, pay, 0.0);
         let a = !self.a_reasons.is_empty();
         if a || m.month() == 1 {
-            let (label, passed, trigger) = if a {
-                (format!("ab {:02}.{}", m.month(), m.year()), m.month() - 1, "A")
-            } else {
-                ("Januar, geplant".to_string(), 0, "Januar")
-            };
-            let source = if a && passed > 0 {
-                format!("{label}, auf 12 Monate hochgerechnet")
-            } else {
-                label
+            let (passed, trigger) = if a { (m.month() - 1, "A") } else { (0, "Januar") };
+            let source = match (a, passed > 0) {
+                (true, true) => msg!(basis_from_extrapolated, month = m),
+                (true, false) => msg!(basis_from, month = m),
+                _ => msg!(basis_january),
             };
             self.basis = Some(self.plan_basis(m, housing_now, source));
             let before = [self.cash, self.bonds, self.stocks];
@@ -2479,9 +2555,9 @@ impl<'a> Run<'a> {
                 self.bucket_move(2, 3, self.bonds.max(0.0), &mut moves);
             }
             let reason = if a {
-                self.a_reasons.join(", ")
+                msg!(reasons, items = self.a_reasons)
             } else {
-                "Januar".to_string()
+                msg!(reason_january)
             };
             self.fill_pots(
                 b,
@@ -2532,11 +2608,12 @@ impl<'a> Run<'a> {
             self.event(
                 m,
                 EventKind::Withdrawal,
-                format!(
-                    "Entnahme {} pro Jahr ({:.1} % von {})",
-                    self.money(self.budget),
-                    self.budget_rate0 * 100.0,
-                    self.money(liquid)
+                msg!(
+                    event_withdrawal_start,
+                    amount = self.budget,
+                    rate = self.budget_rate0,
+                    wealth = liquid,
+                    currency = self.s.currency
                 ),
             );
             return;
@@ -2569,11 +2646,12 @@ impl<'a> Run<'a> {
                     self.event(
                         m,
                         EventKind::Withdrawal,
-                        format!(
-                            "Leitplanke: Entnahme um {:.0} % gekürzt auf {} pro Jahr (Rate {:.1} %)",
-                            adjust * 100.0,
-                            self.money(self.budget),
-                            rate * 100.0
+                        msg!(
+                            event_guardrail_cut,
+                            adjust = adjust,
+                            amount = self.budget,
+                            rate = rate,
+                            currency = self.s.currency
                         ),
                     );
                 } else if rate < self.budget_rate0 * (1.0 - lower) {
@@ -2581,11 +2659,12 @@ impl<'a> Run<'a> {
                     self.event(
                         m,
                         EventKind::Withdrawal,
-                        format!(
-                            "Leitplanke: Entnahme um {:.0} % erhöht auf {} pro Jahr (Rate {:.1} %)",
-                            adjust * 100.0,
-                            self.money(self.budget),
-                            rate * 100.0
+                        msg!(
+                            event_guardrail_raise,
+                            adjust = adjust,
+                            amount = self.budget,
+                            rate = rate,
+                            currency = self.s.currency
                         ),
                     );
                 }
@@ -2639,8 +2718,7 @@ impl<'a> Run<'a> {
             self.reserved_cash = 0.0;
             let mut leftover = false;
             if self.reserved_sale == Some(m.plus(-1)) {
-                self.apply_reasons
-                    .push("Überschuss aus dem Verkaufserlös nach dem Kauf".into());
+                self.apply_reasons.push(msg!(reason_sale_surplus));
                 self.reserved_sale = None;
                 leftover = true;
             }
@@ -2682,10 +2760,15 @@ impl<'a> Run<'a> {
                         extras_out -= amount;
                     }
                     if *amount > 0.0 {
-                        self.mark_inflow(*amount, &format!("«{label}»"));
-                        self.apply_reasons.push(format!("Mittelzufluss «{label}»"));
+                        self.mark_inflow(*amount, msg!(why_extra, label = label));
+                        self.apply_reasons.push(msg!(reason_extra_inflow, label = label));
                     }
-                    let text = format!("{label}: {}", self.money(*amount));
+                    let text = msg!(
+                        event_extra,
+                        label = label,
+                        amount = (*amount),
+                        currency = self.s.currency
+                    );
                     self.event(m, EventKind::Extra, text);
                 }
             }
@@ -2708,9 +2791,9 @@ impl<'a> Run<'a> {
                     self.month_capital_tax += t;
                     self.cash += lump - t;
                     if lump - t > 0.0 {
-                        self.apply_reasons.push("Pensionskassenauszahlung".into());
-                        self.a_reasons.push("PK-Kapitalbezug".into());
-                        self.mark_inflow(lump - t, "PK-Kapitalbezug");
+                        self.apply_reasons.push(msg!(reason_pk_payout));
+                        self.a_reasons.push(msg!(reason_pk_lump_sum));
+                        self.mark_inflow(lump - t, msg!(reason_pk_lump_sum));
                     }
                     let pension = pk * (1.0 - c.pk_lumpsum) * c.pk_conversion / 12.0;
                     self.people[pi].pk_pension = pension;
@@ -2719,18 +2802,20 @@ impl<'a> Run<'a> {
                     self.summary.lumpsum_tax += t;
                     self.summary.pension_fund_monthly += pension;
                     let who = if s.people.len() > 1 {
-                        format!(" ({})", if pi == 0 { "Person 1" } else { "Person 2" })
+                        crate::message::arg(&msg!(suffix_person, n = pi + 1))
                     } else {
-                        String::new()
+                        crate::message::Arg::Null
                     };
                     self.event(
                         m,
                         EventKind::Retirement,
-                        format!(
-                            "Bezug Pensionskasse{who}: Kapitalbezug {} (Steuer {}), Rente {} / Monat",
-                            self.money(lump),
-                            self.money(t),
-                            self.money(pension)
+                        msg!(
+                            event_pk_payout,
+                            who = who,
+                            lump = lump,
+                            tax = t,
+                            pension = pension,
+                            currency = self.s.currency
                         ),
                     );
                 }
@@ -2738,14 +2823,19 @@ impl<'a> Run<'a> {
                     self.people[pi].ahv_started = true;
                     self.people[pi].ahv = c.ahv_monthly;
                     let who = if s.people.len() > 1 {
-                        format!(" ({})", if pi == 0 { "Person 1" } else { "Person 2" })
+                        crate::message::arg(&msg!(suffix_person, n = pi + 1))
                     } else {
-                        String::new()
+                        crate::message::Arg::Null
                     };
                     self.event(
                         m,
                         EventKind::AhvStart,
-                        format!("AHV-Rente{who} {} / Monat", self.money(c.ahv_monthly)),
+                        msg!(
+                            event_ahv_start,
+                            who = who,
+                            pension = c.ahv_monthly,
+                            currency = self.s.currency
+                        ),
                     );
                 }
             }
@@ -2756,7 +2846,7 @@ impl<'a> Run<'a> {
             if leftover {
                 // Surplus of the reservation after the purchase: into bucket 3
                 let rest = std::mem::take(&mut self.reserved);
-                self.mark_inflow_from(4, rest, "Überschuss der Reservierung nach dem Kauf");
+                self.mark_inflow_from(4, rest, msg!(why_reservation_surplus));
             }
             // Order within the month: inflows, purchases/sales (above), then the strategy; once per month, also in January.
             self.apply_now = !self.apply_reasons.is_empty();
@@ -2853,7 +2943,7 @@ impl<'a> Run<'a> {
             if liquid - s.emergency.at(m) * shortfall < 0.0 && !self.props.iter().any(|p| p.emergency_pending) {
                 if let Some(ps) = self.props.iter_mut().find(|p| p.active) {
                     ps.emergency_pending = true;
-                    ps.emergency_reason = Some("Notverkaufskriterium".into());
+                    ps.emergency_reason = Some(msg!(reason_emergency_criterion));
                 }
             }
 
@@ -2881,7 +2971,7 @@ impl<'a> Run<'a> {
             }
             // Log an additional application outside January (in January the strategy applies anyway).
             if self.apply_now && m.month() != 1 && !self.strategy_started && s.dynamic.is_some() && self.any_retired() {
-                let text = format!("Entnahmestrategie angewendet nach {}", self.apply_reasons.join(", "));
+                let text = msg!(event_strategy_applied, reasons = self.apply_reasons);
                 self.event(m, EventKind::Withdrawal, text);
             }
 
@@ -2901,7 +2991,7 @@ impl<'a> Run<'a> {
                 && !self.props.iter().any(|p| p.active)
             {
                 self.summary.depleted = Some(m);
-                self.event(m, EventKind::Depleted, "Vermögen aufgebraucht".into());
+                self.event(m, EventKind::Depleted, msg!(event_depleted));
             }
             if s.retire_at() == Some(m) {
                 self.summary.total_at_retirement = Some(total);

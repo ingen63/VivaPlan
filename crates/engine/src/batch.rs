@@ -42,8 +42,7 @@ pub fn returns_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> R
 /// All return paths according to `returns.source`.
 pub fn market_paths(plan: &Plan, sim: &Simulator, data: Option<&DataSet>) -> Result<Vec<MarketPath>> {
     let n = sim.months();
-    let need =
-        || data.ok_or_else(|| Error::Invalid("Für historische Renditen muss eine Zeitreihe gewählt sein.".into()));
+    let need = || data.ok_or_else(|| Error::Invalid(msg!(historical_series_missing)));
     match plan.returns.source {
         ReturnSource::Fixed => Ok(vec![market::fixed_path(&sim.fixed, sim.start, n)]),
         ReturnSource::Historical => {
@@ -51,7 +50,7 @@ pub fn market_paths(plan: &Plan, sim: &Simulator, data: Option<&DataSet>) -> Res
             let hs = plan
                 .returns
                 .start_date
-                .ok_or_else(|| Error::Invalid("Der historische Startmonat fehlt.".into()))?;
+                .ok_or_else(|| Error::Invalid(msg!(historical_start_missing)))?;
             Ok(vec![market::historical_path(
                 ds,
                 hs,
@@ -65,10 +64,7 @@ pub fn market_paths(plan: &Plan, sim: &Simulator, data: Option<&DataSet>) -> Res
             let ds = need()?;
             let starts = market::rolling_starts(ds, sim.start, n);
             if starts.is_empty() {
-                return Err(Error::Invalid(format!(
-                    "Die Zeitreihe {} ist kürzer als der Simulationszeitraum.",
-                    ds.name
-                )));
+                return Err(Error::Invalid(msg!(series_too_short, name = ds.name)));
             }
             starts
                 .into_iter()
@@ -117,18 +113,14 @@ impl Paths<'_> {
 pub fn path_source<'a>(plan: &Plan, sim: &'a Simulator, data: Option<&'a DataSet>) -> Result<Paths<'a>> {
     let limit = |n: usize| {
         if n == 0 || n > 1_000_000 {
-            Err(Error::Invalid(
-                "Die Anzahl Pfade muss zwischen 1 und 1'000'000 liegen.".into(),
-            ))
+            Err(Error::Invalid(msg!(paths_range)))
         } else {
             Ok(())
         }
     };
     match plan.returns.source {
         ReturnSource::Bootstrap => {
-            let ds = data.ok_or_else(|| {
-                Error::Invalid("Für Monte Carlo aus der Historie muss eine Zeitreihe gewählt sein.".into())
-            })?;
+            let ds = data.ok_or_else(|| Error::Invalid(msg!(bootstrap_series_missing)))?;
             let params = plan.returns.bootstrap.clone().unwrap_or_default();
             limit(params.paths)?;
             Ok(Paths::Bootstrap(Bootstrap {
@@ -155,14 +147,25 @@ pub fn path_source<'a>(plan: &Plan, sim: &'a Simulator, data: Option<&'a DataSet
     }
 }
 
-/// Computes all paths in parallel on all processor cores (without monthly records).
+/// Computes all paths in parallel on all processor cores (without monthly records and event lists).
 pub fn run_all(sim: &Simulator, paths: &[MarketPath]) -> Vec<SimResult> {
-    paths.par_iter().map(|p| sim.run(p, false)).collect()
+    paths.par_iter().map(|p| summary_only(sim.run(p, false))).collect()
 }
 
 /// Like [`run_all`] for a [`Paths`] source; Monte Carlo paths are only created during the run.
 pub fn run_paths(sim: &Simulator, paths: &Paths) -> Vec<SimResult> {
-    crate::progress::par_map(paths.len(), |i| sim.run(&paths.get(i), false))
+    crate::progress::par_map(paths.len(), |i| summary_only(sim.run(&paths.get(i), false)))
+}
+
+/// #171: A run of many keeps only summary and label (the details are computed again for single paths); the lists of
+/// events with their messages are dropped right away, in parallel, instead of all at once at the end.
+fn summary_only(mut r: SimResult) -> SimResult {
+    r.records = vec![];
+    r.events = vec![];
+    r.property_events = vec![];
+    r.bucket_refills = vec![];
+    r.renewals = vec![];
+    r
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -174,7 +177,7 @@ pub struct Percentile {
     /// percentiles of the scenarios, which do not show it (#130).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub end_total_real: Option<f64>,
-    pub label: String,
+    pub label: crate::message::Message,
     /// Index of the run (or return path).
     pub index: usize,
     /// First month without funds in this run (`None`: wealth lasts until the end).
@@ -193,7 +196,7 @@ pub struct BatchSummary {
     /// Share of runs in which wealth lasts until the end.
     pub success_rate: f64,
     pub percentiles: Vec<Percentile>,
-    pub earliest_depletion: Option<(YearMonth, String)>,
+    pub earliest_depletion: Option<(YearMonth, crate::message::Message)>,
     /// Number of runs with at least one lump sum or emergency sale because of insufficient affordability at renewals.
     pub lump_sum_runs: usize,
     pub affordability_sale_runs: usize,
@@ -369,11 +372,10 @@ pub fn stats(sim: &Simulator, results: &[SimResult]) -> BatchStats {
 /// Like [`run_all`], additionally with the bands per month.
 pub fn run_with_bands(sim: &Simulator, paths: &Paths) -> (Vec<SimResult>, Bands) {
     let runs: Vec<(SimResult, Vec<f32>, Vec<f32>)> = crate::progress::par_map(paths.len(), |i| {
-        let mut r = sim.run(&paths.get(i), true);
+        let r = sim.run(&paths.get(i), true);
         let totals = r.records.iter().map(|x| x.total as f32).collect();
         let real = r.records.iter().map(|x| (x.total / x.price_index) as f32).collect();
-        r.records = vec![];
-        (r, totals, real)
+        (summary_only(r), totals, real)
     });
     let months: Vec<YearMonth> = (0..sim.months()).map(|k| sim.start.plus(k as i32)).collect();
     let (results, nominal, real): (Vec<_>, Vec<_>, Vec<_>) =
@@ -398,7 +400,7 @@ mod tests {
         let mut summary = Summary::default();
         f(&mut summary);
         SimResult {
-            label: String::new(),
+            label: crate::message::Message::default(),
             summary,
             events: vec![],
             renewals: vec![],

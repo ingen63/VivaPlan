@@ -324,27 +324,27 @@ pub fn split_defs(s: OptStrategy, ranges: &Ranges) -> Result<(Vec<ParamDef>, Vec
         );
         let show = |v: f64| {
             if d.percent {
-                format!("{} %", (v * 1e4).round() / 100.0)
+                crate::message::arg(&msg!(percent_value, value = (v * 1e4).round() / 100.0))
             } else {
-                format!("{v}")
+                crate::message::arg(&v)
             }
         };
         if !lo.is_finite() || !hi.is_finite() || lo > hi {
-            return Err(Error::Invalid(format!(
-                "{}, {}: Die Bandbreite von {} bis {} ist ungültig («von» darf nicht grösser als «bis» sein).",
-                strategy_name(s),
-                d.label,
-                show(lo),
-                show(hi)
+            return Err(Error::Invalid(msg!(
+                optimize_range_invalid,
+                strategy = strategy_name(s),
+                param = d.label,
+                lo = show(lo),
+                hi = show(hi)
             )));
         }
         if lo < d.min || hi > d.max {
-            return Err(Error::Invalid(format!(
-                "{}, {}: Die Bandbreite muss zwischen {} und {} liegen.",
-                strategy_name(s),
-                d.label,
-                show(d.min),
-                show(d.max)
+            return Err(Error::Invalid(msg!(
+                optimize_range_limits,
+                strategy = strategy_name(s),
+                param = d.label,
+                min = show(d.min),
+                max = show(d.max)
             )));
         }
         (d.lo, d.hi) = (lo, hi);
@@ -630,7 +630,7 @@ pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
     let sim = Simulator::new(plan)?;
     let retire = sim
         .retire_at()
-        .ok_or_else(|| Error::Invalid("Die Planung hat keine Pensionierung.".into()))?;
+        .ok_or_else(|| Error::Invalid(msg!(optimize_no_retirement)))?;
     let stats: Vec<PathStats> = crate::progress::par_map(paths.len(), |i| {
         path_stats(&sim, &sim.run(&paths.get(i), true), retire, o)
     });
@@ -704,7 +704,7 @@ pub struct Settings {
 }
 
 fn parse_plan(v: &Value) -> Result<Plan> {
-    serde_json::from_value(v.clone()).map_err(|e| Error::Invalid(e.to_string()))
+    serde_json::from_value(v.clone()).map_err(|e| Error::Invalid(msg!(raw_error, detail = e.to_string())))
 }
 
 /// Paths of the optimization: `fit` for the search, `check` for the independent check.
@@ -966,11 +966,7 @@ impl Request {
                 all_strategies()
                     .into_iter()
                     .find(|s| strategy_key(*s) == k.trim())
-                    .ok_or_else(|| {
-                        Error::Invalid(format!(
-                            "Unbekannte Strategie «{k}» (standard, three_buckets, three_buckets_guardrails, guardrails, fixed_rate, vpw, endowment, all)"
-                        ))
-                    })
+                    .ok_or_else(|| Error::Invalid(msg!(optimize_strategy_unknown, strategy = k)))
             })
             .collect()
     }
@@ -1062,26 +1058,20 @@ pub fn run_request(
     let t0 = std::time::Instant::now();
     let obj = req.objective();
     if !(0.0..=1.0).contains(&obj.max_ruin) {
-        return Err(Error::Invalid(
-            "Die Ruingrenze muss zwischen 0 % und 100 % liegen.".into(),
-        ));
+        return Err(Error::Invalid(msg!(optimize_ruin_range)));
     }
     if req.paths == 0 || req.check_paths == 0 {
-        return Err(Error::Invalid("Die Anzahl Pfade muss grösser als 0 sein.".into()));
+        return Err(Error::Invalid(msg!(optimize_paths_positive)));
     }
     if req.goal == Goal::KeepProperty {
         let has_property = base["realestate"]["properties"]
             .as_array()
             .is_some_and(|p| p.iter().any(|x| x["status"] != "rent"));
         if !has_property {
-            return Err(Error::Invalid(
-                "Das Ziel «Kein Notverkauf von Immobilien» braucht eine Planung mit mindestens einer Immobilie.".into(),
-            ));
+            return Err(Error::Invalid(msg!(optimize_keep_property_without_property)));
         }
         if !(0.0..=2.0).contains(&req.min_consumption) {
-            return Err(Error::Invalid(
-                "Der Mindestkonsum muss zwischen 0 % und 200 % der geplanten Ausgaben liegen.".into(),
-            ));
+            return Err(Error::Invalid(msg!(optimize_min_consumption_range)));
         }
     }
     let strategies = req.strategy_list()?;
@@ -1090,7 +1080,7 @@ pub fn run_request(
     let sim = Simulator::new(&plan)?;
     let retire = sim
         .retire_at()
-        .ok_or_else(|| Error::Invalid("Die Planung hat keine Pensionierung (Pensionskasse «Bezug ab»).".into()))?;
+        .ok_or_else(|| Error::Invalid(msg!(optimize_no_pk_payout)))?;
     let p_fit = parse_plan(&with_paths(base, req.paths, 0))?;
     let p_check = parse_plan(&with_paths(base, req.check_paths, 7919))?;
     let data = batch::load_series(&plan, base_dir, library)?;

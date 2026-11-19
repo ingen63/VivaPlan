@@ -4,6 +4,9 @@
 //! generate return paths from [`market`] → [`sim::Simulator::run`] per path or
 //! [`batch::run_all`] for many paths in parallel.
 
+// #171: first, so that `msg!` is known in all modules.
+#[macro_use]
+pub mod message;
 pub mod api;
 pub mod batch;
 pub mod calibrate;
@@ -40,9 +43,9 @@ static TEST_ALLOC: test_alloc::Limited = test_alloc::Limited;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Error {
     /// The plan is incomplete or contradictory.
-    Invalid(String),
+    Invalid(message::Message),
     /// A file could not be read.
-    Io(String),
+    Io(message::Message),
     /// Function is not yet implemented in this stage.
     NotImplemented(String),
     /// The computation was cancelled.
@@ -56,6 +59,31 @@ impl fmt::Display for Error {
             Error::Io(s) => write!(f, "{s}"),
             Error::NotImplemented(s) => write!(f, "Noch nicht umgesetzt: {s}"),
             Error::Cancelled => write!(f, "{}", crate::progress::CANCELLED),
+        }
+    }
+}
+
+/// #171: A file could not be read or written: path and the text of the operating system.
+pub(crate) fn io_error(path: &std::path::Path, e: impl fmt::Display) -> Error {
+    Error::Io(msg!(
+        file_error,
+        path = path.display().to_string(),
+        detail = e.to_string()
+    ))
+}
+
+/// #171: The content of a file is invalid: path and the problem (a message or the text of the parser).
+pub(crate) fn file_invalid(path: &std::path::Path, detail: impl message::ToArg) -> Error {
+    Error::Invalid(msg!(file_error, path = path.display().to_string(), detail = detail))
+}
+
+impl Error {
+    /// #171: The error as a message (code and parameters) for the user interface.
+    pub fn message(&self) -> message::Message {
+        match self {
+            Error::Invalid(m) | Error::Io(m) => m.clone(),
+            Error::NotImplemented(s) => msg!(not_implemented, what = s),
+            Error::Cancelled => msg!(cancelled),
         }
     }
 }

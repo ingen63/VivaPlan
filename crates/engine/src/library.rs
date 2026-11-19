@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::import::{self, SnbCube, SnbData};
 use crate::market::{DataSet, Freq};
+use crate::message::Message;
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
@@ -42,15 +43,9 @@ fn builtin_info(name: &str) -> Option<String> {
 /// to the directory of the project file.
 pub fn resolve(series: &str, base_dir: &Path, library: Option<&Path>) -> Result<PathBuf> {
     if let Some(file) = series.strip_prefix(PREFIX) {
-        let lib = library.ok_or_else(|| {
-            Error::Invalid(format!(
-                "Die Zeitreihe «{file}» liegt in der Datenbibliothek, deren Ordner hier nicht bekannt ist."
-            ))
-        })?;
+        let lib = library.ok_or_else(|| Error::Invalid(msg!(library_unknown, file = file)))?;
         if file.contains(['/', '\\']) || file.starts_with('.') {
-            return Err(Error::Invalid(format!(
-                "Ungültiger Name in der Datenbibliothek: «{file}»"
-            )));
+            return Err(Error::Invalid(msg!(library_name_invalid, file = file)));
         }
         return Ok(lib.join(file));
     }
@@ -64,7 +59,7 @@ pub fn resolve(series: &str, base_dir: &Path, library: Option<&Path>) -> Result<
 
 /// Creates missing bundled series and SNB source data; existing files stay unchanged.
 pub fn seed(dir: &Path) -> Result<()> {
-    let io = |e: std::io::Error| Error::Io(format!("{}: {e}", dir.display()));
+    let io = |e: std::io::Error| crate::io_error(dir, e);
     let src = dir.join(SOURCES_DIR);
     std::fs::create_dir_all(&src).map_err(io)?;
     for (name, text) in BUILTIN {
@@ -80,7 +75,7 @@ fn write_new(path: &Path, text: &str) -> Result<()> {
     if path.exists() {
         return Ok(());
     }
-    std::fs::write(path, text).map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    std::fs::write(path, text).map_err(|e| crate::io_error(path, e))
 }
 
 /// #69/AK8: A part of an investment strategy with its own years. If the range is larger than the common
@@ -162,12 +157,12 @@ pub struct Entry {
     pub reference: String,
     pub file: String,
     pub info: Option<SeriesInfo>,
-    pub error: Option<String>,
+    pub error: Option<Message>,
 }
 
 /// All series in the library folder, sorted by file name.
 pub fn list(dir: &Path) -> Result<Vec<Entry>> {
-    let rd = std::fs::read_dir(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
+    let rd = std::fs::read_dir(dir).map_err(|e| crate::io_error(dir, e))?;
     let mut files: Vec<PathBuf> = rd
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| p.is_file() && p.extension().is_some_and(|x| x.eq_ignore_ascii_case("csv")))
@@ -179,7 +174,7 @@ pub fn list(dir: &Path) -> Result<Vec<Entry>> {
             let file = p.file_name().unwrap_or_default().to_string_lossy().into_owned();
             let (info, error) = match DataSet::load_csv(&p) {
                 Ok(ds) => (Some(SeriesInfo::of(&ds)), None),
-                Err(e) => (None, Some(e.to_string())),
+                Err(e) => (None, Some(e.message())),
             };
             Entry {
                 reference: format!("{PREFIX}{file}"),
@@ -218,12 +213,12 @@ pub fn snb_data(dir: &Path) -> Result<SnbData> {
 pub struct ImportReport {
     /// Written files (name in the library) with short info.
     pub written: Vec<(String, SeriesInfo)>,
-    pub notes: Vec<String>,
+    pub notes: Vec<Message>,
 }
 
 fn write_series(dir: &Path, file: &str, ds: &DataSet) -> Result<(String, SeriesInfo)> {
     let path = dir.join(file);
-    std::fs::write(&path, ds.to_csv()).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
+    std::fs::write(&path, ds.to_csv()).map_err(|e| crate::io_error(&path, e))?;
     Ok((file.to_string(), SeriesInfo::of(ds)))
 }
 
@@ -240,10 +235,7 @@ fn import_shiller_raw(dir: &Path, raw: &import::ShillerRaw) -> Result<ImportRepo
     let ch = import::with_ch_bonds(&chf, &snb)?;
     let mut notes = vec![];
     if chf.last() < usd.last() {
-        notes.push(format!(
-            "Die CHF-Reihe endet {}, weil die SNB-Daten (Kurs bzw. Landesindex) nicht weiter reichen. Neuere SNB-Daten lassen sich ebenfalls importieren.",
-            chf.last()
-        ));
+        notes.push(msg!(import_chf_ends, month = chf.last()));
     }
     Ok(ImportReport {
         written: vec![
@@ -258,18 +250,17 @@ fn import_shiller_raw(dir: &Path, raw: &import::ShillerRaw) -> Result<ImportRepo
 /// Take over SNB cubes (CSV from data.snb.ch) and recompute the CHF series.
 pub fn import_snb(dir: &Path, files: &[PathBuf]) -> Result<ImportReport> {
     let src = dir.join(SOURCES_DIR);
-    std::fs::create_dir_all(&src).map_err(|e| Error::Io(format!("{}: {e}", src.display())))?;
+    std::fs::create_dir_all(&src).map_err(|e| crate::io_error(&src, e))?;
     let mut notes = vec![];
     for f in files {
         let cube = import::read_snb(f)?;
         let text = SnbData::extract_csv(&cube)?;
         let target = src.join(format!("snb-{}.csv", cube.id));
-        std::fs::write(&target, text).map_err(|e| Error::Io(format!("{}: {e}", target.display())))?;
-        notes.push(format!(
-            "SNB-Würfel {} übernommen{}.",
-            cube.id,
-            cube.published.map(|p| format!(" (Stand {p})")).unwrap_or_default()
-        ));
+        std::fs::write(&target, text).map_err(|e| crate::io_error(&target, e))?;
+        notes.push(match &cube.published {
+            Some(p) => msg!(import_snb_cube_dated, id = cube.id, published = p),
+            None => msg!(import_snb_cube, id = cube.id),
+        });
     }
     let mut written = vec![];
     let usd_path = dir.join("Shiller USD.csv");
@@ -280,7 +271,7 @@ pub fn import_snb(dir: &Path, files: &[PathBuf]) -> Result<ImportReport> {
         written.push(write_series(dir, "Shiller CHF.csv", &chf)?);
         written.push(write_series(dir, CH_BONDS_FILE, &import::with_ch_bonds(&chf, &snb)?)?);
     } else {
-        notes.push("«Shiller USD.csv» fehlt in der Bibliothek; die CHF-Reihe wurde nicht neu berechnet.".into());
+        notes.push(msg!(import_shiller_usd_missing));
     }
     Ok(ImportReport { written, notes })
 }

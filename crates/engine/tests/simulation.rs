@@ -297,7 +297,7 @@ fn reduces_mortgage_when_not_sustainable() {
 fn debt_after_buy(cash: f64) -> (f64, String) {
     let res = run(&after_sale_plan(cash, 2_000.0, 500_000.0));
     let buy = res.events.iter().find(|e| e.kind == EventKind::Purchase).expect("Kauf");
-    (500_000.0 - res.records[13].property_equity, buy.text.clone())
+    (500_000.0 - res.records[13].property_equity, buy.text.to_string())
 }
 
 #[test]

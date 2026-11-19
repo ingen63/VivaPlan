@@ -13,6 +13,7 @@ use serde_json::Value;
 use crate::batch::{self, Bands, BatchSummary};
 use crate::library::{self, ImportReport, SeriesInfo};
 use crate::market::{self, DataSet};
+use crate::message::Message;
 use crate::model::{Plan, ReturnSource};
 use crate::scenarios::{self, ScenarioResult};
 use crate::sim::{SimResult, Simulator};
@@ -32,7 +33,7 @@ fn parse(plan: &Value) -> Result<Plan, Issue> {
     serde_json::from_value(plan.clone()).map_err(|e| Issue {
         severity: Severity::Error,
         section: "general",
-        message: format!("Die Projektdatei ist unvollständig: {e}"),
+        message: msg!(plan_incomplete_detail, detail = e.to_string()),
         field: None,
     })
 }
@@ -41,7 +42,7 @@ fn parse(plan: &Value) -> Result<Plan, Issue> {
 #[derive(Serialize)]
 pub struct UpgradeOut {
     pub plan: Value,
-    pub notes: Vec<String>,
+    pub notes: Vec<Message>,
 }
 
 /// Bring an older plan up to date when loading (#52, #51). The limits come along as `limits` in the
@@ -60,7 +61,7 @@ pub fn validate(plan: &Value) -> Vec<Issue> {
         return vec![Issue {
             severity: Severity::Error,
             section: "general",
-            message: e.to_string(),
+            message: e.message(),
             field: None,
         }];
     }
@@ -75,20 +76,16 @@ pub fn validate(plan: &Value) -> Vec<Issue> {
 pub struct PreviewOut {
     pub issues: Vec<Issue>,
     pub result: Option<SimResult>,
-    pub error: Option<String>,
+    pub error: Option<Message>,
     /// What the preview computes with, if not with the fixed values (e.g. average of the series).
-    pub basis: Option<String>,
+    pub basis: Option<Message>,
     /// Pillar 3a payout plan per account (#55).
     pub pillar3a: Vec<crate::sim::Pillar3aView>,
 }
 
-fn pct(v: f64) -> String {
-    format!("{:.1} %", v * 100.0)
-}
-
 /// The preview computes one run with constant returns. For series these are their mean
 /// annual returns, for the parametric model the expected geometric stock return.
-fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Option<String> {
+fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Option<Message> {
     use crate::model::Series;
     match p.returns.source {
         ReturnSource::Fixed => None,
@@ -104,17 +101,9 @@ fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Opt
                     let (_, b, i) = ds.averages();
                     f.bonds = Series::Number(b);
                     f.inflation = Series::Number(i);
-                    Some(format!(
-                        "Vorschau mit der erwarteten Aktienrendite des Modells ({} pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen {}, Inflation {} pro Jahr.",
-                        pct(g),
-                        pct(b),
-                        pct(i)
-                    ))
+                    Some(msg!(preview_model_and_series, stocks = g, bonds = b, inflation = i))
                 }
-                None => Some(format!(
-                    "Vorschau mit der erwarteten Aktienrendite des Modells ({} pro Jahr).",
-                    pct(g)
-                )),
+                None => Some(msg!(preview_model, stocks = g)),
             }
         }
         _ => {
@@ -124,12 +113,7 @@ fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Opt
             f.stocks = Series::Number(s);
             f.bonds = Series::Number(b);
             f.inflation = Series::Number(i);
-            Some(format!(
-                "Vorschau mit den Durchschnitten der Zeitreihe: Aktien {}, Obligationen {}, Inflation {} pro Jahr.",
-                pct(s),
-                pct(b),
-                pct(i)
-            ))
+            Some(msg!(preview_series, stocks = s, bonds = b, inflation = i))
         }
     }
 }
@@ -167,7 +151,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
         Err(e) => PreviewOut {
             issues,
             result: None,
-            error: Some(e.to_string()),
+            error: Some(e.message()),
             basis,
             pillar3a: vec![],
         },
@@ -178,7 +162,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
 #[serde(rename_all = "camelCase")]
 pub struct RunOut {
     pub issues: Vec<Issue>,
-    pub error: Option<String>,
+    pub error: Option<Message>,
     /// With exactly one run: the run with all monthly values.
     pub single: Option<SimResult>,
     /// With several runs: metrics, bands and selected runs in detail.
@@ -239,7 +223,7 @@ fn micros_each(seconds: f64, count: usize) -> f64 {
 }
 
 /// Measures how long one run of the plan takes (a few thousand runs, usually under one second).
-pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<BenchOut, String> {
+pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<BenchOut, Message> {
     let mut v = plan.clone();
     for key in ["bootstrap", "parametric"] {
         if let Some(n) = v["returns"][key]["paths"].as_u64() {
@@ -248,9 +232,9 @@ pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<Be
     }
     v["scenarios"]["sweeps"] = Value::Array(vec![]);
     let p = parse(&v).map_err(|i| i.message)?;
-    let sim = Simulator::new(&p).map_err(|e| e.to_string())?;
-    let data = batch::load_series(&p, base_dir, library).map_err(|e| e.to_string())?;
-    let paths = batch::path_source(&p, &sim, data.as_ref()).map_err(|e| e.to_string())?;
+    let sim = Simulator::new(&p).map_err(|e| e.message())?;
+    let data = batch::load_series(&p, base_dir, library).map_err(|e| e.message())?;
+    let paths = batch::path_source(&p, &sim, data.as_ref()).map_err(|e| e.message())?;
     let n = paths.len();
     let (reps, runs) = bench_runs(n);
     // With only one path (fixed returns, historical course) compute the same path several times.
@@ -299,7 +283,7 @@ fn select_variation(plan: &Value) -> crate::Result<Option<Value>> {
     for item in sel {
         let param = item["param"]
             .as_str()
-            .ok_or_else(|| crate::Error::Invalid("Auswahl der Variation ohne Parameter".into()))?;
+            .ok_or_else(|| crate::Error::Invalid(msg!(variation_selection_without_param)))?;
         scenarios::apply(&mut v, param, &item["value"])?;
     }
     if let Some(sc) = v["scenarios"].as_object_mut() {
@@ -319,7 +303,7 @@ pub fn run(plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
 /// engine assigns one.
 pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path, library: Option<&Path>) -> RunOut {
     let t0 = Instant::now();
-    let fail = |issues, e: String| RunOut {
+    let fail = |issues, e: Message| RunOut {
         issues,
         error: Some(e),
         single: None,
@@ -335,37 +319,37 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
             &selected
         }
         Ok(None) => plan,
-        Err(e) => return fail(vec![], e.to_string()),
+        Err(e) => return fail(vec![], e.message()),
     };
     let p = match parse(plan) {
         Ok(p) => p,
-        Err(i) => return fail(vec![i], "Die Projektdatei ist unvollständig.".into()),
+        Err(i) => return fail(vec![i], msg!(plan_incomplete)),
     };
     let job = crate::progress::start_as(job, 0);
     let mut issues = validate::validate(&p);
     let sim = match Simulator::new(&p) {
         Ok(s) => s,
-        Err(e) => return fail(issues, e.to_string()),
+        Err(e) => return fail(issues, e.message()),
     };
     let data = match batch::load_series(&p, base_dir, library) {
         Ok(d) => d,
-        Err(e) => return fail(issues, e.to_string()),
+        Err(e) => return fail(issues, e.message()),
     };
     if let Some(i) = data.as_ref().and_then(|d| currency_issue(d, &p.project.currency)) {
         issues.push(i);
     }
     let paths = match batch::path_source(&p, &sim, data.as_ref()) {
         Ok(x) => x,
-        Err(e) => return fail(issues, e.to_string()),
+        Err(e) => return fail(issues, e.message()),
     };
     crate::progress::set_total(paths.len() as u64);
-    let cancelled = |issues| fail(issues, crate::progress::CANCELLED.into());
+    let cancelled = |issues| fail(issues, msg!(cancelled));
     let scenarios = if p.scenarios.sweeps.is_empty() {
         None
     } else {
         match run_scenarios(plan, &p, data.as_ref(), paths.len()) {
             Ok(s) => Some(s),
-            Err(e) => return fail(issues, e.to_string()),
+            Err(e) => return fail(issues, e.message()),
         }
     };
     if crate::progress::cancelled() {
@@ -414,7 +398,7 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RerunOut {
-    pub error: Option<String>,
+    pub error: Option<Message>,
     /// Per entry of the request: percentile and the run with all monthly values.
     pub details: Vec<(u32, SimResult)>,
 }
@@ -422,14 +406,15 @@ pub struct RerunOut {
 /// Recomputes single runs of a variation step without simulating all paths: `plan.scenarios.select` selects the
 /// step, `picks` are pairs of percentile and path number (`Percentile.index` of the scenarios).
 pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, library: Option<&Path>) -> RerunOut {
-    let fail = |e: String| RerunOut {
+    let fail = |e: Message| RerunOut {
         error: Some(e),
         details: vec![],
     };
     let run = || -> crate::Result<Vec<(u32, SimResult)>> {
         let selected = select_variation(plan)?;
         let plan = selected.as_ref().unwrap_or(plan);
-        let p: Plan = serde_json::from_value(plan.clone()).map_err(|e| crate::Error::Invalid(e.to_string()))?;
+        let p: Plan = serde_json::from_value(plan.clone())
+            .map_err(|e| crate::Error::Invalid(msg!(raw_error, detail = e.to_string())))?;
         let sim = Simulator::new(&p)?;
         let data = batch::load_series(&p, base_dir, library)?;
         let paths = batch::path_source(&p, &sim, data.as_ref())?;
@@ -437,9 +422,10 @@ pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, librar
             .iter()
             .map(|&(percent, index)| {
                 if index >= paths.len() {
-                    return Err(crate::Error::Invalid(format!(
-                        "Pfadnummer {index} ausserhalb von 0 bis {}",
-                        paths.len().saturating_sub(1)
+                    return Err(crate::Error::Invalid(msg!(
+                        path_index_outside,
+                        index = index,
+                        max = paths.len().saturating_sub(1)
                     )));
                 }
                 Ok((percent, sim.run(&paths.get(index), true)))
@@ -448,7 +434,7 @@ pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, librar
     };
     match run() {
         Ok(details) => RerunOut { error: None, details },
-        Err(e) => fail(e.to_string()),
+        Err(e) => fail(e.message()),
     }
 }
 
@@ -471,7 +457,8 @@ fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: u
                 for (param, value) in params.iter().zip(&values) {
                     scenarios::apply(&mut v, param, value)?;
                 }
-                let q: Plan = serde_json::from_value(v).map_err(|e| crate::Error::Invalid(e.to_string()))?;
+                let q: Plan = serde_json::from_value(v)
+                    .map_err(|e| crate::Error::Invalid(msg!(raw_error, detail = e.to_string())))?;
                 let sim = Simulator::new(&q)?;
                 let paths = batch::path_source(&q, &sim, data)?;
                 let results = batch::run_paths(&sim, &paths);
@@ -519,7 +506,7 @@ fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: u
                 at_retirement: None,
                 earliest_depletion: None,
                 percentiles: vec![],
-                error: Some(e.to_string()),
+                error: Some(e.message()),
             })
         })
         .collect();
@@ -535,9 +522,11 @@ pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
     (!c.eq_ignore_ascii_case(plan_currency)).then(|| Issue {
         severity: Severity::Warning,
         section: "returns",
-        message: format!(
-            "Die Zeitreihe «{}» ist in {c}, die Planung in {plan_currency}. Renditen und Inflation gelten dann für {c}.",
-            ds.meta.title.as_deref().unwrap_or(&ds.name)
+        message: msg!(
+            currency_mismatch,
+            series = ds.meta.title.as_deref().unwrap_or(&ds.name),
+            currency = c,
+            plan_currency = plan_currency
         ),
         field: None,
     })
@@ -588,7 +577,7 @@ pub fn import_snb(library: &Path, files: &[std::path::PathBuf]) -> crate::Result
 #[derive(Serialize)]
 pub struct ImportOut {
     pub plan: Value,
-    pub notes: Vec<String>,
+    pub notes: Vec<Message>,
 }
 
 /// Convert an old `config.json`; relative data paths start at `base_dir`.
@@ -602,17 +591,13 @@ pub fn import_legacy(text: &str, start_year: i32, base_dir: &Path, name: &str) -
 
 /// Read a project file; does not detect an old `config.json` automatically (use `import_legacy` for that).
 pub fn read_plan(path: &Path) -> crate::Result<Value> {
-    let text = std::fs::read_to_string(path).map_err(|e| crate::Error::Io(format!("{}: {e}", path.display())))?;
-    let v: Value =
-        serde_json::from_str(&text).map_err(|e| crate::Error::Invalid(format!("{}: {e}", path.display())))?;
+    let text = std::fs::read_to_string(path).map_err(|e| crate::io_error(path, e))?;
+    let v: Value = serde_json::from_str(&text).map_err(|e| crate::file_invalid(path, e.to_string()))?;
     if v.get("format").is_none() && v.get("General").is_some() {
-        return Err(crate::Error::Invalid(
-            "Das ist eine Konfiguration des bisherigen Programms – bitte «Alte config.json importieren» verwenden."
-                .into(),
-        ));
+        return Err(crate::Error::Invalid(msg!(legacy_config_detected)));
     }
     // #144: do not open a file of a newer version silently
-    crate::model::check_format(&v).map_err(|e| crate::Error::Invalid(format!("{}: {e}", path.display())))?;
+    crate::model::check_format(&v).map_err(|e| crate::file_invalid(path, e.message()))?;
     Ok(v)
 }
 
@@ -623,7 +608,7 @@ pub fn write_plan(path: &Path, plan: &Value) -> crate::Result<()> {
         plan.to_mut()["format"] = Value::String(crate::model::FORMAT.into());
     }
     let text = serde_json::to_string_pretty(&plan).expect("serialisierbar");
-    write_atomic(path, text.as_bytes()).map_err(|e| crate::Error::Io(format!("{}: {e}", path.display())))
+    write_atomic(path, text.as_bytes()).map_err(|e| crate::io_error(path, e))
 }
 
 /// #136: Writes to a temporary file in the same folder first, flushes it to disk and only then replaces
@@ -670,8 +655,8 @@ pub fn optimize(
     base_dir: &Path,
     library: Option<&Path>,
 ) -> crate::Result<crate::optimize::Report> {
-    let req: crate::optimize::Request =
-        serde_json::from_value(request.clone()).map_err(|e| crate::Error::Invalid(format!("Optimierung: {e}")))?;
+    let req: crate::optimize::Request = serde_json::from_value(request.clone())
+        .map_err(|e| crate::Error::Invalid(msg!(optimize_problem, problem = e.to_string())))?;
     crate::optimize::run_request(plan, base_dir, library, &req)
 }
 

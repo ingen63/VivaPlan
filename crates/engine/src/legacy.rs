@@ -14,7 +14,7 @@ use crate::{Error, Result};
 
 pub struct LegacyImport {
     pub plan: Plan,
-    pub notes: Vec<String>,
+    pub notes: Vec<crate::message::Message>,
 }
 
 struct Ctx<'a> {
@@ -22,7 +22,7 @@ struct Ctx<'a> {
     start: YearMonth,
     start_age: f64,
     end: YearMonth,
-    notes: Vec<String>,
+    notes: Vec<crate::message::Message>,
 }
 
 fn node<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
@@ -62,9 +62,10 @@ impl<'a> Ctx<'a> {
         let k = key.trim();
         let resolved = if k.starts_with('{') && k.ends_with('}') {
             self.f(&k[1..k.len() - 1])
-                .ok_or_else(|| Error::Invalid(format!("Variable {k} ist nicht definiert")))?
+                .ok_or_else(|| Error::Invalid(msg!(legacy_variable_undefined, name = k)))?
         } else {
-            k.parse().map_err(|_| Error::Invalid(format!("«{k}» ist kein Alter")))?
+            k.parse()
+                .map_err(|_| Error::Invalid(msg!(legacy_not_an_age, value = k)))?
         };
         Ok(resolved)
     }
@@ -84,7 +85,9 @@ impl<'a> Ctx<'a> {
                 let mut rows = vec![];
                 for (k, val) in o {
                     let m = self.month_of_age(self.key_age(k)?);
-                    let x = num(val).ok_or_else(|| Error::Invalid(format!("{path}: «{val}» ist keine Zahl")))?;
+                    let x = num(val).ok_or_else(|| {
+                        Error::Invalid(msg!(legacy_not_a_number, path = path, value = val.to_string()))
+                    })?;
                     rows.push((TimeRef::date(m), map(x)));
                 }
                 rows.sort_by_key(|r| r.0.as_date());
@@ -126,11 +129,10 @@ impl<'a> Ctx<'a> {
 /// `start_year`: calendar year of the simulation start (the old format only knows the start month).
 /// `base_dir`: directory against which relative paths (e.g. `./data/MSCI.csv`) are resolved.
 pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Result<LegacyImport> {
-    let root: Value = serde_json::from_str(text).map_err(|e| Error::Invalid(format!("config.json: {e}")))?;
+    let root: Value =
+        serde_json::from_str(text).map_err(|e| Error::Invalid(msg!(legacy_unreadable, detail = e.to_string())))?;
     if node(&root, "General").is_none() {
-        return Err(Error::Invalid(
-            "config.json: Abschnitt «General» fehlt – keine Konfiguration des früheren Programms.".into(),
-        ));
+        return Err(Error::Invalid(msg!(legacy_general_missing)));
     }
     let start_age = node(&root, "General.StartAge").and_then(num).unwrap_or(50.0);
     let start_month = node(&root, "General.StartMonth").and_then(num).unwrap_or(1.0) as u32;
@@ -182,10 +184,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     let lumpsum = match c.get("Pension.Private.LumpsumRatio") {
         Some(Value::Object(o)) => {
             if o.len() > 1 {
-                c.notes.push(
-                    "Mehrere Kapitalbezüge (LumpsumRatio) werden zu einem Bezug bei der Pensionierung zusammengefasst."
-                        .into(),
-                );
+                c.notes.push(msg!(legacy_lumpsums_merged));
             }
             o.values().filter_map(num).sum()
         }
@@ -348,13 +347,10 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     match c.get("CalculationMode").and_then(Value::as_str) {
         Some(m) if m.eq_ignore_ascii_case("montecarlo") => {
             returns.source = ReturnSource::Parametric;
-            c.notes.push("Monte Carlo übernommen (parametrisches Aktienmodell wie bisher); Obligationen und Inflation folgen den fixen Werten.".into());
+            c.notes.push(msg!(legacy_monte_carlo));
         }
         Some(m) if !m.eq_ignore_ascii_case("single") => {
-            c.notes.push(
-                "CalculationMode «Iteration» wird nicht übernommen; Variationen lassen sich als Szenarien erfassen."
-                    .into(),
-            );
+            c.notes.push(msg!(legacy_iteration));
         }
         _ => {}
     }
@@ -481,20 +477,14 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 mortgage: None,
             },
             other => {
-                c.notes
-                    .push(format!("Immobilie «{name}» mit Status «{other}» wird ignoriert."));
+                c.notes.push(msg!(legacy_property_ignored, name = name, status = other));
                 continue;
             }
         };
         properties.push(prop);
     }
     if !properties.is_empty() {
-        c.notes.push(
-            "Immobilien werden näherungsweise übernommen: Hypotheken werden zu gleichen Konditionen verlängert \
-             (Tragbarkeit nur noch beim Kauf nach Verkauf), Amortisation pro Quartal = 3/4 des alten Werts \
-             (gleicher monatlicher Aufwand)."
-                .into(),
-        );
+        c.notes.push(msg!(legacy_properties_approximate));
     }
     let d = Affordability::default();
     let realestate = RealEstate {

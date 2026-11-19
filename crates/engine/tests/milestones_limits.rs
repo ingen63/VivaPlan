@@ -38,7 +38,7 @@ fn errors(v: &Value) -> Vec<String> {
     issues(v)
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
-        .map(|i| i.message)
+        .map(|i| i.message.to_string())
         .collect()
 }
 
@@ -46,7 +46,7 @@ fn warnings(v: &Value) -> Vec<String> {
     issues(v)
         .into_iter()
         .filter(|i| i.severity == Severity::Warning)
-        .map(|i| i.message)
+        .map(|i| i.message.to_string())
         .collect()
 }
 
@@ -233,7 +233,12 @@ fn issue_170_ak8_fixed_milestones_without_name_give_the_same_results_and_texts()
         }
         v
     };
-    let texts = |v: &Value| api::validate(v).into_iter().map(|i| i.message).collect::<Vec<_>>();
+    let texts = |v: &Value| {
+        api::validate(v)
+            .into_iter()
+            .map(|i| i.message.to_string())
+            .collect::<Vec<_>>()
+    };
     let (a, b) = (texts(&early(unnamed.clone())), texts(&early(named.clone())));
     assert_eq!(a, b);
     assert!(a.iter().any(|t| t.contains("«Bezug Pensionskasse»")), "{a:?}");

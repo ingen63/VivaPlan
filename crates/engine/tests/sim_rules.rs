@@ -682,7 +682,7 @@ fn sale_followed_by_a_purchase_keeps_the_proceeds_liquid() {
 }
 
 fn note_after_sale(props: Value) -> Option<String> {
-    sale(&run(&estate(props))).note.clone()
+    sale(&run(&estate(props))).note.as_ref().map(ToString::to_string)
 }
 
 #[test]

@@ -193,7 +193,7 @@ fn issue_69_ak5_old_series_become_strategies() {
         let r = &out.plan["returns"];
         assert_eq!(r["strategy"], json!({ "stocks": stocks, "bonds": bonds }), "{series:?}");
         assert!(r.get("series").is_none());
-        let strategy_notes: Vec<&String> = out
+        let strategy_notes: Vec<&engine::message::Message> = out
             .notes
             .iter()
             .filter(|n| n.contains("Zeitreihe") || n.contains("Pictet"))
@@ -492,7 +492,8 @@ fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
             out.plan["returns"]["strategy"],
             json!({ "stocks": want_stocks, "bonds": want_bonds })
         );
-        let notes: Vec<&String> = out.notes.iter().filter(|n| n.contains("«Schweiz (Pictet)»")).collect();
+        let notes: Vec<&engine::message::Message> =
+            out.notes.iter().filter(|n| n.contains("«Schweiz (Pictet)»")).collect();
         assert_eq!(notes.len(), 1, "{:?}", out.notes);
         assert_eq!(
             notes[0].contains("für die Aktien «Schweiz (JST)»"),

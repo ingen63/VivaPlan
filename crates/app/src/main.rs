@@ -41,6 +41,43 @@ fn base_dir(plan_path: Option<&str>) -> PathBuf {
         .unwrap_or_else(home)
 }
 
+/// #171: Error of a command for the user interface: a message of the engine (`{code, params, text}`, the user
+/// interface translates it by the code) or a text of the operating system or of Tauri.
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(untagged)]
+enum CmdError {
+    Message(engine::message::Message),
+    Text(String),
+}
+
+#[cfg(test)]
+impl CmdError {
+    fn text(&self) -> &str {
+        match self {
+            CmdError::Message(m) => m.text(),
+            CmdError::Text(s) => s,
+        }
+    }
+}
+
+impl From<String> for CmdError {
+    fn from(s: String) -> Self {
+        CmdError::Text(s)
+    }
+}
+
+impl From<engine::Error> for CmdError {
+    fn from(e: engine::Error) -> Self {
+        CmdError::Message(e.message())
+    }
+}
+
+impl From<engine::message::Message> for CmdError {
+    fn from(m: engine::message::Message) -> Self {
+        CmdError::Message(m)
+    }
+}
+
 /// Folder of the data library (in the app's data directory, e.g. on macOS
 /// `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`).
 fn library_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
@@ -226,7 +263,7 @@ async fn open_path<R: Runtime>(
     app: AppHandle<R>,
     pending: State<'_, PendingOpen>,
     path: String,
-) -> Result<Opened, String> {
+) -> Result<Opened, CmdError> {
     pending.take();
     let o = opened_from(FilePath::Path(PathBuf::from(path)))?;
     remember_plan(&app, &o.path);
@@ -521,9 +558,13 @@ fn app_info<R: Runtime>(app: AppHandle<R>) -> Value {
 
 /// Computing time per run, for the duration estimate of scenarios and optimization.
 #[tauri::command]
-async fn bench_plan<R: Runtime>(app: AppHandle<R>, plan: Value, path: Option<String>) -> Result<api::BenchOut, String> {
+async fn bench_plan<R: Runtime>(
+    app: AppHandle<R>,
+    plan: Value,
+    path: Option<String>,
+) -> Result<api::BenchOut, CmdError> {
     let lib = library_dir(&app).ok();
-    api::bench(&plan, &base_dir(path.as_deref()), lib.as_deref())
+    api::bench(&plan, &base_dir(path.as_deref()), lib.as_deref()).map_err(CmdError::from)
 }
 
 /// State of a calculation (simulation or optimization); without an id the one started last.
@@ -609,12 +650,12 @@ async fn optimize<R: Runtime>(
     mut request: Value,
     path: Option<String>,
     job_id: Option<u64>,
-) -> Result<engine::optimize::Report, String> {
+) -> Result<engine::optimize::Report, CmdError> {
     let lib = library_dir(&app).ok();
     if let (Some(id), Some(obj)) = (job_id, request.as_object_mut()) {
         obj.insert("jobId".into(), id.into());
     }
-    api::optimize(&plan, &request, &base_dir(path.as_deref()), lib.as_deref()).map_err(|e| e.to_string())
+    api::optimize(&plan, &request, &base_dir(path.as_deref()), lib.as_deref()).map_err(CmdError::from)
 }
 
 #[tauri::command]
@@ -622,26 +663,26 @@ fn series_info<R: Runtime>(
     app: AppHandle<R>,
     path: String,
     plan_path: Option<String>,
-) -> Result<engine::library::SeriesInfo, String> {
+) -> Result<engine::library::SeriesInfo, CmdError> {
     let lib = library_dir(&app).ok();
-    api::series_info(&path, &base_dir(plan_path.as_deref()), lib.as_deref()).map_err(|e| e.to_string())
+    api::series_info(&path, &base_dir(plan_path.as_deref()), lib.as_deref()).map_err(CmdError::from)
 }
 
 #[tauri::command]
-async fn library_list<R: Runtime>(app: AppHandle<R>) -> Result<api::LibraryOut, String> {
+async fn library_list<R: Runtime>(app: AppHandle<R>) -> Result<api::LibraryOut, CmdError> {
     list_in(&library_dir(&app)?)
 }
 
 /// Content of the data library in folder `dir` (creates the shipped time series if needed).
-fn list_in(dir: &Path) -> Result<api::LibraryOut, String> {
-    api::library_list(dir).map_err(|e| e.to_string())
+fn list_in(dir: &Path) -> Result<api::LibraryOut, CmdError> {
+    api::library_list(dir).map_err(CmdError::from)
 }
 
 /// Runs `then` only if something was chosen in the dialog (`pick` then returns `Some`).
 fn picked<T, U>(
     pick: impl FnOnce() -> Option<T>,
-    then: impl FnOnce(T) -> Result<U, String>,
-) -> Result<Option<U>, String> {
+    then: impl FnOnce(T) -> Result<U, CmdError>,
+) -> Result<Option<U>, CmdError> {
     pick().map(then).transpose()
 }
 
@@ -649,35 +690,35 @@ fn picked<T, U>(
 async fn import_shiller<R: Runtime>(
     app: AppHandle<R>,
     dialogs: State<'_, Picker>,
-) -> Result<Option<engine::library::ImportReport>, String> {
+) -> Result<Option<engine::library::ImportReport>, CmdError> {
     picked(
         || dialogs.pick_file(&SHILLER_DIALOG),
         |file| shiller_from(&library_dir(&app)?, file),
     )
 }
 
-fn shiller_from(library: &Path, file: FilePath) -> Result<engine::library::ImportReport, String> {
-    api::import_shiller(library, &path_string(file)?).map_err(|e| e.to_string())
+fn shiller_from(library: &Path, file: FilePath) -> Result<engine::library::ImportReport, CmdError> {
+    api::import_shiller(library, &path_string(file)?).map_err(CmdError::from)
 }
 
 #[tauri::command]
 async fn import_snb<R: Runtime>(
     app: AppHandle<R>,
     dialogs: State<'_, Picker>,
-) -> Result<Option<engine::library::ImportReport>, String> {
+) -> Result<Option<engine::library::ImportReport>, CmdError> {
     picked(
         || dialogs.pick_files(&SNB_DIALOG),
         |files| snb_from(&library_dir(&app)?, files),
     )
 }
 
-fn snb_from(library: &Path, files: Vec<FilePath>) -> Result<engine::library::ImportReport, String> {
+fn snb_from(library: &Path, files: Vec<FilePath>) -> Result<engine::library::ImportReport, CmdError> {
     let files = files.into_iter().map(path_string).collect::<Result<Vec<_>, _>>()?;
-    api::import_snb(library, &files).map_err(|e| e.to_string())
+    api::import_snb(library, &files).map_err(CmdError::from)
 }
 
 #[tauri::command]
-async fn open_plan<R: Runtime>(app: AppHandle<R>, dialogs: State<'_, Picker>) -> Result<Option<Opened>, String> {
+async fn open_plan<R: Runtime>(app: AppHandle<R>, dialogs: State<'_, Picker>) -> Result<Option<Opened>, CmdError> {
     let opened = picked(|| dialogs.pick_file(&OPEN_DIALOG), opened_from)?;
     if let Some(o) = &opened {
         remember_plan(&app, &o.path);
@@ -685,9 +726,9 @@ async fn open_plan<R: Runtime>(app: AppHandle<R>, dialogs: State<'_, Picker>) ->
     Ok(opened)
 }
 
-fn opened_from(file: FilePath) -> Result<Opened, String> {
+fn opened_from(file: FilePath) -> Result<Opened, CmdError> {
     let path = path_string(file)?;
-    let plan = api::read_plan(&path).map_err(|e| e.to_string())?;
+    let plan = api::read_plan(&path)?;
     Ok(Opened {
         path: path.to_string_lossy().into_owned(),
         plan,
@@ -700,7 +741,7 @@ async fn save_plan<R: Runtime>(
     dialogs: State<'_, Picker>,
     plan: Value,
     path: Option<String>,
-) -> Result<Option<String>, String> {
+) -> Result<Option<String>, CmdError> {
     let default = i18n::tr(&app.state::<i18n::UiLanguage>().language(), "dialog.planName");
     let saved = save_with(&plan, path, &default, |name| {
         dialogs.save_file(&SAVE_DIALOG, &format!("{name}.vplan"))
@@ -719,7 +760,7 @@ fn save_with(
     path: Option<String>,
     default_name: &str,
     pick: impl FnOnce(&str) -> Option<FilePath>,
-) -> Result<Option<String>, String> {
+) -> Result<Option<String>, CmdError> {
     let legacy = path.as_deref().and_then(legacy_stem);
     let target = match path {
         Some(p) if legacy.is_none() => Some(PathBuf::from(p)),
@@ -731,37 +772,38 @@ fn save_with(
     target.map(|t| write_to(&t, plan)).transpose()
 }
 
-fn write_to(target: &Path, plan: &Value) -> Result<String, String> {
-    api::write_plan(target, plan).map_err(|e| e.to_string())?;
+fn write_to(target: &Path, plan: &Value) -> Result<String, CmdError> {
+    api::write_plan(target, plan)?;
     Ok(target.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
-async fn import_legacy(dialogs: State<'_, Picker>, start_year: i32) -> Result<Option<api::ImportOut>, String> {
+async fn import_legacy(dialogs: State<'_, Picker>, start_year: i32) -> Result<Option<api::ImportOut>, CmdError> {
     picked(
         || dialogs.pick_file(&LEGACY_DIALOG),
         |file| legacy_from(file, start_year),
     )
 }
 
-fn legacy_from(file: FilePath, start_year: i32) -> Result<api::ImportOut, String> {
+fn legacy_from(file: FilePath, start_year: i32) -> Result<api::ImportOut, CmdError> {
     let path = path_string(file)?;
-    let text = std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let text = std::fs::read_to_string(&path)
+        .map_err(|e| engine::msg!(file_error, path = path.display().to_string(), detail = e.to_string()))?;
     // The old program ran in the project folder; data paths like ./data/MSCI.csv are relative to it.
     let base = legacy_base(&path, &text);
     let name = path
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default();
-    api::import_legacy(&text, start_year, &base, &name).map_err(|e| e.to_string())
+    api::import_legacy(&text, start_year, &base, &name).map_err(CmdError::from)
 }
 
-fn series_choice(file: FilePath) -> Result<String, String> {
+fn series_choice(file: FilePath) -> Result<String, CmdError> {
     Ok(path_string(file)?.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
-async fn pick_series(dialogs: State<'_, Picker>) -> Result<Option<String>, String> {
+async fn pick_series(dialogs: State<'_, Picker>) -> Result<Option<String>, CmdError> {
     picked(|| dialogs.pick_file(&SERIES_DIALOG), series_choice)
 }
 
@@ -1200,6 +1242,21 @@ mod tests {
         "tauri://localhost"
     };
 
+    /// #171: Text of an error of a command: a text or a message of the engine (`{code, params, text}`).
+    fn error_text(e: &Value) -> &str {
+        match e.as_str() {
+            Some(t) => t,
+            None => {
+                assert!(e["code"].is_string() && e["params"].is_object(), "{e}");
+                e["text"].as_str().expect("Text der Meldung")
+            }
+        }
+    }
+
+    fn is_error_text(e: &Value) -> bool {
+        !error_text(e).is_empty()
+    }
+
     fn call(w: &WebviewWindow<MockRuntime>, cmd: &str, args: Value) -> Result<Value, Value> {
         tauri::test::get_ipc_response(
             w,
@@ -1369,7 +1426,7 @@ mod tests {
         assert_eq!(r["details"][0][0], 50);
         let r = call(&w, "rerun_paths", json!({"plan": {}, "picks": []})).unwrap();
         assert!(
-            r["error"].is_string() || r["details"].as_array().is_some_and(|a| a.is_empty()),
+            r["error"]["text"].is_string() || r["details"].as_array().is_some_and(|a| a.is_empty()),
             "{r}"
         );
     }
@@ -1390,7 +1447,7 @@ mod tests {
         let r = call(&w, "optimize", json!({"plan": plan, "request": {}})).unwrap();
         assert!(r["outcomes"].is_array());
         let e = call(&w, "optimize", json!({"plan": plan, "request": "unsinn"})).unwrap_err();
-        assert!(e.is_string());
+        assert!(is_error_text(&e));
     }
 
     #[test]
@@ -1402,7 +1459,7 @@ mod tests {
             json!({"path": "/gibt/es/nicht.csv", "planPath": null}),
         )
         .unwrap_err();
-        assert!(e.is_string());
+        assert!(is_error_text(&e));
     }
 
     #[test]
@@ -1417,7 +1474,7 @@ mod tests {
             json!({"path": csv.to_string_lossy(), "planPath": dir.join("p.vplan").to_string_lossy()}),
         );
         // The CSV format depends on the engine parser; both outcomes go through the command.
-        assert!(r.is_ok() || r.unwrap_err().is_string());
+        assert!(r.is_ok() || is_error_text(&r.unwrap_err()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1469,7 +1526,7 @@ mod tests {
         // A folder path that is a file cannot be read.
         let not_a_dir = dir.join("datei");
         std::fs::write(&not_a_dir, "x").unwrap();
-        assert!(list_in(&not_a_dir).err().unwrap().contains("datei"));
+        assert!(list_in(&not_a_dir).err().unwrap().text().contains("datei"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1535,7 +1592,8 @@ mod tests {
             // The IPC response arrives as JSON text; serde_json does not always read floating point numbers from it bit-exactly
             // (without `float_roundtrip`). The dispatcher's response therefore takes the same path through text.
             let mut dev = engine::dispatch::call(cmd, &args, &lib, &home())
-                .map(|v| serde_json::from_str::<Value>(&v.to_string()).unwrap());
+                .map(|v| serde_json::from_str::<Value>(&v.to_string()).unwrap())
+                .map_err(|e| e.text().to_string());
             for v in [&mut tauri, &mut dev].into_iter().flatten() {
                 without_times(v);
             }
@@ -1705,7 +1763,7 @@ mod tests {
     fn saving_plan_into_missing_folder_is_error() {
         let (_app, w, _g) = setup();
         let e = call(&w, "save_plan", json!({"plan": {}, "path": "/gibt/es/nicht/p.vplan"})).unwrap_err();
-        assert!(e.as_str().unwrap().contains("p.vplan"));
+        assert!(error_text(&e).contains("p.vplan"));
     }
 
     /// #136/AK4: If saving fails, the command reports the error (the user interface shows it and leaves the
@@ -1732,7 +1790,7 @@ mod tests {
         )
         .unwrap_err();
         std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
-        assert!(e.as_str().unwrap().contains("p.vplan"), "{e}");
+        assert!(error_text(&e).contains("p.vplan"), "{e}");
         assert_eq!(api::read_plan(&file).unwrap(), old_plan);
         assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1, "keine temporäre Datei");
         let _ = std::fs::remove_dir_all(&dir);
@@ -1755,6 +1813,7 @@ mod tests {
         assert!(opened_from(FilePath::Path(f.clone()))
             .err()
             .unwrap()
+            .text()
             .contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"));
         // Old config.json is rejected.
         let old_config = dir.join("alt.json");
@@ -1762,6 +1821,7 @@ mod tests {
         assert!(opened_from(FilePath::Path(old_config))
             .err()
             .unwrap()
+            .text()
             .contains("Alte config.json"));
         // No JSON, missing file, path that cannot be converted.
         let broken = dir.join("k.vplan");
@@ -1798,6 +1858,7 @@ mod tests {
         assert!(legacy_from(FilePath::Path(PathBuf::from("/gibt/es/nicht.json")), 2026)
             .err()
             .unwrap()
+            .text()
             .contains("nicht.json"));
         let dir = tmp("legacy-bad");
         let bad = dir.join("c.json");
@@ -1893,17 +1954,17 @@ mod tests {
     #[test]
     fn choice_without_match_runs_nothing() {
         // `Err` as follow-up step: had it been called on cancel, the result would be an error.
-        let r = picked(|| None::<String>, Err::<u8, String>);
+        let r = picked(|| None::<String>, |e| Err::<u8, CmdError>(e.into()));
         assert_eq!(r, Ok(None));
         assert_eq!(picked(|| Some(2), |x| Ok(x * 2)), Ok(Some(4)));
         assert_eq!(
-            picked(|| Some("fehler".to_string()), Err::<u8, String>),
-            Err("fehler".into())
+            picked(|| Some("fehler".to_string()), |e| Err::<u8, CmdError>(e.into())),
+            Err(CmdError::Text("fehler".into()))
         );
     }
 
     /// Result of `save_with` along with what the dialog observed: (result, asked, suggested name).
-    type Saved = (Result<Option<String>, String>, bool, String);
+    type Saved = (Result<Option<String>, CmdError>, bool, String);
 
     fn save_with_answer(plan: &Value, path: Option<String>, answer: Option<FilePath>) -> Saved {
         let mut was_asked = false;
@@ -2287,7 +2348,7 @@ mod tests {
     fn open_plan_via_command_reports_errors() {
         let dir = tmp("cmd-open-err");
         let (_app, w, _g, _) = setup_with(chosen(&dir.join("fehlt.vplan")));
-        assert!(call(&w, "open_plan", json!({})).unwrap_err().is_string());
+        assert!(is_error_text(&call(&w, "open_plan", json!({})).unwrap_err()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2455,9 +2516,9 @@ mod tests {
         let bad = dir.join("c.json");
         std::fs::write(&bad, "kein json").unwrap();
         let (_app, w, _g, _) = setup_with(chosen(&bad));
-        assert!(call(&w, "import_legacy", json!({"startYear": 2026}))
-            .unwrap_err()
-            .is_string());
+        assert!(is_error_text(
+            &call(&w, "import_legacy", json!({"startYear": 2026})).unwrap_err()
+        ));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2472,14 +2533,14 @@ mod tests {
             ..Default::default()
         };
         let (_app, w, _g, _) = setup_with(fake);
-        assert!(call(&w, "pick_series", json!({})).unwrap_err().is_string());
+        assert!(is_error_text(&call(&w, "pick_series", json!({})).unwrap_err()));
     }
 
     #[test]
     fn shiller_import_via_command_reports_file_errors() {
         let dir = tmp("cmd-shiller");
         let (_app, w, _g, fake) = setup_with(chosen(&dir.join("fehlt.xls")));
-        assert!(call(&w, "import_shiller", json!({})).unwrap_err().is_string());
+        assert!(is_error_text(&call(&w, "import_shiller", json!({})).unwrap_err()));
         assert_eq!(fake.asked().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -2492,7 +2553,7 @@ mod tests {
             ..Default::default()
         };
         let (_app, w, _g, fake) = setup_with(fake);
-        assert!(call(&w, "import_snb", json!({})).unwrap_err().is_string());
+        assert!(is_error_text(&call(&w, "import_snb", json!({})).unwrap_err()));
         assert_eq!(fake.asked().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }

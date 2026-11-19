@@ -1,8 +1,11 @@
 //! Validation of a plan: errors prevent the simulation, warnings do not.
 
-use serde::Serialize;
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
 
-use crate::model::{person_milestone_name, person_milestones, PayoutAt, PayoutUse, AHV_NAME, PK_NAME};
+use crate::message::{arg, Arg, Message};
+
+use crate::model::{fixed_milestone_message, person_milestones, PayoutAt, PayoutUse};
 use crate::model::{
     AmortMode, AmountMode, GainModel, MilestoneKind, Plan, PropertyStatus, RateKind, ReturnSource, Series, SeriesDef,
     Strategy, Withdrawal,
@@ -20,18 +23,6 @@ const MAX_AGE: i32 = 120;
 /// app crashed at 1'000'000 paths for lack of memory.
 pub const MAX_PATH_MONTHS: u64 = 50_000_000;
 
-/// Integer with apostrophe as thousands separator (40'000).
-fn fmt_count(n: u64) -> String {
-    let d = n.to_string();
-    let mut out = String::new();
-    for (i, c) in d.chars().enumerate() {
-        if i > 0 && (d.len() - i).is_multiple_of(3) {
-            out.push('\'');
-        }
-        out.push(c);
-    }
-    out
-}
 /// Longest allowed person name.
 const MAX_NAME: usize = 60;
 
@@ -42,53 +33,74 @@ pub enum Severity {
     Warning,
 }
 
-#[derive(Clone, Debug, Serialize)]
+/// Serialized as `{ severity, section, message, code, params, field? }`: `message` is the German text, `code` and
+/// `params` let the user interface translate it (#171).
+#[derive(Clone, Debug)]
 pub struct Issue {
     pub severity: Severity,
     /// Section in the editor (`general`, `milestones`, `pension`, `flows`, `wealth`, `returns`,
     /// `withdrawal`, `optimize`, `taxes`, `realestate`).
     pub section: &'static str,
-    pub message: String,
+    pub message: Message,
     /// Path of the affected field in the plan (for example `household.persons.0.name`); the user interface then shows the
     /// message right at the field.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
+}
+
+impl Serialize for Issue {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        let mut m = s.serialize_map(None)?;
+        m.serialize_entry("severity", &self.severity)?;
+        m.serialize_entry("section", self.section)?;
+        m.serialize_entry("message", self.message.text())?;
+        m.serialize_entry("code", self.message.code())?;
+        m.serialize_entry("params", &self.message.params())?;
+        if let Some(f) = &self.field {
+            m.serialize_entry("field", f)?;
+        }
+        m.end()
+    }
+}
+
+/// #171: A name of the validation (series, point in time) as a parameter of a message.
+fn term(m: Message) -> Arg {
+    arg(&m)
 }
 
 struct Issues(Vec<Issue>);
 
 impl Issues {
-    fn err(&mut self, section: &'static str, message: impl Into<String>) {
+    fn err(&mut self, section: &'static str, message: Message) {
         self.0.push(Issue {
             severity: Severity::Error,
             section,
-            message: message.into(),
+            message,
             field: None,
         });
     }
     /// Error at a specific field of the plan.
-    fn err_at(&mut self, section: &'static str, field: impl Into<String>, message: impl Into<String>) {
+    fn err_at(&mut self, section: &'static str, field: impl Into<String>, message: Message) {
         self.0.push(Issue {
             severity: Severity::Error,
             section,
-            message: message.into(),
+            message,
             field: Some(field.into()),
         });
     }
     /// Warning at a specific field of the plan.
-    fn warn_at(&mut self, section: &'static str, field: impl Into<String>, message: impl Into<String>) {
+    fn warn_at(&mut self, section: &'static str, field: impl Into<String>, message: Message) {
         self.0.push(Issue {
             severity: Severity::Warning,
             section,
-            message: message.into(),
+            message,
             field: Some(field.into()),
         });
     }
-    fn warn(&mut self, section: &'static str, message: impl Into<String>) {
+    fn warn(&mut self, section: &'static str, message: Message) {
         self.0.push(Issue {
             severity: Severity::Warning,
             section,
-            message: message.into(),
+            message,
             field: None,
         });
     }
@@ -106,49 +118,37 @@ pub fn validate(plan: &Plan) -> Vec<Issue> {
 fn check_guardrails(v: &mut Issues, w: &Withdrawal) {
     let g = w.guardrails.clone().unwrap_or_default();
     if !(g.initial_rate > 0.0 && g.initial_rate <= 1.0) {
-        v.err("withdrawal", "Die Startrate muss zwischen 0 % und 100 % liegen.");
+        v.err("withdrawal", msg!(guardrails_initial_rate));
     }
     if g.upper < 0.0 || g.lower < 0.0 || g.lower >= 1.0 {
-        v.err(
-            "withdrawal",
-            "Die Leitplanken müssen grösser oder gleich 0 sein (unten kleiner als 100 %).",
-        );
+        v.err("withdrawal", msg!(guardrails_bands));
     }
     if !(0.0..1.0).contains(&g.adjust) {
-        v.err("withdrawal", "Die Anpassung muss zwischen 0 % und 100 % liegen.");
+        v.err("withdrawal", msg!(guardrails_adjust));
     }
 }
 
 /// Floor and ceiling of the living costs.
 fn check_limits(v: &mut Issues, w: &Withdrawal) {
     if w.floor.is_some_and(|f| f < 0.0) || w.ceiling.is_some_and(|c| c < 0.0) {
-        v.err(
-            "withdrawal",
-            "Unter- und Obergrenze der Ausgaben dürfen nicht negativ sein.",
-        );
+        v.err("withdrawal", msg!(spending_limits_negative));
     }
     if let (Some(f), Some(c)) = (w.floor, w.ceiling) {
         if c > 0.0 && f > c {
-            v.err("withdrawal", "Die Untergrenze der Ausgaben liegt über der Obergrenze.");
+            v.err("withdrawal", msg!(spending_floor_above_ceiling));
         }
     }
 }
 
 fn check(plan: &Plan, v: &mut Issues) {
     if plan.household.persons.is_empty() {
-        v.err("general", "Mindestens eine Person ist nötig.");
+        v.err("general", msg!(persons_none));
         return;
     }
     match (plan.household.persons.len(), &plan.partner) {
-        (n, _) if n > 2 => v.err("general", "Es sind höchstens zwei Personen möglich."),
-        (1, Some(_)) => v.err(
-            "general",
-            "Die Angaben zur zweiten Person gehören zu einer zweiten Person im Haushalt.",
-        ),
-        (2, None) => v.warn(
-            "general",
-            "Die zweite Person hat weder Einkommen noch Vorsorge erfasst und bleibt unberücksichtigt.",
-        ),
+        (n, _) if n > 2 => v.err("general", msg!(persons_too_many)),
+        (1, Some(_)) => v.err("general", msg!(partner_without_person)),
+        (2, None) => v.warn("general", msg!(partner_missing)),
         _ => {}
     }
     for (i, p) in plan.household.persons.iter().enumerate() {
@@ -157,45 +157,39 @@ fn check(plan: &Plan, v: &mut Issues) {
             v.err_at(
                 "general",
                 format!("household.persons.{i}.name"),
-                format!("Person {}: Der Name fehlt (Pflichtangabe).", i + 1),
+                msg!(person_name_missing, n = i + 1),
             );
         } else if len > MAX_NAME {
             v.err_at(
                 "general",
                 format!("household.persons.{i}.name"),
-                format!(
-                    "Person {}: Der Name darf höchstens {MAX_NAME} Zeichen lang sein.",
-                    i + 1
-                ),
+                msg!(person_name_too_long, n = i + 1, max = MAX_NAME),
             );
         }
     }
     if plan.household.ahv_couple_cap <= 0.0 {
-        v.err("pension", "Die Plafonierung der AHV-Renten muss grösser als 0 sein.");
+        v.err("pension", msg!(ahv_cap_not_positive));
     }
     let r = match Resolver::new(plan) {
         Ok(r) => r,
         Err(e) => {
-            v.err("milestones", e.to_string());
+            v.err("milestones", e.message());
             return;
         }
     };
     let (start, end) = match (r.milestone("start"), r.milestone("end")) {
         (Ok(s), Ok(e)) => (s, e),
         _ => {
-            v.err(
-                "milestones",
-                "Die Meilensteine «start» und «end» müssen vorhanden sein.",
-            );
+            v.err("milestones", msg!(milestones_start_end_missing));
             return;
         }
     };
     if end <= start {
-        v.err("milestones", "Das Simulationsende muss nach dem Start liegen.");
+        v.err("milestones", msg!(end_before_start));
         return;
     }
     if start.until(end) > 12 * 100 {
-        v.err("milestones", "Der Simulationszeitraum ist länger als 100 Jahre.");
+        v.err("milestones", msg!(period_too_long));
     }
     // #139: Limit the memory of the Monte Carlo computation (paths × months)
     let months = u64::try_from(start.until(end) + 1).unwrap_or(0);
@@ -217,34 +211,27 @@ fn check(plan: &Plan, v: &mut Issues) {
             v.err_at(
                 "returns",
                 field,
-                format!(
-                    "Zu viele Pfade für den Speicher: {} Pfade × {months} Monate. Bei dieser Planungsdauer sind höchstens {} Pfade möglich.",
-                    fmt_count(paths),
-                    fmt_count(max)
-                ),
+                msg!(paths_memory, paths = paths, months = months, max = max),
             );
         }
     }
     for (i, p) in plan.household.persons.iter().enumerate() {
         let who = if p.name.trim().is_empty() {
-            format!("Person {}", i + 1)
+            arg(&msg!(person_n, n = i + 1))
         } else {
-            p.name.clone()
+            arg(&p.name)
         };
         if p.birth > start {
             v.err_at(
                 "general",
                 format!("household.persons.{i}.birth"),
-                format!(
-                    "{who}: Das Geburtsdatum ({}) liegt nach dem Simulationsstart ({start}).",
-                    p.birth
-                ),
+                msg!(birth_after_start, who = who, birth = p.birth, start = start),
             );
         } else if p.birth.until(end) > 12 * MAX_AGE {
             v.err_at(
                 "general",
                 format!("household.persons.{i}.birth"),
-                format!("{who}: Am Simulationsende wäre die Person über {MAX_AGE} Jahre alt."),
+                msg!(person_too_old, who = who, max = MAX_AGE),
             );
         }
     }
@@ -253,7 +240,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             if !(0.0..=130.0).contains(years) {
                 v.err(
                     "milestones",
-                    format!("«{}»: Alter {years} ist nicht möglich.", ms.label()),
+                    msg!(milestone_age_invalid, name = ms.name_arg(), years = years),
                 );
             }
         }
@@ -262,106 +249,91 @@ fn check(plan: &Plan, v: &mut Issues) {
         if m < start {
             v.warn(
                 "milestones",
-                format!("«{}» ({m}) liegt vor dem Simulationsstart.", ms.label()),
+                msg!(milestone_before_start, name = ms.name_arg(), month = m),
             );
         } else if m > end {
-            v.warn(
-                "milestones",
-                format!("«{}» ({m}) liegt nach dem Simulationsende.", ms.label()),
-            );
+            v.warn("milestones", msg!(milestone_after_end, name = ms.name_arg(), month = m));
         }
     }
 
-    let resolve = |v: &mut Issues, section: &'static str, what: &str, t: &TimeRef| -> Option<YearMonth> {
+    let resolve = |v: &mut Issues, section: &'static str, what: Arg, t: &TimeRef| -> Option<YearMonth> {
         match r.resolve(t) {
             Ok(m) => m,
             Err(e) => {
-                v.err(section, format!("{what}: {e}"));
+                v.err(section, msg!(labeled, what = what, problem = e.message()));
                 None
             }
         }
     };
-    let series = |v: &mut Issues, section: &'static str, what: &str, s: &Series, range: Option<(f64, f64)>| {
+    let series = |v: &mut Issues, section: &'static str, what: Arg, s: &Series, range: Option<(f64, f64)>| {
         let values: Vec<f64> = match s {
             Series::Number(x) | Series::Def(SeriesDef::Const { value: x }) => vec![*x],
             Series::Def(SeriesDef::Timed { rows }) => {
                 if rows.is_empty() {
-                    v.err(section, format!("{what}: keine Einträge."));
+                    v.err(section, msg!(series_empty, what = what));
                 }
                 let mut first: Option<YearMonth> = None;
                 for row in rows {
-                    if let Some(m) = resolve(v, section, what, &row.from) {
+                    if let Some(m) = resolve(v, section, what.clone(), &row.from) {
                         first = Some(first.map_or(m, |f| f.min(m)));
                     }
                 }
                 if first.is_some_and(|f| f > start) {
-                    v.warn(
-                        section,
-                        format!("{what}: kein Wert ab Simulationsstart – bis zum ersten Eintrag gilt 0."),
-                    );
+                    v.warn(section, msg!(series_late_start, what = what));
                 }
                 rows.iter().map(|r| r.value).collect()
             }
         };
         if let Some((lo, hi)) = range {
             if values.iter().any(|x| *x < lo || *x > hi) {
-                v.err(section, format!("{what}: Werte müssen zwischen {lo} und {hi} liegen."));
+                v.err(section, msg!(series_out_of_range, what = what, lo = lo, hi = hi));
             }
         }
     };
 
     // Pension
     let pk = &plan.pension.pk;
-    let retire = resolve(v, "pension", "Bezug Pensionskasse", &pk.at);
-    resolve(v, "pension", "AHV-Bezug", &plan.pension.ahv.at);
+    let retire = resolve(v, "pension", term(msg!(term_pk_payout)), &pk.at);
+    resolve(v, "pension", term(msg!(term_ahv_payout)), &plan.pension.ahv.at);
     if !(0.0..=1.0).contains(&pk.lumpsum) {
-        v.err("pension", "Kapitalbezug muss zwischen 0 % und 100 % liegen.");
+        v.err("pension", msg!(pk_lumpsum_range));
     }
     if pk.conversion > 0.08 {
-        v.warn(
-            "pension",
-            format!("Umwandlungssatz {:.2} % ist ungewöhnlich hoch.", pk.conversion * 100.0),
-        );
+        v.warn("pension", msg!(pk_conversion_high, rate = pk.conversion));
     }
-    series(v, "pension", "Beiträge Pensionskasse", &pk.contribution, None);
+    series(v, "pension", term(msg!(term_pk_contribution)), &pk.contribution, None);
     series(
         v,
         "pension",
-        "Verzinsung Pensionskasse",
+        term(msg!(term_pk_interest)),
         &pk.interest,
         Some((-0.5, 1.0)),
     );
     let mut retire_dates = vec![retire];
     if let Some(q) = &plan.partner {
-        retire_dates.push(resolve(v, "pension", "Bezug Pensionskasse (Person 2)", &q.pk.at));
-        resolve(v, "pension", "AHV-Bezug (Person 2)", &q.ahv.at);
+        retire_dates.push(resolve(v, "pension", term(msg!(term_pk_payout_2)), &q.pk.at));
+        resolve(v, "pension", term(msg!(term_ahv_payout_2)), &q.ahv.at);
         if !(0.0..=1.0).contains(&q.pk.lumpsum) {
-            v.err("pension", "Person 2: Kapitalbezug muss zwischen 0 % und 100 % liegen.");
+            v.err("pension", msg!(pk_lumpsum_range_2));
         }
         if q.pk.conversion > 0.08 {
-            v.warn(
-                "pension",
-                format!(
-                    "Person 2: Umwandlungssatz {:.2} % ist ungewöhnlich hoch.",
-                    q.pk.conversion * 100.0
-                ),
-            );
+            v.warn("pension", msg!(pk_conversion_high_2, rate = q.pk.conversion));
         }
         series(
             v,
             "pension",
-            "Beiträge Pensionskasse (Person 2)",
+            term(msg!(term_pk_contribution_2)),
             &q.pk.contribution,
             None,
         );
         series(
             v,
             "pension",
-            "Verzinsung Pensionskasse (Person 2)",
+            term(msg!(term_pk_interest_2)),
             &q.pk.interest,
             Some((-0.5, 1.0)),
         );
-        series(v, "flows", "Einkommen (Person 2)", &q.income, None);
+        series(v, "flows", term(msg!(term_income_2)), &q.income, None);
     }
     let retire_of = [retire_dates[0], retire_dates.get(1).copied().flatten()];
     let pk_lumpsum = [pk.lumpsum, plan.partner.as_ref().map_or(0.0, |q| q.pk.lumpsum)];
@@ -370,21 +342,21 @@ fn check(plan: &Plan, v: &mut Issues) {
     // #51: Fixed milestones per person within the limits from the settings (#25).
     let lim = plan.limits;
     for problem in lim.problems() {
-        v.err("general", format!("Einstellungen: {problem}"));
+        v.err("general", msg!(settings_problem, problem = problem));
     }
     for (i, p) in plan.household.persons.iter().take(2).enumerate() {
         let (pk_id, ahv_id) = person_milestones(i);
-        for (id, base, lo, hi) in [
-            (pk_id, PK_NAME, lim.pk_min, lim.pk_max),
-            (ahv_id, AHV_NAME, lim.ahv_min, lim.ahv_max),
-        ] {
+        for (id, lo, hi) in [(pk_id, lim.pk_min, lim.pk_max), (ahv_id, lim.ahv_min, lim.ahv_max)] {
             let Ok(m) = r.milestone(id) else { continue };
             let age = f64::from(p.birth.until(m)) / 12.0;
             if age < lo - 1e-9 || age > hi + 1e-9 {
-                let name = person_milestone_name(base, i);
-                let msg = format!(
-                    "«{name}»: Alter {} liegt ausserhalb der Grenzen {lo} bis {hi} Jahre (Einstellungen).",
-                    (age * 10.0).round() / 10.0
+                let name = fixed_milestone_message(id).map(|m| arg(&m));
+                let msg = msg!(
+                    milestone_age_limits,
+                    name = name,
+                    age = (age * 10.0).round() / 10.0,
+                    lo = lo,
+                    hi = hi
                 );
                 match plan.milestones.iter().position(|x| x.id == id) {
                     Some(k) => v.err_at("milestones", format!("milestones.{k}.years"), msg),
@@ -402,25 +374,22 @@ fn check(plan: &Plan, v: &mut Issues) {
             )
         };
         // #58: Indexed to inflation, the amount is in prices of the start (inflation depends on the path).
-        let prices = if indexed {
-            " in Preisen des Simulationsstarts"
-        } else {
-            ""
-        };
+        // #171: Indexed and nominal are two messages.
         if let (Some(income), Ok(pk_at)) = (income, r.milestone(pk_id)) {
             if let Ok(c) = Curve::compile(income, &r) {
                 if let Some(x) = c.first_above(pk_at.max(start), end, 0.005) {
-                    let who = if plan.household.persons.len() > 1 {
-                        format!("{}: ", p.name)
+                    let text = if indexed {
+                        msg!(income_after_pk_indexed, at = pk_at, amount = x)
                     } else {
-                        String::new()
+                        msg!(income_after_pk, at = pk_at, amount = x)
                     };
                     v.warn(
                         "flows",
-                        format!(
-                            "{who}Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse ({pk_at}) noch {} pro Monat{prices}.",
-                            chf(x)
-                        ),
+                        if plan.household.persons.len() > 1 {
+                            msg!(labeled, what = p.name, problem = text)
+                        } else {
+                            text
+                        },
                     );
                 }
             }
@@ -428,22 +397,14 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
 
     // Cash flows and wealth
-    series(v, "flows", "Einkommen", &plan.flows.income, None);
-    series(v, "flows", "Ausgaben", &plan.flows.spending, None);
+    series(v, "flows", term(msg!(term_income)), &plan.flows.income, None);
+    series(v, "flows", term(msg!(term_spending)), &plan.flows.spending, None);
     // #53: Living costs include housing costs; every row must contain at least the housing share.
     if plan.flows.spending_includes_housing {
         let w = crate::housing::start_housing(plan, &r);
         let check = |v: &mut Issues, field: String, x: f64| {
             if x + 0.005 < w {
-                v.err_at(
-                    "flows",
-                    field,
-                    format!(
-                        "Die Lebenshaltungskosten ({}) sind kleiner als die Wohnkosten zum Simulationsstart ({}), die sie enthalten.",
-                        chf(x),
-                        chf(w)
-                    ),
-                );
+                v.err_at("flows", field, msg!(spending_below_housing, spending = x, housing = w));
             }
         };
         match &plan.flows.spending {
@@ -458,37 +419,58 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
     if let Some(s) = &plan.flows.savings {
-        series(v, "flows", "Weitere Zuflüsse", s, None);
+        series(v, "flows", term(msg!(term_savings)), s, None);
     }
-    series(v, "wealth", "Aktienanteil", &plan.wealth.stock_share, Some((0.0, 1.0)));
     series(
         v,
         "wealth",
-        "Cash-Reserve",
+        term(msg!(term_stock_share)),
+        &plan.wealth.stock_share,
+        Some((0.0, 1.0)),
+    );
+    series(
+        v,
+        "wealth",
+        term(msg!(term_reserve)),
         &plan.wealth.reserve_months,
         Some((0.0, 1200.0)),
     );
     for x in &plan.flows.extras {
         if x.date > end {
-            v.warn(
-                "flows",
-                format!("Einmaliger Betrag «{}» liegt nach dem Simulationsende.", x.label),
-            );
+            v.warn("flows", msg!(extra_after_end, label = x.label));
         }
     }
 
     // Returns
     let ret = &plan.returns;
-    series(v, "returns", "Aktienrendite", &ret.fixed.stocks, Some((-0.99, 10.0)));
     series(
         v,
         "returns",
-        "Obligationenrendite",
+        term(msg!(term_stock_return)),
+        &ret.fixed.stocks,
+        Some((-0.99, 10.0)),
+    );
+    series(
+        v,
+        "returns",
+        term(msg!(term_bond_return)),
         &ret.fixed.bonds,
         Some((-0.99, 10.0)),
     );
-    series(v, "returns", "Inflation", &ret.fixed.inflation, Some((-0.99, 10.0)));
-    series(v, "returns", "SARON", &ret.fixed.saron, Some((-0.99, 10.0)));
+    series(
+        v,
+        "returns",
+        term(msg!(term_inflation)),
+        &ret.fixed.inflation,
+        Some((-0.99, 10.0)),
+    );
+    series(
+        v,
+        "returns",
+        term(msg!(term_saron)),
+        &ret.fixed.saron,
+        Some((-0.99, 10.0)),
+    );
     // #69: Weights of «Welt individuell»
     if let Some(st) = ret
         .strategy
@@ -503,40 +485,34 @@ fn check(plan: &Plan, v: &mut Issues) {
         ReturnSource::Fixed => {}
         ReturnSource::Historical | ReturnSource::Rolling => {
             if ret.series.is_none() && ret.strategy.is_none() {
-                v.err("returns", "Für historische Renditen muss eine Zeitreihe gewählt sein.");
+                v.err("returns", msg!(historical_series_missing));
             }
             if ret.source == ReturnSource::Historical && ret.start_date.is_none() {
-                v.err("returns", "Der historische Startmonat fehlt.");
+                v.err("returns", msg!(historical_start_missing));
             }
         }
         ReturnSource::Bootstrap => {
             if ret.series.is_none() && ret.strategy.is_none() {
-                v.err(
-                    "returns",
-                    "Für Monte Carlo aus der Historie muss eine Zeitreihe gewählt sein.",
-                );
+                v.err("returns", msg!(bootstrap_series_missing));
             }
             let b = ret.bootstrap.clone().unwrap_or_default();
             if b.paths == 0 || b.paths > 1_000_000 {
-                v.err("returns", "Die Anzahl Pfade muss zwischen 1 und 1'000'000 liegen.");
+                v.err("returns", msg!(paths_range));
             }
             if b.block < 1.0 {
-                v.err("returns", "Die mittlere Blocklänge muss mindestens 1 Monat betragen.");
+                v.err("returns", msg!(block_length_min));
             }
         }
         ReturnSource::Parametric => {
             let q = ret.parametric.clone().unwrap_or_default();
             if q.paths == 0 || q.paths > 1_000_000 {
-                v.err("returns", "Die Anzahl Pfade muss zwischen 1 und 1'000'000 liegen.");
+                v.err("returns", msg!(paths_range));
             }
             if q.sigma < 0.0 || q.jump_sigma < 0.0 || q.jump_lambda < 0.0 {
-                v.err("returns", "Volatilität und Sprungrate dürfen nicht negativ sein.");
+                v.err("returns", msg!(volatility_negative));
             }
             if q.df != 0.0 && q.df <= 2.0 {
-                v.err(
-                    "returns",
-                    "Die Freiheitsgrade müssen grösser als 2 sein (0 = Normalverteilung).",
-                );
+                v.err("returns", msg!(degrees_of_freedom));
             }
         }
     }
@@ -545,19 +521,13 @@ fn check(plan: &Plan, v: &mut Issues) {
         Strategy::ThreeBuckets => {
             let b = plan.withdrawal.buckets.clone().unwrap_or_default();
             if b.cash_years < 0.0 || b.bond_years < 0.0 {
-                v.err("withdrawal", "Die Töpfe dürfen nicht negativ sein.");
+                v.err("withdrawal", msg!(buckets_negative));
             }
             if b.cash_years + b.bond_years > 15.0 {
-                v.warn(
-                    "withdrawal",
-                    "Topf 1 + Topf 2 decken mehr als 15 Jahre – wenig Aktienanteil übrig.",
-                );
+                v.warn("withdrawal", msg!(buckets_too_large));
             }
             if retire.is_none() {
-                v.warn(
-                    "withdrawal",
-                    "Die 3-Topf-Strategie beginnt mit der Pensionierung; ohne Bezugsdatum gilt durchgehend «Standard».",
-                );
+                v.warn("withdrawal", msg!(buckets_without_retirement));
             }
             // #6: If the guardrails steer spending, their checks and those of the limits apply.
             if plan.withdrawal.buckets_with_guardrails() {
@@ -571,35 +541,26 @@ fn check(plan: &Plan, v: &mut Issues) {
             if plan.withdrawal.strategy == Strategy::FixedRate {
                 let r = w.fixed_rate.clone().unwrap_or_default().rate;
                 if !rate_ok(r) {
-                    v.err("withdrawal", "Die Entnahmerate muss zwischen 0 % und 100 % liegen.");
+                    v.err("withdrawal", msg!(withdrawal_rate_range));
                 } else if r > 0.07 {
-                    v.warn(
-                        "withdrawal",
-                        format!(
-                            "Eine Entnahmerate von {:.1} % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch.",
-                            r * 100.0
-                        ),
-                    );
+                    v.warn("withdrawal", msg!(withdrawal_rate_high, rate = r));
                 }
             } else if plan.withdrawal.strategy == Strategy::Vpw {
                 let x = w.vpw.clone().unwrap_or_default();
                 if x.horizon_age <= 0.0 || x.real_return <= -1.0 {
-                    v.err("withdrawal", "VPW: Planungsalter und Realrendite sind ungültig.");
+                    v.err("withdrawal", msg!(vpw_invalid));
                 }
             } else if plan.withdrawal.strategy == Strategy::Endowment {
                 let x = w.endowment.clone().unwrap_or_default();
                 if !rate_ok(x.rate) || !(0.0..=1.0).contains(&x.smoothing) {
-                    v.err(
-                        "withdrawal",
-                        "Endowment: Rate und Glättung müssen zwischen 0 % und 100 % liegen.",
-                    );
+                    v.err("withdrawal", msg!(endowment_invalid));
                 }
             } else {
                 check_guardrails(v, w);
             }
             check_limits(v, w);
             if retire.is_none() {
-                v.warn("withdrawal", "Die Entnahmestrategie beginnt mit der Pensionierung; ohne Bezugsdatum gelten die geplanten Ausgaben durchgehend.");
+                v.warn("withdrawal", msg!(withdrawal_without_retirement));
             }
         }
     }
@@ -608,16 +569,13 @@ fn check(plan: &Plan, v: &mut Issues) {
     match crate::scenarios::parse(&plan.scenarios.sweeps)
         .and_then(|sw| crate::scenarios::count_combinations(&sw).map(|_| sw))
     {
-        Err(e) => v.err("scenarios", e.to_string()),
+        Err(e) => v.err("scenarios", e.message()),
         Ok(sw) => {
             if sw.iter().any(|s| s.param == "wealth.stockShare") && plan.withdrawal.strategy == Strategy::ThreeBuckets {
-                v.warn("scenarios", "Mit der 3-Topf-Strategie wirkt der Aktienanteil nur bis zur Pensionierung; danach bestimmen die Töpfe die Aufteilung.");
+                v.warn("scenarios", msg!(scenario_stock_share_buckets));
             }
             if sw.iter().any(|s| s.param == "returns.startDate") && ret.source != ReturnSource::Historical {
-                v.warn(
-                    "scenarios",
-                    "Der historische Startmonat wirkt nur mit der Quelle «Historisch ab Startzeitpunkt».",
-                );
+                v.warn("scenarios", msg!(scenario_start_date_source));
             }
         }
     }
@@ -625,17 +583,14 @@ fn check(plan: &Plan, v: &mut Issues) {
     // Saved settings of the optimization
     if let Some(o) = &plan.optimization {
         if !(0.0..=1.0).contains(&o.max_ruin) {
-            v.warn(
-                "optimize",
-                "Optimierung: Die höchste Ruinwahrscheinlichkeit muss zwischen 0 % und 100 % liegen.",
-            );
+            v.warn("optimize", msg!(optimize_max_ruin));
         }
         if o.paths == 0 || o.check_paths == 0 {
-            v.warn("optimize", "Optimierung: Die Anzahl Pfade muss grösser als 0 sein.");
+            v.warn("optimize", msg!(optimize_paths));
         }
         for s in crate::optimize::all_strategies() {
             if let Err(e) = crate::optimize::split_defs(s, &o.ranges) {
-                v.warn("optimize", format!("Optimierung: {e}"));
+                v.warn("optimize", msg!(optimize_problem, problem = e.message()));
             }
         }
     }
@@ -644,23 +599,19 @@ fn check(plan: &Plan, v: &mut Issues) {
     // rate of −10¹⁵ produced invalid numbers in the simulation.
     let t = &plan.taxes;
     if !(0.0..=10.0).contains(&t.multiplier) {
-        v.err_at(
-            "taxes",
-            "taxes.multiplier",
-            "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
-        );
+        v.err_at("taxes", "taxes.multiplier", msg!(tax_multiplier_range));
     }
     /// Key in the path, name in the message, brackets [(amount, rate)].
-    type Table<'a> = (&'a str, &'a str, &'a [(f64, f64)]);
+    type Table<'a> = (&'a str, Message, &'a [(f64, f64)]);
     let mut tables: Vec<Table> = vec![
-        ("income", "Einkommenssteuer", &t.income),
-        ("wealth", "Vermögenssteuer", &t.wealth),
-        ("capital", "Kapitalbezugssteuer", &t.capital),
+        ("income", msg!(term_income_tax), &t.income),
+        ("wealth", msg!(term_wealth_tax), &t.wealth),
+        ("capital", msg!(term_capital_tax), &t.capital),
     ];
     if let Some(c) = &t.couple {
-        tables.push(("couple.income", "Einkommenssteuer (Verheiratete)", &c.income));
-        tables.push(("couple.wealth", "Vermögenssteuer (Verheiratete)", &c.wealth));
-        tables.push(("couple.capital", "Kapitalbezugssteuer (Verheiratete)", &c.capital));
+        tables.push(("couple.income", msg!(term_income_tax_married), &c.income));
+        tables.push(("couple.wealth", msg!(term_wealth_tax_married), &c.wealth));
+        tables.push(("couple.capital", msg!(term_capital_tax_married), &c.capital));
     }
     for (key, name, rows) in tables {
         // #134: The tax (amount × rate) must not fall with a rising amount; only a warning, the computation runs.
@@ -672,10 +623,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 v.warn_at(
                     "taxes",
                     format!("taxes.{key}.{i}.1"),
-                    format!(
-                        "{name}, Stufe {}: Mit diesem Satz sinkt die Steuer, obwohl der Betrag steigt. Bitte prüfen Sie die Tabelle (Satz = Steuer geteilt durch Betrag, nicht Grenzsteuersatz).",
-                        i + 1
-                    ),
+                    msg!(tax_rate_falling, table = name, row = i + 1),
                 );
             }
         }
@@ -684,17 +632,14 @@ fn check(plan: &Plan, v: &mut Issues) {
                 v.err_at(
                     "taxes",
                     format!("taxes.{key}.{i}.0"),
-                    format!("{name}, Stufe {}: Der Betrag muss 0 oder grösser sein.", i + 1),
+                    msg!(tax_amount_negative, table = name, row = i + 1),
                 );
             }
             if !(0.0..=1.0).contains(&rate) {
                 v.err_at(
                     "taxes",
                     format!("taxes.{key}.{i}.1"),
-                    format!(
-                        "{name}, Stufe {}: Der Steuersatz muss zwischen 0 % und 100 % liegen.",
-                        i + 1
-                    ),
+                    msg!(tax_rate_range, table = name, row = i + 1),
                 );
             }
         }
@@ -709,10 +654,7 @@ fn check(plan: &Plan, v: &mut Issues) {
             .iter()
             .any(|p| p.status != PropertyStatus::Rent)
     {
-        v.err(
-            "taxes",
-            "Grundstückgewinnsteuer fehlt: Die Planung enthält eine Immobilie im Besitz oder mit geplantem Kauf. Bitte unter «Steuern» die Vorlage Zürich, die Vorlage Aargau oder eigene Regeln (auch mit Satz 0 %) erfassen.",
-        );
+        v.err("taxes", msg!(gain_tax_missing));
     }
 
     // Property gain tax: surcharges and reductions by holding period need the purchase date
@@ -721,20 +663,17 @@ fn check(plan: &Plan, v: &mut Issues) {
             .iter()
             .any(|&(y, c)| !y.is_finite() || y < 0.0 || !c.is_finite() || c <= -1.0)
         {
-            v.err("taxes", "Grundstückgewinnsteuer: Besitzdauer und Zu- oder Abschlag sind ungültig (Jahre ab 0, Abschlag kleiner als 100 %).");
+            v.err("taxes", msg!(gain_tax_duration_invalid));
         }
         if g.model == GainModel::Aargau {
             if g.duration_rates.is_empty() {
-                v.err(
-                    "taxes",
-                    "Grundstückgewinnsteuer (Modell Aargau): Es ist kein Steuersatz nach Besitzdauer erfasst.",
-                );
+                v.err("taxes", msg!(gain_tax_aargau_empty));
             }
             if g.duration_rates
                 .iter()
                 .any(|&(y, r)| !y.is_finite() || y < 0.0 || !r.is_finite() || !(0.0..=1.0).contains(&r))
             {
-                v.err("taxes", "Grundstückgewinnsteuer (Modell Aargau): Besitzdauer und Steuersatz sind ungültig (Jahre ab 0, Satz zwischen 0 und 100 %).");
+                v.err("taxes", msg!(gain_tax_aargau_invalid));
             }
         }
         if !g.duration.is_empty() || (g.model == GainModel::Aargau && !g.duration_rates.is_empty()) {
@@ -744,10 +683,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 .iter()
                 .filter(|p| p.status == PropertyStatus::Owned && p.bought.is_none())
             {
-                v.warn(
-                    "realestate",
-                    format!("{}: Das Kaufdatum fehlt. Ohne Kaufdatum gilt kein Zu- oder Abschlag (Modell Zürich) bzw. der höchste Satz (Modell Aargau) bei der Grundstückgewinnsteuer.", p.name),
-                );
+                v.warn("realestate", msg!(property_bought_missing, name = p.name));
             }
         }
     }
@@ -757,7 +693,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     series(
         v,
         "realestate",
-        "Notverkauf-Schwelle",
+        term(msg!(term_emergency_months)),
         &plan.realestate.emergency_months,
         None,
     );
@@ -766,10 +702,7 @@ fn check(plan: &Plan, v: &mut Issues) {
     for p in &plan.realestate.properties {
         if let Some(id) = &p.id {
             if !ids.insert(id.as_str()) {
-                v.err(
-                    "realestate",
-                    format!("{}: Kennung «{id}» ist doppelt vergeben.", p.name),
-                );
+                v.err("realestate", msg!(property_id_duplicate, name = p.name, id = id));
             }
         }
     }
@@ -777,20 +710,11 @@ fn check(plan: &Plan, v: &mut Issues) {
         for t in [&p.buy, &p.from].into_iter().flatten() {
             let Some(id) = t.sale_of() else { continue };
             match plan.realestate.properties.iter().find(|q| q.id.as_deref() == Some(id)) {
-                None => v.err(
-                    "realestate",
-                    format!(
-                        "{}: Die Immobilie, nach deren Verkauf gekauft bzw. gemietet wird, gibt es nicht mehr.",
-                        p.name
-                    ),
-                ),
-                Some(q) if std::ptr::eq(q, p) => v.err(
-                    "realestate",
-                    format!("{}: Kauf nach dem eigenen Verkauf ist nicht möglich.", p.name),
-                ),
+                None => v.err("realestate", msg!(property_after_sale_missing, name = p.name)),
+                Some(q) if std::ptr::eq(q, p) => v.err("realestate", msg!(property_after_own_sale, name = p.name)),
                 Some(q) if q.status == PropertyStatus::Rent => v.err(
                     "realestate",
-                    format!("{}: «{}» ist eine Miete und wird nie verkauft.", p.name, q.name),
+                    msg!(property_after_rent_sale, name = p.name, other = q.name),
                 ),
                 _ => {}
             }
@@ -798,14 +722,11 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
     for (i, p) in plan.realestate.properties.iter().enumerate() {
         let n = &p.name;
-        let buy = p.buy.as_ref().and_then(|t| resolve(v, "realestate", n, t));
+        let buy = p.buy.as_ref().and_then(|t| resolve(v, "realestate", arg(n), t));
         if let Some(t) = &p.sell {
-            let sell = resolve(v, "realestate", n, t);
+            let sell = resolve(v, "realestate", arg(n), t);
             if sell.is_some_and(|sell| sell < start) {
-                v.warn(
-                    "realestate",
-                    format!("{n}: Verkaufszeitpunkt liegt vor dem Simulationsstart – das Objekt wird nicht zu diesem Zeitpunkt verkauft. Der Verkauf müsste im Simulationszeitraum liegen."),
-                );
+                v.warn("realestate", msg!(property_sale_before_start, name = n));
             }
             // The sale must come after the purchase (owned: purchase date, purchase planned: «Kauf ab»). A purchase «nach Verkauf von …»
             // cannot be determined at entry (`buy` is then missing); the check is skipped there.
@@ -816,16 +737,12 @@ fn check(plan: &Plan, v: &mut Issues) {
             };
             if let (Some(sell), Some(bought)) = (sell, bought) {
                 if sell <= bought {
-                    let what = if p.status == PropertyStatus::Owned {
-                        "dem Kaufdatum"
+                    let text = if p.status == PropertyStatus::Owned {
+                        msg!(property_sale_before_bought, name = n)
                     } else {
-                        "«Kauf ab»"
+                        msg!(property_sale_before_buy, name = n)
                     };
-                    v.err_at(
-                        "realestate",
-                        format!("realestate.properties.{i}.sell"),
-                        format!("{n}: Der Verkauf muss nach {what} liegen."),
-                    );
+                    v.err_at("realestate", format!("realestate.properties.{i}.sell"), text);
                 }
             }
         }
@@ -833,29 +750,23 @@ fn check(plan: &Plan, v: &mut Issues) {
             PropertyStatus::Rent => {
                 match &p.from {
                     Some(t) => {
-                        resolve(v, "realestate", n, t);
+                        resolve(v, "realestate", arg(n), t);
                     }
-                    None => v.err("realestate", format!("{n}: «Miete ab» fehlt.")),
+                    None => v.err("realestate", msg!(property_rent_from_missing, name = n)),
                 }
                 if let Some(t) = &p.until {
-                    resolve(v, "realestate", n, t);
+                    resolve(v, "realestate", arg(n), t);
                 }
                 if p.rent.is_none() {
-                    v.err("realestate", format!("{n}: Miete fehlt."));
+                    v.err("realestate", msg!(property_rent_missing, name = n));
                 }
                 continue;
             }
             PropertyStatus::Planned if buy.is_some_and(|b| b < start) => {
-                v.warn(
-                    "realestate",
-                    format!("{n}: Kaufzeitpunkt liegt vor dem Simulationsstart – das Objekt wird nie gekauft. Bereits gekaufte Objekte als «Besitz» erfassen."),
-                );
+                v.warn("realestate", msg!(property_buy_before_start, name = n));
             }
             PropertyStatus::Planned if buy.is_none() && !p.buy.as_ref().is_some_and(TimeRef::is_dynamic) => {
-                v.warn(
-                    "realestate",
-                    format!("{n}: kein Kaufzeitpunkt – das Objekt wird nie gekauft."),
-                );
+                v.warn("realestate", msg!(property_buy_missing, name = n));
             }
             _ => {}
         }
@@ -863,21 +774,15 @@ fn check(plan: &Plan, v: &mut Issues) {
         let total: f64 = mg.tranches.iter().map(|t| t.amount).sum();
         let max_loan = mg.amount_mode == AmountMode::MaxLoan;
         if max_loan && p.status != PropertyStatus::Planned {
-            v.warn(
-                "realestate",
-                format!("{n}: «80 % des Kaufpreises» gilt nur für geplante Käufe; es zählen die erfassten Beträge."),
-            );
+            v.warn("realestate", msg!(mortgage_max_loan_not_planned, name = n));
         }
         // With «80 % des Kaufpreises» the amounts are only shares and are not compared with the price.
         if !max_loan && p.status == PropertyStatus::Planned {
             if total > p.price {
-                v.err("realestate", format!("{n}: Hypothek ist höher als der Kaufpreis."));
+                v.err("realestate", msg!(mortgage_above_price, name = n));
             }
             if total > p.price * 0.8 {
-                v.warn(
-                    "realestate",
-                    format!("{n}: Belehnung über 80 % – Banken verlangen meist 20 % Eigenmittel."),
-                );
+                v.warn("realestate", msg!(mortgage_above_80, name = n));
             }
         }
         for t in &mg.tranches {
@@ -887,14 +792,12 @@ fn check(plan: &Plan, v: &mut Issues) {
                 n.clone()
             };
             if t.periods.is_empty() {
-                v.err("realestate", format!("{tn}: keine Hypothekarperiode erfasst."));
+                v.err("realestate", msg!(tranche_no_period, name = tn));
             }
             if p.status == PropertyStatus::Owned {
                 match t.start {
-                    None => v.err("realestate", format!("{tn}: Beginn der laufenden Periode fehlt.")),
-                    Some(s) if s > start => {
-                        v.warn("realestate", format!("{tn}: Beginn liegt nach dem Simulationsstart."))
-                    }
+                    None => v.err("realestate", msg!(tranche_start_missing, name = tn)),
+                    Some(s) if s > start => v.warn("realestate", msg!(tranche_start_after_start, name = tn)),
                     _ => {}
                 }
             }
@@ -909,10 +812,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 Some(id) => {
                     let i = plan.household.persons.iter().position(|q| &q.id == id);
                     if i.is_none() {
-                        v.err(
-                            "realestate",
-                            format!("{tn}: Die Person «{id}» für die Säule 3a gibt es nicht."),
-                        );
+                        v.err("realestate", msg!(tranche_pillar3a_person_missing, name = tn, id = id));
                     }
                     i
                 }
@@ -921,35 +821,21 @@ fn check(plan: &Plan, v: &mut Issues) {
             let mut max_q: f64 = 0.0;
             for (k, d) in t.periods.iter().enumerate() {
                 if d.term > 100.0 {
-                    v.err(
-                        "realestate",
-                        format!("{tn}, Periode {}: Laufzeit über 100 Jahre.", k + 1),
-                    );
+                    v.err("realestate", msg!(period_term_too_long, name = tn, period = k + 1));
                 }
                 if d.term <= 0.0 {
-                    v.err(
-                        "realestate",
-                        format!("{tn}, Periode {}: Laufzeit muss grösser als 0 sein.", k + 1),
-                    );
+                    v.err("realestate", msg!(period_term_not_positive, name = tn, period = k + 1));
                 }
                 if d.kind == RateKind::Fixed && d.rate > 0.1 {
                     v.warn(
                         "realestate",
-                        format!(
-                            "{tn}, Periode {}: Zins {:.2} % ist ungewöhnlich hoch.",
-                            k + 1,
-                            d.rate * 100.0
-                        ),
+                        msg!(period_rate_high, name = tn, period = k + 1, rate = d.rate),
                     );
                 }
                 if d.kind == RateKind::Saron && d.margin > 0.03 {
                     v.warn(
                         "realestate",
-                        format!(
-                            "{tn}, Periode {}: SARON-Marge {:.2} % ist ungewöhnlich hoch.",
-                            k + 1,
-                            d.margin * 100.0
-                        ),
+                        msg!(period_margin_high, name = tn, period = k + 1, margin = d.margin),
                     );
                 }
                 let period_end = m.map(|s| s.plus(((d.term * 12.0).round() as i32).max(1)));
@@ -973,39 +859,28 @@ fn check(plan: &Plan, v: &mut Issues) {
     for (k, acc) in plan.pillar3a.iter().enumerate() {
         let f = |name: &str| format!("pillar3a.{k}.{name}");
         let Some(i) = plan.household.persons.iter().position(|q| q.id == acc.person) else {
-            v.err(
-                "pillar3a",
-                format!("Säule 3a: Die Person «{}» gibt es nicht.", acc.person),
-            );
+            v.err("pillar3a", msg!(pillar3a_person_missing, person = acc.person));
             continue;
         };
         let who = if plan.household.persons.len() > 1 {
-            format!("Säule 3a {}", plan.household.persons[i].name)
+            msg!(pillar3a_of, name = plan.household.persons[i].name)
         } else {
-            "Säule 3a".to_string()
+            msg!(pillar3a)
         };
         if plan.pillar3a[..k].iter().any(|a| a.person == acc.person) {
-            v.err("pillar3a", format!("{who}: Pro Person ist nur ein 3a-Konto möglich."));
+            v.err("pillar3a", msg!(pillar3a_duplicate, who = who));
         }
         if acc.balance < 0.0 {
-            v.err_at(
-                "pillar3a",
-                f("balance"),
-                format!("{who}: Das Guthaben darf nicht negativ sein."),
-            );
+            v.err_at("pillar3a", f("balance"), msg!(pillar3a_balance_negative, who = who));
         }
         if !(-0.5..=1.0).contains(&acc.rate) {
-            v.err_at(
-                "pillar3a",
-                f("rate"),
-                format!("{who}: Der Zins muss zwischen −50 % und 100 % liegen."),
-            );
+            v.err_at("pillar3a", f("rate"), msg!(pillar3a_rate_range, who = who));
         }
         if !(acc.contribution >= 0.0 && acc.contribution <= lim.pillar3a_max) {
             v.err_at(
                 "pillar3a",
                 f("contribution"),
-                format!("{who}: Die Einzahlung muss zwischen 0 und dem Maximalbetrag von {} pro Jahr liegen (Einstellungen).", chf(lim.pillar3a_max)),
+                msg!(pillar3a_contribution_range, who = who, max = lim.pillar3a_max),
             );
         }
         let ahv = r.milestone(person_milestones(i).1).ok();
@@ -1013,18 +888,19 @@ fn check(plan: &Plan, v: &mut Issues) {
         if acc.contribution + indirect > lim.pillar3a_max + 0.005 && lim.pillar3a_max >= 0.0 {
             v.warn(
                 "pillar3a",
-                format!(
-                    "{who}: Einzahlung ({}) und indirekte Amortisation ({}) übersteigen zusammen den Maximalbetrag von {} pro Jahr.",
-                    chf(acc.contribution),
-                    chf(indirect),
-                    chf(lim.pillar3a_max)
+                msg!(
+                    pillar3a_over_max,
+                    who = who,
+                    contribution = acc.contribution,
+                    indirect = indirect,
+                    max = lim.pillar3a_max
                 ),
             );
         }
         let repay_possible = indirect > 0.0;
         // Without a tranche with indirect amortization there is nothing to repay: the payout goes into wealth.
         if acc.usage == PayoutUse::Repay && !repay_possible {
-            v.warn("pillar3a", format!("{who}: «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation voraus; der Rest geht ins freie Vermögen."));
+            v.warn("pillar3a", msg!(pillar3a_repay_without_indirect, who = who));
         }
         for (j, x) in acc.payouts.iter().enumerate() {
             // #55: Point in time as a date or age; the message is at the respective field.
@@ -1033,15 +909,11 @@ fn check(plan: &Plan, v: &mut Issues) {
                 PayoutAt::Age => format!("pillar3a.{k}.payouts.{j}.years"),
             };
             let Some(date) = x.month(Some(plan.household.persons[i].birth)) else {
-                let what = match x.kind {
-                    PayoutAt::Date => "Das Datum",
-                    PayoutAt::Age => "Das Alter (0 bis 150 Jahre)",
+                let text = match x.kind {
+                    PayoutAt::Date => msg!(pillar3a_payout_date_invalid, who = who, n = j + 1),
+                    PayoutAt::Age => msg!(pillar3a_payout_age_invalid, who = who, n = j + 1),
                 };
-                v.err_at(
-                    "pillar3a",
-                    at_field,
-                    format!("{who}: {what} der {}. Auszahlung fehlt oder ist ungültig.", j + 1),
-                );
+                v.err_at("pillar3a", at_field, text);
                 continue;
             };
             if let Some(a) = ahv {
@@ -1050,25 +922,40 @@ fn check(plan: &Plan, v: &mut Issues) {
                     v.err_at(
                         "pillar3a",
                         at_field,
-                        format!("{who}: Die Auszahlung im {date} liegt mehr als 5 Jahre vor dem AHV-Bezug ({a}); frühestens im {earliest}."),
+                        msg!(
+                            pillar3a_payout_too_early,
+                            who = who,
+                            date = date,
+                            ahv = a,
+                            earliest = earliest
+                        ),
                     );
                 } else if date > a {
-                    v.warn("pillar3a", format!("{who}: Die Auszahlung im {date} liegt nach dem AHV-Bezug ({a}); das Guthaben ist dann schon ausbezahlt."));
+                    v.warn(
+                        "pillar3a",
+                        msg!(pillar3a_payout_after_ahv, who = who, date = date, ahv = a),
+                    );
                 }
             }
             if x.amount.is_some_and(|b| b.is_nan() || b <= 0.0) {
                 v.err_at(
                     "pillar3a",
                     format!("pillar3a.{k}.payouts.{j}.amount"),
-                    format!("{who}: Der Betrag der Auszahlung im {} muss grösser als 0 sein.", date),
+                    msg!(pillar3a_payout_amount, who = who, date = date),
                 );
             }
             if x.usage == PayoutUse::Repay && !repay_possible {
-                v.warn("pillar3a", format!("{who}: «Hypothek zurückzahlen» (Auszahlung im {}) setzt eine Tranche mit indirekter Amortisation voraus; sie geht ins freie Vermögen.", date));
+                v.warn(
+                    "pillar3a",
+                    msg!(pillar3a_payout_repay_without_indirect, who = who, date = date),
+                );
             }
             if let (Some(pm), true) = (retire_of[i.min(1)], pk_lumpsum[i.min(1)] > 0.0) {
                 if pm.year() == date.year() {
-                    v.warn("pillar3a", format!("{who}: Auszahlung im {} und PK-Kapitalbezug im selben Jahr – sie werden für die Steuerprogression zusammengerechnet.", date));
+                    v.warn(
+                        "pillar3a",
+                        msg!(pillar3a_payout_same_year_as_pk, who = who, date = date),
+                    );
                 }
             }
         }
@@ -1081,37 +968,21 @@ fn check(plan: &Plan, v: &mut Issues) {
         let indirect = indirect_per_person[i];
         if indirect > lim.pillar3a_max + 0.005 {
             let who = if plan.household.persons.len() > 1 {
-                format!("Säule 3a {}", p.name)
+                msg!(pillar3a_of, name = p.name)
             } else {
-                "Säule 3a".to_string()
+                msg!(pillar3a)
             };
             v.warn(
                 "pillar3a",
-                format!(
-                    "{who}: Einzahlung (0) und indirekte Amortisation ({}) übersteigen zusammen den Maximalbetrag von {} pro Jahr.",
-                    chf(indirect),
-                    chf(lim.pillar3a_max)
+                msg!(
+                    pillar3a_over_max,
+                    who = who,
+                    contribution = 0,
+                    indirect = indirect,
+                    max = lim.pillar3a_max
                 ),
             );
         }
-    }
-}
-
-/// Amount with thousands separator («12'500»).
-fn chf(v: f64) -> String {
-    let n = v.round() as i64;
-    let digits = n.unsigned_abs().to_string();
-    let mut out = String::new();
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push('\'');
-        }
-        out.push(c);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
     }
 }
 
@@ -1120,13 +991,29 @@ mod tests {
     use super::*;
     use serde_json::{json, Value};
 
+    /// #171/AK1: an issue carries the German text, the code and the parameters as an object.
+    #[test]
+    fn issue_171_ak1_issue_serializes_code_and_params() {
+        let i = Issue {
+            severity: Severity::Error,
+            section: "general",
+            message: msg!(person_name_missing, n = 2),
+            field: Some("household.persons.1.name".into()),
+        };
+        assert_eq!(
+            serde_json::to_value(&i).unwrap(),
+            json!({ "severity": "error", "section": "general", "message": "Person 2: Der Name fehlt (Pflichtangabe).",
+                "code": "person_name_missing", "params": { "n": 2 }, "field": "household.persons.1.name" })
+        );
+    }
+
     // Example plan: start 2026-11, birth 1966-11, retirement and AHV 2031-11, end 2061-11.
     fn base() -> Value {
         serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
     }
     fn messages(v: &Value) -> Vec<String> {
         let plan: Plan = serde_json::from_value(v.clone()).unwrap();
-        validate(&plan).into_iter().map(|i| i.message).collect()
+        validate(&plan).into_iter().map(|i| i.message.to_string()).collect()
     }
     /// Whether a message contains the text.
     fn has(v: &Value, text: &str) -> bool {
@@ -1709,9 +1596,9 @@ mod tests {
 
     #[test]
     fn issue_124_ak7_chf_formats_with_thousands_separator() {
-        assert_eq!(chf(0.0), "0");
-        assert_eq!(chf(-0.4), "0");
-        assert_eq!(chf(-1234.4), "-1'234");
-        assert_eq!(chf(1_234_567.0), "1'234'567");
+        assert_eq!(crate::message::group(0.0), "0");
+        assert_eq!(crate::message::group(-0.4), "0");
+        assert_eq!(crate::message::group(-1234.4), "-1'234");
+        assert_eq!(crate::message::group(1_234_567.0), "1'234'567");
     }
 }

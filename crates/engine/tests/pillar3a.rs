@@ -55,7 +55,7 @@ fn payouts(r: &SimResult) -> Vec<(YearMonth, String)> {
     r.events
         .iter()
         .filter(|e| e.kind == EventKind::Pillar3aPayout)
-        .map(|e| (e.month, e.text.clone()))
+        .map(|e| (e.month, e.text.to_string()))
         .collect()
 }
 
@@ -285,7 +285,7 @@ fn switches(r: &SimResult) -> Vec<(YearMonth, String)> {
     r.events
         .iter()
         .filter(|e| e.kind == EventKind::AmortizationSwitch)
-        .map(|e| (e.month, e.text.clone()))
+        .map(|e| (e.month, e.text.to_string()))
         .collect()
 }
 

@@ -37,7 +37,7 @@ fn errors(v: &Value) -> Vec<(Option<String>, String)> {
     api::validate(v)
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
-        .map(|i| (i.field, i.message))
+        .map(|i| (i.field, i.message.to_string()))
         .collect()
 }
 

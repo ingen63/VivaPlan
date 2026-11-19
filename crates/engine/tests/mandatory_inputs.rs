@@ -445,7 +445,7 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
         issues(v)
             .into_iter()
             .filter(|i| i.severity == Severity::Error)
-            .map(|i| i.message)
+            .map(|i| i.message.to_string())
             .collect()
     };
     // Limit values: rate 0 % and 100 %, amount 0, tax multiplier 0 and 10

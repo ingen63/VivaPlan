@@ -17,10 +17,8 @@ fn default_format() -> String {
 
 /// #144: Message for a format identifier this version does not know (the same text as `unknownFormatText` in
 /// `crates/app/ui/util.js`).
-pub fn unknown_format(format: &str) -> String {
-    format!(
-        "Die Datei hat das Format «{format}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet."
-    )
+pub fn unknown_format(format: &str) -> crate::message::Message {
+    msg!(format_unknown, format = format)
 }
 
 /// #144: Checks the format identifier of a plan. Valid are [`FORMAT`], [`LEGACY_FORMAT`] and no identifier; any other
@@ -246,6 +244,19 @@ pub fn fixed_milestone_name(id: &str) -> Option<String> {
     }
 }
 
+/// #171: Name of a fixed milestone as a message (the user interface translates it).
+pub fn fixed_milestone_message(id: &str) -> Option<crate::message::Message> {
+    Some(match id {
+        "start" => msg!(milestone_start),
+        "end" => msg!(milestone_end),
+        "retire" => msg!(milestone_retire),
+        "ahv" => msg!(milestone_ahv),
+        "retire2" => msg!(milestone_retire2),
+        "ahv2" => msg!(milestone_ahv2),
+        _ => return None,
+    })
+}
+
 /// Named point in time. `start` and `end` must exist.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -268,6 +279,14 @@ impl Milestone {
             return std::borrow::Cow::Borrowed(&self.name);
         }
         fixed_milestone_name(&self.id).map_or(std::borrow::Cow::Borrowed(self.id.as_str()), std::borrow::Cow::Owned)
+    }
+
+    /// #171: Name as a parameter of a message: the name entered, otherwise the fixed name as a message.
+    pub fn name_arg(&self) -> crate::message::Arg {
+        match fixed_milestone_message(&self.id) {
+            Some(m) if self.name.is_empty() => crate::message::arg(&m),
+            _ => crate::message::arg(&*self.label()),
+        }
     }
 }
 
@@ -1179,10 +1198,10 @@ pub struct Scenarios {
 
 impl Plan {
     pub fn from_json(text: &str) -> Result<Plan, crate::Error> {
-        let v: serde_json::Value =
-            serde_json::from_str(text).map_err(|e| crate::Error::Invalid(format!("Projektdatei: {e}")))?;
+        let v: serde_json::Value = serde_json::from_str(text)
+            .map_err(|e| crate::Error::Invalid(msg!(plan_file_invalid, detail = e.to_string())))?;
         check_format(&v)?;
-        serde_json::from_value(v).map_err(|e| crate::Error::Invalid(format!("Projektdatei: {e}")))
+        serde_json::from_value(v).map_err(|e| crate::Error::Invalid(msg!(plan_file_invalid, detail = e.to_string())))
     }
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).expect("Plan ist immer serialisierbar")

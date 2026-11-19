@@ -197,6 +197,6 @@ fn errors(v: &Value) -> Vec<String> {
     engine::api::validate(v)
         .into_iter()
         .filter(|i| i.severity == engine::validate::Severity::Error)
-        .map(|i| i.message)
+        .map(|i| i.message.to_string())
         .collect()
 }

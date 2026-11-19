@@ -22,16 +22,13 @@ impl Resolver {
                 MilestoneKind::Date { date } => *date,
                 MilestoneKind::Age { person, years } => {
                     let birth = births.get(person).ok_or_else(|| {
-                        Error::Invalid(format!("Meilenstein «{}»: unbekannte Person «{person}»", ms.label()))
+                        Error::Invalid(msg!(milestone_person_unknown, name = ms.name_arg(), person = person))
                     })?;
                     birth.plus((years * 12.0).round() as i32)
                 }
             };
             if milestones.insert(ms.id.clone(), m).is_some() {
-                return Err(Error::Invalid(format!(
-                    "Meilenstein-ID «{}» ist doppelt vergeben",
-                    ms.id
-                )));
+                return Err(Error::Invalid(msg!(milestone_id_duplicate, id = ms.id)));
             }
             names.insert(ms.id.clone(), ms.label().into_owned());
         }
@@ -60,7 +57,7 @@ impl Resolver {
         self.milestones
             .get(id)
             .copied()
-            .ok_or_else(|| Error::Invalid(format!("Meilenstein «{id}» fehlt")))
+            .ok_or_else(|| Error::Invalid(msg!(milestone_missing, id = id)))
     }
 
     pub fn milestone_name<'a>(&'a self, id: &'a str) -> &'a str {
@@ -78,7 +75,7 @@ impl Resolver {
         self.milestones
             .get(&r.0)
             .map(|m| Some(*m))
-            .ok_or_else(|| Error::Invalid(format!("Unbekannter Zeitbezug «{}»", r.0)))
+            .ok_or_else(|| Error::Invalid(msg!(time_ref_unknown, reference = r.0)))
     }
 
     pub fn birth(&self, person: &str) -> Option<YearMonth> {

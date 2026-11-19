@@ -38,25 +38,21 @@ impl Default for Limits {
 
 impl Limits {
     /// Errors in the settings themselves (user interface and validation). Empty = valid.
-    pub fn problems(&self) -> Vec<String> {
+    pub fn problems(&self) -> Vec<crate::message::Message> {
         let mut out = vec![];
         let whole = |x: f64| x.fract() == 0.0 && (0.0..=130.0).contains(&x);
         for (what, lo, hi) in [
-            ("AHV-Bezug", self.ahv_min, self.ahv_max),
-            ("Bezug Pensionskasse", self.pk_min, self.pk_max),
+            (msg!(term_ahv_payout), self.ahv_min, self.ahv_max),
+            (msg!(term_pk_payout), self.pk_min, self.pk_max),
         ] {
             if !whole(lo) || !whole(hi) {
-                out.push(format!(
-                    "{what}: Die Grenzen müssen ganze Jahre zwischen 0 und 130 sein."
-                ));
+                out.push(msg!(limits_not_whole_years, what = what));
             } else if lo > hi {
-                out.push(format!(
-                    "{what}: Die untere Grenze ({lo}) liegt über der oberen Grenze ({hi})."
-                ));
+                out.push(msg!(limits_reversed, what = what, lo = lo, hi = hi));
             }
         }
         if !self.pillar3a_max.is_finite() || self.pillar3a_max < 0.0 {
-            out.push("Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.".into());
+            out.push(msg!(limits_pillar3a_max));
         }
         out
     }

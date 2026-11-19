@@ -20,8 +20,8 @@ use crate::{Error, Result};
 /// Reference of a strategy instead of a series (short info in the user interface): `strategy:` + JSON of the strategy.
 pub const PREFIX: &str = "strategy:";
 
-fn invalid(s: impl Into<String>) -> Error {
-    Error::Invalid(s.into())
+fn invalid(m: crate::message::Message) -> Error {
+    Error::Invalid(m)
 }
 
 pub fn stock_name(s: StockIndex) -> &'static str {
@@ -61,18 +61,13 @@ pub fn label(s: &Investment) -> String {
 }
 
 /// Errors in the weights of «Welt individuell»: each between 0 and 100 %, together 100 %.
-pub fn weight_issue(w: &RegionWeights) -> Option<String> {
+pub fn weight_issue(w: &RegionWeights) -> Option<crate::message::Message> {
     let all = [w.ch, w.usa, w.eu, w.apac];
     if all.iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v)) {
-        return Some("Jedes Gewicht der Regionen muss zwischen 0 % und 100 % liegen.".into());
+        return Some(msg!(weights_range));
     }
     let sum: f64 = all.iter().sum();
-    ((sum - 1.0).abs() > 1e-6).then(|| {
-        format!(
-            "Die Gewichte der Regionen ergeben {} % statt 100 %.",
-            (sum * 1000.0).round() / 10.0
-        )
-    })
+    ((sum - 1.0).abs() > 1e-6).then(|| msg!(weights_sum, sum = (sum * 1000.0).round() / 10.0))
 }
 
 /// Bundled series from the data library (if present), otherwise the built-in one.
@@ -83,7 +78,7 @@ fn builtin_series(file: &str, lib: Option<&Path>) -> Result<DataSet> {
     let (_, text) = library::BUILTIN
         .iter()
         .find(|(f, _)| *f == file)
-        .ok_or_else(|| invalid(format!("Reihe «{file}» ist nicht ausgeliefert")))?;
+        .ok_or_else(|| invalid(msg!(series_not_shipped, file = file)))?;
     DataSet::parse_csv(file.trim_end_matches(".csv"), text)
 }
 
@@ -267,7 +262,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
                 values: (jst::FIRST_YEAR..=jst.last_year())
                     .map(|y| {
                         jst.ch_inflation(y)
-                            .ok_or_else(|| invalid(format!("Teuerung Schweiz {y} fehlt")))
+                            .ok_or_else(|| invalid(msg!(ch_inflation_missing, year = y)))
                     })
                     .collect::<Result<_>>()?,
             };
@@ -295,10 +290,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
     let first = stocks.first.max(bonds.first).max(inflation.first);
     let last = stocks.last().min(bonds.last()).min(inflation.last());
     if last < first {
-        return Err(invalid(format!(
-            "Die Indizes der Strategie «{}» haben keine gemeinsamen Jahre.",
-            label(s)
-        )));
+        return Err(invalid(msg!(strategy_no_common_years, strategy = label(s))));
     }
     let years = first..=last;
     let saron_at = |y: i32| {
@@ -369,7 +361,7 @@ pub fn from_reference_with_parts(reference: &str, lib: Option<&Path>) -> Option<
     let json = reference.strip_prefix(PREFIX)?;
     Some(
         serde_json::from_str::<Investment>(json)
-            .map_err(|e| invalid(format!("Strategie nicht lesbar: {e}")))
+            .map_err(|e| invalid(msg!(strategy_unreadable, detail = e.to_string())))
             .and_then(|s| dataset_with_parts(&s, lib)),
     )
 }

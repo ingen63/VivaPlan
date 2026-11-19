@@ -160,7 +160,7 @@ impl Bootstrap<'_> {
     pub fn path(&self, index: usize) -> MarketPath {
         let ds = self.data;
         let mut rng = Rng::new(self.params.seed, index as u64);
-        let mut p = MarketPath::with_capacity(format!("Bootstrap-Pfad {}", index + 1), self.months);
+        let mut p = MarketPath::with_capacity(msg!(path_bootstrap, n = index + 1), self.months);
         let saron = |i: usize, m: YearMonth| {
             ds.saron
                 .as_ref()
@@ -309,7 +309,7 @@ impl Parametric<'_> {
         let drift = (q.mu - 0.5 * q.sigma * q.sigma) * dt;
         let vol = q.sigma * dt.sqrt();
         let lambda = q.jump_lambda * dt;
-        let mut p = MarketPath::with_capacity(format!("Zufallspfad {}", index + 1), self.months);
+        let mut p = MarketPath::with_capacity(msg!(path_random, n = index + 1), self.months);
         let mut jumps = Jumps::new(lambda, &mut rng);
         let mut month = |rng: &mut Rng| {
             let mut log = 0.0;

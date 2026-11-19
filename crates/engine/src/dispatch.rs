@@ -50,7 +50,8 @@ fn to(v: &impl Serialize) -> Value {
 
 /// Answers a compute command. `library` is the data library, `fallback` the folder for relative paths if
 /// the plan has not been saved yet (desktop app: user folder, development server: working directory).
-pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<Value, String> {
+/// #171: An error is a message (code, parameters, German text) like the errors of the desktop app.
+pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<Value, crate::message::Message> {
     let plan = args.get("plan").cloned().unwrap_or(Value::Null);
     let base = || dir_of(args, "path", fallback);
     let lib = Some(library);
@@ -78,24 +79,27 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
         "preview" => to(&api::preview(&plan, &base(), lib)),
         "run_simulation" => to(&api::run_as(job_id(args), &plan, &base(), lib)),
         "rerun_paths" => {
-            let picks: Vec<(u32, usize)> =
-                serde_json::from_value(args.get("picks").cloned().unwrap_or_default()).map_err(|e| e.to_string())?;
+            let picks: Vec<(u32, usize)> = serde_json::from_value(args.get("picks").cloned().unwrap_or_default())
+                .map_err(|e| msg!(raw_error, detail = e.to_string()))?;
             to(&api::rerun_paths(&plan, &picks, &base(), lib))
         }
         "series_info" => {
-            let p = args.get("path").and_then(Value::as_str).ok_or("Pfad fehlt")?;
+            let p = args
+                .get("path")
+                .and_then(Value::as_str)
+                .ok_or_else(|| msg!(path_missing))?;
             // #142: like the desktop app, relative to the folder of the project file (`planPath`)
-            to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib).map_err(|e| e.to_string())?)
+            to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib).map_err(|e| e.message())?)
         }
         "optimize" => {
             let mut req = args.get("request").cloned().unwrap_or(json!({}));
             if let (Some(id), Some(obj)) = (job_id(args), req.as_object_mut()) {
                 obj.insert("jobId".into(), id.into());
             }
-            to(&api::optimize(&plan, &req, &base(), lib).map_err(|e| e.to_string())?)
+            to(&api::optimize(&plan, &req, &base(), lib).map_err(|e| e.message())?)
         }
-        "library_list" => to(&api::library_list(library).map_err(|e| e.to_string())?),
-        _ => return Err(format!("Befehl «{cmd}» gibt es nur in der Desktop-App")),
+        "library_list" => to(&api::library_list(library).map_err(|e| e.message())?),
+        _ => return Err(msg!(command_desktop_only, cmd = cmd)),
     })
 }
 

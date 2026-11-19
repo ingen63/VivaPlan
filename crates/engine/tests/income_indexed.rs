@@ -172,7 +172,7 @@ fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
     let warn = |v: &Value| -> Vec<String> {
         api::validate(v)
             .into_iter()
-            .map(|i| i.message)
+            .map(|i| i.message.to_string())
             .filter(|m| m.contains("Erwerbseinkommen"))
             .collect()
     };

@@ -1,0 +1,4301 @@
+[
+  {
+    "code": "cancelled",
+    "params": {},
+    "template": "Abgebrochen",
+    "text": "Abgebrochen"
+  },
+  {
+    "code": "not_implemented",
+    "params": {
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Noch nicht umgesetzt: {what}",
+    "text": "Noch nicht umgesetzt: Person 2"
+  },
+  {
+    "code": "person_n",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}",
+    "text": "Person Person 2"
+  },
+  {
+    "code": "milestone_start",
+    "params": {},
+    "template": "Simulationsstart",
+    "text": "Simulationsstart"
+  },
+  {
+    "code": "milestone_end",
+    "params": {},
+    "template": "Simulationsende",
+    "text": "Simulationsende"
+  },
+  {
+    "code": "milestone_retire",
+    "params": {},
+    "template": "Bezug Pensionskasse",
+    "text": "Bezug Pensionskasse"
+  },
+  {
+    "code": "milestone_ahv",
+    "params": {},
+    "template": "AHV-Bezug",
+    "text": "AHV-Bezug"
+  },
+  {
+    "code": "milestone_retire2",
+    "params": {},
+    "template": "Bezug Pensionskasse Person 2",
+    "text": "Bezug Pensionskasse Person 2"
+  },
+  {
+    "code": "milestone_ahv2",
+    "params": {},
+    "template": "AHV-Bezug Person 2",
+    "text": "AHV-Bezug Person 2"
+  },
+  {
+    "code": "pillar3a",
+    "params": {},
+    "template": "Säule 3a",
+    "text": "Säule 3a"
+  },
+  {
+    "code": "pillar3a_of",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Säule 3a {name}",
+    "text": "Säule 3a Person 2"
+  },
+  {
+    "code": "term_pk_payout",
+    "params": {},
+    "template": "Bezug Pensionskasse",
+    "text": "Bezug Pensionskasse"
+  },
+  {
+    "code": "term_ahv_payout",
+    "params": {},
+    "template": "AHV-Bezug",
+    "text": "AHV-Bezug"
+  },
+  {
+    "code": "term_pk_payout_2",
+    "params": {},
+    "template": "Bezug Pensionskasse (Person 2)",
+    "text": "Bezug Pensionskasse (Person 2)"
+  },
+  {
+    "code": "term_ahv_payout_2",
+    "params": {},
+    "template": "AHV-Bezug (Person 2)",
+    "text": "AHV-Bezug (Person 2)"
+  },
+  {
+    "code": "term_pk_contribution",
+    "params": {},
+    "template": "Beiträge Pensionskasse",
+    "text": "Beiträge Pensionskasse"
+  },
+  {
+    "code": "term_pk_interest",
+    "params": {},
+    "template": "Verzinsung Pensionskasse",
+    "text": "Verzinsung Pensionskasse"
+  },
+  {
+    "code": "term_pk_contribution_2",
+    "params": {},
+    "template": "Beiträge Pensionskasse (Person 2)",
+    "text": "Beiträge Pensionskasse (Person 2)"
+  },
+  {
+    "code": "term_pk_interest_2",
+    "params": {},
+    "template": "Verzinsung Pensionskasse (Person 2)",
+    "text": "Verzinsung Pensionskasse (Person 2)"
+  },
+  {
+    "code": "term_income",
+    "params": {},
+    "template": "Einkommen",
+    "text": "Einkommen"
+  },
+  {
+    "code": "term_income_2",
+    "params": {},
+    "template": "Einkommen (Person 2)",
+    "text": "Einkommen (Person 2)"
+  },
+  {
+    "code": "term_spending",
+    "params": {},
+    "template": "Ausgaben",
+    "text": "Ausgaben"
+  },
+  {
+    "code": "term_savings",
+    "params": {},
+    "template": "Weitere Zuflüsse",
+    "text": "Weitere Zuflüsse"
+  },
+  {
+    "code": "term_stock_share",
+    "params": {},
+    "template": "Aktienanteil",
+    "text": "Aktienanteil"
+  },
+  {
+    "code": "term_reserve",
+    "params": {},
+    "template": "Cash-Reserve",
+    "text": "Cash-Reserve"
+  },
+  {
+    "code": "term_stock_return",
+    "params": {},
+    "template": "Aktienrendite",
+    "text": "Aktienrendite"
+  },
+  {
+    "code": "term_bond_return",
+    "params": {},
+    "template": "Obligationenrendite",
+    "text": "Obligationenrendite"
+  },
+  {
+    "code": "term_inflation",
+    "params": {},
+    "template": "Inflation",
+    "text": "Inflation"
+  },
+  {
+    "code": "term_saron",
+    "params": {},
+    "template": "SARON",
+    "text": "SARON"
+  },
+  {
+    "code": "term_emergency_months",
+    "params": {},
+    "template": "Notverkauf-Schwelle",
+    "text": "Notverkauf-Schwelle"
+  },
+  {
+    "code": "term_income_tax",
+    "params": {},
+    "template": "Einkommenssteuer",
+    "text": "Einkommenssteuer"
+  },
+  {
+    "code": "term_wealth_tax",
+    "params": {},
+    "template": "Vermögenssteuer",
+    "text": "Vermögenssteuer"
+  },
+  {
+    "code": "term_capital_tax",
+    "params": {},
+    "template": "Kapitalbezugssteuer",
+    "text": "Kapitalbezugssteuer"
+  },
+  {
+    "code": "term_income_tax_married",
+    "params": {},
+    "template": "Einkommenssteuer (Verheiratete)",
+    "text": "Einkommenssteuer (Verheiratete)"
+  },
+  {
+    "code": "term_wealth_tax_married",
+    "params": {},
+    "template": "Vermögenssteuer (Verheiratete)",
+    "text": "Vermögenssteuer (Verheiratete)"
+  },
+  {
+    "code": "term_capital_tax_married",
+    "params": {},
+    "template": "Kapitalbezugssteuer (Verheiratete)",
+    "text": "Kapitalbezugssteuer (Verheiratete)"
+  },
+  {
+    "code": "labeled",
+    "params": {
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{what}: {problem}",
+    "text": "Person 2: Person 2"
+  },
+  {
+    "code": "guardrails_initial_rate",
+    "params": {},
+    "template": "Die Startrate muss zwischen 0 % und 100 % liegen.",
+    "text": "Die Startrate muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "guardrails_bands",
+    "params": {},
+    "template": "Die Leitplanken müssen grösser oder gleich 0 sein (unten kleiner als 100 %).",
+    "text": "Die Leitplanken müssen grösser oder gleich 0 sein (unten kleiner als 100 %)."
+  },
+  {
+    "code": "guardrails_adjust",
+    "params": {},
+    "template": "Die Anpassung muss zwischen 0 % und 100 % liegen.",
+    "text": "Die Anpassung muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "spending_limits_negative",
+    "params": {},
+    "template": "Unter- und Obergrenze der Ausgaben dürfen nicht negativ sein.",
+    "text": "Unter- und Obergrenze der Ausgaben dürfen nicht negativ sein."
+  },
+  {
+    "code": "spending_floor_above_ceiling",
+    "params": {},
+    "template": "Die Untergrenze der Ausgaben liegt über der Obergrenze.",
+    "text": "Die Untergrenze der Ausgaben liegt über der Obergrenze."
+  },
+  {
+    "code": "persons_none",
+    "params": {},
+    "template": "Mindestens eine Person ist nötig.",
+    "text": "Mindestens eine Person ist nötig."
+  },
+  {
+    "code": "persons_too_many",
+    "params": {},
+    "template": "Es sind höchstens zwei Personen möglich.",
+    "text": "Es sind höchstens zwei Personen möglich."
+  },
+  {
+    "code": "partner_without_person",
+    "params": {},
+    "template": "Die Angaben zur zweiten Person gehören zu einer zweiten Person im Haushalt.",
+    "text": "Die Angaben zur zweiten Person gehören zu einer zweiten Person im Haushalt."
+  },
+  {
+    "code": "partner_missing",
+    "params": {},
+    "template": "Die zweite Person hat weder Einkommen noch Vorsorge erfasst und bleibt unberücksichtigt.",
+    "text": "Die zweite Person hat weder Einkommen noch Vorsorge erfasst und bleibt unberücksichtigt."
+  },
+  {
+    "code": "person_name_missing",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}: Der Name fehlt (Pflichtangabe).",
+    "text": "Person Person 2: Der Name fehlt (Pflichtangabe)."
+  },
+  {
+    "code": "person_name_too_long",
+    "params": {
+      "max": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}: Der Name darf höchstens {max} Zeichen lang sein.",
+    "text": "Person Person 2: Der Name darf höchstens Person 2 Zeichen lang sein."
+  },
+  {
+    "code": "ahv_cap_not_positive",
+    "params": {},
+    "template": "Die Plafonierung der AHV-Renten muss grösser als 0 sein.",
+    "text": "Die Plafonierung der AHV-Renten muss grösser als 0 sein."
+  },
+  {
+    "code": "milestones_start_end_missing",
+    "params": {},
+    "template": "Die Meilensteine «start» und «end» müssen vorhanden sein.",
+    "text": "Die Meilensteine «start» und «end» müssen vorhanden sein."
+  },
+  {
+    "code": "end_before_start",
+    "params": {},
+    "template": "Das Simulationsende muss nach dem Start liegen.",
+    "text": "Das Simulationsende muss nach dem Start liegen."
+  },
+  {
+    "code": "period_too_long",
+    "params": {},
+    "template": "Der Simulationszeitraum ist länger als 100 Jahre.",
+    "text": "Der Simulationszeitraum ist länger als 100 Jahre."
+  },
+  {
+    "code": "paths_memory",
+    "params": {
+      "max": 12345.678,
+      "months": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "paths": 12345.678
+    },
+    "template": "Zu viele Pfade für den Speicher: {paths:int} Pfade × {months} Monate. Bei dieser Planungsdauer sind höchstens {max:int} Pfade möglich.",
+    "text": "Zu viele Pfade für den Speicher: 12'346 Pfade × Person 2 Monate. Bei dieser Planungsdauer sind höchstens 12'346 Pfade möglich."
+  },
+  {
+    "code": "birth_after_start",
+    "params": {
+      "birth": "2031-07",
+      "start": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Das Geburtsdatum ({birth:ym}) liegt nach dem Simulationsstart ({start:ym}).",
+    "text": "Person 2: Das Geburtsdatum (07.2031) liegt nach dem Simulationsstart (07.2031)."
+  },
+  {
+    "code": "person_too_old",
+    "params": {
+      "max": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Am Simulationsende wäre die Person über {max} Jahre alt.",
+    "text": "Person 2: Am Simulationsende wäre die Person über Person 2 Jahre alt."
+  },
+  {
+    "code": "milestone_age_invalid",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "years": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{name}»: Alter {years} ist nicht möglich.",
+    "text": "«Person 2»: Alter Person 2 ist nicht möglich."
+  },
+  {
+    "code": "milestone_before_start",
+    "params": {
+      "month": "2031-07",
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{name}» ({month:ym}) liegt vor dem Simulationsstart.",
+    "text": "«Person 2» (07.2031) liegt vor dem Simulationsstart."
+  },
+  {
+    "code": "milestone_after_end",
+    "params": {
+      "month": "2031-07",
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{name}» ({month:ym}) liegt nach dem Simulationsende.",
+    "text": "«Person 2» (07.2031) liegt nach dem Simulationsende."
+  },
+  {
+    "code": "series_empty",
+    "params": {
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{what}: keine Einträge.",
+    "text": "Person 2: keine Einträge."
+  },
+  {
+    "code": "series_late_start",
+    "params": {
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{what}: kein Wert ab Simulationsstart – bis zum ersten Eintrag gilt 0.",
+    "text": "Person 2: kein Wert ab Simulationsstart – bis zum ersten Eintrag gilt 0."
+  },
+  {
+    "code": "series_out_of_range",
+    "params": {
+      "hi": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lo": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{what}: Werte müssen zwischen {lo} und {hi} liegen.",
+    "text": "Person 2: Werte müssen zwischen Person 2 und Person 2 liegen."
+  },
+  {
+    "code": "pk_lumpsum_range",
+    "params": {},
+    "template": "Kapitalbezug muss zwischen 0 % und 100 % liegen.",
+    "text": "Kapitalbezug muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "pk_conversion_high",
+    "params": {
+      "rate": 0.0371
+    },
+    "template": "Umwandlungssatz {rate:pct2} % ist ungewöhnlich hoch.",
+    "text": "Umwandlungssatz 3.71 % ist ungewöhnlich hoch."
+  },
+  {
+    "code": "pk_lumpsum_range_2",
+    "params": {},
+    "template": "Person 2: Kapitalbezug muss zwischen 0 % und 100 % liegen.",
+    "text": "Person 2: Kapitalbezug muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "pk_conversion_high_2",
+    "params": {
+      "rate": 0.0371
+    },
+    "template": "Person 2: Umwandlungssatz {rate:pct2} % ist ungewöhnlich hoch.",
+    "text": "Person 2: Umwandlungssatz 3.71 % ist ungewöhnlich hoch."
+  },
+  {
+    "code": "settings_problem",
+    "params": {
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Einstellungen: {problem}",
+    "text": "Einstellungen: Person 2"
+  },
+  {
+    "code": "limits_not_whole_years",
+    "params": {
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{what}: Die Grenzen müssen ganze Jahre zwischen 0 und 130 sein.",
+    "text": "Person 2: Die Grenzen müssen ganze Jahre zwischen 0 und 130 sein."
+  },
+  {
+    "code": "limits_reversed",
+    "params": {
+      "hi": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lo": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{what}: Die untere Grenze ({lo}) liegt über der oberen Grenze ({hi}).",
+    "text": "Person 2: Die untere Grenze (Person 2) liegt über der oberen Grenze (Person 2)."
+  },
+  {
+    "code": "limits_pillar3a_max",
+    "params": {},
+    "template": "Säule 3a: Der Maximalbetrag muss 0 oder mehr sein.",
+    "text": "Säule 3a: Der Maximalbetrag muss 0 oder mehr sein."
+  },
+  {
+    "code": "milestone_age_limits",
+    "params": {
+      "age": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "hi": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lo": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{name}»: Alter {age} liegt ausserhalb der Grenzen {lo} bis {hi} Jahre (Einstellungen).",
+    "text": "«Person 2»: Alter Person 2 liegt ausserhalb der Grenzen Person 2 bis Person 2 Jahre (Einstellungen)."
+  },
+  {
+    "code": "income_after_pk",
+    "params": {
+      "amount": 12345.678,
+      "at": "2031-07"
+    },
+    "template": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse ({at:ym}) noch {amount:int} pro Monat.",
+    "text": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (07.2031) noch 12'346 pro Monat."
+  },
+  {
+    "code": "income_after_pk_indexed",
+    "params": {
+      "amount": 12345.678,
+      "at": "2031-07"
+    },
+    "template": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse ({at:ym}) noch {amount:int} pro Monat in Preisen des Simulationsstarts.",
+    "text": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (07.2031) noch 12'346 pro Monat in Preisen des Simulationsstarts."
+  },
+  {
+    "code": "spending_below_housing",
+    "params": {
+      "housing": 12345.678,
+      "spending": 12345.678
+    },
+    "template": "Die Lebenshaltungskosten ({spending:int}) sind kleiner als die Wohnkosten zum Simulationsstart ({housing:int}), die sie enthalten.",
+    "text": "Die Lebenshaltungskosten (12'346) sind kleiner als die Wohnkosten zum Simulationsstart (12'346), die sie enthalten."
+  },
+  {
+    "code": "extra_after_end",
+    "params": {
+      "label": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Einmaliger Betrag «{label}» liegt nach dem Simulationsende.",
+    "text": "Einmaliger Betrag «Person 2» liegt nach dem Simulationsende."
+  },
+  {
+    "code": "weights_range",
+    "params": {},
+    "template": "Jedes Gewicht der Regionen muss zwischen 0 % und 100 % liegen.",
+    "text": "Jedes Gewicht der Regionen muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "weights_sum",
+    "params": {
+      "sum": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Gewichte der Regionen ergeben {sum} % statt 100 %.",
+    "text": "Die Gewichte der Regionen ergeben Person 2 % statt 100 %."
+  },
+  {
+    "code": "historical_series_missing",
+    "params": {},
+    "template": "Für historische Renditen muss eine Zeitreihe gewählt sein.",
+    "text": "Für historische Renditen muss eine Zeitreihe gewählt sein."
+  },
+  {
+    "code": "historical_start_missing",
+    "params": {},
+    "template": "Der historische Startmonat fehlt.",
+    "text": "Der historische Startmonat fehlt."
+  },
+  {
+    "code": "bootstrap_series_missing",
+    "params": {},
+    "template": "Für Monte Carlo aus der Historie muss eine Zeitreihe gewählt sein.",
+    "text": "Für Monte Carlo aus der Historie muss eine Zeitreihe gewählt sein."
+  },
+  {
+    "code": "paths_range",
+    "params": {},
+    "template": "Die Anzahl Pfade muss zwischen 1 und 1'000'000 liegen.",
+    "text": "Die Anzahl Pfade muss zwischen 1 und 1'000'000 liegen."
+  },
+  {
+    "code": "block_length_min",
+    "params": {},
+    "template": "Die mittlere Blocklänge muss mindestens 1 Monat betragen.",
+    "text": "Die mittlere Blocklänge muss mindestens 1 Monat betragen."
+  },
+  {
+    "code": "volatility_negative",
+    "params": {},
+    "template": "Volatilität und Sprungrate dürfen nicht negativ sein.",
+    "text": "Volatilität und Sprungrate dürfen nicht negativ sein."
+  },
+  {
+    "code": "degrees_of_freedom",
+    "params": {},
+    "template": "Die Freiheitsgrade müssen grösser als 2 sein (0 = Normalverteilung).",
+    "text": "Die Freiheitsgrade müssen grösser als 2 sein (0 = Normalverteilung)."
+  },
+  {
+    "code": "buckets_negative",
+    "params": {},
+    "template": "Die Töpfe dürfen nicht negativ sein.",
+    "text": "Die Töpfe dürfen nicht negativ sein."
+  },
+  {
+    "code": "buckets_too_large",
+    "params": {},
+    "template": "Topf 1 + Topf 2 decken mehr als 15 Jahre – wenig Aktienanteil übrig.",
+    "text": "Topf 1 + Topf 2 decken mehr als 15 Jahre – wenig Aktienanteil übrig."
+  },
+  {
+    "code": "buckets_without_retirement",
+    "params": {},
+    "template": "Die 3-Topf-Strategie beginnt mit der Pensionierung; ohne Bezugsdatum gilt durchgehend «Standard».",
+    "text": "Die 3-Topf-Strategie beginnt mit der Pensionierung; ohne Bezugsdatum gilt durchgehend «Standard»."
+  },
+  {
+    "code": "withdrawal_rate_range",
+    "params": {},
+    "template": "Die Entnahmerate muss zwischen 0 % und 100 % liegen.",
+    "text": "Die Entnahmerate muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "withdrawal_rate_high",
+    "params": {
+      "rate": 0.0371
+    },
+    "template": "Eine Entnahmerate von {rate:pct1} % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch.",
+    "text": "Eine Entnahmerate von 3.7 % ist hoch; das Vermögen schrumpft bei längerer Dauer rasch."
+  },
+  {
+    "code": "vpw_invalid",
+    "params": {},
+    "template": "VPW: Planungsalter und Realrendite sind ungültig.",
+    "text": "VPW: Planungsalter und Realrendite sind ungültig."
+  },
+  {
+    "code": "endowment_invalid",
+    "params": {},
+    "template": "Endowment: Rate und Glättung müssen zwischen 0 % und 100 % liegen.",
+    "text": "Endowment: Rate und Glättung müssen zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "withdrawal_without_retirement",
+    "params": {},
+    "template": "Die Entnahmestrategie beginnt mit der Pensionierung; ohne Bezugsdatum gelten die geplanten Ausgaben durchgehend.",
+    "text": "Die Entnahmestrategie beginnt mit der Pensionierung; ohne Bezugsdatum gelten die geplanten Ausgaben durchgehend."
+  },
+  {
+    "code": "scenario_stock_share_buckets",
+    "params": {},
+    "template": "Mit der 3-Topf-Strategie wirkt der Aktienanteil nur bis zur Pensionierung; danach bestimmen die Töpfe die Aufteilung.",
+    "text": "Mit der 3-Topf-Strategie wirkt der Aktienanteil nur bis zur Pensionierung; danach bestimmen die Töpfe die Aufteilung."
+  },
+  {
+    "code": "scenario_start_date_source",
+    "params": {},
+    "template": "Der historische Startmonat wirkt nur mit der Quelle «Historisch ab Startzeitpunkt».",
+    "text": "Der historische Startmonat wirkt nur mit der Quelle «Historisch ab Startzeitpunkt»."
+  },
+  {
+    "code": "optimize_max_ruin",
+    "params": {},
+    "template": "Optimierung: Die höchste Ruinwahrscheinlichkeit muss zwischen 0 % und 100 % liegen.",
+    "text": "Optimierung: Die höchste Ruinwahrscheinlichkeit muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "optimize_paths",
+    "params": {},
+    "template": "Optimierung: Die Anzahl Pfade muss grösser als 0 sein.",
+    "text": "Optimierung: Die Anzahl Pfade muss grösser als 0 sein."
+  },
+  {
+    "code": "optimize_problem",
+    "params": {
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Optimierung: {problem}",
+    "text": "Optimierung: Person 2"
+  },
+  {
+    "code": "tax_multiplier_range",
+    "params": {},
+    "template": "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen.",
+    "text": "Steuerfuss: Der Faktor muss zwischen 0 und 10 liegen."
+  },
+  {
+    "code": "tax_rate_falling",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "table": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{table}, Stufe {row}: Mit diesem Satz sinkt die Steuer, obwohl der Betrag steigt. Bitte prüfen Sie die Tabelle (Satz = Steuer geteilt durch Betrag, nicht Grenzsteuersatz).",
+    "text": "Person 2, Stufe Person 2: Mit diesem Satz sinkt die Steuer, obwohl der Betrag steigt. Bitte prüfen Sie die Tabelle (Satz = Steuer geteilt durch Betrag, nicht Grenzsteuersatz)."
+  },
+  {
+    "code": "tax_amount_negative",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "table": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{table}, Stufe {row}: Der Betrag muss 0 oder grösser sein.",
+    "text": "Person 2, Stufe Person 2: Der Betrag muss 0 oder grösser sein."
+  },
+  {
+    "code": "tax_rate_range",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "table": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{table}, Stufe {row}: Der Steuersatz muss zwischen 0 % und 100 % liegen.",
+    "text": "Person 2, Stufe Person 2: Der Steuersatz muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "gain_tax_missing",
+    "params": {},
+    "template": "Grundstückgewinnsteuer fehlt: Die Planung enthält eine Immobilie im Besitz oder mit geplantem Kauf. Bitte unter «Steuern» die Vorlage Zürich, die Vorlage Aargau oder eigene Regeln (auch mit Satz 0 %) erfassen.",
+    "text": "Grundstückgewinnsteuer fehlt: Die Planung enthält eine Immobilie im Besitz oder mit geplantem Kauf. Bitte unter «Steuern» die Vorlage Zürich, die Vorlage Aargau oder eigene Regeln (auch mit Satz 0 %) erfassen."
+  },
+  {
+    "code": "gain_tax_duration_invalid",
+    "params": {},
+    "template": "Grundstückgewinnsteuer: Besitzdauer und Zu- oder Abschlag sind ungültig (Jahre ab 0, Abschlag kleiner als 100 %).",
+    "text": "Grundstückgewinnsteuer: Besitzdauer und Zu- oder Abschlag sind ungültig (Jahre ab 0, Abschlag kleiner als 100 %)."
+  },
+  {
+    "code": "gain_tax_aargau_empty",
+    "params": {},
+    "template": "Grundstückgewinnsteuer (Modell Aargau): Es ist kein Steuersatz nach Besitzdauer erfasst.",
+    "text": "Grundstückgewinnsteuer (Modell Aargau): Es ist kein Steuersatz nach Besitzdauer erfasst."
+  },
+  {
+    "code": "gain_tax_aargau_invalid",
+    "params": {},
+    "template": "Grundstückgewinnsteuer (Modell Aargau): Besitzdauer und Steuersatz sind ungültig (Jahre ab 0, Satz zwischen 0 und 100 %).",
+    "text": "Grundstückgewinnsteuer (Modell Aargau): Besitzdauer und Steuersatz sind ungültig (Jahre ab 0, Satz zwischen 0 und 100 %)."
+  },
+  {
+    "code": "property_bought_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Das Kaufdatum fehlt. Ohne Kaufdatum gilt kein Zu- oder Abschlag (Modell Zürich) bzw. der höchste Satz (Modell Aargau) bei der Grundstückgewinnsteuer.",
+    "text": "Person 2: Das Kaufdatum fehlt. Ohne Kaufdatum gilt kein Zu- oder Abschlag (Modell Zürich) bzw. der höchste Satz (Modell Aargau) bei der Grundstückgewinnsteuer."
+  },
+  {
+    "code": "property_id_duplicate",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Kennung «{id}» ist doppelt vergeben.",
+    "text": "Person 2: Kennung «Person 2» ist doppelt vergeben."
+  },
+  {
+    "code": "property_after_sale_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Die Immobilie, nach deren Verkauf gekauft bzw. gemietet wird, gibt es nicht mehr.",
+    "text": "Person 2: Die Immobilie, nach deren Verkauf gekauft bzw. gemietet wird, gibt es nicht mehr."
+  },
+  {
+    "code": "property_after_own_sale",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Kauf nach dem eigenen Verkauf ist nicht möglich.",
+    "text": "Person 2: Kauf nach dem eigenen Verkauf ist nicht möglich."
+  },
+  {
+    "code": "property_after_rent_sale",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "other": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: «{other}» ist eine Miete und wird nie verkauft.",
+    "text": "Person 2: «Person 2» ist eine Miete und wird nie verkauft."
+  },
+  {
+    "code": "property_sale_before_start",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Verkaufszeitpunkt liegt vor dem Simulationsstart – das Objekt wird nicht zu diesem Zeitpunkt verkauft. Der Verkauf müsste im Simulationszeitraum liegen.",
+    "text": "Person 2: Verkaufszeitpunkt liegt vor dem Simulationsstart – das Objekt wird nicht zu diesem Zeitpunkt verkauft. Der Verkauf müsste im Simulationszeitraum liegen."
+  },
+  {
+    "code": "property_sale_before_bought",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Der Verkauf muss nach dem Kaufdatum liegen.",
+    "text": "Person 2: Der Verkauf muss nach dem Kaufdatum liegen."
+  },
+  {
+    "code": "property_sale_before_buy",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Der Verkauf muss nach «Kauf ab» liegen.",
+    "text": "Person 2: Der Verkauf muss nach «Kauf ab» liegen."
+  },
+  {
+    "code": "property_rent_from_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: «Miete ab» fehlt.",
+    "text": "Person 2: «Miete ab» fehlt."
+  },
+  {
+    "code": "property_rent_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Miete fehlt.",
+    "text": "Person 2: Miete fehlt."
+  },
+  {
+    "code": "property_buy_before_start",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Kaufzeitpunkt liegt vor dem Simulationsstart – das Objekt wird nie gekauft. Bereits gekaufte Objekte als «Besitz» erfassen.",
+    "text": "Person 2: Kaufzeitpunkt liegt vor dem Simulationsstart – das Objekt wird nie gekauft. Bereits gekaufte Objekte als «Besitz» erfassen."
+  },
+  {
+    "code": "property_buy_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: kein Kaufzeitpunkt – das Objekt wird nie gekauft.",
+    "text": "Person 2: kein Kaufzeitpunkt – das Objekt wird nie gekauft."
+  },
+  {
+    "code": "mortgage_max_loan_not_planned",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: «80 % des Kaufpreises» gilt nur für geplante Käufe; es zählen die erfassten Beträge.",
+    "text": "Person 2: «80 % des Kaufpreises» gilt nur für geplante Käufe; es zählen die erfassten Beträge."
+  },
+  {
+    "code": "mortgage_above_price",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Hypothek ist höher als der Kaufpreis.",
+    "text": "Person 2: Hypothek ist höher als der Kaufpreis."
+  },
+  {
+    "code": "mortgage_above_80",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Belehnung über 80 % – Banken verlangen meist 20 % Eigenmittel.",
+    "text": "Person 2: Belehnung über 80 % – Banken verlangen meist 20 % Eigenmittel."
+  },
+  {
+    "code": "tranche_no_period",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: keine Hypothekarperiode erfasst.",
+    "text": "Person 2: keine Hypothekarperiode erfasst."
+  },
+  {
+    "code": "tranche_start_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Beginn der laufenden Periode fehlt.",
+    "text": "Person 2: Beginn der laufenden Periode fehlt."
+  },
+  {
+    "code": "tranche_start_after_start",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Beginn liegt nach dem Simulationsstart.",
+    "text": "Person 2: Beginn liegt nach dem Simulationsstart."
+  },
+  {
+    "code": "tranche_pillar3a_person_missing",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Die Person «{id}» für die Säule 3a gibt es nicht.",
+    "text": "Person 2: Die Person «Person 2» für die Säule 3a gibt es nicht."
+  },
+  {
+    "code": "period_term_too_long",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "period": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}, Periode {period}: Laufzeit über 100 Jahre.",
+    "text": "Person 2, Periode Person 2: Laufzeit über 100 Jahre."
+  },
+  {
+    "code": "period_term_not_positive",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "period": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}, Periode {period}: Laufzeit muss grösser als 0 sein.",
+    "text": "Person 2, Periode Person 2: Laufzeit muss grösser als 0 sein."
+  },
+  {
+    "code": "period_rate_high",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "period": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "rate": 0.0371
+    },
+    "template": "{name}, Periode {period}: Zins {rate:pct2} % ist ungewöhnlich hoch.",
+    "text": "Person 2, Periode Person 2: Zins 3.71 % ist ungewöhnlich hoch."
+  },
+  {
+    "code": "period_margin_high",
+    "params": {
+      "margin": 0.0371,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "period": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}, Periode {period}: SARON-Marge {margin:pct2} % ist ungewöhnlich hoch.",
+    "text": "Person 2, Periode Person 2: SARON-Marge 3.71 % ist ungewöhnlich hoch."
+  },
+  {
+    "code": "pillar3a_person_missing",
+    "params": {
+      "person": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Säule 3a: Die Person «{person}» gibt es nicht.",
+    "text": "Säule 3a: Die Person «Person 2» gibt es nicht."
+  },
+  {
+    "code": "pillar3a_duplicate",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Pro Person ist nur ein 3a-Konto möglich.",
+    "text": "Person 2: Pro Person ist nur ein 3a-Konto möglich."
+  },
+  {
+    "code": "pillar3a_balance_negative",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Das Guthaben darf nicht negativ sein.",
+    "text": "Person 2: Das Guthaben darf nicht negativ sein."
+  },
+  {
+    "code": "pillar3a_rate_range",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Der Zins muss zwischen −50 % und 100 % liegen.",
+    "text": "Person 2: Der Zins muss zwischen −50 % und 100 % liegen."
+  },
+  {
+    "code": "pillar3a_contribution_range",
+    "params": {
+      "max": 12345.678,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Die Einzahlung muss zwischen 0 und dem Maximalbetrag von {max:int} pro Jahr liegen (Einstellungen).",
+    "text": "Person 2: Die Einzahlung muss zwischen 0 und dem Maximalbetrag von 12'346 pro Jahr liegen (Einstellungen)."
+  },
+  {
+    "code": "pillar3a_over_max",
+    "params": {
+      "contribution": 12345.678,
+      "indirect": 12345.678,
+      "max": 12345.678,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Einzahlung ({contribution:int}) und indirekte Amortisation ({indirect:int}) übersteigen zusammen den Maximalbetrag von {max:int} pro Jahr.",
+    "text": "Person 2: Einzahlung (12'346) und indirekte Amortisation (12'346) übersteigen zusammen den Maximalbetrag von 12'346 pro Jahr."
+  },
+  {
+    "code": "pillar3a_repay_without_indirect",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation voraus; der Rest geht ins freie Vermögen.",
+    "text": "Person 2: «Hypothek zurückzahlen» setzt eine Tranche mit indirekter Amortisation voraus; der Rest geht ins freie Vermögen."
+  },
+  {
+    "code": "pillar3a_payout_date_invalid",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Das Datum der {n}. Auszahlung fehlt oder ist ungültig.",
+    "text": "Person 2: Das Datum der Person 2. Auszahlung fehlt oder ist ungültig."
+  },
+  {
+    "code": "pillar3a_payout_age_invalid",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Das Alter (0 bis 150 Jahre) der {n}. Auszahlung fehlt oder ist ungültig.",
+    "text": "Person 2: Das Alter (0 bis 150 Jahre) der Person 2. Auszahlung fehlt oder ist ungültig."
+  },
+  {
+    "code": "pillar3a_payout_too_early",
+    "params": {
+      "ahv": "2031-07",
+      "date": "2031-07",
+      "earliest": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Die Auszahlung im {date:ym} liegt mehr als 5 Jahre vor dem AHV-Bezug ({ahv:ym}); frühestens im {earliest:ym}.",
+    "text": "Person 2: Die Auszahlung im 07.2031 liegt mehr als 5 Jahre vor dem AHV-Bezug (07.2031); frühestens im 07.2031."
+  },
+  {
+    "code": "pillar3a_payout_after_ahv",
+    "params": {
+      "ahv": "2031-07",
+      "date": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Die Auszahlung im {date:ym} liegt nach dem AHV-Bezug ({ahv:ym}); das Guthaben ist dann schon ausbezahlt.",
+    "text": "Person 2: Die Auszahlung im 07.2031 liegt nach dem AHV-Bezug (07.2031); das Guthaben ist dann schon ausbezahlt."
+  },
+  {
+    "code": "pillar3a_payout_amount",
+    "params": {
+      "date": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Der Betrag der Auszahlung im {date:ym} muss grösser als 0 sein.",
+    "text": "Person 2: Der Betrag der Auszahlung im 07.2031 muss grösser als 0 sein."
+  },
+  {
+    "code": "pillar3a_payout_repay_without_indirect",
+    "params": {
+      "date": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: «Hypothek zurückzahlen» (Auszahlung im {date:ym}) setzt eine Tranche mit indirekter Amortisation voraus; sie geht ins freie Vermögen.",
+    "text": "Person 2: «Hypothek zurückzahlen» (Auszahlung im 07.2031) setzt eine Tranche mit indirekter Amortisation voraus; sie geht ins freie Vermögen."
+  },
+  {
+    "code": "pillar3a_payout_same_year_as_pk",
+    "params": {
+      "date": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: Auszahlung im {date:ym} und PK-Kapitalbezug im selben Jahr – sie werden für die Steuerprogression zusammengerechnet.",
+    "text": "Person 2: Auszahlung im 07.2031 und PK-Kapitalbezug im selben Jahr – sie werden für die Steuerprogression zusammengerechnet."
+  },
+  {
+    "code": "milestone_person_unknown",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "person": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Meilenstein «{name}»: unbekannte Person «{person}»",
+    "text": "Meilenstein «Person 2»: unbekannte Person «Person 2»"
+  },
+  {
+    "code": "milestone_id_duplicate",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Meilenstein-ID «{id}» ist doppelt vergeben",
+    "text": "Meilenstein-ID «Person 2» ist doppelt vergeben"
+  },
+  {
+    "code": "milestone_missing",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Meilenstein «{id}» fehlt",
+    "text": "Meilenstein «Person 2» fehlt"
+  },
+  {
+    "code": "time_ref_unknown",
+    "params": {
+      "reference": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Unbekannter Zeitbezug «{reference}»",
+    "text": "Unbekannter Zeitbezug «Person 2»"
+  },
+  {
+    "code": "format_unknown",
+    "params": {
+      "format": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Datei hat das Format «{format}». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet.",
+    "text": "Die Datei hat das Format «Person 2». Sie braucht eine neuere Version von VivaPlan und wird nicht geöffnet."
+  },
+  {
+    "code": "plan_file_invalid",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Projektdatei: {detail}",
+    "text": "Projektdatei: Person 2"
+  },
+  {
+    "code": "scenario_problem",
+    "params": {
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Variation: {problem}",
+    "text": "Variation: Person 2"
+  },
+  {
+    "code": "scenario_param_missing",
+    "params": {},
+    "template": "Parameter fehlt",
+    "text": "Parameter fehlt"
+  },
+  {
+    "code": "scenario_param_unknown",
+    "params": {
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "unbekannter Parameter «{param}»",
+    "text": "unbekannter Parameter «Person 2»"
+  },
+  {
+    "code": "scenario_step",
+    "params": {
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{param}: Schritt muss grösser als 0 sein",
+    "text": "Person 2: Schritt muss grösser als 0 sein"
+  },
+  {
+    "code": "scenario_value_missing",
+    "params": {
+      "key": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{param}: «{key}» fehlt",
+    "text": "Person 2: «Person 2» fehlt"
+  },
+  {
+    "code": "scenario_month_invalid",
+    "params": {
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{param}: «{value}» ist kein gültiger Monat (erwartet JJJJ-MM)",
+    "text": "Person 2: «Person 2» ist kein gültiger Monat (erwartet JJJJ-MM)"
+  },
+  {
+    "code": "scenario_to_before_from",
+    "params": {
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{param}: «Bis» liegt vor «Von»",
+    "text": "Person 2: «Bis» liegt vor «Von»"
+  },
+  {
+    "code": "scenario_too_many",
+    "params": {
+      "count": 12345.678,
+      "max": 12345.678
+    },
+    "template": "Die Variationen ergeben {count:int} Kombinationen; höchstens {max:int} sind technisch möglich.",
+    "text": "Die Variationen ergeben 12'346 Kombinationen; höchstens 12'346 sind technisch möglich."
+  },
+  {
+    "code": "scenario_too_many_overflow",
+    "params": {
+      "max": 12345.678
+    },
+    "template": "Die Variationen ergeben mehr als 1'000'000 Kombinationen; höchstens {max:int} sind technisch möglich.",
+    "text": "Die Variationen ergeben mehr als 1'000'000 Kombinationen; höchstens 12'346 sind technisch möglich."
+  },
+  {
+    "code": "scenario_retire_missing",
+    "params": {
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Variation {param}: Meilenstein «retire» fehlt in der Planung",
+    "text": "Variation Person 2: Meilenstein «retire» fehlt in der Planung"
+  },
+  {
+    "code": "scenario_factor_missing",
+    "params": {
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Variation {param}: Faktor fehlt in der Planung",
+    "text": "Variation Person 2: Faktor fehlt in der Planung"
+  },
+  {
+    "code": "file_error",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: {detail}",
+    "text": "Person 2: Person 2"
+  },
+  {
+    "code": "series_too_short",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Zeitreihe {name} ist kürzer als der Simulationszeitraum.",
+    "text": "Die Zeitreihe Person 2 ist kürzer als der Simulationszeitraum."
+  },
+  {
+    "code": "series_not_shipped",
+    "params": {
+      "file": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Reihe «{file}» ist nicht ausgeliefert",
+    "text": "Reihe «Person 2» ist nicht ausgeliefert"
+  },
+  {
+    "code": "strategy_no_common_years",
+    "params": {
+      "strategy": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Indizes der Strategie «{strategy}» haben keine gemeinsamen Jahre.",
+    "text": "Die Indizes der Strategie «Person 2» haben keine gemeinsamen Jahre."
+  },
+  {
+    "code": "strategy_unreadable",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Strategie nicht lesbar: {detail}",
+    "text": "Strategie nicht lesbar: Person 2"
+  },
+  {
+    "code": "shiller_sheet_missing",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: Blatt «Data» fehlt ({detail})",
+    "text": "Person 2: Blatt «Data» fehlt (Person 2)"
+  },
+  {
+    "code": "shiller_header_missing",
+    "params": {},
+    "template": "Shiller-Datei: Kopfzeile «Date» nicht gefunden",
+    "text": "Shiller-Datei: Kopfzeile «Date» nicht gefunden"
+  },
+  {
+    "code": "shiller_column_missing",
+    "params": {
+      "column": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Shiller-Datei: Spalte «{column}» nicht gefunden",
+    "text": "Shiller-Datei: Spalte «Person 2» nicht gefunden"
+  },
+  {
+    "code": "shiller_too_few",
+    "params": {},
+    "template": "Shiller-Datei: zu wenige Monatswerte",
+    "text": "Shiller-Datei: zu wenige Monatswerte"
+  },
+  {
+    "code": "shiller_gaps",
+    "params": {},
+    "template": "Shiller-Datei: keine durchgehenden Monatswerte",
+    "text": "Shiller-Datei: keine durchgehenden Monatswerte"
+  },
+  {
+    "code": "snb_line_mismatch",
+    "params": {
+      "line": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Daten: Zeile «{line}» passt nicht zur Kopfzeile",
+    "text": "SNB-Daten: Zeile «Person 2» passt nicht zur Kopfzeile"
+  },
+  {
+    "code": "snb_month_invalid",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Daten: «{value}» ist kein gültiger Monat (erwartet JJJJ-MM)",
+    "text": "SNB-Daten: «Person 2» ist kein gültiger Monat (erwartet JJJJ-MM)"
+  },
+  {
+    "code": "snb_not_a_number",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Daten: «{value}» ist keine Zahl",
+    "text": "SNB-Daten: «Person 2» ist keine Zahl"
+  },
+  {
+    "code": "snb_not_snb",
+    "params": {},
+    "template": "keine SNB-Datei (CubeId bzw. Kopfzeile fehlt)",
+    "text": "keine SNB-Datei (CubeId bzw. Kopfzeile fehlt)"
+  },
+  {
+    "code": "snb_cube_unused_expected",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Würfel «{id}» wird nicht verwendet (erwartet: devkum, plkopr, zimoma, rendoblim)",
+    "text": "SNB-Würfel «Person 2» wird nicht verwendet (erwartet: devkum, plkopr, zimoma, rendoblim)"
+  },
+  {
+    "code": "snb_cube_unused",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Würfel «{id}» wird nicht verwendet",
+    "text": "SNB-Würfel «Person 2» wird nicht verwendet"
+  },
+  {
+    "code": "snb_series_missing",
+    "params": {
+      "cube": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "key": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Würfel {cube}: Reihe {key} fehlt",
+    "text": "SNB-Würfel Person 2: Reihe Person 2 fehlt"
+  },
+  {
+    "code": "chf_monthly_only",
+    "params": {},
+    "template": "Die Umrechnung in CHF ist nur für Monatsreihen möglich.",
+    "text": "Die Umrechnung in CHF ist nur für Monatsreihen möglich."
+  },
+  {
+    "code": "series_not_usd",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Reihe {name} ist nicht in USD.",
+    "text": "Die Reihe Person 2 ist nicht in USD."
+  },
+  {
+    "code": "fx_cpi_not_covering",
+    "params": {},
+    "template": "Kurs USD/CHF bzw. Landesindex decken die Reihe nicht ab.",
+    "text": "Kurs USD/CHF bzw. Landesindex decken die Reihe nicht ab."
+  },
+  {
+    "code": "fx_cpi_gaps",
+    "params": {},
+    "template": "Kurs USD/CHF bzw. Landesindex haben Lücken.",
+    "text": "Kurs USD/CHF bzw. Landesindex haben Lücken."
+  },
+  {
+    "code": "ch_bonds_monthly_only",
+    "params": {},
+    "template": "Schweizer Obligationen lassen sich nur mit einer CHF-Monatsreihe kombinieren.",
+    "text": "Schweizer Obligationen lassen sich nur mit einer CHF-Monatsreihe kombinieren."
+  },
+  {
+    "code": "ch_bonds_not_covering",
+    "params": {},
+    "template": "Die Renditen der Eidgenossenschaft decken die Reihe nicht ab.",
+    "text": "Die Renditen der Eidgenossenschaft decken die Reihe nicht ab."
+  },
+  {
+    "code": "ch_bonds_gaps",
+    "params": {},
+    "template": "Die Renditen der Eidgenossenschaft haben Lücken.",
+    "text": "Die Renditen der Eidgenossenschaft haben Lücken."
+  },
+  {
+    "code": "snb_bond_yields_missing",
+    "params": {},
+    "template": "SNB-Renditen der Eidgenossenschaft fehlen",
+    "text": "SNB-Renditen der Eidgenossenschaft fehlen"
+  },
+  {
+    "code": "jst_no_sheet",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: kein Tabellenblatt",
+    "text": "Person 2: kein Tabellenblatt"
+  },
+  {
+    "code": "jst_table_empty",
+    "params": {},
+    "template": "JST-Daten: Tabelle ist leer",
+    "text": "JST-Daten: Tabelle ist leer"
+  },
+  {
+    "code": "jst_column_missing",
+    "params": {
+      "column": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Daten: Spalte «{column}» fehlt",
+    "text": "JST-Daten: Spalte «Person 2» fehlt"
+  },
+  {
+    "code": "jst_no_region_values",
+    "params": {},
+    "template": "JST-Daten: keine Werte für die Länder der Regionen",
+    "text": "JST-Daten: keine Werte für die Länder der Regionen"
+  },
+  {
+    "code": "jst_extract_empty",
+    "params": {},
+    "template": "JST-Auszug ist leer",
+    "text": "JST-Auszug ist leer"
+  },
+  {
+    "code": "jst_extract_header",
+    "params": {
+      "expected": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "header": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Auszug: Kopfzeile «{header}» statt «{expected}»",
+    "text": "JST-Auszug: Kopfzeile «Person 2» statt «Person 2»"
+  },
+  {
+    "code": "jst_extract_line",
+    "params": {
+      "line": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Auszug, Zeile {row}: «{line}»",
+    "text": "JST-Auszug, Zeile Person 2: «Person 2»"
+  },
+  {
+    "code": "jst_no_stock_return",
+    "params": {
+      "countries": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Daten: keine Aktienrendite für {countries} im Jahr {year}",
+    "text": "JST-Daten: keine Aktienrendite für Person 2 im Jahr Person 2"
+  },
+  {
+    "code": "jst_ch_year_missing",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Daten: Schweiz {year} fehlt",
+    "text": "JST-Daten: Schweiz Person 2 fehlt"
+  },
+  {
+    "code": "jst_ch_bonds_missing",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Daten: Obligationen Schweiz {year} fehlen",
+    "text": "JST-Daten: Obligationen Schweiz Person 2 fehlen"
+  },
+  {
+    "code": "jst_ch_short_rates_missing",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Daten: kurzfristige Zinsen Schweiz {year} fehlen",
+    "text": "JST-Daten: kurzfristige Zinsen Schweiz Person 2 fehlen"
+  },
+  {
+    "code": "jst_ch_inflation_missing",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "JST-Daten: Teuerung Schweiz {year} fehlt",
+    "text": "JST-Daten: Teuerung Schweiz Person 2 fehlt"
+  },
+  {
+    "code": "ch_inflation_missing",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Teuerung Schweiz {year} fehlt",
+    "text": "Teuerung Schweiz Person 2 fehlt"
+  },
+  {
+    "code": "library_unknown",
+    "params": {
+      "file": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Zeitreihe «{file}» liegt in der Datenbibliothek, deren Ordner hier nicht bekannt ist.",
+    "text": "Die Zeitreihe «Person 2» liegt in der Datenbibliothek, deren Ordner hier nicht bekannt ist."
+  },
+  {
+    "code": "library_name_invalid",
+    "params": {
+      "file": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Ungültiger Name in der Datenbibliothek: «{file}»",
+    "text": "Ungültiger Name in der Datenbibliothek: «Person 2»"
+  },
+  {
+    "code": "import_chf_ends",
+    "params": {
+      "month": "2031-07"
+    },
+    "template": "Die CHF-Reihe endet {month:ym}, weil die SNB-Daten (Kurs bzw. Landesindex) nicht weiter reichen. Neuere SNB-Daten lassen sich ebenfalls importieren.",
+    "text": "Die CHF-Reihe endet 07.2031, weil die SNB-Daten (Kurs bzw. Landesindex) nicht weiter reichen. Neuere SNB-Daten lassen sich ebenfalls importieren."
+  },
+  {
+    "code": "import_snb_cube",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Würfel {id} übernommen.",
+    "text": "SNB-Würfel Person 2 übernommen."
+  },
+  {
+    "code": "import_snb_cube_dated",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "published": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "SNB-Würfel {id} übernommen (Stand {published}).",
+    "text": "SNB-Würfel Person 2 übernommen (Stand Person 2)."
+  },
+  {
+    "code": "import_shiller_usd_missing",
+    "params": {},
+    "template": "«Shiller USD.csv» fehlt in der Bibliothek; die CHF-Reihe wurde nicht neu berechnet.",
+    "text": "«Shiller USD.csv» fehlt in der Bibliothek; die CHF-Reihe wurde nicht neu berechnet."
+  },
+  {
+    "code": "legacy_variable_undefined",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Variable {name} ist nicht definiert",
+    "text": "Variable Person 2 ist nicht definiert"
+  },
+  {
+    "code": "legacy_not_an_age",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{value}» ist kein Alter",
+    "text": "«Person 2» ist kein Alter"
+  },
+  {
+    "code": "legacy_not_a_number",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: «{value}» ist keine Zahl",
+    "text": "Person 2: «Person 2» ist keine Zahl"
+  },
+  {
+    "code": "legacy_unreadable",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "config.json: {detail}",
+    "text": "config.json: Person 2"
+  },
+  {
+    "code": "legacy_general_missing",
+    "params": {},
+    "template": "config.json: Abschnitt «General» fehlt – keine Konfiguration des früheren Programms.",
+    "text": "config.json: Abschnitt «General» fehlt – keine Konfiguration des früheren Programms."
+  },
+  {
+    "code": "series_unreadable",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zeitreihe {path} nicht lesbar: {detail}",
+    "text": "Zeitreihe Person 2 nicht lesbar: Person 2"
+  },
+  {
+    "code": "series_file_empty",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zeitreihe {name}: Datei ist leer",
+    "text": "Zeitreihe Person 2: Datei ist leer"
+  },
+  {
+    "code": "series_column_missing",
+    "params": {
+      "column": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zeitreihe {name}: Spalte «{column}» fehlt",
+    "text": "Zeitreihe Person 2: Spalte «Person 2» fehlt"
+  },
+  {
+    "code": "series_line_problem",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zeitreihe {name}, Zeile {row}: {problem}",
+    "text": "Zeitreihe Person 2, Zeile Person 2: Person 2"
+  },
+  {
+    "code": "month_invalid",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{value}» ist kein gültiger Monat (erwartet JJJJ-MM)",
+    "text": "«Person 2» ist kein gültiger Monat (erwartet JJJJ-MM)"
+  },
+  {
+    "code": "year_invalid",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{value}» ist kein Jahr (1000 bis 9999)",
+    "text": "«Person 2» ist kein Jahr (1000 bis 9999)"
+  },
+  {
+    "code": "series_dates_not_continuous",
+    "params": {},
+    "template": "Datum fehlt oder ist nicht fortlaufend",
+    "text": "Datum fehlt oder ist nicht fortlaufend"
+  },
+  {
+    "code": "not_a_number",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{value}» ist keine Zahl",
+    "text": "«Person 2» ist keine Zahl"
+  },
+  {
+    "code": "series_no_data",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zeitreihe {name}: keine Daten",
+    "text": "Zeitreihe Person 2: keine Daten"
+  },
+  {
+    "code": "historical_start_outside",
+    "params": {
+      "first": "2031-07",
+      "last": "2031-07",
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "start": "2031-07"
+    },
+    "template": "Historischer Start {start:ym} liegt ausserhalb der Zeitreihe {name} ({first:ym} – {last:ym})",
+    "text": "Historischer Start 07.2031 liegt ausserhalb der Zeitreihe Person 2 (07.2031 – 07.2031)"
+  },
+  {
+    "code": "raw_error",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{detail}",
+    "text": "Person 2"
+  },
+  {
+    "code": "percent_value",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{value} %",
+    "text": "Person 2 %"
+  },
+  {
+    "code": "optimize_range_invalid",
+    "params": {
+      "hi": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lo": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "strategy": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{strategy}, {param}: Die Bandbreite von {lo} bis {hi} ist ungültig («von» darf nicht grösser als «bis» sein).",
+    "text": "Person 2, Person 2: Die Bandbreite von Person 2 bis Person 2 ist ungültig («von» darf nicht grösser als «bis» sein)."
+  },
+  {
+    "code": "optimize_range_limits",
+    "params": {
+      "max": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "min": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "param": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "strategy": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{strategy}, {param}: Die Bandbreite muss zwischen {min} und {max} liegen.",
+    "text": "Person 2, Person 2: Die Bandbreite muss zwischen Person 2 und Person 2 liegen."
+  },
+  {
+    "code": "optimize_no_retirement",
+    "params": {},
+    "template": "Die Planung hat keine Pensionierung.",
+    "text": "Die Planung hat keine Pensionierung."
+  },
+  {
+    "code": "optimize_strategy_unknown",
+    "params": {
+      "strategy": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Unbekannte Strategie «{strategy}» (standard, three_buckets, three_buckets_guardrails, guardrails, fixed_rate, vpw, endowment, all)",
+    "text": "Unbekannte Strategie «Person 2» (standard, three_buckets, three_buckets_guardrails, guardrails, fixed_rate, vpw, endowment, all)"
+  },
+  {
+    "code": "optimize_ruin_range",
+    "params": {},
+    "template": "Die Ruingrenze muss zwischen 0 % und 100 % liegen.",
+    "text": "Die Ruingrenze muss zwischen 0 % und 100 % liegen."
+  },
+  {
+    "code": "optimize_paths_positive",
+    "params": {},
+    "template": "Die Anzahl Pfade muss grösser als 0 sein.",
+    "text": "Die Anzahl Pfade muss grösser als 0 sein."
+  },
+  {
+    "code": "optimize_keep_property_without_property",
+    "params": {},
+    "template": "Das Ziel «Kein Notverkauf von Immobilien» braucht eine Planung mit mindestens einer Immobilie.",
+    "text": "Das Ziel «Kein Notverkauf von Immobilien» braucht eine Planung mit mindestens einer Immobilie."
+  },
+  {
+    "code": "optimize_min_consumption_range",
+    "params": {},
+    "template": "Der Mindestkonsum muss zwischen 0 % und 200 % der geplanten Ausgaben liegen.",
+    "text": "Der Mindestkonsum muss zwischen 0 % und 200 % der geplanten Ausgaben liegen."
+  },
+  {
+    "code": "optimize_no_pk_payout",
+    "params": {},
+    "template": "Die Planung hat keine Pensionierung (Pensionskasse «Bezug ab»).",
+    "text": "Die Planung hat keine Pensionierung (Pensionskasse «Bezug ab»)."
+  },
+  {
+    "code": "plan_incomplete",
+    "params": {},
+    "template": "Die Projektdatei ist unvollständig.",
+    "text": "Die Projektdatei ist unvollständig."
+  },
+  {
+    "code": "plan_incomplete_detail",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Projektdatei ist unvollständig: {detail}",
+    "text": "Die Projektdatei ist unvollständig: Person 2"
+  },
+  {
+    "code": "legacy_config_detected",
+    "params": {},
+    "template": "Das ist eine Konfiguration des bisherigen Programms – bitte «Alte config.json importieren» verwenden.",
+    "text": "Das ist eine Konfiguration des bisherigen Programms – bitte «Alte config.json importieren» verwenden."
+  },
+  {
+    "code": "variation_selection_without_param",
+    "params": {},
+    "template": "Auswahl der Variation ohne Parameter",
+    "text": "Auswahl der Variation ohne Parameter"
+  },
+  {
+    "code": "path_index_outside",
+    "params": {
+      "index": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "max": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Pfadnummer {index} ausserhalb von 0 bis {max}",
+    "text": "Pfadnummer Person 2 ausserhalb von 0 bis Person 2"
+  },
+  {
+    "code": "currency_mismatch",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "plan_currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "series": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Zeitreihe «{series}» ist in {currency}, die Planung in {plan_currency}. Renditen und Inflation gelten dann für {currency}.",
+    "text": "Die Zeitreihe «Person 2» ist in Person 2, die Planung in Person 2. Renditen und Inflation gelten dann für Person 2."
+  },
+  {
+    "code": "preview_model_and_series",
+    "params": {
+      "bonds": 0.0371,
+      "inflation": 0.0371,
+      "stocks": 0.0371
+    },
+    "template": "Vorschau mit der erwarteten Aktienrendite des Modells ({stocks:pct1} % pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen {bonds:pct1} %, Inflation {inflation:pct1} % pro Jahr.",
+    "text": "Vorschau mit der erwarteten Aktienrendite des Modells (3.7 % pro Jahr) und den Durchschnitten der Zeitreihe: Obligationen 3.7 %, Inflation 3.7 % pro Jahr."
+  },
+  {
+    "code": "preview_model",
+    "params": {
+      "stocks": 0.0371
+    },
+    "template": "Vorschau mit der erwarteten Aktienrendite des Modells ({stocks:pct1} % pro Jahr).",
+    "text": "Vorschau mit der erwarteten Aktienrendite des Modells (3.7 % pro Jahr)."
+  },
+  {
+    "code": "preview_series",
+    "params": {
+      "bonds": 0.0371,
+      "inflation": 0.0371,
+      "stocks": 0.0371
+    },
+    "template": "Vorschau mit den Durchschnitten der Zeitreihe: Aktien {stocks:pct1} %, Obligationen {bonds:pct1} %, Inflation {inflation:pct1} % pro Jahr.",
+    "text": "Vorschau mit den Durchschnitten der Zeitreihe: Aktien 3.7 %, Obligationen 3.7 %, Inflation 3.7 % pro Jahr."
+  },
+  {
+    "code": "plan_errors",
+    "params": {
+      "errors": [
+        {
+          "code": "person_n",
+          "params": {
+            "n": 1
+          },
+          "text": "Person 1"
+        },
+        {
+          "code": "person_n",
+          "params": {
+            "n": 2
+          },
+          "text": "Person 2"
+        }
+      ]
+    },
+    "template": "{errors:lines}",
+    "text": "Person 1\nPerson 2"
+  },
+  {
+    "code": "tranche_period_start_missing",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Beginn der laufenden Hypothekarperiode fehlt",
+    "text": "Person 2: Beginn der laufenden Hypothekarperiode fehlt"
+  },
+  {
+    "code": "property_reference_missing",
+    "params": {
+      "id": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: Immobilie «{id}» gibt es nicht",
+    "text": "Person 2: Immobilie «Person 2» gibt es nicht"
+  },
+  {
+    "code": "empty",
+    "params": {},
+    "template": "",
+    "text": ""
+  },
+  {
+    "code": "reasons",
+    "params": {
+      "items": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{items}",
+    "text": "Person 2"
+  },
+  {
+    "code": "suffix_name",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": " ({name})",
+    "text": " (Person 2)"
+  },
+  {
+    "code": "suffix_person",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": " (Person {n})",
+    "text": " (Person Person 2)"
+  },
+  {
+    "code": "event_sale",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "debt": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "tax": 12345.678,
+      "value": 12345.678
+    },
+    "template": "Verkauf {name}: Wert {value:fix0} {currency}, Hypothek {debt:fix0} {currency}, Grundstückgewinnsteuer {tax:fix0} {currency}",
+    "text": "Verkauf Person 2: Wert 12346 Person 2, Hypothek 12346 Person 2, Grundstückgewinnsteuer 12346 Person 2"
+  },
+  {
+    "code": "event_emergency_sale",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "debt": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "tax": 12345.678,
+      "value": 12345.678
+    },
+    "template": "Notverkauf {name}: Wert {value:fix0} {currency}, Hypothek {debt:fix0} {currency}, Grundstückgewinnsteuer {tax:fix0} {currency}",
+    "text": "Notverkauf Person 2: Wert 12346 Person 2, Hypothek 12346 Person 2, Grundstückgewinnsteuer 12346 Person 2"
+  },
+  {
+    "code": "event_sale_reserved",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Verkaufserlös {name} ({amount:fix0} {currency}) reserviert für Kauf im Folgemonat",
+    "text": "Verkaufserlös Person 2 (12346 Person 2) reserviert für Kauf im Folgemonat"
+  },
+  {
+    "code": "note_sale_reserved",
+    "params": {},
+    "template": "Verkaufserlös reserviert für Kauf im Folgemonat",
+    "text": "Verkaufserlös reserviert für Kauf im Folgemonat"
+  },
+  {
+    "code": "note_withdrawal_applied",
+    "params": {},
+    "template": "Entnahmestrategie angewendet (kein Folgekauf)",
+    "text": "Entnahmestrategie angewendet (kein Folgekauf)"
+  },
+  {
+    "code": "event_purchase_dropped",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Kauf {name} entfällt: Folgeregeln (Miete, weitere Käufe «nach Verkauf») gelten ab dem Folgemonat",
+    "text": "Kauf Person 2 entfällt: Folgeregeln (Miete, weitere Käufe «nach Verkauf») gelten ab dem Folgemonat"
+  },
+  {
+    "code": "event_rent_start",
+    "params": {
+      "names": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Miete ab jetzt: {names}",
+    "text": "Miete ab jetzt: Person 2"
+  },
+  {
+    "code": "event_mortgage_unaffordable_wealth",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lump": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "wealth": 12345.678
+    },
+    "template": "Hypothek {name} nicht mehr tragbar: Einmalzahlung {lump:fix0} {currency} nötig, Vermögen {wealth:fix0} {currency} reicht nicht; Hypothek nicht erneuert, Notverkauf eingeleitet",
+    "text": "Hypothek Person 2 nicht mehr tragbar: Einmalzahlung 12346 Person 2 nötig, Vermögen 12346 Person 2 reicht nicht; Hypothek nicht erneuert, Notverkauf eingeleitet"
+  },
+  {
+    "code": "event_mortgage_unaffordable_criterion",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lump": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Hypothek {name} nicht mehr tragbar: Einmalzahlung {lump:fix0} {currency} nötig, danach würde das Notverkaufskriterium auslösen; Hypothek nicht erneuert, Notverkauf eingeleitet",
+    "text": "Hypothek Person 2 nicht mehr tragbar: Einmalzahlung 12346 Person 2 nötig, danach würde das Notverkaufskriterium auslösen; Hypothek nicht erneuert, Notverkauf eingeleitet"
+  },
+  {
+    "code": "event_mortgage_lump_sum",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "debt": 12345.678,
+      "lump": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Einmalrückzahlung Hypothek {name} für die Tragbarkeit: {lump:fix0} {currency}, Hypothek neu {debt:fix0} {currency}",
+    "text": "Einmalrückzahlung Hypothek Person 2 für die Tragbarkeit: 12346 Person 2, Hypothek neu 12346 Person 2"
+  },
+  {
+    "code": "event_purchase_impossible",
+    "params": {
+      "available": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "needed": 12345.678
+    },
+    "template": "Kauf {name} nicht möglich: Eigenmittel {needed:fix0} {currency} nötig, vorhanden {available:fix0} {currency}",
+    "text": "Kauf Person 2 nicht möglich: Eigenmittel 12346 Person 2 nötig, vorhanden 12346 Person 2"
+  },
+  {
+    "code": "event_purchase",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "mortgage": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "price": 12345.678
+    },
+    "template": "Kauf {name}: Preis {price:fix0} {currency}, Hypothek {mortgage:fix0} {currency}",
+    "text": "Kauf Person 2: Preis 12346 Person 2, Hypothek 12346 Person 2"
+  },
+  {
+    "code": "event_purchase_lump_sum",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lump": 12345.678,
+      "mortgage": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "price": 12345.678
+    },
+    "template": "Kauf {name}: Preis {price:fix0} {currency}, Hypothek {mortgage:fix0} {currency}, Einmalrückzahlung {lump:fix0} {currency} für die Tragbarkeit",
+    "text": "Kauf Person 2: Preis 12346 Person 2, Hypothek 12346 Person 2, Einmalrückzahlung 12346 Person 2 für die Tragbarkeit"
+  },
+  {
+    "code": "event_mortgage_period",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "rate": 0.0371,
+      "tranche": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Neue Hypothekarperiode {name}{tranche}: {rate:pct2} %, {amount:fix0} {currency}",
+    "text": "Neue Hypothekarperiode Person 2Person 2: 3.71 %, 12346 Person 2"
+  },
+  {
+    "code": "event_mortgage_repaid",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Rückzahlung Hypothek {name}: {amount:fix0} {currency}",
+    "text": "Rückzahlung Hypothek Person 2: 12346 Person 2"
+  },
+  {
+    "code": "event_amortization_direct",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "tranche": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Amortisation Hypothek {name}{tranche} ab AHV-Bezug{who} direkt statt über die Säule 3a: {amount:fix0} {currency} pro Jahr",
+    "text": "Amortisation Hypothek Person 2Person 2 ab AHV-BezugPerson 2 direkt statt über die Säule 3a: 12346 Person 2 pro Jahr"
+  },
+  {
+    "code": "event_pillar3a_short",
+    "params": {
+      "available": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "planned": 12345.678,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Säule 3a{who}: Geplant {planned:fix0} {currency}, das Guthaben reicht nur für {available:fix0} {currency}",
+    "text": "Säule 3aPerson 2: Geplant 12346 Person 2, das Guthaben reicht nur für 12346 Person 2"
+  },
+  {
+    "code": "event_pillar3a_payout",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "repaid": 12345.678,
+      "tax": 12345.678,
+      "what": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Säule 3a{who}: {what} {amount:fix0} {currency}, Steuer {tax:fix0} {currency}, an Hypothek {repaid:fix0} {currency}",
+    "text": "Säule 3aPerson 2: Person 2 12346 Person 2, Steuer 12346 Person 2, an Hypothek 12346 Person 2"
+  },
+  {
+    "code": "payout",
+    "params": {},
+    "template": "Auszahlung",
+    "text": "Auszahlung"
+  },
+  {
+    "code": "payout_rest",
+    "params": {},
+    "template": "Auszahlung des Rests beim AHV-Bezug",
+    "text": "Auszahlung des Rests beim AHV-Bezug"
+  },
+  {
+    "code": "event_extra",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "label": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{label}: {amount:fix0} {currency}",
+    "text": "Person 2: 12346 Person 2"
+  },
+  {
+    "code": "event_pk_payout",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lump": 12345.678,
+      "pension": 12345.678,
+      "tax": 12345.678,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Bezug Pensionskasse{who}: Kapitalbezug {lump:fix0} {currency} (Steuer {tax:fix0} {currency}), Rente {pension:fix0} {currency} / Monat",
+    "text": "Bezug PensionskassePerson 2: Kapitalbezug 12346 Person 2 (Steuer 12346 Person 2), Rente 12346 Person 2 / Monat"
+  },
+  {
+    "code": "event_ahv_start",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "pension": 12345.678,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "AHV-Rente{who} {pension:fix0} {currency} / Monat",
+    "text": "AHV-RentePerson 2 12346 Person 2 / Monat"
+  },
+  {
+    "code": "event_withdrawal_start",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "rate": 0.0371,
+      "wealth": 12345.678
+    },
+    "template": "Entnahme {amount:fix0} {currency} pro Jahr ({rate:pct1} % von {wealth:fix0} {currency})",
+    "text": "Entnahme 12346 Person 2 pro Jahr (3.7 % von 12346 Person 2)"
+  },
+  {
+    "code": "event_guardrail_cut",
+    "params": {
+      "adjust": 0.0371,
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "rate": 0.0371
+    },
+    "template": "Leitplanke: Entnahme um {adjust:pct0} % gekürzt auf {amount:fix0} {currency} pro Jahr (Rate {rate:pct1} %)",
+    "text": "Leitplanke: Entnahme um 4 % gekürzt auf 12346 Person 2 pro Jahr (Rate 3.7 %)"
+  },
+  {
+    "code": "event_guardrail_raise",
+    "params": {
+      "adjust": 0.0371,
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "rate": 0.0371
+    },
+    "template": "Leitplanke: Entnahme um {adjust:pct0} % erhöht auf {amount:fix0} {currency} pro Jahr (Rate {rate:pct1} %)",
+    "text": "Leitplanke: Entnahme um 4 % erhöht auf 12346 Person 2 pro Jahr (Rate 3.7 %)"
+  },
+  {
+    "code": "event_strategy_applied",
+    "params": {
+      "reasons": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Entnahmestrategie angewendet nach {reasons}",
+    "text": "Entnahmestrategie angewendet nach Person 2"
+  },
+  {
+    "code": "event_depleted",
+    "params": {},
+    "template": "Vermögen aufgebraucht",
+    "text": "Vermögen aufgebraucht"
+  },
+  {
+    "code": "reason_emergency_criterion",
+    "params": {},
+    "template": "Notverkaufskriterium",
+    "text": "Notverkaufskriterium"
+  },
+  {
+    "code": "reason_wealth_negative",
+    "params": {},
+    "template": "Vermögen < 0",
+    "text": "Vermögen < 0"
+  },
+  {
+    "code": "reason_pots_insufficient",
+    "params": {},
+    "template": "Topf 1, 2 und 3 reichen für die Ausgaben nicht",
+    "text": "Topf 1, 2 und 3 reichen für die Ausgaben nicht"
+  },
+  {
+    "code": "reason_sale_no_follow_up",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Verkauf {name}, kein Folgekauf",
+    "text": "Verkauf Person 2, kein Folgekauf"
+  },
+  {
+    "code": "reason_sale_surplus",
+    "params": {},
+    "template": "Überschuss aus dem Verkaufserlös nach dem Kauf",
+    "text": "Überschuss aus dem Verkaufserlös nach dem Kauf"
+  },
+  {
+    "code": "reason_extra_inflow",
+    "params": {
+      "label": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Mittelzufluss «{label}»",
+    "text": "Mittelzufluss «Person 2»"
+  },
+  {
+    "code": "reason_pk_payout",
+    "params": {},
+    "template": "Pensionskassenauszahlung",
+    "text": "Pensionskassenauszahlung"
+  },
+  {
+    "code": "reason_pk_lump_sum",
+    "params": {},
+    "template": "PK-Kapitalbezug",
+    "text": "PK-Kapitalbezug"
+  },
+  {
+    "code": "reason_wealth_positive_again",
+    "params": {},
+    "template": "Vermögen wieder positiv (Neustart nach Phase 8)",
+    "text": "Vermögen wieder positiv (Neustart nach Phase 8)"
+  },
+  {
+    "code": "reason_withdrawal_start",
+    "params": {},
+    "template": "Start der Entnahmephase",
+    "text": "Start der Entnahmephase"
+  },
+  {
+    "code": "reason_january",
+    "params": {},
+    "template": "Januar",
+    "text": "Januar"
+  },
+  {
+    "code": "why_sale",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Verkauf {name}",
+    "text": "Verkauf Person 2"
+  },
+  {
+    "code": "why_extra",
+    "params": {
+      "label": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{label}»",
+    "text": "«Person 2»"
+  },
+  {
+    "code": "why_pillar3a",
+    "params": {},
+    "template": "Auszahlung Säule 3a",
+    "text": "Auszahlung Säule 3a"
+  },
+  {
+    "code": "why_reservation_surplus",
+    "params": {},
+    "template": "Überschuss der Reservierung nach dem Kauf",
+    "text": "Überschuss der Reservierung nach dem Kauf"
+  },
+  {
+    "code": "event_buckets_reservation_inflow",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "why": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "3-Topf Zufluss in die Reservierung ({why}): {amount:fix0} {currency}",
+    "text": "3-Topf Zufluss in die Reservierung (Person 2): 12346 Person 2"
+  },
+  {
+    "code": "reason_reservation_inflow",
+    "params": {
+      "why": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zufluss in die Reservierung ({why})",
+    "text": "Zufluss in die Reservierung (Person 2)"
+  },
+  {
+    "code": "event_buckets_inflow_external",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "pot1": 12345.678,
+      "pot2": 12345.678,
+      "pot3": 12345.678,
+      "why": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "3-Topf extern nach Topf 3 ({why}): {amount:fix0} {currency}; Topf 1/2/3 nachher {pot1:fix0} {currency} / {pot2:fix0} {currency} / {pot3:fix0} {currency}",
+    "text": "3-Topf extern nach Topf 3 (Person 2): 12346 Person 2; Topf 1/2/3 nachher 12346 Person 2 / 12346 Person 2 / 12346 Person 2"
+  },
+  {
+    "code": "event_buckets_inflow_reservation",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "pot1": 12345.678,
+      "pot2": 12345.678,
+      "pot3": 12345.678,
+      "why": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "3-Topf Reservierung nach Topf 3 ({why}): {amount:fix0} {currency}; Topf 1/2/3 nachher {pot1:fix0} {currency} / {pot2:fix0} {currency} / {pot3:fix0} {currency}",
+    "text": "3-Topf Reservierung nach Topf 3 (Person 2): 12346 Person 2; Topf 1/2/3 nachher 12346 Person 2 / 12346 Person 2 / 12346 Person 2"
+  },
+  {
+    "code": "reason_inflow_pot3",
+    "params": {
+      "why": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zufluss nach Topf 3 ({why})",
+    "text": "Zufluss nach Topf 3 (Person 2)"
+  },
+  {
+    "code": "criterion_ignored",
+    "params": {},
+    "template": "Kriterium ignoriert",
+    "text": "Kriterium ignoriert"
+  },
+  {
+    "code": "criterion_met",
+    "params": {
+      "basis": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "stock_return": 0.0371,
+      "threshold": 0.0371
+    },
+    "template": "Aktienrendite {stock_return:pct1} % ({basis}) ≥ Schwelle {threshold:pct1} %",
+    "text": "Aktienrendite 3.7 % (Person 2) ≥ Schwelle 3.7 %"
+  },
+  {
+    "code": "criterion_not_met",
+    "params": {
+      "basis": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "stock_return": 0.0371,
+      "threshold": 0.0371
+    },
+    "template": "Aktienrendite {stock_return:pct1} % ({basis}) < Schwelle {threshold:pct1} %",
+    "text": "Aktienrendite 3.7 % (Person 2) < Schwelle 3.7 %"
+  },
+  {
+    "code": "return_last_12_months",
+    "params": {},
+    "template": "letzte 12 Monate",
+    "text": "letzte 12 Monate"
+  },
+  {
+    "code": "return_since_start",
+    "params": {},
+    "template": "seit Start",
+    "text": "seit Start"
+  },
+  {
+    "code": "event_buckets_refill",
+    "params": {
+      "after1": 12345.678,
+      "after2": 12345.678,
+      "after3": 12345.678,
+      "before1": 12345.678,
+      "before2": 12345.678,
+      "before3": 12345.678,
+      "criterion": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "expenses": 12345.678,
+      "need": 12345.678,
+      "reason": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "receipts": 12345.678,
+      "source": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "target1": 12345.678,
+      "target2": 12345.678
+    },
+    "template": "3-Topf aufgefüllt ({reason}): Netto-Bedarf {need:fix0} {currency} (Ausgaben {expenses:fix0} {currency} − Einnahmen {receipts:fix0} {currency}, {source}); Ziel Topf 1 {target1:fix0} {currency}, Topf 2 {target2:fix0} {currency}; {criterion}; Topf 1/2/3 vorher {before1:fix0} {currency} / {before2:fix0} {currency} / {before3:fix0} {currency}, nachher {after1:fix0} {currency} / {after2:fix0} {currency} / {after3:fix0} {currency}",
+    "text": "3-Topf aufgefüllt (Person 2): Netto-Bedarf 12346 Person 2 (Ausgaben 12346 Person 2 − Einnahmen 12346 Person 2, Person 2); Ziel Topf 1 12346 Person 2, Topf 2 12346 Person 2; Person 2; Topf 1/2/3 vorher 12346 Person 2 / 12346 Person 2 / 12346 Person 2, nachher 12346 Person 2 / 12346 Person 2 / 12346 Person 2"
+  },
+  {
+    "code": "reason_lookahead_met",
+    "params": {
+      "passed": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Vorausschau: Topf 1 deckt die Ausgaben des Monats nicht, Renditekriterium erfüllt ({passed} Monate seit Januar)",
+    "text": "Vorausschau: Topf 1 deckt die Ausgaben des Monats nicht, Renditekriterium erfüllt (Person 2 Monate seit Januar)"
+  },
+  {
+    "code": "reason_lookahead_not_met",
+    "params": {
+      "months": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Vorausschau: Topf 1 deckt die Ausgaben des Monats nicht, Renditekriterium nicht erfüllt ({months} Monate bis Januar)",
+    "text": "Vorausschau: Topf 1 deckt die Ausgaben des Monats nicht, Renditekriterium nicht erfüllt (Person 2 Monate bis Januar)"
+  },
+  {
+    "code": "event_buckets_c2",
+    "params": {
+      "after1": 12345.678,
+      "after2": 12345.678,
+      "after3": 12345.678,
+      "before1": 12345.678,
+      "before2": 12345.678,
+      "before3": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "payment": 12345.678
+    },
+    "template": "3-Topf C2 Auffüllung Topf 1 vor der Zahlung (Topf 1 deckt die Ausgaben {payment:fix0} {currency} nicht): Topf 1/2/3 vorher {before1:fix0} {currency} / {before2:fix0} {currency} / {before3:fix0} {currency}, nachher {after1:fix0} {currency} / {after2:fix0} {currency} / {after3:fix0} {currency}",
+    "text": "3-Topf C2 Auffüllung Topf 1 vor der Zahlung (Topf 1 deckt die Ausgaben 12346 Person 2 nicht): Topf 1/2/3 vorher 12346 Person 2 / 12346 Person 2 / 12346 Person 2, nachher 12346 Person 2 / 12346 Person 2 / 12346 Person 2"
+  },
+  {
+    "code": "event_buckets_empty",
+    "params": {
+      "cash": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "3-Topf: alle Töpfe leer, keine Immobilie mehr – Topf 1 ist im Minus ({cash:fix0} {currency}), Topf 2 und 3 sind stillgelegt",
+    "text": "3-Topf: alle Töpfe leer, keine Immobilie mehr – Topf 1 ist im Minus (12346 Person 2), Topf 2 und 3 sind stillgelegt"
+  },
+  {
+    "code": "basis_january",
+    "params": {},
+    "template": "Januar, geplant",
+    "text": "Januar, geplant"
+  },
+  {
+    "code": "basis_from",
+    "params": {
+      "month": "2031-07"
+    },
+    "template": "ab {month:ym}",
+    "text": "ab 07.2031"
+  },
+  {
+    "code": "basis_from_extrapolated",
+    "params": {
+      "month": "2031-07"
+    },
+    "template": "ab {month:ym}, auf 12 Monate hochgerechnet",
+    "text": "ab 07.2031, auf 12 Monate hochgerechnet"
+  },
+  {
+    "code": "path_fixed",
+    "params": {},
+    "template": "Fixe Renditen",
+    "text": "Fixe Renditen"
+  },
+  {
+    "code": "path_historical",
+    "params": {
+      "start": "2031-07"
+    },
+    "template": "Historisch ab {start:ym}",
+    "text": "Historisch ab 07.2031"
+  },
+  {
+    "code": "path_historical_year",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Historisch ab {year}",
+    "text": "Historisch ab Person 2"
+  },
+  {
+    "code": "path_bootstrap",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Bootstrap-Pfad {n}",
+    "text": "Bootstrap-Pfad Person 2"
+  },
+  {
+    "code": "path_random",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Zufallspfad {n}",
+    "text": "Zufallspfad Person 2"
+  },
+  {
+    "code": "note_parametric",
+    "params": {},
+    "template": "Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig, korreliert mit den Aktien gemäss der Anlagestrategie (bisher fixe Werte). Ihre Parameter des Aktienmodells bleiben; die Vorschlagswerte für den Aktienindex stehen im Reiter «Simulation». Das Ergebnis ändert sich.",
+    "text": "Monte Carlo parametrisch rechnet neu auch Obligationen und Inflation zufällig, korreliert mit den Aktien gemäss der Anlagestrategie (bisher fixe Werte). Ihre Parameter des Aktienmodells bleiben; die Vorschlagswerte für den Aktienindex stehen im Reiter «Simulation». Das Ergebnis ändert sich."
+  },
+  {
+    "code": "note_sampler",
+    "params": {},
+    "template": "Monte Carlo parametrisch erzeugt die Zufallspfade mit einem schnelleren Verfahren. Die Verteilung der Renditen bleibt gleich, die einzelnen Pfade sind aber andere. Das Ergebnis ändert sich deshalb leicht; mit demselben Zufallsstartwert bleibt es wiederholbar.",
+    "text": "Monte Carlo parametrisch erzeugt die Zufallspfade mit einem schnelleren Verfahren. Die Verteilung der Renditen bleibt gleich, die einzelnen Pfade sind aber andere. Das Ergebnis ändert sich deshalb leicht; mit demselben Zufallsstartwert bleibt es wiederholbar."
+  },
+  {
+    "code": "note_strategy_usd",
+    "params": {},
+    "template": "Die Zeitreihe «Shiller USD» (in USD) wird durch die Anlagestrategie S&P 500 mit US-Obligationen in CHF ersetzt; alle Strategien rechnen in CHF. Das Ergebnis ändert sich.",
+    "text": "Die Zeitreihe «Shiller USD» (in USD) wird durch die Anlagestrategie S&P 500 mit US-Obligationen in CHF ersetzt; alle Strategien rechnen in CHF. Das Ergebnis ändert sich."
+  },
+  {
+    "code": "note_cash",
+    "params": {},
+    "template": "Cash wird neu bis zur Pensionierung (Bezug Pensionskasse) auf dem erfassten Betrag gehalten, mit der Teuerung fortgeschrieben; ein Überschuss geht ins Portfolio. Die Entnahmestrategie, auch «Standard» mit ihrer Cash-Reserve, gilt erst ab der Pensionierung. Das Ergebnis kann sich deshalb ändern.",
+    "text": "Cash wird neu bis zur Pensionierung (Bezug Pensionskasse) auf dem erfassten Betrag gehalten, mit der Teuerung fortgeschrieben; ein Überschuss geht ins Portfolio. Die Entnahmestrategie, auch «Standard» mit ihrer Cash-Reserve, gilt erst ab der Pensionierung. Das Ergebnis kann sich deshalb ändern."
+  },
+  {
+    "code": "note_pictet_stocks",
+    "params": {},
+    "template": "für die Aktien «Schweiz (JST)»",
+    "text": "für die Aktien «Schweiz (JST)»"
+  },
+  {
+    "code": "note_pictet_bonds",
+    "params": {},
+    "template": "für die Obligationen «Eidgenossenschaft 10 Jahre»",
+    "text": "für die Obligationen «Eidgenossenschaft 10 Jahre»"
+  },
+  {
+    "code": "note_pictet",
+    "params": {
+      "parts": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Der Index «Schweiz (Pictet)» wird aus Lizenzgründen nicht mehr mitgeliefert. Die Anlagestrategie verwendet jetzt {parts}; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich.",
+    "text": "Der Index «Schweiz (Pictet)» wird aus Lizenzgründen nicht mehr mitgeliefert. Die Anlagestrategie verwendet jetzt Person 2; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich."
+  },
+  {
+    "code": "note_pictet_both",
+    "params": {
+      "first": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "second": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Der Index «Schweiz (Pictet)» wird aus Lizenzgründen nicht mehr mitgeliefert. Die Anlagestrategie verwendet jetzt {first} und {second}; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich.",
+    "text": "Der Index «Schweiz (Pictet)» wird aus Lizenzgründen nicht mehr mitgeliefert. Die Anlagestrategie verwendet jetzt Person 2 und Person 2; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich."
+  },
+  {
+    "code": "note_own_series",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die eigene Zeitreihe «{name}» wird nicht mehr unterstützt. Die Anlagestrategie ist jetzt «Welt (JST)» mit Obligationen der Eidgenossenschaft; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich.",
+    "text": "Die eigene Zeitreihe «Person 2» wird nicht mehr unterstützt. Die Anlagestrategie ist jetzt «Welt (JST)» mit Obligationen der Eidgenossenschaft; bitte unter «Vermögen & Anlage» prüfen. Das Ergebnis ändert sich."
+  },
+  {
+    "code": "note_spending_includes_housing",
+    "params": {
+      "housing": 12345.678
+    },
+    "template": "Die Lebenshaltungskosten enthalten neu die Wohnkosten. Die Wohnkosten zum Simulationsstart ({housing:fix0} pro Monat) sind zu jedem Wert addiert; das Ergebnis bleibt gleich.",
+    "text": "Die Lebenshaltungskosten enthalten neu die Wohnkosten. Die Wohnkosten zum Simulationsstart (12346 pro Monat) sind zu jedem Wert addiert; das Ergebnis bleibt gleich."
+  },
+  {
+    "code": "note_milestone_added",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "years": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Der Meilenstein «{name}» fehlte und steht neu auf {years} Jahren.",
+    "text": "Der Meilenstein «Person 2» fehlte und steht neu auf Person 2 Jahren."
+  },
+  {
+    "code": "note_milestone_renamed",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "old": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Der Meilenstein «{old}» heisst neu «{name}».",
+    "text": "Der Meilenstein «Person 2» heisst neu «Person 2»."
+  },
+  {
+    "code": "note_milestone_age_limited",
+    "params": {
+      "age": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "hi": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lo": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "years": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{name}» lag bei {age} Jahren, ausserhalb der Grenzen {lo} bis {hi} Jahre; neu {years} Jahre.",
+    "text": "«Person 2» lag bei Person 2 Jahren, ausserhalb der Grenzen Person 2 bis Person 2 Jahre; neu Person 2 Jahre."
+  },
+  {
+    "code": "note_milestone_own_person",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "years": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "«{name}» bezieht sich neu auf das Alter der eigenen Person ({years} Jahre).",
+    "text": "«Person 2» bezieht sich neu auf das Alter der eigenen Person (Person 2 Jahre)."
+  },
+  {
+    "code": "note_pk_reference",
+    "params": {
+      "milestone": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "old": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Der Bezug der Pensionskasse beginnt neu am Meilenstein «{milestone}» (bisher «{old}»).",
+    "text": "Der Bezug der Pensionskasse beginnt neu am Meilenstein «Person 2» (bisher «Person 2»)."
+  },
+  {
+    "code": "note_ahv_reference",
+    "params": {
+      "milestone": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "old": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die AHV-Rente beginnt neu am Meilenstein «{milestone}» (bisher «{old}»).",
+    "text": "Die AHV-Rente beginnt neu am Meilenstein «Person 2» (bisher «Person 2»)."
+  },
+  {
+    "code": "note_pillar3a_repay_to_wealth",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Säule 3a von «{name}»: «Hypothek zurückzahlen» setzt neu eine Tranche mit indirekter Amortisation voraus; die Auszahlung geht ins freie Vermögen.",
+    "text": "Säule 3a von «Person 2»: «Hypothek zurückzahlen» setzt neu eine Tranche mit indirekter Amortisation voraus; die Auszahlung geht ins freie Vermögen."
+  },
+  {
+    "code": "note_pillar3a_account_rest_at_ahv",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Säule 3a von «{name}» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); der Rest wird im Monat des AHV-Bezugs ausbezahlt.",
+    "text": "Die Säule 3a von «Person 2» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); der Rest wird im Monat des AHV-Bezugs ausbezahlt."
+  },
+  {
+    "code": "note_pillar3a_account_moved",
+    "params": {
+      "date": "2031-07",
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "old": "2031-07"
+    },
+    "template": "Die Säule 3a von «{name}» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); die Auszahlung ({old:ym}) lag mehr als 5 Jahre vor dem AHV-Bezug und ist neu im {date:ym}.",
+    "text": "Die Säule 3a von «Person 2» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); die Auszahlung (07.2031) lag mehr als 5 Jahre vor dem AHV-Bezug und ist neu im 07.2031."
+  },
+  {
+    "code": "note_pillar3a_account_payout",
+    "params": {
+      "date": "2031-07",
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Säule 3a von «{name}» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); Auszahlung des ganzen Guthabens im {date:ym}.",
+    "text": "Die Säule 3a von «Person 2» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); Auszahlung des ganzen Guthabens im 07.2031."
+  },
+  {
+    "code": "note_pillar3a_account_no_date",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Die Säule 3a von «{name}» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt.",
+    "text": "Die Säule 3a von «Person 2» ist neu ein eigenes 3a-Konto (Abschnitt «Säule 3a»); ohne Auszahlungszeitpunkt wird das Guthaben im Monat des AHV-Bezugs ausbezahlt."
+  },
+  {
+    "code": "note_pillar3a_merged",
+    "params": {
+      "rate": 0.0371
+    },
+    "template": "Mehrere 3a-Guthaben sind zu einem Konto zusammengefasst (Zins des ersten Kontos: {rate:pct2} %).",
+    "text": "Mehrere 3a-Guthaben sind zu einem Konto zusammengefasst (Zins des ersten Kontos: 3.71 %)."
+  },
+  {
+    "code": "legacy_lumpsums_merged",
+    "params": {},
+    "template": "Mehrere Kapitalbezüge (LumpsumRatio) werden zu einem Bezug bei der Pensionierung zusammengefasst.",
+    "text": "Mehrere Kapitalbezüge (LumpsumRatio) werden zu einem Bezug bei der Pensionierung zusammengefasst."
+  },
+  {
+    "code": "legacy_monte_carlo",
+    "params": {},
+    "template": "Monte Carlo übernommen (parametrisches Aktienmodell wie bisher); Obligationen und Inflation folgen den fixen Werten.",
+    "text": "Monte Carlo übernommen (parametrisches Aktienmodell wie bisher); Obligationen und Inflation folgen den fixen Werten."
+  },
+  {
+    "code": "legacy_iteration",
+    "params": {},
+    "template": "CalculationMode «Iteration» wird nicht übernommen; Variationen lassen sich als Szenarien erfassen.",
+    "text": "CalculationMode «Iteration» wird nicht übernommen; Variationen lassen sich als Szenarien erfassen."
+  },
+  {
+    "code": "legacy_property_ignored",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "status": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Immobilie «{name}» mit Status «{status}» wird ignoriert.",
+    "text": "Immobilie «Person 2» mit Status «Person 2» wird ignoriert."
+  },
+  {
+    "code": "legacy_properties_approximate",
+    "params": {},
+    "template": "Immobilien werden näherungsweise übernommen: Hypotheken werden zu gleichen Konditionen verlängert (Tragbarkeit nur noch beim Kauf nach Verkauf), Amortisation pro Quartal = 3/4 des alten Werts (gleicher monatlicher Aufwand).",
+    "text": "Immobilien werden näherungsweise übernommen: Hypotheken werden zu gleichen Konditionen verlängert (Tragbarkeit nur noch beim Kauf nach Verkauf), Amortisation pro Quartal = 3/4 des alten Werts (gleicher monatlicher Aufwand)."
+  },
+  {
+    "code": "path_missing",
+    "params": {},
+    "template": "Pfad fehlt",
+    "text": "Pfad fehlt"
+  },
+  {
+    "code": "command_desktop_only",
+    "params": {
+      "cmd": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Befehl «{cmd}» gibt es nur in der Desktop-App",
+    "text": "Befehl «Person 2» gibt es nur in der Desktop-App"
+  }
+]

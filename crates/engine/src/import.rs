@@ -17,8 +17,8 @@ use crate::{Error, Result};
 /// Monthly values with gaps.
 pub type Monthly = BTreeMap<YearMonth, f64>;
 
-fn invalid(s: impl Into<String>) -> Error {
-    Error::Invalid(s.into())
+fn invalid(m: crate::message::Message) -> Error {
+    Error::Invalid(m)
 }
 
 // ---------- Shiller ----------
@@ -35,10 +35,14 @@ pub struct ShillerRaw {
 
 /// Reads the sheet «Data» of the Shiller file (`.xls`, `.xlsx` or `.ods`).
 pub fn read_shiller(path: &Path) -> Result<ShillerRaw> {
-    let mut wb = open_workbook_auto(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
-    let range = wb
-        .worksheet_range("Data")
-        .map_err(|e| invalid(format!("{}: Blatt «Data» fehlt ({e})", path.display())))?;
+    let mut wb = open_workbook_auto(path).map_err(|e| crate::io_error(path, e))?;
+    let range = wb.worksheet_range("Data").map_err(|e| {
+        invalid(msg!(
+            shiller_sheet_missing,
+            path = path.display().to_string(),
+            detail = e.to_string()
+        ))
+    })?;
     let rows: Vec<Vec<Data>> = range.rows().map(|r| r.to_vec()).collect();
     parse_shiller(&rows)
 }
@@ -72,7 +76,7 @@ pub fn parse_shiller(rows: &[Vec<Data>]) -> Result<ShillerRaw> {
     let head = rows
         .iter()
         .position(|r| r.first().is_some_and(|c| cell_text(c) == "Date"))
-        .ok_or_else(|| invalid("Shiller-Datei: Kopfzeile «Date» nicht gefunden"))?;
+        .ok_or_else(|| invalid(msg!(shiller_header_missing)))?;
     let width = rows[head].len();
     let label = |c: usize| {
         let mut parts = vec![];
@@ -95,7 +99,7 @@ pub fn parse_shiller(rows: &[Vec<Data>]) -> Result<ShillerRaw> {
         labels
             .iter()
             .position(|l| l.contains(want))
-            .ok_or_else(|| invalid(format!("Shiller-Datei: Spalte «{want}» nicht gefunden")))
+            .ok_or_else(|| invalid(msg!(shiller_column_missing, column = want)))
     };
     let c_cpi = col("cpi")?;
     let c_tr = col("real total return price")?;
@@ -117,7 +121,7 @@ pub fn parse_shiller(rows: &[Vec<Data>]) -> Result<ShillerRaw> {
         }
     }
     if raw.cpi.len() < 13 {
-        return Err(invalid("Shiller-Datei: zu wenige Monatswerte"));
+        return Err(invalid(msg!(shiller_too_few)));
     }
     Ok(raw)
 }
@@ -149,7 +153,7 @@ pub fn shiller_dataset(raw: &ShillerRaw) -> Result<DataSet> {
         m = m.plus(1);
     }
     if ds.is_empty() {
-        return Err(invalid("Shiller-Datei: keine durchgehenden Monatswerte"));
+        return Err(invalid(msg!(shiller_gaps)));
     }
     ds.meta = Meta {
         title: Some("Shiller: S&P Composite und 10-jährige US-Staatsanleihen (USD)".into()),
@@ -188,8 +192,8 @@ impl SnbCube {
 }
 
 pub fn read_snb(path: &Path) -> Result<SnbCube> {
-    let text = std::fs::read_to_string(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
-    parse_snb(&text).map_err(|e| invalid(format!("{}: {e}", path.display())))
+    let text = std::fs::read_to_string(path).map_err(|e| crate::io_error(path, e))?;
+    parse_snb(&text).map_err(|e| crate::file_invalid(path, e.message()))
 }
 
 pub fn parse_snb(text: &str) -> Result<SnbCube> {
@@ -213,7 +217,7 @@ pub fn parse_snb(text: &str) -> Result<SnbCube> {
             continue;
         };
         if cells.len() != h.len() {
-            return Err(invalid(format!("SNB-Daten: Zeile «{line}» passt nicht zur Kopfzeile")));
+            return Err(invalid(msg!(snb_line_mismatch, line = line)));
         }
         let value = cells.last().expect("nicht leer");
         if value.is_empty() {
@@ -221,15 +225,15 @@ pub fn parse_snb(text: &str) -> Result<SnbCube> {
         }
         let m: YearMonth = cells[0]
             .parse()
-            .map_err(|e: String| invalid(format!("SNB-Daten: {e}")))?;
+            .map_err(|_: String| invalid(msg!(snb_month_invalid, value = cells[0])))?;
         let v: f64 = value
             .parse()
-            .map_err(|_| invalid(format!("SNB-Daten: «{value}» ist keine Zahl")))?;
+            .map_err(|_| invalid(msg!(snb_not_a_number, value = value)))?;
         let key = cells[1..cells.len() - 1].join("/");
         cube.series.entry(key).or_default().insert(m, v);
     }
     if cube.id.is_empty() || header.is_none() {
-        return Err(invalid("keine SNB-Datei (CubeId bzw. Kopfzeile fehlt)"));
+        return Err(invalid(msg!(snb_not_snb)));
     }
     Ok(cube)
 }
@@ -272,15 +276,11 @@ impl SnbData {
                 id if id == CUBE_CPI.0 => (&mut d.cpi, CUBE_CPI.1),
                 id if id == CUBE_SARON.0 => (&mut d.saron, CUBE_SARON.1),
                 id if id == CUBE_BONDS.0 => (&mut d.ch_yield10, CUBE_BONDS.1),
-                id => {
-                    return Err(invalid(format!(
-                        "SNB-Würfel «{id}» wird nicht verwendet (erwartet: devkum, plkopr, zimoma, rendoblim)"
-                    )))
-                }
+                id => return Err(invalid(msg!(snb_cube_unused_expected, id = id))),
             };
             let s = c
                 .get(key)
-                .ok_or_else(|| invalid(format!("SNB-Würfel {}: Reihe {key} fehlt", c.id)))?;
+                .ok_or_else(|| invalid(msg!(snb_series_missing, cube = c.id, key = key)))?;
             *target = s.clone();
             match &c.published {
                 Some(p) => d.published.insert(c.id.clone(), p.clone()),
@@ -304,10 +304,10 @@ impl SnbData {
             .iter()
             .find(|(id, _)| *id == cube.id)
             .map(|(_, k)| *k)
-            .ok_or_else(|| invalid(format!("SNB-Würfel «{}» wird nicht verwendet", cube.id)))?;
+            .ok_or_else(|| invalid(msg!(snb_cube_unused, id = cube.id)))?;
         let s = cube
             .get(key)
-            .ok_or_else(|| invalid(format!("SNB-Würfel {}: Reihe {key} fehlt", cube.id)))?;
+            .ok_or_else(|| invalid(msg!(snb_series_missing, cube = cube.id, key = key)))?;
         let dims: Vec<&str> = key.split('/').collect();
         let mut out = format!("\"CubeId\";\"{}\"\n", cube.id);
         if let Some(p) = &cube.published {
@@ -328,10 +328,10 @@ impl SnbData {
 /// (empty before its introduction). The series starts in the first month for which all data is available.
 pub fn to_chf(usd: &DataSet, snb: &SnbData) -> Result<DataSet> {
     if usd.freq != Freq::Monthly {
-        return Err(invalid("Die Umrechnung in CHF ist nur für Monatsreihen möglich."));
+        return Err(invalid(msg!(chf_monthly_only)));
     }
     if usd.currency().is_some_and(|c| c != "USD") {
-        return Err(invalid(format!("Die Reihe {} ist nicht in USD.", usd.name)));
+        return Err(invalid(msg!(series_not_usd, name = usd.name)));
     }
     let have = |m: YearMonth| {
         snb.usd_chf.contains_key(&m)
@@ -341,10 +341,10 @@ pub fn to_chf(usd: &DataSet, snb: &SnbData) -> Result<DataSet> {
     };
     let idx: Vec<usize> = (0..usd.len()).filter(|&i| have(usd.first.plus(i as i32))).collect();
     let (Some(&a), Some(&b)) = (idx.first(), idx.last()) else {
-        return Err(invalid("Kurs USD/CHF bzw. Landesindex decken die Reihe nicht ab."));
+        return Err(invalid(msg!(fx_cpi_not_covering)));
     };
     if b - a + 1 != idx.len() {
-        return Err(invalid("Kurs USD/CHF bzw. Landesindex haben Lücken."));
+        return Err(invalid(msg!(fx_cpi_gaps)));
     }
     let mut ds = DataSet {
         name: "Shiller CHF".into(),
@@ -406,18 +406,16 @@ pub fn bond_return(y0: f64, y1: f64) -> f64 {
 /// for which both are available.
 pub fn with_ch_bonds(chf: &DataSet, snb: &SnbData) -> Result<DataSet> {
     if chf.freq != Freq::Monthly || chf.currency() != Some("CHF") {
-        return Err(invalid(
-            "Schweizer Obligationen lassen sich nur mit einer CHF-Monatsreihe kombinieren.",
-        ));
+        return Err(invalid(msg!(ch_bonds_monthly_only)));
     }
     let y = &snb.ch_yield10;
     let have = |m: YearMonth| y.contains_key(&m) && y.contains_key(&m.plus(-1));
     let idx: Vec<usize> = (0..chf.len()).filter(|&i| have(chf.first.plus(i as i32))).collect();
     let (Some(&a), Some(&b)) = (idx.first(), idx.last()) else {
-        return Err(invalid("Die Renditen der Eidgenossenschaft decken die Reihe nicht ab."));
+        return Err(invalid(msg!(ch_bonds_not_covering)));
     };
     if b - a + 1 != idx.len() {
-        return Err(invalid("Die Renditen der Eidgenossenschaft haben Lücken."));
+        return Err(invalid(msg!(ch_bonds_gaps)));
     }
     let mut ds = DataSet {
         name: "Shiller CHF + CH-Obligationen".into(),

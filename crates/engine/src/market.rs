@@ -96,8 +96,13 @@ impl Meta {
 
 impl DataSet {
     pub fn load_csv(path: &Path) -> Result<DataSet> {
-        let text = std::fs::read_to_string(path)
-            .map_err(|e| Error::Io(format!("Zeitreihe {} nicht lesbar: {e}", path.display())))?;
+        let text = std::fs::read_to_string(path).map_err(|e| {
+            Error::Io(msg!(
+                series_unreadable,
+                path = path.display().to_string(),
+                detail = e.to_string()
+            ))
+        })?;
         let name = path
             .file_stem()
             .map(|s| s.to_string_lossy().into_owned())
@@ -125,14 +130,14 @@ impl DataSet {
             );
         let (_, header) = lines
             .next()
-            .ok_or_else(|| Error::Invalid(format!("Zeitreihe {name}: Datei ist leer")))?;
+            .ok_or_else(|| Error::Invalid(msg!(series_file_empty, name = name)))?;
         let cols: Vec<String> = header
             .split(',')
             .map(|c| c.trim().trim_start_matches('\u{feff}').to_lowercase())
             .collect();
         let find = |names: &[&str]| cols.iter().position(|c| names.contains(&c.as_str()));
         let ci = |names: &[&str], label: &str| {
-            find(names).ok_or_else(|| Error::Invalid(format!("Zeitreihe {name}: Spalte «{label}» fehlt")))
+            find(names).ok_or_else(|| Error::Invalid(msg!(series_column_missing, name = name, column = label)))
         };
         let c_stocks = ci(&["stocks", "aktien"], "Stocks")?;
         let c_bonds = ci(&["bonds", "obligationen"], "Bonds")?;
@@ -147,17 +152,23 @@ impl DataSet {
         let mut prev: Option<YearMonth> = None;
         for (lineno, line) in lines {
             let cells: Vec<&str> = line.split(',').map(str::trim).collect();
-            let bad = |what: &str| Error::Invalid(format!("Zeitreihe {name}, Zeile {}: {what}", lineno + 1));
+            let bad = |what: crate::message::Message| {
+                Error::Invalid(msg!(series_line_problem, name = name, row = lineno + 1, problem = what))
+            };
             let date = cells.first().copied().unwrap_or("");
             let (m, freq) = if date.contains('-') {
-                (date.parse::<YearMonth>().map_err(|e| bad(&e))?, Freq::Monthly)
+                (
+                    date.parse::<YearMonth>()
+                        .map_err(|_| bad(msg!(month_invalid, value = date)))?,
+                    Freq::Monthly,
+                )
             } else {
                 // #60: Years four digits as with monthly data; otherwise the month index overflows.
                 let y: i32 = date
                     .parse()
                     .ok()
                     .filter(|y| (1000..=9999).contains(y))
-                    .ok_or_else(|| bad(&format!("«{date}» ist kein Jahr (1000 bis 9999)")))?;
+                    .ok_or_else(|| bad(msg!(year_invalid, value = date)))?;
                 (YearMonth::new(y, 1), Freq::Yearly)
             };
             match prev {
@@ -168,14 +179,14 @@ impl DataSet {
                 Some(p) => {
                     let step = if ds.freq == Freq::Yearly { 12 } else { 1 };
                     if freq != ds.freq || p.0.checked_add(step) != Some(m.0) {
-                        return Err(bad("Datum fehlt oder ist nicht fortlaufend"));
+                        return Err(bad(msg!(series_dates_not_continuous)));
                     }
                 }
             }
             prev = Some(m);
             let num = |c: usize| -> Result<f64> {
                 let s = cells.get(c).copied().unwrap_or("");
-                s.parse::<f64>().map_err(|_| bad(&format!("«{s}» ist keine Zahl")))
+                s.parse::<f64>().map_err(|_| bad(msg!(not_a_number, value = s)))
             };
             ds.stocks.push(num(c_stocks)?);
             ds.bonds.push(num(c_bonds)?);
@@ -186,7 +197,7 @@ impl DataSet {
             }
         }
         if ds.stocks.is_empty() {
-            return Err(Error::Invalid(format!("Zeitreihe {name}: keine Daten")));
+            return Err(Error::Invalid(msg!(series_no_data, name = name)));
         }
         ds.meta = meta;
         Ok(ds)
@@ -275,7 +286,7 @@ impl DataSet {
 /// Values per simulation month `k` (0 = start).
 #[derive(Clone, Debug)]
 pub struct MarketPath {
-    pub label: String,
+    pub label: crate::message::Message,
     /// Monthly returns.
     pub stocks: Vec<f64>,
     pub bonds: Vec<f64>,
@@ -304,7 +315,7 @@ pub struct FixedCurves {
 }
 
 pub fn fixed_path(c: &FixedCurves, start: YearMonth, months: usize) -> MarketPath {
-    let mut p = MarketPath::with_capacity("Fixe Renditen".into(), months);
+    let mut p = MarketPath::with_capacity(msg!(path_fixed), months);
     for k in 0..months {
         let m = start.plus(k as i32);
         p.stocks.push(monthly(c.stocks.at(m)));
@@ -325,7 +336,7 @@ impl MarketPath {
         self.saron.push(c.saron.at(m));
     }
 
-    pub(crate) fn with_capacity(label: String, n: usize) -> Self {
+    pub(crate) fn with_capacity(label: crate::message::Message, n: usize) -> Self {
         MarketPath {
             label,
             stocks: Vec::with_capacity(n),
@@ -349,17 +360,18 @@ pub fn historical_path(
     fixed: &FixedCurves,
 ) -> Result<MarketPath> {
     if hist_start < ds.first || hist_start > ds.last() {
-        return Err(Error::Invalid(format!(
-            "Historischer Start {hist_start} liegt ausserhalb der Zeitreihe {} ({} – {})",
-            ds.name,
-            ds.first,
-            ds.last()
+        return Err(Error::Invalid(msg!(
+            historical_start_outside,
+            start = hist_start,
+            name = ds.name,
+            first = ds.first,
+            last = ds.last()
         )));
     }
     let sim_end = sim_start.plus(months as i32 - 1);
     let label = match ds.freq {
-        Freq::Yearly => format!("Historisch ab {}", hist_start.year()),
-        Freq::Monthly => format!("Historisch ab {hist_start}"),
+        Freq::Yearly => msg!(path_historical_year, year = hist_start.year()),
+        Freq::Monthly => msg!(path_historical, start = hist_start),
     };
     let mut p = MarketPath::with_capacity(label, months);
     // Extrapolation with fixed values: the values of the respective month (may depend on time).

@@ -140,8 +140,8 @@ pub struct JstData {
     rows: BTreeMap<(String, i32), Row>,
 }
 
-fn invalid(s: impl Into<String>) -> Error {
-    Error::Invalid(s.into())
+fn invalid(m: crate::message::Message) -> Error {
+    Error::Invalid(m)
 }
 
 fn num(c: Option<&Data>) -> Option<f64> {
@@ -161,11 +161,11 @@ fn all_countries() -> impl Iterator<Item = &'static str> {
 impl JstData {
     /// Reads the table of the database (`JSTdatasetR6.xlsx`, first sheet).
     pub fn read_xlsx(path: &Path) -> Result<JstData> {
-        let mut wb = open_workbook_auto(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
+        let mut wb = open_workbook_auto(path).map_err(|e| crate::io_error(path, e))?;
         let range = wb
             .worksheet_range_at(0)
-            .ok_or_else(|| invalid(format!("{}: kein Tabellenblatt", path.display())))?
-            .map_err(|e| invalid(format!("{}: {e}", path.display())))?;
+            .ok_or_else(|| invalid(msg!(jst_no_sheet, path = path.display().to_string())))?
+            .map_err(|e| crate::file_invalid(path, e.to_string()))?;
         let rows: Vec<Vec<Data>> = range.rows().map(|r| r.to_vec()).collect();
         JstData::from_rows(&rows)
     }
@@ -174,7 +174,7 @@ impl JstData {
     pub fn from_rows(rows: &[Vec<Data>]) -> Result<JstData> {
         let header: Vec<String> = rows
             .first()
-            .ok_or_else(|| invalid("JST-Daten: Tabelle ist leer"))?
+            .ok_or_else(|| invalid(msg!(jst_table_empty)))?
             .iter()
             .map(|c| match c {
                 Data::String(s) => s.trim().to_string(),
@@ -185,7 +185,7 @@ impl JstData {
             header
                 .iter()
                 .position(|h| h == name)
-                .ok_or_else(|| invalid(format!("JST-Daten: Spalte «{name}» fehlt")))
+                .ok_or_else(|| invalid(msg!(jst_column_missing, column = name)))
         };
         let (c_year, c_iso) = (col("year")?, col("iso")?);
         let cols: Vec<usize> = COLUMNS.iter().map(|n| col(n)).collect::<Result<_>>()?;
@@ -208,7 +208,7 @@ impl JstData {
             d.rows.insert((iso.to_string(), year), row);
         }
         if d.rows.is_empty() {
-            return Err(invalid("JST-Daten: keine Werte für die Länder der Regionen"));
+            return Err(invalid(msg!(jst_no_region_values)));
         }
         Ok(d)
     }
@@ -231,15 +231,15 @@ impl JstData {
 
     pub fn parse_csv(text: &str) -> Result<JstData> {
         let mut lines = text.lines().filter(|l| !l.trim().is_empty());
-        let header = lines.next().ok_or_else(|| invalid("JST-Auszug ist leer"))?;
+        let header = lines.next().ok_or_else(|| invalid(msg!(jst_extract_empty)))?;
         let expected = format!("year,iso,{}", COLUMNS.join(","));
         if header.trim() != expected {
-            return Err(invalid(format!("JST-Auszug: Kopfzeile «{header}» statt «{expected}»")));
+            return Err(invalid(msg!(jst_extract_header, header = header, expected = expected)));
         }
         let mut d = JstData::default();
         for (n, line) in lines.enumerate() {
             let cells: Vec<&str> = line.split(',').map(str::trim).collect();
-            let bad = || invalid(format!("JST-Auszug, Zeile {}: «{line}»", n + 2));
+            let bad = || invalid(msg!(jst_extract_line, row = n + 2, line = line));
             if cells.len() != COLUMNS.len() + 2 {
                 return Err(bad());
             }
@@ -335,12 +335,8 @@ impl JstData {
     pub fn region_stocks(&self, countries: &[&str]) -> Result<Vec<f64>> {
         (FIRST_YEAR..=self.last_year())
             .map(|y| {
-                self.weighted(countries, y, Asset::Stocks).ok_or_else(|| {
-                    invalid(format!(
-                        "JST-Daten: keine Aktienrendite für {} im Jahr {y}",
-                        countries.join(", ")
-                    ))
-                })
+                self.weighted(countries, y, Asset::Stocks)
+                    .ok_or_else(|| invalid(msg!(jst_no_stock_return, countries = countries, year = y)))
             })
             .collect()
     }
@@ -361,17 +357,17 @@ fn snb_first_full_year(snb: &SnbData) -> Option<i32> {
 /// first whole SNB year, afterwards from the monthly SNB yields (monthly returns linked to the year). 1915 is missing in
 /// JST (exchange closed); there the coupon (`bond_rate`) counts as the return. Returns the first year and the values.
 pub fn ch_bonds_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> {
-    let switch = snb_first_full_year(snb).ok_or_else(|| invalid("SNB-Renditen der Eidgenossenschaft fehlen"))?;
+    let switch = snb_first_full_year(snb).ok_or_else(|| invalid(msg!(snb_bond_yields_missing)))?;
     let y = &snb.ch_yield10;
     let mut out = vec![];
     for year in FIRST_YEAR.. {
         let v = if year < switch {
             let row = jst
                 .row("CHE", year)
-                .ok_or_else(|| invalid(format!("JST-Daten: Schweiz {year} fehlt")))?;
+                .ok_or_else(|| invalid(msg!(jst_ch_year_missing, year = year)))?;
             row.bond_tr
                 .or(row.bond_rate)
-                .ok_or_else(|| invalid(format!("JST-Daten: Obligationen Schweiz {year} fehlen")))?
+                .ok_or_else(|| invalid(msg!(jst_ch_bonds_missing, year = year)))?
         } else {
             let months: Option<Vec<f64>> = (1..=12)
                 .map(|m| {
@@ -399,7 +395,7 @@ pub fn ch_short_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> 
         out.push(
             jst.row("CHE", year)
                 .and_then(|r| r.bill_rate)
-                .ok_or_else(|| invalid(format!("JST-Daten: kurzfristige Zinsen Schweiz {year} fehlen")))?,
+                .ok_or_else(|| invalid(msg!(jst_ch_short_rates_missing, year = year)))?,
         );
     }
     for year in switch.. {
@@ -428,7 +424,7 @@ pub fn world_dataset(jst: &JstData, snb: &SnbData) -> Result<DataSet> {
         .map(|i| {
             let y = FIRST_YEAR + i as i32;
             jst.ch_inflation(y)
-                .ok_or_else(|| invalid(format!("JST-Daten: Teuerung Schweiz {y} fehlt")))
+                .ok_or_else(|| invalid(msg!(jst_ch_inflation_missing, year = y)))
         })
         .collect::<Result<_>>()?;
     let mut source = format!("{SOURCE}; SNB (data.snb.ch): rendoblim");

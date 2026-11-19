@@ -11,19 +11,6 @@ use crate::{Error, Result};
 /// the user interface warns about long computing times.
 pub const MAX_COMBINATIONS: usize = 1_000_000;
 
-/// Number with apostrophe as thousands separator (1'000'000).
-fn grouped(n: usize) -> String {
-    let s = n.to_string();
-    let mut out = String::new();
-    for (i, c) in s.chars().enumerate() {
-        if i > 0 && (s.len() - i).is_multiple_of(3) {
-            out.push('\'');
-        }
-        out.push(c);
-    }
-    out
-}
-
 /// A varied parameter with its values (number or month `YYYY-MM`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sweep {
@@ -46,31 +33,32 @@ fn is_month(param: &str) -> bool {
 
 /// Reads `scenarios.sweeps` (`{param, from, to, step}`; for months `step` in months).
 pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
-    let bad = |s: String| Error::Invalid(format!("Variation: {s}"));
+    let bad = |m: crate::message::Message| Error::Invalid(msg!(scenario_problem, problem = m));
     sweeps
         .iter()
         .map(|s| {
             let param = s
                 .get("param")
                 .and_then(Value::as_str)
-                .ok_or_else(|| bad("Parameter fehlt".into()))?
+                .ok_or_else(|| bad(msg!(scenario_param_missing)))?
                 .to_string();
             if !PARAMS.contains(&param.as_str()) {
-                return Err(bad(format!("unbekannter Parameter «{param}»")));
+                return Err(bad(msg!(scenario_param_unknown, param = param)));
             }
             let step = s.get("step").and_then(Value::as_f64).unwrap_or(0.0);
             if step <= 0.0 {
-                return Err(bad(format!("{param}: Schritt muss grösser als 0 sein")));
+                return Err(bad(msg!(scenario_step, param = param)));
             }
             // One value more than allowed, so that `count_combinations` reports the excess.
             let cap = MAX_COMBINATIONS + 1;
             let values: Vec<Value> = if is_month(&param) {
                 let ym = |k: &str| -> Result<YearMonth> {
-                    s.get(k)
+                    let raw = s
+                        .get(k)
                         .and_then(Value::as_str)
-                        .ok_or_else(|| bad(format!("{param}: «{k}» fehlt")))?
-                        .parse::<YearMonth>()
-                        .map_err(|e| bad(format!("{param}: {e}")))
+                        .ok_or_else(|| bad(msg!(scenario_value_missing, param = param, key = k)))?;
+                    raw.parse::<YearMonth>()
+                        .map_err(|_| bad(msg!(scenario_month_invalid, param = param, value = raw)))
                 };
                 let (a, b) = (ym("from")?, ym("to")?);
                 let step = step.round().max(1.0) as i32;
@@ -84,7 +72,7 @@ pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
                 let num = |k: &str| {
                     s.get(k)
                         .and_then(Value::as_f64)
-                        .ok_or_else(|| bad(format!("{param}: «{k}» fehlt")))
+                        .ok_or_else(|| bad(msg!(scenario_value_missing, param = param, key = k)))
                 };
                 let (a, b) = (num("from")?, num("to")?);
                 (0..)
@@ -96,7 +84,7 @@ pub fn parse(sweeps: &[Value]) -> Result<Vec<Sweep>> {
                     .collect()
             };
             if values.is_empty() {
-                return Err(bad(format!("{param}: «Bis» liegt vor «Von»")));
+                return Err(bad(msg!(scenario_to_before_from, param = param)));
             }
             Ok(Sweep { param, values })
         })
@@ -110,15 +98,11 @@ pub fn count_combinations(sweeps: &[Sweep]) -> Result<usize> {
         n = n.saturating_mul(s.values.len());
     }
     if n > MAX_COMBINATIONS {
-        let shown = if n == usize::MAX {
-            "mehr als 1'000'000".to_string()
+        return Err(Error::Invalid(if n == usize::MAX {
+            msg!(scenario_too_many_overflow, max = MAX_COMBINATIONS)
         } else {
-            grouped(n)
-        };
-        return Err(Error::Invalid(format!(
-            "Die Variationen ergeben {shown} Kombinationen; höchstens {} sind technisch möglich.",
-            grouped(MAX_COMBINATIONS)
-        )));
+            msg!(scenario_too_many, count = n, max = MAX_COMBINATIONS)
+        }));
     }
     Ok(n)
 }
@@ -144,7 +128,6 @@ pub fn combinations(sweeps: &[Sweep]) -> Result<Vec<Vec<Value>>> {
 
 /// Sets a varied value in the plan (JSON).
 pub fn apply(plan: &mut Value, param: &str, value: &Value) -> Result<()> {
-    let missing = |what: &str| Error::Invalid(format!("Variation {param}: {what} fehlt in der Planung"));
     match param {
         "wealth.stockShare" => plan["wealth"]["stockShare"] = value.clone(),
         "pension.pk.lumpsum" => plan["pension"]["pk"]["lumpsum"] = value.clone(),
@@ -160,16 +143,18 @@ pub fn apply(plan: &mut Value, param: &str, value: &Value) -> Result<()> {
             let ms = plan["milestones"]
                 .as_array_mut()
                 .and_then(|a| a.iter_mut().find(|m| m["id"] == "retire"))
-                .ok_or_else(|| missing("Meilenstein «retire»"))?;
+                .ok_or_else(|| Error::Invalid(msg!(scenario_retire_missing, param = param)))?;
             let name = ms["name"].clone();
             *ms = json!({ "id": "retire", "name": name, "kind": "date", "date": value });
         }
         "flows.spendingFactor" => {
-            let f = value.as_f64().ok_or_else(|| missing("Faktor"))?;
+            let f = value
+                .as_f64()
+                .ok_or_else(|| Error::Invalid(msg!(scenario_factor_missing, param = param)))?;
             // #53: The factor applies to the living costs without housing (for older plans the same as before).
             plan["flows"]["spendingFactor"] = json!(f);
         }
-        _ => return Err(Error::Invalid(format!("unbekannter Parameter «{param}»"))),
+        _ => return Err(Error::Invalid(msg!(scenario_param_unknown, param = param))),
     }
     Ok(())
 }
@@ -194,7 +179,7 @@ pub struct ScenarioResult {
     /// End wealth and depletion of the runs at the percentiles (0 = worst run); basis for the optimum per percentile.
     pub percentiles: Vec<crate::batch::Percentile>,
     /// Error if the scenario could not be computed (e.g. start month outside the series).
-    pub error: Option<String>,
+    pub error: Option<crate::message::Message>,
 }
 
 #[cfg(test)]
@@ -244,8 +229,8 @@ mod tests {
         );
         assert!(combinations(&too_many).is_err());
         // exactly 1'000'000 are allowed
-        assert_eq!(grouped(1_000_000), "1'000'000");
-        assert_eq!(grouped(999), "999");
+        assert_eq!(crate::message::group(1_000_000.0), "1'000'000");
+        assert_eq!(crate::message::group(999.0), "999");
     }
 
     #[test]

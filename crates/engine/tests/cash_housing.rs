@@ -54,7 +54,7 @@ fn errors(v: &Value) -> Vec<String> {
     engine::api::validate(v)
         .into_iter()
         .filter(|i| i.severity == engine::validate::Severity::Error)
-        .map(|i| i.message)
+        .map(|i| i.message.to_string())
         .collect()
 }
 
@@ -146,7 +146,7 @@ fn issue_54_ak8_note_for_older_plans() {
     let mut old = base();
     old["flows"] = json!({ "income": 8000, "spending": 6000 });
     let out = engine::api::upgrade_plan(&old);
-    assert_eq!(out.notes, vec![engine::upgrade::CASH_NOTE.to_string()]);
+    assert_eq!(out.notes, vec![engine::upgrade::CASH_NOTE]);
     assert_eq!(out.plan["flows"]["spending"], 6000, "ohne Wohnkosten bleibt der Wert");
     assert!(engine::api::upgrade_plan(&out.plan).notes.is_empty());
     assert!(
