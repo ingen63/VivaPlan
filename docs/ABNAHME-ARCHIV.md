@@ -874,6 +874,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #154/AK1 | Der Schritt `housing` läuft nach den Schritten, die die Planung lesbar machen; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «proptest_upgrade_is_idempotent» | 18.11.2026 ok |
 | #154/AK2 | Regressionstest mit dem verkleinerten Fall. | ☑ | **gilt** | [upgrade.rs](../crates/engine/src/upgrade.rs) «issue_154_…» | 18.11.2026 ok |
 
+### #155 Referenztest: Kapitalbezug beider Partner im selben Jahr
+
+[Issue #155](https://github.com/ingen63/VivaPlan/issues/155) · geschlossen · Umsetzung: d47cb6e
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #155/AK1 | Ein Rust-Test (`household.rs` oder `reference.rs`) rechnet das Beispiel mit Handwerten nach: Steuer je Bezug und Jahressumme, Abzug im … | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_155_ak1_…» | 19.11.2026 ok |
+| #155/AK2 | Ein zweiter Fall mit Bezügen in zwei verschiedenen Jahren zeigt, dass jedes Jahr für sich besteuert wird. | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_155_ak2_…» | 19.11.2026 ok |
+| #155/AK3 | Rechenkern und Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test (Git-Diff d47cb6e) | 19.11.2026 ok |
+
 ### #157 Netzwerkfreiheit automatisch prüfen
 
 [Issue #157](https://github.com/ingen63/VivaPlan/issues/157) · geschlossen · Umsetzung: c6c1ac4
