@@ -973,6 +973,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #166/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests), [test_check_english.py](../tools/test_check_english.py) (16 Tests) | 19.11.2026 ok: alles grün, Golden-Dateien unverändert; Abdeckung vorher/nachher Engine 99,06/99,13 %, Kommandozeile 96,07/96,45 %, App 91,38/91,33 % (App unverändert, Unterschied durch lokale `shiller-index.ods`) |
 | #166/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Vergleich aller String-Literale vor und nach der Umstellung) | 19.11.2026 ok: einziger Unterschied das Formatargument `{ferien:?}` → `{holiday:?}`; Assert-Meldungen in Tests bleiben deutsch |
 
+### #167 Code intern englisch: Desktop-App und Oberfläche
+
+[Issue #167](https://github.com/ingen63/VivaPlan/issues/167) · geschlossen · Umsetzung: 554ac93 … 4f561fe (Kommentare 554ac93, f086a37, aa77996; Bezeichner und Testnamen f1cc28d, 3fa900c)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #167/AK1 | `tools/check-english.sh` meldet für `crates/app/` keine Treffer; die Pfade sind aus der Übergangsliste entfernt. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_transition_list_holds_unconverted_paths»; `tools/check-english.sh --all crates/app` | 19.11.2026 ok: keine Treffer in 34 Dateien; Übergangsliste nur noch e2e |
+| #167/AK2 | Bezeichner und Testnamen folgen dem Glossar; Kriterien-Bezüge bleiben erhalten (`#27/AK2`, `issue_27_ak2_…`, `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`). | ☑ | **gilt** | kein Test (Vergleich der Kennungen vor und nach der Umstellung) | 19.11.2026 ok: `#Nr/AKn`, `issue_Nr_akn` in `crates/app` vor 3f55d98 und nach 4f561fe identisch; IPC-Befehle, `data-*`, CSS-Klassen/IDs, Ergebnisschlüssel und von `e2e/` aufgerufene Funktionen unverändert |
+| #167/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests), Playwright (221), `e2e/unit` (27), `tools/ui-smoke.sh`, [test_check_english.py](../tools/test_check_english.py) (16) | 19.11.2026 ok: alles grün, Golden-Dateien unverändert; Abdeckung App vorher/nachher 90,96/90,95 %, Produktivcode gleich abgedeckt (Unterschied nur im Testzweig der lokalen `shiller-index.ods`) |
+| #167/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Durchsicht aller geänderten Zeilen mit String-Literalen) | 19.11.2026 ok: nur Testdaten-Pfade und eine Assert-Meldung in `csp.rs` geändert; übrige Assert-Meldungen in Tests bleiben deutsch |
+
 ### #169 Code intern englisch: Kommandozeile, fuzz und tools
 
 [Issue #169](https://github.com/ingen63/VivaPlan/issues/169) · geschlossen · Umsetzung: da91d7b, 190c6b4
