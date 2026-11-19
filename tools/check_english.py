@@ -19,15 +19,12 @@ import re
 import subprocess
 import sys
 
-# Paths not yet converted to English (transition). Every package conversion removes its path (#169, #166, #167, #168).
+# Paths not yet converted to English (transition). Every package conversion removes its path (#166, #167, #168; #169 done).
 # With an empty list, the check runs in `make test-quiet` and in the workflow (option --gate).
 PENDING = [
     "crates/engine/",
     "crates/app/",
     "e2e/",
-    "crates/cli/",
-    "fuzz/",
-    "tools/",
 ]
 
 # Directories checked by default, relative to the repository root.

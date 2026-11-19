@@ -178,8 +178,8 @@ mod tests {
         let err = |cmd: &str, args: Value| call(cmd, &args, &lib).unwrap_err();
         assert!(err("rerun_paths", json!({ "plan": plan(), "picks": "x" })).contains("invalid type"));
         assert_eq!(err("series_info", json!({})), "Pfad fehlt");
-        assert!(!err("series_info", json!({ "path": "/gibt/es/nicht.csv" })).is_empty());
-        assert!(!err("optimize", json!({ "plan": plan(), "request": "unsinn" })).is_empty());
+        assert!(!err("series_info", json!({ "path": "/does/not/exist.csv" })).is_empty());
+        assert!(!err("optimize", json!({ "plan": plan(), "request": "nonsense" })).is_empty());
         assert_eq!(
             err("open_dialog", json!({})),
             "Befehl «open_dialog» gibt es nur in der Desktop-App"
@@ -207,7 +207,7 @@ mod tests {
         assert!(call("series_info", &json!({ "path": rel, "planPath": null }), &library()).is_ok());
         assert!(call(
             "series_info",
-            &json!({ "path": rel, "planPath": "/gibt/es/nicht/p.vplan" }),
+            &json!({ "path": rel, "planPath": "/does/not/exist/p.vplan" }),
             &library()
         )
         .is_err());
@@ -238,7 +238,7 @@ mod tests {
                     None
                 })
             })
-            .expect("Server erreichbar");
+            .expect("server reachable");
         write!(s, "{head}\r\nContent-Length: {}\r\n\r\n{body}", body.len()).unwrap();
         let mut out = String::new();
         s.read_to_string(&mut out).unwrap();
@@ -263,7 +263,7 @@ mod tests {
         );
         assert_eq!(request(port, "GET /app.js?x=1 HTTP/1.1", "").1, "1");
         assert_eq!(
-            request(port, "GET /gibt-es-nicht HTTP/1.1", "").0,
+            request(port, "GET /does-not-exist HTTP/1.1", "").0,
             "HTTP/1.1 404 Not Found"
         );
         assert_eq!(
@@ -273,7 +273,7 @@ mod tests {
         let (st, body) = request(port, "POST /api/example_plan HTTP/1.1", "{}");
         assert_eq!(st, "HTTP/1.1 200 OK");
         assert!(serde_json::from_str::<Value>(&body).unwrap()["household"].is_object());
-        let (st, body) = request(port, "POST /api/gibt_es_nicht HTTP/1.1", "kein json");
+        let (st, body) = request(port, "POST /api/does_not_exist HTTP/1.1", "no json");
         assert_eq!(st, "HTTP/1.1 400 Bad Request");
         assert!(body.contains("gibt es nur in der Desktop-App"), "{body}");
         // GET on /api/ is not a request to the dispatcher

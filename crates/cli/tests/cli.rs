@@ -137,7 +137,7 @@ fn validate_and_errors() {
     let o = run(&["validate", &bad]);
     assert!(!o.status.success());
     assert!(text(&o).contains("FEHLER"));
-    let o = run(&["run", "gibt-es-nicht.vplan"]);
+    let o = run(&["run", "does-not-exist.vplan"]);
     assert!(!o.status.success());
     assert!(text(&o).contains("Fehler"));
     let o = run(&["validate"]);
@@ -156,7 +156,7 @@ fn bench_runs_paths() {
 #[test]
 fn import_legacy_config() {
     let d = tmp("legacy");
-    let out = d.join("alt.vplan");
+    let out = d.join("legacy.vplan");
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../engine/tests/fixtures/legacy_fixed.json");
     let fixtures = fixture.parent().unwrap().to_str().unwrap().to_string();
     let o = run(&[
@@ -194,7 +194,7 @@ fn library_import_commands() {
             text(&o)
         );
     } else {
-        eprintln!("übersprungen: {} fehlt (#94)", shiller.display());
+        eprintln!("skipped: {} missing (#94)", shiller.display());
     }
     let cube = root().join("crates/engine/data/quellen/snb-zimoma.csv");
     let o = run(&["import-snb", cube.to_str().unwrap(), "--library", l]);
@@ -236,7 +236,7 @@ fn server() -> Server {
         }
         std::thread::sleep(Duration::from_millis(50));
     }
-    panic!("Entwicklungsserver startet nicht");
+    panic!("development server does not start");
 }
 
 fn http(port: u16, method: &str, path: &str, body: &str) -> (String, String) {
@@ -320,7 +320,7 @@ fn optimize_compares_strategies_and_respects_ruin_limit() {
         assert!(s["validated"]["ruin"].as_f64().unwrap() <= 1.0);
         assert!(s["validated"]["median"].as_f64().unwrap() >= 0.0);
     }
-    assert!(!run(&["optimize", &f, "--strategy", "unsinn"]).status.success());
+    assert!(!run(&["optimize", &f, "--strategy", "nonsense"]).status.success());
     assert!(!run(&["optimize"]).status.success());
 }
 

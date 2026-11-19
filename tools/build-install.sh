@@ -44,7 +44,7 @@ while :; do
   fi
 
   # Copy next to it first, then swap: on error the old app stays
-  tmp="/Applications/.$app_name.neu"
+  tmp="/Applications/.$app_name.new"
   rm -rf "$tmp"
   if ditto "$bundle" "$tmp" && rm -rf "$dest" && mv "$tmp" "$dest"; then
     echo "build-install: $(date '+%Y-%m-%d %H:%M:%S') Commit $sha installiert in $dest."

@@ -18,7 +18,7 @@ HOOK = Path(__file__).resolve().parents[1] / ".claude" / "hooks" / "after-commit
 FAKE_CARGO = """#!/bin/sh
 echo "$@" >> "$FAKE_CARGO_ARGS"
 if [ "${FAKE_CARGO_EXIT:-0}" != 0 ]; then
-  echo "        FAIL [   0.010s] vivaplan-engine::all modul::rot"
+  echo "        FAIL [   0.010s] vivaplan-engine::all module::red"
   echo "     Summary [   1.000s] 3 tests run: 2 passed, 1 failed"
   exit 1
 fi
@@ -43,10 +43,10 @@ class AfterCommitHook(unittest.TestCase):
         self.git("config", "user.name", "Test")
         self.write("Cargo.toml", "[workspace]\n")
         for p in ("engine/src/lib.rs", "engine/tests/all.rs", "app/src/main.rs", "cli/src/main.rs"):
-            self.write("crates/" + p, "// Anfang\n")
-        self.write("docs/README.md", "Anfang\n")
-        self.write("fuzz/src/lib.rs", "// Anfang\n")
-        self.commit("Anfang")
+            self.write("crates/" + p, "// start\n")
+        self.write("docs/README.md", "start\n")
+        self.write("fuzz/src/lib.rs", "// start\n")
+        self.commit("Start")
         # The first commit counts as checked
         self.run_hook(exit_code=0)
         self.args.unlink(missing_ok=True)
@@ -94,7 +94,7 @@ class AfterCommitHook(unittest.TestCase):
     # #160/AK6: green tests with a test in the commit: only the summary, no subagent
     def test_issue_160_ak6_green_with_test_reports_summary_only(self):
         self.append("crates/engine/src/lib.rs", "fn f() {}\n#[test]\nfn t() {}\n")
-        self.commit("Rechenkern mit Test")
+        self.commit("Engine with test")
         out = self.run_hook()
         self.assertNotIn("decision", out)
         ctx = out["hookSpecificOutput"]["additionalContext"]
@@ -109,7 +109,7 @@ class AfterCommitHook(unittest.TestCase):
     # #160/AK6: an engine change without a test in the commit asks for the subagent
     def test_issue_160_ak6_engine_change_without_test_asks_for_agent(self):
         self.append("crates/engine/src/lib.rs", "fn g() {}\n")
-        self.commit("Rechenkern ohne Test")
+        self.commit("Engine without test")
         out = self.run_hook()
         self.assertEqual(out["decision"], "block")
         self.assertIn("rust-test-agent", out["reason"])
@@ -118,19 +118,19 @@ class AfterCommitHook(unittest.TestCase):
     # #160/AK6: a changed integration test counts as a test
     def test_issue_160_ak6_integration_test_counts_as_test(self):
         self.append("crates/engine/src/lib.rs", "fn h() {}\n")
-        self.append("crates/engine/tests/all.rs", "// neuer Test\n")
-        self.commit("Rechenkern und Integrationstest")
+        self.append("crates/engine/tests/all.rs", "// new test\n")
+        self.commit("Engine and integration test")
         out = self.run_hook()
         self.assertNotIn("decision", out)
 
     # #160/AK6: failures ask for the subagent and name the tests
     def test_issue_160_ak6_failures_ask_for_agent_with_failed_tests(self):
         self.append("crates/cli/src/main.rs", "fn k() {}\n")
-        self.commit("Kommandozeile")
+        self.commit("Command line")
         out = self.run_hook(exit_code=1)
         self.assertEqual(out["decision"], "block")
         self.assertIn("fehlgeschlagen", out["reason"])
-        self.assertIn("modul::rot", out["reason"])
+        self.assertIn("module::red", out["reason"])
         self.assertIn("rust-test-agent", out["reason"])
         self.assertIn("1 failed", out["reason"])
 
@@ -138,7 +138,7 @@ class AfterCommitHook(unittest.TestCase):
     def test_issue_160_ak6_only_changed_packages(self):
         self.append("crates/app/src/main.rs", "fn a() {}\n")
         self.append("crates/cli/src/main.rs", "fn c() {}\n")
-        self.commit("App und Kommandozeile")
+        self.commit("App and command line")
         out = self.run_hook()
         self.assertIn("grün", out["hookSpecificOutput"]["additionalContext"])
         (call,) = self.cargo_calls()
@@ -146,21 +146,21 @@ class AfterCommitHook(unittest.TestCase):
         self.assertNotIn("--workspace", call)
 
     def test_no_reaction_without_rust_changes_other_commands_or_agent_commits(self):
-        self.append("docs/README.md", "mehr\n")
-        self.commit("Nur Doku")
+        self.append("docs/README.md", "more\n")
+        self.commit("Docs only")
         self.assertIsNone(self.run_hook())
         self.append("fuzz/src/lib.rs", "fn z() {}\n")
-        self.commit("Nur Fuzz-Ziel (eigener Workspace)")
+        self.commit("Fuzz target only (separate workspace)")
         self.assertIsNone(self.run_hook())
         self.append("crates/cli/src/main.rs", "fn d() {}\n")
-        self.commit("test(auto): Tests vom Agenten")
+        self.commit("test(auto): tests from the agent")
         self.assertIsNone(self.run_hook())
         self.assertIsNone(self.run_hook(command="git status"))
         self.assertEqual(self.cargo_calls(), [])
 
     def test_same_commit_is_checked_only_once(self):
         self.append("crates/cli/src/main.rs", "fn e() {}\n")
-        self.commit("Kommandozeile")
+        self.commit("Command line")
         self.assertIsNotNone(self.run_hook())
         # e.g. a failed `git commit` afterwards: HEAD unchanged
         self.assertIsNone(self.run_hook())

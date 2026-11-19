@@ -15,7 +15,7 @@ class Status(unittest.TestCase):
         # #89/AK3: results.json is downloaded in the pipeline; the file time would be that of the download
         self.assertRegex(report.run_time("2026-11-14T22:01:05.375Z"), r"^\d\d\.\d\d\.\d{4} \d\d:\d\d$")
         self.assertIsNone(report.run_time(None))
-        self.assertIsNone(report.run_time("kein Datum"))
+        self.assertIsNone(report.run_time("no date"))
 
     def test_hygiene_follows_the_stated_rule(self):
         self.assertEqual(report.status_hygiene(None), report.NODATA)
@@ -34,7 +34,7 @@ class Status(unittest.TestCase):
         self.assertEqual(report.status_fit(pk(95, 85, 79.9), mut(0)), report.FAIL)  # #105/AK3: the command line counts too
 
     def test_junit_with_a_failing_test_is_reported_by_name(self):
-        xml = '<testsuites><testsuite><testcase classname="engine::x" name="kaputt" time="0.1"><failure/></testcase><testcase classname="engine::x" name="ok" time="0.2"/><testcase classname="engine::x" name="wackelt" time="0.3"><flakyFailure/></testcase></testsuite></testsuites>'
+        xml = '<testsuites><testsuite><testcase classname="engine::x" name="broken" time="0.1"><failure/></testcase><testcase classname="engine::x" name="ok" time="0.2"/><testcase classname="engine::x" name="wobbly" time="0.3"><flakyFailure/></testcase></testsuite></testsuites>'
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "junit.xml").write_text(xml)
             cwd = os.getcwd()
@@ -43,25 +43,25 @@ class Status(unittest.TestCase):
                 j = report.read_junit()
             finally:
                 os.chdir(cwd)
-        self.assertEqual(j["failed"], ["engine::x kaputt"])
-        self.assertEqual(j["flaky"], ["engine::x wackelt"])
+        self.assertEqual(j["failed"], ["engine::x broken"])
+        self.assertEqual(j["flaky"], ["engine::x wobbly"])
         self.assertEqual(report.status_hygiene(j), report.FAIL)
 
 
 class Requirements(unittest.TestCase):
-    ISSUE = {"number": 7, "title": "Beispiel", "state": "OPEN", "labels": [], "body": "Text\n\n- [ ] eins\n- [x] zwei\n- [ ] drei\n"}
+    ISSUE = {"number": 7, "title": "Example", "state": "OPEN", "labels": [], "body": "Text\n\n- [ ] one\n- [x] two\n- [ ] three\n"}
 
     def test_two_of_three_criteria_with_a_marked_test(self):
         marks = {(7, 1): ["a.rs:3"], (7, 3): ["b.rs:9"]}
         rows = report.requirements([self.ISSUE], marks)
         kinds = [k for k, _, _ in rows[0]["items"]]
-        self.assertEqual(kinds, ["test", "manuell", "test"])  # 2 of 3 covered, the ticked one only manually
+        self.assertEqual(kinds, ["test", "manual", "test"])  # 2 of 3 covered, the ticked one only manually
 
     def test_issue_117_ak5_markers_in_comments_and_test_names(self):
         # #117/AK5: `#115/AK2` in a comment or test name, `issue_115_ak2_…` in a Rust test name
-        self.assertEqual(report.MARK.search("// #115/AK2 prüft").groups(), ("115", "2"))
-        self.assertEqual(report.NAMEMARK.search("fn issue_115_ak2_rundung()").groups(), ("115", "2"))
-        marks = report.scan_marks("a.rs", ["// #7/AK1 prüft", "fn issue_7_ak3_rundung() {}"], {})
+        self.assertEqual(report.MARK.search("// #115/AK2 checks").groups(), ("115", "2"))
+        self.assertEqual(report.NAMEMARK.search("fn issue_115_ak2_rounding()").groups(), ("115", "2"))
+        marks = report.scan_marks("a.rs", ["// #7/AK1 checks", "fn issue_7_ak3_rounding() {}"], {})
         self.assertEqual(sorted(marks), [(7, 1), (7, 3)])
 
     def test_issue_117_ak5_old_ids_are_no_longer_recognised(self):
@@ -69,24 +69,24 @@ class Requirements(unittest.TestCase):
         # HTML entities are not a number. The old ids are concatenated so that `git grep` does not find them.
         src = ["// FE" "A-100/AK2", "fn fe" "a_100_ak2_x() {}", "// IS" "S-3/AK1", "x = '&#39;/AK1'"]
         self.assertEqual(report.scan_marks("a.rs", src, {}), {})
-        self.assertEqual(report.scan_marks("e2e/x.spec.js", ['test.describe("FE" "A-56 alt", () => {', '  test("AK1 x", async () => {});', "});"], {}), {})
+        self.assertEqual(report.scan_marks("e2e/x.spec.js", ['test.describe("FE" "A-56 old", () => {', '  test("AK1 x", async () => {});', "});"], {}), {})
 
     def test_leading_zero_in_a_mark_is_the_same_issue(self):
         marks = report.scan_marks("e2e/x.spec.js", ['test("#07/AK1 …", () => {});', "// #7/AK3"], {})
         kinds = [k for k, _, _ in report.requirements([self.ISSUE], marks)[0]["items"]]
-        self.assertEqual(kinds, ["test", "manuell", "test"])
+        self.assertEqual(kinds, ["test", "manual", "test"])
 
     def test_issue_117_ak5_bare_ak_in_a_describe_block_with_one_issue_number(self):
-        src = ['test.describe("Ergebnis in Worten (#83)", () => {',
-               '  test("AK1, AK3: mehrere Läufe", async () => {',
+        src = ['test.describe("Result in words (#83)", () => {',
+               '  test("AK1, AK3: several runs", async () => {',
                '  });',
-               '  test.describe("Untergruppe ohne Nummer", () => {',
-               '    test("AK2 im inneren Block", async () => {});',
+               '  test.describe("Subgroup without a number", () => {',
+               '    test("AK2 in the inner block", async () => {});',
                '  });',
                '});',
-               'test("AK4 ausserhalb jedes Blocks", async () => {});',
-               'test.describe("#81 und #82", () => {',
-               '  test("AK5 mehrdeutig", async () => {});',
+               'test("AK4 outside any block", async () => {});',
+               'test.describe("#81 and #82", () => {',
+               '  test("AK5 ambiguous", async () => {});',
                '});']
         marks = report.scan_marks("e2e/x.spec.js", src, {})
         self.assertEqual(sorted(marks), [(83, 1), (83, 2), (83, 3)])
@@ -96,9 +96,9 @@ class Requirements(unittest.TestCase):
 
     def test_issues_without_id_in_the_title_are_counted_by_number(self):
         # #117/AK5: the mapping uses the number, not the title
-        rows = report.requirements([dict(self.ISSUE, title="Titel ohne Präfix")], {(7, 2): ["t.rs:1"]})
+        rows = report.requirements([dict(self.ISSUE, title="Title without prefix")], {(7, 2): ["t.rs:1"]})
         self.assertEqual(rows[0]["nr"], 7)
-        self.assertEqual([k for k, _, _ in rows[0]["items"]], ["ohne", "test", "ohne"])
+        self.assertEqual([k for k, _, _ in rows[0]["items"]], ["none", "test", "none"])
 
     def test_issue_113_ak3_checked_criteria_count_as_checked_not_manual(self):
         c = lambda day, body: {"createdAt": f"{day}T10:00:00Z", "body": body}
@@ -109,7 +109,7 @@ class Requirements(unittest.TestCase):
             c("2026-11-17", "**Erneute Prüfung**\n\n- AK3 offen: Gegenprobe fehlt."),
         ])
         items = report.requirements([issue], {(7, 4): ["t.rs:1"]})[0]["items"]
-        self.assertEqual([k for k, _, _ in items], ["geprueft", "geprueft", "manuell", "test", "ohne"])
+        self.assertEqual([k for k, _, _ in items], ["checked", "checked", "manual", "test", "none"])
         self.assertEqual(items[1][2], ["Prüfung vom 16.11.2026"])
 
     def test_issue_113_ak3_summary_comments_mark_all_criteria_except_the_listed_ones(self):
@@ -120,12 +120,12 @@ class Requirements(unittest.TestCase):
         self.assertEqual(report.checked([{"createdAt": "2026-11-15", "body": "Umgesetzt in abc1234. Abnahme ausstehend.\n- AK1 erfüllt"}], 3), {})
 
     def test_escapes_list_found_where_and_regression_test(self):
-        bug = {"number": 9, "title": "Fehler x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
-               "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** Ein Rundungstest.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
-        other = {"number": 10, "title": "Fehler y", "state": "OPEN", "labels": [{"name": "bug"}], "body": ""}
+        bug = {"number": 9, "title": "Bug x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
+               "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** A rounding test.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
+        other = {"number": 10, "title": "Bug y", "state": "OPEN", "labels": [{"name": "bug"}], "body": ""}
         rows = report.escapes([bug, other])
         self.assertEqual(len(rows), 1)
-        self.assertEqual((rows[0]["found"], rows[0]["which"], rows[0]["reg"]), ("usage", "Ein Rundungstest.", "crates/engine/tests/x.rs"))
+        self.assertEqual((rows[0]["found"], rows[0]["which"], rows[0]["reg"]), ("usage", "A rounding test.", "crates/engine/tests/x.rs"))
 
 
 class DiffCoverage(unittest.TestCase):
@@ -193,13 +193,13 @@ class Page(unittest.TestCase):
     def test_issue_42_ak2_a_found_in_use_bug_shows_cause_and_regression_test(self):
         # #42/AK2
         import json
-        bug = {"number": 9, "title": "Fehler x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
-               "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** Ein Rundungstest.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
+        bug = {"number": 9, "title": "Bug x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
+               "body": "Text\n\n**Welcher Test hätte ihn fangen müssen?** A rounding test.\n\n**Regressionstest:** crates/engine/tests/x.rs\n"}
         page = self.render(gh=lambda cmd: json.dumps([bug]))
-        ergebnis = page[page.index("4 Ergebnis"):page.index("Verlauf")]
-        self.assertIn("usage", ergebnis)
-        self.assertIn("Ein Rundungstest.", ergebnis)
-        self.assertIn("crates/engine/tests/x.rs", ergebnis)
+        outcome = page[page.index("4 Ergebnis"):page.index("Verlauf")]
+        self.assertIn("usage", outcome)
+        self.assertIn("A rounding test.", outcome)
+        self.assertIn("crates/engine/tests/x.rs", outcome)
 
     def test_issue_42_ak3_comparison_with_the_previous_version_shows_changes_per_figure(self):
         # #42/AK3
@@ -212,17 +212,17 @@ class Page(unittest.TestCase):
             m.mkdir(parents=True)
             (m / "outcomes.json").write_text('{"caught": 7, "missed": 2}')
         page = self.render(setup)
-        verlauf = page[page.index("<h2>Verlauf</h2>"):]
-        self.assertIn("Vergleich mit Version 9.9.8", verlauf)
-        self.assertIn("Nicht erkannte Mutanten", verlauf)
-        self.assertIn("3,0 ▲", verlauf)  # 5 → 2 missed mutants: fewer is better
+        history = page[page.index("<h2>Verlauf</h2>"):]
+        self.assertIn("Vergleich mit Version 9.9.8", history)
+        self.assertIn("Nicht erkannte Mutanten", history)
+        self.assertIn("3,0 ▲", history)  # 5 → 2 missed mutants: fewer is better
 
     def test_issue_42_ak4_without_gh_the_two_layers_say_no_data_and_the_rest_stays_complete(self):
         # #42/AK4
         page = self.render(gh=None)
         self.assertEqual(page.count("<code>gh</code> ist nicht angemeldet oder nicht erreichbar"), 2)
-        for abschnitt in ("1 Hygiene", "2 Angemessenheit", "3 Anforderungsbezug", "4 Ergebnis", "Verlauf"):
-            self.assertIn(abschnitt, page)
+        for section in ("1 Hygiene", "2 Angemessenheit", "3 Anforderungsbezug", "4 Ergebnis", "Verlauf"):
+            self.assertIn(section, page)
 
 
 if __name__ == "__main__":

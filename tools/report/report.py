@@ -237,7 +237,7 @@ def checked(comments, n_crit):
 
 
 def requirements(issues, marks):
-    """Per criterion the kind: `test` (marked test), `geprueft` (check on instruction), `manuell` (only ticked), `ohne` (none)."""
+    """Per criterion the kind: `test` (marked test), `checked` (check on instruction), `manual` (only ticked), `none` (neither)."""
     rows = []
     for it in sorted(issues, key=lambda i: i["number"]):
         iid = it["number"]
@@ -251,9 +251,9 @@ def requirements(issues, marks):
             if ev:
                 items.append(("test", text.strip(), ev))
             elif n in chk:
-                items.append(("geprueft", text.strip(), [f"Prüfung vom {chk[n]}"]))
+                items.append(("checked", text.strip(), [f"Prüfung vom {chk[n]}"]))
             else:
-                items.append(("manuell" if done != " " else "ohne", text.strip(), []))
+                items.append(("manual" if done != " " else "none", text.strip(), []))
         rows.append({"id": iid, "nr": it["number"], "title": it["title"], "state": it["state"], "items": items})
     return rows
 
@@ -351,12 +351,12 @@ def main():
     reqs = requirements(issues, test_marks()) if issues is not None else None
     esc = escapes(issues) if issues is not None else None
     st_h, st_f = status_hygiene(junit), status_fit(cov, mut)
-    st_r = NODATA if reqs is None else (OK if reqs and all(i[0] != "ohne" for r in reqs for i in r["items"]) else HINT)
+    st_r = NODATA if reqs is None else (OK if reqs and all(i[0] != "none" for r in reqs for i in r["items"]) else HINT)
     st_e = NODATA if not esc else (OK if all(e["which"] and e["reg"] for e in esc) else HINT)
 
     n_crit = sum(len(r["items"]) for r in reqs) if reqs else None
     n_test = sum(1 for r in reqs for i in r["items"] if i[0] == "test") if reqs else None
-    n_chk = sum(1 for r in reqs for i in r["items"] if i[0] == "geprueft") if reqs else None
+    n_chk = sum(1 for r in reqs for i in r["items"] if i[0] == "checked") if reqs else None
     metrics = {"coverage_engine": (cov["pkgs"].get(list(PACKAGES)[0]) or [None])[0] if cov else None,
                "coverage_app": (cov["pkgs"].get(list(PACKAGES)[1]) or [None])[0] if cov else None,
                "missed": mut["missed"] if mut else None, "flaky": len(junit["flaky"]) if junit else None,
@@ -413,9 +413,9 @@ def main():
     else:
         rows = []
         for r in reqs:
-            cnt = {k: sum(1 for i in r["items"] if i[0] == k) for k in ("test", "geprueft", "manuell", "ohne")}; n = len(r["items"])
-            det = "<details><summary>Kriterien</summary><ul>" + "".join(f"<li>{ {'test': '✔ Test', 'geprueft': '✔ geprüft', 'manuell': '☑ nur manuell', 'ohne': '○ ohne Test'}[k] }: {E(tx)}" + (f" <small><code>{E(', '.join(ev[:2]))}</code></small>" if ev else "") + "</li>" for k, tx, ev in r["items"]) + "</ul></details>"
-            rows.append((f"#{r['nr']} {E(r['title'])}{det}", f"{cnt['test']} von {n}", str(cnt["geprueft"]), str(cnt["manuell"]), str(cnt["ohne"])))
+            cnt = {k: sum(1 for i in r["items"] if i[0] == k) for k in ("test", "checked", "manual", "none")}; n = len(r["items"])
+            det = "<details><summary>Kriterien</summary><ul>" + "".join(f"<li>{ {'test': '✔ Test', 'checked': '✔ geprüft', 'manual': '☑ nur manuell', 'none': '○ ohne Test'}[k] }: {E(tx)}" + (f" <small><code>{E(', '.join(ev[:2]))}</code></small>" if ev else "") + "</li>" for k, tx, ev in r["items"]) + "</ul></details>"
+            rows.append((f"#{r['nr']} {E(r['title'])}{det}", f"{cnt['test']} von {n}", str(cnt["checked"]), str(cnt["manual"]), str(cnt["none"])))
         h.append(table(["Issue", "mit Test", "geprüft", "nur manuell", "ohne"], rows, num=(1, 2, 3, 4)))
     h.append("</section>")
 

@@ -273,7 +273,7 @@ mod tests {
         assert_eq!(r.max_vol, None);
         let goal = request_from(&plan(), &args(&["p.vplan", "--goal", "3"])).unwrap_err();
         assert!(goal.to_string().contains("--goal"));
-        let n = request_from(&plan(), &args(&["p.vplan", "--paths", "viele"])).unwrap_err();
+        let n = request_from(&plan(), &args(&["p.vplan", "--paths", "many"])).unwrap_err();
         assert_eq!(n.to_string(), "--paths: Zahl erwartet");
         for g in ["1", "consumption"] {
             assert_eq!(

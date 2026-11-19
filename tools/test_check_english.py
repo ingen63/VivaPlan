@@ -244,7 +244,7 @@ class TransitionTest(unittest.TestCase):
     def test_ak4_transition_list_holds_unconverted_paths(self):
         self.assertEqual(
             sorted(check_english.PENDING),
-            sorted(["crates/engine/", "crates/app/", "e2e/", "crates/cli/", "fuzz/", "tools/"]),
+            sorted(["crates/engine/", "crates/app/", "e2e/"]),
         )
 
     # #165/AK4: Paths on the transition list are skipped; --all checks them anyway.

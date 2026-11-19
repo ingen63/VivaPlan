@@ -148,7 +148,7 @@ fuzz_target!(|data: &[u8]| {
     if let Some(r) = &out.single {
         assert!(
             finite_result(r),
-            "ungültige Zahl: {}",
+            "invalid number: {}",
             serde_json::to_string(&plan).unwrap()
         );
     }
@@ -159,7 +159,7 @@ fuzz_target!(|data: &[u8]| {
                     .percentiles
                     .iter()
                     .all(|p| p.end_total.is_finite() && p.end_total_real.is_some_and(f64::is_finite)),
-            "ungültige Zahl: {}",
+            "invalid number: {}",
             serde_json::to_string(&plan).unwrap()
         );
     }
