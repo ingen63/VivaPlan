@@ -1,5 +1,5 @@
 fn main() {
-    // Zeitpunkt des Builds (Sekunden seit 1970); die Oberfläche zeigt ihn in der Ortszeit an.
+    // Time of the build (seconds since 1970); the user interface shows it in local time.
     let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())

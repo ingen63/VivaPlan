@@ -1,19 +1,19 @@
-//! #44: Einmalige Übernahme der App-Daten des bisherigen Identifiers.
+//! #44: One-time takeover of the app data of the previous identifier.
 //!
-//! Der neue Bundle-Identifier ergibt neue Datenordner. Ist ein neuer Ordner leer oder fehlt er und gibt es den alten,
-//! kopiert der erste Start den alten Inhalt hinüber: Einstellungen mit der zuletzt geöffneten Datei und den
-//! Bestätigungen, die Zeitreihen und (im Datenordner der Webansicht) die gespeicherten Ergebnisse. Der alte Ordner
-//! bleibt unverändert und wird nie gelöscht.
+//! The new bundle identifier yields new data folders. If a new folder is empty or missing and the old one exists,
+//! the first start copies the old content over: settings with the file last opened and the
+//! confirmations, the time series and (in the data folder of the web view) the saved results. The old folder
+//! stays unchanged and is never deleted.
 
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// legacy: RetirementPlanner – bisheriger Bundle-Identifier, nur für die Übernahme der App-Daten.
+/// legacy: RetirementPlanner – previous bundle identifier, only for taking over the app data.
 pub const LEGACY_IDENTIFIER: &str = "ch.speckhofer.pensionsplaner";
 
-/// Paare (alter Ordner, neuer Ordner). `dirs` sind die neuen Ordner, deren letzter Teil der neue Identifier ist
-/// (Datenordner, lokaler Datenordner und unter macOS der Ordner der Webansicht in `~/Library/WebKit`).
-/// Doppelte Ordner erscheinen nur einmal.
+/// Pairs (old folder, new folder). `dirs` are the new folders whose last part is the new identifier
+/// (data folder, local data folder and on macOS the folder of the web view in `~/Library/WebKit`).
+/// Duplicate folders appear only once.
 pub fn legacy_pairs(dirs: &[PathBuf]) -> Vec<(PathBuf, PathBuf)> {
     let mut out: Vec<(PathBuf, PathBuf)> = vec![];
     for new in dirs {
@@ -26,12 +26,12 @@ pub fn legacy_pairs(dirs: &[PathBuf]) -> Vec<(PathBuf, PathBuf)> {
     out
 }
 
-/// Ordner der Webansicht unter macOS (WebKit legt dort u. a. IndexedDB ab).
+/// Folder of the web view on macOS (WebKit stores IndexedDB there, among other things).
 pub fn webkit_dir(home: &Path, identifier: &str) -> PathBuf {
     home.join("Library").join("WebKit").join(identifier)
 }
 
-/// Kopiert `old` nach `new`, wenn `old` ein Ordner ist und `new` fehlt oder leer ist. Ergebnis: ob kopiert wurde.
+/// Copies `old` to `new` if `old` is a folder and `new` is missing or empty. Result: whether it copied.
 pub fn take_over(old: &Path, new: &Path) -> io::Result<bool> {
     if !old.is_dir() || !is_empty_or_missing(new)? {
         return Ok(false);
@@ -63,7 +63,7 @@ fn copy_dir(from: &Path, to: &Path) -> io::Result<()> {
     Ok(())
 }
 
-/// Übernimmt alle Paare; Fehler werden gemeldet, verhindern aber den Start nicht. Ergebnis: übernommene Ordner.
+/// Takes over all pairs; errors are reported but do not prevent the start. Result: folders taken over.
 pub fn take_over_all(pairs: &[(PathBuf, PathBuf)]) -> Vec<PathBuf> {
     pairs
         .iter()
@@ -89,7 +89,7 @@ mod tests {
         d
     }
 
-    /// #44/AK4: Einstellungen, Zeitreihen und Unterordner werden kopiert, der alte Ordner bleibt bestehen.
+    /// #44/AK4: settings, time series and subfolders are copied, the old folder stays in place.
     #[test]
     fn alter_ordner_wird_in_den_leeren_neuen_kopiert_und_bleibt_bestehen() {
         let root = tmp("copy");
@@ -105,7 +105,7 @@ mod tests {
         );
         assert_eq!(std::fs::read_to_string(new.join("Zeitreihen/sub/r.csv")).unwrap(), "1");
         assert!(old.join("einstellungen.json").is_file());
-        // Ein zweiter Start ändert nichts mehr (der neue Ordner ist nicht leer).
+        // A second start changes nothing (the new folder is not empty).
         std::fs::write(old.join("einstellungen.json"), "{}").unwrap();
         assert!(!take_over(&old, &new).unwrap());
         assert_ne!(std::fs::read_to_string(new.join("einstellungen.json")).unwrap(), "{}");
@@ -124,7 +124,7 @@ mod tests {
         std::fs::write(old.join("a"), "x").unwrap();
         assert!(take_over(&old, &new).unwrap());
         assert!(new.join("a").is_file());
-        // Eine Datei statt eines Ordners als neues Ziel ist ein Fehler, der den Start nicht verhindert.
+        // A file instead of a folder as new target is an error that does not prevent the start.
         let file = root.join("datei");
         std::fs::write(&file, "x").unwrap();
         assert!(take_over(&old, &file).is_err());
@@ -139,7 +139,7 @@ mod tests {
         assert!(is_empty_or_missing(&root).unwrap());
         std::fs::write(root.join("a"), "x").unwrap();
         assert!(!is_empty_or_missing(&root).unwrap());
-        // Eine Datei statt eines Ordners ist weder leer noch fehlend: der Fehler wird gemeldet, nicht verschluckt.
+        // A file instead of a folder is neither empty nor missing: the error is reported, not swallowed.
         assert!(is_empty_or_missing(&root.join("a")).is_err());
         let _ = std::fs::remove_dir_all(&root);
     }
@@ -160,7 +160,7 @@ mod tests {
                 (Path::new("/h/Library/WebKit").join(LEGACY_IDENTIFIER), web),
             ]
         );
-        // Hat der neue Ordner schon den alten Namen, gibt es nichts zu übernehmen.
+        // If the new folder already has the old name, there is nothing to take over.
         assert!(legacy_pairs(&[PathBuf::from("/a").join(LEGACY_IDENTIFIER)]).is_empty());
     }
 

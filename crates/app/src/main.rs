@@ -1,11 +1,11 @@
-//! Desktop-App: Fenster mit der Oberfläche aus `crates/app/ui`, Befehle für Rechenkern und Dateien.
-//! Dateien werden nur über Dialoge gewählt und lokal gelesen bzw. geschrieben.
+//! Desktop app: window with the user interface from `crates/app/ui`, commands for the engine and for files.
+//! Files are chosen only through dialogs and read or written locally.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod migrate;
 
-// #116: Speichergrenze je Testprozess (engine::test_alloc).
+// #116: memory limit per test process (engine::test_alloc).
 #[cfg(test)]
 #[global_allocator]
 static TEST_ALLOC: engine::test_alloc::Limited = engine::test_alloc::Limited;
@@ -28,36 +28,36 @@ fn home() -> PathBuf {
     home_from(std::env::var_os("HOME"), std::env::var_os("USERPROFILE"))
 }
 
-/// Home-Verzeichnis aus `HOME`, ersatzweise `USERPROFILE` (Windows); sonst leer.
+/// Home directory from `HOME`, otherwise `USERPROFILE` (Windows); else empty.
 fn home_from(home: Option<OsString>, user_profile: Option<OsString>) -> PathBuf {
     home.or(user_profile).map(PathBuf::from).unwrap_or_default()
 }
 
-/// Verzeichnis der Projektdatei (für relative Pfade zu Zeitreihen).
+/// Directory of the project file (for relative paths to time series).
 fn base_dir(plan_path: Option<&str>) -> PathBuf {
     plan_path
         .and_then(|p| Path::new(p).parent().map(Path::to_path_buf))
         .unwrap_or_else(home)
 }
 
-/// Ordner der Datenbibliothek (im Datenverzeichnis der App, z. B. unter macOS
-/// ~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen).
+/// Folder of the data library (in the app's data directory, e.g. on macOS
+/// `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`).
 fn library_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     let data = app.path().app_data_dir().map_err(|e| e.to_string())?;
     ensure_library_dir(&data)
 }
 
-/// Legt den Unterordner «Zeitreihen» im Datenverzeichnis an (falls nötig) und liefert ihn.
+/// Creates the subfolder «Zeitreihen» in the data directory (if needed) and returns it.
 fn ensure_library_dir(data_dir: &Path) -> Result<PathBuf, String> {
     let dir = data_dir.join("Zeitreihen");
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(dir)
 }
 
-/// Datei mit den Einstellungen der Oberfläche im Datenverzeichnis (nur Einstellungen, keine Planungsdaten).
+/// File with the user interface settings in the data directory (settings only, no plan data).
 const SETTINGS_FILE: &str = "einstellungen.json";
 
-/// Liest die Einstellungen; fehlende oder unlesbare Datei ergibt leere Einstellungen (es gelten die Standardwerte).
+/// Reads the settings; a missing or unreadable file yields empty settings (the defaults apply).
 fn read_settings(data_dir: &Path) -> serde_json::Map<String, Value> {
     std::fs::read_to_string(data_dir.join(SETTINGS_FILE))
         .ok()
@@ -69,7 +69,7 @@ fn read_settings(data_dir: &Path) -> serde_json::Map<String, Value> {
         .unwrap_or_default()
 }
 
-/// Setzt eine Einstellung und schreibt die Datei.
+/// Sets a setting and writes the file.
 fn write_setting(data_dir: &Path, key: &str, value: Value) -> Result<(), String> {
     let mut all = read_settings(data_dir);
     all.insert(key.to_string(), value);
@@ -91,13 +91,13 @@ async fn settings_set<R: Runtime>(app: AppHandle<R>, key: String, value: Value) 
     write_setting(&data, &key, value)
 }
 
-/// Einstellung mit dem Pfad der zuletzt geöffneten oder gespeicherten Planung (nur der Pfad, lokal).
+/// Setting holding the path of the plan last opened or saved (only the path, local).
 const LAST_PLAN_KEY: &str = "lastPlan";
-/// Name der mitgelieferten neutralen Beispielplanung (Ressource im App-Bundle).
+/// Name of the bundled neutral example plan (resource in the app bundle).
 const EXAMPLE_RESOURCE: &str = "Neu.vplan";
 
-/// Planung beim Start: Pfad (leer bei der Beispielplanung), Inhalt und ein Hinweis für die Oberfläche.
-/// `first`: allererster Start (#70), die Oberfläche zeigt dann den Willkommensdialog.
+/// Plan at startup: path (empty for the example plan), content and a notice for the user interface.
+/// `first`: very first start (#70); the user interface then shows the welcome dialog.
 #[derive(Serialize, Debug, PartialEq)]
 struct Startup {
     path: Option<String>,
@@ -113,10 +113,10 @@ fn file_name(path: &str) -> String {
         .unwrap_or_else(|| path.to_string())
 }
 
-/// Bestimmt die Planung beim Start. Eine beim Start übergebene Datei (Doppelklick, Kommandozeile) geht vor, sonst gilt
-/// die gemerkte Datei. Ohne Merkung gilt die Beispielplanung (ohne Hinweis); fehlt die Datei oder ist sie nicht
-/// lesbar, ebenfalls (mit Hinweis). Die Merkung selbst bleibt dabei unverändert.
-/// #70: Gibt es noch keine Einstellungsdatei und wurde keine Datei übergeben, ist es der allererste Start.
+/// Determines the plan at startup. A file passed at startup (double-click, command line) takes precedence, otherwise
+/// the remembered file applies. Without a remembered file the example plan applies (without notice); likewise if the
+/// file is missing or unreadable (with notice). The remembered path itself stays unchanged.
+/// #70: If there is no settings file yet and no file was passed, this is the very first start.
 fn startup_from(data_dir: &Path, given: Option<PathBuf>, example: impl FnOnce() -> Value) -> Startup {
     let first = given.is_none() && !data_dir.join(SETTINGS_FILE).exists();
     let settings = read_settings(data_dir);
@@ -155,7 +155,7 @@ fn startup_from(data_dir: &Path, given: Option<PathBuf>, example: impl FnOnce() 
     }
 }
 
-/// Mitgelieferte Beispielplanung aus den Ressourcen; ersatzweise die eingebaute.
+/// Bundled example plan from the resources; otherwise the built-in one.
 fn bundled_example<R: Runtime>(app: &AppHandle<R>) -> Value {
     app.path()
         .resolve(EXAMPLE_RESOURCE, BaseDirectory::Resource)
@@ -175,8 +175,8 @@ async fn startup_plan<R: Runtime>(app: AppHandle<R>, pending: State<'_, PendingO
     Ok(s)
 }
 
-/// #44: Datei, mit der die App gestartet wurde (Doppelklick im Finder, Dateizuordnung, Kommandozeile), bis die
-/// Oberfläche beim Start danach fragt.
+/// #44: File the app was started with (double-click in the Finder, file association, command line), until the
+/// user interface asks for it at startup.
 #[derive(Default)]
 struct PendingOpen(Mutex<Option<PathBuf>>);
 
@@ -190,7 +190,7 @@ impl PendingOpen {
     }
 }
 
-/// Endungen von Planungsdateien; `rplan` ist die alte Endung (legacy: RetirementPlanner), sie bleibt lesbar.
+/// Extensions of plan files; `rplan` is the old extension (legacy: RetirementPlanner), it stays readable.
 const PLAN_EXTENSIONS: [&str; 2] = ["vplan", "rplan"];
 
 fn is_plan_file(p: &Path) -> bool {
@@ -199,20 +199,20 @@ fn is_plan_file(p: &Path) -> bool {
         .is_some_and(|e| PLAN_EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x)))
 }
 
-/// Erste Planungsdatei unter den Startargumenten (Windows und Linux übergeben die Datei so).
+/// First plan file among the startup arguments (Windows and Linux pass the file this way).
 fn plan_arg(args: impl IntoIterator<Item = OsString>) -> Option<PathBuf> {
     args.into_iter().skip(1).map(PathBuf::from).find(|p| is_plan_file(p))
 }
 
-/// Datei aus dem Betriebssystem öffnen (macOS: Doppelklick bei laufender oder startender App). Läuft die Oberfläche
-/// schon, öffnet sie die Datei über das Ereignis «open-file»; beim Start holt sie sie mit `startup_plan`.
+/// Open a file from the operating system (macOS: double-click while the app is running or starting). If the user
+/// interface is already running, it opens the file via the event «open-file»; at startup it fetches it with `startup_plan`.
 #[cfg(any(test, target_os = "macos", target_os = "ios"))]
 fn open_from_system<R: Runtime>(app: &AppHandle<R>, path: PathBuf) {
     app.state::<PendingOpen>().set(path.clone());
     let _ = app.emit("open-file", path.to_string_lossy());
 }
 
-/// Öffnet eine vom System gemeldete Datei (Ereignis «open-file»), ohne Dialog.
+/// Opens a file reported by the system (event «open-file»), without a dialog.
 #[tauri::command]
 async fn open_path<R: Runtime>(
     app: AppHandle<R>,
@@ -225,10 +225,10 @@ async fn open_path<R: Runtime>(
     Ok(o)
 }
 
-/// Produktname im Fenstertitel und in den Menüs.
+/// Product name in the window title and in the menus.
 const PRODUCT: &str = "VivaPlan";
 
-/// Fenstertitel: «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan».
+/// Window title: «VivaPlan - ‹file name›», without a file just «VivaPlan».
 fn window_title(path: Option<&str>) -> String {
     match path.filter(|p| !p.is_empty()) {
         Some(p) => format!("{PRODUCT} - {}", file_name(p)),
@@ -236,7 +236,7 @@ fn window_title(path: Option<&str>) -> String {
     }
 }
 
-/// Setzt den Fenstertitel nach der geöffneten oder gespeicherten Datei.
+/// Sets the window title after the file was opened or saved.
 #[tauri::command]
 fn set_window_title<R: Runtime>(window: tauri::WebviewWindow<R>, path: Option<String>) -> Result<String, String> {
     let title = window_title(path.as_deref());
@@ -244,7 +244,7 @@ fn set_window_title<R: Runtime>(window: tauri::WebviewWindow<R>, path: Option<St
     Ok(title)
 }
 
-/// Merkt sich den Pfad der Planung für den nächsten Start; ein Fehler dabei stört das Öffnen/Speichern nicht.
+/// Remembers the path of the plan for the next start; an error here does not disturb opening or saving.
 fn remember_plan<R: Runtime>(app: &AppHandle<R>, path: &str) {
     if let Ok(data) = app.path().app_data_dir() {
         remember_in(&data, path);
@@ -255,7 +255,7 @@ fn remember_in(data_dir: &Path, path: &str) {
     let _ = write_setting(data_dir, LAST_PLAN_KEY, Value::String(path.to_string()));
 }
 
-/// Zustand für das Beenden: ungespeicherte Änderungen (von der Oberfläche gemeldet) und die Freigabe zum Beenden.
+/// State for quitting: unsaved changes (reported by the user interface) and the permission to quit.
 #[derive(Default)]
 struct Quit {
     dirty: AtomicBool,
@@ -263,7 +263,7 @@ struct Quit {
 }
 
 impl Quit {
-    /// Beenden braucht eine Rückfrage, solange Änderungen ungespeichert sind und das Beenden nicht freigegeben ist.
+    /// Quitting needs a confirmation as long as changes are unsaved and quitting has not been permitted.
     fn must_ask(&self) -> bool {
         self.dirty.load(Ordering::SeqCst) && !self.confirmed.load(Ordering::SeqCst)
     }
@@ -274,16 +274,16 @@ fn set_dirty(quit: State<'_, Quit>, dirty: bool) {
     quit.dirty.store(dirty, Ordering::SeqCst);
 }
 
-/// Beendet die App ohne weitere Rückfrage (die Oberfläche hat gespeichert oder verworfen).
+/// Quits the app without further confirmation (the user interface has saved or discarded).
 #[tauri::command]
 fn quit_app<R: Runtime>(app: AppHandle<R>, quit: State<'_, Quit>) {
     quit.confirmed.store(true, Ordering::SeqCst);
     app.exit(0);
 }
 
-/// #141: Rauchtest der ausgelieferten App (`--smoke`): Die Oberfläche startet, rechnet die Beispielplanung und meldet das
-/// Ergebnis mit `smoke_done`. Die App beendet sich dann mit Code 0 (in Ordnung) oder 1 (Fehler); ohne Meldung nach
-/// [`SMOKE_TIMEOUT`] mit Code 2.
+/// #141: smoke test of the shipped app (`--smoke`): the user interface starts, calculates the example plan and reports the
+/// result with `smoke_done`. The app then exits with code 0 (ok) or 1 (error); without a report after
+/// [`SMOKE_TIMEOUT`] with code 2.
 #[derive(Default)]
 struct Smoke(bool);
 
@@ -294,8 +294,8 @@ fn smoke_requested(args: impl IntoIterator<Item = OsString>) -> bool {
     args.into_iter().skip(1).any(|a| a == SMOKE_FLAG)
 }
 
-/// Meldet das Ergebnis des Rauchtests auf der Konsole und, falls `VIVAPLAN_SMOKE_OUT` gesetzt ist, in dieser Datei
-/// (unter Windows hat die App keine Konsole).
+/// Reports the result of the smoke test on the console and, if `VIVAPLAN_SMOKE_OUT` is set, in that file
+/// (on Windows the app has no console).
 fn smoke_report(line: &str) {
     println!("{line}");
     if let Some(out) = std::env::var_os("VIVAPLAN_SMOKE_OUT") {
@@ -303,7 +303,7 @@ fn smoke_report(line: &str) {
     }
 }
 
-/// Ausgabe und Exit-Code des Rauchtests.
+/// Output and exit code of the smoke test.
 fn smoke_outcome(ok: bool, message: &str) -> (String, i32) {
     (
         format!("VivaPlan-Rauchtest: {} – {message}", if ok { "ok" } else { "FEHLER" }),
@@ -313,7 +313,7 @@ fn smoke_outcome(ok: bool, message: &str) -> (String, i32) {
 
 #[tauri::command]
 fn smoke_done<R: Runtime>(app: AppHandle<R>, quit: State<'_, Quit>, ok: bool, message: String) {
-    // Nur im Rauchtest (den Zustand setzt `main`); sonst ohne Wirkung.
+    // Only in the smoke test (`main` sets the state); otherwise without effect.
     if !app.try_state::<Smoke>().is_some_and(|s| s.0) {
         return;
     }
@@ -323,7 +323,7 @@ fn smoke_done<R: Runtime>(app: AppHandle<R>, quit: State<'_, Quit>, ok: bool, me
     app.exit(code);
 }
 
-/// Meldet der Oberfläche «quit-requested», wenn ungespeicherte Änderungen vorliegen; `true` heisst: Beenden stoppen.
+/// Sends «quit-requested» to the user interface if there are unsaved changes; `true` means: stop quitting.
 fn ask_before_exit<R: Runtime>(app: &AppHandle<R>) -> bool {
     let ask = app.state::<Quit>().must_ask();
     if ask {
@@ -332,7 +332,7 @@ fn ask_before_exit<R: Runtime>(app: &AppHandle<R>) -> bool {
     ask
 }
 
-/// Beenden über das System (z. B. Dock oder Abmeldung): bei ungespeicherten Änderungen stoppen und fragen.
+/// Quitting through the system (e.g. Dock or logout): with unsaved changes stop and ask.
 fn on_run_event<R: Runtime>(app: &AppHandle<R>, event: RunEvent) {
     match event {
         RunEvent::ExitRequested { api, .. } if ask_before_exit(app) => api.prevent_exit(),
@@ -350,7 +350,7 @@ fn on_run_event<R: Runtime>(app: &AppHandle<R>, event: RunEvent) {
     }
 }
 
-/// Schliessen-Knopf des Fensters: bei ungespeicherten Änderungen das Fenster offen lassen und fragen.
+/// Close button of the window: with unsaved changes keep the window open and ask.
 fn on_window_event<R: Runtime>(window: &tauri::Window<R>, event: &WindowEvent) {
     if let WindowEvent::CloseRequested { api, .. } = event {
         if ask_before_exit(window.app_handle()) {
@@ -359,14 +359,14 @@ fn on_window_event<R: Runtime>(window: &tauri::Window<R>, event: &WindowEvent) {
     }
 }
 
-/// Menüeintrag «Beenden» (⌘Q): fragt bei ungespeicherten Änderungen, sonst sofort beenden.
+/// Menu item «Beenden» (⌘Q): asks if there are unsaved changes, otherwise quits immediately.
 fn quit_from_menu<R: Runtime>(app: &AppHandle<R>) {
     if !ask_before_exit(app) {
         app.exit(0);
     }
 }
 
-/// Beschreibung eines Dateidialogs: Titel und Dateifilter (Name und Endungen).
+/// Description of a file dialog: title and file filters (name and extensions).
 struct Dialog {
     title: &'static str,
     filter: &'static str,
@@ -404,18 +404,18 @@ const SERIES_DIALOG: Dialog = Dialog {
     extensions: &["csv"],
 };
 
-/// Dateiauswahl des Betriebssystems. Hinter einem Trait, damit Tests feste Pfade liefern können;
-/// `None` heisst: Dialog abgebrochen.
+/// File picker of the operating system. Behind a trait so that tests can return fixed paths;
+/// `None` means: dialog cancelled.
 trait Dialogs: Send + Sync {
     fn pick_file(&self, dialog: &Dialog) -> Option<FilePath>;
     fn pick_files(&self, dialog: &Dialog) -> Option<Vec<FilePath>>;
     fn save_file(&self, dialog: &Dialog, file_name: &str) -> Option<FilePath>;
 }
 
-/// Der gemeinsam verwaltete Dateiauswahl-Dienst (siehe `install_dialogs`).
+/// The shared managed file picker service (see `install_dialogs`).
 type Picker = Arc<dyn Dialogs>;
 
-/// Echte Dialoge über `tauri-plugin-dialog` (blockierend, öffnen Fenster des Betriebssystems).
+/// Real dialogs via `tauri-plugin-dialog` (blocking, open windows of the operating system).
 struct NativeDialogs<R: Runtime>(AppHandle<R>);
 
 impl<R: Runtime> NativeDialogs<R> {
@@ -442,7 +442,7 @@ impl<R: Runtime> Dialogs for NativeDialogs<R> {
     }
 }
 
-/// Meldet die echten Dialoge an; die Befehle holen sie als `State<Picker>`.
+/// Registers the real dialogs; the commands fetch them as `State<Picker>`.
 fn install_dialogs<R: Runtime>(app: &tauri::App<R>) {
     let picker: Picker = Arc::new(NativeDialogs(app.handle().clone()));
     app.manage(picker);
@@ -452,7 +452,7 @@ fn path_string(p: FilePath) -> Result<PathBuf, String> {
     p.into_path().map_err(|e| e.to_string())
 }
 
-/// Vorgeschlagener Dateiname (ohne Endung) aus dem Projektnamen.
+/// Suggested file name (without extension) from the project name.
 fn plan_name(plan: &Value) -> &str {
     plan.pointer("/project/name")
         .and_then(Value::as_str)
@@ -460,8 +460,8 @@ fn plan_name(plan: &Value) -> &str {
         .unwrap_or("Planung")
 }
 
-/// Ergänzt die Endung «vplan», falls der gewählte Pfad keine hat; aus «.rplan» wird «.vplan», damit eine alte Datei
-/// nie überschrieben wird.
+/// Adds the extension «vplan» if the chosen path has none; «.rplan» becomes «.vplan» so that an old file
+/// is never overwritten.
 fn with_default_extension(mut p: PathBuf) -> PathBuf {
     if p.extension().is_none() || legacy_stem(&p.to_string_lossy()).is_some() {
         p.set_extension("vplan");
@@ -469,7 +469,7 @@ fn with_default_extension(mut p: PathBuf) -> PathBuf {
     p
 }
 
-/// legacy: RetirementPlanner – Name (ohne Endung) einer alten .rplan-Datei, sonst `None`.
+/// legacy: RetirementPlanner – name (without extension) of an old .rplan file, otherwise `None`.
 fn legacy_stem(path: &str) -> Option<String> {
     let p = Path::new(path);
     p.extension()
@@ -478,8 +478,8 @@ fn legacy_stem(path: &str) -> Option<String> {
     p.file_stem().map(|s| s.to_string_lossy().into_owned())
 }
 
-/// Basisordner für Datenpfade einer alten config.json: der Ordner der Datei oder dessen Elternordner,
-/// je nachdem, wo die referenzierte Datei liegt.
+/// Base folder for data paths of an old config.json: the folder of the file or its parent folder,
+/// depending on where the referenced file is.
 fn legacy_base(path: &Path, text: &str) -> PathBuf {
     let dir = path.parent().map(Path::to_path_buf).unwrap_or_default();
     let data_file = serde_json::from_str::<Value>(text).ok().and_then(|v| {
@@ -500,7 +500,7 @@ struct Opened {
     plan: Value,
 }
 
-/// Version und Zeitpunkt des Builds für das «Über»-Fenster.
+/// Version and time of the build for the «About» window.
 #[tauri::command]
 fn app_info<R: Runtime>(app: AppHandle<R>) -> Value {
     serde_json::json!({
@@ -509,14 +509,14 @@ fn app_info<R: Runtime>(app: AppHandle<R>) -> Value {
     })
 }
 
-/// Rechenzeit pro Lauf, für die Dauerschätzung bei Szenarien und Optimierung.
+/// Computing time per run, for the duration estimate of scenarios and optimization.
 #[tauri::command]
 async fn bench_plan<R: Runtime>(app: AppHandle<R>, plan: Value, path: Option<String>) -> Result<api::BenchOut, String> {
     let lib = library_dir(&app).ok();
     api::bench(&plan, &base_dir(path.as_deref()), lib.as_deref())
 }
 
-/// Stand einer Berechnung (Simulation oder Optimierung); ohne Kennung die zuletzt gestartete.
+/// State of a calculation (simulation or optimization); without an id the one started last.
 #[tauri::command]
 fn progress_get(job_id: Option<u64>) -> engine::progress::Progress {
     match job_id {
@@ -525,7 +525,7 @@ fn progress_get(job_id: Option<u64>) -> engine::progress::Progress {
     }
 }
 
-/// Bricht eine Berechnung ab (mit Kennung nur diese, sonst alle laufenden).
+/// Cancels a calculation (with an id only that one, otherwise all running ones).
 #[tauri::command]
 fn cancel_job(job_id: Option<u64>) {
     match job_id {
@@ -536,7 +536,7 @@ fn cancel_job(job_id: Option<u64>) {
     }
 }
 
-/// Parameter der Strategien mit Standard-Bandbreiten und den Werten der Planung.
+/// Parameters of the strategies with default ranges and the values of the plan.
 #[tauri::command]
 fn opt_params(plan: Value) -> Vec<engine::optimize::CatalogStrategy> {
     api::opt_params(&plan)
@@ -547,7 +547,7 @@ fn example_plan() -> Value {
     api::example_plan()
 }
 
-/// #138: Vorlagen der Grundstückgewinnsteuer.
+/// #138: templates of the property gains tax.
 #[tauri::command]
 fn gain_templates() -> Value {
     api::gain_templates()
@@ -558,7 +558,7 @@ fn validate(plan: Value) -> Vec<Issue> {
     api::validate(&plan)
 }
 
-/// Ältere Planung beim Laden auf den aktuellen Stand bringen (#52, #51).
+/// Brings an older plan up to date when loading (#52, #51).
 #[tauri::command]
 fn upgrade_plan(plan: Value) -> api::UpgradeOut {
     api::upgrade_plan(&plan)
@@ -622,12 +622,12 @@ async fn library_list<R: Runtime>(app: AppHandle<R>) -> Result<api::LibraryOut, 
     list_in(&library_dir(&app)?)
 }
 
-/// Inhalt der Datenbibliothek im Ordner `dir` (legt die ausgelieferten Zeitreihen an, falls nötig).
+/// Content of the data library in folder `dir` (creates the shipped time series if needed).
 fn list_in(dir: &Path) -> Result<api::LibraryOut, String> {
     api::library_list(dir).map_err(|e| e.to_string())
 }
 
-/// Führt `then` nur aus, wenn im Dialog etwas gewählt wurde (`pick` liefert dann `Some`).
+/// Runs `then` only if something was chosen in the dialog (`pick` then returns `Some`).
 fn picked<T, U>(
     pick: impl FnOnce() -> Option<T>,
     then: impl FnOnce(T) -> Result<U, String>,
@@ -700,9 +700,9 @@ async fn save_plan<R: Runtime>(
     Ok(saved)
 }
 
-/// Speichert unter dem gegebenen Pfad, sonst unter dem im Dialog (`pick`, mit Namensvorschlag) gewählten.
-/// #44: Ist der gegebene Pfad eine alte .rplan-Datei, fragt der Dialog wie «Speichern unter» und schlägt denselben
-/// Namen vor (mit .vplan); die .rplan-Datei bleibt unverändert.
+/// Saves under the given path, otherwise under the one chosen in the dialog (`pick`, with a suggested name).
+/// #44: If the given path is an old .rplan file, the dialog asks like «Speichern unter» and suggests the same
+/// name (with .vplan); the .rplan file stays unchanged.
 fn save_with(
     plan: &Value,
     path: Option<String>,
@@ -735,7 +735,7 @@ async fn import_legacy(dialogs: State<'_, Picker>, start_year: i32) -> Result<Op
 fn legacy_from(file: FilePath, start_year: i32) -> Result<api::ImportOut, String> {
     let path = path_string(file)?;
     let text = std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
-    // Das alte Programm lief im Projektordner; Datenpfade wie ./data/MSCI.csv gelten von dort aus.
+    // The old program ran in the project folder; data paths like ./data/MSCI.csv are relative to it.
     let base = legacy_base(&path, &text);
     let name = path
         .file_stem()
@@ -753,10 +753,10 @@ async fn pick_series(dialogs: State<'_, Picker>) -> Result<Option<String>, Strin
     picked(|| dialogs.pick_file(&SERIES_DIALOG), series_choice)
 }
 
-/// Ein Eintrag der Menüs: Kennung, Beschriftung und Tastenkürzel (leer = keines).
+/// A menu entry: id, label and keyboard shortcut (empty = none).
 type Entry = (&'static str, &'static str, &'static str);
 
-/// Trennlinie in den Menütabellen.
+/// Separator in the menu tables.
 const SEP: Entry = ("", "", "");
 
 const FILE_MENU: [Entry; 8] = [
@@ -770,11 +770,11 @@ const FILE_MENU: [Entry; 8] = [
     ("run", "Simulation starten", "CmdOrCtrl+Enter"),
 ];
 
-/// #25: anwendungsweite Einstellungen (Grenzen für AHV-Bezug, Bezug Pensionskasse, Maximalbetrag Säule 3a).
-/// #59: auf macOS im Programmmenü, auf Windows und Linux am Ende von «Datei».
+/// #25: application-wide settings (limits for AHV payout, pension fund payout, maximum amount pillar 3a).
+/// #59: on macOS in the application menu, on Windows and Linux at the end of «Datei».
 const SETTINGS: Entry = ("settings", "Einstellungen…", "CmdOrCtrl+,");
 
-/// Einträge des Menüs «Datei» je System (ohne «Beenden», das als Systemeintrag folgt).
+/// Entries of the menu «Datei» per system (without «Beenden», which follows as a system entry).
 fn file_entries() -> Vec<Entry> {
     let tail: &[Entry] = if cfg!(target_os = "macos") {
         &[]
@@ -790,11 +790,11 @@ const EDIT_MENU: [Entry; 3] = [
     SEP,
 ];
 
-/// Kennung des Menüeintrags «Beenden»; die App behandelt ihn selbst (Rückfrage bei ungespeicherten Änderungen).
+/// Id of the menu item «Beenden»; the app handles it itself (confirmation with unsaved changes).
 const QUIT_ID: &str = "quit";
 
-/// Eigene Zeilen des Programmmenüs (macOS): «Über» und «Einstellungen…» mit Trennlinien; der Rest sind
-/// Systemeinträge.
+/// Own rows of the application menu (macOS): «Über» and «Einstellungen…» with separators; the rest are
+/// system entries.
 #[cfg(target_os = "macos")]
 const APP_MENU: [Entry; 4] = [("about", "Über VivaPlan", ""), SEP, SETTINGS, SEP];
 
@@ -803,7 +803,7 @@ const QUIT_TEXT: &str = "Beenden";
 const EDIT_TITLE: &str = "Bearbeiten";
 const HELP_TITLE: &str = "Hilfe";
 
-/// #70/#71: «Willkommen …» öffnet den Willkommensdialog, «Erste Schritte» blendet die Checkliste ein.
+/// #70/#71: «Willkommen …» opens the welcome dialog, «Erste Schritte» shows the checklist.
 const HELP_MENU: [Entry; 8] = [
     ("helpctx", "Hilfe zum aktuellen Thema", "F1"),
     ("manual", "Handbuch", "CmdOrCtrl+Shift+/"),
@@ -815,7 +815,7 @@ const HELP_MENU: [Entry; 8] = [
     ("about", "Über VivaPlan", ""),
 ];
 
-/// Baut ein Untermenü aus einer Tabelle.
+/// Builds a submenu from a table.
 fn submenu<'a, R: Runtime>(
     app: &'a AppHandle<R>,
     title: &str,
@@ -836,8 +836,8 @@ fn submenu<'a, R: Runtime>(
     Ok(b)
 }
 
-/// Menü mit den üblichen Tastenkürzeln. Eigene Einträge melden sich als Ereignis «menu» mit ihrer
-/// Kennung bei der Oberfläche; Ausschneiden, Kopieren und Einfügen übernimmt das System.
+/// Menu with the usual keyboard shortcuts. Own entries report to the user interface as event «menu» with their
+/// id; cut, copy and paste are handled by the system.
 fn menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let quit = MenuItemBuilder::with_id(QUIT_ID, QUIT_TEXT)
         .accelerator("CmdOrCtrl+Q")
@@ -871,7 +871,7 @@ fn menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     Menu::with_items(app, &[&file, &edit, &help])
 }
 
-/// Baut die Anwendung (Plugins, Menü, Befehle); getrennt von `main`, damit sie mit der Mock-Runtime testbar ist.
+/// Builds the application (plugins, menu, commands); separate from `main` so that it is testable with the mock runtime.
 fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
     builder
         .plugin(tauri_plugin_dialog::init())
@@ -911,7 +911,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
         ])
 }
 
-/// Meldet einen Menüklick als Ereignis «menu» mit der Kennung des Eintrags an die Oberfläche.
+/// Reports a menu click as event «menu» with the id of the entry to the user interface.
 fn forward_menu_event<R: Runtime>(app: &AppHandle<R>, ev: MenuEvent) {
     if ev.id().0 == QUIT_ID {
         return quit_from_menu(app);
@@ -919,8 +919,8 @@ fn forward_menu_event<R: Runtime>(app: &AppHandle<R>, ev: MenuEvent) {
     let _ = app.emit("menu", ev.id().0.as_str());
 }
 
-/// Setzt Menü und Menüereignisse; braucht den Hauptthread des Betriebssystems und ist daher nur in
-/// der echten Anwendung aktiv (nicht in den Tests mit Mock-Runtime).
+/// Sets the menu and menu events; needs the main thread of the operating system and is therefore only active in
+/// the real application (not in the tests with the mock runtime).
 fn install_menu<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::error::Error>> {
     let m = menu(app.handle())?;
     app.set_menu(m)?;
@@ -928,7 +928,7 @@ fn install_menu<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::
     Ok(())
 }
 
-/// Neue Datenordner der App, deren letzter Teil der Identifier ist (für die Übernahme der alten App-Daten).
+/// New data folders of the app whose last part is the identifier (for taking over the old app data).
 fn data_dirs<R: Runtime>(app: &AppHandle<R>) -> Vec<PathBuf> {
     let p = app.path();
     let mut dirs: Vec<PathBuf> = [p.app_data_dir(), p.app_local_data_dir()]
@@ -943,14 +943,14 @@ fn data_dirs<R: Runtime>(app: &AppHandle<R>) -> Vec<PathBuf> {
     dirs
 }
 
-/// Erstellt die im Konfigurationsfile beschriebenen Fenster (dort mit `create: false`, damit die App-Daten vor dem
-/// ersten Zugriff der Webansicht übernommen sind).
+/// Creates the windows described in the configuration file (there with `create: false`, so that the app data is
+/// taken over before the web view accesses it for the first time).
 fn create_windows<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
     let smoke = app.try_state::<Smoke>().is_some_and(|s| s.0);
     for w in app.config().app.windows.clone() {
         let mut b = tauri::WebviewWindowBuilder::from_config(app.handle(), &w)?;
         if smoke {
-            // #141: Die Oberfläche erkennt den Rauchtest an dieser Variable (vor allen Skripten der Seite gesetzt).
+            // #141: the user interface detects the smoke test by this variable (set before all scripts of the page).
             b = b.initialization_script("window.__VIVAPLAN_SMOKE__ = true;");
         }
         b.build()?;
@@ -958,7 +958,7 @@ fn create_windows<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Einrichtung beim Start der echten Anwendung: alte App-Daten übernehmen (#44), Fenster, Dateidialoge und Menü.
+/// Setup at the start of the real application: take over old app data (#44), windows, file dialogs and menu.
 fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::error::Error>> {
     migrate::take_over_all(&migrate::legacy_pairs(&data_dirs(app.handle())));
     create_windows(app)?;
@@ -978,7 +978,7 @@ fn main() {
         app.state::<PendingOpen>().set(p);
     }
     if smoke {
-        // #141: Zeitgrenze, falls die Oberfläche nie meldet (z. B. Webansicht startet nicht)
+        // #141: time limit in case the user interface never reports (e.g. the web view does not start)
         std::thread::spawn(|| {
             std::thread::sleep(SMOKE_TIMEOUT);
             smoke_report(&format!(
@@ -1002,10 +1002,10 @@ mod tests {
         App, Listener, WebviewWindow, WebviewWindowBuilder,
     };
 
-    /// Berechnungen teilen sich einen globalen Fortschritts- und Abbruchzustand; Tests laufen daher nacheinander.
+    /// Calculations share a global progress and cancel state; tests therefore run one after another.
     static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-    /// Dateidialog-Ersatz mit festen Antworten; merkt sich, wie er gefragt wurde.
+    /// File dialog stand-in with fixed answers; remembers how it was asked.
     #[derive(Default)]
     struct FakeDialogs {
         file: Option<FilePath>,
@@ -1042,7 +1042,7 @@ mod tests {
         }
     }
 
-    /// Hält die Sperre `SERIAL` und entfernt am Ende des Tests den Datenordner des Testprozesses.
+    /// Holds the lock `SERIAL` and removes the data folder of the test process at the end of the test.
     struct Serial {
         _lock: std::sync::MutexGuard<'static, ()>,
         data: Option<PathBuf>,
@@ -1056,10 +1056,10 @@ mod tests {
         }
     }
 
-    /// #159: Jeder Testprozess hat einen eigenen Datenordner (Einstellungen, zuletzt geöffnete Planung). nextest startet
-    /// jeden Test in einem eigenen Prozess; die Sperre `SERIAL` gilt nur innerhalb eines Prozesses. Mit einem gemeinsamen
-    /// Ordner überschrieb ein gleichzeitig laufender Test die Einstellungen (Lesen, Ändern, Schreiben), und
-    /// `issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen` schlug zufällig fehl.
+    /// #159: Every test process has its own data folder (settings, plan last opened). nextest starts
+    /// every test in its own process; the lock `SERIAL` only applies within one process. With a shared
+    /// folder a test running at the same time overwrote the settings (read, modify, write), and
+    /// `issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen` failed at random.
     fn test_context() -> tauri::Context<MockRuntime> {
         let mut ctx = mock_context(noop_assets());
         let id = format!("{}.test-{}", ctx.config().identifier, std::process::id());
@@ -1088,8 +1088,8 @@ mod tests {
         (app, w, guard)
     }
 
-    /// #141: Herkunft der Oberfläche, wie Tauri sie prüft: unter Windows (WebView2) `http://tauri.localhost`, sonst
-    /// `tauri://localhost`. Mit der falschen Herkunft lehnt Tauri jeden Befehl ab («… not allowed»).
+    /// #141: origin of the user interface as Tauri checks it: on Windows (WebView2) `http://tauri.localhost`, otherwise
+    /// `tauri://localhost`. With the wrong origin Tauri rejects every command («… not allowed»).
     const APP_ORIGIN: &str = if cfg!(windows) {
         "http://tauri.localhost"
     } else {
@@ -1140,9 +1140,9 @@ mod tests {
         let dir = tmp("lib");
         let lib = ensure_library_dir(&dir.join("neu")).unwrap();
         assert!(lib.is_dir() && lib.ends_with("Zeitreihen"));
-        // Existiert schon: weiterhin Erfolg.
+        // Already exists: still success.
         assert_eq!(ensure_library_dir(&dir.join("neu")).unwrap(), lib);
-        // Datenverzeichnis ist eine Datei: Fehler mit Pfad.
+        // Data directory is a file: error with path.
         let datei = dir.join("datei");
         std::fs::write(&datei, "x").unwrap();
         let e = ensure_library_dir(&datei).unwrap_err();
@@ -1188,15 +1188,15 @@ mod tests {
         std::fs::create_dir_all(&sub).unwrap();
         let cfg = sub.join("config.json");
         let text = r#"{"WealthManagement":{"HistoricalData":"data.csv"}}"#;
-        // Datei nirgends vorhanden: Ordner der config.json.
+        // File nowhere present: folder of the config.json.
         assert_eq!(legacy_base(&cfg, text), sub);
-        // Datei im Elternordner.
+        // File in the parent folder.
         std::fs::write(root.join("data.csv"), "x").unwrap();
         assert_eq!(legacy_base(&cfg, text), root);
-        // Datei im selben Ordner hat Vorrang.
+        // File in the same folder takes precedence.
         std::fs::write(sub.join("data.csv"), "x").unwrap();
         assert_eq!(legacy_base(&cfg, text), sub);
-        // Ungültiges JSON oder fehlender Eintrag.
+        // Invalid JSON or missing entry.
         assert_eq!(legacy_base(&cfg, "kein json"), sub);
         assert_eq!(legacy_base(&cfg, "{}"), sub);
         assert_eq!(legacy_base(Path::new("config.json"), "{}"), PathBuf::from(""));
@@ -1309,7 +1309,7 @@ mod tests {
             "series_info",
             json!({"path": csv.to_string_lossy(), "planPath": dir.join("p.vplan").to_string_lossy()}),
         );
-        // Format der CSV hängt vom Engine-Parser ab; beide Ausgänge laufen über den Befehl.
+        // The CSV format depends on the engine parser; both outcomes go through the command.
         assert!(r.is_ok() || r.unwrap_err().is_string());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1323,14 +1323,14 @@ mod tests {
         let all = read_settings(&dir);
         assert_eq!(all["showTaxCols"], json!(true));
         assert_eq!(all["andere"], json!("x"));
-        // unlesbare Datei: Standardwerte, und Schreiben überschreibt sie
+        // unreadable file: defaults, and writing overwrites it
         std::fs::write(dir.join(SETTINGS_FILE), "kein json").unwrap();
         assert!(read_settings(&dir).is_empty());
         std::fs::write(dir.join(SETTINGS_FILE), "[1]").unwrap();
         assert!(read_settings(&dir).is_empty());
         write_setting(&dir, "showTaxCols", json!(false)).unwrap();
         assert_eq!(read_settings(&dir)["showTaxCols"], json!(false));
-        // Datenverzeichnis nicht beschreibbar (ist eine Datei)
+        // data directory not writable (is a file)
         let file = dir.join("datei");
         std::fs::write(&file, "x").unwrap();
         assert!(write_setting(&file, "k", json!(1)).is_err());
@@ -1359,7 +1359,7 @@ mod tests {
         let v = list_in(&lib).unwrap();
         assert_eq!(v.dir, lib.to_string_lossy());
         assert!(!v.entries.is_empty(), "ausgelieferte Zeitreihen werden angelegt");
-        // Ein Ordnerpfad, der eine Datei ist, lässt sich nicht lesen.
+        // A folder path that is a file cannot be read.
         let datei = dir.join("datei");
         std::fs::write(&datei, "x").unwrap();
         assert!(list_in(&datei).err().unwrap().contains("datei"));
@@ -1373,7 +1373,7 @@ mod tests {
         assert!(d.is_dir());
     }
 
-    /// #142: Antwort ohne Zeitfelder (Rechenzeit, Buildzeit).
+    /// #142: response without time fields (computing time, build time).
     fn without_times(v: &mut Value) {
         match v {
             Value::Object(o) => {
@@ -1386,7 +1386,7 @@ mod tests {
         }
     }
 
-    /// #142: Platzhalter der Tabelle durch kleine Planungen ersetzen.
+    /// #142: replace the placeholders of the table with small plans.
     fn table_args(args: &Value) -> Value {
         let mut a = args.clone();
         if let Some(p) = a.get("plan").and_then(Value::as_str) {
@@ -1409,10 +1409,10 @@ mod tests {
         serde_json::from_str(include_str!("../ipc-commands.json")).expect("Tabelle ist JSON")
     }
 
-    /// #142/AK1, AK2, AK4: Jeder Rechenbefehl der Tabelle gibt über die Tauri-IPC (Argumente wie die Oberfläche sie
-    /// sendet, camelCase) dieselbe Antwort wie der Verteiler des Entwicklungsservers (`engine::dispatch::call`, den
-    /// `devserver::call` unverändert aufruft). Darin enthalten (AK4): `run_simulation` mit `jobId` und danach
-    /// `progress_get` mit derselben Kennung.
+    /// #142/AK1, AK2, AK4: Every calculation command of the table returns through the Tauri IPC (arguments as the user
+    /// interface sends them, camelCase) the same response as the dispatcher of the development server (`engine::dispatch::call`, which
+    /// `devserver::call` calls unchanged). Included (AK4): `run_simulation` with `jobId` and then
+    /// `progress_get` with the same id.
     #[test]
     fn issue_142_ak2_tauri_commands_answer_like_the_dev_server() {
         let (app, w, _g) = setup();
@@ -1425,8 +1425,8 @@ mod tests {
             let cmd = e["cmd"].as_str().unwrap();
             let args = table_args(&e["args"]);
             let mut tauri = call(&w, cmd, args.clone()).map_err(|e| e.as_str().unwrap_or_default().to_string());
-            // Die IPC-Antwort kommt als JSON-Text; serde_json liest Gleitkommazahlen daraus nicht immer bitgenau
-            // (ohne `float_roundtrip`). Die Antwort des Verteilers nimmt deshalb denselben Weg über Text.
+            // The IPC response arrives as JSON text; serde_json does not always read floating point numbers from it bit-exactly
+            // (without `float_roundtrip`). The dispatcher's response therefore takes the same path through text.
             let mut dev = engine::dispatch::call(cmd, &args, &lib, &home())
                 .map(|v| serde_json::from_str::<Value>(&v.to_string()).unwrap());
             for v in [&mut tauri, &mut dev].into_iter().flatten() {
@@ -1453,9 +1453,9 @@ mod tests {
         assert!(progress_checked);
     }
 
-    /// #142/AK3: Die Tabelle nennt jeden Befehl aus `generate_handler!`, als Rechenbefehl oder als «nur Desktop-App»,
-    /// und keinen anderen. Ein neuer Befehl ohne Eintrag lässt den Test fehlschlagen (Gegenstück für den
-    /// Entwicklungsserver: `engine::dispatch`, Test `issue_142_ak3_…`).
+    /// #142/AK3: The table lists every command from `generate_handler!`, as a calculation command or as «desktop app only»,
+    /// and no other. A new command without an entry makes the test fail (counterpart for the
+    /// development server: `engine::dispatch`, test `issue_142_ak3_…`).
     #[test]
     fn issue_142_ak3_table_lists_every_tauri_command() {
         let src = include_str!("main.rs");
@@ -1486,7 +1486,7 @@ mod tests {
         assert_eq!(handler, listed);
     }
 
-    /// #141: Startoption des Rauchtests, Ausgabe und Exit-Code.
+    /// #141: startup option of the smoke test, output and exit code.
     #[test]
     fn issue_141_ak4_smoke_option_and_outcome() {
         let args = |a: &[&str]| a.iter().map(OsString::from).collect::<Vec<_>>();
@@ -1498,7 +1498,7 @@ mod tests {
             ("VivaPlan-Rauchtest: ok – 472 Monate gerechnet".into(), 0)
         );
         assert_eq!(smoke_outcome(false, "x").1, 1);
-        // Ohne --smoke tut der Befehl nichts (die App läuft weiter)
+        // Without --smoke the command does nothing (the app keeps running)
         let (_app, w, _g) = setup();
         assert_eq!(
             call(&w, "smoke_done", json!({"ok": false, "message": "x"})).unwrap(),
@@ -1506,8 +1506,8 @@ mod tests {
         );
     }
 
-    /// #162/AK1: `smoke_report` schreibt die Meldung des Rauchtests auch in die Datei aus `VIVAPLAN_SMOKE_OUT` (unter
-    /// Windows hat die App keine Konsole; `pakete.yml` liest die Datei).
+    /// #162/AK1: `smoke_report` also writes the smoke test report to the file from `VIVAPLAN_SMOKE_OUT` (on
+    /// Windows the app has no console; `pakete.yml` reads the file).
     #[test]
     fn issue_162_ak1_smoke_report_writes_the_file() {
         let out = std::env::temp_dir().join(format!("vivaplan-smoke-{}.txt", std::process::id()));
@@ -1522,8 +1522,8 @@ mod tests {
         let _ = std::fs::remove_file(&out);
     }
 
-    /// #141/AK3: Pfade unter Windows (Laufwerk, Backslash, UNC, Leerzeichen und Umlaute, .rplan → .vplan). Die Fälle
-    /// werden auf allen Systemen übersetzt, ausgeführt nur unter Windows (dort gelten Backslash und Laufwerk als Pfad).
+    /// #141/AK3: paths on Windows (drive, backslash, UNC, spaces and umlauts, .rplan → .vplan). The cases
+    /// are compiled on all systems, run only on Windows (only there backslash and drive count as a path).
     #[cfg_attr(not(windows), allow(dead_code))]
     fn windows_path_cases() {
         assert_eq!(
@@ -1565,7 +1565,7 @@ mod tests {
         windows_path_cases();
     }
 
-    /// #141: Leerzeichen und Umlaute in Pfaden mit «/» (alle Systeme).
+    /// #141: spaces and umlauts in paths with «/» (all systems).
     #[test]
     fn paths_with_spaces_and_umlauts() {
         assert_eq!(
@@ -1601,8 +1601,8 @@ mod tests {
         assert!(e.as_str().unwrap().contains("p.vplan"));
     }
 
-    /// #136/AK4: Schlägt das Speichern fehl, meldet der Befehl den Fehler (die Oberfläche zeigt ihn und lässt die
-    /// Planung ungespeichert, e2e «#136/AK4»), und die vorhandene Datei behält den alten Inhalt.
+    /// #136/AK4: If saving fails, the command reports the error (the user interface shows it and leaves the
+    /// plan unsaved, e2e «#136/AK4»), and the existing file keeps its old content.
     #[cfg(unix)]
     #[test]
     fn issue_136_ak4_failed_save_reports_error_and_keeps_file() {
@@ -1638,20 +1638,20 @@ mod tests {
         let o = opened_from(FilePath::Path(f.clone())).unwrap();
         assert_eq!(o.path, f.to_string_lossy());
         assert_eq!(o.plan["marker"], 1);
-        // #144/AK2: Eine Datei aus einer neueren Version wird mit der Kennung in der Meldung abgewiesen.
+        // #144/AK2: A file from a newer version is rejected with the format id in the message.
         std::fs::write(&f, r#"{"format": "vivaplan/2"}"#).unwrap();
         assert!(opened_from(FilePath::Path(f.clone()))
             .err()
             .unwrap()
             .contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"));
-        // Alte config.json wird abgewiesen.
+        // Old config.json is rejected.
         let alt = dir.join("alt.json");
         std::fs::write(&alt, r#"{"General": {}}"#).unwrap();
         assert!(opened_from(FilePath::Path(alt))
             .err()
             .unwrap()
             .contains("Alte config.json"));
-        // Kein JSON, fehlende Datei, nicht umwandelbarer Pfad.
+        // No JSON, missing file, path that cannot be converted.
         let kaputt = dir.join("k.vplan");
         std::fs::write(&kaputt, "{").unwrap();
         assert!(opened_from(FilePath::Path(kaputt)).is_err());
@@ -1697,7 +1697,7 @@ mod tests {
     #[test]
     fn shiller_import_aus_tabelle_und_fehlerfall() {
         let lib = tmp("shiller");
-        // #94: die Originaltabelle liegt nur lokal; ohne sie entfällt dieser Teil.
+        // #94: the original table exists only locally; without it this part is skipped.
         let ods = root().join("crates/engine/data/quellen/shiller-index.ods");
         if ods.exists() {
             let rep = shiller_from(&lib, FilePath::Path(ods)).unwrap();
@@ -1718,8 +1718,8 @@ mod tests {
         let _ = std::fs::remove_dir_all(&lib);
     }
 
-    /// Alle eigenen Menüeinträge dieses Systems; «Über» des Programmmenüs (macOS) ist derselbe Befehl wie im
-    /// Menü «Hilfe» und zählt nur einmal.
+    /// All own menu entries of this system; «Über» of the application menu (macOS) is the same command as in the
+    /// menu «Hilfe» and counts only once.
     fn eigene_eintraege() -> Vec<Entry> {
         let mut v = file_entries();
         v.extend(EDIT_MENU.iter().chain(&HELP_MENU).copied());
@@ -1728,7 +1728,7 @@ mod tests {
         v
     }
 
-    /// #59/AK1–AK4: Einstellungen auf macOS im Programmmenü, sonst am Ende von «Datei»; genau einmal.
+    /// #59/AK1–AK4: settings on macOS in the application menu, otherwise at the end of «Datei»; exactly once.
     #[test]
     fn issue_59_einstellungen_je_system() {
         let n = eigene_eintraege().iter().filter(|e| e.0 == "settings").count();
@@ -1771,7 +1771,7 @@ mod tests {
 
     #[test]
     fn auswahl_ohne_treffer_fuehrt_nichts_aus() {
-        // `Err` als Folgeschritt: Wäre er bei Abbruch aufgerufen worden, wäre das Ergebnis ein Fehler.
+        // `Err` as follow-up step: had it been called on cancel, the result would be an error.
         let r = picked(|| None::<String>, Err::<u8, String>);
         assert_eq!(r, Ok(None));
         assert_eq!(picked(|| Some(2), |x| Ok(x * 2)), Ok(Some(4)));
@@ -1781,7 +1781,7 @@ mod tests {
         );
     }
 
-    /// Ergebnis von `save_with` samt Beobachtung des Dialogs: (Ergebnis, gefragt, Namensvorschlag).
+    /// Result of `save_with` along with what the dialog observed: (result, asked, suggested name).
     type Saved = (Result<Option<String>, String>, bool, String);
 
     fn save_mit_antwort(plan: &Value, path: Option<String>, antwort: Option<FilePath>) -> Saved {
@@ -1799,20 +1799,20 @@ mod tests {
     fn speichern_mit_dialog_ergaenzt_endung_und_respektiert_abbruch() {
         let dir = tmp("save-dialog");
         let plan = json!({"project": {"name": "Mein Plan"}});
-        // Abbruch im Dialog: nichts geschrieben.
+        // Cancelled in the dialog: nothing written.
         let (r, gefragt, _) = save_mit_antwort(&plan, None, None);
         assert_eq!((r, gefragt), (Ok(None), true));
-        // Dialog liefert Pfad ohne Endung; der Namensvorschlag stammt aus dem Projektnamen.
+        // Dialog returns a path without extension; the suggested name comes from the project name.
         let (r, _, vorschlag) = save_mit_antwort(&plan, None, Some(FilePath::Path(dir.join("ziel"))));
         assert_eq!(vorschlag, "Mein Plan");
         assert_eq!(r.unwrap().unwrap(), dir.join("ziel.vplan").to_string_lossy());
         assert!(dir.join("ziel.vplan").is_file());
-        // Mit Pfad wird der Dialog nicht gefragt.
+        // With a path the dialog is not asked.
         let p = dir.join("direkt.vplan").to_string_lossy().into_owned();
         let (r, gefragt, _) = save_mit_antwort(&plan, Some(p.clone()), None);
         assert_eq!(r, Ok(Some(p)));
         assert!(!gefragt, "mit Pfad kein Dialog");
-        // Nicht umwandelbare Auswahl ist ein Fehler.
+        // A choice that cannot be converted is an error.
         let url = FilePath::Url("https://example.com/x".parse().unwrap());
         assert!(save_mit_antwort(&plan, None, Some(url)).0.is_err());
         let _ = std::fs::remove_dir_all(&dir);
@@ -1877,7 +1877,7 @@ mod tests {
         )
         .unwrap();
         assert!(info.is_object());
-        // Ohne Planpfad (Basis: Home) wird sie nicht gefunden.
+        // Without a plan path (base: home) it is not found.
         assert!(call(&w, "series_info", json!({"path": "renditen-muster.csv"})).is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1891,7 +1891,7 @@ mod tests {
         assert_eq!(p["active"], false);
         assert!(p["done"].as_u64().unwrap() >= 1);
         assert!(p["total"].as_u64().unwrap() >= 1);
-        // Ohne laufende Berechnung bleibt ein Abbruch wirkungslos.
+        // Without a running calculation a cancel has no effect.
         call(&w, "cancel_job", json!({})).unwrap();
         let p = call(&w, "progress_get", json!({})).unwrap();
         assert_eq!(p["cancelled"], false);
@@ -1919,11 +1919,11 @@ mod tests {
         let job = engine::progress::start_as(Some(55_001), 0);
         let other = engine::progress::start_as(Some(55_002), 0);
         assert!(!engine::progress::cancelled());
-        // Der innere Job (55002) ist der des Threads; ein Abbruch von 55001 trifft ihn nicht.
+        // The inner job (55002) is the one of the thread; cancelling 55001 does not affect it.
         call(&w, "cancel_job", json!({"jobId": 55_001})).unwrap();
         assert!(!engine::progress::cancelled());
         assert!(engine::progress::snapshot_of(55_001).cancelled);
-        // Ohne Kennung werden alle laufenden Berechnungen abgebrochen.
+        // Without an id all running calculations are cancelled.
         call(&w, "cancel_job", json!({})).unwrap();
         assert!(engine::progress::cancelled());
         drop(other);
@@ -1933,7 +1933,7 @@ mod tests {
     #[test]
     fn issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen() {
         let (_app, w, _g) = setup();
-        // Zuerst aufräumen: ein früher abgebrochener Lauf (z. B. durch einen Mutanten) kann den Wert hinterlassen haben.
+        // Clean up first: an earlier cancelled run (e.g. by a mutant) may have left the value behind.
         call(&w, "settings_set", json!({"key": "issue_106Test", "value": null})).unwrap();
         let before = call(&w, "settings_get", json!({})).unwrap();
         assert!(before.get("issue_106Test").is_none_or(|v| v.is_null()), "{before}");
@@ -1943,7 +1943,7 @@ mod tests {
         call(&w, "settings_set", json!({"key": "issue_106Test", "value": null})).unwrap();
     }
 
-    /// #163/AK1: Der Datenordner gehört dem Testprozess (Prozesskennung im Namen) und ist nach dem Test entfernt.
+    /// #163/AK1: The data folder belongs to the test process (process id in the name) and is removed after the test.
     #[test]
     fn issue_163_ak1_datenordner_je_testprozess_und_nach_dem_test_entfernt() {
         let (app, w, g) = setup();
@@ -1975,7 +1975,7 @@ mod tests {
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     #[test]
     fn issue_106_vom_system_gemeldete_datei_wird_vorgemerkt() {
-        // macOS: Doppelklick auf eine Planungsdatei meldet «Opened» (#44); andere Dateien werden ignoriert.
+        // macOS: double-click on a plan file reports «Opened» (#44); other files are ignored.
         let (app, _w, _g) = setup();
         let dir = tmp("opened");
         let plan = dir.join("a.vplan");
@@ -2034,7 +2034,7 @@ mod tests {
             assert!(!taste.is_empty(), "{id}: Taste fehlt");
             assert!(mods.iter().all(|m| MODIFIERS.contains(m)), "{id}: {key}");
         }
-        // Kein Kürzel doppelt vergeben.
+        // No shortcut assigned twice.
         let mut keys: Vec<&str> = eigene_eintraege()
             .iter()
             .map(|e| e.2)
@@ -2184,15 +2184,15 @@ mod tests {
             fake.asked(),
             vec!["save|Planung speichern|VivaPlan-Plan|vplan|Mein Plan.vplan"]
         );
-        // Mit Pfad wird nicht gefragt.
+        // With a path nothing is asked.
         let direkt = dir.join("direkt.vplan");
         call(&w, "save_plan", json!({"plan": plan, "path": direkt.to_string_lossy()})).unwrap();
         assert_eq!(fake.asked().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// #44/AK3 (legacy: RetirementPlanner): Eine geöffnete .rplan-Datei wird nie überschrieben. «Speichern» fragt wie «Speichern unter» und
-    /// schlägt denselben Namen mit .vplan vor; die .vplan lässt sich wieder öffnen, die .rplan bleibt unverändert.
+    /// #44/AK3 (legacy: RetirementPlanner): An opened .rplan file is never overwritten. «Speichern» asks like «Speichern unter» and
+    /// suggests the same name with .vplan; the .vplan can be opened again, the .rplan stays unchanged.
     #[test]
     fn rplan_speichern_schlaegt_vplan_vor_und_laesst_die_alte_datei_unveraendert() {
         let dir = tmp("cmd-save-legacy");
@@ -2206,7 +2206,7 @@ mod tests {
         let (_app, w, _g, fake) = setup_with(fake);
         let plan = json!({"format": "vivaplan/1", "project": {"name": "X"}});
         let r = call(&w, "save_plan", json!({"plan": plan, "path": alt.to_string_lossy()})).unwrap();
-        // Auch wenn im Dialog wieder .rplan gewählt wird, entsteht eine .vplan-Datei.
+        // Even if .rplan is chosen again in the dialog, a .vplan file is created.
         assert_eq!(r.as_str().unwrap(), dir.join("Demo.vplan").to_string_lossy());
         assert_eq!(
             fake.asked(),
@@ -2218,7 +2218,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// legacy: RetirementPlanner – abgebrochenes Speichern einer .rplan-Datei.
+    /// legacy: RetirementPlanner – cancelled saving of a .rplan file.
     #[test]
     fn rplan_speichern_abgebrochen_schreibt_nichts() {
         let dir = tmp("cmd-save-legacy-cancel");
@@ -2251,7 +2251,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// #44/AK2: Fenstertitel «VivaPlan - ‹Dateiname›», ohne Datei nur «VivaPlan».
+    /// #44/AK2: window title «VivaPlan - ‹file name›», without a file just «VivaPlan».
     #[test]
     fn fenstertitel_mit_und_ohne_datei() {
         assert_eq!(window_title(None), "VivaPlan");
@@ -2263,7 +2263,7 @@ mod tests {
         assert_eq!(call(&w, "set_window_title", json!({})).unwrap(), "VivaPlan");
     }
 
-    /// #44/AK5: Eine beim Start übergebene Planung (Doppelklick, Dateizuordnung) wird geöffnet und gemerkt.
+    /// #44/AK5: A plan passed at startup (double-click, file association) is opened and remembered.
     #[test]
     fn beim_start_uebergebene_datei_wird_geoeffnet() {
         assert!(is_plan_file(Path::new("/a/b.vplan")) && is_plan_file(Path::new("b.RPLAN")));
@@ -2290,7 +2290,7 @@ mod tests {
         let s = call(&w, "startup_plan", json!({})).unwrap();
         assert_eq!(s["plan"]["marker"], "doppelklick");
         assert!(app.state::<PendingOpen>().take().is_none());
-        // Bei laufender Oberfläche öffnet «open_path» die Datei und leert die Vormerkung.
+        // While the user interface runs, «open_path» opens the file and clears the pending file.
         open_from_system(app.handle(), f.clone());
         let o = call(&w, "open_path", json!({"path": f.to_string_lossy()})).unwrap();
         assert_eq!(o["plan"]["marker"], "doppelklick");
@@ -2311,7 +2311,7 @@ mod tests {
         let r = call(&w, "import_legacy", json!({"startYear": 2026})).unwrap();
         assert!(r["plan"].is_object());
         assert_eq!(fake.asked().len(), 1);
-        // Jahr fehlt: Argumentfehler vor dem Dialog.
+        // Year missing: argument error before the dialog.
         assert!(call(&w, "import_legacy", json!({})).is_err());
         assert_eq!(fake.asked().len(), 1);
     }
@@ -2394,7 +2394,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// #70/AK1, AK6: erster Start nur ohne Einstellungsdatei; danach (auch wenn die gemerkte Datei fehlt) nicht mehr.
+    /// #70/AK1, AK6: first start only without a settings file; afterwards (even if the remembered file is missing) no longer.
     #[test]
     fn issue_70_erster_start_nur_ohne_einstellungen() {
         let dir = tmp("fea54-erst");
@@ -2408,7 +2408,7 @@ mod tests {
             "fehlende Datei: Hinweis, aber kein Willkommensdialog"
         );
         let _ = std::fs::remove_dir_all(&dir);
-        // Mit einer übergebenen Datei (Doppelklick) gibt es keinen Willkommensdialog.
+        // With a passed file (double-click) there is no welcome dialog.
         let dir = tmp("fea54-datei");
         let f = dir.join("x.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": "x"}"#).unwrap();
@@ -2416,7 +2416,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// #70/AK7, #71/AK6: Menü «Hilfe» hat «Willkommen …» und «Erste Schritte».
+    /// #70/AK7, #71/AK6: menu «Hilfe» has «Willkommen …» and «Erste Schritte».
     #[test]
     fn issue_70_issue_71_menue_hilfe() {
         assert!(HELP_MENU.contains(&("welcome", "Willkommen …", "")));
@@ -2446,7 +2446,7 @@ mod tests {
         assert_eq!(s.plan["marker"], "beispiel");
         let n = s.notice.unwrap();
         assert!(n.contains("nicht gefunden") && n.contains("weg.vplan"), "{n}");
-        // Die Merkung bleibt erhalten
+        // The remembered path is kept
         assert_eq!(read_settings(&dir)[LAST_PLAN_KEY], json!(f.to_string_lossy()));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -2474,7 +2474,7 @@ mod tests {
         assert_eq!(startup_from(&dir, None, example_stub).plan["marker"], "a");
         remember_in(&dir, &b.to_string_lossy());
         assert_eq!(startup_from(&dir, None, example_stub).plan["marker"], "b");
-        // Nur der Pfad wird gemerkt
+        // Only the path is remembered
         assert_eq!(read_settings(&dir).len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -2590,7 +2590,7 @@ mod tests {
         assert_eq!(QUIT_TEXT, "Beenden");
     }
 
-    // #124/AK8: Die Fenster aus der Konfiguration (dort `create: false`) entstehen erst beim Start der App.
+    // #124/AK8: The windows from the configuration (there `create: false`) are only created at the start of the app.
     #[test]
     fn fenster_aus_der_konfiguration_werden_erstellt() {
         let _g = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);

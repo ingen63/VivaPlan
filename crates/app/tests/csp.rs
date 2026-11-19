@@ -1,13 +1,13 @@
-//! #157/AK2: Die Content-Security-Policy der Desktop-App erlaubt keine Verbindungen nach aussen.
+//! #157/AK2: The content security policy of the desktop app allows no outbound connections.
 //!
-//! `connect-src` regelt fetch, XHR und WebSocket der Oberfläche. Erlaubt sind nur die eigene Herkunft und die
-//! IPC-Quellen von Tauri (`ipc:` auf macOS/Linux, `http://ipc.localhost` auf Windows).
+//! `connect-src` governs fetch, XHR and WebSocket of the user interface. Only the own origin and the
+//! IPC sources of Tauri are allowed (`ipc:` on macOS/Linux, `http://ipc.localhost` on Windows).
 
 use std::path::Path;
 
 const ERLAUBT: [&str; 3] = ["'self'", "ipc:", "http://ipc.localhost"];
 
-/// Quellen in einer `connect-src`-Angabe, die nicht zu den erlaubten gehören.
+/// Sources in a `connect-src` directive that are not among the allowed ones.
 fn fremde_quellen(connect_src: &str) -> Vec<&str> {
     connect_src
         .split_whitespace()
