@@ -91,7 +91,7 @@ mod tests {
 
     /// #44/AK4: settings, time series and subfolders are copied, the old folder stays in place.
     #[test]
-    fn alter_ordner_wird_in_den_leeren_neuen_kopiert_und_bleibt_bestehen() {
+    fn old_folder_is_copied_into_the_empty_new_one_and_kept() {
         let root = tmp("copy");
         let old = root.join(LEGACY_IDENTIFIER);
         let new = root.join("ch.vivaplan-app.desktop");
@@ -113,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn leerer_neuer_ordner_wird_gefuellt_ohne_alten_ordner_geschieht_nichts() {
+    fn empty_new_folder_is_filled_without_old_folder_nothing_happens() {
         let root = tmp("empty");
         let old = root.join(LEGACY_IDENTIFIER);
         let new = root.join("neu");
@@ -133,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn leer_oder_fehlend_wird_erkannt_andere_fehler_bleiben_fehler() {
+    fn empty_or_missing_is_detected_other_errors_stay_errors() {
         let root = tmp("leer");
         assert!(is_empty_or_missing(&root.join("gibt-es-nicht")).unwrap());
         assert!(is_empty_or_missing(&root).unwrap());
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn paare_aus_den_neuen_ordnern() {
+    fn pairs_from_the_new_folders() {
         let data = PathBuf::from("/h/Library/Application Support/ch.vivaplan-app.desktop");
         let web = webkit_dir(Path::new("/h"), "ch.vivaplan-app.desktop");
         assert_eq!(web, PathBuf::from("/h/Library/WebKit/ch.vivaplan-app.desktop"));
@@ -165,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn mehrere_paare_werden_uebernommen() {
+    fn several_pairs_are_taken_over() {
         let root = tmp("all");
         let old = root.join("a").join(LEGACY_IDENTIFIER);
         std::fs::create_dir_all(&old).unwrap();

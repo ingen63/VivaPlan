@@ -5,19 +5,19 @@
 
 use std::path::Path;
 
-const ERLAUBT: [&str; 3] = ["'self'", "ipc:", "http://ipc.localhost"];
+const ALLOWED: [&str; 3] = ["'self'", "ipc:", "http://ipc.localhost"];
 
 /// Sources in a `connect-src` directive that are not among the allowed ones.
-fn fremde_quellen(connect_src: &str) -> Vec<&str> {
+fn external_sources(connect_src: &str) -> Vec<&str> {
     connect_src
         .split_whitespace()
-        .filter(|q| !ERLAUBT.contains(q))
+        .filter(|q| !ALLOWED.contains(q))
         .collect()
 }
 
-fn connect_src_aus_konfiguration() -> String {
-    let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("tauri.conf.json");
-    let text = std::fs::read_to_string(&pfad).expect("tauri.conf.json lesbar");
+fn connect_src_from_config() -> String {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tauri.conf.json");
+    let text = std::fs::read_to_string(&path).expect("tauri.conf.json lesbar");
     let conf: serde_json::Value = serde_json::from_str(&text).expect("tauri.conf.json ist JSON");
     conf["app"]["security"]["csp"]["connect-src"]
         .as_str()
@@ -27,10 +27,10 @@ fn connect_src_aus_konfiguration() -> String {
 
 #[test]
 fn issue_157_ak2_csp_connect_src_has_no_external_sources() {
-    let connect_src = connect_src_aus_konfiguration();
+    let connect_src = connect_src_from_config();
     assert!(!connect_src.trim().is_empty(), "connect-src darf nicht leer sein");
     assert_eq!(
-        fremde_quellen(&connect_src),
+        external_sources(&connect_src),
         Vec::<&str>::new(),
         "connect-src erlaubt externe Quellen: {connect_src}"
     );
@@ -38,8 +38,8 @@ fn issue_157_ak2_csp_connect_src_has_no_external_sources() {
 
 #[test]
 fn issue_157_ak2_external_sources_are_detected() {
-    assert!(fremde_quellen("'self' ipc: http://ipc.localhost").is_empty());
-    for fremd in [
+    assert!(external_sources("'self' ipc: http://ipc.localhost").is_empty());
+    for external in [
         "https://example.com",
         "http://localhost:8080",
         "https:",
@@ -49,9 +49,9 @@ fn issue_157_ak2_external_sources_are_detected() {
         "data:",
     ] {
         assert_eq!(
-            fremde_quellen(&format!("'self' ipc: {fremd}")),
-            vec![fremd],
-            "{fremd} muss als fremd gelten"
+            external_sources(&format!("'self' ipc: {external}")),
+            vec![external],
+            "{external} must count as external"
         );
     }
 }

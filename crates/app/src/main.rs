@@ -1059,7 +1059,7 @@ mod tests {
     /// #159: Every test process has its own data folder (settings, plan last opened). nextest starts
     /// every test in its own process; the lock `SERIAL` only applies within one process. With a shared
     /// folder a test running at the same time overwrote the settings (read, modify, write), and
-    /// `issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen` failed at random.
+    /// `issue_106_setting_is_saved_and_read_via_the_command` failed at random.
     fn test_context() -> tauri::Context<MockRuntime> {
         let mut ctx = mock_context(noop_assets());
         let id = format!("{}.test-{}", ctx.config().identifier, std::process::id());
@@ -1120,7 +1120,7 @@ mod tests {
     }
 
     #[test]
-    fn home_ist_gesetzt_oder_leer() {
+    fn home_is_set_or_empty() {
         let h = home();
         if std::env::var_os("HOME").is_some() {
             assert!(!h.as_os_str().is_empty());
@@ -1128,7 +1128,7 @@ mod tests {
     }
 
     #[test]
-    fn home_bevorzugt_home_vor_userprofile() {
+    fn home_prefers_home_over_userprofile() {
         let os = |s: &str| Some(OsString::from(s));
         assert_eq!(home_from(os("/h"), os("C:\\u")), PathBuf::from("/h"));
         assert_eq!(home_from(None, os("C:\\u")), PathBuf::from("C:\\u"));
@@ -1136,29 +1136,29 @@ mod tests {
     }
 
     #[test]
-    fn zeitreihenordner_wird_angelegt_oder_fehler_gemeldet() {
+    fn series_folder_is_created_or_error_reported() {
         let dir = tmp("lib");
         let lib = ensure_library_dir(&dir.join("neu")).unwrap();
         assert!(lib.is_dir() && lib.ends_with("Zeitreihen"));
         // Already exists: still success.
         assert_eq!(ensure_library_dir(&dir.join("neu")).unwrap(), lib);
         // Data directory is a file: error with path.
-        let datei = dir.join("datei");
-        std::fs::write(&datei, "x").unwrap();
-        let e = ensure_library_dir(&datei).unwrap_err();
+        let not_a_dir = dir.join("datei");
+        std::fs::write(&not_a_dir, "x").unwrap();
+        let e = ensure_library_dir(&not_a_dir).unwrap_err();
         assert!(e.contains("Zeitreihen"), "{e}");
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn base_dir_nimmt_ordner_der_projektdatei() {
+    fn base_dir_takes_folder_of_the_project_file() {
         assert_eq!(base_dir(Some("/a/b/plan.vplan")), PathBuf::from("/a/b"));
         assert_eq!(base_dir(None), home());
         assert_eq!(base_dir(Some("plan.vplan")), PathBuf::from(""));
     }
 
     #[test]
-    fn plan_name_faellt_auf_standard_zurueck() {
+    fn plan_name_falls_back_to_default() {
         assert_eq!(
             plan_name(&json!({"project": {"name": "Meine Planung"}})),
             "Meine Planung"
@@ -1170,7 +1170,7 @@ mod tests {
     }
 
     #[test]
-    fn endung_wird_nur_ergaenzt_wenn_fehlend() {
+    fn extension_is_added_only_when_missing() {
         assert_eq!(
             with_default_extension(PathBuf::from("/x/plan")),
             PathBuf::from("/x/plan.vplan")
@@ -1182,7 +1182,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_base_findet_datei_im_ordner_oder_elternordner() {
+    fn legacy_base_finds_file_in_folder_or_parent() {
         let root = tmp("legacy");
         let sub = root.join("config");
         std::fs::create_dir_all(&sub).unwrap();
@@ -1204,7 +1204,7 @@ mod tests {
     }
 
     #[test]
-    fn app_info_liefert_version_und_buildzeit() {
+    fn app_info_returns_version_and_build_time() {
         let (_app, w, _g) = setup();
         let v = call(&w, "app_info", json!({})).unwrap();
         assert!(v["version"].as_str().is_some_and(|s| !s.is_empty()));
@@ -1212,7 +1212,7 @@ mod tests {
     }
 
     #[test]
-    fn beispielplan_validiert_ohne_fehler() {
+    fn example_plan_validates_without_errors() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         assert!(plan.is_object());
@@ -1221,21 +1221,21 @@ mod tests {
     }
 
     #[test]
-    fn validate_meldet_probleme_bei_leerem_plan() {
+    fn validate_reports_problems_for_empty_plan() {
         let (_app, w, _g) = setup();
         let issues = call(&w, "validate", json!({"plan": {}})).unwrap();
         assert!(!issues.as_array().unwrap().is_empty());
     }
 
     #[test]
-    fn fortschritt_und_abbruch() {
+    fn progress_and_cancel() {
         let (_app, w, _g) = setup();
         assert!(call(&w, "progress_get", json!({})).unwrap().is_object());
         assert!(call(&w, "cancel_job", json!({})).unwrap().is_null());
     }
 
     #[test]
-    fn opt_params_liefert_katalog() {
+    fn opt_params_returns_catalog() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let v = call(&w, "opt_params", json!({"plan": plan})).unwrap();
@@ -1243,7 +1243,7 @@ mod tests {
     }
 
     #[test]
-    fn preview_und_simulation_laufen_fuer_beispielplan() {
+    fn preview_and_simulation_run_for_example_plan() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let p = call(&w, "preview", json!({"plan": plan, "path": null})).unwrap();
@@ -1253,7 +1253,7 @@ mod tests {
     }
 
     #[test]
-    fn rerun_paths_rechnet_einzelne_laeufe_nach_und_meldet_fehler() {
+    fn rerun_paths_recalculates_single_runs_and_reports_errors() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let r = call(&w, "rerun_paths", json!({"plan": plan, "picks": [[50, 0]]})).unwrap();
@@ -1268,7 +1268,7 @@ mod tests {
     }
 
     #[test]
-    fn bench_plan_misst_oder_meldet_fehler() {
+    fn bench_plan_measures_or_reports_error() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let ok = call(&w, "bench_plan", json!({"plan": plan}));
@@ -1277,7 +1277,7 @@ mod tests {
     }
 
     #[test]
-    fn optimize_liefert_bericht_und_meldet_ungueltige_anfrage() {
+    fn optimize_returns_report_and_reports_invalid_request() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let r = call(&w, "optimize", json!({"plan": plan, "request": {}})).unwrap();
@@ -1287,7 +1287,7 @@ mod tests {
     }
 
     #[test]
-    fn series_info_fehler_bei_fehlender_datei() {
+    fn series_info_error_for_missing_file() {
         let (_app, w, _g) = setup();
         let e = call(
             &w,
@@ -1299,7 +1299,7 @@ mod tests {
     }
 
     #[test]
-    fn series_info_liest_csv() {
+    fn series_info_reads_csv() {
         let (_app, w, _g) = setup();
         let dir = tmp("series");
         let csv = dir.join("s.csv");
@@ -1315,7 +1315,7 @@ mod tests {
     }
 
     #[test]
-    fn einstellungen_werden_in_datei_gespeichert_und_gelesen() {
+    fn settings_are_saved_to_and_read_from_file() {
         let dir = tmp("settings");
         assert!(read_settings(&dir).is_empty());
         write_setting(&dir, "showTaxCols", json!(true)).unwrap();
@@ -1337,7 +1337,7 @@ mod tests {
     }
 
     #[test]
-    fn einstellungen_ueber_die_befehle() {
+    fn settings_via_the_commands() {
         let (_app, w, _g) = setup();
         call(&w, "settings_set", json!({ "key": "showTaxCols", "value": true })).unwrap();
         let v = call(&w, "settings_get", json!({})).unwrap();
@@ -1345,7 +1345,7 @@ mod tests {
     }
 
     #[test]
-    fn library_list_zeigt_ausgelieferte_zeitreihen() {
+    fn library_list_shows_shipped_series() {
         let (_app, w, _g) = setup();
         let v = call(&w, "library_list", json!({})).unwrap();
         assert!(v["dir"].as_str().unwrap().ends_with("Zeitreihen"));
@@ -1353,21 +1353,21 @@ mod tests {
     }
 
     #[test]
-    fn bibliothek_in_eigenem_ordner_und_fehler_bei_datei() {
+    fn library_in_own_folder_and_error_for_file() {
         let dir = tmp("list");
         let lib = ensure_library_dir(&dir).unwrap();
         let v = list_in(&lib).unwrap();
         assert_eq!(v.dir, lib.to_string_lossy());
         assert!(!v.entries.is_empty(), "ausgelieferte Zeitreihen werden angelegt");
         // A folder path that is a file cannot be read.
-        let datei = dir.join("datei");
-        std::fs::write(&datei, "x").unwrap();
-        assert!(list_in(&datei).err().unwrap().contains("datei"));
+        let not_a_dir = dir.join("datei");
+        std::fs::write(&not_a_dir, "x").unwrap();
+        assert!(list_in(&not_a_dir).err().unwrap().contains("datei"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn library_dir_wird_angelegt() {
+    fn library_dir_is_created() {
         let (app, _w, _g) = setup();
         let d = library_dir(app.handle()).unwrap();
         assert!(d.is_dir());
@@ -1583,7 +1583,7 @@ mod tests {
     }
 
     #[test]
-    fn plan_speichern_mit_pfad_und_wieder_lesen() {
+    fn save_plan_with_path_and_read_again() {
         let (_app, w, _g) = setup();
         let dir = tmp("save");
         let file = dir.join("p.vplan");
@@ -1595,7 +1595,7 @@ mod tests {
     }
 
     #[test]
-    fn plan_speichern_in_nicht_existierenden_ordner_ist_fehler() {
+    fn saving_plan_into_missing_folder_is_error() {
         let (_app, w, _g) = setup();
         let e = call(&w, "save_plan", json!({"plan": {}, "path": "/gibt/es/nicht/p.vplan"})).unwrap_err();
         assert!(e.as_str().unwrap().contains("p.vplan"));
@@ -1610,8 +1610,13 @@ mod tests {
         let (_app, w, _g) = setup();
         let dir = tmp("save-readonly");
         let file = dir.join("p.vplan");
-        let alt = json!({"format": "vivaplan/1", "marker": "alt"});
-        call(&w, "save_plan", json!({"plan": alt, "path": file.to_string_lossy()})).unwrap();
+        let old_plan = json!({"format": "vivaplan/1", "marker": "alt"});
+        call(
+            &w,
+            "save_plan",
+            json!({"plan": old_plan, "path": file.to_string_lossy()}),
+        )
+        .unwrap();
         std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
         let e = call(
             &w,
@@ -1621,7 +1626,7 @@ mod tests {
         .unwrap_err();
         std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
         assert!(e.as_str().unwrap().contains("p.vplan"), "{e}");
-        assert_eq!(api::read_plan(&file).unwrap(), alt);
+        assert_eq!(api::read_plan(&file).unwrap(), old_plan);
         assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1, "keine temporäre Datei");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1631,7 +1636,7 @@ mod tests {
     }
 
     #[test]
-    fn plan_oeffnen_liest_datei_und_meldet_fehler() {
+    fn open_plan_reads_file_and_reports_errors() {
         let dir = tmp("open");
         let f = dir.join("p.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": 1}"#).unwrap();
@@ -1645,23 +1650,23 @@ mod tests {
             .unwrap()
             .contains("Die Datei hat das Format «vivaplan/2». Sie braucht eine neuere Version von VivaPlan"));
         // Old config.json is rejected.
-        let alt = dir.join("alt.json");
-        std::fs::write(&alt, r#"{"General": {}}"#).unwrap();
-        assert!(opened_from(FilePath::Path(alt))
+        let old_config = dir.join("alt.json");
+        std::fs::write(&old_config, r#"{"General": {}}"#).unwrap();
+        assert!(opened_from(FilePath::Path(old_config))
             .err()
             .unwrap()
             .contains("Alte config.json"));
         // No JSON, missing file, path that cannot be converted.
-        let kaputt = dir.join("k.vplan");
-        std::fs::write(&kaputt, "{").unwrap();
-        assert!(opened_from(FilePath::Path(kaputt)).is_err());
+        let broken = dir.join("k.vplan");
+        std::fs::write(&broken, "{").unwrap();
+        assert!(opened_from(FilePath::Path(broken)).is_err());
         assert!(opened_from(FilePath::Path(dir.join("fehlt"))).is_err());
         assert!(opened_from(FilePath::Url("https://example.com/x".parse().unwrap())).is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn write_to_schreibt_und_meldet_pfad() {
+    fn write_to_writes_and_reports_path() {
         let dir = tmp("write");
         let f = dir.join("a.vplan");
         assert_eq!(write_to(&f, &json!({"a": 1})).unwrap(), f.to_string_lossy());
@@ -1670,7 +1675,7 @@ mod tests {
     }
 
     #[test]
-    fn serienwahl_gibt_pfad_als_text() {
+    fn series_choice_returns_path_as_text() {
         assert_eq!(
             series_choice(FilePath::Path(PathBuf::from("/a/b.csv"))).unwrap(),
             "/a/b.csv"
@@ -1679,7 +1684,7 @@ mod tests {
     }
 
     #[test]
-    fn alte_konfiguration_wird_importiert() {
+    fn legacy_config_is_imported() {
         let src = root().join("crates/engine/tests/fixtures/legacy_fixed.json");
         let r = legacy_from(FilePath::Path(src), 2026).unwrap();
         assert!(r.plan.is_object());
@@ -1695,7 +1700,7 @@ mod tests {
     }
 
     #[test]
-    fn shiller_import_aus_tabelle_und_fehlerfall() {
+    fn shiller_import_from_table_and_error_case() {
         let lib = tmp("shiller");
         // #94: the original table exists only locally; without it this part is skipped.
         let ods = root().join("crates/engine/data/quellen/shiller-index.ods");
@@ -1711,7 +1716,7 @@ mod tests {
     }
 
     #[test]
-    fn snb_import_fehlerfaelle() {
+    fn snb_import_error_cases() {
         let lib = tmp("snb");
         assert!(snb_from(&lib, vec![FilePath::Path(lib.join("fehlt.csv"))]).is_err());
         assert!(snb_from(&lib, vec![FilePath::Url("https://example.com/x".parse().unwrap())]).is_err());
@@ -1720,7 +1725,7 @@ mod tests {
 
     /// All own menu entries of this system; «Über» of the application menu (macOS) is the same command as in the
     /// menu «Hilfe» and counts only once.
-    fn eigene_eintraege() -> Vec<Entry> {
+    fn own_entries() -> Vec<Entry> {
         let mut v = file_entries();
         v.extend(EDIT_MENU.iter().chain(&HELP_MENU).copied());
         #[cfg(target_os = "macos")]
@@ -1730,8 +1735,8 @@ mod tests {
 
     /// #59/AK1–AK4: settings on macOS in the application menu, otherwise at the end of «Datei»; exactly once.
     #[test]
-    fn issue_59_einstellungen_je_system() {
-        let n = eigene_eintraege().iter().filter(|e| e.0 == "settings").count();
+    fn issue_59_settings_per_system() {
+        let n = own_entries().iter().filter(|e| e.0 == "settings").count();
         assert_eq!(n, 1, "Einstellungen genau einmal");
         assert_eq!(SETTINGS, ("settings", "Einstellungen…", "CmdOrCtrl+,"));
         let file = file_entries();
@@ -1750,9 +1755,9 @@ mod tests {
     }
 
     #[test]
-    fn menuetabellen_sind_konsistent() {
+    fn menu_tables_are_consistent() {
         let mut ids = Vec::new();
-        for (id, text, key) in &eigene_eintraege() {
+        for (id, text, key) in &own_entries() {
             if id.is_empty() {
                 assert!(text.is_empty() && key.is_empty());
             } else {
@@ -1770,7 +1775,7 @@ mod tests {
     }
 
     #[test]
-    fn auswahl_ohne_treffer_fuehrt_nichts_aus() {
+    fn choice_without_match_runs_nothing() {
         // `Err` as follow-up step: had it been called on cancel, the result would be an error.
         let r = picked(|| None::<String>, Err::<u8, String>);
         assert_eq!(r, Ok(None));
@@ -1784,42 +1789,42 @@ mod tests {
     /// Result of `save_with` along with what the dialog observed: (result, asked, suggested name).
     type Saved = (Result<Option<String>, String>, bool, String);
 
-    fn save_mit_antwort(plan: &Value, path: Option<String>, antwort: Option<FilePath>) -> Saved {
-        let mut gefragt = false;
-        let mut vorschlag = String::new();
+    fn save_with_answer(plan: &Value, path: Option<String>, answer: Option<FilePath>) -> Saved {
+        let mut was_asked = false;
+        let mut suggestion = String::new();
         let r = save_with(plan, path, |n| {
-            gefragt = true;
-            vorschlag = n.to_string();
-            antwort
+            was_asked = true;
+            suggestion = n.to_string();
+            answer
         });
-        (r, gefragt, vorschlag)
+        (r, was_asked, suggestion)
     }
 
     #[test]
-    fn speichern_mit_dialog_ergaenzt_endung_und_respektiert_abbruch() {
+    fn save_with_dialog_adds_extension_and_respects_cancel() {
         let dir = tmp("save-dialog");
         let plan = json!({"project": {"name": "Mein Plan"}});
         // Cancelled in the dialog: nothing written.
-        let (r, gefragt, _) = save_mit_antwort(&plan, None, None);
-        assert_eq!((r, gefragt), (Ok(None), true));
+        let (r, was_asked, _) = save_with_answer(&plan, None, None);
+        assert_eq!((r, was_asked), (Ok(None), true));
         // Dialog returns a path without extension; the suggested name comes from the project name.
-        let (r, _, vorschlag) = save_mit_antwort(&plan, None, Some(FilePath::Path(dir.join("ziel"))));
-        assert_eq!(vorschlag, "Mein Plan");
+        let (r, _, suggestion) = save_with_answer(&plan, None, Some(FilePath::Path(dir.join("ziel"))));
+        assert_eq!(suggestion, "Mein Plan");
         assert_eq!(r.unwrap().unwrap(), dir.join("ziel.vplan").to_string_lossy());
         assert!(dir.join("ziel.vplan").is_file());
         // With a path the dialog is not asked.
         let p = dir.join("direkt.vplan").to_string_lossy().into_owned();
-        let (r, gefragt, _) = save_mit_antwort(&plan, Some(p.clone()), None);
+        let (r, was_asked, _) = save_with_answer(&plan, Some(p.clone()), None);
         assert_eq!(r, Ok(Some(p)));
-        assert!(!gefragt, "mit Pfad kein Dialog");
+        assert!(!was_asked, "mit Pfad kein Dialog");
         // A choice that cannot be converted is an error.
         let url = FilePath::Url("https://example.com/x".parse().unwrap());
-        assert!(save_mit_antwort(&plan, None, Some(url)).0.is_err());
+        assert!(save_with_answer(&plan, None, Some(url)).0.is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn befehle_weisen_fehlende_argumente_ab() {
+    fn commands_reject_missing_arguments() {
         let (_app, w, _g) = setup();
         for cmd in [
             "validate",
@@ -1838,13 +1843,13 @@ mod tests {
     }
 
     #[test]
-    fn unbekannter_befehl_wird_abgewiesen() {
+    fn unknown_command_is_rejected() {
         let (_app, w, _g) = setup();
         assert!(call(&w, "gibt_es_nicht", json!({})).is_err());
     }
 
     #[test]
-    fn simulation_der_beispieldatei_liefert_ergebnis_ohne_fehler() {
+    fn simulation_of_example_file_returns_result_without_errors() {
         let (_app, w, _g) = setup();
         let file = root().join("crates/engine/assets/beispiel.vplan");
         let plan = api::read_plan(&file).unwrap();
@@ -1861,7 +1866,7 @@ mod tests {
     }
 
     #[test]
-    fn zeitreihe_im_planordner_wird_relativ_aufgeloest() {
+    fn series_in_plan_folder_is_resolved_relatively() {
         let (_app, w, _g) = setup();
         let dir = tmp("rel");
         std::fs::copy(
@@ -1883,7 +1888,7 @@ mod tests {
     }
 
     #[test]
-    fn fortschritt_nach_berechnung_und_abbruch_ohne_lauf() {
+    fn progress_after_calculation_and_cancel_without_run() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         call(&w, "run_simulation", json!({"plan": plan})).unwrap();
@@ -1898,7 +1903,7 @@ mod tests {
     }
 
     #[test]
-    fn fortschritt_und_abbruch_folgen_der_kennung_der_berechnung() {
+    fn progress_and_cancel_follow_the_job_id() {
         // #107/AK2, #107/AK4
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
@@ -1914,7 +1919,7 @@ mod tests {
     }
 
     #[test]
-    fn issue_106_cancel_job_bricht_die_berechnung_mit_dieser_kennung_ab() {
+    fn issue_106_cancel_job_cancels_the_calculation_with_this_id() {
         let (_app, w, _g) = setup();
         let job = engine::progress::start_as(Some(55_001), 0);
         let other = engine::progress::start_as(Some(55_002), 0);
@@ -1931,7 +1936,7 @@ mod tests {
     }
 
     #[test]
-    fn issue_106_einstellung_wird_ueber_den_befehl_gespeichert_und_gelesen() {
+    fn issue_106_setting_is_saved_and_read_via_the_command() {
         let (_app, w, _g) = setup();
         // Clean up first: an earlier cancelled run (e.g. by a mutant) may have left the value behind.
         call(&w, "settings_set", json!({"key": "issue_106Test", "value": null})).unwrap();
@@ -1945,7 +1950,7 @@ mod tests {
 
     /// #163/AK1: The data folder belongs to the test process (process id in the name) and is removed after the test.
     #[test]
-    fn issue_163_ak1_datenordner_je_testprozess_und_nach_dem_test_entfernt() {
+    fn issue_163_ak1_data_folder_per_test_process_and_removed_after_the_test() {
         let (app, w, g) = setup();
         let dir = app.path().app_data_dir().expect("Datenordner");
         let pid = std::process::id().to_string();
@@ -1962,7 +1967,7 @@ mod tests {
     }
 
     #[test]
-    fn issue_106_datenordner_nennen_den_identifier() {
+    fn issue_106_data_folders_name_the_identifier() {
         let (app, _w, _g) = setup();
         let id = app.config().identifier.clone();
         let dirs = data_dirs(app.handle());
@@ -1974,7 +1979,7 @@ mod tests {
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     #[test]
-    fn issue_106_vom_system_gemeldete_datei_wird_vorgemerkt() {
+    fn issue_106_file_reported_by_the_system_is_kept_pending() {
         // macOS: double-click on a plan file reports «Opened» (#44); other files are ignored.
         let (app, _w, _g) = setup();
         let dir = tmp("opened");
@@ -2000,7 +2005,7 @@ mod tests {
     }
 
     #[test]
-    fn beispielplan_hat_keine_validierungsfehler_und_strategien() {
+    fn example_plan_has_no_validation_errors_and_strategies() {
         let (_app, w, _g) = setup();
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let issues = call(&w, "validate", json!({"plan": plan})).unwrap();
@@ -2008,12 +2013,12 @@ mod tests {
             issues.as_array().unwrap().iter().all(|i| i["severity"] != "error"),
             "{issues}"
         );
-        let katalog = call(&w, "opt_params", json!({"plan": plan})).unwrap();
-        assert!(katalog.as_array().unwrap().len() >= 2);
+        let catalog = call(&w, "opt_params", json!({"plan": plan})).unwrap();
+        assert!(catalog.as_array().unwrap().len() >= 2);
     }
 
     #[test]
-    fn ungueltiger_plan_wird_in_ergebnis_gemeldet() {
+    fn invalid_plan_is_reported_in_result() {
         let (_app, w, _g) = setup();
         let r = call(&w, "run_simulation", json!({"plan": {}})).unwrap();
         assert!(!r["error"].is_null() || !r["issues"].as_array().unwrap().is_empty());
@@ -2023,23 +2028,19 @@ mod tests {
     }
 
     #[test]
-    fn menuekuerzel_haben_gueltige_form() {
+    fn menu_shortcuts_have_valid_form() {
         const MODIFIERS: [&str; 3] = ["CmdOrCtrl", "Shift", "Alt"];
-        for (id, _, key) in &eigene_eintraege() {
+        for (id, _, key) in &own_entries() {
             if key.is_empty() {
                 continue;
             }
             let parts: Vec<&str> = key.split('+').collect();
-            let (taste, mods) = parts.split_last().unwrap();
-            assert!(!taste.is_empty(), "{id}: Taste fehlt");
+            let (last_key, mods) = parts.split_last().unwrap();
+            assert!(!last_key.is_empty(), "{id}: Taste fehlt");
             assert!(mods.iter().all(|m| MODIFIERS.contains(m)), "{id}: {key}");
         }
         // No shortcut assigned twice.
-        let mut keys: Vec<&str> = eigene_eintraege()
-            .iter()
-            .map(|e| e.2)
-            .filter(|k| !k.is_empty())
-            .collect();
+        let mut keys: Vec<&str> = own_entries().iter().map(|e| e.2).filter(|k| !k.is_empty()).collect();
         let n = keys.len();
         keys.sort_unstable();
         keys.dedup();
@@ -2047,7 +2048,7 @@ mod tests {
     }
 
     #[test]
-    fn menuetitel_und_programmmenue() {
+    fn menu_titles_and_application_menu() {
         assert_eq!([FILE_TITLE, EDIT_TITLE, HELP_TITLE], ["Datei", "Bearbeiten", "Hilfe"]);
         #[cfg(target_os = "macos")]
         {
@@ -2058,7 +2059,7 @@ mod tests {
     }
 
     #[test]
-    fn menuereignis_wird_mit_kennung_an_oberflaeche_gemeldet() {
+    fn menu_event_is_reported_to_the_ui_with_id() {
         let (app, _w, _g) = setup();
         let got = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
         let sink = got.clone();
@@ -2079,7 +2080,7 @@ mod tests {
     }
 
     #[test]
-    fn echte_dialoge_werden_als_dienst_angemeldet() {
+    fn real_dialogs_are_registered_as_service() {
         let (app, _w, _g) = setup();
         let app2 = configure(mock_builder())
             .build(mock_context(noop_assets()))
@@ -2091,8 +2092,8 @@ mod tests {
     }
 
     #[test]
-    fn dialogbeschreibungen_sind_unveraendert() {
-        let alle = [
+    fn dialog_descriptions_are_unchanged() {
+        let cases = [
             (
                 &SHILLER_DIALOG,
                 "Shiller-Daten importieren (ie_data.xls)",
@@ -2110,7 +2111,7 @@ mod tests {
             (&LEGACY_DIALOG, "Alte config.json importieren", "Konfiguration", "json"),
             (&SERIES_DIALOG, "Zeitreihe wählen", "Zeitreihe (CSV)", "csv"),
         ];
-        for (d, title, filter, ext) in alle {
+        for (d, title, filter, ext) in cases {
             assert_eq!(
                 (d.title, d.filter, d.extensions.join(",")),
                 (title, filter, ext.to_string())
@@ -2118,7 +2119,7 @@ mod tests {
         }
     }
 
-    fn gewaehlt(p: &Path) -> FakeDialogs {
+    fn chosen(p: &Path) -> FakeDialogs {
         FakeDialogs {
             file: Some(FilePath::Path(p.to_path_buf())),
             ..Default::default()
@@ -2126,7 +2127,7 @@ mod tests {
     }
 
     #[test]
-    fn abbruch_im_dialog_liefert_null_bei_allen_dialogbefehlen() {
+    fn cancel_in_dialog_returns_null_for_all_dialog_commands() {
         let (_app, w, _g, fake) = setup_with(FakeDialogs::default());
         for (cmd, args) in [
             ("import_shiller", json!({})),
@@ -2149,11 +2150,11 @@ mod tests {
     }
 
     #[test]
-    fn plan_oeffnen_ueber_befehl() {
+    fn open_plan_via_command() {
         let dir = tmp("cmd-open");
         let f = dir.join("p.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": 1}"#).unwrap();
-        let (_app, w, _g, _) = setup_with(gewaehlt(&f));
+        let (_app, w, _g, _) = setup_with(chosen(&f));
         let r = call(&w, "open_plan", json!({})).unwrap();
         assert_eq!(r["path"], f.to_string_lossy().as_ref());
         assert_eq!(r["plan"]["marker"], 1);
@@ -2161,15 +2162,15 @@ mod tests {
     }
 
     #[test]
-    fn plan_oeffnen_ueber_befehl_meldet_fehler() {
+    fn open_plan_via_command_reports_errors() {
         let dir = tmp("cmd-open-err");
-        let (_app, w, _g, _) = setup_with(gewaehlt(&dir.join("fehlt.vplan")));
+        let (_app, w, _g, _) = setup_with(chosen(&dir.join("fehlt.vplan")));
         assert!(call(&w, "open_plan", json!({})).unwrap_err().is_string());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn speichern_ueber_befehl_mit_dialog_und_namensvorschlag() {
+    fn save_via_command_with_dialog_and_suggested_name() {
         let dir = tmp("cmd-save");
         let fake = FakeDialogs {
             save: Some(FilePath::Path(dir.join("ziel"))),
@@ -2185,8 +2186,13 @@ mod tests {
             vec!["save|Planung speichern|VivaPlan-Plan|vplan|Mein Plan.vplan"]
         );
         // With a path nothing is asked.
-        let direkt = dir.join("direkt.vplan");
-        call(&w, "save_plan", json!({"plan": plan, "path": direkt.to_string_lossy()})).unwrap();
+        let direct_path = dir.join("direkt.vplan");
+        call(
+            &w,
+            "save_plan",
+            json!({"plan": plan, "path": direct_path.to_string_lossy()}),
+        )
+        .unwrap();
         assert_eq!(fake.asked().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -2194,46 +2200,51 @@ mod tests {
     /// #44/AK3 (legacy: RetirementPlanner): An opened .rplan file is never overwritten. «Speichern» asks like «Speichern unter» and
     /// suggests the same name with .vplan; the .vplan can be opened again, the .rplan stays unchanged.
     #[test]
-    fn rplan_speichern_schlaegt_vplan_vor_und_laesst_die_alte_datei_unveraendert() {
+    fn rplan_save_suggests_vplan_and_leaves_old_file_unchanged() {
         let dir = tmp("cmd-save-legacy");
-        let alt = dir.join("Demo.rplan");
-        let inhalt = r#"{"format": "pensionsplaner/1", "project": {"name": "X"}}"#;
-        std::fs::write(&alt, inhalt).unwrap();
+        let legacy_file = dir.join("Demo.rplan");
+        let content = r#"{"format": "pensionsplaner/1", "project": {"name": "X"}}"#;
+        std::fs::write(&legacy_file, content).unwrap();
         let fake = FakeDialogs {
             save: Some(FilePath::Path(dir.join("Demo.rplan"))),
             ..Default::default()
         };
         let (_app, w, _g, fake) = setup_with(fake);
         let plan = json!({"format": "vivaplan/1", "project": {"name": "X"}});
-        let r = call(&w, "save_plan", json!({"plan": plan, "path": alt.to_string_lossy()})).unwrap();
+        let r = call(
+            &w,
+            "save_plan",
+            json!({"plan": plan, "path": legacy_file.to_string_lossy()}),
+        )
+        .unwrap();
         // Even if .rplan is chosen again in the dialog, a .vplan file is created.
         assert_eq!(r.as_str().unwrap(), dir.join("Demo.vplan").to_string_lossy());
         assert_eq!(
             fake.asked(),
             vec!["save|Planung speichern|VivaPlan-Plan|vplan|Demo.vplan"]
         );
-        assert_eq!(std::fs::read_to_string(&alt).unwrap(), inhalt);
-        let wieder = call(&w, "open_path", json!({"path": r.as_str().unwrap()})).unwrap();
-        assert_eq!(wieder["plan"], plan);
+        assert_eq!(std::fs::read_to_string(&legacy_file).unwrap(), content);
+        let reopened = call(&w, "open_path", json!({"path": r.as_str().unwrap()})).unwrap();
+        assert_eq!(reopened["plan"], plan);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// legacy: RetirementPlanner – cancelled saving of a .rplan file.
     #[test]
-    fn rplan_speichern_abgebrochen_schreibt_nichts() {
+    fn cancelled_rplan_save_writes_nothing() {
         let dir = tmp("cmd-save-legacy-cancel");
-        let alt = dir.join("a.RPLAN");
-        std::fs::write(&alt, "{}").unwrap();
+        let legacy_file = dir.join("a.RPLAN");
+        std::fs::write(&legacy_file, "{}").unwrap();
         let (_app, w, _g, fake) = setup_with(FakeDialogs::default());
         let r = call(
             &w,
             "save_plan",
-            json!({"plan": {"x": 1}, "path": alt.to_string_lossy()}),
+            json!({"plan": {"x": 1}, "path": legacy_file.to_string_lossy()}),
         )
         .unwrap();
         assert!(r.is_null());
         assert_eq!(fake.asked(), vec!["save|Planung speichern|VivaPlan-Plan|vplan|a.vplan"]);
-        assert_eq!(std::fs::read_to_string(&alt).unwrap(), "{}");
+        assert_eq!(std::fs::read_to_string(&legacy_file).unwrap(), "{}");
         assert_eq!(legacy_stem("/x/plan.vplan"), None);
         assert_eq!(legacy_stem("/x/Plan 1.rplan").as_deref(), Some("Plan 1"));
         assert_eq!(
@@ -2253,7 +2264,7 @@ mod tests {
 
     /// #44/AK2: window title «VivaPlan - ‹file name›», without a file just «VivaPlan».
     #[test]
-    fn fenstertitel_mit_und_ohne_datei() {
+    fn window_title_with_and_without_file() {
         assert_eq!(window_title(None), "VivaPlan");
         assert_eq!(window_title(Some("")), "VivaPlan");
         assert_eq!(window_title(Some("/a/b/Mein Plan.vplan")), "VivaPlan - Mein Plan.vplan");
@@ -2265,7 +2276,7 @@ mod tests {
 
     /// #44/AK5: A plan passed at startup (double-click, file association) is opened and remembered.
     #[test]
-    fn beim_start_uebergebene_datei_wird_geoeffnet() {
+    fn file_passed_at_startup_is_opened() {
         assert!(is_plan_file(Path::new("/a/b.vplan")) && is_plan_file(Path::new("b.RPLAN")));
         assert!(!is_plan_file(Path::new("b.json")) && !is_plan_file(Path::new("b")));
         let args = |v: &[&str]| v.iter().map(OsString::from).collect::<Vec<_>>();
@@ -2305,9 +2316,9 @@ mod tests {
     }
 
     #[test]
-    fn alte_konfiguration_ueber_befehl() {
+    fn legacy_config_via_command() {
         let src = root().join("crates/engine/tests/fixtures/legacy_fixed.json");
-        let (_app, w, _g, fake) = setup_with(gewaehlt(&src));
+        let (_app, w, _g, fake) = setup_with(chosen(&src));
         let r = call(&w, "import_legacy", json!({"startYear": 2026})).unwrap();
         assert!(r["plan"].is_object());
         assert_eq!(fake.asked().len(), 1);
@@ -2317,11 +2328,11 @@ mod tests {
     }
 
     #[test]
-    fn alte_konfiguration_ueber_befehl_meldet_fehler() {
+    fn legacy_config_via_command_reports_errors() {
         let dir = tmp("cmd-legacy-err");
         let bad = dir.join("c.json");
         std::fs::write(&bad, "kein json").unwrap();
-        let (_app, w, _g, _) = setup_with(gewaehlt(&bad));
+        let (_app, w, _g, _) = setup_with(chosen(&bad));
         assert!(call(&w, "import_legacy", json!({"startYear": 2026}))
             .unwrap_err()
             .is_string());
@@ -2329,9 +2340,9 @@ mod tests {
     }
 
     #[test]
-    fn zeitreihe_waehlen_ueber_befehl() {
+    fn choose_series_via_command() {
         {
-            let (_app, w, _g, _) = setup_with(gewaehlt(Path::new("/a/b.csv")));
+            let (_app, w, _g, _) = setup_with(chosen(Path::new("/a/b.csv")));
             assert_eq!(call(&w, "pick_series", json!({})).unwrap(), "/a/b.csv");
         }
         let fake = FakeDialogs {
@@ -2343,16 +2354,16 @@ mod tests {
     }
 
     #[test]
-    fn shiller_import_ueber_befehl_meldet_fehler_der_datei() {
+    fn shiller_import_via_command_reports_file_errors() {
         let dir = tmp("cmd-shiller");
-        let (_app, w, _g, fake) = setup_with(gewaehlt(&dir.join("fehlt.xls")));
+        let (_app, w, _g, fake) = setup_with(chosen(&dir.join("fehlt.xls")));
         assert!(call(&w, "import_shiller", json!({})).unwrap_err().is_string());
         assert_eq!(fake.asked().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn snb_import_ueber_befehl_meldet_fehler_der_dateien() {
+    fn snb_import_via_command_reports_file_errors() {
         let dir = tmp("cmd-snb");
         let fake = FakeDialogs {
             files: Some(vec![FilePath::Path(dir.join("fehlt.csv"))]),
@@ -2365,11 +2376,11 @@ mod tests {
     }
 
     #[test]
-    fn snb_import_aus_den_ausgelieferten_cubes() {
+    fn snb_import_from_the_shipped_cubes() {
         let lib = tmp("snb-ok");
-        let dateien = ["devkum", "plkopr", "zimoma", "rendoblim"]
+        let cubes = ["devkum", "plkopr", "zimoma", "rendoblim"]
             .map(|n| FilePath::Path(root().join(format!("crates/engine/data/quellen/snb-{n}.csv"))));
-        let rep = snb_from(&lib, dateien.to_vec()).unwrap();
+        let rep = snb_from(&lib, cubes.to_vec()).unwrap();
         assert!(!rep.written.is_empty());
         let _ = std::fs::remove_dir_all(&lib);
     }
@@ -2379,7 +2390,7 @@ mod tests {
     }
 
     #[test]
-    fn start_ohne_merkung_oeffnet_beispiel_ohne_hinweis() {
+    fn start_without_remembered_path_opens_example_without_notice() {
         let dir = tmp("start-leer");
         let s = startup_from(&dir, None, example_stub);
         assert_eq!(
@@ -2396,7 +2407,7 @@ mod tests {
 
     /// #70/AK1, AK6: first start only without a settings file; afterwards (even if the remembered file is missing) no longer.
     #[test]
-    fn issue_70_erster_start_nur_ohne_einstellungen() {
+    fn issue_70_first_start_only_without_settings() {
         let dir = tmp("fea54-erst");
         assert!(startup_from(&dir, None, example_stub).first, "ohne einstellungen.json");
         write_setting(&dir, "welcomeShown", json!(true)).unwrap();
@@ -2418,13 +2429,13 @@ mod tests {
 
     /// #70/AK7, #71/AK6: menu «Hilfe» has «Willkommen …» and «Erste Schritte».
     #[test]
-    fn issue_70_issue_71_menue_hilfe() {
+    fn issue_70_issue_71_help_menu() {
         assert!(HELP_MENU.contains(&("welcome", "Willkommen …", "")));
         assert!(HELP_MENU.contains(&("steps", "Erste Schritte", "")));
     }
 
     #[test]
-    fn start_oeffnet_gemerkte_datei() {
+    fn start_opens_remembered_file() {
         let dir = tmp("start-datei");
         let f = dir.join("meine.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": "eigene"}"#).unwrap();
@@ -2437,7 +2448,7 @@ mod tests {
     }
 
     #[test]
-    fn start_mit_geloeschter_datei_zeigt_beispiel_und_hinweis() {
+    fn start_with_deleted_file_shows_example_and_notice() {
         let dir = tmp("start-fehlt");
         let f = dir.join("weg.vplan");
         write_setting(&dir, LAST_PLAN_KEY, json!(f.to_string_lossy())).unwrap();
@@ -2452,9 +2463,9 @@ mod tests {
     }
 
     #[test]
-    fn start_mit_unlesbarer_datei_zeigt_beispiel_und_laesst_merkung() {
-        let dir = tmp("start-kaputt");
-        let f = dir.join("kaputt.vplan");
+    fn start_with_unreadable_file_shows_example_and_keeps_remembered_path() {
+        let dir = tmp("start-broken");
+        let f = dir.join("broken.vplan");
         std::fs::write(&f, "kein json").unwrap();
         write_setting(&dir, LAST_PLAN_KEY, json!(f.to_string_lossy())).unwrap();
         let s = startup_from(&dir, None, example_stub);
@@ -2465,7 +2476,7 @@ mod tests {
     }
 
     #[test]
-    fn gemerkter_pfad_wird_beim_start_geoeffnet_und_ersetzt() {
+    fn remembered_path_is_opened_at_startup_and_replaced() {
         let dir = tmp("merken");
         let (a, b) = (dir.join("a.vplan"), dir.join("b.vplan"));
         std::fs::write(&a, r#"{"format": "vivaplan/1", "marker": "a"}"#).unwrap();
@@ -2480,11 +2491,11 @@ mod tests {
     }
 
     #[test]
-    fn oeffnen_und_speichern_ueber_befehle_laufen_mit_merkung_durch() {
+    fn open_and_save_via_commands_remember_the_path() {
         let dir = tmp("merken-befehle");
         let f = dir.join("p.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1"}"#).unwrap();
-        let (_app, w, _g, _) = setup_with(gewaehlt(&f));
+        let (_app, w, _g, _) = setup_with(chosen(&f));
         assert_eq!(
             call(&w, "open_plan", json!({})).unwrap()["path"],
             f.to_string_lossy().as_ref()
@@ -2502,7 +2513,7 @@ mod tests {
     }
 
     #[test]
-    fn beenden_fragt_nur_bei_ungespeicherten_aenderungen() {
+    fn quit_asks_only_with_unsaved_changes() {
         let (app, w, _g) = setup();
         let q = app.state::<Quit>();
         assert!(!q.must_ask());
@@ -2513,7 +2524,7 @@ mod tests {
     }
 
     #[test]
-    fn beenden_bestaetigt_gibt_den_ausstieg_frei() {
+    fn confirmed_quit_permits_exit() {
         let q = Quit::default();
         q.dirty.store(true, Ordering::SeqCst);
         q.confirmed.store(true, Ordering::SeqCst);
@@ -2521,7 +2532,7 @@ mod tests {
     }
 
     #[test]
-    fn beispielplanung_im_bundle_ist_lesbar_oder_ersatz_greift() {
+    fn bundled_example_plan_is_readable_or_fallback_applies() {
         let (app, _w, _g) = setup();
         let p = bundled_example(app.handle());
         assert!(p.get("format").is_some());
@@ -2544,7 +2555,7 @@ mod tests {
     }
 
     #[test]
-    fn beenden_fragt_bei_aenderungen_und_sonst_nicht() {
+    fn quit_asks_with_changes_and_not_otherwise() {
         let (app, _w, _g) = setup();
         let asked = listen_to(&app, "quit-requested");
         let q = app.state::<Quit>();
@@ -2562,7 +2573,7 @@ mod tests {
     }
 
     #[test]
-    fn menueeintrag_beenden_fragt_bei_aenderungen_statt_zu_beenden() {
+    fn quit_menu_item_asks_with_changes_instead_of_quitting() {
         let (app, _w, _g) = setup();
         let asked = listen_to(&app, "quit-requested");
         let menu = listen_to(&app, "menu");
@@ -2583,8 +2594,8 @@ mod tests {
     }
 
     #[test]
-    fn beenden_hat_eine_eigene_kennung_und_ein_kuerzel() {
-        for (id, _, _) in &eigene_eintraege() {
+    fn quit_has_its_own_id_and_shortcut() {
+        for (id, _, _) in &own_entries() {
             assert_ne!(*id, QUIT_ID);
         }
         assert_eq!(QUIT_TEXT, "Beenden");
@@ -2592,7 +2603,7 @@ mod tests {
 
     // #124/AK8: The windows from the configuration (there `create: false`) are only created at the start of the app.
     #[test]
-    fn fenster_aus_der_konfiguration_werden_erstellt() {
+    fn windows_from_the_config_are_created() {
         let _g = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut ctx = mock_context(noop_assets());
         ctx.config_mut().app.windows = vec![tauri::utils::config::WindowConfig {
