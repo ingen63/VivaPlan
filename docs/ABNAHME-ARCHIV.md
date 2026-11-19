@@ -1033,3 +1033,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #171/AK3 | Test: Für jeden Code ergibt die deutsche Tabelle mit den Parametern genau den deutschen `text` des Rechenkerns (Beispiele je Code). | ☑ | **gilt** | [message.rs](../crates/engine/src/message.rs) «issue_171_ak3_examples_file_is_current», [i18n.rs](../crates/app/src/i18n.rs) «issue_171_ak3_engine_codes_render_the_engine_text», [engine-messages.test.js](../e2e/unit/engine-messages.test.js) «#171/AK3» | 19.11.2026 ok |
 | #171/AK4 | Die Berechnung ist unverändert: Golden-Dateien unverändert (der Golden-Vergleich ignoriert `code`/`params`), Rust-Tests je Meldungsart. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) «golden_masters» (`without_codes`), bestehende Texttests je Meldungsart | 19.11.2026 ok: Golden-Dateien ohne Änderung, 762 Rust-Tests grün; Laufzeit gleich oder schneller |
 | #171/AK5 | Spezifikation und `docs/ENTWICKLUNG.md` beschreiben Codes und Parameter. | ☑ | **gilt** | – | 19.11.2026 ok: ENTWICKLUNG.md «Meldungscodes des Rechenkerns (#171)», Pflichteingaben.md (Durchsicht) |
+
+### #176 Texte des Rechenkerns, Golden-Dateien und Kommandozeile auf Englisch
+
+[Issue #176](https://github.com/ingen63/VivaPlan/issues/176) · geschlossen · Umsetzung: 14c7baa (Rechenkern), 6983f34 (Golden-Dateien), 903fbf0 (Kommandozeile, Doku)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #176/AK1 | Alle Texte des Rechenkerns sind englisch; Test wie #171/AK3, nun gegen die Tabelle `en`. | ☑ | **gilt** | [i18n.rs](../crates/app/src/i18n.rs) «issue_171_ak3_engine_codes_render_the_engine_text», [engine-messages.test.js](../e2e/unit/engine-messages.test.js) «#176/AK1» | 19.11.2026 ok: 339 Vorlagen und 4 Upgrade-Hinweise = `en.json`; Namen aus Optimierungskatalog und Zeitreihen (Daten, keine Meldungen) noch deutsch |
+| #176/AK2 | Golden-Dateien neu erzeugt; der Diff enthält nur Textfelder, alle Zahlenwerte sind unverändert (Test oder Prüfskript vergleicht … | ☑ | **gilt** | [golden_numbers.py](../tools/golden_numbers.py) mit [Tests](../tools/test_golden_numbers.py), `make golden-numbers BASE=6983f34~1` | 19.11.2026 ok: 10 Dateien, 62'443 Zahlen, Schlüssel, Listenlängen und Monate unverändert; nur Textfelder geändert |
+| #176/AK3 | Die Kommandozeile gibt Meldungen und Ereignisse englisch aus; ihre Tests sind angepasst. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs), Tests in `crates/cli/src/optimize.rs`, `devserver.rs` | 19.11.2026 ok: 26 Tests grün, Stichprobe `run --events` |
+| #176/AK4 | Die Oberfläche zeigt in jeder Sprache weiterhin die übersetzten Texte (keine englischen Resttexte in de/fr/it). | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «#176/AK4» | 19.11.2026 ok für de (mit Gegenprobe); fr/it noch nicht vorhanden (#174, #175), gleicher Weg über Codes |
+| #176/AK5 | `BESCHREIBUNG.md`, `README.md` und Spezifikation zur Sprache der Kommandozeile nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 19.11.2026 ok: BESCHREIBUNG, README, ENTWICKLUNG, Hilfe (Kommandozeile, Optimierung) |
