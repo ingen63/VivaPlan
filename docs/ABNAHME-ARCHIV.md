@@ -949,3 +949,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #163/AK1 | Jeder Testprozess hat einen eigenen Datenordner; nach dem Test bleibt keiner zurück. | ☑ | **gilt** | `main.rs` Tests der App | 18.11.2026 ok: 93 Tests grün, keine Ordner übrig |
 | #163/AK2 | `issue_106_…` besteht in 20 Läufen hintereinander ohne Fehlversuch. | ☑ | **gilt** | `issue_106_einstellung_…` | 18.11.2026 ok: 20 von 20 |
 | #163/AK3 | Lauf auf GitHub (`tests-coverage`) ist ohne `FLKY`-Meldung grün. | ☑ | **gilt** | [Lauf 44375155792](https://github.com/ingen63/VivaPlan/actions/runs/44375155792) | 18.11.2026 ok |
+
+### #165 Code intern englisch: Regel, Glossar und Prüfskript
+
+[Issue #165](https://github.com/ingen63/VivaPlan/issues/165) · geschlossen · Umsetzung: 7b8a175, afbf054
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #165/AK1 | `CLAUDE.md` und `docs/ENTWICKLUNG.md` enthalten die Regel «Code, Kommentare, Bezeichner und Testnamen englisch; Oberflächentexte, Hilfe, Doku, Issues und Commits deutsch». | ☑ | **gilt** | kein Test (Durchsicht `CLAUDE.md`, `ENTWICKLUNG.md` Abschnitt «Sprache im Code») | 19.11.2026 ok |
+| #165/AK2 | Ein Glossar (`docs/GLOSSAR.md`) legt die englischen Bezeichner für Schweizer Fachbegriffe fest; Schweizer Kürzel bleiben als Bezeichner erlaubt. | ☑ | **gilt** (vorerst nur Fachbegriff → Bezeichner; Oberflächensprachen mit #172, #174, #175, Kommentar im Issue) | kein Test (Durchsicht `docs/GLOSSAR.md`: Beispiele des Issues und Abschnitt «Schweizer Kürzel» vorhanden) | 19.11.2026 ok |
+| #165/AK3 | Ein Prüfskript (`tools/check-english.sh`, Ziel `make english`) meldet deutsche Kommentare und Testnamen mit Datei und Zeile; Oberflächentexte und Golden-Dateien ausgenommen. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak3_…» (10 Tests) | 19.11.2026 ok: Tests grün; `--all` auf dem Repo meldet 3926 Zeilen mit Datei:Zeile |
+| #165/AK4 | Übergangsliste noch nicht umgestellter Pfade; ist sie leer, läuft die Prüfung in `make test-quiet` und im Workflow mit. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_…» (6 Tests) | 19.11.2026 ok: `make test-quiet` ruft `--gate` auf (übersprungen, 6 Pfade); Job `english` in `test-quality.yml` (YAML gültig, auf GitHub noch nicht gelaufen) |
+| #165/AK5 | Tests des Skripts (Treffer, kein Treffer, Ausnahmen) wie bei `check-network-free.sh`. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) (16 Tests) | 19.11.2026 ok |
