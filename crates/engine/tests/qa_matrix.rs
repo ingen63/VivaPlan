@@ -14,24 +14,17 @@ use engine::time::YearMonth;
 use engine::validate::Severity;
 use serde_json::{json, Value};
 
+use crate::plan_builder::PlanBuilder;
+
+fn builder() -> PlanBuilder {
+    PlanBuilder::new("QA")
+        .currency("CHF")
+        .flows(0, 5000)
+        .wealth(0, 0, 1_000_000, 1, 0)
+}
+
 fn base() -> Value {
-    crate::any_age(json!({
-        "project": { "name": "QA", "currency": "CHF" },
-        "household": { "persons": [ { "id": "A", "name": "A", "birth": "1965-01" } ] },
-        "milestones": [
-            { "id": "start", "name": "Start", "kind": "date", "date": "2030-01" },
-            { "id": "retire", "name": "Pensionierung", "kind": "date", "date": "2030-01" },
-            { "id": "end", "name": "Ende", "kind": "date", "date": "2039-12" }
-        ],
-        "pension": {
-            "pk": { "capital": 0, "at": "retire", "lumpsum": 0, "conversion": 0 },
-            "ahv": { "monthly": 0, "at": "never" }
-        },
-        "flows": { "income": 0, "spending": 5000 },
-        "wealth": { "stocks": 0, "bonds": 0, "cash": 1_000_000, "stockShare": 1, "reserveMonths": 0 },
-        "returns": { "source": "fixed", "fixed": { "stocks": 0, "bonds": 0, "inflation": 0 } },
-        "taxes": { "income": [], "wealth": [], "capital": [], "propertyGain": { "brackets": [], "reduction": 0.0 } }
-    }))
+    builder().build()
 }
 
 fn plan(v: &Value) -> Plan {
@@ -1053,19 +1046,17 @@ fn csv_import_error_cases() {
 // ---------------------------------------------------------------------------------------------
 
 fn mc_plan(source: &str, paths: usize, seed: u64) -> Value {
-    let mut v = base();
-    v["wealth"] =
-        json!({ "stocks": 600_000, "bonds": 300_000, "cash": 100_000, "stockShare": 0.6, "reserveMonths": 6 });
-    v["milestones"][2]["date"] = json!("2054-12");
-    v["returns"]["source"] = json!(source);
-    v["returns"]["fixed"]["inflation"] = json!(0.01);
-    v["returns"]["series"] = json!("library:Shiller CHF.csv");
-    v["returns"][source] = if source == "bootstrap" {
-        json!({ "paths": paths, "block": 12, "seed": seed })
+    let b = builder()
+        .dates("2030-01", "2030-01", "2054-12")
+        .wealth(600_000, 300_000, 100_000, 0.6, 6)
+        .fixed_returns(0, 0, 0.01)
+        .series("library:Shiller CHF.csv");
+    if source == "bootstrap" {
+        b.bootstrap(paths, 12, seed)
     } else {
-        json!({ "paths": paths, "mu": 0.06, "sigma": 0.16, "df": 5, "jumpLambda": 0.3, "jumpMu": -0.2, "jumpSigma": 0.1, "seed": seed })
-    };
-    v
+        b.parametric(json!({ "paths": paths, "mu": 0.06, "sigma": 0.16, "df": 5, "jumpLambda": 0.3, "jumpMu": -0.2, "jumpSigma": 0.1, "seed": seed }))
+    }
+    .build()
 }
 
 fn mc_summary(v: &Value) -> (f64, f64, Vec<f64>) {

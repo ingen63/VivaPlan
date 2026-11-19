@@ -4,23 +4,21 @@ use engine::api;
 use serde_json::{json, Value};
 use std::path::Path;
 
+use crate::plan_builder::{parametric, PlanBuilder};
+
 fn plan() -> Value {
-    crate::any_age(json!({
-        "project": { "name": "Nachrechnen" },
-        "household": { "persons": [ { "id": "A", "name": "A", "birth": "1965-01" } ] },
-        "milestones": [
-            { "id": "start", "name": "Start", "kind": "date", "date": "2030-01" },
-            { "id": "retire", "name": "Pensionierung", "kind": "date", "date": "2032-01" },
-            { "id": "end", "name": "Ende", "kind": "date", "date": "2045-12" }
-        ],
-        "pension": { "pk": { "capital": 0, "at": "retire", "lumpsum": 0, "conversion": 0 }, "ahv": { "monthly": 0, "at": "never" } },
-        "flows": { "income": 6_000, "spending": 5_000 },
-        "wealth": { "stocks": 400_000, "bonds": 100_000, "cash": 50_000, "stockShare": 0.6, "reserveMonths": 3 },
-        "returns": { "source": "parametric", "fixed": { "stocks": 0.04, "bonds": 0.01, "inflation": 0.01 },
-            "parametric": { "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "jumpLambda": 0, "jumpMu": 0, "jumpSigma": 0, "seed": 7 } },
-        "taxes": { "income": [], "wealth": [], "capital": [] },
-        "scenarios": { "sweeps": [ { "param": "wealth.stockShare", "from": 0.3, "to": 0.9, "step": 0.3 } ] }
-    }))
+    PlanBuilder::new("Nachrechnen")
+        .dates("2030-01", "2032-01", "2045-12")
+        .flows(6_000, 5_000)
+        .wealth(400_000, 100_000, 50_000, 0.6, 3)
+        .fixed_returns(0.04, 0.01, 0.01)
+        .parametric(parametric(60, 7))
+        .set("taxes", json!({ "income": [], "wealth": [], "capital": [] }))
+        .set(
+            "scenarios",
+            json!({ "sweeps": [ { "param": "wealth.stockShare", "from": 0.3, "to": 0.9, "step": 0.3 } ] }),
+        )
+        .build()
 }
 
 fn picks_of(run: &api::RunOut, level: usize) -> Vec<(u32, usize, f64)> {

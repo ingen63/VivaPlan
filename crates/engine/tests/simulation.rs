@@ -10,25 +10,11 @@ use engine::time::YearMonth;
 use engine::validate::{self, Severity};
 use serde_json::{json, Value};
 
+use crate::plan_builder::PlanBuilder;
+
 /// Minimale Planung: 2 Jahre ab Januar 2030, keine Renditen, keine Inflation, keine Steuern.
 fn base() -> Value {
-    crate::any_age(json!({
-        "project": { "name": "Test" },
-        "household": { "persons": [ { "id": "A", "name": "A", "birth": "1965-01" } ] },
-        "milestones": [
-            { "id": "start", "name": "Start", "kind": "date", "date": "2030-01" },
-            { "id": "retire", "name": "Pensionierung", "kind": "date", "date": "2040-01" },
-            { "id": "end", "name": "Ende", "kind": "date", "date": "2031-12" }
-        ],
-        "pension": {
-            "pk": { "capital": 0, "at": "retire", "lumpsum": 0, "conversion": 0 },
-            "ahv": { "monthly": 0, "at": "never" }
-        },
-        "flows": { "income": 0, "spending": 0 },
-        "wealth": { "stocks": 0, "bonds": 0, "cash": 0, "stockShare": 1, "reserveMonths": 0 },
-        "returns": { "source": "fixed", "fixed": { "stocks": 0, "bonds": 0, "inflation": 0 } },
-        "taxes": { "income": [], "wealth": [], "capital": [], "propertyGain": { "brackets": [], "reduction": 0.0 } }
-    }))
+    PlanBuilder::new("Test").dates("2030-01", "2040-01", "2031-12").build()
 }
 
 fn plan(v: Value) -> Plan {

@@ -1,17 +1,15 @@
 //! #20: Zielauswahl der Optimierung. Ziel 1 (Konsum) bleibt unverändert, Ziel 2 («Kein Notverkauf von Immobilien») ordnet nach dem
 //! Anteil der Läufe mit ungeplantem Immobilienverkauf und bei Gleichstand nach der Ruinwahrscheinlichkeit.
 
-use engine::api;
 use engine::model::{Goal, OptimizerSettings};
 use engine::optimize::{run_request, Metrics, Objective, Request};
 use serde_json::{json, Value};
 use std::path::Path;
 
+use crate::plan_builder::{parametric, PlanBuilder};
+
 fn example() -> Value {
-    let mut v = api::example_plan();
-    v["returns"]["source"] = json!("parametric");
-    v["returns"]["parametric"] = json!({ "paths": 100, "mu": 0.06, "sigma": 0.15, "df": 0, "jumpLambda": 0, "jumpMu": 0, "jumpSigma": 0, "seed": 3 });
-    v
+    PlanBuilder::example().parametric(parametric(100, 3)).build()
 }
 
 fn request(goal: Goal) -> Request {
