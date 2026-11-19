@@ -1,5 +1,5 @@
-//! #100: Aktienparameter des parametrischen Modells je Aktienindex. #101: Obligationen und Inflation mit
-//! Korrelation je Kombination aus Aktien- und Obligationenindex.
+//! #100: Stock parameters of the parametric model per stock index. #101: Bonds and inflation with
+//! correlation per combination of stock and bond index.
 
 use std::path::{Path, PathBuf};
 
@@ -46,7 +46,7 @@ fn start() -> YearMonth {
     YearMonth::new(2030, 1)
 }
 
-/// Parametrische Pfade mit den Vorschlagswerten der Reihe (wie eine Planung mit `auto`).
+/// Parametric paths with the suggested values of the series (like a plan with `auto`).
 fn parametric_paths(d: &DataSet, paths: usize, correlated: bool) -> Vec<MarketPath> {
     let f = fixed();
     let auto = ParametricParams {
@@ -66,7 +66,7 @@ fn parametric_paths(d: &DataSet, paths: usize, correlated: bool) -> Vec<MarketPa
     (0..paths).into_par_iter().map(|i| g.path(i)).collect()
 }
 
-/// Historischer Bootstrap der Reihe mit den Standardwerten (Blocklänge 12 Monate).
+/// Historical bootstrap of the series with the default values (block length 12 months).
 fn bootstrap_paths(d: &DataSet, paths: usize) -> Vec<MarketPath> {
     let f = fixed();
     let b = Bootstrap {
@@ -83,7 +83,7 @@ fn bootstrap_paths(d: &DataSet, paths: usize) -> Vec<MarketPath> {
     (0..paths).into_par_iter().map(|i| b.path(i)).collect()
 }
 
-/// Jahreswerte eines Pfades: Aktien und Obligationen verknüpft, Inflation (Jahressatz) des Dezembers.
+/// Annual values of a path: stocks and bonds linked, inflation (annual rate) of December.
 fn years_of(p: &MarketPath) -> Vec<(f64, f64, f64)> {
     (0..YEARS)
         .map(|y| {
@@ -97,7 +97,7 @@ fn all_years(paths: &[MarketPath]) -> Vec<(f64, f64, f64)> {
     paths.iter().flat_map(years_of).collect()
 }
 
-/// 5., 50. und 95. Perzentil der geometrischen Aktienrendite über 30 Jahre.
+/// 5th, 50th and 95th percentile of the geometric stock return over 30 years.
 fn geo30(paths: &[MarketPath]) -> [f64; 3] {
     let g: Vec<f64> = paths
         .iter()
@@ -119,9 +119,9 @@ const INDICES: [(StockIndex, BondIndex, &str); 3] = [
     (StockIndex::Sp500, BondIndex::Usa, "S&P 500"),
 ];
 
-/// #100/AK1, AK2: Mittelwert, Streuung und geometrisches Mittel der Jahresrenditen höchstens 0,5 Prozentpunkte vom
-/// Bootstrap desselben Index entfernt, das 5 %-Quantil höchstens 2 Prozentpunkte, die geometrische Rendite über
-/// 30 Jahre (5., 50., 95. Perzentil) höchstens 0,5 Prozentpunkte.
+/// #100/AK1, AK2: Mean, spread and geometric mean of the annual returns at most 0.5 percentage points away from the
+/// bootstrap of the same index, the 5 % quantile at most 2 percentage points, the geometric return over
+/// 30 years (5th, 50th, 95th percentile) at most 0.5 percentage points.
 #[test]
 fn issue_100_ak1_ak2_parametric_matches_the_bootstrap_of_each_index() {
     let mut report = vec![];
@@ -144,7 +144,7 @@ fn issue_100_ak1_ak2_parametric_matches_the_bootstrap_of_each_index() {
     println!("{}", report.join("\n"));
 }
 
-/// #100/AK1 (Referenz aus der Analyse): Kennzahlen der Jahresreihen der drei Indizes.
+/// #100/AK1 (reference from the analysis): metrics of the annual series of the three indices.
 #[test]
 fn issue_100_ak1_reference_values_of_the_series() {
     for ((s, b, name), (mean, sd, geo)) in
@@ -154,7 +154,7 @@ fn issue_100_ak1_reference_values_of_the_series() {
     {
         let d = ds(s, b);
         let st = d.stock_series.clone().unwrap();
-        // Kalenderjahre (Monatsreihe ab Januar zu Jahren verknüpft)
+        // Calendar years (monthly series from January linked to years)
         let years: Vec<f64> = match st.freq {
             Freq::Yearly => st.values.clone(),
             Freq::Monthly => st
@@ -166,14 +166,14 @@ fn issue_100_ak1_reference_values_of_the_series() {
                 .collect(),
         };
         let m = calibrate::moments(&years);
-        // Streuung der Analyse mit Nenner n − 1, hier n: Abweichung unter 0,1 Prozentpunkten
+        // Spread of the analysis with denominator n − 1, here n: deviation below 0.1 percentage points
         assert!((m.mean - mean).abs() < 0.001, "{name} {m:?}");
         assert!((m.sd - sd).abs() < 0.002, "{name} {m:?}");
         assert!((m.geo - geo).abs() < 0.001, "{name} {m:?}");
     }
 }
 
-/// #100/AK3: Die Vorschlagswerte entstehen zur Laufzeit aus den ausgelieferten Reihen.
+/// #100/AK3: The suggested values are created at runtime from the bundled series.
 #[test]
 fn issue_100_ak3_suggestions_for_the_shipped_series() {
     let fit = |s, b| calibrate::suggestion(&ds(s, b)).stocks.unwrap();
@@ -193,7 +193,7 @@ fn issue_100_ak3_suggestions_for_the_shipped_series() {
             assert!((a - b).abs() < 1e-9, "erwartet {expected:?}, erhalten {got:?}");
         }
     }
-    // Die Aktienparameter hängen nur vom Aktienindex ab, nicht von den Obligationen
+    // The stock parameters depend only on the stock index, not on the bonds
     assert_eq!(
         fit(StockIndex::Sp500, BondIndex::Ch),
         fit(StockIndex::Sp500, BondIndex::Usa)
@@ -202,18 +202,18 @@ fn issue_100_ak3_suggestions_for_the_shipped_series() {
         fit(StockIndex::WorldJst, BondIndex::ChShort),
         fit(StockIndex::WorldJst, BondIndex::Usa)
     );
-    // S&P 500 mit Eidgenossen: ganze Aktienreihe ab 1922, nicht nur die gemeinsamen Jahre ab 1988
+    // S&P 500 with Swiss Confederation bonds: whole stock series from 1922, not only the common years from 1988
     let s = calibrate::suggestion(&ds(StockIndex::Sp500, BondIndex::Ch));
     assert_eq!(s.stock_years.unwrap().0, 1922);
 }
 
-/// #100/AK3: Nach einem Update der Shiller-Daten ändern sich die Vorschlagswerte für «S&P 500».
+/// #100/AK3: After an update of the Shiller data the suggested values for «S&P 500» change.
 #[test]
 fn issue_100_ak3_new_shiller_data_changes_the_suggestion() {
     let dir = std::env::temp_dir().join(format!("vivaplan-fea78-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let text = std::fs::read_to_string(lib().join("Shiller CHF.csv")).unwrap();
-    // Gekürzte Reihe (bis 1999) als «neue» Daten
+    // Shortened series (until 1999) as «new» data
     let cut: String = text
         .lines()
         .filter(|l| !l.starts_with(|c: char| c.is_ascii_digit()) || l.get(..4).is_some_and(|y| y < "2000"))
@@ -228,7 +228,7 @@ fn issue_100_ak3_new_shiller_data_changes_the_suggestion() {
     assert_ne!(before.stocks, after.stocks);
 }
 
-/// #100/AK7: «Welt individuell» erhält Vorschlagswerte aus seiner eigenen Reihe.
+/// #100/AK7: «Welt individuell» gets suggested values from its own series.
 #[test]
 fn issue_100_ak7_custom_world_uses_its_own_series() {
     let custom = |weights| {
@@ -273,7 +273,7 @@ fn plan_json(source: &str, parametric: Value) -> Value {
     v
 }
 
-/// #100/AK6, #101/AK6: Ältere Planungen behalten ihre Parameter; wer parametrisch rechnet, erhält einen Hinweis.
+/// #100/AK6, #101/AK6: Older plans keep their parameters; those that compute parametrically get a note.
 #[test]
 fn issue_100_ak6_issue_101_ak6_older_plans_keep_their_parameters() {
     let old = json!({"paths": 100, "mu": 0.05, "sigma": 0.12, "df": 4, "jumpLambda": 0.1, "jumpMu": -0.2, "jumpSigma": 0.1, "seed": 3});
@@ -285,28 +285,28 @@ fn issue_100_ak6_issue_101_ak6_older_plans_keep_their_parameters() {
         "{:?}",
         out.notes
     );
-    // Einmalig: nach dem Speichern (Merkmal vorhanden) kein Hinweis mehr
+    // Once only: after saving (flag present) no further note
     let again = api::upgrade_plan(&out.plan);
     assert!(!again.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
-    // Andere Quelle: die Werte waren nicht in Gebrauch und folgen künftig dem Index, ohne Hinweis
+    // Other source: the values were not in use and follow the index from now on, without a note
     let out = api::upgrade_plan(&plan_json("bootstrap", old.clone()));
     assert_eq!(out.plan["returns"]["parametric"]["auto"], json!(true));
     assert!(!out.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
-    // Parametrisch ohne gespeicherte Werte: die bisherigen Standardwerte bleiben, mit Hinweis
+    // Parametric without saved values: the previous default values stay, with a note
     let mut v = plan_json("parametric", json!(null));
     v["returns"].as_object_mut().unwrap().remove("parametric");
     let out = api::upgrade_plan(&v);
     let q: ParametricParams = serde_json::from_value(out.plan["returns"]["parametric"].clone()).unwrap();
     assert_eq!(q, ParametricParams::default());
     assert!(out.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
-    // Rechnung: Die gespeicherten Aktienparameter gelten unverändert
+    // Computation: the saved stock parameters apply unchanged
     let q: ParametricParams = serde_json::from_value(old).unwrap();
     let (r, _) = calibrate::resolve(&q, Some(&ds(StockIndex::WorldJst, BondIndex::Ch)));
     assert_eq!(r, q);
 }
 
-/// #101/AK1, AK2: Für alle 9 Kombinationen stimmen die Korrelationen der Jahreswerte auf 0,05 mit der Reihe, Mittel
-/// und Streuung von Obligationen und Inflation auf 0,3 Prozentpunkte.
+/// #101/AK1, AK2: For all 9 combinations the correlations of the annual values match the series within 0.05, mean
+/// and spread of bonds and inflation within 0.3 percentage points.
 #[test]
 fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
     let stocks = [StockIndex::WorldJst, StockIndex::Sp500, StockIndex::ChJst];
@@ -348,7 +348,7 @@ fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
         }
     }
     println!("{}", report.join("\n"));
-    // Referenz Aktien/Obligationen aus der Analyse (Welt, S&P 500, Schweiz; kurzfristig, 10 Jahre, USA)
+    // Reference stocks/bonds from the analysis (world, S&P 500, Switzerland; short-term, 10 years, USA)
     let reference = [[-0.07, -0.01, 0.24], [-0.02, -0.05, 0.45], [-0.07, 0.19, 0.27]];
     for (s, row) in stocks.iter().zip(reference) {
         for (b, r) in bonds.iter().zip(row) {
@@ -358,8 +358,8 @@ fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
     }
 }
 
-/// Ruinwahrscheinlichkeit: 60 % Aktien, 40 % Obligationen, jährlich ausgeglichen, Entnahme 4 % des Startvermögens zu
-/// Jahresbeginn, mit der Teuerung angepasst, 30 Jahre.
+/// Probability of ruin: 60 % stocks, 40 % bonds, rebalanced annually, withdrawal 4 % of the initial wealth at the
+/// start of the year, adjusted with inflation, 30 years.
 fn ruin(paths: &[MarketPath]) -> f64 {
     let ruined = paths
         .iter()
@@ -379,7 +379,7 @@ fn ruin(paths: &[MarketPath]) -> f64 {
     ruined as f64 / paths.len() as f64
 }
 
-/// Wie [`ruin`], aber monatlich ausgeglichen und monatlich entnommen (wie die Standardstrategie der App).
+/// Like [`ruin`], but rebalanced monthly and withdrawn monthly (like the app's standard strategy).
 fn ruin_monthly(paths: &[MarketPath]) -> f64 {
     let ruined = paths
         .iter()
@@ -399,11 +399,11 @@ fn ruin_monthly(paths: &[MarketPath]) -> f64 {
     ruined as f64 / paths.len() as f64
 }
 
-/// #101/AK3: Ruinwahrscheinlichkeit (60/40, 4 % real, 30 Jahre) höchstens 2 Prozentpunkte neben dem Bootstrap für
-/// «Welt (JST)» und «Schweiz (JST)» mit «Eidgenossenschaft 10 Jahre» und «kurzfristig». Gerechnet auf den
-/// Renditepfaden (ohne Steuern und Ausgabenplanung), jährlich ausgeglichen: Die Jahresreihen des Bootstraps haben
-/// innerhalb eines Jahres gleiche Monatsrenditen, ein monatlicher Ausgleich brächte dem parametrischen Modell
-/// (Schwankung auch innerhalb des Jahres) einen Ausgleichsgewinn, den der Bootstrap nicht hat.
+/// #101/AK3: Probability of ruin (60/40, 4 % real, 30 years) at most 2 percentage points from the bootstrap for
+/// «Welt (JST)» and «Schweiz (JST)» with «Eidgenossenschaft 10 Jahre» and «kurzfristig». Computed on the
+/// return paths (without taxes and spending plan), rebalanced annually: the annual series of the bootstrap have
+/// equal monthly returns within a year; monthly rebalancing would give the parametric model
+/// (fluctuation also within the year) a rebalancing gain the bootstrap does not have.
 #[test]
 fn issue_101_ak3_ruin_probability_close_to_the_bootstrap() {
     let mut report = vec![];
@@ -423,7 +423,7 @@ fn issue_101_ak3_ruin_probability_close_to_the_bootstrap() {
     println!("{}", report.join("\n"));
 }
 
-/// #101/AK4: Ein Wechsel der Obligationen oder der Aktien ändert die Matrix.
+/// #101/AK4: A change of the bonds or the stocks changes the matrix.
 #[test]
 fn issue_101_ak4_matrix_depends_on_the_combination() {
     let m = |s, b| calibrate::suggestion(&ds(s, b)).joint.unwrap();
@@ -431,7 +431,7 @@ fn issue_101_ak4_matrix_depends_on_the_combination() {
     assert_ne!(a.corr, m(StockIndex::WorldJst, BondIndex::Usa).corr);
     assert_ne!(a.corr, m(StockIndex::ChJst, BondIndex::Ch).corr);
     assert_ne!(a.bonds_mean, m(StockIndex::WorldJst, BondIndex::ChShort).bonds_mean);
-    // Die Kurzinfo zur Planung enthält die Werte (Anzeige im Reiter «Simulation»)
+    // The short info about the plan contains the values (displayed in the tab «Simulation»)
     let i = inv(StockIndex::WorldJst, BondIndex::Usa);
     let reference = format!("strategy:{}", serde_json::to_string(&i).unwrap());
     let info = api::series_info(&reference, Path::new("."), Some(&lib())).unwrap();
@@ -440,7 +440,7 @@ fn issue_101_ak4_matrix_depends_on_the_combination() {
     assert!(p.stocks.is_some());
 }
 
-/// #101/AK5: Gleicher Startwert ergibt gleiche Pfade; die Aktienpfade bleiben mit und ohne Korrelation gleich.
+/// #101/AK5: The same seed gives the same paths; the stock paths stay the same with and without correlation.
 #[test]
 fn issue_101_ak5_same_seed_same_paths_and_unchanged_stocks() {
     let d = ds(StockIndex::WorldJst, BondIndex::Ch);
@@ -466,7 +466,7 @@ fn issue_101_ak5_same_seed_same_paths_and_unchanged_stocks() {
         assert_eq!(a.bonds, with.path(i).bonds);
         assert_eq!(a.inflation, with.path(i).inflation);
         assert_ne!(a.bonds, b.bonds);
-        // Juli bis Dezember (6 Monate) ein Wert, danach je Kalenderjahr einer
+        // July to December (6 months) one value, afterwards one per calendar year
         assert!(a.inflation[..6].windows(2).all(|w| w[0] == w[1]));
         assert_ne!(a.inflation[5], a.inflation[6]);
         assert!(a.inflation[6..18].windows(2).all(|w| w[0] == w[1]));
@@ -474,12 +474,12 @@ fn issue_101_ak5_same_seed_same_paths_and_unchanged_stocks() {
     assert_ne!(with.path(0).bonds, with.path(1).bonds);
 }
 
-/// #132/AK7: Eine ältere Planung, die parametrisch rechnet, erhält einmalig einen Hinweis auf die anderen Zufallspfade;
-/// neue Planungen und andere Quellen nicht.
+/// #132/AK7: An older plan that computes parametrically gets a one-time note about the different random paths;
+/// new plans and other sources do not.
 #[test]
 fn issue_132_ak7_older_parametric_plans_get_a_note() {
     let note = engine::upgrade::SAMPLER_NOTE;
-    // Stand nach #101 (mit `auto`), vor #132 (ohne `sampler`)
+    // State after #101 (with `auto`), before #132 (without `sampler`)
     let old = json!({"paths": 100, "mu": 0.05, "sigma": 0.12, "df": 4, "jumpLambda": 0.1, "jumpMu": -0.2, "jumpSigma": 0.1,
         "seed": 3, "auto": false});
     let out = api::upgrade_plan(&plan_json("parametric", old.clone()));
@@ -493,22 +493,22 @@ fn issue_132_ak7_older_parametric_plans_get_a_note() {
         json!(0.05),
         "Parameter bleiben"
     );
-    // nach dem Speichern kein Hinweis mehr
+    // no further note after saving
     assert!(!api::upgrade_plan(&out.plan).notes.iter().any(|n| n == note));
-    // andere Quelle: Merkmal ohne Hinweis
+    // other source: flag without a note
     let out = api::upgrade_plan(&plan_json("bootstrap", old.clone()));
     assert!(!out.notes.iter().any(|n| n == note));
     assert_eq!(
         out.plan["returns"]["parametric"]["sampler"],
         json!(engine::montecarlo::SAMPLER)
     );
-    // vor #101: der Hinweis von #101 nennt die Änderung bereits, kein zweiter
+    // before #101: the note of #101 already names the change, no second one
     let mut older = old.clone();
     older.as_object_mut().unwrap().remove("auto");
     let out = api::upgrade_plan(&plan_json("parametric", older));
     assert!(out.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
     assert!(!out.notes.iter().any(|n| n == note));
-    // neue Planungen (Vorlage, Beispiel) tragen das Merkmal und bleiben ohne Hinweis
+    // new plans (template, example) carry the flag and stay without a note
     let neu: serde_json::Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     for mut v in [neu, api::example_plan()] {
         assert_eq!(

@@ -1,9 +1,9 @@
-//! 3-Topf-Strategie nach Spezifikation: Netto-Bedarf des laufenden Jahres, Januar-Auffüllung, Renditekriterium und die
-//! Sonderfälle A (Start der Entnahmephase, PK-Kapitalbezug, Neustart), B (externe Zuflüsse) und C (Vorausschau).
+//! 3-bucket strategy according to the specification: net need of the current year, January refill, return criterion and the
+//! special cases A (start of the withdrawal phase, PK lump sum, restart), B (external inflows) and C (look-ahead).
 //!
-//! Netto-Bedarf = Lebenshaltung + Wohnen + Einkommenssteuer − regelmässige Einnahmen (AHV, PK-Rente, Erwerb). Nicht
-//! enthalten: einmalige Ausgaben, Amortisationen, Immobilienkäufe, Sondersteuern. Ziel Topf 1 und 2 = Jahre × Netto-Bedarf.
-//! Die Stände in `before`/`after` der Protokolle gelten vor den Ausgaben des Monats.
+//! Net need = living costs + housing + income tax − regular income (AHV, PK pension, earned income). Not
+//! included: one-off expenses, amortization, property purchases, special taxes. Target buckets 1 and 2 = years × net need.
+//! The balances in `before`/`after` of the logs apply before the month's expenses.
 
 use engine::batch;
 use engine::model::Plan;
@@ -11,8 +11,8 @@ use engine::sim::{BucketRefill, EventKind, SimResult, Simulator};
 use engine::time::YearMonth;
 use serde_json::{json, Value};
 
-/// Lebenshaltung 100'000, Miete 24'000, Einkommenssteuer 4'000 (Satz auf 84'000 Renten), Renten 84'000 (AHV 2'500 +
-/// PK-Rente 4'500 pro Monat) → Netto-Bedarf 44'000; Topf 1 = 2 Jahre, Topf 2 = 1 Jahr; Aktien 6 %, Obligationen 1 %.
+/// Living costs 100'000, rent 24'000, income tax 4'000 (rate on 84'000 pensions), pensions 84'000 (AHV 2'500 +
+/// PK pension 4'500 per month) → net need 44'000; bucket 1 = 2 years, bucket 2 = 1 year; stocks 6 %, bonds 1 %.
 fn base() -> Value {
     json!({
         "project": { "name": "3-Topf" },
@@ -54,7 +54,7 @@ fn close(a: f64, b: f64, what: &str) {
     assert!((a - b).abs() < 1e-6 * b.abs().max(1.0), "{what}: {a} statt {b}");
 }
 
-/// Kein Topf fällt je unter 0 (am Monatsende und in allen Protokollen).
+/// No bucket ever falls below 0 (at the end of the month and in all logs).
 fn never_negative(res: &SimResult) {
     for r in &res.records {
         assert!(
@@ -140,9 +140,9 @@ fn ten_years_above_the_threshold_reach_the_targets_every_year() {
         close(r.need, 44_000.0, &format!("Netto-Bedarf {y}"));
         close(r.after[0], 88_000.0, &format!("Topf 1 {y}"));
         close(r.after[1], 44_000.0, &format!("Topf 2 {y}"));
-        // Topf 1 ist durch die Ausgaben des Jahres geschrumpft und wird jedes Jahr wieder auf das Ziel gebracht
+        // Bucket 1 has shrunk by the year's spending and is brought back to the target every year
         assert!(r.before[0] < r.after[0]);
-        // (im ersten Jahr fehlt die Einkommenssteuer des Vorjahres, die erst im Mai fällig wird)
+        // (in the first year the previous year's income tax, only due in May, is missing)
         let paid = if y == 2031 { 40_000.0 } else { 44_000.0 };
         close(r.before[0] + paid, 88_000.0, &format!("Topf 1 vor der Auffüllung {y}"));
     }
@@ -164,7 +164,7 @@ fn inflation_makes_the_pots_grow() {
 #[test]
 fn special_taxes_and_one_time_outflows_do_not_change_the_target() {
     let reference = run(base());
-    // Einmalige Ausgabe 2033 (Reise) und Sondersteuern: Grundstückgewinnsteuer 2033 (Verkauf), Kapitalbezugssteuer
+    // One-off expense 2033 (trip) and special taxes: property gain tax 2033 (sale), lump-sum tax
     let mut v = base();
     v["flows"]["extras"] = json!([ { "date": "2033-03", "amount": -50_000, "label": "Reise" } ]);
     v["taxes"]["propertyGain"] = json!({ "brackets": [[1e18, 0.2]], "reduction": 0.0 });
@@ -221,7 +221,7 @@ fn net_need_zero_gives_zero_targets_and_everything_goes_to_pot_3() {
 
 #[test]
 fn a_falling_need_sends_the_surplus_to_pot_3() {
-    // AHV beginnt erst Januar 2032: Der Netto-Bedarf sinkt von 72'571 auf 44'000; Topf 2 liegt dann über seinem Ziel
+    // AHV only starts in January 2032: the net need falls from 72'571 to 44'000; bucket 2 is then above its target
     let mut v = base();
     v["milestones"]
         .as_array_mut()
@@ -248,14 +248,14 @@ fn pot_2_smaller_than_the_gap_of_pot_1_takes_the_rest_from_pot_3_then_pot_2_from
     let res = run(v);
     let r = january(&res, 2032);
     close(r.target2, 22_000.0, "Ziel Topf 2");
-    // Fehlbetrag Topf 1 = 44'000; Topf 2 (22'000) reicht nicht, 22'000 kommen aus Topf 3, dann Topf 2 wieder aus Topf 3
+    // Shortfall bucket 1 = 44'000; bucket 2 (22'000) is not enough, 22'000 come from bucket 3, then bucket 2 again from bucket 3
     let m: Vec<(u8, u8)> = r.moves.iter().map(|m| (m.from, m.to)).collect();
     assert_eq!(m, vec![(2, 1), (3, 1), (3, 2)], "{:?}", r.moves);
     close(r.after[0], 88_000.0, "Topf 1");
     close(r.after[1], 22_000.0, "Topf 2");
 }
 
-/// Plan mit der Schwelle 100 % (die Aktienrendite von 6 % erreicht sie nie).
+/// Plan with the threshold 100 % (the stock return of 6 % never reaches it).
 fn locked_plan() -> Value {
     let mut v = base();
     v["withdrawal"]["buckets"]["refillThreshold"] = json!(1.0);
@@ -275,19 +275,19 @@ fn years_below_the_threshold_sell_nothing_from_pot_3_in_january_and_pot_1_comes_
             r.moves
         );
     }
-    // Topf 2 wird nicht nachgefüllt: nach dem Transfer in Topf 1 ist er kleiner als das Ziel
+    // Bucket 2 is not refilled: after the transfer to bucket 1 it is smaller than the target
     let r = january(&res, 2031);
     assert!(r.after[1] < r.target2 - 1.0);
-    // Unterjährig greift C: Topf 1 deckt die Ausgaben nicht, die Mittel kommen dann aus Topf 3
+    // During the year C applies: bucket 1 does not cover the expenses, the funds then come from bucket 3
     let c = res.bucket_refills.iter().find(|r| r.trigger == "C2").expect("Fall C2");
     assert!(!c.condition_met);
     assert!(c.moves.iter().any(|m| (m.from, m.to) == (3, 1)), "{:?}", c.moves);
     never_negative(&res);
 }
 
-/// #103/AK2: Start im Juli 2030; der Vorlauf des Renditepfads (Juli 2029 bis Juni 2030) liefert die Monate vor dem
-/// Start. Die Januar-Auffüllung 2031 misst die letzten 12 Monate (Februar 2030 bis Januar 2031): 5 Vorlaufmonate,
-/// Juli bis Dezember 2030 je +2 %, Januar 2031 0 %. Schwelle 5 %.
+/// #103/AK2: Start in July 2030; the lead-in of the return path (July 2029 to June 2030) supplies the months before the
+/// start. The January refill 2031 measures the last 12 months (February 2030 to January 2031): 5 lead-in months,
+/// July to December 2030 +2 % each, January 2031 0 %. Threshold 5 %.
 #[test]
 fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run() {
     let mut v = base();
@@ -306,7 +306,7 @@ fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run(
         sim.run(&path, true)
     };
 
-    // Vorlauf −1 % pro Monat: 0.99⁵ × 1.02⁶ − 1 = +7.1 % ≥ 5 % → erfüllt, es wird aus Topf 3 verkauft
+    // Lead-in −1 % per month: 0.99⁵ × 1.02⁶ − 1 = +7.1 % ≥ 5 % → met, bucket 3 is sold
     let res = run_pre(-0.01);
     let j = january(&res, 2031);
     assert_eq!(j.return_basis, "letzte 12 Monate");
@@ -318,7 +318,7 @@ fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run(
     assert!(j.condition_met);
     assert!(j.moves.iter().any(|m| m.from == 3), "{:?}", j.moves);
 
-    // Vorlauf −3 % pro Monat: 0.97⁵ × 1.02⁶ − 1 = −3.3 % < 5 % → nicht erfüllt, kein Verkauf aus Topf 3
+    // Lead-in −3 % per month: 0.97⁵ × 1.02⁶ − 1 = −3.3 % < 5 % → not met, no sale from bucket 3
     let res = run_pre(-0.03);
     let j = january(&res, 2031);
     close(
@@ -329,7 +329,7 @@ fn issue_103_ak2_start_in_july_measures_the_last_twelve_months_with_the_pre_run(
     assert!(!j.condition_met);
     assert!(j.moves.iter().all(|m| m.from != 3), "{:?}", j.moves);
 
-    // Ab dem 13. Monat misst das Kriterium nur noch Monate des Pfads
+    // From the 13th month the criterion only measures months of the path
     let j = january(&res, 2032);
     assert_eq!(j.return_basis, "letzte 12 Monate");
     close(j.stock_return, 0.0, "Februar 2031 bis Januar 2032");
@@ -352,12 +352,12 @@ fn start_in_march_reduces_the_targets_by_two_months_and_extrapolates_the_need() 
     assert!(a.condition_ignored);
     close(a.after[0], a.target1, "Topf 1");
     close(a.after[1], a.target2, "Topf 2");
-    // alles lag zuerst in Topf 3
+    // everything was in bucket 3 first
     assert_eq!((a.moves[0].to, a.moves[1].to), (3, 3));
     never_negative(&res);
 }
 
-/// Zwei Personen: Person B bezieht im Juli 2030 ihre PK zur Hälfte als Kapital (200'000).
+/// Two persons: person B draws half of their PK as capital in July 2030 (200'000).
 fn two_persons() -> Value {
     let mut v = base();
     v["household"]["persons"] = json!([
@@ -397,14 +397,14 @@ fn a_later_pension_fund_withdrawal_goes_to_pot_3_and_triggers_a_with_reduced_tar
         (12.0 - 6.0) / 12.0 * a.need,
         "Ziel Topf 2 um 6 Monate reduziert",
     );
-    // unterjährig keine Überschussbuchung: Topf 1 über dem Ziel bleibt unverändert
+    // no surplus booking during the year: bucket 1 above the target stays unchanged
     assert!(a.moves.iter().all(|m| !(m.to == 3 && m.from != 0)), "{:?}", a.moves);
     assert!(a.after[0] >= a.target1 - 1e-6);
     never_negative(&res);
 }
 
-/// #99/AK4: Ein PK-Kapitalbezug mitten im Jahr (Auslöser A) bestimmt den Netto-Bedarf neu, aus den Monaten ab dem
-/// Bezug auf 12 Monate hochgerechnet; dieser Bedarf gilt bis zum nächsten Januar.
+/// #99/AK4: A PK lump sum in the middle of the year (trigger A) determines the net need anew, from the months from the
+/// payout extrapolated to 12 months; this need applies until the next January.
 #[test]
 fn issue_99_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawal_month() {
     let res = run(two_persons());
@@ -414,7 +414,7 @@ fn issue_99_ak4_a_pension_fund_withdrawal_recomputes_the_need_from_the_withdrawa
     assert!(a.basis.source.starts_with("ab 07.2030"), "{}", a.basis.source);
     assert!(a.basis.source.contains("hochgerechnet"), "{}", a.basis.source);
     close(a.need, a.basis.need(), "Bedarf aus der neuen Grundlage");
-    // bis Dezember gilt diese Grundlage, erst der Januar bestimmt den Bedarf neu
+    // until December this basis applies; only January determines the need anew
     for r in res
         .bucket_refills
         .iter()
@@ -468,7 +468,7 @@ fn a_large_one_time_outflow_with_the_criterion_met_is_covered_by_c1_with_shorten
     assert!(c.payment > 300_000.0);
     assert_eq!(c.passed_months, 2);
     assert!(c.condition_met && !c.condition_ignored);
-    // Ziel Topf 1 = (2 × 12 − 2) / 12 × Netto-Bedarf + Einmalausgabe, Ziel Topf 2 = (12 − 2) / 12 × Netto-Bedarf
+    // Target bucket 1 = (2 × 12 − 2) / 12 × net need + one-off expense, target bucket 2 = (12 − 2) / 12 × net need
     close(c.target1, 22.0 / 12.0 * 44_000.0 + 300_000.0, "Ziel Topf 1");
     close(c.target2, 10.0 / 12.0 * 44_000.0, "Ziel Topf 2");
     close(c.after[0], c.target1, "Topf 1");
@@ -483,7 +483,7 @@ fn a_large_one_time_outflow_with_the_criterion_met_is_covered_by_c1_with_shorten
     never_negative(&res);
 }
 
-/// Topf 1 ohne Ziel, Renditekriterium nie erfüllt: Fall C2 sorgt dafür, dass Topf 1 die Zahlung deckt.
+/// Bucket 1 without a target, return criterion never met: case C2 makes sure bucket 1 covers the payment.
 fn no_cash_target() -> Value {
     let mut v = base();
     v["withdrawal"]["buckets"] = json!({ "cashYears": 0, "bondYears": 0, "refillThreshold": 1.0 });
@@ -497,7 +497,7 @@ fn c_keeps_two_monthly_needs_in_june_and_nothing_in_december() {
     v["flows"]["extras"] = json!([ { "date": "2030-06", "amount": -20_000, "label": "Ausgabe" } ]);
     let res = run(v);
     let c = find(&res, "C2", 2030, 6);
-    // Juni: 7 Monate bis Januar → Min(3, 7) − 1 = 2 Monatsbedarfe
+    // June: 7 months until January → min(3, 7) − 1 = 2 monthly needs
     let j = res.records.iter().find(|x| x.month == YearMonth::new(2030, 6)).unwrap();
     close(j.cash, 2.0 * month, "Topf 1 nach der Zahlung im Juni");
     assert!(!c.condition_met);
@@ -505,7 +505,7 @@ fn c_keeps_two_monthly_needs_in_june_and_nothing_in_december() {
     v["flows"]["extras"] = json!([ { "date": "2030-12", "amount": -20_000, "label": "Ausgabe" } ]);
     let res = run(v);
     find(&res, "C2", 2030, 12);
-    // Dezember: 1 Monat bis Januar → Min(3, 1) − 1 = 0
+    // December: 1 month until January → min(3, 1) − 1 = 0
     let d = res
         .records
         .iter()
@@ -528,7 +528,7 @@ fn the_reserve_months_setting_is_configurable() {
 #[test]
 fn earned_income_is_deducted_from_the_need() {
     let mut v = base();
-    v["flows"]["income"] = json!(3_000); // 36'000 pro Jahr
+    v["flows"]["income"] = json!(3_000); // 36'000 per year
     let res = run(v);
     let r = january(&res, 2031);
     close(r.basis.earned, 36_000.0, "Erwerbseinkommen");
@@ -605,7 +605,7 @@ fn all_pots_empty_without_a_property_goes_negative_takes_inflows_into_pot_1_and_
             "Topf 2 und 3 stillgelegt"
         );
     }
-    // Der Zufluss baut das Minus ab; sobald das Vermögen positiv ist, läuft A erneut
+    // The inflow reduces the deficit; as soon as wealth is positive, A runs again
     let a = res
         .bucket_refills
         .iter()
@@ -623,7 +623,7 @@ fn all_pots_empty_without_a_property_goes_negative_takes_inflows_into_pot_1_and_
 
 #[test]
 fn threshold_semantics_use_greater_or_equal() {
-    // Schwelle genau gleich der Rendite von 6 %: erfüllt
+    // Threshold exactly equal to the return of 6 %: met
     let mut v = base();
     v["withdrawal"]["buckets"]["refillThreshold"] = json!(0.06 - 1e-9);
     let res = run(v);
@@ -645,12 +645,12 @@ fn c2_with_9_months_reserve_refills_8_months_from_pot_2_then_pot_3_and_does_not_
         c.before[0]
     );
     assert!(!c.condition_met);
-    // Quelle: zuerst Topf 2 bis 0, danach Topf 3; Topf 2 wird nicht aufgefüllt
+    // Source: first bucket 2 down to 0, then bucket 3; bucket 2 is not refilled
     assert_eq!((c.moves[0].from, c.moves[0].to), (2, 1));
     assert_eq!(c.after[1], 0.0);
     assert_eq!((c.moves[1].from, c.moves[1].to), (3, 1));
     assert!(c.moves.iter().all(|m| m.to != 2));
-    // April: 9 Monate bis Januar → Min(9, 9) − 1 = 8 Monatsbedarfe bleiben nach den Ausgaben
+    // April: 9 months until January → min(9, 9) − 1 = 8 monthly needs remain after the expenses
     let r = res.records.iter().find(|x| x.month == YearMonth::new(2030, 4)).unwrap();
     close(r.cash, 8.0 * month, "Topf 1 nach den Ausgaben des Aprils");
     never_negative(&res);
@@ -679,7 +679,7 @@ fn april_2035_with_the_criterion_met_is_c1_and_not_met_is_c2() {
         .iter()
         .any(|r| r.month == YearMonth::new(2035, 4) && r.trigger == "C2"));
     never_negative(&met);
-    // gleicher Fall, Kriterium nicht erfüllt → C2: Ausgaben decken, danach (Min(3, 9) − 1) = 2 Monatsbedarfe, Topf 2 bleibt
+    // same case, criterion not met → C2: cover the expenses, afterwards (min(3, 9) − 1) = 2 monthly needs, bucket 2 stays
     let mut v = locked_plan();
     v["flows"]["extras"] = json!([ { "date": "2035-04", "amount": -400_000, "label": "Anschaffung" } ]);
     let locked = run(v);

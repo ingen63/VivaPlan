@@ -1,4 +1,4 @@
-//! #69: Anlagestrategie statt Wahl der Zeitreihe.
+//! #69: Investment strategy instead of choosing the series.
 
 use std::path::{Path, PathBuf};
 
@@ -43,7 +43,7 @@ fn shipped(file: &str) -> DataSet {
     DataSet::load_csv(&lib().join(file)).unwrap()
 }
 
-/// #69/AK3: 100 % USA in «Welt individuell» ergibt die USA-Reihe des Weltindexes; 100 % Schweiz die Schweizer.
+/// #69/AK3: 100 % USA in «Welt individuell» gives the USA series of the world index; 100 % Switzerland the Swiss one.
 #[test]
 fn issue_69_ak3_hundred_percent_usa_is_the_usa_series() {
     let d = JstData::builtin();
@@ -57,8 +57,8 @@ fn issue_69_ak3_hundred_percent_usa_is_the_usa_series() {
     );
 }
 
-/// #69/AK2: Ändert sich das Gewicht der EU, ändern sich die Anteile aller EU-Länder im gleichen Verhältnis: Die
-/// Rendite ist die Summe der Regionen mal ihr Gewicht; innerhalb der EU bleibt die Verteilung nach BIP.
+/// #69/AK2: If the weight of the EU changes, the shares of all EU countries change in the same proportion: the
+/// return is the sum of the regions times their weight; within the EU the distribution by GDP stays.
 #[test]
 fn issue_69_ak2_eu_weight_scales_all_eu_countries_alike() {
     let d = JstData::builtin();
@@ -68,10 +68,10 @@ fn issue_69_ak2_eu_weight_scales_all_eu_countries_alike() {
     let b = custom(0.0, 0.8, 0.2, 0.0);
     for i in 0..eu.len() {
         assert!((a.stocks[i] - (0.6 * usa[i] + 0.4 * eu[i])).abs() < 1e-12);
-        // EU von 40 % auf 20 %: der EU-Teil halbiert sich (jedes EU-Land halbiert)
+        // EU from 40 % to 20 %: the EU part halves (every EU country halves)
         assert!((a.stocks[i] - b.stocks[i] - 0.2 * (eu[i] - usa[i])).abs() < 1e-12);
     }
-    // Innerhalb der EU nach BIP: Deutschland und Frankreich zusammen ergeben nicht das einfache Mittel.
+    // Within the EU by GDP: Germany and France together do not give the simple mean.
     let y = 2000;
     let w = d.weights(jst::EU.countries, y, jst::Asset::Stocks);
     let de = w.iter().find(|(c, _)| c == "DEU").unwrap().1;
@@ -79,7 +79,7 @@ fn issue_69_ak2_eu_weight_scales_all_eu_countries_alike() {
     assert!(de > gb && (w.iter().map(|x| x.1).sum::<f64>() - 1.0).abs() < 1e-12);
 }
 
-/// #69/AK2: Gewichte zusammen nicht 100 % oder ausserhalb 0–100 %: Fehler beim Feld, kein Lauf.
+/// #69/AK2: Weights not 100 % together or outside 0–100 %: error at the field, no run.
 #[test]
 fn issue_69_ak2_invalid_weights_are_reported_at_the_field() {
     let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
@@ -92,7 +92,7 @@ fn issue_69_ak2_invalid_weights_are_reported_at_the_field() {
         .expect("Fehler an den Gewichten");
     assert_eq!(i.section, "wealth");
     assert!(i.message.contains("150 %"), "{}", i.message);
-    // Andere Aktienwahl: die Gewichte spielen keine Rolle
+    // Other stock choice: the weights do not matter
     v["returns"]["strategy"]["stocks"] = json!("worldJst");
     assert!(api::validate(&v)
         .iter()
@@ -110,7 +110,7 @@ fn issue_69_ak2_invalid_weights_are_reported_at_the_field() {
     assert!(strategy::dataset(&bad, None).unwrap_err().to_string().contains("110 %"));
 }
 
-/// Kombinationen, die es als ausgelieferte Reihe gibt, liefern genau diese (gleiche Ergebnisse für ältere Planungen).
+/// Combinations that exist as a bundled series give exactly that series (same results for older plans).
 #[test]
 fn issue_69_shipped_combinations_are_the_shipped_series() {
     for (s, b, file) in [
@@ -128,8 +128,8 @@ fn issue_69_shipped_combinations_are_the_shipped_series() {
     assert_eq!(ds(StockIndex::Sp500, BondIndex::Usa).freq, Freq::Monthly);
 }
 
-/// Entscheid zu #69: jährlich, sobald ein Teil jährlich ist; Zeitraum = gemeinsame Jahre; Monatswerte zu
-/// Kalenderjahren verknüpft, Teuerung aus der Quelle der Aktien.
+/// Decision on #69: annual as soon as one part is annual; period = common years; monthly values linked to
+/// calendar years, inflation from the source of the stocks.
 #[test]
 fn issue_69_mixed_strategies_are_yearly_over_the_common_years() {
     let shiller = shipped("Shiller CHF.csv");
@@ -143,7 +143,7 @@ fn issue_69_mixed_strategies_are_yearly_over_the_common_years() {
     assert!((at(&s.stocks, 1990) - sp1990).abs() < 1e-12);
     assert_eq!(at(&s.inflation, 1990), shiller.inflation[i(1990, 12)]);
     assert_eq!(at(&s.bonds, 1990), short[(1990 - short_first) as usize]);
-    // SARON: Jahresmittel ab dem ersten ganzen Jahr (2000), vorher fixer Wert
+    // SARON: annual average from the first whole year (2000), fixed value before
     let saron = s.saron.as_ref().unwrap();
     assert!(at(saron, 1999).is_nan());
     let mean2000 = (1..=12)
@@ -152,7 +152,7 @@ fn issue_69_mixed_strategies_are_yearly_over_the_common_years() {
         / 12.0;
     assert!((at(saron, 2000) - mean2000).abs() < 1e-12);
 
-    // JST-Aktien mit Obligationen der Eidgenossenschaft: 1900–2020, gleich wie die Reihe «Welt (JST)»
+    // JST stocks with Swiss Confederation bonds: 1900–2020, the same as the series «Welt (JST)»
     let w = ds(StockIndex::WorldJst, BondIndex::Ch);
     let world = shipped(library::WORLD_FILE);
     assert_eq!((w.first, w.last()), (world.first, world.last()));
@@ -160,7 +160,7 @@ fn issue_69_mixed_strategies_are_yearly_over_the_common_years() {
         assert!((w.stocks[k] - world.stocks[k]).abs() < 1e-9 && (w.bonds[k] - world.bonds[k]).abs() < 1e-9);
         assert!((w.inflation[k] - world.inflation[k]).abs() < 1e-9);
     }
-    // JST-Aktien mit US-Obligationen: Teuerung aus der Quelle der Aktien (JST)
+    // JST stocks with US bonds: inflation from the source of the stocks (JST)
     let p = ds(StockIndex::ChJst, BondIndex::Usa);
     assert_eq!(p.inflation[0], JstData::builtin().ch_inflation(p.first.year()).unwrap());
     assert_eq!(p.meta.currency.as_deref(), Some("CHF"));
@@ -176,13 +176,13 @@ fn plan_with(series: Option<&str>) -> Value {
     v
 }
 
-/// #69/AK5: Ältere Planungen werden beim Öffnen auf die Strategie abgebildet.
+/// #69/AK5: Older plans are mapped to the strategy on opening.
 #[test]
 fn issue_69_ak5_old_series_become_strategies() {
     for (series, stocks, bonds, note) in [
         (Some("library:Shiller CHF.csv"), "sp500", "usa", false),
         (Some("library:Shiller CHF + CH-Obligationen.csv"), "sp500", "ch", false),
-        // #90/AK4: Pictet wird nicht mehr mitgeliefert: Schweiz (JST) mit Eidgenossenschaft, mit Hinweis.
+        // #90/AK4: Pictet is no longer bundled: Switzerland (JST) with Swiss Confederation bonds, with a note.
         (Some("library:Pictet CH.csv"), "chJst", "ch", true),
         (Some("library:Welt (JST).csv"), "worldJst", "ch", false),
         (Some("library:Shiller USD.csv"), "sp500", "usa", true),
@@ -204,7 +204,7 @@ fn issue_69_ak5_old_series_become_strategies() {
         .notes
         .iter()
         .any(|n| n.contains("«x/MSCI.csv»")));
-    // Eine vorhandene Strategie bleibt unverändert
+    // An existing strategy stays unchanged
     let mut v = plan_with(None);
     v["returns"]["strategy"] =
         json!({ "stocks": "worldCustom", "bonds": "usa", "weights": { "ch": 1, "usa": 0, "eu": 0, "apac": 0 } });
@@ -225,7 +225,7 @@ fn end_totals(v: &Value) -> Vec<f64> {
         .collect()
 }
 
-/// #69/AK5: Die übernommene Planung rechnet genau wie vorher (alle historischen Startzeitpunkte).
+/// #69/AK5: The plan taken over computes exactly as before (all historical start dates).
 #[test]
 fn issue_69_ak5_upgraded_plans_give_the_same_results() {
     let series = "library:Shiller CHF.csv";
@@ -238,7 +238,7 @@ fn issue_69_ak5_upgraded_plans_give_the_same_results() {
     assert_eq!(a, b, "{series}");
 }
 
-/// #69/AK4: Fixe Renditen funktionieren wie bisher; die Strategie spielt dann keine Rolle.
+/// #69/AK4: Fixed returns work as before; the strategy then does not matter.
 #[test]
 fn issue_69_ak4_fixed_returns_ignore_the_strategy() {
     let mut a = plan_with(None);
@@ -248,7 +248,7 @@ fn issue_69_ak4_fixed_returns_ignore_the_strategy() {
     assert_eq!(end_totals(&a), end_totals(&b));
 }
 
-/// Kurzinfo der Strategie für die Oberfläche (`strategy:<JSON>`) und neue Planungen mit «Welt (JST)».
+/// Short info of the strategy for the user interface (`strategy:<JSON>`) and new plans with «Welt (JST)».
 #[test]
 fn issue_69_strategy_info_and_new_plans() {
     let r = format!("{}{}", strategy::PREFIX, json!({ "stocks": "chJst", "bonds": "usa" }));
@@ -261,7 +261,7 @@ fn issue_69_strategy_info_and_new_plans() {
     let neu: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     assert_eq!(neu.returns.strategy, Some(Investment::default()));
     assert!(neu.returns.series.is_none());
-    // Mit Strategie braucht «rolling» bzw. «bootstrap» keine Zeitreihe mehr; ohne beides ist es ein Fehler.
+    // With a strategy «rolling» or «bootstrap» no longer needs a series; without both it is an error.
     let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     let series_error = |v: &Value| {
         api::validate(v)
@@ -276,9 +276,9 @@ fn issue_69_strategy_info_and_new_plans() {
     assert!(series_error(&v));
 }
 
-/// #69/AK8: Die Kurzinfo nennt die Teile der Strategie mit ihren eigenen Jahren. Die Mittelwerte gelten für den
-/// gemeinsamen Zeitraum: Aktien JST (1900–2020) mit Obligationen USA (ab 1922) sind auf 1922–2020 gekürzt, das
-/// Mittel der Obligationen ist das dieser Jahre. Ohne Kürzung reichen beide Teile genau über die Reihe.
+/// #69/AK8: The short info names the parts of the strategy with their own years. The means apply to the
+/// common period: stocks JST (1900–2020) with bonds USA (from 1922) are cut to 1922–2020; the
+/// mean of the bonds is that of these years. Without cutting both parts span exactly the series.
 #[test]
 fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     let info = |stocks: &str, bonds: &str| {
@@ -287,7 +287,7 @@ fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     };
     let years = |p: &library::SeriesPart| (p.label.clone(), p.first, p.last);
 
-    // Aktien JST (1900–2020), Obligationen USA (Shiller, ab 1922): gemeinsam 1922–2020, beide Teile sind gekürzt.
+    // Stocks JST (1900–2020), bonds USA (Shiller, from 1922): together 1922–2020, both parts are cut.
     let cut = info("chJst", "usa");
     assert_eq!(
         (cut.first, cut.last),
@@ -300,24 +300,24 @@ fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     let bonds = years(&cut.parts[1]);
     assert_eq!(bonds.0, "Obligationen USA 10 Jahre (Shiller)");
     assert!(bonds.1 <= 1922 && bonds.2 > 2020, "{bonds:?}");
-    // Das Mittel der Obligationen gilt für den gemeinsamen Zeitraum.
+    // The mean of the bonds applies to the common period.
     let geo = |v: &[f64]| (v.iter().map(|r| (1.0 + r).ln()).sum::<f64>() / v.len() as f64).exp() - 1.0;
     let common = ds(StockIndex::ChJst, BondIndex::Usa);
     assert_eq!(common.len(), (2020 - 1922 + 1) as usize);
     assert!((cut.avg_bonds - geo(&common.bonds)).abs() < 1e-12, "{}", cut.avg_bonds);
 
-    // S&P 500 mit Obligationen der Eidgenossenschaft (ausgelieferte Monatsreihe ab 1988): die Aktien sind gekürzt.
+    // S&P 500 with Swiss Confederation bonds (bundled monthly series from 1988): the stocks are cut.
     let sp = info("sp500", "ch");
     assert!(sp.parts[0].first < sp.first.year(), "{:?}", sp.parts[0]);
     assert_eq!((sp.parts[1].first, sp.parts[1].last), (sp.first.year(), sp.last.year()));
 
-    // Eine einzelne Zeitreihe hat keine Teile.
+    // A single series has no parts.
     let plain = api::series_info("library:Welt (JST).csv", &lib(), Some(&lib())).unwrap();
     assert!(plain.parts.is_empty());
 }
 
-/// #69/AK8: S&P 500 mit US-Obligationen ist die ausgelieferte Reihe; kein Teil ist gekürzt. Ein unlesbarer
-/// Verweis gibt einen Fehler, ein fremder Verweis `None`.
+/// #69/AK8: S&P 500 with US bonds is the bundled series; no part is cut. An unreadable
+/// reference gives an error, a foreign reference `None`.
 #[test]
 fn issue_69_ak8_parts_without_cut_and_reference_errors() {
     let inv = Investment {
@@ -339,8 +339,8 @@ fn issue_69_ak8_parts_without_cut_and_reference_errors() {
     assert!(strategy::from_reference_with_parts("library:x.csv", None).is_none());
 }
 
-/// #76/AK2: «Eidgenossenschaft kurzfristig»: JST (`bill_rate`) bis 2020, ab 2021 das Jahresmittel des SARON, ohne
-/// Lücke. Das letzte JST-Jahr und das erste SARON-Jahr von Hand nachgerechnet.
+/// #76/AK2: «Eidgenossenschaft kurzfristig»: JST (`bill_rate`) until 2020, from 2021 the annual average of SARON, without
+/// a gap. The last JST year and the first SARON year recomputed by hand.
 #[test]
 fn issue_76_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
     let jst = JstData::builtin();
@@ -349,14 +349,14 @@ fn issue_76_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
     assert_eq!(first, 1900);
     let at = |y: i32| v[(y - first) as usize];
     assert_eq!(jst.last_year(), 2020);
-    // 1900 und 2020 aus JST: 3.9 % und −0.85 %
+    // 1900 and 2020 from JST: 3.9 % and −0.85 %
     assert!((at(1900) - 0.039).abs() < 1e-6, "{}", at(1900));
     assert!((at(2020) - (-0.0085)).abs() < 1e-9, "{}", at(2020));
-    // 2021: Mittel der zwölf SARON-Monatswerte (Prozent) / 100
+    // 2021: mean of the twelve SARON monthly values (percent) / 100
     let mean2021 = (1..=12).map(|m| snb.saron[&YearMonth::new(2021, m)]).sum::<f64>() / 12.0 / 100.0;
     assert!((at(2021) - mean2021).abs() < 1e-12);
     assert!(at(2021) < 0.0 && at(2021) > -0.01, "{}", at(2021));
-    // Lückenlos bis zum letzten ganzen SARON-Jahr; ein angefangenes Jahr zählt nicht.
+    // Without gaps until the last whole SARON year; a started year does not count.
     let last_full = (2021..)
         .take_while(|y| (1..=12).all(|m| snb.saron.contains_key(&YearMonth::new(*y, m))))
         .last()
@@ -365,14 +365,14 @@ fn issue_76_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
     assert!(v.iter().all(|r| r.is_finite()));
 }
 
-/// #76/AK1, AK3: Wahl «chShort» in der Strategie, jährlich über die gemeinsamen Jahre mit den Aktien.
+/// #76/AK1, AK3: Choice «chShort» in the strategy, annual over the years in common with the stocks.
 #[test]
 fn issue_76_ak1_ak3_short_bonds_in_strategies() {
     let (first, short) = jst::ch_short_yearly(&JstData::builtin(), &engine::import::SnbData::builtin()).unwrap();
-    // Name und Speicherform
+    // Name and storage form
     assert_eq!(strategy::bond_name(BondIndex::ChShort), "Eidgenossenschaft kurzfristig");
     assert_eq!(serde_json::to_value(BondIndex::ChShort).unwrap(), json!("chShort"));
-    // Welt (JST): 1900–2020, Aktien wie «Welt (JST)», Obligationen = kurzfristige Reihe
+    // World (JST): 1900–2020, stocks like «Welt (JST)», bonds = short-term series
     let w = ds(StockIndex::WorldJst, BondIndex::ChShort);
     let world = shipped(library::WORLD_FILE);
     assert_eq!(w.freq, Freq::Yearly);
@@ -382,18 +382,18 @@ fn issue_76_ak1_ak3_short_bonds_in_strategies() {
         assert!((w.stocks[k] - world.stocks[k]).abs() < 1e-9);
         assert_eq!(w.bonds[k], bond);
     }
-    // S&P 500: jährlich (nicht monatlich), bis ins letzte ganze SARON-Jahr
+    // S&P 500: annual (not monthly), up to the last whole SARON year
     let s = ds(StockIndex::Sp500, BondIndex::ChShort);
     assert_eq!(s.freq, Freq::Yearly);
     assert_eq!(s.first.year(), 1922);
     assert_eq!(s.last().year(), (first + short.len() as i32 - 1).min(2025));
     let at = |v: &[f64], y: i32| v[(y - s.first.year()) as usize];
     assert_eq!(at(&s.bonds, 2021), short[(2021 - first) as usize]);
-    // Quelle und Hinweise nennen SARON und die JST-Lizenz
+    // Source and notes name SARON and the JST licence
     assert!(s.meta.source.as_deref().unwrap().contains("SARON"));
     assert!(s.meta.notes.iter().any(|n| n.contains("Geldmarktsatz")));
     assert!(s.meta.notes.iter().any(|n| n.contains("CC BY-NC-SA")));
-    // Kurzinfo über den Verweis der Oberfläche
+    // Short info via the reference of the user interface
     let r = format!("{}{}", strategy::PREFIX, json!({"stocks": "chJst", "bonds": "chShort"}));
     let p = strategy::from_reference(&r, None).unwrap().unwrap();
     assert_eq!((p.first.year(), p.last().year()), (1900, 2020));
@@ -404,36 +404,36 @@ fn plan_struct(v: &Value) -> Plan {
     serde_json::from_value(v.clone()).unwrap()
 }
 
-/// #69/AK4, AK5: `returns_series` nimmt `series`, falls gesetzt (ältere Planungen, Kommandozeile), sonst die
-/// Strategie; ohne beides gibt es keine Reihe. `load_series` lädt nur bei Renditequellen mit Zeitreihe.
+/// #69/AK4, AK5: `returns_series` takes `series` if set (older plans, command line), otherwise the
+/// strategy; without both there is no series. `load_series` only loads for return sources with a series.
 #[test]
 fn issue_69_returns_series_prefers_series_then_strategy_then_none() {
     let mut v = plan_with(None);
     v["returns"]["source"] = json!("historical");
-    // Nur Strategie
+    // Strategy only
     v["returns"]["strategy"] = json!({ "stocks": "sp500", "bonds": "ch" });
     let from_strategy = batch::returns_series(&plan_struct(&v), Path::new("."), Some(&lib()))
         .unwrap()
         .unwrap();
     assert_eq!(from_strategy.stocks, shipped(library::CH_BONDS_FILE).stocks);
-    // Reihe und Strategie: die Reihe gilt
+    // Series and strategy: the series applies
     v["returns"]["series"] = json!("library:Welt (JST).csv");
     let from_series = batch::returns_series(&plan_struct(&v), Path::new("."), Some(&lib()))
         .unwrap()
         .unwrap();
     assert_eq!(from_series.stocks, shipped(library::WORLD_FILE).stocks);
     assert_ne!(from_series.stocks, from_strategy.stocks);
-    // Eine nicht ladbare Reihe ist ein Fehler, auch wenn eine Strategie gesetzt wäre
+    // A series that cannot be loaded is an error, even if a strategy were set
     v["returns"]["series"] = json!("library:gibt-es-nicht.csv");
     assert!(batch::returns_series(&plan_struct(&v), Path::new("."), Some(&lib())).is_err());
-    // Weder noch
+    // Neither
     let o = v["returns"].as_object_mut().unwrap();
     o.remove("series");
     o.remove("strategy");
     assert!(batch::returns_series(&plan_struct(&v), Path::new("."), Some(&lib()))
         .unwrap()
         .is_none());
-    // load_series: bei fixen Renditen keine Reihe, auch mit Strategie
+    // load_series: no series with fixed returns, even with a strategy
     v["returns"]["strategy"] = json!({ "stocks": "chJst", "bonds": "ch" });
     for (source, loaded) in [
         ("fixed", false),
@@ -447,7 +447,7 @@ fn issue_69_returns_series_prefers_series_then_strategy_then_none() {
     }
 }
 
-/// #69/AK4: Die Vorschau im Editor rechnet bei einer Strategie mit den Durchschnitten der Strategie-Reihe.
+/// #69/AK4: With a strategy the preview in the editor computes with the averages of the strategy series.
 #[test]
 fn issue_69_preview_uses_the_averages_of_the_strategy_series() {
     let mut v = plan_with(None);
@@ -467,14 +467,14 @@ fn issue_69_preview_uses_the_averages_of_the_strategy_series() {
         )),
         "{basis}"
     );
-    // Ohne Reihe und Strategie keine Grundlage (Vorschau mit den fixen Werten)
+    // Without series and strategy no basis (preview with the fixed values)
     v["returns"].as_object_mut().unwrap().remove("strategy");
     assert!(api::preview(&v, Path::new("."), Some(&lib())).basis.is_none());
 }
 
-/// #90/AK3: Planungen mit dem früheren Index «Schweiz (Pictet)» öffnen ohne Fehler. Die Aktien werden
-/// «Schweiz (JST)», die Obligationen «Eidgenossenschaft 10 Jahre»; ein Hinweis nennt die Umstellung, und die
-/// übernommene Planung rechnet.
+/// #90/AK3: Plans with the former index «Schweiz (Pictet)» open without error. The stocks become
+/// «Schweiz (JST)», the bonds «Eidgenossenschaft 10 Jahre»; a note names the change, and the
+/// plan taken over computes.
 #[test]
 fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
     for (stocks, bonds, want_stocks, want_bonds, with_stocks, with_bonds) in [
@@ -483,7 +483,7 @@ fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
         ("sp500", "chPictet", "sp500", "ch", false, true),
     ] {
         let mut v = plan_with(None);
-        // Bootstrap: auch die kurze Monatsreihe S&P 500 mit Eidgenossenschaft (ab 1988) liefert Läufe.
+        // Bootstrap: also the short monthly series S&P 500 with Swiss Confederation bonds (from 1988) gives runs.
         v["returns"]["source"] = json!("bootstrap");
         v["returns"]["bootstrap"] = json!({ "paths": 20, "block": 12, "seed": 1 });
         v["returns"]["strategy"] = json!({ "stocks": stocks, "bonds": bonds });
@@ -508,16 +508,16 @@ fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
         );
         assert!(!end_totals(&out.plan).is_empty(), "{stocks}/{bonds}");
     }
-    // Ohne Pictet kein Hinweis.
+    // Without Pictet no note.
     let mut v = plan_with(None);
     v["returns"]["strategy"] = json!({ "stocks": "chJst", "bonds": "ch" });
     assert!(api::upgrade_plan(&v).notes.iter().all(|n| !n.contains("Pictet")));
-    // Ohne Übernahme ist der frühere Schlüssel kein gültiger Index mehr.
+    // Without the takeover the former key is no longer a valid index.
     assert!(serde_json::from_value::<StockIndex>(json!("chPictet")).is_err());
     assert!(serde_json::from_value::<BondIndex>(json!("chPictet")).is_err());
 }
 
-/// Bibliothek mit einer Shiller-Reihe nur für das Kalenderjahr `year` (12 Monate, je 1 %, SARON 2 %).
+/// Library with a Shiller series only for the calendar year `year` (12 months, 1 % each, SARON 2 %).
 fn lib_with_shiller_year(year: i32) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("vivaplan-fea97-{}-{year}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -529,8 +529,8 @@ fn lib_with_shiller_year(year: i32) -> PathBuf {
     dir
 }
 
-/// #124/AK8: Aktien des Weltindex (JST) mit Obligationen USA (Shiller): Ein einziges gemeinsames Jahr genügt, der SARON
-/// gilt auch im ersten und letzten Jahr seiner Reihe; ohne gemeinsames Jahr meldet die Strategie einen Fehler.
+/// #124/AK8: Stocks of the world index (JST) with bonds USA (Shiller): a single common year suffices; SARON
+/// also applies in the first and last year of its series; without a common year the strategy reports an error.
 #[test]
 fn issue_124_ak8_common_years_of_the_indices() {
     let s = Investment {

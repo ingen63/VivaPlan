@@ -1,8 +1,8 @@
-//! #6: 3-Topf mit Guardrails (die Guardrails steuern die Ausgaben, die Töpfe die Anlage) und #47:
-//! Fixe Rate, VPW und Endowment ab der Pensionierung der ersten Person.
+//! #6: «3-Topf» with guardrails (the guardrails steer spending, the buckets steer investment) and #47:
+//! fixed rate, VPW and endowment from the retirement of the first person.
 //!
-//! Grundplanung (erfunden, wie `sim_rules`): Start 2026-11, Geburt 1966-11, Pensionierung und AHV 2031-11, Ende
-//! 2061-11; ohne Steuern, Teuerung und Renditen, Ausgaben 1000 pro Monat, Vermögen 1'000'000 als Bargeld.
+//! Base plan (made up, like `sim_rules`): start 2026-11, birth 1966-11, retirement and AHV 2031-11, end
+//! 2061-11; without taxes, inflation and returns, spending 1000 per month, wealth 1'000'000 as cash.
 
 use engine::market::MarketPath;
 use engine::model::Plan;
@@ -20,18 +20,18 @@ fn base() -> Value {
     v
 }
 
-/// Startrate 4.3 %: Mit 4 % läge das Vermögen nach genau 50 Monaten auf der oberen Leitplanke (Rundung entscheidet).
+/// Initial rate 4.3 %: with 4 % wealth would be exactly on the upper guardrail after 50 months (rounding decides).
 const RATE: f64 = 0.043;
 const GUARDRAILS: fn() -> Value = || json!({"initialRate": RATE, "upper": 0.2, "lower": 0.2, "adjust": 0.1});
 
-/// Reine Strategie «Guardrails».
+/// Pure strategy «Guardrails».
 fn pure(mut v: Value) -> Value {
     v["withdrawal"]["strategy"] = json!("guardrails");
     v["withdrawal"]["guardrails"] = GUARDRAILS();
     v
 }
 
-/// 3-Topf mit Guardrails.
+/// «3-Topf» with guardrails.
 fn combined(mut v: Value) -> Value {
     v["withdrawal"]["strategy"] = json!("three_buckets");
     v["withdrawal"]["buckets"] =
@@ -40,7 +40,7 @@ fn combined(mut v: Value) -> Value {
     v
 }
 
-/// Ehepaar: A wird 2031-11 pensioniert (PK- und AHV-Rente), B arbeitet bis 2033-06 (2000 pro Monat) und bezieht dann die PK.
+/// Married couple: A retires 2031-11 (PK and AHV pension), B works until 2033-06 (2000 per month) and then draws the PK.
 fn couple() -> Value {
     let mut v = base();
     v["household"]["persons"] =
@@ -96,8 +96,8 @@ fn withdrawal_events(r: &SimResult) -> Vec<(YearMonth, &str)> {
 // #6
 // ---------------------------------------------------------------------------------------------
 
-/// #6/AK2: Bei gleichem Vermögensverlauf (ohne Renditen) ist die Entnahme rein und kombiniert identisch, auch nach
-/// einer Kürzung durch die Leitplanke.
+/// #6/AK2: With the same wealth course (without returns) the withdrawal is identical pure and combined, also after
+/// a cut by the guardrail.
 #[test]
 fn issue_6_ak2_combined_spends_like_pure_guardrails() {
     let (p, c) = (run(&pure(base())), run(&combined(base())));
@@ -105,7 +105,7 @@ fn issue_6_ak2_combined_spends_like_pure_guardrails() {
         close(b.spending, a.spending, &format!("Ausgaben {:?}", a.month));
         close(b.liquid, a.liquid, &format!("Vermögen {:?}", a.month));
     }
-    // Startentnahme 4.3 % von 940'000 (60 Monate zu 1000 ausgegeben)
+    // Initial withdrawal 4.3 % of 940'000 (60 months of 1000 spent)
     close(rec(&c, 2031, 11).withdrawal * 12.0, RATE * 940_000.0, "Startentnahme");
     let cuts = |r: &SimResult| {
         withdrawal_events(r)
@@ -118,8 +118,8 @@ fn issue_6_ak2_combined_spends_like_pure_guardrails() {
     assert_eq!(cuts(&p), cuts(&c));
 }
 
-/// #6/AK3 (rein und kombiniert): Die Guardrails starten mit der Pensionierung der ersten Person; ein laufendes
-/// Erwerbseinkommen der zweiten Person zählt zu «Einkommen und Renten».
+/// #6/AK3 (pure and combined): The guardrails start with the retirement of the first person; the running
+/// earned income of the second person counts as «Einkommen und Renten».
 #[test]
 fn issue_6_ak3_guardrails_start_with_the_first_retirement() {
     for v in [pure(couple()), combined(couple())] {
@@ -139,11 +139,11 @@ fn issue_6_ak3_guardrails_start_with_the_first_retirement() {
             "Lebenshaltung = Entnahme + Einkommen und Renten",
         );
     }
-    // Kombiniert: Töpfe und Guardrails starten im selben Monat; der Netto-Bedarf rechnet mit den Guardrails.
+    // Combined: buckets and guardrails start in the same month; the net need uses the guardrails.
     let r = run(&combined(couple()));
     let a = refill(&r, "A", 2031, 11);
     assert_eq!(a.basis.living_source, "Guardrails");
-    // Lebenshaltung im Netto-Bedarf mit Erwerbseinkommen, PK-Rente und AHV (November und Dezember, auf 12 Monate hochgerechnet)
+    // Living costs in the net need with earned income, PK pension and AHV (November and December, extrapolated to 12 months)
     let (nov, dec) = (rec(&r, 2031, 11), rec(&r, 2031, 12));
     assert!(nov.earned > 0.0 && nov.pk_pension > 0.0 && nov.ahv > 0.0);
     close(
@@ -153,7 +153,7 @@ fn issue_6_ak3_guardrails_start_with_the_first_retirement() {
     );
 }
 
-/// #6/AK4 (rein und kombiniert): Ein für einen Kauf reservierter Verkaufserlös zählt nicht zur Rate.
+/// #6/AK4 (pure and combined): Sale proceeds reserved for a purchase do not count towards the rate.
 #[test]
 fn issue_6_ak4_reserved_proceeds_do_not_count_for_the_rate() {
     let with_sale = |mut v: Value| {
@@ -184,8 +184,8 @@ fn issue_6_ak4_reserved_proceeds_do_not_count_for_the_rate() {
     }
 }
 
-/// #6/AK5: Nach einem Zufluss rechnen die Guardrails die Entnahme neu (rein und kombiniert gleich); kombiniert geht
-/// das Geld in Topf 3 und die Ziele bleiben bis zum nächsten Januar.
+/// #6/AK5: After an inflow the guardrails recompute the withdrawal (the same pure and combined); combined, the
+/// money goes to bucket 3 and the targets stay until the next January.
 #[test]
 fn issue_6_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
     let inflow = |mut v: Value| {
@@ -194,7 +194,7 @@ fn issue_6_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
     };
     let (p, c) = (run(&inflow(pure(base()))), run(&inflow(combined(base()))));
     for r in [&p, &c] {
-        // Rate nach dem Zufluss unter 3.44 % (untere Leitplanke): 10 % mehr ab Mai
+        // Rate after the inflow below 3.44 % (lower guardrail): 10 % more from May
         close(
             rec(r, 2032, 5).withdrawal,
             1.1 * rec(r, 2032, 4).withdrawal,
@@ -210,7 +210,7 @@ fn issue_6_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
         b.moves.iter().map(|m| (m.from, m.to, m.amount)).collect::<Vec<_>>(),
         vec![(0, 3, 400_000.0)]
     );
-    // Bis Dezember keine neuen Ziele (nur Januar und A setzen den Netto-Bedarf)
+    // No new targets until December (only January and A set the net need)
     assert!(!c
         .bucket_refills
         .iter()
@@ -225,8 +225,8 @@ fn issue_6_ak5_inflow_recomputes_the_withdrawal_and_keeps_the_targets() {
     }
 }
 
-/// #6/AK6: Der Netto-Bedarf rechnet mit der Guardrails-Lebenshaltung und nennt die Quelle; ohne Grenzen und
-/// Wohnkosten ist er gleich der Entnahme.
+/// #6/AK6: The net need uses the guardrails' living costs and names the source; without limits and
+/// housing costs it equals the withdrawal.
 #[test]
 fn issue_6_ak6_need_uses_the_guardrails_living() {
     let r = run(&combined(base()));
@@ -239,7 +239,7 @@ fn issue_6_ak6_need_uses_the_guardrails_living() {
         12.0 * rec(&r, 2031, 11).spending,
         "Lebenshaltung hochgerechnet",
     );
-    // Die Untergrenze greift auch im Netto-Bedarf: 400 % der geplanten 1000 = 4000 pro Monat (Entnahme rund 3368)
+    // The floor also applies in the net need: 400 % of the planned 1000 = 4000 per month (withdrawal about 3368)
     let mut v = combined(base());
     v["withdrawal"]["floor"] = json!(4);
     let r = run(&v);
@@ -248,7 +248,7 @@ fn issue_6_ak6_need_uses_the_guardrails_living() {
         48_000.0,
         "Lebenshaltung an der Untergrenze",
     );
-    // Ebenso die Obergrenze: 200 % der geplanten 1000 = 2000 pro Monat
+    // Likewise the ceiling: 200 % of the planned 1000 = 2000 per month
     let mut v = combined(base());
     v["withdrawal"]["ceiling"] = json!(2);
     let r = run(&v);
@@ -258,13 +258,13 @@ fn issue_6_ak6_need_uses_the_guardrails_living() {
         24_000.0,
         "Lebenshaltung an der Obergrenze",
     );
-    // Die Grenzen folgen der Teuerung (geplante Ausgaben in heutigen Preisen)
+    // The limits follow inflation (planned spending in today's prices)
     v["returns"]["fixed"]["inflation"] = json!(0.05);
     let r = run(&v);
     let nov = rec(&r, 2031, 11);
     assert!(nov.price_index > 1.2);
     close(nov.spending, 2000.0 * nov.price_index, "Obergrenze mit Teuerung");
-    // 3-Topf ohne Guardrails: geplante Lebenshaltung
+    // «3-Topf» without guardrails: planned living costs
     let mut v = combined(base());
     v["withdrawal"]["buckets"]["spending"] = json!("planned");
     let r = run(&v);
@@ -273,7 +273,7 @@ fn issue_6_ak6_need_uses_the_guardrails_living() {
     close(a.basis.living, 12_000.0, "geplant");
 }
 
-/// #6/AK7: Nach einer Kürzung durch die Leitplanke sinken die Ziele in der nächsten Januar-Auffüllung um die Kürzung.
+/// #6/AK7: After a cut by the guardrail the targets fall by the cut at the next January refill.
 #[test]
 fn issue_6_ak7_targets_follow_a_cut() {
     let r = run(&combined(base()));
@@ -289,7 +289,7 @@ fn issue_6_ak7_targets_follow_a_cut() {
     close(now.target2, 0.9 * before.target2, "Ziel Topf 2");
 }
 
-/// #6/AK8: Ohne das neue Feld bleibt die Planung unverändert, auch beim Speichern.
+/// #6/AK8: Without the new field the plan stays unchanged, also when saving.
 #[test]
 fn issue_6_ak8_plans_without_the_field_stay_unchanged() {
     let mut v = base();
@@ -314,12 +314,12 @@ fn issue_6_ak8_plans_without_the_field_stay_unchanged() {
             (y.spending, y.cash, y.bonds, y.stocks)
         );
     }
-    // Ein unbekannter Wert ist ein Fehler
+    // An unknown value is an error
     v["withdrawal"]["buckets"]["spending"] = json!("vpw");
     assert!(serde_json::from_value::<Plan>(v).is_err());
 }
 
-/// #6: Prüfungen der Guardrails und der Grenzen gelten auch kombiniert.
+/// #6: Checks of the guardrails and the limits also apply when combined.
 #[test]
 fn issue_6_validation_of_the_guardrails_and_limits() {
     let errors = |v: &Value| {
@@ -338,13 +338,13 @@ fn issue_6_validation_of_the_guardrails_and_limits() {
     v["withdrawal"]["floor"] = json!(1.2);
     v["withdrawal"]["ceiling"] = json!(1.1);
     assert!(errors(&v).iter().any(|m| m.contains("Untergrenze")));
-    // Ohne Guardrails werden deren Parameter bei 3-Topf nicht geprüft
+    // Without guardrails their parameters are not checked with «3-Topf»
     v["withdrawal"]["buckets"]["spending"] = json!("planned");
     v["withdrawal"]["guardrails"]["initialRate"] = json!(0);
     assert!(errors(&v).is_empty());
 }
 
-/// #6/AK10: Die Optimierung bietet «3-Topf + Guardrails» an; untere Leitplanke und Anpassung sind standardmässig fix.
+/// #6/AK10: The optimization offers «3-Topf + Guardrails»; lower guardrail and adjustment are fixed by default.
 #[test]
 fn issue_6_ak10_optimization_offers_the_combination() {
     let defs = param_defs(OptStrategy::ThreeBucketsGuardrails);
@@ -355,7 +355,7 @@ fn issue_6_ak10_optimization_offers_the_combination() {
     );
     let fixed: Vec<_> = defs.iter().filter(|d| d.fixed).map(|d| d.key).collect();
     assert_eq!(fixed, ["lower", "adjust", "floor", "ceiling"]);
-    // Die Töpfe haben dieselben Grenzen wie bei «3-Topf»; die Renditeschwelle darf bis −100 % gehen
+    // The buckets have the same limits as with «3-Topf»; the return threshold may go down to −100 %
     let refill = defs.iter().find(|d| d.key == "refillThreshold").unwrap();
     assert_eq!((refill.lo, refill.hi, refill.min, refill.max), (-0.1, 0.2, -1.0, 1.0));
     assert_eq!(
@@ -368,7 +368,7 @@ fn issue_6_ak10_optimization_offers_the_combination() {
             .map(|d| (d.key, d.lo, d.hi, d.min, d.max))
             .collect::<Vec<_>>()
     );
-    // Die Planung der Kombination ist «3-Topf» mit Guardrails; «3-Topf» allein setzt die Ausgaben zurück auf geplant.
+    // The plan of the combination is «3-Topf» with guardrails; «3-Topf» alone resets spending to planned.
     let retire = ym(2031, 11);
     let v = with_params(
         &base(),
@@ -386,15 +386,15 @@ fn issue_6_ak10_optimization_offers_the_combination() {
     assert_eq!(OptStrategy::of(&plan.withdrawal), OptStrategy::ThreeBucketsGuardrails);
     let back = with_params(&v, OptStrategy::ThreeBuckets, &[], &[], retire);
     assert_eq!(back["withdrawal"]["buckets"]["spending"], json!("planned"));
-    // Andere Strategien setzen vorhandene Töpfe auf geplante Ausgaben
+    // Other strategies set existing buckets to planned spending
     let other = with_params(&v, OptStrategy::FixedRate, &[], &[], retire);
     assert_eq!(other["withdrawal"]["buckets"]["spending"], json!("planned"));
-    // Jede Strategie der Optimierung ergibt eine Planung, die wieder als dieselbe Strategie erkannt wird
+    // Every strategy of the optimization gives a plan that is recognized again as the same strategy
     for s in engine::optimize::all_strategies() {
         let plan: Plan = serde_json::from_value(with_params(&v, s, &[], &[], retire)).unwrap();
         assert_eq!(OptStrategy::of(&plan.withdrawal), s);
     }
-    // Ohne Töpfe in der Planung: Die Kombination legt sie an, andere Strategien nicht
+    // Without buckets in the plan: the combination creates them, other strategies do not
     let mut bare = base();
     bare["withdrawal"].as_object_mut().unwrap().remove("buckets");
     let c = with_params(&bare, OptStrategy::ThreeBucketsGuardrails, &[], &[], retire);
@@ -413,8 +413,8 @@ fn issue_6_ak10_optimization_offers_the_combination() {
 // #47
 // ---------------------------------------------------------------------------------------------
 
-/// #47/AK1–AK3: Fixe Rate, VPW und Endowment legen die Entnahme im Monat der ersten Pensionierung fest; ein laufendes
-/// Erwerbseinkommen zählt zu «Einkommen und Renten»; die Grenzen gelten ab demselben Monat.
+/// #47/AK1–AK3: Fixed rate, VPW and endowment set the withdrawal in the month of the first retirement; a running
+/// earned income counts as «Einkommen und Renten»; the limits apply from the same month.
 #[test]
 fn issue_47_dynamic_strategies_start_with_the_first_retirement() {
     let strategies = [
@@ -443,13 +443,13 @@ fn issue_47_dynamic_strategies_start_with_the_first_retirement() {
         };
         close(nov.withdrawal, rate * rec(&r, 2031, 10).liquid / 12.0, key);
         close(nov.spending, nov.withdrawal + nov.income, key);
-        // Untergrenze 1200 % der geplanten 1000 ab demselben Monat (über Entnahme + Einkommen und Renten)
+        // Floor 1200 % of the planned 1000 from the same month (above withdrawal + income and pensions)
         v["withdrawal"]["floor"] = json!(12);
         close(rec(&run(&v), 2031, 11).spending, 12_000.0, key);
     }
 }
 
-/// #47/AK4: Bei einer Person ändert sich nichts: Die Entnahme beginnt mit der Pensionierung.
+/// #47/AK4: With one person nothing changes: the withdrawal starts with retirement.
 #[test]
 fn issue_47_single_person_starts_at_retirement() {
     let mut v = base();
