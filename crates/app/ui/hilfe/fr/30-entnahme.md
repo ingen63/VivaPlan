@@ -154,7 +154,7 @@ Le prélèvement commence avec un **taux initial** et est adapté chaque année 
 
 **Idée:** vous dépensez beaucoup au début (le taux initial est souvent plus élevé qu’avec un taux fixe), mais acceptez d’économiser en période de crise. Les réductions sont rares et faibles, les dépenses restent **plus planifiables** qu’avec un pur taux fixe.
 
-Comme pour le taux fixe, le prélèvement correspond à **coût de la vie + frais de logement moins revenus et rentes** (avant impôts). Des [limites du coût de la vie](#f-wd-limits) sont possibles.
+Comme pour le taux fixe, le prélèvement correspond à **coût de la vie + frais de logement + versement au pilier 3a moins revenus et rentes** (avant impôts). Des [limites du coût de la vie](#f-wd-limits) sont possibles.
 
 ## @f-wd-vpw Prélèvement en pourcentage variable (VPW)
 Mots-clés: VPW, âge de planification, rendement réel, annuité, Bogleheads

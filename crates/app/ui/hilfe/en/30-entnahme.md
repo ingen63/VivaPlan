@@ -154,7 +154,7 @@ The withdrawal starts with an **initial rate** and is adjusted for inflation eve
 
 **Idea:** You spend a lot at the beginning (the initial rate is often higher than with a fixed rate), but accept saving in crises. The cuts are rare and small; spending stays **more predictable** than with a pure fixed rate.
 
-As with the fixed rate, the withdrawal is **living expenses + housing costs minus income and pensions** (before taxes). [Limits on living expenses](#f-wd-limits) are possible.
+As with the fixed rate, the withdrawal is **living expenses + housing costs + pillar 3a contributions minus income and pensions** (before taxes). [Limits on living expenses](#f-wd-limits) are possible.
 
 ## @f-wd-vpw Variable percentage withdrawal (VPW)
 Keywords: VPW, planning age, real return, annuity, Bogleheads

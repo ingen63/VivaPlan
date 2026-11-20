@@ -154,7 +154,7 @@ Die Entnahme startet mit einer **Startrate** und wird jedes Jahr mit der Teuerun
 
 **Idee:** Sie geben anfangs viel aus (die Startrate ist oft höher als bei einer fixen Rate), akzeptieren aber, in Krisen zu sparen. Die Kürzungen sind selten und klein, die Ausgaben bleiben **planbarer** als bei der reinen fixen Rate.
 
-Die Entnahme ist wie bei der fixen Rate **Lebenshaltung + Wohnkosten minus Einkommen und Renten** (vor Steuern). [Grenzen der Lebenshaltung](#f-wd-limits) sind möglich.
+Die Entnahme ist wie bei der fixen Rate **Lebenshaltung + Wohnkosten + Einzahlung in die Säule 3a minus Einkommen und Renten** (vor Steuern). [Grenzen der Lebenshaltung](#f-wd-limits) sind möglich.
 
 ## @f-wd-vpw Variable Prozententnahme (VPW)
 Stichworte: VPW, Planungsalter, Realrendite, Annuität, Bogleheads

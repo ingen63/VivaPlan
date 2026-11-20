@@ -80,3 +80,35 @@ test("#93/AK1, #93/AK3: all places name the same program version, the changelog 
   assert.ok(heads.every(h => /^Version (0\.8\.\d+|1\.0\.0-beta\.\d+)\b/.test(h)), "no entries for earlier versions (1.1.x)");
   assert.equal(fs.existsSync(path.join(ROOT, "docs/release-notes-1.1.3.md")), false);
 });
+
+// #183/AK5: The help names no limit of the scenario combinations other than MAX_COMBINATIONS of the engine.
+// A sentence counts as naming a limit if it contains a word for «combination» and a limit word; every number in it
+// must then equal MAX_COMBINATIONS (examples like «35 combinations with 50 000 paths» name no limit).
+const COMBINATION = /kombination|combination|combinaison|combinazion/i;
+const LIMIT = /höchstens|maximal|mehr als|nicht begrenzt|erlaubt|at most|maximum|beyond|not limited|allowed|au plus|au-delà|pas limité|admises|al massimo|più di|non è limitato|ammesse/i; // check-english: allow (searched terms)
+const limitNumbers = text => text
+  .split(/(?<=[.!?])\s+|\n/)
+  .filter(s => COMBINATION.test(s) && LIMIT.test(s))
+  .flatMap(s => (s.match(/\d(?:[\d'’   ]*\d)?/g) || []).map(n => ({ n: Number(n.replace(/\D/g, "")), s })));
+
+test("#183/AK5: the help names no number of combinations other than MAX_COMBINATIONS", () => {
+  const src = fs.readFileSync(path.join(ROOT, "crates/engine/src/scenarios.rs"), "utf8");
+  const max = Number(src.match(/MAX_COMBINATIONS:\s*usize\s*=\s*([\d_]+)/)[1].replace(/_/g, ""));
+  assert.ok(max > 0);
+  // The check finds the former contradiction («at most 400») and accepts the correct limit.
+  assert.deepEqual(limitNumbers("Höchstens 400 Kombinationen sind erlaubt.").map(x => x.n), [400]); // check-english: allow (sample text)
+  assert.deepEqual(limitNumbers("Erst bei mehr als **1'000'000** Kombinationen.").map(x => x.n), [1000000]); // check-english: allow (sample text)
+  const files = walk(path.join(ROOT, "crates/app/ui/hilfe"), [".md"]);
+  for (const lang of ["de", "en", "fr", "it"]) assert.ok(files.some(f => rel(f).includes(`/hilfe/${lang}/`)), lang);
+  const found = [];
+  const wrong = [];
+  for (const f of files) {
+    for (const { n, s } of limitNumbers(fs.readFileSync(f, "utf8"))) {
+      found.push(rel(f));
+      if (n !== max) wrong.push(`${rel(f)}: ${n} in «${s.slice(0, 120)}»`);
+    }
+  }
+  assert.deepEqual(wrong, []);
+  // Each language names the limit (10-editor.md), so the check does not pass by finding nothing.
+  for (const lang of ["de", "en", "fr", "it"]) assert.ok(found.some(f => f.includes(`/hilfe/${lang}/`)), `limit in ${lang}`);
+});

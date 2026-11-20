@@ -651,3 +651,48 @@ fn issue_124_ak2_need_with_contribution() {
         "Lebenshaltung + 3a = Entnahme",
     );
 }
+
+/// #183/AK3: With the fixed rate and with guardrails the pillar 3a contribution counts towards the withdrawal in the
+/// same way: withdrawal = living costs + housing costs + 3a contribution − income. The withdrawal is set by the
+/// strategy; a contribution of 200 per month leaves it unchanged and lowers the living costs by 200.
+#[test]
+fn issue_183_ak3_pillar3a_counts_towards_withdrawal_for_fixed_rate_and_guardrails() {
+    let strategies = [
+        json!({ "strategy": "fixed_rate", "fixedRate": { "rate": 0.04 } }),
+        json!({ "strategy": "guardrails",
+            "guardrails": { "initialRate": 0.04, "upper": 0.2, "lower": 0.2, "adjust": 0.1 } }),
+    ];
+    for w in strategies {
+        let run_c = |contribution: f64| {
+            let mut v = base();
+            v["milestones"][1]["years"] = json!(60); // withdrawal phase from the start
+            v["withdrawal"] = w.clone();
+            v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": contribution }]);
+            run(&v)
+        };
+        let (with, without) = (run_c(2400.0), run_c(0.0));
+        let name = &w["strategy"];
+        for y in 2040..=2041 {
+            for m in 1..=12 {
+                let (a, b) = (rec(&with, y, m), rec(&without, y, m));
+                close(a.pillar3a_in, 200.0, &format!("{name}: Einzahlung {y}-{m}"));
+                close(
+                    a.withdrawal,
+                    a.spending - a.income,
+                    &format!("{name}: Entnahme = Ausgaben inkl. 3a − Einkommen"),
+                );
+                close(a.withdrawal, b.withdrawal, &format!("{name}: Entnahme unverändert"));
+                close(
+                    (b.spending - b.pillar3a_in) - (a.spending - a.pillar3a_in),
+                    200.0,
+                    &format!("{name}: Lebenshaltung um die Einzahlung tiefer"),
+                );
+            }
+        }
+        close(
+            rec(&with, 2040, 1).withdrawal,
+            40_000.0 / 12.0,
+            &format!("{name}: 4 % von 1'000'000"),
+        );
+    }
+}

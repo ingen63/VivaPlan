@@ -154,7 +154,7 @@ Il prelievo inizia con un **tasso iniziale** e viene adeguato ogni anno al rinca
 
 **Idea:** all’inizio spende molto (il tasso iniziale è spesso più alto che con un tasso fisso), ma accetta di risparmiare nelle crisi. Le riduzioni sono rare e piccole, le spese restano **più pianificabili** che con il puro tasso fisso.
 
-Il prelievo è, come con il tasso fisso, **costo della vita + spese d’alloggio meno redditi e rendite** (prima delle imposte). Sono possibili [limiti del costo della vita](#f-wd-limits).
+Il prelievo è, come con il tasso fisso, **costo della vita + spese d’alloggio + versamento nel pilastro 3a meno redditi e rendite** (prima delle imposte). Sono possibili [limiti del costo della vita](#f-wd-limits).
 
 ## @f-wd-vpw Prelievo percentuale variabile (VPW)
 Parole chiave: VPW, età di pianificazione, rendimento reale, annualità, Bogleheads
