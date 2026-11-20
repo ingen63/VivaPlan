@@ -861,15 +861,3 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #175/AK3 | Oberflächentest in Italienisch: Start mit Systemsprache `it`, Stichproben von Texten in Editor, Ergebnissen, Einstellungen, Menüs und Meldungen; Zahlen im Schweizer Format. | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «Italian user interface (#175)» «AK1, AK3», «Names of the optimization catalog and of the time series (#177)», [main.rs](../crates/app/src/main.rs) «issue_175_ak3_menus_and_dialogs_in_italian» | 20.11.2026 ok: Playwright (Systemsprache it-CH, auch Hilfe und F1) und Rust (native Menüs, Dateidialoge); Desktop-App nicht von Hand geprüft |
 | #175/AK4 | Die Texte sind fachlich geprüft (Entwurf durch Claude, Prüfung durch den Maintainer); Inhalte der Planung (Namen) bleiben unübersetzt. | ☐ | **gilt** | – | 20.11.2026 nicht geprüft: fachliche Prüfung durch den Maintainer offen (Liste heikler Begriffe im Issue) |
 | #175/AK5 | `BESCHREIBUNG.md` und `README.md` nennen die Sprache. | ☑ | **gilt** | kein Test (Durchsicht) | 20.11.2026 ok: BESCHREIBUNG «Sprache», README «Deutsch, Englisch, Französisch und Italienisch», dazu ENTWICKLUNG und Hilfe (Sprachwahl) |
-
-### #179 Fachglossar in vier Sprachen
-
-[Issue #179](https://github.com/ingen63/VivaPlan/issues/179) · offen (`implemented`, AK5 wartet auf das Prüfskript aus #180) · Umsetzung: 3906724
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #179/AK1 | `docs/GLOSSAR.md` hat einen Abschnitt «Übersetzungen» mit einer Tabelle DE, EN, FR, IT, Quelle, verbotene Varianten. | ☑ | **gilt** | [test_glossary.py](../tools/test_glossary.py) «test_issue_179_ak1_section_has_both_tables_with_six_columns» | 20.11.2026 ok: Tabellen «Kürzel» und «Fachbegriffe» mit sechs Spalten |
-| #179/AK2 | Die Tabelle enthält alle Fachbegriffe aus `de.json` und der deutschen Hilfe, mindestens die genannten. | ☑ | **gilt** | [test_glossary.py](../tools/test_glossary.py) «test_issue_179_ak2_minimum_terms_present», «test_issue_179_ak2_german_terms_unique» | 20.11.2026 ok: 97 Fachbegriffe, Mindestliste vollständig; Auswahl von Hand (Durchsicht in #181) |
-| #179/AK3 | Begriffe mit amtlicher Übersetzung nennen die Quelle; Begriffe ohne amtliche Quelle sind markiert. | ☑ | **gilt** | [test_glossary.py](../tools/test_glossary.py) «test_issue_179_ak3_every_source_is_known_or_marked», «test_issue_179_ak3_official_sources_named_in_legend» | 20.11.2026 ok: 30 Zeilen mit Quelle (fedlex, Merkblätter AHV/IV), übrige markiert; TERMDAT nicht erreichbar |
-| #179/AK4 | Unübersetzte Kürzel stehen in einer eigenen Liste mit ihrer Form je Sprache. | ☑ | **gilt** | [test_glossary.py](../tools/test_glossary.py) «test_issue_179_ak4_abbreviations_have_form_per_language» | 20.11.2026 ok: 11 Kürzel, z. B. AHV/AHV/AVS/AVS |
-| #179/AK5 | Die Tabelle lässt sich maschinell lesen: Das Skript aus #180 liest sie ohne Fehler. | ☐ | **gilt** | [test_glossary.py](../tools/test_glossary.py) «test_issue_179_ak5_cli_reads_glossary» | 20.11.2026 teilweise: `tools/glossary.py` liest beide Tabellen fehlerfrei; Skript aus #180 noch nicht vorhanden |
