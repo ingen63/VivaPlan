@@ -856,6 +856,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #148/AK4 | Beispiel: Eine künstlich um 1 Prozentpunkt pro Jahr verschobene Aktienrendite lässt den Test fehlschlagen (einmal von Hand gezeigt und … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) (in den Tests zu AK1–AK3) | 18.11.2026 ok |
 | #148/AK5 | Die Tests bleiben bei festem Startwert reproduzierbar und laufen im Standard unter 10 s; | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
 
+### #150 Kapitalbezüge unverheirateter Paare werden für den Haushalt zusammengerechnet
+
+[Issue #150](https://github.com/ingen63/VivaPlan/issues/150) · geschlossen · Umsetzung: a841d27
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #150/AK1 | Bei unverheirateten Paaren rechnet die Kapitalbezugssteuer die Bezüge eines Jahres je Person zusammen, nicht für den Haushalt. | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_150_ak1_…» | 20.11.2026 ok |
+| #150/AK2 | Bei Verheirateten und bei einer Person bleibt die Rechnung unverändert; die Golden-Dateien ändern nicht (oder nur mit Begründung, … | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_150_ak3_…», «issue_155_…», Golden-Tests; `make golden-numbers` | 20.11.2026 ok (alle Zahlen unverändert) |
+| #150/AK3 | Ein Test belegt das Beispiel (zwei Personen, nicht verheiratet, je 500 000 im selben Jahr) mit Handwert, ein zweiter Test den Fall … | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_150_ak1_…», «issue_150_ak3_…» | 20.11.2026 ok |
+| #150/AK4 | Gilt auch für den Modus «Wohnort» (#64), sobald er umgesetzt ist. | ☑ | **nicht anwendbar** (#64 nicht umgesetzt; Anforderung als Kommentar in #64) | kein Test | 20.11.2026 nicht anwendbar |
+
 ### #153 Mitgelieferte Planungen sind beim Aktienmodell nicht auf dem aktuellen Stand
 
 [Issue #153](https://github.com/ingen63/VivaPlan/issues/153) · geschlossen · Umsetzung: 0c6a760
