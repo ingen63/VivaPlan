@@ -346,6 +346,71 @@ test.describe("English user interface (#172)", () => {
   });
 });
 
+test.describe("French user interface (#174)", () => {
+  test("AK1, AK3: system language fr: editor, results, settings, menus, messages and help in French, numbers in the Swiss format", async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: "fr-CH" });
+    const page = await ctx.newPage();
+    const errors = await openApp(page, { settings: { language: "system" } });
+    expect(await lang(page)).toBe("fr");
+    await expect(page.locator("html")).toHaveAttribute("lang", "fr-CH");
+    // Menus: the app rebuilds the native menus in French (texts: Rust test issue_174_ak3_menus_and_dialogs_in_french)
+    expect(await calls(page, "set_menu_language")).toContainEqual({ language: "fr", choice: "system" });
+
+    // Editor
+    await expect(page.locator("#nav a").first()).toContainText("Ménage et projet");
+    await expect(page.locator("#nav")).toContainText("Fortune et placement");
+    await expect(page.locator("header")).toContainText("Lancer la simulation");
+    await page.evaluate(() => goto("wealth"));
+    await expect(page.locator("#main")).toContainText("Quote-part d’actions (actions dans le portefeuille composé d’actions et d’obligations)");
+    await expect(page.locator("#main")).toContainText("Monde (JST)");
+    await expect(page.locator('input[data-path="wealth.stocks"]')).toHaveValue(/^\d{1,3}(['’]\d{3})+$/);
+    await page.evaluate(() => goto("pension"));
+    await expect(page.locator("#main")).toContainText("Caisse de pension (LPP, 2e pilier) et AVS (1er pilier)");
+    await expect(page.locator("#tlRange")).toHaveText(/^\d\d\.\d{4} – \d\d\.\d{4} · \d+\.\d ans$/);
+    await expect(page.locator("#kpis")).toContainText("Fortune à la retraite");
+
+    // Help: manual and context help (F1) in French
+    await page.evaluate(() => Help.show("start"));
+    await expect(page.locator("#help:not([hidden]) #helpBody h1").first()).toHaveText("Ce que VivaPlan sait faire");
+    expect(await page.evaluate(() => Help.language())).toBe("fr");
+    await page.evaluate(() => { Help.close(); goto("wealth"); });
+    await page.locator('#main [data-path^="wealth.stockShare"]').first().focus();
+    await page.keyboard.press("F1");
+    await expect(page.locator("#help:not([hidden]) #helpBody h1").first()).toHaveText("Part d’actions");
+    await expect(page.locator("#help:not([hidden]) #helpBody")).toContainText("La part des actions dans le portefeuille");
+    await page.evaluate(() => Help.close());
+
+    // Messages of the engine: validation list and a message with an amount (thousands separator ')
+    await page.evaluate(() => { state.withdrawal.strategy = "fixed_rate"; state.withdrawal.fixedRate = { rate: 0.09 }; refresh(); });
+    await expect(page.locator("#val")).toContainText("Un taux de prélèvement de 9.0 % est élevé; la fortune diminue rapidement sur une longue durée.");
+    const p3a = await page.evaluate(async () => {
+      const plan = JSON.parse(JSON.stringify(state));
+      plan.pillar3a = [{ person: plan.household.persons[0].id, balance: 1000, rate: 0, contribution: 99999, payouts: [] }];
+      return (await Engine.call("validate", { plan })).filter(i => i.code === "pillar3a_contribution_range").map(msgText);
+    });
+    expect(p3a[0]).toMatch(/^Pilier 3a: le versement doit être compris entre 0 et le montant maximal de \d{1,3}('\d{3})+ par année \(Paramètres\)\.$/);
+
+    // Results: title from the engine label, tabs, key figures and yearly values
+    await page.evaluate(() => { state.returns.source = "fixed"; state.scenarios.sweeps = []; });
+    await page.evaluate(() => runSimulation("overview", { noConfirm: true }));
+    await expect(page.locator("#resultsTabs button")).toHaveText(["Vue d’ensemble", "Graphiques", "Valeurs annuelles", "Paramètres", "Nominal", "Pouvoir d’achat actuel"]);
+    await expect(page.locator("#results")).toContainText("Simulation unique · Rendements fixes");
+    await expect(page.locator("#resultsBody")).toContainText("Fortune à la fin");
+    await page.locator("#resultsTabs button", { hasText: "Valeurs annuelles" }).click();
+    await expect(page.locator("#resultsBody table.yt tr").first()).toContainText("Total des dépenses");
+    await expect(page.locator("#resultsBody table.yt td").filter({ hasText: /^-?\d{1,3}(['’]\d{3})+$/ }).first()).toBeAttached();
+
+    // Settings
+    await page.evaluate(() => command("settings"));
+    await expect(page.locator("#set-language")).toHaveValue("system");
+    await expect(page.locator("#set-language option")).toHaveText(["comme le système", "Deutsch", "English", "Français"]);
+    await expect(page.locator("body")).toContainText("S’appliquent à toutes les planifications sur cet appareil et ne sont pas enregistrés dans le fichier de planification.");
+
+    await noErrors(page, errors);
+    await ctx.close();
+  });
+});
+
 test.describe("Names of the optimization catalog and of the time series (#177)", () => {
   test("AK3: German names in German, English names in English (parameters and ranges, period of the strategy, short info of the series)", async ({ page }) => {
     const errors = await open(page, "wealth");
@@ -384,6 +449,13 @@ test.describe("Names of the optimization catalog and of the time series (#177)",
       stocks: "Stocks Switzerland (JST)", bonds: "Bonds USA 10 years (Shiller)", info: "Stocks Switzerland (JST), bonds USA 10 years (Shiller): annual 1922–2020",
       shiller: "Shiller: S&P Composite and 10-year US Treasury bonds, converted to CHF (SNB exchange rate), without currency hedging. Inflation: Swiss CPI, SARON from 06.1999.",
       initialRate: "Initial rate", cash: "Bucket 1: cash", years: "years", buckets: "3 buckets", range: "Guardrails, Initial rate: the range from 8 % to 2 % is invalid",
+    });
+    // #174: French names
+    await page.evaluate(() => I18n.use("fr"));
+    await check({
+      stocks: "Actions Suisse (JST)", bonds: "Obligations USA 10 ans (Shiller)", info: "Actions Suisse (JST), obligations USA 10 ans (Shiller): annuel 1922–2020",
+      shiller: "Shiller: S&P Composite et emprunts d’État américains à 10 ans, convertis en CHF (taux de change BNS), sans couverture de change. Renchérissement: indice des prix à la consommation, SARON dès 06.1999.",
+      initialRate: "Taux initial", cash: "Compartiment 1: cash", years: "ans", buckets: "3 compartiments", range: "Guardrails, Taux initial: la fourchette de 8 % à 2 % n’est pas valable",
     });
     await noErrors(page, errors);
   });

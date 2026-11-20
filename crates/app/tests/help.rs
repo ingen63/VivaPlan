@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 const GERMAN: &str = "de";
 /// Languages whose help has every German file (otherwise the help falls back to German per file).
-const COMPLETE: &[&str] = &["en"];
+const COMPLETE: &[&str] = &["en", "fr"];
 /// Quote marks of the screen labels per language.
 const LABEL_QUOTES: &[(&str, char, char)] = &[("en", '“', '”'), ("fr", '«', '»')];
 /// Markers of the keyword line (first line of a topic; the same list as `KEYWORDS` in help.js).

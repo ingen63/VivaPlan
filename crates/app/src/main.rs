@@ -2845,6 +2845,50 @@ mod tests {
         );
     }
 
+    /// #174/AK1, AK3: «Français» is offered in «Ansicht → Sprache»; menus and file dialogs have French texts.
+    #[test]
+    fn issue_174_ak3_menus_and_dialogs_in_french() {
+        assert!(i18n::languages().contains(&("fr".to_string(), "Français".to_string())));
+        let e = language_entries("fr", "fr");
+        assert_eq!(e[0].1, "comme le système");
+        assert!(e.contains(&("language-fr".to_string(), "Français".to_string(), true)));
+        let tr = |key: &str| i18n::tr("fr", key);
+        let titles = [
+            FILE_TITLE,
+            EDIT_TITLE,
+            VIEW_TITLE,
+            HELP_TITLE,
+            QUIT_TEXT,
+            "menu.view.language",
+        ];
+        assert_eq!(
+            titles.map(tr),
+            ["Fichier", "Édition", "Affichage", "Aide", "Quitter", "Langue"]
+        );
+        let entries: Vec<Entry> = file_entries().into_iter().chain(EDIT_MENU).chain(HELP_MENU).collect();
+        for (id, key, _) in entries.into_iter().filter(|(id, ..)| !id.is_empty()) {
+            assert_ne!(tr(key), i18n::tr("de", key), "{id}: {key}");
+            assert_ne!(tr(key), i18n::tr("en", key), "{id}: {key}");
+        }
+        assert_eq!(tr("menu.file.saveAs"), "Enregistrer sous…");
+        assert_eq!(tr("menu.help.shortcuts"), "Raccourcis clavier");
+        let dialogs = [
+            OPEN_DIALOG,
+            SAVE_DIALOG,
+            LEGACY_DIALOG,
+            SERIES_DIALOG,
+            SHILLER_DIALOG,
+            SNB_DIALOG,
+        ];
+        for d in dialogs {
+            assert_ne!(tr(d.title), i18n::tr("de", d.title), "{}", d.title);
+        }
+        assert_eq!(
+            (tr(OPEN_DIALOG.title), tr(OPEN_DIALOG.filter)),
+            ("Ouvrir une planification".into(), "Plan VivaPlan".into())
+        );
+    }
+
     /// #170/AK3, AK9: the user interface reports language and choice; menus (rebuilt in the real app, which needs the
     /// main thread of the system and is therefore not testable here) and file dialogs follow.
     #[test]

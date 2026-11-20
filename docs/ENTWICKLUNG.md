@@ -49,8 +49,8 @@ und Zeile (Rust, JavaScript, Python, Shell):
 Alle Texte der Oberfläche, der Tastenkürzel-Übersicht, der Grafiken, der Zeitleiste, der nativen Menüs und der
 Dateidialoge stehen in Texttabellen je Sprache: `crates/app/ui/i18n/<sprache>.json`, flache Schlüssel nach Bereich
 (`menu.file.open`, `results.overview` …), Platzhalter `{name}`, Werte dürfen einfaches HTML enthalten (`<b>`, `<br>`).
-`crates/app/ui/i18n/languages.json` nennt die vorhandenen Sprachen, jede in ihrer eigenen Sprache: `de.json` und
-`en.json` (#172; Begriffe nach dem Abschnitt Englisch in `docs/GLOSSAR.md`). Neue Texte kommen sofort als Schlüssel in
+`crates/app/ui/i18n/languages.json` nennt die vorhandenen Sprachen, jede in ihrer eigenen Sprache: `de.json`,
+`en.json` (#172) und `fr.json` (#174); Begriffe nach den Abschnitten Englisch und Französisch in `docs/GLOSSAR.md`. Neue Texte kommen sofort als Schlüssel in
 alle Tabellen, nie als Zeichenkette in den Code; der englische Text darf vorläufig sein, der Vollständigkeitstest
 verlangt ihn aber.
 
@@ -506,7 +506,7 @@ Speicher der App (IndexedDB) und nicht in der Planungsdatei.
 Die Hilfe öffnet als Panel rechts und ist kontextabhängig: **F1** zeigt das Thema des Felds mit dem Fokus, sonst des
 aktuellen Abschnitts bzw. der Ergebnisansicht; der Knopf «? Hilfe», die Zeichen ⓘ neben Feldern, Kartenüberschriften und
 Grafiken sowie das Menü *Hilfe* (Handbuch, ⌘⇧?) führen ebenfalls hin. Die Texte liegen als Markdown je Sprache in
-`crates/app/ui/hilfe/<sprache>/` (#173; `de/`, `en/`) mit denselben Dateinamen und Themenkennungen in jeder Sprache
+`crates/app/ui/hilfe/<sprache>/` (#173, #174; `de/`, `en/`, `fr/`) mit denselben Dateinamen und Themenkennungen in jeder Sprache
 (ein Thema beginnt mit `## @kennung Titel`, Verweise als `[Text](#kennung)`, die erste Zeile `Stichworte:` bzw.
 `Keywords:` enthält Suchbegriffe); neue Felder ordnet man in `crates/app/ui/help.js` zu (`FIELD_TOPICS`,
 `HEADING_TOPICS`). Die Hilfe lädt die Kapitel der gewählten Sprache, ein fehlendes Kapitel deutsch; nach einem
@@ -514,7 +514,8 @@ Sprachwechsel zeigt eine offene Hilfe dasselbe Thema in der neuen Sprache. `tool
 dass alle Verweise und Zuordnungen auf ein Thema zeigen und jede Sprache dieselben Themen hat. Der Rust-Test
 `crates/app/tests/help.rs` prüft je Datei gleiche Themen, Unterüberschriften, Verweise und Stichwortzeilen wie im
 Deutschen (`COMPLETE`: Sprachen mit allen Dateien) und dass die in der Hilfe zitierten Bildschirmbegriffe (Englisch:
-in “…”) in der Texttabelle der Sprache stehen; andere Zitate (Beispiele, Eingaben) stehen in ‘…’.
+in “…”, Französisch: in «…») in der Texttabelle der Sprache stehen; andere Zitate (Beispiele, Eingaben) stehen in ‘…’
+bzw. ‹…›.
 
 ## Test quality
 
