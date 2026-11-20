@@ -1115,7 +1115,7 @@
   "pension.pkCapital": "Avere di vecchiaia all’inizio della simulazione ({startTxt})",
   "pension.pkTitle": "Cassa pensione{v}",
   "pension.rentAtStart": "Rendita al mese all’inizio della prestazione",
-  "pension.subtitle": "Cassa pensione (2° pilastro) e AVS (1° pilastro)",
+  "pension.subtitle": "Cassa pensione (LPP, 2° pilastro) e AVS (1° pilastro)",
   "pillar3a.add": "+ Conto 3a",
   "pillar3a.addPayout": "+ Versamento",
   "pillar3a.age": "Età",

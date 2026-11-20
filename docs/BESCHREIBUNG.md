@@ -193,14 +193,15 @@ Betriebssystems (ohne Region, fr_FR → Französisch); fehlt die Sprache, gilt D
 «Ansicht → Sprache» oder in den Einstellungen («wie System» oder eine vorhandene Sprache); der Wechsel wirkt sofort, auch
 auf die Menüs, und lässt Planung, ungespeicherte Änderungen und Ansicht unverändert. Die Wahl gilt für das Gerät, nicht
 für die Planung. Zahlen, Beträge und Daten bleiben in jeder Sprache im Schweizer Format (1'234'567.50 CHF, 2.5 %,
-03.2040). Verfügbar sind Deutsch, Englisch (#172) und Französisch (#174): Oberfläche, Menüs, Dateidialoge und Meldungen des Rechenkerns,
+03.2040). Verfügbar sind Deutsch, Englisch (#172), Französisch (#174) und Italienisch (#175): Oberfläche, Menüs, Dateidialoge und Meldungen des Rechenkerns,
 auch die Namen der Strategien und Parameter der Optimierung, der Indizes und die Beschreibungen der mitgelieferten
 Zeitreihen (#177);
 Schweizer Fachbegriffe stehen auf Englisch mit dem Kürzel in Klammern, z. B. «old-age pension (AHV)», «pillar 3a»,
-auf Französisch als Schweizer Amtsbegriffe, z. B. «rente AVS», «caisse de pension», «pilier 3a», «impôt sur les
-prestations en capital» (Glossar `docs/GLOSSAR.md`). Inhalte der Planung (Namen) bleiben unübersetzt. Die Hilfe (Handbuch, F1, Suche) erscheint in der gewählten Sprache
-(#173, #174: Deutsch, Englisch und Französisch); fehlt ein Kapitel in einer Sprache, erscheint es deutsch. Italienisch
-folgt (#175).
+auf Französisch und Italienisch als Schweizer Amtsbegriffe, z. B. «rente AVS», «caisse de pension», «pilier 3a», «impôt
+sur les prestations en capital» bzw. «rendita AVS», «cassa pensione», «pilastro 3a», «imposta sulle prestazioni in
+capitale» (Glossar `docs/GLOSSAR.md`). Inhalte der Planung (Namen) bleiben unübersetzt. Die Hilfe (Handbuch, F1, Suche) erscheint in der gewählten Sprache
+(#173, #174, #175: Deutsch, Englisch, Französisch und Italienisch); fehlt ein Kapitel in einer Sprache, erscheint es
+deutsch.
 
 **Einstieg für neue Benutzer:** Beim allerersten Start fragt ein Willkommensdialog, ob man das Beispiel erkunden, eine
 eigene Planung beginnen oder leer starten möchte (wieder über *Hilfe → Willkommen …*). Die Checkliste «Erste Schritte»

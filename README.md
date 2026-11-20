@@ -47,8 +47,8 @@ Fall daneben.
 - 🕰️ **Was wäre gewesen:** «Wie wäre es mir ergangen, wenn ich 1973 pensioniert worden wäre?»
 - 🗂️ **Simulationen vergleichen:** jede Simulation wird mit der Planung von damals gespeichert
 - ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein Handbuch mit Suche
-- 🌐 **Deutsch, Englisch und Französisch:** Oberfläche, Menüs, Meldungen und Hilfe in allen drei Sprachen (Wahl unter
-  *Ansicht → Sprache*); Zahlen immer im Schweizer Format. Die Kommandozeile gibt englische Texte aus.
+- 🌐 **Deutsch, Englisch, Französisch und Italienisch:** Oberfläche, Menüs, Meldungen und Hilfe in allen vier Sprachen
+  (Wahl unter *Ansicht → Sprache*); Zahlen immer im Schweizer Format. Die Kommandozeile gibt englische Texte aus.
 
 Die ausführliche Beschreibung steht in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG.md).
 
