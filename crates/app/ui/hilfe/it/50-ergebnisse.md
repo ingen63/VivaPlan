@@ -212,7 +212,7 @@ Una tabella con **una riga per anno** per la simulazione scelta. Importi nella v
 
 | Colonne | Significato |
 |---|---|
-| Liquidità, immobili, previdenza, totale | **sostanza a fine anno**: mezzi liquidi, immobili (netto), previdenza (CP, 3a), somma |
+| Liquida, immobili, previdenza, totale | **sostanza a fine anno**: mezzi liquidi, immobili (netto), previdenza (CP, 3a), somma |
 | Spese totali | **media mensile dell’anno**: spese pianificate (costo della vita dalla Sua pianificazione) più **affitto o interesse ipotecario**, ammortamento e altre spese d’alloggio degli immobili più **versamento nel pilastro 3a** |
 | Prelievo | media mensile dell’anno: ciò che viene **prelevato** dalla sostanza (spese effettive meno reddito, prima delle imposte) |
 | Reddito totale | media mensile dell’anno: reddito (reddito da attività lucrativa e rendite) più prelievo |
