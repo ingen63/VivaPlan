@@ -400,6 +400,8 @@ test.describe("Help in the chosen language (#173)", () => {
     await page.evaluate(() => I18n.use("en"));
     await expect(helpTitle(page)).toHaveText("What VivaPlan can do");
     await expect(helpBody(page)).toContainText("Will the money last, and how certain is that?");
+    // AK1: same topics in every language; every field, heading and link of the English help leads to a topic
+    expect(await page.evaluate(() => Help.check())).toEqual([]);
     // Table of contents and search in English
     await page.evaluate(() => Help.show("toc"));
     await expect(helpBody(page).locator("h3").first()).toHaveText("Introduction");
@@ -410,6 +412,23 @@ test.describe("Help in the chosen language (#173)", () => {
     await page.evaluate(() => I18n.use("de"));
     await page.locator("#helpSearch").fill("Gewähr");
     await expect(helpBody(page).locator(".hit b").first()).toHaveText("Haftungsausschluss");
+    await noErrors(page, errors);
+  });
+
+  test("AK2: context help (F1, ⓘ) shows the topic in the chosen language", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    await page.evaluate(() => I18n.use("en"));
+    await page.locator('#main [data-path^="wealth.stockShare"]').first().focus();
+    await page.keyboard.press("F1");
+    await expect(helpTitle(page)).toHaveText("Stock allocation");
+    await expect(helpBody(page)).toContainText("The share of stocks in the portfolio");
+    // Without a field: the topic of the section; ⓘ at the heading
+    await page.evaluate(() => { Help.close(); document.activeElement?.blur(); goto("general"); });
+    await page.keyboard.press("F1");
+    await expect(helpTitle(page)).toHaveText("Household & project");
+    await page.evaluate(() => { Help.close(); goto("withdrawal"); });
+    await page.locator('#main h2 .hq').click();
+    await expect(helpTitle(page)).toHaveText("Withdrawal strategy: overview");
     await noErrors(page, errors);
   });
 

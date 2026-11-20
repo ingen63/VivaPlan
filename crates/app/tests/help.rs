@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 const GERMAN: &str = "de";
 /// Languages whose help has every German file (otherwise the help falls back to German per file).
-const COMPLETE: &[&str] = &[];
+const COMPLETE: &[&str] = &["en"];
 /// Quote marks of the screen labels per language.
 const LABEL_QUOTES: &[(&str, char, char)] = &[("en", '“', '”')];
 /// Markers of the keyword line (first line of a topic; the same list as `KEYWORDS` in help.js).
@@ -160,9 +160,11 @@ fn issue_173_ak1_every_language_has_the_files_topics_and_anchors_of_the_german_h
 fn plain(s: &str) -> String {
     let mut out = String::new();
     let mut tag = false;
-    for c in s.chars() {
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        let starts_tag = c == '<' && chars.peek().is_some_and(|n| n.is_ascii_alphabetic() || *n == '/');
         match c {
-            '<' => tag = true,
+            '<' if starts_tag => tag = true,
             '>' if tag => tag = false,
             _ if !tag => out.push(c),
             _ => {}
@@ -208,7 +210,11 @@ fn contains_words(text: &str, part: &str) -> bool {
         .any(|(i, _)| !word(text[..i].chars().next_back()) && !word(text[i + part.len()..].chars().next()))
 }
 
-/// `label` equals `pattern` (or its beginning, with `prefix`), where every `{…}` in `pattern` matches any text.
+/// Longest text a placeholder may stand for (a name, a number, a date).
+const PLACEHOLDER_MAX: usize = 30;
+
+/// `label` equals `pattern` (or its beginning, with `prefix`), where every `{…}` in `pattern` stands for 1 to
+/// `PLACEHOLDER_MAX` characters. A pattern with placeholders needs at least three letters of literal text.
 fn glob(label: &str, pattern: &str, prefix: bool) -> bool {
     let mut parts: Vec<&str> = Vec::new();
     let mut rest = pattern;
@@ -225,25 +231,31 @@ fn glob(label: &str, pattern: &str, prefix: bool) -> bool {
             pattern == label
         };
     }
-    // with placeholders: the literal parts in order
-    let mut pos = 0;
-    for (k, part) in parts.iter().enumerate() {
-        let last = k == parts.len() - 1;
-        if k == 0 {
-            if !label.starts_with(part) {
-                return prefix && part.starts_with(label);
-            }
-            pos = part.len();
-        } else if last && !prefix {
-            return label.len() >= pos + part.len() && label.ends_with(part);
-        } else {
-            match label[pos..].find(part) {
-                Some(i) => pos += i + part.len(),
-                None => return prefix,
-            }
-        }
+    if parts.concat().chars().filter(|c| c.is_alphabetic()).count() < 3 {
+        return false;
     }
-    true
+    glob_parts(label, &parts, prefix)
+}
+
+/// `label` starts with `parts[0]`; between two parts stands a placeholder.
+fn glob_parts(label: &str, parts: &[&str], prefix: bool) -> bool {
+    let Some((first, rest)) = parts.split_first() else {
+        return false;
+    };
+    if !label.starts_with(first) {
+        return prefix && first.starts_with(label);
+    }
+    let label = &label[first.len()..];
+    if rest.is_empty() {
+        return prefix || label.is_empty();
+    }
+    if prefix && label.chars().count() <= PLACEHOLDER_MAX {
+        return true;
+    }
+    label
+        .char_indices()
+        .take(PLACEHOLDER_MAX)
+        .any(|(i, c)| glob_parts(&label[i + c.len_utf8()..], rest, prefix))
 }
 
 #[test]
@@ -302,5 +314,9 @@ fn issue_173_ak3_label_matching() {
     assert!(!matches("Start", "Restart simulation"));
     assert!(!matches("Run simulation", "Start simulation"));
     assert!(!matches("Bucket 1: Bonds", "Bucket {n}: Cash"));
+    assert!(!matches("Show file", "{text}"));
+    assert!(!matches("Show file", "{name}: {message}"));
+    assert!(matches("Total income", "Total income"));
     assert_eq!(plain("<b>Total</b>&nbsp;spending"), "Total spending");
+    assert_eq!(plain("Wealth < 0"), "Wealth < 0");
 }

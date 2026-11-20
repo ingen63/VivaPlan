@@ -234,7 +234,7 @@ If the time series ends before the end of the simulation (for example ‘Histori
 - **Moving average:** Every missing value is the (arithmetic) average of the last *n* years. The window moves on and, over time, also contains the values already extrapolated. The extrapolation therefore converges toward a calm mean.
 - **Moving geometric average:** as above, but averaged geometrically.
 
-The period (“Average over … years”) applies to the two moving methods. This input only appears if the series really ends before the plan is finished.
+The period (“Average over” … years) applies to the two moving methods. This input only appears if the series really ends before the plan is finished.
 
 Note: an extrapolation is an **assumption**, not a historical result. With very long extrapolations, the result loses its historical character.
 
