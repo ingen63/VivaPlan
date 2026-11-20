@@ -1075,3 +1075,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #176/AK3 | Die Kommandozeile gibt Meldungen und Ereignisse englisch aus; ihre Tests sind angepasst. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs), Tests in `crates/cli/src/optimize.rs`, `devserver.rs` | 19.11.2026 ok: 26 Tests grün, Stichprobe `run --events` |
 | #176/AK4 | Die Oberfläche zeigt in jeder Sprache weiterhin die übersetzten Texte (keine englischen Resttexte in de/fr/it). | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «#176/AK4» | 19.11.2026 ok für de (mit Gegenprobe); fr/it noch nicht vorhanden (#174, #175), gleicher Weg über Codes |
 | #176/AK5 | `BESCHREIBUNG.md`, `README.md` und Spezifikation zur Sprache der Kommandozeile nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 19.11.2026 ok: BESCHREIBUNG, README, ENTWICKLUNG, Hilfe (Kommandozeile, Optimierung) |
+
+### #177 Namen aus dem Katalog der Optimierung und der Zeitreihen übersetzen
+
+[Issue #177](https://github.com/ingen63/VivaPlan/issues/177) · geschlossen · Umsetzung: 81c03f5
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #177/AK1 | Parameter der Optimierung, Strategienamen, Namen der Anlagestrategien und Indizes und die Beschreibungen der eingebauten … | ☑ | **gilt** | [i18n.rs](../crates/app/src/i18n.rs) «issue_170_ak4_tables_are_complete», «issue_177_ak1_stored_german_series_texts_are_the_table_de», [series_text.rs](../crates/engine/src/series_text.rs) «issue_177_ak1_*» | 20.11.2026 ok: 67 Schlüssel `engine.*` in de/en; deutsche Texte älterer Bibliotheksdateien werden erkannt |
+| #177/AK2 | Der Text des Rechenkerns für diese Namen ist englisch, die Namen sind dieselben wie in der Tabelle `en` (Test wie #176/AK1). … | ☑ | **gilt** | [i18n.rs](../crates/app/src/i18n.rs) «issue_171_ak3_engine_codes_render_the_engine_text», [optimize_ranges.rs](../crates/engine/tests/optimize_ranges.rs) «invalid_ranges_are_reported» | 20.11.2026 ok: «Guardrails, Initial rate: the range from 8 % to 2 % is invalid …»; englische Namen fachlich noch nicht geprüft (wie #172) |
+| #177/AK3 | In Deutsch zeigt die Oberfläche die bisherigen deutschen Namen, in Englisch die englischen; Oberflächentest mit Stichproben … | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «#177 AK3» | 20.11.2026 ok für de und en (Parametertabelle, Einheiten, Bandbreiten-Meldung, `#strategyClip`, Kurzinfo); fr/it mit #174/#175 |
+| #177/AK4 | Die Berechnung ist unverändert: Ändern sich die Golden-Dateien, betrifft der Unterschied nur Textfelder (`make golden-numbers`), … | ☑ | **gilt** | `make golden-numbers` | 20.11.2026 ok: Golden-Dateien unverändert; nur Kommentarzeilen der mitgelieferten CSV-Dateien englisch (Begründung im Issue) |
+| #177/AK5 | Gespeicherte Planungen und Ergebnisse bleiben lesbar; Schlüssel in der Datei (z. B. `optimization.ranges`, Strategie-Kennungen) … | ☑ | **gilt** | Durchsicht Diff, `engineText` mit Text | 20.11.2026 ok: Schlüssel unverändert; Namen als Text in älteren Ergebnissen werden unverändert angezeigt |
