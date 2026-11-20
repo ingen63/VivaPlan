@@ -18,6 +18,7 @@ const LANGUAGES: &str = include_str!("../ui/i18n/languages.json");
 const TABLES: &[(&str, &str)] = &[
     ("de", include_str!("../ui/i18n/de.json")),
     ("en", include_str!("../ui/i18n/en.json")),
+    ("fr", include_str!("../ui/i18n/fr.json")),
 ];
 
 /// Order of the languages in menus and settings.

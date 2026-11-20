@@ -358,3 +358,135 @@ englisch umschrieben, das Schweizer Kürzel steht in Klammern; Schreibweise amer
 | Hilfe, Handbuch, Erste Schritte | help, manual, getting started | |
 | Tastenkürzel | keyboard shortcuts | |
 | wie System | as system | Sprachwahl |
+
+## Französisch (Oberflächenbegriffe)
+
+Begriffe der französischen Oberfläche (#174, Tabelle `crates/app/ui/i18n/fr.json`, Hilfe `crates/app/ui/hilfe/fr/`).
+Massgebend ist die Schweizer Verwaltungssprache (Begriffe der Bundesverwaltung, der AHV-Ausgleichskassen und des
+BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, *livret*) werden nicht verwendet.
+
+**Regeln**
+
+- Anrede mit «vous», Befehle im Infinitiv («Lancer la simulation», «Enregistrer sous…»), Meldungen in ganzen Sätzen.
+- Schweizer Kürzel in der französischen Form: AVS (statt AHV), LPP (statt BVG), CP (caisse de pension, statt PK),
+  BNS (statt SNB), UE (statt EU); unverändert bleiben 3a, SARON, JST, VPW, CHF.
+- Schweizer Wortschatz: *fortune* (nicht *patrimoine*), *renchérissement* neben *inflation*, *impôt sur les
+  prestations en capital*, *coefficient d’impôt*, *commune*, *année civile*.
+- Anführungszeichen «…» ohne Leerraum innen (Schweizer Satz); Beschriftungen der Oberfläche stehen in der Hilfe in
+  «…», andere Zitate (Beispiele, Eingaben) in ‹…›. Kein Leerraum vor «:», «;», «?», «!».
+- Ordnungszahlen ohne Hochstellung: 1er, 5e, 95e percentile; Datumsmuster «MM.AAAA», Monatsformat in Meldungen
+  «AAAA-MM».
+- Zahlen, Beträge und Daten im Schweizer Format wie in allen Sprachen (1'234'567.50 CHF, 2.5 %); Inhalte der
+  Planung (Namen) werden nicht übersetzt; Strategienamen «Standard», «Guardrails», «Endowment», «VPW» bleiben.
+- Inklusive Form nur, wo die Person angesprochen ist und die Kürze es erlaubt («Marié·e·s»).
+
+| Deutsch | Französisch (Oberfläche) | Kurzform / Bemerkung |
+|---|---|---|
+| AHV, AHV-Rente | assurance-vieillesse et survivants (AVS), rente AVS | AVS |
+| AHV-Bezug (Meilenstein) | début de la rente AVS | |
+| Plafonierung (Ehepaar) | plafonnement des rentes AVS (couples) | |
+| 1. / 2. / 3. Säule | 1er / 2e / 3e pilier | |
+| BVG | prévoyance professionnelle (LPP) | LPP |
+| Pensionskasse | caisse de pension | CP; in Zusammensetzungen «rente CP», «retrait en capital CP» |
+| Bezug Pensionskasse (Meilenstein) | prestation de la caisse de pension | |
+| PK-Rente | rente de la caisse de pension | rente CP |
+| Kapitalbezug | retrait en capital, prestation en capital | |
+| Altersguthaben | avoir de vieillesse | |
+| Umwandlungssatz | taux de conversion | |
+| Verzinsung (PK) | rémunération | |
+| Säule 3a, 3a-Konto | pilier 3a, compte 3a | |
+| gebundene Vorsorge | prévoyance liée | |
+| Vorsorge(vermögen) | prévoyance, avoirs de prévoyance | Abschnitt «Prévoyance» |
+| Einzahlung, Auszahlung (3a) | versement, versement (retrait) | Auszahlungsplan: plan de retrait |
+| Pensionierung | retraite | |
+| Simulationsstart, -ende | début de la simulation, fin de la simulation | |
+| Meilenstein | jalon | |
+| Haushalt | ménage | |
+| Verheiratet, Verheiratete | marié·e·s, personnes mariées | |
+| Erwerbseinkommen | revenu de l’activité lucrative | Kurzform: revenu, activité |
+| Lebenshaltungskosten, Lebenshaltung | coût de la vie | |
+| Ausgaben | dépenses | |
+| Wohnkosten | frais de logement | |
+| Einmaliger Betrag | montant unique | |
+| Zufluss | entrée | |
+| ungedeckte Ausgaben, Netto-Bedarf | dépenses non couvertes, besoin net | |
+| Teuerung, Inflation | renchérissement, inflation | «adapté au renchérissement» |
+| in heutigen Preisen, heutige Kaufkraft | aux prix actuels, pouvoir d’achat actuel | |
+| Vermögen | fortune | |
+| liquides Vermögen, freies Vermögen | fortune liquide, fortune libre | |
+| Gesamtvermögen, Endvermögen | fortune totale, fortune finale | |
+| Aktien, Obligationen | actions, obligations | |
+| Aktienanteil, Aktienquote | part d’actions, quote-part d’actions | |
+| Anlagestrategie | stratégie de placement | |
+| Zeitreihe | série temporelle | |
+| Renditequelle | source de rendements | |
+| Fortschreibung | extrapolation | |
+| Zufallsstartwert | valeur initiale aléatoire | |
+| Cash-Reserve | réserve de cash | |
+| Entnahme, Entnahmerate | prélèvement, taux de prélèvement | |
+| Entnahmestrategie | stratégie de prélèvement | |
+| fixe Entnahmerate | taux de prélèvement fixe | |
+| Leitplanke, Guardrails | garde-fou, Guardrails | Strategiename bleibt «Guardrails» |
+| Startrate | taux initial | |
+| Untergrenze, Obergrenze | plancher, plafond | |
+| 3-Topf-Strategie, Topf | stratégie à 3 compartiments, compartiment | Topf 1/2/3: compartiment 1/2/3; T1: C1 |
+| Auffüllung, Januar-Auffüllung | réalimentation, réalimentation de janvier | |
+| Vorausschau | anticipation | |
+| Renditekriterium | critère de rendement | |
+| Reservierung | réservation | |
+| Variable Prozententnahme | prélèvement en pourcentage variable (VPW) | |
+| Planungsalter | âge de planification | |
+| Realrendite | rendement réel | |
+| Immobilie, Objekt | bien immobilier, objet | Abschnitt «Immobilier» |
+| Besitz, Kauf geplant, Miete geplant | propriété, achat planifié, location planifiée | |
+| Kaufpreis, Marktwert | prix d’achat, valeur vénale | |
+| Eigenmittel, Eigenkapital | fonds propres | |
+| Nebenkosten | frais accessoires | |
+| Verkaufserlös, Nettoerlös | produit de la vente, produit net | |
+| Notverkauf, Notverkaufskriterium | vente forcée, critère de vente forcée | |
+| Hypothek, Anschlusshypothek | hypothèque, hypothèque subséquente | |
+| Tranche, Periode, Laufzeit | tranche, période, durée | |
+| Festhypothek, SARON-Hypothek | hypothèque à taux fixe, hypothèque SARON | |
+| Marge | marge | |
+| Erneuerung, Rückzahlung | renouvellement, remboursement | |
+| Einmalzahlung, Einmalrückzahlung | paiement unique, remboursement unique | |
+| Amortisation (direkt, indirekt) | amortissement (direct, indirect) | |
+| Belehnung | taux d’avance | |
+| Tragbarkeit | capacité financière | |
+| kalkulatorischer Zins | taux d’intérêt théorique | |
+| Steuerfuss | coefficient d’impôt | |
+| Stufe (Steuertabelle) | palier | |
+| Steuertabelle | barème | |
+| Einkommens-, Vermögenssteuer | impôt sur le revenu, impôt sur la fortune | |
+| Kapitalbezugssteuer | impôt sur les prestations en capital | |
+| Grundstückgewinnsteuer | impôt sur les gains immobiliers | |
+| Besitzdauer | durée de possession | |
+| Zuschlag, Abzug, Ermässigung | majoration, réduction | |
+| Kanton, Gemeinde | canton, commune | Modell Zürich/Aargau: modèle Zurich/Argovie |
+| Steuerjahr, veranlagt | année fiscale, taxé | |
+| Planung | planification | |
+| Projektdatei | fichier de projet | |
+| Ergebnis, gespeicherte Ergebnisse | résultat, résultats enregistrés | |
+| Lauf, Einzellauf, Einzelne Läufe | simulation, simulation unique, simulations individuelles | |
+| Pfad | trajectoire | Zufallspfad: trajectoire aléatoire |
+| Perzentil | percentile | 5. Perzentil: 5e percentile |
+| Median | médiane | |
+| Erfolgsquote | taux de réussite | |
+| Erschöpfung, aufgebraucht | épuisement, épuisé | |
+| Ruin, Ruinwahrscheinlichkeit | ruine, probabilité de ruine | |
+| Schwankung | volatilité | |
+| Konsum | consommation | |
+| Szenario, Variation, Variante | scénario, variation, variante | |
+| Stufe, Schritt (Variation) | niveau, pas | |
+| Ereignis | événement | |
+| Jahreswerte, Kennzahlen | valeurs annuelles, indicateurs | |
+| Vorschau | aperçu | |
+| Prüfung, Fehler, Hinweis | contrôle, erreur, avertissement / remarque | |
+| Optimierung, Ziel, Nebenbedingung | optimisation, objectif, contrainte | |
+| Einstellungen | paramètres | Menü «Paramètres…» |
+| Hilfe, Handbuch, Erste Schritte | aide, manuel, premiers pas | |
+| Tastenkürzel | raccourcis clavier | |
+| Ansicht → Sprache | Affichage → Langue | |
+| wie System | comme le système | Sprachwahl |
+| Welt (JST), Schweiz (JST) | Monde (JST), Suisse (JST) | Indizes |
+| Eidgenossenschaft 10 Jahre / kurzfristig | Confédération 10 ans / court terme | Indizes |

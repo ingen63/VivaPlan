@@ -48,8 +48,8 @@ const lang = page => page.locator("html").getAttribute("data-language");
 
 test.describe("Multilingual user interface (#170)", () => {
   test("AK7: with another system language the user interface falls back to German", async ({ browser }) => {
-    // #172: English has its own table since then, so only languages without a table fall back
-    for (const locale of ["fr-FR", "ja-JP", "pt-BR"]) {
+    // #172, #174: English and French have their own tables since then, so only languages without a table fall back
+    for (const locale of ["es-ES", "ja-JP", "pt-BR"]) {
       const ctx = await browser.newContext({ locale });
       const page = await ctx.newPage();
       const errors = [];
@@ -339,7 +339,7 @@ test.describe("English user interface (#172)", () => {
     // Settings
     await page.evaluate(() => command("settings"));
     await expect(page.locator("#set-language")).toHaveValue("system");
-    await expect(page.locator("#set-language option")).toHaveText(["as system", "Deutsch", "English"]);
+    await expect(page.locator("#set-language option")).toHaveText(["as system", "Deutsch", "English", "Français"]);
     await expect(page.locator("body")).toContainText("Apply to all plans on this device and are not saved in the plan file.");
     await noErrors(page, errors);
     await ctx.close();
@@ -434,9 +434,10 @@ test.describe("Help in the chosen language (#173)", () => {
 
   test("AK2: a chapter missing in the language and a language without help fall back to German", async ({ page }) => {
     await page.route("**/hilfe/en/00-einstieg.md", r => r.fulfill({ status: 404, body: "" }));
-    await page.route("**/i18n/languages.json", r => r.fulfill({ json: { de: "Deutsch", en: "English", fr: "Français" } }));
-    await page.route("**/i18n/fr.json", async r => {
-      const de = await (await r.fetch({ url: r.request().url().replace("fr.json", "de.json") })).json();
+    // #174: French has its own help since then, so the language without help is a pseudo language «xx»
+    await page.route("**/i18n/languages.json", r => r.fulfill({ json: { de: "Deutsch", en: "English", xx: "Xx" } }));
+    await page.route("**/i18n/xx.json", async r => {
+      const de = await (await r.fetch({ url: r.request().url().replace("xx.json", "de.json") })).json();
       r.fulfill({ json: Object.fromEntries(Object.entries(de).map(([k, v]) => [k, MARK + v])) });
     });
     const errors = await open(page);
@@ -444,10 +445,10 @@ test.describe("Help in the chosen language (#173)", () => {
     await page.evaluate(() => Help.show("start"));
     await expect(helpTitle(page)).toHaveText("Was VivaPlan kann");
     expect(await page.evaluate(() => Help.language())).toBe("en");
-    await page.evaluate(() => I18n.use("fr"));
+    await page.evaluate(() => I18n.use("xx"));
     await page.evaluate(() => Help.show("disclaimer"));
     await expect(helpTitle(page)).toHaveText("Haftungsausschluss");
-    expect(await page.evaluate(() => Help.language())).toBe("fr");
+    expect(await page.evaluate(() => Help.language())).toBe("xx");
     await noErrors(page, errors);
   });
 });

@@ -1623,6 +1623,7 @@
   "verdict.rate_mittel": "mittel",
   "verdict.rate_tief": "tief",
   "verdict.real": " in heutiger Kaufkraft",
+  "verdict.successPre": "In",
   "verdict.successTail": ") der Läufe reicht das Vermögen bis {ymShow} (Alter {end}).",
   "verdict.worstDepleted": "Im ungünstigsten Lauf ist das Geld mit Alter {ageStr} aufgebraucht.",
   "wealth.balances": "Bestände per Simulationsstart ({startTxt})",

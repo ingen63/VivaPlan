@@ -2719,7 +2719,7 @@ function verdictHtml(r, sg) {
   } else {
     const s = r.batch.summary, ed = s.earliestDepletion, end = endM(), cls = rateClass(s.successRate);
     weak = cls !== "hoch";
-    lines.push(`In <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", tr(`verdict.rate_${cls}`), tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
+    lines.push(`${tr("verdict.successPre")} <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", tr(`verdict.rate_${cls}`), tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
     if (ed) lines.push(tr("verdict.worstDepleted", { ageStr: ageStr(ym2i(ed[0])) }));
   }
   const next = weak

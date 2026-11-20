@@ -1623,6 +1623,7 @@
   "verdict.rate_mittel": "medium",
   "verdict.rate_tief": "low",
   "verdict.real": " in today's purchasing power",
+  "verdict.successPre": "In",
   "verdict.successTail": ") of runs, wealth lasts until {ymShow} (age {end}).",
   "verdict.worstDepleted": "In the worst run, the money is depleted at age {ageStr}.",
   "wealth.balances": "Balances at simulation start ({startTxt})",
