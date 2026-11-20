@@ -625,3 +625,173 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | wie System | come il sistema | Sprachwahl |
 | Welt (JST), Schweiz (JST) | Mondo (JST), Svizzera (JST) | Indizes |
 | Eidgenossenschaft 10 Jahre / kurzfristig | Confederazione 10 anni / a breve termine | Indizes |
+
+## Übersetzungen
+
+Verbindliche Übersetzung der Fachbegriffe aus Vorsorge, Steuern, Immobilien und Planung in Deutsch, Englisch,
+Französisch und Italienisch (#179, Teil von #62). Die Tabellen gelten für die Oberfläche (`crates/app/ui/i18n/*.json`)
+und die Hilfe (`crates/app/ui/hilfe/*/`). Sie sind die Grundlage der automatischen Prüfung `make i18n-check` (#180)
+und der fachlichen Prüfung (#181, #182). Die Tabellen pro Sprache weiter oben (Oberflächenbegriffe) bleiben die
+Arbeitslisten der Übersetzung; bei Widerspruch gilt dieser Abschnitt.
+
+**Format (maschinell lesbar)**
+
+- Zwei Markdown-Tabellen mit denselben sechs Spalten `DE | EN | FR | IT | Quelle | verbotene Varianten`:
+  «Kürzel» und «Fachbegriffe». Eine Zeile je Begriff, die Kopfzeile ist genau wie hier geschrieben, die zweite Zeile
+  ist der Trenner `|---|…`. Keine Zelle enthält `|`, Markdown-Auszeichnung oder Zeilenumbrüche.
+- In den Sprachspalten stehen die erlaubten Formen, getrennt mit `; `. Die erste Form ist die bevorzugte, weitere
+  Formen sind gleichwertig erlaubt (Kurzform, amtliche Nebenform, Wortverbindung). In der Spalte DE stehen der Begriff
+  und seine deutschen Nebenformen, an denen die Prüfung den Begriff im deutschen Text erkennt.
+- Vergleich: Fachbegriffe ohne Rücksicht auf Gross- und Kleinschreibung als Teilzeichenkette (Mehrzahl und
+  Zusammensetzungen sind damit eingeschlossen); Kürzel mit Gross- und Kleinschreibung als ganzes Wort. Der
+  Apostroph `'` und der typografische Apostroph `’` gelten als gleich. Passen mehrere Begriffe, gilt der längste.
+- Spalte «Quelle»: Angaben getrennt mit `; `, je Angabe ein Kürzel aus der Liste unten mit Artikel und, wo die
+  Quelle nicht alle Sprachen belegt, den belegten Sprachen in Klammern, z. B. `BVG Art. 14 (FR, IT)`. Begriffe ohne
+  amtliche Quelle beginnen mit `keine amtliche Quelle`; fehlt die amtliche Quelle nur für eine Sprache, steht z. B.
+  `EN: keine amtliche Quelle`. Eine Erläuterung folgt nach einem Doppelpunkt.
+- Spalte «verbotene Varianten»: Einträge getrennt mit `; `, je Eintrag `<sprache>: <Form>` mit der Sprache als
+  Kürzel `en`, `fr` oder `it`. Die Form darf im Text dieser Sprache nicht vorkommen (Teilzeichenkette, ohne Rücksicht
+  auf Gross- und Kleinschreibung). Ein einzelnes `-` heisst «keine»; leere Zellen gibt es nicht.
+- Gelesen werden die Tabellen mit `tools/glossary.py` (Funktion `parse`, Aufruf `python3 tools/glossary.py`); das
+  Format prüft `python3 -m unittest discover -s tools -p 'test_glossary.py'` (Spaltenzahl, leere Zellen,
+  Sprachkürzel, Quellen, Mindestbegriffe).
+
+**Quellen** (geprüft am 20.11.2026)
+
+- `AHVG`: Bundesgesetz über die Alters- und Hinterlassenenversicherung, SR 831.10 (fedlex, DE, FR, IT; keine
+  englische Fassung).
+- `BVG`: Bundesgesetz über die berufliche Alters-, Hinterlassenen- und Invalidenvorsorge, SR 831.40 (fedlex, DE, FR,
+  IT; keine englische Fassung).
+- `DBG`: Bundesgesetz über die direkte Bundessteuer, SR 642.11 (fedlex, DE, FR, IT; keine englische Fassung).
+- `StHG`: Bundesgesetz über die Harmonisierung der direkten Steuern der Kantone und Gemeinden, SR 642.14 (fedlex, DE,
+  FR, IT).
+- `ZGB`: Schweizerisches Zivilgesetzbuch, SR 210 (fedlex, DE, FR, IT, EN).
+- `MB 3.01`: Merkblatt 3.01 «Altersrenten und Hilflosenentschädigungen der AHV» der Informationsstelle AHV/IV, Stand
+  1.1.2026 (DE, FR, IT, EN).
+- `MB 3.04`: Merkblatt 3.04 «Flexibler Rentenbezug» der Informationsstelle AHV/IV, Stand 1.1.2026 (DE, FR, IT).
+- `ISO 4217`: Währungscodes.
+
+TERMDAT war für die Recherche nicht erreichbar; die Begriffe sind an den Gesetzestexten und Merkblättern belegt.
+Englisch ist in der Schweiz keine Amtssprache: Wo eine Quelle keine englische Fassung hat, gilt die englische Form
+als Festlegung des Projekts (Regeln im Abschnitt «Englisch (Oberflächenbegriffe)»).
+
+### Kürzel
+
+Kürzel, die unübersetzt bleiben oder nur in die Form der Sprache wechseln. Die englische Oberfläche behält die
+Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
+
+| DE | EN | FR | IT | Quelle | verbotene Varianten |
+|---|---|---|---|---|---|
+| AHV | AHV | AVS | AVS | AHVG Titel (DE, FR, IT); MB 3.01: EN amtlich OASI, in VivaPlan nicht verwendet | fr: AHV; it: AHV |
+| BVG | BVG | LPP | LPP | BVG Titel (DE, FR, IT); EN: keine amtliche Quelle | fr: BVG; it: BVG |
+| PK | PK | CP | CP | keine amtliche Quelle: Kurzform von Pensionskasse | fr: PK; it: PK |
+| 3a | 3a | 3a | 3a | keine amtliche Quelle: Kurzform von Säule 3a | - |
+| CHF | CHF | CHF | CHF | ISO 4217 | - |
+| SNB | SNB | BNS | BNS | keine amtliche Quelle: Eigenname der Schweizerischen Nationalbank | fr: SNB; it: SNB |
+| EU | EU | UE | UE | keine amtliche Quelle | fr: EU; it: EU |
+| SARON | SARON | SARON | SARON | keine amtliche Quelle: Eigenname | - |
+| JST | JST | JST | JST | keine amtliche Quelle: Eigenname | - |
+| VPW | VPW | VPW | VPW | keine amtliche Quelle: Eigenname | - |
+| StG | StG | StG | StG | keine amtliche Quelle: Steuergesetz, nur in Verweisen | - |
+
+### Fachbegriffe
+
+| DE | EN | FR | IT | Quelle | verbotene Varianten |
+|---|---|---|---|---|---|
+| Alters- und Hinterlassenenversicherung | old-age and survivors' insurance | assurance-vieillesse et survivants | assicurazione per la vecchiaia e per i superstiti; assicurazione vecchiaia e superstiti | AHVG Titel (DE, FR, IT); MB 3.01 (EN) | - |
+| AHV-Rente; Altersrente | AHV pension; old-age pension | rente AVS; rentes AVS; rente de vieillesse; rentes de vieillesse | rendita AVS; rendite AVS; rendita di vecchiaia; rendite di vecchiaia | MB 3.01 | - |
+| Vorbezug | early withdrawal; drawing early | anticipation; perception anticipée | anticipazione; riscossione anticipata | MB 3.04 (DE, FR, IT); MB 3.01 (EN); AHVG Art. 40 | - |
+| Aufschub | deferral; deferring | ajournement | rinvio | MB 3.04 (DE, FR, IT); MB 3.01 (EN) | - |
+| Plafonierung | cap; capped | plafonnement; plafonné | limitazione; limite massimo | MB 3.01; AHVG Art. 35 | - |
+| Maximalrente | maximum pension | rente maximale | rendita massima | MB 3.01 | - |
+| Ausgleichskasse | compensation office | caisse de compensation | cassa di compensazione | MB 3.01; AHVG | - |
+| Beitragsjahre | contribution years; years of contributions | années de cotisation | anni di contribuzione | MB 3.01 | - |
+| Hinterlassenenrente | survivors' pension | rente de survivants; rentes de survivants | rendita per superstiti; rendite per superstiti | MB 3.01 | - |
+| Witwenrente | widow's pension | rente de veuve | rendita vedovile | keine amtliche Quelle | - |
+| Rentenvorausberechnung | pension forecast | calcul anticipé de la rente | calcolo anticipato della rendita | keine amtliche Quelle: im MB 3.01 nicht belegt | - |
+| Vorsorgeausweis | pension statement; statement | certificat de prévoyance; certificats de prévoyance | certificato di previdenza; certificati di previdenza | keine amtliche Quelle | - |
+| 1. Säule; 2. Säule; 3. Säule | pillar | pilier | pilastro | keine amtliche Quelle | - |
+| berufliche Vorsorge | occupational pension | prévoyance professionnelle | previdenza professionale | BVG Titel (FR, IT); EN: keine amtliche Quelle | - |
+| Vorsorgevermögen | pension assets | avoirs de prévoyance; avoir de prévoyance | averi di previdenza; avere di previdenza | keine amtliche Quelle | - |
+| Pensionskasse | pension fund | caisse de pensions; caisse de pension | cassa pensioni; cassa pensione | BVG (FR, IT); EN: keine amtliche Quelle | - |
+| PK-Rente | PK pension | rente CP; rente de la caisse de pension | rendita CP; rendita della cassa pension | keine amtliche Quelle | - |
+| Altersguthaben | retirement savings | avoir de vieillesse | avere di vecchiaia | BVG Art. 14 (FR, IT); EN: keine amtliche Quelle | fr: capital de vieillesse; it: capitale di vecchiaia |
+| Umwandlungssatz | conversion rate | taux de conversion | aliquota di conversione | BVG Art. 14 (FR, IT); EN: keine amtliche Quelle | en: annuity rate; it: tasso di conversione |
+| Kapitalbezug; Kapitalbezüge | lump-sum withdrawal; lump-sum; lump sum | retrait en capital; retraits en capital; prestation en capital | prelievo del capitale; prelievi di capitale; prestazione in capitale; liquidazione in capitale | BVG Art. 37 (FR, IT); DBG Art. 38 (FR, IT); EN: keine amtliche Quelle | - |
+| Kapitalbezugssteuer; Kapitalsteuer | lump-sum tax | impôt sur les prestations en capital | imposta sulle prestazioni in capitale | DBG Art. 38 (FR, IT); EN: keine amtliche Quelle | en: capital tax; fr: impôt sur le capital; it: imposta sul capitale |
+| Säule 3a | pillar 3a | pilier 3a | pilastro 3a | keine amtliche Quelle | - |
+| gebundene Vorsorge | tied pension provision | prévoyance liée; prévoyance individuelle liée | previdenza vincolata; previdenza individuale vincolata | DBG (FR, IT); EN: keine amtliche Quelle | - |
+| Pensionierung | retirement | retraite | pensionamento | keine amtliche Quelle | - |
+| Haushalt | household | ménage | economia domestica | keine amtliche Quelle | it: nucleo familiare |
+| Ehepaar; verheiratet; Verheiratete | married; couple | marié; couple | coniugi; coniugati; coppia sposata; coppie sposate | MB 3.01 | - |
+| Erwerbseinkommen | earned income | revenu de l'activité lucrative; activité lucrative | reddito da attività lucrativa; attività lucrativa | keine amtliche Quelle | - |
+| Lebenshaltungskosten; Lebenshaltung | living expenses | coût de la vie | costo della vita | keine amtliche Quelle | - |
+| Erbschaft | inheritance | succession; héritage | eredità; successione | DBG (FR, IT); EN: keine amtliche Quelle | - |
+| Teuerung | inflation | renchérissement; inflation | rincaro; inflazione | DBG Art. 39 (FR, IT); EN: keine amtliche Quelle | - |
+| Landesindex der Konsumentenpreise; Landesindex | consumer price index; CPI | indice suisse des prix à la consommation; indice des prix à la consommation | indice nazionale dei prezzi al consumo; indice nazionale | keine amtliche Quelle | - |
+| Vermögen | wealth | fortune | sostanza | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | fr: patrimoine; it: patrimonio |
+| Einkommenssteuer | income tax | impôt sur le revenu | imposta sul reddito | DBG Art. 1 (FR, IT); StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
+| Vermögenssteuer | wealth tax | impôt sur la fortune; sur la fortune | imposta sulla sostanza; sulla sostanza | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | en: property tax; it: imposta patrimoniale |
+| Grundstückgewinnsteuer | property gains tax; property gains | impôt sur les gains immobiliers; gains immobiliers | imposta sugli utili immobiliari; utili immobiliari; utili da sostanza immobiliare | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | en: capital gains tax; fr: impôt sur la plus-value |
+| Eigenmietwert | imputed rental value | valeur locative | valore locativo | DBG Art. 21 (FR, IT); EN: keine amtliche Quelle | en: own rental value |
+| Steuerfuss | tax multiplier | coefficient d'impôt | moltiplicatore d'imposta | keine amtliche Quelle | - |
+| Steuertabelle | tax table | barème | tabella delle aliquote; tabelle delle aliquote; tabella fiscale; tabelle fiscali | keine amtliche Quelle | - |
+| Steuersatz | tax rate; rate | taux | aliquota | keine amtliche Quelle | - |
+| Grenzsteuersatz | marginal tax rate | taux marginal | aliquota marginale | keine amtliche Quelle | - |
+| Kanton | canton | canton | cantone; cantoni; cantonale; cantonali | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
+| Gemeinde | municipality | commune | comune | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
+| Besitzdauer | holding period | durée de possession | durata di possesso | keine amtliche Quelle | - |
+| Steuerjahr | tax year | année fiscale | anno fiscale | keine amtliche Quelle: DBG spricht von Steuerperiode | - |
+| Immobilie | property; properties; real estate | bien immobilier; immobilier; immobilière | immobile; immobili | keine amtliche Quelle | - |
+| Hypothek | mortgage | hypothèque; hypothécaire | ipoteca; ipoteche; ipotecari; ipotecaria | ZGB Art. 824 | en: hypothec |
+| Anschlusshypothek | follow-up mortgage | hypothèque subséquente | ipoteca successiva | keine amtliche Quelle | - |
+| Festhypothek | fixed | taux fixe | fissa; fisso | keine amtliche Quelle | - |
+| Hypothekarzins | mortgage interest | intérêts hypothécaires; intérêt hypothécaire; taux hypothécaire | interessi ipotecari; interesse ipotecario; tasso ipotecario | keine amtliche Quelle | - |
+| Amortisation | amortization | amortissement | ammortamento | keine amtliche Quelle: Begriff der Banken | en: amortisation |
+| Belehnung | loan-to-value | taux d'avance | grado d'anticipo | keine amtliche Quelle: Begriff der Banken | - |
+| Tragbarkeit | affordability | capacité financière | sostenibilità | keine amtliche Quelle: Begriff der Banken | - |
+| kalkulatorischer Zins | imputed interest rate | taux d'intérêt théorique | tasso d'interesse teorico | keine amtliche Quelle: Begriff der Banken | - |
+| Eigenmittel | equity | fonds propres | fondi propri | keine amtliche Quelle | - |
+| Nebenkosten | fixed costs | frais accessoires | spese accessorie | keine amtliche Quelle | - |
+| Marktwert | market value | valeur vénale | valore venale | keine amtliche Quelle | - |
+| Verkaufserlös; Nettoerlös | proceeds | produit | ricavo; ricavi | keine amtliche Quelle | - |
+| Notverkauf | emergency sale | vente forcée | vendita forzata | keine amtliche Quelle | - |
+| Aktien | stocks; stock | actions | azioni; azionario; azionaria; azionari | keine amtliche Quelle | - |
+| Obligationen | bonds; bond | obligations; obligataire | obbligazioni; obbligazionario | keine amtliche Quelle | - |
+| Aktienanteil; Aktienquote | stock allocation | part d'actions; quote-part d'actions | quota azionaria | keine amtliche Quelle | - |
+| Anlagestrategie | investment strategy | stratégie de placement | strategia d'investimento | keine amtliche Quelle | - |
+| Realrendite | real return | rendement réel | rendimento reale | keine amtliche Quelle | - |
+| Rendite | return; yield | rendement | rendimento; rendimenti | keine amtliche Quelle | - |
+| Volatilität; Schwankung | volatility; fluctuation | volatilité; fluctuation | volatilità | keine amtliche Quelle | - |
+| Korrelation | correlation | corrélation | correlazione | keine amtliche Quelle | - |
+| Rebalancing | rebalancing | rééquilibrage | ribilanciamento | keine amtliche Quelle | - |
+| Währungsabsicherung | currency hedging | couverture de change | copertura valutaria | keine amtliche Quelle | - |
+| Sequenzrisiko | sequence risk | risque de séquence | rischio di sequenza | keine amtliche Quelle | - |
+| Bootstrap | bootstrap | bootstrap | bootstrap | keine amtliche Quelle: Fachbegriff der Statistik | - |
+| Zeitreihe | time series | série temporelle | serie temporale | keine amtliche Quelle | - |
+| Cash-Reserve | cash reserve | réserve de cash | riserva di cash | keine amtliche Quelle | - |
+| Entnahmestrategie | withdrawal strategy | stratégie de prélèvement | strategia di prelievo | keine amtliche Quelle | - |
+| Entnahmerate | withdrawal rate | taux de prélèvement | tasso di prelievo | keine amtliche Quelle | - |
+| Entnahme | withdrawal | prélèvement | prelievo | keine amtliche Quelle | - |
+| Leitplanke | guardrail | garde-fou | guardrail | keine amtliche Quelle | - |
+| Variable Prozententnahme | variable percentage withdrawal | prélèvement en pourcentage variable | prelievo percentuale variabile | keine amtliche Quelle | - |
+| 3-Topf-Strategie | 3-bucket strategy | stratégie à 3 compartiments | strategia a 3 comparti | keine amtliche Quelle | - |
+| Topf | bucket | compartiment | comparto; comparti | keine amtliche Quelle | - |
+| Auffüllung | refill | réalimentation | rifornimento; rifornimenti | keine amtliche Quelle | - |
+| Konsum | consumption | consommation | consumo | keine amtliche Quelle | - |
+| Monte-Carlo | Monte Carlo | Monte-Carlo; Monte Carlo | Monte Carlo | keine amtliche Quelle: Fachbegriff der Statistik | - |
+| Monte-Carlo-Erfolgsquote; Erfolgsquote | success rate | taux de réussite | tasso di successo | keine amtliche Quelle | - |
+| Ruinwahrscheinlichkeit | probability of ruin | probabilité de ruine | probabilità di rovina | keine amtliche Quelle | - |
+| Erschöpfung | depletion | épuisement | esaurimento | keine amtliche Quelle | - |
+| Perzentil | percentile | percentile | percentile; percentili | keine amtliche Quelle | - |
+| Median | median | médiane | mediana; mediano | keine amtliche Quelle | - |
+| Einzellauf | single run | simulation unique; simulations uniques | simulazione singola; simulazioni singole | keine amtliche Quelle | - |
+| Pfad | path | trajectoire | percorso; percorsi | keine amtliche Quelle | - |
+| Szenario | scenario | scénario | scenario | keine amtliche Quelle | - |
+| in heutigen Preisen | in today's prices | aux prix actuels | ai prezzi attuali | keine amtliche Quelle | - |
+| heutige Kaufkraft | today's purchasing power | pouvoir d'achat actuel | potere d'acquisto attuale | keine amtliche Quelle | - |
+| Optimierung | optimization | optimisation | ottimizzazione | keine amtliche Quelle | en: optimisation |
+| Nebenbedingung | constraint | contrainte | vincolo; vincoli | keine amtliche Quelle | - |
+| Meilenstein | milestone | jalon | tappa; tappe | keine amtliche Quelle | - |
+| Planungsalter | planning age | âge de planification | età di pianificazione | keine amtliche Quelle | - |
+| Simulation | simulation | simulation | simulazione; simulazioni | keine amtliche Quelle | - |
