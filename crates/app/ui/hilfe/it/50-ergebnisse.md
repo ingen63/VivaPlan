@@ -164,7 +164,7 @@ La scheda **«Parametri»** mostra **in sola lettura** con quali dati è stato c
 ## @r-events Eventi
 Parole chiave: elenco, acquisto, vendita, vendita forzata, pensionamento, esaurimento
 
-L’elenco di tutti gli **eventi** di una simulazione con data ed età: pensionamento, inizio AVS, prelievo del capitale con imposta sul capitale, acquisti e vendite di immobili (anche **vendite forzate**), periodi ipotecari, il **passaggio dall’ammortamento indiretto a quello diretto** all’inizio della rendita AVS, il **rimborso unico** all’acquisto se l’ipoteca deve essere ridotta per la sostenibilità, versamento del 3a, importi unici e l’**esaurimento** della sostanza. Le **registrazioni della strategia a 3 comparti** (rifornimenti, entrate, riservazioni di ricavi di vendita) non figurano in questo elenco, ma si possono aprire nei [valori annuali](#r-table); i messaggi della fase di deficit («tutti i comparti vuoti») restano qui.
+L’elenco di tutti gli **eventi** di una simulazione con data ed età: pensionamento, inizio AVS, prelievo del capitale con imposta sulle prestazioni in capitale, acquisti e vendite di immobili (anche **vendite forzate**), periodi ipotecari, il **passaggio dall’ammortamento indiretto a quello diretto** all’inizio della rendita AVS, il **rimborso unico** all’acquisto se l’ipoteca deve essere ridotta per la sostenibilità, versamento del 3a, importi unici e l’**esaurimento** della sostanza. Le **registrazioni della strategia a 3 comparti** (rifornimenti, entrate, riservazioni di ricavi di vendita) non figurano in questo elenco, ma si possono aprire nei [valori annuali](#r-table); i messaggi della fase di deficit («tutti i comparti vuoti») restano qui.
 
 Tutti gli importi figurano **con la valuta** (valuta del progetto).
 

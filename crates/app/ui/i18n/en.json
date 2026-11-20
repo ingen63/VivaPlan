@@ -1130,7 +1130,7 @@
   "pillar3a.intro": "Tied pension provision per person: balance, contribution and payout plan. Indirect amortization of a mortgage flows into this account until the start of the AHV pension.",
   "pillar3a.maxHint": "The maximum contribution ({pillar3aMax} per year, together with indirect amortization) can be changed in the <a href=\"#\" data-action=\"settings\">settings</a>.",
   "pillar3a.none": "No 3a account entered.",
-  "pillar3a.payoutHint": "Payouts at the earliest 5 years before the start of the AHV pension (from {earliest}); without an amount, the whole balance is paid out. The remainder is paid out at the latest in the month the AHV pension starts. Each payout is a lump-sum withdrawal (lump-sum tax, added to the pension fund lump sum in the same year). “Repay mortgage” is only available with a tranche with indirect amortization into this account.",
+  "pillar3a.payoutHint": "Payouts at the earliest 5 years before the start of the AHV pension (from {earliest}); without an amount, the whole balance is paid out. The remainder is paid out at the latest in the month the AHV pension starts. Each payout is a lump-sum withdrawal (lump-sum tax, added to the PK lump sum in the same year). “Repay mortgage” is only available with a tranche with indirect amortization into this account.",
   "pillar3a.payoutPlan": "Payout plan",
   "pillar3a.person": "Person ",
   "pillar3a.preview": "Preview {ymShow}: {text}",

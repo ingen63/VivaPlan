@@ -645,6 +645,9 @@ Arbeitslisten der Übersetzung; bei Widerspruch gilt dieser Abschnitt.
 - Vergleich: Fachbegriffe ohne Rücksicht auf Gross- und Kleinschreibung als Teilzeichenkette (Mehrzahl und
   Zusammensetzungen sind damit eingeschlossen); Kürzel mit Gross- und Kleinschreibung als ganzes Wort. Der
   Apostroph `'` und der typografische Apostroph `’` gelten als gleich. Passen mehrere Begriffe, gilt der längste.
+  In den Zielsprachen darf jedes Wort ab vier Buchstaben am Ende um bis zu drei Buchstaben abweichen (Mehrzahl,
+  Angleichung: «séries temporelles» erfüllt «série temporelle»). Verbotene Varianten folgen der Regel ihrer Tabelle.
+  Text in Code-Schreibweise (`…`), Platzhalter und Link-Ziele zählen nicht.
 - Spalte «Quelle»: Angaben getrennt mit `; `, je Angabe ein Kürzel aus der Liste unten mit Artikel und, wo die
   Quelle nicht alle Sprachen belegt, den belegten Sprachen in Klammern, z. B. `BVG Art. 14 (FR, IT)`. Begriffe ohne
   amtliche Quelle beginnen mit `keine amtliche Quelle`; fehlt die amtliche Quelle nur für eine Sprache, steht z. B.

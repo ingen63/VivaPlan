@@ -115,7 +115,7 @@ L’aliquota di conversione stabilisce quanta **rendita annua** riceve per ogni 
 Con la parte scenari può far variare il prelievo del capitale (vedi [Scenari](#f-sweep)).
 
 ## @f-pk-lumpsum Quota del prelievo del capitale
-Parole chiave: prelievo del capitale, rendita, imposta sul capitale, versamento unico
+Parole chiave: prelievo del capitale, rendita, imposta sulle prestazioni in capitale, versamento unico
 
 La quota dell’avere di vecchiaia versata al pensionamento **come capitale**. 0 % significa ‹interamente come rendita›, 100 % ‹interamente come capitale›.
 
@@ -135,7 +135,7 @@ Parole chiave: rendita, riscossione, rincaro, indice, 1° pilastro, anni di cont
 Con due persone coniugate esiste un limite superiore per entrambe le rendite insieme, vedi [Seconda persona e regole per coppie sposate](#f-couple).
 
 ## @f-couple Seconda persona e regole per coppie sposate
-Parole chiave: coppia sposata, coniugati, plafonamento, 150 percento, partner, doppio reddito
+Parole chiave: coppia sposata, coniugati, limitazione, 150 percento, partner, doppio reddito
 
 Con «+ Seconda persona» registra un’economia domestica con due persone.
 
@@ -209,7 +209,7 @@ Quanti **mesi di spese non coperte** (spese meno redditi e rendite) vengono tenu
 - Sensato in modo dipendente dal tempo: ad esempio 6 mesi fino al pensionamento e 12 mesi dopo.
 
 ## @s-taxes Imposte
-Parole chiave: imposta sul reddito, imposta sulla sostanza, imposta sul capitale, moltiplicatore d’imposta, tabella
+Parole chiave: imposta sul reddito, imposta sulla sostanza, imposta sulle prestazioni in capitale, moltiplicatore d’imposta, tabella
 
 Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale del Suo cantone. Tra gli scaglioni si **interpola linearmente**, l’aliquota viene moltiplicata per il [moltiplicatore d’imposta](#f-tax-multiplier).
 
@@ -240,9 +240,9 @@ Sono disponibili due modelli: **Zurigo** (tariffa a scaglioni con maggiorazioni 
 4. **Riduzione fissa:** una deduzione supplementare in percentuale, indipendente dalla durata di possesso. Nei modelli è impostata a 0.
 5. **Moltiplicatore d’imposta:** con l’opzione «Moltiplicare per il moltiplicatore d’imposta» l’imposta viene inoltre moltiplicata per il moltiplicatore d’imposta di cantone e comune (standard: disattivato).
 
-**Modello Cantone Zurigo** (tariffa § 225 LT, stato 09/2025): scaglioni 10 % (primi 4'000), 15 % (6'000), 20 % (8'000), 25 % (12'000), 30 % (20'000), 35 % (50'000), 40 % oltre. Maggiorazione del 50 % con durata di possesso inferiore a 1 anno, del 25 % inferiore a 2 anni. Riduzione da 5 anni interi del 5 %, poi 3 punti percentuali in più all’anno fino al 50 % da 20 anni. Gli utili inferiori a 5'000 sono esenti da imposta. Il moltiplicatore d’imposta agisce solo se l’opzione sopra è attivata.
+**Modello Cantone Zurigo** (tariffa § 225 StG, stato 09/2025): scaglioni 10 % (primi 4'000), 15 % (6'000), 20 % (8'000), 25 % (12'000), 30 % (20'000), 35 % (50'000), 40 % oltre. Maggiorazione del 50 % con durata di possesso inferiore a 1 anno, del 25 % inferiore a 2 anni. Riduzione da 5 anni interi del 5 %, poi 3 punti percentuali in più all’anno fino al 50 % da 20 anni. Gli utili inferiori a 5'000 sono esenti da imposta. Il moltiplicatore d’imposta agisce solo se l’opzione sopra è attivata.
 
-**Modello Cantone Argovia** (§ 109 LT): nel **modello Argovia** vale, invece degli scaglioni, un’**aliquota diretta sull’intero utile**, dipendente dalla durata di possesso in anni interi: 40 % nel primo anno di possesso, poi ogni anno 2 punti percentuali in meno fino al 20 % nell’undicesimo anno di possesso, poi 1 punto percentuale in meno all’anno fino al 6 % nel 25° anno di possesso e 5 % da 25 anni interi. Senza data d’acquisto vale l’aliquota più alta, e l’app avvisa.
+**Modello Cantone Argovia** (§ 109 StG): nel **modello Argovia** vale, invece degli scaglioni, un’**aliquota diretta sull’intero utile**, dipendente dalla durata di possesso in anni interi: 40 % nel primo anno di possesso, poi ogni anno 2 punti percentuali in meno fino al 20 % nell’undicesimo anno di possesso, poi 1 punto percentuale in meno all’anno fino al 6 % nel 25° anno di possesso e 5 % da 25 anni interi. Senza data d’acquisto vale l’aliquota più alta, e l’app avvisa.
 
 Per un altro cantone adegui le tabelle. I valori si trovano nel foglio delle tariffe dell’amministrazione cantonale delle contribuzioni. Li verifichi prima dell’uso, il modello è uno stato e non una consulenza fiscale.
 

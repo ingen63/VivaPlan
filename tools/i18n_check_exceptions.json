@@ -1,0 +1,232 @@
+{
+  "identical": [
+    {
+      "langs": [
+        "en",
+        "fr",
+        "it"
+      ],
+      "words": [
+        "Bootstrap",
+        "Endowment",
+        "Guardrails",
+        "Shiller",
+        "Yale",
+        "Tobin"
+      ],
+      "reason": "Eigennamen von Verfahren, Strategien und Personen; in allen Sprachen unübersetzt"
+    },
+    {
+      "langs": [
+        "en",
+        "fr",
+        "it"
+      ],
+      "words": [
+        "OK",
+        "Cash",
+        "Standard",
+        "Tranche"
+      ],
+      "reason": "Fremdwörter, die die Übersetzung bewusst übernimmt; fachliche Prüfung in #181 und #182"
+    },
+    {
+      "langs": [
+        "en"
+      ],
+      "words": [
+        "Hist",
+        "In",
+        "Inflation",
+        "Linear",
+        "Liquid",
+        "Median",
+        "Name",
+        "Nominal",
+        "Optimum",
+        "Parameter",
+        "Person",
+        "Ruin",
+        "Simulation",
+        "Start",
+        "Total",
+        "Variation",
+        "Version",
+        "Website"
+      ],
+      "reason": "Englische Wörter, die gleich geschrieben werden wie die deutschen"
+    },
+    {
+      "langs": [
+        "fr"
+      ],
+      "words": [
+        "Hist",
+        "Inflation",
+        "Nominal",
+        "Optimum",
+        "Simulation",
+        "Total",
+        "Variation",
+        "Version"
+      ],
+      "reason": "Französische Wörter, die gleich geschrieben werden wie die deutschen"
+    }
+  ],
+  "findings": [
+    {
+      "file": "crates/app/ui/i18n/en.json",
+      "where": "engine.pillar3a_payout_same_year_as_pk",
+      "check": "terms",
+      "subject": "PK",
+      "reason": "Der englische Text der Meldung muss dem Rechenkern gleichen (crates/engine/src/message.rs, #176); «PK lump sum» braucht eine Änderung im Rechenkern, Prüfung in #181"
+    },
+    {
+      "file": "crates/app/ui/i18n/fr.json",
+      "where": "strat.bucketsGuardShort",
+      "check": "terms",
+      "subject": "Topf",
+      "reason": "Kurzbezeichnung «3 comp. + Guard»; «comp.» kürzt «compartiment» ab"
+    },
+    {
+      "file": "crates/app/ui/hilfe/en/00-einstieg.md",
+      "where": "§disclaimer",
+      "check": "terms",
+      "subject": "Vermögen",
+      "reason": "«Vermögensverluste» heisst «financial losses», nicht das Vermögen der Planung"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/00-einstieg.md",
+      "where": "§disclaimer",
+      "check": "terms",
+      "subject": "Vermögen",
+      "reason": "«Vermögensverluste» heisst «perdite patrimoniali», nicht das Vermögen der Planung"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/00-einstieg.md",
+      "where": "§bedienung",
+      "check": "terms",
+      "subject": "Pfad",
+      "reason": "«Dateipfad» ist der Pfad einer Datei (chemin), nicht der Renditepfad"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/00-einstieg.md",
+      "where": "§privacy",
+      "check": "terms",
+      "subject": "Pfad",
+      "reason": "«Pfad der zuletzt geöffneten Datei» ist ein Dateipfad (chemin), nicht der Renditepfad"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/10-editor.md",
+      "where": "§s-pillar3a",
+      "check": "values",
+      "subject": "number",
+      "reason": "«abgerundet auf 1 000» steht als «arrondi au millier inférieur» in Worten"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/10-editor.md",
+      "where": "§s-pillar3a",
+      "check": "terms",
+      "subject": "Ehepaar",
+      "reason": "«unverheirateten Paaren» enthält «verheiratet»; die Übersetzung meint unverheiratete Paare"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/10-editor.md",
+      "where": "§f-pk-lumpsum",
+      "check": "terms",
+      "subject": "Ehepaar",
+      "reason": "«unverheirateten Paaren» enthält «verheiratet»; die Übersetzung meint unverheiratete Paare"
+    },
+    {
+      "file": "crates/app/ui/hilfe/en/20-renditen.md",
+      "where": "§ret-data",
+      "check": "terms",
+      "subject": "Konsum",
+      "reason": "«Konsumentenpreise» heisst «consumer prices», nicht der Konsum der Optimierung"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/20-renditen.md",
+      "where": "§ret-pitfalls",
+      "check": "values",
+      "subject": "number",
+      "reason": "«20. Jahrhundert» steht als «XXe siècle» (römische Zahl, üblich)"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/20-renditen.md",
+      "where": "§ret-pitfalls",
+      "check": "values",
+      "subject": "number",
+      "reason": "«20. Jahrhundert» steht als «XX secolo» (römische Zahl, üblich)"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/20-renditen.md",
+      "where": "§f-ret-series",
+      "check": "terms",
+      "subject": "Volatilität",
+      "reason": "«Schwankung» ist hier nicht die Volatilität der Renditen (variazione, oscillazione); das Glossar nennt für IT nur «volatilità». Prüfung in #181"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/30-entnahme.md",
+      "where": "§wd-compare",
+      "check": "terms",
+      "subject": "Volatilität",
+      "reason": "«Schwankung» ist hier nicht die Volatilität der Renditen (variazione, oscillazione); das Glossar nennt für IT nur «volatilità». Prüfung in #181"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/40-optimierung.md",
+      "where": "§o-pitfalls",
+      "check": "terms",
+      "subject": "Volatilität",
+      "reason": "«Schwankung» ist hier nicht die Volatilität der Renditen (variazione, oscillazione); das Glossar nennt für IT nur «volatilità». Prüfung in #181"
+    },
+    {
+      "file": "crates/app/ui/hilfe/en/60-referenz.md",
+      "where": "§ref-library",
+      "check": "terms",
+      "subject": "CHF",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/hilfe/en/60-referenz.md",
+      "where": "§ref-library",
+      "check": "terms",
+      "subject": "Obligationen",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/hilfe/en/60-referenz.md",
+      "where": "§ref-library",
+      "check": "values",
+      "subject": "CHF",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/60-referenz.md",
+      "where": "§ref-library",
+      "check": "terms",
+      "subject": "CHF",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/60-referenz.md",
+      "where": "§ref-library",
+      "check": "terms",
+      "subject": "Obligationen",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/60-referenz.md",
+      "where": "§ref-library",
+      "check": "values",
+      "subject": "CHF",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/hilfe/it/60-referenz.md",
+      "where": "§ref-library",
+      "check": "terms",
+      "subject": "Obligationen",
+      "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    }
+  ]
+}

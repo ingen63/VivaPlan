@@ -56,6 +56,21 @@ des Skripts: `python3 -m unittest discover -s tools -p 'test_check_ui_texts.py'`
 Pseudo-Sprache (alle Texte mit «Ⓔ» markiert); die übrigen Oberflächentests starten ausdrücklich in Deutsch
 (`locale: "de-CH"`, `helpers.open` prüft `lang="de-CH"`).
 
+**Prüfung der Übersetzungen (#180):** `tools/check_i18n.py` (`make i18n-check`, in `make test-quiet` und im Job
+`english`) vergleicht `crates/app/ui/i18n/{en,fr,it}.json` Schlüssel für Schlüssel und `crates/app/ui/hilfe/{en,fr,it}/`
+Abschnitt für Abschnitt (zwischen zwei Überschriften) mit dem Deutschen. Prüfungen: `keys` (gleiche Schlüssel),
+`terms` (Glossarbegriffe aus [`GLOSSAR.md`](GLOSSAR.md#übersetzungen) in der festgelegten Form, keine verbotene
+Variante; gelesen mit `tools/glossary.py`), `values` (Platzhalter, Zahlen, CHF, %; Schweizer Schreibweisen wie
+1'000, 1 000, 6,8 und 6.8 gelten als gleich; in der Hilfe muss jede Zahl des deutschen Abschnitts vorkommen),
+`leftover` (Text gleich dem deutschen; in der Hilfe eine wörtlich übernommene Zeile), `structure` (Überschriften mit
+Anker, Links und Tabellenzeilen je Hilfedatei), `address` (keine Du-Form in FR/IT, keine Anführungszeichen „…“ in
+allen Sprachen) und `length` (mehr als 40 % länger als ein deutscher Text ab 20 Zeichen: nur Hinweis, `--hints`
+listet sie). Jeder Befund nennt Datei, Schlüssel oder Zeile mit Abschnitt, Prüfung und Grund. Unklare Befunde stehen
+mit Begründung in `tools/i18n_check_exceptions.json` (`findings`: Datei, Ort, Prüfung, Gegenstand, Grund;
+`identical`: Wörter, die gleich wie im Deutschen bleiben dürfen, z. B. Eigennamen); eine nicht mehr gebrauchte
+Ausnahme ist selbst ein Befund. Tests des Skripts (ein Fall je Prüfung, mit gestellten Dateien):
+`python3 -m unittest discover -s tools -p 'test_check_i18n.py'`.
+
 **Nächtliche Läufe von Hand starten (#159):** Die nächtlichen Jobs von `test-quality.yml` (`tests-os`, `e2e`,
 `release-golden`, `mutants-diff`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen um 02:17 UTC, nur nach einem neuen
 Commit. GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs

@@ -1,10 +1,11 @@
-.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers
+.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers i18n-check
 test:        ; cargo nextest run --workspace
 # #160: dieselben Tests, aber nur Fehlschläge, langsame Tests und die Zusammenfassung (für Claude Code: wenig Kontext)
 QUIET = --status-level fail --final-status-level slow --hide-progress-bar --cargo-quiet
 # #165: die Sprachprüfung läuft mit, sobald die Übergangsliste in tools/check_english.py leer ist (--gate)
 # #170: keine deutschen Oberflächentexte ausserhalb der Texttabelle
-test-quiet:  ; cargo nextest run --workspace $(QUIET) && ./tools/check-english.sh --gate && python3 tools/check_ui_texts.py
+# #180: Prüfung der Übersetzungen gegen das Deutsche (Längenhinweise nur in make i18n-check)
+test-quiet:  ; cargo nextest run --workspace $(QUIET) && ./tools/check-english.sh --gate && python3 tools/check_ui_texts.py && python3 tools/check_i18n.py
 # #87: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
 # #147: runs.test.js braucht fake-indexeddb (e2e/node_modules)
 ui-unit:     ; [ -d e2e/node_modules/fake-indexeddb ] || (cd e2e && npm ci); node --test e2e/unit/*.test.js
@@ -14,6 +15,9 @@ network-free:; python3 -m unittest discover -s tools -p 'test_check_network_free
 english:     ; python3 -m unittest discover -s tools -p 'test_check_english.py' && ./tools/check-english.sh
 # #170: deutsche Oberflächentexte ausserhalb der Texttabelle (crates/app/ui/i18n/de.json), samt Tests des Skripts
 ui-texts:    ; python3 -m unittest discover -s tools -p 'test_check_ui_texts.py' && python3 tools/check_ui_texts.py
+# #180: Übersetzungen (Glossarbegriffe, Platzhalter und Zahlen, Reste, Aufbau der Hilfe, Anrede, Länge) gegen das
+# Deutsche; Ausnahmen in tools/i18n_check_exceptions.json, samt Tests des Skripts
+i18n-check:  ; python3 -m unittest discover -s tools -p 'test_check_i18n.py' && python3 tools/check_i18n.py --hints
 # #176/AK2: Golden-Dateien gegenüber BASE (Vorgabe HEAD) ohne Textfelder vergleichen, samt Tests des Skripts
 golden-numbers:; python3 -m unittest discover -s tools -p 'test_golden_numbers.py' && python3 tools/golden_numbers.py --base $${BASE:-HEAD}
 # #88: wie im Workflow, Warnungen sind Fehler
