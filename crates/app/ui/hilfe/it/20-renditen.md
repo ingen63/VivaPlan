@@ -103,12 +103,12 @@ L’app calcola **ogni mese d’inizio possibile** per il quale la serie copre l
 **Punti deboli che dovrebbe conoscere:**
 
 - Le simulazioni **si sovrappongono molto**. Da 104 anni di dati risultano 800 mesi di punti d’inizio, ma solo poco più di **tre periodi di 32 anni davvero indipendenti**. La dispersione viene perciò **sottostimata**, e ‹il 98 % delle simulazioni ha successo› suona più sicuro di quanto sia.
-- Esiste solo **l’unico** passato. Una sequenza peggiore che non si è mai verificata non compare.
+- Esiste **un solo** passato. Una sequenza peggiore che non si è mai verificata non compare.
 - Con periodi di pianificazione lunghi e serie brevi vi sono pochissimi punti d’inizio. Con una serie annuale (ad esempio «Svizzera (JST)», 121 anni) e una pianificazione di 32 anni sono solo circa 90.
 
 Il [bootstrap](#f-ret-bootstrap) elimina in parte questi punti deboli e mostra perciò fasce più ampie. Usi «Tutti i momenti d’inizio storici» come controprova, non come unica fonte.
 
-Il **numero** di simulazioni è indicato nella sezione «Svolgimento».
+Il **numero** di simulazioni è indicato nella sezione «Andamenti mobili».
 
 ## @f-ret-bootstrap Monte Carlo · storico (bootstrap)
 Parole chiave: bootstrap, lunghezza dei blocchi, percorsi, valore iniziale casuale, seed, stazionario, Monte Carlo
@@ -166,7 +166,7 @@ Un **modello azionario con ipotesi proprie o proposte**. I corsi azionari seguon
 - **Valori propri:** non appena modifica uno dei sei valori del modello, i Suoi valori restano, anche cambiando l’indice. Accanto a ogni campo figura allora la proposta per l’indice scelto. Con **«Adottare i valori proposti»** i valori seguono di nuovo l’indice.
 - Le **pianificazioni meno recenti** che calcolavano già in modo parametrico mantengono i loro valori. All’apertura appare una volta un’avvertenza che obbligazioni e inflazione sono ora casuali.
 
-**Obbligazioni e inflazione:** la scheda «Obbligazioni e inflazione» mostra media, dispersione e la correlazione di azioni, obbligazioni e inflazione, calcolate dai valori annuali della stessa serie usata anche dal bootstrap. Dipende dalla combinazione di indice azionario e obbligazionario. Esempi di correlazione azioni/obbligazioni: Mondo con Confederazione 10 anni −0.01, Svizzera con Confederazione 10 anni 0.19, S&P 500 con USA 10 anni 0.45 (entrambi portano il corso del dollaro). Ogni anno civile il modello estrae un valore per obbligazioni e inflazione correlato con il rendimento azionario dello stesso anno. Gli anni sono indipendenti tra loro come nel bootstrap, non esiste una memoria per inflazione o tassi. Senza serie temporale per obbligazioni e inflazione valgono i valori fissi.
+**Obbligazioni e inflazione:** la scheda «Obbligazioni e inflazione» mostra media, dispersione e la correlazione di azioni, obbligazioni e inflazione, calcolate dai valori annuali della stessa serie usata anche dal bootstrap. Dipende dalla combinazione di indice azionario e obbligazionario. Esempi di correlazione azioni/obbligazioni: Mondo con Confederazione 10 anni −0.01, Svizzera con Confederazione 10 anni 0.19, S&P 500 con USA 10 anni 0.45 (entrambi sono esposti al cambio del dollaro). Ogni anno civile il modello estrae un valore per obbligazioni e inflazione correlato con il rendimento azionario dello stesso anno. Gli anni sono indipendenti tra loro come nel bootstrap, non esiste una memoria per inflazione o tassi. Senza serie temporale per obbligazioni e inflazione valgono i valori fissi.
 
 **Matematica in breve:** il rendimento logaritmico per giorno è (μ − σ²/2)·dt + σ·√dt·Z. Z è uno shock con **distribuzione t di Student**, scalato a varianza 1. A ciò si aggiungono **salti di Poisson** con il tasso «Salti di corso all’anno» e ampiezza log-normale. Obbligazioni e inflazione di un anno hanno distribuzione normale con media e dispersione della serie; la loro dipendenza dal rendimento logaritmico standardizzato delle azioni è scelta in modo che la correlazione con il rendimento azionario corrisponda alla serie.
 
@@ -228,7 +228,7 @@ Ulteriori informazioni: [Fonti dei dati e loro particolarità](#ret-data).
 ## @f-ret-extrapolation Estrapolazione della serie
 Parole chiave: fine della serie, media, fisso, estrapolare
 
-Se la serie temporale termina prima della fine della simulazione (ad esempio «Storico dal 2000» con pianificazione fino al 2058), l’app deve riempire gli anni mancanti. Il **metodo** lo stabilisce qui:
+Se la serie temporale termina prima della fine della simulazione (ad esempio «Storico dal 2000» con pianificazione fino al 2058), l’app deve colmare gli anni mancanti. Il **metodo** lo stabilisce qui:
 
 - **Valori fissi:** valgono i rendimenti fissi della sezione «Rendimenti fissi».
 - **Media mobile:** ogni valore mancante è la media (aritmetica) degli ultimi *n* anni. La finestra scorre e con il tempo contiene anche i valori già estrapolati. L’estrapolazione converge perciò verso una media tranquilla.
@@ -276,10 +276,10 @@ Parole chiave: Shiller, BNS, Pictet, media mensile, obbligazioni, valuta
 Parole chiave: errori, prudenza, survivorship, mercato domestico, eccessivo ottimismo, rischio di sequenza, valuta
 
 - **Il passato non è una previsione.** Nel XX secolo la borsa USA è stata un mercato straordinariamente di successo. Le serie con azioni USA contengono questo successo e possono essere troppo ottimistiche (‹survivorship›). Ciò vale anche per «Mondo (JST)», che contiene solo Paesi che esistono ancora oggi. Verifichi il piano anche con rendimenti più bassi (parametrico con μ = dal 4 % al 5 %) o con azioni svizzere.
-- **I periodi sovrapposti simulano sicurezza.** Vedi [Tutti i momenti d’inizio storici](#f-ret-rolling): pochi periodi indipendenti, ma centinaia di simulazioni.
+- **I periodi sovrapposti danno un’illusione di sicurezza.** Vedi [Tutti i momenti d’inizio storici](#f-ret-rolling): pochi periodi indipendenti, ma centinaia di simulazioni.
 - **Una lunghezza dei blocchi troppo corta nel bootstrap** rende i percorsi troppo regolari. Resti a 12 mesi o più.
 - **Rischio di sequenza:** decisivo è **quando** arrivano gli anni negativi. Un crollo nei primi anni del pensionamento agisce molto più fortemente che più tardi. I rendimenti fissi non lo mostrano.
 - **Valuta:** tutti gli indici sono in CHF; una pianificazione in EUR o USD calcola comunque con rendimenti in franchi e rincaro svizzero (avvertenza nella verifica). Anche le serie in CHF con azioni estere portano un rischio valutario. L’apprezzamento del franco negli ultimi decenni ha ridotto il rendimento di un investitore svizzero in azioni USA.
 - **Confondere nominale e reale:** ‹2 milioni alla fine› sono nominali. Al potere d’acquisto attuale è nettamente meno.
-- **Un’unica fonte.** Chi calcola una sola fonte di rendimenti ottiene una risposta **dipendente dal modello**. Calcoli le questioni importanti con bootstrap e modello parametrico.
+- **Un’unica fonte.** Chi calcola con una sola fonte di rendimenti ottiene una risposta **dipendente dal modello**. Calcoli le questioni importanti con bootstrap e modello parametrico.
 - **Mancano i costi.** I veri costi d’investimento (fondi, deposito) riducono il rendimento da qualche decimo fino a un punto percentuale all’anno. Li deduca dai valori fissi o parametrici.

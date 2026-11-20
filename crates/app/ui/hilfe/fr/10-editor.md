@@ -35,16 +35,16 @@ Chaque jalon est défini comme:
 - **Date:** un mois fixe (05.2027)
 - **Âge de:** l’âge d’une personne, par exemple ‹personne 1 à 64.5 ans›. Les décimales sont admises: 64.5 ans correspondent à 64 ans et 6 mois.
 
-La colonne «Donne» montre le mois qui en résulte. **Lors du passage** entre «Date» et «Âge de», la date reste la même: l’âge ou la date de la colonne «Donne» est reporté dans le nouveau champ. Le jalon peut être supprimé avec ‹✕›. **S’il est encore utilisé**, une boîte de dialogue demande confirmation: elle indique le nombre de saisies et les sections, et les remplace lors de la suppression par la **date fixe** (mois/année) du jalon, pour «Âge de» par la date calculée. S’il en résulte une date en double dans une série temporelle, la ligne la plus récente s’applique et un message le signale. Avec «Annuler» (⌘Z), tout peut être annulé. Le **début de la simulation, la fin de la simulation, la prestation de la caisse de pension et le début de la rente AVS** ne peuvent pas être supprimés; le bouton est grisé.
+La colonne «Donne» montre le mois qui en résulte. **Lors du passage** entre «Date» et «Âge de», la date reste la même: l’âge ou la date de la colonne «Donne» est reporté dans le nouveau champ. Le jalon peut être supprimé avec ‹✕›. **S’il est encore utilisé**, une boîte de dialogue demande confirmation: elle indique le nombre de saisies et les sections, et les remplace lors de la suppression par la **date fixe** (mois/année) du jalon, pour «Âge de» par la date calculée. S’il en résulte une date en double dans une série temporelle, la ligne placée en dernier s’applique et un message le signale. Avec «Annuler» (⌘Z), tout peut être annulé. Le **début de la simulation, la fin de la simulation, la prestation de la caisse de pension et le début de la rente AVS** ne peuvent pas être supprimés; le bouton est grisé.
 
-**Anciennes planifications:** si l’un des jalons fixes manque, il est complété à l’ouverture avec 65 ans. Si un âge se situe en dehors des limites, il est fixé à la limite la plus proche. ‹Pensionierung› s’appelle désormais «Prestation de la caisse de pension». Une boîte de dialogue indique chaque modification.
+**Anciennes planifications:** si l’un des jalons fixes manque, il est ajouté à l’ouverture, fixé à 65 ans. Si un âge se situe en dehors des limites, il est fixé à la limite la plus proche. ‹Pensionierung› s’appelle désormais «Prestation de la caisse de pension». Une boîte de dialogue indique chaque modification.
 
 > Fixez délibérément la **fin de la simulation** tard, par exemple à 95 ou 100 ans. Une fin trop précoce rend le résultat meilleur qu’il ne l’est: l’argent ne doit suffire que jusque-là.
 
 ## @s-pension Prévoyance
 Mots-clés: caisse de pension, AVS, 2e pilier, 1er pilier, pilier 3a, rente
 
-Caisse de pension (2e pilier) et AVS (1er pilier), avec deux personnes des cartes propres pour chaque personne. Vous trouvez les chiffres sur le **certificat de prévoyance** de votre caisse de pension et dans le **compte AVS** (extrait de compte ou calcul anticipé de la rente de la caisse de compensation).
+Caisse de pension (2e pilier) et AVS (1er pilier); avec deux personnes, chacune a ses propres cartes. Vous trouvez les chiffres sur le **certificat de prévoyance** de votre caisse de pension et dans le **compte AVS** (extrait de compte ou calcul anticipé de la rente de la caisse de compensation).
 
 - Caisse de pension: [avoir de vieillesse, prestation, retrait en capital, taux de conversion](#f-pk)
 - AVS: [rente et début de la prestation](#f-ahv)
@@ -60,19 +60,19 @@ Le pilier 3a est un compte propre **par personne**, séparé de la caisse de pen
 
 - **Avoir au début de la simulation** et **intérêt / rendement p.a.**
 - **Versement par année:** 0 jusqu’au montant maximal (7 258 francs, modifiable dans les [paramètres](#f-settings)). L’application verse chaque mois un douzième, jusqu’au mois précédant le **début de la rente AVS**. Le versement **compte dans les dépenses**: il apparaît dans «Total des dépenses» des valeurs annuelles, augmente le prélèvement et fait partie du besoin net de la stratégie à 3 compartiments.
-- **Plan de retrait:** lignes composées d’un moment et d’un montant, par exemple 2041 50 000 et 2042 50 000. Vous fixez le **moment** comme pour un jalon, sous forme de **date** (MM.AAAA) ou d’**âge** de la personne à qui appartient le compte (par exemple 61.5 ans). À côté figurent le mois qui en résulte et l’âge. Si vous passez de «Date» à «Âge», le moment reste le même. Sans montant, la totalité de l’avoir est versée. Un versement est possible **au plus tôt 5 ans avant le début de la rente AVS**, également selon l’âge; une entrée antérieure est une erreur au champ. Si un montant dépasse l’avoir, seul l’avoir est versé (remarque dans les événements).
-- **Avoir tiré de l’aperçu:** chaque ligne montre l’**avoir avant le versement** et le **solde ensuite**; sous le plan figure l’avoir versé au début de la rente AVS. Les valeurs proviennent de l’aperçu avec rendements fixes; si la planification contient une erreur, il n’y a pas d’aperçu, et «–» est affiché.
-- **+ Versement** crée une ligne un an après la dernière (sans ligne: au mois le plus précoce admis, 5 ans avant le début de la rente AVS, pas avant le début de la simulation), au plus tard au début de la rente AVS. Le montant proposé est l’avoir à ce moment après les versements antérieurs, arrondi au millier inférieur. Vous pouvez ensuite le modifier librement.
+- **Plan de retrait:** lignes composées d’un moment et d’un montant, par exemple 2041 50 000 et 2042 50 000. Vous fixez le **moment** comme pour un jalon, sous forme de **date** (MM.AAAA) ou d’**âge** de la personne à qui appartient le compte (par exemple 61.5 ans). À côté figurent le mois qui en résulte et l’âge. Si vous passez de «Date» à «Âge», le moment reste le même. Sans montant, la totalité de l’avoir est retirée. Un retrait est possible **au plus tôt 5 ans avant le début de la rente AVS**, également selon l’âge; une entrée antérieure est signalée comme erreur au champ. Si un montant dépasse l’avoir, seul l’avoir est versé (remarque dans les événements).
+- **Avoir tiré de l’aperçu:** chaque ligne montre l’**avoir avant le retrait** et le **solde ensuite**; sous le plan figure l’avoir versé au début de la rente AVS. Les valeurs proviennent de l’aperçu avec rendements fixes; si la planification contient une erreur, il n’y a pas d’aperçu, et «–» est affiché.
+- **+ Retrait** crée une ligne un an après la dernière (sans ligne: au mois le plus précoce admis, 5 ans avant le début de la rente AVS, pas avant le début de la simulation), au plus tard au début de la rente AVS. Le montant proposé est l’avoir à ce moment après les retraits antérieurs, arrondi au millier inférieur. Vous pouvez ensuite le modifier librement.
 - **Solde au début de la rente AVS:** ce qui reste sur le compte est versé **au plus tard le mois du début de la rente AVS**.
 - **Utilisation:** dans la fortune libre ou, s’il existe une tranche avec amortissement indirect sur ce compte, «Rembourser l’hypothèque» (d’abord les tranches avec amortissement indirect).
 
-Chaque versement est une **prestation en capital** soumise à l’impôt sur les prestations en capital. Les retraits de la même année civile (caisse de pension et pilier 3a) sont additionnés pour le taux, pour les couples non mariés par personne.
+Chaque retrait est une **prestation en capital** soumise à l’impôt sur les prestations en capital. Les retraits de la même année civile (caisse de pension et pilier 3a) sont additionnés pour le taux, pour les couples non mariés par personne.
 
-L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusqu’avant le début de la rente AVS (voir [Hypothèques](#f-re-mortgage)). Le versement et l’amortissement indirect ensemble ne devraient pas dépasser le montant maximal par année; sinon, le contrôle affiche un avertissement.
+L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusqu’au mois précédant le début de la rente AVS (voir [Hypothèques](#f-re-mortgage)). Le versement et l’amortissement indirect ensemble ne devraient pas dépasser le montant maximal par année; sinon, le contrôle affiche un avertissement.
 
-> Exemple: naissance 06.1980, avoir de 120 000 sans intérêt, versement à 61.5 ans (donne 12.2041) de 50 000: avoir avant le versement 120 000, solde ensuite 70 000. «+ Versement» propose une ligne à 62.5 ans (12.2042) de 70 000.
+> Exemple: naissance 06.1980, avoir de 120 000 sans intérêt, retrait à 61.5 ans (donne 12.2041) de 50 000: avoir avant le retrait 120 000, solde ensuite 70 000. «+ Retrait» propose une ligne à 62.5 ans (12.2042) de 70 000.
 
-> Exemple: avoir de 120 000, versements en 2041 et 2042 de 50 000 chacun, début de la rente AVS en 2045: le solde de 20 000 (plus les intérêts) est versé le mois du début de la rente AVS. Si le début de la rente AVS est reporté à 2046, le plan reste valable, et le solde est versé en 2046.
+> Exemple: avoir de 120 000, retraits en 2041 et 2042 de 50 000 chacun, début de la rente AVS en 2045: le solde de 20 000 (plus les intérêts) est versé le mois du début de la rente AVS. Si le début de la rente AVS est reporté à 2046, le plan reste valable, et le solde est versé en 2046.
 
 ## @f-settings Paramètres
 Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue
@@ -115,7 +115,7 @@ Le taux de conversion détermine combien de **rente annuelle** vous recevez par 
 Avec la section des scénarios, vous pouvez faire varier le retrait en capital (voir [Scénarios](#f-sweep)).
 
 ## @f-pk-lumpsum Part du retrait en capital
-Mots-clés: retrait en capital, rente, impôt sur les prestations en capital, versement unique
+Mots-clés: retrait en capital, rente, impôt sur les prestations en capital, prestation unique en capital
 
 La part de l’avoir de vieillesse versée **en capital** à la retraite. 0 % signifie ‹entièrement en rente›, 100 % ‹entièrement en capital›.
 
@@ -154,8 +154,8 @@ Montants mensuels. **Les dépenses sont saisies aux prix actuels** et indexées 
 
 - **Revenu net de l’activité lucrative par mois:** ce qui arrive sur votre compte après déductions (AVS, caisse de pension; les impôts sont calculés séparément). Il prend fin lorsque vous le fixez à 0 en fonction du [temps](#f-timed), par exemple ‹dès la prestation de la caisse de pension 0›. La prestation de la caisse de pension n’y met pas fin d’elle-même; s’il est encore supérieur à 0 ensuite, le contrôle affiche un avertissement avec le montant.
 - **Augmente avec le renchérissement** (par personne): si la case est cochée, les montants, y compris chaque ligne d’un revenu dépendant du temps, s’entendent **aux prix actuels** (prix au début de la simulation) et augmentent avec le renchérissement de la trajectoire concernée, exactement comme le coût de la vie. Exemple: 8 000 par mois avec 2 % de renchérissement donnent 8 160 après un an, environ 8 830 après cinq ans. Sans coche, le montant reste nominalement le même. Les nouvelles planifications et une deuxième personne nouvellement ajoutée ont la case cochée; les anciennes planifications sans indication calculent comme jusqu’ici, sans. Les impôts, les valeurs annuelles et la capacité financière utilisent le montant adapté; l’avertissement après la prestation de la caisse de pension indique alors le montant «aux prix du début de la simulation».
-- **Coût de la vie par mois:** tout ce que vous dépensez, **loyer ou frais de logement compris** (intérêts hypothécaires, amortissement, frais accessoires), tel que cela figure sur l’extrait de compte. L’application déduit la **part du logement**, c’est-à-dire les frais de logement du mois de départ tirés de la section [Immobilier](#s-realestate) en moyenne mensuelle (les intérêts et l’amortissement sont payés trimestriellement), indexée au renchérissement, et ce de chaque ligne de la même manière. Le calcul utilise le coût de la vie sans logement plus les frais de logement **simulés**: si l’intérêt change lors d’un renouvellement ou si vous passez à une location après une vente, les dépenses changent en conséquence. Exemple: 8 000 dont 2 000 de frais de logement; après une hausse d’intérêts de 300, les dépenses sont de 8 300, avec un loyer de 2 500, de 8 500. Si une ligne est inférieure à la part du logement, le contrôle signale une erreur. Le versement au [pilier 3a](#s-pillar3a) n’est pas compris. L’application convertit à l’ouverture les anciennes planifications (coût de la vie sans frais de logement); une remarque indique le montant ajouté. Les impôts sont calculés séparément. Une valeur réaliste est le facteur individuel le plus important pour le résultat. Consultez pour cela deux à trois ans d’extraits de compte.
-- **Montants uniques:** date, montant et description. Positif est une entrée (succession, donation), négatif une dépense (voiture, voyage, rénovation).
+- **Coût de la vie par mois:** tout ce que vous dépensez, **loyer ou frais de logement compris** (intérêts hypothécaires, amortissement, frais accessoires), tel que cela figure sur l’extrait de compte. L’application déduit de chaque ligne, de la même manière, la **part du logement**, c’est-à-dire les frais de logement du mois de départ tirés de la section [Immobilier](#s-realestate) en moyenne mensuelle (les intérêts et l’amortissement sont payés trimestriellement), indexée au renchérissement. Le calcul utilise le coût de la vie sans logement plus les frais de logement **simulés**: si l’intérêt change lors d’un renouvellement ou si vous passez à une location après une vente, les dépenses changent en conséquence. Exemple: 8 000 dont 2 000 de frais de logement; après une hausse d’intérêts de 300, les dépenses sont de 8 300, avec un loyer de 2 500, de 8 500. Si une ligne est inférieure à la part du logement, le contrôle signale une erreur. Le versement au [pilier 3a](#s-pillar3a) n’est pas compris. L’application convertit à l’ouverture les anciennes planifications (coût de la vie sans frais de logement); une remarque indique le montant ajouté. Les impôts sont calculés séparément. Une valeur réaliste est le facteur individuel le plus important pour le résultat. Consultez pour cela deux à trois ans d’extraits de compte.
+- **Montants uniques:** date, montant et description. Un montant positif est une entrée (succession, donation), un montant négatif une dépense (voiture, voyage, rénovation).
 
 Avec l’âge, les dépenses diminuent souvent, par exemple moins de voyages dès 80 ans, alors que les frais de santé augmentent. Utilisez pour cela des [valeurs dépendant du temps](#f-timed).
 
@@ -214,8 +214,8 @@ Mots-clés: impôt sur le revenu, impôt sur la fortune, impôt sur les prestati
 Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impôts de votre canton. Entre les paliers, l’interpolation est **linéaire**; le taux est multiplié par le [coefficient d’impôt](#f-tax-multiplier).
 
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
-- L’**impôt sur le revenu** est taxé en décembre sur le revenu annuel (rentes comprises), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net. Les deux sont payés en mai de l’année suivante.
-- Un impôt encore ouvert à la fin de la planification est déduit le dernier mois.
+- L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes comprises), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net. Les deux sont payés en mai de l’année suivante.
+- Un impôt encore dû à la fin de la planification est déduit le dernier mois.
 - L’[impôt sur les gains immobiliers](#f-tax-gain) est dû lors de la vente d’un bien immobilier, voir aussi [Immobilier](#s-realestate).
 
 Les valeurs d’exemple ne sont que des valeurs fictives. Pour votre résultat, remplacez-les par les valeurs de votre domicile.
@@ -226,7 +226,7 @@ Mots-clés: canton, commune, multiplicateur
 Un facteur appliqué à tous les taux des barèmes, le coefficient d’impôt du **canton et de la commune** ensemble (par exemple 2.0 pour un taux double). Ainsi, vous n’avez pas à réécrire les barèmes si vous changez de domicile, mais seulement à modifier le facteur. Les valeurs de 0 à 10 sont admises.
 
 ## @f-tax-gain Impôt sur les gains immobiliers
-Mots-clés: gain immobilier, vente, bien immobilier, durée de possession, Zurich, Argovie, canton, franchise, tarif, coefficient d’impôt
+Mots-clés: gain immobilier, vente, bien immobilier, durée de possession, Zurich, Argovie, canton, seuil d’exonération, tarif, coefficient d’impôt
 
 L’impôt sur le gain réalisé lors de la **vente** d’un bien immobilier. Les règles **diffèrent d’un canton à l’autre** et sont donc entièrement modifiables. **Obligatoire:** si la planification contient un bien immobilier au statut «Propriété» ou «Achat planifié», les règles doivent être définies (modèle Zurich, modèle Argovie ou règles propres, même avec un taux de 0 %). Si elles manquent, c’est une erreur dans la section Impôts, et «Lancer la simulation» ainsi que «Lancer l’optimisation» sont bloqués. Les objets purement loués et les planifications sans bien immobilier n’ont pas besoin de règles.
 
@@ -234,7 +234,7 @@ Deux modèles sont disponibles: **Zurich** (tarif par paliers avec majorations e
 
 **Calcul:** gain = valeur de vente − prix d’achat payé. Les investissements générateurs de plus-value, les droits de mutation et les frais de vente ne sont pas déduits. Ensuite:
 
-1. **Franchise:** si le gain est inférieur, il est exonéré. À partir de la limite, la **totalité** du gain est imposée.
+1. **Seuil d’exonération:** si le gain est inférieur, il est exonéré. À partir de la limite, la **totalité** du gain est imposée.
 2. **Modèle Zurich, paliers:** le gain est imposé par paliers. Chaque ligne s’applique à sa part du gain («à» est la largeur du palier); au-delà du dernier palier, son taux s’applique.
 3. **Modèle Zurich, durée de possession:** l’impôt est modifié de la majoration ou de la réduction de la ligne correspondante. La dernière ligne dont les années sont atteintes s’applique (durée de possession en années révolues, tirée de la [date d’achat](#f-re-bought)).
 4. **Réduction fixe:** une déduction supplémentaire en pour cent, indépendante de la durée de possession. Dans les modèles, elle est fixée à 0.
@@ -272,7 +272,7 @@ Objets en propriété, planifiés et loués. Vous pouvez en saisir autant que vo
 
 - **Propriété (`owned`):** la valeur vénale au début de la simulation figure dans l’en-tête à côté du nom. Suivent dessous, à des places fixes, la [date d’achat](#f-re-bought), le prix d’achat (payé, pour l’impôt sur les gains immobiliers), «Vente dès» (jamais, jalon ou date) et les frais accessoires par mois. Pour «Achat planifié», les mêmes champs figurent aux mêmes places (au lieu de la date d’achat «Achat dès»), seule la valeur vénale manque; lors d’un changement de statut, les valeurs saisies sont conservées. La vente doit être **postérieure à la date d’achat**, sinon c’est une erreur au champ.
 - **Inflation:** la valeur et les frais accessoires peuvent être indexés à l’inflation **séparément** pour chaque objet, de même que le loyer pour une location.
-- **Achat planifié (`planned`):** achat dès un jalon, prix d’achat, hypothèque. S’y ajoute **«Vente dès»** (par défaut «jamais», sinon date ou jalon); la simulation vend alors l’objet à ce moment. La vente doit être postérieure à «Achat dès», sinon c’est une erreur au champ. Pour un achat «après la vente de …», la date d’achat n’est pas connue lors de la saisie; ce contrôle est alors supprimé.
+- **Achat planifié (`planned`):** achat dès un jalon, prix d’achat, hypothèque. S’y ajoute **«Vente dès»** (par défaut «jamais», sinon date ou jalon); la simulation vend alors l’objet à ce moment. La vente doit être postérieure à «Achat dès», sinon c’est une erreur au champ. Pour un achat «après la vente de …», la date d’achat n’est pas connue lors de la saisie; ce contrôle n’a alors pas lieu.
 - **Location (`rent`):** début et loyer par mois (valeur actuelle, indexé par défaut au renchérissement; l’option «Adapter le loyer à l’inflation» le désactive).
 - **Hypothèque:** tranches avec périodes, voir [Hypothèques](#f-re-mortgage).
 - [Vente forcée](#f-re-emergency) et [capacité financière](#f-re-afford) pour les achats «après la vente».
@@ -300,23 +300,23 @@ La première période commence à la date de début de la tranche (à l’achat)
 
 - **Intérêt** = dette × taux / 12 par mois. Il s’accumule et est payé avec l’amortissement à la **fin du trimestre** (mars, juin, septembre, décembre).
 - **Amortissement:** montant fixe par trimestre, direct (réduit la dette) ou **indirect** (versement au [pilier 3a](#s-pillar3a) de la personne; avec deux personnes, vous choisissez le compte à la tranche).
-- **Amortissement indirect seulement jusqu’au début de la rente AVS:** dès le mois du début de la rente AVS de la personne, le même montant est amorti **directement** et réduit l’hypothèque. Une période qui ne commence qu’après le début de la rente AVS (y compris un renouvellement) amortit toujours directement; la sélection affiche alors «direct (dès l’AVS)». L’aperçu de la période mentionne ‹+ 3a jusqu’à l’AVS› lorsqu’une période dure au-delà du début de la rente AVS. Comme chaque personne a un début de rente AVS, la règle s’applique toujours. Le changement apparaît dans les [événements](#r-events) (‹Amortissement de l’hypothèque … dès la rente AVS direct au lieu du pilier 3a›) lorsque la tranche amortissait auparavant indirectement et continue d’être amortie.
-- Si le pilier 3a verse avec «Rembourser l’hypothèque», les montants vont d’abord aux tranches avec amortissement indirect sur ce compte.
+- **Amortissement indirect seulement jusqu’au début de la rente AVS:** dès le mois du début de la rente AVS de la personne, le même montant est amorti **directement** et réduit l’hypothèque. Une période qui ne commence qu’à partir du début de la rente AVS (y compris un renouvellement) amortit toujours directement; la sélection affiche alors «direct (dès l’AVS)». L’aperçu de la période mentionne ‹+ 3a jusqu’à l’AVS› lorsqu’une période dure au-delà du début de la rente AVS. Comme chaque personne a un début de rente AVS, la règle s’applique toujours. Le changement apparaît dans les [événements](#r-events) (‹Amortissement de l’hypothèque … dès la rente AVS direct au lieu du pilier 3a›) lorsque la tranche amortissait auparavant indirectement et continue d’être amortie.
+- Si le pilier 3a est retiré avec «Rembourser l’hypothèque», les montants vont d’abord aux tranches avec amortissement indirect sur ce compte.
 - En cas de vente, les intérêts accumulés sont payés immédiatement.
 
 ## @f-re-emergency Vente forcée
-Mots-clés: vente, liquidités, seuil, vente contrainte
+Mots-clés: vente, liquidités, seuil, vente forcée, vente contrainte
 
 Si la fortune liquide devient insuffisante, l’application vend le bien immobilier le mois suivant. Le **seuil** est exprimé en mois de dépenses non couvertes: si la fortune liquide couvre moins de mois (dépenses moins revenus), une vente forcée est nécessaire.
 
 Une vente forcée montre que la planification ne fonctionne pas sans vente immobilière. Elle apparaît dans les [événements](#r-events) des résultats. Plus le seuil est élevé, plus la vente intervient tôt.
 
 ## @f-re-afford Capacité financière
-Mots-clés: banque, taux d’avance, taux d’intérêt théorique, fonds propres, hypothèque
+Mots-clés: banque, capacité financière, taux d’avance, taux d’intérêt théorique, fonds propres, hypothèque
 
-Le calcul de la capacité financière des banques, appliqué aux achats «après la vente» et à chaque renouvellement d’une période hypothécaire. Une hypothèque est supportable si les **coûts théoriques** ne dépassent pas une part du revenu.
+Le calcul de la capacité financière selon les règles des banques, appliqué aux achats «après la vente» et à chaque renouvellement d’une période hypothécaire. Une hypothèque est supportable si les **coûts théoriques** ne dépassent pas une part du revenu.
 
-- **Au plus du revenu:** généralement un tiers (33 %).
+- **Part maximale du revenu:** généralement un tiers (33 %).
 - **Taux d’intérêt théorique:** généralement 5 %, indépendamment de l’intérêt actuel.
 - **Frais accessoires:** généralement 1 % du prix par année.
 - **Revenu:** seuls le revenu de l’activité lucrative et les rentes sont pris en compte, **pas** le prélèvement sur la fortune. Si le revenu ne suffit pas, l’hypothèque est réduite; l’achat montre alors le **remboursement unique** prélevé sur la fortune comme événement.
@@ -333,7 +333,7 @@ Vous définissez ici quels paramètres **varient systématiquement**. «Lancer l
 
 La durée de la simulation figure en outre à gauche du bouton «Lancer la simulation». Pendant le calcul, vous pouvez l’arrêter avec **Interrompre**.
 
-Le nombre de combinaisons n’est **pas limité**; ce n’est qu’au-delà de **1'000'000** combinaisons que le moteur de calcul refuse (protection de la mémoire). Si le temps de calcul estimé dépasse **une minute**, l’application demande confirmation avant le lancement (durée et nombre de simulations, «Lancer quand même» ou «Interrompre»). L’affichage «Ampleur» montre combien de simulations sont produites au total (variations × trajectoires); un **symbole d’avertissement jaune (⚠)** apparaît à côté dès que le temps de calcul estimé dépasse **90 secondes**, ainsi qu’une **estimation approximative de la durée**. Elle repose sur une brève mesure de votre planification sur cet ordinateur. La fourchette (‹généralement … à …›) tient compte du fait que les simulations durent plus ou moins longtemps selon la planification. Chaque variation supplémentaire et chaque trajectoire supplémentaire allonge le temps de calcul en conséquence: 35 combinaisons avec 50 000 trajectoires durent environ 10 secondes avec le bootstrap, environ une minute avec le modèle paramétrique. Au plus 400 combinaisons sont admises.
+Le nombre de combinaisons n’est **pas limité**; ce n’est qu’au-delà de **1'000'000** combinaisons que le moteur de calcul refuse (protection de la mémoire). Si le temps de calcul estimé dépasse **une minute**, l’application demande confirmation avant le lancement (durée et nombre de simulations, «Lancer quand même» ou «Interrompre»). L’affichage «Volume» montre combien de simulations sont produites au total (variations × trajectoires); un **symbole d’avertissement jaune (⚠)** apparaît à côté dès que le temps de calcul estimé dépasse **90 secondes**, ainsi qu’une **estimation approximative de la durée**. Elle repose sur une brève mesure de votre planification sur cet ordinateur. La fourchette (‹généralement … à …›) tient compte du fait que les simulations durent plus ou moins longtemps selon la planification. Chaque variation supplémentaire et chaque trajectoire supplémentaire allonge le temps de calcul en conséquence: 35 combinaisons avec 50 000 trajectoires durent environ 10 secondes avec le bootstrap, environ une minute avec le modèle paramétrique. Au plus 400 combinaisons sont admises.
 
 Les variations elles-mêmes: [Variations](#f-sweep).
 

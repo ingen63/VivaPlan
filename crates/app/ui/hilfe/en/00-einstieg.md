@@ -39,10 +39,10 @@ The checklist **“Getting started”** on the right above the validation leads 
 
 The validation at the bottom right shows errors and warnings even before you calculate. Errors prevent the simulation, warnings do not.
 
-> Tip: Press **F1** in an input field, and exactly the help on this field appears.
+> Tip: Press **F1** in an input field to open the help for exactly that field.
 
 ## @bedienung Operation and keyboard shortcuts
-Keywords: menu, keyboard, save, open, undo, F1, language
+Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language
 
 - **File:** New (an **empty plan with default values**: start in the current month, no project name, one person without a name, no amounts and no real estate; returns, tax tables and strategy parameters take the default values), Open, Save, Save as. A plan is a single file with the extension `.vplan`. It can be copied and archived.
 - **Starting and quitting:** At startup, the desktop app opens the plan you last opened or saved; the file name is shown in the header. If there is none, or the file has disappeared or cannot be read, it opens the bundled **example plan** (with a notice naming the file, except at the very first start). The example plan counts as a new, unsaved plan: “Save” asks for a location, it is never overwritten. When you quit with unsaved changes (close button of the window, ⌘Q or Ctrl+Q, or File → Quit), the app asks whether you want to save, discard or cancel. “Cancel” leaves the app open; if you cancel the location dialog while saving, it also stays open. Only the file path is remembered, locally in the data folder of the app.

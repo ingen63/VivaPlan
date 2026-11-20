@@ -386,8 +386,8 @@
       },
       "paths": 12345.678
     },
-    "template": "Too many paths for the memory: {paths:int} paths × {months} months. With this planning period, at most {max:int} paths are possible.",
-    "text": "Too many paths for the memory: 12'346 paths × Person 2 months. With this planning period, at most 12'346 paths are possible."
+    "template": "Too many paths for the available memory: {paths:int} paths × {months} months. With this planning period, at most {max:int} paths are possible.",
+    "text": "Too many paths for the available memory: 12'346 paths × Person 2 months. With this planning period, at most 12'346 paths are possible."
   },
   {
     "code": "birth_after_start",
@@ -1414,8 +1414,8 @@
         "text": "Person 2"
       }
     },
-    "template": "{who}: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to free wealth.",
-    "text": "Person 2: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to free wealth."
+    "template": "{who}: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to liquid wealth.",
+    "text": "Person 2: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to liquid wealth."
   },
   {
     "code": "pillar3a_payout_date_invalid",
@@ -1519,8 +1519,8 @@
         "text": "Person 2"
       }
     },
-    "template": "{who}: “Repay mortgage” (payout in {date:ym}) requires a tranche with indirect amortization; it goes to free wealth.",
-    "text": "Person 2: “Repay mortgage” (payout in 07.2031) requires a tranche with indirect amortization; it goes to free wealth."
+    "template": "{who}: “Repay mortgage” (payout in {date:ym}) requires a tranche with indirect amortization; it goes to liquid wealth.",
+    "text": "Person 2: “Repay mortgage” (payout in 07.2031) requires a tranche with indirect amortization; it goes to liquid wealth."
   },
   {
     "code": "pillar3a_payout_same_year_as_pk",
@@ -2272,8 +2272,8 @@
     "params": {
       "month": "2031-07"
     },
-    "template": "The CHF series ends {month:ym} because the SNB data (exchange rate or consumer price index) do not go further. Newer SNB data can also be imported.",
-    "text": "The CHF series ends 07.2031 because the SNB data (exchange rate or consumer price index) do not go further. Newer SNB data can also be imported."
+    "template": "The CHF series ends in {month:ym} because the SNB data (exchange rate or consumer price index) do not extend further. Newer SNB data can also be imported.",
+    "text": "The CHF series ends in 07.2031 because the SNB data (exchange rate or consumer price index) do not extend further. Newer SNB data can also be imported."
   },
   {
     "code": "import_snb_cube",
@@ -2894,8 +2894,8 @@
   {
     "code": "index_world_custom",
     "params": {},
-    "template": "World custom (JST)",
-    "text": "World custom (JST)"
+    "template": "World, custom (JST)",
+    "text": "World, custom (JST)"
   },
   {
     "code": "index_sp500",
@@ -2953,8 +2953,8 @@
         "text": "Person 2"
       }
     },
-    "template": "World custom (CH {ch} %, USA {usa} %, EU {eu} %, Asia-Pacific {apac} %)",
-    "text": "World custom (CH Person 2 %, USA Person 2 %, EU Person 2 %, Asia-Pacific Person 2 %)"
+    "template": "World, custom (CH {ch} %, USA {usa} %, EU {eu} %, Asia-Pacific {apac} %)",
+    "text": "World, custom (CH Person 2 %, USA Person 2 %, EU Person 2 %, Asia-Pacific Person 2 %)"
   },
   {
     "code": "investment_label",
@@ -3834,8 +3834,8 @@
         "text": "Person 2"
       }
     },
-    "template": "Amortization of mortgage {name}{tranche} from the start of the AHV pension{who} direct instead of via pillar 3a: {amount:fix0} {currency} per year",
-    "text": "Amortization of mortgage Person 2Person 2 from the start of the AHV pensionPerson 2 direct instead of via pillar 3a: 12346 Person 2 per year"
+    "template": "Amortization of mortgage {name}{tranche} from the start of the AHV pension{who} directly instead of via pillar 3a: {amount:fix0} {currency} per year",
+    "text": "Amortization of mortgage Person 2Person 2 from the start of the AHV pensionPerson 2 directly instead of via pillar 3a: 12346 Person 2 per year"
   },
   {
     "code": "event_pillar3a_short",
@@ -4753,8 +4753,8 @@
         "text": "Person 2"
       }
     },
-    "template": "Pillar 3a of “{name}”: “Repay mortgage” now requires a tranche with indirect amortization; the payout goes to free wealth.",
-    "text": "Pillar 3a of “Person 2”: “Repay mortgage” now requires a tranche with indirect amortization; the payout goes to free wealth."
+    "template": "Pillar 3a of “{name}”: “Repay mortgage” now requires a tranche with indirect amortization; the payout goes to liquid wealth.",
+    "text": "Pillar 3a of “Person 2”: “Repay mortgage” now requires a tranche with indirect amortization; the payout goes to liquid wealth."
   },
   {
     "code": "note_pillar3a_account_rest_at_ahv",

@@ -11,7 +11,7 @@ It takes your plan as given and searches, for every selected [withdrawal strateg
 2. **Consumption** is as high as possible (median and poor year, real).
 3. Consumption **fluctuates** as little as possible from year to year.
 
-The strategies are then compared. The best one is at the top and carries a star ★. With a click on “Apply to plan” you take over strategy and parameters into your plan.
+The strategies are then compared. The best one is at the top and carries a star ★. Click “Apply to plan” to transfer the strategy and parameters to your plan.
 
 **Requirements:**
 
@@ -56,7 +56,7 @@ Keywords: median, percentile, P10, weight, consumption, spending, real
 What is optimized is **annual consumption from retirement**: total spending including housing costs, **before taxes**, in **prices of the start month** (i.e. real). The app collects the yearly values of **all paths and all years** and forms two key figures from them:
 
 - **Median:** the typical annual consumption. Half of all path-years are above it, half below.
-- **P10 (10th percentile):** the annual consumption that is undercut in 10 % of the path-years. This is the **poor case** and measures how hard things get in crises.
+- **P10 (10th percentile):** the annual consumption that 10 % of the path-years fall below. This is the **poor case** and measures how hard things get in crises.
 
 **Weight of the median in the consumption goal** (default 50 %): How the consumption goal is mixed from the two key figures. The rest goes to P10.
 
@@ -192,7 +192,7 @@ Keywords: over-optimization, robustness, model risk, cross-check, warning
 An optimization finds the best result **for the assumptions**. It says nothing about whether the assumptions are right.
 
 - **The optimum only applies to these returns.** If you optimized with the Shiller series, the result need not hold with another series or with lower returns. **Cross-check the result with a second source**: optimize with bootstrap and check with the parametric model, or vice versa.
-- **Precise numbers pretend precision.** A stock allocation of 63.4 % is not better than 60 %. Round to understandable values and check how much the goal changes as a result. Often the area around the optimum is **flat**.
+- **Precise numbers suggest a false precision.** A stock allocation of 63.4 % is not better than 60 %. Round to understandable values and check how much the goal changes as a result. Often the area around the optimum is **flat**.
 - **Edge solutions:** If a parameter is at the edge of the search range (for example stock allocation 100 % or initial rate 8 %), this is a sign that the result is extreme. Distrust it.
 - **A ruin limit that is too optimistic.** With 10 % or more, high consumption values are easily possible, but with a probability of 1 in 10 you lose your wealth.
 - **Sequence risk and long periods.** The estimate of ruin with bootstrap and the parametric model depends strongly on the assumptions about crises.

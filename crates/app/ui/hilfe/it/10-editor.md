@@ -15,7 +15,7 @@ Tutte le indicazioni temporali hanno il formato **MM.AAAA** (ad esempio 05.2027)
 I **numeri** si inseriscono con o senza separatore delle migliaia: apostrofo o spazio (1'234 o 1 234), come separatore decimale punto o virgola (12.5 o 12,5). Negli **importi** e nei **numeri interi** (ad esempio numero di percorsi) un punto seguito da esattamente tre cifre è ambiguo (‹12.500›): il campo segnala «Numero ambiguo» e mantiene il valore precedente; scriva 12500 o 12'500. I campi percentuali e degli anni accettano ‹1.25› come finora. Scritture come ‹1e5› o ‹0x10› non sono ammesse da nessuna parte.
 
 ## @s-milestones Tappe
-Parole chiave: prestazione della cassa pensione, pensionamento, inizio, fine, inizio della rendita AVS, data, età, momento, limiti
+Parole chiave: prestazione della cassa pensione, pensionamento, inizio, fine, inizio della rendita AVS, AVS, data, età, momento, limiti
 
 Una tappa è un momento con un nome a cui possono riferirsi tutti gli altri dati (‹da prestazione della cassa pensione›). Se sposta la prestazione della cassa pensione, si sposta tutto ciò che ne dipende. È la leva più importante per provare scenari ‹andare in pensione prima o dopo›.
 
@@ -54,25 +54,25 @@ Una riga sotto le schede mostra che cosa diventa l’avere alla prestazione dell
 Il **pilastro 3a** ha una sezione propria, vedi [Pilastro 3a](#s-pillar3a).
 
 ## @s-pillar3a Pilastro 3a
-Parole chiave: 3a, previdenza vincolata, versamento, riscossione, piano di versamento, età, data, avere, importo massimo, ammortamento indiretto
+Parole chiave: 3a, previdenza vincolata, versamento, riscossione, piano di riscossione, età, data, avere, importo massimo, ammortamento indiretto
 
 Il pilastro 3a è un conto proprio **per persona**, separato da cassa pensione e ipoteca.
 
 - **Avere all’inizio della simulazione** e **remunerazione / rendimento annuo**.
 - **Versamento all’anno:** da 0 all’importo massimo (7'258 franchi, modificabile nelle [Impostazioni](#f-settings)). L’app versa ogni mese un dodicesimo, fino a prima del mese dell’**inizio della rendita AVS**. Il versamento **conta tra le spese**: appare in «Spese totali» dei valori annuali, aumenta il prelievo e fa parte del fabbisogno netto della strategia a 3 comparti.
-- **Piano di versamento:** righe composte da momento e importo, ad esempio 2041 50'000 e 2042 50'000. Il **momento** lo stabilisce come per una tappa come **data** (MM.AAAA) o come **età** della persona a cui appartiene il conto (ad esempio 61.5 anni). Accanto figurano il mese che ne risulta e l’età. Se passa tra «Data» ed «Età», il momento resta uguale. Senza importo viene versato l’intero avere. Un versamento è possibile **al più presto 5 anni prima dell’inizio della rendita AVS**, anche secondo l’età; una voce anteriore è un errore sul campo. Se un importo è superiore all’avere, viene versato solo l’avere (avvertenza negli eventi).
-- **Avere dall’anteprima:** ogni riga mostra l’**avere prima del versamento** e il **resto dopo**, sotto il piano figura l’avere versato all’inizio della rendita AVS. I valori provengono dall’anteprima con rendimenti fissi; se la pianificazione ha un errore, non c’è anteprima, e figura ‹–›.
-- **+ Versamento** crea una riga un anno dopo l’ultima (senza righe: nel primo mese ammesso, 5 anni prima dell’inizio della rendita AVS, non prima dell’inizio della simulazione), al massimo all’inizio della rendita AVS. Come importo figura l’avere in quel momento dopo i versamenti precedenti, arrotondato per difetto a 1'000. In seguito può modificarlo liberamente.
+- **Piano di riscossione:** righe composte da momento e importo, ad esempio 2041 50'000 e 2042 50'000. Il **momento** lo stabilisce come per una tappa come **data** (MM.AAAA) o come **età** della persona a cui appartiene il conto (ad esempio 61.5 anni). Accanto figurano il mese che ne risulta e l’età. Se passa tra «Data» ed «Età», il momento resta uguale. Senza importo viene riscosso l’intero avere. Una riscossione è possibile **al più presto 5 anni prima dell’inizio della rendita AVS**, anche secondo l’età; una voce anteriore è un errore sul campo. Se un importo è superiore all’avere, viene riscosso solo l’avere (avvertenza negli eventi).
+- **Avere dall’anteprima:** ogni riga mostra l’**avere prima della riscossione** e il **resto dopo**, sotto il piano figura l’avere versato all’inizio della rendita AVS. I valori provengono dall’anteprima con rendimenti fissi; se la pianificazione ha un errore, non c’è anteprima, e figura ‹–›.
+- **+ Riscossione** crea una riga un anno dopo l’ultima (senza righe: nel primo mese ammesso, 5 anni prima dell’inizio della rendita AVS, non prima dell’inizio della simulazione), al massimo all’inizio della rendita AVS. Come importo figura l’avere in quel momento dopo le riscossioni precedenti, arrotondato per difetto a 1'000. In seguito può modificarlo liberamente.
 - **Resto all’inizio della rendita AVS:** ciò che resta sul conto viene versato **al più tardi nel mese d’inizio della rendita AVS**.
 - **Utilizzo:** nella sostanza libera o, se esiste una tranche con ammortamento indiretto in questo conto, «Rimborsare l’ipoteca» (prima le tranche con ammortamento indiretto).
 
-Ogni versamento è un **prelievo di capitale** con imposta sulle prestazioni in capitale. I prelievi nello stesso anno civile (cassa pensione e pilastro 3a) vengono sommati per l’aliquota, per le coppie non sposate per persona.
+Ogni riscossione è un **prelievo di capitale** con imposta sulle prestazioni in capitale. I prelievi nello stesso anno civile (cassa pensione e pilastro 3a) vengono sommati per l’aliquota, per le coppie non sposate per persona.
 
 L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a prima dell’inizio della rendita AVS (vedi [Ipoteche](#f-re-mortgage)). Versamento e ammortamento indiretto insieme non dovrebbero superare l’importo massimo annuo; altrimenti la verifica mostra un avviso.
 
-> Esempio: nascita 06.1980, avere 120'000 senza interesse, versamento a 61.5 anni (risulta 12.2041) di 50'000: avere prima del versamento 120'000, resto dopo 70'000. «+ Versamento» propone una riga a 62.5 anni (12.2042) di 70'000.
+> Esempio: nascita 06.1980, avere 120'000 senza interesse, riscossione a 61.5 anni (risulta 12.2041) di 50'000: avere prima della riscossione 120'000, resto dopo 70'000. «+ Riscossione» propone una riga a 62.5 anni (12.2042) di 70'000.
 
-> Esempio: avere 120'000, versamenti 2041 e 2042 di 50'000 ciascuno, inizio della rendita AVS 2045: il resto di 20'000 (più interesse) viene versato nel mese d’inizio della rendita AVS. Se l’inizio della rendita AVS viene spostato al 2046, il piano resta valido, e il resto arriva nel 2046.
+> Esempio: avere 120'000, riscossioni 2041 e 2042 di 50'000 ciascuno, inizio della rendita AVS 2045: il resto di 20'000 (più interesse) viene versato nel mese d’inizio della rendita AVS. Se l’inizio della rendita AVS viene spostato al 2046, il piano resta valido, e il resto arriva nel 2046.
 
 ## @f-settings Impostazioni
 Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua
@@ -115,7 +115,7 @@ L’aliquota di conversione stabilisce quanta **rendita annua** riceve per ogni 
 Con la parte scenari può far variare il prelievo del capitale (vedi [Scenari](#f-sweep)).
 
 ## @f-pk-lumpsum Quota del prelievo del capitale
-Parole chiave: prelievo del capitale, rendita, imposta sulle prestazioni in capitale, versamento unico
+Parole chiave: prelievo del capitale, rendita, imposta sulle prestazioni in capitale, liquidazione unica
 
 La quota dell’avere di vecchiaia versata al pensionamento **come capitale**. 0 % significa ‹interamente come rendita›, 100 % ‹interamente come capitale›.
 
@@ -154,7 +154,7 @@ Importi mensili. **Le spese vengono registrate ai prezzi attuali** e adeguate da
 
 - **Reddito da attività lucrativa netto al mese:** ciò che arriva sul Suo conto dopo le deduzioni (AVS, cassa pensione; le imposte sono calcolate separatamente). Termina quando lo imposta a 0 in modo [dipendente dal tempo](#f-timed), ad esempio ‹da prestazione della cassa pensione 0›. La prestazione della cassa pensione non lo termina da sé; se in seguito è ancora maggiore di 0, la verifica mostra un avviso con l’importo.
 - **Aumenta con il rincaro** (per persona): con la spunta gli importi, anche ogni riga di un reddito dipendente dal tempo, valgono ai **prezzi attuali** (prezzi all’inizio della simulazione) e crescono con il rincaro del rispettivo percorso, esattamente come il costo della vita. Esempio: 8'000 al mese con un rincaro del 2 % sono dopo un anno 8'160, dopo cinque anni circa 8'830. Senza spunta l’importo resta nominalmente uguale. Le nuove pianificazioni e una seconda persona appena aggiunta hanno la spunta; le pianificazioni meno recenti senza indicazione calcolano come finora senza. Imposte, valori annuali e sostenibilità usano l’importo adeguato; l’avviso dopo la prestazione della cassa pensione indica allora l’importo «ai prezzi dell’inizio della simulazione».
-- **Costo della vita al mese:** tutto ciò che spende, **incluso l’affitto o le spese d’alloggio** (interesse ipotecario, ammortamento, spese accessorie), come figura sull’estratto conto. L’app deduce la **quota d’alloggio**, cioè le spese d’alloggio nel mese d’inizio della sezione [Immobili](#s-realestate) come media mensile (interesse e ammortamento vengono pagati trimestralmente), adeguata al rincaro, e cioè in ugual misura da ogni riga. Il calcolo usa il costo della vita senza alloggio più le spese d’alloggio **simulate**: se l’interesse cambia a un rinnovo o se dopo una vendita passa in affitto, le spese cambiano di conseguenza. Esempio: 8'000 incluse 2'000 di spese d’alloggio; dopo un aumento dell’interesse di 300 le spese sono 8'300, con un affitto di 2'500 sono 8'500. Se una riga è inferiore alla quota d’alloggio, la verifica segnala un errore. Il versamento nel [pilastro 3a](#s-pillar3a) non è incluso. Le pianificazioni meno recenti (costo della vita senza spese d’alloggio) l’app le converte all’apertura, un’avvertenza indica l’importo aggiunto. Le imposte vengono calcolate separatamente. Un valore realistico è il singolo fattore più importante per il risultato. A tale scopo osservi due o tre anni di estratti conto.
+- **Costo della vita al mese:** tutto ciò che spende, **incluso l’affitto o le spese d’alloggio** (interesse ipotecario, ammortamento, spese accessorie), come figura sull’estratto conto. L’app deduce la **quota d’alloggio**, cioè le spese d’alloggio del mese d’inizio, tratte dalla sezione [Immobili](#s-realestate), come media mensile (interesse e ammortamento vengono pagati trimestralmente), adeguata al rincaro, e cioè in ugual misura da ogni riga. Il calcolo usa il costo della vita senza alloggio più le spese d’alloggio **simulate**: se l’interesse cambia a un rinnovo o se dopo una vendita passa in affitto, le spese cambiano di conseguenza. Esempio: 8'000 incluse 2'000 di spese d’alloggio; dopo un aumento dell’interesse di 300 le spese sono 8'300, con un affitto di 2'500 sono 8'500. Se una riga è inferiore alla quota d’alloggio, la verifica segnala un errore. Il versamento nel [pilastro 3a](#s-pillar3a) non è incluso. Le pianificazioni meno recenti (costo della vita senza spese d’alloggio) l’app le converte all’apertura, un’avvertenza indica l’importo aggiunto. Le imposte vengono calcolate separatamente. Un valore realistico è il singolo fattore più importante per il risultato. A tale scopo osservi due o tre anni di estratti conto.
 - **Importi unici:** data, importo e descrizione. Positivo è un’entrata (eredità, donazione), negativo una spesa (auto, viaggio, ristrutturazione).
 
 Con l’età le spese spesso diminuiscono, ad esempio meno viaggi dagli 80 anni, mentre aumentano i costi per la salute. Usi a tale scopo i [valori dipendenti dal tempo](#f-timed).
@@ -171,7 +171,7 @@ Esempio costo della vita: ‹da inizio 9'500›, ‹da prestazione della cassa p
 
 Il piccolo grafico accanto al campo mostra l’andamento. Con la rotella del mouse ingrandisce, i pulsanti «Tutto», ‹10 a.›, ‹5 a.› e ‹2 a.› scelgono l’intervallo.
 
-Le righe che stanno più indietro nel tempo, ma iniziano prima di un’altra, l’app le ordina secondo il momento. Può quindi spostare tranquillamente le tappe, l’ordine dei valori resta coerente.
+Le righe inserite più in basso nell’elenco, ma che iniziano prima di un’altra, l’app le ordina secondo il momento. Può quindi spostare tranquillamente le tappe, l’ordine dei valori resta coerente.
 
 ## @s-wealth Sostanza e investimento
 Parole chiave: azioni, obbligazioni, cash, liquidità, quota azionaria, riserva, portafoglio, strategia d’investimento, indice
@@ -180,7 +180,7 @@ I **saldi all’inizio della simulazione**, la **ripartizione** del portafoglio 
 
 - **Azioni, obbligazioni, cash:** i Suoi saldi all’inizio della simulazione. Immobili e averi di previdenza figurano separatamente, qui solo la sostanza liquida. L’app riprende i saldi all’inizio senza modifiche. Accanto ad azioni e obbligazioni figura la loro quota del portafoglio (senza cash, percentuali intere), ad esempio 80'000 di azioni e 20'000 di obbligazioni danno ‹80 % del portafoglio› e ‹20 % del portafoglio›.
 - **Il cash non fa parte del portafoglio.** La [quota azionaria](#f-stockshare) si riferisce solo ad azioni e obbligazioni: 80'000 di azioni, 20'000 di obbligazioni e 50'000 di cash danno una quota azionaria dell’80 %.
-- **Fino al pensionamento** (prestazione della cassa pensione della prima persona) non vale alcuna strategia di prelievo. L’app mantiene tanto cash quanto figura nel campo **Cash**, adeguato al **rincaro**: un’eccedenza va nel portafoglio secondo la quota azionaria, un ammanco viene rifornito dal portafoglio.
+- **Fino al pensionamento** (prestazione della cassa pensione della prima persona) non vale alcuna strategia di prelievo. L’app mantiene tanto cash quanto figura nel campo **Cash**, adeguato al **rincaro**: un’eccedenza va nel portafoglio secondo la quota azionaria, un ammanco viene colmato dal portafoglio.
 - **Dal pensionamento** il cash è determinato dalla [strategia di prelievo](#s-withdrawal): «Standard» con la [riserva di cash](#f-reserve) della sua scheda, tutte le altre con 3 mesi o la strategia a 3 comparti con i suoi comparti.
 
 - **Strategia d’investimento:** un indice per le azioni (Mondo, Mondo personalizzato, Svizzera, S&P 500) e uno per le obbligazioni (Confederazione 10 anni o a breve termine, USA). Con «Mondo personalizzato» stabilisce le ponderazioni di Svizzera, USA, UE e Asia-Pacifico; insieme devono dare 100 %. Sotto la selezione figurano il periodo comune e i rendimenti medi; se un indice viene ridotto al periodo comune, appare un’avvertenza. Dettagli: [Strategia d’investimento](#f-ret-series).
@@ -214,7 +214,7 @@ Parole chiave: imposta sul reddito, imposta sulla sostanza, imposta sulle presta
 Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale del Suo cantone. Tra gli scaglioni si **interpola linearmente**, l’aliquota viene moltiplicata per il [moltiplicatore d’imposta](#f-tax-multiplier).
 
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
-- L’**imposta sul reddito** viene tassata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti. Entrambe vengono pagate a maggio dell’anno successivo.
+- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti. Entrambe vengono pagate a maggio dell’anno successivo.
 - Un’imposta ancora aperta alla fine della pianificazione viene dedotta nell’ultimo mese.
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
 
@@ -226,7 +226,7 @@ Parole chiave: cantone, comune, moltiplicatore
 Un fattore su tutte le aliquote delle tabelle, il moltiplicatore d’imposta di **cantone e comune** insieme (ad esempio 2.0 per un’aliquota doppia). Così non deve riscrivere le tabelle se cambia luogo di domicilio, ma modifica solo il fattore. Sono ammessi valori da 0 a 10.
 
 ## @f-tax-gain Imposta sugli utili immobiliari
-Parole chiave: utile immobiliare, vendita, immobile, durata di possesso, Zurigo, Argovia, cantone, franchigia, tariffa, moltiplicatore d’imposta
+Parole chiave: utile immobiliare, vendita, immobile, durata di possesso, Zurigo, Argovia, cantone, soglia di esenzione, tariffa, moltiplicatore d’imposta
 
 L’imposta sull’utile alla **vendita** di un immobile. Le regole sono **diverse da cantone a cantone** e perciò interamente modificabili. **Obbligatorio:** se la pianificazione contiene un immobile con stato «Proprietà» o «Acquisto pianificato», le regole devono essere impostate (modello Zurigo, modello Argovia o regole proprie, anche con aliquota 0 %). Se mancano, è un errore nella sezione Imposte, e «Avviare la simulazione» e «Avviare l’ottimizzazione» sono bloccati. I soli oggetti in affitto e le pianificazioni senza immobile non hanno bisogno di regole.
 
@@ -234,7 +234,7 @@ Sono disponibili due modelli: **Zurigo** (tariffa a scaglioni con maggiorazioni 
 
 **Calcolo:** utile = valore di vendita − prezzo d’acquisto pagato. Investimenti che aumentano il valore, costi di trapasso e di vendita non vengono dedotti. Poi:
 
-1. **Franchigia:** se l’utile è inferiore, è esente da imposta. Dal limite viene tassato l’**intero** utile.
+1. **Soglia di esenzione:** se l’utile è inferiore, è esente da imposta. Dal limite viene tassato l’**intero** utile.
 2. **Modello Zurigo, scaglioni:** l’utile viene tassato a scaglioni. Ogni riga vale per la sua parte di utile («a» è l’ampiezza dello scaglione), oltre l’ultimo scaglione vale la sua aliquota.
 3. **Modello Zurigo, durata di possesso:** l’imposta viene modificata della maggiorazione o riduzione della riga corrispondente. Vale l’ultima riga i cui anni sono raggiunti (durata di possesso in anni interi, dalla [data d’acquisto](#f-re-bought)).
 4. **Riduzione fissa:** una deduzione supplementare in percentuale, indipendente dalla durata di possesso. Nei modelli è impostata a 0.
@@ -244,7 +244,7 @@ Sono disponibili due modelli: **Zurigo** (tariffa a scaglioni con maggiorazioni 
 
 **Modello Cantone Argovia** (§ 109 StG): nel **modello Argovia** vale, invece degli scaglioni, un’**aliquota diretta sull’intero utile**, dipendente dalla durata di possesso in anni interi: 40 % nel primo anno di possesso, poi ogni anno 2 punti percentuali in meno fino al 20 % nell’undicesimo anno di possesso, poi 1 punto percentuale in meno all’anno fino al 6 % nel 25° anno di possesso e 5 % da 25 anni interi. Senza data d’acquisto vale l’aliquota più alta, e l’app avvisa.
 
-Per un altro cantone adegui le tabelle. I valori si trovano nel foglio delle tariffe dell’amministrazione cantonale delle contribuzioni. Li verifichi prima dell’uso, il modello è uno stato e non una consulenza fiscale.
+Per un altro cantone adegui le tabelle. I valori si trovano nel foglio delle tariffe dell’amministrazione cantonale delle contribuzioni. Li verifichi prima dell’uso: il modello riflette la situazione a una determinata data e non è una consulenza fiscale.
 
 ## @f-tax-tables Tabelle fiscali
 Parole chiave: aliquota, interpolazione, reddito, sostanza, prelievo del capitale, coniugati
@@ -271,7 +271,7 @@ Parole chiave: casa, appartamento, ipoteca, affitto, acquisto, vendita, sostenib
 Oggetti propri, pianificati e in affitto. Può registrarne quanti vuole.
 
 - **Proprietà (`owned`):** il valore venale all’inizio della simulazione figura nell’intestazione accanto al nome. Sotto seguono in posizioni fisse la [data d’acquisto](#f-re-bought), il prezzo d’acquisto (pagato, per l’imposta sugli utili immobiliari), «Vendita da» (mai, tappa o data) e spese accessorie al mese. Con «Acquisto pianificato» gli stessi campi figurano nelle stesse posizioni (al posto della data d’acquisto «Acquisto da»), manca solo il valore venale; al cambio di stato i valori registrati si mantengono. La vendita deve essere **successiva alla data d’acquisto**, altrimenti è un errore sul campo.
-- **Inflazione:** valore e spese accessorie si possono adeguare all’inflazione **singolarmente** per ogni oggetto, per l’affitto allo stesso modo l’affitto.
+- **Inflazione:** valore e spese accessorie si possono adeguare all’inflazione **singolarmente** per ogni oggetto; per gli oggetti in affitto, anche l’affitto.
 - **Acquisto pianificato (`planned`):** acquisto da tappa, prezzo d’acquisto, ipoteca. A ciò si aggiunge **«Vendita da»** (predefinito ‹mai›, altrimenti data o tappa); la simulazione vende allora l’oggetto in quel momento. La vendita deve essere successiva ad «Acquisto da», altrimenti è un errore sul campo. Con acquisto «dopo la vendita di …» il momento dell’acquisto non è noto al momento della registrazione, allora questa verifica viene meno.
 - **Affitto (`rent`):** inizio e affitto al mese (valore attuale, viene adeguato per impostazione standard al rincaro; l’opzione «Adeguare l’affitto all’inflazione» lo disattiva).
 - **Ipoteca:** tranche con periodi, vedi [Ipoteche](#f-re-mortgage).
@@ -298,25 +298,25 @@ Un’ipoteca è composta da **tranche**. Ogni tranche ha una sequenza di **perio
 
 Il primo periodo inizia alla data d’inizio della tranche (all’acquisto), ogni periodo successivo alla fine del precedente. Poi la tranche viene prorogata alle stesse condizioni o rimborsata.
 
-- **Interesse** = debito × aliquota / 12 al mese. Matura e viene pagato insieme all’ammortamento alla **fine del trimestre** (marzo, giugno, settembre, dicembre).
+- **Interesse** = debito × tasso / 12 al mese. Matura e viene pagato insieme all’ammortamento alla **fine del trimestre** (marzo, giugno, settembre, dicembre).
 - **Ammortamento:** importo fisso per trimestre, diretto (riduce il debito) o **indiretto** (versamento nel [pilastro 3a](#s-pillar3a) della persona; con due persone sceglie il conto sulla tranche).
 - **Ammortamento indiretto solo fino all’inizio della rendita AVS:** dal mese d’inizio della rendita AVS della persona lo stesso importo viene ammortizzato **direttamente** e riduce l’ipoteca. Un periodo che inizia solo dall’inizio della rendita AVS (anche un rinnovo) ammortizza sempre direttamente; la selezione mostra allora «diretto (dall’AVS)». L’anteprima del periodo annota ‹+ 3a fino all’AVS› se un periodo va oltre l’inizio della rendita AVS. Poiché ogni persona ha un inizio della rendita AVS, la regola vale sempre. Il passaggio appare negli [eventi](#r-events) (‹Ammortamento ipoteca … dall’inizio della rendita AVS diretto invece che tramite il pilastro 3a›), se la tranche ha ammortizzato prima indirettamente e continua ad ammortizzare.
-- Se il pilastro 3a versa con «Rimborsare l’ipoteca», gli importi vanno prima alle tranche con ammortamento indiretto in questo conto.
+- Se il pilastro 3a viene riscosso con «Rimborsare l’ipoteca», gli importi vanno prima alle tranche con ammortamento indiretto in questo conto.
 - Alla vendita gli interessi maturati vengono pagati subito.
 
 ## @f-re-emergency Vendita forzata
-Parole chiave: vendita, liquidità, soglia, vendita obbligata
+Parole chiave: vendita, liquidità, soglia, vendita forzata, vendita obbligata
 
 Se la sostanza liquida diventa scarsa, l’app vende l’immobile nel mese successivo. La **soglia** sono mesi di spese non coperte: se la sostanza liquida copre meno mesi (spese meno reddito), è necessaria una vendita forzata.
 
 Una vendita forzata mostra che la pianificazione non funziona senza vendita immobiliare. Appare negli [eventi](#r-events) dei risultati. Più alta è la soglia, prima si vende.
 
 ## @f-re-afford Sostenibilità
-Parole chiave: banca, grado d’anticipo, tasso d’interesse teorico, fondi propri, ipoteca
+Parole chiave: banca, sostenibilità, grado d’anticipo, tasso d’interesse teorico, fondi propri, ipoteca
 
 Il calcolo della sostenibilità delle banche, applicato agli acquisti «dopo la vendita» e a ogni rinnovo di un periodo ipotecario. Un’ipoteca è sostenibile se i **costi teorici** non superano una quota del reddito.
 
-- **Al massimo del reddito:** di solito un terzo (33 %).
+- **Quota massima del reddito:** di solito un terzo (33 %).
 - **Tasso d’interesse teorico:** di solito il 5 %, indipendentemente dall’interesse attuale.
 - **Spese accessorie:** di solito l’1 % del prezzo all’anno.
 - **Reddito:** sono computati solo il reddito da attività lucrativa e le rendite, **non** il prelievo dalla sostanza. Se il reddito non basta, l’ipoteca viene ridotta; l’acquisto mostra allora il **rimborso unico** dalla sostanza come evento.
@@ -333,14 +333,14 @@ Qui stabilisce quali parametri vengono **variati sistematicamente**. «Avviare l
 
 La durata della simulazione figura inoltre a sinistra del pulsante «Avviare la simulazione». Durante il calcolo può fermarla con **Interrompere**.
 
-Il numero di combinazioni **non è limitato**; solo con più di **1'000'000** di combinazioni il motore di calcolo rifiuta (protezione della memoria). Se il tempo di calcolo stimato supera **un minuto**, l’app chiede conferma prima dell’avvio (durata e numero di simulazioni, «Avviare comunque» o «Interrompere»). L’indicazione «Entità» mostra quante simulazioni nascono in tutto (variazioni × percorsi); un **simbolo di avvertimento giallo (⚠)** accanto appare non appena il tempo di calcolo stimato supera **90 secondi**, e una **stima approssimativa della durata**. Si basa su una breve misurazione della Sua pianificazione su questo computer. L’intervallo («(per lo più da … a …)») tiene conto del fatto che le simulazioni durano più o meno a lungo a seconda della pianificazione. Ogni variazione e ogni percorso supplementare allunga di conseguenza il tempo di calcolo: 35 combinazioni con 50'000 percorsi durano con il bootstrap circa 10 secondi, con il modello parametrico circa un minuto. Sono ammesse al massimo 400 combinazioni.
+Il numero di combinazioni **non è limitato**; solo con più di **1'000'000** di combinazioni il motore di calcolo rifiuta (protezione della memoria). Se il tempo di calcolo stimato supera **un minuto**, l’app chiede conferma prima dell’avvio (durata e numero di simulazioni, «Avviare comunque» o «Interrompere»). L’indicazione «Dimensione» mostra quante simulazioni nascono in tutto (variazioni × percorsi); un **simbolo di avvertimento giallo (⚠)** accanto appare non appena il tempo di calcolo stimato supera **90 secondi**, e una **stima approssimativa della durata**. Si basa su una breve misurazione della Sua pianificazione su questo computer. L’intervallo «per lo più da … a …» tiene conto del fatto che le simulazioni durano più o meno a lungo a seconda della pianificazione. Ogni variazione e ogni percorso supplementare allunga di conseguenza il tempo di calcolo: 35 combinazioni con 50'000 percorsi durano con il bootstrap circa 10 secondi, con il modello parametrico circa un minuto. Sono ammesse al massimo 400 combinazioni.
 
 Le variazioni stesse: [Variazioni](#f-sweep).
 
 ## @f-sweep Variazioni
 Parole chiave: sweep, da, a, passo, parametro, heatmap
 
-Una variazione ha un **parametro**, un campo **da … a** e un **passo**. L’app calcola ogni valore e mostra l’effetto su tasso di successo e sostanza finale.
+Una variazione ha un **parametro**, un intervallo **da … a** e un **passo**. L’app calcola ogni valore e mostra l’effetto su tasso di successo e sostanza finale.
 
 | Parametro | Significato |
 |---|---|

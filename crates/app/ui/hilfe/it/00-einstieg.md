@@ -29,7 +29,7 @@ Inizi con la pianificazione d’esempio caricata all’apertura e la modifichi p
 La lista di controllo **«Primi passi»** a destra sopra la verifica guida attraverso gli stessi otto passi. Un clic su un passo apre la sezione, ⓘ il relativo aiuto. Una sezione è considerata compiuta non appena vi modifica un valore o la spunta a mano; «Annullare» non toglie la spunta. «Avviare la simulazione» è compiuto non appena una simulazione è giunta al termine senza interruzione. Con ✕ nasconde l’elenco, con *Aiuto → Primi passi* lo mostra di nuovo. Quando tutti i passi sono compiuti, si chiude. L’avanzamento vale per Lei su questo dispositivo, non per una singola pianificazione, e non figura nel file di pianificazione.
 
 1. **[Economia domestica e progetto](#s-general):** inserire nome e mese di nascita.
-2. **[Tappe](#s-milestones):** stabilire prestazione della cassa pensione, inizio della rendita AVS, inizio e fine della simulazione. La fine dovrebbe essere così tardi da non volerla sopravvivere (ad esempio età 95).
+2. **[Tappe](#s-milestones):** stabilire prestazione della cassa pensione, inizio della rendita AVS, inizio e fine della simulazione. La fine dovrebbe essere fissata così tardi da non doverla verosimilmente superare in vita (ad esempio a 95 anni).
 3. **[Previdenza](#s-pension):** inserire l’avere attuale della cassa pensione, l’aliquota di conversione, il prelievo del capitale e la rendita AVS dai Suoi certificati di previdenza.
 4. **[Entrate e spese](#s-flows):** reddito da attività lucrativa e costo della vita al mese. Il costo della vita richiede un valore realistico: qui sta la leva più grande.
 5. **[Sostanza e investimento](#s-wealth):** azioni, obbligazioni e cash all’inizio della simulazione, più la quota azionaria perseguita.
@@ -42,7 +42,7 @@ La verifica in basso a destra mostra errori e avvertenze ancora prima del calcol
 > Consiglio: prema **F1** in un campo d’inserimento e appare esattamente l’aiuto relativo a quel campo.
 
 ## @bedienung Utilizzo e scelte rapide da tastiera
-Parole chiave: menu, tastiera, salvare, aprire, annullare, F1, lingua
+Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, lingua
 
 - **File:** Nuova (una **pianificazione vuota con valori standard**: inizio nel mese attuale, senza nome del progetto, una persona senza nome, nessun importo e nessun immobile; rendimenti, tabelle delle aliquote e parametri delle strategie adottano i valori standard), Aprire, Salvare, Salvare con nome. Una pianificazione è un singolo file con l’estensione `.vplan`. Si può copiare e archiviare.
 - **Avvio e chiusura:** all’avvio l’app desktop apre la pianificazione che ha aperto o salvato per ultima; il nome del file figura nell’intestazione. Se non ve n’è una, se il file è scomparso o non è leggibile, apre la **pianificazione d’esempio** fornita (con avvertenza sul nome del file, tranne al primissimo avvio). La pianificazione d’esempio è considerata una pianificazione nuova, non salvata: «Salvare» chiede un percorso, non viene mai sovrascritta. Uscendo con modifiche non salvate (pulsante di chiusura della finestra, ⌘Q o Ctrl+Q oppure File → Uscire) l’app chiede se desidera salvare, scartare o interrompere. «Interrompere» lascia l’app aperta; se la richiesta del percorso al salvataggio viene interrotta, resta anch’essa aperta. Viene memorizzato solo il percorso del file, in locale nella cartella dei dati dell’app.
@@ -58,7 +58,7 @@ Parole chiave: menu, tastiera, salvare, aprire, annullare, F1, lingua
 L’elenco completo delle scelte rapide da tastiera si trova nel menu *Aiuto → Scelte rapide da tastiera* e nel [capitolo di riferimento](#ref-shortcuts).
 
 ## @privacy Protezione dei dati e dati locali
-Parole chiave: Internet, cloud, luogo di salvataggio, sicurezza, rete
+Parole chiave: Internet, cloud, luogo di salvataggio, sicurezza, rete, protezione dei dati
 
 Tutti i dati restano sul Suo computer. L’app non si collega mai a Internet, nemmeno per i dati, gli aggiornamenti o le statistiche.
 
@@ -82,9 +82,9 @@ VivaPlan è uno **strumento di calcolo**, non una consulenza in investimenti, fi
 Verifichi sempre le decisioni importanti con specialisti. L’[esclusione della responsabilità](#disclaimer) completa si trova nella sezione successiva.
 
 ## @disclaimer Esclusione della responsabilità
-Parole chiave: responsabilità, garanzia, disclaimer, consulenza, diritto, avvertenza
+Parole chiave: responsabilità, garanzia, disclaimer, esclusione di responsabilità, consulenza, diritto, avvertenza
 
-Al primo avvio conferma una versione breve di questa avvertenza. Se il testo cambia, l’app chiede di nuovo. Tutte le pagine dei risultati recano in basso la nota «Calcolo modello senza garanzia. Nessuna consulenza finanziaria o fiscale.».
+Al primo avvio conferma una versione breve di questa avvertenza. Se il testo cambia, l’app chiede di nuovo. Tutte le pagine dei risultati recano in basso la nota «Calcolo basato su un modello, senza garanzia. Nessuna consulenza finanziaria o fiscale.».
 
 **1. Offerta gratuita.** VivaPlan è messo a disposizione gratuitamente dalla Svizzera. Non sussiste alcun diritto a disponibilità, aggiornamenti, correzione di errori o assistenza.
 

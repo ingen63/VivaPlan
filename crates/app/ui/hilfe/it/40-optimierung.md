@@ -133,9 +133,9 @@ Sotto «Parametri delle strategie» figura per ogni strategia una tabella con tu
 ## @o-advanced Impostazioni avanzate
 Parole chiave: percorsi, verifica, punti d’inizio, precisione, tempo di calcolo
 
-- **Percorsi per la ricerca** (standard 5'000): tanti percorsi casuali valuta la ricerca per ogni candidato. **Più percorsi** rendono il risultato più preciso, ma più lento. Regola empirica: sotto 2'000 percorsi la valutazione diventa instabile, oltre 20'000 lo sforzo di solito vale poco.
-- **Percorsi per la verifica** (standard 10'000): tanti percorsi **diversi** ricalcolano alla fine i parametri trovati. Questi valori li vede nel risultato.
-- **Punti d’inizio casuali per strategia** (standard 30): la ricerca inizia dalla pianificazione, dal centro del campo di ricerca e da altrettanti punti casuali. Più punti d’inizio aiutano a non restare bloccati in un cattivo ottimo locale, ma costano tempo, soprattutto con strategie con molti parametri (Guardrails).
+- **Percorsi per la ricerca** (standard 5'000): numero di percorsi casuali che la ricerca valuta per ogni candidato. **Più percorsi** rendono il risultato più preciso, ma più lento. Regola empirica: sotto 2'000 percorsi la valutazione diventa instabile, oltre 20'000 lo sforzo di solito vale poco.
+- **Percorsi per la verifica** (standard 10'000): su tanti percorsi **diversi** vengono ricalcolati alla fine i parametri trovati. Questi valori li vede nel risultato.
+- **Punti d’inizio casuali per strategia** (standard 30): la ricerca inizia dalla pianificazione, dal centro del campo di ricerca e da questo numero di punti casuali. Più punti d’inizio aiutano a non restare bloccati in un cattivo ottimo locale, ma costano tempo, soprattutto con strategie con molti parametri (Guardrails).
 
 I percorsi provengono dalla fonte di rendimenti della pianificazione (bootstrap o parametrica). I percorsi di verifica hanno un **altro valore iniziale casuale**. Con «Tutti i momenti d’inizio storici» non vi sono percorsi casuali. Ricerca e verifica calcolano allora gli stessi segmenti storici, la **verifica lì non è indipendente**.
 
@@ -191,8 +191,8 @@ Parole chiave: sovraottimizzazione, robustezza, rischio di modello, controprova,
 
 Un’ottimizzazione trova il miglior risultato **per le ipotesi**. Non dice nulla sul fatto che le ipotesi siano giuste.
 
-- **L’ottimo vale solo per questi rendimenti.** Se si è ottimizzato con la serie Shiller, il risultato non deve valere necessariamente con un’altra serie o con rendimenti più bassi. **Verifichi il risultato con una seconda fonte**: ottimizzi con il bootstrap e verifichi con il modello parametrico, o viceversa.
-- **I numeri precisi simulano una precisione.** Una quota azionaria del 63.4 % non è migliore del 60 %. Arrotondi a valori comprensibili e verifichi quanto cambia così l’obiettivo. Spesso la superficie attorno all’ottimo è **piatta**.
+- **L’ottimo vale solo per questi rendimenti.** Se si è ottimizzato con la serie Shiller, il risultato non vale necessariamente con un’altra serie o con rendimenti più bassi. **Verifichi il risultato con una seconda fonte**: ottimizzi con il bootstrap e verifichi con il modello parametrico, o viceversa.
+- **I numeri precisi danno un’illusione di precisione.** Una quota azionaria del 63.4 % non è migliore del 60 %. Arrotondi a valori comprensibili e verifichi quanto cambia così l’obiettivo. Spesso la superficie attorno all’ottimo è **piatta**.
 - **Soluzioni al bordo:** se un parametro è al bordo del campo di ricerca (ad esempio quota azionaria 100 % o tasso iniziale 8 %), è un segno che il risultato è estremo. Ne diffidi.
 - **Un limite di rovina troppo ottimistico.** Con il 10 % o più sono facilmente possibili valori di consumo alti, ma con una probabilità di 1 su 10 perde la Sua sostanza.
 - **Rischio di sequenza e periodi lunghi.** La stima della rovina con il bootstrap e il modello parametrico dipende molto dalle ipotesi sulle crisi.

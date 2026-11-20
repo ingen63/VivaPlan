@@ -85,17 +85,17 @@ Keywords: terms, lexicon, meaning, abbreviations
 
 **Retirement savings:** The capital saved with the pension fund (Altersguthaben). See [Pension fund](#f-pk).
 
-**Annuity:** Constant payments that use up a capital over a certain time. Basis of the [VPW](#f-wd-vpw).
+**Annuity:** Constant payments that use up a sum of capital over a certain period. Basis of the [VPW](#f-wd-vpw).
 
 **Bootstrap:** Method of randomly assembling new courses from real data. See [Bootstrap](#f-ret-bootstrap).
 
 **Success rate:** Share of the runs in which the wealth lasts until the end. See [Overview](#r-overview).
 
-**Fat tails:** Thick edges of the return distribution: extreme events are more frequent than with a normal distribution. See [parametric model](#f-ret-parametric).
+**Fat tails:** Thick tails of the return distribution: extreme events are more frequent than with a normal distribution. See [parametric model](#f-ret-parametric).
 
-**Guardrails:** Limits for the withdrawal. See [Guardrails](#f-wd-guardrails).
+**Guardrails:** Bounds around the initial rate that cut or raise the withdrawal when it moves too far from it. See [Guardrails](#f-wd-guardrails).
 
-**Lump-sum withdrawal:** Payout of pension capital as a single amount instead of a pension, with lump-sum tax (Kapitalbezug). See [Share of lump sum](#f-pk-lumpsum).
+**Lump-sum withdrawal:** Payout of pension capital as a single amount instead of a pension, with lump-sum tax (Kapitalbezug). See [Lump-sum share](#f-pk-lumpsum).
 
 **Median:** Middle value: half of the values are above it, half below.
 

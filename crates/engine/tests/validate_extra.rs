@@ -184,7 +184,7 @@ fn issue_139_ak2_one_million_paths_over_100_years_are_an_error() {
         assert_eq!(i.field.as_deref(), Some(format!("returns.{source}.paths").as_str()));
         assert_eq!(
             i.message,
-            "Too many paths for the memory: 1'000'000 paths × 1200 months. With this planning period, at most 41'666 paths are possible."
+            "Too many paths for the available memory: 1'000'000 paths × 1200 months. With this planning period, at most 41'666 paths are possible."
         );
     }
 }
@@ -218,7 +218,7 @@ fn issue_162_ak1_exact_path_limit_and_thousands_separator() {
     let i = too_many(&mc("parametric", 100_000, 100)).unwrap();
     assert!(
         i.message
-            .starts_with("Too many paths for the memory: 100'000 paths × 1200 months."),
+            .starts_with("Too many paths for the available memory: 100'000 paths × 1200 months."),
         "{}",
         i.message
     );

@@ -397,7 +397,7 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | Säule 3a, 3a-Konto | pilier 3a, compte 3a | |
 | gebundene Vorsorge | prévoyance liée | |
 | Vorsorge(vermögen) | prévoyance, avoirs de prévoyance | Abschnitt «Prévoyance» |
-| Einzahlung, Auszahlung (3a) | versement, versement (retrait) | Auszahlungsplan: plan de retrait |
+| Einzahlung, Auszahlung (3a) | versement, retrait | Auszahlungsplan: plan de retrait; «versé» bleibt, wo die Bank auszahlt (#182) |
 | Pensionierung | retraite | |
 | Simulationsstart, -ende | début de la simulation, fin de la simulation | |
 | Meilenstein | jalon | |
@@ -431,7 +431,7 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | Untergrenze, Obergrenze | plancher, plafond | |
 | 3-Topf-Strategie, Topf | stratégie à 3 compartiments, compartiment | Topf 1/2/3: compartiment 1/2/3; T1: C1 |
 | Auffüllung, Januar-Auffüllung | réalimentation, réalimentation de janvier | |
-| Vorausschau | anticipation | |
+| Vorausschau | prévision | «anticipation» steht für den Vorbezug (#182) |
 | Renditekriterium | critère de rendement | |
 | Reservierung | réservation | |
 | Variable Prozententnahme | prélèvement en pourcentage variable (VPW) | |
@@ -532,7 +532,7 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | Säule 3a, 3a-Konto | pilastro 3a, conto 3a | |
 | gebundene Vorsorge | previdenza vincolata | |
 | Vorsorge(vermögen) | previdenza, averi di previdenza | Abschnitt «Previdenza» |
-| Einzahlung, Auszahlung (3a) | versamento (Einzahlung), versamento / riscossione (Auszahlung) | Auszahlungsplan: piano di versamento |
+| Einzahlung, Auszahlung (3a) | versamento, riscossione | Auszahlungsplan: piano di riscossione; «versato» bleibt, wo die Bank auszahlt (#182) |
 | Pensionierung | pensionamento | |
 | Simulationsstart, -ende | inizio della simulazione, fine della simulazione | |
 | Meilenstein | tappa | |
@@ -561,12 +561,12 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | Entnahme, Entnahmerate | prelievo, tasso di prelievo | |
 | Entnahmestrategie | strategia di prelievo | |
 | fixe Entnahmerate | tasso di prelievo fisso | |
-| Leitplanke, Guardrails | guardrail, Guardrails | Strategiename bleibt «Guardrails» |
+| Leitplanke, Guardrails | guardrail, Guardrails | Strategiename bleibt «Guardrails»; männlich: «i Guardrails», «dei Guardrails» (#182) |
 | Startrate | tasso iniziale | |
 | Untergrenze, Obergrenze | limite inferiore, limite superiore | |
 | 3-Topf-Strategie, Topf | strategia a 3 comparti, comparto | Topf 1/2/3: comparto 1/2/3; T1: C1 |
 | Auffüllung, Januar-Auffüllung | rifornimento, rifornimento di gennaio | |
-| Vorausschau | anticipazione | |
+| Vorausschau | previsione | «anticipazione» steht für den Vorbezug (#182) |
 | Renditekriterium | criterio di rendimento | |
 | Reservierung | riservazione | |
 | Variable Prozententnahme | prelievo percentuale variabile (VPW) | |
@@ -723,6 +723,8 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | Kapitalbezug; Kapitalbezüge | lump-sum withdrawal; lump-sum; lump sum | retrait en capital; retraits en capital; prestation en capital | prelievo del capitale; prelievi di capitale; prestazione in capitale; liquidazione in capitale | BVG Art. 37 (FR, IT); DBG Art. 38 (FR, IT); EN: keine amtliche Quelle | - |
 | Kapitalbezugssteuer; Kapitalsteuer | lump-sum tax | impôt sur les prestations en capital | imposta sulle prestazioni in capitale | DBG Art. 38 (FR, IT); EN: keine amtliche Quelle | en: capital tax; fr: impôt sur le capital; it: imposta sul capitale |
 | Säule 3a | pillar 3a | pilier 3a | pilastro 3a | keine amtliche Quelle | - |
+| Einzahlung | contribution | versement | versamento | keine amtliche Quelle: Einzahlung in die Säule 3a; getrennt von der Auszahlung (#182) | - |
+| Auszahlung | payout; paid out | retrait; prestation | riscossione; prestazione | keine amtliche Quelle: Auszahlung aus der Säule 3a bzw. Leistung der Pensionskasse; nicht «versement/versamento», das für die Einzahlung steht (#182) | - |
 | gebundene Vorsorge | tied pension provision | prévoyance liée; prévoyance individuelle liée | previdenza vincolata; previdenza individuale vincolata | DBG (FR, IT); EN: keine amtliche Quelle | - |
 | Pensionierung | retirement | retraite | pensionamento | keine amtliche Quelle | - |
 | Haushalt | household | ménage | economia domestica | keine amtliche Quelle | it: nucleo familiare |
@@ -740,6 +742,7 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | Steuerfuss | tax multiplier | coefficient d'impôt | moltiplicatore d'imposta | keine amtliche Quelle | - |
 | Steuertabelle | tax table | barème | tabella delle aliquote; tabelle delle aliquote; tabella fiscale; tabelle fiscali | keine amtliche Quelle | - |
 | Steuersatz | tax rate; rate | taux | aliquota | keine amtliche Quelle | - |
+| Freigrenze | exemption limit | seuil d'exonération | soglia di esenzione | keine amtliche Quelle: bei Erreichen ist der ganze Gewinn steuerbar; nicht «franchise/franchigia» (Freibetrag) (#182) | fr: franchise; it: franchigia |
 | Grenzsteuersatz | marginal tax rate | taux marginal | aliquota marginale | keine amtliche Quelle | - |
 | Kanton | canton | canton | cantone; cantoni; cantonale; cantonali | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
 | Gemeinde | municipality | commune | comune | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
@@ -781,6 +784,7 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | 3-Topf-Strategie | 3-bucket strategy | stratégie à 3 compartiments | strategia a 3 comparti | keine amtliche Quelle | - |
 | Topf | bucket | compartiment | comparto; comparti | keine amtliche Quelle | - |
 | Auffüllung | refill | réalimentation | rifornimento; rifornimenti | keine amtliche Quelle | - |
+| Vorausschau | look-ahead | prévision | previsione | keine amtliche Quelle: Prüfung der 3-Topf-Strategie im laufenden Monat; nicht «anticipation», das für den Vorbezug steht (#182) | - |
 | Konsum | consumption | consommation | consumo | keine amtliche Quelle | - |
 | Monte-Carlo | Monte Carlo | Monte-Carlo; Monte Carlo | Monte Carlo | keine amtliche Quelle: Fachbegriff der Statistik | - |
 | Monte-Carlo-Erfolgsquote; Erfolgsquote | success rate | taux de réussite | tasso di successo | keine amtliche Quelle | - |

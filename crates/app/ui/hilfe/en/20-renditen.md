@@ -160,7 +160,7 @@ A **stock model with your own or suggested assumptions**. Stock prices follow a 
 | Switzerland (JST) | 10.55 % | 14.5 % | 0.26 | −10 % | 1900–2020 |
 | S&P 500 (Shiller) | 15.05 % | 16.5 % | 0.26 | −20 % | 1922–2025 |
 
-“World custom (JST)” gets values from its own weighted series. After an update of the Shiller data, the values for the S&P 500 change as well. For the S&P 500, the bootstrap draws months; its years are therefore somewhat milder than the calendar years, and the suggested values follow the bootstrap.
+“World, custom (JST)” gets values from its own weighted series. After an update of the Shiller data, the values for the S&P 500 change as well. For the S&P 500, the bootstrap draws months; its years are therefore somewhat milder than the calendar years, and the suggested values follow the bootstrap.
 
 - **New plan:** The values follow the stock index. If you change the index under “Wealth & investment”, the suggested values of the new index apply.
 - **Your own values:** As soon as you change one of the six model values, your values stay, even if the index changes. Next to every field, the suggestion for the chosen index is then shown. With **“Adopt suggested values”**, the values follow the index again.
@@ -189,7 +189,7 @@ The methods “Historical from start date”, “All historical start dates” a
 | Index | Content |
 |---|---|
 | **World (JST)** | Stocks of 11 countries (Switzerland, USA, Germany, France, Italy, Spain, Netherlands, Belgium, United Kingdom, Japan, Australia), weighted every year by the real GDP of the previous year, in CHF without currency hedging. **Annual 1900–2020.** |
-| World custom (JST) | Like “World (JST)”, but you set the weights of **Switzerland, USA, EU and Asia-Pacific** yourself (100 % in total). Within the EU (Germany, France, Italy, Spain, Netherlands, Belgium, United Kingdom) and Asia-Pacific (Japan, Australia), the countries are weighted by GDP. If the weight of the EU changes, the share of every EU country changes in the same proportion: EU 20 % instead of 40 % halves every EU country. The weights apply anew every year (annual rebalancing). |
+| World, custom (JST) | Like “World (JST)”, but you set the weights of **Switzerland, USA, EU and Asia-Pacific** yourself (100 % in total). Within the EU (Germany, France, Italy, Spain, Netherlands, Belgium, United Kingdom) and Asia-Pacific (Japan, Australia), the countries are weighted by GDP. If the weight of the EU changes, the share of every EU country changes in the same proportion: EU 20 % instead of 40 % halves every EU country. The weights apply anew every year (annual rebalancing). |
 | Switzerland (JST) | Swiss stocks, total return. Annual 1900–2020. |
 | **S&P 500 (Shiller)** | US stocks (S&P Composite) in CHF, without currency hedging. **Monthly from 1922.** |
 
@@ -216,8 +216,8 @@ Below the selection are the period, the frequency and the mean annual returns (g
 
 - **World (JST):** broadly diversified, long history, including world wars and hyperinflation. Caution: the index is rather **optimistic**. For 1900–2020, it is about 1.3 percentage points per year above the well-known world index of Dimson, Marsh and Staunton (5.3 % real in USD), mainly because of the annual weighting by GDP and because it only contains countries that still exist today. See [Data sources](#ret-data).
 - **S&P 500:** monthly and therefore the most accurate for bootstrap and rolling; but it only contains US stocks and the high return of the US stock market.
-- **Switzerland (JST):** the investment universe of a Swiss investor with a home market.
-- **World custom:** if you want to reflect your own allocation, for example 30 % Switzerland, 40 % USA, 20 % EU, 10 % Asia-Pacific.
+- **Switzerland (JST):** the investment universe of a Swiss investor who invests in the home market.
+- **World, custom:** if you want to reflect your own allocation, for example 30 % Switzerland, 40 % USA, 20 % EU, 10 % Asia-Pacific.
 
 **Older plans:** A plan with a chosen time series gets the matching strategy when it is opened and calculates the same as before: ‘Shiller CHF’ → S&P 500 with USA 10 years, ‘Shiller CHF + CH-Obligationen’ → S&P 500 with Swiss Confederation 10 years. ‘Shiller USD’ becomes S&P 500 with USA 10 years in CHF; **your own time series** (CSV files) are no longer supported and are replaced by “World (JST)” with bonds of the Swiss Confederation. **Pictet:** The index “Switzerland (Pictet)” is no longer bundled for licensing reasons. A plan with ‘Pictet CH’ or with “Switzerland (Pictet)” gets “Switzerland (JST)” for the stocks and “Swiss Confederation 10 years” for the bonds. In all these cases, the app reports this when the plan is opened, and the result changes.
 
@@ -276,7 +276,7 @@ Keywords: Shiller, SNB, Pictet, monthly average, bonds, currency
 Keywords: mistakes, caution, survivorship, home market, over-optimism, sequence risk, currency
 
 - **The past is not a forecast.** The US stock market was an exceptionally successful market in the 20th century. Series with US stocks contain this success and can be too optimistic (survivorship bias). This also applies to “World (JST)”, which only contains countries that still exist today. Also check the plan with lower returns (parametric with μ = 4 % to 5 %) or with Swiss stocks.
-- **Overlapping periods pretend security.** See [All historical start dates](#f-ret-rolling): few independent periods, but hundreds of runs.
+- **Overlapping periods create a false sense of security.** See [All historical start dates](#f-ret-rolling): few independent periods, but hundreds of runs.
 - **A block length that is too short in the bootstrap** makes the paths too smooth. Stay at 12 months or more.
 - **Sequence risk:** What matters is **when** the bad years come. A crash in the first years of retirement has a much stronger effect than later. Fixed returns do not show this.
 - **Currency:** All indices are in CHF; a plan in EUR or USD still calculates with franc returns and Swiss inflation (notice in the validation). CHF series with foreign stocks also carry currency risk. The appreciation of the franc over the last decades has lowered the return of a Swiss investor in US stocks.

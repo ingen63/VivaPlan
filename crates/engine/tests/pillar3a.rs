@@ -299,7 +299,7 @@ fn issue_50_switch_to_direct_is_an_event() {
         switches(&r),
         vec![(
             ym(2045, 1),
-            "Amortization of mortgage Haus from the start of the AHV pension direct instead of via pillar 3a: 3000 CHF per year".to_string()
+            "Amortization of mortgage Haus from the start of the AHV pension directly instead of via pillar 3a: 3000 CHF per year".to_string()
         )]
     );
     // Renewal from the AHV payout (indirect before): also a switch.
@@ -520,7 +520,7 @@ fn issue_124_ak3_switch_to_direct_needs_amortization_before_and_after() {
         switches(&run(&v)),
         vec![(
             ym(2045, 1),
-            "Amortization of mortgage Haus (T1) from the start of the AHV pension direct instead of via pillar 3a: 3000 CHF per year"
+            "Amortization of mortgage Haus (T1) from the start of the AHV pension directly instead of via pillar 3a: 3000 CHF per year"
                 .to_string()
         )]
     );

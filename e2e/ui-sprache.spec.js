@@ -309,7 +309,7 @@ test.describe("English user interface (#172)", () => {
     await expect(page.locator("#nav")).toContainText("Wealth & investment");
     await expect(page.locator("header")).toContainText("Start simulation");
     await page.evaluate(() => goto("wealth"));
-    await expect(page.locator("#main")).toContainText("Stock allocation (stocks in the portfolio of stocks and bonds)");
+    await expect(page.locator("#main")).toContainText("Stock allocation (share of stocks in the portfolio of stocks and bonds)");
     await expect(page.locator('input[data-path="wealth.stocks"]')).toHaveValue(/^\d{1,3}(['’]\d{3})+$/);
     await page.evaluate(() => goto("pension"));
     await expect(page.locator("#main")).toContainText("Pension fund (BVG, pillar 2) and old-age pension (AHV, pillar 1)");

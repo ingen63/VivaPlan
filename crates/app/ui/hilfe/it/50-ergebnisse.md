@@ -68,7 +68,7 @@ Un **istogramma**: ogni colonna conta le simulazioni la cui sostanza finale cade
 
 Tipica è una distribuzione **asimmetrica** con una lunga coda a destra: poche simulazioni terminano molto bene, la maggior parte nel mezzo. L’estremità inferiore mostra quanto male può andare.
 
-Il secondo grafico mostra la distribuzione della **sostanza al pensionamento**. È la situazione di partenza per la fase di prelievo: una sostanza bassa al pensionamento è spesso una decisione anticipata per il risultato.
+Il secondo grafico mostra la distribuzione della **sostanza al pensionamento**. È la situazione di partenza per la fase di prelievo: una sostanza bassa al pensionamento spesso determina già in larga misura il risultato.
 
 ## @r-depletion Età all’esaurimento
 Parole chiave: esaurimento, esaurita, età, barre
@@ -96,7 +96,7 @@ Con più simulazioni può osservare in dettaglio **singole simulazioni**. Scelga
 
 - **Simulazione peggiore**, **1°**, **5°**, **50°**, **95°** o **99° percentile**: la simulazione la cui **sostanza finale** corrisponde a questo percentile.
 
-Sotto vede i grafici di questa simulazione che mostra una simulazione singola, e l’elenco degli eventi. Così riconosce **perché** una simulazione termina male: crollo di borsa all’inizio, inflazione alta, una vendita forzata dell’immobile.
+Sotto vede, per questa simulazione, gli stessi grafici di una simulazione singola e l’elenco degli eventi. Così riconosce **perché** una simulazione termina male: crollo di borsa all’inizio, inflazione alta, una vendita forzata dell’immobile.
 
 Particolarmente istruttivo è il **confronto** tra il 5° e il 95° percentile: come si differenziano i rendimenti dei primi dieci anni di pensionamento? È il **rischio di sequenza** in cifre. Le simulazioni di dettaglio l’app le ricalcola esattamente.
 
@@ -164,7 +164,7 @@ La scheda **«Parametri»** mostra **in sola lettura** con quali dati è stato c
 ## @r-events Eventi
 Parole chiave: elenco, acquisto, vendita, vendita forzata, pensionamento, esaurimento
 
-L’elenco di tutti gli **eventi** di una simulazione con data ed età: pensionamento, inizio AVS, prelievo del capitale con imposta sulle prestazioni in capitale, acquisti e vendite di immobili (anche **vendite forzate**), periodi ipotecari, il **passaggio dall’ammortamento indiretto a quello diretto** all’inizio della rendita AVS, il **rimborso unico** all’acquisto se l’ipoteca deve essere ridotta per la sostenibilità, versamento del 3a, importi unici e l’**esaurimento** della sostanza. Le **registrazioni della strategia a 3 comparti** (rifornimenti, entrate, riservazioni di ricavi di vendita) non figurano in questo elenco, ma si possono aprire nei [valori annuali](#r-table); i messaggi della fase di deficit («tutti i comparti vuoti») restano qui.
+L’elenco di tutti gli **eventi** di una simulazione con data ed età: pensionamento, inizio AVS, prelievo del capitale con imposta sulle prestazioni in capitale, acquisti e vendite di immobili (anche **vendite forzate**), periodi ipotecari, il **passaggio dall’ammortamento indiretto a quello diretto** all’inizio della rendita AVS, il **rimborso unico** all’acquisto se l’ipoteca deve essere ridotta per la sostenibilità, riscossione del 3a, importi unici e l’**esaurimento** della sostanza. Le **registrazioni della strategia a 3 comparti** (rifornimenti, entrate, riservazioni di ricavi di vendita) non figurano in questo elenco, ma si possono aprire nei [valori annuali](#r-table); i messaggi della fase di deficit («tutti i comparti vuoti») restano qui.
 
 Tutti gli importi figurano **con la valuta** (valuta del progetto).
 
@@ -198,7 +198,7 @@ Sopra i grafici e in ogni titolo di grafico figura **quale variazione** è rappr
 **Valore ottimale per percentile:** nella panoramica (sostanza finale per percentile) e in «Simulazioni singole» figura per ogni percentile il valore della variazione ottimale per quel percentile. A tale scopo vengono usati solo i passi di variazione già calcolati.
 
 - **Fattore spese:** il fattore **più alto** con cui la sostanza basta fino alla fine. Se il passaggio cade tra due passi, si interpola tra essi finché la sostanza finale è esattamente 0 (visualizzazione ‹≈ 73 %›).
-- **Quota azionaria, prelievo del capitale cassa pensione:** hanno la precedenza i valori con cui la sostanza basta; tra questi vale la **sostanza finale più alta**. Se non basta da nessuna parte, vale il valore con l’età di esaurimento più tardiva («(non basta da nessuna parte)»). Qui non si interpola.
+- **Quota azionaria, prelievo del capitale cassa pensione:** hanno la precedenza i valori con cui la sostanza basta; tra questi vale la **sostanza finale più alta**. Se non basta da nessuna parte, vale il valore con l’età di esaurimento più tardiva («(non basta in nessun caso)»). Qui non si interpola.
 - **Due variazioni:** se c’è il fattore spese, per ogni valore dell’altro parametro viene determinato il fattore sostenibile più alto e viene mostrata la combinazione con il fattore più alto. Altrimenti vale la combinazione migliore secondo i criteri sopra.
 - **Bordo del campo:** ‹< 50 %› significa che già il valore più basso esaminato non basta; ‹≥ 110 %› (o ‹≥› / ‹≤› per il valore migliore) che il campo non basta. Allarghi allora la variazione. Per una quota (quota azionaria, prelievo del capitale cassa pensione) figura 0 % o 100 % senza ‹≥› o ‹≤›, perché è il limite naturale, non un campo troppo stretto; se il valore migliore di una quota è a un altro bordo (ad esempio 50 % con un campo da 0 a 50 %), ‹≥› o ‹≤› continua a valere.
 - **Mese d’inizio storico, data di pensionamento, tasso di prelievo:** qui non ha senso un ottimo (il mese d’inizio non è una decisione; una data di pensionamento più tardiva o un tasso più basso dà sempre la sostanza finale più alta). Viene mostrato ‹–›.
@@ -219,14 +219,14 @@ Una tabella con **una riga per anno** per la simulazione scelta. Importi nella v
 | Tasso di prelievo | **prelievo annuo / sostanza totale a inizio anno** in percentuale (colonna «Totale» dell’anno precedente) |
 | Scostamento dal piano | media mensile: reddito totale meno spese totali. Con **0** tutto procede come pianificato. Con le strategie che legano le spese alla sostanza (Guardrails, tasso fisso, VPW, Endowment), un valore **negativo** è la riduzione rispetto al Suo piano, uno positivo l’aumento |
 | Inflazione all’anno | variazione dell’indice dei prezzi nell’anno civile, nel primo anno dall’inizio della simulazione |
-| Imposte pagate nell’anno | **somme annue delle imposte pagate** per tipo: imposta reddito, imposta sostanza, imposta prestazione in capitale, imposta immobile, più il totale. Le colonne sono **chiuse per impostazione standard**; il pulsante **«Mostrare le imposte»** sopra la tabella le mostra e le nasconde, la scelta resta memorizzata |
+| Imposte pagate nell’anno | **somme annue delle imposte pagate** per tipo: imposta reddito, imposta sostanza, imposta prestazione in capitale, imposta utili immobiliari, più il totale. Le colonne sono **chiuse per impostazione standard**; il pulsante **«Mostrare le imposte»** sopra la tabella le mostra e le nasconde, la scelta resta memorizzata |
 
 Le colonne non sono ordinate in gruppi con un titolo. Che la sostanza sia composta da **saldi a fine anno** e i flussi di denaro da **medie mensili** è indicato nell’avvertenza (tooltip) delle intestazioni delle colonne e nel testo sotto la tabella. Il reddito da solo e le spese pianificate senza spese d’alloggio la tabella non li mostra; sono contenuti in «Reddito totale» e «Spese totali».
 
 - **Tasso di prelievo:** il prelievo annuo è la somma dei prelievi mensili dell’anno civile (per anni incompleti la media mensile per 12). La sostanza a inizio anno è la sostanza totale («Totale») dell’anno precedente, nel primo anno il saldo all’inizio della simulazione. Il calcolo usa sempre valori **nominali**, il commutatore nominale/potere d’acquisto attuale non cambia i tassi. Se il prelievo è nullo o negativo (reddito superiore alle spese), la cella resta vuota; se la sostanza è nulla o negativa, figura ‹–›.
 - **Strategia a 3 comparti:** ogni anno con almeno un rifornimento ha davanti una freccia (▸). Apre la **derivazione delle dimensioni dei comparti e dei rifornimenti** di quell’anno (evento scatenante, base delle spese, entrate regolari, fabbisogno netto, obiettivi, criterio di rendimento, trasferimenti, saldi dei comparti prima e dopo). Con più simulazioni vale per la simulazione singola scelta.
 - I flussi di denaro sono **medie mensili** dell’anno civile, perché i singoli mesi variano (gli interessi ipotecari vengono ad esempio pagati trimestralmente).
-- Imposta sul reddito e sulla sostanza vengono tassate a dicembre e pagate a **maggio dell’anno successivo**. La tabella le mostra nella riga dell’**anno fiscale** a cui si riferiscono: l’imposta dell’anno fiscale 2028 figura nella riga 2028, anche se il denaro esce solo a maggio 2029. La sostanza e il saldo di cash diminuiscono perciò solo l’anno successivo. Se la pianificazione termina prima di dicembre, l’imposta dell’ultimo anno incompleto manca nelle colonne. L’imposta sulle prestazioni in capitale (cassa pensione, pilastro 3a) e l’imposta sugli utili immobiliari figurano nell’anno del prelievo o della vendita.
+- L’imposta sul reddito e quella sulla sostanza vengono calcolate a dicembre e pagate a **maggio dell’anno successivo**. La tabella le mostra nella riga dell’**anno fiscale** a cui si riferiscono: l’imposta dell’anno fiscale 2028 figura nella riga 2028, anche se il denaro esce solo a maggio 2029. La sostanza e il saldo di cash diminuiscono perciò solo l’anno successivo. Se la pianificazione termina prima di dicembre, l’imposta dell’ultimo anno incompleto manca nelle colonne. L’imposta sulle prestazioni in capitale (cassa pensione, pilastro 3a) e l’imposta sugli utili immobiliari figurano nell’anno del prelievo o della vendita.
 - Il primo e l’ultimo anno sono per lo più incompleti; recano un asterisco (*), il puntatore del mouse indica il numero di mesi.
 
 ## @r-list Elenco dei risultati

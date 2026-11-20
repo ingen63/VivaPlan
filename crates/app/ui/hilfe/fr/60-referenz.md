@@ -30,7 +30,7 @@ Mots-clés: contrôle, erreur, avertissement, remarque, validation
 À droite dans l’éditeur, l’application contrôle la planification en continu.
 
 - **Erreurs (rouge):** la planification est incomplète ou contradictoire. «Lancer la simulation» n’est alors pas possible. Un clic sur l’erreur saute à la section concernée. **«Lancer la simulation» et «Lancer l’optimisation» sont bloqués** tant qu’il y a des erreurs: une tentative affiche «La planification contient N erreur(s) …» et mène à la première section concernée. Les **champs obligatoires** (par exemple le nom et la date de naissance de chaque personne) portent un astérisque (*); une erreur apparaît directement au champ, de même qu’une valeur illisible (par exemple une date vide). Tant que vous tapez dans un champ, **tout attend**: aucun message n’apparaît, et l’aperçu, les valeurs calculées et la liste de contrôle restent en l’état. Ce n’est que lorsque vous quittez le champ (Tab, clic à côté ou Entrée) que tout est recalculé et qu’un message est affiché ou retiré. Une valeur à moitié saisie comme ‹6› en route vers ‹65› n’est ainsi pas signalée. Les listes de sélection et les cases à cocher agissent immédiatement. La liste complète des saisies obligatoires figure dans la spécification `docs/Pflichteingaben.md`.
-- **Avertissements (jaune):** la simulation fonctionne, mais un point mérite votre attention, par exemple une série temporelle dans une autre monnaie ou l’addition de retraits en capital.
+- **Avertissements (jaune):** la simulation peut être lancée, mais un point mérite votre attention, par exemple une série temporelle dans une autre monnaie ou l’addition de retraits en capital.
 
 Erreurs typiques: départ après la fin, retraite en dehors de la période, plus de deux personnes, une série temporelle manquante pour une source historique, un paramètre non valable d’une stratégie. Le message en indique la cause.
 
@@ -101,7 +101,7 @@ Mots-clés: termes, lexique, signification, abréviations
 
 **Monte Carlo:** calcul de nombreuses évolutions aléatoires pour estimer des probabilités. Voir [Simulation](#s-returns).
 
-**Nominal / réel:** nominaux sont les montants en francs futurs, réels ceux en pouvoir d’achat actuel. Voir [Rendement, inflation et valeurs réelles](#ret-concepts).
+**Nominal / réel:** les montants nominaux sont exprimés en francs futurs, les montants réels en pouvoir d’achat actuel. Voir [Rendement, inflation et valeurs réelles](#ret-concepts).
 
 **Percentile:** le *n*-ième percentile est la valeur au-dessous de laquelle se situent *n* % des valeurs. Voir [Fortune finale par percentile](#r-percentiles).
 

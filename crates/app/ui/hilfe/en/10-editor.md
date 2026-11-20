@@ -19,7 +19,7 @@ Keywords: pension fund payout, retirement, start, end, AHV pension start, AHV st
 
 A milestone is a named point in time to which all other inputs can refer (‘from pension fund payout’). If you move the pension fund payout, everything that depends on it moves along. This is the most important lever for playing through scenarios of ‘retiring earlier or later’.
 
-**Simulation start** and **simulation end** are given. In addition, **every person** has two fixed milestones that always exist:
+**Simulation start** and **simulation end** are predefined. In addition, **every person** has two fixed milestones that always exist:
 
 | Milestone | Meaning | Limits | Default |
 |---|---|---|---|
@@ -44,7 +44,7 @@ The column “Results in” shows the month calculated from it. **When you switc
 ## @s-pension Pensions
 Keywords: pension fund, AHV, pillar 2, pillar 1, pillar 3a, pension
 
-Pension fund (BVG, pillar 2) and old-age pension (AHV, pillar 1), with two persons with separate cards for each person. You find the numbers on the **pension statement** of your pension fund and in the **AHV account** (account statement or pension forecast of the compensation office).
+Pension fund (BVG, pillar 2) and old-age pension (AHV, pillar 1); with two persons, each person has separate cards. You find the numbers on the **pension statement** of your pension fund and in the **AHV account** (account statement or pension forecast of the compensation office).
 
 - Pension fund: [retirement savings, payout, lump sum, conversion rate](#f-pk)
 - AHV: [pension and start of payout](#f-ahv)
@@ -64,7 +64,7 @@ Pillar 3a is a separate account **per person**, separate from the pension fund a
 - **Balance from the preview:** Every row shows the **balance before the payout** and the **rest after it**; below the plan is the balance paid out at the AHV pension start. The values come from the preview with fixed returns; if the plan has an error, there is no preview, and ‘–’ is shown.
 - **+ Payout** creates a row one year after the last one (without a row: in the earliest allowed month, 5 years before the AHV pension start, not before the simulation start), at the latest at the AHV pension start. The amount is the balance at that point in time after the earlier payouts, rounded down to 1 000. You can change it freely afterwards.
 - **Rest at the AHV pension start:** Whatever is still in the account is paid out **at the latest in the month of the AHV pension start**.
-- **Use:** into free wealth or, if a tranche with indirect amortization into this account exists, “Repay mortgage” (first the tranches with indirect amortization).
+- **Use:** into liquid wealth or, if a tranche with indirect amortization into this account exists, “Repay mortgage” (first the tranches with indirect amortization).
 
 Every payout is a **lump-sum withdrawal** with lump-sum tax. Withdrawals in the same calendar year (pension fund and pillar 3a) are added together for the rate; for unmarried couples, per person.
 
@@ -152,7 +152,7 @@ Keywords: income, living expenses, spending, one-off amounts, inheritance, infla
 
 Monthly amounts. **Spending is entered in today's prices** and carried forward by the app with inflation. So you enter your current costs, also for years in the future.
 
-- **Net earned income per month:** what arrives in your account after deductions (AHV, pension fund; taxes are calculated separately). It ends when you set it to 0 [time-dependent](#f-timed), for example ‘from pension fund payout 0’. The pension fund payout does not end it on its own; if it is still greater than 0 afterwards, the validation shows a warning with the amount.
+- **Net earned income per month:** what arrives in your account after deductions (AHV, pension fund; taxes are calculated separately). It ends when you set it to 0 with a [time-dependent value](#f-timed), for example ‘from pension fund payout 0’. The pension fund payout does not end it on its own; if it is still greater than 0 afterwards, the validation shows a warning with the amount.
 - **Rises with inflation** (per person): with a tick, the amounts, including every row of a time-dependent income, are in **today's prices** (prices at the simulation start) and grow with the inflation of the respective path, just like living expenses. Example: 8 000 per month at 2 % inflation are 8 160 after one year and about 8 830 after five years. Without a tick, the amount stays the same nominally. New plans and a newly added second person have the tick set; older plans without the setting calculate without it as before. Taxes, yearly values and affordability use the adjusted amount; the warning after the pension fund payout then names the amount ‘in prices of the simulation start’.
 - **Living expenses per month:** everything you spend, **including rent or housing costs** (mortgage interest, amortization, fixed costs), as shown on your bank statement. The app deducts the **housing share**, which is the housing costs in the start month from the section [Real estate](#s-realestate) as a monthly average (interest and amortization are paid quarterly), carried forward with inflation, and equally from every row. The calculation uses living expenses without housing plus the **simulated** housing costs: if the interest changes at a renewal or you move into a rental after a sale, spending changes accordingly. Example: 8 000 including 2 000 housing costs; after an interest increase of 300, spending is 8 300, with a rent of 2 500 it is 8 500. If a row is smaller than the housing share, the validation reports an error. The contribution to [pillar 3a](#s-pillar3a) is not included. The app converts older plans (living expenses without housing costs) when they are opened, and a notice names the amount added. Taxes are calculated separately. A realistic value is the most important single factor for the result. Look at two to three years of bank statements for this.
 - **One-off amounts:** date, amount and description. Positive is an inflow (inheritance, gift), negative an expense (car, travel, renovation).
@@ -169,12 +169,12 @@ Many amounts and rates come in two forms:
 
 Example living expenses: ‘from start 9 500’, ‘from pension fund payout 8 500’, ‘from 80 7 000’.
 
-The small chart next to the field shows the course. With the mouse wheel you zoom in; the buttons “All”, ‘10 yrs’, ‘5 yrs’ and ‘2 yrs’ choose the section.
+The small chart next to the field shows the course. With the mouse wheel you zoom in; the buttons “All”, ‘10 yrs’, ‘5 yrs’ and ‘2 yrs’ choose the range.
 
 Rows that are further down but begin before another one are sorted by point in time by the app. So feel free to move milestones; the order of the values stays consistent.
 
 ## @s-wealth Wealth & investment
-Keywords: stocks, bonds, cash, stock allocation, reserve, portfolio, investment strategy, index
+Keywords: stocks, bonds, cash, liquidity, stock allocation, reserve, portfolio, investment strategy, index
 
 The **balances at simulation start**, the **split** of the portfolio and the **investment strategy**.
 
@@ -183,7 +183,7 @@ The **balances at simulation start**, the **split** of the portfolio and the **i
 - **Until retirement** (pension fund payout of the first person), no withdrawal strategy applies. The app holds as much cash as is in the field **Cash**, carried forward with **inflation**: a surplus goes into the portfolio according to the stock allocation, and a shortfall is refilled from the portfolio.
 - **From retirement**, the [withdrawal strategy](#s-withdrawal) determines the cash: “Standard” with the [cash reserve](#f-reserve) from its card, all others with 3 months, or the 3-bucket strategy with its buckets.
 
-- **Investment strategy:** one index each for the stocks (World, World custom, Switzerland, S&P 500) and for the bonds (Swiss Confederation 10 years or short-term, USA). With “World custom (JST)”, you set the weights of Switzerland, USA, EU and Asia-Pacific; together they must add up to 100 %. Below the selection are the common period and the mean returns; if an index is cut to the common period, a notice appears. Details: [Investment strategy](#f-ret-series).
+- **Investment strategy:** one index each for the stocks (World, “World, custom”, Switzerland, S&P 500) and for the bonds (Swiss Confederation 10 years or short-term, USA). With “World, custom”, you set the weights of Switzerland, USA, EU and Asia-Pacific; together they must add up to 100 %. Below the selection are the common period and the mean returns; if an index is cut to the common period, a notice appears. Details: [Investment strategy](#f-ret-series).
 
 In the simulation, wealth is carried forward every month with the return of stocks and bonds: from the indices of the investment strategy, using the method under [Simulation](#s-returns) (fixed returns, historical course or Monte Carlo).
 
@@ -305,18 +305,18 @@ The first period starts on the start date of the tranche (at the purchase), ever
 - At a sale, the accrued interest is paid immediately.
 
 ## @f-re-emergency Emergency sale
-Keywords: sale, liquidity, threshold, forced sale
+Keywords: sale, liquidity, threshold, emergency sale, forced sale
 
 If liquid wealth runs low, the app sells the property in the following month. The **threshold** is months of uncovered spending: if liquid wealth covers fewer months (spending minus income), an emergency sale is necessary.
 
 An emergency sale shows that the plan does not work out without selling the property. It appears in the [events](#r-events) of the results. The higher the threshold, the earlier the sale.
 
 ## @f-re-afford Affordability
-Keywords: bank, loan-to-value, imputed interest rate, equity, mortgage
+Keywords: bank, affordability, loan-to-value, imputed interest rate, equity, mortgage
 
 The banks' affordability calculation, applied to purchases “after sale” and at every renewal of a mortgage period. A mortgage is affordable if the **imputed costs** do not exceed a share of the income.
 
-- **At most of income:** usually one third (33 %).
+- **Max. share of income:** usually one third (33 %).
 - **Imputed interest rate:** usually 5 %, regardless of the current interest rate.
 - **Fixed costs:** usually 1 % of the price per year.
 - **Income:** Only earned income and pensions are counted, **not** the withdrawal from wealth. If the income is not sufficient, the mortgage is reduced; the purchase then shows the **one-off repayment** from wealth as an event.
@@ -333,7 +333,7 @@ Here you set which parameters are **varied systematically**. “Start simulation
 
 The duration of the simulation is also shown to the left of the button “Start simulation”. During the calculation, you can stop it with **Cancel**.
 
-The number of combinations is **not limited**; only beyond **1'000'000** combinations does the engine refuse (memory protection). If the estimated calculation time is over **one minute**, the app asks before the start (duration and number of runs, “Start anyway” or “Cancel”). The display “Size” shows how many runs result in total (variations × paths); a **yellow warning symbol (⚠)** appears next to it as soon as the estimated calculation time exceeds **90 seconds**, together with a **rough estimate of the duration**. It is based on a short measurement of your plan on this computer. The range (‘mostly … to …’) takes into account that runs take different amounts of time depending on the plan. Every additional variation and every additional path lengthens the calculation time accordingly: 35 combinations with 50 000 paths take about 10 seconds with bootstrap, and about one minute with the parametric model. At most 400 combinations are allowed.
+The number of combinations is **not limited**; only beyond **1'000'000** combinations does the engine refuse (memory protection). If the estimated calculation time is over **one minute**, the app asks before the start (duration and number of runs, “Start anyway” or “Cancel”). The display “Size” shows how many runs result in total (variations × paths); The display “Size” shows how many runs result in total (variations × paths) and a **rough estimate of the duration**; a **yellow warning symbol (⚠)** appears next to it as soon as the estimated calculation time exceeds **90 seconds**. It is based on a short measurement of your plan on this computer. The range (‘mostly … to …’) takes into account that runs take different amounts of time depending on the plan. Every additional variation and every additional path lengthens the calculation time accordingly: 35 combinations with 50 000 paths take about 10 seconds with bootstrap, and about one minute with the parametric model. At most 400 combinations are allowed.
 
 The variations themselves: [Variations](#f-sweep).
 

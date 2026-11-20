@@ -504,7 +504,7 @@ codes! {
     milestones_start_end_missing => "The milestones “start” and “end” must exist.",
     end_before_start => "The simulation end must be after the start.",
     period_too_long => "The simulation period is longer than 100 years.",
-    paths_memory => "Too many paths for the memory: {paths:int} paths × {months} months. With this planning period, at most {max:int} paths are possible.",
+    paths_memory => "Too many paths for the available memory: {paths:int} paths × {months} months. With this planning period, at most {max:int} paths are possible.",
     birth_after_start => "{who}: the date of birth ({birth:ym}) is after the simulation start ({start:ym}).",
     person_too_old => "{who}: at the simulation end the person would be over {max} years old.",
     milestone_age_invalid => "“{name}”: age {years} is not possible.",
@@ -585,13 +585,13 @@ codes! {
     pillar3a_rate_range => "{who}: the interest rate must be between −50 % and 100 %.",
     pillar3a_contribution_range => "{who}: the contribution must be between 0 and the maximum amount of {max:int} per year (settings).",
     pillar3a_over_max => "{who}: contribution ({contribution:int}) and indirect amortization ({indirect:int}) together exceed the maximum amount of {max:int} per year.",
-    pillar3a_repay_without_indirect => "{who}: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to free wealth.",
+    pillar3a_repay_without_indirect => "{who}: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to liquid wealth.",
     pillar3a_payout_date_invalid => "{who}: the date of payout no. {n} is missing or invalid.",
     pillar3a_payout_age_invalid => "{who}: the age (0 to 150 years) of payout no. {n} is missing or invalid.",
     pillar3a_payout_too_early => "{who}: the payout in {date:ym} is more than 5 years before the start of the AHV pension ({ahv:ym}); at the earliest in {earliest:ym}.",
     pillar3a_payout_after_ahv => "{who}: the payout in {date:ym} is after the start of the AHV pension ({ahv:ym}); the balance will already have been paid out by then.",
     pillar3a_payout_amount => "{who}: the amount of the payout in {date:ym} must be greater than 0.",
-    pillar3a_payout_repay_without_indirect => "{who}: “Repay mortgage” (payout in {date:ym}) requires a tranche with indirect amortization; it goes to free wealth.",
+    pillar3a_payout_repay_without_indirect => "{who}: “Repay mortgage” (payout in {date:ym}) requires a tranche with indirect amortization; it goes to liquid wealth.",
     pillar3a_payout_same_year_as_pk => "{who}: payout in {date:ym} and pension fund lump sum in the same year – they are added together for tax progression.",
     // Milestones and points in time (resolve.rs)
     milestone_person_unknown => "Milestone “{name}”: unknown person “{person}”",
@@ -654,7 +654,7 @@ codes! {
     ch_inflation_missing => "Swiss inflation {year} missing",
     library_unknown => "The time series “{file}” is in the data library, whose folder is not known here.",
     library_name_invalid => "Invalid name in the data library: “{file}”",
-    import_chf_ends => "The CHF series ends {month:ym} because the SNB data (exchange rate or consumer price index) do not go further. Newer SNB data can also be imported.",
+    import_chf_ends => "The CHF series ends in {month:ym} because the SNB data (exchange rate or consumer price index) do not extend further. Newer SNB data can also be imported.",
     import_snb_cube => "SNB cube {id} imported.",
     import_snb_cube_dated => "SNB cube {id} imported (as of {published}).",
     import_shiller_usd_missing => "“Shiller USD.csv” is missing in the library; the CHF series was not recalculated.",
@@ -719,12 +719,12 @@ codes! {
     // Investment strategy and indices (#177; strategy.rs)
     index_ch_jst => "Switzerland (JST)",
     index_world_jst => "World (JST)",
-    index_world_custom => "World custom (JST)",
+    index_world_custom => "World, custom (JST)",
     index_sp500 => "S&P 500 (Shiller)",
     index_confed_10 => "Swiss Confederation 10 years",
     index_us_10 => "USA 10 years (Shiller)",
     index_confed_short => "Swiss Confederation short-term",
-    index_world_custom_weights => "World custom (CH {ch} %, USA {usa} %, EU {eu} %, Asia-Pacific {apac} %)",
+    index_world_custom_weights => "World, custom (CH {ch} %, USA {usa} %, EU {eu} %, Asia-Pacific {apac} %)",
     investment_label => "Stocks {stocks}, bonds {bonds}",
     investment_part_stocks => "Stocks {name}",
     investment_part_bonds => "Bonds {name}",
@@ -790,7 +790,7 @@ codes! {
     event_purchase_lump_sum => "Purchase {name}: price {price:fix0} {currency}, mortgage {mortgage:fix0} {currency}, one-off repayment of {lump:fix0} {currency} for affordability",
     event_mortgage_period => "New mortgage period {name}{tranche}: {rate:pct2} %, {amount:fix0} {currency}",
     event_mortgage_repaid => "Mortgage repayment {name}: {amount:fix0} {currency}",
-    event_amortization_direct => "Amortization of mortgage {name}{tranche} from the start of the AHV pension{who} direct instead of via pillar 3a: {amount:fix0} {currency} per year",
+    event_amortization_direct => "Amortization of mortgage {name}{tranche} from the start of the AHV pension{who} directly instead of via pillar 3a: {amount:fix0} {currency} per year",
     event_pillar3a_short => "Pillar 3a{who}: planned {planned:fix0} {currency}, the balance only covers {available:fix0} {currency}",
     event_pillar3a_payout => "Pillar 3a{who}: {what} {amount:fix0} {currency}, tax {tax:fix0} {currency}, to mortgage {repaid:fix0} {currency}",
     payout => "Payout",
@@ -861,7 +861,7 @@ codes! {
     note_milestone_own_person => "“{name}” now refers to the age of its own person ({years} years).",
     note_pk_reference => "The pension fund payout now starts at the milestone “{milestone}” (previously “{old}”).",
     note_ahv_reference => "The AHV pension now starts at the milestone “{milestone}” (previously “{old}”).",
-    note_pillar3a_repay_to_wealth => "Pillar 3a of “{name}”: “Repay mortgage” now requires a tranche with indirect amortization; the payout goes to free wealth.",
+    note_pillar3a_repay_to_wealth => "Pillar 3a of “{name}”: “Repay mortgage” now requires a tranche with indirect amortization; the payout goes to liquid wealth.",
     note_pillar3a_account_rest_at_ahv => "The pillar 3a of “{name}” is now a separate 3a account (section “Pillar 3a”); the remainder is paid out in the month the AHV pension starts.",
     note_pillar3a_account_moved => "The pillar 3a of “{name}” is now a separate 3a account (section “Pillar 3a”); the payout ({old:ym}) was more than 5 years before the start of the AHV pension and is now in {date:ym}.",
     note_pillar3a_account_payout => "The pillar 3a of “{name}” is now a separate 3a account (section “Pillar 3a”); the whole balance is paid out in {date:ym}.",
@@ -940,6 +940,28 @@ mod tests {
             saved == now,
             "e2e/unit/engine-messages.json is outdated: write it again with MESSAGES_UPDATE=1"
         );
+    }
+
+    /// #182/AK5: the English templates corrected in the review of the translations (the same text as `en.json`).
+    #[test]
+    fn issue_182_ak5_english_templates_follow_the_review() {
+        let cases = [
+            (Code::event_amortization_direct, "directly instead of via pillar 3a"),
+            (Code::import_chf_ends, "series ends in {month:ym}"),
+            (Code::import_chf_ends, "do not extend further"),
+            (Code::index_world_custom, "World, custom (JST)"),
+            (Code::index_world_custom_weights, "World, custom (CH"),
+            (Code::note_pillar3a_repay_to_wealth, "goes to liquid wealth"),
+            (Code::paths_memory, "for the available memory"),
+            (Code::pillar3a_payout_repay_without_indirect, "goes to liquid wealth"),
+            (Code::pillar3a_repay_without_indirect, "goes to liquid wealth"),
+        ];
+        for (code, part) in cases {
+            assert!(code.template().contains(part), "{}: {}", code.as_str(), code.template());
+        }
+        for &c in Code::ALL {
+            assert!(!c.template().contains("free wealth"), "{}", c.as_str());
+        }
     }
 
     /// #171: Codes are unique snake_case words, every template has valid placeholders, and every example renders

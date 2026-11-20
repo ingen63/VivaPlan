@@ -227,6 +227,41 @@
       "check": "terms",
       "subject": "Obligationen",
       "reason": "Namen der Datenreihen bzw. Dateinamen (`Shiller CHF + CH-Obligationen`), die nicht übersetzt werden"
+    },
+    {
+      "file": "crates/app/ui/i18n/en.json",
+      "where": "mortgage.eightyPct",
+      "check": "values",
+      "subject": "number",
+      "reason": "«Minimum Eigenmittel» ist ausgeschrieben als «minimum equity of 20 %» (Gegenstück zu 80 %), damit «minimum equity» nicht als Untergrenze missverstanden wird (#182)"
+    },
+    {
+      "file": "crates/app/ui/i18n/en.json",
+      "where": "mortgage.eightyPct",
+      "check": "values",
+      "subject": "%",
+      "reason": "«Minimum Eigenmittel» ist ausgeschrieben als «minimum equity of 20 %» (Gegenstück zu 80 %), damit «minimum equity» nicht als Untergrenze missverstanden wird (#182)"
+    },
+    {
+      "file": "crates/app/ui/i18n/en.json",
+      "where": "optimize.weightMedianHint",
+      "check": "values",
+      "subject": "%",
+      "reason": "«10-%-Perzentil» steht in der üblichen Form der Sprache als «10th/10e/10° percentile», ohne «%» (#182)"
+    },
+    {
+      "file": "crates/app/ui/i18n/fr.json",
+      "where": "optimize.weightMedianHint",
+      "check": "values",
+      "subject": "%",
+      "reason": "«10-%-Perzentil» steht in der üblichen Form der Sprache als «10th/10e/10° percentile», ohne «%» (#182)"
+    },
+    {
+      "file": "crates/app/ui/i18n/it.json",
+      "where": "optimize.weightMedianHint",
+      "check": "values",
+      "subject": "%",
+      "reason": "«10-%-Perzentil» steht in der üblichen Form der Sprache als «10th/10e/10° percentile», ohne «%» (#182)"
     }
   ]
 }

@@ -9,7 +9,7 @@ L’application calcule votre avenir financier mois par mois, d’aujourd’hui 
 
 - caisse de pension (2e pilier) avec taux de conversion et retrait en capital, AVS (1er pilier) et pilier 3a
 - impôt sur le revenu, impôt sur la fortune, impôt sur les prestations en capital et impôt sur les gains immobiliers
-- logement en propriété avec hypothèque SARON ou à taux fixe, calcul de la capacité financière des banques, location
+- logement en propriété avec hypothèque SARON ou à taux fixe, calcul de la capacité financière selon les règles des banques, location
 - une deuxième personne avec sa propre prévoyance (règles pour couples mariés)
 
 L’avenir est incertain, surtout les rendements boursiers. C’est pourquoi l’application ne calcule pas une seule évolution, mais, selon le réglage, **des milliers** (Monte Carlo ou toutes les dates de départ historiques), et montre dans combien d’entre elles l’argent suffit. La manière dont les rendements sont produits est le thème le plus important de l’application: voir [Rendements et données](#s-returns).
@@ -29,7 +29,7 @@ Commencez avec la planification d’exemple chargée à l’ouverture et adaptez
 La liste de contrôle **«Premiers pas»**, à droite au-dessus du contrôle, vous guide à travers les mêmes huit étapes. Un clic sur une étape ouvre la section, ⓘ l’aide correspondante. Une section est considérée comme effectuée dès que vous y modifiez une valeur ou que vous la cochez à la main; «Annuler» n’enlève pas la coche. «Lancer la simulation» est effectué dès qu’une simulation s’est terminée sans interruption. Avec ✕, vous masquez la liste; vous la réaffichez par *Aide → Premiers pas*. Lorsque toutes les étapes sont effectuées, elle se replie. La progression vaut pour vous sur cet appareil, pas pour une planification en particulier, et ne figure pas dans le fichier de planification.
 
 1. **[Ménage et projet](#s-general):** saisir le nom et le mois de naissance.
-2. **[Jalons](#s-milestones):** fixer la prestation de la caisse de pension, le début de la rente AVS ainsi que le début et la fin de la simulation. La fin devrait être si tardive que vous ne souhaitez pas lui survivre (par exemple 95 ans).
+2. **[Jalons](#s-milestones):** fixer la prestation de la caisse de pension, le début de la rente AVS ainsi que le début et la fin de la simulation. La fin devrait être assez tardive pour que vous ne comptiez pas vivre au-delà (par exemple 95 ans).
 3. **[Prévoyance](#s-pension):** saisir l’avoir actuel de la caisse de pension, le taux de conversion, le retrait en capital et la rente AVS d’après vos certificats de prévoyance.
 4. **[Revenus et dépenses](#s-flows):** revenu de l’activité lucrative et coût de la vie par mois. Le coût de la vie doit avoir une valeur réaliste, c’est là que se trouve le plus grand levier.
 5. **[Fortune et placement](#s-wealth):** actions, obligations et cash au début de la simulation, ainsi que la part d’actions visée.
@@ -42,7 +42,7 @@ Le contrôle en bas à droite affiche les erreurs et les avertissements avant m�
 > Conseil: appuyez sur **F1** dans un champ de saisie, et l’aide relative à ce champ apparaît.
 
 ## @bedienung Utilisation et raccourcis clavier
-Mots-clés: menu, clavier, enregistrer, ouvrir, annuler, F1, langue
+Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue
 
 - **Fichier:** Nouveau (une **planification vide avec les valeurs standard**: départ le mois en cours, sans nom de projet, une personne sans nom, aucun montant ni bien immobilier; les rendements, barèmes fiscaux et paramètres des stratégies reprennent les valeurs standard), Ouvrir, Enregistrer, Enregistrer sous. Une planification est un fichier unique avec l’extension `.vplan`. Il peut être copié et archivé.
 - **Démarrage et fermeture:** au démarrage, l’application de bureau ouvre la planification que vous avez ouverte ou enregistrée en dernier; le nom du fichier figure dans l’en-tête. S’il n’y en a pas, si le fichier a disparu ou s’il est illisible, elle ouvre la **planification d’exemple** fournie (avec une remarque sur le nom du fichier, sauf lors du tout premier démarrage). La planification d’exemple est considérée comme une nouvelle planification non enregistrée: «Enregistrer» demande un emplacement, elle n’est jamais écrasée. Lors de la fermeture avec des modifications non enregistrées (bouton de fermeture de la fenêtre, ⌘Q ou Ctrl+Q, ou Fichier → Quitter), l’application demande si vous voulez enregistrer, ignorer ou interrompre. «Interrompre» laisse l’application ouverte; si vous interrompez le choix de l’emplacement lors de l’enregistrement, elle reste également ouverte. Seul le chemin du fichier est mémorisé, localement dans le dossier de données de l’application.
@@ -58,7 +58,7 @@ Mots-clés: menu, clavier, enregistrer, ouvrir, annuler, F1, langue
 La liste complète des raccourcis clavier figure dans le menu *Aide → Raccourcis clavier* et dans le [chapitre de référence](#ref-shortcuts).
 
 ## @privacy Protection des données et données locales
-Mots-clés: Internet, cloud, emplacement, sécurité, réseau
+Mots-clés: Internet, cloud, emplacement, sécurité, réseau, protection des données
 
 Toutes les données restent sur votre ordinateur. L’application ne se connecte jamais à Internet, ni pour les données, ni pour les mises à jour, ni pour des analyses.
 
@@ -82,7 +82,7 @@ VivaPlan est un **outil de calcul**, pas un conseil en placement, fiscal ou en p
 Vérifiez toujours les décisions importantes avec des spécialistes. Vous trouverez la [clause de non-responsabilité](#disclaimer) complète dans la section suivante.
 
 ## @disclaimer Clause de non-responsabilité
-Mots-clés: responsabilité, garantie, disclaimer, conseil, droit, avertissement
+Mots-clés: responsabilité, garantie, disclaimer, clause de non-responsabilité, conseil, droit, avertissement
 
 Lors du premier démarrage, vous confirmez une version abrégée de cet avertissement. Si le texte change, l’application vous le redemande. Toutes les pages de résultats portent en bas la mention «Calcul modèle sans garantie. Pas de conseil financier ni fiscal.».
 
