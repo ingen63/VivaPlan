@@ -505,9 +505,16 @@ Speicher der App (IndexedDB) und nicht in der Planungsdatei.
 
 Die Hilfe öffnet als Panel rechts und ist kontextabhängig: **F1** zeigt das Thema des Felds mit dem Fokus, sonst des
 aktuellen Abschnitts bzw. der Ergebnisansicht; der Knopf «? Hilfe», die Zeichen ⓘ neben Feldern, Kartenüberschriften und
-Grafiken sowie das Menü *Hilfe* (Handbuch, ⌘⇧?) führen ebenfalls hin. Die Texte liegen als Markdown in `crates/app/ui/hilfe/`
-(ein Thema beginnt mit `## @kennung Titel`, Verweise als `[Text](#kennung)`); neue Felder ordnet man in `crates/app/ui/help.js` zu
-(`FIELD_TOPICS`, `HEADING_TOPICS`). `tools/ui-smoke.sh` prüft, dass alle Verweise und Zuordnungen auf ein Thema zeigen.
+Grafiken sowie das Menü *Hilfe* (Handbuch, ⌘⇧?) führen ebenfalls hin. Die Texte liegen als Markdown je Sprache in
+`crates/app/ui/hilfe/<sprache>/` (#173; `de/`, `en/`) mit denselben Dateinamen und Themenkennungen in jeder Sprache
+(ein Thema beginnt mit `## @kennung Titel`, Verweise als `[Text](#kennung)`, die erste Zeile `Stichworte:` bzw.
+`Keywords:` enthält Suchbegriffe); neue Felder ordnet man in `crates/app/ui/help.js` zu (`FIELD_TOPICS`,
+`HEADING_TOPICS`). Die Hilfe lädt die Kapitel der gewählten Sprache, ein fehlendes Kapitel deutsch; nach einem
+Sprachwechsel zeigt eine offene Hilfe dasselbe Thema in der neuen Sprache. `tools/ui-smoke.sh` (`#helpcheck`) prüft,
+dass alle Verweise und Zuordnungen auf ein Thema zeigen und jede Sprache dieselben Themen hat. Der Rust-Test
+`crates/app/tests/help.rs` prüft je Datei gleiche Themen, Unterüberschriften, Verweise und Stichwortzeilen wie im
+Deutschen (`COMPLETE`: Sprachen mit allen Dateien) und dass die in der Hilfe zitierten Bildschirmbegriffe (Englisch:
+in “…”) in der Texttabelle der Sprache stehen; andere Zitate (Beispiele, Eingaben) stehen in ‘…’.
 
 ## Test quality
 

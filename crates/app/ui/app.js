@@ -215,7 +215,7 @@ function reserveDiffers(p) {
 /**
  * #61: Disclaimer. The short version must be confirmed at the first start; the confirmation is stored in the
  * settings (not in the plan) with the version of the text. If the text changes, increase the version: then the user is
- * asked again. The full text is in the help (`hilfe/00-einstieg.md`, section «@disclaimer»).
+ * asked again. The full text is in the help (`hilfe/de/00-einstieg.md`, section «@disclaimer»).
  */
 const DISCLAIMER_VERSION = 1, DISCLAIMER_KEY = "disclaimerAccepted";
 let DISCLAIMER_SHORT;

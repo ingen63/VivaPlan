@@ -388,3 +388,47 @@ test.describe("Names of the optimization catalog and of the time series (#177)",
     await noErrors(page, errors);
   });
 });
+
+test.describe("Help in the chosen language (#173)", () => {
+  const helpTitle = page => page.locator("#help:not([hidden]) #helpBody h1").first();
+  const helpBody = page => page.locator("#help:not([hidden]) #helpBody");
+
+  test("AK2: manual and search show the help of the chosen language; an open help follows a change of language", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => Help.show("start"));
+    await expect(helpTitle(page)).toHaveText("Was VivaPlan kann");
+    await page.evaluate(() => I18n.use("en"));
+    await expect(helpTitle(page)).toHaveText("What VivaPlan can do");
+    await expect(helpBody(page)).toContainText("Will the money last, and how certain is that?");
+    // Table of contents and search in English
+    await page.evaluate(() => Help.show("toc"));
+    await expect(helpBody(page).locator("h3").first()).toHaveText("Introduction");
+    await page.locator("#helpSearch").fill("warranty");
+    await expect(helpBody(page).locator(".hit b").first()).toHaveText("Disclaimer");
+    await expect(helpBody(page)).not.toContainText("Haftungsausschluss");
+    // Back to German: the same view in German
+    await page.evaluate(() => I18n.use("de"));
+    await page.locator("#helpSearch").fill("Gewähr");
+    await expect(helpBody(page).locator(".hit b").first()).toHaveText("Haftungsausschluss");
+    await noErrors(page, errors);
+  });
+
+  test("AK2: a chapter missing in the language and a language without help fall back to German", async ({ page }) => {
+    await page.route("**/hilfe/en/00-einstieg.md", r => r.fulfill({ status: 404, body: "" }));
+    await page.route("**/i18n/languages.json", r => r.fulfill({ json: { de: "Deutsch", en: "English", fr: "Français" } }));
+    await page.route("**/i18n/fr.json", async r => {
+      const de = await (await r.fetch({ url: r.request().url().replace("fr.json", "de.json") })).json();
+      r.fulfill({ json: Object.fromEntries(Object.entries(de).map(([k, v]) => [k, MARK + v])) });
+    });
+    const errors = await open(page);
+    await page.evaluate(() => I18n.use("en"));
+    await page.evaluate(() => Help.show("start"));
+    await expect(helpTitle(page)).toHaveText("Was VivaPlan kann");
+    expect(await page.evaluate(() => Help.language())).toBe("en");
+    await page.evaluate(() => I18n.use("fr"));
+    await page.evaluate(() => Help.show("disclaimer"));
+    await expect(helpTitle(page)).toHaveText("Haftungsausschluss");
+    expect(await page.evaluate(() => Help.language())).toBe("fr");
+    await noErrors(page, errors);
+  });
+});

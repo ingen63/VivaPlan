@@ -53,7 +53,7 @@ Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache
 - **Hilfe:** **F1** öffnet die Hilfe zum aktuellen Thema (je nachdem, wo Sie gerade sind: Feld, Abschnitt, Ergebnisgrafik). Der Knopf «? Hilfe» und die Zeichen ⓘ neben Feldern tun dasselbe. ⌘⇧? öffnet das Inhaltsverzeichnis, Esc schliesst die Hilfe.
 - **Zeitleiste:** Über dem Editor zeigt sie alle Meilensteine. Ein Klick darauf öffnet die Meilensteine. Unter der Linie stehen die **Immobilienereignisse** der Vorschau (grüne Dreiecke für Kauf und Verkauf, orange für Notverkäufe) mit Kurzbeschriftung wie «Kauf Wohnung 09.2027». Bei mehr als 15 Ereignissen erscheinen nur die Symbole, der Text steht dann im Tooltip.
 - **Zeitabhängige Werte:** Viele Beträge lassen sich als Konstante oder als Abfolge von Werten erfassen, siehe [Zeitabhängige Werte](#f-timed).
-- **Sprache:** Menü *Ansicht → Sprache* oder die [Einstellungen](#f-settings). Der Wechsel wirkt sofort; Planung und Ansicht bleiben.
+- **Sprache:** Menü *Ansicht → Sprache* oder die [Einstellungen](#f-settings). Der Wechsel wirkt sofort; Planung und Ansicht bleiben. Die Hilfe erscheint in der gewählten Sprache; ist ein Kapitel noch nicht übersetzt, erscheint es deutsch.
 
 Die vollständige Liste der Tastenkürzel steht im Menü *Hilfe → Tastenkürzel* und im [Referenzkapitel](#ref-shortcuts).
 

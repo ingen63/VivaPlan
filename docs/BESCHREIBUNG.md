@@ -197,8 +197,9 @@ für die Planung. Zahlen, Beträge und Daten bleiben in jeder Sprache im Schweiz
 auch die Namen der Strategien und Parameter der Optimierung, der Indizes und die Beschreibungen der mitgelieferten
 Zeitreihen (#177);
 Schweizer Fachbegriffe stehen auf Englisch mit dem Kürzel in Klammern, z. B. «old-age pension (AHV)», «pillar 3a»
-(Glossar `docs/GLOSSAR.md`). Inhalte der Planung (Namen) bleiben unübersetzt. Die Hilfe ist vorerst deutsch (#173);
-Französisch und Italienisch folgen (#174, #175).
+(Glossar `docs/GLOSSAR.md`). Inhalte der Planung (Namen) bleiben unübersetzt. Die Hilfe (Handbuch, F1, Suche) erscheint in der gewählten Sprache
+(#173, Deutsch und Englisch); fehlt ein Kapitel in einer Sprache, erscheint es deutsch. Französisch und Italienisch
+folgen (#174, #175).
 
 **Einstieg für neue Benutzer:** Beim allerersten Start fragt ein Willkommensdialog, ob man das Beispiel erkunden, eine
 eigene Planung beginnen oder leer starten möchte (wieder über *Hilfe → Willkommen …*). Die Checkliste «Erste Schritte»

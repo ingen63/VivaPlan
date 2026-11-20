@@ -1,8 +1,12 @@
 // Help: panel on the right, context-sensitive via F1, «?» buttons at fields and headings, search.
-// The texts are in `hilfe/*.md` (offline, shipped with the app). A topic starts with «## @id Title».
+// The texts are in `hilfe/<language>/*.md` (offline, shipped with the app; #173). A topic starts with «## @id Title».
+// File names and topic ids are the same in every language; a chapter missing in a language is shown in German.
 "use strict";
 const Help = (() => {
-  const CHAPTERS = ["00-einstieg", "10-editor", "20-renditen", "30-entnahme", "40-optimierung", "50-ergebnisse", "60-referenz"]; // i18n: allow (file names of the help, per language in #173)
+  const CHAPTERS = ["00-einstieg", "10-editor", "20-renditen", "30-entnahme", "40-optimierung", "50-ergebnisse", "60-referenz"]; // i18n: allow (file names of the help, the same in every language)
+  const FALLBACK = "de";
+  /** First line of a topic with search terms (not shown), per language. */
+  const KEYWORDS = /^(Stichworte|Keywords|Mots-clés|Parole chiave):\s*/; // i18n: allow (markers in the help files)
   /** Input field (data-path) → topic; the first matching row applies. */
   const FIELD_TOPICS = [
     [/^returns\.source$/, "f-ret-source"], [/^returns\.fixed\./, "f-ret-fixed"], [/^returns\.startDate$/, "f-ret-historical"],
@@ -36,7 +40,7 @@ const Help = (() => {
     [tr("runPicker.title"), "r-runs"], [tr("scen.successPerVariant"), "r-scenarios"], [tr("scen.endPerVariant"), "r-scenarios"], [tr("results.yearValues"), "r-table"],
     [tr("cmp.kpis"), "r-compare"], [tr("helpHeading.compare"), "r-compare"], [tr("cmpPlan.title"), "r-compare"], [tr("optimize.result"), "o-read"], [tr("runCharts.liquidByAsset"), "r-comp"], [tr("runCharts.flows"), "r-flows"], [tr("section.realestate"), "r-prop"], [tr("section.pension"), "r-pk"]
   ]);
-  const topics = new Map(), chapters = [];
+  let topics = new Map(), chapters = [], loadedLanguage = null;
   let loading = null, hist = [], pos = -1, panel = null;
   const $h = s => panel.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -86,7 +90,7 @@ const Help = (() => {
   }
 
   // ----- Loading -----
-  function parse(chapterId, text) {
+  function parse(chapterId, text, topics) {
     const lines = text.split("\n"), ch = { id: chapterId, title: chapterId, topics: [] };
     let cur = null;
     for (const l of lines) {
@@ -94,17 +98,32 @@ const Help = (() => {
       if ((m = /^# (.*)/.exec(l))) { ch.title = m[1].trim(); continue; }
       if ((m = /^## @([\w-]+) (.*)/.exec(l))) { cur = { id: m[1], title: m[2].trim(), chapter: ch, keywords: "", body: [] }; ch.topics.push(cur); topics.set(cur.id, cur); continue; }
       if (!cur) continue;
-      if (/^Stichworte:/.test(l) && !cur.body.length) { cur.keywords = l.slice(11).trim(); continue; }
+      if (KEYWORDS.test(l) && !cur.body.length) { cur.keywords = l.replace(KEYWORDS, "").trim(); continue; }
       cur.body.push(l);
     }
     for (const t of ch.topics) { t.md = t.body.join("\n"); t.text = (t.title + " " + t.keywords + " " + t.md).toLowerCase(); }
     return ch;
   }
+  /** Text of a chapter in the language; null if the language does not have it. */
+  async function chapterText(language, f) {
+    const path = `hilfe/${language}/${f}.md`; // i18n: allow (path of the help files)
+    const r = await fetch(path).catch(() => null);
+    if (r?.ok) return r.text();
+    if (language === FALLBACK) throw new Error(`${path}: ${r ? r.status : "-"}`);
+    return null;
+  }
+  /** Help of a language (fallback per chapter: German) as `{ topics, chapters }`. */
+  async function loadLanguage(language) {
+    const own = new Map();
+    const list = await Promise.all(CHAPTERS.map(async f => parse(f, (await chapterText(language, f)) ?? await chapterText(FALLBACK, f), own)));
+    return { topics: own, chapters: list };
+  }
+  /** Loads the help of the current language (again after a change of language). */
   function load() {
-    return loading ||= Promise.all(CHAPTERS.map(async f => {
-      const r = await fetch(`hilfe/${f}.md`); if (!r.ok) throw new Error(`hilfe/${f}.md: ${r.status}`); // i18n: allow (path of the help files)
-      return parse(f, await r.text());
-    })).then(list => { chapters.push(...list); }, e => { loading = null; throw e; });
+    const language = I18n.language();
+    if (loadedLanguage !== language) { loadedLanguage = language; loading = null; }
+    return loading ||= loadLanguage(language).then(h => { if (loadedLanguage === language) ({ topics, chapters } = h); },
+      e => { loading = null; throw e; });
   }
 
   // ----- Display -----
@@ -163,6 +182,8 @@ const Help = (() => {
   function go(d) { const p = pos + d; if (p >= 0 && p < hist.length) { pos = p; draw(hist[pos]); } }
   function close() { if (!panel) return; panel.hidden = true; document.body.classList.remove("help-open"); delete document.documentElement.dataset.help; }
   const isOpen = () => !!panel && !panel.hidden;
+  // #173: an open help is shown again in the new language (same topic).
+  I18n.onChange(() => { if (isOpen() && pos >= 0) draw(hist[pos], hist[pos].startsWith("search:")); });
 
   // ----- Context -----
   const topicFor = (list, key) => list.find(([re]) => re.test(key))?.[1];
@@ -229,6 +250,14 @@ const Help = (() => {
   async function check() {
     await load();
     const problems = [];
+    // #173: the help of every other language has the same topics (fallback per chapter: German).
+    const de = await loadLanguage(FALLBACK);
+    for (const l of Object.keys(I18n.languages()).filter(l => l !== FALLBACK)) {
+      const other = await loadLanguage(l);
+      for (const id of de.topics.keys()) if (!other.topics.has(id)) problems.push(`Thema fehlt (${l}): ${id}`); // i18n: allow (check of the help for the tests)
+      for (const id of other.topics.keys()) if (!de.topics.has(id)) problems.push(`Thema nur in ${l}: ${id}`); // i18n: allow (check of the help for the tests)
+      for (const t of other.topics.values()) for (const m of t.md.matchAll(/\]\(#([\w-]+)\)/g)) if (!other.topics.has(m[1])) problems.push(`Verweis ins Leere (${l}): ${t.id} → ${m[1]}`); // i18n: allow (check of the help for the tests)
+    }
     for (const [, id] of [...FIELD_TOPICS, ...OPT_TOPICS, ...HEADING_TOPICS]) if (!topics.has(id)) problems.push(`Thema fehlt: ${id}`); // i18n: allow (check of the help for the tests)
     for (const id of ["general", "milestones", "pension", "pillar3a", "flows", "wealth", "returns", "withdrawal", "optimize", "taxes", "realestate", "scenarios"]) if (!topics.has("s-" + id)) problems.push(`Abschnitt ohne Thema: s-${id}`); // i18n: allow (check of the help for the tests)
     for (const id of ["overview", "charts", "runs", "scenarios", "table", "list", "compare"]) if (!topics.has("r-" + id)) problems.push(`Ergebnisansicht ohne Thema: r-${id}`); // i18n: allow (check of the help for the tests)
@@ -260,5 +289,5 @@ const Help = (() => {
   };
   // #170: the scripts are loaded by i18n.js after the page, so the page may be loaded already.
   if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", init); else init();
-  return { show, close, openContext, check, topics };
+  return { show, close, openContext, check, get topics() { return topics; }, language: () => loadedLanguage };
 })();
