@@ -83,6 +83,14 @@ verlangt ihn aber.
   `i18n: allow (Grund)` auf der Zeile. Der Rust-Test `issue_170_ak4_tables_are_complete` vergleicht die Schlüssel
   aller Tabellen mit `de.json` (vorhanden, nicht leer, gleiche Platzhalter). `e2e/ui-sprache.spec.js` prüft Wechsel,
   Rückfall und Formate mit einer Pseudo-Sprache.
+- **Prüftabelle für die Übersetzer** (#182): `make i18n-table` schreibt `local/i18n-review/tabelle.csv` (Strichpunkt,
+  UTF-8 mit BOM für Excel): je Schlüssel der Texttabellen und je Block der Hilfe (Überschrift, Zeile «Stichworte:»,
+  Absatz) eine Zeile mit Ort, Kennzeichnung «kritisch», DE, EN, FR, IT und leeren Korrekturspalten je Sprache. Die
+  Hilfedateien müssen in allen Sprachen gleich viele Blöcke in derselben Reihenfolge haben (auch das Glossar in
+  `60-referenz.md` folgt in allen Sprachen der deutschen Reihenfolge); bei abweichender Anzahl bricht das Skript
+  mit der Datei ab. Dieselben Zeilen stehen in Teilen für ein Sprachmodell unter `local/i18n-review/teile/teil-NN.txt`
+  (kritische zuerst, `--part-chars`), dazu der Abschnitt «Übersetzungen» aus `docs/GLOSSAR.md` als
+  `local/i18n-review/glossar.md`.
 
 ### Meldungscodes des Rechenkerns (#171)
 

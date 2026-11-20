@@ -1,4 +1,4 @@
-.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers i18n-check
+.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers i18n-table i18n-check
 test:        ; cargo nextest run --workspace
 # #160: dieselben Tests, aber nur Fehlschläge, langsame Tests und die Zusammenfassung (für Claude Code: wenig Kontext)
 QUIET = --status-level fail --final-status-level slow --hide-progress-bar --cargo-quiet
@@ -18,6 +18,8 @@ ui-texts:    ; python3 -m unittest discover -s tools -p 'test_check_ui_texts.py'
 # #180: Übersetzungen (Glossarbegriffe, Platzhalter und Zahlen, Reste, Aufbau der Hilfe, Anrede, Länge) gegen das
 # Deutsche; Ausnahmen in tools/i18n_check_exceptions.json, samt Tests des Skripts
 i18n-check:  ; python3 -m unittest discover -s tools -p 'test_check_i18n.py' && python3 tools/check_i18n.py --hints
+# #182/AK1: gemeinsame Prüftabelle der Übersetzungen (local/i18n-review/tabelle.csv), samt Tests des Skripts
+i18n-table:  ; python3 -m unittest discover -s tools -p 'test_i18n_review_table.py' && python3 tools/i18n_review_table.py
 # #176/AK2: Golden-Dateien gegenüber BASE (Vorgabe HEAD) ohne Textfelder vergleichen, samt Tests des Skripts
 golden-numbers:; python3 -m unittest discover -s tools -p 'test_golden_numbers.py' && python3 tools/golden_numbers.py --base $${BASE:-HEAD}
 # #88: wie im Workflow, Warnungen sind Fehler
