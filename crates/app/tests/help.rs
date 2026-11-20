@@ -178,9 +178,13 @@ fn plain(s: &str) -> String {
 }
 
 /// Does the label match the table text? Placeholders `{…}` stand for any text; a trailing «:» or «…» of the table text
-/// may be left out; a label ending in «…» quotes the beginning of a text.
+/// may be left out; a label ending in «…» quotes the beginning of a text. A label may also be a part of a longer text
+/// (whole words, e.g. a term in an event or a hint).
 fn matches(label: &str, text: &str) -> bool {
     let text = text.trim();
+    if contains_words(text, label.trim_end_matches('…').trim_end()) {
+        return true;
+    }
     if let Some(start) = label.strip_suffix('…') {
         let start = start.trim_end();
         return !start.is_empty() && glob(start, text, true);
@@ -192,6 +196,16 @@ fn matches(label: &str, text: &str) -> bool {
     ]
     .iter()
     .any(|t| glob(label, t, false))
+}
+
+/// `text` contains `part` as whole words (no letter or digit directly before or after it).
+fn contains_words(text: &str, part: &str) -> bool {
+    if part.is_empty() {
+        return false;
+    }
+    let word = |c: Option<char>| c.is_some_and(|c| c.is_alphanumeric());
+    text.match_indices(part)
+        .any(|(i, _)| !word(text[..i].chars().next_back()) && !word(text[i + part.len()..].chars().next()))
 }
 
 /// `label` equals `pattern` (or its beginning, with `prefix`), where every `{…}` in `pattern` matches any text.
@@ -280,7 +294,12 @@ fn issue_173_ak3_label_matching() {
         "Withdrawal strategy applied after …",
         "Withdrawal strategy applied after {x} years"
     ));
-    assert!(!matches("Start", "Start simulation"));
+    assert!(matches(
+        "all buckets empty",
+        "3 buckets: all buckets empty, no property left"
+    ));
+    assert!(!matches("all buckets", "3 buckets: all bucketsempty"));
+    assert!(!matches("Start", "Restart simulation"));
     assert!(!matches("Run simulation", "Start simulation"));
     assert!(!matches("Bucket 1: Bonds", "Bucket {n}: Cash"));
     assert_eq!(plain("<b>Total</b>&nbsp;spending"), "Total spending");
