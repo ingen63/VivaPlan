@@ -895,6 +895,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #155/AK2 | Ein zweiter Fall mit Bezügen in zwei verschiedenen Jahren zeigt, dass jedes Jahr für sich besteuert wird. | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_155_ak2_…» | 19.11.2026 ok |
 | #155/AK3 | Rechenkern und Golden-Dateien bleiben unverändert. | ☑ | **gilt** | kein Test (Git-Diff d47cb6e) | 19.11.2026 ok |
 
+### #156 Steuerberechnung von Oberfläche und Rechenkern mit gemeinsamen Testfällen prüfen
+
+[Issue #156](https://github.com/ingen63/VivaPlan/issues/156) · geschlossen · Umsetzung: a3cd177
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #156/AK1 | Gemeinsame Testfälle (JSON: Tabelle, Betrag, Steuerfuss, erwartete Steuer) laufen in einem Rust-Test gegen `tax::rate_at`/`tax::tax` … | ☑ | **gilt** | [tax_parity.rs](../crates/engine/tests/tax_parity.rs) «issue_156_ak1_…», [tax-parity.test.js](../e2e/unit/tax-parity.test.js) «#156/AK1» | 20.11.2026 ok (18 Fälle; Gegenprobe mit altem `rateAt` scheitert) |
+| #156/AK2 | Die Abweichung beim Steuerfuss 0 ist geklärt: entweder rechnet die Oberfläche wie der Rechenkern, oder die Prüfung der Planung lässt … | ☑ | **gilt** (Oberfläche rechnet wie der Rechenkern) | [tax-parity.test.js](../e2e/unit/tax-parity.test.js) «#156/AK2», [mandatory_inputs.rs](../crates/engine/tests/mandatory_inputs.rs) «issue_156_ak2_…» | 20.11.2026 ok |
+
 ### #157 Netzwerkfreiheit automatisch prüfen
 
 [Issue #157](https://github.com/ingen63/VivaPlan/issues/157) · geschlossen · Umsetzung: c6c1ac4
