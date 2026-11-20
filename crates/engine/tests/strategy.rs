@@ -256,7 +256,7 @@ fn issue_69_strategy_info_and_new_plans() {
     assert!(!i.monthly);
     assert_eq!((i.first, i.last), (YearMonth::new(1922, 1), YearMonth::new(2020, 12)));
     assert_eq!(i.currency.as_deref(), Some("CHF"));
-    assert!(i.title.unwrap().contains("Schweiz (JST)"));
+    assert!(i.title.unwrap().contains("Switzerland (JST)"));
     assert!(api::series_info("strategy:{kaputt", Path::new("."), None).is_err());
     let new_plan: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
     assert_eq!(new_plan.returns.strategy, Some(Investment::default()));
@@ -285,7 +285,7 @@ fn issue_69_ak8_parts_and_common_period_of_the_averages() {
         let r = format!("{}{}", strategy::PREFIX, json!({ "stocks": stocks, "bonds": bonds }));
         api::series_info(&r, Path::new("."), None).unwrap()
     };
-    let years = |p: &library::SeriesPart| (p.label.clone(), p.first, p.last);
+    let years = |p: &library::SeriesPart| (p.label.to_string(), p.first, p.last);
 
     // Stocks JST (1900–2020), bonds USA (Shiller, from 1922): together 1922–2020, both parts are cut.
     let cut = info("chJst", "usa");
@@ -295,10 +295,10 @@ fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     );
     assert_eq!(
         years(&cut.parts[0]),
-        ("Aktien Schweiz (JST)".to_string(), jst::FIRST_YEAR, 2020)
+        ("Stocks Switzerland (JST)".to_string(), jst::FIRST_YEAR, 2020)
     );
     let bonds = years(&cut.parts[1]);
-    assert_eq!(bonds.0, "Obligationen USA 10 Jahre (Shiller)");
+    assert_eq!(bonds.0, "Bonds USA 10 years (Shiller)");
     assert!(bonds.1 <= 1922 && bonds.2 > 2020, "{bonds:?}");
     // The mean of the bonds applies to the common period.
     let geo = |v: &[f64]| (v.iter().map(|r| (1.0 + r).ln()).sum::<f64>() / v.len() as f64).exp() - 1.0;
@@ -330,8 +330,8 @@ fn issue_69_ak8_parts_without_cut_and_reference_errors() {
     for p in &parts {
         assert_eq!((p.first, p.last), (d.first.year(), d.last().year()), "{}", p.label);
     }
-    assert!(parts[0].label.starts_with("Aktien "));
-    assert!(parts[1].label.starts_with("Obligationen "));
+    assert!(parts[0].label.starts_with("Stocks "));
+    assert!(parts[1].label.starts_with("Bonds "));
 
     let bad = format!("{}{{kaputt", strategy::PREFIX);
     let err = strategy::from_reference_with_parts(&bad, None).unwrap().unwrap_err();
@@ -370,7 +370,10 @@ fn issue_76_ak2_short_bonds_switch_from_jst_to_saron_without_a_gap() {
 fn issue_76_ak1_ak3_short_bonds_in_strategies() {
     let (first, short) = jst::ch_short_yearly(&JstData::builtin(), &engine::import::SnbData::builtin()).unwrap();
     // Name and storage form
-    assert_eq!(strategy::bond_name(BondIndex::ChShort), "Eidgenossenschaft kurzfristig");
+    assert_eq!(
+        strategy::bond_name(BondIndex::ChShort),
+        "Swiss Confederation short-term"
+    );
     assert_eq!(serde_json::to_value(BondIndex::ChShort).unwrap(), json!("chShort"));
     // World (JST): 1900–2020, stocks like «Welt (JST)», bonds = short-term series
     let w = ds(StockIndex::WorldJst, BondIndex::ChShort);
@@ -391,13 +394,13 @@ fn issue_76_ak1_ak3_short_bonds_in_strategies() {
     assert_eq!(at(&s.bonds, 2021), short[(2021 - first) as usize]);
     // Source and notes name SARON and the JST licence
     assert!(s.meta.source.as_deref().unwrap().contains("SARON"));
-    assert!(s.meta.notes.iter().any(|n| n.contains("Geldmarktsatz")));
+    assert!(s.meta.notes.iter().any(|n| n.contains("money market rate")));
     assert!(s.meta.notes.iter().any(|n| n.contains("CC BY-NC-SA")));
     // Short info via the reference of the user interface
     let r = format!("{}{}", strategy::PREFIX, json!({"stocks": "chJst", "bonds": "chShort"}));
     let p = strategy::from_reference(&r, None).unwrap().unwrap();
     assert_eq!((p.first.year(), p.last().year()), (1900, 2020));
-    assert!(p.name.contains("Eidgenossenschaft kurzfristig"));
+    assert!(p.name.contains("Swiss Confederation short-term"));
 }
 
 fn plan_struct(v: &Value) -> Plan {

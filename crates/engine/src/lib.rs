@@ -23,6 +23,7 @@ pub mod optimize;
 pub mod progress;
 pub mod resolve;
 pub mod scenarios;
+pub mod series_text;
 pub mod settings;
 pub mod sim;
 pub mod strategy;

@@ -1,10 +1,10 @@
-# Titel: US-Aktien in CHF und Schweizer Bundesobligationen
+# Titel: US stocks in CHF and Swiss federal bonds
 # Währung: CHF
-# Info: Shiller: US-Aktien (S&P Composite) in CHF, ohne Währungsabsicherung. Obligationen: 10-jährige Bundesobligationen (SNB). Teuerung: Landesindex, SARON ab 06.1999.
-# Quelle: Robert J. Shiller, «Irrational Exuberance», Online-Daten (ie_data); SNB (data.snb.ch): devkum, plkopr, zimoma (Stand devkum 2026-11-02 14:30, plkopr 2026-10-21 09:00, zimoma 2026-11-02 14:30); SNB (data.snb.ch): rendoblim (Stand 2025-09-01 14:29)
-# Hinweis: Aktien: S&P Composite in CHF (ohne Währungsabsicherung); Obligationen: 10-jährige Obligationen der Eidgenossenschaft.
-# Hinweis: Obligationen: Gesamtrendite einer 10-jährigen Obligation zu pari aus den monatlichen SNB-Renditen (Coupon plus Kursänderung), ohne Kosten.
-# Hinweis: Inflation: Landesindex der Konsumentenpreise gegenüber Vorjahresmonat; SARON ab Einführung (06.1999), vorher gilt der fixe Wert.
+# Info: Shiller: US stocks (S&P Composite) in CHF, without currency hedging. Bonds: 10-year Swiss federal bonds (SNB). Inflation: Swiss CPI, SARON from 06.1999.
+# Quelle: Robert J. Shiller, “Irrational Exuberance”, online data (ie_data); SNB (data.snb.ch): devkum, plkopr, zimoma (as of devkum 2026-11-02 14:30, plkopr 2026-10-21 09:00, zimoma 2026-11-02 14:30); SNB (data.snb.ch): rendoblim (as of 2025-09-01 14:29)
+# Hinweis: Stocks: S&P Composite in CHF (without currency hedging); bonds: 10-year Swiss Confederation bonds.
+# Hinweis: Bonds: total return of a 10-year bond at par from the monthly SNB yields (coupon plus price change), without costs.
+# Hinweis: Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the fixed value applies.
 Date,Stocks,Bonds,Inflation,Saron
 1988-02,0.0695209297,0.0029289967,0.017570023,
 1988-03,0.0289954866,0.0114714017,0.0185028736,

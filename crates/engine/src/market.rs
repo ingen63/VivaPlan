@@ -3,8 +3,10 @@
 use std::collections::VecDeque;
 use std::path::Path;
 
+use crate::message::Message;
 use crate::model::{Extrapolation, ExtrapolationMethod};
 use crate::resolve::Curve;
+use crate::series_text::recognize;
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
@@ -44,14 +46,17 @@ pub struct StockSeries {
 
 /// Data from the comment lines at the start of the CSV file (`# Titel: …`, `# Währung: CHF`, …).
 #[derive(Clone, Debug, Default, PartialEq)]
+///
+/// #177: Title, source, info and notes are messages: texts of the bundled series get their code (also the German texts of
+/// older files, see [`crate::series_text`]), other texts the code `plain_text`.
 pub struct Meta {
-    pub title: Option<String>,
+    pub title: Option<Message>,
     pub currency: Option<String>,
-    pub source: Option<String>,
+    pub source: Option<Message>,
     /// Short explanation of the series (at most 2 lines) for the info popup (`# Info: …`).
-    pub info: Option<String>,
+    pub info: Option<Message>,
     /// Other comment lines (`# Hinweis: …` or without a key).
-    pub notes: Vec<String>,
+    pub notes: Vec<Message>,
 }
 
 impl Meta {
@@ -61,26 +66,26 @@ impl Meta {
             return;
         }
         if let Some((k, v)) = line.split_once(':') {
-            let v = v.trim().to_string();
+            let v = v.trim();
             match k.trim().to_lowercase().as_str() {
-                "titel" | "title" => return self.title = Some(v),
+                "titel" | "title" => return self.title = Some(recognize(v)),
                 "währung" | "waehrung" | "currency" => return self.currency = Some(v.to_uppercase()),
-                "quelle" | "source" => return self.source = Some(v),
-                "info" | "erklärung" | "erklaerung" => return self.info = Some(v),
-                "hinweis" | "note" => return self.notes.push(v),
+                "quelle" | "source" => return self.source = Some(recognize(v)),
+                "info" | "erklärung" | "erklaerung" => return self.info = Some(recognize(v)),
+                "hinweis" | "note" => return self.notes.push(recognize(v)),
                 _ => {}
             }
         }
-        self.notes.push(line.to_string());
+        self.notes.push(recognize(line));
     }
 
     fn write(&self, out: &mut String) {
-        let mut line = |k: &str, v: &str| out.push_str(&format!("# {k}: {v}\n"));
+        let mut line = |k: &str, v: &Message| out.push_str(&format!("# {k}: {v}\n"));
         if let Some(v) = &self.title {
             line("Titel", v);
         }
         if let Some(v) = &self.currency {
-            line("Währung", v);
+            line("Währung", &msg!(plain_text, text = v));
         }
         if let Some(v) = &self.info {
             line("Info", v);

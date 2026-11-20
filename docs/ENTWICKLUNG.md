@@ -111,8 +111,8 @@ erscheint eine Meldung als `{ "code", "params", "text" }`.
   einen `Error` mit `code` und `params`, `errText` übersetzt ihn. Die Oberfläche wertet keine Texte des Rechenkerns
   mehr aus, nur Codes (`isCancelled`: `cancelled`, `randomPath`: `path_bootstrap`/`path_random`).
 - **Kommandozeile und Golden-Dateien** verwenden den englischen Text (#176). Die Kommandozeile gibt auch ihre eigenen
-  Texte (Hilfe, Überschriften, Fehler) englisch aus, Zahlen im Schweizer Format; Namen aus dem Katalog der Optimierung
-  und der Zeitreihen (`optimize::param_defs`, `strategy_name`, `strategy::label`) sind noch deutsch. Der
+  Texte (Hilfe, Überschriften, Fehler) englisch aus, Zahlen im Schweizer Format, auch die Namen aus dem Katalog der
+  Optimierung und der Zeitreihen (#177). Der
   Golden-Vergleich (`crates/engine/tests/golden.rs`, `without_codes`) entfernt `code` und `params` und vergleicht eine
   alleinstehende Meldung mit ihrem Text. Die Golden-Dateien wurden mit #176 einmal neu erzeugt; `make golden-numbers
   BASE=<rev>` (`tools/golden_numbers.py`) vergleicht zwei Stände ohne Textfelder (Zahlen, Schlüssel, Listenlängen,
@@ -129,6 +129,17 @@ erscheint eine Meldung als `{ "code", "params", "text" }`.
   deutsche Oberfläche keinen englischen Text des Rechenkerns zeigt.
 - **Neue Meldung:** Code und englische Vorlage in `codes!`, gleicher Schlüssel `engine.<code>` in `en.json` (gleiche
   Vorlage), `de.json` und den übrigen Tabellen, Beispieldatei neu schreiben.
+- **Namen als Meldungen (#177):** Auch Namen sind Meldungen mit Code, damit die Oberfläche sie übersetzt: Strategien
+  und Parameter der Optimierung (`opt_strategy_<key>`, `opt_param_<key>`, Einheiten `unit_*`; `CatalogStrategy.name`,
+  `CatalogParam.label`/`unit`, `Outcome.strategy`/`params`, `Reference.strategy`), Indizes und Anlagestrategie
+  (`index_*`, `investment_*`; `strategy::label`, `stock_name`, `bond_name`, `SeriesPart.label`) und die Texte der
+  mitgelieferten Zeitreihen (`series_title_*`, `series_info_*`, `series_note_*`, `series_source_*`; `market::Meta`
+  und `SeriesInfo`: `title`, `source`, `info`, `notes`). Freie Texte eigener Reihen haben den Code `plain_text`.
+  `series_text::recognize` ordnet die Kommentarzeilen einer CSV-Datei beim Lesen ihrem Code zu, englisch oder deutsch
+  (`STORED_DE`: Texte von Dateien früherer Versionen in der Datenbibliothek = `engine.<code>` in `de.json`, Test
+  `issue_177_ak1_stored_german_series_texts_are_the_table_de`). Die Schlüssel in der Datei (`optimization.ranges`,
+  Kennungen der Strategien und Indizes) bleiben unverändert; gespeicherte Ergebnisse mit Namen als Text zeigt
+  `msgText` unverändert an.
 
 ## Desktop-App
 
@@ -278,7 +289,8 @@ ausgelieferte Reihen an; Kommandozeile und Entwicklungsserver verwenden `crates/
 - **SNB-Würfel** von data.snb.ch (CSV): `devkum` (Reihe M0/USD1), `plkopr` (LD2010100), `zimoma` (SARON), `rendoblim` (10J).
   Ein Auszug ist eingebaut; neuere Downloads ersetzen ihn (`crates/engine/data/quellen/snb-<würfel>.csv`).
 - **CSV-Format:** Kommentarzeilen `# Titel: …`, `# Währung: CHF`, `# Quelle: …`, `# Hinweis: …` vor der Kopfzeile.
-  Leere SARON-Werte sind erlaubt; dort gilt der fixe SARON-Wert der Planung.
+  Leere SARON-Werte sind erlaubt; dort gilt der fixe SARON-Wert der Planung. Die mitgelieferten Reihen haben seit
+  #177 englische Texte; ältere deutsche Texte in der Datenbibliothek werden erkannt und übersetzt (`series_text.rs`).
 - Ist die Reihe in einer anderen Währung als die Planung, meldet die Prüfung einen Hinweis.
 - **Rechte:** Die Zeitreihen fallen nicht unter die GPL; Quellen, Bedingungen und Haftungsausschluss in
   `crates/engine/data/QUELLEN.md`.

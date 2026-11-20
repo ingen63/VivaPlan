@@ -32,7 +32,7 @@ pub const BUILTIN: [(&str, &str); 4] = [
 ];
 
 /// `# Info:` of the bundled series with this name (file name without extension); for files created before the field existed.
-fn builtin_info(name: &str) -> Option<String> {
+fn builtin_info(name: &str) -> Option<Message> {
     let (_, text) = BUILTIN
         .iter()
         .find(|(file, _)| file.strip_suffix(".csv") == Some(name))?;
@@ -83,8 +83,8 @@ fn write_new(path: &Path, text: &str) -> Result<()> {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SeriesPart {
-    /// For example «Obligationen Eidgenossenschaft 10 Jahre».
-    pub label: String,
+    /// For example «Bonds Swiss Confederation 10 years» (#177: message with code).
+    pub label: Message,
     pub first: i32,
     pub last: i32,
 }
@@ -93,12 +93,13 @@ pub struct SeriesPart {
 #[serde(rename_all = "camelCase")]
 pub struct SeriesInfo {
     pub name: String,
-    pub title: Option<String>,
+    /// #177: Title, source, info and notes as messages (texts of the bundled series with their code).
+    pub title: Option<Message>,
     pub currency: Option<String>,
-    pub source: Option<String>,
+    pub source: Option<Message>,
     /// Short explanation (at most 2 lines): `# Info:` of the file; for bundled series without their own, the bundled one.
-    pub info: Option<String>,
-    pub notes: Vec<String>,
+    pub info: Option<Message>,
+    pub notes: Vec<Message>,
     pub monthly: bool,
     pub first: YearMonth,
     pub last: YearMonth,

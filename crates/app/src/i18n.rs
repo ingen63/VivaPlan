@@ -236,6 +236,19 @@ mod tests {
         assert!(stale.is_empty(), "{stale:?}");
     }
 
+    /// #177/AK1: The German texts of the bundled series in older files (recognized by the engine) are the texts of
+    /// the table `de`, so the German user interface shows them as before.
+    #[test]
+    fn issue_177_ak1_stored_german_series_texts_are_the_table_de() {
+        let de = &parsed()["de"];
+        for &(code, text) in engine::series_text::STORED_DE {
+            assert_eq!(
+                de.get(&format!("engine.{}", code.as_str())).map(String::as_str),
+                Some(text)
+            );
+        }
+    }
+
     #[test]
     fn tr_falls_back_to_german_and_to_the_key() {
         assert_eq!(tr("de", "menu.file"), "Datei");

@@ -11,6 +11,7 @@ use std::path::Path;
 use calamine::{open_workbook_auto, Data, Reader};
 
 use crate::market::{DataSet, Freq, Meta};
+use crate::message::Message;
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
@@ -156,23 +157,14 @@ pub fn shiller_dataset(raw: &ShillerRaw) -> Result<DataSet> {
         return Err(invalid(msg!(shiller_gaps)));
     }
     ds.meta = Meta {
-        title: Some("Shiller: S&P Composite und 10-jährige US-Staatsanleihen (USD)".into()),
+        title: Some(msg!(series_title_shiller_usd)),
         currency: Some("USD".into()),
-        source: Some("Robert J. Shiller, «Irrational Exuberance», Online-Daten (ie_data)".into()),
-        info: Some(INFO_USD.into()),
-        notes: vec![
-            "Aktien: Gesamtrendite inkl. Dividenden; Obligationen: Gesamtrendite 10-jähriger Staatsanleihen.".into(),
-            "Monatswerte aus Monatsdurchschnitten der Kurse; Inflation: US-CPI gegenüber Vorjahresmonat.".into(),
-        ],
+        source: Some(msg!(series_source_shiller)),
+        info: Some(msg!(series_info_shiller_usd)),
+        notes: vec![msg!(series_note_total_return), msg!(series_note_usd_monthly)],
     };
     Ok(ds)
 }
-
-// Short explanations of the bundled series (`# Info:` in the files under crates/engine/data/).
-const INFO_USD: &str =
-    "Shiller: S&P Composite und 10-jährige US-Staatsanleihen in USD, Gesamtrendite inkl. Dividenden. Teuerung: US-CPI.";
-const INFO_CHF: &str = "Shiller: S&P Composite und 10-jährige US-Staatsanleihen, in CHF umgerechnet (SNB-Wechselkurs), ohne Währungsabsicherung. Teuerung: Landesindex, SARON ab 06.1999.";
-const INFO_CH_BONDS: &str = "Shiller: US-Aktien (S&P Composite) in CHF, ohne Währungsabsicherung. Obligationen: 10-jährige Bundesobligationen (SNB). Teuerung: Landesindex, SARON ab 06.1999.";
 
 // ---------- SNB ----------
 
@@ -362,14 +354,19 @@ pub fn to_chf(usd: &DataSet, snb: &SnbData) -> Result<DataSet> {
         let s = snb.saron.get(&m).map_or(f64::NAN, |v| v / 100.0);
         ds.saron.as_mut().expect("gesetzt").push(s);
     }
-    let mut notes = vec![
-        "Renditen der US-Anlagen in CHF umgerechnet (Monatsmittel USD/CHF, ohne Währungsabsicherung).".into(),
-        "Inflation: Landesindex der Konsumentenpreise gegenüber Vorjahresmonat; SARON ab Einführung (06.1999), vorher gilt der fixe Wert.".into(),
-    ];
-    notes.extend(usd.meta.notes.iter().filter(|n| n.starts_with("Aktien")).cloned());
-    let mut source = format!(
-        "{}; SNB (data.snb.ch): devkum, plkopr, zimoma",
-        usd.meta.source.as_deref().unwrap_or(&usd.name)
+    let mut notes = vec![msg!(series_note_chf_conversion), msg!(series_note_chf_inflation)];
+    // The note on stocks of the USD series (German in older files, plain text in own ones).
+    notes.extend(
+        usd.meta
+            .notes
+            .iter()
+            .filter(|n| n.starts_with("Stocks") || n.starts_with("Aktien"))
+            .cloned(),
+    );
+    let mut source = msg!(
+        series_source_snb,
+        source = source_of(usd),
+        cubes = "devkum, plkopr, zimoma"
     );
     if !snb.published.is_empty() {
         let stand: Vec<String> = snb
@@ -378,13 +375,13 @@ pub fn to_chf(usd: &DataSet, snb: &SnbData) -> Result<DataSet> {
             .filter(|(id, _)| [CUBE_FX.0, CUBE_CPI.0, CUBE_SARON.0].contains(&id.as_str()))
             .map(|(id, p)| format!("{id} {p}"))
             .collect();
-        source.push_str(&format!(" (Stand {})", stand.join(", ")));
+        source = msg!(series_source_as_of, source = source, dates = stand.join(", "));
     }
     ds.meta = Meta {
-        title: Some("Shiller: S&P Composite und 10-jährige US-Staatsanleihen, in CHF".into()),
+        title: Some(msg!(series_title_shiller_chf)),
         currency: Some("CHF".into()),
         source: Some(source),
-        info: Some(INFO_CHF.into()),
+        info: Some(msg!(series_info_shiller_chf)),
         notes,
     };
     Ok(ds)
@@ -430,26 +427,28 @@ pub fn with_ch_bonds(chf: &DataSet, snb: &SnbData) -> Result<DataSet> {
         let m = chf.first.plus(i as i32);
         ds.bonds.push(bond_return(y[&m.plus(-1)] / 100.0, y[&m] / 100.0));
     }
-    let mut source = format!(
-        "{}; SNB (data.snb.ch): rendoblim",
-        chf.meta.source.as_deref().unwrap_or(&chf.name)
-    );
+    let mut source = msg!(series_source_snb, source = source_of(chf), cubes = "rendoblim");
     if let Some(p) = snb.published.get(CUBE_BONDS.0) {
-        source.push_str(&format!(" (Stand {p})"));
+        source = msg!(series_source_as_of, source = source, dates = p);
     }
-    let mut notes = vec![
-        "Aktien: S&P Composite in CHF (ohne Währungsabsicherung); Obligationen: 10-jährige Obligationen der Eidgenossenschaft.".into(),
-        "Obligationen: Gesamtrendite einer 10-jährigen Obligation zu pari aus den monatlichen SNB-Renditen (Coupon plus Kursänderung), ohne Kosten.".into(),
-    ];
+    let mut notes = vec![msg!(series_note_ch_bonds_stocks), msg!(series_note_ch_bonds_return)];
     notes.extend(chf.meta.notes.iter().filter(|n| n.starts_with("Inflation")).cloned());
     ds.meta = Meta {
-        title: Some("US-Aktien in CHF und Schweizer Bundesobligationen".into()),
+        title: Some(msg!(series_title_ch_bonds)),
         currency: Some("CHF".into()),
         source: Some(source),
-        info: Some(INFO_CH_BONDS.into()),
+        info: Some(msg!(series_info_ch_bonds)),
         notes,
     };
     Ok(ds)
+}
+
+/// Source of a series, otherwise its name.
+fn source_of(ds: &DataSet) -> Message {
+    ds.meta
+        .source
+        .clone()
+        .unwrap_or_else(|| msg!(plain_text, text = ds.name))
 }
 
 #[cfg(test)]
@@ -464,9 +463,9 @@ mod tests {
                 .info
                 .unwrap()
         };
-        assert_eq!(info("Shiller USD.csv"), INFO_USD);
-        assert_eq!(info("Shiller CHF.csv"), INFO_CHF);
-        assert_eq!(info(crate::library::CH_BONDS_FILE), INFO_CH_BONDS);
+        assert_eq!(info("Shiller USD.csv"), msg!(series_info_shiller_usd));
+        assert_eq!(info("Shiller CHF.csv"), msg!(series_info_shiller_chf));
+        assert_eq!(info(crate::library::CH_BONDS_FILE), msg!(series_info_ch_bonds));
     }
 
     use super::*;

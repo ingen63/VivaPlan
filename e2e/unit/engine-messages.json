@@ -2697,6 +2697,596 @@
     "text": "The plan has no retirement (pension fund “payout from”)."
   },
   {
+    "code": "opt_strategy_standard",
+    "params": {},
+    "template": "Standard",
+    "text": "Standard"
+  },
+  {
+    "code": "opt_strategy_three_buckets",
+    "params": {},
+    "template": "3 buckets",
+    "text": "3 buckets"
+  },
+  {
+    "code": "opt_strategy_three_buckets_guardrails",
+    "params": {},
+    "template": "3 buckets + guardrails",
+    "text": "3 buckets + guardrails"
+  },
+  {
+    "code": "opt_strategy_guardrails",
+    "params": {},
+    "template": "Guardrails",
+    "text": "Guardrails"
+  },
+  {
+    "code": "opt_strategy_fixed_rate",
+    "params": {},
+    "template": "Fixed rate",
+    "text": "Fixed rate"
+  },
+  {
+    "code": "opt_strategy_vpw",
+    "params": {},
+    "template": "VPW",
+    "text": "VPW"
+  },
+  {
+    "code": "opt_strategy_endowment",
+    "params": {},
+    "template": "Endowment",
+    "text": "Endowment"
+  },
+  {
+    "code": "opt_param_stock_share",
+    "params": {},
+    "template": "Stock allocation",
+    "text": "Stock allocation"
+  },
+  {
+    "code": "opt_param_reserve_months",
+    "params": {},
+    "template": "Cash reserve",
+    "text": "Cash reserve"
+  },
+  {
+    "code": "opt_param_rate",
+    "params": {},
+    "template": "Withdrawal rate",
+    "text": "Withdrawal rate"
+  },
+  {
+    "code": "opt_param_horizon_age",
+    "params": {},
+    "template": "Planning age",
+    "text": "Planning age"
+  },
+  {
+    "code": "opt_param_real_return",
+    "params": {},
+    "template": "Real return",
+    "text": "Real return"
+  },
+  {
+    "code": "opt_param_e_rate",
+    "params": {},
+    "template": "Target rate",
+    "text": "Target rate"
+  },
+  {
+    "code": "opt_param_smoothing",
+    "params": {},
+    "template": "Smoothing",
+    "text": "Smoothing"
+  },
+  {
+    "code": "opt_param_initial_rate",
+    "params": {},
+    "template": "Initial rate",
+    "text": "Initial rate"
+  },
+  {
+    "code": "opt_param_upper",
+    "params": {},
+    "template": "Upper guardrail",
+    "text": "Upper guardrail"
+  },
+  {
+    "code": "opt_param_lower",
+    "params": {},
+    "template": "Lower guardrail",
+    "text": "Lower guardrail"
+  },
+  {
+    "code": "opt_param_adjust",
+    "params": {},
+    "template": "Adjustment",
+    "text": "Adjustment"
+  },
+  {
+    "code": "opt_param_floor",
+    "params": {},
+    "template": "Floor of living expenses",
+    "text": "Floor of living expenses"
+  },
+  {
+    "code": "opt_param_ceiling",
+    "params": {},
+    "template": "Ceiling of living expenses",
+    "text": "Ceiling of living expenses"
+  },
+  {
+    "code": "opt_param_cash_years",
+    "params": {},
+    "template": "Bucket 1: cash",
+    "text": "Bucket 1: cash"
+  },
+  {
+    "code": "opt_param_bond_years",
+    "params": {},
+    "template": "Bucket 2: bonds",
+    "text": "Bucket 2: bonds"
+  },
+  {
+    "code": "opt_param_refill_threshold",
+    "params": {},
+    "template": "Refill from stocks at a previous-year return of at least",
+    "text": "Refill from stocks at a previous-year return of at least"
+  },
+  {
+    "code": "opt_param_with_unit",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "unit": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name} ({unit})",
+    "text": "Person 2 (Person 2)"
+  },
+  {
+    "code": "unit_percent",
+    "params": {},
+    "template": "%",
+    "text": "%"
+  },
+  {
+    "code": "unit_years",
+    "params": {},
+    "template": "years",
+    "text": "years"
+  },
+  {
+    "code": "unit_months",
+    "params": {},
+    "template": "months",
+    "text": "months"
+  },
+  {
+    "code": "unit_age",
+    "params": {},
+    "template": "age",
+    "text": "age"
+  },
+  {
+    "code": "index_ch_jst",
+    "params": {},
+    "template": "Switzerland (JST)",
+    "text": "Switzerland (JST)"
+  },
+  {
+    "code": "index_world_jst",
+    "params": {},
+    "template": "World (JST)",
+    "text": "World (JST)"
+  },
+  {
+    "code": "index_world_custom",
+    "params": {},
+    "template": "World custom (JST)",
+    "text": "World custom (JST)"
+  },
+  {
+    "code": "index_sp500",
+    "params": {},
+    "template": "S&P 500 (Shiller)",
+    "text": "S&P 500 (Shiller)"
+  },
+  {
+    "code": "index_confed_10",
+    "params": {},
+    "template": "Swiss Confederation 10 years",
+    "text": "Swiss Confederation 10 years"
+  },
+  {
+    "code": "index_us_10",
+    "params": {},
+    "template": "USA 10 years (Shiller)",
+    "text": "USA 10 years (Shiller)"
+  },
+  {
+    "code": "index_confed_short",
+    "params": {},
+    "template": "Swiss Confederation short-term",
+    "text": "Swiss Confederation short-term"
+  },
+  {
+    "code": "index_world_custom_weights",
+    "params": {
+      "apac": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "ch": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "eu": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "usa": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "World custom (CH {ch} %, USA {usa} %, EU {eu} %, Asia-Pacific {apac} %)",
+    "text": "World custom (CH Person 2 %, USA Person 2 %, EU Person 2 %, Asia-Pacific Person 2 %)"
+  },
+  {
+    "code": "investment_label",
+    "params": {
+      "bonds": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "stocks": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Stocks {stocks}, bonds {bonds}",
+    "text": "Stocks Person 2, bonds Person 2"
+  },
+  {
+    "code": "investment_part_stocks",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Stocks {name}",
+    "text": "Stocks Person 2"
+  },
+  {
+    "code": "investment_part_bonds",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Bonds {name}",
+    "text": "Bonds Person 2"
+  },
+  {
+    "code": "investment_info",
+    "params": {
+      "bonds": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "first": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "last": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "stocks": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Stocks {stocks}, bonds {bonds}: annual {first}–{last}, in CHF without currency hedging.",
+    "text": "Stocks Person 2, bonds Person 2: annual Person 2–Person 2, in CHF without currency hedging."
+  },
+  {
+    "code": "investment_note_parts",
+    "params": {
+      "bonds": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "stocks": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Stocks: {stocks}; bonds: {bonds}; annual (monthly values linked to calendar years), in CHF.",
+    "text": "Stocks: Person 2; bonds: Person 2; annual (monthly values linked to calendar years), in CHF."
+  },
+  {
+    "code": "investment_note_saron",
+    "params": {},
+    "template": "SARON: annual average of the SNB monthly values, before 2000 the fixed value applies.",
+    "text": "SARON: annual average of the SNB monthly values, before 2000 the fixed value applies."
+  },
+  {
+    "code": "investment_note_confed_short",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Swiss Confederation short-term: JST (rate for about 3 months) until {year}, then annual average of SARON; the return practically equals the money market rate.",
+    "text": "Swiss Confederation short-term: JST (rate for about 3 months) until Person 2, then annual average of SARON; the return practically equals the money market rate."
+  },
+  {
+    "code": "investment_note_jst_license",
+    "params": {},
+    "template": "JST data: license CC BY-NC-SA 4.0 (non-commercial).",
+    "text": "JST data: license CC BY-NC-SA 4.0 (non-commercial)."
+  },
+  {
+    "code": "series_title_shiller_usd",
+    "params": {},
+    "template": "Shiller: S&P Composite and 10-year US Treasury bonds (USD)",
+    "text": "Shiller: S&P Composite and 10-year US Treasury bonds (USD)"
+  },
+  {
+    "code": "series_title_shiller_chf",
+    "params": {},
+    "template": "Shiller: S&P Composite and 10-year US Treasury bonds, in CHF",
+    "text": "Shiller: S&P Composite and 10-year US Treasury bonds, in CHF"
+  },
+  {
+    "code": "series_title_ch_bonds",
+    "params": {},
+    "template": "US stocks in CHF and Swiss federal bonds",
+    "text": "US stocks in CHF and Swiss federal bonds"
+  },
+  {
+    "code": "series_title_world",
+    "params": {},
+    "template": "World (JST): stocks weighted by GDP, Swiss Confederation bonds, in CHF",
+    "text": "World (JST): stocks weighted by GDP, Swiss Confederation bonds, in CHF"
+  },
+  {
+    "code": "series_info_shiller_usd",
+    "params": {},
+    "template": "Shiller: S&P Composite and 10-year US Treasury bonds in USD, total return incl. dividends. Inflation: US CPI.",
+    "text": "Shiller: S&P Composite and 10-year US Treasury bonds in USD, total return incl. dividends. Inflation: US CPI."
+  },
+  {
+    "code": "series_info_shiller_chf",
+    "params": {},
+    "template": "Shiller: S&P Composite and 10-year US Treasury bonds, converted to CHF (SNB exchange rate), without currency hedging. Inflation: Swiss CPI, SARON from 06.1999.",
+    "text": "Shiller: S&P Composite and 10-year US Treasury bonds, converted to CHF (SNB exchange rate), without currency hedging. Inflation: Swiss CPI, SARON from 06.1999."
+  },
+  {
+    "code": "series_info_ch_bonds",
+    "params": {},
+    "template": "Shiller: US stocks (S&P Composite) in CHF, without currency hedging. Bonds: 10-year Swiss federal bonds (SNB). Inflation: Swiss CPI, SARON from 06.1999.",
+    "text": "Shiller: US stocks (S&P Composite) in CHF, without currency hedging. Bonds: 10-year Swiss federal bonds (SNB). Inflation: Swiss CPI, SARON from 06.1999."
+  },
+  {
+    "code": "series_info_world",
+    "params": {},
+    "template": "World stock index from the JST data (CH, USA, EU, Japan, Australia), weighted by GDP, in CHF without currency hedging. Bonds: Swiss Confederation 10 years. Inflation: CH.",
+    "text": "World stock index from the JST data (CH, USA, EU, Japan, Australia), weighted by GDP, in CHF without currency hedging. Bonds: Swiss Confederation 10 years. Inflation: CH."
+  },
+  {
+    "code": "series_note_total_return",
+    "params": {},
+    "template": "Stocks: total return incl. dividends; bonds: total return of 10-year government bonds.",
+    "text": "Stocks: total return incl. dividends; bonds: total return of 10-year government bonds."
+  },
+  {
+    "code": "series_note_usd_monthly",
+    "params": {},
+    "template": "Monthly values from monthly averages of prices; inflation: US CPI compared with the same month of the previous year.",
+    "text": "Monthly values from monthly averages of prices; inflation: US CPI compared with the same month of the previous year."
+  },
+  {
+    "code": "series_note_chf_conversion",
+    "params": {},
+    "template": "Returns of the US assets converted to CHF (monthly average USD/CHF, without currency hedging).",
+    "text": "Returns of the US assets converted to CHF (monthly average USD/CHF, without currency hedging)."
+  },
+  {
+    "code": "series_note_chf_inflation",
+    "params": {},
+    "template": "Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the fixed value applies.",
+    "text": "Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the fixed value applies."
+  },
+  {
+    "code": "series_note_ch_bonds_stocks",
+    "params": {},
+    "template": "Stocks: S&P Composite in CHF (without currency hedging); bonds: 10-year Swiss Confederation bonds.",
+    "text": "Stocks: S&P Composite in CHF (without currency hedging); bonds: 10-year Swiss Confederation bonds."
+  },
+  {
+    "code": "series_note_ch_bonds_return",
+    "params": {},
+    "template": "Bonds: total return of a 10-year bond at par from the monthly SNB yields (coupon plus price change), without costs.",
+    "text": "Bonds: total return of a 10-year bond at par from the monthly SNB yields (coupon plus price change), without costs."
+  },
+  {
+    "code": "series_note_world_stocks",
+    "params": {},
+    "template": "Stocks: total return of the countries in CHF, weighted by the real GDP of the previous year (Maddison); Germany 1923 excluded (hyperinflation), Germany 1945–1946 and Japan 1946–1947 without values.",
+    "text": "Stocks: total return of the countries in CHF, weighted by the real GDP of the previous year (Maddison); Germany 1923 excluded (hyperinflation), Germany 1945–1946 and Japan 1946–1947 without values."
+  },
+  {
+    "code": "series_note_world_bonds",
+    "params": {
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Bonds: JST until {year}, then from the monthly SNB yields (10 years); 1915 coupon instead of yield (stock exchange closed).",
+    "text": "Bonds: JST until Person 2, then from the monthly SNB yields (10 years); 1915 coupon instead of yield (stock exchange closed)."
+  },
+  {
+    "code": "series_note_world_license",
+    "params": {},
+    "template": "License: CC BY-NC-SA 4.0 (non-commercial, share alike).",
+    "text": "License: CC BY-NC-SA 4.0 (non-commercial, share alike)."
+  },
+  {
+    "code": "series_source_shiller",
+    "params": {},
+    "template": "Robert J. Shiller, “Irrational Exuberance”, online data (ie_data)",
+    "text": "Robert J. Shiller, “Irrational Exuberance”, online data (ie_data)"
+  },
+  {
+    "code": "series_source_jst",
+    "params": {},
+    "template": "Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, retrieved 13.11.2026), license CC BY-NC-SA 4.0. Citations: Jordà, Schularick, Taylor (2017), “Macrofinancial History and the New Business Cycle Facts”, NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), “The Rate of Return on Everything, 1870–2015”, Quarterly Journal of Economics",
+    "text": "Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, retrieved 13.11.2026), license CC BY-NC-SA 4.0. Citations: Jordà, Schularick, Taylor (2017), “Macrofinancial History and the New Business Cycle Facts”, NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), “The Rate of Return on Everything, 1870–2015”, Quarterly Journal of Economics"
+  },
+  {
+    "code": "series_source_snb",
+    "params": {
+      "cubes": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "source": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{source}; SNB (data.snb.ch): {cubes}",
+    "text": "Person 2; SNB (data.snb.ch): Person 2"
+  },
+  {
+    "code": "series_source_as_of",
+    "params": {
+      "dates": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "source": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{source} (as of {dates})",
+    "text": "Person 2 (as of Person 2)"
+  },
+  {
+    "code": "series_source_list",
+    "params": {
+      "other": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "source": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{source}; {other}",
+    "text": "Person 2; Person 2"
+  },
+  {
+    "code": "plain_text",
+    "params": {
+      "text": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{text}",
+    "text": "Person 2"
+  },
+  {
     "code": "plan_incomplete",
     "params": {},
     "template": "The project file is incomplete.",

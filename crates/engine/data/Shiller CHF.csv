@@ -1,10 +1,10 @@
-# Titel: Shiller: S&P Composite und 10-jährige US-Staatsanleihen, in CHF
+# Titel: Shiller: S&P Composite and 10-year US Treasury bonds, in CHF
 # Währung: CHF
-# Info: Shiller: S&P Composite und 10-jährige US-Staatsanleihen, in CHF umgerechnet (SNB-Wechselkurs), ohne Währungsabsicherung. Teuerung: Landesindex, SARON ab 06.1999.
-# Quelle: Robert J. Shiller, «Irrational Exuberance», Online-Daten (ie_data); SNB (data.snb.ch): devkum, plkopr, zimoma (Stand devkum 2026-11-02 14:30, plkopr 2026-10-21 09:00, zimoma 2026-11-02 14:30)
-# Hinweis: Renditen der US-Anlagen in CHF umgerechnet (Monatsmittel USD/CHF, ohne Währungsabsicherung).
-# Hinweis: Inflation: Landesindex der Konsumentenpreise gegenüber Vorjahresmonat; SARON ab Einführung (06.1999), vorher gilt der fixe Wert.
-# Hinweis: Aktien: Gesamtrendite inkl. Dividenden; Obligationen: Gesamtrendite 10-jähriger Staatsanleihen.
+# Info: Shiller: S&P Composite and 10-year US Treasury bonds, converted to CHF (SNB exchange rate), without currency hedging. Inflation: Swiss CPI, SARON from 06.1999.
+# Quelle: Robert J. Shiller, “Irrational Exuberance”, online data (ie_data); SNB (data.snb.ch): devkum, plkopr, zimoma (as of devkum 2026-11-02 14:30, plkopr 2026-10-21 09:00, zimoma 2026-11-02 14:30)
+# Hinweis: Returns of the US assets converted to CHF (monthly average USD/CHF, without currency hedging).
+# Hinweis: Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the fixed value applies.
+# Hinweis: Stocks: total return incl. dividends; bonds: total return of 10-year government bonds.
 Date,Stocks,Bonds,Inflation,Saron
 1922-01,0.0019752387,0.0069871976,-0.1506766914,
 1922-02,0.0220694442,-0.0018921433,-0.1754239154,

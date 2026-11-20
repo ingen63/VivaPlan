@@ -13,6 +13,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::batch::Paths;
+use crate::message::{Code, Message};
 use crate::model::{Goal, Plan};
 use crate::sim::{SimResult, Simulator};
 use crate::time::YearMonth;
@@ -119,13 +120,14 @@ impl Metrics {
 #[derive(Clone, Copy, Debug)]
 pub struct ParamDef {
     pub key: &'static str,
-    pub label: &'static str,
+    /// #177: Name (code of the message, `engine.opt_param_*` in the text tables).
+    pub label: Code,
     pub lo: f64,
     pub hi: f64,
     /// Displayed as percent.
     pub percent: bool,
-    /// Display unit: `%`, `Jahre`, `Monate` or `Alter`.
-    pub unit: &'static str,
+    /// Display unit: `unit_percent`, `unit_years`, `unit_months` or `unit_age`.
+    pub unit: Code,
     /// Outermost allowed limits for user-chosen ranges.
     pub min: f64,
     pub max: f64,
@@ -133,21 +135,13 @@ pub struct ParamDef {
     pub fixed: bool,
 }
 
-const fn p(
-    key: &'static str,
-    label: &'static str,
-    lo: f64,
-    hi: f64,
-    unit: &'static str,
-    min: f64,
-    max: f64,
-) -> ParamDef {
+const fn p(key: &'static str, label: Code, lo: f64, hi: f64, unit: Code, min: f64, max: f64) -> ParamDef {
     ParamDef {
         key,
         label,
         lo,
         hi,
-        percent: unit.len() == 1,
+        percent: matches!(unit, Code::unit_percent),
         unit,
         min,
         max,
@@ -156,12 +150,22 @@ const fn p(
 }
 
 impl ParamDef {
+    /// Name of the parameter.
+    pub fn name(&self) -> Message {
+        Message::new(self.label, vec![])
+    }
+
+    /// Unit of the parameter.
+    pub fn unit_name(&self) -> Message {
+        Message::new(self.unit, vec![])
+    }
+
     /// Display name with unit, unless it is percent.
-    fn shown(&self) -> String {
+    pub fn shown(&self) -> Message {
         if self.percent {
-            self.label.into()
+            self.name()
         } else {
-            format!("{} ({})", self.label, self.unit)
+            msg!(opt_param_with_unit, name = self.name(), unit = self.unit_name())
         }
     }
 
@@ -171,7 +175,8 @@ impl ParamDef {
     }
 }
 
-const STOCK_SHARE: ParamDef = p("stockShare", "Aktienanteil", 0.1, 1.0, "%", 0.0, 1.0);
+const STOCK_SHARE: ParamDef = p("stockShare", Code::opt_param_stock_share, 0.1, 1.0, PCT, 0.0, 1.0);
+const PCT: Code = Code::unit_percent;
 
 /// Ranges per strategy and parameter (key of the strategy, then of the parameter).
 pub type Ranges = std::collections::BTreeMap<String, std::collections::BTreeMap<String, crate::model::ParamRange>>;
@@ -205,15 +210,16 @@ impl OptStrategy {
     }
 }
 
-pub fn strategy_name(s: OptStrategy) -> &'static str {
+/// #177: Name of the strategy (`engine.opt_strategy_<key>` in the text tables).
+pub fn strategy_name(s: OptStrategy) -> Message {
     match s {
-        OptStrategy::Standard => "Standard",
-        OptStrategy::ThreeBuckets => "3-Topf",
-        OptStrategy::ThreeBucketsGuardrails => "3-Topf + Guardrails",
-        OptStrategy::Guardrails => "Guardrails",
-        OptStrategy::FixedRate => "Fixe Rate",
-        OptStrategy::Vpw => "VPW",
-        OptStrategy::Endowment => "Endowment",
+        OptStrategy::Standard => msg!(opt_strategy_standard),
+        OptStrategy::ThreeBuckets => msg!(opt_strategy_three_buckets),
+        OptStrategy::ThreeBucketsGuardrails => msg!(opt_strategy_three_buckets_guardrails),
+        OptStrategy::Guardrails => msg!(opt_strategy_guardrails),
+        OptStrategy::FixedRate => msg!(opt_strategy_fixed_rate),
+        OptStrategy::Vpw => msg!(opt_strategy_vpw),
+        OptStrategy::Endowment => msg!(opt_strategy_endowment),
     }
 }
 
@@ -243,34 +249,50 @@ pub fn all_strategies() -> [OptStrategy; 7] {
 
 /// Parameters optimized for a strategy. Floor and ceiling stay as in the plan.
 pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
-    let floor = p("floor", "Untergrenze der Lebenshaltung", 0.5, 1.0, "%", 0.0, 2.0).fixed();
-    let ceiling = p("ceiling", "Obergrenze der Lebenshaltung", 1.0, 1.5, "%", 0.0, 5.0).fixed();
+    let floor = p("floor", Code::opt_param_floor, 0.5, 1.0, PCT, 0.0, 2.0).fixed();
+    let ceiling = p("ceiling", Code::opt_param_ceiling, 1.0, 1.5, PCT, 0.0, 5.0).fixed();
     match s {
         OptStrategy::Standard => vec![
             STOCK_SHARE,
-            p("reserveMonths", "Reserve", 3.0, 36.0, "Monate", 0.0, 120.0),
+            p(
+                "reserveMonths",
+                Code::opt_param_reserve_months,
+                3.0,
+                36.0,
+                Code::unit_months,
+                0.0,
+                120.0,
+            ),
         ],
         OptStrategy::FixedRate => vec![
-            p("rate", "Entnahmerate", 0.02, 0.08, "%", 0.0, 0.5),
+            p("rate", Code::opt_param_rate, 0.02, 0.08, PCT, 0.0, 0.5),
             STOCK_SHARE,
             floor,
             ceiling,
         ],
         OptStrategy::Vpw => vec![
-            p("horizonAge", "Planungsalter", 85.0, 105.0, "Alter", 60.0, 120.0),
-            p("realReturn", "Realrendite", -0.01, 0.05, "%", -0.1, 0.2),
+            p(
+                "horizonAge",
+                Code::opt_param_horizon_age,
+                85.0,
+                105.0,
+                Code::unit_age,
+                60.0,
+                120.0,
+            ),
+            p("realReturn", Code::opt_param_real_return, -0.01, 0.05, PCT, -0.1, 0.2),
             STOCK_SHARE,
         ],
         OptStrategy::Endowment => vec![
-            p("eRate", "Zielrate", 0.02, 0.08, "%", 0.0, 0.5),
-            p("smoothing", "Glättung", 0.05, 1.0, "%", 0.0, 1.0),
+            p("eRate", Code::opt_param_e_rate, 0.02, 0.08, PCT, 0.0, 0.5),
+            p("smoothing", Code::opt_param_smoothing, 0.05, 1.0, PCT, 0.0, 1.0),
             STOCK_SHARE,
         ],
         OptStrategy::Guardrails => vec![
-            p("initialRate", "Startrate", 0.02, 0.08, "%", 0.0, 0.5),
-            p("upper", "Obere Leitplanke", 0.05, 0.5, "%", 0.0, 2.0),
-            p("lower", "Untere Leitplanke", 0.05, 0.5, "%", 0.0, 2.0),
-            p("adjust", "Anpassung", 0.02, 0.3, "%", 0.0, 1.0),
+            p("initialRate", Code::opt_param_initial_rate, 0.02, 0.08, PCT, 0.0, 0.5),
+            p("upper", Code::opt_param_upper, 0.05, 0.5, PCT, 0.0, 2.0),
+            p("lower", Code::opt_param_lower, 0.05, 0.5, PCT, 0.0, 2.0),
+            p("adjust", Code::opt_param_adjust, 0.02, 0.3, PCT, 0.0, 1.0),
             STOCK_SHARE,
             floor,
             ceiling,
@@ -280,10 +302,10 @@ pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
         OptStrategy::ThreeBucketsGuardrails => {
             let mut v = bucket_defs().to_vec();
             v.extend([
-                p("initialRate", "Startrate", 0.02, 0.08, "%", 0.0, 0.5),
-                p("upper", "Obere Leitplanke", 0.05, 0.5, "%", 0.0, 2.0),
-                p("lower", "Untere Leitplanke", 0.05, 0.5, "%", 0.0, 2.0).fixed(),
-                p("adjust", "Anpassung", 0.02, 0.3, "%", 0.0, 1.0).fixed(),
+                p("initialRate", Code::opt_param_initial_rate, 0.02, 0.08, PCT, 0.0, 0.5),
+                p("upper", Code::opt_param_upper, 0.05, 0.5, PCT, 0.0, 2.0),
+                p("lower", Code::opt_param_lower, 0.05, 0.5, PCT, 0.0, 2.0).fixed(),
+                p("adjust", Code::opt_param_adjust, 0.02, 0.3, PCT, 0.0, 1.0).fixed(),
                 floor,
                 ceiling,
             ]);
@@ -294,14 +316,30 @@ pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
 
 const fn bucket_defs() -> [ParamDef; 3] {
     [
-        p("cashYears", "Topf 1: Cash", 0.5, 4.0, "Jahre", 0.0, 20.0),
-        p("bondYears", "Topf 2: Obligationen", 0.0, 10.0, "Jahre", 0.0, 30.0),
+        p(
+            "cashYears",
+            Code::opt_param_cash_years,
+            0.5,
+            4.0,
+            Code::unit_years,
+            0.0,
+            20.0,
+        ),
+        p(
+            "bondYears",
+            Code::opt_param_bond_years,
+            0.0,
+            10.0,
+            Code::unit_years,
+            0.0,
+            30.0,
+        ),
         p(
             "refillThreshold",
-            "Nachfüllen aus Aktien ab Vorjahresrendite",
+            Code::opt_param_refill_threshold,
             -0.1,
             0.2,
-            "%",
+            PCT,
             -1.0,
             1.0,
         ),
@@ -333,7 +371,7 @@ pub fn split_defs(s: OptStrategy, ranges: &Ranges) -> Result<(Vec<ParamDef>, Vec
             return Err(Error::Invalid(msg!(
                 optimize_range_invalid,
                 strategy = strategy_name(s),
-                param = d.label,
+                param = d.name(),
                 lo = show(lo),
                 hi = show(hi)
             )));
@@ -342,7 +380,7 @@ pub fn split_defs(s: OptStrategy, ranges: &Ranges) -> Result<(Vec<ParamDef>, Vec
             return Err(Error::Invalid(msg!(
                 optimize_range_limits,
                 strategy = strategy_name(s),
-                param = d.label,
+                param = d.name(),
                 min = show(d.min),
                 max = show(d.max)
             )));
@@ -358,8 +396,9 @@ pub fn split_defs(s: OptStrategy, ranges: &Ranges) -> Result<(Vec<ParamDef>, Vec
 #[serde(rename_all = "camelCase")]
 pub struct CatalogParam {
     pub key: &'static str,
-    pub label: &'static str,
-    pub unit: &'static str,
+    /// #177: Name and unit as messages (the user interface translates them by the code).
+    pub label: Message,
+    pub unit: Message,
     pub percent: bool,
     pub lo: f64,
     pub hi: f64,
@@ -375,7 +414,7 @@ pub struct CatalogParam {
 #[serde(rename_all = "camelCase")]
 pub struct CatalogStrategy {
     pub key: &'static str,
-    pub name: &'static str,
+    pub name: Message,
     pub params: Vec<CatalogParam>,
 }
 
@@ -390,8 +429,8 @@ pub fn catalog(plan: &Value) -> Vec<CatalogStrategy> {
                 .into_iter()
                 .map(|d| CatalogParam {
                     key: d.key,
-                    label: d.label,
-                    unit: d.unit,
+                    label: d.name(),
+                    unit: d.unit_name(),
                     percent: d.percent,
                     lo: d.lo,
                     hi: d.hi,
@@ -681,11 +720,12 @@ impl Rng {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Outcome {
-    pub strategy: String,
+    /// #177: Name of the strategy (message with code).
+    pub strategy: Message,
     /// Parameters (key, display name, value, as percent).
-    pub params: Vec<(String, String, f64, bool)>,
+    pub params: Vec<(String, Message, f64, bool)>,
     /// Fixed parameters with their value from the plan (same form as `params`).
-    pub fixed: Vec<(String, String, f64, bool)>,
+    pub fixed: Vec<(String, Message, f64, bool)>,
     /// Metrics on the optimization paths.
     pub fitted: Metrics,
     /// Metrics on independent paths.
@@ -830,7 +870,7 @@ pub fn optimize_strategy(
             "withdrawal": best_plan["withdrawal"],
             "wealth": { "stockShare": best_plan["wealth"]["stockShare"], "reserveMonths": best_plan["wealth"]["reserveMonths"] },
         }),
-        strategy: strategy_name(strategy).into(),
+        strategy: strategy_name(strategy),
         params: defs
             .iter()
             .zip(&bx)
@@ -976,7 +1016,7 @@ impl Request {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Reference {
-    pub strategy: String,
+    pub strategy: Message,
     pub metrics: Metrics,
 }
 
@@ -1091,7 +1131,7 @@ pub fn run_request(
     };
     let check = batch::path_source(&p_check, &sim, data.as_ref())?;
     let reference = Reference {
-        strategy: strategy_name(OptStrategy::of(&plan.withdrawal)).into(),
+        strategy: strategy_name(OptStrategy::of(&plan.withdrawal)),
         metrics: evaluate(&plan, &check, &obj)?,
     };
     let settings = Settings {
@@ -1255,17 +1295,18 @@ mod tests {
             names,
             [
                 "Standard",
-                "3-Topf",
-                "3-Topf + Guardrails",
+                "3 buckets",
+                "3 buckets + guardrails",
                 "Guardrails",
-                "Fixe Rate",
+                "Fixed rate",
                 "VPW",
                 "Endowment"
             ]
         );
         let defs = param_defs(OptStrategy::Standard);
-        assert_eq!(defs[0].shown(), "Aktienanteil");
-        assert_eq!(defs[1].shown(), "Reserve (Monate)");
+        assert_eq!(defs[0].shown(), "Stock allocation");
+        assert_eq!(defs[1].shown(), "Cash reserve (months)");
+        assert_eq!(defs[1].shown().code(), "opt_param_with_unit");
     }
 
     #[test]
@@ -1823,7 +1864,7 @@ mod tests {
             ..metrics()
         };
         Outcome {
-            strategy: String::new(),
+            strategy: Message::default(),
             params: vec![],
             fixed: vec![],
             fitted: m,

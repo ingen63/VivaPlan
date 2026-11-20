@@ -39,9 +39,6 @@ const COLUMNS: [&str; 8] = [
     "bill_rate",
 ];
 
-/// Source reference (citations according to macrohistory.net).
-pub const SOURCE: &str = "Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, abgerufen 13.11.2026), Lizenz CC BY-NC-SA 4.0. Zitate: Jordà, Schularick, Taylor (2017), «Macrofinancial History and the New Business Cycle Facts», NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), «The Rate of Return on Everything, 1870–2015», Quarterly Journal of Economics";
-
 /// Values of a country in one year (missing = `None`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Row {
@@ -410,9 +407,6 @@ pub fn ch_short_yearly(jst: &JstData, snb: &SnbData) -> Result<(i32, Vec<f64>)> 
     Ok((FIRST_YEAR, out))
 }
 
-/// Explanation of the series «Welt (JST)» (at most 2 lines).
-pub const INFO_WORLD: &str = "Welt-Aktienindex aus den JST-Daten (CH, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Obligationen: Eidgenossenschaft 10 Jahre. Teuerung: CH.";
-
 /// #68: Annual series «Welt (JST)» in CHF: stocks = world index (all regions, GDP-weighted), bonds =
 /// 10-year Swiss Confederation bonds ([`ch_bonds_yearly`]), inflation = Swiss consumer prices (JST).
 pub fn world_dataset(jst: &JstData, snb: &SnbData) -> Result<DataSet> {
@@ -427,24 +421,25 @@ pub fn world_dataset(jst: &JstData, snb: &SnbData) -> Result<DataSet> {
                 .ok_or_else(|| invalid(msg!(jst_ch_inflation_missing, year = y)))
         })
         .collect::<Result<_>>()?;
-    let mut source = format!("{SOURCE}; SNB (data.snb.ch): rendoblim");
+    // Source reference: citations according to macrohistory.net (#177: code series_source_jst).
+    let mut source = msg!(series_source_snb, source = msg!(series_source_jst), cubes = "rendoblim");
     if let Some(p) = snb.published.get("rendoblim") {
-        source.push_str(&format!(" (Stand {p})"));
+        source = msg!(series_source_as_of, source = source, dates = p);
     }
     Ok(DataSet {
         name: "Welt (JST)".into(),
         meta: Meta {
-            title: Some("Welt (JST): Aktien nach BIP gewichtet, Obligationen der Eidgenossenschaft, in CHF".into()),
+            title: Some(msg!(series_title_world)),
             currency: Some("CHF".into()),
             source: Some(source),
-            info: Some(INFO_WORLD.into()),
+            info: Some(msg!(series_info_world)),
             notes: vec![
-                "Aktien: Gesamtrendite der Länder in CHF, gewichtet mit dem realen BIP des Vorjahres (Maddison); Deutschland 1923 ausgeschlossen (Hyperinflation), Deutschland 1945–1946 und Japan 1946–1947 ohne Werte.".into(),
-                format!(
-                    "Obligationen: JST bis {}, danach aus den monatlichen SNB-Renditen (10 Jahre); 1915 Coupon statt Rendite (Börse geschlossen).",
-                    snb_first_full_year(snb).unwrap_or(FIRST_YEAR) - 1
+                msg!(series_note_world_stocks),
+                msg!(
+                    series_note_world_bonds,
+                    year = snb_first_full_year(snb).unwrap_or(FIRST_YEAR) - 1
                 ),
-                "Lizenz: CC BY-NC-SA 4.0 (nicht kommerziell, Weitergabe unter gleicher Lizenz).".into(),
+                msg!(series_note_world_license),
             ],
         },
         freq: Freq::Yearly,

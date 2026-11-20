@@ -345,3 +345,46 @@ test.describe("English user interface (#172)", () => {
     await ctx.close();
   });
 });
+
+test.describe("Names of the optimization catalog and of the time series (#177)", () => {
+  test("AK3: German names in German, English names in English (parameters and ranges, period of the strategy, short info of the series)", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    // Strategy with a cut part: stocks Switzerland (JST) until 2020, bonds USA (Shiller) from 1922
+    await page.locator('select[data-path="returns.strategy.stocks"]').selectOption("chJst");
+    await page.locator('select[data-path="returns.strategy.bonds"]').selectOption("usa");
+    await page.waitForFunction(() => seriesInfo?.parts?.length === 2 && state.returns.strategy.bonds === "usa" && seriesInfoRef === seriesRef());
+    // Short info of a bundled series (S&P 500 with US bonds = «Shiller CHF»)
+    const shillerInfo = () => page.evaluate(async () => msgText((await Engine.call("series_info", { path: 'strategy:{"stocks":"sp500","bonds":"usa"}' })).info));
+    const check = async (names) => {
+      await page.evaluate(() => goto("wealth"));
+      await expect(page.locator("#strategyClip")).toContainText(names.stocks);
+      await expect(page.locator("#strategyClip")).toContainText(names.bonds);
+      await expect(page.locator("#main .infobody.short").first()).toContainText(names.info);
+      expect(await shillerInfo()).toBe(names.shiller);
+      await page.evaluate(() => goto("optimize"));
+      await page.waitForSelector("#optR-guardrails-initialRate-var", { state: "attached" });
+      const guard = page.locator("details.optrange:has(#optR-guardrails-initialRate-var)");
+      await expect(guard.locator("summary b")).toHaveText("Guardrails");
+      await expect(guard.locator("tr", { has: page.locator("#optR-guardrails-initialRate-var") }).locator("td").first()).toHaveText(names.initialRate);
+      const cash = page.locator("tr", { has: page.locator("#optR-three_buckets-cashYears-var") });
+      await expect(cash.locator("td").first()).toHaveText(names.cash);
+      await expect(cash.locator("td").last()).toContainText(names.years);
+      await expect(page.locator("details.optrange:has(#optR-three_buckets-cashYears-var) summary b")).toHaveText(names.buckets);
+      await expect(page.locator("#val")).toContainText(names.range);
+    };
+    // Range with «from» greater than «to»: message of the validation with the names of strategy and parameter
+    await page.evaluate(() => { state.optimization ??= {}; state.optimization.ranges = { guardrails: { initialRate: { lo: 0.08, hi: 0.02 } } }; refresh(); });
+    await check({
+      stocks: "Aktien Schweiz (JST)", bonds: "Obligationen USA 10 Jahre (Shiller)", info: "Aktien Schweiz (JST), Obligationen USA 10 Jahre (Shiller): jährlich 1922–2020",
+      shiller: "Shiller: S&P Composite und 10-jährige US-Staatsanleihen, in CHF umgerechnet (SNB-Wechselkurs), ohne Währungsabsicherung. Teuerung: Landesindex, SARON ab 06.1999.",
+      initialRate: "Startrate", cash: "Topf 1: Cash", years: "Jahre", buckets: "3-Topf", range: "Guardrails, Startrate: Die Bandbreite",
+    });
+    await page.evaluate(() => I18n.use("en"));
+    await check({
+      stocks: "Stocks Switzerland (JST)", bonds: "Bonds USA 10 years (Shiller)", info: "Stocks Switzerland (JST), bonds USA 10 years (Shiller): annual 1922–2020",
+      shiller: "Shiller: S&P Composite and 10-year US Treasury bonds, converted to CHF (SNB exchange rate), without currency hedging. Inflation: Swiss CPI, SARON from 06.1999.",
+      initialRate: "Initial rate", cash: "Bucket 1: cash", years: "years", buckets: "3 buckets", range: "Guardrails, Initial rate: the range from 8 % to 2 % is invalid",
+    });
+    await noErrors(page, errors);
+  });
+});

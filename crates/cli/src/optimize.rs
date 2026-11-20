@@ -212,10 +212,10 @@ mod tests {
 
     fn outcome(feasible: bool) -> Outcome {
         Outcome {
-            strategy: "Guardrails".into(),
+            strategy: engine::msg!(opt_strategy_guardrails),
             params: vec![
-                ("rate".into(), "Startrate".into(), 0.045, true),
-                ("cashYears".into(), "Topf 1".into(), 2.5, false),
+                ("rate".into(), engine::msg!(opt_param_initial_rate), 0.045, true),
+                ("cashYears".into(), engine::msg!(opt_param_cash_years), 2.5, false),
             ],
             fixed: vec![],
             fitted: metrics(0.02),
@@ -312,7 +312,7 @@ mod tests {
             .objective();
         let ok = outcome_text(&outcome(true), &consumption);
         assert!(
-            ok.starts_with("\nGuardrails\n    Startrate 4.5 %, Topf 1 2.5\n"),
+            ok.starts_with("\nGuardrails\n    Initial rate 4.5 %, Bucket 1: cash 2.5\n"),
             "{ok}"
         );
         assert!(ok.contains("Optimization") && ok.contains("Check"));

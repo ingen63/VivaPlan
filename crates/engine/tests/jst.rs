@@ -210,12 +210,12 @@ fn issue_68_world_series_range_and_source() {
         "CC BY-NC-SA 4.0",
         "Jordà, Schularick, Taylor (2017)",
         "(2019)",
-        "abgerufen",
+        "retrieved",
         "rendoblim",
     ] {
         assert!(src.contains(part), "Quelle ohne «{part}»");
     }
-    assert!(w.meta.notes.iter().any(|n| n.contains("nicht kommerziell")));
+    assert!(w.meta.notes.iter().any(|n| n.contains("non-commercial")));
     // Inflation: Swiss consumer prices of the database
     let d = JstData::builtin();
     assert!((at(&w.inflation, 1975) - d.ch_inflation(1975).unwrap()).abs() < 1e-9);

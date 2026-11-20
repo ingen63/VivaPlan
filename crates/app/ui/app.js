@@ -52,7 +52,7 @@ document.addEventListener("mouseout", e => { const p = e.target.closest?.(".info
 const infoPop = (html, cls = "") => `<span class="infopop" tabindex="0" role="button" aria-label="${tr("common.showInfo")}" aria-haspopup="true" data-action="info-toggle">ⓘ<span class="infobody ${cls}" role="tooltip">${html}</span></span>`;
 /** Short explanation of a series (at most 2 lines): `# Info:` of the file, otherwise source and notes, shortened; without details no icon. */
 function seriesTip(i) {
-  const text = i?.info || [i?.source, ...(i?.notes || [])].filter(Boolean).join(" ");
+  const text = msgText(i?.info) || [i?.source, ...(i?.notes || [])].map(msgText).filter(Boolean).join(" ");
   return text ? infoPop(`<span class="two">${esc(text)}</span>`, "short") : "";
 }
 /** Simulation start as MM.YYYY for labels («… per Simulationsstart (11.2026)»). */
@@ -881,7 +881,7 @@ const rangeOf = (s, d) => {
 };
 const fmtNum = v => v.toLocaleString("de-CH", { maximumFractionDigits: 2 });
 const rangeShow = (d, v) => d.percent ? optRound(v * 100) : v;
-const rangeUnit = d => d.unit === "%" ? "%" : d.unit;
+const rangeUnit = d => msgText(d.unit);
 const variedParams = s => s.params.filter(d => !rangeOf(s.key, d).fixed);
 function optRangesHtml() {
   if (!optCat.data) return `<p class="hint">${tr("optRanges.loading")}</p>`;
@@ -889,11 +889,11 @@ function optRangesHtml() {
     const n = variedParams(s).length, sel = optCfg.strategies.includes(s.key);
     const rows = s.params.map(d => {
       const r = rangeOf(s.key, d), id = `optR-${s.key}-${d.key}`, off = r.fixed ? "disabled" : "";
-      return `<tr><td>${esc(d.label)}</td><td class="r">${d.current == null ? "–" : `${fmtNum(rangeShow(d, d.current))} ${rangeUnit(d)}`}</td>
+      return `<tr><td>${esc(msgText(d.label))}</td><td class="r">${d.current == null ? "–" : `${fmtNum(rangeShow(d, d.current))} ${rangeUnit(d)}`}</td>
         <td><label class="check"><input type="checkbox" id="${id}-var" ${r.fixed ? "" : "checked"}> ${tr("optRanges.vary")}</label></td>
         <td style="white-space:nowrap">${tr("optRanges.from")} <input class="num" id="${id}-lo" value="${rangeShow(d, r.lo)}" ${off} style="width:68px"> ${tr("optRanges.to")} <input class="num" id="${id}-hi" value="${rangeShow(d, r.hi)}" ${off} style="width:68px"> ${rangeUnit(d)}</td></tr>`;
     }).join("");
-    return `<details class="optrange" ${sel ? "" : "style=\"opacity:.7\""}><summary><b>${esc(s.name)}</b> <span class="computed">${n === 0 ? tr("optRanges.allFixed") : tr("optRanges.varied", { n, length: s.params.length })}${sel ? "" : tr("optRanges.notChosen")}</span></summary>
+    return `<details class="optrange" ${sel ? "" : "style=\"opacity:.7\""}><summary><b>${esc(msgText(s.name))}</b> <span class="computed">${n === 0 ? tr("optRanges.allFixed") : tr("optRanges.varied", { n, length: s.params.length })}${sel ? "" : tr("optRanges.notChosen")}</span></summary>
       <table class="tbl"><tr><th>${tr("optRanges.params")}</th><th class="r">${tr("optRanges.inPlan")}</th><th></th><th>${tr("optRanges.range")}</th></tr>${rows}</table>
       <div style="margin:6px 0 10px"><button class="btn small" data-action="opt-range-reset" data-s="${s.key}">${tr("optRanges.defaults")}</button></div></details>`;
   }).join("");
@@ -917,7 +917,7 @@ document.addEventListener("change", e => { if (/^optR-/.test(e.target.id || "") 
 OPT_ACTIONS["opt-range-reset"] = d => {
   const r = { ...(optCfg.ranges ?? {}) }; delete r[d.s]; optCfg.ranges = r; saveOptCfg(); renderSection();
 };
-const optParam = ([, label, v, pc]) => `${label} ${pc ? (v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }) + " %" : v.toLocaleString("de-CH", { maximumFractionDigits: 1 })}`;
+const optParam = ([, label, v, pc]) => `${esc(msgText(label))} ${pc ? (v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }) + " %" : v.toLocaleString("de-CH", { maximumFractionDigits: 1 })}`;
 function optMetricsRow(name, m, goal, best, extra = "", cls = "") {
   return `<tr class="${cls}"><td><b>${esc(name)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td><td class="r">${fmtInt(m.p10)}</td><td class="r">${pctTxt(m.volatility)}</td>
     <td class="r">${fmtInt(goal)}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td><td>${extra}</td></tr>`;
@@ -931,8 +931,8 @@ function optResultKeep(r, q, stale) {
     ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : ""}
     ${none ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.none", { maxRuin: pctTxt(q.maxRuin), minConsumption: pctTxt(q.minConsumption) })}</p>` : ""}
     <div class="tscroll"><table class="tbl"><tr><th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th><th></th></tr>
-    ${row(tr("optResult.reference", { strategy: r.reference.strategy }), r.reference.metrics, tr("optResult.asInPlan"))}
-    ${r.outcomes.map((x, i) => row(x.strategy + (i === 0 && x.feasible ? " ★" : ""), x.validated,
+    ${row(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics, tr("optResult.asInPlan"))}
+    ${r.outcomes.map((x, i) => row(esc(msgText(x.strategy)) + (i === 0 && x.feasible ? " ★" : ""), x.validated,
       `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">${tr("optResult.constraintsViolated")}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div>`, x.feasible ? "" : "off")).join("")}
     </table></div>
     <p class="hint">${tr("optResult.order")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optResult.footer", { v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
@@ -952,8 +952,8 @@ R.optimize = () => {
     else res = `<div class="card"><h3>${tr("optimize.result")} <span class="sub">${tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
       ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : ""}
       <div class="tscroll"><table class="tbl"><tr><th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th><th>${tr("optRanges.params")}</th></tr>
-      ${optMetricsRow(tr("optResult.reference", { strategy: r.reference.strategy }), r.reference.metrics, goal(r.reference.metrics), best, tr("optResult.asInPlan"), r.reference.metrics.ruin > q.maxRuin ? "" : "")}
-      ${r.outcomes.map((x, i) => optMetricsRow(x.strategy + (i === 0 && x.feasible ? " ★" : ""), x.validated, goal(x.validated), best,
+      ${optMetricsRow(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics, goal(r.reference.metrics), best, tr("optResult.asInPlan"), r.reference.metrics.ruin > q.maxRuin ? "" : "")}
+      ${r.outcomes.map((x, i) => optMetricsRow(esc(msgText(x.strategy)) + (i === 0 && x.feasible ? " ★" : ""), x.validated, goal(x.validated), best,
         `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">${tr("optimize.ruinViolated")}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div>`, x.feasible ? "" : "off")).join("")}
       </table></div>
       <p class="hint">${tr("optimize.ruinDef")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optimize.ruinFooter", { maxRuin: pctTxt(q.maxRuin), round: Math.round(w * 100), round2: Math.round((1 - w) * 100), volWeight: q.volWeight })}</p>
@@ -1020,7 +1020,7 @@ OPT_ACTIONS["opt-apply"] = d => {
   state.wealth.stockShare = pt.wealth.stockShare;
   state.wealth.reserveMonths = pt.wealth.reserveMonths;
   markDirty(); lastOpt.planJson = optKey(); renderSection();
-  toast(tr("optimize.applied", { strategy: x.strategy }));
+  toast(tr("optimize.applied", { strategy: msgText(x.strategy) }));
 };
 
 // ----- Property gains tax (rules per canton, editable) -----
@@ -1227,7 +1227,7 @@ const COMPUTED = {
     // #69/AK8: The means apply to the common period; a longer index is cut to it.
     const from = +String(i.first).slice(0, 4), to = +String(i.last).slice(0, 4), span = `${from}–${to}`;
     const cut = (i.parts || []).filter(x => x.first < from || x.last > to);
-    const clip = cut.length ? `<span class="cliphint" id="strategyClip">⚠ ${cut.map(x => tr("computed.seriesRange", { label: esc(x.label), first: x.first, last: x.last })).join(", ")} ${tr("computed.commonRange", { span })}</span>` : "";
+    const clip = cut.length ? `<span class="cliphint" id="strategyClip">⚠ ${cut.map(x => tr("computed.seriesRange", { label: esc(msgText(x.label)), first: x.first, last: x.last })).join(", ")} ${tr("computed.commonRange", { span })}</span>` : "";
     return `${i.monthly ? tr("computed.monthly") : tr("computed.annual")} ${tr("computed.indexRange", { first: ymShow(i.first), last: ymShow(i.last) })}${i.parts?.length ? ` ${tr("computed.inCommon", { span })}` : ""}${tr("computed.averages", { avgStocks: p(i.avgStocks), avgBonds: p(i.avgBonds), avgInflation: p(i.avgInflation), i: seriesTip(i), clip })}`;
   },
   seriesinfo: () => {
@@ -2942,7 +2942,7 @@ function stratParams(plan) {
 function seriesLabel() {
   const r = state.returns;
   if (r.source === "fixed" || r.source === "parametric" || !seriesRef()) return null;
-  return (seriesInfo && !seriesInfo.error && (seriesInfo.title || seriesInfo.name)) || (r.series ? seriesShort(r.series) : null);
+  return (seriesInfo && !seriesInfo.error && (msgText(seriesInfo.title) || seriesInfo.name)) || (r.series ? seriesShort(r.series) : null);
 }
 /** Display of the column «Zeitreihe» (header data without a value: «–»). */
 const seriesCell = m => m.seriesName === undefined ? "–" : m.seriesName ? esc(m.seriesName)

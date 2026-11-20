@@ -1,9 +1,9 @@
-# Titel: Shiller: S&P Composite und 10-jährige US-Staatsanleihen (USD)
+# Titel: Shiller: S&P Composite and 10-year US Treasury bonds (USD)
 # Währung: USD
-# Info: Shiller: S&P Composite und 10-jährige US-Staatsanleihen in USD, Gesamtrendite inkl. Dividenden. Teuerung: US-CPI.
-# Quelle: Robert J. Shiller, «Irrational Exuberance», Online-Daten (ie_data)
-# Hinweis: Aktien: Gesamtrendite inkl. Dividenden; Obligationen: Gesamtrendite 10-jähriger Staatsanleihen.
-# Hinweis: Monatswerte aus Monatsdurchschnitten der Kurse; Inflation: US-CPI gegenüber Vorjahresmonat.
+# Info: Shiller: S&P Composite and 10-year US Treasury bonds in USD, total return incl. dividends. Inflation: US CPI.
+# Quelle: Robert J. Shiller, “Irrational Exuberance”, online data (ie_data)
+# Hinweis: Stocks: total return incl. dividends; bonds: total return of 10-year government bonds.
+# Hinweis: Monthly values from monthly averages of prices; inflation: US CPI compared with the same month of the previous year.
 Date,Stocks,Bonds,Inflation
 1872-01,0.0299454993,0.0042079182,0.0152703503
 1872-02,0.0086882716,0.0030599999,-0.0148115915

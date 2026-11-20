@@ -1,10 +1,10 @@
-# Titel: Welt (JST): Aktien nach BIP gewichtet, Obligationen der Eidgenossenschaft, in CHF
+# Titel: World (JST): stocks weighted by GDP, Swiss Confederation bonds, in CHF
 # Währung: CHF
-# Info: Welt-Aktienindex aus den JST-Daten (CH, USA, EU, Japan, Australien), nach BIP gewichtet, in CHF ohne Währungsabsicherung. Obligationen: Eidgenossenschaft 10 Jahre. Teuerung: CH.
-# Quelle: Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, abgerufen 13.11.2026), Lizenz CC BY-NC-SA 4.0. Zitate: Jordà, Schularick, Taylor (2017), «Macrofinancial History and the New Business Cycle Facts», NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), «The Rate of Return on Everything, 1870–2015», Quarterly Journal of Economics; SNB (data.snb.ch): rendoblim (Stand 2025-09-01 14:29)
-# Hinweis: Aktien: Gesamtrendite der Länder in CHF, gewichtet mit dem realen BIP des Vorjahres (Maddison); Deutschland 1923 ausgeschlossen (Hyperinflation), Deutschland 1945–1946 und Japan 1946–1947 ohne Werte.
-# Hinweis: Obligationen: JST bis 1988, danach aus den monatlichen SNB-Renditen (10 Jahre); 1915 Coupon statt Rendite (Börse geschlossen).
-# Hinweis: Lizenz: CC BY-NC-SA 4.0 (nicht kommerziell, Weitergabe unter gleicher Lizenz).
+# Info: World stock index from the JST data (CH, USA, EU, Japan, Australia), weighted by GDP, in CHF without currency hedging. Bonds: Swiss Confederation 10 years. Inflation: CH.
+# Quelle: Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, retrieved 13.11.2026), license CC BY-NC-SA 4.0. Citations: Jordà, Schularick, Taylor (2017), “Macrofinancial History and the New Business Cycle Facts”, NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), “The Rate of Return on Everything, 1870–2015”, Quarterly Journal of Economics; SNB (data.snb.ch): rendoblim (as of 2025-09-01 14:29)
+# Hinweis: Stocks: total return of the countries in CHF, weighted by the real GDP of the previous year (Maddison); Germany 1923 excluded (hyperinflation), Germany 1945–1946 and Japan 1946–1947 without values.
+# Hinweis: Bonds: JST until 1988, then from the monthly SNB yields (10 years); 1915 coupon instead of yield (stock exchange closed).
+# Hinweis: License: CC BY-NC-SA 4.0 (non-commercial, share alike).
 Years,Stocks,Bonds,Inflation
 1900,0.0657890342,0.0130764721,-0.0366295068
 1901,0.0652572912,0.1000573561,0.0126741834

@@ -524,7 +524,11 @@ pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
         section: "returns",
         message: msg!(
             currency_mismatch,
-            series = ds.meta.title.as_deref().unwrap_or(&ds.name),
+            series = ds
+                .meta
+                .title
+                .clone()
+                .unwrap_or_else(|| msg!(plain_text, text = ds.name)),
             currency = c,
             plan_currency = plan_currency
         ),

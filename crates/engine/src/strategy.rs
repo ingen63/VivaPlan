@@ -13,6 +13,7 @@ use std::path::Path;
 use crate::jst::{self, JstData};
 use crate::library::{self, SeriesPart};
 use crate::market::{DataSet, Freq, Meta, StockSeries};
+use crate::message::Message;
 use crate::model::{BondIndex, Investment, RegionWeights, StockIndex};
 use crate::time::YearMonth;
 use crate::{Error, Result};
@@ -24,40 +25,42 @@ fn invalid(m: crate::message::Message) -> Error {
     Error::Invalid(m)
 }
 
-pub fn stock_name(s: StockIndex) -> &'static str {
+/// #177: Name of the stock index (`engine.index_*` in the text tables).
+pub fn stock_name(s: StockIndex) -> Message {
     match s {
-        StockIndex::ChJst => "Schweiz (JST)",
-        StockIndex::WorldJst => "Welt (JST)",
-        StockIndex::WorldCustom => "Welt individuell (JST)",
-        StockIndex::Sp500 => "S&P 500 (Shiller)",
+        StockIndex::ChJst => msg!(index_ch_jst),
+        StockIndex::WorldJst => msg!(index_world_jst),
+        StockIndex::WorldCustom => msg!(index_world_custom),
+        StockIndex::Sp500 => msg!(index_sp500),
     }
 }
 
-pub fn bond_name(b: BondIndex) -> &'static str {
+/// #177: Name of the bond index.
+pub fn bond_name(b: BondIndex) -> Message {
     match b {
-        BondIndex::Ch => "Eidgenossenschaft 10 Jahre",
-        BondIndex::Usa => "USA 10 Jahre (Shiller)",
-        BondIndex::ChShort => "Eidgenossenschaft kurzfristig",
+        BondIndex::Ch => msg!(index_confed_10),
+        BondIndex::Usa => msg!(index_us_10),
+        BondIndex::ChShort => msg!(index_confed_short),
     }
 }
 
 /// Short name of the strategy.
-pub fn label(s: &Investment) -> String {
+pub fn label(s: &Investment) -> Message {
     let stocks = match s.stocks {
         StockIndex::WorldCustom => {
             let w = &s.weights;
-            let p = |v: f64| format!("{}", (v * 100.0).round());
-            format!(
-                "Welt individuell (CH {} %, USA {} %, EU {} %, Asien-Pazifik {} %)",
-                p(w.ch),
-                p(w.usa),
-                p(w.eu),
-                p(w.apac)
+            let p = |v: f64| (v * 100.0).round();
+            msg!(
+                index_world_custom_weights,
+                ch = p(w.ch),
+                usa = p(w.usa),
+                eu = p(w.eu),
+                apac = p(w.apac)
             )
         }
-        x => stock_name(x).to_string(),
+        x => stock_name(x),
     };
-    format!("Aktien {stocks}, Obligationen {}", bond_name(s.bonds))
+    msg!(investment_label, stocks = stocks, bonds = bond_name(s.bonds))
 }
 
 /// Errors in the weights of «Welt individuell»: each between 0 and 100 %, together 100 %.
@@ -182,12 +185,12 @@ pub fn dataset(s: &Investment, lib: Option<&Path>) -> Result<DataSet> {
 fn parts(s: &Investment, stocks: (i32, i32), bonds: (i32, i32)) -> Vec<SeriesPart> {
     vec![
         SeriesPart {
-            label: format!("Aktien {}", stock_name(s.stocks)),
+            label: msg!(investment_part_stocks, name = stock_name(s.stocks)),
             first: stocks.0,
             last: stocks.1,
         },
         SeriesPart {
-            label: format!("Obligationen {}", bond_name(s.bonds)),
+            label: msg!(investment_part_bonds, name = bond_name(s.bonds)),
             first: bonds.0,
             last: bonds.1,
         },
@@ -213,7 +216,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
     };
     if let Some(file) = shipped {
         let mut ds = builtin_series(file, lib)?;
-        ds.name = label(s);
+        ds.name = label(s).to_string();
         let own = years_of(&ds);
         // S&P 500 with Swiss Confederation bonds: the stocks go back further than the SNB yields.
         let shiller = if s.bonds == BondIndex::Ch {
@@ -238,7 +241,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
     };
     let shiller = builtin_series("Shiller CHF.csv", lib)?;
 
-    let mut sources: Vec<String> = vec![];
+    let mut sources: Vec<Message> = vec![];
     let (stocks, inflation) = match s.stocks {
         StockIndex::Sp500 => {
             sources.push(shiller.meta.source.clone().unwrap_or_default());
@@ -248,7 +251,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
             )
         }
         x => {
-            sources.push(jst::SOURCE.to_string());
+            sources.push(msg!(series_source_jst));
             let stocks = match x {
                 StockIndex::ChJst => region(&jst, jst::SWITZERLAND.countries)?,
                 StockIndex::WorldJst => {
@@ -275,12 +278,20 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
             yearly_of(&shiller, &shiller.bonds)
         }
         BondIndex::Ch => {
-            sources.push(format!("{}; SNB (data.snb.ch): rendoblim", jst::SOURCE));
+            sources.push(msg!(
+                series_source_snb,
+                source = msg!(series_source_jst),
+                cubes = "rendoblim"
+            ));
             let (first, values) = jst::ch_bonds_yearly(&jst, &snb)?;
             Yearly { first, values }
         }
         BondIndex::ChShort => {
-            sources.push(format!("{}; SNB (data.snb.ch): zimoma (SARON)", jst::SOURCE));
+            sources.push(msg!(
+                series_source_snb,
+                source = msg!(series_source_jst),
+                cubes = "zimoma (SARON)"
+            ));
             let (first, values) = jst::ch_short_yearly(&jst, &snb)?;
             Yearly { first, values }
         }
@@ -302,37 +313,39 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
     };
     sources.dedup();
     let mut notes = vec![
-        format!(
-            "Aktien: {}; Obligationen: {}; jährlich (Monatswerte zu Kalenderjahren verknüpft), in CHF.",
-            stock_name(s.stocks),
-            bond_name(s.bonds)
+        msg!(
+            investment_note_parts,
+            stocks = stock_name(s.stocks),
+            bonds = bond_name(s.bonds)
         ),
-        "SARON: Jahresmittel der SNB-Monatswerte, vor 2000 gilt der fixe Wert.".into(),
+        msg!(investment_note_saron),
     ];
     if s.bonds == BondIndex::ChShort {
-        notes.push(format!(
-            "Eidgenossenschaft kurzfristig: JST (Satz für etwa 3 Monate) bis {}, danach Jahresmittel des SARON; die Rendite entspricht praktisch dem Geldmarktsatz.",
-            jst.last_year()
-        ));
+        notes.push(msg!(investment_note_confed_short, year = jst.last_year()));
     }
     if matches!(
         s.stocks,
         StockIndex::ChJst | StockIndex::WorldJst | StockIndex::WorldCustom
     ) || matches!(s.bonds, BondIndex::Ch | BondIndex::ChShort)
     {
-        notes.push("JST-Daten: Lizenz CC BY-NC-SA 4.0 (nicht kommerziell).".into());
+        notes.push(msg!(investment_note_jst_license));
     }
     let parts = parts(s, (stocks.first, stocks.last()), (bonds.first, bonds.last()));
+    let source = sources
+        .into_iter()
+        .reduce(|a, b| msg!(series_source_list, source = a, other = b));
     let ds = DataSet {
-        name: label(s),
+        name: label(s).to_string(),
         meta: Meta {
             title: Some(label(s)),
             currency: Some("CHF".into()),
-            source: Some(sources.join("; ")),
-            info: Some(format!(
-                "Aktien {}, Obligationen {}: jährlich {first}–{last}, in CHF ohne Währungsabsicherung.",
-                stock_name(s.stocks),
-                bond_name(s.bonds)
+            source,
+            info: Some(msg!(
+                investment_info,
+                stocks = stock_name(s.stocks),
+                bonds = bond_name(s.bonds),
+                first = first,
+                last = last
             )),
             notes,
         },
@@ -404,11 +417,11 @@ mod tests {
     #[test]
     fn labels() {
         let s = Investment::default();
-        assert_eq!(label(&s), "Aktien Welt (JST), Obligationen Eidgenossenschaft 10 Jahre");
+        assert_eq!(label(&s), "Stocks World (JST), bonds Swiss Confederation 10 years");
         let c = Investment {
             stocks: StockIndex::WorldCustom,
             ..Default::default()
         };
-        assert!(label(&c).contains("CH 20 %, USA 40 %, EU 30 %, Asien-Pazifik 10 %"));
+        assert!(label(&c).contains("CH 20 %, USA 40 %, EU 30 %, Asia-Pacific 10 %"));
     }
 }

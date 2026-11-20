@@ -102,7 +102,10 @@ fn invalid_ranges_are_reported() {
     let e = run_request(&plan(), Path::new("/"), Some(&lib()), &request("guardrails", bad))
         .unwrap_err()
         .to_string();
-    assert!(e.contains("Startrate") && e.contains("invalid"), "{e}");
+    assert!(
+        e.starts_with("Guardrails, Initial rate: the range from 8 % to 2 % is invalid"),
+        "{e}"
+    );
     let out = ranges("three_buckets", &[("cashYears", range(None, Some(0.0), Some(99.0)))]);
     let e = split_defs(engine::optimize::OptStrategy::ThreeBuckets, &out)
         .unwrap_err()
@@ -115,7 +118,7 @@ fn invalid_ranges_are_reported() {
     assert!(
         issues
             .iter()
-            .any(|i| i.section == "optimize" && i.message.contains("Startrate")),
+            .any(|i| i.section == "optimize" && i.message.contains("Initial rate")),
         "{issues:?}"
     );
 }
@@ -145,9 +148,16 @@ fn catalog_lists_every_parameter_with_unit_and_plan_value() {
     assert_eq!(c.len(), 7);
     let b = c.iter().find(|s| s.key == "three_buckets").unwrap();
     let cash = b.params.iter().find(|p| p.key == "cashYears").unwrap();
-    assert_eq!((cash.unit, cash.current, cash.percent), ("Jahre", Some(3.0), false));
+    assert_eq!(
+        (cash.unit.code(), cash.current, cash.percent),
+        ("unit_years", Some(3.0), false)
+    );
+    assert_eq!(
+        (cash.label.code(), cash.label.text()),
+        ("opt_param_cash_years", "Bucket 1: cash")
+    );
     let refill = b.params.iter().find(|p| p.key == "refillThreshold").unwrap();
-    assert_eq!((refill.unit, refill.percent), ("%", true));
+    assert_eq!((refill.unit.text(), refill.percent), ("%", true));
     // Ceiling and floor of the living costs can be chosen, but are fixed without a setting of their own
     let g = c.iter().find(|s| s.key == "guardrails").unwrap();
     assert!(g
@@ -178,7 +188,7 @@ fn issue_6_ak11_three_buckets_with_guardrails_is_its_own_strategy_with_two_fixed
     // #6/AK11: strategy of its own in the optimization; lower guardrail and adjustment are fixed by default.
     let c = catalog(&plan());
     let s = c.iter().find(|s| s.key == "three_buckets_guardrails").unwrap();
-    assert_eq!(s.name, "3-Topf + Guardrails");
+    assert_eq!(s.name, "3 buckets + guardrails");
     for key in ["cashYears", "bondYears", "refillThreshold", "initialRate", "upper"] {
         let p = s.params.iter().find(|p| p.key == key).unwrap();
         assert!(!p.fixed, "{key} wird standardmässig variiert");

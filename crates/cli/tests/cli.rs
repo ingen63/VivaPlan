@@ -311,7 +311,7 @@ fn optimize_compares_strategies_and_respects_ruin_limit() {
     let t = text(&o);
     assert!(o.status.success(), "{t}");
     assert!(
-        t.contains("Starting point") && t.contains("Fixe Rate") && t.contains("Guardrails"),
+        t.contains("Starting point") && t.contains("Fixed rate") && t.contains("Guardrails"),
         "{t}"
     );
     let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
@@ -334,10 +334,10 @@ fn optimize_uses_saved_settings_and_options_override_them() {
     });
     let t = text(&run(&["optimize", &f]));
     assert!(t.contains("ruin ≤ 2.0 % until age 90"), "{t}");
-    assert!(t.contains("Fixe Rate") && !t.contains("Guardrails"), "{t}");
+    assert!(t.contains("Fixed rate") && !t.contains("Guardrails"), "{t}");
     let t = text(&run(&["optimize", &f, "--max-ruin", "8", "--strategy", "vpw"]));
     assert!(
-        t.contains("ruin ≤ 8.0 %") && t.contains("VPW") && !t.contains("Fixe Rate"),
+        t.contains("ruin ≤ 8.0 %") && t.contains("VPW") && !t.contains("Fixed rate"),
         "{t}"
     );
 }
