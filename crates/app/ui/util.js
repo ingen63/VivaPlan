@@ -44,12 +44,29 @@ const fmtPct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits
 /** Number from a field of the optimization; otherwise the default `d`. */
 const optNum = (v, d) => { const x = parseNum(v); return x === null ? d : x; }; // #140: like parseNum (no «1e5», «0x10»)
 const optRound = x => Math.round(x * 1e6) / 1e6;
-/** Tax rate of a rate table [[amount, rate], …]: linear between the steps, constant outside. */
+/** Tax rate of a rate table [[amount, rate], …]: linear between the steps, constant outside. Like `tax::rate_at` in the
+ * engine (#156): on a step with several rows the first applies, right after it the last. */
 function rateAt(table, x) {
   const t = [...table].sort((a, b) => a[0] - b[0]);
   if (!t.length || x <= t[0][0]) return t.length ? t[0][1] : 0;
-  for (let i = 1; i < t.length; i++) if (x < t[i][0]) { const [x0, r0] = t[i - 1], [x1, r1] = t[i]; return r0 + (r1 - r0) * (x - x0) / (x1 - x0); }
+  for (let i = 1; i < t.length; i++) {
+    const [x0, r0] = t[i - 1], [x1, r1] = t[i];
+    if (x <= x1) return x1 === x0 ? r1 : r0 + (r1 - r0) * (x - x0) / (x1 - x0);
+  }
   return t[t.length - 1][1];
+}
+/** Rounds to centimes, ties to the even centime (like `tax::round2` in the engine). */
+function round2(v) {
+  const y = v * 100, f = Math.floor(y), d = y - f;
+  return (d > 0.5 || (d === 0.5 && f % 2 !== 0) ? f + 1 : f) / 100;
+}
+/** #156: Tax = amount × rate × tax multiplier, rounded to centimes, like `tax::tax` in the engine. A missing multiplier
+ * counts as 1 (default of the engine), a multiplier 0 gives no tax; a value that is not a number the engine refuses,
+ * here the result is NaN. */
+function taxAt(table, x, multiplier) {
+  const m = multiplier === undefined ? 1 : typeof multiplier === "number" ? multiplier : NaN;
+  if (x < 0) return 0;
+  return round2(x * rateAt(table, x) * m);
 }
 
 // ---------- Paths and file names ----------
@@ -157,7 +174,7 @@ function engineText(m, lookup) {
 if (typeof module !== "undefined") {
   module.exports = {
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
-    rateAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
+    rateAt, round2, taxAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
     KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText, engineText, groupInt, fixedEven,
   };
 }

@@ -1,0 +1,23 @@
+{
+  "_comment": "#156: Shared tax cases for the engine (crates/engine/tests/tax_parity.rs) and the user interface (e2e/unit/tax-parity.test.js). table: [from amount, rate]; multiplier missing = default 1; tax null = the engine refuses the multiplier (plan cannot be read).",
+  "cases": [
+    { "name": "amount 0", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 0, "multiplier": 1.2, "rate": 0, "tax": 0 },
+    { "name": "negative amount", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": -5000, "multiplier": 1.2, "rate": 0, "tax": 0 },
+    { "name": "negative amount, first rate above 0", "table": [[50000, 0.02], [150000, 0.04]], "amount": -1000, "multiplier": 1, "rate": 0.02, "tax": 0 },
+    { "name": "below the first bracket", "table": [[50000, 0.02], [150000, 0.04]], "amount": 10000, "multiplier": 1, "rate": 0.02, "tax": 200 },
+    { "name": "exactly on a bracket", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 100000, "multiplier": 1, "rate": 0.1, "tax": 10000 },
+    { "name": "between brackets", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 50000, "multiplier": 1, "rate": 0.05, "tax": 2500 },
+    { "name": "between brackets with multiplier", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 150000, "multiplier": 1.2, "rate": 0.15, "tax": 27000 },
+    { "name": "exactly on the last bracket", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 200000, "multiplier": 1, "rate": 0.2, "tax": 40000 },
+    { "name": "above the last bracket", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 1000000, "multiplier": 1.5, "rate": 0.2, "tax": 300000 },
+    { "name": "unsorted table", "table": [[200000, 0.2], [0, 0], [100000, 0.1]], "amount": 150000, "multiplier": 1, "rate": 0.15, "tax": 22500 },
+    { "name": "multiplier 0", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 150000, "multiplier": 0, "rate": 0.15, "tax": 0 },
+    { "name": "multiplier missing (default 1)", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 150000, "rate": 0.15, "tax": 22500 },
+    { "name": "multiplier invalid (text)", "table": [[0, 0], [100000, 0.1], [200000, 0.2]], "amount": 150000, "multiplier": "1.2", "rate": 0.15, "tax": null },
+    { "name": "empty table", "table": [], "amount": 150000, "multiplier": 1, "rate": 0, "tax": 0 },
+    { "name": "single bracket", "table": [[0, 0.03]], "amount": 80000, "multiplier": 2, "rate": 0.03, "tax": 4800 },
+    { "name": "rounded to centimes", "table": [[0, 0.012345]], "amount": 1001, "multiplier": 1, "rate": 0.012345, "tax": 12.36 },
+    { "name": "duplicate bracket: on the bracket the first row applies", "table": [[0, 0], [100000, 0.1], [100000, 0.2], [200000, 0.3]], "amount": 100000, "multiplier": 1, "rate": 0.1, "tax": 10000 },
+    { "name": "duplicate bracket: after the bracket the last row applies", "table": [[0, 0], [100000, 0.1], [100000, 0.2], [200000, 0.3]], "amount": 150000, "multiplier": 1, "rate": 0.25, "tax": 37500 }
+  ]
+}

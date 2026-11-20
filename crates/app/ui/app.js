@@ -92,7 +92,7 @@ function seriesAt(ser, m) {
   for (const r of ser.rows) { const rm = refMonth(r.from); if (rm <= m && rm >= bm) { bm = rm; best = r; } }
   return best ? +best.value || 0 : 0;
 }
-const tax = (table, x) => x <= 0 ? 0 : x * rateAt(table, x) * (+state.taxes.multiplier || 1);
+const tax = (table, x) => taxAt(table, x, state.taxes.multiplier); // #156: like the engine (multiplier 0 → no tax)
 
 // Mortgage: one or more tranches, each with a sequence of periods. The first period starts at the
 // start date (or at the purchase), each further one at the end of the previous one. Amortization as a fixed amount per quarter,

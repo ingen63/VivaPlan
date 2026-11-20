@@ -51,6 +51,7 @@ mod sim_rules;
 mod simulation;
 mod statistics;
 mod strategy;
+mod tax_parity;
 mod upgrade_api;
 mod validate_extra;
 

@@ -506,3 +506,17 @@ fn issue_98_tax_tables_and_multiplier_must_be_in_range() {
         );
     }
 }
+
+#[test]
+fn issue_156_ak2_tax_multiplier_zero_stays_allowed() {
+    // #156/AK2: A tax multiplier 0 is valid (no tax), as is the upper limit 10.
+    for m in [0.0, 10.0] {
+        let mut v = base();
+        v["taxes"]["multiplier"] = json!(m);
+        let all = issues(&v);
+        assert!(
+            !all.iter().any(|i| i.field.as_deref() == Some("taxes.multiplier")),
+            "multiplier {m}: {all:?}"
+        );
+    }
+}
