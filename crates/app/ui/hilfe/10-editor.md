@@ -66,7 +66,7 @@ Die Säule 3a ist ein eigenes Konto **je Person**, getrennt von Pensionskasse un
 - **Rest im AHV-Bezug:** Was noch im Konto ist, wird **spätestens im Monat des AHV-Bezugs** ausbezahlt.
 - **Verwendung:** ins freie Vermögen oder, wenn eine Tranche mit indirekter Amortisation in dieses Konto besteht, «Hypothek zurückzahlen» (zuerst die Tranchen mit indirekter Amortisation).
 
-Jede Auszahlung ist ein **Kapitalbezug** mit Kapitalbezugssteuer. Bezüge im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet.
+Jede Auszahlung ist ein **Kapitalbezug** mit Kapitalbezugssteuer. Bezüge im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet, bei unverheirateten Paaren je Person.
 
 Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in dieses Konto (siehe [Hypotheken](#f-re-mortgage)). Einzahlung und indirekte Amortisation zusammen sollten den Maximalbetrag pro Jahr nicht übersteigen; sonst zeigt die Prüfung eine Warnung.
 
@@ -119,7 +119,7 @@ Stichworte: Kapitalbezug, Rente, Kapitalsteuer, Einmalauszahlung
 
 Der Anteil des Altersguthabens, der bei der Pensionierung **als Kapital** ausbezahlt wird. 0 % heisst «ganz als Rente», 100 % «ganz als Kapital».
 
-- Das Kapital kommt netto auf Ihr liquides Vermögen. Davon wird die **Kapitalbezugssteuer** abgezogen (siehe [Steuertabellen](#f-tax-tables)). Bezüge im selben Kalenderjahr (Pensionskasse, Säule 3a) werden für den Satz zusammengerechnet.
+- Das Kapital kommt netto auf Ihr liquides Vermögen. Davon wird die **Kapitalbezugssteuer** abgezogen (siehe [Steuertabellen](#f-tax-tables)). Bezüge im selben Kalenderjahr (Pensionskasse, Säule 3a) werden für den Satz zusammengerechnet, bei unverheirateten Paaren je Person.
 - Der Rest wird mit dem [Umwandlungssatz](#f-pk-conversion) zur Rente.
 - **Rente:** planbar, lebenslang, aber nicht indexiert und nicht vererbbar. **Kapital:** flexibel und vererbbar, trägt aber das Anlagerisiko und die Verantwortung, es nicht zu früh aufzubrauchen.
 
@@ -143,7 +143,7 @@ Mit «+ Zweite Person» erfassen Sie einen Haushalt mit zwei Personen.
 - Steuern, Vermögen, Ausgaben und Immobilien gelten für den **Haushalt**.
 - **Als pensioniert gilt der Haushalt**, sobald alle Personen mit Bezugsdatum pensioniert sind. Erst dann greifen die Entnahmestrategien.
 
-**Verheiratet** (Ehepaar-Regeln): Sind beide AHV-Renten fällig, werden sie zusammen auf höchstens **3 780 Franken pro Monat** begrenzt (150 % der Maximalrente 2025). Der Wert ist änderbar, falls die Maximalrente steigt. Die Grenze steigt jeden Januar einmal mit der Teuerung, sobald mindestens eine Rente mit Teuerungsanpassung läuft. Unter [Steuern](#s-taxes) können für Verheiratete eigene Tabellen hinterlegt werden.
+**Verheiratet** (Ehepaar-Regeln): Sind beide AHV-Renten fällig, werden sie zusammen auf höchstens **3 780 Franken pro Monat** begrenzt (150 % der Maximalrente 2025). Der Wert ist änderbar, falls die Maximalrente steigt. Die Grenze steigt jeden Januar einmal mit der Teuerung, sobald mindestens eine Rente mit Teuerungsanpassung läuft. Unter [Steuern](#s-taxes) können für Verheiratete eigene Tabellen hinterlegt werden. Kapitalbezüge im selben Jahr werden bei Verheirateten zusammengerechnet, bei unverheirateten Paaren je Person.
 
 **Nicht gerechnet:** Todesfall einer Person, Hinterlassenenrenten, Witwenrente. Die Planung rechnet, als lebten beide bis zum Ende.
 
@@ -261,7 +261,7 @@ Jede Tabelle hat Stufen aus **Betrag** und **Satz**. Dazwischen interpoliert die
 - Der Steuerbetrag ist Satz × Betrag × Steuerfuss, auf Rappen gerundet.
 - **Grenzen:** Jeder Satz liegt zwischen 0 % und 100 %, jeder Betrag ist 0 oder grösser. Werte ausserhalb meldet die Prüfung am Feld.
 - **Steuer darf nicht sinken:** Ein höherer Betrag ergibt nie eine tiefere Steuer. Sinkt der Satz zwischen zwei Stufen so stark, dass Satz × Betrag kleiner wird, meldet die Prüfung eine **Warnung** an der betroffenen Stufe; gerechnet wird trotzdem. Meist ist dann ein Grenzsteuersatz statt des Durchschnittssatzes erfasst. Bei mehreren Kapitalbezügen im selben Jahr wird die Steuer auf einen weiteren Bezug in diesem Fall nie negativ, sondern 0.
-- **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet. Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
+- **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet: bei Verheirateten für den Haushalt, bei unverheirateten Paaren je Person (jede Person zahlt die Steuer auf ihre eigenen Bezüge). Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
 - **Verheiratete:** Bei zwei Personen und angekreuztem «Verheiratet» können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
 - Gehen Sie von der **effektiven** Steuerbelastung aus, nicht vom Grenzsteuersatz. Der Steuerrechner Ihres Kantons liefert beides.
 

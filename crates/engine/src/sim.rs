@@ -593,6 +593,8 @@ pub struct Simulator {
     people: Vec<PersonCfg>,
     /// Cap on a married couple's AHV pensions per month.
     couple_cap: Option<f64>,
+    /// #150: Unmarried couples pay the lump-sum tax per person; otherwise the household's lump sums add up.
+    capital_per_person: bool,
     spending: Curve,
     /// #53: Housing share of the entered living costs (prices of the start month) and factor of the variation.
     housing_share: f64,
@@ -706,6 +708,7 @@ impl Simulator {
             people.push(person_cfg(p2.birth, &q.income, q.income_indexed, &q.pk, &q.ahv)?);
         }
         let couple = people.len() > 1 && plan.household.married;
+        let separate = people.len() > 1 && !plan.household.married;
         let mut taxes = plan.taxes.clone();
         if let (true, Some(c)) = (couple, &plan.taxes.couple) {
             taxes.income = c.income.clone();
@@ -774,6 +777,7 @@ impl Simulator {
             months: (start.until(end) + 1) as usize,
             people,
             couple_cap: couple.then_some(plan.household.ahv_couple_cap),
+            capital_per_person: separate,
             spending: curve(&plan.flows.spending)?,
             housing_share: if plan.flows.spending_includes_housing {
                 crate::housing::start_housing(plan, &r)
@@ -1047,7 +1051,9 @@ struct Run<'a> {
     month_capital_tax: f64,
     month_gain_tax: f64,
     year_income: f64,
-    year_capital: f64,
+    /// Lump sums of the calendar year per taxpayer: one entry for the household, or one per person
+    /// for unmarried couples (#150).
+    year_capital: Vec<f64>,
     props: Vec<PropState>,
     /// Pillar 3a balance per person and whether the remainder has already been paid out (#52).
     p3a: Vec<f64>,
@@ -1175,7 +1181,7 @@ impl<'a> Run<'a> {
             month_capital_tax: 0.0,
             month_gain_tax: 0.0,
             year_income: 0.0,
-            year_capital: 0.0,
+            year_capital: vec![0.0; s.people.len().max(1)],
             props,
             p3a: s.accounts.iter().map(|a| a.balance).collect(),
             p3a_done: vec![false; s.accounts.len()],
@@ -1282,13 +1288,19 @@ impl<'a> Run<'a> {
             .sum()
     }
 
-    /// Lump sums in the same calendar year are added together for the rate.
-    fn capital_tax(&mut self, amount: f64) -> f64 {
+    /// Lump sums in the same calendar year are added together for the rate: for the household, or per
+    /// person (`person`) for unmarried couples (#150).
+    fn capital_tax(&mut self, person: usize, amount: f64) -> f64 {
         let t = &self.s.taxes;
-        let before = tax::tax(&t.capital, self.year_capital, t.multiplier);
-        self.year_capital += amount;
+        let k = if self.s.capital_per_person {
+            person.min(self.year_capital.len() - 1)
+        } else {
+            0
+        };
+        let before = tax::tax(&t.capital, self.year_capital[k], t.multiplier);
+        self.year_capital[k] += amount;
         // #134: With a table whose tax falls (warning of the validation) the increment would be negative.
-        (tax::tax(&t.capital, self.year_capital, t.multiplier) - before).max(0.0)
+        (tax::tax(&t.capital, self.year_capital[k], t.multiplier) - before).max(0.0)
     }
 
     fn sell(&mut self, i: usize, m: YearMonth, kind: EventKind) {
@@ -1990,7 +2002,7 @@ impl<'a> Run<'a> {
             return;
         }
         self.p3a[a] -= gross;
-        let t = self.capital_tax(gross);
+        let t = self.capital_tax(a, gross);
         self.ledger.taxes += t;
         self.event_tax += t;
         self.month_capital_tax += t;
@@ -2784,7 +2796,7 @@ impl<'a> Run<'a> {
                     };
                     self.ledger.pk_interest += accrued;
                     let lump = pk * c.pk_lumpsum;
-                    let t = self.capital_tax(lump);
+                    let t = self.capital_tax(pi, lump);
                     self.ledger.taxes += t;
                     self.ledger.annuity += pk - lump;
                     month_tax += t;
@@ -2924,7 +2936,7 @@ impl<'a> Run<'a> {
                 self.pending_wealth += tw;
                 (assessed_income, assessed_wealth) = (ti, tw);
                 self.year_income = 0.0;
-                self.year_capital = 0.0;
+                self.year_capital.fill(0.0);
             }
             if k + 1 == s.months {
                 paid += std::mem::take(&mut self.tax_pending);

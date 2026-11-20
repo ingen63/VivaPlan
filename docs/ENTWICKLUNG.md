@@ -389,7 +389,8 @@ Amortisation als fixer Betrag pro Quartal, fällig Ende März/Juni/September/Dez
 oder indirekt (Einzahlung in die Säule 3a). Die 3a-Auszahlung zahlt zuerst Tranchen mit indirekter Amortisation zurück.
 
 **Steuern:** Satz aus der Tabelle linear interpoliert × Steuerfuss, auf Rappen gerundet. Kapitalbezüge im selben
-Kalenderjahr (PK, 3a) werden für den Satz zusammengerechnet.
+Kalenderjahr (PK, 3a) werden für den Satz zusammengerechnet: für den Haushalt (eine Person, Verheiratete) oder je
+Person (unverheiratetes Paar, #150).
 
 ## Import alter Konfigurationen
 

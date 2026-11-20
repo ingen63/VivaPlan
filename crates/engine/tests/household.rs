@@ -538,3 +538,61 @@ fn issue_155_ak2_married_lump_sums_in_different_years_are_taxed_per_year() {
         res.summary.lumpsum_tax
     );
 }
+
+// ---------------------------------------------------------------------------------------------
+// #150: Lump sums of an unmarried couple, taxed per person
+// ---------------------------------------------------------------------------------------------
+
+/// #150: Couple from January 2030 with `married`, A draws 500'000 in March, B 500'000 in October 2030, both fully
+/// as a lump sum. Capital table [[0, 4 %], [1'000'000, 8 %]] (rate interpolated linearly), multiplier 1, no
+/// other taxes, flows or wealth.
+fn issue_150_lump_sums(married: bool) -> SimResult {
+    let mut v = crate::plan_builder::PlanBuilder::new("Test")
+        .couple("1967-01")
+        .married(married)
+        .set(
+            "partner",
+            json!({ "income": 0, "ahv": { "monthly": 0, "at": "never" },
+                "pk": { "capital": 500_000, "at": "pkB", "lumpsum": 1.0, "conversion": 0.05 } }),
+        )
+        .set(
+            "taxes",
+            json!({ "multiplier": 1.0, "income": [], "wealth": [], "capital": [[0, 0.04], [1_000_000, 0.08]] }),
+        )
+        .build();
+    v["pension"]["pk"] = json!({ "capital": 500_000, "at": "pkA", "lumpsum": 1.0, "conversion": 0.05 });
+    let milestones = v["milestones"].as_array_mut().unwrap();
+    milestones.push(json!({ "id": "pkA", "name": "Bezug A", "kind": "date", "date": "2030-03" }));
+    milestones.push(json!({ "id": "pkB", "name": "Bezug B", "kind": "date", "date": "2030-10" }));
+    run(v)
+}
+
+// #150/AK1, AK3: Unmarried, 500'000 each in 2030. Each person pays the tax on 500'000 = 500'000 × 6 % = 30'000;
+// together 2 × 30'000 = 60'000 (household total 1'000'000 × 8 % = 80'000 would be wrong).
+#[test]
+fn issue_150_ak1_unmarried_lump_sums_are_taxed_per_person() {
+    let res = issue_150_lump_sums(false);
+    assert_months(&capital_tax_months(&res), &[(2, 30_000.0), (9, 30_000.0)]);
+    assert!(
+        (res.summary.lumpsum_tax - 60_000.0).abs() < 0.01,
+        "{}",
+        res.summary.lumpsum_tax
+    );
+    assert!(
+        (res.summary.lumpsum_net - 940_000.0).abs() < 0.01,
+        "{}",
+        res.summary.lumpsum_net
+    );
+}
+
+// #150/AK2, AK3: Same plan married: the year's sum 1'000'000 × 8 % = 80'000; first 30'000, second 50'000.
+#[test]
+fn issue_150_ak3_married_lump_sums_stay_taxed_together() {
+    let res = issue_150_lump_sums(true);
+    assert_months(&capital_tax_months(&res), &[(2, 30_000.0), (9, 50_000.0)]);
+    assert!(
+        (res.summary.lumpsum_tax - 80_000.0).abs() < 0.01,
+        "{}",
+        res.summary.lumpsum_tax
+    );
+}
