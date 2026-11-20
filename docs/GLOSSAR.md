@@ -490,3 +490,138 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | wie System | comme le système | Sprachwahl |
 | Welt (JST), Schweiz (JST) | Monde (JST), Suisse (JST) | Indizes |
 | Eidgenossenschaft 10 Jahre / kurzfristig | Confédération 10 ans / court terme | Indizes |
+
+## Italienisch (Oberflächenbegriffe)
+
+Begriffe der italienischen Oberfläche (#175, Tabelle `crates/app/ui/i18n/it.json`, Hilfe `crates/app/ui/hilfe/it/`).
+Massgebend ist die Schweizer Verwaltungssprache (Begriffe der Bundesverwaltung, der Tessiner Behörden, der
+AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza complementare* im italienischen Sinn,
+*patrimonio* für das steuerbare Vermögen, *IRPEF*) werden nicht verwendet.
+
+**Regeln**
+
+- Anrede mit «Lei» (gross geschrieben: «Suo», «Sua»), Befehle und Schaltflächen im Infinitiv («Avviare la
+  simulazione», «Salvare con nome…»), Meldungen in ganzen Sätzen.
+- Schweizer Kürzel in der italienischen Form: AVS (statt AHV), LPP (statt BVG), CP (cassa pensione, statt PK),
+  BNS (statt SNB), UE (statt EU); unverändert bleiben 3a, SARON, JST, VPW, CHF.
+- Schweizer Wortschatz: *sostanza* (nicht *patrimonio*), *rincaro* neben *inflazione*, *imposta sulle prestazioni in
+  capitale*, *moltiplicatore d’imposta*, *comune*, *anno civile*, *avere di vecchiaia*, *aliquota di conversione*.
+- Anführungszeichen «…» ohne Leerraum innen; Beschriftungen der Oberfläche stehen in der Hilfe in «…», andere Zitate
+  (Beispiele, Eingaben) in ‹…›. Apostroph typografisch (’): «dell’anno», «l’ipoteca».
+- Ordnungszahlen mit «°» ohne Hochstellung (1°, 5°, 95° percentile); wo eine Zahl eingesetzt wird, ohne Ordnungszahl
+  («Anno {v}», «Percentile {p}», «versamento n. {n}»). Datumsmuster «MM.AAAA», Monatsformat in Meldungen «AAAA-MM».
+- Zahlen, Beträge und Daten im Schweizer Format wie in allen Sprachen (1'234'567.50 CHF, 2.5 %); Inhalte der
+  Planung (Namen) werden nicht übersetzt; Strategienamen «Standard», «Guardrails», «Endowment», «VPW» bleiben.
+- «Lauf» heisst *simulazione* (Einzellauf: *simulazione singola*), damit es nicht mit *percorso* (Pfad) verwechselt
+  wird.
+
+| Deutsch | Italienisch (Oberfläche) | Kurzform / Bemerkung |
+|---|---|---|
+| AHV, AHV-Rente | assicurazione vecchiaia e superstiti (AVS), rendita AVS | AVS |
+| AHV-Bezug (Meilenstein) | inizio della rendita AVS | |
+| Plafonierung (Ehepaar) | plafonamento delle rendite AVS (coniugi) | |
+| 1. / 2. / 3. Säule | 1° / 2° / 3° pilastro | |
+| BVG | previdenza professionale (LPP) | LPP |
+| Pensionskasse | cassa pensione | CP; in Zusammensetzungen «rendita CP», «prelievo del capitale CP» |
+| Bezug Pensionskasse (Meilenstein) | prestazione della cassa pensione | |
+| PK-Rente | rendita della cassa pensione | rendita CP |
+| Kapitalbezug | prelievo del capitale, prestazione in capitale | |
+| Altersguthaben | avere di vecchiaia | |
+| Umwandlungssatz | aliquota di conversione | |
+| Verzinsung (PK) | remunerazione | |
+| Säule 3a, 3a-Konto | pilastro 3a, conto 3a | |
+| gebundene Vorsorge | previdenza vincolata | |
+| Vorsorge(vermögen) | previdenza, averi di previdenza | Abschnitt «Previdenza» |
+| Einzahlung, Auszahlung (3a) | versamento (Einzahlung), versamento / riscossione (Auszahlung) | Auszahlungsplan: piano di versamento |
+| Pensionierung | pensionamento | |
+| Simulationsstart, -ende | inizio della simulazione, fine della simulazione | |
+| Meilenstein | tappa | |
+| Haushalt | economia domestica | |
+| Verheiratet, Verheiratete | coniugati | |
+| Erwerbseinkommen | reddito da attività lucrativa | Kurzform: reddito, lavoro |
+| Lebenshaltungskosten, Lebenshaltung | costo della vita | |
+| Ausgaben | spese | |
+| Wohnkosten | spese d’alloggio | |
+| Einmaliger Betrag | importo unico | |
+| Zufluss | entrata | |
+| ungedeckte Ausgaben, Netto-Bedarf | spese non coperte, fabbisogno netto | |
+| Teuerung, Inflation | rincaro, inflazione | «adeguato al rincaro» |
+| in heutigen Preisen, heutige Kaufkraft | ai prezzi attuali, potere d’acquisto attuale | |
+| Vermögen | sostanza | |
+| liquides Vermögen, freies Vermögen | sostanza liquida, sostanza libera | |
+| Gesamtvermögen, Endvermögen | sostanza totale, sostanza finale | |
+| Aktien, Obligationen | azioni, obbligazioni | |
+| Aktienanteil, Aktienquote | quota azionaria | |
+| Anlagestrategie | strategia d’investimento | |
+| Zeitreihe | serie temporale | |
+| Renditequelle | fonte di rendimenti | |
+| Fortschreibung | estrapolazione | |
+| Zufallsstartwert | valore iniziale casuale | |
+| Cash-Reserve | riserva di cash | |
+| Entnahme, Entnahmerate | prelievo, tasso di prelievo | |
+| Entnahmestrategie | strategia di prelievo | |
+| fixe Entnahmerate | tasso di prelievo fisso | |
+| Leitplanke, Guardrails | guardrail, Guardrails | Strategiename bleibt «Guardrails» |
+| Startrate | tasso iniziale | |
+| Untergrenze, Obergrenze | limite inferiore, limite superiore | |
+| 3-Topf-Strategie, Topf | strategia a 3 comparti, comparto | Topf 1/2/3: comparto 1/2/3; T1: C1 |
+| Auffüllung, Januar-Auffüllung | rifornimento, rifornimento di gennaio | |
+| Vorausschau | anticipazione | |
+| Renditekriterium | criterio di rendimento | |
+| Reservierung | riservazione | |
+| Variable Prozententnahme | prelievo percentuale variabile (VPW) | |
+| Planungsalter | età di pianificazione | |
+| Realrendite | rendimento reale | |
+| Immobilie, Objekt | immobile, oggetto | Abschnitt «Immobili» |
+| Besitz, Kauf geplant, Miete geplant | proprietà, acquisto pianificato, affitto pianificato | |
+| Kaufpreis, Marktwert | prezzo d’acquisto, valore venale | |
+| Eigenmittel, Eigenkapital | fondi propri | |
+| Nebenkosten | spese accessorie | |
+| Verkaufserlös, Nettoerlös | ricavo della vendita, ricavo netto | |
+| Notverkauf, Notverkaufskriterium | vendita forzata, criterio di vendita forzata | |
+| Hypothek, Anschlusshypothek | ipoteca, ipoteca successiva | |
+| Tranche, Periode, Laufzeit | tranche, periodo, durata | |
+| Festhypothek, SARON-Hypothek | ipoteca fissa, ipoteca SARON | |
+| Marge | margine | |
+| Erneuerung, Rückzahlung | rinnovo, rimborso | |
+| Einmalzahlung, Einmalrückzahlung | pagamento unico, rimborso unico | |
+| Amortisation (direkt, indirekt) | ammortamento (diretto, indiretto) | |
+| Belehnung | grado d’anticipo | |
+| Tragbarkeit | sostenibilità | |
+| kalkulatorischer Zins | tasso d’interesse teorico | |
+| Steuerfuss | moltiplicatore d’imposta | |
+| Stufe (Steuertabelle) | scaglione | |
+| Steuertabelle | tabella delle aliquote | |
+| Einkommens-, Vermögenssteuer | imposta sul reddito, imposta sulla sostanza | |
+| Kapitalbezugssteuer | imposta sulle prestazioni in capitale | |
+| Grundstückgewinnsteuer | imposta sugli utili immobiliari | |
+| Besitzdauer | durata di possesso | |
+| Zuschlag, Abzug, Ermässigung | maggiorazione, riduzione | |
+| Kanton, Gemeinde | cantone, comune | Modell Zürich/Aargau: modello Zurigo/Argovia |
+| Steuerjahr, veranlagt | anno fiscale, tassato | |
+| Planung | pianificazione | |
+| Projektdatei | file di progetto | |
+| Ergebnis, gespeicherte Ergebnisse | risultato, risultati salvati | |
+| Lauf, Einzellauf, Einzelne Läufe | simulazione, simulazione singola, simulazioni singole | |
+| Pfad | percorso | Zufallspfad: percorso casuale |
+| Perzentil | percentile | 5. Perzentil: 5° percentile |
+| Median | mediana | |
+| Erfolgsquote | tasso di successo | |
+| Erschöpfung, aufgebraucht | esaurimento, esaurita | |
+| Ruin, Ruinwahrscheinlichkeit | rovina, probabilità di rovina | |
+| Schwankung | volatilità | |
+| Konsum | consumo | |
+| Szenario, Variation, Variante | scenario, variazione, variante | |
+| Stufe, Schritt (Variation) | livello, passo | |
+| Ereignis | evento | |
+| Jahreswerte, Kennzahlen | valori annuali, indicatori | |
+| Vorschau | anteprima | |
+| Prüfung, Fehler, Hinweis | verifica, errore, avvertenza | |
+| Optimierung, Ziel, Nebenbedingung | ottimizzazione, obiettivo, vincolo | |
+| Einstellungen | impostazioni | Menü «Impostazioni…» |
+| Hilfe, Handbuch, Erste Schritte | aiuto, manuale, primi passi | |
+| Tastenkürzel | scelte rapide da tastiera | |
+| Datei, Bearbeiten, Ansicht → Sprache | File, Modifica, Vista → Lingua | |
+| wie System | come il sistema | Sprachwahl |
+| Welt (JST), Schweiz (JST) | Mondo (JST), Svizzera (JST) | Indizes |
+| Eidgenossenschaft 10 Jahre / kurzfristig | Confederazione 10 anni / a breve termine | Indizes |

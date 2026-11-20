@@ -339,7 +339,7 @@ test.describe("English user interface (#172)", () => {
     // Settings
     await page.evaluate(() => command("settings"));
     await expect(page.locator("#set-language")).toHaveValue("system");
-    await expect(page.locator("#set-language option")).toHaveText(["as system", "Deutsch", "English", "Français"]);
+    await expect(page.locator("#set-language option")).toHaveText(["as system", "Deutsch", "English", "Français", "Italiano"]);
     await expect(page.locator("body")).toContainText("Apply to all plans on this device and are not saved in the plan file.");
     await noErrors(page, errors);
     await ctx.close();
@@ -403,7 +403,7 @@ test.describe("French user interface (#174)", () => {
     // Settings
     await page.evaluate(() => command("settings"));
     await expect(page.locator("#set-language")).toHaveValue("system");
-    await expect(page.locator("#set-language option")).toHaveText(["comme le système", "Deutsch", "English", "Français"]);
+    await expect(page.locator("#set-language option")).toHaveText(["comme le système", "Deutsch", "English", "Français", "Italiano"]);
     await expect(page.locator("body")).toContainText("S’appliquent à toutes les planifications sur cet appareil et ne sont pas enregistrés dans le fichier de planification.");
 
     await noErrors(page, errors);

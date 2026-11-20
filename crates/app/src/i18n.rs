@@ -19,6 +19,7 @@ const TABLES: &[(&str, &str)] = &[
     ("de", include_str!("../ui/i18n/de.json")),
     ("en", include_str!("../ui/i18n/en.json")),
     ("fr", include_str!("../ui/i18n/fr.json")),
+    ("it", include_str!("../ui/i18n/it.json")),
 ];
 
 /// Order of the languages in menus and settings.

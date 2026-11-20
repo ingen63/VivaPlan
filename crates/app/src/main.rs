@@ -2889,6 +2889,51 @@ mod tests {
         );
     }
 
+    /// #175/AK1, AK3: «Italiano» is offered in «Ansicht → Sprache»; menus and file dialogs have Italian texts.
+    #[test]
+    fn issue_175_ak3_menus_and_dialogs_in_italian() {
+        assert!(i18n::languages().contains(&("it".to_string(), "Italiano".to_string())));
+        let e = language_entries("it", "it");
+        assert_eq!(e[0].1, "come il sistema");
+        assert!(e.contains(&("language-it".to_string(), "Italiano".to_string(), true)));
+        let tr = |key: &str| i18n::tr("it", key);
+        let titles = [
+            FILE_TITLE,
+            EDIT_TITLE,
+            VIEW_TITLE,
+            HELP_TITLE,
+            QUIT_TEXT,
+            "menu.view.language",
+        ];
+        assert_eq!(
+            titles.map(tr),
+            ["File", "Modifica", "Vista", "Aiuto", "Uscire", "Lingua"]
+        );
+        let entries: Vec<Entry> = file_entries().into_iter().chain(EDIT_MENU).chain(HELP_MENU).collect();
+        for (id, key, _) in entries.into_iter().filter(|(id, ..)| !id.is_empty()) {
+            assert_ne!(tr(key), i18n::tr("de", key), "{id}: {key}");
+            assert_ne!(tr(key), i18n::tr("en", key), "{id}: {key}");
+            assert_ne!(tr(key), i18n::tr("fr", key), "{id}: {key}");
+        }
+        assert_eq!(tr("menu.file.saveAs"), "Salvare con nome…");
+        assert_eq!(tr("menu.help.shortcuts"), "Scelte rapide da tastiera");
+        let dialogs = [
+            OPEN_DIALOG,
+            SAVE_DIALOG,
+            LEGACY_DIALOG,
+            SERIES_DIALOG,
+            SHILLER_DIALOG,
+            SNB_DIALOG,
+        ];
+        for d in dialogs {
+            assert_ne!(tr(d.title), i18n::tr("de", d.title), "{}", d.title);
+        }
+        assert_eq!(
+            (tr(OPEN_DIALOG.title), tr(OPEN_DIALOG.filter)),
+            ("Aprire la pianificazione".into(), "Piano VivaPlan".into())
+        );
+    }
+
     /// #170/AK3, AK9: the user interface reports language and choice; menus (rebuilt in the real app, which needs the
     /// main thread of the system and is therefore not testable here) and file dialogs follow.
     #[test]
