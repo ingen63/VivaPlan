@@ -1187,3 +1187,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #182/AK4 | Playwright-Test: jede Ansicht, jeder Dialog und jede Hilfeseite in DE, EN, FR, IT ohne abgeschnittenen oder überlappenden Text. | ☑ | **gilt** (geändert per Kommentar vom 20.11.2026) | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) «Text fits in every language (#182)» «AK4 …» | 21.11.2026 ok: 16 Tests grün; Fenster 1440 × 920, Desktop-App nicht von Hand geprüft |
 | #182/AK5 | Korrekturen in Texttabellen und Hilfe, Begriffe im Glossar, `make i18n-check` grün. | ☑ | **gilt** | [check_i18n.py](../tools/check_i18n.py) (`make i18n-check`), [help.rs](../crates/app/tests/help.rs) «issue_173_ak3_quoted_screen_labels_are_in_the_text_table» | 21.11.2026 ok nach Nacharbeit: Texttabellen (155) und Glossar ok, i18n-check 0 Befunde; Hilfe: Nr. 85 (EN) und 250 (IT) nachgetragen, Nr. 200 (FR) verworfen, weil zusammengesetzte Knopfbeschriftungen nach #173 in ‹…› stehen |
 | #182/AK6 | Je Sprache ist im Issue vermerkt, wer geprüft hat (Rolle) und wann. | ☑ | **gilt** | kein Test (Durchsicht) | 21.11.2026 ok: Kommentar vom 20.11.2026 |
+
+### #183 Widersprüche in der deutschen Hilfe (Lebenshaltung, Kombinationen, 3a-Einzahlung)
+
+[Issue #183](https://github.com/ingen63/VivaPlan/issues/183) · geschlossen · Umsetzung: cc1e5ab
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #183/AK1 | Die Hilfe unterscheidet in `10-editor.md` (Lebenshaltung, Immobilien) die Eingabe der Lebenshaltungskosten (inklusive Wohnkosten) vom gerechneten Wert (ohne Wohnanteil), ohne Widerspruch. | ☑ | **gilt** | kein Test (Durchsicht, Abgleich mit `planned_living` in `sim.rs`) | 21.11.2026 ok: beide Stellen in DE, EN, FR, IT; Rechenkern zieht `housing_share` von der Eingabe ab und rechnet mit den simulierten Wohnkosten |
+| #183/AK2 | Satz «Höchstens 400 Kombinationen sind erlaubt.» entfernt; einzige Grenze 1'000'000 (`MAX_COMBINATIONS`). | ☑ | **gilt** | [docs.test.js](../e2e/unit/docs.test.js) «#183/AK5: …» | 21.11.2026 ok: in allen vier Sprachen entfernt |
+| #183/AK3 | 3a-Einzahlung bei den Leitplanken im Rechenkern nachgeprüft; Formel in `30-entnahme.md` bei fixer Rate und Leitplanken entsprechend; Rust-Test. | ☑ | **gilt** | [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «issue_183_ak3_pillar3a_counts_towards_withdrawal_for_fixed_rate_and_guardrails» | 21.11.2026 ok: beide Strategien über `rule_living`, 3a zählt bei beiden zur Entnahme; Formel der Leitplanken ergänzt; kein Rechenfehler |
+| #183/AK4 | Korrekturen in `hilfe/{de,en,fr,it}/`, `make i18n-check` grün. | ☑ | **gilt** | [check_i18n.py](../tools/check_i18n.py) (`make i18n-check`) | 21.11.2026 ok: 0 Befunde |
+| #183/AK5 | Ein Test findet in der Hilfe keine Zahl der Kombinationen, die von `MAX_COMBINATIONS` abweicht. | ☑ | **gilt** | [docs.test.js](../e2e/unit/docs.test.js) «#183/AK5: the help names no number of combinations other than MAX_COMBINATIONS» | 21.11.2026 ok: Wert aus `scenarios.rs` gelesen; Gegenprobe mit der alten Fassung findet 400 in allen Sprachen |
