@@ -12,7 +12,7 @@ const GERMAN: &str = "de";
 /// Languages whose help has every German file (otherwise the help falls back to German per file).
 const COMPLETE: &[&str] = &["en", "fr"];
 /// Quote marks of the screen labels per language.
-const LABEL_QUOTES: &[(&str, char, char)] = &[("en", '“', '”'), ("fr", '«', '»')];
+const LABEL_QUOTES: &[(&str, char, char)] = &[("en", '“', '”'), ("fr", '«', '»'), ("it", '«', '»')];
 /// Markers of the keyword line (first line of a topic; the same list as `KEYWORDS` in help.js).
 const KEYWORD_MARKERS: &[&str] = &["Stichworte:", "Keywords:", "Mots-clés:", "Parole chiave:"];
 
