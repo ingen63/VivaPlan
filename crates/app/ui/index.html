@@ -95,9 +95,9 @@ select.plain{border:1px solid var(--border);border-radius:7px;background:var(--p
 .series .shead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .series .shead .t{font-weight:600}
 .series .shead .seg{margin-left:auto}
-.series .sbody{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;align-items:start}
+.series .sbody{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:14px;align-items:start}
 .rows{display:flex;flex-direction:column;gap:6px}
-.row{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) 30px;gap:8px;align-items:center}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) 130px 30px;gap:8px;align-items:center}
 .row .ab{font-size:12px;color:var(--faint);width:18px}
 .refwrap{display:flex;gap:6px;min-width:0}
 .refwrap select{flex:1;min-width:0}
@@ -113,6 +113,7 @@ svg.mini.zoomable{height:96px;cursor:grab;user-select:none}
 .minizoom span{font-size:10.5px;color:var(--faint);margin-left:4px}
 
 .runedit{width:100%;box-sizing:border-box;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:3px 5px;border-radius:5px}
+.runedit[data-f="name"]{min-width:28em} /* #182/AK4: the generated name (plan · series · strategy · date) fits */
 .runedit:hover{border-color:var(--border)} .runedit:focus{border-color:var(--accent);background:var(--panel);outline:0}
 .savedbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:12px;background:var(--accent-soft)}
 .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
@@ -171,10 +172,11 @@ table.sctbl td.bad{color:var(--err);font-weight:600}
 .mtbl{table-layout:fixed;min-width:700px;margin-top:12px}
 .mtbl td{padding:5px 4px}
 .mtbl td:nth-child(6){font-size:12px}
-.mtbl .refwrap .inp{width:92px}
-.mtbl .inp .unit{padding:0 6px}
+.mtbl .refwrap .inp{width:102px}
+.mtbl .inp .unit{padding:0 4px}
 .mtbl .inp input{padding:7px 6px}
 .mtbl select.plain{width:100%;padding:6px 4px}
+.swtbl{table-layout:fixed}.swtbl select.plain{width:100%}
 
 .persons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .person{border:1px solid var(--border);border-radius:9px;padding:12px;background:var(--panel2);display:flex;flex-direction:column;gap:10px}

@@ -71,6 +71,14 @@ mit Begründung in `tools/i18n_check_exceptions.json` (`findings`: Datei, Ort, P
 Ausnahme ist selbst ein Befund. Tests des Skripts (ein Fall je Prüfung, mit gestellten Dateien):
 `python3 -m unittest discover -s tools -p 'test_check_i18n.py'`.
 
+**Platz für die Texte (#182/AK4):** `e2e/ui-textfit.spec.js` öffnet die Oberfläche in DE, EN, FR und IT in der
+Fenstergrösse der App (1440 × 920) und prüft mit `e2e/textfit.js` jeden Editor-Abschnitt (auch mit Partner, jeder
+Entnahmestrategie und Renditequelle), die Dialoge, die Ergebnisansichten, Liste und Vergleich der Simulationen und
+jedes Hilfethema. Befund ist abgeschnittener Text (Element mit `overflow: hidden`/`clip` oder Auslassungspunkten,
+Auswahlliste, Knopf oder Eingabefeld, in die der Text nicht passt; der Pfeil einer Auswahlliste zählt 20 px), ein
+Rahmen, der seitwärts rollt, und Text, der sich mit anderem Text überdeckt (auch in Grafiken). Der Test nennt je
+Ansicht die Befunde mit Element und Text.
+
 **Nächtliche Läufe von Hand starten (#159):** Die nächtlichen Jobs von `test-quality.yml` (`tests-os`, `e2e`,
 `release-golden`, `mutants-diff`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen um 02:17 UTC, nur nach einem neuen
 Commit. GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs

@@ -1105,16 +1105,16 @@ function MortgageUI(p, i) {
         <td>${F(D + ".term", "", "years", { bare: true, unit: tr("unit.yearsShort") })}</td>
         <td>${d.type === "saron" ? F(D + ".margin", "", "pct", { bare: true, unit: tr("mortgage.margin") }) : F(D + ".rate", "", "pct", { bare: true })}</td>
         <td><div class="refwrap">${F(D + ".amort", "", "chf", { bare: true })}${periodAfterAhv(p, t, k) ? `<span class="computed" style="padding:8px 4px" title="${tr("mortgage.directOnly")}">${tr("mortgage.directFromAhv")}</span>` : Sel(D + ".amortMode", [["direct", tr("mortgage.direct")], ["indirect", tr("mortgage.indirect")]], { rerender: 1 })}</div></td>
-        <td style="white-space:nowrap">${C("mrow", `${i}:${ti}:${k}`)}</td>
+        <td>${C("mrow", `${i}:${ti}:${k}`)}</td>
         <td>${k ? `<button class="btn ghost small" data-action="list-del" data-path="${T}.periods" data-i="${k}" title="${tr("mortgage.removePeriod")}">✕</button>` : ""}</td></tr>`;
     }).join("");
     return `<div class="tranche">
       ${multi ? `<div class="thead">${F(T + ".name", "", "text", { bare: true })}<button class="btn ghost small" data-action="list-del" data-path="${M}.tranches" data-i="${ti}" title="${tr("mortgage.removeTranche")}">✕</button></div>` : ""}
       <div class="grid3">${maxLoan ? (multi ? F(T + ".amount", tr("mortgage.share"), "num") : `<label class="field"><span>${tr("mortgage.amountAtPurchase")}</span><span class="computed" style="padding:8px 0">${tr("mortgage.computedAtPurchase")}</span></label>`) : F(T + ".amount", owned ? tr("mortgage.amountToday") : tr("mortgage.amountAtPurchase"), "chf")}
         ${owned ? F(T + ".start", tr("mortgage.currentStart"), "month") : `<label class="field"><span>${tr("mortgage.start")}</span><span class="computed" style="padding:8px 0">${tr("mortgage.atPurchaseDate", { esc: esc(msName(p.buy)) })}</span></label>`}
-        <label class="field"><span>${tr("mortgage.afterLast")}</span>${Sel(T + ".after", [["renew", tr("mortgage.extend")], ["repay", tr("mortgage.repay")]])}</label>
+        <label class="field" style="grid-column:span 2"><span>${tr("mortgage.afterLast")}</span>${Sel(T + ".after", [["renew", tr("mortgage.extend")], ["repay", tr("mortgage.repay")]])}</label>
         ${state.household.persons.length > 1 && t.periods.some(d => d.amortMode === "indirect") ? `<label class="field"><span>${tr("mortgage.pillar3a")}</span>${Sel(T + ".pillar3a", state.household.persons.map(q => [q.id, q.name || q.id]))}</label>` : ""}</div>
-      <div style="overflow-x:auto"><table class="tbl mtbl"><colgroup><col style="width:68px"><col style="width:90px"><col style="width:72px"><col style="width:112px"><col style="width:206px"><col><col style="width:28px"></colgroup><tr><th>${tr("mortgage.period")}</th><th>${tr("mortgage.type")}</th><th>${tr("mortgage.term")}</th><th>${tr("mortgage.rate")}</th><th>${tr("mortgage.amortQuarter")}</th><th>${tr("mortgage.periodDebt")}</th><th></th></tr>${rows}</table></div>
+      <div style="overflow-x:auto"><table class="tbl mtbl"><colgroup><col style="width:68px"><col style="width:90px"><col style="width:82px"><col style="width:130px"><col style="width:212px"><col><col style="width:36px"></colgroup><tr><th>${tr("mortgage.period")}</th><th>${tr("mortgage.type")}</th><th>${tr("mortgage.term")}</th><th>${tr("mortgage.rate")}</th><th>${tr("mortgage.amortQuarter")}</th><th>${tr("mortgage.periodDebt")}</th><th></th></tr>${rows}</table></div>
       <div style="margin-top:8px"><button class="btn small" data-action="period-add" data-i="${i}" data-t="${ti}">${tr("mortgage.addFollowUp")}</button></div></div>`;
   }).join("");
   const p3a = anyIndirect ? `<p class="hint">${tr("mortgage.indirectHint")}</p>` : "";
@@ -1150,7 +1150,7 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
 
 R.scenarios = () => `<h2>${tr("section.scenarios")}</h2><p class="lead">${tr("scenarios.intro")}</p>
   <div class="card"><p style="margin:0">${tr("scenarios.runHint")}</p></div>
-  <div class="card"><h3>${tr("scenarios.variations")}</h3><table class="tbl"><tr><th>${tr("scenarios.param")}</th><th>${tr("scenarios.from")}</th><th>${tr("scenarios.to")}</th><th>${tr("scenarios.step")}</th><th>${tr("scenarios.runs")}</th><th></th></tr>
+  <div class="card"><h3>${tr("scenarios.variations")}</h3><table class="tbl swtbl"><colgroup><col><col style="width:110px"><col style="width:110px"><col style="width:110px"><col style="width:96px"><col style="width:36px"></colgroup><tr><th>${tr("scenarios.param")}</th><th>${tr("scenarios.from")}</th><th>${tr("scenarios.to")}</th><th>${tr("scenarios.step")}</th><th>${tr("scenarios.runs")}</th><th></th></tr>
   ${state.scenarios.sweeps.map((s, i) => {
     const t = SWEEP_PARAMS.find(p => p.id === s.param)?.type || "pct", P = `scenarios.sweeps.${i}`;
     return `<tr><td>${Sel(P + ".param", SWEEP_PARAMS.map(p => [p.id, p.label]), { rerender: 1 })}</td><td>${F(P + ".from", "", t, { bare: true })}</td><td>${F(P + ".to", "", t, { bare: true })}</td>
@@ -1272,7 +1272,7 @@ const COMPUTED = {
     const r = trancheSchedule(p, p.mortgage.tranches[ti]).find(x => x.i === k);
     if (!r) return `<span style="color:var(--faint)">${refMonth(p.buy) === Infinity ? tr("computed.startsAtPurchase") : tr("computed.afterSaleEnd")}</span>`;
     if (p.mortgage.amountMode === "maxLoan" && p.status !== "owned") return `${ymShow(i2ym(r.start))} – ${ymShow(i2ym(r.end))}`;
-    const span = `${ymShow(i2ym(r.start))} – ${ymShow(i2ym(r.end))}`;
+    const span = `<span style="white-space:nowrap">${ymShow(i2ym(r.start))} –</span> <span style="white-space:nowrap">${ymShow(i2ym(r.end))}</span>`;
     if (r.past) return `${span} <span style="color:var(--faint)">· ${tr("computed.expired")}</span>`;
     return `${span}${r.d.type === "saron" ? ` · ${fmtPct(r.rate)} %` : ""}<br><b>${fmtMoney(r.a1)}</b>${!r.direct && r.q ? ` <span style="color:var(--faint)">(+ 3a${r.toAhv ? tr("computed.untilAhv") : ""})</span>` : ""}`;
   },
@@ -1435,11 +1435,29 @@ function renderChart(svgSel, tipSel, s) {
   svg.onmouseleave = () => { $(tipSel).style.display = "none"; svg.querySelector("#hov")?.setAttribute("visibility", "hidden"); };
 }
 
+/** #182/AK4: width of a text in pixels (the labels of the timeline are longer in French or Italian than estimated per character). */
+const textCtx = document.createElement("canvas").getContext("2d");
+function textWidth(text, size, weight = 400, el = document.body) {
+  textCtx.font = `${weight} ${size}px ${getComputedStyle(el).fontFamily}`;
+  return textCtx.measureText(text).width;
+}
+
 function renderTimeline() {
   const svg = $("#tl"), W = svg.clientWidth || 900, s0 = startM(), e = endM();
   $("#tlRange").textContent = Number.isFinite(s0) && e > s0 ? tr("timeline.range", { ymShow: ymShow(i2ym(s0)), ymShow2: ymShow(i2ym(e)), v: ((e - s0) / 12).toFixed(1) }) : tr("timeline.invalid");
   if (!(e > s0)) { svg.innerHTML = ""; return; }
-  const P = 14, x = m => P + (m - s0) / (e - s0) * (W - 2 * P), base = 66;
+  const P = 14, x = m => P + (m - s0) / (e - s0) * (W - 2 * P);
+  /** Lane (row) per label: the first one free from the left; a new lane instead of overlapping (#182/AK4: longer texts). */
+  const placeLane = (lanes, lx0, w) => { let k = lanes.findIndex(r => r < lx0 - 6); if (k < 0) k = lanes.push(-Infinity) - 1; lanes[k] = lx0 + w; return k; };
+  const items = state.milestones.map(ms => ({ ms, m: msMonth(ms.id) })).filter(o => Number.isFinite(o.m)).sort((a, b) => a.m - b.m);
+  const lanes = [-Infinity, -Infinity, -Infinity];
+  for (const o of items) {
+    o.when = `${ymShow(i2ym(o.m))} · ${ageStr(o.m)} ${tr("unit.yearsShort")}`; o.px = x(clamp(o.m, s0, e));
+    o.w = textWidth(msLabel(o.ms), 11.5, 600, svg) + textWidth(" " + o.when, 11.5, 400, svg) + 6;
+    o.anchorEnd = o.px + o.w > W - P; o.lx0 = o.anchorEnd ? o.px - o.w : o.px;
+    o.lane = placeLane(lanes, o.lx0, o.w);
+  }
+  const base = 66 + (lanes.length - 3) * 15;
   let h = `<line x1="${P}" x2="${W - P}" y1="${base}" y2="${base}" stroke="${css("--border")}" stroke-width="4" stroke-linecap="round"/>`;
   const ret = refMonth(state.pension.pk.at);
   if (ret > s0 && ret < e) h += `<line x1="${x(ret)}" x2="${W - P}" y1="${base}" y2="${base}" stroke="${css("--accent")}" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>`;
@@ -1447,37 +1465,28 @@ function renderTimeline() {
   for (const xx of state.flows.extras) { const m = ym2i(xx.date); if (m >= s0 && m <= e) h += `<rect x="${x(m) - 3.5}" y="${base - 3.5}" width="7" height="7" transform="rotate(45 ${x(m)} ${base})" fill="${css("--warn")}"><title>${tr("timeline.payout", { label: esc(xx.label), amount: fmtMoney(xx.amount), date: ymShow(xx.date), m: ageStr(m) })}</title></rect>`; }
   for (const ev of lastSim?.events || []) if (ev.tick) h += `<line x1="${x(ev.m)}" x2="${x(ev.m)}" y1="${base - 8}" y2="${base + 8}" stroke="${css("--c2")}" stroke-width="2.5"><title>${tr("timeline.event", { label: esc(ev.label), ymShow: ymShow(i2ym(ev.m)), m: ageStr(ev.m) })}</title></line>`;
   if (lastSim?.depleted != null) { const m = lastSim.depleted; h += `<line x1="${x(m)}" x2="${x(m)}" y1="${base - 9}" y2="${base + 9}" stroke="${css("--err")}" stroke-width="3"><title>${tr("timeline.depleted")}</title></line>`; }
-  const items = state.milestones.map(ms => ({ ms, m: msMonth(ms.id) })).filter(o => Number.isFinite(o.m)).sort((a, b) => a.m - b.m);
-  const lanes = [-Infinity, -Infinity, -Infinity];
-  for (const { ms, m } of items) {
-    const label = `${msLabel(ms)} · ${ymShow(i2ym(m))}`, w = label.length * 6.3 + 6, px = x(clamp(m, s0, e));
-    const anchorEnd = px + w > W - P;
-    const lx0 = anchorEnd ? px - w : px;
-    let lane = lanes.findIndex(r => r < lx0 - 6); if (lane < 0) lane = lanes.indexOf(Math.min(...lanes));
-    lanes[lane] = lx0 + w;
+  for (const { ms, when, px, w, anchorEnd, lx0, lane } of items) {
     const ly = 14 + lane * 15;
     h += `<g class="ms" data-action="ms-goto" data-id="${ms.id}"><line x1="${px}" x2="${px}" y1="${ly + 3}" y2="${base}" stroke="${css("--faint")}" stroke-width="1"/>
       <circle cx="${px}" cy="${base}" r="6" fill="${css(ms.fixed ? "--muted" : "--accent")}" stroke="${css("--panel")}" stroke-width="2"/>
-      <text class="lbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11.5" text-anchor="${anchorEnd ? "end" : "start"}" fill="${css("--text")}"><tspan font-weight="600">${esc(msLabel(ms))}</tspan> <tspan fill="${css("--muted")}">${ymShow(i2ym(m))} · ${ageStr(m)} ${tr("unit.yearsShort")}</tspan></text>
+      <text class="lbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11.5" text-anchor="${anchorEnd ? "end" : "start"}" fill="${css("--text")}"><tspan font-weight="600">${esc(msLabel(ms))}</tspan> <tspan fill="${css("--muted")}">${when}</tspan></text>
       <rect x="${lx0}" y="${ly - 12}" width="${w}" height="16" fill="transparent"/></g>`;
   }
   // Property events (only with a simulation result): triangle below the line, label underneath, staggered.
   // Shape and position distinguish them from the milestones (circle on the line, label above).
   const pev = (lastSim?.propEvents || []).filter(o => o.m >= s0 && o.m <= e).sort((a, b) => a.m - b.m);
   const TL_EV = { purchase: tr("timeline.buy"), sale: tr("timeline.sell"), emergencySale: tr("timeline.emergency") }, compact = pev.length > 15;
-  const evLanes = [-Infinity, -Infinity, -Infinity], top = 104;
+  const evLanes = [-Infinity, -Infinity, -Infinity], top = base + 38;
   for (const o of pev) {
-    const label = `${TL_EV[o.kind]} ${o.property} ${ymShow(i2ym(o.m))}`, w = label.length * 6.1 + 6, px = x(o.m), color = css(o.kind === "emergencySale" ? "--warn" : "--ok");
+    const label = `${TL_EV[o.kind]} ${o.property} ${ymShow(i2ym(o.m))}`, w = textWidth(label, 11, 400, svg) + 6, px = x(o.m), color = css(o.kind === "emergencySale" ? "--warn" : "--ok");
     const anchorEnd = px + w > W - P, lx0 = anchorEnd ? px - w : px;
-    let lane = evLanes.findIndex(r => r < lx0 - 6); if (lane < 0) lane = evLanes.indexOf(Math.min(...evLanes));
-    evLanes[lane] = lx0 + w;
-    const ly = top + lane * 14;
+    const ly = top + placeLane(evLanes, lx0, w) * 14;
     h += `<g class="pev" data-kind="${o.kind}"><title>${tr("timeline.eventAge", { label: esc(label), m: ageStr(o.m) })}</title>
       ${compact ? "" : `<line x1="${px}" x2="${px}" y1="${base + 12}" y2="${ly - 9}" stroke="${color}" stroke-width="1" stroke-opacity=".6"/>`}
       <path d="M${px},${base + 3} l-5,9 h10 z" fill="${color}" stroke="${css("--panel")}" stroke-width="1.5"/>
       ${compact ? "" : `<text class="pelbl" x="${anchorEnd ? px - 4 : px + 4}" y="${ly}" font-size="11" text-anchor="${anchorEnd ? "end" : "start"}" fill="${color}">${esc(label)}</text>`}</g>`;
   }
-  svg.setAttribute("height", pev.length && !compact ? top + 3 * 14 - 4 : 96);
+  svg.setAttribute("height", pev.length && !compact ? top + evLanes.length * 14 - 4 : base + 30);
   svg.innerHTML = h;
 }
 
