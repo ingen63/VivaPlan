@@ -81,15 +81,15 @@ The app does not add newly bundled series to an existing library on its own. Cop
 ## @glossar Glossary
 Keywords: terms, lexicon, meaning, abbreviations
 
-**Affordability:** Bank rule by which the mortgage costs must not exceed a share of the income (Tragbarkeit). See [Affordability](#f-re-afford).
-
 **AHV:** Old-age and survivors' insurance (Alters- und Hinterlassenenversicherung), pillar 1. The app only calculates the old-age pension. See [AHV](#f-ahv).
+
+**Retirement savings:** The capital saved with the pension fund (Altersguthaben). See [Pension fund](#f-pk).
 
 **Annuity:** Constant payments that use up a capital over a certain time. Basis of the [VPW](#f-wd-vpw).
 
 **Bootstrap:** Method of randomly assembling new courses from real data. See [Bootstrap](#f-ret-bootstrap).
 
-**Conversion rate:** Share of the pension capital that is paid out annually as a pension (Umwandlungssatz). See [Conversion rate](#f-pk-conversion).
+**Success rate:** Share of the runs in which the wealth lasts until the end. See [Overview](#r-overview).
 
 **Fat tails:** Thick edges of the return distribution: extreme events are more frequent than with a normal distribution. See [parametric model](#f-ret-parametric).
 
@@ -103,28 +103,28 @@ Keywords: terms, lexicon, meaning, abbreviations
 
 **Nominal / real:** Nominal amounts are in future francs, real amounts in today's purchasing power. See [Return, inflation and real values](#ret-concepts).
 
-**Pension fund (PK, BVG):** Occupational pension provision, pillar 2. See [Pension fund](#f-pk).
-
 **Percentile:** The *n*th percentile is the value that *n* % of the values fall below. See [Final wealth by percentile](#r-percentiles).
 
-**Pillar 3a:** Tied private pension provision (Säule 3a), one account per person. See [Pillar 3a](#s-pillar3a).
+**Pension fund (PK, BVG):** Occupational pension provision, pillar 2. See [Pension fund](#f-pk).
 
 **Rebalancing:** Restoring the desired split between stocks and bonds. See [Stock allocation](#f-stockshare).
-
-**Retirement savings:** The capital saved with the pension fund (Altersguthaben). See [Pension fund](#f-pk).
 
 **Ruin:** The wealth (liquid and real estate) is used up. See [Optimization: goal](#o-goal).
 
 **SARON:** Reference interest rate for mortgages in Switzerland. See [SARON](#ret-saron).
 
+**Pillar 3a:** Tied private pension provision (Säule 3a), one account per person. See [Pillar 3a](#s-pillar3a).
+
 **Seed (random seed):** Start value of the random generator that makes results reproducible. See [Random seed](#ret-seed).
 
 **Sequence risk:** The risk that bad stock market years come right at the beginning of the withdrawal phase. See [Pitfalls](#ret-pitfalls).
 
-**Success rate:** Share of the runs in which the wealth lasts until the end. See [Overview](#r-overview).
+**Affordability:** Bank rule by which the mortgage costs must not exceed a share of the income (Tragbarkeit). See [Affordability](#f-re-afford).
 
 **Tranche:** Part of a mortgage with its own term and its own interest rate. See [Mortgages](#f-re-mortgage).
 
-**Volatility:** Measure of the fluctuation of returns, usually as a standard deviation per year. See [parametric model](#f-ret-parametric).
+**Conversion rate:** Share of the pension capital that is paid out annually as a pension (Umwandlungssatz). See [Conversion rate](#f-pk-conversion).
 
 **VPW:** Variable percentage withdrawal. See [VPW](#f-wd-vpw).
+
+**Volatility:** Measure of the fluctuation of returns, usually as a standard deviation per year. See [parametric model](#f-ret-parametric).
