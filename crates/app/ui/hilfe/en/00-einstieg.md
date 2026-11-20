@@ -51,7 +51,7 @@ Keywords: menu, keyboard, save, open, undo, F1, language
 - **Undo / Redo:** ⌘Z and ⇧⌘Z (on Windows and Linux Ctrl+Z and Ctrl+Shift+Z) undo inputs.
 - **Switching sections:** ⌘1 to ⌘9 and ⌘0 jump to the sections, ⌘↑ and ⌘↓ go one forward or back. In the results, the same keys switch the tab.
 - **Help:** **F1** opens the help on the current topic (depending on where you are: field, section, result chart). The button “? Help” and the ⓘ signs next to fields do the same. ⌘⇧? opens the table of contents, Esc closes the help.
-- **Timeline:** Above the editor, it shows all milestones. A click on it opens the milestones. Below the line are the **real estate events** of the preview (green triangles for purchase and sale, orange for emergency sales) with a short label such as ‘Purchase Apartment 09.2027’. With more than 15 events, only the symbols appear; the text is then in the tooltip.
+- **Timeline:** Above the editor, it shows all milestones. A click on it opens the milestones. Below the line are the **real estate events** of the preview (green triangles for purchase and sale, orange for emergency sales) with a short label such as ‘Purchase Wohnung 09.2027’. With more than 15 events, only the symbols appear; the text is then in the tooltip.
 - **Time-dependent values:** Many amounts can be entered as a constant or as a sequence of values, see [Time-dependent values](#f-timed).
 - **Language:** Menu *View → Language* or the [settings](#f-settings). The change takes effect immediately; plan and view stay. The help is shown in the chosen language; where a chapter is not yet translated, it appears in German.
 
