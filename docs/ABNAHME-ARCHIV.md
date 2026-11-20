@@ -1115,3 +1115,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #180/AK7 | Länge: mehr als 40 % länger als Deutsch ist ein Hinweis, kein Fehler. | ☑ | **gilt** | [test_check_i18n.py](../tools/test_check_i18n.py) «test_issue_180_ak7_long_text_is_a_hint_not_a_finding» | 20.11.2026 ok: 113 Hinweise (`--hints`), deutsche Texte ab 20 Zeichen |
 | #180/AK8 | Eigene Tests mit einem Fall je Prüfung; läuft in `make test-quiet` und in `test-quality.yml`. | ☑ | **gilt** | [test_check_i18n.py](../tools/test_check_i18n.py) «test_issue_180_ak8_exceptions_silence_a_finding_and_stale_ones_are_reported» und alle obigen | 20.11.2026 ok: 15 Tests; Makefile und Job `english` (CI nicht gelaufen, kein Push) |
 | #180/AK9 | Keine neue Abhängigkeit (nur Standardbibliothek). | ☑ | **gilt** | kein Test (Durchsicht der Importe) | 20.11.2026 ok: argparse, json, pathlib, re, sys, `tools/glossary.py` |
+
+### #181 Vorprüfung der Übersetzungen durch Claude
+
+[Issue #181](https://github.com/ingen63/VivaPlan/issues/181) · geschlossen · Umsetzung: kein Commit (Ergebnisse nur in `local/i18n-review/`, Kommentar im Issue)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #181/AK1 | Je Sprache liegt `local/i18n-review/<sprache>.csv` mit den Spalten Ort, DE, Ist, Vorschlag, Art, Schwere. | ☑ | **gilt** | kein Test (Durchsicht der Dateien) | 20.11.2026 ok: `en.csv` 55, `fr.csv` 58, `it.csv` 66 Befunde; zusätzliche Spalte Begründung |
+| #181/AK2 | Die Liste deckt alle 1'709 Schlüssel und alle 7 Hilfedateien ab; Zusammenfassung je Sprache mit geprüften Gruppen und Befunden je Art und Schwere. | ☑ | **gilt** | kein Test (Durchsicht der Protokolle) | 20.11.2026 ok: je Sprache 1'709 Schlüssel in 96 Gruppen, 7 Dateien mit 101 Abschnitten; `<sprache>-zusammenfassung.md` |
+| #181/AK3 | «Hoch» bedeutet anderer fachlicher Sinn: falscher Begriff, Wert, falsche Bedingung oder verneinte Aussage. | ☑ | **gilt** | kein Test (Durchsicht) | 20.11.2026 ok nach einer Nachbesserung: 7 Befunde mit falschem Fachbegriff von mittel auf hoch; hoch EN 2, FR 3, IT 3 |
+| #181/AK4 | Die Vorprüfung ändert keine Übersetzung und committet nichts. | ☑ | **gilt** | kein Test (Prüfsummen vorher/nachher) | 20.11.2026 ok: Prüfsummen von `i18n/*.json` und `hilfe/*/*.md` gleich, HEAD unverändert |
+| #181/AK5 | Kein Befund enthält private Daten. | ☑ | **gilt** | kein Test (Suche in den Befundlisten) | 20.11.2026 ok: nur App-Texte mit erfundenen Beispielen |
