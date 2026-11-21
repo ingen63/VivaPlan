@@ -1,5 +1,16 @@
 # Changelog
 
+## Version 1.0.0-beta.2
+
+Zweite Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.2.
+
+- **Vier Sprachen (#170–#177):** Oberfläche, Menüs, Dateidialoge, Meldungen und Hilfe gibt es auf Deutsch, Englisch, Französisch und Italienisch. Beim ersten Start gilt die Sprache des Systems, danach die Wahl unter «Ansicht → Sprache». Zahlen und Daten bleiben in jeder Sprache im Schweizer Format. Namen aus dem Katalog der Optimierung und der Zeitreihen sind mitübersetzt.
+- **Fachbegriffe und Prüfung der Übersetzungen (#179–#182):** Ein Fachglossar legt die amtlichen Begriffe je Sprache fest (z. B. AVS/LPP, caisse de pension, cassa pensione); eine automatische Prüfung vergleicht alle Übersetzungen mit dem Deutschen. Alle Texte haben in jeder Sprache Platz.
+- **Kommandozeile auf Englisch (#176):** `vivaplan` gibt Meldungen und Berichte englisch aus. Die Zahlen sind unverändert.
+- **Kapitalbezugssteuer unverheirateter Paare (#150):** Kapitalbezüge von Partnern, die nicht verheiratet sind, werden je Person besteuert und nicht mehr für den Haushalt zusammengerechnet. **Das kann die Ergebnisse solcher Planungen ändern.**
+- **Hilfe (#183):** Widersprüche zu Lebenshaltung, Kombinationen und 3a-Einzahlung behoben.
+- **Tests und Entwicklung:** Code intern englisch (#165–#169), Netzwerkfreiheit automatisch geprüft (#157), gemeinsame Testfälle der Steuerberechnung für Oberfläche und Rechenkern (#155, #156, #158).
+
 ## Version 1.0.0-beta.1
 
 Erste Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.1, weil das MSI-Format keine Vorabversion wie «beta.1» kennt; die übrigen Pakete heissen 1.0.0-beta.1.
