@@ -341,6 +341,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #58/AK5 | Jahreswerte, Grafiken, Einkommenssteuer und die Warnung «Erwerbseinkommen nach dem Bezug der Pensionskasse» (#51) verwenden den angepassten Betrag. | ☑ | **gilt** | [engine/tests/income_indexed.rs:139](../crates/engine/tests/income_indexed.rs#L139) | 15.11.2026 ok (Test grün) |
 | #58/AK6 | Regressionstest im Rechenkern; Golden-Dateien ändern nicht (Vorgabe «nein»). Oberflächentest für die Auswahl. Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test | 15.11.2026 ok (Regressionstests und Oberflächentest vorhanden (E2633)) |
 
+### #62 App mehrsprachig: Deutsch, Englisch, Italienisch, Französisch (Schweiz), Zahlen immer im Schweizer Format
+
+[Issue #62](https://github.com/ingen63/VivaPlan/issues/62) · geschlossen · Sammel-Issue, Umsetzung in #165–#176, #179–#182
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #62/AK1 | Beim ersten Start gilt die Sprache des Betriebssystems (de, en, it, fr, unabhängig von der Region); sonst Deutsch. | ☑ | **gilt** | #170/AK2; [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «#172», «#174», «#175» «AK1» | 21.11.2026 ok: Playwright mit Systemsprache en-US, fr-CH, it-CH |
+| #62/AK2 | Auswahl «Sprache» in den Einstellungen, lokal gespeichert, wirkt sofort, auch auf die nativen Menüs. | ☑ | **gilt** (geändert per Kommentar vom 19.11.2026: sofort statt nach Neustart) | #170/AK3; [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «#170» | 21.11.2026 ok; natives Menü nur Code und Rauchtest, nicht von Hand |
+| #62/AK3 | Alle sichtbaren Texte in der gewählten Sprache; Test auf fehlende Übersetzungen. | ☑ | **gilt** (geändert per Kommentar vom 19.11.2026: Vollständigkeitstest) | #170/AK4; `make i18n-check` (#180); [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) | 21.11.2026 ok: 0 Befunde, Playwright 18 grün |
+| #62/AK4 | Meldungen des Rechenkerns in der gewählten Sprache; Berechnung in allen Sprachen identisch. | ☑ | **gilt** (geändert per Kommentar vom 19.11.2026: Golden-Dateien einmalig in #176 neu, Zahlen unverändert) | #171, #176/AK2; Golden-Tests | 21.11.2026 ok: `issue_171_`, `issue_176_` und Golden-Tests grün |
+| #62/AK5 | Zahlen, Beträge, Prozente und Daten in allen vier Sprachen im Schweizer Format. | ☑ | **gilt** | #170/AK5; [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) je Sprache | 21.11.2026 ok: Stichproben je Sprache |
+| #62/AK6 | Eine Planung lässt sich in jeder Sprache öffnen und unverändert speichern; keine sprachabhängigen Texte in der Datei. | ☑ | **gilt** | #170/AK6 | 21.11.2026 ok: `issue_170_` grün |
+| #62/AK7 | Oberflächentests je Sprache, Rust-Tests für übersetzte Meldungen, Doku nachgeführt. | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js); Rust `issue_171_`, `issue_176_` | 21.11.2026 ok: README, BESCHREIBUNG «Sprache» (Durchsicht) |
+
 ### #67 Eigener Welt-Aktienindex aus den JST-Daten nach BIP gewichtet, Vergleich mit DMS
 
 [Issue #67](https://github.com/ingen63/VivaPlan/issues/67) · geschlossen · Umsetzung: `2ccfc9e` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/jst.rs:1](../crates/engine/tests/jst.rs#L1), [engine/tests/jst.rs:63](../crates/engine/tests/jst.rs#L63) (+1)
