@@ -7,6 +7,7 @@ Usage:
   python3 tools/changelog.py check              findings with file and version; exit 1 if any, 2 unreadable input
   python3 tools/changelog.py notes <version>    text of the GitHub release for one version (v prefix allowed);
                                                 [-o FILE] writes it to a file; exit 1 if a language lacks the version
+  python3 tools/changelog.py title <version>    title of the GitHub release, language-neutral: VivaPlan 1.0.0 Beta 2
 
 Checks (the name in brackets appears in each finding):
 - [versions]  the translation has the same version headings in the same order as the German file (AK3);
@@ -178,6 +179,23 @@ def run_checks(root):
     return findings
 
 
+TITLE_RE = re.compile(r"^v?(\d+\.\d+\.\d+)(?:-([A-Za-z]+)\.?(\d+)?)?$")
+
+
+def title(version):
+    """Release title from the version: product name and version only, so it reads the same in every language;
+    a pre-release label is capitalised and its number separated (1.0.0-beta.2 -> VivaPlan 1.0.0 Beta 2)."""
+    m = TITLE_RE.match(version)
+    if not m:
+        raise ValueError(f"version {version!r} is not X.Y.Z or X.Y.Z-label.N")
+    parts = ["VivaPlan", m.group(1)]
+    if m.group(2):
+        parts.append(m.group(2).capitalize())
+    if m.group(3):
+        parts.append(m.group(3))
+    return " ".join(parts)
+
+
 def notes(root, version):
     """The release text of one version: English open, German, French and Italian in <details> blocks."""
     version = version[1:] if version.startswith("v") else version
@@ -203,8 +221,16 @@ def main(argv=None):
     n = sub.add_parser("notes")
     n.add_argument("version")
     n.add_argument("-o", "--output")
+    sub.add_parser("title").add_argument("version")
     args = ap.parse_args(argv)
     root = pathlib.Path(args.root)
+    if args.command == "title":
+        try:
+            print(title(args.version))
+        except ValueError as err:
+            print(f"changelog: {err}", file=sys.stderr)
+            return 1
+        return 0
     if args.command == "notes":
         try:
             text = notes(root, args.version)

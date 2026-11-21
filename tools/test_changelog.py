@@ -230,6 +230,29 @@ class Notes(Base):
         self.assertEqual(text.count("<details>"), 3)
 
 
+class Title(unittest.TestCase):
+    # #188, addition: the release title is language-neutral, product name and version only.
+    def test_issue_188_title_of_pre_release(self):
+        self.assertEqual(changelog.title("v1.0.0-beta.2"), "VivaPlan 1.0.0 Beta 2")
+        self.assertEqual(changelog.title("1.0.0-rc.1"), "VivaPlan 1.0.0 Rc 1")
+        self.assertEqual(changelog.title("v2.0.0-beta"), "VivaPlan 2.0.0 Beta")
+
+    def test_issue_188_title_of_release(self):
+        self.assertEqual(changelog.title("v1.0.0"), "VivaPlan 1.0.0")
+
+    def test_issue_188_title_of_invalid_version_is_an_error(self):
+        for version in ("main", "v1.0", "v1.0.0-beta.2.1"):
+            with self.assertRaises(ValueError, msg=version):
+                changelog.title(version)
+        with redirect_stderr(io.StringIO()):
+            self.assertEqual(changelog.main(["title", "main"]), 1)
+
+    def test_issue_188_title_on_command_line(self):
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(changelog.main(["title", "v1.0.0-beta.2"]), 0)
+        self.assertEqual(out.getvalue(), "VivaPlan 1.0.0 Beta 2\n")
+
+
 class Wiring(unittest.TestCase):
     def test_issue_188_ak5_check_runs_in_test_quiet_and_on_github(self):
         # #188/AK5: make test-quiet and the GitHub run (job english) run the check and its tests.
@@ -249,6 +272,9 @@ class Wiring(unittest.TestCase):
         release_job = workflow.split("\n  release:")[1]
         self.assertIn("tools/changelog.py notes", release_job)
         self.assertIn("body_path:", release_job)
+        self.assertIn("tools/changelog.py title", test_job)
+        self.assertIn("tools/changelog.py title", release_job)
+        self.assertIn("name: ${{ steps.notes.outputs.title }}", release_job)
 
     def test_issue_188_ak8_release_procedure_documented(self):
         # #188/AK8: docs/ENTWICKLUNG.md describes the steps per release.

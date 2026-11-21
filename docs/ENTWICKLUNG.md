@@ -168,6 +168,8 @@ Ablauf pro Release:
 4. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
    einer Sprache fehlt, und setzt den Text aus `python3 tools/changelog.py notes v…` als Beschreibung des
    Release-Entwurfs: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar.
+   Der Titel ist sprachneutral, nur Produkt und Version (`python3 tools/changelog.py title v…`, z. B. v1.0.0-beta.2 →
+   «VivaPlan 1.0.0 Beta 2»).
 
 ## Desktop-App
 

@@ -16,7 +16,10 @@ jobs:
       # #188/AK7: ohne Release Notes der Version in allen vier Sprachen bricht der Paketbau hier ab.
       - name: Release Notes der Version
         if: startsWith(github.ref, 'refs/tags/v')
-        run: python3 tools/changelog.py check && python3 tools/changelog.py notes "$GITHUB_REF_NAME" > /dev/null
+        run: |
+          python3 tools/changelog.py check
+          python3 tools/changelog.py notes "$GITHUB_REF_NAME" > /dev/null
+          python3 tools/changelog.py title "$GITHUB_REF_NAME"
       - uses: ./.github/actions/linux-deps
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@v2
@@ -100,8 +103,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # #188: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar (tools/changelog.py notes)
-      - name: Release Notes zusammensetzen
-        run: python3 tools/changelog.py notes "$GITHUB_REF_NAME" -o "$RUNNER_TEMP/release-notes.md"
+      # #188: Titel sprachneutral aus der Version (v1.0.0-beta.2 → «VivaPlan 1.0.0 Beta 2»)
+      - name: Release Notes und Titel
+        id: notes
+        run: |
+          python3 tools/changelog.py notes "$GITHUB_REF_NAME" -o "$RUNNER_TEMP/release-notes.md"
+          echo "title=$(python3 tools/changelog.py title "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: pakete
@@ -114,6 +121,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           draft: true
+          name: ${{ steps.notes.outputs.title }}
           body_path: ${{ runner.temp }}/release-notes.md
           fail_on_unmatched_files: true
           files: flach/*
