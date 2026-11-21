@@ -157,12 +157,29 @@ def read_issues():
         return None
 
 
-MARK = re.compile(r"(?<![\w&])#(\d+)/AK(\d+)\b")
-NAMEMARK = re.compile(r"\bissue_(\d+)_ak(\d+)", re.I)
+# Further criteria after the first one (#192): a list (`, AK3`, `und AK3`) or a range (`–AK3`, `-AK3`, `bis AK3`).
+TAIL = r"((?:\s*(?:,|und|bis|–|-)\s*AK\d+)*)"
+MARK = re.compile(r"(?<![\w&])#(\d+)/AK(\d+)" + TAIL + r"\b")
+# Rust and Python test names: `issue_53_ak4_…`, also `issue_53_ak4_ak5_…` and `test_issue_53_ak4_…` (#192)
+NAMEMARK = re.compile(r"(?<![A-Za-z0-9])issue_(\d+)_ak(\d+)((?:_ak\d+)*)", re.I)
 IDS = re.compile(r"(?<![\w&])#(\d+)\b")
 DESCRIBE = re.compile(r"^(\s*)test\.describe(?:\.\w+)?\(\s*([\"'`])(.*?)\2")
 TESTNAME = re.compile(r"^\s*test(?:\.\w+)?\(\s*([\"'`])(.*?)\1")
-BARE_AK = re.compile(r"(?<![/\w])AK(\d+)\b")
+BARE_AK = re.compile(r"(?<![/\w])AK(\d+)" + TAIL + r"\b")
+TAIL_ITEM = re.compile(r"(,|und|bis|–|-|_)\s*AK(\d+)", re.I)
+
+
+def criteria_of(first, tail):
+    """Criterion numbers of a mark: the first one and those of the list or range after it (#192/AK1).
+    `AK1–AK3` gives 1, 2, 3; `AK1, AK3` gives 1 and 3; an implausible range (backwards or over 50) only its ends."""
+    nrs = [int(first)]
+    for sep, n in TAIL_ITEM.findall(tail or ""):
+        n = int(n)
+        if sep in ("–", "-", "bis") and 0 < n - nrs[-1] <= 50:
+            nrs += range(nrs[-1] + 1, n + 1)
+        elif n not in nrs:
+            nrs.append(n)
+    return nrs
 
 
 def scan_marks(path, lines, marks):
@@ -173,7 +190,8 @@ def scan_marks(path, lines, marks):
     for i, line in enumerate(lines, 1):
         for rx in (MARK, NAMEMARK):
             for m in rx.finditer(line):
-                marks.setdefault((int(m.group(1)), int(m.group(2))), []).append(f"{path}:{i}")
+                for n in criteria_of(m.group(2), m.group(3)):
+                    marks.setdefault((int(m.group(1)), n), []).append(f"{path}:{i}")
         if not path.endswith(".js"):
             continue
         d = DESCRIBE.match(line)
@@ -187,8 +205,9 @@ def scan_marks(path, lines, marks):
         if t and stack:
             ids = next((s[1] for s in reversed(stack) if s[1]), set())
             if len(ids) == 1:
-                for n in BARE_AK.findall(t.group(2)):
-                    marks.setdefault((next(iter(ids)), int(n)), []).append(f"{path}:{i}")
+                for m in BARE_AK.finditer(t.group(2)):
+                    for n in criteria_of(m.group(1), m.group(2)):
+                        marks.setdefault((next(iter(ids)), n), []).append(f"{path}:{i}")
     return marks
 
 
@@ -242,17 +261,39 @@ def checked(comments, n_crit):
     return res
 
 
+CRITERION = re.compile(r"^\s*- \[( |x|X)\] (.+)$", re.M)
+COMMENT_CRITERION = re.compile(r"^\s*- \[( |x|X)\] (AK(\d+)\b.*)$", re.M)
+
+
+def criteria(issue):
+    """{criterion number: (tick, text)}: the tick list of the issue text in its order, plus criteria added in a
+    comment as `- [ ] AKn …` (#192/AK6). A comment never replaces a criterion of the text."""
+    crit = {n: (done, text) for n, (done, text) in enumerate(CRITERION.findall(issue.get("body") or ""), 1)}
+    for c in sorted(issue.get("comments") or [], key=lambda c: c.get("createdAt", "")):
+        for done, text, n in COMMENT_CRITERION.findall(c.get("body") or ""):
+            crit.setdefault(int(n), (done, text))
+    return dict(sorted(crit.items()))
+
+
+def orphans(issues, marks):
+    """Marks whose issue or criterion does not exist, [(number, criterion, [locations])] (#192/AK3).
+    Issue #0 is the number of the examples in the tests of this scanner and is left out."""
+    known = {it["number"]: criteria(it) for it in issues}
+    return [(nr, ak, locs) for (nr, ak), locs in sorted(marks.items())
+            if nr != 0 and ak not in known.get(nr, {})]
+
+
 def requirements(issues, marks):
     """Per criterion the kind: `test` (marked test), `checked` (check on instruction), `manual` (only ticked), `none` (neither)."""
     rows = []
     for it in sorted(issues, key=lambda i: i["number"]):
         iid = it["number"]
-        crit = re.findall(r"^\s*- \[( |x|X)\] (.+)$", it["body"] or "", re.M)
+        crit = criteria(it)
         if not crit:
             continue
-        chk = checked(it.get("comments"), len(crit))
+        chk = checked(it.get("comments"), max(crit))
         items = []
-        for n, (done, text) in enumerate(crit, 1):
+        for n, (done, text) in crit.items():
             ev = marks.get((iid, n), [])
             if ev:
                 items.append(("test", text.strip(), ev))
@@ -354,7 +395,9 @@ def main():
     junit, pw, cov, mut = read_junit(), read_playwright(), read_lcov(), read_mutants()
     diffcov = read_diff_coverage(cov["file"]) if cov else None
     issues = read_issues()
-    reqs = requirements(issues, test_marks()) if issues is not None else None
+    marks = test_marks()
+    reqs = requirements(issues, marks) if issues is not None else None
+    orph = orphans(issues, marks) if issues is not None else None
     esc = escapes(issues) if issues is not None else None
     st_h, st_f = status_hygiene(junit), status_fit(cov, mut)
     st_r = NODATA if reqs is None else (OK if reqs and all(i[0] != "none" for r in reqs for i in r["items"]) else HINT)
@@ -423,6 +466,8 @@ def main():
             det = "<details><summary>Kriterien</summary><ul>" + "".join(f"<li>{ {'test': '✔ Test', 'checked': '✔ geprüft', 'manual': '☑ nur manuell', 'none': '○ ohne Test'}[k] }: {E(tx)}" + (f" <small><code>{E(', '.join(ev[:2]))}</code></small>" if ev else "") + "</li>" for k, tx, ev in r["items"]) + "</ul></details>"
             rows.append((f"#{r['nr']} {E(r['title'])}{det}", f"{cnt['test']} von {n}", str(cnt["checked"]), str(cnt["manual"]), str(cnt["none"])))
         h.append(table(["Issue", "mit Test", "geprüft", "nur manuell", "ohne"], rows, num=(1, 2, 3, 4)))
+        h.append(f"<details {'open' if orph else ''}><summary>Verwaiste Kennungen ({len(orph)})</summary><p class='rule'>Kennungen in Tests, deren Issue oder Kriterium es nicht gibt (weder im Text noch in einem Kommentar des Issues); Issue <code>#0</code> (Beispiele) ist ausgenommen.</p>"
+                 + ("<ul>" + "".join(f"<li><code>#{nr}/AK{ak}</code>: <small><code>{E(', '.join(locs))}</code></small></li>" for nr, ak, locs in orph) + "</ul>" if orph else "<p>Keine.</p>") + "</details>")
     h.append("</section>")
 
     # Outcome (escaped bugs)

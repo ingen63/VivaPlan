@@ -60,8 +60,8 @@ class Requirements(unittest.TestCase):
     def test_issue_117_ak5_markers_in_comments_and_test_names(self):
         # #117/AK5: `#<issue>/AK<n>` in a comment or test name, `issue_<issue>_ak<n>_…` in a Rust test name
         # The examples are concatenated so that the page does not count them as tests of real issues.
-        self.assertEqual(report.MARK.search("// #115/" "AK2 checks").groups(), ("115", "2"))
-        self.assertEqual(report.NAMEMARK.search("fn issue_115_" "ak2_rounding()").groups(), ("115", "2"))
+        self.assertEqual(report.MARK.search("// #115/" "AK2 checks").groups()[:2], ("115", "2"))
+        self.assertEqual(report.NAMEMARK.search("fn issue_115_" "ak2_rounding()").groups()[:2], ("115", "2"))
         marks = report.scan_marks("a.rs", ["// #7/" "AK1 checks", "fn issue_7_" "ak3_rounding() {}"], {})
         self.assertEqual(sorted(marks), [(7, 1), (7, 3)])
 
@@ -138,6 +138,49 @@ class Requirements(unittest.TestCase):
         self.assertEqual(sorted(report.checked([{"createdAt": "2026-11-15", "body": "**Prüfung (Einzelprüfung auf Anweisung)**\n\nAlle drei Kriterien erfüllt:\n- AK1, AK2: x"}], 3)), [1, 2, 3])
         self.assertEqual(report.checked([{"createdAt": "2026-11-15", "body": "**Prüfung**\n\nNoch nicht umgesetzt, alle fünf Kriterien offen."}], 5), {})
         self.assertEqual(report.checked([{"createdAt": "2026-11-15", "body": "Umgesetzt in abc1234. Abnahme ausstehend.\n- AK1 erfüllt"}], 3), {})
+
+    def test_issue_192_ak1_lists_and_ranges_in_comments_and_test_names(self):
+        # #192/AK1: the examples of the issue; the marks are concatenated so that they do not count as real tests
+        cases = {"// #98/" "AK1–AK3 checks": {(98, 1), (98, 2), (98, 3)},
+                 "// #98/" "AK1-AK3": {(98, 1), (98, 2), (98, 3)},
+                 "// #76/" "AK1, AK3": {(76, 1), (76, 3)},
+                 "// #85/" "AK1 und AK2": {(85, 1), (85, 2)},
+                 "fn issue_53_" "ak4_ak5_rounding() {}": {(53, 4), (53, 5)},
+                 "// #7/" "AK1 und #8/" "AK2": {(7, 1), (8, 2)},
+                 "// #7/" "AK5–AK2 backwards": {(7, 5), (7, 2)}}
+        for line, want in cases.items():
+            with self.subTest(line=line):
+                self.assertEqual(set(report.scan_marks("a.rs", [line], {})), want)
+        # JS (comment and test title) and Python (comment and test name)
+        js = report.scan_marks("e2e/x.spec.js", ['test("#98/' 'AK1–AK3 x", () => {});', "// #76/" "AK1, AK3"], {})
+        self.assertEqual(sorted(js), [(76, 1), (76, 3), (98, 1), (98, 2), (98, 3)])
+        py = report.scan_marks("tools/test_x.py", ["    def test_issue_53_" "ak4_ak5_x(self):", "        # #85/" "AK1 und AK2"], {})
+        self.assertEqual(sorted(py), [(53, 4), (53, 5), (85, 1), (85, 2)])
+
+    def test_issue_192_ak2_bare_list_in_an_e2e_describe_block_counts_for_both(self):
+        # #192/AK2
+        src = ['test.describe("Language (#170)", () => {', '  test("AK3, AK9: menu", async () => {});',
+               '  test("AK1–AK2 range", async () => {});', "});"]
+        self.assertEqual(sorted(report.scan_marks("e2e/x.spec.js", src, {})), [(170, 1), (170, 2), (170, 3), (170, 9)])
+
+    def test_issue_192_ak3_orphan_marks_are_listed_with_location_issue_0_excepted(self):
+        # #192/AK3: issue missing or criterion missing → orphan; #0 never
+        marks = {(7, 3): ["a.rs:1"], (7, 4): ["b.rs:2", "c.rs:3"], (99, 1): ["d.rs:4"], (0, 12): ["e.rs:5"]}
+        self.assertEqual(report.orphans([self.ISSUE], marks), [(7, 4, ["b.rs:2", "c.rs:3"]), (99, 1, ["d.rs:4"])])
+
+    def test_issue_192_ak6_criterion_added_in_a_comment_exists(self):
+        # #192/AK6: like the added criteria of #69 (AK8) and #170 (AK9)
+        issue = dict(self.ISSUE, comments=[
+            {"createdAt": "2026-11-20T10:00:00Z", "body": "**Ergänzung:** neu\n\n- [x] AK4: added later\n- [ ] AK2: no replacement"},
+            {"createdAt": "2026-11-21T10:00:00Z", "body": "- [ ] without number\n- AK5 erfüllt"}])
+        crit = report.criteria(issue)
+        self.assertEqual(sorted(crit), [1, 2, 3, 4])
+        self.assertEqual(crit[2], ("x", "two"))  # a comment does not replace a criterion of the text
+        self.assertEqual(crit[4], ("x", "AK4: added later"))
+        marks = {(7, 4): ["t.rs:1"], (7, 5): ["t.rs:2"]}
+        self.assertEqual(report.orphans([issue], marks), [(7, 5, ["t.rs:2"])])
+        items = report.requirements([issue], marks)[0]["items"]
+        self.assertEqual([k for k, _, _ in items], ["none", "manual", "none", "test"])
 
     def test_escapes_list_found_where_and_regression_test(self):
         bug = {"number": 9, "title": "Bug x", "state": "OPEN", "labels": [{"name": "bug"}, {"name": "found: usage"}],
@@ -236,6 +279,17 @@ class Page(unittest.TestCase):
         self.assertIn("Vergleich mit Version 9.9.8", history)
         self.assertIn("Nicht erkannte Mutanten", history)
         self.assertIn("3,0 ▲", history)  # 5 → 2 missed mutants: fewer is better
+
+    def test_issue_192_ak3_page_lists_orphan_marks_with_location(self):
+        # #192/AK3: the mark of a missing issue appears with its location; #0 does not
+        import json
+        def setup(root):
+            (root / "crates" / "engine" / "tests").mkdir(parents=True)
+            (root / "crates" / "engine" / "tests" / "a.rs").write_text("// #4711/" "AK2 x\n// #0/" "AK9 example\n")
+        page = self.render(setup, gh=lambda cmd: json.dumps([]))
+        self.assertIn("Verwaiste Kennungen (1)", page)
+        self.assertIn("#4711/" "AK2</code>: <small><code>crates/engine/tests/a.rs:1</code>", page)
+        self.assertNotIn("#0/" "AK9", page)
 
     def test_issue_42_ak4_without_gh_the_two_layers_say_no_data_and_the_rest_stays_complete(self):
         # #42/AK4
