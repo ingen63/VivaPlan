@@ -125,7 +125,7 @@ erscheint eine Meldung als `{ "code", "params", "text" }`.
   Golden-Vergleich (`crates/engine/tests/golden.rs`, `without_codes`) entfernt `code` und `params` und vergleicht eine
   alleinstehende Meldung mit ihrem Text. Die Golden-Dateien wurden mit #176 einmal neu erzeugt; `make golden-numbers
   BASE=<rev>` (`tools/golden_numbers.py`) vergleicht zwei Stände ohne Textfelder (Zahlen, Schlüssel, Listenlängen,
-  Monate).
+  Monate); bei jedem Push prüft der Job `golden` dasselbe gegen den Stand vor dem Push (#195, `docs/TESTS.md`).
 - **Englische Texte:** Eine Korrektur einer englischen Vorlage gilt für `en.json` und `codes!` gemeinsam (Test AK1);
   danach Beispieldatei neu schreiben und Golden-Dateien neu erzeugen.
 - **Tests (AK3):** `issue_171_ak3_examples_file_is_current` (Rechenkern) schreibt je Code ein Beispiel

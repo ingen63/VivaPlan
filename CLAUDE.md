@@ -26,7 +26,7 @@ Jede Änderung hat ein GitHub-Issue (nur als `#27` nennen). Gibt es keines, zuer
 - Beim Arbeiten gezielt (`cargo nextest run -p <Paket> -E 'test(…)'`), vor dem Commit `make test-quiet`. Oberfläche: `e2e/` (Playwright, gezielt mit `npx playwright test <Datei> -g "…"`), Rauchtest `tools/ui-smoke.sh`.
 - Untergrenze 80 % Zeilenabdeckung je Paket; `make coverage-diff`, `make mutants-diff` für den geänderten Code. Der Commit-Hook testet selbst und verlangt `rust-test-agent` nur bei Bedarf.
 - Tests zu einem Kriterium nennen es: `#27/AK2` im Kommentar, `issue_27_ak2_…` im Rust-Testnamen, in `e2e/` `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`.
-- Änderungen am Rechenkern brauchen einen Regressionstest. Golden-Dateien (`crates/engine/tests/golden/`) nur mit Begründung im Issue ändern.
+- Änderungen am Rechenkern brauchen einen Regressionstest. Golden-Dateien (`crates/engine/tests/golden/`) nur mit Begründung im Issue ändern; ändern sich Zahlen, braucht der Commit die Zeile `Golden: #Nr Begründung`, sonst schlägt der Push-Lauf fehl (Job `golden`, #195).
 
 ## Regeln
 

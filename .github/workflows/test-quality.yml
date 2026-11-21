@@ -15,7 +15,7 @@ on:
         required: false
         default: false
       base:
-        description: "Basis für die Abdeckung des geänderten Codes (Commit, Tag oder Zweig; leer = Vorgänger HEAD~1)"
+        description: "Basis für die Abdeckung des geänderten Codes und den Golden-Vergleich #195 (Commit, Tag oder Zweig; leer = Vorgänger HEAD~1)"
         required: false
         default: ""
 
@@ -113,6 +113,40 @@ jobs:
         run: python3 -m unittest discover -s tools -p 'test_changelog.py'
       - name: Release Notes in vier Sprachen gegen CHANGELOG.md (#188)
         run: python3 tools/changelog.py check
+
+  # #195: GOLDEN_UPDATE=1 macht golden_masters grün, auch wenn die Ausgabe falsch ist. Deshalb vergleicht dieser Job die
+  # Golden-Dateien mit dem Stand vor dem Push (Zahlen, Schlüssel, Listenlängen, Monate; Texte nicht) und nennt geänderte
+  # Zahlen mit Pfad in der Zusammenfassung. Geänderte Zahlen lassen den Lauf fehlschlagen, ausser einer der gepushten
+  # Commits enthält eine Zeile `Golden: #Nr Begründung` (Regel in #195, docs/TESTS.md).
+  golden:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }      # Stand vor dem Push und die Commit-Nachrichten seither
+      - name: Tests des Prüfskripts (#176/AK2, #195/AK4)
+        run: python3 -m unittest discover -s tools -p 'test_golden_numbers.py'
+      - name: Golden-Zahlen gegenüber dem Stand vor dem Push (#195)
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+          INPUT_BASE: ${{ inputs.base }}
+        run: |
+          # Push: Stand vor dem Push; Pull Request: Basis-Zweig; von Hand: Eingabe, sonst Vorgänger HEAD~1
+          case "$EVENT" in
+            push)         base="$BEFORE" ;;
+            pull_request) base="origin/$BASE_REF" ;;
+            *)            base="${INPUT_BASE:-HEAD~1}" ;;
+          esac
+          # Erster Push eines Zweigs (lauter Nullen) oder unbekannter Stand: Vorgänger des letzten Commits
+          if ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then base="HEAD~1"; fi
+          status=0
+          python3 tools/golden_numbers.py --base "$base" --gate > golden.log || status=$?
+          cat golden.log
+          { echo "### Golden-Zahlen gegenüber $base (#195)"; echo '```'; cat golden.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
   # #88: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
   clippy:
