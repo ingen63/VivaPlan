@@ -922,8 +922,9 @@ mod tests {
         let m = msg!(cancelled);
         assert!(m == "Cancelled");
         assert!(m != "Nope");
-        assert!(m == "Cancelled".to_string());
-        assert!(m != "Nope".to_string());
+        let (same, other) = (String::from("Cancelled"), String::from("Nope"));
+        assert!(m == same);
+        assert!(m != other);
         assert_eq!(String::from(msg!(cancelled)), "Cancelled");
         let m = Message::new(Code::person_n, vec![("a", Arg::Int(1)), ("n", Arg::Int(2))]);
         assert_eq!(m.param("n"), Some(&Arg::Int(2)));
