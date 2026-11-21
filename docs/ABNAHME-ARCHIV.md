@@ -1258,3 +1258,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #187/AK2 | Tests erkennen die Mutanten in `model.rs`, `series_text.rs`, `import.rs`, `sim.rs`, `validate.rs`, oder ein Kommentar begründet einen gleichwertigen Mutanten. | ☑ | **gilt** | «issue_187_ak2_…» in [series_text.rs](../crates/engine/src/series_text.rs), [model.rs](../crates/engine/src/model.rs), [import.rs](../crates/engine/src/import.rs) | 21.11.2026 ok; `parts`, `capital_tax` gleichwertig; sechs `validate.rs`-Einträge mit verrutschter Zeile nachgeführt |
 | #187/AK3 | Tests erkennen die Mutanten in `crates/app` (`pick`, `startup`, `language_menu`, `first_start_language`) und `devserver::content_type`. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_187_ak3_first_start_language_via_command», [i18n.rs](../crates/app/src/i18n.rs) «startup_language_uses_the_saved_choice_or_the_system», [devserver.rs](../crates/cli/src/devserver.rs) «content_types_follow_the_extension» | 21.11.2026 ok; `pick` gleichwertig, `language_menu` nur im Hauptthread (begründet ausgeschlossen) |
 | #187/AK4 | `cargo mutants` auf den betroffenen Dateien meldet keine nicht erkannten Mutanten mehr (ausser begründeten). | ☑ | **gilt** | `mutants-diff` in `test-quality.yml` | 21.11.2026 ok: lokal 44 von 44 erkannt; CI-Lauf 44907095566 1063 Mutanten, 0 nicht erkannt |
+
+### #194 Wertänderung der Liegenschaften im Hauptbuch unabhängig prüfen
+
+[Issue #194](https://github.com/ingen63/VivaPlan/issues/194) · geschlossen · Umsetzung: 933c1e4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #194/AK1 | Ein Test rechnet die Wertänderung eines Monats unabhängig nach und vergleicht `ledger.revaluation` auf 0.01 CHF. Beispiel: … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_194_ak1_…» | 21.11.2026 ok |
+| #194/AK2 | `value_and_fix_costs_inflation_are_independent` prüft den hergeleiteten Wert: Wert 500'000, Teuerung 10 % p. a., Januar 2031 = … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «value_and_fix_costs_inflation_are_independent» | 21.11.2026 ok |
+| #194/AK3 | Ein Wert, der die Teuerung doppelt anwendet (`base × infl_idx²` in `worth()`), lässt beide Tests fehlschlagen; im Issue mit … | ☑ | **gilt** | kein Test (vorübergehende Änderung, Beleg im Issue) | 21.11.2026 ok: beide Tests rot, Änderung rückgängig |
+| #194/AK4 | Rechenergebnisse und Golden-Dateien bleiben unverändert (es ändern sich nur Tests). | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 21.11.2026 ok (Commit ändert nur `reference.rs`) |
