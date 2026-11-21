@@ -81,7 +81,7 @@ pub(crate) fn cases() -> Vec<(&'static str, Value)> {
         { "id": "A", "name": "A", "birth": "1965-01" }, { "id": "B", "name": "B", "birth": "1967-06" } ]);
     couple["partner"] = json!({ "income": 2500,
         "pk": { "capital": 350_000, "at": "retire", "lumpsum": 0.3, "conversion": 0.05 },
-        "ahv": { "monthly": 1800, "at": "ahv", "indexed": true } });
+        "ahv": { "monthly": 1800, "at": "ahv2", "indexed": true } }); // #191: own milestone (65 = 2032-06)
     couple["pension"]["ahv"] = json!({ "monthly": 2400, "at": "ahv", "indexed": true });
     couple["taxes"]["married"] = json!({ "income": [[0, 0.0], [150_000, 0.09]] });
 
