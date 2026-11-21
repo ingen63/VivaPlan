@@ -282,6 +282,7 @@ Objets en propriété, planifiés et loués. Vous pouvez en saisir autant que vo
 - **Location (`rent`):** début et loyer par mois (valeur actuelle, indexé par défaut au renchérissement; l’option «Adapter le loyer à l’inflation» le désactive).
 - **Hypothèque:** tranches avec périodes, voir [Hypothèques](#f-re-mortgage).
 - [Vente forcée](#f-re-emergency) et [capacité financière](#f-re-afford) pour les achats «après la vente».
+- Le commutateur [Ne jamais vendre les biens immobiliers](#f-re-never-sell) en haut de l’onglet exclut toute vente.
 
 Vous saisissez le [coût de la vie](#s-flows) **frais de logement compris**. Le calcul utilise le coût de la vie **sans la part du logement**; loyer, intérêts hypothécaires, amortissement et frais accessoires s’ajoutent comme **frais de logement** simulés. Après la vente du dernier bien immobilier, le suivant avec achat «après la vente» est acheté le mois suivant, pour autant qu’il soit supportable et que les fonds propres suffisent. Sinon, les locations ‹dès après la vente› commencent. Un achat «après la vente» est tenté **une seule fois** le mois suivant. S’il n’est pas finançable, il **est supprimé** avec un message dans les événements, et les règles subséquentes s’appliquent le mois suivant: les locations ‹dès après la vente› de ce bien immobilier commencent, d’autres achats «après la vente» de celui-ci sont tentés. Une **date d’achat ou de vente antérieure au début de la simulation** n’est jamais atteinte; le contrôle la signale comme avertissement.
 
@@ -315,7 +316,18 @@ Mots-clés: vente, liquidités, seuil, vente forcée, vente contrainte
 
 Si la fortune liquide devient insuffisante, l’application vend le bien immobilier le mois suivant. Le **seuil** est exprimé en mois de dépenses non couvertes: si la fortune liquide couvre moins de mois (dépenses moins revenus), une vente forcée est nécessaire.
 
-Une vente forcée montre que la planification ne fonctionne pas sans vente immobilière. Elle apparaît dans les [événements](#r-events) des résultats. Plus le seuil est élevé, plus la vente intervient tôt.
+Une vente forcée montre que la planification ne fonctionne pas sans vente immobilière. Si [Ne jamais vendre les biens immobiliers](#f-re-never-sell) est activé, il n’y a pas de vente forcée. Elle apparaît dans les [événements](#r-events) des résultats. Plus le seuil est élevé, plus la vente intervient tôt.
+
+## @f-re-never-sell Ne jamais vendre les biens immobiliers
+Mots-clés: commutateur, vente, vente forcée, capacité financière, sans vente, conserver
+
+Avec ce commutateur en haut de l’onglet «Immobilier», vous vérifiez si la planification fonctionne aussi sans vendre de bien immobilier. Il s’applique à **tous** les biens de la planification et est enregistré dans le fichier (par défaut: désactivé).
+
+- **Aucune vente:** pas de vente planifiée («Vente dès»), pas de [vente forcée](#f-re-emergency) et pas de vente parce qu’une hypothèque n’est plus [supportable](#f-re-afford) lors du renouvellement. L’hypothèque est alors **renouvelée en totalité**; un événement signale «non supportable».
+- **Les coûts continuent:** intérêts, amortissement et frais accessoires jusqu’à la fin de la planification.
+- **Achats:** un achat planifié avec une date ou un jalon a lieu. Les achats et locations «après la vente» n’ont **pas** lieu; la vérification le signale, de même que les ventes planifiées.
+- **Fortune épuisée:** si la fortune liquide ne suffit plus, la simulation compte comme épuisée, comme sans bien immobilier. Le taux de réussite est donc en général plus bas qu’avec une vente.
+- **Lecture seule:** tant que le commutateur est activé, tous les autres champs de l’onglet sont grisés et en lecture seule. Les valeurs sont conservées et s’appliquent à nouveau sans changement lors de la désactivation.
 
 ## @f-re-afford Capacité financière
 Mots-clés: banque, capacité financière, taux d’avance, taux d’intérêt théorique, fonds propres, hypothèque

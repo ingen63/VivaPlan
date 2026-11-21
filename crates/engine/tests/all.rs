@@ -30,6 +30,7 @@ mod legacy_import;
 mod library;
 mod mandatory_inputs;
 mod milestones_limits;
+mod never_sell;
 mod ods_reference;
 mod optimization_settings;
 mod optimize_goal;

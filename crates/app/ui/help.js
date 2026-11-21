@@ -19,7 +19,7 @@ const Help = (() => {
     [/^withdrawal\.guardrails\./, "f-wd-guardrails"], [/^withdrawal\.vpw\./, "f-wd-vpw"], [/^withdrawal\.endowment\./, "f-wd-endowment"],
     [/^withdrawal\.(floor|ceiling)$/, "f-wd-limits"],
     [/^taxes\.multiplier$/, "f-tax-multiplier"], [/^taxes\./, "f-tax-tables"],
-    [/^realestate\.emergencyMonths/, "f-re-emergency"], [/^realestate\.affordability\./, "f-re-afford"], [/^realestate\.properties\..*(mortgage|tranche)/, "f-re-mortgage"],
+    [/^realestate\.emergencyMonths/, "f-re-emergency"], [/^realestate\.neverSell$/, "f-re-never-sell"], [/^realestate\.affordability\./, "f-re-afford"], [/^realestate\.properties\..*(mortgage|tranche)/, "f-re-mortgage"],
     [/^scenarios\.sweeps/, "f-sweep"], [/^milestones\./, "s-milestones"], [/^pillar3a\./, "s-pillar3a"],
     [/^flows\.(income|spending)\b/, "f-timed"], [/^partner\.income\b/, "f-timed"]
   ];

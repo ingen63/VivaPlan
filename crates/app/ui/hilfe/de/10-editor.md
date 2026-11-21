@@ -282,6 +282,7 @@ Eigene, geplante und gemietete Objekte. Sie können beliebig viele erfassen.
 - **Miete («rent»):** Beginn und Miete pro Monat (heutiger Wert, wird standardmässig mit der Teuerung fortgeschrieben; die Option «Miete mit Inflation anpassen» schaltet das aus).
 - **Hypothek:** Tranchen mit Perioden, siehe [Hypotheken](#f-re-mortgage).
 - [Notverkauf](#f-re-emergency) und [Tragbarkeit](#f-re-afford) für Käufe «nach Verkauf».
+- Der Schalter [Immobilien nie verkaufen](#f-re-never-sell) oben im Reiter schliesst jeden Verkauf aus.
 
 Die [Lebenshaltungskosten](#s-flows) geben Sie **inklusive** Wohnkosten ein. Gerechnet wird mit der Lebenshaltung **ohne Wohnanteil**; Miete, Hypothekarzinsen, Amortisation und Nebenkosten kommen als simulierte **Wohnkosten** dazu. Nach dem Verkauf der letzten Immobilie wird im Folgemonat die nächste mit Kauf «nach Verkauf» gekauft, sofern sie tragbar ist und das Eigenkapital reicht. Sonst beginnen die Mieten «ab nach Verkauf». Ein Kauf «nach Verkauf» wird **einmal** im Folgemonat versucht. Ist er nicht finanzierbar, **entfällt** er mit einer Meldung in den Ereignissen, und die Folgeregeln greifen im nächsten Monat: Mieten «ab nach Verkauf» dieser Immobilie beginnen, weitere Käufe «nach Verkauf» davon werden versucht. Ein **Kauf- oder Verkaufsdatum vor dem Simulationsstart** wird nie erreicht; die Prüfung meldet es als Hinweis.
 
@@ -315,7 +316,18 @@ Stichworte: Verkauf, Liquidität, Schwelle, Zwangsverkauf
 
 Wird das liquide Vermögen knapp, verkauft die App die Immobilie im Folgemonat. Die **Schwelle** sind Monate ungedeckter Ausgaben: Deckt das liquide Vermögen weniger Monate (Ausgaben minus Einkommen), ist ein Notverkauf nötig.
 
-Ein Notverkauf zeigt, dass die Planung ohne Immobilienverkauf nicht aufgeht. Er erscheint in den [Ereignissen](#r-events) der Ergebnisse. Je höher die Schwelle, desto früher wird verkauft.
+Ein Notverkauf zeigt, dass die Planung ohne Immobilienverkauf nicht aufgeht. Ist [Immobilien nie verkaufen](#f-re-never-sell) eingeschaltet, gibt es keinen Notverkauf. Er erscheint in den [Ereignissen](#r-events) der Ergebnisse. Je höher die Schwelle, desto früher wird verkauft.
+
+## @f-re-never-sell Immobilien nie verkaufen
+Stichworte: Schalter, Verkauf, Notverkauf, Tragbarkeit, ohne Verkauf, behalten
+
+Mit diesem Schalter oben im Reiter «Immobilien» prüfen Sie, ob die Planung auch aufgeht, wenn Sie keine Immobilie verkaufen. Er gilt für **alle** Immobilien der Planung und wird in der Datei gespeichert (Standard: aus).
+
+- **Kein Verkauf:** kein geplanter Verkauf («Verkauf ab»), kein [Notverkauf](#f-re-emergency) und kein Verkauf, weil eine Hypothek bei der Erneuerung nicht [tragbar](#f-re-afford) ist. Die Hypothek wird dann **voll erneuert**; ein Ereignis meldet «nicht tragbar».
+- **Kosten laufen weiter:** Zinsen, Amortisation und Nebenkosten bis zum Ende der Planung.
+- **Käufe:** Ein geplanter Kauf mit Datum oder Meilenstein findet statt. Käufe und Mieten «nach Verkauf» finden **nicht** statt; die Prüfung weist darauf hin, ebenso auf geplante Verkäufe.
+- **Vermögen aufgebraucht:** Reicht das liquide Vermögen nicht mehr, zählt der Lauf als aufgebraucht, wie ohne Immobilie. Die Erfolgsquote ist deshalb meist tiefer als mit Verkauf.
+- **Nur lesbar:** Ist der Schalter an, sind alle übrigen Felder des Reiters grau und nur lesbar. Die Werte bleiben erhalten und gelten beim Ausschalten wieder unverändert.
 
 ## @f-re-afford Tragbarkeit
 Stichworte: Bank, Belehnung, kalkulatorischer Zins, Eigenmittel, Hypothek

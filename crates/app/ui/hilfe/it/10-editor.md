@@ -282,6 +282,7 @@ Oggetti propri, pianificati e in affitto. Può registrarne quanti vuole.
 - **Affitto (`rent`):** inizio e affitto al mese (valore attuale, viene adeguato per impostazione standard al rincaro; l’opzione «Adeguare l’affitto all’inflazione» lo disattiva).
 - **Ipoteca:** tranche con periodi, vedi [Ipoteche](#f-re-mortgage).
 - [Vendita forzata](#f-re-emergency) e [sostenibilità](#f-re-afford) per acquisti «dopo la vendita».
+- Il commutatore [Non vendere mai gli immobili](#f-re-never-sell) in alto nella scheda esclude qualsiasi vendita.
 
 Il [costo della vita](#s-flows) lo inserisce **incluse** le spese d’alloggio. Il calcolo usa il costo della vita **senza la quota d’alloggio**; affitto, interessi ipotecari, ammortamento e spese accessorie si aggiungono come **spese d’alloggio** simulate. Dopo la vendita dell’ultimo immobile, nel mese successivo viene acquistato il prossimo con acquisto «dopo la vendita», se è sostenibile e i fondi propri bastano. Altrimenti iniziano gli affitti ‹da dopo la vendita›. Un acquisto «dopo la vendita» viene tentato **una volta** nel mese successivo. Se non è finanziabile, **viene soppresso** con un messaggio negli eventi, e le regole successive intervengono il mese seguente: iniziano gli affitti ‹da dopo la vendita› di questo immobile, vengono tentati ulteriori acquisti «dopo la vendita» di esso. Una **data d’acquisto o di vendita anteriore all’inizio della simulazione** non viene mai raggiunta; la verifica la segnala come avvertenza.
 
@@ -315,7 +316,18 @@ Parole chiave: vendita, liquidità, soglia, vendita forzata, vendita obbligata
 
 Se la sostanza liquida diventa scarsa, l’app vende l’immobile nel mese successivo. La **soglia** sono mesi di spese non coperte: se la sostanza liquida copre meno mesi (spese meno reddito), è necessaria una vendita forzata.
 
-Una vendita forzata mostra che la pianificazione non funziona senza vendita immobiliare. Appare negli [eventi](#r-events) dei risultati. Più alta è la soglia, prima si vende.
+Una vendita forzata mostra che la pianificazione non funziona senza vendita immobiliare. Se [Non vendere mai gli immobili](#f-re-never-sell) è attivato, non c’è vendita forzata. Appare negli [eventi](#r-events) dei risultati. Più alta è la soglia, prima si vende.
+
+## @f-re-never-sell Non vendere mai gli immobili
+Parole chiave: commutatore, vendita, vendita forzata, sostenibilità, senza vendita, mantenere
+
+Con questo commutatore in alto nella scheda «Immobili» verificate se la pianificazione funziona anche senza vendere un immobile. Vale per **tutti** gli immobili della pianificazione ed è salvato nel file (predefinito: disattivato).
+
+- **Nessuna vendita:** nessuna vendita pianificata («Vendita da»), nessuna [vendita forzata](#f-re-emergency) e nessuna vendita perché un’ipoteca non è più [sostenibile](#f-re-afford) al rinnovo. L’ipoteca viene allora **rinnovata per intero**; un evento segnala «non sostenibile».
+- **I costi continuano:** interessi, ammortamento e spese accessorie fino alla fine della pianificazione.
+- **Acquisti:** un acquisto pianificato con una data o una tappa ha luogo. Acquisti e affitti «dopo la vendita» **non** hanno luogo; la verifica lo segnala, come pure le vendite pianificate.
+- **Sostanza esaurita:** se la sostanza liquida non basta più, l’esecuzione conta come esaurita, come senza immobile. Il tasso di successo è quindi di solito più basso che con una vendita.
+- **Sola lettura:** finché il commutatore è attivo, tutti gli altri campi della scheda sono grigi e di sola lettura. I valori restano invariati e tornano a valere quando il commutatore viene disattivato.
 
 ## @f-re-afford Sostenibilità
 Parole chiave: banca, sostenibilità, grado d’anticipo, tasso d’interesse teorico, fondi propri, ipoteca

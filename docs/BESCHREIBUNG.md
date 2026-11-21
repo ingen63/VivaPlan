@@ -138,6 +138,11 @@ Beim Kauf prüft die App die Tragbarkeit wie eine Bank und kürzt die Hypothek n
 höchsten Belehnung von 80 % finanziert. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
 Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten.
 
+Der Schalter **«Immobilien nie verkaufen»** prüft, ob die Planung auch ohne Verkauf aufgeht: Für alle Liegenschaften
+entfallen geplante Verkäufe, Notverkäufe und Verkäufe wegen fehlender Tragbarkeit bei der Erneuerung (die Hypothek wird
+dann voll erneuert). Käufe mit Datum finden statt, Käufe und Mieten «nach Verkauf» nicht. Reicht das liquide Vermögen
+nicht mehr, gilt es als aufgebraucht.
+
 ## Datenbibliothek
 
 Die Renditen stammen aus den Indizes der Anlagestrategie. Dahinter stehen diese Daten:

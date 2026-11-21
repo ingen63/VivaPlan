@@ -392,3 +392,42 @@ fn issue_144_ak3_cli_rejects_an_unknown_format() {
         assert!(o.status.success(), "{format:?}: {}", text(&o));
     }
 }
+
+// #196/AK7: `run` and `optimize` calculate with the switch «Immobilien nie verkaufen» from the file.
+#[test]
+fn issue_196_ak7_cli_uses_never_sell_from_the_file() {
+    let d = tmp("never-sell");
+    let settings = serde_json::json!({ "paths": 100, "checkPaths": 100, "samples": 1, "strategies": ["fixed_rate"] });
+    let file = |source: &str, on: bool| {
+        let s = settings.clone();
+        let p = plan_file(&d, source, move |p| {
+            p["optimization"] = s.clone();
+            p["realestate"]["neverSell"] = serde_json::json!(on);
+        });
+        let to = d.join(format!("{source}-{on}.vplan"));
+        std::fs::rename(&p, &to).unwrap();
+        to.to_string_lossy().into_owned()
+    };
+    // run: without the switch the house is sold, with it there is no sale and the wealth is depleted.
+    let off = text(&run(&["run", &file("fixed", false), "--events"]));
+    assert!(
+        off.contains("Emergency sale Haus") || off.contains("Sale Haus"),
+        "{off}"
+    );
+    let on = text(&run(&["run", &file("fixed", true), "--events"]));
+    assert!(!on.contains("Sale Haus") && !on.contains("Emergency sale"), "{on}");
+    assert!(
+        on.contains("Wealth depleted") && on.contains("“Never sell properties” is switched on"),
+        "{on}"
+    );
+    // optimize: no run with an emergency sale.
+    let share = |on: bool| {
+        let json = d.join(format!("opt-{on}.json"));
+        let o = run(&["optimize", &file("parametric", on), "--json", json.to_str().unwrap()]);
+        assert!(o.status.success(), "{}", text(&o));
+        let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
+        r[0]["validated"]["emergencyShare"].as_f64().unwrap()
+    };
+    assert!(share(false) > 0.0);
+    assert_eq!(share(true), 0.0);
+}

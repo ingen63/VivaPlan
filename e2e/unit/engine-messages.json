@@ -1083,6 +1083,34 @@
     "text": "Person 2: the sale date is before the simulation start – the property is not sold at that date. The sale would have to be within the simulation period."
   },
   {
+    "code": "property_never_sell_sale",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: “Never sell properties” is switched on – the planned sale is not carried out.",
+    "text": "Person 2: “Never sell properties” is switched on – the planned sale is not carried out."
+  },
+  {
+    "code": "property_never_sell_after_sale",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: “Never sell properties” is switched on – the purchase or rent “after sale” does not take place.",
+    "text": "Person 2: “Never sell properties” is switched on – the purchase or rent “after sale” does not take place."
+  },
+  {
     "code": "property_sale_before_bought",
     "params": {
       "name": {
@@ -3697,6 +3725,28 @@
     },
     "template": "Mortgage {name} no longer affordable: one-off payment of {lump:fix0} {currency} required, after which the emergency sale criterion would trigger; mortgage not renewed, emergency sale initiated",
     "text": "Mortgage Person 2 no longer affordable: one-off payment of 12346 Person 2 required, after which the emergency sale criterion would trigger; mortgage not renewed, emergency sale initiated"
+  },
+  {
+    "code": "event_mortgage_unaffordable_kept",
+    "params": {
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "lump": 12345.678,
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Mortgage {name} not affordable: one-off payment of {lump:fix0} {currency} would be required; properties are never sold, mortgage renewed in full",
+    "text": "Mortgage Person 2 not affordable: one-off payment of 12346 Person 2 would be required; properties are never sold, mortgage renewed in full"
   },
   {
     "code": "event_mortgage_lump_sum",

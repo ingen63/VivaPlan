@@ -282,6 +282,7 @@ Owned, planned and rented properties. You can enter as many as you like.
 - **Rent (‘rent’):** start and rent per month (today's value, carried forward with inflation by default; the option “Adjust rent for inflation” turns this off).
 - **Mortgage:** tranches with periods, see [Mortgages](#f-re-mortgage).
 - [Emergency sale](#f-re-emergency) and [affordability](#f-re-afford) for purchases “after sale”.
+- The switch [Never sell properties](#f-re-never-sell) at the top of the tab rules out any sale.
 
 You enter [living expenses](#s-flows) **including** housing costs. The calculation uses living expenses **without the housing share**; rent, mortgage interest, amortization and fixed costs are added as simulated **housing costs**. After the sale of the last property, the next one with a purchase “after sale” is bought in the following month, provided it is affordable and the equity is sufficient. Otherwise the rents ‘from after sale’ begin. A purchase “after sale” is attempted **once** in the following month. If it cannot be financed, it is **dropped** with a message in the events, and the follow-up rules apply in the next month: rents ‘from after sale’ of this property begin, and further purchases “after sale” of it are attempted. A **purchase or sale date before the simulation start** is never reached; the validation reports it as a warning.
 
@@ -315,7 +316,18 @@ Keywords: sale, liquidity, threshold, emergency sale, forced sale
 
 If liquid wealth runs low, the app sells the property in the following month. The **threshold** is months of uncovered spending: if liquid wealth covers fewer months (spending minus income), an emergency sale is necessary.
 
-An emergency sale shows that the plan does not work out without selling the property. It appears in the [events](#r-events) of the results. The higher the threshold, the earlier the sale.
+An emergency sale shows that the plan does not work out without selling the property. If [Never sell properties](#f-re-never-sell) is switched on, there is no emergency sale. It appears in the [events](#r-events) of the results. The higher the threshold, the earlier the sale.
+
+## @f-re-never-sell Never sell properties
+Keywords: switch, sale, emergency sale, affordability, without sale, keep
+
+With this switch at the top of the “Real estate” tab you check whether the plan also works out if you never sell a property. It applies to **all** properties of the plan and is saved in the file (default: off).
+
+- **No sale:** no planned sale (“Sale from”), no [emergency sale](#f-re-emergency) and no sale because a mortgage is not [affordable](#f-re-afford) at renewal. The mortgage is then **renewed in full**; an event reports “not affordable”.
+- **Costs continue:** interest, amortization and fixed costs until the end of the plan.
+- **Purchases:** a planned purchase with a date or milestone takes place. Purchases and rents “after sale” do **not** take place; the validation points this out, as well as planned sales.
+- **Wealth depleted:** if liquid wealth is no longer sufficient, the run counts as depleted, as without a property. The success rate is therefore usually lower than with a sale.
+- **Read-only:** while the switch is on, all other fields of the tab are grey and read-only. The values are kept and apply again unchanged when it is switched off.
 
 ## @f-re-afford Affordability
 Keywords: bank, affordability, loan-to-value, imputed interest rate, equity, mortgage

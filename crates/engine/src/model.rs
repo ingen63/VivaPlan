@@ -929,6 +929,10 @@ fn is_zero(v: &f64) -> bool {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RealEstate {
+    /// #196: Never sell a property: no planned sale, no emergency sale, no sale for lack of affordability at a
+    /// renewal (the mortgage is renewed in full). Purchases and rents «nach Verkauf» do not take place.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub never_sell: bool,
     /// Emergency sale if liquid wealth no longer covers the uncovered spending of this number of months.
     #[serde(default)]
     pub emergency_months: Series,

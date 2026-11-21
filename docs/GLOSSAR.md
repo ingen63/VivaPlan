@@ -140,6 +140,7 @@ Wörter in Grossbuchstaben nicht.
 | Marktwert | `worth` (Planung), `property_value` (Ergebnis) | |
 | Kauf, Verkauf | `purchase`, `sale` | Planungsfelder `buy`, `sell`, `bought` |
 | Notverkauf | `emergency_sale` | Schwelle `emergency_months` |
+| Immobilien nie verkaufen (Schalter) | `never_sell` | serialisiert `neverSell` (#196) |
 | Verkaufserlös, Nettoerlös | `proceeds`, `net_proceeds` | |
 | Eigenmittel, Eigenkapital | `equity` | `property_equity` |
 | Nebenkosten | `fix_costs` | serialisiert `fixCosts` |
@@ -316,6 +317,7 @@ englisch umschrieben, das Schweizer Kürzel steht in Klammern; Schreibweise amer
 | Nebenkosten | fixed costs | |
 | Verkaufserlös, Nettoerlös | sale proceeds, net proceeds | |
 | Notverkauf, Notverkaufskriterium | emergency sale, emergency sale criterion | |
+| Immobilien nie verkaufen | never sell properties | |
 | Hypothek, Anschlusshypothek | mortgage, follow-up mortgage | |
 | Tranche, Periode, Laufzeit | tranche, period, term | |
 | Festhypothek, SARON-Hypothek | fixed, SARON mortgage | |
@@ -444,6 +446,7 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | Nebenkosten | frais accessoires | |
 | Verkaufserlös, Nettoerlös | produit de la vente, produit net | |
 | Notverkauf, Notverkaufskriterium | vente forcée, critère de vente forcée | |
+| Immobilien nie verkaufen | ne jamais vendre les biens immobiliers | |
 | Hypothek, Anschlusshypothek | hypothèque, hypothèque subséquente | |
 | Tranche, Periode, Laufzeit | tranche, période, durée | |
 | Festhypothek, SARON-Hypothek | hypothèque à taux fixe, hypothèque SARON | |
@@ -579,6 +582,7 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | Nebenkosten | spese accessorie | |
 | Verkaufserlös, Nettoerlös | ricavo della vendita, ricavo netto | |
 | Notverkauf, Notverkaufskriterium | vendita forzata, criterio di vendita forzata | |
+| Immobilien nie verkaufen | non vendere mai gli immobili | |
 | Hypothek, Anschlusshypothek | ipoteca, ipoteca successiva | |
 | Tranche, Periode, Laufzeit | tranche, periodo, durata | |
 | Festhypothek, SARON-Hypothek | ipoteca fissa, ipoteca SARON | |

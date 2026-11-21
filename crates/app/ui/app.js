@@ -429,7 +429,7 @@ function Sel(path, opts, o = {}) {
   const v = getP(path);
   return `<select class="plain" data-path="${path}" data-type="select" ${o.rerender ? "data-rerender=1" : ""}>${opts.map(([k, l]) => `<option value="${esc(k)}" ${k === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
 }
-function Chk(path, label) { return `<label class="check"><input type="checkbox" data-path="${path}" data-type="bool" ${getP(path) ? "checked" : ""}> ${label}</label>`; }
+function Chk(path, label, o = {}) { return `<label class="check"><input type="checkbox" data-path="${path}" data-type="bool" ${getP(path) ? "checked" : ""} ${o.rerender ? "data-rerender=1" : ""}> ${label}</label>`; }
 function Ref(path, o = {}) {
   const v = getP(path), date = isYM(v);
   const opts = state.milestones.map(ms => `<option value="${ms.id}" ${ms.id === v ? "selected" : ""}>${esc(msLabel(ms))}</option>`).join("");
@@ -1124,7 +1124,11 @@ function MortgageUI(p, i) {
     <div style="margin:4px 0 0"><button class="btn small" data-action="tranche-add" data-i="${i}">${tr("mortgage.addTranche")}</button></div>
     <p class="hint">${C("mort", i)}</p>${p3a}`;
 }
+// #196: «Immobilien nie verkaufen» at the top; when on, the rest of the tab is grey and read-only (values are kept).
 R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("realestate.intro")}</p>
+  <div class="card" id="neverSellCard">${Chk("realestate.neverSell", tr("realestate.neverSell"), { rerender: 1 })}
+    <p class="hint">${tr("realestate.neverSellHint")}</p></div>
+  <fieldset class="locked-area" id="realestateBody" ${state.realestate.neverSell ? "disabled" : ""}>
   <div class="card"><h3>${tr("realestate.emergency")}</h3>${Series("realestate.emergencyMonths", tr("realestate.threshold"), "months", tr("realestate.emergencyHint"))}
     <p class="hint">${tr("realestate.afterSaleHint")}</p></div>
   <div class="card"><h3>${tr("realestate.affordability")} <span class="sub">${tr("realestate.forAfterSale")}</span></h3><div class="grid3">
@@ -1148,7 +1152,7 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
       <div class="seg">${PSTAT.map(([k, l]) => `<button class="${p.status === k ? "on" : ""}" data-action="pstat" data-i="${i}" data-v="${k}">${l}</button>`).join("")}</div>
       <button class="btn ghost small" data-action="list-del" data-path="realestate.properties" data-i="${i}" title="${tr("realestate.remove")}">✕</button></div>${body}</div>`;
   }).join("")}
-  <button class="btn" data-action="prop-add">${tr("realestate.add")}</button>`;
+  <button class="btn" data-action="prop-add">${tr("realestate.add")}</button></fieldset>`;
 
 R.scenarios = () => `<h2>${tr("section.scenarios")}</h2><p class="lead">${tr("scenarios.intro")}</p>
   <div class="card"><p style="margin:0">${tr("scenarios.runHint")}</p></div>

@@ -416,6 +416,14 @@ Reihenfolge pro Monat:
    Zusammenfassung zählt `lumpSums` und `affordabilitySales`, die Stapelauswertung `lumpSumRuns` und `affordabilitySaleRuns`.
    Mit `"amountMode": "maxLoan"` beträgt die Hypothek beim Kauf die höchste Belehnung (80 %, also Minimum
    Eigenmittel), gekürzt falls nicht tragbar; die Beträge der Tranchen gelten dann als Anteile.
+   **«Immobilien nie verkaufen»** (`"realestate": {"neverSell": true}`, #196; fehlt das Feld: aus, «aus» wird nicht
+   geschrieben): kein geplanter Verkauf (`sell` wird beim Übersetzen ignoriert, die Tranchen laufen bis zum Planende),
+   kein Notverkauf (weder Kriterium noch 3-Topf «Töpfe reichen nicht»), und bei einer nicht tragbaren Erneuerung, die
+   sonst einen Notverkauf auslösen würde, wird die Hypothek voll erneuert (Ereignis `event_mortgage_unaffordable_kept`,
+   `emergencySale` leer, `affordabilitySales` unverändert); eine Einmalzahlung, die die Bedingungen oben erfüllt, bleibt.
+   Käufe mit Datum oder Meilenstein finden statt, Käufe und Mieten «nach Verkauf» nicht (die Prüfung warnt:
+   `property_never_sell_sale`, `property_never_sell_after_sale`). «Aufgebraucht» gilt dann auch mit Immobilie im Besitz.
+   Für einen Lauf setzt man das Feld in einer Kopie der Planung (`plan.realestate.never_sell = true`) vor `Simulator::new`.
 8. **Entnahmestrategie «Standard»:** Cash = Reserve (Monate × ungedeckte Ausgaben), Rest nach Aktienanteil.
    **«3-Topf»** (`"strategy": "three_buckets"`, `"buckets": {"cashYears", "bondYears", "refillThreshold", "reserveMonths"}`)
    ab dem Start der Entnahmephase (die erste Pensionierung), davor «Standard». Topf 1 = Cash (alle Ausgaben werden

@@ -569,3 +569,66 @@ test.describe("Early and deferred AHV payout (#191)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Never sell properties (#196)", () => {
+  const box = page => page.locator('input[type=checkbox][data-path="realestate.neverSell"]');
+
+  test("AK1: switch at the top of the tab, off by default, saved in the plan, older files open with off", async ({ page }) => {
+    const errors = await open(page, "realestate");
+    await expect(box(page)).toBeVisible();
+    await expect(box(page)).not.toBeChecked();
+    await expect(page.locator("#neverSellCard")).toContainText("Immobilien nie verkaufen");
+    // At the top: before the card «Notverkauf» and before the properties
+    const order = await page.evaluate(() => {
+      const main = document.querySelector("#main");
+      const cards = [...main.querySelectorAll(".card, .prop")];
+      return cards.findIndex(c => c.id === "neverSellCard");
+    });
+    expect(order).toBe(0);
+    expect(await page.evaluate(() => state.realestate.neverSell)).toBeFalsy();
+    await box(page).check();
+    expect(await page.evaluate(() => JSON.parse(JSON.stringify(state)).realestate.neverSell)).toBe(true);
+    // An older file without the field opens with «aus».
+    const plan = await page.evaluate(() => { const s = JSON.parse(JSON.stringify(state)); delete s.realestate.neverSell; return s; });
+    const file = path.join(os.tmpdir(), `qa-never-sell-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(plan));
+    await page.locator("#fileInput").setInputFiles(file);
+    if (await page.locator("#ask").isVisible()) await page.locator("#ask button[value='ok']").click();
+    await nav(page, "Immobilien");
+    await expect(box(page)).not.toBeChecked();
+    expect(await page.evaluate(() => state.realestate.neverSell)).toBeFalsy();
+    fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+
+  test("AK2: switched on, the rest of the tab is grey and read-only; values stay and apply again", async ({ page }) => {
+    const errors = await open(page, "realestate");
+    const body = page.locator("#realestateBody");
+    const before = await page.evaluate(() => JSON.stringify(state.realestate.properties));
+    await expect(body).not.toHaveAttribute("disabled");
+    expect(await body.locator("input:enabled, select:enabled, button:enabled").count()).toBeGreaterThan(10);
+    await box(page).check();
+    await expect(body).toHaveAttribute("disabled");
+    // Mortgages and costs included: no field or button of the tab can be used any more
+    expect(await body.locator("input:enabled, select:enabled, button:enabled").count()).toBe(0);
+    expect(await body.locator("input, select, button").count()).toBeGreaterThan(10);
+    await expect(body.locator('input[data-path$=".fixCosts"]').first()).toBeDisabled();
+    await expect(body.locator('input[data-path*=".mortgage.tranches.0"]').first()).toBeDisabled();
+    expect(Number(await body.evaluate(e => getComputedStyle(e).opacity))).toBeLessThan(1);
+    // The switch itself stays usable
+    await expect(box(page)).toBeEnabled();
+    await box(page).uncheck();
+    await expect(body).not.toHaveAttribute("disabled");
+    expect(await body.locator("input:enabled, select:enabled, button:enabled").count()).toBeGreaterThan(10);
+    expect(await page.evaluate(() => JSON.stringify(state.realestate.properties))).toBe(before);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: the validation names the sales and purchases after sale that are not carried out", async ({ page }) => {
+    const errors = await open(page, "realestate");
+    await box(page).check();
+    await expect(page.locator("body")).toContainText("«Immobilien nie verkaufen» ist eingeschaltet – der geplante Verkauf wird nicht ausgeführt.");
+    await noErrors(page, errors);
+  });
+});

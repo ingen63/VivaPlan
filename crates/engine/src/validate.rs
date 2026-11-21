@@ -744,6 +744,24 @@ fn check(plan: &Plan, v: &mut Issues) {
             }
         }
     }
+    // #196: With «Immobilien nie verkaufen» planned sales and purchases or rents «nach Verkauf» are not carried out.
+    if plan.realestate.never_sell {
+        for (i, p) in plan.realestate.properties.iter().enumerate() {
+            let sells = p.status != PropertyStatus::Rent && p.sell.as_ref().is_some_and(|t| !t.is_never());
+            if sells {
+                let field = format!("realestate.properties.{i}.sell");
+                v.warn_at("realestate", field, msg!(property_never_sell_sale, name = p.name));
+            }
+            let trigger = match p.status {
+                PropertyStatus::Planned => p.buy.as_ref(),
+                PropertyStatus::Rent => p.from.as_ref(),
+                PropertyStatus::Owned => None,
+            };
+            if trigger.is_some_and(|t| t.is_dynamic()) {
+                v.warn("realestate", msg!(property_never_sell_after_sale, name = p.name));
+            }
+        }
+    }
     for (i, p) in plan.realestate.properties.iter().enumerate() {
         let n = &p.name;
         let buy = p.buy.as_ref().and_then(|t| resolve(v, "realestate", arg(n), t));

@@ -490,6 +490,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     }
     let d = Affordability::default();
     let realestate = RealEstate {
+        never_sell: false,
         emergency_months: c.series_or_zero("RealEstate.ThresholdMonths")?,
         properties,
         affordability: Affordability {

@@ -686,6 +686,8 @@ pub struct Simulator {
     stock_share: Curve,
     reserve: Curve,
     emergency: Curve,
+    /// #196: Never sell a property (switch «Immobilien nie verkaufen»).
+    never_sell: bool,
     stocks0: f64,
     bonds0: f64,
     cash0: f64,
@@ -882,6 +884,7 @@ impl Simulator {
                 Curve::constant(FIXED_RESERVE_MONTHS)
             },
             emergency: curve(&plan.realestate.emergency_months)?,
+            never_sell: plan.realestate.never_sell,
             stocks0: plan.wealth.stocks,
             bonds0: plan.wealth.bonds,
             cash0: plan.wealth.cash,
@@ -963,7 +966,12 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
         })
     };
     let buy = res(&p.buy)?;
-    let sell = res(&p.sell)?;
+    // #196: With «Immobilien nie verkaufen» the planned sale is dropped; the mortgage runs until the end.
+    let sell = if plan.realestate.never_sell {
+        None
+    } else {
+        res(&p.sell)?
+    };
     let mut tranches = vec![];
     if p.status != PropertyStatus::Rent {
         if let Some(mg) = &p.mortgage {
@@ -1696,6 +1704,19 @@ impl<'a> Run<'a> {
                 s.planned_living(m) * self.infl_idx + self.running_estimate(m, k, i, tranches, keep) - income_m;
             (liquid - lump - s.emergency.at(m) * shortfall < 0.0).then_some("emergency sale criterion")
         };
+        if reason.is_some() && s.never_sell {
+            // #196: No sale: the mortgage is renewed in full; the event reports «nicht tragbar».
+            let text = msg!(
+                event_mortgage_unaffordable_kept,
+                name = name,
+                lump = lump,
+                currency = self.s.currency
+            );
+            self.event(m, EventKind::MortgageRenewal, text);
+            let rate = self.renewal_rate(i, m, k, tranches, 1.0);
+            self.push_renewal(record, rate);
+            return true;
+        }
         if let Some(reason) = reason {
             let below_zero = reason == "wealth < 0";
             let reason = if below_zero {
@@ -2605,7 +2626,7 @@ impl<'a> Run<'a> {
                 return;
             }
             // Buckets 2 and 3 are not enough: emergency sale of a property, otherwise phase 8
-            if let Some(i) = self.props.iter().position(|p| p.active) {
+            if let Some(i) = self.props.iter().position(|p| p.active).filter(|_| !self.s.never_sell) {
                 self.props[i].emergency_reason = Some(msg!(reason_pots_insufficient));
                 self.sell(i, m, EventKind::EmergencySale);
                 if self.reserved > 0.0 {
@@ -3049,7 +3070,10 @@ impl<'a> Run<'a> {
             // Check for an emergency sale (with the pensions after any indexing)
             let liquid = self.cash + self.stocks + self.bonds;
             let shortfall = living + prop_running + p3a_in - (earned + self.pk_pension() + self.ahv());
-            if liquid - s.emergency.at(m) * shortfall < 0.0 && !self.props.iter().any(|p| p.emergency_pending) {
+            if !s.never_sell
+                && liquid - s.emergency.at(m) * shortfall < 0.0
+                && !self.props.iter().any(|p| p.emergency_pending)
+            {
                 if let Some(ps) = self.props.iter_mut().find(|p| p.active) {
                     ps.emergency_pending = true;
                     ps.emergency_reason = Some(msg!(reason_emergency_criterion));
@@ -3097,7 +3121,7 @@ impl<'a> Run<'a> {
             // Depleted: debt or no more funds for uncovered expenses.
             if (liquid < -0.005 || (liquid <= 0.005 && shortfall > 0.0))
                 && self.summary.depleted.is_none()
-                && !self.props.iter().any(|p| p.active)
+                && (s.never_sell || !self.props.iter().any(|p| p.active))
             {
                 self.summary.depleted = Some(m);
                 self.event(m, EventKind::Depleted, msg!(event_depleted));
