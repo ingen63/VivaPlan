@@ -1272,6 +1272,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #192/AK5 | `docs/TESTS.md` beschreibt die erkannten Schreibweisen. | ☑ | **gilt** | – | 21.11.2026 ok (Durchsicht) |
 | #192/AK6 | Ein per Kommentar nachgetragenes Kriterium zählt als vorhanden; Beispiel #69/AK8 und #170/AK9 sind nicht verwaist. … | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_192_ak6_…» | 21.11.2026 ok (am echten Stand nicht verwaist) |
 
+### #193 Verwaiste Kennungen #69/AK8 und #170/AK9 zuordnen
+
+[Issue #193](https://github.com/ingen63/VivaPlan/issues/193) · geschlossen · Umsetzung: keine Dateiänderung (Entscheid im Issue)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #193/AK1 | `#69/AK8`: Für die Fundstellen `crates/engine/tests/strategy.rs` …, `strategy.rs`, `library.rs` und `e2e/ui-start.spec.js` ist entschieden, … | ☑ | **gilt** | [strategy.rs](../crates/engine/tests/strategy.rs) «issue_69_ak8_…» (2), [ui-start.spec.js](../e2e/ui-start.spec.js) «#69/AK8: …» | 21.11.2026 ok: Entscheid «per Kommentar bereits nachgetragen» im Issue; Tests grün |
+| #193/AK2 | `#170/AK9`: dasselbe für `crates/app/src/main.rs` (Test `issue_170_ak9_language_menu_entries`) und `e2e/ui-sprache.spec.js` (zwei Tests). | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_170_ak9_…» (2), [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «AK9» (2) | 21.11.2026 ok: Entscheid im Issue; Tests grün |
+| #193/AK3 | Danach findet der Anforderungsbezug (`make report`, mit #192) keine verwaiste Kennung ausser `#0`. | ☑ | **gilt** | `tools/report/report.py` | 21.11.2026 ok: «Verwaiste Kennungen (0)» |
+| #193/AK4 | Alle Tests bleiben grün; geändert werden nur Kennungen, Kommentare und Testnamen. | ☑ | **gilt** | `make test-quiet`, e2e gezielt | 21.11.2026 ok: keine Änderung, 789 Rust-Tests und 5 e2e-Tests grün |
+
 ### #194 Wertänderung der Liegenschaften im Hauptbuch unabhängig prüfen
 
 [Issue #194](https://github.com/ingen63/VivaPlan/issues/194) · geschlossen · Umsetzung: 933c1e4
