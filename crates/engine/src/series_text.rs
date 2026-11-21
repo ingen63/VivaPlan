@@ -189,6 +189,21 @@ mod tests {
         assert_eq!(recognize("Eigene Reihe").text(), "Eigene Reihe");
     }
 
+    /// #187/AK2: a number stays a number only if it is written as such («1988», not «01988»); an empty value does not
+    /// match a placeholder.
+    #[test]
+    fn issue_187_ak2_numbers_and_empty_values() {
+        let bonds = |year: &str| {
+            recognize(&format!(
+                "Obligationen: JST bis {year}, danach aus den monatlichen SNB-Renditen (10 Jahre); 1915 Coupon statt Rendite (Börse geschlossen)."
+            ))
+        };
+        assert_eq!(bonds("1988").param("year"), Some(&Arg::Int(1988)));
+        assert_eq!(bonds("01988").param("year"), Some(&Arg::Text("01988".into())));
+        assert_eq!(bonds("Ende").param("year"), Some(&Arg::Text("Ende".into())));
+        assert_eq!(bonds("").code(), "plain_text");
+    }
+
     #[test]
     fn issue_177_ak1_nested_sources_are_recognized() {
         let de = "Robert J. Shiller, «Irrational Exuberance», Online-Daten (ie_data); SNB (data.snb.ch): devkum, plkopr, zimoma (Stand devkum 2026-11-02 14:30, plkopr 2026-10-21 09:00); SNB (data.snb.ch): rendoblim (Stand 2025-09-01 14:29)";

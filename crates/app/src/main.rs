@@ -2972,6 +2972,16 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// #187/AK3: the command reports the system language only while there is no settings file.
+    #[test]
+    fn issue_187_ak3_first_start_language_via_command() {
+        let (_app, w, _g) = setup();
+        let first = call(&w, "first_start_language", json!({})).unwrap();
+        assert_eq!(first, json!(i18n::system_language()));
+        call(&w, "settings_set", json!({"key": i18n::SETTING, "value": "it"})).unwrap();
+        assert_eq!(call(&w, "first_start_language", json!({})).unwrap(), Value::Null);
+    }
+
     #[test]
     fn quit_has_its_own_id_and_shortcut() {
         for (id, _, _) in &own_entries() {

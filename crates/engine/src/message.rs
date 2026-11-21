@@ -905,6 +905,34 @@ mod tests {
         assert_eq!(render("{ a } {", &params), "{ a } {");
     }
 
+    /// #187/AK1: formats `fix1` and `fix2` round to one and two decimals (not the plain number).
+    #[test]
+    fn issue_187_ak1_fixed_decimals() {
+        let params: Params = vec![("x", arg(&1234.5678))];
+        assert_eq!(render("{x:fix1} {x:fix2} {x}", &params), "1234.6 1234.57 1234.5678");
+    }
+
+    /// #187/AK1: messages are equal only with equal code and equal parameters; comparison with texts and the
+    /// conversion to a string use the rendered text.
+    #[test]
+    fn issue_187_ak1_equality_text_and_parameters() {
+        assert_eq!(msg!(person_n, n = 1), msg!(person_n, n = 1));
+        assert_ne!(msg!(person_n, n = 1), msg!(person_n, n = 2));
+        assert_ne!(msg!(cancelled), msg!(plain_text, text = "Cancelled"));
+        let m = msg!(cancelled);
+        assert!(m == "Cancelled");
+        assert!(m != "Nope");
+        assert!(m == "Cancelled".to_string());
+        assert!(m != "Nope".to_string());
+        assert_eq!(String::from(msg!(cancelled)), "Cancelled");
+        let m = Message::new(Code::person_n, vec![("a", Arg::Int(1)), ("n", Arg::Int(2))]);
+        assert_eq!(m.param("n"), Some(&Arg::Int(2)));
+        assert_eq!(m.param("a"), Some(&Arg::Int(1)));
+        assert_eq!(m.param("x"), None);
+        assert_eq!(arg(&true), Arg::Bool(true));
+        assert_eq!(arg(&false), Arg::Bool(false));
+    }
+
     #[test]
     fn issue_171_message_serializes_code_params_text() {
         let m = msg!(cancelled);

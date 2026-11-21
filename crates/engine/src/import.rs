@@ -660,4 +660,57 @@ mod tests {
         in_usd.meta.currency = Some("USD".into());
         assert!(with_ch_bonds(&in_usd, &snb).is_err());
     }
+
+    /// #187/AK2: a file that cannot be read is an error (not an empty series).
+    #[test]
+    fn issue_187_ak2_shiller_file_missing_is_an_error() {
+        let path = std::env::temp_dir().join(format!("vivaplan-missing-{}.xlsx", std::process::id()));
+        assert!(read_shiller(&path).is_err());
+    }
+
+    fn months(from: YearMonth, values: &[f64]) -> Monthly {
+        values
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (from.plus(i as i32), *v))
+            .collect()
+    }
+
+    /// #187/AK2: conversion to CHF and Swiss bonds when the SNB data starts after the first month of the series: the
+    /// series is cut to the covered months; notes on stocks of the USD series are kept.
+    #[test]
+    fn issue_187_ak2_conversion_starts_with_the_covered_months() {
+        let jan = YearMonth::new(2001, 1);
+        let snb = SnbData {
+            usd_chf: months(YearMonth::new(2000, 12), &[2.0, 2.0, 2.0]),
+            cpi: months(YearMonth::new(2000, 1), &[100.0; 15]),
+            ch_yield10: months(jan, &[0.03, 0.03]),
+            ..Default::default()
+        };
+        let usd = DataSet {
+            name: "u".into(),
+            freq: Freq::Monthly,
+            first: YearMonth::new(2000, 11),
+            stocks: vec![0.0; 4],
+            bonds: vec![0.0; 4],
+            inflation: vec![0.0; 4],
+            meta: Meta {
+                notes: vec![
+                    msg!(plain_text, text = "Stocks: own note"),
+                    msg!(plain_text, text = "Aktien: eigene Notiz"),
+                    msg!(plain_text, text = "Other note"),
+                ],
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let chf = to_chf(&usd, &snb).unwrap();
+        assert_eq!((chf.first, chf.len()), (jan, 2));
+        let notes: Vec<&str> = chf.meta.notes.iter().map(|n| n.text()).collect();
+        assert!(notes.contains(&"Stocks: own note"), "{notes:?}");
+        assert!(notes.contains(&"Aktien: eigene Notiz"), "{notes:?}");
+        assert!(!notes.contains(&"Other note"), "{notes:?}");
+        let ch = with_ch_bonds(&chf, &snb).unwrap();
+        assert_eq!((ch.first, ch.len()), (YearMonth::new(2001, 2), 1));
+    }
 }

@@ -140,7 +140,7 @@ exclude_re = [
     "upgrade\\.rs:\\d+:49: replace \\|\\| with && in pillar3a",
     "upgrade\\.rs:\\d+:62: replace \\* with [+/] in pillar3a",
     # Prüfung: Eine indirekte Amortisation von 0 erhöht das Maximum nicht.
-    "validate\\.rs:881:32: replace > with >= in check",
+    "validate\\.rs:843:32: replace > with >= in check",
 
     # --- #124, Grenzfälle ---
     # Säule 3a: Wunschbetrag genau Guthaben + 0.005, Rest genau 0.005 (Rundungstoleranz).
@@ -150,11 +150,11 @@ exclude_re = [
     "strategy\\.rs:\\d+:24: replace > with >= in weight_issue",
     # Alter genau auf der Grenze ± 1e-9 (Import und Prüfung).
     "upgrade\\.rs:\\d+:30: replace (< with <=|> with >=) in milestones",
-    "validate\\.rs:323:(20: replace < with <=|39: replace > with >=) in check",
+    "validate\\.rs:352:(20: replace < with <=|39: replace > with >=) in check",
     # Prüfung: Wohnanteil, Maximalbetrag der 3a mit indirekter Amortisation (Rundungstoleranz 0.005).
-    "validate\\.rs:377:26: replace < with <= in check",
-    "validate\\.rs:937:40: replace > with >= in check",
-    "validate\\.rs:1006:21: replace > with >= in check",
+    "validate\\.rs:406:26: replace < with <= in check",
+    "validate\\.rs:888:40: replace > with >= in check",
+    "validate\\.rs:969:21: replace > with >= in check",
     # #106, App (`crates/app/src/main.rs`): Die folgenden Mutanten betreffen Aufrufe, die erst eine laufende Anwendung mit
     # Fenster, Betriebssystem-Dialog oder Ereignisschleife auslöst. Die Mock-Runtime von Tauri (`tauri::test`) kann sie nicht
     # erzeugen (`request_exit` ist dort nicht umgesetzt, `ExitRequestApi` hat keinen öffentlichen Konstruktor). Die
@@ -193,13 +193,32 @@ exclude_re = [
     "api\\.rs:\\d+:\\d+: replace match guard m\\.file_type\\(\\)\\.is_symlink\\(\\) with true in write_atomic",
     # Speichergrenze: Die Prüfung kommt erst nach «Ende nach Start», es gibt also immer mindestens einen Monat; mit
     # months = 0 wäre das Produkt 0 und die Bedingung ebenfalls falsch.
-    "validate\\.rs:215:19: replace > with >= in check",
+    "validate\\.rs:209:19: replace > with >= in check",
     # --- #162, Grenzfälle ---
     # Fallende Steuer: Der Satz der letzten Zeile einer Gruppe liegt genau um die Toleranz EPS (1e-12) unter dem der
     # ersten; bei gerechneten Sätzen kommt das nicht vor.
     "tax\\.rs:\\d+:52: replace < with <= in falling_row",
     # Fallende Steuer: Ableitung (Anfang bzw. Ende eines Abschnitts) genau −EPS.
     "tax\\.rs:\\d+:(26|48): replace < with <= in falling_row",
+
+    # --- #187 (mutants-diff vom 21.11.2026), gleichwertig ---
+    # Fehlender Parameter: Der Zweig löst in Test-Builds `debug_assert!` aus, bevor der Text zusammengesetzt wird; die
+    # Vorlagen aller Codes und ihre Parameter prüft `issue_171_ak3_examples_file_is_current`.
+    "message\\.rs:\\d+:(49|77): replace \\+ with [-*] in render",
+    # Platzhalter: Der Rest beginnt bei «}» bzw. beim letzten Zeichen des Namens statt dahinter; beide enthalten kein «{»,
+    # die gefundenen Platzhalter bleiben gleich.
+    "message\\.rs:\\d+:33: replace \\+ with [-*] in placeholders",
+    # Vorlage, die mit «{» beginnt: Mit `>=` kommt ein leerer Textteil dazu, und ein leerer Präfix passt immer.
+    "series_text\\.rs:\\d+:14: replace > with >= in parts",
+    # Kapitalsteuer: `year_capital` hat einen Eintrag je Person, der Index der Person ist immer kleiner; die Grenze
+    # `len − 1` greift nie (`len + 1` und `len / 1` ebenso wenig).
+    "sim\\.rs:\\d+:48: replace - with [+/] in Run<'a>::capital_tax",
+    # Sprache wählen: Tabellen und Liste der Sprachen enthalten dieselben Sprachen (`every_language_has_a_compiled_table`),
+    # die zweite Bedingung ändert das Ergebnis nie.
+    "i18n\\.rs:\\d+:(45: replace && with \\|\\||83: replace == with !=) in pick",
+    # Menü «Ansicht → Sprache»: muda baut Menüs unter macOS nur im Hauptthread, auch mit der Mock-Runtime (wie
+    # `install_menu`); die Einträge sind in `language_entries` getestet.
+    "main\\.rs:\\d+:14: replace == with != in language_menu",
 ]
 
 # #43: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).

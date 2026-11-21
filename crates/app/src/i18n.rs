@@ -267,6 +267,9 @@ mod tests {
         assert_eq!((l.language(), l.choice()), ("de".to_string(), SYSTEM.to_string()));
         let l = startup(None, || "de".into());
         assert_eq!(l.choice(), SYSTEM);
+        // #187/AK3: «wie System» takes the language of the system, not a language named «system».
+        let l = startup(Some(SYSTEM), || "fr".into());
+        assert_eq!((l.language(), l.choice()), ("fr".to_string(), SYSTEM.to_string()));
         l.set("fr-CH", "fr");
         assert_eq!(l.language(), pick(Some("fr")));
         assert_eq!(l.choice(), "fr");

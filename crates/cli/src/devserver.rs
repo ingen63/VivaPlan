@@ -233,6 +233,7 @@ mod tests {
             ("a.svg", "image/svg+xml"),
             ("a.png", "image/png"),
             ("a.md", "text/markdown"),
+            ("a.json", "application/json"),
             ("a.bin", "application/octet-stream"),
             ("a", "application/octet-stream"),
         ] {

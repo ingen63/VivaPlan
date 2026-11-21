@@ -1282,4 +1282,35 @@ mod tests {
         assert_eq!(serde_json::to_value(&age).unwrap()["kind"], json!("age"));
         assert!(serde_json::to_value(&date).unwrap().get("kind").is_none());
     }
+
+    /// #187/AK2: German names of the fixed milestones as older plans stored them, by id.
+    #[test]
+    fn issue_187_ak2_stored_milestone_names() {
+        let name = |id: &str| stored_milestone_name(id);
+        assert_eq!(name("start").as_deref(), Some(START_NAME));
+        assert_eq!(name("end").as_deref(), Some(END_NAME));
+        assert_eq!(name("retire").as_deref(), Some(PK_NAME));
+        assert_eq!(name("ahv").as_deref(), Some(AHV_NAME));
+        assert_eq!(name("retire2"), Some(format!("{PK_NAME} Person 2")));
+        assert_eq!(name("ahv2"), Some(format!("{AHV_NAME} Person 2")));
+        assert_eq!(name("house"), None);
+    }
+
+    /// #187/AK2: a fixed milestone without a name is the fixed name as a message, any other the name entered.
+    #[test]
+    fn issue_187_ak2_name_arg_of_milestones() {
+        use crate::message::Arg;
+        let ms = |id: &str, name: &str| Milestone {
+            id: id.into(),
+            name: name.into(),
+            kind: MilestoneKind::Date {
+                date: YearMonth::new(2040, 1),
+            },
+            fixed: false,
+        };
+        assert_eq!(ms("retire", "").name_arg(), Arg::Msg(Box::new(msg!(milestone_retire))));
+        assert_eq!(ms("retire", "Frühpension").name_arg(), Arg::Text("Frühpension".into()));
+        assert_eq!(ms("house", "Hauskauf").name_arg(), Arg::Text("Hauskauf".into()));
+        assert_eq!(ms("house", "").name_arg(), Arg::Text("house".into()));
+    }
 }
