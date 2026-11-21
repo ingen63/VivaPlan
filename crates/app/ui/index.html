@@ -114,7 +114,7 @@ svg.mini.zoomable{height:96px;cursor:grab;user-select:none}
 .minizoom span{font-size:10.5px;color:var(--faint);margin-left:4px}
 
 .runedit{width:100%;box-sizing:border-box;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:3px 5px;border-radius:5px}
-.runedit[data-f="name"]{min-width:28em} /* #182/AK4: the generated name (plan · series · strategy · date) fits */
+.runedit[data-f="name"]{min-width:32em} /* #182/AK4: the generated name (plan · series · strategy · date) fits, also with the wider fonts of Linux */
 .runedit:hover{border-color:var(--border)} .runedit:focus{border-color:var(--accent);background:var(--panel);outline:0}
 .savedbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:12px;background:var(--accent-soft)}
 .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
@@ -162,7 +162,7 @@ table.sctbl td.bad{color:var(--err);font-weight:600}
 
 .prop{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;background:var(--panel2)}
 .prop .phead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.prop .phead .inp{max-width:240px}
+.prop .phead .inp{max-width:240px} /* #182/AK4: the width follows the name (attribute size), a long name moves the market value below */
 .prop .phead .seg{margin-left:auto}
 .prop .phead{flex-wrap:wrap}.prop .phead .pworth{min-width:260px;flex:0 1 300px}
 .prop h4{margin:12px 0 8px;font-size:13px;color:var(--muted);font-weight:600}

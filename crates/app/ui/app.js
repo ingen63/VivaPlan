@@ -419,7 +419,7 @@ async function blockedByErrors() {
 function F(path, label, type = "chf", o = {}) {
   const v = getP(path), unit = o.unit ?? (UNIT[type] ? UNIT[type]() : "");
   const cls = ["chf", "chfopt", "pct", "num", "months", "years"].includes(type) ? "num" : "";
-  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""} value="${esc(showVal(type, v))}" ${type === "month" ? `placeholder="${tr("input.datePlaceholder")}"` : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
+  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""}${o.size ? ` size="${o.size}"` : ""} value="${esc(showVal(type, v))}" ${type === "month" ? `placeholder="${tr("input.datePlaceholder")}"` : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
   if (o.bare) return input;
   return `<label class="field"><span>${label}${reqMark(path)}</span>${input}${o.hint ? `<span class="computed">${o.hint}</span>` : ""}</label>`;
 }
@@ -1114,7 +1114,7 @@ function MortgageUI(p, i) {
         ${owned ? F(T + ".start", tr("mortgage.currentStart"), "month") : `<label class="field"><span>${tr("mortgage.start")}</span><span class="computed" style="padding:8px 0">${tr("mortgage.atPurchaseDate", { esc: esc(msName(p.buy)) })}</span></label>`}
         <label class="field" style="grid-column:span 2"><span>${tr("mortgage.afterLast")}</span>${Sel(T + ".after", [["renew", tr("mortgage.extend")], ["repay", tr("mortgage.repay")]])}</label>
         ${state.household.persons.length > 1 && t.periods.some(d => d.amortMode === "indirect") ? `<label class="field"><span>${tr("mortgage.pillar3a")}</span>${Sel(T + ".pillar3a", state.household.persons.map(q => [q.id, q.name || q.id]))}</label>` : ""}</div>
-      <div style="overflow-x:auto"><table class="tbl mtbl"><colgroup><col style="width:68px"><col style="width:90px"><col style="width:82px"><col style="width:130px"><col style="width:212px"><col><col style="width:36px"></colgroup><tr><th>${tr("mortgage.period")}</th><th>${tr("mortgage.type")}</th><th>${tr("mortgage.term")}</th><th>${tr("mortgage.rate")}</th><th>${tr("mortgage.amortQuarter")}</th><th>${tr("mortgage.periodDebt")}</th><th></th></tr>${rows}</table></div>
+      <div style="overflow-x:auto"><table class="tbl mtbl"><colgroup><col style="width:68px"><col style="width:96px"><col style="width:82px"><col style="width:130px"><col style="width:212px"><col><col style="width:36px"></colgroup><tr><th>${tr("mortgage.period")}</th><th>${tr("mortgage.type")}</th><th>${tr("mortgage.term")}</th><th>${tr("mortgage.rate")}</th><th>${tr("mortgage.amortQuarter")}</th><th>${tr("mortgage.periodDebt")}</th><th></th></tr>${rows}</table></div>
       <div style="margin-top:8px"><button class="btn small" data-action="period-add" data-i="${i}" data-t="${ti}">${tr("mortgage.addFollowUp")}</button></div></div>`;
   }).join("");
   const p3a = anyIndirect ? `<p class="hint">${tr("mortgage.indirectHint")}</p>` : "";
@@ -1141,7 +1141,7 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
       ${F(P + ".fixCosts", tr("realestate.costsMonth"), "chf")}</div>
       <div class="grid3" style="margin-top:10px">${Chk(P + ".inflationValue", tr("realestate.valueIndexed"))}${Chk(P + ".inflationFixCosts", tr("realestate.costsIndexed"))}</div>
       ${MortgageUI(p, i)}`;
-    return `<div class="prop"><div class="phead">${F(P + ".name", "", "text", { bare: true })}
+    return `<div class="prop"><div class="phead">${F(P + ".name", "", "text", { bare: true, size: Math.max(20, (p.name || "").length + 4) })}
       ${p.status === "owned" ? `<div class="pworth">${F(P + ".worth", tr("realestate.marketValue", { startTxt: startTxt() }), "chf")}</div>` : ""}
       <div class="seg">${PSTAT.map(([k, l]) => `<button class="${p.status === k ? "on" : ""}" data-action="pstat" data-i="${i}" data-v="${k}">${l}</button>`).join("")}</div>
       <button class="btn ghost small" data-action="list-del" data-path="realestate.properties" data-i="${i}" title="${tr("realestate.remove")}">✕</button></div>${body}</div>`;
