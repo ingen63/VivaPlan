@@ -1259,6 +1259,25 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #187/AK3 | Tests erkennen die Mutanten in `crates/app` (`pick`, `startup`, `language_menu`, `first_start_language`) und `devserver::content_type`. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_187_ak3_first_start_language_via_command», [i18n.rs](../crates/app/src/i18n.rs) «startup_language_uses_the_saved_choice_or_the_system», [devserver.rs](../crates/cli/src/devserver.rs) «content_types_follow_the_extension» | 21.11.2026 ok; `pick` gleichwertig, `language_menu` nur im Hauptthread (begründet ausgeschlossen) |
 | #187/AK4 | `cargo mutants` auf den betroffenen Dateien meldet keine nicht erkannten Mutanten mehr (ausser begründeten). | ☑ | **gilt** | `mutants-diff` in `test-quality.yml` | 21.11.2026 ok: lokal 44 von 44 erkannt; CI-Lauf 44907095566 1063 Mutanten, 0 nicht erkannt |
 
+### #190 13. AHV-Rente im Dezember
+
+[Issue #190](https://github.com/ingen63/VivaPlan/issues/190) · geschlossen · Umsetzung: 44a0619
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #190/AK1 | Die rechtliche Grundlage (Gesetz, Beginn, Höhe) ist im Issue mit Quelle festgehalten, bevor die Umsetzung beginnt. | ☑ | **gilt** | – | 21.11.2026 ok (Kommentar mit Quellen im Issue) |
+| #190/AK2 | Im Dezember jedes Jahres ab 2026 wird zusätzlich zur AHV-Rente des Monats eine 13. Rente in gleicher Höhe ausbezahlt; … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak2_…» | 21.11.2026 ok |
+| #190/AK3 | Beginnt die AHV im Laufe eines Jahres, ist die Höhe der 13. Rente in diesem Jahr nach der gesetzlichen Regel entschieden … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak3_…» (2) | 21.11.2026 ok (anteilig, 1'260) |
+| #190/AK4 | Für Ehepaare ist entschieden und getestet, ob und wie der Plafond (`ahvCoupleCap`) für die 13. Rente gilt; … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak4_…» (2) | 21.11.2026 ok (2'205 + 945, keine zweite Deckelung) |
+| #190/AK5 | Referenztest mit Handrechnung in `crates/engine/tests/reference.rs`; jede Änderung der Golden-Dateien ist im Issue begründet. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_…», `golden.rs` | 21.11.2026 ok (Golden 02–04, Begründung im Issue) |
+| #190/AK6 | Jahreswerte zeigen die 13. Rente im Dezember im AHV-Einkommen. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK6» | 21.11.2026 ok |
+| #190/AK7 | Hilfe (Abschnitt AHV, vier Sprachen), `docs/BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | – | 21.11.2026 ok (Durchsicht) |
+| #190/AK8 | Das Eingabefeld «Rente pro Monat bei Bezugsbeginn» zeigt einen Hinweis, welcher Betrag gemeint ist: … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK8» | 21.11.2026 ok |
+| #190/AK9 | Der Monatsanteil wird auf Rappen, die Summe im Dezember kaufmännisch auf ganze Franken gerundet (Kommentar). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak9_…» | 21.11.2026 ok |
+| #190/AK10 | Endet die Simulation vor Dezember, wird für dieses Jahr keine 13. Rente ausbezahlt (Kommentar). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak10_…» | 21.11.2026 ok |
+| #190/AK11 | Eine 13. Rente gibt es erst ab Dezember 2026, auch wenn die Simulation früher beginnt (Kommentar). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak11_…» | 21.11.2026 ok |
+| #190/AK12 | Beim Öffnen einer älteren Planung erscheint der Hinweis zur 13. Rente einmalig; Test mit einer alten Datei (Kommentar). | ☑ | **gilt** | [upgrade_api.rs](../crates/engine/tests/upgrade_api.rs) «issue_190_ak12_…», [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK12» | 21.11.2026 ok |
+
 ### #192 Anforderungsbezug: Kennungslisten erkennen und verwaiste Kennungen melden
 
 [Issue #192](https://github.com/ingen63/VivaPlan/issues/192) · geschlossen · Umsetzung: 7e93347
