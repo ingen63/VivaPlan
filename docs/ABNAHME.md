@@ -814,3 +814,18 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #132/AK6 | Die Golden-Dateien (`crates/engine/tests/golden/`) ändern sich nicht, oder die Änderung wird im Issue begründet. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 18.11.2026 ok (nur `08-parametrisch.json`, begründet im Issue) |
 | #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui-abnahme.spec.js](../e2e/ui-abnahme.spec.js) «AK7: …» | 18.11.2026 ok |
 | #132/AK8 | Keine Netzwerkzugriffe und keine Abhängigkeit von Grafiktreibern; `docs/ENTWICKLUNG.md` (Abschnitt Monte Carlo) beschreibt das Verfahren. | ☑ | **gilt** | kein Test (Durchsicht `Cargo.toml`, `docs/ENTWICKLUNG.md`) | 18.11.2026 ok |
+
+### #188 Release Notes in vier Sprachen
+
+[Issue #188](https://github.com/ingen63/VivaPlan/issues/188) · offen (`implemented`) · Umsetzung: c17f7ff, 5ebe461 (Titel)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #188/AK1 | Neben `CHANGELOG.md` gibt es `CHANGELOG.en.md`, `CHANGELOG.fr.md` und `CHANGELOG.it.md`, jede mit einem Eintrag für jede Version ab … | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak1_…» (2 Tests) | 21.11.2026 ok |
+| #188/AK2 | Jeder Eintrag in jeder Sprache trennt die Abschnitte «Neu/Geändert/Behoben», «Kann Ergebnisse ändern» und «Tests und Entwicklung». … | ☑ | **gilt** (Reihenfolge: «Kann Ergebnisse ändern» zuerst) | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak2_…» (5 Tests) | 21.11.2026 ok |
+| #188/AK3 | Eine Prüfung meldet einen Fehler, wenn sich eine Übersetzung von der deutschen Fassung unterscheidet: in den Versionsüberschriften, … | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak3_…» (9 Tests) | 21.11.2026 ok (Beispiel #185 in fr) |
+| #188/AK4 | Die Prüfung meldet in den Übersetzungen verbotene Varianten aus `docs/GLOSSAR.md`. Beispiel: «Liquidità» in `CHANGELOG.it.md` … | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak4_…» (3 Tests) | 21.11.2026 ok |
+| #188/AK5 | Die Prüfung läuft in `make test-quiet` und im GitHub-Lauf (Job `english` oder ein eigener Job). | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak5_…» | 21.11.2026 ok: `make test-quiet` lokal, Lauf [44922524561](https://github.com/ingen63/VivaPlan/actions/runs/44922524561) |
+| #188/AK6 | Ein Skript in `tools/` erzeugt aus den vier Dateien den Text für den Release einer Version: Englisch zuerst und offen; … | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak6_…» (6 Tests) | 21.11.2026 ok (Entwurf v1.0.0-beta.2 trägt den Text) |
+| #188/AK7 | `pakete.yml` setzt diesen Text als Beschreibung des Release-Entwurfs. Der Paketbau bricht ab, wenn die Version des Tags in einer der … | ☐ | **gilt** (dazu der Titel, Kommentar im Issue) | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak7_…» | 21.11.2026 nicht geprüft: nur lokal nachgestellt; auf GitHub erst beim nächsten Tag |
+| #188/AK8 | `docs/ENTWICKLUNG.md` beschreibt den Ablauf pro Release: deutschen Eintrag schreiben, übersetzen, prüfen, taggen. | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak8_…» | 21.11.2026 ok |
