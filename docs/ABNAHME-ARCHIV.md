@@ -1191,14 +1191,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #182 Fachliche Prüfung der Übersetzungen durch Muttersprachler
 
-[Issue #182](https://github.com/ingen63/VivaPlan/issues/182) · geschlossen · Umsetzung: 4221280, 2f31420, d9da4a7 und die Nacharbeit zu AK5
+[Issue #182](https://github.com/ingen63/VivaPlan/issues/182) · geschlossen · Umsetzung: 4221280, 2f31420, d9da4a7, die Nacharbeit zu AK5 und a9359be (AK4 unter Linux und Windows)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #182/AK1 | Gemeinsame Prüftabelle `local/i18n-review/tabelle.csv` mit allen Texten und Hilfeabsätzen, Spalten nach Vorgabe, per Skript erzeugt, direkt in Excel lesbar. | ☑ | **gilt** (geändert per Kommentar vom 20.11.2026: Tabelle statt Bildergalerie) | [test_i18n_review_table.py](../tools/test_i18n_review_table.py) | 21.11.2026 ok: 2347 Zeilen (1709 Schlüssel, 638 Hilfeblöcke), 675 kritisch, UTF-8 mit BOM und `;`; 6 Tests grün |
 | #182/AK2 | Für jeden Befund aus `local/i18n-review/<sprache>.csv` ist der Entscheid vermerkt. | ☑ | **gilt** | kein Test (Auswertung `entscheidliste.csv`) | 21.11.2026 ok: 179 Befunde in 270 Zeilen aufgegangen, jede mit Entscheid (261 übernommen, 5 angepasst, 4 verworfen) |
 | #182/AK3 | Die kritischen Texte sind vollständig geprüft (Felder, Meldungen, Haftungsausschluss, `60-referenz.md`, Stichworte). | ☑ | **gilt** | kein Test (Durchsicht der Prüfprotokolle) | 21.11.2026 ok mit Einschränkung: zwei maschinelle Durchgänge (#181, Gemini) und Abnahme durch den Projektinhaber; Gemini Teil 01 ohne Lesebestätigung; keine Muttersprachler |
-| #182/AK4 | Playwright-Test: jede Ansicht, jeder Dialog und jede Hilfeseite in DE, EN, FR, IT ohne abgeschnittenen oder überlappenden Text. | ☑ | **gilt** (geändert per Kommentar vom 20.11.2026) | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) «Text fits in every language (#182)» «AK4 …» | 21.11.2026 ok: 16 Tests grün; Fenster 1440 × 920, Desktop-App nicht von Hand geprüft |
+| #182/AK4 | Playwright-Test: jede Ansicht, jeder Dialog und jede Hilfeseite in DE, EN, FR, IT ohne abgeschnittenen oder überlappenden Text. | ☑ | **gilt** (geändert per Kommentar vom 20.11.2026) | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) «Text fits in every language (#182)» «AK4 …» | 21.11.2026 ok: 16 Tests grün; Fenster 1440 × 920, Desktop-App nicht von Hand geprüft. In CI (Linux) danach rot, wieder geöffnet; Nachprüfung 21.11.2026 nach a9359be ok: lokal 16 Tests grün, CI-Lauf 44912644203 `e2e` grün; Gegenprobe ohne Silbentrennung (wie Linux und WebView2) |
 | #182/AK5 | Korrekturen in Texttabellen und Hilfe, Begriffe im Glossar, `make i18n-check` grün. | ☑ | **gilt** | [check_i18n.py](../tools/check_i18n.py) (`make i18n-check`), [help.rs](../crates/app/tests/help.rs) «issue_173_ak3_quoted_screen_labels_are_in_the_text_table» | 21.11.2026 ok nach Nacharbeit: Texttabellen (155) und Glossar ok, i18n-check 0 Befunde; Hilfe: Nr. 85 (EN) und 250 (IT) nachgetragen, Nr. 200 (FR) verworfen, weil zusammengesetzte Knopfbeschriftungen nach #173 in ‹…› stehen |
 | #182/AK6 | Je Sprache ist im Issue vermerkt, wer geprüft hat (Rolle) und wann. | ☑ | **gilt** | kein Test (Durchsicht) | 21.11.2026 ok: Kommentar vom 20.11.2026 |
 
