@@ -509,7 +509,7 @@ fn issue_132_ak7_older_parametric_plans_get_a_note() {
     assert!(out.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
     assert!(!out.notes.iter().any(|n| n == note));
     // new plans (template, example) carry the flag and stay without a note
-    let new_plan: serde_json::Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    let new_plan: serde_json::Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     for mut v in [new_plan, api::example_plan()] {
         assert_eq!(
             v["returns"]["parametric"]["sampler"],

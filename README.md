@@ -98,7 +98,7 @@ Abdeckung von mindestens 80 % je Paket, Mutationstests und Fuzzing.
 
 ```sh
 cargo build --release
-target/release/vivaplan run crates/engine/assets/beispiel.vplan --events   # Ausgabe englisch (#176)
+target/release/vivaplan run crates/engine/assets/example.vplan --events   # Ausgabe englisch (#176)
 make test        # alle Rust-Tests mit nextest (nicht cargo test; Grund in docs/TESTS.md)
 ```
 

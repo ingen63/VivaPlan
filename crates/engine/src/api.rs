@@ -26,7 +26,7 @@ pub fn gain_templates() -> Value {
 }
 
 pub fn example_plan() -> Value {
-    serde_json::from_str(include_str!("../assets/beispiel.vplan")).expect("Beispiel ist gültig")
+    serde_json::from_str(include_str!("../assets/example.vplan")).expect("Beispiel ist gültig")
 }
 
 fn parse(plan: &Value) -> Result<Plan, Issue> {
@@ -670,7 +670,7 @@ mod tests {
     use serde_json::json;
 
     fn example() -> Value {
-        serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
+        serde_json::from_str(include_str!("../assets/new.vplan")).unwrap()
     }
 
     /// #162/AK1: The temporary file is in the folder of the target file (otherwise the replacement would not be atomic and would fail

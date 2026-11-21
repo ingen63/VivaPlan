@@ -22,7 +22,7 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #3/AK1 | Mit `examples/Test 1.rplan` hat jedes Kauf-, Verkaufs- und Notverkaufsereignis eine Beschriftung. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `beispiel.vplan` oder einer erfundenen Planung. | [ui-start.spec.js:10](../e2e/ui-start.spec.js#L10) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
+| #3/AK1 | Mit `examples/Test 1.rplan` hat jedes Kauf-, Verkaufs- und Notverkaufsereignis eine Beschriftung. | ☑ | **gilt**: Die Planung `examples/Test 1.rplan` gibt es nicht mehr (#26); prüfen mit der Beispielplanung `example.vplan` oder einer erfundenen Planung. | [ui-start.spec.js:10](../e2e/ui-start.spec.js#L10) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
 | #3/AK2 | Keine zwei Beschriftungen überdecken sich. | ☑ | **gilt** | [ui-start.spec.js:10](../e2e/ui-start.spec.js#L10) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
 | #3/AK3 | Ereignisse und Meilensteine sind ohne Farbunterscheidung auseinanderzuhalten. | ☑ | **gilt** | [ui-start.spec.js:10](../e2e/ui-start.spec.js#L10) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
 | #3/AK4 | Bei mehr als 15 Ereignissen erscheinen nur Symbole, Text beim Hover. | ☑ | **gilt** | [ui-start.spec.js:10](../e2e/ui-start.spec.js#L10) (prüft alle fünf Kriterien, nennt die Kennungen nicht) | 15.11.2026 ok (e2e, grün) |
@@ -36,12 +36,12 @@ Keine Kriterien im Issue; der Entscheid zum Verhalten steht im Issue-Text.
 |---|---|---|---|---|---|
 | #4/AK1 | Planung öffnen, App beenden, neu starten: dieselbe Planung ist geladen, der Dateiname steht im Kopf. | ☑ | **gilt** | [app/main.rs:1964](../crates/app/src/main.rs#L1964), [app/main.rs:2005](../crates/app/src/main.rs#L2005), [ui-optimierung.spec.js:162](../e2e/ui-optimierung.spec.js#L162) | 15.11.2026 ok (Tests grün; echter Neustart vom Anwender geprüft) |
 | #4/AK2 | Speichern unter neuem Namen und Neustart: die neue Datei wird geöffnet. | ☑ | **gilt** | [app/main.rs:2020](../crates/app/src/main.rs#L2020), [app/main.rs:2005](../crates/app/src/main.rs#L2005) | 15.11.2026 ok (Tests grün; echter Neustart vom Anwender geprüft) |
-| #4/AK3 | Erststart ohne Merkung: Beispielplanung, kein Hinweis. | ☑ | **überholt**: durch #70 und #61: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `Neu.vplan`. | [app/main.rs:1919](../crates/app/src/main.rs#L1919), [ui-optimierung.spec.js:162](../e2e/ui-optimierung.spec.js#L162) | 15.11.2026 ok (Tests grün); ohne Hinweis, dazu Willkommensdialog (#70) |
+| #4/AK3 | Erststart ohne Merkung: Beispielplanung, kein Hinweis. | ☑ | **überholt**: durch #70 und #61: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `new.vplan`. | [app/main.rs:1919](../crates/app/src/main.rs#L1919), [ui-optimierung.spec.js:162](../e2e/ui-optimierung.spec.js#L162) | 15.11.2026 ok (Tests grün); ohne Hinweis, dazu Willkommensdialog (#70) |
 | #4/AK4 | Datei zwischen den Starts gelöscht: Beispielplanung und Hinweis «Zuletzt geöffnete Datei nicht gefunden». | ☑ | **gilt** | [app/main.rs:1977](../crates/app/src/main.rs#L1977), [ui-optimierung.spec.js:205](../e2e/ui-optimierung.spec.js#L205) | 15.11.2026 ok (Tests grün) |
 | #4/AK5 | «Neue Planung» ohne Speichern, dann Neustart: die zuletzt gespeicherte Planung wird geöffnet. | ☑ | **gilt** | kein Test (Code: «Neue Planung» ruft `remember_plan` nicht auf) | 15.11.2026 ok (Code gelesen) |
 | #4/AK6 | Beenden mit ungespeicherten Änderungen: Dialog mit Speichern, Verwerfen, Abbrechen; Abbrechen lässt die App offen. | ☑ | **gilt** | [app/main.rs:2042](../crates/app/src/main.rs#L2042), [ui-optimierung.spec.js:213](../e2e/ui-optimierung.spec.js#L213) | 15.11.2026 ok (Tests grün) |
 | #4/AK7 | Die Merkung enthält nur den Dateipfad und bleibt lokal. | ☑ | **gilt** | [app/main.rs:2005](../crates/app/src/main.rs#L2005) | 15.11.2026 ok (Code gelesen: `lastPlan` ist der Pfad) |
-| #4/AK8 | Die Beispielplanung enthält keine persönlichen Daten und ist ohne Fehler simulierbar. | ☑ | **gilt**: Beispielplanung heute `crates/engine/assets/beispiel.vplan`. | [app/main.rs:1094](../crates/app/src/main.rs#L1094), [app/main.rs:1486](../crates/app/src/main.rs#L1486), [app/main.rs:2061](../crates/app/src/main.rs#L2061) | 15.11.2026 ok (Tests grün) |
+| #4/AK8 | Die Beispielplanung enthält keine persönlichen Daten und ist ohne Fehler simulierbar. | ☑ | **gilt**: Beispielplanung heute `crates/engine/assets/example.vplan`. | [app/main.rs:1094](../crates/app/src/main.rs#L1094), [app/main.rs:1486](../crates/app/src/main.rs#L1486), [app/main.rs:2061](../crates/app/src/main.rs#L2061) | 15.11.2026 ok (Tests grün) |
 
 ### #5 Ergebnisse: Reiter «Parameter»
 
@@ -887,7 +887,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #153/AK1 | `beispiel.vplan` und `Neu.vplan` enthalten `"auto": true` bei `returns.parametric`; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «issue_137_ak5_…» | 18.11.2026 ok |
+| #153/AK1 | `example.vplan` und `new.vplan` enthalten `"auto": true` bei `returns.parametric`; | ☑ | **gilt** | [proptest_upgrade.rs](../crates/engine/tests/proptest_upgrade.rs) «issue_137_ak5_…» | 18.11.2026 ok |
 | #153/AK2 | Ändern sich dadurch Ergebnisse von Tests (z. | ☑ | **gilt** | kein Test (Git-Verlauf Golden) | 18.11.2026 ok |
 
 ### #154 Nachführen holt die Wohnkosten-Anpassung erst beim zweiten Öffnen nach
@@ -1013,7 +1013,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #166/AK1 | `tools/check-english.sh` meldet für `crates/engine/` keine Treffer; die Pfade sind aus der Übergangsliste entfernt. | ☑ | **gilt** | [test_check_english.py](../tools/test_check_english.py) «test_ak4_transition_list_holds_unconverted_paths»; `tools/check-english.sh --all crates/engine` | 19.11.2026 ok: keine Treffer in 88 Dateien; Übergangsliste nur noch App, e2e |
-| #166/AK2 | Bezeichner und Testnamen folgen dem Glossar; Kriterien-Bezüge bleiben erhalten (`#27/AK2`, `issue_27_ak2_…`, `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`). | ☑ | **gilt** | kein Test (Vergleich der Kennungen vor und nach der Umstellung) | 19.11.2026 ok: `#Nr/AKn`, `issue_Nr_akn` in `crates/engine` vor 06dd6ba und nach 82be2e0 identisch; Modul `example_neu` nach der Vorlage `Neu.vplan` benannt |
+| #166/AK2 | Bezeichner und Testnamen folgen dem Glossar; Kriterien-Bezüge bleiben erhalten (`#27/AK2`, `issue_27_ak2_…`, `AK2` im Testnamen innerhalb von `test.describe("… (#27)")`). | ☑ | **gilt** | kein Test (Vergleich der Kennungen vor und nach der Umstellung) | 19.11.2026 ok: `#Nr/AKn`, `issue_Nr_akn` in `crates/engine` vor 06dd6ba und nach 82be2e0 identisch; Modul `example_neu` nach der Vorlage `new.vplan` benannt |
 | #166/AK3 | Keine Verhaltensänderung: `make test-quiet` grün, Golden-Dateien unverändert, Zeilenabdeckung je Paket nicht gesunken. | ☑ | **gilt** | `make test-quiet` (744 Tests), [test_check_english.py](../tools/test_check_english.py) (16 Tests) | 19.11.2026 ok: alles grün, Golden-Dateien unverändert; Abdeckung vorher/nachher Engine 99,06/99,13 %, Kommandozeile 96,07/96,45 %, App 91,38/91,33 % (App unverändert, Unterschied durch lokale `shiller-index.ods`) |
 | #166/AK4 | Oberflächentexte, Meldungstexte und Dateischlüssel der `.rplan`-Datei sind unverändert (bleiben deutsch bis #62). | ☑ | **gilt** | kein Test (Vergleich aller String-Literale vor und nach der Umstellung) | 19.11.2026 ok: einziger Unterschied das Formatargument `{ferien:?}` → `{holiday:?}`; Assert-Meldungen in Tests bleiben deutsch |
 

@@ -1221,7 +1221,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    const EXAMPLE: &str = include_str!("../assets/Neu.vplan");
+    const EXAMPLE: &str = include_str!("../assets/new.vplan");
 
     // #40: Default values when reading and compact output when writing.
     #[test]

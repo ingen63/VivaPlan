@@ -12,7 +12,7 @@ use engine::time::YearMonth;
 use serde_json::{json, Value};
 
 fn base() -> Value {
-    let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    let mut v: Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
     v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
     v["flows"]["spending"] = json!(1000);

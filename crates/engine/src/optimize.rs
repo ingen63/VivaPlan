@@ -1210,7 +1210,7 @@ mod tests {
     /// Made-up plan without taxes, inflation and returns: start 2026-11, retirement 2031-11, end 2061-11,
     /// spending 1000 per month, wealth as cash only.
     fn calm(cash: f64) -> Value {
-        let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+        let mut v: Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
         // Pension fund payout also after 65 (the test moves it); #51 checks the limits elsewhere.
         v["limits"] = json!({"pkMax": 130, "ahvMax": 130});
         v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});

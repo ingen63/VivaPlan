@@ -10,7 +10,7 @@ Projektdatei und die Rechenregeln Schritt für Schritt. Was die App kann, steht 
 |---|---|
 | `crates/engine/` | Bibliothek: Datenmodell, Simulation, Zeitreihen, Steuern, Prüfung, Import alter Konfigurationen; Tests unter `tests/` |
 | `crates/engine/data/` | Datenbibliothek: ausgelieferte Zeitreihen (`Shiller CHF.csv`, `Shiller USD.csv`, `Welt (JST).csv`) sowie in `crates/engine/data/quellen/` SNB-Auszüge und die JST-Tabelle mit Auszug (die Shiller-Originaldatei wird nicht mitgeliefert, siehe `QUELLEN.md`) |
-| `crates/engine/assets/` | Beispielplanungen (`beispiel.vplan`, Vorlage `Neu.vplan`) |
+| `crates/engine/assets/` | Beispielplanungen (`example.vplan`, Vorlage `new.vplan`) |
 | `crates/cli/` | Kommandozeile `vivaplan` (Rechnen, Prüfen, Import, Vergleich, Entwicklungsserver) |
 | `crates/app/` | Desktop-App (Tauri 2): Fenster, Dateidialoge, Anbindung an den Rechenkern |
 | `crates/app/ui/` | Oberfläche: Editor, Live-Vorschau, Ergebnisansicht (HTML/JS ohne externe Bibliotheken), Hilfe in `hilfe/` |
@@ -199,12 +199,12 @@ Alter bei Erschöpfung. Szenarien: Erfolgsquote und Endvermögen je Variante (ei
 cargo build --release
 B=target/release/vivaplan
 
-$B run crates/engine/assets/beispiel.vplan --events          # Jahresübersicht, Kennzahlen, Ereignisse
-$B run crates/engine/assets/beispiel.vplan --csv monate.csv  # alle Monatswerte
-$B validate crates/engine/assets/beispiel.vplan              # Fehler und Hinweise
+$B run crates/engine/assets/example.vplan --events          # Jahresübersicht, Kennzahlen, Ereignisse
+$B run crates/engine/assets/example.vplan --csv monate.csv  # alle Monatswerte
+$B validate crates/engine/assets/example.vplan              # Fehler und Hinweise
 $B import-legacy local/eigene/config.json --start-year 2026 --base local/eigene -o meine.vplan
-$B bench crates/engine/assets/beispiel.vplan --paths 50000   # Rechenleistung
-$B optimize crates/engine/assets/beispiel.vplan --max-ruin 5 --ruin-age 95   # beste Entnahmestrategie suchen
+$B bench crates/engine/assets/example.vplan --paths 50000   # Rechenleistung
+$B optimize crates/engine/assets/example.vplan --max-ruin 5 --ruin-age 95   # beste Entnahmestrategie suchen
 $B schema > planung.schema.json                  # JSON-Schema der Projektdatei
 $B library                                       # Zeitreihen der Datenbibliothek (Ordner crates/engine/data/)
 $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.xls, .xlsx, .ods)

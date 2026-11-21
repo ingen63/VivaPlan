@@ -1009,7 +1009,7 @@ mod tests {
 
     // Example plan: start 2026-11, birth 1966-11, retirement and AHV 2031-11, end 2061-11.
     fn base() -> Value {
-        serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap()
+        serde_json::from_str(include_str!("../assets/new.vplan")).unwrap()
     }
     fn messages(v: &Value) -> Vec<String> {
         let plan: Plan = serde_json::from_value(v.clone()).unwrap();

@@ -132,7 +132,7 @@ async fn settings_set<R: Runtime>(app: AppHandle<R>, key: String, value: Value) 
 /// Setting holding the path of the plan last opened or saved (only the path, local).
 const LAST_PLAN_KEY: &str = "lastPlan";
 /// Name of the bundled neutral example plan (resource in the app bundle).
-const EXAMPLE_RESOURCE: &str = "Neu.vplan";
+const EXAMPLE_RESOURCE: &str = "new.vplan";
 
 /// Plan at startup: path (empty for the example plan), content and a notice for the user interface.
 /// `first`: very first start (#70); the user interface then shows the welcome dialog.
@@ -2028,7 +2028,7 @@ mod tests {
     #[test]
     fn simulation_of_example_file_returns_result_without_errors() {
         let (_app, w, _g) = setup();
-        let file = root().join("crates/engine/assets/beispiel.vplan");
+        let file = root().join("crates/engine/assets/example.vplan");
         let plan = api::read_plan(&file).unwrap();
         let path = file.to_string_lossy().into_owned();
         let r = call(&w, "run_simulation", json!({"plan": plan, "path": path})).unwrap();

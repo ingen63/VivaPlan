@@ -91,7 +91,7 @@ fn rplan_stays_unchanged_and_computes_like_the_vplan() {
     );
     let rplan = api::read_plan(&old).unwrap();
     assert_eq!(rplan["format"], LEGACY_FORMAT);
-    let new_plan = api::read_plan(&dir().join("assets/beispiel.vplan")).unwrap();
+    let new_plan = api::read_plan(&dir().join("assets/example.vplan")).unwrap();
     assert_eq!(new_plan["format"], FORMAT);
     let upgraded = api::upgrade_plan(&rplan).plan;
     assert_eq!(upgraded["format"], FORMAT);

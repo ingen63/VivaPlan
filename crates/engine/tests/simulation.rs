@@ -246,7 +246,7 @@ fn validation_reports_errors() {
 
 #[test]
 fn example_plan_runs_and_roundtrips() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/beispiel.vplan");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/example.vplan");
     let p = Plan::from_json(&std::fs::read_to_string(path).unwrap()).unwrap();
     let res = run(&p);
     assert!(res.summary.depleted.is_none());

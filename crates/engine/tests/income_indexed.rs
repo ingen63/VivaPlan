@@ -200,6 +200,6 @@ fn issue_58_ak1_written_only_when_set() {
         json!(true)
     );
     // New plans: «ja» (decision on #58)
-    let new_plan: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    let new_plan: Plan = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     assert!(new_plan.flows.income_indexed);
 }

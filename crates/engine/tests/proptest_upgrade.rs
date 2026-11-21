@@ -17,7 +17,7 @@ const REGRESSIONS: &str = concat!(
 fn bases() -> Vec<Value> {
     let mut v = vec![
         api::example_plan(),
-        serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap(),
+        serde_json::from_str(include_str!("../assets/new.vplan")).unwrap(),
         serde_json::from_str(include_str!("fixtures/planung-altformat.rplan")).unwrap(),
     ];
     v.extend(crate::golden::cases().into_iter().map(|(_, p)| p));
@@ -129,10 +129,10 @@ proptest! {
 #[test]
 fn issue_137_ak5_shipped_plans_need_no_upgrade() {
     for (name, plan) in [
-        ("beispiel.vplan", api::example_plan()),
+        ("example.vplan", api::example_plan()),
         (
-            "Neu.vplan",
-            serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap(),
+            "new.vplan",
+            serde_json::from_str(include_str!("../assets/new.vplan")).unwrap(),
         ),
     ] {
         let out = api::upgrade_plan(&plan);

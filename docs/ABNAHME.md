@@ -66,7 +66,7 @@ Vermerk «(Kommentar)» in der Liste. Änderungen an Kriterien per Kommentar sin
 
 | Kennung | Einschätzung |
 |---|---|
-| #4/AK3 | **überholt**: durch #70 und #61: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `Neu.vplan`. |
+| #4/AK3 | **überholt**: durch #70 und #61: Beim ersten Start erscheinen Haftungsausschluss und Willkommensdialog; ohne gemerkte Datei lädt die Desktop-App `new.vplan`. |
 | #12/AK2 | **gilt** in neuer Fassung: Die Spalte «Zeitreihe» zeigt den Namen der Anlagestrategie bzw. der Reihe (Kommentar in #12 vom 15.11.2026). |
 | #13/AK8 | **überholt**: durch #25: Die Schwelle ist keine Einstellung geworden und gilt fest mit 5 % (Kommentar in #25). |
 | #18/AK3 | **überholt**: durch #74: Der Hinweis erscheint nur einmal, beim ersten Laden einer betroffenen Planung. |
@@ -248,7 +248,7 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #30/AK1 | `Neu.rplan`: «Verkauf Haus» löschen fragt nach und nennt 2 Eingaben im Abschnitt Immobilien. | ☑ | **gilt**: Die Planung `Neu.rplan` mit «Verkauf Haus» gibt es nicht mehr (heute `Neu.vplan` ohne diesen Meilenstein); prüfen mit einer erfundenen Planung. | kein Test | – |
+| #30/AK1 | `Neu.rplan`: «Verkauf Haus» löschen fragt nach und nennt 2 Eingaben im Abschnitt Immobilien. | ☑ | **gilt**: Die Planung `Neu.rplan` mit «Verkauf Haus» gibt es nicht mehr (heute `new.vplan` ohne diesen Meilenstein); prüfen mit einer erfundenen Planung. | kein Test | – |
 | #30/AK2 | Nach «Löschen und umstellen» tragen Verkauf und Kauf das feste Datum 06.2041. | ☑ | **gilt**: Wie AK1: braucht eine erfundene Planung mit dem Meilenstein. | kein Test | – |
 | #30/AK3 | Ein Meilenstein ohne Verwendung lässt sich ohne Rückfrage löschen. | ☑ | **gilt** | kein Test | – |
 

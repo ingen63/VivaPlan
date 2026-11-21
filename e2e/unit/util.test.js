@@ -185,7 +185,7 @@ test("#140/AK3: valid notations stay valid", () => {
 });
 
 // #184: names of the example plan in the language of the user interface
-const EXAMPLE = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "../../crates/engine/assets/beispiel.vplan"), "utf8"));
+const EXAMPLE = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "../../crates/engine/assets/example.vplan"), "utf8"));
 const TABLES = Object.fromEntries(["de", "en", "fr", "it"].map(l => [l, require(`../../crates/app/ui/i18n/${l}.json`)]));
 /** All names and labels of a plan (any depth), with their paths. */
 function names(v, at = "", out = {}) {

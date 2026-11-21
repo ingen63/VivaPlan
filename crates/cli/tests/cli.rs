@@ -40,7 +40,7 @@ fn text(o: &Output) -> String {
 /// Example plan with adjusted returns, as a file.
 fn plan_file(dir: &Path, source: &str, extra: impl Fn(&mut serde_json::Value)) -> String {
     let mut v: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(root().join("crates/engine/assets/beispiel.vplan")).unwrap())
+        serde_json::from_str(&std::fs::read_to_string(root().join("crates/engine/assets/example.vplan")).unwrap())
             .unwrap();
     v["returns"]["source"] = serde_json::json!(source);
     v["returns"]["bootstrap"] = serde_json::json!({ "paths": 200, "block": 12, "seed": 1 });

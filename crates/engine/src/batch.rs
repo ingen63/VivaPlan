@@ -414,7 +414,7 @@ mod tests {
     // #40: Number of paths between 1 and 1'000'000 (limits included); `is_empty` follows the length.
     #[test]
     fn path_count_limits() {
-        let mut v: serde_json::Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+        let mut v: serde_json::Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
         v["returns"]["source"] = serde_json::json!("parametric");
         let source = |v: &serde_json::Value, n: usize| {
             let mut v = v.clone();

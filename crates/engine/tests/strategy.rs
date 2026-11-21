@@ -82,7 +82,7 @@ fn issue_69_ak2_eu_weight_scales_all_eu_countries_alike() {
 /// #69/AK2: Weights not 100 % together or outside 0–100 %: error at the field, no run.
 #[test]
 fn issue_69_ak2_invalid_weights_are_reported_at_the_field() {
-    let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    let mut v: Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     v["returns"]["strategy"] =
         json!({ "stocks": "worldCustom", "bonds": "ch", "weights": { "ch": 0.5, "usa": 0.5, "eu": 0.5, "apac": 0 } });
     let issues = api::validate(&v);
@@ -167,7 +167,7 @@ fn issue_69_mixed_strategies_are_yearly_over_the_common_years() {
 }
 
 fn plan_with(series: Option<&str>) -> Value {
-    let mut v: Value = serde_json::from_str(include_str!("../assets/beispiel.vplan")).unwrap();
+    let mut v: Value = serde_json::from_str(include_str!("../assets/example.vplan")).unwrap();
     let r = v["returns"].as_object_mut().unwrap();
     r.remove("strategy");
     if let Some(s) = series {
@@ -258,11 +258,11 @@ fn issue_69_strategy_info_and_new_plans() {
     assert_eq!(i.currency.as_deref(), Some("CHF"));
     assert!(i.title.unwrap().contains("Switzerland (JST)"));
     assert!(api::series_info("strategy:{kaputt", Path::new("."), None).is_err());
-    let new_plan: Plan = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    let new_plan: Plan = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     assert_eq!(new_plan.returns.strategy, Some(Investment::default()));
     assert!(new_plan.returns.series.is_none());
     // With a strategy «rolling» or «bootstrap» no longer needs a series; without both it is an error.
-    let mut v: Value = serde_json::from_str(include_str!("../assets/Neu.vplan")).unwrap();
+    let mut v: Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     let series_error = |v: &Value| {
         api::validate(v)
             .iter()

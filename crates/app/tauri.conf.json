@@ -37,7 +37,7 @@
     "targets": "all",
     "category": "Finance",
     "resources": {
-      "../engine/assets/Neu.vplan": "Neu.vplan"
+      "../engine/assets/new.vplan": "new.vplan"
     },
     "fileAssociations": [
       {

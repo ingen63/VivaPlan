@@ -1,4 +1,4 @@
-//! #4: The bundled example plan `crates/engine/assets/Neu.vplan` is readable, without errors and can be simulated.
+//! #4: The bundled example plan `crates/engine/assets/new.vplan` is readable, without errors and can be simulated.
 
 use engine::api;
 use engine::model::Plan;
@@ -8,7 +8,7 @@ use std::path::Path;
 
 #[test]
 fn bundled_example_validates_and_runs() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/Neu.vplan");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/new.vplan");
     let value = api::read_plan(&path).expect("Beispielplanung lesbar");
     let errors: Vec<_> = api::validate(&value)
         .into_iter()

@@ -115,7 +115,7 @@ mod tests {
     /// desktop app and development server; if both returned `null`, it would not notice there.
     #[test]
     fn issue_162_ak1_answer_is_the_serialized_result() {
-        let plan: Value = serde_json::from_str(include_str!("../assets/beispiel.vplan")).unwrap();
+        let plan: Value = serde_json::from_str(include_str!("../assets/example.vplan")).unwrap();
         let args = json!({ "plan": plan });
         let issues = call("validate", &args, &lib(), Path::new("/")).unwrap();
         assert_eq!(issues, serde_json::to_value(crate::api::validate(&plan)).unwrap());
