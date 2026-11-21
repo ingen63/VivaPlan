@@ -16,7 +16,7 @@ Projektdatei und die Rechenregeln Schritt für Schritt. Was die App kann, steht 
 | `crates/app/ui/` | Oberfläche: Editor, Live-Vorschau, Ergebnisansicht (HTML/JS ohne externe Bibliotheken), Hilfe in `hilfe/` |
 | `e2e/` | Oberflächentests (Playwright) |
 | `fuzz/` | Fuzzing (cargo-fuzz, eigener Workspace) |
-| `tools/` | Skripte: Git-Hooks, Build und Installation, Rauchtest `ui-smoke.sh`, Testqualität, Übersichtsseite, Issues |
+| `tools/` | Skripte: Git-Hooks, Build und Installation, App-Icons `make-icons.sh`, Rauchtest `ui-smoke.sh`, Testqualität, Übersichtsseite, Issues |
 | `docs/` | Beschreibung, Glossar der Fachbegriffe ([`docs/GLOSSAR.md`](GLOSSAR.md)), Teststrategie ([`docs/TESTS.md`](TESTS.md)), QA-Bericht, Spezifikationen (Pflichteingaben, Weltindex JST, MCP-Konzept) |
 | `local/` | Nur lokal (von Git ausgeschlossen): Mutationsläufe, Berichte der Testqualität, eigene Planungen und alte Konfigurationen (`local/eigene/`), Notizen |
 
@@ -159,6 +159,20 @@ npx tauri dev                  # App im Entwicklungsmodus
 ```
 
 Für Windows bzw. Linux wird `npx tauri build` auf dem jeweiligen System ausgeführt.
+
+**App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
+vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung
+an einer der beiden Dateien alle Rasterdateien neu erzeugen (macOS):
+
+```sh
+make icons                     # = tools/make-icons.sh --preview
+```
+
+Das Skript rendert mit `npx tauri icon` (`@tauri-apps/cli`), setzt `icon.ico` (Python) und `icon.icns` (`iconutil`) aus
+beiden Fassungen zusammen, kopiert `icon-small.svg` als Favicon nach `crates/app/ui/favicon.svg` und schreibt die
+Vorschau `docs/bilder/icon-vorschau.png` (16/32/128/512 px auf hellem und dunklem Grund; braucht ImageMagick).
+Das Ergebnis ist reproduzierbar: zweimal erzeugt, gleiche Dateien. `tools/test_icons.py` (in `make test-quiet`) prüft
+Farben, Grössen der Rasterdateien, die Einträge von `icon.ico` und das Favicon.
 
 Unter macOS baut der Git-Hook `tools/git-hooks/post-commit` nach jedem Commit, der Rechenkern,
 Oberfläche oder Cargo-Dateien ändert, die App im Hintergrund und ersetzt `/Applications/VivaPlan.app`
