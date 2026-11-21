@@ -183,3 +183,34 @@ test("#140/AK3: valid notations stay valid", () => {
   assert.equal(u.parseNum("12.500"), 12.5);
   assert.equal(u.optNum("2,5", 1), 2.5);
 });
+
+// #184: names of the example plan in the language of the user interface
+const EXAMPLE = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "../../crates/engine/assets/beispiel.vplan"), "utf8"));
+const TABLES = Object.fromEntries(["de", "en", "fr", "it"].map(l => [l, require(`../../crates/app/ui/i18n/${l}.json`)]));
+/** All names and labels of a plan (any depth), with their paths. */
+function names(v, at = "", out = {}) {
+  if (Array.isArray(v)) v.forEach((x, i) => names(x, `${at}${i}.`, out));
+  else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) {
+    if ((k === "name" || k === "label") && typeof x === "string") out[at + k] = x; else names(x, `${at}${k}.`, out);
+  }
+  return out;
+}
+
+test("#184/AK1: every name of the example plan is in the language of the table, no German name stays", () => {
+  const german = new Set(Object.entries(TABLES.de).filter(([k]) => k.startsWith("example.")).map(([, v]) => v));
+  assert.equal(german.size, 8);
+  for (const l of ["en", "fr", "it"]) {
+    const got = names(u.localizeExample(EXAMPLE, k => TABLES[l][k]));
+    const left = Object.entries(got).filter(([, v]) => german.has(v) || (/Tranche/.test(v) && !/^Tranche \d$/.test(v)));
+    assert.deepEqual(left, [], l);
+    for (const k of Object.keys(TABLES.de).filter(k => k.startsWith("example."))) assert.ok(Object.values(got).includes(TABLES[l][k]), `${l}: ${k}`);
+  }
+  // German: the file already holds the German names
+  assert.deepEqual(u.localizeExample(EXAMPLE, k => TABLES.de[k]), EXAMPLE);
+});
+
+test("#184/AK2: the example plans of the four languages differ only in names", () => {
+  const strip = p => JSON.parse(JSON.stringify(p, (k, v) => (k === "name" || k === "label") && typeof v === "string" ? "" : v));
+  for (const l of ["en", "fr", "it"]) assert.deepEqual(strip(u.localizeExample(EXAMPLE, k => TABLES[l][k])), strip(EXAMPLE), l);
+  assert.equal(u.localizeExample(EXAMPLE, () => undefined).project.name, EXAMPLE.project.name, "missing text keeps the name");
+});

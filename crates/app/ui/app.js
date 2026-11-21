@@ -3332,10 +3332,13 @@ document.addEventListener("change", e => {
 });
 
 // ---------- Welcome (#70) and first steps (#71) ----------
+/** #184: Example plan with its names in the language of the user interface. */
+const localExample = plan => localizeExample(plan, key => tr(key));
+const examplePlan = async () => localExample(await Engine.call("example_plan"));
 /** Loads the example plan as a new, unsaved plan (after asking if there are unsaved changes). */
 async function loadExample() {
   if (!await confirmDiscard()) return false;
-  await adopt(await Engine.call("example_plan")); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
+  await adopt(await examplePlan()); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
   return true;
 }
 /**
@@ -3422,7 +3425,8 @@ Object.assign(ACTIONS, {
   try {
     // Desktop app: plan last opened, otherwise the bundled example plan (#4)
     if (Engine.inApp) startup = await Engine.call("startup_plan");
-    var startNotes = await adopt(startup ? startup.plan : await Engine.call("example_plan"));
+    // #184: without a path the app opens the example plan, with its names in the language of the user interface
+    var startNotes = await adopt(startup?.path ? startup.plan : startup ? localExample(startup.plan) : await examplePlan());
     gainTemplates = await Engine.call("gain_templates");
   } catch (e) { document.body.innerHTML = `<p style="padding:24px">${tr("boot.engineUnreachable", { esc: esc(errText(e)) })}</p>`; return; }
   for (const src of ["historical", "rolling", "bootstrap", "parametric"]) if (initial.includes(src)) state.returns.source = src;

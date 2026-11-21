@@ -596,3 +596,64 @@ test.describe("Help in the chosen language (#173)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Example plan in the language of the user interface (#184)", () => {
+  const shown = page => page.evaluate(() => ({
+    project: state.project.name, person: state.household.persons[0].name, extras: state.flows.extras.map(e => e.label),
+    properties: state.realestate.properties.map(p => p.name), age: state.milestones.find(m => m.id === "sell_house").name,
+  }));
+
+  test("AK1: first start and the welcome choice «explore example» open the example plan with the names in fr, it and en", async ({ browser }) => {
+    for (const [locale, want] of [
+      ["fr-CH", { project: "Planification d’exemple", person: "Marie Dupont", extras: ["Nouvelle voiture", "Grand voyage"], properties: ["Maison", "Appartement en PPE", "Appartement en location"], age: "75 ans" }],
+      ["it-CH", { project: "Pianificazione d’esempio", person: "Maria Rossi", extras: ["Nuova auto", "Grande viaggio"], properties: ["Casa", "Appartamento in PPP", "Appartamento in affitto"], age: "75 anni" }],
+      ["en-GB", { project: "Example plan", person: "Jane Smith", extras: ["New car", "Big trip"], properties: ["House", "Condominium", "Rented apartment"], age: "Age 75" }],
+    ]) {
+      const ctx = await browser.newContext({ locale });
+      const page = await ctx.newPage();
+      // first start: the app reports no file, so the user interface opens the example plan
+      const start = await (await fetch(`${test.info().project.use.baseURL}/api/example_plan`, { method: "POST", body: "{}" })).json();
+      const errors = await openApp(page, { settings: { language: "system" }, startup: { path: null, plan: start, notice: null, first: false } });
+      expect(await shown(page)).toEqual(want);
+      // the welcome choice «explore example» loads it again in the same language
+      await page.evaluate(() => { state.project.name = "x"; History.reset(); return loadExample(); });
+      expect(await shown(page)).toEqual(want);
+      await noErrors(page, errors);
+      await ctx.close();
+    }
+  });
+
+  test("AK2: the example plans of the four languages give the same results", async ({ page }) => {
+    const errors = await openApp(page);
+    const results = await page.evaluate(async () => {
+      const out = {};
+      for (const l of ["de", "en", "fr", "it"]) {
+        await I18n.use(l);
+        const plan = await examplePlan();
+        plan.returns.source = "fixed"; plan.scenarios.sweeps = [];
+        const r = await Engine.call("run_simulation", { plan, path: null });
+        out[l] = { name: plan.project.name, records: JSON.stringify(r.single.records) };
+      }
+      return out;
+    });
+    expect(new Set(Object.values(results).map(r => r.name)).size).toBe(4);
+    for (const l of ["en", "fr", "it"]) expect(results[l].records, l).toBe(results.de.records);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: a saved plan keeps its names in another language", async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: "fr-CH" });
+    const page = await ctx.newPage();
+    const start = await (await fetch(`${test.info().project.use.baseURL}/api/example_plan`, { method: "POST", body: "{}" })).json();
+    // the example plan saved in German, opened again with the user interface in French
+    const errors = await openApp(page, { settings: { language: "system" }, startup: { path: "/x/Beispiel.vplan", plan: start, notice: null, first: false } });
+    expect(await lang(page)).toBe("fr");
+    expect(await page.evaluate(() => [state.project.name, state.household.persons[0].name, state.realestate.properties[0].name]))
+      .toEqual(["Beispielplanung", "Erika Muster", "Haus"]);
+    // switching the language does not translate the open plan either
+    await page.evaluate(() => I18n.use("it"));
+    expect(await page.evaluate(() => state.project.name)).toBe("Beispielplanung");
+    await noErrors(page, errors);
+    await ctx.close();
+  });
+});

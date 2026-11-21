@@ -171,8 +171,33 @@ function engineText(m, lookup) {
   return template.replace(/\{(\w+)(?::(\w+))?\}/g, (all, k, f) => (k in params ? engineValue(params[k], f || "", lookup) : all));
 }
 
+/**
+ * #184: Names of the example plan in the language of the user interface. The plan file holds the German names; on
+ * opening they are replaced by the texts `example.*` (`lookup` = key → text). Only names change, never a number, so
+ * the example plan gives the same results in every language. Tranches keep «Tranche 1/2» (the same in all languages).
+ * A saved plan is never passed through here, so its names stay as they are.
+ */
+const EXAMPLE_NAMES = [
+  ["project.name", "example.name"],
+  ["household.persons.0.name", "example.person"],
+  ["flows.extras.0.label", "example.car"],
+  ["flows.extras.1.label", "example.trip"],
+  ["realestate.properties.0.name", "example.house"],
+  ["realestate.properties.1.name", "example.condo"],
+  ["realestate.properties.2.name", "example.rental"],
+];
+function localizeExample(plan, lookup) {
+  const p = JSON.parse(JSON.stringify(plan));
+  const put = (path, key) => { if (typeof getPath(p, path) === "string" && lookup(key) !== undefined) setPath(p, path, lookup(key)); };
+  for (const [path, key] of EXAMPLE_NAMES) put(path, key);
+  const i = (p.milestones || []).findIndex(m => m.id === "sell_house");
+  if (i >= 0) put(`milestones.${i}.name`, "example.age75");
+  return p;
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
+    localizeExample,
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
     rateAt, round2, taxAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
     KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText, engineText, groupInt, fixedEven,

@@ -199,7 +199,7 @@ Zeitreihen (#177);
 Schweizer Fachbegriffe stehen auf Englisch mit dem Kürzel in Klammern, z. B. «old-age pension (AHV)», «pillar 3a»,
 auf Französisch und Italienisch als Schweizer Amtsbegriffe, z. B. «rente AVS», «caisse de pension», «pilier 3a», «impôt
 sur les prestations en capital» bzw. «rendita AVS», «cassa pensione», «pilastro 3a», «imposta sulle prestazioni in
-capitale» (Glossar `docs/GLOSSAR.md`). Inhalte der Planung (Namen) bleiben unübersetzt. Die Hilfe (Handbuch, F1, Suche) erscheint in der gewählten Sprache
+capitale» (Glossar `docs/GLOSSAR.md`). Inhalte der Planung (Namen) bleiben unübersetzt; nur die Beispielplanung erhält beim Öffnen ihre Namen in der gewählten Sprache, mit denselben Zahlen (#184). Die Hilfe (Handbuch, F1, Suche) erscheint in der gewählten Sprache
 (#173, #174, #175: Deutsch, Englisch, Französisch und Italienisch); fehlt ein Kapitel in einer Sprache, erscheint es
 deutsch.
 
