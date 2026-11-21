@@ -101,7 +101,8 @@
       "at": "ahv",
       "indexed": true,
       "monthly": 2000,
-      "thirteenthNoted": true
+      "thirteenthNoted": true,
+      "referenceAge": true
     },
     "pk": {
       "at": "retire",

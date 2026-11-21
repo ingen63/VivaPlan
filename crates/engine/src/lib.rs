@@ -7,6 +7,7 @@
 // #171: first, so that `msg!` is known in all modules.
 #[macro_use]
 pub mod message;
+pub mod ahv;
 pub mod api;
 pub mod batch;
 pub mod calibrate;

@@ -4533,6 +4533,40 @@
     "text": "From December 2026 the simulation includes the 13th AHV pension: every December one twelfth of the AHV pensions paid in the year in addition. The result may therefore differ from before (more income in retirement)."
   },
   {
+    "code": "note_ahv_early",
+    "params": {
+      "new": 12345.678,
+      "old": 12345.678,
+      "rate": 0.0371,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself reduces it by {rate:pct1} % for drawing early. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month; the result stays the same.",
+    "text": "The AHV pensionPerson 2 is now entered as the pension at 65 (reference age); the app itself reduces it by 3.7 % for drawing early. The previous amount of 12345.68 has therefore been converted to 12345.68 per month; the result stays the same."
+  },
+  {
+    "code": "note_ahv_deferred",
+    "params": {
+      "new": 12345.678,
+      "old": 12345.678,
+      "rate": 0.0371,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself increases it by {rate:pct1} % for the deferral. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month; the result stays the same.",
+    "text": "The AHV pensionPerson 2 is now entered as the pension at 65 (reference age); the app itself increases it by 3.7 % for the deferral. The previous amount of 12345.68 has therefore been converted to 12345.68 per month; the result stays the same."
+  },
+  {
     "code": "note_pictet_stocks",
     "params": {},
     "template": "“Switzerland (JST)” for the stocks",

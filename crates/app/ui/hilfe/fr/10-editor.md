@@ -126,10 +126,14 @@ La part de l’avoir de vieillesse versée **en capital** à la retraite. 0 % si
 La meilleure part dépend de l’impôt, du taux de conversion et de votre goût du risque. Faites-la varier avec une [variation](#f-sweep) et voyez comment le taux de réussite change.
 
 ## @f-ahv AVS
-Mots-clés: rente, prestation, renchérissement, indice, 1er pilier, années de cotisation, 13e rente AVS, décembre
+Mots-clés: rente, prestation, renchérissement, indice, 1er pilier, années de cotisation, 13e rente AVS, décembre, anticipation, ajournement, réduction, supplément
 
 - **Rente par mois au début de la prestation:** votre rente mensuelle probable lors d’une perception à 65 ans (âge de référence) selon le calcul anticipé de la rente de la caisse de compensation, aux prix actuels, **sans la 13e rente** (l’application l’ajoute elle-même, voir ci-dessous).
-- **Prestation dès:** toujours le jalon **Début de la rente AVS** de la personne (63 à 70 ans). Une anticipation ou un ajournement modifie la rente. Adaptez alors la rente en conséquence.
+- **Prestation dès:** toujours le jalon **Début de la rente AVS** de la personne (63 à 70 ans). S’il se situe avant ou après 65 ans, l’application réduit ou augmente elle-même la rente (voir ci-dessous); saisissez néanmoins la rente à 65 ans.
+
+Sous le champ figure toujours la rente avec laquelle l’application calcule, aux prix actuels: sans anticipation ni ajournement égale à la saisie, sinon avec le taux, p. ex. *−13.6 % → effectivement 2'177.28 CHF par mois*. Pour les couples mariés figure en plus à partir de quand les deux rentes courent et quelle part reste alors après le plafond, p. ex. *dès 03.2032 plafonnée 1'890.00 CHF*.
+
+**Anticipation et ajournement:** Une anticipation réduit la rente de 6,8 % par année, au mois près selon le tableau de l’AVS (p. ex. 15 mois 8,5 %), au plus 13,6 % en cas de perception à 63 ans. Un ajournement d’au moins une année l’augmente par trimestres: 1 an 5,2 %, 2 ans 10,8 %, 3 ans 17,1 %, 4 ans 24,0 %, 5 ans 31,5 %; un ajournement de moins d’une année n’apporte aucun supplément. Réduction et supplément valent pour toute la durée de perception, aussi après 65 ans, et par personne; le plafond pour les couples mariés et la 13e rente reposent sur la rente adaptée. Exemple: rente 2 520, perception à 63 ans → 2 520 × (1 − 0,136) = 2 177.28; perception à 68 ans → 2 520 × 1,171 = 2 950.92, pas d’AVS entre 65 et 68 ans. Source: mémento 3.04 *Retraite flexible* (état au 1.1.2026). Ne sont pas pris en compte l’anticipation et l’ajournement partiels ni les taux particuliers pour les femmes nées de 1961 à 1969. Les planifications enregistrées avant cette modification contenaient la rente déjà adaptée en cas de perception avant ou après 65 ans; à l’ouverture, l’application la reconvertit une fois en rente à 65 ans et le signale, le résultat reste le même.
 - **Adapter chaque année la rente au renchérissement:** l’AVS est augmentée en janvier du renchérissement accumulé depuis le dernier janvier. Laissez la case cochée si la rente doit augmenter en conséquence.
 
 Avec deux personnes mariées, il existe un plafond pour les deux rentes ensemble, voir [Deuxième personne et règles pour couples mariés](#f-couple).

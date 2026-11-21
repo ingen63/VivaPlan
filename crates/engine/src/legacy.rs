@@ -205,6 +205,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             at: TimeRef::milestone("ahv"),
             indexed: true,
             thirteenth_noted: false,
+            reference_age: false,
         },
     };
 

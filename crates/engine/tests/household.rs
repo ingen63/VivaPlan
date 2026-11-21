@@ -30,6 +30,14 @@ fn base() -> Value {
     })
 }
 
+/// #191: Like [`with_partner`], B the same age as A, so that an AHV pension from the start (2030-01) is paid at 65 for
+/// both (no reduction for an early payout).
+fn with_partner_65(v: Value) -> Value {
+    let mut v = with_partner(v);
+    v["household"]["persons"][1]["birth"] = json!("1965-01");
+    v
+}
+
 fn with_partner(mut v: Value) -> Value {
     v["household"]["persons"] = json!([
         { "id": "A", "name": "A", "birth": "1965-01" },
@@ -119,7 +127,7 @@ fn each_person_retires_on_own_date_and_lump_sums_are_added() {
 
 #[test]
 fn couple_ahv_is_capped_but_single_pension_is_not() {
-    let mut v = with_partner(base());
+    let mut v = with_partner_65(base());
     v["pension"]["ahv"] = json!({ "monthly": 2_520, "at": "start" });
     v["partner"]["ahv"] = json!({ "monthly": 2_520, "at": "start" });
     v["household"]["ahvCoupleCap"] = json!(3_780);
@@ -140,7 +148,12 @@ fn couple_ahv_is_capped_but_single_pension_is_not() {
 
 /// #145: Married couple with cap 3'780 and inflation 3 % (fixed); AHV in month `k` (0 = January 2030).
 fn capped_ahv(a_indexed: bool, b_indexed: bool, b_at: &str) -> SimResult {
-    let mut v = with_partner(base());
+    // #191: B reaches 65 at its AHV payout (2030-01 or 2032-01)
+    let mut v = if b_at == "start" {
+        with_partner_65(base())
+    } else {
+        with_partner(base())
+    };
     v["milestones"]
         .as_array_mut()
         .unwrap()
@@ -174,7 +187,7 @@ fn issue_145_ak3_cap_with_only_one_indexed_pension() {
     let res = capped_ahv(true, false, "start");
     assert!((ahv_in(&res, 12) - 3_893.40).abs() < 0.01, "{}", ahv_in(&res, 12));
     // The cap only applies when it is below the sum: A 1'000 indexed, B 2'000 fixed.
-    let mut v = with_partner(base());
+    let mut v = with_partner_65(base());
     v["returns"]["fixed"]["inflation"] = json!(0.03);
     v["pension"]["ahv"] = json!({ "monthly": 1_000, "at": "start", "indexed": true });
     v["partner"]["ahv"] = json!({ "monthly": 2_000, "at": "start", "indexed": false });

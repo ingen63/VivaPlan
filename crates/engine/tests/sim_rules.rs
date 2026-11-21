@@ -329,6 +329,8 @@ fn renewal_plan(amount: f64, periods: Value) -> Value {
     let mut v = base();
     v["milestones"][1] = json!({"id": "retire", "kind": "date", "name": "Pensionierung", "date": "2027-01"});
     v["milestones"][2] = json!({"id": "ahv", "kind": "date", "name": "AHV", "date": "2027-01"});
+    // #191: AHV at 65 (no reduction for an early payout)
+    v["household"]["persons"][0]["birth"] = json!("1962-01");
     v["pension"]["pk"] = json!({"capital": 240_000, "at": "retire", "lumpsum": 0, "conversion": 0.05});
     v["pension"]["ahv"] = json!({"monthly": 1500, "at": "ahv", "indexed": true});
     v["flows"]["income"] = json!(10_000);

@@ -13,6 +13,9 @@
 //!   parametrically, a note names the different random paths.
 //! - #190: The AHV gets the marker `thirteenthNoted`. If the plan has an AHV pension, a note names the 13th AHV
 //!   pension (from December 2026); the plan stays the same otherwise.
+//! - #191: The AHV gets the marker `referenceAge`. An older plan with an AHV payout before or after 65 held the pension
+//!   already adjusted; it is converted back to the pension at 65 (amount / (1 − reduction) or / (1 + supplement)),
+//!   with a note per person, so that the result stays the same.
 
 use std::borrow::Cow;
 
@@ -74,6 +77,7 @@ pub fn upgrade(v: &mut Value) -> Vec<Message> {
     parametric(v, &mut notes);
     sampler(v, &mut notes);
     thirteenth_ahv(v, &mut notes);
+    ahv_reference_age(v, &births, &mut notes);
     // #154: last, because `housing` needs a readable plan, and the steps before can only make it readable
     // (e.g. an invalid `returns.series`). Otherwise only the next opening would catch up on the adjustment.
     housing(v, &mut notes);
@@ -144,6 +148,71 @@ fn thirteenth_ahv(v: &mut Value, notes: &mut Vec<Message>) {
     if pension("/pension/ahv/monthly") || pension("/partner/ahv/monthly") {
         notes.push(msg!(note_thirteenth_ahv));
     }
+}
+
+/// #191: Marker `pension.ahv.referenceAge`. If it is missing, the AHV pensions of the plan (person and partner) are the
+/// pensions as paid; with a payout before or after 65 they are converted back to the pension at 65, so that the
+/// simulation, which now adjusts itself, computes with the same pension. One note per converted pension.
+fn ahv_reference_age(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Message>) {
+    match v.pointer("/pension/ahv").and_then(Value::as_object) {
+        None => return,
+        Some(o) if o.get("referenceAge").and_then(Value::as_bool) == Some(true) => return,
+        Some(_) => {}
+    }
+    v["pension"]["ahv"]["referenceAge"] = json!(true);
+    let multi = births.len() > 1 && v.get("partner").is_some_and(Value::is_object);
+    for (i, base) in [(0usize, "/pension/ahv"), (1usize, "/partner/ahv")] {
+        let Some((_, birth)) = births.get(i) else {
+            continue;
+        };
+        let Some(old) = v
+            .pointer(&format!("{base}/monthly"))
+            .and_then(Value::as_f64)
+            .filter(|m| *m > 0.0)
+        else {
+            continue;
+        };
+        let at = v.pointer(&format!("{base}/at")).and_then(Value::as_str).unwrap_or("");
+        let at = v
+            .get("milestones")
+            .and_then(Value::as_array)
+            .and_then(|l| l.iter().find(|m| m.get("id").and_then(Value::as_str) == Some(at)))
+            .and_then(|ms| milestone_month(ms, births))
+            .or_else(|| ym(&json!(at)));
+        let Some(at) = at else {
+            continue;
+        };
+        let offset = crate::ahv::offset(*birth, at);
+        let rate = crate::ahv::rate(offset);
+        if rate == 0.0 {
+            continue;
+        }
+        let new = reference_amount(old, offset);
+        if let Some(m) = v.pointer_mut(&format!("{base}/monthly")) {
+            *m = json!(new);
+        }
+        let who = if multi {
+            crate::message::arg(&msg!(suffix_person, n = i + 1))
+        } else {
+            crate::message::Arg::Null
+        };
+        notes.push(if rate < 0.0 {
+            msg!(note_ahv_early, who = who, rate = -rate, old = old, new = new)
+        } else {
+            msg!(note_ahv_deferred, who = who, rate = rate, old = old, new = new)
+        });
+    }
+}
+
+/// #191: Pension at 65 (to the centime) for the pension `paid` with a payout `offset` months from 65: of the amounts next
+/// to the quotient, the one from which the simulation computes exactly `paid` again (so the result stays the same).
+fn reference_amount(paid: f64, offset: i32) -> f64 {
+    let base = crate::ahv::at_reference_age(paid, offset);
+    [base, base - 0.01, base + 0.01]
+        .into_iter()
+        .map(|x| (x * 100.0).round() / 100.0)
+        .find(|x| crate::ahv::adjusted(*x, offset) == paid)
+        .unwrap_or(base)
 }
 
 /// #90: The index «Schweiz (Pictet)» is no longer bundled. Stocks «Schweiz (Pictet)» become

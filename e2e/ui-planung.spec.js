@@ -496,3 +496,71 @@ test.describe("13th AHV pension (#190)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Early and deferred AHV payout (#191)", () => {
+  test("AK8: the effective AHV pension next to the field follows pension, payout and cap", async ({ page }) => {
+    const errors = await open(page, "pension");
+    const eff = i => page.locator(`[data-computed="ahvEff"][data-arg="${i}"]`);
+    // Swiss format: the apostrophe of the browser (’) as in the issue (')
+    const text = async i => (await eff(i).innerText()).replace(/’/g, "'");
+    const expectText = (i, t) => expect.poll(() => text(i)).toBe(t);
+    // example plan: AHV 2'000 at 65
+    await expectText(0, "Ohne Kürzung oder Zuschlag → effektiv 2'000.00 CHF pro Monat");
+    await field(page, "pension.ahv.monthly").fill("2520");
+    await field(page, "pension.ahv.monthly").press("Tab");
+    await expectText(0, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat");
+    // payout at 63: −13.6 %
+    const payout = async years => {
+      await nav(page, "Meilensteine");
+      const input = (await msRow(page, "ahv")).locator("input[data-type=years]");
+      await input.fill(String(years));
+      await input.press("Tab");
+      await nav(page, "Vorsorge");
+    };
+    await payout(63);
+    await expectText(0, "−13.6 % → effektiv 2'177.28 CHF pro Monat");
+    await payout(68);
+    await expectText(0, "+17.1 % → effektiv 2'950.92 CHF pro Monat");
+    await payout(65);
+    await expectText(0, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat");
+
+    // married couple: both 2'520 at 65, cap 3'780 → from the month both pensions run 1'890.00 each
+    await page.evaluate(() => { ACTIONS["partner-add"](); state.household.persons[1].birth = "1972-03"; renderSection(); requestPreview(); });
+    await field(page, "partner.ahv.monthly").fill("2520");
+    await field(page, "partner.ahv.monthly").press("Tab");
+    // person 1: 65 in 06.2035, person 2: 65 in 03.2037
+    await expectText(0, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat, ab 03.2037 plafoniert 1'890.00 CHF");
+    await expectText(1, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat, ab 03.2037 plafoniert 1'890.00 CHF");
+    // a higher cap: no longer capped
+    await nav(page, "Haushalt & Projekt");
+    await field(page, "household.ahvCoupleCap").fill("6000");
+    await field(page, "household.ahvCoupleCap").press("Tab");
+    await nav(page, "Vorsorge");
+    await expectText(1, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat");
+    await noErrors(page, errors);
+  });
+
+  test("AK9: an older plan with an AHV payout at 63 is converted back to the pension at 65 with a note", async ({ page }) => {
+    const errors = await open(page);
+    const plan = await page.evaluate(() => {
+      const s = JSON.parse(JSON.stringify(state));
+      delete s.pension.ahv.referenceAge;
+      s.milestones.find(m => m.id === "ahv").years = 63;
+      s.pension.ahv.monthly = 2177.28;
+      return s;
+    });
+    const file = path.join(os.tmpdir(), `ahv191-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(plan));
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect(page.locator("#ask")).toBeVisible();
+    await expect(page.locator("#askText")).toContainText("Die AHV-Rente wird neu als Rente mit 65 (Referenzalter) erfasst; die App kürzt sie beim Vorbezug selbst um 13.6 %. Der bisherige Betrag 2177.28 ist deshalb auf 2520.00 pro Monat umgerechnet; das Ergebnis bleibt gleich.");
+    await page.locator("#ask button[value='ok']").click();
+    expect(await page.evaluate(() => [state.pension.ahv.monthly, state.pension.ahv.referenceAge])).toEqual([2520, true]);
+    await nav(page, "Vorsorge");
+    await expect.poll(async () => (await page.locator('[data-computed="ahvEff"][data-arg="0"]').innerText()).replace(/’/g, "'"))
+      .toBe("−13.6 % → effektiv 2'177.28 CHF pro Monat");
+    fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+});

@@ -126,10 +126,14 @@ Der Anteil des Altersguthabens, der bei der Pensionierung **als Kapital** ausbez
 Der beste Anteil hängt von der Steuer, vom Umwandlungssatz und von Ihrer Risikobereitschaft ab. Lassen Sie ihn mit einer [Variation](#f-sweep) laufen und sehen Sie, wie sich die Erfolgsquote verändert.
 
 ## @f-ahv AHV
-Stichworte: Rente, Bezug, Teuerung, Index, 1. Säule, Beitragsjahre, 13. AHV-Rente, Dezember
+Stichworte: Rente, Bezug, Teuerung, Index, 1. Säule, Beitragsjahre, 13. AHV-Rente, Dezember, Vorbezug, Aufschub, Kürzung, Zuschlag
 
 - **Rente pro Monat bei Bezugsbeginn:** Ihre voraussichtliche Monatsrente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung der Ausgleichskasse, in heutigen Preisen, **ohne 13. Rente** (die App rechnet sie selbst dazu, siehe unten).
-- **Bezug ab:** immer der Meilenstein **AHV-Bezug** der Person (63 bis 70 Jahre). Ein Vorbezug oder Aufschub ändert die Rente. Passen Sie die Rente dann entsprechend an.
+- **Bezug ab:** immer der Meilenstein **AHV-Bezug** der Person (63 bis 70 Jahre). Liegt er vor oder nach 65, kürzt bzw. erhöht die App die Rente selbst (siehe unten); geben Sie trotzdem die Rente mit 65 ein.
+
+Unter dem Feld steht immer die Rente, mit der die App rechnet, in heutigen Preisen: ohne Vorbezug oder Aufschub gleich der Eingabe, sonst mit dem Satz, z. B. «−13.6 % → effektiv 2'177.28 CHF pro Monat». Bei Verheirateten steht zusätzlich, ab wann beide Renten laufen und welcher Anteil dann nach der Obergrenze bleibt, z. B. «ab 03.2032 plafoniert 1'890.00 CHF».
+
+**Vorbezug und Aufschub:** Ein Vorbezug kürzt die Rente um 6,8 % je Jahr, monatsgenau nach der Tabelle der AHV (z. B. 15 Monate 8,5 %), höchstens 13,6 % bei Bezug mit 63. Ein Aufschub um mindestens ein Jahr erhöht sie nach Vierteljahren: 1 Jahr 5,2 %, 2 Jahre 10,8 %, 3 Jahre 17,1 %, 4 Jahre 24,0 %, 5 Jahre 31,5 %; ein Aufschub unter einem Jahr bringt keinen Zuschlag. Kürzung und Zuschlag gelten für die ganze Bezugsdauer, auch nach 65, und je Person; die Obergrenze für Verheiratete und die 13. Rente beruhen auf der angepassten Rente. Beispiel: Rente 2 520, Bezug mit 63 → 2 520 × (1 − 0,136) = 2 177.28; Bezug mit 68 → 2 520 × 1,171 = 2 950.92, zwischen 65 und 68 keine AHV. Quelle: Merkblatt 3.04 «Flexibler Rentenbezug» (Stand 1.1.2026). Nicht berücksichtigt sind Teilvorbezug und Teilaufschub sowie die besonderen Sätze für Frauen der Jahrgänge 1961 bis 1969. Planungen, die vor dieser Änderung gespeichert wurden, enthielten bei Bezug vor oder nach 65 die bereits angepasste Rente; beim Öffnen rechnet die App sie einmalig auf die Rente mit 65 zurück und meldet es, das Ergebnis bleibt gleich.
 - **Rente jährlich an die Teuerung anpassen:** Die AHV wird im Januar um die seit dem letzten Januar aufgelaufene Teuerung erhöht . Lassen Sie das Feld angekreuzt, wenn die Rente mitwachsen soll.
 
 Bei zwei Personen gibt es bei Verheirateten eine Obergrenze für beide Renten zusammen, siehe [Zweite Person und Ehepaar-Regeln](#f-couple).

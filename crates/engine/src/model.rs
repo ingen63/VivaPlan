@@ -390,6 +390,10 @@ pub struct Ahv {
     /// plan; no switch: the simulation always pays the 13th pension from December 2026).
     #[serde(default, skip_serializing_if = "is_false")]
     pub thirteenth_noted: bool,
+    /// #191: `monthly` (person and partner) is the pension at the reference age 65; the simulation reduces or increases
+    /// it itself (marker of [`crate::upgrade`]; older plans held the already adjusted pension).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub reference_age: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]

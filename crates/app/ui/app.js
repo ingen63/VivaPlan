@@ -36,6 +36,8 @@ let lastRunPlan = null;
 let current = "general";
 let flashId = null;
 let lastSim = null;
+/** #191: AHV pension per person from the preview (entered, rate, effective, capped share); also with errors in the plan. */
+let lastAhv = [];
 
 // ---------- Helpers ----------
 const $ = s => document.querySelector(s);
@@ -167,10 +169,10 @@ function requestPreview() {
     try {
       const r = await Engine.call("preview", { plan: state, path: currentPath });
       if (seq !== previewSeq) return;
-      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) lastSim.p3aView = r.pillar3a || []; previewBasis = r.basis;
+      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) lastSim.p3aView = r.pillar3a || []; lastAhv = r.ahv || []; previewBasis = r.basis;
     } catch (e) {
       if (seq !== previewSeq) return;
-      previewError = errText(e); lastSim = null;
+      previewError = errText(e); lastSim = null; lastAhv = [];
     }
     renderDerived();
     if (req === requestPreview.n) document.documentElement.dataset.preview = "idle"; // no newer request
@@ -494,7 +496,7 @@ function PensionCards(root, who) {
     ${F(`${pk}.lumpsum`, tr("pension.lumpsum"), "pct")}
     ${F(`${pk}.conversion`, tr("pension.conversion"), "pct")}</div>
     <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></div>
-  <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2">${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}
+  <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2"><div>${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}${C("ahvEff", root === "partner" ? 1 : 0)}</div>
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
     <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>`;
 }
@@ -1196,6 +1198,15 @@ const COMPUTED = {
     if (!state.flows.spendingIncludesHousing) return "";
     const w = lastSim?.housingShare;
     return tr("computed.spendingHousing", { v: w != null ? fmtMoney(Math.round(w)) : "–" });
+  },
+  // #191: AHV pension the simulation computes with (reduction or supplement, for couples the capped share)
+  ahvEff: arg => {
+    const v = lastAhv.find(x => x.person === Number(arg));
+    if (!v || !v.start) return "";
+    const money = x => `${x.toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur()}`;
+    const rate = `${v.rate < 0 ? "−" : "+"}${fmtPct(Math.abs(v.rate))}`;
+    const eff = v.rate === 0 ? tr("computed.ahvEffective", { money: money(v.monthly) }) : tr("computed.ahvEffectiveRate", { rate, money: money(v.monthly) });
+    return eff + (v.capped != null && v.cappedFrom ? tr("computed.ahvCapped", { ym: ymShow(v.cappedFrom), money: money(v.capped) }) : "");
   },
   ms: id => { const m = msMonth(id); return Number.isFinite(m) ? tr("computed.msAge", { ymShow: ymShow(i2ym(m)), m: ageStr(m) }) : tr("computed.invalid"); },
   age1: () => { const s = startM(); return Number.isFinite(s) && state.household.persons[1] ? tr("computed.ageAtStart", { s: ageAt(s, state.household.persons[1].id).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : ""; },
@@ -3274,7 +3285,7 @@ onLanguage(() => PLAN_HIDDEN = [
   [/^realestate\.affordability\.wealthContribution$/, tr("planHidden.noField")], [/^withdrawal\.buckets\.reserveMonths$/, tr("planHidden.noField")],
   [/^realestate\.properties\.\d+\.inflation$/, tr("planHidden.legacyField")],
   [/^returns\.parametric\.sampler$/, tr("planHidden.sampling")],
-  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")],
+  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")], [/(^|\.)ahv\.referenceAge$/, tr("planHidden.noField")],
 ]);
 function cmpPlan(body, items, datas) {
   // Sections in the order of the editor, within them the labels in the order of their first occurrence

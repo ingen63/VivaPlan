@@ -41,7 +41,9 @@ Der Editor führt durch zwölf Abschnitte:
   Pensionskasse, verschiebt sich alles, was daran hängt. Das Ende des Erwerbseinkommens steht im Einkommen; läuft es nach
   dem Bezug der Pensionskasse weiter, warnt die Prüfung.
 - **Vorsorge:** Pensionskasse mit Guthaben, Beiträgen, Verzinsung, Umwandlungssatz und Kapitalbezug in Prozent;
-  AHV-Rente mit oder ohne Teuerungsanpassung; ab Dezember 2026 jedes Jahr im Dezember die 13. AHV-Rente (1/12 der im
+  AHV-Rente mit oder ohne Teuerungsanpassung, eingegeben als Rente mit 65; bei Bezug vor oder nach 65 kürzt bzw.
+  erhöht die App sie selbst nach den Sätzen der AHV (Vorbezug 6,8 % je Jahr, höchstens 13,6 %; Aufschub 5,2 % bis
+  31,5 %), neben dem Feld steht die effektive Rente; ab Dezember 2026 jedes Jahr im Dezember die 13. AHV-Rente (1/12 der im
   Jahr ausbezahlten AHV-Renten, anteilig bei Beginn im Laufe des Jahres).
 - **Säule 3a:** ein Konto je Person mit Guthaben, Verzinsung, Einzahlung pro Jahr (bis zum Maximalbetrag, zählt zu den
   Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug); der Rest wird spätestens

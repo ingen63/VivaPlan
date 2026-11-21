@@ -126,10 +126,14 @@ The share of the retirement savings paid out **as capital** at retirement. 0 % m
 The best share depends on the tax, the conversion rate and your willingness to take risks. Run it through a [variation](#f-sweep) and see how the success rate changes.
 
 ## @f-ahv AHV
-Keywords: pension, payout, inflation, index, pillar 1, contribution years, 13th AHV pension, December
+Keywords: pension, payout, inflation, index, pillar 1, contribution years, 13th AHV pension, December, early payout, deferral, reduction, supplement
 
 - **Pension per month at the start of payout:** your expected monthly pension when drawn at 65 (reference age) according to the pension forecast of the compensation office, in today's prices, **without the 13th pension** (the app adds it itself, see below).
-- **Payout from:** always the milestone **AHV pension start** of the person (63 to 70 years). Drawing early or deferring changes the pension. Then adjust the pension accordingly.
+- **Payout from:** always the milestone **AHV pension start** of the person (63 to 70 years). If it lies before or after 65, the app reduces or increases the pension itself (see below); still enter the pension at 65.
+
+Below the field you always see the pension the app computes with, in today's prices: without an early payout or deferral the same as the input, otherwise with the rate, e.g. *−13.6 % → effective 2'177.28 CHF per month*. For married couples it also shows from when both pensions run and which share remains after the upper limit, e.g. *from 03.2032 capped 1'890.00 CHF*.
+
+**Early payout and deferral:** Drawing early reduces the pension by 6.8 % per year, month by month according to the AHV table (e.g. 15 months 8.5 %), at most 13.6 % when drawn at 63. A deferral of at least one year increases it in quarter-year steps: 1 year 5.2 %, 2 years 10.8 %, 3 years 17.1 %, 4 years 24.0 %, 5 years 31.5 %; a deferral of less than one year brings no supplement. Reduction and supplement apply to the whole payout period, also after 65, and per person; the upper limit for married couples and the 13th pension rest on the adjusted pension. Example: pension 2 520, drawn at 63 → 2 520 × (1 − 0.136) = 2 177.28; drawn at 68 → 2 520 × 1.171 = 2 950.92, no AHV between 65 and 68. Source: leaflet 3.04 *Flexible retirement* (as of 1.1.2026). Not included are partial early payout and partial deferral and the special rates for women born 1961 to 1969. Plans saved before this change held the already adjusted pension for a payout before or after 65; when opened, the app converts it once back to the pension at 65 and reports it, the result stays the same.
 - **Adjust the pension annually for inflation:** The AHV pension is increased in January by the inflation accumulated since the last January. Leave the box ticked if the pension should grow with it.
 
 With two married persons, there is an upper limit for both pensions together, see [Second person and rules for couples](#f-couple).

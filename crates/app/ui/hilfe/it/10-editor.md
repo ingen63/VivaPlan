@@ -126,10 +126,14 @@ La quota dell’avere di vecchiaia versata al pensionamento **come capitale**. 0
 La quota migliore dipende dall’imposta, dall’aliquota di conversione e dalla Sua propensione al rischio. La faccia variare con una [variazione](#f-sweep) e osservi come cambia il tasso di successo.
 
 ## @f-ahv AVS
-Parole chiave: rendita, riscossione, rincaro, indice, 1° pilastro, anni di contribuzione, 13a rendita AVS, dicembre
+Parole chiave: rendita, riscossione, rincaro, indice, 1° pilastro, anni di contribuzione, 13a rendita AVS, dicembre, anticipazione, rinvio, riduzione, supplemento
 
 - **Rendita al mese all’inizio della prestazione:** la Sua rendita mensile presumibile con riscossione a 65 anni (età di riferimento) secondo il calcolo anticipato della rendita della cassa di compensazione, ai prezzi attuali, **senza la 13a rendita** (l’applicazione la aggiunge da sé, vedi sotto).
-- **Prestazione da:** sempre la tappa **Inizio della rendita AVS** della persona (da 63 a 70 anni). Un’anticipazione o un rinvio modifica la rendita. Adegui allora la rendita di conseguenza.
+- **Prestazione da:** sempre la tappa **Inizio della rendita AVS** della persona (da 63 a 70 anni). Se si trova prima o dopo i 65 anni, l’applicazione riduce o aumenta da sé la rendita (vedi sotto); inserisca comunque la rendita a 65 anni.
+
+Sotto il campo figura sempre la rendita con cui l’applicazione calcola, ai prezzi attuali: senza anticipazione né rinvio uguale all’inserimento, altrimenti con l’aliquota, p. es. *−13.6 % → effettivamente 2'177.28 CHF al mese*. Per le coppie sposate figura inoltre da quando entrambe le rendite sono in corso e quale quota resta dopo il limite superiore, p. es. *dal 03.2032 plafonata 1'890.00 CHF*.
+
+**Anticipazione e rinvio:** Un’anticipazione riduce la rendita del 6,8 % all’anno, al mese esatto secondo la tabella dell’AVS (p. es. 15 mesi 8,5 %), al massimo 13,6 % con riscossione a 63 anni. Un rinvio di almeno un anno la aumenta per trimestri: 1 anno 5,2 %, 2 anni 10,8 %, 3 anni 17,1 %, 4 anni 24,0 %, 5 anni 31,5 %; un rinvio inferiore a un anno non dà alcun supplemento. Riduzione e supplemento valgono per l’intera durata della riscossione, anche dopo i 65 anni, e per persona; il limite superiore per le coppie sposate e la 13a rendita si basano sulla rendita adeguata. Esempio: rendita 2 520, riscossione a 63 anni → 2 520 × (1 − 0,136) = 2 177.28; riscossione a 68 anni → 2 520 × 1,171 = 2 950.92, nessuna AVS tra 65 e 68 anni. Fonte: promemoria 3.04 *Pensionamento flessibile* (stato al 1.1.2026). Non sono considerati l’anticipazione e il rinvio parziali né le aliquote particolari per le donne nate dal 1961 al 1969. Le pianificazioni salvate prima di questa modifica contenevano la rendita già adeguata in caso di riscossione prima o dopo i 65 anni; all’apertura l’applicazione la riconverte una volta nella rendita a 65 anni e lo segnala, il risultato resta invariato.
 - **Adeguare annualmente la rendita al rincaro:** l’AVS viene aumentata a gennaio del rincaro accumulato dall’ultimo gennaio. Lasci il campo spuntato se la rendita deve crescere di pari passo.
 
 Con due persone coniugate esiste un limite superiore per entrambe le rendite insieme, vedi [Seconda persona e regole per coppie sposate](#f-couple).

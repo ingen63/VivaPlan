@@ -81,6 +81,8 @@ pub struct PreviewOut {
     pub basis: Option<Message>,
     /// Pillar 3a payout plan per account (#55).
     pub pillar3a: Vec<crate::sim::Pillar3aView>,
+    /// #191: AHV pension per person with reduction or supplement (and cap) as the simulation computes with it.
+    pub ahv: Vec<crate::sim::AhvView>,
 }
 
 /// The preview computes one run with constant returns. For series these are their mean
@@ -129,10 +131,12 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
                 error: None,
                 basis: None,
                 pillar3a: vec![],
+                ahv: vec![],
             }
         }
     };
     let issues = validate::validate(&p);
+    let ahv = crate::sim::ahv_view(&p);
     let basis = preview_returns(&mut p, base_dir, library);
     p.returns.source = ReturnSource::Fixed;
     match Simulator::new(&p) {
@@ -146,6 +150,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
                 error: None,
                 basis,
                 pillar3a,
+                ahv,
             }
         }
         Err(e) => PreviewOut {
@@ -154,6 +159,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
             error: Some(e.message()),
             basis,
             pillar3a: vec![],
+            ahv,
         },
     }
 }
