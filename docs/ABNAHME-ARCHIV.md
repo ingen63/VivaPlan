@@ -1214,6 +1214,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #183/AK4 | Korrekturen in `hilfe/{de,en,fr,it}/`, `make i18n-check` grün. | ☑ | **gilt** | [check_i18n.py](../tools/check_i18n.py) (`make i18n-check`) | 21.11.2026 ok: 0 Befunde |
 | #183/AK5 | Ein Test findet in der Hilfe keine Zahl der Kombinationen, die von `MAX_COMBINATIONS` abweicht. | ☑ | **gilt** | [docs.test.js](../e2e/unit/docs.test.js) «#183/AK5: the help names no number of combinations other than MAX_COMBINATIONS» | 21.11.2026 ok: Wert aus `scenarios.rs` gelesen; Gegenprobe mit der alten Fassung findet 400 in allen Sprachen |
 
+### #184 Beispielplanung in der Sprache der Oberfläche
+
+[Issue #184](https://github.com/ingen63/VivaPlan/issues/184) · geschlossen · Umsetzung: 123d4af
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #184/AK1 | Mit der Oberfläche auf EN, FR oder IT öffnen «Neu» und der erste Start die Beispielplanung mit allen Namen in dieser Sprache; kein deutsches Wort bleibt. | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «Example plan in the language of the user interface (#184)» «AK1: …», [util.test.js](../e2e/unit/util.test.js) «#184/AK1: …» | 21.11.2026 ok: FR, IT, EN; «Tranche 1/2» nach Glossar in allen Sprachen gleich; Desktop-App nicht von Hand geprüft |
+| #184/AK2 | Die Beispielplanungen der vier Sprachen ergeben dieselben Ergebnisse (nur Namen verschieden); ein Test prüft das. | ☑ | **gilt** | [util.test.js](../e2e/unit/util.test.js) «#184/AK2: …» | 21.11.2026 ok |
+| #184/AK3 | Gespeicherte Planungen werden nicht übersetzt; eine gespeicherte Beispielplanung behält in einer anderen Sprache ihre Namen. | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js) «AK3: a saved plan keeps its names in another language» | 21.11.2026 ok |
+| #184/AK4 | Die Namen folgen dem Glossar; die Person heisst landesüblich und ist erfunden. | ☑ | **gilt** | kein Test (Durchsicht `example.*` in `i18n/*.json` gegen `docs/GLOSSAR.md`) | 21.11.2026 ok: Planung → plan, planification, pianificazione; PPE/PPP landesüblich; Jane Smith, Marie Dupont, Maria Rossi |
+| #184/AK5 | Hilfe und `docs/BESCHREIBUNG.md` nachgeführt, wo sie die Beispielplanung beschreiben. | ☑ | **gilt** | kein Test (Durchsicht) | 21.11.2026 ok: `hilfe/*/10-editor.md` in allen vier Sprachen, `BESCHREIBUNG.md` |
+
 ### #185 Neues App-Icon
 
 [Issue #185](https://github.com/ingen63/VivaPlan/issues/185) · geschlossen · Umsetzung: 85edb19
@@ -1226,3 +1238,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #185/AK4 | Das Icon wirkt auf hellem und auf dunklem Hintergrund (macOS-Dock, Windows-Taskleiste hell und dunkel). | ☑ | **gilt** | kein Test (Vorschau `docs/bilder/icon-vorschau.png`) | 21.11.2026 ok (Urteil von Auge des Projektinhabers zur Vorschau) |
 | #185/AK5 | Kein Schweizerkreuz oder anderes geschütztes Zeichen, keine fremden Marken, keine Schriftart mit Lizenzpflicht. | ☑ | **gilt** | kein Test (Durchsicht der SVG-Dateien; `<text>` prüft «issue_185_ak1_…») | 21.11.2026 ok |
 | #185/AK6 | Die Installationspakete (`.github/workflows/pakete.yml`) bauen mit dem neuen Icon. | ☑ | **gilt** | kein Test (Lauf [44913969121](https://github.com/ingen63/VivaPlan/actions/runs/44913969121) von Hand auf a9359be) | 21.11.2026 ok (macOS, Linux, Windows erfolgreich) |
+
+### #186 Beispieldatei der Meldungen unter Windows mit CRLF
+
+[Issue #186](https://github.com/ingen63/VivaPlan/issues/186) · geschlossen · Umsetzung: 8d3b49d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #186/AK1 | `.gitattributes` checkt `e2e/unit/engine-messages.json` mit LF aus (`git check-attr eol` meldet `lf`). | ☑ | **gilt** | kein Test (`git check-attr eol`, `git ls-files --eol`) | 21.11.2026 ok |
+| #186/AK2 | Job `tests-os (windows-latest)` im nächsten Lauf grün. | ☑ | **gilt** | `message::tests::issue_171_ak3_examples_file_is_current` unter Windows | 21.11.2026 ok: Läufe 44907095566 (7676c22) und 44912644203 (a9359be) |
+
+### #187 Nicht erkannte Mutanten der Mehrsprachigkeit und der Meldungen
+
+[Issue #187](https://github.com/ingen63/VivaPlan/issues/187) · geschlossen · Umsetzung: dcf8df2, 7676c22
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #187/AK1 | Tests erkennen die Mutanten in `message.rs` (Gleichheit, `param`, `render`, `number` fix1/fix2, `placeholders`, `bool`-Argument). | ☑ | **gilt** | [message.rs](../crates/engine/src/message.rs) «issue_187_ak1_…» (2 Tests) | 21.11.2026 ok; `render` (fehlender Parameter) und `placeholders` gleichwertig, Block «#187» in `.cargo/mutants.toml` |
+| #187/AK2 | Tests erkennen die Mutanten in `model.rs`, `series_text.rs`, `import.rs`, `sim.rs`, `validate.rs`, oder ein Kommentar begründet einen gleichwertigen Mutanten. | ☑ | **gilt** | «issue_187_ak2_…» in [series_text.rs](../crates/engine/src/series_text.rs), [model.rs](../crates/engine/src/model.rs), [import.rs](../crates/engine/src/import.rs) | 21.11.2026 ok; `parts`, `capital_tax` gleichwertig; sechs `validate.rs`-Einträge mit verrutschter Zeile nachgeführt |
+| #187/AK3 | Tests erkennen die Mutanten in `crates/app` (`pick`, `startup`, `language_menu`, `first_start_language`) und `devserver::content_type`. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_187_ak3_first_start_language_via_command», [i18n.rs](../crates/app/src/i18n.rs) «startup_language_uses_the_saved_choice_or_the_system», [devserver.rs](../crates/cli/src/devserver.rs) «content_types_follow_the_extension» | 21.11.2026 ok; `pick` gleichwertig, `language_menu` nur im Hauptthread (begründet ausgeschlossen) |
+| #187/AK4 | `cargo mutants` auf den betroffenen Dateien meldet keine nicht erkannten Mutanten mehr (ausser begründeten). | ☑ | **gilt** | `mutants-diff` in `test-quality.yml` | 21.11.2026 ok: lokal 44 von 44 erkannt; CI-Lauf 44907095566 1063 Mutanten, 0 nicht erkannt |
