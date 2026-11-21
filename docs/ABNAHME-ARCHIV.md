@@ -1280,20 +1280,34 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 
 ### #191 AHV-Vorbezug und -Aufschub: Kürzung und Zuschlag berechnen
 
-[Issue #191](https://github.com/ingen63/VivaPlan/issues/191) · geschlossen · Umsetzung: e3eed8f
+[Issue #191](https://github.com/ingen63/VivaPlan/issues/191) · geschlossen · Umsetzung: e3eed8f, 0477c2e (Nachbesserung Plafond)
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #191/AK1 | Die Sätze sind im Issue mit Quelle festgehalten (Merkblatt 3.04, Stand 1.1.2026): … | ☑ | **gilt** | – | 21.11.2026 ok (Kommentar mit Tabellen im Issue) |
 | #191/AK2 | Die Sätze stehen an einer Stelle im Rechenkern mit Gültigkeitsjahr und Quelle; ein Test prüft die Tabellenwerte. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak2_…» | 21.11.2026 ok |
-| #191/AK3 | Bezug mit 63 (24 Monate vor 65), eingegebene Rente 2'520: die App rechnet mit 2'177.28 pro Monat, auch nach Erreichen von 65. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak3_…» | 21.11.2026 ok |
+| #191/AK3 | Bezug mit 63, Rente 2'520: die App rechnet mit 2'520 − 343 = 2'177.00 pro Monat, auch nach Erreichen von 65. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak3_…» | 21.11.2026 ok |
 | #191/AK4 | Bezug 15 Monate vor 65: Kürzung 8,5 % (Tabelle); Rente 2'000 → 1'830.00. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak4_…» | 21.11.2026 ok |
-| #191/AK5 | Bezug mit 68 (36 Monate Aufschub), Rente 2'520: Zuschlag 17,1 % → 2'950.92; zwischen 65 und 68 keine AHV-Rente. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak5_…» | 21.11.2026 ok |
-| #191/AK6 | Bezug mit 65: Rente unverändert; Golden-Dateien mit AHV-Bezug bei 65 unverändert. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak6_…», `golden.rs` | 21.11.2026 ok (Golden 02 nur Ereignistext, Bezug vor 65, begründet) |
-| #191/AK7 | Die Anpassung gilt je Person; die Plafonierung wirkt auf die angepasste Rente; die 13. Rente beruht auf der angepassten Rente. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak7_…» | 21.11.2026 ok |
-| #191/AK8 | Neben dem Eingabefeld steht immer die effektive monatliche AHV-Rente, bei Ehepaaren zusätzlich die plafonierte Rente; … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK8» | 21.11.2026 ok (Prozent mit Punkt im Zahlenformat der App) |
-| #191/AK9 | Bestehende Planungen: beim Öffnen nicht doppelt gekürzt; Vorgehen entschieden und mit alter Datei getestet (`upgrade.rs`). | ☑ | **gilt** | [upgrade_api.rs](../crates/engine/tests/upgrade_api.rs) «issue_191_ak9_…», [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK9» | 21.11.2026 ok |
+| #191/AK5 | Bezug mit 68, Rente 2'520: Zuschlag 17,1 % (431) → 2'951.00; zwischen 65 und 68 keine AHV-Rente. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak5_…» | 21.11.2026 ok |
+| #191/AK6 | Bezug mit 65: Rente unverändert; Golden-Dateien mit AHV-Bezug bei 65 unverändert. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak6_…», `golden.rs` | 21.11.2026 ok (nur Golden 02 geändert: Person 2 Vorbezug, begründet) |
+| #191/AK7 | Die Anpassung gilt je Person nach ihrem eigenen Alter; Plafond, Kürzungsbetrag und Zuschlag folgen dem Gesetz (AK11–AK24). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak7_…» | 21.11.2026 ok |
+| #191/AK8 | Neben dem Eingabefeld steht immer die effektive monatliche AHV-Rente, bei Ehepaaren zusätzlich die Rente nach Plafond und Kürzung/Zuschlag; … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK8» | 21.11.2026 ok (Prozent mit Punkt im Zahlenformat der App) |
+| #191/AK9 | Bestehende Planungen: beim Öffnen nicht doppelt gekürzt; Vorgehen entschieden und mit alter Datei getestet (`upgrade.rs`). | ☑ | **gilt** | [upgrade_api.rs](../crates/engine/tests/upgrade_api.rs) «issue_191_ak9_…», [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK9» | 21.11.2026 ok (gerechnet 2'177 statt 2'177.28, Franken-Rundung) |
 | #191/AK10 | Hilfe (Abschnitt AHV, vier Sprachen), `docs/BESCHREIBUNG.md` und Spezifikation sind nachgeführt; … | ☑ | **gilt** | – | 21.11.2026 ok (Durchsicht) |
+| #191/AK11 | Beide beziehen mit 65: Plafond ab dem 65. der zweiten Person; je 1'890. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak11_…» | 21.11.2026 ok |
+| #191/AK12 | Summe unter dem Plafond: A 1'728, B 1'500. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak12_…» | 21.11.2026 ok |
+| #191/AK13 | Nicht verheiratet: kein Plafond; A 2'177, B 2'520. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak13_…», [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak7_…» | 21.11.2026 ok |
+| #191/AK14 | Vorbezug ohne Anspruch des Ehepartners: Kürzung 343; ab Plafond A 1'547, B 1'890. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak14_…» | 21.11.2026 ok |
+| #191/AK15 | Ehepartner wird während des Vorbezugs 65: 2'177, dann 1'633; ab 65 Kürzung 300, A 1'590. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak15_…» | 21.11.2026 ok |
+| #191/AK16 | Beide gleichzeitig mit 63: je 1'633, auch nach 65. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak16_…» | 21.11.2026 ok |
+| #191/AK17 | Aufschub 3 Jahre, Ehepartner bezieht: B ab dem 65. von A 1'890; A ab 68 2'213; Summe 4'103. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak17_…» | 21.11.2026 ok |
+| #191/AK18 | Aufschub 1 Jahr ohne Anspruch des Ehepartners: Zuschlag 131, A 2'651; ab Plafond 2'021 und 1'890. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak18_…» | 21.11.2026 ok |
+| #191/AK19 | Bezug weniger als ein Jahr nach 65: kein Zuschlag; die Prüfung warnt. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak19_…», [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak19_…» | 21.11.2026 ok |
+| #191/AK20 | Bezug vor 63 oder nach 70 im eigenen Alter: die Prüfung meldet es; höchstens 13,6 % bzw. 31,5 %. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak20_…» | 21.11.2026 ok |
+| #191/AK21 | Teuerung: Rente, Plafond, Kürzungsbetrag und Zuschlag steigen im Januar gleich. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak21_…» | 21.11.2026 ok |
+| #191/AK22 | Simulationsstart während oder nach Vorbezug/Aufschub: Monate davor mit den Beträgen beim Start. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak22_…» | 21.11.2026 ok |
+| #191/AK23 | Eine Person bezieht nie AHV: die andere wird nie plafoniert. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak23_…» | 21.11.2026 ok |
+| #191/AK24 | 13. Rente auf den ausbezahlten Renten nach Plafond, Kürzung und Zuschlag (Fall AK14: 3'437). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak7_…» | 21.11.2026 ok |
 
 ### #192 Anforderungsbezug: Kennungslisten erkennen und verwaiste Kennungen melden
 
