@@ -19,6 +19,18 @@ ZERO="0000000000000000000000000000000000000000"
 # Prevent recursion (in case the agent pushes itself)
 [ -n "${RUST_TEST_AGENT_RUNNING:-}" ] && exit 0
 
+# Overview page «Testqualität»: if the hook lets the push through, fetch the page that test-quality.yml
+# builds for the pushed main commit in the background (tools/fetch-report.sh). Switch off: FETCH_REPORT=0 git push
+report_sha=""
+start_report() {
+  [ -n "$report_sha" ] && [ "${FETCH_REPORT:-1}" != "0" ] || return 0
+  local root; root="$(git rev-parse --show-toplevel)"
+  mkdir -p "$root/local/test-quality"
+  nohup "$root/tools/fetch-report.sh" "$report_sha" >>"$root/local/test-quality/fetch-report.log" 2>&1 </dev/null &
+  echo "pre-push: Bericht Testqualität wird nach dem GitHub-Lauf geholt (Protokoll: local/test-quality/fetch-report.log)."
+}
+trap 'rc=$?; [ "$rc" -eq 0 ] && start_report; exit "$rc"' EXIT
+
 [ -f Cargo.toml ] || exit 0
 
 # Determine the commits to be pushed from stdin
@@ -31,6 +43,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     range_commits="$(git rev-list "$remote_sha..$local_sha")"
   fi
   commits="$commits $range_commits"
+  [ "$remote_ref" = refs/heads/main ] && [ -n "$range_commits" ] && report_sha="$local_sha"
 done
 
 commits="$(echo $commits | tr ' ' '\n' | sed '/^$/d' | sort -u)"

@@ -199,6 +199,8 @@ Unter macOS baut der Git-Hook `tools/git-hooks/post-commit` nach jedem Commit, d
 Oberfläche oder Cargo-Dateien ändert, die App im Hintergrund und ersetzt `/Applications/VivaPlan.app`
 (Skript `tools/build-install.sh`, Protokoll in `target/build-install.log`). Reine Test- und Dokumentationscommits
 lösen keinen Build aus. Für einen einzelnen Commit abschalten: `BUILD_INSTALL=0 git commit …`.
+Nach jedem Push auf `main` holt `tools/git-hooks/pre-push` im Hintergrund die Übersichtsseite «Testqualität» des
+GitHub-Laufs nach `local/test-quality/report/` (`tools/fetch-report.sh`, docs/TESTS.md; abschalten mit `FETCH_REPORT=0 git push`).
 Die Hooks gelten nach `git config core.hooksPath tools/git-hooks`.
 Zum Testen der Oberfläche im Browser (ohne Dateidialoge): `vivaplan ui-dev` aus dem Projektordner starten
 und <http://127.0.0.1:8787/> öffnen; der Server lauscht nur lokal.
