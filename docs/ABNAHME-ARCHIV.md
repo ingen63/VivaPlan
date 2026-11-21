@@ -1371,3 +1371,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #196/AK7 | Die Kommandozeile (`run`, `optimize`) rechnet mit dem Schalter aus der Datei. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) «issue_196_ak7_…» | 21.11.2026 ok |
 | #196/AK8 | Regressionstest im Rechenkern. Bei ausgeschaltetem Schalter bleiben die Golden-Dateien unverändert. | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak8_…»; [golden.rs](../crates/engine/tests/golden.rs) | 21.11.2026 ok (Commit ändert keine Golden-Datei) |
 | #196/AK9 | Hilfe (Immobilien, Notverkauf) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 21.11.2026 ok: Hilfe in vier Sprachen, neuer Abschnitt `f-re-never-sell` |
+
+### #197 Entnahmestrategien ohne Optimierung vergleichen
+
+[Issue #197](https://github.com/ingen63/VivaPlan/issues/197) · geschlossen · Umsetzung: 793fdd9
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #197/AK1 | In der Optimierung startet ein Knopf «Strategien vergleichen (ohne Optimierung)» die gewählten Entnahmestrategien mit den … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK1» (#197); [compare_strategies.rs](../crates/engine/tests/compare_strategies.rs) «issue_197_ak1_…» | 22.11.2026 ok |
+| #197/AK2 | Die Ergebnistabelle zeigt je Strategie zusätzlich das nominale Endvermögen bei 1, 5, 50, 95 und 99 %, auch nach einer … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2» (#197); [compare_strategies.rs](../crates/engine/tests/compare_strategies.rs) «issue_197_ak2_…» | 22.11.2026 ok |
+| #197/AK3 | Eine Auswahl legt fest, womit verglichen wird: «wie geplant», «Immobilien nie verkaufen» oder «beide». Bei «beide» steht … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK3» (#197); [compare_strategies.rs](../crates/engine/tests/compare_strategies.rs) «issue_197_ak3_…» | 22.11.2026 ok |
+| #197/AK4 | Die Kommandozeile kann dasselbe (Vergleich ohne Suche, Auswahl «wie geplant / nie verkaufen / beide»; Namen der Optionen … | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) «issue_197_ak4_…»; [optimize.rs](../crates/cli/src/optimize.rs) «issue_197_ak4_…» (2) | 22.11.2026 ok (Optionen `--compare`, `--property planned\|never-sell\|both`; von Hand mit der Beispielplanung) |
+| #197/AK5 | Für den Vergleich ohne Optimierung gibt es einen Test mit der Beispielplanung. Die Kennzahlen sind dieselben wie bei `run` … | ☑ | **gilt** | [compare_strategies.rs](../crates/engine/tests/compare_strategies.rs) «issue_197_ak5_…» | 22.11.2026 ok (7 Strategien; von Hand: 50 % gleich wie `run`) |
+| #197/AK6 | Hilfe (Optimierung) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht); Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, neuer Abschnitt `o-compare` |
