@@ -23,7 +23,7 @@
 //! at `household.ahvCoupleCap`.
 //!
 //! Fixed withdrawal rate, guardrails, VPW and endowment determine living costs from the first person's retirement:
-//! annual withdrawal = living costs + housing costs − income and pensions (before taxes). Sale proceeds reserved
+//! annual withdrawal = living costs + housing costs + pillar 3a contributions − income and pensions (before taxes). Sale proceeds reserved
 //! for a purchase do not count towards the wealth used for withdrawals. With «3-Topf» and guardrails (#6) the
 //! guardrails steer spending and the buckets steer investment; the buckets' net need is then based on the
 //! guardrails' living costs.
