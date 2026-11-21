@@ -1278,6 +1278,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #190/AK11 | Eine 13. Rente gibt es erst ab Dezember 2026, auch wenn die Simulation früher beginnt (Kommentar). | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_190_ak11_…» | 21.11.2026 ok |
 | #190/AK12 | Beim Öffnen einer älteren Planung erscheint der Hinweis zur 13. Rente einmalig; Test mit einer alten Datei (Kommentar). | ☑ | **gilt** | [upgrade_api.rs](../crates/engine/tests/upgrade_api.rs) «issue_190_ak12_…», [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK12» | 21.11.2026 ok |
 
+### #191 AHV-Vorbezug und -Aufschub: Kürzung und Zuschlag berechnen
+
+[Issue #191](https://github.com/ingen63/VivaPlan/issues/191) · geschlossen · Umsetzung: e3eed8f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #191/AK1 | Die Sätze sind im Issue mit Quelle festgehalten (Merkblatt 3.04, Stand 1.1.2026): … | ☑ | **gilt** | – | 21.11.2026 ok (Kommentar mit Tabellen im Issue) |
+| #191/AK2 | Die Sätze stehen an einer Stelle im Rechenkern mit Gültigkeitsjahr und Quelle; ein Test prüft die Tabellenwerte. | ☑ | **gilt** | [ahv.rs](../crates/engine/src/ahv.rs) «issue_191_ak2_…» | 21.11.2026 ok |
+| #191/AK3 | Bezug mit 63 (24 Monate vor 65), eingegebene Rente 2'520: die App rechnet mit 2'177.28 pro Monat, auch nach Erreichen von 65. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak3_…» | 21.11.2026 ok |
+| #191/AK4 | Bezug 15 Monate vor 65: Kürzung 8,5 % (Tabelle); Rente 2'000 → 1'830.00. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak4_…» | 21.11.2026 ok |
+| #191/AK5 | Bezug mit 68 (36 Monate Aufschub), Rente 2'520: Zuschlag 17,1 % → 2'950.92; zwischen 65 und 68 keine AHV-Rente. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak5_…» | 21.11.2026 ok |
+| #191/AK6 | Bezug mit 65: Rente unverändert; Golden-Dateien mit AHV-Bezug bei 65 unverändert. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak6_…», `golden.rs` | 21.11.2026 ok (Golden 02 nur Ereignistext, Bezug vor 65, begründet) |
+| #191/AK7 | Die Anpassung gilt je Person; die Plafonierung wirkt auf die angepasste Rente; die 13. Rente beruht auf der angepassten Rente. | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «issue_191_ak7_…» | 21.11.2026 ok |
+| #191/AK8 | Neben dem Eingabefeld steht immer die effektive monatliche AHV-Rente, bei Ehepaaren zusätzlich die plafonierte Rente; … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK8» | 21.11.2026 ok (Prozent mit Punkt im Zahlenformat der App) |
+| #191/AK9 | Bestehende Planungen: beim Öffnen nicht doppelt gekürzt; Vorgehen entschieden und mit alter Datei getestet (`upgrade.rs`). | ☑ | **gilt** | [upgrade_api.rs](../crates/engine/tests/upgrade_api.rs) «issue_191_ak9_…», [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK9» | 21.11.2026 ok |
+| #191/AK10 | Hilfe (Abschnitt AHV, vier Sprachen), `docs/BESCHREIBUNG.md` und Spezifikation sind nachgeführt; … | ☑ | **gilt** | – | 21.11.2026 ok (Durchsicht) |
+
 ### #192 Anforderungsbezug: Kennungslisten erkennen und verwaiste Kennungen melden
 
 [Issue #192](https://github.com/ingen63/VivaPlan/issues/192) · geschlossen · Umsetzung: 7e93347
