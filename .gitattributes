@@ -4,3 +4,5 @@
 *.csv text eol=lf
 *.rplan text eol=lf
 *.vplan text eol=lf
+# message::tests::issue_171_ak3_examples_file_is_current vergleicht die Beispieldatei Byte für Byte (#171).
+e2e/unit/engine-messages.json text eol=lf
