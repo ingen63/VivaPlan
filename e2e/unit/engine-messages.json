@@ -540,6 +540,48 @@
     "text": "The lump sum must be between 0 % and 100 %."
   },
   {
+    "code": "ahv_payout_age_law",
+    "params": {
+      "age": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The AHV pension{who} starts at {age} years; the AHV only allows a payout from 63 to 70. The app computes with at most 13.6 % reduction or 31.5 % supplement.",
+    "text": "The AHV pensionPerson 2 starts at Person 2 years; the AHV only allows a payout from 63 to 70. The app computes with at most 13.6 % reduction or 31.5 % supplement."
+  },
+  {
+    "code": "ahv_deferral_short",
+    "params": {
+      "months": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The AHV pension{who} starts {months} months after 65; a deferral needs at least one year, so there is no supplement.",
+    "text": "The AHV pensionPerson 2 starts Person 2 months after 65; a deferral needs at least one year, so there is no supplement."
+  },
+  {
     "code": "pk_conversion_high",
     "params": {
       "rate": 0.0371
@@ -4546,8 +4588,8 @@
         "text": "Person 2"
       }
     },
-    "template": "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself reduces it by {rate:pct1} % for drawing early. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month; the result stays the same.",
-    "text": "The AHV pensionPerson 2 is now entered as the pension at 65 (reference age); the app itself reduces it by 3.7 % for drawing early. The previous amount of 12345.68 has therefore been converted to 12345.68 per month; the result stays the same."
+    "template": "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself reduces it by {rate:pct1} % for drawing early. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month. The reduction and supplement are now rounded to francs and, for married couples, applied after the cap as the AHV does; the result may therefore change slightly.",
+    "text": "The AHV pensionPerson 2 is now entered as the pension at 65 (reference age); the app itself reduces it by 3.7 % for drawing early. The previous amount of 12345.68 has therefore been converted to 12345.68 per month. The reduction and supplement are now rounded to francs and, for married couples, applied after the cap as the AHV does; the result may therefore change slightly."
   },
   {
     "code": "note_ahv_deferred",
@@ -4563,8 +4605,8 @@
         "text": "Person 2"
       }
     },
-    "template": "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself increases it by {rate:pct1} % for the deferral. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month; the result stays the same.",
-    "text": "The AHV pensionPerson 2 is now entered as the pension at 65 (reference age); the app itself increases it by 3.7 % for the deferral. The previous amount of 12345.68 has therefore been converted to 12345.68 per month; the result stays the same."
+    "template": "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself increases it by {rate:pct1} % for the deferral. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month. The reduction and supplement are now rounded to francs and, for married couples, applied after the cap as the AHV does; the result may therefore change slightly.",
+    "text": "The AHV pensionPerson 2 is now entered as the pension at 65 (reference age); the app itself increases it by 3.7 % for the deferral. The previous amount of 12345.68 has therefore been converted to 12345.68 per month. The reduction and supplement are now rounded to francs and, for married couples, applied after the cap as the AHV does; the result may therefore change slightly."
   },
   {
     "code": "note_pictet_stocks",

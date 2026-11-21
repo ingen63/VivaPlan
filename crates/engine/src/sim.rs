@@ -19,12 +19,12 @@
 //!
 //! Second person: income, pension fund and AHV run per person; taxes, wealth and
 //! spending apply to the household. The withdrawal strategies (except «Standard») start as soon as the first
-//! person with a payout date is retired. Once both AHV pensions are due, they are capped for married couples
-//! at `household.ahvCoupleCap`.
+//! person with a payout date is retired. Once both are entitled to an AHV pension, their pensions at 65 are capped for
+//! married couples at `household.ahvCoupleCap` (#191: before the reduction or supplement, see [`crate::ahv::Calc`]).
 //!
 //! #191: The AHV pension is entered at the reference age (65); an early payout reduces it, a deferral increases it
-//! by the rates of [`crate::ahv`], for the whole payout duration and before the cap for married couples (so the
-//! 13th pension also rests on the adjusted pension).
+//! by the rates of [`crate::ahv`] as fixed amounts in francs, for the whole payout duration and after the cap for married
+//! couples (leaflet 3.04); the 13th pension rests on the pensions paid.
 //!
 //! #190: From 2026 the AHV pays a 13th pension in December: one twelfth of the (capped) household AHV paid
 //! from January to December, each monthly share rounded to the centime, the sum to whole francs (circular
@@ -420,14 +420,16 @@ pub struct AhvView {
     /// Monthly pension the simulation computes with.
     pub monthly: f64,
     pub start: Option<YearMonth>,
-    /// Married couples: month from which both pensions run and their sum exceeds the cap.
+    /// Married couples: month from which both are entitled (payout or reference age) and the pensions at 65 together
+    /// exceed the cap.
     pub capped_from: Option<YearMonth>,
-    /// Married couples: share of this person in the capped pension from `capped_from` (proportional to the pensions).
+    /// Married couples: pension of this person after the cap and the reduction or supplement, once every early payout
+    /// and deferral is over (#191, leaflet 3.04).
     pub capped: Option<f64>,
 }
 
 /// #191: The AHV pensions per person as the simulation computes with them (see [`AhvView`]); also for a plan with
-/// errors elsewhere, as long as the payouts can be resolved (otherwise empty).
+/// errors elsewhere, as long as the payouts can be resolved (otherwise empty). Without inflation.
 pub fn ahv_view(plan: &Plan) -> Vec<AhvView> {
     let Ok(r) = Resolver::new(plan) else {
         return vec![];
@@ -439,37 +441,43 @@ pub fn ahv_view(plan: &Plan) -> Vec<AhvView> {
     }
     let mut people = vec![];
     for (p, ahv) in list {
-        let Some(p) = p else {
+        let (Some(p), Ok(at)) = (p, r.resolve(&ahv.at)) else {
             return vec![];
         };
-        let Ok(at) = r.resolve(&ahv.at) else {
-            return vec![];
-        };
-        let offset = at.map_or(0, |a| crate::ahv::offset(p.birth, a));
-        people.push((
-            ahv.monthly,
-            crate::ahv::rate(offset),
-            crate::ahv::adjusted(ahv.monthly, offset),
-            at,
-        ));
+        people.push(crate::ahv::Person::new(p.birth, ahv.monthly, at, false));
     }
-    let both = (people.len() > 1 && plan.household.married)
-        .then(|| people.iter().map(|x| x.3).collect::<Option<Vec<_>>>())
+    let married = people.len() > 1 && plan.household.married;
+    let cap = married.then_some(plan.household.ahv_couple_cap);
+    // From the month both are entitled; the amounts once every early payout and deferral is over.
+    let both = married
+        .then(|| people.iter().map(|p| p.entitled_from()).collect::<Option<Vec<_>>>())
         .flatten()
         .and_then(|v| v.into_iter().max());
-    let sum: f64 = people.iter().map(|x| x.2).sum();
-    let cap = Some(plan.household.ahv_couple_cap).filter(|cap| both.is_some() && sum > *cap);
+    let first = people.iter().filter_map(|p| p.entitled_from()).min();
+    let last = people.iter().filter_map(|p| p.at.map(|a| a.max(p.reference))).max();
+    let mut finals = vec![None; people.len()];
+    if let (Some(from), Some(to)) = (first, last.max(both)) {
+        let mut calc = crate::ahv::Calc::new(people.clone(), cap);
+        // bounded (extreme dates in a plan): at most 100 years of months
+        for k in 0..=from.until(to).clamp(0, 1200) {
+            calc.step(from.plus(k), k == 0);
+        }
+        for (i, f) in finals.iter_mut().enumerate() {
+            *f = Some(calc.paid(i));
+        }
+    }
+    let capped = both.filter(|_| people.iter().map(|p| p.entered).sum::<f64>() > plan.household.ahv_couple_cap);
     people
-        .into_iter()
+        .iter()
         .enumerate()
-        .map(|(i, (entered, rate, monthly, start))| AhvView {
+        .map(|(i, p)| AhvView {
             person: i,
-            entered,
-            rate,
-            monthly,
-            start,
-            capped_from: cap.and(both),
-            capped: cap.map(|cap| (monthly * cap / sum * 100.0).round() / 100.0),
+            entered: p.entered,
+            rate: p.rate(),
+            monthly: crate::ahv::adjusted(p.entered, p.offset()),
+            start: p.at,
+            capped_from: capped,
+            capped: capped.and(finals[i]),
         })
         .collect()
 }
@@ -615,10 +623,8 @@ struct PersonCfg {
     pk_lumpsum: f64,
     pk_conversion: f64,
     pk_at: Option<YearMonth>,
-    /// #191: Monthly AHV pension adjusted for an early or deferred payout ([`crate::ahv`]).
-    ahv_monthly: f64,
-    ahv_at: Option<YearMonth>,
-    ahv_indexed: bool,
+    /// #191: AHV of the person (entered pension at 65, payout, reference age; see [`crate::ahv::Calc`]).
+    ahv: crate::ahv::Person,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -759,8 +765,6 @@ impl Simulator {
                           ahv: &crate::model::Ahv|
          -> Result<PersonCfg> {
             let ahv_at = r.resolve(&ahv.at)?;
-            // #191: reduction or supplement by the months between the reference age and the payout
-            let ahv_offset = ahv_at.map_or(0, |a| crate::ahv::offset(birth, a));
             Ok(PersonCfg {
                 birth,
                 income: curve(income)?,
@@ -771,9 +775,7 @@ impl Simulator {
                 pk_lumpsum: pk.lumpsum,
                 pk_conversion: pk.conversion,
                 pk_at: r.resolve(&pk.at)?,
-                ahv_monthly: crate::ahv::adjusted(ahv.monthly, ahv_offset),
-                ahv_at,
-                ahv_indexed: ahv.indexed,
+                ahv: crate::ahv::Person::new(birth, ahv.monthly, ahv_at, ahv.indexed),
             })
         };
         let persons = &plan.household.persons;
@@ -1123,8 +1125,8 @@ struct Run<'a> {
     stocks: f64,
     bonds: f64,
     people: Vec<PersonState>,
-    /// AHV inflation since the first payout (for the cap on married couples).
-    ahv_scale: f64,
+    /// #191: AHV of the household (cap, reduction and supplement as the AHV computes them).
+    ahv: crate::ahv::Calc,
     /// #190: Monthly shares of the 13th AHV pension accrued in the current calendar year, in centimes.
     ahv13_centimes: f64,
     /// Taxes from the month's events (3a payout, property gain).
@@ -1220,8 +1222,6 @@ struct PersonState {
     pk_accrued: f64,
     retired: bool,
     pk_pension: f64,
-    ahv: f64,
-    ahv_started: bool,
 }
 
 impl<'a> Run<'a> {
@@ -1261,7 +1261,7 @@ impl<'a> Run<'a> {
                     ..Default::default()
                 })
                 .collect(),
-            ahv_scale: 1.0,
+            ahv: crate::ahv::Calc::new(s.people.iter().map(|p| p.ahv.clone()).collect(), s.couple_cap),
             ahv13_centimes: 0.0,
             event_tax: 0.0,
             infl_idx: 1.0,
@@ -1331,11 +1331,7 @@ impl<'a> Run<'a> {
 
     /// AHV pensions of the household; for married couples together at most the cap.
     fn ahv(&self) -> f64 {
-        let sum: f64 = self.people.iter().map(|p| p.ahv).sum();
-        match self.s.couple_cap {
-            Some(cap) => sum.min(cap * self.ahv_scale),
-            None => sum,
-        }
+        self.ahv.total()
     }
 
     /// #190: Accrues the share of the 13th AHV pension for month `m` (one twelfth of the household AHV `monthly`,
@@ -2169,7 +2165,7 @@ impl<'a> Run<'a> {
     /// AHV and PK pension in month `mm` for planning the current year: running pensions as today, those not yet
     /// started from their date (PK pension estimated from today's balance).
     fn pensions_at(&self, mm: YearMonth) -> (f64, f64) {
-        let (mut ahv, mut pk) = (0.0, 0.0);
+        let mut pk = 0.0;
         for (st, c) in self.people.iter().zip(&self.s.people) {
             pk += if st.retired {
                 st.pk_pension
@@ -2178,19 +2174,8 @@ impl<'a> Run<'a> {
             } else {
                 0.0
             };
-            ahv += if st.ahv_started {
-                st.ahv
-            } else if c.ahv_at.is_some_and(|a| mm >= a) {
-                c.ahv_monthly
-            } else {
-                0.0
-            };
         }
-        let ahv = match self.s.couple_cap {
-            Some(cap) => ahv.min(cap * self.ahv_scale),
-            None => ahv,
-        };
-        (ahv, pk)
+        (self.ahv.projected(mm), pk)
     }
 
     /// Net need from the planned values of the current year from month `m` until December (at most until the end of the plan),
@@ -2869,16 +2854,7 @@ impl<'a> Run<'a> {
                 self.infl_idx_jan = self.infl_idx;
                 infl_factor = factor;
                 // #145: The cap rises once per January as soon as at least one indexed pension is running (not per person).
-                let mut indexed = false;
-                for (st, c) in self.people.iter_mut().zip(&s.people) {
-                    if st.ahv_started && c.ahv_indexed {
-                        st.ahv *= factor;
-                        indexed = true;
-                    }
-                }
-                if indexed {
-                    self.ahv_scale *= factor;
-                }
+                self.ahv.index(factor);
             }
 
             // Events
@@ -2950,25 +2926,25 @@ impl<'a> Run<'a> {
                         ),
                     );
                 }
-                if !self.people[pi].ahv_started && c.ahv_at.is_some_and(|a| m >= a) {
-                    self.people[pi].ahv_started = true;
-                    self.people[pi].ahv = c.ahv_monthly;
-                    let who = if s.people.len() > 1 {
-                        crate::message::arg(&msg!(suffix_person, n = pi + 1))
-                    } else {
-                        crate::message::Arg::Null
-                    };
-                    self.event(
-                        m,
-                        EventKind::AhvStart,
-                        msg!(
-                            event_ahv_start,
-                            who = who,
-                            pension = c.ahv_monthly,
-                            currency = self.s.currency
-                        ),
-                    );
-                }
+            }
+            // #191: AHV of the month (cap, reduction, supplement) and the start of a payout
+            for pi in self.ahv.step(m, k == 0) {
+                let who = if s.people.len() > 1 {
+                    crate::message::arg(&msg!(suffix_person, n = pi + 1))
+                } else {
+                    crate::message::Arg::Null
+                };
+                let pension = self.ahv.paid(pi);
+                self.event(
+                    m,
+                    EventKind::AhvStart,
+                    msg!(
+                        event_ahv_start,
+                        who = who,
+                        pension = pension,
+                        currency = self.s.currency
+                    ),
+                );
             }
             let (prop_cost, prop_running) = self.properties(k, m);
             // #52: The pillar 3a contribution counts as spending (like housing costs).

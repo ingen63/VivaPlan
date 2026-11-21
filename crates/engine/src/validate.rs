@@ -364,6 +364,30 @@ fn check(plan: &Plan, v: &mut Issues) {
                 }
             }
         }
+        // #191/AK19, AK20: AHV payout by the person's own age (leaflet 3.04: early payout from 63, deferral 1 to 5 years).
+        let ahv = if i == 0 {
+            Some(&plan.pension.ahv)
+        } else {
+            plan.partner.as_ref().map(|q| &q.ahv)
+        };
+        if let Some(at) = ahv.and_then(|a| r.resolve(&a.at).ok().flatten()) {
+            let person = crate::ahv::Person::new(p.birth, 0.0, Some(at), false);
+            let offset = person.offset();
+            let who = if plan.partner.is_some() {
+                arg(&msg!(suffix_person, n = i + 1))
+            } else {
+                crate::message::Arg::Null
+            };
+            if !(-24..=60).contains(&offset) {
+                let age = f64::from(p.birth.until(at)) / 12.0;
+                v.warn(
+                    "pension",
+                    msg!(ahv_payout_age_law, who = who, age = (age * 10.0).round() / 10.0),
+                );
+            } else if (1..crate::ahv::MIN_DEFERRAL_MONTHS).contains(&offset) {
+                v.warn("pension", msg!(ahv_deferral_short, who = who, months = offset));
+            }
+        }
         // #51: Earned income after the pension fund payout (warning).
         let (income, indexed) = if i == 0 {
             (Some(&plan.flows.income), plan.flows.income_indexed)

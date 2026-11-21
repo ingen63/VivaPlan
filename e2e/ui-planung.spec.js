@@ -519,9 +519,9 @@ test.describe("Early and deferred AHV payout (#191)", () => {
       await nav(page, "Vorsorge");
     };
     await payout(63);
-    await expectText(0, "−13.6 % → effektiv 2'177.28 CHF pro Monat");
+    await expectText(0, "−13.6 % → effektiv 2'177.00 CHF pro Monat");
     await payout(68);
-    await expectText(0, "+17.1 % → effektiv 2'950.92 CHF pro Monat");
+    await expectText(0, "+17.1 % → effektiv 2'951.00 CHF pro Monat");
     await payout(65);
     await expectText(0, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat");
 
@@ -532,6 +532,11 @@ test.describe("Early and deferred AHV payout (#191)", () => {
     // person 1: 65 in 06.2035, person 2: 65 in 03.2037
     await expectText(0, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat, ab 03.2037 plafoniert 1'890.00 CHF");
     await expectText(1, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat, ab 03.2037 plafoniert 1'890.00 CHF");
+    // person 1 early at 63 (06.2033): from 03.2037 capped 1'890, minus the fixed reduction 343 (13.6 % of 2'520)
+    await payout(63);
+    await expectText(0, "−13.6 % → effektiv 2'177.00 CHF pro Monat, ab 03.2037 plafoniert 1'547.00 CHF");
+    await expectText(1, "Ohne Kürzung oder Zuschlag → effektiv 2'520.00 CHF pro Monat, ab 03.2037 plafoniert 1'890.00 CHF");
+    await payout(65);
     // a higher cap: no longer capped
     await nav(page, "Haushalt & Projekt");
     await field(page, "household.ahvCoupleCap").fill("6000");
@@ -554,12 +559,12 @@ test.describe("Early and deferred AHV payout (#191)", () => {
     fs.writeFileSync(file, JSON.stringify(plan));
     await page.locator("#fileInput").setInputFiles(file);
     await expect(page.locator("#ask")).toBeVisible();
-    await expect(page.locator("#askText")).toContainText("Die AHV-Rente wird neu als Rente mit 65 (Referenzalter) erfasst; die App kürzt sie beim Vorbezug selbst um 13.6 %. Der bisherige Betrag 2177.28 ist deshalb auf 2520.00 pro Monat umgerechnet; das Ergebnis bleibt gleich.");
+    await expect(page.locator("#askText")).toContainText("Die AHV-Rente wird neu als Rente mit 65 (Referenzalter) erfasst; die App kürzt sie beim Vorbezug selbst um 13.6 %. Der bisherige Betrag 2177.28 ist deshalb auf 2520.00 pro Monat umgerechnet.");
     await page.locator("#ask button[value='ok']").click();
     expect(await page.evaluate(() => [state.pension.ahv.monthly, state.pension.ahv.referenceAge])).toEqual([2520, true]);
     await nav(page, "Vorsorge");
     await expect.poll(async () => (await page.locator('[data-computed="ahvEff"][data-arg="0"]').innerText()).replace(/’/g, "'"))
-      .toBe("−13.6 % → effektiv 2'177.28 CHF pro Monat");
+      .toBe("−13.6 % → effektiv 2'177.00 CHF pro Monat");
     fs.rmSync(file);
     await noErrors(page, errors);
   });

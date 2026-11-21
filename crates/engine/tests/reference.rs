@@ -926,14 +926,15 @@ fn ahv_flex(monthly: f64, years: f64) -> Value {
     v
 }
 
-/// #191/AK3: Payout at 63 (24 months early), 2'520 entered: 2'520 × (1 − 0.136) = 2'177.28 per month, also after 65.
+/// #191/AK3: Payout at 63 (24 months early), 2'520 entered: 2'520 − 343 (13.6 % = 342.72, in francs) = 2'177 per
+/// month, also after 65.
 #[test]
 fn issue_191_ak3_payout_at_63_reduces_the_pension_by_13_6_percent_for_good() {
     let res = run(ahv_flex(2_520.0, 63.0));
-    close(month(&res, 2028, 1).ahv, 2_177.28, "Januar 2028 (63)");
-    close(month(&res, 2029, 11).ahv, 2_177.28, "November 2029");
-    close(month(&res, 2031, 11).ahv, 2_177.28, "November 2031 (nach 65)");
-    close(month(&res, 2035, 11).ahv, 2_177.28, "November 2035");
+    close(month(&res, 2028, 1).ahv, 2_177.0, "Januar 2028 (63)");
+    close(month(&res, 2029, 11).ahv, 2_177.0, "November 2029");
+    close(month(&res, 2031, 11).ahv, 2_177.0, "November 2031 (nach 65)");
+    close(month(&res, 2035, 11).ahv, 2_177.0, "November 2035");
     let start = res.events.iter().find(|e| e.kind == EventKind::AhvStart).unwrap();
     assert_eq!(start.month, YearMonth::new(2028, 1));
     assert!(start.text.contains("2177"), "{}", start.text);
@@ -948,7 +949,8 @@ fn issue_191_ak4_payout_15_months_early_reduces_by_8_5_percent() {
     close(month(&res, 2033, 6).ahv, 1_830.0, "Juni 2033");
 }
 
-/// #191/AK5: Payout at 68 (36 months deferral): supplement 17.1 %, 2'520 → 2'950.92; no AHV between 65 and 68.
+/// #191/AK5: Payout at 68 (36 months deferral): supplement 17.1 % = 430.92 → 431, 2'520 → 2'951; no AHV between 65
+/// and 68.
 #[test]
 fn issue_191_ak5_payout_at_68_increases_by_17_1_percent() {
     let res = run(ahv_flex(2_520.0, 68.0));
@@ -957,8 +959,8 @@ fn issue_191_ak5_payout_at_68_increases_by_17_1_percent() {
         .iter()
         .filter(|r| r.month < YearMonth::new(2033, 1))
         .all(|r| r.ahv == 0.0));
-    close(month(&res, 2033, 1).ahv, 2_950.92, "Januar 2033 (68)");
-    close(month(&res, 2035, 11).ahv, 2_950.92, "November 2035");
+    close(month(&res, 2033, 1).ahv, 2_951.0, "Januar 2033 (68)");
+    close(month(&res, 2035, 11).ahv, 2_951.0, "November 2035");
 }
 
 /// #191/AK6: Payout at 65: the pension stays as entered (the golden files with AHV at 65 are checked by
@@ -971,11 +973,11 @@ fn issue_191_ak6_payout_at_65_leaves_the_pension_unchanged() {
     close(month(&res, 2035, 11).ahv, 2_520.0, "November 2035");
 }
 
-/// #191/AK7: The adjustment applies per person; the 13th pension and the cap rest on the adjusted pensions.
-/// A at 63 (2'520 → 2'177.28 from 01.2028), B (born 1966-01) at 65 = 01.2031 with 2'520.
-/// 13th 2028 for A alone: 12 × round(2'177.28 / 12 = 181.44) = 2'177.28 → 2'177.
-/// Unmarried from 2031: 2'177.28 + 2'520 = 4'697.28; married with cap 3'780: 3'780 (instead of 2 × 2'520 capped).
-/// Cap not reached: A 2'000 at 63 → 1'728, B 1'500 at 65 → 3'228 < 3'780.
+/// #191/AK7, AK13, AK14, AK24 in the simulation: A (born 1965-01) at 63 = 01.2028, B (born 1966-01) at 65 = 01.2031,
+/// 2'520 each. Unmarried: A 2'520 − 343 = 2'177, B 2'520. Married with cap 3'780: from 01.2031 the pensions at 65 are
+/// capped (1'890 each), then A's fixed reduction 343: A 1'547, B 1'890, together 3'437.
+/// 13th pension 2028 (A alone): 12 × round(2'177 / 12 = 181.42) = 2'177.04 → 2'177;
+/// 13th pension 2031 (capped): 12 × round(3'437 / 12 = 286.42) = 3'437.04 → 3'437.
 #[test]
 fn issue_191_ak7_adjustment_per_person_with_cap_and_thirteenth() {
     let couple = |a: f64, b: f64, married: bool| {
@@ -998,15 +1000,25 @@ fn issue_191_ak7_adjustment_per_person_with_cap_and_thirteenth() {
         v
     };
     let res = run(couple(2_520.0, 2_520.0, false));
-    close(month(&res, 2028, 11).ahv, 2_177.28, "November 2028, nur A");
+    close(month(&res, 2028, 11).ahv, 2_177.0, "November 2028, nur A");
     close(
         month(&res, 2028, 12).ahv,
-        2_177.28 + 2_177.0,
+        2_177.0 + 2_177.0,
         "Dezember 2028 mit 13. Rente",
     );
-    close(month(&res, 2031, 11).ahv, 4_697.28, "November 2031, unverheiratet");
+    close(month(&res, 2031, 11).ahv, 4_697.0, "November 2031, unverheiratet");
     let res = run(couple(2_520.0, 2_520.0, true));
-    close(month(&res, 2031, 11).ahv, 3_780.0, "November 2031, plafoniert");
+    close(month(&res, 2030, 11).ahv, 2_177.0, "November 2030, nur A");
+    close(
+        month(&res, 2031, 11).ahv,
+        3_437.0,
+        "November 2031, plafoniert, dann gekürzt",
+    );
+    close(
+        month(&res, 2031, 12).ahv,
+        3_437.0 + 3_437.0,
+        "Dezember 2031 mit 13. Rente",
+    );
     let res = run(couple(2_000.0, 1_500.0, true));
     close(
         month(&res, 2031, 11).ahv,
@@ -1014,20 +1026,78 @@ fn issue_191_ak7_adjustment_per_person_with_cap_and_thirteenth() {
         "November 2031, unter dem Plafond",
     );
 
-    // The preview shows the adjusted pension per person and the capped share from 01.2031.
+    // The preview shows the adjusted pension per person and, once both are entitled, the pension after the cap.
     let p = plan(couple(2_520.0, 2_520.0, true));
     let view = engine::sim::ahv_view(&p);
-    assert_eq!((view[0].entered, view[0].monthly), (2_520.0, 2_177.28));
+    assert_eq!((view[0].entered, view[0].monthly), (2_520.0, 2_177.0));
     assert!((view[0].rate + 0.136).abs() < 1e-12);
     assert_eq!((view[1].monthly, view[1].rate), (2_520.0, 0.0));
     assert_eq!(view[0].capped_from, Some(YearMonth::new(2031, 1)));
-    // shares proportional to the adjusted pensions: 3'780 × 2'177.28 / 4'697.28 and 3'780 × 2'520 / 4'697.28
-    assert_eq!(view[0].capped, Some(1_752.10));
-    assert_eq!(view[1].capped, Some(2_027.90));
-    // the example of the issue: both 2'520 at 65, cap 3'780 → 1'890 each
+    assert_eq!((view[0].capped, view[1].capped), (Some(1_547.0), Some(1_890.0)));
+    // the example of AK8: both 2'520 at 65, cap 3'780 → 1'890 each
     let mut v = couple(2_520.0, 2_520.0, true);
     v["milestones"][3]["years"] = json!(65);
     let view = engine::sim::ahv_view(&plan(v));
     assert_eq!((view[0].capped, view[1].capped), (Some(1_890.0), Some(1_890.0)));
     assert_eq!(view[0].capped_from, Some(YearMonth::new(2031, 1)));
+    // unmarried: no cap
+    let view = engine::sim::ahv_view(&plan(couple(2_520.0, 2_520.0, false)));
+    assert_eq!((view[0].capped, view[0].capped_from), (None, None));
+}
+
+fn warning_codes(v: Value) -> Vec<&'static str> {
+    validate::validate(&plan(v))
+        .into_iter()
+        .filter(|i| i.severity == Severity::Warning)
+        .map(|i| i.message.code())
+        .collect()
+}
+
+/// #191/AK19: A payout 6 months after 65 is no deferral (at least one year): no supplement, the check warns.
+#[test]
+fn issue_191_ak19_deferral_under_one_year_warns_and_gets_no_supplement() {
+    let v = ahv_flex(2_520.0, 65.5);
+    assert!(warning_codes(v.clone()).contains(&"ahv_deferral_short"));
+    let res = run(v);
+    assert!(month(&res, 2030, 6).ahv == 0.0);
+    close(month(&res, 2030, 7).ahv, 2_520.0, "Juli 2030 (65 ½)");
+    for years in [63.0, 65.0, 66.0, 70.0] {
+        let codes = warning_codes(ahv_flex(2_520.0, years));
+        assert!(
+            !codes.contains(&"ahv_deferral_short") && !codes.contains(&"ahv_payout_age_law"),
+            "{years}: {codes:?}"
+        );
+    }
+}
+
+/// #191/AK20: A payout before 63 or after 70 by the person's own age (e.g. at the milestone of the other person): the
+/// check warns; the simulation computes with at most 13.6 % (62 years: 2'520 − 343 = 2'177) or 31.5 % (71 years:
+/// 2'520 + 794 = 3'314).
+#[test]
+fn issue_191_ak20_payout_outside_63_to_70_warns_and_is_limited() {
+    let v = ahv_flex(2_520.0, 62.0);
+    assert!(warning_codes(v.clone()).contains(&"ahv_payout_age_law"));
+    close(month(&run(v), 2028, 1).ahv, 2_177.0, "62 Jahre (ab Start 2028)");
+    let mut v = ahv_flex(2_520.0, 71.0);
+    v["milestones"][2]["date"] = json!("2036-12");
+    assert!(warning_codes(v.clone()).contains(&"ahv_payout_age_law"));
+    close(month(&run(v), 2036, 1).ahv, 3_314.0, "71 Jahre");
+    // the partner's payout at the milestone of the first person: by the partner's own age 62 years 11 months
+    let mut v = ahv_flex(2_520.0, 65.0);
+    v["household"]["persons"] = json!([
+        { "id": "A", "name": "A", "birth": "1965-01" },
+        { "id": "B", "name": "B", "birth": "1967-02" }
+    ]);
+    v["partner"] = json!({
+        "income": 0,
+        "pk": { "capital": 0, "at": "retire", "lumpsum": 0, "conversion": 0 },
+        "ahv": { "monthly": 2_000, "at": "ahv" }
+    });
+    let issues = validate::validate(&plan(v));
+    let w = issues
+        .iter()
+        .find(|i| i.message.code() == "ahv_payout_age_law")
+        .expect("Warnung");
+    assert!(w.message.to_string().contains("(person 2)"), "{}", w.message);
+    assert!(w.message.to_string().contains("62.9 years"), "{}", w.message);
 }

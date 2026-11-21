@@ -15,7 +15,8 @@
 //!   pension (from December 2026); the plan stays the same otherwise.
 //! - #191: The AHV gets the marker `referenceAge`. An older plan with an AHV payout before or after 65 held the pension
 //!   already adjusted; it is converted back to the pension at 65 (amount / (1 − reduction) or / (1 + supplement)),
-//!   with a note per person, so that the result stays the same.
+//!   with a note per person; the simulation computes with about the same pension (reduction and supplement in francs,
+//!   for married couples after the cap).
 
 use std::borrow::Cow;
 
@@ -152,7 +153,7 @@ fn thirteenth_ahv(v: &mut Value, notes: &mut Vec<Message>) {
 
 /// #191: Marker `pension.ahv.referenceAge`. If it is missing, the AHV pensions of the plan (person and partner) are the
 /// pensions as paid; with a payout before or after 65 they are converted back to the pension at 65, so that the
-/// simulation, which now adjusts itself, computes with the same pension. One note per converted pension.
+/// simulation, which now adjusts itself, computes with about the same pension. One note per converted pension.
 fn ahv_reference_age(v: &mut Value, births: &[(String, YearMonth)], notes: &mut Vec<Message>) {
     match v.pointer("/pension/ahv").and_then(Value::as_object) {
         None => return,
@@ -205,7 +206,7 @@ fn ahv_reference_age(v: &mut Value, births: &[(String, YearMonth)], notes: &mut 
 }
 
 /// #191: Pension at 65 (to the centime) for the pension `paid` with a payout `offset` months from 65: of the amounts next
-/// to the quotient, the one from which the simulation computes exactly `paid` again (so the result stays the same).
+/// to the quotient, the one from which a single person's pension is exactly `paid` again, if there is one.
 fn reference_amount(paid: f64, offset: i32) -> f64 {
     let base = crate::ahv::at_reference_age(paid, offset);
     [base, base - 0.01, base + 0.01]

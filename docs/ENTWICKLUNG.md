@@ -370,16 +370,20 @@ Reihenfolge pro Monat:
    Simulationsstart erfasst. Die AHV (falls indexiert) wird nur im Januar um die seit dem letzten Januar
    aufgelaufene Teuerung angepasst.
 2. **Ereignisse:** einmalige Beträge; Pensionierung (Kapitalbezug mit Kapitalsteuer, Rente = Restkapital ×
-   Umwandlungssatz / 12); AHV-Beginn (**Vorbezug und Aufschub, #191:** `monthly` ist die Rente mit 65; bei Bezug
-   `n` Monate vor 65 gekürzt um `EARLY_REDUCTION_PCT[n]` (0,6 … 13,6 %, mehr als 24 Monate wie 24), bei einem Aufschub
-   ab 12 Monaten erhöht um `DEFERRAL_SUPPLEMENT_PCT` je angefangenes Vierteljahr (5,2 … 31,5 %, mehr als 5 Jahre wie 5),
-   unter 12 Monaten unverändert; Betrag auf Rappen gerundet, gilt für die ganze Bezugsdauer und je Person vor dem
-   Plafond, damit auch für die 13. Rente. Sätze mit Gültigkeit und Quelle in `crates/engine/src/ahv.rs`, Merkblatt
-   3.04, Stand 1.1.2026. Nicht abgebildet: Teilvorbezug/-aufschub, Sätze der Übergangsgeneration. Die Vorschau gibt je
-   Person `ahv` = Eingabe, Satz, effektive Rente und bei Ehepaaren den plafonierten Anteil ab dem Monat, in dem beide
-   Renten laufen (anteilig zu den angepassten Renten). Ältere Planungen ohne Marke `pension.ahv.referenceAge` hielten
-   die bereits angepasste Rente: `upgrade.rs` rechnet sie auf die Rente mit 65 zurück (Betrag / (1 + Satz), auf Rappen so
-   gewählt, dass die Simulation wieder genau den alten Betrag ergibt) und meldet es je Person einmalig); Immobilien (Notverkauf aus dem Vormonat, Kauf, Verkauf mit
+   Umwandlungssatz / 12); AHV-Beginn (**Vorbezug, Aufschub und Plafond, #191:** `monthly` ist die Rente mit 65. Die
+   Rechnung steht in `crates/engine/src/ahv.rs` (`Calc`, Sätze mit Gültigkeit und Quelle, Merkblatt 3.04, Stand
+   1.1.2026, Ziffern 4, 11–14, 24–26): Anspruch hat eine Person ab Bezug (auch Vorbezug) oder Referenzalter (auch
+   Aufschub). Bei Ehepaaren mit Anspruch beider werden die Renten mit 65 anteilig auf den Plafond gekürzt. Im Vorbezug
+   wird die (plafonierte) Rente jeden Monat um den Satz gekürzt; ab dem Referenzalter gilt ein fester Kürzungsbetrag =
+   Satz × Durchschnitt der (plafonierten) Renten im Vorbezug. Ein Aufschub ab 12 Monaten gibt ab Bezug einen festen
+   Zuschlag = Satz × Durchschnitt der (plafonierten) aufgeschobenen Rente. Beträge auf ganze Franken; Kürzung und
+   Zuschlag liegen ausserhalb des Plafonds und steigen im Januar mit der Rente. Vorbezug über 24 Monate wie 24, Aufschub
+   über 5 Jahre wie 5, unter 12 Monaten ohne Zuschlag; die Prüfung warnt bei Bezug vor 63, nach 70 und bei einem
+   Aufschub unter einem Jahr. Monate eines Vorbezugs oder Aufschubs vor dem Simulationsstart zählen mit den Beträgen
+   beim Start. Die Vorschau gibt je Person `ahv` = Eingabe, Satz, effektive Rente ohne Plafond und bei Ehepaaren die
+   Rente nach Plafond und Kürzung/Zuschlag ab dem Monat, in dem beide Anspruch haben. Ältere Planungen ohne Marke
+   `pension.ahv.referenceAge` hielten die bereits angepasste Rente: `upgrade.rs` rechnet sie auf die Rente mit 65 zurück
+   (Betrag / (1 + Satz), auf Rappen) und meldet es je Person einmalig); Immobilien (Notverkauf aus dem Vormonat, Kauf, Verkauf mit
    Grundstückgewinnsteuer, Hypothekarperioden); Säule 3a (Verzinsung, Auszahlung).
 3. **Geldflüsse** in das Cash: Einkommen + Renten + Zuflüsse − Lebenshaltung − Wohnkosten.
    **13. AHV-Rente (#190):** ab 2026 im Dezember zusätzlich zur AHV des Monats; Höhe 1/12 der von Januar bis Dezember

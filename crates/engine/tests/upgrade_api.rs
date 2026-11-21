@@ -71,7 +71,8 @@ fn issue_190_ak12_note_on_the_thirteenth_ahv_pension_once_for_an_older_plan() {
 
 /// #191/AK9: An older plan with an AHV payout at 63 held the pension already reduced (2'177.28). When opening, the
 /// amount is converted back to the pension at 65 (2'177.28 / (1 − 0.136) = 2'520.00) with a note once; the simulation
-/// still computes with 2'177.28. The same for a deferral to 68 (2'950.92 / 1.171 = 2'520.00) and for the partner.
+/// computes with 2'520 − 343 = 2'177 (reduction in francs, leaflet 3.04). The same for a deferral to 68
+/// (2'950.92 / 1.171 = 2'520.00, computed 2'951) and for the partner.
 #[test]
 fn issue_191_ak9_older_plan_converts_the_adjusted_ahv_pension_back_to_65() {
     use engine::model::Plan;
@@ -106,7 +107,7 @@ fn issue_191_ak9_older_plan_converts_the_adjusted_ahv_pension_back_to_65() {
         "{text}"
     );
     let view = simulated(&first.plan);
-    assert_eq!(view[0].monthly, 2_177.28);
+    assert_eq!(view[0].monthly, 2_177.0);
     assert_eq!(view[0].entered, 2_520.0);
     // once: the second opening changes nothing
     let second = api::upgrade_plan(&first.plan);
@@ -117,7 +118,7 @@ fn issue_191_ak9_older_plan_converts_the_adjusted_ahv_pension_back_to_65() {
     let first = api::upgrade_plan(&with_payout(68.0, 2_950.92));
     assert_eq!(first.plan["pension"]["ahv"]["monthly"], json!(2_520.0));
     assert!(first.notes.iter().any(|n| code(n) == "note_ahv_deferred"));
-    assert_eq!(simulated(&first.plan)[0].monthly, 2_950.92);
+    assert_eq!(simulated(&first.plan)[0].monthly, 2_951.0);
 
     // Payout at 65 or no pension: unchanged, no note
     for old in [with_payout(65.0, 2_177.28), with_payout(63.0, 0.0)] {
