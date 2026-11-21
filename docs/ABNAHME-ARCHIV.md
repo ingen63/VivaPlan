@@ -1269,3 +1269,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #194/AK2 | `value_and_fix_costs_inflation_are_independent` prüft den hergeleiteten Wert: Wert 500'000, Teuerung 10 % p. a., Januar 2031 = … | ☑ | **gilt** | [reference.rs](../crates/engine/tests/reference.rs) «value_and_fix_costs_inflation_are_independent» | 21.11.2026 ok |
 | #194/AK3 | Ein Wert, der die Teuerung doppelt anwendet (`base × infl_idx²` in `worth()`), lässt beide Tests fehlschlagen; im Issue mit … | ☑ | **gilt** | kein Test (vorübergehende Änderung, Beleg im Issue) | 21.11.2026 ok: beide Tests rot, Änderung rückgängig |
 | #194/AK4 | Rechenergebnisse und Golden-Dateien bleiben unverändert (es ändern sich nur Tests). | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 21.11.2026 ok (Commit ändert nur `reference.rs`) |
+
+### #195 Golden-Zahlen im Workflow vergleichen
+
+[Issue #195](https://github.com/ingen63/VivaPlan/issues/195) · geschlossen · Umsetzung: 8b36be7
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #195/AK1 | Der Push-Lauf von `test-quality.yml` vergleicht die Golden-Dateien mit dem Stand vor dem Push (`tools/golden_numbers.py --base …`) … | ☑ | **gilt** | Job `golden` in [test-quality.yml](../.github/workflows/test-quality.yml); [test_golden_numbers.py](../tools/test_golden_numbers.py) «test_issue_195_ak3_changed_monthly_value_without_reason_fails» (Pfad in der Ausgabe) | 21.11.2026 ok: Schritt lokal in einem Klon nachgestellt (Zusammenfassung mit `05-immobilie-hypothek.single.records[1].age`), actionlint ohne Befund; echter Lauf nach dem nächsten Push steht aus |
+| #195/AK2 | Ändern sich Zahlen, schlägt der Lauf fehl, ausser die Commit-Nachricht eines der gepushten Commits begründet die Änderung … | ☑ | **gilt** | [test_golden_numbers.py](../tools/test_golden_numbers.py) «test_issue_195_ak2_…» (2), «test_issue_195_ak3_…» (6) | 21.11.2026 ok: Regel `Golden: #Nr Begründung` (Kommentar im Issue); im Klon ohne Zeile Code 1, mit Zeile Code 0 |
+| #195/AK3 | Beispiel: Ein Commit, der in `05-immobilie-hypothek.json` nur einen Monatswert ändert, lässt den Lauf ohne Begründung fehlschlagen; … | ☑ | **gilt** | [test_golden_numbers.py](../tools/test_golden_numbers.py) «test_issue_195_ak3_…» | 21.11.2026 ok: Tests im Kleinen; im Klon mit der echten Datei nachgestellt |
+| #195/AK4 | `tools/test_golden_numbers.py` läuft im Workflow. | ☑ | **gilt** | Job `golden`, Schritt «Tests des Prüfskripts» | 21.11.2026 ok (Durchsicht; 12 Tests lokal grün) |
+| #195/AK5 | `docs/TESTS.md` (Abschnitt Golden) und `CLAUDE.md` (Regel zu Golden-Dateien) nennen die Prüfung. | ☑ | **gilt** | [TESTS.md](TESTS.md) Zeile 5c, [CLAUDE.md](../CLAUDE.md) Abschnitt Tests | 21.11.2026 ok (Durchsicht) |
