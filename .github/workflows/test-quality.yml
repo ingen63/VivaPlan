@@ -109,6 +109,10 @@ jobs:
         run: python3 -m unittest discover -s tools -p 'test_check_i18n.py'
       - name: Übersetzungen gegen das Deutsche, mit Längenhinweisen (#180)
         run: python3 tools/check_i18n.py --hints
+      - name: Tests der Prüfung der Release Notes (#188)
+        run: python3 -m unittest discover -s tools -p 'test_changelog.py'
+      - name: Release Notes in vier Sprachen gegen CHANGELOG.md (#188)
+        run: python3 tools/changelog.py check
 
   # #88: clippy bei jedem Push; jede Warnung lässt den Lauf fehlschlagen. Braucht die Linux-Pakete der Desktop-App.
   clippy:

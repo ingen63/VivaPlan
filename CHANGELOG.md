@@ -4,24 +4,42 @@
 
 Zweite Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.2.
 
+### Kann Ergebnisse ändern
+
+- **Kapitalbezugssteuer unverheirateter Paare (#150):** Kapitalbezüge von Partnern, die nicht verheiratet sind, werden je Person besteuert und nicht mehr für den Haushalt zusammengerechnet. Das kann die Ergebnisse solcher Planungen ändern.
+
+### Neu, geändert, behoben
+
 - **Vier Sprachen (#170–#177):** Oberfläche, Menüs, Dateidialoge, Meldungen und Hilfe gibt es auf Deutsch, Englisch, Französisch und Italienisch. Beim ersten Start gilt die Sprache des Systems, danach die Wahl unter «Ansicht → Sprache». Zahlen und Daten bleiben in jeder Sprache im Schweizer Format. Namen aus dem Katalog der Optimierung und der Zeitreihen sind mitübersetzt.
-- **Fachbegriffe und Prüfung der Übersetzungen (#179–#182):** Ein Fachglossar legt die amtlichen Begriffe je Sprache fest (z. B. AVS/LPP, caisse de pension, cassa pensione); eine automatische Prüfung vergleicht alle Übersetzungen mit dem Deutschen. Alle Texte haben in jeder Sprache Platz.
+- **Fachbegriffe und Prüfung der Übersetzungen (#179–#182):** Ein Fachglossar legt die amtlichen Begriffe je Sprache fest (z. B. AVS/LPP, caisse de pension, cassa pensione); eine automatische Prüfung vergleicht alle Übersetzungen mit dem Deutschen. Alle Texte haben in jeder Sprache Platz, auch mit den Schriften unter Linux und Windows.
 - **Kommandozeile auf Englisch (#176):** `vivaplan` gibt Meldungen und Berichte englisch aus. Die Zahlen sind unverändert.
-- **Kapitalbezugssteuer unverheirateter Paare (#150):** Kapitalbezüge von Partnern, die nicht verheiratet sind, werden je Person besteuert und nicht mehr für den Haushalt zusammengerechnet. **Das kann die Ergebnisse solcher Planungen ändern.**
-- **Hilfe (#183):** Widersprüche zu Lebenshaltung, Kombinationen und 3a-Einzahlung behoben.
 - **Neues App-Icon (#185):** «Gipfelweg – Abendrot», mit eigener Fassung für kleine Grössen und passendem Favicon.
 - **Beispielplanung (#184):** Die Beispielplanung erscheint in der Sprache der Oberfläche.
-- **Tests und Entwicklung:** Code intern englisch (#165–#169), Netzwerkfreiheit automatisch geprüft (#157), gemeinsame Testfälle der Steuerberechnung für Oberfläche und Rechenkern (#155, #156, #158), Textbreiten auch mit den Schriften unter Linux und Windows geprüft (#182), Beispieldateien englisch benannt und mit festen Zeilenenden (#186), Tests für bisher nicht erkannte Mutanten (#187).
+- **Hilfe (#183):** Widersprüche zu Lebenshaltung, Kombinationen und 3a-Einzahlung behoben.
+
+### Tests und Entwicklung
+
+- Code intern englisch (#165–#169), Netzwerkfreiheit automatisch geprüft (#157), gemeinsame Testfälle der Steuerberechnung für Oberfläche und Rechenkern (#155, #156, #158).
+- Beispieldateien englisch benannt und mit festen Zeilenenden (#186), Tests für bisher nicht erkannte Mutanten (#187).
+- Release Notes in vier Sprachen mit automatischer Prüfung (#188).
 
 ## Version 1.0.0-beta.1
 
 Erste Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.1, weil das MSI-Format keine Vorabversion wie «beta.1» kennt; die übrigen Pakete heissen 1.0.0-beta.1.
 
-- **Renditekriterium der 3-Topf-Strategie (#103):** Jeder Renditepfad trägt die Aktienrenditen der 12 Monate vor dem Simulationsstart mit. Das Renditekriterium gilt damit auch in den ersten 12 Monaten über volle 12 Monate. **Das kann die Ergebnisse von Planungen mit 3-Topf-Strategie im ersten Jahr ändern.**
+### Kann Ergebnisse ändern
+
+- **Renditekriterium der 3-Topf-Strategie (#103):** Jeder Renditepfad trägt die Aktienrenditen der 12 Monate vor dem Simulationsstart mit. Das Renditekriterium gilt damit auch in den ersten 12 Monaten über volle 12 Monate. Das kann die Ergebnisse von Planungen mit 3-Topf-Strategie im ersten Jahr ändern.
+
+### Neu, geändert, behoben
+
 - **Vergleich der Ergebnisse (#115):** Der Vergleich gespeicherter Ergebnisse bietet dieselben Möglichkeiten wie ein einzelnes Ergebnis: nominal oder in heutiger Kaufkraft, alle Grafiken und die Jahreswerte, mit Wahl des Laufs (Perzentil).
 - **Bezugslinie in den Grafiken (#114):** Die Linie bei 0 (bzw. bei 100 in der Wertentwicklung) ist in allen Ergebnisgrafiken deutlich hervorgehoben.
 - **Menü (#112):** Ein Klick ins Menü links oder in die Prüfliste geht nicht mehr verloren, wenn gleichzeitig eine Vorschau eintrifft.
-- **Tests und Entwicklung:** Oberflächentests unabhängig von der Rechnerlast (#111), Übersichtsseite Testqualität mit geprüften Kriterien (#113), Speichergrenze für Testprozesse bei Mutationsläufen (#116).
+
+### Tests und Entwicklung
+
+- Oberflächentests unabhängig von der Rechnerlast (#111), Übersichtsseite Testqualität mit geprüften Kriterien (#113), Speichergrenze für Testprozesse bei Mutationsläufen (#116).
 
 ## Version 0.8.1
 

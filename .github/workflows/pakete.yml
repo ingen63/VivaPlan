@@ -1,6 +1,6 @@
 # Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .AppImage; .rpm nur ohne Vorabversion) und macOS (.dmg).
 # Start von Hand (Actions → «Installationspakete» → Run workflow) oder durch ein Versions-Tag (v0.3.0):
-# dann entsteht zusätzlich ein Entwurf unter «Releases» mit allen Paketen.
+# dann entsteht zusätzlich ein Entwurf unter «Releases» mit allen Paketen und den Release Notes in vier Sprachen (#188).
 name: Installationspakete
 
 on:
@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      # #188/AK7: ohne Release Notes der Version in allen vier Sprachen bricht der Paketbau hier ab.
+      - name: Release Notes der Version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: python3 tools/changelog.py check && python3 tools/changelog.py notes "$GITHUB_REF_NAME" > /dev/null
       - uses: ./.github/actions/linux-deps
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@v2
@@ -94,6 +98,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+      # #188: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar (tools/changelog.py notes)
+      - name: Release Notes zusammensetzen
+        run: python3 tools/changelog.py notes "$GITHUB_REF_NAME" -o "$RUNNER_TEMP/release-notes.md"
       - uses: actions/download-artifact@v4
         with:
           path: pakete
@@ -106,5 +114,6 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           draft: true
+          body_path: ${{ runner.temp }}/release-notes.md
           fail_on_unmatched_files: true
           files: flach/*

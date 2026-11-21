@@ -150,6 +150,25 @@ erscheint eine Meldung als `{ "code", "params", "text" }`.
   Kennungen der Strategien und Indizes) bleiben unverändert; gespeicherte Ergebnisse mit Namen als Text zeigt
   `msgText` unverändert an.
 
+### Release Notes (#188)
+
+`CHANGELOG.md` (deutsch) ist massgebend; `CHANGELOG.en.md`, `CHANGELOG.fr.md` und `CHANGELOG.it.md` übersetzen jede
+Version ab 1.0.0-beta.1, ältere Versionen stehen nur deutsch. Jeder Eintrag gliedert sich in höchstens drei Abschnitte in
+fester Reihenfolge: «Kann Ergebnisse ändern» (nur wenn es solche Änderungen gibt), «Neu, geändert, behoben» und «Tests und
+Entwicklung»; die Überschriften je Sprache stehen in `tools/changelog.py` (`SECTIONS`).
+
+Ablauf pro Release:
+
+1. Den deutschen Eintrag in `CHANGELOG.md` schreiben, mit Issue-Nummern.
+2. Ihn in die drei Übersetzungen übertragen: dieselben Abschnitte und Issue-Nummern, Begriffe nach dem Glossar
+   (`docs/GLOSSAR.md`).
+3. Prüfen: `make changelog` bzw. `python3 tools/changelog.py check` (läuft auch in `make test-quiet` und im Job
+   `english`). Gemeldet werden abweichende Versionen, Abschnitte oder Issue-Nummern und verbotene Varianten aus dem
+   Glossar.
+4. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
+   einer Sprache fehlt, und setzt den Text aus `python3 tools/changelog.py notes v…` als Beschreibung des
+   Release-Entwurfs: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar.
+
 ## Desktop-App
 
 ```sh

@@ -1,11 +1,12 @@
-.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers i18n-table i18n-check icons
+.PHONY: test test-quiet ui-unit clippy coverage coverage-diff mutants mutants-diff proptest fuzz quality report network-free english ui-texts golden-numbers i18n-table i18n-check icons changelog
 test:        ; cargo nextest run --workspace
 # #160: dieselben Tests, aber nur Fehlschläge, langsame Tests und die Zusammenfassung (für Claude Code: wenig Kontext)
 QUIET = --status-level fail --final-status-level slow --hide-progress-bar --cargo-quiet
 # #165: die Sprachprüfung läuft mit, sobald die Übergangsliste in tools/check_english.py leer ist (--gate)
 # #170: keine deutschen Oberflächentexte ausserhalb der Texttabelle
 # #180: Prüfung der Übersetzungen gegen das Deutsche (Längenhinweise nur in make i18n-check)
-test-quiet:  ; cargo nextest run --workspace $(QUIET) && ./tools/check-english.sh --gate && python3 tools/check_ui_texts.py && python3 tools/check_i18n.py && python3 -m unittest -q tools/test_icons.py
+# #188: Release Notes in vier Sprachen gegen CHANGELOG.md, samt Tests des Skripts
+test-quiet:  ; cargo nextest run --workspace $(QUIET) && ./tools/check-english.sh --gate && python3 tools/check_ui_texts.py && python3 tools/check_i18n.py && python3 -m unittest -q tools/test_icons.py tools/test_changelog.py && python3 tools/changelog.py check
 # #87: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
 # #147: runs.test.js braucht fake-indexeddb (e2e/node_modules)
 ui-unit:     ; [ -d e2e/node_modules/fake-indexeddb ] || (cd e2e && npm ci); node --test e2e/unit/*.test.js
@@ -22,6 +23,8 @@ i18n-check:  ; python3 -m unittest discover -s tools -p 'test_check_i18n.py' && 
 i18n-table:  ; python3 -m unittest discover -s tools -p 'test_i18n_review_table.py' && python3 tools/i18n_review_table.py
 # #176/AK2: Golden-Dateien gegenüber BASE (Vorgabe HEAD) ohne Textfelder vergleichen, samt Tests des Skripts
 golden-numbers:; python3 -m unittest discover -s tools -p 'test_golden_numbers.py' && python3 tools/golden_numbers.py --base $${BASE:-HEAD}
+# #188: Release Notes (CHANGELOG*.md) gegen das Deutsche; Text des Release einer Version: python3 tools/changelog.py notes v1.2.3
+changelog:   ; python3 -m unittest discover -s tools -p 'test_changelog.py' && python3 tools/changelog.py check
 # #185: App-Icons und Favicon aus crates/app/icons/icon.svg und icon-small.svg, samt Vorschau (macOS)
 icons:       ; ./tools/make-icons.sh --preview && python3 -m unittest tools/test_icons.py
 # #88: wie im Workflow, Warnungen sind Fehler
