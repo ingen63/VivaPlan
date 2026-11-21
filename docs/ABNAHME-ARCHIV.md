@@ -1259,6 +1259,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #187/AK3 | Tests erkennen die Mutanten in `crates/app` (`pick`, `startup`, `language_menu`, `first_start_language`) und `devserver::content_type`. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_187_ak3_first_start_language_via_command», [i18n.rs](../crates/app/src/i18n.rs) «startup_language_uses_the_saved_choice_or_the_system», [devserver.rs](../crates/cli/src/devserver.rs) «content_types_follow_the_extension» | 21.11.2026 ok; `pick` gleichwertig, `language_menu` nur im Hauptthread (begründet ausgeschlossen) |
 | #187/AK4 | `cargo mutants` auf den betroffenen Dateien meldet keine nicht erkannten Mutanten mehr (ausser begründeten). | ☑ | **gilt** | `mutants-diff` in `test-quality.yml` | 21.11.2026 ok: lokal 44 von 44 erkannt; CI-Lauf 44907095566 1063 Mutanten, 0 nicht erkannt |
 
+### #192 Anforderungsbezug: Kennungslisten erkennen und verwaiste Kennungen melden
+
+[Issue #192](https://github.com/ingen63/VivaPlan/issues/192) · geschlossen · Umsetzung: 7e93347
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #192/AK1 | `#98/AK1–AK3` zählt für AK1, AK2 und AK3; `#76/AK1, AK3` für AK1 und AK3; `#85/AK1 und AK2` für beide; `issue_53_ak4_ak5` … | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_192_ak1_…» | 21.11.2026 ok (433 statt 382 Kriterien mit Test) |
+| #192/AK2 | In `e2e/` zählt ein Testname «AK3, AK9» innerhalb von `test.describe("… (#170)")` weiterhin für beide. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_192_ak2_…» | 21.11.2026 ok |
+| #192/AK3 | Die Übersichtsseite listet verwaiste Kennungen (Issue oder Kriterium existiert nicht) mit Fundstelle; Issue `#0` … | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_192_ak3_…» (2) | 21.11.2026 ok (am echten Stand keine) |
+| #192/AK4 | Tests in `tools/report/test_report.py` für jedes Beispiel oben. | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_192_…» | 21.11.2026 ok (Durchsicht; 26 Tests grün) |
+| #192/AK5 | `docs/TESTS.md` beschreibt die erkannten Schreibweisen. | ☑ | **gilt** | – | 21.11.2026 ok (Durchsicht) |
+| #192/AK6 | Ein per Kommentar nachgetragenes Kriterium zählt als vorhanden; Beispiel #69/AK8 und #170/AK9 sind nicht verwaist. … | ☑ | **gilt** | [test_report.py](../tools/report/test_report.py) «test_issue_192_ak6_…» | 21.11.2026 ok (am echten Stand nicht verwaist) |
+
 ### #194 Wertänderung der Liegenschaften im Hauptbuch unabhängig prüfen
 
 [Issue #194](https://github.com/ingen63/VivaPlan/issues/194) · geschlossen · Umsetzung: 933c1e4
