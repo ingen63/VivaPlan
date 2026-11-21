@@ -1213,3 +1213,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #183/AK3 | 3a-Einzahlung bei den Leitplanken im Rechenkern nachgeprüft; Formel in `30-entnahme.md` bei fixer Rate und Leitplanken entsprechend; Rust-Test. | ☑ | **gilt** | [pillar3a.rs](../crates/engine/tests/pillar3a.rs) «issue_183_ak3_pillar3a_counts_towards_withdrawal_for_fixed_rate_and_guardrails» | 21.11.2026 ok: beide Strategien über `rule_living`, 3a zählt bei beiden zur Entnahme; Formel der Leitplanken ergänzt; kein Rechenfehler |
 | #183/AK4 | Korrekturen in `hilfe/{de,en,fr,it}/`, `make i18n-check` grün. | ☑ | **gilt** | [check_i18n.py](../tools/check_i18n.py) (`make i18n-check`) | 21.11.2026 ok: 0 Befunde |
 | #183/AK5 | Ein Test findet in der Hilfe keine Zahl der Kombinationen, die von `MAX_COMBINATIONS` abweicht. | ☑ | **gilt** | [docs.test.js](../e2e/unit/docs.test.js) «#183/AK5: the help names no number of combinations other than MAX_COMBINATIONS» | 21.11.2026 ok: Wert aus `scenarios.rs` gelesen; Gegenprobe mit der alten Fassung findet 400 in allen Sprachen |
+
+### #185 Neues App-Icon
+
+[Issue #185](https://github.com/ingen63/VivaPlan/issues/185) · geschlossen · Umsetzung: 85edb19
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #185/AK1 | Die Quelldatei des Icons liegt als SVG im Repository (`crates/app/icons/icon.svg`) und zeigt die Variante «Abendrot» wie oben beschrieben. | ☑ | **gilt** (gilt auch für `icon-small.svg`, Kommentar im Issue) | [test_icons.py](../tools/test_icons.py) «issue_185_ak1_…» | 21.11.2026 ok |
+| #185/AK2 | Alle Icon-Dateien aus `crates/app/tauri.conf.json` (32, 128, 256 px, `.icns`, `.ico`) und `icon.png` sind aus dieser SVG-Datei erzeugt; … | ☑ | **gilt** (kleine Grössen aus `icon-small.svg`) | [test_icons.py](../tools/test_icons.py) «issue_185_ak2_…» (2 Tests) | 21.11.2026 ok (`make icons`, zweimal erzeugt gleiche Dateien) |
+| #185/AK3 | Das Icon bleibt mit 16 und 32 px erkennbar (Sonne und Bergkette unterscheidbar); ein Bild mit den Grössen 16/32/128/512 px liegt im Issue. | ☑ | **gilt** | kein Test (Vorschau `docs/bilder/icon-vorschau.png`) | 21.11.2026 ok (Urteil von Auge des Projektinhabers zur Vorschau) |
+| #185/AK4 | Das Icon wirkt auf hellem und auf dunklem Hintergrund (macOS-Dock, Windows-Taskleiste hell und dunkel). | ☑ | **gilt** | kein Test (Vorschau `docs/bilder/icon-vorschau.png`) | 21.11.2026 ok (Urteil von Auge des Projektinhabers zur Vorschau) |
+| #185/AK5 | Kein Schweizerkreuz oder anderes geschütztes Zeichen, keine fremden Marken, keine Schriftart mit Lizenzpflicht. | ☑ | **gilt** | kein Test (Durchsicht der SVG-Dateien; `<text>` prüft «issue_185_ak1_…») | 21.11.2026 ok |
+| #185/AK6 | Die Installationspakete (`.github/workflows/pakete.yml`) bauen mit dem neuen Icon. | ☑ | **gilt** | kein Test (Lauf [44913969121](https://github.com/ingen63/VivaPlan/actions/runs/44913969121) von Hand auf a9359be) | 21.11.2026 ok (macOS, Linux, Windows erfolgreich) |
