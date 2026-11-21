@@ -656,10 +656,43 @@ fn value_and_fix_costs_inflation_are_independent() {
     close(v_none.property_value, 500_000.0, "ohne Inflation");
     close(v_val.property_value, v_both.property_value, "Wert mit Inflation");
     close(v_cost.property_value, 500_000.0, "Wert ohne Inflation");
-    assert!(v_both.property_value > 520_000.0);
+    // #194/AK2: 12 months of inflation from January 2030: 500'000 × 1.1 = 550'000.
+    assert!(
+        (v_both.property_value - 550_000.0).abs() <= 0.01,
+        "Wert mit Inflation: {} statt 550'000",
+        v_both.property_value
+    );
     close(v_val.housing, 1_000.0, "Nebenkosten ohne Inflation");
     close(v_cost.housing, v_both.housing, "Nebenkosten mit Inflation");
     assert!(v_both.housing > 1_050.0);
+}
+
+/// #194/AK1: The ledger books the change in property value of a month; recomputed by hand.
+/// Owned property worth 1'000'000, value follows inflation, inflation 2 % p. a., no mortgage.
+/// Monthly factor f = 1.02^(1/12) = 1.0016515813. The value is W × f^k in month k (k = 0 in January 2030).
+/// Month 2 (February): 1'000'000 × (f − 1) = 1'651.58; month 3 (March): 1'000'000 × f × (f − 1) = 1'654.31.
+#[test]
+fn issue_194_ak1_ledger_revaluation_recomputed_by_hand() {
+    let mut v = base();
+    v["wealth"]["cash"] = json!(100_000);
+    v["returns"]["fixed"]["inflation"] = json!(0.02);
+    v["realestate"] = json!({ "properties": [
+        { "name": "Haus", "status": "owned", "price": 800_000, "worth": 1_000_000, "inflationValue": true }
+    ] });
+    let res = run(v);
+    let f = 1.02f64.powf(1.0 / 12.0);
+    let cases = [
+        (1, 0.0, 0.0),
+        (2, 1_000_000.0 * (f - 1.0), 1_651.58),
+        (3, 1_000_000.0 * f * (f - 1.0), 1_654.31),
+    ];
+    for (m, by_formula, by_hand) in cases {
+        let got = month(&res, 2030, m).ledger.revaluation;
+        assert!(
+            (got - by_formula).abs() <= 0.01 && (got - by_hand).abs() <= 0.01,
+            "Wertänderung Monat {m}: {got} statt {by_hand}"
+        );
+    }
 }
 
 // ---------- Templates of the property gain tax (#138) ----------
