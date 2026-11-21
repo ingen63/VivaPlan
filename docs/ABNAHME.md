@@ -814,3 +814,16 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #132/AK6 | Die Golden-Dateien (`crates/engine/tests/golden/`) ändern sich nicht, oder die Änderung wird im Issue begründet. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 18.11.2026 ok (nur `08-parametrisch.json`, begründet im Issue) |
 | #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui-abnahme.spec.js](../e2e/ui-abnahme.spec.js) «AK7: …» | 18.11.2026 ok |
 | #132/AK8 | Keine Netzwerkzugriffe und keine Abhängigkeit von Grafiktreibern; `docs/ENTWICKLUNG.md` (Abschnitt Monte Carlo) beschreibt das Verfahren. | ☑ | **gilt** | kein Test (Durchsicht `Cargo.toml`, `docs/ENTWICKLUNG.md`) | 18.11.2026 ok |
+
+### #185 Neues App-Icon
+
+[Issue #185](https://github.com/ingen63/VivaPlan/issues/185) · offen (`implemented`) · Umsetzung: 85edb19
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #185/AK1 | Die Quelldatei des Icons liegt als SVG im Repository (`crates/app/icons/icon.svg`) und zeigt die Variante «Abendrot» wie oben beschrieben. | ☑ | **gilt** (gilt auch für `icon-small.svg`, Kommentar im Issue) | [test_icons.py](../tools/test_icons.py) «issue_185_ak1_…» | 21.11.2026 ok |
+| #185/AK2 | Alle Icon-Dateien aus `crates/app/tauri.conf.json` (32, 128, 256 px, `.icns`, `.ico`) und `icon.png` sind aus dieser SVG-Datei erzeugt; … | ☑ | **gilt** (kleine Grössen aus `icon-small.svg`) | [test_icons.py](../tools/test_icons.py) «issue_185_ak2_…» (2 Tests) | 21.11.2026 ok (`make icons`, zweimal erzeugt gleiche Dateien) |
+| #185/AK3 | Das Icon bleibt mit 16 und 32 px erkennbar (Sonne und Bergkette unterscheidbar); ein Bild mit den Grössen 16/32/128/512 px liegt im Issue. | ☐ | **gilt** | kein Test (Vorschau `docs/bilder/icon-vorschau.png`) | 21.11.2026 nicht geprüft: Urteil von Auge beim Projektinhaber |
+| #185/AK4 | Das Icon wirkt auf hellem und auf dunklem Hintergrund (macOS-Dock, Windows-Taskleiste hell und dunkel). | ☐ | **gilt** | kein Test (Vorschau `docs/bilder/icon-vorschau.png`) | 21.11.2026 nicht geprüft: Urteil von Auge beim Projektinhaber |
+| #185/AK5 | Kein Schweizerkreuz oder anderes geschütztes Zeichen, keine fremden Marken, keine Schriftart mit Lizenzpflicht. | ☑ | **gilt** | kein Test (Durchsicht der SVG-Dateien; `<text>` prüft «issue_185_ak1_…») | 21.11.2026 ok |
+| #185/AK6 | Die Installationspakete (`.github/workflows/pakete.yml`) bauen mit dem neuen Icon. | ☐ | **gilt** | kein Test | 21.11.2026 nicht geprüft: lokal `npx tauri build --bundles app` ok; GitHub erst nach dem Push |
