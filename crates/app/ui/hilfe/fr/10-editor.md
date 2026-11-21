@@ -126,13 +126,15 @@ La part de l’avoir de vieillesse versée **en capital** à la retraite. 0 % si
 La meilleure part dépend de l’impôt, du taux de conversion et de votre goût du risque. Faites-la varier avec une [variation](#f-sweep) et voyez comment le taux de réussite change.
 
 ## @f-ahv AVS
-Mots-clés: rente, prestation, renchérissement, indice, 1er pilier, années de cotisation
+Mots-clés: rente, prestation, renchérissement, indice, 1er pilier, années de cotisation, 13e rente AVS, décembre
 
-- **Rente par mois au début de la prestation:** votre rente mensuelle probable selon le calcul anticipé de la rente de la caisse de compensation, aux prix actuels.
+- **Rente par mois au début de la prestation:** votre rente mensuelle probable lors d’une perception à 65 ans (âge de référence) selon le calcul anticipé de la rente de la caisse de compensation, aux prix actuels, **sans la 13e rente** (l’application l’ajoute elle-même, voir ci-dessous).
 - **Prestation dès:** toujours le jalon **Début de la rente AVS** de la personne (63 à 70 ans). Une anticipation ou un ajournement modifie la rente. Adaptez alors la rente en conséquence.
 - **Adapter chaque année la rente au renchérissement:** l’AVS est augmentée en janvier du renchérissement accumulé depuis le dernier janvier. Laissez la case cochée si la rente doit augmenter en conséquence.
 
 Avec deux personnes mariées, il existe un plafond pour les deux rentes ensemble, voir [Deuxième personne et règles pour couples mariés](#f-couple).
+
+**13e rente AVS:** Dès décembre 2026, l’AVS verse chaque année en décembre une 13e rente; l’application en tient toujours compte, il n’y a pas d’option pour la désactiver. Elle correspond à un douzième des rentes AVS versées de janvier à décembre (chaque mois arrondi au centime, la somme au franc entier). Si la rente commence en cours d’année, elle est versée au prorata: une rente de 2 520 dès juillet donne 6 × 210 = 1 260. Pour les couples mariés, c’est la rente déjà plafonnée qui compte; la 13e rente elle-même n’est pas plafonnée une seconde fois. Elle compte en décembre comme revenu AVS: dans les [valeurs annuelles](#r-table) parmi les recettes, dans le graphique [Revenus et dépenses par année](#r-flows) sous l’AVS. Elle est imposable comme la rente AVS. Si la simulation se termine avant décembre, il n’y a pas de 13e rente cette année-là. À l’ouverture d’une planification enregistrée avant cette modification, une remarque signale une fois que le résultat peut donc différer.
 
 ## @f-couple Deuxième personne et règles pour couples mariés
 Mots-clés: couple marié, marié, plafonnement, 150 pour cent, partenaire, double revenu

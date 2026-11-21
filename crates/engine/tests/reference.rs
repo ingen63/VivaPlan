@@ -778,3 +778,130 @@ fn issue_138_ak1_templates_have_a_single_source() {
     assert_eq!(t["zurich"]["model"], "zurich");
     assert_eq!(t["aargau"]["model"], "aargau");
 }
+
+// ---------- 13th AHV pension (#190) ----------
+
+/// #190: One year 2026 with an AHV pension from `at`; no returns, no inflation, no taxes.
+fn ahv_2026(monthly: f64, at: &str) -> Value {
+    let mut v = base();
+    v["milestones"][0]["date"] = json!("2026-01");
+    v["milestones"][2]["date"] = json!("2026-12");
+    v["wealth"]["cash"] = json!(100_000);
+    v["pension"]["ahv"] = json!({ "monthly": monthly, "at": at });
+    v
+}
+
+fn ahv_in_year(res: &SimResult, y: i32) -> f64 {
+    res.records.iter().filter(|r| r.month.year() == y).map(|r| r.ahv).sum()
+}
+
+/// #190/AK2: AHV 2'000 from 2026-01: November 2'000, December 2'000 + 13th pension.
+/// 13th: 12 × round(2'000 / 12 = 166.666…, centimes) = 12 × 166.67 = 2'000.04 → 2'000; year 26'000.
+#[test]
+fn issue_190_ak2_thirteenth_ahv_pension_in_december() {
+    let res = run(ahv_2026(2_000.0, "2026-01"));
+    close(month(&res, 2026, 11).ahv, 2_000.0, "November 2026");
+    close(month(&res, 2026, 12).ahv, 4_000.0, "Dezember 2026");
+    close(ahv_in_year(&res, 2026), 26_000.0, "Summe 2026");
+}
+
+/// #190/AK3: AHV 2'520 from 2026-07 (example of the circular): 6 × 2'520 / 12 = 6 × 210 = 1'260.
+#[test]
+fn issue_190_ak3_pension_starting_during_the_year_gets_a_pro_rata_thirteenth() {
+    let res = run(ahv_2026(2_520.0, "2026-07"));
+    close(month(&res, 2026, 11).ahv, 2_520.0, "November 2026");
+    close(month(&res, 2026, 12).ahv, 2_520.0 + 1_260.0, "Dezember 2026");
+    close(ahv_in_year(&res, 2026), 6.0 * 2_520.0 + 1_260.0, "Summe 2026");
+}
+
+/// #190/AK3: The simulation starts in July, the pension has been running since 2025: the months January to June 2026
+/// count with the pension at the start; full 13th pension 12 × 210 = 2'520.
+#[test]
+fn issue_190_ak3_months_before_the_simulation_start_count() {
+    let mut v = ahv_2026(2_520.0, "2025-01");
+    v["milestones"][0]["date"] = json!("2026-07");
+    let res = run(v);
+    close(month(&res, 2026, 12).ahv, 2_520.0 + 2_520.0, "Dezember 2026");
+}
+
+/// #190/AK4: Married couple, cap 3'780. A: 2'520 from 2026-01, B: 2'520 from 2026-07; from July capped at 3'780
+/// (per person 1'890, circular: 6 × 210 + 6 × 157.50 = 2'205 for A, 6 × 157.50 = 945 for B).
+/// 13th of the household: 6 × 2'520 / 12 + 6 × 3'780 / 12 = 1'260 + 1'890 = 3'150 = 2'205 + 945.
+/// Not capped a second time: December 3'780 + 3'150 = 6'930.
+#[test]
+fn issue_190_ak4_couple_cap_applies_to_the_monthly_pensions_only() {
+    let mut v = ahv_2026(2_520.0, "2026-01");
+    v["household"]["persons"] = json!([
+        { "id": "A", "name": "A", "birth": "1960-01" },
+        { "id": "B", "name": "B", "birth": "1961-01" }
+    ]);
+    v["household"]["married"] = json!(true);
+    v["household"]["ahvCoupleCap"] = json!(3_780);
+    v["partner"] = json!({
+        "income": 0,
+        "pk": { "capital": 0, "at": "retire", "lumpsum": 0, "conversion": 0 },
+        "ahv": { "monthly": 2_520, "at": "2026-07" }
+    });
+    let res = run(v);
+    close(month(&res, 2026, 6).ahv, 2_520.0, "Juni 2026");
+    close(month(&res, 2026, 11).ahv, 3_780.0, "November 2026 (plafoniert)");
+    close(month(&res, 2026, 12).ahv, 3_780.0 + 3_150.0, "Dezember 2026");
+}
+
+/// #190/AK4: Inflation acts through the paid pensions. Inflation 10 %, indexed: from January 2027 the pension a (record of
+/// January); 13th 2027 = 12 × round(a / 12, centimes), rounded to francs.
+#[test]
+fn issue_190_ak4_inflation_acts_like_on_the_monthly_pension() {
+    let mut v = ahv_2026(2_000.0, "2026-01");
+    v["milestones"][2]["date"] = json!("2027-12");
+    v["pension"]["ahv"]["indexed"] = json!(true);
+    v["returns"]["fixed"]["inflation"] = json!(0.1);
+    let res = run(v);
+    let a = month(&res, 2027, 1).ahv;
+    assert!(a > 2_100.0, "indexiert: {a}");
+    let thirteenth = (12.0 * (a / 12.0 * 100.0).round() / 100.0).round();
+    close(month(&res, 2027, 12).ahv, a + thirteenth, "Dezember 2027");
+    close(month(&res, 2026, 12).ahv, 4_000.0, "Dezember 2026");
+}
+
+/// #190/AK9: Monthly share to the centime, sum to whole francs (half away from zero). AHV 1'000.99 from July:
+/// 1'000.99 / 12 = 83.4158… → 83.42; 6 × 83.42 = 500.52 → 501 (without rounding the shares: 500.495 → 500).
+#[test]
+fn issue_190_ak9_shares_rounded_to_centimes_sum_to_francs() {
+    let res = run(ahv_2026(1_000.99, "2026-07"));
+    close(month(&res, 2026, 12).ahv, 1_000.99 + 501.0, "Dezember 2026");
+}
+
+/// #190/AK10: The simulation ends in November: no 13th pension (entitlement only with a pension in December).
+#[test]
+fn issue_190_ak10_no_thirteenth_if_the_simulation_ends_before_december() {
+    let mut v = ahv_2026(2_000.0, "2026-01");
+    v["milestones"][2]["date"] = json!("2026-11");
+    let res = run(v);
+    assert_eq!(res.records.last().unwrap().month, YearMonth::new(2026, 11));
+    assert!(res.records.iter().all(|r| (r.ahv - 2_000.0).abs() < 1e-9));
+    close(ahv_in_year(&res, 2026), 22_000.0, "Summe 2026");
+}
+
+/// #190/AK11: No 13th pension before December 2026; months of 2025 do not count.
+#[test]
+fn issue_190_ak11_first_thirteenth_in_december_2026() {
+    let mut v = ahv_2026(2_000.0, "2025-01");
+    v["milestones"][0]["date"] = json!("2025-01");
+    let res = run(v);
+    close(month(&res, 2025, 12).ahv, 2_000.0, "Dezember 2025");
+    close(ahv_in_year(&res, 2025), 24_000.0, "Summe 2025");
+    close(month(&res, 2026, 12).ahv, 4_000.0, "Dezember 2026");
+    close(ahv_in_year(&res, 2026), 26_000.0, "Summe 2026");
+}
+
+/// #190: The 13th pension counts as income for the income tax (like the AHV pension): base 2026 = 26'000.
+#[test]
+fn issue_190_thirteenth_counts_for_the_income_tax() {
+    let mut v = ahv_2026(2_000.0, "2026-01");
+    v["taxes"]["income"] = json!([[0, 0.1]]);
+    let p = plan(v.clone());
+    let res = run(v);
+    let expected = tax::tax(&p.taxes.income, 26_000.0, p.taxes.multiplier);
+    close(month(&res, 2026, 12).assessed_income, expected, "Einkommenssteuer 2026");
+}

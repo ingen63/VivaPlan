@@ -494,7 +494,7 @@ function PensionCards(root, who) {
     ${F(`${pk}.lumpsum`, tr("pension.lumpsum"), "pct")}
     ${F(`${pk}.conversion`, tr("pension.conversion"), "pct")}</div>
     <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></div>
-  <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2">${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf")}
+  <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2">${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
     <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>`;
 }
@@ -3274,6 +3274,7 @@ onLanguage(() => PLAN_HIDDEN = [
   [/^realestate\.affordability\.wealthContribution$/, tr("planHidden.noField")], [/^withdrawal\.buckets\.reserveMonths$/, tr("planHidden.noField")],
   [/^realestate\.properties\.\d+\.inflation$/, tr("planHidden.legacyField")],
   [/^returns\.parametric\.sampler$/, tr("planHidden.sampling")],
+  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")],
 ]);
 function cmpPlan(body, items, datas) {
   // Sections in the order of the editor, within them the labels in the order of their first occurrence

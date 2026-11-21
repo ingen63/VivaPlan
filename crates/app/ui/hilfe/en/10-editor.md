@@ -126,13 +126,15 @@ The share of the retirement savings paid out **as capital** at retirement. 0 % m
 The best share depends on the tax, the conversion rate and your willingness to take risks. Run it through a [variation](#f-sweep) and see how the success rate changes.
 
 ## @f-ahv AHV
-Keywords: pension, payout, inflation, index, pillar 1, contribution years
+Keywords: pension, payout, inflation, index, pillar 1, contribution years, 13th AHV pension, December
 
-- **Pension per month at the start of payout:** your expected monthly pension according to the pension forecast of the compensation office, in today's prices.
+- **Pension per month at the start of payout:** your expected monthly pension when drawn at 65 (reference age) according to the pension forecast of the compensation office, in today's prices, **without the 13th pension** (the app adds it itself, see below).
 - **Payout from:** always the milestone **AHV pension start** of the person (63 to 70 years). Drawing early or deferring changes the pension. Then adjust the pension accordingly.
 - **Adjust the pension annually for inflation:** The AHV pension is increased in January by the inflation accumulated since the last January. Leave the box ticked if the pension should grow with it.
 
 With two married persons, there is an upper limit for both pensions together, see [Second person and rules for couples](#f-couple).
+
+**13th AHV pension:** From December 2026 the AHV pays a 13th pension every year in December; the app always includes it, there is no switch for it. It amounts to one twelfth of the AHV pensions paid from January to December (each month rounded to the centime, the sum to whole francs). If the pension starts during the year, it is paid pro rata: a pension of 2 520 from July gives 6 × 210 = 1 260. For married couples the already capped pension counts; the 13th pension itself is not capped again. It counts as AHV income in December: in the [yearly values](#r-table) under receipts, in the chart [Income and spending per year](#r-flows) under AHV. It is taxable like the AHV pension. If the simulation ends before December, there is no 13th pension in that year. When you open a plan saved before this change, a note appears once that the result may therefore differ.
 
 ## @f-couple Second person and rules for couples
 Keywords: couple, married, cap, 150 percent, partner, double income

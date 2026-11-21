@@ -440,3 +440,59 @@ test.describe("Earned income with inflation (#58)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("13th AHV pension (#190)", () => {
+  test("AK8: the field for the monthly AHV pension explains which amount is meant", async ({ page }) => {
+    const errors = await open(page, "pension");
+    const label = page.locator("label.field", { hasText: "Rente pro Monat bei Bezugsbeginn" });
+    await expect(label).toHaveCount(1);
+    await expect(label.locator(".computed")).toHaveText(
+      "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, in heutigen Preisen, ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).");
+    await noErrors(page, errors);
+  });
+
+  test("AK6: the annual values contain the 13th AHV pension in December in the AHV income", async ({ page }) => {
+    const errors = await open(page);
+    const out = await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      realView = false;
+      const recs = lastRun.single.records, at = m => recs.find(r => r.month === m);
+      const y = yearly(recs).find(a => String(a.y) === "2036");
+      return { jan: at("2036-01").ahv, nov: at("2036-11").ahv, dec: at("2036-12").ahv, year: y.ahv };
+    });
+    // example plan: AHV 2'000 from 06.2035, indexed in January; 2036 a full year with the same monthly pension
+    expect(out.jan).toBeGreaterThan(2000);
+    expect(out.nov).toBeCloseTo(out.jan, 6);
+    const thirteenth = Math.round(12 * Math.round(out.jan / 12 * 100) / 100);
+    expect(out.dec).toBeCloseTo(out.jan + thirteenth, 6);
+    expect(out.year).toBeCloseTo(12 * out.jan + thirteenth, 6);
+    await noErrors(page, errors);
+  });
+
+  test("AK12: an older plan shows the note on the 13th AHV pension once", async ({ page }) => {
+    const errors = await open(page);
+    const plan = await page.evaluate(() => {
+      const s = JSON.parse(JSON.stringify(state));
+      delete s.pension.ahv.thirteenthNoted;
+      return s;
+    });
+    const file = path.join(os.tmpdir(), `ahv13-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(plan));
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect(page.locator("#ask")).toBeVisible();
+    await expect(page.locator("#askText")).toContainText("Ab Dezember 2026 rechnet die Simulation mit der 13. AHV-Rente");
+    await page.locator("#ask button[value='ok']").click();
+    expect(await page.evaluate(() => state.pension.ahv.thirteenthNoted)).toBe(true);
+    // the plan as saved now: no note on the next opening
+    fs.writeFileSync(file, JSON.stringify(await page.evaluate(() => state)));
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect(page.locator("#main")).toBeVisible();
+    await page.waitForTimeout(300);
+    const again = await page.locator("#ask").isVisible() ? await page.locator("#askText").innerText() : "";
+    expect(again).not.toContain("13. AHV-Rente");
+    fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+});

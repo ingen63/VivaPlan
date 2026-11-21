@@ -11,6 +11,8 @@
 //!   plan computes parametrically, its parameters stay (`auto` = false) and a note names the changed computation.
 //! - #132: The parametric model gets the flag `sampler` (sampling method). If the plan computes
 //!   parametrically, a note names the different random paths.
+//! - #190: The AHV gets the marker `thirteenthNoted`. If the plan has an AHV pension, a note names the 13th AHV
+//!   pension (from December 2026); the plan stays the same otherwise.
 
 use std::borrow::Cow;
 
@@ -71,6 +73,7 @@ pub fn upgrade(v: &mut Value) -> Vec<Message> {
     pictet(v, &mut notes);
     parametric(v, &mut notes);
     sampler(v, &mut notes);
+    thirteenth_ahv(v, &mut notes);
     // #154: last, because `housing` needs a readable plan, and the steps before can only make it readable
     // (e.g. an invalid `returns.series`). Otherwise only the next opening would catch up on the adjustment.
     housing(v, &mut notes);
@@ -121,6 +124,25 @@ fn sampler(v: &mut Value, notes: &mut Vec<Message>) {
     q.insert("sampler".into(), json!(crate::montecarlo::SAMPLER));
     if active && !notes.iter().any(|n| n == PARAMETRIC_NOTE) {
         notes.push(msg!(note_sampler));
+    }
+}
+
+/// #190: Note when opening a plan from before the 13th AHV pension.
+pub const THIRTEENTH_AHV_NOTE: &str = "From December 2026 the simulation includes the 13th AHV pension: every December one twelfth of the AHV pensions paid in the year in addition. The result may therefore differ from before (more income in retirement).";
+
+/// #190: Marker `pension.ahv.thirteenthNoted`. If it is missing, the plan dates from before the 13th AHV pension; with an AHV
+/// pension (person or partner) it gets a note once. Nothing else in the plan changes.
+fn thirteenth_ahv(v: &mut Value, notes: &mut Vec<Message>) {
+    let Some(ahv) = v.pointer_mut("/pension/ahv").and_then(Value::as_object_mut) else {
+        return;
+    };
+    if ahv.get("thirteenthNoted").and_then(Value::as_bool) == Some(true) {
+        return;
+    }
+    ahv.insert("thirteenthNoted".into(), json!(true));
+    let pension = |p: &str| v.pointer(p).and_then(Value::as_f64).unwrap_or(0.0) > 0.0;
+    if pension("/pension/ahv/monthly") || pension("/partner/ahv/monthly") {
+        notes.push(msg!(note_thirteenth_ahv));
     }
 }
 

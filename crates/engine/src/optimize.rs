@@ -1507,7 +1507,15 @@ mod tests {
         let k = res.records.iter().position(|r| r.month == retire).unwrap();
         assert!(res.records[k].taxes > 0.0 && res.records[k].income > 0.0);
         let st = path_stats(&sim, &res, retire, &Objective::default());
-        assert!((st.draw_rate - 12.0 * 500.0 / res.records[k - 1].liquid).abs() < 1e-12);
+        // #190: the 13th AHV pension in December 2032 lowers the withdrawal of the first 12 months.
+        let dec = res
+            .records
+            .iter()
+            .find(|r| r.month == YearMonth::new(2032, 12))
+            .unwrap();
+        let thirteenth = dec.ahv - 500.0;
+        assert!(thirteenth > 0.0);
+        assert!((st.draw_rate - (12.0 * 500.0 - thirteenth) / res.records[k - 1].liquid).abs() < 1e-12);
     }
 
     #[test]

@@ -22,6 +22,10 @@
 //! person with a payout date is retired. Once both AHV pensions are due, they are capped for married couples
 //! at `household.ahvCoupleCap`.
 //!
+//! #190: From 2026 the AHV pays a 13th pension in December: one twelfth of the (capped) household AHV paid
+//! from January to December, each monthly share rounded to the centime, the sum to whole francs (circular
+//! «13. Altersrente», margin numbers 4001–4005). It is only paid if a pension is due in December.
+//!
 //! Fixed withdrawal rate, guardrails, VPW and endowment determine living costs from the first person's retirement:
 //! annual withdrawal = living costs + housing costs + pillar 3a contributions − income and pensions (before taxes). Sale proceeds reserved
 //! for a purchase do not count towards the wealth used for withdrawals. With «3-Topf» and guardrails (#6) the
@@ -1026,6 +1030,15 @@ struct PropState {
     int_accr: f64,
 }
 
+/// #190: First year with a 13th AHV pension (first payout December 2026).
+pub const AHV13_FROM_YEAR: i32 = 2026;
+
+/// #190: Share of the 13th AHV pension of one month in centimes: one twelfth of the monthly pension, rounded to the
+/// centime (half away from zero).
+fn ahv13_share_centimes(monthly: f64) -> f64 {
+    (monthly / 12.0 * 100.0).round()
+}
+
 struct Run<'a> {
     s: &'a Simulator,
     path: &'a MarketPath,
@@ -1036,6 +1049,8 @@ struct Run<'a> {
     people: Vec<PersonState>,
     /// AHV inflation since the first payout (for the cap on married couples).
     ahv_scale: f64,
+    /// #190: Monthly shares of the 13th AHV pension accrued in the current calendar year, in centimes.
+    ahv13_centimes: f64,
     /// Taxes from the month's events (3a payout, property gain).
     event_tax: f64,
     infl_idx: f64,
@@ -1171,6 +1186,7 @@ impl<'a> Run<'a> {
                 })
                 .collect(),
             ahv_scale: 1.0,
+            ahv13_centimes: 0.0,
             event_tax: 0.0,
             infl_idx: 1.0,
             infl_idx_jan: 1.0,
@@ -1243,6 +1259,25 @@ impl<'a> Run<'a> {
         match self.s.couple_cap {
             Some(cap) => sum.min(cap * self.ahv_scale),
             None => sum,
+        }
+    }
+
+    /// #190: Accrues the share of the 13th AHV pension for month `m` (one twelfth of the household AHV `monthly`,
+    /// rounded to the centime) and returns the 13th pension in December: the year's shares, rounded to whole francs.
+    /// Not before [`AHV13_FROM_YEAR`]; nothing without a pension in December.
+    fn thirteenth_ahv(&mut self, m: YearMonth, monthly: f64) -> f64 {
+        if m.year() < AHV13_FROM_YEAR {
+            return 0.0;
+        }
+        self.ahv13_centimes += ahv13_share_centimes(monthly);
+        if !m.is_december() {
+            return 0.0;
+        }
+        let centimes = std::mem::take(&mut self.ahv13_centimes);
+        if monthly > 0.0 {
+            (centimes / 100.0).round()
+        } else {
+            0.0
         }
     }
 
@@ -2716,6 +2751,14 @@ impl<'a> Run<'a> {
             self.summary.start_total = liquid + self.equity() + pk + p3a;
         }
 
+        // #190/AK3: The months of the start year before the simulation start count for the 13th AHV pension with the
+        // pensions due then (amounts at the start).
+        if s.start.year() >= AHV13_FROM_YEAR {
+            for month in 1..s.start.month() {
+                let (a, _) = self.pensions_at(YearMonth::new(s.start.year(), month));
+                self.ahv13_centimes += ahv13_share_centimes(a);
+            }
+        }
         for k in 0..s.months {
             let m = s.start.plus(k as i32);
             let december = m.is_december();
@@ -2866,7 +2909,9 @@ impl<'a> Run<'a> {
             // Cash flows
             let earned = s.earned(m, self.infl_idx);
             let pk_pension = self.pk_pension();
-            let ahv = self.ahv();
+            let ahv_monthly = self.ahv();
+            // #190: the 13th AHV pension in December counts as AHV income (also for the income tax).
+            let ahv = ahv_monthly + self.thirteenth_ahv(m, ahv_monthly);
             let income = earned + pk_pension + ahv;
             let planned = s.planned_living(m) * self.infl_idx;
             // #6/#47: The spending rule applies from the retirement of the first person.

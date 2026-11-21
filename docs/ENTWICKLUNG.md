@@ -373,6 +373,14 @@ Reihenfolge pro Monat:
    Umwandlungssatz / 12); AHV-Beginn; Immobilien (Notverkauf aus dem Vormonat, Kauf, Verkauf mit
    Grundstückgewinnsteuer, Hypothekarperioden); Säule 3a (Verzinsung, Auszahlung).
 3. **Geldflüsse** in das Cash: Einkommen + Renten + Zuflüsse − Lebenshaltung − Wohnkosten.
+   **13. AHV-Rente (#190):** ab 2026 im Dezember zusätzlich zur AHV des Monats; Höhe 1/12 der von Januar bis Dezember
+   ausbezahlten AHV des Haushalts (nach dem Plafond für Ehepaare, keine zweite Deckelung), je Monat auf Rappen, die Summe
+   kaufmännisch auf ganze Franken gerundet (KS 13. AR Rz 4001–4005). Monate des Startjahrs vor dem Simulationsstart zählen
+   mit den dann fälligen Renten; Monate vor 2026 zählen nicht. Ohne AHV im Dezember (auch: Simulation endet vorher)
+   keine 13. Rente. Sie zählt zum AHV-Einkommen der Jahreswerte und zum steuerbaren Einkommen; kein Schalter. Tragbarkeit,
+   Notverkaufskriterium und Netto-Bedarf der 3-Topf-Strategie rechnen mit den Monatsrenten ohne 13. Rente. Ältere
+   Planungen (ohne die Marke `pension.ahv.thirteenthNoted`) bekommen beim Öffnen einmalig einen Hinweis (`upgrade.rs`,
+   nur mit AHV-Rente); sonst bleibt die Datei unverändert.
 4. **Rendite** auf Aktien und Obligationen (Jahresrendite geometrisch auf Monate umgerechnet), sofern das Portfolio positiv ist.
 5. **Pensionskasse** bis zum Bezug: Beiträge monatlich, Verzinsung im Dezember.
 6. **Steuern:** Im Dezember werden die Einkommenssteuer auf das Jahreseinkommen (inkl. Renten) und die
@@ -400,7 +408,7 @@ Reihenfolge pro Monat:
    ab dem Start der Entnahmephase (die erste Pensionierung), davor «Standard». Topf 1 = Cash (alle Ausgaben werden
    daraus bezahlt), Topf 2 = Obligationen, Topf 3 = Aktien; ein für einen Kauf im Folgemonat reservierter Verkaufserlös
    gehört zu keinem Topf. **Kein Topf fällt je unter 0** (einzige Ausnahme: alle Töpfe leer und keine Immobilie mehr).
-   **Netto-Bedarf** = Lebenshaltung + Wohnen (ohne Amortisation) + Einkommenssteuer − AHV − PK-Rente − Erwerbseinkommen, aus den
+   **Netto-Bedarf** = Lebenshaltung + Wohnen (ohne Amortisation) + Einkommenssteuer − AHV (Monatsrenten, ohne 13. Rente) − PK-Rente − Erwerbseinkommen, aus den
    geplanten Werten des laufenden Jahres (Beginn mit einem Auslöser A: Monate ab dem Auslöser, auf 12 Monate hochgerechnet,
    auch die Einkommenssteuer); einmalige Ausgaben, Käufe, Amortisationen und Sondersteuern zählen nicht. Bedarf ≤ 0 → Ziele 0.
    Der Netto-Bedarf wird im Januar und bei **jedem** Auslöser A neu bestimmt, also auch bei einem PK-Kapitalbezug mitten im

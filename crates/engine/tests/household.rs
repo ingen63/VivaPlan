@@ -158,10 +158,11 @@ fn ahv_in(res: &SimResult, k: usize) -> f64 {
 
 // #145/AK1, AK2: Both pensions indexed: the cap rises once per January by 3 %, not by 3 % per person.
 // 01.2031: 3'780 × 1.03 = 3'893.40; 01.2033: 3'780 × 1.03³ = 4'130.51 (previously 4'010.20 and 4'513.52).
+// November instead of December: the December contains the 13th AHV pension (#190).
 #[test]
 fn issue_145_ak2_couple_cap_follows_inflation_once_per_year() {
     let res = capped_ahv(true, true, "start");
-    assert!((ahv_in(&res, 11) - 3_780.0).abs() < 0.01, "{}", ahv_in(&res, 11));
+    assert!((ahv_in(&res, 10) - 3_780.0).abs() < 0.01, "{}", ahv_in(&res, 10));
     assert!((ahv_in(&res, 12) - 3_893.40).abs() < 0.01, "{}", ahv_in(&res, 12));
     assert!((ahv_in(&res, 36) - 4_130.51).abs() < 0.01, "{}", ahv_in(&res, 36));
 }

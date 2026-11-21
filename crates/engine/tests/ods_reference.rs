@@ -112,6 +112,24 @@ fn engine_liquid(v: &Value) -> Vec<f64> {
     sim.run(&paths[0], true).records.iter().map(|r| r.liquid).collect()
 }
 
+/// #190: The spreadsheet knows no 13th AHV pension. Liquid wealth without it (sheet 1 has no return): minus the
+/// 13th pensions paid so far (December AHV minus that of November).
+fn engine_liquid_without_13th_ahv(v: &Value) -> Vec<f64> {
+    let p: Plan = serde_json::from_value(v.clone()).expect("Planung gültig");
+    let sim = Simulator::new(&p).unwrap();
+    let paths = batch::market_paths(&p, &sim, None).unwrap();
+    let records = sim.run(&paths[0], true).records;
+    let mut paid = 0.0;
+    (0..records.len())
+        .map(|k| {
+            if k > 0 && records[k].month.is_december() {
+                paid += records[k].ahv - records[k - 1].ahv;
+            }
+            records[k].liquid - paid
+        })
+        .collect()
+}
+
 fn close(a: f64, b: f64, what: &str) {
     assert!(
         (a - b).abs() <= 0.01 + 1e-9 * b.abs(),
@@ -126,7 +144,7 @@ fn sheet1_matches_month_by_month_over_the_whole_horizon() {
     let s = Sheet::load("Sheet1");
     let (v, early, legal, amort, sale) = plan_of(&s, 0.0);
     assert!(errors(&v).is_empty(), "{:?}", errors(&v));
-    let liquid = engine_liquid(&v);
+    let liquid = engine_liquid_without_13th_ahv(&v);
     assert!(early < legal && legal < amort && amort < sale);
     assert_eq!(liquid.len(), s.rows() - 2);
     for (k, &l) in liquid.iter().enumerate() {

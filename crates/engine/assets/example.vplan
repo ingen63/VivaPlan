@@ -100,7 +100,8 @@
     "ahv": {
       "at": "ahv",
       "indexed": true,
-      "monthly": 2000
+      "monthly": 2000,
+      "thirteenthNoted": true
     },
     "pk": {
       "at": "retire",

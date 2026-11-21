@@ -126,13 +126,15 @@ La quota dell’avere di vecchiaia versata al pensionamento **come capitale**. 0
 La quota migliore dipende dall’imposta, dall’aliquota di conversione e dalla Sua propensione al rischio. La faccia variare con una [variazione](#f-sweep) e osservi come cambia il tasso di successo.
 
 ## @f-ahv AVS
-Parole chiave: rendita, riscossione, rincaro, indice, 1° pilastro, anni di contribuzione
+Parole chiave: rendita, riscossione, rincaro, indice, 1° pilastro, anni di contribuzione, 13a rendita AVS, dicembre
 
-- **Rendita al mese all’inizio della prestazione:** la Sua rendita mensile presumibile secondo il calcolo anticipato della rendita della cassa di compensazione, ai prezzi attuali.
+- **Rendita al mese all’inizio della prestazione:** la Sua rendita mensile presumibile con riscossione a 65 anni (età di riferimento) secondo il calcolo anticipato della rendita della cassa di compensazione, ai prezzi attuali, **senza la 13a rendita** (l’applicazione la aggiunge da sé, vedi sotto).
 - **Prestazione da:** sempre la tappa **Inizio della rendita AVS** della persona (da 63 a 70 anni). Un’anticipazione o un rinvio modifica la rendita. Adegui allora la rendita di conseguenza.
 - **Adeguare annualmente la rendita al rincaro:** l’AVS viene aumentata a gennaio del rincaro accumulato dall’ultimo gennaio. Lasci il campo spuntato se la rendita deve crescere di pari passo.
 
 Con due persone coniugate esiste un limite superiore per entrambe le rendite insieme, vedi [Seconda persona e regole per coppie sposate](#f-couple).
+
+**13a rendita AVS:** Da dicembre 2026 l’AVS versa ogni anno a dicembre una 13a rendita; l’applicazione ne tiene sempre conto, non c’è un’opzione per disattivarla. Corrisponde a un dodicesimo delle rendite AVS versate da gennaio a dicembre (ogni mese arrotondato al centesimo, la somma al franco intero). Se la rendita inizia nel corso dell’anno, è versata pro rata: una rendita di 2 520 da luglio dà 6 × 210 = 1 260. Per le coppie sposate conta la rendita già plafonata; la 13a rendita stessa non viene plafonata una seconda volta. A dicembre conta come reddito AVS: nei [valori annuali](#r-table) tra le entrate, nel grafico [Entrate e spese all’anno](#r-flows) alla voce AVS. È imponibile come la rendita AVS. Se la simulazione termina prima di dicembre, in quell’anno non c’è la 13a rendita. All’apertura di una pianificazione salvata prima di questa modifica, un avviso segnala una volta che il risultato può quindi differire.
 
 ## @f-couple Seconda persona e regole per coppie sposate
 Parole chiave: coppia sposata, coniugati, limitazione, 150 percento, partner, doppio reddito

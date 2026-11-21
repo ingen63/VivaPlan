@@ -55,7 +55,8 @@
     "ahv": {
       "at": "ahv",
       "indexed": true,
-      "monthly": 0
+      "monthly": 0,
+      "thirteenthNoted": true
     },
     "pk": {
       "at": "retire",

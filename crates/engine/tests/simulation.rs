@@ -65,7 +65,9 @@ fn spending_is_indexed_monthly_and_ahv_every_january() {
         "Dezember: elf Monate Teuerung"
     );
     assert!((r[12].spending - 1_100.0).abs() < 1e-9, "Januar: volles Jahr");
-    assert!((r[11].income - 2_000.0).abs() < 1e-9, "AHV bis Dezember unverändert");
+    assert!((r[10].income - 2_000.0).abs() < 1e-9, "AHV bis November unverändert");
+    // #190: December with the 13th AHV pension (from 2026 in every plan year of this test).
+    assert!((r[11].income - 4_000.0).abs() < 1e-9, "Dezember mit 13. AHV-Rente");
     assert!((r[12].income - 2_200.0).abs() < 1e-9, "AHV im Januar angepasst");
 }
 

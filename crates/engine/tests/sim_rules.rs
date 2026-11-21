@@ -540,7 +540,8 @@ fn phase8_chain() -> Value {
     v["flows"]["spending"] =
         json!({"mode": "timed", "rows": [{"from": "start", "value": 12_500}, {"from": "2030-02", "value": 18_500}]});
     v["wealth"]["cash"] = json!(50_000);
-    v["flows"]["extras"] = json!([{"date": "2030-01", "amount": -300_000, "label": "Ausgabe 1"},
+    // #190: 4'500 more than before for the 13th AHV pensions 2027–2029 (3 × 1'500)
+    v["flows"]["extras"] = json!([{"date": "2030-01", "amount": -304_500, "label": "Ausgabe 1"},
                                   {"date": "2030-02", "amount": -540_000, "label": "Ausgabe 2"}]);
     buckets(&mut v, 1.0, 1.0, -1.0);
     v

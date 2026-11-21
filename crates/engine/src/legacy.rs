@@ -204,6 +204,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             monthly: c.f_or("Pension.Legal", 0.0),
             at: TimeRef::milestone("ahv"),
             indexed: true,
+            thirteenth_noted: false,
         },
     };
 

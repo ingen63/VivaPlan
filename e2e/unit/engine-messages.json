@@ -4527,6 +4527,12 @@
     "text": "Cash is now kept at the amount entered until retirement (pension fund payout), adjusted for inflation; a surplus goes to the portfolio. The withdrawal strategy, including “Standard” with its cash reserve, only applies from retirement. The result may therefore change."
   },
   {
+    "code": "note_thirteenth_ahv",
+    "params": {},
+    "template": "From December 2026 the simulation includes the 13th AHV pension: every December one twelfth of the AHV pensions paid in the year in addition. The result may therefore differ from before (more income in retirement).",
+    "text": "From December 2026 the simulation includes the 13th AHV pension: every December one twelfth of the AHV pensions paid in the year in addition. The result may therefore differ from before (more income in retirement)."
+  },
+  {
     "code": "note_pictet_stocks",
     "params": {},
     "template": "“Switzerland (JST)” for the stocks",

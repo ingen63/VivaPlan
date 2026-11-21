@@ -126,13 +126,15 @@ Der Anteil des Altersguthabens, der bei der Pensionierung **als Kapital** ausbez
 Der beste Anteil hängt von der Steuer, vom Umwandlungssatz und von Ihrer Risikobereitschaft ab. Lassen Sie ihn mit einer [Variation](#f-sweep) laufen und sehen Sie, wie sich die Erfolgsquote verändert.
 
 ## @f-ahv AHV
-Stichworte: Rente, Bezug, Teuerung, Index, 1. Säule, Beitragsjahre
+Stichworte: Rente, Bezug, Teuerung, Index, 1. Säule, Beitragsjahre, 13. AHV-Rente, Dezember
 
-- **Rente pro Monat bei Bezugsbeginn:** Ihre voraussichtliche Monatsrente laut Rentenvorausberechnung der Ausgleichskasse, in heutigen Preisen.
+- **Rente pro Monat bei Bezugsbeginn:** Ihre voraussichtliche Monatsrente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung der Ausgleichskasse, in heutigen Preisen, **ohne 13. Rente** (die App rechnet sie selbst dazu, siehe unten).
 - **Bezug ab:** immer der Meilenstein **AHV-Bezug** der Person (63 bis 70 Jahre). Ein Vorbezug oder Aufschub ändert die Rente. Passen Sie die Rente dann entsprechend an.
 - **Rente jährlich an die Teuerung anpassen:** Die AHV wird im Januar um die seit dem letzten Januar aufgelaufene Teuerung erhöht . Lassen Sie das Feld angekreuzt, wenn die Rente mitwachsen soll.
 
 Bei zwei Personen gibt es bei Verheirateten eine Obergrenze für beide Renten zusammen, siehe [Zweite Person und Ehepaar-Regeln](#f-couple).
+
+**13. AHV-Rente:** Ab Dezember 2026 zahlt die AHV jedes Jahr im Dezember eine 13. Rente; die App rechnet sie immer mit, ein Schalter dafür gibt es nicht. Sie beträgt ein Zwölftel der von Januar bis Dezember ausbezahlten AHV-Renten (je Monat auf Rappen gerundet, die Summe auf ganze Franken). Beginnt die Rente im Laufe des Jahres, gibt es sie anteilig: Rente 2 520 ab Juli ergibt 6 × 210 = 1 260. Bei Verheirateten zählt die bereits begrenzte Rente; die 13. Rente selbst wird nicht nochmals begrenzt. Sie zählt im Dezember zum AHV-Einkommen: in den [Jahreswerten](#r-table) bei den Einnahmen, in der Grafik [Einnahmen und Ausgaben pro Jahr](#r-flows) bei der AHV. Sie ist wie die AHV-Rente steuerbar. Endet die Simulation vor Dezember, gibt es in diesem Jahr keine 13. Rente. Beim Öffnen einer Planung, die vor dieser Änderung gespeichert wurde, weist ein Hinweis einmalig darauf hin, dass das Ergebnis deshalb abweichen kann.
 
 ## @f-couple Zweite Person und Ehepaar-Regeln
 Stichworte: Ehepaar, verheiratet, Plafonierung, 150 Prozent, Partner, Double Income

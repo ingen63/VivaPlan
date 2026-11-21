@@ -397,17 +397,19 @@ fn ahv_fixed_and_indexed() {
         v["pension"]["ahv"] = json!({ "monthly": 2000, "at": "retire", "indexed": indexed });
         v
     };
+    // #190: the monthly pension outside December; the December contains the 13th pension (2'000 with a full year).
+    let monthly = |r: &engine::sim::MonthRecord| if r.month.is_december() { r.ahv / 2.0 } else { r.ahv };
     let fixed = run(&make(false, 0.03));
     assert!(
-        fixed.records.iter().all(|r| (r.ahv - 2000.0).abs() < 1e-9),
+        fixed.records.iter().all(|r| (monthly(r) - 2000.0).abs() < 1e-9),
         "feste AHV darf sich nicht ändern"
     );
     let idx = run(&make(true, 0.03));
     assert!((idx.records[0].ahv - 2000.0).abs() < 1e-9);
-    assert!(idx.records[12].ahv > idx.records[11].ahv, "Teuerung wirkt im Januar");
-    assert!((idx.records[12].ahv / idx.records[11].ahv - 1.03).abs() < 1e-9);
+    assert!(idx.records[12].ahv > idx.records[10].ahv, "Teuerung wirkt im Januar");
+    assert!((idx.records[12].ahv / idx.records[10].ahv - 1.03).abs() < 1e-9);
     let none = run(&make(true, 0.0));
-    assert!(none.records.iter().all(|r| (r.ahv - 2000.0).abs() < 1e-9));
+    assert!(none.records.iter().all(|r| (monthly(r) - 2000.0).abs() < 1e-9));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1591,8 +1593,10 @@ fn indexed_ahv_changes_only_in_january() {
     let res = run(&v);
     let first = res.records.iter().position(|r| r.income > 0.0).expect("AHV beginnt");
     let mut jumps = 0;
-    for k in (first + 1)..res.records.len() {
-        let (prev, r) = (&res.records[k - 1], &res.records[k]);
+    // #190: Decembers (13th AHV pension) are left out; January is compared with November.
+    let months: Vec<_> = res.records[first..].iter().filter(|r| !r.month.is_december()).collect();
+    for w in months.windows(2) {
+        let (prev, r) = (w[0], w[1]);
         if (r.income - prev.income).abs() > 0.005 {
             jumps += 1;
             assert_eq!(r.month.month(), 1, "AHV-Änderung im {}", r.month);

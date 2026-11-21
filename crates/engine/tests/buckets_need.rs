@@ -142,8 +142,14 @@ fn ten_years_above_the_threshold_reach_the_targets_every_year() {
         close(r.after[1], 44_000.0, &format!("Topf 2 {y}"));
         // Bucket 1 has shrunk by the year's spending and is brought back to the target every year
         assert!(r.before[0] < r.after[0]);
-        // (in the first year the previous year's income tax, only due in May, is missing)
-        let paid = if y == 2031 { 40_000.0 } else { 44_000.0 };
+        // (in the first year the previous year's income tax, only due in May, is missing; #190: the 13th AHV pension
+        // of 2'500 in December is not part of the net need and lowers the year's withdrawal; the income tax on it,
+        // 2'500 × 4'000 / 84'000, is paid in May of the following year)
+        let paid = if y == 2031 {
+            40_000.0 - 2_500.0
+        } else {
+            44_000.0 - 2_500.0 + 2_500.0 * 4_000.0 / 84_000.0
+        };
         close(r.before[0] + paid, 88_000.0, &format!("Topf 1 vor der Auffüllung {y}"));
     }
     never_negative(&res);
@@ -698,7 +704,8 @@ fn april_2035_with_the_criterion_met_is_c1_and_not_met_is_c2() {
 fn c1_in_december_does_not_move_pot_2_above_the_shortened_target_to_pot_3() {
     let mut v = base();
     v["withdrawal"]["buckets"]["bondYears"] = json!(10);
-    v["flows"]["extras"] = json!([ { "date": "2035-12", "amount": -38_000, "label": "Ausgabe" } ]);
+    // #190: 2'500 more than before because of the 13th AHV pension in December
+    v["flows"]["extras"] = json!([ { "date": "2035-12", "amount": -40_500, "label": "Ausgabe" } ]);
     let res = run(v);
     let c = find(&res, "C1", 2035, 12);
     assert_eq!(c.passed_months, 11);

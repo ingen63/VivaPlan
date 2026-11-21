@@ -849,6 +849,7 @@ codes! {
     note_sampler => crate::upgrade::SAMPLER_NOTE,
     note_strategy_usd => crate::upgrade::STRATEGY_USD_NOTE,
     note_cash => crate::upgrade::CASH_NOTE,
+    note_thirteenth_ahv => crate::upgrade::THIRTEENTH_AHV_NOTE,
     note_pictet_stocks => "“Switzerland (JST)” for the stocks",
     note_pictet_bonds => "“Swiss Confederation 10 years” for the bonds",
     note_pictet => "The index “Switzerland (Pictet)” is no longer included for licensing reasons. The investment strategy now uses {parts}; please check under “Wealth & investment”. The result changes.",

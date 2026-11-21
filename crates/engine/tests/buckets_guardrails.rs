@@ -146,9 +146,12 @@ fn issue_6_ak3_guardrails_start_with_the_first_retirement() {
     // Living costs in the net need with earned income, PK pension and AHV (November and December, extrapolated to 12 months)
     let (nov, dec) = (rec(&r, 2031, 11), rec(&r, 2031, 12));
     assert!(nov.earned > 0.0 && nov.pk_pension > 0.0 && nov.ahv > 0.0);
+    // #190: the net need plans with the monthly pensions; the guardrails spend the 13th AHV pension in December as well.
+    let thirteenth = dec.ahv - nov.ahv;
+    assert!(thirteenth > 0.0);
     close(
         a.basis.living,
-        6.0 * (nov.spending + dec.spending),
+        6.0 * (nov.spending + dec.spending - thirteenth),
         "Lebenshaltung im Netto-Bedarf",
     );
 }

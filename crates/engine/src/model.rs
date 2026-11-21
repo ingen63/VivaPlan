@@ -386,6 +386,10 @@ pub struct Ahv {
     /// Annual adjustment to inflation (in December).
     #[serde(default)]
     pub indexed: bool,
+    /// #190: The plan knows the 13th AHV pension (marker of [`crate::upgrade`] for the note when opening an older
+    /// plan; no switch: the simulation always pays the 13th pension from December 2026).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub thirteenth_noted: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
