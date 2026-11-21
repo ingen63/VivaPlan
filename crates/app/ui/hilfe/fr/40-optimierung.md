@@ -124,11 +124,28 @@ Sous «Paramètres des stratégies» figure, pour chaque stratégie, un tableau 
 **Bon à savoir:**
 
 - Une **fourchette étroite** rend la recherche plus rapide et le résultat plus proche de votre planification. Une fourchette **large** trouve plus volontiers des surprises, mais demande plus de temps de calcul.
-- Si **tous** les paramètres d’une stratégie sont fixes, seule cette planification est calculée. C’est utile pour comparer équitablement des stratégies aux valeurs fixes.
+- Si **tous** les paramètres d’une stratégie sont fixes, seule cette planification est calculée. C’est utile pour comparer équitablement des stratégies aux valeurs fixes. C’est plus rapide avec [Comparer les stratégies (sans optimisation)](#o-compare), sans modifier les coches.
 - «de» ne doit pas être supérieur à «à». Il existe des limites extrêmes par paramètre (p. ex. part d’actions de 0 % à 100 %); au-delà, l’application signale une erreur.
 - **Le plancher et le plafond du coût de la vie** (Guardrails, taux fixe) sont d’abord fixes. Qui les fait varier obtient souvent des résultats qui n’ont l’air ‹bons› qu’avec le plancher, car les réductions sont empêchées.
 - «Fourchettes standard» réinitialise la stratégie au préréglage.
 - Les réglages sont **enregistrés avec la planification**.
+
+## @o-compare Comparer les stratégies (sans optimisation)
+Mots-clés: comparer, sans recherche, valeurs de la planification, fortune finale, ne jamais vendre les biens immobiliers, les deux
+
+Le bouton **«Comparer les stratégies (sans optimisation)»** à côté de «Lancer l’optimisation» calcule les stratégies choisies **avec les valeurs des paramètres de votre planification**, sans rechercher de meilleures valeurs. Pour une stratégie que votre planification n’a jamais utilisée, ses valeurs par défaut s’appliquent (colonne «dans la planification» sous «Paramètres des stratégies»).
+
+- Les coches **«varier»** et les fourchettes restent inchangées; la comparaison ne les prend pas en compte. Vous pouvez ensuite optimiser comme d’habitude.
+- Le calcul se fait sur **les mêmes trajectoires que la simulation** (nombre et graine de la source de rendements). Les chiffres d’une stratégie correspondent donc à une simulation dans laquelle vous avez choisi cette stratégie. Les trajectoires de recherche et de vérification sous «Avancé» ne valent que pour l’optimisation.
+- Le tableau est le même qu’après une optimisation (voir [Lire le résultat](#o-read)); la colonne des paramètres montre les valeurs de la planification.
+
+**Biens immobiliers:** Si votre planification comporte un bien en propriété ou prévu, le choix «Biens immobiliers» détermine ce qui est calculé, pour la comparaison comme pour l’optimisation:
+
+- **comme planifié:** avec votre planification telle qu’elle est;
+- **Ne jamais vendre les biens immobiliers:** avec le commutateur [Ne jamais vendre les biens immobiliers](#f-re-never-sell) activé;
+- **les deux:** chaque stratégie deux fois, avec les mentions «comme planifié» et «ne jamais vendre les biens immobiliers».
+
+Sans bien immobilier en propriété, le choix est masqué. Le choix est enregistré avec la planification.
 
 ## @o-advanced Réglages avancés
 Mots-clés: trajectoires, vérification, points de départ, précision, temps de calcul
@@ -164,7 +181,8 @@ Le tableau des résultats montre pour chaque stratégie les indicateurs, **calcu
 | Volatilité | variation moyenne de la consommation annuelle par rapport à l’année précédente |
 | Objectif | la valeur combinée selon la [formule](#o-score), avec une barre pour la comparaison |
 | Taux de prélèvement | prélèvement sur la fortune la **première année de retraite** (coût de la vie et frais de logement moins revenus, **avant impôts**), en pour cent de la fortune liquide au début; médiane sur les trajectoires |
-| Paramètres | les réglages trouvés; bouton pour les reprendre |
+| Fortune finale 1 % … 99 % | fortune nominale à la fin de la simulation aux percentiles 1, 5, 50, 95 et 99 % des trajectoires, déterminée comme dans le résultat de la simulation; aussi pour la situation de départ |
+| Paramètres | les réglages trouvés (pour la comparaison sans optimisation, les valeurs de la planification); bouton pour les reprendre |
 
 - La première ligne **«Situation initiale»** montre votre planification inchangée, sur les mêmes trajectoires de vérification. Vous mesurez à cette aune le gain de l’optimisation.
 - Les **lignes grisées** («Limite de ruine non respectée») sont des stratégies qui ne respectent pas votre limite de ruine. Elles restent visibles pour que vous perceviez le coût de la sécurité. Si **aucune** stratégie n’est admissible, la limite n’est pas atteignable avec les moyens disponibles; vous devez alors réduire les dépenses, prendre votre retraite plus tard ou assouplir la limite.
@@ -181,6 +199,7 @@ Mots-clés: reprendre, paramètres, définir la stratégie, appliquer
 
 - la **stratégie** et ses paramètres (par exemple le taux initial et les garde-fous pour Guardrails),
 - la **part d’actions** et la **réserve de cash** dès la retraite.
+- le commutateur **«Ne jamais vendre les biens immobiliers»**, si la ligne a été calculée avec lui.
 
 La planification est ensuite considérée comme modifiée (non enregistrée). Avec **Annuler** (⌘Z), la reprise peut être annulée. Le résultat de l’optimisation reste visible et valable tant que vous ne modifiez pas la planification autrement.
 
@@ -240,5 +259,7 @@ vivaplan optimize <planification.vplan> [options]
 | `--seed` | valeur initiale aléatoire |
 | `--strategy a,b` | stratégies (`standard`, `three_buckets`, `guardrails`, `fixed_rate`, `vpw`, `endowment`) |
 | `--json <fichier>` | enregistrer le résultat en JSON |
+| `--compare` | comparer les stratégies sans recherche avec les valeurs de la planification, sur les trajectoires de la simulation |
+| `--property planned\|never-sell\|both` | biens immobiliers: comme planifié (par défaut), ne jamais vendre ou les deux (chaque stratégie deux fois) |
 
-Si des réglages sont enregistrés dans la planification, ils servent de point de départ. Chaque option indiquée les remplace. La commande lit toujours les **fourchettes des paramètres** (`optimization.ranges`) dans la planification; le terminal n’a pas d’options pour cela. La sortie montre pour chaque stratégie les paramètres et les indicateurs de la recherche et de la vérification; elle est en anglais (voir [Ligne de commande](#ref-cli)).
+Si des réglages sont enregistrés dans la planification, ils servent de point de départ. Chaque option indiquée les remplace. La commande lit toujours les **fourchettes des paramètres** (`optimization.ranges`) dans la planification; le terminal n’a pas d’options pour cela. La sortie montre pour chaque stratégie les paramètres et les indicateurs de la recherche et de la vérification; elle est en anglais (voir [Ligne de commande](#ref-cli)). Avec `--compare`, elle montre pour chaque stratégie les valeurs de la planification et une ligne d’indicateurs; la fortune finale à 1, 5, 50, 95 et 99 % figure toujours.

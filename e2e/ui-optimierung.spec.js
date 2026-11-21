@@ -487,3 +487,99 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Compare strategies without optimization (#197)", () => {
+  /** Optimization view with 300 bootstrap paths and two strategies. */
+  async function openSmall(page) {
+    const errors = await open(page, "optimize/bootstrap");
+    await page.evaluate(() => { state.returns.bootstrap.paths = 300; });
+    await setOpt(page, { strategies: ["standard", "guardrails"], paths: 200, checkPaths: 300, samples: 2 });
+    return errors;
+  }
+  /** Clicks the button and waits for the new result. */
+  async function start(page, action = "opt-compare") {
+    await page.evaluate(() => { lastOpt = null; });
+    await page.locator(`button[data-action="${action}"]`).click();
+    await page.waitForFunction(() => lastOpt && !optBusy, null, { timeout: 120_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-job", "off");
+  }
+
+  test("AK1: the button computes the chosen strategies with the plan's values without search; the vary check marks stay", async ({ page }) => {
+    const errors = await openSmall(page);
+    const button = page.locator('button[data-action="opt-compare"]');
+    await expect(button).toHaveText("Strategien vergleichen (ohne Optimierung)");
+    // next to «Optimierung starten»
+    await expect(page.locator('button[data-action="opt-run"] + button[data-action="opt-compare"]')).toBeVisible();
+    await page.evaluate(() => { state.withdrawal.guardrails.initialRate = 0.043; });
+    const ranges = await page.evaluate(() => JSON.stringify(state.optimization.ranges ?? {}));
+    await start(page);
+    await expect(page.locator("#main h3", { hasText: "Vergleich ohne Optimierung" })).toBeVisible();
+    const r = await page.evaluate(() => lastOpt.report);
+    expect(r.compare).toBe(true);
+    expect(r.checkPaths).toBe(300);
+    expect(r.outcomes).toHaveLength(2);
+    for (const o of r.outcomes) { expect(o.params).toEqual([]); expect(o.evaluations).toBe(1); }
+    const g = r.outcomes.find(o => o.patch.withdrawal.strategy === "guardrails");
+    expect(g.fixed.find(f => f[0] === "initialRate")[2]).toBe(0.043);
+    expect(await page.evaluate(() => JSON.stringify(state.optimization.ranges ?? {}))).toBe(ranges);
+    await expect(page.locator("#optR-guardrails-initialRate-var")).toBeChecked();
+    // the plan's values are listed as parameters
+    await expect(page.locator("#main table.tbl small", { hasText: "4.3 %" }).first()).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK2: end wealth at 1, 5, 50, 95 and 99 % in the result, also after an optimization", async ({ page }) => {
+    const errors = await openSmall(page);
+    const check = async () => {
+      await expect(page.locator("#main th", { hasText: "Endvermögen (nominal)" })).toBeVisible();
+      for (const p of ["1 %", "5 %", "50 %", "95 %", "99 %"]) await expect(page.locator("#main th", { hasText: new RegExp(`^${p}$`) })).toBeVisible();
+      const r = await page.evaluate(() => lastOpt.report);
+      // reference row and every strategy: 5 values, rising
+      for (const m of [r.reference.metrics, ...r.outcomes.map(o => o.validated)]) {
+        expect(m.endTotal).toHaveLength(5);
+        expect([...m.endTotal].sort((a, b) => a - b)).toEqual(m.endTotal);
+      }
+      // one row per strategy plus the plan: 5 cells each with an amount after the metrics
+      const row = page.locator("#main table.tbl").last().locator("tr").nth(2);
+      await expect(row.locator("td")).toHaveCount(13);
+    };
+    await start(page);
+    await check();
+    await setOpt(page, { strategies: ["fixed_rate"] });
+    await start(page, "opt-run");
+    await check();
+    expect(await page.evaluate(() => lastOpt.report.compare)).toBe(false);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: selection as planned / never sell / both; both shows every strategy twice; hidden without property", async ({ page }) => {
+    const errors = await openSmall(page);
+    const sel = page.locator("#opt-property");
+    await expect(sel).toHaveValue("planned");
+    await expect(sel.locator("option")).toHaveText(["wie geplant", "Immobilien nie verkaufen", "beide (jede Strategie zweimal)"]);
+    await sel.selectOption("both");
+    expect(await page.evaluate(() => state.optimization.property)).toBe("both");
+    await start(page);
+    const names = await page.locator("#main table.tbl").last().locator("tr td:first-child b").allTextContents();
+    for (const s of ["Standard", "Guardrails"]) {
+      expect(names.filter(n => n.startsWith(s + " · wie geplant"))).toHaveLength(1);
+      expect(names.filter(n => n.startsWith(s + " · Immobilien nie verkaufen"))).toHaveLength(1);
+    }
+    // taking over a «never sell» result switches it on in the plan
+    const i = await page.evaluate(() => lastOpt.report.outcomes.findIndex(o => o.neverSell));
+    expect(await page.evaluate(() => !!state.realestate.neverSell)).toBe(false);
+    await page.locator(`button[data-action="opt-apply"][data-i="${i}"]`).click();
+    expect(await page.evaluate(() => state.realestate.neverSell)).toBe(true);
+    // «nie verkaufen»: every strategy once, with the switch
+    await page.evaluate(() => { state.realestate.neverSell = false; renderSection(); });
+    await sel.selectOption("neverSell");
+    await start(page);
+    expect(await page.evaluate(() => lastOpt.report.outcomes.map(o => o.neverSell))).toEqual([true, true]);
+    // without a property of its own the selection is hidden (the engine then computes «as planned», see the Rust test)
+    await page.evaluate(() => { state.realestate.properties = []; renderSection(); });
+    await expect(sel).toHaveCount(0);
+    await expect(page.locator('button[data-action="opt-compare"]')).toBeVisible();
+    await noErrors(page, errors);
+  });
+});

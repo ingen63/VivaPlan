@@ -124,11 +124,28 @@ Sotto «Parametri delle strategie» figura per ogni strategia una tabella con tu
 **Buono a sapersi:**
 
 - Una **fascia stretta** rende la ricerca più veloce e il risultato più vicino alla Sua pianificazione. Una **ampia** trova più facilmente sorprese, ma richiede più tempo di calcolo.
-- Se **tutti** i parametri di una strategia sono fissi, viene calcolata solo quest’unica pianificazione. È utile per confrontare equamente strategie con valori fissi.
+- Se **tutti** i parametri di una strategia sono fissi, viene calcolata solo quest’unica pianificazione. È utile per confrontare equamente strategie con valori fissi. È più rapido con [Confrontare le strategie (senza ottimizzazione)](#o-compare), senza modificare le spunte.
 - «da» non può essere maggiore di «a». Esistono limiti estremi per parametro (ad es. quota azionaria da 0 % a 100 %); al di fuori l’app segnala un errore.
 - **Limite inferiore e superiore del costo della vita** (Guardrails, tasso fisso) sono inizialmente fissi. Chi li fa variare ottiene spesso risultati che sembrano ‹buoni› solo grazie al limite inferiore, perché le riduzioni vengono impedite.
 - «Fasce standard» riporta la strategia all’impostazione predefinita.
 - Le impostazioni vengono **salvate con la pianificazione**.
+
+## @o-compare Confrontare le strategie (senza ottimizzazione)
+Parole chiave: confrontare, senza ricerca, valori della pianificazione, sostanza finale, non vendere mai gli immobili, entrambi
+
+Il pulsante **«Confrontare le strategie (senza ottimizzazione)»** accanto ad «Avviare l’ottimizzazione» calcola le strategie scelte **con i valori dei parametri della Sua pianificazione**, senza cercare valori migliori. Per una strategia che la Sua pianificazione non ha mai usato valgono i suoi valori predefiniti (colonna «nella pianificazione» sotto «Parametri delle strategie»).
+
+- Le spunte **«variare»** e le fasce restano invariate; il confronto non ne tiene conto. In seguito può ottimizzare come al solito.
+- Il calcolo avviene sugli **stessi percorsi della simulazione** (numero e seme della fonte dei rendimenti). Le cifre di una strategia corrispondono quindi a una simulazione in cui ha impostato questa strategia. I percorsi di ricerca e di verifica sotto «Avanzate» valgono solo per l’ottimizzazione.
+- La tabella è la stessa di un’ottimizzazione (vedi [Leggere il risultato](#o-read)); la colonna dei parametri mostra i valori della pianificazione.
+
+**Immobili:** Se la Sua pianificazione ha un immobile di proprietà o previsto, la scelta «Immobili» determina con che cosa si calcola, per il confronto come per l’ottimizzazione:
+
+- **come pianificato:** con la Sua pianificazione così com’è;
+- **Non vendere mai gli immobili:** con il commutatore [Non vendere mai gli immobili](#f-re-never-sell) attivato;
+- **entrambi:** ogni strategia due volte, con le diciture «come pianificato» e «non vendere mai gli immobili».
+
+Senza un immobile di proprietà la scelta è nascosta. La scelta viene salvata con la pianificazione.
 
 ## @o-advanced Impostazioni avanzate
 Parole chiave: percorsi, verifica, punti d’inizio, precisione, tempo di calcolo
@@ -164,7 +181,8 @@ La tabella dei risultati mostra per ogni strategia gli indicatori, **calcolati s
 | Volatilità | variazione media del consumo annuo rispetto all’anno precedente |
 | Obiettivo | il valore combinato secondo la [formula](#o-score), con barra per il confronto |
 | Tasso di prelievo | prelievo dalla sostanza nel **primo anno di pensionamento** (costo della vita e spese d’alloggio meno entrate, **prima delle imposte**), in percentuale della sostanza liquida all’inizio; mediana sui percorsi |
-| Parametri | le impostazioni trovate; pulsante per adottarle |
+| Sostanza finale 1 % … 99 % | sostanza nominale alla fine della simulazione ai percentili 1, 5, 50, 95 e 99 % dei percorsi, determinata come nel risultato della simulazione; anche per la situazione di partenza |
+| Parametri | le impostazioni trovate (nel confronto senza ottimizzazione i valori della pianificazione); pulsante per adottarle |
 
 - La prima riga **«Situazione di partenza»** mostra la Sua pianificazione invariata, sugli stessi percorsi di verifica. Con essa misura il guadagno dell’ottimizzazione.
 - Le **righe in grigio** («Limite di rovina non rispettato») sono strategie che mancano il Suo limite di rovina. Restano visibili, affinché riconosca i costi della sicurezza. Se **nessuna** strategia è ammissibile, il limite non è raggiungibile con i mezzi disponibili; deve allora ridurre le spese, andare in pensione più tardi o allentare il limite.
@@ -181,6 +199,7 @@ Parole chiave: adottare, parametri, impostare la strategia, applicare
 
 - la **strategia** e i suoi parametri (ad esempio tasso iniziale e guardrail con Guardrails),
 - la **quota azionaria** e la **riserva di cash** dal pensionamento.
+- il commutatore **«Non vendere mai gli immobili»**, se la riga è stata calcolata con esso.
 
 La pianificazione è poi considerata modificata (non salvata). Con **Annullare** (⌘Z) l’adozione può essere revocata. Il risultato dell’ottimizzazione resta visibile e continua a valere, finché non modifica la pianificazione in altro modo.
 
@@ -240,5 +259,7 @@ vivaplan optimize <pianificazione.vplan> [opzioni]
 | `--seed` | valore iniziale casuale |
 | `--strategy a,b` | strategie (`standard`, `three_buckets`, `guardrails`, `fixed_rate`, `vpw`, `endowment`) |
 | `--json <file>` | salvare il risultato come JSON |
+| `--compare` | confrontare le strategie senza ricerca con i valori della pianificazione, sui percorsi della simulazione |
+| `--property planned\|never-sell\|both` | immobili: come pianificato (predefinito), non vendere mai o entrambi (ogni strategia due volte) |
 
-Se nella pianificazione sono salvate impostazioni, valgono come punto di partenza. Ogni opzione indicata le sovrascrive. Le **fasce dei parametri** (`optimization.ranges`) il comando le legge sempre dalla pianificazione; nel terminale non vi sono opzioni per esse. L’output mostra per ogni strategia i parametri e gli indicatori di ricerca e verifica; è in inglese (vedi [Riga di comando](#ref-cli)).
+Se nella pianificazione sono salvate impostazioni, valgono come punto di partenza. Ogni opzione indicata le sovrascrive. Le **fasce dei parametri** (`optimization.ranges`) il comando le legge sempre dalla pianificazione; nel terminale non vi sono opzioni per esse. L’output mostra per ogni strategia i parametri e gli indicatori di ricerca e verifica; è in inglese (vedi [Riga di comando](#ref-cli)). Con `--compare` mostra per ogni strategia i valori della pianificazione e una riga di indicatori; la sostanza finale a 1, 5, 50, 95 e 99 % è sempre indicata.

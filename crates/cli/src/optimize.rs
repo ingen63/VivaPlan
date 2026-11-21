@@ -3,7 +3,7 @@
 use std::path::Path;
 
 use engine::api;
-use engine::model::{Goal, Plan, ReturnSource};
+use engine::model::{Goal, Plan, PropertyMode, ReturnSource};
 use engine::optimize::{self as opt, Objective, Outcome, Request};
 
 use crate::{chf, library_dir, opt as option, positional, R};
@@ -31,7 +31,26 @@ fn metrics_line(label: &str, m: &opt::Metrics) -> String {
     )
 }
 
-fn outcome_text(o: &Outcome, obj: &Objective) -> String {
+/// #197: Nominal end wealth at 1, 5, 50, 95 and 99 %.
+fn end_line(m: &opt::Metrics) -> String {
+    let parts: Vec<String> = opt::END_PERCENTS
+        .iter()
+        .zip(m.end_total)
+        .map(|(p, v)| format!("{p} % {}", chf(v)))
+        .collect();
+    format!("    {:<12} {}", "End wealth", parts.join("   "))
+}
+
+/// #197: Name of the strategy, with the property setting if the result shows it.
+fn outcome_name(o: &Outcome, property: PropertyMode) -> String {
+    match (property, o.never_sell) {
+        (PropertyMode::Planned, _) => o.strategy.to_string(),
+        (_, true) => format!("{} (never sell properties)", o.strategy),
+        (_, false) => format!("{} (as planned)", o.strategy),
+    }
+}
+
+fn outcome_text(o: &Outcome, obj: &Objective, property: PropertyMode, compare: bool) -> String {
     let ok = if o.feasible {
         ""
     } else if obj.goal == Goal::KeepProperty {
@@ -39,8 +58,7 @@ fn outcome_text(o: &Outcome, obj: &Objective) -> String {
     } else {
         "  – ruin limit NOT met"
     };
-    let params: Vec<String> = o
-        .params
+    let params: Vec<String> = (if compare { &o.fixed } else { &o.params })
         .iter()
         .map(|(_, label, v, percent)| {
             if *percent {
@@ -58,12 +76,20 @@ fn outcome_text(o: &Outcome, obj: &Objective) -> String {
     } else {
         format!("    Goal (check): {} per year", chf(o.validated.score(obj)))
     };
+    let lines = if compare {
+        metrics_line("Plan values", &o.validated)
+    } else {
+        format!(
+            "{}\n{}",
+            metrics_line("Optimization", &o.fitted),
+            metrics_line("Check", &o.validated)
+        )
+    };
     format!(
-        "\n{}{ok}\n    {}\n{}\n{}\n{target}",
-        o.strategy,
+        "\n{}{ok}\n    {}\n{lines}\n{}\n{target}",
+        outcome_name(o, property),
         params.join(", "),
-        metrics_line("Optimization", &o.fitted),
-        metrics_line("Check", &o.validated)
+        end_line(&o.validated)
     )
 }
 
@@ -111,6 +137,16 @@ fn request_from(plan: &Plan, args: &[String]) -> Result<Request, Box<dyn std::er
     if let Some(s) = option(args, &["--strategy"]) {
         req.strategies = s.split(',').map(str::to_string).collect();
     }
+    // #197: comparison without search and property setting
+    req.compare = args.iter().any(|a| a == "--compare");
+    if let Some(p) = option(args, &["--property"]) {
+        req.property = match p.as_str() {
+            "planned" => PropertyMode::Planned,
+            "never-sell" | "neverSell" => PropertyMode::NeverSell,
+            "both" => PropertyMode::Both,
+            _ => return Err("--property: planned, never-sell or both expected".into()),
+        };
+    }
     Ok(req)
 }
 
@@ -134,10 +170,22 @@ pub fn cmd_optimize(args: &[String]) -> R {
     let obj = req.objective();
     let report = opt::run_request(&base, &base_dir, Some(&library_dir(args)), &req)?;
 
-    println!(
-        "Optimization of “{path}”: retirement {}, {} paths (search), {} (check)",
-        report.retire, report.fit_paths, report.check_paths
-    );
+    if report.compare {
+        println!(
+            "Comparison of strategies without optimization of “{path}”: retirement {}, {} paths (as in run)",
+            report.retire, report.check_paths
+        );
+    } else {
+        println!(
+            "Optimization of “{path}”: retirement {}, {} paths (search), {} (check)",
+            report.retire, report.fit_paths, report.check_paths
+        );
+    }
+    match report.property {
+        PropertyMode::Planned => {}
+        PropertyMode::NeverSell => println!("Properties: never sell (switch on for all strategies)"),
+        PropertyMode::Both => println!("Properties: every strategy as planned and with “never sell”"),
+    }
     if obj.goal == Goal::KeepProperty {
         println!(
             "Goal 2 “No emergency sale of real estate”: as few unplanned sales as possible, on a tie the lowest probability of ruin; \
@@ -161,13 +209,14 @@ pub fn cmd_optimize(args: &[String]) -> R {
     println!("Consumption in prices of the start month, per year, incl. housing costs, before taxes.");
     println!("\nStarting point ({}, unchanged)", report.reference.strategy);
     println!("{}", metrics_line("Check", &report.reference.metrics));
+    println!("{}", end_line(&report.reference.metrics));
     for o in &report.outcomes {
-        println!("{}", outcome_text(o, &obj));
+        println!("{}", outcome_text(o, &obj, report.property, report.compare));
     }
     if let Some(best) = report.outcomes.first() {
         println!(
             "\nBest strategy after the check: {}{}",
-            best.strategy,
+            outcome_name(best, report.property),
             if best.feasible {
                 ""
             } else {
@@ -207,6 +256,7 @@ mod tests {
             draw_rate: 0.04,
             emergency_share: 0.125,
             planned: 120_000.0,
+            end_total: [1.0, 5.0, 50.0, 95.0, 99.0],
         }
     }
 
@@ -223,6 +273,7 @@ mod tests {
             feasible,
             evaluations: 10,
             patch: serde_json::json!({}),
+            never_sell: false,
         }
     }
 
@@ -310,7 +361,7 @@ mod tests {
         let keep = request_from(&plan(), &args(&["p.vplan", "--goal", "2"]))
             .unwrap()
             .objective();
-        let ok = outcome_text(&outcome(true), &consumption);
+        let ok = outcome_text(&outcome(true), &consumption, PropertyMode::Planned, false);
         assert!(
             ok.starts_with("\nGuardrails\n    Initial rate 4.5 %, Bucket 1: cash 2.5\n"),
             "{ok}"
@@ -318,15 +369,67 @@ mod tests {
         assert!(ok.contains("Optimization") && ok.contains("Check"));
         assert!(ok.contains("Goal (check): ") && ok.ends_with(" per year"), "{ok}");
         assert!(!ok.contains("NOT"));
-        let bad = outcome_text(&outcome(false), &consumption);
+        let bad = outcome_text(&outcome(false), &consumption, PropertyMode::Planned, false);
         assert!(bad.starts_with("\nGuardrails  – ruin limit NOT met\n"), "{bad}");
-        let bad_keep = outcome_text(&outcome(false), &keep);
+        let bad_keep = outcome_text(&outcome(false), &keep, PropertyMode::Planned, false);
         assert!(bad_keep.contains("constraints NOT met"), "{bad_keep}");
         assert!(
             bad_keep.ends_with("unplanned property sale in 12.5 % of the runs"),
             "{bad_keep}"
         );
         // without a violated constraint, goal 2 shows no warning
-        assert!(!outcome_text(&outcome(true), &keep).contains("NOT"));
+        assert!(!outcome_text(&outcome(true), &keep, PropertyMode::Planned, false).contains("NOT"));
+    }
+
+    // #197/AK4: options --compare and --property, output of the comparison
+    #[test]
+    fn issue_197_ak4_compare_and_property_options() {
+        let r = request_from(&plan(), &args(&["p.vplan"])).unwrap();
+        assert!(!r.compare);
+        assert_eq!(r.property, PropertyMode::Planned);
+        let r = request_from(&plan(), &args(&["--compare", "p.vplan", "--property", "both"])).unwrap();
+        assert!(r.compare);
+        assert_eq!(r.property, PropertyMode::Both);
+        for (v, m) in [
+            ("planned", PropertyMode::Planned),
+            ("never-sell", PropertyMode::NeverSell),
+            ("neverSell", PropertyMode::NeverSell),
+        ] {
+            assert_eq!(
+                request_from(&plan(), &args(&["p.vplan", "--property", v]))
+                    .unwrap()
+                    .property,
+                m
+            );
+        }
+        let e = request_from(&plan(), &args(&["p.vplan", "--property", "sometimes"])).unwrap_err();
+        assert!(e.to_string().starts_with("--property:"), "{e}");
+        // --compare takes no value: the file after it is still the project file
+        let a = args(&["--compare", "p.vplan"]);
+        assert_eq!(crate::positional(&a).map(String::as_str), Some("p.vplan"));
+    }
+
+    #[test]
+    fn issue_197_ak4_output_shows_end_wealth_and_variant() {
+        let l = end_line(&metrics(0.02));
+        assert!(l.starts_with("    End wealth"), "{l}");
+        for p in ["1 % ", "5 % ", "50 % ", "95 % ", "99 % "] {
+            assert!(l.contains(p), "{p} in {l}");
+        }
+        let mut o = outcome(true);
+        assert_eq!(outcome_name(&o, PropertyMode::Planned), "Guardrails");
+        assert_eq!(outcome_name(&o, PropertyMode::Both), "Guardrails (as planned)");
+        o.never_sell = true;
+        assert_eq!(
+            outcome_name(&o, PropertyMode::NeverSell),
+            "Guardrails (never sell properties)"
+        );
+        // comparison: one line with the plan values, the fixed values as parameters
+        o.fixed = vec![("rate".into(), engine::msg!(opt_param_initial_rate), 0.05, true)];
+        let obj = request_from(&plan(), &args(&["p.vplan"])).unwrap().objective();
+        let t = outcome_text(&o, &obj, PropertyMode::Both, true);
+        assert!(t.contains("Initial rate 5.0 %"), "{t}");
+        assert!(t.contains("Plan values") && !t.contains("Optimization"), "{t}");
+        assert!(t.contains("End wealth"), "{t}");
     }
 }

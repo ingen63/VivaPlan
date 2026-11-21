@@ -25,7 +25,7 @@ const Help = (() => {
   ];
   /** Input fields of the optimization (without data-path) → topic. */
   const OPT_TOPICS = [[/^opt-(maxRuin|ruinAge)$/, "o-goal"], [/^opt-weightMedian$/, "o-consumption"], [/^opt-(volWeight|maxVol)$/, "o-vol"],
-    [/^opt-(paths|checkPaths|samples)$/, "o-advanced"], [/^optS-/, "o-strategies"], [/^optR-/, "o-ranges"]];
+    [/^opt-(paths|checkPaths|samples)$/, "o-advanced"], [/^optS-/, "o-strategies"], [/^optR-/, "o-ranges"], [/^opt-property$/, "o-compare"]];
   /** Card headings (start of the text) → topic. */
   let HEADING_TOPICS;
   onLanguage(() => HEADING_TOPICS = [

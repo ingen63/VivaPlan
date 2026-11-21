@@ -124,11 +124,28 @@ Under “Strategy parameters”, there is a table for every strategy with all it
 **Good to know:**
 
 - A **narrow range** makes the search faster and the result closer to your plan. A **wide** one is more likely to find surprises, but needs more calculation time.
-- If **all** parameters of a strategy are fixed, only this one plan is calculated. This is useful for comparing strategies with fixed values fairly.
+- If **all** parameters of a strategy are fixed, only this one plan is calculated. This is useful for comparing strategies with fixed values fairly. This is quicker with [Compare strategies (without optimization)](#o-compare), without changing the check marks.
 - “from” must not be greater than “to”. There are outer limits for every parameter (e.g. stock allocation 0 % to 100 %); outside them, the app reports an error.
 - **Floor and ceiling of living expenses** (guardrails, fixed rate) are fixed at first. If you vary them, you often get results that only look ‘good’ because of the floor, since cuts are prevented.
 - “Default ranges” resets the strategy to the presets.
 - The settings are **saved with the plan**.
+
+## @o-compare Compare strategies (without optimization)
+Keywords: compare, without search, values of the plan, end wealth, never sell properties, both
+
+The button **“Compare strategies (without optimization)”** next to “Start optimization” computes the chosen strategies **with the parameter values of your plan**, without searching for better values. For a strategy your plan has never used, its default values apply (column “in the plan” under “Strategy parameters”).
+
+- The **“vary”** check marks and the ranges stay unchanged; the comparison ignores them. Afterwards you can optimize as usual.
+- It computes on **the same paths as the simulation** (number and random seed of the return source). The figures of a strategy therefore match a simulation in which you have set this strategy. The paths for search and checking under “Advanced” only apply to the optimization.
+- The table is the same as after an optimization (see [Reading the result](#o-read)); the parameter column shows the values of the plan.
+
+**Real estate:** If your plan has an owned or planned property, the selection “Real estate” determines what is computed, for the comparison as well as for the optimization:
+
+- **as planned:** with your plan as it is;
+- **Never sell properties:** with the switch [Never sell properties](#f-re-never-sell) on;
+- **both:** every strategy twice, labelled “as planned” and “never sell properties”.
+
+Without a property of your own the selection is hidden. The selection is saved with the plan.
 
 ## @o-advanced Advanced settings
 Keywords: paths, checking, start points, accuracy, calculation time
@@ -164,7 +181,8 @@ The result table shows the key figures for every strategy, **calculated on the i
 | Volatility | mean change of annual consumption compared with the previous year |
 | Goal | the combined value according to the [formula](#o-score), with a bar for comparison |
 | Withdrawal rate | withdrawal from wealth in the **first year of retirement** (living expenses and housing costs minus income, **before taxes**), as a percentage of liquid wealth at the beginning; median across the paths |
-| Parameters | the settings found; button for applying them |
+| End wealth 1 % … 99 % | nominal wealth at the end of the simulation at the percentiles 1, 5, 50, 95 and 99 % of the paths, determined as in the simulation result; also for the starting point |
+| Parameters | the settings found (in the comparison without optimization the values of the plan); button for applying them |
 
 - The first row **“Baseline”** shows your plan unchanged, on the same paths for checking. It is the measure of what the optimization gains.
 - **Grayed-out rows** (“Ruin limit not met”) are strategies that miss your ruin limit. They stay visible so that you can see the cost of security. If **no** strategy is admissible, the limit cannot be reached with the available means; you then have to reduce spending, retire later or relax the limit.
@@ -181,6 +199,7 @@ Keywords: apply, parameters, set strategy, adopt
 
 - the **strategy** and its parameters (for example initial rate and guardrails for Guardrails),
 - the **stock allocation** and the **cash reserve** from retirement.
+- the switch **“Never sell properties”** if the row was computed with it.
 
 The plan then counts as changed (unsaved). With **Undo** (⌘Z), you can take back the change. The result of the optimization stays visible and remains valid as long as you do not change the plan otherwise.
 
@@ -240,5 +259,7 @@ vivaplan optimize <plan.vplan> [options]
 | `--seed` | random seed |
 | `--strategy a,b` | strategies (`standard`, `three_buckets`, `guardrails`, `fixed_rate`, `vpw`, `endowment`) |
 | `--json <file>` | save the result as JSON |
+| `--compare` | compare the strategies without search with the values of the plan, on the paths of the simulation |
+| `--property planned\|never-sell\|both` | real estate: as planned (default), never sell or both (every strategy twice) |
 
-If settings are saved in the plan, they serve as the starting point. Every option given overrides them. The command always reads the **ranges of the parameters** (`optimization.ranges`) from the plan; there are no options for them in the terminal. The output shows the parameters and the key figures from search and checking for every strategy; it is in English (see [Command line](#ref-cli)).
+If settings are saved in the plan, they serve as the starting point. Every option given overrides them. The command always reads the **ranges of the parameters** (`optimization.ranges`) from the plan; there are no options for them in the terminal. The output shows the parameters and the key figures from search and checking for every strategy; it is in English (see [Command line](#ref-cli)). With `--compare` it shows the values of the plan and one line of key figures per strategy; the end wealth at 1, 5, 50, 95 and 99 % is always included.

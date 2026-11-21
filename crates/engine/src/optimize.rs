@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 
 use crate::batch::Paths;
 use crate::message::{Code, Message};
-use crate::model::{Goal, Plan};
+use crate::model::{Goal, Plan, PropertyMode};
 use crate::sim::{SimResult, Simulator};
 use crate::time::YearMonth;
 use crate::{Error, Result};
@@ -71,7 +71,12 @@ pub struct Metrics {
     pub emergency_share: f64,
     /// Median of the planned spending per year from retirement (including housing costs, prices of the start month).
     pub planned: f64,
+    /// #197: Nominal end wealth at the percentiles [`END_PERCENTS`], chosen as in `run` (`batch::summarize`).
+    pub end_total: [f64; 5],
 }
+
+/// #197: Percentiles of the end wealth in the results (same as the result of `run` shows).
+pub const END_PERCENTS: [u32; 5] = [1, 5, 50, 95, 99];
 
 impl Metrics {
     /// Objective value (higher is better), without constraints. Goal 1: consumption per year. Goal 2: fewer unplanned
@@ -597,6 +602,8 @@ struct PathStats {
     emergency: bool,
     /// Planned spending per year (real, including housing costs), same blocks as `annual`.
     planned: Vec<f64>,
+    /// Nominal wealth at the end of the simulation.
+    end_total: f64,
 }
 
 fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective) -> PathStats {
@@ -654,6 +661,7 @@ fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective
         draw_rate,
         emergency: res.summary.emergency_sales > 0,
         planned,
+        end_total: res.summary.end_total,
     }
 }
 
@@ -696,6 +704,11 @@ pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
             p.sort_by(f64::total_cmp);
             quantile(&p, 0.5)
         },
+        end_total: {
+            let mut e: Vec<f64> = stats.iter().map(|s| s.end_total).collect();
+            e.sort_by(f64::total_cmp);
+            END_PERCENTS.map(|p| quantile(&e, f64::from(p) / 100.0))
+        },
     })
 }
 
@@ -733,8 +746,10 @@ pub struct Outcome {
     pub feasible: bool,
     pub evaluations: usize,
     /// Strategy and investment parameters of the plan (`withdrawal`, `wealth.stockShare`, `wealth.reserveMonths`),
-    /// to be taken over into the plan.
+    /// to be taken over into the plan; `neverSell: true` if computed with «Immobilien nie verkaufen» (#197).
     pub patch: Value,
+    /// #197: Computed with the switch «Immobilien nie verkaufen» on (property setting «never sell» or «both»).
+    pub never_sell: bool,
 }
 
 pub struct Settings {
@@ -887,6 +902,40 @@ pub fn optimize_strategy(
         validated,
         feasible: validated.feasible(o),
         evaluations: evals,
+        never_sell: false,
+    })
+}
+
+/// #197: A strategy with the parameter values of the plan (default values where the plan has none), without search,
+/// on the paths `paths`. All parameters are listed as fixed.
+pub fn compare_strategy(
+    base: &Value,
+    strategy: OptStrategy,
+    retire: YearMonth,
+    paths: &Paths<'_>,
+    o: &Objective,
+) -> Result<Outcome> {
+    let plan = with_params(base, strategy, &[], &[], retire);
+    let m = evaluate(&parse_plan(&plan)?, paths, o)?;
+    Ok(Outcome {
+        patch: json!({
+            "withdrawal": plan["withdrawal"],
+            "wealth": { "stockShare": plan["wealth"]["stockShare"], "reserveMonths": plan["wealth"]["reserveMonths"] },
+        }),
+        strategy: strategy_name(strategy),
+        params: vec![],
+        fixed: param_defs(strategy)
+            .iter()
+            .filter_map(|d| {
+                let v = current(&plan, d.key).or_else(|| model_default(d.key))?;
+                Some((d.key.to_string(), d.shown(), v, d.percent))
+            })
+            .collect(),
+        fitted: m,
+        validated: m,
+        feasible: m.feasible(o),
+        evaluations: 1,
+        never_sell: false,
     })
 }
 
@@ -937,6 +986,11 @@ pub struct Request {
     pub seed: u64,
     /// Ranges and fixed parameters per strategy (see [`split_defs`]).
     pub ranges: Ranges,
+    /// #197: Compare the strategies with the parameter values of the plan, without search, on the plan's own paths
+    /// (as `run`); `paths`, `check_paths`, `samples` and `ranges` do not apply.
+    pub compare: bool,
+    /// #197: Property setting of the runs (as planned, never sell, both). Without a property only «as planned».
+    pub property: PropertyMode,
     /// Id of the computation for progress and cancellation (chosen by the user interface; otherwise the engine assigns one).
     pub job_id: Option<crate::progress::JobId>,
 }
@@ -957,6 +1011,8 @@ impl Default for Request {
             samples: d_samples(),
             seed: d_seed(),
             ranges: Ranges::new(),
+            compare: false,
+            property: PropertyMode::Planned,
             job_id: None,
         }
     }
@@ -978,6 +1034,8 @@ impl From<&crate::model::OptimizerSettings> for Request {
             samples: s.samples,
             seed: d_seed(),
             ranges: s.ranges.clone(),
+            compare: false,
+            property: s.property,
             job_id: None,
         }
     }
@@ -1024,6 +1082,10 @@ pub struct Reference {
 #[serde(rename_all = "camelCase")]
 pub struct Report {
     pub goal: Goal,
+    /// #197: Comparison without search (see [`Request::compare`]).
+    pub compare: bool,
+    /// #197: Property setting actually used (always «planned» without a property).
+    pub property: PropertyMode,
     pub min_consumption: f64,
     pub retire: String,
     pub fit_paths: usize,
@@ -1063,7 +1125,7 @@ fn search_evals(s: OptStrategy) -> u64 {
 /// Estimated number of runs for the progress display: per strategy starting points plus pattern search
 /// (empirical values, proportional to the varied parameters) on the search paths, plus the check paths for every strategy
 /// and for the plan itself.
-fn progress_total(req: &Request, strategies: &[OptStrategy]) -> Result<u64> {
+fn progress_total(req: &Request, strategies: &[OptStrategy], variants: usize) -> Result<u64> {
     let mut search = 0;
     for s in strategies {
         let (varied, _) = split_defs(*s, &req.ranges)?;
@@ -1074,7 +1136,34 @@ fn progress_total(req: &Request, strategies: &[OptStrategy]) -> Result<u64> {
             req.samples as u64 + 2 + search_evals(*s) * varied.len() as u64 / usual
         };
     }
-    Ok(search * req.paths as u64 + (strategies.len() as u64 + 1) * req.check_paths as u64)
+    let variants = variants as u64;
+    Ok(variants * search * req.paths as u64 + (variants * strategies.len() as u64 + 1) * req.check_paths as u64)
+}
+
+/// The plan has a property of its own (not only rented ones).
+fn has_property(base: &Value) -> bool {
+    base["realestate"]["properties"]
+        .as_array()
+        .is_some_and(|p| p.iter().any(|x| x["status"] != "rent"))
+}
+
+/// #197: Runs per strategy: `false` = as planned, `true` = with «Immobilien nie verkaufen».
+fn variants(mode: PropertyMode) -> &'static [bool] {
+    match mode {
+        PropertyMode::Planned => &[false],
+        PropertyMode::NeverSell => &[true],
+        PropertyMode::Both => &[false, true],
+    }
+}
+
+/// The plan with the switch «Immobilien nie verkaufen» on (#196).
+fn never_selling(base: &Value) -> Value {
+    let mut v = base.clone();
+    if !v["realestate"].is_object() {
+        v["realestate"] = json!({});
+    }
+    v["realestate"]["neverSell"] = json!(true);
+    v
 }
 
 /// Ranking of the results: feasible ones by objective on the check paths, infeasible ones below by smallest violation.
@@ -1103,10 +1192,8 @@ pub fn run_request(
     if req.paths == 0 || req.check_paths == 0 {
         return Err(Error::Invalid(msg!(optimize_paths_positive)));
     }
+    let has_property = has_property(base);
     if req.goal == Goal::KeepProperty {
-        let has_property = base["realestate"]["properties"]
-            .as_array()
-            .is_some_and(|p| p.iter().any(|x| x["status"] != "rent"));
         if !has_property {
             return Err(Error::Invalid(msg!(optimize_keep_property_without_property)));
         }
@@ -1115,51 +1202,96 @@ pub fn run_request(
         }
     }
     let strategies = req.strategy_list()?;
-    let _job = crate::progress::start_as(req.job_id, progress_total(req, &strategies)?);
+    // #197: Without a property of its own, «never sell» changes nothing: only «as planned».
+    let property = if has_property {
+        req.property
+    } else {
+        PropertyMode::Planned
+    };
+    let variants = variants(property);
+    let total = if req.compare {
+        0
+    } else {
+        progress_total(req, &strategies, variants.len())?
+    };
+    let _job = crate::progress::start_as(req.job_id, total);
     let plan = parse_plan(base)?;
     let sim = Simulator::new(&plan)?;
     let retire = sim
         .retire_at()
         .ok_or_else(|| Error::Invalid(msg!(optimize_no_pk_payout)))?;
-    let p_fit = parse_plan(&with_paths(base, req.paths, 0))?;
-    let p_check = parse_plan(&with_paths(base, req.check_paths, 7919))?;
     let data = batch::load_series(&plan, base_dir, library)?;
-    // Create the search paths once, so that not every candidate recomputes them.
-    let fit = match batch::path_source(&p_fit, &sim, data.as_ref())? {
-        Paths::List(v) => Paths::List(v),
-        other => Paths::List(other.iter_owned().collect()),
-    };
-    let check = batch::path_source(&p_check, &sim, data.as_ref())?;
-    let reference = Reference {
-        strategy: strategy_name(OptStrategy::of(&plan.withdrawal)),
-        metrics: evaluate(&plan, &check, &obj)?,
-    };
-    let settings = Settings {
-        samples: req.samples,
-        seed: req.seed,
-    };
+    let bases: Vec<(bool, Value)> = variants
+        .iter()
+        .map(|&never| (never, if never { never_selling(base) } else { base.clone() }))
+        .collect();
     let mut outcomes = Vec::new();
-    for s in strategies {
-        outcomes.push(optimize_strategy(
-            base,
-            s,
-            retire,
-            PathSets {
-                fit: &fit,
-                check: &check,
-            },
-            &obj,
-            &settings,
-            &req.ranges,
-        )?);
+    let (fit_paths, check_paths, reference);
+    if req.compare {
+        // #197: The plan's own paths, as in `run`.
+        let paths = batch::path_source(&plan, &sim, data.as_ref())?;
+        crate::progress::set_total(((variants.len() * strategies.len() + 1) * paths.len()) as u64);
+        reference = Reference {
+            strategy: strategy_name(OptStrategy::of(&plan.withdrawal)),
+            metrics: evaluate(&plan, &paths, &obj)?,
+        };
+        for &s in &strategies {
+            for (never, b) in &bases {
+                let mut o = compare_strategy(b, s, retire, &paths, &obj)?;
+                o.never_sell = *never;
+                outcomes.push(o);
+            }
+        }
+        (fit_paths, check_paths) = (paths.len(), paths.len());
+    } else {
+        let p_fit = parse_plan(&with_paths(base, req.paths, 0))?;
+        let p_check = parse_plan(&with_paths(base, req.check_paths, 7919))?;
+        // Create the search paths once, so that not every candidate recomputes them.
+        let fit = match batch::path_source(&p_fit, &sim, data.as_ref())? {
+            Paths::List(v) => Paths::List(v),
+            other => Paths::List(other.iter_owned().collect()),
+        };
+        let check = batch::path_source(&p_check, &sim, data.as_ref())?;
+        reference = Reference {
+            strategy: strategy_name(OptStrategy::of(&plan.withdrawal)),
+            metrics: evaluate(&plan, &check, &obj)?,
+        };
+        let settings = Settings {
+            samples: req.samples,
+            seed: req.seed,
+        };
+        for &s in &strategies {
+            for (never, b) in &bases {
+                let mut o = optimize_strategy(
+                    b,
+                    s,
+                    retire,
+                    PathSets {
+                        fit: &fit,
+                        check: &check,
+                    },
+                    &obj,
+                    &settings,
+                    &req.ranges,
+                )?;
+                o.never_sell = *never;
+                outcomes.push(o);
+            }
+        }
+        (fit_paths, check_paths) = (fit.len(), check.len());
+    }
+    for o in outcomes.iter_mut().filter(|o| o.never_sell) {
+        o.patch["neverSell"] = json!(true);
     }
     outcomes.sort_by(|a, b| rank(b, &obj).total_cmp(&rank(a, &obj)));
     Ok(Report {
         goal: req.goal,
+        compare: req.compare,
+        property,
         min_consumption: req.min_consumption,
         retire: retire.iso(),
-        fit_paths: fit.len(),
-        check_paths: check.len(),
+        fit_paths,
+        check_paths,
         source: format!("{:?}", plan.returns.source).to_lowercase(),
         reference,
         outcomes,
@@ -1198,6 +1330,7 @@ mod tests {
             draw_rate: 0.0,
             emergency_share: 0.0,
             planned: 0.0,
+            end_total: [0.0; 5],
         };
         let bad = Metrics { ruin: 0.2, ..ok };
         assert!(ok.fitness(&o) > bad.fitness(&o));
@@ -1238,6 +1371,7 @@ mod tests {
             draw_rate: 0.0,
             emergency_share: 0.1,
             planned: 120.0,
+            end_total: [0.0; 5],
         }
     }
 
@@ -1603,12 +1737,12 @@ mod tests {
         };
         // Fixed rate: 10 samples + plan + middle + 14 steps, plus checking strategy and plan.
         assert_eq!(
-            progress_total(&req, &[OptStrategy::FixedRate]).unwrap(),
+            progress_total(&req, &[OptStrategy::FixedRate], 1).unwrap(),
             26 * 100 + 2 * 1000
         );
         // All: 7 × 12 starting points + 22 + 14 + 46 + 110 + 40 + 74 + 90 steps (#6: «3-Topf» + guardrails)
         assert_eq!(
-            progress_total(&req, &all_strategies()).unwrap(),
+            progress_total(&req, &all_strategies(), 1).unwrap(),
             (84 + 396) * 100 + 8 * 1000
         );
         // One of two parameters held fixed: half the number of steps; all fixed: one run.
@@ -1635,14 +1769,17 @@ mod tests {
             ..req.clone()
         };
         assert_eq!(
-            progress_total(&one, &[OptStrategy::FixedRate]).unwrap(),
+            progress_total(&one, &[OptStrategy::FixedRate], 1).unwrap(),
             19 * 100 + 2 * 1000
         );
         let all = Request {
             ranges: fix(&["stockShare", "rate"]),
             ..req.clone()
         };
-        assert_eq!(progress_total(&all, &[OptStrategy::FixedRate]).unwrap(), 100 + 2 * 1000);
+        assert_eq!(
+            progress_total(&all, &[OptStrategy::FixedRate], 1).unwrap(),
+            100 + 2 * 1000
+        );
     }
 
     fn emergency_plan() -> Value {
@@ -1880,6 +2017,7 @@ mod tests {
             feasible,
             evaluations: 0,
             patch: Value::Null,
+            never_sell: false,
         }
     }
 

@@ -431,3 +431,46 @@ fn issue_196_ak7_cli_uses_never_sell_from_the_file() {
     assert!(share(false) > 0.0);
     assert_eq!(share(true), 0.0);
 }
+
+// #197/AK4: `optimize --compare` compares the strategies with the plan's values without search, on the plan's paths;
+// `--property both` shows every strategy twice.
+#[test]
+fn issue_197_ak4_cli_compare_without_optimization() {
+    let d = tmp("compare");
+    let f = plan_file(&d, "parametric", |_| {});
+    let json = d.join("compare.json");
+    let o = run(&[
+        "optimize",
+        "--compare",
+        &f,
+        "--strategy",
+        "standard,guardrails",
+        "--property",
+        "both",
+        "--json",
+        json.to_str().unwrap(),
+    ]);
+    let t = text(&o);
+    assert!(o.status.success(), "{t}");
+    assert!(
+        t.contains("Comparison of strategies without optimization") && t.contains("50 paths (as in run)"),
+        "{t}"
+    );
+    assert!(
+        t.contains("Guardrails (as planned)") && t.contains("Guardrails (never sell properties)"),
+        "{t}"
+    );
+    assert!(
+        t.contains("End wealth") && t.contains("Plan values") && !t.contains("Optimization"),
+        "{t}"
+    );
+    let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
+    let list = r.as_array().unwrap();
+    assert_eq!(list.len(), 4);
+    for s in list {
+        assert_eq!(s["evaluations"], 1);
+        assert_eq!(s["validated"]["endTotal"].as_array().unwrap().len(), 5);
+    }
+    assert_eq!(list.iter().filter(|s| s["neverSell"] == true).count(), 2);
+    assert!(!run(&["optimize", &f, "--compare", "--property", "x"]).status.success());
+}

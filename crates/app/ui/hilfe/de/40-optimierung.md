@@ -124,11 +124,28 @@ Unter «Parameter der Strategien» steht für jede Strategie eine Tabelle mit al
 **Gut zu wissen:**
 
 - Eine **enge Bandbreite** macht die Suche schneller und das Ergebnis näher an Ihrer Planung. Eine **weite** findet eher Überraschungen, braucht aber mehr Rechenzeit.
-- Sind **alle** Parameter einer Strategie fix, wird nur diese eine Planung gerechnet. Das ist nützlich, um Strategien mit festen Werten fair zu vergleichen.
+- Sind **alle** Parameter einer Strategie fix, wird nur diese eine Planung gerechnet. Das ist nützlich, um Strategien mit festen Werten fair zu vergleichen. Schneller geht das mit [Strategien vergleichen (ohne Optimierung)](#o-compare), ohne die Haken zu ändern.
 - «von» darf nicht grösser sein als «bis». Es gibt äusserste Grenzen je Parameter (z. B. Aktienanteil 0 % bis 100 %); ausserhalb meldet die App einen Fehler.
 - **Untergrenze und Obergrenze der Lebenshaltung** (Guardrails, Fixe Rate) sind zunächst fix. Wer sie variiert, bekommt oft Ergebnisse, die nur mit der Untergrenze «gut» aussehen, weil Kürzungen verhindert werden.
 - «Standard-Bandbreiten» setzt die Strategie auf die Voreinstellung zurück.
 - Die Einstellungen werden **mit der Planung gespeichert**.
+
+## @o-compare Strategien vergleichen (ohne Optimierung)
+Stichworte: vergleichen, ohne Suche, Werte der Planung, Endvermögen, Immobilien nie verkaufen, beide
+
+Der Knopf **«Strategien vergleichen (ohne Optimierung)»** neben «Optimierung starten» rechnet die gewählten Strategien **mit den Parameterwerten Ihrer Planung**, ohne nach besseren Werten zu suchen. Für eine Strategie, die Ihre Planung nie benutzt hat, gelten ihre Standardwerte (Spalte «In der Planung» unter «Parameter der Strategien»).
+
+- Die Haken **«variieren»** und die Bandbreiten bleiben unverändert; der Vergleich beachtet sie nicht. Danach können Sie wie gewohnt optimieren.
+- Gerechnet wird auf **denselben Pfaden wie die Simulation** (Anzahl und Zufallsstartwert der Renditequelle). Die Zahlen einer Strategie stimmen daher mit einer Simulation überein, in der Sie diese Strategie eingestellt haben. Die Pfade für Suche und Prüfung unter «Erweitert» gelten nur für die Optimierung.
+- Die Tabelle ist dieselbe wie nach einer Optimierung (siehe [Ergebnis lesen](#o-read)); die Parameter-Spalte zeigt die Werte der Planung.
+
+**Immobilien:** Hat Ihre Planung eine eigene oder geplante Immobilie, legt die Auswahl «Immobilien» fest, womit gerechnet wird, beim Vergleich wie bei der Optimierung:
+
+- **wie geplant:** mit Ihrer Planung, wie sie ist;
+- **Immobilien nie verkaufen:** mit eingeschaltetem Schalter [Immobilien nie verkaufen](#f-re-never-sell);
+- **beide:** jede Strategie zweimal, beschriftet mit «wie geplant» und «Immobilien nie verkaufen».
+
+Ohne eigene Immobilie ist die Auswahl ausgeblendet. Die Auswahl wird mit der Planung gespeichert.
 
 ## @o-advanced Erweiterte Einstellungen
 Stichworte: Pfade, Prüfung, Startpunkte, Genauigkeit, Rechenzeit
@@ -164,7 +181,8 @@ Die Ergebnistabelle zeigt für jede Strategie die Kennzahlen, **gerechnet auf de
 | Schwankung | mittlere Änderung des Jahreskonsums gegenüber dem Vorjahr |
 | Ziel | der kombinierte Wert nach der [Formel](#o-score), mit Balken zum Vergleich |
 | Entnahmerate | Entnahme aus dem Vermögen im **ersten Jahr der Pensionierung** (Lebenshaltung und Wohnkosten minus Einnahmen, **vor Steuern**), in Prozent des liquiden Vermögens zu Beginn; Median über die Pfade |
-| Parameter | die gefundenen Einstellungen; Knopf zum Übernehmen |
+| Endvermögen 1 % … 99 % | nominales Vermögen am Ende der Simulation bei den Perzentilen 1, 5, 50, 95 und 99 % der Pfade, ermittelt wie im Ergebnis der Simulation; auch für die Ausgangslage |
+| Parameter | die gefundenen Einstellungen (beim Vergleich ohne Optimierung die Werte der Planung); Knopf zum Übernehmen |
 
 - Die erste Zeile **«Ausgangslage»** zeigt Ihre Planung unverändert, auf denselben Prüfpfaden. Daran messen Sie den Gewinn der Optimierung.
 - **Ausgegraute Zeilen** («Ruingrenze nicht eingehalten») sind Strategien, die Ihre Ruingrenze verfehlen. Sie bleiben sichtbar, damit Sie die Kosten der Sicherheit erkennen. Ist **keine** Strategie zulässig, ist die Grenze mit den vorhandenen Mitteln nicht erreichbar, Sie müssen dann die Ausgaben senken, später in Pension gehen oder die Grenze lockern.
@@ -181,6 +199,7 @@ Stichworte: übernehmen, Parameter, Strategie setzen, anwenden
 
 - die **Strategie** und ihre Parameter (zum Beispiel Startrate und Leitplanken bei Guardrails),
 - den **Aktienanteil** und die **Cash-Reserve** ab der Pensionierung.
+- den Schalter **«Immobilien nie verkaufen»**, wenn die Zeile damit gerechnet wurde.
 
 Die Planung gilt danach als geändert (ungespeichert). Mit **Rückgängig** (⌘Z) lässt sich die Übernahme zurücknehmen. Das Ergebnis der Optimierung bleibt sichtbar und gilt weiterhin, solange Sie die Planung nicht anders ändern.
 
@@ -240,5 +259,7 @@ vivaplan optimize <planung.vplan> [Optionen]
 | `--seed` | Zufallsstartwert |
 | `--strategy a,b` | Strategien (`standard`, `three_buckets`, `guardrails`, `fixed_rate`, `vpw`, `endowment`) |
 | `--json <datei>` | Ergebnis als JSON speichern |
+| `--compare` | Strategien ohne Suche mit den Werten der Planung vergleichen, auf den Pfaden der Simulation |
+| `--property planned\|never-sell\|both` | Immobilien: wie geplant (Standard), nie verkaufen oder beide (jede Strategie zweimal) |
 
-Sind in der Planung Einstellungen gespeichert, gelten sie als Ausgangspunkt. Jede angegebene Option überschreibt sie. Die **Bandbreiten der Parameter** (`optimization.ranges`) liest der Befehl immer aus der Planung; im Terminal gibt es dafür keine Optionen. Die Ausgabe zeigt je Strategie die Parameter und die Kennzahlen aus Suche und Prüfung; sie ist englisch (siehe [Kommandozeile](#ref-cli)).
+Sind in der Planung Einstellungen gespeichert, gelten sie als Ausgangspunkt. Jede angegebene Option überschreibt sie. Die **Bandbreiten der Parameter** (`optimization.ranges`) liest der Befehl immer aus der Planung; im Terminal gibt es dafür keine Optionen. Die Ausgabe zeigt je Strategie die Parameter und die Kennzahlen aus Suche und Prüfung; sie ist englisch (siehe [Kommandozeile](#ref-cli)). Mit `--compare` zeigt sie je Strategie die Werte der Planung und eine Zeile mit den Kennzahlen; das Endvermögen bei 1, 5, 50, 95 und 99 % steht immer dabei.

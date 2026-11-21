@@ -84,6 +84,25 @@ pub enum Goal {
     KeepProperty,
 }
 
+/// #197: Which property setting the optimization and the comparison of strategies use.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum PropertyMode {
+    /// As in the plan (switch «Immobilien nie verkaufen» as set there).
+    #[default]
+    Planned,
+    /// With the switch «Immobilien nie verkaufen» on (#196).
+    NeverSell,
+    /// Every strategy twice: as planned and with «Immobilien nie verkaufen».
+    Both,
+}
+
+impl PropertyMode {
+    fn is_planned(&self) -> bool {
+        *self == PropertyMode::Planned
+    }
+}
+
 /// Settings of the optimization. Shares as numbers (0.05 = 5 %); `strategies` empty = all.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", default)]
@@ -112,6 +131,9 @@ pub struct OptimizerSettings {
     /// Without an entry the default ranges apply.
     #[serde(skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub ranges: std::collections::BTreeMap<String, std::collections::BTreeMap<String, ParamRange>>,
+    /// #197: Property setting of the runs (as planned, never sell, both); not written if «as planned».
+    #[serde(skip_serializing_if = "PropertyMode::is_planned")]
+    pub property: PropertyMode,
 }
 
 /// Range of a parameter in the optimization, in the parameter's unit
@@ -141,6 +163,7 @@ impl Default for OptimizerSettings {
             samples: 30,
             strategies: vec![],
             ranges: Default::default(),
+            property: PropertyMode::Planned,
         }
     }
 }

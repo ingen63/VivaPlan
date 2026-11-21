@@ -228,6 +228,7 @@ $B validate crates/engine/assets/example.vplan              # Fehler und Hinweis
 $B import-legacy local/eigene/config.json --start-year 2026 --base local/eigene -o meine.vplan
 $B bench crates/engine/assets/example.vplan --paths 50000   # Rechenleistung
 $B optimize crates/engine/assets/example.vplan --max-ruin 5 --ruin-age 95   # beste Entnahmestrategie suchen
+$B optimize crates/engine/assets/example.vplan --compare --property both    # Strategien ohne Suche vergleichen (#197)
 $B schema > planung.schema.json                  # JSON-Schema der Projektdatei
 $B library                                       # Zeitreihen der Datenbibliothek (Ordner crates/engine/data/)
 $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.xls, .xlsx, .ods)
@@ -509,6 +510,12 @@ Quartal); der Import meldet das. Mehrere Kapitalbezüge (`LumpsumRatio`) werden 
   `rate` × Vermögen. Beide kennen `floor` / `ceiling`.
 - **Optimieren:** In der App unter «Optimierung» (Ergebnis lässt sich mit einem Klick in die Planung übernehmen; die Einstellungen werden in der Planung unter `optimization` gespeichert und gelten auch für `optimize`, Optionen überschreiben sie), im Terminal mit `optimize <planung>`: sucht für jede Strategie die Parameter, die den Konsum (Median und P10,
   real) maximieren, solange die Ruinwahrscheinlichkeit unter der Grenze bleibt, und prüft sie auf unabhängigen Pfaden.
+  Vergleich ohne Suche (#197): `Request.compare` (Knopf «Strategien vergleichen (ohne Optimierung)», CLI `--compare`)
+  rechnet jede Strategie mit den Werten der Planung (`optimize::compare_strategy`, `with_params` ohne Parameter) auf den
+  Pfaden der Planung wie `run`; Bandbreiten und Pfade der Optimierung gelten dann nicht. `Request.property`
+  (`optimization.property`, CLI `--property planned|never-sell|both`) rechnet wie geplant, mit `realestate.neverSell`
+  oder beides (`Outcome.neverSell`, `patch.neverSell`); ohne eigene Immobilie nur «wie geplant». `Metrics.endTotal`:
+  nominales Endvermögen bei 1, 5, 50, 95 und 99 % (`END_PERCENTS`), gewählt wie in `batch::summarize`.
 - **Ergebnisse:** Bandbreite mit 1. und 99. Perzentil und dem monatlich schlechtesten Wert; unter «Einzelne Läufe»
   zusätzlich 1., 99. Perzentil und der Lauf mit dem tiefsten Endvermögen. Einzelläufe zeigen den Verlauf von
   Aktien und Obligationen als Index.

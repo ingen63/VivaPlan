@@ -125,6 +125,10 @@ Planung übernehmen. Die Einstellungen werden mit der Planung gespeichert, und e
 Start, wie lange die Rechnung mit den gewählten Pfaden dauert. Dasselbe gibt es im Terminal (`optimize`).
 Zwei Ziele stehen zur Wahl: **Konsum bei begrenztem Ruinrisiko** (Standard) oder **Kein Notverkauf von Immobilien**, also der geringste
 Anteil an Läufen mit ungeplantem Immobilienverkauf bei einem Mindestkonsum und begrenztem Ruin.
+Der Knopf **«Strategien vergleichen (ohne Optimierung)»** rechnet die gewählten Strategien ohne Suche mit den Werten der
+Planung (Standardwerte für Strategien, die die Planung nie benutzt hat), auf denselben Pfaden wie die Simulation. Die
+Ergebnistabelle zeigt je Strategie zusätzlich das nominale **Endvermögen** bei 1, 5, 50, 95 und 99 %. Mit Immobilien legt
+eine Auswahl fest, ob «wie geplant», mit «Immobilien nie verkaufen» oder mit beidem gerechnet wird (jede Strategie zweimal).
 
 ## Immobilien und Hypotheken
 

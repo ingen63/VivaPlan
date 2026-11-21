@@ -28,6 +28,8 @@ Usage:
   vivaplan optimize <plan.vplan> [--strategy all|standard|three_buckets|guardrails|fixed_rate|vpw|endowment]
         [--goal 1|2] [--min-consumption 90] [--max-ruin 5] [--ruin-age 95] [--weight-median 0.5] [--vol-weight 1] [--max-vol 10]
         [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json <file>]
+        [--compare] [--property planned|never-sell|both]
+        (--compare: strategies with the plan's values, without search, on the plan's paths as in run)
   vivaplan schema
   vivaplan --version
   vivaplan library [--library <folder>]          (time series of the data library)
@@ -104,7 +106,7 @@ fn positionals(args: &[String]) -> Vec<&String> {
         if skip {
             skip = false;
         } else if a.starts_with('-') {
-            skip = !matches!(a.as_str(), "--events");
+            skip = !matches!(a.as_str(), "--events" | "--compare");
         } else {
             out.push(a);
         }
@@ -189,7 +191,7 @@ pub(crate) fn positional(args: &[String]) -> Option<&String> {
             continue;
         }
         if a.starts_with('-') {
-            skip = !matches!(a.as_str(), "--events");
+            skip = !matches!(a.as_str(), "--events" | "--compare");
             continue;
         }
         return Some(a);
