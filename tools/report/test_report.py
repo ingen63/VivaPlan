@@ -58,10 +58,11 @@ class Requirements(unittest.TestCase):
         self.assertEqual(kinds, ["test", "manual", "test"])  # 2 of 3 covered, the ticked one only manually
 
     def test_issue_117_ak5_markers_in_comments_and_test_names(self):
-        # #117/AK5: `#115/AK2` in a comment or test name, `issue_115_ak2_…` in a Rust test name
-        self.assertEqual(report.MARK.search("// #115/AK2 checks").groups(), ("115", "2"))
-        self.assertEqual(report.NAMEMARK.search("fn issue_115_ak2_rounding()").groups(), ("115", "2"))
-        marks = report.scan_marks("a.rs", ["// #7/AK1 checks", "fn issue_7_ak3_rounding() {}"], {})
+        # #117/AK5: `#<issue>/AK<n>` in a comment or test name, `issue_<issue>_ak<n>_…` in a Rust test name
+        # The examples are concatenated so that the page does not count them as tests of real issues.
+        self.assertEqual(report.MARK.search("// #115/" "AK2 checks").groups(), ("115", "2"))
+        self.assertEqual(report.NAMEMARK.search("fn issue_115_" "ak2_rounding()").groups(), ("115", "2"))
+        marks = report.scan_marks("a.rs", ["// #7/" "AK1 checks", "fn issue_7_" "ak3_rounding() {}"], {})
         self.assertEqual(sorted(marks), [(7, 1), (7, 3)])
 
     def test_issue_117_ak5_old_ids_are_no_longer_recognised(self):
@@ -71,8 +72,27 @@ class Requirements(unittest.TestCase):
         self.assertEqual(report.scan_marks("a.rs", src, {}), {})
         self.assertEqual(report.scan_marks("e2e/x.spec.js", ['test.describe("FE" "A-56 old", () => {', '  test("AK1 x", async () => {});', "});"], {}), {})
 
+    def test_marks_are_found_in_unit_tests_fuzz_targets_and_tests_of_the_tools(self):
+        # Issue #0 does not exist, so these examples never count for a real criterion.
+        files = {"crates/engine/tests/a.rs": "// #0/AK1", "e2e/x.spec.js": "// #0/AK2", "e2e/unit/x.test.js": "// #0/AK3",
+                 "fuzz/fuzz_targets/x.rs": "// #0/AK4", "tools/test_x.py": "# #0/AK5", "tools/report/test_y.py": "# #0/AK6",
+                 "tools/check_x.py": "# #0/AK7", "e2e/node_modules/p/test_z.js": "// #0/AK8",
+                 "fuzz/target/test_t.py": "# #0/AK9"}
+        with tempfile.TemporaryDirectory() as d:
+            for name, text in files.items():
+                (Path(d) / name).parent.mkdir(parents=True, exist_ok=True)
+                (Path(d) / name).write_text(text + "\n")
+            cwd = os.getcwd()
+            os.chdir(d)
+            try:
+                marks = report.test_marks()
+            finally:
+                os.chdir(cwd)
+        # The tools themselves (check_x.py), node_modules and build folders do not count
+        self.assertEqual(sorted(marks), [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)])
+
     def test_leading_zero_in_a_mark_is_the_same_issue(self):
-        marks = report.scan_marks("e2e/x.spec.js", ['test("#07/AK1 …", () => {});', "// #7/AK3"], {})
+        marks = report.scan_marks("e2e/x.spec.js", ['test("#07/' 'AK1 …", () => {});', "// #7/" "AK3"], {})
         kinds = [k for k, _, _ in report.requirements([self.ISSUE], marks)[0]["items"]]
         self.assertEqual(kinds, ["test", "manual", "test"])
 

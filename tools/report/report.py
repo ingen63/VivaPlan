@@ -192,11 +192,17 @@ def scan_marks(path, lines, marks):
     return marks
 
 
+# Where marked tests live: Rust (engine, command line, app), the interface tests (e2e/), their unit tests without a
+# browser (e2e/unit/), the fuzz targets and the tests of the tools (only test_*.py, not the tools themselves).
+MARK_FILES = ("crates/engine/**/*.rs", "crates/cli/**/*.rs", "crates/app/src/**/*.rs", "e2e/*.js", "e2e/unit/*.js",
+              "fuzz/fuzz_targets/*.rs", "tools/**/test_*.py")
+
+
 def test_marks():
     """Test marks: `#115/AK2` (comment, test name), `issue_115_ak2_…` or `AK2` in the test name inside
     a `test.describe("#115 …")`; {(number, criterion): [locations]}."""
     files = []
-    for pat in ("crates/engine/**/*.rs", "crates/cli/**/*.rs", "crates/app/src/**/*.rs", "e2e/*.js"):
+    for pat in MARK_FILES:
         files += glob.glob(pat, recursive=True)
     marks = {}
     for f in files:

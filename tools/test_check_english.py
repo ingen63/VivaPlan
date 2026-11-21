@@ -122,7 +122,7 @@ class GermanTextTest(unittest.TestCase):
                 fn oeffnen_und_speichern() {}
                 #[test]
                 #[should_panic]
-                fn issue_27_ak2_rejects_unknown_command() {}
+                fn issue_0_ak2_rejects_unknown_command() {}
                 #[tokio::test]
                 async fn laden_ohne_datei() {}
                 """,
