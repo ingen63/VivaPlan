@@ -1355,3 +1355,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #195/AK3 | Beispiel: Ein Commit, der in `05-immobilie-hypothek.json` nur einen Monatswert ändert, lässt den Lauf ohne Begründung fehlschlagen; … | ☑ | **gilt** | [test_golden_numbers.py](../tools/test_golden_numbers.py) «test_issue_195_ak3_…» | 21.11.2026 ok: Tests im Kleinen; im Klon mit der echten Datei nachgestellt |
 | #195/AK4 | `tools/test_golden_numbers.py` läuft im Workflow. | ☑ | **gilt** | Job `golden`, Schritt «Tests des Prüfskripts» | 21.11.2026 ok (Durchsicht; 12 Tests lokal grün) |
 | #195/AK5 | `docs/TESTS.md` (Abschnitt Golden) und `CLAUDE.md` (Regel zu Golden-Dateien) nennen die Prüfung. | ☑ | **gilt** | [TESTS.md](TESTS.md) Zeile 5c, [CLAUDE.md](../CLAUDE.md) Abschnitt Tests | 21.11.2026 ok (Durchsicht) |
+
+### #196 Schalter «Immobilien nie verkaufen»
+
+[Issue #196](https://github.com/ingen63/VivaPlan/issues/196) · geschlossen · Umsetzung: 02a5e37
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #196/AK1 | Der Reiter «Immobilien» hat oben den Schalter «Immobilien nie verkaufen» (Standard: aus). Er gilt für alle Immobilien der … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK1» (#196); [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak1_…» | 21.11.2026 ok |
+| #196/AK2 | Ist der Schalter an, sind alle übrigen Felder des Reiters (auch Hypotheken und Kosten) grau und nur lesbar. Die Werte … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK2» (#196) | 21.11.2026 ok |
+| #196/AK3 | Ist der Schalter an, verkauft der Rechenkern keine Immobilie: kein geplanter Verkauf, kein Notverkauf, kein Verkauf wegen … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak3_…» (4) | 21.11.2026 ok |
+| #196/AK4 | Ein geplanter Kauf, der nicht an einen Verkauf gebunden ist, findet auch bei eingeschaltetem Schalter statt. Käufe «nach … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak4_…» | 21.11.2026 ok |
+| #196/AK5 | Reicht das liquide Vermögen nicht mehr, zählt der Lauf als «Vermögen aufgebraucht» (Ruin), wie ohne Immobilie. Beispiel: … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak5_…» (2) | 21.11.2026 ok (Beispielplanung, Bootstrap 200 Läufe) |
+| #196/AK6 | Die Prüfung der Planung meldet einen Hinweis, wenn der Schalter an ist und die Planung Verkäufe oder Käufe «nach Verkauf» … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak6_…»; [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK6» (#196) | 21.11.2026 ok |
+| #196/AK7 | Die Kommandozeile (`run`, `optimize`) rechnet mit dem Schalter aus der Datei. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) «issue_196_ak7_…» | 21.11.2026 ok |
+| #196/AK8 | Regressionstest im Rechenkern. Bei ausgeschaltetem Schalter bleiben die Golden-Dateien unverändert. | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_196_ak8_…»; [golden.rs](../crates/engine/tests/golden.rs) | 21.11.2026 ok (Commit ändert keine Golden-Datei) |
+| #196/AK9 | Hilfe (Immobilien, Notverkauf) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 21.11.2026 ok: Hilfe in vier Sprachen, neuer Abschnitt `f-re-never-sell` |
