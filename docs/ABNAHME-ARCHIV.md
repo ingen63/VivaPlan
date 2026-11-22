@@ -1411,3 +1411,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #199/AK4 | Die Kommandozeile (`run`) gibt die Zahl im Bericht und im JSON aus. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) «issue_199_ak4_…» (2) | 22.11.2026 ok (von Hand: Beispielplanung, Bootstrap 200 Läufe, 31 Läufe = 15.5 %) |
 | #199/AK5 | Bei ausgeschaltetem Schalter ist die Zahl immer 0. Ist sie 0, fehlt das Feld im Ergebnis-JSON; die Golden-Dateien bleiben … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_199_ak5_…», «issue_199_ak2_…»; [golden.rs](../crates/engine/tests/golden.rs) | 22.11.2026 ok (keine Golden-Datei geändert) |
 | #199/AK6 | Texte in vier Sprachen. Hilfe (Immobilien nie verkaufen, Ergebnisse) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht); i18n-check; Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, Hilfe, Beschreibung, Spezifikation |
+
+### #200 Ergebnistabelle der Optimierung ohne waagrechtes Scrollen
+
+[Issue #200](https://github.com/ingen63/VivaPlan/issues/200) · geschlossen · Umsetzung: 0b81624
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #200/AK1 | Die gefundenen Parameter und der Knopf «In Planung übernehmen» stehen je Strategie in einer eigenen Unterzeile über die … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK1» (#200) | 22.11.2026 ok (beide Ziele) |
+| #200/AK2 | Die Ergebniskarte der Optimierung ist höchstens 1400 px breit statt 900 px. Die Karte mit den Einstellungen und alle … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2, AK3» (#200) | 22.11.2026 ok |
+| #200/AK3 | Im Abschnitt «Optimierung» ist die rechte Spalte (Vorschau und Prüfung) ausgeblendet, sodass `main` deren Breite bekommt. … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2, AK3» (#200) | 22.11.2026 ok |
+| #200/AK4 | Bei 1440 × 900 px Fenstergrösse zeigt die Tabelle mit fünf Ergebniszeilen (Ausgangslage und vier Strategien) in allen vier … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK4, AK6» (#200) | 22.11.2026 ok (de, en, fr, it; beide Ziele) |
+| #200/AK5 | Bei 2560 px Fensterbreite ist die Tabelle höchstens 1400 px breit. | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK5» (#200) | 22.11.2026 ok |
+| #200/AK6 | Die Hinweistexte unter der Tabelle bleiben auf eine lesbare Zeilenlänge begrenzt (höchstens 900 px). | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK4, AK6» (#200) | 22.11.2026 ok |
+| #200/AK7 | Unter 760 px Fensterbreite bleibt das bisherige Verhalten: Die Tabelle scrollt waagrecht innerhalb der Karte, die Seite … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK7» (#200) | 22.11.2026 ok (700 px) |
+| #200/AK8 | Die Textbreiten-Tests (#182) bleiben grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) (#182) | 22.11.2026 ok (16 Tests) |
