@@ -1453,18 +1453,24 @@ impl<'a> Run<'a> {
     }
 
     /// Lump sums in the same calendar year are added together for the rate: for the household, or per
-    /// person (`person`) for unmarried couples (#150).
+    /// person (`person`) for unmarried couples (#150). #64: In the mode «Wohnort» the table of the place of residence
+    /// applies (multipliers included); unmarried couples pay per person with the tariff for single persons.
     fn capital_tax(&mut self, person: usize, amount: f64) -> f64 {
-        let (t, idx) = (&self.s.taxes, self.tax_index());
+        let idx = self.tax_index();
+        let (table, multiplier) = match &self.s.location {
+            Some(r) => (&r.capital, 1.0),
+            None => (&self.s.taxes.capital, self.s.taxes.multiplier),
+        };
         let k = if self.s.capital_per_person {
             person.min(self.year_capital.len() - 1)
         } else {
             0
         };
-        let before = tax::tax_indexed(&t.capital, self.year_capital[k], t.multiplier, idx);
+        let before = tax::tax_indexed(table, self.year_capital[k], multiplier, idx);
+        let after = tax::tax_indexed(table, self.year_capital[k] + amount, multiplier, idx);
         self.year_capital[k] += amount;
         // #134: With a table whose tax falls (warning of the validation) the increment would be negative.
-        (tax::tax_indexed(&t.capital, self.year_capital[k], t.multiplier, idx) - before).max(0.0)
+        (after - before).max(0.0)
     }
 
     /// #66: Price index for the amounts of the tax tables (cumulative inflation since the simulation start) if the

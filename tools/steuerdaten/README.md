@@ -16,6 +16,10 @@ es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weitere
 - `wealth`: je Kanton die Kurve `[Vermögen, Satz]`, der Satz auf das Vermögen **vor** den Sozialabzügen (eingerechnet);
 - `municipalities`: je Gemeinde BFS-Nummer, Name, Kanton und die Steuerfüsse als Anteile (0.95 = 95 %) für Kanton,
   Gemeinde, reformierte, römisch-katholische und christkatholische Kirche, je für Einkommen und Vermögen;
+- `capital` (je Kanton, #64): Kurve `[Bezug, Satz]` der einfachen Steuer auf Kapitalbezüge aus Vorsorge (Steuerfuss
+  100 %, auf den ganzen Bezug, ohne Abzüge), `single` und `married`; `capitalMunicipal`: eigene Kurve der
+  Gemeindesteuer, wo die Regel abweicht; `capitalRule`: die Regel als Text; `capitalApprox`: Hinweis, wenn die Regel nur
+  angenähert ist. `federalCapital`: ein Fünftel des Tarifs der direkten Bundessteuer;
 - `year`, `source`, `note`: Steuerjahr, Quelle und Hinweis.
 
 Eine Regel ergibt den Abzug `base + rate × Bezugsgrösse`, mindestens `min`, höchstens `max` (0 = ohne Höchstbetrag).
@@ -33,7 +37,32 @@ Rentner, Entlastungsabzüge), Fahrkosten, Verpflegung, Zweitverdienerabzug.
 Der Rechenkern (`crates/engine/src/taxdata.rs`) rechnet:
 Einkommenssteuer = Kantonskurve(steuerbares Einkommen Kanton) × (Steuerfuss Kanton + Kirche)
 + Gemeindekurve × Steuerfuss Gemeinde + Bundeskurve(steuerbares Einkommen Bund);
-Vermögenssteuer = Vermögenskurve × (Steuerfuss Kanton + Gemeinde + Kirche).
+Vermögenssteuer = Vermögenskurve × (Steuerfuss Kanton + Gemeinde + Kirche);
+Kapitalbezugssteuer = Kapitalkurve × (Steuerfuss Kanton + Kirche) + Gemeindekurve × Steuerfuss Gemeinde + Bundeskurve,
+mit den Steuerfüssen der Einkommenssteuer.
+
+## Regeln für Kapitalbezüge (#64)
+
+Die ESTV-Grunddaten enthalten nur für 12 Kantone einen Tarif «Kapitalauszahlung aus Vorsorge» (Steuerart
+`VORSORGESTEUER` in `tarife_<Jahr>.csv`). Die Regeln aller 26 Kantone stehen deshalb von Hand erfasst in
+`kapitalregeln.json`, abgeleitet aus 364 Rechnungen des ESTV-Steuerrechners 2026 «Kapitalauszahlung aus Vorsorge»
+(alle Kantonshauptorte, Bezüge 50 000 bis 5 Millionen, alleinstehend und verheiratet, Alter 65, ohne Kinder, ohne
+Konfession): Kantons- und Gemeindesteuer geteilt durch den Steuerfuss ergibt die einfache Steuer. Nicht aus
+Steuermäppchen oder Gesetzen geprüft.
+
+- `kind: table`: Tarif «Kapitalauszahlung aus Vorsorge» der ESTV (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
+  als Typ `BUND`, Bern); `kind: income`: Anteil `share` der Steuer nach dem Einkommenstarif ohne Abzüge, Satz für
+  `Bezug / divisor`, Verheiratete mit dem Splitting des Tarifs;
+- `min`, `max`: Grenzen des Satzes; `rebate`: Ermässigung (`rate` des Bezugs, höchstens `max`);
+- `single`, `married`: Werte je Zivilstand; `municipal`: eigene Regel der Gemeindesteuer (`target: GEMEINDE` nimmt
+  den Gemeindetarif); `cantonMultiplier`: Kantonssteuer mit eigenem Steuerfuss (Freiburg 100 % statt 96 %);
+- `text`: die Regel für die Steuerdatei (`capitalRule`); `approx`: Hinweis bei einer Näherung (`capitalApprox`).
+
+Näherungen: Wallis (Höchstsatz der Gemeindesteuer aus Sitten abgeleitet) und Zug (Abweichung bis rund 7 %, genaue
+Regel nicht gefunden). Alle anderen Kantone treffen die 364 Rechnungen auf 1 % genau. Die Oberfläche zeigt die Regel
+aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsche Text muss `text` entsprechen
+(e2e-Test). Für ein neues Steuerjahr die Rechnungen wiederholen und die Regeln und Referenzfälle
+(`crates/engine/tests/tax_capital_location.rs`) nachführen.
 
 ## Ablauf für ein neues Steuerjahr
 
@@ -56,7 +85,8 @@ Vermögenssteuer = Vermögenskurve × (Steuerfuss Kanton + Gemeinde + Kirche).
      --tarife local/estv/tarife_2026.csv --abzuege local/estv/abzuege_2026.csv \
      --out crates/engine/data/steuern-2026.json --bericht local/estv/bericht.txt
    ```
-   Der Bericht nennt je Kanton die gewählten Tarife und Abzüge.
+   Die Regeln für Kapitalbezüge liest das Werkzeug aus `kapitalregeln.json` (anderer Ort: `--kapitalregeln`).
+   Der Bericht nennt je Kanton die gewählten Tarife, Abzüge und die Regel für Kapitalbezüge.
 4. Den Dateinamen in `crates/engine/src/taxdata.rs` (`BUILTIN`) anpassen.
 5. Referenzfälle prüfen: Im ESTV-Steuerrechner (Einkommens- und Vermögenssteuer, ohne Kinder, ohne Konfession) die Fälle
    aus `crates/engine/tests/tax_location.rs` für das neue Jahr rechnen und die Werte im Test ersetzen. Der Test verlangt

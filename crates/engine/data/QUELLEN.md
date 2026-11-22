@@ -21,7 +21,9 @@ entstehen, steht in `docs/ENTWICKLUNG.md` (Abschnitt «Datenbibliothek»).
 
 `steuern-2026.json` enthält Tarife, Standardabzüge und Steuerfüsse aus den Grunddaten des Steuerrechners der
 Eidgenössischen Steuerverwaltung (ESTV, swisstaxcalculator.estv.admin.ch, «Grunddaten abrufen», Steuerjahr 2026),
-aufbereitet mit `tools/steuerdaten/build.py`. Für die ESTV-Daten gibt es keine offene Lizenz; die schriftliche
+aufbereitet mit `tools/steuerdaten/build.py`. Die Regeln für Kapitalbezüge aus Vorsorge (#64,
+`tools/steuerdaten/kapitalregeln.json`) sind aus 364 Rechnungen des ESTV-Steuerrechners 2026 abgeleitet, weil die
+Grunddaten nur für 12 Kantone einen Tarif «Kapitalauszahlung aus Vorsorge» enthalten. Für die ESTV-Daten gibt es keine offene Lizenz; die schriftliche
 Zustimmung der ESTV zur Weitergabe mit VivaPlan liegt vor. Die Datei fällt nicht unter die GPL.
 
 ## Lizenz der JST-Daten

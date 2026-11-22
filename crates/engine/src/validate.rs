@@ -654,19 +654,19 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
     /// Key in the path, name in the message, brackets [(amount, rate)].
     type Table<'a> = (&'a str, Message, &'a [(f64, f64)]);
-    // #63: In the mode «Wohnort» the own tables for income and wealth do not apply (hidden, kept in the file).
+    // #63, #64: In the mode «Wohnort» the own tables for income, wealth and lump sums do not apply (hidden, kept in
+    // the file).
     let own = t.mode.is_own();
-    let mut tables: Vec<Table> = vec![("capital", msg!(term_capital_tax), &t.capital)];
+    let mut tables: Vec<Table> = Vec::new();
     if own {
+        tables.push(("capital", msg!(term_capital_tax), &t.capital));
         tables.push(("income", msg!(term_income_tax), &t.income));
         tables.push(("wealth", msg!(term_wealth_tax), &t.wealth));
-    }
-    if let Some(c) = &t.couple {
-        if own {
+        if let Some(c) = &t.couple {
             tables.push(("couple.income", msg!(term_income_tax_married), &c.income));
             tables.push(("couple.wealth", msg!(term_wealth_tax_married), &c.wealth));
+            tables.push(("couple.capital", msg!(term_capital_tax_married), &c.capital));
         }
-        tables.push(("couple.capital", msg!(term_capital_tax_married), &c.capital));
     }
     if !own {
         check_tax_location(v, t.location.as_ref());

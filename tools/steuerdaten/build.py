@@ -5,8 +5,10 @@ Inputs (ESTV tax calculator, «Grunddaten abrufen», one tax year):
   --steuerfuesse  Excel export «Steuerfüsse», whole of Switzerland (xlsx)
   --tarife        tariffs for income and wealth (CSV, columns see README.md)
   --abzuege       deductions for income and wealth, whole of Switzerland (CSV)
+  --kapitalregeln rules of the cantons for lump sums from pension savings (JSON, default kapitalregeln.json, #64)
 Output: JSON with the income tariffs (on the taxable income), the standard deduction rules, the wealth curves (social
-deductions included) per canton and for the federal tax, and the tax multipliers per municipality.
+deductions included), the curves for lump sums (#64) per canton and for the federal tax, and the tax multipliers per
+municipality.
 
 Standard library only; the xlsx is read directly from the ZIP. Usage and procedure: README.md.
 """
@@ -15,6 +17,7 @@ import argparse
 import csv
 import math
 import json
+import os
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -43,6 +46,15 @@ WEALTH_GRID = (
     + list(range(3_000_000, 10_000_000, 500_000))
     + [10_000_000, 20_000_000, 50_000_000, 100_000_000]
 )
+# #64: grid points of the curves for lump sums from pension savings.
+CAPITAL_GRID = (
+    list(range(0, 200_000, 10_000))
+    + list(range(200_000, 1_000_000, 25_000))
+    + list(range(1_000_000, 3_000_000, 100_000))
+    + list(range(3_000_000, 10_000_000, 500_000))
+    + [10_000_000, 20_000_000, 50_000_000]
+)
+RULES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kapitalregeln.json")
 
 # Standard deductions from the income, without children: per marital status and variant a list of groups; per group
 # the first deduction found applies. Variant «retired»: insurance premiums and savings interest without contributions
@@ -361,7 +373,82 @@ def wealth_curve(tariff, married, table, spec, grid):
     return pts
 
 
-def build(tariff_rows, deduction_rows, year, munis):
+# ---------------------------------------------------------------- lump sums (#64)
+
+
+def capital_rule(rule, married):
+    """Rule with the values for the marital status (`single`, `married` override)."""
+    r = {k: v for k, v in rule.items() if k not in ("single", "married", "municipal")}
+    r.update(rule.get("married" if married else "single", {}))
+    return r
+
+
+def capital_tax(rule, tariffs, canton, married, x):
+    """Simple tax (tax multiplier 100 %) on a lump sum from pension savings by the rule of the canton.
+
+    Rule `table`: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV. Rule `income`: share `share` of the tax by the
+    income tariff, rate determined for `x / divisor` (without deductions, married couples with the splitting of the
+    tariff). The rate lies between `min` and `max` if given; `rebate` reduces by a share of the amount, at most `max`.
+    """
+    if x <= 0:
+        return 0.0
+    r = capital_rule(rule, married)
+    target = r.get("target", "KANTON")
+    if r["kind"] == "table":
+        t = pick(tariffs.get((canton, target, "VORSORGESTEUER")) or tariffs.get((canton, "KANTON", "VORSORGESTEUER")),
+                 married)
+        if t is None:
+            raise ValueError(f"{canton}: tariff for lump sums missing")
+        rate = t.tax(x, married) / x * r.get("share", 1.0)
+    elif r["kind"] == "income":
+        t = pick(tariffs.get((canton, target, "EINKOMMENSSTEUER")), married)
+        d = r.get("divisor", 1)
+        rate = t.tax(x / d, married) / (x / d) * r.get("share", 1.0)
+    else:
+        raise ValueError(f"{canton}: unknown rule {r['kind']}")
+    if r.get("min") is not None:
+        rate = max(rate, r["min"])
+    if r.get("max") is not None:
+        rate = min(rate, r["max"])
+    tax = x * rate
+    if r.get("rebate"):
+        tax -= min(x * r["rebate"]["rate"], r["rebate"].get("max", float("inf")))
+    return max(tax, 0.0)
+
+
+def capital_curves(rule, tariffs, canton, scale=1.0):
+    """Rate of the simple tax on the whole lump sum per grid point, for single persons and married couples."""
+    return {status: [[x, round(capital_tax(rule, tariffs, canton, married, x) * scale / x, 7) if x > 0 else 0.0]
+                     for x in CAPITAL_GRID]
+            for status, married in (("single", False), ("married", True))}
+
+
+def capital(c, rule, tariffs, munis, report):
+    """Adds the lump-sum fields of a canton: `capital`, if needed `capitalMunicipal`, `capitalRule`, `capitalApprox`."""
+    cid = c["id"]
+    scale = 1.0
+    if "cantonMultiplier" in rule:
+        # cantonal tax with its own multiplier: scale the curve so that curve × cantonal multiplier fits
+        kts = {m[3][0] for m in munis if m[2] == cid}
+        if len(kts) != 1:
+            raise ValueError(f"{cid}: cantonMultiplier needs a uniform cantonal tax multiplier")
+        scale = rule["cantonMultiplier"] / kts.pop()
+    c["capital"] = capital_curves(rule, tariffs, cid, scale)
+    if "municipal" in rule or scale != 1.0:
+        c["capitalMunicipal"] = capital_curves(rule.get("municipal", rule), tariffs, cid)
+    c["capitalRule"] = rule["text"]
+    if rule.get("approx"):
+        c["capitalApprox"] = rule["approx"]
+    report.append(f"{cid} capital: {rule['text']}" + (f" (approx: {rule['approx']})" if rule.get("approx") else ""))
+
+
+def read_rules(path):
+    """Capital rules per canton; keys starting with `_` are comments."""
+    with open(path, encoding="utf-8") as f:
+        return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+
+
+def build(tariff_rows, deduction_rows, year, munis, capital_rules=None):
     tariffs = load_tariffs(tariff_rows)
     deds = defaultdict(dict)
     for r in deduction_rows:
@@ -401,7 +488,17 @@ def build(tariff_rows, deduction_rows, year, munis):
         if not c["income"] or not c["wealth"]:
             raise ValueError(f"canton {cid}: tariff missing")
         c["deductions"] = deductions(deds.get((cid, "KANTON", "EINKOMMENSSTEUER"), {}), cid, report)
+        if capital_rules is not None:
+            if cid not in capital_rules:
+                raise ValueError(f"canton {cid}: capital rule missing")
+            capital(c, capital_rules[cid], tariffs, munis, report)
         cantons.append(c)
+    if capital_rules is not None:
+        # #64: federal tax on lump sums: one fifth of the tariff of the direct federal tax, without deductions
+        fed = tariffs[("CH", "BUND", "EINKOMMENSSTEUER")]
+        federal_capital = {status: [[x, round(pick(fed, married).tax(x, married) / 5 / x, 7) if x > 0 else 0.0]
+                                    for x in CAPITAL_GRID]
+                           for status, married in (("single", False), ("married", True))}
     data = {
         "year": year,
         "source": SOURCE,
@@ -411,6 +508,8 @@ def build(tariff_rows, deduction_rows, year, munis):
         "cantons": cantons,
         "municipalities": munis,
     }
+    if capital_rules is not None:
+        data["federalCapital"] = federal_capital
     return data, report
 
 
@@ -419,11 +518,12 @@ def main(argv=None):
     ap.add_argument("--steuerfuesse", required=True)
     ap.add_argument("--tarife", required=True)
     ap.add_argument("--abzuege", required=True)
+    ap.add_argument("--kapitalregeln", default=RULES, help="rules of the cantons for lump sums (#64)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--bericht", help="file for the report of the chosen tariffs and deductions")
     a = ap.parse_args(argv)
     year, munis = read_multipliers(a.steuerfuesse)
-    data, report = build(read_csv(a.tarife), read_csv(a.abzuege), year, munis)
+    data, report = build(read_csv(a.tarife), read_csv(a.abzuege), year, munis, read_rules(a.kapitalregeln))
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")

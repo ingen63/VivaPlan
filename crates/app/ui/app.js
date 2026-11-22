@@ -1194,7 +1194,8 @@ function multiplierText(what, m, church) {
   return tr("taxes.multipliers", { what, canton: fmtPct(m[0]), municipality: fmtPct(m[1]) }) + (k > 0 ? tr("taxes.multiplierChurch", { church: fmtPct(m[k + 1]) }) : "");
 }
 /** #63/AK1, AK9: Card «Wohnort»: canton, municipality (search in the list of the canton), church tax; multipliers,
- *  tax year, source and the note that the tax is an estimate with the standard deductions. */
+ *  tax year, source and the note that the tax is an estimate with the standard deductions. #64/AK1, AK3: the rule of
+ *  the canton for lump sums, with ⚠ if it is only approximated. */
 function taxLocationCard() {
   const loc = state.taxes.location ?? {}, canton = taxLoc?.cantons.find(c => c.id === loc.canton);
   const muni = canton?.municipalities.find(m => m[0] === loc.municipality);
@@ -1208,6 +1209,9 @@ function taxLocationCard() {
     <label class="field"><span>${tr("taxes.church")}</span>${Sel("taxes.location.church", CHURCH, { rerender: 1 })}</label></div>
     ${muni ? `<p class="hint" id="tax-multipliers">${multiplierText(tr("taxes.income"), muni[2], loc.church)}; ${multiplierText(tr("taxes.wealth"), muni[3], loc.church)}.</p>` : ""}
     ${earned?.approx ? `<p class="hint warn" id="tax-earned-approx">⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}
+    ${canton ? `<p class="hint" id="tax-capital-rule">${tr("taxes.capitalRule", { rule: tr(`capitalRule.${canton.id}`) })}</p>` : ""}
+    ${canton?.capitalApprox ? `<p class="hint warn" id="tax-capital-approx">⚠ ${tr("taxes.capitalApprox", { note: tr(`capitalApprox.${canton.id}`) })}</p>` : ""}
+    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p>
     <p class="hint" id="tax-source">${tr("taxes.locationSource", { year: taxLoc?.year ?? "–", source: esc(taxLoc?.source ?? "") })}</p></div>`;
 }
 document.addEventListener("change", e => {
@@ -1226,10 +1230,10 @@ R.taxes = () => {
   const own = !isLocation(state);
   const seg = `<div class="seg" style="margin-bottom:12px" id="tax-mode"><button class="${own ? "on" : ""}" data-action="tax-mode" data-v="own">${tr("taxes.modeOwn")}</button><button class="${own ? "" : "on"}" data-action="tax-mode" data-v="location">${tr("taxes.modeLocation")}</button></div>`;
   const note = own ? tr("taxes.estimateNote") : tr("taxes.estimateNoteLocation");
-  // #63: in the mode «Wohnort» the tables for income and wealth are hidden (they stay in the file); lump sums and
-  // the property gains tax keep the own tables and the multiplier (#64, #65).
-  const tables = own ? TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income")) + TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth")) : "";
-  const coupleTables = state.taxes.couple ? (own ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) : "") + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : "";
+  // #63, #64: in the mode «Wohnort» the tables for income, wealth and lump sums are hidden (they stay in the file);
+  // the property gains tax keeps the own rules and the multiplier (#65).
+  const tables = TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income")) + TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"));
+  const coupleTables = state.taxes.couple ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : "";
   return `<h2>${tr("section.taxes")}</h2><p class="lead">${own ? tr("taxes.intro") : tr("taxes.introLocation")}</p>
   ${seg}
   <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
@@ -1238,12 +1242,12 @@ R.taxes = () => {
     ${own ? "" : `<p class="hint">${tr("taxes.locationOwnTablesHint")}</p>`}
     <div style="margin-top:10px">${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
     <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>
-  <div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
-    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>
+  ${own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
+    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : ""}
   ${gainCard()}
-  ${state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
+  ${own && state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
-    <p class="hint">${own ? tr("taxes.marriedHint") : tr("taxes.marriedHintLocation")}</p>
+    <p class="hint">${tr("taxes.marriedHint")}</p>
     ${coupleTables}</div>` : ""}`;
 };
 
@@ -3073,9 +3077,11 @@ function paramSections(plan, full = false) {
   })]);
   const t = plan.taxes || {}, g = t.propertyGain;
   // #63/AK10: mode and place of residence with the name of the municipality instead of the own tables
+  // #64: the lump-sum tax by the place of residence with the rule of the canton
+  const lumpsum = isLocation(plan) ? (t.location?.canton ? tr("params.lumpsumLocation", { rule: tr(`capitalRule.${t.location.canton}`) }) : tr("taxes.modeLocation")) : table(t.capital);
   const incomeWealth = isLocation(plan) ? [[tr("params.taxMode"), tr("taxes.modeLocation")], [tr("taxes.location"), locationText(t.location)]]
     : [[tr("params.taxMode"), tr("taxes.modeOwn")], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)]];
-  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("taxes.lumpsumTax"), table(t.capital)],
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("taxes.lumpsumTax"), lumpsum],
     [tr("gain.title"), g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
   if (full) {

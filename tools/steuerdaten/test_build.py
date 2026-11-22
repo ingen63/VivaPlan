@@ -174,6 +174,84 @@ class Build(unittest.TestCase):
             build.build(tariffs, deductions, 2030, [])
 
 
+class Capital(unittest.TestCase):
+    """#64: Rules for lump sums from pension savings."""
+
+    def tariffs(self):
+        rows = [row("XX", "KANTON", "EINKOMMENSSTEUER", "ZUERICH", 2, "ALLE", 0, 10_000, 0),
+                row("XX", "KANTON", "EINKOMMENSSTEUER", "ZUERICH", 2, "ALLE", 1, 1e10, 10),
+                row("XX", "KANTON", "VORSORGESTEUER", "ZUERICH", 0, "ALLE", 0, 0, 0, 0),
+                row("XX", "KANTON", "VORSORGESTEUER", "ZUERICH", 0, "ALLE", 1, 100_000, 2, 1000)]
+        return build.load_tariffs(rows)
+
+    def test_income_rule_with_share_divisor_min_max(self):
+        t = self.tariffs()
+        rule = {"kind": "income", "share": 0.5, "divisor": 2}
+        # rate for 50 000: (40 000 × 10 %) / 50 000 = 8 %, half of it
+        self.assertAlmostEqual(build.capital_tax(rule, t, "XX", False, 100_000), 100_000 * 0.04)
+        self.assertAlmostEqual(build.capital_tax({**rule, "max": 0.03}, t, "XX", False, 100_000), 3000)
+        self.assertAlmostEqual(build.capital_tax({**rule, "min": 0.05}, t, "XX", False, 100_000), 5000)
+        # married: splitting 2 of the tariff, rate for 25 000 = 6 %, half of it
+        self.assertAlmostEqual(build.capital_tax(rule, t, "XX", True, 100_000), 100_000 * 0.03)
+        self.assertEqual(build.capital_tax(rule, t, "XX", False, 0), 0.0)
+
+    def test_table_with_base_amount_and_overrides(self):
+        t = self.tariffs()
+        # brackets with a base amount count as type BUND: 1000 + 50 000 × 2 %
+        rule = {"kind": "table", "married": {"rebate": {"rate": 0.002, "max": 500}}}
+        self.assertAlmostEqual(build.capital_tax(rule, t, "XX", False, 150_000), 2000)
+        self.assertAlmostEqual(build.capital_tax(rule, t, "XX", True, 150_000), 1700)
+        self.assertAlmostEqual(build.capital_tax(rule, t, "XX", True, 1_000_000), 19_000 - 500)
+
+    def test_unknown_rule_and_missing_table_are_errors(self):
+        t = self.tariffs()
+        with self.assertRaises(ValueError):
+            build.capital_tax({"kind": "flat"}, t, "XX", False, 1000)
+        with self.assertRaises(ValueError):
+            build.capital_tax({"kind": "table"}, t, "YY", False, 1000)
+
+    def test_rules_file_covers_all_cantons(self):
+        rules = build.read_rules(build.RULES)
+        self.assertEqual(set(rules), set(build.NAMES))
+        for cid, r in rules.items():
+            self.assertTrue(r["text"], cid)
+            self.assertIn(r["kind"], ("table", "income"), cid)
+        self.assertEqual(sorted(c for c, r in rules.items() if r.get("approx")), ["VS", "ZG"])
+
+    def test_build_writes_curves_rule_and_federal_fifth(self):
+        tariffs, deductions = minimal_inputs()
+        rules = {c: {"kind": "income", "share": 0.2, "text": "ein Fünftel"} for c in build.NAMES}
+        rules["SZ"] = {"kind": "income", "share": 0.5, "text": "Hälfte", "approx": "angenähert",
+                       "municipal": {"kind": "income", "target": "GEMEINDE"}}
+        rules["FR"] = {"kind": "income", "cantonMultiplier": 1.0, "text": "Steuerfuss 100 %"}
+        munis = [[1, "Musterdorf", "FR", [0.8, 1, 0, 0, 0], [0.8, 1, 0, 0, 0]]]
+        data, report = build.build(tariffs, deductions, 2030, munis, rules)
+        zh = next(c for c in data["cantons"] if c["id"] == "ZH")
+        # 10 % flat tariff, one fifth of it
+        self.assertAlmostEqual(next(p for p in zh["capital"]["single"] if p[0] == 500_000)[1], 0.02)
+        self.assertEqual(zh["capitalRule"], "ein Fünftel")
+        self.assertNotIn("capitalMunicipal", zh)
+        self.assertNotIn("capitalApprox", zh)
+        sz = next(c for c in data["cantons"] if c["id"] == "SZ")
+        self.assertAlmostEqual(next(p for p in sz["capitalMunicipal"]["married"] if p[0] == 100_000)[1], 0.05)
+        self.assertEqual(sz["capitalApprox"], "angenähert")
+        fr = next(c for c in data["cantons"] if c["id"] == "FR")
+        # curve scaled by 1.0 / 0.8 so that curve × 0.8 gives the tax with multiplier 100 %
+        self.assertAlmostEqual(next(p for p in fr["capital"]["single"] if p[0] == 100_000)[1], 0.125)
+        self.assertAlmostEqual(next(p for p in fr["capitalMunicipal"]["single"] if p[0] == 100_000)[1], 0.1)
+        # federal: one fifth of the federal tariff (10 %)
+        self.assertAlmostEqual(next(p for p in data["federalCapital"]["married"] if p[0] == 1_000_000)[1], 0.02)
+        self.assertTrue(any("capital" in line for line in report))
+        # without rules no lump-sum fields
+        data, _ = build.build(tariffs, deductions, 2030, munis)
+        self.assertNotIn("federalCapital", data)
+        # missing canton or non-uniform cantonal multiplier
+        with self.assertRaises(ValueError):
+            build.build(tariffs, deductions, 2030, munis, {k: v for k, v in rules.items() if k != "JU"})
+        with self.assertRaises(ValueError):
+            build.build(tariffs, deductions, 2030, munis + [[2, "Beispielwil", "FR", [0.9] * 5, [0.9] * 5]], rules)
+
+
 class Inputs(unittest.TestCase):
     def test_read_multipliers_from_xlsx(self):
         """Tax multipliers from a minimal Excel export (inline strings): year, BFS number, rates as shares."""
@@ -204,15 +282,21 @@ class Inputs(unittest.TestCase):
                     w.writerows(rows)
                 return path
             t, a = write_csv("t.csv", tariffs), write_csv("a.csv", deductions)
+            rules = os.path.join(d, "rules.json")
+            with open(rules, "w", encoding="utf-8") as f:
+                json.dump({"_info": "x", **{c: {"kind": "income", "text": c} for c in build.NAMES}}, f)
             orig = build.read_multipliers
             build.read_multipliers = lambda path: (2030, [])
             try:
                 out, rep = os.path.join(d, "out.json"), os.path.join(d, "report.txt")
-                build.main(["--steuerfuesse", "x.xlsx", "--tarife", t, "--abzuege", a, "--out", out, "--bericht", rep])
+                build.main(["--steuerfuesse", "x.xlsx", "--tarife", t, "--abzuege", a, "--kapitalregeln", rules,
+                           "--out", out, "--bericht", rep])
             finally:
                 build.read_multipliers = orig
             with open(out, encoding="utf-8") as f:
-                self.assertEqual(json.load(f)["year"], 2030)
+                data = json.load(f)
+            self.assertEqual(data["year"], 2030)
+            self.assertEqual(data["cantons"][0]["capitalRule"], data["cantons"][0]["id"])
             self.assertTrue(os.path.getsize(rep) > 0)
 
 

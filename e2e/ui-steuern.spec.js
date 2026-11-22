@@ -33,10 +33,10 @@ test.describe("Tax by place of residence (#63)", () => {
     await expect(page.locator('input[data-path="taxes.income.0.0"]')).toBeVisible();
     await toLocation(page);
     expect(await page.evaluate(() => state.taxes.mode)).toBe("location");
-    // Tables for income and wealth hidden (they stay in the plan), lump sum stays
+    // Tables for income and wealth hidden (they stay in the plan); since #64 also the lump-sum table
     await expect(page.locator('input[data-path="taxes.income.0.0"]')).toHaveCount(0);
     await expect(page.locator('input[data-path="taxes.wealth.0.0"]')).toHaveCount(0);
-    await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toBeVisible();
+    await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toHaveCount(0);
     expect(await page.evaluate(() => state.taxes.income.length)).toBeGreaterThan(0);
     // Municipality only after the canton; the list holds the municipalities of the canton
     await expect(muni(page)).toBeDisabled();
@@ -146,6 +146,63 @@ test.describe("Tax by place of residence (#63)", () => {
     const rows = await page.evaluate(() => Object.fromEntries(paramSections(state).flatMap(([, r]) => r)));
     expect(rows["Einkommens- und Vermögenssteuer"]).toBe("Eigene Tabellen");
     expect(rows["Einkommenssteuer"]).toBeTruthy();
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Lump-sum tax by place of residence (#64)", () => {
+  test("AK1: no input for the lump-sum tax in the mode place of residence; the rule of the canton is shown below the municipality", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toBeVisible();
+    // married couple: in the mode own tables the own tables for married couples are available
+    expect(await page.evaluate(() => { ACTIONS["partner-add"](); state.household.married = true; renderSection(); return !!state.partner; })).toBe(true);
+    await expect(page.locator('input[data-action="couple-tax"]')).toBeVisible();
+    await toLocation(page);
+    await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toHaveCount(0);
+    await expect(page.locator('[data-path^="taxes.couple"]')).toHaveCount(0);
+    await expect(page.locator('input[data-action="couple-tax"]')).toHaveCount(0);
+    expect(await page.evaluate(() => state.taxes.capital.length)).toBeGreaterThan(0);
+    await expect(page.locator("#tax-capital-rule")).toHaveCount(0);
+    await choose(page, "ZH", "Zürich");
+    const rule = page.locator("#tax-capital-rule");
+    await expect(rule).toContainText("Kapitalbezugssteuer im Kanton: Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %.");
+    await expect(rule).toContainText("ein Fünftel des Tarifs, ohne Abzüge");
+    // the rule stands below the municipality field
+    const muniBox = await muni(page).boundingBox(), ruleBox = await rule.boundingBox();
+    expect(ruleBox.y).toBeGreaterThan(muniBox.y);
+    await expect(page.locator("#tax-location p.lumpcheck")).toHaveText(/^Kapitalbezugssteuer: Vor dem Entscheid/);
+    await expect(page.locator("#main")).toContainText("Steuerfuss für die Grundstückgewinnsteuer");
+    // the parameters tab names the rule instead of the table
+    const rows = await page.evaluate(() => Object.fromEntries(paramSections(state).flatMap(([, r]) => r)));
+    expect(rows["Kapitalbezugssteuer"]).toBe("nach Wohnort (Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %)");
+    // back to own tables: the table is there again
+    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK3: every canton has a rule in all languages; approximated rules are marked with ⚠", async ({ page }) => {
+    const errors = await open(page);
+    await toLocation(page);
+    const ids = await page.evaluate(() => taxLoc.cantons.map(c => [c.id, c.capitalRule, !!c.capitalApprox]));
+    expect(ids).toHaveLength(26);
+    expect(ids.filter(([, , a]) => a).map(([id]) => id).sort()).toEqual(["VS", "ZG"]);
+    const texts = Object.fromEntries(["de", "en", "fr", "it"].map(l =>
+      [l, JSON.parse(fs.readFileSync(path.join(__dirname, "..", "crates", "app", "ui", "i18n", `${l}.json`), "utf8"))]));
+    for (const [id, rule, approx] of ids) {
+      // the German text is the rule of the tax data file
+      expect(texts.de[`capitalRule.${id}`]).toBe(rule);
+      for (const l of ["en", "fr", "it"]) {
+        expect(texts[l][`capitalRule.${id}`], `${l} ${id}`).toBeTruthy();
+        if (approx) expect(texts[l][`capitalApprox.${id}`], `${l} ${id}`).toBeTruthy();
+      }
+    }
+    await cantonSel(page).selectOption("ZG");
+    await expect(page.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert: Die Regel ist angenähert");
+    await cantonSel(page).selectOption("ZH");
+    await expect(page.locator("#tax-capital-approx")).toHaveCount(0);
+    await expect(page.locator("#tax-capital-rule")).toBeVisible();
     await noErrors(page, errors);
   });
 });

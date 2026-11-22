@@ -74,9 +74,11 @@ Der Editor führt durch zwölf Abschnitte:
   Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuerdaten der ESTV, mit den
   Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
   «mit 2. und 3. Säule», Berufskostenpauschale) und der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
-  Netzwerkzugriff. Modus «Eigene Tabellen»: Tabellen für Einkommens- und Vermögenssteuer mit Steuerfuss; bestehende
-  Planungen öffnen in diesem Modus. In beiden Modi Tabellen für Kapital- und Grundstückgewinnsteuer; die Sätze
-  werden zwischen den Stufen linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
+  Netzwerkzugriff. Im Modus «Wohnort» auch die Kapitalbezugssteuer (#64) nach der Regel des Kantons mit den
+  Steuerfüssen der Einkommenssteuer und einem Fünftel des Bundestarifs, ohne eigene Tabelle; die Regel steht unter der
+  Gemeinde, angenäherte Regeln (Wallis, Zug) mit ⚠. Modus «Eigene Tabellen»: Tabellen für Einkommens-, Vermögens- und
+  Kapitalbezugssteuer mit Steuerfuss; bestehende Planungen öffnen in diesem Modus. In beiden Modi Regeln für die
+  Grundstückgewinnsteuer; die Sätze der Tabellen werden zwischen den Stufen linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
   Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
   Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne.
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
@@ -183,7 +185,8 @@ würde die Scheingenauigkeit verstärken.
   Kapitalbezüge eines Jahres zusammen, Stufen und Besitzdauer der Grundstückgewinnsteuer); die Vorlage Zürich der
   Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. Modus «Wohnort»: 25 erfundene Fälle in fünf Kantonen
   (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %);
-  Vergleichswerte für Erwerbstätige fehlen noch.
+  Vergleichswerte für Erwerbstätige fehlen noch. Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
+  (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis und Zug nur angenähert.
 - **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
   Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
 - **Was fehlt:** Abzüge im Einzelnen (nur so weit in den Sätzen enthalten), Eigenmietwert, Schuldzins- und
@@ -192,7 +195,8 @@ würde die Scheingenauigkeit verstärken.
 
 Im Modus «Wohnort» nennt der Abschnitt Steuern die Steuerfüsse der Gemeinde, das Steuerjahr und die Quelle der Daten
 und dass die Steuer eine Schätzung mit den Standardabzügen des Kantons ist; Berufskosten, für die die ESTV-Daten nur
-einen Höchstbetrag nennen (BL, BS, TI), sind mit ⚠ markiert. Die Warnung bei alten Daten folgt mit #143.
+einen Höchstbetrag nennen (BL, BS, TI), sind mit ⚠ markiert. Unter der Gemeinde steht die Regel des Kantons für
+Kapitalbezüge, angenäherte Regeln (Wallis, Zug) mit ⚠; die Tabellen für den Kapitalbezug sind ausgeblendet. Die Warnung bei alten Daten folgt mit #143.
 
 ## Datenbibliothek
 

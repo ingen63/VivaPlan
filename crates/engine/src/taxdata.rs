@@ -11,6 +11,11 @@
 //!
 //! The municipal curve is the cantonal one, except in Schwyz and Valais. Wealth tax = wealth curve × (multiplier
 //! canton + municipality + church), without federal tax.
+//!
+//! #64: Lump sums from pension savings = capital curve of the canton × (multiplier canton + church) plus capital curve
+//! of the municipality × multiplier municipality plus federal capital curve (one fifth of the federal tariff, without
+//! deductions). The curves hold the rate of the simple tax on the whole lump sum; the multipliers are those of the
+//! income tax.
 
 use std::sync::OnceLock;
 
@@ -125,6 +130,16 @@ pub struct Canton {
     #[serde(default)]
     pub municipal_income: Option<Curves>,
     pub deductions: Deductions,
+    /// #64: Rate of the simple tax on lump sums from pension savings (multiplier 100 %), on the whole lump sum.
+    pub capital: Curves,
+    /// #64: Own capital curve of the municipal tax (otherwise the cantonal one applies).
+    #[serde(default)]
+    pub capital_municipal: Option<Curves>,
+    /// #64: Rule by which the canton taxes lump sums (German text of the tool).
+    pub capital_rule: String,
+    /// #64: Note if the rule is only approximated; missing for an exact rule.
+    #[serde(default)]
+    pub capital_approx: Option<String>,
 }
 
 /// Tax multipliers of a municipality as shares (0.95 = 95 %): canton, municipality, reformed, Roman Catholic, Christ
@@ -144,6 +159,8 @@ pub struct TaxData {
     /// Tariff of the direct federal tax on the taxable income.
     pub federal: Curves,
     pub federal_deductions: Deductions,
+    /// #64: Federal tax on lump sums from pension savings (one fifth of the tariff, without deductions).
+    pub federal_capital: Curves,
     pub cantons: Vec<Canton>,
     pub municipalities: Vec<Municipality>,
 }
@@ -192,10 +209,17 @@ impl TaxData {
         let (ek, vm) = (&muni.3, &muni.4);
         let kt = canton.income.get(married);
         let gem = canton.municipal_income.as_ref().map_or(kt, |c| c.get(married));
+        let ck = canton.capital.get(married);
+        let cg = canton.capital_municipal.as_ref().map_or(ck, |c| c.get(married));
         Ok(Resolved {
             cantonal: combine(&[(kt, ek[0] + church(ek, loc.church)), (gem, ek[1])]),
             federal: self.federal.get(married).to_vec(),
             wealth: combine(&[(canton.wealth.get(married), vm[0] + vm[1] + church(vm, loc.church))]),
+            capital: combine(&[
+                (ck, ek[0] + church(ek, loc.church)),
+                (cg, ek[1]),
+                (self.federal_capital.get(married), 1.0),
+            ]),
             canton_deductions: canton.deductions.applied(married),
             federal_deductions: self.federal_deductions.applied(married),
         })
@@ -211,6 +235,8 @@ pub struct Resolved {
     pub federal: Table,
     /// Wealth tax (canton, municipality, church) on the wealth before deductions.
     pub wealth: Table,
+    /// #64: Tax on lump sums from pension savings (canton, municipality, church, federal) on the whole lump sum.
+    pub capital: Table,
     pub canton_deductions: Applied,
     pub federal_deductions: Applied,
 }
@@ -265,6 +291,10 @@ pub struct CantonOut {
     pub id: String,
     pub name: String,
     pub deductions: Deductions,
+    /// #64: Rule for lump sums and the note if it is only approximated.
+    pub capital_rule: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capital_approx: Option<String>,
     /// Municipalities: BFS number, name, multipliers income and wealth, sorted by name.
     pub municipalities: Vec<(u32, String, Multipliers, Multipliers)>,
 }
@@ -286,6 +316,8 @@ pub fn locations() -> LocationsOut {
                 id: c.id.clone(),
                 name: c.name.clone(),
                 deductions: c.deductions.clone(),
+                capital_rule: c.capital_rule.clone(),
+                capital_approx: c.capital_approx.clone(),
                 municipalities,
             }
         })

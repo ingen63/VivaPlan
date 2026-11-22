@@ -545,15 +545,28 @@ ein (`BUILTIN`).
   eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie
   bei `taxes.couple`: zweite Person und `household.married`; unverheiratete Paare rechnen mit den Kurven und Abzügen
   für Alleinstehende auf dem Haushaltseinkommen.
-- Kapitalbezüge und Grundstückgewinn rechnen im Modus «Wohnort» weiter mit den eigenen Tabellen und `taxes.multiplier`
-  (#64, #65). Die eigenen Tabellen für Einkommen und Vermögen bleiben in der Datei, die Prüfung übergeht sie.
+- **Kapitalbezüge (#64):** je Kanton `capital` (Satz der einfachen Steuer auf den ganzen Bezug, Steuerfuss 100 %,
+  Alleinstehende und Verheiratete), wo nötig `capitalMunicipal` (eigene Regel der Gemeindesteuer: Schwyz, Wallis,
+  Genf; Freiburg wegen `cantonMultiplier`), `capitalRule` (Text) und `capitalApprox` (Näherung: Wallis, Zug); dazu
+  `federalCapital` (ein Fünftel des Bundestarifs, ohne Abzüge). `resolve` liefert `capital` = Kantonskurve × (Steuerfuss
+  Kanton + Kirche) + Gemeindekurve × Steuerfuss Gemeinde + Bundeskurve, mit den Steuerfüssen der Einkommenssteuer.
+  `Run::capital_tax` nimmt im Modus «Wohnort» diese Tabelle mit Steuerfuss 1 statt `taxes.capital` × `taxes.multiplier`;
+  Bezüge eines Kalenderjahres zusammen, bei Verheirateten für den Haushalt (Kurve für Verheiratete), bei unverheirateten
+  Paaren je Person (Kurve für Alleinstehende, #150). «Tarife mit der Teuerung» gilt (Satz für `x / index`). Herkunft
+  der Regeln: `tools/steuerdaten/kapitalregeln.json` und README dort. `tax_locations` liefert je Kanton `capitalRule`
+  und `capitalApprox`; die Oberfläche zeigt die Regel aus den Texten `capitalRule.<Kanton>` (deutsch = `capitalRule`
+  der Steuerdatei, e2e prüft das).
+- Die Grundstückgewinnsteuer rechnet im Modus «Wohnort» weiter mit den eigenen Regeln und `taxes.multiplier` (#65).
+  Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch `taxes.couple`) bleiben in der Datei, die
+  Prüfung übergeht sie.
 - **Prüfung:** Kanton fehlt oder unbekannt (`taxes.location.canton`), Gemeinde fehlt oder liegt nicht im Kanton
   (`taxes.location.municipality`): Fehler im Abschnitt Steuern; `Simulator::new` lehnt die Planung ebenso ab.
 - **Befehl `tax_locations`** (App und Entwicklungsserver): Steuerjahr, Quelle, Hinweis, Abzugsregeln von Bund und
   Kantonen und je Kanton die Gemeinden mit den Steuerfüssen für Einkommen und Vermögen. Die Oberfläche lädt ihn beim
   Start, damit Übersicht und Reiter «Parameter» den Gemeindenamen ohne geöffneten Abschnitt Steuern kennen.
-- Tests: `crates/engine/tests/tax_location.rs` (`issue_63_ak…`, Referenzfälle ESTV 2026), `tools/steuerdaten/test_build.py`,
-  e2e `ui-steuern.spec.js`.
+- Tests: `crates/engine/tests/tax_location.rs` (`issue_63_ak…`, Referenzfälle ESTV 2026),
+  `crates/engine/tests/tax_capital_location.rs` (`issue_64_…`, 48 Referenzfälle Kapitalbezug),
+  `tools/steuerdaten/test_build.py`, e2e `ui-steuern.spec.js`.
 
 ## Import alter Konfigurationen
 

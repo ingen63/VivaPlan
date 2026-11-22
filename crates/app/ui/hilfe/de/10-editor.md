@@ -217,7 +217,7 @@ Wie viele **Monate der ungedeckten Ausgaben** (Ausgaben minus Einkommen und Rent
 ## @s-taxes Steuern
 Stichworte: Einkommenssteuer, Vermögenssteuer, Kapitalsteuer, Steuerfuss, Tabelle
 
-Zwei Modi stehen zur Wahl: **Wohnort** rechnet die Einkommens- und Vermögenssteuer aus Kanton, Gemeinde und Kirchensteuer mit den Steuerdaten der ESTV ([Steuer nach Wohnort](#f-tax-location)); **Eigene Tabellen** rechnet mit Satztabellen und Steuerfuss, wie unten beschrieben. Bestehende Planungen öffnen mit «Eigene Tabellen».
+Zwei Modi stehen zur Wahl: **Wohnort** rechnet die Einkommens-, Vermögens- und Kapitalbezugssteuer aus Kanton, Gemeinde und Kirchensteuer mit den Steuerdaten der ESTV ([Steuer nach Wohnort](#f-tax-location)); **Eigene Tabellen** rechnet mit Satztabellen und Steuerfuss, wie unten beschrieben. Bestehende Planungen öffnen mit «Eigene Tabellen».
 
 Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten können. Zwischen den Stufen wird **linear interpoliert**, der Satz wird mit dem [Steuerfuss](#f-tax-multiplier) multipliziert.
 
@@ -232,7 +232,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 Die Beispielwerte sind nur Platzhalter. Ersetzen Sie sie für Ihr Ergebnis durch Werte Ihres Wohnorts.
 
 ## @f-tax-location Steuer nach Wohnort
-Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerdaten, Standardabzüge, Berufskosten, Bundessteuer, steuerbares Einkommen
+Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerdaten, Standardabzüge, Berufskosten, Bundessteuer, steuerbares Einkommen, Kapitalbezug, Kapitalbezugssteuer
 
 Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons mit Suche: Namen eintippen) und die **Kirchensteuer** (keine, reformiert, römisch-katholisch, christkatholisch). Tarife, Abzüge und Steuerfüsse kommen aus der mitgelieferten Steuerdatei der ESTV (Steuerrechner, Grunddaten); die Karte nennt das Steuerjahr, die Quelle und die Steuerfüsse der Gemeinde. Es gibt keinen Netzwerkzugriff.
 
@@ -246,17 +246,18 @@ Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons
 
 - Einkommenssteuer = Tarif des Kantons auf das steuerbare Einkommen × (Steuerfuss Kanton + Kirche) + Tarif der Gemeinde × Steuerfuss Gemeinde + direkte Bundessteuer auf das steuerbare Einkommen des Bundes. Der Tarif der Gemeinde ist der des Kantons, ausser in Schwyz und Wallis.
 - Vermögenssteuer = Tarif des Kantons (Sozialabzüge auf dem Vermögen eingerechnet) × (Steuerfuss Kanton + Gemeinde + Kirche), ohne Bundessteuer.
+- **Kapitalbezugssteuer** (Pensionskasse, Säule 3a) = Kapitalregel des Kantons × (Steuerfuss Kanton + Kirche) + Regel der Gemeinde × Steuerfuss Gemeinde + Bundessteuer (ein Fünftel des Tarifs der direkten Bundessteuer, ohne Abzüge). Es gelten die Steuerfüsse der Einkommenssteuer; die Regel gilt für den ganzen Bezug. Bezüge im selben Kalenderjahr werden zusammengerechnet: bei Verheirateten für den Haushalt mit dem Tarif für Verheiratete, bei unverheirateten Paaren je Person mit dem Tarif für Alleinstehende. Unter der Gemeinde steht die Regel des Kantons, zum Beispiel Zürich «Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %». Die Regeln sind aus dem ESTV-Steuerrechner abgeleitet; in Wallis und Zug sind sie nur angenähert (⚠).
 - **Verheiratete** (zwei Personen und «Verheiratet» angekreuzt): Tarife und Abzüge für Verheiratete. Unverheiratete Paare rechnen mit denen für Alleinstehende auf dem gemeinsamen Einkommen.
 - Mit [Tarifen mit der Teuerung](#f-tax-indexed) wachsen die Beträge der Tarife und Abzüge mit der simulierten Teuerung.
 
-**Nicht im Modus Wohnort:** Kapitalbezüge (Pensionskasse, Säule 3a) und die [Grundstückgewinnsteuer](#f-tax-gain) rechnen weiter mit den eigenen Tabellen und dem [Steuerfuss](#f-tax-multiplier). Die eigenen Tabellen für Einkommen und Vermögen sind ausgeblendet und bleiben in der Datei; zurück auf «Eigene Tabellen» gelten sie wieder.
+**Nicht im Modus Wohnort:** Die [Grundstückgewinnsteuer](#f-tax-gain) rechnet weiter mit den eigenen Regeln und dem [Steuerfuss](#f-tax-multiplier). Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch die für Verheiratete) sind ausgeblendet und bleiben in der Datei; zurück auf «Eigene Tabellen» gelten sie wieder.
 
 **Prüfung:** Fehlt der Kanton oder die Gemeinde oder liegt die Gemeinde nicht im Kanton, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» ist gesperrt. Die Übersicht der Annahmen und der Reiter «Parameter» nennen den Wohnort, zum Beispiel «Zürich (ZH), Kirchensteuer keine».
 
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator
 
-Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor. Erlaubt sind Werte von 0 bis 10.
+Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor. Erlaubt sind Werte von 0 bis 10. Im Modus [Wohnort](#f-tax-location) gilt er nur noch für die Grundstückgewinnsteuer.
 
 ## @f-tax-indexed Tarife mit der Teuerung
 Stichworte: kalte Progression, Teuerung, Inflation, Stufen, Tarif, heutige Preise
@@ -317,6 +318,8 @@ Die Steuer in VivaPlan ist eine **Schätzung für die Planung**, kein Steuerbesc
 **Referenzfälle:** Die Rechenregeln sind mit von Hand nachgerechneten Fällen getestet: Satz aus der Tabelle linear interpoliert mal Steuerfuss, Kapitalbezüge eines Jahres für den Satz zusammengerechnet, Stufen und Besitzdauer der Grundstückgewinnsteuer. Die Vorlage Kanton Zürich der Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. VivaPlan rechnet also mit Ihren Tabellen richtig; wie nahe das an Ihrer tatsächlichen Steuer liegt, hängt von den Tabellen ab.
 
 **Modus «Wohnort»:** 25 erfundene Fälle in Zürich, Bern, Luzern, Aarau und St. Gallen (Einkommen 80 000 bis 300 000, Vermögen 300 000 bis 4 Millionen, Rentnerinnen und Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab; verlangt sind höchstens ±5 %. Für Erwerbstätige fehlen solche Vergleichswerte noch. Individuelle Abzüge, Kinder, einkommensabhängige Abzüge, Fahrkosten und Verpflegung sind nicht enthalten.
+
+**Kapitalbezug im Modus «Wohnort»:** 48 erfundene Fälle in Zürich, Bern, Luzern, Aarau, St. Gallen, Genf, Freiburg und Bellinzona (Bezüge 100 000, 500 000 und 1 Million, alleinstehend und verheiratet) weichen höchstens ±5 % vom ESTV-Steuerrechner 2026 ab. Wallis und Zug sind nur angenähert (in Zug bis rund 7 %).
 
 **Näherungen:**
 

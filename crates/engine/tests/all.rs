@@ -54,6 +54,7 @@ mod sim_rules;
 mod simulation;
 mod statistics;
 mod strategy;
+mod tax_capital_location;
 mod tax_indexed;
 mod tax_location;
 mod tax_parity;

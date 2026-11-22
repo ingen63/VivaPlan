@@ -217,7 +217,7 @@ Combien de **mois de dépenses non couvertes** (dépenses moins revenus et rente
 ## @s-taxes Impôts
 Mots-clés: impôt sur le revenu, impôt sur la fortune, impôt sur les prestations en capital, coefficient d’impôt, barème
 
-Deux modes sont disponibles: **Domicile** calcule l’impôt sur le revenu et sur la fortune selon le canton, la commune et l’impôt ecclésiastique avec les données fiscales de l’AFC ([Impôt selon le domicile](#f-tax-location)); **Barèmes propres** calcule avec des barèmes et le coefficient d’impôt, comme décrit ci-dessous. Les planifications existantes s’ouvrent avec «Barèmes propres».
+Deux modes sont disponibles: **Domicile** calcule l’impôt sur le revenu, sur la fortune et sur les prestations en capital selon le canton, la commune et l’impôt ecclésiastique avec les données fiscales de l’AFC ([Impôt selon le domicile](#f-tax-location)); **Barèmes propres** calcule avec des barèmes et le coefficient d’impôt, comme décrit ci-dessous. Les planifications existantes s’ouvrent avec «Barèmes propres».
 
 Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impôts de votre canton. Entre les paliers, l’interpolation est **linéaire**; le taux est multiplié par le [coefficient d’impôt](#f-tax-multiplier).
 
@@ -232,7 +232,7 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 Les valeurs d’exemple ne sont que des valeurs fictives. Pour votre résultat, remplacez-les par les valeurs de votre domicile.
 
 ## @f-tax-location Impôt selon le domicile
-Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, données fiscales, déductions standard, frais professionnels, impôt fédéral, revenu imposable
+Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, données fiscales, déductions standard, frais professionnels, impôt fédéral, revenu imposable, retrait en capital, impôt sur les prestations en capital
 
 Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune** (liste du canton avec recherche: saisir le nom) et l’**impôt ecclésiastique** (aucune, réformée, catholique romaine, catholique chrétienne). Barèmes, déductions et coefficients d’impôt proviennent du fichier de données fiscales de l’AFC livré avec l’application (calculateur d’impôts, données de base); la carte indique l’année fiscale, la source et les coefficients d’impôt de la commune. Il n’y a pas d’accès au réseau.
 
@@ -246,17 +246,18 @@ Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune
 
 - Impôt sur le revenu = barème du canton sur le revenu imposable × (coefficient d’impôt canton + Église) + barème de la commune × coefficient d’impôt commune + impôt fédéral direct sur le revenu imposable de la Confédération. Le barème de la commune est celui du canton, sauf à Schwytz et en Valais.
 - Impôt sur la fortune = barème du canton (déductions sociales sur la fortune comprises) × (coefficient d’impôt canton + commune + Église), sans impôt fédéral.
+- **Impôt sur les prestations en capital** (caisse de pension, pilier 3a) = règle du canton pour le capital × (coefficient d’impôt canton + Église) + règle de la commune × coefficient d’impôt commune + impôt fédéral (un cinquième du barème de l’impôt fédéral direct, sans déductions). Les coefficients d’impôt de l’impôt sur le revenu s’appliquent; la règle s’applique à l’ensemble du retrait. Les retraits de la même année civile sont additionnés: pour les personnes mariées pour le ménage avec le barème des personnes mariées, pour les couples non mariés par personne avec le barème des personnes seules. Sous la commune figure la règle du canton, par exemple Zurich «taux du barème du revenu pour un vingtième du retrait, d’au moins 2 %». Les règles sont déduites du calculateur d’impôts de l’AFC; en Valais et à Zoug, elles ne sont qu’approximatives (⚠).
 - **Personnes mariées** (deux personnes et la case «Marié·e·s» cochée): barèmes et déductions pour personnes mariées. Les couples non mariés sont calculés avec ceux pour personnes seules sur le revenu commun.
 - Avec les [barèmes avec le renchérissement](#f-tax-indexed), les montants des barèmes et déductions augmentent avec le renchérissement simulé.
 
-**Pas dans le mode Domicile:** les retraits en capital (caisse de pension, pilier 3a) et l’[impôt sur les gains immobiliers](#f-tax-gain) sont toujours calculés avec les barèmes propres et le [coefficient d’impôt](#f-tax-multiplier). Les barèmes propres pour le revenu et la fortune sont masqués et restent dans le fichier; de retour à «Barèmes propres», ils s’appliquent à nouveau.
+**Pas dans le mode Domicile:** l’[impôt sur les gains immobiliers](#f-tax-gain) est toujours calculé avec les règles propres et le [coefficient d’impôt](#f-tax-multiplier). Les barèmes propres pour le revenu, la fortune et le retrait en capital (y compris ceux pour personnes mariées) sont masqués et restent dans le fichier; de retour à «Barèmes propres», ils s’appliquent à nouveau.
 
 **Contrôle:** si le canton ou la commune manque ou si la commune ne se trouve pas dans le canton, c’est une erreur dans la section Impôts, et «Lancer la simulation» est bloqué. L’aperçu des hypothèses et l’onglet «Paramètres» indiquent le domicile, par exemple «Zürich (ZH), impôt ecclésiastique aucune».
 
 ## @f-tax-multiplier Coefficient d’impôt
 Mots-clés: canton, commune, multiplicateur
 
-Un facteur appliqué à tous les taux des barèmes, le coefficient d’impôt du **canton et de la commune** ensemble (par exemple 2.0 pour un taux double). Ainsi, vous n’avez pas à réécrire les barèmes si vous changez de domicile, mais seulement à modifier le facteur. Les valeurs de 0 à 10 sont admises.
+Un facteur appliqué à tous les taux des barèmes, le coefficient d’impôt du **canton et de la commune** ensemble (par exemple 2.0 pour un taux double). Ainsi, vous n’avez pas à réécrire les barèmes si vous changez de domicile, mais seulement à modifier le facteur. Les valeurs de 0 à 10 sont admises. Dans le mode [Domicile](#f-tax-location), il ne s’applique plus qu’à l’impôt sur les gains immobiliers.
 
 ## @f-tax-indexed Barèmes avec le renchérissement
 Mots-clés: progression à froid, renchérissement, inflation, paliers, barème, prix actuels
@@ -317,6 +318,8 @@ L’impôt dans VivaPlan est une **estimation pour la planification**, pas une t
 **Cas de référence:** les règles de calcul sont testées avec des cas recalculés à la main: taux du barème interpolé linéairement multiplié par le coefficient d’impôt, retraits en capital d’une année additionnés pour le taux, paliers et durée de possession de l’impôt sur les gains immobiliers. Le modèle du canton de Zurich pour l’impôt sur les gains immobiliers correspond au barème officiel. VivaPlan calcule donc correctement avec vos barèmes; la proximité avec votre impôt effectif dépend des barèmes.
 
 **Mode «Domicile»:** 25 cas inventés à Zurich, Berne, Lucerne, Aarau et Saint-Gall (revenu de 80 000 à 300 000, fortune de 300 000 à 4 millions, retraités, sans enfants ni confession) s’écartent de moins de 1 % du calculateur d’impôts 2026 de l’AFC; au plus ±5 % est exigé. De telles valeurs de comparaison manquent encore pour les personnes actives. Les déductions individuelles, les enfants, les déductions dépendant du revenu, les frais de déplacement et de repas ne sont pas compris.
+
+**Retraits en capital dans le mode «Domicile»:** 48 cas inventés à Zurich, Berne, Lucerne, Aarau, Saint-Gall, Genève, Fribourg et Bellinzone (retraits de 100 000, 500 000 et 1 million, personnes seules et mariées) s’écartent d’au plus ±5 % du calculateur d’impôts 2026 de l’AFC. Le Valais et Zoug ne sont qu’approximatifs (à Zoug jusqu’à environ 7 %).
 
 **Approximations:**
 
