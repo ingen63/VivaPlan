@@ -1466,3 +1466,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #205/AK4 | Beispiel: Vermögen 300'000, Renten 3'000 pro Monat, Ausgaben 9'000 pro Monat, Untergrenze 80 %, fixe Renditen. Bei Fixe … | ☑ | **gilt** | [optimize.rs](../crates/engine/src/optimize.rs) `issue_205_ak1_ak4_…`, `issue_205_ak4_…` | 22.11.2026 ok (100 %; bei 3'000'000 im ersten Jahr 0 %) |
 | #205/AK5 | Hilfe (Optimierung, Grenzen der Lebenshaltung) und Beschreibung erklären die Kennzahl. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: vier Sprachen, 40-optimierung und 30-entnahme; BESCHREIBUNG.md |
 | #205/AK6 | Ein gespeichertes Optimierungsergebnis (#201) zeigt die Kennzahl nach dem Öffnen wieder. | ☑ | **gilt** (vor #205 gespeichert: «–», Kommentar im Issue) | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK6» (#205) | 22.11.2026 ok |
+
+### #207 Kommandozeile für KIs: JSON-Ausgabe und Werte per Feldpfad ändern
+
+[Issue #207](https://github.com/ingen63/VivaPlan/issues/207) · geschlossen · Umsetzung: 147c34e
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #207/AK1 | `run`, `optimize`, `validate` und `bench` geben mit `--json` ein festes, dokumentiertes Format auf die Standardausgabe aus. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) `issue_207_ak1_…`; [report.rs](../crates/engine/src/report.rs) `issue_207_ak1_…` (2 Tests) | 22.11.2026 ok (vier Befehle und `diff`; Format in der Hilfe «Ausgabe als JSON», vier Sprachen) |
+| #207/AK2 | `vivaplan set <plan> <pfad>=<wert> …` setzt Werte über die Feldpfade der Prüfmeldungen. Ein unbekannter Pfad oder ein … | ☑ | **gilt** | [fieldpath.rs](../crates/engine/src/fieldpath.rs) `issue_207_ak2_…` (2 Tests); [cli.rs](../crates/cli/tests/cli.rs) `issue_207_ak2_ak3_…` | 22.11.2026 ok (keine Änderung, keine Datei bei Fehler) |
+| #207/AK3 | Ohne `-o` schreibt `set` eine neue Datei neben der alten. Eine vorhandene Datei wird nur mit `--overwrite` ersetzt, … | ☑ | **gilt** (nächste freie Nummer `plan-1.vplan` …, Entscheid im Issue vom 22.11.2026) | [cli.rs](../crates/cli/tests/cli.rs) `issue_207_ak2_ak3_…` | 22.11.2026 ok (`-o`, `--overwrite`, `.bak`) |
+| #207/AK4 | `vivaplan diff <a> <b>` listet je Unterschied Feldpfad, alten und neuen Wert. | ☑ | **gilt** | [fieldpath.rs](../crates/engine/src/fieldpath.rs) `issue_207_ak4_…`; [cli.rs](../crates/cli/tests/cli.rs) `issue_207_ak4_…` | 22.11.2026 ok (Text und `--json`) |
+| #207/AK5 | Die JSON-Ausgabe von `run` bleibt an der Beispielplanung unter 20'000 Zeichen. | ☑ | **gilt** | [report.rs](../crates/engine/src/report.rs) `issue_207_ak5_…` | 22.11.2026 ok (6 212 Zeichen mit 8 Variationen; 200 Pfade ebenfalls darunter) |
+| #207/AK6 | Die Prüfung von Pfad und Typ liegt im Rechenkern (`api`), nicht in der Kommandozeile. | ☑ | **gilt** | [api.rs](../crates/engine/src/api.rs) `issue_207_ak6_…` | 22.11.2026 ok (`api::set_fields` → `engine::fieldpath`) |
+| #207/AK7 | (Kommentar) Feldpfade erlauben einen Zeitpunkt in Verläufen: `@<meilenstein>`, `@age:<n>`, `@<JJJJ-MM>` wählt die Stufe … | – | **gilt** | [fieldpath.rs](../crates/engine/src/fieldpath.rs) `issue_207_ak7_…` (2 Tests) | 22.11.2026 ok (bestehende Stufe geändert, sonst neue Stufe; konstanter Wert wird zeitabhängig) |
