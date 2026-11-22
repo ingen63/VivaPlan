@@ -1442,3 +1442,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #201/AK7 | Öffnet man eine Planung, deren Stand zu einem gespeicherten Optimierungsergebnis passt, zeigt der Abschnitt … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK7» (#201) | 22.11.2026 ok |
 | #201/AK8 | Ohne IndexedDB (gesperrter Speicher) bleibt das Ergebnis bis zum Schliessen im Arbeitsspeicher, wie bei Simulationen. … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK8» (#201) | 22.11.2026 ok |
 | #201/AK9 | Hilfe und `docs/BESCHREIBUNG.md` beschreiben das Speichern und Öffnen von Optimierungen. | ☑ | **gilt** | kein Test (Durchsicht); Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, Beschreibung, Spezifikation |
+
+### #204 Grenzen der Lebenshaltung bei VPW und Endowment im Vergleich und in der Optimierung zeigen
+
+[Issue #204](https://github.com/ingen63/VivaPlan/issues/204) · geschlossen · Umsetzung: 62d3230
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #204/AK1 | Vergleich und Optimierung führen bei VPW und Endowment Untergrenze und Obergrenze als feste Parameter mit dem Wert der … | ☑ | **gilt** | [optimize_ranges.rs](../crates/engine/tests/optimize_ranges.rs) `issue_204_ak1_…`; [cli.rs](../crates/cli/tests/cli.rs) `issue_204_ak1_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK1» (#204) | 22.11.2026 ok (App, Kommandozeile mit und ohne `--compare`) |
+| #204/AK2 | Eine Grenze von 0 (keine Grenze) wird bei allen fünf Strategien gleich behandelt wie heute bei Fixe Rate und Guardrails. | ☑ | **gilt** | [optimize_ranges.rs](../crates/engine/tests/optimize_ranges.rs) `issue_204_ak2_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2» (#204) | 22.11.2026 ok |
+| #204/AK3 | Übernehmen einer VPW- oder Endowment-Zeile lässt die Grenzen der Planung unverändert. | ☑ | **gilt** | [optimize_ranges.rs](../crates/engine/tests/optimize_ranges.rs) `issue_204_ak3_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK3» (#204) | 22.11.2026 ok |
+| #204/AK4 | Die Hilfe zur Optimierung nennt bei den Grenzen alle fünf Strategien; heute nennt sie nur Guardrails und Fixe Rate. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: vier Sprachen, beide Stellen |
