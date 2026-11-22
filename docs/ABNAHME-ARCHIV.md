@@ -1453,3 +1453,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #204/AK2 | Eine Grenze von 0 (keine Grenze) wird bei allen fünf Strategien gleich behandelt wie heute bei Fixe Rate und Guardrails. | ☑ | **gilt** | [optimize_ranges.rs](../crates/engine/tests/optimize_ranges.rs) `issue_204_ak2_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2» (#204) | 22.11.2026 ok |
 | #204/AK3 | Übernehmen einer VPW- oder Endowment-Zeile lässt die Grenzen der Planung unverändert. | ☑ | **gilt** | [optimize_ranges.rs](../crates/engine/tests/optimize_ranges.rs) `issue_204_ak3_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK3» (#204) | 22.11.2026 ok |
 | #204/AK4 | Die Hilfe zur Optimierung nennt bei den Grenzen alle fünf Strategien; heute nennt sie nur Guardrails und Fixe Rate. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: vier Sprachen, beide Stellen |
+
+### #205 Hinweis in der Ergebnistabelle, wenn die Untergrenze die Ausgaben bestimmt
+
+[Issue #205](https://github.com/ingen63/VivaPlan/issues/205) · geschlossen · Umsetzung: 2e44810
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #205/AK1 | Die Ergebnistabelle (Vergleich und Optimierung, App und Kommandozeile) zeigt je Strategie mit Untergrenze den Anteil der … | ☑ | **gilt** | [optimize.rs](../crates/engine/src/optimize.rs) `issue_205_ak1_…`; [optimize.rs](../crates/cli/src/optimize.rs) `issue_205_ak1_ak2_ak3_…`; [cli.rs](../crates/cli/tests/cli.rs) `issue_197_ak4_cli_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK1» (#205) | 22.11.2026 ok (App beide Ziele, Kommandozeile `--compare` mit Bootstrap-Pfaden, JSON `floorShare`) |
+| #205/AK2 | Ab 50 % dieser Monate steht bei der Strategie ein Hinweis: «Die Untergrenze bestimmt meist die Ausgaben; die Strategie … | ☑ | **gilt** | [optimize.rs](../crates/cli/src/optimize.rs) `issue_205_ak1_ak2_ak3_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2» (#205) | 22.11.2026 ok (Grenze 50 % / 49.9 %) |
+| #205/AK3 | Strategien ohne Untergrenze (Standard, 3 Töpfe, Grenze 0) zeigen «–» und keinen Hinweis. | ☑ | **gilt** (3 Töpfe mit Guardrails hat eine Untergrenze, Kommentar im Issue) | [optimize.rs](../crates/engine/src/optimize.rs) `issue_205_ak3_…`; [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK3» (#205) | 22.11.2026 ok |
+| #205/AK4 | Beispiel: Vermögen 300'000, Renten 3'000 pro Monat, Ausgaben 9'000 pro Monat, Untergrenze 80 %, fixe Renditen. Bei Fixe … | ☑ | **gilt** | [optimize.rs](../crates/engine/src/optimize.rs) `issue_205_ak1_ak4_…`, `issue_205_ak4_…` | 22.11.2026 ok (100 %; bei 3'000'000 im ersten Jahr 0 %) |
+| #205/AK5 | Hilfe (Optimierung, Grenzen der Lebenshaltung) und Beschreibung erklären die Kennzahl. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: vier Sprachen, 40-optimierung und 30-entnahme; BESCHREIBUNG.md |
+| #205/AK6 | Ein gespeichertes Optimierungsergebnis (#201) zeigt die Kennzahl nach dem Öffnen wieder. | ☑ | **gilt** (vor #205 gespeichert: «–», Kommentar im Issue) | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK6» (#205) | 22.11.2026 ok |
