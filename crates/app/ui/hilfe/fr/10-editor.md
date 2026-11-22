@@ -217,8 +217,11 @@ Combien de **mois de dépenses non couvertes** (dépenses moins revenus et rente
 ## @s-taxes Impôts
 Mots-clés: impôt sur le revenu, impôt sur la fortune, impôt sur les prestations en capital, coefficient d’impôt, barème
 
+Deux modes sont disponibles: **Domicile** calcule l’impôt sur le revenu et sur la fortune selon le canton, la commune et l’impôt ecclésiastique avec les données fiscales de l’AFC ([Impôt selon le domicile](#f-tax-location)); **Barèmes propres** calcule avec des barèmes et le coefficient d’impôt, comme décrit ci-dessous. Les planifications existantes s’ouvrent avec «Barèmes propres».
+
 Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impôts de votre canton. Entre les paliers, l’interpolation est **linéaire**; le taux est multiplié par le [coefficient d’impôt](#f-tax-multiplier).
 
+- [Impôt selon le domicile](#f-tax-location)
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
 - [Barèmes avec le renchérissement](#f-tax-indexed)
 - [Quelle est la précision de l’impôt?](#tax-accuracy)
@@ -227,6 +230,28 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 - L’[impôt sur les gains immobiliers](#f-tax-gain) est dû lors de la vente d’un bien immobilier, voir aussi [Immobilier](#s-realestate).
 
 Les valeurs d’exemple ne sont que des valeurs fictives. Pour votre résultat, remplacez-les par les valeurs de votre domicile.
+
+## @f-tax-location Impôt selon le domicile
+Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, données fiscales, déductions standard, frais professionnels, impôt fédéral, revenu imposable
+
+Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune** (liste du canton avec recherche: saisir le nom) et l’**impôt ecclésiastique** (aucune, réformée, catholique romaine, catholique chrétienne). Barèmes, déductions et coefficients d’impôt proviennent du fichier de données fiscales de l’AFC livré avec l’application (calculateur d’impôts, données de base); la carte indique l’année fiscale, la source et les coefficients d’impôt de la commune. Il n’y a pas d’accès au réseau.
+
+**Revenu imposable** = revenu de l’année (revenu de l’activité lucrative net, rente de la caisse de pension, AVS) moins les **déductions standard** (proposition du canton), jamais négatif. Le canton et la Confédération ont chacun leurs propres déductions:
+
+- **Déductions sociales** pour personnes seules ou mariées, dans la mesure où le canton en prévoit.
+- **Primes d’assurance et intérêts de capitaux d’épargne:** les années avec revenu de l’activité lucrative le montant «avec cotisations aux 2e et 3e piliers», sinon le montant «sans».
+- **Déduction forfaitaire des frais professionnels** sur le revenu de l’activité lucrative de chaque personne active: taux, montant minimal et maximal du canton, au plus le revenu de l’activité lucrative, sans revenu de l’activité lucrative pas de déduction. Exemple Zurich: 3 %, au moins 2 000, au plus 4 000 francs, donc 3 000 pour 100 000 de revenu de l’activité lucrative. Bâle-Campagne, Bâle-Ville et le Tessin n’indiquent dans les données de l’AFC qu’un montant maximal; il s’applique comme déduction fixe (⚠).
+
+**Impôt:**
+
+- Impôt sur le revenu = barème du canton sur le revenu imposable × (coefficient d’impôt canton + Église) + barème de la commune × coefficient d’impôt commune + impôt fédéral direct sur le revenu imposable de la Confédération. Le barème de la commune est celui du canton, sauf à Schwytz et en Valais.
+- Impôt sur la fortune = barème du canton (déductions sociales sur la fortune comprises) × (coefficient d’impôt canton + commune + Église), sans impôt fédéral.
+- **Personnes mariées** (deux personnes et la case «Marié·e·s» cochée): barèmes et déductions pour personnes mariées. Les couples non mariés sont calculés avec ceux pour personnes seules sur le revenu commun.
+- Avec les [barèmes avec le renchérissement](#f-tax-indexed), les montants des barèmes et déductions augmentent avec le renchérissement simulé.
+
+**Pas dans le mode Domicile:** les retraits en capital (caisse de pension, pilier 3a) et l’[impôt sur les gains immobiliers](#f-tax-gain) sont toujours calculés avec les barèmes propres et le [coefficient d’impôt](#f-tax-multiplier). Les barèmes propres pour le revenu et la fortune sont masqués et restent dans le fichier; de retour à «Barèmes propres», ils s’appliquent à nouveau.
+
+**Contrôle:** si le canton ou la commune manque ou si la commune ne se trouve pas dans le canton, c’est une erreur dans la section Impôts, et «Lancer la simulation» est bloqué. L’aperçu des hypothèses et l’onglet «Paramètres» indiquent le domicile, par exemple «Zürich (ZH), impôt ecclésiastique aucune».
 
 ## @f-tax-multiplier Coefficient d’impôt
 Mots-clés: canton, commune, multiplicateur
@@ -290,6 +315,8 @@ Mots-clés: estimation, impôt estimé, précision, arrondi, arrondir, cas de r�
 L’impôt dans VivaPlan est une **estimation pour la planification**, pas une taxation. Les résultats l’appellent donc «impôt estimé» et montrent les montants d’impôt **arrondis à 100 francs**. Le calcul est exact, l’arrondi ne concerne que l’affichage; la ligne de commande et son export CSV donnent les valeurs exactes.
 
 **Cas de référence:** les règles de calcul sont testées avec des cas recalculés à la main: taux du barème interpolé linéairement multiplié par le coefficient d’impôt, retraits en capital d’une année additionnés pour le taux, paliers et durée de possession de l’impôt sur les gains immobiliers. Le modèle du canton de Zurich pour l’impôt sur les gains immobiliers correspond au barème officiel. VivaPlan calcule donc correctement avec vos barèmes; la proximité avec votre impôt effectif dépend des barèmes.
+
+**Mode «Domicile»:** 25 cas inventés à Zurich, Berne, Lucerne, Aarau et Saint-Gall (revenu de 80 000 à 300 000, fortune de 300 000 à 4 millions, retraités, sans enfants ni confession) s’écartent de moins de 1 % du calculateur d’impôts 2026 de l’AFC; au plus ±5 % est exigé. De telles valeurs de comparaison manquent encore pour les personnes actives. Les déductions individuelles, les enfants, les déductions dépendant du revenu, les frais de déplacement et de repas ne sont pas compris.
 
 **Approximations:**
 

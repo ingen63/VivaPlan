@@ -899,6 +899,92 @@ pub struct Taxes {
     /// since the simulation start (compensation of bracket creep); the rates stay the same. Missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub indexed: bool,
+    /// #63: Source of the income and wealth tax: own tables (default, not written) or the place of residence.
+    #[serde(default, skip_serializing_if = "TaxMode::is_own")]
+    pub mode: TaxMode,
+    /// #63: Place of residence for the mode `location`; missing details are reported by the validation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<TaxLocation>,
+}
+
+/// #63: Source of the income and wealth tax.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum TaxMode {
+    /// Own tables with tax multiplier.
+    #[default]
+    Own,
+    /// Canton, municipality and church tax; tariffs, deductions and multipliers from the tax data file.
+    Location,
+}
+
+impl TaxMode {
+    pub fn is_own(&self) -> bool {
+        *self == TaxMode::Own
+    }
+}
+
+/// #63: Denomination for the church tax.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum Church {
+    #[default]
+    None,
+    Reformed,
+    Catholic,
+    ChristCatholic,
+}
+
+/// #63: Place of residence for the tax.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TaxLocation {
+    /// Canton abbreviation, for example «ZH».
+    #[serde(default)]
+    pub canton: String,
+    /// BFS number of the municipality.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub municipality: Option<u32>,
+    #[serde(default)]
+    pub church: Church,
+}
+
+/// #63: Rule of a deduction from the income: `base + rate × reference`, at least `min`, at most `max` (0 = no
+/// maximum). The reference is the income before deductions, for the flat deduction for professional expenses the
+/// earned income. Amounts in prices of the tax year of the data; with «tariffs with inflation» (#66) they grow with
+/// the price index.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DeductionRule {
+    #[serde(default)]
+    pub base: f64,
+    #[serde(default)]
+    pub rate: f64,
+    #[serde(default)]
+    pub min: f64,
+    #[serde(default)]
+    pub max: f64,
+}
+
+impl DeductionRule {
+    /// Deduction for the reference amount `reference`; `index` scales the amounts (1.0 = prices of the data).
+    pub fn amount(&self, reference: f64, index: f64) -> f64 {
+        let v = (self.base * index + self.rate * reference).max(self.min * index);
+        if self.max > 0.0 {
+            v.min(self.max * index)
+        } else {
+            v
+        }
+    }
+
+    /// Flat deduction for professional expenses on the earned income of a year: no deduction without earned income,
+    /// at most the earned income.
+    pub fn earned_amount(&self, earned: f64, index: f64) -> f64 {
+        if earned <= 0.0 {
+            return 0.0;
+        }
+        self.amount(earned, index).min(earned)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]

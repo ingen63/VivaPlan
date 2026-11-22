@@ -4,6 +4,7 @@
     { "cmd": "app_info", "args": {}, "compare": "keys" },
     { "cmd": "example_plan", "args": {} },
     { "cmd": "gain_templates", "args": {} },
+    { "cmd": "tax_locations", "args": {} },
     { "cmd": "library_list", "args": {} },
     { "cmd": "opt_params", "args": { "plan": "$plan" } },
     { "cmd": "validate", "args": { "plan": "$plan" } },

@@ -604,6 +604,12 @@ fn gain_templates() -> Value {
     api::gain_templates()
 }
 
+/// #63: cantons and municipalities of the tax data file.
+#[tauri::command]
+fn tax_locations() -> engine::taxdata::LocationsOut {
+    api::tax_locations()
+}
+
 #[tauri::command]
 fn validate(plan: Value) -> Vec<Issue> {
     api::validate(&plan)
@@ -1022,6 +1028,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             cancel_job,
             example_plan,
             gain_templates,
+            tax_locations,
             upgrade_plan,
             validate,
             preview,

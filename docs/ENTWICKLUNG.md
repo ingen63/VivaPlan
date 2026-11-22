@@ -9,14 +9,14 @@ Projektdatei und die Rechenregeln Schritt für Schritt. Was die App kann, steht 
 | Ordner | Inhalt |
 |---|---|
 | `crates/engine/` | Bibliothek: Datenmodell, Simulation, Zeitreihen, Steuern, Prüfung, Import alter Konfigurationen; Tests unter `tests/` |
-| `crates/engine/data/` | Datenbibliothek: ausgelieferte Zeitreihen (`Shiller CHF.csv`, `Shiller USD.csv`, `Welt (JST).csv`) sowie in `crates/engine/data/quellen/` SNB-Auszüge und die JST-Tabelle mit Auszug (die Shiller-Originaldatei wird nicht mitgeliefert, siehe `QUELLEN.md`) |
+| `crates/engine/data/` | Datenbibliothek: ausgelieferte Zeitreihen (`Shiller CHF.csv`, `Shiller USD.csv`, `Welt (JST).csv`), die Steuerdatei `steuern-<Jahr>.json` (#63) sowie in `crates/engine/data/quellen/` SNB-Auszüge und die JST-Tabelle mit Auszug (die Shiller-Originaldatei wird nicht mitgeliefert, siehe `QUELLEN.md`) |
 | `crates/engine/assets/` | Beispielplanungen (`example.vplan`, Vorlage `new.vplan`) |
 | `crates/cli/` | Kommandozeile `vivaplan` (Rechnen, Prüfen, Import, Vergleich, Entwicklungsserver) |
 | `crates/app/` | Desktop-App (Tauri 2): Fenster, Dateidialoge, Anbindung an den Rechenkern |
 | `crates/app/ui/` | Oberfläche: Editor, Live-Vorschau, Ergebnisansicht (HTML/JS ohne externe Bibliotheken), Hilfe in `hilfe/` |
 | `e2e/` | Oberflächentests (Playwright) |
 | `fuzz/` | Fuzzing (cargo-fuzz, eigener Workspace) |
-| `tools/` | Skripte: Git-Hooks, Build und Installation, App-Icons `make-icons.sh`, Rauchtest `ui-smoke.sh`, Testqualität, Übersichtsseite, Issues |
+| `tools/` | Skripte: Git-Hooks, Build und Installation, App-Icons `make-icons.sh`, Rauchtest `ui-smoke.sh`, Testqualität, Übersichtsseite, Issues, Steuerdatei `steuerdaten/` (#63) |
 | `docs/` | Beschreibung, Glossar der Fachbegriffe ([`docs/GLOSSAR.md`](GLOSSAR.md)), Teststrategie ([`docs/TESTS.md`](TESTS.md)), QA-Bericht, Spezifikationen (Pflichteingaben, Weltindex JST, MCP-Konzept) |
 | `local/` | Nur lokal (von Git ausgeschlossen): Mutationsläufe, Berichte der Testqualität, eigene Planungen und alte Konfigurationen (`local/eigene/`), Notizen |
 
@@ -517,6 +517,43 @@ gilt die Tabelle ohne Anpassung. Massgebend ist der Index im Monat der Veranlagu
 Vermögen, Monat des Bezugs für Kapitalbezüge, Januar bzw. Neuberechnung für die geschätzte Einkommenssteuer im Bedarf
 der 3-Topf-Strategie). Fehlt das Feld, gilt «nein» und es wird nicht geschrieben; der Import alter `config.json`
 setzt «nein», `new.vplan` und «Neu» in der Oberfläche setzen «ja». Die Grundstückgewinnsteuer bleibt unverändert.
+Im Modus «Wohnort» wachsen ebenso die Beträge der Tarife (Satz für `x / index`) und der Abzüge (`base`, `min`, `max`
+× Index; der Satz `rate` bleibt).
+
+### Steuer nach Wohnort (#63)
+
+Modell: `taxes.mode` ist `"own"` (Standard, wird nicht geschrieben) oder `"location"`; `taxes.location` =
+`{ canton: "ZH", municipality: 261, church: "none" | "reformed" | "catholic" | "christCatholic" }`, `municipality` ist
+die BFS-Nummer. Die Steuerdatei `crates/engine/data/steuern-2026.json` erzeugt `tools/steuerdaten/build.py` aus den
+ESTV-Grunddaten (Aufbau und Ablauf für ein neues Steuerjahr: `tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
+ein (`BUILTIN`).
+
+- **Tarif und Abzüge getrennt:** Die Einkommenskurven `[steuerbares Einkommen, Satz]` sind der Tarif der einfachen
+  Steuer (Steuerfuss 100 %, Verheiratete mit dem Splitting des Kantons); die Standardabzüge stehen als Regeln
+  `{base, rate, min, max}` je Kanton und Bund, Zivilstand und Variante (`retired`: ohne, `working`: mit Beiträgen an
+  die 2. und 3. Säule) und `earned` (Berufskostenpauschale). Abzug = `base × Index + rate × Bezug`, mindestens
+  `min × Index`, höchstens `max × Index` (0 = ohne); Bezug ist das Einkommen, bei `earned` der Erwerb der Person
+  (höchstens der Erwerb, ohne Erwerb 0). Abweichung von VivaPlan-Private: dort sind die Abzüge (Variante «ohne») in
+  die Kurven eingerechnet; für Rentner ergibt sich dieselbe Steuer (Abweichung unter 1.5 %).
+- **Steuerbares Einkommen** je Kanton und Bund = Jahreseinkommen (Erwerb netto + PK-Rente + AHV) − Abzüge, nie
+  negativ. Variante `working`, sobald im Kalenderjahr eine Person Erwerbseinkommen hat, sonst `retired`; die
+  Berufskostenpauschale gilt je Person (`Run::year_earned`).
+- **Steuer:** `TaxData::resolve(location, married)` fasst Kantonskurve × (Steuerfuss Kanton + Kirche) und
+  Gemeindekurve (Schwyz, Wallis: eigene, sonst die des Kantons) × Steuerfuss Gemeinde mit `combine` exakt auf den
+  vereinigten Stützpunkten zusammen; Einkommenssteuer = diese Tabelle auf das steuerbare Einkommen Kanton + Bundeskurve
+  auf das steuerbare Einkommen Bund (`Resolved::income_tax`). Vermögenssteuer = Vermögenskurve (Sozialabzüge
+  eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie
+  bei `taxes.couple`: zweite Person und `household.married`; unverheiratete Paare rechnen mit den Kurven und Abzügen
+  für Alleinstehende auf dem Haushaltseinkommen.
+- Kapitalbezüge und Grundstückgewinn rechnen im Modus «Wohnort» weiter mit den eigenen Tabellen und `taxes.multiplier`
+  (#64, #65). Die eigenen Tabellen für Einkommen und Vermögen bleiben in der Datei, die Prüfung übergeht sie.
+- **Prüfung:** Kanton fehlt oder unbekannt (`taxes.location.canton`), Gemeinde fehlt oder liegt nicht im Kanton
+  (`taxes.location.municipality`): Fehler im Abschnitt Steuern; `Simulator::new` lehnt die Planung ebenso ab.
+- **Befehl `tax_locations`** (App und Entwicklungsserver): Steuerjahr, Quelle, Hinweis, Abzugsregeln von Bund und
+  Kantonen und je Kanton die Gemeinden mit den Steuerfüssen für Einkommen und Vermögen. Die Oberfläche lädt ihn beim
+  Start, damit Übersicht und Reiter «Parameter» den Gemeindenamen ohne geöffneten Abschnitt Steuern kennen.
+- Tests: `crates/engine/tests/tax_location.rs` (`issue_63_ak…`, Referenzfälle ESTV 2026), `tools/steuerdaten/test_build.py`,
+  e2e `ui-steuern.spec.js`.
 
 ## Import alter Konfigurationen
 

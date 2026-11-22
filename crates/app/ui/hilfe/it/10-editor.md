@@ -217,8 +217,11 @@ Quanti **mesi di spese non coperte** (spese meno redditi e rendite) vengono tenu
 ## @s-taxes Imposte
 Parole chiave: imposta sul reddito, imposta sulla sostanza, imposta sulle prestazioni in capitale, moltiplicatore d’imposta, tabella
 
+Sono disponibili due modi: **Domicilio** calcola l’imposta sul reddito e sulla sostanza secondo cantone, comune e imposta di culto con i dati fiscali dell’AFC ([Imposta secondo il domicilio](#f-tax-location)); **Tabelle proprie** calcola con tabelle delle aliquote e moltiplicatore d’imposta, come descritto sotto. Le pianificazioni esistenti si aprono con «Tabelle proprie».
+
 Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale del Suo cantone. Tra gli scaglioni si **interpola linearmente**, l’aliquota viene moltiplicata per il [moltiplicatore d’imposta](#f-tax-multiplier).
 
+- [Imposta secondo il domicilio](#f-tax-location)
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
 - [Quanto è precisa l’imposta?](#tax-accuracy)
@@ -227,6 +230,28 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
 
 I valori d’esempio sono solo segnaposto. Per il Suo risultato li sostituisca con i valori del Suo luogo di domicilio.
+
+## @f-tax-location Imposta secondo il domicilio
+Parole chiave: domicilio, cantone, comune, imposta di culto, confessione, AFC, dati fiscali, deduzioni standard, spese professionali, imposta federale, reddito imponibile
+
+Nel modo **Domicilio** sceglie solo il **cantone**, il **comune** (elenco del cantone con ricerca: digitare il nome) e l’**imposta di culto** (nessuna, riformata, cattolica romana, cattolica cristiana). Tariffe, deduzioni e moltiplicatori d’imposta provengono dal file dei dati fiscali dell’AFC fornito con l’app (calcolatore d’imposta, dati di base); la scheda indica l’anno fiscale, la fonte e i moltiplicatori d’imposta del comune. Non c’è accesso alla rete.
+
+**Reddito imponibile** = reddito dell’anno (reddito da attività lucrativa netto, rendita della cassa pensioni, AVS) meno le **deduzioni standard** (proposta del cantone), mai negativo. Cantone e Confederazione hanno ciascuno le proprie deduzioni:
+
+- **Deduzioni sociali** per persone sole o coniugate, se il cantone le prevede.
+- **Premi assicurativi e interessi su capitali a risparmio:** negli anni con reddito da attività lucrativa l’importo «con contributi al 2° e 3° pilastro», altrimenti l’importo «senza».
+- **Deduzione forfettaria per spese professionali** sul reddito da attività lucrativa di ogni persona attiva: aliquota, importo minimo e massimo del cantone, al massimo il reddito da attività lucrativa, senza reddito da attività lucrativa nessuna deduzione. Esempio Zurigo: 3 %, almeno 2 000, al massimo 4 000 franchi, quindi 3 000 con 100 000 di reddito da attività lucrativa. Basilea Campagna, Basilea Città e Ticino indicano nei dati dell’AFC solo un importo massimo; vale come deduzione fissa (⚠).
+
+**Imposta:**
+
+- Imposta sul reddito = tariffa del cantone sul reddito imponibile × (moltiplicatore d’imposta cantone + Chiesa) + tariffa del comune × moltiplicatore d’imposta comune + imposta federale diretta sul reddito imponibile della Confederazione. La tariffa del comune è quella del cantone, salvo a Svitto e nel Vallese.
+- Imposta sulla sostanza = tariffa del cantone (deduzioni sociali sulla sostanza comprese) × (moltiplicatore d’imposta cantone + comune + Chiesa), senza imposta federale.
+- **Coniugati** (due persone e «Coniugati» spuntato): tariffe e deduzioni per coniugati. Le coppie non sposate sono calcolate con quelle per persone sole sul reddito comune.
+- Con le [tariffe con il rincaro](#f-tax-indexed) gli importi di tariffe e deduzioni crescono con il rincaro simulato.
+
+**Non nel modo Domicilio:** i prelievi di capitale (cassa pensioni, pilastro 3a) e l’[imposta sugli utili immobiliari](#f-tax-gain) sono ancora calcolati con le tabelle proprie e il [moltiplicatore d’imposta](#f-tax-multiplier). Le tabelle proprie per reddito e sostanza sono nascoste e restano nel file; tornando a «Tabelle proprie» valgono di nuovo.
+
+**Verifica:** se manca il cantone o il comune o se il comune non si trova nel cantone, è un errore nella sezione Imposte, e «Avviare la simulazione» è bloccato. La panoramica delle ipotesi e la scheda «Parametri» indicano il domicilio, per esempio «Zürich (ZH), imposta di culto nessuna».
 
 ## @f-tax-multiplier Moltiplicatore d’imposta
 Parole chiave: cantone, comune, moltiplicatore
@@ -290,6 +315,8 @@ Parole chiave: stima, imposta stimata, precisione, arrotondamento, arrotondato, 
 L’imposta in VivaPlan è una **stima per la pianificazione**, non una tassazione. I risultati la chiamano quindi «imposta stimata» e mostrano gli importi d’imposta **arrotondati a 100 franchi**. Il calcolo è esatto, l’arrotondamento vale solo per la visualizzazione; la riga di comando e la sua esportazione CSV forniscono i valori esatti.
 
 **Casi di riferimento:** le regole di calcolo sono testate con casi ricalcolati a mano: aliquota della tabella interpolata linearmente per il moltiplicatore d’imposta, prelievi di capitale di un anno sommati per l’aliquota, gradini e durata di possesso dell’imposta sugli utili immobiliari. Il modello del Cantone di Zurigo per l’imposta sugli utili immobiliari corrisponde alla tabella ufficiale. VivaPlan calcola quindi correttamente con le Sue tabelle; quanto ciò sia vicino alla Sua imposta effettiva dipende dalle tabelle.
+
+**Modo «Domicilio»:** 25 casi inventati a Zurigo, Berna, Lucerna, Aarau e San Gallo (reddito da 80 000 a 300 000, sostanza da 300 000 a 4 milioni, pensionati, senza figli né confessione) si scostano meno dell’1 % dal calcolatore d’imposta 2026 dell’AFC; è richiesto al massimo ±5 %. Valori di confronto simili mancano ancora per le persone attive. Non sono comprese deduzioni individuali, figli, deduzioni dipendenti dal reddito, spese di trasporto e di vitto.
 
 **Approssimazioni:**
 

@@ -371,6 +371,8 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         }),
         couple: None,
         indexed: false,
+        mode: TaxMode::Own,
+        location: None,
     };
 
     // Properties (approximately)

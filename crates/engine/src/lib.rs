@@ -31,6 +31,7 @@ pub mod settings;
 pub mod sim;
 pub mod strategy;
 pub mod tax;
+pub mod taxdata;
 #[doc(hidden)]
 pub mod test_alloc;
 pub mod time;

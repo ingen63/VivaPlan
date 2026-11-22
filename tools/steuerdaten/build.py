@@ -1,0 +1,437 @@
+#!/usr/bin/env python3
+"""#63: Builds the tax data file for the mode «Wohnort» from the ESTV base data.
+
+Inputs (ESTV tax calculator, «Grunddaten abrufen», one tax year):
+  --steuerfuesse  Excel export «Steuerfüsse», whole of Switzerland (xlsx)
+  --tarife        tariffs for income and wealth (CSV, columns see README.md)
+  --abzuege       deductions for income and wealth, whole of Switzerland (CSV)
+Output: JSON with the income tariffs (on the taxable income), the standard deduction rules, the wealth curves (social
+deductions included) per canton and for the federal tax, and the tax multipliers per municipality.
+
+Standard library only; the xlsx is read directly from the ZIP. Usage and procedure: README.md.
+"""
+
+import argparse
+import csv
+import math
+import json
+import re
+import sys
+import xml.etree.ElementTree as ET
+import zipfile
+from collections import defaultdict
+
+NAMES = {
+    "ZH": "Zürich", "BE": "Bern", "LU": "Luzern", "UR": "Uri", "SZ": "Schwyz", "OW": "Obwalden",
+    "NW": "Nidwalden", "GL": "Glarus", "ZG": "Zug", "FR": "Freiburg", "SO": "Solothurn",
+    "BS": "Basel-Stadt", "BL": "Basel-Landschaft", "SH": "Schaffhausen", "AR": "Appenzell Ausserrhoden",
+    "AI": "Appenzell Innerrhoden", "SG": "St. Gallen", "GR": "Graubünden", "AG": "Aargau", "TG": "Thurgau",
+    "TI": "Tessin", "VD": "Waadt", "VS": "Wallis", "NE": "Neuenburg", "GE": "Genf", "JU": "Jura",
+}
+
+# Grid points of the curves (francs). Between the points the engine interpolates the rate linearly, above the last
+# point the last rate applies.
+INCOME_GRID = (
+    list(range(0, 100_000, 2_500))
+    + list(range(100_000, 300_000, 10_000))
+    + list(range(300_000, 1_000_000, 50_000))
+    + [1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 10_000_000]
+)
+WEALTH_GRID = (
+    list(range(0, 500_000, 25_000))
+    + list(range(500_000, 3_000_000, 100_000))
+    + list(range(3_000_000, 10_000_000, 500_000))
+    + [10_000_000, 20_000_000, 50_000_000, 100_000_000]
+)
+
+# Standard deductions from the income, without children: per marital status and variant a list of groups; per group
+# the first deduction found applies. Variant «retired»: insurance premiums and savings interest without contributions
+# to the 2nd and 3rd pillar (the next available variant otherwise); variant «working»: with contributions.
+_SOCIAL_SINGLE = [["SozLedig_EK"], ["SozAlleinEigenemHaushalt_EK"]]
+_SOCIAL_MARRIED = [["SozVerheiratet_EK"], ["SozZusAbzug_EK"]]
+INCOME_DEDUCTIONS = {
+    "single": {
+        "retired": [
+            ["KKSparLedigOhneBVGS3a_EK", "KKSparLedigMitBVGS3a_EK", "PrivVersSparLedigMitBVGS3a_EK",
+             "KKPrivVersLedig_EK", "KKLedig_EK"],
+            ["PrivVersLedig_EK"],
+            ["SparzinsenLedig_EK"],
+        ] + _SOCIAL_SINGLE,
+        "working": [
+            ["KKSparLedigMitBVGS3a_EK", "KKSparLedigOhneBVGS3a_EK", "PrivVersSparLedigMitBVGS3a_EK",
+             "KKPrivVersLedig_EK", "KKLedig_EK"],
+            ["PrivVersLedig_EK"],
+            ["SparzinsenLedig_EK"],
+        ] + _SOCIAL_SINGLE,
+    },
+    "married": {
+        "retired": [
+            ["KKSparVerhOhneBVGS3a_EK", "KKSparzVerhBeideOhneBVGS3a_EK", "KKSparzVerhMitBVGS3a_EK",
+             "PrivVersSparzVerhMitBVGS3a_EK", "KKPrivVersVerheiratet_EK", "KKVerheiratet_EK"],
+            ["PrivVersVerheiratet_EK"],
+            ["SparzinsenVerheiratet_EK"],
+        ] + _SOCIAL_MARRIED,
+        "working": [
+            ["KKSparzVerhMitBVGS3a_EK", "KKSparzVerhBeideMitBVGS3a_EK", "KKSparVerhOhneBVGS3a_EK",
+             "PrivVersSparzVerhMitBVGS3a_EK", "KKPrivVersVerheiratet_EK", "KKVerheiratet_EK"],
+            ["PrivVersVerheiratet_EK"],
+            ["SparzinsenVerheiratet_EK"],
+        ] + _SOCIAL_MARRIED,
+    },
+}
+WEALTH_DEDUCTIONS = {
+    "single": [["SozLedigOhneKinder_VM", "SozLedigMitOhneKinder_VM"]],
+    "married": [["SozVerheiratet_VM"]],
+}
+# Flat deduction for other professional expenses on the earned income
+EARNED_DEDUCTION = "HauptErw_EK"
+
+SOURCE = "ESTV, Steuerrechner, Grunddaten (Steuerfüsse, Tarife, Abzüge)"
+NOTE = ("Schätzung für die Planung mit den Standardabzügen des Kantons und des Bundes für Alleinstehende oder "
+        "Verheiratete ohne Kinder, ohne individuelle Abzüge.")
+
+
+# ---------------------------------------------------------------- inputs
+
+
+def read_xlsx(path):
+    """First sheet as a list of rows (dict column -> text)."""
+    ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    tag = "{%s}" % ns["m"]
+    z = zipfile.ZipFile(path)
+    strings = []
+    if "xl/sharedStrings.xml" in z.namelist():
+        for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall("m:si", ns):
+            strings.append("".join(t.text or "" for t in si.iter(tag + "t")))
+    sheet = sorted(n for n in z.namelist() if n.startswith("xl/worksheets/sheet"))[0]
+    out = []
+    for r in ET.fromstring(z.read(sheet)).iter(tag + "row"):
+        row = {}
+        for c in r.findall("m:c", ns):
+            col = re.match(r"[A-Z]+", c.get("r")).group()
+            v, t = c.find("m:v", ns), c.get("t")
+            if t == "inlineStr":
+                row[col] = "".join(x.text or "" for x in c.iter(tag + "t"))
+            elif v is None:
+                row[col] = None
+            elif t == "s":
+                row[col] = strings[int(v.text)]
+            else:
+                row[col] = v.text
+        out.append(row)
+    return out
+
+
+def read_multipliers(path):
+    """Tax multipliers per municipality. Columns: A canton id, B canton, C BFS id, D municipality, E–I income (canton,
+    municipality, church reformed, Roman Catholic, Christ Catholic), J–N wealth (same)."""
+    rows = read_xlsx(path)
+    year = None
+    for r in rows[:3]:
+        a = r.get("A")
+        if a and re.fullmatch(r"\d{4}(\.0)?", a):
+            year = int(float(a))
+    head = next(i for i, r in enumerate(rows) if r.get("C") == "BfS-Id")
+    num = lambda v: round(float(v or 0) / 100, 6)  # noqa: E731
+    munis = []
+    for r in rows[head + 1:]:
+        if not r.get("B") or not r.get("C"):
+            continue
+        munis.append([
+            int(float(r["C"])), r["D"], r["B"],
+            [num(r.get(c)) for c in "EFGHI"],
+            [num(r.get(c)) for c in "JKLMN"],
+        ])
+    munis.sort(key=lambda m: (m[2], m[1]))
+    return year, munis
+
+
+def read_csv(path):
+    with open(path, encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+# ---------------------------------------------------------------- tariffs
+
+
+def evaluate_formula(formula, x):
+    expr = formula.replace("$wert$", "x")
+    expr = re.sub(r"\blog\s+x\b", "log(x)", expr)
+    if not re.fullmatch(r"[\d\s.+\-*/()xlog]+", expr):
+        raise ValueError(f"unknown formula: {formula}")
+    return eval(expr, {"__builtins__": {}}, {"x": x, "log": math.log})  # noqa: S307 (numbers, x and log only)
+
+
+class Tariff:
+    """An ESTV tariff: type (ZUERICH, BUND, FLATTAX, FREIBURG, FORMEL), splitting and rows."""
+
+    def __init__(self, kind, splitting, rows):
+        self.kind = kind
+        self.splitting = splitting
+        self.rows = rows  # [(amount, percent, tax, formula)]
+
+    def simple(self, x):
+        """Simple tax (tax multiplier 100 %) on the amount x, without splitting."""
+        if x <= 0:
+            return 0.0
+        rows = self.rows
+        if self.kind == "ZUERICH":  # brackets «for the next CHF / additional %»
+            tax, rest = 0.0, x
+            for width, pct, _, _ in rows:
+                part = min(rest, width)
+                tax += part * pct / 100
+                rest -= part
+                if rest <= 0:
+                    break
+            return tax
+        if self.kind == "BUND":  # base amount from the bracket plus marginal rate
+            row = None
+            for r in rows:
+                if r[0] <= x:
+                    row = r
+            if row is None:
+                return 0.0
+            return row[2] + (x - row[0]) * row[1] / 100
+        if self.kind == "FLATTAX":
+            return x * rows[0][1] / 100
+        if self.kind == "FREIBURG":  # average rate, linear between the rows
+            pts = [(r[0], r[1]) for r in rows]
+            if x >= pts[-1][0]:
+                return x * pts[-1][1] / 100
+            for (x0, r0), (x1, r1) in zip(pts, pts[1:]):
+                if x0 <= x < x1:
+                    rate = r0 if x1 == x0 else r0 + (r1 - r0) * (x - x0) / (x1 - x0)
+                    return x * rate / 100
+            return 0.0
+        if self.kind == "FORMEL":
+            row = None
+            for r in rows:
+                if r[0] <= x:
+                    row = r
+            if row is None or not row[3]:
+                return 0.0
+            return max(0.0, evaluate_formula(row[3], x))
+        raise ValueError(f"unknown tariff type {self.kind}")
+
+    def tax(self, x, married):
+        """Tax with splitting for married couples (rate of the divided amount on the whole amount)."""
+        s = self.splitting if married and self.splitting > 0 else 1.0
+        if x <= 0:
+            return 0.0
+        if s == 1.0:
+            return self.simple(x)
+        return self.simple(x / s) / (x / s) * x
+
+
+def load_tariffs(rows):
+    groups = defaultdict(list)
+    for r in rows:
+        key = (r["Kanton"], r["Hoheit"], r["Steuerart"], r["Tariftyp"], float(r["Splitting"]), r["Gruppe"])
+        groups[key].append((int(r["Zeile"]), float(r["Betrag"]), float(r["Prozent"]), float(r["Steuer"]), r["Formel"]))
+    out = defaultdict(list)  # (canton, authority, kind of tax) -> [(group, Tariff)]
+    for (canton, target, kind, ttype, split, group), lines in groups.items():
+        lines.sort()
+        rows = [line[1:] for line in lines]
+        if ttype == "ZUERICH" and any(r[2] for r in rows):
+            ttype = "BUND"  # brackets with a base amount
+        out[(canton, target, kind)].append((group, Tariff(ttype, split, rows)))
+    return out
+
+
+def pick(tariffs, married):
+    """Tariff for single persons without children or for married couples from the ESTV groups."""
+    if not tariffs:
+        return None
+    for group, t in tariffs:
+        if group == "ALLE":
+            return t
+    groups = [(set(g.split(",")), t) for g, t in tariffs]
+    if married:
+        for g, t in groups:
+            if "VERHEIRATET" in g:
+                return t
+    else:
+        for want in ("LEDIG_OHNE_KINDER", "LEDIG_KONKUBINAT"):
+            for g, t in groups:
+                if want in g and "VERHEIRATET" not in g:
+                    return t
+    raise ValueError(f"no group for {'married' if married else 'single'}: {[g for g, _ in tariffs]}")
+
+
+# ---------------------------------------------------------------- deductions
+
+
+def rule_of(row):
+    """Deduction as a rule `{base, rate, min, max}`: amount = base + rate × reference, at least min, at most max
+    (0 = no maximum). The reference is the income (general deductions) or the earned income (professional expenses).
+    A percentage with the format STANDARDIZED takes the amount of the ESTV data as the minimum. Returns the rule and
+    whether it is an approximation (only a maximum is known; it applies as a fixed deduction)."""
+    fmt = set(row["Format"].split(","))
+    amount, pct = float(row["Betrag"]), float(row["Prozent"]) / 100
+    lo, hi = float(row["Minimum"]), float(row["Maximum"])
+    if "PERCENT" in fmt:
+        if "STANDARDIZED" in fmt:
+            lo = amount
+        return {"base": 0, "rate": pct, "min": lo if ("MINIMUM" in fmt or "STANDARDIZED" in fmt) else 0,
+                "max": hi if "MAXIMUM" in fmt else 0}, False
+    if "STANDARDIZED" in fmt:
+        return {"base": amount, "rate": 0, "min": 0, "max": 0}, False
+    if "MAXIMUM" in fmt:
+        return {"base": hi, "rate": 0, "min": 0, "max": 0}, False
+    if "MINIMUM" in fmt:
+        return {"base": lo, "rate": 0, "min": 0, "max": 0}, False
+    return {"base": amount, "rate": 0, "min": 0, "max": 0}, False
+
+
+def rule_amount(rule, reference):
+    """Amount of a rule for a reference amount (same formula as the engine, index 1)."""
+    v = max(rule["base"] + rule["rate"] * reference, rule["min"])
+    return min(v, rule["max"]) if rule["max"] > 0 else v
+
+
+def kind_of(ident):
+    """Kind of a deduction for the display (#131): social deduction, savings interest or insurance premiums."""
+    if ident.startswith("Soz"):
+        return "social"
+    if ident.startswith("Sparzinsen"):
+        return "savingsInterest"
+    return "insurance"
+
+
+def deduction_rules(table, spec):
+    """Rules of the deductions found for a specification (list of groups of alternatives)."""
+    out = []
+    for alternatives in spec:
+        for ident in alternatives:
+            if ident in table:
+                rule, _ = rule_of(table[ident])
+                out.append({"id": ident, "kind": kind_of(ident), **rule})
+                break
+    return out
+
+
+def earned_rule(row):
+    """Flat deduction «other professional expenses» as `{base, rate, min, max}` and the flag `approx` if the ESTV
+    data only name a maximum (taken as a fixed deduction of that amount)."""
+    rule, _ = rule_of(row)
+    fmt = set(row["Format"].split(","))
+    if "PERCENT" not in fmt and "MAXIMUM" in fmt:
+        hi = float(row["Maximum"])
+        return {"base": hi, "rate": 0, "min": 0, "max": hi, "approx": True}
+    return rule
+
+
+def deductions(table, label, report):
+    """Income deduction rules of one authority: per marital status and variant, and the professional expenses."""
+    out = {}
+    for status, variants in INCOME_DEDUCTIONS.items():
+        out[status] = {variant: deduction_rules(table, spec) for variant, spec in variants.items()}
+        for variant, rules in out[status].items():
+            report.append(f"{label} {status} {variant}: {[r['id'] for r in rules]}")
+    row = table.get(EARNED_DEDUCTION)
+    if row is None:
+        raise ValueError(f"{label}: flat deduction for professional expenses missing")
+    out["earned"] = earned_rule(row)
+    report.append(f"{label} earned: {out['earned']}")
+    return out
+
+
+def total_deduction(table, spec, base):
+    """Sum of the deductions of a specification for the amount `base` (wealth curves)."""
+    return sum(rule_amount(r, base) for r in deduction_rules(table, spec))
+
+
+# ---------------------------------------------------------------- curves
+
+
+def tariff_curve(tariff, married, grid):
+    """Rate of the simple tax (tax multiplier 100 %) on the taxable amount, per grid point."""
+    return [[x, round(tariff.tax(x, married) / x, 7) if x > 0 else 0.0] for x in grid]
+
+
+def wealth_curve(tariff, married, table, spec, grid):
+    """Rate of the simple tax on the wealth before the social deductions, per grid point."""
+    pts = []
+    for x in grid:
+        if x <= 0:
+            pts.append([0, 0.0])
+            continue
+        tax = tariff.tax(max(0.0, x - total_deduction(table, spec, x)), married)
+        pts.append([x, round(tax / x, 7)])
+    return pts
+
+
+def build(tariff_rows, deduction_rows, year, munis):
+    tariffs = load_tariffs(tariff_rows)
+    deds = defaultdict(dict)
+    for r in deduction_rows:
+        deds[(r["Kanton"], r["Hoheit"], r["Steuerart"])][r["ID"]] = r
+    report = []
+
+    def income(canton, target):
+        res = {}
+        for status, married in (("single", False), ("married", True)):
+            t = pick(tariffs.get((canton, target, "EINKOMMENSSTEUER")), married)
+            if t is None:
+                return None
+            report.append(f"{canton} {target} income {status}: {t.kind}, splitting {t.splitting}")
+            res[status] = tariff_curve(t, married, INCOME_GRID)
+        return res
+
+    def wealth(canton):
+        res = {}
+        table = deds.get((canton, "KANTON", "VERMOEGENSSTEUER"), {})
+        for status, married in (("single", False), ("married", True)):
+            t = pick(tariffs.get((canton, "KANTON", "VERMOEGENSSTEUER")), married)
+            if t is None:
+                return None
+            spec = WEALTH_DEDUCTIONS[status]
+            report.append(f"{canton} wealth {status}: {t.kind}, deductions {[r['id'] for r in deduction_rules(table, spec)]}")
+            res[status] = wealth_curve(t, married, table, spec, WEALTH_GRID)
+        return res
+
+    federal = income("CH", "BUND")
+    federal_deductions = deductions(deds.get(("CH", "BUND", "EINKOMMENSSTEUER"), {}), "CH", report)
+    cantons = []
+    for cid in sorted(NAMES):
+        c = {"id": cid, "name": NAMES[cid], "income": income(cid, "KANTON"), "wealth": wealth(cid)}
+        muni = income(cid, "GEMEINDE")
+        if muni:
+            c["municipalIncome"] = muni
+        if not c["income"] or not c["wealth"]:
+            raise ValueError(f"canton {cid}: tariff missing")
+        c["deductions"] = deductions(deds.get((cid, "KANTON", "EINKOMMENSSTEUER"), {}), cid, report)
+        cantons.append(c)
+    data = {
+        "year": year,
+        "source": SOURCE,
+        "note": NOTE,
+        "federal": federal,
+        "federalDeductions": federal_deductions,
+        "cantons": cantons,
+        "municipalities": munis,
+    }
+    return data, report
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--steuerfuesse", required=True)
+    ap.add_argument("--tarife", required=True)
+    ap.add_argument("--abzuege", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--bericht", help="file for the report of the chosen tariffs and deductions")
+    a = ap.parse_args(argv)
+    year, munis = read_multipliers(a.steuerfuesse)
+    data, report = build(read_csv(a.tarife), read_csv(a.abzuege), year, munis)
+    with open(a.out, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("\n")
+    if a.bericht:
+        with open(a.bericht, "w", encoding="utf-8") as f:
+            f.write("\n".join(report) + "\n")
+    print(f"{a.out}: tax year {year}, {len(data['cantons'])} cantons, {len(munis)} municipalities", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

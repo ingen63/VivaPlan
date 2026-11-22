@@ -18,7 +18,7 @@ const Help = (() => {
     [/^withdrawal\.strategy$/, "f-wd-choice"], [/^withdrawal\.buckets\.spending$/, "f-wd-three_buckets_guardrails"], [/^withdrawal\.buckets\./, "f-wd-three_buckets"], [/^withdrawal\.fixedRate\./, "f-wd-fixed_rate"],
     [/^withdrawal\.guardrails\./, "f-wd-guardrails"], [/^withdrawal\.vpw\./, "f-wd-vpw"], [/^withdrawal\.endowment\./, "f-wd-endowment"],
     [/^withdrawal\.(floor|ceiling)$/, "f-wd-limits"],
-    [/^taxes\.multiplier$/, "f-tax-multiplier"], [/^taxes\.indexed$/, "f-tax-indexed"], [/^taxes\./, "f-tax-tables"],
+    [/^taxes\.multiplier$/, "f-tax-multiplier"], [/^taxes\.indexed$/, "f-tax-indexed"], [/^taxes\.location\./, "f-tax-location"], [/^taxes\./, "f-tax-tables"],
     [/^realestate\.emergencyMonths/, "f-re-emergency"], [/^realestate\.neverSell$/, "f-re-never-sell"], [/^realestate\.affordability\./, "f-re-afford"], [/^realestate\.properties\..*(mortgage|tranche)/, "f-re-mortgage"],
     [/^scenarios\.sweeps/, "f-sweep"], [/^milestones\./, "s-milestones"], [/^pillar3a\./, "s-pillar3a"],
     [/^flows\.(income|spending)\b/, "f-timed"], [/^partner\.income\b/, "f-timed"]
@@ -33,7 +33,7 @@ const Help = (() => {
     [tr("scen.variations"), "f-sweep"], [tr("params.series"), "f-ret-series"], [tr("strategy.title", { info: "" }).trim(), "f-ret-series"], [tr("returns.fromStrategy"), "f-ret-series"], [tr("returns.extrapolationTitle"), "f-ret-extrapolation"], [tr("returns.bootstrap"), "f-ret-bootstrap"],
     [tr("returns.stockModel"), "f-ret-parametric"], [tr("source.fixed"), "f-ret-fixed"], [tr("returns.run"), "f-ret-rolling"], [tr("optimize.goal"), "o-goal"], [tr("optimize.strategies"), "o-strategies"], [tr("optimize.strategyParams"), "o-ranges"],
     [tr("strat.standard"), "f-wd-standard"], [tr("limits.title"), "f-wd-limits"], [tr("strat.fixedRate"), "f-wd-fixed_rate"], [tr("strat.guardrails"), "f-wd-guardrails"], [tr("withdrawal.vpw"), "f-wd-vpw"], [tr("strat.endowmentShort"), "f-wd-endowment"],
-    [tr("gain.title"), "f-tax-gain"], [tr("taxes.married"), "f-tax-tables"], [tr("taxes.incomeTax"), "f-tax-tables"], [tr("params.multiplier"), "f-tax-multiplier"], [tr("params.taxIndexed"), "f-tax-indexed"],
+    [tr("gain.title"), "f-tax-gain"], [tr("taxes.location"), "f-tax-location"], [tr("taxes.married"), "f-tax-tables"], [tr("taxes.incomeTax"), "f-tax-tables"], [tr("params.multiplier"), "f-tax-multiplier"], [tr("params.taxIndexed"), "f-tax-indexed"],
     [tr("batch.band"), "r-fan"], [tr("batch.survival"), "r-survival"], [tr("batch.endDist"), "r-hist"],
     [tr("batch.retireDist"), "r-hist"], [tr("batch.depletionAge"), "r-depletion"], [tr("results.endByPercentile"), "r-percentiles"],
     [tr("helpHeading.markets"), "r-markets"], [tr("runCharts.wealth"), "r-wealth"], [tr("runCharts.withdrawal"), "r-draw"], [tr("results.events"), "r-events"],

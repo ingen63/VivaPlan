@@ -25,6 +25,11 @@ pub fn gain_templates() -> Value {
     serde_json::from_str(include_str!("../assets/gain-templates.json")).expect("Vorlagen sind gültig")
 }
 
+/// #63: Cantons and municipalities of the built-in tax data file with tax year, source, note and deduction rules.
+pub fn tax_locations() -> crate::taxdata::LocationsOut {
+    crate::taxdata::locations()
+}
+
 pub fn example_plan() -> Value {
     serde_json::from_str(include_str!("../assets/example.vplan")).expect("Beispiel ist gültig")
 }

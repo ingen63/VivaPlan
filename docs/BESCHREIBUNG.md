@@ -70,7 +70,12 @@ Der Editor führt durch zwölf Abschnitte:
   Methode gelten. Die Zeitreihe ergibt sich aus der Anlagestrategie.
 - **Entnahmestrategie:** sechs Strategien (siehe unten).
 - **Optimierung:** sucht die beste Strategie für das eigene Szenario (siehe unten).
-- **Steuern:** Tabellen für Einkommens-, Vermögens-, Kapital- und Grundstückgewinnsteuer mit Steuerfuss; die Sätze
+- **Steuern:** Modus «Wohnort» (#63): Einkommens- und Vermögenssteuer aus Kanton, Gemeinde (alle Gemeinden des
+  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuerdaten der ESTV, mit den
+  Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
+  «mit 2. und 3. Säule», Berufskostenpauschale) und der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
+  Netzwerkzugriff. Modus «Eigene Tabellen»: Tabellen für Einkommens- und Vermögenssteuer mit Steuerfuss; bestehende
+  Planungen öffnen in diesem Modus. In beiden Modi Tabellen für Kapital- und Grundstückgewinnsteuer; die Sätze
   werden zwischen den Stufen linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
   Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
   Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne.
@@ -168,22 +173,26 @@ Die Steuer ist eine **Schätzung für die Planung**, kein Steuerbescheid (#143).
 Steuer» (Kennzahl, Diagrammlegenden, Jahreswerte, Vergleich, Übersicht der Annahmen) und zeigt Steuerbeträge auf
 **100 Franken gerundet**; gerechnet wird genau. Die Kommandozeile und ihr CSV-Export geben die genauen Werte aus und
 nennen sie ebenfalls geschätzt (Spalte `taxes_estimated`). Der Abschnitt Steuern zeigt einen festen Hinweis, unter den
-Jahreswerten steht «Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet. Keine Steuerberatung.», und
+Jahreswerten steht «Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet. Keine Steuerberatung.» (im
+Modus «Wohnort»: «… mit den Steuerdaten 2026 der ESTV und den Standardabzügen des Kantons …»), und
 bei Kapitalbezugs- und Grundstückgewinnsteuer der Rat, vor dem Entscheid mit dem Steuerrechner des Kantons oder einer
 Fachperson zu prüfen. Eine Bandbreite (± %) zeigt die App bewusst nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl
 würde die Scheingenauigkeit verstärken.
 
 - **Referenzfälle:** Von Hand nachgerechnete Fälle prüfen die Regeln (Satz linear interpoliert mal Steuerfuss,
   Kapitalbezüge eines Jahres zusammen, Stufen und Besitzdauer der Grundstückgewinnsteuer); die Vorlage Zürich der
-  Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein.
+  Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. Modus «Wohnort»: 25 erfundene Fälle in fünf Kantonen
+  (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %);
+  Vergleichswerte für Erwerbstätige fehlen noch.
 - **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
   Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
 - **Was fehlt:** Abzüge im Einzelnen (nur so weit in den Sätzen enthalten), Eigenmietwert, Schuldzins- und
   Unterhaltsabzug, Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
   Investitionen und Kosten beim Grundstückgewinn, künftige Gesetzesänderungen.
 
-Steuerjahr und Quelle der Daten, die Herkunft der Abzüge und die Warnung bei alten Daten kommen mit den
-Tarifen nach Kanton und Gemeinde (#63) dazu.
+Im Modus «Wohnort» nennt der Abschnitt Steuern die Steuerfüsse der Gemeinde, das Steuerjahr und die Quelle der Daten
+und dass die Steuer eine Schätzung mit den Standardabzügen des Kantons ist; Berufskosten, für die die ESTV-Daten nur
+einen Höchstbetrag nennen (BL, BS, TI), sind mit ⚠ markiert. Die Warnung bei alten Daten folgt mit #143.
 
 ## Datenbibliothek
 

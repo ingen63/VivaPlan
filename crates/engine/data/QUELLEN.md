@@ -17,6 +17,13 @@ entstehen, steht in `docs/ENTWICKLUNG.md` (Abschnitt «Datenbibliothek»).
 | `Shiller CHF + CH-Obligationen.csv` | wie `Shiller CHF.csv`; Obligationen aus der Rendite 10-jähriger Obligationen der Eidgenossenschaft (SNB) |
 | `Welt (JST).csv` | Jordà-Schularick-Taylor Macrohistory Database, Release 6 (macrohistory.net/database, abgerufen 13.11.2026): Aktienrenditen von 11 Ländern, nach realem BIP gewichtet und in CHF umgerechnet; Obligationen der Eidgenossenschaft (JST bis 1988, danach SNB `rendoblim`); Teuerung Schweiz (JST). Zitate: Jordà, Schularick, Taylor (2017), «Macrofinancial History and the New Business Cycle Facts», NBER Macroeconomics Annual 2016; Jordà, Knoll, Kuvshinov, Schularick, Taylor (2019), «The Rate of Return on Everything, 1870–2015», Quarterly Journal of Economics. **Lizenz CC BY-NC-SA 4.0** (siehe unten). |
 
+## Steuerdatei (#63)
+
+`steuern-2026.json` enthält Tarife, Standardabzüge und Steuerfüsse aus den Grunddaten des Steuerrechners der
+Eidgenössischen Steuerverwaltung (ESTV, swisstaxcalculator.estv.admin.ch, «Grunddaten abrufen», Steuerjahr 2026),
+aufbereitet mit `tools/steuerdaten/build.py`. Für die ESTV-Daten gibt es keine offene Lizenz; die schriftliche
+Zustimmung der ESTV zur Weitergabe mit VivaPlan liegt vor. Die Datei fällt nicht unter die GPL.
+
 ## Lizenz der JST-Daten
 
 Die JST-Daten stehen unter Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0).

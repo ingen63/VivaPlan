@@ -55,6 +55,7 @@ mod simulation;
 mod statistics;
 mod strategy;
 mod tax_indexed;
+mod tax_location;
 mod tax_parity;
 mod upgrade_api;
 mod validate_extra;

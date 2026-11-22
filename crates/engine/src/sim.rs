@@ -709,6 +709,8 @@ pub struct Simulator {
     /// Ids of the persons (for assigning the tranches to pillar 3a).
     person_ids: Vec<String>,
     taxes: crate::model::Taxes,
+    /// #63: Tables and deductions of the place of residence (mode «Wohnort»); `None`: own tables.
+    location: Option<crate::taxdata::Resolved>,
     pub fixed: crate::market::FixedCurves,
     pub source: ReturnSource,
     afford: Affordability,
@@ -810,6 +812,13 @@ impl Simulator {
             taxes.wealth = c.wealth.clone();
             taxes.capital = c.capital.clone();
         }
+        // #63: Mode «Wohnort»: tariffs and deductions for married couples with a second person and `household.married`.
+        let location = match plan.taxes.mode {
+            crate::model::TaxMode::Own => None,
+            crate::model::TaxMode::Location => {
+                Some(crate::taxdata::builtin().resolve(&plan.taxes.location.clone().unwrap_or_default(), couple)?)
+            }
+        };
         let props = plan
             .realestate
             .properties
@@ -910,6 +919,7 @@ impl Simulator {
             accounts,
             person_ids: persons.iter().map(|p| p.id.clone()).collect(),
             taxes,
+            location,
             fixed: crate::market::FixedCurves {
                 stocks: curve(&plan.returns.fixed.stocks)?,
                 bonds: curve(&plan.returns.fixed.bonds)?,
@@ -932,10 +942,30 @@ impl Simulator {
     /// Earned income of the household in this month; `infl_idx` is the path's price index since the start. If a
     /// person's income rises with inflation (#58), their amount is in prices of the start.
     fn earned(&self, m: YearMonth, infl_idx: f64) -> f64 {
-        self.people
-            .iter()
-            .map(|p| p.income.at(m) * if p.income_indexed { infl_idx } else { 1.0 })
-            .sum()
+        (0..self.people.len()).map(|i| self.person_earned(i, m, infl_idx)).sum()
+    }
+
+    /// Net earned income of person `i` in month `m`.
+    fn person_earned(&self, i: usize, m: YearMonth, infl_idx: f64) -> f64 {
+        let p = &self.people[i];
+        p.income.at(m) * if p.income_indexed { infl_idx } else { 1.0 }
+    }
+
+    /// Income tax of a year on the income `income` (earned income + PK pension + AHV); `earned`: earned income per
+    /// person (only used in the mode «Wohnort», #63). `index`: price index for the amounts (#66).
+    fn income_tax(&self, income: f64, earned: &[f64], index: f64) -> f64 {
+        match &self.location {
+            Some(r) => r.income_tax(income, earned, index),
+            None => tax::tax_indexed(&self.taxes.income, income, self.taxes.multiplier, index),
+        }
+    }
+
+    /// Wealth tax of a year.
+    fn wealth_tax(&self, wealth: f64, index: f64) -> f64 {
+        match &self.location {
+            Some(r) => r.wealth_tax(wealth, index),
+            None => tax::tax_indexed(&self.taxes.wealth, wealth, self.taxes.multiplier, index),
+        }
     }
 
     /// #205: The spending rule has a floor (fixed rate, guardrails, VPW, endowment, 3 buckets with guardrails; floor > 0).
@@ -1168,6 +1198,8 @@ struct Run<'a> {
     month_capital_tax: f64,
     month_gain_tax: f64,
     year_income: f64,
+    /// #63: Earned income of the calendar year per person (mode «Wohnort»: deductions).
+    year_earned: [f64; 2],
     /// Lump sums of the calendar year per taxpayer: one entry for the household, or one per person
     /// for unmarried couples (#150).
     year_capital: Vec<f64>,
@@ -1297,6 +1329,7 @@ impl<'a> Run<'a> {
             month_capital_tax: 0.0,
             month_gain_tax: 0.0,
             year_income: 0.0,
+            year_earned: [0.0; 2],
             year_capital: vec![0.0; s.people.len().max(1)],
             props,
             p3a: s.accounts.iter().map(|a| a.balance).collect(),
@@ -2232,6 +2265,7 @@ impl<'a> Run<'a> {
         let s = self.s;
         let last = s.start.plus(s.months as i32 - 1);
         let (mut living, mut housing, mut ahv, mut pk, mut earned, mut p3a) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut per_person = [0.0; 2];
         let mut n = 0u32;
         // #6: If a spending rule (guardrails) steers spending, the living costs come from it.
         let rule = s.dynamic.filter(|_| self.budget_on);
@@ -2255,6 +2289,9 @@ impl<'a> Run<'a> {
             ahv += a;
             pk += p;
             earned += s.earned(mm, self.infl_idx);
+            for (i, e) in per_person.iter_mut().enumerate().take(s.people.len()) {
+                *e += s.person_earned(i, mm, self.infl_idx);
+            }
             n += 1;
         }
         let f = if n > 0 { 12.0 / f64::from(n) } else { 0.0 };
@@ -2263,14 +2300,18 @@ impl<'a> Run<'a> {
         if m.year() >= AHV13_FROM_YEAR {
             ahv *= 13.0 / 12.0;
         }
-        let t = &s.taxes;
+        let per_person = per_person.map(|e| e * f);
         NeedBasis {
             year: m.year(),
             source,
             living_source: if rule.is_some() { "Guardrails" } else { "geplant" }.into(),
             living: living * f,
             housing: housing * f,
-            income_tax: tax::tax_indexed(&t.income, (ahv + pk + earned) * f, t.multiplier, self.tax_index()),
+            income_tax: s.income_tax(
+                (ahv + pk + earned) * f,
+                &per_person[..s.people.len().min(2)],
+                self.tax_index(),
+            ),
             ahv: ahv * f,
             pk: pk * f,
             earned: earned * f,
@@ -3041,6 +3082,11 @@ impl<'a> Run<'a> {
             self.ledger.living += living;
             self.ledger.housing += prop_cost;
             self.year_income += income;
+            if s.location.is_some() {
+                for (i, e) in self.year_earned.iter_mut().enumerate().take(s.people.len()) {
+                    *e += s.person_earned(i, m, self.infl_idx);
+                }
+            }
 
             // Returns
             let wealth = self.cash + self.stocks + self.bonds;
@@ -3082,17 +3128,18 @@ impl<'a> Run<'a> {
                 paid_wealth += std::mem::take(&mut self.pending_wealth);
             }
             if december {
-                let t = &s.taxes;
                 let taxable_wealth = wealth + self.equity();
+                let idx = self.tax_index();
                 let (ti, tw) = (
-                    tax::tax_indexed(&t.income, self.year_income, t.multiplier, self.tax_index()),
-                    tax::tax_indexed(&t.wealth, taxable_wealth, t.multiplier, self.tax_index()),
+                    s.income_tax(self.year_income, &self.year_earned[..s.people.len().min(2)], idx),
+                    s.wealth_tax(taxable_wealth, idx),
                 );
                 self.tax_pending += ti + tw;
                 self.pending_income += ti;
                 self.pending_wealth += tw;
                 (assessed_income, assessed_wealth) = (ti, tw);
                 self.year_income = 0.0;
+                self.year_earned = [0.0; 2];
                 self.year_capital.fill(0.0);
             }
             if k + 1 == s.months {

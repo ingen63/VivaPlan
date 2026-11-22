@@ -114,6 +114,33 @@ pub fn validate(plan: &Plan) -> Vec<Issue> {
     v.0
 }
 
+/// #63/AK8: Mode «Wohnort»: the canton must be in the tax data and the municipality must belong to it.
+fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>) {
+    let data = crate::taxdata::builtin();
+    let canton = loc.map(|l| l.canton.as_str()).unwrap_or("");
+    if canton.is_empty() {
+        v.err_at("taxes", "taxes.location.canton", msg!(tax_canton_missing));
+        return;
+    }
+    if data.canton(canton).is_none() {
+        v.err_at(
+            "taxes",
+            "taxes.location.canton",
+            msg!(tax_canton_unknown, canton = canton),
+        );
+        return;
+    }
+    match loc.and_then(|l| l.municipality) {
+        None => v.err_at("taxes", "taxes.location.municipality", msg!(tax_municipality_missing)),
+        Some(bfs) if data.municipality(bfs).is_none_or(|m| m.2 != canton) => v.err_at(
+            "taxes",
+            "taxes.location.municipality",
+            msg!(tax_municipality_not_in_canton, bfs = bfs, canton = canton),
+        ),
+        Some(_) => {}
+    }
+}
+
 /// Parameters of the guardrails (strategy «Guardrails» and «3-Topf» with guardrails).
 fn check_guardrails(v: &mut Issues, w: &Withdrawal) {
     let g = w.guardrails.clone().unwrap_or_default();
@@ -627,15 +654,22 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
     /// Key in the path, name in the message, brackets [(amount, rate)].
     type Table<'a> = (&'a str, Message, &'a [(f64, f64)]);
-    let mut tables: Vec<Table> = vec![
-        ("income", msg!(term_income_tax), &t.income),
-        ("wealth", msg!(term_wealth_tax), &t.wealth),
-        ("capital", msg!(term_capital_tax), &t.capital),
-    ];
+    // #63: In the mode «Wohnort» the own tables for income and wealth do not apply (hidden, kept in the file).
+    let own = t.mode.is_own();
+    let mut tables: Vec<Table> = vec![("capital", msg!(term_capital_tax), &t.capital)];
+    if own {
+        tables.push(("income", msg!(term_income_tax), &t.income));
+        tables.push(("wealth", msg!(term_wealth_tax), &t.wealth));
+    }
     if let Some(c) = &t.couple {
-        tables.push(("couple.income", msg!(term_income_tax_married), &c.income));
-        tables.push(("couple.wealth", msg!(term_wealth_tax_married), &c.wealth));
+        if own {
+            tables.push(("couple.income", msg!(term_income_tax_married), &c.income));
+            tables.push(("couple.wealth", msg!(term_wealth_tax_married), &c.wealth));
+        }
         tables.push(("couple.capital", msg!(term_capital_tax_married), &c.capital));
+    }
+    if !own {
+        check_tax_location(v, t.location.as_ref());
     }
     for (key, name, rows) in tables {
         // #134: The tax (amount × rate) must not fall with a rising amount; only a warning, the computation runs.

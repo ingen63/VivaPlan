@@ -1176,18 +1176,76 @@ Object.assign(OPT_ACTIONS, {
     markDirty(); renderSection();
   }
 });
-R.taxes = () => `<h2>${tr("section.taxes")}</h2><p class="lead">${tr("taxes.intro")}</p>
-  <div class="card taxnote" id="taxEstimateNote"><p class="hint">${tr("taxes.estimateNote")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
-  <div class="card"><div class="grid3">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div>
+/** #63: Cantons and municipalities of the tax data file (command `tax_locations`), loaded at startup so that the
+ *  overview and the tab «Parameter» name the municipality without opening the section «Steuern». */
+let taxLoc = null;
+let CHURCH;
+onLanguage(() => CHURCH = [["none", tr("church.none")], ["reformed", tr("church.reformed")], ["catholic", tr("church.catholic")], ["christCatholic", tr("church.christCatholic")]]);
+const isLocation = plan => plan?.taxes?.mode === "location";
+/** #63/AK10: Place of residence as text: «Zürich (ZH), Kirchensteuer keine»; an unknown number with the canton. */
+function locationText(loc = {}) {
+  const c = taxLoc?.cantons.find(x => x.id === loc.canton), m = c?.municipalities.find(x => x[0] === loc.municipality);
+  const church = CHURCH.find(x => x[0] === (loc.church ?? "none"))?.[1] ?? loc.church;
+  return tr("params.locationText", { name: m ? m[1] : loc.municipality ?? "–", canton: loc.canton || "–", church });
+}
+/** #63/AK9: multipliers of a municipality (income or wealth) with the church of the chosen denomination. */
+function multiplierText(what, m, church) {
+  const k = CHURCH.findIndex(c => c[0] === (church ?? "none"));
+  return tr("taxes.multipliers", { what, canton: fmtPct(m[0]), municipality: fmtPct(m[1]) }) + (k > 0 ? tr("taxes.multiplierChurch", { church: fmtPct(m[k + 1]) }) : "");
+}
+/** #63/AK1, AK9: Card «Wohnort»: canton, municipality (search in the list of the canton), church tax; multipliers,
+ *  tax year, source and the note that the tax is an estimate with the standard deductions. */
+function taxLocationCard() {
+  const loc = state.taxes.location ?? {}, canton = taxLoc?.cantons.find(c => c.id === loc.canton);
+  const muni = canton?.municipalities.find(m => m[0] === loc.municipality);
+  const earned = canton?.deductions.earned;
+  return `<div class="card" id="tax-location"><h3>${tr("taxes.location")}</h3><div class="grid3">
+    <label class="field"><span>${tr("taxes.canton")}</span><div data-path="taxes.location.canton"><select class="plain" id="tax-canton">
+      <option value="" ${canton ? "" : "selected"}>${tr("taxes.choose")}</option>
+      ${(taxLoc?.cantons ?? []).map(c => `<option value="${c.id}" ${c.id === loc.canton ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div></label>
+    <label class="field"><span>${tr("taxes.municipality")}</span><div class="inp" data-path="taxes.location.municipality"><input id="tax-muni" list="tax-munis" autocomplete="off" placeholder="${canton ? tr("taxes.municipalityPlaceholder") : tr("taxes.chooseCantonFirst")}" ${canton ? "" : "disabled"} value="${esc(muni ? muni[1] : "")}"></div>
+      <datalist id="tax-munis">${(canton?.municipalities ?? []).map(m => `<option value="${esc(m[1])}"></option>`).join("")}</datalist></label>
+    <label class="field"><span>${tr("taxes.church")}</span>${Sel("taxes.location.church", CHURCH, { rerender: 1 })}</label></div>
+    ${muni ? `<p class="hint" id="tax-multipliers">${multiplierText(tr("taxes.income"), muni[2], loc.church)}; ${multiplierText(tr("taxes.wealth"), muni[3], loc.church)}.</p>` : ""}
+    ${earned?.approx ? `<p class="hint warn" id="tax-earned-approx">⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}
+    <p class="hint" id="tax-source">${tr("taxes.locationSource", { year: taxLoc?.year ?? "–", source: esc(taxLoc?.source ?? "") })}</p></div>`;
+}
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el?.id === "tax-canton") {
+    state.taxes.location = { ...(state.taxes.location ?? {}), canton: el.value }; delete state.taxes.location.municipality;
+    markDirty(); renderSection();
+  } else if (el?.id === "tax-muni") {
+    const c = taxLoc?.cantons.find(x => x.id === state.taxes.location?.canton), name = el.value.trim();
+    const m = c?.municipalities.find(x => x[1] === name) ?? c?.municipalities.find(x => x[1].toLowerCase() === name.toLowerCase());
+    if (m) state.taxes.location.municipality = m[0]; else delete state.taxes.location.municipality;
+    markDirty(); renderSection();
+  }
+});
+R.taxes = () => {
+  const own = !isLocation(state);
+  const seg = `<div class="seg" style="margin-bottom:12px" id="tax-mode"><button class="${own ? "on" : ""}" data-action="tax-mode" data-v="own">${tr("taxes.modeOwn")}</button><button class="${own ? "" : "on"}" data-action="tax-mode" data-v="location">${tr("taxes.modeLocation")}</button></div>`;
+  const note = own ? tr("taxes.estimateNote") : tr("taxes.estimateNoteLocation");
+  // #63: in the mode «Wohnort» the tables for income and wealth are hidden (they stay in the file); lump sums and
+  // the property gains tax keep the own tables and the multiplier (#64, #65).
+  const tables = own ? TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income")) + TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth")) : "";
+  const coupleTables = state.taxes.couple ? (own ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) : "") + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : "";
+  return `<h2>${tr("section.taxes")}</h2><p class="lead">${own ? tr("taxes.intro") : tr("taxes.introLocation")}</p>
+  ${seg}
+  <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
+  ${own ? "" : taxLocationCard()}
+  <div class="card"><div class="grid3">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>
+    ${own ? "" : `<p class="hint">${tr("taxes.locationOwnTablesHint")}</p>`}
     <div style="margin-top:10px">${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
-    <p class="hint">${tr("taxes.indexedHint")}</p></div>
-  <div class="card">${TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income"))}${TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"))}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
+    <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>
+  <div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>
   ${gainCard()}
   ${state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
-    <p class="hint">${tr("taxes.marriedHint")}</p>
-    ${state.taxes.couple ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : ""}</div>` : ""}`;
+    <p class="hint">${own ? tr("taxes.marriedHint") : tr("taxes.marriedHintLocation")}</p>
+    ${coupleTables}</div>` : ""}`;
+};
 
 let PSTAT;
 onLanguage(() => PSTAT = [["owned", tr("property.owned")], ["planned", tr("property.planned")], ["rent", tr("property.rent")]]);
@@ -2004,6 +2062,11 @@ const ACTIONS = {
     state.pillar3a = state.pillar3a.filter(a => a.person !== b.id);
     markDirty(); renderSection();
   },
+  "tax-mode": d => {
+    if (d.v === "location") { state.taxes.mode = "location"; state.taxes.location ??= { canton: "", church: "none" }; }
+    else delete state.taxes.mode;
+    markDirty(); renderSection();
+  },
   "couple-tax": () => {
     if (state.taxes.couple) delete state.taxes.couple;
     else state.taxes.couple = { income: structuredClone(state.taxes.income), wealth: structuredClone(state.taxes.wealth), capital: structuredClone(state.taxes.capital) };
@@ -2518,7 +2581,7 @@ function yearTable(recs, start, refills = []) {
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th><th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
       ${tx ? taxHeads() : ""}</tr>${rows}</table></div>
-    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
+    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {
   const dep = s.depleted ? ym2i(s.depleted) : null;
@@ -3009,7 +3072,10 @@ function paramSections(plan, full = false) {
       ...(a.payouts || []).map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")})`])];
   })]);
   const t = plan.taxes || {}, g = t.propertyGain;
-  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)], [tr("taxes.lumpsumTax"), table(t.capital)],
+  // #63/AK10: mode and place of residence with the name of the municipality instead of the own tables
+  const incomeWealth = isLocation(plan) ? [[tr("params.taxMode"), tr("taxes.modeLocation")], [tr("taxes.location"), locationText(t.location)]]
+    : [[tr("params.taxMode"), tr("taxes.modeOwn")], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)]];
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("taxes.lumpsumTax"), table(t.capital)],
     [tr("gain.title"), g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
   if (full) {
@@ -3588,6 +3654,7 @@ Object.assign(ACTIONS, {
     // #184: without a path the app opens the example plan, with its names in the language of the user interface
     var startNotes = await adopt(startup?.path ? startup.plan : startup ? localExample(startup.plan) : await examplePlan());
     gainTemplates = await Engine.call("gain_templates");
+    taxLoc = await Engine.call("tax_locations");
   } catch (e) { document.body.innerHTML = `<p style="padding:24px">${tr("boot.engineUnreachable", { esc: esc(errText(e)) })}</p>`; return; }
   for (const src of ["historical", "rolling", "bootstrap", "parametric"]) if (initial.includes(src)) state.returns.source = src;
   if (initial.includes("buckets")) state.withdrawal.strategy = "three_buckets";

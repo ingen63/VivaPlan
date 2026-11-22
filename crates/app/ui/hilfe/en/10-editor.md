@@ -217,8 +217,11 @@ How many **months of uncovered spending** (spending minus income and pensions) a
 ## @s-taxes Taxes
 Keywords: income tax, wealth tax, lump-sum tax, tax multiplier, table
 
+Two modes are available: **Place of residence** calculates the income and wealth tax from canton, municipality and church tax with the tax data of the FTA ([Tax by place of residence](#f-tax-location)); **Own tables** calculates with rate tables and tax multiplier, as described below. Existing plans open with “Own tables”.
+
 Simple **rate tables** that you can derive from the tax calculator of your canton. Between the brackets, the app **interpolates linearly**, and the rate is multiplied by the [tax multiplier](#f-tax-multiplier).
 
+- [Tax by place of residence](#f-tax-location)
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
 - [How accurate is the tax?](#tax-accuracy)
@@ -227,6 +230,28 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 - The [property gains tax](#f-tax-gain) is due when a property is sold, see also [Real estate](#s-realestate).
 
 The example values are only placeholders. For your result, replace them with values of your place of residence.
+
+## @f-tax-location Tax by place of residence
+Keywords: place of residence, canton, municipality, church tax, denomination, FTA, tax data, standard deductions, professional expenses, federal tax, taxable income
+
+In the mode **Place of residence** you only choose the **canton**, the **municipality** (list of the canton with search: type the name) and the **church tax** (none, Reformed, Roman Catholic, Christ Catholic). Tariffs, deductions and tax multipliers come from the bundled tax data file of the FTA (tax calculator, base data); the card names the tax year, the source and the tax multipliers of the municipality. There is no network access.
+
+**Taxable income** = income of the year (earned income net, pension fund pension, AHV) minus the **standard deductions** (proposal of the canton), never negative. Canton and federal tax each have their own deductions:
+
+- **Social deductions** for single persons or married couples, where the canton has them.
+- **Insurance premiums and savings interest:** in years with earned income the amount “with contributions to the 2nd and 3rd pillar”, otherwise the amount “without”.
+- **Flat deduction for professional expenses** on the earned income of each working person: rate, minimum and maximum of the canton, at most the earned income, no deduction without earned income. Example Zurich: 3 %, at least 2 000, at most 4 000 francs, so 3 000 with 100 000 earned income. Basel-Landschaft, Basel-Stadt and Ticino only name a maximum in the FTA data; it applies as a fixed deduction (⚠).
+
+**Tax:**
+
+- Income tax = tariff of the canton on the taxable income × (tax multiplier canton + church) + tariff of the municipality × tax multiplier municipality + direct federal tax on the federal taxable income. The tariff of the municipality is that of the canton, except in Schwyz and Valais.
+- Wealth tax = tariff of the canton (social deductions on the wealth included) × (tax multiplier canton + municipality + church), without federal tax.
+- **Married couples** (two persons and “Married” ticked): tariffs and deductions for married couples. Unmarried couples are calculated with those for single persons on the joint income.
+- With [tariffs with inflation](#f-tax-indexed) the amounts of the tariffs and deductions grow with the simulated inflation.
+
+**Not in the mode Place of residence:** lump sums (pension fund, pillar 3a) and the [property gains tax](#f-tax-gain) are still calculated with the own tables and the [tax multiplier](#f-tax-multiplier). The own tables for income and wealth are hidden and stay in the file; back on “Own tables” they apply again.
+
+**Validation:** If the canton or the municipality is missing or the municipality is not in the canton, this is an error in the section Taxes, and “Start simulation” is blocked. The overview of the assumptions and the tab “Parameters” name the place of residence, for example “Zürich (ZH), church tax none”.
 
 ## @f-tax-multiplier Tax multiplier
 Keywords: canton, municipality, multiplier
@@ -290,6 +315,8 @@ Keywords: estimate, estimated tax, accuracy, rounding, rounded, reference cases,
 The tax in VivaPlan is an **estimate for planning**, not a tax assessment. The results therefore call it “estimated tax” and show tax amounts **rounded to 100 francs**. The calculation is exact, the rounding applies to the display only; the command line and its CSV export output the exact values.
 
 **Reference cases:** The calculation rules are tested with cases recalculated by hand: rate from the table interpolated linearly times the tax multiplier, lump-sum withdrawals of a year combined for the rate, steps and holding period of the property gains tax. The Canton of Zurich template of the property gains tax matches the official table. So VivaPlan calculates correctly with your tables; how close this is to your actual tax depends on the tables.
+
+**Mode “Place of residence”:** 25 made-up cases in Zurich, Bern, Lucerne, Aarau and St. Gallen (income 80 000 to 300 000, wealth 300 000 to 4 million, retired persons, without children and denomination) deviate less than 1 % from the FTA tax calculator 2026; at most ±5 % is required. Such comparison values are still missing for working persons. Individual deductions, children, income-dependent deductions, travel and meal costs are not included.
 
 **Approximations:**
 

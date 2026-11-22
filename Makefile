@@ -6,7 +6,8 @@ QUIET = --status-level fail --final-status-level slow --hide-progress-bar --carg
 # #170: keine deutschen Oberflächentexte ausserhalb der Texttabelle
 # #180: Prüfung der Übersetzungen gegen das Deutsche (Längenhinweise nur in make i18n-check)
 # #188: Release Notes in vier Sprachen gegen CHANGELOG.md, samt Tests des Skripts
-test-quiet:  ; cargo nextest run --workspace $(QUIET) && ./tools/check-english.sh --gate && python3 tools/check_ui_texts.py && python3 tools/check_i18n.py && python3 -m unittest -q tools/test_icons.py tools/test_changelog.py && python3 tools/changelog.py check
+# #63: Tests des Werkzeugs für die Steuerdatei (tools/steuerdaten)
+test-quiet:  ; cargo nextest run --workspace $(QUIET) && ./tools/check-english.sh --gate && python3 tools/check_ui_texts.py && python3 tools/check_i18n.py && python3 -m unittest -q tools/test_icons.py tools/test_changelog.py && python3 tools/changelog.py check && python3 -I -m unittest discover -q -s tools/steuerdaten
 # #87: reine Hilfsfunktionen der Oberfläche (crates/app/ui/util.js), ohne Browser
 # #147: runs.test.js braucht fake-indexeddb (e2e/node_modules)
 ui-unit:     ; [ -d e2e/node_modules/fake-indexeddb ] || (cd e2e && npm ci); node --test e2e/unit/*.test.js
