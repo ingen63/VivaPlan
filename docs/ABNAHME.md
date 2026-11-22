@@ -537,6 +537,19 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #61/AK4 | Der vollständige Haftungsausschluss ist jederzeit erreichbar: im Dialog «Über …» (Menü und Hilfe) und als Seite in der Hilfe, mit Stand-Datum. | ☑ | **gilt** | [ui-einstieg.spec.js:124](../e2e/ui-einstieg.spec.js#L124) | 15.11.2026 ok (Test grün) |
 | #61/AK5 | Oberflächentests für AK1 bis AK4 (erster Start, gespeicherte Bestätigung, neue Version fragt erneut, Fusszeile, Info-Bereich). Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Kommentar vom 14.11.2026: «AK-5. Nicht erfüllt.» Das Issue ist trotzdem geschlossen und abgehakt; nachprüfen. | kein Test | nicht geprüft: Kommentar im Issue: «AK-5 nicht erfüllt» |
 
+### #66 Steuertarife mit der Teuerung
+
+[Issue #66](https://github.com/ingen63/VivaPlan/issues/66) · offen (AK3 wartet auf #63) · Umsetzung: 5e01d8f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #66/AK1 | Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug wachsen jedes Jahr mit der kumulierten simulierten … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak1_…` (3 Tests) | 22.11.2026 ok (Einkommen, Vermögen, Kapitalbezug, Bedarf der 3-Topf-Strategie) |
+| #66/AK2 | Beispiel: Tabelle `[[0, 0], [200000, 0.10]]`, Teuerung 2 % pro Jahr. Im Jahr 10 liegt die Stufe bei 243 799 … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak2_…`, `issue_66_nonpositive_index_…` | 22.11.2026 ok (Satz 5 % statt 6.09 %) |
+| #66/AK3 | Die Anpassung gilt im Modus «Eigene Tabellen», auch für die Tabellen der Verheirateten, und im Modus «Wohnort» (#63 … | ☐ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak3_…` | 22.11.2026 teilweise: «Eigene Tabellen» und Verheiratete ok; Modus «Wohnort» nicht geprüft (#63 nicht umgesetzt) |
+| #66/AK4 | Eine Option «Tarife mit der Teuerung» ist für neue Planungen eingeschaltet; bestehende Planungen und der Import alter … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak4_…` (2 Tests); [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK4» (#66) | 22.11.2026 ok (Kästchen, «Neu», Import, Übersicht ja/nein) |
+| #66/AK5 | Die Grundstückgewinnsteuer bleibt unverändert (ihr Tarif bezieht sich auf den einzelnen Gewinn). | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak5_…` | 22.11.2026 ok |
+| #66/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
+
 ### #69 Anlagestrategie statt Renditewahl, Gewichtung von CH, EU und USA, Reiter «Renditen & Daten» entfällt
 
 [Issue #69](https://github.com/ingen63/VivaPlan/issues/69) · geschlossen · Umsetzung: `c2b4e38`, `93adc88` (altes Repository) · Tests zum Issue ohne Kriterium: [cli/tests/cli.rs:111](../crates/cli/tests/cli.rs#L111), [engine/tests/strategy.rs:1](../crates/engine/tests/strategy.rs#L1) (+2)
