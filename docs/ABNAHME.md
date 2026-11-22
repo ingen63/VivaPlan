@@ -829,3 +829,16 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #188/AK6 | Ein Skript in `tools/` erzeugt aus den vier Dateien den Text für den Release einer Version: Englisch zuerst und offen; … | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak6_…» (6 Tests) | 21.11.2026 ok (Entwurf v1.0.0-beta.2 trägt den Text) |
 | #188/AK7 | `pakete.yml` setzt diesen Text als Beschreibung des Release-Entwurfs. Der Paketbau bricht ab, wenn die Version des Tags in einer der … | ☐ | **gilt** (dazu der Titel, Kommentar im Issue) | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak7_…» | 21.11.2026 nicht geprüft: nur lokal nachgestellt; auf GitHub erst beim nächsten Tag |
 | #188/AK8 | `docs/ENTWICKLUNG.md` beschreibt den Ablauf pro Release: deutschen Eintrag schreiben, übersetzen, prüfen, taggen. | ☑ | **gilt** | [test_changelog.py](../tools/test_changelog.py) «issue_188_ak8_…» | 21.11.2026 ok |
+
+### #202 GitHub-Actions-Verbrauch senken
+
+[Issue #202](https://github.com/ingen63/VivaPlan/issues/202) · offen (`implemented`) · Umsetzung: 12c3a2f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #202/AK1 | `mutants-diff` startet nicht mehr nächtlich, sondern einmal pro Woche zu einer festen Zeit (`schedule`). Die übrigen nächtlichen … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 22.11.2026 teilweise: Konfiguration ok (`17 2 * * 0`, übrige Jobs schliessen ihn aus); wöchentlicher Start erst nach Push belegbar |
+| #202/AK2 | `mutants-diff` läuft in 4 Teilen (`--shard i/4`) statt in 16. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 22.11.2026 ok |
+| #202/AK3 | Der wöchentliche Lauf mutiert nur die geänderten Zeilen des Rechenkerns (`crates/engine`). Er vergleicht mit dem letzten … | ☐ | **gilt** | kein Test (Durchsicht; Abfrage `gh run list`/`gh run view` lokal gegen vorhandene Läufe) | 22.11.2026 teilweise: Pfadangabe und Basis-Abfrage lokal ok; echter wöchentlicher Lauf fehlt |
+| #202/AK4 | Ein Start von Hand mit `nightly` startet `mutants-diff` weiterhin. Bei einem Pull Request bleibt das Verhalten gleich. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 22.11.2026 ok |
+| #202/AK5 | «Installationspakete» baut nur das `.dmg` für macOS, als Start von Hand und durch ein Versions-Tag. Der Release-Entwurf … | ☐ | **gilt** | kein Test (Durchsicht `pakete.yml`, `actionlint`) | 22.11.2026 teilweise: Matrix nur `macos`; Lauf mit Release-Entwurf fehlt |
+| #202/AK6 | `docs/TESTS.md` und die Kommentare in den Workflows beschreiben den neuen Ablauf. Hilfe und Übersicht nennen die Pakete für … | ☑ | **gilt** | kein Test (Durchsicht, `grep`) | 22.11.2026 ok: TESTS, ENTWICKLUNG, BESCHREIBUNG, README; Hilfe nannte nie Pakete |
