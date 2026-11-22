@@ -58,16 +58,26 @@ fn outcome_text(o: &Outcome, obj: &Objective, property: PropertyMode, compare: b
     } else {
         "  – ruin limit NOT met"
     };
-    let params: Vec<String> = (if compare { &o.fixed } else { &o.params })
-        .iter()
-        .map(|(_, label, v, percent)| {
-            if *percent {
-                format!("{label} {:.1} %", v * 100.0)
-            } else {
-                format!("{label} {v:.1}")
-            }
-        })
-        .collect();
+    let list = |ps: &[(String, engine::message::Message, f64, bool)]| {
+        ps.iter()
+            .map(|(_, label, v, percent)| {
+                if *percent {
+                    format!("{label} {:.1} %", v * 100.0)
+                } else {
+                    format!("{label} {v:.1}")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    // #204: the optimization also lists the fixed parameters (plan values), as the app does.
+    let params = if compare {
+        list(&o.fixed)
+    } else if o.fixed.is_empty() {
+        list(&o.params)
+    } else {
+        format!("{}\n    fixed: {}", list(&o.params), list(&o.fixed))
+    };
     let target = if obj.goal == Goal::KeepProperty {
         format!(
             "    Goal (check): unplanned property sale in {} of the runs",
@@ -88,7 +98,7 @@ fn outcome_text(o: &Outcome, obj: &Objective, property: PropertyMode, compare: b
     format!(
         "\n{}{ok}\n    {}\n{lines}\n{}\n{target}",
         outcome_name(o, property),
-        params.join(", "),
+        params,
         end_line(&o.validated)
     )
 }

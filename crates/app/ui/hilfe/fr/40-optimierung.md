@@ -104,7 +104,7 @@ Choisissez les stratégies à comparer. Il est recommandé de **toutes** les cal
 **Important:**
 
 - La **part d’actions** est modifiée **dès la retraite**. Les lignes antérieures d’une valeur dépendant du temps sont conservées.
-- Les **limites du coût de la vie** (plancher, plafond) restent par défaut fixées à la valeur de votre planification. Pour Guardrails et le taux fixe, vous pouvez également les faire varier. Un plancher peut fortement restreindre l’optimisation, car il empêche les réductions.
+- Les **limites du coût de la vie** (plancher, plafond) restent par défaut fixées à la valeur de votre planification. Cela vaut pour toutes les stratégies qui fixent elles-mêmes le coût de la vie: taux fixe, Guardrails, VPW, Endowment et 3 compartiments + Guardrails. Vous pouvez également les y faire varier. Un plancher peut fortement restreindre l’optimisation, car il empêche les réductions.
 - La **stratégie à 3 compartiments** fixe la part d’actions par les compartiments; c’est pourquoi elle n’y est pas recherchée.
 - Un paramètre en bordure de la plage indique que la plage est limitante: l’optimum se trouve au bord, pas au-delà.
 
@@ -126,7 +126,7 @@ Sous «Paramètres des stratégies» figure, pour chaque stratégie, un tableau 
 - Une **fourchette étroite** rend la recherche plus rapide et le résultat plus proche de votre planification. Une fourchette **large** trouve plus volontiers des surprises, mais demande plus de temps de calcul.
 - Si **tous** les paramètres d’une stratégie sont fixes, seule cette planification est calculée. C’est utile pour comparer équitablement des stratégies aux valeurs fixes. C’est plus rapide avec [Comparer les stratégies (sans optimisation)](#o-compare), sans modifier les coches.
 - «de» ne doit pas être supérieur à «à». Il existe des limites extrêmes par paramètre (p. ex. part d’actions de 0 % à 100 %); au-delà, l’application signale une erreur.
-- **Le plancher et le plafond du coût de la vie** (Guardrails, taux fixe) sont d’abord fixes. Qui les fait varier obtient souvent des résultats qui n’ont l’air ‹bons› qu’avec le plancher, car les réductions sont empêchées.
+- **Le plancher et le plafond du coût de la vie** (taux fixe, Guardrails, VPW, Endowment, 3 compartiments + Guardrails) sont d’abord fixes. Qui les fait varier obtient souvent des résultats qui n’ont l’air ‹bons› qu’avec le plancher, car les réductions sont empêchées.
 - «Fourchettes standard» réinitialise la stratégie au préréglage.
 - Les réglages sont **enregistrés avec la planification**.
 

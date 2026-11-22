@@ -218,3 +218,74 @@ fn results_show_the_withdrawal_rate_of_the_first_retirement_year() {
     assert!((0.02..0.07).contains(&rate), "Entnahmerate {rate}");
     assert!(rep.reference.metrics.draw_rate > 0.0);
 }
+
+/// Outcome of `strategy` in a comparison of all strategies with the given limits of the plan.
+fn compare_outcomes(floor: f64, ceiling: f64) -> Vec<engine::optimize::Outcome> {
+    let mut p = plan();
+    p["withdrawal"]["floor"] = json!(floor);
+    p["withdrawal"]["ceiling"] = json!(ceiling);
+    let req = Request {
+        strategies: [
+            "fixed_rate",
+            "guardrails",
+            "vpw",
+            "endowment",
+            "three_buckets_guardrails",
+        ]
+        .map(String::from)
+        .to_vec(),
+        compare: true,
+        ..request("vpw", Ranges::new())
+    };
+    run_request(&p, Path::new("/"), Some(&lib()), &req).unwrap().outcomes
+}
+
+#[test]
+fn issue_204_ak1_vpw_and_endowment_list_both_limits_as_fixed_parameters() {
+    // #204/AK1: comparison and optimization list floor and ceiling with the plan value.
+    for o in compare_outcomes(0.8, 1.3) {
+        assert_eq!(value(&o, "floor"), 0.8, "{:?}", o.strategy);
+        assert_eq!(value(&o, "ceiling"), 1.3, "{:?}", o.strategy);
+    }
+    for s in ["vpw", "endowment"] {
+        let mut p = plan();
+        p["withdrawal"]["floor"] = json!(0.7);
+        p["withdrawal"]["ceiling"] = json!(1.4);
+        let rep = run_request(&p, Path::new("/"), Some(&lib()), &request(s, Ranges::new())).unwrap();
+        let o = &rep.outcomes[0];
+        let fixed: Vec<&str> = o.fixed.iter().map(|f| f.0.as_str()).collect();
+        assert_eq!(fixed, ["floor", "ceiling"], "{s}");
+        assert!(o.params.iter().all(|f| f.0 != "floor" && f.0 != "ceiling"), "{s}");
+        assert_eq!((value(o, "floor"), value(o, "ceiling")), (0.7, 1.4), "{s}");
+    }
+}
+
+#[test]
+fn issue_204_ak2_a_limit_of_zero_is_listed_alike_for_all_five_strategies() {
+    // #204/AK2: 0 (no limit) appears as fixed value 0 % in every strategy, as with fixed rate and guardrails.
+    let out = compare_outcomes(0.0, 0.0);
+    assert_eq!(out.len(), 5);
+    for o in &out {
+        for k in ["floor", "ceiling"] {
+            let f = o.fixed.iter().find(|f| f.0 == k).unwrap();
+            assert_eq!((f.2, f.3), (0.0, true), "{:?} {k}", o.strategy);
+        }
+    }
+}
+
+#[test]
+fn issue_204_ak3_adopting_vpw_or_endowment_keeps_the_limits_of_the_plan() {
+    // #204/AK3: the patch of a VPW or endowment row carries the unchanged limits of the plan.
+    for o in compare_outcomes(0.8, 1.3) {
+        assert_eq!(o.patch["withdrawal"]["floor"], json!(0.8), "{:?}", o.strategy);
+        assert_eq!(o.patch["withdrawal"]["ceiling"], json!(1.3), "{:?}", o.strategy);
+    }
+    for s in ["vpw", "endowment"] {
+        let mut p = plan();
+        p["withdrawal"]["floor"] = json!(0.6);
+        p["withdrawal"]["ceiling"] = json!(0.0);
+        let rep = run_request(&p, Path::new("/"), Some(&lib()), &request(s, Ranges::new())).unwrap();
+        let w = &rep.outcomes[0].patch["withdrawal"];
+        assert_eq!((&w["floor"], &w["ceiling"]), (&json!(0.6), &json!(0.0)), "{s}");
+    }
+}

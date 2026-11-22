@@ -104,7 +104,7 @@ Wählen Sie die Strategien, die verglichen werden sollen. Es empfiehlt sich, **a
 **Wichtig:**
 
 - Der **Aktienanteil** wird **ab der Pensionierung** verändert. Frühere Zeilen eines zeitabhängigen Werts bleiben bestehen.
-- Die **Grenzen der Lebenshaltung** (Untergrenze, Obergrenze) bleiben standardmässig fix auf dem Wert Ihrer Planung. Bei Guardrails und Fixer Rate können Sie sie ebenfalls variieren lassen. Eine Untergrenze kann die Optimierung stark einschränken, weil sie Kürzungen verhindert.
+- Die **Grenzen der Lebenshaltung** (Untergrenze, Obergrenze) bleiben standardmässig fix auf dem Wert Ihrer Planung. Das gilt bei allen Strategien, die die Lebenshaltung selbst festlegen: Fixe Rate, Guardrails, VPW, Endowment und 3-Topf + Guardrails. Sie können sie dort ebenfalls variieren lassen. Eine Untergrenze kann die Optimierung stark einschränken, weil sie Kürzungen verhindert.
 - Die **3-Topf-Strategie** legt den Aktienanteil durch die Töpfe fest, deshalb wird er dort nicht gesucht.
 - Ein Parameter am Rand des Bereichs ist ein Hinweis, dass der Bereich begrenzt: Das Optimum liegt am Rand, nicht dahinter.
 
@@ -126,7 +126,7 @@ Unter «Parameter der Strategien» steht für jede Strategie eine Tabelle mit al
 - Eine **enge Bandbreite** macht die Suche schneller und das Ergebnis näher an Ihrer Planung. Eine **weite** findet eher Überraschungen, braucht aber mehr Rechenzeit.
 - Sind **alle** Parameter einer Strategie fix, wird nur diese eine Planung gerechnet. Das ist nützlich, um Strategien mit festen Werten fair zu vergleichen. Schneller geht das mit [Strategien vergleichen (ohne Optimierung)](#o-compare), ohne die Haken zu ändern.
 - «von» darf nicht grösser sein als «bis». Es gibt äusserste Grenzen je Parameter (z. B. Aktienanteil 0 % bis 100 %); ausserhalb meldet die App einen Fehler.
-- **Untergrenze und Obergrenze der Lebenshaltung** (Guardrails, Fixe Rate) sind zunächst fix. Wer sie variiert, bekommt oft Ergebnisse, die nur mit der Untergrenze «gut» aussehen, weil Kürzungen verhindert werden.
+- **Untergrenze und Obergrenze der Lebenshaltung** (Fixe Rate, Guardrails, VPW, Endowment, 3-Topf + Guardrails) sind zunächst fix. Wer sie variiert, bekommt oft Ergebnisse, die nur mit der Untergrenze «gut» aussehen, weil Kürzungen verhindert werden.
 - «Standard-Bandbreiten» setzt die Strategie auf die Voreinstellung zurück.
 - Die Einstellungen werden **mit der Planung gespeichert**.
 

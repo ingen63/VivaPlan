@@ -104,7 +104,7 @@ Select the strategies to be compared. It is advisable to calculate **all** of th
 **Important:**
 
 - The **stock allocation** is changed **from retirement**. Earlier rows of a time-dependent value remain.
-- The **limits on living expenses** (floor, ceiling) stay fixed at the value of your plan by default. With guardrails and fixed rate, you can have them varied as well. A floor can restrict the optimization considerably because it prevents cuts.
+- The **limits on living expenses** (floor, ceiling) stay fixed at the value of your plan by default. This applies to all strategies that set the living expenses themselves: fixed rate, guardrails, VPW, endowment and 3 buckets + guardrails. You can have them varied there as well. A floor can restrict the optimization considerably because it prevents cuts.
 - The **3-bucket strategy** sets the stock allocation through the buckets, so it is not searched there.
 - A parameter at the edge of the range is a sign that the range is limiting: the optimum is at the edge, not beyond it.
 
@@ -126,7 +126,7 @@ Under “Strategy parameters”, there is a table for every strategy with all it
 - A **narrow range** makes the search faster and the result closer to your plan. A **wide** one is more likely to find surprises, but needs more calculation time.
 - If **all** parameters of a strategy are fixed, only this one plan is calculated. This is useful for comparing strategies with fixed values fairly. This is quicker with [Compare strategies (without optimization)](#o-compare), without changing the check marks.
 - “from” must not be greater than “to”. There are outer limits for every parameter (e.g. stock allocation 0 % to 100 %); outside them, the app reports an error.
-- **Floor and ceiling of living expenses** (guardrails, fixed rate) are fixed at first. If you vary them, you often get results that only look ‘good’ because of the floor, since cuts are prevented.
+- **Floor and ceiling of living expenses** (fixed rate, guardrails, VPW, endowment, 3 buckets + guardrails) are fixed at first. If you vary them, you often get results that only look ‘good’ because of the floor, since cuts are prevented.
 - “Default ranges” resets the strategy to the presets.
 - The settings are **saved with the plan**.
 

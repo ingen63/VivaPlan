@@ -523,3 +523,33 @@ fn issue_199_ak4_cli_single_run_reports_unaffordable_renewals() {
         "{t}"
     );
 }
+
+// #204/AK1: `optimize` and `optimize --compare` list floor and ceiling with the plan value for VPW and endowment.
+#[test]
+fn issue_204_ak1_cli_lists_the_limits_for_vpw_and_endowment() {
+    let d = tmp("limits");
+    let f = plan_file(&d, "parametric", |p| {
+        p["withdrawal"]["floor"] = serde_json::json!(0.8);
+        p["withdrawal"]["ceiling"] = serde_json::json!(1.25);
+    });
+    let limits = "Floor of living expenses 80.0 %, Ceiling of living expenses 125.0 %";
+    let o = run(&["optimize", "--compare", &f, "--strategy", "vpw,endowment"]);
+    let t = text(&o);
+    assert!(o.status.success(), "{t}");
+    assert_eq!(t.matches(limits).count(), 2, "{t}");
+    let o = run(&[
+        "optimize",
+        &f,
+        "--strategy",
+        "vpw,endowment",
+        "--paths",
+        "50",
+        "--check-paths",
+        "50",
+        "--samples",
+        "2",
+    ]);
+    let t = text(&o);
+    assert!(o.status.success(), "{t}");
+    assert_eq!(t.matches(&format!("fixed: {limits}")).count(), 2, "{t}");
+}

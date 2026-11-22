@@ -559,8 +559,9 @@ Nachfüllen ab Vorjahresrendite −30 % bis +10 %. Gespeichert wird das in der P
 ```
 
 Ohne Eintrag gelten die Standard-Bandbreiten (`engine::optimize::param_defs`); Untergrenze und Obergrenze der Lebenshaltung
-(Guardrails, Fixe Rate) sind ohne Eintrag fix. Der Befehl `opt_params` liefert der Oberfläche die Parameter mit Einheit,
-Standard-Bandbreite und aktuellem Wert; `optimize` auf der Kommandozeile liest die Bandbreiten aus der Planung.
+(Fixe Rate, Guardrails, VPW, Endowment, 3-Topf + Guardrails) sind ohne Eintrag fix (#204). Der Befehl `opt_params` liefert der Oberfläche die Parameter mit Einheit,
+Standard-Bandbreite und aktuellem Wert; `optimize` auf der Kommandozeile liest die Bandbreiten aus der Planung und führt
+die fixen Parameter mit dem Wert der Planung auf (Zeile `fixed:`, beim Vergleich als Parameter).
 
 ### Dauerschätzung
 

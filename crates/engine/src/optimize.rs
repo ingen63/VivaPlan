@@ -287,11 +287,15 @@ pub fn param_defs(s: OptStrategy) -> Vec<ParamDef> {
             ),
             p("realReturn", Code::opt_param_real_return, -0.01, 0.05, PCT, -0.1, 0.2),
             STOCK_SHARE,
+            floor,
+            ceiling,
         ],
         OptStrategy::Endowment => vec![
             p("eRate", Code::opt_param_e_rate, 0.02, 0.08, PCT, 0.0, 0.5),
             p("smoothing", Code::opt_param_smoothing, 0.05, 1.0, PCT, 0.0, 1.0),
             STOCK_SHARE,
+            floor,
+            ceiling,
         ],
         OptStrategy::Guardrails => vec![
             p("initialRate", Code::opt_param_initial_rate, 0.02, 0.08, PCT, 0.0, 0.5),

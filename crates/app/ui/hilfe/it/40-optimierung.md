@@ -104,7 +104,7 @@ Scelga le strategie da confrontare. Si consiglia di calcolarle **tutte**, per ve
 **Importante:**
 
 - La **quota azionaria** viene modificata **dal pensionamento**. Le righe precedenti di un valore dipendente dal tempo restano.
-- I **limiti del costo della vita** (limite inferiore, limite superiore) restano per impostazione standard fissi sul valore della Sua pianificazione. Con Guardrails e tasso fisso può farli variare. Un limite inferiore può limitare molto l’ottimizzazione, perché impedisce le riduzioni.
+- I **limiti del costo della vita** (limite inferiore, limite superiore) restano per impostazione standard fissi sul valore della Sua pianificazione. Ciò vale per tutte le strategie che stabiliscono esse stesse il costo della vita: tasso fisso, Guardrails, VPW, Endowment e 3 comparti + Guardrails. Lì può anche farli variare. Un limite inferiore può limitare molto l’ottimizzazione, perché impedisce le riduzioni.
 - La **strategia a 3 comparti** stabilisce la quota azionaria tramite i comparti, perciò lì non viene cercata.
 - Un parametro al bordo del campo indica che il campo è limitante: l’ottimo è al bordo, non oltre.
 
@@ -126,7 +126,7 @@ Sotto «Parametri delle strategie» figura per ogni strategia una tabella con tu
 - Una **fascia stretta** rende la ricerca più veloce e il risultato più vicino alla Sua pianificazione. Una **ampia** trova più facilmente sorprese, ma richiede più tempo di calcolo.
 - Se **tutti** i parametri di una strategia sono fissi, viene calcolata solo quest’unica pianificazione. È utile per confrontare equamente strategie con valori fissi. È più rapido con [Confrontare le strategie (senza ottimizzazione)](#o-compare), senza modificare le spunte.
 - «da» non può essere maggiore di «a». Esistono limiti estremi per parametro (ad es. quota azionaria da 0 % a 100 %); al di fuori l’app segnala un errore.
-- **Limite inferiore e superiore del costo della vita** (Guardrails, tasso fisso) sono inizialmente fissi. Chi li fa variare ottiene spesso risultati che sembrano ‹buoni› solo grazie al limite inferiore, perché le riduzioni vengono impedite.
+- **Limite inferiore e superiore del costo della vita** (tasso fisso, Guardrails, VPW, Endowment, 3 comparti + Guardrails) sono inizialmente fissi. Chi li fa variare ottiene spesso risultati che sembrano ‹buoni› solo grazie al limite inferiore, perché le riduzioni vengono impedite.
 - «Fasce standard» riporta la strategia all’impostazione predefinita.
 - Le impostazioni vengono **salvate con la pianificazione**.
 

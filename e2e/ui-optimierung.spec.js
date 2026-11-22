@@ -880,3 +880,59 @@ test.describe("Save and reopen the result of the optimization (#201)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Limits of living expenses with VPW and endowment in comparison and optimization (#204)", () => {
+  const FIVE = ["fixed_rate", "guardrails", "vpw", "endowment", "three_buckets_guardrails"];
+  /** Runs the comparison (or optimization) of `strategies` with the given limits and returns the report. */
+  async function run(page, strategies, floor, ceiling, action = "opt-compare") {
+    await page.evaluate(([f, c]) => { state.returns.bootstrap.paths = 300; state.withdrawal.floor = f; state.withdrawal.ceiling = c; }, [floor, ceiling]);
+    await setOpt(page, { strategies, paths: 100, checkPaths: 300, samples: 2 });
+    await page.evaluate(() => { lastOpt = null; });
+    await page.locator(`button[data-action="${action}"]`).click();
+    await page.waitForFunction(() => lastOpt && !optBusy, null, { timeout: 120_000 });
+    return page.evaluate(() => lastOpt.report);
+  }
+  /** Parameter text of the result row of `strategy`. */
+  const row = (page, r, strategy) => {
+    const i = r.outcomes.findIndex(o => o.patch.withdrawal.strategy === strategy.replace("_guardrails", "") && (strategy === "three_buckets_guardrails") === (o.patch.withdrawal.strategy === "three_buckets"));
+    expect(i, strategy).toBeGreaterThanOrEqual(0);
+    return page.locator(`#main .optsubin:has(button[data-i="${i}"])`);
+  };
+
+  test("AK1: comparison and optimization list floor and ceiling with the plan value for VPW and endowment", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    // the limits appear among the parameters of both strategies, fixed by default
+    for (const s of ["vpw", "endowment"]) for (const k of ["floor", "ceiling"]) await expect(page.locator(`#optR-${s}-${k}-var`)).not.toBeChecked();
+    let r = await run(page, ["vpw", "endowment"], 0.8, 1.25);
+    for (const s of ["vpw", "endowment"]) {
+      await expect(row(page, r, s)).toContainText("Untergrenze der Lebenshaltung 80 %");
+      await expect(row(page, r, s)).toContainText("Obergrenze der Lebenshaltung 125 %");
+    }
+    r = await run(page, ["vpw", "endowment"], 0.8, 1.25, "opt-run");
+    for (const s of ["vpw", "endowment"]) await expect(row(page, r, s).locator("small.computed")).toContainText("fix: Untergrenze der Lebenshaltung 80 %, Obergrenze der Lebenshaltung 125 %");
+    await noErrors(page, errors);
+  });
+
+  test("AK2: a limit of 0 (no limit) is shown alike for all five strategies", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    const r = await run(page, FIVE, 0, 0);
+    expect(r.outcomes).toHaveLength(5);
+    for (const s of FIVE) {
+      await expect(row(page, r, s)).toContainText("Untergrenze der Lebenshaltung 0 %");
+      await expect(row(page, r, s)).toContainText("Obergrenze der Lebenshaltung 0 %");
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK3: adopting a VPW or endowment row leaves the limits of the plan unchanged", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    for (const s of ["vpw", "endowment"]) {
+      const r = await run(page, [s], 0.8, 1.25);
+      await page.evaluate(() => { state.withdrawal.strategy = "standard"; });
+      await row(page, r, s).locator('button[data-action="opt-apply"]').click();
+      expect(await page.evaluate(() => [state.withdrawal.strategy, state.withdrawal.floor, state.withdrawal.ceiling])).toEqual([s, 0.8, 1.25]);
+    }
+    await noErrors(page, errors);
+  });
+});
