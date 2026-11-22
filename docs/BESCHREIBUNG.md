@@ -162,6 +162,29 @@ nicht mehr, gilt es als aufgebraucht. Jeder Lauf zählt die Erneuerungen, die ni
 voll erneuert wurden; die Ergebnisse vieler Läufe zeigen neben den Notverkäufen, in wie vielen Läufen das vorkam
 (Kennzahl «Nicht tragbare Erneuerungen»), die Kommandozeile im Bericht und im JSON.
 
+## Wie genau ist die Steuer?
+
+Die Steuer ist eine **Schätzung für die Planung**, kein Steuerbescheid (#143). Die Oberfläche nennt sie «geschätzte
+Steuer» (Kennzahl, Diagrammlegenden, Jahreswerte, Vergleich, Übersicht der Annahmen) und zeigt Steuerbeträge auf
+**100 Franken gerundet**; gerechnet wird genau. Die Kommandozeile und ihr CSV-Export geben die genauen Werte aus und
+nennen sie ebenfalls geschätzt (Spalte `taxes_estimated`). Der Abschnitt Steuern zeigt einen festen Hinweis, unter den
+Jahreswerten steht «Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet. Keine Steuerberatung.», und
+bei Kapitalbezugs- und Grundstückgewinnsteuer der Rat, vor dem Entscheid mit dem Steuerrechner des Kantons oder einer
+Fachperson zu prüfen. Eine Bandbreite (± %) zeigt die App bewusst nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl
+würde die Scheingenauigkeit verstärken.
+
+- **Referenzfälle:** Von Hand nachgerechnete Fälle prüfen die Regeln (Satz linear interpoliert mal Steuerfuss,
+  Kapitalbezüge eines Jahres zusammen, Stufen und Besitzdauer der Grundstückgewinnsteuer); die Vorlage Zürich der
+  Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein.
+- **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
+  Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
+- **Was fehlt:** Abzüge im Einzelnen (nur so weit in den Sätzen enthalten), Eigenmietwert, Schuldzins- und
+  Unterhaltsabzug, Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
+  Investitionen und Kosten beim Grundstückgewinn, künftige Gesetzesänderungen.
+
+Steuerjahr und Quelle der Daten, die Herkunft der Abzüge und die Warnung bei alten Daten kommen mit den
+Tarifen nach Kanton und Gemeinde (#63) dazu.
+
 ## Datenbibliothek
 
 Die Renditen stammen aus den Indizes der Anlagestrategie. Dahinter stehen diese Daten:
@@ -263,8 +286,8 @@ Testfall belegt. Dazu kommen:
 - ein Vergleich mit einer Referenztabelle, die auf den Rappen übereinstimmen muss,
 - automatische Tests aller Ansichten und der Bedienung der Oberfläche.
 
-**Haftungsausschluss:** VivaPlan ist kostenlos und liefert Modellrechnungen ohne Gewähr, keine Finanz- oder
-Steuerberatung. Beim ersten Start bestätigt man eine Kurzfassung (bei einem neuen Text erneut), die Ergebnisseiten und
+**Haftungsausschluss:** VivaPlan ist kostenlos und liefert Modellrechnungen ohne Gewähr, keine Steuer- oder
+Anlageberatung (#143); die Steuern sind Schätzungen. Beim ersten Start bestätigt man eine Kurzfassung (bei einem neuen Text erneut), die Ergebnisseiten und
 das Ergebnis der Optimierung tragen eine Fusszeile, der vollständige Text steht in der Hilfe und ist über
 «Über VivaPlan» erreichbar. Die Kommandozeile nennt die Kurzfassung in ihrer Hilfe.
 

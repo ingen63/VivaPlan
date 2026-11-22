@@ -621,7 +621,7 @@ test.describe("Comparison: differences in the plan with labels (#123)", () => {
     // Section as a group row in front, no internal field names and no JSON
     const groups = await t.locator("tr.grp th").allTextContents();
     expect(groups.length).toBeGreaterThan(0);
-    const order = ["Haushalt", "Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Säule 3a", "Steuerannahmen", "Variationen"];
+    const order = ["Haushalt", "Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Säule 3a", "Annahmen zur geschätzten Steuer", "Variationen"];
     expect(groups.map(g => order.indexOf(g))).toEqual([...groups.map(g => order.indexOf(g))].sort((a, b) => a - b));
     expect(groups.every(g => order.includes(g))).toBe(true);
     const text = await t.innerText();

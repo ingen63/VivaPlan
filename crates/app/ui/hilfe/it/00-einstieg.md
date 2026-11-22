@@ -74,7 +74,7 @@ Parole chiave: ipotesi, non considerato, consulenza, responsabilità, decesso
 VivaPlan è uno **strumento di calcolo**, non una consulenza in investimenti, fiscale o previdenziale. Un risultato vale solo per le ipotesi inserite. Particolarmente importante:
 
 - **Il futuro non è il passato.** I rendimenti storici non sono una previsione. Vedi [Insidie dei rendimenti](#ret-pitfalls).
-- **Le imposte sono semplificate:** tabelle delle aliquote, interpolate linearmente, per il moltiplicatore d’imposta. Mancano deduzioni, progressione in dettaglio e particolarità cantonali.
+- **Le imposte sono semplificate:** tabelle delle aliquote, interpolate linearmente, per il moltiplicatore d’imposta. Mancano deduzioni, progressione in dettaglio e particolarità cantonali. I risultati mostrano quindi un’**imposta stimata**, vedi [Quanto è precisa l’imposta?](#tax-accuracy).
 - **Non vengono calcolati:** decessi e rendite per superstiti, eredità se non come importo unico, costi di cura (a meno che li registri come spese), modifiche di legge, costi d’investimento e commissioni, interessi sul cash.
 - Gli **immobili** sono semplificati: valore venale con il rincaro, ipoteche in tranche, vendita forzata secondo una regola semplice.
 - Le **strategie ottimizzate** valgono solo per i dati con cui sono state calcolate, vedi [Insidie dell’ottimizzazione](#o-pitfalls).
@@ -84,13 +84,13 @@ Verifichi sempre le decisioni importanti con specialisti. L’[esclusione della 
 ## @disclaimer Esclusione della responsabilità
 Parole chiave: responsabilità, garanzia, disclaimer, esclusione di responsabilità, consulenza, diritto, avvertenza
 
-Al primo avvio conferma una versione breve di questa avvertenza. Se il testo cambia, l’app chiede di nuovo. Tutte le pagine dei risultati recano in basso la nota «Calcolo basato su un modello, senza garanzia. Nessuna consulenza finanziaria o fiscale.».
+Al primo avvio conferma una versione breve di questa avvertenza. Se il testo cambia, l’app chiede di nuovo. Tutte le pagine dei risultati recano in basso la nota «Calcolo basato su un modello, senza garanzia. Nessuna consulenza fiscale o in investimenti.».
 
 **1. Offerta gratuita.** VivaPlan è messo a disposizione gratuitamente dalla Svizzera. Non sussiste alcun diritto a disponibilità, aggiornamenti, correzione di errori o assistenza.
 
-**2. Nessuna consulenza.** L’app è uno strumento di calcolo per la pianificazione personale. Non offre consulenza in investimenti, finanziaria, fiscale, previdenziale o giuridica e non dà raccomandazioni sull’acquisto o la vendita di strumenti finanziari o immobili.
+**2. Nessuna consulenza.** L’app è uno strumento di calcolo per la pianificazione personale. **Non è una consulenza fiscale o in investimenti.** Non offre consulenza in investimenti, finanziaria, fiscale, previdenziale o giuridica e non dà raccomandazioni sull’acquisto o la vendita di strumenti finanziari o immobili.
 
-**3. Calcoli modello senza garanzia.** Tutti i risultati si basano sui Suoi dati e su ipotesi semplificate su rendimento, costi, rincaro, imposte e speranza di vita. Gli sviluppi effettivi possono differire notevolmente. I calcoli fiscali sono approssimazioni e non riproducono tutte le regole, deduzioni e modifiche di legge cantonali e comunali. Non si assume alcuna garanzia per l’esattezza, la completezza e l’attualità dei calcoli.
+**3. Calcoli modello senza garanzia.** Tutti i risultati si basano sui Suoi dati e su ipotesi semplificate su rendimento, costi, rincaro, imposte e speranza di vita. Gli sviluppi effettivi possono differire notevolmente. I calcoli fiscali sono stime e non riproducono tutte le regole, deduzioni e modifiche di legge cantonali e comunali. Non si assume alcuna garanzia per l’esattezza, la completezza e l’attualità dei calcoli.
 
 **4. Responsabilità propria.** Le decisioni che prende sulla base dell’app sono di Sua esclusiva responsabilità. Prima di decisioni finanziarie importanti, ad esempio sul prelievo del capitale, sulla vendita della casa o sulla strategia di prelievo, dovrebbe consultare uno specialista qualificato.
 
@@ -100,4 +100,4 @@ Al primo avvio conferma una versione breve di questa avvertenza. Se il testo cam
 
 **7. Diritto applicabile.** Si applica il diritto svizzero.
 
-Stato: 13 novembre 2026
+Stato: 22 novembre 2026

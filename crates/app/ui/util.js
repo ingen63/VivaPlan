@@ -38,6 +38,12 @@ const ambiguousThousands = s => /\d\.\d{3}(?!\d)/.test(String(s).replace(/[’'\
 function parseAmount(s) { return ambiguousThousands(s) ? null : parseNum(s); }
 const ambiguousText = () => tr("input.ambiguous");
 const fmtInt = v => Math.round(v).toLocaleString("de-CH");
+/** #143/AK2: Taxes are estimates; the user interface shows them rounded to 100 francs (the engine computes exactly). */
+const roundTax = v => Math.round(v / 100) * 100 || 0;
+const fmtTax = v => fmtInt(roundTax(v));
+/** #143/AK2: Engine message with the parameter `tax` rounded to 100 francs for display (events of payouts and sales). */
+const taxRounded = m => m && typeof m === "object" && m.params && typeof m.params.tax === "number"
+  ? { ...m, params: { ...m.params, tax: roundTax(m.params.tax) } } : m;
 function fmtMio(v) { return Math.abs(v) >= 1e6 ? tr("fmt.mio", { v: (v / 1e6).toLocaleString("de-CH", { maximumFractionDigits: 2 }) }) : `${fmtInt(v / 1000)}k`; }
 /** Share as a percentage without sign (0.05 → «5»). */
 const fmtPct = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 3 })}`;
@@ -198,7 +204,7 @@ function localizeExample(plan, lookup) {
 if (typeof module !== "undefined") {
   module.exports = {
     localizeExample,
-    esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, fmtMio, fmtPct, optNum, optRound,
+    esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, roundTax, fmtTax, taxRounded, fmtMio, fmtPct, optNum, optRound,
     rateAt, round2, taxAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
     KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText, engineText, groupInt, fixedEven,
   };

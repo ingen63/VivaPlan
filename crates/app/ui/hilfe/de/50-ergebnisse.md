@@ -7,7 +7,7 @@ Nach «Simulation starten» zeigt die App einen **Fortschrittsbalken** mit verga
 
 **Ergebnis in Worten:** Zuoberst fasst die Übersicht das Ergebnis in zwei, drei Sätzen zusammen. Bei mehreren Läufen: «In 87 % (mittel) der Läufe reicht das Vermögen bis 12.2055 (Alter 95,0).» Die Einordnung in Klammern folgt den Farben der Erfolgsquote: **hoch** ab 95 %, **mittel** von 80 % bis unter 95 %, **tief** unter 80 %; massgebend ist der angezeigte, auf 0,1 % gerundete Wert. Geht in einem Lauf das Geld aus, nennt ein zweiter Satz das Alter im ungünstigsten Lauf (wie «Früheste Erschöpfung»). Bei einem Lauf steht, ob das Vermögen bis zum Ende reicht und wie gross es dann ist (nominal oder in heutiger Kaufkraft, je nach Umschalter), oder wann es aufgebraucht ist. Darunter folgt ein Vorschlag für den nächsten Schritt: unter 95 % bzw. bei aufgebrauchtem Vermögen die [Optimierung](#s-optimize), sonst die [Szenarien](#s-scenarios). Der Text ist eine Lesehilfe, keine Bewertung Ihrer Lage.
 
-**Bei einem einzigen Lauf** (fixe Renditen, historischer Verlauf) zeigt die Übersicht fünf Kennzahlen: Vermögen bei Pensionierung, Vermögen am Ende, bis wann das Geld reicht, die PK-Rente und die gesamten Steuern. Darunter folgen der Vermögensverlauf und die Liste der Ereignisse.
+**Bei einem einzigen Lauf** (fixe Renditen, historischer Verlauf) zeigt die Übersicht fünf Kennzahlen: Vermögen bei Pensionierung, Vermögen am Ende, bis wann das Geld reicht, die PK-Rente und die geschätzten Steuern total ([Wie genau ist die Steuer?](#tax-accuracy)). Darunter folgen der Vermögensverlauf und die Liste der Ereignisse.
 
 **Bei mehreren Läufen** (Monte Carlo, alle Startzeitpunkte) zeigt die Übersicht:
 
@@ -124,7 +124,7 @@ Stichworte: Einnahmen, Ausgaben, Steuern, Wohnkosten, Lebenshaltung, Säulen
 Pro **Kalenderjahr** zwei Säulen:
 
 - **links die Einnahmen:** Erwerbseinkommen, PK-Rente, AHV
-- **rechts die Ausgaben:** Lebenshaltung, Wohnkosten, Steuern
+- **rechts die Ausgaben:** Lebenshaltung, Wohnkosten, geschätzte Steuern
 
 Wo die rechte Säule höher ist als die linke, wird **das Vermögen angezapft**. Das erste und das letzte Jahr sind unvollständig, weil die Simulation mitten im Jahr beginnt oder endet.
 
@@ -219,7 +219,7 @@ Eine Tabelle mit **einer Zeile pro Jahr** für den gewählten Lauf. Beträge in 
 | Entnahmerate | **jährliche Entnahme / Gesamtvermögen am Jahresanfang** in Prozent (Spalte «Total» des Vorjahres) |
 | Abweichung vom Plan | Monatsdurchschnitt: Einkommen total minus Ausgaben total. Bei **0** verläuft alles wie geplant. Bei Strategien, die die Ausgaben an das Vermögen koppeln (Guardrails, Fixe Rate, VPW, Endowment), ist ein **negativer** Wert die Kürzung gegenüber Ihrem Plan, ein positiver die Erhöhung |
 | Inflation pro Jahr | Veränderung des Preisindex im Kalenderjahr, im ersten Jahr seit Simulationsstart |
-| Steuern bezahlt im Jahr | **Jahressummen der bezahlten Steuern** nach Art: Steuer Einkommen, Steuer Vermögen, Steuer Kapital Bezug, Steuer Grundstück, dazu das Total. Die Spalten sind **standardmässig eingeklappt**; die Schaltfläche **«Steuern anzeigen»** über der Tabelle blendet sie ein und aus, die Wahl bleibt erhalten |
+| Steuern bezahlt im Jahr | **Jahressummen der bezahlten Steuern** nach Art: Steuer Einkommen, Steuer Vermögen, Steuer Kapital Bezug, Steuer Grundstück, dazu das Total. Die Spalten sind **standardmässig eingeklappt**; die Schaltfläche **«Steuern anzeigen»** über der Tabelle blendet sie ein und aus, die Wahl bleibt erhalten. Die Spaltenköpfe heissen **«Steuer geschätzt …»**, ihr Tooltip nennt die Rundung auf 100 Franken |
 
 Die Spalten sind nicht in Gruppen mit Überschrift geordnet. Dass die Vermögen **Stände am Jahresende** und die Geldflüsse **Monatsdurchschnitte** sind, steht im Hinweis (Tooltip) der Spaltenköpfe und im Text unter der Tabelle. Das Einkommen allein und die geplanten Ausgaben ohne Wohnkosten zeigt die Tabelle nicht; sie stecken in «Einkommen total» und «Ausgaben total».
 
@@ -227,6 +227,7 @@ Die Spalten sind nicht in Gruppen mit Überschrift geordnet. Dass die Vermögen 
 - **3-Topf-Strategie:** Jedes Jahr mit mindestens einer Auffüllung hat vorn einen Pfeil (▸). Er klappt die **Herleitung der Topfgrössen und der Auffüllungen** dieses Jahres auf (Auslöser, Ausgabenbasis, regelmässige Einnahmen, Netto-Bedarf, Ziele, Renditekriterium, Umbuchungen, Topfstände vorher und nachher). Bei mehreren Läufen gilt sie für den gewählten Einzellauf.
 - Die Geldflüsse sind **Monatsdurchschnitte** des Kalenderjahrs, weil einzelne Monate schwanken (Hypothekarzinsen werden zum Beispiel quartalsweise bezahlt).
 - Einkommens- und Vermögenssteuer werden im Dezember veranlagt und im **Mai des Folgejahres** bezahlt. Die Tabelle zeigt sie in der Zeile des **Steuerjahres**, für das sie gelten: Die Steuer des Steuerjahres 2028 steht in der Zeile 2028, auch wenn das Geld erst im Mai 2029 abfliesst. Das Vermögen und der Cash-Bestand sinken deshalb erst im Folgejahr. Endet die Planung vor Dezember, fehlt die Steuer des letzten, unvollständigen Jahres in den Spalten. Kapitalbezugssteuer (Pensionskasse, Säule 3a) und Grundstückgewinnsteuer stehen im Jahr des Bezugs bzw. Verkaufs.
+- Die Steuern sind **geschätzt** und auf **100 Franken gerundet** (jede Zelle für sich, das Total kann deshalb um wenige hundert Franken von der Summe der gerundeten Spalten abweichen). Unter der Tabelle steht «Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet. Keine Steuerberatung.» Kapitalbezugs- und Grundstückgewinnsteuer vor dem Entscheid mit dem Steuerrechner des Kantons oder einer Fachperson prüfen, siehe [Wie genau ist die Steuer?](#tax-accuracy).
 - Das erste und das letzte Jahr sind meist unvollständig; sie tragen einen Stern (*), der Mauszeiger nennt die Zahl der Monate.
 
 ## @r-list Liste der Ergebnisse

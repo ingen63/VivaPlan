@@ -23,7 +23,7 @@ async function openApp(page, { settings = {}, firstStart = null, startup = null 
       core: {
         invoke: async (cmd, args = {}) => {
           window.__calls.push([cmd, JSON.parse(JSON.stringify(args))]);
-          if (cmd === "settings_get") return { disclaimerAccepted: 1, ...window.__settings };
+          if (cmd === "settings_get") return { disclaimerAccepted: 2, ...window.__settings };
           if (cmd === "settings_set") { window.__settings[args.key] = args.value; return null; }
           if (cmd === "first_start_language") return firstStart;
           if (cmd === "startup_plan") return startup ?? { path: "/x/Familie.vplan", plan: await (await fetch("/api/example_plan", { method: "POST", body: "{}" })).json(), notice: null, first: false };
@@ -240,7 +240,7 @@ test.describe("Messages of the engine (#171)", () => {
       const de = await (await fetch("i18n/de.json")).json();
       return {
         issues: issues.map(i => [i.code, msgText(i), i.message]),
-        events: run.single.events.map(e => [msgText(e), engineText(e, k => de[k]), e.text]),
+        events: run.single.events.map(e => [msgText(e), engineText(taxRounded(e), k => de[k]), e.text]), // #143/AK2: tax rounded to 100
         label: msgText(run.single.label),
         unknown: msgText({ code: "no_such_code", params: {}, text: "Text des Rechenkerns" }),
       };

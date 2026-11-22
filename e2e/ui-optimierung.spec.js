@@ -152,7 +152,7 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
   test.describe("#4: start with the plan opened last, question on quitting (desktop app simulated)", () => {
     /** Simulates the desktop app: commands of the Tauri layer are emulated, all others go to the engine. */
     async function openApp(page, startup, settings = {}) {
-      settings = { disclaimerAccepted: 1, ...settings }; // #61: The disclaimer counts as confirmed unless a test says otherwise
+      settings = { disclaimerAccepted: 2, ...settings }; // #61: The disclaimer counts as confirmed unless a test says otherwise
       await page.addInitScript(([startup, settings]) => {
         window.__calls = [];
         window.__TAURI__ = {
@@ -199,14 +199,14 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
       await expect(d).not.toHaveAttribute("open", "");
       await expect(page.locator("html")).toHaveAttribute("data-ready", "1");
       const set = await page.evaluate(() => window.__calls.filter(([c]) => c === "settings_set").map(([, a]) => a));
-      expect(set).toContainEqual({ key: "disclaimerAccepted", value: 1 });
+      expect(set).toContainEqual({ key: "disclaimerAccepted", value: 2 });
       // not in the plan
       expect(JSON.stringify(await page.evaluate(() => state))).not.toContain("disclaimer");
     });
 
     test("#61/AK2: a confirmed version does not ask any more, an older version asks again", async ({ page }) => {
       const p = await plan(page);
-      await openApp(page, { path: "/x/A.vplan", plan: p, notice: null }, { disclaimerAccepted: 1 });
+      await openApp(page, { path: "/x/A.vplan", plan: p, notice: null }, { disclaimerAccepted: 2 });
       await expect(page.locator("#disclaimer")).not.toHaveAttribute("open", "");
       await openApp(page, { path: "/x/A.vplan", plan: p, notice: null }, { disclaimerAccepted: 0 });
       await expect(page.locator("#disclaimer")).toHaveAttribute("open", "");

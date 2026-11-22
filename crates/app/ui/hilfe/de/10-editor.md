@@ -221,6 +221,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 
 - [Steuerfuss und Tabellen](#f-tax-tables)
 - [Tarife mit der Teuerung](#f-tax-indexed)
+- [Wie genau ist die Steuer?](#tax-accuracy)
 - Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto. Bezahlt wird beides im Mai des Folgejahres.
 - Eine bei Planende noch offene Steuer wird im letzten Monat abgezogen.
 - Die [Grundstückgewinnsteuer](#f-tax-gain) fällt beim Verkauf einer Immobilie an, siehe auch [Immobilien](#s-realestate).
@@ -282,6 +283,32 @@ Jede Tabelle hat Stufen aus **Betrag** und **Satz**. Dazwischen interpoliert die
 - **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet: bei Verheirateten für den Haushalt, bei unverheirateten Paaren je Person (jede Person zahlt die Steuer auf ihre eigenen Bezüge). Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
 - **Verheiratete:** Bei zwei Personen und angekreuztem «Verheiratet» können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
 - Gehen Sie von der **effektiven** Steuerbelastung aus, nicht vom Grenzsteuersatz. Der Steuerrechner Ihres Kantons liefert beides.
+
+## @tax-accuracy Wie genau ist die Steuer?
+Stichworte: Schätzung, geschätzte Steuer, Genauigkeit, Rundung, gerundet, Referenzfälle, Näherung, Abzüge, Steuerberatung, Bandbreite
+
+Die Steuer in VivaPlan ist eine **Schätzung für die Planung**, kein Steuerbescheid. Die Ergebnisse nennen sie deshalb «geschätzte Steuer» und zeigen Steuerbeträge **auf 100 Franken gerundet**. Gerechnet wird genau, die Rundung gilt nur für die Anzeige; die Kommandozeile und ihr CSV-Export geben die genauen Werte aus.
+
+**Referenzfälle:** Die Rechenregeln sind mit von Hand nachgerechneten Fällen getestet: Satz aus der Tabelle linear interpoliert mal Steuerfuss, Kapitalbezüge eines Jahres für den Satz zusammengerechnet, Stufen und Besitzdauer der Grundstückgewinnsteuer. Die Vorlage Kanton Zürich der Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. VivaPlan rechnet also mit Ihren Tabellen richtig; wie nahe das an Ihrer tatsächlichen Steuer liegt, hängt von den Tabellen ab.
+
+**Näherungen:**
+
+- Ihre Tabellen geben einen Durchschnittssatz je Betrag, dazwischen interpoliert VivaPlan linear. Der echte Tarif verläuft anders.
+- Ein einziger Steuerfuss für Kanton und Gemeinde gilt für alle Tabellen.
+- Mit [Tarifen mit der Teuerung](#f-tax-indexed) wachsen die Stufen mit der simulierten Teuerung; der Ausgleich der Kantone kann davon abweichen.
+- Grundstückgewinn = Verkaufswert − bezahlter Kaufpreis.
+
+**Was fehlt:**
+
+- Abzüge im Einzelnen. Sie sind nur enthalten, soweit Sie sie in die Sätze einrechnen.
+- Eigenmietwert, Abzüge für Schuldzinsen und Unterhalt.
+- Kirchen- und Personalsteuer sowie die direkte Bundessteuer, soweit sie nicht in Tabellen oder Steuerfuss stecken.
+- Wertvermehrende Investitionen, Handänderungs- und Verkaufskosten bei der Grundstückgewinnsteuer.
+- Künftige Gesetzesänderungen.
+
+Eine **Bandbreite** (± %) zeigt VivaPlan nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl würde eine Genauigkeit vortäuschen.
+
+Bei **Kapitalbezugs- und Grundstückgewinnsteuer** geht es oft um viel Geld: Vor dem Entscheid mit dem Steuerrechner des Kantons oder einer Fachperson prüfen. VivaPlan ist keine Steuerberatung.
 
 ## @s-realestate Immobilien
 Stichworte: Haus, Wohnung, Hypothek, Miete, Kauf, Verkauf, Tragbarkeit

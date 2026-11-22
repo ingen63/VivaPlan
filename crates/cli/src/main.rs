@@ -40,7 +40,7 @@ Usage:
 Without --library, the data library is the folder crates/engine/data/ of the project; plans refer to it
 with “library:<file>”. Messages and events are in English.
 
-Model calculation without guarantee. No financial or tax advice.
+Model calculation without guarantee. No tax or investment advice. Taxes are estimates.
 ";
 
 fn main() -> ExitCode {
@@ -386,13 +386,13 @@ fn print_single(sim: &Simulator, res: &SimResult, events: bool) {
         println!("Wealth at retirement:         {}", chf(t));
     }
     println!(
-        "Pension fund lump sum net:    {} (tax {})",
+        "Pension fund lump sum net:    {} (estimated tax {})",
         chf(s.lumpsum_net),
         chf(s.lumpsum_tax)
     );
     println!("Pension fund annuity / month: {}", chf(s.pension_fund_monthly));
     println!("Wealth at the end:            {}", chf(s.end_total));
-    println!("Taxes total:                  {}", chf(s.taxes_total));
+    println!("Estimated taxes total:        {}", chf(s.taxes_total));
     match s.depleted {
         Some(m) => println!("Wealth depleted:              {m} (age {:.1})", sim.age_at(m)),
         None => println!("Wealth lasts until the end."),
@@ -413,7 +413,7 @@ fn print_single(sim: &Simulator, res: &SimResult, events: bool) {
 
 fn write_csv(path: &str, res: &SimResult) -> R {
     let mut out = String::from(
-        "month,age,cash,stocks,bonds,liquid,property_equity,pension_fund,pillar3a,total,income,spending,taxes\n",
+        "month,age,cash,stocks,bonds,liquid,property_equity,pension_fund,pillar3a,total,income,spending,taxes_estimated\n",
     );
     for r in &res.records {
         out.push_str(&format!(

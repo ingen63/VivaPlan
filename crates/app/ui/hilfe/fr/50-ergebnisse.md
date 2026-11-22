@@ -7,7 +7,7 @@ Après «Lancer la simulation», l’application affiche une **barre de progress
 
 **Résultat en mots:** tout en haut, la vue d’ensemble résume le résultat en deux ou trois phrases. Avec plusieurs simulations: ‹Dans 87 % (moyen) des simulations, la fortune suffit jusqu’en 12.2055 (âge 95.0).› Le classement entre parenthèses suit les couleurs du taux de réussite: **élevé** dès 95 %, **moyen** de 80 % à moins de 95 %, **bas** au-dessous de 80 %; c’est la valeur affichée, arrondie à 0.1 %, qui fait foi. Si l’argent s’épuise dans une simulation, une deuxième phrase indique l’âge dans la simulation la plus défavorable (comme «Épuisement le plus précoce»). Avec une seule simulation, le texte indique si la fortune suffit jusqu’à la fin et à combien elle s’élève alors (nominal ou en pouvoir d’achat actuel, selon le commutateur), ou quand elle est épuisée. Suit une proposition pour la prochaine étape: au-dessous de 95 % ou si la fortune est épuisée, l’[optimisation](#s-optimize), sinon les [scénarios](#s-scenarios). Le texte est une aide à la lecture, pas une évaluation de votre situation.
 
-**Avec une seule simulation** (rendements fixes, évolution historique), la vue d’ensemble affiche cinq indicateurs: la fortune à la retraite, la fortune à la fin, jusqu’à quand l’argent suffit, la rente CP et le total des impôts. Suivent l’évolution de la fortune et la liste des événements.
+**Avec une seule simulation** (rendements fixes, évolution historique), la vue d’ensemble affiche cinq indicateurs: la fortune à la retraite, la fortune à la fin, jusqu’à quand l’argent suffit, la rente CP et le total des impôts estimés ([Quelle est la précision de l’impôt?](#tax-accuracy)). Suivent l’évolution de la fortune et la liste des événements.
 
 **Avec plusieurs simulations** (Monte Carlo, toutes les dates de départ), la vue d’ensemble affiche:
 
@@ -124,7 +124,7 @@ Mots-clés: revenus, dépenses, impôts, frais de logement, coût de la vie, col
 Par **année civile**, deux colonnes:
 
 - **à gauche les revenus:** revenu de l’activité lucrative, rente CP, AVS
-- **à droite les dépenses:** coût de la vie, frais de logement, impôts
+- **à droite les dépenses:** coût de la vie, frais de logement, impôts estimés
 
 Là où la colonne de droite est plus haute que celle de gauche, **la fortune est mise à contribution**. La première et la dernière année sont incomplètes, car la simulation commence ou se termine en cours d’année.
 
@@ -219,7 +219,7 @@ Un tableau avec **une ligne par année** pour la simulation choisie. Montants da
 | Taux de prélèvement | **prélèvement annuel / fortune totale en début d’année** en pour cent (colonne «Total» de l’année précédente) |
 | Écart par rapport au plan | moyenne mensuelle: total des revenus moins total des dépenses. À **0**, tout se déroule comme planifié. Pour les stratégies qui lient les dépenses à la fortune (Guardrails, taux fixe, VPW, Endowment), une valeur **négative** est la réduction par rapport à votre plan, une valeur positive l’augmentation |
 | Inflation par année | variation de l’indice des prix pendant l’année civile, la première année depuis le début de la simulation |
-| Impôts payés dans l’année | **sommes annuelles des impôts payés** par type: impôt revenu, impôt fortune, impôt prestation en capital, impôt gain immobilier, plus le total. Les colonnes sont **repliées par défaut**; le bouton **«Afficher les impôts»** au-dessus du tableau les affiche et les masque, le choix est conservé |
+| Impôts payés dans l’année | **sommes annuelles des impôts payés** par type: impôt revenu, impôt fortune, impôt prestation en capital, impôt gain immobilier, plus le total. Les colonnes sont **repliées par défaut**; le bouton **«Afficher les impôts»** au-dessus du tableau les affiche et les masque, le choix est conservé. Les en-têtes s’appellent **«Impôt estimé …»**, leur infobulle mentionne l’arrondi à 100 francs |
 
 Les colonnes ne sont pas classées en groupes avec un titre. Le fait que les fortunes soient des **soldes en fin d’année** et les flux monétaires des **moyennes mensuelles** figure dans l’indication (infobulle) des en-têtes de colonnes et dans le texte sous le tableau. Le tableau ne montre ni le revenu seul ni les dépenses planifiées sans frais de logement; ils sont compris dans «Total des revenus» et «Total des dépenses».
 
@@ -227,6 +227,7 @@ Les colonnes ne sont pas classées en groupes avec un titre. Le fait que les for
 - **Stratégie à 3 compartiments:** chaque année avec au moins une réalimentation a une flèche (▸) au début. Elle déplie le **calcul de la taille des compartiments et des réalimentations** de cette année (déclencheur, base des dépenses, revenus réguliers, besoin net, objectifs, critère de rendement, transferts, soldes des compartiments avant et après). Avec plusieurs simulations, il vaut pour la simulation unique choisie.
 - Les flux monétaires sont des **moyennes mensuelles** de l’année civile, car les mois individuels fluctuent (les intérêts hypothécaires sont par exemple payés trimestriellement).
 - L’impôt sur le revenu et l’impôt sur la fortune sont taxés en décembre et payés en **mai de l’année suivante**. Le tableau les montre dans la ligne de l’**année fiscale** à laquelle ils se rapportent: l’impôt de l’année fiscale 2028 figure dans la ligne 2028, même si l’argent ne sort qu’en mai 2029. La fortune et le solde de cash ne diminuent donc que l’année suivante. Si la planification se termine avant décembre, l’impôt de la dernière année, incomplète, manque dans les colonnes. L’impôt sur les prestations en capital (caisse de pension, pilier 3a) et l’impôt sur les gains immobiliers figurent l’année du retrait ou de la vente.
+- Les impôts sont **estimés** et **arrondis à 100 francs** (chaque cellule pour elle-même, le total peut donc s’écarter de quelques centaines de francs de la somme des colonnes arrondies). Sous le tableau figure «Impôt estimé avec vos propres barèmes, arrondi à 100 francs. Pas de conseil fiscal.» L’impôt sur les prestations en capital et l’impôt sur les gains immobiliers sont à vérifier avec le calculateur d’impôt du canton ou un spécialiste avant de décider, voir [Quelle est la précision de l’impôt?](#tax-accuracy).
 - La première et la dernière année sont généralement incomplètes; elles portent un astérisque (*), le pointeur de la souris indique le nombre de mois.
 
 ## @r-list Liste des résultats

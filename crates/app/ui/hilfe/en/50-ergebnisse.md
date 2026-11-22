@@ -7,7 +7,7 @@ After “Start simulation”, the app shows a **progress bar** with the elapsed 
 
 **Result in words:** At the very top, the overview summarizes the result in two or three sentences. With several runs: ‘In 87 % (medium) of runs, wealth lasts until 12.2055 (age 95.0).’ The rating in parentheses follows the colors of the success rate: **high** from 95 %, **medium** from 80 % to below 95 %, **low** below 80 %; what counts is the value displayed, rounded to 0.1 %. If the money runs out in a run, a second sentence names the age in the worst run (like “Earliest depletion”). With one run, it states whether wealth lasts until the end and how large it is then (nominal or in today's purchasing power, depending on the switch), or when it is depleted. Below that follows a suggestion for the next step: below 95 % or with depleted wealth the [optimization](#s-optimize), otherwise the [scenarios](#s-scenarios). The text is a reading aid, not an assessment of your situation.
 
-**With a single run** (fixed returns, historical course), the overview shows five key figures: wealth at retirement, wealth at the end, how long the money lasts, the PK pension and the total taxes. Below follow the wealth over time and the list of events.
+**With a single run** (fixed returns, historical course), the overview shows five key figures: wealth at retirement, wealth at the end, how long the money lasts, the PK pension and the estimated taxes total ([How accurate is the tax?](#tax-accuracy)). Below follow the wealth over time and the list of events.
 
 **With several runs** (Monte Carlo, all start dates), the overview shows:
 
@@ -124,7 +124,7 @@ Keywords: income, spending, taxes, housing costs, living expenses, bars
 Two bars per **calendar year**:
 
 - **on the left, income:** earned income, PK pension, AHV
-- **on the right, spending:** living expenses, housing costs, taxes
+- **on the right, spending:** living expenses, housing costs, estimated taxes
 
 Where the right bar is higher than the left one, **wealth is drawn on**. The first and the last year are incomplete, because the simulation begins or ends in the middle of the year.
 
@@ -219,7 +219,7 @@ A table with **one row per year** for the chosen run. Amounts in the project cur
 | Withdrawal rate | **annual withdrawal / total wealth at the start of the year** in percent (column “Total” of the previous year) |
 | Deviation from plan | monthly average: total income minus total spending. At **0**, everything goes as planned. With strategies that link spending to wealth (Guardrails, fixed rate, VPW, endowment), a **negative** value is the cut compared with your plan, a positive one the increase |
 | Inflation per year | change in the price index in the calendar year, in the first year since the simulation start |
-| Taxes paid in the year | **annual sums of the taxes paid** by type: income tax, wealth tax, lump-sum tax, property gains tax, plus the total. The columns are **collapsed by default**; the button **“Show taxes”** above the table shows and hides them, and the choice is kept |
+| Taxes paid in the year | **annual sums of the taxes paid** by type: income tax, wealth tax, lump-sum tax, property gains tax, plus the total. The columns are **collapsed by default**; the button **“Show taxes”** above the table shows and hides them, and the choice is kept. The column headers read **“Estimated …”**; their tooltip mentions the rounding to 100 francs |
 
 The columns are not arranged in groups with headings. That wealth figures are **balances at year end** and the cash flows are **monthly averages** is stated in the hint (tooltip) of the column headers and in the text below the table. The table does not show income alone or the planned spending without housing costs; they are contained in “Total income” and “Total spending”.
 
@@ -227,6 +227,7 @@ The columns are not arranged in groups with headings. That wealth figures are **
 - **3-bucket strategy:** Every year with at least one refill has an arrow (▸) in front. It expands the **derivation of the bucket sizes and refills** of this year (trigger, spending basis, regular income, net need, targets, return criterion, transfers, bucket balances before and after). With several runs, it applies to the chosen single run.
 - The cash flows are **monthly averages** of the calendar year, because individual months fluctuate (mortgage interest, for example, is paid quarterly).
 - Income and wealth tax are assessed in December and paid in **May of the following year**. The table shows them in the row of the **tax year** they apply to: the tax of the tax year 2028 is in row 2028, even though the money only flows out in May 2029. Wealth and the cash balance therefore only drop in the following year. If the plan ends before December, the tax of the last, incomplete year is missing from the columns. Lump-sum tax (pension fund, pillar 3a) and property gains tax are shown in the year of the payout or sale.
+- The taxes are **estimated** and **rounded to 100 francs** (each cell on its own, so the total may differ by a few hundred francs from the sum of the rounded columns). Below the table is “Estimated tax with your own tables, rounded to 100 francs. No tax advice.” Check lump-sum tax and property gains tax with the canton’s tax calculator or a professional before deciding, see [How accurate is the tax?](#tax-accuracy).
 - The first and the last year are usually incomplete; they carry an asterisk (*), and the mouse pointer names the number of months.
 
 ## @r-list List of results

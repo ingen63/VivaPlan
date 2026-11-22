@@ -57,7 +57,7 @@ test.describe("Results", () => {
     await expect(header).not.toContainText("Steuer");
     await page.locator('button[data-action="tax-cols"]').click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
-    expect(await page.locator("#resultsBody table.yt th.tx").nth(2).innerText()).toMatch(/^Steuer\s+Kapital Bezug$/);
+    expect(await page.locator("#resultsBody table.yt th.tx").nth(2).innerText()).toMatch(/^Steuer geschätzt\s+Kapital Bezug$/);
     expect(await page.locator("#resultsBody table.yt th.tx").first().getAttribute("title")).toContain("Steuerjahr");
     await expect(page.locator("#resultsBody p.hint", { hasText: "Stände am Jahresende" })).toContainText("Zeile des Steuerjahres");
     const cell = await page.locator("#resultsBody table.yt tr").nth(1).locator("td").nth(11).textContent();
@@ -455,7 +455,7 @@ test.describe("Results", () => {
     await page.locator("button[data-action='rtab'][data-tab='params']").click();
     const body = page.locator("#resultsBody");
     await expect(body).toContainText("Haushalt");
-    for (const t of ["Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Steuerannahmen", "Variationen"]) await expect(body).toContainText(t);
+    for (const t of ["Meilensteine", "Vorsorge", "Einnahmen und Ausgaben", "Vermögen und Anlage", "Renditequelle und Zeitreihe", "Entnahmestrategie", "Immobilien", "Annahmen zur geschätzten Steuer", "Variationen"]) await expect(body).toContainText(t);
     await expect(body).toContainText("Geburt");
     await expect(body).not.toContainText("Person A"); // names are not part of it
     await expect(body.locator("input, select, textarea")).toHaveCount(0);
@@ -479,7 +479,7 @@ test.describe("Results", () => {
         "Renditequelle und Zeitreihe": p => { p.returns.fixed.stocks += 0.01; },
         "Entnahmestrategie": p => { p.withdrawal.strategy = "fixed_rate"; p.withdrawal.fixedRate = { rate: 0.035 }; },
         "Immobilien": p => { p.realestate.emergencyMonths += 1; },
-        "Steuerannahmen": p => { p.taxes.multiplier += 1; },
+        "Annahmen zur geschätzten Steuer": p => { p.taxes.multiplier += 1; },
         "Variationen": p => { p.scenarios.sweeps = [{ param: "wealth.stockShare", from: 0.3, to: 1, step: 0.1 }]; },
       };
       const b = sum(base), out = {};
@@ -833,6 +833,141 @@ test.describe("Unaffordable renewals with never sell (#199)", () => {
     expect(off.s.unaffordableRenewalRuns).toBeUndefined();
     expect(off.kpis.some(k => k.includes("Nicht tragbare"))).toBe(false);
     expect(noProp.kpis.some(k => k.includes("Nicht tragbare"))).toBe(false);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// #143: the tax is an estimate (mode «own tables»; tax year of the data, origin of the deductions and AK5 follow with #63)
+test.describe("Estimated tax (#143)", () => {
+  const CHECK = "Vor dem Entscheid mit dem Steuerrechner des Kantons oder einer Fachperson prüfen.";
+
+  test("AK1: key figure, legend, yearly values and overview speak of the estimated tax", async ({ page }) => {
+    const errors = await open(page, "results/nosweep");
+    await expect(resultKpi(page, "Geschätzte Steuern total")).toBeVisible();
+    await page.getByRole("button", { name: "Grafiken" }).click();
+    await expect(page.locator("#resultsBody .legend", { hasText: "Geschätzte Steuern" }).first()).toBeVisible();
+    await page.getByRole("button", { name: "Jahreswerte" }).click();
+    await page.locator('button[data-action="tax-cols"]').click();
+    const heads = page.locator("#resultsBody table.yt th.tx");
+    await expect(heads).toHaveCount(5);
+    for (const h of await heads.all()) {
+      expect(await h.innerText()).toMatch(/^Steuer geschätzt\s/);                  // hint in the header of every tax column
+      expect(await h.getAttribute("title")).toContain("auf 100 Franken gerundet");
+    }
+    await page.getByRole("button", { name: "Parameter" }).click();
+    await expect(page.locator("#resultsBody")).toContainText("Annahmen zur geschätzten Steuer");
+    await expect(page.locator("#resultsBody")).not.toContainText("Steuerannahmen");
+    await noErrors(page, errors);
+  });
+
+  test("AK2: tax amounts in the interface rounded to 100 francs, the result stays exact", async ({ page }) => {
+    const errors = await open(page, "results/table/nosweep");
+    await page.locator('button[data-action="tax-cols"]').click();
+    const t = await page.evaluate(() => {
+      const num = s => Number(s.replace(/[’'\s  ]/g, "")) || 0;
+      const head = [...document.querySelector("#resultsBody table.yt").rows[0].cells], first = head.findIndex(c => c.classList.contains("tx"));
+      const cells = [...document.querySelectorAll("#resultsBody table.yt tr")].slice(1).filter(r => /^\d{4}/.test(r.cells[0].innerText.trim()))
+        .flatMap(r => [...r.cells].slice(first, first + 5).map(c => num(c.innerText)));
+      const recs = lastRun.single.records, pk = lastRun.single.events.find(e => e.code === "event_pk_payout");
+      return { cells, exact: recs.some(r => Math.abs(r.taxes % 100) > 0.5), pkTax: pk.params.tax, pkText: msgText(pk), lumpTax: lastRun.single.summary.lumpsumTax };
+    });
+    expect(t.cells.some(c => c > 0)).toBe(true);
+    for (const c of t.cells) expect(c % 100).toBe(0);
+    expect(t.exact).toBe(true);                                         // the engine computes exactly (not rounded)
+    expect(t.pkTax % 100).not.toBe(0);
+    const rounded = String(Math.round(t.pkTax / 100) * 100);
+    expect(t.pkText).toContain(`Steuer ${rounded} CHF`);                // event text with the rounded tax
+    // Section pension: lump-sum tax at retirement rounded, called estimated
+    await page.keyboard.press("Escape");
+    await nav(page, "Vorsorge");
+    const pk = page.locator(".hint", { hasText: "geschätzte Steuer" }).first();
+    await expect(pk).toBeVisible();
+    const shown = (await pk.innerText()).match(/geschätzte Steuer ([\d’']+)/)[1].replace(/[’']/g, "");
+    expect(Number(shown) % 100).toBe(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: fixed note in the section Taxes, with «no tax advice», without tax year of the data", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    const note = page.locator("#taxEstimateNote");
+    await expect(note).toBeVisible();
+    await expect(note).toContainText("Die Steuer ist eine Schätzung.");
+    await expect(note).toContainText("Nicht enthalten sind");
+    await expect(note).toContainText("Keine Steuerberatung.");
+    await expect(note).not.toContainText("Steuerjahr");
+    await expect(note).not.toContainText("±");                          // AK9
+    await note.locator('a[data-action="help-topic"]').click();
+    await expect(helpTitle(page)).toHaveText("Wie genau ist die Steuer?");
+    await noErrors(page, errors);
+  });
+
+  test("AK4: line below the yearly values, also with collapsed tax columns", async ({ page }) => {
+    const errors = await open(page, "results/table/nosweep");
+    const line = page.locator("#resultsBody p.taxline");
+    await expect(line).toHaveText(/^Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet\. Keine Steuerberatung\./);
+    await page.locator('button[data-action="tax-cols"]').click();
+    await expect(line).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK6: lump-sum and property gains tax with the advice to check before deciding", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.taxes.propertyGain = GAIN_ZH(); markDirty(); });
+    await nav(page, "Steuern");
+    await expect(page.locator("p.lumpcheck")).toHaveText(`Kapitalbezugssteuer: ${CHECK}`);
+    await expect(page.locator("p.gaincheck")).toHaveText(`Grundstückgewinnsteuer: ${CHECK}`);
+    await nav(page, "Vorsorge");
+    await expect(page.locator(".hint", { hasText: "geschätzte Steuer" }).first()).toContainText(CHECK);
+    await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    const heads = page.locator("#resultsBody table.yt th.tx");
+    expect(await heads.nth(2).getAttribute("title")).toContain(CHECK);   // lump-sum tax
+    expect(await heads.nth(3).getAttribute("title")).toContain(CHECK);   // property gains tax
+    expect(await heads.nth(0).getAttribute("title")).not.toContain(CHECK);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: property events: gains tax rounded, with the advice to check before deciding", async ({ page }) => {
+    const errors = await open(page);
+    const html = await page.evaluate(() => propertyEvents({ propertyEvents: [{ kind: "sale", month: "2035-06", property: "Haus", proceeds: 1_000_000, debtRepaid: 400_000, gainTax: 23_456.7, net: 576_543.3 }] }));
+    expect(html).toMatch(/Grundstückgewinnsteuer<\/span> 23[’']500/);
+    expect(html).toContain("Die Grundstückgewinnsteuer ist geschätzt und auf 100 Franken gerundet.");
+    expect(html).toContain(CHECK);
+    const none = await page.evaluate(() => propertyEvents({ propertyEvents: [{ kind: "sale", month: "2035-06", property: "Haus", proceeds: 1, debtRepaid: 0, gainTax: 0, net: 1 }] }));
+    expect(none).not.toContain(CHECK);
+    await noErrors(page, errors);
+  });
+
+  test("AK7: the disclaimer names tax and investment advice explicitly; the new text is confirmed again", async ({ page }) => {
+    const errors = await open(page, "results/nosweep");
+    await expect(page.locator("#resultsFoot")).toHaveText("Modellrechnung ohne Gewähr. Keine Steuer- oder Anlageberatung.");
+    const t = await page.evaluate(() => { const before = Pref.get("disclaimerAccepted", 0); Pref.set("disclaimerAccepted", 1); const r = { short: DISCLAIMER_SHORT, pendingOld: disclaimerPending() }; Pref.set("disclaimerAccepted", before); return r; });
+    expect(t.short).toContain("keine Steuer- oder Anlageberatung");
+    expect(t.pendingOld).toBe(true);                                    // confirmed version 1 asks again
+    await page.evaluate(() => Help.show("disclaimer"));
+    await expect(page.locator("#help:not([hidden]) #helpBody")).toContainText("keine Steuer- oder Anlageberatung");
+    await noErrors(page, errors);
+  });
+
+  test("AK8: help section «how accurate is the tax?» with reference cases, approximations and what is missing", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => Help.show("tax-accuracy"));
+    await expect(helpTitle(page)).toHaveText("Wie genau ist die Steuer?");
+    const body = page.locator("#help:not([hidden]) #helpBody");
+    for (const h of ["Referenzfälle:", "Näherungen:", "Was fehlt:", "auf 100 Franken gerundet", "Keine Steuerberatung"]) await expect(body).toContainText(h, { ignoreCase: true });
+    await noErrors(page, errors);
+  });
+
+  test("AK9: the results show no range of the tax", async ({ page }) => {
+    const errors = await open(page, "results/table/nosweep");
+    await page.locator('button[data-action="tax-cols"]').click();
+    await expect(page.locator("#resultsBody table.yt")).not.toContainText("±");
+    await expect(page.locator("#resultsBody p.taxline")).not.toContainText("±");
     await noErrors(page, errors);
   });
 });

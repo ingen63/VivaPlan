@@ -214,3 +214,19 @@ test("#184/AK2: the example plans of the four languages differ only in names", (
   for (const l of ["en", "fr", "it"]) assert.deepEqual(strip(u.localizeExample(EXAMPLE, k => TABLES[l][k])), strip(EXAMPLE), l);
   assert.equal(u.localizeExample(EXAMPLE, () => undefined).project.name, EXAMPLE.project.name, "missing text keeps the name");
 });
+
+test("#143/AK2: taxes are shown rounded to 100 francs, the values stay exact", () => {
+  assert.equal(u.roundTax(12_345.67), 12_300);
+  assert.equal(u.roundTax(12_350), 12_400);
+  assert.equal(u.roundTax(49.99), 0);
+  assert.equal(u.roundTax(-149), -100);
+  assert.match(u.fmtTax(123_456.78), new RegExp(`^123${T}500$`));
+  // Engine messages: only the parameter `tax` is rounded, the other amounts and the message itself stay unchanged
+  const m = { code: "event_pk_payout", params: { who: "", lump: 250_123.4, tax: 18_765.43, pension: 1_234.5, currency: "CHF" }, text: "" };
+  const r = u.taxRounded(m);
+  assert.deepEqual(r.params, { ...m.params, tax: 18_800 });
+  assert.equal(m.params.tax, 18_765.43);
+  const en = require("../../crates/app/ui/i18n/en.json");
+  assert.equal(u.engineText(r, k => en[k]), "Pension fund payout: lump sum 250123 CHF (tax 18800 CHF), pension 1234 CHF / month");
+  for (const x of [null, "text", { code: "cancelled", params: {} }, { code: "x", params: { tax: "n/a" } }]) assert.equal(u.taxRounded(x), x);
+});

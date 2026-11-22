@@ -74,7 +74,7 @@ Stichworte: Annahmen, nicht berücksichtigt, Beratung, Haftung, Todesfall
 VivaPlan ist ein **Rechenwerkzeug**, keine Anlage-, Steuer- oder Vorsorgeberatung. Ein Ergebnis gilt nur für die eingegebenen Annahmen. Besonders wichtig:
 
 - **Die Zukunft ist nicht die Vergangenheit.** Historische Renditen sind keine Prognose. Siehe [Fallstricke bei den Renditen](#ret-pitfalls).
-- **Steuern sind vereinfacht:** Satztabellen, linear interpoliert, mal Steuerfuss. Abzüge, Progression im Detail und Kantonsbesonderheiten fehlen.
+- **Steuern sind vereinfacht:** Satztabellen, linear interpoliert, mal Steuerfuss. Abzüge, Progression im Detail und Kantonsbesonderheiten fehlen. Die Ergebnisse zeigen deshalb eine **geschätzte Steuer**, siehe [Wie genau ist die Steuer?](#tax-accuracy).
 - **Nicht gerechnet werden:** Todesfälle und Hinterlassenenrenten, Erbschaften ausser als einmaliger Betrag, Pflegekosten (ausser Sie erfassen sie als Ausgaben), Gesetzesänderungen, Anlagekosten und Gebühren, Zinsen auf Cash.
 - **Immobilien** sind vereinfacht: Marktwert mit Teuerung, Hypotheken in Tranchen, Notverkauf nach einfacher Regel.
 - **Optimierte Strategien** gelten nur für die Eingaben, mit denen sie berechnet wurden, siehe [Fallstricke der Optimierung](#o-pitfalls).
@@ -84,13 +84,13 @@ Prüfen Sie wichtige Entscheide immer mit Fachpersonen. Den vollständigen [Haft
 ## @disclaimer Haftungsausschluss
 Stichworte: Haftung, Gewähr, Disclaimer, Beratung, Verantwortung, Recht, Hinweis
 
-Beim ersten Start bestätigen Sie eine Kurzfassung dieses Hinweises. Ändert sich der Text, fragt die App erneut. Alle Ergebnisseiten tragen unten den Vermerk «Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.».
+Beim ersten Start bestätigen Sie eine Kurzfassung dieses Hinweises. Ändert sich der Text, fragt die App erneut. Alle Ergebnisseiten tragen unten den Vermerk «Modellrechnung ohne Gewähr. Keine Steuer- oder Anlageberatung.».
 
 **1. Kostenloses Angebot.** VivaPlan wird aus der Schweiz unentgeltlich zur Verfügung gestellt. Es besteht kein Anspruch auf Verfügbarkeit, Updates, Fehlerbehebung oder Support.
 
-**2. Keine Beratung.** Die App ist ein Rechenhilfsmittel für die persönliche Planung. Sie bietet keine Anlage-, Finanz-, Steuer-, Vorsorge- oder Rechtsberatung und gibt keine Empfehlungen zum Kauf oder Verkauf von Finanzinstrumenten oder Immobilien.
+**2. Keine Beratung.** Die App ist ein Rechenhilfsmittel für die persönliche Planung. Sie ist **keine Steuer- oder Anlageberatung**. Sie bietet keine Anlage-, Finanz-, Steuer-, Vorsorge- oder Rechtsberatung und gibt keine Empfehlungen zum Kauf oder Verkauf von Finanzinstrumenten oder Immobilien.
 
-**3. Modellrechnungen ohne Gewähr.** Alle Ergebnisse beruhen auf Ihren Eingaben sowie auf vereinfachten Annahmen zu Rendite, Kosten, Teuerung, Steuern und Lebenserwartung. Tatsächliche Entwicklungen können erheblich abweichen. Steuerberechnungen sind Näherungen und bilden nicht alle kantonalen und kommunalen Regeln, Abzüge und Gesetzesänderungen ab. Für die Richtigkeit, Vollständigkeit und Aktualität der Berechnungen wird keine Gewähr übernommen.
+**3. Modellrechnungen ohne Gewähr.** Alle Ergebnisse beruhen auf Ihren Eingaben sowie auf vereinfachten Annahmen zu Rendite, Kosten, Teuerung, Steuern und Lebenserwartung. Tatsächliche Entwicklungen können erheblich abweichen. Steuerberechnungen sind Schätzungen und bilden nicht alle kantonalen und kommunalen Regeln, Abzüge und Gesetzesänderungen ab. Für die Richtigkeit, Vollständigkeit und Aktualität der Berechnungen wird keine Gewähr übernommen.
 
 **4. Eigene Verantwortung.** Entscheidungen, die Sie auf Grundlage der App treffen, liegen allein in Ihrer Verantwortung. Vor wichtigen finanziellen Entscheidungen, etwa zu Kapitalbezug, Hausverkauf oder Entnahmestrategie, sollten Sie eine qualifizierte Fachperson beiziehen.
 
@@ -100,4 +100,4 @@ Beim ersten Start bestätigen Sie eine Kurzfassung dieses Hinweises. Ändert sic
 
 **7. Anwendbares Recht.** Es gilt schweizerisches Recht.
 
-Stand: 13. November 2026
+Stand: 22. November 2026

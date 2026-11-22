@@ -18,8 +18,8 @@ test.describe("Additional acceptance tests", () => {
 
   test("#8/AK4, #8/AK5, #8/AK6: total taxes stays visible, computation unchanged, toggling moves no column", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
-    await expect(resultKpi(page, "Steuern total")).toBeVisible();
-    const kpi = await resultKpi(page, "Steuern total").textContent();
+    await expect(resultKpi(page, "Geschätzte Steuern total")).toBeVisible();
+    const kpi = await resultKpi(page, "Geschätzte Steuern total").textContent();
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     // Content of the table without the tax columns (column headers with class tx) and size of the result
     const snap = () => page.evaluate(() => {
@@ -36,7 +36,7 @@ test.describe("Additional acceptance tests", () => {
     expect(open5.rows).toEqual(closed.rows);          // AK6: the same values in them
     expect(open5.run).toBe(closed.run);               // AK5: the result is unchanged
     await page.getByRole("button", { name: "Übersicht" }).click();
-    await expect(resultKpi(page, "Steuern total")).toHaveText(kpi);   // AK4: also with expanded columns
+    await expect(resultKpi(page, "Geschätzte Steuern total")).toHaveText(kpi);   // AK4: also with expanded columns
     await noErrors(page, errors);
   });
 
@@ -61,11 +61,13 @@ test.describe("Additional acceptance tests", () => {
     let positive = 0;
     for (const r of t) {
       const [ink, verm, kap, gain, total] = r.cells;
-      expect(Math.abs(ink - r.ai)).toBeLessThanOrEqual(1);       // AK1: assessed in the tax year of the row
-      expect(Math.abs(verm - r.aw)).toBeLessThanOrEqual(1);
-      expect(Math.abs(kap - r.kap)).toBeLessThanOrEqual(1);      // AK3: in the year of the withdrawal
-      expect(Math.abs(gain - r.gain)).toBeLessThanOrEqual(1);
-      expect(Math.abs(total - (ink + verm + kap + gain))).toBeLessThanOrEqual(2);   // AK2
+      // #143/AK2: every cell is rounded to 100 francs, so it lies within 50 of the exact value
+      expect(Math.abs(ink - r.ai)).toBeLessThanOrEqual(50);      // AK1: assessed in the tax year of the row
+      expect(Math.abs(verm - r.aw)).toBeLessThanOrEqual(50);
+      expect(Math.abs(kap - r.kap)).toBeLessThanOrEqual(50);     // AK3: in the year of the withdrawal
+      expect(Math.abs(gain - r.gain)).toBeLessThanOrEqual(50);
+      expect(Math.abs(total - (r.ai + r.aw + r.kap + r.gain))).toBeLessThanOrEqual(50);   // AK2: the exact sum, rounded
+      for (const c of r.cells) expect(c % 100).toBe(0);
       if (ink > 0) positive++;
     }
     expect(positive).toBeGreaterThan(0);

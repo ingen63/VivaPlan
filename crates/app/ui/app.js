@@ -219,7 +219,7 @@ function reserveDiffers(p) {
  * settings (not in the plan) with the version of the text. If the text changes, increase the version: then the user is
  * asked again. The full text is in the help (`hilfe/de/00-einstieg.md`, section «@disclaimer»).
  */
-const DISCLAIMER_VERSION = 1, DISCLAIMER_KEY = "disclaimerAccepted";
+const DISCLAIMER_VERSION = 2, DISCLAIMER_KEY = "disclaimerAccepted"; // #143/AK7: version 2 names tax and investment advice
 let DISCLAIMER_SHORT;
 onLanguage(() => DISCLAIMER_SHORT = tr("disclaimer.short"));
 let DISCLAIMER_FOOT;
@@ -1156,6 +1156,7 @@ function gainCard() {
   return `<div class="card">${head}${model}${tables}
     <div class="grid3" style="margin-top:10px">${F(P + ".exemptBelow", tr("gain.exempt"), "chf")}${F(P + ".reduction", tr("gain.reduction"), "pct")}</div>
     <div style="margin-top:10px">${Chk(P + ".useMultiplier", tr("gain.multiplier"))}</div>
+    <p class="hint gaincheck">${tr("gain.title")}: ${tr("taxes.checkBeforeDecision")}</p>
     <div style="margin-top:10px">${btns(true)}</div></div>`;
 }
 Object.assign(OPT_ACTIONS, {
@@ -1176,10 +1177,12 @@ Object.assign(OPT_ACTIONS, {
   }
 });
 R.taxes = () => `<h2>${tr("section.taxes")}</h2><p class="lead">${tr("taxes.intro")}</p>
+  <div class="card taxnote" id="taxEstimateNote"><p class="hint">${tr("taxes.estimateNote")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
   <div class="card"><div class="grid3">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div>
     <div style="margin-top:10px">${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
     <p class="hint">${tr("taxes.indexedHint")}</p></div>
-  <div class="card">${TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income"))}${TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"))}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}</div>
+  <div class="card">${TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income"))}${TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"))}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
+    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>
   ${gainCard()}
   ${state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
@@ -1317,7 +1320,7 @@ const COMPUTED = {
   age1: () => { const s = startM(); return Number.isFinite(s) && state.household.persons[1] ? tr("computed.ageAtStart", { s: ageAt(s, state.household.persons[1].id).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : ""; },
   wdinit: () => { const e = lastSim?.events.find(x => x.kind === "withdrawal"); return e ? tr("computed.preview", { label: esc(e.label), ymShow: ymShow(i2ym(e.m)) }) : tr("computed.previewNone"); },
   age0: () => { const s = startM(); return Number.isFinite(s) ? tr("computed.ageAtStart", { s: ageStr(s) }) : ""; },
-  pkresult: () => lastSim ? `${state.partner ? tr("computed.householdAtRetire") : tr("computed.atRetire")}${tr("computed.pkAtRetire", { lumpNet: fmtMoney(lastSim.lumpNet), lumpTax: fmtMoney(lastSim.lumpTax), pkPension: fmtMoney(lastSim.pkPension) })}` : "",
+  pkresult: () => lastSim ? `${state.partner ? tr("computed.householdAtRetire") : tr("computed.atRetire")}${tr("computed.pkAtRetire", { lumpNet: fmtMoney(lastSim.lumpNet), lumpTax: `${fmtTax(lastSim.lumpTax)} ${cur()}`, pkPension: fmtMoney(lastSim.pkPension) })} ${tr("taxes.checkBeforeDecision")}` : "", // #143/AK2, AK6
   // #73: Share of stocks or bonds in the portfolio (without cash), integer; without a portfolio no value.
   wquote: arg => {
     const w = state.wealth, s = Math.max(0, +w.stocks || 0), b = Math.max(0, +w.bonds || 0);
@@ -2358,7 +2361,7 @@ function propertyEvents(res) {
     if (e.kind === "purchase") return [part(tr("propEvents.price"), n(e.price)), part(tr("propEvents.equity"), n(e.equity)), part(tr("propEvents.mortgage"), n(e.mortgage))];
     if (e.kind === "sale" || e.kind === "emergencySale") {
       const p = [part(tr("propEvents.proceeds"), n(e.proceeds)), part(tr("propEvents.mortgageRepaid"), n(e.debtRepaid))];
-      if (e.gainTax > 0) p.push(part(tr("propEvents.gainTax"), n(e.gainTax)));
+      if (e.gainTax > 0) p.push(part(tr("propEvents.gainTax"), fmtTax(e.gainTax))); // #143/AK2
       p.push(part(tr("propEvents.netProceeds"), `<b>${n(e.net)}</b>`));
       if (e.reason) p.push(part(tr("propEvents.reason"), `<span class="bad">${esc(msgText(e.reason))}</span>`));
       if (e.note) p.push(part(tr("propEvents.note"), esc(msgText(e.note))));
@@ -2374,7 +2377,7 @@ function propertyEvents(res) {
   const body = evs.length
     ? `<div class="tscroll"><table class="tbl"><tr><th class="l">${tr("propEvents.when")}</th><th class="l">${tr("propEvents.event")}</th><th class="l">${tr("propEvents.property")}</th><th class="l">${tr("propEvents.amountsIn", { cur: cur() })}</th></tr>
       ${evs.map(e => `<tr><td class="l">${atAge(e.month)}</td><td class="l ${e.kind === "emergencySale" ? "bad" : ""}">${TYPE[e.kind]}</td><td class="l">${esc(e.property)}</td><td class="l pes">${detail(e).join("")}</td></tr>`).join("")}</table></div>
-      <p class="hint">${tr("propEvents.nominalHint")}</p>`
+      <p class="hint">${tr("propEvents.nominalHint")}${evs.some(e => e.gainTax > 0) ? ` ${tr("propEvents.gainTaxHint")} ${tr("taxes.checkBeforeDecision")}` : ""}</p>`
     : `<p class="hint" style="margin:0">${tr("propEvents.none")}</p>`;
   return card(tr("section.realestate"), tr("propEvents.subtitle"), body);
 }
@@ -2393,7 +2396,7 @@ function bucketDerivation(rs) {
     const cond = inflow ? "–" : r.conditionIgnored ? `<small>${tr("buckets.ignored")}</small>` : `${r.conditionMet ? tr("buckets.met") : `<span class="bad">${tr("buckets.notMet")}</span>`}<br><small>${pct(r.stockReturn)} (${esc(msgText(r.returnBasis))}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
     const moves = r.moves?.length ? r.moves.map(x => `${side(x.from)} → ${side(x.to)}: ${n(x.amount)}`).join("<br>") : "–";
     const basis = inflow ? `<td colspan="8" class="l"><small>${tr("buckets.noRefill")}</small></td>`
-      : `<td>${n(b.living)}${b.livingSource === "Guardrails" ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${n(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
+      : `<td>${n(b.living)}${b.livingSource === "Guardrails" ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${fmtTax(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
     const targets = inflow ? "<td>–</td><td>–</td>" : `<td>${n(r.target1)}</td><td>${n(r.target2)}</td>`;
     const passed = (r.trigger === "A" || r.trigger === "C1") && r.passedMonths > 0 ? `<br><small>${tr("buckets.targetsShortened", { passedMonths: r.passedMonths })}</small>` : "";
     const base = inflow || !b.source ? "" : `<br><small>${esc(msgText(b.source))}</small>`;
@@ -2491,6 +2494,13 @@ function yearValues(recs, start) {
 const rateTxt = r => r == null ? "" : Number.isNaN(r) ? "–" : `${(r * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 function yearTable(recs, start, refills = []) {
   const cell = (v, bold) => `<td>${Math.abs(v) < 0.5 ? "" : bold ? `<b>${fmtInt(v)}</b>` : fmtInt(v)}</td>`;
+  // #143/AK2: taxes rounded to 100 francs (an amount below 50 shows as empty)
+  const taxCell = (v, bold) => cell(roundTax(v), bold);
+  // #143/AK1: the headers of the tax columns say «estimated»; the tooltip explains the estimate and the rounding (AK6: check
+  // lump-sum and property gains tax before deciding)
+  const est = tr("yearTable.taxEstimatedTitle"), check = tr("taxes.checkBeforeDecision");
+  const taxHeads = () => [[tr("yearTable.taxIncome"), `${tr("yearTable.taxTitle")} ${est}`], [tr("yearTable.taxWealth"), est], [tr("yearTable.taxLumpsum"), `${est} ${check}`],
+    [tr("yearTable.taxProperty"), `${est} ${check}`], [tr("yearTable.taxTotal"), est]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
   const tx = showTaxCols, cols = 12 + (tx ? 5 : 0);
   const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);
   const rows = yearValues(recs, start).map(v => {
@@ -2499,7 +2509,7 @@ function yearTable(recs, start, refills = []) {
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${tx ? `${cell(v.taxIncome)}${cell(v.taxWealth)}${cell(v.taxCapital)}${cell(v.taxGain)}${cell(v.taxTotal, true)}` : ""}</tr>`
+      ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
@@ -2507,8 +2517,8 @@ function yearTable(recs, start, refills = []) {
     <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th><th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
-      ${tx ? `<th class="tx" title="${tr("yearTable.taxTitle")}">${tr("yearTable.taxIncome")}</th><th class="tx">${tr("yearTable.taxWealth")}</th><th class="tx">${tr("yearTable.taxLumpsum")}</th><th class="tx">${tr("yearTable.taxProperty")}</th><th class="tx">${tr("yearTable.taxTotal")}</th>` : ""}</tr>${rows}</table></div>
-    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
+      ${tx ? taxHeads() : ""}</tr>${rows}</table></div>
+    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {
   const dep = s.depleted ? ym2i(s.depleted) : null;
@@ -2541,7 +2551,7 @@ function runChartsHtml(res, p) {
     + card(tr("runCharts.liquidByAsset"), realNote(), `<div class="seg" style="margin-bottom:8px"><button class="${compPercent ? "" : "on"}" data-action="comp" data-v="0">${tr("runCharts.amounts")}</button><button class="${compPercent ? "on" : ""}" data-action="comp" data-v="1">${tr("runCharts.shares")}</button></div>`
       + chartBox(`${p}-comp`, 300, true) + legend([["--c1", tr("wealth.stocks")], ["--c2", tr("wealth.bonds")], ["--c3", tr("wealth.cash")]]))
     + card(tr("runCharts.flows"), realNote(), chartBox(`${p}-flows`, 300, true)
-      + legend([["--c2", tr("runCharts.earned")], ["--c1", tr("single.pkPension")], ["--c4", tr("common.ahv")], ["--c3", tr("runCharts.living")], ["--warn", tr("runCharts.housing")], ["--err", tr("section.taxes")]])
+      + legend([["--c2", tr("runCharts.earned")], ["--c1", tr("single.pkPension")], ["--c4", tr("common.ahv")], ["--c3", tr("runCharts.living")], ["--warn", tr("runCharts.housing")], ["--err", tr("runCharts.taxesEstimated")]])
       + `<p class="hint">${tr("runCharts.flowsHint")}</p>`)
     + card(tr("runCharts.withdrawal"), tr("runCharts.withdrawalSub"), chartBox(`${p}-draw`, 260, true)
       + `<p class="hint">${tr("runCharts.withdrawalHint")}</p>`)
@@ -2571,7 +2581,7 @@ function drawRunCharts(res, p) {
   Charts.bars($(`#${p}-flows`), $(`#${p}-flows-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: fmtMio,
     series: [{ group: "in", color: "--c2", values: ys.map(a => a.earned) }, { group: "in", color: "--c1", values: ys.map(a => a.pk) }, { group: "in", color: "--c4", values: ys.map(a => a.ahv) },
       { group: "out", color: "--c3", values: ys.map(a => a.living) }, { group: "out", color: "--warn", values: ys.map(a => a.housing) }, { group: "out", color: "--c4", values: ys.map(a => a.p3a) }, { group: "out", color: "--err", values: ys.map(a => a.taxes) }],
-    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.earned + a.pk + a.ahv), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.living + a.housing + a.p3a + a.taxes), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${tr("runTip.taxes", { taxes: fmtMoney(a.taxes) })}`; } });
+    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.earned + a.pk + a.ahv), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.living + a.housing + a.p3a + a.taxes), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${tr("runTip.taxes", { taxes: `${fmtTax(a.taxes)} ${cur()}` })}`; } });
   const rate = ys.map(a => a.liquidStart > 0 ? Math.max(0, a.draw) / a.liquidStart * 12 / a.months : 0);
   Charts.bars($(`#${p}-draw`), $(`#${p}-draw-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: v => `${(v * 100).toFixed(1)} %`,
     series: [{ color: "--accent", values: rate }],
@@ -3208,7 +3218,7 @@ onLanguage(() => CMP_YEAR = [["total", tr("cmp.totalWealth")], ["liquid", tr("le
 let CMP_LIQUID;
 onLanguage(() => CMP_LIQUID = [["liquid", tr("yearTable.total")], ["stocks", tr("wealth.stocks")], ["bonds", tr("wealth.bonds")], ["cash", tr("wealth.cash")]]);
 let CMP_FLOW;
-onLanguage(() => CMP_FLOW = [["in", tr("cmp.income")], ["out", tr("cmp.spending")], ["taxes", tr("section.taxes")]]);
+onLanguage(() => CMP_FLOW = [["in", tr("cmp.income")], ["out", tr("cmp.spending")], ["taxes", tr("runCharts.taxesEstimated")]]);
 /**
  * What a saved result provides for the comparison. `run` is the run for trajectories and yearly values: for a single run
  * this one, for multiple runs the run of the chosen percentile (`cmpP`, like «Lauf wählen» in the single result); if this
@@ -3402,13 +3412,13 @@ function cmpTable(body, items) {
   const runs = items.filter(it => it.run);
   const yrs = cmpYears(runs, it => yearValues(it.run.records, { total: it.run.summary.startTotal, liquid: it.run.summary.startLiquid }));
   const key = cmpYearKey, label = CMP_YEAR.find(([k]) => k === key)?.[1] || "";
-  const cell = (v, y) => `<td title="${esc(String(y))}">${key === "rate" ? rateTxt(v) : !Number.isFinite(v) ? "–" : fmtInt(v)}</td>`;
+  const cell = (v, y) => `<td title="${esc(String(y))}">${key === "rate" ? rateTxt(v) : !Number.isFinite(v) ? "–" : key === "taxTotal" ? fmtTax(v) : fmtInt(v)}</td>`; // #143/AK2
   const notes = cmpRunNotes(items);
   const rows = Array.from({ length: yrs.n }, (_, k) => `<tr><td>${yrs.label(k)}</td>${yrs.per.map(v => v[k] ? cell(v[k][key], v[k].y) : "<td>–</td>").join("")}</tr>`).join("");
   body.innerHTML = cmpPicker(items) + cmpNote(notes) + card(tr("results.yearValues"), `${tr("cmp.tableSub", { label, cmpReal: cmpReal(), cur: cur() })}${runs.some(it => it.batch) ? ` · ${pName(cmpP)}` : ""}`,
     `<label class="field" style="max-width:320px"><span>${tr("cmp.measure")}</span><select data-action="cmp-year">${CMP_YEAR.map(([k, t]) => `<option value="${k}" ${k === key ? "selected" : ""}>${t}</option>`).join("")}</select></label>
     <div class="tscroll"><table class="tbl num yt cmpyear"><tr><th>${yrs.same ? tr("yearTable.year") : tr("cmp.yearSinceStart")}</th>${runs.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${rows}</table></div>
-    <p class="hint">${tr("cmp.tableHint")}${yrs.same ? "" : tr("cmp.tableYearsHint")}</p>`, "yearcard");
+    <p class="hint">${tr("cmp.tableHint")}${yrs.same ? "" : tr("cmp.tableYearsHint")}</p>${key === "taxTotal" ? `<p class="hint taxline">${tr("taxes.estimateLine")}</p>` : ""}`, "yearcard");
 }
 document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
 /**

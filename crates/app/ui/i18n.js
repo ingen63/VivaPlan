@@ -129,8 +129,9 @@ const I18n = (() => {
     if (m) use(m[1]).catch(e => report(e.message));
   });
 
-  /** #171: Text of a message of the engine (`{code, params, text}`) in the current language (`engineText`, util.js). */
-  const message = m => engineText(m, key => table[key] ?? base[key]);
+  /** #171: Text of a message of the engine (`{code, params, text}`) in the current language (`engineText`, util.js);
+   *  #143/AK2: a tax amount in it rounded to 100 francs. */
+  const message = m => engineText(taxRounded(m), key => table[key] ?? base[key]);
 
   return {
     SYSTEM, tr, format, shortcuts, use, boot, applyStatic, languageOf, pick, message,

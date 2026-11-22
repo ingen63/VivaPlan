@@ -483,7 +483,9 @@ oder indirekt (Einzahlung in die Säule 3a). Die 3a-Auszahlung zahlt zuerst Tran
 
 **Steuern:** Satz aus der Tabelle linear interpoliert × Steuerfuss, auf Rappen gerundet. Kapitalbezüge im selben
 Kalenderjahr (PK, 3a) werden für den Satz zusammengerechnet: für den Haushalt (eine Person, Verheiratete) oder je
-Person (unverheiratetes Paar, #150).
+Person (unverheiratetes Paar, #150). Die Oberfläche zeigt Steuerbeträge als «geschätzt» und auf 100 Franken gerundet
+(#143, nur Anzeige: `roundTax`/`fmtTax` und `taxRounded` für Ereignistexte in `util.js`); Rechenkern, Kommandozeile und
+CSV-Export (Spalte `taxes_estimated`) bleiben genau.
 
 **Tarife mit der Teuerung** (`taxes.indexed`, #66): Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug
 (auch `taxes.couple`) wachsen mit dem Preisindex des Pfades seit Simulationsstart (`Run::infl_idx`, derselbe wie für

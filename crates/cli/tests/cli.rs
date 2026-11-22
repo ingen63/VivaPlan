@@ -56,8 +56,8 @@ fn usage_and_schema() {
     let o = run(&[]);
     assert_eq!(o.status.code(), Some(2));
     assert!(text(&o).contains("Usage"));
-    // #61: short form of the disclaimer in one line
-    assert!(text(&o).contains("Model calculation without guarantee. No financial or tax advice."));
+    // #61: short form of the disclaimer in one line; #143/AK7: names tax and investment advice
+    assert!(text(&o).contains("Model calculation without guarantee. No tax or investment advice. Taxes are estimates."));
     let o = run(&["schema"]);
     assert!(o.status.success());
     let schema: serde_json::Value = serde_json::from_slice(&o.stdout).unwrap();
@@ -101,7 +101,14 @@ fn run_single_with_outputs() {
         t.contains("Wealth at the end") && t.contains("Events:") && t.contains("(age "),
         "{t}"
     );
-    assert!(std::fs::read_to_string(&csv).unwrap().lines().count() > 300);
+    let rows = std::fs::read_to_string(&csv).unwrap();
+    assert!(rows.lines().count() > 300);
+    // #143/AK1: the export names the taxes «estimated»; the values stay exact (AK2)
+    assert!(
+        rows.lines().next().unwrap().ends_with(",spending,taxes_estimated"),
+        "{rows}"
+    );
+    assert!(t.contains("Estimated taxes total:"), "{t}");
     let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
     assert!(r["summary"]["endTotal"].is_number());
 }

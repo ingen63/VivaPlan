@@ -221,6 +221,7 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
 - [Barèmes avec le renchérissement](#f-tax-indexed)
+- [Quelle est la précision de l’impôt?](#tax-accuracy)
 - L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes comprises), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net. Les deux sont payés en mai de l’année suivante.
 - Un impôt encore dû à la fin de la planification est déduit le dernier mois.
 - L’[impôt sur les gains immobiliers](#f-tax-gain) est dû lors de la vente d’un bien immobilier, voir aussi [Immobilier](#s-realestate).
@@ -282,6 +283,32 @@ Chaque barème a des paliers composés d’un **montant** et d’un **taux**. En
 - **Les retraits en capital** de la même année civile (caisse de pension et pilier 3a) sont additionnés pour le taux: pour les personnes mariées pour le ménage, pour les couples non mariés par personne (chaque personne paie l’impôt sur ses propres retraits). Si vous répartissez les retraits sur différentes années, le taux baisse.
 - **Personnes mariées:** avec deux personnes et la case «Marié·e·s» cochée, vous pouvez enregistrer des barèmes propres pour les couples mariés. Sans barèmes propres, les barèmes normaux s’appliquent.
 - Partez de la charge fiscale **effective**, pas du taux marginal. Le calculateur d’impôts de votre canton fournit les deux.
+
+## @tax-accuracy Quelle est la précision de l’impôt?
+Mots-clés: estimation, impôt estimé, précision, arrondi, arrondir, cas de référence, approximation, déductions, conseil fiscal, fourchette
+
+L’impôt dans VivaPlan est une **estimation pour la planification**, pas une taxation. Les résultats l’appellent donc «impôt estimé» et montrent les montants d’impôt **arrondis à 100 francs**. Le calcul est exact, l’arrondi ne concerne que l’affichage; la ligne de commande et son export CSV donnent les valeurs exactes.
+
+**Cas de référence:** les règles de calcul sont testées avec des cas recalculés à la main: taux du barème interpolé linéairement multiplié par le coefficient d’impôt, retraits en capital d’une année additionnés pour le taux, paliers et durée de possession de l’impôt sur les gains immobiliers. Le modèle du canton de Zurich pour l’impôt sur les gains immobiliers correspond au barème officiel. VivaPlan calcule donc correctement avec vos barèmes; la proximité avec votre impôt effectif dépend des barèmes.
+
+**Approximations:**
+
+- Vos barèmes donnent un taux moyen par montant; entre les deux, VivaPlan interpole linéairement. Le tarif réel est différent.
+- Un seul coefficient d’impôt pour le canton et la commune s’applique à tous les barèmes.
+- Avec les [barèmes avec le renchérissement](#f-tax-indexed), les paliers augmentent avec le renchérissement simulé; la compensation des cantons peut être différente.
+- Gain immobilier = valeur de vente − prix d’achat payé.
+
+**Ce qui manque:**
+
+- Les déductions une par une. Elles ne sont comprises que dans la mesure où vous les intégrez dans les taux.
+- La valeur locative, les déductions des intérêts passifs et de l’entretien.
+- L’impôt ecclésiastique et l’impôt personnel ainsi que l’impôt fédéral direct, s’ils ne figurent pas dans les barèmes ou le coefficient.
+- Les investissements à plus-value, les frais de mutation et de vente pour l’impôt sur les gains immobiliers.
+- Les futures modifications de la loi.
+
+VivaPlan n’affiche pas de **fourchette** (± %): il n’y a pas de base pour cela, et un chiffre de plus ferait croire à une précision qui n’existe pas.
+
+**L’impôt sur les prestations en capital et l’impôt sur les gains immobiliers** portent souvent sur des montants importants: à vérifier avec le calculateur d’impôt du canton ou un spécialiste avant de décider. VivaPlan n’est pas un conseil fiscal.
 
 ## @s-realestate Immobilier
 Mots-clés: maison, appartement, hypothèque, location, achat, vente, capacité financière

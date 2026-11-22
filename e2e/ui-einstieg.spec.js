@@ -218,7 +218,7 @@ test.describe("#72 Result in words", () => {
 // ---------------------------------------------------------------------------------------------
 // #61 Disclaimer: footer of the results and full text
 test.describe("#61 Disclaimer", () => {
-  const FOOT = "Modellrechnung ohne Gewähr. Keine Finanz- oder Steuerberatung.";
+  const FOOT = "Modellrechnung ohne Gewähr. Keine Steuer- oder Anlageberatung."; // #143/AK7
   const prefs = page => page.evaluate(() => JSON.parse(localStorage.getItem("rp.settings") || "{}"));
   const helpTitle = page => page.locator("#help:not([hidden]) #helpBody h1").first();
 
@@ -228,7 +228,7 @@ test.describe("#61 Disclaimer", () => {
     await page.locator("#disclaimerCheck").check();
     await page.locator("#disclaimerOk").click();
     await page.waitForSelector("html[data-ready='1']");
-    expect((await prefs(page)).disclaimerAccepted).toBe(1);
+    expect((await prefs(page)).disclaimerAccepted).toBe(2); // #143/AK7: version 2 of the text
     await page.reload();
     await page.waitForSelector("html[data-ready='1']");
     await expect(page.locator("#disclaimer")).not.toHaveAttribute("open", "");
@@ -271,7 +271,7 @@ test.describe("#61 Disclaimer", () => {
     for (const h of ["1. Kostenloses Angebot.", "2. Keine Beratung.", "3. Modellrechnungen ohne Gewähr.", "4. Eigene Verantwortung.",
       "5. Haftung.", "6. Daten.", "7. Anwendbares Recht."]) await expect(body).toContainText(h);
     await expect(body).toContainText("VivaPlan wird aus der Schweiz unentgeltlich zur Verfügung gestellt.");
-    await expect(body).toContainText("Stand: 13. November 2026");
+    await expect(body).toContainText("Stand: 22. November 2026");
     // also via the search of the help
     await page.evaluate(() => Help.show("disclaimer"));
     await expect(helpTitle(page)).toHaveText("Haftungsausschluss");

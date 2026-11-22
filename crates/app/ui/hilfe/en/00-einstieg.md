@@ -74,7 +74,7 @@ Keywords: assumptions, not considered, advice, liability, death
 VivaPlan is a **calculation tool**, not investment, tax or pension advice. A result only applies to the assumptions entered. Particularly important:
 
 - **The future is not the past.** Historical returns are not a forecast. See [Pitfalls of the returns](#ret-pitfalls).
-- **Taxes are simplified:** rate tables, linearly interpolated, times the tax multiplier. Deductions, detailed progression and cantonal particularities are missing.
+- **Taxes are simplified:** rate tables, linearly interpolated, times the tax multiplier. Deductions, detailed progression and cantonal particularities are missing. The results therefore show an **estimated tax**, see [How accurate is the tax?](#tax-accuracy).
 - **Not calculated:** deaths and survivors' pensions, inheritances except as a one-off amount, care costs (unless you enter them as spending), changes in the law, investment costs and fees, interest on cash.
 - **Real estate** is simplified: market value with inflation, mortgages in tranches, emergency sale by a simple rule.
 - **Optimized strategies** only apply to the inputs they were calculated with, see [Pitfalls of the optimization](#o-pitfalls).
@@ -84,13 +84,13 @@ Always check important decisions with professionals. You will find the full [dis
 ## @disclaimer Disclaimer
 Keywords: liability, warranty, disclaimer, advice, responsibility, law, notice
 
-At the first start, you confirm a short version of this notice. If the text changes, the app asks again. All result pages carry the note “Model calculation without warranty. Not financial or tax advice.” at the bottom.
+At the first start, you confirm a short version of this notice. If the text changes, the app asks again. All result pages carry the note “Model calculation without warranty. Not tax or investment advice.” at the bottom.
 
 **1. Free offering.** VivaPlan is provided free of charge from Switzerland. There is no entitlement to availability, updates, bug fixes or support.
 
-**2. No advice.** The app is a calculation aid for personal planning. It does not provide investment, financial, tax, pension or legal advice and makes no recommendations to buy or sell financial instruments or real estate.
+**2. No advice.** The app is a calculation aid for personal planning. It is **not tax or investment advice**. It does not provide investment, financial, tax, pension or legal advice and makes no recommendations to buy or sell financial instruments or real estate.
 
-**3. Model calculations without warranty.** All results are based on your inputs and on simplified assumptions about returns, costs, inflation, taxes and life expectancy. Actual developments may differ considerably. Tax calculations are approximations and do not reflect all cantonal and municipal rules, deductions and changes in the law. No warranty is given for the correctness, completeness and timeliness of the calculations.
+**3. Model calculations without warranty.** All results are based on your inputs and on simplified assumptions about returns, costs, inflation, taxes and life expectancy. Actual developments may differ considerably. Tax calculations are estimates and do not reflect all cantonal and municipal rules, deductions and changes in the law. No warranty is given for the correctness, completeness and timeliness of the calculations.
 
 **4. Own responsibility.** Decisions you make on the basis of the app are your sole responsibility. Before important financial decisions, for example on a lump-sum withdrawal, the sale of a house or the withdrawal strategy, you should consult a qualified professional.
 
@@ -100,4 +100,4 @@ At the first start, you confirm a short version of this notice. If the text chan
 
 **7. Applicable law.** Swiss law applies.
 
-As of: 13 November 2026
+As of: 22 November 2026

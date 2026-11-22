@@ -221,6 +221,7 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
+- [Quanto è precisa l’imposta?](#tax-accuracy)
 - L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti. Entrambe vengono pagate a maggio dell’anno successivo.
 - Un’imposta ancora aperta alla fine della pianificazione viene dedotta nell’ultimo mese.
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
@@ -282,6 +283,32 @@ Ogni tabella ha scaglioni composti da **importo** e **aliquota**. Tra questi l�
 - I **prelievi di capitale** nello stesso anno civile (cassa pensione e pilastro 3a) vengono sommati per l’aliquota: per i coniugati per l’economia domestica, per le coppie non sposate per persona (ogni persona paga l’imposta sui propri prelievi). Se ripartisce i prelievi su anni diversi, l’aliquota diminuisce.
 - **Coniugati:** con due persone e «Coniugati» spuntato può registrare tabelle proprie per coppie sposate. Senza tabelle proprie valgono quelle normali.
 - Parta dall’onere fiscale **effettivo**, non dall’aliquota marginale. Il calcolatore fiscale del Suo cantone fornisce entrambi.
+
+## @tax-accuracy Quanto è precisa l’imposta?
+Parole chiave: stima, imposta stimata, precisione, arrotondamento, arrotondato, casi di riferimento, approssimazione, deduzioni, consulenza fiscale, intervallo
+
+L’imposta in VivaPlan è una **stima per la pianificazione**, non una tassazione. I risultati la chiamano quindi «imposta stimata» e mostrano gli importi d’imposta **arrotondati a 100 franchi**. Il calcolo è esatto, l’arrotondamento vale solo per la visualizzazione; la riga di comando e la sua esportazione CSV forniscono i valori esatti.
+
+**Casi di riferimento:** le regole di calcolo sono testate con casi ricalcolati a mano: aliquota della tabella interpolata linearmente per il moltiplicatore d’imposta, prelievi di capitale di un anno sommati per l’aliquota, gradini e durata di possesso dell’imposta sugli utili immobiliari. Il modello del Cantone di Zurigo per l’imposta sugli utili immobiliari corrisponde alla tabella ufficiale. VivaPlan calcola quindi correttamente con le Sue tabelle; quanto ciò sia vicino alla Sua imposta effettiva dipende dalle tabelle.
+
+**Approssimazioni:**
+
+- Le Sue tabelle danno un’aliquota media per importo; nel mezzo VivaPlan interpola linearmente. La tariffa reale ha un altro andamento.
+- Un unico moltiplicatore d’imposta per Cantone e Comune vale per tutte le tabelle.
+- Con le [tariffe con il rincaro](#f-tax-indexed) i gradini crescono con il rincaro simulato; la compensazione dei Cantoni può differire.
+- Utile immobiliare = valore di vendita − prezzo d’acquisto pagato.
+
+**Cosa manca:**
+
+- Le singole deduzioni. Sono comprese solo nella misura in cui Lei le include nelle aliquote.
+- Il valore locativo, le deduzioni per interessi passivi e manutenzione.
+- L’imposta di culto e l’imposta personale nonché l’imposta federale diretta, se non figurano nelle tabelle o nel moltiplicatore.
+- Gli investimenti che aumentano il valore, i costi di trapasso e di vendita per l’imposta sugli utili immobiliari.
+- Le future modifiche di legge.
+
+VivaPlan non mostra un **intervallo** (± %): manca una base, e un numero in più farebbe credere a una precisione che non esiste.
+
+**L’imposta sulle prestazioni in capitale e l’imposta sugli utili immobiliari** riguardano spesso molto denaro: prima di decidere, verificare con il calcolatore fiscale del Cantone o con uno specialista. VivaPlan non è una consulenza fiscale.
 
 ## @s-realestate Immobili
 Parole chiave: casa, appartamento, ipoteca, affitto, acquisto, vendita, sostenibilità

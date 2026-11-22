@@ -221,6 +221,7 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
+- [How accurate is the tax?](#tax-accuracy)
 - **Income tax** is assessed in December on the annual income (including pensions), **wealth tax** on the portfolio plus real estate net. Both are paid in May of the following year.
 - A tax still open at the end of the plan is deducted in the last month.
 - The [property gains tax](#f-tax-gain) is due when a property is sold, see also [Real estate](#s-realestate).
@@ -282,6 +283,32 @@ Every table has brackets of **amount** and **rate**. In between, the app interpo
 - **Lump-sum withdrawals** in the same calendar year (pension fund and pillar 3a) are added together for the rate: for married couples for the household, for unmarried couples per person (every person pays the tax on their own withdrawals). If you spread withdrawals over different years, the rate drops.
 - **Married:** With two persons and “Married” ticked, you can store separate tables for married couples. Without separate tables, the normal ones apply.
 - Start from the **effective** tax burden, not the marginal tax rate. The tax calculator of your canton provides both.
+
+## @tax-accuracy How accurate is the tax?
+Keywords: estimate, estimated tax, accuracy, rounding, rounded, reference cases, approximation, deductions, tax advice, range
+
+The tax in VivaPlan is an **estimate for planning**, not a tax assessment. The results therefore call it “estimated tax” and show tax amounts **rounded to 100 francs**. The calculation is exact, the rounding applies to the display only; the command line and its CSV export output the exact values.
+
+**Reference cases:** The calculation rules are tested with cases recalculated by hand: rate from the table interpolated linearly times the tax multiplier, lump-sum withdrawals of a year combined for the rate, steps and holding period of the property gains tax. The Canton of Zurich template of the property gains tax matches the official table. So VivaPlan calculates correctly with your tables; how close this is to your actual tax depends on the tables.
+
+**Approximations:**
+
+- Your tables give an average rate per amount; in between, VivaPlan interpolates linearly. The real tariff runs differently.
+- A single tax multiplier for canton and municipality applies to all tables.
+- With [tariffs with inflation](#f-tax-indexed), the steps grow with the simulated inflation; the cantons’ adjustment may differ.
+- Property gain = sale value − purchase price paid.
+
+**What is missing:**
+
+- Individual deductions. They are only included as far as you build them into the rates.
+- Imputed rental value, deductions for debt interest and maintenance.
+- Church and poll tax and the direct federal tax, unless they are in the tables or the multiplier.
+- Value-adding investments, transfer and selling costs for the property gains tax.
+- Future changes in the law.
+
+VivaPlan does not show a **range** (± %): there is no basis for it, and another number would suggest a precision that does not exist.
+
+**Lump-sum tax and property gains tax** often involve a lot of money: check with the canton’s tax calculator or a professional before deciding. VivaPlan is not tax advice.
 
 ## @s-realestate Real estate
 Keywords: house, apartment, mortgage, rent, purchase, sale, affordability

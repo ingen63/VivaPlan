@@ -74,7 +74,7 @@ Mots-clés: hypothèses, non pris en compte, conseil, responsabilité, décès
 VivaPlan est un **outil de calcul**, pas un conseil en placement, fiscal ou en prévoyance. Un résultat ne vaut que pour les hypothèses saisies. Particulièrement important:
 
 - **L’avenir n’est pas le passé.** Les rendements historiques ne sont pas une prévision. Voir [Pièges des rendements](#ret-pitfalls).
-- **Les impôts sont simplifiés:** barèmes de taux, interpolés linéairement, multipliés par le coefficient d’impôt. Les déductions, le détail de la progression et les particularités cantonales manquent.
+- **Les impôts sont simplifiés:** barèmes de taux, interpolés linéairement, multipliés par le coefficient d’impôt. Les déductions, le détail de la progression et les particularités cantonales manquent. Les résultats montrent donc un **impôt estimé**, voir [Quelle est la précision de l’impôt?](#tax-accuracy).
 - **Ne sont pas calculés:** les décès et les rentes de survivants, les successions (sauf comme montant unique), les frais de soins (sauf si vous les saisissez comme dépenses), les modifications législatives, les frais de placement et les commissions, les intérêts sur le cash.
 - **Les biens immobiliers** sont simplifiés: valeur vénale avec renchérissement, hypothèques en tranches, vente forcée selon une règle simple.
 - **Les stratégies optimisées** ne valent que pour les saisies avec lesquelles elles ont été calculées, voir [Pièges de l’optimisation](#o-pitfalls).
@@ -84,13 +84,13 @@ Vérifiez toujours les décisions importantes avec des spécialistes. Vous trouv
 ## @disclaimer Clause de non-responsabilité
 Mots-clés: responsabilité, garantie, disclaimer, clause de non-responsabilité, conseil, droit, avertissement
 
-Lors du premier démarrage, vous confirmez une version abrégée de cet avertissement. Si le texte change, l’application vous le redemande. Toutes les pages de résultats portent en bas la mention «Calcul modèle sans garantie. Pas de conseil financier ni fiscal.».
+Lors du premier démarrage, vous confirmez une version abrégée de cet avertissement. Si le texte change, l’application vous le redemande. Toutes les pages de résultats portent en bas la mention «Calcul modèle sans garantie. Pas de conseil fiscal ni en placement.».
 
 **1. Offre gratuite.** VivaPlan est mis à disposition gratuitement depuis la Suisse. Il n’existe aucun droit à la disponibilité, aux mises à jour, à la correction d’erreurs ou à l’assistance.
 
-**2. Pas de conseil.** L’application est un outil de calcul pour la planification personnelle. Elle n’offre aucun conseil en placement, financier, fiscal, en prévoyance ou juridique et ne donne aucune recommandation d’achat ou de vente d’instruments financiers ou de biens immobiliers.
+**2. Pas de conseil.** L’application est un outil de calcul pour la planification personnelle. Elle n’est **pas un conseil fiscal ni en placement**. Elle n’offre aucun conseil en placement, financier, fiscal, en prévoyance ou juridique et ne donne aucune recommandation d’achat ou de vente d’instruments financiers ou de biens immobiliers.
 
-**3. Calculs modèles sans garantie.** Tous les résultats reposent sur vos saisies ainsi que sur des hypothèses simplifiées concernant le rendement, les coûts, le renchérissement, les impôts et l’espérance de vie. Les évolutions effectives peuvent s’en écarter considérablement. Les calculs fiscaux sont des approximations et ne reproduisent pas toutes les règles, déductions et modifications législatives cantonales et communales. Aucune garantie n’est donnée quant à l’exactitude, l’exhaustivité et l’actualité des calculs.
+**3. Calculs modèles sans garantie.** Tous les résultats reposent sur vos saisies ainsi que sur des hypothèses simplifiées concernant le rendement, les coûts, le renchérissement, les impôts et l’espérance de vie. Les évolutions effectives peuvent s’en écarter considérablement. Les calculs fiscaux sont des estimations et ne reproduisent pas toutes les règles, déductions et modifications législatives cantonales et communales. Aucune garantie n’est donnée quant à l’exactitude, l’exhaustivité et l’actualité des calculs.
 
 **4. Responsabilité personnelle.** Les décisions que vous prenez sur la base de l’application relèvent de votre seule responsabilité. Avant des décisions financières importantes, par exemple concernant le retrait en capital, la vente d’un logement ou la stratégie de prélèvement, vous devriez faire appel à une personne qualifiée.
 
@@ -100,4 +100,4 @@ Lors du premier démarrage, vous confirmez une version abrégée de cet avertiss
 
 **7. Droit applicable.** Le droit suisse est applicable.
 
-État: 13 novembre 2026
+État: 22 novembre 2026
