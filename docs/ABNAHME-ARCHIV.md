@@ -1480,3 +1480,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #207/AK5 | Die JSON-Ausgabe von `run` bleibt an der Beispielplanung unter 20'000 Zeichen. | ☑ | **gilt** | [report.rs](../crates/engine/src/report.rs) `issue_207_ak5_…` | 22.11.2026 ok (6 212 Zeichen mit 8 Variationen; 200 Pfade ebenfalls darunter) |
 | #207/AK6 | Die Prüfung von Pfad und Typ liegt im Rechenkern (`api`), nicht in der Kommandozeile. | ☑ | **gilt** | [api.rs](../crates/engine/src/api.rs) `issue_207_ak6_…` | 22.11.2026 ok (`api::set_fields` → `engine::fieldpath`) |
 | #207/AK7 | (Kommentar) Feldpfade erlauben einen Zeitpunkt in Verläufen: `@<meilenstein>`, `@age:<n>`, `@<JJJJ-MM>` wählt die Stufe … | – | **gilt** | [fieldpath.rs](../crates/engine/src/fieldpath.rs) `issue_207_ak7_…` (2 Tests) | 22.11.2026 ok (bestehende Stufe geändert, sonst neue Stufe; konstanter Wert wird zeitabhängig) |
+
+### #215 Renditepfade für mehrere Varianten wiederverwenden
+
+[Issue #215](https://github.com/ingen63/VivaPlan/issues/215) · geschlossen · Umsetzung: 50fa01d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #215/AK1 | Variationen erzeugen jeden Pfad einmal und rechnen alle Kombinationen darauf. | ☑ | **gilt** | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak1_…` | 22.11.2026 ok (`PathCache`: gleiche Pfad-Eingaben einmal erzeugt, andere `seed` neu; Hauptlauf verwendet sie mit) |
+| #215/AK2 | Die Optimierung verwendet die Pfade über alle Bewertungen einer Suche wieder, entweder als Zwischenspeicher oder mit … | ☑ | **gilt** | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak2_…`; [optimize.rs](../crates/engine/src/optimize.rs) `issue_215_ak2_…` (2 Tests) | 22.11.2026 ok (`batch::prepare` für Such-, Prüf- und Vergleichspfade; Suche und Vergleich bitgleich zu ohne Zwischenspeicher) |
+| #215/AK3 | Die Ergebnisse sind bitgleich zu vorher: Golden-Dateien unverändert, und ein Test vergleicht Variationen und … | ☑ | **gilt** | [path_reuse.rs](../crates/engine/tests/path_reuse.rs) `issue_215_ak3_…` (2 Tests, vor der Umstellung grün); `golden::*` | 22.11.2026 ok (Golden-Dateien im Commit unverändert; Fingerabdrücke von `variants_bench` vorher und nachher gleich) |
+| #215/AK4 | Bei 8 Varianten auf parametrischen Pfaden braucht die Rechnung höchstens die halbe Zeit wie vorher. Gemessen wird auf … | ☑ | **gilt** | [variants_bench.rs](../crates/engine/examples/variants_bench.rs) (Messprogramm, kein Test) | 22.11.2026 ok: M1 Pro, 1 Kern, 1000 Pfade, bestes von 5: Variationen 2143 → 1038 ms (48 %); Strategievergleich 2036 → 1082 ms (53 %, nur Hinweis) |
+| #215/AK5 | Der Speicherbedarf für zwischengespeicherte Pfade ist begrenzt (Obergrenze dokumentiert). Darüber wird ohne … | ☑ | **gilt** (512 MB, Entscheid im Issue vom 22.11.2026) | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak5_…`, `issue_215_ak2_prepare_…` | 22.11.2026 ok (`PATH_CACHE_BYTES`, `docs/ENTWICKLUNG.md`; darüber Erzeugung im Lauf) |
