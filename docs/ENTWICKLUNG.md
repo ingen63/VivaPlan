@@ -254,6 +254,28 @@ Die Bandbreiten halten aber je Pfad und Monat das Vermögen (nominal und real, `
 sind das rund 23 Bytes je Pfad und Monat. Die Prüfung begrenzt deshalb Pfade × Monate auf 50 Mio.
 (`validate::MAX_PATH_MONTHS`, #139; an der Grenze rund 1,3 GB bei der schwersten Testplanung).
 
+**Pfade für mehrere Varianten (#215):** Variationen und Optimierung rechnen viele Varianten auf denselben Pfaden; das
+Erzeugen eines parametrischen Pfades kostet mehr als eine Simulation. Deshalb entstehen die Monte-Carlo-Pfade dort nur
+einmal und werden für alle Varianten verwendet:
+
+- Variationen (`api::run_scenarios`): `batch::PathCache` hält die Pfade der letzten Kombination. Hat die nächste
+  Kombination dieselben Pfad-Eingaben (`PathKey`: Modell und Parameter samt `seed`, Reihe, fixe Kurven, Start, Monate),
+  rechnet sie auf diesen Pfaden; sonst entstehen neue. Der Hauptlauf der Planung verwendet sie danach ebenfalls. Ohne
+  Variationen bleibt es beim Erzeugen im Lauf.
+- Optimierung (`optimize::run_request`): `batch::prepare` erzeugt Such- und Prüfpfade (bzw. beim Vergleich die Pfade der
+  Planung) einmal für alle Bewertungen einer Suche.
+- Obergrenze: `batch::PATH_CACHE_BYTES` = **512 MB** für gehaltene Pfade (je Pfad `(4 × Monate + 12) × 8` Bytes plus
+  Verwaltung, `batch::path_bytes`; bei 40 Jahren rund 15 KB, also gut 30'000 Pfade). Bei der Optimierung teilen sich Such-
+  und Prüfpfade die Grenze (Suchpfade zuerst). Darüber werden die Pfade wie vor #215 im Lauf erzeugt: langsamer, aber ohne
+  zusätzlichen Speicher.
+- Die Ergebnisse sind bitgleich, weil Pfad *i* nur von seinen Eingaben abhängt (Tests `issue_215_*`).
+- Messprogramm: `cargo run --release -p vivaplan-engine --example variants_bench [-- <Pfade> <Wiederholungen>]` rechnet
+  auf einem Kern 8 Varianten der Musterplanung auf parametrischen Pfaden (Variation des Ausgabenfaktors in 8 Schritten
+  und Strategievergleich mit 8 Bewertungen) und gibt Zeit und einen Fingerabdruck der Ergebnisse aus. Gemessen (Apple
+  M1 Pro, 1000 Pfade, Release, bestes von 5, vorher/nachher abwechselnd): Variationen 2143 → 1038 ms (48 %),
+  Strategievergleich 2036 → 1082 ms (53 %; dort rechnet jede Bewertung die Monatswerte mit, die Simulation wiegt mehr);
+  Fingerabdrücke unverändert.
+
 ## Monte Carlo
 
 - **`bootstrap`** (`{"paths": 50000, "block": 12, "seed": 42}`): stationärer Bootstrap aus der gewählten Zeitreihe.

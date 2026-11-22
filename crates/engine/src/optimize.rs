@@ -1207,6 +1207,17 @@ pub fn run_request(
     library: Option<&std::path::Path>,
     req: &Request,
 ) -> Result<Report> {
+    run_request_within(base, base_dir, library, req, crate::batch::PATH_CACHE_BYTES)
+}
+
+/// [`run_request`] with at most `budget` bytes for paths kept in memory (#215).
+fn run_request_within(
+    base: &Value,
+    base_dir: &std::path::Path,
+    library: Option<&std::path::Path>,
+    req: &Request,
+    mut budget: usize,
+) -> Result<Report> {
     use crate::batch;
     let t0 = std::time::Instant::now();
     let obj = req.objective();
@@ -1252,8 +1263,8 @@ pub fn run_request(
     let mut outcomes = Vec::new();
     let (fit_paths, check_paths, reference);
     if req.compare {
-        // #197: The plan's own paths, as in `run`.
-        let paths = batch::path_source(&plan, &sim, data.as_ref())?;
+        // #197: The plan's own paths, as in `run`; #215: generated once for all strategies.
+        let paths = batch::prepare(batch::path_source(&plan, &sim, data.as_ref())?, &mut budget);
         crate::progress::set_total(((variants.len() * strategies.len() + 1) * paths.len()) as u64);
         reference = Reference {
             strategy: strategy_name(OptStrategy::of(&plan.withdrawal)),
@@ -1270,12 +1281,10 @@ pub fn run_request(
     } else {
         let p_fit = parse_plan(&with_paths(base, req.paths, 0))?;
         let p_check = parse_plan(&with_paths(base, req.check_paths, 7919))?;
-        // Create the search paths once, so that not every candidate recomputes them.
-        let fit = match batch::path_source(&p_fit, &sim, data.as_ref())? {
-            Paths::List(v) => Paths::List(v),
-            other => Paths::List(other.iter_owned().collect()),
-        };
-        let check = batch::path_source(&p_check, &sim, data.as_ref())?;
+        // Create the search and check paths once, so that not every candidate recomputes them (#215: within the
+        // memory limit, the search paths first).
+        let fit = batch::prepare(batch::path_source(&p_fit, &sim, data.as_ref())?, &mut budget);
+        let check = batch::prepare(batch::path_source(&p_check, &sim, data.as_ref())?, &mut budget);
         reference = Reference {
             strategy: strategy_name(OptStrategy::of(&plan.withdrawal)),
             metrics: evaluate(&plan, &check, &obj)?,
@@ -2185,5 +2194,59 @@ mod tests {
         assert!(serde_json::to_value(m).unwrap().get("floorShare").is_none());
         m.floor_share = Some(0.25);
         assert_eq!(serde_json::to_value(m).unwrap()["floorShare"], json!(0.25));
+    }
+
+    // ---- #215 ----
+
+    /// Made-up plan on parametric paths without a series, for the optimization with and without kept paths.
+    fn reuse_plan() -> Value {
+        let mut v = calm(400_000.0);
+        v["returns"]["source"] = json!("parametric");
+        v["returns"]["parametric"] = json!({"paths": 6, "mu": 0.04, "sigma": 0.15, "df": 0});
+        v
+    }
+
+    fn report_without_time(r: Report) -> Value {
+        Value::from_iter(
+            serde_json::to_value(Report { elapsed_ms: 0.0, ..r })
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .clone(),
+        )
+    }
+
+    /// #215/AK2, AK3, AK5: The search keeps the search and check paths for all evaluations; the report is bit for bit
+    /// the same as without kept paths (budget 0: every evaluation generates its paths again).
+    #[test]
+    fn issue_215_ak2_search_with_kept_paths_is_bit_identical() {
+        let v = reuse_plan();
+        let r = Request {
+            strategies: vec!["fixed_rate".into(), "guardrails".into()],
+            paths: 5,
+            check_paths: 7,
+            samples: 1,
+            ..Default::default()
+        };
+        let dir = std::path::Path::new(".");
+        let kept = run_request(&v, dir, None, &r).unwrap();
+        assert_eq!((kept.fit_paths, kept.check_paths, kept.outcomes.len()), (5, 7, 2));
+        let fresh = run_request_within(&v, dir, None, &r, 0).unwrap();
+        assert_eq!(report_without_time(kept), report_without_time(fresh));
+    }
+
+    /// #215/AK2, AK3, AK5: The comparison of the strategies is the same with and without kept paths.
+    #[test]
+    fn issue_215_ak2_compare_with_kept_paths_is_bit_identical() {
+        let v = reuse_plan();
+        let r = Request {
+            compare: true,
+            ..Default::default()
+        };
+        let dir = std::path::Path::new(".");
+        let kept = run_request(&v, dir, None, &r).unwrap();
+        assert_eq!((kept.fit_paths, kept.outcomes.len()), (6, 7));
+        let fresh = run_request_within(&v, dir, None, &r, 0).unwrap();
+        assert_eq!(report_without_time(kept), report_without_time(fresh));
     }
 }

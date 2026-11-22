@@ -79,6 +79,8 @@ pub fn market_paths(plan: &Plan, sim: &Simulator, data: Option<&DataSet>) -> Res
 /// generated only while computing.
 pub enum Paths<'a> {
     List(Vec<MarketPath>),
+    /// #215: Paths generated once and used for several variants (see [`PathCache`], [`prepare`]).
+    Shared(&'a [MarketPath]),
     Bootstrap(Bootstrap<'a>),
     Parametric(Parametric<'a>),
 }
@@ -87,6 +89,7 @@ impl Paths<'_> {
     pub fn len(&self) -> usize {
         match self {
             Paths::List(v) => v.len(),
+            Paths::Shared(v) => v.len(),
             Paths::Bootstrap(b) => b.len(),
             Paths::Parametric(p) => p.len(),
         }
@@ -99,6 +102,7 @@ impl Paths<'_> {
     pub fn get(&self, i: usize) -> Cow<'_, MarketPath> {
         match self {
             Paths::List(v) => Cow::Borrowed(&v[i]),
+            Paths::Shared(v) => Cow::Borrowed(&v[i]),
             Paths::Bootstrap(b) => Cow::Owned(b.path(i)),
             Paths::Parametric(p) => Cow::Owned(p.path(i)),
         }
@@ -107,6 +111,142 @@ impl Paths<'_> {
     pub fn iter_owned(&self) -> impl Iterator<Item = MarketPath> + '_ {
         (0..self.len()).map(|i| self.get(i).into_owned())
     }
+
+    /// #215: Everything a Monte Carlo path depends on; `None` for fixed paths (they are not generated per run).
+    fn key(&self) -> Option<PathKey> {
+        let (fixed, start, months, generator) = match self {
+            Paths::List(_) | Paths::Shared(_) => return None,
+            Paths::Bootstrap(b) => (
+                b.fixed,
+                b.start,
+                b.months,
+                Generator::Bootstrap {
+                    data: std::ptr::from_ref(b.data) as usize,
+                    params: b.params.clone(),
+                },
+            ),
+            Paths::Parametric(p) => (
+                p.fixed,
+                p.start,
+                p.months,
+                Generator::Parametric {
+                    params: p.params.clone(),
+                    correlated: p.correlated.clone(),
+                },
+            ),
+        };
+        Some(PathKey {
+            fixed: fixed.clone(),
+            start,
+            months,
+            generator,
+        })
+    }
+
+    /// Generates all paths in parallel, in the order of their index.
+    fn generate(&self) -> Vec<MarketPath> {
+        (0..self.len())
+            .into_par_iter()
+            .map(|i| self.get(i).into_owned())
+            .collect()
+    }
+}
+
+/// #215/AK5: Upper limit for return paths kept in memory to be used for several variants (512 MB). Above it, every
+/// variant generates its paths again while computing (as before #215): slower, but without additional memory.
+pub const PATH_CACHE_BYTES: usize = 512 * 1024 * 1024;
+
+/// Memory of `n` paths over `months` months (four monthly series plus the lead-in).
+pub fn path_bytes(n: usize, months: usize) -> usize {
+    let per_path = (4 * months + market::PRE_MONTHS) * std::mem::size_of::<f64>() + std::mem::size_of::<MarketPath>();
+    n.saturating_mul(per_path)
+}
+
+/// Inputs of a Monte Carlo path generator: equal keys give bit-identical paths for every index.
+#[derive(Clone, PartialEq)]
+struct PathKey {
+    fixed: market::FixedCurves,
+    start: YearMonth,
+    months: usize,
+    generator: Generator,
+}
+
+#[derive(Clone, PartialEq)]
+enum Generator {
+    /// `data`: address of the series (the same series for all variants of a computation).
+    Bootstrap {
+        data: usize,
+        params: crate::model::BootstrapParams,
+    },
+    Parametric {
+        params: crate::model::ParametricParams,
+        correlated: Option<crate::calibrate::Correlated>,
+    },
+}
+
+/// #215/AK1: Keeps the Monte Carlo paths of the last variant, so that the next variant with the same path inputs
+/// (seed, number, model, fixed values, period) uses them instead of generating them again. At most `limit` bytes;
+/// above it the paths are generated while computing.
+pub struct PathCache {
+    limit: usize,
+    key: Option<PathKey>,
+    paths: Vec<MarketPath>,
+    #[cfg(test)]
+    generated: usize,
+}
+
+impl Default for PathCache {
+    fn default() -> Self {
+        PathCache::with_limit(PATH_CACHE_BYTES)
+    }
+}
+
+impl PathCache {
+    pub fn with_limit(limit: usize) -> Self {
+        PathCache {
+            limit,
+            key: None,
+            paths: vec![],
+            #[cfg(test)]
+            generated: 0,
+        }
+    }
+
+    /// The paths of `source`: from the cache if it holds them, otherwise generated and kept (within the limit).
+    pub fn paths<'c>(&'c mut self, source: Paths<'c>) -> Paths<'c> {
+        let Some(key) = source.key() else {
+            return source;
+        };
+        if self.key.as_ref() != Some(&key) {
+            // Release the old paths before generating new ones.
+            self.key = None;
+            self.paths = vec![];
+            if path_bytes(source.len(), key.months) > self.limit {
+                return source;
+            }
+            self.paths = source.generate();
+            self.key = Some(key);
+            #[cfg(test)]
+            {
+                self.generated += 1;
+            }
+        }
+        Paths::Shared(&self.paths)
+    }
+}
+
+/// #215/AK2: Generates Monte Carlo paths once for all evaluations of an optimization, if they fit into the remaining
+/// `budget` (bytes, reduced by the paths kept); otherwise they are generated while computing.
+pub fn prepare<'a>(source: Paths<'a>, budget: &mut usize) -> Paths<'a> {
+    let Some(key) = source.key() else {
+        return source;
+    };
+    let bytes = path_bytes(source.len(), key.months);
+    if bytes > *budget {
+        return source;
+    }
+    *budget -= bytes;
+    Paths::List(source.generate())
 }
 
 /// Like [`market_paths`], but without generating Monte Carlo paths in advance.
@@ -400,6 +540,125 @@ pub fn run_with_bands(sim: &Simulator, paths: &Paths) -> (Vec<SimResult>, Bands)
 mod tests {
     use super::*;
     use crate::sim::Summary;
+
+    // ---- #215 ----
+
+    fn parametric(paths: usize, seed: u64, spending_factor: f64) -> Plan {
+        let mut v = crate::api::example_plan();
+        v["returns"]["source"] = serde_json::json!("parametric");
+        v["returns"]["parametric"] =
+            serde_json::json!({"paths": paths, "seed": seed, "mu": 0.05, "sigma": 0.12, "df": 0});
+        v["flows"]["spendingFactor"] = serde_json::json!(spending_factor);
+        serde_json::from_value(v).unwrap()
+    }
+
+    /// Bit for bit equal paths.
+    fn same(a: &Paths, b: &Paths) -> bool {
+        let bits = |v: &[f64]| v.iter().map(|x| x.to_bits()).collect::<Vec<_>>();
+        a.len() == b.len()
+            && (0..a.len()).all(|i| {
+                let (p, q) = (a.get(i), b.get(i));
+                p.label == q.label
+                    && [
+                        (&p.stocks, &q.stocks),
+                        (&p.bonds, &q.bonds),
+                        (&p.inflation, &q.inflation),
+                    ]
+                    .into_iter()
+                    .chain([(&p.saron, &q.saron), (&p.pre_stocks, &q.pre_stocks)])
+                    .all(|(x, y)| bits(x) == bits(y))
+            })
+    }
+
+    /// #215/AK1: A second variant with the same path inputs (only the spending differs) uses the kept paths; other
+    /// inputs (seed) generate new ones. The kept paths are those generated while computing.
+    #[test]
+    fn issue_215_ak1_cache_generates_paths_once_per_inputs() {
+        let mut cache = PathCache::default();
+        let (a, b, c) = (parametric(4, 1, 1.0), parametric(4, 1, 1.2), parametric(4, 2, 1.0));
+        for (plan, generated) in [(&a, 1), (&b, 1), (&a, 1), (&c, 2), (&a, 3)] {
+            let sim = Simulator::new(plan).unwrap();
+            let paths = cache.paths(path_source(plan, &sim, None).unwrap());
+            assert!(matches!(paths, Paths::Shared(_)));
+            assert!(same(&paths, &path_source(plan, &sim, None).unwrap()));
+            drop(paths);
+            assert_eq!(cache.generated, generated);
+        }
+        // Fixed paths are not generated per run and pass through unchanged.
+        let mut fixed = parametric(4, 1, 1.0);
+        fixed.returns.source = ReturnSource::Fixed;
+        let sim = Simulator::new(&fixed).unwrap();
+        assert!(matches!(
+            cache.paths(path_source(&fixed, &sim, None).unwrap()),
+            Paths::List(_)
+        ));
+        assert_eq!(cache.generated, 3);
+    }
+
+    /// #215/AK5: Above the limit nothing is kept: the paths are generated while computing, and earlier kept paths
+    /// are released.
+    #[test]
+    fn issue_215_ak5_cache_respects_the_limit() {
+        assert_eq!(PATH_CACHE_BYTES, 512 << 20);
+        let plan = parametric(4, 1, 1.0);
+        let sim = Simulator::new(&plan).unwrap();
+        let bytes = path_bytes(4, sim.months());
+        assert_eq!(
+            bytes,
+            4 * ((4 * sim.months() + market::PRE_MONTHS) * 8 + std::mem::size_of::<MarketPath>())
+        );
+        assert_eq!(path_bytes(usize::MAX, 1), usize::MAX);
+        let mut cache = PathCache::with_limit(bytes);
+        assert!(matches!(
+            cache.paths(path_source(&plan, &sim, None).unwrap()),
+            Paths::Shared(_)
+        ));
+        cache.limit = bytes - 1;
+        let other = parametric(4, 2, 1.0);
+        let other_sim = sim_of(&other);
+        let paths = cache.paths(path_source(&other, &other_sim, None).unwrap());
+        assert!(matches!(paths, Paths::Parametric(_)));
+        drop(paths);
+        assert!(cache.key.is_none() && cache.paths.is_empty());
+    }
+
+    fn sim_of(plan: &Plan) -> Simulator {
+        Simulator::new(plan).unwrap()
+    }
+
+    /// #215/AK2, AK5: `prepare` keeps the paths within the budget and reduces it by their memory; above it the paths
+    /// stay a generator and the budget unchanged.
+    #[test]
+    fn issue_215_ak2_prepare_keeps_paths_within_the_budget() {
+        let plan = parametric(3, 1, 1.0);
+        let sim = sim_of(&plan);
+        let bytes = path_bytes(3, sim.months());
+        let mut budget = bytes + 5;
+        let kept = prepare(path_source(&plan, &sim, None).unwrap(), &mut budget);
+        assert!(matches!(kept, Paths::List(_)));
+        assert!(same(&kept, &path_source(&plan, &sim, None).unwrap()));
+        assert_eq!(budget, 5);
+        // Exactly at the limit the paths are still kept.
+        let mut budget = bytes;
+        assert!(matches!(
+            prepare(path_source(&plan, &sim, None).unwrap(), &mut budget),
+            Paths::List(_)
+        ));
+        assert_eq!(budget, 0);
+        let mut budget = bytes - 1;
+        assert!(matches!(
+            prepare(path_source(&plan, &sim, None).unwrap(), &mut budget),
+            Paths::Parametric(_)
+        ));
+        assert_eq!(budget, bytes - 1);
+        let mut fixed = plan.clone();
+        fixed.returns.source = ReturnSource::Fixed;
+        let mut budget = 0;
+        assert!(matches!(
+            prepare(path_source(&fixed, &sim_of(&fixed), None).unwrap(), &mut budget),
+            Paths::List(_)
+        ));
+    }
 
     fn result(f: impl FnOnce(&mut Summary)) -> SimResult {
         let mut summary = Summary::default();

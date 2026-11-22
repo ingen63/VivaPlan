@@ -85,7 +85,7 @@ impl Resolver {
 }
 
 /// Step function over calendar months: the last valid value, 0 before the first entry.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Curve {
     points: Vec<(i32, f64)>,
 }

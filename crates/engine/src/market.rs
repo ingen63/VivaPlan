@@ -312,6 +312,7 @@ pub fn monthly(yearly: f64) -> f64 {
 }
 
 /// Curves for fixed values (annual rates).
+#[derive(Clone, PartialEq)]
 pub struct FixedCurves {
     pub stocks: Curve,
     pub bonds: Curve,

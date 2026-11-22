@@ -344,17 +344,19 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
     if let Some(i) = data.as_ref().and_then(|d| currency_issue(d, &p.project.currency)) {
         issues.push(i);
     }
-    let paths = match batch::path_source(&p, &sim, data.as_ref()) {
+    let source = match batch::path_source(&p, &sim, data.as_ref()) {
         Ok(x) => x,
         Err(e) => return fail(issues, e.message()),
     };
-    crate::progress::set_total(paths.len() as u64);
+    crate::progress::set_total(source.len() as u64);
     let cancelled = |issues| fail(issues, msg!(cancelled));
-    let scenarios = if p.scenarios.sweeps.is_empty() {
-        None
+    // #215: With variations, all combinations and the plan itself use the same paths (generated once).
+    let mut cache = batch::PathCache::default();
+    let (scenarios, paths) = if p.scenarios.sweeps.is_empty() {
+        (None, source)
     } else {
-        match run_scenarios(plan, &p, data.as_ref(), paths.len()) {
-            Ok(s) => Some(s),
+        match run_scenarios(plan, &p, data.as_ref(), source.len(), &mut cache) {
+            Ok(s) => (Some(s), cache.paths(source)),
             Err(e) => return fail(issues, e.message()),
         }
     };
@@ -445,8 +447,14 @@ pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, librar
 }
 
 /// Every combination of the variations with all return paths. Monte Carlo paths are the same in all
-/// scenarios (same seed), so differences come from the parameters.
-fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: usize) -> crate::Result<ScenariosOut> {
+/// scenarios (same seed), so differences come from the parameters; `cache` generates them only once (#215).
+fn run_scenarios(
+    plan: &Value,
+    p: &Plan,
+    data: Option<&DataSet>,
+    per_scenario: usize,
+    cache: &mut batch::PathCache,
+) -> crate::Result<ScenariosOut> {
     let sweeps = scenarios::parse(&p.scenarios.sweeps)?;
     let combos = scenarios::combinations(&sweeps)?;
     let params: Vec<String> = sweeps.iter().map(|s| s.param.clone()).collect();
@@ -466,7 +474,7 @@ fn run_scenarios(plan: &Value, p: &Plan, data: Option<&DataSet>, per_scenario: u
                 let q: Plan = serde_json::from_value(v)
                     .map_err(|e| crate::Error::Invalid(msg!(raw_error, detail = e.to_string())))?;
                 let sim = Simulator::new(&q)?;
-                let paths = batch::path_source(&q, &sim, data)?;
+                let paths = cache.paths(batch::path_source(&q, &sim, data)?);
                 let results = batch::run_paths(&sim, &paths);
                 let s = batch::summarize(&results);
                 let pct = |x: u32| {

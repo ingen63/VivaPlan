@@ -37,6 +37,7 @@ mod optimization_settings;
 mod optimize_goal;
 mod optimize_ranges;
 mod parametric_fit;
+mod path_reuse;
 mod pillar3a;
 mod pillar3a_plan;
 mod plan_builder;
