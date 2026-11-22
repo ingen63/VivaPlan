@@ -137,7 +137,7 @@ Der Knopf **«Strategien vergleichen (ohne Optimierung)»** neben «Optimierung 
 
 - Die Haken **«variieren»** und die Bandbreiten bleiben unverändert; der Vergleich beachtet sie nicht. Danach können Sie wie gewohnt optimieren.
 - Gerechnet wird auf **denselben Pfaden wie die Simulation** (Anzahl und Zufallsstartwert der Renditequelle). Die Zahlen einer Strategie stimmen daher mit einer Simulation überein, in der Sie diese Strategie eingestellt haben. Die Pfade für Suche und Prüfung unter «Erweitert» gelten nur für die Optimierung.
-- Die Tabelle ist dieselbe wie nach einer Optimierung (siehe [Ergebnis lesen](#o-read)); die Parameter-Spalte zeigt die Werte der Planung.
+- Die Tabelle ist dieselbe wie nach einer Optimierung (siehe [Ergebnis lesen](#o-read)); die Zeile unter jeder Strategie zeigt die Werte der Planung.
 
 **Immobilien:** Hat Ihre Planung eine eigene oder geplante Immobilie, legt die Auswahl «Immobilien» fest, womit gerechnet wird, beim Vergleich wie bei der Optimierung:
 
@@ -182,7 +182,8 @@ Die Ergebnistabelle zeigt für jede Strategie die Kennzahlen, **gerechnet auf de
 | Ziel | der kombinierte Wert nach der [Formel](#o-score), mit Balken zum Vergleich |
 | Entnahmerate | Entnahme aus dem Vermögen im **ersten Jahr der Pensionierung** (Lebenshaltung und Wohnkosten minus Einnahmen, **vor Steuern**), in Prozent des liquiden Vermögens zu Beginn; Median über die Pfade |
 | Endvermögen 1 % … 99 % | nominales Vermögen am Ende der Simulation bei den Perzentilen 1, 5, 50, 95 und 99 % der Pfade, ermittelt wie im Ergebnis der Simulation; auch für die Ausgangslage |
-| Parameter | die gefundenen Einstellungen (beim Vergleich ohne Optimierung die Werte der Planung); Knopf zum Übernehmen |
+
+Unter jeder Strategie steht eine **eigene Zeile** über die ganze Tabellenbreite mit den gefundenen Parametern (beim Vergleich ohne Optimierung den Werten der Planung) und dem Knopf «In Planung übernehmen». Damit die Tabelle Platz hat, ist im Abschnitt «Optimierung» die Vorschau mit der Prüfung rechts ausgeblendet.
 
 - Die erste Zeile **«Ausgangslage»** zeigt Ihre Planung unverändert, auf denselben Prüfpfaden. Daran messen Sie den Gewinn der Optimierung.
 - **Ausgegraute Zeilen** («Ruingrenze nicht eingehalten») sind Strategien, die Ihre Ruingrenze verfehlen. Sie bleiben sichtbar, damit Sie die Kosten der Sicherheit erkennen. Ist **keine** Strategie zulässig, ist die Grenze mit den vorhandenen Mitteln nicht erreichbar, Sie müssen dann die Ausgaben senken, später in Pension gehen oder die Grenze lockern.

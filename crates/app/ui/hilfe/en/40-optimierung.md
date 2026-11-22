@@ -137,7 +137,7 @@ The button **“Compare strategies (without optimization)”** next to “Start 
 
 - The **“vary”** check marks and the ranges stay unchanged; the comparison ignores them. Afterwards you can optimize as usual.
 - It computes on **the same paths as the simulation** (number and random seed of the return source). The figures of a strategy therefore match a simulation in which you have set this strategy. The paths for search and checking under “Advanced” only apply to the optimization.
-- The table is the same as after an optimization (see [Reading the result](#o-read)); the parameter column shows the values of the plan.
+- The table is the same as after an optimization (see [Reading the result](#o-read)); the line below each strategy shows the values of the plan.
 
 **Real estate:** If your plan has an owned or planned property, the selection “Real estate” determines what is computed, for the comparison as well as for the optimization:
 
@@ -182,7 +182,8 @@ The result table shows the key figures for every strategy, **calculated on the i
 | Goal | the combined value according to the [formula](#o-score), with a bar for comparison |
 | Withdrawal rate | withdrawal from wealth in the **first year of retirement** (living expenses and housing costs minus income, **before taxes**), as a percentage of liquid wealth at the beginning; median across the paths |
 | End wealth 1 % … 99 % | nominal wealth at the end of the simulation at the percentiles 1, 5, 50, 95 and 99 % of the paths, determined as in the simulation result; also for the starting point |
-| Parameters | the settings found (in the comparison without optimization the values of the plan); button for applying them |
+
+Below each strategy there is a **line of its own** across the full width of the table with the parameters found (in the comparison without optimization the values of the plan) and the button “Apply to plan”. To make room for the table, the preview with the validation on the right is hidden in the section “Optimization”.
 
 - The first row **“Baseline”** shows your plan unchanged, on the same paths for checking. It is the measure of what the optimization gains.
 - **Grayed-out rows** (“Ruin limit not met”) are strategies that miss your ruin limit. They stay visible so that you can see the cost of security. If **no** strategy is admissible, the limit cannot be reached with the available means; you then have to reduce spending, retire later or relax the limit.

@@ -924,32 +924,52 @@ const optParam = ([, label, v, pc]) => `${esc(msgText(label))} ${pc ? (v * 100).
 const OPT_END_P = [1, 5, 50, 95, 99];
 const optEndCells = m => OPT_END_P.map((p, i) => `<td class="r">${m.endTotal ? fmtInt(m.endTotal[i]) : "–"}</td>`).join("");
 /** Two header rows: the columns `cols` (cells) span both, the end wealth gets a group heading over its percentiles. */
-const optHead = cols => `<tr>${cols.replace(/<th/g, '<th rowspan="2"')}<th colspan="5" style="text-align:center" title="${tr("optResult.endTitle")}">${tr("optResult.endWealth")}</th><th rowspan="2"></th></tr>
-  <tr>${OPT_END_P.map(p => `<th class="r">${p} %</th>`).join("")}</tr>`;
+const optHead = cols => `<thead><tr>${cols.replace(/<th/g, '<th rowspan="2"')}<th colspan="5" style="text-align:center" title="${tr("optResult.endTitle")}">${tr("optResult.endWealth")}</th></tr>
+  <tr>${OPT_END_P.map(p => `<th class="r">${p} %</th>`).join("")}</tr></thead>`;
 /** Name of a result row; with the property setting «both» or «never sell» also the variant (#197). */
 const optName = (r, x) => msgText(x.strategy) + (r.property && r.property !== "planned" ? ` · ${x.neverSell ? tr("optResult.neverSell") : tr("optResult.asPlanned")}` : "");
 /** Parameters of a result: after an optimization the found ones (and the fixed ones), in a comparison the plan's values. */
 const optParamsHtml = (r, x) => r.compare ? `<small>${x.fixed.map(optParam).join(", ")}</small>`
   : `<small>${x.params.map(optParam).join(", ")}</small>${x.fixed?.length ? `<br><small class="computed">fix: ${x.fixed.map(optParam).join(", ")}</small>` : ""}`;
-function optMetricsRow(name, m, goal, best, extra = "", cls = "") {
-  return `<tr class="${cls}"><td><b>${esc(name)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td><td class="r">${fmtInt(m.p10)}</td><td class="r">${pctTxt(m.volatility)}</td>
-    <td class="r">${fmtInt(goal)}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td>${optEndCells(m)}<td style="min-width:240px">${extra}</td></tr>`;
-}
+/** #200: One group per result: the metrics row and below it a sub-row over the full table width
+ * (parameters, button «In Planung übernehmen»); the group keeps both together visibly. */
+const optGroup = (cells, span, sub, cls = "") => `<tbody class="optgrp ${cls}"><tr class="optmain">${cells}</tr><tr class="optsub"><td colspan="${span}">${sub}</td></tr></tbody>`;
+/** Content of the sub-row of a strategy: parameters left, notice and button right. */
+const optSub = (r, x, i, violated) => `<div class="optsubin"><div>${optParamsHtml(r, x)}</div><div class="optact">${x.feasible ? "" : `<span style="color:var(--err)">${violated}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div></div>`;
+/** Result rows of a report: the reference (plan unchanged) and every strategy, each as a group (#200). */
+const optRows = (r, cells, span, violated) => optGroup(cells(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics), span, `<small class="computed">${tr("optResult.asInPlan")}</small>`)
+  + r.outcomes.map((x, i) => optGroup(cells(optName(r, x) + (i === 0 && x.feasible ? " ★" : ""), x.validated), span, optSub(r, x, i, violated), x.feasible ? "" : "off")).join("");
+const optStale = stale => stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : "";
 /** Result for goal 2 «Kein Notverkauf von Immobilien»: per strategy the share of runs with an unplanned sale. */
 function optResultKeep(r, q, stale) {
-  const row = (name, m, extra, cls = "") => `<tr class="${cls}"><td><b>${esc(name)}</b></td><td class="r"><b>${pctTxt(m.emergencyShare)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td>
-    <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td>${optEndCells(m)}<td style="min-width:240px">${extra}</td></tr>`;
+  const cells = (name, m) => `<td><b>${esc(name)}</b></td><td class="r"><b>${pctTxt(m.emergencyShare)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td>
+    <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td>${optEndCells(m)}`;
   const none = !r.outcomes.some(x => x.feasible);
-  return `<div class="card"><h3>${r.compare ? tr("optResult.titleGoal2Compare") : tr("optResult.titleGoal2")} <span class="sub">${r.compare ? tr("optResult.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) }) : tr("optResult.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
-    ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : ""}
+  return `<div class="card optres"><h3>${r.compare ? tr("optResult.titleGoal2Compare") : tr("optResult.titleGoal2")} <span class="sub">${r.compare ? tr("optResult.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) }) : tr("optResult.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
+    ${optStale(stale)}
     ${none ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.none", { maxRuin: pctTxt(q.maxRuin), minConsumption: pctTxt(q.minConsumption) })}</p>` : ""}
-    <div class="tscroll"><table class="tbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th>`)}
-    ${row(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics, tr("optResult.asInPlan"))}
-    ${r.outcomes.map((x, i) => row(optName(r, x) + (i === 0 && x.feasible ? " ★" : ""), x.validated,
-      `${optParamsHtml(r, x)}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">${tr("optResult.constraintsViolated")}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div>`, x.feasible ? "" : "off")).join("")}
+    <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th>`)}
+    ${optRows(r, cells, 5 + OPT_END_P.length, tr("optResult.constraintsViolated"))}
     </table></div>
     <p class="hint">${tr("optResult.order")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optResult.footer", { v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
 }
+/** Result for goal 1 «Konsum»: metrics, combined goal value with bar, withdrawal rate. */
+function optResultConsumption(r, q, stale) {
+  const w = q.weightMedian;
+  const goal = m => (w * m.median + (1 - w) * m.p10) * Math.max(0, 1 - q.volWeight * m.volatility);
+  const best = Math.max(1, goal(r.reference.metrics), ...r.outcomes.map(x => goal(x.validated)));
+  const cells = (name, m) => `<td><b>${esc(name)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td><td class="r">${fmtInt(m.p10)}</td><td class="r">${pctTxt(m.volatility)}</td>
+    <td class="r">${fmtInt(goal(m))}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal(m) / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td>${optEndCells(m)}`;
+  return `<div class="card optres"><h3>${r.compare ? tr("optimize.compareResult") : tr("optimize.result")} <span class="sub">${r.compare ? tr("optimize.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) }) : tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
+    ${optStale(stale)}
+    <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th>`)}
+    ${optRows(r, cells, 7 + OPT_END_P.length, tr("optimize.ruinViolated"))}
+    </table></div>
+    <p class="hint">${tr("optimize.ruinDef")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optimize.ruinFooter", { maxRuin: pctTxt(q.maxRuin), round: Math.round(w * 100), round2: Math.round((1 - w) * 100), volWeight: q.volWeight })}</p>
+    <p class="hint">${r.compare ? tr("optimize.compareFooter", { v: (r.elapsedMs / 1000).toFixed(1) }) : tr("optimize.searchFooter", { fitPaths: fmtInt(r.fitPaths), v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
+}
+/** #200: Result card of an optimization or comparison, rendered from the report `r` and its request `q` only. */
+const optResultCard = (r, q, stale) => q.goal === "keepProperty" ? optResultKeep(r, q, stale) : optResultConsumption(r, q, stale);
 R.optimize = () => {
   optCfg = optFromPlan();
   const o = lastOpt, stale = o && optKey() !== o.planJson;
@@ -957,21 +977,7 @@ R.optimize = () => {
   let res = "";
   if (optBusy) res = jobCard(tr("optimize.running"), tr("optimize.runningHint"));
   else if (optError) res = `<div class="card errcard">${esc(optError)}</div>`;
-  else if (o) {
-    const r = o.report, q = o.req, w = q.weightMedian;
-    const goal = m => (w * m.median + (1 - w) * m.p10) * Math.max(0, 1 - q.volWeight * m.volatility);
-    const best = Math.max(1, goal(r.reference.metrics), ...r.outcomes.map(x => goal(x.validated)));
-    if (q.goal === "keepProperty") res = optResultKeep(r, q, stale);
-    else res = `<div class="card"><h3>${r.compare ? tr("optimize.compareResult") : tr("optimize.result")} <span class="sub">${r.compare ? tr("optimize.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) }) : tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
-      ${stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : ""}
-      <div class="tscroll"><table class="tbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th>`)}
-      ${optMetricsRow(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics, goal(r.reference.metrics), best, tr("optResult.asInPlan"), r.reference.metrics.ruin > q.maxRuin ? "" : "")}
-      ${r.outcomes.map((x, i) => optMetricsRow(optName(r, x) + (i === 0 && x.feasible ? " ★" : ""), x.validated, goal(x.validated), best,
-        `${optParamsHtml(r, x)}<div style="margin-top:4px">${x.feasible ? "" : `<span style="color:var(--err)">${tr("optimize.ruinViolated")}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div>`, x.feasible ? "" : "off")).join("")}
-      </table></div>
-      <p class="hint">${tr("optimize.ruinDef")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optimize.ruinFooter", { maxRuin: pctTxt(q.maxRuin), round: Math.round(w * 100), round2: Math.round((1 - w) * 100), volWeight: q.volWeight })}</p>
-      <p class="hint">${r.compare ? tr("optimize.compareFooter", { v: (r.elapsedMs / 1000).toFixed(1) }) : tr("optimize.searchFooter", { fitPaths: fmtInt(r.fitPaths), v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
-  }
+  else if (o) res = optResultCard(o.report, o.req, stale);
   return `<h2>${tr("section.optimize")}</h2><p class="lead">${tr("optimize.intro")}</p>
   ${single ? `<div class="card errcard">${tr("optimize.singlePathPre")}${state.returns.source === "fixed" ? tr("optimize.fixedReturns") : tr("optimize.historicalPath")}${tr("optimize.singlePathPost")}</div>` : ""}
   <div class="card"><h3>${tr("optimize.goal")}</h3>
@@ -1386,6 +1392,8 @@ function renderNav(vals) {
 }
 function renderSection() {
   const m = $("#main"), y = m.scrollTop;
+  // #200: in «Optimierung» the right column (preview, validation) gives its width to the result table
+  $(".layout").classList.toggle("wide", current === "optimize");
   m.innerHTML = R[current]();
   m.scrollTop = y;
   refresh();

@@ -137,7 +137,7 @@ Le bouton **«Comparer les stratégies (sans optimisation)»** à côté de «La
 
 - Les coches **«varier»** et les fourchettes restent inchangées; la comparaison ne les prend pas en compte. Vous pouvez ensuite optimiser comme d’habitude.
 - Le calcul se fait sur **les mêmes trajectoires que la simulation** (nombre et graine de la source de rendements). Les chiffres d’une stratégie correspondent donc à une simulation dans laquelle vous avez choisi cette stratégie. Les trajectoires de recherche et de vérification sous «Avancé» ne valent que pour l’optimisation.
-- Le tableau est le même qu’après une optimisation (voir [Lire le résultat](#o-read)); la colonne des paramètres montre les valeurs de la planification.
+- Le tableau est le même qu’après une optimisation (voir [Lire le résultat](#o-read)); la ligne sous chaque stratégie montre les valeurs de la planification.
 
 **Biens immobiliers:** Si votre planification comporte un bien en propriété ou prévu, le choix «Biens immobiliers» détermine ce qui est calculé, pour la comparaison comme pour l’optimisation:
 
@@ -182,7 +182,8 @@ Le tableau des résultats montre pour chaque stratégie les indicateurs, **calcu
 | Objectif | la valeur combinée selon la [formule](#o-score), avec une barre pour la comparaison |
 | Taux de prélèvement | prélèvement sur la fortune la **première année de retraite** (coût de la vie et frais de logement moins revenus, **avant impôts**), en pour cent de la fortune liquide au début; médiane sur les trajectoires |
 | Fortune finale 1 % … 99 % | fortune nominale à la fin de la simulation aux percentiles 1, 5, 50, 95 et 99 % des trajectoires, déterminée comme dans le résultat de la simulation; aussi pour la situation de départ |
-| Paramètres | les réglages trouvés (pour la comparaison sans optimisation, les valeurs de la planification); bouton pour les reprendre |
+
+Sous chaque stratégie figure une **ligne propre** sur toute la largeur du tableau avec les paramètres trouvés (pour la comparaison sans optimisation, les valeurs de la planification) et le bouton «Reprendre dans la planification». Pour laisser de la place au tableau, l’aperçu avec la vérification à droite est masqué dans la section «Optimisation».
 
 - La première ligne **«Situation initiale»** montre votre planification inchangée, sur les mêmes trajectoires de vérification. Vous mesurez à cette aune le gain de l’optimisation.
 - Les **lignes grisées** («Limite de ruine non respectée») sont des stratégies qui ne respectent pas votre limite de ruine. Elles restent visibles pour que vous perceviez le coût de la sécurité. Si **aucune** stratégie n’est admissible, la limite n’est pas atteignable avec les moyens disponibles; vous devez alors réduire les dépenses, prendre votre retraite plus tard ou assouplir la limite.

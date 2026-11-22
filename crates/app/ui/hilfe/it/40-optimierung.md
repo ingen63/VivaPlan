@@ -137,7 +137,7 @@ Il pulsante **«Confrontare le strategie (senza ottimizzazione)»** accanto ad �
 
 - Le spunte **«variare»** e le fasce restano invariate; il confronto non ne tiene conto. In seguito può ottimizzare come al solito.
 - Il calcolo avviene sugli **stessi percorsi della simulazione** (numero e seme della fonte dei rendimenti). Le cifre di una strategia corrispondono quindi a una simulazione in cui ha impostato questa strategia. I percorsi di ricerca e di verifica sotto «Avanzate» valgono solo per l’ottimizzazione.
-- La tabella è la stessa di un’ottimizzazione (vedi [Leggere il risultato](#o-read)); la colonna dei parametri mostra i valori della pianificazione.
+- La tabella è la stessa di un’ottimizzazione (vedi [Leggere il risultato](#o-read)); la riga sotto ogni strategia mostra i valori della pianificazione.
 
 **Immobili:** Se la Sua pianificazione ha un immobile di proprietà o previsto, la scelta «Immobili» determina con che cosa si calcola, per il confronto come per l’ottimizzazione:
 
@@ -182,7 +182,8 @@ La tabella dei risultati mostra per ogni strategia gli indicatori, **calcolati s
 | Obiettivo | il valore combinato secondo la [formula](#o-score), con barra per il confronto |
 | Tasso di prelievo | prelievo dalla sostanza nel **primo anno di pensionamento** (costo della vita e spese d’alloggio meno entrate, **prima delle imposte**), in percentuale della sostanza liquida all’inizio; mediana sui percorsi |
 | Sostanza finale 1 % … 99 % | sostanza nominale alla fine della simulazione ai percentili 1, 5, 50, 95 e 99 % dei percorsi, determinata come nel risultato della simulazione; anche per la situazione di partenza |
-| Parametri | le impostazioni trovate (nel confronto senza ottimizzazione i valori della pianificazione); pulsante per adottarle |
+
+Sotto ogni strategia c’è una **riga propria** su tutta la larghezza della tabella con i parametri trovati (nel confronto senza ottimizzazione i valori della pianificazione) e il pulsante «Adottare nella pianificazione». Per lasciare spazio alla tabella, nella sezione «Ottimizzazione» l’anteprima con la verifica a destra è nascosta.
 
 - La prima riga **«Situazione di partenza»** mostra la Sua pianificazione invariata, sugli stessi percorsi di verifica. Con essa misura il guadagno dell’ottimizzazione.
 - Le **righe in grigio** («Limite di rovina non rispettato») sono strategie che mancano il Suo limite di rovina. Restano visibili, affinché riconosca i costi della sicurezza. Se **nessuna** strategia è ammissibile, il limite non è raggiungibile con i mezzi disponibili; deve allora ridurre le spese, andare in pensione più tardi o allentare il limite.

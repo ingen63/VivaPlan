@@ -129,6 +129,8 @@ Der Knopf **«Strategien vergleichen (ohne Optimierung)»** rechnet die gewählt
 Planung (Standardwerte für Strategien, die die Planung nie benutzt hat), auf denselben Pfaden wie die Simulation. Die
 Ergebnistabelle zeigt je Strategie zusätzlich das nominale **Endvermögen** bei 1, 5, 50, 95 und 99 %. Mit Immobilien legt
 eine Auswahl fest, ob «wie geplant», mit «Immobilien nie verkaufen» oder mit beidem gerechnet wird (jede Strategie zweimal).
+Die gefundenen Parameter und der Knopf zum Übernehmen stehen je Strategie in einer eigenen Zeile unter den Kennzahlen; im
+Abschnitt «Optimierung» ist die Vorschau ausgeblendet, damit die Tabelle ohne waagrechtes Scrollen Platz hat.
 
 ## Immobilien und Hypotheken
 

@@ -136,6 +136,16 @@ table.tbl tr.flash td{animation:flash 1.6s ease}
 .choice:hover{border-color:var(--accent)}
 .choice.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .tbl tr.off td{opacity:.55}
+/* #200: result of the optimization – wide card, per strategy a group of metrics row and sub-row (parameters, button) */
+.layout.wide{grid-template-columns:230px minmax(0,1fr)}
+.layout.wide>aside{display:none}
+.card.optres{max-width:1400px}
+.card.optres .hint{max-width:900px}
+table.opttbl tr.optmain td{border-bottom:0;padding-bottom:2px}
+table.opttbl tr.optsub td{padding:0 6px 8px 18px;border-bottom:1px solid var(--border)}
+table.opttbl tbody.off td{opacity:.55}
+.optsubin{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 16px;border-left:2px solid var(--grid);padding-left:8px}
+.optsubin .optact{white-space:nowrap}
 .choice.off{opacity:.5;cursor:not-allowed}
 .choice b{display:block;margin-bottom:3px}
 .choice small{color:var(--muted);display:block;line-height:1.35}
@@ -292,11 +302,11 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
 .errcard{border-color:var(--err)}
 @media (max-width:1180px){
   body{overflow:auto;height:auto}
-  .layout{grid-template-columns:200px minmax(0,1fr)}
+  .layout,.layout.wide{grid-template-columns:200px minmax(0,1fr)}
   aside{grid-column:1 / -1;border-left:0;border-top:1px solid var(--border)}
 }
 @media (max-width:760px){
-  .layout{grid-template-columns:1fr}
+  .layout,.layout.wide{grid-template-columns:1fr}
   nav{display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid var(--border);padding:6px}
   nav a{flex:none} nav .navfoot{display:none}
   main{padding:16px}

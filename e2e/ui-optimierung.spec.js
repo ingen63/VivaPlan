@@ -542,7 +542,7 @@ test.describe("Compare strategies without optimization (#197)", () => {
       }
       // one row per strategy plus the plan: 5 cells each with an amount after the metrics
       const row = page.locator("#main table.tbl").last().locator("tr").nth(2);
-      await expect(row.locator("td")).toHaveCount(13);
+      await expect(row.locator("td")).toHaveCount(12); // #200: parameters in a sub-row, no column of their own
     };
     await start(page);
     await check();
@@ -581,5 +581,124 @@ test.describe("Compare strategies without optimization (#197)", () => {
     await expect(sel).toHaveCount(0);
     await expect(page.locator('button[data-action="opt-compare"]')).toBeVisible();
     await noErrors(page, errors);
+  });
+});
+
+test.describe("Result table of the optimization without horizontal scrolling (#200)", () => {
+  const LANGUAGES = ["de", "en", "fr", "it"];
+  /** Compares four strategies (reference plus four result rows) with a small computation; `goal` as in the plan. */
+  async function compareFour(page, goal = "consumption") {
+    await page.evaluate(() => { state.returns.bootstrap.paths = 300; });
+    await setOpt(page, { goal, strategies: ["standard", "three_buckets", "guardrails", "fixed_rate"], paths: 200, checkPaths: 300, samples: 2 });
+    await page.evaluate(() => { lastOpt = null; });
+    await page.locator('button[data-action="opt-compare"]').click();
+    await page.waitForFunction(() => lastOpt && !optBusy, null, { timeout: 120_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-job", "off");
+    await expect(page.locator("#main table.opttbl tbody.optgrp")).toHaveCount(5);
+  }
+  /** Widths of the result: table area (client/scroll), card, page and hints. */
+  const widths = page => page.evaluate(() => {
+    const s = document.querySelector("#main .optres .tscroll"), card = document.querySelector("#main .optres");
+    return { client: s.clientWidth, scroll: s.scrollWidth, table: s.querySelector("table").getBoundingClientRect().width,
+      card: card.getBoundingClientRect().width, main: document.querySelector("#main").getBoundingClientRect().width,
+      pageScroll: document.documentElement.scrollWidth, window: window.innerWidth, mainScroll: document.querySelector("#main").scrollWidth - document.querySelector("#main").clientWidth,
+      hints: [...card.querySelectorAll(".hint")].map(h => h.getBoundingClientRect().width) };
+  });
+
+  test("AK1: parameters and button in a sub-row over the full width per strategy, for both goals", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    for (const goal of ["consumption", "keepProperty"]) {
+      await compareFour(page, goal);
+      const t = page.locator("#main table.opttbl");
+      const cols = await t.locator("tbody.optgrp").first().locator("tr.optmain td").count();
+      // no column of its own for the parameters: the header has exactly as many columns as the metrics row
+      expect(await t.evaluate(tbl => [...tbl.tHead.rows[0].cells].reduce((n, c) => n + c.colSpan, 0))).toBe(cols);
+      const groups = t.locator("tbody.optgrp");
+      for (let i = 0; i < 5; i++) {
+        const g = groups.nth(i);
+        await expect(g.locator("tr")).toHaveCount(2);
+        const sub = g.locator("tr.optsub td");
+        await expect(sub).toHaveAttribute("colspan", String(cols));
+        if (i > 0) await expect(sub.locator('button[data-action="opt-apply"]')).toHaveAttribute("data-i", String(i - 1));
+        // the sub-row belongs visibly to its strategy: no line between them, a line below the group
+        const border = await g.evaluate(el => [...el.rows].map(r => getComputedStyle(r.cells[0]).borderBottomWidth));
+        expect(border).toEqual(["0px", "1px"]);
+      }
+      await expect(t.locator('tr.optmain button[data-action="opt-apply"]')).toHaveCount(0);
+      await expect(t.locator("tr.optsub", { hasText: /\d %/ })).toHaveCount(4); // the plan's values as parameters
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK3: result card up to 1400 px, other cards 900 px; right column hidden only in the optimization section", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    await compareFour(page);
+    const max = sel => page.locator(sel).evaluateAll(els => els.map(e => getComputedStyle(e).maxWidth));
+    expect(await max("#main .card.optres")).toEqual(["1400px"]);
+    expect(new Set(await max("#main .card:not(.optres)"))).toEqual(new Set(["900px"]));
+    await expect(page.locator(".layout > aside")).toBeHidden();
+    const geo = () => page.evaluate(() => ({ layout: document.querySelector(".layout").getBoundingClientRect().width,
+      nav: document.querySelector("nav").getBoundingClientRect().width, main: document.querySelector("#main").getBoundingClientRect().width }));
+    let g = await geo();
+    expect(g.main).toBeCloseTo(g.layout - g.nav, 0);
+    for (const sec of ["general", "withdrawal"]) {
+      await page.evaluate(s => goto(s), sec);
+      await expect(page.locator(".layout > aside")).toBeVisible();
+      g = await geo();
+      expect(g.main).toBeCloseTo(g.layout - g.nav - 400, 0);
+      expect(new Set(await max("#main .card"))).toEqual(new Set(["900px"]));
+    }
+    await page.evaluate(() => goto("optimize"));
+    await expect(page.locator(".layout > aside")).toBeHidden();
+    await noErrors(page, errors);
+  });
+
+  test("AK4, AK6: 1440 × 900 px with five result rows: no horizontal scroll bar in any language; hints at most 900 px", async ({ browser }) => {
+    test.setTimeout(180_000);
+    const context = await browser.newContext({ locale: "de-CH", viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    const errors = await open(page, "optimize/bootstrap");
+    await compareFour(page);
+    for (const goal of ["consumption", "keepProperty"]) {
+      if (goal === "keepProperty") await compareFour(page, goal);
+      for (const l of LANGUAGES) {
+        await page.evaluate(l => I18n.use(l).then(() => renderSection()), l);
+        await expect(page.locator("html")).toHaveAttribute("data-language", l);
+        const w = await widths(page);
+        expect(w.scroll, `${goal} ${l}`).toBeLessThanOrEqual(w.client);
+        expect(w.mainScroll, `${goal} ${l}`).toBeLessThanOrEqual(0);
+        for (const h of w.hints) expect(h).toBeLessThanOrEqual(900);
+      }
+      await page.evaluate(() => I18n.use("de"));
+    }
+    await noErrors(page, errors);
+    await context.close();
+  });
+
+  test("AK5: at 2560 px the table is at most 1400 px wide", async ({ browser }) => {
+    const context = await browser.newContext({ locale: "de-CH", viewport: { width: 2560, height: 1200 } });
+    const page = await context.newPage();
+    const errors = await open(page, "optimize/bootstrap");
+    await compareFour(page);
+    const w = await widths(page);
+    expect(w.card).toBeLessThanOrEqual(1400);
+    expect(w.table).toBeLessThanOrEqual(1400);
+    expect(w.scroll).toBeLessThanOrEqual(w.client);
+    await noErrors(page, errors);
+    await context.close();
+  });
+
+  test("AK7: below 760 px the table scrolls inside the card, the page itself does not", async ({ browser }) => {
+    const context = await browser.newContext({ locale: "de-CH", viewport: { width: 700, height: 900 } });
+    const page = await context.newPage();
+    const errors = await open(page, "optimize/bootstrap");
+    await compareFour(page);
+    const w = await widths(page);
+    expect(w.scroll).toBeGreaterThan(w.client);
+    expect(w.card).toBeLessThanOrEqual(w.window);
+    expect(w.pageScroll).toBeLessThanOrEqual(w.window);
+    expect(w.mainScroll).toBeLessThanOrEqual(0);
+    await noErrors(page, errors);
+    await context.close();
   });
 });
