@@ -59,9 +59,11 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | Befehl | Zweck |
 |---|---|
 | `run <planung>` | Planung rechnen (`--csv`, `--json`, `--events`) |
-| `validate <planung>` | Planung prüfen |
+| `validate <planung>` | Planung prüfen (`--json`) |
+| `set <planung> <pfad>=<wert>…` | Werte per Feldpfad ändern, siehe [Werte ändern](#ref-set) |
+| `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
 | `optimize <planung>` | Strategie optimieren, siehe [Kommandozeile](#o-cli) |
-| `bench <planung>` | Rechenzeit messen (`--paths`) |
+| `bench <planung>` | Rechenzeit messen (`--paths`, `--json`) |
 | `schema` | JSON-Schema der Planungsdatei ausgeben |
 | `library` | Zeitreihen der Datenbibliothek auflisten |
 | `import-shiller <datei>` | Shiller-Daten neu einlesen (.xls, .xlsx, .ods) |
@@ -70,6 +72,41 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `ui-dev` | Oberfläche im Browser, nur lokal (Entwicklung) |
 
 Die Kommandozeile gibt ihre Texte, Meldungen und Ereignisse auf Englisch aus, unabhängig von der Sprache der Oberfläche; Zahlen und Daten stehen im Schweizer Format.
+
+## @ref-json Ausgabe als JSON
+Stichworte: JSON, maschinenlesbar, KI, Skript, Standardausgabe, format
+
+`run`, `validate`, `optimize`, `bench` und `diff` geben mit `--json` ohne Dateinamen das Ergebnis in einem festen Format auf die Standardausgabe aus, für Skripte und KI-Assistenten. Hinweise und Fehler gehen auf die Fehlerausgabe; bei einem Fehler endet der Befehl mit einem Fehlercode. `--json <datei.json>` speichert wie bisher das ausführliche Ergebnis in einer Datei.
+
+Jede Ausgabe beginnt mit `format` und der Version. Beträge sind auf ganze Einheiten der Währung gerundet, Anteile auf vier Stellen (0.9512 = 95,12 %), Monate stehen als `"JJJJ-MM"`. Meldungen haben `code`, `params` und den englischen `text`; Prüfmeldungen zusätzlich `severity`, `section` und `field` (Feldpfad).
+
+| `format` | Inhalt |
+|---|---|
+| `vivaplan-run/1` | `error` (oder `null`), `issues`, `elapsedMs` und je nach Methode `single`, `batch` und `scenarios` |
+| `vivaplan-validate/1` | `valid` (keine Fehler), `issues` |
+| `vivaplan-optimize/1` | Einstellungen, `reference` (die Planung, wie sie ist) und `outcomes` (beste Strategie zuerst, mit `params`, `validated`, `feasible` und `patch`) |
+| `vivaplan-bench/1` | `runs`, `months`, `elapsedMs`, `usPerRun`, `cores`, `check` |
+| `vivaplan-diff/1` | `changes`: je Unterschied `path`, `old`, `new` |
+
+**`single`** (ein Renditepfad): Kennzahlen des Laufs (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` als Tabelle mit `columns` und einer Zeile je Jahr (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: Stand Ende Jahr; `income`, `spending`, `taxes`: Summe des Jahres) und `events` als Paare aus Monat und Text.
+
+**`batch`** (mehrere Pfade): `runs`, `successRate`, `earliestDepletion`, `percentiles` (Endvermögen bei 0 = schlechtester Lauf, 1, 5, 10, 25, 50, 75, 90, 95 und 99 %) und `years` mit `p5` bis `p95` des Gesamtvermögens, dem realen Median `p50Real` und dem Anteil der Läufe mit Vermögen `survival`.
+
+**`scenarios`** (Variationen): `params` und je Kombination `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
+
+Für die Beispielplanung umfasst die Ausgabe von `run --json` weniger als 20 000 Zeichen.
+
+## @ref-set Werte per Feldpfad ändern
+Stichworte: set, diff, Feldpfad, ändern, Variante, KI, vergleichen
+
+`vivaplan set <planung> <pfad>=<wert> …` ändert Werte einer Planung, ohne die Datei von Hand zu bearbeiten. Ein **Feldpfad** nennt die Schlüssel der Planungsdatei mit Punkten, Listeneinträge mit ihrer Nummer ab 0: `wealth.stockShare`, `household.persons.0.name`, `milestones.1.years`. Es sind dieselben Pfade, die die Prüfmeldungen unter `field` nennen.
+
+- Der **Wert** wird als JSON gelesen (`0.6`, `true`, `null`, `"Text"`, `{…}`); alles andere gilt als Text, zum Beispiel `project.name=Variante B` oder `returns.startDate=1990-01`.
+- **Zeitpunkt** bei zeitabhängigen Werten: `pfad@<zeitpunkt>=<zahl>` ändert die Stufe ab diesem Zeitpunkt; gibt es dort keine, beginnt dort eine neue. Ein Zeitpunkt ist ein Meilenstein (`@retire`), ein Alter der ersten Person (`@age:62.5`) oder ein Monat (`@2035-01`). Beispiel: `wealth.stockShare@start=0.8 wealth.stockShare@retire=0.5` setzt den Aktienanteil vor und nach der Pensionierung; ein konstanter Wert wird dabei zeitabhängig.
+- **Prüfung:** Ein unbekannter Pfad, ein falscher Typ oder ein unbekannter Zeitpunkt ergibt eine Meldung, und **keine** der Änderungen wird übernommen. Die übrigen Prüfmeldungen der geänderten Planung erscheinen als Hinweise; die Datei wird trotzdem geschrieben.
+- **Datei:** Ohne `-o` schreibt `set` eine neue Datei neben die alte, unter der nächsten freien Nummer (`plan-1.vplan`, `plan-2.vplan`, …), und gibt ihren Namen aus. Mit `-o <datei>` schreibt es dorthin. Eine vorhandene Datei ersetzt `set` nur mit `--overwrite`, nach einer Sicherungskopie `<datei>.bak`. `--overwrite` ohne `-o` ersetzt die Planung selbst.
+
+`vivaplan diff <a> <b>` listet je Unterschied den Feldpfad, den alten und den neuen Wert, zum Beispiel `withdrawal.floor: 0 → 0.8`; mit `--json` im Format `vivaplan-diff/1`.
 
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV

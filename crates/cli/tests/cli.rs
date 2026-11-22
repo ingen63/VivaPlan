@@ -562,3 +562,170 @@ fn issue_204_ak1_cli_lists_the_limits_for_vpw_and_endowment() {
     assert!(o.status.success(), "{t}");
     assert_eq!(t.matches(&format!("fixed: {limits}")).count(), 2, "{t}");
 }
+
+fn stdout_json(o: &Output) -> serde_json::Value {
+    serde_json::from_slice(&o.stdout).unwrap_or_else(|e| panic!("{e}: {}", text(o)))
+}
+
+// #207/AK1: `run`, `optimize`, `validate` and `bench` print with `--json` a fixed format on the standard output (and
+// nothing else there); `--json <file.json>` still saves the detailed result.
+#[test]
+fn issue_207_ak1_json_on_standard_output() {
+    let d = tmp("json-out");
+    let fixed = plan_file(&d, "fixed", |_| {});
+    let o = run(&["run", &fixed, "--json"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let v = stdout_json(&o);
+    assert_eq!(v["format"], "vivaplan-run/1");
+    assert!(v["single"]["years"]["rows"].as_array().unwrap().len() > 30);
+    // `--json` in front of the plan is a switch, not a file name
+    let v = stdout_json(&run(&["run", "--json", &fixed]));
+    assert_eq!(v["format"], "vivaplan-run/1");
+    let boot = plan_file(&d, "bootstrap", |_| {});
+    let v = stdout_json(&run(&["run", &boot, "--json"]));
+    assert_eq!(v["batch"]["runs"], 200);
+
+    let o = run(&["validate", &fixed, "--json"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert_eq!(
+        stdout_json(&o),
+        serde_json::json!({ "format": "vivaplan-validate/1", "valid": true, "issues": [] })
+    );
+    let bad = plan_file(&d, "historical", |v| v["taxes"]["multiplier"] = serde_json::json!(-1));
+    let o = run(&["validate", "--json", &bad]);
+    assert!(!o.status.success());
+    let v = stdout_json(&o);
+    assert_eq!(v["valid"], false);
+    assert_eq!(v["issues"][0]["field"], "taxes.multiplier");
+
+    let o = run(&["bench", &fixed, "--paths", "100", "--json"]);
+    let v = stdout_json(&o);
+    assert_eq!(v["format"], "vivaplan-bench/1");
+    assert_eq!(v["runs"], 100);
+    assert!(v["usPerRun"].as_f64().unwrap() > 0.0);
+
+    let param = plan_file(&d, "parametric", |_| {});
+    let o = run(&[
+        "optimize",
+        &param,
+        "--strategy",
+        "fixed_rate",
+        "--paths",
+        "50",
+        "--check-paths",
+        "50",
+        "--samples",
+        "2",
+        "--json",
+    ]);
+    let v = stdout_json(&o);
+    assert_eq!(v["format"], "vivaplan-optimize/1");
+    assert_eq!(v["outcomes"].as_array().unwrap().len(), 1);
+    assert!(v["outcomes"][0]["validated"]["ruin"].is_number());
+
+    // A run that fails: the error in the format and a failure exit code.
+    let broken = d.join("broken.vplan");
+    let mut p: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&fixed).unwrap()).unwrap();
+    p["milestones"][1]["person"] = serde_json::json!("Z");
+    std::fs::write(&broken, p.to_string()).unwrap();
+    let o = run(&["run", broken.to_str().unwrap(), "--json"]);
+    assert!(!o.status.success());
+    assert!(stdout_json(&o)["error"]["text"].is_string());
+}
+
+// #207/AK2, AK3: `set` changes values by field path into a new file next to the plan; on an error nothing is written.
+#[test]
+fn issue_207_ak2_ak3_set_writes_a_new_file() {
+    let d = tmp("set");
+    let p = plan_file(&d, "fixed", |_| {});
+    let before = std::fs::read_to_string(&p).unwrap();
+    let o = run(&["set", &p, "wealth.stockShare@retire=0.4", "project.name=Neu"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let first = d.join("fixed-1.vplan");
+    assert_eq!(String::from_utf8_lossy(&o.stdout).trim(), first.to_str().unwrap());
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&first).unwrap()).unwrap();
+    assert_eq!(v["project"]["name"], "Neu");
+    assert_eq!(
+        v["wealth"]["stockShare"]["rows"][1],
+        serde_json::json!({ "from": "retire", "value": 0.4 })
+    );
+    assert_eq!(std::fs::read_to_string(&p).unwrap(), before);
+    // The next free number, never overwriting
+    let o = run(&["set", &p, "wealth.cash=1"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert!(d.join("fixed-2.vplan").exists());
+
+    // AK2: unknown path or wrong type: messages, no file
+    let o = run(&[
+        "set",
+        &p,
+        "wealth.cash=2",
+        "wealth.stockShar=0.5",
+        "wealth.bonds=\"viel\"",
+    ]);
+    let t = text(&o);
+    assert!(!o.status.success());
+    assert!(
+        t.contains("Unknown field path “wealth.stockShar”") && t.contains("expected number"),
+        "{t}"
+    );
+    assert!(t.contains("No change made"), "{t}");
+    assert!(!d.join("fixed-3.vplan").exists());
+    assert_eq!(std::fs::read_to_string(&p).unwrap(), before);
+    let o = run(&["set", &p]);
+    assert!(text(&o).contains("Changes missing"), "{}", text(&o));
+
+    // AK3: `-o` to an existing file only with `--overwrite`, after a backup
+    let out = first.to_str().unwrap();
+    let o = run(&["set", &p, "wealth.cash=3", "-o", out]);
+    assert!(!o.status.success());
+    assert!(text(&o).contains("--overwrite"), "{}", text(&o));
+    let old_first = std::fs::read_to_string(&first).unwrap();
+    let o = run(&["set", &p, "wealth.cash=3", "-o", out, "--overwrite"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert_eq!(std::fs::read_to_string(d.join("fixed-1.vplan.bak")).unwrap(), old_first);
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&first).unwrap()).unwrap();
+    assert_eq!(v["wealth"]["cash"], 3);
+    // `--overwrite` without `-o` replaces the plan itself, after a backup
+    let o = run(&["set", &p, "wealth.cash=4", "--overwrite"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert_eq!(std::fs::read_to_string(format!("{p}.bak")).unwrap(), before);
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
+    assert_eq!(v["wealth"]["cash"], 4);
+    // A new file without `-o` does not need `--overwrite`; a new `-o` file neither
+    let fresh = d.join("fresh.vplan");
+    let o = run(&["set", &p, "wealth.cash=5", "-o", fresh.to_str().unwrap()]);
+    assert!(o.status.success() && fresh.exists(), "{}", text(&o));
+    // The validation of the changed plan is shown as notes; the file is written all the same.
+    let o = run(&["set", &p, "taxes.multiplier=-1"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert!(text(&o).contains("ERROR [taxes]"), "{}", text(&o));
+}
+
+// #207/AK4: `diff` lists per difference the field path, the old and the new value.
+#[test]
+fn issue_207_ak4_diff_of_two_plans() {
+    let d = tmp("diff");
+    let p = plan_file(&d, "fixed", |_| {});
+    let o = run(&["set", &p, "household.persons.0.name=Max", "withdrawal.floor=0.8"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let q = d.join("fixed-1.vplan");
+    let o = run(&["diff", &p, q.to_str().unwrap()]);
+    let t = text(&o);
+    assert!(o.status.success(), "{t}");
+    assert_eq!(
+        String::from_utf8_lossy(&o.stdout),
+        "household.persons.0.name: \"Erika Muster\" → \"Max\"\nwithdrawal.floor: 0 → 0.8\n"
+    );
+    let v = stdout_json(&run(&["diff", &p, q.to_str().unwrap(), "--json"]));
+    assert_eq!(v["format"], "vivaplan-diff/1");
+    assert_eq!(
+        v["changes"][1],
+        serde_json::json!({ "path": "withdrawal.floor", "old": 0, "new": 0.8 })
+    );
+    let o = run(&["diff", &p, &p]);
+    assert!(text(&o).contains("No differences."));
+    let o = run(&["diff", &p]);
+    assert!(!o.status.success());
+    assert!(text(&o).contains("Two project files expected"));
+}

@@ -670,6 +670,27 @@ pub fn optimize(
     crate::optimize::run_request(plan, base_dir, library, &req)
 }
 
+/// #207: Result of [`run`] in the fixed, compact format of the command line (`run --json`).
+pub fn run_report(plan: &Value, base_dir: &Path, library: Option<&Path>) -> crate::report::RunReport {
+    crate::report::run(&run(plan, base_dir, library))
+}
+
+/// #207: Result of [`validate`] in the fixed format of the command line (`validate --json`).
+pub fn validate_report(plan: &Value) -> crate::report::ValidateReport {
+    crate::report::validate(validate(plan))
+}
+
+/// #207/AK2, AK6, AK7: Sets values by field path (`path[@time]=value`). Path, type and point in time are checked here;
+/// on any error the result is the list of messages and nothing is changed.
+pub fn set_fields(plan: &Value, assignments: &[String]) -> Result<Value, Vec<Message>> {
+    crate::fieldpath::set(plan, assignments)
+}
+
+/// #207/AK4: Differences between two plans: field path, old and new value.
+pub fn diff_plans(a: &Value, b: &Value) -> Vec<crate::fieldpath::Change> {
+    crate::fieldpath::diff(a, b)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -805,5 +826,26 @@ mod tests {
         assert!(b.fixed_paths.is_some_and(|n| n > 100), "{b:?}");
         // Same plan, runs of the same length: per run about as much time as with one path (generous limit)
         assert!(b.us_per_run > 0.2 * single, "{b:?}, ein Pfad {single}");
+    }
+
+    /// #207/AK6: path and type are checked by the engine interface; the command line only passes the texts on.
+    #[test]
+    fn issue_207_ak6_engine_checks_path_and_type() {
+        let plan = example_plan();
+        let list = |l: &[&str]| l.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let e = set_fields(
+            &plan,
+            &list(&["wealth.stockShare=0.5", "wealth.nope=1", "wealth.cash=true"]),
+        )
+        .unwrap_err();
+        assert_eq!(
+            e.iter().map(Message::code).collect::<Vec<_>>(),
+            ["field_path_unknown", "field_type_wrong"]
+        );
+        let v = set_fields(&plan, &list(&["wealth.stockShare@retire=0.5"])).unwrap();
+        assert_eq!(diff_plans(&plan, &v).len(), 3);
+        assert!(validate_report(&v).valid);
+        let r = run_report(&v, Path::new("."), None);
+        assert!(r.error.is_none() && r.single.is_some());
     }
 }

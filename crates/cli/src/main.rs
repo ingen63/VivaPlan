@@ -21,13 +21,16 @@ const USAGE: &str = "\
 VivaPlan – calculation engine
 
 Usage:
-  vivaplan run <plan.vplan> [--csv <file>] [--json <file>] [--events]
-  vivaplan validate <plan.vplan>
+  vivaplan run <plan.vplan> [--csv <file>] [--json [<file.json>]] [--events]
+  vivaplan validate <plan.vplan> [--json]
+  vivaplan set <plan.vplan> <path>[@<time>]=<value>… [-o <plan.vplan>] [--overwrite]
+        (<time>: milestone id, age:<years> or YYYY-MM; without -o a new file plan-1.vplan, plan-2.vplan, …)
+  vivaplan diff <a.vplan> <b.vplan> [--json]
   vivaplan import-legacy <config.json> --start-year <YYYY> [-o <plan.vplan>] [--base <directory>]
-  vivaplan bench <plan.vplan> [--paths <count>]
+  vivaplan bench <plan.vplan> [--paths <count>] [--json]
   vivaplan optimize <plan.vplan> [--strategy all|standard|three_buckets|guardrails|fixed_rate|vpw|endowment]
         [--goal 1|2] [--min-consumption 90] [--max-ruin 5] [--ruin-age 95] [--weight-median 0.5] [--vol-weight 1] [--max-vol 10]
-        [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json <file>]
+        [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json [<file.json>]]
         [--compare] [--property planned|never-sell|both]
         (--compare: strategies with the plan's values, without search, on the plan's paths as in run)
   vivaplan schema
@@ -37,6 +40,8 @@ Usage:
   vivaplan import-snb <cube.csv>… [--library <folder>]   (devkum, plkopr, zimoma, rendoblim from data.snb.ch)
   vivaplan ui-dev [--port 8787] [--ui <folder>] [--library <folder>]   (user interface in the browser, local only)
 
+--json alone prints the result in a fixed format to the standard output (see the help, reference);
+--json <file.json> saves the detailed result as before.
 Without --library, the data library is the folder crates/engine/data/ of the project; plans refer to it
 with “library:<file>”. Messages and events are in English.
 
@@ -48,6 +53,8 @@ fn main() -> ExitCode {
     let result = match args.first().map(String::as_str) {
         Some("run") => cmd_run(&args[1..]),
         Some("validate") => cmd_validate(&args[1..]),
+        Some("set") => cmd_set(&args[1..]),
+        Some("diff") => cmd_diff(&args[1..]),
         Some("import-legacy") => cmd_import(&args[1..]),
         Some("bench") => cmd_bench(&args[1..]),
         Some("optimize") => optimize::cmd_optimize(&args[1..]),
@@ -99,19 +106,54 @@ pub(crate) fn library_dir(args: &[String]) -> PathBuf {
     })
 }
 
+/// Whether the option `flag` takes the next argument as its value. #207: `--json` only takes a file ending in `.json`.
+fn takes_value(flag: &str, next: Option<&String>) -> bool {
+    match flag {
+        "--events" | "--compare" | "--overwrite" => false,
+        "--json" => next.is_some_and(|n| n.ends_with(".json")),
+        _ => true,
+    }
+}
+
 fn positionals(args: &[String]) -> Vec<&String> {
     let mut out = vec![];
     let mut skip = false;
-    for a in args {
+    for (i, a) in args.iter().enumerate() {
         if skip {
             skip = false;
         } else if a.starts_with('-') {
-            skip = !matches!(a.as_str(), "--events" | "--compare");
+            skip = takes_value(a, args.get(i + 1));
         } else {
             out.push(a);
         }
     }
     out
+}
+
+/// #207: Where the result goes as JSON.
+#[derive(Debug, PartialEq)]
+pub(crate) enum JsonOut {
+    None,
+    /// `--json` alone: fixed format on the standard output.
+    Stdout,
+    /// `--json <file.json>`: detailed result in a file.
+    File(String),
+}
+
+pub(crate) fn json_out(args: &[String]) -> JsonOut {
+    match args.iter().position(|a| a == "--json") {
+        None => JsonOut::None,
+        Some(i) => match args.get(i + 1) {
+            Some(f) if takes_value("--json", Some(f)) => JsonOut::File(f.clone()),
+            _ => JsonOut::Stdout,
+        },
+    }
+}
+
+/// #207: Prints a fixed format on the standard output.
+pub(crate) fn print_json(v: &impl serde::Serialize) -> R {
+    println!("{}", serde_json::to_string(v)?);
+    Ok(())
 }
 
 fn pct(v: f64) -> String {
@@ -184,19 +226,7 @@ fn cmd_import_snb(args: &[String]) -> R {
 }
 
 pub(crate) fn positional(args: &[String]) -> Option<&String> {
-    let mut skip = false;
-    for a in args {
-        if skip {
-            skip = false;
-            continue;
-        }
-        if a.starts_with('-') {
-            skip = !matches!(a.as_str(), "--events" | "--compare");
-            continue;
-        }
-        return Some(a);
-    }
-    None
+    positionals(args).into_iter().next()
 }
 
 fn load(path: &str) -> Result<(Plan, PathBuf), Box<dyn std::error::Error>> {
@@ -238,6 +268,15 @@ fn print_issues(plan: &Plan) -> bool {
 
 fn cmd_validate(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
+    if json_out(args) == JsonOut::Stdout {
+        let report = engine::api::validate_report(&engine::api::read_plan(Path::new(path))?);
+        print_json(&report)?;
+        return if report.valid {
+            Ok(())
+        } else {
+            Err("The plan contains errors.".into())
+        };
+    }
     let (plan, _) = load(path)?;
     if print_issues(&plan) {
         return Err("The plan contains errors.".into());
@@ -248,6 +287,17 @@ fn cmd_validate(args: &[String]) -> R {
 
 fn cmd_run(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
+    let json = json_out(args);
+    if json == JsonOut::Stdout {
+        let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+        let plan = engine::api::read_plan(Path::new(path))?;
+        let report = engine::api::run_report(&plan, &base, Some(&library_dir(args)));
+        print_json(&report)?;
+        return match report.error {
+            Some(e) => Err(e.to_string().into()),
+            None => Ok(()),
+        };
+    }
     let (plan, base) = load(path)?;
     print_issues(&plan);
     let t0 = Instant::now();
@@ -270,8 +320,8 @@ fn cmd_run(args: &[String]) -> R {
             write_csv(&csv, &res)?;
             println!("Monthly values: {csv}");
         }
-        if let Some(json) = opt(args, &["--json"]) {
-            std::fs::write(&json, serde_json::to_string_pretty(&res)?)?;
+        if let JsonOut::File(json) = &json {
+            std::fs::write(json, serde_json::to_string_pretty(&res)?)?;
             println!("Result: {json}");
         }
     } else {
@@ -310,8 +360,8 @@ fn cmd_run(args: &[String]) -> R {
             dt.as_secs_f64() * 1e6 / s.runs as f64,
             rayon_threads()
         );
-        if let Some(json) = opt(args, &["--json"]) {
-            std::fs::write(&json, serde_json::to_string_pretty(&s)?)?;
+        if let JsonOut::File(json) = &json {
+            std::fs::write(json, serde_json::to_string_pretty(&s)?)?;
         }
     }
     Ok(())
@@ -329,6 +379,16 @@ fn cmd_bench(args: &[String]) -> R {
     let t0 = Instant::now();
     let results = batch::run_all(&sim, &paths);
     let dt = t0.elapsed();
+    if json_out(args) == JsonOut::Stdout {
+        let check = results[n - 1].summary.end_total;
+        return print_json(&engine::report::BenchReport::new(
+            n,
+            sim.months(),
+            dt.as_secs_f64(),
+            rayon_threads(),
+            check,
+        ));
+    }
     println!(
         "{n} runs of {} months in {:.0} ms ({:.1} µs per run, {} cores); check: {}",
         sim.months(),
@@ -460,6 +520,93 @@ fn cmd_import(args: &[String]) -> R {
             eprintln!("Saved: {out}");
         }
         None => println!("{json}"),
+    }
+    Ok(())
+}
+
+/// #207/AK2, AK3: Sets values by field path. The engine checks path and type; on an error nothing is written. Without
+/// `-o` the result goes to the next free file `<name>-1.vplan`, `<name>-2.vplan`, … next to the plan; an existing file
+/// is only replaced with `--overwrite`, after a backup `<file>.bak`.
+fn cmd_set(args: &[String]) -> R {
+    let list = positionals(args);
+    let (path, assignments) = list.split_first().ok_or("Project file missing")?;
+    if assignments.is_empty() {
+        return Err("Changes missing: <path>=<value>".into());
+    }
+    let plan = engine::api::read_plan(Path::new(path.as_str()))?;
+    let assignments: Vec<String> = assignments.iter().map(|s| s.to_string()).collect();
+    let changed = match engine::api::set_fields(&plan, &assignments) {
+        Ok(v) => v,
+        Err(errors) => {
+            for e in &errors {
+                eprintln!("Error: {e}");
+            }
+            return Err("No change made.".into());
+        }
+    };
+    let overwrite = args.iter().any(|a| a == "--overwrite");
+    let target = match opt(args, &["-o", "--out"]) {
+        Some(out) => PathBuf::from(out),
+        None if overwrite => PathBuf::from(path.as_str()),
+        None => next_free(Path::new(path.as_str())),
+    };
+    if target.exists() {
+        if !overwrite {
+            return Err(format!("{} exists; use --overwrite to replace it", target.display()).into());
+        }
+        let backup = backup_path(&target);
+        std::fs::copy(&target, &backup).map_err(|e| format!("{}: {e}", backup.display()))?;
+        eprintln!("Backup: {}", backup.display());
+    }
+    engine::api::write_plan(&target, &changed)?;
+    for i in engine::api::validate(&changed) {
+        let tag = if i.severity == Severity::Error { "ERROR" } else { "Note" };
+        eprintln!("{tag} [{}] {}", i.section, i.message);
+    }
+    println!("{}", target.display());
+    Ok(())
+}
+
+/// `<name>-1.<ext>`, `<name>-2.<ext>`, … : the first that does not exist, next to `path`.
+fn next_free(path: &Path) -> PathBuf {
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let ext = path
+        .extension()
+        .map(|e| format!(".{}", e.to_string_lossy()))
+        .unwrap_or_default();
+    (1..)
+        .map(|n| path.with_file_name(format!("{stem}-{n}{ext}")))
+        .find(|p| !p.exists())
+        .expect("a free name exists")
+}
+
+/// `<file>.bak` next to the file.
+fn backup_path(path: &Path) -> PathBuf {
+    let mut name = path.file_name().unwrap_or_default().to_os_string();
+    name.push(".bak");
+    path.with_file_name(name)
+}
+
+/// #207/AK4: Lists the differences between two plans: field path, old and new value.
+fn cmd_diff(args: &[String]) -> R {
+    let list = positionals(args);
+    let [a, b] = list.as_slice() else {
+        return Err("Two project files expected".into());
+    };
+    let a = engine::api::read_plan(Path::new(a.as_str()))?;
+    let b = engine::api::read_plan(Path::new(b.as_str()))?;
+    let changes = engine::api::diff_plans(&a, &b);
+    if json_out(args) == JsonOut::Stdout {
+        return print_json(&engine::report::diff(changes));
+    }
+    for c in &changes {
+        println!("{}: {} → {}", c.path, c.old, c.new);
+    }
+    if changes.is_empty() {
+        println!("No differences.");
     }
     Ok(())
 }

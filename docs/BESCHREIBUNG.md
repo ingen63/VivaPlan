@@ -266,6 +266,14 @@ importieren und die Rechenleistung messen. Sie gibt Texte, Meldungen und Ereigni
 Daten im Schweizer Format. Das Dateiformat ist als JSON-Schema dokumentiert. Konfigurationen eines
 früheren Programms lassen sich importieren.
 
+Für Skripte und KI-Assistenten (#207): `run`, `validate`, `optimize`, `bench` und `diff` geben mit `--json` ein festes,
+in der Hilfe dokumentiertes Format auf die Standardausgabe aus (kompakt: eine Zeile je Jahr, für die Beispielplanung
+unter 20 000 Zeichen). `vivaplan set <planung> <pfad>=<wert> …` ändert Werte über die Feldpfade der Prüfmeldungen, bei
+zeitabhängigen Werten auch die Stufe ab einem Zeitpunkt (`wealth.stockShare@retire=0.5`, `@age:62`, `@2035-01`). Der
+Rechenkern prüft Pfad und Typ gegen das Schema; bei einem Fehler wird keine Änderung übernommen. `set` schreibt ohne
+`-o` eine neue Datei mit der nächsten freien Nummer und ersetzt eine vorhandene nur mit `--overwrite` (nach einer
+Sicherungskopie `.bak`). `vivaplan diff <a> <b>` listet je Unterschied Feldpfad, alten und neuen Wert.
+
 ## Installation
 
 Das Paket für **macOS** (.dmg) baut ein GitHub-Workflow beim Setzen eines Versions-Tags und legt es als Release-Entwurf

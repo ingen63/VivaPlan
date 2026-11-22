@@ -59,9 +59,11 @@ The engine is also available in the terminal (program `vivaplan`):
 | Command | Purpose |
 |---|---|
 | `run <plan>` | Calculate a plan (`--csv`, `--json`, `--events`) |
-| `validate <plan>` | Validate a plan |
+| `validate <plan>` | Validate a plan (`--json`) |
+| `set <plan> <path>=<value>…` | Change values by field path, see [Changing values](#ref-set) |
+| `diff <a> <b>` | List the differences between two plans (`--json`) |
 | `optimize <plan>` | Optimize the strategy, see [Command line](#o-cli) |
-| `bench <plan>` | Measure the calculation time (`--paths`) |
+| `bench <plan>` | Measure the calculation time (`--paths`, `--json`) |
 | `schema` | Output the JSON schema of the plan file |
 | `library` | List the time series of the data library |
 | `import-shiller <file>` | Import Shiller data again (.xls, .xlsx, .ods) |
@@ -70,6 +72,41 @@ The engine is also available in the terminal (program `vivaplan`):
 | `ui-dev` | User interface in the browser, local only (development) |
 
 The command line outputs its texts, messages and events in English, regardless of the language of the user interface; numbers and dates are in the Swiss format.
+
+## @ref-json Output as JSON
+Keywords: JSON, machine-readable, AI, script, standard output, format
+
+With `--json` and no file name, `run`, `validate`, `optimize`, `bench` and `diff` print the result in a fixed format on the standard output, for scripts and AI assistants. Notes and errors go to the error output; on an error the command ends with an error code. `--json <file.json>` saves the detailed result in a file, as before.
+
+Every output starts with `format` and the version. Amounts are rounded to whole units of the currency, shares to four decimals (0.9512 = 95.12 %), months are given as `"YYYY-MM"`. Messages have `code`, `params` and the English `text`; validation messages also have `severity`, `section` and `field` (field path).
+
+| `format` | Content |
+|---|---|
+| `vivaplan-run/1` | `error` (or `null`), `issues`, `elapsedMs` and, depending on the method, `single`, `batch` and `scenarios` |
+| `vivaplan-validate/1` | `valid` (no errors), `issues` |
+| `vivaplan-optimize/1` | settings, `reference` (the plan as it is) and `outcomes` (best strategy first, with `params`, `validated`, `feasible` and `patch`) |
+| `vivaplan-bench/1` | `runs`, `months`, `elapsedMs`, `usPerRun`, `cores`, `check` |
+| `vivaplan-diff/1` | `changes`: per difference `path`, `old`, `new` |
+
+**`single`** (one return path): key figures of the run (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` as a table with `columns` and one row per year (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: value at the end of the year; `income`, `spending`, `taxes`: sum of the year) and `events` as pairs of month and text.
+
+**`batch`** (several paths): `runs`, `successRate`, `earliestDepletion`, `percentiles` (final wealth at 0 = worst run, 1, 5, 10, 25, 50, 75, 90, 95 and 99 %) and `years` with `p5` to `p95` of the total wealth, the real median `p50Real` and the share of runs with wealth left, `survival`.
+
+**`scenarios`** (variations): `params` and per combination `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
+
+For the example plan, the output of `run --json` has fewer than 20 000 characters.
+
+## @ref-set Changing values by field path
+Keywords: set, diff, field path, change, variant, AI, compare
+
+`vivaplan set <plan> <path>=<value> …` changes values of a plan without editing the file by hand. A **field path** names the keys of the plan file separated by dots, list entries by their number from 0: `wealth.stockShare`, `household.persons.0.name`, `milestones.1.years`. These are the same paths that the validation messages give under `field`.
+
+- The **value** is read as JSON (`0.6`, `true`, `null`, `"text"`, `{…}`); anything else counts as text, for example `project.name=Variant B` or `returns.startDate=1990-01`.
+- **Point in time** for time-dependent values: `path@<time>=<number>` changes the step from this point in time; if there is none, a new one begins there. A point in time is a milestone (`@retire`), an age of the first person (`@age:62.5`) or a month (`@2035-01`). Example: `wealth.stockShare@start=0.8 wealth.stockShare@retire=0.5` sets the stock allocation before and after retirement; a constant value becomes time-dependent.
+- **Checking:** an unknown path, a wrong type or an unknown point in time gives a message, and **none** of the changes is applied. The other validation messages of the changed plan appear as notes; the file is written all the same.
+- **File:** without `-o`, `set` writes a new file next to the old one, under the next free number (`plan-1.vplan`, `plan-2.vplan`, …), and prints its name. With `-o <file>` it writes there. `set` replaces an existing file only with `--overwrite`, after a backup `<file>.bak`. `--overwrite` without `-o` replaces the plan itself.
+
+`vivaplan diff <a> <b>` lists per difference the field path, the old and the new value, for example `withdrawal.floor: 0 → 0.8`; with `--json` in the format `vivaplan-diff/1`.
 
 ## @ref-library Data library: folders and files
 Keywords: folder, time series, storage location, Application Support, CSV

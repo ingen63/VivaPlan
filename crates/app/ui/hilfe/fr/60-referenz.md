@@ -59,9 +59,11 @@ Le moteur de calcul est également disponible dans le terminal (programme `vivap
 | Commande | But |
 |---|---|
 | `run <planification>` | Calculer une planification (`--csv`, `--json`, `--events`) |
-| `validate <planification>` | Contrôler une planification |
+| `validate <planification>` | Contrôler une planification (`--json`) |
+| `set <planification> <chemin>=<valeur>…` | Modifier des valeurs par chemin de champ, voir [Modifier des valeurs](#ref-set) |
+| `diff <a> <b>` | Lister les différences entre deux planifications (`--json`) |
 | `optimize <planification>` | Optimiser la stratégie, voir [Ligne de commande](#o-cli) |
-| `bench <planification>` | Mesurer le temps de calcul (`--paths`) |
+| `bench <planification>` | Mesurer le temps de calcul (`--paths`, `--json`) |
 | `schema` | Afficher le schéma JSON du fichier de planification |
 | `library` | Lister les séries temporelles de la bibliothèque de données |
 | `import-shiller <fichier>` | Réimporter les données Shiller (.xls, .xlsx, .ods) |
@@ -70,6 +72,41 @@ Le moteur de calcul est également disponible dans le terminal (programme `vivap
 | `ui-dev` | Interface dans le navigateur, uniquement en local (développement) |
 
 La ligne de commande affiche ses textes, messages et événements en anglais, indépendamment de la langue de l’interface; les nombres et les dates sont au format suisse.
+
+## @ref-json Sortie en JSON
+Mots-clés: JSON, lisible par machine, IA, script, sortie standard, format
+
+Avec `--json` sans nom de fichier, `run`, `validate`, `optimize`, `bench` et `diff` affichent le résultat dans un format fixe sur la sortie standard, pour les scripts et les assistants IA. Les remarques et les erreurs vont sur la sortie d’erreur; en cas d’erreur, la commande se termine avec un code d’erreur. `--json <fichier.json>` enregistre comme jusqu’ici le résultat détaillé dans un fichier.
+
+Chaque sortie commence par `format` et la version. Les montants sont arrondis à des unités entières de la monnaie, les parts à quatre décimales (0.9512 = 95,12 %), les mois figurent sous la forme `"AAAA-MM"`. Les messages ont `code`, `params` et le `text` anglais; les messages de contrôle ont en plus `severity`, `section` et `field` (chemin de champ).
+
+| `format` | Contenu |
+|---|---|
+| `vivaplan-run/1` | `error` (ou `null`), `issues`, `elapsedMs` et, selon la méthode, `single`, `batch` et `scenarios` |
+| `vivaplan-validate/1` | `valid` (aucune erreur), `issues` |
+| `vivaplan-optimize/1` | réglages, `reference` (la planification telle quelle) et `outcomes` (meilleure stratégie en premier, avec `params`, `validated`, `feasible` et `patch`) |
+| `vivaplan-bench/1` | `runs`, `months`, `elapsedMs`, `usPerRun`, `cores`, `check` |
+| `vivaplan-diff/1` | `changes`: par différence `path`, `old`, `new` |
+
+**`single`** (une trajectoire de rendement): indicateurs de la simulation (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` sous forme de tableau avec `columns` et une ligne par année (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: état en fin d’année; `income`, `spending`, `taxes`: somme de l’année) et `events` sous forme de paires mois et texte.
+
+**`batch`** (plusieurs trajectoires): `runs`, `successRate`, `earliestDepletion`, `percentiles` (fortune finale à 0 = pire simulation, 1, 5, 10, 25, 50, 75, 90, 95 et 99 %) et `years` avec `p5` à `p95` de la fortune totale, la médiane réelle `p50Real` et la part des simulations avec de la fortune, `survival`.
+
+**`scenarios`** (variations): `params` et par combinaison `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
+
+Pour la planification d’exemple, la sortie de `run --json` compte moins de 20 000 caractères.
+
+## @ref-set Modifier des valeurs par chemin de champ
+Mots-clés: set, diff, chemin de champ, modifier, variante, IA, comparer
+
+`vivaplan set <planification> <chemin>=<valeur> …` modifie des valeurs d’une planification sans éditer le fichier à la main. Un **chemin de champ** nomme les clés du fichier de planification séparées par des points, les entrées de liste par leur numéro à partir de 0: `wealth.stockShare`, `household.persons.0.name`, `milestones.1.years`. Ce sont les mêmes chemins que les messages de contrôle indiquent sous `field`.
+
+- La **valeur** est lue en JSON (`0.6`, `true`, `null`, `"texte"`, `{…}`); tout le reste compte comme texte, par exemple `project.name=Variante B` ou `returns.startDate=1990-01`.
+- **Moment** pour les valeurs dépendant du temps: `chemin@<moment>=<nombre>` modifie le palier à partir de ce moment; s’il n’y en a pas, un nouveau commence là. Un moment est un jalon (`@retire`), un âge de la première personne (`@age:62.5`) ou un mois (`@2035-01`). Exemple: `wealth.stockShare@start=0.8 wealth.stockShare@retire=0.5` fixe la part d’actions avant et après la retraite; une valeur constante devient alors dépendante du temps.
+- **Contrôle:** un chemin inconnu, un type erroné ou un moment inconnu donne un message, et **aucune** des modifications n’est reprise. Les autres messages de contrôle de la planification modifiée apparaissent comme remarques; le fichier est tout de même écrit.
+- **Fichier:** sans `-o`, `set` écrit un nouveau fichier à côté de l’ancien, sous le prochain numéro libre (`plan-1.vplan`, `plan-2.vplan`, …), et affiche son nom. Avec `-o <fichier>`, il écrit à cet endroit. `set` ne remplace un fichier existant qu’avec `--overwrite`, après une copie de sauvegarde `<fichier>.bak`. `--overwrite` sans `-o` remplace la planification elle-même.
+
+`vivaplan diff <a> <b>` liste par différence le chemin de champ, l’ancienne et la nouvelle valeur, par exemple `withdrawal.floor: 0 → 0.8`; avec `--json` au format `vivaplan-diff/1`.
 
 ## @ref-library Bibliothèque de données: dossiers et fichiers
 Mots-clés: dossier, séries temporelles, emplacement, Application Support, CSV

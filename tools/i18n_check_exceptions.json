@@ -262,6 +262,27 @@
       "check": "values",
       "subject": "%",
       "reason": "«10-%-Perzentil» steht in der üblichen Form der Sprache als «10th/10e/10° percentile», ohne «%» (#182)"
+    },
+    {
+      "file": "crates/app/ui/i18n/fr.json",
+      "where": "engine.field_path_unknown",
+      "check": "terms",
+      "subject": "Pfad",
+      "reason": "«Pfad» meint hier den Feldpfad der Planungsdatei (#207), nicht den Renditepfad; französisch «chemin de champ»"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/60-referenz.md",
+      "where": "§ref-cli",
+      "check": "terms",
+      "subject": "Pfad",
+      "reason": "«Pfad» meint hier den Feldpfad der Planungsdatei (#207), nicht den Renditepfad; französisch «chemin de champ»"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/60-referenz.md",
+      "where": "§ref-set",
+      "check": "terms",
+      "subject": "Pfad",
+      "reason": "«Pfad» meint hier den Feldpfad der Planungsdatei (#207), nicht den Renditepfad; französisch «chemin de champ»"
     }
   ]
 }

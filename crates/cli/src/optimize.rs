@@ -6,7 +6,7 @@ use engine::api;
 use engine::model::{Goal, Plan, PropertyMode, ReturnSource};
 use engine::optimize::{self as opt, Objective, Outcome, Request};
 
-use crate::{chf, library_dir, opt as option, positional, R};
+use crate::{chf, json_out, library_dir, opt as option, positional, print_json, JsonOut, R};
 
 fn num(args: &[String], name: &str) -> Result<Option<f64>, Box<dyn std::error::Error>> {
     option(args, &[name])
@@ -193,6 +193,10 @@ pub fn cmd_optimize(args: &[String]) -> R {
     let req = request_from(&plan, args)?;
     let obj = req.objective();
     let report = opt::run_request(&base, &base_dir, Some(&library_dir(args)), &req)?;
+    let json = json_out(args);
+    if json == JsonOut::Stdout {
+        return print_json(&engine::report::optimize(&report));
+    }
 
     if report.compare {
         println!(
@@ -250,8 +254,8 @@ pub fn cmd_optimize(args: &[String]) -> R {
         );
     }
     println!("Computing time: {:.1} s", report.elapsed_ms / 1e3);
-    if let Some(json) = option(args, &["--json"]) {
-        std::fs::write(&json, serde_json::to_string_pretty(&report.outcomes)?)?;
+    if let JsonOut::File(json) = &json {
+        std::fs::write(json, serde_json::to_string_pretty(&report.outcomes)?)?;
         println!("Result: {json}");
     }
     Ok(())

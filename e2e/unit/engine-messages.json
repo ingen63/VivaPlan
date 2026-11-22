@@ -3410,6 +3410,111 @@
     "text": "Path number Person 2 outside 0 to Person 2"
   },
   {
+    "code": "field_assignment_invalid",
+    "params": {
+      "text": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{text}”: expected <path>=<value>",
+    "text": "“Person 2”: expected <path>=<value>"
+  },
+  {
+    "code": "field_path_unknown",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Unknown field path “{path}”",
+    "text": "Unknown field path “Person 2”"
+  },
+  {
+    "code": "field_type_wrong",
+    "params": {
+      "expected": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}”: {value} does not fit, expected {expected}",
+    "text": "“Person 2”: Person 2 does not fit, expected Person 2"
+  },
+  {
+    "code": "field_not_series",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}” is not a time-dependent value; a point in time with @ is only possible for time-dependent values",
+    "text": "“Person 2” is not a time-dependent value; a point in time with @ is only possible for time-dependent values"
+  },
+  {
+    "code": "field_time_unknown",
+    "params": {
+      "at": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}”: unknown point in time “{at}” (milestone, age:<years> or YYYY-MM)",
+    "text": "“Person 2”: unknown point in time “Person 2” (milestone, age:<years> or YYYY-MM)"
+  },
+  {
+    "code": "field_changes_invalid",
+    "params": {
+      "detail": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The changes do not give a valid plan: {detail}",
+    "text": "The changes do not give a valid plan: Person 2"
+  },
+  {
     "code": "currency_mismatch",
     "params": {
       "currency": {

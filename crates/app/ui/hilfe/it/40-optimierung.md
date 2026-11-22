@@ -272,7 +272,7 @@ vivaplan optimize <pianificazione.vplan> [opzioni]
 | `--paths`, `--check-paths`, `--samples` | percorsi della ricerca e della verifica, punti d’inizio |
 | `--seed` | valore iniziale casuale |
 | `--strategy a,b` | strategie (`standard`, `three_buckets`, `guardrails`, `fixed_rate`, `vpw`, `endowment`) |
-| `--json <file>` | salvare il risultato come JSON |
+| `--json [<file.json>]` | senza file: risultato nel formato fisso sull’output standard ([Output in JSON](#ref-json)); con file: salvare il risultato come JSON |
 | `--compare` | confrontare le strategie senza ricerca con i valori della pianificazione, sui percorsi della simulazione |
 | `--property planned\|never-sell\|both` | immobili: come pianificato (predefinito), non vendere mai o entrambi (ogni strategia due volte) |
 
