@@ -180,8 +180,9 @@ fn couple() -> Value {
     v
 }
 
+/// #198/AK4: The need counts the capped household AHV with the 13th pension, without a second cap.
 #[test]
-fn need_counts_pensions_that_start_later_in_the_year() {
+fn issue_198_ak4_need_counts_pensions_that_start_later_in_the_year() {
     let r = run(&couple());
     let a = refill(&r, "A", 2031, 11);
     // November and December, extrapolated to 12 months (× 6)
@@ -191,8 +192,8 @@ fn need_counts_pensions_that_start_later_in_the_year() {
     let pb = rec(&r, 2031, 12).pk_pension - pa;
     assert!(pa > 0.0 && pb > 0.0);
     close(a.basis.pk, 6.0 * (2.0 * pa + pb), "PK-Renten");
-    // AHV together 5000, capped at 3780
-    close(a.basis.ahv, 12.0 * 3780.0, "AHV plafoniert");
+    // AHV together 5000, capped at 3780; #198/AK4: with the 13th pension 13 × 3780, not capped again
+    close(a.basis.ahv, 13.0 * 3780.0, "AHV plafoniert mit 13. Rente");
     close(a.basis.living, 12_000.0, "Lebenshaltung");
 }
 
@@ -231,7 +232,8 @@ fn need_uses_the_indexed_ahv_cap() {
     assert_eq!(j.basis.source, "January, planned");
     // Cap adjusted with inflation, like the AHV paid out in January
     assert!(rec(&r, 2032, 1).ahv > 3780.0 * 1.1);
-    close(j.basis.ahv, 12.0 * rec(&r, 2032, 1).ahv, "AHV");
+    // #198: with the 13th pension
+    close(j.basis.ahv, 13.0 * rec(&r, 2032, 1).ahv, "AHV");
 }
 
 #[test]

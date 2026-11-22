@@ -59,7 +59,7 @@
   "boot.startupTitle": "Planung beim Start",
   "buckets.after": "Nachher T1 / T2 / T3",
   "buckets.afterTitle": "Topf 1 / Topf 2 / Topf 3 nach der Auffüllung",
-  "buckets.ahvTitle": "abgezogene Einnahmen: AHV-Rente pro Jahr",
+  "buckets.ahvTitle": "abgezogene Einnahmen: AHV-Rente pro Jahr, ab 2026 mit 13. Rente",
   "buckets.before": "Vorher T1 / T2 / T3",
   "buckets.beforeSpending": "vor den Ausgaben des Monats ({payment})",
   "buckets.beforeTitle": "Topf 1 / Topf 2 / Topf 3 vor der Auffüllung",

@@ -59,7 +59,7 @@
   "boot.startupTitle": "Plan at startup",
   "buckets.after": "After B1 / B2 / B3",
   "buckets.afterTitle": "Bucket 1 / bucket 2 / bucket 3 after the refill",
-  "buckets.ahvTitle": "deducted income: AHV pension per year",
+  "buckets.ahvTitle": "deducted income: AHV pension per year, from 2026 with the 13th pension",
   "buckets.before": "Before B1 / B2 / B3",
   "buckets.beforeSpending": "before the month's spending ({payment})",
   "buckets.beforeTitle": "Bucket 1 / bucket 2 / bucket 3 before the refill",

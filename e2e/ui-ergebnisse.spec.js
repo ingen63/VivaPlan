@@ -767,3 +767,38 @@ test.describe("Display", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("13th AHV pension in the net need of the 3-bucket strategy (#198)", () => {
+  test("AK5: the AHV column of the 3-bucket table shows the AHV of the year with the 13th pension", async ({ page }) => {
+    const errors = await open(page);
+    const out = await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      state.withdrawal.strategy = "three_buckets";
+      state.withdrawal.buckets = { cashYears: 2, bondYears: 1, refillThreshold: -1, reserveMonths: 3 };
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "overview"; showResults(true); renderResults(lastRun);
+      const recs = lastRun.single.records, ahv = m => recs.find(x => x.month === m)?.ahv ?? 0;
+      // A January refill of a full year from 2027 on in which the AHV already ran in the previous December
+      const jan = lastRun.single.bucketRefills.find(r => r.trigger === "Januar" && r.basis.months === 12
+        && +r.month.slice(0, 4) >= 2027 && ahv(`${+r.month.slice(0, 4) - 1}-12`) > 0);
+      return { jan, monthly: jan ? ahv(jan.month) : 0 };
+    });
+    expect(out.jan, "Januar-Auffüllung mit laufender AHV").toBeTruthy();
+    expect(out.monthly).toBeGreaterThan(0);
+    // AK1: 13 × the monthly pension
+    expect(out.jan.basis.ahv).toBeCloseTo(13 * out.monthly, 6);
+    const year = out.jan.month.slice(0, 4);
+    await page.getByRole("button", { name: "Jahreswerte" }).click();
+    await page.locator(`button[data-action="bk-toggle"][data-y="${year}"]`).click();
+    const table = page.locator("#resultsBody tr.bk table").first();
+    const heads = await table.locator("tr").first().locator("th").allInnerTexts();
+    const col = heads.indexOf("AHV");
+    expect(col).toBeGreaterThan(1);
+    const row = table.locator("tr").filter({ hasText: "Januar" }).first();
+    const shown = parseNum(await row.locator("td").nth(col).innerText());
+    expect(Math.abs(shown - 13 * out.monthly)).toBeLessThanOrEqual(1);
+    expect(Math.abs(shown - 12 * out.monthly)).toBeGreaterThan(1);
+    await noErrors(page, errors);
+  });
+});

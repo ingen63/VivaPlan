@@ -11,8 +11,9 @@ use engine::sim::{BucketRefill, EventKind, SimResult, Simulator};
 use engine::time::YearMonth;
 use serde_json::{json, Value};
 
-/// Living costs 100'000, rent 24'000, income tax 4'000 (rate on 84'000 pensions), pensions 84'000 (AHV 2'500 +
-/// PK pension 4'500 per month) → net need 44'000; bucket 1 = 2 years, bucket 2 = 1 year; stocks 6 %, bonds 1 %.
+/// Living costs 100'000, rent 24'000, income tax rate 4'000 / 84'000, pensions AHV 2'500 + PK pension 4'500 per month;
+/// #198: AHV in the need with the 13th pension 32'500, pensions 86'500, income tax 4'119.05 → net need [`NEED`];
+/// bucket 1 = 2 years, bucket 2 = 1 year; stocks 6 %, bonds 1 %.
 fn base() -> Value {
     json!({
         "project": { "name": "3-Topf" },
@@ -31,6 +32,9 @@ fn base() -> Value {
         "realestate": { "properties": [ { "name": "Miete", "status": "rent", "from": "start", "rent": 2000 } ] }
     })
 }
+
+/// #198/AK2: Net need of [`base`]: 100'000 + 24'000 + 4'119.05 − 32'500 − 54'000.
+const NEED: f64 = 41_619.05;
 
 fn run(v: Value) -> SimResult {
     let p: Plan = serde_json::from_value(crate::any_age(v)).expect("Planung gültig");
@@ -106,8 +110,9 @@ fn table(res: &SimResult, what: &str) {
     }
 }
 
+/// #198/AK2, #198/AK3: AHV with the 13th pension (13 × 2'500), income tax on 86'500 including the 13th pension.
 #[test]
-fn example_january_2031_gives_88000_and_44000() {
+fn issue_198_ak2_example_january_2031_gives_83238_10_and_41619_05() {
     let res = run(base());
     let r = january(&res, 2031);
     assert_eq!(r.basis.year, 2031);
@@ -115,14 +120,14 @@ fn example_january_2031_gives_88000_and_44000() {
     assert_eq!(r.basis.months, 12);
     close(r.basis.living, 100_000.0, "Lebenshaltung");
     close(r.basis.housing, 24_000.0, "Wohnen");
-    close(r.basis.income_tax, 4_000.0, "Einkommenssteuer");
-    close(r.basis.ahv, 30_000.0, "AHV");
+    close(r.basis.income_tax, 4_119.05, "Einkommenssteuer auf 86'500");
+    close(r.basis.ahv, 32_500.0, "AHV mit 13. Rente");
     close(r.basis.pk, 54_000.0, "PK-Rente");
-    close(r.need, 44_000.0, "Netto-Bedarf");
-    close(r.target1, 88_000.0, "Ziel Topf 1");
-    close(r.target2, 44_000.0, "Ziel Topf 2");
-    close(r.after[0], 88_000.0, "Topf 1 nach der Auffüllung");
-    close(r.after[1], 44_000.0, "Topf 2 nach der Auffüllung");
+    close(r.need, 41_619.05, "Netto-Bedarf");
+    close(r.target1, 83_238.10, "Ziel Topf 1");
+    close(r.target2, 41_619.05, "Ziel Topf 2");
+    close(r.after[0], 83_238.10, "Topf 1 nach der Auffüllung");
+    close(r.after[1], 41_619.05, "Topf 2 nach der Auffüllung");
     close(
         r.after[0] + r.after[1] + r.after[2],
         r.before.iter().sum::<f64>(),
@@ -131,26 +136,48 @@ fn example_january_2031_gives_88000_and_44000() {
     assert!(r.condition_met && !r.condition_ignored);
 }
 
+/// #198/AK1: Before 2026 the AHV counts 12 monthly pensions in the need, from 2026 with the 13th pension 13.
+#[test]
+fn issue_198_ak1_the_13th_pension_counts_in_the_need_from_2026() {
+    let mut v = base();
+    v["household"]["persons"][0]["birth"] = json!("1959-01"); // 65 at the start: no early-payout reduction
+    v["milestones"][0]["date"] = json!("2024-01");
+    v["milestones"][1]["date"] = json!("2024-01");
+    v["milestones"][2]["date"] = json!("2027-12");
+    let res = run(v);
+    let (r25, r26) = (january(&res, 2025), january(&res, 2026));
+    close(r25.basis.ahv, 30_000.0, "AHV 2025: 12 × 2'500");
+    close(r25.basis.income_tax, 4_000.0, "Einkommenssteuer 2025 auf 84'000");
+    close(r25.need, 44_000.0, "Netto-Bedarf 2025");
+    close(r26.basis.ahv, 32_500.0, "AHV 2026: 13 × 2'500");
+    close(r26.need, NEED, "Netto-Bedarf 2026");
+    close(r26.target1, 2.0 * NEED, "Ziel Topf 1 2026");
+}
+
 #[test]
 fn ten_years_above_the_threshold_reach_the_targets_every_year() {
     let res = run(base());
     table(&res, "10 Jahre, Rendite über der Schwelle");
     for y in 2031..=2041 {
         let r = january(&res, y);
-        close(r.need, 44_000.0, &format!("Netto-Bedarf {y}"));
-        close(r.after[0], 88_000.0, &format!("Topf 1 {y}"));
-        close(r.after[1], 44_000.0, &format!("Topf 2 {y}"));
+        close(r.need, NEED, &format!("Netto-Bedarf {y}"));
+        close(r.after[0], 2.0 * NEED, &format!("Topf 1 {y}"));
+        close(r.after[1], NEED, &format!("Topf 2 {y}"));
         // Bucket 1 has shrunk by the year's spending and is brought back to the target every year
         assert!(r.before[0] < r.after[0]);
         // (in the first year the previous year's income tax, only due in May, is missing; #190: the 13th AHV pension
-        // of 2'500 in December is not part of the net need and lowers the year's withdrawal; the income tax on it,
+        // of 2'500 in December lowers the year's withdrawal (#198: it is part of the net need); the income tax on it,
         // 2'500 × 4'000 / 84'000, is paid in May of the following year)
         let paid = if y == 2031 {
             40_000.0 - 2_500.0
         } else {
             44_000.0 - 2_500.0 + 2_500.0 * 4_000.0 / 84_000.0
         };
-        close(r.before[0] + paid, 88_000.0, &format!("Topf 1 vor der Auffüllung {y}"));
+        close(
+            r.before[0] + paid,
+            2.0 * NEED,
+            &format!("Topf 1 vor der Auffüllung {y}"),
+        );
     }
     never_negative(&res);
 }
@@ -253,12 +280,13 @@ fn pot_2_smaller_than_the_gap_of_pot_1_takes_the_rest_from_pot_3_then_pot_2_from
     v["withdrawal"]["buckets"]["bondYears"] = json!(0.5);
     let res = run(v);
     let r = january(&res, 2032);
-    close(r.target2, 22_000.0, "Ziel Topf 2");
-    // Shortfall bucket 1 = 44'000; bucket 2 (22'000) is not enough, 22'000 come from bucket 3, then bucket 2 again from bucket 3
+    close(r.target2, 0.5 * NEED, "Ziel Topf 2");
+    // Shortfall bucket 1 ≈ one year's spending; bucket 2 (half a need) is not enough, the rest comes from bucket 3, then
+    // bucket 2 again from bucket 3
     let m: Vec<(u8, u8)> = r.moves.iter().map(|m| (m.from, m.to)).collect();
     assert_eq!(m, vec![(2, 1), (3, 1), (3, 2)], "{:?}", r.moves);
-    close(r.after[0], 88_000.0, "Topf 1");
-    close(r.after[1], 22_000.0, "Topf 2");
+    close(r.after[0], 2.0 * NEED, "Topf 1");
+    close(r.after[1], 0.5 * NEED, "Topf 2");
 }
 
 /// Plan with the threshold 100 % (the stock return of 6 % never reaches it).
@@ -352,9 +380,11 @@ fn start_in_march_reduces_the_targets_by_two_months_and_extrapolates_the_need() 
     assert_eq!(a.passed_months, 2);
     assert_eq!(a.basis.months, 10);
     assert!(a.basis.source.contains("extrapolated"));
-    close(a.need, 44_000.0, "Netto-Bedarf auf 12 Monate hochgerechnet");
-    close(a.target1, (24.0 - 2.0) / 12.0 * 44_000.0, "Ziel Topf 1");
-    close(a.target2, (12.0 - 2.0) / 12.0 * 44_000.0, "Ziel Topf 2");
+    // #198/AK1: AHV of the 10 months from March, extrapolated: 10 × 2'500 × 12/10 × 13/12 = 32'500
+    close(a.basis.ahv, 32_500.0, "AHV hochgerechnet mit 13. Rente");
+    close(a.need, NEED, "Netto-Bedarf auf 12 Monate hochgerechnet");
+    close(a.target1, (24.0 - 2.0) / 12.0 * NEED, "Ziel Topf 1");
+    close(a.target2, (12.0 - 2.0) / 12.0 * NEED, "Ziel Topf 2");
     assert!(a.condition_ignored);
     close(a.after[0], a.target1, "Topf 1");
     close(a.after[1], a.target2, "Topf 2");
@@ -475,8 +505,8 @@ fn a_large_one_time_outflow_with_the_criterion_met_is_covered_by_c1_with_shorten
     assert_eq!(c.passed_months, 2);
     assert!(c.condition_met && !c.condition_ignored);
     // Target bucket 1 = (2 × 12 − 2) / 12 × net need + one-off expense, target bucket 2 = (12 − 2) / 12 × net need
-    close(c.target1, 22.0 / 12.0 * 44_000.0 + 300_000.0, "Ziel Topf 1");
-    close(c.target2, 10.0 / 12.0 * 44_000.0, "Ziel Topf 2");
+    close(c.target1, 22.0 / 12.0 * NEED + 300_000.0, "Ziel Topf 1");
+    close(c.target2, 10.0 / 12.0 * NEED, "Ziel Topf 2");
     close(c.after[0], c.target1, "Topf 1");
     close(c.after[1], c.target2, "Topf 2");
     assert!(
@@ -498,7 +528,7 @@ fn no_cash_target() -> Value {
 
 #[test]
 fn c_keeps_two_monthly_needs_in_june_and_nothing_in_december() {
-    let month = 44_000.0 / 12.0;
+    let month = NEED / 12.0;
     let mut v = no_cash_target();
     v["flows"]["extras"] = json!([ { "date": "2030-06", "amount": -20_000, "label": "Ausgabe" } ]);
     let res = run(v);
@@ -528,7 +558,7 @@ fn the_reserve_months_setting_is_configurable() {
     v["flows"]["extras"] = json!([ { "date": "2030-06", "amount": -20_000, "label": "Ausgabe" } ]);
     let res = run(v);
     let j = res.records.iter().find(|x| x.month == YearMonth::new(2030, 6)).unwrap();
-    close(j.cash, 4.0 * 44_000.0 / 12.0, "5 Monate − 1");
+    close(j.cash, 4.0 * NEED / 12.0, "5 Monate − 1");
 }
 
 #[test]
@@ -538,11 +568,12 @@ fn earned_income_is_deducted_from_the_need() {
     let res = run(v);
     let r = january(&res, 2031);
     close(r.basis.earned, 36_000.0, "earned income");
-    close(r.basis.ahv + r.basis.pk, 84_000.0, "Renten");
-    close(r.basis.income_tax, 120_000.0 * 4_000.0 / 84_000.0, "Einkommenssteuer");
+    // #198: AHV with the 13th pension
+    close(r.basis.ahv + r.basis.pk, 86_500.0, "Renten");
+    close(r.basis.income_tax, 122_500.0 * 4_000.0 / 84_000.0, "Einkommenssteuer");
     close(
         r.need,
-        124_000.0 + r.basis.income_tax - 84_000.0 - 36_000.0,
+        124_000.0 + r.basis.income_tax - 86_500.0 - 36_000.0,
         "Netto-Bedarf",
     );
     close(r.target1, 2.0 * r.need, "Ziel Topf 1");
@@ -557,8 +588,8 @@ fn the_target_rises_in_the_first_year_after_working_income_ends() {
     let (a, b, c) = (january(&res, 2032), january(&res, 2033), january(&res, 2034));
     close(a.basis.earned, 36_000.0, "Erwerb 2032");
     close(b.basis.earned, 0.0, "kein Erwerb 2033 (geplant für das laufende Jahr)");
-    close(b.target1, 88_000.0, "Ziel steigt schon im Januar 2033");
-    close(c.target1, 88_000.0, "Ziel 2034");
+    close(b.target1, 2.0 * NEED, "Ziel steigt schon im Januar 2033");
+    close(c.target1, 2.0 * NEED, "Ziel 2034");
 }
 
 #[test]
@@ -638,7 +669,7 @@ fn threshold_semantics_use_greater_or_equal() {
 
 #[test]
 fn c2_with_9_months_reserve_refills_8_months_from_pot_2_then_pot_3_and_does_not_refill_pot_2() {
-    let month = 44_000.0 / 12.0;
+    let month = NEED / 12.0;
     let mut v = locked_plan();
     v["withdrawal"]["buckets"]["reserveMonths"] = json!(9);
     v["flows"]["extras"] = json!([ { "date": "2030-04", "amount": -400_000, "label": "Anschaffung" } ]);
@@ -672,10 +703,10 @@ fn april_2035_with_the_criterion_met_is_c1_and_not_met_is_c2() {
     assert_eq!(c.passed_months, 3);
     close(
         c.target1,
-        1.75 * 44_000.0 + 400_000.0,
+        1.75 * NEED + 400_000.0,
         "Ziel Topf 1 = 1.75 × Netto-Bedarf + Einmalausgabe",
     );
-    close(c.target2, 0.75 * 44_000.0, "Ziel Topf 2 = 0.75 × Netto-Bedarf");
+    close(c.target2, 0.75 * NEED, "Ziel Topf 2 = 0.75 × Netto-Bedarf");
     close(c.after[0], c.target1, "Topf 1");
     close(c.after[1], c.target2, "Topf 2");
     let m = met.records.iter().find(|x| x.month == YearMonth::new(2035, 4)).unwrap();
@@ -696,7 +727,7 @@ fn april_2035_with_the_criterion_met_is_c1_and_not_met_is_c2() {
         .iter()
         .find(|x| x.month == YearMonth::new(2035, 4))
         .unwrap();
-    close(m.cash, 2.0 * 44_000.0 / 12.0, "Topf 1 nach den Ausgaben");
+    close(m.cash, 2.0 * NEED / 12.0, "Topf 1 nach den Ausgaben");
     never_negative(&locked);
 }
 
@@ -709,7 +740,7 @@ fn c1_in_december_does_not_move_pot_2_above_the_shortened_target_to_pot_3() {
     let res = run(v);
     let c = find(&res, "C1", 2035, 12);
     assert_eq!(c.passed_months, 11);
-    close(c.target2, (120.0 - 11.0) / 12.0 * 44_000.0, "Ziel Topf 2 gekürzt");
+    close(c.target2, (120.0 - 11.0) / 12.0 * NEED, "Ziel Topf 2 gekürzt");
     assert!(
         c.after[1] > c.target2,
         "Topf 2 liegt über dem gekürzten Ziel: {} / {}",
@@ -730,7 +761,7 @@ fn a_large_one_time_outflow_in_january_is_covered_by_the_january_refill_without_
     v["flows"]["extras"] = json!([ { "date": "2034-01", "amount": -300_000, "label": "Anschaffung" } ]);
     let res = run(v);
     let j = january(&res, 2034);
-    close(j.target1, 2.0 * 44_000.0 + 300_000.0, "Ziel Topf 1 + Einmalausgabe");
+    close(j.target1, 2.0 * NEED + 300_000.0, "Ziel Topf 1 + Einmalausgabe");
     close(j.after[0], j.target1, "Topf 1");
     assert!(!res
         .bucket_refills
@@ -758,7 +789,7 @@ fn a_pension_fund_withdrawal_in_october_books_no_surplus_into_pot_3() {
 
 #[test]
 fn with_3_months_reserve_c_fires_repeatedly_after_the_outflow_with_at_most_2_months_left() {
-    let month = 44_000.0 / 12.0;
+    let month = NEED / 12.0;
     let mut v = no_cash_target();
     v["flows"]["extras"] = json!([ { "date": "2035-04", "amount": -400_000, "label": "Anschaffung" } ]);
     let res = run(v);

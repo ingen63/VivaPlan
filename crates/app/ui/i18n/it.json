@@ -59,7 +59,7 @@
   "boot.startupTitle": "Pianificazione all’avvio",
   "buckets.after": "Dopo C1 / C2 / C3",
   "buckets.afterTitle": "Comparto 1 / comparto 2 / comparto 3 dopo il rifornimento",
-  "buckets.ahvTitle": "entrate dedotte: rendita AVS all’anno",
+  "buckets.ahvTitle": "entrate dedotte: rendita AVS all’anno, dal 2026 con la 13a rendita",
   "buckets.before": "Prima C1 / C2 / C3",
   "buckets.beforeSpending": "prima delle spese del mese ({payment})",
   "buckets.beforeTitle": "Comparto 1 / comparto 2 / comparto 3 prima del rifornimento",

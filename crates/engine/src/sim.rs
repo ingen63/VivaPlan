@@ -2200,7 +2200,7 @@ impl<'a> Run<'a> {
     }
 
     /// Net need from the planned values of the current year from month `m` until December (at most until the end of the plan),
-    /// extrapolated to 12 months. `housing_now` are this month's ongoing housing costs without amortization.
+    /// extrapolated to 12 months; from 2026 the AHV with the 13th pension (#198). `housing_now` are this month's ongoing housing costs without amortization.
     fn plan_basis(&self, m: YearMonth, housing_now: f64, source: Message) -> NeedBasis {
         let s = self.s;
         let last = s.start.plus(s.months as i32 - 1);
@@ -2231,6 +2231,11 @@ impl<'a> Run<'a> {
             n += 1;
         }
         let f = if n > 0 { 12.0 / f64::from(n) } else { 0.0 };
+        // #198: From 2026 the AHV of a year includes the 13th pension: 13 × the monthly pension, extrapolated 12 months
+        // × 13/12 (household AHV already capped, no second cap); also for the income tax.
+        if m.year() >= AHV13_FROM_YEAR {
+            ahv *= 13.0 / 12.0;
+        }
         let t = &s.taxes;
         NeedBasis {
             year: m.year(),
