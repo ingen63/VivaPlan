@@ -1398,3 +1398,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #198/AK5 | Die Tabelle «3-Topf-Strategie» in den Ergebnissen zeigt bei «AHV» den Wert mit 13. Rente. Ein Oberflächentest prüft das. | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK5» (#198) | 22.11.2026 ok |
 | #198/AK6 | Hilfe (Netto-Bedarf, vier Sprachen) und Spezifikation in `docs/ENTWICKLUNG.md` sind nachgeführt; der Vermerk «ohne 13. … | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe vier Sprachen, Tooltip, Spezifikation |
 | #198/AK7 | Ändern sich Golden-Zahlen, ist das im Issue begründet (Zeile `Golden: #Nr …`). | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 22.11.2026 ok (keine Golden-Datei geändert) |
+
+### #199 Nicht tragbare Erneuerungen bei «Immobilien nie verkaufen» zählen
+
+[Issue #199](https://github.com/ingen63/VivaPlan/issues/199) · geschlossen · Umsetzung: 2f25184
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #199/AK1 | Jeder Lauf zählt die Erneuerungen, die nur dank «Immobilien nie verkaufen» voll erneuert wurden. Das sind die Fälle mit dem … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_199_ak1_…» | 22.11.2026 ok |
+| #199/AK2 | Die Auswertung vieler Läufe nennt die Zahl der Läufe mit mindestens einer solchen Erneuerung. | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_199_ak2_…»; [batch.rs](../crates/engine/src/batch.rs) «summary_of_no_runs_and_counters» | 22.11.2026 ok |
+| #199/AK3 | In den Ergebnissen erscheint die Zahl bei eingeschaltetem Schalter neben dem Notverkauf, als Anzahl Läufe und Anteil. … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK3» (#199) | 22.11.2026 ok |
+| #199/AK4 | Die Kommandozeile (`run`) gibt die Zahl im Bericht und im JSON aus. | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) «issue_199_ak4_…» (2) | 22.11.2026 ok (von Hand: Beispielplanung, Bootstrap 200 Läufe, 31 Läufe = 15.5 %) |
+| #199/AK5 | Bei ausgeschaltetem Schalter ist die Zahl immer 0. Ist sie 0, fehlt das Feld im Ergebnis-JSON; die Golden-Dateien bleiben … | ☑ | **gilt** | [never_sell.rs](../crates/engine/tests/never_sell.rs) «issue_199_ak5_…», «issue_199_ak2_…»; [golden.rs](../crates/engine/tests/golden.rs) | 22.11.2026 ok (keine Golden-Datei geändert) |
+| #199/AK6 | Texte in vier Sprachen. Hilfe (Immobilien nie verkaufen, Ergebnisse) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht); i18n-check; Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, Hilfe, Beschreibung, Spezifikation |
