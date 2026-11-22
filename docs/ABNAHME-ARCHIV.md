@@ -355,6 +355,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #62/AK6 | Eine Planung lässt sich in jeder Sprache öffnen und unverändert speichern; keine sprachabhängigen Texte in der Datei. | ☑ | **gilt** | #170/AK6 | 21.11.2026 ok: `issue_170_` grün |
 | #62/AK7 | Oberflächentests je Sprache, Rust-Tests für übersetzte Meldungen, Doku nachgeführt. | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js); Rust `issue_171_`, `issue_176_` | 21.11.2026 ok: README, BESCHREIBUNG «Sprache» (Durchsicht) |
 
+### #64 Kapitalbezugssteuer nach Kanton und Gemeinde
+
+[Issue #64](https://github.com/ingen63/VivaPlan/issues/64) · geschlossen · Umsetzung: 7d2dc59
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #64/AK1 | Im Modus «Wohnort» gibt es keine Eingabe für die Kapitalbezugssteuer; sie ergibt sich aus dem gewählten Wohnort. … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1» (#64); [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_ak1_…` (2 Tests) | 22.11.2026 ok (Test grün) |
+| #64/AK2 | Die Steuer enthält Kanton, Gemeinde, Kirche (falls gewählt) und Bund (ein Fünftel des Tarifs der direkten … | ☑ | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_ak2_…` | 22.11.2026 ok (Bund 10 501 wie ESTV) |
+| #64/AK3 | Alle 26 Kantone haben eine Regel. Kantone, deren Regel nur angenähert ist, sind in der Steuerdatei markiert, … | ☑ | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_ak3_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK3» (#64); [test_build.py](../tools/steuerdaten/test_build.py) `Capital` | 22.11.2026 ok (VS, ZG mit ⚠) |
+| #64/AK4 | Für je drei Referenzfälle (zum Beispiel 100 000, 500 000 und 1 000 000 Franken, alleinstehend und verheiratet) … | ☑ | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_ak4_…` | 22.11.2026 ok (48 Fälle, acht Kantone, ±5 %) |
+| #64/AK5 | Im Modus «Eigene Tabellen» rechnet die Kapitalbezugssteuer unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_ak1_ak5_…` | 22.11.2026 ok (Golden unverändert, 905 Tests grün) |
+| #64/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
+| #64 (Kommentar, #150) | Bei unverheirateten Paaren wird die Kapitalbezugssteuer je Person berechnet; bei Verheirateten gilt der Haushalt. | – | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_unmarried_couple_…` | 22.11.2026 ok |
+
 ### #67 Eigener Welt-Aktienindex aus den JST-Daten nach BIP gewichtet, Vergleich mit DMS
 
 [Issue #67](https://github.com/ingen63/VivaPlan/issues/67) · geschlossen · Umsetzung: `2ccfc9e` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/jst.rs:1](../crates/engine/tests/jst.rs#L1), [engine/tests/jst.rs:63](../crates/engine/tests/jst.rs#L63) (+1)
