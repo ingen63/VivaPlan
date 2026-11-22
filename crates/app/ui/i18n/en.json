@@ -1293,6 +1293,8 @@
   "results.realTitle": "Amounts in prices at the simulation start (adjusted for inflation)",
   "results.runs": "Individual runs",
   "results.runsN": "{runs} runs",
+  "results.unaffordableRenewals": "Unaffordable renewals",
+  "results.unaffordableRenewalsSub": "{pctTxt} of runs, mortgage renewed in full anyway",
   "results.sales": "Property sales",
   "results.salesTitle": "All property sales in this run with the month; emergency sales (emergency sale criterion or lack of affordability at a mortgage renewal) carry the warning symbol",
   "results.savedNote": "Saved result from <b>{esc}</b> · {name}. The plan as of that time applies.",

@@ -474,3 +474,52 @@ fn issue_197_ak4_cli_compare_without_optimization() {
     assert_eq!(list.iter().filter(|s| s["neverSell"] == true).count(), 2);
     assert!(!run(&["optimize", &f, "--compare", "--property", "x"]).status.success());
 }
+
+// #199/AK4: `run` reports the runs with an unaffordable mortgage renewed in full (never sell) in the report and in
+// the JSON; without the switch the line and the field are missing (#199/AK5).
+#[test]
+fn issue_199_ak4_cli_reports_unaffordable_renewals() {
+    let d = tmp("unaffordable");
+    let report = |on: bool| {
+        let p = plan_file(&d, "bootstrap", |p| {
+            p["realestate"]["neverSell"] = serde_json::json!(on)
+        });
+        let json = d.join(format!("run-{on}.json"));
+        let o = run(&["run", &p, "--json", json.to_str().unwrap()]);
+        assert!(o.status.success(), "{}", text(&o));
+        let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
+        (text(&o), r)
+    };
+    let (t, r) = report(true);
+    let n = r["unaffordableRenewalRuns"].as_u64().unwrap();
+    assert!(n > 0, "{r}");
+    assert!(
+        t.contains(&format!(
+            "Unaffordable mortgage renewed in full (never sell) in {n} runs ("
+        )),
+        "{t}"
+    );
+    let (t, r) = report(false);
+    assert!(r.get("unaffordableRenewalRuns").is_none(), "{r}");
+    assert!(!t.contains("Unaffordable"), "{t}");
+}
+
+// #199/AK4: the report of a single run names the renewals kept only because of «Immobilien nie verkaufen».
+#[test]
+fn issue_199_ak4_cli_single_run_reports_unaffordable_renewals() {
+    let d = tmp("unaffordable-single");
+    let p = plan_file(&d, "fixed", |p| {
+        p["realestate"]["neverSell"] = serde_json::json!(true);
+        p["returns"]["fixed"]["stocks"] = serde_json::json!(-0.05);
+    });
+    let json = d.join("r.json");
+    let o = run(&["run", &p, "--json", json.to_str().unwrap()]);
+    let t = text(&o);
+    assert!(o.status.success(), "{t}");
+    let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
+    let n = r["summary"]["unaffordableRenewals"].as_u64().unwrap();
+    assert!(
+        t.contains(&format!("Unaffordable renewals kept:   {n} (never sell)")),
+        "{t}"
+    );
+}

@@ -145,7 +145,9 @@ Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten.
 Der Schalter **«Immobilien nie verkaufen»** prüft, ob die Planung auch ohne Verkauf aufgeht: Für alle Liegenschaften
 entfallen geplante Verkäufe, Notverkäufe und Verkäufe wegen fehlender Tragbarkeit bei der Erneuerung (die Hypothek wird
 dann voll erneuert). Käufe mit Datum finden statt, Käufe und Mieten «nach Verkauf» nicht. Reicht das liquide Vermögen
-nicht mehr, gilt es als aufgebraucht.
+nicht mehr, gilt es als aufgebraucht. Jeder Lauf zählt die Erneuerungen, die nicht tragbar waren und nur dank des Schalters
+voll erneuert wurden; die Ergebnisse vieler Läufe zeigen neben den Notverkäufen, in wie vielen Läufen das vorkam
+(Kennzahl «Nicht tragbare Erneuerungen»), die Kommandozeile im Bericht und im JSON.
 
 ## Datenbibliothek
 

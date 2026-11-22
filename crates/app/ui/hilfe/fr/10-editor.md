@@ -323,7 +323,7 @@ Mots-clés: commutateur, vente, vente forcée, capacité financière, sans vente
 
 Avec ce commutateur en haut de l’onglet «Immobilier», vous vérifiez si la planification fonctionne aussi sans vendre de bien immobilier. Il s’applique à **tous** les biens de la planification et est enregistré dans le fichier (par défaut: désactivé).
 
-- **Aucune vente:** pas de vente planifiée («Vente dès»), pas de [vente forcée](#f-re-emergency) et pas de vente parce qu’une hypothèque n’est plus [supportable](#f-re-afford) lors du renouvellement. L’hypothèque est alors **renouvelée en totalité**; un événement signale «non supportable».
+- **Aucune vente:** pas de vente planifiée («Vente dès»), pas de [vente forcée](#f-re-emergency) et pas de vente parce qu’une hypothèque n’est plus [supportable](#f-re-afford) lors du renouvellement. L’hypothèque est alors **renouvelée en totalité**; un événement signale «non supportable». Avec plusieurs simulations, l’indicateur **«Renouvellements non supportables»** de la [vue d’ensemble](#r-property) montre dans combien de simulations cela s’est produit (nombre et part); un paiement unique effectué n’en fait pas partie.
 - **Les coûts continuent:** intérêts, amortissement et frais accessoires jusqu’à la fin de la planification.
 - **Achats:** un achat planifié avec une date ou un jalon a lieu. Les achats et locations «après la vente» n’ont **pas** lieu; la vérification le signale, de même que les ventes planifiées.
 - **Fortune épuisée:** si la fortune liquide ne suffit plus, la simulation compte comme épuisée, comme sans bien immobilier. Le taux de réussite est donc en général plus bas qu’avec une vente.

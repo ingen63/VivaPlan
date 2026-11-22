@@ -1293,6 +1293,8 @@
   "results.realTitle": "Beträge in Preisen des Simulationsstarts (um die Teuerung bereinigt)",
   "results.runs": "Einzelne Läufe",
   "results.runsN": "{runs} Läufe",
+  "results.unaffordableRenewals": "Nicht tragbare Erneuerungen",
+  "results.unaffordableRenewalsSub": "{pctTxt} der Läufe, Hypothek trotzdem voll erneuert",
   "results.sales": "Immobilienverkäufe",
   "results.salesTitle": "Alle Verkäufe von Immobilien in diesem Lauf mit Monat; Notverkäufe (Notverkaufskriterium oder fehlende Tragbarkeit bei einer Hypothekenerneuerung) tragen das Warnsymbol",
   "results.savedNote": "Gespeichertes Ergebnis vom <b>{esc}</b> · {name}. Es gilt die Planung von damals.",

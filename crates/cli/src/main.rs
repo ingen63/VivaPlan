@@ -287,6 +287,13 @@ fn cmd_run(args: &[String]) -> R {
         if let Some((m, label)) = &s.earliest_depletion {
             println!("Earliest depletion: {m} (age {:.1}) – {label}", sim.age_at(*m));
         }
+        if s.unaffordable_renewal_runs > 0 {
+            println!(
+                "Unaffordable mortgage renewed in full (never sell) in {} runs ({:.1} %)",
+                s.unaffordable_renewal_runs,
+                s.unaffordable_renewal_runs as f64 / s.runs as f64 * 100.0
+            );
+        }
         println!("\nTotal wealth at the end (nominal):");
         for p in &s.percentiles {
             let name = if p.percent == 0 {
@@ -392,6 +399,9 @@ fn print_single(sim: &Simulator, res: &SimResult, events: bool) {
     }
     if let Some(m) = s.min_liquid_month {
         println!("Lowest liquid wealth:         {} ({m})", chf(s.min_liquid));
+    }
+    if s.unaffordable_renewals > 0 {
+        println!("Unaffordable renewals kept:   {} (never sell)", s.unaffordable_renewals);
     }
     if events {
         println!("\nEvents:");

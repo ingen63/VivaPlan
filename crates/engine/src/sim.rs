@@ -359,6 +359,10 @@ pub struct Renewal {
     pub emergency_sale: Option<Message>,
 }
 
+pub(crate) fn is_zero_count(n: &usize) -> bool {
+    *n == 0
+}
+
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Summary {
@@ -368,6 +372,10 @@ pub struct Summary {
     pub lump_sums: usize,
     /// Emergency sales because of insufficient affordability at renewals.
     pub affordability_sales: usize,
+    /// Renewals that were not affordable and were renewed in full only because of «Immobilien nie verkaufen» (#199).
+    /// Missing in the JSON when 0.
+    #[serde(skip_serializing_if = "is_zero_count")]
+    pub unaffordable_renewals: usize,
     pub end_total: f64,
     pub end_liquid: f64,
     /// Total wealth and liquid wealth at the start of the simulation (before the first month), nominal.
@@ -1713,6 +1721,7 @@ impl<'a> Run<'a> {
                 currency = self.s.currency
             );
             self.event(m, EventKind::MortgageRenewal, text);
+            self.summary.unaffordable_renewals += 1;
             let rate = self.renewal_rate(i, m, k, tranches, 1.0);
             self.push_renewal(record, rate);
             return true;

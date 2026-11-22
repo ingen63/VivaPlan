@@ -323,7 +323,7 @@ Parole chiave: commutatore, vendita, vendita forzata, sostenibilità, senza vend
 
 Con questo commutatore in alto nella scheda «Immobili» verificate se la pianificazione funziona anche senza vendere un immobile. Vale per **tutti** gli immobili della pianificazione ed è salvato nel file (predefinito: disattivato).
 
-- **Nessuna vendita:** nessuna vendita pianificata («Vendita da»), nessuna [vendita forzata](#f-re-emergency) e nessuna vendita perché un’ipoteca non è più [sostenibile](#f-re-afford) al rinnovo. L’ipoteca viene allora **rinnovata per intero**; un evento segnala «non sostenibile».
+- **Nessuna vendita:** nessuna vendita pianificata («Vendita da»), nessuna [vendita forzata](#f-re-emergency) e nessuna vendita perché un’ipoteca non è più [sostenibile](#f-re-afford) al rinnovo. L’ipoteca viene allora **rinnovata per intero**; un evento segnala «non sostenibile». Con più simulazioni l’indicatore **«Rinnovi non sostenibili»** della [panoramica](#r-property) mostra in quante simulazioni ciò è accaduto (numero e quota); un pagamento unico effettuato non vi rientra.
 - **I costi continuano:** interessi, ammortamento e spese accessorie fino alla fine della pianificazione.
 - **Acquisti:** un acquisto pianificato con una data o una tappa ha luogo. Acquisti e affitti «dopo la vendita» **non** hanno luogo; la verifica lo segnala, come pure le vendite pianificate.
 - **Sostanza esaurita:** se la sostanza liquida non basta più, l’esecuzione conta come esaurita, come senza immobile. Il tasso di successo è quindi di solito più basso che con una vendita.

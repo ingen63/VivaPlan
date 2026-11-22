@@ -323,7 +323,7 @@ Stichworte: Schalter, Verkauf, Notverkauf, Tragbarkeit, ohne Verkauf, behalten
 
 Mit diesem Schalter oben im Reiter «Immobilien» prüfen Sie, ob die Planung auch aufgeht, wenn Sie keine Immobilie verkaufen. Er gilt für **alle** Immobilien der Planung und wird in der Datei gespeichert (Standard: aus).
 
-- **Kein Verkauf:** kein geplanter Verkauf («Verkauf ab»), kein [Notverkauf](#f-re-emergency) und kein Verkauf, weil eine Hypothek bei der Erneuerung nicht [tragbar](#f-re-afford) ist. Die Hypothek wird dann **voll erneuert**; ein Ereignis meldet «nicht tragbar».
+- **Kein Verkauf:** kein geplanter Verkauf («Verkauf ab»), kein [Notverkauf](#f-re-emergency) und kein Verkauf, weil eine Hypothek bei der Erneuerung nicht [tragbar](#f-re-afford) ist. Die Hypothek wird dann **voll erneuert**; ein Ereignis meldet «nicht tragbar». Bei mehreren Läufen zeigt die Kennzahl **«Nicht tragbare Erneuerungen»** der [Übersicht](#r-property), in wie vielen Läufen das vorkam (Anzahl und Anteil); eine bezahlte Einmalzahlung zählt nicht dazu.
 - **Kosten laufen weiter:** Zinsen, Amortisation und Nebenkosten bis zum Ende der Planung.
 - **Käufe:** Ein geplanter Kauf mit Datum oder Meilenstein findet statt. Käufe und Mieten «nach Verkauf» finden **nicht** statt; die Prüfung weist darauf hin, ebenso auf geplante Verkäufe.
 - **Vermögen aufgebraucht:** Reicht das liquide Vermögen nicht mehr, zählt der Lauf als aufgebraucht, wie ohne Immobilie. Die Erfolgsquote ist deshalb meist tiefer als mit Verkauf.

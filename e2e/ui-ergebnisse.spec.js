@@ -802,3 +802,37 @@ test.describe("13th AHV pension in the net need of the 3-bucket strategy (#198)"
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Unaffordable renewals with never sell (#199)", () => {
+  test("AK3: key figure next to the emergency sales only with the switch and a property", async ({ page }) => {
+    const errors = await open(page);
+    const out = await page.evaluate(async () => {
+      state.scenarios.sweeps = [];
+      state.returns.source = "bootstrap"; state.returns.bootstrap.paths = 200;
+      const show = async (neverSell, props = state.realestate.properties) => {
+        state.realestate.neverSell = neverSell; state.realestate.properties = props;
+        lastRunPlan = JSON.parse(JSON.stringify(state));
+        lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+        if (!lastRun.batch) throw new Error(JSON.stringify({ error: lastRun.error }));
+        resultTab = "overview"; showResults(true); renderResults(lastRun);
+        const kpis = [...document.querySelectorAll("#resultsBody .rkpis .kpi")].map(k => k.innerText.replace(/\s+/g, " "));
+        return { kpis, s: lastRun.batch.summary };
+      };
+      return { on: await show(true), off: await show(false), noProp: await show(true, []) };
+    });
+    const { on, off, noProp } = out;
+    const n = on.s.unaffordableRenewalRuns;
+    expect(n).toBeGreaterThan(0);
+    const i = on.kpis.findIndex(k => k.startsWith("Nicht tragbare Erneuerungen"));
+    expect(i, on.kpis.join(" | ")).toBeGreaterThan(0);
+    expect(on.kpis[i - 1]).toContain("Notverkäufe");
+    const pct = await page.evaluate(n => [fmtInt(n), pctTxt(n / 200)], n);
+    expect(on.kpis[i]).toContain(`${pct[0]} Läufe`);
+    expect(on.kpis[i]).toContain(`${pct[1]} der Läufe`);
+    expect(off.s.unaffordableRenewalRuns).toBeUndefined();
+    expect(off.kpis.some(k => k.includes("Nicht tragbare"))).toBe(false);
+    expect(noProp.kpis.some(k => k.includes("Nicht tragbare"))).toBe(false);
+    await noErrors(page, errors);
+  });
+});

@@ -202,6 +202,10 @@ pub struct BatchSummary {
     pub affordability_sale_runs: usize,
     /// Number of runs with at least one emergency sale (for any reason).
     pub emergency_sale_runs: usize,
+    /// Number of runs with at least one renewal that was not affordable and was renewed in full only because of
+    /// «Immobilien nie verkaufen» (#199). Missing in the JSON when 0.
+    #[serde(skip_serializing_if = "crate::sim::is_zero_count")]
+    pub unaffordable_renewal_runs: usize,
 }
 
 pub fn summarize(results: &[SimResult]) -> BatchSummary {
@@ -240,6 +244,7 @@ pub fn summarize(results: &[SimResult]) -> BatchSummary {
         lump_sum_runs: results.iter().filter(|r| r.summary.lump_sums > 0).count(),
         affordability_sale_runs: results.iter().filter(|r| r.summary.affordability_sales > 0).count(),
         emergency_sale_runs: results.iter().filter(|r| r.summary.emergency_sales > 0).count(),
+        unaffordable_renewal_runs: results.iter().filter(|r| r.summary.unaffordable_renewals > 0).count(),
     }
 }
 
@@ -445,6 +450,7 @@ mod tests {
                 s.emergency_sales = 3;
                 s.affordability_sales = 1;
             }),
+            result(|s| s.unaffordable_renewals = 2),
             result(|_| {}),
         ];
         let s = summarize(&runs);
@@ -452,6 +458,8 @@ mod tests {
             (s.lump_sum_runs, s.affordability_sale_runs, s.emergency_sale_runs),
             (1, 2, 1)
         );
+        // #199/AK2: runs with at least one renewal kept only because of «Immobilien nie verkaufen».
+        assert_eq!(s.unaffordable_renewal_runs, 1);
         assert_eq!(s.success_rate, 1.0);
         assert_eq!(s.percentiles.len(), 10);
     }

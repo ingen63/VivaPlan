@@ -1293,6 +1293,8 @@
   "results.realTitle": "Importi ai prezzi dell’inizio della simulazione (depurati dal rincaro)",
   "results.runs": "Simulazioni singole",
   "results.runsN": "{runs} simulazioni",
+  "results.unaffordableRenewals": "Rinnovi non sostenibili",
+  "results.unaffordableRenewalsSub": "{pctTxt} delle simulazioni, ipoteca comunque rinnovata per intero",
   "results.sales": "Vendite di immobili",
   "results.salesTitle": "Tutte le vendite di immobili in questa simulazione con il mese; le vendite forzate (criterio di vendita forzata o mancanza di sostenibilità al rinnovo di un’ipoteca) recano il simbolo di avvertimento",
   "results.savedNote": "Risultato salvato del <b>{esc}</b> · {name}. Vale la pianificazione di allora.",

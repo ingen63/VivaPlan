@@ -323,7 +323,7 @@ Keywords: switch, sale, emergency sale, affordability, without sale, keep
 
 With this switch at the top of the “Real estate” tab you check whether the plan also works out if you never sell a property. It applies to **all** properties of the plan and is saved in the file (default: off).
 
-- **No sale:** no planned sale (“Sale from”), no [emergency sale](#f-re-emergency) and no sale because a mortgage is not [affordable](#f-re-afford) at renewal. The mortgage is then **renewed in full**; an event reports “not affordable”.
+- **No sale:** no planned sale (“Sale from”), no [emergency sale](#f-re-emergency) and no sale because a mortgage is not [affordable](#f-re-afford) at renewal. The mortgage is then **renewed in full**; an event reports “not affordable”. With several runs, the key figure **“Unaffordable renewals”** in the [overview](#r-property) shows in how many runs this happened (number and share); a paid one-off payment does not count.
 - **Costs continue:** interest, amortization and fixed costs until the end of the plan.
 - **Purchases:** a planned purchase with a date or milestone takes place. Purchases and rents “after sale” do **not** take place; the validation points this out, as well as planned sales.
 - **Wealth depleted:** if liquid wealth is no longer sufficient, the run counts as depleted, as without a property. The success rate is therefore usually lower than with a sale.

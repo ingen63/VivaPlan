@@ -304,3 +304,70 @@ fn issue_196_ak8_off_equals_missing_field() {
     assert_eq!(serde_json::to_value(&a).unwrap(), serde_json::to_value(&b).unwrap());
     assert_eq!(sales(&a), 1);
 }
+
+/// Plan in which the renewal 2027-11 is not affordable; with `cash` the lump sum can or cannot be paid.
+fn unaffordable(cash: f64, never_sell: bool) -> Value {
+    let mut v = with(json!([house("never", 680_800.0)]), never_sell);
+    v["wealth"]["cash"] = json!(cash);
+    v["flows"]["spending"] = json!(11_000);
+    v
+}
+
+fn kept_events(r: &SimResult) -> usize {
+    r.events
+        .iter()
+        .filter(|e| e.text.code() == "event_mortgage_unaffordable_kept")
+        .count()
+}
+
+// #199/AK1: each renewal kept only because of the switch (event «nicht tragbar … voll erneuert») is counted; a paid
+// lump sum is not, it stays a lump sum.
+#[test]
+fn issue_199_ak1_counts_renewals_kept_by_never_sell() {
+    let kept = run(&unaffordable(30_000.0, true));
+    assert!(kept.summary.unaffordable_renewals >= 1);
+    assert_eq!(kept.summary.unaffordable_renewals, kept_events(&kept));
+    assert_eq!(
+        kept.summary.unaffordable_renewals,
+        kept.renewals
+            .iter()
+            .filter(|n| !n.affordable && n.lump_sum == 0.0)
+            .count()
+    );
+    assert_eq!(kept.summary.lump_sums, 0);
+    let paid = run(&unaffordable(1_000_000.0, true));
+    assert!(paid.renewals[0].lump_sum > 0.0);
+    assert_eq!(paid.summary.unaffordable_renewals, kept_events(&paid));
+    assert_eq!(paid.summary.unaffordable_renewals, 0);
+    assert!(paid.summary.lump_sums >= 1);
+}
+
+// #199/AK5: without the switch the count is always 0 (here an emergency sale instead), and the field is missing.
+#[test]
+fn issue_199_ak5_zero_without_switch_and_missing_in_json() {
+    let off = run(&unaffordable(30_000.0, false));
+    assert_eq!(off.summary.unaffordable_renewals, 0);
+    assert_eq!(off.summary.affordability_sales, 1);
+    let json = serde_json::to_value(&off.summary).unwrap();
+    assert!(json.get("unaffordableRenewals").is_none(), "{json}");
+    let kept = serde_json::to_value(&run(&unaffordable(30_000.0, true)).summary).unwrap();
+    assert!(kept["unaffordableRenewals"].as_u64().unwrap() >= 1, "{kept}");
+}
+
+// #199/AK2, AK3, AK5: the example plan with bootstrap counts runs with such a renewal only with the switch on; the
+// field is missing in the batch JSON when 0.
+#[test]
+fn issue_199_ak2_example_plan_counts_runs() {
+    let on = example(true);
+    assert!(on.unaffordable_renewal_runs > 0 && on.unaffordable_renewal_runs <= on.runs);
+    assert_eq!(
+        serde_json::to_value(&on).unwrap()["unaffordableRenewalRuns"],
+        json!(on.unaffordable_renewal_runs)
+    );
+    let off = example(false);
+    assert_eq!(off.unaffordable_renewal_runs, 0);
+    assert!(serde_json::to_value(&off)
+        .unwrap()
+        .get("unaffordableRenewalRuns")
+        .is_none());
+}

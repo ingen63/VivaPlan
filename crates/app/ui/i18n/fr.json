@@ -1293,6 +1293,8 @@
   "results.realTitle": "Montants aux prix du début de la simulation (corrigés du renchérissement)",
   "results.runs": "Simulations individuelles",
   "results.runsN": "{runs} simulations",
+  "results.unaffordableRenewals": "Renouvellements non supportables",
+  "results.unaffordableRenewalsSub": "{pctTxt} des simulations, hypothèque tout de même renouvelée en totalité",
   "results.sales": "Ventes immobilières",
   "results.salesTitle": "Toutes les ventes de biens immobiliers de cette simulation avec le mois; les ventes forcées (critère de vente forcée ou capacité financière insuffisante lors d’un renouvellement de l’hypothèque) portent le symbole d’avertissement",
   "results.savedNote": "Résultat enregistré le <b>{esc}</b> · {name}. La planification de l’époque s’applique.",

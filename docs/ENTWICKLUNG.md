@@ -421,7 +421,9 @@ Reihenfolge pro Monat:
    geschrieben): kein geplanter Verkauf (`sell` wird beim Übersetzen ignoriert, die Tranchen laufen bis zum Planende),
    kein Notverkauf (weder Kriterium noch 3-Topf «Töpfe reichen nicht»), und bei einer nicht tragbaren Erneuerung, die
    sonst einen Notverkauf auslösen würde, wird die Hypothek voll erneuert (Ereignis `event_mortgage_unaffordable_kept`,
-   `emergencySale` leer, `affordabilitySales` unverändert); eine Einmalzahlung, die die Bedingungen oben erfüllt, bleibt.
+   `emergencySale` leer, `affordabilitySales` unverändert; die Zusammenfassung zählt sie in `unaffordableRenewals`, die
+   Stapelauswertung die Läufe in `unaffordableRenewalRuns`, beide fehlen im JSON bei 0, #199); eine Einmalzahlung, die
+   die Bedingungen oben erfüllt, bleibt und zählt in `lumpSums`.
    Käufe mit Datum oder Meilenstein finden statt, Käufe und Mieten «nach Verkauf» nicht (die Prüfung warnt:
    `property_never_sell_sale`, `property_never_sell_after_sale`). «Aufgebraucht» gilt dann auch mit Immobilie im Besitz.
    Für einen Lauf setzt man das Feld in einer Kopie der Planung (`plan.realestate.never_sell = true`) vor `Simulator::new`.
