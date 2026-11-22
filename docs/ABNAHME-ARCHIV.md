@@ -369,6 +369,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #64/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
 | #64 (Kommentar, #150) | Bei unverheirateten Paaren wird die Kapitalbezugssteuer je Person berechnet; bei Verheirateten gilt der Haushalt. | – | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_64_unmarried_couple_…` | 22.11.2026 ok |
 
+### #65 Grundstückgewinnsteuer für alle Kantone
+
+[Issue #65](https://github.com/ingen63/VivaPlan/issues/65) · geschlossen · Umsetzung: 6ccd002
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #65/AK1 | Im Modus «Wohnort» gilt automatisch der Regelsatz des Kantons, in dem die Immobilie liegt. Jede Immobilie hat … | ☑ | **gilt** | [gain_location.rs](../crates/engine/tests/gain_location.rs) `issue_65_ak1_…` (2 Tests); [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1, AK3, AK5» (#65) | 22.11.2026 ok (Test grün) |
+| #65/AK2 | Alle 26 Kantone haben einen Regelsatz in den bestehenden Modellen (Stufentarif mit Zu- und Abschlag nach … | ☑ | **gilt** | [property_gain_models.rs](../crates/engine/tests/property_gain_models.rs) `issue_65_ak2_…` (12 Tests); [test_build.py](../tools/steuerdaten/test_build.py) `PropertyGain` | 22.11.2026 ok (Test grün) |
+| #65/AK3 | Kantone, deren Regel nur angenähert ist, sind in der Steuerdatei markiert, und die Oberfläche zeigt bei der … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1, AK3, AK5», «AK3» (#65); [test_build.py](../tools/steuerdaten/test_build.py) `test_issue_65_ak3_…` | 22.11.2026 ok (BS, BL, SG, VD, VS mit ⚠) |
+| #65/AK4 | Je Kanton prüft ein Test einen erfundenen Fall (Gewinn und Besitzdauer) gegen einen von Hand nachgerechneten … | ☑ | **gilt** | [tax_gain_cantons.rs](../crates/engine/tests/tax_gain_cantons.rs) `issue_65_ak4_…` (31 Tests) | 22.11.2026 ok (alle 26 Kantone, Quelle im Kommentar) |
+| #65/AK5 | Eigene Regeln bleiben möglich: Im Modus «Wohnort» schaltet das Häkchen «Eigene Regeln statt der Regeln des … | ☑ | **gilt** | [gain_location.rs](../crates/engine/tests/gain_location.rs), [property_gain_models.rs](../crates/engine/tests/property_gain_models.rs) `issue_65_ak5_…` (3 Tests); e2e (#65) | 22.11.2026 ok (Golden unverändert, 953 Tests grün) |
+| #65/AK6 | Prüfung: Im Modus «Wohnort» ohne eigene Regeln sind die eigenen Regeln keine Pflicht. Ein unbekannter Kanton … | ☑ | **gilt** | [gain_location.rs](../crates/engine/tests/gain_location.rs) `issue_65_ak6_…` | 22.11.2026 ok (Test grün) |
+| #65/AK7 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor und 60-referenz in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md, Pflichteingaben.md |
+
 ### #67 Eigener Welt-Aktienindex aus den JST-Daten nach BIP gewichtet, Vergleich mit DMS
 
 [Issue #67](https://github.com/ingen63/VivaPlan/issues/67) · geschlossen · Umsetzung: `2ccfc9e` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/jst.rs:1](../crates/engine/tests/jst.rs#L1), [engine/tests/jst.rs:63](../crates/engine/tests/jst.rs#L63) (+1)
