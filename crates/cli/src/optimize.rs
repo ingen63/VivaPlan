@@ -41,6 +41,19 @@ fn end_line(m: &opt::Metrics) -> String {
     format!("    {:<12} {}", "End wealth", parts.join("   "))
 }
 
+/// #205: Share of the months from retirement at the floor («–» without a floor), with the hint from 50 %.
+fn floor_line(m: &opt::Metrics) -> String {
+    match m.floor_share {
+        None => format!("    {:<12} –", "At floor"),
+        Some(v) if v >= opt::FLOOR_HINT_SHARE => format!(
+            "    {:<12} {} of the months from retirement – the floor mostly sets the spending; the strategy has little effect.",
+            "At floor",
+            pct1(v)
+        ),
+        Some(v) => format!("    {:<12} {} of the months from retirement", "At floor", pct1(v)),
+    }
+}
+
 /// #197: Name of the strategy, with the property setting if the result shows it.
 fn outcome_name(o: &Outcome, property: PropertyMode) -> String {
     match (property, o.never_sell) {
@@ -96,10 +109,11 @@ fn outcome_text(o: &Outcome, obj: &Objective, property: PropertyMode, compare: b
         )
     };
     format!(
-        "\n{}{ok}\n    {}\n{lines}\n{}\n{target}",
+        "\n{}{ok}\n    {}\n{lines}\n{}\n{}\n{target}",
         outcome_name(o, property),
         params,
-        end_line(&o.validated)
+        end_line(&o.validated),
+        floor_line(&o.validated)
     )
 }
 
@@ -220,6 +234,7 @@ pub fn cmd_optimize(args: &[String]) -> R {
     println!("\nStarting point ({}, unchanged)", report.reference.strategy);
     println!("{}", metrics_line("Check", &report.reference.metrics));
     println!("{}", end_line(&report.reference.metrics));
+    println!("{}", floor_line(&report.reference.metrics));
     for o in &report.outcomes {
         println!("{}", outcome_text(o, &obj, report.property, report.compare));
     }
@@ -267,6 +282,7 @@ mod tests {
             emergency_share: 0.125,
             planned: 120_000.0,
             end_total: [1.0, 5.0, 50.0, 95.0, 99.0],
+            floor_share: None,
         }
     }
 
@@ -441,5 +457,34 @@ mod tests {
         assert!(t.contains("Initial rate 5.0 %"), "{t}");
         assert!(t.contains("Plan values") && !t.contains("Optimization"), "{t}");
         assert!(t.contains("End wealth"), "{t}");
+    }
+
+    #[test]
+    fn issue_205_ak1_ak2_ak3_floor_line_with_share_and_hint() {
+        let mut m = metrics(0.02);
+        // AK3: without a floor «–» and no hint
+        assert_eq!(floor_line(&m), "    At floor     –");
+        // AK1: share without hint below 50 %
+        m.floor_share = Some(0.25);
+        let l = floor_line(&m);
+        assert!(
+            l.contains("25.0 % of the months from retirement") && !l.contains("mostly"),
+            "{l}"
+        );
+        // AK2: hint from 50 %
+        m.floor_share = Some(0.5);
+        let l = floor_line(&m);
+        assert!(
+            l.contains("50.0 %") && l.contains("the floor mostly sets the spending"),
+            "{l}"
+        );
+        // in the text of a strategy (comparison and optimization)
+        let mut o = outcome(true);
+        o.validated.floor_share = Some(1.0);
+        let obj = request_from(&plan(), &args(&["p.vplan"])).unwrap().objective();
+        for compare in [true, false] {
+            let t = outcome_text(&o, &obj, PropertyMode::Planned, compare);
+            assert!(t.contains("At floor     100.0 %") && t.contains("little effect"), "{t}");
+        }
     }
 }

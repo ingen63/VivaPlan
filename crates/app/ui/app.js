@@ -926,6 +926,12 @@ const optParam = p => `${esc(msgText(p[1]))} ${optVal(p)}`;
 /** #197: Nominal end wealth at these percentiles (engine: `END_PERCENTS`). */
 const OPT_END_P = [1, 5, 50, 95, 99];
 const optEndCells = m => OPT_END_P.map((p, i) => `<td class="r">${m.endTotal ? fmtInt(m.endTotal[i]) : "–"}</td>`).join("");
+/** #205: From this share of months at the floor the hint appears (engine: `FLOOR_HINT_SHARE`). */
+const OPT_FLOOR_HINT = 0.5;
+/** #205: Share of the months from retirement at the floor; «–» without a floor and in results saved before #205. */
+const optFloorCell = m => `<td class="r optfloor">${m.floorShare == null ? "–" : pctTxt(m.floorShare)}</td>`;
+const optFloorHint = m => m.floorShare >= OPT_FLOOR_HINT ? `<br><small class="optfloorhint" style="color:var(--warn)">${tr("optResult.floorHint")}</small>` : "";
+const optFloorHead = () => `<th class="r" title="${tr("optResult.floorTitle")}">${tr("optResult.floor")}</th>`;
 /** Two header rows: the columns `cols` (cells) span both, the end wealth gets a group heading over its percentiles. */
 const optHead = cols => `<thead><tr>${cols.replace(/<th/g, '<th rowspan="2"')}<th colspan="5" style="text-align:center" title="${tr("optResult.endTitle")}">${tr("optResult.endWealth")}</th></tr>
   <tr>${OPT_END_P.map(p => `<th class="r">${p} %</th>`).join("")}</tr></thead>`;
@@ -938,21 +944,21 @@ const optParamsHtml = (r, x) => r.compare ? `<small>${x.fixed.map(optParam).join
  * (parameters, button «In Planung übernehmen»); the group keeps both together visibly. */
 const optGroup = (cells, span, sub, cls = "") => `<tbody class="optgrp ${cls}"><tr class="optmain">${cells}</tr><tr class="optsub"><td colspan="${span}">${sub}</td></tr></tbody>`;
 /** Content of the sub-row of a strategy: parameters left, notice and button right. */
-const optSub = (r, x, i, violated) => `<div class="optsubin"><div>${optParamsHtml(r, x)}</div><div class="optact">${x.feasible ? "" : `<span style="color:var(--err)">${violated}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div></div>`;
+const optSub = (r, x, i, violated) => `<div class="optsubin"><div>${optParamsHtml(r, x)}${optFloorHint(x.validated)}</div><div class="optact">${x.feasible ? "" : `<span style="color:var(--err)">${violated}</span> `}<button class="btn small" data-action="opt-apply" data-i="${i}">${tr("optResult.adopt")}</button></div></div>`;
 /** Result rows of a report: the reference (plan unchanged) and every strategy, each as a group (#200). */
-const optRows = (r, cells, span, violated) => optGroup(cells(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics), span, `<small class="computed">${tr("optResult.asInPlan")}</small>`)
+const optRows = (r, cells, span, violated) => optGroup(cells(tr("optResult.reference", { strategy: esc(msgText(r.reference.strategy)) }), r.reference.metrics), span, `<small class="computed">${tr("optResult.asInPlan")}</small>${optFloorHint(r.reference.metrics)}`)
   + r.outcomes.map((x, i) => optGroup(cells(optName(r, x) + (i === 0 && x.feasible ? " ★" : ""), x.validated), span, optSub(r, x, i, violated), x.feasible ? "" : "off")).join("");
 const optStale = stale => stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : "";
 /** Result for goal 2 «Kein Notverkauf von Immobilien»: per strategy the share of runs with an unplanned sale. */
 function optResultKeep(r, q, stale, start = startM()) {
   const cells = (name, m) => `<td><b>${esc(name)}</b></td><td class="r"><b>${pctTxt(m.emergencyShare)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td>
-    <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td>${optEndCells(m)}`;
+    <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td>${optFloorCell(m)}${optEndCells(m)}`;
   const none = !r.outcomes.some(x => x.feasible);
   return `<div class="card optres"><h3>${r.compare ? tr("optResult.titleGoal2Compare") : tr("optResult.titleGoal2")} <span class="sub">${r.compare ? tr("optResult.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) }) : tr("optResult.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) })}</span></h3>
     ${optStale(stale)}
     ${none ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.none", { maxRuin: pctTxt(q.maxRuin), minConsumption: pctTxt(q.minConsumption) })}</p>` : ""}
-    <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th>`)}
-    ${optRows(r, cells, 5 + OPT_END_P.length, tr("optResult.constraintsViolated"))}
+    <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th>${optFloorHead()}`)}
+    ${optRows(r, cells, 6 + OPT_END_P.length, tr("optResult.constraintsViolated"))}
     </table></div>
     <p class="hint">${tr("optResult.order")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optResult.footer", { v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
 }
@@ -962,11 +968,11 @@ function optResultConsumption(r, q, stale, start = startM()) {
   const goal = m => (w * m.median + (1 - w) * m.p10) * Math.max(0, 1 - q.volWeight * m.volatility);
   const best = Math.max(1, goal(r.reference.metrics), ...r.outcomes.map(x => goal(x.validated)));
   const cells = (name, m) => `<td><b>${esc(name)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td><td class="r">${fmtInt(m.p10)}</td><td class="r">${pctTxt(m.volatility)}</td>
-    <td class="r">${fmtInt(goal(m))}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal(m) / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td>${optEndCells(m)}`;
+    <td class="r">${fmtInt(goal(m))}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal(m) / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td>${optFloorCell(m)}${optEndCells(m)}`;
   return `<div class="card optres"><h3>${r.compare ? tr("optimize.compareResult") : tr("optimize.result")} <span class="sub">${r.compare ? tr("optimize.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) }) : tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) })}</span></h3>
     ${optStale(stale)}
-    <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th>`)}
-    ${optRows(r, cells, 7 + OPT_END_P.length, tr("optimize.ruinViolated"))}
+    <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th>${optFloorHead()}`)}
+    ${optRows(r, cells, 8 + OPT_END_P.length, tr("optimize.ruinViolated"))}
     </table></div>
     <p class="hint">${tr("optimize.ruinDef")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optimize.ruinFooter", { maxRuin: pctTxt(q.maxRuin), round: Math.round(w * 100), round2: Math.round((1 - w) * 100), volWeight: q.volWeight })}</p>
     <p class="hint">${r.compare ? tr("optimize.compareFooter", { v: (r.elapsedMs / 1000).toFixed(1) }) : tr("optimize.searchFooter", { fitPaths: fmtInt(r.fitPaths), v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;

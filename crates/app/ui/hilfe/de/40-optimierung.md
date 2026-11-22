@@ -182,12 +182,14 @@ Die Ergebnistabelle zeigt für jede Strategie die Kennzahlen, **gerechnet auf de
 | Ziel | der kombinierte Wert nach der [Formel](#o-score), mit Balken zum Vergleich |
 | Entnahmerate | Entnahme aus dem Vermögen im **ersten Jahr der Pensionierung** (Lebenshaltung und Wohnkosten minus Einnahmen, **vor Steuern**), in Prozent des liquiden Vermögens zu Beginn; Median über die Pfade |
 | Endvermögen 1 % … 99 % | nominales Vermögen am Ende der Simulation bei den Perzentilen 1, 5, 50, 95 und 99 % der Pfade, ermittelt wie im Ergebnis der Simulation; auch für die Ausgangslage |
+| Auf Untergrenze | Anteil der Monate ab Pensionierung, in denen die [Untergrenze](#f-wd-limits) die Lebenshaltung festlegt, gemittelt über die Prüfpfade; «–» bei Strategien ohne Untergrenze (Standard, 3-Topf mit Ausgaben wie geplant, Untergrenze 0). Die Spalte steht bei beiden Zielen |
 
 Unter jeder Strategie steht eine **eigene Zeile** über die ganze Tabellenbreite mit den gefundenen Parametern (beim Vergleich ohne Optimierung den Werten der Planung) und dem Knopf «In Planung übernehmen». Damit die Tabelle Platz hat, ist im Abschnitt «Optimierung» die Vorschau mit der Prüfung rechts ausgeblendet.
 
 - Die erste Zeile **«Ausgangslage»** zeigt Ihre Planung unverändert, auf denselben Prüfpfaden. Daran messen Sie den Gewinn der Optimierung.
 - **Ausgegraute Zeilen** («Ruingrenze nicht eingehalten») sind Strategien, die Ihre Ruingrenze verfehlen. Sie bleiben sichtbar, damit Sie die Kosten der Sicherheit erkennen. Ist **keine** Strategie zulässig, ist die Grenze mit den vorhandenen Mitteln nicht erreichbar, Sie müssen dann die Ausgaben senken, später in Pension gehen oder die Grenze lockern.
 - Die **Entnahmerate** ist ein Vergleichswert, kein Ziel der Suche. Sie zeigt, wie stark eine Strategie das Vermögen zu Beginn beansprucht: Eine hohe Rate bei gleich hohem Konsum heisst, dass die Strategie mehr vom Vermögen zehrt und weniger auf Renten und Einkommen baut. Die Faustregel «unter 4 %» gilt nur grob (siehe [Entnahme aus dem Vermögen](#r-draw)).
+- **Auf Untergrenze:** Liegt die Lebenshaltung oft auf der Untergrenze, gibt die Strategie kaum etwas vor: Sie würde weniger erlauben, die Untergrenze hebt die Ausgaben an. Mehrere Strategien rechnen dann praktisch gleich. Ab **50 %** der Monate steht unter der Strategie der Hinweis «Die Untergrenze bestimmt meist die Ausgaben; die Strategie wirkt kaum.» Prüfen Sie dann, ob die Untergrenze zu hoch ist oder die geplanten Ausgaben das Vermögen übersteigen. Gespeicherte Ergebnisse aus älteren Versionen zeigen hier «–».
 - Sinkt der Konsum gegenüber der Ausgangslage stark, kostet die Sicherheit entsprechend. Das ist **kein Fehler**, sondern die Antwort.
 - Unter der Tabelle stehen Anzahl Pfade für Suche und Prüfung und die Rechenzeit.
 

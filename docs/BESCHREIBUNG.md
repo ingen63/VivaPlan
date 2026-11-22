@@ -131,6 +131,10 @@ Ergebnistabelle zeigt je Strategie zusätzlich das nominale **Endvermögen** bei
 eine Auswahl fest, ob «wie geplant», mit «Immobilien nie verkaufen» oder mit beidem gerechnet wird (jede Strategie zweimal).
 Die gefundenen Parameter und der Knopf zum Übernehmen stehen je Strategie in einer eigenen Zeile unter den Kennzahlen; im
 Abschnitt «Optimierung» ist die Vorschau ausgeblendet, damit die Tabelle ohne waagrechtes Scrollen Platz hat.
+Die Spalte **«Auf Untergrenze»** zeigt je Strategie mit Untergrenze, in wie vielen Monaten ab Pensionierung die
+Untergrenze die Lebenshaltung festlegt (gemittelt über die Prüfpfade; «–» ohne Untergrenze). Ab 50 % steht der Hinweis,
+dass die Untergrenze meist die Ausgaben bestimmt und die Strategie kaum wirkt; dann rechnen mehrere Strategien praktisch
+gleich. Die Kommandozeile (`optimize`, auch `--compare`) zeigt dieselbe Kennzahl (`floorShare` im JSON).
 Jedes abgeschlossene Ergebnis einer Optimierung oder eines Strategievergleichs legt die App wie die Simulationen in
 «Gespeicherte Ergebnisse» ab, mit Bericht, Einstellungen und Planungsstand (lokal, nicht in der Planungsdatei). Der
 Eintrag nennt die beste Strategie, ihre Ruinwahrscheinlichkeit und das Ziel, öffnet sich in der breiten Ergebnisansicht

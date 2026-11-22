@@ -73,7 +73,14 @@ pub struct Metrics {
     pub planned: f64,
     /// #197: Nominal end wealth at the percentiles [`END_PERCENTS`], chosen as in `run` (`batch::summarize`).
     pub end_total: [f64; 5],
+    /// #205: Share of the months from retirement in which the floor sets the living costs, averaged over the paths.
+    /// Missing for strategies without a floor (Standard, 3 buckets without guardrails, floor 0).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub floor_share: Option<f64>,
 }
+
+/// #205: From this share of months at the floor the result shows the hint that the floor mostly sets the spending.
+pub const FLOOR_HINT_SHARE: f64 = 0.5;
 
 /// #197: Percentiles of the end wealth in the results (same as the result of `run` shows).
 pub const END_PERCENTS: [u32; 5] = [1, 5, 50, 95, 99];
@@ -608,6 +615,8 @@ struct PathStats {
     planned: Vec<f64>,
     /// Nominal wealth at the end of the simulation.
     end_total: f64,
+    /// #205: Share of the months from retirement in which the floor sets the living costs.
+    floor_share: f64,
 }
 
 fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective) -> PathStats {
@@ -620,7 +629,10 @@ fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective
     let mut annual = Vec::new();
     let mut planned = Vec::new();
     let (mut sum, mut plan_sum, mut n) = (0.0, 0.0, 0);
+    let (mut floor_months, mut months) = (0usize, 0usize);
     for r in res.records.iter().filter(|r| r.month >= retire) {
+        months += 1;
+        floor_months += usize::from(r.at_floor);
         let spent = if depleted.is_some_and(|d| r.month >= d) {
             r.spending.min(r.income).max(0.0)
         } else {
@@ -666,6 +678,11 @@ fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective
         emergency: res.summary.emergency_sales > 0,
         planned,
         end_total: res.summary.end_total,
+        floor_share: if months > 0 {
+            floor_months as f64 / months as f64
+        } else {
+            0.0
+        },
     }
 }
 
@@ -713,6 +730,9 @@ pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
             e.sort_by(f64::total_cmp);
             END_PERCENTS.map(|p| quantile(&e, f64::from(p) / 100.0))
         },
+        floor_share: sim
+            .has_floor()
+            .then(|| stats.iter().map(|s| s.floor_share).sum::<f64>() / n as f64),
     })
 }
 
@@ -1335,6 +1355,7 @@ mod tests {
             emergency_share: 0.0,
             planned: 0.0,
             end_total: [0.0; 5],
+            floor_share: None,
         };
         let bad = Metrics { ruin: 0.2, ..ok };
         assert!(ok.fitness(&o) > bad.fitness(&o));
@@ -1376,6 +1397,7 @@ mod tests {
             emergency_share: 0.1,
             planned: 120.0,
             end_total: [0.0; 5],
+            floor_share: None,
         }
     }
 
@@ -2069,5 +2091,99 @@ mod tests {
             "{} > {outer_ms}",
             rep.elapsed_ms
         );
+    }
+
+    // ---- #205 ----
+
+    /// #205/AK4: wealth as cash, AHV 3'000 and spending 9'000 per month, fixed rate 4 %, floor 80 %, fixed returns 0.
+    fn floor_plan(cash: f64) -> Value {
+        let mut v = calm(cash);
+        v["pension"]["ahv"]["monthly"] = json!(3000);
+        v["flows"]["spending"] = json!(9000);
+        v["withdrawal"]["strategy"] = json!("fixed_rate");
+        v["withdrawal"]["fixedRate"] = json!({"rate": 0.04});
+        v["withdrawal"]["floor"] = json!(0.8);
+        v
+    }
+
+    fn floor_metrics(v: &Value) -> Metrics {
+        let plan = parse_plan(v).unwrap();
+        let sim = Simulator::new(&plan).unwrap();
+        let path = crate::market::fixed_path(&sim.fixed, sim.start, sim.months());
+        evaluate(&plan, &Paths::List(vec![path.clone(), path]), &Objective::default()).unwrap()
+    }
+
+    #[test]
+    fn issue_205_ak1_ak4_floor_share_with_little_wealth_is_full() {
+        // #205/AK4: 4 % of 300'000 = 1'000 per month plus AHV is below 80 % of 9'000: every month at the floor.
+        let m = floor_metrics(&floor_plan(300_000.0));
+        assert_eq!(m.floor_share, Some(1.0));
+        assert!(m.floor_share.unwrap() >= FLOOR_HINT_SHARE);
+    }
+
+    #[test]
+    fn issue_205_ak4_no_floor_month_in_the_first_year_with_much_wealth() {
+        // #205/AK4: 4 % of 3'000'000 = 10'000 per month plus AHV is above the floor in the first year.
+        let plan = parse_plan(&floor_plan(3_000_000.0)).unwrap();
+        let sim = Simulator::new(&plan).unwrap();
+        let res = sim.run(&crate::market::fixed_path(&sim.fixed, sim.start, sim.months()), true);
+        let retire = sim.retire_at().unwrap();
+        let first: Vec<_> = res.records.iter().filter(|r| r.month >= retire).take(12).collect();
+        assert_eq!(first.len(), 12);
+        assert!(first.iter().all(|r| !r.at_floor));
+        // Over all months from retirement the share is the mean of the flags and below the hint threshold.
+        let share = path_stats(&sim, &res, retire, &Objective::default()).floor_share;
+        let flags: Vec<bool> = res
+            .records
+            .iter()
+            .filter(|r| r.month >= retire)
+            .map(|r| r.at_floor)
+            .collect();
+        let expected = flags.iter().filter(|f| **f).count() as f64 / flags.len() as f64;
+        assert!((share - expected).abs() < 1e-12);
+        assert!(share < FLOOR_HINT_SHARE, "{share}");
+        assert_eq!(floor_metrics(&floor_plan(3_000_000.0)).floor_share, Some(share));
+    }
+
+    #[test]
+    fn issue_205_ak1_floor_share_is_averaged_over_the_paths() {
+        // Wealth in stocks: a path without returns and one with high stock returns give different shares.
+        let mut v = floor_plan(0.0);
+        v["wealth"] = json!({"stocks": 1_000_000, "bonds": 0, "cash": 0, "stockShare": 1, "reserveMonths": 0});
+        let plan = parse_plan(&v).unwrap();
+        let sim = Simulator::new(&plan).unwrap();
+        let retire = sim.retire_at().unwrap();
+        let flat = crate::market::fixed_path(&sim.fixed, sim.start, sim.months());
+        let mut rich = flat.clone();
+        rich.stocks.iter_mut().for_each(|r| *r = 0.02);
+        let share = |p| path_stats(&sim, &sim.run(p, true), retire, &Objective::default()).floor_share;
+        let (a, b) = (share(&flat), share(&rich));
+        assert!(a > b, "{a} {b}");
+        let m = evaluate(&plan, &Paths::List(vec![flat, rich]), &Objective::default()).unwrap();
+        assert!((m.floor_share.unwrap() - (a + b) / 2.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn issue_205_ak3_strategies_without_floor_have_no_share() {
+        let base = floor_plan(300_000.0);
+        let without = |f: &dyn Fn(&mut Value)| {
+            let mut v = base.clone();
+            f(&mut v);
+            floor_metrics(&v).floor_share
+        };
+        assert_eq!(without(&|v| v["withdrawal"]["strategy"] = json!("standard")), None);
+        assert_eq!(without(&|v| v["withdrawal"]["strategy"] = json!("three_buckets")), None);
+        assert_eq!(without(&|v| v["withdrawal"]["floor"] = json!(0)), None);
+        // 3 buckets with guardrails have a floor (#204).
+        let with = without(&|v| {
+            v["withdrawal"]["strategy"] = json!("three_buckets");
+            v["withdrawal"]["buckets"]["spending"] = json!("guardrails");
+        });
+        assert!(with.is_some(), "{with:?}");
+        // Missing in the JSON without a floor, present with one.
+        let mut m = metrics();
+        assert!(serde_json::to_value(m).unwrap().get("floorShare").is_none());
+        m.floor_share = Some(0.25);
+        assert_eq!(serde_json::to_value(m).unwrap()["floorShare"], json!(0.25));
     }
 }

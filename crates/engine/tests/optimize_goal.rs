@@ -36,6 +36,7 @@ fn metrics(median: f64, ruin: f64, share: f64, planned: f64) -> Metrics {
         emergency_share: share,
         planned,
         end_total: [0.0; 5],
+        floor_share: None,
     }
 }
 

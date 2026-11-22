@@ -182,12 +182,14 @@ The result table shows the key figures for every strategy, **calculated on the i
 | Goal | the combined value according to the [formula](#o-score), with a bar for comparison |
 | Withdrawal rate | withdrawal from wealth in the **first year of retirement** (living expenses and housing costs minus income, **before taxes**), as a percentage of liquid wealth at the beginning; median across the paths |
 | End wealth 1 % … 99 % | nominal wealth at the end of the simulation at the percentiles 1, 5, 50, 95 and 99 % of the paths, determined as in the simulation result; also for the starting point |
+| At floor | share of the months from retirement in which the [floor](#f-wd-limits) sets the living expenses, averaged over the paths for checking; “–” for strategies without a floor (Standard, 3 buckets with spending as planned, floor 0). The column appears for both goals |
 
 Below each strategy there is a **line of its own** across the full width of the table with the parameters found (in the comparison without optimization the values of the plan) and the button “Apply to plan”. To make room for the table, the preview with the validation on the right is hidden in the section “Optimization”.
 
 - The first row **“Baseline”** shows your plan unchanged, on the same paths for checking. It is the measure of what the optimization gains.
 - **Grayed-out rows** (“Ruin limit not met”) are strategies that miss your ruin limit. They stay visible so that you can see the cost of security. If **no** strategy is admissible, the limit cannot be reached with the available means; you then have to reduce spending, retire later or relax the limit.
 - The **withdrawal rate** is a value for comparison, not a goal of the search. It shows how much a strategy draws on wealth at the beginning: a high rate with equally high consumption means that the strategy consumes more of the wealth and relies less on pensions and income. The rule of thumb ‘below 4 %’ only applies roughly (see [Withdrawal from wealth](#r-draw)).
+- **At floor:** If the living expenses are often at the floor, the strategy hardly decides anything: it would allow less, and the floor raises the spending. Several strategies then compute practically the same. From **50 %** of the months, the hint “The floor mostly sets the spending; the strategy has little effect.” appears below the strategy. Then check whether the floor is too high or the planned spending exceeds your wealth. Saved results from older versions show “–” here.
 - If consumption drops sharply compared with the baseline, security costs accordingly. That is **not an error** but the answer.
 - Below the table are the numbers of paths for search and checking and the calculation time.
 

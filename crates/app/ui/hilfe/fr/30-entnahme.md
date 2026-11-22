@@ -194,6 +194,6 @@ Pour les stratégies qui fixent elles-mêmes le coût de la vie (taux fixe, Guar
 - **Plancher:** le coût de la vie ne descend jamais au-dessous de cette part des dépenses planifiées (aux prix actuels, adaptées au renchérissement). Exemple: 80 % signifie que vous dépensez au moins 80 % de ce que vous avez planifié, même si la stratégie en permettait moins. **La fortune peut alors être épuisée.** Le plancher rend visible le prix de la sécurité des dépenses.
 - **Plafond:** le coût de la vie ne dépasse jamais cette part. Exemple: 130 % empêche que vous dépensiez nettement plus que prévu lors des bonnes années.
 
-Les limites sont un moyen de garantir des **besoins fixes** (logement, santé) face au prélèvement flexible. Dans l’[optimisation](#s-optimize), les limites restent comme dans la planification.
+Les limites sont un moyen de garantir des **besoins fixes** (logement, santé) face au prélèvement flexible. Dans l’[optimisation](#s-optimize), les limites restent comme dans la planification. Dans le résultat de l’optimisation et de la comparaison des stratégies, la colonne **«Au plancher»** indique pendant combien de mois dès la retraite le plancher fixe le coût de la vie (voir [Lire le résultat](#o-read)).
 
 Les limites ne s’appliquent pas à «Standard» ni à «3 compartiments» avec dépenses comme planifié, car les dépenses y sont de toute façon fixes.

@@ -194,6 +194,6 @@ Con le strategie che fissano esse stesse il costo della vita (tasso fisso, Guard
 - **Limite inferiore:** il costo della vita non scende mai sotto questa quota delle spese pianificate (ai prezzi attuali, adeguate al rincaro). Esempio: 80 % significa che spende almeno l’80 % di quanto ha pianificato, anche se la strategia consentirebbe meno. **La sostanza può allora esaurirsi.** Il limite inferiore rende visibile il prezzo della sicurezza nelle spese.
 - **Limite superiore:** il costo della vita non sale mai sopra questa quota. Esempio: 130 % impedisce di spendere negli anni buoni molto più di quanto pianificato.
 
-I limiti sono un modo per proteggere **esigenze fisse** (alloggio, salute) dal prelievo flessibile. Nell’[ottimizzazione](#s-optimize) i limiti restano come nella pianificazione.
+I limiti sono un modo per proteggere **esigenze fisse** (alloggio, salute) dal prelievo flessibile. Nell’[ottimizzazione](#s-optimize) i limiti restano come nella pianificazione. Nel risultato dell’ottimizzazione e del confronto delle strategie, la colonna **«Al limite inferiore»** mostra in quanti mesi dal pensionamento il limite inferiore fissa il costo della vita (vedi [Leggere il risultato](#o-read)).
 
 I limiti non valgono per «Standard» e «3 comparti» con spese come pianificate, perché lì le spese sono comunque fisse.

@@ -179,6 +179,9 @@ pub struct MonthRecord {
     /// #133: Ledger of the month (internal only, not part of the result).
     #[serde(skip)]
     pub ledger: Ledger,
+    /// #205: The floor of the spending rule sets the living costs this month (internal only, not part of the result).
+    #[serde(skip)]
+    pub at_floor: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -933,6 +936,11 @@ impl Simulator {
             .iter()
             .map(|p| p.income.at(m) * if p.income_indexed { infl_idx } else { 1.0 })
             .sum()
+    }
+
+    /// #205: The spending rule has a floor (fixed rate, guardrails, VPW, endowment, 3 buckets with guardrails; floor > 0).
+    pub fn has_floor(&self) -> bool {
+        self.dynamic.is_some_and(|d| d.floor.is_some())
     }
 
     /// Last payout of a pension fund (retirement of the household).
@@ -2719,16 +2727,23 @@ impl<'a> Run<'a> {
     /// Living costs of one month by the spending rule: withdrawal / 12 + savings + income and pensions − housing costs,
     /// limited by floor and ceiling (shares of the planned spending).
     fn rule_living(&self, d: &Dynamic, m: YearMonth, income: f64, housing: f64) -> f64 {
+        self.rule_living_bound(d, m, income, housing).0
+    }
+
+    /// As [`Self::rule_living`]; also tells whether the floor sets the living costs (#205).
+    fn rule_living_bound(&self, d: &Dynamic, m: YearMonth, income: f64, housing: f64) -> (f64, bool) {
         let s = self.s;
         let planned = s.planned_living(m) * self.infl_idx;
         let mut l = (self.budget / 12.0 + s.savings.at(m) + income - housing).max(0.0);
         if let Some(c) = d.ceiling {
             l = l.min(c * planned);
         }
+        let mut at_floor = false;
         if let Some(f) = d.floor {
+            at_floor = f * planned > l;
             l = l.max(f * planned);
         }
-        l
+        (l, at_floor)
     }
 
     /// Set the annual withdrawal at retirement and adjust it every January.
@@ -3002,12 +3017,12 @@ impl<'a> Run<'a> {
             let income = earned + pk_pension + ahv;
             let planned = s.planned_living(m) * self.infl_idx;
             // #6/#47: The spending rule applies from the retirement of the first person.
-            let living = match s.dynamic {
+            let (living, at_floor) = match s.dynamic {
                 Some(d) if self.any_retired() => {
                     self.update_budget(&d, m, infl_factor);
-                    self.rule_living(&d, m, income, prop_cost + p3a_in)
+                    self.rule_living_bound(&d, m, income, prop_cost + p3a_in)
                 }
-                _ => planned,
+                _ => (planned, false),
             };
             self.month_running = prop_running;
             self.cash += s.savings.at(m) + income - living - prop_cost - p3a_in;
@@ -3188,6 +3203,7 @@ impl<'a> Run<'a> {
                     stock_index: self.stock_idx,
                     bond_index: self.bond_idx,
                     ledger: self.ledger,
+                    at_floor,
                 });
             }
         }

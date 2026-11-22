@@ -521,6 +521,9 @@ Quartal); der Import meldet das. Mehrere Kapitalbezüge (`LumpsumRatio`) werden 
   (`optimization.property`, CLI `--property planned|never-sell|both`) rechnet wie geplant, mit `realestate.neverSell`
   oder beides (`Outcome.neverSell`, `patch.neverSell`); ohne eigene Immobilie nur «wie geplant». `Metrics.endTotal`:
   nominales Endvermögen bei 1, 5, 50, 95 und 99 % (`END_PERCENTS`), gewählt wie in `batch::summarize`.
+  `Metrics.floorShare` (#205): Anteil der Monate ab Pensionierung mit `MonthRecord.at_floor` (die Untergrenze hebt die
+  Lebenshaltung der Ausgaberegel an, `rule_living_bound`), gemittelt über die Pfade; fehlt ohne Untergrenze
+  (`Simulator::has_floor`) und in Berichten vor #205. Ab `FLOOR_HINT_SHARE` (50 %) zeigen App und CLI einen Hinweis.
 - **Ergebnisse:** Bandbreite mit 1. und 99. Perzentil und dem monatlich schlechtesten Wert; unter «Einzelne Läufe»
   zusätzlich 1., 99. Perzentil und der Lauf mit dem tiefsten Endvermögen. Einzelläufe zeigen den Verlauf von
   Aktien und Obligationen als Index.

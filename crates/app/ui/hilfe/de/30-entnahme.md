@@ -194,6 +194,6 @@ Bei den Strategien, die die Lebenshaltung selbst festlegen (fixe Rate, Guardrail
 - **Untergrenze:** Die Lebenshaltung sinkt nie unter diesen Anteil der geplanten Ausgaben (in heutigen Preisen, mit der Teuerung angepasst). Beispiel: 80 % heisst, Sie geben mindestens 80 % dessen aus, was Sie geplant haben, auch wenn die Strategie weniger erlauben würde. **Dann kann das Vermögen aufgebraucht werden.** Die Untergrenze macht den Preis der Sicherheit bei den Ausgaben sichtbar.
 - **Obergrenze:** Die Lebenshaltung steigt nie über diesen Anteil. Beispiel: 130 % verhindert, dass Sie in guten Jahren wesentlich mehr ausgeben, als Sie geplant haben.
 
-Die Grenzen sind eine Möglichkeit, **feste Ansprüche** (Wohnen, Gesundheit) gegen die flexible Entnahme abzusichern. Bei der [Optimierung](#s-optimize) bleiben die Grenzen wie in der Planung.
+Die Grenzen sind eine Möglichkeit, **feste Ansprüche** (Wohnen, Gesundheit) gegen die flexible Entnahme abzusichern. Bei der [Optimierung](#s-optimize) bleiben die Grenzen wie in der Planung. Im Ergebnis der Optimierung und des Strategievergleichs zeigt die Spalte **«Auf Untergrenze»**, in wie vielen Monaten ab Pensionierung die Untergrenze die Lebenshaltung festlegt (siehe [Ergebnis lesen](#o-read)).
 
 Die Grenzen gelten nicht für «Standard» und «3-Topf» mit Ausgaben wie geplant, weil dort die Ausgaben ohnehin fix sind.

@@ -542,7 +542,7 @@ test.describe("Compare strategies without optimization (#197)", () => {
       }
       // one row per strategy plus the plan: 5 cells each with an amount after the metrics
       const row = page.locator("#main table.tbl").last().locator("tr").nth(2);
-      await expect(row.locator("td")).toHaveCount(12); // #200: parameters in a sub-row, no column of their own
+      await expect(row.locator("td")).toHaveCount(13); // #200: parameters in a sub-row, no column of their own; #205: column «Auf Untergrenze»
     };
     await start(page);
     await check();
@@ -933,6 +933,89 @@ test.describe("Limits of living expenses with VPW and endowment in comparison an
       await row(page, r, s).locator('button[data-action="opt-apply"]').click();
       expect(await page.evaluate(() => [state.withdrawal.strategy, state.withdrawal.floor, state.withdrawal.ceiling])).toEqual([s, 0.8, 1.25]);
     }
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Hint in the result table when the floor sets the spending (#205)", () => {
+  const HINT = "Die Untergrenze bestimmt meist die Ausgaben; die Strategie wirkt kaum.";
+  /** Runs the comparison (or optimization) of `strategies` with floor `floor`; returns the report. */
+  async function run(page, strategies, floor, action = "opt-compare", goal = "consumption") {
+    await page.evaluate(f => { state.returns.bootstrap.paths = 300; state.withdrawal.floor = f; state.withdrawal.ceiling = 0; }, floor);
+    await setOpt(page, { goal, strategies, paths: 100, checkPaths: 300, samples: 2 });
+    await page.evaluate(() => { lastOpt = null; });
+    await page.locator(`button[data-action="${action}"]`).click();
+    await page.waitForFunction(() => lastOpt && !optBusy, null, { timeout: 120_000 });
+    return page.evaluate(() => lastOpt.report);
+  }
+  /** Texts of the column «Auf Untergrenze» and whether the hint stands in the sub-row, per group (reference first). */
+  const shown = (page, root = "#main") => page.locator(`${root} table.opttbl tbody.optgrp`).evaluateAll(gs => gs.map(g => ({
+    cell: g.querySelector("tr.optmain td.optfloor")?.textContent, hint: g.querySelector("tr.optsub .optfloorhint")?.textContent ?? null })));
+  const expected = (page, r) => page.evaluate(r => [r.reference.metrics, ...r.outcomes.map(o => o.validated)].map(m =>
+    ({ cell: m.floorShare == null ? "–" : pctTxt(m.floorShare), hint: m.floorShare >= 0.5 ? "Die Untergrenze bestimmt meist die Ausgaben; die Strategie wirkt kaum." : null })), r);
+
+  test("AK1: column with the share of months at the floor per strategy, in comparison and optimization, for both goals", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    for (const [action, goal] of [["opt-compare", "consumption"], ["opt-run", "consumption"], ["opt-compare", "keepProperty"]]) {
+      const r = await run(page, ["fixed_rate", "guardrails"], 0.8, action, goal);
+      await expect(page.locator("#main table.opttbl th", { hasText: /^Auf Untergrenze$/ })).toBeVisible();
+      expect(await page.locator("#main table.opttbl th", { hasText: /^Auf Untergrenze$/ }).getAttribute("title")).toContain("ab Pensionierung");
+      for (const o of r.outcomes) expect(o.validated.floorShare).toBeGreaterThanOrEqual(0);
+      expect(await shown(page)).toEqual(await expected(page, r));
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK2: hint from 50 % of the months in the sub-row of the strategy", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    await run(page, ["fixed_rate", "guardrails"], 0.8);
+    for (const [v, hint] of [[0.5, true], [0.499, false], [1, true], [0, false]]) {
+      await page.evaluate(v => { lastOpt.report.outcomes[0].validated.floorShare = v; renderSection(); }, v);
+      const g = page.locator("#main table.opttbl tbody.optgrp").nth(1);
+      await expect(g.locator("td.optfloor")).toHaveText(await page.evaluate(v => pctTxt(v), v));
+      await expect(g.locator("tr.optsub .optfloorhint")).toHaveCount(hint ? 1 : 0);
+      if (hint) await expect(g.locator("tr.optsub")).toContainText(HINT);
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK3: Standard, 3 buckets without guardrails and floor 0 show «–» and no hint; 3 buckets with guardrails has a share", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap");
+    let r = await run(page, ["standard", "three_buckets", "three_buckets_guardrails", "fixed_rate"], 0.8);
+    const byStrategy = r.outcomes.map(o => [o.patch.withdrawal.strategy, o.patch.withdrawal.buckets?.spending ?? null, o.validated.floorShare]);
+    for (const [s, sp, f] of byStrategy) {
+      if (s === "standard" || (s === "three_buckets" && sp !== "guardrails")) expect(f, s).toBeUndefined();
+      else expect(f, `${s} ${sp}`).toBeGreaterThanOrEqual(0);
+    }
+    expect(await shown(page)).toEqual(await expected(page, r));
+    r = await run(page, ["fixed_rate", "guardrails", "vpw"], 0);
+    const rows = await shown(page);
+    expect(rows.slice(1)).toEqual(r.outcomes.map(() => ({ cell: "–", hint: null })));
+    await noErrors(page, errors);
+  });
+
+  test("AK6: a saved optimization shows the share again after opening; one saved before #205 shows «–» without hint", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await page.evaluate(() => { state.returns.bootstrap.paths = 300; state.withdrawal.floor = 0.8; });
+    await setOpt(page, { strategies: ["fixed_rate", "standard"], paths: 100, checkPaths: 300, samples: 2 });
+    const before = await page.evaluate(() => +document.documentElement.dataset.saved || 0);
+    await page.locator('button[data-action="opt-run"]').click();
+    await page.waitForFunction(n => (+document.documentElement.dataset.saved || 0) > n && !optBusy, before, { timeout: 120_000 });
+    const inSection = await shown(page);
+    expect(inSection.some(x => x.cell !== "–")).toBe(true);
+    const [m] = await page.evaluate(() => Runs.list());
+    await page.evaluate(() => openRuns());
+    await page.locator(`button[data-action="run-view"][data-id="${m.id}"]`).click();
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "savedOpt");
+    expect(await shown(page, "#resultsBody")).toEqual(inSection);
+    // saved before #205: no share in the report
+    await page.evaluate(async id => {
+      const [meta] = (await Runs.list()).filter(x => x.id === id), d = await Runs.get(id);
+      const old = JSON.parse(JSON.stringify(d));
+      for (const x of [old.opt.report.reference.metrics, ...old.opt.report.outcomes.flatMap(o => [o.fitted, o.validated])]) delete x.floorShare;
+      viewOpt(meta, old);
+    }, m.id);
+    expect(await shown(page, "#resultsBody")).toEqual(inSection.map(() => ({ cell: "–", hint: null })));
     await noErrors(page, errors);
   });
 });

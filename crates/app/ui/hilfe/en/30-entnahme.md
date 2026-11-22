@@ -194,6 +194,6 @@ With the strategies that set living expenses themselves (fixed rate, guardrails,
 - **Floor:** Living expenses never fall below this share of the planned spending (in today's prices, adjusted for inflation). Example: 80 % means you spend at least 80 % of what you planned, even if the strategy would allow less. **Then wealth can be depleted.** The floor makes the price of security in spending visible.
 - **Ceiling:** Living expenses never rise above this share. Example: 130 % prevents you from spending considerably more than planned in good years.
 
-The limits are one way of protecting **fixed commitments** (housing, health) against the flexible withdrawal. In the [optimization](#s-optimize), the limits stay as in the plan.
+The limits are one way of protecting **fixed commitments** (housing, health) against the flexible withdrawal. In the [optimization](#s-optimize), the limits stay as in the plan. In the result of the optimization and of the strategy comparison, the column **“At floor”** shows in how many months from retirement the floor sets the living expenses (see [Reading the result](#o-read)).
 
 The limits do not apply to “Standard” and to “3 buckets” with spending as planned, because spending is fixed there anyway.

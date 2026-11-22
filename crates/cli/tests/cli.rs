@@ -464,6 +464,8 @@ fn issue_197_ak4_cli_compare_without_optimization() {
         t.contains("End wealth") && t.contains("Plan values") && !t.contains("Optimization"),
         "{t}"
     );
+    // #205/AK1: the share of months at the floor (or «–») per strategy
+    assert!(t.contains("At floor"), "{t}");
     let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
     let list = r.as_array().unwrap();
     assert_eq!(list.len(), 4);
