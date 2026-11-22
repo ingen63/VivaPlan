@@ -649,7 +649,9 @@ fn check(plan: &Plan, v: &mut Issues) {
     // #98: Tax multiplier and rate tables (income, wealth, lump sum, also married). Without the check a
     // rate of −10¹⁵ produced invalid numbers in the simulation.
     let t = &plan.taxes;
-    if !(0.0..=10.0).contains(&t.multiplier) {
+    // #65: in the mode «Wohnort» the multiplier only applies to own rules of the property gain tax (hidden otherwise)
+    let multiplier_used = t.mode == crate::model::TaxMode::Own || t.property_gain_own;
+    if multiplier_used && !(0.0..=10.0).contains(&t.multiplier) {
         v.err_at("taxes", "taxes.multiplier", msg!(tax_multiplier_range));
     }
     /// Key in the path, name in the message, brackets [(amount, rate)].
@@ -704,8 +706,11 @@ fn check(plan: &Plan, v: &mut Issues) {
     }
 
     // The property gain tax is required as soon as a property with status «Besitz» or «Kauf geplant» occurs
-    // (rented properties do not trigger it). Rules with a rate of 0 % count as set.
-    if plan.taxes.property_gain.is_none()
+    // (rented properties do not trigger it). Rules with a rate of 0 % count as set. #65/AK6: in the mode «Wohnort»
+    // the rule set of the canton of the property applies; own rules only with `taxes.propertyGainOwn`.
+    let canton_rules = plan.taxes.mode == crate::model::TaxMode::Location && !plan.taxes.property_gain_own;
+    if !canton_rules
+        && plan.taxes.property_gain.is_none()
         && plan
             .realestate
             .properties
@@ -714,9 +719,30 @@ fn check(plan: &Plan, v: &mut Issues) {
     {
         v.err("taxes", msg!(gain_tax_missing));
     }
+    if canton_rules {
+        let data = crate::taxdata::builtin();
+        for (i, p) in plan.realestate.properties.iter().enumerate() {
+            if p.status == PropertyStatus::Rent {
+                continue;
+            }
+            if let Some(c) = p.canton.as_deref().filter(|c| !c.is_empty()) {
+                if data.canton(c).is_none() {
+                    v.err_at(
+                        "realestate",
+                        format!("realestate.properties.{i}.canton"),
+                        msg!(property_canton_unknown, name = p.name, canton = c),
+                    );
+                }
+            }
+            if p.status == PropertyStatus::Owned && p.bought.is_none() {
+                v.warn("realestate", msg!(property_bought_missing_canton, name = p.name));
+            }
+        }
+    }
 
-    // Property gain tax: surcharges and reductions by holding period need the purchase date
-    if let Some(g) = &plan.taxes.property_gain {
+    // Property gain tax: surcharges and reductions by holding period need the purchase date. #65: own rules that do
+    // not apply (mode «Wohnort» without `propertyGainOwn`) are not checked.
+    if let Some(g) = plan.taxes.property_gain.as_ref().filter(|_| !canton_rules) {
         if g.duration
             .iter()
             .any(|&(y, c)| !y.is_finite() || y < 0.0 || !c.is_finite() || c <= -1.0)

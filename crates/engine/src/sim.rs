@@ -73,6 +73,16 @@ pub enum EventKind {
     Depleted,
 }
 
+/// #65: Rules of the property gain tax for one property.
+#[derive(Clone, Debug)]
+struct GainRule {
+    def: Option<crate::model::PropertyGainTax>,
+    /// Tax multiplier; it only has an effect if the rules set `use_multiplier`.
+    multiplier: f64,
+    /// Holding period in months (rule set of the canton); otherwise in full years (own rules).
+    months: bool,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Event {
     pub month: YearMonth,
@@ -711,6 +721,8 @@ pub struct Simulator {
     taxes: crate::model::Taxes,
     /// #63: Tables and deductions of the place of residence (mode «Wohnort»); `None`: own tables.
     location: Option<crate::taxdata::Resolved>,
+    /// #65: Property gain tax per property (index as in `props`).
+    gain_rules: Vec<GainRule>,
     pub fixed: crate::market::FixedCurves,
     pub source: ReturnSource,
     afford: Affordability,
@@ -819,6 +831,31 @@ impl Simulator {
                 Some(crate::taxdata::builtin().resolve(&plan.taxes.location.clone().unwrap_or_default(), couple)?)
             }
         };
+        // #65: Mode «Wohnort» without own rules: rule set of the canton in which the property lies.
+        let canton_rules = plan.taxes.mode == crate::model::TaxMode::Location && !plan.taxes.property_gain_own;
+        let gain_rules = plan
+            .realestate
+            .properties
+            .iter()
+            .map(|p| {
+                // Rented properties are never sold; their canton does not matter.
+                if canton_rules && p.status != crate::model::PropertyStatus::Rent {
+                    let loc = plan.taxes.location.clone().unwrap_or_default();
+                    let (def, multiplier) = crate::taxdata::builtin().property_gain(&loc, p.canton.as_deref())?;
+                    Ok(GainRule {
+                        def: Some(def),
+                        multiplier,
+                        months: true,
+                    })
+                } else {
+                    Ok(GainRule {
+                        def: plan.taxes.property_gain.clone(),
+                        multiplier: plan.taxes.multiplier,
+                        months: false,
+                    })
+                }
+            })
+            .collect::<Result<Vec<_>>>()?;
         let props = plan
             .realestate
             .properties
@@ -920,6 +957,7 @@ impl Simulator {
             person_ids: persons.iter().map(|p| p.id.clone()).collect(),
             taxes,
             location,
+            gain_rules,
             fixed: crate::market::FixedCurves {
                 stocks: curve(&plan.returns.fixed.stocks)?,
                 bonds: curve(&plan.returns.fixed.bonds)?,
@@ -1486,14 +1524,15 @@ impl<'a> Run<'a> {
     fn sell(&mut self, i: usize, m: YearMonth, kind: EventKind) {
         let worth = self.worth(i);
         let debt: f64 = self.props[i].balances.iter().sum();
-        // Holding period in full years; unknown for owned property without a purchase date (no surcharge or reduction).
-        let years = self.props[i].bought.map(|b| b.until(m).max(0) / 12);
-        let gain_tax = tax::property_gain_tax_held(
-            self.s.taxes.property_gain.as_ref(),
-            worth - self.props[i].price_paid,
-            years,
-            self.s.taxes.multiplier,
-        );
+        // Holding period in months (#65: rule set of the canton) or in full years (own rules, as before); unknown for
+        // owned property without a purchase date (no surcharge or reduction).
+        let rule = &self.s.gain_rules[i];
+        let months = self.props[i]
+            .bought
+            .map(|b| b.until(m).max(0))
+            .map(|h| if rule.months { h } else { h / 12 * 12 });
+        let paid = self.props[i].price_paid;
+        let gain_tax = tax::property_gain_tax_full(rule.def.as_ref(), worth - paid, paid, months, rule.multiplier);
         self.cash += worth - debt - gain_tax;
         self.ledger.taxes += gain_tax;
         self.interest_settled += std::mem::take(&mut self.props[i].int_accr);

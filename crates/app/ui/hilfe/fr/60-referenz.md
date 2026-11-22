@@ -46,7 +46,7 @@ Une planification est **un fichier texte** au format JSON avec l’extension `.v
 - Les **montants** s’entendent par mois, les **taux** par année sous forme de nombre décimal (0.05 = 5 %).
 - Les **valeurs dépendant du temps** sont un nombre ou `{"mode": "timed", "rows": [{"from": "start", "value": 9500}, {"from": "retire", "value": 8500}]}`.
 - **Optimisation:** l’objectif, les stratégies, les trajectoires et les **fourchettes des paramètres** par stratégie figurent sous `optimization` (`ranges`: stratégie, paramètre, puis `fixed` ou `lo`/`hi`, parts sous forme de nombre décimal).
-- **Impôt sur les gains immobiliers:** `taxes.propertyGain` avec `brackets` (largeur, taux), `duration` (dès années révolues, majoration ou réduction), `exemptBelow` et `reduction`; la date d’achat d’un bien immobilier en propriété figure dans `bought`.
+- **Impôt sur les gains immobiliers:** `taxes.propertyGain` avec `brackets` (largeur, taux), `duration` (dès années révolues, majoration ou réduction), `exemptBelow` et `reduction`; la date d’achat d’un bien immobilier en propriété figure dans `bought`. Dans le mode «Domicile» s’applique la règle du canton du bien immobilier (`canton` par bien, sans indication le canton de domicile); `taxes.propertyGainOwn: true` passe aux règles propres.
 - Le format complet est fourni par `vivaplan schema` dans le terminal.
 
 Le fichier ne contient **aucun résultat**. L’application classe les résultats dans la [liste des résultats](#r-list).

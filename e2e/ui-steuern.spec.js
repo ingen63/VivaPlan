@@ -172,7 +172,8 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
     const muniBox = await muni(page).boundingBox(), ruleBox = await rule.boundingBox();
     expect(ruleBox.y).toBeGreaterThan(muniBox.y);
     await expect(page.locator("#tax-location p.lumpcheck")).toHaveText(/^Kapitalbezugssteuer: Vor dem Entscheid/);
-    await expect(page.locator("#main")).toContainText("Steuerfuss für die Grundstückgewinnsteuer");
+    // #65: the multiplier for the property gains tax only with own rules
+    await expect(page.locator("#main")).not.toContainText("Steuerfuss für die Grundstückgewinnsteuer");
     // the parameters tab names the rule instead of the table
     const rows = await page.evaluate(() => Object.fromEntries(paramSections(state).flatMap(([, r]) => r)));
     expect(rows["Kapitalbezugssteuer"]).toBe("nach Wohnort (Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %)");
@@ -203,6 +204,83 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
     await cantonSel(page).selectOption("ZH");
     await expect(page.locator("#tax-capital-approx")).toHaveCount(0);
     await expect(page.locator("#tax-capital-rule")).toBeVisible();
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Property gains tax by canton (#65)", () => {
+  test("AK1, AK3, AK5: canton per property, rule with approximation note, own rules stay possible", async ({ page }) => {
+    const errors = await open(page);
+    await toLocation(page);
+    await choose(page, "ZH", "Zürich");
+    // AK1/AK6: no duty for own rules, the rules of the canton apply; no rule editor
+    await expect(page.locator("#gain-location")).toContainText("Für jede Immobilie gilt die Regel des Kantons");
+    await expect(page.locator("#gain-own")).not.toBeChecked();
+    await expect(page.locator('[data-action="gain-zh"]')).toHaveCount(0);
+    await expect(page.locator("#main .errcard")).toHaveCount(0);
+    await expect(page.locator('input[data-path="taxes.multiplier"]')).toHaveCount(0);
+    const idx = await page.evaluate(() => state.realestate.properties.findIndex(p => p.status !== "rent"));
+    expect(idx).toBeGreaterThanOrEqual(0);
+
+    // section «Immobilien»: canton of the property, default canton of residence, rule visible
+    await nav(page, "Immobilien");
+    const sel = page.locator(`select[data-path="realestate.properties.${idx}.canton"]`);
+    await expect(sel).toBeVisible();
+    await expect(sel.locator("option").first()).toHaveText("Wohnkanton (Zürich)");
+    expect(await sel.locator("option").count()).toBe(27);
+    const rule = page.locator("[data-gain-rule]").first();
+    await expect(rule).toHaveText("Grundstückgewinnsteuer Zürich: Stufentarif 10 % bis 40 %, Zuschlag bis 50 % unter 2 Jahren, Ermässigung bis 50 % ab 20 Jahren.");
+    await expect(page.locator("[data-gain-approx]")).toHaveCount(0);
+    // AK3: approximated rule (Valais) with ⚠
+    await sel.selectOption("VS");
+    expect(await page.evaluate(i => state.realestate.properties[i].canton, idx)).toBe("VS");
+    await expect(rule).toContainText("Grundstückgewinnsteuer Wallis: Stufentarif 12 % bis 24 %");
+    await expect(page.locator("[data-gain-approx]").first()).toHaveText("⚠ Näherung bei der Grundstückgewinnsteuer: Angenommen ist ein Stufentarif nach Gewinnhöhe (nicht ein Satz für den ganzen Gewinn).");
+    await sel.selectOption("AG");
+    await expect(page.locator("[data-gain-approx]")).toHaveCount(0);
+    await sel.selectOption("");
+    await expect(rule).toContainText("Grundstückgewinnsteuer Zürich");
+    // the parameters tab names the rule of the canton and the canton of the property
+    let rows = await page.evaluate(() => Object.fromEntries(paramSections(state, true).flatMap(([, r]) => r)));
+    expect(rows["Grundstückgewinnsteuer"]).toBe("Regel des Kantons der Immobilie");
+
+    // AK5: own rules with the check box; then the editor and the multiplier, no canton at the property
+    await nav(page, "Steuern");
+    await page.locator("#gain-own").check();
+    expect(await page.evaluate(() => state.taxes.propertyGainOwn)).toBe(true);
+    await expect(page.locator("#gain-location")).toContainText("Es gelten die unten erfassten Regeln für alle Immobilien.");
+    await expect(page.locator('input[data-path="taxes.multiplier"]')).toBeVisible();
+    await expect(page.locator("#main")).toContainText("Steuerfuss für die Grundstückgewinnsteuer");
+    await nav(page, "Immobilien");
+    await expect(sel).toHaveCount(0);
+    await nav(page, "Steuern");
+    await page.locator("#gain-own").uncheck();
+    expect(await page.evaluate(() => state.taxes.propertyGainOwn)).toBeUndefined();
+    // AK5: in the mode «Eigene Tabellen» always the own rules, no check box
+    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    await expect(page.locator("#gain-own")).toHaveCount(0);
+    await nav(page, "Immobilien");
+    await expect(sel).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: every canton has a property gains rule in all languages; approximations are marked", async ({ page }) => {
+    const errors = await open(page);
+    await toLocation(page);
+    const ids = await page.evaluate(() => taxLoc.cantons.map(c => [c.id, c.propertyGainRule, c.propertyGainApprox ?? null]));
+    expect(ids).toHaveLength(26);
+    expect(ids.filter(([, , a]) => a).map(([id]) => id).sort()).toEqual(["BL", "BS", "SG", "VD", "VS"]);
+    const texts = Object.fromEntries(["de", "en", "fr", "it"].map(l =>
+      [l, JSON.parse(fs.readFileSync(path.join(__dirname, "..", "crates", "app", "ui", "i18n", `${l}.json`), "utf8"))]));
+    for (const [id, rule, approx] of ids) {
+      // the German texts are those of the tax data file
+      expect(texts.de[`propertyGainRule.${id}`]).toBe(rule);
+      if (approx) expect(texts.de[`propertyGainApprox.${id}`]).toBe(approx);
+      for (const l of ["en", "fr", "it"]) {
+        expect(texts[l][`propertyGainRule.${id}`], `${l} ${id}`).toBeTruthy();
+        if (approx) expect(texts[l][`propertyGainApprox.${id}`], `${l} ${id}`).toBeTruthy();
+      }
+    }
     await noErrors(page, errors);
   });
 });

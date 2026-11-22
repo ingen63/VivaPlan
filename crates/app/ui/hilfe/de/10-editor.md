@@ -217,7 +217,7 @@ Wie viele **Monate der ungedeckten Ausgaben** (Ausgaben minus Einkommen und Rent
 ## @s-taxes Steuern
 Stichworte: Einkommenssteuer, Vermögenssteuer, Kapitalsteuer, Steuerfuss, Tabelle
 
-Zwei Modi stehen zur Wahl: **Wohnort** rechnet die Einkommens-, Vermögens- und Kapitalbezugssteuer aus Kanton, Gemeinde und Kirchensteuer mit den Steuerdaten der ESTV ([Steuer nach Wohnort](#f-tax-location)); **Eigene Tabellen** rechnet mit Satztabellen und Steuerfuss, wie unten beschrieben. Bestehende Planungen öffnen mit «Eigene Tabellen».
+Zwei Modi stehen zur Wahl: **Wohnort** rechnet die Einkommens-, Vermögens- und Kapitalbezugssteuer aus Kanton, Gemeinde und Kirchensteuer mit den Steuerdaten der ESTV und die Grundstückgewinnsteuer nach dem Kanton der Immobilie ([Steuer nach Wohnort](#f-tax-location)); **Eigene Tabellen** rechnet mit Satztabellen und Steuerfuss, wie unten beschrieben. Bestehende Planungen öffnen mit «Eigene Tabellen».
 
 Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten können. Zwischen den Stufen wird **linear interpoliert**, der Satz wird mit dem [Steuerfuss](#f-tax-multiplier) multipliziert.
 
@@ -232,7 +232,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 Die Beispielwerte sind nur Platzhalter. Ersetzen Sie sie für Ihr Ergebnis durch Werte Ihres Wohnorts.
 
 ## @f-tax-location Steuer nach Wohnort
-Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerdaten, Standardabzüge, Berufskosten, Bundessteuer, steuerbares Einkommen, Kapitalbezug, Kapitalbezugssteuer
+Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerdaten, Standardabzüge, Berufskosten, Bundessteuer, steuerbares Einkommen, Kapitalbezug, Kapitalbezugssteuer, Grundstückgewinnsteuer, Kanton der Liegenschaft
 
 Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons mit Suche: Namen eintippen) und die **Kirchensteuer** (keine, reformiert, römisch-katholisch, christkatholisch). Tarife, Abzüge und Steuerfüsse kommen aus der mitgelieferten Steuerdatei der ESTV (Steuerrechner, Grunddaten); die Karte nennt das Steuerjahr, die Quelle und die Steuerfüsse der Gemeinde. Es gibt keinen Netzwerkzugriff.
 
@@ -249,15 +249,16 @@ Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons
 - **Kapitalbezugssteuer** (Pensionskasse, Säule 3a) = Kapitalregel des Kantons × (Steuerfuss Kanton + Kirche) + Regel der Gemeinde × Steuerfuss Gemeinde + Bundessteuer (ein Fünftel des Tarifs der direkten Bundessteuer, ohne Abzüge). Es gelten die Steuerfüsse der Einkommenssteuer; die Regel gilt für den ganzen Bezug. Bezüge im selben Kalenderjahr werden zusammengerechnet: bei Verheirateten für den Haushalt mit dem Tarif für Verheiratete, bei unverheirateten Paaren je Person mit dem Tarif für Alleinstehende. Unter der Gemeinde steht die Regel des Kantons, zum Beispiel Zürich «Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %». Die Regeln sind aus dem ESTV-Steuerrechner abgeleitet; in Wallis und Zug sind sie nur angenähert (⚠).
 - **Verheiratete** (zwei Personen und «Verheiratet» angekreuzt): Tarife und Abzüge für Verheiratete. Unverheiratete Paare rechnen mit denen für Alleinstehende auf dem gemeinsamen Einkommen.
 - Mit [Tarifen mit der Teuerung](#f-tax-indexed) wachsen die Beträge der Tarife und Abzüge mit der simulierten Teuerung.
+- **Grundstückgewinnsteuer:** Für jede Immobilie gilt der Regelsatz des Kantons, in dem sie liegt; den Kanton wählen Sie bei der Immobilie unter [Immobilien](#s-realestate), ohne Angabe gilt der Wohnkanton. Einzelheiten unter [Grundstückgewinnsteuer](#f-tax-gain). Mit dem Häkchen **«Eigene Regeln statt der Regeln des Kantons»** gelten stattdessen die eigenen Regeln mit dem [Steuerfuss](#f-tax-multiplier) für alle Immobilien.
 
-**Nicht im Modus Wohnort:** Die [Grundstückgewinnsteuer](#f-tax-gain) rechnet weiter mit den eigenen Regeln und dem [Steuerfuss](#f-tax-multiplier). Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch die für Verheiratete) sind ausgeblendet und bleiben in der Datei; zurück auf «Eigene Tabellen» gelten sie wieder.
+**Ausgeblendet:** Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch die für Verheiratete), die eigenen Regeln der Grundstückgewinnsteuer und der Steuerfuss (ohne das Häkchen) bleiben in der Datei; zurück auf «Eigene Tabellen» gelten sie wieder.
 
 **Prüfung:** Fehlt der Kanton oder die Gemeinde oder liegt die Gemeinde nicht im Kanton, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» ist gesperrt. Die Übersicht der Annahmen und der Reiter «Parameter» nennen den Wohnort, zum Beispiel «Zürich (ZH), Kirchensteuer keine».
 
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator
 
-Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor. Erlaubt sind Werte von 0 bis 10. Im Modus [Wohnort](#f-tax-location) gilt er nur noch für die Grundstückgewinnsteuer.
+Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor. Erlaubt sind Werte von 0 bis 10. Im Modus [Wohnort](#f-tax-location) gilt er nur für eigene Regeln der Grundstückgewinnsteuer (Häkchen «Eigene Regeln statt der Regeln des Kantons») und ist sonst ausgeblendet.
 
 ## @f-tax-indexed Tarife mit der Teuerung
 Stichworte: kalte Progression, Teuerung, Inflation, Stufen, Tarif, heutige Preise
@@ -271,9 +272,9 @@ Mit Häkchen gelten die **Beträge** der Tabellen für Einkommen, Vermögen und 
 - Neue Planungen haben das Häkchen gesetzt. Ältere Planungen ohne Angabe und importierte alte Konfigurationen rechnen wie bisher ohne: Die Beträge gelten dann nominal über die ganze Planung.
 
 ## @f-tax-gain Grundstückgewinnsteuer
-Stichworte: Grundstückgewinn, Verkauf, Immobilie, Besitzdauer, Zürich, Aargau, Kanton, Freigrenze, Tarif, Steuerfuss
+Stichworte: Grundstückgewinn, Verkauf, Immobilie, Besitzdauer, Zürich, Aargau, Kanton, Freigrenze, Freibetrag, Tarif, Steuerfuss, Wohnort, Näherung
 
-Die Steuer auf dem Gewinn beim **Verkauf** einer Immobilie. Die Regeln sind **von Kanton zu Kanton verschieden** und deshalb vollständig editierbar. **Pflicht:** Enthält die Planung eine Immobilie mit Status «Besitz» oder «Kauf geplant», müssen die Regeln gesetzt sein (Vorlage Zürich, Vorlage Aargau oder eigene Regeln, auch mit Satz 0 %). Fehlen sie, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» sowie «Optimieren» sind gesperrt. Reine Mietobjekte und Planungen ohne Immobilie brauchen keine Regeln.
+Die Steuer auf dem Gewinn beim **Verkauf** einer Immobilie. Die Regeln sind **von Kanton zu Kanton verschieden**. Im Modus [Wohnort](#f-tax-location) gelten die [Regeln des Kantons](#f-tax-gain-canton) der Immobilie; im Modus «Eigene Tabellen» (oder mit dem Häkchen «Eigene Regeln statt der Regeln des Kantons») die eigenen Regeln, die vollständig editierbar sind. **Pflicht** (nur für eigene Regeln): Enthält die Planung eine Immobilie mit Status «Besitz» oder «Kauf geplant», müssen die Regeln gesetzt sein (Vorlage Zürich, Vorlage Aargau oder eigene Regeln, auch mit Satz 0 %). Fehlen sie, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» sowie «Optimieren» sind gesperrt. Reine Mietobjekte und Planungen ohne Immobilie brauchen keine Regeln.
 
 Zwei Modelle stehen zur Wahl: **Zürich** (Stufentarif mit Zu- und Abschlägen) und **Aargau** (direkter Steuersatz nach Besitzdauer). Die **eigene Eingabe** basiert auf dem Modell Aargau.
 
@@ -290,6 +291,22 @@ Zwei Modelle stehen zur Wahl: **Zürich** (Stufentarif mit Zu- und Abschlägen) 
 **Vorlage Kanton Aargau** (§ 109 StG): Im **Modell Aargau** gilt statt der Stufen ein **direkter Steuersatz auf den ganzen Gewinn**, abhängig von der Besitzdauer in vollen Jahren: 40 % im ersten Besitzjahr, dann je Jahr 2 Prozentpunkte weniger bis 20 % im elften Besitzjahr, danach 1 Prozentpunkt weniger je Jahr bis 6 % im 25. Besitzjahr und 5 % ab 25 vollen Jahren. Ohne Kaufdatum gilt der höchste Satz, und die App warnt.
 
 Für einen anderen Kanton passen Sie die Tabellen an. Die Werte finden Sie im Tarifblatt der kantonalen Steuerverwaltung. Prüfen Sie sie vor Gebrauch, die Vorlage ist ein Stand und keine Steuerberatung.
+
+## @f-tax-gain-canton Grundstückgewinnsteuer nach Kanton
+Stichworte: Grundstückgewinnsteuer, Kanton, Liegenschaft, Wohnort, Regelsatz, Steuermäppchen, Näherung, Besitzdauer, Monate, Steuerfuss, Median
+
+Im Modus [Wohnort](#f-tax-location) gilt für jede Immobilie automatisch der **Regelsatz des Kantons, in dem sie liegt**. Alle 26 Kantone sind erfasst; Quelle ist das Steuermäppchen «Grundstückgewinnsteuer» der ESTV (Steuerperiode 2025), für Zug, Freiburg, Wallis, Basel-Stadt, Basel-Landschaft, St. Gallen und Waadt zusätzlich das kantonale Gesetz.
+
+- **Kanton der Liegenschaft:** Feld bei jeder Immobilie im Besitz oder mit geplantem Kauf unter [Immobilien](#s-realestate). Ohne Angabe gilt der Wohnkanton. Darunter steht die Regel des Kantons, zum Beispiel Zürich «Stufentarif 10 % bis 40 %, Zuschlag bis 50 % unter 2 Jahren, Ermässigung bis 50 % ab 20 Jahren».
+- **Besitzdauer in Monaten:** Die Regeln der Kantone zählen die Besitzdauer in Monaten vom [Kaufdatum](#f-re-bought) bis zum Verkauf; mehrere Kantone rechnen Zuschläge je Monat.
+- **Steuerfuss:** Bern, Luzern, Obwalden, Solothurn, Schaffhausen und Jura rechnen eine einfache Steuer mal Steuerfuss. Liegt die Immobilie im Wohnkanton, gilt der Steuerfuss der Wohngemeinde (Kanton und Gemeinde), sonst der mittlere Steuerfuss (Median) der Gemeinden des Kantons.
+- **Ablauf:** Freigrenze, Freibetrag, Veränderung des Gewinns nach Besitzdauer, Steuer nach dem Modell des Kantons (Stufentarif, Satz nach Besitzdauer, Satz nach Gewinn oder Satz nach Jahresrendite), Zuschlag über einer Schwelle bei kurzer Besitzdauer, Zu- oder Abschlag nach Besitzdauer, Steuerfuss, Ermässigung, Höchstbelastung.
+- **Ohne Kaufdatum** gilt kein Zu- oder Abschlag nach Besitzdauer, bei Kantonen mit Satz nach Besitzdauer der höchste Satz; die Prüfung warnt.
+- **Näherungen (⚠):** Bei Basel-Stadt, Basel-Landschaft, St. Gallen, Waadt und Wallis ist die Regel nur angenähert, zum Beispiel ist in Basel-Stadt, St. Gallen und Waadt Selbstnutzung angenommen. Die Oberfläche zeigt bei der Immobilie den Hinweis mit ⚠.
+- **Nicht enthalten:** Selbstnutzung je Immobilie, die Ermässigung bei Selbstnutzung in Basel-Landschaft, die Ermässigung für wertvermehrende Aufwendungen und die Anpassung der Anlagekosten an die Teuerung.
+- **Prüfung:** Eigene Regeln sind keine Pflicht. Ein unbekannter Kanton einer Immobilie ist ein Fehler am Feld.
+
+Mit dem Häkchen **«Eigene Regeln statt der Regeln des Kantons»** im Abschnitt Steuern gelten die eigenen Regeln und der Steuerfuss für alle Immobilien, wie im Modus «Eigene Tabellen».
 
 ## @f-tax-tables Steuertabellen
 Stichworte: Satz, Interpolation, Einkommen, Vermögen, Kapitalbezug, Verheiratete
@@ -321,6 +338,8 @@ Die Steuer in VivaPlan ist eine **Schätzung für die Planung**, kein Steuerbesc
 
 **Kapitalbezug im Modus «Wohnort»:** 48 erfundene Fälle in Zürich, Bern, Luzern, Aarau, St. Gallen, Genf, Freiburg und Bellinzona (Bezüge 100 000, 500 000 und 1 Million, alleinstehend und verheiratet) weichen höchstens ±5 % vom ESTV-Steuerrechner 2026 ab. Wallis und Zug sind nur angenähert (in Zug bis rund 7 %).
 
+**Grundstückgewinnsteuer im Modus «Wohnort»:** Je Kanton prüft ein Test erfundene Fälle (Gewinn und Besitzdauer) gegen von Hand nachgerechnete Werte nach Steuermäppchen oder Gesetz. In Basel-Stadt, Basel-Landschaft, St. Gallen, Waadt und Wallis ist die Regel nur angenähert (⚠).
+
 **Näherungen:**
 
 - Ihre Tabellen geben einen Durchschnittssatz je Betrag, dazwischen interpoliert VivaPlan linear. Der echte Tarif verläuft anders.
@@ -345,7 +364,7 @@ Stichworte: Haus, Wohnung, Hypothek, Miete, Kauf, Verkauf, Tragbarkeit
 
 Eigene, geplante und gemietete Objekte. Sie können beliebig viele erfassen.
 
-- **Eigentum («owned»):** Der Marktwert per Simulationsstart steht in der Kopfzeile neben dem Namen. Darunter folgen in festen Plätzen [Kaufdatum](#f-re-bought), Kaufpreis (bezahlt, für die Grundstückgewinnsteuer), «Verkauf ab» (nie, Meilenstein oder Datum) und Nebenkosten pro Monat. Bei «Kauf geplant» stehen dieselben Felder an denselben Plätzen (statt Kaufdatum «Kauf ab»), nur der Marktwert fehlt; beim Statuswechsel bleiben die erfassten Werte erhalten. Der Verkauf muss **nach dem Kaufdatum** liegen, sonst ist das ein Fehler am Feld.
+- **Eigentum («owned»):** Der Marktwert per Simulationsstart steht in der Kopfzeile neben dem Namen. Darunter folgen in festen Plätzen [Kaufdatum](#f-re-bought), Kaufpreis (bezahlt, für die Grundstückgewinnsteuer), «Verkauf ab» (nie, Meilenstein oder Datum) und Nebenkosten pro Monat. Im Steuermodus [Wohnort](#f-tax-location) folgt der **Kanton der Liegenschaft** mit der Regel der [Grundstückgewinnsteuer](#f-tax-gain-canton) dieses Kantons. Bei «Kauf geplant» stehen dieselben Felder an denselben Plätzen (statt Kaufdatum «Kauf ab»), nur der Marktwert fehlt; beim Statuswechsel bleiben die erfassten Werte erhalten. Der Verkauf muss **nach dem Kaufdatum** liegen, sonst ist das ein Fehler am Feld.
 - **Inflation:** Wert und Nebenkosten lassen sich je Objekt **einzeln** mit der Inflation fortschreiben, bei Miete ebenso die Miete.
 - **Geplanter Kauf («planned»):** Kauf ab Meilenstein, Kaufpreis, Hypothek. Dazu kommt **«Verkauf ab»** (Vorgabe «Nie», sonst Datum oder Meilenstein); die Simulation verkauft das Objekt dann zu diesem Zeitpunkt. Der Verkauf muss nach «Kauf ab» liegen, sonst ist das ein Fehler am Feld. Bei Kauf «nach Verkauf von …» ist der Kaufzeitpunkt beim Erfassen nicht bekannt, dann entfällt diese Prüfung.
 - **Miete («rent»):** Beginn und Miete pro Monat (heutiger Wert, wird standardmässig mit der Teuerung fortgeschrieben; die Option «Miete mit Inflation anpassen» schaltet das aus).
@@ -362,7 +381,7 @@ Der Monat, in dem Sie die Immobilie gekauft haben. Er bestimmt die **Besitzdauer
 
 - Das Feld gibt es nur bei Immobilien im Besitz. Bei einer **geplanten** Immobilie zählt der Kaufmonat der Simulation.
 - Ohne Kaufdatum rechnet die App **ohne** Zu- oder Abschlag (die Steuer nach dem Grundtarif). Sind Besitzdauer-Regeln erfasst, weist die Prüfung darauf hin.
-- Massgebend ist die Besitzdauer in **vollen Jahren** bis zum Verkaufsmonat.
+- Massgebend ist die Besitzdauer bis zum Verkaufsmonat: bei eigenen Regeln in **vollen Jahren**, mit den [Regeln des Kantons](#f-tax-gain-canton) (Modus Wohnort) in **Monaten**.
 
 ## @f-re-mortgage Hypotheken
 Stichworte: Tranche, SARON, Festhypothek, Amortisation, Marge, Zins

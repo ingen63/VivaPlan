@@ -77,8 +77,13 @@ Der Editor führt durch zwölf Abschnitte:
   Netzwerkzugriff. Im Modus «Wohnort» auch die Kapitalbezugssteuer (#64) nach der Regel des Kantons mit den
   Steuerfüssen der Einkommenssteuer und einem Fünftel des Bundestarifs, ohne eigene Tabelle; die Regel steht unter der
   Gemeinde, angenäherte Regeln (Wallis, Zug) mit ⚠. Modus «Eigene Tabellen»: Tabellen für Einkommens-, Vermögens- und
-  Kapitalbezugssteuer mit Steuerfuss; bestehende Planungen öffnen in diesem Modus. In beiden Modi Regeln für die
-  Grundstückgewinnsteuer; die Sätze der Tabellen werden zwischen den Stufen linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
+  Kapitalbezugssteuer mit Steuerfuss; bestehende Planungen öffnen in diesem Modus. Grundstückgewinnsteuer: im Modus
+  «Wohnort» (#65) der Regelsatz des Kantons, in dem die Immobilie liegt (Feld Kanton je Immobilie, ohne Angabe der
+  Wohnkanton; alle 26 Kantone nach dem ESTV-Steuermäppchen 2025 und, wo nötig, dem kantonalen Gesetz; Besitzdauer in
+  Monaten; Steuerfuss der Wohngemeinde oder Median des Kantons; Regeltext bei der Immobilie, angenäherte Regeln von
+  Basel-Stadt, Basel-Landschaft, St. Gallen, Waadt und Wallis mit ⚠); mit dem Häkchen «Eigene Regeln statt der Regeln
+  des Kantons» und im Modus «Eigene Tabellen» die eigenen Regeln. Die Sätze der Tabellen werden zwischen den Stufen
+  linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
   Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
   Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne.
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
@@ -187,11 +192,14 @@ würde die Scheingenauigkeit verstärken.
   (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %);
   Vergleichswerte für Erwerbstätige fehlen noch. Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
   (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis und Zug nur angenähert.
+  Grundstückgewinnsteuer im Modus «Wohnort»: je Kanton erfundene Fälle gegen von Hand nachgerechnete Werte nach
+  Steuermäppchen oder Gesetz.
 - **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
   Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
 - **Was fehlt:** Abzüge im Einzelnen (nur so weit in den Sätzen enthalten), Eigenmietwert, Schuldzins- und
   Unterhaltsabzug, Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
-  Investitionen und Kosten beim Grundstückgewinn, künftige Gesetzesänderungen.
+  Investitionen und Kosten beim Grundstückgewinn, bei der Grundstückgewinnsteuer nach Kanton die Selbstnutzung je
+  Immobilie und die Anpassung der Anlagekosten an die Teuerung, künftige Gesetzesänderungen.
 
 Im Modus «Wohnort» nennt der Abschnitt Steuern die Steuerfüsse der Gemeinde, das Steuerjahr und die Quelle der Daten
 und dass die Steuer eine Schätzung mit den Standardabzügen des Kantons ist; Berufskosten, für die die ESTV-Daten nur

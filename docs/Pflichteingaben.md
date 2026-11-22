@@ -45,9 +45,10 @@ Oberfläche zeigt den Text aus ihrer Texttabelle (`engine.<code>`). Die Codes un
 | Lebenshaltung inklusive Wohnkosten (#53) | jede Zeile der Lebenshaltung mindestens so gross wie der Wohnanteil (Wohnkosten zum Simulationsstart) | `cash_housing::issue_53_ak4_ak5_check_and_no_housing` |
 | Säule 3a (#52, #55) | ein Konto je Person; Guthaben ≥ 0; Zins −50 % bis 100 %; Einzahlung 0 bis Maximalbetrag (Einstellungen); Auszahlungen (Datum oder Alter 0–150 Jahre) frühestens 5 Jahre vor dem AHV-Bezug, Betrag > 0 | `pillar_3a_is_checked` |
 | Meilensteine «Bezug Pensionskasse» und «AHV-Bezug» (#51) | Alter innerhalb der Grenzen aus den Einstellungen (Standard 58–65 und 63–70 Jahre) | `milestones_limits::issue_51_ak2_ages_within_limits` |
-| Steuertabellen und Steuerfuss (#98) | Einkommens-, Vermögens- und Kapitalbezugssteuer (auch Verheiratete): je Stufe Betrag ≥ 0 und Satz 0 % bis 100 %; Steuerfuss 0 bis 10; Meldung am Feld | `issue_98_tax_tables_and_multiplier_must_be_in_range` |
+| Steuertabellen und Steuerfuss (#98) | Einkommens-, Vermögens- und Kapitalbezugssteuer (auch Verheiratete): je Stufe Betrag ≥ 0 und Satz 0 % bis 100 %; Steuerfuss 0 bis 10 (im Modus «Wohnort» nur mit eigenen Regeln der Grundstückgewinnsteuer, #65); Meldung am Feld | `issue_98_tax_tables_and_multiplier_must_be_in_range` |
 | Grundstückgewinnsteuer | gültige Besitzdauer-Staffel (Modell Aargau: Satz je Besitzdauer) | `property_gain_tax_rules_must_be_valid` |
-| Grundstückgewinnsteuer (Regeln gesetzt) | Bei einer Immobilie mit Status «Besitz» oder «Kauf geplant» müssen Regeln gesetzt sein (Vorlage oder eigene, auch Satz 0 %); Mietobjekte lösen die Pflicht nicht aus (#29) | `property_gain_tax_is_mandatory_for_owned_and_planned_properties` |
+| Grundstückgewinnsteuer (Regeln gesetzt) | Bei einer Immobilie mit Status «Besitz» oder «Kauf geplant» müssen Regeln gesetzt sein (Vorlage oder eigene, auch Satz 0 %); Mietobjekte lösen die Pflicht nicht aus (#29); im Modus «Wohnort» nur mit «Eigene Regeln statt der Regeln des Kantons» (#65) | `property_gain_tax_is_mandatory_for_owned_and_planned_properties`, `gain_location::issue_65_ak6_validation_in_location_mode` |
+| Kanton der Immobilie (#65) | Im Modus «Wohnort» mit den Regeln des Kantons: Kanton einer Immobilie im Besitz oder mit geplantem Kauf in der Steuerdatei (Fehler am Feld); Kaufdatum einer Immobilie im Besitz (Warnung) | `gain_location::issue_65_ak6_validation_in_location_mode` |
 | Variationen | gültiger Parameter, Wertebereich und Schritt | `variations_need_a_valid_parameter` |
 
 ## Warnungen (blockieren nicht)

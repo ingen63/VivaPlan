@@ -46,7 +46,7 @@ Una pianificazione è **un file di testo** in formato JSON con l’estensione `.
 - Gli **importi** valgono al mese, le **aliquote** all’anno come numero decimale (0.05 = 5 %).
 - I **valori dipendenti dal tempo** sono un numero oppure `{"mode": "timed", "rows": [{"from": "start", "value": 9500}, {"from": "retire", "value": 8500}]}`.
 - **Ottimizzazione:** obiettivo, strategie, percorsi e le **fasce dei parametri** per strategia si trovano sotto `optimization` (`ranges`: strategia, parametro, poi `fixed` o `lo`/`hi`, quote come numero decimale).
-- **Imposta sugli utili immobiliari:** `taxes.propertyGain` con `brackets` (ampiezza, aliquota), `duration` (da anni interi, maggiorazione o riduzione), `exemptBelow` e `reduction`; la data d’acquisto di un immobile in proprietà si trova in `bought`.
+- **Imposta sugli utili immobiliari:** `taxes.propertyGain` con `brackets` (ampiezza, aliquota), `duration` (da anni interi, maggiorazione o riduzione), `exemptBelow` e `reduction`; la data d’acquisto di un immobile in proprietà si trova in `bought`. Nel modo «Domicilio» vale la regola del cantone dell’immobile (`canton` per immobile, senza indicazione il cantone di domicilio); `taxes.propertyGainOwn: true` passa alle regole proprie.
 - Il formato completo lo fornisce `vivaplan schema` nel terminale.
 
 Il file **non contiene risultati**. L’app archivia i risultati nell’[elenco dei risultati](#r-list).

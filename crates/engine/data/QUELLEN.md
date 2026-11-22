@@ -23,7 +23,10 @@ entstehen, steht in `docs/ENTWICKLUNG.md` (Abschnitt «Datenbibliothek»).
 Eidgenössischen Steuerverwaltung (ESTV, swisstaxcalculator.estv.admin.ch, «Grunddaten abrufen», Steuerjahr 2026),
 aufbereitet mit `tools/steuerdaten/build.py`. Die Regeln für Kapitalbezüge aus Vorsorge (#64,
 `tools/steuerdaten/kapitalregeln.json`) sind aus 364 Rechnungen des ESTV-Steuerrechners 2026 abgeleitet, weil die
-Grunddaten nur für 12 Kantone einen Tarif «Kapitalauszahlung aus Vorsorge» enthalten. Für die ESTV-Daten gibt es keine offene Lizenz; die schriftliche
+Grunddaten nur für 12 Kantone einen Tarif «Kapitalauszahlung aus Vorsorge» enthalten. Die Regelsätze der
+Grundstückgewinnsteuer (#65, `tools/steuerdaten/grundstueckgewinn.py`) stammen aus dem ESTV-Steuermäppchen
+«Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3, für ZG, FR, VS, BS, BL, SG und VD
+zusätzlich aus dem kantonalen Gesetz. Für die ESTV-Daten gibt es keine offene Lizenz; die schriftliche
 Zustimmung der ESTV zur Weitergabe mit VivaPlan liegt vor. Die Datei fällt nicht unter die GPL.
 
 ## Lizenz der JST-Daten

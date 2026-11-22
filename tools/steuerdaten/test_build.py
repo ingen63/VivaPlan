@@ -13,6 +13,7 @@ import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build  # noqa: E402
+import grundstueckgewinn  # noqa: E402
 
 
 def row(canton, target, kind, ttype, split, group, i, amount, pct, taxes=0, formula=""):
@@ -252,6 +253,91 @@ class Capital(unittest.TestCase):
             build.build(tariffs, deductions, 2030, munis + [[2, "Beispielwil", "FR", [0.9] * 5, [0.9] * 5]], rules)
 
 
+class PropertyGain(unittest.TestCase):
+    """#65: Rule sets of the property gain tax."""
+
+    MODELS = {"zurich", "aargau", "curve", "return"}
+    KEYS = {"model", "brackets", "uniformAbove", "longBrackets", "durationRates", "rateCurve", "returnBounds",
+            "returnMaxDuration", "shortSurcharge", "durationAbove", "duration", "gainDuration", "exemptBelow",
+            "allowance", "maxShare", "useMultiplier", "text", "source", "approx"}
+
+    def test_issue_65_ak2_rules_cover_all_cantons_with_known_fields(self):
+        """#65/AK2: every canton has a rule set in one of the four models, with text and source."""
+        rules = grundstueckgewinn.rules()
+        self.assertEqual(set(rules), set(build.NAMES))
+        for cid, r in rules.items():
+            self.assertIn(r["model"], self.MODELS, cid)
+            self.assertLessEqual(set(r), self.KEYS, cid)
+            self.assertTrue(r["text"] and r["source"], cid)
+            if r["model"] == "zurich":
+                self.assertTrue(r["brackets"], cid)
+            if r["model"] == "aargau":
+                self.assertTrue(r["durationRates"], cid)
+        self.assertEqual({r["model"] for r in rules.values()}, self.MODELS)
+        self.assertEqual(sorted(c for c, r in rules.items() if r.get("useMultiplier")),
+                         ["BE", "JU", "LU", "OW", "SH", "SO"])
+
+    def test_issue_65_ak3_approximations_are_marked(self):
+        """#65/AK3: the simplified rules carry a note."""
+        rules = grundstueckgewinn.rules()
+        self.assertEqual(sorted(c for c, r in rules.items() if r.get("approx")), ["BL", "BS", "SG", "VD", "VS"])
+
+    def test_steps_and_monthly_surcharge(self):
+        self.assertEqual(grundstueckgewinn.steps(5, -0.05, -0.03, -0.12), [[5, -0.05], [6, -0.08], [7, -0.11],
+                                                                           [8, -0.12]])
+        self.assertEqual(grundstueckgewinn.steps(1, 0.1, 0.1, 1.0, end_year=2), [[1, 0.1], [2, 0.2]])
+        self.assertEqual(grundstueckgewinn.monthly_surcharge(3, 0.01), [[0.0, 0.03], [round(1 / 12, 6), 0.02],
+                                                                        [round(2 / 12, 6), 0.01], [0.25, 0.0]])
+
+    def test_issue_65_ak1_build_writes_rule_text_approx_and_median_multiplier(self):
+        """#65/AK1: the tax data file holds the rule, its text, the note and the median tax multiplier."""
+        tariffs, deductions = minimal_inputs()
+        rules = {c: {"model": "aargau", "durationRates": [[0, 0.3]], "text": f"Regel {c}", "source": "S. 1"}
+                 for c in build.NAMES}
+        rules["BE"] = {"model": "zurich", "brackets": [[1e12, 0.02]], "useMultiplier": True, "text": "Bern",
+                       "source": "S. 9", "approx": "angenähert"}
+        munis = [[1, "A", "BE", [1.0, 1.0, 0, 0, 0], [0] * 5], [2, "B", "BE", [1.0, 1.5, 0, 0, 0], [0] * 5],
+                 [3, "C", "BE", [1.0, 2.0, 0, 0, 0], [0] * 5]]
+        munis += [[10 + i, "X", c, [0.5, 0.5, 0, 0, 0], [0] * 5] for i, c in enumerate(build.NAMES) if c != "BE"]
+        data, report = build.build(tariffs, deductions, 2030, munis, None, rules)
+        be = next(c for c in data["cantons"] if c["id"] == "BE")
+        self.assertEqual(be["propertyGain"], {"model": "zurich", "brackets": [[1e12, 0.02]], "useMultiplier": True})
+        self.assertEqual(be["propertyGainRule"], "Bern")
+        self.assertEqual(be["propertyGainApprox"], "angenähert")
+        self.assertEqual(be["gainMultiplier"], 2.5)
+        zh = next(c for c in data["cantons"] if c["id"] == "ZH")
+        self.assertNotIn("propertyGainApprox", zh)
+        self.assertEqual(zh["gainMultiplier"], 1.0)
+        self.assertTrue(data["propertyGainSource"])
+        self.assertTrue(any("property gain" in line and "S. 9" in line for line in report))
+        # the input rules stay unchanged
+        self.assertIn("text", rules["BE"])
+        # without rules no property gain fields
+        data, _ = build.build(tariffs, deductions, 2030, munis)
+        self.assertNotIn("propertyGainSource", data)
+        self.assertNotIn("propertyGain", data["cantons"][0])
+        # missing canton or canton without municipality
+        with self.assertRaises(ValueError):
+            build.build(tariffs, deductions, 2030, munis, None, {k: v for k, v in rules.items() if k != "JU"})
+        with self.assertRaises(ValueError):
+            build.build(tariffs, deductions, 2030, [m for m in munis if m[2] != "ZH"], None, rules)
+
+    def test_issue_65_ak2_tax_file_holds_the_rules(self):
+        """#65/AK2: the built-in tax data file was built from grundstueckgewinn.py."""
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "crates", "engine", "data",
+                            "steuern-2026.json")
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        rules = grundstueckgewinn.rules()
+        for c in data["cantons"]:
+            r = json.loads(json.dumps(rules[c["id"]]))
+            self.assertEqual(c["propertyGainRule"], r.pop("text"), c["id"])
+            r.pop("source")
+            self.assertEqual(c.get("propertyGainApprox"), r.pop("approx", None), c["id"])
+            self.assertEqual(c["propertyGain"], r, c["id"])
+            self.assertGreater(c["gainMultiplier"], 0, c["id"])
+
+
 class Inputs(unittest.TestCase):
     def test_read_multipliers_from_xlsx(self):
         """Tax multipliers from a minimal Excel export (inline strings): year, BFS number, rates as shares."""
@@ -286,7 +372,9 @@ class Inputs(unittest.TestCase):
             with open(rules, "w", encoding="utf-8") as f:
                 json.dump({"_info": "x", **{c: {"kind": "income", "text": c} for c in build.NAMES}}, f)
             orig = build.read_multipliers
-            build.read_multipliers = lambda path: (2030, [])
+            # one municipality per canton for the median tax multiplier of the property gain tax (#65)
+            build.read_multipliers = lambda path: (2030, [[i, f"Ort {c}", c, [1, 1, 0, 0, 0], [1, 1, 0, 0, 0]]
+                                                          for i, c in enumerate(sorted(build.NAMES))])
             try:
                 out, rep = os.path.join(d, "out.json"), os.path.join(d, "report.txt")
                 build.main(["--steuerfuesse", "x.xlsx", "--tarife", t, "--abzuege", a, "--kapitalregeln", rules,
@@ -298,6 +386,10 @@ class Inputs(unittest.TestCase):
             self.assertEqual(data["year"], 2030)
             self.assertEqual(data["cantons"][0]["capitalRule"], data["cantons"][0]["id"])
             self.assertTrue(os.path.getsize(rep) > 0)
+            # #65: the property gain rules come from grundstueckgewinn.py
+            first = data["cantons"][0]
+            self.assertEqual(first["propertyGainRule"], grundstueckgewinn.rules()[first["id"]]["text"])
+            self.assertTrue(data["propertyGainSource"])
 
 
 if __name__ == "__main__":

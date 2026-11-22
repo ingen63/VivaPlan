@@ -20,6 +20,10 @@ es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weitere
   100 %, auf den ganzen Bezug, ohne Abzüge), `single` und `married`; `capitalMunicipal`: eigene Kurve der
   Gemeindesteuer, wo die Regel abweicht; `capitalRule`: die Regel als Text; `capitalApprox`: Hinweis, wenn die Regel nur
   angenähert ist. `federalCapital`: ein Fünftel des Tarifs der direkten Bundessteuer;
+- `propertyGain` (je Kanton, #65): der Regelsatz der Grundstückgewinnsteuer im Format von `PropertyGainTax` des
+  Rechenkerns; `propertyGainRule`: die Regel als Text; `propertyGainApprox`: Hinweis, wenn die Regel nur angenähert
+  ist; `gainMultiplier`: Median von Steuerfuss Kanton + Gemeinde (Einkommenssteuer) über die Gemeinden des Kantons,
+  für Immobilien ausserhalb des Wohnkantons. `propertyGainSource`: Quelle der Regeln;
 - `year`, `source`, `note`: Steuerjahr, Quelle und Hinweis.
 
 Eine Regel ergibt den Abzug `base + rate × Bezugsgrösse`, mindestens `min`, höchstens `max` (0 = ohne Höchstbetrag).
@@ -64,6 +68,27 @@ aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsc
 (e2e-Test). Für ein neues Steuerjahr die Rechnungen wiederholen und die Regeln und Referenzfälle
 (`crates/engine/tests/tax_capital_location.rs`) nachführen.
 
+## Regeln der Grundstückgewinnsteuer (#65)
+
+Die Regelsätze aller 26 Kantone stehen von Hand erfasst in `grundstueckgewinn.py` (Funktion `rules()`). Quelle:
+ESTV-Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3, Seite je Kanton;
+ZG, FR, VS, BS, BL, SG und VD zusätzlich gegen das kantonale Gesetz geprüft (Stand November 2026). Je Kanton `text`
+(Regel für `propertyGainRule`), `source` (Seite oder Gesetz, nur im Bericht) und, wo vereinfacht, `approx`.
+
+- Modelle: `zurich` (Stufen `brackets`, optional `uniformAbove`, `longBrackets`), `aargau` (`durationRates`), `curve`
+  (`rateCurve`) und `return` (`returnBounds`, `returnMaxDuration`);
+- Ergänzungen: `duration`, `gainDuration`, `durationAbove`, `shortSurcharge`, `exemptBelow`, `allowance`, `maxShare`,
+  `useMultiplier` (BE, LU, OW, SO, SH, JU);
+- Hilfsfunktionen: `steps` (Zeilen je Jahr mit festem Schritt bis zu einem Endwert), `monthly_surcharge` (Zuschlag je
+  fehlenden Monat).
+
+Näherungen: Basel-Stadt (Selbstnutzung angenommen, ohne Ermässigung für wertvermehrende Aufwendungen),
+Basel-Landschaft (Ermässigung bei 20 Jahren Selbstnutzung und Anpassung an die Teuerung fehlen), St. Gallen
+(Selbstnutzung von 15 Jahren angenommen), Waadt (Selbstnutzung während der ganzen Besitzdauer), Wallis (Stufentarif
+nach Gewinnhöhe angenommen). Die Regeln gelten nicht jährlich neu: Bei einer Gesetzesänderung Regel, Texte
+`propertyGainRule.<Kanton>` in `crates/app/ui/i18n/*.json` (deutsch = `text`, e2e-Test) und Handwerte in
+`crates/engine/tests/tax_gain_cantons.rs` nachführen.
+
 ## Ablauf für ein neues Steuerjahr
 
 1. Im ESTV-Steuerrechner unter «Grunddaten abrufen» das Steuerjahr wählen und herunterladen:
@@ -86,7 +111,9 @@ aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsc
      --out crates/engine/data/steuern-2026.json --bericht local/estv/bericht.txt
    ```
    Die Regeln für Kapitalbezüge liest das Werkzeug aus `kapitalregeln.json` (anderer Ort: `--kapitalregeln`).
-   Der Bericht nennt je Kanton die gewählten Tarife, Abzüge und die Regel für Kapitalbezüge.
+   Die Regeln der Grundstückgewinnsteuer kommen aus `grundstueckgewinn.py`.
+   Der Bericht nennt je Kanton die gewählten Tarife, Abzüge, die Regel für Kapitalbezüge und die der
+   Grundstückgewinnsteuer mit Quelle.
 4. Den Dateinamen in `crates/engine/src/taxdata.rs` (`BUILTIN`) anpassen.
 5. Referenzfälle prüfen: Im ESTV-Steuerrechner (Einkommens- und Vermögenssteuer, ohne Kinder, ohne Konfession) die Fälle
    aus `crates/engine/tests/tax_location.rs` für das neue Jahr rechnen und die Werte im Test ersetzen. Der Test verlangt

@@ -45,6 +45,7 @@ fn gain_def() -> impl Strategy<Value = PropertyGainTax> {
                 reduction,
                 duration,
                 exempt_below,
+                ..Default::default()
             },
         )
 }

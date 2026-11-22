@@ -217,7 +217,7 @@ Combien de **mois de dépenses non couvertes** (dépenses moins revenus et rente
 ## @s-taxes Impôts
 Mots-clés: impôt sur le revenu, impôt sur la fortune, impôt sur les prestations en capital, coefficient d’impôt, barème
 
-Deux modes sont disponibles: **Domicile** calcule l’impôt sur le revenu, sur la fortune et sur les prestations en capital selon le canton, la commune et l’impôt ecclésiastique avec les données fiscales de l’AFC ([Impôt selon le domicile](#f-tax-location)); **Barèmes propres** calcule avec des barèmes et le coefficient d’impôt, comme décrit ci-dessous. Les planifications existantes s’ouvrent avec «Barèmes propres».
+Deux modes sont disponibles: **Domicile** calcule l’impôt sur le revenu, sur la fortune et sur les prestations en capital selon le canton, la commune et l’impôt ecclésiastique avec les données fiscales de l’AFC et l’impôt sur les gains immobiliers selon le canton du bien immobilier ([Impôt selon le domicile](#f-tax-location)); **Barèmes propres** calcule avec des barèmes et le coefficient d’impôt, comme décrit ci-dessous. Les planifications existantes s’ouvrent avec «Barèmes propres».
 
 Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impôts de votre canton. Entre les paliers, l’interpolation est **linéaire**; le taux est multiplié par le [coefficient d’impôt](#f-tax-multiplier).
 
@@ -232,7 +232,7 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 Les valeurs d’exemple ne sont que des valeurs fictives. Pour votre résultat, remplacez-les par les valeurs de votre domicile.
 
 ## @f-tax-location Impôt selon le domicile
-Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, données fiscales, déductions standard, frais professionnels, impôt fédéral, revenu imposable, retrait en capital, impôt sur les prestations en capital
+Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, données fiscales, déductions standard, frais professionnels, impôt fédéral, revenu imposable, retrait en capital, impôt sur les prestations en capital, impôt sur les gains immobiliers, canton du bien immobilier
 
 Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune** (liste du canton avec recherche: saisir le nom) et l’**impôt ecclésiastique** (aucune, réformée, catholique romaine, catholique chrétienne). Barèmes, déductions et coefficients d’impôt proviennent du fichier de données fiscales de l’AFC livré avec l’application (calculateur d’impôts, données de base); la carte indique l’année fiscale, la source et les coefficients d’impôt de la commune. Il n’y a pas d’accès au réseau.
 
@@ -249,15 +249,16 @@ Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune
 - **Impôt sur les prestations en capital** (caisse de pension, pilier 3a) = règle du canton pour le capital × (coefficient d’impôt canton + Église) + règle de la commune × coefficient d’impôt commune + impôt fédéral (un cinquième du barème de l’impôt fédéral direct, sans déductions). Les coefficients d’impôt de l’impôt sur le revenu s’appliquent; la règle s’applique à l’ensemble du retrait. Les retraits de la même année civile sont additionnés: pour les personnes mariées pour le ménage avec le barème des personnes mariées, pour les couples non mariés par personne avec le barème des personnes seules. Sous la commune figure la règle du canton, par exemple Zurich «taux du barème du revenu pour un vingtième du retrait, d’au moins 2 %». Les règles sont déduites du calculateur d’impôts de l’AFC; en Valais et à Zoug, elles ne sont qu’approximatives (⚠).
 - **Personnes mariées** (deux personnes et la case «Marié·e·s» cochée): barèmes et déductions pour personnes mariées. Les couples non mariés sont calculés avec ceux pour personnes seules sur le revenu commun.
 - Avec les [barèmes avec le renchérissement](#f-tax-indexed), les montants des barèmes et déductions augmentent avec le renchérissement simulé.
+- **Impôt sur les gains immobiliers:** pour chaque bien immobilier s’applique la règle du canton où il se trouve; vous choisissez le canton avec le bien sous [Immobilier](#s-realestate), sans indication le canton de domicile s’applique. Détails sous [Impôt sur les gains immobiliers](#f-tax-gain). Avec la case **«Règles propres au lieu des règles du canton»**, ce sont les règles propres avec le [coefficient d’impôt](#f-tax-multiplier) qui s’appliquent à tous les biens immobiliers.
 
-**Pas dans le mode Domicile:** l’[impôt sur les gains immobiliers](#f-tax-gain) est toujours calculé avec les règles propres et le [coefficient d’impôt](#f-tax-multiplier). Les barèmes propres pour le revenu, la fortune et le retrait en capital (y compris ceux pour personnes mariées) sont masqués et restent dans le fichier; de retour à «Barèmes propres», ils s’appliquent à nouveau.
+**Masqués:** les barèmes propres pour le revenu, la fortune et le retrait en capital (y compris ceux pour personnes mariées), les règles propres de l’impôt sur les gains immobiliers et le coefficient d’impôt (sans la case) restent dans le fichier; de retour à «Barèmes propres», ils s’appliquent à nouveau.
 
 **Contrôle:** si le canton ou la commune manque ou si la commune ne se trouve pas dans le canton, c’est une erreur dans la section Impôts, et «Lancer la simulation» est bloqué. L’aperçu des hypothèses et l’onglet «Paramètres» indiquent le domicile, par exemple «Zürich (ZH), impôt ecclésiastique aucune».
 
 ## @f-tax-multiplier Coefficient d’impôt
 Mots-clés: canton, commune, multiplicateur
 
-Un facteur appliqué à tous les taux des barèmes, le coefficient d’impôt du **canton et de la commune** ensemble (par exemple 2.0 pour un taux double). Ainsi, vous n’avez pas à réécrire les barèmes si vous changez de domicile, mais seulement à modifier le facteur. Les valeurs de 0 à 10 sont admises. Dans le mode [Domicile](#f-tax-location), il ne s’applique plus qu’à l’impôt sur les gains immobiliers.
+Un facteur appliqué à tous les taux des barèmes, le coefficient d’impôt du **canton et de la commune** ensemble (par exemple 2.0 pour un taux double). Ainsi, vous n’avez pas à réécrire les barèmes si vous changez de domicile, mais seulement à modifier le facteur. Les valeurs de 0 à 10 sont admises. Dans le mode [Domicile](#f-tax-location), il ne s’applique qu’aux règles propres de l’impôt sur les gains immobiliers (case «Règles propres au lieu des règles du canton») et est masqué sinon.
 
 ## @f-tax-indexed Barèmes avec le renchérissement
 Mots-clés: progression à froid, renchérissement, inflation, paliers, barème, prix actuels
@@ -271,9 +272,9 @@ Avec la coche, les **montants** des barèmes pour le revenu, la fortune et le re
 - Les nouvelles planifications ont la coche activée. Les planifications plus anciennes sans indication et les anciennes configurations importées calculent comme avant, sans: les montants s’appliquent alors en valeur nominale sur toute la planification.
 
 ## @f-tax-gain Impôt sur les gains immobiliers
-Mots-clés: gain immobilier, vente, bien immobilier, durée de possession, Zurich, Argovie, canton, seuil d’exonération, tarif, coefficient d’impôt
+Mots-clés: gain immobilier, vente, bien immobilier, durée de possession, Zurich, Argovie, canton, seuil d’exonération, tarif, coefficient d’impôt, montant exonéré, domicile, approximation
 
-L’impôt sur le gain réalisé lors de la **vente** d’un bien immobilier. Les règles **diffèrent d’un canton à l’autre** et sont donc entièrement modifiables. **Obligatoire:** si la planification contient un bien immobilier au statut «Propriété» ou «Achat planifié», les règles doivent être définies (modèle Zurich, modèle Argovie ou règles propres, même avec un taux de 0 %). Si elles manquent, c’est une erreur dans la section Impôts, et «Lancer la simulation» ainsi que «Lancer l’optimisation» sont bloqués. Les objets purement loués et les planifications sans bien immobilier n’ont pas besoin de règles.
+L’impôt sur le gain réalisé lors de la **vente** d’un bien immobilier. Les règles **diffèrent d’un canton à l’autre**. Dans le mode [Domicile](#f-tax-location), ce sont les [règles du canton](#f-tax-gain-canton) du bien immobilier qui s’appliquent; dans le mode «Barèmes propres» (ou avec la case «Règles propres au lieu des règles du canton»), les règles propres, entièrement modifiables. **Obligatoire** (seulement pour les règles propres): si la planification contient un bien immobilier au statut «Propriété» ou «Achat planifié», les règles doivent être définies (modèle Zurich, modèle Argovie ou règles propres, même avec un taux de 0 %). Si elles manquent, c’est une erreur dans la section Impôts, et «Lancer la simulation» ainsi que «Lancer l’optimisation» sont bloqués. Les objets purement loués et les planifications sans bien immobilier n’ont pas besoin de règles.
 
 Deux modèles sont disponibles: **Zurich** (tarif par paliers avec majorations et réductions) et **Argovie** (taux d’imposition direct selon la durée de possession). La **saisie propre** se fonde sur le modèle Argovie.
 
@@ -290,6 +291,22 @@ Deux modèles sont disponibles: **Zurich** (tarif par paliers avec majorations e
 **Modèle du canton d’Argovie** (§ 109 StG): dans le **modèle Argovie**, au lieu des paliers, un **taux d’imposition direct sur la totalité du gain** s’applique, en fonction de la durée de possession en années révolues: 40 % la première année de possession, puis 2 points de pourcentage de moins par année jusqu’à 20 % la onzième année de possession, ensuite 1 point de pourcentage de moins par année jusqu’à 6 % la 25e année de possession et 5 % dès 25 années révolues. Sans date d’achat, le taux le plus élevé s’applique, et l’application émet un avertissement.
 
 Pour un autre canton, adaptez les barèmes. Vous trouvez les valeurs dans la feuille de tarif de l’administration cantonale des impôts. Vérifiez-les avant de les utiliser; le modèle reflète un état donné et n’est pas un conseil fiscal.
+
+## @f-tax-gain-canton Impôt sur les gains immobiliers selon le canton
+Mots-clés: impôt sur les gains immobiliers, canton, bien immobilier, domicile, règles, brochure fiscale, approximation, durée de possession, mois, coefficient d’impôt, médiane
+
+Dans le mode [Domicile](#f-tax-location), la **règle du canton où se trouve le bien immobilier** s’applique automatiquement à chaque bien. Les 26 cantons sont saisis; la source est la brochure «Impôt sur les gains immobiliers» de l’AFC (période fiscale 2025), pour Zoug, Fribourg, le Valais, Bâle-Ville, Bâle-Campagne, Saint-Gall et Vaud en plus la loi cantonale.
+
+- **Canton du bien immobilier:** champ pour chaque bien en propriété ou dont l’achat est planifié sous [Immobilier](#s-realestate). Sans indication, le canton de domicile s’applique. Dessous figure la règle du canton, par exemple Zurich «barème progressif de 10 % à 40 %, majoration jusqu’à 50 % en dessous de 2 ans, réduction jusqu’à 50 % dès 20 ans».
+- **Durée de possession en mois:** les règles des cantons comptent la durée de possession en mois de la [date d’achat](#f-re-bought) à la vente; plusieurs cantons calculent des majorations par mois.
+- **Coefficient d’impôt:** Berne, Lucerne, Obwald, Soleure, Schaffhouse et le Jura calculent un impôt simple multiplié par le coefficient d’impôt. Si le bien se trouve dans le canton de domicile, le coefficient de la commune de domicile (canton et commune) s’applique, sinon le coefficient médian des communes du canton.
+- **Déroulement:** seuil d’exonération, montant exonéré, modification du gain selon la durée de possession, impôt selon le modèle du canton (barème progressif, taux selon la durée de possession, taux selon le gain ou taux selon le rendement annuel), majoration au-delà d’un seuil en cas de courte durée de possession, majoration ou réduction selon la durée de possession, coefficient d’impôt, réduction, charge maximale.
+- **Sans date d’achat**, aucune majoration ni réduction selon la durée de possession ne s’applique, pour les cantons avec un taux selon la durée de possession le taux le plus élevé; la vérification avertit.
+- **Approximations (⚠):** pour Bâle-Ville, Bâle-Campagne, Saint-Gall, Vaud et le Valais, la règle n’est qu’approchée; par exemple, une occupation par le propriétaire est supposée à Bâle-Ville, Saint-Gall et Vaud. L’interface affiche la remarque avec ⚠ au bien immobilier.
+- **Non compris:** l’occupation par le propriétaire par bien, la réduction pour occupation par le propriétaire à Bâle-Campagne, la réduction pour les dépenses à plus-value et l’adaptation des dépenses d’investissement au renchérissement.
+- **Vérification:** les règles propres ne sont pas obligatoires. Un canton inconnu d’un bien immobilier est une erreur au champ.
+
+Avec la case **«Règles propres au lieu des règles du canton»** dans la section Impôts, les règles propres et le coefficient d’impôt s’appliquent à tous les biens immobiliers, comme dans le mode «Barèmes propres».
 
 ## @f-tax-tables Barèmes fiscaux
 Mots-clés: taux, interpolation, revenu, fortune, retrait en capital, personnes mariées
@@ -321,6 +338,8 @@ L’impôt dans VivaPlan est une **estimation pour la planification**, pas une t
 
 **Retraits en capital dans le mode «Domicile»:** 48 cas inventés à Zurich, Berne, Lucerne, Aarau, Saint-Gall, Genève, Fribourg et Bellinzone (retraits de 100 000, 500 000 et 1 million, personnes seules et mariées) s’écartent d’au plus ±5 % du calculateur d’impôts 2026 de l’AFC. Le Valais et Zoug ne sont qu’approximatifs (à Zoug jusqu’à environ 7 %).
 
+**Impôt sur les gains immobiliers dans le mode «Domicile»:** pour chaque canton, un test vérifie des cas inventés (gain et durée de possession) avec des valeurs recalculées à la main selon la brochure fiscale ou la loi. À Bâle-Ville, Bâle-Campagne, Saint-Gall, Vaud et en Valais, la règle n’est qu’approchée (⚠).
+
 **Approximations:**
 
 - Vos barèmes donnent un taux moyen par montant; entre les deux, VivaPlan interpole linéairement. Le tarif réel est différent.
@@ -345,7 +364,7 @@ Mots-clés: maison, appartement, hypothèque, location, achat, vente, capacité 
 
 Objets en propriété, planifiés et loués. Vous pouvez en saisir autant que vous voulez.
 
-- **Propriété (`owned`):** la valeur vénale au début de la simulation figure dans l’en-tête à côté du nom. Suivent dessous, à des places fixes, la [date d’achat](#f-re-bought), le prix d’achat (payé, pour l’impôt sur les gains immobiliers), «Vente dès» (jamais, jalon ou date) et les frais accessoires par mois. Pour «Achat planifié», les mêmes champs figurent aux mêmes places (au lieu de la date d’achat «Achat dès»), seule la valeur vénale manque; lors d’un changement de statut, les valeurs saisies sont conservées. La vente doit être **postérieure à la date d’achat**, sinon c’est une erreur au champ.
+- **Propriété (`owned`):** la valeur vénale au début de la simulation figure dans l’en-tête à côté du nom. Suivent dessous, à des places fixes, la [date d’achat](#f-re-bought), le prix d’achat (payé, pour l’impôt sur les gains immobiliers), «Vente dès» (jamais, jalon ou date) et les frais accessoires par mois. Dans le mode fiscal [Domicile](#f-tax-location) suit le **canton du bien immobilier**, avec la règle de l’[impôt sur les gains immobiliers](#f-tax-gain-canton) de ce canton. Pour «Achat planifié», les mêmes champs figurent aux mêmes places (au lieu de la date d’achat «Achat dès»), seule la valeur vénale manque; lors d’un changement de statut, les valeurs saisies sont conservées. La vente doit être **postérieure à la date d’achat**, sinon c’est une erreur au champ.
 - **Inflation:** la valeur et les frais accessoires peuvent être indexés à l’inflation **séparément** pour chaque objet, de même que le loyer pour une location.
 - **Achat planifié (`planned`):** achat dès un jalon, prix d’achat, hypothèque. S’y ajoute **«Vente dès»** (par défaut «jamais», sinon date ou jalon); la simulation vend alors l’objet à ce moment. La vente doit être postérieure à «Achat dès», sinon c’est une erreur au champ. Pour un achat «après la vente de …», la date d’achat n’est pas connue lors de la saisie; ce contrôle n’a alors pas lieu.
 - **Location (`rent`):** début et loyer par mois (valeur actuelle, indexé par défaut au renchérissement; l’option «Adapter le loyer à l’inflation» le désactive).
@@ -362,7 +381,7 @@ Le mois au cours duquel vous avez acheté le bien immobilier. Il détermine la *
 
 - Le champ n’existe que pour les biens immobiliers en propriété. Pour un bien immobilier **planifié**, c’est le mois d’achat de la simulation qui compte.
 - Sans date d’achat, l’application calcule **sans** majoration ni réduction (l’impôt selon le tarif de base). Si des règles de durée de possession sont saisies, le contrôle le signale.
-- C’est la durée de possession en **années révolues** jusqu’au mois de la vente qui fait foi.
+- C’est la durée de possession jusqu’au mois de la vente qui fait foi: avec des règles propres en **années révolues**, avec les [règles du canton](#f-tax-gain-canton) (mode Domicile) en **mois**.
 
 ## @f-re-mortgage Hypothèques
 Mots-clés: tranche, SARON, hypothèque à taux fixe, amortissement, marge, intérêt

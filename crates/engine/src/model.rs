@@ -905,6 +905,10 @@ pub struct Taxes {
     /// #63: Place of residence for the mode `location`; missing details are reported by the validation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<TaxLocation>,
+    /// #65: In the mode «Wohnort», own rules for the property gain tax (`property_gain`) instead of the rule set of
+    /// the canton in which the property lies. Missing: no.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub property_gain_own: bool,
 }
 
 /// #63: Source of the income and wealth tax.
@@ -1004,10 +1008,17 @@ pub enum GainModel {
     Zurich,
     /// Direct tax rate on the gain by holding period (canton of Aargau, § 109 StG).
     Aargau,
+    /// #65: Rate by the amount of the gain, interpolated linearly between the points of `rate_curve`
+    /// (canton BL); the rate applies to the whole gain.
+    Curve,
+    /// #65: Rate = return per year (gain / investment costs / years held), limited by `return_bounds` (Zug).
+    Return,
 }
 
 /// Property gain tax. Zurich model: brackets `[width of the bracket, rate]`, then surcharge or
-/// reduction by holding period. Aargau model: rate per holding period. The rules differ per canton.
+/// reduction by holding period. Aargau model: rate per holding period. #65: models «curve» and «return» and
+/// supplements for the rule sets of all cantons (tax data file); the order of the computation is described at
+/// [`crate::tax::property_gain_tax_full`]. The rules differ per canton.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PropertyGainTax {
@@ -1033,6 +1044,40 @@ pub struct PropertyGainTax {
     /// Gains below this amount stay tax-free (0 = no exemption limit).
     #[serde(default, skip_serializing_if = "is_zero")]
     pub exempt_below: f64,
+    /// #65: Allowance, always deducted from the gain (0 = none).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub allowance: f64,
+    /// #65: From this gain one rate applies to the whole gain: `[from gain, rate]` (Zurich model).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uniform_above: Option<(f64, f64)>,
+    /// #65: Model «curve»: pairs `[gain, rate]`; the rate applies to the whole gain.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rate_curve: Vec<(f64, f64)>,
+    /// #65: Model «return»: lowest and highest rate.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub return_bounds: Option<(f64, f64)>,
+    /// #65: Model «return»: highest rate by holding period, pairs `[from years, highest rate]` (replaces the highest
+    /// rate of `return_bounds`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub return_max_duration: Vec<(f64, f64)>,
+    /// #65: Change of the gain by holding period: pairs `[from years, change]` (−0.1 = gain 10 % lower).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub gain_duration: Vec<(f64, f64)>,
+    /// #65: Maximum burden as a share of the gain (0 = none).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub max_share: f64,
+    /// #65: Surcharge on the part of the gain above a threshold for a short holding period:
+    /// `[threshold, surcharge on the tax, holding period in years]` (Fribourg: 400 000, 0.4, 5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub short_surcharge: Option<(f64, f64, f64)>,
+    /// #65: From this holding period in years other brackets apply (Zurich model): `(from years, brackets)` (Valais).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub long_brackets: Option<(f64, Vec<(f64, f64)>)>,
+    /// #65: Surcharges and reductions for the part of the gain above a threshold: `(threshold, rows as in
+    /// `duration`)`. The tax is split in proportion to the parts of the gain (St. Gallen: reduction up to 500 000
+    /// francs different from above).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_above: Option<(f64, Vec<(f64, f64)>)>,
 }
 
 fn is_zero(v: &f64) -> bool {
@@ -1110,6 +1155,10 @@ pub struct Property {
     /// Purchase date (owned): determines the holding period for the property gain tax.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bought: Option<YearMonth>,
+    /// #65: Canton in which the property lies, for the property gain tax in the mode «Wohnort» (missing or empty:
+    /// canton of residence).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub canton: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sell: Option<TimeRef>,
     /// Rent from (status `rent`).

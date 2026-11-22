@@ -217,7 +217,7 @@ Quanti **mesi di spese non coperte** (spese meno redditi e rendite) vengono tenu
 ## @s-taxes Imposte
 Parole chiave: imposta sul reddito, imposta sulla sostanza, imposta sulle prestazioni in capitale, moltiplicatore d’imposta, tabella
 
-Sono disponibili due modi: **Domicilio** calcola l’imposta sul reddito, sulla sostanza e sulle prestazioni in capitale secondo cantone, comune e imposta di culto con i dati fiscali dell’AFC ([Imposta secondo il domicilio](#f-tax-location)); **Tabelle proprie** calcola con tabelle delle aliquote e moltiplicatore d’imposta, come descritto sotto. Le pianificazioni esistenti si aprono con «Tabelle proprie».
+Sono disponibili due modi: **Domicilio** calcola l’imposta sul reddito, sulla sostanza e sulle prestazioni in capitale secondo cantone, comune e imposta di culto con i dati fiscali dell’AFC e l’imposta sugli utili immobiliari secondo il cantone dell’immobile ([Imposta secondo il domicilio](#f-tax-location)); **Tabelle proprie** calcola con tabelle delle aliquote e moltiplicatore d’imposta, come descritto sotto. Le pianificazioni esistenti si aprono con «Tabelle proprie».
 
 Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale del Suo cantone. Tra gli scaglioni si **interpola linearmente**, l’aliquota viene moltiplicata per il [moltiplicatore d’imposta](#f-tax-multiplier).
 
@@ -232,7 +232,7 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 I valori d’esempio sono solo segnaposto. Per il Suo risultato li sostituisca con i valori del Suo luogo di domicilio.
 
 ## @f-tax-location Imposta secondo il domicilio
-Parole chiave: domicilio, cantone, comune, imposta di culto, confessione, AFC, dati fiscali, deduzioni standard, spese professionali, imposta federale, reddito imponibile, prelievo del capitale, imposta sulle prestazioni in capitale
+Parole chiave: domicilio, cantone, comune, imposta di culto, confessione, AFC, dati fiscali, deduzioni standard, spese professionali, imposta federale, reddito imponibile, prelievo del capitale, imposta sulle prestazioni in capitale, imposta sugli utili immobiliari, cantone dell’immobile
 
 Nel modo **Domicilio** sceglie solo il **cantone**, il **comune** (elenco del cantone con ricerca: digitare il nome) e l’**imposta di culto** (nessuna, riformata, cattolica romana, cattolica cristiana). Tariffe, deduzioni e moltiplicatori d’imposta provengono dal file dei dati fiscali dell’AFC fornito con l’app (calcolatore d’imposta, dati di base); la scheda indica l’anno fiscale, la fonte e i moltiplicatori d’imposta del comune. Non c’è accesso alla rete.
 
@@ -249,15 +249,16 @@ Nel modo **Domicilio** sceglie solo il **cantone**, il **comune** (elenco del ca
 - **Imposta sulle prestazioni in capitale** (cassa pensioni, pilastro 3a) = regola del cantone per il capitale × (moltiplicatore d’imposta cantone + Chiesa) + regola del comune × moltiplicatore d’imposta comune + imposta federale (un quinto della tariffa dell’imposta federale diretta, senza deduzioni). Valgono i moltiplicatori d’imposta dell’imposta sul reddito; la regola vale per l’intero prelievo. I prelievi dello stesso anno civile sono sommati: per i coniugati per l’economia domestica con la tariffa per coniugati, per le coppie non sposate per persona con la tariffa per persone sole. Sotto il comune figura la regola del cantone, per esempio Zurigo «aliquota della tariffa del reddito per un ventesimo del prelievo, almeno 2 %». Le regole sono derivate dal calcolatore d’imposta dell’AFC; nel Vallese e a Zugo sono solo approssimate (⚠).
 - **Coniugati** (due persone e «Coniugati» spuntato): tariffe e deduzioni per coniugati. Le coppie non sposate sono calcolate con quelle per persone sole sul reddito comune.
 - Con le [tariffe con il rincaro](#f-tax-indexed) gli importi di tariffe e deduzioni crescono con il rincaro simulato.
+- **Imposta sugli utili immobiliari:** per ogni immobile vale la regola del cantone in cui si trova; il cantone si sceglie presso l’immobile sotto [Immobili](#s-realestate), senza indicazione vale il cantone di domicilio. Dettagli sotto [Imposta sugli utili immobiliari](#f-tax-gain). Con la casella **«Regole proprie invece delle regole del cantone»** valgono invece le regole proprie con il [moltiplicatore d’imposta](#f-tax-multiplier) per tutti gli immobili.
 
-**Non nel modo Domicilio:** l’[imposta sugli utili immobiliari](#f-tax-gain) è ancora calcolata con le regole proprie e il [moltiplicatore d’imposta](#f-tax-multiplier). Le tabelle proprie per reddito, sostanza e prelievo di capitale (anche quelle per coniugati) sono nascoste e restano nel file; tornando a «Tabelle proprie» valgono di nuovo.
+**Nascosti:** le tabelle proprie per reddito, sostanza e prelievo di capitale (anche quelle per coniugati), le regole proprie dell’imposta sugli utili immobiliari e il moltiplicatore d’imposta (senza la casella) restano nel file; tornando a «Tabelle proprie» valgono di nuovo.
 
 **Verifica:** se manca il cantone o il comune o se il comune non si trova nel cantone, è un errore nella sezione Imposte, e «Avviare la simulazione» è bloccato. La panoramica delle ipotesi e la scheda «Parametri» indicano il domicilio, per esempio «Zürich (ZH), imposta di culto nessuna».
 
 ## @f-tax-multiplier Moltiplicatore d’imposta
 Parole chiave: cantone, comune, moltiplicatore
 
-Un fattore su tutte le aliquote delle tabelle, il moltiplicatore d’imposta di **cantone e comune** insieme (ad esempio 2.0 per un’aliquota doppia). Così non deve riscrivere le tabelle se cambia luogo di domicilio, ma modifica solo il fattore. Sono ammessi valori da 0 a 10. Nel modo [Domicilio](#f-tax-location) vale ormai solo per l’imposta sugli utili immobiliari.
+Un fattore su tutte le aliquote delle tabelle, il moltiplicatore d’imposta di **cantone e comune** insieme (ad esempio 2.0 per un’aliquota doppia). Così non deve riscrivere le tabelle se cambia luogo di domicilio, ma modifica solo il fattore. Sono ammessi valori da 0 a 10. Nel modo [Domicilio](#f-tax-location) vale solo per le regole proprie dell’imposta sugli utili immobiliari (casella «Regole proprie invece delle regole del cantone») ed è altrimenti nascosto.
 
 ## @f-tax-indexed Tariffe con il rincaro
 Parole chiave: progressione a freddo, rincaro, inflazione, scaglioni, tariffa, prezzi attuali
@@ -271,9 +272,9 @@ Con il segno di spunta, gli **importi** delle tabelle per reddito, sostanza e pr
 - Le nuove pianificazioni hanno il segno di spunta attivato. Le pianificazioni più vecchie senza indicazione e le vecchie configurazioni importate calcolano come prima, senza: gli importi valgono allora in termini nominali per tutta la pianificazione.
 
 ## @f-tax-gain Imposta sugli utili immobiliari
-Parole chiave: utile immobiliare, vendita, immobile, durata di possesso, Zurigo, Argovia, cantone, soglia di esenzione, tariffa, moltiplicatore d’imposta
+Parole chiave: utile immobiliare, vendita, immobile, durata di possesso, Zurigo, Argovia, cantone, soglia di esenzione, tariffa, moltiplicatore d’imposta, importo esente, domicilio, approssimazione
 
-L’imposta sull’utile alla **vendita** di un immobile. Le regole sono **diverse da cantone a cantone** e perciò interamente modificabili. **Obbligatorio:** se la pianificazione contiene un immobile con stato «Proprietà» o «Acquisto pianificato», le regole devono essere impostate (modello Zurigo, modello Argovia o regole proprie, anche con aliquota 0 %). Se mancano, è un errore nella sezione Imposte, e «Avviare la simulazione» e «Avviare l’ottimizzazione» sono bloccati. I soli oggetti in affitto e le pianificazioni senza immobile non hanno bisogno di regole.
+L’imposta sull’utile alla **vendita** di un immobile. Le regole sono **diverse da cantone a cantone**. Nel modo [Domicilio](#f-tax-location) valgono le [regole del cantone](#f-tax-gain-canton) dell’immobile; nel modo «Tabelle proprie» (o con la casella «Regole proprie invece delle regole del cantone») le regole proprie, interamente modificabili. **Obbligatorio** (solo per le regole proprie): se la pianificazione contiene un immobile con stato «Proprietà» o «Acquisto pianificato», le regole devono essere impostate (modello Zurigo, modello Argovia o regole proprie, anche con aliquota 0 %). Se mancano, è un errore nella sezione Imposte, e «Avviare la simulazione» e «Avviare l’ottimizzazione» sono bloccati. I soli oggetti in affitto e le pianificazioni senza immobile non hanno bisogno di regole.
 
 Sono disponibili due modelli: **Zurigo** (tariffa a scaglioni con maggiorazioni e riduzioni) e **Argovia** (aliquota diretta secondo la durata di possesso). L’**inserimento proprio** si basa sul modello Argovia.
 
@@ -290,6 +291,22 @@ Sono disponibili due modelli: **Zurigo** (tariffa a scaglioni con maggiorazioni 
 **Modello Cantone Argovia** (§ 109 StG): nel **modello Argovia** vale, invece degli scaglioni, un’**aliquota diretta sull’intero utile**, dipendente dalla durata di possesso in anni interi: 40 % nel primo anno di possesso, poi ogni anno 2 punti percentuali in meno fino al 20 % nell’undicesimo anno di possesso, poi 1 punto percentuale in meno all’anno fino al 6 % nel 25° anno di possesso e 5 % da 25 anni interi. Senza data d’acquisto vale l’aliquota più alta, e l’app avvisa.
 
 Per un altro cantone adegui le tabelle. I valori si trovano nel foglio delle tariffe dell’amministrazione cantonale delle contribuzioni. Li verifichi prima dell’uso: il modello riflette la situazione a una determinata data e non è una consulenza fiscale.
+
+## @f-tax-gain-canton Imposta sugli utili immobiliari secondo il cantone
+Parole chiave: imposta sugli utili immobiliari, cantone, immobile, domicilio, regole, opuscolo fiscale, approssimazione, durata di possesso, mesi, moltiplicatore d’imposta, mediana
+
+Nel modo [Domicilio](#f-tax-location) per ogni immobile vale automaticamente la **regola del cantone in cui si trova**. Sono registrati tutti i 26 cantoni; la fonte è l’opuscolo «Imposta sugli utili immobiliari» dell’AFC (periodo fiscale 2025), per Zugo, Friburgo, Vallese, Basilea Città, Basilea Campagna, San Gallo e Vaud anche la legge cantonale.
+
+- **Cantone dell’immobile:** campo per ogni immobile in proprietà o con acquisto pianificato sotto [Immobili](#s-realestate). Senza indicazione vale il cantone di domicilio. Sotto figura la regola del cantone, ad esempio Zurigo «tariffa a scaglioni dal 10 % al 40 %, maggiorazione fino al 50 % sotto 2 anni, riduzione fino al 50 % da 20 anni».
+- **Durata di possesso in mesi:** le regole dei cantoni contano la durata di possesso in mesi dalla [data d’acquisto](#f-re-bought) alla vendita; diversi cantoni calcolano maggiorazioni al mese.
+- **Moltiplicatore d’imposta:** Berna, Lucerna, Obvaldo, Soletta, Sciaffusa e Giura calcolano un’imposta semplice per il moltiplicatore d’imposta. Se l’immobile si trova nel cantone di domicilio vale il moltiplicatore del comune di domicilio (cantone e comune), altrimenti il moltiplicatore mediano dei comuni del cantone.
+- **Procedura:** soglia di esenzione, importo esente, variazione dell’utile secondo la durata di possesso, imposta secondo il modello del cantone (tariffa a scaglioni, aliquota secondo la durata di possesso, aliquota secondo l’utile o aliquota secondo il rendimento annuo), maggiorazione oltre una soglia con breve durata di possesso, maggiorazione o riduzione secondo la durata di possesso, moltiplicatore d’imposta, riduzione, onere massimo.
+- **Senza data d’acquisto** non vale alcuna maggiorazione o riduzione secondo la durata di possesso, per i cantoni con aliquota secondo la durata di possesso l’aliquota più alta; la verifica avverte.
+- **Approssimazioni (⚠):** per Basilea Città, Basilea Campagna, San Gallo, Vaud e Vallese la regola è solo approssimata; ad esempio a Basilea Città, San Gallo e Vaud si presuppone l’occupazione da parte del proprietario. L’interfaccia mostra la nota con ⚠ presso l’immobile.
+- **Non compreso:** l’occupazione da parte del proprietario per immobile, la riduzione per occupazione da parte del proprietario a Basilea Campagna, la riduzione per le spese che aumentano il valore e l’adeguamento dei costi d’investimento al rincaro.
+- **Verifica:** le regole proprie non sono obbligatorie. Un cantone sconosciuto di un immobile è un errore sul campo.
+
+Con la casella **«Regole proprie invece delle regole del cantone»** nella sezione Imposte valgono le regole proprie e il moltiplicatore d’imposta per tutti gli immobili, come nel modo «Tabelle proprie».
 
 ## @f-tax-tables Tabelle fiscali
 Parole chiave: aliquota, interpolazione, reddito, sostanza, prelievo del capitale, coniugati
@@ -321,6 +338,8 @@ L’imposta in VivaPlan è una **stima per la pianificazione**, non una tassazio
 
 **Prelievi di capitale nel modo «Domicilio»:** 48 casi inventati a Zurigo, Berna, Lucerna, Aarau, San Gallo, Ginevra, Friburgo e Bellinzona (prelievi di 100 000, 500 000 e 1 milione, persone sole e coniugate) si scostano al massimo ±5 % dal calcolatore d’imposta 2026 dell’AFC. Il Vallese e Zugo sono solo approssimati (a Zugo fino a circa il 7 %).
 
+**Imposta sugli utili immobiliari nel modo «Domicilio»:** per ogni cantone un test verifica casi inventati (utile e durata di possesso) con valori ricalcolati a mano secondo l’opuscolo fiscale o la legge. A Basilea Città, Basilea Campagna, San Gallo, Vaud e nel Vallese la regola è solo approssimata (⚠).
+
 **Approssimazioni:**
 
 - Le Sue tabelle danno un’aliquota media per importo; nel mezzo VivaPlan interpola linearmente. La tariffa reale ha un altro andamento.
@@ -345,7 +364,7 @@ Parole chiave: casa, appartamento, ipoteca, affitto, acquisto, vendita, sostenib
 
 Oggetti propri, pianificati e in affitto. Può registrarne quanti vuole.
 
-- **Proprietà (`owned`):** il valore venale all’inizio della simulazione figura nell’intestazione accanto al nome. Sotto seguono in posizioni fisse la [data d’acquisto](#f-re-bought), il prezzo d’acquisto (pagato, per l’imposta sugli utili immobiliari), «Vendita da» (mai, tappa o data) e spese accessorie al mese. Con «Acquisto pianificato» gli stessi campi figurano nelle stesse posizioni (al posto della data d’acquisto «Acquisto da»), manca solo il valore venale; al cambio di stato i valori registrati si mantengono. La vendita deve essere **successiva alla data d’acquisto**, altrimenti è un errore sul campo.
+- **Proprietà (`owned`):** il valore venale all’inizio della simulazione figura nell’intestazione accanto al nome. Sotto seguono in posizioni fisse la [data d’acquisto](#f-re-bought), il prezzo d’acquisto (pagato, per l’imposta sugli utili immobiliari), «Vendita da» (mai, tappa o data) e spese accessorie al mese. Nel modo fiscale [Domicilio](#f-tax-location) segue il **cantone dell’immobile**, con la regola dell’[imposta sugli utili immobiliari](#f-tax-gain-canton) di questo cantone. Con «Acquisto pianificato» gli stessi campi figurano nelle stesse posizioni (al posto della data d’acquisto «Acquisto da»), manca solo il valore venale; al cambio di stato i valori registrati si mantengono. La vendita deve essere **successiva alla data d’acquisto**, altrimenti è un errore sul campo.
 - **Inflazione:** valore e spese accessorie si possono adeguare all’inflazione **singolarmente** per ogni oggetto; per gli oggetti in affitto, anche l’affitto.
 - **Acquisto pianificato (`planned`):** acquisto da tappa, prezzo d’acquisto, ipoteca. A ciò si aggiunge **«Vendita da»** (predefinito ‹mai›, altrimenti data o tappa); la simulazione vende allora l’oggetto in quel momento. La vendita deve essere successiva ad «Acquisto da», altrimenti è un errore sul campo. Con acquisto «dopo la vendita di …» il momento dell’acquisto non è noto al momento della registrazione, allora questa verifica viene meno.
 - **Affitto (`rent`):** inizio e affitto al mese (valore attuale, viene adeguato per impostazione standard al rincaro; l’opzione «Adeguare l’affitto all’inflazione» lo disattiva).
@@ -362,7 +381,7 @@ Il mese in cui ha acquistato l’immobile. Determina la **durata di possesso** e
 
 - Il campo esiste solo per gli immobili in proprietà. Per un immobile **pianificato** conta il mese d’acquisto della simulazione.
 - Senza data d’acquisto l’app calcola **senza** maggiorazione o riduzione (l’imposta secondo la tariffa di base). Se sono registrate regole sulla durata di possesso, la verifica lo segnala.
-- Determinante è la durata di possesso in **anni interi** fino al mese della vendita.
+- Determinante è la durata di possesso fino al mese della vendita: con regole proprie in **anni interi**, con le [regole del cantone](#f-tax-gain-canton) (modo Domicilio) in **mesi**.
 
 ## @f-re-mortgage Ipoteche
 Parole chiave: tranche, SARON, ipoteca fissa, ammortamento, margine, interesse

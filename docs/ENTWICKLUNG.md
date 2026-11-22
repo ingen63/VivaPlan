@@ -556,9 +556,18 @@ ein (`BUILTIN`).
   der Regeln: `tools/steuerdaten/kapitalregeln.json` und README dort. `tax_locations` liefert je Kanton `capitalRule`
   und `capitalApprox`; die Oberfläche zeigt die Regel aus den Texten `capitalRule.<Kanton>` (deutsch = `capitalRule`
   der Steuerdatei, e2e prüft das).
-- Die Grundstückgewinnsteuer rechnet im Modus «Wohnort» weiter mit den eigenen Regeln und `taxes.multiplier` (#65).
-  Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch `taxes.couple`) bleiben in der Datei, die
-  Prüfung übergeht sie.
+- **Grundstückgewinnsteuer (#65):** je Kanton `propertyGain` (Regelsatz im Format von `PropertyGainTax`),
+  `propertyGainRule` (Text), `propertyGainApprox` (Näherung: BS, BL, SG, VD, VS) und `gainMultiplier` (Median von
+  Steuerfuss Kanton + Gemeinde der Einkommenssteuer über die Gemeinden des Kantons); dazu `propertyGainSource`.
+  `TaxData::property_gain(location, canton)` liefert Regelsatz und Steuerfuss für eine Immobilie im Kanton `canton`
+  (fehlt oder leer: Wohnkanton): im Wohnkanton den Steuerfuss der Wohngemeinde, sonst `gainMultiplier`. Der Simulator
+  legt beim Aufbau je Immobilie die Regeln fest (`GainRule`): im Modus «Wohnort» ohne `taxes.propertyGainOwn` die des
+  Kantons, Besitzdauer in Monaten; sonst `taxes.propertyGain` mit `taxes.multiplier`, Besitzdauer in vollen Jahren wie
+  bisher. Mietobjekte brauchen keine Regel. Herkunft der Regeln: `tools/steuerdaten/grundstueckgewinn.py` und README
+  dort; `tax_locations` liefert `propertyGainRule` und `propertyGainApprox`, die Oberfläche zeigt die Texte
+  `propertyGainRule.<Kanton>` und `propertyGainApprox.<Kanton>` (deutsch = Steuerdatei, e2e prüft das).
+- Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch `taxes.couple`) und die nicht geltenden eigenen
+  Regeln der Grundstückgewinnsteuer bleiben in der Datei, die Prüfung übergeht sie.
 - **Prüfung:** Kanton fehlt oder unbekannt (`taxes.location.canton`), Gemeinde fehlt oder liegt nicht im Kanton
   (`taxes.location.municipality`): Fehler im Abschnitt Steuern; `Simulator::new` lehnt die Planung ebenso ab.
 - **Befehl `tax_locations`** (App und Entwicklungsserver): Steuerjahr, Quelle, Hinweis, Abzugsregeln von Bund und
@@ -631,6 +640,25 @@ Für andere Kantone die Tabellen anpassen; ohne Kaufdatum gilt kein Zu- oder Abs
 25. Jahr, 5 % ab 25 vollen Jahren); ohne Kaufdatum gilt der höchste Satz. Freigrenze und feste Ermässigung gelten in
 beiden Modellen. `useMultiplier` multipliziert die Steuer zusätzlich mit dem Steuerfuss (`taxes.multiplier`, Standard
 aus). «Eigene Regeln erfassen» beginnt mit einer Zeile im Modell Aargau.
+
+**Regelsätze der Kantone (#65).** Im Modus «Wohnort» gilt ohne `taxes.propertyGainOwn` für jede Immobilie der Regelsatz
+ihres Kantons (`realestate.properties[].canton`, fehlt oder leer: Wohnkanton) aus der Steuerdatei. Dafür kennt
+`PropertyGainTax` zwei weitere Modelle und Ergänzungen:
+
+- `curve`: Satz nach Gewinn (`rateCurve`, linear interpoliert, für den ganzen Gewinn; Basel-Landschaft);
+- `return`: Satz = Rendite pro Jahr (Gewinn / Anlagekosten / Besitzjahre; bis 5 Jahre in angefangenen Monaten,
+  darüber in angefangenen Jahren) zwischen `returnBounds`, Höchstsatz nach Besitzdauer `returnMaxDuration` (Zug);
+  Anlagekosten = bezahlter Kaufpreis;
+- `allowance` (Freibetrag), `uniformAbove` (ab einem Gewinn ein Satz für den ganzen Gewinn), `longBrackets` (andere
+  Stufen ab einer Besitzdauer, Wallis), `gainDuration` (Veränderung des Gewinns nach Besitzdauer, Bern),
+  `shortSurcharge` (Zuschlag auf dem Gewinnanteil über einer Schwelle bei kurzer Besitzdauer, Freiburg),
+  `durationAbove` (eigene Zu- und Abschläge für den Gewinnanteil über einer Schwelle, Steuer im Verhältnis der
+  Gewinnanteile aufgeteilt, St. Gallen), `maxShare` (Höchstbelastung als Anteil des Gewinns).
+
+Ablauf (`tax::property_gain_tax_full`): Freigrenze, Freibetrag, Veränderung des Gewinns, Steuer nach dem Modell,
+Zuschlag über der Schwelle, Zu- oder Abschlag nach Besitzdauer (nicht im Modell `aargau`), Steuerfuss (falls
+`useMultiplier`), feste Ermässigung, Höchstbelastung, nie negativ. Die Jahre der Tabellen werden mit Monate / 12
+verglichen. Eigene Regeln rechnen weiter mit vollen Jahren; damit rechnen bestehende Planungen unverändert.
 
 ### Bandbreiten der Optimierung
 

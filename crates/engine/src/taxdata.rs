@@ -16,12 +16,16 @@
 //! of the municipality × multiplier municipality plus federal capital curve (one fifth of the federal tariff, without
 //! deductions). The curves hold the rate of the simple tax on the whole lump sum; the multipliers are those of the
 //! income tax.
+//!
+//! #65: Property gain tax: the rule set of the canton in which the property lies (`propertyGain`, format of
+//! [`crate::model::PropertyGainTax`]); cantons that compute with the tax multiplier take that of the municipality of
+//! residence for a property in the canton of residence, otherwise the median of the canton (`gainMultiplier`).
 
 use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{Church, DeductionRule, TaxLocation};
+use crate::model::{Church, DeductionRule, PropertyGainTax, TaxLocation};
 use crate::tax::{rate_at, tax_indexed};
 use crate::{Error, Result};
 
@@ -140,6 +144,15 @@ pub struct Canton {
     /// #64: Note if the rule is only approximated; missing for an exact rule.
     #[serde(default)]
     pub capital_approx: Option<String>,
+    /// #65: Rule set of the property gain tax.
+    pub property_gain: PropertyGainTax,
+    /// #65: The rule as text (German; the user interface shows `propertyGainRule.<canton>`).
+    pub property_gain_rule: String,
+    /// #65: Note if the rule is only approximated.
+    #[serde(default)]
+    pub property_gain_approx: Option<String>,
+    /// #65: Median tax multiplier (canton + municipality) for a property outside the canton of residence.
+    pub gain_multiplier: f64,
 }
 
 /// Tax multipliers of a municipality as shares (0.95 = 95 %): canton, municipality, reformed, Roman Catholic, Christ
@@ -161,6 +174,8 @@ pub struct TaxData {
     pub federal_deductions: Deductions,
     /// #64: Federal tax on lump sums from pension savings (one fifth of the tariff, without deductions).
     pub federal_capital: Curves,
+    /// #65: Source of the rule sets of the property gain tax.
+    pub property_gain_source: String,
     pub cantons: Vec<Canton>,
     pub municipalities: Vec<Municipality>,
 }
@@ -224,6 +239,22 @@ impl TaxData {
             federal_deductions: self.federal_deductions.applied(married),
         })
     }
+
+    /// #65: Rule set of the property gain tax and tax multiplier for a property in the canton `canton` (missing or
+    /// empty: canton of residence). In the canton of residence the multiplier of the municipality of residence
+    /// (canton + municipality) applies, otherwise the median of the canton.
+    pub fn property_gain(&self, loc: &TaxLocation, canton: Option<&str>) -> Result<(PropertyGainTax, f64)> {
+        let id = canton.filter(|c| !c.is_empty()).unwrap_or(&loc.canton);
+        let c = self
+            .canton(id)
+            .ok_or_else(|| Error::Invalid(msg!(gain_tax_canton_unknown, canton = id)))?;
+        let home = loc
+            .municipality
+            .and_then(|b| self.municipality(b))
+            .filter(|m| m.2 == c.id);
+        let multiplier = home.map_or(c.gain_multiplier, |m| m.3[0] + m.3[1]);
+        Ok((c.property_gain.clone(), multiplier))
+    }
 }
 
 /// Tables and deduction rules of a place of residence, multipliers included.
@@ -282,6 +313,7 @@ pub struct LocationsOut {
     pub source: String,
     pub note: String,
     pub federal_deductions: Deductions,
+    pub property_gain_source: String,
     pub cantons: Vec<CantonOut>,
 }
 
@@ -295,6 +327,9 @@ pub struct CantonOut {
     pub capital_rule: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capital_approx: Option<String>,
+    pub property_gain_rule: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub property_gain_approx: Option<String>,
     /// Municipalities: BFS number, name, multipliers income and wealth, sorted by name.
     pub municipalities: Vec<(u32, String, Multipliers, Multipliers)>,
 }
@@ -318,6 +353,8 @@ pub fn locations() -> LocationsOut {
                 deductions: c.deductions.clone(),
                 capital_rule: c.capital_rule.clone(),
                 capital_approx: c.capital_approx.clone(),
+                property_gain_rule: c.property_gain_rule.clone(),
+                property_gain_approx: c.property_gain_approx.clone(),
                 municipalities,
             }
         })
@@ -328,6 +365,7 @@ pub fn locations() -> LocationsOut {
         source: d.source.clone(),
         note: d.note.clone(),
         federal_deductions: d.federal_deductions.clone(),
+        property_gain_source: d.property_gain_source.clone(),
         cantons,
     }
 }

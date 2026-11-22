@@ -174,6 +174,10 @@ Wörter in Grossbuchstaben nicht.
 | Besitzdauer | `holding_period` | Tabellen `duration`, `duration_rates` |
 | Freigrenze | `exempt_below` | |
 | Ermässigung | `reduction` | |
+| Freibetrag (Grundstückgewinn) | `allowance` | #65 |
+| Höchstbelastung | `max_share` | #65, Anteil des Gewinns |
+| Anlagekosten | `cost` | #65, Modell «return»: bezahlter Kaufpreis |
+| Regelsatz des Kantons | `rule`, `GainRule` | #65 |
 | veranlagt, Steuerjahr | `assessed`, `tax_year` | `assessed_income`, `assessed_wealth` |
 | Verheiratetentarif | `couple` | |
 | Kanton, Gemeinde | `canton`, `municipality` | |

@@ -217,7 +217,7 @@ How many **months of uncovered spending** (spending minus income and pensions) a
 ## @s-taxes Taxes
 Keywords: income tax, wealth tax, lump-sum tax, tax multiplier, table
 
-Two modes are available: **Place of residence** calculates the income, wealth and lump-sum tax from canton, municipality and church tax with the tax data of the FTA ([Tax by place of residence](#f-tax-location)); **Own tables** calculates with rate tables and tax multiplier, as described below. Existing plans open with “Own tables”.
+Two modes are available: **Place of residence** calculates the income, wealth and lump-sum tax from canton, municipality and church tax with the tax data of the FTA and the property gains tax by the canton of the property ([Tax by place of residence](#f-tax-location)); **Own tables** calculates with rate tables and tax multiplier, as described below. Existing plans open with “Own tables”.
 
 Simple **rate tables** that you can derive from the tax calculator of your canton. Between the brackets, the app **interpolates linearly**, and the rate is multiplied by the [tax multiplier](#f-tax-multiplier).
 
@@ -232,7 +232,7 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 The example values are only placeholders. For your result, replace them with values of your place of residence.
 
 ## @f-tax-location Tax by place of residence
-Keywords: place of residence, canton, municipality, church tax, denomination, FTA, tax data, standard deductions, professional expenses, federal tax, taxable income, lump sum, lump-sum tax
+Keywords: place of residence, canton, municipality, church tax, denomination, FTA, tax data, standard deductions, professional expenses, federal tax, taxable income, lump sum, lump-sum tax, property gains tax, canton of the property
 
 In the mode **Place of residence** you only choose the **canton**, the **municipality** (list of the canton with search: type the name) and the **church tax** (none, Reformed, Roman Catholic, Christ Catholic). Tariffs, deductions and tax multipliers come from the bundled tax data file of the FTA (tax calculator, base data); the card names the tax year, the source and the tax multipliers of the municipality. There is no network access.
 
@@ -249,15 +249,16 @@ In the mode **Place of residence** you only choose the **canton**, the **municip
 - **Lump-sum tax** (pension fund, pillar 3a) = capital rule of the canton × (tax multiplier canton + church) + rule of the municipality × tax multiplier municipality + federal tax (one fifth of the tariff of the direct federal tax, without deductions). The tax multipliers of the income tax apply; the rule applies to the whole lump sum. Lump sums in the same calendar year are added together: for married couples for the household with the tariff for married couples, for unmarried couples per person with the tariff for single persons. Below the municipality the rule of the canton is shown, for example Zurich “rate of the income tariff for one twentieth of the lump sum, at least 2 %”. The rules are derived from the FTA tax calculator; in Valais and Zug they are only approximated (⚠).
 - **Married couples** (two persons and “Married” ticked): tariffs and deductions for married couples. Unmarried couples are calculated with those for single persons on the joint income.
 - With [tariffs with inflation](#f-tax-indexed) the amounts of the tariffs and deductions grow with the simulated inflation.
+- **Property gains tax:** for each property the rule set of the canton in which it lies applies; you choose the canton with the property under [Real estate](#s-realestate), without an entry the canton of residence applies. Details under [Property gains tax](#f-tax-gain). With the check box **“Own rules instead of the rules of the canton”** the own rules with the [tax multiplier](#f-tax-multiplier) apply to all properties instead.
 
-**Not in the mode Place of residence:** the [property gains tax](#f-tax-gain) is still calculated with the own rules and the [tax multiplier](#f-tax-multiplier). The own tables for income, wealth and lump sums (also those for married couples) are hidden and stay in the file; back on “Own tables” they apply again.
+**Hidden:** the own tables for income, wealth and lump sums (also those for married couples), the own rules of the property gains tax and the tax multiplier (without the check box) stay in the file; back on “Own tables” they apply again.
 
 **Validation:** If the canton or the municipality is missing or the municipality is not in the canton, this is an error in the section Taxes, and “Start simulation” is blocked. The overview of the assumptions and the tab “Parameters” name the place of residence, for example “Zürich (ZH), church tax none”.
 
 ## @f-tax-multiplier Tax multiplier
 Keywords: canton, municipality, multiplier
 
-A factor on all rates of the tables, the tax multiplier of **canton and municipality** together (for example 2.0 for a double rate). This way, you do not have to rewrite the tables when you move; you only change the factor. Values from 0 to 10 are allowed. In the mode [Place of residence](#f-tax-location) it applies only to the property gains tax.
+A factor on all rates of the tables, the tax multiplier of **canton and municipality** together (for example 2.0 for a double rate). This way, you do not have to rewrite the tables when you move; you only change the factor. Values from 0 to 10 are allowed. In the mode [Place of residence](#f-tax-location) it applies only to own rules of the property gains tax (check box “Own rules instead of the rules of the canton”) and is hidden otherwise.
 
 ## @f-tax-indexed Tariffs with inflation
 Keywords: bracket creep, inflation, brackets, tariff, today's prices
@@ -271,9 +272,9 @@ With the tick, the **amounts** of the tables for income, wealth and lump sums ap
 - New plans have the tick set. Older plans without the setting and imported old configurations compute as before without it: the amounts then apply nominally over the whole plan.
 
 ## @f-tax-gain Property gains tax
-Keywords: property gain, sale, property, holding period, Zurich, Aargau, canton, exemption limit, tariff, tax multiplier
+Keywords: property gain, sale, property, holding period, Zurich, Aargau, canton, exemption limit, tariff, tax multiplier, allowance, place of residence, approximation
 
-The tax on the gain when a property is **sold**. The rules **differ from canton to canton** and are therefore fully editable. **Required:** if the plan contains a property with the status “Owned” or “Purchase planned”, the rules must be set (Zurich template, Aargau template or your own rules, also with a rate of 0 %). If they are missing, this is an error in the section Taxes, and “Start simulation” and “Start optimization” are blocked. Pure rental properties and plans without a property need no rules.
+The tax on the gain when a property is **sold**. The rules **differ from canton to canton**. In the mode [Place of residence](#f-tax-location) the [rules of the canton](#f-tax-gain-canton) of the property apply; in the mode “Own tables” (or with the check box “Own rules instead of the rules of the canton”) the own rules, which are fully editable. **Required** (only for own rules): if the plan contains a property with the status “Owned” or “Purchase planned”, the rules must be set (Zurich template, Aargau template or your own rules, also with a rate of 0 %). If they are missing, this is an error in the section Taxes, and “Start simulation” and “Start optimization” are blocked. Pure rental properties and plans without a property need no rules.
 
 Two models are available: **Zurich** (bracket tariff with surcharges and reductions) and **Aargau** (direct tax rate by holding period). **Your own input** is based on the Aargau model.
 
@@ -290,6 +291,22 @@ Two models are available: **Zurich** (bracket tariff with surcharges and reducti
 **Template canton of Aargau** (§ 109 StG): In the **Aargau model**, instead of the brackets, a **direct tax rate on the whole gain** applies, depending on the holding period in full years: 40 % in the first year of ownership, then 2 percentage points less per year down to 20 % in the eleventh year of ownership, after that 1 percentage point less per year down to 6 % in the 25th year of ownership and 5 % from 25 full years. Without a purchase date, the highest rate applies, and the app warns.
 
 For another canton, adapt the tables. You find the values in the tariff sheet of the cantonal tax administration. Check them before use; the template reflects a certain date and is not tax advice.
+
+## @f-tax-gain-canton Property gains tax by canton
+Keywords: property gains tax, canton, property, place of residence, rule set, tax guide, approximation, holding period, months, tax multiplier, median
+
+In the mode [Place of residence](#f-tax-location), the **rule set of the canton in which the property lies** applies automatically to each property. All 26 cantons are covered; the source is the FTA tax guide “Property gains tax” (tax period 2025), for Zug, Fribourg, Valais, Basel-Stadt, Basel-Landschaft, St. Gallen and Vaud also the cantonal law.
+
+- **Canton of the property:** field with each property that is owned or planned for purchase under [Real estate](#s-realestate). Without an entry the canton of residence applies. Below it is the rule of the canton, for example Zurich “bracket tariff 10 % to 40 %, surcharge up to 50 % under 2 years, reduction up to 50 % from 20 years”.
+- **Holding period in months:** the rules of the cantons count the holding period in months from the [purchase date](#f-re-bought) to the sale; several cantons calculate surcharges per month.
+- **Tax multiplier:** Bern, Lucerne, Obwalden, Solothurn, Schaffhausen and Jura calculate a simple tax times the tax multiplier. If the property lies in the canton of residence, the tax multiplier of the municipality of residence (canton and municipality) applies, otherwise the median tax multiplier of the municipalities of the canton.
+- **Order:** exemption limit, allowance, change of the gain by holding period, tax by the model of the canton (bracket tariff, rate by holding period, rate by gain or rate by annual return), surcharge above a threshold for a short holding period, surcharge or reduction by holding period, tax multiplier, reduction, maximum burden.
+- **Without a purchase date** no surcharge or reduction by holding period applies, for cantons with a rate by holding period the highest rate; the validation warns.
+- **Approximations (⚠):** for Basel-Stadt, Basel-Landschaft, St. Gallen, Vaud and Valais the rule is only approximated; for example, owner occupation is assumed in Basel-Stadt, St. Gallen and Vaud. The user interface shows the note with ⚠ at the property.
+- **Not included:** owner occupation per property, the reduction for owner occupation in Basel-Landschaft, the reduction for value-enhancing expenses and the adjustment of the investment costs to inflation.
+- **Validation:** own rules are not required. An unknown canton of a property is an error at the field.
+
+With the check box **“Own rules instead of the rules of the canton”** in the section Taxes, the own rules and the tax multiplier apply to all properties, as in the mode “Own tables”.
 
 ## @f-tax-tables Tax tables
 Keywords: rate, interpolation, income, wealth, lump sum, married
@@ -321,6 +338,8 @@ The tax in VivaPlan is an **estimate for planning**, not a tax assessment. The r
 
 **Lump sums in the mode “Place of residence”:** 48 made-up cases in Zurich, Bern, Lucerne, Aarau, St. Gallen, Geneva, Fribourg and Bellinzona (lump sums of 100 000, 500 000 and 1 million, single and married) deviate at most ±5 % from the FTA tax calculator 2026. Valais and Zug are only approximated (in Zug up to about 7 %).
 
+**Property gains tax in the mode “Place of residence”:** per canton, a test checks invented cases (gain and holding period) against values computed by hand according to the tax guide or the law. In Basel-Stadt, Basel-Landschaft, St. Gallen, Vaud and Valais the rule is only approximated (⚠).
+
 **Approximations:**
 
 - Your tables give an average rate per amount; in between, VivaPlan interpolates linearly. The real tariff runs differently.
@@ -345,7 +364,7 @@ Keywords: house, apartment, mortgage, rent, purchase, sale, affordability
 
 Owned, planned and rented properties. You can enter as many as you like.
 
-- **Owned (‘owned’):** The market value at simulation start is in the header next to the name. Below follow, in fixed places, [purchase date](#f-re-bought), purchase price (paid, for the property gains tax), “Sale from” (never, milestone or date) and fixed costs per month. With “Purchase planned”, the same fields are in the same places (“Purchase from” instead of the purchase date), only the market value is missing; when the status changes, the values entered are kept. The sale must be **after the purchase date**; otherwise it is an error at the field.
+- **Owned (‘owned’):** The market value at simulation start is in the header next to the name. Below follow, in fixed places, [purchase date](#f-re-bought), purchase price (paid, for the property gains tax), “Sale from” (never, milestone or date) and fixed costs per month. In the tax mode [Place of residence](#f-tax-location) the **canton of the property** follows, with the rule of the [property gains tax](#f-tax-gain-canton) of this canton. With “Purchase planned”, the same fields are in the same places (“Purchase from” instead of the purchase date), only the market value is missing; when the status changes, the values entered are kept. The sale must be **after the purchase date**; otherwise it is an error at the field.
 - **Inflation:** Value and fixed costs can be carried forward with inflation **individually** for each property, and so can the rent for a rental.
 - **Planned purchase (‘planned’):** purchase from milestone, purchase price, mortgage. In addition, there is **“Sale from”** (default ‘Never’, otherwise date or milestone); the simulation then sells the property at that point in time. The sale must be after “Purchase from”; otherwise it is an error at the field. For a purchase ‘after sale of …’, the point of purchase is not known when entering it, and this check is omitted.
 - **Rent (‘rent’):** start and rent per month (today's value, carried forward with inflation by default; the option “Adjust rent for inflation” turns this off).
@@ -362,7 +381,7 @@ The month in which you bought the property. It determines the **holding period**
 
 - The field only exists for owned properties. For a **planned** property, the month of purchase in the simulation counts.
 - Without a purchase date, the app calculates **without** surcharge or reduction (the tax according to the basic tariff). If holding period rules are entered, the validation points this out.
-- What counts is the holding period in **full years** until the month of sale.
+- What counts is the holding period until the month of sale: with own rules in **full years**, with the [rules of the canton](#f-tax-gain-canton) (mode Place of residence) in **months**.
 
 ## @f-re-mortgage Mortgages
 Keywords: tranche, SARON, fixed mortgage, amortization, margin, interest

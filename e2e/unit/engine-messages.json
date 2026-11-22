@@ -1046,6 +1046,55 @@
     "text": "Person 2: the purchase date is missing. Without a purchase date, no surcharge or reduction (Zurich model) or the highest rate (Aargau model) applies to the property gains tax."
   },
   {
+    "code": "gain_tax_canton_unknown",
+    "params": {
+      "canton": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Property gains tax: the canton “{canton}” is not in the tax data.",
+    "text": "Property gains tax: the canton “Person 2” is not in the tax data."
+  },
+  {
+    "code": "property_canton_unknown",
+    "params": {
+      "canton": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: the canton “{canton}” is not in the tax data (property gains tax).",
+    "text": "Person 2: the canton “Person 2” is not in the tax data (property gains tax)."
+  },
+  {
+    "code": "property_bought_missing_canton",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: the purchase date is missing. Without a purchase date, no surcharge or reduction by holding period applies to the property gains tax; for cantons with a rate by holding period the highest rate applies.",
+    "text": "Person 2: the purchase date is missing. Without a purchase date, no surcharge or reduction by holding period applies to the property gains tax; for cantons with a rate by holding period the highest rate applies."
+  },
+  {
     "code": "property_id_duplicate",
     "params": {
       "id": {

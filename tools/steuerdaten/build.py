@@ -8,7 +8,7 @@ Inputs (ESTV tax calculator, «Grunddaten abrufen», one tax year):
   --kapitalregeln rules of the cantons for lump sums from pension savings (JSON, default kapitalregeln.json, #64)
 Output: JSON with the income tariffs (on the taxable income), the standard deduction rules, the wealth curves (social
 deductions included), the curves for lump sums (#64) per canton and for the federal tax, and the tax multipliers per
-municipality.
+municipality. #65: the rule sets of the property gain tax per canton come from `grundstueckgewinn.py`.
 
 Standard library only; the xlsx is read directly from the ZIP. Usage and procedure: README.md.
 """
@@ -19,6 +19,7 @@ import math
 import json
 import os
 import re
+import statistics
 import sys
 import xml.etree.ElementTree as ET
 import zipfile
@@ -98,6 +99,8 @@ WEALTH_DEDUCTIONS = {
 # Flat deduction for other professional expenses on the earned income
 EARNED_DEDUCTION = "HauptErw_EK"
 
+GAIN_SOURCE = ("ESTV, Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3; "
+               "ZG, FR, VS, BS, BL, SG und VD zusätzlich nach dem kantonalen Gesetz")
 SOURCE = "ESTV, Steuerrechner, Grunddaten (Steuerfüsse, Tarife, Abzüge)"
 NOTE = ("Schätzung für die Planung mit den Standardabzügen des Kantons und des Bundes für Alleinstehende oder "
         "Verheiratete ohne Kinder, ohne individuelle Abzüge.")
@@ -442,13 +445,33 @@ def capital(c, rule, tariffs, munis, report):
     report.append(f"{cid} capital: {rule['text']}" + (f" (approx: {rule['approx']})" if rule.get("approx") else ""))
 
 
+def property_gain(c, rule, munis, report):
+    """#65: Adds the property gain fields of a canton: `propertyGain` (the rule for the engine), `propertyGainRule`,
+    `propertyGainApprox` if the rule is simplified, and `gainMultiplier`, the median tax multiplier of canton and
+    municipality (income tax) for properties outside the canton of residence."""
+    cid = c["id"]
+    rule = dict(rule)
+    c["propertyGainRule"] = rule.pop("text")
+    source = rule.pop("source")
+    approx = rule.pop("approx", None)
+    if approx:
+        c["propertyGainApprox"] = approx
+    c["propertyGain"] = rule
+    rates = [m[3][0] + m[3][1] for m in munis if m[2] == cid]
+    if not rates:
+        raise ValueError(f"canton {cid}: no municipality for the tax multiplier of the property gain tax")
+    c["gainMultiplier"] = round(statistics.median(rates), 4)
+    note = f" (approx: {approx})" if approx else ""
+    report.append(f"{cid} property gain: {c['propertyGainRule']} ({source}){note}")
+
+
 def read_rules(path):
     """Capital rules per canton; keys starting with `_` are comments."""
     with open(path, encoding="utf-8") as f:
         return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
 
 
-def build(tariff_rows, deduction_rows, year, munis, capital_rules=None):
+def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rules=None):
     tariffs = load_tariffs(tariff_rows)
     deds = defaultdict(dict)
     for r in deduction_rows:
@@ -492,6 +515,10 @@ def build(tariff_rows, deduction_rows, year, munis, capital_rules=None):
             if cid not in capital_rules:
                 raise ValueError(f"canton {cid}: capital rule missing")
             capital(c, capital_rules[cid], tariffs, munis, report)
+        if gain_rules is not None:
+            if cid not in gain_rules:
+                raise ValueError(f"canton {cid}: property gain rule missing")
+            property_gain(c, gain_rules[cid], munis, report)
         cantons.append(c)
     if capital_rules is not None:
         # #64: federal tax on lump sums: one fifth of the tariff of the direct federal tax, without deductions
@@ -510,6 +537,8 @@ def build(tariff_rows, deduction_rows, year, munis, capital_rules=None):
     }
     if capital_rules is not None:
         data["federalCapital"] = federal_capital
+    if gain_rules is not None:
+        data["propertyGainSource"] = GAIN_SOURCE
     return data, report
 
 
@@ -523,7 +552,11 @@ def main(argv=None):
     ap.add_argument("--bericht", help="file for the report of the chosen tariffs and deductions")
     a = ap.parse_args(argv)
     year, munis = read_multipliers(a.steuerfuesse)
-    data, report = build(read_csv(a.tarife), read_csv(a.abzuege), year, munis, read_rules(a.kapitalregeln))
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import grundstueckgewinn  # noqa: E402 (next to this file, also with python3 -I)
+
+    data, report = build(read_csv(a.tarife), read_csv(a.abzuege), year, munis, read_rules(a.kapitalregeln),
+                         grundstueckgewinn.rules())
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")

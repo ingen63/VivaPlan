@@ -1169,6 +1169,10 @@ Object.assign(OPT_ACTIONS, {
     if (d.v === "zurich" && !g.brackets?.length) g.brackets = GAIN_ZH().brackets;
     markDirty(); renderSection();
   },
+  "gain-own-toggle": () => {
+    if (state.taxes.propertyGainOwn) delete state.taxes.propertyGainOwn; else state.taxes.propertyGainOwn = true;
+    markDirty(); renderSection();
+  },
   "gain-del": () => { delete state.taxes.propertyGain; markDirty(); renderSection(); },
   "gain-add": d => {
     const t = (state.taxes.propertyGain[d.key] ??= []), last = t[t.length - 1];
@@ -1182,6 +1186,24 @@ let taxLoc = null;
 let CHURCH;
 onLanguage(() => CHURCH = [["none", tr("church.none")], ["reformed", tr("church.reformed")], ["catholic", tr("church.catholic")], ["christCatholic", tr("church.christCatholic")]]);
 const isLocation = plan => plan?.taxes?.mode === "location";
+/** #65/AK5: the own rules of the property gains tax apply in the mode «Eigene Tabellen» or with the check box. */
+const gainOwn = (plan = state) => !isLocation(plan) || !!plan.taxes.propertyGainOwn;
+/** #65/AK1, AK3: canton of the property and the rule that applies there (mode «Wohnort», canton rules). */
+function propertyGainRow(p, P) {
+  if (gainOwn() || p.status === "rent" || !taxLoc) return "";
+  const home = state.taxes.location?.canton, c = taxLoc.cantons.find(x => x.id === (p.canton || home));
+  const homeName = taxLoc.cantons.find(x => x.id === home)?.name;
+  return `<div class="grid2" style="margin-top:10px"><label class="field"><span>${tr("realestate.gainCanton")}</span>${Sel(P + ".canton", [["", homeName ? tr("realestate.gainCantonHomeName", { name: homeName }) : tr("realestate.gainCantonHome")], ...taxLoc.cantons.map(x => [x.id, x.name])], { rerender: 1 })}</label></div>
+    ${c ? `<p class="hint" data-gain-rule>${tr("realestate.gainRule", { canton: esc(c.name), rule: tr(`propertyGainRule.${c.id}`) })}</p>` : `<p class="hint">${tr("realestate.gainCantonMissing")}</p>`}
+    ${c?.propertyGainApprox ? `<p class="hint warn" data-gain-approx>⚠ ${tr("realestate.gainApprox", { note: tr(`propertyGainApprox.${c.id}`) })}</p>` : ""}`;
+}
+/** #65/AK5: card «Grundstückgewinnsteuer» in the mode «Wohnort»: check box for own rules, then the own rules. */
+function locGainCard() {
+  const own = gainOwn();
+  return `<div class="card" id="gain-location"><h3>${tr("gain.title")}</h3>
+    <label class="check"><input type="checkbox" id="gain-own" data-action="gain-own-toggle" ${own ? "checked" : ""}> ${tr("gain.ownRules")}</label>
+    <p class="hint">${own ? tr("gain.ownRulesHint") : tr("gain.cantonRulesHint")}</p></div>${own ? gainCard() : ""}`;
+}
 /** #63/AK10: Place of residence as text: «Zürich (ZH), Kirchensteuer keine»; an unknown number with the canton. */
 function locationText(loc = {}) {
   const c = taxLoc?.cantons.find(x => x.id === loc.canton), m = c?.municipalities.find(x => x[0] === loc.municipality);
@@ -1230,21 +1252,22 @@ R.taxes = () => {
   const own = !isLocation(state);
   const seg = `<div class="seg" style="margin-bottom:12px" id="tax-mode"><button class="${own ? "on" : ""}" data-action="tax-mode" data-v="own">${tr("taxes.modeOwn")}</button><button class="${own ? "" : "on"}" data-action="tax-mode" data-v="location">${tr("taxes.modeLocation")}</button></div>`;
   const note = own ? tr("taxes.estimateNote") : tr("taxes.estimateNoteLocation");
-  // #63, #64: in the mode «Wohnort» the tables for income, wealth and lump sums are hidden (they stay in the file);
-  // the property gains tax keeps the own rules and the multiplier (#65).
+  // #63, #64: in the mode «Wohnort» the tables for income, wealth and lump sums are hidden (they stay in the file).
+  // #65: the property gains tax follows the canton of each property; own rules and their multiplier only with the
+  // check box.
   const tables = TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income")) + TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"));
   const coupleTables = state.taxes.couple ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : "";
   return `<h2>${tr("section.taxes")}</h2><p class="lead">${own ? tr("taxes.intro") : tr("taxes.introLocation")}</p>
   ${seg}
   <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
   ${own ? "" : taxLocationCard()}
-  <div class="card"><div class="grid3">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>
-    ${own ? "" : `<p class="hint">${tr("taxes.locationOwnTablesHint")}</p>`}
-    <div style="margin-top:10px">${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
+  <div class="card">${own || gainOwn() ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>` : ""}
+    ${own ? "" : `<p class="hint">${gainOwn() ? tr("taxes.locationOwnTablesHint") : tr("taxes.locationCantonGainHint")}</p>`}
+    <div>${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
     <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>
   ${own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : ""}
-  ${gainCard()}
+  ${own ? gainCard() : locGainCard()}
   ${own && state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
     <p class="hint">${tr("taxes.marriedHint")}</p>
@@ -1312,6 +1335,7 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
       <label class="field"><span>${tr("realestate.sellFrom")}</span>${Ref(P + ".sell", { never: true })}</label>
       ${F(P + ".fixCosts", tr("realestate.costsMonth"), "chf")}</div>
       <div class="grid3" style="margin-top:10px">${Chk(P + ".inflationValue", tr("realestate.valueIndexed"))}${Chk(P + ".inflationFixCosts", tr("realestate.costsIndexed"))}</div>
+      ${propertyGainRow(p, P)}
       ${MortgageUI(p, i)}`;
     return `<div class="prop"><div class="phead">${F(P + ".name", "", "text", { bare: true, size: Math.max(20, (p.name || "").length + 4) })}
       ${p.status === "owned" ? `<div class="pworth">${F(P + ".worth", tr("realestate.marketValue", { startTxt: startTxt() }), "chf")}</div>` : ""}
@@ -3082,7 +3106,8 @@ function paramSections(plan, full = false) {
   const incomeWealth = isLocation(plan) ? [[tr("params.taxMode"), tr("taxes.modeLocation")], [tr("taxes.location"), locationText(t.location)]]
     : [[tr("params.taxMode"), tr("taxes.modeOwn")], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)]];
   out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("taxes.lumpsumTax"), lumpsum],
-    [tr("gain.title"), g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
+    // #65: in the mode «Wohnort» without own rules the rule of the canton of each property
+    [tr("gain.title"), !gainOwn(plan) ? tr("params.gainCanton") : g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
   if (full) {
     const add = (title, rows) => { const sec = out.find(x => x[0] === title); if (sec) sec[1].push(...rows); else if (rows.length) out.push([title, rows]); };
@@ -3091,6 +3116,7 @@ function paramSections(plan, full = false) {
       [tr("params.affCosts"), pc(a.fixCosts)], [tr("params.affLtv"), pc(a.maxLoanToValue)],
       ...props.flatMap(p => { const nm = p.name || tr("params.property"); return [
         ...(p.status === "owned" ? [[tr("params.buyDate", { nm }), ymShow(p.bought)]] : []),
+        ...(!gainOwn(plan) && p.status !== "rent" ? [[tr("params.gainCantonOf", { nm }), p.canton || t.location?.canton || "–"]] : []),
         ...(p.status === "rent" ? [[tr("params.rentFrom", { nm }), at(p.from)], [tr("params.rentIndexed", { nm }), yn(p.inflationRent)]]
           : [[tr("params.valueIndexed", { nm }), yn(p.inflationValue)], [tr("params.costsIndexed", { nm }), yn(p.inflationFixCosts)]]),
         ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}${tr("params.afterLast")}`, t.after === "repay" ? tr("mortgage.repay") : tr("params.extendLower")])]; })]);
@@ -3098,7 +3124,7 @@ function paramSections(plan, full = false) {
     // Time-dependent values of the strategy as a list instead of «zeitabhängig», so that differences are visible
     const ws = plan.wealth || {}, strat = out.find(x => x[0] === tr("section.withdrawal"));
     if (strat) strat[1] = strat[1].map(([k, v]) => k === tr("withdrawal.reserve") ? [k, ser(ws.reserveMonths, x => tr("params.months", { x }))] : k.startsWith(tr("sweep.stockShare")) ? [k, ser(ws.stockShare, pc)] : [k, v]);
-    if (g) add(tr("params.taxAssumptions"), [[tr("params.gainMultiplier"), yn(g.useMultiplier)],
+    if (g && gainOwn(plan)) add(tr("params.taxAssumptions"), [[tr("params.gainMultiplier"), yn(g.useMultiplier)],
       ...(g.durationRates?.length ? [[tr("params.gainHolding"), g.durationRates.map(([y, r]) => tr("params.holdingRate", { y, rate: fmtPct(r) })).join("; ")]] : [])]);
   }
   return out;

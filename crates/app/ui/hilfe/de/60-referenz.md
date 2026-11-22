@@ -46,7 +46,7 @@ Eine Planung ist **eine Textdatei** im JSON-Format mit der Endung `.vplan`. Sie 
 - **Beträge** gelten pro Monat, **Sätze** pro Jahr als Dezimalzahl (0.05 = 5 %).
 - **Zeitabhängige Werte** sind eine Zahl oder `{"mode": "timed", "rows": [{"from": "start", "value": 9500}, {"from": "retire", "value": 8500}]}`.
 - **Optimierung:** Ziel, Strategien, Pfade und die **Bandbreiten der Parameter** je Strategie stehen unter `optimization` (`ranges`: Strategie, Parameter, dann `fixed` oder `lo`/`hi`, Anteile als Dezimalzahl).
-- **Grundstückgewinnsteuer:** `taxes.propertyGain` mit `brackets` (Breite, Satz), `duration` (ab vollen Jahren, Zu- oder Abschlag), `exemptBelow` und `reduction`; das Kaufdatum einer Immobilie im Besitz steht in `bought`.
+- **Grundstückgewinnsteuer:** `taxes.propertyGain` mit `brackets` (Breite, Satz), `duration` (ab vollen Jahren, Zu- oder Abschlag), `exemptBelow` und `reduction`; das Kaufdatum einer Immobilie im Besitz steht in `bought`. Im Modus «Wohnort» gilt der Regelsatz des Kantons der Immobilie (`canton` je Immobilie, ohne Angabe der Wohnkanton); `taxes.propertyGainOwn: true` schaltet auf die eigenen Regeln um.
 - Das vollständige Format liefert `vivaplan schema` im Terminal.
 
 Die Datei enthält **keine Ergebnisse**. Ergebnisse legt die App in der [Liste der Ergebnisse](#r-list) ab.

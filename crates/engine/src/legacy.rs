@@ -373,6 +373,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         indexed: false,
         mode: TaxMode::Own,
         location: None,
+        property_gain_own: false,
     };
 
     // Properties (approximately)
@@ -432,6 +433,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 worth: s("Worth").and_then(num),
                 buy: None,
                 bought: None,
+                canton: None,
                 sell: Some(c.age_ref(s("SellAge")).unwrap_or_else(TimeRef::never)),
                 from: None,
                 until: None,
@@ -451,6 +453,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 worth: None,
                 buy: Some(buy),
                 bought: None,
+                canton: None,
                 sell: None,
                 from: None,
                 until: None,
@@ -470,6 +473,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 worth: None,
                 buy: None,
                 bought: None,
+                canton: None,
                 sell: None,
                 from: Some(c.age_ref(s("BuyAge")).unwrap_or_else(TimeRef::after_sale)),
                 until: None,
