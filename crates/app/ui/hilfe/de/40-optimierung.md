@@ -24,7 +24,7 @@ Die Strategien werden danach verglichen. Die beste steht oben und trägt einen S
 
 **Welche Parameter variiert werden**, bestimmen Sie je Strategie selbst, siehe [Parameter fix oder variieren](#o-ranges).
 
-**Gespeichert werden die Einstellungen** (Ziel, Strategien, Pfade, Bandbreiten der Parameter) **mit der Planung**: Sie stehen in der `.vplan`-Datei, kommen beim Öffnen wieder und gelten auch für `optimize` im Terminal (Optionen überschreiben sie dort). Das Ergebnis einer Optimierung wird nicht gespeichert. Eine geänderte Einstellung macht ein früheres Ergebnis nicht ungültig, nur eine geänderte Planung.
+**Gespeichert werden die Einstellungen** (Ziel, Strategien, Pfade, Bandbreiten der Parameter) **mit der Planung**: Sie stehen in der `.vplan`-Datei, kommen beim Öffnen wieder und gelten auch für `optimize` im Terminal (Optionen überschreiben sie dort). Das Ergebnis legt die App in der [Liste der Ergebnisse](#r-list) ab, siehe [Ergebnis speichern und wieder öffnen](#o-saved). Eine geänderte Einstellung macht ein früheres Ergebnis nicht ungültig, nur eine geänderte Planung.
 
 Lesen Sie die Ergebnisse mit [Ergebnis lesen](#o-read) und beachten Sie die [Fallstricke](#o-pitfalls). Ein Optimum ist **kein Versprechen**.
 
@@ -205,6 +205,17 @@ Stichworte: übernehmen, Parameter, Strategie setzen, anwenden
 Die Planung gilt danach als geändert (ungespeichert). Mit **Rückgängig** (⌘Z) lässt sich die Übernahme zurücknehmen. Das Ergebnis der Optimierung bleibt sichtbar und gilt weiterhin, solange Sie die Planung nicht anders ändern.
 
 Prüfen Sie anschliessend das Ergebnis mit einer **normalen Simulation** und, wenn möglich, mit einer **anderen Renditequelle**. Ist das Optimum dort noch gut, ist es robust.
+
+## @o-saved Ergebnis speichern und wieder öffnen
+Stichworte: gespeichert, Liste, Ergebnisse, wieder öffnen, Strategievergleich, Neustart
+
+Jede **abgeschlossene** Optimierung und jeder Strategievergleich wird automatisch in der [Liste der Ergebnisse](#r-list) abgelegt, mit dem Bericht, den Einstellungen der Optimierung und dem Planungsstand zur Zeit der Rechnung. Ein Abbruch oder ein Fehler legt nichts ab. Wie die Simulationen liegt der Eintrag **lokal im Speicher der App**, nicht in der Planungsdatei, und bleibt nach einem Neustart erhalten. Ist der Speicher der App gesperrt, bleibt er bis zum Schliessen im Arbeitsspeicher.
+
+- **In der Liste** heisst der Eintrag «… · Optimierung · …» bzw. «… · Strategievergleich · …». Er nennt die beste Strategie (ihre Parameter beim Daraufzeigen), ihre Ruinwahrscheinlichkeit und das Ziel; beim Ziel «Kein Notverkauf» zusätzlich den Anteil ungeplanter Verkäufe. Umbenennen, Notiz und Löschen funktionieren wie bei Simulationen.
+- **Öffnen** zeigt das Ergebnis in der breiten Ergebnisansicht mit derselben Tabelle wie im Abschnitt «Optimierung», mit Datum und Zahl der geprüften Pfade.
+- **«In Planung übernehmen»** übernimmt die Parameter in die offene Planung. Gehört das Ergebnis zu einem anderen Planungsstand (andere Planung oder seither geändert), steht oben ein Hinweis, und die App fragt vor dem Übernehmen nach.
+- **Beim Öffnen einer Planung** zeigt der Abschnitt «Optimierung» das neueste gespeicherte Ergebnis, das zu genau diesem Planungsstand passt.
+- **Vergleichen** lässt sich eine Optimierung nicht mit Simulationen: Markiert lässt sie sich löschen, «Vergleichen» lässt sie aus.
 
 ## @o-pitfalls Fallstricke der Optimierung
 Stichworte: Überoptimierung, Robustheit, Modellrisiko, Gegenprobe, Warnung

@@ -131,6 +131,11 @@ Ergebnistabelle zeigt je Strategie zusätzlich das nominale **Endvermögen** bei
 eine Auswahl fest, ob «wie geplant», mit «Immobilien nie verkaufen» oder mit beidem gerechnet wird (jede Strategie zweimal).
 Die gefundenen Parameter und der Knopf zum Übernehmen stehen je Strategie in einer eigenen Zeile unter den Kennzahlen; im
 Abschnitt «Optimierung» ist die Vorschau ausgeblendet, damit die Tabelle ohne waagrechtes Scrollen Platz hat.
+Jedes abgeschlossene Ergebnis einer Optimierung oder eines Strategievergleichs legt die App wie die Simulationen in
+«Gespeicherte Ergebnisse» ab, mit Bericht, Einstellungen und Planungsstand (lokal, nicht in der Planungsdatei). Der
+Eintrag nennt die beste Strategie, ihre Ruinwahrscheinlichkeit und das Ziel, öffnet sich in der breiten Ergebnisansicht
+mit derselben Tabelle und erlaubt «In Planung übernehmen» (mit Rückfrage, wenn er zu einem anderen Planungsstand gehört).
+Beim Öffnen einer Planung zeigt der Abschnitt «Optimierung» das neueste dazu passende gespeicherte Ergebnis.
 
 ## Immobilien und Hypotheken
 
@@ -192,7 +197,8 @@ lassen sich nominal oder in heutiger Kaufkraft anzeigen.
 
 **Liste der Simulationen:** Jede Simulation wird mit der Planung von damals gespeichert. Der automatische Name nennt
 Planung, Renditequelle und Strategie in Kurzform (z. B. «MC hist. · 3-Topf + Guard»). Die Liste lässt sich umbenennen,
-mit Notizen versehen, aufräumen und zum **Vergleichen** von bis zu zehn Ergebnissen nutzen. Der Vergleich bietet dieselben
+mit Notizen versehen, aufräumen und zum **Vergleichen** von bis zu zehn Ergebnissen nutzen (Optimierungen stehen
+ebenfalls in der Liste, werden beim Vergleichen aber ausgelassen). Der Vergleich bietet dieselben
 Möglichkeiten wie ein einzelnes Ergebnis: Kennzahlen (nach jeder Spalte sortierbar), Bandbreite, Perzentile,
 Wahrscheinlichkeit und Erschöpfungsalter, die Verläufe des Einzel- bzw. Median-Laufs (Aktien, Obligationen und Inflation
 auch als Änderung in % oder logarithmisch), Jahreswerte mit einer Spalte je Ergebnis und die Eingaben, die sich

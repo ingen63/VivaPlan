@@ -702,3 +702,181 @@ test.describe("Result table of the optimization without horizontal scrolling (#2
     await context.close();
   });
 });
+
+test.describe("Save and reopen the result of the optimization (#201)", () => {
+  /** Small optimization (`compare` false) or comparison; waits until it is stored in the list (in memory). */
+  async function runOpt(page, { compare = false, goal = "consumption", strategies = ["fixed_rate", "standard"] } = {}) {
+    await page.evaluate(() => { state.returns.bootstrap.paths = 300; });
+    await setOpt(page, { goal, strategies, paths: 200, checkPaths: 300, samples: 2 });
+    const before = await page.evaluate(() => +document.documentElement.dataset.saved || 0);
+    await page.locator(`button[data-action="${compare ? "opt-compare" : "opt-run"}"]`).click();
+    await page.waitForFunction(n => (+document.documentElement.dataset.saved || 0) > n && !optBusy, before, { timeout: 120_000 });
+  }
+  const list = page => page.evaluate(() => Runs.list());
+  const openList = async page => { await page.evaluate(() => openRuns()); await expect(page.locator("html")).toHaveAttribute("data-rendered", "runs"); };
+  const row = (page, kind) => page.locator("#runsTbl tr", { hasText: kind });
+
+  test("AK1: a finished optimization creates an entry with report, settings and plan; cancel or error none", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page);
+    const [m] = await list(page);
+    expect(m.kind).toBe("optimization");
+    const d = await page.evaluate(id => Runs.get(id), m.id);
+    expect(d.opt.report.outcomes.length).toBe(2);
+    expect(d.opt.req).toMatchObject({ goal: "consumption", checkPaths: 300 });
+    expect([...d.opt.req.strategies].sort()).toEqual(["fixed_rate", "standard"]);
+    expect(d.plan.returns.bootstrap.paths).toBe(300);
+    expect(d.opt.planJson).toBe(await page.evaluate(() => optKey()));
+    // cancel and error: no entry
+    for (const err of [{ code: "cancelled" }, { message: "kaputt" }]) {
+      await page.evaluate(err => { const call = Engine.call.bind(Engine); Engine.call = (n, a) => n === "optimize" ? Promise.reject(Object.assign(new Error(err.message || "x"), err)) : call(n, a); }, err);
+      await page.locator('button[data-action="opt-run"]').click();
+      await page.waitForFunction(() => !optBusy);
+    }
+    expect(await list(page)).toHaveLength(1);
+    expect(await page.evaluate(() => window.__errors)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test("AK2: recognizable as optimization or strategy comparison with best strategy, ruin and goal; rename, note and delete", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page);
+    await runOpt(page, { compare: true, goal: "keepProperty" });
+    await openList(page);
+    const opt = row(page, "Ziel Konsum"), cmp = row(page, "Ziel kein Notverkauf");
+    const [mc, mo] = await list(page);
+    await expect(opt.locator("input.runedit[data-f=name]")).toHaveValue(/ · Optimierung · /);
+    await expect(opt).toContainText("Optimierung · Ziel Konsum · 300 Pfade");
+    await expect(opt).toContainText(`Ruin ${await page.evaluate(v => pctTxt(v), mo.ruin)}`);
+    await expect(opt.locator("td.ptip")).toHaveText(await page.evaluate(k => stratName(k), mo.strategy));
+    expect(await opt.locator("td.ptip").getAttribute("data-tip")).toMatch(/: /);
+    await expect(cmp.locator("input.runedit[data-f=name]")).toHaveValue(/ · Strategievergleich · /);
+    await expect(cmp).toContainText("Strategievergleich · Ziel kein Notverkauf");
+    await expect(cmp).toContainText(`Ungeplanter Verkauf ${await page.evaluate(v => pctTxt(v), mc.emergencyShare)} · Ruin`);
+    // rename and note as for simulations
+    const name = opt.locator("input.runedit[data-f=name]");
+    await name.fill("Meine Optimierung"); await name.blur();
+    const note = page.locator(`input.runedit[data-f=note][data-id="${mo.id}"]`);
+    await note.fill("Notiz A"); await note.blur();
+    await expect.poll(async () => (await list(page)).find(m => m.id === mo.id)).toMatchObject({ name: "Meine Optimierung", note: "Notiz A" });
+    // delete
+    await page.locator(`button[data-action="run-del"][data-id="${mo.id}"]`).click();
+    await page.locator('#ask button[value="ok"]').click();
+    await expect.poll(async () => (await list(page)).map(m => m.id)).toEqual([mc.id]);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: open shows the table of the optimization section in the wide results view with date and number of paths", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page, { strategies: ["fixed_rate", "standard", "vpw"] });
+    const [m] = await list(page);
+    await openList(page);
+    await page.locator(`button[data-action="run-view"][data-id="${m.id}"]`).click();
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "savedOpt");
+    await expect(page.locator("#results")).toBeVisible();
+    await expect(page.locator("#resultsBody .card.optres table.opttbl tbody.optgrp")).toHaveCount(4);
+    await expect(page.locator('#resultsBody tr.optsub button[data-action="opt-apply"]')).toHaveCount(3);
+    const date = await page.evaluate(iso => runDate(iso), m.created);
+    await expect(page.locator("#resultsPick .savedbar")).toContainText(`Gespeichertes Ergebnis vom ${date}`);
+    await expect(page.locator("#resultsPick .savedbar")).toContainText("geprüft mit 300 Pfaden");
+    await expect(page.locator("#resultsPick .savedother")).toHaveCount(0);
+    await expect(page.locator("#resultsBody .optres h3 .sub")).toContainText("300");
+    // same card as in the section (#200): identical table
+    const saved = await page.locator("#resultsBody table.opttbl").innerHTML();
+    await page.locator('#resultsPick button[data-action="runs-open"]').click();
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => goto("optimize"));
+    expect(await page.locator("#main table.opttbl").innerHTML()).toBe(saved);
+    await noErrors(page, errors);
+  });
+
+  test("AK5: apply to plan takes the parameters over; with another state of the plan only after a question", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page, { strategies: ["fixed_rate"] });
+    const [m] = await list(page);
+    const rate = await page.evaluate(id => Runs.get(id).then(d => d.opt.report.outcomes[0].patch.withdrawal.fixedRate.rate), m.id);
+    const view = async () => { await openList(page); await page.locator(`button[data-action="run-view"][data-id="${m.id}"]`).click(); await expect(page.locator("html")).toHaveAttribute("data-rendered", "savedOpt"); };
+    // matching plan: no question
+    await page.evaluate(() => { state.withdrawal.strategy = "standard"; state.withdrawal.fixedRate.rate = 0.0123; lastOpt = null; });
+    await page.evaluate(id => Runs.get(id).then(d => { state = normalize(JSON.parse(JSON.stringify(d.plan))); }), m.id);
+    await view();
+    await page.locator('#resultsBody button[data-action="opt-apply"][data-i="0"]').click();
+    await expect(page.locator("#results")).toBeHidden();
+    await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
+    expect(await page.evaluate(() => [state.withdrawal.strategy, state.withdrawal.fixedRate.rate])).toEqual(["fixed_rate", rate]);
+    // the section shows the result again (matching the plan now)
+    await expect(page.locator("#main table.opttbl")).toBeVisible();
+    // other state: question; cancel leaves the plan, OK takes over
+    await page.evaluate(() => { state.withdrawal.strategy = "standard"; state.household.persons[0].name = "Andere"; });
+    await view();
+    await expect(page.locator("#resultsPick .savedother")).toContainText("anderen Planungsstand");
+    await page.locator('#resultsBody button[data-action="opt-apply"][data-i="0"]').click();
+    await expect(page.locator("#askText")).toContainText("anderen Planungsstand");
+    await page.locator('#ask button[value="cancel"]').click();
+    expect(await page.evaluate(() => state.withdrawal.strategy)).toBe("standard");
+    await page.locator('#resultsBody button[data-action="opt-apply"][data-i="0"]').click();
+    await page.locator('#ask button[value="ok"]').click();
+    await expect(page.locator("#results")).toBeHidden();
+    expect(await page.evaluate(() => [state.withdrawal.strategy, state.withdrawal.fixedRate.rate, state.household.persons[0].name])).toEqual(["fixed_rate", rate, "Andere"]);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: optimizations can be marked for deleting but are left out of the comparison", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page, { strategies: ["fixed_rate"] });
+    await page.evaluate(async () => {
+      const plan = JSON.parse(JSON.stringify(state)), sim = await Engine.call("run_simulation", { plan: { ...plan, returns: { ...plan.returns, source: "fixed" }, scenarios: { ...plan.scenarios, sweeps: [] } }, path: null });
+      await rememberRun(sim); await rememberRun(sim);
+    });
+    await openList(page);
+    await page.locator('input[data-action="runs-all"]').check();
+    await expect(page.locator('#runsTbl input[data-action="run-sel"]:checked')).toHaveCount(3);
+    await expect(page.locator('button[data-action="runs-compare"]')).toHaveText("Vergleichen (2)");
+    await expect(page.locator('button[data-action="runs-compare"]')).toBeEnabled();
+    await expect(page.locator('button[data-action="runs-delete"]')).toHaveText("Markierte löschen (3)");
+    expect(await row(page, "Optimierung").locator('input[data-action="run-sel"]').getAttribute("title")).toContain("nicht mit Simulationen vergleichen");
+    // only the optimization and one simulation marked: comparison not possible
+    await page.locator('input[data-action="runs-all"]').uncheck();
+    await row(page, "Optimierung").locator('input[data-action="run-sel"]').check();
+    await page.locator('#runsTbl input[data-action="run-sel"]:not(:checked)').first().check();
+    await expect(page.locator('button[data-action="runs-compare"]')).toHaveText("Vergleichen (1)");
+    await expect(page.locator('button[data-action="runs-compare"]')).toBeDisabled();
+    // all marked: the comparison shows the two simulations
+    await page.locator('input[data-action="runs-all"]').check();
+    await page.locator('button[data-action="runs-compare"]').click();
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "compare");
+    await expect(page.locator("#resultsTitle")).toContainText("2");
+    await noErrors(page, errors);
+  });
+
+  test("AK7: opening a plan matching a saved optimization shows the newest of them in the section", async ({ page }) => {
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page, { strategies: ["fixed_rate"] });
+    await runOpt(page, { compare: true, strategies: ["fixed_rate", "standard"] });
+    const plan = await page.evaluate(() => JSON.parse(JSON.stringify(state)));
+    const restored = () => page.evaluate(() => +document.documentElement.dataset.optRestored || 0);
+    // another plan: the section shows no saved result
+    let n = await restored();
+    await page.evaluate(async () => { lastOpt = null; await adopt(await examplePlan()); });
+    await page.waitForFunction(n => +document.documentElement.dataset.optRestored > n, n);
+    await page.evaluate(() => goto("optimize"));
+    await expect(page.locator("#main table.opttbl")).toHaveCount(0);
+    // the plan of that time (through the engine as when opening a file, keys in another order): newest = comparison
+    n = await restored();
+    await page.evaluate(async p => { const r = {}; for (const k of Object.keys(p).reverse()) r[k] = p[k]; await adopt(r); goto("optimize"); }, plan);
+    await page.waitForFunction(n => +document.documentElement.dataset.optRestored > n, n);
+    await expect(page.locator("#main .optres h3")).toContainText("Vergleich ohne Optimierung");
+    await expect(page.locator("#main table.opttbl tbody.optgrp")).toHaveCount(3);
+    await expect(page.locator("#main .optres")).not.toContainText("seit dieser Optimierung geändert");
+    await noErrors(page, errors);
+  });
+
+  test("AK8: without IndexedDB the result stays in memory, without a message", async ({ page }) => {
+    // «mem»: opening the database fails as with blocked storage (runs.js throws before indexedDB.open), the list falls back to memory
+    const errors = await open(page, "optimize/bootstrap/mem");
+    await runOpt(page, { strategies: ["fixed_rate"] });
+    expect((await list(page)).map(m => m.kind)).toEqual(["optimization"]);
+    await expect(page.locator("#toast")).not.toContainText("nicht");
+    await noErrors(page, errors);
+  });
+});

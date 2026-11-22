@@ -588,6 +588,12 @@ gespeicherte Ergebnis (mit der Planung von damals; «Planung in den Editor über
 Verlauf des Gesamtvermögens (Median und 5. Perzentil) und eine Tabelle der geänderten Eingaben. Die Liste liegt lokal im
 Speicher der App (IndexedDB) und nicht in der Planungsdatei.
 
+Arten der Einträge (`kind` in den Kopfdaten): `single`, `batch`, `scenarios` (Simulation, Inhalt `{plan, result}`) und
+`optimization` (#201, Optimierung oder mit `compare: true` Strategievergleich, Inhalt `{plan, opt: {report, req,
+planJson}}`). `planJson` ist `optKey()` beim Start (Planung ohne `optimization` und `limits`, Schlüssel sortiert), die
+Kopfdaten tragen davon einen Hash (`planHash`). Damit findet die App beim Öffnen einer Planung das neueste passende
+Ergebnis, ohne alle Inhalte zu laden. Optimierungen lassen sich markieren und löschen, aber nicht vergleichen.
+
 ### Hilfe
 
 Die Hilfe öffnet als Panel rechts und ist kontextabhängig: **F1** zeigt das Thema des Felds mit dem Fokus, sonst des

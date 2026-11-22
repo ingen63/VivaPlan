@@ -76,3 +76,16 @@ test("#147/AK4: a result of an older version (without later fields) can be read"
   assert.deepEqual((await Runs.get("alt")).result, old.result);
   assert.equal((await Runs.list())[0].version, "1.0.0-beta.1");
 });
+
+test("#201/AK4: a saved optimization (kind «optimization») is still there after a restart and can be opened", async () => {
+  const Runs = fresh();
+  const opt = { report: { compare: false, checkPaths: 300, outcomes: [{ strategy: { code: "s" }, validated: { ruin: 0.02, endTotal: [1, 2, 3, 4, 5] }, patch: { withdrawal: { strategy: "fixed_rate" } } }] },
+    req: { goal: "consumption", strategies: ["fixed_rate"] }, planJson: "{\"a\":1}" };
+  await Runs.add(meta("o", "2026-11-03T10:00:00Z", { kind: "optimization", compare: false, goal: "consumption", ruin: 0.02, planHash: "abc" }), { plan: { a: 1 }, opt });
+  await Runs.add(meta("s", "2026-11-02T10:00:00Z", { kind: "single" }), { plan: { a: 1 }, result: { single: {} } });
+  const again = fresh(globalThis.indexedDB);
+  const list = await again.list();
+  assert.deepEqual(list.map(m => [m.id, m.kind]), [["o", "optimization"], ["s", "single"]]);
+  assert.equal(list[0].planHash, "abc");
+  assert.deepEqual(await again.get("o"), { id: "o", plan: { a: 1 }, opt });
+});

@@ -24,7 +24,7 @@ The strategies are then compared. The best one is at the top and carries a star 
 
 **Which parameters are varied** you decide yourself for each strategy, see [Fixed or varied parameters](#o-ranges).
 
-**The settings are saved** (goal, strategies, paths, ranges of the parameters) **with the plan**: they are in the `.vplan` file, come back when you open it and also apply to `optimize` in the terminal (options override them there). The result of an optimization is not saved. A changed setting does not invalidate an earlier result; only a changed plan does.
+**The settings are saved** (goal, strategies, paths, ranges of the parameters) **with the plan**: they are in the `.vplan` file, come back when you open it and also apply to `optimize` in the terminal (options override them there). The app stores the result in the [list of results](#r-list), see [Saving and reopening the result](#o-saved). A changed setting does not invalidate an earlier result; only a changed plan does.
 
 Read the results with [Reading the result](#o-read) and note the [pitfalls](#o-pitfalls). An optimum is **not a promise**.
 
@@ -205,6 +205,17 @@ Keywords: apply, parameters, set strategy, adopt
 The plan then counts as changed (unsaved). With **Undo** (⌘Z), you can take back the change. The result of the optimization stays visible and remains valid as long as you do not change the plan otherwise.
 
 Afterwards, check the result with a **normal simulation** and, if possible, with a **different return source**. If the optimum is still good there, it is robust.
+
+## @o-saved Saving and reopening the result
+Keywords: saved, list, results, reopen, strategy comparison, restart
+
+Every **finished** optimization and every strategy comparison is stored automatically in the [list of results](#r-list), with the report, the settings of the optimization and the state of the plan at the time of the computation. A cancellation or an error stores nothing. Like the simulations, the entry is kept **locally in the app's storage**, not in the plan file, and remains after a restart. If the app's storage is blocked, it stays in memory until the app is closed.
+
+- **In the list** the entry is called “… · Optimization · …” or “… · Strategy comparison · …”. It names the best strategy (its parameters when you point at it), its probability of ruin and the goal; with the goal “No emergency sale” also the share of unplanned sales. Renaming, note and deleting work as for simulations.
+- **Open** shows the result in the wide results view with the same table as in the section “Optimization”, with the date and the number of paths checked.
+- **“Apply to plan”** takes the parameters over into the open plan. If the result belongs to a different state of the plan (another plan or changed since), a notice appears at the top, and the app asks before taking them over.
+- **When you open a plan**, the section “Optimization” shows the newest saved result that matches exactly this state of the plan.
+- An optimization cannot be **compared** with simulations: when marked it can be deleted, “Compare” leaves it out.
 
 ## @o-pitfalls Pitfalls of the optimization
 Keywords: over-optimization, robustness, model risk, cross-check, warning

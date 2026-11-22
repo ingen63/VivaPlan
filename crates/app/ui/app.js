@@ -310,6 +310,7 @@ async function adopt(plan) {
   try { const r = await Engine.call("upgrade_plan", { plan }); plan = r.plan; notes = r.notes || []; }
   catch { /* without the engine: take over unchanged */ }
   state = normalize(plan);
+  restoreOpt();
   return notes;
 }
 async function showNotes(notes) {
@@ -763,8 +764,10 @@ function optToPlan(c) {
     maxVol: c.maxVol === "" ? null : optRound(optNum(c.maxVol, 0) / 100), paths: c.paths, checkPaths: c.checkPaths, samples: c.samples, strategies: c.strategies,
     ...(Object.keys(c.ranges ?? {}).length ? { ranges: c.ranges } : {}), ...(c.property && c.property !== "planned" ? { property: c.property } : {}) };
 }
+/** Copy with sorted object keys: the same plan gives the same text after saving and opening (#201). */
+const sortedKeys = v => Array.isArray(v) ? v.map(sortedKeys) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sortedKeys(v[k])])) : v;
 /** Key of the plan without the optimization settings: they do not change the result of an earlier optimization. */
-const optKey = () => JSON.stringify({ ...state, optimization: undefined });
+const optKey = () => JSON.stringify(sortedKeys({ ...state, optimization: undefined, limits: undefined })); // limits come from the settings, not the plan
 function saveOptCfg() {
   const next = optToPlan(readOptCfg());
   if (JSON.stringify(next) !== JSON.stringify(state.optimization)) { state.optimization = next; markDirty(); }
@@ -919,7 +922,7 @@ document.addEventListener("change", e => { if (/^optR-/.test(e.target.id || "") 
 OPT_ACTIONS["opt-range-reset"] = d => {
   const r = { ...(optCfg.ranges ?? {}) }; delete r[d.s]; optCfg.ranges = r; saveOptCfg(); renderSection();
 };
-const optParam = ([, label, v, pc]) => `${esc(msgText(label))} ${pc ? (v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }) + " %" : v.toLocaleString("de-CH", { maximumFractionDigits: 1 })}`;
+const optParam = p => `${esc(msgText(p[1]))} ${optVal(p)}`;
 /** #197: Nominal end wealth at these percentiles (engine: `END_PERCENTS`). */
 const OPT_END_P = [1, 5, 50, 95, 99];
 const optEndCells = m => OPT_END_P.map((p, i) => `<td class="r">${m.endTotal ? fmtInt(m.endTotal[i]) : "–"}</td>`).join("");
@@ -941,11 +944,11 @@ const optRows = (r, cells, span, violated) => optGroup(cells(tr("optResult.refer
   + r.outcomes.map((x, i) => optGroup(cells(optName(r, x) + (i === 0 && x.feasible ? " ★" : ""), x.validated), span, optSub(r, x, i, violated), x.feasible ? "" : "off")).join("");
 const optStale = stale => stale ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.stale")}</p>` : "";
 /** Result for goal 2 «Kein Notverkauf von Immobilien»: per strategy the share of runs with an unplanned sale. */
-function optResultKeep(r, q, stale) {
+function optResultKeep(r, q, stale, start = startM()) {
   const cells = (name, m) => `<td><b>${esc(name)}</b></td><td class="r"><b>${pctTxt(m.emergencyShare)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td>
     <td class="r">${m.planned > 0 ? pctTxt(m.median / m.planned) : "–"}</td>${optEndCells(m)}`;
   const none = !r.outcomes.some(x => x.feasible);
-  return `<div class="card optres"><h3>${r.compare ? tr("optResult.titleGoal2Compare") : tr("optResult.titleGoal2")} <span class="sub">${r.compare ? tr("optResult.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) }) : tr("optResult.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
+  return `<div class="card optres"><h3>${r.compare ? tr("optResult.titleGoal2Compare") : tr("optResult.titleGoal2")} <span class="sub">${r.compare ? tr("optResult.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) }) : tr("optResult.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) })}</span></h3>
     ${optStale(stale)}
     ${none ? `<p class="hint" style="color:var(--warn);margin:0 0 8px">${tr("optResult.none", { maxRuin: pctTxt(q.maxRuin), minConsumption: pctTxt(q.minConsumption) })}</p>` : ""}
     <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r" title="${tr("optResult.unplannedTitle")}">${tr("optResult.unplanned")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optResult.medianConsumption")}</th><th class="r" title="${tr("optResult.medianTitle")}">${tr("optResult.shareOfPlan")}</th>`)}
@@ -954,13 +957,13 @@ function optResultKeep(r, q, stale) {
     <p class="hint">${tr("optResult.order")}${q.ruinAge ? ` ${tr("optResult.untilAge", { ruinAge: q.ruinAge })}` : tr("optResult.untilEnd")} ${tr("optResult.footer", { v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
 }
 /** Result for goal 1 «Konsum»: metrics, combined goal value with bar, withdrawal rate. */
-function optResultConsumption(r, q, stale) {
+function optResultConsumption(r, q, stale, start = startM()) {
   const w = q.weightMedian;
   const goal = m => (w * m.median + (1 - w) * m.p10) * Math.max(0, 1 - q.volWeight * m.volatility);
   const best = Math.max(1, goal(r.reference.metrics), ...r.outcomes.map(x => goal(x.validated)));
   const cells = (name, m) => `<td><b>${esc(name)}</b></td><td class="r">${pctTxt(m.ruin)}</td><td class="r">${fmtInt(m.median)}</td><td class="r">${fmtInt(m.p10)}</td><td class="r">${pctTxt(m.volatility)}</td>
     <td class="r">${fmtInt(goal(m))}<div style="height:4px;background:var(--accent);opacity:.5;width:${Math.max(0, Math.min(100, goal(m) / best * 100))}%;margin-top:2px;border-radius:2px"></div></td><td class="r">${pctTxt(m.drawRate ?? 0)}</td>${optEndCells(m)}`;
-  return `<div class="card optres"><h3>${r.compare ? tr("optimize.compareResult") : tr("optimize.result")} <span class="sub">${r.compare ? tr("optimize.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) }) : tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(startM())) })}</span></h3>
+  return `<div class="card optres"><h3>${r.compare ? tr("optimize.compareResult") : tr("optimize.result")} <span class="sub">${r.compare ? tr("optimize.compareChecked", { paths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) }) : tr("optimize.checked", { checkPaths: fmtInt(r.checkPaths), ymShow: ymShow(i2ym(start)) })}</span></h3>
     ${optStale(stale)}
     <div class="tscroll"><table class="tbl opttbl">${optHead(`<th>${tr("optResult.strategy")}</th><th class="r">${tr("optResult.ruin")}</th><th class="r">${tr("optimize.median")}</th><th class="r">P10</th><th class="r">${tr("optimize.volatility")}</th><th class="r">${tr("optimize.goal")}</th><th class="r" title="${tr("optimize.goalTitle")}">${tr("optimize.rate")}</th>`)}
     ${optRows(r, cells, 7 + OPT_END_P.length, tr("optimize.ruinViolated"))}
@@ -969,7 +972,7 @@ function optResultConsumption(r, q, stale) {
     <p class="hint">${r.compare ? tr("optimize.compareFooter", { v: (r.elapsedMs / 1000).toFixed(1) }) : tr("optimize.searchFooter", { fitPaths: fmtInt(r.fitPaths), v: (r.elapsedMs / 1000).toFixed(1) })}</p></div>`;
 }
 /** #200: Result card of an optimization or comparison, rendered from the report `r` and its request `q` only. */
-const optResultCard = (r, q, stale) => q.goal === "keepProperty" ? optResultKeep(r, q, stale) : optResultConsumption(r, q, stale);
+const optResultCard = (r, q, stale, start) => q.goal === "keepProperty" ? optResultKeep(r, q, stale, start) : optResultConsumption(r, q, stale, start);
 R.optimize = () => {
   optCfg = optFromPlan();
   const o = lastOpt, stale = o && optKey() !== o.planJson;
@@ -1030,26 +1033,90 @@ async function optStart(compare) {
     compare, property: hasProperties() ? c.property : "planned" };
   saveOptCfg();
   optBusy = true; optError = null; renderSection();
-  const planJson = optKey();
-  try { const report = await withJob(() => Engine.call("optimize", { plan: state, request: req, path: currentPath, jobId: job.id })); lastOpt = { report, req, planJson }; }
+  const planJson = optKey(), plan = JSON.parse(JSON.stringify(state)), path = currentPath;
+  let done = null;
+  try { const report = await withJob(() => Engine.call("optimize", { plan: state, request: req, path: currentPath, jobId: job.id })); lastOpt = done = { report, req, planJson }; }
   catch (e) { if (isCancelled(e)) toast(tr("optimize.cancelled")); else optError = errText(e); }
   optBusy = false;
   if (current === "optimize") renderSection();
+  // #201: only a finished optimization or comparison is kept, not a cancelled or failed one
+  if (done) await rememberOpt(done, plan, path);
   document.documentElement.dataset.optimized = optError ? "error" : "ok";
+}
+/** #201: Short hash (cyrb53) of a text: finds saved optimizations matching the plan from their header data alone. */
+function textHash(s) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+/** Value of an optimization parameter as text (percent or number). */
+const optVal = ([, , v, pc]) => pc ? (v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }) + " %" : v.toLocaleString("de-CH", { maximumFractionDigits: 1 });
+/** #201: Header data of a saved optimization: best strategy (first outcome) with its ruin and goal value. */
+function optMeta(o, plan) {
+  const r = o.report, best = r.outcomes[0], v = best?.validated || {};
+  return { kind: "optimization", compare: !!r.compare, goal: o.req.goal, source: plan.returns.source, seriesName: seriesLabel(),
+    strategy: best ? stratKey(best.patch?.withdrawal) : null, neverSell: !!best?.neverSell, feasible: !!best?.feasible,
+    ruin: v.ruin ?? null, emergencyShare: v.emergencyShare ?? null, runs: r.checkPaths, planHash: textHash(o.planJson),
+    params: best ? [...(best.params || []), ...(best.fixed || [])].map(p => [msgText(p[1]), optVal(p)]) : null };
+}
+/** #201: Keeps a finished optimization in «Gespeicherte Ergebnisse», with report, request and the plan at its start. */
+async function rememberOpt(o, plan, path) {
+  try {
+    const m = optMeta(o, plan), now = new Date().toISOString();
+    const base = (path && baseName(path).replace(/\.[rv]plan$/, "")) || plan.project.name || tr("refs.plan");
+    const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
+    await Runs.add(meta, { plan, opt: o });
+    document.documentElement.dataset.saved = (+document.documentElement.dataset.saved || 0) + 1;
+  } catch (e) {
+    toast(tr("runs.notListed") + errText(e));
+    noteError(tr("runs.notSaved") + errText(e));
+  }
+}
+/** #201: After opening a plan the newest saved optimization matching it becomes the result of the section «Optimierung». */
+async function restoreOpt() {
+  const key = optKey(), hash = textHash(key);
+  try {
+    for (const m of await Runs.list()) {
+      if (m.kind !== "optimization" || m.planHash !== hash) continue;
+      const d = await Runs.get(m.id);
+      if (!d?.opt || d.opt.planJson !== key) continue;
+      if (optKey() !== key || optBusy) return; // another plan opened meanwhile, or a new optimization running
+      lastOpt = { report: d.opt.report, req: d.opt.req, planJson: key }; optError = null;
+      if (current === "optimize" && $("#results").hidden) renderSection();
+      return;
+    }
+  } catch { /* without the list there is nothing to show; no message (#201/AK8) */ }
+  finally { document.documentElement.dataset.optRestored = (+document.documentElement.dataset.optRestored || 0) + 1; }
 }
 OPT_ACTIONS["opt-run"] = () => optStart(false);
 OPT_ACTIONS["opt-compare"] = () => optStart(true);
-OPT_ACTIONS["opt-apply"] = d => {
+OPT_ACTIONS["opt-apply"] = async d => {
+  // #201: from a saved optimization; the plan of that time must match the open plan, otherwise ask first
+  if (savedOpt) {
+    const o = savedOpt, x = o.opt.report.outcomes[+d.i]; if (!x) return;
+    const same = optKey() === o.opt.planJson;
+    if (!same && !await ask(tr("savedOpt.otherTitle"), tr("savedOpt.otherText"), null, tr("optResult.adopt"))) return;
+    optPatch(x.patch); markDirty();
+    if (same) lastOpt = { ...o.opt, planJson: optKey() };
+    showResults(false); goto("optimize");
+    toast(o.opt.report.compare ? tr("optimize.appliedCompare", { strategy: msgText(x.strategy) }) : tr("optimize.applied", { strategy: msgText(x.strategy) }));
+    return;
+  }
   const x = lastOpt?.report.outcomes[+d.i]; if (!x) return;
-  const pt = x.patch;
+  optPatch(x.patch);
+  markDirty(); lastOpt.planJson = optKey(); renderSection();
+  toast(lastOpt.report.compare ? tr("optimize.appliedCompare", { strategy: msgText(x.strategy) }) : tr("optimize.applied", { strategy: msgText(x.strategy) }));
+};
+/** Takes the parameters of an optimization result over into the open plan. */
+function optPatch(pt) {
   state.withdrawal = { ...state.withdrawal, ...pt.withdrawal };
   state.wealth.stockShare = pt.wealth.stockShare;
   state.wealth.reserveMonths = pt.wealth.reserveMonths;
   // #197: a result computed with «Immobilien nie verkaufen» switches it on in the plan
   if (pt.neverSell) state.realestate.neverSell = true;
-  markDirty(); lastOpt.planJson = optKey(); renderSection();
-  toast(lastOpt.report.compare ? tr("optimize.appliedCompare", { strategy: msgText(x.strategy) }) : tr("optimize.applied", { strategy: msgText(x.strategy) }));
-};
+}
 
 // ----- Property gains tax (rules per canton, editable) -----
 /** #138: Templates of the property gains tax from the engine (crates/engine/assets/gain-templates.json): Zurich
@@ -2205,6 +2272,7 @@ const bucketOpen = new Set();
 let resultTab = "overview", realView = false, compPercent = false, detailP = 50, mktPct = false, mktLog = false, resultZoom = null, compareOpen = false;
 function showResults(on) {
   if (!on) unpark();
+  savedOpt = null;
   $("#results").hidden = !on; $(".layout").hidden = on; $("#timeline").hidden = on;
   if (on) $("#resultsPick").innerHTML = "";
   if (!on) { lastRun = null; renderDerived(); }
@@ -2960,7 +3028,8 @@ function runPicker(r, res) {
 function showDetail(p) { detailP = p; bucketOpen.clear(); if (lastRun) renderResults(lastRun); }
 
 // ---------- Saved simulations ----------
-let savedView = null, parkedState = null;
+/** #201: saved optimization shown in the results view ({ meta, plan, opt }), otherwise null. */
+let savedView = null, parkedState = null, savedOpt = null;
 /** #120: Maximum number of results in the comparison; each has its own color (--r1 … --r10 in index.html). */
 const CMP_MAX = 10;
 const runsSel = new Set(), RUN_COLORS = Array.from({ length: CMP_MAX }, (_, i) => `--r${i + 1}`);
@@ -2968,7 +3037,7 @@ const runDate = iso => new Date(iso).toLocaleString("de-CH", { dateStyle: "short
 const stratName = id => id === "three_buckets_guardrails" ? tr("opt.bucketsGuardrails") : STRATS.find(x => x[0] === id)?.[1] || id;
 const sourceName = id => SOURCES.find(x => x[0] === id)?.[1] || id;
 /** Name of a new result: plan · source (for scenarios «Szenarien») · strategy · date, time. */
-const runTitle = (base, m, iso) => [base, m.kind === "scenarios" ? tr("scen.title") : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
+const runTitle = (base, m, iso) => [base, m.kind === "optimization" ? optKindName(m) : m.kind === "scenarios" ? tr("scen.title") : SOURCE_SHORT[m.source] || sourceName(m.source), STRAT_SHORT[m.strategy] || stratName(m.strategy), runDate(iso)].join(" · ");
 /** While viewing a saved simulation its plan applies; the editor state is set aside meanwhile. */
 function unpark() { if (parkedState) { state = parkedState; parkedState = null; } savedView = null; }
 /** Value of a time series of the plan as text: constant → value, otherwise «zeitabhängig». */
@@ -3025,7 +3094,10 @@ function runMeta(r) {
   }
   return { ...base, kind: "scenarios", runs: r.scenarios.results.length };
 }
-const runKind = m => m.kind === "single" ? tr("results.single") : m.kind === "scenarios" ? tr("runs.scenariosN", { runs: m.runs }) : tr("runs.runsSource", { runs: fmtInt(m.runs), source: sourceName(m.source) });
+/** #201: «Optimierung» or «Strategievergleich» (comparison without search, #197). */
+const optKindName = m => m.compare ? tr("savedOpt.compare") : tr("savedOpt.optimization");
+const runKind = m => m.kind === "optimization" ? [optKindName(m), m.goal === "keepProperty" ? tr("savedOpt.goalKeep") : tr("savedOpt.goalConsumption"), tr("savedOpt.paths", { paths: fmtInt(m.runs) })].join(" · ")
+  : m.kind === "single" ? tr("results.single") : m.kind === "scenarios" ? tr("runs.scenariosN", { runs: m.runs }) : tr("runs.runsSource", { runs: fmtInt(m.runs), source: sourceName(m.source) });
 async function rememberRun(r) {
   if (r.error || (!r.single && !r.batch && !r.scenarios)) return;
   try {
@@ -3044,9 +3116,13 @@ async function rememberRun(r) {
   }
 }
 let runsIds = [];
+/** #201: ids of the saved optimizations in the list; they can be marked for deleting but are not compared. */
+const runsOpt = new Set();
+/** Marked simulations (without optimizations): only they are compared. */
+const cmpMarked = () => [...runsSel].filter(id => !runsOpt.has(id));
 function runsBar() {
-  const k = runsSel.size, n = runsIds.length, canCompare = k >= 2 && k <= CMP_MAX;
-  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-compare" ${canCompare ? "" : "disabled"} title="${tr("runs.compareTitle", { cmpMax: CMP_MAX })}">${tr("runs.compare", { k })}</button>${k > CMP_MAX ? `<span class="cmpmax hint" role="status">${tr("runs.compareMax", { cmpMax: CMP_MAX })}</span>` : ""}
+  const k = runsSel.size, n = runsIds.length, c = cmpMarked().length, canCompare = c >= 2 && c <= CMP_MAX;
+  $("#resultsTabs").innerHTML = `<button class="btn small" data-action="runs-compare" ${canCompare ? "" : "disabled"} title="${tr("runs.compareTitle", { cmpMax: CMP_MAX })}">${tr("runs.compare", { k: c })}</button>${c > CMP_MAX ? `<span class="cmpmax hint" role="status">${tr("runs.compareMax", { cmpMax: CMP_MAX })}</span>` : ""}
     <button class="btn small" data-action="runs-delete" ${k < 1 ? "disabled" : ""}>${tr("runs.deleteMarked", { k })}</button>
     <button class="btn small" data-action="runs-delete-all" ${n < 1 ? "disabled" : ""}>${tr("runs.deleteAll")}</button>`;
   const all = document.querySelector('input[data-action="runs-all"]');
@@ -3059,12 +3135,13 @@ async function openRuns() {
   try { list = await Runs.list(); } catch (e) { noteError(errText(e)); }
   for (const id of [...runsSel]) if (!list.some(m => m.id === id)) runsSel.delete(id);
   runsIds = list.map(m => m.id);
+  runsOpt.clear(); list.forEach(m => { if (m.kind === "optimization") runsOpt.add(m.id); });
   $("#resultsInfo").textContent = `${list.length} ${list.length === 1 ? tr("runs.entry") : tr("runs.entries")} ${tr("runs.localOnly")}`;
   runsBar();
-  const cell = m => (m.kind === "batch" ? `<span title="${tr("runs.medianTitle", { end50: fmtMio(m.end50) })}">${pctTxt(m.successRate)} · 5 %: ${fmtMio(m.end5)}</span>` : m.kind === "single" ? tr("runs.endWealth", { endTotal: fmtMio(m.endTotal) }) : "–") + emergencyMark(m);
+  const cell = m => m.kind === "optimization" ? optCell(m) : (m.kind === "batch" ? `<span title="${tr("runs.medianTitle", { end50: fmtMio(m.end50) })}">${pctTxt(m.successRate)} · 5 %: ${fmtMio(m.end5)}</span>` : m.kind === "single" ? tr("runs.endWealth", { endTotal: fmtMio(m.endTotal) }) : "–") + emergencyMark(m);
   $("#resultsBody").innerHTML = list.length ? `<div class="card"><table class="tbl" id="runsTbl">
     <tr><th><input type="checkbox" data-action="runs-all" title="${tr("runs.markAllTitle")}"></th><th>${tr("runs.name")}</th><th>${tr("runs.note")}</th><th>${tr("runs.date")}</th><th>${tr("runs.series")}</th><th>${tr("runs.strategy")}</th><th>${tr("runs.result")}</th><th></th></tr>
-    ${list.map(m => `<tr><td><input type="checkbox" data-action="run-sel" data-id="${m.id}" ${runsSel.has(m.id) ? "checked" : ""} title="${tr("runs.markTitle", { cmpMax: CMP_MAX })}"></td>
+    ${list.map(m => `<tr><td><input type="checkbox" data-action="run-sel" data-id="${m.id}" ${runsSel.has(m.id) ? "checked" : ""} title="${m.kind === "optimization" ? tr("savedOpt.markTitle") : tr("runs.markTitle", { cmpMax: CMP_MAX })}"></td>
       <td><input class="runedit" data-id="${m.id}" data-f="name" value="${esc(m.name)}" title="${tr("runs.renameTitle")}"></td>
       <td><input class="runedit" data-id="${m.id}" data-f="note" value="${esc(m.note)}" placeholder="${tr("runs.notePlaceholder")}"></td>
       <td>${esc(runDate(m.created))}</td><td>${seriesCell(m)}</td>${stratCell(m)}<td>${cell(m)}<br><small class="muted">${esc(runKind(m))}</small></td>
@@ -3073,9 +3150,28 @@ async function openRuns() {
     : `<div class="card"><p style="margin:0">${tr("runs.empty")}</p></div>`;
   document.documentElement.dataset.rendered = "runs";
 }
+/** #201: Result column of a saved optimization: ruin of the best strategy, with goal 2 the share of unplanned sales. */
+const optCell = m => [m.goal === "keepProperty" && m.emergencyShare != null ? `${tr("optResult.unplanned")} ${pctTxt(m.emergencyShare)}` : null,
+  m.ruin != null ? `${tr("optResult.ruin")} ${pctTxt(m.ruin)}` : null].filter(Boolean).join(" · ") || "–";
+/** #201: A saved optimization in the wide results view, with the table of the section «Optimierung» (#200). */
+function viewOpt(meta, data) {
+  showResults(true); lastRun = null; savedView = null; compareOpen = false;
+  savedOpt = { meta, plan: data.plan, opt: data.opt };
+  const r = data.opt.report, plan = normalize(JSON.parse(JSON.stringify(data.plan)));
+  const s = state; state = plan; let start; try { start = startM(); } finally { state = s; }
+  plainTitle(meta.name);
+  $("#resultsInfo").textContent = runKind(meta);
+  $("#resultsTabs").innerHTML = "";
+  const other = optKey() !== data.opt.planJson;
+  $("#resultsPick").innerHTML = `<div class="card savedbar"><span>${tr("savedOpt.note", { date: esc(runDate(meta.created)), name: esc(meta.name), paths: fmtInt(r.checkPaths) })}${other ? `<br><span class="savedother" style="color:var(--warn)">${tr("savedOpt.otherHint")}</span>` : ""}</span><span class="spacer"></span>
+    <button class="btn small" data-action="runs-open">${tr("results.backToList")}</button></div>`;
+  $("#resultsBody").innerHTML = optResultCard(r, data.opt.req, false, start) + `<footer class="rfoot">${esc(DISCLAIMER_FOOT)}</footer>`;
+  document.documentElement.dataset.rendered = "savedOpt";
+}
 async function viewRun(id) {
   const [meta] = (await Runs.list()).filter(m => m.id === id), data = await Runs.get(id);
   if (!meta || !data) { toast(tr("runs.gone")); return openRuns(); }
+  if (meta.kind === "optimization") return viewOpt(meta, data);
   resetVariation();
   if (!parkedState) parkedState = state;
   state = normalize(JSON.parse(JSON.stringify(data.plan)));
@@ -3152,7 +3248,7 @@ function cmpYears(items, valuesOf) {
   return { per, n, same, label: k => same ? (per.find(v => v && v[k])?.[k].y ?? "") : tr("cmp.yearN", { v: k + 1 }) };
 }
 async function compareRuns() {
-  const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse().slice(0, CMP_MAX);
+  const metas = (await Runs.list()).filter(m => runsSel.has(m.id) && m.kind !== "optimization").reverse().slice(0, CMP_MAX);
   const datas = await Promise.all(metas.map(m => Runs.get(m.id)));
   lastRun = null; savedView = null; compareOpen = true;
   const items = metas.map((m, i) => cmpItem(m, datas[i], i));

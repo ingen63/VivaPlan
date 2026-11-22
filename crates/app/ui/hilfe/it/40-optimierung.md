@@ -24,7 +24,7 @@ Le strategie vengono poi confrontate. La migliore figura in alto e reca una stel
 
 **Quali parametri vengono variati** lo stabilisce Lei per ogni strategia, vedi [Parametri fissi o variati](#o-ranges).
 
-**Le impostazioni vengono salvate** (obiettivo, strategie, percorsi, fasce dei parametri) **con la pianificazione**: figurano nel file `.vplan`, ritornano all’apertura e valgono anche per `optimize` nel terminale (le opzioni le sovrascrivono lì). Il risultato di un’ottimizzazione non viene salvato. Un’impostazione modificata non invalida un risultato precedente, solo una pianificazione modificata.
+**Le impostazioni vengono salvate** (obiettivo, strategie, percorsi, fasce dei parametri) **con la pianificazione**: figurano nel file `.vplan`, ritornano all’apertura e valgono anche per `optimize` nel terminale (le opzioni le sovrascrivono lì). L’app archivia il risultato nell’[elenco dei risultati](#r-list), vedi [Salvare e riaprire il risultato](#o-saved). Un’impostazione modificata non invalida un risultato precedente, solo una pianificazione modificata.
 
 Legga i risultati con [Leggere il risultato](#o-read) e tenga conto delle [insidie](#o-pitfalls). Un ottimo **non è una promessa**.
 
@@ -205,6 +205,17 @@ Parole chiave: adottare, parametri, impostare la strategia, applicare
 La pianificazione è poi considerata modificata (non salvata). Con **Annullare** (⌘Z) l’adozione può essere revocata. Il risultato dell’ottimizzazione resta visibile e continua a valere, finché non modifica la pianificazione in altro modo.
 
 Verifichi poi il risultato con una **simulazione normale** e, se possibile, con un’**altra fonte di rendimenti**. Se l’ottimo è ancora buono lì, è robusto.
+
+## @o-saved Salvare e riaprire il risultato
+Parole chiave: salvato, elenco, risultati, riaprire, confronto delle strategie, riavvio
+
+Ogni ottimizzazione **conclusa** e ogni confronto delle strategie viene archiviato automaticamente nell’[elenco dei risultati](#r-list), con il rapporto, le impostazioni dell’ottimizzazione e lo stato della pianificazione al momento del calcolo. Un’interruzione o un errore non archivia nulla. Come le simulazioni, la voce resta **localmente nella memoria dell’app**, non nel file della pianificazione, e rimane dopo un riavvio. Se la memoria dell’app è bloccata, resta nella memoria di lavoro fino alla chiusura.
+
+- **Nell’elenco** la voce si chiama «… · Ottimizzazione · …» o «… · Confronto delle strategie · …». Indica la strategia migliore (i suoi parametri al passaggio del mouse), la sua probabilità di rovina e l’obiettivo; con l’obiettivo «Nessuna vendita forzata» anche la quota di vendite non pianificate. Rinominare, nota ed eliminazione funzionano come per le simulazioni.
+- **Aprire** mostra il risultato nell’ampia vista dei risultati con la stessa tabella della sezione «Ottimizzazione», con la data e il numero di percorsi verificati.
+- **«Adottare nella pianificazione»** riprende i parametri nella pianificazione aperta. Se il risultato appartiene a un altro stato della pianificazione (altra pianificazione o modificata nel frattempo), in alto appare un’avvertenza e l’app chiede conferma prima di riprenderli.
+- **All’apertura di una pianificazione** la sezione «Ottimizzazione» mostra il risultato salvato più recente che corrisponde esattamente a questo stato della pianificazione.
+- Un’ottimizzazione non si può **confrontare** con le simulazioni: contrassegnata si può eliminare, «Confrontare» la tralascia.
 
 ## @o-pitfalls Insidie dell’ottimizzazione
 Parole chiave: sovraottimizzazione, robustezza, rischio di modello, controprova, avvertimento

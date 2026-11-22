@@ -24,7 +24,7 @@ Les stratégies sont ensuite comparées. La meilleure figure en haut et porte un
 
 **Quels paramètres varient**, vous le décidez vous-même pour chaque stratégie, voir [Paramètres fixes ou variables](#o-ranges).
 
-**Les réglages sont enregistrés** (objectif, stratégies, trajectoires, fourchettes des paramètres) **avec la planification**: ils figurent dans le fichier `.vplan`, reviennent à l’ouverture et valent aussi pour `optimize` dans le terminal (les options les y remplacent). Le résultat d’une optimisation n’est pas enregistré. Un réglage modifié n’invalide pas un résultat antérieur, seule une planification modifiée le fait.
+**Les réglages sont enregistrés** (objectif, stratégies, trajectoires, fourchettes des paramètres) **avec la planification**: ils figurent dans le fichier `.vplan`, reviennent à l’ouverture et valent aussi pour `optimize` dans le terminal (les options les y remplacent). L’app classe le résultat dans la [liste des résultats](#r-list), voir [Enregistrer et rouvrir le résultat](#o-saved). Un réglage modifié n’invalide pas un résultat antérieur, seule une planification modifiée le fait.
 
 Lisez les résultats avec [Lire le résultat](#o-read) et tenez compte des [pièges](#o-pitfalls). Un optimum n’est **pas une promesse**.
 
@@ -205,6 +205,17 @@ Mots-clés: reprendre, paramètres, définir la stratégie, appliquer
 La planification est ensuite considérée comme modifiée (non enregistrée). Avec **Annuler** (⌘Z), la reprise peut être annulée. Le résultat de l’optimisation reste visible et valable tant que vous ne modifiez pas la planification autrement.
 
 Vérifiez ensuite le résultat avec une **simulation normale** et, si possible, avec une **autre source de rendements**. Si l’optimum y reste bon, il est robuste.
+
+## @o-saved Enregistrer et rouvrir le résultat
+Mots-clés: enregistré, liste, résultats, rouvrir, comparaison des stratégies, redémarrage
+
+Chaque optimisation **terminée** et chaque comparaison des stratégies est classée automatiquement dans la [liste des résultats](#r-list), avec le rapport, les réglages de l’optimisation et l’état de la planification au moment du calcul. Une interruption ou une erreur ne classe rien. Comme les simulations, l’entrée est conservée **localement dans la mémoire de l’app**, pas dans le fichier de planification, et reste après un redémarrage. Si la mémoire de l’app est bloquée, elle reste en mémoire vive jusqu’à la fermeture.
+
+- **Dans la liste**, l’entrée s’appelle «… · Optimisation · …» ou «… · Comparaison des stratégies · …». Elle indique la meilleure stratégie (ses paramètres au survol), sa probabilité de ruine et l’objectif; avec l’objectif «Pas de vente forcée», en plus la part des ventes non planifiées. Renommer, note et suppression fonctionnent comme pour les simulations.
+- **Ouvrir** affiche le résultat dans la vue large des résultats avec le même tableau que dans la section «Optimisation», avec la date et le nombre de trajectoires vérifiées.
+- **«Reprendre dans la planification»** reprend les paramètres dans la planification ouverte. Si le résultat appartient à un autre état de la planification (autre planification ou modifiée depuis), une remarque apparaît en haut et l’app demande confirmation avant la reprise.
+- **À l’ouverture d’une planification**, la section «Optimisation» affiche le résultat enregistré le plus récent qui correspond exactement à cet état de la planification.
+- Une optimisation ne peut pas être **comparée** avec des simulations: marquée, elle peut être supprimée, «Comparer» l’ignore.
 
 ## @o-pitfalls Pièges de l’optimisation
 Mots-clés: suroptimisation, robustesse, risque de modèle, contre-épreuve, avertissement
