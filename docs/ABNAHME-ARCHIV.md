@@ -1384,3 +1384,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #197/AK4 | Die Kommandozeile kann dasselbe (Vergleich ohne Suche, Auswahl «wie geplant / nie verkaufen / beide»; Namen der Optionen … | ☑ | **gilt** | [cli.rs](../crates/cli/tests/cli.rs) «issue_197_ak4_…»; [optimize.rs](../crates/cli/src/optimize.rs) «issue_197_ak4_…» (2) | 22.11.2026 ok (Optionen `--compare`, `--property planned\|never-sell\|both`; von Hand mit der Beispielplanung) |
 | #197/AK5 | Für den Vergleich ohne Optimierung gibt es einen Test mit der Beispielplanung. Die Kennzahlen sind dieselben wie bei `run` … | ☑ | **gilt** | [compare_strategies.rs](../crates/engine/tests/compare_strategies.rs) «issue_197_ak5_…» | 22.11.2026 ok (7 Strategien; von Hand: 50 % gleich wie `run`) |
 | #197/AK6 | Hilfe (Optimierung) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht); Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, neuer Abschnitt `o-compare` |
+
+### #198 13. AHV-Rente im Netto-Bedarf der 3-Topf-Strategie
+
+[Issue #198](https://github.com/ingen63/VivaPlan/issues/198) · geschlossen · Umsetzung: 7a73566
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #198/AK1 | Ab 2026 zählt im Netto-Bedarf die AHV eines Jahres mit 13. Rente: 13 × Monatsrente. Wird hochgerechnet (Auslöser A), gilt … | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) «issue_198_ak1_…», «start_in_march_…» | 22.11.2026 ok |
+| #198/AK2 | Beispiel aus `buckets_need.rs`: AHV 2'500 pro Monat, Lebenshaltung 100'000, Wohnen 24'000, PK-Rente 54'000, Steuersatz … | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) «issue_198_ak2_…» | 22.11.2026 ok |
+| #198/AK3 | Die Einkommenssteuer im Netto-Bedarf rechnet mit dem Jahreseinkommen inklusive 13. Rente, gleich wie die Simulation (#190). | ☑ | **gilt** | [buckets_need.rs](../crates/engine/tests/buckets_need.rs) «issue_198_ak2_…», «earned_income_…» | 22.11.2026 ok |
+| #198/AK4 | Ehepaare: Basis ist die plafonierte AHV des Haushalts, ohne zweite Deckelung (wie #190/AK4). | ☑ | **gilt** | [sim_rules.rs](../crates/engine/tests/sim_rules.rs) «issue_198_ak4_…» | 22.11.2026 ok |
+| #198/AK5 | Die Tabelle «3-Topf-Strategie» in den Ergebnissen zeigt bei «AHV» den Wert mit 13. Rente. Ein Oberflächentest prüft das. | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK5» (#198) | 22.11.2026 ok |
+| #198/AK6 | Hilfe (Netto-Bedarf, vier Sprachen) und Spezifikation in `docs/ENTWICKLUNG.md` sind nachgeführt; der Vermerk «ohne 13. … | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe vier Sprachen, Tooltip, Spezifikation |
+| #198/AK7 | Ändern sich Golden-Zahlen, ist das im Issue begründet (Zeile `Golden: #Nr …`). | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs) | 22.11.2026 ok (keine Golden-Datei geändert) |
