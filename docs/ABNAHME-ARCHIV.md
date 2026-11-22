@@ -1426,3 +1426,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #200/AK6 | Die Hinweistexte unter der Tabelle bleiben auf eine lesbare Zeilenlänge begrenzt (höchstens 900 px). | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK4, AK6» (#200) | 22.11.2026 ok |
 | #200/AK7 | Unter 760 px Fensterbreite bleibt das bisherige Verhalten: Die Tabelle scrollt waagrecht innerhalb der Karte, die Seite … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK7» (#200) | 22.11.2026 ok (700 px) |
 | #200/AK8 | Die Textbreiten-Tests (#182) bleiben grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) (#182) | 22.11.2026 ok (16 Tests) |
+
+### #201 Ergebnis der Optimierung speichern und wieder öffnen
+
+[Issue #201](https://github.com/ingen63/VivaPlan/issues/201) · geschlossen · Umsetzung: a36db89
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #201/AK1 | Nach jeder abgeschlossenen Optimierung entsteht automatisch ein Eintrag in «Gespeicherte Ergebnisse», mit Bericht, … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK1» (#201) | 22.11.2026 ok (Abbruch und Fehler ohne Eintrag) |
+| #201/AK2 | Der Eintrag ist als Optimierung erkennbar und zeigt in der Liste die beste Strategie, ihre Ruinwahrscheinlichkeit und … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK2» (#201) | 22.11.2026 ok (Optimierung und Strategievergleich, beide Ziele) |
+| #201/AK3 | «Öffnen» zeigt das gespeicherte Ergebnis in der breiten Ergebnisansicht mit derselben Tabelle wie im Abschnitt … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK3» (#201) | 22.11.2026 ok |
+| #201/AK4 | Nach einem Neustart der App ist der Eintrag noch vorhanden und lässt sich öffnen. | ☑ | **gilt** | [runs.test.js](../e2e/unit/runs.test.js) «#201/AK4» | 22.11.2026 ok (fake-indexeddb; nicht von Hand in der Desktop-App) |
+| #201/AK5 | «In Planung übernehmen» aus einem geöffneten Eintrag übernimmt die Parameter in die offene Planung, wenn der … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK5» (#201) | 22.11.2026 ok |
+| #201/AK6 | Optimierungen lassen sich nicht mit Simulationen vergleichen. Beim Markieren für den Vergleich werden sie ausgelassen, … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK6» (#201) | 22.11.2026 ok (markierbar zum Löschen, Vergleich zählt nur Simulationen) |
+| #201/AK7 | Öffnet man eine Planung, deren Stand zu einem gespeicherten Optimierungsergebnis passt, zeigt der Abschnitt … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK7» (#201) | 22.11.2026 ok |
+| #201/AK8 | Ohne IndexedDB (gesperrter Speicher) bleibt das Ergebnis bis zum Schliessen im Arbeitsspeicher, wie bei Simulationen. … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK8» (#201) | 22.11.2026 ok |
+| #201/AK9 | Hilfe und `docs/BESCHREIBUNG.md` beschreiben das Speichern und Öffnen von Optimierungen. | ☑ | **gilt** | kein Test (Durchsicht); Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, Beschreibung, Spezifikation |
