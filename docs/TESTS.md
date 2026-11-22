@@ -27,7 +27,8 @@ Schnittstellen. Ziel: mindestens 80 % Zeilenabdeckung je Paket (`vivaplan-engine
 `tests-os` in `test-quality.yml`, Runner von GitHub). Windows-Pfade (Laufwerk, Backslash, UNC, Umlaute) prüft
 `issue_141_ak3_windows_paths` in `crates/app/src/main.rs` (nur unter Windows ausgeführt, überall übersetzt). Vor dem
 Release-Entwurf startet `pakete.yml` jedes gebaute Programm mit `--smoke`: Fenster und Webansicht öffnen, Beispielplanung
-rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`).
+rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`). Bis auf Weiteres baut
+`pakete.yml` nur das `.dmg` für macOS, der Rauchtest läuft also nur dort (#202); Linux und Windows schaltet #203 wieder ein.
 
 **Netzwerkfreiheit (#157):** Die App verspricht, keine Netzwerkzugriffe zu machen. Zwei Prüfungen belegen das
 automatisch. `tools/check-network-free.sh` (`make network-free`, Job `network-free` in `test-quality.yml` bei jedem Push)
@@ -80,16 +81,19 @@ Rahmen, der seitwärts rollt, und Text, der sich mit anderem Text überdeckt (au
 Ansicht die Befunde mit Element und Text.
 
 **Nächtliche Läufe von Hand starten (#159):** Die nächtlichen Jobs von `test-quality.yml` (`tests-os`, `e2e`,
-`release-golden`, `mutants-diff`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen um 02:17 UTC, nur nach einem neuen
-Commit. GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs
-von Hand starten:
+`release-golden`, `fuzz`, Eigenschaftstests mit 10'000 Fällen) laufen täglich um 02:17 UTC (`17 2 * * *`), nur nach einem
+neuen Commit. `mutants-diff` läuft seit #202 nur noch wöchentlich, am Sonntag um 02:17 UTC (eigener Zeitplan
+`17 2 * * 0`, die Jobs unterscheiden die beiden an `github.event.schedule`); am Sonntag laufen beide Läufe nebeneinander.
+GitHub löst `schedule` bei hoher Last verspätet (mehrere Stunden) oder gar nicht aus. Dann alle nächtlichen Jobs
+und `mutants-diff` von Hand starten:
 
 ```bash
 gh workflow run test-quality.yml --ref main -f nightly=true
 ```
 
 Ohne `nightly` startet der Lauf von Hand wie bisher ohne `fuzz` und `mutants-diff`. Nächtliche Läufe (auch von Hand mit
-`nightly`) haben eine eigene Concurrency-Gruppe: Ein Push bricht sie nicht ab, sondern nur einen vorherigen Push-Lauf.
+`nightly`) und der wöchentliche Lauf haben je eine eigene Concurrency-Gruppe: Ein Push bricht sie nicht ab, sondern nur
+einen vorherigen Push-Lauf.
 
 Nicht automatisch getestet: die Fenster- und Dialogschicht der Desktop-App (`crates/app`, nur Weiterleitung an
 den Rechenkern) und die Darstellung der Grafiken im Detail (Sichtkontrolle mit Bildschirmfotos).
@@ -215,7 +219,7 @@ Abdeckung zeigt, was ausgeführt wird, nicht was geprüft wird. Deshalb gelten d
 - **Abdeckung des geänderten Codes (#39):** `make coverage-diff` (Basis mit `BASE=<Zweig>`, Vorgabe `origin/main`) zeigt, welcher Anteil der geänderten Rust-Zeilen von Tests ausgeführt wird, mit den nicht abgedeckten Zeilen. Dasselbe steht in der Zusammenfassung des Laufs von `test-quality.yml` und auf der Übersichtsseite: bei einem Push auf `main` gegenüber dem Stand vor dem Push (das Projekt arbeitet ohne Pull Requests), bei einem Pull Request gegenüber dem Basis-Zweig, beim Start von Hand gegenüber der Eingabe `base` (leer = Vorgänger des letzten Commits; `gh workflow run test-quality.yml -f base=<Commit>`). Lokal vor dem Push zeigt `make coverage-diff` mit `origin/main` denselben Bereich, nämlich die noch nicht gepushten Commits (dazu den Arbeitsbaum). Ein Hinweis, keine Sperre.
 - **Mutationstests (#38, #40, #43):** `cargo mutants` verändert den Rechenkern und prüft, ob ein Test fehlschlägt.
   - Der `rust-test-agent` lässt vor dem Push `cargo mutants --in-diff` auf die geänderten Zeilen laufen. Sein Ziel ist «keine neuen nicht erkannten Mutanten im Rechenkern», nicht nur «80 % erreicht». Er schreibt keine Tests ohne Prüfung.
-  - **Nächtlich auf GitHub:** Da das Projekt ohne Pull Requests arbeitet, läuft der Job `mutants-diff` in `test-quality.yml` auch nächtlich (nach einem neuen Commit) und von Hand mit `nightly` (#159). Verglichen wird mit dem letzten erfolgreichen nächtlichen Lauf (sonst mit dem Stand vor 24 Stunden), höchstens 3 Tage zurück; die Mutanten sind auf 16 Jobs verteilt (`--shard`) und werden inkrementell übersetzt (`CARGO_INCREMENTAL=1`), damit der Lauf auch nach ausgefallenen Nächten im Zeitlimit von 120 Minuten bleibt (gemessen: 3 Tage Änderungen rund 980 Mutanten, mit 4 Teilen rund 2½ Stunden je Teil). Die Basis steht in der Zusammenfassung des Laufs. Nicht erkannte Mutanten lassen den Lauf fehlschlagen, Zeitüberschreitungen nicht (sie zählen als erkannt, #159).
+  - **Wöchentlich auf GitHub (#202):** Da das Projekt ohne Pull Requests arbeitet, läuft der Job `mutants-diff` in `test-quality.yml` einmal pro Woche (Sonntag 02:17 UTC, nur nach einem neuen Commit) und von Hand mit `nightly` (#159). Er mutiert nur die geänderten Zeilen des Rechenkerns (`crates/engine`); App und Kommandozeile prüft der volle Lauf von Hand (`mutation-full.yml`, `make mutants`). Verglichen wird mit dem letzten erfolgreichen wöchentlichen Lauf (sonst mit dem Stand vor 7 Tagen), höchstens 7 Tage zurück; die Mutanten sind auf 4 Jobs verteilt (`--shard i/4`, Zeitlimit 6 Stunden je Job) und werden inkrementell übersetzt (`CARGO_INCREMENTAL=1`). Bis #202 lief er nächtlich in 16 Teilen über den ganzen Workspace und brauchte rund 55 % der Actions-Minuten, vor allem für die Vorbereitung jedes Teils (gemessen am 18.11.2026: 3 Tage Änderungen rund 980 Mutanten, rund 75 s je Mutant). Basis und Dateien stehen in der Zusammenfassung des Laufs. Nicht erkannte Mutanten lassen den Lauf fehlschlagen, Zeitüberschreitungen nicht (sie zählen als erkannt, #159). Bei einem Pull Request mutiert der Job wie bisher alle geänderten Rust-Zeilen gegenüber dem Basis-Zweig.
   - **Einzeln beurteilen, kein Score-Ziel (#40):** Jeder nicht erkannte (missed) Mutant in `vivaplan-engine` wird mit einem Test getötet oder mit Begründung ausgeschlossen (`#[mutants::skip]` oder `exclude_re` in `.cargo/mutants.toml`, mit Kommentar; Ausschlüsse ohne Begründung sind nicht erlaubt). Einen Mutation Score als Zielwert gibt es nicht. Zwei Arten von Ausschlüssen sind zulässig: **gleichwertige** Mutanten (das Ergebnis bleibt bei jeder Eingabe gleich) und **Grenzfälle** (der Mutant ändert nur das Verhalten bei exakter Gleichheit zweier gerechneter Frankenbeträge oder innerhalb der Rundungstoleranz von 0.005). Die Einträge sind an Datei, Spalte und Funktion gebunden; verschiebt sich ein Ausdruck, erscheint der Mutant wieder und wird neu beurteilt. Die offenen missed Mutanten stehen unten (Stand #40), die des letzten vollen Laufs in der Zusammenfassung von `mutation-full.yml`, lokal in `local/mutants.out/missed.txt` und auf der Übersichtsseite (siehe unten); sie werden **pro Version durchgesehen**.
   - **Laufzeit (#43, #116):** Jeder Mutant hat höchstens etwa 1 Minute (`minimum_test_timeout = 60` und `timeout_multiplier = 1.0` in `.cargo/mutants.toml`; bis #116 waren es 2 Minuten); ein Timeout zählt als erkannt. Mutationsläufe verwenden das nextest-Profil `mutants` (`.config/nextest.toml`), das zehn schwere Tests überspringt (Testlauf rund 4 s statt rund 45 s). Die Begründung je Test steht in der Konfiguration; die Tests laufen weiter in `make test` und in CI. nextest führt keine Doctests aus: ein «missed» in einer Zeile, die nur ein Doctest prüft, ist kein echter Befund. Der volle Lauf auf GitHub (`mutation-full.yml`) verwendet 16 Shards.
   - **Warum ein Lauf Stunden statt Minuten dauerte (#43, Analyse):** Das Bauen eines Mutanten wuchs im Lauf von 85 s auf über 900 s, die Tests selbst brauchten nur wenige Sekunden. Ursache: Die Integrationstests waren 24 einzelne Programme, und jedes Programm hinterliess rund 350 Objektdateien (Debug-Informationen) im Zielverzeichnis; nach 800 Mutanten lagen je Arbeitskopie rund 285'000 Dateien. macOS prüft jedes neu gebundene Programm, und die Zeit dafür wuchs mit der Dateizahl; vier bis acht parallele Arbeitskopien warteten gegenseitig auf die Platte. Dazu kamen Timeouts von 2 Minuten, die ein Viertel der Laufzeit der Tests selbst ausmachten.

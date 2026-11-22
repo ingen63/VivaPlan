@@ -6,11 +6,14 @@ on:
   schedule:
     # #159: nicht zur vollen oder halben Stunde (dort ist GitHub am stärksten ausgelastet). `schedule` kann trotzdem
     # Stunden zu spät kommen oder ausfallen; dann von Hand mit `nightly` starten (docs/TESTS.md).
+    # #202: Zwei Zeitpläne. Die Jobs unterscheiden sie an `github.event.schedule`: Der wöchentliche Lauf startet nur
+    # `mutants-diff` (und `changes`), der nächtliche alle übrigen nächtlichen Jobs. Am Sonntag laufen beide nebeneinander.
     - cron: "17 2 * * *"          # nächtlich 02:17 UTC
+    - cron: "17 2 * * 0"          # wöchentlich, Sonntag 02:17 UTC: nur mutants-diff (#202)
   workflow_dispatch:              # manuell: läuft immer
     inputs:
       nightly:
-        description: "Alle nächtlichen Jobs ausführen, auch fuzz und mutants-diff (#159)"
+        description: "Alle nächtlichen Jobs ausführen, auch fuzz und den wöchentlichen mutants-diff (#159, #202)"
         type: boolean
         required: false
         default: false
@@ -26,9 +29,10 @@ permissions:
   pull-requests: read
 
 # #159: Nächtliche Läufe (auch von Hand mit `nightly`) haben eine eigene Gruppe und werden nicht abgebrochen; ein Push
-# bricht weiterhin nur den vorherigen Push-Lauf (oder einfachen Start von Hand) ab.
+# bricht weiterhin nur den vorherigen Push-Lauf (oder einfachen Start von Hand) ab. #202: Der wöchentliche Lauf hat eine
+# eigene Gruppe, damit er am Sonntag nicht auf den nächtlichen wartet.
 concurrency:
-  group: test-quality-${{ github.ref }}-${{ (github.event_name == 'schedule' || inputs.nightly) && 'nightly' || 'push' }}
+  group: test-quality-${{ github.ref }}-${{ github.event.schedule == '17 2 * * 0' && 'weekly' || ((github.event_name == 'schedule' || inputs.nightly) && 'nightly' || 'push') }}
   cancel-in-progress: ${{ !(github.event_name == 'schedule' || inputs.nightly) }}
 
 jobs:
@@ -45,11 +49,22 @@ jobs:
           if [ "${{ github.event_name }}" != "schedule" ] && [ "${{ inputs.nightly }}" != "true" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          last=$(gh run list -R "$GITHUB_REPOSITORY" --workflow test-quality.yml \
-                   --event schedule --status success --limit 1 \
-                   --json headSha -q '.[0].headSha')
-          echo "last=$last" >> "$GITHUB_OUTPUT"
-          # #159: Von Hand mit `nightly` läuft immer (Basis für mutants-diff wie nächtlich).
+          # #202: Nächtliche und wöchentliche Läufe kommen beide von `schedule`; `gh run list` zeigt den Zeitplan nicht.
+          # Ein Lauf zählt deshalb als nächtlich, wenn sein Job `fuzz` bestanden hat, und als wöchentlich, wenn alle
+          # Teile von `mutants-diff` bestanden haben (Basis für mutants-diff, auch von Hand mit `nightly`).
+          last_with() {
+            for id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow test-quality.yml --event schedule \
+                          --status success --limit 30 --json databaseId -q '.[].databaseId'); do
+              if gh run view "$id" -R "$GITHUB_REPOSITORY" --json jobs \
+                   -q "[.jobs[] | select(.name | startswith(\"$1\"))] | length > 0 and all(.conclusion == \"success\")" | grep -q true; then
+                gh run view "$id" -R "$GITHUB_REPOSITORY" --json headSha -q .headSha; return
+              fi
+            done
+          }
+          weekly=$(last_with mutants-diff)
+          echo "last=$weekly" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event.schedule }}" = "17 2 * * 0" ]; then last="$weekly"; else last=$(last_with fuzz); fi
+          # #159: Von Hand mit `nightly` läuft immer (Basis für mutants-diff wie wöchentlich).
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
@@ -188,7 +203,8 @@ jobs:
   # Unter cargo test teilen sich parallele Tests den prozessweiten Fortschritt und Abbruch (crates/engine/src/progress.rs).
   tests-coverage:
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    # #202: nicht im wöchentlichen Lauf (nur mutants-diff)
+    if: needs.changes.outputs.run == 'true' && github.event.schedule != '17 2 * * 0'
     runs-on: ubuntu-22.04      # wie pakete.yml; ubuntu-latest ist inzwischen 26.04
     timeout-minutes: 90
     env:
@@ -280,21 +296,22 @@ jobs:
 
   mutants-diff:
     needs: changes
-    # Pull Request, sonst nächtlich (Arbeit direkt auf main, also kein PR) oder von Hand mit `nightly` (#159): Mutanten
-    # der seit dem letzten erfolgreichen nächtlichen Lauf geänderten Zeilen.
-    if: github.event_name == 'pull_request' || ((github.event_name == 'schedule' || inputs.nightly) && needs.changes.outputs.run == 'true')
-    # #159: Nach ausgefallenen Nächten wächst der Vergleich; am 17.11.2026 brach ein Job nach 120 Minuten ab. Gewählt:
-    # Die Mutanten werden auf 16 Jobs verteilt (`--shard`, wie mutation-full.yml), die Basis liegt höchstens 3 Tage zurück,
-    # und der Build eines Mutanten ist inkrementell. Gemessen am 18.11.2026 mit 4 Teilen: 3 Tage Änderungen ergaben rund
-    # 980 Mutanten, rund 75 s je Mutant (Build rund 60 s ohne inkrementelles Übersetzen); 4 Teile brauchten rund 2½ Stunden.
-    # Mit 16 Teilen sind es rund 61 Mutanten oder 40 Minuten je Teil, auch nach zwei ausgefallenen Nächten innerhalb von
-    # 120 Minuten. Ältere Änderungen prüft der volle Lauf (`mutation-full.yml`, `make mutants`).
+    # Pull Request, sonst wöchentlich (Arbeit direkt auf main, also kein PR; #202) oder von Hand mit `nightly` (#159):
+    # Mutanten der seit dem letzten erfolgreichen wöchentlichen Lauf geänderten Zeilen des Rechenkerns.
+    if: github.event_name == 'pull_request' || ((github.event.schedule == '17 2 * * 0' || inputs.nightly) && needs.changes.outputs.run == 'true')
+    # #202: Nächtlich in 16 Teilen brauchte mutants-diff rund 55 % der Actions-Minuten, vor allem für die Vorbereitung
+    # (Abhängigkeiten, Cache, erster Build: über 10 Minuten je Teil). Deshalb wöchentlich (Sonntag, eigener `schedule`)
+    # in 4 Teilen und nur für den Rechenkern (`crates/engine`): Basis ist der letzte erfolgreiche wöchentliche Lauf,
+    # höchstens 7 Tage zurück. Gemessen am 18.11.2026 (#159): 3 Tage Änderungen im ganzen Workspace ergaben rund 980
+    # Mutanten bei rund 75 s je Mutant, mit 4 Teilen rund 2½ Stunden je Teil; eine Woche des ganzen Workspace könnte die
+    # 6-Stunden-Grenze eines Jobs überschreiten, daher nur der Rechenkern. App und Kommandozeile prüft der volle Lauf von
+    # Hand (`mutation-full.yml`, `make mutants`). Ein Pull Request mutiert wie bisher alle geänderten Rust-Zeilen.
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        shard: [0, 1, 2, 3]
     runs-on: ubuntu-24.04      # cargo-mutants braucht glibc 2.39 (22.04 hat 2.35)
-    timeout-minutes: 120
+    timeout-minutes: 360       # #202: Höchstwert eines Jobs bei GitHub
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -312,30 +329,33 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
           LAST: ${{ needs.changes.outputs.last }}
         run: |
-          # Pull Request: Basis-Zweig; nächtlich: letzter erfolgreicher nächtlicher Lauf,
-          # sonst der letzte Commit vor 24 Stunden, sonst der Vorgänger von HEAD.
+          # Pull Request: Basis-Zweig, alle Rust-Dateien. Wöchentlich und von Hand mit `nightly` (#202): letzter
+          # erfolgreicher wöchentlicher Lauf, sonst der letzte Commit vor 7 Tagen, sonst der Vorgänger von HEAD;
+          # nur der Rechenkern.
           if [ "$EVENT" = "pull_request" ]; then
             base="origin/$BASE_REF"
+            paths='*.rs'
           else
             base="$LAST"
-            git rev-parse --verify --quiet "${base:-x}^{commit}" >/dev/null || base=$(git rev-list -n1 --before="24 hours ago" HEAD)
-            # #159: höchstens 3 Tage zurück, damit der Lauf im Zeitlimit bleibt
-            limit=$(git rev-list -n1 --before="3 days ago" HEAD)
+            git rev-parse --verify --quiet "${base:-x}^{commit}" >/dev/null || base=$(git rev-list -n1 --before="7 days ago" HEAD)
+            # #202: höchstens 7 Tage zurück, damit der Lauf im Zeitlimit bleibt
+            limit=$(git rev-list -n1 --before="7 days ago" HEAD)
             if [ -n "$base" ] && [ -n "$limit" ] && git merge-base --is-ancestor "$base" "$limit"; then
-              echo "Basis $base liegt mehr als 3 Tage zurück; begrenzt auf $limit." >> "$GITHUB_STEP_SUMMARY"
+              echo "Basis $base liegt mehr als 7 Tage zurück; begrenzt auf $limit." >> "$GITHUB_STEP_SUMMARY"
               base="$limit"
             fi
             [ -n "$base" ] || base="HEAD~1"
+            paths='crates/engine/*.rs'
           fi
-          echo "Basis für den Vergleich: $base (Teil ${{ matrix.shard }} von 16)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Basis für den Vergleich: $base, Dateien \`$paths\` (Teil ${{ matrix.shard }} von 4)" >> "$GITHUB_STEP_SUMMARY"
           # Nur Rust-Dateien: cargo mutants kann den Kopf einer umbenannten Markdown-Datei mit Umlaut nicht lesen
           # (git setzt den Pfad in Anführungszeichen mit Oktalcodes).
-          git diff "$base"...HEAD -- '*.rs' > pr.diff
-          if ! grep -q '\.rs$' <(git diff --name-only "$base"...HEAD); then
+          git diff "$base"...HEAD -- "$paths" > pr.diff
+          if ! grep -q '\.rs$' <(git diff --name-only "$base"...HEAD -- "$paths"); then
             echo "Keine Rust-Änderungen – keine Mutanten." >> "$GITHUB_STEP_SUMMARY"; exit 0
           fi
           status=0
-          cargo mutants --in-diff pr.diff --no-shuffle -j 2 --shard ${{ matrix.shard }}/16 || status=$?
+          cargo mutants --in-diff pr.diff --no-shuffle -j 2 --shard ${{ matrix.shard }}/4 || status=$?
           # #159: Ein Timeout zählt als erkannt (docs/TESTS.md, Endlosschleife). cargo mutants endet bei Timeouts mit
           # Code 3, auch wenn es zusätzlich nicht erkannte Mutanten gibt (dann ebenfalls 3, sonst 2). Massgebend ist
           # deshalb die Zahl der nicht erkannten Mutanten; andere Codes (z. B. 4, Basislauf rot) bleiben Fehler.
@@ -350,7 +370,7 @@ jobs:
         run: |
           f=local/mutants.out/outcomes.json
           [ -f "$f" ] || exit 0
-          jq -r '"### Mutation testing (Teil ${{ matrix.shard }} von 16)\ncaught: \(.caught)  missed: \(.missed)  timeout: \(.timeout)  unviable: \(.unviable)"' "$f" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '"### Mutation testing (Teil ${{ matrix.shard }} von 4)\ncaught: \(.caught)  missed: \(.missed)  timeout: \(.timeout)  unviable: \(.unviable)"' "$f" >> "$GITHUB_STEP_SUMMARY"
           if [ -s local/mutants.out/missed.txt ]; then
             echo '#### Nicht erkannte Mutanten' >> "$GITHUB_STEP_SUMMARY"
             sed 's/^/- /' local/mutants.out/missed.txt >> "$GITHUB_STEP_SUMMARY"
@@ -363,7 +383,7 @@ jobs:
   # Dauer 20 bis 30 Minuten auf dem 2-Kern-Runner. Der Entwicklungsserver (vivaplan ui-dev) startet die Playwright-Konfiguration selbst.
   e2e:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.event.schedule != '17 2 * * 0'
     runs-on: ubuntu-24.04      # hat Google Chrome (die Konfiguration nutzt channel: chrome)
     timeout-minutes: 60
     steps:
@@ -398,7 +418,7 @@ jobs:
   # das Übersetzen der Desktop-App. Die Runner von GitHub sind für das öffentliche Repo kostenlos (Kommentar in #141).
   tests-os:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.event.schedule != '17 2 * * 0'
     strategy:
       fail-fast: false
       matrix:
@@ -430,7 +450,7 @@ jobs:
   # liefert (heutige Toleranz, ohne GOLDEN_UPDATE). Nur der Rechenkern: keine Tauri-Abhängigkeiten nötig.
   release-golden:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.event.schedule != '17 2 * * 0'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -462,7 +482,7 @@ jobs:
   fuzz:
     needs: changes
     # #159: auch von Hand mit `nightly`
-    if: (github.event_name == 'schedule' || inputs.nightly) && needs.changes.outputs.run == 'true'
+    if: (github.event_name == 'schedule' || inputs.nightly) && github.event.schedule != '17 2 * * 0' && needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

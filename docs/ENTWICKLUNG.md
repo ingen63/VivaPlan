@@ -527,8 +527,9 @@ Quartal); der Import meldet das. Mehrere Kapitalbezüge (`LumpsumRatio`) werden 
 - **Ergebnisse:** Bandbreite mit 1. und 99. Perzentil und dem monatlich schlechtesten Wert; unter «Einzelne Läufe»
   zusätzlich 1., 99. Perzentil und der Lauf mit dem tiefsten Endvermögen. Einzelläufe zeigen den Verlauf von
   Aktien und Obligationen als Index.
-- **Installationspakete:** `.github/workflows/pakete.yml` baut auf GitHub Windows (.msi, .exe), Linux (.deb, .rpm,
-  .AppImage) und macOS (.dmg) – von Hand gestartet oder durch ein Tag `v…` (dann als Entwurf unter «Releases»).
+- **Installationspakete:** `.github/workflows/pakete.yml` baut auf GitHub bis auf Weiteres nur macOS (.dmg, #202;
+  Windows .msi/.exe und Linux .deb/.rpm/.AppImage schaltet #203 wieder ein) – von Hand gestartet oder durch ein Tag `v…`
+  (dann als Entwurf unter «Releases»).
   Lokal geht jeweils nur das eigene System (`npx tauri build`). Die Pakete sind nicht signiert.
 
 ### Grundstückgewinnsteuer
@@ -624,7 +625,7 @@ Die Testqualität wird auf mehreren Ebenen gemessen (Details und Schichten: `doc
 | Statische Prüfung | clippy mit `-D warnings` (Workspace und `fuzz/`, Job `clippy`) | `make clippy` | Log des Laufs |
 | Sprache im Code | `tools/check-english.sh` (Job `english` und `make test-quiet`, Übergangsliste leer seit #168) | `make english` | Datei:Zeile im Log |
 | Abdeckung | cargo-llvm-cov (Gate: Zeilen ≥ 80 % je Paket, `tools/coverage-min`) | `make coverage` | HTML, LCOV, Cobertura |
-| Wirksamkeit | cargo-mutants (PR und nächtlich: nur geänderte Zeilen seit dem letzten erfolgreichen nächtlichen Lauf; voll: lokal oder manuell in Actions) | `make mutants`, `make mutants-diff` | `local/mutants.out/` (`missed.txt`) |
+| Wirksamkeit | cargo-mutants (PR: geänderte Zeilen gegenüber dem Basis-Zweig; wöchentlich, #202: geänderte Zeilen des Rechenkerns seit dem letzten erfolgreichen wöchentlichen Lauf; voll: lokal oder manuell in Actions) | `make mutants`, `make mutants-diff` | `local/mutants.out/` (`missed.txt`) |
 | Eingabebreite | proptest (`crates/engine/tests/proptest_parsers.rs`, zufällige Planungen in `proptest_plans.rs`), cargo-fuzz (`fuzz/`, ganze Rechnung im Ziel `run_plan`) | `make proptest`, `make fuzz` | Fehlerfälle, Korpora |
 
 Miri und loom sind nicht eingerichtet: der Code enthält kein `unsafe` und nur einfache Atomic-Flags (`progress.rs`).

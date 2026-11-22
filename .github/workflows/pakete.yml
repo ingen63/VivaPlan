@@ -1,4 +1,6 @@
-# Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .AppImage; .rpm nur ohne Vorabversion) und macOS (.dmg).
+# Baut die Installationspakete, bis auf Weiteres nur macOS (.dmg, #202). Windows (.msi, .exe) und Linux (.deb, .AppImage;
+# .rpm nur ohne Vorabversion) sind abgeschaltet, um Actions-Minuten zu sparen; #203 schaltet sie wieder ein (Einträge in
+# der Matrix unten; die Schritte für Linux und Windows sind noch vorhanden).
 # Start von Hand (Actions → «Installationspakete» → Run workflow) oder durch ein Versions-Tag (v0.3.0):
 # dann entsteht zusätzlich ein Entwurf unter «Releases» mit allen Paketen und den Release Notes in vier Sprachen (#188).
 name: Installationspakete
@@ -33,10 +35,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: windows
-            os: windows-latest
-          - name: linux
-            os: ubuntu-22.04
+          # #202: Windows und Linux abgeschaltet, #203 schaltet sie wieder ein:
+          # - name: windows
+          #   os: windows-latest
+          # - name: linux
+          #   os: ubuntu-22.04
           - name: macos
             os: macos-latest
     runs-on: ${{ matrix.os }}
