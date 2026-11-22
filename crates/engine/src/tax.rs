@@ -66,6 +66,17 @@ pub fn tax(table: &[(f64, f64)], x: f64, multiplier: f64) -> f64 {
     round2(x * rate_at(table, x) * multiplier)
 }
 
+/// #66: Like [`tax`], but the amounts of the table are scaled by the price index `index` (1.0 = simulation start);
+/// the rates stay the same. Equivalently, the rate applies to the amount in prices of the start. If `index` is not
+/// positive, the table applies unadjusted.
+pub fn tax_indexed(table: &[(f64, f64)], x: f64, multiplier: f64, index: f64) -> f64 {
+    if x < 0.0 {
+        return 0.0;
+    }
+    let real = if index > 0.0 { x / index } else { x };
+    round2(x * rate_at(table, real) * multiplier)
+}
+
 /// Property gain tax: the gain is taxed in brackets (width and rate per bracket), then reduced.
 pub fn property_gain_tax(def: Option<&PropertyGainTax>, gain: f64) -> f64 {
     property_gain_tax_held(def, gain, None, 1.0)

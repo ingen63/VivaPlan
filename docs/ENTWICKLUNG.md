@@ -485,6 +485,15 @@ oder indirekt (Einzahlung in die Säule 3a). Die 3a-Auszahlung zahlt zuerst Tran
 Kalenderjahr (PK, 3a) werden für den Satz zusammengerechnet: für den Haushalt (eine Person, Verheiratete) oder je
 Person (unverheiratetes Paar, #150).
 
+**Tarife mit der Teuerung** (`taxes.indexed`, #66): Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug
+(auch `taxes.couple`) wachsen mit dem Preisindex des Pfades seit Simulationsstart (`Run::infl_idx`, derselbe wie für
+Lebenshaltung und Einkommen); die Sätze bleiben gleich. `tax::tax_indexed(table, x, multiplier, index)` nimmt den Satz
+für `x / index` (Betrag in Preisen des Starts), Steuer = `x × Satz × Steuerfuss`, auf Rappen gerundet; bei Index ≤ 0
+gilt die Tabelle ohne Anpassung. Massgebend ist der Index im Monat der Veranlagung (Dezember für Einkommen und
+Vermögen, Monat des Bezugs für Kapitalbezüge, Januar bzw. Neuberechnung für die geschätzte Einkommenssteuer im Bedarf
+der 3-Topf-Strategie). Fehlt das Feld, gilt «nein» und es wird nicht geschrieben; der Import alter `config.json`
+setzt «nein», `new.vplan` und «Neu» in der Oberfläche setzen «ja». Die Grundstückgewinnsteuer bleibt unverändert.
+
 ## Import alter Konfigurationen
 
 `import-legacy` übernimmt eine `config.json` des früheren Programms als Ausgangspunkt. Das frühere Programm gilt

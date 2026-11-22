@@ -370,6 +370,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             ..Default::default()
         }),
         couple: None,
+        indexed: false,
     };
 
     // Properties (approximately)

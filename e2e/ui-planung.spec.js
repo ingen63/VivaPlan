@@ -441,6 +441,37 @@ test.describe("Earned income with inflation (#58)", () => {
   });
 });
 
+test.describe("Tax tariffs with inflation (#66)", () => {
+  test("AK4: option in the taxes section, off for existing plans, on for new plans, named in the overview", async ({ page }) => {
+    const errors = await open(page, "taxes");
+    const box = page.locator('input[data-path="taxes.indexed"]');
+    await expect(box).toBeVisible();
+    await expect(page.locator("label.check", { has: box })).toContainText("Tarife mit der Teuerung (Beträge der Tabellen in heutigen Preisen)");
+    await expect(box).not.toBeChecked(); // example plan without a value: «nein»
+    const row = () => page.evaluate(() => paramSections(state).flatMap(([, r]) => r).find(([k]) => k === "Tarife mit der Teuerung")?.[1]);
+    expect(await row()).toBe("nein");
+    // AK1: the preview recomputes with the shifted brackets
+    const endValue = () => page.evaluate(() => lastSim?.total.at(-1));
+    await expect(kpiValue(page, "Vermögen am Ende")).not.toHaveText("–");
+    const before = await endValue();
+    await box.check();
+    expect(await page.evaluate(() => state.taxes.indexed)).toBe(true);
+    expect(await row()).toBe("ja");
+    await expect.poll(endValue).not.toBe(before);
+    await box.uncheck();
+    await expect.poll(endValue).toBe(before);
+    // New plan: on (the unchecked change is discarded)
+    await page.locator('button[data-action="new"]').click();
+    await page.locator('#ask button[value="ok"]').click();
+    await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0);
+    expect(await page.evaluate(() => state.taxes.indexed)).toBe(true);
+    await nav(page, "Steuern");
+    await expect(box).toBeChecked();
+    expect(await row()).toBe("ja");
+    await noErrors(page, errors);
+  });
+});
+
 // ---------------------------------------------------------------------------------------------
 test.describe("13th AHV pension (#190)", () => {
   test("AK8: the field for the monthly AHV pension explains which amount is meant", async ({ page }) => {

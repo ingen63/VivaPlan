@@ -220,6 +220,7 @@ Parole chiave: imposta sul reddito, imposta sulla sostanza, imposta sulle presta
 Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale del Suo cantone. Tra gli scaglioni si **interpola linearmente**, l’aliquota viene moltiplicata per il [moltiplicatore d’imposta](#f-tax-multiplier).
 
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
+- [Tariffe con il rincaro](#f-tax-indexed)
 - L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti. Entrambe vengono pagate a maggio dell’anno successivo.
 - Un’imposta ancora aperta alla fine della pianificazione viene dedotta nell’ultimo mese.
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
@@ -230,6 +231,17 @@ I valori d’esempio sono solo segnaposto. Per il Suo risultato li sostituisca c
 Parole chiave: cantone, comune, moltiplicatore
 
 Un fattore su tutte le aliquote delle tabelle, il moltiplicatore d’imposta di **cantone e comune** insieme (ad esempio 2.0 per un’aliquota doppia). Così non deve riscrivere le tabelle se cambia luogo di domicilio, ma modifica solo il fattore. Sono ammessi valori da 0 a 10.
+
+## @f-tax-indexed Tariffe con il rincaro
+Parole chiave: progressione a freddo, rincaro, inflazione, scaglioni, tariffa, prezzi attuali
+
+Con il segno di spunta, gli **importi** delle tabelle per reddito, sostanza e prelievo di capitale valgono ai **prezzi attuali** (prezzi all’inizio della simulazione) e crescono con il rincaro simulato del rispettivo percorso; le **aliquote** restano invariate. Così l’onere fiscale non aumenta solo a causa del rincaro (compensazione della progressione a freddo), come fanno la Confederazione e i cantoni.
+
+- **Esempio:** tabella 0 → 0 %, 200 000 → 10 %, rincaro 2 % all’anno. Nel decimo anno lo scaglione superiore è a 243 799. Un reddito di 121 899 (100 000 con il rincaro) ha l’aliquota del 5 % come 100 000 nell’anno iniziale; senza segno di spunta sarebbe il 6.09 %.
+- Determinante è l’indice dei prezzi nel mese della tassazione: dicembre per reddito e sostanza, il mese del prelievo per i prelievi di capitale. Anche l’imposta sul reddito stimata nel fabbisogno della [strategia a 3 comparti](#f-wd-three_buckets) è calcolata così.
+- Ciò vale anche per le tabelle dei coniugati.
+- L’[imposta sugli utili immobiliari](#f-tax-gain) resta invariata, la sua tariffa si riferisce al singolo utile.
+- Le nuove pianificazioni hanno il segno di spunta attivato. Le pianificazioni più vecchie senza indicazione e le vecchie configurazioni importate calcolano come prima, senza: gli importi valgono allora in termini nominali per tutta la pianificazione.
 
 ## @f-tax-gain Imposta sugli utili immobiliari
 Parole chiave: utile immobiliare, vendita, immobile, durata di possesso, Zurigo, Argovia, cantone, soglia di esenzione, tariffa, moltiplicatore d’imposta

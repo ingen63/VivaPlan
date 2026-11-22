@@ -895,6 +895,10 @@ pub struct Taxes {
     /// Tables for married couples; apply if the plan has a second person and `household.married`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub couple: Option<TaxTables>,
+    /// #66: The amounts of the tables for income, wealth and lump sums grow with the cumulative simulated inflation
+    /// since the simulation start (compensation of bracket creep); the rates stay the same. Missing: no.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub indexed: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]

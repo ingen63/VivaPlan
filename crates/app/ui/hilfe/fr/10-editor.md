@@ -220,6 +220,7 @@ Mots-clés: impôt sur le revenu, impôt sur la fortune, impôt sur les prestati
 Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impôts de votre canton. Entre les paliers, l’interpolation est **linéaire**; le taux est multiplié par le [coefficient d’impôt](#f-tax-multiplier).
 
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
+- [Barèmes avec le renchérissement](#f-tax-indexed)
 - L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes comprises), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net. Les deux sont payés en mai de l’année suivante.
 - Un impôt encore dû à la fin de la planification est déduit le dernier mois.
 - L’[impôt sur les gains immobiliers](#f-tax-gain) est dû lors de la vente d’un bien immobilier, voir aussi [Immobilier](#s-realestate).
@@ -230,6 +231,17 @@ Les valeurs d’exemple ne sont que des valeurs fictives. Pour votre résultat, 
 Mots-clés: canton, commune, multiplicateur
 
 Un facteur appliqué à tous les taux des barèmes, le coefficient d’impôt du **canton et de la commune** ensemble (par exemple 2.0 pour un taux double). Ainsi, vous n’avez pas à réécrire les barèmes si vous changez de domicile, mais seulement à modifier le facteur. Les valeurs de 0 à 10 sont admises.
+
+## @f-tax-indexed Barèmes avec le renchérissement
+Mots-clés: progression à froid, renchérissement, inflation, paliers, barème, prix actuels
+
+Avec la coche, les **montants** des barèmes pour le revenu, la fortune et le retrait en capital s’appliquent aux **prix actuels** (prix au début de la simulation) et augmentent avec le renchérissement simulé de chaque trajectoire; les **taux** restent les mêmes. Ainsi, la charge fiscale n’augmente pas du seul fait du renchérissement (compensation de la progression à froid), comme le pratiquent la Confédération et les cantons.
+
+- **Exemple:** barème 0 → 0 %, 200 000 → 10 %, renchérissement 2 % par an. La dixième année, le palier supérieur est à 243 799. Un revenu de 121 899 (100 000 avec le renchérissement) a le taux de 5 % comme 100 000 l’année de départ; sans la coche, ce serait 6.09 %.
+- L’indice des prix du mois de la taxation est déterminant: décembre pour le revenu et la fortune, le mois du retrait pour les retraits en capital. L’impôt sur le revenu estimé dans le besoin de la [stratégie à 3 compartiments](#f-wd-three_buckets) est calculé de la même manière.
+- Cela vaut aussi pour les barèmes des personnes mariées.
+- L’[impôt sur les gains immobiliers](#f-tax-gain) reste inchangé, son barème se rapporte au gain individuel.
+- Les nouvelles planifications ont la coche activée. Les planifications plus anciennes sans indication et les anciennes configurations importées calculent comme avant, sans: les montants s’appliquent alors en valeur nominale sur toute la planification.
 
 ## @f-tax-gain Impôt sur les gains immobiliers
 Mots-clés: gain immobilier, vente, bien immobilier, durée de possession, Zurich, Argovie, canton, seuil d’exonération, tarif, coefficient d’impôt

@@ -1176,7 +1176,9 @@ Object.assign(OPT_ACTIONS, {
   }
 });
 R.taxes = () => `<h2>${tr("section.taxes")}</h2><p class="lead">${tr("taxes.intro")}</p>
-  <div class="card"><div class="grid3">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div></div>
+  <div class="card"><div class="grid3">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div>
+    <div style="margin-top:10px">${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
+    <p class="hint">${tr("taxes.indexedHint")}</p></div>
   <div class="card">${TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income"))}${TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"))}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}</div>
   ${gainCard()}
   ${state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
@@ -1904,6 +1906,7 @@ function blankPlan(base, now = new Date()) {
   p.pension = { ...p.pension, pk: { ...p.pension.pk, capital: 0, at: "retire", lumpsum: 0, contribution: { ...zero }, interest: { mode: "const", value: 0.02 } },
     ahv: { ...p.pension.ahv, monthly: 0, at: "ahv" } };
   p.flows = { income: { ...zero }, incomeIndexed: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true };
+  p.taxes = { ...p.taxes, indexed: true }; // #66/AK4: new plans with «Tarife mit der Teuerung»
   p.wealth = { ...p.wealth, stocks: 0, bonds: 0, cash: 0 };
   p.realestate = { ...p.realestate, properties: [] };
   p.scenarios = { ...p.scenarios, sweeps: [] };
@@ -2996,7 +2999,7 @@ function paramSections(plan, full = false) {
       ...(a.payouts || []).map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")})`])];
   })]);
   const t = plan.taxes || {}, g = t.propertyGain;
-  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)], [tr("taxes.lumpsumTax"), table(t.capital)],
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)], [tr("taxes.lumpsumTax"), table(t.capital)],
     [tr("gain.title"), g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
   if (full) {

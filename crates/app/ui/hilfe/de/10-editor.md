@@ -220,6 +220,7 @@ Stichworte: Einkommenssteuer, Vermögenssteuer, Kapitalsteuer, Steuerfuss, Tabel
 Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten können. Zwischen den Stufen wird **linear interpoliert**, der Satz wird mit dem [Steuerfuss](#f-tax-multiplier) multipliziert.
 
 - [Steuerfuss und Tabellen](#f-tax-tables)
+- [Tarife mit der Teuerung](#f-tax-indexed)
 - Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto. Bezahlt wird beides im Mai des Folgejahres.
 - Eine bei Planende noch offene Steuer wird im letzten Monat abgezogen.
 - Die [Grundstückgewinnsteuer](#f-tax-gain) fällt beim Verkauf einer Immobilie an, siehe auch [Immobilien](#s-realestate).
@@ -230,6 +231,17 @@ Die Beispielwerte sind nur Platzhalter. Ersetzen Sie sie für Ihr Ergebnis durch
 Stichworte: Kanton, Gemeinde, Multiplikator
 
 Ein Faktor auf alle Sätze der Tabellen, der Steuerfuss von **Kanton und Gemeinde** zusammen (zum Beispiel 2.0 für einen doppelten Satz). So müssen Sie die Tabellen nicht neu schreiben, wenn Sie den Wohnort wechseln, sondern ändern nur den Faktor. Erlaubt sind Werte von 0 bis 10.
+
+## @f-tax-indexed Tarife mit der Teuerung
+Stichworte: kalte Progression, Teuerung, Inflation, Stufen, Tarif, heutige Preise
+
+Mit Häkchen gelten die **Beträge** der Tabellen für Einkommen, Vermögen und Kapitalbezug in **heutigen Preisen** (Preise beim Simulationsstart) und wachsen mit der simulierten Teuerung des jeweiligen Pfades; die **Sätze** bleiben gleich. So steigt die Steuerlast nicht allein wegen der Teuerung (Ausgleich der kalten Progression), wie es Bund und Kantone handhaben.
+
+- **Beispiel:** Tabelle 0 → 0 %, 200 000 → 10 %, Teuerung 2 % pro Jahr. Im Jahr 10 liegt die obere Stufe bei 243 799. Ein Einkommen von 121 899 (100 000 mit der Teuerung) hat den Satz 5 % wie 100 000 im Startjahr, ohne Häkchen wären es 6.09 %.
+- Massgebend ist der Preisindex im Monat der Veranlagung: im Dezember für Einkommen und Vermögen, im Monat des Bezugs für Kapitalbezüge. Auch die geschätzte Einkommenssteuer im Bedarf der [3-Topf-Strategie](#f-wd-three_buckets) rechnet so.
+- Das gilt auch für die Tabellen der Verheirateten.
+- Die [Grundstückgewinnsteuer](#f-tax-gain) bleibt unverändert, ihr Tarif bezieht sich auf den einzelnen Gewinn.
+- Neue Planungen haben das Häkchen gesetzt. Ältere Planungen ohne Angabe und importierte alte Konfigurationen rechnen wie bisher ohne: Die Beträge gelten dann nominal über die ganze Planung.
 
 ## @f-tax-gain Grundstückgewinnsteuer
 Stichworte: Grundstückgewinn, Verkauf, Immobilie, Besitzdauer, Zürich, Aargau, Kanton, Freigrenze, Tarif, Steuerfuss

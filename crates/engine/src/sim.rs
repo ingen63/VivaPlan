@@ -1422,16 +1422,26 @@ impl<'a> Run<'a> {
     /// Lump sums in the same calendar year are added together for the rate: for the household, or per
     /// person (`person`) for unmarried couples (#150).
     fn capital_tax(&mut self, person: usize, amount: f64) -> f64 {
-        let t = &self.s.taxes;
+        let (t, idx) = (&self.s.taxes, self.tax_index());
         let k = if self.s.capital_per_person {
             person.min(self.year_capital.len() - 1)
         } else {
             0
         };
-        let before = tax::tax(&t.capital, self.year_capital[k], t.multiplier);
+        let before = tax::tax_indexed(&t.capital, self.year_capital[k], t.multiplier, idx);
         self.year_capital[k] += amount;
         // #134: With a table whose tax falls (warning of the validation) the increment would be negative.
-        (tax::tax(&t.capital, self.year_capital[k], t.multiplier) - before).max(0.0)
+        (tax::tax_indexed(&t.capital, self.year_capital[k], t.multiplier, idx) - before).max(0.0)
+    }
+
+    /// #66: Price index for the amounts of the tax tables (cumulative inflation since the simulation start) if the
+    /// plan chose «tariffs with inflation»; otherwise 1.0 (tables in nominal francs).
+    fn tax_index(&self) -> f64 {
+        if self.s.taxes.indexed {
+            self.infl_idx
+        } else {
+            1.0
+        }
     }
 
     fn sell(&mut self, i: usize, m: YearMonth, kind: EventKind) {
@@ -2260,7 +2270,7 @@ impl<'a> Run<'a> {
             living_source: if rule.is_some() { "Guardrails" } else { "geplant" }.into(),
             living: living * f,
             housing: housing * f,
-            income_tax: tax::tax(&t.income, (ahv + pk + earned) * f, t.multiplier),
+            income_tax: tax::tax_indexed(&t.income, (ahv + pk + earned) * f, t.multiplier, self.tax_index()),
             ahv: ahv * f,
             pk: pk * f,
             earned: earned * f,
@@ -3075,8 +3085,8 @@ impl<'a> Run<'a> {
                 let t = &s.taxes;
                 let taxable_wealth = wealth + self.equity();
                 let (ti, tw) = (
-                    tax::tax(&t.income, self.year_income, t.multiplier),
-                    tax::tax(&t.wealth, taxable_wealth, t.multiplier),
+                    tax::tax_indexed(&t.income, self.year_income, t.multiplier, self.tax_index()),
+                    tax::tax_indexed(&t.wealth, taxable_wealth, t.multiplier, self.tax_index()),
                 );
                 self.tax_pending += ti + tw;
                 self.pending_income += ti;

@@ -220,6 +220,7 @@ Keywords: income tax, wealth tax, lump-sum tax, tax multiplier, table
 Simple **rate tables** that you can derive from the tax calculator of your canton. Between the brackets, the app **interpolates linearly**, and the rate is multiplied by the [tax multiplier](#f-tax-multiplier).
 
 - [Tax multiplier and tables](#f-tax-tables)
+- [Tariffs with inflation](#f-tax-indexed)
 - **Income tax** is assessed in December on the annual income (including pensions), **wealth tax** on the portfolio plus real estate net. Both are paid in May of the following year.
 - A tax still open at the end of the plan is deducted in the last month.
 - The [property gains tax](#f-tax-gain) is due when a property is sold, see also [Real estate](#s-realestate).
@@ -230,6 +231,17 @@ The example values are only placeholders. For your result, replace them with val
 Keywords: canton, municipality, multiplier
 
 A factor on all rates of the tables, the tax multiplier of **canton and municipality** together (for example 2.0 for a double rate). This way, you do not have to rewrite the tables when you move; you only change the factor. Values from 0 to 10 are allowed.
+
+## @f-tax-indexed Tariffs with inflation
+Keywords: bracket creep, inflation, brackets, tariff, today's prices
+
+With the tick, the **amounts** of the tables for income, wealth and lump sums apply in **today's prices** (prices at the simulation start) and grow with the simulated inflation of the respective path; the **rates** stay the same. This way the tax burden does not rise merely because of inflation (compensation of bracket creep), as the Confederation and the cantons handle it.
+
+- **Example:** table 0 → 0 %, 200 000 → 10 %, inflation 2 % per year. In year 10 the upper bracket is at 243 799. An income of 121 899 (100 000 with inflation) has the rate 5 % like 100 000 in the start year; without the tick it would be 6.09 %.
+- The price index in the month of the assessment applies: December for income and wealth, the month of the payout for lump sums. The estimated income tax in the need of the [3-bucket strategy](#f-wd-three_buckets) is computed the same way.
+- This also applies to the tables for married couples.
+- The [property gains tax](#f-tax-gain) stays unchanged; its tariff refers to the single gain.
+- New plans have the tick set. Older plans without the setting and imported old configurations compute as before without it: the amounts then apply nominally over the whole plan.
 
 ## @f-tax-gain Property gains tax
 Keywords: property gain, sale, property, holding period, Zurich, Aargau, canton, exemption limit, tariff, tax multiplier

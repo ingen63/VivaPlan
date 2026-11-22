@@ -71,7 +71,9 @@ Der Editor führt durch zwölf Abschnitte:
 - **Entnahmestrategie:** sechs Strategien (siehe unten).
 - **Optimierung:** sucht die beste Strategie für das eigene Szenario (siehe unten).
 - **Steuern:** Tabellen für Einkommens-, Vermögens-, Kapital- und Grundstückgewinnsteuer mit Steuerfuss; die Sätze
-  werden zwischen den Stufen linear interpoliert.
+  werden zwischen den Stufen linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
+  Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
+  Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne.
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 

@@ -128,6 +128,7 @@
     "sweeps": []
   },
   "taxes": {
+    "indexed": true,
     "capital": [
       [
         0,
