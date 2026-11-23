@@ -74,7 +74,8 @@ Der Editor führt durch zwölf Abschnitte:
 - **Steuern:** Modus «Wohnort» (#63): Einkommens- und Vermögenssteuer aus Kanton, Gemeinde (alle Gemeinden des
   Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuerdaten der ESTV, mit den
   Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
-  «mit 2. und 3. Säule», Berufskostenpauschale; statt dessen je Zeitraum ein eigener Wert, dazu die Säule 3a, #131) und
+  «mit 2. und 3. Säule», Berufskostenpauschale, bei Ehepaaren mit zwei Erwerbseinkommen der Zweitverdienerabzug;
+  statt dessen je Zeitraum ein eigener Wert, dazu die Säule 3a, #131) und
   der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
   Netzwerkzugriff. Im Modus «Wohnort» auch die Kapitalbezugssteuer (#64) nach der Regel des Kantons mit den
   Steuerfüssen der Einkommenssteuer und einem Fünftel des Bundestarifs, ohne eigene Tabelle; die Regel steht unter der
@@ -196,7 +197,8 @@ würde die Scheingenauigkeit verstärken.
   Kapitalbezüge eines Jahres zusammen, Stufen und Besitzdauer der Grundstückgewinnsteuer); die Vorlage Zürich der
   Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. Modus «Wohnort»: 25 erfundene Fälle in fünf Kantonen
   (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %);
-  Vergleichswerte für Erwerbstätige fehlen noch. Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
+  25 Fälle mit Erwerbstätigen (alleinstehend, verheiratet mit einem oder zwei Erwerbseinkommen) ebenfalls unter 1 %.
+  Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
   (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis und Zug nur angenähert.
   Grundstückgewinnsteuer im Modus «Wohnort»: je Kanton erfundene Fälle gegen von Hand nachgerechnete Werte nach
   Steuermäppchen oder Gesetz.

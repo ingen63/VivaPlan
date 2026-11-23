@@ -12,7 +12,10 @@ es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weitere
 - `federal`: der Tarif der direkten Bundessteuer, ebenso auf das steuerbare Einkommen;
 - `deductions` (je Kanton) und `federalDeductions` (Bund): die Standardabzüge vom Einkommen als Regeln
   `{id, kind, base, rate, min, max}` je Zivilstand und Variante (`retired`: Versicherungsprämien und Sparzinsen ohne
-  Beiträge an die 2. und 3. Säule; `working`: mit Beiträgen), dazu `earned`, die Berufskostenpauschale;
+  Beiträge an die 2. und 3. Säule; `working`: mit Beiträgen), dazu `earned`, die Berufskostenpauschale, und
+  `secondEarner`, der Zweitverdienerabzug für Ehepaare mit zwei Erwerbseinkommen (`reference`: `lower` = tieferes
+  Erwerbseinkommen nach der Berufskostenpauschale, `total` = Summe der Erwerbseinkommen, nur Bern; höchstens das tiefere
+  Erwerbseinkommen nach der Berufskostenpauschale; fehlt im Thurgau);
 - `wealth`: je Kanton die Kurve `[Vermögen, Satz]`, der Satz auf das Vermögen **vor** den Sozialabzügen (eingerechnet);
 - `municipalities`: je Gemeinde BFS-Nummer, Name, Kanton und die Steuerfüsse als Anteile (0.95 = 95 %) für Kanton,
   Gemeinde, reformierte, römisch-katholische und christkatholische Kirche, je für Einkommen und Vermögen;
@@ -36,7 +39,7 @@ Fehlt die gewünschte Variante, gilt die nächste vorhandene (Genf kennt nur «m
 «Pauschalabzug übrige Berufskosten» (`HauptErw_EK`). Basel-Landschaft, Basel-Stadt und Tessin nennen nur einen
 Höchstbetrag; er gilt als fester Abzug und trägt `approx: true`. Bei Format `STANDARDIZED` mit Prozent gilt der Betrag
 als Mindestbetrag (AI 1000, AR und SG 700). Nicht enthalten: Kinder, einkommensabhängige Abzüge (bescheidene Einkommen,
-Rentner, Entlastungsabzüge), Fahrkosten, Verpflegung, Zweitverdienerabzug.
+Rentner, Entlastungsabzüge), Fahrkosten, Verpflegung.
 
 Der Rechenkern (`crates/engine/src/taxdata.rs`) rechnet:
 Einkommenssteuer = Kantonskurve(steuerbares Einkommen Kanton) × (Steuerfuss Kanton + Kirche)

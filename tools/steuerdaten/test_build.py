@@ -105,6 +105,19 @@ class Deductions(unittest.TestCase):
         bl = build.earned_rule(ded("BL", "KANTON", "HauptErw_EK", "MAXIMUM", hi="500"))
         self.assertEqual(bl, {"base": 500.0, "rate": 0, "min": 0, "max": 500.0, "approx": True})
 
+    def test_second_earner_rule(self):
+        """#63/AK3: second-earner deduction: percentage of the lower earned income with limits (federal), fixed
+        amount (ZH), percentage of the total earned income (BE), none without a row (TG)."""
+        ch = build.second_earner_rule(ded("CH", "BUND", "ZweitVerdiener_EK", "PERCENT,MINIMUM,MAXIMUM", pct="50",
+                                          lo="8600", hi="14100"), "CH")
+        self.assertEqual(ch, {"base": 0, "rate": 0.5, "min": 8600.0, "max": 14100.0, "reference": "lower"})
+        zh = build.second_earner_rule(ded("ZH", "KANTON", "ZweitVerdiener_EK", "MAXIMUM", hi="6200"), "ZH")
+        self.assertEqual(zh, {"base": 6200.0, "rate": 0, "min": 0, "max": 0, "reference": "lower"})
+        be = build.second_earner_rule(ded("BE", "KANTON", "ZweitVerdiener_EK", "PERCENT,MAXIMUM", pct="2",
+                                          hi="9500"), "BE")
+        self.assertEqual(be["reference"], "total")
+        self.assertIsNone(build.second_earner_rule(None, "TG"))
+
     def test_variants_retired_and_working(self):
         """#63/AK3: insurance premiums «without» contributions to the 2nd and 3rd pillar for retired persons, «with»
         for working persons; the next available variant otherwise."""

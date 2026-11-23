@@ -244,6 +244,7 @@ Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons
 - **Sozialabzüge** für Alleinstehende oder Verheiratete, soweit der Kanton sie kennt.
 - **Versicherungsprämien und Sparzinsen:** in Jahren mit Erwerbseinkommen der Betrag «mit Beiträgen an die 2. und 3. Säule», sonst der Betrag «ohne».
 - **Berufskostenpauschale** auf dem Erwerb jeder erwerbstätigen Person: Satz, Mindest- und Höchstbetrag des Kantons, höchstens der Erwerb, ohne Erwerb kein Abzug. Beispiel Zürich: 3 %, mindestens 2 000, höchstens 4 000 Franken, bei 100 000 Erwerb also 3 000. Basel-Landschaft, Basel-Stadt und Tessin nennen in den ESTV-Daten nur einen Höchstbetrag; er gilt als fester Abzug (⚠).
+- **Zweitverdienerabzug** bei Ehepaaren, wenn beide Erwerbseinkommen haben: nach der Regel von Kanton und Bund, bezogen auf das tiefere Erwerbseinkommen nach der Berufskostenpauschale und höchstens dieses; Bern rechnet 2 % des gesamten Erwerbseinkommens. Beispiel Bund: 50 %, mindestens 8 600, höchstens 14 100 Franken; Zürich fest 6 200 Franken. Der Thurgau kennt keinen Zweitverdienerabzug.
 
 **Steuer:**
 
@@ -365,7 +366,7 @@ Die Steuer in VivaPlan ist eine **Schätzung für die Planung**, kein Steuerbesc
 
 **Referenzfälle:** Die Rechenregeln sind mit von Hand nachgerechneten Fällen getestet: Satz aus der Tabelle linear interpoliert mal Steuerfuss, Kapitalbezüge eines Jahres für den Satz zusammengerechnet, Stufen und Besitzdauer der Grundstückgewinnsteuer. Die Vorlage Kanton Zürich der Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. VivaPlan rechnet also mit Ihren Tabellen richtig; wie nahe das an Ihrer tatsächlichen Steuer liegt, hängt von den Tabellen ab.
 
-**Modus «Wohnort»:** 25 erfundene Fälle in Zürich, Bern, Luzern, Aarau und St. Gallen (Einkommen 80 000 bis 300 000, Vermögen 300 000 bis 4 Millionen, Rentnerinnen und Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab; verlangt sind höchstens ±5 %. Für Erwerbstätige fehlen solche Vergleichswerte noch. Individuelle Abzüge, Kinder, einkommensabhängige Abzüge, Fahrkosten und Verpflegung sind nicht enthalten.
+**Modus «Wohnort»:** 25 erfundene Fälle in Zürich, Bern, Luzern, Aarau und St. Gallen (Einkommen 80 000 bis 300 000, Vermögen 300 000 bis 4 Millionen, Rentnerinnen und Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab; verlangt sind höchstens ±5 %. Für Erwerbstätige (alleinstehend, verheiratet mit einem oder zwei Erwerbseinkommen; Bruttolohn 70 000 bis 210 000, Vermögen 50 000 bis 800 000) liegen 25 erfundene Fälle in denselben Gemeinden ebenfalls weniger als 1 % neben dem ESTV-Steuerrechner. Individuelle Abzüge, Kinder, einkommensabhängige Abzüge, Fahrkosten und Verpflegung sind nicht enthalten.
 
 **Kapitalbezug im Modus «Wohnort»:** 48 erfundene Fälle in Zürich, Bern, Luzern, Aarau, St. Gallen, Genf, Freiburg und Bellinzona (Bezüge 100 000, 500 000 und 1 Million, alleinstehend und verheiratet) weichen höchstens ±5 % vom ESTV-Steuerrechner 2026 ab. Wallis und Zug sind nur angenähert (in Zug bis rund 7 %).
 

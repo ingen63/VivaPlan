@@ -77,12 +77,37 @@ pub struct EarnedRule {
     pub approx: bool,
 }
 
+/// Reference amount of the second-earner deduction.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SecondEarnerReference {
+    /// The lower earned income after the flat deduction for professional expenses (federal, most cantons).
+    #[default]
+    Lower,
+    /// The sum of the earned incomes (Bern).
+    Total,
+}
+
+/// Second-earner deduction for married couples with two earned incomes: the rule applied to the reference amount, at
+/// most the lower earned income after the flat deduction for professional expenses.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct SecondEarner {
+    #[serde(flatten)]
+    pub rule: DeductionRule,
+    #[serde(default)]
+    pub reference: SecondEarnerReference,
+}
+
 /// Standard deductions from the income of one authority (canton or federal).
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Deductions {
     pub single: Variants,
     pub married: Variants,
     pub earned: EarnedRule,
+    /// Second-earner deduction; missing if the authority has none (Thurgau).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub second_earner: Option<SecondEarner>,
 }
 
 impl Deductions {
@@ -97,6 +122,7 @@ impl Deductions {
             earned: self.earned.rule.clone(),
             retired_kinds: kinds(&v.retired),
             working_kinds: kinds(&v.working),
+            second_earner: self.second_earner.clone().filter(|_| married),
         }
     }
 }
@@ -110,6 +136,8 @@ pub struct Applied {
     /// #131: Kind of each rule (`social`, `insurance`, `savingsInterest`), in the order of `retired` and `working`.
     pub retired_kinds: Vec<String>,
     pub working_kinds: Vec<String>,
+    /// Second-earner deduction; only for married couples.
+    pub second_earner: Option<SecondEarner>,
 }
 
 impl Applied {
@@ -123,7 +151,28 @@ impl Applied {
             .iter()
             .map(|r| r.amount(income, index))
             .sum();
-        general + earned.iter().map(|&e| self.earned.earned_amount(e, index)).sum::<f64>()
+        general
+            + earned.iter().map(|&e| self.earned.earned_amount(e, index)).sum::<f64>()
+            + self.second_earner_amount(earned, index)
+    }
+    /// Second-earner deduction: only for married couples (rule present) in which both persons have earned income; at
+    /// most the lower earned income after the flat deduction for professional expenses.
+    pub fn second_earner_amount(&self, earned: &[f64], index: f64) -> f64 {
+        let Some(s) = &self.second_earner else {
+            return 0.0;
+        };
+        if earned.len() < 2 || earned.iter().any(|&e| e <= 0.0) {
+            return 0.0;
+        }
+        let lower = earned
+            .iter()
+            .map(|&e| (e - self.earned.earned_amount(e, index)).max(0.0))
+            .fold(f64::INFINITY, f64::min);
+        let reference = match s.reference {
+            SecondEarnerReference::Lower => lower,
+            SecondEarnerReference::Total => earned.iter().sum(),
+        };
+        s.rule.amount(reference, index).min(lower)
     }
     /// #131: The same deduction as [`Applied::total`], split by kind (`social`, `insurance`, `savingsInterest` and
     /// `professional` for the flat deduction for professional expenses); kinds without an amount are left out.
@@ -150,6 +199,7 @@ impl Applied {
         for &e in earned {
             add("professional", self.earned.earned_amount(e, index));
         }
+        add("secondEarner", self.second_earner_amount(earned, index));
         out
     }
 }
@@ -479,6 +529,7 @@ mod tests {
             },
             retired_kinds: kinds(&["social", "social", "insurance"]),
             working_kinds: kinds(&["insurance"]),
+            second_earner: None,
         };
         assert_eq!(a.parts(50_000.0, &[0.0], 1.0), vec![("social".to_string(), 5000.0)]);
         assert_eq!(

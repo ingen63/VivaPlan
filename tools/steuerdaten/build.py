@@ -98,6 +98,11 @@ WEALTH_DEDUCTIONS = {
 }
 # Flat deduction for other professional expenses on the earned income
 EARNED_DEDUCTION = "HauptErw_EK"
+# Second-earner deduction for married couples with two earned incomes. Reference: the lower earned income after the
+# flat deduction for professional expenses; Bern: the total earned income (2 % of it). Derived from the ESTV tax
+# calculator 2026 (ZH, BE, LU, AG, SG, AR, GL, NE and federal, 23.11.2026).
+SECOND_EARNER_DEDUCTION = "ZweitVerdiener_EK"
+SECOND_EARNER_TOTAL = {"BE"}
 
 GAIN_SOURCE = ("ESTV, Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3; "
                "ZG, FR, VS, BS, BL, SG und VD zusätzlich nach dem kantonalen Gesetz")
@@ -348,7 +353,21 @@ def deductions(table, label, report):
         raise ValueError(f"{label}: flat deduction for professional expenses missing")
     out["earned"] = earned_rule(row)
     report.append(f"{label} earned: {out['earned']}")
+    second = second_earner_rule(table.get(SECOND_EARNER_DEDUCTION), label)
+    if second is not None:
+        out["secondEarner"] = second
+    report.append(f"{label} second earner: {second}")
     return out
+
+
+def second_earner_rule(row, label):
+    """Second-earner deduction as `{base, rate, min, max, reference}`; `reference` is `lower` (lower earned income
+    after the professional expenses) or `total` (sum of the earned incomes). The deduction is at most the lower earned
+    income after the professional expenses. None if the ESTV data have no such deduction."""
+    if row is None:
+        return None
+    rule, _ = rule_of(row)
+    return {**rule, "reference": "total" if label in SECOND_EARNER_TOTAL else "lower"}
 
 
 def total_deduction(table, spec, base):

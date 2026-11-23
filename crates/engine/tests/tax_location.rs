@@ -308,16 +308,63 @@ fn issue_63_ak3_taxable_income_with_standard_deductions() {
     // never negative
     assert_eq!(r.taxable(1000.0, &[], 1.0), (0.0, 0.0));
     assert_eq!(r.income_tax(1000.0, &[], 1.0), 0.0);
-    // Married, both working: professional expenses per person; married deductions of the canton
+    // Married, both working: professional expenses per person; married deductions of the canton; second-earner
+    // deduction of Zurich 6200
     let m = data.resolve(&loc("ZH", 261, Church::None), true).unwrap();
     let (c, _) = m.taxable(150_000.0, &[100_000.0, 50_000.0], 1.0);
-    assert_eq!(c, 150_000.0 - 5800.0 - 3000.0 - 2000.0);
+    assert_eq!(c, 150_000.0 - 5800.0 - 3000.0 - 2000.0 - 6200.0);
     // canton BL: only a maximum is known (fixed deduction, marked), at most the earned income
     let bl = data.canton("BL").unwrap();
     assert!(bl.deductions.earned.approx && !data.canton("ZH").unwrap().deductions.earned.approx);
     assert_eq!(bl.deductions.earned.rule.earned_amount(300.0, 1.0), 300.0);
     // The deductions lower the tax: working with the same income pays less than without deductions
     assert!(r.income_tax(100_000.0, &[100_000.0], 1.0) < r.income_tax(100_000.0, &[], 1.0));
+}
+
+/// #63/AK3: Second-earner deduction for married couples with two earned incomes, as in the ESTV tax calculator 2026
+/// (23.11.2026): reference is the lower earned income after the professional expenses, at most that income; Bern 2 %
+/// of the total earned income. Hand values from the calculator: net wages 54 243 and 18 640 (GL 3600 = minimum, AR
+/// 2500 = minimum, federal 8600 = minimum); 54 243 and 2 796 (NE 25 % of 796 = 199, federal capped at 796);
+/// 103 117 and 71 883 (BE 2 % of 175 000 = 3500, federal 14 100 = maximum, ZH 6200 fixed).
+#[test]
+fn issue_63_ak3_second_earner_deduction_as_estv() {
+    let data = taxdata::builtin();
+    let at = |canton: &str, bfs: u32, earned: &[f64]| {
+        let r = data.resolve(&loc(canton, bfs, Church::None), true).unwrap();
+        (
+            r.canton_deductions.second_earner_amount(earned, 1.0).round(),
+            r.federal_deductions.second_earner_amount(earned, 1.0).round(),
+        )
+    };
+    assert_eq!(at("GL", 1632, &[54_243.0, 18_640.0]), (3600.0, 8600.0));
+    assert_eq!(at("AR", 3001, &[54_243.0, 18_640.0]), (2500.0, 8600.0));
+    assert_eq!(at("NE", 6458, &[54_243.0, 2_796.0]), (199.0, 796.0));
+    assert_eq!(at("BE", 351, &[103_117.0, 71_883.0]), (3500.0, 14_100.0));
+    assert_eq!(at("ZH", 261, &[103_117.0, 71_883.0]), (6200.0, 14_100.0));
+    // Only with two earned incomes, only for married couples; Thurgau has none
+    assert_eq!(at("ZH", 261, &[134_539.0, 0.0]), (0.0, 0.0));
+    let single = data.resolve(&loc("ZH", 261, Church::None), false).unwrap();
+    assert_eq!(
+        single
+            .canton_deductions
+            .second_earner_amount(&[100_000.0, 50_000.0], 1.0),
+        0.0
+    );
+    assert_eq!(at("TG", 4566, &[103_117.0, 71_883.0]).0, 0.0);
+    // With the price index the amounts grow (#66)
+    let r = data.resolve(&loc("ZH", 261, Church::None), true).unwrap();
+    assert_eq!(
+        r.canton_deductions
+            .second_earner_amount(&[103_117.0, 71_883.0], 1.1)
+            .round(),
+        6820.0
+    );
+    // Listed as its own part of the proposal (#131)
+    let parts = r.canton_deductions.parts(175_000.0, &[103_117.0, 71_883.0], 1.0);
+    assert!(
+        parts.iter().any(|p| p.0 == "secondEarner" && p.1 == 6200.0),
+        "{parts:?}"
+    );
 }
 
 /// #63/AK4: Income tax = cantonal curve × (multiplier canton + church) + municipal curve × multiplier municipality
@@ -607,4 +654,259 @@ fn issue_63_ak3_bucket_need_uses_location_tax_with_earned_income() {
     );
     // without the earned income per person the deductions would be those of a retired person
     assert!((b.income_tax - res.income_tax(income, &[], 1.0)).abs() > 10.0);
+}
+
+/// Canton, BFS number, married, net earned income per person (as shown by the ESTV calculator after social
+/// contributions; `0.0` for no second earner), wealth, ESTV: federal, canton, municipality (income), canton,
+/// municipality (wealth).
+type EmployedCase = (&'static str, u32, bool, [f64; 2], f64, [f64; 5]);
+
+/// #63/AK6: Invented cases for employed persons, computed on 23.11.2026 in the ESTV tax calculator 2026 (user
+/// interface, version 2.1.3): gross wage 70 000, 110 000, 210 000 (single), 150 000 (married, one earner) and
+/// 115 000 + 80 000 (married, two earners); age 35, no children, no church, standard deductions only. The
+/// calculator derives the net wage itself; that net wage is the earned income of the app. Personal tax not included.
+const EMPLOYED: [EmployedCase; 25] = [
+    (
+        "ZH",
+        261,
+        false,
+        [63_063.0, 0.0],
+        50_000.0,
+        [648.0, 2460.0, 3081.0, 0.0, 0.0],
+    ),
+    (
+        "ZH",
+        261,
+        false,
+        [98_632.0, 0.0],
+        200_000.0,
+        [2275.0, 5237.0, 6560.0, 57.0, 71.0],
+    ),
+    (
+        "ZH",
+        261,
+        false,
+        [189_259.0, 0.0],
+        800_000.0,
+        [10750.0, 13944.0, 17467.0, 604.0, 756.0],
+    ),
+    (
+        "ZH",
+        261,
+        true,
+        [134_539.0, 0.0],
+        400_000.0,
+        [3203.0, 6383.0, 7996.0, 114.0, 142.0],
+    ),
+    (
+        "ZH",
+        261,
+        true,
+        [103_117.0, 71_883.0],
+        900_000.0,
+        [5309.0, 9167.0, 11482.0, 632.0, 792.0],
+    ),
+    (
+        "BE",
+        351,
+        false,
+        [63_063.0, 0.0],
+        50_000.0,
+        [648.0, 5949.0, 3080.0, 0.0, 0.0],
+    ),
+    (
+        "BE",
+        351,
+        false,
+        [98_632.0, 0.0],
+        200_000.0,
+        [2275.0, 10957.0, 5672.0, 305.0, 158.0],
+    ),
+    (
+        "BE",
+        351,
+        false,
+        [189_259.0, 0.0],
+        800_000.0,
+        [10750.0, 26339.0, 13634.0, 1944.0, 1006.0],
+    ),
+    (
+        "BE",
+        351,
+        true,
+        [134_539.0, 0.0],
+        400_000.0,
+        [3203.0, 13535.0, 7007.0, 733.0, 380.0],
+    ),
+    (
+        "BE",
+        351,
+        true,
+        [103_117.0, 71_883.0],
+        900_000.0,
+        [5309.0, 19216.0, 9947.0, 2232.0, 1155.0],
+    ),
+    (
+        "LU",
+        1061,
+        false,
+        [63_063.0, 0.0],
+        50_000.0,
+        [648.0, 3014.0, 3014.0, 0.0, 0.0],
+    ),
+    (
+        "LU",
+        1061,
+        false,
+        [98_632.0, 0.0],
+        200_000.0,
+        [2275.0, 5522.0, 5522.0, 149.0, 149.0],
+    ),
+    (
+        "LU",
+        1061,
+        false,
+        [189_259.0, 0.0],
+        800_000.0,
+        [10750.0, 12349.0, 12349.0, 801.0, 801.0],
+    ),
+    (
+        "LU",
+        1061,
+        true,
+        [134_539.0, 0.0],
+        400_000.0,
+        [3203.0, 6644.0, 6644.0, 299.0, 299.0],
+    ),
+    (
+        "LU",
+        1061,
+        true,
+        [103_117.0, 71_883.0],
+        900_000.0,
+        [5309.0, 9280.0, 9280.0, 843.0, 843.0],
+    ),
+    (
+        "AG",
+        4001,
+        false,
+        [63_063.0, 0.0],
+        50_000.0,
+        [648.0, 3079.0, 2870.0, 0.0, 0.0],
+    ),
+    (
+        "AG",
+        4001,
+        false,
+        [98_632.0, 0.0],
+        200_000.0,
+        [2275.0, 6344.0, 5913.0, 50.0, 47.0],
+    ),
+    (
+        "AG",
+        4001,
+        false,
+        [189_259.0, 0.0],
+        800_000.0,
+        [10750.0, 15504.0, 14450.0, 873.0, 813.0],
+    ),
+    (
+        "AG",
+        4001,
+        true,
+        [134_539.0, 0.0],
+        400_000.0,
+        [3203.0, 6903.0, 6433.0, 111.0, 104.0],
+    ),
+    (
+        "AG",
+        4001,
+        true,
+        [103_117.0, 71_883.0],
+        900_000.0,
+        [5309.0, 10525.0, 9810.0, 823.0, 767.0],
+    ),
+    (
+        "SG",
+        3203,
+        false,
+        [63_063.0, 0.0],
+        50_000.0,
+        [648.0, 3276.0, 4306.0, 0.0, 0.0],
+    ),
+    (
+        "SG",
+        3203,
+        false,
+        [98_632.0, 0.0],
+        200_000.0,
+        [2275.0, 6676.0, 8774.0, 223.0, 293.0],
+    ),
+    (
+        "SG",
+        3203,
+        false,
+        [189_259.0, 0.0],
+        800_000.0,
+        [10750.0, 15606.0, 20511.0, 1294.0, 1701.0],
+    ),
+    (
+        "SG",
+        3203,
+        true,
+        [134_539.0, 0.0],
+        400_000.0,
+        [3203.0, 7523.0, 9888.0, 446.0, 587.0],
+    ),
+    (
+        "SG",
+        3203,
+        true,
+        [103_117.0, 71_883.0],
+        900_000.0,
+        [5309.0, 11156.0, 14662.0, 1339.0, 1760.0],
+    ),
+];
+
+/// Income and wealth tax of the app for an employed case (net earned income per person, no pensions).
+fn employed_taxes(data: &taxdata::TaxData, case: &EmployedCase) -> (f64, f64) {
+    let (canton, bfs, married, earned, wealth, _) = *case;
+    let res = data.resolve(&loc(canton, bfs, Church::None), married).unwrap();
+    let persons: &[f64] = if married { &earned } else { &earned[..1] };
+    let income: f64 = earned.iter().sum();
+    (res.income_tax(income, persons, 1.0), res.wealth_tax(wealth, 1.0))
+}
+
+/// Relative deviation from the ESTV value; an ESTV value of 0 requires (almost) 0.
+fn deviation(mine: f64, estv: f64) -> f64 {
+    if estv == 0.0 {
+        if mine < 1.0 {
+            0.0
+        } else {
+            f64::INFINITY
+        }
+    } else {
+        (mine / estv - 1.0).abs()
+    }
+}
+
+/// #63/AK6: Employed persons (single, married with one or two earned incomes) deviate at most ±5 % from the ESTV tax
+/// calculator (income and wealth separately), with the standard deductions of the canton (variant «with contributions
+/// to the 2nd and 3rd pillar», flat deduction for professional expenses, second-earner deduction).
+#[test]
+fn issue_63_ak6_reference_cases_employed_match_estv_within_five_percent() {
+    let data = taxdata::builtin();
+    let mut worst: f64 = 0.0;
+    for case in &EMPLOYED {
+        let (canton, _, married, earned, wealth, r) = *case;
+        let (my_i, my_w) = employed_taxes(data, case);
+        let (ref_i, ref_w) = (r[0] + r[1] + r[2], r[3] + r[4]);
+        let what = format!("{canton} married={married} {earned:?}/{wealth}");
+        let (di, dw) = (deviation(my_i, ref_i), deviation(my_w, ref_w));
+        assert!(di <= 0.05, "{what}: income {my_i} instead of {ref_i}");
+        assert!(dw <= 0.05, "{what}: wealth {my_w} instead of {ref_w}");
+        worst = worst.max(di).max(dw);
+    }
+    // Regression: measured at most 0.3 % (23.11.2026)
+    assert!(worst < 0.01, "largest deviation {worst}");
 }

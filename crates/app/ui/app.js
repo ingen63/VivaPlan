@@ -1274,7 +1274,7 @@ document.addEventListener("change", e => {
  *  of the canton throughout, otherwise none (shown, but only stored after «Abzüge anpassen»). */
 const dedImplicit = () => isLocation(state) ? [{ from: "start", kind: "canton" }] : [];
 const dedRows = () => state.taxes.deductions ?? dedImplicit();
-const DED_PARTS = ["social", "insurance", "savingsInterest", "professional"];
+const DED_PARTS = ["social", "insurance", "savingsInterest", "professional", "secondEarner"];
 /** #131/AK5: proposal of the canton for the first year of row `i` with its parts, canton and federal (from the preview). */
 function dedProposal(i) {
   const rows = dedRows(), r = rows[+i];
