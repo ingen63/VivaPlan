@@ -890,3 +890,17 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #202/AK4 | Ein Start von Hand mit `nightly` startet `mutants-diff` weiterhin. Bei einem Pull Request bleibt das Verhalten gleich. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 22.11.2026 ok |
 | #202/AK5 | «Installationspakete» baut nur das `.dmg` für macOS, als Start von Hand und durch ein Versions-Tag. Der Release-Entwurf … | ☐ | **gilt** | kein Test (Durchsicht `pakete.yml`, `actionlint`) | 22.11.2026 teilweise: Matrix nur `macos`; Lauf mit Release-Entwurf fehlt |
 | #202/AK6 | `docs/TESTS.md` und die Kommentare in den Workflows beschreiben den neuen Ablauf. Hilfe und Übersicht nennen die Pakete für … | ☑ | **gilt** | kein Test (Durchsicht, `grep`) | 22.11.2026 ok: TESTS, ENTWICKLUNG, BESCHREIBUNG, README; Hilfe nannte nie Pakete |
+
+### #221 Robustheitstest über alle Rechenbefehle mit unsinnigen Argumenten
+
+[Issue #221](https://github.com/ingen63/VivaPlan/issues/221) · offen (`implemented`) · Umsetzung: 4162603
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #221/AK1 | Ein Test schickt jeden Befehl der Tabelle mit unsinnigen Argumenten an `engine::dispatch`: falscher Typ, fehlendes … | ☑ | **gilt** (Mengenfelder mit Fehlermeldung, Kommentar vom 23.11.2026) | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak1_…` (2 Tests); [optimize.rs](../crates/engine/src/optimize.rs) `issue_221_ak1_…` (2 Tests) | 23.11.2026 ok (Push-Umfang 133 Aufrufe in 9 s; nächtlicher Umfang lokal 1'358 Aufrufe in 89 s ohne Absturz) |
+| #221/AK2 | Jeder Aufruf endet mit einem Ergebnis oder einer Fehlermeldung; ein Absturz in irgendeinem Thread (auch Rayon) lässt … | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak1_every_command_…` (Panic-Hook) | 23.11.2026 ok (während der Umsetzung meldete er echte Funde mit Befehl und Argumenten: `bench_plan` mit Liste als Planung, Speicherabbruch bei `rerun_paths` mit 10'000 Läufen; behoben) |
+| #221/AK3 | Ein Hänger wird beendet und lässt den Lauf fehlschlagen (Zeitgrenze im nextest-Profil `ci`); die letzte Ausgabe … | ☐ | **gilt** | `.config/nextest.toml` (Override `command_sweep`) | 23.11.2026 teilweise: Konfiguration gelesen (`nextest list --profile ci`), jeder Aufruf steht vorher in der Ausgabe; Abbruch eines Hängers nur in CI belegbar |
+| #221/AK4 | Ein neuer Befehl in `ipc-commands.json` ist ohne weiteres Zutun im Test enthalten. | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak4_…` | 23.11.2026 ok (Befehle und Beispielargumente aus der Tabelle gelesen) |
+| #221/AK5 | Ein Befehl mit gültigen Argumenten, der ein Ergebnis mit NaN oder ∞ liefert, lässt den Test fehlschlagen. | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak5_…`; [finite.rs](../crates/engine/src/finite.rs) `issue_221_ak5_…` | 23.11.2026 ok (`dispatch` meldet NaN/∞ als `result_not_finite`, der Test verlangt mit gültigen Argumenten ein Ergebnis) |
+| #221/AK6 | Die Fallzahl folgt dem Budget wie bei proptest (wenige Fälle bei jedem Push, viele nächtlich). | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak6_…` | 23.11.2026 ok (`PROPTEST_CASES` 256 → 133 Aufrufe, 10'000 → alle systematischen und 625 zufällige) |
+| #221/AK7 | `docs/TESTS.md` nennt den Test in der Schicht 5. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
