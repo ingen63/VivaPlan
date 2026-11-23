@@ -96,7 +96,7 @@ Der Editor führt durch zwölf Abschnitte:
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 
-**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Grenzen für AHV-Bezug und Bezug Pensionskasse und der
+**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse und der
 Maximalbeträge der kleinen und der grossen Säule 3a. Sie gelten für alle Planungen auf dem Gerät und werden nicht in der Planungsdatei
 gespeichert. Ältere Planungsdateien werden beim Öffnen übernommen (feste Meilensteine, Säule 3a als eigenes Konto); ein
 Dialog nennt jede Änderung.
@@ -277,6 +277,11 @@ Eine **kontextabhängige Hilfe** öffnet auf **F1** rechts neben dem Editor und 
 oder der Grafik, an der man gerade arbeitet. Das Handbuch mit Suche erklärt jeden Abschnitt, vor allem die Renditen und die
 Optimierung ausführlich. Menüs und die üblichen Tastenkürzel (neu, öffnen, speichern, Simulation starten, Rückgängig,
 Wiederholen, Wechsel der Abschnitte) sind vorhanden, ebenso ein «Über»-Fenster mit Version und Buildzeit.
+
+**Darstellung:** «System» (Vorgabe), «Hell» oder «Dunkel» (#220). «System» folgt dem hellen oder dunklen
+Erscheinungsbild des Betriebssystems, auch wenn es zur Laufzeit wechselt. Das gewählte Thema gilt für die ganze
+Oberfläche, auch für Auswahlmenüs, Eingabefelder, Dialoge, Hilfe und Diagramme; das helle Thema sieht unter einem
+dunklen Systemthema gleich aus wie unter einem hellen. Die Wahl gilt für das Gerät, nicht für die Planung.
 
 **Sprache:** Die Oberfläche bezieht alle Texte aus Texttabellen je Sprache (#170). Beim ersten Start gilt die Sprache des
 Betriebssystems (ohne Region, fr_FR → Französisch); fehlt die Sprache, gilt Deutsch. Gewählt wird sie im Menü

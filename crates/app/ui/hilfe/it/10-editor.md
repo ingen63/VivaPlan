@@ -76,19 +76,22 @@ L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a
 > Esempio: avere 120'000, riscossioni 2041 e 2042 di 50'000 ciascuno, inizio della rendita AVS 2045: il resto di 20'000 (più interesse) viene versato nel mese d’inizio della rendita AVS. Se l’inizio della rendita AVS viene spostato al 2046, il piano resta valido, e il resto arriva nel 2046.
 
 ## @f-settings Impostazioni
-Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua
+Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua, aspetto, scuro, chiaro
 
 Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu «File → Impostazioni…» (Ctrl+,), oppure il pulsante «Impostazioni» in alto. Le impostazioni valgono per **tutte le pianificazioni su questo dispositivo** e vengono salvate in locale, **non nel file di pianificazione**.
 
 | Impostazione | Standard |
 |---|---|
 | Lingua | come il sistema |
+| Aspetto | Sistema |
 | Inizio della rendita AVS: limite inferiore e superiore | 63 e 70 anni |
 | Prestazione della cassa pensione: limite inferiore e superiore | 58 e 65 anni |
 | Pilastro 3a: importo massimo del versamento all’anno | 7'258 |
 | Grande pilastro 3a (senza cassa pensione): importo massimo all’anno | 36'288 |
 
 **Lingua:** «come il sistema» segue la lingua del sistema operativo (al primo avvio; senza regione, it_CH vale come italiano), altrimenti vale la lingua scelta. Sono offerti tedesco, inglese, francese e italiano; se manca la lingua del sistema, vale il tedesco. L’aiuto appare nella lingua scelta; un capitolo non ancora tradotto appare in tedesco. La stessa scelta si trova nel menu «Vista → Lingua». Un cambio ha effetto subito, anche sui menu; la pianificazione, le modifiche non salvate e la vista restano. Numeri, importi e date appaiono in ogni lingua nel formato svizzero (1'234'567.50, 2.5 %, 03.2040), e il file di pianificazione è lo stesso in ogni lingua. I nomi nella pianificazione (persone, immobili, tappe) non vengono tradotti; solo la pianificazione d’esempio riceve i suoi nomi nella lingua scelta all’apertura, con le stesse cifre.
+
+**Aspetto:** «Sistema» segue l’aspetto chiaro o scuro del sistema operativo, anche se cambia durante il lavoro; «Chiaro» e «Scuro» valgono indipendentemente. Il tema vale per tutta l’app: campi di immissione, menu di selezione, dialoghi, guida e grafici. La scelta ha effetto al salvataggio.
 
 Il limite inferiore non può essere superiore a quello superiore, le età sono anni interi, l’importo massimo è 0 o superiore. «Valori standard» ripristina tutto dopo una domanda di conferma. Se dopo una modifica una pianificazione è al di fuori dei nuovi limiti, la verifica lo segnala; la stessa pianificazione può perciò dare un messaggio su un altro dispositivo con altre impostazioni. La riga di comando usa sempre i valori standard.
 

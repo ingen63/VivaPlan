@@ -7,26 +7,30 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
 :root{
+  /* #220: the theme is set explicitly (attribute data-theme, setting «Darstellung»); color-scheme makes the native
+     controls (select popups, inputs, scroll bars) follow the theme instead of the system theme */
+  color-scheme:light;
   --bg:#f4f5f7; --panel:#ffffff; --panel2:#f9fafb; --text:#1c2230; --muted:#667085; --faint:#98a2b3;
-  --border:#e2e5ea; --accent:#2f6fdf; --accent-soft:#e8f0fd; --warn:#b7791f; --warn-soft:#fdf4e3;
+  --border:#e2e5ea; --accent:#2f6fdf; --accent-soft:#e8f0fd; --on-accent:#ffffff; --warn:#b7791f; --warn-soft:#fdf4e3;
   --err:#c53030; --err-soft:#fde8e8; --ok:#2f855a; --ok-soft:#e6f4ec;
   --c1:#2f6fdf; --c2:#14a38b; --c3:#a4abb8; --c4:#8b5cf6; --grid:#eceef2; --shadow:0 1px 2px rgba(16,24,40,.06);
   /* #120: ten colors for the results in the comparison */
   --r1:#2f6fdf; --r2:#14a38b; --r3:#e8590c; --r4:#8b5cf6; --r5:#d6336c; --r6:#8c6d1f; --r7:#5c940d; --r8:#c92a2a; --r9:#495057; --r10:#f59f00;
 }
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#12151b; --panel:#1a1e26; --panel2:#20252e; --text:#e6e9ef; --muted:#9aa3b2; --faint:#6b7483;
-    --border:#2c323d; --accent:#6c9cf5; --accent-soft:#1f2b44; --warn:#e0a84a; --warn-soft:#3a2f1c;
-    --err:#f07171; --err-soft:#3d2224; --ok:#5cc08a; --ok-soft:#1d3428;
-    --c1:#6c9cf5; --c2:#3cc7ad; --c3:#5d6575; --c4:#a78bfa; --grid:#262b35; --shadow:none;
-    --r1:#6c9cf5; --r2:#3cc7ad; --r3:#ff922b; --r4:#a78bfa; --r5:#f06595; --r6:#d4a24c; --r7:#94d82d; --r8:#fa5252; --r9:#adb5bd; --r10:#ffd43b;
-  }
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#12151b; --panel:#1a1e26; --panel2:#20252e; --text:#e6e9ef; --muted:#9aa3b2; --faint:#8a93a3;
+  --border:#2c323d; --accent:#6c9cf5; --accent-soft:#1f2b44; --on-accent:#0d1220; --warn:#e0a84a; --warn-soft:#3a2f1c;
+  --err:#f07171; --err-soft:#3d2224; --ok:#5cc08a; --ok-soft:#1d3428;
+  --c1:#6c9cf5; --c2:#3cc7ad; --c3:#5d6575; --c4:#a78bfa; --grid:#262b35; --shadow:none;
+  --r1:#6c9cf5; --r2:#3cc7ad; --r3:#ff922b; --r4:#a78bfa; --r5:#f06595; --r6:#d4a24c; --r7:#94d82d; --r8:#fa5252; --r9:#adb5bd; --r10:#ffd43b;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 button,input,select{font:inherit;color:inherit}
+/* #220: the popup of a select uses the colors of the options; without them Linux (GTK) shows light text on light */
+option,optgroup{background:var(--panel);color:var(--text)}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border)}
 header .brand{font-weight:650;letter-spacing:.2px}
 header .file{color:var(--muted);font-size:13px}
@@ -34,7 +38,7 @@ header .dirty{color:var(--warn);font-size:12px;margin-left:4px}
 header .spacer{flex:1}
 .btn{border:1px solid var(--border);background:var(--panel);border-radius:7px;padding:6px 12px;cursor:pointer;white-space:nowrap}
 .btn:hover{background:var(--panel2)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover{filter:brightness(1.07)}
 .btn.small{padding:3px 9px;font-size:12.5px}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}

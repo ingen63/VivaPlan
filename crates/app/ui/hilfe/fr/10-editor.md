@@ -76,19 +76,22 @@ L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusq
 > Exemple: avoir de 120 000, retraits en 2041 et 2042 de 50 000 chacun, début de la rente AVS en 2045: le solde de 20 000 (plus les intérêts) est versé le mois du début de la rente AVS. Si le début de la rente AVS est reporté à 2046, le plan reste valable, et le solde est versé en 2046.
 
 ## @f-settings Paramètres
-Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue
+Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair
 
 Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu «Fichier → Paramètres…» (Ctrl+,), ou le bouton «Paramètres» en haut. Les paramètres valent pour **toutes les planifications sur cet appareil** et sont enregistrés localement, **pas dans le fichier de planification**.
 
 | Paramètre | Standard |
 |---|---|
 | Langue | comme le système |
+| Apparence | Système |
 | Début de la rente AVS: limite inférieure et supérieure | 63 et 70 ans |
 | Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
 | Pilier 3a: montant maximal du versement par année | 7 258 |
 | Grand pilier 3a (sans caisse de pension): montant maximal par année | 36 288 |
 
 **Langue:** «comme le système» suit la langue du système d’exploitation (au premier démarrage; sans région, fr_FR compte comme français), sinon la langue choisie s’applique. Sont proposés l’allemand, l’anglais, le français et l’italien; si la langue du système manque, l’allemand s’applique. L’aide apparaît dans la langue choisie; un chapitre pas encore traduit apparaît en allemand. Le même choix figure dans le menu «Affichage → Langue». Un changement agit immédiatement, y compris sur les menus; la planification, les modifications non enregistrées et la vue sont conservées. Les nombres, montants et dates apparaissent dans chaque langue au format suisse (1'234'567.50, 2.5 %, 03.2040), et le fichier de planification est le même dans chaque langue. Les noms dans la planification (personnes, biens immobiliers, jalons) ne sont pas traduits; seule la planification d’exemple reçoit ses noms dans la langue choisie à l’ouverture, avec les mêmes chiffres.
+
+**Apparence:** «Système» suit l’apparence claire ou sombre du système d’exploitation, même si elle change pendant le travail; «Clair» et «Sombre» s’appliquent indépendamment. Le thème vaut pour toute l’app: champs de saisie, menus de sélection, dialogues, aide et graphiques. Le choix s’applique dès l’enregistrement.
 
 La limite inférieure ne doit pas être supérieure à la limite supérieure, les âges sont des années entières, le montant maximal est de 0 ou plus. «Valeurs standard» réinitialise tout après confirmation. Si une planification se situe en dehors des nouvelles limites après une modification, le contrôle le signale; la même planification peut donc donner un message sur un autre appareil avec d’autres paramètres. La ligne de commande utilise toujours les valeurs standard.
 

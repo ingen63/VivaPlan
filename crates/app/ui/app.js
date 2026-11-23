@@ -2405,7 +2405,6 @@ $("#fileInput").addEventListener("change", async e => {
   e.target.value = "";
 });
 window.addEventListener("resize", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderDerived(); if (lastRun) renderResults(lastRun); });
 
 // ---------- Settings (#25) ----------
 /** Default values of the settings; the engine knows the same ones (crates/engine/src/settings.rs). */
@@ -2436,9 +2435,10 @@ function limitProblems(l) {
 }
 /** #110: Question about saving before the simulation (default: on). */
 const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
-function settingsFields(l, language = I18n.choice()) {
+function settingsFields(l, language = I18n.choice(), theme = Theme.choice()) {
   const langs = [[I18n.SYSTEM, tr("language.system")], ...Object.entries(I18n.languages())];
   return `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
+    + `<label class="field" style="grid-column:1/-1"><span>${tr("settings.theme")}</span><select id="set-theme">${Theme.CHOICES.map(k => `<option value="${k}" ${k === theme ? "selected" : ""}>${tr("theme." + k)}</option>`).join("")}</select></label>`
     + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
     + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("");
 }
@@ -2458,6 +2458,7 @@ $("#settingsSave").addEventListener("click", e => {
   const l = readSettings(), problems = limitProblems(l);
   if (problems.length) { e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>"); return; }
   Pref.set("limits", l); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
+  Pref.set("theme", $("#set-theme").value); Theme.apply();
   const language = $("#set-language").value;
   $("#settings").close();
   // #170: a new language draws everything again (also the section)
@@ -2467,8 +2468,8 @@ $("#settingsSave").addEventListener("click", e => {
 $("#settingsDefaults").addEventListener("click", async e => {
   e.preventDefault();
   if (!await ask(tr("settings.defaults"), tr("settings.resetAsk"), null, tr("settings.reset"))) return;
-  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("askSaveBeforeRun", true);
-  $("#settingsBody").innerHTML = settingsFields(limits(), I18n.SYSTEM); $("#settingsErr").textContent = "";
+  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("askSaveBeforeRun", true); Pref.set("theme", "system"); Theme.apply();
+  $("#settingsBody").innerHTML = settingsFields(limits(), I18n.SYSTEM, "system"); $("#settingsErr").textContent = "";
   renderSection();
 });
 
@@ -2490,6 +2491,25 @@ const Pref = {
     else try { localStorage.setItem("rp.settings", JSON.stringify(this.cache)); } catch { /* as above */ }
   },
 };
+/**
+ * #220: Theme of the user interface (setting «Darstellung»): "system" follows `prefers-color-scheme`, also when the
+ * system theme changes while the app runs; "light" and "dark" apply always. Sets `data-theme` on the root element,
+ * the CSS variables (and with them the charts) follow it.
+ */
+const Theme = {
+  CHOICES: ["system", "light", "dark"],
+  media: matchMedia("(prefers-color-scheme: dark)"),
+  choice() { const c = Pref.get("theme", "system"); return this.CHOICES.includes(c) ? c : "system"; },
+  effective(choice = this.choice()) { return choice === "system" ? (this.media.matches ? "dark" : "light") : choice; },
+  apply() {
+    const t = this.effective();
+    if (document.documentElement.dataset.theme === t) return;
+    document.documentElement.dataset.theme = t;
+    if (state) { renderDerived(); if (lastRun) renderResults(lastRun); } // before the start nothing is drawn yet
+  },
+};
+Theme.media.addEventListener("change", () => Theme.apply());
+Theme.apply(); // system theme until the settings are loaded
 let showTaxCols = false;
 /** Years whose 3-bucket derivation is expanded in the yearly values. */
 const bucketOpen = new Set();
@@ -3814,6 +3834,7 @@ Object.assign(ACTIONS, {
 (async () => {
   const initial = location.hash.slice(1).split("/");
   await Pref.load();
+  Theme.apply();
   showTaxCols = Pref.get("showTaxCols", false) === true;
   if (SECTIONS.some(s => s.id === initial[0])) current = initial[0];
   let startup = null;
