@@ -222,6 +222,7 @@ Zwei Modi stehen zur Wahl: **Wohnort** rechnet die Einkommens-, Vermögens- und 
 Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten können. Zwischen den Stufen wird **linear interpoliert**, der Satz wird mit dem [Steuerfuss](#f-tax-multiplier) multipliziert.
 
 - [Steuer nach Wohnort](#f-tax-location)
+- [Abzüge vom Einkommen](#f-tax-deductions)
 - [Steuerfuss und Tabellen](#f-tax-tables)
 - [Tarife mit der Teuerung](#f-tax-indexed)
 - [Wie genau ist die Steuer?](#tax-accuracy)
@@ -236,7 +237,7 @@ Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerda
 
 Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons mit Suche: Namen eintippen) und die **Kirchensteuer** (keine, reformiert, römisch-katholisch, christkatholisch). Tarife, Abzüge und Steuerfüsse kommen aus der mitgelieferten Steuerdatei der ESTV (Steuerrechner, Grunddaten); die Karte nennt das Steuerjahr, die Quelle und die Steuerfüsse der Gemeinde. Es gibt keinen Netzwerkzugriff.
 
-**Steuerbares Einkommen** = Einkommen des Jahres (Erwerb netto, Pensionskassenrente, AHV) minus die **Standardabzüge** (Vorschlag des Kantons), nie negativ. Kanton und Bund haben je eigene Abzüge:
+**Steuerbares Einkommen** = Einkommen des Jahres (Erwerb netto, Pensionskassenrente, AHV) minus die **Standardabzüge** (Vorschlag des Kantons), nie negativ. Statt des Vorschlags gilt je Zeitraum auch ein eigener Wert, dazu die Säule 3a, siehe [Abzüge vom Einkommen](#f-tax-deductions). Kanton und Bund haben je eigene Abzüge:
 
 - **Sozialabzüge** für Alleinstehende oder Verheiratete, soweit der Kanton sie kennt.
 - **Versicherungsprämien und Sparzinsen:** in Jahren mit Erwerbseinkommen der Betrag «mit Beiträgen an die 2. und 3. Säule», sonst der Betrag «ohne».
@@ -254,6 +255,32 @@ Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons
 **Ausgeblendet:** Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch die für Verheiratete), die eigenen Regeln der Grundstückgewinnsteuer und der Steuerfuss (ohne das Häkchen) bleiben in der Datei; zurück auf «Eigene Tabellen» gelten sie wieder.
 
 **Prüfung:** Fehlt der Kanton oder die Gemeinde oder liegt die Gemeinde nicht im Kanton, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» ist gesperrt. Die Übersicht der Annahmen und der Reiter «Parameter» nennen den Wohnort, zum Beispiel «Zürich (ZH), Kirchensteuer keine».
+
+## @f-tax-deductions Abzüge vom Einkommen
+Stichworte: Abzüge, Vorschlag des Kantons, eigener Wert, Steuerveranlagung, steuerbares Einkommen, Säule 3a, Eigenmietwert, Hypothekarzinsen, Schuldzinsen, Berufskosten
+
+Die Karte **Abzüge vom Einkommen** im Abschnitt Steuern legt fest, was vom Einkommen des Jahres (Erwerb netto, Pensionskassenrente, AHV) abgezogen wird. Das **steuerbare Einkommen** = Einkommen − Abzüge, nie negativ.
+
+**Zeilen:** Die Abzüge sind zeitabhängig wie das Erwerbseinkommen; eine Zeile gilt ab ihrem Zeitpunkt bis zur nächsten. Neue Planungen haben zwei Zeilen, «ab Simulationsstart» (bis Pensionierung) und «ab Bezug Pensionskasse» (ab Pensionierung); weitere Zeilen sind möglich, zum Beispiel «ab 2029» wegen des Wegfalls des Eigenmietwerts. Wechselt die Zeile im Lauf eines Jahres, zählt jede Zeile für ihre Monate.
+
+Jede Zeile ist entweder:
+
+- **Vorschlag des Kantons** (nur im Modus [Wohnort](#f-tax-location), dort Standard): die Standardabzüge aus den Steuerdaten der ESTV, je für Kanton und Bund – Sozialabzüge, Versicherungsprämien und Sparzinsen, Berufskosten. Die Karte zeigt den Betrag für das erste Jahr der Zeile mit seinen Bestandteilen; angenäherte Berufskosten (Basel-Landschaft, Basel-Stadt, Tessin) sind mit ⚠ markiert. Der Vorschlag rechnet sich neu, wenn Sie Kanton, Gemeinde oder Zivilstand ändern.
+- **eigener Wert:** ein Betrag pro Jahr in Preisen des Simulationsstarts (wächst mit [Tarifen mit der Teuerung](#f-tax-indexed)), optional zusätzlich ein Prozentsatz des Einkommens. Er gilt für Kanton und Bund und bleibt, wenn Sie Kanton, Gemeinde oder Zivilstand ändern. Im Modus «Eigene Tabellen» gibt es nur den eigenen Wert; ohne Zeile gilt 0. Beispiel: eigener Wert 40 000, Einkommen 120 000, Steuer wie bei 80 000.
+
+**Eigenen Wert bestimmen:** Die Eingabehilfe rechnet ihn aus dem **Einkommen** und dem **steuerbaren Einkommen laut Veranlagung**, zum Beispiel 120 000 und 80 000 ergeben 40 000; «Als eigenen Wert übernehmen» setzt ihn in die Zeile. Dabei gilt:
+
+- Einkommen ist **netto**, nach AHV- und PK-Beiträgen, wie der Nettolohn im Lohnausweis, mit Renten.
+- **Ohne Säule 3a:** Die Einzahlungen kommen aus der Planung (siehe unten).
+- **Wohneigentum** (Eigenmietwert, Hypothekarzinsen, Unterhalt) gehört in den eigenen Wert. Ab 2029 gibt es für selbstgenutztes Eigentum keinen Eigenmietwert und keinen Schuldzinsabzug mehr; legen Sie dafür eine Zeile «ab 2029» an. **Hypothekarzinsen werden nicht automatisch abgezogen.**
+
+**Säule 3a:** Mit dem Häkchen **«Einzahlungen in die Säule 3a abziehen»** werden die Einzahlungen eines Jahres aus dem Abschnitt [Säule 3a](#s-pillar3a) (mit der indirekten Amortisation) vom steuerbaren Einkommen abgezogen, für Kanton und Bund, höchstens bis zum Maximalbetrag je Person aus den Einstellungen. Beispiel: Einkommen 100 000, sonst keine Abzüge, Einzahlung 7 000, Steuer wie bei 93 000. Neue Planungen haben das Häkchen gesetzt.
+
+**Bestehende Planungen** rechnen wie bisher: im Modus «Wohnort» mit dem Vorschlag des Kantons über die ganze Zeit, mit eigenen Tabellen ohne Abzüge, und ohne Abzug der Säule 3a. Erst «Abzüge anpassen» legt Zeilen an.
+
+**Prüfung:** Ein negativer Betrag oder ein Prozentsatz unter 0 % oder über 100 % ist ein Fehler im Abschnitt Steuern.
+
+**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, eigener Wert, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
 
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator

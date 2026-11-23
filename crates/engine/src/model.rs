@@ -909,6 +909,40 @@ pub struct Taxes {
     /// the canton in which the property lies. Missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub property_gain_own: bool,
+    /// #131: Deduct the contributions to pillar 3a of a year from the taxable income, at most the maximum per person
+    /// (settings, `limits.pillar3aMax`). Missing: no.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub deduct_pillar3a: bool,
+    /// #131: Deductions from income, time-dependent (a row applies from its point in time until the next row).
+    /// Missing: as before #131 – in the mode «Wohnort» the proposal of the canton throughout, with own tables none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deductions: Option<Vec<IncomeDeduction>>,
+}
+
+/// #131: Origin of a row of the deductions from income.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum DeductionKind {
+    /// Proposal of the canton: the deduction rules of the tax data file (#63), only in the mode «Wohnort».
+    Canton,
+    /// Own value: `amount` per year plus `rate` × income, for canton and federal tax.
+    #[default]
+    Own,
+}
+
+/// #131: Row of the deductions from income.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct IncomeDeduction {
+    pub from: TimeRef,
+    #[serde(default)]
+    pub kind: DeductionKind,
+    /// Own value: amount per year in prices of the simulation start (grows with «tariffs with inflation», #66).
+    #[serde(default)]
+    pub amount: f64,
+    /// Own value: additionally this share of the income (0.1 = 10 %).
+    #[serde(default)]
+    pub rate: f64,
 }
 
 /// #63: Source of the income and wealth tax.

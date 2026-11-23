@@ -222,6 +222,7 @@ Two modes are available: **Place of residence** calculates the income, wealth an
 Simple **rate tables** that you can derive from the tax calculator of your canton. Between the brackets, the app **interpolates linearly**, and the rate is multiplied by the [tax multiplier](#f-tax-multiplier).
 
 - [Tax by place of residence](#f-tax-location)
+- [Deductions from income](#f-tax-deductions)
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
 - [How accurate is the tax?](#tax-accuracy)
@@ -236,7 +237,7 @@ Keywords: place of residence, canton, municipality, church tax, denomination, FT
 
 In the mode **Place of residence** you only choose the **canton**, the **municipality** (list of the canton with search: type the name) and the **church tax** (none, Reformed, Roman Catholic, Christ Catholic). Tariffs, deductions and tax multipliers come from the bundled tax data file of the FTA (tax calculator, base data); the card names the tax year, the source and the tax multipliers of the municipality. There is no network access.
 
-**Taxable income** = income of the year (earned income net, pension fund pension, AHV) minus the **standard deductions** (proposal of the canton), never negative. Canton and federal tax each have their own deductions:
+**Taxable income** = income of the year (earned income net, pension fund pension, AHV) minus the **standard deductions** (proposal of the canton), never negative. Instead of the proposal an own value can apply per period, plus pillar 3a, see [Deductions from income](#f-tax-deductions). Canton and federal tax each have their own deductions:
 
 - **Social deductions** for single persons or married couples, where the canton has them.
 - **Insurance premiums and savings interest:** in years with earned income the amount “with contributions to the 2nd and 3rd pillar”, otherwise the amount “without”.
@@ -254,6 +255,32 @@ In the mode **Place of residence** you only choose the **canton**, the **municip
 **Hidden:** the own tables for income, wealth and lump sums (also those for married couples), the own rules of the property gains tax and the tax multiplier (without the check box) stay in the file; back on “Own tables” they apply again.
 
 **Validation:** If the canton or the municipality is missing or the municipality is not in the canton, this is an error in the section Taxes, and “Start simulation” is blocked. The overview of the assumptions and the tab “Parameters” name the place of residence, for example “Zürich (ZH), church tax none”.
+
+## @f-tax-deductions Deductions from income
+Keywords: deductions, proposal of the canton, own value, tax assessment, taxable income, pillar 3a, imputed rental value, mortgage interest, debt interest, professional expenses
+
+The card **Deductions from income** in the section Taxes sets what is deducted from the income of the year (earned income net, pension fund pension, AHV). The **taxable income** = income − deductions, never negative.
+
+**Rows:** The deductions are time-dependent like the earned income; a row applies from its point in time until the next one. New plans have two rows, “from the simulation start” (until retirement) and “from the pension fund payout” (from retirement); more rows are possible, for example “from 2029” because the imputed rental value is abolished. If the row changes during a year, each row counts for its months.
+
+Each row is either:
+
+- **Proposal of the canton** (only in the mode [place of residence](#f-tax-location), the default there): the standard deductions from the tax data of the FTA, for canton and federal tax – social deductions, insurance premiums and savings interest, professional expenses. The card shows the amount for the first year of the row with its parts; approximated professional expenses (Basel-Landschaft, Basel-Stadt, Ticino) are marked with ⚠. The proposal is computed anew if you change the canton, the municipality or the marital status.
+- **own value:** an amount per year in prices of the simulation start (grows with [tariffs with inflation](#f-tax-indexed)), optionally plus a percentage of the income. It applies to canton and federal tax and stays when you change the canton, the municipality or the marital status. In the mode “Own tables” there is only the own value; without a row 0 applies. Example: own value 40 000, income 120 000, tax as on 80 000.
+
+**Determining the own value:** The input help computes it from the **income** and the **taxable income according to the assessment**, for example 120 000 and 80 000 give 40 000; “Use as own value” puts it into the row. Note:
+
+- Income is **net**, after AHV and PK contributions, like the net salary on the salary statement, including pensions.
+- **Without pillar 3a:** the contributions come from the plan (see below).
+- **Home ownership** (imputed rental value, mortgage interest, maintenance) belongs in the own value. From 2029 there is no imputed rental value and no interest deduction for owner-occupied property; add a row “from 2029” for it. **Mortgage interest is not deducted automatically.**
+
+**Pillar 3a:** With the check box **“Deduct contributions to pillar 3a”** the contributions of a year from the section [Pillar 3a](#s-pillar3a) (including the indirect amortization) are deducted from the taxable income, for canton and federal tax, at most the maximum per person from the settings. Example: income 100 000, no other deductions, contribution 7 000, tax as on 93 000. New plans have the check box set.
+
+**Existing plans** compute as before: in the mode “place of residence” with the proposal of the canton throughout, with own tables without deductions, and without the pillar 3a deduction. Only “Adjust deductions” creates rows.
+
+**Validation:** A negative amount or a percentage below 0 % or above 100 % is an error in the section Taxes.
+
+**Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, own value, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
 
 ## @f-tax-multiplier Tax multiplier
 Keywords: canton, municipality, multiplier

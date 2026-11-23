@@ -673,6 +673,27 @@ fn check(plan: &Plan, v: &mut Issues) {
     if !own {
         check_tax_location(v, t.location.as_ref());
     }
+    // #131: Deductions from income: amount not negative, share of the income between 0 and 100 %, valid point in time.
+    for (i, d) in t.deductions.iter().flatten().enumerate() {
+        resolve(v, "taxes", term(msg!(term_income_deductions)), &d.from);
+        if d.kind == crate::model::DeductionKind::Canton && own {
+            continue;
+        }
+        if !(d.amount.is_finite() && d.amount >= 0.0) {
+            v.err_at(
+                "taxes",
+                format!("taxes.deductions.{i}.amount"),
+                msg!(deduction_amount_negative, row = i + 1),
+            );
+        }
+        if !(0.0..=1.0).contains(&d.rate) {
+            v.err_at(
+                "taxes",
+                format!("taxes.deductions.{i}.rate"),
+                msg!(deduction_rate_range, row = i + 1),
+            );
+        }
+    }
     for (key, name, rows) in tables {
         // #134: The tax (amount × rate) must not fall with a rising amount; only a warning, the computation runs.
         if rows

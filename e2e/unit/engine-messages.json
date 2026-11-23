@@ -222,6 +222,12 @@
     "text": "Lump-sum tax"
   },
   {
+    "code": "term_income_deductions",
+    "params": {},
+    "template": "Deductions from income",
+    "text": "Deductions from income"
+  },
+  {
     "code": "term_income_tax_married",
     "params": {},
     "template": "Income tax (married)",
@@ -1058,6 +1064,34 @@
     },
     "template": "Property gains tax: the canton “{canton}” is not in the tax data.",
     "text": "Property gains tax: the canton “Person 2” is not in the tax data."
+  },
+  {
+    "code": "deduction_amount_negative",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Deductions from income, row {row}: the amount must be 0 or greater.",
+    "text": "Deductions from income, row Person 2: the amount must be 0 or greater."
+  },
+  {
+    "code": "deduction_rate_range",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Deductions from income, row {row}: the share of the income must be between 0 % and 100 %.",
+    "text": "Deductions from income, row Person 2: the share of the income must be between 0 % and 100 %."
   },
   {
     "code": "property_canton_unknown",

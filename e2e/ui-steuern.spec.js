@@ -284,3 +284,133 @@ test.describe("Property gains tax by canton (#65)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Deductions from income with the proposal of the canton (#131)", () => {
+  const card = page => page.locator("#tax-deductions");
+  /** Plan with the stored rows `rows` (and optionally in the mode «Wohnort», Zurich). */
+  async function withRows(page, rows, loc) {
+    await page.evaluate(([rows, loc]) => {
+      state.taxes.deductions = rows;
+      if (loc) { state.taxes.mode = "location"; state.taxes.location = { canton: loc[0], municipality: loc[1], church: "none" }; }
+      markDirty(); renderSection(); scheduleRefresh();
+    }, [rows, loc]);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+
+  test("AK1, AK2: pillar 3a deduction with the maximum per person, can be switched off", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    const chk = card(page).locator('input[data-path="taxes.deductPillar3a"]');
+    await expect(chk).not.toBeChecked();       // existing plan: no new deduction
+    await expect(card(page)).toContainText("höchstens 7'258 Franken je Person");
+    await chk.check();
+    expect(await page.evaluate(() => state.taxes.deductPillar3a)).toBe(true);
+    await chk.uncheck();
+    expect(await page.evaluate(() => state.taxes.deductPillar3a)).toBe(false);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: new plans have the rows until and from retirement; more rows possible", async ({ page }) => {
+    const errors = await open(page);
+    const p = await page.evaluate(async () => blankPlan(await Engine.call("example_plan")));
+    expect(p.taxes.deductions).toEqual([{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
+    expect(p.taxes.deductPillar3a).toBe(true);
+    await withRows(page, p.taxes.deductions);
+    await expect(card(page).locator("[data-ded-row]")).toHaveCount(2);
+    await expect(card(page).locator('select[data-path="taxes.deductions.1.from"]')).toHaveValue("retire");
+    await card(page).locator('button[data-action="ded-add"]').click();
+    await expect(card(page).locator("[data-ded-row]")).toHaveCount(3);
+    await noErrors(page, errors);
+  });
+
+  test("AK4, AK5: in the mode «Wohnort» the proposal of the canton is the default; amount of the first year with parts, ⚠ for BL", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
+    await toLocation(page);
+    expect(await page.evaluate(() => state.taxes.deductions.map(r => r.kind))).toEqual(["canton", "canton"]);
+    await choose(page, "ZH", "Zürich");
+    await previewIdle(page);
+    const kind = card(page).locator('select[data-path="taxes.deductions.0.kind"]');
+    expect(await kind.locator("option").allTextContents()).toEqual(["Vorschlag des Kantons", "eigener Wert"]);
+    const proposal = card(page).locator('[data-ded-proposal="0"]');
+    await expect(proposal).toContainText(/^\d{4}: Kanton [\d']+ \(.*Versicherungsprämien [\d']+.*\), Bund [\d']+ \(/);
+    await expect(card(page).locator("[data-ded-approx]")).toHaveCount(0);
+    await choose(page, "BL", "Liestal");
+    await previewIdle(page);
+    await expect(card(page).locator("[data-ded-approx]").first()).toContainText("⚠");
+    await noErrors(page, errors);
+  });
+
+  test("AK6, AK7: own value per year and share of the income; the input help computes it from the assessment", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "own", amount: 0, rate: 0 }]);
+    await expect(card(page).locator('input[data-path="taxes.deductions.0.amount"]')).toBeVisible();
+    await expect(card(page).locator('input[data-path="taxes.deductions.0.rate"]')).toBeVisible();
+    await page.locator("#ded-calc-income").fill("120000");
+    await page.locator("#ded-calc-taxable").fill("80000");
+    await expect(page.locator("#ded-calc-result")).toHaveText("40'000");
+    await page.locator('button[data-action="ded-calc-apply"]').click();
+    expect(await page.evaluate(() => state.taxes.deductions[0])).toEqual({ from: "start", kind: "own", amount: 40000, rate: 0 });
+    await expect(card(page).locator('input[data-path="taxes.deductions.0.amount"]')).toHaveValue("40'000");
+    await noErrors(page, errors);
+  });
+
+  test("AK8, AK9: an own value stays when the canton changes; the explanation of the own value", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "own", amount: 15000, rate: 0 }], ["ZH", 261]);
+    await cantonSel(page).selectOption("BE");
+    expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 15000, rate: 0 }]);
+    const hint = page.locator("#ded-own-hint");
+    await expect(hint).toContainText("netto (nach AHV- und PK-Beiträgen");
+    await expect(hint).toContainText("Die Säule 3a gehört nicht dazu");
+    await expect(hint).toContainText("ab 2029 ohne Eigenmietwert und ohne Schuldzinsabzug");
+    await expect(card(page)).toContainText("Hypothekarzinsen werden nicht automatisch abgezogen");
+    await noErrors(page, errors);
+  });
+
+  test("AK11, AK13: own tables without a proposal; existing plans keep their deductions until adjusted", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    // Example plan (own tables, without rows): no deductions, nothing stored
+    await expect(card(page)).toContainText("Keine Abzüge.");
+    await expect(card(page).locator('select[data-path$=".kind"]')).toHaveCount(0);
+    expect(await page.evaluate(() => state.taxes.deductions)).toBeUndefined();
+    // Mode «Wohnort» without rows: the proposal of the canton throughout, still not stored
+    await toLocation(page);
+    await expect(card(page).locator("[data-ded-row]")).toHaveCount(1);
+    await expect(card(page)).toContainText("Vorschlag des Kantons");
+    expect(await page.evaluate(() => state.taxes.deductions)).toBeUndefined();
+    await card(page).locator('button[data-action="ded-edit"]').click();
+    expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "canton" }]);
+    // Back to own tables: the proposal becomes an own value of 0
+    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 0, rate: 0 }]);
+    await noErrors(page, errors);
+  });
+
+  test("AK14: a negative amount or a share above 100 % is an error in the taxes section", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "own", amount: -5, rate: 1.5 }]);
+    await expect(card(page).locator(".ferr").first()).toContainText("Zeile 1: Der Betrag muss 0 oder grösser sein");
+    await expect(card(page).locator(".ferr").nth(1)).toContainText("Anteil am Einkommen muss zwischen 0 % und 100 %");
+    expect(await page.evaluate(() => lastIssues.filter(i => i.severity === "error").map(i => [i.section, i.field]))).toEqual([
+      ["taxes", "taxes.deductions.0.amount"], ["taxes", "taxes.deductions.0.rate"]]);
+    await noErrors(page, errors);
+  });
+
+  test("AK15: the tax breakdown shows income, deductions with origin and taxable income", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "own", amount: 10000, rate: 0 }]);
+    await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    const heads = await page.locator("#resultsBody table.yt th.tx").allTextContents();
+    expect(heads.slice(-3)).toEqual(["Einkommen", "Abzüge", "Steuerbar"]);
+    const origin = page.locator("#resultsBody table.yt td[data-ded-origin]").first();
+    await expect(origin).toHaveAttribute("title", /eigener Wert: 10'000/);
+    await noErrors(page, errors);
+  });
+});

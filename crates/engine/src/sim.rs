@@ -168,6 +168,10 @@ pub struct MonthRecord {
     /// following year, see `tax_income`/`tax_wealth`). The yearly values show it in the row of the tax year.
     pub assessed_income: f64,
     pub assessed_wealth: f64,
+    /// #131: Income, deductions by origin and taxable income of the tax year; only in the month of the assessment
+    /// (December) of plans with deductions (mode «Wohnort», `taxes.deductions` or `taxes.deductPillar3a`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tax_basis: Option<TaxBasis>,
     /// Planned living costs from the plan (nominal, without housing costs).
     pub planned_spending: f64,
     /// Withdrawal from wealth: actual living costs and housing costs minus income (before taxes).
@@ -192,6 +196,52 @@ pub struct MonthRecord {
     /// #205: The floor of the spending rule sets the living costs this month (internal only, not part of the result).
     #[serde(skip)]
     pub at_floor: bool,
+}
+
+/// #131: Basis of the income tax of a year: income, deductions by origin, taxable income for canton and federal tax.
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaxBasis {
+    /// Income of the year (earned income + PK pension + AHV).
+    pub income: f64,
+    /// Proposal of the canton as applied (share of the year with a row «Vorschlag des Kantons»).
+    pub proposal_canton: f64,
+    pub proposal_federal: f64,
+    /// Share of the year's months with a row «Vorschlag des Kantons» (0 to 1).
+    pub proposal_share: f64,
+    /// Proposal of the canton for the whole year, split by kind (`social`, `insurance`, `savingsInterest`,
+    /// `professional`); empty without a proposal in the year.
+    pub parts_canton: Vec<(String, f64)>,
+    pub parts_federal: Vec<(String, f64)>,
+    /// Own value (amount and share of the income), for canton and federal tax.
+    pub own: f64,
+    /// Pillar 3a contributions, at most the maximum per person.
+    pub pillar3a: f64,
+    /// Taxable income, never negative; with own tables both are the same.
+    pub taxable_canton: f64,
+    pub taxable_federal: f64,
+}
+
+/// #131: Deductions of a tax year collected month by month: months with a proposal of the canton, own value and
+/// pillar 3a contributions per person.
+#[derive(Clone, Copy, Debug, Default)]
+struct YearDeductions {
+    months: u32,
+    canton_months: u32,
+    /// Sum of the own amounts per year over the months (divided by `months` at the end of the year).
+    own_amount: f64,
+    /// Sum of share × income of the months.
+    own_rate: f64,
+    pillar3a: [f64; 2],
+}
+
+/// #131: Compiled row of the deductions from income.
+#[derive(Clone, Copy, Debug)]
+struct CDeduction {
+    from: i32,
+    kind: crate::model::DeductionKind,
+    amount: f64,
+    rate: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -723,6 +773,12 @@ pub struct Simulator {
     location: Option<crate::taxdata::Resolved>,
     /// #65: Property gain tax per property (index as in `props`).
     gain_rules: Vec<GainRule>,
+    /// #131: Rows of the deductions from income, sorted by month; pillar 3a deduction and its maximum per person.
+    deductions: Vec<CDeduction>,
+    deduct_pillar3a: bool,
+    pillar3a_max: f64,
+    /// #131: Record the basis of the income tax (plans with deductions).
+    tax_basis: bool,
     pub fixed: crate::market::FixedCurves,
     pub source: ReturnSource,
     afford: Affordability,
@@ -856,6 +912,33 @@ impl Simulator {
                 }
             })
             .collect::<Result<Vec<_>>>()?;
+        // #131: Without rows as before: in the mode «Wohnort» the proposal of the canton throughout, otherwise none.
+        let deductions = match &plan.taxes.deductions {
+            Some(rows) => {
+                let mut out = Vec::with_capacity(rows.len());
+                for d in rows {
+                    if let Some(m) = r.resolve(&d.from)? {
+                        out.push(CDeduction {
+                            from: m.0,
+                            kind: d.kind,
+                            amount: d.amount,
+                            rate: d.rate,
+                        });
+                    }
+                }
+                // Sort stably: for the same month the later row applies.
+                out.sort_by_key(|d| d.from);
+                out
+            }
+            None if location.is_some() => vec![CDeduction {
+                from: i32::MIN,
+                kind: crate::model::DeductionKind::Canton,
+                amount: 0.0,
+                rate: 0.0,
+            }],
+            None => vec![],
+        };
+        let tax_basis = location.is_some() || plan.taxes.deductions.is_some() || plan.taxes.deduct_pillar3a;
         let props = plan
             .realestate
             .properties
@@ -958,6 +1041,10 @@ impl Simulator {
             taxes,
             location,
             gain_rules,
+            deductions,
+            deduct_pillar3a: plan.taxes.deduct_pillar3a,
+            pillar3a_max: plan.limits.pillar3a_max,
+            tax_basis,
             fixed: crate::market::FixedCurves {
                 stocks: curve(&plan.returns.fixed.stocks)?,
                 bonds: curve(&plan.returns.fixed.bonds)?,
@@ -989,13 +1076,82 @@ impl Simulator {
         p.income.at(m) * if p.income_indexed { infl_idx } else { 1.0 }
     }
 
-    /// Income tax of a year on the income `income` (earned income + PK pension + AHV); `earned`: earned income per
-    /// person (only used in the mode «Wohnort», #63). `index`: price index for the amounts (#66).
-    fn income_tax(&self, income: f64, earned: &[f64], index: f64) -> f64 {
-        match &self.location {
-            Some(r) => r.income_tax(income, earned, index),
-            None => tax::tax_indexed(&self.taxes.income, income, self.taxes.multiplier, index),
+    /// #131: Row of the deductions from income that applies in month `m` (`None` before the first row).
+    fn deduction_at(&self, m: YearMonth) -> Option<&CDeduction> {
+        match self.deductions.partition_point(|d| d.from <= m.0) {
+            0 => None,
+            i => Some(&self.deductions[i - 1]),
         }
+    }
+
+    /// #131: Deductible pillar 3a contributions of person `i` per year (at most the maximum of the settings). The only
+    /// place of the limit, so that it can differ per person (large pillar 3a, #152). `index`: price index (#66).
+    fn pillar3a_cap(&self, _i: usize, index: f64) -> f64 {
+        self.pillar3a_max * index
+    }
+
+    /// #131: Adds month `m` with the income `income` to the deductions of the tax year.
+    fn add_deduction_month(&self, acc: &mut YearDeductions, m: YearMonth, income: f64) {
+        acc.months += 1;
+        match self.deduction_at(m) {
+            Some(d) if d.kind == crate::model::DeductionKind::Canton => {
+                // Own tables: no proposal (#131).
+                if self.location.is_some() {
+                    acc.canton_months += 1;
+                }
+            }
+            Some(d) => {
+                acc.own_amount += d.amount;
+                acc.own_rate += d.rate * income;
+            }
+            None => {}
+        }
+    }
+
+    /// Income tax of a year on the income `income` (earned income + PK pension + AHV) with the deductions `acc`
+    /// (#131) and its basis; `earned`: earned income per person (proposal of the canton, #63). `index`: price index
+    /// for the amounts (#66).
+    fn income_tax(&self, income: f64, earned: &[f64], acc: &YearDeductions, index: f64) -> (f64, TaxBasis) {
+        let months = f64::from(acc.months.max(1));
+        let share = f64::from(acc.canton_months) / months;
+        let own = acc.own_amount / months * index + acc.own_rate;
+        let pillar3a = if self.deduct_pillar3a {
+            (0..self.people.len().min(2))
+                .map(|i| acc.pillar3a[i].min(self.pillar3a_cap(i, index)))
+                .sum()
+        } else {
+            0.0
+        };
+        let mut basis = TaxBasis {
+            income,
+            proposal_share: share,
+            own,
+            pillar3a,
+            ..Default::default()
+        };
+        let tax = match &self.location {
+            Some(r) => {
+                if share > 0.0 {
+                    let (pc, pf) = r.proposal(income, earned, index);
+                    basis.proposal_canton = share * pc;
+                    basis.proposal_federal = share * pf;
+                    basis.parts_canton = r.canton_deductions.parts(income, earned, index);
+                    basis.parts_federal = r.federal_deductions.parts(income, earned, index);
+                }
+                basis.taxable_canton = (income - (basis.proposal_canton + own + pillar3a)).max(0.0);
+                basis.taxable_federal = (income - (basis.proposal_federal + own + pillar3a)).max(0.0);
+                r.income_tax_on(basis.taxable_canton, basis.taxable_federal, index)
+            }
+            None => {
+                let d = own + pillar3a;
+                // Without deductions exactly the income as before #131.
+                let taxable = if d == 0.0 { income } else { (income - d).max(0.0) };
+                basis.taxable_canton = taxable;
+                basis.taxable_federal = taxable;
+                tax::tax_indexed(&self.taxes.income, taxable, self.taxes.multiplier, index)
+            }
+        };
+        (tax, basis)
     }
 
     /// Wealth tax of a year.
@@ -1027,6 +1183,14 @@ impl Simulator {
             .filter(|a| a.ahv.is_none_or(|h| m < h))
             .map(|a| a.contribution_m)
             .sum()
+    }
+
+    /// #131: Planned pillar 3a contribution of person `i` in month `m`.
+    fn pillar3a_contribution_of(&self, i: usize, m: YearMonth) -> f64 {
+        self.accounts
+            .get(i)
+            .filter(|a| a.ahv.is_none_or(|h| m < h))
+            .map_or(0.0, |a| a.contribution_m)
     }
 
     pub fn age_at(&self, m: YearMonth) -> f64 {
@@ -1238,6 +1402,8 @@ struct Run<'a> {
     year_income: f64,
     /// #63: Earned income of the calendar year per person (mode «Wohnort»: deductions).
     year_earned: [f64; 2],
+    /// #131: Deductions of the calendar year (rows, pillar 3a).
+    year_ded: YearDeductions,
     /// Lump sums of the calendar year per taxpayer: one entry for the household, or one per person
     /// for unmarried couples (#150).
     year_capital: Vec<f64>,
@@ -1368,6 +1534,7 @@ impl<'a> Run<'a> {
             month_gain_tax: 0.0,
             year_income: 0.0,
             year_earned: [0.0; 2],
+            year_ded: YearDeductions::default(),
             year_capital: vec![0.0; s.people.len().max(1)],
             props,
             p3a: s.accounts.iter().map(|a| a.balance).collect(),
@@ -2139,6 +2306,10 @@ impl<'a> Run<'a> {
                                 self.ledger.amortization += a;
                             } else {
                                 self.p3a[a] += x.amort_q;
+                                // #131: indirect amortization is a pillar 3a contribution
+                                if let Some(y) = self.year_ded.pillar3a.get_mut(a) {
+                                    *y += x.amort_q;
+                                }
                                 cost += x.amort_q;
                                 self.ledger.amortization += x.amort_q;
                             }
@@ -2174,6 +2345,9 @@ impl<'a> Run<'a> {
             if c.contribution_m > 0.0 && c.ahv.is_none_or(|h| m < h) {
                 self.p3a[a] += c.contribution_m;
                 paid_in += c.contribution_m;
+                if let Some(y) = self.year_ded.pillar3a.get_mut(a) {
+                    *y += c.contribution_m;
+                }
             }
             if self.record {
                 self.p3a_view[a].balances.push(self.p3a[a]);
@@ -2311,6 +2485,8 @@ impl<'a> Run<'a> {
         let last = s.start.plus(s.months as i32 - 1);
         let (mut living, mut housing, mut ahv, mut pk, mut earned, mut p3a) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut per_person = [0.0; 2];
+        // #131: the same deductions as the assessment
+        let mut ded = YearDeductions::default();
         let mut n = 0u32;
         // #6: If a spending rule (guardrails) steers spending, the living costs come from it.
         let rule = s.dynamic.filter(|_| self.budget_on);
@@ -2337,6 +2513,16 @@ impl<'a> Run<'a> {
             for (i, e) in per_person.iter_mut().enumerate().take(s.people.len()) {
                 *e += s.person_earned(i, mm, self.infl_idx);
             }
+            // the share of the income includes the 13th AHV pension as in the assessment (#198)
+            let a13 = if mm.year() >= AHV13_FROM_YEAR {
+                a * 13.0 / 12.0
+            } else {
+                a
+            };
+            s.add_deduction_month(&mut ded, mm, a13 + p + s.earned(mm, self.infl_idx));
+            for (i, y) in ded.pillar3a.iter_mut().enumerate().take(s.people.len()) {
+                *y += s.pillar3a_contribution_of(i, mm);
+            }
             n += 1;
         }
         let f = if n > 0 { 12.0 / f64::from(n) } else { 0.0 };
@@ -2346,17 +2532,22 @@ impl<'a> Run<'a> {
             ahv *= 13.0 / 12.0;
         }
         let per_person = per_person.map(|e| e * f);
+        ded.own_rate *= f;
+        ded.pillar3a = ded.pillar3a.map(|y| y * f);
         NeedBasis {
             year: m.year(),
             source,
             living_source: if rule.is_some() { "Guardrails" } else { "geplant" }.into(),
             living: living * f,
             housing: housing * f,
-            income_tax: s.income_tax(
-                (ahv + pk + earned) * f,
-                &per_person[..s.people.len().min(2)],
-                self.tax_index(),
-            ),
+            income_tax: s
+                .income_tax(
+                    (ahv + pk + earned) * f,
+                    &per_person[..s.people.len().min(2)],
+                    &ded,
+                    self.tax_index(),
+                )
+                .0,
             ahv: ahv * f,
             pk: pk * f,
             earned: earned * f,
@@ -3127,6 +3318,7 @@ impl<'a> Run<'a> {
             self.ledger.living += living;
             self.ledger.housing += prop_cost;
             self.year_income += income;
+            s.add_deduction_month(&mut self.year_ded, m, income);
             if s.location.is_some() {
                 for (i, e) in self.year_earned.iter_mut().enumerate().take(s.people.len()) {
                     *e += s.person_earned(i, m, self.infl_idx);
@@ -3167,6 +3359,7 @@ impl<'a> Run<'a> {
             let mut paid = 0.0;
             let (mut paid_income, mut paid_wealth) = (0.0, 0.0);
             let (mut assessed_income, mut assessed_wealth) = (0.0, 0.0);
+            let mut tax_basis = None;
             if m.month() == 5 {
                 paid += std::mem::take(&mut self.tax_pending);
                 paid_income += std::mem::take(&mut self.pending_income);
@@ -3175,16 +3368,23 @@ impl<'a> Run<'a> {
             if december {
                 let taxable_wealth = wealth + self.equity();
                 let idx = self.tax_index();
-                let (ti, tw) = (
-                    s.income_tax(self.year_income, &self.year_earned[..s.people.len().min(2)], idx),
-                    s.wealth_tax(taxable_wealth, idx),
+                let (ti, basis) = s.income_tax(
+                    self.year_income,
+                    &self.year_earned[..s.people.len().min(2)],
+                    &self.year_ded,
+                    idx,
                 );
+                let tw = s.wealth_tax(taxable_wealth, idx);
+                if s.tax_basis && self.record {
+                    tax_basis = Some(basis);
+                }
                 self.tax_pending += ti + tw;
                 self.pending_income += ti;
                 self.pending_wealth += tw;
                 (assessed_income, assessed_wealth) = (ti, tw);
                 self.year_income = 0.0;
                 self.year_earned = [0.0; 2];
+                self.year_ded = YearDeductions::default();
                 self.year_capital.fill(0.0);
             }
             if k + 1 == s.months {
@@ -3285,6 +3485,7 @@ impl<'a> Run<'a> {
                     tax_gain: self.month_gain_tax,
                     assessed_income,
                     assessed_wealth,
+                    tax_basis,
                     planned_spending: planned,
                     withdrawal: living + prop_cost + p3a_in - income,
                     earned,
@@ -3461,5 +3662,76 @@ mod tests_ledger {
         let minus = 8.0 + 16.0 + 64.0 + 4096.0;
         assert_eq!(l.sum(), plus - minus);
         assert_eq!(Ledger::default().sum(), 0.0);
+    }
+}
+
+#[cfg(test)]
+mod tests_deductions {
+    use super::*;
+
+    fn simulator(v: serde_json::Value) -> Simulator {
+        Simulator::new(&serde_json::from_value(v).unwrap()).unwrap()
+    }
+
+    fn plan(deduct: bool) -> serde_json::Value {
+        serde_json::json!({
+            "project": { "name": "Abzug" },
+            "household": { "persons": [ { "id": "A", "name": "A", "birth": "1980-01" } ] },
+            "milestones": [
+                { "id": "start", "kind": "date", "date": "2030-01" },
+                { "id": "end", "kind": "date", "date": "2031-12" }
+            ],
+            "pension": { "pk": { "capital": 0, "at": "start", "lumpsum": 0, "conversion": 0 }, "ahv": { "monthly": 0, "at": "start" } },
+            "flows": { "income": 0, "spending": 0 },
+            "wealth": { "stocks": 0, "bonds": 0, "cash": 0, "stockShare": 0, "reserveMonths": 0 },
+            "returns": { "source": "fixed", "fixed": { "stocks": 0, "bonds": 0, "inflation": 0 } },
+            "taxes": { "multiplier": 1.0, "income": [[0, 0.1]], "wealth": [], "capital": [], "deductPillar3a": deduct },
+            "limits": { "pillar3aMax": 7000 }
+        })
+    }
+
+    /// #131/AK1: At most the maximum per person (settings), growing with the price index; switched off: nothing.
+    #[test]
+    fn issue_131_ak1_pillar3a_capped_per_person() {
+        let s = simulator(plan(true));
+        let acc = YearDeductions {
+            months: 12,
+            pillar3a: [9000.0, 0.0],
+            ..Default::default()
+        };
+        let (t, b) = s.income_tax(100_000.0, &[], &acc, 1.0);
+        assert_eq!(b.pillar3a, 7000.0);
+        assert!((t - 9300.0).abs() < 1e-9);
+        assert!((s.income_tax(100_000.0, &[], &acc, 1.1).1.pillar3a - 7700.0).abs() < 1e-9);
+        let acc = YearDeductions {
+            months: 12,
+            pillar3a: [5000.0, 0.0],
+            ..Default::default()
+        };
+        assert_eq!(s.income_tax(100_000.0, &[], &acc, 1.0).1.pillar3a, 5000.0);
+        assert_eq!(
+            simulator(plan(false)).income_tax(100_000.0, &[], &acc, 1.0).1.pillar3a,
+            0.0
+        );
+    }
+
+    /// #131/AK3: Before the first row there is no deduction; months without a row count for the share of the year.
+    #[test]
+    fn issue_131_ak3_deduction_row_lookup() {
+        let mut v = plan(false);
+        v["taxes"]["deductions"] = serde_json::json!([
+            { "from": "2030-07", "kind": "own", "amount": 1200 },
+            { "from": "2031-01", "kind": "own", "amount": 2400 } ]);
+        let s = simulator(v);
+        assert!(s.deduction_at(YearMonth::new(2030, 6)).is_none());
+        assert_eq!(s.deduction_at(YearMonth::new(2030, 7)).unwrap().amount, 1200.0);
+        assert_eq!(s.deduction_at(YearMonth::new(2031, 1)).unwrap().amount, 2400.0);
+        let mut acc = YearDeductions::default();
+        for m in 1..=12 {
+            s.add_deduction_month(&mut acc, YearMonth::new(2030, m), 1000.0);
+        }
+        let (_, b) = s.income_tax(12_000.0, &[], &acc, 1.0);
+        assert_eq!(b.own, 600.0);
+        assert_eq!(b.taxable_canton, 11_400.0);
     }
 }

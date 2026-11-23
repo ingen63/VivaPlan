@@ -23,6 +23,7 @@ mod files;
 mod gain_location;
 mod golden;
 mod household;
+mod income_deductions;
 mod income_indexed;
 mod inflow_strategy;
 mod invariants;

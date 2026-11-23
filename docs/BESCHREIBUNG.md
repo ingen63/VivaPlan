@@ -73,7 +73,8 @@ Der Editor führt durch zwölf Abschnitte:
 - **Steuern:** Modus «Wohnort» (#63): Einkommens- und Vermögenssteuer aus Kanton, Gemeinde (alle Gemeinden des
   Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuerdaten der ESTV, mit den
   Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
-  «mit 2. und 3. Säule», Berufskostenpauschale) und der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
+  «mit 2. und 3. Säule», Berufskostenpauschale; statt dessen je Zeitraum ein eigener Wert, dazu die Säule 3a, #131) und
+  der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
   Netzwerkzugriff. Im Modus «Wohnort» auch die Kapitalbezugssteuer (#64) nach der Regel des Kantons mit den
   Steuerfüssen der Einkommenssteuer und einem Fünftel des Bundestarifs, ohne eigene Tabelle; die Regel steht unter der
   Gemeinde, angenäherte Regeln (Wallis, Zug) mit ⚠. Modus «Eigene Tabellen»: Tabellen für Einkommens-, Vermögens- und
@@ -196,8 +197,16 @@ würde die Scheingenauigkeit verstärken.
   Steuermäppchen oder Gesetz.
 - **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
   Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
-- **Was fehlt:** Abzüge im Einzelnen (nur so weit in den Sätzen enthalten), Eigenmietwert, Schuldzins- und
-  Unterhaltsabzug, Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
+- **Abzüge vom Einkommen (#131):** zeitabhängige Zeilen, je «Vorschlag des Kantons» (Modus «Wohnort», Standard:
+  Standardabzüge der Steuerdatei, Betrag des ersten Jahres mit Bestandteilen für Kanton und Bund) oder «eigener Wert»
+  (Betrag pro Jahr in Preisen des Starts, wächst mit «Tarife mit der Teuerung», optional Prozentsatz des Einkommens, für
+  Kanton und Bund; Eingabehilfe aus Einkommen und steuerbarem Einkommen der Veranlagung). Neue Planungen: Zeilen «bis
+  Pensionierung» und «ab Pensionierung». Dazu abschaltbar die Einzahlungen in die Säule 3a (mit indirekter
+  Amortisation), höchstens der Maximalbetrag je Person der Einstellungen. Steuerbares Einkommen nie negativ;
+  Hypothekarzinsen nie automatisch (Wohneigentum gehört in den eigenen Wert). Bestehende Planungen rechnen wie bisher.
+  Die Jahreswerte zeigen mit den Steuerspalten Einkommen, Abzüge mit Herkunft und steuerbares Einkommen.
+- **Was fehlt:** Abzüge im Einzelnen (nur als eigener Wert oder in den Sätzen), Eigenmietwert, Schuldzins- und
+  Unterhaltsabzug (nur im eigenen Wert), Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
   Investitionen und Kosten beim Grundstückgewinn, bei der Grundstückgewinnsteuer nach Kanton die Selbstnutzung je
   Immobilie und die Anpassung der Anlagekosten an die Teuerung, künftige Gesetzesänderungen.
 

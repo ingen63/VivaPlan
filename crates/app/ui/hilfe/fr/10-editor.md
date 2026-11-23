@@ -222,6 +222,7 @@ Deux modes sont disponibles: **Domicile** calcule l’impôt sur le revenu, sur 
 Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impôts de votre canton. Entre les paliers, l’interpolation est **linéaire**; le taux est multiplié par le [coefficient d’impôt](#f-tax-multiplier).
 
 - [Impôt selon le domicile](#f-tax-location)
+- [Déductions du revenu](#f-tax-deductions)
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
 - [Barèmes avec le renchérissement](#f-tax-indexed)
 - [Quelle est la précision de l’impôt?](#tax-accuracy)
@@ -236,7 +237,7 @@ Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, 
 
 Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune** (liste du canton avec recherche: saisir le nom) et l’**impôt ecclésiastique** (aucune, réformée, catholique romaine, catholique chrétienne). Barèmes, déductions et coefficients d’impôt proviennent du fichier de données fiscales de l’AFC livré avec l’application (calculateur d’impôts, données de base); la carte indique l’année fiscale, la source et les coefficients d’impôt de la commune. Il n’y a pas d’accès au réseau.
 
-**Revenu imposable** = revenu de l’année (revenu de l’activité lucrative net, rente de la caisse de pension, AVS) moins les **déductions standard** (proposition du canton), jamais négatif. Le canton et la Confédération ont chacun leurs propres déductions:
+**Revenu imposable** = revenu de l’année (revenu de l’activité lucrative net, rente de la caisse de pension, AVS) moins les **déductions standard** (proposition du canton), jamais négatif. Au lieu de la proposition, une valeur propre peut s’appliquer par période, plus le pilier 3a, voir [Déductions du revenu](#f-tax-deductions). Le canton et la Confédération ont chacun leurs propres déductions:
 
 - **Déductions sociales** pour personnes seules ou mariées, dans la mesure où le canton en prévoit.
 - **Primes d’assurance et intérêts de capitaux d’épargne:** les années avec revenu de l’activité lucrative le montant «avec cotisations aux 2e et 3e piliers», sinon le montant «sans».
@@ -254,6 +255,32 @@ Dans le mode **Domicile**, vous choisissez seulement le **canton**, la **commune
 **Masqués:** les barèmes propres pour le revenu, la fortune et le retrait en capital (y compris ceux pour personnes mariées), les règles propres de l’impôt sur les gains immobiliers et le coefficient d’impôt (sans la case) restent dans le fichier; de retour à «Barèmes propres», ils s’appliquent à nouveau.
 
 **Contrôle:** si le canton ou la commune manque ou si la commune ne se trouve pas dans le canton, c’est une erreur dans la section Impôts, et «Lancer la simulation» est bloqué. L’aperçu des hypothèses et l’onglet «Paramètres» indiquent le domicile, par exemple «Zürich (ZH), impôt ecclésiastique aucune».
+
+## @f-tax-deductions Déductions du revenu
+Mots-clés: déductions, proposition du canton, valeur propre, taxation, revenu imposable, pilier 3a, valeur locative, intérêts hypothécaires, intérêts passifs, frais professionnels
+
+La carte **Déductions du revenu** de la section Impôts fixe ce qui est déduit du revenu de l’année (revenu d’activité net, rente de la caisse de pension, AVS). Le **revenu imposable** = revenu − déductions, jamais négatif.
+
+**Lignes:** Les déductions dépendent du temps comme le revenu de l’activité lucrative; une ligne s’applique de sa date jusqu’à la suivante. Les nouvelles planifications ont deux lignes, l’une dès le début de la simulation (jusqu’à la retraite), l’autre dès le retrait de la caisse de pension (dès la retraite); d’autres lignes sont possibles, par exemple «dès 2029» en raison de la suppression de la valeur locative. Si la ligne change en cours d’année, chaque ligne compte pour ses mois.
+
+Chaque ligne est soit:
+
+- **Proposition du canton** (seulement dans le mode [domicile](#f-tax-location), où elle est la valeur par défaut): les déductions standard des données fiscales de l’AFC, pour le canton et la Confédération – déductions sociales, primes d’assurance et intérêts d’épargne, frais professionnels. La carte indique le montant de la première année de la ligne avec ses composantes; les frais professionnels approximés (Bâle-Campagne, Bâle-Ville, Tessin) sont marqués d’un ⚠. La proposition est recalculée si vous changez le canton, la commune ou l’état civil.
+- **valeur propre:** un montant par an aux prix du début de la simulation (croît avec les [barèmes avec le renchérissement](#f-tax-indexed)), en option plus un pourcentage du revenu. Elle s’applique au canton et à la Confédération et est conservée si vous changez le canton, la commune ou l’état civil. Dans le mode «Barèmes propres», seule la valeur propre existe; sans ligne, 0 s’applique. Exemple: valeur propre 40 000, revenu 120 000, impôt comme sur 80 000.
+
+**Déterminer la valeur propre:** L’aide à la saisie la calcule à partir du **revenu** et du **revenu imposable selon la taxation**, par exemple 120 000 et 80 000 donnent 40 000; «Reprendre comme valeur propre» l’inscrit dans la ligne. À noter:
+
+- Le revenu est **net**, après les cotisations AVS et CP, comme le salaire net du certificat de salaire, rentes comprises.
+- **Sans pilier 3a:** les versements proviennent de la planification (voir ci-dessous).
+- La **propriété du logement** (valeur locative, intérêts hypothécaires, entretien) fait partie de la valeur propre. Dès 2029, il n’y a plus de valeur locative ni de déduction des intérêts pour le logement occupé par le propriétaire; créez pour cela une ligne «dès 2029». **Les intérêts hypothécaires ne sont pas déduits automatiquement.**
+
+**Pilier 3a:** Avec la case **«Déduire les versements au pilier 3a»**, les versements d’une année de la section [Pilier 3a](#s-pillar3a) (avec l’amortissement indirect) sont déduits du revenu imposable, pour le canton et la Confédération, au plus le montant maximal par personne des réglages. Exemple: revenu 100 000, aucune autre déduction, versement 7 000, impôt comme sur 93 000. Les nouvelles planifications ont la case cochée.
+
+**Les planifications existantes** calculent comme avant: dans le mode «domicile» avec la proposition du canton pendant toute la durée, avec des tableaux propres sans déductions, et sans déduction du pilier 3a. Seul «Adapter les déductions» crée des lignes.
+
+**Contrôle:** Un montant négatif ou un pourcentage inférieur à 0 % ou supérieur à 100 % est une erreur dans la section Impôts.
+
+**Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent le revenu, les déductions (canton; l’origine – proposition du canton, valeur propre, pilier 3a – dans l’infobulle de la cellule) et le revenu imposable (celui de la Confédération dans l’infobulle s’il diffère).
 
 ## @f-tax-multiplier Coefficient d’impôt
 Mots-clés: canton, commune, multiplicateur

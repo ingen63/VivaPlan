@@ -545,6 +545,22 @@ ein (`BUILTIN`).
   eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie
   bei `taxes.couple`: zweite Person und `household.married`; unverheiratete Paare rechnen mit den Kurven und Abzügen
   für Alleinstehende auf dem Haushaltseinkommen.
+- **Abzüge vom Einkommen (#131):** `taxes.deductions` = zeitabhängige Zeilen `{ from, kind: "canton" | "own", amount,
+  rate }` (`CDeduction`, sortiert wie eine Kurve), `taxes.deductPillar3a` (Standard nein). Fehlt `deductions`, gilt
+  wie vor #131 im Modus «Wohnort» der Vorschlag über die ganze Zeit, mit eigenen Tabellen nichts. `Run::year_ded`
+  (`YearDeductions`) sammelt je Monat: Monate mit Vorschlag (nur im Modus «Wohnort»), eigener Betrag und `rate` ×
+  Monatseinkommen, Einzahlungen in die Säule 3a je Person (Beitrag und indirekte Amortisation). Im Dezember
+  (`Simulator::income_tax`): Anteil = Vorschlagsmonate / Monate des Jahres; Vorschlag = Anteil × `Resolved::proposal`
+  (Kanton, Bund); eigener Wert = Summe der Beträge / Monate × Index + Summe `rate` × Einkommen; Säule 3a = Σ je Person
+  min(Einzahlung, `pillar3a_cap`) (einzige Stelle der Begrenzung, heute `limits.pillar3aMax` × Index, #152 erweitert sie
+  je Person). Steuerbar Kanton/Bund = Einkommen − (Vorschlag + eigener Wert + 3a), nie negativ; mit eigenen Tabellen
+  ohne Abzüge exakt das Einkommen (Golden-Dateien unverändert). Die Schätzung des Netto-Bedarfs (3-Topf, `plan_basis`)
+  rechnet mit denselben Zeilen (Anteil am Einkommen mit der 13. AHV-Rente) und den geplanten 3a-Beiträgen, auf 12
+  Monate hochgerechnet. `MonthRecord.tax_basis`
+  (`TaxBasis`: Einkommen, Vorschlag Kanton/Bund mit Anteil und Bestandteilen je Art, eigener Wert, 3a, steuerbar
+  Kanton/Bund) nur im Dezember und nur bei Planungen mit Abzügen (Modus «Wohnort», `deductions` oder
+  `deductPillar3a`). Prüfung: Betrag ≥ 0, `rate` 0 bis 1 (Fehler am Feld), Zeitpunkt auflösbar; Zeilen «canton» mit
+  eigenen Tabellen ungeprüft und ohne Wirkung.
 - **Kapitalbezüge (#64):** je Kanton `capital` (Satz der einfachen Steuer auf den ganzen Bezug, Steuerfuss 100 %,
   Alleinstehende und Verheiratete), wo nötig `capitalMunicipal` (eigene Regel der Gemeindesteuer: Schwyz, Wallis,
   Genf; Freiburg wegen `cantonMultiplier`), `capitalRule` (Text) und `capitalApprox` (Näherung: Wallis, Zug); dazu

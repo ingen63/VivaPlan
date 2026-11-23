@@ -90,10 +90,13 @@ impl Deductions {
     pub fn applied(&self, married: bool) -> Applied {
         let v = if married { &self.married } else { &self.single };
         let rules = |r: &[NamedRule]| r.iter().map(|n| n.rule.clone()).collect();
+        let kinds = |r: &[NamedRule]| r.iter().map(|n| n.kind.clone()).collect();
         Applied {
             retired: rules(&v.retired),
             working: rules(&v.working),
             earned: self.earned.rule.clone(),
+            retired_kinds: kinds(&v.retired),
+            working_kinds: kinds(&v.working),
         }
     }
 }
@@ -104,6 +107,9 @@ pub struct Applied {
     pub retired: Vec<DeductionRule>,
     pub working: Vec<DeductionRule>,
     pub earned: DeductionRule,
+    /// #131: Kind of each rule (`social`, `insurance`, `savingsInterest`), in the order of `retired` and `working`.
+    pub retired_kinds: Vec<String>,
+    pub working_kinds: Vec<String>,
 }
 
 impl Applied {
@@ -118,6 +124,33 @@ impl Applied {
             .map(|r| r.amount(income, index))
             .sum();
         general + earned.iter().map(|&e| self.earned.earned_amount(e, index)).sum::<f64>()
+    }
+    /// #131: The same deduction as [`Applied::total`], split by kind (`social`, `insurance`, `savingsInterest` and
+    /// `professional` for the flat deduction for professional expenses); kinds without an amount are left out.
+    pub fn parts(&self, income: f64, earned: &[f64], index: f64) -> Vec<(String, f64)> {
+        let working = earned.iter().any(|&e| e > 0.0);
+        let (rules, kinds) = if working {
+            (&self.working, &self.working_kinds)
+        } else {
+            (&self.retired, &self.retired_kinds)
+        };
+        let mut out: Vec<(String, f64)> = Vec::new();
+        let mut add = |kind: &str, amount: f64| {
+            if amount == 0.0 {
+                return;
+            }
+            match out.iter_mut().find(|p| p.0 == kind) {
+                Some(p) => p.1 += amount,
+                None => out.push((kind.to_string(), amount)),
+            }
+        };
+        for (k, r) in rules.iter().enumerate() {
+            add(kinds.get(k).map_or("social", String::as_str), r.amount(income, index));
+        }
+        for &e in earned {
+            add("professional", self.earned.earned_amount(e, index));
+        }
+        out
     }
 }
 
@@ -285,7 +318,20 @@ impl Resolved {
     /// tariffs and deductions (#66; 1.0 = unadjusted).
     pub fn income_tax(&self, income: f64, earned: &[f64], index: f64) -> f64 {
         let (c, f) = self.taxable(income, earned, index);
-        tax_indexed(&self.cantonal, c, 1.0, index) + tax_indexed(&self.federal, f, 1.0, index)
+        self.income_tax_on(c, f, index)
+    }
+
+    /// #131: Proposal of the canton: standard deductions for canton and federal tax (rules of the tax data file).
+    pub fn proposal(&self, income: f64, earned: &[f64], index: f64) -> (f64, f64) {
+        (
+            self.canton_deductions.total(income, earned, index),
+            self.federal_deductions.total(income, earned, index),
+        )
+    }
+
+    /// #131: Income tax of a year on the taxable income for canton (`canton`) and federal tax (`federal`).
+    pub fn income_tax_on(&self, canton: f64, federal: f64, index: f64) -> f64 {
+        tax_indexed(&self.cantonal, canton, 1.0, index) + tax_indexed(&self.federal, federal, 1.0, index)
     }
 
     /// Wealth tax of a year.
@@ -399,6 +445,7 @@ mod tests {
                 max: 4000.0,
                 ..Default::default()
             },
+            ..Default::default()
         };
         assert_eq!(a.total(50_000.0, &[], 1.0), 5000.0);
         assert_eq!(a.total(50_000.0, &[0.0, 0.0], 1.0), 5000.0);
@@ -412,5 +459,33 @@ mod tests {
         // ... also the minimum and the maximum of the professional expenses (3 % of 10 000 = 300 < 2 × 2000)
         assert_eq!(a.total(10_000.0, &[10_000.0], 2.0), 6000.0 + 4000.0);
         assert_eq!(a.total(500_000.0, &[500_000.0], 2.0), 6000.0 + 8000.0);
+    }
+
+    /// #131/AK5: Parts of the proposal by kind: amounts of the same kind add up, without earned income (also with
+    /// zeros per person) the variant «retired», kinds without an amount are left out.
+    #[test]
+    fn issue_131_ak5_parts_by_kind() {
+        let r = |base| DeductionRule {
+            base,
+            ..Default::default()
+        };
+        let kinds = |k: &[&str]| k.iter().map(|x| x.to_string()).collect();
+        let a = Applied {
+            retired: vec![r(4000.0), r(1000.0), r(0.0)],
+            working: vec![r(3000.0)],
+            earned: DeductionRule {
+                rate: 0.03,
+                ..Default::default()
+            },
+            retired_kinds: kinds(&["social", "social", "insurance"]),
+            working_kinds: kinds(&["insurance"]),
+        };
+        assert_eq!(a.parts(50_000.0, &[0.0], 1.0), vec![("social".to_string(), 5000.0)]);
+        assert_eq!(
+            a.parts(50_000.0, &[50_000.0], 1.0),
+            vec![("insurance".to_string(), 3000.0), ("professional".to_string(), 1500.0)]
+        );
+        let total: f64 = a.parts(50_000.0, &[50_000.0], 1.0).iter().map(|p| p.1).sum();
+        assert_eq!(total, a.total(50_000.0, &[50_000.0], 1.0));
     }
 }

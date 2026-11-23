@@ -222,6 +222,7 @@ Sono disponibili due modi: **Domicilio** calcola l’imposta sul reddito, sulla 
 Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale del Suo cantone. Tra gli scaglioni si **interpola linearmente**, l’aliquota viene moltiplicata per il [moltiplicatore d’imposta](#f-tax-multiplier).
 
 - [Imposta secondo il domicilio](#f-tax-location)
+- [Deduzioni dal reddito](#f-tax-deductions)
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
 - [Quanto è precisa l’imposta?](#tax-accuracy)
@@ -236,7 +237,7 @@ Parole chiave: domicilio, cantone, comune, imposta di culto, confessione, AFC, d
 
 Nel modo **Domicilio** sceglie solo il **cantone**, il **comune** (elenco del cantone con ricerca: digitare il nome) e l’**imposta di culto** (nessuna, riformata, cattolica romana, cattolica cristiana). Tariffe, deduzioni e moltiplicatori d’imposta provengono dal file dei dati fiscali dell’AFC fornito con l’app (calcolatore d’imposta, dati di base); la scheda indica l’anno fiscale, la fonte e i moltiplicatori d’imposta del comune. Non c’è accesso alla rete.
 
-**Reddito imponibile** = reddito dell’anno (reddito da attività lucrativa netto, rendita della cassa pensioni, AVS) meno le **deduzioni standard** (proposta del cantone), mai negativo. Cantone e Confederazione hanno ciascuno le proprie deduzioni:
+**Reddito imponibile** = reddito dell’anno (reddito da attività lucrativa netto, rendita della cassa pensioni, AVS) meno le **deduzioni standard** (proposta del cantone), mai negativo. Invece della proposta può valere per periodo un valore proprio, più il pilastro 3a, vedi [Deduzioni dal reddito](#f-tax-deductions). Cantone e Confederazione hanno ciascuno le proprie deduzioni:
 
 - **Deduzioni sociali** per persone sole o coniugate, se il cantone le prevede.
 - **Premi assicurativi e interessi su capitali a risparmio:** negli anni con reddito da attività lucrativa l’importo «con contributi al 2° e 3° pilastro», altrimenti l’importo «senza».
@@ -254,6 +255,32 @@ Nel modo **Domicilio** sceglie solo il **cantone**, il **comune** (elenco del ca
 **Nascosti:** le tabelle proprie per reddito, sostanza e prelievo di capitale (anche quelle per coniugati), le regole proprie dell’imposta sugli utili immobiliari e il moltiplicatore d’imposta (senza la casella) restano nel file; tornando a «Tabelle proprie» valgono di nuovo.
 
 **Verifica:** se manca il cantone o il comune o se il comune non si trova nel cantone, è un errore nella sezione Imposte, e «Avviare la simulazione» è bloccato. La panoramica delle ipotesi e la scheda «Parametri» indicano il domicilio, per esempio «Zürich (ZH), imposta di culto nessuna».
+
+## @f-tax-deductions Deduzioni dal reddito
+Parole chiave: deduzioni, proposta del cantone, valore proprio, tassazione, reddito imponibile, pilastro 3a, valore locativo, interessi ipotecari, interessi passivi, spese professionali
+
+La scheda **Deduzioni dal reddito** nella sezione Imposte stabilisce che cosa viene dedotto dal reddito dell’anno (reddito da lavoro netto, rendita della cassa pensioni, AVS). Il **reddito imponibile** = reddito − deduzioni, mai negativo.
+
+**Righe:** Le deduzioni dipendono dal tempo come il reddito da attività lucrativa; una riga vale dalla sua data fino alla successiva. Le nuove pianificazioni hanno due righe, una dall’inizio della simulazione (fino al pensionamento), l’altra dal prelievo della cassa pensioni (dal pensionamento); altre righe sono possibili, per esempio «dal 2029» per l’abolizione del valore locativo. Se la riga cambia nel corso dell’anno, ogni riga conta per i suoi mesi.
+
+Ogni riga è:
+
+- **Proposta del cantone** (solo nella modalità [domicilio](#f-tax-location), dove è il valore predefinito): le deduzioni standard dei dati fiscali dell’AFC, per cantone e Confederazione – deduzioni sociali, premi assicurativi e interessi di risparmio, spese professionali. La scheda mostra l’importo per il primo anno della riga con le sue componenti; le spese professionali approssimate (Basilea Campagna, Basilea Città, Ticino) sono segnate con ⚠. La proposta viene ricalcolata se cambiate cantone, comune o stato civile.
+- **valore proprio:** un importo all’anno ai prezzi dell’inizio della simulazione (cresce con le [tariffe con il rincaro](#f-tax-indexed)), facoltativamente più una percentuale del reddito. Vale per cantone e Confederazione e rimane se cambiate cantone, comune o stato civile. Nella modalità «Tabelle proprie» c’è solo il valore proprio; senza riga vale 0. Esempio: valore proprio 40 000, reddito 120 000, imposta come su 80 000.
+
+**Determinare il valore proprio:** L’aiuto all’inserimento lo calcola dal **reddito** e dal **reddito imponibile secondo la tassazione**, per esempio 120 000 e 80 000 danno 40 000; «Usare come valore proprio» lo inserisce nella riga. Da notare:
+
+- Il reddito è **netto**, dopo i contributi AVS e CP, come il salario netto del certificato di salario, rendite comprese.
+- **Senza pilastro 3a:** i versamenti provengono dalla pianificazione (vedi sotto).
+- La **proprietà dell’abitazione** (valore locativo, interessi ipotecari, manutenzione) rientra nel valore proprio. Dal 2029 non ci sono più valore locativo né deduzione degli interessi per l’abitazione occupata dal proprietario; create per questo una riga «dal 2029». **Gli interessi ipotecari non vengono dedotti automaticamente.**
+
+**Pilastro 3a:** Con la casella **«Dedurre i versamenti nel pilastro 3a»** i versamenti di un anno della sezione [Pilastro 3a](#s-pillar3a) (con l’ammortamento indiretto) vengono dedotti dal reddito imponibile, per cantone e Confederazione, al massimo l’importo massimo per persona delle impostazioni. Esempio: reddito 100 000, nessun’altra deduzione, versamento 7 000, imposta come su 93 000. Le nuove pianificazioni hanno la casella selezionata.
+
+**Le pianificazioni esistenti** calcolano come prima: nella modalità «domicilio» con la proposta del cantone per tutta la durata, con tabelle proprie senza deduzioni, e senza deduzione del pilastro 3a. Solo «Adattare le deduzioni» crea righe.
+
+**Verifica:** Un importo negativo o una percentuale inferiore a 0 % o superiore a 100 % è un errore nella sezione Imposte.
+
+**Risultati:** Con «Mostrare le imposte» i valori annuali mostrano il reddito, le deduzioni (cantone; l’origine – proposta del cantone, valore proprio, pilastro 3a – nel tooltip della cella) e il reddito imponibile (quello della Confederazione nel tooltip se diverso).
 
 ## @f-tax-multiplier Moltiplicatore d’imposta
 Parole chiave: cantone, comune, moltiplicatore
