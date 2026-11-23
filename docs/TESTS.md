@@ -36,10 +36,30 @@ Runner von GitHub); macOS bleibt nächtlich. Beim Push läuft Windows nur, wenn 
 `test-quality.yml` geändert wurden (Ausgabe `rust` des Jobs `changes`). Budget: 300 Actions-Minuten pro Woche für den
 Windows-Job beim Push (Schätzung in #225); wird es überschritten, testet Windows beim Push nur `vivaplan-engine` und die
 Pfadtests der App. Windows-Pfade (Laufwerk, Backslash, UNC, Umlaute) prüft
-`issue_141_ak3_windows_paths` in `crates/app/src/main.rs` (nur unter Windows ausgeführt, überall übersetzt). Vor dem
+`issue_141_ak3_windows_paths` in `crates/app/src/main.rs` (nur unter Windows ausgeführt, überall übersetzt, sonst
+übersprungen mit Grund, #224). Vor dem
 Release-Entwurf startet `pakete.yml` jedes gebaute Programm mit `--smoke`: Fenster und Webansicht öffnen, Beispielplanung
 rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`). Bis auf Weiteres baut
 `pakete.yml` nur das `.dmg` für macOS, der Rauchtest läuft also nur dort (#202); Linux und Windows schaltet #203 wieder ein.
+
+**Übersprungene Tests (#224):** Tests, die etwas Besonderes brauchen, dürfen lokal übersprungen werden, aber nie still:
+Sie fragen `engine::test_resource` (`crates/engine/src/test_resource.rs`), das den Grund auf stderr schreibt
+(`übersprungen: es fehlt …`; unter nextest sichtbar mit `--success-output immediate`). Je Ressource gibt es eine
+Umgebungsvariable: leer oder nicht gesetzt = überspringen, `1` = Pflicht (fehlt die Ressource, schlägt der Test fehl),
+jeder andere Wert = Fehler, der die Variable und den erlaubten Wert nennt.
+
+| Variable | Ressource | Tests | Gesetzt in (`test-quality.yml`) |
+|---|---|---|---|
+| `VIVAPLAN_WINDOWS_REQUIRED` | Windows | `issue_141_ak3_windows_paths` (App) | `tests-os` unter Windows (Push und nächtlich) |
+| `VIVAPLAN_UNIX_REQUIRED` | Unix (macOS, Linux): Dateirechte, symbolische Links | `issue_136_ak2_…`, `issue_136_saving_through_a_symlink_…` (Engine, `files.rs`), `issue_136_ak4_…` (App) | `tests-coverage` (Linux), `tests-os` unter macOS (nächtlich) |
+| `VIVAPLAN_DATA_REQUIRED` | Shiller-Originaltabelle `crates/engine/data/quellen/shiller-index.ods` (nur lokal, #94) | `data.rs` (Shiller-Spalten), `library::shipped_series_match_import`, `library_import_commands` (CLI), `shiller_import_from_table_and_error_case` (App) | kein Job (die Tabelle liegt nicht im Repository) |
+
+Unter Windows sind die Unix-Tests eigene Platzhalter gleichen Namens (`#[cfg(not(unix))]`), die nur überspringen oder
+fehlschlagen. Die drei Last- und Messtests in `qa_matrix.rs` sind `#[ignore = "Grund"]`: zwei laufen nächtlich im
+Release-Profil (`release-golden`, `--run-ignored only`), `benchmark_paths` nur von Hand. Die Oberflächentests
+(`e2e/`, `tools/ui-smoke.sh`) überspringen nichts: fehlt Chrome, schlagen sie fehl. Plattformabhängige Prüfungen
+innerhalb eines Tests (`#[cfg(target_os = "macos")]` in den Menütests) sind kein Überspringen; der Test läuft überall.
+Neue bedingte Tests verwenden `test_resource` und tragen sich hier ein.
 
 **Netzwerkfreiheit (#157):** Die App verspricht, keine Netzwerkzugriffe zu machen. Zwei Prüfungen belegen das
 automatisch. `tools/check-network-free.sh` (`make network-free`, Job `network-free` in `test-quality.yml` bei jedem Push)

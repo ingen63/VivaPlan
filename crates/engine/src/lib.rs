@@ -35,6 +35,8 @@ pub mod tax;
 pub mod taxdata;
 #[doc(hidden)]
 pub mod test_alloc;
+#[doc(hidden)]
+pub mod test_resource;
 pub mod time;
 pub mod upgrade;
 pub mod validate;

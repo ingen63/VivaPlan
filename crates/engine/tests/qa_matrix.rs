@@ -1440,7 +1440,7 @@ fn stress_plan(paths: usize) -> Value {
 }
 
 #[test]
-#[ignore]
+#[ignore = "Messung, nur von Hand: cargo test --release -p vivaplan-engine --test qa_matrix -- --ignored --nocapture benchmark_paths"]
 fn benchmark_paths() {
     for paths in [1_000usize, 10_000, 50_000] {
         let v = mc_plan("parametric", paths, 1);
@@ -1465,7 +1465,7 @@ fn benchmark_paths() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "im Testprofil zu langsam; läuft nächtlich im Release-Profil im Job release-golden (#139)"]
 fn stress_couple_four_properties_100_years() {
     let paths = std::env::var("QA_PATHS")
         .ok()
@@ -1809,7 +1809,7 @@ fn holding_period_fields_roundtrip_and_old_files_still_load() {
 /// (`engine::test_alloc`); it stays below the limit of the test processes of 1.5 GB (measured 18.11.2026: 1'337 MB).
 /// About 8 s in the release profile, over a minute in the test profile: runs nightly in the job `release-golden`.
 #[test]
-#[ignore]
+#[ignore = "im Testprofil zu langsam; läuft nächtlich im Release-Profil im Job release-golden (#139)"]
 fn issue_139_ak4_peak_memory_at_the_limit_stays_below_the_test_limit() {
     use engine::test_alloc::{Limited, LIMIT};
     let months: u64 = 100 * 12;

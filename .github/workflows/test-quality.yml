@@ -230,6 +230,7 @@ jobs:
     timeout-minutes: 90
     env:
       PROPTEST_CASES: ${{ (github.event_name == 'schedule' || inputs.nightly) && '10000' || '256' }}
+      VIVAPLAN_UNIX_REQUIRED: "1"   # #224: Linux hat Dateirechte und symbolische Links, die Tests dürfen nicht überspringen
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }      # für die Abdeckung des geänderten Codes (git diff gegen den Basis-Zweig)
@@ -452,6 +453,10 @@ jobs:
         os: ${{ github.event_name == 'push' && fromJSON('["windows-latest"]') || fromJSON('["windows-latest","macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    # #224: Der Runner stellt die Plattform bereit; deren Tests schlagen fehl statt still zu überspringen (docs/TESTS.md).
+    env:
+      VIVAPLAN_WINDOWS_REQUIRED: ${{ matrix.os == 'windows-latest' && '1' || '' }}
+      VIVAPLAN_UNIX_REQUIRED: ${{ matrix.os == 'macos-latest' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

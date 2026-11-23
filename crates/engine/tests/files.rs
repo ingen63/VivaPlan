@@ -4,6 +4,7 @@
 use std::path::{Path, PathBuf};
 
 use engine::api;
+use engine::test_resource::UNIX;
 use serde_json::{json, Value};
 
 /// Temporary folder that is deleted when the returned guard is dropped (end of the test).
@@ -49,6 +50,7 @@ fn issue_136_ak1_saving_replaces_the_file_and_leaves_nothing_else() {
 #[test]
 fn issue_136_ak2_failed_write_keeps_the_previous_file() {
     use std::os::unix::fs::PermissionsExt;
+    assert!(UNIX.available(true));
     let (_tmp, d) = dir("readonly");
     let f = d.join("planung.vplan");
     api::write_plan(&f, &plan("Alt")).unwrap();
@@ -79,6 +81,7 @@ fn issue_136_ak3_failed_replace_removes_the_temporary_file() {
 #[cfg(unix)]
 #[test]
 fn issue_136_saving_through_a_symlink_replaces_its_target() {
+    assert!(UNIX.available(true));
     let (_tmp, d) = dir("symlink");
     let real = d.join("echt.vplan");
     let link = d.join("link.vplan");
@@ -89,4 +92,18 @@ fn issue_136_saving_through_a_symlink_replaces_its_target() {
     assert_eq!(api::read_plan(&real).unwrap()["project"]["name"], "Neu");
     assert_eq!(entries(&d), vec!["echt.vplan", "link.vplan"]);
     let _ = std::fs::remove_dir_all(&d);
+}
+
+/// #224: without Unix file permissions and symbolic links skipped with a reason (error with `VIVAPLAN_UNIX_REQUIRED=1`).
+#[cfg(not(unix))]
+#[test]
+fn issue_136_ak2_failed_write_keeps_the_previous_file() {
+    assert!(!UNIX.available(false));
+}
+
+/// #224: see above.
+#[cfg(not(unix))]
+#[test]
+fn issue_136_saving_through_a_symlink_replaces_its_target() {
+    assert!(!UNIX.available(false));
 }

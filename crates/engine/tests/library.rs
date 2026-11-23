@@ -16,8 +16,7 @@ fn data_dir() -> PathBuf {
 fn shipped_series_match_import() {
     let shiller = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/quellen/shiller-index.ods");
     // #94: the original spreadsheet only exists locally; without it the test is skipped.
-    if !shiller.exists() {
-        eprintln!("übersprungen: {} fehlt (#94)", shiller.display());
+    if !engine::test_resource::DATA.available(shiller.exists()) {
         return;
     }
     let usd = import::shiller_dataset(&import::read_shiller(&shiller).unwrap()).unwrap();

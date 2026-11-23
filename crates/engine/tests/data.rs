@@ -13,15 +13,10 @@ use engine::{api, import, market};
 use serde_json::json;
 
 /// #94: Shiller's original spreadsheet only exists locally (not in the repository). If it is missing, `None` is returned, and the test
-/// is skipped with a message.
+/// is skipped with a reason (#224: an error with `VIVAPLAN_DATA_REQUIRED=1`).
 fn shiller_file() -> Option<PathBuf> {
     let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/quellen/shiller-index.ods");
-    if p.exists() {
-        Some(p)
-    } else {
-        eprintln!("übersprungen: {} fehlt (#94)", p.display());
-        None
-    }
+    engine::test_resource::DATA.available(p.exists()).then_some(p)
 }
 
 fn num(c: Option<&Data>) -> Option<f64> {

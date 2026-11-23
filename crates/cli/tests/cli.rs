@@ -195,7 +195,7 @@ fn library_import_commands() {
     assert!(text(&o).contains("Shiller CHF.csv") && text(&o).contains("CHF"));
     // #94: the original table exists only locally; without it this part is skipped.
     let shiller = root().join("crates/engine/data/quellen/shiller-index.ods");
-    if shiller.exists() {
+    if engine::test_resource::DATA.available(shiller.exists()) {
         let o = run(&["import-shiller", shiller.to_str().unwrap(), "--library", l]);
         assert!(o.status.success(), "{}", text(&o));
         assert!(
@@ -203,8 +203,6 @@ fn library_import_commands() {
             "{}",
             text(&o)
         );
-    } else {
-        eprintln!("skipped: {} missing (#94)", shiller.display());
     }
     let cube = root().join("crates/engine/data/quellen/snb-zimoma.csv");
     let o = run(&["import-snb", cube.to_str().unwrap(), "--library", l]);

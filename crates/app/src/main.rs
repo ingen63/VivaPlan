@@ -1145,6 +1145,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use engine::test_resource::{DATA, UNIX, WINDOWS};
     use serde_json::json;
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime, INVOKE_KEY};
     use tauri::webview::InvokeRequest;
@@ -1698,7 +1699,6 @@ mod tests {
 
     /// #141/AK3: paths on Windows (drive, backslash, UNC, spaces and umlauts, .rplan → .vplan). The cases
     /// are compiled on all systems, run only on Windows (only there backslash and drive count as a path).
-    #[cfg_attr(not(windows), allow(dead_code))]
     fn windows_path_cases() {
         assert_eq!(
             legacy_stem(r"C:\Users\Anna\Planungen\Alte Planung.rplan").as_deref(),
@@ -1733,10 +1733,13 @@ mod tests {
         );
     }
 
-    #[cfg(windows)]
+    /// #224: elsewhere skipped with a reason; with `VIVAPLAN_WINDOWS_REQUIRED=1` (job `tests-os` under Windows)
+    /// a missing Windows is an error.
     #[test]
     fn issue_141_ak3_windows_paths() {
-        windows_path_cases();
+        if WINDOWS.available(cfg!(windows)) {
+            windows_path_cases();
+        }
     }
 
     /// #141: spaces and umlauts in paths with «/» (all systems).
@@ -1781,6 +1784,7 @@ mod tests {
     #[test]
     fn issue_136_ak4_failed_save_reports_error_and_keeps_file() {
         use std::os::unix::fs::PermissionsExt;
+        assert!(UNIX.available(true));
         let (_app, w, _g) = setup();
         let (_tmp, dir) = tmp("save-readonly");
         let file = dir.join("p.vplan");
@@ -1803,6 +1807,13 @@ mod tests {
         assert_eq!(api::read_plan(&file).unwrap(), old_plan);
         assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1, "keine temporäre Datei");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// #224: without Unix file permissions skipped with a reason (error with `VIVAPLAN_UNIX_REQUIRED=1`).
+    #[cfg(not(unix))]
+    #[test]
+    fn issue_136_ak4_failed_save_reports_error_and_keeps_file() {
+        assert!(!UNIX.available(false));
     }
 
     fn root() -> PathBuf {
@@ -1881,11 +1892,9 @@ mod tests {
         let (_tmp, lib) = tmp("shiller");
         // #94: the original table exists only locally; without it this part is skipped.
         let ods = root().join("crates/engine/data/quellen/shiller-index.ods");
-        if ods.exists() {
+        if DATA.available(ods.exists()) {
             let rep = shiller_from(&lib, FilePath::Path(ods)).unwrap();
             assert!(!rep.written.is_empty());
-        } else {
-            eprintln!("übersprungen: {} fehlt (#94)", ods.display());
         }
         assert!(shiller_from(&lib, FilePath::Path(lib.join("fehlt.xls"))).is_err());
         assert!(shiller_from(&lib, FilePath::Url("https://example.com/x".parse().unwrap())).is_err());
