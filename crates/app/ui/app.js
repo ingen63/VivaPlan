@@ -1333,7 +1333,7 @@ function deductionsCard() {
     // #228: own grid (.dedrow): time and kind stacked in one cell, so that the value gets the remaining width
     const kind = !loc ? "" : stored ? Sel(`${R}.kind`, kinds, { rerender: 1 }) : `<span class="computed">${tr("deductions.canton")}</span>`;
     // #230/AK1: additional amount per year to the proposal of the canton (only stored rows can be edited)
-    const extra = stored ? `<span class="ab">${tr("deductions.extra")}</span>${F(`${R}.extra`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}` : "";
+    const extra = stored ? `<span class="dedextra">${tr("deductions.extra")}</span>${F(`${R}.extra`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}` : "";
     const value = canton
       ? `<span class="computed" data-ded-proposal="${i}">${C("dedProposal", i)}</span>${extra}`
       : `${F(`${R}.amount`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}${F(`${R}.rate`, "", "pct", { bare: true, unit: tr("deductions.ofIncome") })}`;

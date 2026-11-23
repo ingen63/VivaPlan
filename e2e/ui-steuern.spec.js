@@ -489,6 +489,8 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     const extra = card(page).locator('[data-ded-row="0"] input[data-path="taxes.deductions.0.extra"]');
     await expect(extra).toBeVisible();
     await expect(card(page).locator('[data-ded-row="0"]')).toContainText("+ zusätzlich");
+    // the label is shown in full (not cut to the width of «ab»)
+    expect(await card(page).locator('[data-ded-row="0"] .dedextra').evaluate(e => e.scrollWidth <= e.clientWidth && e.getBoundingClientRect().width > 40)).toBe(true);
     await expect(card(page).locator('input[data-path="taxes.deductions.1.extra"]')).toHaveCount(0);
     await extra.fill("3000");
     await extra.press("Tab");
