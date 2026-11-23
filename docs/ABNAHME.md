@@ -916,3 +916,15 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #225/AK3 | Die Dauer des Jobs und die zusätzlichen Actions-Minuten pro Woche sind gemessen und im Issue festgehalten; überschreiten … | ☐ | **gilt** (Budget 300 min/Woche, Klärung vom 23.11.2026) | kein Test | 23.11.2026 teilweise: Schätzung aus nächtlichen Läufen im Issue (6–8 min, ≈160–184 min/Woche, unter Budget → ganzer Workspace); Messung beim Push fehlt |
 | #225/AK4 | macOS bleibt nächtlich. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Matrix beim Push nur `windows-latest`, sonst Windows und macOS |
 | #225/AK5 | `docs/TESTS.md`, Abschnitt «Plattformen», ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
+### #224 Übersprungene Tests in CI als Fehler werten
+
+[Issue #224](https://github.com/ingen63/VivaPlan/issues/224) · offen (`implemented`) · Umsetzung: ab71e68
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #224/AK1 | Jeder bedingt laufende Test meldet beim Überspringen einen Grund in der Testausgabe; kein stilles `return`. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak1_…` | 23.11.2026 ok (Windows-, Unix- und Datentests über `test_resource`, Grund mit `--success-output immediate` gesehen; `#[ignore]` mit Grund; e2e und `ui-smoke.sh` überspringen nichts) |
+| #224/AK2 | Eine Umgebungsvariable je Ressource (z. B. `VIVAPLAN_WINDOWS_REQUIRED`): leer oder nicht gesetzt = überspringen, `1` = … | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak2_…` (2 Tests) | 23.11.2026 ok (`WINDOWS`, `UNIX`, `DATA`; ungültiger Wert von Hand) |
+| #224/AK3 | Die Jobs in `test-quality.yml`, die die Ressource haben (z. B. `tests-os` unter Windows für `issue_141_ak3_windows_paths`), … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 23.11.2026 teilweise: `tests-os` (Windows, macOS) und `tests-coverage` setzen die Variablen; Lauf in CI erst nach dem nächsten Push belegbar |
+| #224/AK4 | Ein Test prüft, dass bei gesetzter Pflicht und fehlender Ressource ein Fehler entsteht. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak4_…` (2 Tests) | 23.11.2026 ok (zusätzlich von Hand: `VIVAPLAN_WINDOWS_REQUIRED=1` auf macOS → Fehler) |
+| #224/AK5 | `docs/TESTS.md` listet die Variablen und die Jobs, die sie setzen. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
