@@ -562,7 +562,7 @@ test.describe("Deductions from wealth (#231)", () => {
   }
   const startYear = page => page.evaluate(() => Math.floor(startM() / 12));
 
-  test("AK1: card with time-dependent rows "additionally … per year" and the list of one-off deductions", async ({ page }) => {
+  test("AK1: card with time-dependent rows “additionally … per year” and the list of one-off deductions", async ({ page }) => {
     const errors = await open(page);
     await withRows(page, null, null);
     const y = await startYear(page);
