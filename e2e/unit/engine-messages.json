@@ -228,6 +228,12 @@
     "text": "Deductions from income"
   },
   {
+    "code": "term_residence",
+    "params": {},
+    "template": "Place of residence",
+    "text": "Place of residence"
+  },
+  {
     "code": "term_income_tax_married",
     "params": {},
     "template": "Income tax (married)",
@@ -949,6 +955,99 @@
     },
     "template": "Taxes (place of residence): the municipality {bfs} is not in the canton {canton}. Please choose the municipality again.",
     "text": "Taxes (place of residence): the municipality Person 2 is not in the canton Person 2. Please choose the municipality again."
+  },
+  {
+    "code": "relocation_canton_missing",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Taxes (place of residence), row {row}: please choose the canton.",
+    "text": "Taxes (place of residence), row Person 2: please choose the canton."
+  },
+  {
+    "code": "relocation_canton_unknown",
+    "params": {
+      "canton": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Taxes (place of residence), row {row}: the canton “{canton}” is not in the tax data.",
+    "text": "Taxes (place of residence), row Person 2: the canton “Person 2” is not in the tax data."
+  },
+  {
+    "code": "relocation_municipality_missing",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Taxes (place of residence), row {row}: please choose the municipality.",
+    "text": "Taxes (place of residence), row Person 2: please choose the municipality."
+  },
+  {
+    "code": "relocation_municipality_not_in_canton",
+    "params": {
+      "bfs": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "canton": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Taxes (place of residence), row {row}: the municipality {bfs} is not in the canton {canton}. Please choose the municipality again.",
+    "text": "Taxes (place of residence), row Person 2: the municipality Person 2 is not in the canton Person 2. Please choose the municipality again."
+  },
+  {
+    "code": "relocation_before_previous",
+    "params": {
+      "month": "2031-07",
+      "previous": "2031-07",
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Taxes (place of residence), row {row}: the row starts ({month:ym}) before the previous row ({previous:ym}). Please order the rows by time.",
+    "text": "Taxes (place of residence), row Person 2: the row starts (07.2031) before the previous row (07.2031). Please order the rows by time."
   },
   {
     "code": "tax_rate_falling",

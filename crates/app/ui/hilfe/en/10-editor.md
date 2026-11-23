@@ -233,7 +233,7 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 The example values are only placeholders. For your result, replace them with values of your place of residence.
 
 ## @f-tax-location Tax by place of residence
-Keywords: place of residence, canton, municipality, church tax, denomination, FTA, tax data, standard deductions, professional expenses, federal tax, taxable income, lump sum, lump-sum tax, property gains tax, canton of the property
+Keywords: place of residence, canton, municipality, church tax, denomination, FTA, tax data, standard deductions, professional expenses, federal tax, taxable income, lump sum, lump-sum tax, property gains tax, canton of the property, move, change of residence, reference date
 
 In the mode **Place of residence** you only choose the **canton**, the **municipality** (list of the canton with search: type the name) and the **church tax** (none, Reformed, Roman Catholic, Christ Catholic). Tariffs, deductions and tax multipliers come from the bundled tax data file of the FTA (tax calculator, base data); the card names the tax year, the source and the tax multipliers of the municipality. There is no network access.
 
@@ -252,9 +252,11 @@ In the mode **Place of residence** you only choose the **canton**, the **municip
 - With [tariffs with inflation](#f-tax-indexed) the amounts of the tariffs and deductions grow with the simulated inflation.
 - **Property gains tax:** for each property the rule set of the canton in which it lies applies; you choose the canton with the property under [Real estate](#s-realestate), without an entry the canton of residence applies. Details under [Property gains tax](#f-tax-gain). With the check box **“Own rules instead of the rules of the canton”** the own rules with the [tax multiplier](#f-tax-multiplier) apply to all properties instead.
 
+**Change of residence:** With “Add place of residence” you add a further place of residence, from a year or from an event (for example retirement), each with canton, municipality and church tax; the first row applies from the simulation start. The rules of the Tax Harmonisation Act apply (StHG Art. 4b): the **income and wealth tax** of a year is computed with the place of residence on **31 December**, for the whole year – if you move in June, you pay the whole year at the new place. The **lump-sum tax** is computed with the place of residence in the **month of the payout**; moving to a cheaper canton therefore only helps if the move is before the payout. The **property gains tax** of a property without its own canton is computed with the canton of residence in the month of the sale. The [proposal of the canton](#f-tax-deductions) follows the place of residence of the tax year, an own value stays. Not computed are moving abroad, moving costs and tax liability for only part of the year. The parameters of a run name each place of residence with its start, the yearly values show the place of residence of each year with the tax columns.
+
 **Hidden:** the own tables for income, wealth and lump sums (also those for married couples), the own rules of the property gains tax and the tax multiplier (without the check box) stay in the file; back on “Own tables” they apply again.
 
-**Validation:** If the canton or the municipality is missing or the municipality is not in the canton, this is an error in the section Taxes, and “Start simulation” is blocked. The overview of the assumptions and the tab “Parameters” name the place of residence, for example “Zürich (ZH), church tax none”.
+**Validation:** If the canton or the municipality of a row is missing, the municipality is not in the canton or a row starts before the previous one, this is an error in the section Taxes, and “Start simulation” is blocked. The overview of the assumptions and the tab “Parameters” name the place of residence, for example “Zürich (ZH), church tax none”.
 
 ## @f-tax-deductions Deductions from income
 Keywords: deductions, proposal of the canton, own value, tax assessment, taxable income, pillar 3a, imputed rental value, mortgage interest, debt interest, professional expenses

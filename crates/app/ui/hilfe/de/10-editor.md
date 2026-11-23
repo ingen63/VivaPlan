@@ -233,7 +233,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 Die Beispielwerte sind nur Platzhalter. Ersetzen Sie sie für Ihr Ergebnis durch Werte Ihres Wohnorts.
 
 ## @f-tax-location Steuer nach Wohnort
-Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerdaten, Standardabzüge, Berufskosten, Bundessteuer, steuerbares Einkommen, Kapitalbezug, Kapitalbezugssteuer, Grundstückgewinnsteuer, Kanton der Liegenschaft
+Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerdaten, Standardabzüge, Berufskosten, Bundessteuer, steuerbares Einkommen, Kapitalbezug, Kapitalbezugssteuer, Grundstückgewinnsteuer, Kanton der Liegenschaft, Umzug, Wohnortwechsel, Stichtag
 
 Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons mit Suche: Namen eintippen) und die **Kirchensteuer** (keine, reformiert, römisch-katholisch, christkatholisch). Tarife, Abzüge und Steuerfüsse kommen aus der mitgelieferten Steuerdatei der ESTV (Steuerrechner, Grunddaten); die Karte nennt das Steuerjahr, die Quelle und die Steuerfüsse der Gemeinde. Es gibt keinen Netzwerkzugriff.
 
@@ -252,9 +252,11 @@ Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons
 - Mit [Tarifen mit der Teuerung](#f-tax-indexed) wachsen die Beträge der Tarife und Abzüge mit der simulierten Teuerung.
 - **Grundstückgewinnsteuer:** Für jede Immobilie gilt der Regelsatz des Kantons, in dem sie liegt; den Kanton wählen Sie bei der Immobilie unter [Immobilien](#s-realestate), ohne Angabe gilt der Wohnkanton. Einzelheiten unter [Grundstückgewinnsteuer](#f-tax-gain). Mit dem Häkchen **«Eigene Regeln statt der Regeln des Kantons»** gelten stattdessen die eigenen Regeln mit dem [Steuerfuss](#f-tax-multiplier) für alle Immobilien.
 
+**Wohnortwechsel:** Mit «Wohnort hinzufügen» legen Sie einen weiteren Wohnort an, ab einem Jahr oder ab einem Ereignis (zum Beispiel der Pensionierung), je mit Kanton, Gemeinde und Kirchensteuer; die erste Zeile gilt ab dem Simulationsstart. Es gelten die Regeln des Steuerharmonisierungsgesetzes (StHG Art. 4b): Die **Einkommens- und Vermögenssteuer** eines Jahres rechnet mit dem Wohnort am **31. Dezember**, für das ganze Jahr – ziehen Sie im Juni um, zahlen Sie das ganze Jahr am neuen Ort. Die **Kapitalbezugssteuer** rechnet mit dem Wohnort im **Monat des Bezugs**; ein Umzug vor dem Kapitalbezug in einen günstigeren Kanton wirkt also nur, wenn er vor dem Bezug liegt. Die **Grundstückgewinnsteuer** einer Immobilie ohne eigenen Kanton rechnet mit dem Wohnkanton im Monat des Verkaufs. Der [Vorschlag des Kantons](#f-tax-deductions) richtet sich nach dem Wohnort des Steuerjahres, ein eigener Wert bleibt. Nicht berechnet werden der Wegzug ins Ausland, Umzugskosten und eine Steuerpflicht nur für einen Teil des Jahres. Die Parameter eines Laufs nennen jeden Wohnort mit seinem Beginn, die Jahreswerte zeigen mit den Steuerspalten den Wohnort jedes Jahres.
+
 **Ausgeblendet:** Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch die für Verheiratete), die eigenen Regeln der Grundstückgewinnsteuer und der Steuerfuss (ohne das Häkchen) bleiben in der Datei; zurück auf «Eigene Tabellen» gelten sie wieder.
 
-**Prüfung:** Fehlt der Kanton oder die Gemeinde oder liegt die Gemeinde nicht im Kanton, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» ist gesperrt. Die Übersicht der Annahmen und der Reiter «Parameter» nennen den Wohnort, zum Beispiel «Zürich (ZH), Kirchensteuer keine».
+**Prüfung:** Fehlt in einer Zeile der Kanton oder die Gemeinde, liegt die Gemeinde nicht im Kanton oder beginnt eine Zeile vor der vorherigen, ist das ein Fehler im Abschnitt Steuern, und «Simulation starten» ist gesperrt. Die Übersicht der Annahmen und der Reiter «Parameter» nennen den Wohnort, zum Beispiel «Zürich (ZH), Kirchensteuer keine».
 
 ## @f-tax-deductions Abzüge vom Einkommen
 Stichworte: Abzüge, Vorschlag des Kantons, eigener Wert, Steuerveranlagung, steuerbares Einkommen, Säule 3a, Eigenmietwert, Hypothekarzinsen, Schuldzinsen, Berufskosten

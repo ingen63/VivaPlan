@@ -50,6 +50,7 @@ mod proptest_tax;
 mod proptest_upgrade;
 mod qa_matrix;
 mod reference;
+mod relocation;
 mod rerun_paths;
 mod reserve_standard_only;
 mod robustness;

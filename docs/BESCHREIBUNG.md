@@ -83,7 +83,11 @@ Der Editor führt durch zwölf Abschnitte:
   Wohnkanton; alle 26 Kantone nach dem ESTV-Steuermäppchen 2025 und, wo nötig, dem kantonalen Gesetz; Besitzdauer in
   Monaten; Steuerfuss der Wohngemeinde oder Median des Kantons; Regeltext bei der Immobilie, angenäherte Regeln von
   Basel-Stadt, Basel-Landschaft, St. Gallen, Waadt und Wallis mit ⚠); mit dem Häkchen «Eigene Regeln statt der Regeln
-  des Kantons» und im Modus «Eigene Tabellen» die eigenen Regeln. Die Sätze der Tabellen werden zwischen den Stufen
+  des Kantons» und im Modus «Eigene Tabellen» die eigenen Regeln. Wohnort zeitabhängig (#151): weitere Wohnorte ab
+  Jahr oder Ereignis; Einkommens- und Vermögenssteuer eines Jahres nach dem Wohnort am 31. Dezember für das ganze
+  Jahr, Kapitalbezugssteuer nach dem Wohnort im Monat des Bezugs, Grundstückgewinnsteuer einer Immobilie ohne eigenen
+  Kanton nach dem Wohnkanton im Monat des Verkaufs (StHG Art. 4b); Parameter und Jahreswerte nennen den Wohnort je
+  Zeitraum bzw. Jahr. Die Sätze der Tabellen werden zwischen den Stufen
   linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
   Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
   Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne.

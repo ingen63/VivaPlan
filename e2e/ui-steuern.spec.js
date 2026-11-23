@@ -414,3 +414,85 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     await noErrors(page, errors);
   });
 });
+
+test.describe("Time-dependent place of residence (#151)", () => {
+  /** Mode «Wohnort» with Zurich from the start. */
+  async function zurich(page) {
+    await toLocation(page);
+    await choose(page, "ZH", "Zürich");
+  }
+
+  test("AK1: further rows from a year or an event, each with canton, municipality and church tax", async ({ page }) => {
+    const errors = await open(page);
+    await zurich(page);
+    // First row from the start, without ✕
+    await expect(page.locator('[data-loc-row="0"]')).toContainText("Simulationsstart");
+    await expect(page.locator('[data-loc-row="0"] [data-action="loc-del"]')).toHaveCount(0);
+    expect(await page.evaluate(() => state.taxes.relocations)).toBeUndefined();
+    await page.locator('button[data-action="loc-add"]').click();
+    const row = page.locator('[data-loc-row="1"]');
+    await expect(row).toBeVisible();
+    // One year after the start, canton and church of the previous row, municipality to be chosen
+    const added = await page.evaluate(() => state.taxes.relocations[0]);
+    expect(added.canton).toBe("ZH");
+    expect(added.from).toBe(await page.evaluate(() => i2ym(startM() + 12)));
+    await row.locator("#tax-canton-1").selectOption("ZG");
+    await expect(row.locator("#tax-muni-1")).toBeEnabled();
+    await row.locator("#tax-muni-1").fill("Zug");
+    await row.locator("#tax-muni-1").press("Tab");
+    await row.locator('select[data-path="taxes.relocations.0.church"]').selectOption("reformed");
+    // From an event (milestone «AHV-Bezug» of the first person)
+    const ahv = await page.evaluate(() => state.milestones.find(m => m.name === "AHV-Bezug" || m.id.endsWith("ahv"))?.id);
+    await row.locator('select[data-path="taxes.relocations.0.from"]').selectOption(ahv);
+    expect(await page.evaluate(() => state.taxes.relocations)).toEqual([{ from: ahv, canton: "ZG", municipality: 1711, church: "reformed" }]);
+    await expect(row.locator("#tax-capital-rule-1")).toBeVisible();
+    // The first row keeps its place (form of #63)
+    expect(await page.evaluate(() => state.taxes.location)).toEqual({ canton: "ZH", municipality: 261, church: "none" });
+    // ✕ removes the row; without further rows the plan has no `relocations`
+    await row.locator('[data-action="loc-del"]').click();
+    await expect(page.locator('[data-loc-row="1"]')).toHaveCount(0);
+    expect(await page.evaluate(() => "relocations" in state.taxes)).toBe(false);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: errors per row at the field and a row before the previous one", async ({ page }) => {
+    const errors = await open(page);
+    await zurich(page);
+    await page.locator('button[data-action="loc-add"]').click();
+    await previewIdle(page);
+    await expect(page.locator('[data-path="taxes.relocations.0.municipality"] + .ferr')).toContainText("Zeile 2: Bitte die Gemeinde wählen");
+    await page.evaluate(() => { state.taxes.relocations[0].municipality = 351; renderSection(); scheduleRefresh(); });
+    await previewIdle(page);
+    await expect(page.locator('[data-path="taxes.relocations.0.municipality"] + .ferr')).toContainText("liegt nicht im Kanton ZH");
+    await page.evaluate(() => { Object.assign(state.taxes.relocations[0], { canton: "ZG", municipality: 1711 }); state.taxes.relocations.push({ from: i2ym(startM() + 6), canton: "ZH", municipality: 261, church: "none" }); renderSection(); scheduleRefresh(); });
+    await previewIdle(page);
+    await expect(page.locator("#main")).toContainText("Zeile 3: Die Zeile beginnt");
+    await page.evaluate(() => { state.taxes.relocations[1].from = i2ym(startM() + 24); renderSection(); scheduleRefresh(); });
+    await previewIdle(page);
+    await expect(page.locator("#main .ferr")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK7: parameters name the place of residence per period, the yearly values per year", async ({ page }) => {
+    const errors = await open(page);
+    await zurich(page);
+    await page.evaluate(async () => {
+      state.taxes.relocations = [{ from: i2ym(startM() + 18), canton: "ZG", municipality: 1711, church: "none" }];
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      lastRunPlan = state;
+      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    const rows = await page.evaluate(() => paramSections(state).flatMap(([, r]) => r).filter(([k]) => String(k).startsWith("Wohnort")));
+    const from = await page.evaluate(() => ymShow(i2ym(startM() + 18)));
+    expect(rows).toEqual([["Wohnort", "Zürich (ZH), Kirchensteuer keine"], [`Wohnort ab ${from}`, "Zug (ZG), Kirchensteuer keine"]]);
+    const heads = await page.locator("#resultsBody table.yt th.tx").allTextContents();
+    expect(heads[heads.length - 1]).toBe("Wohnort");
+    const cells = await page.locator("#resultsBody table.yt td[data-residence]").allTextContents();
+    // Rows from the start year; the year of the move (after 18 months) in Zug for the whole year, the year before in Zurich
+    const k = await page.evaluate(() => Math.floor((startM() + 18) / 12) - Math.floor(startM() / 12));
+    expect(cells[k - 1]).toBe("Zürich (ZH), Kirchensteuer keine");
+    expect(cells[k]).toBe("Zug (ZG), Kirchensteuer keine");
+    await noErrors(page, errors);
+  });
+});

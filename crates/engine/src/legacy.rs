@@ -373,6 +373,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         indexed: false,
         mode: TaxMode::Own,
         location: None,
+        relocations: vec![],
         property_gain_own: false,
         deduct_pillar3a: false,
         deductions: None,

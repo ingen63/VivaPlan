@@ -114,29 +114,53 @@ pub fn validate(plan: &Plan) -> Vec<Issue> {
     v.0
 }
 
-/// #63/AK8: Mode «Wohnort»: the canton must be in the tax data and the municipality must belong to it.
-fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>) {
+/// #63/AK8: Mode «Wohnort»: the canton must be in the tax data and the municipality must belong to it. #151: `row`
+/// is the index in `taxes.relocations` for the further places of residence (`None`: `taxes.location`, first row).
+fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>, row: Option<usize>) {
     let data = crate::taxdata::builtin();
+    let path = |field: &str| match row {
+        None => format!("taxes.location.{field}"),
+        Some(i) => format!("taxes.relocations.{i}.{field}"),
+    };
+    // Row number as in the user interface: the first row is `taxes.location`.
+    let n = row.map_or(1, |i| i + 2);
     let canton = loc.map(|l| l.canton.as_str()).unwrap_or("");
     if canton.is_empty() {
-        v.err_at("taxes", "taxes.location.canton", msg!(tax_canton_missing));
+        let m = match row {
+            None => msg!(tax_canton_missing),
+            Some(_) => msg!(relocation_canton_missing, row = n),
+        };
+        v.err_at("taxes", path("canton"), m);
         return;
     }
     if data.canton(canton).is_none() {
-        v.err_at(
-            "taxes",
-            "taxes.location.canton",
-            msg!(tax_canton_unknown, canton = canton),
-        );
+        let m = match row {
+            None => msg!(tax_canton_unknown, canton = canton),
+            Some(_) => msg!(relocation_canton_unknown, row = n, canton = canton),
+        };
+        v.err_at("taxes", path("canton"), m);
         return;
     }
     match loc.and_then(|l| l.municipality) {
-        None => v.err_at("taxes", "taxes.location.municipality", msg!(tax_municipality_missing)),
-        Some(bfs) if data.municipality(bfs).is_none_or(|m| m.2 != canton) => v.err_at(
-            "taxes",
-            "taxes.location.municipality",
-            msg!(tax_municipality_not_in_canton, bfs = bfs, canton = canton),
-        ),
+        None => {
+            let m = match row {
+                None => msg!(tax_municipality_missing),
+                Some(_) => msg!(relocation_municipality_missing, row = n),
+            };
+            v.err_at("taxes", path("municipality"), m);
+        }
+        Some(bfs) if data.municipality(bfs).is_none_or(|m| m.2 != canton) => {
+            let m = match row {
+                None => msg!(tax_municipality_not_in_canton, bfs = bfs, canton = canton),
+                Some(_) => msg!(
+                    relocation_municipality_not_in_canton,
+                    row = n,
+                    bfs = bfs,
+                    canton = canton
+                ),
+            };
+            v.err_at("taxes", path("municipality"), m);
+        }
         Some(_) => {}
     }
 }
@@ -671,7 +695,23 @@ fn check(plan: &Plan, v: &mut Issues) {
         }
     }
     if !own {
-        check_tax_location(v, t.location.as_ref());
+        check_tax_location(v, t.location.as_ref(), None);
+        // #151/AK6: further places of residence: each row checked, the rows in the order of time (the first row
+        // applies from the start; the same month as the previous row is allowed, the later row then applies).
+        let mut previous = start;
+        for (i, row) in t.relocations.iter().enumerate() {
+            check_tax_location(v, Some(&row.place), Some(i));
+            if let Some(m) = resolve(v, "taxes", term(msg!(term_residence)), &row.from) {
+                if m < previous {
+                    v.err_at(
+                        "taxes",
+                        format!("taxes.relocations.{i}.from"),
+                        msg!(relocation_before_previous, row = i + 2, month = m, previous = previous),
+                    );
+                }
+                previous = previous.max(m);
+            }
+        }
     }
     // #131: Deductions from income: amount not negative, share of the income between 0 and 100 %, valid point in time.
     for (i, d) in t.deductions.iter().flatten().enumerate() {

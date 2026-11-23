@@ -582,6 +582,33 @@ ein (`BUILTIN`).
   bisher. Mietobjekte brauchen keine Regel. Herkunft der Regeln: `tools/steuerdaten/grundstueckgewinn.py` und README
   dort; `tax_locations` liefert `propertyGainRule` und `propertyGainApprox`, die Oberfläche zeigt die Texte
   `propertyGainRule.<Kanton>` und `propertyGainApprox.<Kanton>` (deutsch = Steuerdatei, e2e prüft das).
+- **Wohnort zeitabhängig (#151):** `taxes.location` ist die erste Zeile (ab Start, Form von #63 unverändert),
+  `taxes.relocations` = weitere Zeilen `{ from, canton, municipality, church }` (`model::Relocation`, Feld fehlt bei
+  einem einzigen Wohnort und wird dann nicht geschrieben). `Simulator::locations` (`CLocation { from, place, resolved }`)
+  hält je Zeile den aufgelösten Wohnort, stabil nach Monat sortiert (gleicher Monat: die spätere Zeile gilt; Zeitpunkt
+  «nie» oder dynamisch: ohne Wirkung); `location_at(m)` liefert die Zeile im Monat `m`. Stichtage nach dem
+  Steuerharmonisierungsgesetz (StHG, SR 642.14, Stand 1. Januar 2025, auf fedlex.admin.ch geprüft am 23.11.2026):
+  - Einkommen und Vermögen: `location_of_year(m)` = Wohnort im Dezember des Steuerjahres, für das ganze Jahr
+    (`income_tax`, `wealth_tax`, auch die Schätzung des Netto-Bedarfs). Art. 4b Abs. 1 Satz 1: bei Wechsel des
+    Wohnsitzes innerhalb der Schweiz besteht die Steuerpflicht für die laufende Steuerperiode im Kanton, in dem die
+    Person am Ende der Periode Wohnsitz hat; Art. 17 Abs. 1: das Vermögen bemisst sich nach dem Stand am Ende der
+    Steuerperiode. Der Wechsel der Gemeinde im selben Kanton folgt derselben Regel (kantonales Recht, Vereinfachung).
+  - Kapitalleistungen aus Vorsorge (Art. 11 Abs. 3): `capital_tax` mit dem Wohnort im Monat des Bezugs, Art. 4b Abs. 1
+    Satz 2 (Kanton des Wohnsitzes im Zeitpunkt der Fälligkeit). Bezüge eines Kalenderjahres werden weiter
+    zusammengerechnet, auch über einen Wechsel hinweg (Vereinfachung: der Zuschlag rechnet mit der Tabelle des neuen
+    Orts).
+  - Grundstückgewinnsteuer (#65): `gain_rules` je Immobilie und Wohnort (`GainRule` je Zeile von `locations`, mit
+    eigenen Regeln ein Eintrag); beim Verkauf gilt der Eintrag des Wohnorts im Monat des Verkaufs: ohne `canton` der
+    Wohnkanton, im Wohnkanton der Steuerfuss der Wohngemeinde, sonst der Median.
+  - Abzüge «Vorschlag des Kantons» (#131) mit dem `Resolved` des Steuerjahres; ein eigener Wert bleibt.
+  - Ergebnis: `TaxBasis.residence` (Wohnort am 31. Dezember) nur, wenn die Planung mehr als einen Wohnort hat (sonst
+    nicht geschrieben); die Jahreswerte zeigen ihn mit den Steuerspalten, die Parameter je Zeile «Wohnort ab …».
+  - Prüfung je Zeile am Feld `taxes.relocations.N.*` (`relocation_canton_missing`, `relocation_canton_unknown`,
+    `relocation_municipality_missing`, `relocation_municipality_not_in_canton`, Zeilennummer wie in der Oberfläche:
+    `taxes.location` ist Zeile 1) und `relocation_before_previous` am Feld `from`, wenn eine Zeile vor der vorherigen
+    (oder vor dem Start) beginnt. Mit eigenen Tabellen werden die Zeilen weder geprüft noch angewendet.
+  - Nicht enthalten: Wegzug ins Ausland, Umzugskosten, Steuerpflicht für einen Teil des Jahres (pro rata).
+  - Tests: `crates/engine/tests/relocation.rs` (`issue_151_…`), e2e `ui-steuern.spec.js` («(#151)»).
 - Die eigenen Tabellen für Einkommen, Vermögen und Kapitalbezug (auch `taxes.couple`) und die nicht geltenden eigenen
   Regeln der Grundstückgewinnsteuer bleiben in der Datei, die Prüfung übergeht sie.
 - **Prüfung:** Kanton fehlt oder unbekannt (`taxes.location.canton`), Gemeinde fehlt oder liegt nicht im Kanton

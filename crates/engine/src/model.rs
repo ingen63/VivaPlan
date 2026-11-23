@@ -905,6 +905,10 @@ pub struct Taxes {
     /// #63: Place of residence for the mode `location`; missing details are reported by the validation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<TaxLocation>,
+    /// #151: Further places of residence in the mode `location`, each from its point in time until the next row;
+    /// `location` is the first row (from the start). Missing: one place of residence for the whole plan.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub relocations: Vec<Relocation>,
     /// #65: In the mode «Wohnort», own rules for the property gain tax (`property_gain`) instead of the rule set of
     /// the canton in which the property lies. Missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
@@ -985,6 +989,15 @@ pub struct TaxLocation {
     pub municipality: Option<u32>,
     #[serde(default)]
     pub church: Church,
+}
+
+/// #151: Change of the place of residence: from `from` the place `place` applies (until the next row).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Relocation {
+    pub from: TimeRef,
+    #[serde(flatten)]
+    pub place: TaxLocation,
 }
 
 /// #63: Rule of a deduction from the income: `base + rate × reference`, at least `min`, at most `max` (0 = no

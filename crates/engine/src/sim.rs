@@ -220,6 +220,9 @@ pub struct TaxBasis {
     /// Taxable income, never negative; with own tables both are the same.
     pub taxable_canton: f64,
     pub taxable_federal: f64,
+    /// #151: Place of residence of the tax year (on 31 December); only if the place changes during the plan.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub residence: Option<crate::model::TaxLocation>,
 }
 
 /// #131: Deductions of a tax year collected month by month: months with a proposal of the canton, own value and
@@ -233,6 +236,14 @@ struct YearDeductions {
     /// Sum of share × income of the months.
     own_rate: f64,
     pillar3a: [f64; 2],
+}
+
+/// #151: Compiled place of residence: applies from month `from` (index of `YearMonth`) until the next row.
+#[derive(Clone, Debug)]
+struct CLocation {
+    from: i32,
+    place: crate::model::TaxLocation,
+    resolved: crate::taxdata::Resolved,
 }
 
 /// #131: Compiled row of the deductions from income.
@@ -769,10 +780,12 @@ pub struct Simulator {
     /// Ids of the persons (for assigning the tranches to pillar 3a).
     person_ids: Vec<String>,
     taxes: crate::model::Taxes,
-    /// #63: Tables and deductions of the place of residence (mode «Wohnort»); `None`: own tables.
-    location: Option<crate::taxdata::Resolved>,
-    /// #65: Property gain tax per property (index as in `props`).
-    gain_rules: Vec<GainRule>,
+    /// #63: Tables and deductions of the place of residence (mode «Wohnort»); empty: own tables. #151: one row per
+    /// place of residence, sorted by month; the first applies from the start.
+    locations: Vec<CLocation>,
+    /// #65: Property gain tax per property (index as in `props`); #151: per place of residence (index as in
+    /// `locations`), with own rules a single entry.
+    gain_rules: Vec<Vec<GainRule>>,
     /// #131: Rows of the deductions from income, sorted by month; pillar 3a deduction and its maximum per person.
     deductions: Vec<CDeduction>,
     deduct_pillar3a: bool,
@@ -881,14 +894,33 @@ impl Simulator {
             taxes.capital = c.capital.clone();
         }
         // #63: Mode «Wohnort»: tariffs and deductions for married couples with a second person and `household.married`.
-        let location = match plan.taxes.mode {
-            crate::model::TaxMode::Own => None,
+        // #151: further places of residence from their point in time (stable order: for the same month the later row).
+        let locations = match plan.taxes.mode {
+            crate::model::TaxMode::Own => vec![],
             crate::model::TaxMode::Location => {
-                Some(crate::taxdata::builtin().resolve(&plan.taxes.location.clone().unwrap_or_default(), couple)?)
+                let data = crate::taxdata::builtin();
+                let first = plan.taxes.location.clone().unwrap_or_default();
+                let mut out = vec![CLocation {
+                    from: i32::MIN,
+                    resolved: data.resolve(&first, couple)?,
+                    place: first,
+                }];
+                for row in &plan.taxes.relocations {
+                    if let Some(m) = r.resolve(&row.from)? {
+                        out.push(CLocation {
+                            from: m.0,
+                            resolved: data.resolve(&row.place, couple)?,
+                            place: row.place.clone(),
+                        });
+                    }
+                }
+                out.sort_by_key(|l| l.from);
+                out
             }
         };
         // #65: Mode «Wohnort» without own rules: rule set of the canton in which the property lies.
         let canton_rules = plan.taxes.mode == crate::model::TaxMode::Location && !plan.taxes.property_gain_own;
+        // #151: per place of residence (canton of the property if empty, multiplier of the municipality).
         let gain_rules = plan
             .realestate
             .properties
@@ -896,19 +928,24 @@ impl Simulator {
             .map(|p| {
                 // Rented properties are never sold; their canton does not matter.
                 if canton_rules && p.status != crate::model::PropertyStatus::Rent {
-                    let loc = plan.taxes.location.clone().unwrap_or_default();
-                    let (def, multiplier) = crate::taxdata::builtin().property_gain(&loc, p.canton.as_deref())?;
-                    Ok(GainRule {
-                        def: Some(def),
-                        multiplier,
-                        months: true,
-                    })
+                    locations
+                        .iter()
+                        .map(|l| {
+                            let (def, multiplier) =
+                                crate::taxdata::builtin().property_gain(&l.place, p.canton.as_deref())?;
+                            Ok(GainRule {
+                                def: Some(def),
+                                multiplier,
+                                months: true,
+                            })
+                        })
+                        .collect::<Result<Vec<_>>>()
                 } else {
-                    Ok(GainRule {
+                    Ok(vec![GainRule {
                         def: plan.taxes.property_gain.clone(),
                         multiplier: plan.taxes.multiplier,
                         months: false,
-                    })
+                    }])
                 }
             })
             .collect::<Result<Vec<_>>>()?;
@@ -930,7 +967,7 @@ impl Simulator {
                 out.sort_by_key(|d| d.from);
                 out
             }
-            None if location.is_some() => vec![CDeduction {
+            None if !locations.is_empty() => vec![CDeduction {
                 from: i32::MIN,
                 kind: crate::model::DeductionKind::Canton,
                 amount: 0.0,
@@ -938,7 +975,7 @@ impl Simulator {
             }],
             None => vec![],
         };
-        let tax_basis = location.is_some() || plan.taxes.deductions.is_some() || plan.taxes.deduct_pillar3a;
+        let tax_basis = !locations.is_empty() || plan.taxes.deductions.is_some() || plan.taxes.deduct_pillar3a;
         let props = plan
             .realestate
             .properties
@@ -1039,7 +1076,7 @@ impl Simulator {
             accounts,
             person_ids: persons.iter().map(|p| p.id.clone()).collect(),
             taxes,
-            location,
+            locations,
             gain_rules,
             deductions,
             deduct_pillar3a: plan.taxes.deduct_pillar3a,
@@ -1076,6 +1113,22 @@ impl Simulator {
         p.income.at(m) * if p.income_indexed { infl_idx } else { 1.0 }
     }
 
+    /// #151: Index of the place of residence in month `m` (in `locations`); 0 with own tables.
+    fn location_index(&self, m: YearMonth) -> usize {
+        self.locations.partition_point(|l| l.from <= m.0).max(1) - 1
+    }
+
+    /// #151: Place of residence in month `m` (mode «Wohnort»), `None` with own tables.
+    fn location_at(&self, m: YearMonth) -> Option<&CLocation> {
+        self.locations.get(self.location_index(m))
+    }
+
+    /// #151: Place of residence of the tax year of month `m`: the one on 31 December (StHG Art. 4b para. 1, Art. 17
+    /// para. 1).
+    fn location_of_year(&self, m: YearMonth) -> Option<&CLocation> {
+        self.location_at(YearMonth::new(m.year(), 12))
+    }
+
     /// #131: Row of the deductions from income that applies in month `m` (`None` before the first row).
     fn deduction_at(&self, m: YearMonth) -> Option<&CDeduction> {
         match self.deductions.partition_point(|d| d.from <= m.0) {
@@ -1096,7 +1149,7 @@ impl Simulator {
         match self.deduction_at(m) {
             Some(d) if d.kind == crate::model::DeductionKind::Canton => {
                 // Own tables: no proposal (#131).
-                if self.location.is_some() {
+                if !self.locations.is_empty() {
                     acc.canton_months += 1;
                 }
             }
@@ -1108,10 +1161,17 @@ impl Simulator {
         }
     }
 
-    /// Income tax of a year on the income `income` (earned income + PK pension + AHV) with the deductions `acc`
-    /// (#131) and its basis; `earned`: earned income per person (proposal of the canton, #63). `index`: price index
-    /// for the amounts (#66).
-    fn income_tax(&self, income: f64, earned: &[f64], acc: &YearDeductions, index: f64) -> (f64, TaxBasis) {
+    /// Income tax of the year of month `m` on the income `income` (earned income + PK pension + AHV) with the
+    /// deductions `acc` (#131) and its basis; `earned`: earned income per person (proposal of the canton, #63).
+    /// `index`: price index for the amounts (#66). #151: with the place of residence on 31 December, for the whole year.
+    fn income_tax(
+        &self,
+        m: YearMonth,
+        income: f64,
+        earned: &[f64],
+        acc: &YearDeductions,
+        index: f64,
+    ) -> (f64, TaxBasis) {
         let months = f64::from(acc.months.max(1));
         let share = f64::from(acc.canton_months) / months;
         let own = acc.own_amount / months * index + acc.own_rate;
@@ -1129,7 +1189,12 @@ impl Simulator {
             pillar3a,
             ..Default::default()
         };
-        let tax = match &self.location {
+        let location = self.location_of_year(m);
+        // #151: the place of residence of the year in the result only if it changes during the plan.
+        if self.locations.len() > 1 {
+            basis.residence = location.map(|l| l.place.clone());
+        }
+        let tax = match location.map(|l| &l.resolved) {
             Some(r) => {
                 if share > 0.0 {
                     let (pc, pf) = r.proposal(income, earned, index);
@@ -1154,9 +1219,9 @@ impl Simulator {
         (tax, basis)
     }
 
-    /// Wealth tax of a year.
-    fn wealth_tax(&self, wealth: f64, index: f64) -> f64 {
-        match &self.location {
+    /// Wealth tax of the year of month `m` (#151: place of residence on 31 December).
+    fn wealth_tax(&self, m: YearMonth, wealth: f64, index: f64) -> f64 {
+        match self.location_of_year(m).map(|l| &l.resolved) {
             Some(r) => r.wealth_tax(wealth, index),
             None => tax::tax_indexed(&self.taxes.wealth, wealth, self.taxes.multiplier, index),
         }
@@ -1660,10 +1725,11 @@ impl<'a> Run<'a> {
     /// Lump sums in the same calendar year are added together for the rate: for the household, or per
     /// person (`person`) for unmarried couples (#150). #64: In the mode «Wohnort» the table of the place of residence
     /// applies (multipliers included); unmarried couples pay per person with the tariff for single persons.
-    fn capital_tax(&mut self, person: usize, amount: f64) -> f64 {
+    /// #151: place of residence in the month `m` of the payout (StHG Art. 4b para. 1).
+    fn capital_tax(&mut self, person: usize, m: YearMonth, amount: f64) -> f64 {
         let idx = self.tax_index();
-        let (table, multiplier) = match &self.s.location {
-            Some(r) => (&r.capital, 1.0),
+        let (table, multiplier) = match self.s.location_at(m) {
+            Some(l) => (&l.resolved.capital, 1.0),
             None => (&self.s.taxes.capital, self.s.taxes.multiplier),
         };
         let k = if self.s.capital_per_person {
@@ -1693,7 +1759,9 @@ impl<'a> Run<'a> {
         let debt: f64 = self.props[i].balances.iter().sum();
         // Holding period in months (#65: rule set of the canton) or in full years (own rules, as before); unknown for
         // owned property without a purchase date (no surcharge or reduction).
-        let rule = &self.s.gain_rules[i];
+        // #151: rules of the place of residence in the month of the sale (one entry with own rules).
+        let rules = &self.s.gain_rules[i];
+        let rule = &rules[self.s.location_index(m).min(rules.len() - 1)];
         let months = self.props[i]
             .bought
             .map(|b| b.until(m).max(0))
@@ -2409,7 +2477,7 @@ impl<'a> Run<'a> {
             return;
         }
         self.p3a[a] -= gross;
-        let t = self.capital_tax(a, gross);
+        let t = self.capital_tax(a, m, gross);
         self.ledger.taxes += t;
         self.event_tax += t;
         self.month_capital_tax += t;
@@ -2542,6 +2610,7 @@ impl<'a> Run<'a> {
             housing: housing * f,
             income_tax: s
                 .income_tax(
+                    m,
                     (ahv + pk + earned) * f,
                     &per_person[..s.people.len().min(2)],
                     &ded,
@@ -3228,7 +3297,7 @@ impl<'a> Run<'a> {
                     };
                     self.ledger.pk_interest += accrued;
                     let lump = pk * c.pk_lumpsum;
-                    let t = self.capital_tax(pi, lump);
+                    let t = self.capital_tax(pi, m, lump);
                     self.ledger.taxes += t;
                     self.ledger.annuity += pk - lump;
                     month_tax += t;
@@ -3319,7 +3388,7 @@ impl<'a> Run<'a> {
             self.ledger.housing += prop_cost;
             self.year_income += income;
             s.add_deduction_month(&mut self.year_ded, m, income);
-            if s.location.is_some() {
+            if !s.locations.is_empty() {
                 for (i, e) in self.year_earned.iter_mut().enumerate().take(s.people.len()) {
                     *e += s.person_earned(i, m, self.infl_idx);
                 }
@@ -3369,12 +3438,13 @@ impl<'a> Run<'a> {
                 let taxable_wealth = wealth + self.equity();
                 let idx = self.tax_index();
                 let (ti, basis) = s.income_tax(
+                    m,
                     self.year_income,
                     &self.year_earned[..s.people.len().min(2)],
                     &self.year_ded,
                     idx,
                 );
-                let tw = s.wealth_tax(taxable_wealth, idx);
+                let tw = s.wealth_tax(m, taxable_wealth, idx);
                 if s.tax_basis && self.record {
                     tax_basis = Some(basis);
                 }
@@ -3699,18 +3769,33 @@ mod tests_deductions {
             pillar3a: [9000.0, 0.0],
             ..Default::default()
         };
-        let (t, b) = s.income_tax(100_000.0, &[], &acc, 1.0);
+        let (t, b) = s.income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.0);
         assert_eq!(b.pillar3a, 7000.0);
         assert!((t - 9300.0).abs() < 1e-9);
-        assert!((s.income_tax(100_000.0, &[], &acc, 1.1).1.pillar3a - 7700.0).abs() < 1e-9);
+        assert!(
+            (s.income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.1)
+                .1
+                .pillar3a
+                - 7700.0)
+                .abs()
+                < 1e-9
+        );
         let acc = YearDeductions {
             months: 12,
             pillar3a: [5000.0, 0.0],
             ..Default::default()
         };
-        assert_eq!(s.income_tax(100_000.0, &[], &acc, 1.0).1.pillar3a, 5000.0);
         assert_eq!(
-            simulator(plan(false)).income_tax(100_000.0, &[], &acc, 1.0).1.pillar3a,
+            s.income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.0)
+                .1
+                .pillar3a,
+            5000.0
+        );
+        assert_eq!(
+            simulator(plan(false))
+                .income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.0)
+                .1
+                .pillar3a,
             0.0
         );
     }
@@ -3730,7 +3815,7 @@ mod tests_deductions {
         for m in 1..=12 {
             s.add_deduction_month(&mut acc, YearMonth::new(2030, m), 1000.0);
         }
-        let (_, b) = s.income_tax(12_000.0, &[], &acc, 1.0);
+        let (_, b) = s.income_tax(YearMonth::new(2030, 12), 12_000.0, &[], &acc, 1.0);
         assert_eq!(b.own, 600.0);
         assert_eq!(b.taxable_canton, 11_400.0);
     }
