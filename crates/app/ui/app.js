@@ -1296,12 +1296,13 @@ function deductionsCard() {
   const kinds = [["canton", tr("deductions.canton")], ["own", tr("deductions.own")]];
   const body = rows.map((r, i) => {
     const R = `${P}.${i}`, canton = loc && r.kind === "canton"; // AK11: with own tables no proposal
+    // #228: own grid (.dedrow): time and kind stacked in one cell, so that the value gets the remaining width
     const kind = !loc ? "" : stored ? Sel(`${R}.kind`, kinds, { rerender: 1 }) : `<span class="computed">${tr("deductions.canton")}</span>`;
     const value = canton
       ? `<span class="computed" data-ded-proposal="${i}">${C("dedProposal", i)}</span>`
       : `${F(`${R}.amount`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}${F(`${R}.rate`, "", "pct", { bare: true, unit: tr("deductions.ofIncome") })}`;
-    return `<div class="row" data-ded-row="${i}"><span class="ab">${tr("common.from")}</span>${stored ? Ref(`${R}.from`) : `<span class="computed">${tr("deductions.fromStart")}</span>`}${kind}${value}
-      ${stored && rows.length > 1 ? `<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button>` : ""}</div>
+    return `<div class="dedrow" data-ded-row="${i}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${stored ? Ref(`${R}.from`) : `<span class="computed">${tr("deductions.fromStart")}</span>`}${kind}</div><div class="dedval">${value}</div>
+      ${stored && rows.length > 1 ? `<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button>` : "<span></span>"}</div>
       ${canton && earned?.approx ? `<p class="hint warn" data-ded-approx>⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}`;
   }).join("");
   const own = rows.map((r, i) => [r, i]).filter(([r]) => !loc || r.kind !== "canton");

@@ -415,6 +415,60 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
   });
 });
 
+test.describe("Layout of the rows of the deductions from income (#228)", () => {
+  const card = page => page.locator("#tax-deductions");
+  /** Width of the value of row `i` and whether the button ✕ is on the same height as the value. */
+  const measure = (page, i) => card(page).locator(`[data-ded-row="${i}"]`).evaluate(row => {
+    const val = row.querySelector(".dedval").getBoundingClientRect(), del = row.querySelector('button[data-action="row-del"]');
+    const d = del?.getBoundingClientRect();
+    return { width: val.width, sameLine: d ? d.top < val.bottom && d.bottom > val.top : null,
+      rightmost: d ? d.left >= val.right : null, clipped: [...row.querySelectorAll(".dedval .computed")].some(e => e.scrollWidth > e.clientWidth) };
+  });
+
+  test("AK1–AK3, AK5: proposal of the canton and own value at least 200 px wide, ✕ on the same height", async ({ page }) => {
+    const errors = await open(page);
+    // Not adjusted yet: proposal of the canton without a button ✕
+    await toLocation(page);
+    await choose(page, "ZH", "Zürich");
+    await previewIdle(page);
+    await expect(card(page).locator('[data-ded-proposal="0"]')).toContainText("Kanton");
+    let m = await measure(page, 0);
+    expect(m.width).toBeGreaterThanOrEqual(200);
+    expect(m.clipped).toBe(false);
+    // Adjusted: one row each with the proposal and with an own value, both with ✕
+    await page.evaluate(() => {
+      state.taxes.deductions = [{ from: "start", kind: "canton" }, { from: "retire", kind: "own", amount: 12000, rate: 0.05 }];
+      markDirty(); renderSection(); scheduleRefresh();
+    });
+    await previewIdle(page);
+    await expect(card(page).locator('[data-ded-proposal="0"]')).toContainText("Kanton");
+    for (const i of [0, 1]) {
+      m = await measure(page, i);
+      expect(m.width, `row ${i}`).toBeGreaterThanOrEqual(200);
+      expect(m.sameLine, `row ${i}`).toBe(true);
+      expect(m.rightmost, `row ${i}`).toBe(true);
+      expect(m.clipped, `row ${i}`).toBe(false);
+    }
+    // AK2: amount and share side by side, both readable
+    const amount = await card(page).locator('[data-ded-row="1"] input[data-path="taxes.deductions.1.amount"]').boundingBox();
+    const rate = await card(page).locator('[data-ded-row="1"] input[data-path="taxes.deductions.1.rate"]').boundingBox();
+    expect(Math.abs(amount.y - rate.y)).toBeLessThan(2);
+    expect(rate.x).toBeGreaterThan(amount.x + amount.width - 1);
+    expect(Math.min(amount.width, rate.width)).toBeGreaterThanOrEqual(60);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: other time series with .row keep their grid", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    await toLocation(page);
+    const cols = await page.locator("#tax-location .row").first().evaluate(e => getComputedStyle(e).gridTemplateColumns.split(" ").length);
+    expect(cols).toBe(4);
+    expect(await page.evaluate(() => [...document.querySelectorAll(".row")].every(e => !e.matches("[data-ded-row]")))).toBe(true);
+    await noErrors(page, errors);
+  });
+});
+
 test.describe("Time-dependent place of residence (#151)", () => {
   /** Mode «Wohnort» with Zurich from the start. */
   async function zurich(page) {

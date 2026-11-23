@@ -109,6 +109,12 @@ select.plain{border:1px solid var(--border);border-radius:7px;background:var(--p
 .rows{display:flex;flex-direction:column;gap:6px}
 .row{display:grid;grid-template-columns:auto minmax(0,1fr) 130px 30px;gap:8px;align-items:center}
 .row .ab{font-size:12px;color:var(--faint);width:18px}
+.dedrow{display:grid;grid-template-columns:auto minmax(0,210px) minmax(200px,1fr) 30px;gap:8px;align-items:center}
+.dedwhen{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dedrow .ab{font-size:12px;color:var(--faint);width:18px}
+.dedval{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.dedval .inp{flex:1 1 140px;min-width:0}
+.dedval .computed{overflow-wrap:anywhere}
 .refwrap{display:flex;gap:6px;min-width:0}
 .refwrap select{flex:1;min-width:0}
 .refwrap .inp{width:96px;flex:none}
