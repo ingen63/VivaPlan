@@ -971,3 +971,32 @@ test.describe("Estimated tax (#143)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("KPI earliest depletion readable (#234)", () => {
+  // #234/AK1, AK3: the run of the earliest depletion is a message of the engine; it shows as text in the chosen language
+  test("AK3: the KPI shows month and run as text, in German and in English", async ({ page }) => {
+    const errors = await open(page, "results/rolling");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
+    // more spending than the example plan can carry: some historical runs deplete
+    await page.evaluate(() => { state.flows.spendingFactor = 3; return runSimulation("overview", { noConfirm: true }); });
+    const sub = page.locator(`#resultsBody .kpi:has(.k:text-is("Früheste Erschöpfung")) .s`);
+    await expect(sub).toHaveText(/^\d\d\.\d{4} · Historisch ab \d\d\.\d{4}$/);
+    await page.evaluate(() => I18n.use("en"));
+    const subEn = page.locator(`#resultsBody .kpi:has(.k:text-is("Earliest depletion")) .s`);
+    await expect(subEn).toHaveText(/^\d\d\.\d{4} · Historical from \d\d\.\d{4}$/);
+    await expect(page.locator("#resultsBody")).not.toContainText("[object Object]");
+    await noErrors(page, errors);
+  });
+
+  // #234/AK2: an error of a variation is a message of the engine as well
+  test("AK2: error of a variation in the table of variations as text in the chosen language", async ({ page }) => {
+    const errors = await open(page);
+    const row = () => page.evaluate(() => scenarioTable({ params: ["wealth.stockShare"], results: [
+      { values: [0.5], runs: 1, error: { code: "path_missing", params: {}, text: "Path missing" } }] }));
+    expect(await row()).toContain(">Pfad fehlt</td>");
+    await page.evaluate(() => I18n.use("en"));
+    expect(await row()).toContain(">Path missing</td>");
+    await noErrors(page, errors);
+  });
+});

@@ -3167,7 +3167,7 @@ async function pickVariation(sel) {
     const plan = JSON.parse(JSON.stringify(state));
     plan.scenarios = { sweeps: [], select: sc.params.map((p, i) => (variationSel[i] == null ? null : { param: p, value: variationSel[i] })).filter(Boolean) };
     const out = await Engine.call("run_simulation", { plan, path: currentPath });
-    if (out.error || !out.single) { variationSel = null; toast(tr("variation.failed") + (out.error || tr("variation.noResult"))); }
+    if (out.error || !out.single) { variationSel = null; toast(tr("variation.failed") + (out.error ? errText(out.error) : tr("variation.noResult"))); }
     else variationRuns.set(selKey(variationSel), out.single);
   }
   renderResults(lastRun);
@@ -3184,7 +3184,7 @@ function scenarioTable(sc) {
   const single = sc.results.every(r => r.runs <= 1);
   const rows = sc.results.map(r => {
     const vals = r.values.map((v, i) => `<td class="l">${SWEEP_SHOW[types[i]](v)}</td>`).join("");
-    if (r.error) return `<tr>${vals}<td class="l" colspan="6" style="color:var(--err)">${esc(r.error)}</td></tr>`;
+    if (r.error) return `<tr>${vals}<td class="l" colspan="6" style="color:var(--err)">${esc(errText(r.error))}</td></tr>`;
     const ok = r.successRate, cls = ok >= 0.95 ? "good" : ok < 0.8 ? "bad" : "";
     return `<tr class="${r.successRate === best ? "best" : ""}">${vals}
       <td class="${cls}">${single ? (ok ? "✓" : "✗") : pctTxt(ok)}</td>
@@ -3305,7 +3305,7 @@ function renderResults(r) {
         ${kpi(tr("fan.worstRun"), fmtMio(pc(0).endTotal), esc(percentInfo(r, 0, pc(0).label)), pc(0).endTotal > 0 ? "" : "bad")}
         ${kpi(tr("results.endP95"), fmtMio(pc(95).endTotal), esc(percentInfo(r, 95, pc(95).label)))}
         ${kpi(tr("results.endP99"), fmtMio(pc(99).endTotal), esc(percentInfo(r, 99, pc(99).label)))}
-        ${kpi(tr("scen.earliestDepletion"), ed ? tr("kpi.age") + ageStr(ym2i(ed[0])) : tr("results.none"), ed ? `${ymShow(ed[0])} · ${esc(ed[1])}` : tr("results.inNoRun"), ed ? "bad" : "good")}
+        ${kpi(tr("scen.earliestDepletion"), ed ? tr("kpi.age") + ageStr(ym2i(ed[0])) : tr("results.none"), ed ? `${ymShow(ed[0])} · ${esc(msgText(ed[1]))}` : tr("results.inNoRun"), ed ? "bad" : "good")}
         ${hasProperties() ? kpi(tr("results.emergencySales"), tr("results.runsN", { runs: fmtInt(s.emergencySaleRuns) }), `${tr("results.ofRuns", { pctTxt: pctTxt(s.emergencySaleRuns / s.runs) })}${s.affordabilitySaleRuns ? tr("results.affordabilityPart", { affordabilitySaleRuns: fmtInt(s.affordabilitySaleRuns) }) : ""}`, s.emergencySaleRuns > 0 ? "bad" : "good") : ""}
         ${hasProperties() && (lastRunPlan || state).realestate.neverSell ? kpi(tr("results.unaffordableRenewals"), tr("results.runsN", { runs: fmtInt(s.unaffordableRenewalRuns || 0) }), tr("results.unaffordableRenewalsSub", { pctTxt: pctTxt((s.unaffordableRenewalRuns || 0) / s.runs) }), s.unaffordableRenewalRuns > 0 ? "bad" : "good") : ""}</div>`
         + card(tr("batch.band"), tr("batch.overRuns", { realNote: realNote() }), chartBox("mc-fan", 300, true) + FAN_LEGEND)
