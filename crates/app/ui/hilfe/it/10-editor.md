@@ -1,13 +1,14 @@
 # Editor: sezioni e campi
 
 ## @s-general Economia domestica e progetto
-Parole chiave: nome, valuta, persone, nascita, seconda persona, doppio reddito, periodo di simulazione
+Parole chiave: nome, valuta, persone, nascita, seconda persona, doppio reddito, periodo di simulazione, senza cassa pensione, grande pilastro 3a, indipendenti
 
 Qui stabilisce i dati di base.
 
 - **Nome del progetto e valuta:** tutti gli importi vengono registrati nella valuta del progetto (CHF, EUR o USD). Gli indici della [strategia d’investimento](#f-ret-series) sono in CHF; con una pianificazione in EUR o USD appare un’avvertenza.
 - **Persona 1:** nome e mese di nascita (formato MM.AAAA). Dal mese di nascita l’app calcola l’età per le tappe (‹a 65 anni›) e per le didascalie dei grafici.
 - **+ Seconda persona:** aggiunge una seconda persona con reddito proprio, cassa pensione propria e AVS propria (doppio reddito). Imposte, sostanza e spese valgono per l’economia domestica. Vedi [Seconda persona e regole per coppie sposate](#f-couple).
+- **Senza cassa pensione (grande pilastro 3a):** casella per persona per chi esercita un’attività lucrativa senza cassa pensione, soprattutto gli indipendenti. Per questa persona versamento e deduzione del [pilastro 3a](#s-pillar3a) arrivano fino al **20 % del reddito da attività lucrativa**, al massimo fino all’importo massimo del grande pilastro 3a (36'288 franchi, modificabile nelle [Impostazioni](#f-settings)); per tutte le altre vale il piccolo pilastro 3a (7'258 franchi). Se la pianificazione contiene comunque una cassa pensione della persona (capitale o contributi), la verifica mostra un avviso.
 - **Periodo di simulazione:** inizio e fine sono tappe e si modificano sotto [Tappe](#s-milestones).
 
 Tutte le indicazioni temporali hanno il formato **MM.AAAA** (ad esempio 05.2027).
@@ -59,7 +60,7 @@ Parole chiave: 3a, previdenza vincolata, versamento, riscossione, piano di risco
 Il pilastro 3a è un conto proprio **per persona**, separato da cassa pensione e ipoteca.
 
 - **Avere all’inizio della simulazione** e **remunerazione / rendimento annuo**.
-- **Versamento all’anno:** da 0 all’importo massimo (7'258 franchi, modificabile nelle [Impostazioni](#f-settings)). L’app versa ogni mese un dodicesimo, fino a prima del mese dell’**inizio della rendita AVS**. Il versamento **conta tra le spese**: appare in «Spese totali» dei valori annuali, aumenta il prelievo e fa parte del fabbisogno netto della strategia a 3 comparti.
+- **Versamento all’anno:** da 0 all’importo massimo (7'258 franchi; con «Senza cassa pensione (grande pilastro 3a)» per la persona 36'288 franchi, al massimo il 20 % del reddito da attività lucrativa; modificabile nelle [Impostazioni](#f-settings)). L’app versa ogni mese un dodicesimo, fino a prima del mese dell’**inizio della rendita AVS**. Il versamento **conta tra le spese**: appare in «Spese totali» dei valori annuali, aumenta il prelievo e fa parte del fabbisogno netto della strategia a 3 comparti.
 - **Piano di riscossione:** righe composte da momento e importo, ad esempio 2041 50'000 e 2042 50'000. Il **momento** lo stabilisce come per una tappa come **data** (MM.AAAA) o come **età** della persona a cui appartiene il conto (ad esempio 61.5 anni). Accanto figurano il mese che ne risulta e l’età. Se passa tra «Data» ed «Età», il momento resta uguale. Senza importo viene riscosso l’intero avere. Una riscossione è possibile **al più presto 5 anni prima dell’inizio della rendita AVS**, anche secondo l’età; una voce anteriore è un errore sul campo. Se un importo è superiore all’avere, viene riscosso solo l’avere (avvertenza negli eventi).
 - **Avere dall’anteprima:** ogni riga mostra l’**avere prima della riscossione** e il **resto dopo**, sotto il piano figura l’avere versato all’inizio della rendita AVS. I valori provengono dall’anteprima con rendimenti fissi; se la pianificazione ha un errore, non c’è anteprima, e figura ‹–›.
 - **+ Riscossione** crea una riga un anno dopo l’ultima (senza righe: nel primo mese ammesso, 5 anni prima dell’inizio della rendita AVS, non prima dell’inizio della simulazione), al massimo all’inizio della rendita AVS. Come importo figura l’avere in quel momento dopo le riscossioni precedenti, arrotondato per difetto a 1'000. In seguito può modificarlo liberamente.
@@ -68,7 +69,7 @@ Il pilastro 3a è un conto proprio **per persona**, separato da cassa pensione e
 
 Ogni riscossione è un **prelievo di capitale** con imposta sulle prestazioni in capitale. I prelievi nello stesso anno civile (cassa pensione e pilastro 3a) vengono sommati per l’aliquota, per le coppie non sposate per persona.
 
-L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a prima dell’inizio della rendita AVS (vedi [Ipoteche](#f-re-mortgage)). Versamento e ammortamento indiretto insieme non dovrebbero superare l’importo massimo annuo; altrimenti la verifica mostra un avviso.
+L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a prima dell’inizio della rendita AVS (vedi [Ipoteche](#f-re-mortgage)). Versamento e ammortamento indiretto insieme non dovrebbero superare l’importo massimo annuo; altrimenti la verifica mostra un avviso. Senza cassa pensione la verifica avvisa inoltre non appena la somma supera il 20 % del reddito da attività lucrativa all’anno (con il primo mese in cui il reddito è troppo basso); viene dedotta solo questa quota.
 
 > Esempio: nascita 06.1980, avere 120'000 senza interesse, riscossione a 61.5 anni (risulta 12.2041) di 50'000: avere prima della riscossione 120'000, resto dopo 70'000. «+ Riscossione» propone una riga a 62.5 anni (12.2042) di 70'000.
 
@@ -85,6 +86,7 @@ Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu
 | Inizio della rendita AVS: limite inferiore e superiore | 63 e 70 anni |
 | Prestazione della cassa pensione: limite inferiore e superiore | 58 e 65 anni |
 | Pilastro 3a: importo massimo del versamento all’anno | 7'258 |
+| Grande pilastro 3a (senza cassa pensione): importo massimo all’anno | 36'288 |
 
 **Lingua:** «come il sistema» segue la lingua del sistema operativo (al primo avvio; senza regione, it_CH vale come italiano), altrimenti vale la lingua scelta. Sono offerti tedesco, inglese, francese e italiano; se manca la lingua del sistema, vale il tedesco. L’aiuto appare nella lingua scelta; un capitolo non ancora tradotto appare in tedesco. La stessa scelta si trova nel menu «Vista → Lingua». Un cambio ha effetto subito, anche sui menu; la pianificazione, le modifiche non salvate e la vista restano. Numeri, importi e date appaiono in ogni lingua nel formato svizzero (1'234'567.50, 2.5 %, 03.2040), e il file di pianificazione è lo stesso in ogni lingua. I nomi nella pianificazione (persone, immobili, tappe) non vengono tradotti; solo la pianificazione d’esempio riceve i suoi nomi nella lingua scelta all’apertura, con le stesse cifre.
 
@@ -276,7 +278,7 @@ Ogni riga è:
 - **Senza pilastro 3a:** i versamenti provengono dalla pianificazione (vedi sotto).
 - La **proprietà dell’abitazione** (valore locativo, interessi ipotecari, manutenzione) rientra nel valore proprio. Dal 2029 non ci sono più valore locativo né deduzione degli interessi per l’abitazione occupata dal proprietario; create per questo una riga «dal 2029». **Gli interessi ipotecari non vengono dedotti automaticamente.**
 
-**Pilastro 3a:** Con la casella **«Dedurre i versamenti nel pilastro 3a»** i versamenti di un anno della sezione [Pilastro 3a](#s-pillar3a) (con l’ammortamento indiretto) vengono dedotti dal reddito imponibile, per cantone e Confederazione, al massimo l’importo massimo per persona delle impostazioni. Esempio: reddito 100 000, nessun’altra deduzione, versamento 7 000, imposta come su 93 000. Le nuove pianificazioni hanno la casella selezionata.
+**Pilastro 3a:** Con la casella **«Dedurre i versamenti nel pilastro 3a»** i versamenti di un anno della sezione [Pilastro 3a](#s-pillar3a) (con l’ammortamento indiretto) vengono dedotti dal reddito imponibile, per cantone e Confederazione, al massimo l’importo massimo per persona delle impostazioni. Esempio: reddito 100 000, nessun’altra deduzione, versamento 7 000, imposta come su 93 000. Per una persona «Senza cassa pensione (grande pilastro 3a)» vale il 20 % del suo reddito da attività lucrativa dell’anno, al massimo l’importo massimo del grande pilastro 3a; come gli altri importi cresce con «Tariffe con il rincaro». Esempio: reddito 100 000, versamento 25 000, deduzione 20 000; reddito 300 000, versamento 40 000, deduzione 36 288. Le nuove pianificazioni hanno la casella selezionata.
 
 **Le pianificazioni esistenti** calcolano come prima: nella modalità «domicilio» con la proposta del cantone per tutta la durata, con tabelle proprie senza deduzioni, e senza deduzione del pilastro 3a. Solo «Adattare le deduzioni» crea righe.
 

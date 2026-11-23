@@ -790,6 +790,9 @@ pub struct Simulator {
     deductions: Vec<CDeduction>,
     deduct_pillar3a: bool,
     pillar3a_max: f64,
+    /// #152: Persons without a pension fund (large pillar 3a) and its maximum.
+    pillar3a_large: [bool; 2],
+    pillar3a_max_large: f64,
     /// #131: Record the basis of the income tax (plans with deductions).
     tax_basis: bool,
     pub fixed: crate::market::FixedCurves,
@@ -1081,6 +1084,8 @@ impl Simulator {
             deductions,
             deduct_pillar3a: plan.taxes.deduct_pillar3a,
             pillar3a_max: plan.limits.pillar3a_max,
+            pillar3a_large: [0, 1].map(|i| persons.get(i).is_some_and(|p| p.no_pension_fund)),
+            pillar3a_max_large: plan.limits.pillar3a_max_large,
             tax_basis,
             fixed: crate::market::FixedCurves {
                 stocks: curve(&plan.returns.fixed.stocks)?,
@@ -1137,10 +1142,15 @@ impl Simulator {
         }
     }
 
-    /// #131: Deductible pillar 3a contributions of person `i` per year (at most the maximum of the settings). The only
-    /// place of the limit, so that it can differ per person (large pillar 3a, #152). `index`: price index (#66).
-    fn pillar3a_cap(&self, _i: usize, index: f64) -> f64 {
-        self.pillar3a_max * index
+    /// #131: Deductible pillar 3a contributions of person `i` per year (at most the maximum of the settings); the only
+    /// place of the limit. #152: without a pension fund (large pillar 3a) 20 % of the earned income `earned` of the
+    /// year, at most the maximum of the large pillar 3a. `index`: price index (#66).
+    fn pillar3a_cap(&self, i: usize, earned: f64, index: f64) -> f64 {
+        if self.pillar3a_large[i] {
+            (LARGE_PILLAR3A_SHARE * earned).min(self.pillar3a_max_large * index)
+        } else {
+            self.pillar3a_max * index
+        }
     }
 
     /// #131: Adds month `m` with the income `income` to the deductions of the tax year.
@@ -1177,7 +1187,7 @@ impl Simulator {
         let own = acc.own_amount / months * index + acc.own_rate;
         let pillar3a = if self.deduct_pillar3a {
             (0..self.people.len().min(2))
-                .map(|i| acc.pillar3a[i].min(self.pillar3a_cap(i, index)))
+                .map(|i| acc.pillar3a[i].min(self.pillar3a_cap(i, earned.get(i).copied().unwrap_or(0.0), index)))
                 .sum()
         } else {
             0.0
@@ -1431,6 +1441,10 @@ struct PropState {
 
 /// #190: First year with a 13th AHV pension (first payout December 2026).
 pub const AHV13_FROM_YEAR: i32 = 2026;
+
+/// #152: Large pillar 3a (without a pension fund): contributions and deduction up to this share of the earned income
+/// (BVV 3 Art. 7 para. 1 lit. b).
+pub const LARGE_PILLAR3A_SHARE: f64 = 0.2;
 
 /// #190: Share of the 13th AHV pension of one month in centimes: one twelfth of the monthly pension, rounded to the
 /// centime (half away from zero).
@@ -3388,10 +3402,9 @@ impl<'a> Run<'a> {
             self.ledger.housing += prop_cost;
             self.year_income += income;
             s.add_deduction_month(&mut self.year_ded, m, income);
-            if !s.locations.is_empty() {
-                for (i, e) in self.year_earned.iter_mut().enumerate().take(s.people.len()) {
-                    *e += s.person_earned(i, m, self.infl_idx);
-                }
+            // #63 proposal of the canton, #152 large pillar 3a: earned income per person of the tax year.
+            for (i, e) in self.year_earned.iter_mut().enumerate().take(s.people.len()) {
+                *e += s.person_earned(i, m, self.infl_idx);
             }
 
             // Returns

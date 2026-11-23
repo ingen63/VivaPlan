@@ -1,13 +1,14 @@
 # Editor: sections and fields
 
 ## @s-general Household & project
-Keywords: name, currency, persons, birth, second person, double income, simulation period
+Keywords: name, currency, persons, birth, second person, double income, simulation period, without pension fund, large pillar 3a, self-employed
 
 Here you set the basic data.
 
 - **Project name and currency:** All amounts are entered in the project currency (CHF, EUR or USD). The indices of the [investment strategy](#f-ret-series) are in CHF; with a plan in EUR or USD, a notice appears.
 - **Person 1:** Name and month of birth (format MM.YYYY). From the month of birth, the app calculates the age for milestones (‘at 65’) and for the labels of the charts.
 - **+ Second person:** Adds a second person with their own income, their own pension fund and their own AHV (double income). Taxes, wealth and spending apply to the household. See [Second person and rules for couples](#f-couple).
+- **Without pension fund (large pillar 3a):** Check box per person for gainfully employed persons without a pension fund, especially the self-employed. For this person, contribution and deduction of [pillar 3a](#s-pillar3a) go up to **20 % of the earned income**, at most the maximum of the large pillar 3a (36 288 francs, changeable in the [settings](#f-settings)); for everyone else the small pillar 3a applies (7 258 francs). If the plan still contains a pension fund for the person (capital or contributions), the validation shows a warning.
 - **Simulation period:** Start and end are milestones and are changed under [Milestones](#s-milestones).
 
 All dates have the format **MM.YYYY** (for example 05.2027).
@@ -59,7 +60,7 @@ Keywords: 3a, tied pension provision, contribution, payout, payout plan, age, da
 Pillar 3a is a separate account **per person**, separate from the pension fund and the mortgage.
 
 - **Balance at simulation start** and **interest / return p.a.**
-- **Contribution per year:** 0 up to the maximum amount (7 258 francs, changeable in the [settings](#f-settings)). The app pays in one twelfth every month, until the month before the **AHV pension start**. The contribution **counts as spending**: it appears in “Total spending” of the yearly values, increases the withdrawal and is part of the net need of the 3-bucket strategy.
+- **Contribution per year:** 0 up to the maximum amount (7 258 francs; with “Without pension fund (large pillar 3a)” for the person 36 288 francs, at most 20 % of the earned income; changeable in the [settings](#f-settings)). The app pays in one twelfth every month, until the month before the **AHV pension start**. The contribution **counts as spending**: it appears in “Total spending” of the yearly values, increases the withdrawal and is part of the net need of the 3-bucket strategy.
 - **Payout plan:** rows of point in time and amount, for example 2041 50 000 and 2042 50 000. As with a milestone, you set the **point in time** as a **date** (MM.YYYY) or as the **age** of the person who owns the account (for example 61.5 years). Next to it are the resulting month and the age. If you switch between “Date” and “Age”, the point in time stays the same. Without an amount, the whole balance is paid out. A payout is possible **at the earliest 5 years before the AHV pension start**, also by age; an earlier entry is an error at the field. If an amount is larger than the balance, only the balance is paid out (notice in the events).
 - **Balance from the preview:** Every row shows the **balance before the payout** and the **rest after it**; below the plan is the balance paid out at the AHV pension start. The values come from the preview with fixed returns; if the plan has an error, there is no preview, and ‘–’ is shown.
 - **+ Payout** creates a row one year after the last one (without a row: in the earliest allowed month, 5 years before the AHV pension start, not before the simulation start), at the latest at the AHV pension start. The amount is the balance at that point in time after the earlier payouts, rounded down to 1 000. You can change it freely afterwards.
@@ -68,7 +69,7 @@ Pillar 3a is a separate account **per person**, separate from the pension fund a
 
 Every payout is a **lump-sum withdrawal** with lump-sum tax. Withdrawals in the same calendar year (pension fund and pillar 3a) are added together for the rate; for unmarried couples, per person.
 
-The **indirect amortization** of a mortgage flows into this account until before the AHV pension start (see [Mortgages](#f-re-mortgage)). Contribution and indirect amortization together should not exceed the maximum amount per year; otherwise the validation shows a warning.
+The **indirect amortization** of a mortgage flows into this account until before the AHV pension start (see [Mortgages](#f-re-mortgage)). Contribution and indirect amortization together should not exceed the maximum amount per year; otherwise the validation shows a warning. Without a pension fund, the validation also warns as soon as the sum exceeds 20 % of the earned income per year (with the first month in which the income is too low); only this share is then deducted.
 
 > Example: born 06.1980, balance 120 000 without interest, payout at 61.5 years (results in 12.2041) of 50 000: balance before the payout 120 000, rest after it 70 000. “+ Payout” suggests a row at 62.5 years (12.2042) of 70 000.
 
@@ -85,6 +86,7 @@ On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, me
 | AHV pension start: lower and upper limit | 63 and 70 years |
 | Pension fund payout: lower and upper limit | 58 and 65 years |
 | Pillar 3a: maximum contribution per year | 7 258 |
+| Large pillar 3a (without pension fund): maximum per year | 36 288 |
 
 **Language:** “as system” follows the language of the operating system (at the first start; without region, fr_FR counts as French); otherwise the chosen language applies. German, English, French and Italian are offered; if the system's language is missing, German applies. The help appears in the chosen language; a chapter that is not yet translated appears in German. The same choice is in the menu “View → Language”. A change takes effect immediately, also on the menus; the plan, unsaved changes and the view stay. Numbers, amounts and dates appear in the Swiss format in every language (1'234'567.50, 2.5 %, 03.2040), and the plan file is the same in every language. Names in the plan (persons, properties, milestones) are not translated; only the example plan gets its names in the chosen language when it is opened, with the same numbers.
 
@@ -276,7 +278,7 @@ Each row is either:
 - **Without pillar 3a:** the contributions come from the plan (see below).
 - **Home ownership** (imputed rental value, mortgage interest, maintenance) belongs in the own value. From 2029 there is no imputed rental value and no interest deduction for owner-occupied property; add a row “from 2029” for it. **Mortgage interest is not deducted automatically.**
 
-**Pillar 3a:** With the check box **“Deduct contributions to pillar 3a”** the contributions of a year from the section [Pillar 3a](#s-pillar3a) (including the indirect amortization) are deducted from the taxable income, for canton and federal tax, at most the maximum per person from the settings. Example: income 100 000, no other deductions, contribution 7 000, tax as on 93 000. New plans have the check box set.
+**Pillar 3a:** With the check box **“Deduct contributions to pillar 3a”** the contributions of a year from the section [Pillar 3a](#s-pillar3a) (including the indirect amortization) are deducted from the taxable income, for canton and federal tax, at most the maximum per person from the settings. Example: income 100 000, no other deductions, contribution 7 000, tax as on 93 000. For a person “Without pension fund (large pillar 3a)”, 20 % of their earned income in the year applies, at most the maximum of the large pillar 3a; like the other amounts it grows with “Tariffs with inflation”. Example: earned income 100 000, contribution 25 000, deduction 20 000; earned income 300 000, contribution 40 000, deduction 36 288. New plans have the check box set.
 
 **Existing plans** compute as before: in the mode “place of residence” with the proposal of the canton throughout, with own tables without deductions, and without the pillar 3a deduction. Only “Adjust deductions” creates rows.
 

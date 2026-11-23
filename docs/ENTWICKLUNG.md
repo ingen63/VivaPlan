@@ -552,8 +552,8 @@ ein (`BUILTIN`).
   Monatseinkommen, Einzahlungen in die Säule 3a je Person (Beitrag und indirekte Amortisation). Im Dezember
   (`Simulator::income_tax`): Anteil = Vorschlagsmonate / Monate des Jahres; Vorschlag = Anteil × `Resolved::proposal`
   (Kanton, Bund); eigener Wert = Summe der Beträge / Monate × Index + Summe `rate` × Einkommen; Säule 3a = Σ je Person
-  min(Einzahlung, `pillar3a_cap`) (einzige Stelle der Begrenzung, heute `limits.pillar3aMax` × Index, #152 erweitert sie
-  je Person). Steuerbar Kanton/Bund = Einkommen − (Vorschlag + eigener Wert + 3a), nie negativ; mit eigenen Tabellen
+  min(Einzahlung, `pillar3a_cap`) (einzige Stelle der Begrenzung: `limits.pillar3aMax` × Index; #152 je Person, siehe
+  unten). Steuerbar Kanton/Bund = Einkommen − (Vorschlag + eigener Wert + 3a), nie negativ; mit eigenen Tabellen
   ohne Abzüge exakt das Einkommen (Golden-Dateien unverändert). Die Schätzung des Netto-Bedarfs (3-Topf, `plan_basis`)
   rechnet mit denselben Zeilen (Anteil am Einkommen mit der 13. AHV-Rente) und den geplanten 3a-Beiträgen, auf 12
   Monate hochgerechnet. `MonthRecord.tax_basis`
@@ -561,6 +561,19 @@ ein (`BUILTIN`).
   Kanton/Bund) nur im Dezember und nur bei Planungen mit Abzügen (Modus «Wohnort», `deductions` oder
   `deductPillar3a`). Prüfung: Betrag ≥ 0, `rate` 0 bis 1 (Fehler am Feld), Zeitpunkt auflösbar; Zeilen «canton» mit
   eigenen Tabellen ungeprüft und ohne Wirkung.
+- **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
+  erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
+  Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung bei «Tarife mit der
+  Teuerung» (#66), sonst 1. Das Erwerbseinkommen je Person (`Run::year_earned`) wird dafür immer gesammelt, auch mit
+  eigenen Tabellen. Alle anderen Personen: `limits.pillar3aMax` × Index wie bisher.
+  `limits.pillar3aMaxLarge` Standard 36 288 (BSV, FAQ «Welche Beiträge kann ich in die Säule 3a einzahlen?», Stand
+  2025/26; Fachmitteilung admin.ch vom 5.10.2026 «Höchstabzüge Säule 3a im Steuerjahr 2027»: bis Ende 2026 36 288).
+  Einzahlungsgrenze der Planung (`validate.rs`, dieselbe Regel): Einzahlung 0 bis `pillar3a_max_of` (grosse oder
+  kleine Säule 3a, Fehler am Feld); Einzahlung + indirekte Amortisation über diesem Betrag: Warnung
+  `pillar3a_over_max`; sonst ohne Pensionskasse Warnung `pillar3a_over_income` für den ersten Monat vom Start bis vor
+  dem AHV-Bezug, in dem 20 % × 12 × Monatseinkommen darunter liegt. Warnung `pillar3a_large_with_pk`, wenn die
+  Person trotzdem eine Pensionskasse hat (Kapital > 0 oder Beiträge im Zeitraum). Ohne das Feld rechnen bestehende
+  Planungen unverändert (Golden-Dateien unverändert).
 - **Kapitalbezüge (#64):** je Kanton `capital` (Satz der einfachen Steuer auf den ganzen Bezug, Steuerfuss 100 %,
   Alleinstehende und Verheiratete), wo nötig `capitalMunicipal` (eigene Regel der Gemeindesteuer: Schwyz, Wallis,
   Genf; Freiburg wegen `cantonMultiplier`), `capitalRule` (Text) und `capitalApprox` (Näherung: Wallis, Zug); dazu

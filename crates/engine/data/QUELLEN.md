@@ -81,3 +81,12 @@ Vergleich ab, bis die Reihen neu erzeugt sind (`vivaplan import-shiller`).
 - **BFS (Landesindex der Konsumentenpreise):** Nutzung erlaubt, auch kommerziell; die Quellenangabe mit Autor, Titel
   und Link ist Pflicht. Quelle: Bundesamt für Statistik (BFS), Landesindex der Konsumentenpreise, bezogen über das
   Datenportal der SNB, https://data.snb.ch, Würfel `plkopr`.
+
+## Höchstbeträge der Säule 3a (#131, #152)
+
+Standardwerte der Einstellungen (`crates/engine/src/settings.rs`): kleine Säule 3a 7 258, grosse Säule 3a (ohne
+Pensionskasse, höchstens 20 % des Erwerbseinkommens) 36 288 Franken pro Jahr. Quelle: Bundesamt für
+Sozialversicherungen (BSV), FAQ «Welche Beiträge kann ich in die Säule 3a einzahlen?»
+(faq.bsv.admin.ch/de/3-saeule/welche-beitraege-kann-ich-die-saeule-3a-einzahlen, Stand 2025/26, abgerufen 23.11.2026);
+bestätigt durch die Fachmitteilung «Höchstabzüge Säule 3a im Steuerjahr 2027» (admin.ch, 5.10.2026), die ab 2027 neue
+Werte nennt (7 373 und 36 864) und 7 258 bzw. 36 288 als heute geltend.

@@ -678,6 +678,12 @@
     "text": "Pillar 3a: the maximum amount must be 0 or more."
   },
   {
+    "code": "limits_pillar3a_max_large",
+    "params": {},
+    "template": "Large pillar 3a: the maximum amount must be 0 or more.",
+    "text": "Large pillar 3a: the maximum amount must be 0 or more."
+  },
+  {
     "code": "milestone_age_limits",
     "params": {
       "age": {
@@ -1701,6 +1707,38 @@
     },
     "template": "{who}: contribution ({contribution:int}) and indirect amortization ({indirect:int}) together exceed the maximum amount of {max:int} per year.",
     "text": "Person 2: contribution (12'346) and indirect amortization (12'346) together exceed the maximum amount of 12'346 per year."
+  },
+  {
+    "code": "pillar3a_over_income",
+    "params": {
+      "contribution": 12345.678,
+      "from": "2031-07",
+      "indirect": 12345.678,
+      "limit": 12345.678,
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: contribution ({contribution:int}) and indirect amortization ({indirect:int}) together exceed 20 % of the earned income ({limit:int} per year from {from:ym}); only this share is deductible.",
+    "text": "Person 2: contribution (12'346) and indirect amortization (12'346) together exceed 20 % of the earned income (12'346 per year from 07.2031); only this share is deductible."
+  },
+  {
+    "code": "pillar3a_large_with_pk",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: “Without pension fund (large pillar 3a)” is set, but the plan contains a pension fund for this person.",
+    "text": "Person 2: “Without pension fund (large pillar 3a)” is set, but the plan contains a pension fund for this person."
   },
   {
     "code": "pillar3a_repay_without_indirect",

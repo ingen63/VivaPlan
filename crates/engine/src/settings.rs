@@ -22,6 +22,9 @@ pub struct Limits {
     pub pk_max: f64,
     /// Maximum pillar 3a contribution per year.
     pub pillar3a_max: f64,
+    /// #152: Maximum pillar 3a contribution per year for persons without a pension fund («large» pillar 3a, at most
+    /// 20 % of the earned income).
+    pub pillar3a_max_large: f64,
 }
 
 impl Default for Limits {
@@ -32,6 +35,7 @@ impl Default for Limits {
             pk_min: 58.0,
             pk_max: 65.0,
             pillar3a_max: 7258.0,
+            pillar3a_max_large: 36288.0,
         }
     }
 }
@@ -53,6 +57,9 @@ impl Limits {
         }
         if !self.pillar3a_max.is_finite() || self.pillar3a_max < 0.0 {
             out.push(msg!(limits_pillar3a_max));
+        }
+        if !self.pillar3a_max_large.is_finite() || self.pillar3a_max_large < 0.0 {
+            out.push(msg!(limits_pillar3a_max_large));
         }
         out
     }
@@ -91,5 +98,20 @@ mod tests {
         assert!(bad(|l| l.pillar3a_max = -1.0)[0].contains("0 or more"));
         assert!(bad(|l| l.pillar3a_max = f64::NAN)[0].contains("0 or more"));
         assert!(bad(|l| l.pillar3a_max = 0.0).is_empty());
+    }
+
+    /// #152/AK2: Default of the large pillar 3a (BSV, as of 2025/26) and its check.
+    #[test]
+    fn issue_152_ak2_large_pillar3a_limit() {
+        assert_eq!(Limits::default().pillar3a_max_large, 36288.0);
+        let mut l = Limits {
+            pillar3a_max_large: -1.0,
+            ..Limits::default()
+        };
+        assert!(l.problems()[0].contains("Large pillar 3a"));
+        l.pillar3a_max_large = f64::INFINITY;
+        assert_eq!(l.problems().len(), 1);
+        l.pillar3a_max_large = 0.0;
+        assert!(l.problems().is_empty());
     }
 }

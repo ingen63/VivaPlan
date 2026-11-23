@@ -1,13 +1,14 @@
 # Éditeur: sections et champs
 
 ## @s-general Ménage et projet
-Mots-clés: nom, monnaie, personnes, naissance, deuxième personne, double revenu, période de simulation
+Mots-clés: nom, monnaie, personnes, naissance, deuxième personne, double revenu, période de simulation, sans caisse de pension, grand pilier 3a, indépendants
 
 Vous définissez ici les données de base.
 
 - **Nom du projet et monnaie:** tous les montants sont saisis dans la monnaie du projet (CHF, EUR ou USD). Les indices de la [stratégie de placement](#f-ret-series) sont en CHF; pour une planification en EUR ou en USD, une remarque apparaît.
 - **Personne 1:** nom et mois de naissance (format MM.AAAA). À partir du mois de naissance, l’application calcule l’âge pour les jalons (‹à 65 ans›) et pour la légende des graphiques.
 - **+ Deuxième personne:** ajoute une deuxième personne avec son propre revenu, sa propre caisse de pension et sa propre AVS (double revenu). Les impôts, la fortune et les dépenses s’appliquent au ménage. Voir [Deuxième personne et règles pour couples mariés](#f-couple).
+- **Sans caisse de pension (grand pilier 3a):** case à cocher par personne pour les personnes exerçant une activité lucrative sans caisse de pension, surtout les indépendants. Pour cette personne, le versement et la déduction du [pilier 3a](#s-pillar3a) vont jusqu’à **20 % du revenu de l’activité lucrative**, au plus jusqu’au montant maximal du grand pilier 3a (36 288 francs, modifiable dans les [paramètres](#f-settings)); pour toutes les autres, le petit pilier 3a s’applique (7 258 francs). Si la planification contient malgré tout une caisse de pension pour cette personne (capital ou cotisations), la vérification affiche un avertissement.
 - **Période de simulation:** le début et la fin sont des jalons et sont modifiés sous [Jalons](#s-milestones).
 
 Toutes les indications de temps ont le format **MM.AAAA** (par exemple 05.2027).
@@ -59,7 +60,7 @@ Mots-clés: 3a, prévoyance liée, versement, retrait, plan de retrait, âge, da
 Le pilier 3a est un compte propre **par personne**, séparé de la caisse de pension et de l’hypothèque.
 
 - **Avoir au début de la simulation** et **intérêt / rendement p.a.**
-- **Versement par année:** 0 jusqu’au montant maximal (7 258 francs, modifiable dans les [paramètres](#f-settings)). L’application verse chaque mois un douzième, jusqu’au mois précédant le **début de la rente AVS**. Le versement **compte dans les dépenses**: il apparaît dans «Total des dépenses» des valeurs annuelles, augmente le prélèvement et fait partie du besoin net de la stratégie à 3 compartiments.
+- **Versement par année:** 0 jusqu’au montant maximal (7 258 francs; avec «Sans caisse de pension (grand pilier 3a)» pour la personne 36 288 francs, au plus 20 % du revenu de l’activité lucrative; modifiable dans les [paramètres](#f-settings)). L’application verse chaque mois un douzième, jusqu’au mois précédant le **début de la rente AVS**. Le versement **compte dans les dépenses**: il apparaît dans «Total des dépenses» des valeurs annuelles, augmente le prélèvement et fait partie du besoin net de la stratégie à 3 compartiments.
 - **Plan de retrait:** lignes composées d’un moment et d’un montant, par exemple 2041 50 000 et 2042 50 000. Vous fixez le **moment** comme pour un jalon, sous forme de **date** (MM.AAAA) ou d’**âge** de la personne à qui appartient le compte (par exemple 61.5 ans). À côté figurent le mois qui en résulte et l’âge. Si vous passez de «Date» à «Âge», le moment reste le même. Sans montant, la totalité de l’avoir est retirée. Un retrait est possible **au plus tôt 5 ans avant le début de la rente AVS**, également selon l’âge; une entrée antérieure est signalée comme erreur au champ. Si un montant dépasse l’avoir, seul l’avoir est versé (remarque dans les événements).
 - **Avoir tiré de l’aperçu:** chaque ligne montre l’**avoir avant le retrait** et le **solde ensuite**; sous le plan figure l’avoir versé au début de la rente AVS. Les valeurs proviennent de l’aperçu avec rendements fixes; si la planification contient une erreur, il n’y a pas d’aperçu, et «–» est affiché.
 - **+ Retrait** crée une ligne un an après la dernière (sans ligne: au mois le plus précoce admis, 5 ans avant le début de la rente AVS, pas avant le début de la simulation), au plus tard au début de la rente AVS. Le montant proposé est l’avoir à ce moment après les retraits antérieurs, arrondi au millier inférieur. Vous pouvez ensuite le modifier librement.
@@ -68,7 +69,7 @@ Le pilier 3a est un compte propre **par personne**, séparé de la caisse de pen
 
 Chaque retrait est une **prestation en capital** soumise à l’impôt sur les prestations en capital. Les retraits de la même année civile (caisse de pension et pilier 3a) sont additionnés pour le taux, pour les couples non mariés par personne.
 
-L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusqu’au mois précédant le début de la rente AVS (voir [Hypothèques](#f-re-mortgage)). Le versement et l’amortissement indirect ensemble ne devraient pas dépasser le montant maximal par année; sinon, le contrôle affiche un avertissement.
+L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusqu’au mois précédant le début de la rente AVS (voir [Hypothèques](#f-re-mortgage)). Le versement et l’amortissement indirect ensemble ne devraient pas dépasser le montant maximal par année; sinon, le contrôle affiche un avertissement. Sans caisse de pension, la vérification avertit en outre dès que la somme dépasse 20 % du revenu de l’activité lucrative par année (avec le premier mois où le revenu est trop bas); seule cette part est alors déduite.
 
 > Exemple: naissance 06.1980, avoir de 120 000 sans intérêt, retrait à 61.5 ans (donne 12.2041) de 50 000: avoir avant le retrait 120 000, solde ensuite 70 000. «+ Retrait» propose une ligne à 62.5 ans (12.2042) de 70 000.
 
@@ -85,6 +86,7 @@ Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu
 | Début de la rente AVS: limite inférieure et supérieure | 63 et 70 ans |
 | Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
 | Pilier 3a: montant maximal du versement par année | 7 258 |
+| Grand pilier 3a (sans caisse de pension): montant maximal par année | 36 288 |
 
 **Langue:** «comme le système» suit la langue du système d’exploitation (au premier démarrage; sans région, fr_FR compte comme français), sinon la langue choisie s’applique. Sont proposés l’allemand, l’anglais, le français et l’italien; si la langue du système manque, l’allemand s’applique. L’aide apparaît dans la langue choisie; un chapitre pas encore traduit apparaît en allemand. Le même choix figure dans le menu «Affichage → Langue». Un changement agit immédiatement, y compris sur les menus; la planification, les modifications non enregistrées et la vue sont conservées. Les nombres, montants et dates apparaissent dans chaque langue au format suisse (1'234'567.50, 2.5 %, 03.2040), et le fichier de planification est le même dans chaque langue. Les noms dans la planification (personnes, biens immobiliers, jalons) ne sont pas traduits; seule la planification d’exemple reçoit ses noms dans la langue choisie à l’ouverture, avec les mêmes chiffres.
 
@@ -276,7 +278,7 @@ Chaque ligne est soit:
 - **Sans pilier 3a:** les versements proviennent de la planification (voir ci-dessous).
 - La **propriété du logement** (valeur locative, intérêts hypothécaires, entretien) fait partie de la valeur propre. Dès 2029, il n’y a plus de valeur locative ni de déduction des intérêts pour le logement occupé par le propriétaire; créez pour cela une ligne «dès 2029». **Les intérêts hypothécaires ne sont pas déduits automatiquement.**
 
-**Pilier 3a:** Avec la case **«Déduire les versements au pilier 3a»**, les versements d’une année de la section [Pilier 3a](#s-pillar3a) (avec l’amortissement indirect) sont déduits du revenu imposable, pour le canton et la Confédération, au plus le montant maximal par personne des réglages. Exemple: revenu 100 000, aucune autre déduction, versement 7 000, impôt comme sur 93 000. Les nouvelles planifications ont la case cochée.
+**Pilier 3a:** Avec la case **«Déduire les versements au pilier 3a»**, les versements d’une année de la section [Pilier 3a](#s-pillar3a) (avec l’amortissement indirect) sont déduits du revenu imposable, pour le canton et la Confédération, au plus le montant maximal par personne des réglages. Exemple: revenu 100 000, aucune autre déduction, versement 7 000, impôt comme sur 93 000. Pour une personne «Sans caisse de pension (grand pilier 3a)», 20 % de son revenu de l’activité lucrative de l’année s’appliquent, au plus le montant maximal du grand pilier 3a; comme les autres montants, il augmente avec «Barèmes avec le renchérissement». Exemple: revenu 100 000, versement 25 000, déduction 20 000; revenu 300 000, versement 40 000, déduction 36 288. Les nouvelles planifications ont la case cochée.
 
 **Les planifications existantes** calculent comme avant: dans le mode «domicile» avec la proposition du canton pendant toute la durée, avec des tableaux propres sans déductions, et sans déduction du pilier 3a. Seul «Adapter les déductions» crée des lignes.
 

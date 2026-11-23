@@ -1,13 +1,14 @@
 # Editor: Abschnitte und Felder
 
 ## @s-general Haushalt & Projekt
-Stichworte: Name, Währung, Personen, Geburt, zweite Person, Double Income, Simulationszeitraum
+Stichworte: Name, Währung, Personen, Geburt, zweite Person, Double Income, Simulationszeitraum, ohne Pensionskasse, grosse Säule 3a, Selbständige
 
 Hier legen Sie die Grunddaten fest.
 
 - **Projektname und Währung:** Alle Beträge werden in der Projektwährung erfasst (CHF, EUR oder USD). Die Indizes der [Anlagestrategie](#f-ret-series) sind in CHF; bei einer Planung in EUR oder USD erscheint ein Hinweis.
 - **Person 1:** Name und Geburtsmonat (Format MM.JJJJ). Aus dem Geburtsmonat berechnet die App das Alter für Meilensteine («mit 65») und für die Beschriftung der Grafiken.
 - **+ Zweite Person:** Fügt eine zweite Person mit eigenem Einkommen, eigener Pensionskasse und eigener AHV hinzu (Double Income). Steuern, Vermögen und Ausgaben gelten für den Haushalt. Siehe [Zweite Person und Ehepaar-Regeln](#f-couple).
+- **Ohne Pensionskasse (grosse Säule 3a):** Häkchen je Person für Erwerbstätige ohne Pensionskasse, vor allem Selbständige. Für diese Person gelten Einzahlung und Abzug der [Säule 3a](#s-pillar3a) bis **20 % des Erwerbseinkommens**, höchstens bis zum Maximalbetrag der grossen Säule 3a (36 288 Franken, änderbar in den [Einstellungen](#f-settings)); für alle anderen die kleine Säule 3a (7 258 Franken). Hat die Person in der Planung trotzdem eine Pensionskasse (Kapital oder Beiträge), zeigt die Prüfung eine Warnung.
 - **Simulationszeitraum:** Start und Ende sind Meilensteine und werden unter [Meilensteine](#s-milestones) geändert.
 
 Alle Zeitangaben haben das Format **MM.JJJJ** (zum Beispiel 05.2027).
@@ -59,7 +60,7 @@ Stichworte: 3a, gebundene Vorsorge, Einzahlung, Auszahlung, Auszahlungsplan, Alt
 Die Säule 3a ist ein eigenes Konto **je Person**, getrennt von Pensionskasse und Hypothek.
 
 - **Guthaben per Simulationsstart** und **Verzinsung / Rendite p.a.**
-- **Einzahlung pro Jahr:** 0 bis zum Maximalbetrag (7 258 Franken, änderbar in den [Einstellungen](#f-settings)). Die App zahlt monatlich ein Zwölftel ein, bis vor dem Monat des **AHV-Bezugs**. Die Einzahlung **zählt zu den Ausgaben**: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme und gehört zum Netto-Bedarf der 3-Topf-Strategie.
+- **Einzahlung pro Jahr:** 0 bis zum Maximalbetrag (7 258 Franken; mit «Ohne Pensionskasse (grosse Säule 3a)» bei der Person 36 288 Franken, höchstens 20 % des Erwerbseinkommens; änderbar in den [Einstellungen](#f-settings)). Die App zahlt monatlich ein Zwölftel ein, bis vor dem Monat des **AHV-Bezugs**. Die Einzahlung **zählt zu den Ausgaben**: Sie erscheint in «Ausgaben total» der Jahreswerte, erhöht die Entnahme und gehört zum Netto-Bedarf der 3-Topf-Strategie.
 - **Auszahlungsplan:** Zeilen aus Zeitpunkt und Betrag, zum Beispiel 2041 50 000 und 2042 50 000. Den **Zeitpunkt** legen Sie wie bei einem Meilenstein als **Datum** (MM.JJJJ) oder als **Alter** der Person fest, der das Konto gehört (zum Beispiel 61.5 Jahre). Daneben steht der Monat, der sich daraus ergibt, und das Alter. Wechseln Sie zwischen «Datum» und «Alter», bleibt der Zeitpunkt gleich. Ohne Betrag wird das ganze Guthaben ausbezahlt. Eine Auszahlung ist **frühestens 5 Jahre vor dem AHV-Bezug** möglich, auch nach Alter; ein früherer Eintrag ist ein Fehler am Feld. Ist ein Betrag grösser als das Guthaben, wird nur das Guthaben ausbezahlt (Hinweis in den Ereignissen).
 - **Guthaben aus der Vorschau:** Jede Zeile zeigt das **Guthaben vor der Auszahlung** und den **Rest danach**, unter dem Plan steht das Guthaben, das im AHV-Bezug ausbezahlt wird. Die Werte stammen aus der Vorschau mit fixen Renditen; hat die Planung einen Fehler, gibt es keine Vorschau, und es steht «–».
 - **+ Auszahlung** legt eine Zeile ein Jahr nach der letzten an (ohne Zeile: im frühesten erlaubten Monat, 5 Jahre vor dem AHV-Bezug, nicht vor dem Simulationsstart), höchstens im AHV-Bezug. Als Betrag steht das Guthaben zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1 000. Sie können ihn danach frei ändern.
@@ -68,7 +69,7 @@ Die Säule 3a ist ein eigenes Konto **je Person**, getrennt von Pensionskasse un
 
 Jede Auszahlung ist ein **Kapitalbezug** mit Kapitalbezugssteuer. Bezüge im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet, bei unverheirateten Paaren je Person.
 
-Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in dieses Konto (siehe [Hypotheken](#f-re-mortgage)). Einzahlung und indirekte Amortisation zusammen sollten den Maximalbetrag pro Jahr nicht übersteigen; sonst zeigt die Prüfung eine Warnung.
+Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in dieses Konto (siehe [Hypotheken](#f-re-mortgage)). Einzahlung und indirekte Amortisation zusammen sollten den Maximalbetrag pro Jahr nicht übersteigen; sonst zeigt die Prüfung eine Warnung. Ohne Pensionskasse warnt die Prüfung ausserdem, sobald die Summe 20 % des Erwerbseinkommens pro Jahr übersteigt (mit dem ersten Monat, in dem das Einkommen zu tief ist); abgezogen wird dann nur dieser Anteil.
 
 > Beispiel: Geburt 06.1980, Guthaben 120 000 ohne Zins, Auszahlung mit 61.5 Jahren (ergibt 12.2041) über 50 000: Guthaben vor der Auszahlung 120 000, Rest danach 70 000. «+ Auszahlung» schlägt eine Zeile mit 62.5 Jahren (12.2042) über 70 000 vor.
 
@@ -85,6 +86,7 @@ Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Li
 | AHV-Bezug: untere und obere Grenze | 63 und 70 Jahre |
 | Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
 | Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
+| Grosse Säule 3a (ohne Pensionskasse): Maximalbetrag pro Jahr | 36 288 |
 
 **Sprache:** «wie System» folgt der Sprache des Betriebssystems (beim ersten Start; ohne Region, fr_FR gilt als Französisch), sonst gilt die gewählte Sprache. Angeboten werden Deutsch, Englisch, Französisch und Italienisch; fehlt die Sprache des Systems, gilt Deutsch. Die Hilfe erscheint in der gewählten Sprache; ein noch nicht übersetztes Kapitel erscheint deutsch. Dieselbe Wahl steht im Menü «Ansicht → Sprache». Ein Wechsel wirkt sofort, auch auf die Menüs; die Planung, ungespeicherte Änderungen und die Ansicht bleiben. Zahlen, Beträge und Daten erscheinen in jeder Sprache im Schweizer Format (1'234'567.50, 2.5 %, 03.2040), und die Planungsdatei ist in jeder Sprache dieselbe. Namen in der Planung (Personen, Immobilien, Meilensteine) werden nicht übersetzt; nur die Beispielplanung erhält beim Öffnen ihre Namen in der gewählten Sprache, mit denselben Zahlen.
 
@@ -276,7 +278,7 @@ Jede Zeile ist entweder:
 - **Ohne Säule 3a:** Die Einzahlungen kommen aus der Planung (siehe unten).
 - **Wohneigentum** (Eigenmietwert, Hypothekarzinsen, Unterhalt) gehört in den eigenen Wert. Ab 2029 gibt es für selbstgenutztes Eigentum keinen Eigenmietwert und keinen Schuldzinsabzug mehr; legen Sie dafür eine Zeile «ab 2029» an. **Hypothekarzinsen werden nicht automatisch abgezogen.**
 
-**Säule 3a:** Mit dem Häkchen **«Einzahlungen in die Säule 3a abziehen»** werden die Einzahlungen eines Jahres aus dem Abschnitt [Säule 3a](#s-pillar3a) (mit der indirekten Amortisation) vom steuerbaren Einkommen abgezogen, für Kanton und Bund, höchstens bis zum Maximalbetrag je Person aus den Einstellungen. Beispiel: Einkommen 100 000, sonst keine Abzüge, Einzahlung 7 000, Steuer wie bei 93 000. Neue Planungen haben das Häkchen gesetzt.
+**Säule 3a:** Mit dem Häkchen **«Einzahlungen in die Säule 3a abziehen»** werden die Einzahlungen eines Jahres aus dem Abschnitt [Säule 3a](#s-pillar3a) (mit der indirekten Amortisation) vom steuerbaren Einkommen abgezogen, für Kanton und Bund, höchstens bis zum Maximalbetrag je Person aus den Einstellungen. Beispiel: Einkommen 100 000, sonst keine Abzüge, Einzahlung 7 000, Steuer wie bei 93 000. Für eine Person «Ohne Pensionskasse (grosse Säule 3a)» gelten 20 % ihres Erwerbseinkommens im Jahr, höchstens der Maximalbetrag der grossen Säule 3a; er wächst wie die anderen Beträge mit «Tarife mit der Teuerung». Beispiel: Erwerb 100 000, Einzahlung 25 000, Abzug 20 000; Erwerb 300 000, Einzahlung 40 000, Abzug 36 288. Neue Planungen haben das Häkchen gesetzt.
 
 **Bestehende Planungen** rechnen wie bisher: im Modus «Wohnort» mit dem Vorschlag des Kantons über die ganze Zeit, mit eigenen Tabellen ohne Abzüge, und ohne Abzug der Säule 3a. Erst «Abzüge anpassen» legt Zeilen an.
 

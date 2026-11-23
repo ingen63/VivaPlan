@@ -46,8 +46,9 @@ Der Editor führt durch zwölf Abschnitte:
   31,5 %; feste Beträge in Franken, bei Ehepaaren nach dem Plafond auf die ungekürzten Renten), neben dem Feld steht
   die effektive Rente; ab Dezember 2026 jedes Jahr im Dezember die 13. AHV-Rente (1/12 der im
   Jahr ausbezahlten AHV-Renten, anteilig bei Beginn im Laufe des Jahres).
-- **Säule 3a:** ein Konto je Person mit Guthaben, Verzinsung, Einzahlung pro Jahr (bis zum Maximalbetrag, zählt zu den
-  Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug); der Rest wird spätestens
+- **Säule 3a:** ein Konto je Person mit Guthaben, Verzinsung, Einzahlung pro Jahr (bis zum Maximalbetrag; für eine
+  Person «Ohne Pensionskasse (grosse Säule 3a)» bis 20 % des Erwerbseinkommens, höchstens der Maximalbetrag der grossen
+  Säule 3a, #152; zählt zu den Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug); der Rest wird spätestens
   im AHV-Bezug ausbezahlt. Der Zeitpunkt einer Auszahlung ist ein Datum oder ein Alter der Kontoinhaberin bzw. des
   Kontoinhabers; jede Zeile zeigt das Guthaben vor und nach der Auszahlung aus der Vorschau, und eine neue Zeile erhält
   als Betrag das Guthaben zu ihrem Zeitpunkt.
@@ -95,7 +96,7 @@ Der Editor führt durch zwölf Abschnitte:
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 
 **Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Grenzen für AHV-Bezug und Bezug Pensionskasse und der
-Maximalbetrag der Säule 3a. Sie gelten für alle Planungen auf dem Gerät und werden nicht in der Planungsdatei
+Maximalbeträge der kleinen und der grossen Säule 3a. Sie gelten für alle Planungen auf dem Gerät und werden nicht in der Planungsdatei
 gespeichert. Ältere Planungsdateien werden beim Öffnen übernommen (feste Meilensteine, Säule 3a als eigenes Konto); ein
 Dialog nennt jede Änderung.
 
@@ -206,7 +207,8 @@ würde die Scheingenauigkeit verstärken.
   (Betrag pro Jahr in Preisen des Starts, wächst mit «Tarife mit der Teuerung», optional Prozentsatz des Einkommens, für
   Kanton und Bund; Eingabehilfe aus Einkommen und steuerbarem Einkommen der Veranlagung). Neue Planungen: Zeilen «bis
   Pensionierung» und «ab Pensionierung». Dazu abschaltbar die Einzahlungen in die Säule 3a (mit indirekter
-  Amortisation), höchstens der Maximalbetrag je Person der Einstellungen. Steuerbares Einkommen nie negativ;
+  Amortisation), höchstens der Maximalbetrag je Person der Einstellungen; für eine Person ohne Pensionskasse 20 % ihres
+  Erwerbseinkommens im Jahr, höchstens der Maximalbetrag der grossen Säule 3a (#152). Steuerbares Einkommen nie negativ;
   Hypothekarzinsen nie automatisch (Wohneigentum gehört in den eigenen Wert). Bestehende Planungen rechnen wie bisher.
   Die Jahreswerte zeigen mit den Steuerspalten Einkommen, Abzüge mit Herkunft und steuerbares Einkommen.
 - **Was fehlt:** Abzüge im Einzelnen (nur als eigener Wert oder in den Sätzen), Eigenmietwert, Schuldzins- und

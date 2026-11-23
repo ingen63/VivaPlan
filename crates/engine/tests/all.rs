@@ -28,6 +28,7 @@ mod income_indexed;
 mod inflow_strategy;
 mod invariants;
 mod jst;
+mod large_pillar3a;
 mod legacy_format;
 mod legacy_import;
 mod library;

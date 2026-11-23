@@ -465,11 +465,12 @@ R.general = () => `
     <label class="field"><span>${tr("general.currency")}</span>${Sel("project.currency", [["CHF", tr("general.chf")], ["EUR", tr("general.eur")], ["USD", tr("general.usd")]], { rerender: 1 })}</label></div>
     <p class="hint">${tr("general.currencyHint")}</p></div>
   <div class="card"><h3>${tr("general.persons")}</h3><div class="persons">
-    <div class="person">${state.partner ? `<b>${tr("general.person1")}</b>` : ""}${F("household.persons.0.name", tr("general.name"), "text")}${F("household.persons.0.birth", tr("general.birth"), "month")}${C("age0")}</div>
+    <div class="person">${state.partner ? `<b>${tr("general.person1")}</b>` : ""}${F("household.persons.0.name", tr("general.name"), "text")}${F("household.persons.0.birth", tr("general.birth"), "month")}${C("age0")}${Chk("household.persons.0.noPensionFund", tr("general.noPensionFund"))}</div>
     ${state.partner
-      ? `<div class="person"><div class="phead"><b>${tr("general.person2")}</b><button class="btn ghost small" data-action="partner-del" title="${tr("general.removePerson2")}">✕</button></div>${F("household.persons.1.name", tr("general.name"), "text")}${F("household.persons.1.birth", tr("general.birth"), "month")}${C("age1")}</div>`
+      ? `<div class="person"><div class="phead"><b>${tr("general.person2")}</b><button class="btn ghost small" data-action="partner-del" title="${tr("general.removePerson2")}">✕</button></div>${F("household.persons.1.name", tr("general.name"), "text")}${F("household.persons.1.birth", tr("general.birth"), "month")}${C("age1")}${Chk("household.persons.1.noPensionFund", tr("general.noPensionFund"))}</div>`
       : `<div class="person ghost"><button class="btn" data-action="partner-add">${tr("general.addPerson2")}</button><span class="computed">${tr("general.doubleIncome")}</span></div>`}
   </div>
+  <p class="hint">${tr("general.noPensionFundHint", { max: fmtInt(limits().pillar3aMaxLarge) })}</p>
   ${state.partner ? `<div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
     <div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
     <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>` : ""}</div>
@@ -539,7 +540,7 @@ R.pillar3a = () => {
     const events = (lastSim?.p3a || []).filter(e => state.household.persons.length < 2 || e.text.includes(`(${pp.name})`));
     return `<div class="card"><h3>${tr("pillar3a.title", { who })}<button class="btn ghost small" style="float:right" data-action="list-del" data-path="pillar3a" data-i="${k}" title="${tr("pillar3a.remove")}">✕</button></h3>
       <div class="grid3">${F(A + ".balance", tr("pillar3a.balance", { startTxt: startTxt() }), "chf")}${F(A + ".rate", tr("pillar3a.interest"), "pct")}
-        ${F(A + ".contribution", tr("pillar3a.contribution"), "chf", { hint: tr("pillar3a.contributionHint", { pillar3aMax: fmtInt(l.pillar3aMax), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) })}</div>
+        ${F(A + ".contribution", tr("pillar3a.contribution"), "chf", { hint: tr(pp.noPensionFund ? "pillar3a.contributionHintLarge" : "pillar3a.contributionHint", { pillar3aMax: fmtInt(pp.noPensionFund ? l.pillar3aMaxLarge : l.pillar3aMax), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) })}</div>
       <h4>${tr("pillar3a.payoutPlan")}</h4>
       <table class="tbl"><tr><th>${tr("pillar3a.when")}</th><th>${tr("pillar3a.result")}</th><th>${tr("pillar3a.amount")}</th><th>${tr("pillar3a.use")}</th><th title="${tr("pillar3a.fromPreview")}">${tr("pillar3a.balanceAfter")}</th><th></th></tr>
       ${(acc.payouts || []).map((x, j) => {
@@ -558,7 +559,7 @@ R.pillar3a = () => {
       <p class="hint">${lastSim ? (events.length ? events.map(e => tr("pillar3a.preview", { ymShow: ymShow(i2ym(e.m)), text: esc(e.text) })).join("<br>") : tr("pillar3a.previewNone")) : ""}</p></div>`;
   }).join("");
   return `<h2>${tr("section.pillar3a")}</h2><p class="lead">${tr("pillar3a.intro")}</p>${cards}
-    <p class="hint">${tr("pillar3a.maxHint", { pillar3aMax: fmtInt(l.pillar3aMax) })}</p>`;
+    <p class="hint">${tr("pillar3a.maxHint", { pillar3aMax: fmtInt(l.pillar3aMax), pillar3aMaxLarge: fmtInt(l.pillar3aMaxLarge) })}</p>`;
 };
 
 R.flows = () => `
@@ -1316,7 +1317,7 @@ function deductionsCard() {
     <p class="hint">${loc ? tr("deductions.hintLocation") : tr("deductions.hintOwn")}</p>
     ${own.length || !loc ? `<p class="hint" id="ded-own-hint">${tr("deductions.ownHint")}</p>` : ""}
     ${calc}
-    <div style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a", { max: fmtInt(limits().pillar3aMax) }))}</div>
+    <div style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a", { max: fmtInt(limits().pillar3aMax), maxLarge: fmtInt(limits().pillar3aMaxLarge) }))}</div>
     <p class="hint">${tr("deductions.pillar3aHint")}</p></div>`;
 }
 /** #131/AK7: input help «eigener Wert» from income and taxable income of the last assessment (not saved). */
@@ -2408,11 +2409,13 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { re
 
 // ---------- Settings (#25) ----------
 /** Default values of the settings; the engine knows the same ones (crates/engine/src/settings.rs). */
-const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258 };
+const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258, pillar3aMaxLarge: 36288 };
 let LIMIT_FIELDS;
 onLanguage(() => LIMIT_FIELDS = [["ahvMin", tr("limits.ahvMin"), tr("unit.years")], ["ahvMax", tr("limits.ahvMax"), tr("unit.years")],
   ["pkMin", tr("limits.pkMin"), tr("unit.years")], ["pkMax", tr("limits.pkMax"), tr("unit.years")],
-  ["pillar3aMax", tr("limits.pillar3aMax"), null]]);
+  ["pillar3aMax", tr("limits.pillar3aMax"), null], ["pillar3aMaxLarge", tr("limits.pillar3aMaxLarge"), null]]);
+/** Settings that are amounts (thousands separator, #140). */
+const LIMIT_AMOUNTS = new Set(["pillar3aMax", "pillar3aMaxLarge"]);
 /** Applicable limits: saved values, otherwise the defaults. They apply to all plans on this device. */
 function limits() {
   const saved = Pref.get("limits", null), l = { ...LIMIT_DEFAULTS };
@@ -2428,6 +2431,7 @@ function limitProblems(l) {
     else if (lo > hi) out.push(tr("limits.lowAboveHigh", { what, lo, hi }));
   }
   if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push(tr("limits.pillar3aNegative"));
+  if (!(Number.isFinite(l.pillar3aMaxLarge) && l.pillar3aMaxLarge >= 0)) out.push(tr("limits.pillar3aLargeNegative"));
   return out;
 }
 /** #110: Question about saving before the simulation (default: on). */
@@ -2436,12 +2440,12 @@ function settingsFields(l, language = I18n.choice()) {
   const langs = [[I18n.SYSTEM, tr("language.system")], ...Object.entries(I18n.languages())];
   return `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
     + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
-    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(k === "pillar3aMax" ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: k === "pillar3aMax" ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("");
+    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("");
 }
 function readSettings() {
   const l = {};
   // #140: The maximum amount of pillar 3a is an amount («7.258» is ambiguous)
-  for (const [k] of LIMIT_FIELDS) { const t = $("#set-" + k).value, v = k === "pillar3aMax" ? parseAmount(t) : parseNum(t); l[k] = v === null ? NaN : v; }
+  for (const [k] of LIMIT_FIELDS) { const t = $("#set-" + k).value, v = LIMIT_AMOUNTS.has(k) ? parseAmount(t) : parseNum(t); l[k] = v === null ? NaN : v; }
   return l;
 }
 /** Dialog «Einstellungen»: applies to all plans, is stored locally, never in the plan file. */

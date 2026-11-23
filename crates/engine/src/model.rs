@@ -220,6 +220,10 @@ pub struct Person {
     pub id: String,
     pub name: String,
     pub birth: YearMonth,
+    /// #152: Gainfully employed without a pension fund (large pillar 3a): contributions and deduction up to 20 % of the
+    /// earned income, at most `limits.pillar3aMaxLarge`. Missing: no.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_pension_fund: bool,
 }
 
 /// German name of the milestone `retire` as older plans stored it (formerly «Pensionierung», #51); only for the

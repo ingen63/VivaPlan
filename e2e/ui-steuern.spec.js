@@ -496,3 +496,53 @@ test.describe("Time-dependent place of residence (#151)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Large pillar 3a for persons without a pension fund (#152)", () => {
+  test("AK1, AK4: check box per person; warning if the plan has a pension fund for this person", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Haushalt & Projekt");
+    const chk = page.locator('input[data-path="household.persons.0.noPensionFund"]');
+    await expect(chk).toBeVisible();
+    await expect(chk).not.toBeChecked();
+    await expect(page.locator("#main")).toContainText("Ohne Pensionskasse (grosse Säule 3a)");
+    await expect(page.locator("#main")).toContainText("höchstens 36'288 pro Jahr");
+    await chk.check();
+    expect(await page.evaluate(() => state.household.persons[0].noPensionFund)).toBe(true);
+    // the example plan has a pension fund: warning in the validation
+    expect(await page.evaluate(() => state.pension.pk.capital)).toBeGreaterThan(0);
+    await expect(page.locator("#val")).toContainText("«Ohne Pensionskasse (grosse Säule 3a)» ist gesetzt, die Planung enthält aber eine Pensionskasse");
+    // a second person has their own check box
+    await page.locator('button[data-action="partner-add"]').click();
+    await expect(page.locator('input[data-path="household.persons.1.noPensionFund"]')).not.toBeChecked();
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK3, AK8: maximum of the large pillar 3a in the settings; contribution limit per person as for the deduction", async ({ page }) => {
+    const errors = await open(page);
+    await page.locator('header button[data-action="settings"]').click();
+    await expect(page.locator("#settings")).toContainText("Grosse Säule 3a (ohne Pensionskasse): Maximalbetrag pro Jahr");
+    await expect(page.locator("#set-pillar3aMaxLarge")).toHaveValue("36'288");
+    await page.locator("#settings button[value='cancel']").click();
+    // AK8: 30'000 is an error with the small pillar 3a, allowed without a pension fund (settings go to the engine)
+    const codes = await page.evaluate(async () => {
+      const out = [];
+      for (const large of [false, true]) {
+        const plan = JSON.parse(JSON.stringify(state));
+        plan.limits = limits();
+        plan.household.persons[0].noPensionFund = large;
+        plan.pillar3a = [{ person: plan.household.persons[0].id, balance: 0, rate: 0, contribution: 30000, payouts: [] }];
+        out.push((await Engine.call("validate", { plan })).map(i => i.code));
+      }
+      return out;
+    });
+    expect(codes[0]).toContain("pillar3a_contribution_range");
+    expect(codes[1]).not.toContain("pillar3a_contribution_range");
+    // hint at the contribution and at the deduction
+    await page.evaluate(() => { state.household.persons[0].noPensionFund = true; state.pillar3a = [{ person: state.household.persons[0].id, balance: 0, rate: 0, contribution: 0, payouts: [] }]; markDirty(); renderSection(); });
+    await nav(page, "Säule 3a");
+    await expect(page.locator("#main")).toContainText("0 bis 36'288, höchstens 20 % des Erwerbseinkommens");
+    await nav(page, "Steuern");
+    await expect(page.locator("#tax-deductions")).toContainText("ohne Pensionskasse 20 % des Erwerbseinkommens, höchstens 36'288 Franken");
+    await noErrors(page, errors);
+  });
+});

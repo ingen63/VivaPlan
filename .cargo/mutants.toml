@@ -153,8 +153,11 @@ exclude_re = [
     "validate\\.rs:352:(20: replace < with <=|39: replace > with >=) in check",
     # Prüfung: Wohnanteil, Maximalbetrag der 3a mit indirekter Amortisation (Rundungstoleranz 0.005).
     "validate\\.rs:406:26: replace < with <= in check",
-    "validate\\.rs:888:40: replace > with >= in check",
-    "validate\\.rs:969:21: replace > with >= in check",
+    "validate\\.rs:1104:40: replace > with >= in check",
+    "validate\\.rs:1202:21: replace > with >= in check",
+    # #152, grosse Säule 3a: Einzahlung genau 20 % des Erwerbseinkommens + 0.005; Kapital der Pensionskasse genau 0.005.
+    "validate\\.rs:\\d+:18: replace > with >= in large_pillar3a_over_income",
+    "validate\\.rs:1232:29: replace > with >= in check",
     # #106, App (`crates/app/src/main.rs`): Die folgenden Mutanten betreffen Aufrufe, die erst eine laufende Anwendung mit
     # Fenster, Betriebssystem-Dialog oder Ereignisschleife auslöst. Die Mock-Runtime von Tauri (`tauri::test`) kann sie nicht
     # erzeugen (`request_exit` ist dort nicht umgesetzt, `ExitRequestApi` hat keinen öffentlichen Konstruktor). Die

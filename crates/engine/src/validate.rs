@@ -191,6 +191,57 @@ fn check_limits(v: &mut Issues, w: &Withdrawal) {
     }
 }
 
+/// #152: Maximum pillar 3a contribution of person `p` per year: without a pension fund the large pillar 3a.
+fn pillar3a_max_of(lim: &crate::settings::Limits, p: &crate::model::Person) -> f64 {
+    if p.no_pension_fund {
+        lim.pillar3a_max_large
+    } else {
+        lim.pillar3a_max
+    }
+}
+
+/// #152/AK8: Large pillar 3a: the contributions (with the indirect amortization) may not exceed 20 % of the earned
+/// income per year, the same rule as for the deduction. Warning for the first month from `from` until before `ahv`
+/// (end of the contributions, at most the month after the end of the plan) in which the earned income of person `i` (per month × 12) is too low.
+#[allow(clippy::too_many_arguments)]
+fn large_pillar3a_over_income(
+    plan: &Plan,
+    r: &Resolver,
+    i: usize,
+    from: YearMonth,
+    ahv: YearMonth,
+    contribution: f64,
+    indirect: f64,
+    who: &Message,
+) -> Option<Message> {
+    let total = contribution + indirect;
+    if !plan.household.persons.get(i)?.no_pension_fund {
+        return None;
+    }
+    let income = if i == 0 {
+        &plan.flows.income
+    } else {
+        &plan.partner.as_ref()?.income
+    };
+    let curve = Curve::compile(income, r).ok()?;
+    let mut m = from;
+    while m < ahv {
+        let limit = crate::sim::LARGE_PILLAR3A_SHARE * 12.0 * curve.at(m);
+        if total > limit + 0.005 {
+            return Some(msg!(
+                pillar3a_over_income,
+                who = who.clone(),
+                contribution = contribution,
+                indirect = indirect,
+                limit = limit,
+                from = m
+            ));
+        }
+        m = m.plus(1);
+    }
+    None
+}
+
 fn check(plan: &Plan, v: &mut Issues) {
     if plan.household.persons.is_empty() {
         v.err("general", msg!(persons_none));
@@ -1039,16 +1090,18 @@ fn check(plan: &Plan, v: &mut Issues) {
         if !(-0.5..=1.0).contains(&acc.rate) {
             v.err_at("pillar3a", f("rate"), msg!(pillar3a_rate_range, who = who));
         }
-        if !(acc.contribution >= 0.0 && acc.contribution <= lim.pillar3a_max) {
+        // #152: without a pension fund the maximum of the large pillar 3a, as for the deduction.
+        let max = pillar3a_max_of(&lim, &plan.household.persons[i]);
+        if !(acc.contribution >= 0.0 && acc.contribution <= max) {
             v.err_at(
                 "pillar3a",
                 f("contribution"),
-                msg!(pillar3a_contribution_range, who = who, max = lim.pillar3a_max),
+                msg!(pillar3a_contribution_range, who = who, max = max),
             );
         }
         let ahv = r.milestone(person_milestones(i).1).ok();
         let indirect = indirect_per_person[i.min(1)];
-        if acc.contribution + indirect > lim.pillar3a_max + 0.005 && lim.pillar3a_max >= 0.0 {
+        if acc.contribution + indirect > max + 0.005 && max >= 0.0 {
             v.warn(
                 "pillar3a",
                 msg!(
@@ -1056,9 +1109,20 @@ fn check(plan: &Plan, v: &mut Issues) {
                     who = who,
                     contribution = acc.contribution,
                     indirect = indirect,
-                    max = lim.pillar3a_max
+                    max = max
                 ),
             );
+        } else if let Some(text) = large_pillar3a_over_income(
+            plan,
+            &r,
+            i,
+            start,
+            ahv.unwrap_or(end).min(end.plus(1)),
+            acc.contribution,
+            indirect,
+            &who,
+        ) {
+            v.warn("pillar3a", text);
         }
         let repay_possible = indirect > 0.0;
         // Without a tranche with indirect amortization there is nothing to repay: the payout goes into wealth.
@@ -1129,12 +1193,13 @@ fn check(plan: &Plan, v: &mut Issues) {
             continue;
         }
         let indirect = indirect_per_person[i];
-        if indirect > lim.pillar3a_max + 0.005 {
-            let who = if plan.household.persons.len() > 1 {
-                msg!(pillar3a_of, name = p.name)
-            } else {
-                msg!(pillar3a)
-            };
+        let max = pillar3a_max_of(&lim, p);
+        let who = if plan.household.persons.len() > 1 {
+            msg!(pillar3a_of, name = p.name)
+        } else {
+            msg!(pillar3a)
+        };
+        if indirect > max + 0.005 {
             v.warn(
                 "pillar3a",
                 msg!(
@@ -1142,9 +1207,31 @@ fn check(plan: &Plan, v: &mut Issues) {
                     who = who,
                     contribution = 0,
                     indirect = indirect,
-                    max = lim.pillar3a_max
+                    max = max
                 ),
             );
+        } else {
+            let ahv = r.milestone(person_milestones(i).1).unwrap_or(end).min(end.plus(1));
+            if let Some(text) = large_pillar3a_over_income(plan, &r, i, start, ahv, 0.0, indirect, &who) {
+                v.warn("pillar3a", text);
+            }
+        }
+    }
+    // #152/AK4: «ohne Pensionskasse» with a pension fund in the plan (capital or contributions).
+    for (i, p) in plan.household.persons.iter().take(2).enumerate() {
+        let fund = if i == 0 {
+            Some(&plan.pension.pk)
+        } else {
+            plan.partner.as_ref().map(|q| &q.pk)
+        };
+        if let (true, Some(fund)) = (p.no_pension_fund, fund) {
+            let contributes = Curve::compile(&fund.contribution, &r)
+                .ok()
+                .and_then(|c| c.first_above(start, end, 0.005))
+                .is_some();
+            if fund.capital > 0.005 || contributes {
+                v.warn("pension", msg!(pillar3a_large_with_pk, name = p.name));
+            }
         }
     }
 }

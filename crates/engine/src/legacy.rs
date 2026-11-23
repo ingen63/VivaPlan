@@ -526,6 +526,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 id: "A".into(),
                 name: "Person A".into(),
                 birth,
+                no_pension_fund: false,
             }],
             married: true,
             ahv_couple_cap: 3780.0,
