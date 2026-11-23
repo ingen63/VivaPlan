@@ -231,7 +231,7 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
 - [Quanto è precisa l’imposta?](#tax-accuracy)
-- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti. Entrambe vengono pagate a maggio dell’anno successivo.
+- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti (con il [valore fiscale](#f-re-tax-value) se registrato, altrimenti con il valore venale). Entrambe vengono pagate a maggio dell’anno successivo.
 - Un’imposta ancora aperta alla fine della pianificazione viene dedotta nell’ultimo mese.
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
 
@@ -403,6 +403,7 @@ Oggetti propri, pianificati e in affitto. Può registrarne quanti vuole.
 - **Acquisto pianificato (`planned`):** acquisto da tappa, prezzo d’acquisto, ipoteca. A ciò si aggiunge **«Vendita da»** (predefinito ‹mai›, altrimenti data o tappa); la simulazione vende allora l’oggetto in quel momento. La vendita deve essere successiva ad «Acquisto da», altrimenti è un errore sul campo. Con acquisto «dopo la vendita di …» il momento dell’acquisto non è noto al momento della registrazione, allora questa verifica viene meno.
 - **Affitto (`rent`):** inizio e affitto al mese (valore attuale, viene adeguato per impostazione standard al rincaro; l’opzione «Adeguare l’affitto all’inflazione» lo disattiva).
 - **Ipoteca:** tranche con periodi, vedi [Ipoteche](#f-re-mortgage).
+- **Valore fiscale:** facoltativo per ogni immobile di proprietà o con acquisto pianificato, per l’imposta sulla sostanza, vedi [Valore fiscale](#f-re-tax-value).
 - [Vendita forzata](#f-re-emergency) e [sostenibilità](#f-re-afford) per acquisti «dopo la vendita».
 - Il commutatore [Non vendere mai gli immobili](#f-re-never-sell) in alto nella scheda esclude qualsiasi vendita.
 
@@ -416,6 +417,19 @@ Il mese in cui ha acquistato l’immobile. Determina la **durata di possesso** e
 - Il campo esiste solo per gli immobili in proprietà. Per un immobile **pianificato** conta il mese d’acquisto della simulazione.
 - Senza data d’acquisto l’app calcola **senza** maggiorazione o riduzione (l’imposta secondo la tariffa di base). Se sono registrate regole sulla durata di possesso, la verifica lo segnala.
 - Determinante è la durata di possesso fino al mese della vendita: con regole proprie in **anni interi**, con le [regole del cantone](#f-tax-gain-canton) (modo Domicilio) in **mesi**.
+
+## @f-re-tax-value Valore fiscale
+Stichworte: valore fiscale, imposta sulla sostanza, valore ufficiale, stima
+
+Il **valore fiscale** è il valore ufficiale con cui l’immobile figura nella dichiarazione d’imposta. Spesso è pari al **60–80 % del valore venale**, con stime più vecchie anche nettamente inferiore. Riprenda il valore dalla sua **dichiarazione d’imposta** o dall’ultima tassazione.
+
+- Il campo esiste per gli immobili di proprietà e con acquisto pianificato, non per gli affitti. Si può scegliere «come il valore venale» (nessuna indicazione), un **importo** o **% del valore venale**.
+- Solo l’**imposta sulla sostanza** lo utilizza: per ogni immobile è imponibile il valore fiscale meno l’ipoteca invece del valore venale meno l’ipoteca. Esempio: valore venale 1'000'000, valore fiscale 650'000, ipoteca 400'000 danno una sostanza imponibile di 250'000 invece di 600'000.
+- Sostanza, risultati, imposta sugli utili immobiliari, sostenibilità e vendita forzata continuano a usare il **valore venale**.
+- Un importo mantiene il suo **rapporto con il valore venale** (per un acquisto pianificato con il prezzo d’acquisto): se il valore venale aumenta con l’inflazione, il valore fiscale aumenta nella stessa proporzione. In realtà il valore fiscale cambia solo con una nuova stima; negli anni è un’approssimazione.
+- Senza valore fiscale vale il valore venale come finora; non c’è un valore predefinito. Un importo negativo o una percentuale fuori da 0–100 % è un errore nel campo.
+- Nei [valori annuali](#r-table) le colonne delle imposte comprendono la colonna **Valore fiscale immobili** (somma al 31 dicembre, immobili senza valore fiscale al valore venale).
+- Non sono calcolati: il valore locativo, il riparto fiscale per un immobile in un altro cantone e le deduzioni per sottoutilizzo.
 
 ## @f-re-mortgage Ipoteche
 Parole chiave: tranche, SARON, ipoteca fissa, ammortamento, margine, interesse

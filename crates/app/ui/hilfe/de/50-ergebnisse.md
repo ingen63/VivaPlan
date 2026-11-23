@@ -220,6 +220,7 @@ Eine Tabelle mit **einer Zeile pro Jahr** für den gewählten Lauf. Beträge in 
 | Abweichung vom Plan | Monatsdurchschnitt: Einkommen total minus Ausgaben total. Bei **0** verläuft alles wie geplant. Bei Strategien, die die Ausgaben an das Vermögen koppeln (Guardrails, Fixe Rate, VPW, Endowment), ist ein **negativer** Wert die Kürzung gegenüber Ihrem Plan, ein positiver die Erhöhung |
 | Inflation pro Jahr | Veränderung des Preisindex im Kalenderjahr, im ersten Jahr seit Simulationsstart |
 | Steuern bezahlt im Jahr | **Jahressummen der bezahlten Steuern** nach Art: Steuer Einkommen, Steuer Vermögen, Steuer Kapital Bezug, Steuer Grundstück, dazu das Total. Die Spalten sind **standardmässig eingeklappt**; die Schaltfläche **«Steuern anzeigen»** über der Tabelle blendet sie ein und aus, die Wahl bleibt erhalten. Die Spaltenköpfe heissen **«Steuer geschätzt …»**, ihr Tooltip nennt die Rundung auf 100 Franken |
+| Steuerwert Immobilien | erscheint mit den Steuerspalten, wenn eine Immobilie einen [Steuerwert](#f-re-tax-value) hat: Summe der Steuerwerte am 31. Dezember (Immobilien ohne Steuerwert mit dem Marktwert); die Vermögenssteuer rechnet damit minus Hypothek |
 
 Die Spalten sind nicht in Gruppen mit Überschrift geordnet. Dass die Vermögen **Stände am Jahresende** und die Geldflüsse **Monatsdurchschnitte** sind, steht im Hinweis (Tooltip) der Spaltenköpfe und im Text unter der Tabelle. Das Einkommen allein und die geplanten Ausgaben ohne Wohnkosten zeigt die Tabelle nicht; sie stecken in «Einkommen total» und «Ausgaben total».
 

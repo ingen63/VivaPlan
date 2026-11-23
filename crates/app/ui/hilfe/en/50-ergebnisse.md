@@ -220,6 +220,7 @@ A table with **one row per year** for the chosen run. Amounts in the project cur
 | Deviation from plan | monthly average: total income minus total spending. At **0**, everything goes as planned. With strategies that link spending to wealth (Guardrails, fixed rate, VPW, endowment), a **negative** value is the cut compared with your plan, a positive one the increase |
 | Inflation per year | change in the price index in the calendar year, in the first year since the simulation start |
 | Taxes paid in the year | **annual sums of the taxes paid** by type: income tax, wealth tax, lump-sum tax, property gains tax, plus the total. The columns are **collapsed by default**; the button **“Show taxes”** above the table shows and hides them, and the choice is kept. The column headers read **“Estimated …”**; their tooltip mentions the rounding to 100 francs |
+| Tax value properties | appears with the tax columns if a property has a [tax value](#f-re-tax-value): sum of the tax values on 31 December (properties without a tax value at market value); the wealth tax uses it minus the mortgage |
 
 The columns are not arranged in groups with headings. That wealth figures are **balances at year end** and the cash flows are **monthly averages** is stated in the hint (tooltip) of the column headers and in the text below the table. The table does not show income alone or the planned spending without housing costs; they are contained in “Total income” and “Total spending”.
 

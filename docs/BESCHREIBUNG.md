@@ -176,6 +176,12 @@ Beim Kauf prüft die App die Tragbarkeit wie eine Bank und kürzt die Hypothek n
 höchsten Belehnung von 80 % finanziert. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
 Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten.
 
+Je Liegenschaft im Besitz oder mit geplantem Kauf lässt sich ein **Steuerwert** erfassen, als Betrag oder in % des
+Marktwerts, zum Beispiel aus der letzten Steuererklärung (#229). Nur die Vermögenssteuer rechnet damit (Steuerwert
+minus Hypothek); ein Betrag behält sein Verhältnis zum Marktwert und wächst mit ihm. Alles andere rechnet mit dem
+Marktwert; ohne Steuerwert gilt der Marktwert wie bisher. Die Jahreswerte zeigen bei den Steuerspalten den Steuerwert
+der Immobilien als eigene Spalte.
+
 Der Schalter **«Immobilien nie verkaufen»** prüft, ob die Planung auch ohne Verkauf aufgeht: Für alle Liegenschaften
 entfallen geplante Verkäufe, Notverkäufe und Verkäufe wegen fehlender Tragbarkeit bei der Erneuerung (die Hypothek wird
 dann voll erneuert). Käufe mit Datum finden statt, Käufe und Mieten «nach Verkauf» nicht. Reicht das liquide Vermögen

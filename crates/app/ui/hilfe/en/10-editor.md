@@ -231,7 +231,7 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
 - [How accurate is the tax?](#tax-accuracy)
-- **Income tax** is assessed in December on the annual income (including pensions), **wealth tax** on the portfolio plus real estate net. Both are paid in May of the following year.
+- **Income tax** is assessed in December on the annual income (including pensions), **wealth tax** on the portfolio plus real estate net (with the [tax value](#f-re-tax-value) where entered, otherwise with the market value). Both are paid in May of the following year.
 - A tax still open at the end of the plan is deducted in the last month.
 - The [property gains tax](#f-tax-gain) is due when a property is sold, see also [Real estate](#s-realestate).
 
@@ -403,6 +403,7 @@ Owned, planned and rented properties. You can enter as many as you like.
 - **Planned purchase (‘planned’):** purchase from milestone, purchase price, mortgage. In addition, there is **“Sale from”** (default ‘Never’, otherwise date or milestone); the simulation then sells the property at that point in time. The sale must be after “Purchase from”; otherwise it is an error at the field. For a purchase ‘after sale of …’, the point of purchase is not known when entering it, and this check is omitted.
 - **Rent (‘rent’):** start and rent per month (today's value, carried forward with inflation by default; the option “Adjust rent for inflation” turns this off).
 - **Mortgage:** tranches with periods, see [Mortgages](#f-re-mortgage).
+- **Tax value:** optional for each owned property or planned purchase, for the wealth tax, see [Tax value](#f-re-tax-value).
 - [Emergency sale](#f-re-emergency) and [affordability](#f-re-afford) for purchases “after sale”.
 - The switch [Never sell properties](#f-re-never-sell) at the top of the tab rules out any sale.
 
@@ -416,6 +417,19 @@ The month in which you bought the property. It determines the **holding period**
 - The field only exists for owned properties. For a **planned** property, the month of purchase in the simulation counts.
 - Without a purchase date, the app calculates **without** surcharge or reduction (the tax according to the basic tariff). If holding period rules are entered, the validation points this out.
 - What counts is the holding period until the month of sale: with own rules in **full years**, with the [rules of the canton](#f-tax-gain-canton) (mode Place of residence) in **months**.
+
+## @f-re-tax-value Tax value
+Stichworte: tax value, wealth tax, official value, valuation
+
+The **tax value** is the official value at which the property appears in the tax return. It is often **60–80 % of the market value**, with older valuations also considerably lower. Take the value from your **tax return** or the last assessment.
+
+- The field exists for owned properties and planned purchases, not for rentals. You can choose «as market value» (no entry), an **amount** or **% of market value**.
+- Only the **wealth tax** uses it: for each property the tax value minus the mortgage is taxable instead of the market value minus the mortgage. Example: market value 1'000'000, tax value 650'000, mortgage 400'000 gives 250'000 taxable wealth instead of 600'000.
+- Wealth, results, property gains tax, affordability and emergency sale keep using the **market value**.
+- An amount keeps its **ratio to the market value** (for a planned purchase to the purchase price): if the market value rises with inflation, the tax value rises in the same ratio. In reality the tax value only changes with a revaluation; over the years this is an approximation.
+- Without a tax value the market value applies as before; there is no default. A negative amount or a percentage outside 0–100 % is an error at the field.
+- In the [annual values](#r-table) the tax columns include the column **Tax value properties** (sum on 31 December, properties without a tax value at market value).
+- Not calculated: imputed rental value, the tax allocation for a property in another canton, and deductions for underuse.
 
 ## @f-re-mortgage Mortgages
 Keywords: tranche, SARON, fixed mortgage, amortization, margin, interest

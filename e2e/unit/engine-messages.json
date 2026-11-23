@@ -1402,6 +1402,34 @@
     "text": "Person 2: rent is missing."
   },
   {
+    "code": "property_tax_value_negative",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: the tax value must not be negative.",
+    "text": "Person 2: the tax value must not be negative."
+  },
+  {
+    "code": "property_tax_value_rate_range",
+    "params": {
+      "name": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{name}: the tax value must be between 0 % and 100 % of the market value.",
+    "text": "Person 2: the tax value must be between 0 % and 100 % of the market value."
+  },
+  {
     "code": "property_buy_before_start",
     "params": {
       "name": {

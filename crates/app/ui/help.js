@@ -11,7 +11,7 @@ const Help = (() => {
   const FIELD_TOPICS = [
     [/^returns\.source$/, "f-ret-source"], [/^returns\.fixed\./, "f-ret-fixed"], [/^returns\.startDate$/, "f-ret-historical"],
     [/^returns\.bootstrap\./, "f-ret-bootstrap"], [/^returns\.parametric\./, "f-ret-parametric"], [/^returns\.extrapolation\./, "f-ret-extrapolation"],
-    [/^returns\.(series|strategy)\b/, "f-ret-series"], [/^taxes\.propertyGain\./, "f-tax-gain"], [/^realestate\.properties\.\d+\.bought$/, "f-re-bought"], [/^realestate\.properties\.\d+\.canton$/, "f-tax-gain-canton"],
+    [/^returns\.(series|strategy)\b/, "f-ret-series"], [/^taxes\.propertyGain\./, "f-tax-gain"], [/^realestate\.properties\.\d+\.bought$/, "f-re-bought"], [/^realestate\.properties\.\d+\.canton$/, "f-tax-gain-canton"], [/^realestate\.properties\.\d+\.taxValue\./, "f-re-tax-value"],
     [/^(pension|partner)\.pk\.conversion$/, "f-pk-conversion"], [/^(pension|partner)\.pk\.lumpsum$/, "f-pk-lumpsum"], [/^(pension|partner)\.pk\./, "f-pk"],
     [/^(pension|partner)\.ahv\./, "f-ahv"], [/^household\.(married|ahvCoupleCap)$/, "f-couple"],
     [/^wealth\.stockShare/, "f-stockshare"], [/^wealth\.reserveMonths/, "f-reserve"],

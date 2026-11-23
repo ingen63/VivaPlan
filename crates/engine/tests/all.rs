@@ -46,6 +46,7 @@ mod pillar3a;
 mod pillar3a_plan;
 mod plan_builder;
 mod property_gain_models;
+mod property_tax_value;
 mod proptest_parsers;
 mod proptest_plans;
 mod proptest_tax;

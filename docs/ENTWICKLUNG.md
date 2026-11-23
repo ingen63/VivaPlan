@@ -421,7 +421,15 @@ Reihenfolge pro Monat:
 5. **Pensionskasse** bis zum Bezug: Beiträge monatlich, Verzinsung im Dezember.
 6. **Steuern:** Im Dezember werden die Einkommenssteuer auf das Jahreseinkommen (inkl. Renten) und die
    Vermögenssteuer auf Portfolio + Immobilien netto veranlagt; bezahlt wird sie im Mai des Folgejahres. Eine bei
-   Planende noch offene Steuer wird im letzten Monat abgezogen.
+   Planende noch offene Steuer wird im letzten Monat abgezogen. **Steuerwert (#229):** Für die Vermögenssteuer zählt
+   je Immobilie (Besitz, Kauf geplant) der Steuerwert minus Hypothek statt Marktwert minus Hypothek. Feld
+   `taxValue: {"kind": "amount"|"rate", "value": …}`: ein Betrag bezogen auf den Marktwert `worth` (geplant: `price`)
+   oder ein Anteil (0.65 = 65 %); daraus wird beim Übersetzen ein fester Anteil am Marktwert, der Steuerwert folgt
+   also dem Marktwert mit der Teuerung. Ohne `taxValue` ist der Anteil 1 (bisheriges Verhalten, Golden unverändert);
+   bei Mieten wird das Feld ignoriert. Prüfung: Betrag < 0 oder Anteil ausserhalb 0–1 ist ein Fehler am Feld
+   `taxValue.value`. Hat eine Immobilie einen Steuerwert, wird die Steuerzerlegung (`taxBasis`) aufgezeichnet, mit
+   `propertyTaxValue` (Summe der Steuerwerte am 31. Dezember). Vermögen, Ergebnisse, Grundstückgewinnsteuer,
+   Tragbarkeit und Notverkauf rechnen mit dem Marktwert.
 7. **Notverkauf prüfen:** wenn liquides Vermögen < Schwelle × (Ausgaben − Einkommen); ausgeführt im Folgemonat.
    Ist danach (oder nach einem geplanten Verkauf) keine Immobilie mehr im Besitz, wird im Folgemonat die nächste
    Immobilie mit Kauf `"afterSale"` gekauft, sofern tragbar (Tragbarkeit wie bei den Banken, Hypothek allenfalls

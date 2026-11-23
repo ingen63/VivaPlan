@@ -1206,6 +1206,26 @@ function propertyGainRow(p, P) {
     ${c ? `<p class="hint" data-gain-rule>${tr("realestate.gainRule", { canton: esc(c.name), rule: tr(`propertyGainRule.${c.id}`) })}</p>` : `<p class="hint">${tr("realestate.gainCantonMissing")}</p>`}
     ${c?.propertyGainApprox ? `<p class="hint warn" data-gain-approx>⚠ ${tr("realestate.gainApprox", { note: tr(`propertyGainApprox.${c.id}`) })}</p>` : ""}`;
 }
+/** #229/AK1: tax value for the wealth tax (owned and planned): none (market value), amount or share of the market value. */
+function taxValueRow(p, i, P) {
+  const kind = p.taxValue?.kind ?? "";
+  const opts = [["", tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
+  const sel = `<select class="plain" data-action-change="tax-value-kind" data-i="${i}">${opts.map(([k, l]) => `<option value="${k}" ${k === kind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  const value = kind ? F(`${P}.taxValue.value`, "", kind === "rate" ? "pct" : "chf", { bare: true }) : "";
+  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${tr("realestate.taxValue")}</span><div class="refwrap">${sel}${value}</div></label></div>
+    <p class="hint">${tr("realestate.taxValueHint")}</p>`;
+}
+/** #229: changing the kind keeps the tax value: an amount becomes its share of the market value (planned: purchase price) and back. */
+document.addEventListener("change", e => {
+  const el = e.target; if (!el.matches?.('select[data-action-change="tax-value-kind"]')) return;
+  const p = state.realestate.properties[+el.dataset.i], old = p.taxValue, kind = el.value;
+  const base = (p.status === "owned" ? p.worth ?? p.price : p.price) || 0;
+  const share = !old ? 1 : old.kind === "rate" ? old.value : base > 0 ? old.value / base : 1;
+  if (!kind) delete p.taxValue;
+  else p.taxValue = { kind, value: kind === "rate" ? Math.round(share * 10000) / 10000 : Math.round(share * base) };
+  invalidFields.delete(`realestate.properties.${el.dataset.i}.taxValue.value`);
+  markDirty(); renderSection();
+});
 /** #65/AK5: card «Grundstückgewinnsteuer» in the mode «Wohnort»: check box for own rules, then the own rules. */
 function locGainCard() {
   const own = gainOwn();
@@ -1425,6 +1445,7 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
       <label class="field"><span>${tr("realestate.sellFrom")}</span>${Ref(P + ".sell", { never: true })}</label>
       ${F(P + ".fixCosts", tr("realestate.costsMonth"), "chf")}</div>
       <div class="grid3" style="margin-top:10px">${Chk(P + ".inflationValue", tr("realestate.valueIndexed"))}${Chk(P + ".inflationFixCosts", tr("realestate.costsIndexed"))}</div>
+      ${taxValueRow(p, i, P)}
       ${propertyGainRow(p, P)}
       ${MortgageUI(p, i)}`;
     return `<div class="prop"><div class="phead">${F(P + ".name", "", "text", { bare: true, size: Math.max(20, (p.name || "").length + 4) })}
@@ -2738,6 +2759,8 @@ function yearValues(recs, start) {
     const taxIncome = sum(rs, r => r.assessedIncome ?? 0), taxWealth = sum(rs, r => r.assessedWealth ?? 0), taxCapital = sum(rs, r => r.taxCapital), taxGain = sum(rs, r => r.taxGain);
     // #131/AK14: income, deductions by origin and taxable income of the tax year (record of the assessment)
     const br = rs.find(r => r.taxBasis), tb = br && Object.fromEntries(["income", "proposalCanton", "proposalFederal", "own", "pillar3a", "taxableCanton", "taxableFederal"].map(k => [k, rv(br, br.taxBasis[k])]));
+    // #229/AK7: tax value of the properties (only if a property has one)
+    if (tb && br.taxBasis.propertyTaxValue != null) tb.propertyTaxValue = rv(br, br.taxBasis.propertyTaxValue);
     // #151/AK7: place of residence of the tax year (only if it changes during the plan)
     return { basis: tb, residence: br?.taxBasis?.residence, y, months: rs.length, age: last.age, liquid: rv(last, last.liquid), property: rv(last, last.propertyEquity), pension: rv(last, last.pensionFund + last.pillar3a),
       total: rv(last, last.total), spending, draw, receipts, yearDraw, rate: yearDraw > 0 && baseTotal > 0 ? yearDraw / baseTotal : yearDraw > 0 ? NaN : null,
@@ -2754,7 +2777,8 @@ function yearTable(recs, start, refills = []) {
   const est = tr("yearTable.taxEstimatedTitle"), check = tr("taxes.checkBeforeDecision");
   const taxHeads = () => [[tr("yearTable.taxIncome"), `${tr("yearTable.taxTitle")} ${est}`], [tr("yearTable.taxWealth"), est], [tr("yearTable.taxLumpsum"), `${est} ${check}`],
     [tr("yearTable.taxProperty"), `${est} ${check}`], [tr("yearTable.taxTotal"), est]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
-  const tx = showTaxCols, vals = yearValues(recs, start), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence), cols = 12 + (tx ? 5 : 0) + (bx ? 3 : 0) + (lx ? 1 : 0);
+  const tx = showTaxCols, vals = yearValues(recs, start), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence);
+  const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), cols = 12 + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (lx ? 1 : 0);
   // #131/AK14: tax breakdown: income, deductions (canton) with their origin as tooltip, taxable income
   const basisHeads = () => [[tr("yearTable.taxBasisIncome"), tr("yearTable.taxBasisIncomeTitle")], [tr("yearTable.taxBasisDeductions"), tr("yearTable.taxBasisDeductionsTitle")],
     [tr("yearTable.taxBasisTaxable"), tr("yearTable.taxBasisTaxableTitle")]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
@@ -2773,7 +2797,7 @@ function yearTable(recs, start, refills = []) {
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
+      ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
@@ -2781,7 +2805,7 @@ function yearTable(recs, start, refills = []) {
     <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th><th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
-      ${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
+      ${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
     <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {
@@ -3262,6 +3286,8 @@ function paramSections(plan, full = false) {
   out.push([tr("section.realestate"), [[tr("params.emergencyBelow"), ser(plan.realestate?.emergencyMonths, num)], ...props.flatMap(p => {
     const nm = p.name || tr("params.property");
     return [[tr("params.status", { nm }), STATUS[p.status] || p.status], ...(p.price != null ? [[tr("params.price", { nm }), money(p.price)]] : []), ...(p.worth != null ? [[tr("params.marketValue", { nm }), money(p.worth)]] : []),
+      // #229: tax value (not for rentals)
+      ...(p.taxValue && p.status !== "rent" ? [[tr("params.taxValue", { nm }), p.taxValue.kind === "rate" ? tr("params.taxValueRate", { pc: pc(p.taxValue.value) }) : money(p.taxValue.value)]] : []),
       ...(p.buy ? [[tr("params.buy", { nm }), at(p.buy)]] : []), ...(p.sell ? [[tr("params.sell", { nm }), at(p.sell)]] : []),
       ...(p.fixCosts != null ? [[tr("params.costsMonth", { nm }), money(p.fixCosts)]] : []), ...(p.rent != null ? [[tr("params.rentMonth", { nm }), money(p.rent)]] : []),
       ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}`, `${money(t.amount)}${t.start ? ` ${tr("common.fromDate", { date: ymShow(t.start) })}` : ""}; ${(t.periods || []).map(d => tr("params.periodText", { v: d.type === "saron" ? "SARON" : tr("mortgage.fixedLower"), term: num(d.term), rate: pc(d.rate), margin: pc(d.margin), amort: money(d.amort), v2: d.amortMode === "indirect" ? tr("mortgage.indirect") : tr("mortgage.direct") })).join(" → ")}`]),

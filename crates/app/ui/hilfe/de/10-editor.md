@@ -231,7 +231,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 - [Steuerfuss und Tabellen](#f-tax-tables)
 - [Tarife mit der Teuerung](#f-tax-indexed)
 - [Wie genau ist die Steuer?](#tax-accuracy)
-- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto. Bezahlt wird beides im Mai des Folgejahres.
+- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto (mit dem [Steuerwert](#f-re-tax-value), wo erfasst, sonst mit dem Marktwert). Bezahlt wird beides im Mai des Folgejahres.
 - Eine bei Planende noch offene Steuer wird im letzten Monat abgezogen.
 - Die [Grundstückgewinnsteuer](#f-tax-gain) fällt beim Verkauf einer Immobilie an, siehe auch [Immobilien](#s-realestate).
 
@@ -404,6 +404,7 @@ Eigene, geplante und gemietete Objekte. Sie können beliebig viele erfassen.
 - **Geplanter Kauf («planned»):** Kauf ab Meilenstein, Kaufpreis, Hypothek. Dazu kommt **«Verkauf ab»** (Vorgabe «Nie», sonst Datum oder Meilenstein); die Simulation verkauft das Objekt dann zu diesem Zeitpunkt. Der Verkauf muss nach «Kauf ab» liegen, sonst ist das ein Fehler am Feld. Bei Kauf «nach Verkauf von …» ist der Kaufzeitpunkt beim Erfassen nicht bekannt, dann entfällt diese Prüfung.
 - **Miete («rent»):** Beginn und Miete pro Monat (heutiger Wert, wird standardmässig mit der Teuerung fortgeschrieben; die Option «Miete mit Inflation anpassen» schaltet das aus).
 - **Hypothek:** Tranchen mit Perioden, siehe [Hypotheken](#f-re-mortgage).
+- **Steuerwert:** optional je Immobilie im Besitz oder mit geplantem Kauf, für die Vermögenssteuer, siehe [Steuerwert](#f-re-tax-value).
 - [Notverkauf](#f-re-emergency) und [Tragbarkeit](#f-re-afford) für Käufe «nach Verkauf».
 - Der Schalter [Immobilien nie verkaufen](#f-re-never-sell) oben im Reiter schliesst jeden Verkauf aus.
 
@@ -417,6 +418,19 @@ Der Monat, in dem Sie die Immobilie gekauft haben. Er bestimmt die **Besitzdauer
 - Das Feld gibt es nur bei Immobilien im Besitz. Bei einer **geplanten** Immobilie zählt der Kaufmonat der Simulation.
 - Ohne Kaufdatum rechnet die App **ohne** Zu- oder Abschlag (die Steuer nach dem Grundtarif). Sind Besitzdauer-Regeln erfasst, weist die Prüfung darauf hin.
 - Massgebend ist die Besitzdauer bis zum Verkaufsmonat: bei eigenen Regeln in **vollen Jahren**, mit den [Regeln des Kantons](#f-tax-gain-canton) (Modus Wohnort) in **Monaten**.
+
+## @f-re-tax-value Steuerwert
+Stichworte: Vermögenssteuerwert, Vermögenssteuer, Steuerwert, amtlicher Wert, Schätzung
+
+Der **Steuerwert** (Vermögenssteuerwert) ist der amtliche Wert, mit dem die Immobilie in der Steuererklärung steht. Er liegt oft bei **60–80 % des Marktwerts**, bei älteren Schätzungen auch deutlich tiefer. Nehmen Sie den Wert aus Ihrer **Steuererklärung** oder der letzten Veranlagung.
+
+- Das Feld gibt es bei Immobilien im Besitz und mit geplantem Kauf, nicht bei Mieten. Zur Wahl stehen «wie Marktwert» (keine Angabe), ein **Betrag** oder **% des Marktwerts**.
+- Nur die **Vermögenssteuer** nutzt ihn: Steuerbar ist je Immobilie der Steuerwert minus die Hypothek statt Marktwert minus Hypothek. Beispiel: Marktwert 1'000'000, Steuerwert 650'000, Hypothek 400'000 ergibt 250'000 steuerbares Vermögen statt 600'000.
+- Vermögen, Ergebnisse, Grundstückgewinnsteuer, Tragbarkeit und Notverkauf rechnen weiter mit dem **Marktwert**.
+- Ein Betrag behält sein **Verhältnis zum Marktwert** (bei geplantem Kauf zum Kaufpreis): Steigt der Marktwert mit der Teuerung, steigt der Steuerwert im selben Verhältnis. In Wirklichkeit ändert der Steuerwert nur bei einer Neubewertung; über die Jahre ist das eine Näherung.
+- Ohne Steuerwert gilt der Marktwert wie bisher; eine Vorgabe gibt es nicht. Ein negativer Betrag oder Prozent ausserhalb von 0–100 % ist ein Fehler am Feld.
+- In den [Jahreswerten](#r-table) zeigen die Steuerspalten die Spalte **Steuerwert Immobilien** (Summe am 31. Dezember, Immobilien ohne Steuerwert mit dem Marktwert).
+- Nicht berechnet werden Eigenmietwert, die Steuerausscheidung bei einer Immobilie in einem anderen Kanton und Unternutzungsabzüge.
 
 ## @f-re-mortgage Hypotheken
 Stichworte: Tranche, SARON, Festhypothek, Amortisation, Marge, Zins

@@ -600,3 +600,80 @@ test.describe("Large pillar 3a for persons without a pension fund (#152)", () =>
     await noErrors(page, errors);
   });
 });
+
+test.describe("Tax value per property for the wealth tax (#229)", () => {
+  const kindSel = (page, i) => page.locator(`select[data-action-change="tax-value-kind"][data-i="${i}"]`);
+  const valueField = (page, i) => page.locator(`input[data-path="realestate.properties.${i}.taxValue.value"]`);
+
+  test("AK1: owned and planned properties have the field as amount or share, rentals none; the kind keeps the value", async ({ page }) => {
+    const errors = await open(page);
+    const kinds = await page.evaluate(() => state.realestate.properties.map(p => p.status));
+    await nav(page, "Immobilien");
+    for (const [k, i] of kinds.map((k, i) => [k, i])) if (k === "rent") await expect(kindSel(page, i)).toHaveCount(0);
+    const i = kinds.indexOf("owned");
+    expect(i).toBeGreaterThanOrEqual(0);
+    await page.evaluate(i => { state.realestate.properties[i].worth = 1000000; renderSection(); }, i);
+    // no default: without a choice no tax value
+    await expect(kindSel(page, i)).toHaveValue("");
+    await expect(valueField(page, i)).toHaveCount(0);
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toBeUndefined();
+    // amount: starts with the market value, then the value from the tax return
+    await kindSel(page, i).selectOption("amount");
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toEqual({ kind: "amount", value: 1000000 });
+    await valueField(page, i).fill("650'000");
+    await valueField(page, i).press("Tab");
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toEqual({ kind: "amount", value: 650000 });
+    // share of the market value: the same tax value as 65 %
+    await kindSel(page, i).selectOption("rate");
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toEqual({ kind: "rate", value: 0.65 });
+    await expect(valueField(page, i)).toHaveValue(/^65/);
+    await expect(page.locator(`[data-tax-value="${i}"]`)).toContainText("Steuerwert");
+    await expect(page.locator("#main")).toContainText("oft 60–80 % des Marktwerts");
+    // the parameters name the tax value
+    const rows = await page.evaluate(() => Object.fromEntries(paramSections(state, true).flatMap(([, r]) => r)));
+    const nm = await page.evaluate(i => state.realestate.properties[i].name, i);
+    expect(rows[`${nm}: Steuerwert`]).toMatch(/^65.*des Marktwerts$/);
+    // back to «wie Marktwert»: no tax value
+    await kindSel(page, i).selectOption("");
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toBeUndefined();
+    // a planned purchase has the field too
+    await page.evaluate(i => { state.realestate.properties[i].status = "planned"; renderSection(); }, i);
+    await expect(kindSel(page, i)).toBeVisible();
+    await page.evaluate(i => { state.realestate.properties[i].status = "rent"; renderSection(); }, i);
+    await expect(kindSel(page, i)).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: a negative amount and a share above 100 % are errors at the property", async ({ page }) => {
+    const errors = await open(page);
+    const i = await page.evaluate(() => state.realestate.properties.findIndex(p => p.status === "owned"));
+    await nav(page, "Immobilien");
+    await kindSel(page, i).selectOption("amount");
+    await valueField(page, i).fill("-1");
+    await valueField(page, i).press("Tab");
+    await expect(page.locator(`[data-tax-value="${i}"] .ferr`)).toContainText("Der Steuerwert darf nicht negativ sein");
+    await kindSel(page, i).selectOption("rate");
+    await valueField(page, i).fill("120");
+    await valueField(page, i).press("Tab");
+    await expect(page.locator(`[data-tax-value="${i}"] .ferr`)).toContainText("zwischen 0 % und 100 % des Marktwerts");
+    expect(await page.evaluate(() => lastIssues.filter(x => x.severity === "error").map(x => [x.section, x.field])))
+      .toEqual([["realestate", `realestate.properties.${i}.taxValue.value`]]);
+    await noErrors(page, errors);
+  });
+
+  test("AK7: the tax breakdown shows the tax value of the properties as a column of its own", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(async () => {
+      const p = state.realestate.properties.find(x => x.status === "owned");
+      p.taxValue = { kind: "rate", value: 0.5 };
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    const heads = await page.locator("#resultsBody table.yt th.tx").allTextContents();
+    expect(heads).toContain("SteuerwertImmobilien");
+    const cell = page.locator("#resultsBody table.yt td[data-property-tax-value]").first();
+    await expect(cell).toHaveText(/^\d{1,3}('\d{3})+$/);
+    await noErrors(page, errors);
+  });
+});

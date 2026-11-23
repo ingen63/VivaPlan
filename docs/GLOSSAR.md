@@ -138,6 +138,7 @@ Wörter in Grossbuchstaben nicht.
 | Besitz, geplant, Miete | `owned`, `planned`, `rent` | `PropertyStatus` |
 | Kaufpreis | `price` | |
 | Marktwert | `worth` (Planung), `property_value` (Ergebnis) | |
+| Steuerwert (Vermögenssteuerwert) | `tax_value` (Planung), `property_tax_value` (Steuerzerlegung) | #229; Art `amount` oder `rate` |
 | Kauf, Verkauf | `purchase`, `sale` | Planungsfelder `buy`, `sell`, `bought` |
 | Notverkauf | `emergency_sale` | Schwelle `emergency_months` |
 | Immobilien nie verkaufen (Schalter) | `never_sell` | serialisiert `neverSell` (#196) |
@@ -317,6 +318,7 @@ englisch umschrieben, das Schweizer Kürzel steht in Klammern; Schreibweise amer
 | Immobilie, Objekt | property; Abschnitt «Real estate» | |
 | Besitz, Kauf geplant, Miete geplant | owned, purchase planned, rent planned | |
 | Kaufpreis, Marktwert | purchase price, market value | |
+| Steuerwert | tax value | |
 | Eigenmittel, Eigenkapital | equity | |
 | Nebenkosten | fixed costs | |
 | Verkaufserlös, Nettoerlös | sale proceeds, net proceeds | |
@@ -446,6 +448,7 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | Immobilie, Objekt | bien immobilier, objet | Abschnitt «Immobilier» |
 | Besitz, Kauf geplant, Miete geplant | propriété, achat planifié, location planifiée | |
 | Kaufpreis, Marktwert | prix d’achat, valeur vénale | |
+| Steuerwert | valeur fiscale | |
 | Eigenmittel, Eigenkapital | fonds propres | |
 | Nebenkosten | frais accessoires | |
 | Verkaufserlös, Nettoerlös | produit de la vente, produit net | |
@@ -582,6 +585,7 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | Immobilie, Objekt | immobile, oggetto | Abschnitt «Immobili» |
 | Besitz, Kauf geplant, Miete geplant | proprietà, acquisto pianificato, affitto pianificato | |
 | Kaufpreis, Marktwert | prezzo d’acquisto, valore venale | |
+| Steuerwert | valore fiscale | |
 | Eigenmittel, Eigenkapital | fondi propri | |
 | Nebenkosten | spese accessorie | |
 | Verkaufserlös, Nettoerlös | ricavo della vendita, ricavo netto | |
@@ -768,6 +772,7 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | Eigenmittel | equity | fonds propres | fondi propri | keine amtliche Quelle | - |
 | Nebenkosten | fixed costs | frais accessoires | spese accessorie | keine amtliche Quelle | - |
 | Marktwert | market value | valeur vénale | valore venale | keine amtliche Quelle | - |
+| Steuerwert | tax value | valeur fiscale | valore fiscale | keine amtliche Quelle | - |
 | Verkaufserlös; Nettoerlös | proceeds | produit | ricavo; ricavi | keine amtliche Quelle | - |
 | Notverkauf | emergency sale | vente forcée | vendita forzata | keine amtliche Quelle | - |
 | Aktien | stocks; stock | actions | azioni; azionario; azionaria; azionari | keine amtliche Quelle | - |

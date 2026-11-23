@@ -447,6 +447,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 inflation_fix_costs: None,
                 inflation_rent: None,
                 mortgage: mortgage(true),
+                tax_value: None,
             },
             "Planned" => Property {
                 id: None,
@@ -467,6 +468,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 inflation_fix_costs: None,
                 inflation_rent: None,
                 mortgage: mortgage(false),
+                tax_value: None,
             },
             "PlannedForRent" => Property {
                 id: None,
@@ -487,6 +489,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 inflation_fix_costs: None,
                 inflation_rent: None,
                 mortgage: None,
+                tax_value: None,
             },
             other => {
                 c.notes.push(msg!(legacy_property_ignored, name = name, status = other));

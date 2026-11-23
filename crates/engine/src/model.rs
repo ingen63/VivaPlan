@@ -1236,6 +1236,43 @@ pub struct Property {
     pub inflation_rent: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mortgage: Option<Mortgage>,
+    /// #229: Tax value for the wealth tax (owned and planned only); missing: the market value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tax_value: Option<TaxValue>,
+}
+
+/// #229: How the tax value of a property is entered.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum TaxValueKind {
+    /// Amount in francs, relative to the market value today (owned) or the purchase price (planned).
+    #[default]
+    Amount,
+    /// Share of the market value (0.65 = 65 %).
+    Rate,
+}
+
+/// #229: Tax value of a property (wealth tax value). It keeps its ratio to the market value: if the market value
+/// grows with inflation, the tax value grows in the same ratio. Only the wealth tax uses it.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TaxValue {
+    #[serde(default)]
+    pub kind: TaxValueKind,
+    /// Amount in francs (`amount`) or share (`rate`).
+    pub value: f64,
+}
+
+impl TaxValue {
+    /// Ratio of the tax value to the market value; `base` is the market value today (owned) or the purchase price
+    /// (planned). An amount on a base of 0 has no ratio; the market value then applies.
+    pub fn ratio(&self, base: f64) -> f64 {
+        match self.kind {
+            TaxValueKind::Rate => self.value,
+            TaxValueKind::Amount if base > 0.0 => self.value / base,
+            TaxValueKind::Amount => 1.0,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]

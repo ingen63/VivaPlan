@@ -587,6 +587,8 @@ codes! {
     property_sale_before_buy => "{name}: the sale must be after “Purchase from”.",
     property_rent_from_missing => "{name}: “Rent from” is missing.",
     property_rent_missing => "{name}: rent is missing.",
+    property_tax_value_negative => "{name}: the tax value must not be negative.",
+    property_tax_value_rate_range => "{name}: the tax value must be between 0 % and 100 % of the market value.",
     property_buy_before_start => "{name}: the purchase date is before the simulation start – the property is never bought. Enter properties already bought as “Owned”.",
     property_buy_missing => "{name}: no purchase date – the property is never bought.",
     mortgage_max_loan_not_planned => "{name}: “80 % of the purchase price” only applies to planned purchases; the amounts entered are used.",

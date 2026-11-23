@@ -8,7 +8,7 @@ use crate::message::{arg, Arg, Message};
 use crate::model::{fixed_milestone_message, person_milestones, PayoutAt, PayoutUse};
 use crate::model::{
     AmortMode, AmountMode, GainModel, MilestoneKind, Plan, PropertyStatus, RateKind, ReturnSource, Series, SeriesDef,
-    Strategy, Withdrawal,
+    Strategy, TaxValueKind, Withdrawal,
 };
 use crate::resolve::{Curve, Resolver};
 use crate::tax;
@@ -958,6 +958,19 @@ fn check(plan: &Plan, v: &mut Issues) {
                     };
                     v.err_at("realestate", format!("realestate.properties.{i}.sell"), text);
                 }
+            }
+        }
+        // #229/AK6: tax value as a non-negative amount or a share from 0 to 100 %; rentals have no tax value.
+        if let Some(tv) = p.tax_value.filter(|_| p.status != PropertyStatus::Rent) {
+            let field = format!("realestate.properties.{i}.taxValue.value");
+            match tv.kind {
+                TaxValueKind::Amount if !(0.0..).contains(&tv.value) => {
+                    v.err_at("realestate", field, msg!(property_tax_value_negative, name = n));
+                }
+                TaxValueKind::Rate if !(0.0..=1.0).contains(&tv.value) => {
+                    v.err_at("realestate", field, msg!(property_tax_value_rate_range, name = n));
+                }
+                _ => {}
             }
         }
         match p.status {

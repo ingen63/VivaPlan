@@ -223,6 +223,9 @@ pub struct TaxBasis {
     /// #151: Place of residence of the tax year (on 31 December); only if the place changes during the plan.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub residence: Option<crate::model::TaxLocation>,
+    /// #229: Tax value of the owned properties on 31 December; only if a property has a tax value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub property_tax_value: Option<f64>,
 }
 
 /// #131: Deductions of a tax year collected month by month: months with a proposal of the canton, own value and
@@ -673,6 +676,8 @@ struct CProp {
     price: f64,
     bought: Option<YearMonth>,
     worth: f64,
+    /// #229: Ratio of the tax value to the market value (1.0 without a tax value).
+    tax_ratio: f64,
     infl_value: bool,
     infl_fix_costs: bool,
     infl_rent: bool,
@@ -795,6 +800,8 @@ pub struct Simulator {
     pillar3a_max_large: f64,
     /// #131: Record the basis of the income tax (plans with deductions).
     tax_basis: bool,
+    /// #229: A property (owned or planned) has a tax value; the basis then also shows the tax value of the properties.
+    tax_values: bool,
     pub fixed: crate::market::FixedCurves,
     pub source: ReturnSource,
     afford: Affordability,
@@ -978,7 +985,13 @@ impl Simulator {
             }],
             None => vec![],
         };
-        let tax_basis = !locations.is_empty() || plan.taxes.deductions.is_some() || plan.taxes.deduct_pillar3a;
+        let tax_values = plan
+            .realestate
+            .properties
+            .iter()
+            .any(|p| p.status != PropertyStatus::Rent && p.tax_value.is_some());
+        let tax_basis =
+            !locations.is_empty() || plan.taxes.deductions.is_some() || plan.taxes.deduct_pillar3a || tax_values;
         let props = plan
             .realestate
             .properties
@@ -1087,6 +1100,7 @@ impl Simulator {
             pillar3a_large: [0, 1].map(|i| persons.get(i).is_some_and(|p| p.no_pension_fund)),
             pillar3a_max_large: plan.limits.pillar3a_max_large,
             tax_basis,
+            tax_values,
             fixed: crate::market::FixedCurves {
                 stocks: curve(&plan.returns.fixed.stocks)?,
                 bonds: curve(&plan.returns.fixed.bonds)?,
@@ -1355,6 +1369,11 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
         price: p.price,
         bought: p.bought,
         worth: p.worth.unwrap_or(p.price),
+        tax_ratio: match (p.status, p.tax_value) {
+            (PropertyStatus::Owned, Some(t)) => t.ratio(p.worth.unwrap_or(p.price)),
+            (PropertyStatus::Planned, Some(t)) => t.ratio(p.price),
+            _ => 1.0,
+        },
         infl_value: p.inflation_value.unwrap_or(p.inflation),
         infl_fix_costs: p.inflation_fix_costs.unwrap_or(p.inflation),
         infl_rent: p.inflation_rent.unwrap_or(true),
@@ -1733,6 +1752,22 @@ impl<'a> Run<'a> {
         (0..self.props.len())
             .filter(|&i| self.props[i].active)
             .map(|i| self.worth(i) - self.props[i].balances.iter().sum::<f64>())
+            .sum()
+    }
+
+    /// #229: Tax value of the owned properties (market value × ratio of the tax value).
+    fn tax_worth(&self) -> f64 {
+        (0..self.props.len())
+            .filter(|&i| self.props[i].active)
+            .map(|i| self.worth(i) * self.s.props[i].tax_ratio)
+            .sum()
+    }
+
+    /// #229: Taxable property wealth: tax value minus mortgage (without a tax value the same as [`Self::equity`]).
+    fn tax_equity(&self) -> f64 {
+        (0..self.props.len())
+            .filter(|&i| self.props[i].active)
+            .map(|i| self.worth(i) * self.s.props[i].tax_ratio - self.props[i].balances.iter().sum::<f64>())
             .sum()
     }
 
@@ -3448,9 +3483,10 @@ impl<'a> Run<'a> {
                 paid_wealth += std::mem::take(&mut self.pending_wealth);
             }
             if december {
-                let taxable_wealth = wealth + self.equity();
+                // #229: the wealth tax uses the tax value of the properties instead of the market value
+                let taxable_wealth = wealth + self.tax_equity();
                 let idx = self.tax_index();
-                let (ti, basis) = s.income_tax(
+                let (ti, mut basis) = s.income_tax(
                     m,
                     self.year_income,
                     &self.year_earned[..s.people.len().min(2)],
@@ -3459,6 +3495,9 @@ impl<'a> Run<'a> {
                 );
                 let tw = s.wealth_tax(m, taxable_wealth, idx);
                 if s.tax_basis && self.record {
+                    if s.tax_values {
+                        basis.property_tax_value = Some(self.tax_worth());
+                    }
                     tax_basis = Some(basis);
                 }
                 self.tax_pending += ti + tw;
