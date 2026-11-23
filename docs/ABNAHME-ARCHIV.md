@@ -1660,6 +1660,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #229/AK8 | Ein Test belegt das Beispiel aus AK2 mit Handwert; ein Test belegt, dass Planungen ohne Steuerwert unverändert … | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak2_…`, `issue_229_ak4_…` | 23.11.2026 ok |
 | #229/AK9 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. Die Hilfe nennt: oft 60–80 % des Marktwerts, bei … | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it, `BESCHREIBUNG.md`, `ENTWICKLUNG.md`, Glossar; Durchsicht) |
 
+### #230 Zusätzliche und einmalige Abzüge vom Einkommen
+
+[Issue #230](https://github.com/ingen63/VivaPlan/issues/230) · geschlossen · Umsetzung: b825f83
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #230/AK1 | Eine Zeile «Vorschlag des Kantons» hat das Feld «zusätzlich … pro Jahr» (Betrag in Preisen des Simulationsstarts, … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak1_…`, [sim.rs](../crates/engine/src/sim.rs) `issue_230_ak1_extra_hand_value`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1` | 23.11.2026 ok (Handwert 20'000 + 3'000 = 23'000; Kanton und Bund; Teuerung; Sichtprüfung hell und dunkel, abgeschnittene Beschriftung in 04ce32d behoben) |
+| #230/AK2 | Die Liste «Einmalige Abzüge» hat je Eintrag Steuerjahr, Beschreibung und Betrag (nominal). Der Betrag zählt in … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak2_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK2` | 23.11.2026 ok (Handwert 2027: 40'000, übrige Jahre 90'000; mit Vorschlag und eigenen Tabellen) |
+| #230/AK3 | Das steuerbare Einkommen wird nicht negativ. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak3_…` | 23.11.2026 ok (beide Modi) |
+| #230/AK4 | Die Steuerzerlegung zeigt «zusätzlich» und «einmalig» als eigene Zeilen mit Herkunft. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak4_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK4` | 23.11.2026 ok (Herkunft im Tooltip der Abzüge, `extra` und `oneOff` im Ergebnis) |
+| #230/AK5 | Die Schätzung des Netto-Bedarfs (3-Topf) nutzt die laufenden Abzüge. Einmalige Abzüge zählen nur im Steuerjahr … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak5_…` | 23.11.2026 ok |
+| #230/AK6 | Die Prüfung meldet negative Beträge und ein Steuerjahr ausserhalb der Simulation als Fehler. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak6_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK6` | 23.11.2026 ok (Fehler am Feld) |
+| #230/AK7 | Bestehende Planungen rechnen unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak7_…`, Golden-Tests | 23.11.2026 ok |
+| #230/AK8 | Je Fall gibt es einen Test mit Handwert; Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_…` | 23.11.2026 ok (Hilfe de/en/fr/it, `BESCHREIBUNG.md`, `ENTWICKLUNG.md`, Glossar; Durchsicht) |
+
 ### #232 Erwerbseinkommen als Jahresbetrag wie in der Steuererklärung
 
 [Issue #232](https://github.com/ingen63/VivaPlan/issues/232) · geschlossen · Umsetzung: 5b581d1
