@@ -1716,3 +1716,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #233/AK4 | Die Planungsdatei enthält die Tragbarkeit nicht mehr. Öffnet man eine ältere Datei, deren Werte von den Einstellungen … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK4` | 23.11.2026 ok (gespeicherte Datei ohne `affordability`; ältere Datei: Hinweis mit übernommenen und bisherigen Werten; gleiche Werte: kein Hinweis) |
 | #233/AK5 | Gespeicherte Ergebnisse und der Vergleich der Planungen zeigen weiterhin die Werte, mit denen gerechnet wurde. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK5` | 23.11.2026 ok (gespeichertes Ergebnis behält 70 % nach Änderung der Einstellungen) |
 | #233/AK6 | Hilfe (de, en, fr, it), `docs/BESCHREIBUNG.md` und Spezifikation beschreiben den neuen Ort. | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it «Einstellungen» und «Tragbarkeit», `BESCHREIBUNG.md`, `ENTWICKLUNG.md`; Durchsicht, `check_i18n` 0 Befunde) |
+
+### #234 Kennzahl «Früheste Erschöpfung» zeigt «[object Object]»
+
+[Issue #234](https://github.com/ingen63/VivaPlan/issues/234) · geschlossen · Umsetzung: b1ddfc9
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #234/AK1 | Die Kennzahl zeigt Datum und den Lauf als lesbaren Text in der gewählten Sprache, nie «[object Object]». | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) `AK3` | 23.11.2026 ok («09.2033 · Historisch ab …», englisch «Historical from …»; Gegenprobe ohne Korrektur: «[object Object]») |
+| #234/AK2 | Alle anderen Stellen, die `earliestDepletion` oder andere Meldungen des Rechenkerns anzeigen, sind geprüft und … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) `AK2` | 23.11.2026 ok (Durchsicht `crates/app/ui/`; korrigiert: Fehler einer Variante in der Tabelle, de/en getestet; Toast beim Fehlschlag einer Variante nur Code-Durchsicht) |
+| #234/AK3 | Ein e2e-Test prüft den Text der Kennzahl (inkl. einer zweiten Sprache). | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) `AK3` | 23.11.2026 ok (Deutsch und Englisch) |
