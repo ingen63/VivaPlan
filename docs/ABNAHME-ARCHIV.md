@@ -1594,6 +1594,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #215/AK4 | Bei 8 Varianten auf parametrischen Pfaden braucht die Rechnung höchstens die halbe Zeit wie vorher. Gemessen wird auf … | ☑ | **gilt** | [variants_bench.rs](../crates/engine/examples/variants_bench.rs) (Messprogramm, kein Test) | 22.11.2026 ok: M1 Pro, 1 Kern, 1000 Pfade, bestes von 5: Variationen 2143 → 1038 ms (48 %); Strategievergleich 2036 → 1082 ms (53 %, nur Hinweis) |
 | #215/AK5 | Der Speicherbedarf für zwischengespeicherte Pfade ist begrenzt (Obergrenze dokumentiert). Darüber wird ohne … | ☑ | **gilt** (512 MB, Entscheid im Issue vom 22.11.2026) | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak5_…`, `issue_215_ak2_prepare_…` | 22.11.2026 ok (`PATH_CACHE_BYTES`, `docs/ENTWICKLUNG.md`; darüber Erzeugung im Lauf) |
 
+### #222 Regel gegen überflüssige Tests für den rust-test-agent
+
+[Issue #222](https://github.com/ingen63/VivaPlan/issues/222) · geschlossen · Umsetzung: a2a4afe
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #222/AK1 | `.claude/agents/rust-test-agent.md` enthält die drei Angaben als Pflicht vor jedem neuen Test. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Schritt 3: Regel, Bruch, nur dieser Test) |
+| #222/AK2 | Die Anleitung nennt, was kein eigener Test wird: Code, der sich durch Lesen prüfen lässt (wenige Zeilen, höchstens … | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (alle sieben Kategorien) |
+| #222/AK3 | Ausgenommen bleiben Regressionstests zu Speichern, Rechenregeln und Golden Masters. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (dazu benannte Fehlerfunde, #223) |
+| #222/AK4 | Der Bericht des Agenten nennt je neuem Test die geschützte Regel und die Änderung, die ihn fehlschlagen lässt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Schritt 5; Verhalten im echten Lauf nicht geprüft) |
+| #222/AK5 | `docs/TESTS.md` beschreibt die Regel im Abschnitt «Testqualität». | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
 ### #223 Funde der Eigenschaftstests als benannte Regressionstests
 
 [Issue #223](https://github.com/ingen63/VivaPlan/issues/223) · geschlossen · Umsetzung: b57777b
