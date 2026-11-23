@@ -1616,3 +1616,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #223/AK2 | Ein Eintrag ohne gefundenen Fehler (zum Beispiel ein falsch formulierter Test) ist mit Begründung entfernt. | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) `issue_223_ak2_…` | 23.11.2026 ok (Fehler im Prüforakel `really_falls` von #134, Eintrag entfernt) |
 | #223/AK3 | `docs/TESTS.md` (Schicht 3) und `.claude/agents/rust-test-agent.md` schreiben vor: neuer Fund → benannter … | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
 | #223/AK4 | Die Regressionsdateien bleiben eingecheckt, gelten aber nicht als Dokumentation des Fundes. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (`git ls-files`, TESTS.md) |
+
+### #228 Vorschlag des Kantons bei den Abzügen ganz rechts zusammengedrückt
+
+[Issue #228](https://github.com/ingen63/VivaPlan/issues/228) · geschlossen · Umsetzung: aade95a
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #228/AK1 | Bei einer Zeile «Vorschlag des Kantons» steht der Text (Jahr, Kanton, Bund, Bestandteile) über die verfügbare Breite … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok (nicht angepasst und angepasst, Text bricht um, nichts abgeschnitten; Sichtprüfung hell und dunkel) |
+| #228/AK2 | Bei einer Zeile «eigener Wert» stehen Betrag pro Jahr und Prozentsatz nebeneinander, beide lesbar, der Knopf ✕ am … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok (gleiche Höhe, ✕ rechts vom Wert; Sichtprüfung) |
+| #228/AK3 | Der Knopf ✕ bleibt in derselben Zeile wie ihre Werte. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok |
+| #228/AK4 | Andere Zeitreihen, die `.row` verwenden (z. B. Erwerbseinkommen, Wohnort #151), sehen aus wie vorher. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK4` | 23.11.2026 ok (`.row` unverändert, Wohnort mit 4 Spalten; Tests #151, ui-eingaben, ui-textfit grün) |
+| #228/AK5 | Ein Oberflächentest prüft für beide Arten von Zeilen, dass der Wert mindestens 200 px breit ist und der Knopf ✕ auf … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok |
