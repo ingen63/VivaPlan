@@ -718,6 +718,30 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #130/AK1 | Szenario-Perzentile ohne `endTotalReal`, Zusammenfassung mit. | ☑ | **gilt** | [simulation.rs](../crates/engine/tests/simulation.rs) «issue_130_ak1_…» | 17.11.2026 ok |
 | #130/AK2 | Szenarientabelle, Optimum und Vergleich zeigen dieselben Werte. | ☑ | **gilt** | [golden.rs](../crates/engine/tests/golden.rs); alle Oberflächentests | 17.11.2026 ok (Golden 09: nur 90 Zeilen `endTotalReal` entfernt) |
 
+### #131 Abzüge vom Einkommen mit Vorschlag des Kantons
+
+[Issue #131](https://github.com/ingen63/VivaPlan/issues/131) · geschlossen · Umsetzung: 023a9dc
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #131/AK1 | Die Einzahlung in die Säule 3a eines Jahres wird vom steuerbaren Einkommen abgezogen, höchstens bis zum … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak1_…` (3 Tests), `sim::tests_deductions::issue_131_ak1_…` | 23.11.2026 ok (Test grün, 93 000 von Hand) |
+| #131/AK2 | Der Abzug der Säule 3a ist abschaltbar. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak2_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1, AK2» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK3 | Im Abschnitt Steuern gibt es das Feld «Abzüge vom Einkommen», zeitabhängig wie das Erwerbseinkommen. … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak3_…`, `sim::tests_deductions::issue_131_ak3_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK3» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK4 | Jede Zeile ist entweder «Vorschlag des Kantons» (Standard im Modus «Wohnort», Regeln aus #63) oder … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK4, AK5» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK5 | Beim Vorschlag zeigt die Oberfläche den Betrag für das erste Jahr der Zeile und seine Bestandteile … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak5_…`, `taxdata::tests::issue_131_ak5_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK4, AK5» (#131) | 23.11.2026 ok (ZH 5 900 von Hand, ⚠ bei BL) |
+| #131/AK6 | Ein eigener Wert ist ein Betrag pro Jahr in Preisen des Simulationsstarts (wächst mit «Tarife mit der … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak6_…` (2 Tests); [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK6, AK7» (#131) | 23.11.2026 ok (40 000 → 80 000) |
+| #131/AK7 | Eine Eingabehilfe rechnet den eigenen Wert aus «Einkommen» und «steuerbares Einkommen laut Veranlagung» … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK6, AK7» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK8 | Ein eigener Wert bleibt, wenn Kanton, Gemeinde oder Zivilstand ändern; ein Vorschlag rechnet sich neu. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak8_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK8, AK9» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK9 | Die Oberfläche erklärt beim eigenen Wert: Einkommen ist netto (nach AHV- und PK-Beiträgen, wie der … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK8, AK9» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK10 | Hypothekarzinsen werden nicht automatisch abgezogen. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak10_…` | 23.11.2026 ok (Test grün) |
+| #131/AK11 | Im Modus «Eigene Tabellen» gibt es keinen Vorschlag; Standard ist ein eigener Wert von 0. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak11_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK11, AK13» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK12 | Das steuerbare Einkommen wird nicht negativ. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak12_…` | 23.11.2026 ok (Test grün) |
+| #131/AK13 | Bestehende Planungen öffnen unverändert und rechnen mit denselben Abzügen wie vorher (keine neuen Abzüge … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak13_…`; [golden.rs](../crates/engine/tests/golden.rs); e2e «AK11, AK13» (#131) | 23.11.2026 ok (Golden unverändert, 972 Tests grün) |
+| #131/AK14 | Ungültige Werte (negativer Betrag oder Prozentsatz, Prozentsatz über 100 %) meldet die Prüfung als Fehler … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak14_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK14» (#131) | 23.11.2026 ok (Test grün) |
+| #131/AK15 | Die Simulation zeigt in der Steuerzerlegung das Einkommen, die Abzüge mit Herkunft («Vorschlag des … | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_131_ak15_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK15» (#131) | 23.11.2026 ok (Jahreswerte mit Steuerspalten) |
+| #131/AK16 | Ein Test je Abzugsart belegt die Beispiele mit Handwert. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) AK1, AK3, AK5, AK6 | 23.11.2026 ok (3a, eigener Wert, Vorschlag, Zeilen) |
+| #131/AK17 | Hilfe, `BESCHREIBUNG.md`, Spezifikation und Pflichteingaben sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Hilfe 10-editor in vier Sprachen (Thema f-tax-deductions), BESCHREIBUNG.md, ENTWICKLUNG.md, Pflichteingaben.md |
+
 ### #133 Geldfluss-Erhaltung über alle Bestandteile prüfen
 
 [Issue #133](https://github.com/ingen63/VivaPlan/issues/133) · geschlossen · Umsetzung: b5640b1
