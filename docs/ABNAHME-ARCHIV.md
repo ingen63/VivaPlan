@@ -933,6 +933,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #150/AK3 | Ein Test belegt das Beispiel (zwei Personen, nicht verheiratet, je 500 000 im selben Jahr) mit Handwert, ein zweiter Test den Fall … | ☑ | **gilt** | [household.rs](../crates/engine/tests/household.rs) «issue_150_ak1_…», «issue_150_ak3_…» | 20.11.2026 ok |
 | #150/AK4 | Gilt auch für den Modus «Wohnort» (#64), sobald er umgesetzt ist. | ☑ | **nicht anwendbar** (#64 nicht umgesetzt; Anforderung als Kommentar in #64) | kein Test | 20.11.2026 nicht anwendbar |
 
+### #151 Wohnort zeitabhängig
+
+[Issue #151](https://github.com/ingen63/VivaPlan/issues/151) · geschlossen · Umsetzung: 157aef4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #151/AK1 | Im Modus «Wohnort» lässt sich der Wohnort zeitabhängig angeben: erste Zeile ab Start, weitere Zeilen … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1» (#151) | 23.11.2026 ok (Test grün) |
+| #151/AK2 | Einkommens- und Vermögenssteuer eines Steuerjahres rechnen mit dem Wohnort am 31. Dezember dieses … | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak2_ak9_…` | 23.11.2026 ok (Test grün; StHG Art. 4b Abs. 1, Art. 17 Abs. 1 auf fedlex geprüft) |
+| #151/AK3 | Die Kapitalbezugssteuer rechnet mit dem Wohnort im Monat des Bezugs. | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak3_ak9_…` | 23.11.2026 ok (Test grün; StHG Art. 4b Abs. 1 Satz 2, Art. 11 Abs. 3) |
+| #151/AK4 | Die Grundstückgewinnsteuer einer Immobilie ohne eigenen Kanton (#65) rechnet mit dem Wohnkanton im … | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak4_…` | 23.11.2026 ok (Test grün) |
+| #151/AK5 | Die Abzüge «Vorschlag des Kantons» (#131) richten sich nach dem Wohnort des Steuerjahres; ein eigener … | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak5_…` | 23.11.2026 ok (Test grün) |
+| #151/AK6 | Die Prüfung meldet Fehler je Zeile (Kanton fehlt, Gemeinde passt nicht zum Kanton) und Zeilen, deren … | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak6_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK6» (#151) | 23.11.2026 ok (Test grün) |
+| #151/AK7 | Übersicht, Parameter eines Laufs und Jahreswerte zeigen den Wohnort je Zeitraum bzw. Jahr. | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak7_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK7» (#151) | 23.11.2026 ok (Test grün) |
+| #151/AK8 | Planungen mit einem einzigen Wohnort rechnen unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) `issue_151_ak8_…`; [golden.rs](../crates/engine/tests/golden.rs) | 23.11.2026 ok (Golden unverändert, 979 Tests grün) |
+| #151/AK9 | Tests belegen: Wechsel im Juni (ganzes Jahr nach neuem Wohnort), Kapitalbezug vor und nach dem Wechsel. | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) AK2, AK3 | 23.11.2026 ok (Tests grün) |
+| #151/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Hilfe f-tax-location und Dateiformat in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md, Pflichteingaben.md) |
+
 ### #153 Mitgelieferte Planungen sind beim Aktienmodell nicht auf dem aktuellen Stand
 
 [Issue #153](https://github.com/ingen63/VivaPlan/issues/153) · geschlossen · Umsetzung: 0c6a760
