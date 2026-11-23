@@ -215,7 +215,8 @@ nur eine Kennung der Liste entgegen und öffnet die Adresse mit `tauri_plugin_op
 Das Plugin wird nicht registriert, die Oberfläche hat also keinen Zugriff auf seine JavaScript-Schnittstelle und die
 Berechtigungen (`capabilities/default.json`) bleiben bei `core:default`. Die Oberfläche ruft `openLink(kennung)` auf;
 im Browser (`ui-dev`) öffnet sie die Adresse aus derselben Liste in einem neuen Tab. Eine neue Adresse ist eine Zeile
-in `links.json` (z. B. die Videos aus #240).
+in `links.json`. Einführungsvideos (#240): je Länge und Sprache eine Kennung `video-<2min|10min>-<de|en|fr|it>`;
+die Oberfläche wählt die Sprache der Einstellung (`data-action="video"`, in der Hilfe `[Text](video:2min)`).
 
 **Ergebnisse:** Registerkarten Übersicht, Grafiken, Einzelne Läufe (5./50./95. Perzentil), Szenarien, Jahreswerte;
 alle Beträge wahlweise nominal oder in heutiger Kaufkraft (Preise des Simulationsstarts). Grafiken eines Laufs:

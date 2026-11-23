@@ -5,6 +5,8 @@ Keywords: overview, purpose, retirement planning, pension planning, simulation
 
 VivaPlan answers the question everyone faces before retirement: **Will the money last, and how certain is that?**
 
+> Video: [VivaPlan in 2 minutes](video:2min) shows the overview (opens the browser).
+
 The app calculates your financial future month by month, from today until the end of the plan. It knows the Swiss specifics:
 
 - pension fund (BVG, pillar 2) with conversion rate and lump-sum withdrawal, old-age pension (AHV, pillar 1) and pillar 3a
@@ -24,6 +26,8 @@ The structure:
 ## @quickstart A first plan in ten minutes
 Keywords: instructions, beginning, tutorial, steps, getting started
 
+> Video: [VivaPlan in 10 minutes](video:10min) guides you through the first plan (opens the browser).
+
 Start with the example plan that is loaded when the app opens, and adapt it step by step to your situation.
 
 The checklist **“Getting started”** on the right above the validation leads through the same eight steps. A click on a step opens the section, ⓘ the help on it. A section counts as done as soon as you change a value in it or tick it off by hand; “Undo” does not remove the tick. “Start simulation” is done as soon as a simulation has run without being canceled. With ✕ you hide the list, and *Help → Getting started* shows it again. Once all steps are done, it collapses. The progress applies to you on this device, not to a single plan, and is not stored in the plan file.
@@ -42,7 +46,7 @@ The validation at the bottom right shows errors and warnings even before you cal
 > Tip: Press **F1** in an input field to open the help for exactly that field.
 
 ## @bedienung Operation and keyboard shortcuts
-Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent, support, donation, coffee
+Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent, support, donation, coffee, video, introductory video
 
 - **File:** New (an **empty plan with default values**: start in the current month, no project name, one person without a name, no amounts and no real estate; returns, tax tables and strategy parameters take the default values), Open, Open Recent, Save, Save as. A plan is a single file with the extension `.vplan`. It can be copied and archived.
 - **Open Recent:** The submenu below File → Open shows the up to 10 plans you opened or saved last, the most recent at the top (file name without `.vplan`; with the folder if names are equal). A click opens the plan like “Open…”; with unsaved changes the app asks first. If the file no longer exists, the app says so and removes the entry. “Clear List” empties the list; if it is empty, it shows “No Entries”.
@@ -55,6 +59,7 @@ Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent
 - **Timeline:** Above the editor, it shows all milestones. A click on it opens the milestones. Below the line are the **real estate events** of the preview (green triangles for purchase and sale, orange for emergency sales) with a short label such as ‘Purchase Wohnung 09.2027’. With more than 15 events, only the symbols appear; the text is then in the tooltip.
 - **Time-dependent values:** Many amounts can be entered as a constant or as a sequence of values, see [Time-dependent values](#f-timed).
 - **Language:** Menu *View → Language* or the [settings](#f-settings). The change takes effect immediately; plan and view stay. The help is shown in the chosen language; where a chapter is not yet translated, it appears in German.
+- **Introductory videos:** *Help → Introductory videos …* shows the videos “VivaPlan in 2 minutes” and “VivaPlan in 10 minutes”; the welcome dialog has the link “Watch VivaPlan in 2 minutes”. A click opens the video in the language set in your browser (Internet Archive).
 - **Support VivaPlan:** VivaPlan is free. If you would like to support the author voluntarily with a coffee: *Help → Support VivaPlan…*, the line “☕ Support VivaPlan” at the bottom of the navigation or the link in the window “About VivaPlan” open the page buymeacoffee.com/vivaplan in your browser. The app itself loads nothing from the internet.
 
 The complete list of keyboard shortcuts is in the menu *Help → Keyboard shortcuts* and in the [reference chapter](#ref-shortcuts).
@@ -62,7 +67,7 @@ The complete list of keyboard shortcuts is in the menu *Help → Keyboard shortc
 ## @privacy Privacy and local data
 Keywords: internet, cloud, storage location, security, network, data protection
 
-All data stays on your computer. The app never connects to the internet, not even for data, updates or analytics.
+All data stays on your computer. The app never connects to the internet, not even for data, updates or analytics. Only two kinds of links open your browser: the [introductory videos](#start) and the donation link “Support VivaPlan” ([operation](#bedienung)). The addresses are fixed in the app; the app itself loads nothing.
 
 - **Plans** are where you save the `.vplan` file. The paths of the plans last opened or saved (list “Open Recent”) are in the file `einstellungen.json` in the data folder of the app.
 - **Time series** (the data library) are in the data folder of the app. On macOS this is `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

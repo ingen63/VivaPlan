@@ -48,7 +48,9 @@ const Help = (() => {
   // ----- Markdown (small subset) -----
   const inline = s => esc(s)
     .replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
-    .replace(/\[([^\]]+)\]\(#([\w-]+)\)/g, '<a data-topic="$2">$1</a>');
+    .replace(/\[([^\]]+)\]\(#([\w-]+)\)/g, '<a data-topic="$2">$1</a>')
+    // #240: [text](video:2min) opens the introductory video in the language set (fixed list of addresses, app.js)
+    .replace(/\[([^\]]+)\]\(video:(2min|10min)\)/g, '<a href="#" data-action="video" data-video="$2">$1</a>');
   function render(md) {
     const out = [], lines = md.split("\n");
     for (let i = 0; i < lines.length; i++) {
@@ -263,6 +265,7 @@ const Help = (() => {
     for (const k of ["fixed", "historical", "rolling", "bootstrap", "parametric"]) if (!topics.has("f-ret-" + k)) problems.push(`Quelle ohne Thema: f-ret-${k}`); // i18n: allow (check of the help for the tests)
     for (const k of ["standard", "three_buckets", "guardrails", "fixed_rate", "vpw", "endowment"]) if (!topics.has("f-wd-" + k)) problems.push(`Strategie ohne Thema: f-wd-${k}`); // i18n: allow (check of the help for the tests)
     for (const t of topics.values()) for (const m of t.md.matchAll(/\]\(#([\w-]+)\)/g)) if (!topics.has(m[1])) problems.push(`Verweis ins Leere: ${t.id} → ${m[1]}`); // i18n: allow (check of the help for the tests)
+    for (const t of topics.values()) for (const m of t.md.matchAll(/\]\(video:([\w-]*)\)/g)) if (!["2min", "10min"].includes(m[1])) problems.push(`Video unbekannt: ${t.id} → ${m[1]}`); // i18n: allow (check of the help for the tests)
     return problems;
   }
 

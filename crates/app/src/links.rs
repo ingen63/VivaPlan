@@ -1,7 +1,8 @@
 //! #237: External addresses the app may open in the default browser of the system. The fixed list stands in one
 //! place, `ui/links.json` (id → address), compiled into the app; the user interface reads the same file. The command
 //! `open_link` takes only an id of this list, never an address, so the user interface cannot open anything else.
-//! A new address (e.g. the videos of #240) is one more line in `ui/links.json`.
+//! A new address is one more line in `ui/links.json`. #240: the introductory videos, one per length and language
+//! (`video-<2min|10min>-<de|en|fr|it>`); the user interface picks the id of the language set.
 
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
@@ -87,6 +88,51 @@ mod tests {
         assert_eq!(
             open_with("donate", |_| Err("kein Browser".into())),
             Err("kein Browser".into())
+        );
+    }
+
+    /// #240/AK4: the list holds exactly the donation link and the eight videos (two lengths, four languages).
+    #[test]
+    fn issue_240_ak4_list_holds_exactly_these_addresses() {
+        let mut want = vec![("donate".to_string(), "https://buymeacoffee.com/vivaplan".to_string())];
+        for lang in ["de", "en", "fr", "it"] {
+            for len in ["2min", "10min"] {
+                want.push((
+                    format!("video-{len}-{lang}"),
+                    format!("https://archive.org/details/vivaplan-video-{lang}/vivaplan-{len}.mp4"),
+                ));
+            }
+        }
+        want.sort();
+        let got: Vec<_> = all().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        assert_eq!(got, want);
+    }
+
+    /// #240/AK4: other video ids and the video addresses themselves are rejected; the opener is never called.
+    #[test]
+    fn issue_240_ak4_rejects_other_videos() {
+        for bad in [
+            "video-2min",
+            "video-2min-es",
+            "video-5min-de",
+            "VIDEO-2MIN-DE",
+            "https://archive.org/details/vivaplan-video-de/vivaplan-2min.mp4",
+            "https://archive.org/details/vivaplan-video-de",
+        ] {
+            let r = open_with(bad, |_| panic!("darf nicht öffnen: {bad}"));
+            assert!(r.is_err(), "{bad}");
+        }
+        let mut seen = None;
+        assert_eq!(
+            open_with("video-10min-fr", |u| {
+                seen = Some(u.to_string());
+                Ok(())
+            }),
+            Ok(())
+        );
+        assert_eq!(
+            seen.as_deref(),
+            Some("https://archive.org/details/vivaplan-video-fr/vivaplan-10min.mp4")
         );
     }
 }

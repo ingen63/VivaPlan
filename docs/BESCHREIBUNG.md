@@ -313,6 +313,16 @@ Navigation und die Zeile «Unterstützen» im «Über»-Fenster öffnen https://
 Systems. Kein Popup, kein Hinweis beim Start. Die App lädt dafür nichts aus dem Netz (kein Logo, kein Zähler, keine
 Prüfung der Seite); sie öffnet nur Adressen aus einer festen Liste (`crates/app/ui/links.json`).
 
+**Einführungsvideos (#240):** Menü *Hilfe → Einführungsvideos …* zeigt die Videos «VivaPlan in 2 Minuten» (Überblick)
+und «VivaPlan in 10 Minuten» (erste Planung) mit Länge und dem Hinweis, dass ein Klick den Browser öffnet. Der
+Willkommensdialog hat unter den drei Auswahlen den Link «VivaPlan in 2 Minuten ansehen», die Hilfeseiten «Was VivaPlan
+kann» und «Erste Planung in zehn Minuten» verlinken das passende Video. Jedes Video gibt es in Deutsch, Englisch,
+Französisch und Italienisch (Internet Archive); die App öffnet das Video in der eingestellten Sprache im Standardbrowser.
+
+**Links in den Browser:** Nur diese Links öffnen den Browser: die Einführungsvideos und der Spendenlink. Ihre Adressen
+stehen fest in der App (`crates/app/ui/links.json`); andere Adressen öffnet die App nicht, und sie selbst lädt dabei
+nichts aus dem Netz.
+
 **Darstellung:** «System» (Vorgabe), «Hell» oder «Dunkel» (#220). «System» folgt dem hellen oder dunklen
 Erscheinungsbild des Betriebssystems, auch wenn es zur Laufzeit wechselt. Das gewählte Thema gilt für die ganze
 Oberfläche, auch für Auswahlmenüs, Eingabefelder, Dialoge, Hilfe und Diagramme; das helle Thema sieht unter einem

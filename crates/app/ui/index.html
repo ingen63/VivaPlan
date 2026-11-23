@@ -265,6 +265,7 @@ dialog{border:1px solid var(--border);border-radius:12px;background:var(--panel)
 .wchoices button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--panel2);color:var(--text);cursor:pointer;font:inherit}
 .wchoices button:hover,.wchoices button:focus-visible{border-color:var(--accent);background:var(--accent-soft);outline:none}
 .wchoices button b{font-size:14px} .wchoices button span{font-size:12.5px;color:var(--muted)}
+.welcome p.wvideo a,#videoList a{color:var(--accent-text);cursor:pointer}
 #steps{margin-bottom:16px}
 #steps[hidden]{display:none}
 #steps details{border:1px solid var(--border);border-radius:9px;background:var(--panel2);padding:8px 10px}
@@ -402,6 +403,7 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
     <button value="own"><b data-i18n="welcome.own"></b><span data-i18n="welcome.ownText"></span></button>
     <button value="blank"><b data-i18n="welcome.blank"></b><span data-i18n="welcome.blankText"></span></button>
   </div>
+  <p class="wvideo"><a href="#" data-action="video" data-video="2min" data-i18n="welcome.video" data-i18n-title="welcome.videoTitle"></a></p>
 </form></dialog>
 
 <dialog id="disclaimer" aria-labelledby="disclaimerTitle"><form method="dialog" class="askform">

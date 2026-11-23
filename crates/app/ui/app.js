@@ -1990,6 +1990,7 @@ function command(id) {
   if (id === "welcome") return showWelcome();
   if (id === "steps") return Steps.show();
   if (id === "support") return openLink("donate");
+  if (id === "videos") return showVideos();
   if (id === "back") { if (!$("#results").hidden) showResults(false); return; }
   if (/^recent-\d+$/.test(id)) return openRecent(+id.slice(7));
   ACTIONS[id]?.({});
@@ -2008,6 +2009,15 @@ async function openLink(id) {
     const url = await linkUrl(id);
     if (url) window.open(url, "_blank", "noopener");
   } catch (e) { toast(errText(e)); }
+}
+// #240: Introductory videos, one per length (2min, 10min) and language; opened like every external address via the
+// fixed list (ids video-<length>-<language>), in the language set.
+const videoLink = len => `video-${len}-${I18n.language()}`;
+function showVideos() {
+  const row = (len, min, key) => `<li><a href="#" data-action="video" data-video="${len}"><b>${tr(`videos.${key}`)}</b></a>
+    · ${tr("videos.length", { min })}<br><span class="hint">${tr(`videos.${key}Text`)}</span></li>`;
+  ask(tr("videos.title"), `<ul id="videoList" style="margin:0;padding-left:18px;line-height:1.6">${row("2min", 2, "short")}${row("10min", 10, "long")}</ul>
+    <p class="hint">${tr("videos.browser")}</p>`);
 }
 async function showAbout() {
   let info = null, donate = null;
@@ -2363,6 +2373,8 @@ const ACTIONS = {
   about: () => command("about"),
   // #237: external address from the fixed list (links.json), e.g. the donation link
   link: d => openLink(d.link),
+  // #240: introductory video in the language set (data-video: 2min or 10min)
+  video: d => openLink(videoLink(d.video)),
   // #61/AK4: from the dialog «Über VivaPlan» to the full disclaimer in the help
   "about-disclaimer": () => { $("#ask").close(); Help.show("disclaimer"); },
   back: () => showResults(false),

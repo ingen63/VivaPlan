@@ -947,13 +947,15 @@ const HELP_TITLE: &str = "menu.help";
 
 /// #70/#71: «Willkommen …» opens the welcome dialog, «Erste Schritte» shows the checklist.
 /// #237: «VivaPlan unterstützen…» opens the donation link in the browser, before «Über VivaPlan».
-const HELP_MENU: [Entry; 9] = [
+/// #240: «Einführungsvideos …» opens the dialog with the introductory videos, after «Erste Schritte».
+const HELP_MENU: [Entry; 10] = [
     ("helpctx", "menu.help.topic", "F1"),
     ("manual", "menu.help.manual", "CmdOrCtrl+Shift+/"),
     ("help", "menu.help.shortcuts", "CmdOrCtrl+/"),
     SEP,
     ("welcome", "menu.help.welcome", ""),
     ("steps", "menu.help.steps", ""),
+    ("videos", "menu.help.videos", ""),
     SEP,
     ("support", "menu.help.support", ""),
     ("about", "menu.about", ""),
@@ -2959,6 +2961,28 @@ mod tests {
         let n = help.len();
         assert_eq!(help[n - 2], ("support", "VivaPlan unterstützen…".into(), ""));
         assert_eq!(help[n - 1].0, "about");
+    }
+
+    /// #240/AK1: menu «Hilfe» has «Einführungsvideos …» directly after «Erste Schritte».
+    #[test]
+    fn issue_240_ak1_help_menu_videos() {
+        let help: Vec<_> = HELP_MENU.iter().map(de).collect();
+        let i = help.iter().position(|e| e.0 == "steps").expect("steps");
+        assert_eq!(help[i + 1], ("videos", "Einführungsvideos …".into(), ""));
+    }
+
+    /// #240/AK4: the command `open_link` rejects a video address and an id of a video that does not exist.
+    #[test]
+    fn issue_240_ak4_open_link_rejects_video_addresses() {
+        let (_app, w, _guard) = setup();
+        for id in [
+            "https://archive.org/details/vivaplan-video-de/vivaplan-2min.mp4",
+            "video-5min-de",
+            "video-2min-es",
+        ] {
+            let e = call(&w, "open_link", json!({ "id": id })).expect_err(id);
+            assert!(error_text(&e).contains("unknown link"), "{e}");
+        }
     }
 
     /// #237/AK2: the command `open_link` rejects an address or an id outside the fixed list (nothing is opened).

@@ -5,6 +5,8 @@ Parole chiave: panoramica, scopo, pianificazione della previdenza, simulazione
 
 VivaPlan risponde alla domanda che si pone prima del pensionamento: **il denaro basta, e con quale sicurezza?**
 
+> Video: [VivaPlan in 2 minuti](video:2min) mostra la panoramica (apre il browser).
+
 L’app calcola il Suo futuro finanziario mese per mese, da oggi fino alla fine della pianificazione. Conosce le particolarità svizzere:
 
 - cassa pensione (2° pilastro) con aliquota di conversione e prelievo del capitale, AVS (1° pilastro) e pilastro 3a
@@ -24,6 +26,8 @@ La struttura:
 ## @quickstart La prima pianificazione in dieci minuti
 Parole chiave: istruzioni, inizio, tutorial, passi
 
+> Video: [VivaPlan in 10 minuti](video:10min) guida attraverso la prima pianificazione (apre il browser).
+
 Inizi con la pianificazione d’esempio caricata all’apertura e la modifichi passo dopo passo secondo la Sua situazione.
 
 La lista di controllo **«Primi passi»** a destra sopra la verifica guida attraverso gli stessi otto passi. Un clic su un passo apre la sezione, ⓘ il relativo aiuto. Una sezione è considerata compiuta non appena vi modifica un valore o la spunta a mano; «Annullare» non toglie la spunta. «Avviare la simulazione» è compiuto non appena una simulazione è giunta al termine senza interruzione. Con ✕ nasconde l’elenco, con *Aiuto → Primi passi* lo mostra di nuovo. Quando tutti i passi sono compiuti, si chiude. L’avanzamento vale per Lei su questo dispositivo, non per una singola pianificazione, e non figura nel file di pianificazione.
@@ -42,7 +46,7 @@ La verifica in basso a destra mostra errori e avvertenze ancora prima del calcol
 > Consiglio: prema **F1** in un campo d’inserimento e appare esattamente l’aiuto relativo a quel campo.
 
 ## @bedienung Utilizzo e scelte rapide da tastiera
-Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, lingua, aperti di recente, sostenere, donazione, caffè
+Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, lingua, aperti di recente, sostenere, donazione, caffè, video, video introduttivo
 
 - **File:** Nuova (una **pianificazione vuota con valori standard**: inizio nel mese attuale, senza nome del progetto, una persona senza nome, nessun importo e nessun immobile; rendimenti, tabelle delle aliquote e parametri delle strategie adottano i valori standard), Aprire, Aperti di recente, Salvare, Salvare con nome. Una pianificazione è un singolo file con l’estensione `.vplan`. Si può copiare e archiviare.
 - **Aperti di recente:** Il sottomenu sotto File → Aprire mostra fino a 10 pianificazioni aperte o salvate per ultime, la più recente in alto (nome del file senza `.vplan`; con la cartella se i nomi sono uguali). Un clic apre la pianificazione come «Aprire…»; se ci sono modifiche non salvate, l’app chiede prima. Se il file non esiste più, l’app lo segnala e rimuove la voce. «Cancella elenco» svuota l’elenco; se è vuoto, mostra «Nessuna voce».
@@ -55,6 +59,7 @@ Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, ling
 - **Linea del tempo:** sopra l’editor mostra tutte le tappe. Un clic su di essa apre le tappe. Sotto la linea figurano gli **eventi immobiliari** dell’anteprima (triangoli verdi per acquisto e vendita, arancioni per le vendite forzate) con una breve didascalia come ‹Acquisto Wohnung 09.2027›. Con più di 15 eventi appaiono solo i simboli, il testo figura allora nel tooltip.
 - **Valori dipendenti dal tempo:** molti importi si possono registrare come costante o come sequenza di valori, vedi [Valori dipendenti dal tempo](#f-timed).
 - **Lingua:** menu *Vista → Lingua* o le [Impostazioni](#f-settings). Il cambio ha effetto subito; pianificazione e vista restano. L’aiuto appare nella lingua scelta; se un capitolo non è ancora tradotto, appare in tedesco.
+- **Video introduttivi:** *Aiuto → Video introduttivi …* mostra i video «VivaPlan in 2 minuti» e «VivaPlan in 10 minuti»; la finestra di benvenuto contiene il link «Guardare VivaPlan in 2 minuti». Un clic apre il video nella lingua impostata nel Suo browser (Internet Archive).
 - **Sostenere VivaPlan:** VivaPlan è gratuito. Se desidera sostenere liberamente l’autore offrendogli un caffè: *Aiuto → Sostenere VivaPlan…*, la riga «☕ Sostenere VivaPlan» in fondo alla navigazione o il link nella finestra «Informazioni su VivaPlan» aprono la pagina buymeacoffee.com/vivaplan nel Suo browser. L’app stessa non carica nulla da Internet.
 
 L’elenco completo delle scelte rapide da tastiera si trova nel menu *Aiuto → Scelte rapide da tastiera* e nel [capitolo di riferimento](#ref-shortcuts).
@@ -62,7 +67,7 @@ L’elenco completo delle scelte rapide da tastiera si trova nel menu *Aiuto →
 ## @privacy Protezione dei dati e dati locali
 Parole chiave: Internet, cloud, luogo di salvataggio, sicurezza, rete, protezione dei dati
 
-Tutti i dati restano sul Suo computer. L’app non si collega mai a Internet, nemmeno per i dati, gli aggiornamenti o le statistiche.
+Tutti i dati restano sul Suo computer. L’app non si collega mai a Internet, nemmeno per i dati, gli aggiornamenti o le statistiche. Solo due tipi di link aprono il Suo browser: i [video introduttivi](#start) e il link per le donazioni «Sostenere VivaPlan» ([uso](#bedienung)). Gli indirizzi sono fissati nell’app; l’app stessa non carica nulla.
 
 - Le **pianificazioni** si trovano dove salva il file `.vplan`. I percorsi delle ultime pianificazioni aperte o salvate (elenco «Aperti di recente») figurano nel file `einstellungen.json` nella cartella dei dati dell’app.
 - Le **serie temporali** (la biblioteca di dati) si trovano nella cartella dei dati dell’app. Con macOS è `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

@@ -5,6 +5,8 @@ Mots-clés: vue d’ensemble, but, planification de la retraite, simulation
 
 VivaPlan répond à la question qui se pose avant la retraite: **l’argent suffira-t-il, et avec quelle certitude?**
 
+> Vidéo: [VivaPlan en 2 minutes](video:2min) montre la vue d’ensemble (ouvre le navigateur).
+
 L’application calcule votre avenir financier mois par mois, d’aujourd’hui jusqu’à la fin de la planification. Elle connaît les particularités suisses:
 
 - caisse de pension (2e pilier) avec taux de conversion et retrait en capital, AVS (1er pilier) et pilier 3a
@@ -24,6 +26,8 @@ La structure:
 ## @quickstart Première planification en dix minutes
 Mots-clés: guide, début, tutoriel, étapes
 
+> Vidéo: [VivaPlan en 10 minutes](video:10min) guide à travers la première planification (ouvre le navigateur).
+
 Commencez avec la planification d’exemple chargée à l’ouverture et adaptez-la pas à pas à votre situation.
 
 La liste de contrôle **«Premiers pas»**, à droite au-dessus du contrôle, vous guide à travers les mêmes huit étapes. Un clic sur une étape ouvre la section, ⓘ l’aide correspondante. Une section est considérée comme effectuée dès que vous y modifiez une valeur ou que vous la cochez à la main; «Annuler» n’enlève pas la coche. «Lancer la simulation» est effectué dès qu’une simulation s’est terminée sans interruption. Avec ✕, vous masquez la liste; vous la réaffichez par *Aide → Premiers pas*. Lorsque toutes les étapes sont effectuées, elle se replie. La progression vaut pour vous sur cet appareil, pas pour une planification en particulier, et ne figure pas dans le fichier de planification.
@@ -42,7 +46,7 @@ Le contrôle en bas à droite affiche les erreurs et les avertissements avant m�
 > Conseil: appuyez sur **F1** dans un champ de saisie, et l’aide relative à ce champ apparaît.
 
 ## @bedienung Utilisation et raccourcis clavier
-Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue, ouverts récemment, soutenir, don, café
+Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue, ouverts récemment, soutenir, don, café, vidéo, vidéo d’introduction
 
 - **Fichier:** Nouveau (une **planification vide avec les valeurs standard**: départ le mois en cours, sans nom de projet, une personne sans nom, aucun montant ni bien immobilier; les rendements, barèmes fiscaux et paramètres des stratégies reprennent les valeurs standard), Ouvrir, Ouverts récemment, Enregistrer, Enregistrer sous. Une planification est un fichier unique avec l’extension `.vplan`. Il peut être copié et archivé.
 - **Ouverts récemment:** Le sous-menu sous Fichier → Ouvrir montre jusqu’à 10 planifications que vous avez ouvertes ou enregistrées en dernier, la plus récente en haut (nom du fichier sans `.vplan`; avec le dossier si les noms sont identiques). Un clic ouvre la planification comme «Ouvrir…»; s’il y a des modifications non enregistrées, l’app demande d’abord. Si le fichier n’existe plus, l’app le signale et retire l’entrée. «Effacer la liste» vide la liste; si elle est vide, elle affiche «Aucune entrée».
@@ -55,6 +59,7 @@ Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue,
 - **Ligne du temps:** au-dessus de l’éditeur, elle montre tous les jalons. Un clic dessus ouvre les jalons. Sous la ligne figurent les **événements immobiliers** de l’aperçu (triangles verts pour l’achat et la vente, orange pour les ventes forcées) avec une brève légende comme ‹Achat Wohnung 09.2027›. Au-delà de 15 événements, seuls les symboles apparaissent; le texte figure alors dans l’infobulle.
 - **Valeurs dépendant du temps:** de nombreux montants peuvent être saisis comme constante ou comme suite de valeurs, voir [Valeurs dépendant du temps](#f-timed).
 - **Langue:** menu *Affichage → Langue* ou les [paramètres](#f-settings). Le changement agit immédiatement; la planification et la vue sont conservées. L’aide apparaît dans la langue choisie; si un chapitre n’est pas encore traduit, il apparaît en allemand.
+- **Vidéos d’introduction:** *Aide → Vidéos d’introduction …* affiche les vidéos «VivaPlan en 2 minutes» et «VivaPlan en 10 minutes»; la boîte de dialogue de bienvenue contient le lien «Regarder VivaPlan en 2 minutes». Un clic ouvre la vidéo dans la langue choisie dans votre navigateur (Internet Archive).
 - **Soutenir VivaPlan:** VivaPlan est gratuit. Si vous souhaitez soutenir librement l’auteur en lui offrant un café: *Aide → Soutenir VivaPlan…*, la ligne «☕ Soutenir VivaPlan» en bas de la navigation ou le lien dans la fenêtre «À propos de VivaPlan» ouvrent la page buymeacoffee.com/vivaplan dans votre navigateur. L’application elle-même ne charge rien depuis Internet.
 
 La liste complète des raccourcis clavier figure dans le menu *Aide → Raccourcis clavier* et dans le [chapitre de référence](#ref-shortcuts).
@@ -62,7 +67,7 @@ La liste complète des raccourcis clavier figure dans le menu *Aide → Raccourc
 ## @privacy Protection des données et données locales
 Mots-clés: Internet, cloud, emplacement, sécurité, réseau, protection des données
 
-Toutes les données restent sur votre ordinateur. L’application ne se connecte jamais à Internet, ni pour les données, ni pour les mises à jour, ni pour des analyses.
+Toutes les données restent sur votre ordinateur. L’application ne se connecte jamais à Internet, ni pour les données, ni pour les mises à jour, ni pour des analyses. Seuls deux types de liens ouvrent votre navigateur: les [vidéos d’introduction](#start) et le lien de don «Soutenir VivaPlan» ([utilisation](#bedienung)). Les adresses sont fixées dans l’application; l’application elle-même ne charge rien.
 
 - Les **planifications** se trouvent là où vous enregistrez le fichier `.vplan`. Les chemins des planifications ouvertes ou enregistrées en dernier (liste «Ouverts récemment») figurent dans le fichier `einstellungen.json` du dossier de données de l’application.
 - Les **séries temporelles** (la bibliothèque de données) se trouvent dans le dossier de données de l’application. Sous macOS, il s’agit de `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

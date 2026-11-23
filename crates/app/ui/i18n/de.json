@@ -2002,5 +2002,15 @@
   "menu.file.recent": "Zuletzt geöffnet",
   "menu.file.recentClear": "Liste löschen",
   "menu.file.recentEmpty": "Keine Einträge",
-  "file.recentMissing": "Die Datei «{file}» gibt es nicht mehr. Sie wurde aus der Liste «Zuletzt geöffnet» entfernt."
+  "file.recentMissing": "Die Datei «{file}» gibt es nicht mehr. Sie wurde aus der Liste «Zuletzt geöffnet» entfernt.",
+  "menu.help.videos": "Einführungsvideos …",
+  "videos.browser": "Ein Klick öffnet das Video im Browser.",
+  "videos.length": "{min} Minuten",
+  "videos.long": "VivaPlan in 10 Minuten",
+  "videos.longText": "Die erste Planung Schritt für Schritt.",
+  "videos.short": "VivaPlan in 2 Minuten",
+  "videos.shortText": "Überblick: was VivaPlan kann.",
+  "videos.title": "Einführungsvideos",
+  "welcome.video": "▶ VivaPlan in 2 Minuten ansehen",
+  "welcome.videoTitle": "Öffnet das Video im Browser"
 }

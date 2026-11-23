@@ -5,6 +5,8 @@ Stichworte: Übersicht, Zweck, Pensionsplanung, Simulation
 
 VivaPlan beantwortet die Frage, die sich vor der Pensionierung stellt: **Reicht das Geld, und wie sicher ist das?**
 
+> Video: [VivaPlan in 2 Minuten](video:2min) zeigt den Überblick (öffnet den Browser).
+
 Die App rechnet Ihre finanzielle Zukunft Monat für Monat durch, vom heutigen Tag bis zum Ende der Planung. Sie kennt die Schweizer Eigenheiten:
 
 - Pensionskasse (2. Säule) mit Umwandlungssatz und Kapitalbezug, AHV (1. Säule) und Säule 3a
@@ -24,6 +26,8 @@ Der Aufbau:
 ## @quickstart Erste Planung in zehn Minuten
 Stichworte: Anleitung, Beginn, Tutorial, Schritte
 
+> Video: [VivaPlan in 10 Minuten](video:10min) führt durch die erste Planung (öffnet den Browser).
+
 Starten Sie mit der Beispielplanung, die beim Öffnen geladen ist, und ändern Sie sie Schritt für Schritt auf Ihre Verhältnisse.
 
 Die Checkliste **«Erste Schritte»** rechts über der Prüfung führt durch dieselben acht Schritte. Ein Klick auf einen Schritt öffnet den Abschnitt, ⓘ die Hilfe dazu. Ein Abschnitt gilt als erledigt, sobald Sie darin einen Wert ändern oder ihn von Hand abhaken; «Rückgängig» nimmt den Haken nicht weg. «Simulation starten» ist erledigt, sobald eine Simulation ohne Abbruch durchgelaufen ist. Mit ✕ blenden Sie die Liste aus, über *Hilfe → Erste Schritte* wieder ein. Sind alle Schritte erledigt, klappt sie zu. Der Fortschritt gilt für Sie auf diesem Gerät, nicht für eine einzelne Planung, und steht nicht in der Planungsdatei.
@@ -42,7 +46,7 @@ Die Prüfung rechts unten zeigt Fehler und Hinweise, noch bevor Sie rechnen. Feh
 > Tipp: Drücken Sie **F1** in einem Eingabefeld, dann erscheint genau die Hilfe zu diesem Feld.
 
 ## @bedienung Bedienung und Tastenkürzel
-Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache, zuletzt geöffnet, unterstützen, Spende, Kaffee
+Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache, zuletzt geöffnet, unterstützen, Spende, Kaffee, Video, Einführungsvideo
 
 - **Datei:** Neu (eine **leere Planung mit Standardwerten**: Start im aktuellen Monat, ohne Projektname, eine Person ohne Namen, keine Beträge und Immobilien; Renditen, Steuertabellen und Strategieparameter übernehmen die Standardwerte), Öffnen, Zuletzt geöffnet, Speichern, Speichern unter. Eine Planung ist eine einzelne Datei mit der Endung `.vplan`. Sie lässt sich kopieren und archivieren.
 - **Zuletzt geöffnet:** Das Untermenü unter Datei → Öffnen zeigt die bis zu 10 Planungen, die Sie zuletzt geöffnet oder gespeichert haben, die neueste zuoberst (Dateiname ohne `.vplan`; bei gleichen Namen mit dem Ordner). Ein Klick öffnet die Planung wie «Öffnen …»; bei ungespeicherten Änderungen fragt die App zuerst nach. Gibt es die Datei nicht mehr, meldet die App das und entfernt den Eintrag. «Liste löschen» leert die Liste; ist sie leer, steht dort «Keine Einträge».
@@ -55,6 +59,7 @@ Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache, zule
 - **Zeitleiste:** Über dem Editor zeigt sie alle Meilensteine. Ein Klick darauf öffnet die Meilensteine. Unter der Linie stehen die **Immobilienereignisse** der Vorschau (grüne Dreiecke für Kauf und Verkauf, orange für Notverkäufe) mit Kurzbeschriftung wie «Kauf Wohnung 09.2027». Bei mehr als 15 Ereignissen erscheinen nur die Symbole, der Text steht dann im Tooltip.
 - **Zeitabhängige Werte:** Viele Beträge lassen sich als Konstante oder als Abfolge von Werten erfassen, siehe [Zeitabhängige Werte](#f-timed).
 - **Sprache:** Menü *Ansicht → Sprache* oder die [Einstellungen](#f-settings). Der Wechsel wirkt sofort; Planung und Ansicht bleiben. Die Hilfe erscheint in der gewählten Sprache; ist ein Kapitel noch nicht übersetzt, erscheint es deutsch.
+- **Einführungsvideos:** *Hilfe → Einführungsvideos …* zeigt die Videos «VivaPlan in 2 Minuten» und «VivaPlan in 10 Minuten»; der Willkommensdialog hat den Link «VivaPlan in 2 Minuten ansehen». Ein Klick öffnet das Video in der eingestellten Sprache in Ihrem Browser (Internet Archive).
 - **VivaPlan unterstützen:** VivaPlan ist kostenlos. Wenn Sie den Autor freiwillig mit einem Kaffee unterstützen möchten: *Hilfe → VivaPlan unterstützen…*, die Zeile «☕ VivaPlan unterstützen» unten in der Navigation oder der Link im Fenster «Über VivaPlan» öffnen die Seite buymeacoffee.com/vivaplan in Ihrem Browser. Die App selbst lädt dabei nichts aus dem Internet.
 
 Die vollständige Liste der Tastenkürzel steht im Menü *Hilfe → Tastenkürzel* und im [Referenzkapitel](#ref-shortcuts).
@@ -62,7 +67,7 @@ Die vollständige Liste der Tastenkürzel steht im Menü *Hilfe → Tastenkürze
 ## @privacy Datenschutz und lokale Daten
 Stichworte: Internet, Cloud, Speicherort, Sicherheit, Netzwerk
 
-Alle Daten bleiben auf Ihrem Rechner. Die App verbindet sich nie mit dem Internet, auch nicht für die Daten, Updates oder Auswertungen.
+Alle Daten bleiben auf Ihrem Rechner. Die App verbindet sich nie mit dem Internet, auch nicht für die Daten, Updates oder Auswertungen. Nur zwei Arten von Links öffnen Ihren Browser: die [Einführungsvideos](#start) und der Spendenlink «VivaPlan unterstützen» ([Bedienung](#bedienung)). Die Adressen stehen fest in der App; die App selbst lädt dabei nichts.
 
 - **Planungen** liegen dort, wo Sie die `.vplan`-Datei speichern. Die Pfade der zuletzt geöffneten oder gespeicherten Planungen (Liste «Zuletzt geöffnet») stehen in der Datei `einstellungen.json` im Datenordner der App.
 - **Zeitreihen** (die Datenbibliothek) liegen im Datenordner der App. Unter macOS ist das `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

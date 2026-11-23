@@ -1,3 +1,11 @@
 {
-  "donate": "https://buymeacoffee.com/vivaplan"
+  "donate": "https://buymeacoffee.com/vivaplan",
+  "video-2min-de": "https://archive.org/details/vivaplan-video-de/vivaplan-2min.mp4",
+  "video-10min-de": "https://archive.org/details/vivaplan-video-de/vivaplan-10min.mp4",
+  "video-2min-en": "https://archive.org/details/vivaplan-video-en/vivaplan-2min.mp4",
+  "video-10min-en": "https://archive.org/details/vivaplan-video-en/vivaplan-10min.mp4",
+  "video-2min-fr": "https://archive.org/details/vivaplan-video-fr/vivaplan-2min.mp4",
+  "video-10min-fr": "https://archive.org/details/vivaplan-video-fr/vivaplan-10min.mp4",
+  "video-2min-it": "https://archive.org/details/vivaplan-video-it/vivaplan-2min.mp4",
+  "video-10min-it": "https://archive.org/details/vivaplan-video-it/vivaplan-10min.mp4"
 }
