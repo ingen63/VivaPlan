@@ -1644,6 +1644,22 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #228/AK4 | Andere Zeitreihen, die `.row` verwenden (z. B. Erwerbseinkommen, Wohnort #151), sehen aus wie vorher. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK4` | 23.11.2026 ok (`.row` unverändert, Wohnort mit 4 Spalten; Tests #151, ui-eingaben, ui-textfit grün) |
 | #228/AK5 | Ein Oberflächentest prüft für beide Arten von Zeilen, dass der Wert mindestens 200 px breit ist und der Knopf ✕ auf … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok |
 
+### #229 Steuerwert je Immobilie für die Vermögenssteuer
+
+[Issue #229](https://github.com/ingen63/VivaPlan/issues/229) · geschlossen · Umsetzung: 7a77f92
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #229/AK1 | Jede Immobilie im Besitz oder mit geplantem Kauf hat ein Feld «Steuerwert»: entweder als Betrag oder in % des … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1` | 23.11.2026 ok (Besitz und Kauf geplant mit Feld, Miete ohne; Wechsel Betrag ↔ % behält den Wert) |
+| #229/AK2 | Das steuerbare Vermögen enthält je Immobilie den Steuerwert minus die Hypothek, statt Marktwert minus Hypothek. … | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak2_…` | 23.11.2026 ok (Handwert 1'000'000 / 650'000 / 400'000 ergibt 250'000; als Betrag und als 65 %) |
+| #229/AK3 | Ein Steuerwert als Betrag behält sein Verhältnis zum Marktwert: Steigt der Marktwert mit der Teuerung, steigt der … | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak3_…` | 23.11.2026 ok (Verhältnis 65 % mit 2 % Teuerung; geplanter Kauf bezogen auf den Kaufpreis; Basis 0) |
+| #229/AK4 | Ohne Steuerwert gilt der Marktwert wie bisher; es gibt keine Vorgabe (auch nicht für neue Immobilien). … | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak4_…`, Golden-Tests, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1` | 23.11.2026 ok (Golden unverändert, keine Vorgabe in der Oberfläche) |
+| #229/AK5 | Vermögen, Ergebnisse, Grundstückgewinnsteuer, Tragbarkeit und Notverkauf rechnen weiter mit dem Marktwert; nur … | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak5_…` | 23.11.2026 ok (Marktwert, Eigenkapital, Grundstückgewinnsteuer gleich; Tragbarkeit und Notverkauf im Code: nur die Vermögenssteuer nutzt `tax_equity`) |
+| #229/AK6 | Ungültige Werte (negativer Betrag, Prozent ausserhalb von 0–100 %) meldet die Prüfung als Fehler an der Immobilie. | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak6_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK6` | 23.11.2026 ok (Fehler am Feld `taxValue.value`) |
+| #229/AK7 | Die Steuerzerlegung zeigt beim Vermögen den Steuerwert der Immobilien als eigene Zeile. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK7` | 23.11.2026 ok (eigene Spalte «Steuerwert Immobilien» in den Jahreswerten mit Steuerspalten) |
+| #229/AK8 | Ein Test belegt das Beispiel aus AK2 mit Handwert; ein Test belegt, dass Planungen ohne Steuerwert unverändert … | ☑ | **gilt** | [property_tax_value.rs](../crates/engine/tests/property_tax_value.rs) `issue_229_ak2_…`, `issue_229_ak4_…` | 23.11.2026 ok |
+| #229/AK9 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. Die Hilfe nennt: oft 60–80 % des Marktwerts, bei … | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it, `BESCHREIBUNG.md`, `ENTWICKLUNG.md`, Glossar; Durchsicht) |
+
 ### #232 Erwerbseinkommen als Jahresbetrag wie in der Steuererklärung
 
 [Issue #232](https://github.com/ingen63/VivaPlan/issues/232) · geschlossen · Umsetzung: 5b581d1
