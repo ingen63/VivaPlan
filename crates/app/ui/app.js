@@ -1689,7 +1689,7 @@ function renderNav(vals) {
   const nav = $("#nav");
   if (nav.querySelectorAll("a[data-sec]").length !== SECTIONS.length)
     nav.innerHTML = SECTIONS.map((s, i) => `<a data-action="goto" data-sec="${s.id}"><span class="num">${i + 1}</span>${s.title}</a>`).join("")
-      + `<div class="navfoot">${tr("nav.localData")}</div>`;
+      + `<div class="navfoot">${tr("nav.localData")}<a class="navsupport" href="#" data-action="link" data-link="donate" title="${esc(tr("nav.supportTitle"))}">${tr("nav.support")}</a></div>`;
   for (const a of nav.querySelectorAll("a[data-sec]")) {
     const id = a.dataset.sec, e = vals.filter(v => v.sec === id && v.sev === "err").length, w = vals.filter(v => v.sec === id && v.sev === "warn").length;
     a.classList.toggle("active", id === current);
@@ -1989,18 +1989,36 @@ function command(id) {
   if (id === "about") return showAbout();
   if (id === "welcome") return showWelcome();
   if (id === "steps") return Steps.show();
+  if (id === "support") return openLink("donate");
   if (id === "back") { if (!$("#results").hidden) showResults(false); return; }
   if (/^recent-\d+$/.test(id)) return openRecent(+id.slice(7));
   ACTIONS[id]?.({});
 }
+// #237: External addresses: fixed list in links.json (id → address), the same file the desktop app compiles in. The desktop
+// app opens an entry in the default browser (command open_link takes only ids of the list), the development server
+// in a new browser tab. Nothing is loaded from the internet.
+let linkTable = null;
+async function linkUrl(id) {
+  linkTable ??= fetch("links.json").then(r => r.json());
+  return (await linkTable)[id];
+}
+async function openLink(id) {
+  try {
+    if (Engine.inApp) return await Engine.call("open_link", { id });
+    const url = await linkUrl(id);
+    if (url) window.open(url, "_blank", "noopener");
+  } catch (e) { toast(errText(e)); }
+}
 async function showAbout() {
-  let info = null;
+  let info = null, donate = null;
   try { info = await Engine.call("app_info"); } catch { /* without the engine no details */ }
+  try { donate = (await linkUrl("donate"))?.replace(/^https:\/\//, ""); } catch { /* without the list no link */ }
   const built = info?.buildEpoch ? new Date(info.buildEpoch * 1000).toLocaleString("de-CH", { dateStyle: "medium", timeStyle: "medium" }) : tr("about.unknownBuild");
   ask(tr("about.title"), `<p style="margin-top:0">${tr("about.tagline")}</p>
     <table class="tbl" id="aboutTbl"><tr><td class="l">${tr("about.version")}</td><td class="l"><b>${esc(info?.version ?? tr("about.unknownVersion"))}</b></td></tr>
     <tr><td class="l">${tr("about.built")}</td><td class="l"><b>${esc(built)}</b></td></tr>
-    <tr><td class="l">${tr("about.website")}</td><td class="l">vivaplan-app.ch</td></tr></table>
+    <tr><td class="l">${tr("about.website")}</td><td class="l">vivaplan-app.ch</td></tr>
+    ${donate ? `<tr id="aboutSupport"><td class="l">${tr("about.support")}</td><td class="l"><a href="#" data-action="link" data-link="donate" title="${esc(tr("nav.supportTitle"))}">${esc(donate)}</a></td></tr>` : ""}</table>
     <p class="hint">${tr("about.local")}</p>
     <p class="hint" id="aboutDisclaimer">${tr("about.disclaimer", { disclaimerFoot: esc(DISCLAIMER_FOOT) })}</p>`);
 }
@@ -2343,6 +2361,8 @@ const ACTIONS = {
   run: () => runSimulation(),
   help: () => command("help"),
   about: () => command("about"),
+  // #237: external address from the fixed list (links.json), e.g. the donation link
+  link: d => openLink(d.link),
   // #61/AK4: from the dialog «Über VivaPlan» to the full disclaimer in the help
   "about-disclaimer": () => { $("#ask").close(); Help.show("disclaimer"); },
   back: () => showResults(false),

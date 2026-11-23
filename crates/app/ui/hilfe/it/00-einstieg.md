@@ -42,7 +42,7 @@ La verifica in basso a destra mostra errori e avvertenze ancora prima del calcol
 > Consiglio: prema **F1** in un campo d’inserimento e appare esattamente l’aiuto relativo a quel campo.
 
 ## @bedienung Utilizzo e scelte rapide da tastiera
-Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, lingua, aperti di recente
+Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, lingua, aperti di recente, sostenere, donazione, caffè
 
 - **File:** Nuova (una **pianificazione vuota con valori standard**: inizio nel mese attuale, senza nome del progetto, una persona senza nome, nessun importo e nessun immobile; rendimenti, tabelle delle aliquote e parametri delle strategie adottano i valori standard), Aprire, Aperti di recente, Salvare, Salvare con nome. Una pianificazione è un singolo file con l’estensione `.vplan`. Si può copiare e archiviare.
 - **Aperti di recente:** Il sottomenu sotto File → Aprire mostra fino a 10 pianificazioni aperte o salvate per ultime, la più recente in alto (nome del file senza `.vplan`; con la cartella se i nomi sono uguali). Un clic apre la pianificazione come «Aprire…»; se ci sono modifiche non salvate, l’app chiede prima. Se il file non esiste più, l’app lo segnala e rimuove la voce. «Cancella elenco» svuota l’elenco; se è vuoto, mostra «Nessuna voce».
@@ -55,6 +55,7 @@ Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, ling
 - **Linea del tempo:** sopra l’editor mostra tutte le tappe. Un clic su di essa apre le tappe. Sotto la linea figurano gli **eventi immobiliari** dell’anteprima (triangoli verdi per acquisto e vendita, arancioni per le vendite forzate) con una breve didascalia come ‹Acquisto Wohnung 09.2027›. Con più di 15 eventi appaiono solo i simboli, il testo figura allora nel tooltip.
 - **Valori dipendenti dal tempo:** molti importi si possono registrare come costante o come sequenza di valori, vedi [Valori dipendenti dal tempo](#f-timed).
 - **Lingua:** menu *Vista → Lingua* o le [Impostazioni](#f-settings). Il cambio ha effetto subito; pianificazione e vista restano. L’aiuto appare nella lingua scelta; se un capitolo non è ancora tradotto, appare in tedesco.
+- **Sostenere VivaPlan:** VivaPlan è gratuito. Se desidera sostenere liberamente l’autore offrendogli un caffè: *Aiuto → Sostenere VivaPlan…*, la riga «☕ Sostenere VivaPlan» in fondo alla navigazione o il link nella finestra «Informazioni su VivaPlan» aprono la pagina buymeacoffee.com/vivaplan nel Suo browser. L’app stessa non carica nulla da Internet.
 
 L’elenco completo delle scelte rapide da tastiera si trova nel menu *Aiuto → Scelte rapide da tastiera* e nel [capitolo di riferimento](#ref-shortcuts).
 

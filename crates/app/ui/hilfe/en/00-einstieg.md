@@ -42,7 +42,7 @@ The validation at the bottom right shows errors and warnings even before you cal
 > Tip: Press **F1** in an input field to open the help for exactly that field.
 
 ## @bedienung Operation and keyboard shortcuts
-Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent
+Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent, support, donation, coffee
 
 - **File:** New (an **empty plan with default values**: start in the current month, no project name, one person without a name, no amounts and no real estate; returns, tax tables and strategy parameters take the default values), Open, Open Recent, Save, Save as. A plan is a single file with the extension `.vplan`. It can be copied and archived.
 - **Open Recent:** The submenu below File → Open shows the up to 10 plans you opened or saved last, the most recent at the top (file name without `.vplan`; with the folder if names are equal). A click opens the plan like “Open…”; with unsaved changes the app asks first. If the file no longer exists, the app says so and removes the entry. “Clear List” empties the list; if it is empty, it shows “No Entries”.
@@ -55,6 +55,7 @@ Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent
 - **Timeline:** Above the editor, it shows all milestones. A click on it opens the milestones. Below the line are the **real estate events** of the preview (green triangles for purchase and sale, orange for emergency sales) with a short label such as ‘Purchase Wohnung 09.2027’. With more than 15 events, only the symbols appear; the text is then in the tooltip.
 - **Time-dependent values:** Many amounts can be entered as a constant or as a sequence of values, see [Time-dependent values](#f-timed).
 - **Language:** Menu *View → Language* or the [settings](#f-settings). The change takes effect immediately; plan and view stay. The help is shown in the chosen language; where a chapter is not yet translated, it appears in German.
+- **Support VivaPlan:** VivaPlan is free. If you would like to support the author voluntarily with a coffee: *Help → Support VivaPlan…*, the line “☕ Support VivaPlan” at the bottom of the navigation or the link in the window “About VivaPlan” open the page buymeacoffee.com/vivaplan in your browser. The app itself loads nothing from the internet.
 
 The complete list of keyboard shortcuts is in the menu *Help → Keyboard shortcuts* and in the [reference chapter](#ref-shortcuts).
 

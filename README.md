@@ -103,6 +103,11 @@ make test        # alle Rust-Tests mit nextest (nicht cargo test; Grund in docs/
 
 Fehler und Wünsche gern als [Issue](https://github.com/ingen63/VivaPlan/issues).
 
+## Unterstützen
+
+VivaPlan ist kostenlos. Wenn Sie das Projekt nützlich finden, können Sie es freiwillig mit einem Kaffee unterstützen:
+[buymeacoffee.com/vivaplan](https://buymeacoffee.com/vivaplan).
+
 ## Lizenz
 
 Programmcode: [GPL v3](LICENSE). Die mitgelieferten Zeitreihen fallen nicht darunter; die Rechte an den Grunddaten

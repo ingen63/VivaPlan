@@ -307,6 +307,12 @@ oder der Grafik, an der man gerade arbeitet. Das Handbuch mit Suche erklärt jed
 Optimierung ausführlich. Menüs und die üblichen Tastenkürzel (neu, öffnen, speichern, Simulation starten, Rückgängig,
 Wiederholen, Wechsel der Abschnitte) sind vorhanden, ebenso ein «Über»-Fenster mit Version und Buildzeit.
 
+**VivaPlan unterstützen (#237):** Wer VivaPlan nützlich findet, kann den Autor freiwillig über «Buy me a coffee»
+unterstützen: Menü *Hilfe → VivaPlan unterstützen…*, eine unauffällige graue Zeile «☕ VivaPlan unterstützen» unten in der
+Navigation und die Zeile «Unterstützen» im «Über»-Fenster öffnen https://buymeacoffee.com/vivaplan im Standardbrowser des
+Systems. Kein Popup, kein Hinweis beim Start. Die App lädt dafür nichts aus dem Netz (kein Logo, kein Zähler, keine
+Prüfung der Seite); sie öffnet nur Adressen aus einer festen Liste (`crates/app/ui/links.json`).
+
 **Darstellung:** «System» (Vorgabe), «Hell» oder «Dunkel» (#220). «System» folgt dem hellen oder dunklen
 Erscheinungsbild des Betriebssystems, auch wenn es zur Laufzeit wechselt. Das gewählte Thema gilt für die ganze
 Oberfläche, auch für Auswahlmenüs, Eingabefelder, Dialoge, Hilfe und Diagramme; das helle Thema sieht unter einem

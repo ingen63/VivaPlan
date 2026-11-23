@@ -36,6 +36,7 @@
     "set_window_title",
     "save_plan",
     "import_legacy",
-    "pick_series"
+    "pick_series",
+    "open_link"
   ]
 }

@@ -209,6 +209,14 @@ und <http://127.0.0.1:8787/> öffnen; der Server lauscht nur lokal.
 ⌘I alte config.json importieren, ⌘↩ Simulation starten, Esc zurück zum Editor, ⌘Z / ⇧⌘Z rückgängig / wiederholen
 (ganze Planung), ⌘1 … ⌘0 Abschnitt bzw. Registerkarte, ⌘↑ / ⌘↓ voriger / nächster Abschnitt, ⌘/ Übersicht.
 
+**Externe Links (#237):** Die feste Adressliste steht an einer Stelle, `crates/app/ui/links.json` (Kennung → Adresse,
+nur `https://`). Die App bindet sie mit `include_str!` ein (`crates/app/src/links.rs`); der Befehl `open_link` nimmt
+nur eine Kennung der Liste entgegen und öffnet die Adresse mit `tauri_plugin_opener::open_url` im Standardbrowser.
+Das Plugin wird nicht registriert, die Oberfläche hat also keinen Zugriff auf seine JavaScript-Schnittstelle und die
+Berechtigungen (`capabilities/default.json`) bleiben bei `core:default`. Die Oberfläche ruft `openLink(kennung)` auf;
+im Browser (`ui-dev`) öffnet sie die Adresse aus derselben Liste in einem neuen Tab. Eine neue Adresse ist eine Zeile
+in `links.json` (z. B. die Videos aus #240).
+
 **Ergebnisse:** Registerkarten Übersicht, Grafiken, Einzelne Läufe (5./50./95. Perzentil), Szenarien, Jahreswerte;
 alle Beträge wahlweise nominal oder in heutiger Kaufkraft (Preise des Simulationsstarts). Grafiken eines Laufs:
 Vermögensverlauf, liquides Vermögen nach Anlage (Beträge oder Anteile), Einnahmen und Ausgaben pro Jahr,

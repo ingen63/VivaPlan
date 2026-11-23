@@ -42,7 +42,7 @@ Le contrôle en bas à droite affiche les erreurs et les avertissements avant m�
 > Conseil: appuyez sur **F1** dans un champ de saisie, et l’aide relative à ce champ apparaît.
 
 ## @bedienung Utilisation et raccourcis clavier
-Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue, ouverts récemment
+Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue, ouverts récemment, soutenir, don, café
 
 - **Fichier:** Nouveau (une **planification vide avec les valeurs standard**: départ le mois en cours, sans nom de projet, une personne sans nom, aucun montant ni bien immobilier; les rendements, barèmes fiscaux et paramètres des stratégies reprennent les valeurs standard), Ouvrir, Ouverts récemment, Enregistrer, Enregistrer sous. Une planification est un fichier unique avec l’extension `.vplan`. Il peut être copié et archivé.
 - **Ouverts récemment:** Le sous-menu sous Fichier → Ouvrir montre jusqu’à 10 planifications que vous avez ouvertes ou enregistrées en dernier, la plus récente en haut (nom du fichier sans `.vplan`; avec le dossier si les noms sont identiques). Un clic ouvre la planification comme «Ouvrir…»; s’il y a des modifications non enregistrées, l’app demande d’abord. Si le fichier n’existe plus, l’app le signale et retire l’entrée. «Effacer la liste» vide la liste; si elle est vide, elle affiche «Aucune entrée».
@@ -55,6 +55,7 @@ Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue,
 - **Ligne du temps:** au-dessus de l’éditeur, elle montre tous les jalons. Un clic dessus ouvre les jalons. Sous la ligne figurent les **événements immobiliers** de l’aperçu (triangles verts pour l’achat et la vente, orange pour les ventes forcées) avec une brève légende comme ‹Achat Wohnung 09.2027›. Au-delà de 15 événements, seuls les symboles apparaissent; le texte figure alors dans l’infobulle.
 - **Valeurs dépendant du temps:** de nombreux montants peuvent être saisis comme constante ou comme suite de valeurs, voir [Valeurs dépendant du temps](#f-timed).
 - **Langue:** menu *Affichage → Langue* ou les [paramètres](#f-settings). Le changement agit immédiatement; la planification et la vue sont conservées. L’aide apparaît dans la langue choisie; si un chapitre n’est pas encore traduit, il apparaît en allemand.
+- **Soutenir VivaPlan:** VivaPlan est gratuit. Si vous souhaitez soutenir librement l’auteur en lui offrant un café: *Aide → Soutenir VivaPlan…*, la ligne «☕ Soutenir VivaPlan» en bas de la navigation ou le lien dans la fenêtre «À propos de VivaPlan» ouvrent la page buymeacoffee.com/vivaplan dans votre navigateur. L’application elle-même ne charge rien depuis Internet.
 
 La liste complète des raccourcis clavier figure dans le menu *Aide → Raccourcis clavier* et dans le [chapitre de référence](#ref-shortcuts).
 

@@ -4,6 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod i18n;
+mod links;
 mod migrate;
 mod recent;
 
@@ -624,6 +625,15 @@ fn app_info<R: Runtime>(app: AppHandle<R>) -> Value {
     })
 }
 
+/// #237: opens an entry of the fixed list of addresses (`ui/links.json`) in the default browser of the system; the
+/// user interface passes only the id. Without the plugin's JavaScript interface, so no permission is needed.
+#[tauri::command]
+fn open_link(id: String) -> Result<(), String> {
+    links::open_with(&id, |url| {
+        tauri_plugin_opener::open_url(url, None::<&str>).map_err(|e| e.to_string())
+    })
+}
+
 /// Computing time per run, for the duration estimate of scenarios and optimization.
 #[tauri::command]
 async fn bench_plan<R: Runtime>(
@@ -936,7 +946,8 @@ const VIEW_TITLE: &str = "menu.view";
 const HELP_TITLE: &str = "menu.help";
 
 /// #70/#71: «Willkommen …» opens the welcome dialog, «Erste Schritte» shows the checklist.
-const HELP_MENU: [Entry; 8] = [
+/// #237: «VivaPlan unterstützen…» opens the donation link in the browser, before «Über VivaPlan».
+const HELP_MENU: [Entry; 9] = [
     ("helpctx", "menu.help.topic", "F1"),
     ("manual", "menu.help.manual", "CmdOrCtrl+Shift+/"),
     ("help", "menu.help.shortcuts", "CmdOrCtrl+/"),
@@ -944,6 +955,7 @@ const HELP_MENU: [Entry; 8] = [
     ("welcome", "menu.help.welcome", ""),
     ("steps", "menu.help.steps", ""),
     SEP,
+    ("support", "menu.help.support", ""),
     ("about", "menu.about", ""),
 ];
 
@@ -1178,7 +1190,8 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             set_window_title,
             save_plan,
             import_legacy,
-            pick_series
+            pick_series,
+            open_link
         ])
 }
 
@@ -2937,6 +2950,25 @@ mod tests {
         let help: Vec<_> = HELP_MENU.iter().map(de).collect();
         assert!(help.contains(&("welcome", "Willkommen …".into(), "")));
         assert!(help.contains(&("steps", "Erste Schritte".into(), "")));
+    }
+
+    /// #237/AK1: menu «Hilfe» has «VivaPlan unterstützen…» directly before «Über VivaPlan».
+    #[test]
+    fn issue_237_ak1_help_menu_support_before_about() {
+        let help: Vec<_> = HELP_MENU.iter().map(de).collect();
+        let n = help.len();
+        assert_eq!(help[n - 2], ("support", "VivaPlan unterstützen…".into(), ""));
+        assert_eq!(help[n - 1].0, "about");
+    }
+
+    /// #237/AK2: the command `open_link` rejects an address or an id outside the fixed list (nothing is opened).
+    #[test]
+    fn issue_237_ak2_open_link_rejects_addresses() {
+        let (_app, w, _guard) = setup();
+        for id in ["https://example.com", "unknown"] {
+            let e = call(&w, "open_link", json!({ "id": id })).expect_err(id);
+            assert!(error_text(&e).contains("unknown link"), "{e}");
+        }
     }
 
     #[test]
