@@ -1,5 +1,32 @@
 # Changelog
 
+## Version 1.0.0-beta.3
+
+Dritte Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.3; Installationspakete gibt es vorerst nur für macOS (#202).
+
+### Kann Ergebnisse ändern
+
+- **Steuern nach Kanton und Gemeinde (#63, #64, #65, #66):** Einkommens-, Vermögens- und Kapitalbezugssteuer rechnen im Modus «Wohnort» nach Kanton und Gemeinde, die Grundstückgewinnsteuer nach dem Kanton der Immobilie. Tarife wachsen mit der Teuerung, der Zweitverdienerabzug wirkt für Erwerbstätige.
+- **Abzüge und Wohnort (#131, #151, #152, #228–#232):** Abzüge vom Einkommen mit Vorschlag des Kantons oder eigenen Zeilen, zusätzliche und einmalige Abzüge, Abzüge vom Vermögen, Steuerwert je Immobilie, Erwerbseinkommen als Jahresbetrag, zeitabhängiger Wohnort und grosse Säule 3a für Personen ohne Pensionskasse.
+- **AHV (#190, #191, #198):** Die 13. AHV-Rente wird im Dezember ausbezahlt und zählt im Netto-Bedarf der 3-Topf-Strategie. Vorbezug und Aufschub kürzen bzw. erhöhen die Rente; der Plafond für Ehepaare gilt gesetzeskonform.
+- **Immobilien und Strategien (#199, #204, #239):** Nicht tragbare Erneuerungen bei «Immobilien nie verkaufen» zählen; die Grenzen der Lebenshaltung gelten bei VPW und Endowment auch im Vergleich und in der Optimierung; Leitplanken ohne liquides Vermögen passen nichts an.
+- **Erwerbseinkommen (#236):** Auf Wunsch endet das Erwerbseinkommen mit dem Bezug der Pensionskasse.
+
+### Neu, geändert, behoben
+
+- **Strategien vergleichen (#196, #197, #200, #201, #205):** Strategien lassen sich ohne Optimierung vergleichen, Ergebnisse der Optimierung speichern und wieder öffnen; Schalter «Immobilien nie verkaufen»; Hinweis, wenn die Untergrenze die Ausgaben bestimmt; Ergebnistabelle ohne waagrechtes Scrollen.
+- **Dunkles Theme (#220, #235):** Einstellung «Darstellung» mit hellem und dunklem Theme; besserer Kontrast im Menü.
+- **Bedienung (#143, #227, #233, #234, #241):** Steuern als Schätzung gekennzeichnet, zuletzt geöffnete Planungen im Menü «Datei», Tragbarkeit in den Einstellungen, lesbare Meldungen des Rechenkerns, übersichtlichere Karte «Abzüge vom Einkommen» mit Text für den Zweitverdienerabzug.
+- **Einführungsvideos (#240, #242):** «VivaPlan in 2 Minuten» und «in 10 Minuten» in vier Sprachen, aus Menü «Hilfe», Willkommensdialog und Hilfe; sie öffnen den Browser.
+- **Unterstützen (#237):** Freiwilliger Spendenlink «Buy me a coffee» im Menü «Hilfe», in der Navigation und unter «Über VivaPlan»; er öffnet den Browser.
+- **Kommandozeile für KIs (#207, #215):** JSON-Ausgabe und Werte per Feldpfad ändern; Renditepfade werden für mehrere Varianten wiederverwendet (schneller).
+
+### Tests und Entwicklung
+
+- Golden-Zahlen im Push-Lauf verglichen (#195), Wertänderung der Liegenschaften unabhängig nachgerechnet (#194), Anforderungsbezug der Tests erweitert (#192).
+- Robustheitstest aller Rechenbefehle (#221), Funde der Eigenschaftstests als Regressionstests (#223), Rust-Tests unter Windows (#225), übersprungene Tests als Fehler (#224), Laufzeitgrenze je Test (#226), Regeln für den Test-Agenten (#222).
+- Release Notes in vier Sprachen mit sprachneutralem Titel (#188); mutants-diff wöchentlich (#202).
+
 ## Version 1.0.0-beta.2
 
 Zweite Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.2.

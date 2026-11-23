@@ -2,6 +2,33 @@
 
 Traduzione italiana di `CHANGELOG.md` (tedesco, versione di riferimento) a partire dalla versione 1.0.0-beta.1.
 
+## Versione 1.0.0-beta.3
+
+Terza versione preliminare di 1.0. Il pacchetto di installazione Windows `.msi` porta il numero di versione 1.0.0.3; per ora i pacchetti di installazione vengono creati solo per macOS (#202).
+
+### Può modificare i risultati
+
+- **Imposte secondo cantone e comune (#63, #64, #65, #66):** Nella modalità «Domicilio», l'imposta sul reddito, sulla sostanza e sulle prestazioni in capitale segue cantone e comune, l'imposta sugli utili immobiliari il cantone dell'immobile. Le tariffe crescono con il rincaro, la deduzione per doppio reddito vale per le persone che esercitano un'attività lucrativa.
+- **Deduzioni e domicilio (#131, #151, #152, #228–#232):** Deduzioni dal reddito secondo la proposta del cantone o con righe proprie, deduzioni supplementari e uniche, deduzioni dalla sostanza, valore fiscale per immobile, reddito da attività lucrativa come importo annuo, domicilio variabile nel tempo e grande pilastro 3a per le persone senza cassa pensione.
+- **AVS (#190, #191, #198):** La 13a rendita AVS è versata in dicembre e conta nel fabbisogno netto della strategia dei 3 vasi. Anticipo e rinvio riducono o aumentano la rendita; il plafond per i coniugi è conforme alla legge.
+- **Immobili e strategie (#199, #204, #239):** I rinnovi non sostenibili con «Non vendere mai gli immobili» vengono contati; i limiti delle spese di sostentamento valgono per VPW ed Endowment anche nel confronto e nell'ottimizzazione; i guardrail senza sostanza liquida non adeguano nulla.
+- **Reddito da attività lucrativa (#236):** Su richiesta, il reddito da attività lucrativa termina con il prelievo della cassa pensione.
+
+### Novità, modifiche, correzioni
+
+- **Confrontare strategie (#196, #197, #200, #201, #205):** Le strategie si confrontano senza ottimizzazione, i risultati dell'ottimizzazione si salvano e si riaprono; opzione «Non vendere mai gli immobili»; indicazione quando il limite inferiore determina le spese; tabella dei risultati senza scorrimento orizzontale.
+- **Tema scuro (#220, #235):** Impostazione «Aspetto» con tema chiaro e scuro; contrasto migliore nel menu.
+- **Utilizzo (#143, #227, #233, #234, #241):** Imposte indicate come stima, pianificazioni aperte di recente nel menu «File», sostenibilità nelle impostazioni, messaggi del motore di calcolo leggibili, scheda «Deduzioni dal reddito» più chiara con un testo per la deduzione per doppio reddito.
+- **Video introduttivi (#240, #242):** «VivaPlan in 2 minuti» e «in 10 minuti» in quattro lingue, dal menu «Aiuto», dalla finestra di benvenuto e dall'aiuto; aprono il browser.
+- **Sostenere (#237):** Link facoltativo per una donazione «Buy me a coffee» nel menu «Aiuto», nella navigazione e sotto «Informazioni su VivaPlan»; apre il browser.
+- **Riga di comando per le IA (#207, #215):** Output JSON e modifica dei valori tramite percorso del campo; i percorsi di rendimento sono riutilizzati per più varianti (più veloce).
+
+### Test e sviluppo
+
+- Cifre di riferimento confrontate nel push (#195), variazione del valore degli immobili ricalcolata in modo indipendente (#194), tracciabilità dei requisiti dei test estesa (#192).
+- Test di robustezza di tutti i comandi di calcolo (#221), risultati dei test di proprietà come test di regressione (#223), test Rust sotto Windows (#225), test saltati contati come errori (#224), limite di durata per test (#226), regole per l'agente di test (#222).
+- Note di rilascio in quattro lingue con titolo neutro (#188); mutants-diff settimanale (#202).
+
 ## Versione 1.0.0-beta.2
 
 Seconda versione preliminare di 1.0. Il pacchetto d'installazione Windows `.msi` porta il numero di versione 1.0.0.2.
