@@ -122,6 +122,23 @@ select.plain{border:1px solid var(--border);border-radius:7px;background:var(--p
 .dedval .inp{flex:1 1 140px;min-width:0}
 .dedval .computed{overflow-wrap:anywhere}
 .dedval .dedextra{font-size:12px;color:var(--muted);white-space:nowrap;align-self:center}
+/* #241: rows of the deductions from income: head line (from, kind, value), below the additional amount and details */
+.dedblock{display:flex;flex-direction:column;gap:4px}
+.dedrow.inc{grid-template-columns:auto minmax(0,170px) minmax(0,195px) minmax(240px,1fr) 30px}
+.dedrow.inc.ownval{grid-template-columns:auto minmax(0,170px) minmax(0,130px) minmax(300px,1fr) 30px}
+.dedrow.inc .dedval .inp{flex-basis:110px}.dedrow.inc .dedval .inp+.inp{flex-basis:170px}
+.dedrow.inc .refwrap{flex-wrap:wrap}.dedrow.inc .refwrap>*{flex:1 1 90px}
+.dedrow.inc.nokind{grid-template-columns:auto minmax(0,210px) 0 minmax(200px,1fr) 30px}
+.dedkind{min-width:0}.dedkind select{width:100%}
+.dedsub{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-left:26px}
+.dedextrarow{display:flex;gap:8px;align-items:center}.dedextrarow .inp{width:200px}
+.dedextrarow .dedextra{font-size:12px;color:var(--muted);white-space:nowrap}
+.deddetails summary{cursor:pointer;font-size:12.5px;color:var(--accent)}
+.deddetails .dedparts{margin-top:6px;min-width:360px}
+table.tbl tr.total td{font-weight:600;border-top:1px solid var(--border)}
+.card h4.dedsubtitle{margin:16px 0 4px;font-size:13px;font-weight:600}
+.dedp3a{display:flex;align-items:center}
+#tax-deductions .dedcalc{margin-top:14px}
 .refwrap{display:flex;gap:6px;min-width:0}
 .refwrap select{flex:1;min-width:0}
 .refwrap .inp{width:96px;flex:none}

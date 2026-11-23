@@ -303,7 +303,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     await nav(page, "Steuern");
     const chk = card(page).locator('input[data-path="taxes.deductPillar3a"]');
     await expect(chk).not.toBeChecked();       // existing plan: no new deduction
-    await expect(card(page)).toContainText("höchstens 7'258 Franken je Person");
+    await expect(card(page)).toContainText(/höchstens 7'258 Franken je Person/i); // #241/AK6: in the ⓘ
     await chk.check();
     expect(await page.evaluate(() => state.taxes.deductPillar3a)).toBe(true);
     await chk.uncheck();
@@ -334,7 +334,10 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     const kind = card(page).locator('select[data-path="taxes.deductions.0.kind"]');
     expect(await kind.locator("option").allTextContents()).toEqual(["Vorschlag des Kantons", "eigener Wert"]);
     const proposal = card(page).locator('[data-ded-proposal="0"]');
-    await expect(proposal).toContainText(/^\d{4}: Kanton [\d']+ \(.*Versicherungsprämien [\d']+.*\), Bund [\d']+ \(/);
+    // #241/AK3, AK4: the sum in the head line, the parts in the details
+    await expect(proposal).toHaveText(/^Kanton [\d']+ · Bund [\d']+$/);
+    await card(page).locator('[data-ded-row="0"] details.deddetails summary').click();
+    await expect(card(page).locator('[data-ded-row="0"] table.dedparts')).toContainText("Versicherungsprämien");
     await expect(card(page).locator("[data-ded-approx]")).toHaveCount(0);
     await choose(page, "BL", "Liestal");
     await previewIdle(page);
@@ -487,11 +490,14 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     const errors = await open(page);
     await withRows(page, [{ from: "start", kind: "canton" }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
     const extra = card(page).locator('[data-ded-row="0"] input[data-path="taxes.deductions.0.extra"]');
+    // #241/AK5: the field appears after «+ Zusätzlicher Abzug»
+    await card(page).locator('[data-ded-row="0"] button[data-action="ded-extra-show"]').click();
     await expect(extra).toBeVisible();
-    await expect(card(page).locator('[data-ded-row="0"]')).toContainText("+ zusätzlich");
+    await expect(card(page).locator('[data-ded-row="0"]')).toContainText("Zusätzlicher Abzug");
     // the label is shown in full (not cut to the width of «ab»)
     expect(await card(page).locator('[data-ded-row="0"] .dedextra').evaluate(e => e.scrollWidth <= e.clientWidth && e.getBoundingClientRect().width > 40)).toBe(true);
     await expect(card(page).locator('input[data-path="taxes.deductions.1.extra"]')).toHaveCount(0);
+    await expect(card(page).locator('[data-ded-row="1"] button[data-action="ded-extra-show"]')).toHaveCount(0);
     await extra.fill("3000");
     await extra.press("Tab");
     expect(await page.evaluate(() => state.taxes.deductions[0].extra)).toBe(3000);
@@ -838,6 +844,158 @@ test.describe("Tax value per property for the wealth tax (#229)", () => {
     expect(heads).toContain("SteuerwertImmobilien");
     const cell = page.locator("#resultsBody table.yt td[data-property-tax-value]").first();
     await expect(cell).toHaveText(/^\d{1,3}('\d{3})+$/);
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Clearer card of the deductions from income (#241)", () => {
+  const card = page => page.locator("#tax-deductions");
+  const row = (page, i) => card(page).locator(`[data-ded-row="${i}"]`);
+  /** Plan with the stored rows `rows` (undefined: none stored); `loc` ZH Zurich, otherwise own tables; `couple`: a
+   *  married couple, both with earned income. */
+  async function withRows(page, rows, { loc = true, couple = false } = {}) {
+    await page.evaluate(([rows, loc, couple]) => {
+      if (couple) { ACTIONS["partner-add"](); state.household.married = true; state.partner.income = { mode: "const", value: 4000 }; }
+      if (rows) state.taxes.deductions = rows; else delete state.taxes.deductions;
+      if (loc) { state.taxes.mode = "location"; state.taxes.location = { canton: "ZH", municipality: 261, church: "none" }; }
+      else state.taxes.mode = "own";
+      markDirty(); renderSection(); scheduleRefresh();
+    }, [rows, loc, couple]);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+  /** Rows of the details table of row `i` as [part, canton, federal]. */
+  const details = (page, i) => row(page, i).locator("table.dedparts tr").evaluateAll(trs =>
+    trs.map(tr => [...tr.children].map(c => c.textContent.trim())));
+  const num = t => Number(t.replace(/'/g, ""));
+
+  test("AK1: the second earner deduction has a text, no raw key in the card", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton" }], { couple: true });
+    await row(page, 0).locator("details.deddetails summary").click();
+    const t = await details(page, 0);
+    expect(t.map(r => r[0])).toContain("Zweitverdienerabzug");
+    await expect(card(page)).not.toContainText("deductions.");
+    await noErrors(page, errors);
+  });
+
+  test("AK2: every part of DED_PARTS has a text in de, en, fr and it", async ({ page }) => {
+    const errors = await open(page);
+    const parts = await page.evaluate(() => DED_PARTS);
+    expect(parts).toContain("secondEarner");
+    for (const l of ["de", "en", "fr", "it"]) {
+      const texts = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "crates", "app", "ui", "i18n", `${l}.json`), "utf8"));
+      for (const k of parts) expect(texts[`deductions.part.${k}`], `${l} ${k}`).toBeTruthy();
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK3: head line with from, kind and the sum for canton and federal tax, or the own amount", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton" }, { from: "retire", kind: "own", amount: 12000, rate: 0 }]);
+    const head0 = row(page, 0).locator(".dedrow");
+    await expect(head0.locator(".ab")).toHaveText("ab");
+    await expect(head0.locator('select[data-path="taxes.deductions.0.kind"]')).toHaveValue("canton");
+    await expect(head0.locator('[data-ded-proposal="0"]')).toHaveText(/^Kanton \d{1,3}('\d{3})* · Bund \d{1,3}('\d{3})*$/);
+    const head1 = row(page, 1).locator(".dedrow");
+    await expect(head1.locator('select[data-path="taxes.deductions.1.kind"]')).toHaveValue("own");
+    await expect(head1.locator('input[data-path="taxes.deductions.1.amount"]')).toHaveValue("12'000");
+    // one line: from, kind and value side by side
+    const boxes = await head0.evaluate(h => [".dedwhen", ".dedkind", ".dedval"].map(s => h.querySelector(s).getBoundingClientRect()));
+    expect(boxes[1].left).toBeGreaterThan(boxes[0].right - 1);
+    expect(boxes[2].left).toBeGreaterThan(boxes[1].right - 1);
+    expect(Math.abs(boxes[0].top - boxes[2].top)).toBeLessThan(12);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: details show the parts for canton and federal tax with the total, closed by default", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton", extra: 1000 }], { couple: true });
+    const det = row(page, 0).locator("details.deddetails");
+    await expect(det).not.toHaveAttribute("open", "");
+    await expect(det.locator("table.dedparts")).toBeHidden();
+    await det.locator("summary").click();
+    await expect(det.locator("table.dedparts")).toBeVisible();
+    const t = await details(page, 0), y = await page.evaluate(() => Math.floor(startM() / 12));
+    expect(t[0]).toEqual([`Jahr ${y} (erstes Jahr der Zeile)`, "Kanton", "Bund"]);
+    const body = t.slice(1, -1), total = t[t.length - 1];
+    expect(body.map(r => r[0])).toEqual(["Sozialabzüge", "Versicherungsprämien", "Berufskosten", "Zweitverdienerabzug", "zusätzlich"].filter(p => body.some(r => r[0] === p)));
+    expect(body.map(r => r[0])).toEqual(expect.arrayContaining(["Versicherungsprämien", "Berufskosten", "Zweitverdienerabzug", "zusätzlich"]));
+    for (const r of body) expect(num(r[1]) !== 0 || num(r[2]) !== 0, r[0]).toBe(true);   // no part with 0 in both columns
+    expect(body.find(r => r[0] === "zusätzlich").slice(1)).toEqual(["1'000", "1'000"]);
+    expect(total[0]).toBe("Total");
+    for (const c of [1, 2]) expect(num(total[c])).toBe(body.reduce((a, r) => a + num(r[c]), 0));
+    await expect(row(page, 0).locator('[data-ded-proposal="0"]')).toHaveText(`Kanton ${total[1]} · Bund ${total[2]}`);
+    // stays open after a new preview
+    await page.evaluate(() => { renderSection(); scheduleRefresh(); });
+    await previewIdle(page);
+    await expect(row(page, 0).locator("details.deddetails")).toHaveAttribute("open", "");
+    await noErrors(page, errors);
+  });
+
+  test("AK5: the additional field only with a stored amount or after its button; values unchanged", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton" }, { from: "retire", kind: "canton", extra: 2500 }]);
+    const field = i => card(page).locator(`input[data-path="taxes.deductions.${i}.extra"]`);
+    await expect(field(0)).toHaveCount(0);
+    await expect(field(1)).toHaveValue("2'500");
+    await expect(row(page, 1).locator('button[data-action="ded-extra-show"]')).toHaveCount(0);
+    const before = await page.evaluate(() => JSON.stringify(state.taxes));
+    await expect(row(page, 0).locator('button[data-action="ded-extra-show"]')).toHaveText("+ Zusätzlicher Abzug");
+    await row(page, 0).locator('button[data-action="ded-extra-show"]').click();
+    await expect(field(0)).toBeVisible();
+    await expect(row(page, 0)).toContainText("Zusätzlicher Abzug");
+    expect(await page.evaluate(() => JSON.stringify(state.taxes))).toBe(before);
+    await field(0).fill("800");
+    await field(0).press("Tab");
+    expect(await page.evaluate(() => state.taxes.deductions.map(r => r.extra))).toEqual([800, 2500]);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: explanations in ⓘ, short check box for pillar 3a with the maximum in ⓘ", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton" }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
+    await expect(card(page).locator("h3 .infopop .infobody #ded-hint")).toContainText("Je Zeile gilt der Vorschlag des Kantons");
+    await expect(card(page).locator("h3 .infopop .infobody #ded-own-hint")).toContainText("Eigener Wert: Betrag pro Jahr");
+    await expect(card(page).locator(":scope > p.hint")).toHaveCount(0);
+    const chk = card(page).locator(".dedp3a label.check");
+    await expect(chk).toHaveText("Einzahlungen in die Säule 3a abziehen");
+    await expect(card(page).locator(".dedp3a .infopop .infobody")).toContainText("Höchstens 7'258 Franken je Person und Jahr");
+    await expect(card(page).locator(".dedp3a .infopop .infobody")).toContainText("indirekte Amortisation");
+    await noErrors(page, errors);
+  });
+
+  test("AK7: one-off deductions under a subtitle of their own, after the rows", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton" }]);
+    const sub = card(page).locator("#ded-oneoff h4.dedsubtitle");
+    await expect(sub).toHaveText("Einmalige Abzüge");
+    expect(await card(page).evaluate(c => {
+      const rows = c.querySelector(".rows"), h = c.querySelector("#ded-oneoff h4");
+      return !rows.contains(h) && !!(rows.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING);
+    })).toBe(true);
+    await noErrors(page, errors);
+  });
+
+  test("AK8: the same layout with own tables; plans open unchanged", async ({ page }) => {
+    const errors = await open(page);
+    // existing plan without rows in the mode «Wohnort»: nothing is stored by showing or opening the details
+    await withRows(page, undefined);
+    const before = await page.evaluate(() => JSON.stringify(state));
+    await expect(row(page, 0).locator('[data-ded-proposal="0"]')).toHaveText(/^Kanton [\d']+ · Bund [\d']+$/);
+    await row(page, 0).locator("details.deddetails summary").click();
+    await expect(row(page, 0).locator("table.dedparts")).toBeVisible();
+    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);
+    // own tables: head line with the own amount, explanations in ⓘ, one-off deductions under the subtitle
+    await withRows(page, [{ from: "start", kind: "own", amount: 9000, rate: 0 }], { loc: false });
+    const head = row(page, 0).locator(".dedrow");
+    await expect(head.locator(".ab")).toHaveText("ab");
+    await expect(head.locator('input[data-path="taxes.deductions.0.amount"]')).toHaveValue("9'000");
+    await expect(row(page, 0).locator("details.deddetails, button[data-action='ded-extra-show']")).toHaveCount(0);
+    await expect(card(page).locator("h3 .infopop .infobody #ded-hint")).toContainText("Mit eigenen Tabellen");
+    await expect(card(page).locator(":scope > p.hint")).toHaveCount(0);
+    await expect(card(page).locator("#ded-oneoff h4.dedsubtitle")).toHaveText("Einmalige Abzüge");
+    expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 9000, rate: 0 }]);
     await noErrors(page, errors);
   });
 });

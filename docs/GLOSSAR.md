@@ -182,6 +182,7 @@ Wörter in Grossbuchstaben nicht.
 | veranlagt, Steuerjahr | `assessed`, `tax_year` | `assessed_income`, `assessed_wealth` |
 | Verheiratetentarif | `couple` | |
 | Kanton, Gemeinde | `canton`, `municipality` | |
+| Zweitverdienerabzug | `second_earner` | #63; `SecondEarner`, Teil `secondEarner` im Vorschlag des Kantons (#241) |
 | zusätzlicher Abzug (zum Vorschlag des Kantons) | `extra` | #230; `IncomeDeduction.extra`, `TaxBasis.extra` |
 | einmaliger Abzug | `one_off_deduction` | #230; `OneOffDeduction`, Planung `oneOffDeductions`, `TaxBasis.one_off` |
 | Abzug vom Vermögen | `wealth_deduction` | #231; `WealthDeduction`, Planung `wealthDeductions`, `oneOffWealthDeductions` |
@@ -754,6 +755,7 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | Einkommenssteuer | income tax | impôt sur le revenu | imposta sul reddito | DBG Art. 1 (FR, IT); StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
 | Vermögenssteuer | wealth tax | impôt sur la fortune; sur la fortune | imposta sulla sostanza; sulla sostanza | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | en: property tax; it: imposta patrimoniale |
 | Grundstückgewinnsteuer | property gains tax; property gains | impôt sur les gains immobiliers; gains immobiliers | imposta sugli utili immobiliari; utili immobiliari; utili da sostanza immobiliare | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | en: capital gains tax; fr: impôt sur la plus-value |
+| Zweitverdienerabzug | second earner deduction | déduction pour couple à deux revenus | deduzione per coppie con doppio reddito | DBG Art. 33 Abs. 2 (Sachverhalt); keine amtliche Kurzform (#241) | - |
 | Eigenmietwert | imputed rental value | valeur locative | valore locativo | DBG Art. 21 (FR, IT); EN: keine amtliche Quelle | en: own rental value |
 | Steuerfuss | tax multiplier | coefficient d'impôt | moltiplicatore d'imposta | keine amtliche Quelle | - |
 | Steuertabelle | tax table | barème | tabella delle aliquote; tabelle delle aliquote; tabella fiscale; tabelle fiscali | keine amtliche Quelle | - |
