@@ -129,7 +129,6 @@ const Help = (() => {
   // ----- Display -----
   function build() {
     if (panel) return;
-    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "help.css"; document.head.append(css);
     panel = document.createElement("aside"); panel.id = "help"; panel.hidden = true; panel.setAttribute("aria-label", tr("help.title"));
     panel.innerHTML = `<div class="hh"><button type="button" data-h="back" data-i18n-title="help.back" title="${tr("help.back")}">←</button><button type="button" data-h="fwd" data-i18n-title="help.forward" title="${tr("help.forward")}">→</button>
       <button type="button" data-h="toc" data-i18n-title="help.toc" title="${tr("help.toc")}">☰</button><input type="search" id="helpSearch" data-i18n-placeholder="help.searchPlaceholder" data-i18n-aria-label="help.searchLabel" placeholder="${tr("help.searchPlaceholder")}" aria-label="${tr("help.searchLabel")}">

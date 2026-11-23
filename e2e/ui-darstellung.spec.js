@@ -45,7 +45,7 @@ const MAIN = [
   ["body", "body"], ["header", "header .brand"], ["menu", "#nav a:not(.active)"], ["menu active", "#nav a.active"],
   ["field label", "#main .field>span"], ["input", "#main .inp input"], ["select", "#main select"],
   ["option", "#main select option"], ["button", "header .btn:not(.primary)"], ["primary button", "header .btn.primary"],
-  ["hint", "#main .lead"], ["preview text", "aside .sub"],
+  ["hint", "#main .lead"], ["preview text", "aside .sub"], ["help button", "#main .hq"],
 ];
 const DIALOG = [["dialog title", "#settings[open] b, #settings[open] h2, #settings[open] .field>span"], ["dialog select", "#settings[open] #set-theme"],
   ["dialog option", "#settings[open] #set-theme option"], ["dialog button", "#settings[open] .btn:not(.primary)"], ["dialog primary", "#settings[open] .btn.primary"]];
