@@ -1617,6 +1617,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #223/AK3 | `docs/TESTS.md` (Schicht 3) und `.claude/agents/rust-test-agent.md` schreiben vor: neuer Fund → benannter … | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
 | #223/AK4 | Die Regressionsdateien bleiben eingecheckt, gelten aber nicht als Dokumentation des Fundes. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (`git ls-files`, TESTS.md) |
 
+### #227 Zuletzt geöffnete Planungen im Menü Datei
+
+[Issue #227](https://github.com/ingen63/VivaPlan/issues/227) · geschlossen · Umsetzung: fede6bc
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #227/AK1 | Das Menü «Datei» hat ein Untermenü «Zuletzt geöffnet» mit bis zu 10 Planungen, die zuletzt verwendete zuoberst. … | ☑ | **gilt** | [recent.rs](../crates/app/src/recent.rs) `issue_227_ak1_…`, [main.rs](../crates/app/src/main.rs) `issue_227_ak1_ak5_…` | 23.11.2026 ok (Einträge, Reihenfolge, Name ohne `.vplan`, Ordner bei gleichem Namen; natives Menü nicht von Hand angesehen) |
+| #227/AK2 | Öffnen, «Speichern unter» und das erste Speichern einer neuen Planung setzen sie an die erste Stelle. … | ☑ | **gilt** | [recent.rs](../crates/app/src/recent.rs) `issue_227_ak2_…`, [main.rs](../crates/app/src/main.rs) `issue_227_ak2_…` | 23.11.2026 ok (über die Befehle `open_plan`, `save_plan`; Grenze 10) |
+| #227/AK3 | Ein Klick auf einen Eintrag öffnet die Planung wie «Öffnen …». Hat die offene Planung ungespeicherte Änderungen, … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) `issue_227_ak3_…`, [ui-zuletzt.spec.js](../e2e/ui-zuletzt.spec.js) `AK3` | 23.11.2026 ok (Rückfrage, Abbrechen, Öffnen ohne Dialog) |
+| #227/AK4 | Gibt es die Datei nicht mehr, meldet die App das und entfernt den Eintrag aus der Liste. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) `issue_227_ak4_…`, [ui-zuletzt.spec.js](../e2e/ui-zuletzt.spec.js) `AK4` | 23.11.2026 ok |
+| #227/AK5 | Am Ende des Untermenüs steht «Liste löschen». Ist die Liste leer, zeigt das Untermenü den deaktivierten Eintrag … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) `issue_227_ak1_ak5_…`, `issue_227_ak5_…` | 23.11.2026 ok (Menüeintrag und Löschen über das Menüereignis; übrige Einstellungen bleiben) |
+| #227/AK6 | Die Liste bleibt über Neustarts erhalten und liegt in den Einstellungen der App. … | ☑ | **gilt** | [recent.rs](../crates/app/src/recent.rs) `issue_227_ak6_…`, [main.rs](../crates/app/src/main.rs) `issue_227_ak6_…` | 23.11.2026 ok (`recentPlans` in `einstellungen.json`, Start mit erstem Eintrag, Übernahme von `lastPlan`, «Darstellung» bleibt) |
+| #227/AK7 | Das Untermenü folgt der gewählten Sprache; die Texte stehen als Schlüssel in `i18n`. | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) `issue_227_ak7_…` | 23.11.2026 ok (de/en/fr/it; Neuaufbau wie beim Sprachwechsel) |
+| #227/AK8 | Hilfe und `BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it, Durchsicht) |
+
 ### #228 Vorschlag des Kantons bei den Abzügen ganz rechts zusammengedrückt
 
 [Issue #228](https://github.com/ingen63/VivaPlan/issues/228) · geschlossen · Umsetzung: aade95a
