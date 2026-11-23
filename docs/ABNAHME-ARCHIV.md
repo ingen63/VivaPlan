@@ -1675,6 +1675,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #230/AK7 | Bestehende Planungen rechnen unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_ak7_…`, Golden-Tests | 23.11.2026 ok |
 | #230/AK8 | Je Fall gibt es einen Test mit Handwert; Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | [income_deductions.rs](../crates/engine/tests/income_deductions.rs) `issue_230_…` | 23.11.2026 ok (Hilfe de/en/fr/it, `BESCHREIBUNG.md`, `ENTWICKLUNG.md`, Glossar; Durchsicht) |
 
+### #231 Abzüge vom Vermögen
+
+[Issue #231](https://github.com/ingen63/VivaPlan/issues/231) · offen (Abhaken und Schliessen durch den Nutzer) · Umsetzung: 4e2eaac, daaf072
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #231/AK1 | Im Abschnitt Steuern gibt es die Karte «Abzüge vom Vermögen» mit zeitabhängigen Zeilen «zusätzlich … pro Jahr» und … | ☐ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1` | 23.11.2026 ok (Darstellung `.dedrow` wie bei den Abzügen vom Einkommen; Sichtprüfung hell und dunkel) |
+| #231/AK2 | Im Modus «Wohnort» kommen die Abzüge zu den Sozialabzügen des Kantons dazu, die in den Kurven der Steuerdatei … | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_ak2_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK2, AK3` | 23.11.2026 ok (800'000 mit 50'000 Abzug wie 750'000 ohne, Zürich; Hinweis auf der Karte) |
+| #231/AK3 | Mit eigenen Tabellen sind diese Beträge der ganze Abzug. | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_ak3_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK2, AK3` | 23.11.2026 ok (1 % auf 750'000 = 7'500) |
+| #231/AK4 | Steuerbares Vermögen = Vermögen − Abzüge, nie negativ. Ein einmaliger Abzug gilt für den Stichtag 31.12. seines … | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_ak4_…` | 23.11.2026 ok (Handwert 2027 650'000, sonst 750'000; Zeile vom 31.12.; nie negativ) |
+| #231/AK5 | Die Steuerzerlegung zeigt die Abzüge vom Vermögen mit Herkunft. | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_ak4_hand_value_example`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK5` | 23.11.2026 ok (Spalten «Abzüge Vermögen» mit Herkunft im Tooltip und «Steuerbares Vermögen») |
+| #231/AK6 | Die Prüfung meldet negative Beträge und ein Steuerjahr ausserhalb der Simulation als Fehler. | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_ak6_…`, [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK6` | 23.11.2026 ok (Fehler am Feld) |
+| #231/AK7 | Bestehende Planungen rechnen unverändert; die Golden-Dateien ändern nicht. | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_ak7_…`, Golden-Tests | 23.11.2026 ok |
+| #231/AK8 | Tests mit Handwert; Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☐ | **gilt** | [wealth_deductions.rs](../crates/engine/tests/wealth_deductions.rs) `issue_231_…` | 23.11.2026 ok (Hilfe de/en/fr/it, `BESCHREIBUNG.md`, `ENTWICKLUNG.md`, Glossar, Pflichteingaben; Durchsicht) |
+
 ### #232 Erwerbseinkommen als Jahresbetrag wie in der Steuererklärung
 
 [Issue #232](https://github.com/ingen63/VivaPlan/issues/232) · geschlossen · Umsetzung: 5b581d1
