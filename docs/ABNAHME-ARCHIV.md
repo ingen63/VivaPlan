@@ -1726,3 +1726,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #234/AK1 | Die Kennzahl zeigt Datum und den Lauf als lesbaren Text in der gewählten Sprache, nie «[object Object]». | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) `AK3` | 23.11.2026 ok («09.2033 · Historisch ab …», englisch «Historical from …»; Gegenprobe ohne Korrektur: «[object Object]») |
 | #234/AK2 | Alle anderen Stellen, die `earliestDepletion` oder andere Meldungen des Rechenkerns anzeigen, sind geprüft und … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) `AK2` | 23.11.2026 ok (Durchsicht `crates/app/ui/`; korrigiert: Fehler einer Variante in der Tabelle, de/en getestet; Toast beim Fehlschlag einer Variante nur Code-Durchsicht) |
 | #234/AK3 | Ein e2e-Test prüft den Text der Kennzahl (inkl. einer zweiten Sprache). | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) `AK3` | 23.11.2026 ok (Deutsch und Englisch) |
+
+### #235 Kontrast des aktiven Menüeintrags im hellen Theme
+
+[Issue #235](https://github.com/ingen63/VivaPlan/issues/235) · geschlossen · Umsetzung: ec6c1a4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #235/AK1 | Der aktive Menüeintrag im hellen Theme hat einen Kontrast von mindestens 4,5:1. Er bleibt klar als aktiv erkennbar. | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK1` | 23.11.2026 ok (4,79:1, #2864d0 auf #e8f0fd; Hintergrund, Farbe und Schriftgewicht anders als bei den übrigen Einträgen) |
+| #235/AK2 | Die Ausnahme im Test von #220 ist entfernt. Der Test verlangt 4,5:1 für alle Elemente in beiden Themen. | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK2`, #220 `AK3 AK6` | 23.11.2026 ok (`LIGHT_EXCEPTIONS` entfernt, alle Elemente hell und dunkel ≥ 4,5:1) |
+| #235/AK3 | Das übrige helle Aussehen bleibt gleich; die Änderung betrifft nur diesen Eintrag oder eine eigene Variable. | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK3` | 23.11.2026 ok (eigene Variable `--accent-text`; übrige Farbvariablen hell und dunkel unverändert, dunkel aktiver Eintrag weiter #6c9cf5; nur berechnete Farben, kein Bildvergleich) |
