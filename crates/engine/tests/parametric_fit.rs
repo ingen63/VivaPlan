@@ -122,6 +122,7 @@ const INDICES: [(StockIndex, BondIndex, &str); 3] = [
 /// #100/AK1, AK2: Mean, spread and geometric mean of the annual returns at most 0.5 percentage points away from the
 /// bootstrap of the same index, the 5 % quantile at most 2 percentage points, the geometric return over
 /// 30 years (5th, 50th, 95th percentile) at most 0.5 percentage points.
+// slow: bootstrap and parametric paths for every index
 #[test]
 fn issue_100_ak1_ak2_parametric_matches_the_bootstrap_of_each_index() {
     let mut report = vec![];
@@ -308,6 +309,7 @@ fn issue_100_ak6_issue_101_ak6_older_plans_keep_their_parameters() {
 
 /// #101/AK1, AK2: For all 9 combinations the correlations of the annual values match the series within 0.05, mean
 /// and spread of bonds and inflation within 0.3 percentage points.
+// slow: 2'000 parametric paths for each of nine index combinations
 #[test]
 fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
     let stocks = [StockIndex::WorldJst, StockIndex::Sp500, StockIndex::ChJst];
@@ -405,6 +407,7 @@ fn ruin_monthly(paths: &[MarketPath]) -> f64 {
 /// return paths (without taxes and spending plan), rebalanced annually: the annual series of the bootstrap have
 /// equal monthly returns within a year; monthly rebalancing would give the parametric model
 /// (fluctuation also within the year) a rebalancing gain the bootstrap does not have.
+// slow: 6'000 bootstrap and parametric paths for four index combinations
 #[test]
 fn issue_101_ak3_ruin_probability_close_to_the_bootstrap() {
     let mut report = vec![];

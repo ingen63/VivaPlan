@@ -320,6 +320,7 @@ fn cases(budget: usize) -> Vec<Case> {
 
 /// #221/AK1, AK2, AK6: Every command of the table with nonsense arguments ends with a result or an error message;
 /// a panic in any thread fails the test and names command, change and arguments.
+// slow: calls every command with many nonsense arguments
 #[test]
 fn issue_221_ak1_every_command_survives_nonsense_arguments() {
     count_panics();
@@ -346,6 +347,7 @@ fn issue_221_ak1_every_command_survives_nonsense_arguments() {
 }
 
 /// #221/AK6: Few cases at a push, nightly all systematic ones and many random ones.
+// slow: builds every systematic case of the command sweep
 #[test]
 fn issue_221_ak6_number_of_cases_follows_the_budget() {
     let all = systematic().len();
@@ -369,6 +371,7 @@ fn issue_221_ak4_every_command_of_the_table_is_called() {
 
 /// #221/AK5: With valid arguments every command returns a result, and that result has no NaN or ∞ (serde_json would write
 /// them as `null`; the dispatcher therefore checks the numbers before converting and reports an error).
+// slow: runs every compute command with valid arguments
 #[test]
 fn issue_221_ak5_valid_arguments_give_finite_results() {
     count_panics();

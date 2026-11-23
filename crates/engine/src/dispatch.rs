@@ -188,6 +188,7 @@ mod tests {
 
     /// #142: `series_info` reads a relative path in the folder of the project file (`planPath`), without a project file in
     /// the fallback folder; the plan's `path` does not count here.
+    // slow: copies and reads a whole return series
     #[test]
     fn series_info_is_relative_to_the_plan_file() {
         let _tmp_d = tempfile::Builder::new().prefix("vivaplan-").tempdir().unwrap();

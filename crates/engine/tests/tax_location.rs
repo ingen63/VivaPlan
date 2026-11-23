@@ -258,6 +258,7 @@ fn issue_63_ak6_reference_cases_retired_match_estv_within_five_percent() {
 }
 
 /// #63/AK2: All 26 cantons and all municipalities of the tax data file are selectable and compute.
+// slow: computes the taxes of every municipality of Switzerland
 #[test]
 fn issue_63_ak2_all_cantons_and_municipalities_resolve() {
     let data = taxdata::builtin();

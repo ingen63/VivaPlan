@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip())
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT / "tools"))
+import slow_tests  # noqa: E402  (#226)
 MIN_COVERAGE = float((ROOT / "tools" / "coverage-min").read_text().strip())
 PACKAGES = {"Engine (vivaplan-engine)": "crates/engine/", "App (vivaplan-app)": "crates/app/",
             "Kommandozeile (vivaplan-cli)": "crates/cli/"}
@@ -71,6 +72,8 @@ def read_junit():
             r["flaky"].append(name)
         if tc.find("skipped") is not None:
             r["skipped"] += 1
+    # #226: tests over the run time limit of their kind without `// slow: <reason>` (a hint, not an error)
+    r["slow"] = [s for s in slow_tests.check(f, ROOT) if not s["reason"]]
     return r
 
 
@@ -334,7 +337,7 @@ def history(version_, metrics):
 def status_hygiene(junit):
     if not junit:
         return NODATA
-    return FAIL if junit["failed"] else HINT if junit["flaky"] else OK
+    return FAIL if junit["failed"] else HINT if junit["flaky"] or junit.get("slow") else OK
 
 
 def status_fit(cov, mut):
@@ -417,7 +420,7 @@ def main():
          f"<h1>Testqualität</h1><p class='muted'>Version {E(ver)} · Commit <code>{E(commit)}</code> · erzeugt {now}. Es gibt keine Gesamtnote: Jede Schicht hat ihren eigenen Status nach der genannten Regel, die Hinweise stehen einzeln darunter.</p>"]
 
     # Hygiene
-    h.append(f"<section><h2>1 Hygiene {badge(st_h)}</h2><p class='rule'>Regel: erfüllt = keine fehlgeschlagenen und keine als flaky markierten Tests; Hinweis = flaky Tests; nicht erfüllt = mindestens ein fehlgeschlagener Test; keine Daten = kein JUnit-Ergebnis (nextest, Profil ci) vorhanden.</p>")
+    h.append(f"<section><h2>1 Hygiene {badge(st_h)}</h2><p class='rule'>Regel: erfüllt = keine fehlgeschlagenen und keine als flaky markierten Tests; Hinweis = flaky Tests oder Tests über der Laufzeitgrenze ihrer Art ohne Begründung (#226: Unit-Test 0,1 s, Integrationstest 1 s, startet Programm/Server 15 s; Begründung <code>// slow: &lt;Grund&gt;</code> über dem Test); nicht erfüllt = mindestens ein fehlgeschlagener Test; keine Daten = kein JUnit-Ergebnis (nextest, Profil ci) vorhanden.</p>")
     if junit:
         total = sum(t for _, t in junit["tests"])
         h.append(f"<p>{len(junit['tests'])} Tests, {len(junit['failed'])} fehlgeschlagen, {junit['skipped']} übersprungen, {len(junit['flaky'])} flaky · Laufzeit der Tests zusammen {total:.0f} s <small>(Stand {junit['when']})</small></p>")
@@ -425,6 +428,8 @@ def main():
             h.append("<p><b>Fehlgeschlagen:</b></p><ul>" + "".join(f"<li><code>{E(n)}</code></li>" for n in junit["failed"]) + "</ul>")
         if junit["flaky"]:
             h.append("<p><b>Flaky:</b></p><ul>" + "".join(f"<li><code>{E(n)}</code></li>" for n in junit["flaky"]) + "</ul>")
+        if junit["slow"]:
+            h.append("<p><b>Über der Laufzeitgrenze ohne Begründung (#226):</b></p>" + table(["Test", "Art", "Grenze s", "Sekunden", "Ort"], [(f"<code>{E(s['test'])}</code>", slow_tests.KIND_NAMES[s["kind"]], f"{s['limit']:g}", f"{s['time']:.2f}", E(s["place"] or "–")) for s in junit["slow"]], num=(2, 3)))
         slow = sorted(junit["tests"], key=lambda x: -x[1])[:10]
         h.append("<details><summary>Die zehn langsamsten Tests</summary>" + table(["Test", "Sekunden"], [(f"<code>{E(n)}</code>", f"{t:.1f}") for n, t in slow], num=(1,)) + "</details>")
     else:
@@ -492,7 +497,7 @@ def main():
     print(f"Seite: {out / 'index.html'}", file=sys.stderr)
 
     if "--summary" in sys.argv:
-        lines = [f"### Testqualität (Version {ver}, Commit {commit})", "", f"- **Hygiene:** {st_h}" + (f" ({len(junit['tests'])} Tests, {len(junit['failed'])} fehlgeschlagen, {len(junit['flaky'])} flaky)" if junit else ""),
+        lines = [f"### Testqualität (Version {ver}, Commit {commit})", "", f"- **Hygiene:** {st_h}" + (f" ({len(junit['tests'])} Tests, {len(junit['failed'])} fehlgeschlagen, {len(junit['flaky'])} flaky, {len(junit['slow'])} über der Laufzeitgrenze ohne Begründung)" if junit else ""),
                  f"- **Angemessenheit:** {st_f}" + (" · Abdeckung " + ", ".join(f"{k.split(' ')[0]} {fmt(v[0]) if v else '–'}" for k, v in cov['pkgs'].items()) if cov else "") + (f" · nicht erkannte Mutanten: {mut['missed']}" if mut else " · kein Mutationslauf"),
                  f"- **Anforderungsbezug:** {st_r}" + (f" ({n_test} von {n_crit} Kriterien mit Test, {n_chk} geprüft)" if n_crit else ""), f"- **Ergebnis:** {st_e}"]
         print("\n".join(lines))

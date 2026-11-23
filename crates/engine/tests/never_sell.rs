@@ -251,6 +251,7 @@ fn example(never_sell: bool) -> engine::batch::BatchSummary {
 }
 
 // #196/AK5: the example plan has a lower success rate with the switch and no run with an emergency sale.
+// slow: two Monte Carlo runs of the example plan
 #[test]
 fn issue_196_ak5_example_plan_lower_success_without_sales() {
     let off = example(false);
@@ -356,6 +357,7 @@ fn issue_199_ak5_zero_without_switch_and_missing_in_json() {
 
 // #199/AK2, AK3, AK5: the example plan with bootstrap counts runs with such a renewal only with the switch on; the
 // field is missing in the batch JSON when 0.
+// slow: two Monte Carlo runs of the example plan
 #[test]
 fn issue_199_ak2_example_plan_counts_runs() {
     let on = example(true);

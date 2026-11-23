@@ -1965,6 +1965,7 @@ mod tests {
     }
 
     // The pattern search finds the optimum of the withdrawal rate (fine grid for comparison).
+    // slow: pattern search compared with a fine grid
     #[test]
     fn search_finds_the_optimum() {
         let mut f = calm(400_000.0);
@@ -2291,6 +2292,7 @@ mod tests {
 
     /// #215/AK2, AK3, AK5: The search keeps the search and check paths for all evaluations; the report is bit for bit
     /// the same as without kept paths (budget 0: every evaluation generates its paths again).
+    // slow: runs the search twice, with and without kept paths
     #[test]
     fn issue_215_ak2_search_with_kept_paths_is_bit_identical() {
         let v = reuse_plan();
@@ -2309,6 +2311,7 @@ mod tests {
     }
 
     /// #215/AK2, AK3, AK5: The comparison of the strategies is the same with and without kept paths.
+    // slow: compares all strategies twice, with and without kept paths
     #[test]
     fn issue_215_ak2_compare_with_kept_paths_is_bit_identical() {
         let v = reuse_plan();

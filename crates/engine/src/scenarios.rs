@@ -264,6 +264,7 @@ mod tests {
     }
 
     // #40: Exactly 1'000'000 values are allowed, one value more is not; longer ranges are capped when created.
+    // slow: creates a sweep with one million values
     #[test]
     fn one_million_values_is_the_limit() {
         let sweep =

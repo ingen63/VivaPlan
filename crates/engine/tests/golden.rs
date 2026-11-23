@@ -246,6 +246,7 @@ fn diff(path: &str, a: &Value, b: &Value, out: &mut Vec<String>) {
     }
 }
 
+// slow: runs every golden plan
 #[test]
 fn golden_masters() {
     let update = std::env::var("GOLDEN_UPDATE").is_ok();

@@ -35,6 +35,7 @@ fn without_real(percentiles: &[Percentile]) -> Value {
 
 /// #215/AK3: Every combination of the variations of the example plan gives exactly (bit for bit) the result of a
 /// run of that combination alone, which generates its own paths.
+// slow: runs every variation again on its own, for two return sources
 #[test]
 fn issue_215_ak3_variations_match_single_runs() {
     let lib = library();
@@ -83,6 +84,7 @@ fn issue_215_ak3_variations_match_single_runs() {
 
 /// #215/AK3: The comparison of the strategies on the example plan (8 evaluations on the same paths) gives exactly
 /// the metrics of every strategy evaluated on its own, freshly generated paths.
+// slow: compares all strategies and evaluates each again on its own paths
 #[test]
 fn issue_215_ak3_optimization_compare_matches_own_paths() {
     let lib = library();

@@ -743,6 +743,7 @@ mod tests {
     }
 
     // #40: Preview with the parametric model: expected geometric stock return exp(μ − σ²/2 + λ·μJ) − 1.
+    // slow: preview of the example plan for each return source
     #[test]
     fn preview_basis_for_each_source() {
         let mut v = example();
@@ -837,6 +838,7 @@ mod tests {
 
     // Runs take time (microseconds per run > 0), with one and with many paths; the number of paths is fixed only
     // with «rolling».
+    // slow: performance measurement with one and with many paths
     #[test]
     fn bench_measures_runs() {
         let mut v = example();

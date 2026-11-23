@@ -1071,6 +1071,7 @@ fn mc_summary(v: &Value) -> (f64, f64, Vec<f64>) {
     (b.summary.success_rate, mean, ends)
 }
 
+// slow: six Monte Carlo runs with 500 paths
 #[test]
 fn monte_carlo_is_reproducible_with_same_seed() {
     for source in ["bootstrap", "parametric"] {
@@ -1091,6 +1092,7 @@ fn monte_carlo_is_reproducible_with_same_seed() {
     }
 }
 
+// slow: 2'000 parametric paths
 #[test]
 fn parametric_paths_are_finite_and_plausible() {
     let v = mc_plan("parametric", 2000, 5);
@@ -1114,6 +1116,7 @@ fn parametric_paths_are_finite_and_plausible() {
     assert!(ends.iter().all(|x| x.is_finite()));
 }
 
+// slow: Monte Carlo with 1'000 and 10'000 paths
 #[test]
 fn statistics_are_stable_across_path_counts() {
     // Mean and success rate may change only a little when the paths are multiplied by ten. The mean is that
@@ -1136,6 +1139,7 @@ fn statistics_are_stable_across_path_counts() {
 // Scenarios
 // ---------------------------------------------------------------------------------------------
 
+// slow: grid of 81 variations compared with single runs
 #[test]
 fn scenario_grid_is_complete_and_matches_single_runs() {
     let mut v = mc_plan("bootstrap", 100, 3);
@@ -1290,6 +1294,7 @@ fn file_roundtrip_is_semantically_identical() {
 /// total = total of the previous month + savings + income + one-off amounts − spending − taxes + returns,
 /// with return = stocks(previous month) × r_stocks + bonds(previous month) × r_bonds (only with positive
 /// wealth). Reallocations, reserve and buckets must not change the total. Deviation ≤ 0.01 CHF.
+// slow: 300 random plans checked month by month
 #[test]
 fn monthly_cash_flow_identity_with_returns_and_taxes() {
     use engine::montecarlo::Rng;

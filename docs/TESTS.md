@@ -182,6 +182,7 @@ make english                                     # deutsche Kommentare und Testn
 tools/ui-smoke.sh                                # Oberfläche (Rauchtest)
 (cd e2e && npm install && npx playwright test)   # Oberfläche (Bedienung, 176 Tests)
 make coverage                                    # Abdeckung (cargo llvm-cov mit nextest)
+python3 tools/slow_tests.py                      # Tests über der Laufzeitgrenze (nach dem Profil ci, #226)
 ```
 
 Die Rust-Tests laufen mit `make test` (`cargo nextest run --workspace`), nicht mit `cargo test`. Grund: nextest startet
@@ -200,6 +201,32 @@ Test zu ändern oder hinzuzufügen (Datei unter `crates/engine/tests/` oder neue
 Claude nur die Zusammenfassung. Jeder Commit wird einmal geprüft. Die Prüfung vor dem Push (`tools/git-hooks/pre-push`,
 Abdeckung und Mutanten) ist unverändert. Tests des Hooks: `python3 -m unittest discover -s tools -p 'test_after_commit.py'`
 (kleines Git-Repository, `cargo` ersetzt).
+
+**Laufzeitgrenzen (#226).** Langsame Tests verlängern jeden Push-Lauf und vervielfachen sich in den Mutationsläufen.
+Jeder Rust-Test bleibt deshalb unter der Grenze seiner Art (Debug-Build):
+
+| Art | Grenze | Zuordnung |
+|---|---:|---|
+| Unit-Test | 0,1 s | Tests in `src/` (Bibliothek oder Programm) |
+| Integrationstest | 1 s | Tests in `tests/` (im Rechenkern das eine Testprogramm `all`) |
+| startet ein Programm oder einen Server | 15 s | `crates/cli/tests/cli.rs` (ruft `vivaplan` auf), Tests des Entwicklungsservers (`serve(`) und der Tauri-Testapp (`setup(`, `setup_with(`, `mock_builder(`) |
+
+Braucht ein Test länger, steht direkt über ihm (zwischen den übrigen Kommentar- und Attributzeilen) eine Begründung,
+englisch wie alle Kommentare im Code:
+
+```rust
+// slow: 600 mutated plans, checks for crashes over many cases
+#[test]
+fn mutated_plans_never_crash() { … }
+```
+
+`tools/slow_tests.py` liest die Laufzeiten aus `target/nextest/ci/junit.xml` (`cargo nextest run --workspace --profile
+ci`), ordnet jeden Test einer Art zu und listet jeden Test über der Grenze ohne Begründung mit Name, Dauer und Ort. Der
+Befund ist ein Hinweis, kein Fehler: Er steht in der Zusammenfassung von `test-quality.yml` (Job `tests-coverage`) und
+auf der Übersichtsseite in der Schicht «Hygiene». Die Laufzeiten in CI stammen aus dem Lauf mit Abdeckung und sind
+etwas länger als die eines gewöhnlichen Debug-Builds; lokal hängen sie von der Last ab (alle Tests laufen parallel).
+Das Profil `mutants` in `.config/nextest.toml` nimmt die schweren Tests unabhängig davon aus. Tests des Skripts:
+`python3 -m unittest discover -s tools -p 'test_slow_tests.py'` (gestellte junit-Dateien).
 
 Die reinen Hilfsfunktionen der Oberfläche (Zahlenformate, Monate, Pfadzugriff, Steuersatz, Dauerschätzung) liegen in
 `crates/app/ui/util.js` und haben Unit-Tests in `e2e/unit/util.test.js` (`node --test`, unter 1 s, #87). Die Ergebnisliste
@@ -288,7 +315,7 @@ Es gibt **keine Gesamtnote**. Jede Schicht hat ihren eigenen Status (erfüllt, H
 
 | Schicht | erfüllt | Hinweis | nicht erfüllt |
 |---|---|---|---|
-| 1 Hygiene | keine Fehlschläge, keine flaky Tests | flaky Tests | ein Test schlägt fehl |
+| 1 Hygiene | keine Fehlschläge, keine flaky Tests, kein Test über der Laufzeitgrenze ohne Begründung | flaky Tests oder Tests über der Laufzeitgrenze ohne `// slow: <Grund>` (#226) | ein Test schlägt fehl |
 | 2 Angemessenheit | alle drei Pakete ≥ 80 %, keine nicht erkannten Mutanten | Abdeckung erreicht, aber nicht erkannte Mutanten oder kein Mutationslauf | ein Paket unter 80 % |
 | 3 Anforderungsbezug | jedes Abnahmekriterium durch Test belegt, geprüft oder abgehakt | Kriterien ohne Test, ohne Prüfung und ohne Haken | – |
 | 4 Ergebnis | jeder durchgerutschte Fehler nennt den Test, der ihn hätte fangen müssen, und den Regressionstest | eine Antwort fehlt | – |

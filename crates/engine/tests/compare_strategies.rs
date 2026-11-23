@@ -63,6 +63,7 @@ fn assert_same_as_run(base: &Value, o: &Outcome) {
 }
 
 // #197/AK5: with the example plan the figures of every strategy are those of `run` of the same plan.
+// slow: compares all seven strategies and repeats `run` for each
 #[test]
 fn issue_197_ak5_compare_gives_the_figures_of_run() {
     let base = example();
@@ -136,6 +137,7 @@ fn issue_197_ak1_plan_values_without_search() {
 
 // #197/AK3: «both» shows every strategy twice (as planned and «never sell»), each with the figures of `run`;
 // without a property only «as planned».
+// slow: compares two strategies with and without sales and repeats `run` for each
 #[test]
 fn issue_197_ak3_property_setting() {
     let base = example();
@@ -176,6 +178,7 @@ fn issue_197_ak3_property_setting() {
 
 // #197/AK2: the end wealth at 1, 5, 50, 95 and 99 % also after an optimization (on the check paths), for the
 // plan and every strategy; the property setting applies to the optimization too.
+// slow: optimization with check paths, with and without sales
 #[test]
 fn issue_197_ak2_end_wealth_after_optimization() {
     let req = Request {

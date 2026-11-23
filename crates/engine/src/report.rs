@@ -353,6 +353,7 @@ mod tests {
 
     /// #207/AK5: the result of `run` for the example plan stays below 20 000 characters (with variations), also
     /// with several paths.
+    // slow: full run of the example plan with variations
     #[test]
     fn issue_207_ak5_run_report_of_the_example_is_short() {
         let plan = crate::api::example_plan();

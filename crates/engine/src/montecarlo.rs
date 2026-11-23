@@ -654,6 +654,7 @@ mod tests {
 
     // #132/AK4: The Student-t draw (Bailey) has the distribution function of the t-distribution, for the default df = 6
     // (separate computation with ∛w), integer and non-integer df and df ≤ 2 (infinite variance).
+    // slow: 200'000 draws for each of six degrees of freedom
     #[test]
     fn issue_132_ak4_student_t_matches_distribution() {
         assert!((t_cdf(1.0, 1.0) - 0.75).abs() < 1e-9, "Cauchy");
@@ -702,6 +703,7 @@ mod tests {
 
     // #132/AK4: Annual log return of a path with price jumps: mean (μ − σ²/2) + λ·μJ, variance σ² plus that of the jumps
     // (per day N·(μJ + σJ·Z) with N Poisson(λ·dt): E[N²]·(μJ² + σJ²) − (E[N]·μJ)²).
+    // slow: 20'000 parametric paths with price jumps
     #[test]
     fn issue_132_ak4_path_with_jumps_matches_model() {
         let f = fixed();

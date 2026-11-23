@@ -322,6 +322,7 @@ proptest! {
     })]
 
     /// #85/AK1, AK2: fixed returns and historical course (one path), all strategies, with and without a partner.
+    // slow: random plans, PROPTEST_CASES cases
     #[test]
     fn proptest_plans_keep_books_balanced(p in params(&LIGHT_SOURCES)) {
         check(&plan(&p), true)?;
@@ -329,6 +330,7 @@ proptest! {
 
     /// #85/AK2, AK3: rolling time windows, bootstrap and parametric Monte Carlo (20 paths); not in the profile
     /// `mutants`.
+    // slow: random plans with Monte Carlo paths, PROPTEST_CASES cases
     #[test]
     fn proptest_plans_monte_carlo_keep_books_balanced(p in params(&HEAVY_SOURCES)) {
         check(&plan(&p), false)?;

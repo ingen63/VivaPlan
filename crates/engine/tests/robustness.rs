@@ -153,6 +153,7 @@ fn finite_run(out: &api::RunOut) -> bool {
         })
 }
 
+// slow: 600 mutated plans with Monte Carlo and variations, checked for crashes
 #[test]
 fn mutated_plans_never_crash() {
     let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");

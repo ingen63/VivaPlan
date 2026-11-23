@@ -255,6 +255,14 @@ jobs:
         run: cp "$(find target -path '*nextest/ci/junit.xml' | head -n1)" junit.xml || true
       - name: Tests der Berichtswerkzeuge (Übersichtsseite, Diff-Abdeckung)
         run: python3 -m unittest discover tools/report
+      - name: Tests der Laufzeitprüfung (#226/AK3)
+        run: python3 -m unittest discover -s tools -p 'test_slow_tests.py'
+      # #226: Tests über der Laufzeitgrenze ihrer Art ohne `// slow: <Grund>` (Hinweis, keine Sperre). Die Laufzeiten
+      # stammen aus dem Lauf mit Abdeckung (instrumentiert, etwas langsamer als ein gewöhnlicher Debug-Build).
+      - name: Laufzeitgrenzen der Tests (Hinweis)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: python3 tools/slow_tests.py junit.xml --markdown >> "$GITHUB_STEP_SUMMARY"
       - name: Basis für den geänderten Code bestimmen
         if: ${{ !cancelled() }}
         env:

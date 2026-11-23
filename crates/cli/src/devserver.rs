@@ -143,6 +143,7 @@ mod tests {
         assert!(call_ok("opt_params", json!({ "plan": plan() })).is_array());
     }
 
+    // slow: calls every compute command of the development server, simulation and optimization included
     #[test]
     fn commands_with_a_plan() {
         let args = json!({ "plan": plan() });
@@ -158,6 +159,7 @@ mod tests {
         assert!(o["outcomes"].is_array());
     }
 
+    // slow: runs a simulation of the example plan through the development server
     #[test]
     fn progress_and_cancel_follow_the_job_id() {
         // #107/AK2, #107/AK4: the user interface passes the id at the start and uses it to poll progress and cancel.
@@ -217,6 +219,7 @@ mod tests {
     }
 
     /// #142: without a plan file, relative paths start in the working directory (in the test the folder `crates/cli`).
+    // slow: reads a whole return series twice
     #[test]
     fn relative_paths_without_a_plan_file_start_in_the_working_directory() {
         let rel = "../engine/data/Shiller CHF.csv";

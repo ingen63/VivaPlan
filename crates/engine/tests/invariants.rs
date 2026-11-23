@@ -181,6 +181,7 @@ fn run(v: &Value) -> Option<(Simulator, SimResult)> {
     Some((sim, res))
 }
 
+// slow: many random plans checked month by month
 #[test]
 fn random_plans_keep_books_balanced() {
     let mut g = Gen(Rng::new(2026, 1));

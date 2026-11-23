@@ -54,6 +54,7 @@ fn value(o: &engine::optimize::Outcome, key: &str) -> f64 {
         .2
 }
 
+// slow: optimization with ranges for the three buckets
 #[test]
 fn fixed_parameters_keep_the_plan_value_and_varied_ones_stay_in_their_range() {
     // Example of the request: bucket 1 fixed, bucket 2 from 0 to 2 years, refill threshold from -30 % to +10 %.
@@ -240,6 +241,7 @@ fn compare_outcomes(floor: f64, ceiling: f64) -> Vec<engine::optimize::Outcome> 
     run_request(&p, Path::new("/"), Some(&lib()), &req).unwrap().outcomes
 }
 
+// slow: compares all strategies and optimizes VPW and endowment on Monte Carlo paths
 #[test]
 fn issue_204_ak1_vpw_and_endowment_list_both_limits_as_fixed_parameters() {
     // #204/AK1: comparison and optimization list floor and ceiling with the plan value.
@@ -260,6 +262,7 @@ fn issue_204_ak1_vpw_and_endowment_list_both_limits_as_fixed_parameters() {
     }
 }
 
+// slow: compares five strategies on Monte Carlo paths
 #[test]
 fn issue_204_ak2_a_limit_of_zero_is_listed_alike_for_all_five_strategies() {
     // #204/AK2: 0 (no limit) appears as fixed value 0 % in every strategy, as with fixed rate and guardrails.
@@ -273,6 +276,7 @@ fn issue_204_ak2_a_limit_of_zero_is_listed_alike_for_all_five_strategies() {
     }
 }
 
+// slow: compares all strategies and optimizes VPW and endowment on Monte Carlo paths
 #[test]
 fn issue_204_ak3_adopting_vpw_or_endowment_keeps_the_limits_of_the_plan() {
     // #204/AK3: the patch of a VPW or endowment row carries the unchanged limits of the plan.

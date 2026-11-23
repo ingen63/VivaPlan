@@ -258,6 +258,7 @@ fn glob_parts(label: &str, parts: &[&str], prefix: bool) -> bool {
         .any(|(i, c)| glob_parts(&label[i + c.len_utf8()..], rest, prefix))
 }
 
+// slow: looks up every quoted label of the help in the text table, for every language
 #[test]
 fn issue_173_ak3_quoted_screen_labels_are_in_the_text_table() {
     for &(language, open, close) in LABEL_QUOTES {

@@ -16,6 +16,7 @@ fn plan(source: &str) -> serde_json::Value {
     p
 }
 
+// slow: performance measurement for four return sources
 #[test]
 fn bench_measures_one_run_for_each_source() {
     let lib = data_dir();
@@ -36,6 +37,7 @@ fn bench_measures_one_run_for_each_source() {
     assert!(n > 100, "{n}");
 }
 
+// slow: performance measurement with the capped number of paths
 #[test]
 fn bench_caps_the_number_of_paths_and_reports_errors() {
     let mut p = plan("bootstrap");

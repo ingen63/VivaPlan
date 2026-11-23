@@ -1887,6 +1887,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    // slow: imports the whole Shiller table where it exists (only locally)
     #[test]
     fn shiller_import_from_table_and_error_case() {
         let (_tmp, lib) = tmp("shiller");

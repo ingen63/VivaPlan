@@ -42,6 +42,7 @@ fn shipped_series_match_import() {
     assert!((usd.stocks[i] + 0.20).abs() < 0.01, "{}", usd.stocks[i]);
 }
 
+// slow: full run of the example plan with rolling windows of a library series
 #[test]
 fn plan_uses_library_reference() {
     let mut plan = api::example_plan();

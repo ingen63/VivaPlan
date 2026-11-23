@@ -32,6 +32,7 @@ fn cancel_when_running() -> std::thread::JoinHandle<progress::Progress> {
     })
 }
 
+// slow: needs runs long enough to cancel simulation and optimization while they run
 #[test]
 fn progress_counts_and_cancel_stops_simulation_and_optimization() {
     let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");

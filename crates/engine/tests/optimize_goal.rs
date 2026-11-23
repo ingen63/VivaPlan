@@ -95,6 +95,7 @@ fn goal_two_constraints_are_ruin_limit_and_minimum_consumption() {
     );
 }
 
+// slow: optimization with goal 2 over all strategies of the example plan
 #[test]
 fn goal_two_report_is_sorted_by_emergency_share() {
     let base = example();
@@ -132,6 +133,7 @@ fn goal_two_report_is_sorted_by_emergency_share() {
     assert!(fp(&report) <= fp(&one) + 1e-12 || report.outcomes.iter().all(|o| !o.feasible));
 }
 
+// slow: optimization with goal 2 on the example plan
 #[test]
 fn goal_two_needs_a_property_and_a_sensible_minimum() {
     let mut base = example();

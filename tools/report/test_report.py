@@ -22,6 +22,9 @@ class Status(unittest.TestCase):
         self.assertEqual(report.status_hygiene({"failed": [], "flaky": []}), report.OK)
         self.assertEqual(report.status_hygiene({"failed": [], "flaky": ["a"]}), report.HINT)
         self.assertEqual(report.status_hygiene({"failed": ["x"], "flaky": ["a"]}), report.FAIL)
+        # #226/AK2: a test over its run time limit without a reason is a hint, not an error
+        self.assertEqual(report.status_hygiene({"failed": [], "flaky": [], "slow": [{"test": "t"}]}), report.HINT)
+        self.assertEqual(report.status_hygiene({"failed": ["x"], "flaky": [], "slow": [{"test": "t"}]}), report.FAIL)
 
     def test_fit_needs_both_packages_and_no_missed_mutants(self):
         pk = lambda a, b, c=90: {"pkgs": {"Engine (vivaplan-engine)": (a, 10), "App (vivaplan-app)": (b, 10), "Kommandozeile (vivaplan-cli)": (c, 10)}}
@@ -234,6 +237,23 @@ class Page(unittest.TestCase):
                 os.chdir(cwd)
                 report.ROOT, report.sh, sys.argv = old_root, old_sh, old_argv
             return (root / "out" / "index.html").read_text(encoding="utf-8")
+
+    def test_issue_226_ak2_hygiene_lists_slow_tests_without_reason_as_a_hint(self):
+        def setup(root):
+            (root / "crates" / "engine" / "tests").mkdir(parents=True)
+            (root / "crates" / "engine" / "Cargo.toml").write_text('[package]\nname = "vivaplan-engine"\n')
+            (root / "crates" / "engine" / "tests" / "heavy.rs").write_text("#[test]\nfn plain() {}\n\n// slow: many plans\n#[test]\nfn reasoned() {}\n")
+            (root / "target" / "nextest" / "ci").mkdir(parents=True)
+            (root / "target" / "nextest" / "ci" / "junit.xml").write_text(
+                '<testsuites><testsuite><testcase classname="vivaplan-engine::all" name="heavy::plain" time="2.5"/>'
+                '<testcase classname="vivaplan-engine::all" name="heavy::reasoned" time="9"/></testsuite></testsuites>')
+        page = self.render(setup)
+        self.assertIn("1 Hygiene <span", page)
+        self.assertIn(">Hinweis<", page.split("<h2>2 ")[0])
+        self.assertIn("Über der Laufzeitgrenze ohne Begründung", page)
+        self.assertIn("vivaplan-engine::all heavy::plain", page.split("Die zehn langsamsten")[0])
+        self.assertNotIn("heavy::reasoned", page.split("Die zehn langsamsten")[0])
+        self.assertIn("crates/engine/tests/heavy.rs:2", page)
 
     def test_issue_41_ak3_missed_mutants_are_listed_one_by_one_with_file_and_line(self):
         # #41/AK3

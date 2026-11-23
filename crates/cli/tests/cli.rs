@@ -332,6 +332,7 @@ fn optimize_compares_strategies_and_respects_ruin_limit() {
     assert!(!run(&["optimize"]).status.success());
 }
 
+// slow: runs the optimization twice through the binary (100 search and 200 check paths)
 #[test]
 fn optimize_uses_saved_settings_and_options_override_them() {
     let (_tmp, d) = tmp("optimize-saved");
