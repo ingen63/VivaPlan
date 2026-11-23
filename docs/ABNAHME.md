@@ -891,6 +891,21 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #202/AK5 | «Installationspakete» baut nur das `.dmg` für macOS, als Start von Hand und durch ein Versions-Tag. Der Release-Entwurf … | ☐ | **gilt** | kein Test (Durchsicht `pakete.yml`, `actionlint`) | 22.11.2026 teilweise: Matrix nur `macos`; Lauf mit Release-Entwurf fehlt |
 | #202/AK6 | `docs/TESTS.md` und die Kommentare in den Workflows beschreiben den neuen Ablauf. Hilfe und Übersicht nennen die Pakete für … | ☑ | **gilt** | kein Test (Durchsicht, `grep`) | 22.11.2026 ok: TESTS, ENTWICKLUNG, BESCHREIBUNG, README; Hilfe nannte nie Pakete |
 
+### #220 Auswahlmenu ohne kontrast
+
+[Issue #220](https://github.com/ingen63/VivaPlan/issues/220) · offen (`implemented`) · Umsetzung: 1774c54, f78c56c · Kriterien im Klärungskommentar vom 23.11.2026
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #220/AK1 | In den Einstellungen gibt es «Darstellung: System / Hell / Dunkel», Vorgabe «System». Die Wahl wird in den … | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK1` (2 Tests) | 23.11.2026 ok (Browser-Speicher und App-Einstellungen über `settings_set`, Neuladen, «Standardwerte») |
+| #220/AK2 | Bei «System» folgt die App `prefers-color-scheme`, auch wenn das Thema zur Laufzeit wechselt. | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK2` | 23.11.2026 ok |
+| #220/AK3 | Im dunklen Theme sind Oberfläche, Auswahlmenüs (`select`/`option`), Eingabefelder, Dialoge, Menüs und Hilfe lesbar … | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK3 AK6` (4 Tests) | 23.11.2026 ok (Kontrast ≥ 4,5:1; bei der Abnahme behoben: ⓘ-Knöpfe mit nativem Hintergrund, f78c56c) |
+| #220/AK4 | Die Diagramme (Achsen, Gitter, Beschriftungen, Linien, Flächen) sind im dunklen Theme lesbar. | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK4` | 23.11.2026 ok (dazu Sichtprüfung am Bildschirmfoto der Ergebnisse) |
+| #220/AK5 | Im hellen Theme ändert sich das Aussehen nicht, auch nicht unter einem dunklen Systemthema (Ursache dieses Fehlers). | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK5` | 23.11.2026 ok (berechnete Farben aller Elemente gleich; aktiver Menüeintrag hell 4,1:1, bestehendes Design) |
+| #220/AK6 | Ein e2e-Test prüft den Kontrast der wichtigsten Elemente (inkl. Auswahlmenü) in beiden Themen bei emuliertem … | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK3 AK6` | 23.11.2026 ok |
+| #220/AK7 | Texte als Schlüssel in `i18n`; Hilfe und `BESCHREIBUNG.md` nachgeführt. | ☑ | **gilt** | `make ui-texts` | 23.11.2026 ok (Hilfe de/en/fr/it) |
+| #220/AK8 | Unter Linux (AppImage, dunkles Systemthema) sind die Auswahlmenüs lesbar. Prüfbar erst mit dem nächsten Paket. | ☐ | **gilt** | kein Test | 23.11.2026 nicht geprüft: erst mit dem nächsten AppImage |
+
 ### #221 Robustheitstest über alle Rechenbefehle mit unsinnigen Argumenten
 
 [Issue #221](https://github.com/ingen63/VivaPlan/issues/221) · offen (`implemented`) · Umsetzung: 4162603
