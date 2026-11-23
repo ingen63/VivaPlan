@@ -17,6 +17,12 @@ store-failure-output = true
 filter = 'test(mutated_plans_never_crash)'
 slow-timeout = { period = "120s", terminate-after = 5 }
 
+# #221: Befehls-Sweep; bei einem Push unter 10 s, nächtlich mit PROPTEST_CASES=10000 rund 1'300 Aufrufe. Ein Hänger
+# endet spätestens hier; die letzte Ausgabe des Tests nennt den Befehl.
+[[profile.ci.overrides]]
+filter = 'test(/^command_sweep::/)'
+slow-timeout = { period = "120s", terminate-after = 10 }
+
 # #85: Zufällige Planungen; nächtlich mit PROPTEST_CASES=10000 (rund 40-mal so viele Fälle wie bei einem Push).
 [[profile.ci.overrides]]
 filter = 'test(/^proptest_plans::/)'

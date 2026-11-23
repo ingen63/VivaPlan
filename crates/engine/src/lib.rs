@@ -13,6 +13,7 @@ pub mod batch;
 pub mod calibrate;
 pub mod dispatch;
 pub mod fieldpath;
+mod finite;
 pub mod housing;
 pub mod import;
 pub mod jst;

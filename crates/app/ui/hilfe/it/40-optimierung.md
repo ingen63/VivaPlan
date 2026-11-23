@@ -156,6 +156,8 @@ Parole chiave: percorsi, verifica, punti d’inizio, precisione, tempo di calcol
 
 I percorsi provengono dalla fonte di rendimenti della pianificazione (bootstrap o parametrica). I percorsi di verifica hanno un **altro valore iniziale casuale**. Con «Tutti i momenti d’inizio storici» non vi sono percorsi casuali. Ricerca e verifica calcolano allora gli stessi segmenti storici, la **verifica lì non è indipendente**.
 
+**Limiti superiori:** Un’ottimizzazione calcola al massimo **20 milioni di simulazioni** (ricerca e verifica insieme; i valori predefiniti ne richiedono circa 1,7 milioni con tutte le strategie). Con rendimenti bootstrap o parametrici, per i percorsi della ricerca e della verifica vale inoltre lo stesso limite di memoria dei percorsi della pianificazione. Oltre, l’app rifiuta l’ottimizzazione con un messaggio invece di calcolare per ore. Una strategia scelta due volte viene ottimizzata una sola volta.
+
 ## @o-algorithm Come funziona la ricerca
 Parole chiave: algoritmo, ricerca casuale, ricerca a schema, margine di sicurezza, verifica, indipendente, sovradattamento
 

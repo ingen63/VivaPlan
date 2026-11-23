@@ -156,6 +156,8 @@ Stichworte: Pfade, Prüfung, Startpunkte, Genauigkeit, Rechenzeit
 
 Die Pfade stammen aus der Renditequelle der Planung (Bootstrap oder parametrisch). Die Prüfpfade haben einen **anderen Zufallsstartwert**. Bei «Alle historischen Startzeitpunkte» gibt es keine Zufallspfade. Suche und Prüfung rechnen dann dieselben historischen Abschnitte, die **Prüfung ist dort nicht unabhängig**.
 
+**Obergrenzen:** Eine Optimierung rechnet höchstens **20 Millionen Läufe** (Suche und Prüfung zusammen; die Standardwerte brauchen mit allen Strategien rund 1,7 Millionen). Mit Bootstrap oder parametrischen Renditen gilt für die Pfade der Suche und der Prüfung zudem dieselbe Speichergrenze wie für die Pfade der Planung. Darüber lehnt die App die Optimierung mit einer Meldung ab, statt stundenlang zu rechnen. Eine Strategie, die doppelt gewählt ist, wird einmal optimiert.
+
 ## @o-algorithm Wie die Suche funktioniert
 Stichworte: Algorithmus, Zufallssuche, Mustersuche, Sicherheitsabstand, Prüfung, unabhängig, Überanpassung
 

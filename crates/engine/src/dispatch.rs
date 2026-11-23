@@ -45,8 +45,12 @@ fn job_id(args: &Value) -> Option<u64> {
     args.get("jobId").and_then(Value::as_u64)
 }
 
-fn to(v: &impl Serialize) -> Value {
-    serde_json::to_value(v).expect("serialisierbar")
+/// #221: serde_json would write NaN and ∞ as `null`; a result with such a number is an error that names the field.
+fn to(v: &impl Serialize) -> Result<Value, crate::message::Message> {
+    if let Some(field) = crate::finite::first_non_finite(v) {
+        return Err(msg!(result_not_finite, field = field));
+    }
+    Ok(serde_json::to_value(v).expect("serialisierbar"))
 }
 
 /// Answers a compute command. `library` is the data library, `fallback` the folder for relative paths if
@@ -58,11 +62,11 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
     let lib = Some(library);
     Ok(match cmd {
         "app_info" => json!({ "version": env!("CARGO_PKG_VERSION"), "buildEpoch": null }),
-        "bench_plan" => to(&api::bench(&plan, &base(), lib)?),
+        "bench_plan" => to(&api::bench(&plan, &base(), lib)?)?,
         "progress_get" => to(&match job_id(args) {
             Some(id) => progress::snapshot_of(id),
             None => progress::snapshot(),
-        }),
+        })?,
         "cancel_job" => {
             match job_id(args) {
                 Some(id) => {
@@ -72,18 +76,18 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
             }
             Value::Null
         }
-        "opt_params" => to(&api::opt_params(&plan)),
+        "opt_params" => to(&api::opt_params(&plan))?,
         "example_plan" => api::example_plan(),
         "gain_templates" => api::gain_templates(),
-        "tax_locations" => to(&api::tax_locations()),
-        "validate" => to(&api::validate(&plan)),
-        "upgrade_plan" => to(&api::upgrade_plan(&plan)),
-        "preview" => to(&api::preview(&plan, &base(), lib)),
-        "run_simulation" => to(&api::run_as(job_id(args), &plan, &base(), lib)),
+        "tax_locations" => to(&api::tax_locations())?,
+        "validate" => to(&api::validate(&plan))?,
+        "upgrade_plan" => to(&api::upgrade_plan(&plan))?,
+        "preview" => to(&api::preview(&plan, &base(), lib))?,
+        "run_simulation" => to(&api::run_as(job_id(args), &plan, &base(), lib))?,
         "rerun_paths" => {
             let picks: Vec<(u32, usize)> = serde_json::from_value(args.get("picks").cloned().unwrap_or_default())
                 .map_err(|e| msg!(raw_error, detail = e.to_string()))?;
-            to(&api::rerun_paths(&plan, &picks, &base(), lib))
+            to(&api::rerun_paths(&plan, &picks, &base(), lib))?
         }
         "series_info" => {
             let p = args
@@ -91,16 +95,16 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
                 .and_then(Value::as_str)
                 .ok_or_else(|| msg!(path_missing))?;
             // #142: like the desktop app, relative to the folder of the project file (`planPath`)
-            to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib).map_err(|e| e.message())?)
+            to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib).map_err(|e| e.message())?)?
         }
         "optimize" => {
             let mut req = args.get("request").cloned().unwrap_or(json!({}));
             if let (Some(id), Some(obj)) = (job_id(args), req.as_object_mut()) {
                 obj.insert("jobId".into(), id.into());
             }
-            to(&api::optimize(&plan, &req, &base(), lib).map_err(|e| e.message())?)
+            to(&api::optimize(&plan, &req, &base(), lib).map_err(|e| e.message())?)?
         }
-        "library_list" => to(&api::library_list(library).map_err(|e| e.message())?),
+        "library_list" => to(&api::library_list(library).map_err(|e| e.message())?)?,
         _ => return Err(msg!(command_desktop_only, cmd = cmd)),
     })
 }

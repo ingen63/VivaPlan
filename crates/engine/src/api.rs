@@ -241,7 +241,13 @@ pub fn bench(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Result<Be
             v["returns"][key]["paths"] = Value::from(n.min(1000));
         }
     }
-    v["scenarios"]["sweeps"] = Value::Array(vec![]);
+    // #221: only in an object (indexing a list or a number would panic); anything else fails when reading the plan
+    if let Some(Value::Object(s)) = v.as_object_mut().map(|o| {
+        o.entry("scenarios")
+            .or_insert_with(|| Value::Object(Default::default()))
+    }) {
+        s.insert("sweeps".into(), Value::Array(vec![]));
+    }
     let p = parse(&v).map_err(|i| i.message)?;
     let sim = Simulator::new(&p).map_err(|e| e.message())?;
     let data = batch::load_series(&p, base_dir, library).map_err(|e| e.message())?;
@@ -416,6 +422,9 @@ pub struct RerunOut {
     pub details: Vec<(u32, SimResult)>,
 }
 
+/// #221: Most runs that [`rerun_paths`] recomputes in one call (each with all monthly values in memory).
+pub const MAX_PICKS: usize = 100;
+
 /// Recomputes single runs of a variation step without simulating all paths: `plan.scenarios.select` selects the
 /// step, `picks` are pairs of percentile and path number (`Percentile.index` of the scenarios).
 pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, library: Option<&Path>) -> RerunOut {
@@ -423,6 +432,10 @@ pub fn rerun_paths(plan: &Value, picks: &[(u32, usize)], base_dir: &Path, librar
         error: Some(e),
         details: vec![],
     };
+    // #221: Every run keeps all monthly values; the user interface asks for six.
+    if picks.len() > MAX_PICKS {
+        return fail(msg!(rerun_too_many_picks, count = picks.len(), max = MAX_PICKS));
+    }
     let run = || -> crate::Result<Vec<(u32, SimResult)>> {
         let selected = select_variation(plan)?;
         let plan = selected.as_ref().unwrap_or(plan);

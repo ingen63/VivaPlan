@@ -699,6 +699,7 @@ codes! {
     series_no_data => "Time series {name}: no data",
     historical_start_outside => "Historical start {start:ym} is outside the time series {name} ({first:ym} – {last:ym})",
     raw_error => "{detail}",
+    result_not_finite => "The result contains an invalid number (field {field}). Please check the inputs.",
     // Optimization (optimize.rs)
     percent_value => "{value} %",
     optimize_range_invalid => "{strategy}, {param}: the range from {lo} to {hi} is invalid (“from” must not be greater than “to”).",
@@ -707,6 +708,7 @@ codes! {
     optimize_strategy_unknown => "Unknown strategy “{strategy}” (standard, three_buckets, three_buckets_guardrails, guardrails, fixed_rate, vpw, endowment, all)",
     optimize_ruin_range => "The ruin limit must be between 0 % and 100 %.",
     optimize_paths_positive => "The number of paths must be greater than 0.",
+    optimize_too_many_runs => "The optimization would compute {runs:int} runs; at most {max:int} are possible. Reduce the paths, the start points or the strategies.",
     optimize_keep_property_without_property => "The goal “No emergency sale of real estate” requires a plan with at least one property.",
     optimize_min_consumption_range => "The minimum consumption must be between 0 % and 200 % of the planned spending.",
     optimize_no_pk_payout => "The plan has no retirement (pension fund “payout from”).",
@@ -786,6 +788,7 @@ codes! {
     legacy_config_detected => "This is a configuration of the previous program – please use “Import old config.json”.",
     variation_selection_without_param => "Variation selected without a parameter",
     path_index_outside => "Path number {index} outside 0 to {max}",
+    rerun_too_many_picks => "{count:int} runs requested; at most {max:int} can be recomputed at once.",
     field_assignment_invalid => "“{text}”: expected <path>=<value>",
     field_path_unknown => "Unknown field path “{path}”",
     field_type_wrong => "“{path}”: {value} does not fit, expected {expected}",

@@ -1090,7 +1090,17 @@ impl Request {
                     .find(|s| strategy_key(*s) == k.trim())
                     .ok_or_else(|| Error::Invalid(msg!(optimize_strategy_unknown, strategy = k)))
             })
-            .collect()
+            .collect::<Result<Vec<_>>>()
+            .map(|mut list| {
+                // #221: a strategy listed twice is optimized once
+                let mut seen = vec![];
+                list.retain(|s| {
+                    let new = !seen.contains(s);
+                    seen.push(*s);
+                    new
+                });
+                list
+            })
     }
 }
 
@@ -1146,22 +1156,31 @@ fn search_evals(s: OptStrategy) -> u64 {
     }
 }
 
+/// #221: Most runs of one optimization (search and check, as counted by the progress). The defaults of the user interface
+/// (6 strategies, 5'000 search paths, 30 starting points, 10'000 check paths) need about 1.7 million; more than
+/// [`MAX_RUNS`] would compute for hours.
+pub const MAX_RUNS: u64 = 20_000_000;
+
 /// Estimated number of runs for the progress display: per strategy starting points plus pattern search
 /// (empirical values, proportional to the varied parameters) on the search paths, plus the check paths for every strategy
 /// and for the plan itself.
 fn progress_total(req: &Request, strategies: &[OptStrategy], variants: usize) -> Result<u64> {
-    let mut search = 0;
+    let mut search: u64 = 0;
     for s in strategies {
         let (varied, _) = split_defs(*s, &req.ranges)?;
         let usual = param_defs(*s).iter().filter(|d| !d.fixed).count().max(1) as u64;
-        search += if varied.is_empty() {
+        search = search.saturating_add(if varied.is_empty() {
             1
         } else {
-            req.samples as u64 + 2 + search_evals(*s) * varied.len() as u64 / usual
-        };
+            (req.samples as u64).saturating_add(2 + search_evals(*s) * varied.len() as u64 / usual)
+        });
     }
     let variants = variants as u64;
-    Ok(variants * search * req.paths as u64 + (variants * strategies.len() as u64 + 1) * req.check_paths as u64)
+    // #221: saturating, so that absurd numbers of paths or starting points end in the limit [`MAX_RUNS`], not in an overflow
+    Ok(variants
+        .saturating_mul(search)
+        .saturating_mul(req.paths as u64)
+        .saturating_add((variants * strategies.len() as u64 + 1).saturating_mul(req.check_paths as u64)))
 }
 
 /// The plan has a property of its own (not only rented ones).
@@ -1249,12 +1268,37 @@ fn run_request_within(
     } else {
         progress_total(req, &strategies, variants.len())?
     };
+    if total > MAX_RUNS {
+        return Err(Error::Invalid(msg!(
+            optimize_too_many_runs,
+            runs = total.min(i64::MAX as u64),
+            max = MAX_RUNS
+        )));
+    }
     let _job = crate::progress::start_as(req.job_id, total);
     let plan = parse_plan(base)?;
     let sim = Simulator::new(&plan)?;
     let retire = sim
         .retire_at()
         .ok_or_else(|| Error::Invalid(msg!(optimize_no_pk_payout)))?;
+    // #221: Monte Carlo search and check paths within the memory limit of the plan's own paths (#139)
+    if !req.compare
+        && matches!(
+            plan.returns.source,
+            crate::model::ReturnSource::Bootstrap | crate::model::ReturnSource::Parametric
+        )
+    {
+        let months = sim.months().max(1) as u64;
+        let max_paths = crate::validate::MAX_PATH_MONTHS / months;
+        if let Some(&n) = [req.paths, req.check_paths].iter().find(|&&n| n as u64 > max_paths) {
+            return Err(Error::Invalid(msg!(
+                paths_memory,
+                paths = (n as u64).min(i64::MAX as u64),
+                months = months,
+                max = max_paths
+            )));
+        }
+    }
     let data = batch::load_series(&plan, base_dir, library)?;
     let bases: Vec<(bool, Value)> = variants
         .iter()
@@ -1335,6 +1379,35 @@ fn run_request_within(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// #221: The defaults of the user interface (all strategies except 3 buckets with guardrails, both property
+    /// settings) stay well below the limit; absurd numbers saturate instead of overflowing.
+    #[test]
+    fn issue_221_ak1_default_request_stays_below_the_run_limit() {
+        let ui: Vec<OptStrategy> = all_strategies()
+            .into_iter()
+            .filter(|s| strategy_key(*s) != "three_buckets_guardrails")
+            .collect();
+        let total = progress_total(&Request::default(), &ui, 2).unwrap();
+        assert!(total > 1_000_000 && total < MAX_RUNS / 4, "{total}");
+        let absurd = Request {
+            samples: usize::MAX,
+            paths: usize::MAX,
+            ..Request::default()
+        };
+        assert_eq!(progress_total(&absurd, &ui, 2).unwrap(), u64::MAX);
+    }
+
+    /// #221: A strategy listed twice is optimized once (otherwise a long list would multiply the computation).
+    #[test]
+    fn issue_221_ak1_strategies_are_listed_once() {
+        let req = Request {
+            strategies: vec!["vpw".into(), "fixed_rate".into(), "vpw".into(), " vpw ".into()],
+            ..Request::default()
+        };
+        let keys: Vec<&str> = req.strategy_list().unwrap().into_iter().map(strategy_key).collect();
+        assert_eq!(keys, ["vpw", "fixed_rate"]);
+    }
 
     #[test]
     fn stock_share_keeps_earlier_rows() {

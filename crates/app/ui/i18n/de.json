@@ -451,6 +451,7 @@
   "engine.optimize_no_retirement": "Die Planung hat keine Pensionierung.",
   "engine.optimize_paths": "Optimierung: Die Anzahl Pfade muss grösser als 0 sein.",
   "engine.optimize_paths_positive": "Die Anzahl Pfade muss grösser als 0 sein.",
+  "engine.optimize_too_many_runs": "Die Optimierung würde {runs:int} Läufe rechnen; höchstens {max:int} sind möglich. Verringern Sie die Pfade, die Startpunkte oder die Strategien.",
   "engine.optimize_problem": "Optimierung: {problem}",
   "engine.optimize_range_invalid": "{strategy}, {param}: Die Bandbreite von {lo} bis {hi} ist ungültig («von» darf nicht grösser als «bis» sein).",
   "engine.optimize_range_limits": "{strategy}, {param}: Die Bandbreite muss zwischen {min} und {max} liegen.",

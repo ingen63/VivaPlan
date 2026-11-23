@@ -16,6 +16,7 @@ mod buckets_guardrails;
 mod buckets_need;
 mod cancel;
 mod cash_housing;
+mod command_sweep;
 mod compare_strategies;
 mod data;
 mod example_neu;

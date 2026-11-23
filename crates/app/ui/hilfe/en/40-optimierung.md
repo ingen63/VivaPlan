@@ -156,6 +156,8 @@ Keywords: paths, checking, start points, accuracy, calculation time
 
 The paths come from the return source of the plan (bootstrap or parametric). The paths for checking have a **different random seed**. With “All historical start dates”, there are no random paths. Search and checking then calculate the same historical periods, so **the checking is not independent there**.
 
+**Upper limits:** An optimization computes at most **20 million runs** (search and check together; the default values need about 1.7 million with all strategies). With bootstrap or parametric returns, the paths for the search and for checking are also subject to the same memory limit as the paths of the plan. Above that, the app rejects the optimization with a message instead of computing for hours. A strategy chosen twice is optimized once.
+
 ## @o-algorithm How the search works
 Keywords: algorithm, random search, pattern search, safety margin, checking, independent, overfitting
 

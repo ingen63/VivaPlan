@@ -451,6 +451,7 @@
   "engine.optimize_no_retirement": "La pianificazione non ha alcun pensionamento.",
   "engine.optimize_paths": "Ottimizzazione: il numero di percorsi deve essere maggiore di 0.",
   "engine.optimize_paths_positive": "Il numero di percorsi deve essere maggiore di 0.",
+  "engine.optimize_too_many_runs": "L’ottimizzazione calcolerebbe {runs:int} simulazioni; ne sono possibili al massimo {max:int}. Riducete i percorsi, i punti d’inizio o le strategie.",
   "engine.optimize_problem": "Ottimizzazione: {problem}",
   "engine.optimize_range_invalid": "{strategy}, {param}: la fascia da {lo} a {hi} non è valida («da» non può essere maggiore di «a»).",
   "engine.optimize_range_limits": "{strategy}, {param}: la fascia deve essere compresa tra {min} e {max}.",

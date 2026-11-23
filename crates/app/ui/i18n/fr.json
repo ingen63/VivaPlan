@@ -451,6 +451,7 @@
   "engine.optimize_no_retirement": "La planification n’a pas de retraite.",
   "engine.optimize_paths": "Optimisation: le nombre de trajectoires doit être supérieur à 0.",
   "engine.optimize_paths_positive": "Le nombre de trajectoires doit être supérieur à 0.",
+  "engine.optimize_too_many_runs": "L’optimisation calculerait {runs:int} simulations; au plus {max:int} sont possibles. Réduisez les trajectoires, les points de départ ou les stratégies.",
   "engine.optimize_problem": "Optimisation: {problem}",
   "engine.optimize_range_invalid": "{strategy}, {param}: la fourchette de {lo} à {hi} n’est pas valable («de» ne doit pas être supérieur à «à»).",
   "engine.optimize_range_limits": "{strategy}, {param}: la fourchette doit être comprise entre {min} et {max}.",

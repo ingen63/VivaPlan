@@ -2900,6 +2900,20 @@
     "text": "Person 2"
   },
   {
+    "code": "result_not_finite",
+    "params": {
+      "field": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The result contains an invalid number (field {field}). Please check the inputs.",
+    "text": "The result contains an invalid number (field Person 2). Please check the inputs."
+  },
+  {
     "code": "percent_value",
     "params": {
       "value": {
@@ -3014,6 +3028,15 @@
     "params": {},
     "template": "The number of paths must be greater than 0.",
     "text": "The number of paths must be greater than 0."
+  },
+  {
+    "code": "optimize_too_many_runs",
+    "params": {
+      "max": 12345.678,
+      "runs": 12345.678
+    },
+    "template": "The optimization would compute {runs:int} runs; at most {max:int} are possible. Reduce the paths, the start points or the strategies.",
+    "text": "The optimization would compute 12'346 runs; at most 12'346 are possible. Reduce the paths, the start points or the strategies."
   },
   {
     "code": "optimize_keep_property_without_property",
@@ -3675,6 +3698,15 @@
     },
     "template": "Path number {index} outside 0 to {max}",
     "text": "Path number Person 2 outside 0 to Person 2"
+  },
+  {
+    "code": "rerun_too_many_picks",
+    "params": {
+      "count": 12345.678,
+      "max": 12345.678
+    },
+    "template": "{count:int} runs requested; at most {max:int} can be recomputed at once.",
+    "text": "12'346 runs requested; at most 12'346 can be recomputed at once."
   },
   {
     "code": "field_assignment_invalid",

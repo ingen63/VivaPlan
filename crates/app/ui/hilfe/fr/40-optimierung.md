@@ -156,6 +156,8 @@ Mots-clés: trajectoires, vérification, points de départ, précision, temps de
 
 Les trajectoires proviennent de la source de rendements de la planification (bootstrap ou paramétrique). Les trajectoires de vérification ont une **autre valeur initiale aléatoire**. Avec «Toutes les dates de départ historiques», il n’y a pas de trajectoires aléatoires. La recherche et la vérification calculent alors les mêmes segments historiques; **la vérification n’y est pas indépendante**.
 
+**Limites supérieures:** Une optimisation calcule au plus **20 millions de simulations** (recherche et vérification ensemble; les valeurs par défaut en demandent environ 1,7 million avec toutes les stratégies). Avec des rendements bootstrap ou paramétriques, les trajectoires de la recherche et de la vérification sont en outre soumises à la même limite de mémoire que les trajectoires de la planification. Au-delà, l’application refuse l’optimisation avec un message au lieu de calculer pendant des heures. Une stratégie choisie deux fois est optimisée une seule fois.
+
 ## @o-algorithm Comment fonctionne la recherche
 Mots-clés: algorithme, recherche aléatoire, recherche par motifs, marge de sécurité, vérification, indépendante, surajustement
 

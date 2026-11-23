@@ -451,6 +451,7 @@
   "engine.optimize_no_retirement": "The plan has no retirement.",
   "engine.optimize_paths": "Optimization: the number of paths must be greater than 0.",
   "engine.optimize_paths_positive": "The number of paths must be greater than 0.",
+  "engine.optimize_too_many_runs": "The optimization would compute {runs:int} runs; at most {max:int} are possible. Reduce the paths, the start points or the strategies.",
   "engine.optimize_problem": "Optimization: {problem}",
   "engine.optimize_range_invalid": "{strategy}, {param}: the range from {lo} to {hi} is invalid (“from” must not be greater than “to”).",
   "engine.optimize_range_limits": "{strategy}, {param}: the range must be between {min} and {max}.",
