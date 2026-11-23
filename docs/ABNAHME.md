@@ -955,3 +955,18 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #224/AK3 | Die Jobs in `test-quality.yml`, die die Ressource haben (z. B. `tests-os` unter Windows für `issue_141_ak3_windows_paths`), … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 23.11.2026 teilweise: `tests-os` (Windows, macOS) und `tests-coverage` setzen die Variablen; Lauf in CI erst nach dem nächsten Push belegbar |
 | #224/AK4 | Ein Test prüft, dass bei gesetzter Pflicht und fehlender Ressource ein Fehler entsteht. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak4_…` (2 Tests) | 23.11.2026 ok (zusätzlich von Hand: `VIVAPLAN_WINDOWS_REQUIRED=1` auf macOS → Fehler) |
 | #224/AK5 | `docs/TESTS.md` listet die Variablen und die Jobs, die sie setzen. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
+### #237 Spendenlink «Buy me a coffee»
+
+[Issue #237](https://github.com/ingen63/VivaPlan/issues/237) · offen (`implemented`) · Umsetzung: 0806a57
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #237/AK1 | Im Info-/Hilfebereich steht ein Eintrag «Kaffee spendieren» (Text über `de.json`, Anrede «Sie»). | ☑ | **gilt** (Ort und Text nach Entscheid im Issue: Menü Hilfe «VivaPlan unterstützen…», Navigation, Fenster «Über VivaPlan») | `main.rs` `issue_237_ak1_…`, [ui-spende.spec.js](../e2e/ui-spende.spec.js) `AK1` (4 Tests) | 23.11.2026 ok (Eintrag vor «Über VivaPlan», graue Zeile unter `nav.localData`, Zeile «Unterstützen» unter «Website»; Texte in de, en, fr, it; Tooltip «Freiwillig einen Kaffee spendieren …») |
+| #237/AK2 | Ein Klick öffnet die festgelegte Buy-me-a-coffee-Adresse im Standardbrowser, nicht in einem App-Fenster. | ☑ | **gilt** | [links.rs](../crates/app/src/links.rs) `issue_237_ak2_…` (2 Tests), `main.rs` `issue_237_ak2_open_link_rejects_addresses`, [ui-spende.spec.js](../e2e/ui-spende.spec.js) `AK2` | 23.11.2026 ok (Befehl `open_link` mit Kennung aus `links.json` über `tauri_plugin_opener::open_url`; fremde Adressen abgewiesen; im Browser neuer Tab; Klick in der installierten App nicht von Hand geprüft) |
+| #237/AK3 | Die App sendet keine Anfrage ins Netz. Sie lädt weder Logo noch Zähler und prüft nicht, ob die Seite erreichbar ist. | ☑ | **gilt** | [ui-spende.spec.js](../e2e/ui-spende.spec.js) (alle Tests prüfen: keine Anfrage ausser an den lokalen Server) | 23.11.2026 ok (kein Bild, kein Abruf; CSP unverändert) |
+| #237/AK4 | Der Hinweis stört nicht: kein Popup, kein Hinweis beim Start, keine Wiederholung. | ☑ | **gilt** | [ui-spende.spec.js](../e2e/ui-spende.spec.js) `AK4` | 23.11.2026 ok |
+| #237/AK5 | Die Hilfe (`crates/app/ui/hilfe/`) und `docs/BESCHREIBUNG.md` erwähnen den Link. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Hilfe de, en, fr, it «Bedienung und Tastenkürzel»; BESCHREIBUNG «Hilfe und Bedienung»; zusätzlich ENTWICKLUNG) |
+| #237/AK6 | `README.md` hat vor dem Abschnitt «Lizenz» einen kurzen Absatz … mit Link auf https://buymeacoffee.com/vivaplan. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Abschnitt «Unterstützen») |
+| #237/AK7 | `.github/FUNDING.yml` enthält `buy_me_a_coffee: vivaplan`; auf der Repo-Seite erscheint der Knopf «Sponsor». | ☐ | **gilt** | kein Test (Durchsicht) | 23.11.2026 teilweise: Datei vorhanden; Knopf «Sponsor» erst nach dem Push prüfbar |
+| #237/AK8 | `tools/check-network-free.sh` bleibt grün (`tauri-plugin-opener` zieht keine Netzwerkbibliothek nach). | ☑ | **gilt** | `tools/check-network-free.sh` | 23.11.2026 ok (neu u. a. `open`, `zbus`; keine gesperrte Bibliothek) |
