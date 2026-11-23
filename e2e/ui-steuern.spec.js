@@ -469,6 +469,82 @@ test.describe("Layout of the rows of the deductions from income (#228)", () => {
   });
 });
 
+test.describe("Additional and one-off deductions from income (#230)", () => {
+  const card = page => page.locator("#tax-deductions");
+  async function withRows(page, rows, oneOff, loc = ["ZH", 261]) {
+    await page.evaluate(([rows, oneOff, loc]) => {
+      state.taxes.deductions = rows;
+      if (oneOff) state.taxes.oneOffDeductions = oneOff; else delete state.taxes.oneOffDeductions;
+      if (loc) { state.taxes.mode = "location"; state.taxes.location = { canton: loc[0], municipality: loc[1], church: "none" }; }
+      markDirty(); renderSection(); scheduleRefresh();
+    }, [rows, oneOff, loc]);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+  const startYear = page => page.evaluate(() => Math.floor(startM() / 12));
+
+  test("AK1: a row with the proposal of the canton has the field for the additional amount per year, an own value not", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "canton" }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
+    const extra = card(page).locator('[data-ded-row="0"] input[data-path="taxes.deductions.0.extra"]');
+    await expect(extra).toBeVisible();
+    await expect(card(page).locator('[data-ded-row="0"]')).toContainText("+ zusätzlich");
+    await expect(card(page).locator('input[data-path="taxes.deductions.1.extra"]')).toHaveCount(0);
+    await extra.fill("3000");
+    await extra.press("Tab");
+    expect(await page.evaluate(() => state.taxes.deductions[0].extra)).toBe(3000);
+    // #228: the value with the extra field still at least 200 px wide
+    expect(await card(page).locator('[data-ded-row="0"] .dedval').evaluate(e => e.getBoundingClientRect().width)).toBeGreaterThanOrEqual(200);
+    await noErrors(page, errors);
+  });
+
+  test("AK2: the list of one-off deductions with tax year, description and amount; ✕ removes", async ({ page }) => {
+    const errors = await open(page);
+    await withRows(page, [{ from: "start", kind: "own", amount: 0, rate: 0 }], null);
+    const y = await startYear(page);
+    await expect(card(page).locator("#ded-oneoff")).toContainText("Einmalige Abzüge");
+    await card(page).locator('button[data-action="ded-oneoff-add"]').click();
+    expect(await page.evaluate(() => state.taxes.oneOffDeductions)).toEqual([{ year: y + 1, label: "Einmaliger Abzug", amount: 0 }]);
+    const row = card(page).locator('[data-oneoff-row="0"]');
+    await expect(row.locator('input[data-path="taxes.oneOffDeductions.0.year"]')).toHaveValue(String(y + 1));
+    await row.locator('input[data-path="taxes.oneOffDeductions.0.label"]').fill("PK-Einkauf");
+    await row.locator('input[data-path="taxes.oneOffDeductions.0.label"]').press("Tab");
+    await row.locator('input[data-path="taxes.oneOffDeductions.0.amount"]').fill("50000");
+    await row.locator('input[data-path="taxes.oneOffDeductions.0.amount"]').press("Tab");
+    expect(await page.evaluate(() => state.taxes.oneOffDeductions[0])).toEqual({ year: y + 1, label: "PK-Einkauf", amount: 50000 });
+    await card(page).locator('[data-oneoff-row="0"] button[data-action="list-del"]').click();
+    expect(await page.evaluate(() => state.taxes.oneOffDeductions)).toEqual([]);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: the tax breakdown shows the additional and the one-off deduction as origins of their own", async ({ page }) => {
+    const errors = await open(page);
+    const y = await startYear(page);
+    await withRows(page, [{ from: "start", kind: "canton", extra: 3000 }], [{ year: y, label: "Sanierung", amount: 8000 }]);
+    await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    const origins = page.locator("#resultsBody table.yt td[data-ded-origin]");
+    await expect(origins.first()).toHaveAttribute("title", /zusätzlich: 3'000/);
+    await expect(origins.first()).toHaveAttribute("title", /einmalig: 8'000/);
+    await expect(origins.nth(1)).not.toHaveAttribute("title", /einmalig/);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: a negative amount and a tax year outside the simulation are errors at the field", async ({ page }) => {
+    const errors = await open(page);
+    const y = await startYear(page);
+    await withRows(page, [{ from: "start", kind: "canton", extra: -1 }], [{ year: y - 1, label: "", amount: -5 }]);
+    expect(await page.evaluate(() => lastIssues.filter(i => i.severity === "error").map(i => [i.section, i.field]))).toEqual([
+      ["taxes", "taxes.deductions.0.extra"], ["taxes", "taxes.oneOffDeductions.0.amount"], ["taxes", "taxes.oneOffDeductions.0.year"]]);
+    await expect(card(page).locator(".ferr")).toHaveCount(3);
+    await expect(card(page)).toContainText(`Das Steuerjahr ${y - 1} liegt ausserhalb der Simulation`);
+    await noErrors(page, errors);
+  });
+});
+
 test.describe("Time-dependent place of residence (#151)", () => {
   /** Mode «Wohnort» with Zurich from the start. */
   async function zurich(page) {

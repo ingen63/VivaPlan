@@ -446,3 +446,222 @@ fn issue_131_net_need_uses_the_same_deductions() {
         "share extrapolated",
     );
 }
+
+/// [`base`] from 2026-01 to 2028-12 with income 120'000 per year and own value 30'000 (#230/AK2).
+fn three_years() -> Value {
+    let mut v = base();
+    v["milestones"][0]["date"] = json!("2026-01");
+    v["milestones"][3]["date"] = json!("2028-12");
+    v["flows"]["income"] = json!(10_000);
+    v["taxes"]["deductions"] = own(30_000.0, 0.0);
+    v
+}
+
+fn canton_row(extra: f64) -> Value {
+    json!([{ "from": "start", "kind": "canton", "extra": extra }])
+}
+
+/// #230/AK1: «zusätzlich» is added to the proposal of the canton, for canton and federal tax (proposal + 3'000).
+#[test]
+fn issue_230_ak1_extra_added_to_proposal() {
+    let mut v = location("ZH", 261, 100_000.0);
+    v["taxes"]["deductions"] = canton_row(0.0);
+    let r0 = run(&v);
+    let b0 = basis(&r0, 2030);
+    assert!(b0.proposal_canton > 0.0 && b0.extra == 0.0);
+    v["taxes"]["deductions"] = canton_row(3000.0);
+    let r1 = run(&v);
+    let b1 = basis(&r1, 2030);
+    close(b1.extra, 3000.0, "extra");
+    close(b1.proposal_canton, b0.proposal_canton, "proposal unchanged");
+    close(
+        b1.proposal_canton + b1.extra,
+        b0.proposal_canton + 3000.0,
+        "deduction = proposal + 3'000",
+    );
+    close(b1.taxable_canton, b0.taxable_canton - 3000.0, "canton");
+    close(b1.taxable_federal, b0.taxable_federal - 3000.0, "federal");
+    assert!(tax(&r1, 2030) < tax(&r0, 2030));
+}
+
+/// #230/AK1: «zusätzlich» is in prices of the start and grows with «Tarife mit der Teuerung».
+#[test]
+fn issue_230_ak1_extra_grows_with_indexed_tariffs() {
+    let mut v = location("ZH", 261, 100_000.0);
+    v["returns"]["fixed"]["inflation"] = json!(0.02);
+    v["taxes"]["deductions"] = canton_row(3000.0);
+    close(basis(&run(&v), 2031).extra, 3000.0, "nominal without the check box");
+    v["taxes"]["indexed"] = json!(true);
+    let r = run(&v);
+    let idx = december(&r, 2031).price_index;
+    assert!(idx > 1.03);
+    close(basis(&r, 2031).extra, 3000.0 * idx, "indexed");
+}
+
+/// #230/AK1: A row «canton» with own tables has no proposal and no extra (as #131/AK11); the extra counts only for
+/// the months of the row.
+#[test]
+fn issue_230_ak1_extra_only_with_proposal_months() {
+    let mut v = base();
+    v["taxes"]["deductions"] = canton_row(3000.0);
+    let b = basis(&run(&v), 2030).clone();
+    assert_eq!(b.extra, 0.0);
+    close(b.taxable_canton, 100_000.0, "own tables");
+    let mut v = location("ZH", 261, 100_000.0);
+    v["taxes"]["deductions"] = json!([
+        { "from": "start", "kind": "own", "amount": 0 },
+        { "from": "2030-07", "kind": "canton", "extra": 3000 }
+    ]);
+    close(basis(&run(&v), 2030).extra, 1500.0, "half a year");
+}
+
+/// #230/AK2: Income 120'000, own value 30'000, one-off 50'000 in 2027 → taxable 40'000 in 2027, 90'000 otherwise.
+#[test]
+fn issue_230_ak2_one_off_in_its_tax_year() {
+    let mut v = three_years();
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2027, "label": "PK-Einkauf", "amount": 50_000 }]);
+    let r = run(&v);
+    close(basis(&r, 2026).taxable_canton, 90_000.0, "2026");
+    close(basis(&r, 2027).taxable_canton, 40_000.0, "2027");
+    close(basis(&r, 2027).taxable_federal, 40_000.0, "2027 federal");
+    close(basis(&r, 2027).one_off, 50_000.0, "one-off");
+    close(basis(&r, 2028).taxable_canton, 90_000.0, "2028");
+    assert_eq!(basis(&r, 2028).one_off, 0.0);
+    close(tax(&r, 2027), 4000.0, "10 % of 40'000");
+    close(tax(&r, 2026), 9000.0, "10 % of 90'000");
+    // several in the same year are added; nominal (no growth with indexed tariffs)
+    v["returns"]["fixed"]["inflation"] = json!(0.02);
+    v["taxes"]["indexed"] = json!(true);
+    v["taxes"]["oneOffDeductions"] = json!([
+        { "year": 2027, "label": "a", "amount": 20_000 },
+        { "year": 2027, "label": "b", "amount": 30_000 }
+    ]);
+    close(basis(&run(&v), 2027).one_off, 50_000.0, "added, nominal");
+}
+
+/// #230/AK2: The one-off deduction also counts with a row «Vorschlag des Kantons» (mode «Wohnort»), for canton and
+/// federal tax, and alone with own tables (the basis is then recorded).
+#[test]
+fn issue_230_ak2_one_off_with_proposal_and_without_rows() {
+    let mut v = location("ZH", 261, 120_000.0);
+    v["taxes"]["deductions"] = canton_row(0.0);
+    let b0 = basis(&run(&v), 2030).clone();
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2030, "label": "Sanierung", "amount": 50_000 }]);
+    let b1 = basis(&run(&v), 2030).clone();
+    close(b1.taxable_canton, b0.taxable_canton - 50_000.0, "canton");
+    close(b1.taxable_federal, b0.taxable_federal - 50_000.0, "federal");
+    let mut v = base();
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2031, "label": "", "amount": 50_000 }]);
+    let r = run(&v);
+    close(basis(&r, 2030).taxable_canton, 100_000.0, "2030");
+    close(basis(&r, 2031).taxable_canton, 50_000.0, "2031");
+}
+
+/// #230/AK3: The taxable income does not become negative (one-off above the income), in both modes.
+#[test]
+fn issue_230_ak3_taxable_income_not_negative() {
+    let mut v = three_years();
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2027, "label": "", "amount": 500_000 }]);
+    let r = run(&v);
+    assert_eq!(basis(&r, 2027).taxable_canton, 0.0);
+    assert_eq!(tax(&r, 2027), 0.0);
+    let mut v = location("ZH", 261, 100_000.0);
+    v["taxes"]["deductions"] = canton_row(500_000.0);
+    let b = basis(&run(&v), 2030).clone();
+    assert_eq!((b.taxable_canton, b.taxable_federal), (0.0, 0.0));
+}
+
+/// #230/AK4: The basis has «zusätzlich» and «einmalig» as own values, also in the result (JSON `extra`, `oneOff`).
+#[test]
+fn issue_230_ak4_basis_shows_extra_and_one_off() {
+    let mut v = location("ZH", 261, 120_000.0);
+    v["taxes"]["deductions"] = canton_row(3000.0);
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2030, "label": "Krankheitskosten", "amount": 8000 }]);
+    let r = run(&v);
+    let j = serde_json::to_value(basis(&r, 2030)).unwrap();
+    assert_eq!(j["extra"], json!(3000.0));
+    assert_eq!(j["oneOff"], json!(8000.0));
+    let b = basis(&r, 2030);
+    close(
+        b.income - b.taxable_canton,
+        b.proposal_canton + b.extra + b.one_off,
+        "deductions = proposal + extra + one-off",
+    );
+}
+
+/// #230/AK5: The estimate of the net need (3 buckets) uses the extra of the ongoing rows; a one-off deduction of the
+/// year does not change it.
+#[test]
+fn issue_230_ak5_net_need_ongoing_only() {
+    let mut v = json!({
+        "project": { "name": "3-Topf" },
+        "household": { "persons": [ { "id": "A", "name": "A", "birth": "1965-01" } ] },
+        "milestones": [
+            { "id": "start", "name": "Start", "kind": "date", "date": "2030-01" },
+            { "id": "retire", "name": "Pensionierung", "kind": "date", "date": "2030-01" },
+            { "id": "end", "name": "Ende", "kind": "date", "date": "2033-12" }
+        ],
+        "pension": { "pk": { "capital": 1_000_000, "at": "retire", "lumpsum": 0, "conversion": 0.054 }, "ahv": { "monthly": 2_500, "at": "start" } },
+        "flows": { "income": 0, "spending": 100_000.0 / 12.0 },
+        "wealth": { "stocks": 600_000, "bonds": 200_000, "cash": 700_000, "stockShare": 0.6, "reserveMonths": 6 },
+        "returns": { "source": "fixed", "fixed": { "stocks": 0.06, "bonds": 0.01, "inflation": 0 } },
+        "taxes": { "income": [[0, 4000.0 / 84000.0]], "wealth": [], "capital": [], "propertyGain": { "brackets": [], "reduction": 0.0 },
+                   "mode": "location", "location": { "canton": "ZH", "municipality": 261, "church": "none" },
+                   "deductions": [ { "from": "start", "kind": "canton" } ] },
+        "withdrawal": { "strategy": "three_buckets", "buckets": { "cashYears": 2, "bondYears": 1, "refillThreshold": -1 } }
+    });
+    let need = |v: &Value| {
+        let r = run(&crate::any_age(v.clone()));
+        r.bucket_refills
+            .iter()
+            .find(|x| x.month == YearMonth::new(2031, 1))
+            .unwrap()
+            .basis
+            .income_tax
+    };
+    let without = need(&v);
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2031, "label": "", "amount": 50_000 }]);
+    assert_eq!(need(&v), without, "one-off: not in the estimate");
+    // the one-off counts in the assessment of its tax year
+    let r = run(&crate::any_age(v.clone()));
+    close(basis(&r, 2031).one_off, 50_000.0, "assessment 2031");
+    v["taxes"]["deductions"][0]["extra"] = json!(10_000);
+    assert!(need(&v) < without - 1.0, "extra lowers the estimated income tax");
+}
+
+/// #230/AK6: Negative amounts and a tax year outside the simulation are errors at the field.
+#[test]
+fn issue_230_ak6_invalid_values_are_errors() {
+    let mut v = location("ZH", 261, 100_000.0);
+    v["taxes"]["deductions"] = canton_row(-1.0);
+    assert_eq!(
+        errors(&v),
+        vec![("taxes".to_string(), "taxes.deductions.0.extra".to_string())]
+    );
+    for (row, field) in [
+        (json!({ "year": 2030, "label": "", "amount": -1 }), "amount"),
+        (json!({ "year": 2029, "label": "", "amount": 1 }), "year"),
+        (json!({ "year": 2032, "label": "", "amount": 1 }), "year"),
+    ] {
+        let mut v = base();
+        v["taxes"]["oneOffDeductions"] = json!([{ "year": 2031, "label": "", "amount": 0 }, row]);
+        assert_eq!(
+            errors(&v),
+            vec![("taxes".to_string(), format!("taxes.oneOffDeductions.1.{field}"))]
+        );
+    }
+    let mut v = base();
+    v["taxes"]["oneOffDeductions"] = json!([{ "year": 2030, "amount": 1 }, { "year": 2031, "amount": 1 }]);
+    assert!(errors(&v).is_empty(), "first and last year of the simulation");
+}
+
+/// #230/AK7: Plans without the new fields keep them out of the file (no `extra`, no `oneOffDeductions`).
+#[test]
+fn issue_230_ak7_existing_plans_unchanged() {
+    let mut v = location("ZH", 261, 100_000.0);
+    v["taxes"]["deductions"] = canton_row(0.0);
+    let plan: Plan = serde_json::from_value(v).unwrap();
+    let out = serde_json::to_value(&plan).unwrap();
+    assert!(out["taxes"].get("oneOffDeductions").is_none());
+    assert!(out["taxes"]["deductions"][0].get("extra").is_none());
+}

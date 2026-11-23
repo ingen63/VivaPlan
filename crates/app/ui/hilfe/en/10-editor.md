@@ -273,7 +273,7 @@ The card **Deductions from income** in the section Taxes sets what is deducted f
 
 Each row is either:
 
-- **Proposal of the canton** (only in the mode [place of residence](#f-tax-location), the default there): the standard deductions from the tax data of the FTA, for canton and federal tax – social deductions, insurance premiums and savings interest, professional expenses. The card shows the amount for the first year of the row with its parts; approximated professional expenses (Basel-Landschaft, Basel-Stadt, Ticino) are marked with ⚠. The proposal is computed anew if you change the canton, the municipality or the marital status.
+- **Proposal of the canton** (only in the mode [place of residence](#f-tax-location), the default there): the standard deductions from the tax data of the FTA, for canton and federal tax – social deductions, insurance premiums and savings interest, professional expenses. The card shows the amount for the first year of the row with its parts; approximated professional expenses (Basel-Landschaft, Basel-Stadt, Ticino) are marked with ⚠. The proposal is computed anew if you change the canton, the municipality or the marital status. **Additionally … per year:** an own amount in prices of the simulation start (grows with “Tariffs with inflation”) is added to the proposal, for canton and federal tax. Example: proposal 20 000, additionally 3 000, deduction 23 000.
 - **own value:** an amount per year in prices of the simulation start (grows with [tariffs with inflation](#f-tax-indexed)), optionally plus a percentage of the income. It applies to canton and federal tax and stays when you change the canton, the municipality or the marital status. In the mode “Own tables” there is only the own value; without a row 0 applies. Example: own value 40 000, income 120 000, tax as on 80 000.
 
 **Determining the own value:** The input help computes it from the **income** and the **taxable income according to the assessment**, for example 120 000 and 80 000 give 40 000; “Use as own value” puts it into the row. Note:
@@ -282,13 +282,15 @@ Each row is either:
 - **Without pillar 3a:** the contributions come from the plan (see below).
 - **Home ownership** (imputed rental value, mortgage interest, maintenance) belongs in the own value. From 2029 there is no imputed rental value and no interest deduction for owner-occupied property; add a row “from 2029” for it. **Mortgage interest is not deducted automatically.**
 
+**One-off deductions:** “+ One-off deduction” adds a deduction for a single tax year, with tax year, description and amount (nominal, without inflation), for example a pension fund buy-in, a renovation or medical costs. The amount counts in this tax year in addition to the row that applies, with the proposal of the canton as with the own value and in both modes. Example: income 120 000, own value 30 000, one-off 50 000 in the year 2027 gives a taxable income of 40 000 in 2027, 90 000 in the other years. The estimate of the net need of the [3-bucket strategy](#f-wd-three_buckets) uses only the ongoing deductions.
+
 **Pillar 3a:** With the check box **“Deduct contributions to pillar 3a”** the contributions of a year from the section [Pillar 3a](#s-pillar3a) (including the indirect amortization) are deducted from the taxable income, for canton and federal tax, at most the maximum per person from the settings. Example: income 100 000, no other deductions, contribution 7 000, tax as on 93 000. For a person “Without pension fund (large pillar 3a)”, 20 % of their earned income in the year applies, at most the maximum of the large pillar 3a; like the other amounts it grows with “Tariffs with inflation”. Example: earned income 100 000, contribution 25 000, deduction 20 000; earned income 300 000, contribution 40 000, deduction 36 288. New plans have the check box set.
 
 **Existing plans** compute as before: in the mode “place of residence” with the proposal of the canton throughout, with own tables without deductions, and without the pillar 3a deduction. Only “Adjust deductions” creates rows.
 
-**Validation:** A negative amount or a percentage below 0 % or above 100 % is an error in the section Taxes.
+**Validation:** A negative amount (also “additionally” and one-off), a percentage below 0 % or above 100 % and a tax year outside the simulation are errors in the section Taxes.
 
-**Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, own value, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
+**Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, additionally, own value, one-off, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
 
 ## @f-tax-multiplier Tax multiplier
 Keywords: canton, municipality, multiplier

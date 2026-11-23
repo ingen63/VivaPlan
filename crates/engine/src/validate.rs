@@ -784,6 +784,37 @@ fn check(plan: &Plan, v: &mut Issues) {
                 msg!(deduction_rate_range, row = i + 1),
             );
         }
+        // #230/AK6: additional amount to the proposal of the canton not negative
+        if !(d.extra.is_finite() && d.extra >= 0.0) {
+            v.err_at(
+                "taxes",
+                format!("taxes.deductions.{i}.extra"),
+                msg!(deduction_extra_negative, row = i + 1),
+            );
+        }
+    }
+    // #230/AK6: one-off deductions: amount not negative, tax year within the simulation
+    for (i, d) in t.one_off_deductions.iter().enumerate() {
+        if !(d.amount.is_finite() && d.amount >= 0.0) {
+            v.err_at(
+                "taxes",
+                format!("taxes.oneOffDeductions.{i}.amount"),
+                msg!(one_off_deduction_negative, row = i + 1),
+            );
+        }
+        if !(start.year()..=end.year()).contains(&d.year) {
+            v.err_at(
+                "taxes",
+                format!("taxes.oneOffDeductions.{i}.year"),
+                msg!(
+                    one_off_deduction_year,
+                    row = i + 1,
+                    year = d.year,
+                    from = start.year(),
+                    to = end.year()
+                ),
+            );
+        }
     }
     for (key, name, rows) in tables {
         // #134: The tax (amount × rate) must not fall with a rising amount; only a warning, the computation runs.

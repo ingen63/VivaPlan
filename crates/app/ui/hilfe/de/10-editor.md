@@ -273,7 +273,7 @@ Die Karte **Abzüge vom Einkommen** im Abschnitt Steuern legt fest, was vom Eink
 
 Jede Zeile ist entweder:
 
-- **Vorschlag des Kantons** (nur im Modus [Wohnort](#f-tax-location), dort Standard): die Standardabzüge aus den Steuerdaten der ESTV, je für Kanton und Bund – Sozialabzüge, Versicherungsprämien und Sparzinsen, Berufskosten. Die Karte zeigt den Betrag für das erste Jahr der Zeile mit seinen Bestandteilen; angenäherte Berufskosten (Basel-Landschaft, Basel-Stadt, Tessin) sind mit ⚠ markiert. Der Vorschlag rechnet sich neu, wenn Sie Kanton, Gemeinde oder Zivilstand ändern.
+- **Vorschlag des Kantons** (nur im Modus [Wohnort](#f-tax-location), dort Standard): die Standardabzüge aus den Steuerdaten der ESTV, je für Kanton und Bund – Sozialabzüge, Versicherungsprämien und Sparzinsen, Berufskosten. Die Karte zeigt den Betrag für das erste Jahr der Zeile mit seinen Bestandteilen; angenäherte Berufskosten (Basel-Landschaft, Basel-Stadt, Tessin) sind mit ⚠ markiert. Der Vorschlag rechnet sich neu, wenn Sie Kanton, Gemeinde oder Zivilstand ändern. **Zusätzlich … pro Jahr:** Ein eigener Betrag in Preisen des Simulationsstarts (wächst mit «Tarife mit der Teuerung») kommt zum Vorschlag dazu, für Kanton und Bund. Beispiel: Vorschlag 20 000, zusätzlich 3 000, Abzug 23 000.
 - **eigener Wert:** ein Betrag pro Jahr in Preisen des Simulationsstarts (wächst mit [Tarifen mit der Teuerung](#f-tax-indexed)), optional zusätzlich ein Prozentsatz des Einkommens. Er gilt für Kanton und Bund und bleibt, wenn Sie Kanton, Gemeinde oder Zivilstand ändern. Im Modus «Eigene Tabellen» gibt es nur den eigenen Wert; ohne Zeile gilt 0. Beispiel: eigener Wert 40 000, Einkommen 120 000, Steuer wie bei 80 000.
 
 **Eigenen Wert bestimmen:** Die Eingabehilfe rechnet ihn aus dem **Einkommen** und dem **steuerbaren Einkommen laut Veranlagung**, zum Beispiel 120 000 und 80 000 ergeben 40 000; «Als eigenen Wert übernehmen» setzt ihn in die Zeile. Dabei gilt:
@@ -282,13 +282,15 @@ Jede Zeile ist entweder:
 - **Ohne Säule 3a:** Die Einzahlungen kommen aus der Planung (siehe unten).
 - **Wohneigentum** (Eigenmietwert, Hypothekarzinsen, Unterhalt) gehört in den eigenen Wert. Ab 2029 gibt es für selbstgenutztes Eigentum keinen Eigenmietwert und keinen Schuldzinsabzug mehr; legen Sie dafür eine Zeile «ab 2029» an. **Hypothekarzinsen werden nicht automatisch abgezogen.**
 
+**Einmalige Abzüge:** «+ Einmaliger Abzug» legt einen Abzug für ein einzelnes Steuerjahr an, mit Steuerjahr, Beschreibung und Betrag (nominal, ohne Teuerung), zum Beispiel einen PK-Einkauf, eine Sanierung oder Krankheitskosten. Der Betrag zählt in diesem Steuerjahr zusätzlich zur geltenden Zeile, beim Vorschlag des Kantons wie beim eigenen Wert und in beiden Modi. Beispiel: Einkommen 120 000, eigener Wert 30 000, einmalig 50 000 im Jahr 2027 ergibt 2027 ein steuerbares Einkommen von 40 000, in den übrigen Jahren 90 000. Die Schätzung des Netto-Bedarfs der [3-Topf-Strategie](#f-wd-three_buckets) nutzt nur die laufenden Abzüge.
+
 **Säule 3a:** Mit dem Häkchen **«Einzahlungen in die Säule 3a abziehen»** werden die Einzahlungen eines Jahres aus dem Abschnitt [Säule 3a](#s-pillar3a) (mit der indirekten Amortisation) vom steuerbaren Einkommen abgezogen, für Kanton und Bund, höchstens bis zum Maximalbetrag je Person aus den Einstellungen. Beispiel: Einkommen 100 000, sonst keine Abzüge, Einzahlung 7 000, Steuer wie bei 93 000. Für eine Person «Ohne Pensionskasse (grosse Säule 3a)» gelten 20 % ihres Erwerbseinkommens im Jahr, höchstens der Maximalbetrag der grossen Säule 3a; er wächst wie die anderen Beträge mit «Tarife mit der Teuerung». Beispiel: Erwerb 100 000, Einzahlung 25 000, Abzug 20 000; Erwerb 300 000, Einzahlung 40 000, Abzug 36 288. Neue Planungen haben das Häkchen gesetzt.
 
 **Bestehende Planungen** rechnen wie bisher: im Modus «Wohnort» mit dem Vorschlag des Kantons über die ganze Zeit, mit eigenen Tabellen ohne Abzüge, und ohne Abzug der Säule 3a. Erst «Abzüge anpassen» legt Zeilen an.
 
-**Prüfung:** Ein negativer Betrag oder ein Prozentsatz unter 0 % oder über 100 % ist ein Fehler im Abschnitt Steuern.
+**Prüfung:** Ein negativer Betrag (auch «zusätzlich» und einmalig), ein Prozentsatz unter 0 % oder über 100 % und ein Steuerjahr ausserhalb der Simulation sind Fehler im Abschnitt Steuern.
 
-**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, eigener Wert, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
+**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, zusätzlich, eigener Wert, einmalig, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
 
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator

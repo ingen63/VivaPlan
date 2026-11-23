@@ -573,6 +573,15 @@ ein (`BUILTIN`).
   Kanton/Bund) nur im Dezember und nur bei Planungen mit Abzügen (Modus «Wohnort», `deductions` oder
   `deductPillar3a`). Prüfung: Betrag ≥ 0, `rate` 0 bis 1 (Fehler am Feld), Zeitpunkt auflösbar; Zeilen «canton» mit
   eigenen Tabellen ungeprüft und ohne Wirkung.
+- **Zusätzliche und einmalige Abzüge (#230):** Zeilen «canton» haben `extra` (Betrag pro Jahr in Preisen des Starts,
+  nur gespeichert, wenn ≠ 0; `amount` wird dort nicht umgedeutet, alte Planungen können Werte enthalten).
+  `YearDeductions.extra` summiert `extra` über die Vorschlagsmonate (nur Modus «Wohnort»); im Dezember zusätzlich =
+  Summe / Monate × Index. `taxes.oneOffDeductions` = Liste `{ year, label, amount }` (nominal, mehrere im selben Jahr
+  addiert); `Run` setzt `year_ded.one_off` erst bei der Veranlagung im Dezember, die Schätzung des Netto-Bedarfs
+  (`plan_basis`) rechnet deshalb nur mit den laufenden Abzügen. Steuerbar = Einkommen − (Vorschlag + zusätzlich +
+  eigener Wert + einmalig + 3a), nie negativ, in beiden Modi. `TaxBasis` hat `extra` und `oneOff`; einmalige Abzüge
+  allein schalten die Aufzeichnung ein. Prüfung: `extra` ≥ 0, einmaliger Betrag ≥ 0 und Steuerjahr zwischen dem Jahr
+  des Starts und dem Jahr des Endes (Fehler am Feld).
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
   Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung bei «Tarife mit der

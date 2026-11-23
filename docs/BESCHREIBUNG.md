@@ -221,6 +221,11 @@ würde die Scheingenauigkeit verstärken.
   Erwerbseinkommens im Jahr, höchstens der Maximalbetrag der grossen Säule 3a (#152). Steuerbares Einkommen nie negativ;
   Hypothekarzinsen nie automatisch (Wohneigentum gehört in den eigenen Wert). Bestehende Planungen rechnen wie bisher.
   Die Jahreswerte zeigen mit den Steuerspalten Einkommen, Abzüge mit Herkunft und steuerbares Einkommen.
+- **Zusätzliche und einmalige Abzüge (#230):** Zum Vorschlag des Kantons lässt sich je Zeile ein Betrag pro Jahr
+  dazurechnen («zusätzlich», Preise des Starts, für Kanton und Bund). Einmalige Abzüge (Steuerjahr, Beschreibung,
+  Betrag nominal, zum Beispiel PK-Einkauf, Sanierung, Krankheitskosten) zählen nur in ihrem Steuerjahr zusätzlich zur
+  geltenden Zeile, bei beiden Arten von Zeilen und in beiden Modi; die Schätzung des Netto-Bedarfs (3-Topf) nutzt nur
+  die laufenden Abzüge. Die Herkunft «zusätzlich» und «einmalig» steht im Tooltip der Abzüge.
 - **Was fehlt:** Abzüge im Einzelnen (nur als eigener Wert oder in den Sätzen), Eigenmietwert, Schuldzins- und
   Unterhaltsabzug (nur im eigenen Wert), Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
   Investitionen und Kosten beim Grundstückgewinn, bei der Grundstückgewinnsteuer nach Kanton die Selbstnutzung je

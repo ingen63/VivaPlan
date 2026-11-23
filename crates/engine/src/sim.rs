@@ -215,6 +215,11 @@ pub struct TaxBasis {
     pub parts_federal: Vec<(String, f64)>,
     /// Own value (amount and share of the income), for canton and federal tax.
     pub own: f64,
+    /// #230: Additional amount to the proposal of the canton (share of the year with such a row), for canton and
+    /// federal tax.
+    pub extra: f64,
+    /// #230: One-off deductions of the tax year, for canton and federal tax.
+    pub one_off: f64,
     /// Pillar 3a contributions, at most the maximum per person.
     pub pillar3a: f64,
     /// Taxable income, never negative; with own tables both are the same.
@@ -238,6 +243,10 @@ struct YearDeductions {
     own_amount: f64,
     /// Sum of share × income of the months.
     own_rate: f64,
+    /// #230: Sum of the additional amounts per year of the months with a proposal of the canton (divided by `months`).
+    extra: f64,
+    /// #230: One-off deductions of the tax year (nominal); set at the assessment, not in the estimate of the net need.
+    one_off: f64,
     pillar3a: [f64; 2],
 }
 
@@ -256,6 +265,7 @@ struct CDeduction {
     kind: crate::model::DeductionKind,
     amount: f64,
     rate: f64,
+    extra: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -793,6 +803,8 @@ pub struct Simulator {
     gain_rules: Vec<Vec<GainRule>>,
     /// #131: Rows of the deductions from income, sorted by month; pillar 3a deduction and its maximum per person.
     deductions: Vec<CDeduction>,
+    /// #230: One-off deductions from income per tax year (nominal).
+    one_off: Vec<(i32, f64)>,
     deduct_pillar3a: bool,
     pillar3a_max: f64,
     /// #152: Persons without a pension fund (large pillar 3a) and its maximum.
@@ -970,6 +982,7 @@ impl Simulator {
                             kind: d.kind,
                             amount: d.amount,
                             rate: d.rate,
+                            extra: d.extra,
                         });
                     }
                 }
@@ -982,16 +995,28 @@ impl Simulator {
                 kind: crate::model::DeductionKind::Canton,
                 amount: 0.0,
                 rate: 0.0,
+                extra: 0.0,
             }],
             None => vec![],
         };
+        // #230: one-off deductions per tax year (several in the same year are added).
+        let mut one_off: Vec<(i32, f64)> = Vec::new();
+        for d in &plan.taxes.one_off_deductions {
+            match one_off.iter_mut().find(|(y, _)| *y == d.year) {
+                Some((_, a)) => *a += d.amount,
+                None => one_off.push((d.year, d.amount)),
+            }
+        }
         let tax_values = plan
             .realestate
             .properties
             .iter()
             .any(|p| p.status != PropertyStatus::Rent && p.tax_value.is_some());
-        let tax_basis =
-            !locations.is_empty() || plan.taxes.deductions.is_some() || plan.taxes.deduct_pillar3a || tax_values;
+        let tax_basis = !locations.is_empty()
+            || plan.taxes.deductions.is_some()
+            || plan.taxes.deduct_pillar3a
+            || !one_off.is_empty()
+            || tax_values;
         let props = plan
             .realestate
             .properties
@@ -1095,6 +1120,7 @@ impl Simulator {
             locations,
             gain_rules,
             deductions,
+            one_off,
             deduct_pillar3a: plan.taxes.deduct_pillar3a,
             pillar3a_max: plan.limits.pillar3a_max,
             pillar3a_large: [0, 1].map(|i| persons.get(i).is_some_and(|p| p.no_pension_fund)),
@@ -1156,6 +1182,11 @@ impl Simulator {
         }
     }
 
+    /// #230: One-off deductions from income of the tax year `year` (nominal).
+    fn one_off_deduction(&self, year: i32) -> f64 {
+        self.one_off.iter().filter(|(y, _)| *y == year).map(|(_, a)| a).sum()
+    }
+
     /// #131: Deductible pillar 3a contributions of person `i` per year (at most the maximum of the settings); the only
     /// place of the limit. #152: without a pension fund (large pillar 3a) 20 % of the earned income `earned` of the
     /// year, at most the maximum of the large pillar 3a. `index`: price index (#66).
@@ -1175,6 +1206,7 @@ impl Simulator {
                 // Own tables: no proposal (#131).
                 if !self.locations.is_empty() {
                     acc.canton_months += 1;
+                    acc.extra += d.extra;
                 }
             }
             Some(d) => {
@@ -1199,6 +1231,9 @@ impl Simulator {
         let months = f64::from(acc.months.max(1));
         let share = f64::from(acc.canton_months) / months;
         let own = acc.own_amount / months * index + acc.own_rate;
+        // #230: additional amount to the proposal of the canton (prices of the start) and one-off deductions (nominal)
+        let extra = acc.extra / months * index;
+        let one_off = acc.one_off;
         let pillar3a = if self.deduct_pillar3a {
             (0..self.people.len().min(2))
                 .map(|i| acc.pillar3a[i].min(self.pillar3a_cap(i, earned.get(i).copied().unwrap_or(0.0), index)))
@@ -1210,6 +1245,8 @@ impl Simulator {
             income,
             proposal_share: share,
             own,
+            extra,
+            one_off,
             pillar3a,
             ..Default::default()
         };
@@ -1227,12 +1264,13 @@ impl Simulator {
                     basis.parts_canton = r.canton_deductions.parts(income, earned, index);
                     basis.parts_federal = r.federal_deductions.parts(income, earned, index);
                 }
-                basis.taxable_canton = (income - (basis.proposal_canton + own + pillar3a)).max(0.0);
-                basis.taxable_federal = (income - (basis.proposal_federal + own + pillar3a)).max(0.0);
+                let common = own + extra + one_off + pillar3a;
+                basis.taxable_canton = (income - (basis.proposal_canton + common)).max(0.0);
+                basis.taxable_federal = (income - (basis.proposal_federal + common)).max(0.0);
                 r.income_tax_on(basis.taxable_canton, basis.taxable_federal, index)
             }
             None => {
-                let d = own + pillar3a;
+                let d = own + extra + one_off + pillar3a;
                 // Without deductions exactly the income as before #131.
                 let taxable = if d == 0.0 { income } else { (income - d).max(0.0) };
                 basis.taxable_canton = taxable;
@@ -3486,6 +3524,7 @@ impl<'a> Run<'a> {
                 // #229: the wealth tax uses the tax value of the properties instead of the market value
                 let taxable_wealth = wealth + self.tax_equity();
                 let idx = self.tax_index();
+                self.year_ded.one_off = s.one_off_deduction(m.year());
                 let (ti, mut basis) = s.income_tax(
                     m,
                     self.year_income,
@@ -3850,6 +3889,32 @@ mod tests_deductions {
                 .pillar3a,
             0.0
         );
+    }
+
+    /// #230/AK1: Hand value: a deduction of 20'000 plus «zusätzlich» 3'000 per year gives 23'000 (income 100'000,
+    /// taxable 77'000); the extra is averaged over the months of the year and grows with the price index.
+    #[test]
+    fn issue_230_ak1_extra_hand_value() {
+        let s = simulator(plan(false));
+        let acc = YearDeductions {
+            months: 12,
+            own_amount: 12.0 * 20_000.0,
+            extra: 12.0 * 3000.0,
+            ..Default::default()
+        };
+        let (t, b) = s.income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.0);
+        assert_eq!(b.own + b.extra, 23_000.0);
+        assert_eq!(b.taxable_canton, 77_000.0);
+        assert!((t - 7700.0).abs() < 1e-9);
+        let (_, b) = s.income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.1);
+        assert!((b.extra - 3300.0).abs() < 1e-9);
+        // #230/AK2: one-off on top, nominal
+        let acc = YearDeductions {
+            one_off: 50_000.0,
+            ..acc
+        };
+        let (_, b) = s.income_tax(YearMonth::new(2030, 12), 100_000.0, &[], &acc, 1.1);
+        assert_eq!(b.one_off, 50_000.0);
     }
 
     /// #131/AK3: Before the first row there is no deduction; months without a row count for the share of the year.

@@ -1313,6 +1313,15 @@ function dedProposal(i) {
   const sum = list => list.reduce((a, p) => a + p[1], 0);
   return tr("deductions.proposalYear", { year: y, canton: fmtInt(sum(b.partsCanton)), cantonParts: parts(b.partsCanton), federal: fmtInt(sum(b.partsFederal)), federalParts: parts(b.partsFederal) });
 }
+/** #230/AK2: list «Einmalige Abzüge» (tax year, description, nominal amount), like «Einmalige Beträge» in the flows. */
+function oneOffDeductions() {
+  const P = "taxes.oneOffDeductions", list = state.taxes.oneOffDeductions ?? [];
+  const rows = list.map((x, i) => `<tr data-oneoff-row="${i}"><td style="width:110px">${F(`${P}.${i}.year`, "", "num", { bare: true, int: true })}</td><td>${F(`${P}.${i}.label`, "", "text", { bare: true })}</td><td style="width:200px">${F(`${P}.${i}.amount`, "", "chf", { bare: true })}</td>
+      <td><button class="btn ghost small" title="${tr("series.removeRow")}" data-action="list-del" data-path="${P}" data-i="${i}">✕</button></td></tr>`).join("");
+  return `<div id="ded-oneoff" style="margin-top:12px"><b>${tr("deductions.oneOff")}</b> <span class="sub">${tr("deductions.oneOffHint")}</span>
+    ${list.length ? `<table class="tbl"><tr><th>${tr("deductions.taxYear")}</th><th>${tr("flows.description")}</th><th>${tr("flows.amount")}</th><th></th></tr>${rows}</table>` : ""}
+    <div style="margin-top:8px"><button class="btn small" data-action="ded-oneoff-add">${tr("deductions.addOneOff")}</button></div></div>`;
+}
 /** #131/AK3–AK10: card «Abzüge vom Einkommen» with the pillar 3a deduction. */
 function deductionsCard() {
   const loc = isLocation(state), stored = !!state.taxes.deductions, rows = dedRows(), P = "taxes.deductions";
@@ -1323,8 +1332,10 @@ function deductionsCard() {
     const R = `${P}.${i}`, canton = loc && r.kind === "canton"; // AK11: with own tables no proposal
     // #228: own grid (.dedrow): time and kind stacked in one cell, so that the value gets the remaining width
     const kind = !loc ? "" : stored ? Sel(`${R}.kind`, kinds, { rerender: 1 }) : `<span class="computed">${tr("deductions.canton")}</span>`;
+    // #230/AK1: additional amount per year to the proposal of the canton (only stored rows can be edited)
+    const extra = stored ? `<span class="ab">${tr("deductions.extra")}</span>${F(`${R}.extra`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}` : "";
     const value = canton
-      ? `<span class="computed" data-ded-proposal="${i}">${C("dedProposal", i)}</span>`
+      ? `<span class="computed" data-ded-proposal="${i}">${C("dedProposal", i)}</span>${extra}`
       : `${F(`${R}.amount`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}${F(`${R}.rate`, "", "pct", { bare: true, unit: tr("deductions.ofIncome") })}`;
     return `<div class="dedrow" data-ded-row="${i}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${stored ? Ref(`${R}.from`) : `<span class="computed">${tr("deductions.fromStart")}</span>`}${kind}</div><div class="dedval">${value}</div>
       ${stored && rows.length > 1 ? `<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button>` : "<span></span>"}</div>
@@ -1340,6 +1351,7 @@ function deductionsCard() {
   return `<div class="card" id="tax-deductions"><h3>${tr("deductions.title")}</h3>
     <div class="rows">${body || `<p class="computed">${tr("deductions.none")}</p>`}
     <div>${stored ? `<button class="btn small" data-action="ded-add">${tr("series.addRow")}</button>` : `<button class="btn small" data-action="ded-edit">${tr("deductions.edit")}</button>`}</div></div>
+    ${oneOffDeductions()}
     <p class="hint">${loc ? tr("deductions.hintLocation") : tr("deductions.hintOwn")}</p>
     ${own.length || !loc ? `<p class="hint" id="ded-own-hint">${tr("deductions.ownHint")}</p>` : ""}
     ${calc}
@@ -2237,6 +2249,11 @@ const ACTIONS = {
     rows.push({ from: i2ym(Math.max(startM(), Number.isFinite(lm) ? lm : startM()) + 12), ...(isLocation(state) ? { kind: "canton" } : { kind: "own", amount: 0, rate: 0 }) });
     markDirty(); renderSection();
   },
+  // #230/AK2: one-off deduction in the year after the start
+  "ded-oneoff-add": () => {
+    (state.taxes.oneOffDeductions ??= []).push({ year: Math.floor(startM() / 12) + 1, label: tr("deductions.newOneOff"), amount: 0 });
+    markDirty(); renderSection();
+  },
   "ded-calc-apply": d => {
     const v = dedCalcValue(), i = +($("#ded-calc-row")?.value ?? d.i), r = state.taxes.deductions?.[i];
     if (!Number.isFinite(v) || !r) return toast(tr("deductions.calcMissing"));
@@ -2758,7 +2775,7 @@ function yearValues(recs, start) {
     prevLast = last;
     const taxIncome = sum(rs, r => r.assessedIncome ?? 0), taxWealth = sum(rs, r => r.assessedWealth ?? 0), taxCapital = sum(rs, r => r.taxCapital), taxGain = sum(rs, r => r.taxGain);
     // #131/AK14: income, deductions by origin and taxable income of the tax year (record of the assessment)
-    const br = rs.find(r => r.taxBasis), tb = br && Object.fromEntries(["income", "proposalCanton", "proposalFederal", "own", "pillar3a", "taxableCanton", "taxableFederal"].map(k => [k, rv(br, br.taxBasis[k])]));
+    const br = rs.find(r => r.taxBasis), tb = br && Object.fromEntries(["income", "proposalCanton", "proposalFederal", "own", "extra", "oneOff", "pillar3a", "taxableCanton", "taxableFederal"].map(k => [k, rv(br, br.taxBasis[k])]));
     // #229/AK7: tax value of the properties (only if a property has one)
     if (tb && br.taxBasis.propertyTaxValue != null) tb.propertyTaxValue = rv(br, br.taxBasis.propertyTaxValue);
     // #151/AK7: place of residence of the tax year (only if it changes during the plan)
@@ -2785,9 +2802,9 @@ function yearTable(recs, start, refills = []) {
   const basisCells = b => {
     if (!b) return "<td></td><td></td><td></td>";
     const fed = Math.abs(b.proposalFederal - b.proposalCanton) > 0.5 || Math.abs(b.taxableFederal - b.taxableCanton) > 0.5;
-    const origin = [[b.proposalCanton, tr("deductions.originCanton") + (fed ? ` (${tr("deductions.federal")} ${fmtInt(b.proposalFederal)})` : "")], [b.own, tr("deductions.originOwn")], [b.pillar3a, tr("deductions.originPillar3a")]]
+    const origin = [[b.proposalCanton, tr("deductions.originCanton") + (fed ? ` (${tr("deductions.federal")} ${fmtInt(b.proposalFederal)})` : "")], [b.extra ?? 0, tr("deductions.originExtra")], [b.own, tr("deductions.originOwn")], [b.oneOff ?? 0, tr("deductions.originOneOff")], [b.pillar3a, tr("deductions.originPillar3a")]]
       .filter(([v]) => Math.abs(v) >= 0.5).map(([v, t]) => `${t}: ${fmtInt(v)}`).join("; ");
-    const ded = b.proposalCanton + b.own + b.pillar3a;
+    const ded = b.proposalCanton + (b.extra ?? 0) + b.own + (b.oneOff ?? 0) + b.pillar3a;
     return `${cell(b.income)}<td title="${esc(origin || tr("deductions.originNone"))}" data-ded-origin="${esc(origin)}">${fmtInt(ded)}</td><td title="${fed ? esc(`${tr("deductions.federal")}: ${fmtInt(b.taxableFederal)}`) : ""}">${fmtInt(b.taxableCanton)}</td>`;
   };
   const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);

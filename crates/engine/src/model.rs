@@ -925,6 +925,20 @@ pub struct Taxes {
     /// Missing: as before #131 – in the mode «Wohnort» the proposal of the canton throughout, with own tables none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deductions: Option<Vec<IncomeDeduction>>,
+    /// #230: One-off deductions from income: each counts in its tax year in addition to the row that applies.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub one_off_deductions: Vec<OneOffDeduction>,
+}
+
+/// #230: One-off deduction from income in a tax year, nominal (for example a pension fund buy-in or a renovation).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct OneOffDeduction {
+    pub year: i32,
+    #[serde(default)]
+    pub label: String,
+    #[serde(default)]
+    pub amount: f64,
 }
 
 /// #131: Origin of a row of the deductions from income.
@@ -951,6 +965,10 @@ pub struct IncomeDeduction {
     /// Own value: additionally this share of the income (0.1 = 10 %).
     #[serde(default)]
     pub rate: f64,
+    /// #230: Proposal of the canton: additional amount per year in prices of the simulation start (grows with «tariffs
+    /// with inflation», #66), for canton and federal tax. `amount` is not reused, old plans may hold values there.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub extra: f64,
 }
 
 /// #63: Source of the income and wealth tax.

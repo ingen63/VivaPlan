@@ -182,6 +182,8 @@ Wörter in Grossbuchstaben nicht.
 | veranlagt, Steuerjahr | `assessed`, `tax_year` | `assessed_income`, `assessed_wealth` |
 | Verheiratetentarif | `couple` | |
 | Kanton, Gemeinde | `canton`, `municipality` | |
+| zusätzlicher Abzug (zum Vorschlag des Kantons) | `extra` | #230; `IncomeDeduction.extra`, `TaxBasis.extra` |
+| einmaliger Abzug | `one_off_deduction` | #230; `OneOffDeduction`, Planung `oneOffDeductions`, `TaxBasis.one_off` |
 
 ## Simulation und Ergebnisse
 
