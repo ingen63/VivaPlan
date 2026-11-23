@@ -905,6 +905,18 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #221/AK6 | Die Fallzahl folgt dem Budget wie bei proptest (wenige Fälle bei jedem Push, viele nächtlich). | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak6_…` | 23.11.2026 ok (`PROPTEST_CASES` 256 → 133 Aufrufe, 10'000 → alle systematischen und 625 zufällige) |
 | #221/AK7 | `docs/TESTS.md` nennt den Test in der Schicht 5. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
 
+### #226 Laufzeitgrenze für einzelne Tests
+
+[Issue #226](https://github.com/ingen63/VivaPlan/issues/226) · offen (`implemented`) · Umsetzung: 3c97ec3
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #226/AK1 | Ein Skript liest die Laufzeiten aus `target/nextest/ci/junit.xml` und listet jeden Test über der Grenze ohne … | ☑ | **gilt** (Grenze je Testart, Klärung vom 23.11.2026) | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak1_ak3_…` | 23.11.2026 ok (9 Tests grün; am echten Lauf: 80 Funde vor, 30 nach den Begründungen) |
+| #226/AK2 | Der Befund erscheint in der Zusammenfassung von `test-quality.yml` und auf der Übersichtsseite (Schicht «Hygiene» … | ☐ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak2_…`; [test_report.py](../tools/report/test_report.py) `test_issue_226_ak2_…` | 23.11.2026 teilweise: Seite lokal mit echtem Lauf erzeugt (Hygiene «Hinweis», Liste), Markdown getestet, `actionlint` ohne neuen Befund; Ausgabe im CI-Lauf erst nach dem nächsten Push belegbar |
+| #226/AK3 | Das Skript hat eigene Tests mit gestellten junit-Dateien (Test unter Grenze, über Grenze mit und ohne Begründung). | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak3_…` (3 Tests) | 23.11.2026 ok |
+| #226/AK4 | Die heute langsamen Tests sind entweder schneller oder begründet; die Liste steht im Issue. | ☐ | **unklar** (30 Tests nur unter Last über der Grenze) | kein Test (Messung `--profile ci`, voll und `-j 1`) | 23.11.2026 teilweise: Liste im Issue; 50 auch einzeln langsame Tests mit `// slow:` begründet; 30 nur im parallelen Lauf über der Grenze, Entscheid offen |
+| #226/AK5 | `docs/TESTS.md` nennt Grenze und Begründungsform. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
 ### #225 Rust-Tests unter Windows bei jedem Push
 
 [Issue #225](https://github.com/ingen63/VivaPlan/issues/225) · offen (`implemented`) · Umsetzung: 0099b33
