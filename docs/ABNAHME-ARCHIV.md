@@ -950,6 +950,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #151/AK9 | Tests belegen: Wechsel im Juni (ganzes Jahr nach neuem Wohnort), Kapitalbezug vor und nach dem Wechsel. | ☑ | **gilt** | [relocation.rs](../crates/engine/tests/relocation.rs) AK2, AK3 | 23.11.2026 ok (Tests grün) |
 | #151/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Hilfe f-tax-location und Dateiformat in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md, Pflichteingaben.md) |
 
+### #152 Grosse Säule 3a für Personen ohne Pensionskasse
+
+[Issue #152](https://github.com/ingen63/VivaPlan/issues/152) · geschlossen · Umsetzung: bb30559
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #152/AK1 | Je Person gibt es die Angabe «ohne Pensionskasse (grosse Säule 3a)». | ☑ | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak1_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1, AK4» (#152) | 23.11.2026 ok (Test grün) |
+| #152/AK2 | Für diese Person gilt als Höchstbetrag des Abzugs 20 % ihres Erwerbseinkommens im Jahr, höchstens der … | ☑ | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak2_…`, `settings::tests::issue_152_ak2_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK2, AK3, AK8» (#152) | 23.11.2026 ok (36 288 laut BSV, Stand 2025/26; indexiert) |
+| #152/AK3 | Für die anderen Personen gilt weiter der Maximalbetrag der kleinen Säule 3a. | ☑ | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak3_…` | 23.11.2026 ok (Paar 20 000 + 7 258) |
+| #152/AK4 | Hat die Person eine Pensionskasse in der Planung und ist «ohne Pensionskasse» gesetzt, meldet die Prüfung … | ☑ | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak4_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1, AK4» (#152) | 23.11.2026 ok (Test grün) |
+| #152/AK5 | Bestehende Planungen rechnen unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak5_…`; [golden.rs](../crates/engine/tests/golden.rs) | 23.11.2026 ok (Golden unverändert, 987 Tests grün) |
+| #152/AK6 | Ein Test belegt: Erwerb 100 000, Einzahlung 25 000, Abzug 20 000; Erwerb 300 000, Einzahlung 40 000, … | ☑ | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak6_…` | 23.11.2026 ok (20 000 und 36 288 von Hand) |
+| #152/AK7 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md, Pflichteingaben.md, QUELLEN.md |
+| #152/AK8 | Die Einzahlungsgrenze der Planung folgt derselben Regel wie der Abzug; ein Test belegt es (Kommentar … | Kommentar | **gilt** | [large_pillar3a.rs](../crates/engine/tests/large_pillar3a.rs) `issue_152_ak8_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK2, AK3, AK8» (#152) | 23.11.2026 ok (Fehler über Maximalbetrag, Warnung über 20 %) |
+
 ### #153 Mitgelieferte Planungen sind beim Aktienmodell nicht auf dem aktuellen Stand
 
 [Issue #153](https://github.com/ingen63/VivaPlan/issues/153) · geschlossen · Umsetzung: 0c6a760
