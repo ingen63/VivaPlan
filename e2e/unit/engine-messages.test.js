@@ -50,3 +50,16 @@ test("#171/AK2: numbers in the Swiss format, as the engine renders them", () => 
   assert.equal(u.groupInt(-0.4), "0");
   assert.equal(u.groupInt(999.5), "1'000");
 });
+
+test("#232/AK5: earned income in messages per year, also inside a nested message; the engine stays per month", () => {
+  const m = { code: "income_after_pk", params: { at: "2031-07", amount: 2500 }, text: "" };
+  assert.equal(u.engineText(u.incomeYearly(m), lookup(de)), "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse (07.2031) noch 30'000 pro Jahr.");
+  assert.equal(u.engineText(u.incomeYearly({ ...m, code: "income_after_pk_indexed" }), lookup(en)),
+    "After the pension fund payout (07.2031), earned income is still 30'000 per year in prices at the simulation start.");
+  const labeled = { code: "labeled", params: { what: "B", problem: m } };
+  assert.match(u.engineText(u.incomeYearly(labeled), lookup(de)), /^B: .* noch 30'000 pro Jahr\.$/);
+  // without the conversion the template of the engine (per month) applies, and the message itself is not changed
+  assert.equal(u.engineText(m, lookup(en)), "After the pension fund payout (07.2031), earned income is still 2'500 per month.");
+  assert.equal(m.params.amount, 2500);
+  assert.equal(u.incomeYearly(null), null);
+});

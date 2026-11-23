@@ -130,8 +130,8 @@ const I18n = (() => {
   });
 
   /** #171: Text of a message of the engine (`{code, params, text}`) in the current language (`engineText`, util.js);
-   *  #143/AK2: a tax amount in it rounded to 100 francs. */
-  const message = m => engineText(taxRounded(m), key => table[key] ?? base[key]);
+   *  #143/AK2: a tax amount in it rounded to 100 francs; #232: earned income per year. */
+  const message = m => engineText(incomeYearly(taxRounded(m)), key => table[key] ?? base[key]);
 
   return {
     SYSTEM, tr, format, shortcuts, use, boot, applyStatic, languageOf, pick, message,

@@ -80,7 +80,7 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
   test("#51/AK8: warning on earned income after the pension fund withdrawal", async ({ page }) => {
     const errors = await open(page, "flows");
     await page.evaluate(() => { state.flows.income = { mode: "const", value: 12500 }; renderSection(); });
-    await expect(page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" })).toContainText("noch 12'500 pro Monat");
+    await expect(page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" })).toContainText("noch 150'000 pro Jahr"); // #232: per year (12 × 12'500)
     await noErrors(page, errors);
   });
 
@@ -660,6 +660,51 @@ test.describe("Never sell properties (#196)", () => {
     const errors = await open(page, "realestate");
     await box(page).check();
     await expect(page.locator("body")).toContainText("«Immobilien nie verkaufen» ist eingeschaltet – der geplante Verkauf wird nicht ausgeführt.");
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Earned income per year as in the tax return (#232)", () => {
+  test("#232/AK1–AK5: AK6 input 120'000 per year shows 10'000 per month and stores 10'000 per month", async ({ page }) => {
+    const errors = await open(page, "flows");
+    await page.evaluate(() => { state.flows.income = { mode: "const", value: 9000 }; renderSection(); });
+    const own = field(page, "flows.income.value");
+    await expect(own).toHaveValue("108'000");
+    // AK1: name and hint as in the tax return
+    const head = page.locator(".series", { has: own }).locator(".shead");
+    await expect(head.locator(".t")).toHaveText(/^Einkünfte aus Erwerb netto \/ Jahrⓘ?$/); // ⓘ: help button
+    await expect(page.locator(".series", { has: own }).locator(".shint")).toHaveText("wie Nettolohn im Lohnausweis (Ziffer 11), inkl. 13. Monatslohn und Boni; Selbständige: Einkommen aus selbständiger Erwerbstätigkeit");
+    // AK6/AK2/AK4: input per year, display per month, stored per month
+    await own.fill("120000");
+    await own.blur();
+    await expect(own).toHaveValue("120'000");
+    await expect(page.locator('[data-permonth="flows.income.value"]')).toHaveText("= 10'000 / Monat");
+    expect(await page.evaluate(() => state.flows.income)).toEqual({ mode: "const", value: 10000 });
+    // AK4: an existing plan shows the monthly amount × 12
+    await page.evaluate(() => { state.flows.income = { mode: "const", value: 8333 }; renderSection(); });
+    await expect(own).toHaveValue("99'996");
+    await expect(page.locator('[data-permonth="flows.income.value"]')).toHaveText("= 8'333 / Monat");
+    // AK3: every row of the time series and the second person
+    await page.evaluate(() => { ACTIONS["partner-add"](); state.flows.income = { mode: "timed", rows: [{ from: "start", value: 10000 }, { from: "retire", value: 2000 }] };
+      state.partner.income = { mode: "const", value: 5000 }; goto("flows"); });
+    await expect(field(page, "flows.income.rows.0.value")).toHaveValue("120'000");
+    await expect(field(page, "flows.income.rows.1.value")).toHaveValue("24'000");
+    await expect(page.locator('[data-permonth="flows.income.rows.1.value"]')).toHaveText("= 2'000 / Monat");
+    await expect(field(page, "partner.income.value")).toHaveValue("60'000");
+    await expect(page.locator('[data-permonth="partner.income.value"]')).toHaveText("= 5'000 / Monat");
+    await field(page, "partner.income.value").fill("90'000");
+    await field(page, "partner.income.value").blur();
+    expect(await page.evaluate(() => state.partner.income.value)).toBe(7500);
+    // AK5: parameters of a run per year
+    const params = await page.evaluate(() => Object.fromEntries(paramSections(state).find(([t]) => t === "Einnahmen und Ausgaben")[1]));
+    expect(params["Einkommen pro Jahr"]).toContain("120'000");
+    expect(params["Einkommen pro Jahr"]).toContain("24'000");
+    expect(params["Einkommen Person 2 pro Jahr"]).toBe("90'000 CHF");
+    // AK5: the message names the amount per year (for two persons with the name in front)
+    await page.evaluate(() => { state.flows.income = { mode: "const", value: 2500 }; goto("flows"); });
+    const warn = page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" });
+    await expect(warn.filter({ hasText: "noch 30'000 pro Jahr" })).toHaveCount(1);
+    await expect(warn.filter({ hasText: "Person 2: " })).toContainText("noch 90'000 pro Jahr");
     await noErrors(page, errors);
   });
 });

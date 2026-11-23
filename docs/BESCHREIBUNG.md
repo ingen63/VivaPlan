@@ -54,6 +54,8 @@ Der Editor führt durch zwölf Abschnitte:
   als Betrag das Guthaben zu ihrem Zeitpunkt.
 - **Einnahmen & Ausgaben:** Erwerbseinkommen, Lebenshaltung und einmalige Beträge (Erbschaft, Autokauf, Reise). Jeder
   Wert kann zeitabhängig sein, zum Beispiel tiefere Ausgaben ab 80.
+  Das Erwerbseinkommen wird pro Jahr erfasst wie in der Steuererklärung («Einkünfte aus Erwerb netto / Jahr», Nettolohn
+  im Lohnausweis Ziffer 11); daneben steht der Betrag pro Monat. Gespeichert und gerechnet wird pro Monat (ein Zwölftel).
   Das Erwerbseinkommen jeder Person kann wahlweise mit der Teuerung steigen (Beträge in heutigen Preisen; neue
   Planungen: ja).
   Die Lebenshaltungskosten enthalten Miete bzw. Wohnkosten; die App zieht den Wohnanteil zum Simulationsstart ab und

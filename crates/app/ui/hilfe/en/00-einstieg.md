@@ -31,7 +31,7 @@ The checklist **“Getting started”** on the right above the validation leads 
 1. **[Household & project](#s-general):** Enter name and month of birth.
 2. **[Milestones](#s-milestones):** Set the pension fund payout, the AHV pension start, and the start and end of the simulation. The end should be so late that you would not expect to outlive it (for example age 95).
 3. **[Pensions](#s-pension):** Enter the current pension fund balance, conversion rate, lump-sum withdrawal and AHV pension from your pension statements.
-4. **[Income & spending](#s-flows):** Earned income and living expenses per month. The expenses need a realistic value; this is where the biggest lever is.
+4. **[Income & spending](#s-flows):** Earned income per year (as in the tax return) and living expenses per month. The expenses need a realistic value; this is where the biggest lever is.
 5. **[Wealth & investment](#s-wealth):** Stocks, bonds and cash at the simulation start, plus the target stock allocation.
 6. **[Simulation](#s-returns):** For a first assessment, choose “Monte Carlo · historical”. You set the indices (for example “World (JST)”) in the [investment strategy](#f-ret-series) under “Wealth & investment”.
 7. **[Taxes](#s-taxes):** Replace the rates of the example plan with those of your place of residence (tax calculator of your canton).

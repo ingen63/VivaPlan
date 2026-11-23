@@ -31,7 +31,7 @@ Die Checkliste **«Erste Schritte»** rechts über der Prüfung führt durch die
 1. **[Haushalt & Projekt](#s-general):** Name und Geburtsmonat eintragen.
 2. **[Meilensteine](#s-milestones):** Bezug Pensionskasse, AHV-Bezug, Start und Ende der Simulation festlegen. Das Ende sollte so spät sein, dass Sie es nicht überleben möchten (zum Beispiel Alter 95).
 3. **[Vorsorge](#s-pension):** Aktuelles Pensionskassenguthaben, Umwandlungssatz, Kapitalbezug und AHV-Rente aus Ihren Vorsorgeausweisen eintragen.
-4. **[Einnahmen & Ausgaben](#s-flows):** Erwerbseinkommen und Lebenshaltungskosten pro Monat. Die Kosten brauchen einen realistischen Wert, hier steckt der grösste Hebel.
+4. **[Einnahmen & Ausgaben](#s-flows):** Erwerbseinkommen pro Jahr (wie in der Steuererklärung) und Lebenshaltungskosten pro Monat. Die Kosten brauchen einen realistischen Wert, hier steckt der grösste Hebel.
 5. **[Vermögen & Anlage](#s-wealth):** Aktien, Obligationen und Cash per Simulationsstart, dazu der angestrebte Aktienanteil.
 6. **[Simulation](#s-returns):** Für eine erste Einschätzung «Monte Carlo · historisch» wählen. Die Indizes (zum Beispiel «Welt (JST)») legen Sie bei der [Anlagestrategie](#f-ret-series) unter «Vermögen & Anlage» fest.
 7. **[Steuern](#s-taxes):** Die Sätze der Beispielplanung durch die Ihres Wohnorts ersetzen (Steuerrechner Ihres Kantons).

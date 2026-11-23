@@ -42,6 +42,16 @@ const fmtInt = v => Math.round(v).toLocaleString("de-CH");
 const roundTax = v => Math.round(v / 100) * 100 || 0;
 const fmtTax = v => fmtInt(roundTax(v));
 /** #143/AK2: Engine message with the parameter `tax` rounded to 100 francs for display (events of payouts and sales). */
+/** #232: The engine reports earned income per month; the user interface names it per year (amount × 12) with its own
+ *  text (`textKey`), also inside a nested message. The engine, its texts and the golden files stay per month. */
+const YEARLY_MESSAGES = { income_after_pk: "flows.incomeAfterPk", income_after_pk_indexed: "flows.incomeAfterPkIndexed" };
+function incomeYearly(m) {
+  if (!m || typeof m !== "object" || !m.params || typeof m.params !== "object") return m;
+  const params = Object.fromEntries(Object.entries(m.params).map(([k, v]) => [k, v && typeof v === "object" && !Array.isArray(v) ? incomeYearly(v) : v]));
+  const key = YEARLY_MESSAGES[m.code];
+  if (key && typeof params.amount === "number") return { ...m, params: { ...params, amount: params.amount * 12 }, textKey: key };
+  return { ...m, params };
+}
 const taxRounded = m => m && typeof m === "object" && m.params && typeof m.params.tax === "number"
   ? { ...m, params: { ...m.params, tax: roundTax(m.params.tax) } } : m;
 function fmtMio(v) { return Math.abs(v) >= 1e6 ? tr("fmt.mio", { v: (v / 1e6).toLocaleString("de-CH", { maximumFractionDigits: 2 }) }) : `${fmtInt(v / 1000)}k`; }
@@ -171,7 +181,7 @@ function engineValue(v, format, lookup) {
 function engineText(m, lookup) {
   if (m === null || m === undefined) return "";
   if (typeof m !== "object") return String(m);
-  const template = m.code ? lookup(`engine.${m.code}`) : undefined;
+  const template = m.code ? lookup(m.textKey ?? `engine.${m.code}`) : undefined;
   if (template === undefined) return String(m.text ?? m.message ?? "");
   const params = m.params || {};
   return template.replace(/\{(\w+)(?::(\w+))?\}/g, (all, k, f) => (k in params ? engineValue(params[k], f || "", lookup) : all));
@@ -206,6 +216,6 @@ if (typeof module !== "undefined") {
     localizeExample,
     esc, clamp, isYM, ym2i, i2ym, ymShow, parseShow, quarterEnds, parseNum, fmtInt, roundTax, fmtTax, taxRounded, fmtMio, fmtPct, optNum, optRound,
     rateAt, round2, taxAt, getPath, setPath, baseName, seriesShort, fmtShort, fmtEstimate, optSecondsFor, sweepSteps, sortBy,
-    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText, engineText, groupInt, fixedEven,
+    KNOWN_FORMATS, unknownFormatText, ambiguousThousands, parseAmount, ambiguousText, engineText, groupInt, fixedEven, incomeYearly,
   };
 }

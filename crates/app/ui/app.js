@@ -361,9 +361,11 @@ async function refreshSeriesInfo() {
 }
 
 // ---------- Form building blocks ----------
-const UNIT = { chf: () => cur(), chfopt: () => cur(), pct: () => "%", months: () => tr("unit.months"), years: () => tr("unit.years"), num: () => "" };
+const UNIT = { chf: () => cur(), chfopt: () => cur(), chfyear: () => cur(), pct: () => "%", months: () => tr("unit.months"), years: () => tr("unit.years"), num: () => "" };
+// #232: `chfyear` is an amount per year in the field, stored per month (field value / 12).
 function showVal(type, v) {
   if (type === "chf") return fmtInt(v ?? 0);
+  if (type === "chfyear") return fmtInt((v ?? 0) * 12);
   if (type === "chfopt") return v == null ? "" : fmtInt(v);
   if (type === "pct") return fmtPct(v ?? 0);
   if (type === "month") return ymShow(v);
@@ -423,8 +425,8 @@ async function blockedByErrors() {
 }
 function F(path, label, type = "chf", o = {}) {
   const v = getP(path), unit = o.unit ?? (UNIT[type] ? UNIT[type]() : "");
-  const cls = ["chf", "chfopt", "pct", "num", "months", "years"].includes(type) ? "num" : "";
-  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""}${o.size ? ` size="${o.size}"` : ""} value="${esc(showVal(type, v))}" ${type === "month" ? `placeholder="${tr("input.datePlaceholder")}"` : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>`;
+  const cls = ["chf", "chfopt", "chfyear", "pct", "num", "months", "years"].includes(type) ? "num" : "";
+  const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""}${o.size ? ` size="${o.size}"` : ""} value="${esc(showVal(type, v))}" ${type === "month" ? `placeholder="${tr("input.datePlaceholder")}"` : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>${type === "chfyear" ? perMonth(path) : ""}`;
   if (o.bare) return input;
   return `<label class="field"><span>${label}${reqMark(path)}</span>${input}${o.hint ? `<span class="computed">${o.hint}</span>` : ""}</label>`;
 }
@@ -444,17 +446,20 @@ function Ref(path, o = {}) {
     <option value="__date" ${date ? "selected" : ""}>${tr("ref.fixedDate")}</option></select>
     ${date ? F(path, "", "month", { bare: true }) : ""}</div>`;
 }
-function Series(path, label, type, note = "") {
+function Series(path, label, type, note = "", hint = "") {
   const s = getP(path), timed = s.mode === "timed";
   let body;
   if (!timed) body = `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
-  else body = `<div class="rows">${s.rows.map((r, i) => `<div class="row"><span class="ab">${tr("common.from")}</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
+  else body = `<div class="rows">${s.rows.map((r, i) => `<div class="row${type === "chfyear" ? " peryear" : ""}"><span class="ab">${tr("common.from")}</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
     <div><button class="btn small" data-action="row-add" data-path="${path}.rows">${tr("series.addRow")}</button></div></div>`;
   return `<div class="series"><div class="shead"><span class="t">${label}</span><span class="computed">${note}</span>
-    <div class="seg"><button class="${timed ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">${tr("series.constant")}</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">${tr("series.timeDependent")}</button></div></div>
+    <div class="seg"><button class="${timed ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">${tr("series.constant")}</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">${tr("series.timeDependent")}</button></div></div>${hint ? `<p class="computed shint">${hint}</p>` : ""}
     <div class="sbody">${body}<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
       <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>${tr("series.zoomHint")}</span></div></div></div></div>`;
 }
+/** #232: The amount per month next to a field per year («= 10 000 / Monat»). */
+const perMonthText = v => tr("flows.perMonth", { v: fmtInt(v ?? 0) });
+const perMonth = path => `<span class="computed permonth" data-permonth="${path}">${perMonthText(getP(path))}</span>`;
 const C = (key, arg = "") => `<span class="computed" data-computed="${key}" data-arg="${arg}"></span>`;
 
 // ---------- Sections ----------
@@ -564,9 +569,9 @@ R.pillar3a = () => {
 
 R.flows = () => `
   <h2>${tr("section.flows")}</h2><p class="lead">${tr("flows.intro")}</p>
-  <div class="card">${Series("flows.income", state.partner ? tr("flows.incomeOf", { esc: esc(state.household.persons[0].name) }) : tr("flows.income"), "chf")}
+  <div class="card">${Series("flows.income", state.partner ? tr("flows.incomeOf", { esc: esc(state.household.persons[0].name) }) : tr("flows.income"), "chfyear", "", tr("flows.incomeHint"))}
     <div style="margin:-4px 0 12px">${Chk("flows.incomeIndexed", INCOME_INDEXED)}</div>
-    ${state.partner ? `${Series("partner.income", tr("flows.incomeOf", { esc: esc(state.household.persons[1].name) }), "chf")}
+    ${state.partner ? `${Series("partner.income", tr("flows.incomeOf", { esc: esc(state.household.persons[1].name) }), "chfyear", "", tr("flows.incomeHint"))}
     <div style="margin:-4px 0 12px">${Chk("partner.incomeIndexed", INCOME_INDEXED)}</div>` : ""}
     ${Series("flows.spending", tr("flows.spending"), "chf", state.partner ? tr("flows.spendingNote") : tr("flows.todayPrices"))}
     <p class="hint">${C("housingshare")}</p></div>
@@ -1797,7 +1802,7 @@ function zoomRange(z) {
   return [from, from + span];
 }
 const miniRange = path => zoomRange(miniZoom[path]);
-function miniValue(t, v) { return t === "pct" ? fmtPct(v) + " %" : t === "months" ? `${v} ${tr("unit.monthsShort")}` : t === "years" ? `${v} ${tr("unit.yearsShort")}` : fmtInt(v); }
+function miniValue(t, v) { return t === "chfyear" ? fmtInt(v * 12) : t === "pct" ? fmtPct(v) + " %" : t === "months" ? `${v} ${tr("unit.monthsShort")}` : t === "years" ? `${v} ${tr("unit.yearsShort")}` : fmtInt(v); }
 function drawMini(svg) {
   const path = svg.dataset.mini, ser = getP(path), t = svg.dataset.type;
   if (!ser || !(endM() > startM())) { svg.innerHTML = ""; return; }
@@ -1995,9 +2000,9 @@ function readInput(el) {
   if (t === "month") return parseShow(el.value);
   if (t === "chfopt" && el.value.trim() === "") return undefined;
   // #140: Amounts and integers do not take «1.234» as 1.234
-  const v = t === "chf" || t === "chfopt" || el.dataset.int ? parseAmount(el.value) : parseNum(el.value);
+  const v = ["chf", "chfopt", "chfyear"].includes(t) || el.dataset.int ? parseAmount(el.value) : parseNum(el.value);
   if (v === null) return null;
-  return t === "pct" ? v / 100 : v;
+  return t === "pct" ? v / 100 : t === "chfyear" ? v / 12 : v;
 }
 function onEdit(el) {
   const path = el.dataset.path; if (!path) return;
@@ -2011,7 +2016,7 @@ function onEdit(el) {
   const typing = document.activeElement === el && el.matches("input:not([type=checkbox]):not([type=radio])");
   if (typing) holdField(el);
   if (v === null) {
-    const ambiguous = (["chf", "chfopt"].includes(el.dataset.type) || el.dataset.int) && ambiguousThousands(el.value);
+    const ambiguous = (["chf", "chfopt", "chfyear"].includes(el.dataset.type) || el.dataset.int) && ambiguousThousands(el.value);
     invalidFields.set(path, { section: current, message: el.dataset.type === "month" ? tr("input.invalidDate") : ambiguous ? ambiguousText() : tr("input.invalidNumber") });
     if (!typing) { el.classList.add("invalid"); applyFieldIssues(); }
     return;
@@ -2023,6 +2028,7 @@ function onEdit(el) {
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
   setP(path, v); markDirty();
+  if (el.dataset.type === "chfyear") { const pm = [...document.querySelectorAll("[data-permonth]")].find(x => x.dataset.permonth === path); if (pm) pm.textContent = perMonthText(v); }
   // #100: an own input in the stock model ends following the suggested values
   if (/^returns\.parametric\.(mu|sigma|df|jumpLambda|jumpMu|jumpSigma)$/.test(path)) state.returns.parametric.auto = false;
   if (/\.amortMode$/.test(path) && v === "indirect") {
@@ -2056,7 +2062,7 @@ document.addEventListener("focusout", e => {
   const el = e.target; if (!el.matches("input[data-path]")) return;
   releaseField(el);
   if (el.classList.contains("invalid")) return;
-  const t = el.dataset.type; if (["chf", "chfopt", "pct", "month"].includes(t)) el.value = showVal(t, getP(el.dataset.path));
+  const t = el.dataset.type; if (["chf", "chfopt", "chfyear", "pct", "month"].includes(t)) el.value = showVal(t, getP(el.dataset.path));
 });
 
 /**
@@ -3193,7 +3199,7 @@ function renderResults(r) {
  */
 function paramSections(plan, full = false) {
   const c = plan.project?.currency || "";
-  const money = v => v == null ? "–" : `${fmtInt(v)} ${c}`, pc = v => v == null ? "–" : `${fmtPct(v)} %`, num = v => v == null ? "–" : String(v);
+  const money = v => v == null ? "–" : `${fmtInt(v)} ${c}`, moneyYear = v => money(v == null ? v : v * 12), pc = v => v == null ? "–" : `${fmtPct(v)} %`, num = v => v == null ? "–" : String(v);
   const yn = v => v ? tr("common.yes") : tr("common.no");
   const msName = id => msLabel(plan.milestones?.find(m => m.id === id));
   const at = r => isYM(r) ? ymShow(r) : (msName(r) ?? String(r ?? "–"));
@@ -3212,7 +3218,7 @@ function paramSections(plan, full = false) {
   const part = plan.partner;
   out.push([tr("section.pension"), [...pens(part ? tr("params.person1") : "", plan.pension || {}, plan.pension?.ahv),
     ...(part ? pens(tr("params.person2"), part, part.ahv) : [])]]);
-  out.push([tr("params.flows"), [[tr("params.incomeMonth"), ser(plan.flows?.income, money)], ...(part ? [[tr("params.income2Month"), ser(part.income, money)]] : []),
+  out.push([tr("params.flows"), [[tr("params.incomeYear"), ser(plan.flows?.income, moneyYear)], ...(part ? [[tr("params.income2Year"), ser(part.income, moneyYear)]] : []),
     [tr("params.spendingMonth"), ser(plan.flows?.spending, money)],
     ...(plan.flows?.extras || []).map(e => [tr("params.oneOff", { date: ymShow(e.date), v: e.label ? " " + e.label : "" }), money(e.amount)])]]);
   const w = plan.wealth || {};

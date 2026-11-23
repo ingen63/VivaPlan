@@ -31,7 +31,7 @@ La lista di controllo **«Primi passi»** a destra sopra la verifica guida attra
 1. **[Economia domestica e progetto](#s-general):** inserire nome e mese di nascita.
 2. **[Tappe](#s-milestones):** stabilire prestazione della cassa pensione, inizio della rendita AVS, inizio e fine della simulazione. La fine dovrebbe essere fissata così tardi da non doverla verosimilmente superare in vita (ad esempio a 95 anni).
 3. **[Previdenza](#s-pension):** inserire l’avere attuale della cassa pensione, l’aliquota di conversione, il prelievo del capitale e la rendita AVS dai Suoi certificati di previdenza.
-4. **[Entrate e spese](#s-flows):** reddito da attività lucrativa e costo della vita al mese. Il costo della vita richiede un valore realistico: qui sta la leva più grande.
+4. **[Entrate e spese](#s-flows):** reddito da attività lucrativa all’anno (come nella dichiarazione d’imposta) e costo della vita al mese. Il costo della vita richiede un valore realistico: qui sta la leva più grande.
 5. **[Sostanza e investimento](#s-wealth):** azioni, obbligazioni e cash all’inizio della simulazione, più la quota azionaria perseguita.
 6. **[Simulazione](#s-returns):** per una prima valutazione scegliere «Monte Carlo · storico». Gli indici (ad esempio «Mondo (JST)») si stabiliscono nella [strategia d’investimento](#f-ret-series) sotto «Sostanza e investimento».
 7. **[Imposte](#s-taxes):** sostituire le aliquote della pianificazione d’esempio con quelle del Suo luogo di domicilio (calcolatore fiscale del Suo cantone).

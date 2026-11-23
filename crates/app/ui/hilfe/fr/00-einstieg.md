@@ -31,7 +31,7 @@ La liste de contrôle **«Premiers pas»**, à droite au-dessus du contrôle, vo
 1. **[Ménage et projet](#s-general):** saisir le nom et le mois de naissance.
 2. **[Jalons](#s-milestones):** fixer la prestation de la caisse de pension, le début de la rente AVS ainsi que le début et la fin de la simulation. La fin devrait être assez tardive pour que vous ne comptiez pas vivre au-delà (par exemple 95 ans).
 3. **[Prévoyance](#s-pension):** saisir l’avoir actuel de la caisse de pension, le taux de conversion, le retrait en capital et la rente AVS d’après vos certificats de prévoyance.
-4. **[Revenus et dépenses](#s-flows):** revenu de l’activité lucrative et coût de la vie par mois. Le coût de la vie doit avoir une valeur réaliste, c’est là que se trouve le plus grand levier.
+4. **[Revenus et dépenses](#s-flows):** revenu de l’activité lucrative par an (comme dans la déclaration d’impôt) et coût de la vie par mois. Le coût de la vie doit avoir une valeur réaliste, c’est là que se trouve le plus grand levier.
 5. **[Fortune et placement](#s-wealth):** actions, obligations et cash au début de la simulation, ainsi que la part d’actions visée.
 6. **[Simulation](#s-returns):** pour une première estimation, choisir «Monte Carlo · historique». Vous définissez les indices (par exemple «Monde (JST)») dans la [stratégie de placement](#f-ret-series) sous «Fortune et placement».
 7. **[Impôts](#s-taxes):** remplacer les taux de la planification d’exemple par ceux de votre domicile (calculateur d’impôts de votre canton).
