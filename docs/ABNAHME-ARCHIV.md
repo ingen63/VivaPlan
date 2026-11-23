@@ -1233,6 +1233,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #177/AK4 | Die Berechnung ist unverändert: Ändern sich die Golden-Dateien, betrifft der Unterschied nur Textfelder (`make golden-numbers`), … | ☑ | **gilt** | `make golden-numbers` | 20.11.2026 ok: Golden-Dateien unverändert; nur Kommentarzeilen der mitgelieferten CSV-Dateien englisch (Begründung im Issue) |
 | #177/AK5 | Gespeicherte Planungen und Ergebnisse bleiben lesbar; Schlüssel in der Datei (z. B. `optimization.ranges`, Strategie-Kennungen) … | ☑ | **gilt** | Durchsicht Diff, `engineText` mit Text | 20.11.2026 ok: Schlüssel unverändert; Namen als Text in älteren Ergebnissen werden unverändert angezeigt |
 
+### #178 Testanalyse mit Soll-Testkonzept durchführen und Bericht ablegen
+
+[Issue #178](https://github.com/ingen63/VivaPlan/issues/178) · geschlossen · Umsetzung: keine Dateiänderung im Repository (Bericht `local/test-quality/analyse-2026-11-23.md`, nicht versioniert)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #178/AK1 | Der Bericht liegt unter `local/test-quality/analyse-<Datum>.md` und folgt den 13 Kapiteln des Prompts. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Datei vorhanden, 13 Kapitel in der Reihenfolge des Prompts |
+| #178/AK2 | Die Risk-Based Test Matrix (FMEA mit Severity, Occurrence, Detectability, RPN und Klassen P0–P3) steht im Bericht vor der Bewertung der vorhandenen Tests. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Kap. 4 und 5 vor Kap. 6 |
+| #178/AK3 | Die RTM ordnet jede Anforderung einem Issue samt Abnahmekriterium oder einer Code-Stelle zu und nennt je Anforderung die vorhandenen und fehlenden Tests. Sie markiert jede Anforderung als nicht, teilweise oder vollständig getestet. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Kap. 5.1, R01–R53 je eine Zeile, Bilanz 34/17/2 |
+| #178/AK4 | Die RTM prüft auch umgekehrt: Abnahmekriterien von Issues mit Label `implemented` ohne Test, und Tests mit einer Kennung, die auf kein Kriterium passt. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Kap. 5.3 a–c |
+| #178/AK5 | Alle Befunde nennen Datei und Zeile (`datei:zeile`) und sind als «bestätigt» oder «plausibel» gekennzeichnet. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Durchsicht Kap. 1, 6–9 |
+| #178/AK6 | Der Bericht bewertet Testqualität, Testabdeckung, Risikoreduktion und Wartbarkeit mit je 0–100 Punkten und begründet jede Zahl. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Kap. 10: 86 / 83 / 81 / 72 mit Begründung |
+| #178/AK7 | Die Roadmap P0–P3 nennt je Empfehlung Nutzen, Risiko bei Nichtumsetzung, Aufwand und Testgewinn. Jede Empfehlung ist so formuliert, dass daraus direkt ein Issue entstehen kann. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Kap. 11, P0-1 bis P3-7 mit Häkchenlisten |
+| #178/AK8 | Der Bericht hält fest, welche Befunde der früheren Analysen (`local/issues/test-review-2026-11-13.md`, `local/reports/test-analyse-2026-11-17.md`) inzwischen behoben sind. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Kap. 6.6, zusätzlich Analyse vom 21.11. (Entscheid im Issue) |
+| #178/AK9 | Es werden keine Issues angelegt, kein Code geändert und nichts committet. Nach Abschluss liegt nur der Bericht vor. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: keine neuen Issues, kein Code geändert; einziger Commit ist dieser Abnahme-Eintrag (vom Anwender erlaubt) |
+| #178/AK10 | Der Bericht enthält keine privaten Daten. | ☑ | **gilt** | – (Durchsicht des Berichts) | 23.11.2026 ok: Durchsicht und Suche nach Namen, Pfaden, Adressen |
+
 ### #179 Fachglossar in vier Sprachen
 
 [Issue #179](https://github.com/ingen63/VivaPlan/issues/179) · geschlossen · Umsetzung: 3906724, d0833d8
