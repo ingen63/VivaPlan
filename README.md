@@ -15,11 +15,14 @@
   <img src="docs/bilder/uebersicht.png" alt="VivaPlan: Beispielplanung mit Zeitleiste, Eingaben und Live-Vorschau des Vermögensverlaufs" width="900">
 </p>
 
+https://github.com/user-attachments/assets/d5e55050-891c-4345-a27d-df911424cc30
+
 <p align="center">
-  <img src="docs/bilder/ergebnisse.png" alt="VivaPlan: Ergebnisse der Beispielplanung mit Kennzahlen und Vermögensverlauf" width="900">
+  ▶ <a href="https://archive.org/details/vivaplan-video-de/vivaplan-2min.mp4">VivaPlan in 2 Minuten</a> ·
+  ▶ <a href="https://archive.org/details/vivaplan-video-de/vivaplan-10min.mp4">VivaPlan in 10 Minuten</a>
 </p>
 
-<p align="center"><sub>Bildschirmfotos der mitgelieferten Beispielplanung (erfundene Daten).</sub></p>
+<p align="center"><sub>Bildschirmfoto und Videos zeigen Beispielplanungen mit erfundenen Daten.</sub></p>
 
 ## Worum es geht
 
