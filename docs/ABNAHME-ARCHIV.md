@@ -1593,3 +1593,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #215/AK3 | Die Ergebnisse sind bitgleich zu vorher: Golden-Dateien unverändert, und ein Test vergleicht Variationen und … | ☑ | **gilt** | [path_reuse.rs](../crates/engine/tests/path_reuse.rs) `issue_215_ak3_…` (2 Tests, vor der Umstellung grün); `golden::*` | 22.11.2026 ok (Golden-Dateien im Commit unverändert; Fingerabdrücke von `variants_bench` vorher und nachher gleich) |
 | #215/AK4 | Bei 8 Varianten auf parametrischen Pfaden braucht die Rechnung höchstens die halbe Zeit wie vorher. Gemessen wird auf … | ☑ | **gilt** | [variants_bench.rs](../crates/engine/examples/variants_bench.rs) (Messprogramm, kein Test) | 22.11.2026 ok: M1 Pro, 1 Kern, 1000 Pfade, bestes von 5: Variationen 2143 → 1038 ms (48 %); Strategievergleich 2036 → 1082 ms (53 %, nur Hinweis) |
 | #215/AK5 | Der Speicherbedarf für zwischengespeicherte Pfade ist begrenzt (Obergrenze dokumentiert). Darüber wird ohne … | ☑ | **gilt** (512 MB, Entscheid im Issue vom 22.11.2026) | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak5_…`, `issue_215_ak2_prepare_…` | 22.11.2026 ok (`PATH_CACHE_BYTES`, `docs/ENTWICKLUNG.md`; darüber Erzeugung im Lauf) |
+
+### #223 Funde der Eigenschaftstests als benannte Regressionstests
+
+[Issue #223](https://github.com/ingen63/VivaPlan/issues/223) · geschlossen · Umsetzung: b57777b
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #223/AK1 | Jeder Eintrag in den proptest-Regressionsdateien hat einen benannten Test (`issue_<Nr>_…`), der die verkleinerte … | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) `issue_223_ak2_…` | 23.11.2026 ok (keine Einträge mehr; früherer Fall schlägt mit dem alten Orakel fehl, lokal geprüft) |
+| #223/AK2 | Ein Eintrag ohne gefundenen Fehler (zum Beispiel ein falsch formulierter Test) ist mit Begründung entfernt. | ☑ | **gilt** | [proptest_tax.rs](../crates/engine/tests/proptest_tax.rs) `issue_223_ak2_…` | 23.11.2026 ok (Fehler im Prüforakel `really_falls` von #134, Eintrag entfernt) |
+| #223/AK3 | `docs/TESTS.md` (Schicht 3) und `.claude/agents/rust-test-agent.md` schreiben vor: neuer Fund → benannter … | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+| #223/AK4 | Die Regressionsdateien bleiben eingecheckt, gelten aber nicht als Dokumentation des Fundes. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (`git ls-files`, TESTS.md) |
