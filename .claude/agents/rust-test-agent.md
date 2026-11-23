@@ -73,6 +73,10 @@ Das Projekt ist mit rustfmt formatiert (#56, Einstellungen in `rustfmt.toml`).
    - Async-Code: das im Projekt bereits verwendete Runtime-Test-Makro nutzen (z. B. `#[tokio::test]`).
    - Ist `proptest` oder `quickcheck` bereits eine Dev-Dependency, für reine Funktionen
      Property-Tests ergänzen. Keine neuen Dependencies ohne Rückfrage hinzufügen.
+   - **Fund eines Eigenschaftstests (#223):** Findet proptest einen Fehler, im selben Commit wie die Korrektur einen
+     benannten Regressionstest (`issue_<Nr>_…`) mit der verkleinerten Eingabe als lesbarem Wert schreiben, der ohne die
+     Korrektur fehlschlägt. Die Datei unter `proptest-regressions/` bleibt eingecheckt, ersetzt diesen Test aber nicht.
+     War der Test selbst falsch formuliert: Test korrigieren, Eintrag aus der Regressionsdatei entfernen.
    - Bestehende Teststil-Konventionen des Projekts übernehmen. Keine trivialen Tests,
      die nur Getter aufrufen, um die Abdeckung zu schönen.
    - **Jeder Test prüft etwas** (`assert!`, `assert_eq!`, `matches!` auf konkrete, nachgerechnete Werte oder erwartete

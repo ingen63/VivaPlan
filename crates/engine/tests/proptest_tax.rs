@@ -156,3 +156,26 @@ fn issue_162_ak1_falling_row_edges() {
     // finds it, the one at the end does not. The input validation requires rates ≥ 0; `falling_row` applies to every table.
     assert_eq!(falling_row(&[(1.0, -0.5), (11.0, 0.5)]), Some(1));
 }
+
+/// #223/AK2: The only entry ever saved in `proptest-regressions/proptest_tax.txt` (shrunk by
+/// `proptest_falling_row_matches_the_tax_curve` during #134) was no bug in the engine: `falling_row` was right, the
+/// oracle `really_falls` was not. It took the start of a section from the bracket itself, where `rate_at` still applies
+/// the rate of the first of several rows with the same amount (0 %), instead of the rate just after it (79 %). From
+/// 100'000 the rate falls from 79 % to 0 % at 109'822, so the tax falls in that section. The entry was removed; this
+/// test keeps the case readable and fails with the former oracle.
+#[test]
+fn issue_223_ak2_oracle_sees_a_fall_after_a_group_of_equal_amounts() {
+    let t = [
+        (100_000.0, 0.0),
+        (100_000.0, 0.790_172_171_361_065_8),
+        (109_821.611_465_208_95, 0.0),
+    ];
+    // at the bracket the first row applies, just after it the last one
+    assert_eq!(rate_at(&t, 100_000.0), 0.0);
+    assert!((rate_at(&t, 100_000.001) - 0.790_172).abs() < 1e-5);
+    // tax ≈ 79'017 just after the bracket, 0 at the end of the section
+    assert!(raw(&t, 100_000.001) > 79_000.0);
+    assert_eq!(raw(&t, 109_821.611_465_208_95), 0.0);
+    assert_eq!(falling_row(&t), Some(2));
+    assert!(really_falls(&t));
+}
