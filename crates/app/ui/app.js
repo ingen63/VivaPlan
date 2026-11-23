@@ -1936,6 +1936,7 @@ function command(id) {
   if (id === "welcome") return showWelcome();
   if (id === "steps") return Steps.show();
   if (id === "back") { if (!$("#results").hidden) showResults(false); return; }
+  if (/^recent-\d+$/.test(id)) return openRecent(+id.slice(7));
   ACTIONS[id]?.({});
 }
 async function showAbout() {
@@ -2321,6 +2322,16 @@ if (window.__TAURI__?.event) window.__TAURI__.event.listen("open-file", async ev
   if (!await confirmDiscard()) return;
   try { await showOpened(await Engine.call("open_path", { path: ev.payload })); } catch (e) { toast(errText(e)); }
 });
+/** #227: «Datei → Zuletzt geöffnet → ‹Planung›»: same question as «Öffnen …»; a file that no longer exists is reported
+ *  (the app removes it from the list). */
+async function openRecent(index) {
+  if (!await confirmDiscard()) return;
+  try {
+    const r = await Engine.call("open_recent", { index });
+    if (r?.missing) return toast(tr("file.recentMissing", { file: r.missing }));
+    if (r?.opened) await showOpened(r.opened);
+  } catch (e) { toast(errText(e)); }
+}
 /** #44: Window title «VivaPlan - ‹file name›», without a file just «VivaPlan». */
 function showTitle(name) {
   document.title = name ? `VivaPlan - ${name}` : "VivaPlan";

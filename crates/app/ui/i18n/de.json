@@ -1953,5 +1953,9 @@
   "yearTable.taxBasisTaxable": "Steuerbar",
   "yearTable.taxBasisTaxableTitle": "Steuerbares Einkommen (Kanton), nie negativ; weicht der Bund ab, zeigt ihn der Tooltip der Zelle.",
   "yearTable.residence": "Wohnort",
-  "yearTable.residenceTitle": "Wohnort am 31. Dezember; er gilt für die Einkommens- und Vermögenssteuer des ganzen Jahres."
+  "yearTable.residenceTitle": "Wohnort am 31. Dezember; er gilt für die Einkommens- und Vermögenssteuer des ganzen Jahres.",
+  "menu.file.recent": "Zuletzt geöffnet",
+  "menu.file.recentClear": "Liste löschen",
+  "menu.file.recentEmpty": "Keine Einträge",
+  "file.recentMissing": "Die Datei «{file}» gibt es nicht mehr. Sie wurde aus der Liste «Zuletzt geöffnet» entfernt."
 }

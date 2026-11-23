@@ -32,6 +32,7 @@
     "import_snb",
     "open_plan",
     "open_path",
+    "open_recent",
     "set_window_title",
     "save_plan",
     "import_legacy",

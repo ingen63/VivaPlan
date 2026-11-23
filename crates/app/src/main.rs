@@ -5,6 +5,7 @@
 
 mod i18n;
 mod migrate;
+mod recent;
 
 // #116: memory limit per test process (engine::test_alloc).
 #[cfg(test)]
@@ -109,8 +110,15 @@ fn read_settings(data_dir: &Path) -> serde_json::Map<String, Value> {
 
 /// Sets a setting and writes the file.
 fn write_setting(data_dir: &Path, key: &str, value: Value) -> Result<(), String> {
+    update_settings(data_dir, |all| {
+        all.insert(key.to_string(), value);
+    })
+}
+
+/// Reads the settings, changes them with `change` and writes the file; the other settings stay as they are.
+fn update_settings(data_dir: &Path, change: impl FnOnce(&mut serde_json::Map<String, Value>)) -> Result<(), String> {
     let mut all = read_settings(data_dir);
-    all.insert(key.to_string(), value);
+    change(&mut all);
     std::fs::create_dir_all(data_dir).map_err(|e| format!("{}: {e}", data_dir.display()))?;
     let file = data_dir.join(SETTINGS_FILE);
     let text = serde_json::to_string_pretty(&all).map_err(|e| e.to_string())?;
@@ -129,8 +137,9 @@ async fn settings_set<R: Runtime>(app: AppHandle<R>, key: String, value: Value) 
     write_setting(&data, &key, value)
 }
 
-/// Setting holding the path of the plan last opened or saved (only the path, local).
-const LAST_PLAN_KEY: &str = "lastPlan";
+/// Older setting holding the path of the plan last opened or saved; since #227 the list `recentPlans` replaces it.
+#[cfg(test)]
+const LAST_PLAN_KEY: &str = recent::LEGACY_KEY;
 /// Name of the bundled neutral example plan (resource in the app bundle).
 const EXAMPLE_RESOURCE: &str = "new.vplan";
 
@@ -159,17 +168,15 @@ fn file_name(path: &str) -> String {
 }
 
 /// Determines the plan at startup. A file passed at startup (double-click, command line) takes precedence, otherwise
-/// the remembered file applies. Without a remembered file the example plan applies (without notice); likewise if the
+/// the first entry of the recent plans applies (#227). Without a remembered file the example plan applies (without notice); likewise if the
 /// file is missing or unreadable (with notice). The remembered path itself stays unchanged.
 /// #70: If there is no settings file yet and no file was passed, this is the very first start.
 fn startup_from(data_dir: &Path, given: Option<PathBuf>, example: impl FnOnce() -> Value) -> Startup {
     let first = given.is_none() && !data_dir.join(SETTINGS_FILE).exists();
     let settings = read_settings(data_dir);
     let given = given.map(|p| p.to_string_lossy().into_owned());
-    let Some(last) = given
-        .as_deref()
-        .or_else(|| settings.get(LAST_PLAN_KEY).and_then(Value::as_str))
-    else {
+    let recent = recent::list(&settings);
+    let Some(last) = given.as_deref().or(recent.first().map(String::as_str)) else {
         return Startup {
             path: None,
             plan: example(),
@@ -289,15 +296,76 @@ fn set_window_title<R: Runtime>(window: tauri::WebviewWindow<R>, path: Option<St
     Ok(title)
 }
 
-/// Remembers the path of the plan for the next start; an error here does not disturb opening or saving.
+/// Remembers the path of the plan for the next start and puts it first in «Zuletzt geöffnet» (#227); an error here
+/// does not disturb opening or saving.
 fn remember_plan<R: Runtime>(app: &AppHandle<R>, path: &str) {
     if let Ok(data) = app.path().app_data_dir() {
         remember_in(&data, path);
+        refresh_menu(app);
     }
 }
 
 fn remember_in(data_dir: &Path, path: &str) {
-    let _ = write_setting(data_dir, LAST_PLAN_KEY, Value::String(path.to_string()));
+    change_recent(data_dir, |list| recent::push(list, path));
+}
+
+/// Changes the list of recent plans in the settings.
+fn change_recent(data_dir: &Path, change: impl FnOnce(Vec<String>) -> Vec<String>) {
+    let _ = update_settings(data_dir, |all| {
+        let list = change(recent::list(all));
+        recent::store(all, &list);
+    });
+}
+
+/// Recent plans from the settings (empty if the data folder is unknown).
+fn recent_plans<R: Runtime>(app: &AppHandle<R>) -> Vec<String> {
+    app.path()
+        .app_data_dir()
+        .map(|d| recent::list(&read_settings(&d)))
+        .unwrap_or_default()
+}
+
+/// #227: result of «Zuletzt geöffnet → ‹Planung›»: the opened plan, or the file name if the file no longer exists
+/// (the entry is then removed from the list).
+#[derive(Serialize)]
+struct RecentOpened {
+    opened: Option<Opened>,
+    missing: Option<String>,
+}
+
+/// #227/AK3, AK4: opens entry `index` of «Zuletzt geöffnet» like «Öffnen …» (the user interface has already asked
+/// about unsaved changes).
+#[tauri::command]
+async fn open_recent<R: Runtime>(app: AppHandle<R>, index: usize) -> Result<RecentOpened, CmdError> {
+    let data = app.path().app_data_dir().map_err(|e| CmdError::Text(e.to_string()))?;
+    let r = open_recent_in(&data, index)?;
+    refresh_menu(&app);
+    Ok(r)
+}
+
+fn open_recent_in(data_dir: &Path, index: usize) -> Result<RecentOpened, CmdError> {
+    let Some(path) = recent::list(&read_settings(data_dir)).get(index).cloned() else {
+        return Ok(RecentOpened {
+            opened: None,
+            missing: None,
+        });
+    };
+    if !Path::new(&path).is_file() {
+        change_recent(data_dir, |mut list| {
+            list.retain(|p| *p != path);
+            list
+        });
+        return Ok(RecentOpened {
+            opened: None,
+            missing: Some(file_name(&path)),
+        });
+    }
+    let o = opened_from(FilePath::Path(PathBuf::from(&path)))?;
+    remember_in(data_dir, &o.path);
+    Ok(RecentOpened {
+        opened: Some(o),
+        missing: None,
+    })
 }
 
 /// State for quitting: unsaved changes (reported by the user interface) and the permission to quit.
@@ -830,6 +898,9 @@ const FILE_MENU: [Entry; 8] = [
     ("run", "menu.file.run", "CmdOrCtrl+Enter"),
 ];
 
+/// #227: «Zuletzt geöffnet» follows the first entries of «Datei» («Neue Planung», «Öffnen…»).
+const RECENT_AFTER: usize = 2;
+
 /// #25: application-wide settings (limits for AHV payout, pension fund payout, maximum amount pillar 3a).
 /// #59: on macOS in the application menu, on Windows and Linux at the end of «Datei».
 const SETTINGS: Entry = ("settings", "menu.settings", "CmdOrCtrl+,");
@@ -883,7 +954,16 @@ fn submenu<'a, R: Runtime>(
     title: &str,
     entries: &[Entry],
 ) -> tauri::Result<SubmenuBuilder<'a, R, AppHandle<R>>> {
-    let mut b = SubmenuBuilder::new(app, title);
+    add_entries(SubmenuBuilder::new(app, title), app, lang, entries)
+}
+
+/// Adds the entries of a table to a submenu.
+fn add_entries<'a, R: Runtime>(
+    mut b: SubmenuBuilder<'a, R, AppHandle<R>>,
+    app: &'a AppHandle<R>,
+    lang: &str,
+    entries: &[Entry],
+) -> tauri::Result<SubmenuBuilder<'a, R, AppHandle<R>>> {
     for (id, key, accel) in entries {
         if id.is_empty() {
             b = b.separator();
@@ -896,6 +976,43 @@ fn submenu<'a, R: Runtime>(
         b = b.item(&item.build(app)?);
     }
     Ok(b)
+}
+
+/// Prefix of the ids of the entries in «Datei → Zuletzt geöffnet»; the user interface opens them (`recent-<index>`).
+const RECENT_ID: &str = "recent-";
+/// Id of «Liste löschen» in «Zuletzt geöffnet»; the app handles it itself.
+const RECENT_CLEAR_ID: &str = "recent-clear";
+/// Id of the disabled entry «Keine Einträge».
+const RECENT_EMPTY_ID: &str = "recent-none";
+
+/// #227/AK1, AK5: entries of «Datei → Zuletzt geöffnet»: the plans (most recent first), then a separator (empty
+/// id) and «Liste löschen»; without plans only the disabled entry «Keine Einträge». (id, text, enabled)
+fn recent_entries(lang: &str, list: &[String]) -> Vec<(String, String, bool)> {
+    if list.is_empty() {
+        return vec![(RECENT_EMPTY_ID.into(), i18n::tr(lang, "menu.file.recentEmpty"), false)];
+    }
+    recent::labels(list)
+        .into_iter()
+        .enumerate()
+        .map(|(i, text)| (format!("{RECENT_ID}{i}"), text, true))
+        .chain([
+            (String::new(), String::new(), false),
+            (RECENT_CLEAR_ID.into(), i18n::tr(lang, "menu.file.recentClear"), true),
+        ])
+        .collect()
+}
+
+/// Submenu «Zuletzt geöffnet».
+fn recent_menu<R: Runtime>(app: &AppHandle<R>, lang: &str, list: &[String]) -> tauri::Result<Submenu<R>> {
+    let mut b = SubmenuBuilder::new(app, i18n::tr(lang, "menu.file.recent"));
+    for (id, text, enabled) in recent_entries(lang, list) {
+        b = if id.is_empty() {
+            b.separator()
+        } else {
+            b.item(&MenuItemBuilder::with_id(id, text).enabled(enabled).build(app)?)
+        };
+    }
+    b.build()
 }
 
 /// Prefix of the ids of the entries in «Ansicht → Sprache»; the user interface handles them (`language-<choice>`).
@@ -922,21 +1039,22 @@ fn language_menu<R: Runtime>(app: &AppHandle<R>, lang: &str, choice: &str) -> ta
     b.build()
 }
 
-/// Menu with the usual keyboard shortcuts, in the language `lang`; `choice` is checked in «Ansicht → Sprache».
-/// Own entries report to the user interface as event «menu» with their id; cut, copy and paste are handled by
-/// the system.
-fn menu<R: Runtime>(app: &AppHandle<R>, lang: &str, choice: &str) -> tauri::Result<Menu<R>> {
+/// Menu with the usual keyboard shortcuts, in the language `lang`; `choice` is checked in «Ansicht → Sprache»,
+/// `recent` fills «Datei → Zuletzt geöffnet» (#227). Own entries report to the user interface as event «menu» with
+/// their id; cut, copy and paste are handled by the system.
+fn menu<R: Runtime>(app: &AppHandle<R>, lang: &str, choice: &str, recent: &[String]) -> tauri::Result<Menu<R>> {
     let tr = |key: &str| i18n::tr(lang, key);
     let quit = MenuItemBuilder::with_id(QUIT_ID, tr(QUIT_TEXT))
         .accelerator("CmdOrCtrl+Q")
         .build(app)?;
+    let entries = file_entries();
+    let (head, tail) = entries.split_at(RECENT_AFTER);
+    let file = submenu(app, lang, &tr(FILE_TITLE), head)?.item(&recent_menu(app, lang, recent)?);
+    let file = add_entries(file, app, lang, tail)?;
     #[cfg(not(target_os = "macos"))]
-    let file = submenu(app, lang, &tr(FILE_TITLE), &file_entries())?
-        .separator()
-        .item(&quit)
-        .build()?;
+    let file = file.separator().item(&quit).build()?;
     #[cfg(target_os = "macos")]
-    let file = submenu(app, lang, &tr(FILE_TITLE), &file_entries())?.build()?;
+    let file = file.build()?;
     let edit = submenu(app, lang, &tr(EDIT_TITLE), &EDIT_MENU)?
         .cut()
         .copy()
@@ -987,16 +1105,23 @@ async fn set_menu_language<R: Runtime>(
     choice: String,
 ) -> Result<(), String> {
     ui.set(&language, &choice);
-    if app.try_state::<MenuInstalled>().is_some() {
-        let (handle, lang, choice) = (app.clone(), ui.language(), ui.choice());
-        app.run_on_main_thread(move || {
-            if let Ok(m) = menu(&handle, &lang, &choice) {
-                let _ = handle.set_menu(m);
-            }
-        })
-        .map_err(|e| e.to_string())?;
-    }
+    refresh_menu(&app);
     Ok(())
+}
+
+/// Builds the menu again (language, choice, recent plans), like after a change of language (#170) or of the recent
+/// plans (#227); only in the real application with an installed menu.
+fn refresh_menu<R: Runtime>(app: &AppHandle<R>) {
+    if app.try_state::<MenuInstalled>().is_none() {
+        return;
+    }
+    let ui = app.state::<i18n::UiLanguage>();
+    let (handle, lang, choice, recent) = (app.clone(), ui.language(), ui.choice(), recent_plans(app));
+    let _ = app.run_on_main_thread(move || {
+        if let Ok(m) = menu(&handle, &lang, &choice, &recent) {
+            let _ = handle.set_menu(m);
+        }
+    });
 }
 
 /// Language of the menus at the start, before the user interface reports its own: the saved choice, otherwise the
@@ -1049,6 +1174,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             import_snb,
             open_plan,
             open_path,
+            open_recent,
             set_window_title,
             save_plan,
             import_legacy,
@@ -1061,7 +1187,18 @@ fn forward_menu_event<R: Runtime>(app: &AppHandle<R>, ev: MenuEvent) {
     if ev.id().0 == QUIT_ID {
         return quit_from_menu(app);
     }
+    if ev.id().0 == RECENT_CLEAR_ID {
+        return clear_recent(app);
+    }
     let _ = app.emit("menu", ev.id().0.as_str());
+}
+
+/// #227/AK5: «Liste löschen» empties «Zuletzt geöffnet».
+fn clear_recent<R: Runtime>(app: &AppHandle<R>) {
+    if let Ok(data) = app.path().app_data_dir() {
+        change_recent(&data, |_| Vec::new());
+    }
+    refresh_menu(app);
 }
 
 /// Sets the menu and menu events; needs the main thread of the operating system and is therefore only active in
@@ -1072,7 +1209,7 @@ fn install_menu<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::
         let start = startup_language(&data);
         ui.set(&start.language(), &start.choice());
     }
-    let m = menu(app.handle(), &ui.language(), &ui.choice())?;
+    let m = menu(app.handle(), &ui.language(), &ui.choice(), &recent_plans(app.handle()))?;
     app.set_menu(m)?;
     app.manage(MenuInstalled);
     app.on_menu_event(forward_menu_event);
@@ -2589,6 +2726,171 @@ mod tests {
 
     fn example_stub() -> Value {
         json!({"format": "vivaplan/1", "marker": "beispiel"})
+    }
+
+    /// Recent plans in the settings of the test app.
+    fn recent_of(app: &App<MockRuntime>) -> Vec<String> {
+        recent_plans(app.handle())
+    }
+
+    fn plan_file(dir: &Path, name: &str) -> PathBuf {
+        let f = dir.join(name);
+        std::fs::write(&f, format!(r#"{{"format": "vivaplan/1", "marker": "{name}"}}"#)).unwrap();
+        f
+    }
+
+    fn s(p: &Path) -> String {
+        p.to_string_lossy().into_owned()
+    }
+
+    /// #227/AK1, AK5: «Zuletzt geöffnet» follows «Öffnen…»; entries most recent first, then «Liste löschen»; an empty
+    /// list shows only the disabled entry «Keine Einträge».
+    #[test]
+    fn issue_227_ak1_ak5_recent_menu_entries() {
+        let ids: Vec<&str> = file_entries()[..RECENT_AFTER].iter().map(|e| e.0).collect();
+        assert_eq!(ids, ["new", "open"]);
+        assert_eq!(
+            recent_entries("de", &[]),
+            [(RECENT_EMPTY_ID.to_string(), "Keine Einträge".to_string(), false)]
+        );
+        let l = ["/a/Familie.vplan".to_string(), "/b/Allein.vplan".to_string()];
+        let e = recent_entries("de", &l);
+        let e: Vec<(&str, &str, bool)> = e.iter().map(|(i, t, on)| (i.as_str(), t.as_str(), *on)).collect();
+        assert_eq!(
+            e,
+            [
+                ("recent-0", "Familie", true),
+                ("recent-1", "Allein", true),
+                ("", "", false),
+                (RECENT_CLEAR_ID, "Liste löschen", true),
+            ]
+        );
+        assert!(!e[0].0.starts_with(RECENT_EMPTY_ID) && RECENT_CLEAR_ID.starts_with(RECENT_ID));
+    }
+
+    /// #227/AK2: «Öffnen …», «Speichern unter» and the first saving put the plan first; plain saving keeps the order
+    /// apart from moving it up, there are no duplicates.
+    #[test]
+    fn issue_227_ak2_open_save_as_and_first_save_put_plan_first() {
+        let (_tmp, dir) = tmp("recent-cmd");
+        let a = plan_file(&dir, "a.vplan");
+        let fake = FakeDialogs {
+            file: Some(FilePath::Path(a.clone())),
+            save: Some(FilePath::Path(dir.join("b"))),
+            ..Default::default()
+        };
+        let (app, w, _g, _) = setup_with(fake);
+        let b = dir.join("b.vplan");
+        call(&w, "open_plan", json!({})).unwrap();
+        assert_eq!(recent_of(&app), [s(&a)]);
+        // first saving of a new plan (no path): dialog → b first
+        call(&w, "save_plan", json!({"plan": {}})).unwrap();
+        assert_eq!(recent_of(&app), [s(&b), s(&a)]);
+        // «Speichern unter» while a is open: the dialog chooses b again → no duplicate
+        call(&w, "save_plan", json!({"plan": {}, "path": null})).unwrap();
+        assert_eq!(recent_of(&app), [s(&b), s(&a)]);
+        // opening a again moves it up
+        call(&w, "open_plan", json!({})).unwrap();
+        assert_eq!(recent_of(&app), [s(&a), s(&b)]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// #227/AK3: a click on an entry opens the plan like «Öffnen …» (without dialog) and moves it up.
+    #[test]
+    fn issue_227_ak3_open_recent_opens_and_moves_up() {
+        let (_tmp, dir) = tmp("recent-open");
+        let (a, b) = (plan_file(&dir, "a.vplan"), plan_file(&dir, "b.vplan"));
+        let (app, w, _g, fake) = setup_with(FakeDialogs::default());
+        let data = app.path().app_data_dir().unwrap();
+        remember_in(&data, &s(&a));
+        remember_in(&data, &s(&b));
+        let r = call(&w, "open_recent", json!({"index": 1})).unwrap();
+        assert_eq!(r["opened"]["path"], s(&a));
+        assert_eq!(r["opened"]["plan"]["marker"], "a.vplan");
+        assert!(r["missing"].is_null());
+        assert!(fake.asked().is_empty(), "kein Dateidialog");
+        assert_eq!(recent_of(&app), [s(&a), s(&b)]);
+        // an index beyond the list opens nothing
+        let r = call(&w, "open_recent", json!({"index": 9})).unwrap();
+        assert!(r["opened"].is_null() && r["missing"].is_null());
+        // an unreadable file is an error like with «Öffnen …» and stays in the list
+        std::fs::write(&b, "kein json").unwrap();
+        assert!(is_error_text(
+            &call(&w, "open_recent", json!({"index": 1})).unwrap_err()
+        ));
+        assert_eq!(recent_of(&app).len(), 2);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// #227/AK4: a file that no longer exists is reported by name and removed from the list.
+    #[test]
+    fn issue_227_ak4_missing_file_is_reported_and_removed() {
+        let (_tmp, dir) = tmp("recent-missing");
+        let a = plan_file(&dir, "a.vplan");
+        let gone = dir.join("weg.vplan");
+        remember_in(&dir, &s(&gone));
+        remember_in(&dir, &s(&a));
+        let r = open_recent_in(&dir, 1).unwrap();
+        assert!(r.opened.is_none());
+        assert_eq!(r.missing.as_deref(), Some("weg.vplan"));
+        assert_eq!(recent::list(&read_settings(&dir)), [s(&a)]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// #227/AK5: «Liste löschen» empties the list; the other settings stay.
+    #[test]
+    fn issue_227_ak5_clear_list_from_menu() {
+        let (app, _w, _g) = setup();
+        let data = app.path().app_data_dir().unwrap();
+        write_setting(&data, "theme", json!("dark")).unwrap();
+        remember_in(&data, "/x/a.vplan");
+        assert_eq!(recent_of(&app).len(), 1);
+        forward_menu_event(
+            app.handle(),
+            MenuEvent {
+                id: tauri::menu::MenuId::new(RECENT_CLEAR_ID),
+            },
+        );
+        assert!(recent_of(&app).is_empty());
+        assert_eq!(read_settings(&data)["theme"], "dark");
+    }
+
+    /// #227/AK6: the list persists in the settings; the start takes the first entry; settings with only `lastPlan`
+    /// take that path as first entry, the next plan comes in front of it.
+    #[test]
+    fn issue_227_ak6_start_takes_first_entry_and_legacy_last_plan() {
+        let (_tmp, dir) = tmp("recent-start");
+        let (a, b) = (plan_file(&dir, "a.vplan"), plan_file(&dir, "b.vplan"));
+        write_setting(&dir, LAST_PLAN_KEY, json!(s(&a))).unwrap();
+        assert_eq!(startup_from(&dir, None, example_stub).plan["marker"], "a.vplan");
+        remember_in(&dir, &s(&b));
+        let set = read_settings(&dir);
+        assert_eq!(set[recent::KEY], json!([s(&b), s(&a)]));
+        assert!(!set.contains_key(LAST_PLAN_KEY), "die Liste ersetzt lastPlan");
+        assert_eq!(startup_from(&dir, None, example_stub).plan["marker"], "b.vplan");
+        // after clearing the list the example plan starts
+        change_recent(&dir, |_| Vec::new());
+        assert_eq!(startup_from(&dir, None, example_stub).plan["marker"], "beispiel");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// #227/AK7: the submenu follows the language; its texts are keys of the text tables in all languages.
+    #[test]
+    fn issue_227_ak7_recent_texts_in_all_languages() {
+        let keys = [
+            "menu.file.recent",
+            "menu.file.recentClear",
+            "menu.file.recentEmpty",
+            "file.recentMissing",
+        ];
+        for lang in ["de", "en", "fr", "it"] {
+            for k in keys {
+                assert_ne!(i18n::tr(lang, k), k, "{lang}: {k}");
+            }
+        }
+        assert_eq!(i18n::tr("en", "menu.file.recent"), "Open Recent");
+        assert_eq!(recent_entries("en", &[])[0].1, "No Entries");
+        assert_eq!(recent_entries("fr", &["/a.vplan".into()])[2].1, "Effacer la liste");
     }
 
     #[test]

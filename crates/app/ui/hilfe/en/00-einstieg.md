@@ -42,9 +42,10 @@ The validation at the bottom right shows errors and warnings even before you cal
 > Tip: Press **F1** in an input field to open the help for exactly that field.
 
 ## @bedienung Operation and keyboard shortcuts
-Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language
+Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent
 
-- **File:** New (an **empty plan with default values**: start in the current month, no project name, one person without a name, no amounts and no real estate; returns, tax tables and strategy parameters take the default values), Open, Save, Save as. A plan is a single file with the extension `.vplan`. It can be copied and archived.
+- **File:** New (an **empty plan with default values**: start in the current month, no project name, one person without a name, no amounts and no real estate; returns, tax tables and strategy parameters take the default values), Open, Open Recent, Save, Save as. A plan is a single file with the extension `.vplan`. It can be copied and archived.
+- **Open Recent:** The submenu below File → Open shows the up to 10 plans you opened or saved last, the most recent at the top (file name without `.vplan`; with the folder if names are equal). A click opens the plan like “Open…”; with unsaved changes the app asks first. If the file no longer exists, the app says so and removes the entry. “Clear List” empties the list; if it is empty, it shows “No Entries”.
 - **Starting and quitting:** At startup, the desktop app opens the plan you last opened or saved; the file name is shown in the header. If there is none, or the file has disappeared or cannot be read, it opens the bundled **example plan** (with a notice naming the file, except at the very first start). The example plan counts as a new, unsaved plan: “Save” asks for a location, it is never overwritten. When you quit with unsaved changes (close button of the window, ⌘Q or Ctrl+Q, or File → Quit), the app asks whether you want to save, discard or cancel. “Cancel” leaves the app open; if you cancel the location dialog while saving, it also stays open. Only the file path is remembered, locally in the data folder of the app.
 - **Saving before the simulation:** If the plan has unsaved changes, the desktop app asks before every simulation whether you want to save: “Save” (for a new plan with a location dialog), “Simulate without saving” or “Cancel”. The question can be turned off in the settings.
 - **Welcome:** At the very first start, the app asks how you would like to begin: **Explore the example** (loads the example plan and opens the help [What VivaPlan can do](#start)), **Start your own plan** (loads the example plan as a template, opens “Household & project” and resets the checklist [Getting started](#quickstart)) or **Empty plan** (like File → New). Esc closes the dialog without a change. After that, it no longer appears on its own; *Help → Welcome …* opens it at any time, with a question if there are unsaved changes. If the app is started with a file (double click), it does not appear.
@@ -62,7 +63,7 @@ Keywords: internet, cloud, storage location, security, network, data protection
 
 All data stays on your computer. The app never connects to the internet, not even for data, updates or analytics.
 
-- **Plans** are where you save the `.vplan` file. The path of the plan last opened or saved is in the file `einstellungen.json` in the data folder of the app.
+- **Plans** are where you save the `.vplan` file. The paths of the plans last opened or saved (list “Open Recent”) are in the file `einstellungen.json` in the data folder of the app.
 - **Time series** (the data library) are in the data folder of the app. On macOS this is `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.
 - **The list of results** is in the local storage of the app (not in the plan file). Anyone who has your user account on this computer can read it. Delete entries you do not want to keep.
 

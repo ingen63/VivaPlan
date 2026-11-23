@@ -1953,5 +1953,9 @@
   "yearTable.taxBasisTaxable": "Imposable",
   "yearTable.taxBasisTaxableTitle": "Revenu imposable (canton), jamais négatif; si celui de la Confédération diffère, l’infobulle de la cellule l’indique.",
   "yearTable.residence": "Domicile",
-  "yearTable.residenceTitle": "Domicile au 31 décembre; il s’applique à l’impôt sur le revenu et sur la fortune de toute l’année."
+  "yearTable.residenceTitle": "Domicile au 31 décembre; il s’applique à l’impôt sur le revenu et sur la fortune de toute l’année.",
+  "menu.file.recent": "Ouverts récemment",
+  "menu.file.recentClear": "Effacer la liste",
+  "menu.file.recentEmpty": "Aucune entrée",
+  "file.recentMissing": "Le fichier «{file}» n’existe plus. Il a été retiré de la liste «Ouverts récemment»."
 }

@@ -42,9 +42,10 @@ Die Prüfung rechts unten zeigt Fehler und Hinweise, noch bevor Sie rechnen. Feh
 > Tipp: Drücken Sie **F1** in einem Eingabefeld, dann erscheint genau die Hilfe zu diesem Feld.
 
 ## @bedienung Bedienung und Tastenkürzel
-Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache
+Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache, zuletzt geöffnet
 
-- **Datei:** Neu (eine **leere Planung mit Standardwerten**: Start im aktuellen Monat, ohne Projektname, eine Person ohne Namen, keine Beträge und Immobilien; Renditen, Steuertabellen und Strategieparameter übernehmen die Standardwerte), Öffnen, Speichern, Speichern unter. Eine Planung ist eine einzelne Datei mit der Endung `.vplan`. Sie lässt sich kopieren und archivieren.
+- **Datei:** Neu (eine **leere Planung mit Standardwerten**: Start im aktuellen Monat, ohne Projektname, eine Person ohne Namen, keine Beträge und Immobilien; Renditen, Steuertabellen und Strategieparameter übernehmen die Standardwerte), Öffnen, Zuletzt geöffnet, Speichern, Speichern unter. Eine Planung ist eine einzelne Datei mit der Endung `.vplan`. Sie lässt sich kopieren und archivieren.
+- **Zuletzt geöffnet:** Das Untermenü unter Datei → Öffnen zeigt die bis zu 10 Planungen, die Sie zuletzt geöffnet oder gespeichert haben, die neueste zuoberst (Dateiname ohne `.vplan`; bei gleichen Namen mit dem Ordner). Ein Klick öffnet die Planung wie «Öffnen …»; bei ungespeicherten Änderungen fragt die App zuerst nach. Gibt es die Datei nicht mehr, meldet die App das und entfernt den Eintrag. «Liste löschen» leert die Liste; ist sie leer, steht dort «Keine Einträge».
 - **Start und Beenden:** Die Desktop-App öffnet beim Start die Planung, die Sie zuletzt geöffnet oder gespeichert haben; der Dateiname steht im Kopf. Gibt es keine, ist die Datei verschwunden oder nicht lesbar, öffnet sie die mitgelieferte **Beispielplanung** (mit Hinweis auf den Dateinamen, ausser beim allerersten Start). Die Beispielplanung gilt als neue, ungespeicherte Planung: «Speichern» fragt nach einem Ort, sie wird nie überschrieben. Beim Beenden mit ungespeicherten Änderungen (Schliessen-Knopf des Fensters, ⌘Q bzw. Ctrl+Q oder Datei → Beenden) fragt die App, ob Sie speichern, verwerfen oder abbrechen wollen. «Abbrechen» lässt die App offen; bricht die Ortsabfrage beim Speichern ab, bleibt sie ebenfalls offen. Gemerkt wird nur der Dateipfad, lokal im Datenordner der App.
 - **Speichern vor der Simulation:** Hat die Planung ungespeicherte Änderungen, fragt die Desktop-App vor jeder Simulation, ob Sie speichern wollen: «Speichern» (bei einer neuen Planung mit Ortsabfrage), «Ohne Speichern simulieren» oder «Abbrechen». Die Rückfrage lässt sich in den Einstellungen abschalten.
 - **Willkommen:** Beim allerersten Start fragt die App, wie Sie beginnen möchten: **Beispiel erkunden** (lädt die Beispielplanung und öffnet die Hilfe [Was VivaPlan kann](#start)), **Eigene Planung beginnen** (lädt die Beispielplanung als Vorlage, öffnet «Haushalt & Projekt» und setzt die Checkliste [Erste Schritte](#quickstart) zurück) oder **Leere Planung** (wie Datei → Neu). Esc schliesst den Dialog ohne Änderung. Danach erscheint er nicht mehr von selbst; *Hilfe → Willkommen …* öffnet ihn jederzeit, bei ungespeicherten Änderungen mit Rückfrage. Wird die App mit einer Datei gestartet (Doppelklick), erscheint er nicht.
@@ -62,7 +63,7 @@ Stichworte: Internet, Cloud, Speicherort, Sicherheit, Netzwerk
 
 Alle Daten bleiben auf Ihrem Rechner. Die App verbindet sich nie mit dem Internet, auch nicht für die Daten, Updates oder Auswertungen.
 
-- **Planungen** liegen dort, wo Sie die `.vplan`-Datei speichern. Der Pfad der zuletzt geöffneten oder gespeicherten Planung steht in der Datei `einstellungen.json` im Datenordner der App.
+- **Planungen** liegen dort, wo Sie die `.vplan`-Datei speichern. Die Pfade der zuletzt geöffneten oder gespeicherten Planungen (Liste «Zuletzt geöffnet») stehen in der Datei `einstellungen.json` im Datenordner der App.
 - **Zeitreihen** (die Datenbibliothek) liegen im Datenordner der App. Unter macOS ist das `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.
 - **Die Liste der Ergebnisse** liegt im lokalen Speicher der App (nicht in der Planungsdatei). Wer Ihren Benutzer-Account auf diesem Rechner hat, kann sie lesen. Löschen Sie Einträge, die Sie nicht aufbewahren möchten.
 

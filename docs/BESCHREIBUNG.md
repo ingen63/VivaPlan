@@ -19,7 +19,7 @@ des 1. und 99. Perzentils und des schlechtesten Laufs.
 
 Die App läuft auf macOS, Windows und Linux. Sie greift nie aufs Netzwerk zu: Planungen, Zeitreihen und Ergebnisse
 bleiben ausschliesslich auf dem eigenen Rechner. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
-kopieren und archivieren lässt; ein Doppelklick auf die Datei öffnet sie in VivaPlan. Beim Start öffnet die Desktop-App die zuletzt geöffnete oder gespeicherte Planung (sonst eine mitgelieferte Beispielplanung); beim Beenden mit ungespeicherten Änderungen fragt sie nach.
+kopieren und archivieren lässt; ein Doppelklick auf die Datei öffnet sie in VivaPlan. Beim Start öffnet die Desktop-App die zuletzt geöffnete oder gespeicherte Planung (sonst eine mitgelieferte Beispielplanung); beim Beenden mit ungespeicherten Änderungen fragt sie nach. Das Menü «Datei → Zuletzt geöffnet» zeigt die letzten 10 geöffneten oder gespeicherten Planungen zum schnellen Wechseln; eine nicht mehr vorhandene Datei meldet die App und entfernt sie aus der Liste, «Liste löschen» leert sie. Die Liste enthält nur die Dateipfade und liegt in den lokalen Einstellungen der App.
 
 VivaPlan hiess früher «RetirementPlanner». Planungen von damals (`.rplan`) lassen sich weiterhin öffnen; beim Speichern
 schlägt VivaPlan eine neue Datei mit der Endung `.vplan` vor, die alte Datei bleibt unverändert. Einstellungen, die

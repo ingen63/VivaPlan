@@ -1953,5 +1953,9 @@
   "yearTable.taxBasisTaxable": "Imponibile",
   "yearTable.taxBasisTaxableTitle": "Reddito imponibile (cantone), mai negativo; se quello della Confederazione è diverso, lo indica il tooltip della cella.",
   "yearTable.residence": "Domicilio",
-  "yearTable.residenceTitle": "Domicilio al 31 dicembre; vale per l’imposta sul reddito e sulla sostanza di tutto l’anno."
+  "yearTable.residenceTitle": "Domicilio al 31 dicembre; vale per l’imposta sul reddito e sulla sostanza di tutto l’anno.",
+  "menu.file.recent": "Aperti di recente",
+  "menu.file.recentClear": "Cancella elenco",
+  "menu.file.recentEmpty": "Nessuna voce",
+  "file.recentMissing": "Il file «{file}» non esiste più. È stato rimosso dall’elenco «Aperti di recente»."
 }

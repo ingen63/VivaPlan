@@ -1953,5 +1953,9 @@
   "yearTable.taxBasisTaxable": "Taxable",
   "yearTable.taxBasisTaxableTitle": "Taxable income (canton), never negative; if the federal amount differs, the tooltip of the cell shows it.",
   "yearTable.residence": "Residence",
-  "yearTable.residenceTitle": "Place of residence on 31 December; it applies to the income and wealth tax of the whole year."
+  "yearTable.residenceTitle": "Place of residence on 31 December; it applies to the income and wealth tax of the whole year.",
+  "menu.file.recent": "Open Recent",
+  "menu.file.recentClear": "Clear List",
+  "menu.file.recentEmpty": "No Entries",
+  "file.recentMissing": "The file “{file}” no longer exists. It has been removed from the “Open Recent” list."
 }
