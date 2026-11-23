@@ -68,6 +68,7 @@ mod tax_location;
 mod tax_parity;
 mod upgrade_api;
 mod validate_extra;
+mod wealth_deductions;
 
 /// Test plans that do not check #51 partly use ages outside the limits for the milestones
 /// «AHV-Bezug» and «Bezug Pensionskasse» (for example a payout at 75 years). Open limits apply to them; the limits themselves are checked by the

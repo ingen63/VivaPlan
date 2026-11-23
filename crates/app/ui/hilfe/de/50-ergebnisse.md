@@ -221,6 +221,7 @@ Eine Tabelle mit **einer Zeile pro Jahr** für den gewählten Lauf. Beträge in 
 | Inflation pro Jahr | Veränderung des Preisindex im Kalenderjahr, im ersten Jahr seit Simulationsstart |
 | Steuern bezahlt im Jahr | **Jahressummen der bezahlten Steuern** nach Art: Steuer Einkommen, Steuer Vermögen, Steuer Kapital Bezug, Steuer Grundstück, dazu das Total. Die Spalten sind **standardmässig eingeklappt**; die Schaltfläche **«Steuern anzeigen»** über der Tabelle blendet sie ein und aus, die Wahl bleibt erhalten. Die Spaltenköpfe heissen **«Steuer geschätzt …»**, ihr Tooltip nennt die Rundung auf 100 Franken |
 | Steuerwert Immobilien | erscheint mit den Steuerspalten, wenn eine Immobilie einen [Steuerwert](#f-re-tax-value) hat: Summe der Steuerwerte am 31. Dezember (Immobilien ohne Steuerwert mit dem Marktwert); die Vermögenssteuer rechnet damit minus Hypothek |
+| Abzüge Vermögen, Steuerbares Vermögen | erscheinen mit den Steuerspalten, wenn die Planung [Abzüge vom Vermögen](#f-tax-wealth-deductions) hat: Abzüge am 31. Dezember mit Herkunft im Tooltip und Vermögen minus Abzüge, nie unter 0 (im Modus «Wohnort» kommen die Sozialabzüge des Kantons dazu) |
 
 Die Spalten sind nicht in Gruppen mit Überschrift geordnet. Dass die Vermögen **Stände am Jahresende** und die Geldflüsse **Monatsdurchschnitte** sind, steht im Hinweis (Tooltip) der Spaltenköpfe und im Text unter der Tabelle. Das Einkommen allein und die geplanten Ausgaben ohne Wohnkosten zeigt die Tabelle nicht; sie stecken in «Einkommen total» und «Ausgaben total».
 

@@ -226,6 +226,13 @@ würde die Scheingenauigkeit verstärken.
   Betrag nominal, zum Beispiel PK-Einkauf, Sanierung, Krankheitskosten) zählen nur in ihrem Steuerjahr zusätzlich zur
   geltenden Zeile, bei beiden Arten von Zeilen und in beiden Modi; die Schätzung des Netto-Bedarfs (3-Topf) nutzt nur
   die laufenden Abzüge. Die Herkunft «zusätzlich» und «einmalig» steht im Tooltip der Abzüge.
+- **Abzüge vom Vermögen (#231):** Karte «Abzüge vom Vermögen» mit zeitabhängigen Zeilen «zusätzlich … pro Jahr»
+  (Preise des Starts, mit «Tarife mit der Teuerung») und einmaligen Abzügen (Steuerjahr, Beschreibung, Betrag nominal),
+  zum Beispiel Schulden ausser der Hypothek. Steuerbares Vermögen = Vermögen am 31.12. (Immobilien zum Steuerwert) −
+  Abzüge, nie negativ; es zählt die Zeile vom 31.12., ein einmaliger Abzug am 31.12. seines Steuerjahres. Im Modus
+  «Wohnort» kommen die Abzüge zu den Sozialabzügen des Kantons in den Vermögenskurven dazu und ersetzen sie nicht; mit
+  eigenen Tabellen sind sie der ganze Abzug. Die Steuerzerlegung zeigt die Abzüge mit Herkunft und das steuerbare
+  Vermögen.
 - **Was fehlt:** Abzüge im Einzelnen (nur als eigener Wert oder in den Sätzen), Eigenmietwert, Schuldzins- und
   Unterhaltsabzug (nur im eigenen Wert), Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
   Investitionen und Kosten beim Grundstückgewinn, bei der Grundstückgewinnsteuer nach Kanton die Selbstnutzung je

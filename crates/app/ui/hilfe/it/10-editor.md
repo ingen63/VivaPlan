@@ -292,6 +292,25 @@ Ogni riga è:
 
 **Risultati:** Con «Mostrare le imposte» i valori annuali mostrano il reddito, le deduzioni (cantone; l’origine – proposta del cantone, in aggiunta, valore proprio, unica, pilastro 3a – nel tooltip della cella) e il reddito imponibile (quello della Confederazione nel tooltip se diverso).
 
+## @f-tax-wealth-deductions Deduzioni dalla sostanza
+Parole chiave: deduzioni, sostanza imponibile, imposta sulla sostanza, debiti, deduzioni sociali, unica
+
+La scheda **Deduzioni dalla sostanza** nella sezione Imposte stabilisce che cosa viene dedotto dalla sostanza al 31 dicembre, per esempio debiti diversi dall’ipoteca o deduzioni cantonali che mancano nelle tariffe. La **sostanza imponibile** = sostanza − deduzioni, mai negativa. Gli immobili contano al loro [valore fiscale](#f-re-tax-value) meno l’ipoteca.
+
+**Righe:** «+ Riga» aggiunge una riga dipendente dal tempo con il campo «+ in aggiunta» (all’anno); vale dalla sua data fino alla successiva. Per un anno fiscale conta la riga che vale al 31 dicembre. L’importo è ai prezzi dell’inizio della simulazione e cresce con le [tariffe con il rincaro](#f-tax-indexed).
+
+**Deduzioni uniche:** «+ Deduzione unica» aggiunge una deduzione per un singolo anno fiscale, con anno fiscale, descrizione e importo (nominale, senza rincaro). Vale alla data di riferimento del 31 dicembre del suo anno fiscale, in aggiunta alla riga applicabile. Esempio: sostanza 800 000, corrente 50 000, unica 100 000 nell’anno 2027 dà nel 2027 una sostanza imponibile di 650 000, negli altri anni 750 000.
+
+**Modalità «domicilio»:** Le deduzioni sociali del cantone sono già comprese nelle tariffe sulla sostanza dei dati fiscali. Le vostre deduzioni si aggiungono; le deduzioni del cantone non possono essere sostituite. La scheda lo indica con una nota.
+
+**Tabelle proprie:** Gli importi sono l’intera deduzione dalla sostanza.
+
+**Le pianificazioni esistenti** non hanno deduzioni dalla sostanza e calcolano come prima.
+
+**Verifica:** Un importo negativo e un anno fiscale al di fuori della simulazione sono errori nella sezione Imposte.
+
+**Risultati:** Con «Mostrare le imposte» i valori annuali mostrano le deduzioni dalla sostanza (l’origine – in aggiunta, unica – nel tooltip della cella) e la sostanza imponibile (la sostanza prima delle deduzioni nel tooltip).
+
 ## @f-tax-multiplier Moltiplicatore d’imposta
 Parole chiave: cantone, comune, moltiplicatore
 

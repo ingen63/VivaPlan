@@ -582,6 +582,15 @@ ein (`BUILTIN`).
   eigener Wert + einmalig + 3a), nie negativ, in beiden Modi. `TaxBasis` hat `extra` und `oneOff`; einmalige Abzüge
   allein schalten die Aufzeichnung ein. Prüfung: `extra` ≥ 0, einmaliger Betrag ≥ 0 und Steuerjahr zwischen dem Jahr
   des Starts und dem Jahr des Endes (Fehler am Feld).
+- **Abzüge vom Vermögen (#231):** `taxes.wealthDeductions` = Liste `{ from, amount }` (Betrag in Preisen des Starts,
+  × Index bei «Tarife mit der Teuerung»), `taxes.oneOffWealthDeductions` = Liste `{ year, label, amount }` wie
+  `oneOffDeductions` (nominal, mehrere im selben Jahr addiert); beide nur gespeichert, wenn nicht leer.
+  `Simulator::taxable_wealth` rechnet im Dezember: Vermögen (mit `tax_equity`, #229) − Zeile, die im Dezember gilt, −
+  einmalige Abzüge des Jahres, nie negativ; ohne beide Listen genau das Vermögen wie bisher. Im Modus «Wohnort» geht der
+  Rest in die Vermögenskurve des Wohnorts (die Sozialabzüge des Kantons stecken darin, #63), mit eigenen Tabellen in die
+  Tabelle. `TaxBasis.wealth` = `WealthBasis { wealth, ongoing, oneOff, taxable }`, nur mit Abzügen vom Vermögen; diese
+  schalten die Aufzeichnung ein. Prüfung: Zeitpunkt auflösbar, Beträge ≥ 0, Steuerjahr zwischen Start und Ende (Fehler am
+  Feld).
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
   Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung bei «Tarife mit der

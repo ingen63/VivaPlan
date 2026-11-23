@@ -378,6 +378,8 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         deduct_pillar3a: false,
         deductions: None,
         one_off_deductions: vec![],
+        wealth_deductions: vec![],
+        one_off_wealth_deductions: vec![],
     };
 
     // Properties (approximately)

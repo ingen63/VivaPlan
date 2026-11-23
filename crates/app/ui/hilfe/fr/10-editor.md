@@ -292,6 +292,25 @@ Chaque ligne est soit:
 
 **Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent le revenu, les déductions (canton; l’origine – proposition du canton, en plus, valeur propre, unique, pilier 3a – dans l’infobulle de la cellule) et le revenu imposable (celui de la Confédération dans l’infobulle s’il diffère).
 
+## @f-tax-wealth-deductions Déductions de la fortune
+Mots-clés: déductions, fortune imposable, impôt sur la fortune, dettes, déductions sociales, unique
+
+La carte **Déductions de la fortune** de la section Impôts fixe ce qui est déduit de la fortune au 31 décembre, par exemple des dettes autres que l’hypothèque ou des déductions cantonales absentes des barèmes. La **fortune imposable** = fortune − déductions, jamais négative. Les biens immobiliers comptent à leur [valeur fiscale](#f-re-tax-value) moins l’hypothèque.
+
+**Lignes:** «+ Ligne» ajoute une ligne dépendant du temps avec le champ «+ en plus» (par an); elle s’applique dès sa date jusqu’à la suivante. Pour une année fiscale compte la ligne qui s’applique au 31 décembre. Le montant est aux prix du début de la simulation et croît avec les [barèmes avec le renchérissement](#f-tax-indexed).
+
+**Déductions uniques:** «+ Déduction unique» ajoute une déduction pour une seule année fiscale, avec année fiscale, description et montant (nominal, sans renchérissement). Elle s’applique à la date de référence du 31 décembre de son année fiscale, en plus de la ligne applicable. Exemple: fortune 800 000, courante 50 000, unique 100 000 en 2027 donne en 2027 une fortune imposable de 650 000, les autres années 750 000.
+
+**Mode «domicile»:** Les déductions sociales du canton sont déjà comprises dans les barèmes de fortune des données fiscales. Vos déductions s’y ajoutent; les déductions du canton ne peuvent pas être remplacées. La carte l’indique par une remarque.
+
+**Barèmes propres:** Les montants sont la déduction entière de la fortune.
+
+**Les planifications existantes** n’ont pas de déductions de la fortune et calculent comme avant.
+
+**Contrôle:** Un montant négatif et une année fiscale en dehors de la simulation sont des erreurs dans la section Impôts.
+
+**Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent les déductions de la fortune (l’origine – en plus, unique – dans l’infobulle de la cellule) et la fortune imposable (la fortune avant déductions dans l’infobulle).
+
 ## @f-tax-multiplier Coefficient d’impôt
 Mots-clés: canton, commune, multiplicateur
 

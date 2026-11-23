@@ -1313,14 +1313,29 @@ function dedProposal(i) {
   const sum = list => list.reduce((a, p) => a + p[1], 0);
   return tr("deductions.proposalYear", { year: y, canton: fmtInt(sum(b.partsCanton)), cantonParts: parts(b.partsCanton), federal: fmtInt(sum(b.partsFederal)), federalParts: parts(b.partsFederal) });
 }
-/** #230/AK2: list «Einmalige Abzüge» (tax year, description, nominal amount), like «Einmalige Beträge» in the flows. */
-function oneOffDeductions() {
-  const P = "taxes.oneOffDeductions", list = state.taxes.oneOffDeductions ?? [];
+/** #230/AK2: list «Einmalige Abzüge» (tax year, description, nominal amount), like «Einmalige Beträge» in the flows.
+ *  #231/AK1: the same list for the deductions from wealth (`key` oneOffWealthDeductions). */
+function oneOffDeductions(key = "oneOffDeductions", hint = tr("deductions.oneOffHint")) {
+  const P = `taxes.${key}`, list = state.taxes[key] ?? [], wealth = key !== "oneOffDeductions";
   const rows = list.map((x, i) => `<tr data-oneoff-row="${i}"><td style="width:110px">${F(`${P}.${i}.year`, "", "num", { bare: true, int: true })}</td><td>${F(`${P}.${i}.label`, "", "text", { bare: true })}</td><td style="width:200px">${F(`${P}.${i}.amount`, "", "chf", { bare: true })}</td>
       <td><button class="btn ghost small" title="${tr("series.removeRow")}" data-action="list-del" data-path="${P}" data-i="${i}">✕</button></td></tr>`).join("");
-  return `<div id="ded-oneoff" style="margin-top:12px"><b>${tr("deductions.oneOff")}</b> <span class="sub">${tr("deductions.oneOffHint")}</span>
+  return `<div id="${wealth ? "wded-oneoff" : "ded-oneoff"}" style="margin-top:12px"><b>${tr("deductions.oneOff")}</b> <span class="sub">${hint}</span>
     ${list.length ? `<table class="tbl"><tr><th>${tr("deductions.taxYear")}</th><th>${tr("flows.description")}</th><th>${tr("flows.amount")}</th><th></th></tr>${rows}</table>` : ""}
-    <div style="margin-top:8px"><button class="btn small" data-action="ded-oneoff-add">${tr("deductions.addOneOff")}</button></div></div>`;
+    <div style="margin-top:8px"><button class="btn small" data-action="ded-oneoff-add" data-key="${key}">${tr("deductions.addOneOff")}</button></div></div>`;
+}
+/** #231/AK1–AK3: card «Abzüge vom Vermögen»: time-dependent rows «zusätzlich … pro Jahr» (layout .dedrow as the
+ *  deductions from income, #228) and the list of one-off deductions; in the mode «Wohnort» in addition to the social
+ *  deductions of the canton (hint), with own tables the whole deduction. */
+function wealthDeductionsCard() {
+  const P = "taxes.wealthDeductions", rows = state.taxes.wealthDeductions ?? [];
+  const body = rows.map((r, i) => `<div class="dedrow" data-wded-row="${i}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${Ref(`${P}.${i}.from`)}</div>
+    <div class="dedval"><span class="dedextra">${tr("deductions.extra")}</span>${F(`${P}.${i}.amount`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}</div>
+    <button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button></div>`).join("");
+  return `<div class="card" id="tax-wealth-deductions"><h3>${tr("wealthDeductions.title")}</h3>
+    <div class="rows">${body || `<p class="computed">${tr("wealthDeductions.none")}</p>`}
+    <div><button class="btn small" data-action="wded-add">${tr("series.addRow")}</button></div></div>
+    ${oneOffDeductions("oneOffWealthDeductions", tr("wealthDeductions.oneOffHint"))}
+    <p class="hint" id="wded-hint">${isLocation(state) ? tr("wealthDeductions.hintLocation") : tr("wealthDeductions.hintOwn")}</p></div>`;
 }
 /** #131/AK3–AK10: card «Abzüge vom Einkommen» with the pillar 3a deduction. */
 function deductionsCard() {
@@ -1383,6 +1398,7 @@ R.taxes = () => {
   <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
   ${own ? "" : taxLocationCard()}
   ${deductionsCard()}
+  ${wealthDeductionsCard()}
   <div class="card">${own || gainOwn() ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>` : ""}
     ${own ? "" : `<p class="hint">${gainOwn() ? tr("taxes.locationOwnTablesHint") : tr("taxes.locationCantonGainHint")}</p>`}
     <div>${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
@@ -2250,8 +2266,15 @@ const ACTIONS = {
     markDirty(); renderSection();
   },
   // #230/AK2: one-off deduction in the year after the start
-  "ded-oneoff-add": () => {
-    (state.taxes.oneOffDeductions ??= []).push({ year: Math.floor(startM() / 12) + 1, label: tr("deductions.newOneOff"), amount: 0 });
+  // #231/AK1: also for the deductions from wealth (`data-key` oneOffWealthDeductions)
+  "ded-oneoff-add": d => {
+    (state.taxes[d.key || "oneOffDeductions"] ??= []).push({ year: Math.floor(startM() / 12) + 1, label: tr("deductions.newOneOff"), amount: 0 });
+    markDirty(); renderSection();
+  },
+  // #231/AK1: first row from the start, each further one a year after the previous one
+  "wded-add": () => {
+    const rows = (state.taxes.wealthDeductions ??= []), last = rows[rows.length - 1], lm = refMonth(last?.from ?? "start");
+    rows.push({ from: last ? i2ym(Math.max(startM(), Number.isFinite(lm) ? lm : startM()) + 12) : "start", amount: 0 });
     markDirty(); renderSection();
   },
   "ded-calc-apply": d => {
@@ -2778,6 +2801,9 @@ function yearValues(recs, start) {
     const br = rs.find(r => r.taxBasis), tb = br && Object.fromEntries(["income", "proposalCanton", "proposalFederal", "own", "extra", "oneOff", "pillar3a", "taxableCanton", "taxableFederal"].map(k => [k, rv(br, br.taxBasis[k])]));
     // #229/AK7: tax value of the properties (only if a property has one)
     if (tb && br.taxBasis.propertyTaxValue != null) tb.propertyTaxValue = rv(br, br.taxBasis.propertyTaxValue);
+    // #231/AK5: deductions from wealth by origin and taxable wealth (only with deductions from wealth)
+    const wb = br?.taxBasis.wealth;
+    if (tb && wb) tb.wealth = Object.fromEntries(["wealth", "ongoing", "oneOff", "taxable"].map(k => [k, rv(br, wb[k])]));
     // #151/AK7: place of residence of the tax year (only if it changes during the plan)
     return { basis: tb, residence: br?.taxBasis?.residence, y, months: rs.length, age: last.age, liquid: rv(last, last.liquid), property: rv(last, last.propertyEquity), pension: rv(last, last.pensionFund + last.pillar3a),
       total: rv(last, last.total), spending, draw, receipts, yearDraw, rate: yearDraw > 0 && baseTotal > 0 ? yearDraw / baseTotal : yearDraw > 0 ? NaN : null,
@@ -2795,7 +2821,17 @@ function yearTable(recs, start, refills = []) {
   const taxHeads = () => [[tr("yearTable.taxIncome"), `${tr("yearTable.taxTitle")} ${est}`], [tr("yearTable.taxWealth"), est], [tr("yearTable.taxLumpsum"), `${est} ${check}`],
     [tr("yearTable.taxProperty"), `${est} ${check}`], [tr("yearTable.taxTotal"), est]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
   const tx = showTaxCols, vals = yearValues(recs, start), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence);
-  const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), cols = 12 + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (lx ? 1 : 0);
+  const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), wx = tx && vals.some(v => v.basis?.wealth);
+  const cols = 12 + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
+  // #231/AK5: deductions from wealth with their origin as tooltip and the taxable wealth
+  const wealthHeads = () => [[tr("yearTable.wealthDeductions"), tr("yearTable.wealthDeductionsTitle")], [tr("yearTable.taxableWealth"), tr("yearTable.taxableWealthTitle")]]
+    .map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
+  const wealthCells = w => {
+    if (!w) return "<td></td><td></td>";
+    const origin = [[w.ongoing, tr("deductions.originExtra")], [w.oneOff, tr("deductions.originOneOff")]]
+      .filter(([v]) => Math.abs(v) >= 0.5).map(([v, t]) => `${t}: ${fmtInt(v)}`).join("; ");
+    return `<td title="${esc(origin || tr("deductions.originNone"))}" data-wded-origin="${esc(origin)}">${fmtInt(w.ongoing + w.oneOff)}</td><td title="${esc(`${tr("yearTable.wealthBefore")}: ${fmtInt(w.wealth)}`)}" data-taxable-wealth>${fmtInt(w.taxable)}</td>`;
+  };
   // #131/AK14: tax breakdown: income, deductions (canton) with their origin as tooltip, taxable income
   const basisHeads = () => [[tr("yearTable.taxBasisIncome"), tr("yearTable.taxBasisIncomeTitle")], [tr("yearTable.taxBasisDeductions"), tr("yearTable.taxBasisDeductionsTitle")],
     [tr("yearTable.taxBasisTaxable"), tr("yearTable.taxBasisTaxableTitle")]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
@@ -2814,7 +2850,7 @@ function yearTable(recs, start, refills = []) {
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
+      ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${wx ? wealthCells(v.basis?.wealth) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
@@ -2822,7 +2858,7 @@ function yearTable(recs, start, refills = []) {
     <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th><th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
-      ${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
+      ${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
     <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {

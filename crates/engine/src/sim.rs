@@ -231,6 +231,25 @@ pub struct TaxBasis {
     /// #229: Tax value of the owned properties on 31 December; only if a property has a tax value.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub property_tax_value: Option<f64>,
+    /// #231: Wealth, deductions from wealth by origin and taxable wealth on 31 December; only if the plan has
+    /// deductions from wealth.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wealth: Option<WealthBasis>,
+}
+
+/// #231: Basis of the wealth tax of a year with deductions from wealth.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WealthBasis {
+    /// Wealth before the deductions (properties at their tax value, #229).
+    pub wealth: f64,
+    /// Row of the deductions from wealth on 31 December (prices of the start × index).
+    pub ongoing: f64,
+    /// One-off deductions from wealth of the tax year (nominal).
+    pub one_off: f64,
+    /// Wealth minus deductions, never negative. In the mode «Wohnort» the social deductions of the canton are applied
+    /// on top inside the wealth curves.
+    pub taxable: f64,
 }
 
 /// #131: Deductions of a tax year collected month by month: months with a proposal of the canton, own value and
@@ -805,6 +824,10 @@ pub struct Simulator {
     deductions: Vec<CDeduction>,
     /// #230: One-off deductions from income per tax year (nominal).
     one_off: Vec<(i32, f64)>,
+    /// #231: Rows of the deductions from wealth (month, amount in prices of the start), sorted by month; one-off
+    /// deductions from wealth per tax year (nominal). Both empty: wealth tax as before.
+    wealth_deductions: Vec<(i32, f64)>,
+    one_off_wealth: Vec<(i32, f64)>,
     deduct_pillar3a: bool,
     pillar3a_max: f64,
     /// #152: Persons without a pension fund (large pillar 3a) and its maximum.
@@ -1007,6 +1030,22 @@ impl Simulator {
                 None => one_off.push((d.year, d.amount)),
             }
         }
+        // #231: deductions from wealth: rows sorted by month (stably: for the same month the later row applies),
+        // one-off deductions per tax year (several in the same year are added).
+        let mut wealth_deductions = Vec::with_capacity(plan.taxes.wealth_deductions.len());
+        for d in &plan.taxes.wealth_deductions {
+            if let Some(m) = r.resolve(&d.from)? {
+                wealth_deductions.push((m.0, d.amount));
+            }
+        }
+        wealth_deductions.sort_by_key(|d| d.0);
+        let mut one_off_wealth: Vec<(i32, f64)> = Vec::new();
+        for d in &plan.taxes.one_off_wealth_deductions {
+            match one_off_wealth.iter_mut().find(|(y, _)| *y == d.year) {
+                Some((_, a)) => *a += d.amount,
+                None => one_off_wealth.push((d.year, d.amount)),
+            }
+        }
         let tax_values = plan
             .realestate
             .properties
@@ -1016,6 +1055,8 @@ impl Simulator {
             || plan.taxes.deductions.is_some()
             || plan.taxes.deduct_pillar3a
             || !one_off.is_empty()
+            || !plan.taxes.wealth_deductions.is_empty()
+            || !one_off_wealth.is_empty()
             || tax_values;
         let props = plan
             .realestate
@@ -1121,6 +1162,8 @@ impl Simulator {
             gain_rules,
             deductions,
             one_off,
+            wealth_deductions,
+            one_off_wealth,
             deduct_pillar3a: plan.taxes.deduct_pillar3a,
             pillar3a_max: plan.limits.pillar3a_max,
             pillar3a_large: [0, 1].map(|i| persons.get(i).is_some_and(|p| p.no_pension_fund)),
@@ -1185,6 +1228,36 @@ impl Simulator {
     /// #230: One-off deductions from income of the tax year `year` (nominal).
     fn one_off_deduction(&self, year: i32) -> f64 {
         self.one_off.iter().filter(|(y, _)| *y == year).map(|(_, a)| a).sum()
+    }
+
+    /// #231: Taxable wealth on 31 December of the year of month `m`: `wealth` minus the row of the deductions from
+    /// wealth of December (prices of the start × `index`) and the one-off deductions of the year (nominal), never
+    /// negative. Without deductions from wealth exactly `wealth` and no basis (as before #231).
+    fn taxable_wealth(&self, m: YearMonth, wealth: f64, index: f64) -> (f64, Option<WealthBasis>) {
+        if self.wealth_deductions.is_empty() && self.one_off_wealth.is_empty() {
+            return (wealth, None);
+        }
+        let december = YearMonth::new(m.year(), 12).0;
+        let ongoing = match self.wealth_deductions.partition_point(|d| d.0 <= december) {
+            0 => 0.0,
+            i => self.wealth_deductions[i - 1].1 * index,
+        };
+        let one_off: f64 = self
+            .one_off_wealth
+            .iter()
+            .filter(|(y, _)| *y == m.year())
+            .map(|(_, a)| a)
+            .sum();
+        let taxable = (wealth - ongoing - one_off).max(0.0);
+        (
+            taxable,
+            Some(WealthBasis {
+                wealth,
+                ongoing,
+                one_off,
+                taxable,
+            }),
+        )
     }
 
     /// #131: Deductible pillar 3a contributions of person `i` per year (at most the maximum of the settings); the only
@@ -3532,11 +3605,14 @@ impl<'a> Run<'a> {
                     &self.year_ded,
                     idx,
                 );
+                // #231: minus the deductions from wealth (in the mode «Wohnort» in addition to those of the canton)
+                let (taxable_wealth, wealth_basis) = s.taxable_wealth(m, taxable_wealth, idx);
                 let tw = s.wealth_tax(m, taxable_wealth, idx);
                 if s.tax_basis && self.record {
                     if s.tax_values {
                         basis.property_tax_value = Some(self.tax_worth());
                     }
+                    basis.wealth = wealth_basis;
                     tax_basis = Some(basis);
                 }
                 self.tax_pending += ti + tw;

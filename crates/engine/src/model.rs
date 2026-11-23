@@ -928,9 +928,28 @@ pub struct Taxes {
     /// #230: One-off deductions from income: each counts in its tax year in addition to the row that applies.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub one_off_deductions: Vec<OneOffDeduction>,
+    /// #231: Deductions from taxable wealth, time-dependent (a row applies from its point in time until the next row;
+    /// the row of 31 December counts). In the mode «Wohnort» in addition to the social deductions of the canton in
+    /// the wealth curves; with own tables the whole deduction. Missing: none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub wealth_deductions: Vec<WealthDeduction>,
+    /// #231: One-off deductions from taxable wealth: each counts on 31 December of its tax year (nominal).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub one_off_wealth_deductions: Vec<OneOffDeduction>,
+}
+
+/// #231: Row of the deductions from wealth: amount per year in prices of the simulation start (grows with «tariffs
+/// with inflation», #66), for example debts other than the mortgage.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct WealthDeduction {
+    pub from: TimeRef,
+    #[serde(default)]
+    pub amount: f64,
 }
 
 /// #230: One-off deduction from income in a tax year, nominal (for example a pension fund buy-in or a renovation).
+/// #231: also from wealth (on 31 December of the tax year).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct OneOffDeduction {

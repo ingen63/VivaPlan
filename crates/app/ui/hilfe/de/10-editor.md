@@ -292,6 +292,25 @@ Jede Zeile ist entweder:
 
 **Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, zusätzlich, eigener Wert, einmalig, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
 
+## @f-tax-wealth-deductions Abzüge vom Vermögen
+Stichworte: Abzüge, steuerbares Vermögen, Vermögenssteuer, Schulden, Sozialabzüge, einmalig
+
+Die Karte **Abzüge vom Vermögen** im Abschnitt Steuern legt fest, was vom Vermögen am 31. Dezember abgezogen wird, zum Beispiel Schulden ausser der Hypothek oder kantonale Abzüge, die in den Tarifen fehlen. Das **steuerbare Vermögen** = Vermögen − Abzüge, nie negativ. Immobilien zählen dabei zum [Steuerwert](#f-re-tax-value) minus Hypothek.
+
+**Zeilen:** «+ Zeile» legt eine zeitabhängige Zeile mit dem Feld «+ zusätzlich» (pro Jahr) an; sie gilt ab ihrem Zeitpunkt bis zur nächsten. Für ein Steuerjahr zählt die Zeile, die am 31. Dezember gilt. Der Betrag steht in Preisen des Simulationsstarts und wächst mit [Tarifen mit der Teuerung](#f-tax-indexed).
+
+**Einmalige Abzüge:** «+ Einmaliger Abzug» legt einen Abzug für ein einzelnes Steuerjahr an, mit Steuerjahr, Beschreibung und Betrag (nominal, ohne Teuerung). Er gilt für den Stichtag 31. Dezember seines Steuerjahres, zusätzlich zur geltenden Zeile. Beispiel: Vermögen 800 000, laufend 50 000, einmalig 100 000 im Jahr 2027 ergibt 2027 ein steuerbares Vermögen von 650 000, in den übrigen Jahren 750 000.
+
+**Modus «Wohnort»:** Die Sozialabzüge des Kantons stecken schon in den Vermögenstarifen der Steuerdaten. Ihre Abzüge kommen dazu; ersetzen lassen sich die Abzüge des Kantons nicht. Die Karte zeigt dazu einen Hinweis.
+
+**Eigene Tabellen:** Die Beträge sind der ganze Abzug vom Vermögen.
+
+**Bestehende Planungen** haben keine Abzüge vom Vermögen und rechnen wie bisher.
+
+**Prüfung:** Ein negativer Betrag und ein Steuerjahr ausserhalb der Simulation sind Fehler im Abschnitt Steuern.
+
+**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte die Abzüge vom Vermögen (die Herkunft – zusätzlich, einmalig – im Tooltip der Zelle) und das steuerbare Vermögen (das Vermögen vor Abzügen im Tooltip).
+
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator
 

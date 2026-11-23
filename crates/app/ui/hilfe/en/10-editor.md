@@ -292,6 +292,25 @@ Each row is either:
 
 **Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, additionally, own value, one-off, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
 
+## @f-tax-wealth-deductions Deductions from wealth
+Keywords: deductions, taxable wealth, wealth tax, debts, social deductions, one-off
+
+The card **Deductions from wealth** in the section Taxes sets what is deducted from the wealth on 31 December, for example debts other than the mortgage or cantonal deductions missing in the tariffs. The **taxable wealth** = wealth − deductions, never negative. Properties count at their [tax value](#f-re-tax-value) minus the mortgage.
+
+**Rows:** “+ Row” adds a time-dependent row with the field “+ additionally” (per year); it applies from its point in time until the next one. For a tax year the row that applies on 31 December counts. The amount is in prices of the simulation start and grows with [tariffs with inflation](#f-tax-indexed).
+
+**One-off deductions:** “+ One-off deduction” adds a deduction for a single tax year, with tax year, description and amount (nominal, without inflation). It applies on the reference date 31 December of its tax year, in addition to the row that applies. Example: wealth 800 000, ongoing 50 000, one-off 100 000 in the year 2027 gives a taxable wealth of 650 000 in 2027, 750 000 in the other years.
+
+**Mode “place of residence”:** The social deductions of the canton are already included in the wealth tariffs of the tax data. Your deductions are added; the deductions of the canton cannot be replaced. The card shows a hint about this.
+
+**Own tables:** The amounts are the whole deduction from wealth.
+
+**Existing plans** have no deductions from wealth and compute as before.
+
+**Validation:** A negative amount and a tax year outside the simulation are errors in the section Taxes.
+
+**Results:** With “Show taxes” the yearly values show the deductions from wealth (the origin – additionally, one-off – in the tooltip of the cell) and the taxable wealth (the wealth before deductions in the tooltip).
+
 ## @f-tax-multiplier Tax multiplier
 Keywords: canton, municipality, multiplier
 

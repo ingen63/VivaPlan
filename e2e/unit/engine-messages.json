@@ -228,6 +228,12 @@
     "text": "Deductions from income"
   },
   {
+    "code": "term_wealth_deductions",
+    "params": {},
+    "template": "Deductions from wealth",
+    "text": "Deductions from wealth"
+  },
+  {
     "code": "term_residence",
     "params": {},
     "template": "Place of residence",
@@ -1260,6 +1266,69 @@
     },
     "template": "One-off deductions, row {row}: the tax year {year} lies outside the simulation ({from} to {to}).",
     "text": "One-off deductions, row Person 2: the tax year Person 2 lies outside the simulation (Person 2 to Person 2)."
+  },
+  {
+    "code": "wealth_deduction_negative",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Deductions from wealth, row {row}: the amount must be 0 or greater.",
+    "text": "Deductions from wealth, row Person 2: the amount must be 0 or greater."
+  },
+  {
+    "code": "one_off_wealth_deduction_negative",
+    "params": {
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "One-off deductions from wealth, row {row}: the amount must be 0 or greater.",
+    "text": "One-off deductions from wealth, row Person 2: the amount must be 0 or greater."
+  },
+  {
+    "code": "one_off_wealth_deduction_year",
+    "params": {
+      "from": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "row": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "to": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "One-off deductions from wealth, row {row}: the tax year {year} lies outside the simulation ({from} to {to}).",
+    "text": "One-off deductions from wealth, row Person 2: the tax year Person 2 lies outside the simulation (Person 2 to Person 2)."
   },
   {
     "code": "property_canton_unknown",

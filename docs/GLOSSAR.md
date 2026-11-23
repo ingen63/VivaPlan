@@ -184,6 +184,8 @@ Wörter in Grossbuchstaben nicht.
 | Kanton, Gemeinde | `canton`, `municipality` | |
 | zusätzlicher Abzug (zum Vorschlag des Kantons) | `extra` | #230; `IncomeDeduction.extra`, `TaxBasis.extra` |
 | einmaliger Abzug | `one_off_deduction` | #230; `OneOffDeduction`, Planung `oneOffDeductions`, `TaxBasis.one_off` |
+| Abzug vom Vermögen | `wealth_deduction` | #231; `WealthDeduction`, Planung `wealthDeductions`, `oneOffWealthDeductions` |
+| steuerbares Vermögen | `taxable_wealth` | #231; `WealthBasis.taxable` |
 
 ## Simulation und Ergebnisse
 

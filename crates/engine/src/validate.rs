@@ -816,6 +816,40 @@ fn check(plan: &Plan, v: &mut Issues) {
             );
         }
     }
+    // #231/AK6: deductions from wealth: amount not negative, valid point in time; one-off: amount not negative, tax
+    // year within the simulation
+    for (i, d) in t.wealth_deductions.iter().enumerate() {
+        resolve(v, "taxes", term(msg!(term_wealth_deductions)), &d.from);
+        if !(d.amount.is_finite() && d.amount >= 0.0) {
+            v.err_at(
+                "taxes",
+                format!("taxes.wealthDeductions.{i}.amount"),
+                msg!(wealth_deduction_negative, row = i + 1),
+            );
+        }
+    }
+    for (i, d) in t.one_off_wealth_deductions.iter().enumerate() {
+        if !(d.amount.is_finite() && d.amount >= 0.0) {
+            v.err_at(
+                "taxes",
+                format!("taxes.oneOffWealthDeductions.{i}.amount"),
+                msg!(one_off_wealth_deduction_negative, row = i + 1),
+            );
+        }
+        if !(start.year()..=end.year()).contains(&d.year) {
+            v.err_at(
+                "taxes",
+                format!("taxes.oneOffWealthDeductions.{i}.year"),
+                msg!(
+                    one_off_wealth_deduction_year,
+                    row = i + 1,
+                    year = d.year,
+                    from = start.year(),
+                    to = end.year()
+                ),
+            );
+        }
+    }
     for (key, name, rows) in tables {
         // #134: The tax (amount × rate) must not fall with a rising amount; only a warning, the computation runs.
         if rows
