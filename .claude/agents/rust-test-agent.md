@@ -64,7 +64,32 @@ Das Projekt ist mit rustfmt formatiert (#56, Einstellungen in `rustfmt.toml`).
        und begründe das im Bericht.
    - Tests niemals abschwächen, auskommentieren oder mit `#[ignore]` markieren, nur damit sie grün werden.
 
-3. **Neue Testfälle schreiben** – für jede geänderte/neue Logik:
+3. **Neue Testfälle schreiben** – für jede geänderte/neue Logik, nach der Regel unten:
+   - **Pflicht vor jedem neuen Test (#222):** Bevor du einen Test schreibst, musst du drei Angaben machen können;
+     fehlt eine, wird der Test nicht geschrieben:
+     1. **Regel:** welche Regel oder Eigenschaft des Codes der Test schützt (zum Beispiel «der Kapitalbezug wird
+        getrennt vom Einkommen besteuert»), nicht nur «Funktion X liefert Y».
+     2. **Bruch:** welche realistische Änderung am Code die Regel bricht und den Test fehlschlagen lässt (Off-by-one,
+        vertauschte Schritte, falscher Vergleich, geänderter Vorgabewert, vergessener Fall) – im Rechenkern meist ein
+        nicht erkannter Mutant.
+     3. **Nur dieser Test:** dass bei dieser Änderung heute kein anderer Test fehlschlägt (sonst ist der neue Test ein
+        Duplikat). Prüfen, wo möglich: Änderung von Hand einbauen oder `cargo mutants` auf die Stelle, Tests laufen
+        lassen, Änderung zurücknehmen.
+   - **Kein eigener Test wird** (auch nicht, um 80 % zu erreichen oder einen Mutanten zu töten, der auch so erkannt wird):
+     - Code, der sich durch Lesen prüfen lässt: wenige Zeilen, höchstens eine Verzweigung, ohne Rechnung.
+     - Reine Weiterleitung: eine Funktion oder ein Tauri-Command, der nur an eine andere, getestete Funktion übergibt.
+     - Vorgabewert, Konstante oder einzelner Tabelleneintrag (Satz, Grenzbetrag, Text).
+     - Was der Compiler prüft: Typen, Vollständigkeit von `match`, Sichtbarkeit, Ableitungen (`derive`).
+     - Verhalten einer fremden Bibliothek (serde, chrono, Tauri, Standardbibliothek), statt des eigenen Codes.
+     - Duplikat: Ein bestehender Test schlägt bei derselben Änderung schon fehl (Angabe 3).
+     - Weitere Eingabewerte durch dieselbe Verzweigung: Eine zweite Eingabe, die denselben Pfad nimmt, prüft nichts
+       Neues. Grenzwerte, die einen anderen Pfad nehmen (genau an der Schwelle, 0, leer), sind kein Duplikat.
+   - **Ausgenommen** von dieser Liste (die Pflichtangaben gelten trotzdem, Angabe 3 darf aber «ein anderer Test schlägt
+     auch fehl» lauten): Regressionstests zu **Speichern** (Lesen/Schreiben von Planungsdateien, Migration, Upgrade),
+     zu **Rechenregeln** (Handrechnung einer Regel, auch wenn sie nur eine Konstante oder einen Tabelleneintrag
+     verwendet) und **Golden Masters** (`crates/engine/tests/golden/`), dazu benannte Regressionstests zu einem
+     gefundenen Fehler (`issue_<Nr>_…`, auch Funde der Eigenschaftstests, #223).
+   - Bestehende Tests werden mit dieser Regel nicht gekürzt; sie gilt für neue Tests.
    - Unit-Tests im selben File in `#[cfg(test)] mod tests { use super::*; ... }`
      (auch für private Funktionen).
    - Integrationstests für öffentliche APIs unter `tests/`.
@@ -124,7 +149,9 @@ Das Projekt ist mit rustfmt formatiert (#56, Einstellungen in `rustfmt.toml`).
      Meldungen in bestehendem Code nur berichten, nicht beheben. `cargo fmt --all --check` muss sauber sein.
    - Nur die Testdateien einzeln stagen (`git add <Datei>`, nie `git add -A` oder `git add .`) und committen:
      `git commit -m "test(auto): Tests für <Kurzbeschreibung> (<sha des Ausgangscommits>)"`
-   - Bericht zurückgeben: Ergebnis der Testläufe, neue Testfälle (Datei + Name),
+   - Bericht zurückgeben: Ergebnis der Testläufe, neue Testfälle (Datei + Name, **je Test die geschützte Regel und die
+     Änderung am Code, die ihn fehlschlagen lässt**, #222; bei einer Ausnahme deren Art: Speichern, Rechenregel, Golden
+     Master, Fehlerfund), Stellen, für die du bewusst keinen Test geschrieben hast (mit Kategorie aus Schritt 3),
      Abdeckung vorher/nachher je Paket (Engine und App getrennt), gefundene Fehler im Produktivcode,
      Ergebnis des Mutationslaufs (caught/missed) und **die verbleibenden nicht erkannten Mutanten mit Datei und Zeile**
      (jeweils mit Begründung, warum kein Test sinnvoll ist).
