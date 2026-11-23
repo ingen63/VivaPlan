@@ -30,8 +30,12 @@ Kommentar, welcher Fehler es war; er schlägt ohne die Korrektur fehl. Die Regre
 Kurzform). War der Fund kein Fehler im Code, sondern ein falsch formulierter Test, wird der Test korrigiert und der
 Eintrag entfernt. Beispiel: `proptest_tax.rs::issue_223_ak2_…` (Fehler im Prüforakel von #134, Eintrag entfernt).
 
-**Plattformen (#141):** Die Rust-Tests laufen bei jedem Push unter Linux, nächtlich zusätzlich unter Windows und macOS (Job
-`tests-os` in `test-quality.yml`, Runner von GitHub). Windows-Pfade (Laufwerk, Backslash, UNC, Umlaute) prüft
+**Plattformen (#141, #225):** Die Rust-Tests laufen bei jedem Push unter Linux (mit Abdeckung) und unter Windows (ohne
+Abdeckung, ohne Mutationstests), nächtlich zusätzlich unter Windows und macOS (Job `tests-os` in `test-quality.yml`,
+Runner von GitHub); macOS bleibt nächtlich. Beim Push läuft Windows nur, wenn Rust-Code, `Cargo.toml`/`Cargo.lock` oder
+`test-quality.yml` geändert wurden (Ausgabe `rust` des Jobs `changes`). Budget: 300 Actions-Minuten pro Woche für den
+Windows-Job beim Push (Schätzung in #225); wird es überschritten, testet Windows beim Push nur `vivaplan-engine` und die
+Pfadtests der App. Windows-Pfade (Laufwerk, Backslash, UNC, Umlaute) prüft
 `issue_141_ak3_windows_paths` in `crates/app/src/main.rs` (nur unter Windows ausgeführt, überall übersetzt). Vor dem
 Release-Entwurf startet `pakete.yml` jedes gebaute Programm mit `--smoke`: Fenster und Webansicht öffnen, Beispielplanung
 rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`). Bis auf Weiteres baut

@@ -41,7 +41,26 @@ jobs:
     outputs:
       run: ${{ steps.check.outputs.run }}
       last: ${{ steps.check.outputs.last }}
+      rust: ${{ steps.rust.outputs.rust }}
     steps:
+      # #225: Hat der Push Rust-Code, Cargo.toml/Cargo.lock oder diesen Workflow geändert? Nur dann laufen die Rust-Tests
+      # unter Windows auch beim Push (Job tests-os). Unbekannter Stand vor dem Push (erster Push, Force-Push): ja.
+      - id: rust
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" != "push" ]; then echo "rust=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! files=$(gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE...$GITHUB_SHA" --paginate -q '.files[].filename'); then
+            echo "rust=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if printf '%s\n' "$files" | grep -qE '\.rs$|(^|/)Cargo\.(toml|lock)$|^\.github/workflows/test-quality\.yml$'; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+            echo "Kein Rust-Code, keine Cargo-Datei und kein Workflow geändert: Windows-Tests übersprungen (#225)." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
@@ -418,13 +437,19 @@ jobs:
   # #141: Die Rust-Tests laufen bei jedem Push unter Linux (tests-coverage). Nächtlich zusätzlich unter Windows und macOS:
   # Pfade (Laufwerk, Backslash), Mathematikbibliotheken der Plattform (Golden Masters mit der heutigen Toleranz) und
   # das Übersetzen der Desktop-App. Die Runner von GitHub sind für das öffentliche Repo kostenlos (Kommentar in #141).
+  # #225: Windows zusätzlich bei jedem Push auf main, wenn Rust-Code, Cargo.toml/Cargo.lock oder dieser Workflow geändert
+  # wurden (Ausgabe `rust` des Jobs changes); ohne Abdeckung und ohne Mutationstests. macOS bleibt nächtlich.
+  # Budget 300 Actions-Minuten pro Woche (Schätzung im Issue): darüber nur vivaplan-engine und die Pfadtests der App.
   tests-os:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.event.schedule != '17 2 * * 0'
+    if: >-
+      needs.changes.outputs.run == 'true' && (
+        ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.event.schedule != '17 2 * * 0') ||
+        (github.event_name == 'push' && needs.changes.outputs.rust == 'true'))
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
+        os: ${{ github.event_name == 'push' && fromJSON('["windows-latest"]') || fromJSON('["windows-latest","macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
