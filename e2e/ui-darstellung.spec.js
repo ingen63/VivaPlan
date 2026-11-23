@@ -51,18 +51,12 @@ const DIALOG = [["dialog title", "#settings[open] b, #settings[open] h2, #settin
   ["dialog option", "#settings[open] #set-theme option"], ["dialog button", "#settings[open] .btn:not(.primary)"], ["dialog primary", "#settings[open] .btn.primary"]];
 const HELP = [["help text", "#help:not([hidden]) #helpBody p"], ["help title", "#help:not([hidden]) #helpBody h1"], ["help search", "#help:not([hidden]) .hh input"]];
 
-/**
- * Known exception of the light theme, which stays unchanged (#220/AK5): the active menu entry (accent on light accent,
- * semibold) has 4.1:1. The dark theme meets 4.5:1 everywhere.
- */
-const LIGHT_EXCEPTIONS = { "menu active": 4 };
-
 async function expectReadable(page, selectors, choice) {
   const all = await contrasts(page, selectors);
   for (const { what, ratio } of all) expect(ratio, what).not.toBeNull();
   for (const { what, ratio } of all) {
-    const min = choice === "light" ? LIGHT_EXCEPTIONS[what] ?? 4.5 : 4.5;
-    expect.soft(ratio, `contrast of «${what}»`).toBeGreaterThanOrEqual(min);
+    // #235/AK2: no exception any more, 4.5:1 for every element in both themes (choice only names the theme)
+    expect.soft(ratio, `contrast of «${what}» (${choice})`).toBeGreaterThanOrEqual(4.5);
   }
 }
 
@@ -201,6 +195,48 @@ test.describe("Theme light and dark (#220)", () => {
     await expect(page.locator("#chart path").first()).toBeAttached();
     expect(await theme(page)).toBe("light");
     expect(await look()).toBe(underLight);
+    await noErrors(page, errors);
+  });
+});
+
+// #235: contrast of the active menu entry in the light theme (own variable --accent-text, nothing else changes).
+test.describe("Active menu entry in the light theme (#235)", () => {
+  test("AK1: active entry at least 4.5:1 in the light theme and clearly marked as active", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    const errors = await open(page);
+    await chooseTheme(page, "light");
+    const [active] = await contrasts(page, [["menu active", "#nav a.active"]]);
+    expect(active.ratio).toBeGreaterThanOrEqual(4.5);
+    const look = await page.evaluate(() => {
+      const cs = el => getComputedStyle(document.querySelector(el));
+      const a = cs("#nav a.active"), n = cs("#nav a:not(.active)");
+      return { aBg: a.backgroundColor, nBg: n.backgroundColor, aW: a.fontWeight, nW: n.fontWeight, aC: a.color, nC: n.color };
+    });
+    expect(look.aBg).not.toBe(look.nBg);
+    expect(look.aC).not.toBe(look.nC);
+    expect(Number(look.aW)).toBeGreaterThan(Number(look.nW));
+    await noErrors(page, errors);
+  });
+
+  test("AK2: the test of #220 has no exception left (4.5:1 for all elements in both themes)", async () => {
+    const src = require("fs").readFileSync(__filename, "utf8");
+    expect(src).not.toContain("LIGHT_" + "EXCEPTIONS");
+  });
+
+  test("AK3: only the active entry changes – colors of the light theme and the dark theme as before", async ({ page }) => {
+    const errors = await open(page);
+    const vars = () => page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      return ["--accent", "--accent-soft", "--accent-text", "--text", "--bg", "--panel", "--muted"].map(v => cs.getPropertyValue(v).trim());
+    });
+    const active = () => page.evaluate(() => getComputedStyle(document.querySelector("#nav a.active")).color);
+    await chooseTheme(page, "light");
+    expect(await vars()).toEqual(["#2f6fdf", "#e8f0fd", "#2864d0", "#1c2230", "#f4f5f7", "#ffffff", "#667085"]);
+    expect(await active()).toBe("rgb(40, 100, 208)");
+    await chooseTheme(page, "dark");
+    // dark theme unchanged: the active entry keeps the accent color #6c9cf5
+    expect(await vars()).toEqual(["#6c9cf5", "#1f2b44", "#6c9cf5", "#e6e9ef", "#12151b", "#1a1e26", "#9aa3b2"]);
+    expect(await active()).toBe("rgb(108, 156, 245)");
     await noErrors(page, errors);
   });
 });
