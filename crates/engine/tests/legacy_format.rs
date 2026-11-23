@@ -103,7 +103,8 @@ fn rplan_stays_unchanged_and_computes_like_the_vplan() {
 #[test]
 fn writing_sets_the_new_identifier() {
     assert_eq!(FORMAT, "vivaplan/1");
-    let d = std::env::temp_dir().join(format!("vivaplan-legacy-format-{}", std::process::id()));
+    let _tmp_d = tempfile::Builder::new().prefix("vivaplan-").tempdir().unwrap();
+    let d = _tmp_d.path().to_path_buf();
     std::fs::create_dir_all(&d).unwrap();
     let f = d.join("neu.vplan");
     let old = api::read_plan(&dir().join("tests/fixtures/planung-altformat.rplan")).unwrap();
@@ -155,7 +156,8 @@ fn upgrade_replaces_only_the_old_identifier() {
 /// #44: When writing, plans without an identifier, with a non-text identifier and non-objects stay unchanged.
 #[test]
 fn writing_invents_no_identifier() {
-    let d = std::env::temp_dir().join(format!("vivaplan-legacy-format-b-{}", std::process::id()));
+    let _tmp_d = tempfile::Builder::new().prefix("vivaplan-").tempdir().unwrap();
+    let d = _tmp_d.path().to_path_buf();
     std::fs::create_dir_all(&d).unwrap();
     let f = d.join("x.vplan");
     for v in [
@@ -174,7 +176,8 @@ fn writing_invents_no_identifier() {
 // `read_plan` (opening in the desktop app), `Plan::from_json` (command line) and `validate` with the message.
 #[test]
 fn issue_144_ak2_unknown_format_is_rejected_on_open() {
-    let d = std::env::temp_dir().join(format!("vivaplan-format-{}", std::process::id()));
+    let _tmp_d = tempfile::Builder::new().prefix("vivaplan-").tempdir().unwrap();
+    let d = _tmp_d.path().to_path_buf();
     std::fs::create_dir_all(&d).unwrap();
     let file = d.join("planung.vplan");
     let mut plan = api::example_plan();

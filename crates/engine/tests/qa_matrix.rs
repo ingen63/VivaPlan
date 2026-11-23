@@ -987,7 +987,8 @@ fn rolling_runs_equal_possible_start_months() {
 
 #[test]
 fn csv_import_error_cases() {
-    let dir = std::env::temp_dir().join(format!("qa-csv-{}", std::process::id()));
+    let _tmp_dir = tempfile::Builder::new().prefix("qa-").tempdir().unwrap();
+    let dir = _tmp_dir.path().to_path_buf();
     std::fs::create_dir_all(&dir).unwrap();
     let write = |name: &str, text: &str| {
         let p = dir.join(name);
@@ -1258,7 +1259,8 @@ fn preview_equals_final_simulation() {
 
 #[test]
 fn file_roundtrip_is_semantically_identical() {
-    let dir = std::env::temp_dir().join(format!("qa-rt-{}", std::process::id()));
+    let _tmp_dir = tempfile::Builder::new().prefix("qa-").tempdir().unwrap();
+    let dir = _tmp_dir.path().to_path_buf();
     std::fs::create_dir_all(&dir).unwrap();
     for (name, original) in [("a.vplan", api::example_plan()), ("b.vplan", base())] {
         let (p1, p2) = (dir.join(name), dir.join(format!("2-{name}")));

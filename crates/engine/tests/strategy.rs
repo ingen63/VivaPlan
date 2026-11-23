@@ -519,16 +519,17 @@ fn issue_90_ak3_pictet_strategies_are_replaced_with_a_note() {
     assert!(serde_json::from_value::<BondIndex>(json!("chPictet")).is_err());
 }
 
-/// Library with a Shiller series only for the calendar year `year` (12 months, 1 % each, SARON 2 %).
-fn lib_with_shiller_year(year: i32) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("vivaplan-fea97-{}-{year}", std::process::id()));
-    std::fs::create_dir_all(&dir).unwrap();
+/// Library with a Shiller series only for the calendar year `year` (12 months, 1 % each, SARON 2 %); deleted when
+/// the returned folder is dropped.
+fn lib_with_shiller_year(year: i32) -> tempfile::TempDir {
+    let tmp = tempfile::Builder::new().prefix("vivaplan-strategy-").tempdir().unwrap();
+    let dir = tmp.path();
     let mut csv = String::from("# Titel: Test\n# Währung: CHF\nDate,Stocks,Bonds,Inflation,Saron\n");
     for m in 1..=12 {
         csv += &format!("{year}-{m:02},0.01,0.01,0.01,0.02\n");
     }
     std::fs::write(dir.join("Shiller CHF.csv"), csv).unwrap();
-    dir
+    tmp
 }
 
 /// #124/AK8: Stocks of the world index (JST) with bonds USA (Shiller): a single common year suffices; SARON
@@ -542,11 +543,9 @@ fn issue_124_ak8_common_years_of_the_indices() {
     };
     let last = JstData::builtin().last_year();
     let one = lib_with_shiller_year(last);
-    let r = strategy::dataset(&s, Some(&one));
+    let r = strategy::dataset(&s, Some(one.path()));
     let late = lib_with_shiller_year(last + 5);
-    let e = strategy::dataset(&s, Some(&late));
-    let _ = std::fs::remove_dir_all(one);
-    let _ = std::fs::remove_dir_all(late);
+    let e = strategy::dataset(&s, Some(late.path()));
     let d = r.expect("ein gemeinsames Jahr");
     assert_eq!((d.first, d.stocks.len()), (YearMonth::new(last, 1), 1));
     assert_eq!(d.saron.as_deref().map(|s| s.len()), Some(1));

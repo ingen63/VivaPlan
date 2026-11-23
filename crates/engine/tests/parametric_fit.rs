@@ -210,7 +210,8 @@ fn issue_100_ak3_suggestions_for_the_shipped_series() {
 /// #100/AK3: After an update of the Shiller data the suggested values for «S&P 500» change.
 #[test]
 fn issue_100_ak3_new_shiller_data_changes_the_suggestion() {
-    let dir = std::env::temp_dir().join(format!("vivaplan-fea78-{}", std::process::id()));
+    let _tmp_dir = tempfile::Builder::new().prefix("vivaplan-").tempdir().unwrap();
+    let dir = _tmp_dir.path().to_path_buf();
     std::fs::create_dir_all(&dir).unwrap();
     let text = std::fs::read_to_string(lib().join("Shiller CHF.csv")).unwrap();
     // Shortened series (until 1999) as «new» data

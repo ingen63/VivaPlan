@@ -331,11 +331,14 @@ mod tests {
         }
     }
 
-    fn scratch(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("pp-lib-unit-{tag}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
-        dir
+    /// Temporary folder that is deleted when the returned guard is dropped (end of the test).
+    fn scratch(tag: &str) -> (tempfile::TempDir, PathBuf) {
+        let d = tempfile::Builder::new()
+            .prefix(&format!("vivaplan-lib-{tag}-"))
+            .tempdir()
+            .unwrap();
+        let p = d.path().to_path_buf();
+        (d, p)
     }
 
     // #40: Short info of a monthly series with SARON (first and last value, NaN at the edge) and of an annual series.
@@ -363,7 +366,7 @@ mod tests {
 
     #[test]
     fn list_reads_only_csv_files() {
-        let dir = scratch("list");
+        let (_tmp, dir) = scratch("list");
         std::fs::write(dir.join("notiz.txt"), "x").unwrap();
         std::fs::create_dir_all(dir.join("ordner.csv")).unwrap();
         std::fs::write(dir.join("b.csv"), "Date,Stocks,Bonds,Inflation\n2000-01,0.01,0,0\n").unwrap();
@@ -381,7 +384,7 @@ mod tests {
 
     #[test]
     fn snb_data_uses_csv_sources_only() {
-        let dir = scratch("snb");
+        let (_tmp, dir) = scratch("snb");
         let builtin = import::SnbData::builtin();
         assert_eq!(snb_data(&dir).unwrap().usd_chf, builtin.usd_chf);
         std::fs::create_dir_all(dir.join(SOURCES_DIR)).unwrap();
@@ -401,7 +404,7 @@ mod tests {
 
     #[test]
     fn shiller_import_notes_when_snb_data_end_earlier() {
-        let dir = scratch("shiller");
+        let (_tmp, dir) = scratch("shiller");
         let mut raw = import::ShillerRaw::default();
         // 2020-01 to 2099-12: longer than the built-in SNB data.
         for i in 0..960 {

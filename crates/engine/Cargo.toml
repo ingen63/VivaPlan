@@ -21,6 +21,7 @@ calamine = { version = "0.38.0", default-features = false }
 
 [dev-dependencies]
 proptest = "1"
+tempfile = "3"
 
 [[test]]
 name = "all"

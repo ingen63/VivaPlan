@@ -605,14 +605,13 @@ mod tests {
         assert!(parse_snb("\"CubeId\";\"devkum\"\n").is_err());
         assert!(parse_snb("\"Date\";\"D0\";\"Value\"\n\"2000-01\";\"M0\";\"1\"\n").is_err());
 
-        let dir = std::env::temp_dir().join(format!("pp-snb-unit-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
+        let tmp = tempfile::Builder::new().prefix("vivaplan-snb-").tempdir().unwrap();
+        let dir = tmp.path();
         let path = dir.join("snb-devkum.csv");
         std::fs::write(&path, BUILTIN_SNB[0].1).unwrap();
         let cube = read_snb(&path).unwrap();
         assert_eq!(cube.id, "devkum");
         assert!(cube.get(CUBE_FX.1).is_some_and(|s| s.len() > 1000));
-        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
@@ -664,7 +663,8 @@ mod tests {
     /// #187/AK2: a file that cannot be read is an error (not an empty series).
     #[test]
     fn issue_187_ak2_shiller_file_missing_is_an_error() {
-        let path = std::env::temp_dir().join(format!("vivaplan-missing-{}.xlsx", std::process::id()));
+        let tmp = tempfile::Builder::new().prefix("vivaplan-missing-").tempdir().unwrap();
+        let path = tmp.path().join("missing.xlsx");
         assert!(read_shiller(&path).is_err());
     }
 

@@ -61,7 +61,8 @@ fn json_files(dir: &Path) -> Vec<std::path::PathBuf> {
 /// #92/AK1, AK2: The list takes every `.json` file, without fixed names, and is empty if the folder is missing.
 #[test]
 fn issue_92_ak1_ak2_json_files_without_fixed_names() {
-    let dir = std::env::temp_dir().join(format!("pp-eigene-{}", std::process::id()));
+    let _tmp_dir = tempfile::Builder::new().prefix("pp-").tempdir().unwrap();
+    let dir = _tmp_dir.path().to_path_buf();
     let _ = std::fs::remove_dir_all(&dir);
     assert!(json_files(&dir).is_empty(), "fehlender Ordner");
     std::fs::create_dir_all(dir.join("data.json")).unwrap();

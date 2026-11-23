@@ -18,11 +18,14 @@ fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn tmp(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("pp-cli-{}-{name}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&d);
-    std::fs::create_dir_all(&d).unwrap();
-    d
+/// Temporary folder that is deleted when the returned guard is dropped (end of the test).
+fn tmp(name: &str) -> (tempfile::TempDir, PathBuf) {
+    let d = tempfile::Builder::new()
+        .prefix(&format!("vivaplan-cli-{name}-"))
+        .tempdir()
+        .unwrap();
+    let p = d.path().to_path_buf();
+    (d, p)
 }
 
 fn run(args: &[&str]) -> Output {
@@ -83,7 +86,7 @@ fn version_is_printed() {
 
 #[test]
 fn run_single_with_outputs() {
-    let d = tmp("single");
+    let (_tmp, d) = tmp("single");
     let p = plan_file(&d, "fixed", |_| {});
     let (csv, json) = (d.join("m.csv"), d.join("r.json"));
     let o = run(&[
@@ -115,7 +118,7 @@ fn run_single_with_outputs() {
 
 #[test]
 fn run_batches() {
-    let d = tmp("batch");
+    let (_tmp, d) = tmp("batch");
     for src in ["rolling", "bootstrap", "parametric", "historical"] {
         let p = plan_file(&d, src, |_| {});
         let json = d.join(format!("{src}.json"));
@@ -131,7 +134,7 @@ fn run_batches() {
 
 #[test]
 fn validate_and_errors() {
-    let d = tmp("validate");
+    let (_tmp, d) = tmp("validate");
     let ok = plan_file(&d, "fixed", |_| {});
     let o = run(&["validate", &ok]);
     assert!(o.status.success(), "{}", text(&o));
@@ -153,7 +156,7 @@ fn validate_and_errors() {
 
 #[test]
 fn bench_runs_paths() {
-    let d = tmp("bench");
+    let (_tmp, d) = tmp("bench");
     let p = plan_file(&d, "fixed", |_| {});
     let o = run(&["bench", &p, "--paths", "200"]);
     assert!(o.status.success(), "{}", text(&o));
@@ -162,7 +165,7 @@ fn bench_runs_paths() {
 
 #[test]
 fn import_legacy_config() {
-    let d = tmp("legacy");
+    let (_tmp, d) = tmp("legacy");
     let out = d.join("legacy.vplan");
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../engine/tests/fixtures/legacy_fixed.json");
     let fixtures = fixture.parent().unwrap().to_str().unwrap().to_string();
@@ -185,7 +188,7 @@ fn import_legacy_config() {
 
 #[test]
 fn library_import_commands() {
-    let lib = tmp("library");
+    let (_tmp, lib) = tmp("library");
     let l = lib.to_str().unwrap();
     let o = run(&["library", "--library", l]);
     assert!(o.status.success(), "{}", text(&o));
@@ -298,7 +301,7 @@ fn dev_server_serves_ui_and_api() {
 
 #[test]
 fn optimize_compares_strategies_and_respects_ruin_limit() {
-    let d = tmp("optimize");
+    let (_tmp, d) = tmp("optimize");
     let f = plan_file(&d, "parametric", |_| {});
     let json = d.join("opt.json");
     let o = run(&[
@@ -333,7 +336,7 @@ fn optimize_compares_strategies_and_respects_ruin_limit() {
 
 #[test]
 fn optimize_uses_saved_settings_and_options_override_them() {
-    let d = tmp("optimize-saved");
+    let (_tmp, d) = tmp("optimize-saved");
     let f = plan_file(&d, "parametric", |p| {
         p["optimization"] = serde_json::json!({
             "maxRuin": 0.02, "ruinAge": 90, "paths": 100, "checkPaths": 200, "samples": 2, "strategies": ["fixed_rate"]
@@ -351,7 +354,7 @@ fn optimize_uses_saved_settings_and_options_override_them() {
 
 #[test]
 fn optimize_goal_two_needs_a_property_and_is_selectable() {
-    let d = tmp("optimize-goal");
+    let (_tmp, d) = tmp("optimize-goal");
     let settings = serde_json::json!({ "paths": 100, "checkPaths": 100, "samples": 1, "strategies": ["fixed_rate"] });
     let f = plan_file(&d, "parametric", |p| p["optimization"] = settings.clone());
     // Goal 2 with the example plan's property
@@ -377,7 +380,7 @@ fn optimize_goal_two_needs_a_property_and_is_selectable() {
 // format id); the current and the old format id and a file without one calculate as before.
 #[test]
 fn issue_144_ak3_cli_rejects_an_unknown_format() {
-    let d = tmp("format");
+    let (_tmp, d) = tmp("format");
     let newer = plan_file(&d, "fixed", |v| v["format"] = serde_json::json!("vivaplan/2"));
     for cmd in ["run", "validate"] {
         let o = run(&[cmd, &newer]);
@@ -403,7 +406,7 @@ fn issue_144_ak3_cli_rejects_an_unknown_format() {
 // #196/AK7: `run` and `optimize` calculate with the switch «Immobilien nie verkaufen» from the file.
 #[test]
 fn issue_196_ak7_cli_uses_never_sell_from_the_file() {
-    let d = tmp("never-sell");
+    let (_tmp, d) = tmp("never-sell");
     let settings = serde_json::json!({ "paths": 100, "checkPaths": 100, "samples": 1, "strategies": ["fixed_rate"] });
     let file = |source: &str, on: bool| {
         let s = settings.clone();
@@ -443,7 +446,7 @@ fn issue_196_ak7_cli_uses_never_sell_from_the_file() {
 // `--property both` shows every strategy twice.
 #[test]
 fn issue_197_ak4_cli_compare_without_optimization() {
-    let d = tmp("compare");
+    let (_tmp, d) = tmp("compare");
     let f = plan_file(&d, "parametric", |_| {});
     let json = d.join("compare.json");
     let o = run(&[
@@ -488,7 +491,7 @@ fn issue_197_ak4_cli_compare_without_optimization() {
 // the JSON; without the switch the line and the field are missing (#199/AK5).
 #[test]
 fn issue_199_ak4_cli_reports_unaffordable_renewals() {
-    let d = tmp("unaffordable");
+    let (_tmp, d) = tmp("unaffordable");
     let report = |on: bool| {
         let p = plan_file(&d, "bootstrap", |p| {
             p["realestate"]["neverSell"] = serde_json::json!(on)
@@ -516,7 +519,7 @@ fn issue_199_ak4_cli_reports_unaffordable_renewals() {
 // #199/AK4: the report of a single run names the renewals kept only because of «Immobilien nie verkaufen».
 #[test]
 fn issue_199_ak4_cli_single_run_reports_unaffordable_renewals() {
-    let d = tmp("unaffordable-single");
+    let (_tmp, d) = tmp("unaffordable-single");
     let p = plan_file(&d, "fixed", |p| {
         p["realestate"]["neverSell"] = serde_json::json!(true);
         p["returns"]["fixed"]["stocks"] = serde_json::json!(-0.05);
@@ -536,7 +539,7 @@ fn issue_199_ak4_cli_single_run_reports_unaffordable_renewals() {
 // #204/AK1: `optimize` and `optimize --compare` list floor and ceiling with the plan value for VPW and endowment.
 #[test]
 fn issue_204_ak1_cli_lists_the_limits_for_vpw_and_endowment() {
-    let d = tmp("limits");
+    let (_tmp, d) = tmp("limits");
     let f = plan_file(&d, "parametric", |p| {
         p["withdrawal"]["floor"] = serde_json::json!(0.8);
         p["withdrawal"]["ceiling"] = serde_json::json!(1.25);
@@ -571,7 +574,7 @@ fn stdout_json(o: &Output) -> serde_json::Value {
 // nothing else there); `--json <file.json>` still saves the detailed result.
 #[test]
 fn issue_207_ak1_json_on_standard_output() {
-    let d = tmp("json-out");
+    let (_tmp, d) = tmp("json-out");
     let fixed = plan_file(&d, "fixed", |_| {});
     let o = run(&["run", &fixed, "--json"]);
     assert!(o.status.success(), "{}", text(&o));
@@ -636,7 +639,7 @@ fn issue_207_ak1_json_on_standard_output() {
 // #207/AK2, AK3: `set` changes values by field path into a new file next to the plan; on an error nothing is written.
 #[test]
 fn issue_207_ak2_ak3_set_writes_a_new_file() {
-    let d = tmp("set");
+    let (_tmp, d) = tmp("set");
     let p = plan_file(&d, "fixed", |_| {});
     let before = std::fs::read_to_string(&p).unwrap();
     let o = run(&["set", &p, "wealth.stockShare@retire=0.4", "project.name=Neu"]);
@@ -705,7 +708,7 @@ fn issue_207_ak2_ak3_set_writes_a_new_file() {
 // #207/AK4: `diff` lists per difference the field path, the old and the new value.
 #[test]
 fn issue_207_ak4_diff_of_two_plans() {
-    let d = tmp("diff");
+    let (_tmp, d) = tmp("diff");
     let p = plan_file(&d, "fixed", |_| {});
     let o = run(&["set", &p, "household.persons.0.name=Max", "withdrawal.floor=0.8"]);
     assert!(o.status.success(), "{}", text(&o));

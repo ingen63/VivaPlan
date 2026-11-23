@@ -103,16 +103,22 @@ mod tests {
     use std::net::TcpStream;
     use std::time::Duration;
 
-    /// Separate data library per test (`library_list` creates the shipped series there).
-    fn library() -> PathBuf {
-        tmp(&format!("lib-{:?}", std::thread::current().id()).replace(['(', ')'], ""))
+    /// Separate data library per call (`library_list` creates the shipped series there); deleted when dropped.
+    fn library() -> tempfile::TempDir {
+        tempfile::Builder::new()
+            .prefix("vivaplan-devserver-lib-")
+            .tempdir()
+            .unwrap()
     }
 
-    fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("vivaplan-devserver-{name}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&d);
-        std::fs::create_dir_all(&d).unwrap();
-        d
+    /// Temporary folder that is deleted when the returned guard is dropped (end of the test).
+    fn tmp(name: &str) -> (tempfile::TempDir, PathBuf) {
+        let d = tempfile::Builder::new()
+            .prefix(&format!("vivaplan-devserver-{name}-"))
+            .tempdir()
+            .unwrap();
+        let p = d.path().to_path_buf();
+        (d, p)
     }
 
     /// Small, fast plan: fixed returns, no scenarios.
@@ -124,7 +130,7 @@ mod tests {
     }
 
     fn call_ok(cmd: &str, args: Value) -> Value {
-        call(cmd, &args, &library()).unwrap_or_else(|e| panic!("{cmd}: {e}"))
+        call(cmd, &args, library().path()).unwrap_or_else(|e| panic!("{cmd}: {e}"))
     }
 
     #[test]
@@ -181,7 +187,7 @@ mod tests {
     #[test]
     fn invalid_arguments_and_unknown_commands_are_errors() {
         let lib = library();
-        let err = |cmd: &str, args: Value| call(cmd, &args, &lib).unwrap_err();
+        let err = |cmd: &str, args: Value| call(cmd, &args, lib.path()).unwrap_err();
         assert!(err("rerun_paths", json!({ "plan": plan(), "picks": "x" })).contains("invalid type"));
         assert_eq!(err("series_info", json!({})), "Path missing");
         // #171: the answer carries text, code and parameters as an object
@@ -199,12 +205,12 @@ mod tests {
 
     #[test]
     fn series_info_passes_the_file_to_the_parser() {
-        let dir = tmp("series");
+        let (_tmp, dir) = tmp("series");
         std::fs::write(dir.join("s.csv"), "Date,Value\n2000-01,1.0\n2000-02,1.1\n2000-03,1.2\n").unwrap();
         let e = call(
             "series_info",
             &json!({ "path": dir.join("s.csv").to_string_lossy() }),
-            &library(),
+            library().path(),
         )
         .unwrap_err();
         assert!(e.contains("column “Stocks” missing"), "{e}");
@@ -215,11 +221,16 @@ mod tests {
     fn relative_paths_without_a_plan_file_start_in_the_working_directory() {
         let rel = "../engine/data/Shiller CHF.csv";
         assert!(std::env::current_dir().unwrap().join(rel).is_file());
-        assert!(call("series_info", &json!({ "path": rel, "planPath": null }), &library()).is_ok());
+        assert!(call(
+            "series_info",
+            &json!({ "path": rel, "planPath": null }),
+            library().path()
+        )
+        .is_ok());
         assert!(call(
             "series_info",
             &json!({ "path": rel, "planPath": "/does/not/exist/p.vplan" }),
-            &library()
+            library().path()
         )
         .is_err());
     }
@@ -260,7 +271,7 @@ mod tests {
 
     #[test]
     fn serves_files_and_the_api_and_refuses_paths_outside() {
-        let ui = tmp("ui");
+        let (_ui, ui) = tmp("ui");
         std::fs::write(ui.join("index.html"), "<p>Start</p>").unwrap();
         std::fs::write(ui.join("app.js"), "1").unwrap();
         let port = {
@@ -268,7 +279,8 @@ mod tests {
             l.local_addr().unwrap().port()
         };
         let lib = library();
-        std::thread::spawn(move || serve(port, ui, lib));
+        let lib_path = lib.path().to_path_buf();
+        std::thread::spawn(move || serve(port, ui, lib_path));
         assert_eq!(
             request(port, "GET / HTTP/1.1", ""),
             ("HTTP/1.1 200 OK".into(), "<p>Start</p>".into())
@@ -299,6 +311,6 @@ mod tests {
     fn serve_fails_when_the_port_is_taken() {
         let l = TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let port = l.local_addr().unwrap().port();
-        assert!(serve(port, PathBuf::from("."), library()).is_err());
+        assert!(serve(port, PathBuf::from("."), library().path().to_path_buf()).is_err());
     }
 }

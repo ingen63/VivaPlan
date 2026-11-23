@@ -105,7 +105,8 @@ fn saron_gaps_use_fixed_value() {
 
 #[test]
 fn seed_and_list() {
-    let dir = std::env::temp_dir().join(format!("pp-lib-{}", std::process::id()));
+    let _tmp_dir = tempfile::Builder::new().prefix("pp-").tempdir().unwrap();
+    let dir = _tmp_dir.path().to_path_buf();
     let _ = std::fs::remove_dir_all(&dir);
     library::seed(&dir).unwrap();
     std::fs::write(dir.join("Kaputt.csv"), "Years,Stocks\n").unwrap();
@@ -142,7 +143,8 @@ fn seed_and_list() {
 #[test]
 fn issue_90_ak5_pictet_is_not_seeded_and_an_old_copy_stays() {
     assert!(library::BUILTIN.iter().all(|(f, _)| !f.contains("Pictet")));
-    let dir = std::env::temp_dir().join(format!("pp-lib-fea72-{}", std::process::id()));
+    let _tmp_dir = tempfile::Builder::new().prefix("pp-").tempdir().unwrap();
+    let dir = _tmp_dir.path().to_path_buf();
     let _ = std::fs::remove_dir_all(&dir);
     library::seed(&dir).unwrap();
     assert!(!dir.join("Pictet CH.csv").exists());

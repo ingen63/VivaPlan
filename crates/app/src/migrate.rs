@@ -82,17 +82,20 @@ pub fn take_over_all(pairs: &[(PathBuf, PathBuf)]) -> Vec<PathBuf> {
 mod tests {
     use super::*;
 
-    fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("vivaplan-migrate-{name}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&d);
-        std::fs::create_dir_all(&d).unwrap();
-        d
+    /// Temporary folder that is deleted when the returned guard is dropped (end of the test).
+    fn tmp(name: &str) -> (tempfile::TempDir, PathBuf) {
+        let d = tempfile::Builder::new()
+            .prefix(&format!("vivaplan-migrate-{name}-"))
+            .tempdir()
+            .unwrap();
+        let p = d.path().to_path_buf();
+        (d, p)
     }
 
     /// #44/AK4: settings, time series and subfolders are copied, the old folder stays in place.
     #[test]
     fn old_folder_is_copied_into_the_empty_new_one_and_kept() {
-        let root = tmp("copy");
+        let (_tmp, root) = tmp("copy");
         let old = root.join(LEGACY_IDENTIFIER);
         let new = root.join("ch.vivaplan-app.desktop");
         std::fs::create_dir_all(old.join("Zeitreihen/sub")).unwrap();
@@ -114,7 +117,7 @@ mod tests {
 
     #[test]
     fn empty_new_folder_is_filled_without_old_folder_nothing_happens() {
-        let root = tmp("empty");
+        let (_tmp, root) = tmp("empty");
         let old = root.join(LEGACY_IDENTIFIER);
         let new = root.join("neu");
         assert!(!take_over(&old, &new).unwrap());
@@ -134,7 +137,7 @@ mod tests {
 
     #[test]
     fn empty_or_missing_is_detected_other_errors_stay_errors() {
-        let root = tmp("leer");
+        let (_tmp, root) = tmp("leer");
         assert!(is_empty_or_missing(&root.join("gibt-es-nicht")).unwrap());
         assert!(is_empty_or_missing(&root).unwrap());
         std::fs::write(root.join("a"), "x").unwrap();
@@ -166,7 +169,7 @@ mod tests {
 
     #[test]
     fn several_pairs_are_taken_over() {
-        let root = tmp("all");
+        let (_tmp, root) = tmp("all");
         let old = root.join("a").join(LEGACY_IDENTIFIER);
         std::fs::create_dir_all(&old).unwrap();
         std::fs::write(old.join("f"), "1").unwrap();

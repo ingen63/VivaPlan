@@ -4057,6 +4057,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
+ "tempfile",
  "vivaplan-engine",
 ]
 
@@ -4066,6 +4067,7 @@ version = "1.0.0-beta.2"
 dependencies = [
  "serde",
  "serde_json",
+ "tempfile",
  "vivaplan-engine",
 ]
 
@@ -4079,6 +4081,7 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]

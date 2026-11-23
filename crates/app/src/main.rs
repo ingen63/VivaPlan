@@ -1280,11 +1280,14 @@ mod tests {
         .map(|b| b.deserialize::<Value>().unwrap())
     }
 
-    fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("pp-app-test-{}-{name}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&d);
-        std::fs::create_dir_all(&d).unwrap();
-        d
+    /// Temporary folder that is deleted when the returned guard is dropped (end of the test).
+    fn tmp(name: &str) -> (tempfile::TempDir, PathBuf) {
+        let d = tempfile::Builder::new()
+            .prefix(&format!("vivaplan-app-{name}-"))
+            .tempdir()
+            .unwrap();
+        let p = d.path().to_path_buf();
+        (d, p)
     }
 
     #[test]
@@ -1305,7 +1308,7 @@ mod tests {
 
     #[test]
     fn series_folder_is_created_or_error_reported() {
-        let dir = tmp("lib");
+        let (_tmp, dir) = tmp("lib");
         let lib = ensure_library_dir(&dir.join("neu")).unwrap();
         assert!(lib.is_dir() && lib.ends_with("Zeitreihen"));
         // Already exists: still success.
@@ -1354,7 +1357,7 @@ mod tests {
 
     #[test]
     fn legacy_base_finds_file_in_folder_or_parent() {
-        let root = tmp("legacy");
+        let (_tmp, root) = tmp("legacy");
         let sub = root.join("config");
         std::fs::create_dir_all(&sub).unwrap();
         let cfg = sub.join("config.json");
@@ -1472,7 +1475,7 @@ mod tests {
     #[test]
     fn series_info_reads_csv() {
         let (_app, w, _g) = setup();
-        let dir = tmp("series");
+        let (_tmp, dir) = tmp("series");
         let csv = dir.join("s.csv");
         std::fs::write(&csv, "Date,Value\n2000-01,1.0\n2000-02,1.1\n2000-03,1.2\n").unwrap();
         let r = call(
@@ -1487,7 +1490,7 @@ mod tests {
 
     #[test]
     fn settings_are_saved_to_and_read_from_file() {
-        let dir = tmp("settings");
+        let (_tmp, dir) = tmp("settings");
         assert!(read_settings(&dir).is_empty());
         write_setting(&dir, "showTaxCols", json!(true)).unwrap();
         write_setting(&dir, "andere", json!("x")).unwrap();
@@ -1525,7 +1528,7 @@ mod tests {
 
     #[test]
     fn library_in_own_folder_and_error_for_file() {
-        let dir = tmp("list");
+        let (_tmp, dir) = tmp("list");
         let lib = ensure_library_dir(&dir).unwrap();
         let v = list_in(&lib).unwrap();
         assert_eq!(v.dir, lib.to_string_lossy());
@@ -1682,8 +1685,8 @@ mod tests {
     /// Windows the app has no console; `pakete.yml` reads the file).
     #[test]
     fn issue_162_ak1_smoke_report_writes_the_file() {
-        let out = std::env::temp_dir().join(format!("vivaplan-smoke-{}.txt", std::process::id()));
-        let _ = std::fs::remove_file(&out);
+        let (_tmp, dir) = tmp("smoke");
+        let out = dir.join("smoke.txt");
         std::env::set_var("VIVAPLAN_SMOKE_OUT", &out);
         smoke_report("VivaPlan-Rauchtest: ok – 472 Monate gerechnet");
         std::env::remove_var("VIVAPLAN_SMOKE_OUT");
@@ -1691,7 +1694,6 @@ mod tests {
             std::fs::read_to_string(&out).unwrap(),
             "VivaPlan-Rauchtest: ok – 472 Monate gerechnet\n"
         );
-        let _ = std::fs::remove_file(&out);
     }
 
     /// #141/AK3: paths on Windows (drive, backslash, UNC, spaces and umlauts, .rplan → .vplan). The cases
@@ -1757,7 +1759,7 @@ mod tests {
     #[test]
     fn save_plan_with_path_and_read_again() {
         let (_app, w, _g) = setup();
-        let dir = tmp("save");
+        let (_tmp, dir) = tmp("save");
         let file = dir.join("p.vplan");
         let plan = call(&w, "example_plan", json!({})).unwrap();
         let r = call(&w, "save_plan", json!({"plan": plan, "path": file.to_string_lossy()})).unwrap();
@@ -1780,7 +1782,7 @@ mod tests {
     fn issue_136_ak4_failed_save_reports_error_and_keeps_file() {
         use std::os::unix::fs::PermissionsExt;
         let (_app, w, _g) = setup();
-        let dir = tmp("save-readonly");
+        let (_tmp, dir) = tmp("save-readonly");
         let file = dir.join("p.vplan");
         let old_plan = json!({"format": "vivaplan/1", "marker": "alt"});
         call(
@@ -1809,7 +1811,7 @@ mod tests {
 
     #[test]
     fn open_plan_reads_file_and_reports_errors() {
-        let dir = tmp("open");
+        let (_tmp, dir) = tmp("open");
         let f = dir.join("p.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": 1}"#).unwrap();
         let o = opened_from(FilePath::Path(f.clone())).unwrap();
@@ -1841,7 +1843,7 @@ mod tests {
 
     #[test]
     fn write_to_writes_and_reports_path() {
-        let dir = tmp("write");
+        let (_tmp, dir) = tmp("write");
         let f = dir.join("a.vplan");
         assert_eq!(write_to(&f, &json!({"a": 1})).unwrap(), f.to_string_lossy());
         assert!(write_to(&dir.join("x/y.vplan"), &json!({})).is_err());
@@ -1867,7 +1869,7 @@ mod tests {
             .unwrap()
             .text()
             .contains("nicht.json"));
-        let dir = tmp("legacy-bad");
+        let (_tmp, dir) = tmp("legacy-bad");
         let bad = dir.join("c.json");
         std::fs::write(&bad, "kein json").unwrap();
         assert!(legacy_from(FilePath::Path(bad), 2026).is_err());
@@ -1876,7 +1878,7 @@ mod tests {
 
     #[test]
     fn shiller_import_from_table_and_error_case() {
-        let lib = tmp("shiller");
+        let (_tmp, lib) = tmp("shiller");
         // #94: the original table exists only locally; without it this part is skipped.
         let ods = root().join("crates/engine/data/quellen/shiller-index.ods");
         if ods.exists() {
@@ -1892,7 +1894,7 @@ mod tests {
 
     #[test]
     fn snb_import_error_cases() {
-        let lib = tmp("snb");
+        let (_tmp, lib) = tmp("snb");
         assert!(snb_from(&lib, vec![FilePath::Path(lib.join("fehlt.csv"))]).is_err());
         assert!(snb_from(&lib, vec![FilePath::Url("https://example.com/x".parse().unwrap())]).is_err());
         let _ = std::fs::remove_dir_all(&lib);
@@ -1986,7 +1988,7 @@ mod tests {
 
     #[test]
     fn save_with_dialog_adds_extension_and_respects_cancel() {
-        let dir = tmp("save-dialog");
+        let (_tmp, dir) = tmp("save-dialog");
         let plan = json!({"project": {"name": "Mein Plan"}});
         // Cancelled in the dialog: nothing written.
         let (r, was_asked, _) = save_with_answer(&plan, None, None);
@@ -2052,7 +2054,7 @@ mod tests {
     #[test]
     fn series_in_plan_folder_is_resolved_relatively() {
         let (_app, w, _g) = setup();
-        let dir = tmp("rel");
+        let (_tmp, dir) = tmp("rel");
         std::fs::copy(
             root().join("crates/engine/tests/fixtures/renditen-muster.csv"),
             dir.join("renditen-muster.csv"),
@@ -2166,7 +2168,7 @@ mod tests {
     fn issue_106_file_reported_by_the_system_is_kept_pending() {
         // macOS: double-click on a plan file reports «Opened» (#44); other files are ignored.
         let (app, _w, _g) = setup();
-        let dir = tmp("opened");
+        let (_tmp, dir) = tmp("opened");
         let plan = dir.join("a.vplan");
         std::fs::write(&plan, "{}").unwrap();
         let other = dir.join("b.txt");
@@ -2341,7 +2343,7 @@ mod tests {
 
     #[test]
     fn open_plan_via_command() {
-        let dir = tmp("cmd-open");
+        let (_tmp, dir) = tmp("cmd-open");
         let f = dir.join("p.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": 1}"#).unwrap();
         let (_app, w, _g, _) = setup_with(chosen(&f));
@@ -2353,7 +2355,7 @@ mod tests {
 
     #[test]
     fn open_plan_via_command_reports_errors() {
-        let dir = tmp("cmd-open-err");
+        let (_tmp, dir) = tmp("cmd-open-err");
         let (_app, w, _g, _) = setup_with(chosen(&dir.join("fehlt.vplan")));
         assert!(is_error_text(&call(&w, "open_plan", json!({})).unwrap_err()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -2361,7 +2363,7 @@ mod tests {
 
     #[test]
     fn save_via_command_with_dialog_and_suggested_name() {
-        let dir = tmp("cmd-save");
+        let (_tmp, dir) = tmp("cmd-save");
         let fake = FakeDialogs {
             save: Some(FilePath::Path(dir.join("ziel"))),
             ..Default::default()
@@ -2391,7 +2393,7 @@ mod tests {
     /// suggests the same name with .vplan; the .vplan can be opened again, the .rplan stays unchanged.
     #[test]
     fn rplan_save_suggests_vplan_and_leaves_old_file_unchanged() {
-        let dir = tmp("cmd-save-legacy");
+        let (_tmp, dir) = tmp("cmd-save-legacy");
         let legacy_file = dir.join("Demo.rplan");
         let content = r#"{"format": "pensionsplaner/1", "project": {"name": "X"}}"#;
         std::fs::write(&legacy_file, content).unwrap();
@@ -2422,7 +2424,7 @@ mod tests {
     /// legacy: RetirementPlanner – cancelled saving of a .rplan file.
     #[test]
     fn cancelled_rplan_save_writes_nothing() {
-        let dir = tmp("cmd-save-legacy-cancel");
+        let (_tmp, dir) = tmp("cmd-save-legacy-cancel");
         let legacy_file = dir.join("a.RPLAN");
         std::fs::write(&legacy_file, "{}").unwrap();
         let (_app, w, _g, fake) = setup_with(FakeDialogs::default());
@@ -2477,7 +2479,7 @@ mod tests {
         assert_eq!(plan_arg(args(&["/d/p.vplan"])), None);
         assert_eq!(plan_arg(args(&["/app", "x.txt"])), None);
 
-        let dir = tmp("given");
+        let (_tmp, dir) = tmp("given");
         let f = dir.join("doppelklick.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": "doppelklick"}"#).unwrap();
         let s = startup_from(&dir, Some(f.clone()), example_stub);
@@ -2519,7 +2521,7 @@ mod tests {
 
     #[test]
     fn legacy_config_via_command_reports_errors() {
-        let dir = tmp("cmd-legacy-err");
+        let (_tmp, dir) = tmp("cmd-legacy-err");
         let bad = dir.join("c.json");
         std::fs::write(&bad, "kein json").unwrap();
         let (_app, w, _g, _) = setup_with(chosen(&bad));
@@ -2545,7 +2547,7 @@ mod tests {
 
     #[test]
     fn shiller_import_via_command_reports_file_errors() {
-        let dir = tmp("cmd-shiller");
+        let (_tmp, dir) = tmp("cmd-shiller");
         let (_app, w, _g, fake) = setup_with(chosen(&dir.join("fehlt.xls")));
         assert!(is_error_text(&call(&w, "import_shiller", json!({})).unwrap_err()));
         assert_eq!(fake.asked().len(), 1);
@@ -2554,7 +2556,7 @@ mod tests {
 
     #[test]
     fn snb_import_via_command_reports_file_errors() {
-        let dir = tmp("cmd-snb");
+        let (_tmp, dir) = tmp("cmd-snb");
         let fake = FakeDialogs {
             files: Some(vec![FilePath::Path(dir.join("fehlt.csv"))]),
             ..Default::default()
@@ -2567,7 +2569,7 @@ mod tests {
 
     #[test]
     fn snb_import_from_the_shipped_cubes() {
-        let lib = tmp("snb-ok");
+        let (_tmp, lib) = tmp("snb-ok");
         let cubes = ["devkum", "plkopr", "zimoma", "rendoblim"]
             .map(|n| FilePath::Path(root().join(format!("crates/engine/data/quellen/snb-{n}.csv"))));
         let rep = snb_from(&lib, cubes.to_vec()).unwrap();
@@ -2581,7 +2583,7 @@ mod tests {
 
     #[test]
     fn start_without_remembered_path_opens_example_without_notice() {
-        let dir = tmp("start-leer");
+        let (_tmp, dir) = tmp("start-leer");
         let s = startup_from(&dir, None, example_stub);
         assert_eq!(
             s,
@@ -2598,7 +2600,7 @@ mod tests {
     /// #70/AK1, AK6: first start only without a settings file; afterwards (even if the remembered file is missing) no longer.
     #[test]
     fn issue_70_first_start_only_without_settings() {
-        let dir = tmp("fea54-erst");
+        let (_tmp, dir) = tmp("fea54-erst");
         assert!(startup_from(&dir, None, example_stub).first, "ohne einstellungen.json");
         write_setting(&dir, "welcomeShown", json!(true)).unwrap();
         assert!(!startup_from(&dir, None, example_stub).first, "Einstellungen vorhanden");
@@ -2610,7 +2612,7 @@ mod tests {
         );
         let _ = std::fs::remove_dir_all(&dir);
         // With a passed file (double-click) there is no welcome dialog.
-        let dir = tmp("fea54-datei");
+        let (_tmp, dir) = tmp("fea54-datei");
         let f = dir.join("x.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": "x"}"#).unwrap();
         assert!(!startup_from(&dir, Some(f), example_stub).first);
@@ -2627,7 +2629,7 @@ mod tests {
 
     #[test]
     fn start_opens_remembered_file() {
-        let dir = tmp("start-datei");
+        let (_tmp, dir) = tmp("start-datei");
         let f = dir.join("meine.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1", "marker": "eigene"}"#).unwrap();
         write_setting(&dir, LAST_PLAN_KEY, json!(f.to_string_lossy())).unwrap();
@@ -2640,7 +2642,7 @@ mod tests {
 
     #[test]
     fn start_with_deleted_file_shows_example_and_notice() {
-        let dir = tmp("start-fehlt");
+        let (_tmp, dir) = tmp("start-fehlt");
         let f = dir.join("weg.vplan");
         write_setting(&dir, LAST_PLAN_KEY, json!(f.to_string_lossy())).unwrap();
         let s = startup_from(&dir, None, example_stub);
@@ -2663,7 +2665,7 @@ mod tests {
 
     #[test]
     fn start_with_unreadable_file_shows_example_and_keeps_remembered_path() {
-        let dir = tmp("start-broken");
+        let (_tmp, dir) = tmp("start-broken");
         let f = dir.join("broken.vplan");
         std::fs::write(&f, "kein json").unwrap();
         write_setting(&dir, LAST_PLAN_KEY, json!(f.to_string_lossy())).unwrap();
@@ -2676,7 +2678,7 @@ mod tests {
 
     #[test]
     fn remembered_path_is_opened_at_startup_and_replaced() {
-        let dir = tmp("merken");
+        let (_tmp, dir) = tmp("merken");
         let (a, b) = (dir.join("a.vplan"), dir.join("b.vplan"));
         std::fs::write(&a, r#"{"format": "vivaplan/1", "marker": "a"}"#).unwrap();
         std::fs::write(&b, r#"{"format": "vivaplan/1", "marker": "b"}"#).unwrap();
@@ -2691,7 +2693,7 @@ mod tests {
 
     #[test]
     fn open_and_save_via_commands_remember_the_path() {
-        let dir = tmp("merken-befehle");
+        let (_tmp, dir) = tmp("merken-befehle");
         let f = dir.join("p.vplan");
         std::fs::write(&f, r#"{"format": "vivaplan/1"}"#).unwrap();
         let (_app, w, _g, _) = setup_with(chosen(&f));
@@ -2966,7 +2968,7 @@ mod tests {
     /// start in the saved choice, otherwise in the system language.
     #[test]
     fn issue_170_ak2_first_start_language_and_menu_language_at_startup() {
-        let dir = tmp("first-language");
+        let (_tmp, dir) = tmp("first-language");
         assert_eq!(first_start_language_in(&dir, || "fr".into()), Some("fr".to_string()));
         let l = startup_language(&dir);
         assert_eq!(l.choice(), i18n::SYSTEM);

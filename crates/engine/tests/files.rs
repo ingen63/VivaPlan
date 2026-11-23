@@ -6,11 +6,14 @@ use std::path::{Path, PathBuf};
 use engine::api;
 use serde_json::{json, Value};
 
-fn dir(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("vivaplan-files-{name}-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&d);
-    std::fs::create_dir_all(&d).unwrap();
-    d
+/// Temporary folder that is deleted when the returned guard is dropped (end of the test).
+fn dir(name: &str) -> (tempfile::TempDir, PathBuf) {
+    let d = tempfile::Builder::new()
+        .prefix(&format!("vivaplan-files-{name}-"))
+        .tempdir()
+        .unwrap();
+    let p = d.path().to_path_buf();
+    (d, p)
 }
 
 fn plan(name: &str) -> Value {
@@ -31,7 +34,7 @@ fn entries(d: &Path) -> Vec<String> {
 /// #136/AK1: Successful saving replaces the content; afterwards only the plan is in the folder.
 #[test]
 fn issue_136_ak1_saving_replaces_the_file_and_leaves_nothing_else() {
-    let d = dir("ok");
+    let (_tmp, d) = dir("ok");
     let f = d.join("planung.vplan");
     api::write_plan(&f, &plan("A")).unwrap();
     api::write_plan(&f, &plan("B")).unwrap();
@@ -46,7 +49,7 @@ fn issue_136_ak1_saving_replaces_the_file_and_leaves_nothing_else() {
 #[test]
 fn issue_136_ak2_failed_write_keeps_the_previous_file() {
     use std::os::unix::fs::PermissionsExt;
-    let d = dir("readonly");
+    let (_tmp, d) = dir("readonly");
     let f = d.join("planung.vplan");
     api::write_plan(&f, &plan("Alt")).unwrap();
     std::fs::set_permissions(&d, std::fs::Permissions::from_mode(0o555)).unwrap();
@@ -62,7 +65,7 @@ fn issue_136_ak2_failed_write_keeps_the_previous_file() {
 /// temporary file is removed again.
 #[test]
 fn issue_136_ak3_failed_replace_removes_the_temporary_file() {
-    let d = dir("replace");
+    let (_tmp, d) = dir("replace");
     let target = d.join("ordner.vplan");
     std::fs::create_dir(&target).unwrap();
     std::fs::write(target.join("inhalt"), "bleibt").unwrap();
@@ -76,7 +79,7 @@ fn issue_136_ak3_failed_replace_removes_the_temporary_file() {
 #[cfg(unix)]
 #[test]
 fn issue_136_saving_through_a_symlink_replaces_its_target() {
-    let d = dir("symlink");
+    let (_tmp, d) = dir("symlink");
     let real = d.join("echt.vplan");
     let link = d.join("link.vplan");
     api::write_plan(&real, &plan("Alt")).unwrap();

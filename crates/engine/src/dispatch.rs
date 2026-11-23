@@ -186,7 +186,8 @@ mod tests {
     /// the fallback folder; the plan's `path` does not count here.
     #[test]
     fn series_info_is_relative_to_the_plan_file() {
-        let d = std::env::temp_dir().join(format!("vivaplan-dispatch-{}", std::process::id()));
+        let _tmp_d = tempfile::Builder::new().prefix("vivaplan-").tempdir().unwrap();
+        let d = _tmp_d.path().to_path_buf();
         std::fs::create_dir_all(d.join("plan")).unwrap();
         std::fs::copy(lib().join("Shiller CHF.csv"), d.join("plan/s.csv")).unwrap();
         let plan_path = d.join("plan/p.vplan").to_string_lossy().into_owned();
