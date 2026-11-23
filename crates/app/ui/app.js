@@ -271,7 +271,6 @@ function normalize(p) {
   p.realestate ??= {}; p.realestate.properties ??= [];
   for (const q of p.realestate.properties) if (q.status !== "rent") q.sell ??= "never";
   p.realestate.emergencyMonths ??= 0;
-  p.realestate.affordability ??= { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, wealthContribution: 0.03, maxLoanToValue: 0.8 };
   p.returns.extrapolation ??= { method: "fixed", range: 30 };
   p.returns.bootstrap ??= { paths: 50000, block: 12, seed: 42 };
   // #100: new plans follow the suggested values of the stock index (`auto`); upgrade_plan sets older ones.
@@ -307,11 +306,16 @@ function normalize(p) {
  * Takes over a loaded plan: first bring it up to date (#52, #51; show notes), then
  * normalize it. Returns the notes.
  */
-async function adopt(plan) {
+async function adopt(plan, fromFile = true) {
   let notes = [];
+  // #233/AK4: the affordability of an older file (before the upgrade, which leaves it as it is)
+  const fileAfford = fromFile ? plan?.realestate?.affordability : null;
   try { const r = await Engine.call("upgrade_plan", { plan }); plan = r.plan; notes = r.notes || []; }
   catch { /* without the engine: take over unchanged */ }
   state = normalize(plan);
+  delete state.realestate.affordability;
+  const adopted = adoptAffordability(fileAfford);
+  if (adopted) notes.push(adopted);
   restoreOpt();
   return notes;
 }
@@ -775,7 +779,8 @@ function optToPlan(c) {
 /** Copy with sorted object keys: the same plan gives the same text after saving and opening (#201). */
 const sortedKeys = v => Array.isArray(v) ? v.map(sortedKeys) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sortedKeys(v[k])])) : v;
 /** Key of the plan without the optimization settings: they do not change the result of an earlier optimization. */
-const optKey = () => JSON.stringify(sortedKeys({ ...state, optimization: undefined, limits: undefined })); // limits come from the settings, not the plan
+// limits come from the settings, not the plan; #233: the affordability from the settings counts (as in the plan before)
+const optKey = () => JSON.stringify(sortedKeys({ ...state, optimization: undefined, limits: undefined, realestate: { ...state.realestate, affordability: affordability() } }));
 function saveOptCfg() {
   const next = optToPlan(readOptCfg());
   if (JSON.stringify(next) !== JSON.stringify(state.optimization)) { state.optimization = next; markDirty(); }
@@ -1047,7 +1052,7 @@ async function optStart(compare) {
     compare, property: hasProperties() ? c.property : "planned" };
   saveOptCfg();
   optBusy = true; optError = null; renderSection();
-  const planJson = optKey(), plan = JSON.parse(JSON.stringify(state)), path = currentPath;
+  const planJson = optKey(), plan = withAffordability(state), path = currentPath;
   let done = null;
   try { const report = await withJob(() => Engine.call("optimize", { plan: state, request: req, path: currentPath, jobId: job.id })); lastOpt = done = { report, req, planJson }; }
   catch (e) { if (isCancelled(e)) toast(tr("optimize.cancelled")); else optError = errText(e); }
@@ -1458,10 +1463,7 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
   <fieldset class="locked-area" id="realestateBody" ${state.realestate.neverSell ? "disabled" : ""}>
   <div class="card"><h3>${tr("realestate.emergency")}</h3>${Series("realestate.emergencyMonths", tr("realestate.threshold"), "months", tr("realestate.emergencyHint"))}
     <p class="hint">${tr("realestate.afterSaleHint")}</p></div>
-  <div class="card"><h3>${tr("realestate.affordability")} <span class="sub">${tr("realestate.forAfterSale")}</span></h3><div class="grid3">
-    ${F("realestate.affordability.sustainability", tr("realestate.maxIncomeShare"), "pct")}${F("realestate.affordability.imputedRate", tr("realestate.imputedRate"), "pct")}${F("realestate.affordability.fixCosts", tr("realestate.costs"), "pct")}
-    ${F("realestate.affordability.maxLoanToValue", tr("realestate.maxLtv"), "pct")}</div>
-    <p class="hint">${tr("realestate.affordabilityHint")}</p></div>
+  <p class="hint" id="affordNote">${tr("realestate.affordabilityNote", { values: affordText(affordability()) })}</p>
   ${state.realestate.properties.map((p, i) => {
     const P = `realestate.properties.${i}`;
     let body = "";
@@ -1624,7 +1626,7 @@ const COMPUTED = {
   mort: i => {
     const p = state.realestate.properties[i]; if (!p?.mortgage) return "";
     if (p.status !== "owned" && p.mortgage.amountMode === "maxLoan") {
-      const a = state.realestate.affordability;
+      const a = affordability();
       return tr("computed.maxLoan", { money: fmtMoney(p.price * a.maxLoanToValue), maxLoanToValue: fmtPct(a.maxLoanToValue), price: fmtMoney(p.price) });
     }
     const base = p.status === "owned" ? p.worth : p.price, total = mortTotal(p), multi = p.mortgage.tranches.length > 1;
@@ -2309,7 +2311,7 @@ const ACTIONS = {
   download: () => download(),
   new: async () => {
     if (!await confirmDiscard()) return;
-    await adopt(blankPlan(await Engine.call("example_plan"))); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
+    await adopt(blankPlan(await Engine.call("example_plan")), false); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
   },
   open: async () => {
     if (!Engine.inApp) return $("#fileInput").click();
@@ -2432,7 +2434,7 @@ async function confirmDiscard() {
 async function save(as) {
   if (!Engine.inApp) { download(); setFile(currentPath); return; }
   try {
-    const p = await Engine.call("save_plan", { plan: state, path: as ? null : currentPath });
+    const p = await Engine.call("save_plan", { plan: planForFile(state), path: as ? null : currentPath });
     if (!p) return;
     setFile(p); toast(tr("file.saved", { p: baseName(p) }));
   } catch (e) { toast(errText(e)); }
@@ -2452,7 +2454,7 @@ function ask(title, html, value = null, okLabel = "OK", discardLabel = null) {
 }
 function download() {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }));
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(planForFile(state), null, 2)], { type: "application/json" }));
   a.download = (state.project.name || tr("file.defaultName")).replace(/[^\w\-äöüÄÖÜ ]/g, "") + ".vplan"; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -2512,20 +2514,75 @@ function limitProblems(l) {
   if (!(Number.isFinite(l.pillar3aMaxLarge) && l.pillar3aMaxLarge >= 0)) out.push(tr("limits.pillar3aLargeNegative"));
   return out;
 }
+/** #233: Affordability of the banks (setting, before in the plan); the same defaults as the engine (`Affordability`). */
+const AFFORD_DEFAULTS = { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8 };
+/** No longer used by the engine (affordability only uses income); the plan needs it. */
+const AFFORD_WEALTH_CONTRIBUTION = 0.03;
+let AFFORD_FIELDS;
+onLanguage(() => AFFORD_FIELDS = [["sustainability", tr("realestate.maxIncomeShare")], ["imputedRate", tr("realestate.imputedRate")],
+  ["fixCosts", tr("realestate.costs")], ["maxLoanToValue", tr("realestate.maxLtv")]]);
+/** Applicable affordability: saved values, otherwise the defaults (shares as decimals). */
+function affordability() {
+  const saved = Pref.get("affordability", null), a = { ...AFFORD_DEFAULTS };
+  if (saved && typeof saved === "object") for (const k of Object.keys(AFFORD_DEFAULTS)) if (Number.isFinite(saved[k])) a[k] = saved[k];
+  return { ...a, wealthContribution: AFFORD_WEALTH_CONTRIBUTION };
+}
+Engine.affordability = affordability;
+/** Validation as before in the editor: every value is a number. */
+function affordProblems(a) {
+  return AFFORD_FIELDS.filter(([k]) => !Number.isFinite(a[k])).map(([, what]) => tr("settings.affordInvalid", { what }));
+}
+/** Short text of the values («33.3 % des Einkommens, Zins 5 %, …»), one decimal at most. */
+const affordPct = v => (Math.round(v * 1000) / 10).toLocaleString("de-CH", { maximumFractionDigits: 1 });
+const affordText = a => tr("realestate.affordabilityValues", { income: affordPct(a.sustainability), rate: affordPct(a.imputedRate), costs: affordPct(a.fixCosts), ltv: affordPct(a.maxLoanToValue) });
+/** Copy of the plan with the affordability it is calculated with (saved results, #233/AK5). */
+function withAffordability(plan) {
+  const p = JSON.parse(JSON.stringify(plan));
+  p.realestate ??= {};
+  p.realestate.affordability ??= affordability();
+  return p;
+}
+/** #233/AK4: The plan file does not hold the affordability. */
+function planForFile(plan) {
+  const p = JSON.parse(JSON.stringify(plan));
+  if (p.realestate) delete p.realestate.affordability;
+  return p;
+}
+/**
+ * #233/AK4: An older file with its own affordability: values that differ from the settings are taken over into the
+ * settings. Returns the note for the dialog of the changes (adopted and previous values), otherwise null.
+ */
+function adoptAffordability(file) {
+  if (!file || typeof file !== "object") return null;
+  const before = affordability(), next = {};
+  for (const k of Object.keys(AFFORD_DEFAULTS)) next[k] = Number.isFinite(file[k]) ? file[k] : before[k];
+  if (Object.keys(next).every(k => Math.abs(next[k] - before[k]) < 1e-9)) return null;
+  Pref.set("affordability", next);
+  return tr("notes.affordabilityAdopted", { values: affordText(next), before: affordText(before) });
+}
 /** #110: Question about saving before the simulation (default: on). */
 const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
-function settingsFields(l, language = I18n.choice(), theme = Theme.choice()) {
+function settingsFields(l, language = I18n.choice(), theme = Theme.choice(), af = affordability()) {
   const langs = [[I18n.SYSTEM, tr("language.system")], ...Object.entries(I18n.languages())];
   return `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
     + `<label class="field" style="grid-column:1/-1"><span>${tr("settings.theme")}</span><select id="set-theme">${Theme.CHOICES.map(k => `<option value="${k}" ${k === theme ? "selected" : ""}>${tr("theme." + k)}</option>`).join("")}</select></label>`
     + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
-    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("");
+    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("")
+    + `<div id="set-afford" style="grid-column:1/-1;margin-top:6px"><b>${tr("realestate.affordability")}</b> <span class="computed">${tr("realestate.forAfterSale")}</span></div>`
+    + AFFORD_FIELDS.map(([k, label]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-afford-${k}" value="${esc(fmtPct(af[k]))}"><span class="unit">%</span></div><span class="computed">${tr("settings.default", { v: `${affordPct(AFFORD_DEFAULTS[k])} %` })}</span></label>`).join("")
+    + `<p class="hint" style="grid-column:1/-1">${tr("realestate.affordabilityHint")}</p>`;
 }
 function readSettings() {
   const l = {};
   // #140: The maximum amount of pillar 3a is an amount («7.258» is ambiguous)
   for (const [k] of LIMIT_FIELDS) { const t = $("#set-" + k).value, v = LIMIT_AMOUNTS.has(k) ? parseAmount(t) : parseNum(t); l[k] = v === null ? NaN : v; }
   return l;
+}
+/** #233: Affordability of the dialog «Einstellungen» (input in percent). */
+function readAffordability() {
+  const a = {};
+  for (const [k] of AFFORD_FIELDS) { const v = parseNum($("#set-afford-" + k).value); a[k] = v === null ? NaN : v / 100; }
+  return a;
 }
 /** Dialog «Einstellungen»: applies to all plans, is stored locally, never in the plan file. */
 function showSettings() {
@@ -2534,9 +2591,9 @@ function showSettings() {
   d.showModal();
 }
 $("#settingsSave").addEventListener("click", e => {
-  const l = readSettings(), problems = limitProblems(l);
+  const l = readSettings(), af = readAffordability(), problems = [...limitProblems(l), ...affordProblems(af)];
   if (problems.length) { e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>"); return; }
-  Pref.set("limits", l); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
+  Pref.set("limits", l); Pref.set("affordability", af); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
   Pref.set("theme", $("#set-theme").value); Theme.apply();
   const language = $("#set-language").value;
   $("#settings").close();
@@ -2547,7 +2604,7 @@ $("#settingsSave").addEventListener("click", e => {
 $("#settingsDefaults").addEventListener("click", async e => {
   e.preventDefault();
   if (!await ask(tr("settings.defaults"), tr("settings.resetAsk"), null, tr("settings.reset"))) return;
-  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("askSaveBeforeRun", true); Pref.set("theme", "system"); Theme.apply();
+  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("affordability", { ...AFFORD_DEFAULTS }); Pref.set("askSaveBeforeRun", true); Pref.set("theme", "system"); Theme.apply();
   $("#settingsBody").innerHTML = settingsFields(limits(), I18n.SYSTEM, "system"); $("#settingsErr").textContent = "";
   renderSection();
 });
@@ -2640,7 +2697,7 @@ async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
   plainTitle(tr("run.running")); $("#resultsInfo").textContent = ""; $("#resultsTabs").innerHTML = "";
   $("#resultsBody").innerHTML = jobCard(tr("run.running"), tr("run.local"));
   try {
-    const planAtRun = JSON.parse(JSON.stringify(state));
+    const planAtRun = withAffordability(state);
     lastRun = await withJob(() => Engine.call("run_simulation", { plan: state, path: currentPath, jobId: job.id }));
     lastRunPlan = planAtRun;
     if (isCancelled(lastRun.error)) { lastRun = null; showResults(false); return toast(tr("run.cancelled")); }
@@ -3365,7 +3422,7 @@ function paramSections(plan, full = false) {
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
   if (full) {
     const add = (title, rows) => { const sec = out.find(x => x[0] === title); if (sec) sec[1].push(...rows); else if (rows.length) out.push([title, rows]); };
-    const a = plan.realestate?.affordability || {};
+    const a = plan.realestate?.affordability || affordability(); // #233: values of the calculation, otherwise the settings
     add(tr("section.realestate"), [[tr("params.affIncome"), pc(a.sustainability)], [tr("params.affRate"), pc(a.imputedRate)],
       [tr("params.affCosts"), pc(a.fixCosts)], [tr("params.affLtv"), pc(a.maxLoanToValue)],
       ...props.flatMap(p => { const nm = p.name || tr("params.property"); return [
@@ -3472,7 +3529,7 @@ const runKind = m => m.kind === "optimization" ? [optKindName(m), m.goal === "ke
 async function rememberRun(r) {
   if (r.error || (!r.single && !r.batch && !r.scenarios)) return;
   try {
-    const plan = JSON.parse(JSON.stringify(state)), m = runMeta(r);
+    const plan = withAffordability(lastRunPlan && lastRun === r ? lastRunPlan : state), m = runMeta(r);
     const base = (currentPath && baseName(currentPath).replace(/\.[rv]plan$/, "")) || plan.project.name || tr("refs.plan");
     const now = new Date().toISOString();
     const meta = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), created: now, name: runTitle(base, m, now), note: "", ...m };
@@ -3834,6 +3891,7 @@ Object.assign(ACTIONS, {
   "run-restore": async () => {
     if (!await confirmDiscard()) return;
     parkedState = null; savedView = null; lastRun = null;
+    delete state.realestate.affordability; // #233: the settings apply
     showResults(false); setFile(null, true); History.reset(); goto("general"); refreshSeriesInfo();
     toast(tr("runsDelete.planLoaded"));
   }
@@ -3850,7 +3908,7 @@ const examplePlan = async () => localExample(await Engine.call("example_plan"));
 /** Loads the example plan as a new, unsaved plan (after asking if there are unsaved changes). */
 async function loadExample() {
   if (!await confirmDiscard()) return false;
-  await adopt(await examplePlan()); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
+  await adopt(await examplePlan(), false); setFile(null); History.reset(); goto("general"); refreshSeriesInfo();
   return true;
 }
 /**
@@ -3939,7 +3997,7 @@ Object.assign(ACTIONS, {
     // Desktop app: plan last opened, otherwise the bundled example plan (#4)
     if (Engine.inApp) startup = await Engine.call("startup_plan");
     // #184: without a path the app opens the example plan, with its names in the language of the user interface
-    var startNotes = await adopt(startup?.path ? startup.plan : startup ? localExample(startup.plan) : await examplePlan());
+    var startNotes = await adopt(startup?.path ? startup.plan : startup ? localExample(startup.plan) : await examplePlan(), !!startup?.path);
     gainTemplates = await Engine.call("gain_templates");
     taxLoc = await Engine.call("tax_locations");
   } catch (e) { document.body.innerHTML = `<p style="padding:24px">${tr("boot.engineUnreachable", { esc: esc(errText(e)) })}</p>`; return; }

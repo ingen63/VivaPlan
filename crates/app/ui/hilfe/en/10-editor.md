@@ -76,7 +76,7 @@ The **indirect amortization** of a mortgage flows into this account until before
 > Example: balance 120 000, payouts in 2041 and 2042 of 50 000 each, AHV pension start 2045: the rest of 20 000 (plus interest) is paid out in the month of the AHV pension start. If the AHV pension start is moved to 2046, the plan stays valid, and the rest comes in 2046.
 
 ## @f-settings Settings
-Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, default values, language, appearance, dark, light
+Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, default values, language, appearance, dark, light, affordability, loan-to-value
 
 On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, menu “File → Settings…” (Ctrl+,); or the button “Settings” at the top. The settings apply to **all plans on this device** and are stored locally, **not in the plan file**.
 
@@ -88,10 +88,16 @@ On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, me
 | Pension fund payout: lower and upper limit | 58 and 65 years |
 | Pillar 3a: maximum contribution per year | 7 258 |
 | Large pillar 3a (without pension fund): maximum per year | 36 288 |
+| Affordability: max. share of income | one third (33 %) |
+| Affordability: imputed interest rate | 5 % |
+| Affordability: fixed costs p.a. (of the price) | 1 % |
+| Affordability: maximum loan-to-value | 80 % |
 
 **Language:** “as system” follows the language of the operating system (at the first start; without region, fr_FR counts as French); otherwise the chosen language applies. German, English, French and Italian are offered; if the system's language is missing, German applies. The help appears in the chosen language; a chapter that is not yet translated appears in German. The same choice is in the menu “View → Language”. A change takes effect immediately, also on the menus; the plan, unsaved changes and the view stay. Numbers, amounts and dates appear in the Swiss format in every language (1'234'567.50, 2.5 %, 03.2040), and the plan file is the same in every language. Names in the plan (persons, properties, milestones) are not translated; only the example plan gets its names in the chosen language when it is opened, with the same numbers.
 
 **Appearance:** “System” follows the light or dark appearance of the operating system, also when it changes while you work; “Light” and “Dark” apply regardless of it. The theme applies to the whole app: input fields, selection menus, dialogs, help and charts. The choice takes effect as soon as you save.
+
+**Affordability:** The four values of the [affordability](#f-re-afford) are rules of the bank, not details of your own plan; every value must be a number. A change takes effect immediately on the preview and the simulation. The section “Real estate” shows the values that apply in a note. If you open an older plan file that still contains its own values and they differ from the settings, the app takes these values over into the settings; the dialog “Notes on the plan” names the adopted and the previous values. Saved results and the comparison of the plans show the values that were used in the calculation. The command line uses the values of an older file, otherwise the default values.
 
 The lower limit must not be above the upper one, ages are whole years, and the maximum amount is 0 or more. “Default values” resets everything after a confirmation. If a plan is outside the new limits after a change, the validation reports this; the same plan can therefore give a message on another device with other settings. The command line always uses the default values.
 
@@ -426,7 +432,7 @@ Owned, planned and rented properties. You can enter as many as you like.
 - **Rent (‘rent’):** start and rent per month (today's value, carried forward with inflation by default; the option “Adjust rent for inflation” turns this off).
 - **Mortgage:** tranches with periods, see [Mortgages](#f-re-mortgage).
 - **Tax value:** optional for each owned property or planned purchase, for the wealth tax, see [Tax value](#f-re-tax-value).
-- [Emergency sale](#f-re-emergency) and [affordability](#f-re-afford) for purchases “after sale”.
+- [Emergency sale](#f-re-emergency) for purchases “after sale” and a note with the values of the [affordability](#f-re-afford); they are in the [settings](#f-settings).
 - The switch [Never sell properties](#f-re-never-sell) at the top of the tab rules out any sale.
 
 You enter [living expenses](#s-flows) **including** housing costs. The calculation uses living expenses **without the housing share**; rent, mortgage interest, amortization and fixed costs are added as simulated **housing costs**. After the sale of the last property, the next one with a purchase “after sale” is bought in the following month, provided it is affordable and the equity is sufficient. Otherwise the rents ‘from after sale’ begin. A purchase “after sale” is attempted **once** in the following month. If it cannot be financed, it is **dropped** with a message in the events, and the follow-up rules apply in the next month: rents ‘from after sale’ of this property begin, and further purchases “after sale” of it are attempted. A **purchase or sale date before the simulation start** is never reached; the validation reports it as a warning.
@@ -490,7 +496,7 @@ With this switch at the top of the “Real estate” tab you check whether the p
 ## @f-re-afford Affordability
 Keywords: bank, affordability, loan-to-value, imputed interest rate, equity, mortgage
 
-The banks' affordability calculation, applied to purchases “after sale” and at every renewal of a mortgage period. A mortgage is affordable if the **imputed costs** do not exceed a share of the income.
+The banks' affordability calculation, applied to purchases “after sale” and at every renewal of a mortgage period. A mortgage is affordable if the **imputed costs** do not exceed a share of the income. The four values are in the [settings](#f-settings) and apply to all plans on this device.
 
 - **Max. share of income:** usually one third (33 %).
 - **Imputed interest rate:** usually 5 %, regardless of the current interest rate.

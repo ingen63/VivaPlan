@@ -295,6 +295,28 @@ fn reduces_mortgage_when_not_sustainable() {
     assert!((debt - 40_000.0).abs() < 1.0, "gekürzte Hypothek {debt}: {}", buy.text);
 }
 
+/// #233/AK3, AK4: The plan file has no affordability any more (the app inserts the values of its settings before every
+/// calculation): without it the defaults apply (loan-to-value 80 %); 70 % in the plan gives a smaller mortgage.
+#[test]
+fn issue_233_ak3_loan_to_value_from_the_plan_or_the_default() {
+    let debt = |ltv: Option<f64>| {
+        let mut p = after_sale_plan(100_000.0, 10_000.0, 500_000.0);
+        p.realestate.properties[1].mortgage.as_mut().unwrap().tranches[0].amount = 450_000.0;
+        if let Some(v) = ltv {
+            p.realestate.affordability.max_loan_to_value = v;
+        }
+        500_000.0 - run(&p).records[13].property_equity
+    };
+    // after_sale_plan has no `affordability` in its JSON: the defaults apply
+    let a = after_sale_plan(0.0, 0.0, 1.0).realestate.affordability;
+    assert_eq!(
+        (a.sustainability, a.imputed_rate, a.fix_costs, a.max_loan_to_value),
+        (1.0 / 3.0, 0.05, 0.01, 0.8)
+    );
+    assert!((debt(None) - 400_000.0).abs() < 1e-6, "{}", debt(None));
+    assert!((debt(Some(0.7)) - 350_000.0).abs() < 1e-6, "{}", debt(Some(0.7)));
+}
+
 /// Mortgage after the purchase (price minus equity of the flat in February 2031).
 fn debt_after_buy(cash: f64) -> (f64, String) {
     let res = run(&after_sale_plan(cash, 2_000.0, 500_000.0));

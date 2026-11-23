@@ -10,10 +10,16 @@ const Engine = {
   inApp: !!(window.__TAURI__ && window.__TAURI__.core),
   /** #25: Limits from the settings (set by app.js); they are sent with the plan on every call. */
   limits: () => null,
+  /** #233: Affordability from the settings (set by app.js); it fills `realestate.affordability` of a plan without it. */
+  affordability: () => null,
   async call(cmd, args = {}) {
     // The limits do not belong to the plan: never save them with it.
     const limits = this.limits();
     if (limits && args.plan && typeof args.plan === "object" && cmd !== "save_plan") args = { ...args, plan: { ...args.plan, limits } };
+    // #233: Neither does the affordability; a plan of a saved result keeps the values it was calculated with.
+    const afford = cmd === "save_plan" || cmd === "upgrade_plan" ? null : this.affordability();
+    if (afford && args.plan && typeof args.plan === "object" && !args.plan.realestate?.affordability)
+      args = { ...args, plan: { ...args.plan, realestate: { ...args.plan.realestate, affordability: afford } } };
     if (this.inApp) return window.__TAURI__.core.invoke(cmd, args).catch(e => { throw engineError(e); });
     const r = await fetch(`/api/${cmd}`, {
       method: "POST",

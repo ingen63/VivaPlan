@@ -98,10 +98,13 @@ Der Editor führt durch zwölf Abschnitte:
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 
-**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse und der
-Maximalbeträge der kleinen und der grossen Säule 3a. Sie gelten für alle Planungen auf dem Gerät und werden nicht in der Planungsdatei
-gespeichert. Ältere Planungsdateien werden beim Öffnen übernommen (feste Meilensteine, Säule 3a als eigenes Konto); ein
-Dialog nennt jede Änderung.
+**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse, die
+Maximalbeträge der kleinen und der grossen Säule 3a und die Tragbarkeit der Banken (höchstens vom Einkommen, kalkulatorischer
+Zins, Nebenkosten, höchste Belehnung; Standard 33 %, 5 %, 1 %, 80 %). Sie gelten für alle Planungen auf dem Gerät und werden
+nicht in der Planungsdatei gespeichert; der Abschnitt «Immobilien» nennt die geltende Tragbarkeit in einem Hinweis. Ältere
+Planungsdateien werden beim Öffnen übernommen (feste Meilensteine, Säule 3a als eigenes Konto, eigene Werte der Tragbarkeit
+gehen in die Einstellungen über); ein Dialog nennt jede Änderung. Gespeicherte Ergebnisse behalten die Tragbarkeit, mit der
+gerechnet wurde.
 
 Neben dem Editor zeigt eine **Live-Vorschau** den Vermögensverlauf, nach jeder Änderung neu gerechnet (bei Eingabefeldern beim Verlassen des Feldes). Eine
 laufende **Prüfung** meldet Fehler und Hinweise, bevor gerechnet wird. Eine **Zeitleiste** zeigt alle Meilensteine.
@@ -172,8 +175,8 @@ Grundstückgewinnsteuer an. Hypotheken bestehen aus Tranchen mit aufeinanderfolg
 Marge, mit Verlängerung oder Rückzahlung am Ende. Die Amortisation erfolgt direkt oder indirekt über die Säule 3a;
 indirekt nur bis zum AHV-Bezug, danach direkt.
 
-Beim Kauf prüft die App die Tragbarkeit wie eine Bank und kürzt die Hypothek nötigenfalls; auf Wunsch wird mit der
-höchsten Belehnung von 80 % finanziert. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
+Beim Kauf prüft die App die Tragbarkeit wie eine Bank (Werte in den Einstellungen) und kürzt die Hypothek nötigenfalls;
+auf Wunsch wird mit der höchsten Belehnung (Standard 80 %) finanziert. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
 Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten.
 
 Je Liegenschaft im Besitz oder mit geplantem Kauf lässt sich ein **Steuerwert** erfassen, als Betrag oder in % des

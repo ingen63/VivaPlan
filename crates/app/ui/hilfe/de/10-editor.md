@@ -76,7 +76,7 @@ Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in d
 > Beispiel: Guthaben 120 000, Auszahlungen 2041 und 2042 je 50 000, AHV-Bezug 2045: Der Rest von 20 000 (plus Zins) wird im Monat des AHV-Bezugs ausbezahlt. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig, und der Rest kommt 2046.
 
 ## @f-settings Einstellungen
-Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache, Darstellung, dunkel, hell
+Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache, Darstellung, dunkel, hell, Tragbarkeit, Belehnung
 
 Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Linux Menü «Datei → Einstellungen…» (Ctrl+,), oder die Schaltfläche «Einstellungen» oben. Die Einstellungen gelten für **alle Planungen auf diesem Gerät** und werden lokal gespeichert, **nicht in der Planungsdatei**.
 
@@ -88,10 +88,16 @@ Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Li
 | Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
 | Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
 | Grosse Säule 3a (ohne Pensionskasse): Maximalbetrag pro Jahr | 36 288 |
+| Tragbarkeit: Höchstens vom Einkommen | ein Drittel (33 %) |
+| Tragbarkeit: Kalkulatorischer Zins | 5 % |
+| Tragbarkeit: Nebenkosten p.a. (vom Preis) | 1 % |
+| Tragbarkeit: Höchste Belehnung | 80 % |
 
 **Sprache:** «wie System» folgt der Sprache des Betriebssystems (beim ersten Start; ohne Region, fr_FR gilt als Französisch), sonst gilt die gewählte Sprache. Angeboten werden Deutsch, Englisch, Französisch und Italienisch; fehlt die Sprache des Systems, gilt Deutsch. Die Hilfe erscheint in der gewählten Sprache; ein noch nicht übersetztes Kapitel erscheint deutsch. Dieselbe Wahl steht im Menü «Ansicht → Sprache». Ein Wechsel wirkt sofort, auch auf die Menüs; die Planung, ungespeicherte Änderungen und die Ansicht bleiben. Zahlen, Beträge und Daten erscheinen in jeder Sprache im Schweizer Format (1'234'567.50, 2.5 %, 03.2040), und die Planungsdatei ist in jeder Sprache dieselbe. Namen in der Planung (Personen, Immobilien, Meilensteine) werden nicht übersetzt; nur die Beispielplanung erhält beim Öffnen ihre Namen in der gewählten Sprache, mit denselben Zahlen.
 
 **Darstellung:** «System» folgt dem hellen oder dunklen Erscheinungsbild des Betriebssystems, auch wenn es während der Arbeit wechselt; «Hell» und «Dunkel» gelten unabhängig davon. Das Thema gilt für die ganze App: Eingabefelder, Auswahlmenüs, Dialoge, Hilfe und Diagramme. Die Wahl wirkt sofort beim Speichern.
+
+**Tragbarkeit:** Die vier Werte der [Tragbarkeit](#f-re-afford) sind Regeln der Bank, keine Angaben zur eigenen Planung; jeder Wert muss eine Zahl sein. Eine Änderung wirkt sofort auf Vorschau und Simulation. Der Abschnitt «Immobilien» zeigt die geltenden Werte in einem Hinweis. Öffnen Sie eine ältere Planungsdatei, die noch eigene Werte enthält und von den Einstellungen abweicht, übernimmt die App diese Werte in die Einstellungen; der Dialog «Hinweise zur Planung» nennt die übernommenen und die bisherigen Werte. Gespeicherte Ergebnisse und der Vergleich der Planungen zeigen die Werte, mit denen gerechnet wurde. Die Kommandozeile verwendet die Werte einer älteren Datei, sonst die Standardwerte.
 
 Die untere Grenze darf nicht über der oberen liegen, Alter sind ganze Jahre, der Maximalbetrag ist 0 oder mehr. «Standardwerte» setzt alles nach Rückfrage zurück. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das; dieselbe Planung kann deshalb auf einem anderen Gerät mit anderen Einstellungen eine Meldung ergeben. Die Kommandozeile verwendet immer die Standardwerte.
 
@@ -426,7 +432,7 @@ Eigene, geplante und gemietete Objekte. Sie können beliebig viele erfassen.
 - **Miete («rent»):** Beginn und Miete pro Monat (heutiger Wert, wird standardmässig mit der Teuerung fortgeschrieben; die Option «Miete mit Inflation anpassen» schaltet das aus).
 - **Hypothek:** Tranchen mit Perioden, siehe [Hypotheken](#f-re-mortgage).
 - **Steuerwert:** optional je Immobilie im Besitz oder mit geplantem Kauf, für die Vermögenssteuer, siehe [Steuerwert](#f-re-tax-value).
-- [Notverkauf](#f-re-emergency) und [Tragbarkeit](#f-re-afford) für Käufe «nach Verkauf».
+- [Notverkauf](#f-re-emergency) für Käufe «nach Verkauf» und ein Hinweis mit den Werten der [Tragbarkeit](#f-re-afford); diese stehen in den [Einstellungen](#f-settings).
 - Der Schalter [Immobilien nie verkaufen](#f-re-never-sell) oben im Reiter schliesst jeden Verkauf aus.
 
 Die [Lebenshaltungskosten](#s-flows) geben Sie **inklusive** Wohnkosten ein. Gerechnet wird mit der Lebenshaltung **ohne Wohnanteil**; Miete, Hypothekarzinsen, Amortisation und Nebenkosten kommen als simulierte **Wohnkosten** dazu. Nach dem Verkauf der letzten Immobilie wird im Folgemonat die nächste mit Kauf «nach Verkauf» gekauft, sofern sie tragbar ist und das Eigenkapital reicht. Sonst beginnen die Mieten «ab nach Verkauf». Ein Kauf «nach Verkauf» wird **einmal** im Folgemonat versucht. Ist er nicht finanzierbar, **entfällt** er mit einer Meldung in den Ereignissen, und die Folgeregeln greifen im nächsten Monat: Mieten «ab nach Verkauf» dieser Immobilie beginnen, weitere Käufe «nach Verkauf» davon werden versucht. Ein **Kauf- oder Verkaufsdatum vor dem Simulationsstart** wird nie erreicht; die Prüfung meldet es als Hinweis.
@@ -490,7 +496,7 @@ Mit diesem Schalter oben im Reiter «Immobilien» prüfen Sie, ob die Planung au
 ## @f-re-afford Tragbarkeit
 Stichworte: Bank, Belehnung, kalkulatorischer Zins, Eigenmittel, Hypothek
 
-Die Tragbarkeitsrechnung der Banken, angewandt auf Käufe «nach Verkauf» und bei jeder Erneuerung einer Hypothekarperiode. Eine Hypothek ist tragbar, wenn die **kalkulatorischen Kosten** einen Anteil des Einkommens nicht übersteigen.
+Die Tragbarkeitsrechnung der Banken, angewandt auf Käufe «nach Verkauf» und bei jeder Erneuerung einer Hypothekarperiode. Eine Hypothek ist tragbar, wenn die **kalkulatorischen Kosten** einen Anteil des Einkommens nicht übersteigen. Die vier Werte stehen in den [Einstellungen](#f-settings) und gelten für alle Planungen auf diesem Gerät.
 
 - **Höchstens vom Einkommen:** üblich ein Drittel (33 %).
 - **Kalkulatorischer Zins:** meist 5 %, unabhängig vom aktuellen Zins.

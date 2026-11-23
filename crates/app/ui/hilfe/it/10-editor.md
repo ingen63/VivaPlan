@@ -76,7 +76,7 @@ L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a
 > Esempio: avere 120'000, riscossioni 2041 e 2042 di 50'000 ciascuno, inizio della rendita AVS 2045: il resto di 20'000 (più interesse) viene versato nel mese d’inizio della rendita AVS. Se l’inizio della rendita AVS viene spostato al 2046, il piano resta valido, e il resto arriva nel 2046.
 
 ## @f-settings Impostazioni
-Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua, aspetto, scuro, chiaro
+Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua, aspetto, scuro, chiaro, sostenibilità, grado d’anticipo
 
 Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu «File → Impostazioni…» (Ctrl+,), oppure il pulsante «Impostazioni» in alto. Le impostazioni valgono per **tutte le pianificazioni su questo dispositivo** e vengono salvate in locale, **non nel file di pianificazione**.
 
@@ -88,10 +88,16 @@ Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu
 | Prestazione della cassa pensione: limite inferiore e superiore | 58 e 65 anni |
 | Pilastro 3a: importo massimo del versamento all’anno | 7'258 |
 | Grande pilastro 3a (senza cassa pensione): importo massimo all’anno | 36'288 |
+| Sostenibilità: quota massima del reddito | un terzo (33 %) |
+| Sostenibilità: tasso d’interesse teorico | 5 % |
+| Sostenibilità: spese accessorie annue (del prezzo) | 1 % |
+| Sostenibilità: grado d’anticipo massimo | 80 % |
 
 **Lingua:** «come il sistema» segue la lingua del sistema operativo (al primo avvio; senza regione, it_CH vale come italiano), altrimenti vale la lingua scelta. Sono offerti tedesco, inglese, francese e italiano; se manca la lingua del sistema, vale il tedesco. L’aiuto appare nella lingua scelta; un capitolo non ancora tradotto appare in tedesco. La stessa scelta si trova nel menu «Vista → Lingua». Un cambio ha effetto subito, anche sui menu; la pianificazione, le modifiche non salvate e la vista restano. Numeri, importi e date appaiono in ogni lingua nel formato svizzero (1'234'567.50, 2.5 %, 03.2040), e il file di pianificazione è lo stesso in ogni lingua. I nomi nella pianificazione (persone, immobili, tappe) non vengono tradotti; solo la pianificazione d’esempio riceve i suoi nomi nella lingua scelta all’apertura, con le stesse cifre.
 
 **Aspetto:** «Sistema» segue l’aspetto chiaro o scuro del sistema operativo, anche se cambia durante il lavoro; «Chiaro» e «Scuro» valgono indipendentemente. Il tema vale per tutta l’app: campi di immissione, menu di selezione, dialoghi, guida e grafici. La scelta ha effetto al salvataggio.
+
+**Sostenibilità:** I quattro valori della [sostenibilità](#f-re-afford) sono regole della banca, non dati della propria pianificazione; ogni valore deve essere un numero. Una modifica agisce subito sull’anteprima e sulla simulazione. La sezione «Immobili» mostra i valori applicabili in un’avvertenza. Se si apre un vecchio file di pianificazione che contiene ancora valori propri diversi dalle impostazioni, l’app riprende questi valori nelle impostazioni; il dialogo «Avvertenze sulla pianificazione» indica i valori ripresi e quelli precedenti. I risultati salvati e il confronto delle pianificazioni mostrano i valori con cui è stato calcolato. La riga di comando usa i valori di un vecchio file, altrimenti i valori standard.
 
 Il limite inferiore non può essere superiore a quello superiore, le età sono anni interi, l’importo massimo è 0 o superiore. «Valori standard» ripristina tutto dopo una domanda di conferma. Se dopo una modifica una pianificazione è al di fuori dei nuovi limiti, la verifica lo segnala; la stessa pianificazione può perciò dare un messaggio su un altro dispositivo con altre impostazioni. La riga di comando usa sempre i valori standard.
 
@@ -426,7 +432,7 @@ Oggetti propri, pianificati e in affitto. Può registrarne quanti vuole.
 - **Affitto (`rent`):** inizio e affitto al mese (valore attuale, viene adeguato per impostazione standard al rincaro; l’opzione «Adeguare l’affitto all’inflazione» lo disattiva).
 - **Ipoteca:** tranche con periodi, vedi [Ipoteche](#f-re-mortgage).
 - **Valore fiscale:** facoltativo per ogni immobile di proprietà o con acquisto pianificato, per l’imposta sulla sostanza, vedi [Valore fiscale](#f-re-tax-value).
-- [Vendita forzata](#f-re-emergency) e [sostenibilità](#f-re-afford) per acquisti «dopo la vendita».
+- [Vendita forzata](#f-re-emergency) per acquisti «dopo la vendita» e un’avvertenza con i valori della [sostenibilità](#f-re-afford); questi si trovano nelle [impostazioni](#f-settings).
 - Il commutatore [Non vendere mai gli immobili](#f-re-never-sell) in alto nella scheda esclude qualsiasi vendita.
 
 Il [costo della vita](#s-flows) lo inserisce **incluse** le spese d’alloggio. Il calcolo usa il costo della vita **senza la quota d’alloggio**; affitto, interessi ipotecari, ammortamento e spese accessorie si aggiungono come **spese d’alloggio** simulate. Dopo la vendita dell’ultimo immobile, nel mese successivo viene acquistato il prossimo con acquisto «dopo la vendita», se è sostenibile e i fondi propri bastano. Altrimenti iniziano gli affitti ‹da dopo la vendita›. Un acquisto «dopo la vendita» viene tentato **una volta** nel mese successivo. Se non è finanziabile, **viene soppresso** con un messaggio negli eventi, e le regole successive intervengono il mese seguente: iniziano gli affitti ‹da dopo la vendita› di questo immobile, vengono tentati ulteriori acquisti «dopo la vendita» di esso. Una **data d’acquisto o di vendita anteriore all’inizio della simulazione** non viene mai raggiunta; la verifica la segnala come avvertenza.
@@ -490,7 +496,7 @@ Con questo commutatore in alto nella scheda «Immobili» verificate se la pianif
 ## @f-re-afford Sostenibilità
 Parole chiave: banca, sostenibilità, grado d’anticipo, tasso d’interesse teorico, fondi propri, ipoteca
 
-Il calcolo della sostenibilità delle banche, applicato agli acquisti «dopo la vendita» e a ogni rinnovo di un periodo ipotecario. Un’ipoteca è sostenibile se i **costi teorici** non superano una quota del reddito.
+Il calcolo della sostenibilità delle banche, applicato agli acquisti «dopo la vendita» e a ogni rinnovo di un periodo ipotecario. Un’ipoteca è sostenibile se i **costi teorici** non superano una quota del reddito. I quattro valori si trovano nelle [impostazioni](#f-settings) e valgono per tutte le pianificazioni su questo dispositivo.
 
 - **Quota massima del reddito:** di solito un terzo (33 %).
 - **Tasso d’interesse teorico:** di solito il 5 %, indipendentemente dall’interesse attuale.

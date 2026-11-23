@@ -708,3 +708,127 @@ test.describe("Earned income per year as in the tax return (#232)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Affordability in the settings (#233)", () => {
+  const dlg = page => page.locator("#settings");
+  const openSettings = async page => { await page.keyboard.press(`${MOD}+,`); await expect(dlg(page)).toBeVisible(); };
+  /** Mortgage of the purchase of the flat «nach Verkauf» in the events of a result (German text of the event). */
+  const purchaseMortgage = events => {
+    const e = events.find(x => /^Kauf Eigentumswohnung/.test(x.label));
+    return e ? parseNum(/Hypothek ([\d'’]+)/.exec(e.label)[1]) : null;
+  };
+  /** Example plan: the flat wants a mortgage of 90 % and the income easily carries it (only the loan-to-value limits it). */
+  const highMortgage = page => page.evaluate(() => {
+    const flat = state.realestate.properties.find(p => p.status === "planned");
+    flat.mortgage.tranches[0].amount = 900000; flat.inflationValue = false; // price 1'000'000 at the purchase
+    state.flows.income = { mode: "const", value: 50000 };
+    renderSection();
+  });
+  const previewMortgage = async page => { await previewIdle(page); return purchaseMortgage(await page.evaluate(() => lastSim.events)); };
+  const simulationMortgage = page => page.evaluate(async () => {
+    const plan = JSON.parse(JSON.stringify(state)); plan.returns.source = "fixed"; plan.scenarios.sweeps = [];
+    return (await Engine.call("run_simulation", { plan, path: null })).single.events.map(e => ({ label: msgText(e) }));
+  }).then(purchaseMortgage);
+
+  test("AK1: no affordability card in the real estate section, a note with the values and a link to the settings", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Immobilien");
+    await expect(page.locator('#main input[data-path^="realestate.affordability"]')).toHaveCount(0);
+    await expect(page.locator("#main h3", { hasText: "Tragbarkeit" })).toHaveCount(0);
+    await expect(page.locator("#affordNote")).toHaveText("Tragbarkeit: 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 % – änderbar in den Einstellungen.");
+    await page.locator("#affordNote a").click();
+    await expect(dlg(page)).toBeVisible();
+    await expect(page.locator("#set-afford-maxLoanToValue")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK2: four fields with the defaults, invalid input rejected, the default values button resets them", async ({ page }) => {
+    const errors = await open(page);
+    await openSettings(page);
+    for (const t of ["Höchstens vom Einkommen", "Kalkulatorischer Zins", "Nebenkosten p.a. (vom Preis)", "Höchste Belehnung"]) await expect(dlg(page)).toContainText(t);
+    for (const [k, v] of [["sustainability", "33.333"], ["imputedRate", "5"], ["fixCosts", "1"], ["maxLoanToValue", "80"]])
+      await expect(page.locator(`#set-afford-${k}`)).toHaveValue(v);
+    await expect(page.locator("#settings label.field", { has: page.locator("#set-afford-sustainability") })).toContainText("Standard 33.3 %");
+    // as before in the editor: a number is required
+    await page.locator("#set-afford-imputedRate").fill("abc");
+    await page.locator("#settingsSave").click();
+    await expect(page.locator("#settingsErr")).toContainText("Tragbarkeit, Kalkulatorischer Zins: Bitte eine Zahl eingeben.");
+    await expect(dlg(page)).toBeVisible();
+    expect(await page.evaluate(() => affordability().imputedRate)).toBe(0.05);
+    await page.locator("#set-afford-imputedRate").fill("4.5");
+    await page.locator("#set-afford-maxLoanToValue").fill("70");
+    await page.locator("#settingsSave").click();
+    await expect(dlg(page)).toBeHidden();
+    await page.reload();
+    await page.waitForSelector("html[data-ready='1']");
+    expect(await page.evaluate(() => affordability())).toMatchObject({ imputedRate: 0.045, maxLoanToValue: 0.7 });
+    expect(await prefs(page)).toMatchObject({ theme: "system", limits: { ahvMin: 63 } }); // the other settings stay
+    await openSettings(page);
+    await page.locator("#settingsDefaults").click();
+    await page.locator("#ask button[value='ok']").click();
+    await expect(page.locator("#set-afford-maxLoanToValue")).toHaveValue("80");
+    expect(await page.evaluate(() => affordability())).toMatchObject({ sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8 });
+    await noErrors(page, errors);
+  });
+
+  test("AK3: loan-to-value 70 % instead of 80 % gives a smaller mortgage for the purchase after sale in preview and simulation", async ({ page }) => {
+    const errors = await open(page);
+    await highMortgage(page);
+    expect(await previewMortgage(page)).toBe(800000);
+    expect(await simulationMortgage(page)).toBe(800000);
+    await openSettings(page);
+    await page.locator("#set-afford-maxLoanToValue").fill("70");
+    await page.locator("#settingsSave").click();
+    await expect(dlg(page)).toBeHidden();
+    expect(await previewMortgage(page)).toBe(700000);
+    expect(await simulationMortgage(page)).toBe(700000);
+    await nav(page, "Immobilien");
+    await expect(page.locator("#affordNote")).toContainText("Belehnung 70 %");
+    await noErrors(page, errors);
+  });
+
+  test("AK4: the plan file holds no affordability; an older file with other values sets the settings and says so", async ({ page }) => {
+    const errors = await open(page);
+    expect(await page.evaluate(() => "affordability" in state.realestate)).toBe(false);
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.evaluate(() => download())]);
+    const saved = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
+    expect("affordability" in saved.realestate).toBe(false);
+    // older file with its own values
+    const older = JSON.parse(JSON.stringify(saved));
+    older.realestate.affordability = { sustainability: 0.3, imputedRate: 0.045, fixCosts: 0.01, wealthContribution: 0.03, maxLoanToValue: 0.75 };
+    const file = path.join(os.tmpdir(), `qa-233-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(older));
+    await page.locator("#fileInput").setInputFiles(file);
+    const ask = page.locator("#ask");
+    await expect(ask).toBeVisible();
+    await expect(ask).toContainText("Die Tragbarkeit aus der Datei gilt jetzt für alle Planungen (Einstellungen): 30 % des Einkommens, Zins 4.5 %, Nebenkosten 1 %, Belehnung 75 %; bisher 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 %.");
+    await ask.locator("button[value='ok']").click();
+    expect(await page.evaluate(() => affordability())).toMatchObject({ sustainability: 0.3, imputedRate: 0.045, fixCosts: 0.01, maxLoanToValue: 0.75 });
+    expect(await page.evaluate(() => "affordability" in state.realestate)).toBe(false);
+    // the same values again: no note
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect(page.locator("#toast")).toContainText("geöffnet");
+    await expect(ask).not.toBeVisible();
+    fs.rmSync(file);
+    await noErrors(page, errors);
+  });
+
+  test("AK5: a saved result and the comparison show the values the plan was calculated with", async ({ page }) => {
+    const errors = await open(page);
+    await openSettings(page);
+    await page.locator("#set-afford-maxLoanToValue").fill("70");
+    await page.locator("#settingsSave").click();
+    await page.evaluate(() => { state.returns.source = "fixed"; state.scenarios.sweeps = []; });
+    await page.evaluate(() => runSimulation("overview", { noConfirm: true }));
+    await expect(page.locator("html")).toHaveAttribute("data-saved", "1");
+    const [m] = await page.evaluate(() => Runs.list());
+    const plan = await page.evaluate(id => Runs.get(id).then(d => d.plan), m.id);
+    expect(plan.realestate.affordability.maxLoanToValue).toBe(0.7);
+    // later change of the settings: the saved result keeps 70 %
+    await page.evaluate(() => { Pref.set("affordability", { ...AFFORD_DEFAULTS }); });
+    const rows = await page.evaluate(p => paramSections(p, true).flatMap(s => s[1]), plan);
+    expect(rows).toContainEqual(["Tragbarkeit: Höchste Belehnung", "70 %"]);
+    await noErrors(page, errors);
+  });
+});

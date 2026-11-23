@@ -76,7 +76,7 @@ L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusq
 > Exemple: avoir de 120 000, retraits en 2041 et 2042 de 50 000 chacun, début de la rente AVS en 2045: le solde de 20 000 (plus les intérêts) est versé le mois du début de la rente AVS. Si le début de la rente AVS est reporté à 2046, le plan reste valable, et le solde est versé en 2046.
 
 ## @f-settings Paramètres
-Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair
+Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair, capacité financière, taux d’avance
 
 Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu «Fichier → Paramètres…» (Ctrl+,), ou le bouton «Paramètres» en haut. Les paramètres valent pour **toutes les planifications sur cet appareil** et sont enregistrés localement, **pas dans le fichier de planification**.
 
@@ -88,10 +88,16 @@ Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu
 | Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
 | Pilier 3a: montant maximal du versement par année | 7 258 |
 | Grand pilier 3a (sans caisse de pension): montant maximal par année | 36 288 |
+| Capacité financière: part maximale du revenu | un tiers (33 %) |
+| Capacité financière: taux d’intérêt théorique | 5 % |
+| Capacité financière: frais accessoires p.a. (du prix) | 1 % |
+| Capacité financière: taux d’avance maximal | 80 % |
 
 **Langue:** «comme le système» suit la langue du système d’exploitation (au premier démarrage; sans région, fr_FR compte comme français), sinon la langue choisie s’applique. Sont proposés l’allemand, l’anglais, le français et l’italien; si la langue du système manque, l’allemand s’applique. L’aide apparaît dans la langue choisie; un chapitre pas encore traduit apparaît en allemand. Le même choix figure dans le menu «Affichage → Langue». Un changement agit immédiatement, y compris sur les menus; la planification, les modifications non enregistrées et la vue sont conservées. Les nombres, montants et dates apparaissent dans chaque langue au format suisse (1'234'567.50, 2.5 %, 03.2040), et le fichier de planification est le même dans chaque langue. Les noms dans la planification (personnes, biens immobiliers, jalons) ne sont pas traduits; seule la planification d’exemple reçoit ses noms dans la langue choisie à l’ouverture, avec les mêmes chiffres.
 
 **Apparence:** «Système» suit l’apparence claire ou sombre du système d’exploitation, même si elle change pendant le travail; «Clair» et «Sombre» s’appliquent indépendamment. Le thème vaut pour toute l’app: champs de saisie, menus de sélection, dialogues, aide et graphiques. Le choix s’applique dès l’enregistrement.
+
+**Capacité financière:** Les quatre valeurs de la [capacité financière](#f-re-afford) sont des règles de la banque, pas des données de votre planification; chaque valeur doit être un nombre. Une modification agit immédiatement sur l’aperçu et la simulation. La section «Immobilier» indique les valeurs applicables dans une remarque. Si vous ouvrez un ancien fichier de planification qui contient encore ses propres valeurs et qu’elles diffèrent des paramètres, l’app reprend ces valeurs dans les paramètres; le dialogue «Remarques sur la planification» indique les valeurs reprises et les valeurs précédentes. Les résultats enregistrés et la comparaison des planifications montrent les valeurs utilisées pour le calcul. La ligne de commande utilise les valeurs d’un ancien fichier, sinon les valeurs standard.
 
 La limite inférieure ne doit pas être supérieure à la limite supérieure, les âges sont des années entières, le montant maximal est de 0 ou plus. «Valeurs standard» réinitialise tout après confirmation. Si une planification se situe en dehors des nouvelles limites après une modification, le contrôle le signale; la même planification peut donc donner un message sur un autre appareil avec d’autres paramètres. La ligne de commande utilise toujours les valeurs standard.
 
@@ -426,7 +432,7 @@ Objets en propriété, planifiés et loués. Vous pouvez en saisir autant que vo
 - **Location (`rent`):** début et loyer par mois (valeur actuelle, indexé par défaut au renchérissement; l’option «Adapter le loyer à l’inflation» le désactive).
 - **Hypothèque:** tranches avec périodes, voir [Hypothèques](#f-re-mortgage).
 - **Valeur fiscale:** facultative pour chaque bien immobilier en propriété ou dont l’achat est planifié, pour l’impôt sur la fortune, voir [Valeur fiscale](#f-re-tax-value).
-- [Vente forcée](#f-re-emergency) et [capacité financière](#f-re-afford) pour les achats «après la vente».
+- [Vente forcée](#f-re-emergency) pour les achats «après la vente» et une remarque avec les valeurs de la [capacité financière](#f-re-afford); elles se trouvent dans les [paramètres](#f-settings).
 - Le commutateur [Ne jamais vendre les biens immobiliers](#f-re-never-sell) en haut de l’onglet exclut toute vente.
 
 Vous saisissez le [coût de la vie](#s-flows) **frais de logement compris**. Le calcul utilise le coût de la vie **sans la part du logement**; loyer, intérêts hypothécaires, amortissement et frais accessoires s’ajoutent comme **frais de logement** simulés. Après la vente du dernier bien immobilier, le suivant avec achat «après la vente» est acheté le mois suivant, pour autant qu’il soit supportable et que les fonds propres suffisent. Sinon, les locations ‹dès après la vente› commencent. Un achat «après la vente» est tenté **une seule fois** le mois suivant. S’il n’est pas finançable, il **est supprimé** avec un message dans les événements, et les règles subséquentes s’appliquent le mois suivant: les locations ‹dès après la vente› de ce bien immobilier commencent, d’autres achats «après la vente» de celui-ci sont tentés. Une **date d’achat ou de vente antérieure au début de la simulation** n’est jamais atteinte; le contrôle la signale comme avertissement.
@@ -490,7 +496,7 @@ Avec ce commutateur en haut de l’onglet «Immobilier», vous vérifiez si la p
 ## @f-re-afford Capacité financière
 Mots-clés: banque, capacité financière, taux d’avance, taux d’intérêt théorique, fonds propres, hypothèque
 
-Le calcul de la capacité financière selon les règles des banques, appliqué aux achats «après la vente» et à chaque renouvellement d’une période hypothécaire. Une hypothèque est supportable si les **coûts théoriques** ne dépassent pas une part du revenu.
+Le calcul de la capacité financière selon les règles des banques, appliqué aux achats «après la vente» et à chaque renouvellement d’une période hypothécaire. Une hypothèque est supportable si les **coûts théoriques** ne dépassent pas une part du revenu. Les quatre valeurs se trouvent dans les [paramètres](#f-settings) et valent pour toutes les planifications sur cet appareil.
 
 - **Part maximale du revenu:** généralement un tiers (33 %).
 - **Taux d’intérêt théorique:** généralement 5 %, indépendamment de l’intérêt actuel.

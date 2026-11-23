@@ -437,7 +437,12 @@ Reihenfolge pro Monat:
    Mit `"buy": "afterSale:<id>"` wird im Monat nach dem Verkauf einer bestimmten Immobilie gekauft (Verweis über
    deren `id`); klappt der Kauf nicht und ist keine Immobilie mehr im Besitz, beginnen die Mieten.
    Die Tragbarkeit rechnet nur mit dem Einkommen (Erwerb, Renten): (`sustainability` × Jahreseinkommen − Nebenkosten) /
-   `imputedRate`; `wealthContribution` wird nicht mehr verwendet. Sie wird auch bei **jeder Erneuerung** einer Hypothekarperiode
+   `imputedRate`; `wealthContribution` wird nicht mehr verwendet. Die Werte `realestate.affordability` sind seit #233
+   eine Einstellung der App (`affordability` in `einstellungen.json`) und stehen nicht mehr in der Planungsdatei: Die
+   Oberfläche setzt sie vor jeder Rechnung in die Planung ein (`Engine.call`, nur wenn die Planung keine eigenen hat, etwa
+   die Planung eines gespeicherten Ergebnisses), entfernt sie beim Speichern und übernimmt beim Öffnen die abweichenden Werte
+   einer älteren Datei in die Einstellungen (Hinweis im Dialog der Änderungen). Der Rechenkern und die Kommandozeile
+   lesen sie unverändert aus der Planung; fehlen sie, gelten die Standardwerte (1/3, 5 %, 1 %, 80 %). Sie wird auch bei **jeder Erneuerung** einer Hypothekarperiode
    geprüft (Einkommen im Erneuerungsmonat, Nebenkosten wie erfasst, kalkulatorischer Zins `imputedRate`): Der nicht tragbare
    Teil ist die minimale Einmalzahlung. Sie wird aus dem Vermögen anteilig auf alle Tranchen bezahlt, wenn das Vermögen
    danach >= 0 ist und das Notverkaufskriterium nach der Zahlung nicht auslöst (Schätzung: geplante Ausgaben + Zins,
@@ -445,7 +450,7 @@ Reihenfolge pro Monat:
    Zahlung, keine Erneuerung, Notverkauf im Folgemonat. Jede Erneuerung steht in `renewals` des Laufs
    (`affordable`, `lumpSum`, `debtBefore`, `debtAfter`, `emergencySale` = «Vermögen < 0» oder «Notverkaufskriterium»); die
    Zusammenfassung zählt `lumpSums` und `affordabilitySales`, die Stapelauswertung `lumpSumRuns` und `affordabilitySaleRuns`.
-   Mit `"amountMode": "maxLoan"` beträgt die Hypothek beim Kauf die höchste Belehnung (80 %, also Minimum
+   Mit `"amountMode": "maxLoan"` beträgt die Hypothek beim Kauf die höchste Belehnung (`maxLoanToValue`, Standard 80 %, also Minimum
    Eigenmittel), gekürzt falls nicht tragbar; die Beträge der Tranchen gelten dann als Anteile.
    **«Immobilien nie verkaufen»** (`"realestate": {"neverSell": true}`, #196; fehlt das Feld: aus, «aus» wird nicht
    geschrieben): kein geplanter Verkauf (`sell` wird beim Übersetzen ignoriert, die Tranchen laufen bis zum Planende),
@@ -792,7 +797,7 @@ Speicher der App (IndexedDB) und nicht in der Planungsdatei.
 
 Arten der Einträge (`kind` in den Kopfdaten): `single`, `batch`, `scenarios` (Simulation, Inhalt `{plan, result}`) und
 `optimization` (#201, Optimierung oder mit `compare: true` Strategievergleich, Inhalt `{plan, opt: {report, req,
-planJson}}`). `planJson` ist `optKey()` beim Start (Planung ohne `optimization` und `limits`, Schlüssel sortiert), die
+planJson}}`). `planJson` ist `optKey()` beim Start (Planung ohne `optimization` und `limits`, mit der Tragbarkeit der Einstellungen, Schlüssel sortiert), die
 Kopfdaten tragen davon einen Hash (`planHash`). Damit findet die App beim Öffnen einer Planung das neueste passende
 Ergebnis, ohne alle Inhalte zu laden. Optimierungen lassen sich markieren und löschen, aber nicht vergleichen.
 
