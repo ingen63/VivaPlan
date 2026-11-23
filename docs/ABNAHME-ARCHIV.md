@@ -1628,3 +1628,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #228/AK3 | Der Knopf ✕ bleibt in derselben Zeile wie ihre Werte. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok |
 | #228/AK4 | Andere Zeitreihen, die `.row` verwenden (z. B. Erwerbseinkommen, Wohnort #151), sehen aus wie vorher. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK4` | 23.11.2026 ok (`.row` unverändert, Wohnort mit 4 Spalten; Tests #151, ui-eingaben, ui-textfit grün) |
 | #228/AK5 | Ein Oberflächentest prüft für beide Arten von Zeilen, dass der Wert mindestens 200 px breit ist und der Knopf ✕ auf … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK1–AK3, AK5` | 23.11.2026 ok |
+
+### #232 Erwerbseinkommen als Jahresbetrag wie in der Steuererklärung
+
+[Issue #232](https://github.com/ingen63/VivaPlan/issues/232) · geschlossen · Umsetzung: 5b581d1
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #232/AK1 | Das Feld heisst «Einkünfte aus Erwerb netto / Jahr». Der Hinweis lautet: «wie Nettolohn im Lohnausweis (Ziffer 11), … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6` | 23.11.2026 ok (Bezeichnung und Hinweis wörtlich; Sichtprüfung) |
+| #232/AK2 | Neben dem Feld steht der Betrag pro Monat. Beispiel: Eingabe 120 000 pro Jahr ergibt die Anzeige «= 10 000 / Monat». | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6` | 23.11.2026 ok |
+| #232/AK3 | Das gilt für jede Zeile der Zeitreihe und für beide Personen. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6` | 23.11.2026 ok (zwei Zeilen, Person 2) |
+| #232/AK4 | Gespeichert wird wie bisher pro Monat (Jahresbetrag / 12). Planungsdateien, Kommandozeile und Golden-Dateien ändern … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6` | 23.11.2026 ok (gespeicherter Wert 10 000; Commit ohne Rechenkern, Kommandozeile, Golden) |
+| #232/AK5 | Parameter eines Laufs, Übersicht und Meldungen nennen das Erwerbseinkommen pro Jahr, wo sie heute den Monatsbetrag … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6`, [engine-messages.test.js](../e2e/unit/engine-messages.test.js) `#232/AK5` | 23.11.2026 ok (Parameter und Warnung pro Jahr; Übersicht ohne Monatsbetrag des Erwerbs) |
+| #232/AK6 | Ein Oberflächentest prüft die Eingabe 120 000, die Anzeige 10 000 / Monat und den gespeicherten Wert 10 000. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6` | 23.11.2026 ok |
+| #232/AK7 | Hilfe und `BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it, Durchsicht) |
