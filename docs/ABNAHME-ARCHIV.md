@@ -1703,3 +1703,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #232/AK5 | Parameter eines Laufs, Übersicht und Meldungen nennen das Erwerbseinkommen pro Jahr, wo sie heute den Monatsbetrag … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6`, [engine-messages.test.js](../e2e/unit/engine-messages.test.js) `#232/AK5` | 23.11.2026 ok (Parameter und Warnung pro Jahr; Übersicht ohne Monatsbetrag des Erwerbs) |
 | #232/AK6 | Ein Oberflächentest prüft die Eingabe 120 000, die Anzeige 10 000 / Monat und den gespeicherten Wert 10 000. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5: AK6` | 23.11.2026 ok |
 | #232/AK7 | Hilfe und `BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it, Durchsicht) |
+
+### #233 Tragbarkeit der Immobilien in die Einstellungen verschieben
+
+[Issue #233](https://github.com/ingen63/VivaPlan/issues/233) · geschlossen · Umsetzung: 7b983ac
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #233/AK1 | Der Abschnitt «Immobilien» hat keine Karte «Tragbarkeit» mehr; ein Hinweis nennt die geltenden Werte (z. B. … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK1` | 23.11.2026 ok (Hinweis «Tragbarkeit: 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 % – änderbar in den Einstellungen.», Verweis öffnet den Dialog) |
+| #233/AK2 | Die Einstellungen haben die vier Felder mit denselben Grenzen und Prüfungen wie bisher; Standardwerte 33 %, 5 %, 1 %, … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK2` | 23.11.2026 ok (Prüfung wie bisher: Zahl; Standard ein Drittel, angezeigt 33.333; «Standardwerte» setzt zurück; übrige Einstellungen bleiben) |
+| #233/AK3 | Eine Änderung in den Einstellungen wirkt sofort auf Vorschau und Simulation (Beispiel: Belehnung 70 % statt 80 % … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK3`, [simulation.rs](../crates/engine/tests/simulation.rs) `issue_233_ak3_…` | 23.11.2026 ok (Hypothek 800'000 → 700'000 in Vorschau und Simulation) |
+| #233/AK4 | Die Planungsdatei enthält die Tragbarkeit nicht mehr. Öffnet man eine ältere Datei, deren Werte von den Einstellungen … | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK4` | 23.11.2026 ok (gespeicherte Datei ohne `affordability`; ältere Datei: Hinweis mit übernommenen und bisherigen Werten; gleiche Werte: kein Hinweis) |
+| #233/AK5 | Gespeicherte Ergebnisse und der Vergleich der Planungen zeigen weiterhin die Werte, mit denen gerechnet wurde. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK5` | 23.11.2026 ok (gespeichertes Ergebnis behält 70 % nach Änderung der Einstellungen) |
+| #233/AK6 | Hilfe (de, en, fr, it), `docs/BESCHREIBUNG.md` und Spezifikation beschreiben den neuen Ort. | ☑ | **gilt** | – | 23.11.2026 ok (Hilfe de/en/fr/it «Einstellungen» und «Tragbarkeit», `BESCHREIBUNG.md`, `ENTWICKLUNG.md`; Durchsicht, `check_i18n` 0 Befunde) |
