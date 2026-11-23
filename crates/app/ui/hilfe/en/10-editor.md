@@ -247,6 +247,7 @@ In the mode **Place of residence** you only choose the **canton**, the **municip
 - **Social deductions** for single persons or married couples, where the canton has them.
 - **Insurance premiums and savings interest:** in years with earned income the amount “with contributions to the 2nd and 3rd pillar”, otherwise the amount “without”.
 - **Flat deduction for professional expenses** on the earned income of each working person: rate, minimum and maximum of the canton, at most the earned income, no deduction without earned income. Example Zurich: 3 %, at least 2 000, at most 4 000 francs, so 3 000 with 100 000 earned income. Basel-Landschaft, Basel-Stadt and Ticino only name a maximum in the FTA data; it applies as a fixed deduction (⚠).
+- **Second earner deduction** for married couples when both have earned income: according to the rule of canton and federal tax, based on the lower earned income after the flat deduction for professional expenses and at most this amount; Bern takes 2 % of the total earned income. Example federal tax: 50 %, at least 8 600, at most 14 100 francs; Zurich a fixed 6 200 francs. Thurgau has no second earner deduction.
 
 **Tax:**
 
@@ -368,7 +369,7 @@ The tax in VivaPlan is an **estimate for planning**, not a tax assessment. The r
 
 **Reference cases:** The calculation rules are tested with cases recalculated by hand: rate from the table interpolated linearly times the tax multiplier, lump-sum withdrawals of a year combined for the rate, steps and holding period of the property gains tax. The Canton of Zurich template of the property gains tax matches the official table. So VivaPlan calculates correctly with your tables; how close this is to your actual tax depends on the tables.
 
-**Mode “Place of residence”:** 25 made-up cases in Zurich, Bern, Lucerne, Aarau and St. Gallen (income 80 000 to 300 000, wealth 300 000 to 4 million, retired persons, without children and denomination) deviate less than 1 % from the FTA tax calculator 2026; at most ±5 % is required. Such comparison values are still missing for working persons. Individual deductions, children, income-dependent deductions, travel and meal costs are not included.
+**Mode “Place of residence”:** 25 made-up cases in Zurich, Bern, Lucerne, Aarau and St. Gallen (income 80 000 to 300 000, wealth 300 000 to 4 million, retired persons, without children and denomination) deviate less than 1 % from the FTA tax calculator 2026; at most ±5 % is required. For working persons (single, married with one or two earned incomes; gross salary 70 000 to 210 000, wealth 50 000 to 800 000), 25 made-up cases in the same municipalities are also less than 1 % off the FTA tax calculator. Individual deductions, children, income-dependent deductions, travel and meal costs are not included.
 
 **Lump sums in the mode “Place of residence”:** 48 made-up cases in Zurich, Bern, Lucerne, Aarau, St. Gallen, Geneva, Fribourg and Bellinzona (lump sums of 100 000, 500 000 and 1 million, single and married) deviate at most ±5 % from the FTA tax calculator 2026. Valais and Zug are only approximated (in Zug up to about 7 %).
 
