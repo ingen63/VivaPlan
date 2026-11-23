@@ -25,6 +25,7 @@ mod gain_location;
 mod golden;
 mod household;
 mod income_deductions;
+mod income_ends;
 mod income_indexed;
 mod inflow_strategy;
 mod invariants;

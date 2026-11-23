@@ -733,6 +733,7 @@
   "flows.incomeAfterPk": "After the pension fund payout ({at:ym}), earned income is still {amount:int} per year.",
   "flows.incomeAfterPkIndexed": "After the pension fund payout ({at:ym}), earned income is still {amount:int} per year in prices at the simulation start.",
   "flows.incomeIndexed": "Rises with inflation (amounts in today's prices)",
+  "flows.incomeEndsAtRetirement": "Earned income ends with the pension fund payout",
   "flows.incomeOf": "Net earned income / year · {esc}",
   "flows.incomeHint": "like the net salary on the salary statement (item 11), incl. 13th monthly salary and bonuses; self-employed: income from self-employment",
   "flows.intro": "Monthly amounts, earned income per year as in the tax return. Spending is entered in today's prices and adjusted for inflation.",

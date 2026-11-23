@@ -724,6 +724,7 @@
   "flows.incomeAfterPk": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse ({at:ym}) noch {amount:int} pro Jahr.",
   "flows.incomeAfterPkIndexed": "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse ({at:ym}) noch {amount:int} pro Jahr in Preisen des Simulationsstarts.",
   "flows.incomeIndexed": "Steigt mit der Teuerung (Beträge in heutigen Preisen)",
+  "flows.incomeEndsAtRetirement": "Erwerbseinkommen endet mit dem Bezug der Pensionskasse",
   "flows.incomeOf": "Einkünfte aus Erwerb netto / Jahr · {esc}",
   "flows.incomeHint": "wie Nettolohn im Lohnausweis (Ziffer 11), inkl. 13. Monatslohn und Boni; Selbständige: Einkommen aus selbständiger Erwerbstätigkeit",
   "flows.intro": "Monatliche Beträge, das Erwerbseinkommen pro Jahr wie in der Steuererklärung. Ausgaben werden in heutigen Preisen erfasst und mit der Inflation fortgeschrieben.",

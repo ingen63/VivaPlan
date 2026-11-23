@@ -200,7 +200,10 @@ const SERIES_PATHS = ["flows.income", "flows.spending", "pension.pk.contribution
 /** #58: Labels of the choice for the earned income of each person. */
 let INCOME_INDEXED;
 onLanguage(() => INCOME_INDEXED = tr("flows.incomeIndexed"));
-const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeIndexed: true,
+/** #236: Switch per person: the earned income ends with the milestone «Bezug Pensionskasse». */
+const incomeEnds = path => `<div style="margin:-8px 0 12px">${Chk(path, tr("flows.incomeEndsAtRetirement"))}</div>`;
+// #236/AK1: a new person's earned income ends with their pension fund payout
+const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeIndexed: true, incomeEndsAtRetirement: true,
   pk: { capital: 0, at: "retire2", lumpsum: 0, conversion: 0.05, contribution: { mode: "const", value: 0 }, interest: { mode: "const", value: 0.01 } },
   ahv: { monthly: 2000, at: "ahv2", indexed: true } });
 function newPropId(p = state) {
@@ -574,9 +577,9 @@ R.pillar3a = () => {
 R.flows = () => `
   <h2>${tr("section.flows")}</h2><p class="lead">${tr("flows.intro")}</p>
   <div class="card">${Series("flows.income", state.partner ? tr("flows.incomeOf", { esc: esc(state.household.persons[0].name) }) : tr("flows.income"), "chfyear", "", tr("flows.incomeHint"))}
-    <div style="margin:-4px 0 12px">${Chk("flows.incomeIndexed", INCOME_INDEXED)}</div>
+    <div style="margin:-4px 0 12px">${Chk("flows.incomeIndexed", INCOME_INDEXED)}</div>${incomeEnds("flows.incomeEndsAtRetirement")}
     ${state.partner ? `${Series("partner.income", tr("flows.incomeOf", { esc: esc(state.household.persons[1].name) }), "chfyear", "", tr("flows.incomeHint"))}
-    <div style="margin:-4px 0 12px">${Chk("partner.incomeIndexed", INCOME_INDEXED)}</div>` : ""}
+    <div style="margin:-4px 0 12px">${Chk("partner.incomeIndexed", INCOME_INDEXED)}</div>${incomeEnds("partner.incomeEndsAtRetirement")}` : ""}
     ${Series("flows.spending", tr("flows.spending"), "chf", state.partner ? tr("flows.spendingNote") : tr("flows.todayPrices"))}
     <p class="hint">${C("housingshare")}</p></div>
   <div class="card"><h3>${tr("flows.oneOff")} <span class="sub">${tr("flows.oneOffHint")}</span></h3>
@@ -2138,7 +2141,8 @@ function blankPlan(base, now = new Date()) {
   p.pillar3a = [];
   p.pension = { ...p.pension, pk: { ...p.pension.pk, capital: 0, at: "retire", lumpsum: 0, contribution: { ...zero }, interest: { mode: "const", value: 0.02 } },
     ahv: { ...p.pension.ahv, monthly: 0, at: "ahv" } };
-  p.flows = { income: { ...zero }, incomeIndexed: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true };
+  // #236/AK1: new plans end the earned income with the pension fund payout
+  p.flows = { income: { ...zero }, incomeIndexed: true, incomeEndsAtRetirement: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true };
   p.taxes = { ...p.taxes, indexed: true }; // #66/AK4: new plans with «Tarife mit der Teuerung»
   // #131/AK3: rows «bis Pensionierung» and «ab Pensionierung» (own value 0, in the mode «Wohnort» the proposal); AK1: pillar 3a
   p.taxes.deductions = [{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }];

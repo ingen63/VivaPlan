@@ -38,8 +38,9 @@ Der Editor führt durch zwölf Abschnitte:
 - **Meilensteine:** Zeitpunkte als Datum oder als Alter einer Person («mit 63»). Jede Person hat zwei feste,
   nicht löschbare Meilensteine: **Bezug Pensionskasse** (58 bis 65 Jahre) und **AHV-Bezug** (63 bis 70 Jahre), beide
   standardmässig 65. Alle anderen Angaben können sich auf Meilensteine beziehen; verschiebt man den Bezug der
-  Pensionskasse, verschiebt sich alles, was daran hängt. Das Ende des Erwerbseinkommens steht im Einkommen; läuft es nach
-  dem Bezug der Pensionskasse weiter, warnt die Prüfung.
+  Pensionskasse, verschiebt sich alles, was daran hängt. Das Erwerbseinkommen einer Person endet mit ihrem Bezug der
+  Pensionskasse, solange der Schalter dazu im Einkommen eingeschaltet ist (#236); läuft es bei ausgeschaltetem Schalter
+  nach dem Bezug der Pensionskasse weiter, warnt die Prüfung.
 - **Vorsorge:** Pensionskasse mit Guthaben, Beiträgen, Verzinsung, Umwandlungssatz und Kapitalbezug in Prozent;
   AHV-Rente mit oder ohne Teuerungsanpassung, eingegeben als Rente mit 65; bei Bezug vor oder nach 65 kürzt bzw.
   erhöht die App sie selbst nach den Sätzen der AHV (Vorbezug 6,8 % je Jahr, höchstens 13,6 %; Aufschub 5,2 % bis
@@ -58,6 +59,11 @@ Der Editor führt durch zwölf Abschnitte:
   im Lohnausweis Ziffer 11); daneben steht der Betrag pro Monat. Gespeichert und gerechnet wird pro Monat (ein Zwölftel).
   Das Erwerbseinkommen jeder Person kann wahlweise mit der Teuerung steigen (Beträge in heutigen Preisen; neue
   Planungen: ja).
+  Je Person gibt es den Schalter «Erwerbseinkommen endet mit dem Bezug der Pensionskasse» (#236; neue Planungen und
+  eine neu hinzugefügte zweite Person: ein, ältere Planungen ohne Angabe: aus). Eingeschaltet ist das
+  Erwerbseinkommen ab dem Monat ihres Meilensteins «Bezug Pensionskasse» 0, auch wenn die Zeitreihe danach einen Wert
+  hat; das gilt auch für grosse Säule 3a, Berufskosten, Abzüge für Erwerbstätige und Zweitverdienerabzug.
+  Ausgeschaltet (Teilpensionierung, Arbeit nach der Pensionierung) gilt die Zeitreihe wie eingegeben.
   Die Lebenshaltungskosten enthalten Miete bzw. Wohnkosten; die App zieht den Wohnanteil zum Simulationsstart ab und
   rechnet mit den simulierten Wohnkosten (Erneuerung, Verkauf, Miete).
 - **Vermögen & Anlage:** Aktien, Obligationen und Cash sowie die Aktienquote; neben Aktien und Obligationen steht ihr

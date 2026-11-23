@@ -240,6 +240,8 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         income: c.series_or_zero("MoneyFlows.Income")?,
         // In the old program the income stayed the same in nominal terms (#58).
         income_indexed: false,
+        // The old program let the income run on after retirement (#236).
+        income_ends_at_retirement: false,
         spending: c.series_or_zero("MoneyFlows.Spendings")?,
         savings: c.series("MoneyFlows.Savings", |x| x)?,
         extras,

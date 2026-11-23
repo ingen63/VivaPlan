@@ -409,6 +409,12 @@ Reihenfolge pro Monat:
    (Betrag / (1 + Satz), auf Rappen) und meldet es je Person einmalig); Immobilien (Notverkauf aus dem Vormonat, Kauf, Verkauf mit
    Grundstückgewinnsteuer, Hypothekarperioden); Säule 3a (Verzinsung, Auszahlung).
 3. **Geldflüsse** in das Cash: Einkommen + Renten + Zuflüsse − Lebenshaltung − Wohnkosten.
+   **Ende des Erwerbseinkommens (#236):** `flows.incomeEndsAtRetirement` bzw. `partner.incomeEndsAtRetirement`
+   (fehlt: `false`, ältere Planungen und Golden-Dateien unverändert; `blankPlan` und eine neue zweite Person: `true`).
+   Eingeschaltet ist das Erwerbseinkommen der Person ab dem Monat ihres Meilensteins `retire` bzw. `retire2` 0
+   (`PersonCfg::income_end`, `Simulator::person_earned`), unabhängig von `pension.pk.at`. Alles, was das Erwerbseinkommen
+   nutzt (Geldflüsse, Tragbarkeit, Berufskosten, Variante `working`, Zweitverdienerabzug, grosse Säule 3a, Netto-Bedarf),
+   geht über `person_earned`. Die Warnung `income_after_pk` entfällt dann für diese Person.
    **13. AHV-Rente (#190):** ab 2026 im Dezember zusätzlich zur AHV des Monats; Höhe 1/12 der von Januar bis Dezember
    ausbezahlten AHV des Haushalts (nach dem Plafond für Ehepaare, keine zweite Deckelung), je Monat auf Rappen, die Summe
    kaufmännisch auf ganze Franken gerundet (KS 13. AR Rz 4001–4005). Monate des Startjahrs vor dem Simulationsstart zählen

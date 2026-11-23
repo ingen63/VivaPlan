@@ -733,6 +733,7 @@
   "flows.incomeAfterPk": "Le revenu de l’activité lucrative s’élève encore à {amount:int} par an après la prestation de la caisse de pension ({at:ym}).",
   "flows.incomeAfterPkIndexed": "Le revenu de l’activité lucrative s’élève encore à {amount:int} par an aux prix du début de la simulation après la prestation de la caisse de pension ({at:ym}).",
   "flows.incomeIndexed": "Augmente avec le renchérissement (montants aux prix actuels)",
+  "flows.incomeEndsAtRetirement": "Le revenu de l’activité lucrative prend fin avec la prestation de la caisse de pension",
   "flows.incomeOf": "Revenu net de l’activité lucrative / an · {esc}",
   "flows.incomeHint": "comme le salaire net du certificat de salaire (chiffre 11), y c. 13e salaire et bonus ; indépendants : revenu de l’activité lucrative indépendante",
   "flows.intro": "Montants mensuels, le revenu de l’activité lucrative par an comme dans la déclaration d’impôt. Les dépenses sont saisies aux prix actuels et indexées à l’inflation.",

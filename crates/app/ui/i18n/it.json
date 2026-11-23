@@ -733,6 +733,7 @@
   "flows.incomeAfterPk": "Dopo la prestazione della cassa pensione ({at:ym}) il reddito da attività lucrativa ammonta ancora a {amount:int} all’anno.",
   "flows.incomeAfterPkIndexed": "Dopo la prestazione della cassa pensione ({at:ym}) il reddito da attività lucrativa ammonta ancora a {amount:int} all’anno ai prezzi dell’inizio della simulazione.",
   "flows.incomeIndexed": "Aumenta con il rincaro (importi ai prezzi attuali)",
+  "flows.incomeEndsAtRetirement": "Il reddito da attività lucrativa termina con la prestazione della cassa pensione",
   "flows.incomeOf": "Reddito da attività lucrativa netto / anno · {esc}",
   "flows.incomeHint": "come il salario netto del certificato di salario (cifra 11), incl. 13a mensilità e bonus; indipendenti: reddito da attività lucrativa indipendente",
   "flows.intro": "Importi mensili, il reddito da attività lucrativa all’anno come nella dichiarazione d’imposta. Le spese sono registrate ai prezzi attuali e adeguate all’inflazione.",

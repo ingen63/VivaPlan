@@ -704,6 +704,30 @@ fn issue_207_ak2_ak3_set_writes_a_new_file() {
     assert!(text(&o).contains("ERROR [taxes]"), "{}", text(&o));
 }
 
+// #236/AK5: The CLI knows the switch «Erwerbseinkommen endet mit dem Bezug der Pensionskasse»: schema, `set`,
+// `validate` (no warning about earned income after the payout) and `run`.
+#[test]
+fn issue_236_ak5_cli_knows_the_income_end_switch() {
+    let o = run(&["schema"]);
+    let schema = String::from_utf8_lossy(&o.stdout).into_owned();
+    assert_eq!(schema.matches("incomeEndsAtRetirement").count(), 2, "flows and partner");
+    let (_tmp, d) = tmp("income-end");
+    // income 10'000 also after the payout: warning
+    let p = plan_file(&d, "fixed", |v| v["flows"]["income"] = serde_json::json!(10_000));
+    let o = run(&["validate", &p]);
+    assert!(text(&o).contains("earned income is still 10'000"), "{}", text(&o));
+    let o = run(&["set", &p, "flows.incomeEndsAtRetirement=true"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let on = d.join("fixed-1.vplan");
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&on).unwrap()).unwrap();
+    assert_eq!(v["flows"]["incomeEndsAtRetirement"], true);
+    let o = run(&["validate", on.to_str().unwrap()]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert!(!text(&o).contains("earned income is still"), "{}", text(&o));
+    let o = run(&["run", on.to_str().unwrap()]);
+    assert!(o.status.success(), "{}", text(&o));
+}
+
 // #207/AK4: `diff` lists per difference the field path, the old and the new value.
 #[test]
 fn issue_207_ak4_diff_of_two_plans() {

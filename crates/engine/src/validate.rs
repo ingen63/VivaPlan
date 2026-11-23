@@ -490,15 +490,21 @@ fn check(plan: &Plan, v: &mut Issues) {
                 v.warn("pension", msg!(ahv_deferral_short, who = who, months = offset));
             }
         }
-        // #51: Earned income after the pension fund payout (warning).
-        let (income, indexed) = if i == 0 {
-            (Some(&plan.flows.income), plan.flows.income_indexed)
+        // #51: Earned income after the pension fund payout (warning). #236: not if the income ends there anyway.
+        let (income, indexed, ends) = if i == 0 {
+            (
+                Some(&plan.flows.income),
+                plan.flows.income_indexed,
+                plan.flows.income_ends_at_retirement,
+            )
         } else {
             (
                 plan.partner.as_ref().map(|q| &q.income),
                 plan.partner.as_ref().is_some_and(|q| q.income_indexed),
+                plan.partner.as_ref().is_some_and(|q| q.income_ends_at_retirement),
             )
         };
+        let income = income.filter(|_| !ends);
         // #58: Indexed to inflation, the amount is in prices of the start (inflation depends on the path).
         // #171: Indexed and nominal are two messages.
         if let (Some(income), Ok(pk_at)) = (income, r.milestone(pk_id)) {

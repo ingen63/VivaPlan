@@ -210,6 +210,10 @@ pub struct Partner {
     /// #58: Earned income rises with inflation (amounts in prices of the simulation start); missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_indexed: bool,
+    /// #236: Earned income ends with the person's milestone «Bezug Pensionskasse» (`retire`, `retire2`): from that
+    /// month it is 0 whatever the series says. New plans switch it on; missing (older plans): no.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub income_ends_at_retirement: bool,
     pub pk: PensionFund,
     pub ahv: Ahv,
 }
@@ -432,6 +436,10 @@ pub struct Flows {
     /// #58: Earned income rises with inflation (amounts in prices of the simulation start); missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_indexed: bool,
+    /// #236: Earned income ends with the person's milestone «Bezug Pensionskasse» (`retire`, `retire2`): from that
+    /// month it is 0 whatever the series says. New plans switch it on; missing (older plans): no.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub income_ends_at_retirement: bool,
     /// Living costs per month in prices at the simulation start.
     pub spending: Series,
     /// #53: Living costs include rent or housing costs. The simulation deducts the housing share

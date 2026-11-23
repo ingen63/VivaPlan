@@ -441,6 +441,46 @@ test.describe("Earned income with inflation (#58)", () => {
   });
 });
 
+test.describe("Earned income ends with the pension fund payout (#236)", () => {
+  test("AK1: new plans and a new second person with the switch on", async ({ page }) => {
+    const errors = await open(page);
+    await page.locator('button[data-action="new"]').click();
+    await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0);
+    expect(await page.evaluate(() => state.flows.incomeEndsAtRetirement)).toBe(true);
+    await nav(page, "Einnahmen & Ausgaben");
+    const own = page.locator('input[data-path="flows.incomeEndsAtRetirement"]');
+    await expect(own).toBeChecked();
+    await expect(page.locator("label.check", { has: own })).toContainText("Erwerbseinkommen endet mit dem Bezug der Pensionskasse");
+    await nav(page, "Haushalt & Projekt");
+    await page.getByRole("button", { name: "+ Zweite Person" }).click();
+    await nav(page, "Einnahmen & Ausgaben");
+    await expect(page.locator('input[data-path="partner.incomeEndsAtRetirement"]')).toBeChecked();
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK4, AK5: older plan opens with the switch off; switching changes the preview and is kept in the plan", async ({ page }) => {
+    const errors = await open(page, "flows");
+    const own = page.locator('input[data-path="flows.incomeEndsAtRetirement"]');
+    await expect(own).not.toBeChecked(); // example plan without a value: off
+    // income 10'000 per month also after the payout
+    await page.evaluate(() => { state.flows.income = { mode: "const", value: 10000 }; renderSection(); });
+    const warning = page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" });
+    await expect(warning).toHaveCount(1);
+    const endValue = () => page.evaluate(() => lastSim?.total.at(-1));
+    await expect(kpiValue(page, "Vermögen am Ende")).not.toHaveText("–");
+    await expect.poll(endValue).toBeGreaterThan(0);
+    const before = await endValue();
+    await own.check();
+    expect(await page.evaluate(() => state.flows.incomeEndsAtRetirement)).toBe(true);
+    await expect.poll(endValue).toBeLessThan(before);
+    await expect(warning).toHaveCount(0); // AK5: the validation knows the switch
+    await own.uncheck();
+    expect(await page.evaluate(() => state.flows.incomeEndsAtRetirement)).toBe(false);
+    await expect.poll(endValue).toBe(before);
+    await noErrors(page, errors);
+  });
+});
+
 test.describe("Tax tariffs with inflation (#66)", () => {
   test("AK4: option in the taxes section, off for existing plans, on for new plans, named in the overview", async ({ page }) => {
     const errors = await open(page, "taxes");

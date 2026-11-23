@@ -733,6 +733,8 @@ struct PersonCfg {
     income: Curve,
     /// #58: Income in prices of the start, extrapolated with the path's price index.
     income_indexed: bool,
+    /// #236: First month without earned income (milestone «Bezug Pensionskasse» of the person), if the switch is on.
+    income_end: Option<YearMonth>,
     pk_contribution: Curve,
     pk_interest: Curve,
     pk_capital: f64,
@@ -899,17 +901,26 @@ impl Simulator {
         let start = r.milestone("start")?;
         let end = r.milestone("end")?;
         let curve = |s: &crate::model::Series| Curve::compile(s, &r);
-        let person_cfg = |birth: YearMonth,
+        let person_cfg = |index: usize,
+                          birth: YearMonth,
                           income: &crate::model::Series,
                           income_indexed: bool,
+                          income_ends: bool,
                           pk: &crate::model::PensionFund,
                           ahv: &crate::model::Ahv|
          -> Result<PersonCfg> {
             let ahv_at = r.resolve(&ahv.at)?;
+            // #236: the person's own milestone «Bezug Pensionskasse» (`retire`, `retire2`)
+            let income_end = if income_ends {
+                Some(r.milestone(crate::model::person_milestones(index).0)?)
+            } else {
+                None
+            };
             Ok(PersonCfg {
                 birth,
                 income: curve(income)?,
                 income_indexed,
+                income_end,
                 pk_contribution: curve(&pk.contribution)?,
                 pk_interest: curve(&pk.interest)?,
                 pk_capital: pk.capital,
@@ -921,14 +932,24 @@ impl Simulator {
         };
         let persons = &plan.household.persons;
         let mut people = vec![person_cfg(
+            0,
             persons[0].birth,
             &plan.flows.income,
             plan.flows.income_indexed,
+            plan.flows.income_ends_at_retirement,
             &plan.pension.pk,
             &plan.pension.ahv,
         )?];
         if let (Some(q), Some(p2)) = (&plan.partner, persons.get(1)) {
-            people.push(person_cfg(p2.birth, &q.income, q.income_indexed, &q.pk, &q.ahv)?);
+            people.push(person_cfg(
+                1,
+                p2.birth,
+                &q.income,
+                q.income_indexed,
+                q.income_ends_at_retirement,
+                &q.pk,
+                &q.ahv,
+            )?);
         }
         let couple = people.len() > 1 && plan.household.married;
         let separate = people.len() > 1 && !plan.household.married;
@@ -1195,9 +1216,12 @@ impl Simulator {
         (0..self.people.len()).map(|i| self.person_earned(i, m, infl_idx)).sum()
     }
 
-    /// Net earned income of person `i` in month `m`.
+    /// Net earned income of person `i` in month `m`; #236: 0 from the end of the earned income on.
     fn person_earned(&self, i: usize, m: YearMonth, infl_idx: f64) -> f64 {
         let p = &self.people[i];
+        if p.income_end.is_some_and(|end| m >= end) {
+            return 0.0;
+        }
         p.income.at(m) * if p.income_indexed { infl_idx } else { 1.0 }
     }
 
