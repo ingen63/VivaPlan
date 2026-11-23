@@ -465,3 +465,62 @@ fn issue_47_single_person_starts_at_retirement() {
         "ab Pensionierung",
     );
 }
+
+// ---------------------------------------------------------------------------------------------
+// #239
+// ---------------------------------------------------------------------------------------------
+
+/// Base plan whose liquid wealth is used up in March 2035 by a one-off expense (after the start of the guardrails).
+fn used_up(v: Value) -> Value {
+    let mut v = v;
+    v["flows"]["extras"] = json!([{"date": "2035-03", "amount": -2_000_000, "label": "Ausgabe"}]);
+    v
+}
+
+/// Parameters of the withdrawal events that are `null` when serialized like the result for the user interface
+/// (serde_json writes NaN and ∞ as `null`, #221; the withdrawal events have only numbers and the currency).
+fn non_finite_params(r: &SimResult) -> Vec<String> {
+    r.events
+        .iter()
+        .filter(|e| e.kind == EventKind::Withdrawal)
+        .filter_map(|e| {
+            let v = serde_json::to_value(e).unwrap();
+            let params = v.get("params")?.as_object()?.clone();
+            params
+                .iter()
+                .find(|(_, x)| x.is_null())
+                .map(|(k, _)| format!("{:?} {}: {k}", e.month, e.text.code()))
+        })
+        .collect()
+}
+
+/// #239/AK1, AK2: With used-up liquid wealth the guardrails neither cut nor raise (pure and combined); the
+/// simulation reports the used-up wealth.
+#[test]
+fn issue_239_ak1_ak2_no_guardrail_adjustment_without_liquid_wealth() {
+    for (name, v) in [("pure", pure(used_up(base()))), ("combined", combined(used_up(base())))] {
+        let r = run(&v);
+        let depleted = r
+            .summary
+            .depleted
+            .unwrap_or_else(|| panic!("{name}: Vermögen aufgebraucht"));
+        assert!(depleted <= ym(2035, 3), "{name}: {depleted:?}");
+        let after: Vec<_> = withdrawal_events(&r)
+            .into_iter()
+            .filter(|(m, t)| *m > ym(2035, 3) && (t.contains("cut by") || t.contains("raised by")))
+            .collect();
+        assert!(
+            after.is_empty(),
+            "{name}: keine Leitplanken-Ereignisse ohne Vermögen: {after:?}"
+        );
+    }
+}
+
+/// #239/AK3: No event of a run with used-up wealth contains a non-finite number.
+#[test]
+fn issue_239_ak3_events_contain_only_finite_numbers() {
+    for (name, v) in [("pure", pure(used_up(base()))), ("combined", combined(used_up(base())))] {
+        let r = run(&v);
+        assert_eq!(non_finite_params(&r), Vec::<String>::new(), "{name}");
+    }
+}

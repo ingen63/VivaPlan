@@ -3333,7 +3333,12 @@ impl<'a> Run<'a> {
             Rule::Guardrails {
                 upper, lower, adjust, ..
             } => {
-                let current = |b: f64| if liquid > 0.0 { b / liquid } else { f64::INFINITY };
+                // #239: Without liquid wealth there is no withdrawal rate: the budget stays and no guardrail event
+                // (the used-up wealth is reported separately).
+                if liquid <= 0.0 {
+                    return;
+                }
+                let current = |b: f64| b / liquid;
                 // After a losing year no inflation adjustment while the rate is above the initial rate.
                 if !(self.stock_prev_year < 0.0 && current(self.budget) > self.budget_rate0) {
                     self.budget *= infl_factor;
