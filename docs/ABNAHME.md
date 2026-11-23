@@ -904,3 +904,15 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #221/AK5 | Ein Befehl mit gültigen Argumenten, der ein Ergebnis mit NaN oder ∞ liefert, lässt den Test fehlschlagen. | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak5_…`; [finite.rs](../crates/engine/src/finite.rs) `issue_221_ak5_…` | 23.11.2026 ok (`dispatch` meldet NaN/∞ als `result_not_finite`, der Test verlangt mit gültigen Argumenten ein Ergebnis) |
 | #221/AK6 | Die Fallzahl folgt dem Budget wie bei proptest (wenige Fälle bei jedem Push, viele nächtlich). | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak6_…` | 23.11.2026 ok (`PROPTEST_CASES` 256 → 133 Aufrufe, 10'000 → alle systematischen und 625 zufällige) |
 | #221/AK7 | `docs/TESTS.md` nennt den Test in der Schicht 5. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
+### #225 Rust-Tests unter Windows bei jedem Push
+
+[Issue #225](https://github.com/ingen63/VivaPlan/issues/225) · offen (`implemented`) · Umsetzung: 0099b33
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #225/AK1 | `test-quality.yml` führt die Rust-Tests bei jedem Push auf `main` auch unter Windows aus (ohne Abdeckung, ohne … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 23.11.2026 teilweise: Job `tests-os` mit Matrix `windows-latest` beim Push, `cargo nextest run --workspace` ohne llvm-cov/mutants; Lauf beim Push erst nach dem nächsten Push belegbar |
+| #225/AK2 | Der Windows-Job läuft nur, wenn Rust-Code, `Cargo.toml`/`Cargo.lock` oder der Workflow geändert wurden (wie der Job … | ☑ | **gilt** | kein Test (Filter von Hand gegen echte Pushes) | 23.11.2026 ok: Ausgabe `rust` des Jobs `changes`; Compare-API gegen 4 Pushes mit Rust-Code (`true`) und 1 nur mit Doku (`false`); unbekannter Stand → `true` |
+| #225/AK3 | Die Dauer des Jobs und die zusätzlichen Actions-Minuten pro Woche sind gemessen und im Issue festgehalten; überschreiten … | ☐ | **gilt** (Budget 300 min/Woche, Klärung vom 23.11.2026) | kein Test | 23.11.2026 teilweise: Schätzung aus nächtlichen Läufen im Issue (6–8 min, ≈160–184 min/Woche, unter Budget → ganzer Workspace); Messung beim Push fehlt |
+| #225/AK4 | macOS bleibt nächtlich. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Matrix beim Push nur `windows-latest`, sonst Windows und macOS |
+| #225/AK5 | `docs/TESTS.md`, Abschnitt «Plattformen», ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
