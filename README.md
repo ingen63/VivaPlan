@@ -62,13 +62,17 @@ Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu. Ei
 
 ## Installation
 
-Das Paket für macOS (.dmg) steht unter [Releases](https://github.com/ingen63/VivaPlan/releases). Pakete für Windows
-und Linux gibt es zurzeit nicht.
+Pakete für macOS (.dmg), Windows (.msi, .exe) und Linux (.deb, .AppImage; .rpm nur bei Versionen ohne «beta») stehen
+unter [Releases](https://github.com/ingen63/VivaPlan/releases).
 
-Das Paket ist nicht signiert. Beim ersten Start warnt das Betriebssystem deshalb:
+Die Pakete sind nicht signiert. Beim ersten Start warnt das Betriebssystem deshalb:
 
 - **macOS:** Die App in den Ordner «Programme» ziehen und öffnen. Erscheint die Meldung, dass sie nicht geöffnet werden
   kann, unter *Systemeinstellungen → Datenschutz & Sicherheit* auf «Dennoch öffnen» klicken.
+- **Windows:** Im blauen Fenster «Der Computer wurde durch Windows geschützt» auf «Weitere Informationen» und dann
+  «Trotzdem ausführen» klicken.
+- **Linux:** Die AppImage-Datei ausführbar machen (`chmod +x VivaPlan*.AppImage`) oder das .deb- bzw. .rpm-Paket
+  installieren.
 
 ## Erste Schritte
 

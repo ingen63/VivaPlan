@@ -369,9 +369,10 @@ Sicherungskopie `.bak`). `vivaplan diff <a> <b>` listet je Unterschied Feldpfad,
 
 ## Installation
 
-Das Paket für **macOS** (.dmg) baut ein GitHub-Workflow beim Setzen eines Versions-Tags und legt es als Release-Entwurf
-ab. Pakete für Windows und Linux werden bis auf Weiteres nicht gebaut (#202, wieder eingeschaltet mit #203). Das Paket ist
-nicht signiert, macOS zeigt deshalb beim ersten Start eine Warnung.
+Pakete für **Windows** (.msi, .exe), **Linux** (.deb, .AppImage; .rpm nur ohne Vorabversion) und **macOS** (.dmg) baut
+ein GitHub-Workflow beim Setzen eines Versions-Tags und legt sie als Release-Entwurf ab (#203). Von Hand gestartet baut er
+nur die gewählten Plattformen, auf Wunsch für ein bestehendes Tag. Die Pakete sind nicht signiert, Windows und macOS
+zeigen deshalb beim ersten Start eine Warnung.
 
 ## Verlässlichkeit
 

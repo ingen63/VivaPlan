@@ -1,27 +1,63 @@
-# Baut die Installationspakete, bis auf Weiteres nur macOS (.dmg, #202). Windows (.msi, .exe) und Linux (.deb, .AppImage;
-# .rpm nur ohne Vorabversion) sind abgeschaltet, um Actions-Minuten zu sparen; #203 schaltet sie wieder ein (Einträge in
-# der Matrix unten; die Schritte für Linux und Windows sind noch vorhanden).
-# Start von Hand (Actions → «Installationspakete» → Run workflow) oder durch ein Versions-Tag (v0.3.0):
-# dann entsteht zusätzlich ein Entwurf unter «Releases» mit allen Paketen und den Release Notes in vier Sprachen (#188).
+# Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .AppImage; .rpm nur ohne Vorabversion) und macOS
+# (.dmg). Ein Versions-Tag (v0.3.0) baut alle drei und legt einen Entwurf unter «Releases» an, mit den Release Notes in
+# vier Sprachen (#188, #203). Von Hand (Actions → «Installationspakete» → Run workflow, oder
+# `gh workflow run pakete.yml -f tag=v1.0.0-beta.3 -f plattformen=windows,linux`) baut nur die gewählten Plattformen
+# (Vorgabe macOS, spart Actions-Minuten, #202): mit «tag» den Stand dieses Tags, die Pakete kommen in dessen
+# Release-Entwurf; ohne «tag» den Stand des gewählten Zweigs, nur als Artefakte.
 name: Installationspakete
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Versions-Tag (z. B. v1.0.0-beta.3); leer = Stand des Zweigs, nur Artefakte"
+        required: false
+        default: ""
+      plattformen:
+        description: "Plattformen, durch Komma getrennt: macos, windows, linux"
+        required: false
+        default: "macos"
+
+env:
+  # Tag des Laufs: beim Tag-Push der Ref, von Hand die Eingabe «tag» (leer = kein Release)
+  TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
 
 jobs:
+  # #203: Matrix der Plattformen; Tag-Push alle drei, von Hand die Eingabe «plattformen»
+  matrix:
+    runs-on: ubuntu-22.04
+    outputs:
+      include: ${{ steps.m.outputs.include }}
+    steps:
+      - id: m
+        env:
+          WANTED: ${{ github.event_name == 'push' && 'macos,windows,linux' || inputs.plattformen }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          runners = {"macos": "macos-latest", "windows": "windows-latest", "linux": "ubuntu-22.04"}
+          wanted = [w.strip().lower() for w in os.environ["WANTED"].split(",") if w.strip()]
+          unknown = [w for w in wanted if w not in runners]
+          if unknown or not wanted:
+              raise SystemExit(f"unbekannte oder keine Plattform: {unknown or wanted}; erlaubt: macos, windows, linux")
+          print("include=" + json.dumps([{"name": w, "os": runners[w]} for w in dict.fromkeys(wanted)]))
+          PY
+
   test:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG || github.ref }}
       # #188/AK7: ohne Release Notes der Version in allen vier Sprachen bricht der Paketbau hier ab.
       - name: Release Notes der Version
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.TAG != ''
         run: |
           python3 tools/changelog.py check
-          python3 tools/changelog.py notes "$GITHUB_REF_NAME" > /dev/null
-          python3 tools/changelog.py title "$GITHUB_REF_NAME"
+          python3 tools/changelog.py notes "$TAG" > /dev/null
+          python3 tools/changelog.py title "$TAG"
       - uses: ./.github/actions/linux-deps
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@v2
@@ -30,21 +66,16 @@ jobs:
       - run: cargo nextest run --workspace
 
   pakete:
-    needs: test
+    needs: [matrix, test]
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # #202: Windows und Linux abgeschaltet, #203 schaltet sie wieder ein:
-          # - name: windows
-          #   os: windows-latest
-          # - name: linux
-          #   os: ubuntu-22.04
-          - name: macos
-            os: macos-latest
+        include: ${{ fromJSON(needs.matrix.outputs.include) }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG || github.ref }}
       - name: Linux-Abhängigkeiten
         if: matrix.name == 'linux'
         uses: ./.github/actions/linux-deps
@@ -98,20 +129,23 @@ jobs:
             target/release/bundle/dmg/*.dmg
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # job-level `if` kennt `env` nicht: dieselbe Bedingung wie TAG
+    if: github.event_name == 'push' || inputs.tag != ''
     needs: pakete
     runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
       # #188: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar (tools/changelog.py notes)
       # #188: Titel sprachneutral aus der Version (v1.0.0-beta.2 → «VivaPlan 1.0.0 Beta 2»)
       - name: Release Notes und Titel
         id: notes
         run: |
-          python3 tools/changelog.py notes "$GITHUB_REF_NAME" -o "$RUNNER_TEMP/release-notes.md"
-          echo "title=$(python3 tools/changelog.py title "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
+          python3 tools/changelog.py notes "$TAG" -o "$RUNNER_TEMP/release-notes.md"
+          echo "title=$(python3 tools/changelog.py title "$TAG")" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: pakete
@@ -121,10 +155,25 @@ jobs:
           mkdir flach
           find pakete -type f -exec mv {} flach/ \;
           ls -l flach
+      # Tag-Push: neuer Entwurf mit allen Paketen
       - uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push'
         with:
           draft: true
           name: ${{ steps.notes.outputs.title }}
           body_path: ${{ runner.temp }}/release-notes.md
           fail_on_unmatched_files: true
           files: flach/*
+      # #203: von Hand mit «tag»: Pakete in den bestehenden Release (auch Entwurf) dieses Tags legen; gleichnamige
+      # Dateien werden ersetzt. Gibt es noch keinen Release, entsteht ein Entwurf mit Titel und Release Notes.
+      - name: Pakete in den Release des Tags legen
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.notes.outputs.title }}
+        run: |
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag --title "$TITLE" \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber flach/*
