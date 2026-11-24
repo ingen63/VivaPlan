@@ -1942,3 +1942,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #253/AK3 | PK rechnet mit 0, Werte bleiben gespeichert, Warnung #152 entfällt. | ☑ | **gilt** | `tests/no_pension_fund.rs` | 24.11.2026 ok (Handwerte 2 083.33 / 0) |
 | #253/AK4 | Ohne Schalter unverändert, Golden unverändert. | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (1206/1206 grün) |
 | #253/AK5 | Tests, Hilfe 4 Sprachen, BESCHREIBUNG, Spezifikation nachgeführt. | ☑ | **gilt** | — | 24.11.2026 ok (Durchsicht) |
+
+### #257 Auswahl «Steuerwert» bei Immobilien in Französisch und Italienisch abgeschnitten
+
+[Issue #257](https://github.com/ingen63/VivaPlan/issues/257) · geschlossen · Umsetzung: 4c5de87
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #257/AK1 | Die Auswahl für den Steuerwert zeigt in de, en, fr und it jede Wahl vollständig, ohne Abschneiden. | ☑ | **gilt** (Auswahl so breit wie die längste Wahl, Betrag bricht bei Platzmangel um; Ursache war die feste Breite aus #255) | e2e `ui-textfit.spec.js` AK1 (#257) | 24.11.2026 ok (e2e grün, 4 Sprachen, 1440 und 1000 px, alle drei Wahlen) |
+| #257/AK2 | `npx playwright test ui-textfit.spec.js` ist in allen vier Sprachen grün. | ☑ | **gilt** | e2e `ui-textfit.spec.js` | 24.11.2026 ok (72/72 grün zusammen mit `ui-steuern.spec.js`) |
