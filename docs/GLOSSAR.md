@@ -88,6 +88,7 @@ Wörter in Grossbuchstaben nicht.
 | ungedeckte Ausgaben, Bedarf | `need` | `NeedBasis` |
 | Geldfluss | `flow` | `Flows` |
 | Zeitreihe (Wert über die Zeit) | `series` | `Series`, `SeriesRow` |
+| Stützpunkt eines Verlaufs (#217) | `point` | `SeriesPoint`; Gerade `linear`, Tabelle `table`, Faktor `factor`, Treppe `step` |
 
 ## Vermögen und Anlage
 

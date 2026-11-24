@@ -2098,6 +2098,63 @@
     "text": "Unknown time reference “Person 2”"
   },
   {
+    "code": "series_point_when",
+    "params": {},
+    "template": "A support point needs either a point in time (“at”) or an age (“age”)",
+    "text": "A support point needs either a point in time (“at”) or an age (“age”)"
+  },
+  {
+    "code": "series_point_not_fixed",
+    "params": {
+      "reference": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{reference}” is not a fixed point in time; a support point needs a date, a milestone or an age",
+    "text": "“Person 2” is not a fixed point in time; a support point needs a date, a milestone or an age"
+  },
+  {
+    "code": "series_point_age_invalid",
+    "params": {
+      "years": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Support point: age {years} is not possible",
+    "text": "Support point: age Person 2 is not possible"
+  },
+  {
+    "code": "series_point_person_unknown",
+    "params": {
+      "person": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Support point: unknown person “{person}”",
+    "text": "Support point: unknown person “Person 2”"
+  },
+  {
+    "code": "linear_end_before_start",
+    "params": {
+      "end": "2031-07",
+      "start": "2031-07"
+    },
+    "template": "The end ({end:ym}) of the straight line is before its start ({start:ym})",
+    "text": "The end (07.2031) of the straight line is before its start (07.2031)"
+  },
+  {
     "code": "format_unknown",
     "params": {
       "format": {
@@ -3996,6 +4053,27 @@
     },
     "template": "“{path}”: {value} does not fit, expected {expected}",
     "text": "“Person 2”: Person 2 does not fit, expected Person 2"
+  },
+  {
+    "code": "field_series_form_fixed",
+    "params": {
+      "mode": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}”: a point in time with @ is only possible for a constant value or steps, not for the form “{mode}”",
+    "text": "“Person 2”: a point in time with @ is only possible for a constant value or steps, not for the form “Person 2”"
   },
   {
     "code": "field_not_series",

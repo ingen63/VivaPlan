@@ -873,3 +873,38 @@ test.describe("Affordability in the settings (#233)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Course forms linear, table and factor (#217)", () => {
+  test("AK7: the editor shows the new forms read-only with a note and the mini chart, computes them and replaces them on request", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    await page.evaluate(() => {
+      state.wealth.stockShare = { mode: "linear", start: { age: 55, value: 0.9 }, end: { age: 65, value: 0.5 } };
+      state.wealth.reserveMonths = { mode: "table", interpolation: "step", points: [{ at: "start", value: 6 }, { age: 80, value: 12 }] };
+      state.flows.spending = { mode: "factor", base: 9000, factor: { mode: "table", interpolation: "step", points: [{ at: "start", value: 1 }, { age: 80, value: 0.8 }] } };
+      markDirty(); renderSection();
+    });
+    const share = page.locator('.series:has(svg[data-mini="wealth.stockShare"])');
+    await expect(share.locator('.shint[data-form="linear"]')).toContainText("Die Form «Gerade» lässt sich hier noch nicht bearbeiten");
+    await expect(share.locator('svg[data-mini="wealth.stockShare"] path').first()).toBeAttached();
+    await expect(share.locator('button[data-action="series-mode"].on')).toHaveCount(0);
+    // The value in the course: 70 % at 60 like the engine (#217/AK5), only for display.
+    expect(await page.evaluate(() => {
+      const b = ym2i(state.household.persons[0].birth);
+      return Math.round(seriesAt(state.wealth.stockShare, b + 60 * 12) * 1000) / 1000;
+    })).toBe(0.7);
+    await previewIdle(page);
+    await expect(page.locator("#chart path").first()).toBeAttached();
+    await nav(page, "Einnahmen & Ausgaben");
+    const spending = page.locator('.series:has(svg[data-mini="flows.spending"])');
+    await expect(spending.locator('.shint[data-form="factor"]')).toContainText("«Faktor»");
+    // «Constant» replaces the course with its value at the simulation start.
+    await spending.locator('button[data-action="series-mode"][data-mode="const"]').click();
+    expect(await page.evaluate(() => state.flows.spending)).toEqual({ mode: "const", value: 9000 });
+    await nav(page, "Entnahmestrategie");
+    await page.evaluate(() => { state.withdrawal.strategy = "standard"; renderSection(); });
+    await expect(page.locator('.series:has(svg[data-mini="wealth.reserveMonths"]) .shint[data-form="table"]')).toContainText("«Tabelle»");
+    await previewIdle(page);
+    await noErrors(page, errors);
+  });
+});

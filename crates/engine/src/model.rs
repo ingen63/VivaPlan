@@ -350,14 +350,58 @@ pub enum Series {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "mode", rename_all = "lowercase")]
 pub enum SeriesDef {
-    Const { value: f64 },
-    Timed { rows: Vec<SeriesRow> },
+    Const {
+        value: f64,
+    },
+    /// Steps: every row applies from its point in time on, 0 before the first row.
+    Timed {
+        rows: Vec<SeriesRow>,
+    },
+    /// #217: straight line from `start` to `end`; the start value before it, the end value after it.
+    Linear {
+        start: SeriesPoint,
+        end: SeriesPoint,
+    },
+    /// #217: support points by age, date or milestone; in between linear or as steps, the first value before the
+    /// first point, the last value after the last point.
+    Table {
+        #[serde(default)]
+        interpolation: Interpolation,
+        points: Vec<SeriesPoint>,
+    },
+    /// #217: base value times a course of factors (for example spending 100 % up to 80, 80 % after it).
+    Factor {
+        base: f64,
+        factor: Box<Series>,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub struct SeriesRow {
     pub from: TimeRef,
     pub value: f64,
+}
+
+/// #217: support point of a course: a point in time (`at`: date `YYYY-MM` or milestone) or an age (`age`, decimal
+/// years, of `person`; the first person if missing), exactly one of the two.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SeriesPoint {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at: Option<TimeRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub age: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub person: Option<String>,
+    pub value: f64,
+}
+
+/// #217: values between the support points of a table.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Interpolation {
+    #[default]
+    Linear,
+    Step,
 }
 
 impl Default for Series {

@@ -191,6 +191,14 @@ Die kleine Grafik neben dem Feld zeigt den Verlauf. Mit dem Mausrad zoomen Sie h
 
 Zeilen, die in der Zeit hinten stehen, aber vor einer anderen beginnen, ordnet die App nach dem Zeitpunkt. Verschieben Sie daher ruhig Meilensteine, die Reihenfolge der Werte bleibt konsistent.
 
+Für Gleitpfade und Ausgaben nach Lebensphase gibt es drei weitere Formen. Sie stehen in der [Planungsdatei](#ref-file) und gelten für jeden zeitabhängigen Wert:
+
+- **Gerade:** von einem Wert zu einem Zeitpunkt gleichmässig, Monat für Monat, zu einem zweiten Wert zu einem späteren Zeitpunkt. Davor gilt der erste, danach der zweite Wert. Beispiel Aktienanteil: 90 % mit 55, 50 % mit 65 ergibt 70 % mit 60.
+- **Tabelle:** Stützpunkte nach Alter, Datum oder Meilenstein; dazwischen gleitend wie eine Gerade oder als Treppe. Vor dem ersten Stützpunkt gilt sein Wert, nach dem letzten der letzte Wert.
+- **Faktor:** ein Grundwert mal einem Verlauf von Faktoren. Beispiel Lebenshaltung: 6 000 mit 100 % bis 80, danach 80 %.
+
+Der Editor zeigt diese Formen mit einem Hinweis und in der kleinen Grafik an; bearbeiten lassen sie sich dort noch nicht. «Konstant» oder «Zeitabhängig» ersetzt sie durch den Wert beim Simulationsstart.
+
 ## @s-wealth Vermögen & Anlage
 Stichworte: Aktien, Obligationen, Cash, Liquidität, Aktienquote, Aktienanteil, Reserve, Portfolio, Anlagestrategie, Index
 

@@ -261,6 +261,15 @@ fn apply(plan: &mut Value, a: &Assignment) -> Result<(), Message> {
             if !a.value.is_number() {
                 return Err(wrong_type(vec!["number".into()]));
             }
+            // #217: a straight line, a table or a factor has no steps to set.
+            let current = get(plan, &a.keys);
+            if let Some(mode) = current
+                .get("mode")
+                .and_then(Value::as_str)
+                .filter(|m| !matches!(*m, "const" | "timed"))
+            {
+                return Err(msg!(field_series_form_fixed, path = a.path, mode = mode));
+            }
             let p = parsed(plan)?;
             let (m, from) = point_in_time(&p, a.path, at)?;
             set_step(get(plan, &a.keys), &p, m, from, a.value.clone())?

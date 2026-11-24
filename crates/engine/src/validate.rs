@@ -242,6 +242,16 @@ fn large_pillar3a_over_income(
     None
 }
 
+/// #217: a table without support points, or a factor of an empty course.
+fn series_def_empty(def: &SeriesDef) -> bool {
+    match def {
+        SeriesDef::Timed { rows } => rows.is_empty(),
+        SeriesDef::Table { points, .. } => points.is_empty(),
+        SeriesDef::Factor { factor, .. } => matches!(&**factor, Series::Def(d) if series_def_empty(d)),
+        SeriesDef::Const { .. } | SeriesDef::Linear { .. } => false,
+    }
+}
+
 fn check(plan: &Plan, v: &mut Issues) {
     if plan.household.persons.is_empty() {
         v.err("general", msg!(persons_none));
@@ -384,6 +394,25 @@ fn check(plan: &Plan, v: &mut Issues) {
                     v.warn(section, msg!(series_late_start, what = what));
                 }
                 rows.iter().map(|r| r.value).collect()
+            }
+            // #217: the values of the compiled course (support points, line and base times factor).
+            Series::Def(def) => {
+                if series_def_empty(def) {
+                    v.err(section, msg!(series_empty, what = what));
+                }
+                match Curve::compile(s, &r) {
+                    Ok(c) => {
+                        // A factor with steps: 0 applies before the first step.
+                        if c.first().is_some_and(|f| f > start.0) {
+                            v.warn(section, msg!(series_late_start, what = what));
+                        }
+                        c.values().collect()
+                    }
+                    Err(e) => {
+                        v.err(section, msg!(labeled, what = what, problem = e.message()));
+                        vec![]
+                    }
+                }
             }
         };
         if let Some((lo, hi)) = range {
@@ -546,6 +575,12 @@ fn check(plan: &Plan, v: &mut Issues) {
             Series::Def(SeriesDef::Timed { rows }) => {
                 for (i, row) in rows.iter().enumerate() {
                     check(v, format!("flows.spending.rows.{i}.value"), row.value);
+                }
+            }
+            // #217: the lowest value of the course.
+            s @ Series::Def(_) => {
+                if let Some(x) = Curve::compile(s, &r).ok().and_then(|c| c.values().reduce(f64::min)) {
+                    check(v, "flows.spending".into(), x);
                 }
             }
         }

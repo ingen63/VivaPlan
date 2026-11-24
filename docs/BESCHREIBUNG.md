@@ -55,6 +55,11 @@ Der Editor führt durch zwölf Abschnitte:
   als Betrag das Guthaben zu ihrem Zeitpunkt.
 - **Einnahmen & Ausgaben:** Erwerbseinkommen, Lebenshaltung und einmalige Beträge (Erbschaft, Autokauf, Reise). Jeder
   Wert kann zeitabhängig sein, zum Beispiel tiefere Ausgaben ab 80.
+  Zeitabhängige Werte (Verläufe) gibt es als Konstante, Treppe («ab Zeitpunkt gilt Wert»), Gerade (von Wert a zu
+  Zeitpunkt t1 auf Wert b zu Zeitpunkt t2, davor a, danach b), Tabelle (Stützpunkte nach Alter, Datum oder Meilenstein,
+  dazwischen gleitend oder als Treppe) und Faktor (Grundwert mal Verlauf, zum Beispiel Lebenshaltung 100 % bis 80, danach
+  80 %), #217. Gerade, Tabelle und Faktor gelten für jedes zeitabhängige Feld; sie stehen in der Planungsdatei, der
+  Editor zeigt sie bis #243 nur mit Hinweis und in der Minigrafik an.
   Das Erwerbseinkommen wird pro Jahr erfasst wie in der Steuererklärung («Einkünfte aus Erwerb netto / Jahr», Nettolohn
   im Lohnausweis Ziffer 11); daneben steht der Betrag pro Monat. Gespeichert und gerechnet wird pro Monat (ein Zwölftel).
   Das Erwerbseinkommen jeder Person kann wahlweise mit der Teuerung steigen (Beträge in heutigen Preisen; neue

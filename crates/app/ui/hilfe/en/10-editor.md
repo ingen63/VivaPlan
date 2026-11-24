@@ -191,6 +191,14 @@ The small chart next to the field shows the course. With the mouse wheel you zoo
 
 Rows that are further down but begin before another one are sorted by point in time by the app. So feel free to move milestones; the order of the values stays consistent.
 
+For glide paths and spending by phase of life there are three further forms. They are written in the [plan file](#ref-file) and apply to every time-dependent value:
+
+- **Straight line:** from a value at one point in time evenly, month by month, to a second value at a later point in time. Before it the first value applies, after it the second. Example stock allocation: 90 % at 55, 50 % at 65 gives 70 % at 60.
+- **Table:** support points by age, date or milestone; in between gliding like a straight line or as steps. Before the first support point its value applies, after the last one the last value.
+- **Factor:** a base value times a course of factors. Example living expenses: 6 000 with 100 % up to 80, after that 80 %.
+
+The editor shows these forms with a note and in the small chart; they cannot be edited there yet. “Constant” or “Time-dependent” replaces them with the value at simulation start.
+
 ## @s-wealth Wealth & investment
 Keywords: stocks, bonds, cash, liquidity, stock allocation, reserve, portfolio, investment strategy, index
 

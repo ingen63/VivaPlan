@@ -191,6 +191,14 @@ Le petit graphique à côté du champ montre l’évolution. Avec la molette de 
 
 Les lignes qui figurent plus bas mais commencent avant une autre sont classées par l’application selon leur moment. Vous pouvez donc déplacer des jalons sans crainte, l’ordre des valeurs reste cohérent.
 
+Pour les trajectoires de désinvestissement et les dépenses selon la phase de vie, il existe trois autres formes. Elles figurent dans le [fichier de planification](#ref-file) et s’appliquent à toute valeur dépendant du temps:
+
+- **Droite:** d’une valeur à un moment, régulièrement, mois par mois, jusqu’à une seconde valeur à un moment ultérieur. Avant, la première valeur s’applique, après, la seconde. Exemple part d’actions: 90 % à 55 ans, 50 % à 65 ans donne 70 % à 60 ans.
+- **Tableau:** points d’appui selon l’âge, la date ou le jalon; entre eux de façon continue comme une droite ou en paliers. Avant le premier point d’appui, sa valeur s’applique, après le dernier, la dernière valeur.
+- **Facteur:** une valeur de base multipliée par une évolution de facteurs. Exemple coût de la vie: 6 000 avec 100 % jusqu’à 80 ans, ensuite 80 %.
+
+L’éditeur affiche ces formes avec une remarque et dans le petit graphique; elles ne peuvent pas encore y être modifiées. «Constant» ou «Dépendant du temps» les remplace par la valeur au début de la simulation.
+
 ## @s-wealth Fortune et placement
 Mots-clés: actions, obligations, cash, liquidités, quote-part d’actions, part d’actions, réserve, portefeuille, stratégie de placement, indice
 

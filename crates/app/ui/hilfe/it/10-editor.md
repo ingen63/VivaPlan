@@ -191,6 +191,14 @@ Il piccolo grafico accanto al campo mostra l’andamento. Con la rotella del mou
 
 Le righe inserite più in basso nell’elenco, ma che iniziano prima di un’altra, l’app le ordina secondo il momento. Può quindi spostare tranquillamente le tappe, l’ordine dei valori resta coerente.
 
+Per i percorsi di riduzione del rischio e le spese secondo la fase della vita esistono altre tre forme. Si trovano nel [file di pianificazione](#ref-file) e valgono per ogni valore dipendente dal tempo:
+
+- **Retta:** da un valore a un momento in modo uniforme, mese per mese, fino a un secondo valore a un momento successivo. Prima vale il primo valore, dopo il secondo. Esempio quota azionaria: 90 % a 55, 50 % a 65 dà 70 % a 60.
+- **Tabella:** punti d’appoggio secondo età, data o tappa; nel mezzo in modo continuo come una retta oppure a gradini. Prima del primo punto d’appoggio vale il suo valore, dopo l’ultimo l’ultimo valore.
+- **Fattore:** un valore di base moltiplicato per un andamento di fattori. Esempio costo della vita: 6'000 con 100 % fino a 80, poi 80 %.
+
+L’editor mostra queste forme con un’avvertenza e nel piccolo grafico; lì non si possono ancora modificare. «Costante» o «Dipendente dal tempo» le sostituisce con il valore all’inizio della simulazione.
+
 ## @s-wealth Sostanza e investimento
 Parole chiave: azioni, obbligazioni, cash, liquidità, quota azionaria, riserva, portafoglio, strategia d’investimento, indice
 

@@ -87,12 +87,47 @@ const FIXED_MS_IDS = ["start", "end", "retire", "ahv", "retire2", "ahv2"];
 const msLabel = ms => (ms && FIXED_MS_IDS.includes(ms.id) ? tr(`milestone.${ms.id}`) : ms?.name);
 function msName(ref) { if (ref === "never") return tr("ref.never"); if (ref === "afterSale") return tr("ref.afterSale"); if (saleOf(ref)) return tr("ref.afterSaleOf", { propById: propById(saleOf(ref))?.name ?? "?" }); if (isYM(ref)) return ymShow(ref); return msLabel(state.milestones.find(m => m.id === ref)) ?? "?"; }
 
+/** #217: the forms «linear», «table» and «factor»; the editor shows them read-only until #243. */
+const NEW_FORMS = ["linear", "table", "factor"];
+const isNewForm = ser => !!ser && typeof ser === "object" && NEW_FORMS.includes(ser.mode);
+const formName = mode => ({ linear: tr("series.form.linear"), table: tr("series.form.table"), factor: tr("series.form.factor") })[mode];
+/** #217: month of a support point (date, milestone or age of a person, the first person without one). */
+function pointMonth(p) {
+  if (p?.age == null) return refMonth(p?.at);
+  const birth = state.household.persons.find(x => x.id === (p.person ?? state.household.persons[0]?.id))?.birth;
+  return birth ? ym2i(birth) + Math.round(p.age * 12) : Infinity;
+}
+/** #217: value between support points sorted by month (the engine computes the same, here only for display). */
+function pointsAt(pts, m, linear) {
+  const s = pts.map(p => [pointMonth(p), +p.value || 0]).filter(p => Number.isFinite(p[0])).sort((x, y) => x[0] - y[0]);
+  if (!s.length) return 0;
+  let i = -1;
+  s.forEach((p, k) => { if (p[0] <= m) i = k; });
+  if (i < 0) return s[0][1];
+  if (i === s.length - 1 || !linear) return s[i][1];
+  const [[m1, a], [m2, b]] = [s[i], s[i + 1]];
+  return a + (b - a) * (m - m1) / (m2 - m1);
+}
 function seriesAt(ser, m) {
-  if (!ser) return 0;
+  if (ser == null) return 0;
+  if (typeof ser !== "object") return +ser || 0;
   if (ser.mode === "const") return +ser.value || 0;
+  if (ser.mode === "linear") return pointsAt([ser.start, ser.end].filter(Boolean), m, true);
+  if (ser.mode === "table") return pointsAt(ser.points || [], m, ser.interpolation !== "step");
+  if (ser.mode === "factor") return (+ser.base || 0) * seriesAt(ser.factor, m);
   let best = null, bm = -Infinity;
-  for (const r of ser.rows) { const rm = refMonth(r.from); if (rm <= m && rm >= bm) { bm = rm; best = r; } }
+  for (const r of ser.rows || []) { const rm = refMonth(r.from); if (rm <= m && rm >= bm) { bm = rm; best = r; } }
   return best ? +best.value || 0 : 0;
+}
+/** All values a course can take at its support points (for checks of the whole course). */
+function seriesValues(ser) {
+  if (ser == null) return [];
+  if (typeof ser !== "object") return [ser];
+  if (ser.mode === "const") return [ser.value];
+  if (ser.mode === "linear") return [ser.start?.value, ser.end?.value];
+  if (ser.mode === "table") return (ser.points || []).map(x => x.value);
+  if (ser.mode === "factor") return seriesValues(ser.factor).map(x => (+ser.base || 0) * x);
+  return (ser.rows || []).map(x => x.value);
 }
 const tax = (table, x) => taxAt(table, x, state.taxes.multiplier); // #156: like the engine (multiplier 0 → no tax)
 
@@ -217,8 +252,7 @@ const FIXED_RESERVE_MONTHS = 3;
 function reserveDiffers(p) {
   if ((p.withdrawal?.strategy ?? "standard") === "standard") return false;
   const r = p.wealth?.reserveMonths;
-  const vals = r == null ? [] : typeof r !== "object" ? [r] : r.mode === "const" ? [r.value] : (r.rows || []).map(x => x.value);
-  return vals.some(v => v !== FIXED_RESERVE_MONTHS);
+  return seriesValues(r).some(v => v !== FIXED_RESERVE_MONTHS);
 }
 /**
  * #61: Disclaimer. The short version must be confirmed at the first start; the confirmation is stored in the
@@ -455,13 +489,14 @@ function Ref(path, o = {}) {
     ${date ? F(path, "", "month", { bare: true }) : ""}</div>`;
 }
 function Series(path, label, type, note = "", hint = "") {
-  const s = getP(path), timed = s.mode === "timed";
+  const s = getP(path), timed = s.mode === "timed", form = isNewForm(s);
   let body;
-  if (!timed) body = `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
+  if (form) body = `<div class="rows"><p class="computed shint" data-form="${esc(s.mode)}">${tr("series.formReadOnly", { form: formName(s.mode) })}</p></div>`;
+  else if (!timed) body = `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
   else body = `<div class="rows">${s.rows.map((r, i) => `<div class="row${type === "chfyear" ? " peryear" : ""}"><span class="ab">${tr("common.from")}</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
     <div><button class="btn small" data-action="row-add" data-path="${path}.rows">${tr("series.addRow")}</button></div></div>`;
   return `<div class="series"><div class="shead"><span class="t">${label}</span><span class="computed">${note}</span>
-    <div class="seg"><button class="${timed ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">${tr("series.constant")}</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">${tr("series.timeDependent")}</button></div></div>${hint ? `<p class="computed shint">${hint}</p>` : ""}
+    <div class="seg"><button class="${timed || form ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">${tr("series.constant")}</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">${tr("series.timeDependent")}</button></div></div>${hint ? `<p class="computed shint">${hint}</p>` : ""}
     <div class="sbody">${body}<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
       <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>${tr("series.zoomHint")}</span></div></div></div></div>`;
 }
@@ -1901,7 +1936,9 @@ function drawMini(svg) {
   const [a, b] = miniRange(path), W = svg.clientWidth || 220, H = svg.clientHeight || 96, T = 14, Bm = 16;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   // Exact steps: value at the start of the section and at every change within it.
-  const changes = ser.mode === "timed" ? ser.rows.map(r => refMonth(r.from)).filter(m => m > a && m <= b) : [];
+  // #217: a straight line or table month by month.
+  const changes = ser.mode === "timed" ? (ser.rows || []).map(r => refMonth(r.from)).filter(m => m > a && m <= b)
+    : isNewForm(ser) ? Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i + 1) : [];
   const pts = [a, ...[...new Set(changes)].sort((x, y) => x - y)], vals = pts.map(m => seriesAt(ser, m));
   const max = Math.max(...vals, 1e-9), min = Math.min(0, ...vals);
   const X = m => (m - a) / (b - a) * W, Y = v => T + (1 - (v - min) / (max - min || 1)) * (H - T - Bm);
@@ -1920,7 +1957,7 @@ function drawMini(svg) {
     const mm = msMonth(m.id);
     if (mm > a && mm < b) g += `<line x1="${X(mm)}" x2="${X(mm)}" y1="${T}" y2="${H - Bm}" stroke="${css("--accent")}" stroke-opacity=".35" stroke-dasharray="2 3"><title>${esc(msLabel(m))}</title></line>`;
   }
-  const dots = pts.slice(1).map((m, i) => `<circle cx="${X(m)}" cy="${Y(vals[i + 1])}" r="3" fill="${css("--accent")}"/>`).join("");
+  const dots = isNewForm(ser) ? "" : pts.slice(1).map((m, i) => `<circle cx="${X(m)}" cy="${Y(vals[i + 1])}" r="3" fill="${css("--accent")}"/>`).join("");
   svg.innerHTML = g + `<path d="${d}V${H - Bm}H0Z" fill="${css("--accent")}" fill-opacity=".12"/><path d="${d}" fill="none" stroke="${css("--accent")}" stroke-width="2"/>${dots}
     <text x="4" y="10" font-size="9.5" fill="${css("--muted")}" style="font-variant-numeric:tabular-nums">max ${miniValue(t, max)}</text>
     <line class="hov" y1="${T}" y2="${H - Bm}" stroke="${css("--text")}" stroke-opacity=".4" visibility="hidden"/>`;
@@ -2227,8 +2264,10 @@ const ACTIONS = {
   "param-suggest": () => { state.returns.parametric.auto = true; followSuggestion(); markDirty(); renderSection(); },
   "series-mode": d => {
     const s = getP(d.path); if (s.mode === d.mode) return;
-    if (d.mode === "timed") { s.rows = [{ from: "start", value: s.value ?? 0 }]; delete s.value; }
-    else { s.value = s.rows?.[0]?.value ?? 0; delete s.rows; }
+    // #217: a straight line, table or factor is replaced by its value at the simulation start.
+    const first = isNewForm(s) ? seriesAt(s, startM()) : d.mode === "timed" ? s.value ?? 0 : s.rows?.[0]?.value ?? 0;
+    for (const k of ["value", "rows", "start", "end", "points", "interpolation", "base", "factor"]) delete s[k];
+    if (d.mode === "timed") s.rows = [{ from: "start", value: first }]; else s.value = first;
     s.mode = d.mode; markDirty(); renderSection();
   },
   "row-add": d => { const rows = getP(d.path), last = rows[rows.length - 1]; rows.push({ from: i2ym(Math.max(startM(), refMonth(last?.from ?? "start") === Infinity ? startM() : refMonth(last?.from ?? "start")) + 12), value: last?.value ?? 0 }); markDirty(); renderSection(); },
@@ -3410,7 +3449,8 @@ function paramSections(plan, full = false) {
   const msName = id => msLabel(plan.milestones?.find(m => m.id === id));
   const at = r => isYM(r) ? ymShow(r) : (msName(r) ?? String(r ?? "–"));
   const ser = (v, f) => !v || typeof v !== "object" ? (v == null ? "–" : f(v))
-    : v.mode === "const" ? f(v.value) : (v.rows || []).map(r => tr("params.fromValue", { from: at(r.from), value: f(r.value) })).join("; ") || "–";
+    : v.mode === "const" ? f(v.value) : isNewForm(v) ? formName(v.mode)
+    : (v.rows || []).map(r => tr("params.fromValue", { from: at(r.from), value: f(r.value) })).join("; ") || "–";
   const table = rows => (rows || []).map(([x, r]) => tr("params.fromValue", { from: fmtInt(x), value: `${fmtPct(r)} %` })).join("; ") || "–";
   const out = [];
   const persons = plan.household?.persons || [];

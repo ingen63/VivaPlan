@@ -60,6 +60,7 @@ mod relocation;
 mod rerun_paths;
 mod reserve_standard_only;
 mod robustness;
+mod series_forms;
 mod sim_rules;
 mod simulation;
 mod statistics;

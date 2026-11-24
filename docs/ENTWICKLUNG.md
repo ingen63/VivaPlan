@@ -437,7 +437,11 @@ Meilensteine sind ein Datum oder das Alter einer Person (`{"kind": "age", "perso
 `start` und `end` sind Pflicht. Die festen Meilensteine (`start`, `end`, `retire`, `ahv`, `retire2`, `ahv2`) haben
 keinen `name`; die Oberfläche zeigt ihren Namen in der gewählten Sprache (#170). Die Datei enthält keine Texte der
 Oberfläche, eine Planung ist in jeder Sprache dieselbe Datei. Zeitabhängige Werte sind eine Zahl oder
-`{"mode": "timed", "rows": [{"from": "start", "value": 9500}, {"from": "retire", "value": 8500}]}`.
+`{"mode": "timed", "rows": [{"from": "start", "value": 9500}, {"from": "retire", "value": 8500}]}`, dazu (#217)
+`linear` (`start`, `end`), `table` (`points`, `interpolation` `linear` oder `step`) und `factor` (`base` mal Verlauf
+`factor`). Ein Stützpunkt (`SeriesPoint`) hat `at` (Datum oder Meilenstein, nicht `never`/`afterSale`) oder `age` (mit
+`person`, sonst die erste Person). `Curve::compile` übersetzt alle Formen vor der Simulation in eine Treppe über
+Kalendermonate (eine Gerade Monat für Monat, höchstens 2400 Stufen); zur Laufzeit kostet keine Form mehr als eine Treppe.
 Beträge gelten pro Monat, Sätze pro Jahr als Dezimalzahl (0.05 = 5 %). Das vollständige Format liefert `vivaplan schema`.
 
 ## Rechenregeln
