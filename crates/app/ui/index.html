@@ -113,7 +113,9 @@ select.plain{border:1px solid var(--border);border-radius:7px;background:var(--p
 .series .sbody{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:14px;align-items:start}
 .rows{display:flex;flex-direction:column;gap:6px}
 .row{display:grid;grid-template-columns:auto minmax(0,1fr) 130px 30px;gap:8px;align-items:center}
-.row.peryear{grid-template-columns:auto minmax(0,1fr) 130px auto 30px}
+.row.peryear{grid-template-columns:auto minmax(0,1fr) 140px 30px;row-gap:2px}
+.row.peryear .inp .unit{padding:0 6px 0 2px}
+.row.peryear .permonth{grid-column:3;grid-row:2;justify-self:end;margin-right:7px}
 .row .ab{font-size:12px;color:var(--faint);width:18px}
 .series .sfoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.series .shead.sub{margin:8px 0 0}
 .dedrow{display:grid;grid-template-columns:auto minmax(0,210px) minmax(200px,1fr) 30px;gap:8px;align-items:center}

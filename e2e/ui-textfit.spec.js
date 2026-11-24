@@ -103,3 +103,22 @@ test.describe("Text fits in every language (#182)", () => {
     });
   }
 });
+
+test.describe("Number field in the section flows not cut off (#244)", () => {
+  for (const language of LANGUAGES) {
+    // #244/AK2: an amount per year with 7 digits and the per-month amount fit beside the longest milestone (also fr and it).
+    test(`AK2 ${language}: income per year with 7 digits in a step course`, async ({ browser }) => {
+      const t = await start(browser, language);
+      await t.open();
+      await t.page.evaluate(() => goto("flows"));
+      const field = t.page.locator('input[data-path="flows.income.rows.0.value"]');
+      await field.fill("1'200'000");
+      await field.press("Tab");
+      await expect(field).toHaveValue("1'200'000");
+      await t.check("flows › 1'200'000");
+      expect(t.found).toEqual({});
+      expect(t.errors).toEqual([]);
+      await t.close();
+    });
+  }
+});
