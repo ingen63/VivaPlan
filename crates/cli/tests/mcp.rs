@@ -620,7 +620,9 @@ fn issue_211_ak3_confirmation_from_60_seconds() {
     assert_eq!(a["status"], "needsConfirmation");
     assert!(a["estimate"]["seconds"].as_f64().unwrap() >= 60.0, "{a}");
     assert!(a["message"].as_str().unwrap().contains("confirm"), "{a}");
-    assert!(t0.elapsed().as_secs() < 30, "nothing computed");
+    // #258/AK1: compare with the estimate, which is measured live and slows down with the machine.
+    let estimate = a["estimate"]["seconds"].as_f64().unwrap();
+    assert!(t0.elapsed().as_secs_f64() < estimate, "nothing computed");
     let (t, _) = s.tool("result_list", json!({}));
     assert_eq!(data(&t)["results"], json!([]));
     s.close();
