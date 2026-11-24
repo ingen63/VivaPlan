@@ -193,6 +193,14 @@ mod tests {
         );
     }
 
+    /// #213/AK2: the dev server reports `cliPath` as an explicit null; the key must exist because the contract test
+    /// compares the field names of app and dispatch (indexing a missing key would also yield null).
+    #[test]
+    fn issue_213_ak2_app_info_has_cli_path_key_with_null() {
+        let info = call("app_info", &json!({}), &lib(), Path::new("/")).unwrap();
+        assert_eq!(info.as_object().unwrap().get("cliPath"), Some(&Value::Null));
+    }
+
     /// #142: `series_info` reads a relative path in the folder of the project file (`planPath`), without a project file in
     /// the fallback folder; the plan's `path` does not count here.
     // slow: copies and reads a whole return series
