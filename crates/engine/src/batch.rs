@@ -672,6 +672,7 @@ mod tests {
             bucket_refills: vec![],
             records: vec![],
             pillar3a: vec![],
+            wealth_tax: vec![],
         }
     }
 

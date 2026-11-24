@@ -172,7 +172,7 @@ function requestPreview() {
     try {
       const r = await Engine.call("preview", { plan: state, path: currentPath });
       if (seq !== previewSeq) return;
-      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) lastSim.p3aView = r.pillar3a || []; lastAhv = r.ahv || []; previewBasis = r.basis;
+      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) { lastSim.p3aView = r.pillar3a || []; lastSim.wealthTax = r.wealthTax || []; } lastAhv = r.ahv || []; previewBasis = r.basis;
     } catch (e) {
       if (seq !== previewSeq) return;
       previewError = errText(e); lastSim = null; lastAhv = [];
@@ -1217,13 +1217,14 @@ function propertyGainRow(p, P) {
     ${c?.propertyGainApprox ? `<p class="hint warn" data-gain-approx>⚠ ${tr("realestate.gainApprox", { note: tr(`propertyGainApprox.${c.id}`) })}</p>` : ""}`;
 }
 /** #229/AK1: tax value for the wealth tax (owned and planned): none (market value), amount or share of the market value. */
-function taxValueRow(p, i, P) {
+function taxValueRow(p, i, P, o = {}) {
   const kind = p.taxValue?.kind ?? "";
   const opts = [["", tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
   const sel = `<select class="plain" data-action-change="tax-value-kind" data-i="${i}">${opts.map(([k, l]) => `<option value="${k}" ${k === kind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
   const value = kind ? F(`${P}.taxValue.value`, "", kind === "rate" ? "pct" : "chf", { bare: true }) : "";
-  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${tr("realestate.taxValue")}</span><div class="refwrap">${sel}${value}</div></label></div>
-    <p class="hint">${tr("realestate.taxValueHint")}</p>`;
+  // #249: in the card «Abzüge vom Vermögen» with the name of the property as label and the hint only once
+  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${o.label ?? tr("realestate.taxValue")}</span><div class="refwrap">${sel}${value}</div></label></div>
+    ${o.hint === false ? "" : `<p class="hint">${tr("realestate.taxValueHint")}</p>`}`;
 }
 /** #229: changing the kind keeps the tax value: an amount becomes its share of the market value (planned: purchase price) and back. */
 document.addEventListener("change", e => {
@@ -1354,12 +1355,65 @@ function oneOffDeductions(key = "oneOffDeductions", hint = tr("deductions.oneOff
 /** #231/AK1–AK3: card «Abzüge vom Vermögen»: time-dependent rows «zusätzlich … pro Jahr» (layout .dedrow as the
  *  deductions from income, #228) and the list of one-off deductions; in the mode «Wohnort» in addition to the social
  *  deductions of the canton (hint), with own tables the whole deduction. */
+/** #249/AK1, AK3: open details and chosen tax year of the composition (only for the display, not saved). */
+const wtax = { open: false, year: null };
+document.addEventListener("toggle", e => { if (e.target?.dataset?.wtaxDetails != null) wtax.open = e.target.open; }, true);
+document.addEventListener("change", e => {
+  if (e.target?.id !== "wtax-year") return;
+  wtax.year = +e.target.value;
+  const out = $('[data-computed="wtaxTable"]'); if (out) out.innerHTML = wtaxTable();
+});
+/** #249: composition of the taxable wealth of tax year `y` from the preview (first tax year without `y`). */
+const wtaxYearOf = y => (lastSim?.wealthTax || []).find(w => y == null || w.year === y) ?? null;
+/** #249/AK7: estimated taxable wealth of the first tax year with the share of the properties, warnings for
+ *  properties without a tax value (link to the field) and, in the mode «Wohnort», the note on cantonal allowances. */
+function wtaxHint() {
+  const w = wtaxYearOf(null);
+  if (!w) return tr("wealthTax.none");
+  const k = v => fmtInt(Math.round(v / 1000) * 1000);
+  const props = w.properties.reduce((a, p) => a + p.taxValue - p.mortgage, 0);
+  let html = tr("wealthTax.estimate", { year: w.year, amount: k(w.taxable) }) + (w.properties.length ? tr("wealthTax.ofWhichProperties", { amount: k(props) }) : "");
+  if (isLocation(state)) html += ` ${tr("wealthTax.locationNote")}`;
+  for (const p of w.properties.filter(p => !p.hasTaxValue))
+    html += `<br><span class="warn" data-wtax-missing="${p.index}">⚠ ${tr("wealthTax.noTaxValue", { name: esc(p.name), amount: fmtInt(p.worth) })} <a href="#" data-action="wtax-edit" data-i="${p.index}">${tr("wealthTax.noTaxValueLink")}</a></span>`;
+  return html;
+}
+/** #249/AK1, AK2: rows of the composition (wealth without properties, tax value and mortgage per property, deductions,
+ *  taxable wealth) for the chosen tax year; the rows add up to the taxable wealth of the year table. */
+function wtaxTable() {
+  const w = wtaxYearOf(wtax.year) ?? wtaxYearOf(null);
+  if (!w) return `<p class="computed">${tr("wealthTax.none")}</p>`;
+  const row = (label, v, cls = "") => `<tr${cls}><td>${label}</td><td class="r">${fmtInt(v)}</td></tr>`;
+  const rows = [row(tr("wealthTax.liquid"), w.liquid)];
+  for (const p of w.properties) {
+    rows.push(p.hasTaxValue ? row(tr("wealthTax.taxValue", { name: esc(p.name) }), p.taxValue)
+      : row(`${tr("wealthTax.marketValue", { name: esc(p.name) })} <span class="warn">⚠</span>`, p.taxValue, ` data-wtax-market="${p.index}"`));
+    rows.push(row(tr("wealthTax.mortgage", { name: esc(p.name) }), p.mortgage));
+  }
+  if (w.ongoing) rows.push(row(tr("wealthTax.ongoing"), w.ongoing));
+  if (w.oneOff) rows.push(row(tr("wealthTax.oneOff"), w.oneOff));
+  rows.push(row(tr("wealthTax.taxable"), w.taxable, ' class="total" data-wtax-taxable'));
+  return `<table class="tbl dedparts" data-wtax-year="${w.year}"><tr><th>${tr("wealthTax.year", { year: w.year })}</th><th class="r">${UNIT.chf()}</th></tr>${rows.join("")}</table>
+    ${isLocation(state) ? `<p class="hint">${tr("wealthTax.socialNote")}</p>` : ""}`;
+}
+/** #231, #249: card «Abzüge vom Vermögen»: estimated taxable wealth (AK7), composition per tax year with the tax value
+ *  of the properties (AK1, AK3), the rows of the deductions and the one-off deductions. */
 function wealthDeductionsCard() {
   const P = "taxes.wealthDeductions", rows = state.taxes.wealthDeductions ?? [];
   const body = rows.map((r, i) => `<div class="dedrow" data-wded-row="${i}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${Ref(`${P}.${i}.from`)}</div>
     <div class="dedval"><span class="dedextra">${tr("deductions.extra")}</span>${F(`${P}.${i}.amount`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}</div>
     <button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button></div>`).join("");
+  const y0 = Math.floor(startM() / 12), y1 = Math.floor(endM() / 12);
+  const years = Number.isFinite(y0) && Number.isFinite(y1) ? Array.from({ length: Math.max(0, y1 - y0 + 1) }, (_, k) => y0 + k) : [];
+  const yearSel = years.length > 1 ? `<label class="field" style="max-width:200px"><span>${tr("wealthTax.chooseYear")}</span><select class="plain" id="wtax-year">${years.map(y => `<option value="${y}"${y === wtax.year ? " selected" : ""}>${y}</option>`).join("")}</select></label>` : "";
+  // #249/AK3: the same field «Steuerwert» as in the section «Immobilien» for every owned or planned property
+  const props = state.realestate.properties.map((p, i) => [p, i]).filter(([p]) => p.status !== "rent");
+  const taxValues = props.length ? `<div data-wtax-fields style="margin-top:12px"><b>${tr("wealthTax.taxValuesTitle")}</b>${props.map(([p, i]) => `<div data-wtax-field="${i}">${taxValueRow(p, i, `realestate.properties.${i}`, { label: esc(p.name || tr("realestate.taxValue")), hint: false })}</div>`).join("")}
+    <p class="hint">${tr("realestate.taxValueHint")}</p></div>` : "";
+  const details = `<details class="deddetails" data-wtax-details style="margin-bottom:12px"${wtax.open ? " open" : ""}><summary>${tr("deductions.details")}</summary><div style="margin-top:8px">${yearSel}</div>${C("wtaxTable")}${taxValues}</details>`;
   return `<div class="card" id="tax-wealth-deductions"><h3>${tr("wealthDeductions.title")}</h3>
+    <p class="hint" id="wtax-hint">${C("wtaxHint")}</p>
+    ${details}
     <div class="rows">${body || `<p class="computed">${tr("wealthDeductions.none")}</p>`}
     <div><button class="btn small" data-action="wded-add">${tr("series.addRow")}</button></div></div>
     ${oneOffDeductions("oneOffWealthDeductions", tr("wealthDeductions.oneOffHint"))}
@@ -1565,6 +1619,8 @@ function runsPerScenario() {
 const COMPUTED = {
   dedSum: i => dedSum(i),
   dedParts: i => dedParts(i),
+  wtaxHint: () => wtaxHint(),
+  wtaxTable: () => wtaxTable(),
   // #55: Payout plan of pillar 3a (row «k.j»): month and age, balance before and after the payout from the preview.
   p3aat: a => {
     const [k, j] = a.split(".").map(Number), acc = state.pillar3a[k], x = acc?.payouts[j];
@@ -2230,6 +2286,12 @@ function blankPlan(base, now = new Date()) {
 }
 const ACTIONS = {
   goto: d => goto(d.sec),
+  // #249/AK7: from the warning to the field «Steuerwert» of the property in the card «Abzüge vom Vermögen»
+  "wtax-edit": d => {
+    wtax.open = true; renderSection();
+    const el = $(`#tax-wealth-deductions [data-wtax-field="${d.i}"] select`);
+    if (el) { el.scrollIntoView({ block: "center" }); el.focus(); }
+  },
   "ms-goto": d => { flashId = d.id; goto("milestones"); flashId = null; },
   set: d => { setP(d.path, d.value); markDirty(); renderSection(); if (d.path === "returns.source") refreshSeriesInfo(); },
   // #100: follow the suggested values of the stock index again

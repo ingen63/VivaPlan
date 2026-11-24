@@ -518,6 +518,43 @@ pub struct SimResult {
     /// results; the preview passes it on separately.
     #[serde(skip)]
     pub pillar3a: Vec<Pillar3aView>,
+    /// #249: Taxable wealth per tax year with the properties; only with `record = true`. Not part of the saved
+    /// results; the preview passes it on separately.
+    #[serde(skip)]
+    pub wealth_tax: Vec<WealthTaxYear>,
+}
+
+/// #249: Taxable wealth of a tax year on 31 December, built up as in the tax return: wealth without properties,
+/// per property the tax value (market value without a tax value) minus the mortgage, minus the deductions from wealth.
+#[derive(Clone, Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WealthTaxYear {
+    pub year: i32,
+    /// Cash, bonds and stocks (without pension fund and pillar 3a).
+    pub liquid: f64,
+    /// Owned properties on 31 December.
+    pub properties: Vec<PropertyTax>,
+    /// Row of the deductions from wealth (prices of the start × index) and one-off deductions of the year.
+    pub ongoing: f64,
+    pub one_off: f64,
+    /// Wealth minus deductions, never negative (as for the wealth tax; in the mode «Wohnort» without the social
+    /// deductions of the canton inside the tariffs).
+    pub taxable: f64,
+}
+
+/// #249: One property in [`WealthTaxYear`].
+#[derive(Clone, Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PropertyTax {
+    /// Index in `realestate.properties`.
+    pub index: usize,
+    pub name: String,
+    /// Market value.
+    pub worth: f64,
+    /// Value for the wealth tax: the tax value, without one the market value.
+    pub tax_value: f64,
+    pub has_tax_value: bool,
+    pub mortgage: f64,
 }
 
 /// #191: AHV pension of one person in the editor (preview): entered pension at the reference age, rate and the
@@ -707,6 +744,8 @@ struct CProp {
     worth: f64,
     /// #229: Ratio of the tax value to the market value (1.0 without a tax value).
     tax_ratio: f64,
+    /// #249: A tax value is entered (otherwise the wealth tax uses the market value).
+    has_tax_value: bool,
     infl_value: bool,
     infl_fix_costs: bool,
     infl_rent: bool,
@@ -1512,6 +1551,7 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
             (PropertyStatus::Planned, Some(t)) => t.ratio(p.price),
             _ => 1.0,
         },
+        has_tax_value: p.tax_value.is_some() && p.status != PropertyStatus::Rent,
         infl_value: p.inflation_value.unwrap_or(p.inflation),
         infl_fix_costs: p.inflation_fix_costs.unwrap_or(p.inflation),
         infl_rent: p.inflation_rent.unwrap_or(true),
@@ -1649,6 +1689,8 @@ struct Run<'a> {
     p3a_done: Vec<bool>,
     /// Pillar 3a payout plan per account for display (#55), only with `record`.
     p3a_view: Vec<Pillar3aView>,
+    /// #249: taxable wealth per tax year (only with `record`).
+    wealth_tax: Vec<WealthTaxYear>,
     /// Pillar 3a contribution in this month.
     month_p3a_in: f64,
     /// Month in which, after the sale of the last property, a property is bought or rented.
@@ -1775,6 +1817,7 @@ impl<'a> Run<'a> {
             props,
             p3a: s.accounts.iter().map(|a| a.balance).collect(),
             p3a_done: vec![false; s.accounts.len()],
+            wealth_tax: vec![],
             p3a_view: s
                 .accounts
                 .iter()
@@ -1899,6 +1942,34 @@ impl<'a> Run<'a> {
             .filter(|&i| self.props[i].active)
             .map(|i| self.worth(i) * self.s.props[i].tax_ratio)
             .sum()
+    }
+
+    /// #249: Taxable wealth of the tax year with the properties (preview).
+    fn wealth_tax_year(&self, year: i32, liquid: f64, basis: Option<WealthBasis>, taxable: f64) -> WealthTaxYear {
+        let properties = (0..self.props.len())
+            .filter(|&i| self.props[i].active)
+            .map(|i| {
+                let p = &self.s.props[i];
+                let worth = self.worth(i);
+                PropertyTax {
+                    index: i,
+                    name: p.name.clone(),
+                    worth,
+                    tax_value: worth * p.tax_ratio,
+                    has_tax_value: p.has_tax_value,
+                    mortgage: self.props[i].balances.iter().sum(),
+                }
+            })
+            .collect();
+        let (ongoing, one_off) = basis.map_or((0.0, 0.0), |b| (b.ongoing, b.one_off));
+        WealthTaxYear {
+            year,
+            liquid,
+            properties,
+            ongoing,
+            one_off,
+            taxable,
+        }
     }
 
     /// #229: Taxable property wealth: tax value minus mortgage (without a tax value the same as [`Self::equity`]).
@@ -3647,6 +3718,10 @@ impl<'a> Run<'a> {
                     basis.wealth = wealth_basis;
                     tax_basis = Some(basis);
                 }
+                if self.record {
+                    let wealth_tax = self.wealth_tax_year(m.year(), wealth, wealth_basis, taxable_wealth);
+                    self.wealth_tax.push(wealth_tax);
+                }
                 self.tax_pending += ti + tw;
                 self.pending_income += ti;
                 self.pending_wealth += tw;
@@ -3788,6 +3863,7 @@ impl<'a> Run<'a> {
             bucket_refills: self.bucket_refills,
             records: self.records,
             pillar3a: self.p3a_view,
+            wealth_tax: self.wealth_tax,
         }
     }
 }

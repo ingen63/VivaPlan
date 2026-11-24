@@ -88,6 +88,8 @@ pub struct PreviewOut {
     pub pillar3a: Vec<crate::sim::Pillar3aView>,
     /// #191: AHV pension per person with reduction or supplement (and cap) as the simulation computes with it.
     pub ahv: Vec<crate::sim::AhvView>,
+    /// #249: Taxable wealth per tax year with the properties (card «Abzüge vom Vermögen»).
+    pub wealth_tax: Vec<crate::sim::WealthTaxYear>,
 }
 
 /// The preview computes one run with constant returns. For series these are their mean
@@ -137,6 +139,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
                 basis: None,
                 pillar3a: vec![],
                 ahv: vec![],
+                wealth_tax: vec![],
             }
         }
     };
@@ -149,6 +152,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
             let path = market::fixed_path(&sim.fixed, sim.start, sim.months());
             let mut result = sim.run(&path, true);
             let pillar3a = std::mem::take(&mut result.pillar3a);
+            let wealth_tax = std::mem::take(&mut result.wealth_tax);
             PreviewOut {
                 issues,
                 result: Some(result),
@@ -156,6 +160,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
                 basis,
                 pillar3a,
                 ahv,
+                wealth_tax,
             }
         }
         Err(e) => PreviewOut {
@@ -165,6 +170,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
             basis,
             pillar3a: vec![],
             ahv,
+            wealth_tax: vec![],
         },
     }
 }

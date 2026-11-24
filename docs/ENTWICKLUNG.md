@@ -613,6 +613,12 @@ ein (`BUILTIN`).
   Tabelle. `TaxBasis.wealth` = `WealthBasis { wealth, ongoing, oneOff, taxable }`, nur mit Abzügen vom Vermögen; diese
   schalten die Aufzeichnung ein. Prüfung: Zeitpunkt auflösbar, Beträge ≥ 0, Steuerjahr zwischen Start und Ende (Fehler am
   Feld).
+- **Zusammenstellung des steuerbaren Vermögens (#249):** Mit `record` legt der Lauf im Dezember je Steuerjahr ein
+  `WealthTaxYear { year, liquid, properties: [PropertyTax { index, name, worth, taxValue, hasTaxValue, mortgage }],
+  ongoing, oneOff, taxable }` ab (`liquid` = bar + Obligationen + Aktien; `taxValue` ohne Steuerwert = Marktwert;
+  `taxable` = derselbe Wert wie für die Vermögenssteuer). Es steht in `SimResult.wealth_tax` (`serde(skip)`, nicht in
+  den gespeicherten Ergebnissen und Golden-Dateien) und geht wie `pillar3a` über `PreviewOut.wealthTax` an die
+  Oberfläche (Hinweis und Details der Karte «Abzüge vom Vermögen»).
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
   Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung bei «Tarife mit der

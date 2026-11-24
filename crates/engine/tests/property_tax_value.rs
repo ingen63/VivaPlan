@@ -212,3 +212,79 @@ fn issue_229_ak3_ratio_of_amount_and_share() {
     };
     close(rate.ratio(0.0), 0.7, "share independent of the base");
 }
+
+/// #249/AK2: Plan of AK2: wealth without properties 300'000, tax value 650'000, mortgage 400'000, deduction 50'000.
+fn issue_249_plan(tax_value: bool) -> Value {
+    let extra = if tax_value {
+        json!({ "taxValue": { "kind": "amount", "value": 650_000 } })
+    } else {
+        json!({})
+    };
+    let mut v = plan(house(extra));
+    v["wealth"]["cash"] = json!(300_000);
+    v["taxes"]["wealthDeductions"] = json!([{ "from": "start", "amount": 50_000 }]);
+    v
+}
+
+/// #249/AK2: The composition of the taxable wealth (preview) adds up to the taxable wealth of the wealth tax:
+/// 300'000 + 650'000 − 400'000 − 50'000 = 500'000 (hand value); without a tax value with the market value 850'000.
+#[test]
+fn issue_249_ak2_composition_matches_taxable_wealth() {
+    let out = engine::api::preview(&issue_249_plan(true), std::path::Path::new("."), None);
+    assert!(out.error.is_none(), "{:?}", out.error);
+    let y = out.wealth_tax.iter().find(|y| y.year == 2030).expect("tax year 2030");
+    close(y.liquid, 300_000.0, "wealth without properties");
+    assert_eq!(y.properties.len(), 1);
+    let p = &y.properties[0];
+    assert_eq!((p.index, p.name.as_str(), p.has_tax_value), (0, "Haus", true));
+    close(p.worth, 1_000_000.0, "market value");
+    close(p.tax_value, 650_000.0, "tax value");
+    close(p.mortgage, 400_000.0, "mortgage");
+    close(y.ongoing, 50_000.0, "deduction");
+    close(y.one_off, 0.0, "one-off");
+    close(y.taxable, 500_000.0, "taxable wealth");
+    let sum = y.liquid + y.properties.iter().map(|p| p.tax_value - p.mortgage).sum::<f64>() - y.ongoing - y.one_off;
+    close(sum, y.taxable, "the rows add up");
+    // the same as the basis of the wealth tax: 1 % of 500'000
+    let dec = rec(out.result.as_ref().expect("result"), 2030, 12);
+    close(dec.assessed_wealth, 5_000.0, "wealth tax on the taxable wealth");
+    close(
+        dec.tax_basis
+            .as_ref()
+            .and_then(|b| b.wealth)
+            .expect("wealth basis")
+            .taxable,
+        500_000.0,
+        "year table",
+    );
+
+    // without a tax value: market value, flagged
+    let out = engine::api::preview(&issue_249_plan(false), std::path::Path::new("."), None);
+    let y = out.wealth_tax.iter().find(|y| y.year == 2030).expect("tax year 2030");
+    assert!(!y.properties[0].has_tax_value);
+    close(
+        y.properties[0].tax_value,
+        1_000_000.0,
+        "market value without a tax value",
+    );
+    close(y.taxable, 850_000.0, "taxable wealth with the market value");
+}
+
+/// #249/AK4, AK5: Without properties the composition has no property rows; the saved results (run) do not carry it,
+/// so the golden files stay the same.
+#[test]
+fn issue_249_ak4_without_properties_and_not_in_run() {
+    let v = PlanBuilder::new("Ohne Immobilie")
+        .set(
+            "wealth",
+            json!({ "stocks": 0, "bonds": 0, "cash": 100_000, "stockShare": 1, "reserveMonths": 0 }),
+        )
+        .build();
+    let out = engine::api::preview(&v, std::path::Path::new("."), None);
+    let y = out.wealth_tax.first().expect("first tax year");
+    assert!(y.properties.is_empty());
+    close(y.liquid, 100_000.0, "wealth");
+    close(y.taxable, 100_000.0, "taxable wealth without deductions");
+    let run = serde_json::to_value(engine::api::run(&issue_249_plan(true), std::path::Path::new("."), None)).unwrap();
+    assert!(!run.to_string().contains("wealthTax"), "not in the saved results");
+}
