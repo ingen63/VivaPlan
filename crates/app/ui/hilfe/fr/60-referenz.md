@@ -66,6 +66,7 @@ Le moteur de calcul est également disponible dans le terminal (programme `vivap
 | `set <planification> <chemin>=<valeur>…` | Modifier des valeurs par chemin de champ, voir [Modifier des valeurs](#ref-set) |
 | `diff <a> <b>` | Lister les différences entre deux planifications (`--json`) |
 | `optimize <planification>` | Optimiser la stratégie, voir [Ligne de commande](#o-cli) |
+| `describe [<section>]` | Catalogue pour les IA : ce qui peut être modifié, varié et mesuré (`--plan`, `--json`), voir [Catalogue pour les IA](#ref-describe) |
 | `evaluate <planification> <experience.json>` | Calculer une expérience (`--json`, `--yes`), voir [Expérience](#ref-experiment) |
 | `bench <planification>` | Mesurer le temps de calcul (`--paths`, `--json`) |
 | `schema` | Afficher le schéma JSON du fichier de planification |
@@ -184,6 +185,24 @@ Exemple : 10 ans jusqu’à la retraite, part d'actions de 40, 60 ou 80 % avant 
 ```
 
 Variations, comparaison des stratégies et optimisation s’expriment ainsi : les variations sont une grille sans objectif; la comparaison des stratégies est un groupe des stratégies avec `"objective": {"score": {}}` et `budget.paths` = trajectoires de la planification; l’optimisation est une recherche par motifs avec `score` et `"margin": 1.5`.
+
+## @ref-describe Catalogue pour les IA (describe)
+Mots-clés: describe, catalogue, IA, champs, unité, plage de valeurs, grandeur d’état, indicateur, temps de calcul
+
+`vivaplan describe [<section>] [--plan <planification>] [--json]` indique à un programme ou à une IA sans code source ce qu’elle peut modifier, varier et mesurer dans une planification. Le catalogue est généré à partir du schéma et du code et est en anglais comme le reste de la ligne de commande. Il reste sous 20'000 caractères; les sections séparément avec `describe <section>` :
+
+| Section | Contenu |
+|---|---|
+| `fields` | Champs de la planification groupés par objet, chacun avec type, unité, plage de valeurs et (uniquement dans cette section) signification; `*` représente le numéro dans une liste |
+| `series` | Formes d’une valeur dans le temps (`const`, `timed`, `linear`, `table`, `factor`, `curve`) et les moments (jalon, `AAAA-MM`, `age:<années>`, `chemin@<moment>`) |
+| `state` | Grandeurs d’état d’une [courbe caractéristique](#f-curve) |
+| `metrics` | Éléments d’un [indicateur](#ref-metric) : grandeurs, fenêtre de temps, réduction par trajectoire, agrégation sur les trajectoires, comparaisons |
+| `experiment` | Formes de l’[expérience](#ref-experiment) : variations, contrainte, objectif, méthodes de recherche, valeurs par défaut |
+| `examples` | trois expériences d’exemple (dépenses avec au plus 5 % de ruine, rente ou capital, part d’actions et règle de prélèvement) qui tournent sur la planification d’exemple |
+| `performance` | Microsecondes par calcul, mesurées lors de l’appel (environ une demi-seconde) sur la planification de `--plan`, sinon sur la planification d’exemple avec rendements paramétriques; elles permettent d’estimer la durée d’une expérience |
+| `limits` | Limites du modèle : années indépendantes dans le modèle paramétrique, erreur de sélection avec de nombreuses variantes, incertitude, nominal et réel, temps de calcul |
+
+Avec `--json`, le catalogue est fourni au format fixe `vivaplan-describe/1`. Les descriptions complètes et la structure exacte sont affichées par `vivaplan schema`.
 
 ## @ref-library Bibliothèque de données: dossiers et fichiers
 Mots-clés: dossier, séries temporelles, emplacement, Application Support, CSV

@@ -400,6 +400,13 @@ Varianten werden auf unabhängigen Pfaden bestätigt. Das Ergebnis ist eine kurz
 Standardfehlern, Hinweisen («am Rand des Rasters») und dem vollständigen Experiment mit Version und Startwert. Ab 60 s
 geschätzter Dauer rechnet `evaluate` nur mit `--yes`. Variationen, Strategievergleich und Optimierung sind Spezialfälle.
 
+Katalog für KIs (#219): `vivaplan describe [<abschnitt>] [--plan <planung>] [--json]` sagt einem Programm oder einer
+KI ohne Quellcode, was es ändern, variieren und messen kann: die Felder der Planung mit Typ, Einheit, Wertebereich und
+Bedeutung, die Formen zeitabhängiger Werte, die Zustandsgrössen der Kennlinien, die Bausteine der Kennzahlen, die
+Formen von Variationsraum und Ziel, drei Beispiel-Experimente, die beim Aufruf gemessenen Mikrosekunden je Lauf (rund
+0,5 s, an der angegebenen oder der Beispielplanung) und die Grenzen des Modells. Der Katalog wird aus Schema und Code
+erzeugt, ist englisch und bleibt unter 20'000 Zeichen; einzelne Abschnitte mit `describe <abschnitt>`.
+
 ## Installation
 
 Pakete für **Windows** (.msi, .exe), **Linux** (.deb, .AppImage; .rpm nur ohne Vorabversion) und **macOS** (.dmg) baut

@@ -770,6 +770,18 @@ pub fn evaluate(
     crate::experiment::evaluate(plan, experiment, base_dir, library)
 }
 
+/// #219: Catalog for AIs: fields, forms, state variables, metric building blocks, examples, measured microseconds per
+/// run (on `plan`, otherwise on the example plan) and limits; all sections or one. See [`crate::describe`]; later a
+/// tool of the MCP server (#210).
+pub fn describe(
+    section: Option<crate::describe::Section>,
+    plan: Option<&Value>,
+    base_dir: &Path,
+    library: Option<&Path>,
+) -> crate::describe::Catalog {
+    crate::describe::describe(section, plan, base_dir, library)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

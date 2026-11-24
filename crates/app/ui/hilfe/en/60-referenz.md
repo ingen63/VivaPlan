@@ -66,6 +66,7 @@ The engine is also available in the terminal (program `vivaplan`):
 | `set <plan> <path>=<value>…` | Change values by field path, see [Changing values](#ref-set) |
 | `diff <a> <b>` | List the differences between two plans (`--json`) |
 | `optimize <plan>` | Optimize the strategy, see [Command line](#o-cli) |
+| `describe [<section>]` | Catalog for AIs: what can be changed, varied and measured (`--plan`, `--json`), see [Catalog for AIs](#ref-describe) |
 | `evaluate <plan> <experiment.json>` | Compute an experiment (`--json`, `--yes`), see [Experiment](#ref-experiment) |
 | `bench <plan>` | Measure the calculation time (`--paths`, `--json`) |
 | `schema` | Output the JSON schema of the plan file |
@@ -184,6 +185,24 @@ Example: 10 years to retirement, stock allocation 40, 60 or 80 % before and 30 o
 ```
 
 Variations, comparison of strategies and optimization can be expressed this way: variations are a grid without an objective; the comparison of strategies is a group of the strategies with `"objective": {"score": {}}` and `budget.paths` = paths of the plan; the optimization is a pattern search with `score` and `"margin": 1.5`.
+
+## @ref-describe Catalog for AIs (describe)
+Keywords: describe, catalog, AI, fields, unit, range, state variable, metric, computing time
+
+`vivaplan describe [<section>] [--plan <plan>] [--json]` tells a program or an AI without the source code what it can change, vary and measure in a plan. The catalog is generated from the schema and the code and is in English like the rest of the command line. It stays under 20'000 characters; single sections with `describe <section>`:
+
+| Section | Content |
+|---|---|
+| `fields` | Fields of the plan grouped by object, each with type, unit, range and (only in this section) meaning; `*` stands for the number in a list |
+| `series` | Forms of a value over time (`const`, `timed`, `linear`, `table`, `factor`, `curve`) and the points in time (milestone, `YYYY-MM`, `age:<years>`, `path@<point in time>`) |
+| `state` | State variables of a [characteristic curve](#f-curve) |
+| `metrics` | Building blocks of a [metric](#ref-metric): quantities, window, reduction per path, aggregation over the paths, comparisons |
+| `experiment` | Forms of the [experiment](#ref-experiment): variations, constraint, objective, search methods, defaults |
+| `examples` | three example experiments (spending at most 5 % ruin, pension or lump sum, stock allocation and withdrawal rule) that run on the example plan |
+| `performance` | Microseconds per run, measured at the call (about half a second) on the plan of `--plan`, otherwise on the example plan with parametric returns; it gives an estimate of the duration of an experiment |
+| `limits` | Limits of the model: independent years in the parametric model, selection error with many variants, uncertainty, nominal and real, computing time |
+
+With `--json` the catalog comes in the fixed format `vivaplan-describe/1`. The full descriptions and the exact structure are shown by `vivaplan schema`.
 
 ## @ref-library Data library: folders and files
 Keywords: folder, time series, storage location, Application Support, CSV

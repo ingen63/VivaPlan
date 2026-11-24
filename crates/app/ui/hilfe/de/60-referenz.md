@@ -66,6 +66,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `set <planung> <pfad>=<wert>…` | Werte per Feldpfad ändern, siehe [Werte ändern](#ref-set) |
 | `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
 | `optimize <planung>` | Strategie optimieren, siehe [Kommandozeile](#o-cli) |
+| `describe [<abschnitt>]` | Katalog für KIs: was sich ändern, variieren und messen lässt (`--plan`, `--json`), siehe [Katalog für KIs](#ref-describe) |
 | `evaluate <planung> <experiment.json>` | Experiment rechnen (`--json`, `--yes`), siehe [Experiment](#ref-experiment) |
 | `bench <planung>` | Rechenzeit messen (`--paths`, `--json`) |
 | `schema` | JSON-Schema der Planungsdatei ausgeben |
@@ -184,6 +185,24 @@ Beispiel: 10 Jahre bis zur Rente, Aktienanteil vorher 40, 60 oder 80 % und nachh
 ```
 
 Variationen, Strategievergleich und Optimierung lassen sich so formulieren: Variationen sind ein Raster ohne Ziel; der Strategievergleich ist eine Gruppe der Strategien mit `"objective": {"score": {}}` und `budget.paths` = Pfade der Planung; die Optimierung ist eine Mustersuche mit `score` und `"margin": 1.5`.
+
+## @ref-describe Katalog für KIs (describe)
+Stichworte: describe, Katalog, KI, Felder, Einheit, Wertebereich, Zustandsgrösse, Kennzahl, Rechenzeit
+
+`vivaplan describe [<abschnitt>] [--plan <planung>] [--json]` sagt einem Programm oder einer KI ohne Quellcode, was sie an einer Planung ändern, variieren und messen kann. Der Katalog wird aus dem Schema und dem Code erzeugt und ist englisch wie die übrige Kommandozeile. Er bleibt unter 20'000 Zeichen; einzelne Abschnitte gibt es mit `describe <abschnitt>`:
+
+| Abschnitt | Inhalt |
+|---|---|
+| `fields` | Felder der Planung nach Objekt gruppiert, je mit Typ, Einheit, Wertebereich und (nur in diesem Abschnitt) Bedeutung; `*` steht für die Nummer in einer Liste |
+| `series` | Formen eines zeitabhängigen Werts (`const`, `timed`, `linear`, `table`, `factor`, `curve`) und die Zeitpunkte (Meilenstein, `JJJJ-MM`, `age:<jahre>`, `pfad@<zeitpunkt>`) |
+| `state` | Zustandsgrössen einer [Kennlinie](#f-curve) |
+| `metrics` | Bausteine einer [Kennzahl](#ref-metric): Grössen, Zeitfenster, Reduktion je Pfad, Aggregation über die Pfade, Vergleiche |
+| `experiment` | Formen des [Experiments](#ref-experiment): Variationen, Nebenbedingung, Ziel, Suchverfahren, Standardwerte |
+| `examples` | drei Beispiel-Experimente (Ausgaben bei höchstens 5 % Ruin, Rente oder Kapital, Aktienanteil und Entnahmeregel), die auf der Beispielplanung laufen |
+| `performance` | Mikrosekunden je Lauf, beim Aufruf gemessen (rund eine halbe Sekunde) an der Planung von `--plan`, sonst an der Beispielplanung mit parametrischen Renditen; daraus lässt sich die Dauer eines Experiments abschätzen |
+| `limits` | Grenzen des Modells: unabhängige Jahre im parametrischen Modell, Auswahlfehler bei vielen Varianten, Unsicherheit, nominal und real, Rechenzeit |
+
+Mit `--json` kommt der Katalog im festen Format `vivaplan-describe/1`. Die vollständigen Beschreibungen und den genauen Aufbau zeigt `vivaplan schema`.
 
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV

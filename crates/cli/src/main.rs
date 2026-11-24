@@ -1,5 +1,6 @@
 //! Command line for the calculation engine (until the desktop app is ready; also for tests and comparisons).
 
+mod describe;
 mod devserver;
 mod evaluate;
 mod optimize;
@@ -38,6 +39,9 @@ Usage:
   vivaplan evaluate <plan.vplan> <experiment.json> [--json] [--yes]
         (experiment: changes, variations, metrics, constraints, objective; see the help, reference;
          from an estimated 60 s only with --yes)
+  vivaplan describe [<section>] [--plan <plan.vplan>] [--json]
+        (catalog for AIs: fields, series, state, metrics, experiment, examples, performance, limits;
+         performance measured in about 0.5 s on the plan, otherwise on the example plan)
   vivaplan schema
   vivaplan --version
   vivaplan library [--library <folder>]          (time series of the data library)
@@ -64,6 +68,7 @@ fn main() -> ExitCode {
         Some("bench") => cmd_bench(&args[1..]),
         Some("optimize") => optimize::cmd_optimize(&args[1..]),
         Some("evaluate") => evaluate::cmd_evaluate(&args[1..]),
+        Some("describe") => describe::cmd_describe(&args[1..]),
         Some("library") => cmd_library(&args[1..]),
         Some("import-shiller") => cmd_import_shiller(&args[1..]),
         Some("import-snb") => cmd_import_snb(&args[1..]),

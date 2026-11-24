@@ -240,6 +240,7 @@ $B optimize crates/engine/assets/example.vplan --max-ruin 5 --ruin-age 95   # be
 $B optimize crates/engine/assets/example.vplan --compare --property both    # Strategien ohne Suche vergleichen (#197)
 $B run crates/engine/assets/example.vplan --metric '{"quantity": "total", "real": true, "reduce": "atEnd", "aggregate": {"kind": "quantile", "q": 0.05}}'   # eigene Kennzahl (#214)
 $B evaluate crates/engine/assets/example.vplan experiment.json --json   # Experiment (#216), ab 60 s nur mit --yes
+$B describe [fields|series|state|metrics|experiment|examples|performance|limits] [--json]   # Katalog für KIs (#219)
 $B schema > planung.schema.json                  # JSON-Schema der Projektdatei
 $B library                                       # Zeitreihen der Datenbibliothek (Ordner crates/engine/data/)
 $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.xls, .xlsx, .ods)
@@ -397,6 +398,28 @@ beschreibt alle Bausteine samt Doku-Kommentaren (für `describe`, #219).
   (`experiment_edge_low/high`, `experiment_confirm_same_paths`), `paths` (Anzahl, Startwerte, `independent`), das
   vollständige `experiment` und `version`. `api::evaluate` und `vivaplan evaluate` (`--json`, `--yes`); der MCP-Server
   (#210–#212) soll `evaluate` als Hauptwerkzeug nutzen.
+
+## Katalog für KIs (#219)
+
+`engine::describe` erzeugt den Katalog (`api::describe(section, plan, base_dir, library)` → `Catalog`, Format
+`vivaplan-describe/1`); `vivaplan describe` (`crates/cli/src/describe.rs`) gibt ihn als Text oder JSON aus. Die
+Ausgabe ist vom Rechenkern getrennt, damit der MCP-Server (#210) denselben `Catalog` als Werkzeug liefern kann.
+
+- **Felder:** `schema_leaves()` läuft über `schema_for!(Plan)`: Objekte werden aufgelöst, Listen von Datensätzen als `*`,
+  ein zeitabhängiger Wert (`Series`) bzw. eine Kennlinie (`StateSeries`) und Tabellen (Listen von Listen) sind je ein
+  Blatt. Typ, erlaubte Werte und Bedeutung kommen aus dem Schema (Titel + Beschreibung, gekürzt mit `short`: erster
+  Satz, ohne Issue-Nummern, höchstens `MEANING_CHARS`). Einheit und Bereich stehen in der Tabelle `UNITS`, fehlende
+  oder unklare Bedeutungen in `MEANINGS`. Test `describe::issue_219_ak2_…`: beide Tabellen nennen nur Felder des
+  Schemas, jedes Feld vom Typ number, integer oder series hat eine Einheit, jedes Feld eine Bedeutung; zusätzlich liegen
+  alle Werte der Beispielplanung auf Feldern des Katalogs. **Neues Feld im Modell → Eintrag in `UNITS` (Zahlen) bzw.
+  Doc-Kommentar oder `MEANINGS`.**
+- **Übrige Abschnitte** aus den Schemas von `measure::Metric` (Grössen, Zeitfenster, Reduktion, Aggregation),
+  `experiment::Experiment` (Schlüssel, Ziel, Suchverfahren, Standardwerte) und `StateInput` (Zustandsgrössen); die
+  Beispiele (`describe::examples`) laufen im Test auf der Beispielplanung; `performance` misst mit `api::bench` beim
+  Aufruf (Beispielplanung mit parametrischen Renditen, sonst `--plan`); `LIMITS` nach Analyse Abschnitt 9.
+- **Grösse:** ganzer Katalog und jeder Abschnitt, Text und JSON, unter 20'000 Zeichen (`issue_219_ak4_…`). Die Felder
+  stehen in der Übersicht ohne Bedeutung, mit Bedeutung nur in `describe fields`; Zeilen als `name: type, unit, range
+  – meaning`, Namenslisten als JSON-Objekt.
 
 ## Jahreswerte, Kurzfassung und Vergleich (#209)
 

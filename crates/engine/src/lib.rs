@@ -11,6 +11,7 @@ pub mod ahv;
 pub mod api;
 pub mod batch;
 pub mod calibrate;
+pub mod describe;
 pub mod digest;
 pub mod dispatch;
 pub mod experiment;

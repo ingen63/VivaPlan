@@ -926,3 +926,107 @@ fn issue_216_ak7_evaluate_stops_without_yes() {
     let t = text(&o);
     assert!(t.contains("Estimate: 1900 variants") && t.contains("--yes"), "{t}");
 }
+
+/// #219/AK4: `describe` as text and JSON under 20 000 characters, the whole catalog and every section; a section alone
+/// holds only itself.
+#[test]
+fn issue_219_ak4_describe_small_and_in_sections() {
+    let o = run(&["describe"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let t = String::from_utf8(o.stdout).unwrap();
+    assert!(t.chars().count() < 20_000, "{}", t.chars().count());
+    for s in [
+        "## fields",
+        "## series",
+        "## state",
+        "## metrics",
+        "## experiment",
+        "## examples",
+        "## performance",
+    ] {
+        assert!(t.contains(s), "{s}");
+    }
+    assert!(
+        t.contains("µs per run") && t.contains("stockShare: series|curve, share, 0..1"),
+        "{t}"
+    );
+    let o = run(&["describe", "--json"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert!(String::from_utf8_lossy(&o.stdout).chars().count() < 20_000);
+    let v = stdout_json(&o);
+    assert_eq!(v["format"], "vivaplan-describe/1");
+    assert!(v["performance"]["usPerRun"].as_f64().is_some_and(|u| u > 0.0), "{v}");
+
+    for s in [
+        "fields",
+        "series",
+        "state",
+        "metrics",
+        "experiment",
+        "examples",
+        "limits",
+    ] {
+        let o = run(&["describe", s]);
+        assert!(o.status.success(), "{}", text(&o));
+        let t = String::from_utf8(o.stdout).unwrap();
+        assert!(t.chars().count() < 20_000, "{s}: {}", t.chars().count());
+        assert_eq!(t.matches("\n## ").count(), 1, "{s}: {t}");
+        assert!(t.contains(&format!("## {s}")), "{s}");
+        let o = run(&["describe", s, "--json"]);
+        assert!(String::from_utf8_lossy(&o.stdout).chars().count() < 20_000, "{s}");
+        let v = stdout_json(&o);
+        assert!(v.get(s).is_some() && v.get("performance").is_none(), "{s}");
+    }
+    // The fields with their meaning only in the section.
+    let o = run(&["describe", "fields"]);
+    assert!(String::from_utf8_lossy(&o.stdout).contains("upper: number, share, 0..1 – Upper guardrail"));
+
+    let o = run(&["describe", "nothing"]);
+    assert!(!o.status.success());
+    assert!(
+        text(&o).contains("Unknown section nothing; sections: fields"),
+        "{}",
+        text(&o)
+    );
+    let o = run(&["describe", "fields", "state"]);
+    assert!(!o.status.success());
+}
+
+/// #219/AK1: The microseconds per run on the given plan (`--plan`), otherwise on the example plan.
+#[test]
+fn issue_219_ak1_describe_measures_the_given_plan() {
+    let (_tmp, d) = tmp("describe");
+    let f = plan_file(&d, "parametric", |_| {});
+    let o = run(&["describe", "performance", "--plan", &f, "--json"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let v = stdout_json(&o);
+    assert_eq!(v["performance"]["plan"], "given");
+    assert!(v["performance"]["usPerRun"].as_f64().is_some_and(|u| u > 0.0), "{v}");
+    let o = run(&["describe", "performance"]);
+    let t = text(&o);
+    assert!(t.contains("Measured on the example plan in"), "{t}");
+    let o = run(&["describe", "--plan", "missing.vplan"]);
+    assert!(!o.status.success());
+}
+
+/// #219/AK3: An example of the catalog runs with `vivaplan evaluate` on the example plan.
+#[test]
+fn issue_219_ak3_example_runs_with_evaluate() {
+    let (_tmp, d) = tmp("describe-example");
+    let o = run(&["describe", "examples", "--json"]);
+    let v = stdout_json(&o);
+    let ex = v["examples"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["name"] == "lumpSum")
+        .expect("example lumpSum");
+    let e = d.join("lump.json");
+    std::fs::write(&e, ex["experiment"].to_string()).unwrap();
+    let plan = root().join("crates/engine/assets/example.vplan");
+    let o = run(&["evaluate", plan.to_str().unwrap(), e.to_str().unwrap(), "--json"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let r = stdout_json(&o);
+    assert_eq!(r["status"], "done");
+    assert_eq!(r["result"]["variants"], 3);
+}

@@ -216,6 +216,7 @@ Wörter in Grossbuchstaben nicht.
 | Kennzahlen | `summary`, `metrics` | `Summary`, `Metrics` |
 | Messebene, Kennzahl aus Bausteinen (#214) | `measure`, `metric` | `Measurement`, `Metric`, `Quantity`, `Window`, `Reduce`, `Aggregate` |
 | Experiment, Variation, Nebenbedingung, Ziel, Raster, Mustersuche, Bestätigung (#216) | `experiment`, `vary`, `constraint`, `objective`, `grid`, `pattern`, `confirm` | `Experiment`, `Variation`, `GroupMember`, `Constraint`, `ExperimentObjective`, `ExperimentBudget` |
+| Katalog für KIs, Abschnitt, Einheit, Wertebereich, Bedeutung (#219) | `describe`, `section`, `unit`, `range`, `meaning` | `Catalog`, `Section`, `Field`, `Leaf` |
 | Vorschau | `preview` | |
 | Fortschritt, Abbruch | `progress`, `cancel` | |
 
