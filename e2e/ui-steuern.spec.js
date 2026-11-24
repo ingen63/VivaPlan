@@ -999,3 +999,27 @@ test.describe("Clearer card of the deductions from income (#241)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Field «Steuerwert» wide enough (#255)", () => {
+  test("AK1, AK3: amount up to 99'999'999 and a share fully visible at the smallest window width", async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 800 });
+    const errors = await open(page);
+    const i = await page.evaluate(() => state.realestate.properties.findIndex(p => p.status === "owned"));
+    for (const tv of [{ kind: "amount", value: 1250000 }, { kind: "amount", value: 99999999 }, { kind: "rate", value: 0.6543 }]) {
+      await page.evaluate(([i, tv]) => { state.realestate.properties[i].taxValue = tv; markDirty(); renderSection(); }, [i, tv]);
+      await nav(page, "Immobilien");
+      const [sw, cw] = await page.locator(`[data-tax-value="${i}"] input`).evaluate(el => [el.scrollWidth, el.clientWidth]);
+      expect(sw, JSON.stringify(tv)).toBeLessThanOrEqual(cw);
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK2: other fields with a choice and an amount keep their width", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Immobilien");
+    const widths = await page.locator(".refwrap:not(.tv) .inp").evaluateAll(els => els.map(el => [!!el.closest(".mtbl"), Math.round(el.getBoundingClientRect().width)]));
+    expect(widths.length).toBeGreaterThan(0);
+    for (const [inTable, w] of widths) expect(w).toBe(inTable ? 102 : 96);
+    await noErrors(page, errors);
+  });
+});

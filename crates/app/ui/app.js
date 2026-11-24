@@ -1353,7 +1353,7 @@ function taxValueRow(p, i, P) {
   const opts = [["", tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
   const sel = `<select class="plain" data-action-change="tax-value-kind" data-i="${i}">${opts.map(([k, l]) => `<option value="${k}" ${k === kind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
   const value = kind ? F(`${P}.taxValue.value`, "", kind === "rate" ? "pct" : "chf", { bare: true }) : "";
-  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${tr("realestate.taxValue")}</span><div class="refwrap">${sel}${value}</div></label></div>
+  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${tr("realestate.taxValue")}</span><div class="refwrap tv">${sel}${value}</div></label></div>
     <p class="hint">${tr("realestate.taxValueHint")}</p>`;
 }
 /** #229: changing the kind keeps the tax value: an amount becomes its share of the market value (planned: purchase price) and back. */
