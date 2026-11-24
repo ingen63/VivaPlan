@@ -39,8 +39,8 @@ Pfadtests der App. Windows-Pfade (Laufwerk, Backslash, UNC, Umlaute) prüft
 `issue_141_ak3_windows_paths` in `crates/app/src/main.rs` (nur unter Windows ausgeführt, überall übersetzt, sonst
 übersprungen mit Grund, #224). Vor dem
 Release-Entwurf startet `pakete.yml` jedes gebaute Programm mit `--smoke`: Fenster und Webansicht öffnen, Beispielplanung
-rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`). Bis auf Weiteres baut
-`pakete.yml` nur das `.dmg` für macOS, der Rauchtest läuft also nur dort (#202); Linux und Windows schaltet #203 wieder ein.
+rechnen, beenden (Code 0 = in Ordnung, Meldung in `VIVAPLAN_SMOKE_OUT`; Linux in `xvfb`). Ein Tag baut alle drei
+Systeme, der Rauchtest läuft also auf allen dreien; von Hand gestartet nur auf den gewählten (#202, #203).
 
 **Übersprungene Tests (#224):** Tests, die etwas Besonderes brauchen, dürfen lokal übersprungen werden, aber nie still:
 Sie fragen `engine::test_resource` (`crates/engine/src/test_resource.rs`), das den Grund auf stderr schreibt

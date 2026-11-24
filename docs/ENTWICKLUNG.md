@@ -748,9 +748,11 @@ Quartal); der Import meldet das. Mehrere Kapitalbezüge (`LumpsumRatio`) werden 
 - **Ergebnisse:** Bandbreite mit 1. und 99. Perzentil und dem monatlich schlechtesten Wert; unter «Einzelne Läufe»
   zusätzlich 1., 99. Perzentil und der Lauf mit dem tiefsten Endvermögen. Einzelläufe zeigen den Verlauf von
   Aktien und Obligationen als Index.
-- **Installationspakete:** `.github/workflows/pakete.yml` baut auf GitHub bis auf Weiteres nur macOS (.dmg, #202;
-  Windows .msi/.exe und Linux .deb/.rpm/.AppImage schaltet #203 wieder ein) – von Hand gestartet oder durch ein Tag `v…`
-  (dann als Entwurf unter «Releases»).
+- **Installationspakete:** `.github/workflows/pakete.yml` baut auf GitHub Windows (.msi, .exe), Linux (.deb, .AppImage;
+  .rpm nur ohne Vorabversion) und macOS (.dmg). Ein Tag `v…` baut alle drei und legt einen Entwurf unter «Releases» an.
+  Von Hand gestartet (Eingaben `tag` und `plattformen`, Vorgabe nur macOS, #202/#203) baut er die gewählten Plattformen;
+  mit `tag` den Stand dieses Tags und lädt die Pakete in dessen Release (auch Entwurf), z. B.
+  `gh workflow run pakete.yml -f tag=v1.0.0-beta.3 -f plattformen=windows,linux`.
   Lokal geht jeweils nur das eigene System (`npx tauri build`). Die Pakete sind nicht signiert.
 
 ### Grundstückgewinnsteuer
