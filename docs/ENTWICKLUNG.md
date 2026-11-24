@@ -162,10 +162,16 @@ Ablauf pro Release:
 1. Den deutschen Eintrag in `CHANGELOG.md` schreiben, mit Issue-Nummern.
 2. Ihn in die drei Übersetzungen übertragen: dieselben Abschnitte und Issue-Nummern, Begriffe nach dem Glossar
    (`docs/GLOSSAR.md`).
-3. Prüfen: `make changelog` bzw. `python3 tools/changelog.py check` (läuft auch in `make test-quiet` und im Job
+3. `README.md` (deutsch, massgebend) und die Übersetzungen `README.en.md`, `README.fr.md` und `README.it.md`
+   nachführen, wenn sich Funktionen, Installation oder Videos geändert haben (#245): dieselbe Sprachleiste,
+   dieselben Abschnitte in derselben Reihenfolge, Begriffe nach dem Glossar. Jede Fassung zeigt den Teaser ihrer
+   Sprache (`user-attachments`), verlinkt die Videos ihres archive.org-Items (`vivaplan-video-<de|en|fr|it>`) und das
+   Bildschirmfoto `docs/bilder/uebersicht.png` bzw. `uebersicht-<en|fr|it>.png` (Planung der Videos, Namen je
+   Sprache).
+4. Prüfen: `make changelog` bzw. `python3 tools/changelog.py check` (läuft auch in `make test-quiet` und im Job
    `english`). Gemeldet werden abweichende Versionen, Abschnitte oder Issue-Nummern und verbotene Varianten aus dem
    Glossar.
-4. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
+5. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
    einer Sprache fehlt, und setzt den Text aus `python3 tools/changelog.py notes v…` als Beschreibung des
    Release-Entwurfs: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar.
    Der Titel ist sprachneutral, nur Produkt und Version (`python3 tools/changelog.py title v…`, z. B. v1.0.0-beta.2 →

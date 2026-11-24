@@ -1,3 +1,5 @@
+<p align="center"><b>Deutsch</b> · <a href="README.en.md">English</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a></p>
+
 <h1 align="center">VivaPlan</h1>
 
 <p align="center">
@@ -12,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/bilder/uebersicht.png" alt="VivaPlan: Beispielplanung mit Zeitleiste, Eingaben und Live-Vorschau des Vermögensverlaufs" width="900">
+  <img src="docs/bilder/uebersicht.png" alt="VivaPlan: Planung von Hans und Anna Meier aus den Videos mit Zeitleiste, Eingaben und Live-Vorschau des Vermögensverlaufs" width="900">
 </p>
 
 https://github.com/user-attachments/assets/d5e55050-891c-4345-a27d-df911424cc30
@@ -22,7 +24,7 @@ https://github.com/user-attachments/assets/d5e55050-891c-4345-a27d-df911424cc30
   ▶ <a href="https://archive.org/details/vivaplan-video-de/vivaplan-10min.mp4">VivaPlan in 10 Minuten</a>
 </p>
 
-<p align="center"><sub>Bildschirmfoto und Videos zeigen Beispielplanungen mit erfundenen Daten.</sub></p>
+<p align="center"><sub>Bildschirmfoto und Videos zeigen dieselbe Beispielplanung mit erfundenen Daten.</sub></p>
 
 ## Worum es geht
 
@@ -49,7 +51,7 @@ Fall daneben.
 - 🔀 **Szenarien:** «Was, wenn ich mit 63 gehe und die Hälfte als Kapital beziehe?» als Kurven und Heatmaps
 - 🕰️ **Was wäre gewesen:** «Wie wäre es mir ergangen, wenn ich 1973 pensioniert worden wäre?»
 - 🗂️ **Simulationen vergleichen:** jede Simulation wird mit der Planung von damals gespeichert
-- ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein Handbuch mit Suche
+- ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein [Handbuch](crates/app/ui/hilfe/de/00-einstieg.md) mit Suche
 - 🌐 **Deutsch, Englisch, Französisch und Italienisch:** Oberfläche, Menüs, Meldungen und Hilfe in allen vier Sprachen
   (Wahl unter *Ansicht → Sprache*); Zahlen immer im Schweizer Format. Die Kommandozeile gibt englische Texte aus.
 
