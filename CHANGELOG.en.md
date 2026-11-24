@@ -4,22 +4,11 @@ English translation of `CHANGELOG.md` (German, authoritative) from version 1.0.0
 
 ## Version 1.0.0-beta.4
 
-Fourth pre-release of 1.0, corrects the tax compared with 1.0.0-beta.3. The Windows installer `.msi` carries the version number 1.0.0.4; for now installers are built for macOS only (#202).
+Fourth pre-release of 1.0; it also contains all changes of the unpublished 1.0.0-beta.3. The Windows installer `.msi` carries the version number 1.0.0.4; for now installers are built for macOS only (#202).
 
 ### May change results
 
 - **Married with one person (#250):** «Married» also applies without a second person; taxes are then calculated with the tariffs and deductions for married couples. Older plans with one person are taken over as unmarried when opened and calculate as before (note); new plans start unmarried.
-
-### New, changed, fixed
-
-- **Input help from the assessment (#251):** New field «of which pillar 3a according to the assessment», so that pillar 3a is not deducted twice with «Deduct contributions to pillar 3a»; a note is shown while the field is empty.
-
-## Version 1.0.0-beta.3
-
-Third pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.3; for now installers are built for macOS only (#202).
-
-### May change results
-
 - **Taxes by canton and municipality (#63, #64, #65, #66):** In the mode «Place of residence», income, wealth and lump-sum tax follow canton and municipality, the property gains tax the canton of the property. Tariffs grow with inflation, the second-earner deduction applies to employed persons.
 - **Deductions and residence (#131, #151, #152, #228–#232):** Income deductions as proposed by the canton or as own rows, additional and one-off deductions, wealth deductions, tax value per property, earned income as an annual amount, residence changing over time and the large pillar 3a for persons without a pension fund.
 - **AHV (#190, #191, #198):** The 13th AHV pension is paid in December and counts in the net need of the 3-pot strategy. Early withdrawal and deferral reduce or increase the pension; the cap for married couples follows the law.
@@ -28,6 +17,7 @@ Third pre-release of 1.0. The Windows installer `.msi` carries the version numbe
 
 ### New, changed, fixed
 
+- **Input help from the assessment (#251):** New field «of which pillar 3a according to the assessment», so that pillar 3a is not deducted twice with «Deduct contributions to pillar 3a»; a note is shown while the field is empty.
 - **Compare strategies (#196, #197, #200, #201, #205):** Strategies can be compared without optimization, optimization results saved and reopened; switch «Never sell real estate»; a hint when the lower limit determines spending; result table without horizontal scrolling.
 - **Dark theme (#220, #235):** Setting «Appearance» with light and dark theme; better contrast in the menu.
 - **Usability (#143, #227, #233, #234, #241):** Taxes marked as an estimate, recently opened plans in the «File» menu, affordability in the settings, readable engine messages, clearer card «Income deductions» with a text for the second-earner deduction.

@@ -2,22 +2,11 @@
 
 ## Version 1.0.0-beta.4
 
-Vierte Vorabversion von 1.0, korrigiert die Steuer gegenüber 1.0.0-beta.3. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.4; Installationspakete gibt es vorerst nur für macOS (#202).
+Vierte Vorabversion von 1.0; sie enthält auch alle Änderungen der nicht veröffentlichten 1.0.0-beta.3. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.4; Installationspakete gibt es vorerst nur für macOS (#202).
 
 ### Kann Ergebnisse ändern
 
 - **Verheiratet mit einer Person (#250):** «Verheiratet» gilt auch ohne zweite Person; dann rechnen die Steuern mit Tarifen und Abzügen für Verheiratete. Ältere Planungen mit einer Person werden beim Öffnen als unverheiratet übernommen und rechnen wie bisher (Hinweis); neue Planungen beginnen unverheiratet.
-
-### Neu, geändert, behoben
-
-- **Eingabehilfe aus der Veranlagung (#251):** Neues Feld «davon Säule 3a laut Veranlagung», damit die Säule 3a mit «Einzahlungen in die Säule 3a abziehen» nicht doppelt abgezogen wird; Hinweis, solange das Feld leer ist.
-
-## Version 1.0.0-beta.3
-
-Dritte Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.3; Installationspakete gibt es vorerst nur für macOS (#202).
-
-### Kann Ergebnisse ändern
-
 - **Steuern nach Kanton und Gemeinde (#63, #64, #65, #66):** Einkommens-, Vermögens- und Kapitalbezugssteuer rechnen im Modus «Wohnort» nach Kanton und Gemeinde, die Grundstückgewinnsteuer nach dem Kanton der Immobilie. Tarife wachsen mit der Teuerung, der Zweitverdienerabzug wirkt für Erwerbstätige.
 - **Abzüge und Wohnort (#131, #151, #152, #228–#232):** Abzüge vom Einkommen mit Vorschlag des Kantons oder eigenen Zeilen, zusätzliche und einmalige Abzüge, Abzüge vom Vermögen, Steuerwert je Immobilie, Erwerbseinkommen als Jahresbetrag, zeitabhängiger Wohnort und grosse Säule 3a für Personen ohne Pensionskasse.
 - **AHV (#190, #191, #198):** Die 13. AHV-Rente wird im Dezember ausbezahlt und zählt im Netto-Bedarf der 3-Topf-Strategie. Vorbezug und Aufschub kürzen bzw. erhöhen die Rente; der Plafond für Ehepaare gilt gesetzeskonform.
@@ -26,6 +15,7 @@ Dritte Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Ve
 
 ### Neu, geändert, behoben
 
+- **Eingabehilfe aus der Veranlagung (#251):** Neues Feld «davon Säule 3a laut Veranlagung», damit die Säule 3a mit «Einzahlungen in die Säule 3a abziehen» nicht doppelt abgezogen wird; Hinweis, solange das Feld leer ist.
 - **Strategien vergleichen (#196, #197, #200, #201, #205):** Strategien lassen sich ohne Optimierung vergleichen, Ergebnisse der Optimierung speichern und wieder öffnen; Schalter «Immobilien nie verkaufen»; Hinweis, wenn die Untergrenze die Ausgaben bestimmt; Ergebnistabelle ohne waagrechtes Scrollen.
 - **Dunkles Theme (#220, #235):** Einstellung «Darstellung» mit hellem und dunklem Theme; besserer Kontrast im Menü.
 - **Bedienung (#143, #227, #233, #234, #241):** Steuern als Schätzung gekennzeichnet, zuletzt geöffnete Planungen im Menü «Datei», Tragbarkeit in den Einstellungen, lesbare Meldungen des Rechenkerns, übersichtlichere Karte «Abzüge vom Einkommen» mit Text für den Zweitverdienerabzug.
