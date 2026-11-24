@@ -1632,6 +1632,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #217/AK6 | Bestehende Planungen rechnen unverändert (Golden). | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (Golden unverändert) |
 | #217/AK7 | Hilfe und Beschreibung nachgeführt (Editor ausgelagert nach #243). | ☑ | **gilt** (nach Kommentar) | e2e lesende Anzeige im Editor | 24.11.2026 ok (Hilfe vier Sprachen, BESCHREIBUNG; Editor zeigt die Formen lesend) |
 
+### #218 Kennlinien: Parameter abhängig vom Zustand
+
+[Issue #218](https://github.com/ingen63/VivaPlan/issues/218) · geschlossen · Umsetzung: 535c968
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #218/AK1 | Zustandsgrössen `age`, `liquidReal`, `withdrawalRate`, `fundedRatio`, `stockReturn12m`, `drawdown`, in Hilfe und Schema definiert. | ☑ | **gilt** | `issue_218_ak1_…` | 24.11.2026 ok (Test grün; Hilfe vier Sprachen; Deckungsgrad ohne Abzinsung, nach Kommentar) |
+| #218/AK2 | `wealth.stockShare` als Kennlinie, ausgewertet beim Umschichten (`yearly`/`monthly`). | ☑ | **gilt** | `issue_218_ak2_…`, e2e lesende Anzeige | 24.11.2026 ok (Test grün) |
+| #218/AK3 | Stützpunkte [[0.02, 0.8], [0.06, 0.4]] über `withdrawalRate`: 4 % ergibt 0.6. | ☑ | **gilt** | `issue_218_ak3_…` | 24.11.2026 ok (Test grün, in der Simulation) |
+| #218/AK4 | Ohne Kennlinie unverändert (Golden), Rechenzeit im Messrauschen. | ☑ | **gilt** | Golden, `variants_bench` | 24.11.2026 ok (Golden unverändert, bitgleich; variations 1086–1097 → 1056–1075 ms, compare 1243–1255 → 1202–1220 ms) |
+| #218/AK5 | Hilfe nennt die Grenze des parametrischen Modells. | ☑ | **gilt** | – | 24.11.2026 ok (Durchsicht, vier Sprachen) |
+
 ### #222 Regel gegen überflüssige Tests für den rust-test-agent
 
 [Issue #222](https://github.com/ingen63/VivaPlan/issues/222) · geschlossen · Umsetzung: a2a4afe
