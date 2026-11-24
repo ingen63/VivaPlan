@@ -59,7 +59,7 @@ Il motore di calcolo è disponibile anche nel terminale (programma `vivaplan`):
 
 | Comando | Scopo |
 |---|---|
-| `run <pianificazione>` | calcolare la pianificazione (`--csv`, `--json`, `--events`) |
+| `run <pianificazione>` | calcolare la pianificazione (`--csv`, `--json`, `--events`, `--metric`, vedi [Indicatori propri](#ref-metric)) |
 | `validate <pianificazione>` | verificare la pianificazione (`--json`) |
 | `set <pianificazione> <percorso>=<valore>…` | modificare valori per percorso di campo, vedi [Modificare valori](#ref-set) |
 | `diff <a> <b>` | elencare le differenze tra due pianificazioni (`--json`) |
@@ -83,7 +83,7 @@ Ogni output inizia con `format` e la versione. Gli importi sono arrotondati a un
 
 | `format` | Contenuto |
 |---|---|
-| `vivaplan-run/1` | `error` (o `null`), `issues`, `elapsedMs` e, secondo il metodo, `single`, `batch` e `scenarios` |
+| `vivaplan-run/1` | `error` (o `null`), `issues`, `elapsedMs` e, secondo il metodo, `single`, `batch` e `scenarios`; con `--metric` anche `metrics` |
 | `vivaplan-validate/1` | `valid` (nessun errore), `issues` |
 | `vivaplan-optimize/1` | impostazioni, `reference` (la pianificazione così com’è) e `outcomes` (la strategia migliore per prima, con `params`, `validated`, `feasible` e `patch`) |
 | `vivaplan-bench/1` | `runs`, `months`, `elapsedMs`, `usPerRun`, `cores`, `check` |
@@ -108,6 +108,33 @@ Parole chiave: set, diff, percorso di campo, modificare, variante, IA, confronta
 - **File:** senza `-o`, `set` scrive un nuovo file accanto a quello vecchio, con il prossimo numero libero (`plan-1.vplan`, `plan-2.vplan`, …), e ne emette il nome. Con `-o <file>` scrive lì. `set` sostituisce un file esistente solo con `--overwrite`, dopo una copia di sicurezza `<file>.bak`. `--overwrite` senza `-o` sostituisce la pianificazione stessa.
 
 `vivaplan diff <a> <b>` elenca per ogni differenza il percorso di campo, il valore vecchio e quello nuovo, per esempio `withdrawal.floor: 0 → 0.8`; con `--json` nel formato `vivaplan-diff/1`.
+
+## @ref-metric Indicatori propri (--metric)
+Parole chiave: indicatore, metric, misura, quantile, mediana, probabilità, finestra, consumo, IA
+
+`vivaplan run <pianificazione> --metric '<json>'` calcola inoltre indicatori che Lei compone da elementi, sugli stessi percorsi di rendimento di `run` (senza variazioni). `--metric` si può indicare più volte e accetta un indicatore o un elenco di indicatori. Con `--json` i valori si trovano sotto `metrics`, altrimenti alla fine del rapporto. Gli indicatori vengono raccolti durante la simulazione; a tale scopo non vengono salvati valori mensili.
+
+| Elemento | Chiave | Scelta |
+|---|---|---|
+| Grandezza | `quantity` | un campo dei valori mensili (`total`, `liquid`, `income`, `spending`, `taxes`, `withdrawal`, `housing`, `mortgage`, `pensionFund`, `age` …) o derivata: `consumption` (spese; dopo l’esaurimento solo quanto coperto dal reddito), `plannedConsumption`, `depleted` (1 dall’esaurimento), `atFloor` (1 quando il minimo determina le spese), i contatori `emergencySales`, `lumpSums`, `affordabilitySales`, `unaffordableRenewals` |
+| Unità | `real` | `true`: ai prezzi del mese iniziale (solo importi); altrimenti nominale |
+| Finestra | `window` | `from`, `to` (incluso): `start`, `retirement`, `end`, identificativo di una tappa o `AAAA-MM`; `fromAge`, `toAge`: età della prima persona; `years`: solo i primi n anni. Senza indicazione l’intera durata |
+| Riduzione per percorso | `reduce` | `annualSums` (somma per 12 mesi, una serie annuale), `sum`, `mean`, `min`, `max`, `atStart`, `atEnd`, `firstWhen` (età nel primo mese che soddisfa la condizione), `share` (quota di mesi che soddisfano la condizione), `any`, `volatility` (variazione media delle somme annuali), `shareOfStartLiquid` (somma rispetto alla sostanza liquida prima della finestra) |
+| Aggregazione sui percorsi | `aggregate` | `{"kind": "quantile", "q": 0.5}`, `mean`, `min`, `max`, `probability` e `count` (con `condition`), `conditionalMean` (con `lowest` o `highest` come quota, oppure `condition`) |
+
+Una condizione si scrive per esempio `{"op": "lt", "value": 50000}` (`gt`, `ge`, `lt`, `le`); senza indicazione vale «maggiore di 0», cioè «sì» per `depleted` e `atFloor`. `condition` accanto a `reduce` verifica i mesi (`firstWhen`, `share`, `any`), `condition` in `aggregate` i valori per percorso. Con `annualSums` l’aggregazione prende insieme tutti i valori annuali di tutti i percorsi, come l’ottimizzazione. `name` dà il nome all’indicatore nel risultato.
+
+Ogni voce di `metrics` contiene `name`, `value` (o `null`), `values` (numero di valori), l’errore standard `stdError` per le probabilità e le medie per percorso, il percorso `path` per quantile, minimo e massimo, nonché la definizione `metric`. Gli errori negli indicatori vengono riuniti in un messaggio con l’elenco; in tal caso non si calcola nulla. `vivaplan schema` descrive la pianificazione, non gli indicatori.
+
+Esempi:
+
+```
+--metric '{"name": "Consumo anni 1–15, mediana", "quantity": "consumption", "real": true, "window": {"from": "retirement", "years": 15}, "reduce": "annualSums", "aggregate": {"kind": "quantile", "q": 0.5}}'
+--metric '{"name": "Rovina fino a 85 anni", "quantity": "depleted", "window": {"toAge": 85}, "reduce": "any", "aggregate": {"kind": "probability"}}'
+--metric '{"name": "Quota di mesi al minimo", "quantity": "atFloor", "window": {"from": "retirement"}, "reduce": "share", "aggregate": {"kind": "mean"}}'
+```
+
+Mediana e P10 di `consumption` (reale, intera durata da `retirement`) sono gli stessi valori che in `optimize --compare`.
 
 ## @ref-library Biblioteca di dati: cartelle e file
 Parole chiave: cartella, serie temporali, luogo di salvataggio, Application Support, CSV

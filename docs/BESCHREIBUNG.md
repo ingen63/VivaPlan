@@ -367,6 +367,14 @@ Rechenkern prüft Pfad und Typ gegen das Schema; bei einem Fehler wird keine Än
 `-o` eine neue Datei mit der nächsten freien Nummer und ersetzt eine vorhandene nur mit `--overwrite` (nach einer
 Sicherungskopie `.bak`). `vivaplan diff <a> <b>` listet je Unterschied Feldpfad, alten und neuen Wert.
 
+Eigene Kennzahlen (#214): `vivaplan run <planung> --metric '<json>'` setzt eine Kennzahl aus Bausteinen zusammen –
+Grösse (zum Beispiel Konsum, Gesamtvermögen, «Untergrenze bestimmt die Ausgaben»), nominal oder real, Zeitfenster
+(ab/bis Meilenstein, Alter, die ersten n Jahre), Reduktion je Pfad (Jahressumme, Mittel, Minimum, Wert am Ende, erster
+Zeitpunkt, Anteil Monate, Schwankung) und Aggregation über die Pfade (Quantil, Mittel, Wahrscheinlichkeit mit
+Standardfehler, bedingtes Mittel). So lässt sich etwa «Median des realen Konsums in den ersten 15 Jahren ab
+Pensionierung» ohne neuen Code beantworten. Die Kennzahlen werden während der Simulation gesammelt; die Optimierung
+rechnet ihre Kennzahlen auf demselben Weg.
+
 ## Installation
 
 Das Paket für **macOS** (.dmg) baut ein GitHub-Workflow beim Setzen eines Versions-Tags und legt es als Release-Entwurf

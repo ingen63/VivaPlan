@@ -238,6 +238,7 @@ $B import-legacy local/eigene/config.json --start-year 2026 --base local/eigene 
 $B bench crates/engine/assets/example.vplan --paths 50000   # Rechenleistung
 $B optimize crates/engine/assets/example.vplan --max-ruin 5 --ruin-age 95   # beste Entnahmestrategie suchen
 $B optimize crates/engine/assets/example.vplan --compare --property both    # Strategien ohne Suche vergleichen (#197)
+$B run crates/engine/assets/example.vplan --metric '{"quantity": "total", "real": true, "reduce": "atEnd", "aggregate": {"kind": "quantile", "q": 0.05}}'   # eigene Kennzahl (#214)
 $B schema > planung.schema.json                  # JSON-Schema der Projektdatei
 $B library                                       # Zeitreihen der Datenbibliothek (Ordner crates/engine/data/)
 $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.xls, .xlsx, .ods)
@@ -342,6 +343,28 @@ einmal und werden für alle Varianten verwendet:
 `returns.startDate` (Monat, Schritt in Monaten), `milestone.retire` (Monat; setzt die Pensionierung als Datum),
 `flows.spendingFactor` (Faktor auf die Lebenshaltungskosten ohne Wohnanteil). Jede Kombination (technisch höchstens 1'000'000) wird mit allen Pfaden
 gerechnet: Erfolgsquote, Vermögen bei Pensionierung (Median), Endvermögen 5./50./95. Perzentil, früheste Erschöpfung.
+
+## Messebene: Kennzahlen aus Bausteinen (#214)
+
+`engine::measure`: Eine Kennzahl (`Metric`, JSON) ist Grösse (`Quantity`: Feld des `MonthRecord` oder abgeleitet:
+`consumption`, `plannedConsumption`, `depleted`, `atFloor`, Zähler aus `Summary`) × `real` × Zeitfenster (`Window`:
+`from`/`to` als `start`, `retirement`, `end`, Meilenstein oder Monat, `fromAge`/`toAge`, `years`) × Reduktion je Pfad
+(`Reduce`) × Aggregation über Pfade (`Aggregate`, mit `kind`). Kein Ausdrucksparser; das JSON-Schema (`measure::schema`)
+beschreibt alle Bausteine samt Doku-Kommentaren (für `describe`, #219).
+
+- **Im Strom:** `Simulator::run_observed` übergibt jeden Monat einem `MonthObserver` (Datensatz und `Summary` nach dem
+  Monat), auch ohne `record`. `Measurement` legt gleiche Teile je Pfad (Grösse, Einheit, Fenster, Reduktion,
+  Bedingung) zu einem Sammler zusammen und aggregiert danach. `annualSums` sind Blöcke zu 12 Monaten ab Fensterbeginn,
+  ein unvollständiges letztes Jahr fällt weg; die Aggregation nimmt alle Jahreswerte aller Pfade zusammen.
+- **Quantil:** Wert an Rang round((n − 1) · q) der sortierten Werte, wie `run` und die Optimierung; dazu der Pfad.
+- **Statistik:** Wahrscheinlichkeiten mit Standardfehler √(p(1 − p)/n), Mittel je Pfad mit s/√n.
+- **Fehler:** `Measurement::new` und `measure::parse` geben alle Fehler als Liste zurück (`metric_invalid` mit dem
+  Problem als verschachtelter Meldung); ein leeres Zeitfenster ist ein Fehler, ausser in
+  `Measurement::allowing_empty` (feste Kennzahlen der Optimierung).
+- **Bestehende Kennzahlen:** `optimize::evaluate` rechnet mit `optimize::evaluate_metrics` über die Messebene (vorher
+  Monatsaufzeichnung und `path_stats`); `batch::summarize` lässt sich ausdrücken (Test `measure::issue_214_ak3_…`). Beide
+  ergeben bitgleich dieselben Werte wie vorher.
+- **Kommandozeile:** `run --metric <json>` (mehrfach, auch Liste) über `api::measure`, im JSON unter `metrics`.
 
 ## Datenbibliothek
 

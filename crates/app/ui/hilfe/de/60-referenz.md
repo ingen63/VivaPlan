@@ -59,7 +59,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 
 | Befehl | Zweck |
 |---|---|
-| `run <planung>` | Planung rechnen (`--csv`, `--json`, `--events`) |
+| `run <planung>` | Planung rechnen (`--csv`, `--json`, `--events`, `--metric`, siehe [Eigene Kennzahlen](#ref-metric)) |
 | `validate <planung>` | Planung prüfen (`--json`) |
 | `set <planung> <pfad>=<wert>…` | Werte per Feldpfad ändern, siehe [Werte ändern](#ref-set) |
 | `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
@@ -83,7 +83,7 @@ Jede Ausgabe beginnt mit `format` und der Version. Beträge sind auf ganze Einhe
 
 | `format` | Inhalt |
 |---|---|
-| `vivaplan-run/1` | `error` (oder `null`), `issues`, `elapsedMs` und je nach Methode `single`, `batch` und `scenarios` |
+| `vivaplan-run/1` | `error` (oder `null`), `issues`, `elapsedMs` und je nach Methode `single`, `batch` und `scenarios`; mit `--metric` zusätzlich `metrics` |
 | `vivaplan-validate/1` | `valid` (keine Fehler), `issues` |
 | `vivaplan-optimize/1` | Einstellungen, `reference` (die Planung, wie sie ist) und `outcomes` (beste Strategie zuerst, mit `params`, `validated`, `feasible` und `patch`) |
 | `vivaplan-bench/1` | `runs`, `months`, `elapsedMs`, `usPerRun`, `cores`, `check` |
@@ -108,6 +108,33 @@ Stichworte: set, diff, Feldpfad, ändern, Variante, KI, vergleichen
 - **Datei:** Ohne `-o` schreibt `set` eine neue Datei neben die alte, unter der nächsten freien Nummer (`plan-1.vplan`, `plan-2.vplan`, …), und gibt ihren Namen aus. Mit `-o <datei>` schreibt es dorthin. Eine vorhandene Datei ersetzt `set` nur mit `--overwrite`, nach einer Sicherungskopie `<datei>.bak`. `--overwrite` ohne `-o` ersetzt die Planung selbst.
 
 `vivaplan diff <a> <b>` listet je Unterschied den Feldpfad, den alten und den neuen Wert, zum Beispiel `withdrawal.floor: 0 → 0.8`; mit `--json` im Format `vivaplan-diff/1`.
+
+## @ref-metric Eigene Kennzahlen (--metric)
+Stichworte: Kennzahl, metric, Messung, Quantil, Median, Wahrscheinlichkeit, Zeitfenster, Konsum, KI
+
+`vivaplan run <planung> --metric '<json>'` berechnet zusätzlich Kennzahlen, die Sie aus Bausteinen zusammensetzen, auf denselben Renditepfaden wie `run` (ohne Variationen). `--metric` ist mehrfach möglich und nimmt eine Kennzahl oder eine Liste davon. Mit `--json` stehen die Werte unter `metrics`, sonst am Ende des Berichts. Die Kennzahlen werden während der Simulation gesammelt; dafür werden keine Monatswerte gespeichert.
+
+| Baustein | Schlüssel | Auswahl |
+|---|---|---|
+| Grösse | `quantity` | ein Feld der Monatswerte (`total`, `liquid`, `income`, `spending`, `taxes`, `withdrawal`, `housing`, `mortgage`, `pensionFund`, `age` …) oder abgeleitet: `consumption` (Ausgaben; nach der Erschöpfung nur, was das Einkommen deckt), `plannedConsumption`, `depleted` (1 ab der Erschöpfung), `atFloor` (1, wenn die Untergrenze die Ausgaben bestimmt), die Zähler `emergencySales`, `lumpSums`, `affordabilitySales`, `unaffordableRenewals` |
+| Einheit | `real` | `true`: in Preisen des Startmonats (nur Beträge); sonst nominal |
+| Zeitfenster | `window` | `from`, `to` (einschliesslich): `start`, `retirement`, `end`, Kennung eines Meilensteins oder `JJJJ-MM`; `fromAge`, `toAge`: Alter der ersten Person; `years`: nur die ersten n Jahre. Ohne Angabe die ganze Dauer |
+| Reduktion je Pfad | `reduce` | `annualSums` (Summe je 12 Monate, eine Jahresreihe), `sum`, `mean`, `min`, `max`, `atStart`, `atEnd`, `firstWhen` (Alter im ersten Monat mit der Bedingung), `share` (Anteil Monate mit der Bedingung), `any`, `volatility` (mittlere Änderung der Jahressummen), `shareOfStartLiquid` (Summe im Verhältnis zum flüssigen Vermögen vor dem Fenster) |
+| Aggregation über die Pfade | `aggregate` | `{"kind": "quantile", "q": 0.5}`, `mean`, `min`, `max`, `probability` und `count` (mit `condition`), `conditionalMean` (mit `lowest` oder `highest` als Anteil, oder `condition`) |
+
+Eine Bedingung lautet zum Beispiel `{"op": "lt", "value": 50000}` (`gt`, `ge`, `lt`, `le`); ohne Angabe gilt «grösser als 0», also «ja» bei `depleted` und `atFloor`. `condition` neben `reduce` prüft die Monate (`firstWhen`, `share`, `any`), `condition` in `aggregate` die Werte je Pfad. Bei `annualSums` nimmt die Aggregation alle Jahreswerte aller Pfade zusammen, wie die Optimierung. `name` benennt die Kennzahl im Ergebnis.
+
+Jeder Eintrag in `metrics` hat `name`, `value` (oder `null`), `values` (Anzahl Werte), bei Wahrscheinlichkeiten und bei Mitteln je Pfad den Standardfehler `stdError`, bei Quantil, Minimum und Maximum den Pfad `path` sowie die Definition `metric`. Fehler in den Kennzahlen kommen gesammelt als eine Meldung mit der Liste; gerechnet wird dann nicht. `vivaplan schema` beschreibt die Planung, nicht die Kennzahlen.
+
+Beispiele:
+
+```
+--metric '{"name": "Konsum Jahre 1–15, Median", "quantity": "consumption", "real": true, "window": {"from": "retirement", "years": 15}, "reduce": "annualSums", "aggregate": {"kind": "quantile", "q": 0.5}}'
+--metric '{"name": "Ruin bis 85", "quantity": "depleted", "window": {"toAge": 85}, "reduce": "any", "aggregate": {"kind": "probability"}}'
+--metric '{"name": "Anteil Monate an der Untergrenze", "quantity": "atFloor", "window": {"from": "retirement"}, "reduce": "share", "aggregate": {"kind": "mean"}}'
+```
+
+Median und P10 von `consumption` (real, ganze Dauer ab `retirement`) sind dieselben Werte wie unter `optimize --compare`.
 
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV

@@ -20,6 +20,7 @@ pub mod jst;
 pub mod legacy;
 pub mod library;
 pub mod market;
+pub mod measure;
 pub mod model;
 pub mod montecarlo;
 pub mod optimize;

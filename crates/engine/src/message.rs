@@ -721,6 +721,14 @@ codes! {
     optimize_keep_property_without_property => "The goal “No emergency sale of real estate” requires a plan with at least one property.",
     optimize_min_consumption_range => "The minimum consumption must be between 0 % and 200 % of the planned spending.",
     optimize_no_pk_payout => "The plan has no retirement (pension fund “payout from”).",
+    // Metrics (#214; measure.rs)
+    metric_invalid => "Metric {metric}: {problem}",
+    metric_real_not_amount => "“real” applies only to amounts, not to “{quantity}”",
+    metric_quantile_invalid => "the quantile “q” must be between 0 and 1",
+    metric_conditional_mean_invalid => "a conditional mean needs exactly one of “lowest”, “highest” (a share above 0 and at most 1) or “condition”",
+    metric_window_empty => "the window contains no month of the simulation",
+    metric_point_invalid => "“{point}” is not a point in time for a window (start, retirement, end, a milestone id or YYYY-MM)",
+    metric_years_invalid => "the number of years must be at least 1",
     // Catalog of the optimization (#177; optimize.rs): strategies, parameters, units
     opt_strategy_standard => "Standard",
     opt_strategy_three_buckets => "3 buckets",

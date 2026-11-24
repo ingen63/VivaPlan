@@ -21,7 +21,8 @@ const USAGE: &str = "\
 VivaPlan – calculation engine
 
 Usage:
-  vivaplan run <plan.vplan> [--csv <file>] [--json [<file.json>]] [--events]
+  vivaplan run <plan.vplan> [--csv <file>] [--json [<file.json>]] [--events] [--metric <json>]…
+        (--metric: a metric as JSON, or a list of them; several times possible; see the help, reference)
   vivaplan validate <plan.vplan> [--json]
   vivaplan set <plan.vplan> <path>[@<time>]=<value>… [-o <plan.vplan>] [--overwrite]
         (<time>: milestone id, age:<years> or YYYY-MM; without -o a new file plan-1.vplan, plan-2.vplan, …)
@@ -285,13 +286,52 @@ fn cmd_validate(args: &[String]) -> R {
     Ok(())
 }
 
+/// #214: The metrics given with `--metric` (JSON; each a metric or a list of metrics).
+fn metric_args(args: &[String]) -> Result<Vec<serde_json::Value>, String> {
+    if args.last().is_some_and(|a| a == "--metric") {
+        return Err("--metric needs a metric as JSON".into());
+    }
+    args.windows(2)
+        .filter(|w| w[0] == "--metric")
+        .map(|w| serde_json::from_str(&w[1]).map_err(|e| format!("--metric {}: {e}", w[1])))
+        .collect()
+}
+
+/// #214: Prints the metrics after the result of `run`.
+fn print_metrics(path: &str, metrics: &[serde_json::Value], args: &[String]) -> R {
+    let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+    let plan = engine::api::read_plan(Path::new(path))?;
+    let values = engine::api::measure(&plan, metrics, &base, Some(&library_dir(args))).map_err(|e| e.to_string())?;
+    println!("\nMetrics:");
+    let number = |v: f64| {
+        if v.abs() >= 100.0 {
+            chf(v)
+        } else {
+            format!("{v:.4}")
+        }
+    };
+    for m in values {
+        let value = m.value.map_or_else(|| "–".to_string(), number);
+        let error = m.std_error.map(|e| format!(" ± {}", number(e))).unwrap_or_default();
+        println!("  {:<36} {value:>15}{error}  (n = {})", m.name, m.values);
+    }
+    Ok(())
+}
+
 fn cmd_run(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
     let json = json_out(args);
+    let metrics = metric_args(args)?;
     if json == JsonOut::Stdout {
         let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
         let plan = engine::api::read_plan(Path::new(path))?;
-        let report = engine::api::run_report(&plan, &base, Some(&library_dir(args)));
+        let mut report = engine::api::run_report(&plan, &base, Some(&library_dir(args)));
+        if !metrics.is_empty() && report.error.is_none() {
+            match engine::api::measure(&plan, &metrics, &base, Some(&library_dir(args))) {
+                Ok(v) => report.metrics = Some(v),
+                Err(e) => report.error = Some(e),
+            }
+        }
         print_json(&report)?;
         return match report.error {
             Some(e) => Err(e.to_string().into()),
@@ -363,6 +403,9 @@ fn cmd_run(args: &[String]) -> R {
         if let JsonOut::File(json) = &json {
             std::fs::write(json, serde_json::to_string_pretty(&s)?)?;
         }
+    }
+    if !metrics.is_empty() {
+        print_metrics(path, &metrics, args)?;
     }
     Ok(())
 }

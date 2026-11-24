@@ -755,3 +755,94 @@ fn issue_207_ak4_diff_of_two_plans() {
     assert!(!o.status.success());
     assert!(text(&o).contains("Two project files expected"));
 }
+
+// #214/AK6: `run --metric <json>` (several times, also a list) with the values in `--json` and in the report; over the
+// whole duration from retirement median and P10 of real consumption equal those of `optimize --compare` (#214/AK4).
+#[test]
+fn issue_214_ak6_run_with_metrics() {
+    let (_tmp, d) = tmp("metric");
+    let f = plan_file(&d, "parametric", |v| {
+        v["withdrawal"]["strategy"] = serde_json::json!("guardrails")
+    });
+    let list = serde_json::json!([
+        consumption_value("median", None, 0.5),
+        consumption_value("p10", None, 0.1),
+        { "name": "ruin85", "quantity": "depleted", "window": { "toAge": 85 }, "reduce": "any",
+          "aggregate": { "kind": "probability" } }
+    ])
+    .to_string();
+    let first15 = consumption_value("median15", Some(15), 0.5).to_string();
+    let o = run(&["run", &f, "--metric", &first15, "--json", "--metric", &list]);
+    assert!(o.status.success(), "{}", text(&o));
+    let v = stdout_json(&o);
+    let m = v["metrics"].as_array().expect("metrics");
+    let names: Vec<&str> = m.iter().map(|x| x["name"].as_str().unwrap()).collect();
+    assert_eq!(names, ["median15", "median", "p10", "ruin85"]);
+    assert_eq!(m[0]["values"], 50 * 15);
+    assert_eq!(m[3]["values"], 50);
+    assert!(m[3]["stdError"].is_number() && m[3]["value"].is_number());
+    assert_eq!(m[0]["metric"]["window"]["years"], 15);
+    assert_eq!(v["batch"]["runs"], 50, "the result of run stays");
+
+    // Same as the comparison of the strategies on the plan's paths.
+    let json = d.join("compare.json");
+    let o = run(&[
+        "optimize",
+        "--compare",
+        &f,
+        "--strategy",
+        "guardrails",
+        "--json",
+        json.to_str().unwrap(),
+    ]);
+    assert!(o.status.success(), "{}", text(&o));
+    let r: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
+    assert_eq!(m[1]["value"], r[0]["validated"]["median"]);
+    assert_eq!(m[2]["value"], r[0]["validated"]["p10"]);
+
+    // Report without --json
+    let o = run(&["run", &f, "--metric", &first15]);
+    let t = text(&o);
+    assert!(
+        o.status.success() && t.contains("Metrics:") && t.contains("median15"),
+        "{t}"
+    );
+
+    // Errors: invalid JSON, unknown building block, empty window
+    let o = run(&["run", &f, "--metric", "{"]);
+    assert!(!o.status.success() && text(&o).contains("--metric {"), "{}", text(&o));
+    let o = run(&["run", &f, "--metric"]);
+    assert!(
+        !o.status.success() && text(&o).contains("--metric needs"),
+        "{}",
+        text(&o)
+    );
+    let bad = r#"[{"quantity": "total", "reduce": "atEnd", "aggregate": {"kind": "mean"}, "window": {"fromAge": 200}},
+        {"quantity": "x", "reduce": "sum", "aggregate": {"kind": "mean"}}]"#;
+    let o = run(&["run", &f, "--json", "--metric", bad]);
+    assert!(!o.status.success());
+    let e = &stdout_json(&o)["error"];
+    assert_eq!(e["code"], "plan_errors");
+    assert_eq!(
+        e["params"]["errors"].as_array().unwrap().len(),
+        1,
+        "parse errors first: {e}"
+    );
+    let bad = r#"{"quantity": "total", "reduce": "atEnd", "aggregate": {"kind": "mean"}, "window": {"fromAge": 200}}"#;
+    let o = run(&["run", &f, "--metric", bad]);
+    assert!(!o.status.success());
+    assert!(
+        text(&o).contains("Metric #1: the window contains no month"),
+        "{}",
+        text(&o)
+    );
+}
+
+fn consumption_value(name: &str, years: Option<u32>, q: f64) -> serde_json::Value {
+    let mut window = serde_json::json!({ "from": "retirement" });
+    if let Some(y) = years {
+        window["years"] = serde_json::json!(y);
+    }
+    serde_json::json!({ "name": name, "quantity": "consumption", "real": true, "window": window,
+        "reduce": "annualSums", "aggregate": { "kind": "quantile", "q": q } })
+}

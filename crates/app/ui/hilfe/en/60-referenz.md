@@ -59,7 +59,7 @@ The engine is also available in the terminal (program `vivaplan`):
 
 | Command | Purpose |
 |---|---|
-| `run <plan>` | Calculate a plan (`--csv`, `--json`, `--events`) |
+| `run <plan>` | Calculate a plan (`--csv`, `--json`, `--events`, `--metric`, see [Custom metrics](#ref-metric)) |
 | `validate <plan>` | Validate a plan (`--json`) |
 | `set <plan> <path>=<value>…` | Change values by field path, see [Changing values](#ref-set) |
 | `diff <a> <b>` | List the differences between two plans (`--json`) |
@@ -83,7 +83,7 @@ Every output starts with `format` and the version. Amounts are rounded to whole 
 
 | `format` | Content |
 |---|---|
-| `vivaplan-run/1` | `error` (or `null`), `issues`, `elapsedMs` and, depending on the method, `single`, `batch` and `scenarios` |
+| `vivaplan-run/1` | `error` (or `null`), `issues`, `elapsedMs` and, depending on the method, `single`, `batch` and `scenarios`; with `--metric` also `metrics` |
 | `vivaplan-validate/1` | `valid` (no errors), `issues` |
 | `vivaplan-optimize/1` | settings, `reference` (the plan as it is) and `outcomes` (best strategy first, with `params`, `validated`, `feasible` and `patch`) |
 | `vivaplan-bench/1` | `runs`, `months`, `elapsedMs`, `usPerRun`, `cores`, `check` |
@@ -108,6 +108,33 @@ Keywords: set, diff, field path, change, variant, AI, compare
 - **File:** without `-o`, `set` writes a new file next to the old one, under the next free number (`plan-1.vplan`, `plan-2.vplan`, …), and prints its name. With `-o <file>` it writes there. `set` replaces an existing file only with `--overwrite`, after a backup `<file>.bak`. `--overwrite` without `-o` replaces the plan itself.
 
 `vivaplan diff <a> <b>` lists per difference the field path, the old and the new value, for example `withdrawal.floor: 0 → 0.8`; with `--json` in the format `vivaplan-diff/1`.
+
+## @ref-metric Custom metrics (--metric)
+Keywords: metric, measurement, quantile, median, probability, window, consumption, AI
+
+`vivaplan run <plan> --metric '<json>'` also computes metrics that you compose from building blocks, on the same return paths as `run` (without variations). `--metric` can be given several times and takes one metric or a list of them. With `--json` the values are under `metrics`, otherwise at the end of the report. The metrics are collected during the simulation; no monthly values are stored for them.
+
+| Building block | Key | Choices |
+|---|---|---|
+| Quantity | `quantity` | a field of the monthly values (`total`, `liquid`, `income`, `spending`, `taxes`, `withdrawal`, `housing`, `mortgage`, `pensionFund`, `age` …) or derived: `consumption` (spending; after depletion only what income covers), `plannedConsumption`, `depleted` (1 from depletion), `atFloor` (1 when the floor sets the spending), the counters `emergencySales`, `lumpSums`, `affordabilitySales`, `unaffordableRenewals` |
+| Unit | `real` | `true`: in prices of the start month (amounts only); otherwise nominal |
+| Window | `window` | `from`, `to` (inclusive): `start`, `retirement`, `end`, a milestone id or `YYYY-MM`; `fromAge`, `toAge`: age of the first person; `years`: only the first n years. Without it the whole duration |
+| Reduction per path | `reduce` | `annualSums` (sum per 12 months, a yearly series), `sum`, `mean`, `min`, `max`, `atStart`, `atEnd`, `firstWhen` (age in the first month meeting the condition), `share` (share of months meeting the condition), `any`, `volatility` (mean change of the annual sums), `shareOfStartLiquid` (sum relative to the liquid wealth before the window) |
+| Aggregation over paths | `aggregate` | `{"kind": "quantile", "q": 0.5}`, `mean`, `min`, `max`, `probability` and `count` (with `condition`), `conditionalMean` (with `lowest` or `highest` as a share, or `condition`) |
+
+A condition reads, for example, `{"op": "lt", "value": 50000}` (`gt`, `ge`, `lt`, `le`); without one, “greater than 0” applies, that is “yes” for `depleted` and `atFloor`. `condition` next to `reduce` checks the months (`firstWhen`, `share`, `any`), `condition` in `aggregate` the values per path. With `annualSums` the aggregation takes all yearly values of all paths together, as the optimization does. `name` names the metric in the result.
+
+Every entry in `metrics` has `name`, `value` (or `null`), `values` (number of values), the standard error `stdError` for probabilities and for means per path, the path `path` for quantile, minimum and maximum, and the definition `metric`. Errors in the metrics come together as one message with the list; nothing is computed then. `vivaplan schema` describes the plan, not the metrics.
+
+Examples:
+
+```
+--metric '{"name": "Consumption years 1–15, median", "quantity": "consumption", "real": true, "window": {"from": "retirement", "years": 15}, "reduce": "annualSums", "aggregate": {"kind": "quantile", "q": 0.5}}'
+--metric '{"name": "Ruin up to 85", "quantity": "depleted", "window": {"toAge": 85}, "reduce": "any", "aggregate": {"kind": "probability"}}'
+--metric '{"name": "Share of months at the floor", "quantity": "atFloor", "window": {"from": "retirement"}, "reduce": "share", "aggregate": {"kind": "mean"}}'
+```
+
+Median and P10 of `consumption` (real, whole duration from `retirement`) are the same values as in `optimize --compare`.
 
 ## @ref-library Data library: folders and files
 Keywords: folder, time series, storage location, Application Support, CSV

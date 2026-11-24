@@ -13,9 +13,10 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::batch::Paths;
+use crate::measure::{Measurement, Metric, Window};
 use crate::message::{Code, Message};
 use crate::model::{Goal, Plan, PropertyMode};
-use crate::sim::{SimResult, Simulator};
+use crate::sim::Simulator;
 use crate::time::YearMonth;
 use crate::{Error, Result};
 
@@ -602,137 +603,79 @@ pub fn with_params(base: &Value, strategy: OptStrategy, defs: &[ParamDef], x: &[
 // Metrics
 // ---------------------------------------------------------------------------------------------
 
-struct PathStats {
-    ruined: bool,
-    /// Real consumption per year (12-month blocks from retirement).
-    annual: Vec<f64>,
-    vol: f64,
-    /// Withdrawal rate in the first year from retirement.
-    draw_rate: f64,
-    /// At least one emergency sale in this run.
-    emergency: bool,
-    /// Planned spending per year (real, including housing costs), same blocks as `annual`.
-    planned: Vec<f64>,
-    /// Nominal wealth at the end of the simulation.
-    end_total: f64,
-    /// #205: Share of the months from retirement in which the floor sets the living costs.
-    floor_share: f64,
-}
-
-fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective) -> PathStats {
-    let ruined = res.summary.depleted.is_some_and(|m| match o.ruin_age {
-        Some(age) => sim.age_at(m) <= age,
-        None => true,
-    });
-    // After depletion only what income covers counts.
-    let depleted = res.summary.depleted;
-    let mut annual = Vec::new();
-    let mut planned = Vec::new();
-    let (mut sum, mut plan_sum, mut n) = (0.0, 0.0, 0);
-    let (mut floor_months, mut months) = (0usize, 0usize);
-    for r in res.records.iter().filter(|r| r.month >= retire) {
-        months += 1;
-        floor_months += usize::from(r.at_floor);
-        let spent = if depleted.is_some_and(|d| r.month >= d) {
-            r.spending.min(r.income).max(0.0)
-        } else {
-            r.spending
-        };
-        sum += spent / r.price_index;
-        plan_sum += (r.planned_spending + r.housing) / r.price_index;
-        n += 1;
-        if n == 12 {
-            annual.push(sum);
-            planned.push(plan_sum);
-            sum = 0.0;
-            plan_sum = 0.0;
-            n = 0;
-        }
-    }
-    let changes: Vec<f64> = annual
-        .windows(2)
-        .filter(|w| w[0] > 1e-9)
-        .map(|w| ((w[1] - w[0]) / w[0]).abs())
-        .collect();
-    let vol = if changes.is_empty() {
-        0.0
-    } else {
-        changes.iter().sum::<f64>() / changes.len() as f64
+/// #214: The metrics of the optimization, composed of the building blocks of the measurement layer (in the order of
+/// [`evaluate`]): ruin, median and 10 % percentile of real annual consumption from retirement, fluctuation, withdrawal
+/// rate, emergency sales, planned spending, end wealth at [`END_PERCENTS`], months at the floor.
+pub fn evaluate_metrics(o: &Objective) -> Vec<Metric> {
+    use crate::measure::{Aggregate as A, Quantity as Q, Reduce as R};
+    let from_retirement = Window {
+        from: Some("retirement".into()),
+        ..Window::default()
     };
-    // Withdrawal of the first 12 months from retirement relative to the liquid wealth before.
-    let first: Vec<_> = res.records.iter().filter(|r| r.month >= retire).take(12).collect();
-    let draw_rate = first.first().map_or(0.0, |r| {
-        let start = r.liquid + r.spending - r.income + r.taxes;
-        let draw: f64 = first.iter().map(|r| r.spending - r.income).sum();
-        if start > 0.0 {
-            draw.max(0.0) / start
-        } else {
-            0.0
-        }
-    });
-    PathStats {
-        ruined,
-        annual,
-        vol,
-        draw_rate,
-        emergency: res.summary.emergency_sales > 0,
-        planned,
-        end_total: res.summary.end_total,
-        floor_share: if months > 0 {
-            floor_months as f64 / months as f64
-        } else {
-            0.0
-        },
-    }
+    let consumption = || {
+        Metric::new(Q::Consumption, R::AnnualSums, A::Mean)
+            .real()
+            .window(from_retirement.clone())
+    };
+    let quantile = |m: Metric, q: f64| Metric {
+        aggregate: A::Quantile { q },
+        ..m
+    };
+    let probability = A::Probability { condition: None };
+    let mut out = vec![
+        Metric::new(Q::Depleted, R::Any, probability).window(Window {
+            to_age: o.ruin_age,
+            ..Window::default()
+        }),
+        quantile(consumption(), 0.5),
+        quantile(consumption(), 0.1),
+        Metric::new(Q::Consumption, R::Volatility, A::Mean)
+            .real()
+            .window(from_retirement.clone()),
+        Metric::new(Q::Withdrawal, R::ShareOfStartLiquid, A::Quantile { q: 0.5 }).window(Window {
+            years: Some(1),
+            ..from_retirement.clone()
+        }),
+        Metric::new(Q::EmergencySales, R::AtEnd, probability),
+        Metric::new(Q::PlannedConsumption, R::AnnualSums, A::Quantile { q: 0.5 })
+            .real()
+            .window(from_retirement.clone()),
+    ];
+    out.extend(END_PERCENTS.map(|p| {
+        Metric::new(
+            Q::Total,
+            R::AtEnd,
+            A::Quantile {
+                q: f64::from(p) / 100.0,
+            },
+        )
+    }));
+    out.push(Metric::new(Q::AtFloor, R::Share, A::Mean).window(from_retirement));
+    out
 }
 
-fn quantile(sorted: &[f64], q: f64) -> f64 {
-    if sorted.is_empty() {
-        return 0.0;
-    }
-    sorted[((sorted.len() - 1) as f64 * q).round() as usize]
-}
-
-/// Runs a plan with all paths and summarizes.
+/// Runs a plan with all paths and summarizes (#214: collected during the simulation, without monthly records).
 pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
     let sim = Simulator::new(plan)?;
-    let retire = sim
-        .retire_at()
+    sim.retire_at()
         .ok_or_else(|| Error::Invalid(msg!(optimize_no_retirement)))?;
-    let stats: Vec<PathStats> = crate::progress::par_map(paths.len(), |i| {
-        path_stats(&sim, &sim.run(&paths.get(i), true), retire, o)
-    });
-    if crate::progress::cancelled() {
-        return Err(Error::Cancelled);
-    }
-    let n = stats.len().max(1);
-    let mut all: Vec<f64> = stats.iter().flat_map(|s| s.annual.iter().copied()).collect();
-    all.sort_by(f64::total_cmp);
+    let measurement = Measurement::allowing_empty(plan, &sim, evaluate_metrics(o))?;
+    let v: Vec<f64> = measurement
+        .run(&sim, paths)?
+        .iter()
+        .map(|m| m.value.unwrap_or(0.0))
+        .collect();
     Ok(Metrics {
-        runs: stats.len(),
-        ruin: stats.iter().filter(|s| s.ruined).count() as f64 / n as f64,
-        median: quantile(&all, 0.5),
-        p10: quantile(&all, 0.1),
-        volatility: stats.iter().map(|s| s.vol).sum::<f64>() / n as f64,
-        draw_rate: {
-            let mut r: Vec<f64> = stats.iter().map(|s| s.draw_rate).collect();
-            r.sort_by(f64::total_cmp);
-            quantile(&r, 0.5)
-        },
-        emergency_share: stats.iter().filter(|s| s.emergency).count() as f64 / n as f64,
-        planned: {
-            let mut p: Vec<f64> = stats.iter().flat_map(|s| s.planned.iter().copied()).collect();
-            p.sort_by(f64::total_cmp);
-            quantile(&p, 0.5)
-        },
-        end_total: {
-            let mut e: Vec<f64> = stats.iter().map(|s| s.end_total).collect();
-            e.sort_by(f64::total_cmp);
-            END_PERCENTS.map(|p| quantile(&e, f64::from(p) / 100.0))
-        },
-        floor_share: sim
-            .has_floor()
-            .then(|| stats.iter().map(|s| s.floor_share).sum::<f64>() / n as f64),
+        runs: paths.len(),
+        ruin: v[0],
+        median: v[1],
+        p10: v[2],
+        volatility: v[3],
+        draw_rate: v[4],
+        emergency_share: v[5],
+        planned: v[6],
+        end_total: [v[7], v[8], v[9], v[10], v[11]],
+        floor_share: sim.has_floor().then_some(v[12]),
     })
 }
 
@@ -1379,6 +1322,7 @@ fn run_request_within(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sim::SimResult;
 
     /// #221: The defaults of the user interface (all strategies except 3 buckets with guardrails, both property
     /// settings) stay well below the limit; absurd numbers saturate instead of overflowing.
@@ -1425,7 +1369,7 @@ mod tests {
     #[test]
     fn quantiles_and_fitness() {
         let v = [1.0, 2.0, 3.0, 4.0, 5.0];
-        assert_eq!(quantile(&v, 0.5), 3.0);
+        assert_eq!(v[crate::measure::quantile_index(v.len(), 0.5).unwrap()], 3.0);
         let o = Objective::default();
         let ok = Metrics {
             runs: 1,
@@ -1458,6 +1402,31 @@ mod tests {
         v["flows"]["spending"] = json!(1000);
         v["wealth"] = json!({"stocks": 0, "bonds": 0, "cash": cash, "stockShare": 0, "reserveMonths": 0});
         v
+    }
+
+    /// #214: Values of one recorded path, from the building blocks of [`evaluate_metrics`].
+    struct PathStats {
+        ruined: bool,
+        annual: Vec<f64>,
+        vol: f64,
+        draw_rate: f64,
+        emergency: bool,
+        planned: Vec<f64>,
+        floor_share: f64,
+    }
+
+    fn path_stats(sim: &Simulator, res: &SimResult, retire: YearMonth, o: &Objective) -> PathStats {
+        assert_eq!(sim.retire_at(), Some(retire));
+        let v = crate::measure::Measurement::without_plan(sim, evaluate_metrics(o)).replay(res);
+        PathStats {
+            ruined: v[0][0] > 0.0,
+            annual: v[1].clone(),
+            vol: v[3][0],
+            draw_rate: v[4][0],
+            emergency: v[5][0] > 0.0,
+            planned: v[6].clone(),
+            floor_share: v[12][0],
+        }
     }
 
     fn run_calm(cash: f64) -> (Simulator, SimResult) {

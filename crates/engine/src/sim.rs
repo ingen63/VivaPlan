@@ -469,6 +469,12 @@ pub(crate) fn is_zero_count(n: &usize) -> bool {
     *n == 0
 }
 
+/// #214: Receives the months of a run in order (see [`Simulator::run_observed`] and `measure`). `summary` is the state
+/// after the month: counters and the month of depletion so far.
+pub trait MonthObserver {
+    fn month(&mut self, record: &MonthRecord, summary: &Summary);
+}
+
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Summary {
@@ -1422,11 +1428,17 @@ impl Simulator {
     }
 
     pub fn run(&self, path: &MarketPath, record: bool) -> SimResult {
+        self.run_observed(path, record, None)
+    }
+
+    /// #214: Like [`Simulator::run`]; `observer` receives every month as it is computed (also without `record`), so
+    /// that metrics are collected without keeping the monthly records.
+    pub fn run_observed(&self, path: &MarketPath, record: bool, observer: Option<&mut dyn MonthObserver>) -> SimResult {
         assert!(
             path.stocks.len() >= self.months,
             "Renditepfad ist kürzer als der Simulationszeitraum"
         );
-        Run::new(self, path, record).execute()
+        Run::new(self, path, record).execute(observer)
     }
 }
 
@@ -3375,7 +3387,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    fn execute(mut self) -> SimResult {
+    fn execute(mut self, mut observer: Option<&mut dyn MonthObserver>) -> SimResult {
         let s = self.s;
         // Initial split with the values of the start month.
         {
@@ -3729,8 +3741,8 @@ impl<'a> Run<'a> {
             self.summary.end_total = total;
             self.summary.end_total_real = total / self.infl_idx;
             self.summary.end_liquid = liquid;
-            if self.record {
-                self.records.push(MonthRecord {
+            if self.record || observer.is_some() {
+                let record = MonthRecord {
                     month: m,
                     age: s.age_at(m),
                     cash: self.cash,
@@ -3773,7 +3785,13 @@ impl<'a> Run<'a> {
                     bond_index: self.bond_idx,
                     ledger: self.ledger,
                     at_floor,
-                });
+                };
+                if let Some(o) = observer.as_deref_mut() {
+                    o.month(&record, &self.summary);
+                }
+                if self.record {
+                    self.records.push(record);
+                }
             }
         }
         SimResult {

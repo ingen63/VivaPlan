@@ -212,6 +212,7 @@ Wörter in Grossbuchstaben nicht.
 | Monatswerte | `month_record` | `MonthRecord` |
 | Jahreswerte | `yearly` | |
 | Kennzahlen | `summary`, `metrics` | `Summary`, `Metrics` |
+| Messebene, Kennzahl aus Bausteinen (#214) | `measure`, `metric` | `Measurement`, `Metric`, `Quantity`, `Window`, `Reduce`, `Aggregate` |
 | Vorschau | `preview` | |
 | Fortschritt, Abbruch | `progress`, `cancel` | |
 

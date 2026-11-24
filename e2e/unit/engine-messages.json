@@ -3217,6 +3217,79 @@
     "text": "The plan has no retirement (pension fund “payout from”)."
   },
   {
+    "code": "metric_invalid",
+    "params": {
+      "metric": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Metric {metric}: {problem}",
+    "text": "Metric Person 2: Person 2"
+  },
+  {
+    "code": "metric_real_not_amount",
+    "params": {
+      "quantity": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“real” applies only to amounts, not to “{quantity}”",
+    "text": "“real” applies only to amounts, not to “Person 2”"
+  },
+  {
+    "code": "metric_quantile_invalid",
+    "params": {},
+    "template": "the quantile “q” must be between 0 and 1",
+    "text": "the quantile “q” must be between 0 and 1"
+  },
+  {
+    "code": "metric_conditional_mean_invalid",
+    "params": {},
+    "template": "a conditional mean needs exactly one of “lowest”, “highest” (a share above 0 and at most 1) or “condition”",
+    "text": "a conditional mean needs exactly one of “lowest”, “highest” (a share above 0 and at most 1) or “condition”"
+  },
+  {
+    "code": "metric_window_empty",
+    "params": {},
+    "template": "the window contains no month of the simulation",
+    "text": "the window contains no month of the simulation"
+  },
+  {
+    "code": "metric_point_invalid",
+    "params": {
+      "point": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{point}” is not a point in time for a window (start, retirement, end, a milestone id or YYYY-MM)",
+    "text": "“Person 2” is not a point in time for a window (start, retirement, end, a milestone id or YYYY-MM)"
+  },
+  {
+    "code": "metric_years_invalid",
+    "params": {},
+    "template": "the number of years must be at least 1",
+    "text": "the number of years must be at least 1"
+  },
+  {
     "code": "opt_strategy_standard",
     "params": {},
     "template": "Standard",

@@ -51,6 +51,9 @@ pub struct RunReport {
     /// With variations (`scenarios.sweeps`).
     pub scenarios: Option<ScenariosReport>,
     pub elapsed_ms: i64,
+    /// #214: Metrics given with `--metric` (missing without).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<Vec<crate::measure::MetricValue>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -264,6 +267,7 @@ pub fn run(out: &RunOut) -> RunReport {
         batch: out.batch.as_ref().map(batch),
         scenarios: out.scenarios.as_ref().map(scenarios),
         elapsed_ms: amount(out.elapsed_ms),
+        metrics: None,
     }
 }
 

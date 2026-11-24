@@ -35,6 +35,7 @@ mod legacy_format;
 mod legacy_import;
 mod library;
 mod mandatory_inputs;
+mod measure;
 mod milestones_limits;
 mod never_sell;
 mod ods_reference;

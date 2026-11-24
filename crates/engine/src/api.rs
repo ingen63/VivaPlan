@@ -701,6 +701,24 @@ pub fn run_report(plan: &Value, base_dir: &Path, library: Option<&Path>) -> crat
     crate::report::run(&run(plan, base_dir, library))
 }
 
+/// #214: Metrics of a plan (`run --metric`), collected on the plan's own paths as in [`run`] (without variations).
+/// Errors in the metrics come together as one message with the list (`plan_errors`).
+pub fn measure(
+    plan: &Value,
+    metrics: &[Value],
+    base_dir: &Path,
+    library: Option<&Path>,
+) -> Result<Vec<crate::measure::MetricValue>, Message> {
+    let list = |e: Vec<Message>| msg!(plan_errors, errors = e);
+    let metrics = crate::measure::parse(metrics).map_err(list)?;
+    let p = parse(plan).map_err(|i| i.message)?;
+    let sim = Simulator::new(&p).map_err(|e| e.message())?;
+    let m = crate::measure::Measurement::new(&p, &sim, metrics).map_err(list)?;
+    let data = batch::load_series(&p, base_dir, library).map_err(|e| e.message())?;
+    let paths = batch::path_source(&p, &sim, data.as_ref()).map_err(|e| e.message())?;
+    m.run(&sim, &paths).map_err(|e| e.message())
+}
+
 /// #207: Result of [`validate`] in the fixed format of the command line (`validate --json`).
 pub fn validate_report(plan: &Value) -> crate::report::ValidateReport {
     crate::report::validate(validate(plan))
