@@ -745,6 +745,9 @@ test.describe("Earned income per year as in the tax return (#232)", () => {
     await page.evaluate(() => { state.flows.income = { mode: "const", value: 2500 }; goto("flows"); });
     const warn = page.locator("#val li.warn", { hasText: "Das Erwerbseinkommen beträgt nach dem Bezug der Pensionskasse" });
     await expect(warn.filter({ hasText: "noch 30'000 pro Jahr" })).toHaveCount(1);
+    // #247: a new second person's income ends with the pension fund payout (#236), so there is no message
+    await expect(warn.filter({ hasText: "Person 2: " })).toHaveCount(0);
+    await page.evaluate(() => { state.partner.incomeEndsAtRetirement = false; goto("flows"); });
     await expect(warn.filter({ hasText: "Person 2: " })).toContainText("noch 90'000 pro Jahr");
     await noErrors(page, errors);
   });
