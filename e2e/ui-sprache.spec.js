@@ -150,9 +150,10 @@ test.describe("Multilingual user interface (#170)", () => {
     const missing = [];
     for (const id of sections) {
       await page.evaluate(id => goto(id), id);
-      // labels, headings, column titles, buttons, hints: each must come from the (pseudo) table
+      // labels, headings, column titles, buttons, hints: each must come from the (pseudo) table;
+      // #259/AK1: labels from the plan's data (name of a property, currency) are not texts of the interface
       missing.push(...await page.evaluate(mark => [...document.querySelectorAll(
-        "#main h2, #main h3, #main th, #main label.field > span:first-child, #main .hint, #main p.lead, #main button, header button, #nav a, aside h3")]
+        "#main h2, #main h3, #main th:not([data-no-tr]), #main label.field > span:first-child:not([data-no-tr]), #main .hint, #main p.lead, #main button, header button, #nav a, aside h3")]
         .map(el => el.textContent.trim()).filter(t => /[A-Za-zÄÖÜäöü]{3}/.test(t) && !t.includes(mark))
         .map(t => `${document.querySelector("#nav a.active")?.textContent}: ${t}`), MARK));
     }

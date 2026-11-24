@@ -1359,8 +1359,9 @@ function taxValueRow(p, i, P, o = {}) {
   const opts = [["", tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
   const sel = `<select class="plain" data-action-change="tax-value-kind" data-i="${i}">${opts.map(([k, l]) => `<option value="${k}" ${k === kind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
   const value = kind ? F(`${P}.taxValue.value`, "", kind === "rate" ? "pct" : "chf", { bare: true }) : "";
-  // #249: in the card «Abzüge vom Vermögen» with the name of the property as label and the hint only once
-  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${o.label ?? tr("realestate.taxValue")}</span><div class="refwrap tv">${sel}${value}</div></label></div>
+  // #249: in the card «Abzüge vom Vermögen» with the name of the property as label and the hint only once;
+  // #259/AK1: a label from the plan's data is marked as such
+  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span${o.userText ? " data-no-tr" : ""}>${o.label ?? tr("realestate.taxValue")}</span><div class="refwrap tv">${sel}${value}</div></label></div>
     ${o.hint === false ? "" : `<p class="hint">${tr("realestate.taxValueHint")}</p>`}`;
 }
 /** #229: changing the kind keeps the tax value: an amount becomes its share of the market value (planned: purchase price) and back. */
@@ -1530,7 +1531,7 @@ function wtaxTable() {
   if (w.ongoing) rows.push(row(tr("wealthTax.ongoing"), w.ongoing));
   if (w.oneOff) rows.push(row(tr("wealthTax.oneOff"), w.oneOff));
   rows.push(row(tr("wealthTax.taxable"), w.taxable, ' class="total" data-wtax-taxable'));
-  return `<table class="tbl dedparts" data-wtax-year="${w.year}"><tr><th>${tr("wealthTax.year", { year: w.year })}</th><th class="r">${UNIT.chf()}</th></tr>${rows.join("")}</table>
+  return `<table class="tbl dedparts" data-wtax-year="${w.year}"><tr><th>${tr("wealthTax.year", { year: w.year })}</th><th class="r" data-no-tr>${UNIT.chf()}</th></tr>${rows.join("")}</table>
     ${isLocation(state) ? `<p class="hint">${tr("wealthTax.socialNote")}</p>` : ""}`;
 }
 /** #231, #249: card «Abzüge vom Vermögen»: estimated taxable wealth (AK7), composition per tax year with the tax value
@@ -1545,7 +1546,7 @@ function wealthDeductionsCard() {
   const yearSel = years.length > 1 ? `<label class="field" style="max-width:200px"><span>${tr("wealthTax.chooseYear")}</span><select class="plain" id="wtax-year">${years.map(y => `<option value="${y}"${y === wtax.year ? " selected" : ""}>${y}</option>`).join("")}</select></label>` : "";
   // #249/AK3: the same field «Steuerwert» as in the section «Immobilien» for every owned or planned property
   const props = state.realestate.properties.map((p, i) => [p, i]).filter(([p]) => p.status !== "rent");
-  const taxValues = props.length ? `<div data-wtax-fields style="margin-top:12px"><b>${tr("wealthTax.taxValuesTitle")}</b>${props.map(([p, i]) => `<div data-wtax-field="${i}">${taxValueRow(p, i, `realestate.properties.${i}`, { label: esc(p.name || tr("realestate.taxValue")), hint: false })}</div>`).join("")}
+  const taxValues = props.length ? `<div data-wtax-fields style="margin-top:12px"><b>${tr("wealthTax.taxValuesTitle")}</b>${props.map(([p, i]) => `<div data-wtax-field="${i}">${taxValueRow(p, i, `realestate.properties.${i}`, { label: esc(p.name || tr("realestate.taxValue")), userText: !!p.name, hint: false })}</div>`).join("")}
     <p class="hint">${tr("realestate.taxValueHint")}</p></div>` : "";
   const details = `<details class="deddetails" data-wtax-details style="margin-bottom:12px"${wtax.open ? " open" : ""}><summary>${tr("deductions.details")}</summary><div style="margin-top:8px">${yearSel}</div>${C("wtaxTable")}${taxValues}</details>`;
   return `<div class="card" id="tax-wealth-deductions"><h3>${tr("wealthDeductions.title")}</h3>
