@@ -1852,3 +1852,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #244/AK1 | Die Ursache ist benannt (welches Feld, welcher Inhalt, seit welchem Commit). | ☑ | **gilt** | – | 24.11.2026 ok (Kommentar: `flows.income.rows.0.value`, «120'000», seit #232 5b581d1; dazu Meilenstein-Auswahl in fr/it) |
 | #244/AK2 | Das Feld zeigt seinen Inhalt in allen vier Sprachen vollständig; `ui-textfit.spec.js` grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) `AK2` (#244) | 24.11.2026 ok (20 Tests grün, 1'200'000 pro Jahr passt) |
 | #244/AK3 | Kein anderer Abschnitt verliert dadurch Platz. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) alle Abschnitte | 24.11.2026 ok (Test grün; nur Regeln für `.row.peryear` geändert) |
+
+### #246 Oberflächentest Navigation zählt 13 statt 12 Einträge
+
+[Issue #246](https://github.com/ingen63/VivaPlan/issues/246) · geschlossen · Umsetzung: 6aefa8e
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #246/AK1 | Die Ursache ist benannt (welcher zusätzliche Eintrag, seit welchem Commit). | ☑ | **gilt** | – | 24.11.2026 ok (Kommentar: Link «VivaPlan unterstützen» in `#nav .navfoot`, seit #237 0806a57) |
+| #246/AK2 | Entweder zählt der Test nur Abschnitte der Navigation, oder die Erwartung ist begründet angepasst; `npx playwright test ui-start.spec.js` ist grün. | ☑ | **gilt** | [ui-start.spec.js](../e2e/ui-start.spec.js) `#246/AK2` | 24.11.2026 ok (Selektor `#nav a[data-sec]`; ui-start und ui-spende 26 Tests grün) |
