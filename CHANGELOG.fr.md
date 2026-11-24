@@ -2,6 +2,26 @@
 
 Traduction française de `CHANGELOG.md` (allemand, version de référence) à partir de la version 1.0.0-beta.1.
 
+## Version 1.0.0-beta.5
+
+Cinquième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.5; les paquets d'installation sont à nouveau disponibles pour macOS, Windows et Linux (#203).
+
+### Peut modifier les résultats
+
+- **Sans caisse de pension (#253):** L'interrupteur se trouve désormais dans la carte «Caisse de pension» de la section Prévoyance. S'il est activé, la caisse de pension de cette personne compte pour 0 (ni avoir, ni cotisations, ni rente, ni retrait en capital); les valeurs saisies restent enregistrées, les champs sont verrouillés.
+- **Optimisation (#248):** Pour toutes les formes d'évolution, l'évolution avant la retraite est conservée; la valeur optimisée s'applique dès la retraite.
+
+### Nouveautés, modifications, corrections
+
+- **Utiliser VivaPlan avec une IA (#208–#214, #216, #219):** Le serveur MCP `vivaplan mcp` ouvre, modifie, calcule et compare des planifications pour Claude, ChatGPT, LM Studio et d'autres IA, avec progression, interruption et confirmation des longs calculs. Le menu «Aide» › «Connecter à une IA» montre la configuration; pour Claude Desktop, il existe un paquet en un clic `.mcpb` (#213). Les données ne vont qu'à l'IA que vous connectez vous-même.
+- **Formes d'évolution et courbes caractéristiques (#217, #218, #243):** Les valeurs peuvent évoluer de façon linéaire, selon un tableau ou avec un facteur et se modifier dans l'éditeur; les courbes caractéristiques font dépendre des paramètres de l'état.
+- **Ligne de commande dans le paquet d'installation (#206):** `vivaplan` utilise le même dossier de données que l'application.
+- **Affichage (#244, #255, #257, #259):** Les champs numériques et le choix «Valeur fiscale» ne sont plus tronqués, dans aucune langue.
+
+### Tests et développement
+
+- Tests de l'interface mis à jour (#246, #247), limite de temps du test MCP indépendante de la vitesse de l'ordinateur (#258).
+
 ## Version 1.0.0-beta.4
 
 Quatrième préversion de 1.0 ; elle contient aussi toutes les modifications de la 1.0.0-beta.3 non publiée. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.4 ; pour l'instant, les paquets d'installation ne sont construits que pour macOS (#202).

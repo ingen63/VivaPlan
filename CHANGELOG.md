@@ -1,5 +1,25 @@
 # Changelog
 
+## Version 1.0.0-beta.5
+
+Fünfte Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.5; Installationspakete gibt es wieder für macOS, Windows und Linux (#203).
+
+### Kann Ergebnisse ändern
+
+- **Ohne Pensionskasse (#253):** Der Schalter steht neu in der Karte «Pensionskasse» im Abschnitt Vorsorge. Ist er gesetzt, rechnet die Pensionskasse dieser Person mit 0 (kein Guthaben, keine Beiträge, keine Rente, kein Kapitalbezug); die erfassten Werte bleiben gespeichert, die Felder sind gesperrt.
+- **Optimierung (#248):** Bei allen Verlaufsformen bleibt der Verlauf vor der Pensionierung erhalten; der optimierte Wert gilt ab der Pensionierung.
+
+### Neu, geändert, behoben
+
+- **VivaPlan mit einer KI nutzen (#208–#214, #216, #219):** Der MCP-Server `vivaplan mcp` öffnet, ändert, rechnet und vergleicht Planungen für Claude, ChatGPT, LM Studio und andere KIs, mit Fortschritt, Abbruch und Bestätigung langer Rechnungen. Menü «Hilfe» › «Mit KI verbinden» zeigt die Einrichtung; für Claude Desktop gibt es ein Ein-Klick-Paket `.mcpb` (#213). Daten gehen nur an die KI, die Sie selbst anbinden.
+- **Verlaufsformen und Kennlinien (#217, #218, #243):** Werte können linear, nach Tabelle oder mit Faktor verlaufen und im Editor bearbeitet werden; Kennlinien machen Parameter vom Zustand abhängig.
+- **Kommandozeile im Installationspaket (#206):** `vivaplan` nutzt denselben Datenordner wie die App.
+- **Darstellung (#244, #255, #257, #259):** Zahlenfelder und die Auswahl «Steuerwert» werden in allen Sprachen nicht mehr abgeschnitten.
+
+### Tests und Entwicklung
+
+- Oberflächentests nachgeführt (#246, #247), Zeitgrenze im MCP-Test unabhängig von der Rechnergeschwindigkeit (#258).
+
 ## Version 1.0.0-beta.4
 
 Vierte Vorabversion von 1.0; sie enthält auch alle Änderungen der nicht veröffentlichten 1.0.0-beta.3. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.4; Installationspakete gibt es vorerst nur für macOS (#202).

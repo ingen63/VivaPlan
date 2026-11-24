@@ -2,6 +2,26 @@
 
 Traduzione italiana di `CHANGELOG.md` (tedesco, versione di riferimento) a partire dalla versione 1.0.0-beta.1.
 
+## Versione 1.0.0-beta.5
+
+Quinta versione preliminare di 1.0. Il pacchetto d'installazione Windows `.msi` porta il numero di versione 1.0.0.5; i pacchetti d'installazione sono di nuovo disponibili per macOS, Windows e Linux (#203).
+
+### Può modificare i risultati
+
+- **Senza cassa pensione (#253):** L'interruttore si trova ora nella scheda «Cassa pensione» della sezione Previdenza. Se attivo, la cassa pensione di questa persona vale 0 (nessun avere, nessun contributo, nessuna rendita, nessun prelievo di capitale); i valori inseriti restano salvati, i campi sono bloccati.
+- **Ottimizzazione (#248):** Per tutte le forme di andamento, l'andamento prima del pensionamento resta invariato; il valore ottimizzato vale dal pensionamento.
+
+### Novità, modifiche, correzioni
+
+- **Usare VivaPlan con un'IA (#208–#214, #216, #219):** Il server MCP `vivaplan mcp` apre, modifica, calcola e confronta pianificazioni per Claude, ChatGPT, LM Studio e altre IA, con avanzamento, interruzione e conferma dei calcoli lunghi. Il menu «Aiuto» › «Collegare a un’IA» mostra la configurazione; per Claude Desktop esiste un pacchetto con un clic `.mcpb` (#213). I dati vanno solo all'IA che collega Lei stesso.
+- **Forme di andamento e curve caratteristiche (#217, #218, #243):** I valori possono seguire una retta, una tabella o un fattore e si modificano nell'editor; le curve caratteristiche rendono i parametri dipendenti dallo stato.
+- **Riga di comando nel pacchetto d'installazione (#206):** `vivaplan` usa la stessa cartella dei dati dell'app.
+- **Visualizzazione (#244, #255, #257, #259):** I campi numerici e la scelta «Valore fiscale» non vengono più troncati in nessuna lingua.
+
+### Test e sviluppo
+
+- Test dell'interfaccia aggiornati (#246, #247), limite di tempo nel test MCP indipendente dalla velocità del computer (#258).
+
 ## Versione 1.0.0-beta.4
 
 Quarta versione preliminare di 1.0; contiene anche tutte le modifiche della 1.0.0-beta.3 non pubblicata. Il pacchetto di installazione Windows `.msi` porta il numero di versione 1.0.0.4; per ora i pacchetti di installazione vengono creati solo per macOS (#202).

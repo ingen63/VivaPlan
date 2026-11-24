@@ -2,6 +2,26 @@
 
 English translation of `CHANGELOG.md` (German, authoritative) from version 1.0.0-beta.1 on.
 
+## Version 1.0.0-beta.5
+
+Fifth pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.5; installers are built again for macOS, Windows and Linux (#203).
+
+### May change results
+
+- **Without pension fund (#253):** The switch is now in the card «Pension fund» in the section Pensions. When set, the pension fund of this person counts as 0 (no assets, no contributions, no pension, no lump sum); the entered values stay saved, the fields are locked.
+- **Optimization (#248):** For all course forms, the course before retirement is kept; the optimized value applies from retirement.
+
+### New, changed, fixed
+
+- **Using VivaPlan with an AI (#208–#214, #216, #219):** The MCP server `vivaplan mcp` opens, changes, calculates and compares plans for Claude, ChatGPT, LM Studio and other AIs, with progress, cancelling and confirmation of long calculations. Menu «Help» › «Connect to AI» shows the setup; for Claude Desktop there is a one-click package `.mcpb` (#213). Data only goes to the AI you connect yourself.
+- **Course forms and characteristic curves (#217, #218, #243):** Values can follow a line, a table or a factor and be edited in the editor; characteristic curves make parameters depend on the state.
+- **Command line in the installer (#206):** `vivaplan` uses the same data folder as the app.
+- **Display (#244, #255, #257, #259):** Number fields and the choice «Tax value» are no longer cut off in any language.
+
+### Tests and development
+
+- User interface tests updated (#246, #247), time limit in the MCP test independent of the machine's speed (#258).
+
 ## Version 1.0.0-beta.4
 
 Fourth pre-release of 1.0; it also contains all changes of the unpublished 1.0.0-beta.3. The Windows installer `.msi` carries the version number 1.0.0.4; for now installers are built for macOS only (#202).

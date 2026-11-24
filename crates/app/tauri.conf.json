@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "VivaPlan",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "identifier": "ch.vivaplan-app.desktop",
   "build": {
     "frontendDist": "ui"
@@ -69,7 +69,7 @@
       },
       "wix": {
         "language": "de-DE",
-        "version": "1.0.0.4"
+        "version": "1.0.0.5"
       }
     },
     "linux": {
