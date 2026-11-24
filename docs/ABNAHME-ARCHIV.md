@@ -1842,3 +1842,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #243/AK5 | Eine Vorschau zeigt den Verlauf über die Zeit. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK5` | 24.11.2026 ok (Test grün; Minigrafik folgt jeder Änderung) |
 | #243/AK6 | Eine Planung mit den neuen Formen lässt sich öffnen, bearbeiten und speichern, ohne dass Werte verloren gehen (e2e-Test). | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK6` | 24.11.2026 ok (Test grün; Öffnen, Bearbeiten, Speichern, erneut Öffnen) |
 | #243/AK7 | Hilfe (vier Sprachen) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | `make i18n-check`, `make ui-texts` | 24.11.2026 ok (`10-editor.md` de/en/fr/it, BESCHREIBUNG; durchgesehen) |
+
+### #244 Zahlenfeld im Abschnitt Flüsse abgeschnitten (Textfit)
+
+[Issue #244](https://github.com/ingen63/VivaPlan/issues/244) · geschlossen · Umsetzung: 2460902
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #244/AK1 | Die Ursache ist benannt (welches Feld, welcher Inhalt, seit welchem Commit). | ☑ | **gilt** | – | 24.11.2026 ok (Kommentar: `flows.income.rows.0.value`, «120'000», seit #232 5b581d1; dazu Meilenstein-Auswahl in fr/it) |
+| #244/AK2 | Das Feld zeigt seinen Inhalt in allen vier Sprachen vollständig; `ui-textfit.spec.js` grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) `AK2` (#244) | 24.11.2026 ok (20 Tests grün, 1'200'000 pro Jahr passt) |
+| #244/AK3 | Kein anderer Abschnitt verliert dadurch Platz. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) alle Abschnitte | 24.11.2026 ok (Test grün; nur Regeln für `.row.peryear` geändert) |
