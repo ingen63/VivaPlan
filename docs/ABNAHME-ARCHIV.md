@@ -1604,6 +1604,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #211/AK3 | Ab 60 s geschätzter Dauer startet die Rechnung nur mit `"confirm": true`. | ☑ | **gilt** | [mcp.rs](../crates/cli/tests/mcp.rs) `issue_211_ak3_confirmation_from_60_seconds` | 24.11.2026 ok (beide Werkzeuge: `needsConfirmation` mit Schätzung, kein Ergebnis) |
 | #211/AK4 | Die Kennzahlen stimmen mit `api::run` bzw. `api::evaluate` überein. | ☑ | **gilt** | [mcp.rs](../crates/cli/tests/mcp.rs) `issue_211_ak4_key_figures_as_api_run_and_evaluate` | 24.11.2026 ok (Kurzfassung und Varianten gleich bis auf die letzte Stelle beim Einlesen von JSON, rel. 1e-12) |
 
+### #212 MCP-Server: Ändern, Rückgängig, Vergleichen, Speichern
+
+[Issue #212](https://github.com/ingen63/VivaPlan/issues/212) · geschlossen · Umsetzung: a599872 · Kriterium AK1 zu Arbeitsbeginn umformuliert (Kommentar im Issue)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #212/AK1 | `plan_set`, `plan_changes`, `plan_undo` und `plan_apply` (Variante eines `evaluate`-Ergebnisses nach Rang übernehmen) arbeiten wie in Abschnitt 5 und 7 des Konzepts; Vergleich und Optimierung laufen über `evaluate` (#211). | ☑ | **gilt** | Unit-Tests in `crates/cli/src/mcp/edit.rs` `issue_212_ak1_…` (3); [mcp.rs](../crates/cli/tests/mcp.rs) `issue_212_ak1_ak2_change_undo_and_save_over_stdio` | 24.11.2026 ok (alter/neuer Wert, alles oder nichts, Änderungsliste, Rückgängig, Übernehmen aus echtem `evaluate` über stdio) |
+| #212/AK2 | `plan_save` hält die Regeln 1 bis 6 aus Abschnitt 7 ein; jede Regel hat einen Test. | ☑ | **gilt** | `issue_212_ak2_rule1_…` bis `issue_212_ak2_rule6_…` in `edit.rs`; [mcp.rs](../crates/cli/tests/mcp.rs) `issue_212_ak1_ak2_…`, `issue_212_ak2_ak3_…` | 24.11.2026 ok (je Regel ein Test; Rückfrage `elicitation/create` ablehnen und annehmen über stdio) |
+| #212/AK3 | `--read-only` entfernt `plan_save` aus der Werkzeugliste. | ☑ | **gilt** | `issue_212_ak3_read_only_without_plan_save`; [mcp.rs](../crates/cli/tests/mcp.rs) `issue_212_ak2_ak3_read_only_and_released_folders_over_stdio` | 24.11.2026 ok (`tools/list` ohne `plan_save`, Aufruf ist Protokollfehler) |
+
 ### #214 Messebene: Kennzahlen frei zusammensetzen, im Strom gerechnet
 
 [Issue #214](https://github.com/ingen63/VivaPlan/issues/214) · geschlossen · Umsetzung: 2955114
