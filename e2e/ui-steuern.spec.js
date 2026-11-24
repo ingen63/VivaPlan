@@ -999,3 +999,46 @@ test.describe("Clearer card of the deductions from income (#241)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Input help from the assessment without double pillar 3a (#251)", () => {
+  const card = page => page.locator("#tax-deductions");
+  async function withOwnRow(page, deduct) {
+    await page.evaluate(deduct => {
+      state.taxes.deductions = [{ from: "start", kind: "own", amount: 0, rate: 0 }];
+      state.taxes.deductPillar3a = deduct;
+      markDirty(); renderSection(); scheduleRefresh();
+    }, deduct);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+
+  test("AK1: with the pillar 3a deduction switched on the pillar 3a of the assessment is taken off, without it not", async ({ page }) => {
+    const errors = await open(page);
+    await withOwnRow(page, true);
+    await page.locator("#ded-calc-income").fill("120000");
+    await page.locator("#ded-calc-taxable").fill("80000");
+    await page.locator("#ded-calc-p3a").fill("7000");
+    await expect(page.locator("#ded-calc-result")).toHaveText("33'000");
+    await page.locator('button[data-action="ded-calc-apply"]').click();
+    expect(await page.evaluate(() => state.taxes.deductions[0].amount)).toBe(33000);
+    // switched off: the field does not count
+    await card(page).locator('input[data-path="taxes.deductPillar3a"]').uncheck();
+    await expect(page.locator("#ded-calc-result")).toHaveText("40'000");
+    await expect(page.locator("#ded-calc-p3a-hint")).toBeHidden();
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK3: hint while the pillar 3a field is empty; the explanation of the own value names the double count", async ({ page }) => {
+    const errors = await open(page);
+    await withOwnRow(page, true);
+    const hint = page.locator("#ded-calc-p3a-hint");
+    await expect(hint).toBeVisible();
+    await expect(hint).toContainText("sonst zählt sie doppelt");
+    await page.locator("#ded-calc-p3a").fill("7000");
+    await expect(hint).toBeHidden();
+    await page.locator("#ded-calc-p3a").fill("");
+    await expect(hint).toBeVisible();
+    expect(await page.evaluate(() => document.querySelector("#ded-own-hint").textContent)).toContain("zählt sonst doppelt");
+    await noErrors(page, errors);
+  });
+});

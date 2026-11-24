@@ -1402,10 +1402,13 @@ function deductionsCard() {
       ${canton && earned?.approx ? `<p class="hint warn" data-ded-approx>⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}</div>`;
   }).join("");
   const own = rows.map((r, i) => [r, i]).filter(([r]) => !loc || r.kind !== "canton");
-  const calc = stored && own.length ? `<div class="dedcalc" id="ded-calc"><b>${tr("deductions.calcTitle")}</b><div class="grid3">
+  // #251: with «Säule 3a abziehen» the 3a contributions of the assessment are taken off (else they count twice)
+  const calc = stored && own.length ? `<div class="dedcalc" id="ded-calc"><b>${tr("deductions.calcTitle")}</b><div class="grid2">
       <label class="field"><span>${tr("deductions.calcIncome")}</span><div class="inp"><input class="num" id="ded-calc-income" value="${esc(dedCalc.income)}"><span class="unit">${UNIT.chf()}</span></div></label>
       <label class="field"><span>${tr("deductions.calcTaxable")}</span><div class="inp"><input class="num" id="ded-calc-taxable" value="${esc(dedCalc.taxable)}"><span class="unit">${UNIT.chf()}</span></div></label>
+      <label class="field"><span>${tr("deductions.calcPillar3a")}</span><div class="inp"><input class="num" id="ded-calc-p3a" value="${esc(dedCalc.p3a)}"><span class="unit">${UNIT.chf()}</span></div></label>
       <label class="field"><span>${tr("deductions.calcResult")}</span><span class="computed" id="ded-calc-result">${dedCalcText()}</span></label></div>
+      <p class="hint warn" id="ded-calc-p3a-hint"${dedCalcP3aMissing() ? "" : " hidden"}>⚠ ${tr("deductions.calcPillar3aHint")}</p>
       <div class="row">${own.length > 1 ? `<select class="plain" id="ded-calc-row">${own.map(([r, i]) => `<option value="${i}">${tr("deductions.rowN", { n: i + 1 })}</option>`).join("")}</select>` : ""}
       <button class="btn small" data-action="ded-calc-apply" data-i="${own[0][1]}">${tr("deductions.calcApply")}</button></div></div>` : "";
   // #241/AK6: the explanations in ⓘ instead of paragraphs
@@ -1416,19 +1419,24 @@ function deductionsCard() {
     <div class="rows">${body || `<p class="computed">${tr("deductions.none")}</p>`}
     <div>${stored ? `<button class="btn small" data-action="ded-add">${tr("series.addRow")}</button>` : `<button class="btn small" data-action="ded-edit">${tr("deductions.edit")}</button>`}</div></div>
     ${calc}
-    <div class="dedp3a" style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a"))}${p3aInfo}</div>
+    <div class="dedp3a" style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a"), { rerender: true })}${p3aInfo}</div>
     ${oneOffDeductions()}</div>`;
 }
 /** #131/AK7: input help «eigener Wert» from income and taxable income of the last assessment (not saved). */
-const dedCalc = { income: "", taxable: "" };
+const dedCalc = { income: "", taxable: "", p3a: "" };
 const numIn = t => { const x = parseNum(String(t ?? "")); return Number.isFinite(x) ? x : NaN; };
-const dedCalcValue = () => { const a = numIn(dedCalc.income), b = numIn(dedCalc.taxable); return Number.isFinite(a) && Number.isFinite(b) ? Math.max(0, a - b) : NaN; };
+/** #251: the 3a contributions of the assessment, taken off only with «Säule 3a abziehen» (empty = 0). */
+const dedCalcP3a = () => state.taxes.deductPillar3a ? (numIn(dedCalc.p3a) || 0) : 0;
+const dedCalcP3aMissing = () => !!state.taxes.deductPillar3a && !Number.isFinite(numIn(dedCalc.p3a));
+const dedCalcValue = () => { const a = numIn(dedCalc.income), b = numIn(dedCalc.taxable); return Number.isFinite(a) && Number.isFinite(b) ? Math.max(0, a - b - dedCalcP3a()) : NaN; };
 const dedCalcText = () => { const v = dedCalcValue(); return Number.isFinite(v) ? fmtInt(v) : "–"; };
+const DED_CALC = { "ded-calc-income": "income", "ded-calc-taxable": "taxable", "ded-calc-p3a": "p3a" };
 document.addEventListener("input", e => {
-  const id = e.target?.id;
-  if (id !== "ded-calc-income" && id !== "ded-calc-taxable") return;
-  dedCalc[id === "ded-calc-income" ? "income" : "taxable"] = e.target.value;
+  const key = DED_CALC[e.target?.id];
+  if (!key) return;
+  dedCalc[key] = e.target.value;
   const out = $("#ded-calc-result"); if (out) out.textContent = dedCalcText();
+  const hint = $("#ded-calc-p3a-hint"); if (hint) hint.hidden = !dedCalcP3aMissing();
 });
 R.taxes = () => {
   const own = !isLocation(state);
