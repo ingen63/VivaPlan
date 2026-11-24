@@ -163,6 +163,8 @@ With “+ Second person”, you enter a household with two persons.
 
 **Married** (rules for couples): If both are entitled to an AHV pension, their pensions at 65 are together capped at **3 780 francs per month**; the reduction for drawing early and the supplement for a deferral come after that (see [AHV](#f-ahv)) (150 % of the maximum pension 2025). The value can be changed if the maximum pension rises. The cap rises once every January with inflation as soon as at least one pension with inflation adjustment is running. Under [Taxes](#s-taxes), separate tables can be stored for married couples. Lump-sum withdrawals in the same year are added together for married couples, and per person for unmarried couples.
 
+**Married with one person:** The “Married” box is also available without a second person, for example if the spouse has neither income nor a pension. The tax tariffs and deductions for married couples then apply (in the “Place of residence” mode canton, municipality and federal tax, with your own tables the tables for married couples); the tax is the same as for a married couple with a second person without income. The cap on the AHV pensions only applies with two persons. Older plans with one person had “Married” ticked without effect; they are taken over as unmarried when opened and calculate as before, a note says so. New plans start unmarried.
+
 **Not calculated:** death of a person, survivors' pensions, widow's pension. The plan calculates as if both lived until the end.
 
 ## @s-flows Income & spending
@@ -289,7 +291,7 @@ In the mode **Place of residence** you only choose the **canton**, the **municip
 - Income tax = tariff of the canton on the taxable income × (tax multiplier canton + church) + tariff of the municipality × tax multiplier municipality + direct federal tax on the federal taxable income. The tariff of the municipality is that of the canton, except in Schwyz and Valais.
 - Wealth tax = tariff of the canton (social deductions on the wealth included) × (tax multiplier canton + municipality + church), without federal tax.
 - **Lump-sum tax** (pension fund, pillar 3a) = capital rule of the canton × (tax multiplier canton + church) + rule of the municipality × tax multiplier municipality + federal tax (one fifth of the tariff of the direct federal tax, without deductions). The tax multipliers of the income tax apply; the rule applies to the whole lump sum. Lump sums in the same calendar year are added together: for married couples for the household with the tariff for married couples, for unmarried couples per person with the tariff for single persons. Below the municipality the rule of the canton is shown, for example Zurich “rate of the income tariff for one twentieth of the lump sum, at least 2 %”. The rules are derived from the FTA tax calculator; in Valais and Zug they are only approximated (⚠).
-- **Married couples** (two persons and “Married” ticked): tariffs and deductions for married couples. Unmarried couples are calculated with those for single persons on the joint income.
+- **Married couples** (“Married” ticked, also for a single person): tariffs and deductions for married couples. Unmarried couples are calculated with those for single persons on the joint income.
 - With [tariffs with inflation](#f-tax-indexed) the amounts of the tariffs and deductions grow with the simulated inflation.
 - **Property gains tax:** for each property the rule set of the canton in which it lies applies; you choose the canton with the property under [Real estate](#s-realestate), without an entry the canton of residence applies. Details under [Property gains tax](#f-tax-gain). With the check box **“Own rules instead of the rules of the canton”** the own rules with the [tax multiplier](#f-tax-multiplier) apply to all properties instead.
 
@@ -314,7 +316,7 @@ Each row is either (the explanations are also in the ⓘ next to the title of th
 **Determining the own value:** The input help computes it from the **income** and the **taxable income according to the assessment**, for example 120 000 and 80 000 give 40 000; “Use as own value” puts it into the row. Note:
 
 - Income is **net**, after AHV and PK contributions, like the net salary on the salary statement, including pensions.
-- **Without pillar 3a:** the contributions come from the plan (see below).
+- **Without pillar 3a:** the contributions come from the plan (see below). The deduction according to the assessment already includes them: if “Deduct contributions to pillar 3a” is switched on, enter pillar 3a according to the assessment under **“of which pillar 3a”**; the input help takes it off, otherwise it counts twice. Example: 120 000, taxable 80 000, of which pillar 3a 7 000 gives 33 000 (without the check box 40 000). If the field is empty, the input help points this out.
 - **Home ownership** (imputed rental value, mortgage interest, maintenance) belongs in the own value. From 2029 there is no imputed rental value and no interest deduction for owner-occupied property; add a row “from 2029” for it. **Mortgage interest is not deducted automatically.**
 
 **One-off deductions:** They are listed under a subtitle of their own at the end of the card. “+ One-off deduction” adds a deduction for a single tax year, with tax year, description and amount (nominal, without inflation), for example a pension fund buy-in, a renovation or medical costs. The amount counts in this tax year in addition to the row that applies, with the proposal of the canton as with the own value and in both modes. Example: income 120 000, own value 30 000, one-off 50 000 in the year 2027 gives a taxable income of 40 000 in 2027, 90 000 in the other years. The estimate of the net need of the [3-bucket strategy](#f-wd-three_buckets) uses only the ongoing deductions.
@@ -331,6 +333,10 @@ Each row is either (the explanations are also in the ⓘ next to the title of th
 Keywords: deductions, taxable wealth, wealth tax, debts, social deductions, one-off
 
 The card **Deductions from wealth** in the section Taxes sets what is deducted from the wealth on 31 December, for example debts other than the mortgage or cantonal deductions missing in the tariffs. The **taxable wealth** = wealth − deductions, never negative. Properties count at their [tax value](#f-re-tax-value) minus the mortgage.
+
+**Estimated taxable wealth:** At the top, a note shows the taxable wealth on 31 December of the first tax year, rounded to 1 000 francs, with the share of the properties (tax value minus mortgage), for example 500 000 on 31.12.2026, of which properties 250 000. Compare it with your last tax return. If a property has no tax value, the note warns: the market value is then used, and the taxable wealth is often far too high. The link leads to the field “Tax value”. In the mode “Place of residence”, cantonal allowances contained in the tariffs are not deducted; the tax return may therefore be lower.
+
+**Details:** The composition shows for a selectable tax year how the taxable wealth comes about, structured as in the tax return: wealth without properties (cash, bonds, stocks; without pension fund and pillar 3a), per property the tax value (without a tax value the market value, with ⚠) and the mortgage, the deductions from wealth and the taxable wealth. Below it, each property has the field [Tax value](#f-re-tax-value), the same as in the section Real estate.
 
 **Rows:** “+ Row” adds a time-dependent row with the field “+ additionally” (per year); it applies from its point in time until the next one. For a tax year the row that applies on 31 December counts. The amount is in prices of the simulation start and grows with [tariffs with inflation](#f-tax-indexed).
 
@@ -415,7 +421,7 @@ Every table has brackets of **amount** and **rate**. In between, the app interpo
 - **Limits:** every rate is between 0 % and 100 %, every amount is 0 or greater. The validation reports values outside these limits at the field.
 - **Tax must not decrease:** a higher amount never results in a lower tax. If the rate drops so sharply between two brackets that rate × amount becomes smaller, the validation reports a **warning** at the bracket concerned; the calculation still runs. Usually a marginal tax rate has then been entered instead of the average rate. With several lump-sum withdrawals in the same year, the tax on a further withdrawal is then never negative but 0.
 - **Lump-sum withdrawals** in the same calendar year (pension fund and pillar 3a) are added together for the rate: for married couples for the household, for unmarried couples per person (every person pays the tax on their own withdrawals). If you spread withdrawals over different years, the rate drops.
-- **Married:** With two persons and “Married” ticked, you can store separate tables for married couples. Without separate tables, the normal ones apply.
+- **Married:** With “Married” ticked (also for a single person), you can store separate tables for married couples. Without separate tables, the normal ones apply.
 - Start from the **effective** tax burden, not the marginal tax rate. The tax calculator of your canton provides both.
 
 ## @tax-accuracy How accurate is the tax?

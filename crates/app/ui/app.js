@@ -223,7 +223,7 @@ function requestPreview() {
     try {
       const r = await Engine.call("preview", { plan: state, path: currentPath });
       if (seq !== previewSeq) return;
-      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) lastSim.p3aView = r.pillar3a || []; lastAhv = r.ahv || []; previewBasis = r.basis;
+      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) { lastSim.p3aView = r.pillar3a || []; lastSim.wealthTax = r.wealthTax || []; } lastAhv = r.ahv || []; previewBasis = r.basis;
     } catch (e) {
       if (seq !== previewSeq) return;
       previewError = errText(e); lastSim = null; lastAhv = [];
@@ -615,9 +615,10 @@ R.general = () => `
       ? `<div class="person"><div class="phead"><b>${tr("general.person2")}</b><button class="btn ghost small" data-action="partner-del" title="${tr("general.removePerson2")}">✕</button></div>${F("household.persons.1.name", tr("general.name"), "text")}${F("household.persons.1.birth", tr("general.birth"), "month")}${C("age1")}</div>`
       : `<div class="person ghost"><button class="btn" data-action="partner-add">${tr("general.addPerson2")}</button><span class="computed">${tr("general.doubleIncome")}</span></div>`}
   </div>
-  ${state.partner ? `<div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
-    <div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
-    <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>` : ""}</div>
+  <div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
+  ${state.partner ? `<div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
+    <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>`
+    : `<p class="hint">${tr("general.marriedSingleHint")}</p>`}</div>
   <div class="card"><h3>${tr("general.period")}</h3>
     <div class="grid2"><div>${tr("general.start", { c: C("ms", "start") })}</div><div>${tr("general.end", { c: C("ms", "end") })}</div></div>
     <p class="hint">${tr("general.periodHint")}</p></div>`;
@@ -1353,13 +1354,14 @@ function propertyGainRow(p, P) {
     ${c?.propertyGainApprox ? `<p class="hint warn" data-gain-approx>⚠ ${tr("realestate.gainApprox", { note: tr(`propertyGainApprox.${c.id}`) })}</p>` : ""}`;
 }
 /** #229/AK1: tax value for the wealth tax (owned and planned): none (market value), amount or share of the market value. */
-function taxValueRow(p, i, P) {
+function taxValueRow(p, i, P, o = {}) {
   const kind = p.taxValue?.kind ?? "";
   const opts = [["", tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
   const sel = `<select class="plain" data-action-change="tax-value-kind" data-i="${i}">${opts.map(([k, l]) => `<option value="${k}" ${k === kind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
   const value = kind ? F(`${P}.taxValue.value`, "", kind === "rate" ? "pct" : "chf", { bare: true }) : "";
-  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${tr("realestate.taxValue")}</span><div class="refwrap tv">${sel}${value}</div></label></div>
-    <p class="hint">${tr("realestate.taxValueHint")}</p>`;
+  // #249: in the card «Abzüge vom Vermögen» with the name of the property as label and the hint only once
+  return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span>${o.label ?? tr("realestate.taxValue")}</span><div class="refwrap tv">${sel}${value}</div></label></div>
+    ${o.hint === false ? "" : `<p class="hint">${tr("realestate.taxValueHint")}</p>`}`;
 }
 /** #229: changing the kind keeps the tax value: an amount becomes its share of the market value (planned: purchase price) and back. */
 document.addEventListener("change", e => {
@@ -1490,12 +1492,65 @@ function oneOffDeductions(key = "oneOffDeductions", hint = tr("deductions.oneOff
 /** #231/AK1–AK3: card «Abzüge vom Vermögen»: time-dependent rows «zusätzlich … pro Jahr» (layout .dedrow as the
  *  deductions from income, #228) and the list of one-off deductions; in the mode «Wohnort» in addition to the social
  *  deductions of the canton (hint), with own tables the whole deduction. */
+/** #249/AK1, AK3: open details and chosen tax year of the composition (only for the display, not saved). */
+const wtax = { open: false, year: null };
+document.addEventListener("toggle", e => { if (e.target?.dataset?.wtaxDetails != null) wtax.open = e.target.open; }, true);
+document.addEventListener("change", e => {
+  if (e.target?.id !== "wtax-year") return;
+  wtax.year = +e.target.value;
+  const out = $('[data-computed="wtaxTable"]'); if (out) out.innerHTML = wtaxTable();
+});
+/** #249: composition of the taxable wealth of tax year `y` from the preview (first tax year without `y`). */
+const wtaxYearOf = y => (lastSim?.wealthTax || []).find(w => y == null || w.year === y) ?? null;
+/** #249/AK7: estimated taxable wealth of the first tax year with the share of the properties, warnings for
+ *  properties without a tax value (link to the field) and, in the mode «Wohnort», the note on cantonal allowances. */
+function wtaxHint() {
+  const w = wtaxYearOf(null);
+  if (!w) return tr("wealthTax.none");
+  const k = v => fmtInt(Math.round(v / 1000) * 1000);
+  const props = w.properties.reduce((a, p) => a + p.taxValue - p.mortgage, 0);
+  let html = tr("wealthTax.estimate", { year: w.year, amount: k(w.taxable) }) + (w.properties.length ? tr("wealthTax.ofWhichProperties", { amount: k(props) }) : "");
+  if (isLocation(state)) html += ` ${tr("wealthTax.locationNote")}`;
+  for (const p of w.properties.filter(p => !p.hasTaxValue))
+    html += `<br><span class="warn" data-wtax-missing="${p.index}">⚠ ${tr("wealthTax.noTaxValue", { name: esc(p.name), amount: fmtInt(p.worth) })} <a href="#" data-action="wtax-edit" data-i="${p.index}">${tr("wealthTax.noTaxValueLink")}</a></span>`;
+  return html;
+}
+/** #249/AK1, AK2: rows of the composition (wealth without properties, tax value and mortgage per property, deductions,
+ *  taxable wealth) for the chosen tax year; the rows add up to the taxable wealth of the year table. */
+function wtaxTable() {
+  const w = wtaxYearOf(wtax.year) ?? wtaxYearOf(null);
+  if (!w) return `<p class="computed">${tr("wealthTax.none")}</p>`;
+  const row = (label, v, cls = "") => `<tr${cls}><td>${label}</td><td class="r">${fmtInt(v)}</td></tr>`;
+  const rows = [row(tr("wealthTax.liquid"), w.liquid)];
+  for (const p of w.properties) {
+    rows.push(p.hasTaxValue ? row(tr("wealthTax.taxValue", { name: esc(p.name) }), p.taxValue)
+      : row(`${tr("wealthTax.marketValue", { name: esc(p.name) })} <span class="warn">⚠</span>`, p.taxValue, ` data-wtax-market="${p.index}"`));
+    rows.push(row(tr("wealthTax.mortgage", { name: esc(p.name) }), p.mortgage));
+  }
+  if (w.ongoing) rows.push(row(tr("wealthTax.ongoing"), w.ongoing));
+  if (w.oneOff) rows.push(row(tr("wealthTax.oneOff"), w.oneOff));
+  rows.push(row(tr("wealthTax.taxable"), w.taxable, ' class="total" data-wtax-taxable'));
+  return `<table class="tbl dedparts" data-wtax-year="${w.year}"><tr><th>${tr("wealthTax.year", { year: w.year })}</th><th class="r">${UNIT.chf()}</th></tr>${rows.join("")}</table>
+    ${isLocation(state) ? `<p class="hint">${tr("wealthTax.socialNote")}</p>` : ""}`;
+}
+/** #231, #249: card «Abzüge vom Vermögen»: estimated taxable wealth (AK7), composition per tax year with the tax value
+ *  of the properties (AK1, AK3), the rows of the deductions and the one-off deductions. */
 function wealthDeductionsCard() {
   const P = "taxes.wealthDeductions", rows = state.taxes.wealthDeductions ?? [];
   const body = rows.map((r, i) => `<div class="dedrow" data-wded-row="${i}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${Ref(`${P}.${i}.from`)}</div>
     <div class="dedval"><span class="dedextra">${tr("deductions.extra")}</span>${F(`${P}.${i}.amount`, "", "chf", { bare: true, unit: tr("deductions.perYear") })}</div>
     <button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button></div>`).join("");
+  const y0 = Math.floor(startM() / 12), y1 = Math.floor(endM() / 12);
+  const years = Number.isFinite(y0) && Number.isFinite(y1) ? Array.from({ length: Math.max(0, y1 - y0 + 1) }, (_, k) => y0 + k) : [];
+  const yearSel = years.length > 1 ? `<label class="field" style="max-width:200px"><span>${tr("wealthTax.chooseYear")}</span><select class="plain" id="wtax-year">${years.map(y => `<option value="${y}"${y === wtax.year ? " selected" : ""}>${y}</option>`).join("")}</select></label>` : "";
+  // #249/AK3: the same field «Steuerwert» as in the section «Immobilien» for every owned or planned property
+  const props = state.realestate.properties.map((p, i) => [p, i]).filter(([p]) => p.status !== "rent");
+  const taxValues = props.length ? `<div data-wtax-fields style="margin-top:12px"><b>${tr("wealthTax.taxValuesTitle")}</b>${props.map(([p, i]) => `<div data-wtax-field="${i}">${taxValueRow(p, i, `realestate.properties.${i}`, { label: esc(p.name || tr("realestate.taxValue")), hint: false })}</div>`).join("")}
+    <p class="hint">${tr("realestate.taxValueHint")}</p></div>` : "";
+  const details = `<details class="deddetails" data-wtax-details style="margin-bottom:12px"${wtax.open ? " open" : ""}><summary>${tr("deductions.details")}</summary><div style="margin-top:8px">${yearSel}</div>${C("wtaxTable")}${taxValues}</details>`;
   return `<div class="card" id="tax-wealth-deductions"><h3>${tr("wealthDeductions.title")}</h3>
+    <p class="hint" id="wtax-hint">${C("wtaxHint")}</p>
+    ${details}
     <div class="rows">${body || `<p class="computed">${tr("wealthDeductions.none")}</p>`}
     <div><button class="btn small" data-action="wded-add">${tr("series.addRow")}</button></div></div>
     ${oneOffDeductions("oneOffWealthDeductions", tr("wealthDeductions.oneOffHint"))}
@@ -1538,10 +1593,13 @@ function deductionsCard() {
       ${canton && earned?.approx ? `<p class="hint warn" data-ded-approx>⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}</div>`;
   }).join("");
   const own = rows.map((r, i) => [r, i]).filter(([r]) => !loc || r.kind !== "canton");
-  const calc = stored && own.length ? `<div class="dedcalc" id="ded-calc"><b>${tr("deductions.calcTitle")}</b><div class="grid3">
+  // #251: with «Säule 3a abziehen» the 3a contributions of the assessment are taken off (else they count twice)
+  const calc = stored && own.length ? `<div class="dedcalc" id="ded-calc"><b>${tr("deductions.calcTitle")}</b><div class="grid2">
       <label class="field"><span>${tr("deductions.calcIncome")}</span><div class="inp"><input class="num" id="ded-calc-income" value="${esc(dedCalc.income)}"><span class="unit">${UNIT.chf()}</span></div></label>
       <label class="field"><span>${tr("deductions.calcTaxable")}</span><div class="inp"><input class="num" id="ded-calc-taxable" value="${esc(dedCalc.taxable)}"><span class="unit">${UNIT.chf()}</span></div></label>
+      <label class="field"><span>${tr("deductions.calcPillar3a")}</span><div class="inp"><input class="num" id="ded-calc-p3a" value="${esc(dedCalc.p3a)}"><span class="unit">${UNIT.chf()}</span></div></label>
       <label class="field"><span>${tr("deductions.calcResult")}</span><span class="computed" id="ded-calc-result">${dedCalcText()}</span></label></div>
+      <p class="hint warn" id="ded-calc-p3a-hint"${dedCalcP3aMissing() ? "" : " hidden"}>⚠ ${tr("deductions.calcPillar3aHint")}</p>
       <div class="row">${own.length > 1 ? `<select class="plain" id="ded-calc-row">${own.map(([r, i]) => `<option value="${i}">${tr("deductions.rowN", { n: i + 1 })}</option>`).join("")}</select>` : ""}
       <button class="btn small" data-action="ded-calc-apply" data-i="${own[0][1]}">${tr("deductions.calcApply")}</button></div></div>` : "";
   // #241/AK6: the explanations in ⓘ instead of paragraphs
@@ -1552,19 +1610,24 @@ function deductionsCard() {
     <div class="rows">${body || `<p class="computed">${tr("deductions.none")}</p>`}
     <div>${stored ? `<button class="btn small" data-action="ded-add">${tr("series.addRow")}</button>` : `<button class="btn small" data-action="ded-edit">${tr("deductions.edit")}</button>`}</div></div>
     ${calc}
-    <div class="dedp3a" style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a"))}${p3aInfo}</div>
+    <div class="dedp3a" style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a"), { rerender: true })}${p3aInfo}</div>
     ${oneOffDeductions()}</div>`;
 }
 /** #131/AK7: input help «eigener Wert» from income and taxable income of the last assessment (not saved). */
-const dedCalc = { income: "", taxable: "" };
+const dedCalc = { income: "", taxable: "", p3a: "" };
 const numIn = t => { const x = parseNum(String(t ?? "")); return Number.isFinite(x) ? x : NaN; };
-const dedCalcValue = () => { const a = numIn(dedCalc.income), b = numIn(dedCalc.taxable); return Number.isFinite(a) && Number.isFinite(b) ? Math.max(0, a - b) : NaN; };
+/** #251: the 3a contributions of the assessment, taken off only with «Säule 3a abziehen» (empty = 0). */
+const dedCalcP3a = () => state.taxes.deductPillar3a ? (numIn(dedCalc.p3a) || 0) : 0;
+const dedCalcP3aMissing = () => !!state.taxes.deductPillar3a && !Number.isFinite(numIn(dedCalc.p3a));
+const dedCalcValue = () => { const a = numIn(dedCalc.income), b = numIn(dedCalc.taxable); return Number.isFinite(a) && Number.isFinite(b) ? Math.max(0, a - b - dedCalcP3a()) : NaN; };
 const dedCalcText = () => { const v = dedCalcValue(); return Number.isFinite(v) ? fmtInt(v) : "–"; };
+const DED_CALC = { "ded-calc-income": "income", "ded-calc-taxable": "taxable", "ded-calc-p3a": "p3a" };
 document.addEventListener("input", e => {
-  const id = e.target?.id;
-  if (id !== "ded-calc-income" && id !== "ded-calc-taxable") return;
-  dedCalc[id === "ded-calc-income" ? "income" : "taxable"] = e.target.value;
+  const key = DED_CALC[e.target?.id];
+  if (!key) return;
+  dedCalc[key] = e.target.value;
   const out = $("#ded-calc-result"); if (out) out.textContent = dedCalcText();
+  const hint = $("#ded-calc-p3a-hint"); if (hint) hint.hidden = !dedCalcP3aMissing();
 });
 R.taxes = () => {
   const own = !isLocation(state);
@@ -1588,7 +1651,7 @@ R.taxes = () => {
   ${own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : ""}
   ${own ? gainCard() : locGainCard()}
-  ${own && state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
+  ${own && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
     <p class="hint">${tr("taxes.marriedHint")}</p>
     ${coupleTables}</div>` : ""}`;
@@ -1693,6 +1756,8 @@ function runsPerScenario() {
 const COMPUTED = {
   dedSum: i => dedSum(i),
   dedParts: i => dedParts(i),
+  wtaxHint: () => wtaxHint(),
+  wtaxTable: () => wtaxTable(),
   // #55: Payout plan of pillar 3a (row «k.j»): month and age, balance before and after the payout from the preview.
   p3aat: a => {
     const [k, j] = a.split(".").map(Number), acc = state.pillar3a[k], x = acc?.payouts[j];
@@ -2410,6 +2475,12 @@ function blankPlan(base, now = new Date()) {
 }
 const ACTIONS = {
   goto: d => goto(d.sec),
+  // #249/AK7: from the warning to the field «Steuerwert» of the property in the card «Abzüge vom Vermögen»
+  "wtax-edit": d => {
+    wtax.open = true; renderSection();
+    const el = $(`#tax-wealth-deductions [data-wtax-field="${d.i}"] select`);
+    if (el) { el.scrollIntoView({ block: "center" }); el.focus(); }
+  },
   "ms-goto": d => { flashId = d.id; goto("milestones"); flashId = null; },
   set: d => { setP(d.path, d.value); markDirty(); renderSection(); if (d.path === "returns.source") refreshSeriesInfo(); },
   // #100: follow the suggested values of the stock index again
@@ -2491,6 +2562,8 @@ const ACTIONS = {
     const a = state.household.persons[0], id = a.id === "B" ? "C" : "B";
     state.household.persons.push({ id, name: tr("general.person2"), birth: a.birth });
     state.partner = newPartner();
+    // #250: new plans start unmarried; a couple starts married as before (the box can be cleared)
+    state.household.married = true;
     const at = state.milestones.length - 1;
     state.milestones.splice(at, 0, { id: "retire2", kind: "age", person: id, years: 65 }, { id: "ahv2", kind: "age", person: id, years: 65 });
     markDirty(); renderSection();
@@ -2502,7 +2575,8 @@ const ACTIONS = {
     const used = own.find(m => countRefs(m.id));
     if (used) { state.partner = saved; return toast(tr("actions.usedReplaceFirst", { name: msLabel(used) })); }
     state.milestones = state.milestones.filter(m => !own.includes(m));
-    state.household.persons.splice(1, 1); delete state.partner; delete state.taxes.couple;
+    // #250: the tables for married couples stay with «Verheiratet» (they also apply to a single person)
+    state.household.persons.splice(1, 1); delete state.partner; if (!state.household.married) delete state.taxes.couple;
     state.pillar3a = state.pillar3a.filter(a => a.person !== b.id);
     markDirty(); renderSection();
   },
@@ -3611,7 +3685,7 @@ function paramSections(plan, full = false) {
   const out = [];
   const persons = plan.household?.persons || [];
   out.push([tr("params.household"), [[tr("general.currency"), c], ...persons.map((p, i) => [tr("params.personBirth", { v: i + 1 }), ymShow(p.birth)]),
-    ...(persons.length > 1 ? [[tr("params.married"), yn(plan.household?.married)], ...(plan.household?.married ? [[tr("general.ahvCap"), money(plan.household.ahvCoupleCap)]] : [])] : [])]]);
+    [tr("params.married"), yn(plan.household?.married)], ...(persons.length > 1 && plan.household?.married ? [[tr("general.ahvCap"), money(plan.household.ahvCoupleCap)]] : [])]]);
   out.push([tr("section.milestones"), (plan.milestones || []).map(m => [m.name, m.kind === "date" ? ymShow(m.date) : tr("params.ageOfPerson", { years: m.years, max: Math.max(1, persons.findIndex(p => p.id === m.person) + 1) })])]);
   const pens = (pre, o, ahv) => [
     [tr("params.pkCapital", { pre }), money(o.pk?.capital)], [tr("params.pkFrom", { pre }), at(o.pk?.at)], [tr("params.lumpsum", { pre }), pc(o.pk?.lumpsum)],
@@ -4100,7 +4174,7 @@ onLanguage(() => PLAN_HIDDEN = [
   [/^realestate\.affordability\.wealthContribution$/, tr("planHidden.noField")], [/^withdrawal\.buckets\.reserveMonths$/, tr("planHidden.noField")],
   [/^realestate\.properties\.\d+\.inflation$/, tr("planHidden.legacyField")],
   [/^returns\.parametric\.sampler$/, tr("planHidden.sampling")],
-  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")], [/(^|\.)ahv\.referenceAge$/, tr("planHidden.noField")],
+  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")], [/^household\.marriedNoted$/, tr("planHidden.noField")], [/(^|\.)ahv\.referenceAge$/, tr("planHidden.noField")],
 ]);
 function cmpPlan(body, items, datas) {
   // Sections in the order of the editor, within them the labels in the order of their first occurrence

@@ -2,12 +2,13 @@
 
 Traduzione italiana di `CHANGELOG.md` (tedesco, versione di riferimento) a partire dalla versione 1.0.0-beta.1.
 
-## Versione 1.0.0-beta.3
+## Versione 1.0.0-beta.4
 
-Terza versione preliminare di 1.0. Il pacchetto di installazione Windows `.msi` porta il numero di versione 1.0.0.3; per ora i pacchetti di installazione vengono creati solo per macOS (#202).
+Quarta versione preliminare di 1.0; contiene anche tutte le modifiche della 1.0.0-beta.3 non pubblicata. Il pacchetto di installazione Windows `.msi` porta il numero di versione 1.0.0.4; per ora i pacchetti di installazione vengono creati solo per macOS (#202).
 
 ### Può modificare i risultati
 
+- **Coniugati con una sola persona (#250):** «Coniugati» vale anche senza seconda persona; le imposte sono allora calcolate con le tariffe e le deduzioni per coniugati. Le pianificazioni meno recenti con una persona vengono riprese come non coniugate all'apertura e calcolano come prima (avvertenza); le nuove pianificazioni iniziano non coniugate.
 - **Imposte secondo cantone e comune (#63, #64, #65, #66):** Nella modalità «Domicilio», l'imposta sul reddito, sulla sostanza e sulle prestazioni in capitale segue cantone e comune, l'imposta sugli utili immobiliari il cantone dell'immobile. Le tariffe crescono con il rincaro, la deduzione per doppio reddito vale per le persone che esercitano un'attività lucrativa.
 - **Deduzioni e domicilio (#131, #151, #152, #228–#232):** Deduzioni dal reddito secondo la proposta del cantone o con righe proprie, deduzioni supplementari e uniche, deduzioni dalla sostanza, valore fiscale per immobile, reddito da attività lucrativa come importo annuo, domicilio variabile nel tempo e grande pilastro 3a per le persone senza cassa pensione.
 - **AVS (#190, #191, #198):** La 13a rendita AVS è versata in dicembre e conta nel fabbisogno netto della strategia dei 3 vasi. Anticipo e rinvio riducono o aumentano la rendita; il plafond per i coniugi è conforme alla legge.
@@ -16,6 +17,8 @@ Terza versione preliminare di 1.0. Il pacchetto di installazione Windows `.msi` 
 
 ### Novità, modifiche, correzioni
 
+- **Sostanza imponibile nella scheda «Deduzioni dalla sostanza» (#249):** Avvertenza con la sostanza imponibile stimata del primo anno fiscale e la quota degli immobili, avviso se manca un valore fiscale; i dettagli la compongono per anno fiscale come la dichiarazione d'imposta e offrono il campo «Valore fiscale» per immobile.
+- **Aiuto all'inserimento dalla tassazione (#251):** Nuovo campo «di cui pilastro 3a secondo la tassazione», affinché il pilastro 3a non venga dedotto due volte con «Dedurre i versamenti nel pilastro 3a»; un'avvertenza appare finché il campo è vuoto.
 - **Confrontare strategie (#196, #197, #200, #201, #205):** Le strategie si confrontano senza ottimizzazione, i risultati dell'ottimizzazione si salvano e si riaprono; opzione «Non vendere mai gli immobili»; indicazione quando il limite inferiore determina le spese; tabella dei risultati senza scorrimento orizzontale.
 - **Tema scuro (#220, #235):** Impostazione «Aspetto» con tema chiaro e scuro; contrasto migliore nel menu.
 - **Utilizzo (#143, #227, #233, #234, #241):** Imposte indicate come stima, pianificazioni aperte di recente nel menu «File», sostenibilità nelle impostazioni, messaggi del motore di calcolo leggibili, scheda «Deduzioni dal reddito» più chiara con un testo per la deduzione per doppio reddito.

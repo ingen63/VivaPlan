@@ -2,12 +2,13 @@
 
 Traduction française de `CHANGELOG.md` (allemand, version de référence) à partir de la version 1.0.0-beta.1.
 
-## Version 1.0.0-beta.3
+## Version 1.0.0-beta.4
 
-Troisième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.3 ; pour l'instant, les paquets d'installation ne sont construits que pour macOS (#202).
+Quatrième préversion de 1.0 ; elle contient aussi toutes les modifications de la 1.0.0-beta.3 non publiée. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.4 ; pour l'instant, les paquets d'installation ne sont construits que pour macOS (#202).
 
 ### Peut modifier les résultats
 
+- **Marié·e avec une seule personne (#250) :** «Marié·e·s» s'applique aussi sans deuxième personne ; les impôts sont alors calculés avec les barèmes et déductions pour personnes mariées. Les anciennes planifications avec une personne sont reprises comme non mariées à l'ouverture et calculent comme avant (remarque) ; les nouvelles planifications commencent non mariées.
 - **Impôts selon le canton et la commune (#63, #64, #65, #66) :** En mode « Domicile », l'impôt sur le revenu, sur la fortune et sur les prestations en capital suit le canton et la commune, l'impôt sur les gains immobiliers le canton de l'immeuble. Les barèmes suivent le renchérissement, la déduction pour double revenu s'applique aux personnes actives.
 - **Déductions et domicile (#131, #151, #152, #228–#232) :** Déductions du revenu selon la proposition du canton ou en lignes propres, déductions supplémentaires et uniques, déductions de la fortune, valeur fiscale par immeuble, revenu d'activité en montant annuel, domicile variable dans le temps et grand pilier 3a pour les personnes sans caisse de pension.
 - **AVS (#190, #191, #198) :** La 13e rente AVS est versée en décembre et compte dans le besoin net de la stratégie des 3 pots. Le versement anticipé et l'ajournement réduisent ou augmentent la rente ; le plafond pour les couples mariés est conforme à la loi.
@@ -16,6 +17,8 @@ Troisième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le 
 
 ### Nouveautés, modifications, corrections
 
+- **Fortune imposable dans la carte «Déductions de la fortune» (#249) :** Remarque avec la fortune imposable estimée de la première année fiscale et la part des immeubles, avertissement si une valeur fiscale manque ; les détails la composent par année fiscale comme la déclaration d'impôt et proposent le champ «Valeur fiscale» par immeuble.
+- **Aide à la saisie tirée de la taxation (#251) :** Nouveau champ «dont pilier 3a selon la taxation», afin que le pilier 3a ne soit pas déduit deux fois avec «Déduire les versements au pilier 3a» ; une remarque s'affiche tant que le champ est vide.
 - **Comparer les stratégies (#196, #197, #200, #201, #205) :** Les stratégies se comparent sans optimisation, les résultats de l'optimisation s'enregistrent et se rouvrent ; option « Ne jamais vendre les immeubles » ; indication lorsque la limite inférieure détermine les dépenses ; tableau des résultats sans défilement horizontal.
 - **Thème sombre (#220, #235) :** Réglage « Apparence » avec thème clair et sombre ; meilleur contraste dans le menu.
 - **Utilisation (#143, #227, #233, #234, #241) :** Impôts signalés comme estimation, planifications récentes dans le menu « Fichier », supportabilité dans les réglages, messages du moteur de calcul lisibles, carte « Déductions du revenu » plus claire avec un texte pour la déduction pour double revenu.

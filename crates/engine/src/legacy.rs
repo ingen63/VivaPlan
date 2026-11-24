@@ -537,6 +537,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 no_pension_fund: false,
             }],
             married: true,
+            married_noted: false,
             ahv_couple_cap: 3780.0,
         },
         milestones,

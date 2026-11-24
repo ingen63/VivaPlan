@@ -146,12 +146,17 @@ fn issue_53_ak7_upgrade_keeps_the_result() {
 fn issue_54_ak8_note_for_older_plans() {
     let mut old = base();
     old["flows"] = json!({ "income": 8000, "spending": 6000 });
+    // #250: unmarried, so that only the note about the cash rule remains
+    old["household"]["married"] = json!(false);
     let out = engine::api::upgrade_plan(&old);
     assert_eq!(out.notes, vec![engine::upgrade::CASH_NOTE]);
     assert_eq!(out.plan["flows"]["spending"], 6000, "ohne Wohnkosten bleibt der Wert");
     assert!(engine::api::upgrade_plan(&out.plan).notes.is_empty());
+    // a new plan carries the marker of #250 (like `assets/new.vplan`)
+    let mut fresh = base();
+    fresh["household"]["marriedNoted"] = json!(true);
     assert!(
-        engine::api::upgrade_plan(&base()).notes.is_empty(),
+        engine::api::upgrade_plan(&fresh).notes.is_empty(),
         "neue Planung ohne Hinweis"
     );
 }

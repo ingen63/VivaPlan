@@ -929,6 +929,7 @@ codes! {
     note_strategy_usd => crate::upgrade::STRATEGY_USD_NOTE,
     note_cash => crate::upgrade::CASH_NOTE,
     note_thirteenth_ahv => crate::upgrade::THIRTEENTH_AHV_NOTE,
+    note_married_single => crate::upgrade::MARRIED_SINGLE_NOTE,
     note_ahv_early => "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself reduces it by {rate:pct1} % for drawing early. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month. The reduction and supplement are now rounded to francs and, for married couples, applied after the cap as the AHV does; the result may therefore change slightly.",
     note_ahv_deferred => "The AHV pension{who} is now entered as the pension at 65 (reference age); the app itself increases it by {rate:pct1} % for the deferral. The previous amount of {old:fix2} has therefore been converted to {new:fix2} per month. The reduction and supplement are now rounded to francs and, for married couples, applied after the cap as the AHV does; the result may therefore change slightly.",
     note_pictet_stocks => "“Switzerland (JST)” for the stocks",

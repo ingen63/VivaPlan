@@ -36,7 +36,8 @@ Der Editor führt durch zwölf Abschnitte:
 - **Haushalt & Projekt:** Personen mit Geburtsdatum, Währung; auf Wunsch eine **zweite Person** (Double Income) mit
   eigenem Einkommen, eigener Pensionskasse und AHV und den Ehepaar-Regeln (Plafonierung der AHV-Renten,
   eigene Steuertabellen für Verheiratete, Kapitalbezüge eines Jahres zusammen besteuert); bei unverheirateten Paaren
-  zahlt jede Person die Kapitalbezugssteuer auf ihre eigenen Bezüge.
+  zahlt jede Person die Kapitalbezugssteuer auf ihre eigenen Bezüge. «Verheiratet» gibt es auch für eine Person
+  allein (Ehepartner ohne Einkommen und Rente): Dann gelten die Steuertarife und Abzüge für Verheiratete (#250).
 - **Meilensteine:** Zeitpunkte als Datum oder als Alter einer Person («mit 63»). Jede Person hat zwei feste,
   nicht löschbare Meilensteine: **Bezug Pensionskasse** (58 bis 65 Jahre) und **AHV-Bezug** (63 bis 70 Jahre), beide
   standardmässig 65. Alle anderen Angaben können sich auf Meilensteine beziehen; verschiebt man den Bezug der
@@ -269,6 +270,11 @@ würde die Scheingenauigkeit verstärken.
   «Wohnort» kommen die Abzüge zu den Sozialabzügen des Kantons in den Vermögenskurven dazu und ersetzen sie nicht; mit
   eigenen Tabellen sind sie der ganze Abzug. Die Steuerzerlegung zeigt die Abzüge mit Herkunft und das steuerbare
   Vermögen.
+- **Steuerbares Vermögen in der Karte (#249):** Die Karte «Abzüge vom Vermögen» zeigt zuoberst das geschätzte
+  steuerbare Vermögen des ersten Steuerjahres mit dem Anteil der Liegenschaften und warnt, wenn einer Immobilie der
+  Steuerwert fehlt (dann zählt der Marktwert). Die Details setzen es für ein wählbares Jahr zusammen wie die
+  Steuererklärung (Vermögen ohne Immobilien, Steuerwert und Hypothek je Liegenschaft, Abzüge) und bieten das Feld
+  «Steuerwert» je Liegenschaft.
 - **Was fehlt:** Abzüge im Einzelnen (nur als eigener Wert oder in den Sätzen), Eigenmietwert, Schuldzins- und
   Unterhaltsabzug (nur im eigenen Wert), Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),
   Investitionen und Kosten beim Grundstückgewinn, bei der Grundstückgewinnsteuer nach Kanton die Selbstnutzung je

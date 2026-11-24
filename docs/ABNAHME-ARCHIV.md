@@ -1903,6 +1903,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #244/AK2 | Das Feld zeigt seinen Inhalt in allen vier Sprachen vollständig; `ui-textfit.spec.js` grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) `AK2` (#244) | 24.11.2026 ok (20 Tests grün, 1'200'000 pro Jahr passt) |
 | #244/AK3 | Kein anderer Abschnitt verliert dadurch Platz. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) alle Abschnitte | 24.11.2026 ok (Test grün; nur Regeln für `.row.peryear` geändert) |
 
+### #245 README in vier Sprachen mit Videos und Bildschirmfoto in der jeweiligen Sprache
+
+[Issue #245](https://github.com/ingen63/VivaPlan/issues/245) · geschlossen · Umsetzung: 3790556
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #245/AK1 | Alle vier Dateien beginnen mit derselben Sprachleiste «Deutsch · English · Français · Italiano»; jeder Eintrag verlinkt die entsprechende Datei, die eigene Sprache ist nicht verlinkt (fett). | ☑ | **gilt** | – | 24.11.2026 ok (Prüfskript: erste Zeile je Datei genau verglichen) |
+| #245/AK2 | Die Übersetzungen haben dieselben Abschnitte in derselben Reihenfolge wie `README.md`; Begriffe nach `docs/GLOSSAR.md`. | ☑ | **gilt** | – | 24.11.2026 ok (9 Abschnitte nebeneinander verglichen; verbotene Varianten des Glossars mit den Mustern aus `tools/changelog.py` geprüft) |
+| #245/AK3 | Jede Fassung zeigt den Teaser in ihrer Sprache als GitHub-Player (`user-attachments`, startet nicht automatisch). | ☑ | **gilt** | – | 24.11.2026 ok (Adressen gleich wie im Kommentar im Issue, eigene Zeile wie in `README.md`; Darstellung auf GitHub vor dem Push nicht geprüft) |
+| #245/AK4 | Jede Fassung verlinkt «VivaPlan in 2 Minuten» und «VivaPlan in 10 Minuten» (Titel in der jeweiligen Sprache) auf das archive.org-Item ihrer Sprache. | ☑ | **gilt** | – | 24.11.2026 ok (Prüfskript: genau die beiden Adressen der eigenen Sprache; Titel wie `videos.long` der App) |
+| #245/AK5 | Bildschirmfoto in der jeweiligen Sprache mit der Planung der Videos (`Demo.vplan`, Namen je Sprache, Werte gleich); Dateien `docs/bilder/uebersicht*.png`; Bildunterschrift erfundene Daten. | ☑ | **gilt** | – | 24.11.2026 ok (mit Playwright aufgenommen, alle vier angesehen: Namen und Werte stimmen) |
+| #245/AK6 | Links innerhalb der Übersetzungen funktionieren; `docs/ENTWICKLUNG.md` nennt die vier README-Dateien im Ablauf pro Release. | ☑ | **gilt** | – | 24.11.2026 ok (Prüfskript: relative Pfade und Anker; ENTWICKLUNG Abschnitt «Release Notes», Schritt 3) |
+
 ### #246 Oberflächentest Navigation zählt 13 statt 12 Einträge
 
 [Issue #246](https://github.com/ingen63/VivaPlan/issues/246) · geschlossen · Umsetzung: 6aefa8e

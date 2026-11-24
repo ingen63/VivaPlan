@@ -162,10 +162,16 @@ Ablauf pro Release:
 1. Den deutschen Eintrag in `CHANGELOG.md` schreiben, mit Issue-Nummern.
 2. Ihn in die drei Übersetzungen übertragen: dieselben Abschnitte und Issue-Nummern, Begriffe nach dem Glossar
    (`docs/GLOSSAR.md`).
-3. Prüfen: `make changelog` bzw. `python3 tools/changelog.py check` (läuft auch in `make test-quiet` und im Job
+3. `README.md` (deutsch, massgebend) und die Übersetzungen `README.en.md`, `README.fr.md` und `README.it.md`
+   nachführen, wenn sich Funktionen, Installation oder Videos geändert haben (#245): dieselbe Sprachleiste,
+   dieselben Abschnitte in derselben Reihenfolge, Begriffe nach dem Glossar. Jede Fassung zeigt den Teaser ihrer
+   Sprache (`user-attachments`), verlinkt die Videos ihres archive.org-Items (`vivaplan-video-<de|en|fr|it>`) und das
+   Bildschirmfoto `docs/bilder/uebersicht.png` bzw. `uebersicht-<en|fr|it>.png` (Planung der Videos, Namen je
+   Sprache).
+4. Prüfen: `make changelog` bzw. `python3 tools/changelog.py check` (läuft auch in `make test-quiet` und im Job
    `english`). Gemeldet werden abweichende Versionen, Abschnitte oder Issue-Nummern und verbotene Varianten aus dem
    Glossar.
-4. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
+5. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
    einer Sprache fehlt, und setzt den Text aus `python3 tools/changelog.py notes v…` als Beschreibung des
    Release-Entwurfs: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar.
    Der Titel ist sprachneutral, nur Produkt und Version (`python3 tools/changelog.py title v…`, z. B. v1.0.0-beta.2 →
@@ -752,8 +758,10 @@ ein (`BUILTIN`).
   vereinigten Stützpunkten zusammen; Einkommenssteuer = diese Tabelle auf das steuerbare Einkommen Kanton + Bundeskurve
   auf das steuerbare Einkommen Bund (`Resolved::income_tax`). Vermögenssteuer = Vermögenskurve (Sozialabzüge
   eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie
-  bei `taxes.couple`: zweite Person und `household.married`; unverheiratete Paare rechnen mit den Kurven und Abzügen
-  für Alleinstehende auf dem Haushaltseinkommen.
+  bei `taxes.couple`: `household.married` und entweder eine zweite Person oder die Markierung
+  `household.marriedNoted` (#250: dann auch eine Person allein; ältere Planungen mit einer Person übernimmt
+  `upgrade` als unverheiratet); unverheiratete Paare rechnen mit den Kurven und Abzügen für Alleinstehende auf dem
+  Haushaltseinkommen. Die Plafonierung der AHV braucht immer zwei Personen.
 - **Abzüge vom Einkommen (#131):** `taxes.deductions` = zeitabhängige Zeilen `{ from, kind: "canton" | "own", amount,
   rate }` (`CDeduction`, sortiert wie eine Kurve), `taxes.deductPillar3a` (Standard nein). Fehlt `deductions`, gilt
   wie vor #131 im Modus «Wohnort» der Vorschlag über die ganze Zeit, mit eigenen Tabellen nichts. `Run::year_ded`
@@ -788,6 +796,12 @@ ein (`BUILTIN`).
   Tabelle. `TaxBasis.wealth` = `WealthBasis { wealth, ongoing, oneOff, taxable }`, nur mit Abzügen vom Vermögen; diese
   schalten die Aufzeichnung ein. Prüfung: Zeitpunkt auflösbar, Beträge ≥ 0, Steuerjahr zwischen Start und Ende (Fehler am
   Feld).
+- **Zusammenstellung des steuerbaren Vermögens (#249):** Mit `record` legt der Lauf im Dezember je Steuerjahr ein
+  `WealthTaxYear { year, liquid, properties: [PropertyTax { index, name, worth, taxValue, hasTaxValue, mortgage }],
+  ongoing, oneOff, taxable }` ab (`liquid` = bar + Obligationen + Aktien; `taxValue` ohne Steuerwert = Marktwert;
+  `taxable` = derselbe Wert wie für die Vermögenssteuer). Es steht in `SimResult.wealth_tax` (`serde(skip)`, nicht in
+  den gespeicherten Ergebnissen und Golden-Dateien) und geht wie `pillar3a` über `PreviewOut.wealthTax` an die
+  Oberfläche (Hinweis und Details der Karte «Abzüge vom Vermögen»).
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
   Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung bei «Tarife mit der

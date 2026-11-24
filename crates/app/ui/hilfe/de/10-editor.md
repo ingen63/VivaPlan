@@ -163,6 +163,8 @@ Mit «+ Zweite Person» erfassen Sie einen Haushalt mit zwei Personen.
 
 **Verheiratet** (Ehepaar-Regeln): Haben beide Anspruch auf eine AHV-Rente, werden die Renten mit 65 zusammen auf höchstens **3 780 Franken pro Monat** begrenzt; Kürzung bei Vorbezug und Zuschlag bei Aufschub kommen danach dazu (siehe [AHV](#f-ahv)) (150 % der Maximalrente 2025). Der Wert ist änderbar, falls die Maximalrente steigt. Die Grenze steigt jeden Januar einmal mit der Teuerung, sobald mindestens eine Rente mit Teuerungsanpassung läuft. Unter [Steuern](#s-taxes) können für Verheiratete eigene Tabellen hinterlegt werden. Kapitalbezüge im selben Jahr werden bei Verheirateten zusammengerechnet, bei unverheirateten Paaren je Person.
 
+**Verheiratet mit einer Person:** Das Häkchen «Verheiratet» gibt es auch ohne zweite Person, zum Beispiel wenn der Ehepartner weder Einkommen noch Rente hat. Dann gelten die Steuertarife und Abzüge für Verheiratete (im Modus «Wohnort» Kanton, Gemeinde und Bund, mit eigenen Tabellen die Tabellen für Verheiratete); die Steuer ist dieselbe wie bei einem Ehepaar mit einer zweiten Person ohne Einkommen. Die Begrenzung der AHV-Renten gilt erst mit zwei Personen. Ältere Planungen mit einer Person hatten «Verheiratet» ohne Wirkung angekreuzt; sie werden beim Öffnen als unverheiratet übernommen und rechnen wie bisher, ein Hinweis nennt das. Neue Planungen beginnen unverheiratet.
+
 **Nicht gerechnet:** Todesfall einer Person, Hinterlassenenrenten, Witwenrente. Die Planung rechnet, als lebten beide bis zum Ende.
 
 ## @s-flows Einnahmen & Ausgaben
@@ -289,7 +291,7 @@ Im Modus **Wohnort** wählen Sie nur **Kanton**, **Gemeinde** (Liste des Kantons
 - Einkommenssteuer = Tarif des Kantons auf das steuerbare Einkommen × (Steuerfuss Kanton + Kirche) + Tarif der Gemeinde × Steuerfuss Gemeinde + direkte Bundessteuer auf das steuerbare Einkommen des Bundes. Der Tarif der Gemeinde ist der des Kantons, ausser in Schwyz und Wallis.
 - Vermögenssteuer = Tarif des Kantons (Sozialabzüge auf dem Vermögen eingerechnet) × (Steuerfuss Kanton + Gemeinde + Kirche), ohne Bundessteuer.
 - **Kapitalbezugssteuer** (Pensionskasse, Säule 3a) = Kapitalregel des Kantons × (Steuerfuss Kanton + Kirche) + Regel der Gemeinde × Steuerfuss Gemeinde + Bundessteuer (ein Fünftel des Tarifs der direkten Bundessteuer, ohne Abzüge). Es gelten die Steuerfüsse der Einkommenssteuer; die Regel gilt für den ganzen Bezug. Bezüge im selben Kalenderjahr werden zusammengerechnet: bei Verheirateten für den Haushalt mit dem Tarif für Verheiratete, bei unverheirateten Paaren je Person mit dem Tarif für Alleinstehende. Unter der Gemeinde steht die Regel des Kantons, zum Beispiel Zürich «Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %». Die Regeln sind aus dem ESTV-Steuerrechner abgeleitet; in Wallis und Zug sind sie nur angenähert (⚠).
-- **Verheiratete** (zwei Personen und «Verheiratet» angekreuzt): Tarife und Abzüge für Verheiratete. Unverheiratete Paare rechnen mit denen für Alleinstehende auf dem gemeinsamen Einkommen.
+- **Verheiratete** («Verheiratet» angekreuzt, auch bei einer Person): Tarife und Abzüge für Verheiratete. Unverheiratete Paare rechnen mit denen für Alleinstehende auf dem gemeinsamen Einkommen.
 - Mit [Tarifen mit der Teuerung](#f-tax-indexed) wachsen die Beträge der Tarife und Abzüge mit der simulierten Teuerung.
 - **Grundstückgewinnsteuer:** Für jede Immobilie gilt der Regelsatz des Kantons, in dem sie liegt; den Kanton wählen Sie bei der Immobilie unter [Immobilien](#s-realestate), ohne Angabe gilt der Wohnkanton. Einzelheiten unter [Grundstückgewinnsteuer](#f-tax-gain). Mit dem Häkchen **«Eigene Regeln statt der Regeln des Kantons»** gelten stattdessen die eigenen Regeln mit dem [Steuerfuss](#f-tax-multiplier) für alle Immobilien.
 
@@ -314,7 +316,7 @@ Jede Zeile ist entweder (die Erklärungen dazu stehen auch im ⓘ neben dem Tite
 **Eigenen Wert bestimmen:** Die Eingabehilfe rechnet ihn aus dem **Einkommen** und dem **steuerbaren Einkommen laut Veranlagung**, zum Beispiel 120 000 und 80 000 ergeben 40 000; «Als eigenen Wert übernehmen» setzt ihn in die Zeile. Dabei gilt:
 
 - Einkommen ist **netto**, nach AHV- und PK-Beiträgen, wie der Nettolohn im Lohnausweis, mit Renten.
-- **Ohne Säule 3a:** Die Einzahlungen kommen aus der Planung (siehe unten).
+- **Ohne Säule 3a:** Die Einzahlungen kommen aus der Planung (siehe unten). Der Abzug laut Veranlagung enthält sie schon: Ist «Einzahlungen in die Säule 3a abziehen» eingeschaltet, tragen Sie die Säule 3a laut Veranlagung bei **«davon Säule 3a»** ein; die Eingabehilfe zieht sie ab, sonst zählt sie doppelt. Beispiel: 120 000, steuerbar 80 000, davon Säule 3a 7 000 ergibt 33 000 (ohne Häkchen 40 000). Ist das Feld leer, weist die Eingabehilfe darauf hin.
 - **Wohneigentum** (Eigenmietwert, Hypothekarzinsen, Unterhalt) gehört in den eigenen Wert. Ab 2029 gibt es für selbstgenutztes Eigentum keinen Eigenmietwert und keinen Schuldzinsabzug mehr; legen Sie dafür eine Zeile «ab 2029» an. **Hypothekarzinsen werden nicht automatisch abgezogen.**
 
 **Einmalige Abzüge:** Sie stehen unter einem eigenen Zwischentitel am Ende der Karte. «+ Einmaliger Abzug» legt einen Abzug für ein einzelnes Steuerjahr an, mit Steuerjahr, Beschreibung und Betrag (nominal, ohne Teuerung), zum Beispiel einen PK-Einkauf, eine Sanierung oder Krankheitskosten. Der Betrag zählt in diesem Steuerjahr zusätzlich zur geltenden Zeile, beim Vorschlag des Kantons wie beim eigenen Wert und in beiden Modi. Beispiel: Einkommen 120 000, eigener Wert 30 000, einmalig 50 000 im Jahr 2027 ergibt 2027 ein steuerbares Einkommen von 40 000, in den übrigen Jahren 90 000. Die Schätzung des Netto-Bedarfs der [3-Topf-Strategie](#f-wd-three_buckets) nutzt nur die laufenden Abzüge.
@@ -331,6 +333,10 @@ Jede Zeile ist entweder (die Erklärungen dazu stehen auch im ⓘ neben dem Tite
 Stichworte: Abzüge, steuerbares Vermögen, Vermögenssteuer, Schulden, Sozialabzüge, einmalig
 
 Die Karte **Abzüge vom Vermögen** im Abschnitt Steuern legt fest, was vom Vermögen am 31. Dezember abgezogen wird, zum Beispiel Schulden ausser der Hypothek oder kantonale Abzüge, die in den Tarifen fehlen. Das **steuerbare Vermögen** = Vermögen − Abzüge, nie negativ. Immobilien zählen dabei zum [Steuerwert](#f-re-tax-value) minus Hypothek.
+
+**Geschätztes steuerbares Vermögen:** Zuoberst steht als Hinweis das steuerbare Vermögen am 31. Dezember des ersten Steuerjahres, auf 1 000 Franken gerundet, mit dem Anteil der Liegenschaften (Steuerwert minus Hypothek), zum Beispiel «Steuerbares Vermögen geschätzt am 31.12.2026: 500 000, davon Liegenschaften 250 000». Vergleichen Sie ihn mit Ihrer letzten Steuererklärung. Fehlt bei einer Immobilie der Steuerwert, warnt der Hinweis: Gerechnet wird dann mit dem Marktwert, das steuerbare Vermögen ist oft deutlich zu hoch. Der Link führt zum Feld «Steuerwert». Im Modus «Wohnort» sind kantonale Freibeträge, die in den Tarifen stecken, nicht abgezogen; die Steuererklärung kann deshalb tiefer liegen.
+
+**Details:** Die Zusammenstellung zeigt für ein wählbares Steuerjahr, wie das steuerbare Vermögen entsteht, aufgebaut wie in der Steuererklärung: Vermögen ohne Immobilien (bar, Obligationen, Aktien; ohne Pensionskasse und Säule 3a), je Liegenschaft der Steuerwert (ohne Steuerwert der Marktwert, mit ⚠) und die Hypothek, die Abzüge vom Vermögen und das steuerbare Vermögen. Darunter steht für jede Liegenschaft das Feld [Steuerwert](#f-re-tax-value), dasselbe wie im Abschnitt Immobilien.
 
 **Zeilen:** «+ Zeile» legt eine zeitabhängige Zeile mit dem Feld «+ zusätzlich» (pro Jahr) an; sie gilt ab ihrem Zeitpunkt bis zur nächsten. Für ein Steuerjahr zählt die Zeile, die am 31. Dezember gilt. Der Betrag steht in Preisen des Simulationsstarts und wächst mit [Tarifen mit der Teuerung](#f-tax-indexed).
 
@@ -415,7 +421,7 @@ Jede Tabelle hat Stufen aus **Betrag** und **Satz**. Dazwischen interpoliert die
 - **Grenzen:** Jeder Satz liegt zwischen 0 % und 100 %, jeder Betrag ist 0 oder grösser. Werte ausserhalb meldet die Prüfung am Feld.
 - **Steuer darf nicht sinken:** Ein höherer Betrag ergibt nie eine tiefere Steuer. Sinkt der Satz zwischen zwei Stufen so stark, dass Satz × Betrag kleiner wird, meldet die Prüfung eine **Warnung** an der betroffenen Stufe; gerechnet wird trotzdem. Meist ist dann ein Grenzsteuersatz statt des Durchschnittssatzes erfasst. Bei mehreren Kapitalbezügen im selben Jahr wird die Steuer auf einen weiteren Bezug in diesem Fall nie negativ, sondern 0.
 - **Kapitalbezüge** im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet: bei Verheirateten für den Haushalt, bei unverheirateten Paaren je Person (jede Person zahlt die Steuer auf ihre eigenen Bezüge). Verteilen Sie Bezüge auf verschiedene Jahre, sinkt der Satz.
-- **Verheiratete:** Bei zwei Personen und angekreuztem «Verheiratet» können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
+- **Verheiratete:** Mit angekreuztem «Verheiratet» (auch bei einer Person) können Sie eigene Tabellen für Ehepaare hinterlegen. Ohne eigene Tabellen gelten die normalen.
 - Gehen Sie von der **effektiven** Steuerbelastung aus, nicht vom Grenzsteuersatz. Der Steuerrechner Ihres Kantons liefert beides.
 
 ## @tax-accuracy Wie genau ist die Steuer?

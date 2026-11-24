@@ -1079,3 +1079,141 @@ test.describe("Field «Steuerwert» wide enough (#255)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Input help from the assessment without double pillar 3a (#251)", () => {
+  const card = page => page.locator("#tax-deductions");
+  async function withOwnRow(page, deduct) {
+    await page.evaluate(deduct => {
+      state.taxes.deductions = [{ from: "start", kind: "own", amount: 0, rate: 0 }];
+      state.taxes.deductPillar3a = deduct;
+      markDirty(); renderSection(); scheduleRefresh();
+    }, deduct);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+
+  test("AK1: with the pillar 3a deduction switched on the pillar 3a of the assessment is taken off, without it not", async ({ page }) => {
+    const errors = await open(page);
+    await withOwnRow(page, true);
+    await page.locator("#ded-calc-income").fill("120000");
+    await page.locator("#ded-calc-taxable").fill("80000");
+    await page.locator("#ded-calc-p3a").fill("7000");
+    await expect(page.locator("#ded-calc-result")).toHaveText("33'000");
+    await page.locator('button[data-action="ded-calc-apply"]').click();
+    expect(await page.evaluate(() => state.taxes.deductions[0].amount)).toBe(33000);
+    // switched off: the field does not count
+    await card(page).locator('input[data-path="taxes.deductPillar3a"]').uncheck();
+    await expect(page.locator("#ded-calc-result")).toHaveText("40'000");
+    await expect(page.locator("#ded-calc-p3a-hint")).toBeHidden();
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK3: hint while the pillar 3a field is empty; the explanation of the own value names the double count", async ({ page }) => {
+    const errors = await open(page);
+    await withOwnRow(page, true);
+    const hint = page.locator("#ded-calc-p3a-hint");
+    await expect(hint).toBeVisible();
+    await expect(hint).toContainText("sonst zählt sie doppelt");
+    await page.locator("#ded-calc-p3a").fill("7000");
+    await expect(hint).toBeHidden();
+    await page.locator("#ded-calc-p3a").fill("");
+    await expect(hint).toBeVisible();
+    expect(await page.evaluate(() => document.querySelector("#ded-own-hint").textContent)).toContain("zählt sonst doppelt");
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Deductions from wealth as clear as the deductions from income (#249)", () => {
+  const card = page => page.locator("#tax-wealth-deductions");
+  const hint = page => page.locator("#wtax-hint");
+  /** Example plan with own tables and the owned property without a tax value; `prepare` adjusts the state. */
+  async function setup(page, prepare = () => {}) {
+    await page.evaluate(prepare);
+    await page.evaluate(() => { state.taxes.mode = "own"; markDirty(); renderSection(); scheduleRefresh(); });
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+  const owned = page => page.evaluate(() => state.realestate.properties.findIndex(p => p.status === "owned"));
+  const fmt = v => Math.round(v).toLocaleString("de-CH");
+
+  test("AK7: estimated taxable wealth with the share of the properties; warning without a tax value with a link to the field", async ({ page }) => {
+    const errors = await open(page);
+    const i = await owned(page);
+    expect(i).toBeGreaterThanOrEqual(0);
+    await setup(page, () => { for (const p of state.realestate.properties) delete p.taxValue; });
+    const w = await page.evaluate(() => lastSim.wealthTax[0]);
+    const k = v => fmt(Math.round(v / 1000) * 1000);
+    const props = w.properties.reduce((a, p) => a + p.taxValue - p.mortgage, 0);
+    await expect(hint(page)).toContainText(`Steuerbares Vermögen geschätzt am 31.12.${w.year}: ${k(w.taxable)}, davon Liegenschaften ${k(props)}.`);
+    const warn = hint(page).locator(`[data-wtax-missing="${i}"]`);
+    await expect(warn).toContainText("ohne Steuerwert, gerechnet mit dem Marktwert");
+    // the link opens the details and puts the focus on the field «Steuerwert» of the property
+    await warn.locator('a[data-action="wtax-edit"]').click();
+    const sel = card(page).locator(`[data-wtax-field="${i}"] select[data-action-change="tax-value-kind"]`);
+    await expect(sel).toBeFocused();
+    await sel.selectOption("amount");
+    await previewIdle(page);
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue?.kind, i)).toBe("amount");
+    // with a tax value no warning; the hint follows the preview
+    await expect(hint(page).locator("[data-wtax-missing]")).toHaveCount(0);
+    await page.evaluate(i => { state.realestate.properties[i].taxValue = { kind: "rate", value: 0.5 }; markDirty(); renderSection(); scheduleRefresh(); }, i);
+    await previewIdle(page);
+    const w2 = await page.evaluate(() => lastSim.wealthTax[0]);
+    expect(w2.taxable).toBeLessThan(w.taxable);
+    await expect(hint(page)).toContainText(`: ${k(w2.taxable)},`);
+    // mode «Wohnort»: note on the cantonal allowances
+    await page.evaluate(() => { state.taxes.mode = "location"; state.taxes.location = { canton: "ZH", municipality: 261, church: "none" }; markDirty(); renderSection(); scheduleRefresh(); });
+    await previewIdle(page);
+    await expect(hint(page)).toContainText("Kantonale Freibeträge, die in den Tarifen stecken, sind nicht abgezogen");
+    await noErrors(page, errors);
+  });
+
+  test("AK1, AK3: composition for a chosen year adds up to the taxable wealth; without a tax value «Marktwert» and the same field as under real estate", async ({ page }) => {
+    const errors = await open(page);
+    const i = await owned(page);
+    await setup(page, () => {
+      for (const p of state.realestate.properties) delete p.taxValue;
+      state.taxes.wealthDeductions = [{ from: "start", amount: 50000 }];
+    });
+    await card(page).locator("details[data-wtax-details] summary").click();
+    const table = card(page).locator("table[data-wtax-year]");
+    await expect(table).toContainText("Vermögen ohne Immobilien");
+    await expect(table.locator(`[data-wtax-market="${i}"]`)).toContainText("(ohne Steuerwert)");
+    await expect(table).toContainText("− Hypothek");
+    await expect(table).toContainText("− Abzüge vom Vermögen");
+    // second tax year chosen: the total is the taxable wealth of that year
+    const years = await page.evaluate(() => lastSim.wealthTax.map(w => w.year));
+    expect(years.length).toBeGreaterThan(1);
+    await card(page).locator("#wtax-year").selectOption(String(years[1]));
+    await expect(table).toHaveAttribute("data-wtax-year", String(years[1]));
+    const w = await page.evaluate(y => lastSim.wealthTax.find(w => w.year === y), years[1]);
+    await expect(table.locator("[data-wtax-taxable]")).toContainText(fmt(w.taxable));
+    const sum = w.liquid + w.properties.reduce((a, p) => a + p.taxValue - p.mortgage, 0) - w.ongoing - w.oneOff;
+    expect(Math.abs(sum - w.taxable)).toBeLessThan(1e-6);
+    // the same field as in the section «Immobilien»: an amount is stored at the property
+    const sel = card(page).locator(`[data-wtax-field="${i}"] select[data-action-change="tax-value-kind"]`);
+    await sel.selectOption("amount");
+    const value = card(page).locator(`input[data-path="realestate.properties.${i}.taxValue.value"]`);
+    await value.fill("400'000");
+    await value.press("Tab");
+    await previewIdle(page);
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toEqual({ kind: "amount", value: 400000 });
+    await expect(table.locator(`[data-wtax-market="${i}"]`)).toHaveCount(0);
+    await expect(table).toContainText("+ Steuerwert");
+    await noErrors(page, errors);
+  });
+
+  test("AK4: without properties no property rows and no share of the properties", async ({ page }) => {
+    const errors = await open(page);
+    await setup(page, () => { state.realestate.properties = []; });
+    await expect(hint(page)).toContainText("Steuerbares Vermögen geschätzt am 31.12.");
+    await expect(hint(page)).not.toContainText("davon Liegenschaften");
+    await card(page).locator("details[data-wtax-details] summary").click();
+    const table = card(page).locator("table[data-wtax-year]");
+    await expect(table).toContainText("Vermögen ohne Immobilien");
+    await expect(table).not.toContainText("Hypothek");
+    await expect(card(page).locator("[data-wtax-fields]")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+});
