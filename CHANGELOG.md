@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 1.0.0-beta.4
+
+Vierte Vorabversion von 1.0, korrigiert die Steuer gegenüber 1.0.0-beta.3. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.4; Installationspakete gibt es vorerst nur für macOS (#202).
+
+### Kann Ergebnisse ändern
+
+- **Verheiratet mit einer Person (#250):** «Verheiratet» gilt auch ohne zweite Person; dann rechnen die Steuern mit Tarifen und Abzügen für Verheiratete. Ältere Planungen mit einer Person werden beim Öffnen als unverheiratet übernommen und rechnen wie bisher (Hinweis); neue Planungen beginnen unverheiratet.
+
+### Neu, geändert, behoben
+
+- **Eingabehilfe aus der Veranlagung (#251):** Neues Feld «davon Säule 3a laut Veranlagung», damit die Säule 3a mit «Einzahlungen in die Säule 3a abziehen» nicht doppelt abgezogen wird; Hinweis, solange das Feld leer ist.
+
 ## Version 1.0.0-beta.3
 
 Dritte Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.3; Installationspakete gibt es vorerst nur für macOS (#202).

@@ -2,6 +2,18 @@
 
 Traduction française de `CHANGELOG.md` (allemand, version de référence) à partir de la version 1.0.0-beta.1.
 
+## Version 1.0.0-beta.4
+
+Quatrième préversion de 1.0, corrige l'impôt par rapport à 1.0.0-beta.3. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.4 ; pour l'instant, les paquets d'installation ne sont construits que pour macOS (#202).
+
+### Peut modifier les résultats
+
+- **Marié·e avec une seule personne (#250) :** «Marié·e·s» s'applique aussi sans deuxième personne ; les impôts sont alors calculés avec les barèmes et déductions pour personnes mariées. Les anciennes planifications avec une personne sont reprises comme non mariées à l'ouverture et calculent comme avant (remarque) ; les nouvelles planifications commencent non mariées.
+
+### Nouveautés, modifications, corrections
+
+- **Aide à la saisie tirée de la taxation (#251) :** Nouveau champ «dont pilier 3a selon la taxation», afin que le pilier 3a ne soit pas déduit deux fois avec «Déduire les versements au pilier 3a» ; une remarque s'affiche tant que le champ est vide.
+
 ## Version 1.0.0-beta.3
 
 Troisième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.3 ; pour l'instant, les paquets d'installation ne sont construits que pour macOS (#202).

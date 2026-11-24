@@ -2,6 +2,18 @@
 
 English translation of `CHANGELOG.md` (German, authoritative) from version 1.0.0-beta.1 on.
 
+## Version 1.0.0-beta.4
+
+Fourth pre-release of 1.0, corrects the tax compared with 1.0.0-beta.3. The Windows installer `.msi` carries the version number 1.0.0.4; for now installers are built for macOS only (#202).
+
+### May change results
+
+- **Married with one person (#250):** «Married» also applies without a second person; taxes are then calculated with the tariffs and deductions for married couples. Older plans with one person are taken over as unmarried when opened and calculate as before (note); new plans start unmarried.
+
+### New, changed, fixed
+
+- **Input help from the assessment (#251):** New field «of which pillar 3a according to the assessment», so that pillar 3a is not deducted twice with «Deduct contributions to pillar 3a»; a note is shown while the field is empty.
+
 ## Version 1.0.0-beta.3
 
 Third pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.3; for now installers are built for macOS only (#202).

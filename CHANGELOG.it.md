@@ -2,6 +2,18 @@
 
 Traduzione italiana di `CHANGELOG.md` (tedesco, versione di riferimento) a partire dalla versione 1.0.0-beta.1.
 
+## Versione 1.0.0-beta.4
+
+Quarta versione preliminare di 1.0, corregge l'imposta rispetto a 1.0.0-beta.3. Il pacchetto di installazione Windows `.msi` porta il numero di versione 1.0.0.4; per ora i pacchetti di installazione vengono creati solo per macOS (#202).
+
+### Può modificare i risultati
+
+- **Coniugati con una sola persona (#250):** «Coniugati» vale anche senza seconda persona; le imposte sono allora calcolate con le tariffe e le deduzioni per coniugati. Le pianificazioni meno recenti con una persona vengono riprese come non coniugate all'apertura e calcolano come prima (avvertenza); le nuove pianificazioni iniziano non coniugate.
+
+### Novità, modifiche, correzioni
+
+- **Aiuto all'inserimento dalla tassazione (#251):** Nuovo campo «di cui pilastro 3a secondo la tassazione», affinché il pilastro 3a non venga dedotto due volte con «Dedurre i versamenti nel pilastro 3a»; un'avvertenza appare finché il campo è vuoto.
+
 ## Versione 1.0.0-beta.3
 
 Terza versione preliminare di 1.0. Il pacchetto di installazione Windows `.msi` porta il numero di versione 1.0.0.3; per ora i pacchetti di installazione vengono creati solo per macOS (#202).
