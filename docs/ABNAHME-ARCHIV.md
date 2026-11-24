@@ -1662,6 +1662,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #218/AK4 | Ohne Kennlinie unverändert (Golden), Rechenzeit im Messrauschen. | ☑ | **gilt** | Golden, `variants_bench` | 24.11.2026 ok (Golden unverändert, bitgleich; variations 1086–1097 → 1056–1075 ms, compare 1243–1255 → 1202–1220 ms) |
 | #218/AK5 | Hilfe nennt die Grenze des parametrischen Modells. | ☑ | **gilt** | – | 24.11.2026 ok (Durchsicht, vier Sprachen) |
 
+### #219 describe: maschinenlesbarer Katalog für KIs
+
+[Issue #219](https://github.com/ingen63/VivaPlan/issues/219) · geschlossen · Umsetzung: 4b43dfb
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #219/AK1 | `vivaplan describe [--json]`: Felder mit Typ, Einheit, Wertebereich und Bedeutung, Zustandsgrössen, Bausteine für Kennzahlen, Formen für Variationsraum und Ziel, drei Beispiel-Experimente, gemessene µs je Lauf. | ☑ | **gilt** | `issue_219_ak1_…` (5 Tests), CLI `issue_219_ak1_…` | 24.11.2026 ok (Test grün; Messung beim Aufruf, Release 0,3 s; Bedeutung der Felder in `describe fields`, nach Kommentar) |
+| #219/AK2 | Katalog aus Schema und Code erzeugt; Test schlägt fehl, wenn ein Feld des Schemas fehlt oder ein Feld des Katalogs nicht im Schema steht. | ☑ | **gilt** | `issue_219_ak2_…` (2 Tests) | 24.11.2026 ok (Test grün; Tabellen `UNITS`/`MEANINGS` in beiden Richtungen, Werte echter Planungen) |
+| #219/AK3 | Die drei Beispiel-Experimente laufen im Test fehlerfrei. | ☑ | **gilt** | `issue_219_ak3_…` (4 Tests), CLI `issue_219_ak3_…` | 24.11.2026 ok (Test grün; auch über `vivaplan evaluate`) |
+| #219/AK4 | Ausgabe unter 20'000 Zeichen; einzelne Abschnitte mit `describe <abschnitt>`. | ☑ | **gilt** | `issue_219_ak4_…`, CLI `issue_219_ak4_…` | 24.11.2026 ok (Test grün; ganz 17'793/17'899, `fields` 18'672/18'872 Zeichen Text/JSON) |
+
 ### #222 Regel gegen überflüssige Tests für den rust-test-agent
 
 [Issue #222](https://github.com/ingen63/VivaPlan/issues/222) · geschlossen · Umsetzung: a2a4afe
