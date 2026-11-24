@@ -57,8 +57,9 @@ Die ausführliche Beschreibung steht in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG
 
 ## Ihre Daten bleiben bei Ihnen
 
-Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu. Eine Planung ist eine einzelne Datei
-(`.vplan`), die Sie speichern, kopieren und archivieren wie jedes andere Dokument.
+Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu, weder die App noch der Rechenkern noch der
+MCP-Server `vivaplan mcp`. Daten verlassen den Rechner nur über eine KI, die Sie selbst anbinden. Eine Planung ist eine
+einzelne Datei (`.vplan`), die Sie speichern, kopieren und archivieren wie jedes andere Dokument.
 
 ## Installation
 

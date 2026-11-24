@@ -60,6 +60,7 @@ Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent
 - **Time-dependent values:** Many amounts can be entered as a constant or as a sequence of values, see [Time-dependent values](#f-timed).
 - **Language:** Menu *View → Language* or the [settings](#f-settings). The change takes effect immediately; plan and view stay. The help is shown in the chosen language; where a chapter is not yet translated, it appears in German.
 - **Introductory videos:** *Help → Introductory videos …* shows the videos “VivaPlan in 2 minutes” and “VivaPlan in 10 minutes”; the welcome dialog has the link “Watch VivaPlan in 2 minutes”. A click opens the video in the language set in your browser (Internet Archive).
+- **Connect to AI:** *Help → Connect to AI …* shows how to set up VivaPlan in Claude Desktop, Claude Code, the ChatGPT desktop app or LM Studio, each with the place of the setup and a line to copy ([connect AI programs](#ref-mcp)). VivaPlan sets up nothing itself.
 - **Support VivaPlan:** VivaPlan is free. If you would like to support the author voluntarily with a coffee: *Help → Support VivaPlan…*, the line “☕ Support VivaPlan” at the bottom of the navigation or the link in the window “About VivaPlan” open the page buymeacoffee.com/vivaplan in your browser. The app itself loads nothing from the internet.
 
 The complete list of keyboard shortcuts is in the menu *Help → Keyboard shortcuts* and in the [reference chapter](#ref-shortcuts).
@@ -72,6 +73,7 @@ All data stays on your computer. The app never connects to the internet, not eve
 - **Plans** are where you save the `.vplan` file. The paths of the plans last opened or saved (list “Open Recent”) are in the file `einstellungen.json` in the data folder of the app.
 - **Time series** (the data library) are in the data folder of the app. On macOS this is `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.
 - **The list of results** is in the local storage of the app (not in the plan file). Anyone who has your user account on this computer can read it. Delete entries you do not want to keep.
+- **AI programs:** If you connect VivaPlan to an AI ([connect AI programs](#ref-mcp)), the AI reads data of your plan through the program `vivaplan mcp`. With a cloud AI (for example Claude or ChatGPT) this data goes to its provider. With a local model (for example in LM Studio) it stays on your computer. VivaPlan itself sends nothing.
 
 You download new data for the library (Shiller, SNB) yourself from their websites and import it with the buttons in the [investment strategy](#f-ret-series).
 

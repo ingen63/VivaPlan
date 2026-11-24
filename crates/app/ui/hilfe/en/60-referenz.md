@@ -268,6 +268,8 @@ Before every computation the server estimates its duration. From 60 seconds it c
 
 **Saving:** `plan_save` keeps these rules itself, whatever the AI does: (1) Without a path a **new file** is created next to the opened one, `<name> (AI).vplan` (with a number if needed); an existing file stays untouched. (2) The server replaces an existing file only with `overwrite` and only after the AI program has asked you and shown the changes; if it cannot ask, the server refuses. (3) A backup `<file>.bak` is made first; writing goes through a temporary file. (4) If the file was changed since it was opened, it is not replaced. (5) Old `.rplan` files are never replaced; plans are saved as `.vplan`. (6) The server writes only into the folder of the opened plan or into a folder released with `--allow-dir <folder>`. With `--read-only` the server does not offer `plan_save` at all. Do not edit a plan in the app and in the AI at the same time: the app does not notice changes to the file.
 
+**Set up with one click:** The menu *Help → Connect to AI …* shows for Claude Desktop, Claude Code, the ChatGPT desktop app (through the configuration of Codex) and LM Studio where the entry belongs, and the matching line with the path of the program on your computer to copy. VivaPlan sets up nothing itself. For Claude Desktop on macOS every version comes with the package `VivaPlan_<version>_aarch64.mcpb`: a double click installs VivaPlan as an extension in Claude Desktop; the package contains the program `vivaplan` itself.
+
 **Set up:** In the AI program, enter the program `vivaplan` with its full path (see [command line](#ref-cli)) and the argument `mcp`. In Claude Desktop and LM Studio the entry looks like this on macOS:
 
 ```

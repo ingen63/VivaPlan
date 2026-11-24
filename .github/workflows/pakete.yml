@@ -1,9 +1,9 @@
 # Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .AppImage; .rpm nur ohne Vorabversion) und macOS
-# (.dmg). Ein Versions-Tag (v0.3.0) baut alle drei und legt einen Entwurf unter «Releases» an, mit den Release Notes in
-# vier Sprachen (#188, #203). Von Hand (Actions → «Installationspakete» → Run workflow, oder
-# `gh workflow run pakete.yml -f tag=v1.0.0-beta.3 -f plattformen=windows,linux`) baut nur die gewählten Plattformen
-# (Vorgabe macOS, spart Actions-Minuten, #202): mit «tag» den Stand dieses Tags, die Pakete kommen in dessen
-# Release-Entwurf; ohne «tag» den Stand des gewählten Zweigs, nur als Artefakte.
+# (.dmg, dazu das Ein-Klick-Paket .mcpb für Claude Desktop, #213). Ein Versions-Tag (v0.3.0) baut alle drei und legt
+# einen Entwurf unter «Releases» an, mit den Release Notes in vier Sprachen (#188, #203). Von Hand (Actions →
+# «Installationspakete» → Run workflow, oder `gh workflow run pakete.yml -f tag=v1.0.0-beta.3 -f plattformen=windows,linux`)
+# baut nur die gewählten Plattformen (Vorgabe macOS, spart Actions-Minuten, #202): mit «tag» den Stand dieses Tags, die
+# Pakete kommen in dessen Release-Entwurf; ohne «tag» den Stand des gewählten Zweigs, nur als Artefakte.
 name: Installationspakete
 
 on:
@@ -119,6 +119,16 @@ jobs:
               7z l target/release/bundle/nsis/*.exe | grep -i 'vivaplan\.exe'
               target/release/vivaplan.exe --version ;;
           esac | tee -a "$GITHUB_STEP_SUMMARY"
+      # #213/AK1: Ein-Klick-Paket für Claude Desktop (.mcpb, nur macOS) mit der Kommandozeile aus dem .app; die Prüfung
+      # packt es aus, prüft das Manifest und startet `vivaplan mcp` wie Claude Desktop.
+      - name: Ein-Klick-Paket für Claude Desktop
+        if: matrix.name == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mcpb=$(python3 tools/mcpb.py build --binary target/release/bundle/macos/VivaPlan.app/Contents/MacOS/vivaplan \
+            --out target/release/bundle/mcpb)
+          python3 tools/mcpb.py check "$mcpb" | tee -a "$GITHUB_STEP_SUMMARY"
       # #141: Rauchtest vor dem Release-Entwurf: Die gebaute App öffnet Fenster und Webansicht, rechnet die
       # Beispielplanung und beendet sich (Code 0 = in Ordnung). Unter Linux in einer virtuellen Anzeige (xvfb);
       # unter Windows hat die App keine Konsole, die Meldung steht deshalb in VIVAPLAN_SMOKE_OUT.
@@ -146,6 +156,7 @@ jobs:
             target/release/bundle/rpm/*.rpm
             target/release/bundle/appimage/*.AppImage
             target/release/bundle/dmg/*.dmg
+            target/release/bundle/mcpb/*.mcpb
 
   release:
     # job-level `if` kennt `env` nicht: dieselbe Bedingung wie TAG

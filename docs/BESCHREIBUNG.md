@@ -17,7 +17,8 @@ Weil die Börsenrenditen unsicher sind, rechnet die App nicht nur einen Verlauf,
 (Monte Carlo oder alle historischen Startzeitpunkte) und zeigt, in wie vielen davon das Geld reicht, einschliesslich
 des 1. und 99. Perzentils und des schlechtesten Laufs.
 
-Die App läuft auf macOS, Windows und Linux. Sie greift nie aufs Netzwerk zu: Planungen, Zeitreihen und Ergebnisse
+Die App läuft auf macOS, Windows und Linux. Sie greift nie aufs Netzwerk zu (das gilt für die App, den Rechenkern und
+den MCP-Server `vivaplan mcp`): Planungen, Zeitreihen und Ergebnisse
 bleiben ausschliesslich auf dem eigenen Rechner. Daten verlassen den Rechner nur, wenn man VivaPlan selbst mit einer KI
 verbindet (`vivaplan mcp`, Kommandozeile), und dann nur das, was die KI abfragt. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
 kopieren und archivieren lässt; ein Doppelklick auf die Datei öffnet sie in VivaPlan. Beim Start öffnet die Desktop-App die zuletzt geöffnete oder gespeicherte Planung (sonst eine mitgelieferte Beispielplanung); beim Beenden mit ungespeicherten Änderungen fragt sie nach. Das Menü «Datei → Zuletzt geöffnet» zeigt die letzten 10 geöffneten oder gespeicherten Planungen zum schnellen Wechseln; eine nicht mehr vorhandene Datei meldet die App und entfernt sie aus der Liste, «Liste löschen» leert sie. Die Liste enthält nur die Dateipfade und liegt in den lokalen Einstellungen der App.
@@ -437,6 +438,15 @@ dem Datenordner der App. Namen von Personen und frei eingegebene Bezeichnungen e
 («Person 1»), ausser mit `--names`, und nennt nur Dateinamen; keine Antwort ist länger als 20'000 Zeichen. Das erste
 Öffnen einer Planung weist darauf hin, dass die abgefragten Daten Teil des Gesprächs mit der KI werden und an deren
 Anbieter gehen, und zeigt den vollen Haftungsausschluss; jede Antwort mit Ergebnissen endet mit der Kurzfassung.
+
+Mit KI verbinden (#213): Menü *Hilfe → Mit KI verbinden …* zeigt Anleitungen für Claude Desktop, Claude Code, die
+ChatGPT-Desktop-App (über die Konfiguration von Codex, `~/.codex/config.toml`) und LM Studio, je mit dem Ort der
+Einrichtung und einer Einrichtungszeile mit dem Pfad des Programms `vivaplan` neben der installierten App, zum Kopieren
+in die Zwischenablage. Die App richtet nichts selbst ein und greift nicht aufs Netz zu. Für Claude Desktop unter macOS
+enthält jede Version das Ein-Klick-Paket `VivaPlan_<Version>_aarch64.mcpb` (MCP Bundle mit `manifest.json`, dem
+Programm `vivaplan` und dem Symbol); ein Doppelklick installiert VivaPlan als Erweiterung. Die Hilfe zum Datenschutz
+erklärt: Mit einer Cloud-KI gehen die gelesenen Daten an deren Anbieter, mit einem lokalen Modell bleiben sie auf dem
+Rechner.
 
 ## Installation
 

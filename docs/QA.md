@@ -158,6 +158,61 @@ Werkzeuge aufrufen kann (zum Beispiel Qwen 3 oder Llama 3.1 Instruct, in LM Stud
 6. In LM Studio den Server ausschalten: Der Prozess `vivaplan mcp` endet (Aktivitätsanzeige).
 7. Ergebnis mit Datum, Version, LM-Studio-Version und Modell unter «Messungen» oder im Issue festhalten.
 
+## Prüfung von Hand: Mit KI verbinden (#213)
+
+Vor einer Version und nach Änderungen am Dialog *Hilfe → Mit KI verbinden …*, an `tools/mcpb.py` oder an der
+Kommandozeile. Paket gebaut (`pakete.yml` oder `npx tauri build --config tauri.cli.conf.json`, dann
+`python3 tools/mcpb.py build --binary target/release/bundle/macos/VivaPlan.app/Contents/MacOS/vivaplan --out
+target/release/bundle/mcpb`), `VivaPlan.app` nach `/Applications` kopiert. Beispielplanung als
+`~/Documents/beispiel.vplan` gespeichert.
+
+**Für alle Programme gleich**
+
+1. In der App *Hilfe → Mit KI verbinden …* öffnen. Erwartet: oben der Pfad
+   `/Applications/VivaPlan.app/Contents/MacOS/vivaplan` (der Ort der installierten App, nicht der Standardpfad), darunter
+   Claude Desktop, Claude Code, ChatGPT Desktop und LM Studio, je mit Ort der Einrichtung und Zeile zum Kopieren.
+2. «Kopieren» drücken und in einem Texteditor einfügen: Erwartet ist genau die angezeigte Zeile; der Knopf zeigt kurz
+   «Kopiert ✓».
+3. AK4: Vor und nach dem Öffnen des Dialogs `ls -l ~/Library/Application\ Support/Claude ~/.codex ~/.lmstudio`
+   vergleichen: keine Datei geändert. Die App öffnet keine Netzwerkverbindung (Little Snitch oder `nettop -p vivaplan-app`).
+4. Nach dem Einrichten in jedem Programm fragen: «Öffne ~/Documents/beispiel.vplan mit VivaPlan und sag mir, ob die
+   Planung Fehler hat.» Erwartet: Aufruf von `plan_open` und `plan_validate`, Person als «Person 1», keine Fehler.
+5. Ergebnis mit Datum, Version, Programmversion und Modell im Issue festhalten.
+
+**Claude Desktop, Ein-Klick-Paket (AK1)**
+
+1. Ist VivaPlan schon als Server in `claude_desktop_config.json` eingetragen, den Eintrag vorher entfernen.
+2. `VivaPlan_<Version>_aarch64.mcpb` im Finder doppelklicken. Erwartet: Claude Desktop öffnet die Installationsansicht
+   mit Name «VivaPlan», Version, Symbol, Beschreibung und den fünfzehn Werkzeugen; «Installieren» gelingt ohne
+   Fehlermeldung (auch keine von Gatekeeper zum Programm `server/vivaplan`).
+3. Unter *Settings → Extensions* ist VivaPlan eingeschaltet; Prüfung 4 oben gelingt. In der Aktivitätsanzeige läuft
+   `vivaplan mcp` aus dem Erweiterungsordner von Claude Desktop.
+4. Erweiterung deaktivieren: Der Prozess `vivaplan mcp` endet.
+
+**Claude Desktop, von Hand**
+
+1. Settings → Developer → Edit Config, die Zeile aus dem Dialog einfügen (oder bei vorhandenen Einträgen nur
+   `"vivaplan": {…}` ergänzen), Claude Desktop neu starten.
+2. Erwartet: VivaPlan erscheint unter den Werkzeugen (Schieberegler-Symbol) mit fünfzehn Werkzeugen; Prüfung 4 gelingt.
+
+**Claude Code**
+
+1. Die Zeile `claude mcp add --scope user vivaplan -- … mcp` im Terminal ausführen.
+2. Erwartet: `claude mcp list` zeigt `vivaplan` als verbunden; in einer neuen Sitzung gelingt Prüfung 4.
+
+**ChatGPT Desktop (über die Konfiguration von Codex)**
+
+1. Die drei Zeilen aus dem Dialog in `~/.codex/config.toml` einfügen (Datei anlegen, falls sie fehlt), die
+   ChatGPT-Desktop-App neu starten.
+2. Erwartet: VivaPlan steht in der App als verbundener MCP-Server; Prüfung 4 gelingt. Falls die App die Konfiguration
+   von Codex nicht liest (Annahme aus `local/analysen/ki-anbindung.md`, Stand 11/2026), dies im Issue festhalten:
+   Dann ist die Anleitung im Dialog zu ändern.
+
+**LM Studio**
+
+1. Program → Install → Edit mcp.json, die Zeile aus dem Dialog einfügen, speichern.
+2. Erwartet: wie in der Prüfung «MCP-Server mit LM Studio (#210)», Schritte 2 bis 6.
+
 ## Offene Punkte
 
 1. ~~**Cashflow-Invariante mit Immobilien, Pensionskasse und 3a**~~ – erledigt mit #133: Der Monatsdatensatz führt intern

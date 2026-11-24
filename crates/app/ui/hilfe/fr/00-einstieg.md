@@ -60,6 +60,7 @@ Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue,
 - **Valeurs dépendant du temps:** de nombreux montants peuvent être saisis comme constante ou comme suite de valeurs, voir [Valeurs dépendant du temps](#f-timed).
 - **Langue:** menu *Affichage → Langue* ou les [paramètres](#f-settings). Le changement agit immédiatement; la planification et la vue sont conservées. L’aide apparaît dans la langue choisie; si un chapitre n’est pas encore traduit, il apparaît en allemand.
 - **Vidéos d’introduction:** *Aide → Vidéos d’introduction …* affiche les vidéos «VivaPlan en 2 minutes» et «VivaPlan en 10 minutes»; la boîte de dialogue de bienvenue contient le lien «Regarder VivaPlan en 2 minutes». Un clic ouvre la vidéo dans la langue choisie dans votre navigateur (Internet Archive).
+- **Connecter à une IA:** *Aide → Connecter à une IA …* montre comment configurer VivaPlan dans Claude Desktop, Claude Code, l’application de bureau ChatGPT ou LM Studio, chaque fois avec l’emplacement de la configuration et une ligne à copier ([connecter des programmes d’IA](#ref-mcp)). VivaPlan ne configure rien lui-même.
 - **Soutenir VivaPlan:** VivaPlan est gratuit. Si vous souhaitez soutenir librement l’auteur en lui offrant un café: *Aide → Soutenir VivaPlan…*, la ligne «☕ Soutenir VivaPlan» en bas de la navigation ou le lien dans la fenêtre «À propos de VivaPlan» ouvrent la page buymeacoffee.com/vivaplan dans votre navigateur. L’application elle-même ne charge rien depuis Internet.
 
 La liste complète des raccourcis clavier figure dans le menu *Aide → Raccourcis clavier* et dans le [chapitre de référence](#ref-shortcuts).
@@ -72,6 +73,7 @@ Toutes les données restent sur votre ordinateur. L’application ne se connecte
 - Les **planifications** se trouvent là où vous enregistrez le fichier `.vplan`. Les chemins des planifications ouvertes ou enregistrées en dernier (liste «Ouverts récemment») figurent dans le fichier `einstellungen.json` du dossier de données de l’application.
 - Les **séries temporelles** (la bibliothèque de données) se trouvent dans le dossier de données de l’application. Sous macOS, il s’agit de `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.
 - **La liste des résultats** se trouve dans la mémoire locale de l’application (pas dans le fichier de planification). Quiconque dispose de votre compte d’utilisateur sur cet ordinateur peut la lire. Supprimez les entrées que vous ne souhaitez pas conserver.
+- **Programmes d’IA:** si vous connectez VivaPlan à une IA ([connecter des programmes d’IA](#ref-mcp)), l’IA lit des données de votre planification par le programme `vivaplan mcp`. Avec une IA dans le cloud (par exemple Claude ou ChatGPT), ces données vont à son fournisseur. Avec un modèle local (par exemple dans LM Studio), elles restent sur votre ordinateur. VivaPlan lui-même n’envoie rien.
 
 Vous téléchargez vous-même les nouvelles données de la bibliothèque (Shiller, BNS) sur leurs sites web et les importez au moyen des boutons de la [stratégie de placement](#f-ret-series).
 

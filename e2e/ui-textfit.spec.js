@@ -54,8 +54,9 @@ test.describe("Text fits in every language (#182)", () => {
       const t = await start(browser, language);
       await t.open();
       for (const [name, call, root] of [["settings", "command('settings')", "#settings"], ["about", "command('about')", "#ask"],
-        ["shortcuts", "command('help')", "#ask"], ["welcome", "showWelcome()", "#welcome"], ["steps", "command('steps')", "body"], ["json", "ACTIONS.json({})", "#dlg"]]) {
-        await t.page.evaluate(`${call}; null`); // the dialog promise is fulfilled only when it closes
+        ["shortcuts", "command('help')", "#ask"], ["welcome", "showWelcome()", "#welcome"], ["steps", "command('steps')", "body"], ["json", "ACTIONS.json({})", "#dlg"],
+        ["connectai", "await showConnectAi()", "#ask"]]) { // #213: waits for app_info, then the dialog is open
+        await t.page.evaluate(`(async () => { ${call}; })()`); // the dialog promise is fulfilled only when it closes
         await t.check(name, root);
         await t.page.evaluate(() => document.querySelectorAll("dialog[open]").forEach(d => d.close()));
       }

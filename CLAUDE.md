@@ -31,7 +31,7 @@ Jede Änderung hat ein GitHub-Issue (nur als `#27` nennen). Gibt es keines, zuer
 ## Regeln
 
 - `cargo fmt --all --check` vor jedem Commit (auch in `fuzz/`).
-- Keine Netzwerkzugriffe in der App, im Rechenkern und in `vivaplan mcp`; keine privaten Daten in Code, Tests, Issues, Commits oder Beispielen (nur erfundene Daten).
+- Keine Netzwerkzugriffe in der App, im Rechenkern und in `vivaplan mcp`; Daten gehen nur über die vom Menschen angebundene KI hinaus (#213). Keine privaten Daten in Code, Tests, Issues, Commits oder Beispielen (nur erfundene Daten).
 - Hilfe (`crates/app/ui/hilfe/`), `docs/BESCHREIBUNG.md` und Spezifikation im selben Zug nachführen, wenn sich Verhalten oder Begriffe ändern.
 - Berechnung in `crates/engine/`, Darstellung in `crates/app/ui/`.
 - Keine neue Abhängigkeit (Crate, npm-Paket) ohne Rückfrage.

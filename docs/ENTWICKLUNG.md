@@ -230,6 +230,16 @@ eine vorhandene Datei, schickt `mod.rs` statt der Antwort eine Anfrage `elicitat
 `initialize` die Fähigkeit `elicitation` meldet) und merkt sich den Schreibauftrag mit dem Stand der Arbeitskopie;
 die Antwort des Programms (`accept` mit `replace: true`) löst `edit::write` aus (Regel 4 erneut, `.bak`, dann
 `api::write_plan` über eine Zwischendatei), danach geht die Antwort auf den ursprünglichen Aufruf hinaus.
+
+**Ein-Klick-Paket und «Mit KI verbinden» (#213):** `tools/mcpb.py build --binary <vivaplan> --out <ordner>` schreibt
+`VivaPlan_<Version>_<Architektur>.mcpb`, ein ZIP mit `manifest.json` (MCPB, `manifest_version` 0.2, `server.type`
+`binary`, `mcp_config` `${__dirname}/server/vivaplan mcp`, `compatibility.platforms` `darwin`), dem Programm unter
+`server/vivaplan` (Unix-Rechte 755 im ZIP) und `icon.png`. Die Werkzeugliste des Manifests fragt das Skript beim
+Server selbst ab (`tools/list`, erster Satz der Beschreibung). `tools/mcpb.py check <paket>` prüft das Manifest, packt
+aus und startet den Server wie Claude Desktop; `pakete.yml` baut und prüft das Paket unter macOS, Tests in
+`tools/test_mcpb.py` (in `make test-quiet`). Nur Python-Standardbibliothek. Der Dialog (`showConnectAi` in `app.js`)
+nimmt den Pfad des Programms aus `app_info.cliPath` (`cli_next_to`: das Programm neben `current_exe`, nicht bei
+AppImage und App Translocation), sonst den Standardpfad des Systems; kopiert wird mit `navigator.clipboard`.
 `notifications/cancelled` verwirft den Auftrag. `--read-only` nimmt `plan_save` aus `tools/list` (`tools::listed`);
 `--allow-dir` (mehrfach) gibt Ordner kanonisch frei. Verknüpfungen (Symlinks) als Ziel werden abgelehnt.
 

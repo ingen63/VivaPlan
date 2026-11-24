@@ -60,6 +60,7 @@ Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache, zule
 - **Zeitabhängige Werte:** Viele Beträge lassen sich als Konstante oder als Abfolge von Werten erfassen, siehe [Zeitabhängige Werte](#f-timed).
 - **Sprache:** Menü *Ansicht → Sprache* oder die [Einstellungen](#f-settings). Der Wechsel wirkt sofort; Planung und Ansicht bleiben. Die Hilfe erscheint in der gewählten Sprache; ist ein Kapitel noch nicht übersetzt, erscheint es deutsch.
 - **Einführungsvideos:** *Hilfe → Einführungsvideos …* zeigt die Videos «VivaPlan in 2 Minuten» und «VivaPlan in 10 Minuten»; der Willkommensdialog hat den Link «VivaPlan in 2 Minuten ansehen». Ein Klick öffnet das Video in der eingestellten Sprache in Ihrem Browser (Internet Archive).
+- **Mit KI verbinden:** *Hilfe → Mit KI verbinden …* zeigt, wie Sie VivaPlan in Claude Desktop, Claude Code, der ChatGPT-Desktop-App oder LM Studio einrichten, je mit dem Ort der Einrichtung und einer Zeile zum Kopieren ([KI-Programme verbinden](#ref-mcp)). VivaPlan richtet dabei nichts selbst ein.
 - **VivaPlan unterstützen:** VivaPlan ist kostenlos. Wenn Sie den Autor freiwillig mit einem Kaffee unterstützen möchten: *Hilfe → VivaPlan unterstützen…*, die Zeile «☕ VivaPlan unterstützen» unten in der Navigation oder der Link im Fenster «Über VivaPlan» öffnen die Seite buymeacoffee.com/vivaplan in Ihrem Browser. Die App selbst lädt dabei nichts aus dem Internet.
 
 Die vollständige Liste der Tastenkürzel steht im Menü *Hilfe → Tastenkürzel* und im [Referenzkapitel](#ref-shortcuts).
@@ -72,6 +73,7 @@ Alle Daten bleiben auf Ihrem Rechner. Die App verbindet sich nie mit dem Interne
 - **Planungen** liegen dort, wo Sie die `.vplan`-Datei speichern. Die Pfade der zuletzt geöffneten oder gespeicherten Planungen (Liste «Zuletzt geöffnet») stehen in der Datei `einstellungen.json` im Datenordner der App.
 - **Zeitreihen** (die Datenbibliothek) liegen im Datenordner der App. Unter macOS ist das `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.
 - **Die Liste der Ergebnisse** liegt im lokalen Speicher der App (nicht in der Planungsdatei). Wer Ihren Benutzer-Account auf diesem Rechner hat, kann sie lesen. Löschen Sie Einträge, die Sie nicht aufbewahren möchten.
+- **KI-Programme:** Verbinden Sie VivaPlan mit einer KI ([KI-Programme verbinden](#ref-mcp)), liest die KI über das Programm `vivaplan mcp` Daten Ihrer Planung. Mit einer Cloud-KI (zum Beispiel Claude oder ChatGPT) gehen diese Daten an deren Anbieter. Mit einem lokalen Modell (zum Beispiel in LM Studio) bleiben sie auf Ihrem Rechner. VivaPlan selbst sendet nichts.
 
 Neue Daten der Bibliothek (Shiller, SNB) laden Sie selbst von deren Webseiten herunter und lesen sie über die Knöpfe bei der [Anlagestrategie](#f-ret-series) ein.
 

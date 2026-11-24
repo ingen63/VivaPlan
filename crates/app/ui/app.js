@@ -2163,6 +2163,7 @@ function command(id) {
   if (id === "steps") return Steps.show();
   if (id === "support") return openLink("donate");
   if (id === "videos") return showVideos();
+  if (id === "connectai") return showConnectAi();
   if (id === "back") { if (!$("#results").hidden) showResults(false); return; }
   if (/^recent-\d+$/.test(id)) return openRecent(+id.slice(7));
   ACTIONS[id]?.({});
@@ -2190,6 +2191,54 @@ function showVideos() {
     · ${tr("videos.length", { min })}<br><span class="hint">${tr(`videos.${key}Text`)}</span></li>`;
   ask(tr("videos.title"), `<ul id="videoList" style="margin:0;padding-left:18px;line-height:1.6">${row("2min", 2, "short")}${row("10min", 10, "long")}</ul>
     <p class="hint">${tr("videos.browser")}</p>`);
+}
+// #213: «Mit KI verbinden»: one instruction per AI program with the place of its configuration and a setup line to
+// copy. The app only shows and copies; it writes no configuration and loads nothing. The path of the program comes
+// from the desktop app (`cliPath` of app_info, the program next to the app); without it the usual path of the system.
+const IS_WIN = /Win/.test(navigator.platform || navigator.userAgent);
+const CLI_DEFAULT = IS_MAC ? "/Applications/VivaPlan.app/Contents/MacOS/vivaplan"
+  : IS_WIN ? "%LOCALAPPDATA%\\VivaPlan\\vivaplan.exe" : "/usr/bin/vivaplan";
+let aiLines = [];
+/** Setup per AI program: name (product names, not translated), text key, configuration file, line to copy. */
+function aiPrograms(cli, version) {
+  const home = IS_WIN ? "%USERPROFILE%" : "~";
+  const sep = IS_WIN ? "\\" : "/";
+  const json = JSON.stringify({ mcpServers: { vivaplan: { command: cli, args: ["mcp"] } } });
+  const shell = /\s/.test(cli) ? `"${cli}"` : cli;
+  const claudeConfig = IS_MAC ? "~/Library/Application Support/Claude/claude_desktop_config.json"
+    : IS_WIN ? "%APPDATA%\\Claude\\claude_desktop_config.json" : "~/.config/Claude/claude_desktop_config.json";
+  return [
+    { id: "claudeDesktop", name: "Claude Desktop", config: claudeConfig, line: json,
+      extra: IS_MAC ? tr("ai.claudeDesktop.mcpb", { file: `VivaPlan_${version}_aarch64.mcpb` }) : "" },
+    { id: "claudeCode", name: "Claude Code", config: "", line: `claude mcp add --scope user vivaplan -- ${shell} mcp` },
+    { id: "chatgpt", name: "ChatGPT Desktop", config: `${home}${sep}.codex${sep}config.toml`,
+      line: `[mcp_servers.vivaplan]\ncommand = '${cli}'\nargs = ["mcp"]` },
+    { id: "lmstudio", name: "LM Studio", config: `${home}${sep}.lmstudio${sep}mcp.json`, line: json },
+  ];
+}
+async function showConnectAi() {
+  let info = null;
+  try { info = await Engine.call("app_info"); } catch { /* without the engine the usual path */ }
+  const cli = info?.cliPath || CLI_DEFAULT;
+  const programs = aiPrograms(cli, info?.version ?? "…");
+  aiLines = [cli, ...programs.map(p => p.line)];
+  const copy = i => `<button type="button" class="btn aicopy" data-action="ai-copy" data-copy="${i}" title="${esc(tr("ai.copyTitle"))}">${tr("ai.copy")}</button>`;
+  const code = i => `<div class="aicode"><pre>${esc(aiLines[i])}</pre>${copy(i)}</div>`;
+  const section = (p, i) => `<section class="aiprog" data-program="${p.id}"><h4>${esc(p.name)}</h4>
+    ${p.extra ? `<p class="hint">${p.extra}</p>` : ""}
+    <p class="hint">${tr(`ai.${p.id}.steps`, { config: `<code>${esc(p.config)}</code>` })}</p>${code(i + 1)}</section>`;
+  ask(tr("ai.title"), `<div id="connectAi"><p style="margin-top:0">${tr("ai.intro")}</p>
+    <p class="hint">${tr("ai.path")}</p>${code(0)}
+    ${programs.map(section).join("")}
+    <p class="hint">${tr("ai.privacy")} <a href="#" data-action="ai-help" data-topic="privacy">${tr("ai.privacyLink")}</a> ·
+    <a href="#" data-action="ai-help" data-topic="ref-mcp">${tr("ai.moreLink")}</a></p></div>`);
+}
+/** Copies a setup line; the button confirms it, because a toast would lie behind the open dialog. */
+function aiCopy(d, el) {
+  const done = ok => { el.textContent = tr(ok ? "ai.copied" : "actions.copyFailed"); setTimeout(() => { el.textContent = tr("ai.copy"); }, 1600); };
+  const text = aiLines[+d.copy];
+  if (!navigator.clipboard || text === undefined) return done(false);
+  navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
 }
 async function showAbout() {
   let info = null, donate = null;
@@ -4187,6 +4236,8 @@ Object.assign(ACTIONS, {
   "steps-check": (d, el) => Steps.mark(d.step, el.checked),
   "steps-go": d => d.step === "run" ? runSimulation() : goto(d.step),
   "help-topic": d => Help.show(d.topic),
+  "ai-copy": aiCopy,
+  "ai-help": d => { $("#ask").close(); Help.show(d.topic); },
 });
 
 // ---------- Start ----------

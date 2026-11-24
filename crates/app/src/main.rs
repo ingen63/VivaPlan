@@ -607,13 +607,28 @@ struct Opened {
     plan: Value,
 }
 
-/// Version and time of the build for the «About» window.
+/// Version and time of the build for the «About» window; #213: path of the command line for «Mit KI verbinden».
 #[tauri::command]
 fn app_info<R: Runtime>(app: AppHandle<R>) -> Value {
+    let cli = std::env::current_exe()
+        .ok()
+        .and_then(|exe| cli_next_to(&exe, std::env::var_os("APPIMAGE").is_some()));
     serde_json::json!({
         "version": app.package_info().version.to_string(),
         "buildEpoch": env!("PP_BUILD_EPOCH").parse::<u64>().unwrap_or(0),
+        "cliPath": cli.map(|p| p.display().to_string()),
     })
+}
+
+/// #213: the command line `vivaplan` next to the program `exe` of the app (all packages put it there, #206), if it
+/// exists. None for a path that does not last: an AppImage (mounted only while it runs) and an app that macOS
+/// started from a random folder (App Translocation, app not moved out of the download folder).
+fn cli_next_to(exe: &Path, appimage: bool) -> Option<PathBuf> {
+    let cli = exe
+        .parent()?
+        .join(if cfg!(windows) { "vivaplan.exe" } else { "vivaplan" });
+    let lasting = !appimage && !cli.components().any(|c| c.as_os_str() == "AppTranslocation");
+    (lasting && cli.is_file()).then_some(cli)
 }
 
 /// #237: opens an entry of the fixed list of addresses (`ui/links.json`) in the default browser of the system; the
@@ -957,7 +972,8 @@ const HELP_TITLE: &str = "menu.help";
 /// #70/#71: «Willkommen …» opens the welcome dialog, «Erste Schritte» shows the checklist.
 /// #237: «VivaPlan unterstützen…» opens the donation link in the browser, before «Über VivaPlan».
 /// #240: «Einführungsvideos …» opens the dialog with the introductory videos, after «Erste Schritte».
-const HELP_MENU: [Entry; 10] = [
+/// #213: «Mit KI verbinden …» opens the setup instructions for AI programs, after the videos.
+const HELP_MENU: [Entry; 11] = [
     ("helpctx", "menu.help.topic", "F1"),
     ("manual", "menu.help.manual", "CmdOrCtrl+Shift+/"),
     ("help", "menu.help.shortcuts", "CmdOrCtrl+/"),
@@ -965,6 +981,7 @@ const HELP_MENU: [Entry; 10] = [
     ("welcome", "menu.help.welcome", ""),
     ("steps", "menu.help.steps", ""),
     ("videos", "menu.help.videos", ""),
+    ("connectai", "menu.help.connectAi", ""),
     SEP,
     ("support", "menu.help.support", ""),
     ("about", "menu.about", ""),
@@ -3014,6 +3031,39 @@ mod tests {
         let help: Vec<_> = HELP_MENU.iter().map(de).collect();
         let i = help.iter().position(|e| e.0 == "steps").expect("steps");
         assert_eq!(help[i + 1], ("videos", "Einführungsvideos …".into(), ""));
+    }
+
+    /// #213/AK2: menu «Hilfe» has «Mit KI verbinden …» directly after «Einführungsvideos …».
+    #[test]
+    fn issue_213_ak2_help_menu_connect_ai() {
+        let help: Vec<_> = HELP_MENU.iter().map(de).collect();
+        let i = help.iter().position(|e| e.0 == "videos").expect("videos");
+        assert_eq!(help[i + 1], ("connectai", "Mit KI verbinden …".into(), ""));
+    }
+
+    /// #213/AK2: `app_info` names the command line next to the app if it is there and its path lasts.
+    #[test]
+    fn issue_213_ak2_cli_path_next_to_the_app() {
+        let dir = std::env::temp_dir().join(format!("vivaplan-213-{}", std::process::id()));
+        let name = if cfg!(windows) { "vivaplan.exe" } else { "vivaplan" };
+        std::fs::create_dir_all(&dir).unwrap();
+        let exe = dir.join("vivaplan-app");
+        assert_eq!(cli_next_to(&exe, false), None, "without the program");
+        std::fs::write(dir.join(name), b"").unwrap();
+        assert_eq!(cli_next_to(&exe, false), Some(dir.join(name)));
+        assert_eq!(cli_next_to(&exe, true), None, "AppImage");
+        let moved = dir.join("AppTranslocation").join("x");
+        std::fs::create_dir_all(&moved).unwrap();
+        std::fs::write(moved.join(name), b"").unwrap();
+        assert_eq!(
+            cli_next_to(&moved.join("vivaplan-app"), false),
+            None,
+            "App Translocation"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+        let (_app, w, _g) = setup();
+        let v = call(&w, "app_info", json!({})).unwrap();
+        assert!(v.get("cliPath").is_some_and(|p| p.is_null() || p.is_string()), "{v}");
     }
 
     /// #240/AK4: the command `open_link` rejects a video address and an id of a video that does not exist.
