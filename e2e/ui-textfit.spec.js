@@ -123,3 +123,32 @@ test.describe("Number field in the section flows not cut off (#244)", () => {
     });
   }
 });
+
+test.describe("Choice «Steuerwert» of a property not cut off (#257)", () => {
+  for (const language of LANGUAGES) {
+    test(`AK1 ${language}: every choice fully visible, also with the amount and at the smallest window width`, async ({ browser }) => {
+      const t = await start(browser, language);
+      for (const width of [WINDOW.width, 1000]) {
+        await t.page.setViewportSize({ width, height: WINDOW.height });
+        await t.open();
+        const i = await t.page.evaluate(() => state.realestate.properties.findIndex(p => p.status === "owned"));
+        expect(i).toBeGreaterThanOrEqual(0);
+        for (const tv of [undefined, { kind: "amount", value: 99999999 }, { kind: "rate", value: 0.6543 }]) {
+          await t.page.evaluate(([i, tv]) => { const p = state.realestate.properties[i]; if (tv) p.taxValue = tv; else delete p.taxValue; markDirty(); goto("realestate"); }, [i, tv]);
+          await t.check(`${width} › ${tv?.kind ?? "none"}`, `[data-tax-value="${i}"]`);
+          // every option, not only the selected one, fits into the choice (the widest one sets its width)
+          const cut = await t.page.locator(`[data-tax-value="${i}"] select`).evaluate(sel => {
+            const s = getComputedStyle(sel), ctx = document.createElement("canvas").getContext("2d");
+            ctx.font = s.font;
+            const free = sel.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight) - 20; // arrow of a select (as textfit.js)
+            return [...sel.options].map(o => o.textContent.trim()).filter(x => ctx.measureText(x).width > free + 0.5);
+          });
+          expect(cut, `${width} ${tv?.kind ?? "none"}`).toEqual([]);
+        }
+      }
+      expect(t.found).toEqual({});
+      expect(t.errors).toEqual([]);
+      await t.close();
+    });
+  }
+});
