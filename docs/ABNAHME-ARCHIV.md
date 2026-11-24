@@ -1816,3 +1816,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #241/AK6 | Erklärungsabsätze (Vorschlag/eigener Wert, Säule 3a) in ⓘ-Infos; Kästchen «Einzahlungen in die Säule 3a abziehen» mit Höchstbeträgen im ⓘ. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK6` | 23.11.2026 ok (Test grün) |
 | #241/AK7 | «Einmalige Abzüge» unter eigenem Zwischentitel, getrennt von den Zeilen. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK7` | 23.11.2026 ok (Test grün; am Ende der Karte) |
 | #241/AK8 | Gleiches Verhalten in «Wohnort» und «Eigene Tabellen»; Dateiformat unverändert; Hilfe (4 Sprachen) und `e2e/ui-steuern.spec.js` nachgeführt. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK8` | 23.11.2026 ok (Test grün; Hilfe de, en, fr, it und BESCHREIBUNG nachgelesen; Modell unverändert) |
+
+### #243 Editor für die Verlaufsformen linear, table und factor
+
+[Issue #243](https://github.com/ingen63/VivaPlan/issues/243) · geschlossen · Umsetzung: a91e892
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #243/AK1 | Für jedes Feld mit Verlauf lässt sich im Editor die Form wählen: konstant, Treppe, linear, Tabelle, Faktor. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK1` | 24.11.2026 ok (Test grün; alle Verläufe aller Abschnitte, Wert bei Simulationsstart bleibt beim Wechsel) |
+| #243/AK2 | `linear`: Eingabe von Wert a, Zeitpunkt t1, Wert b, Zeitpunkt t2; Zeitpunkte als Datum, Alter oder Meilenstein. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK2` | 24.11.2026 ok (Test grün; 70 % mit 60) |
+| #243/AK3 | `table`: Stützpunkte nach Alter oder Datum hinzufügen, ändern und löschen; Auswahl linear oder Treppe. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK3` | 24.11.2026 ok (Test grün) |
+| #243/AK4 | `factor`: Grundwert und Faktorverlauf bearbeiten. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK4` | 24.11.2026 ok (Test grün; 6000 bis 80, danach 4800) |
+| #243/AK5 | Eine Vorschau zeigt den Verlauf über die Zeit. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK5` | 24.11.2026 ok (Test grün; Minigrafik folgt jeder Änderung) |
+| #243/AK6 | Eine Planung mit den neuen Formen lässt sich öffnen, bearbeiten und speichern, ohne dass Werte verloren gehen (e2e-Test). | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `AK6` | 24.11.2026 ok (Test grün; Öffnen, Bearbeiten, Speichern, erneut Öffnen) |
+| #243/AK7 | Hilfe (vier Sprachen) und `docs/BESCHREIBUNG.md` sind nachgeführt. | ☑ | **gilt** | `make i18n-check`, `make ui-texts` | 24.11.2026 ok (`10-editor.md` de/en/fr/it, BESCHREIBUNG; durchgesehen) |
