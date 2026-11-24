@@ -970,3 +970,16 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #237/AK6 | `README.md` hat vor dem Abschnitt «Lizenz» einen kurzen Absatz … mit Link auf https://buymeacoffee.com/vivaplan. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Abschnitt «Unterstützen») |
 | #237/AK7 | `.github/FUNDING.yml` enthält `buy_me_a_coffee: vivaplan`; auf der Repo-Seite erscheint der Knopf «Sponsor». | ☐ | **gilt** | kein Test (Durchsicht) | 23.11.2026 teilweise: Datei vorhanden; Knopf «Sponsor» erst nach dem Push prüfbar |
 | #237/AK8 | `tools/check-network-free.sh` bleibt grün (`tauri-plugin-opener` zieht keine Netzwerkbibliothek nach). | ☑ | **gilt** | `tools/check-network-free.sh` | 23.11.2026 ok (neu u. a. `open`, `zbus`; keine gesperrte Bibliothek) |
+
+### #206 Kommandozeile im Installationspaket mit dem Datenordner der App
+
+[Issue #206](https://github.com/ingen63/VivaPlan/issues/206) · offen (`implemented`) · Umsetzung: a5484e8
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #206/AK1 | Das Paket enthält das Programm `vivaplan` neben `vivaplan-app` (nach Kommentar: alle drei Systeme). | ☐ | **gilt** | `pakete.yml` Schritt «Kommandozeile im Paket» | 24.11.2026 teilweise: macOS ok (lokaler Bau, `vivaplan --version` im Bundle); Windows und Linux erst im CI-Lauf prüfbar |
+| #206/AK2 | Ohne `--library`/`--data-dir` nimmt die Kommandozeile den Datenordner der App; `--data-dir` übersteuert. | ☑ | **gilt** | `issue_206_ak2_…` (CLI, Rechenkern, App) | 24.11.2026 ok (Test grün) |
+| #206/AK3 | Grenzen aus den Einstellungen wirken gleich wie in der App. | ☑ | **gilt** | `issue_206_ak3_settings_give_the_same_result_as_in_the_app` | 24.11.2026 ok (Test grün) |
+| #206/AK4 | Eine in der App importierte Reihe ist in der Kommandozeile verwendbar. | ☑ | **gilt** | `issue_206_ak4_series_of_the_app_library` | 24.11.2026 ok (Test grün) |
+| #206/AK5 | Fehlt der Datenordner, eingebaute Reihen und Standardgrenzen, einmal gemeldet. | ☑ | **gilt** | `issue_206_ak5_…` | 24.11.2026 ok (Test grün) |
+| #206/AK6 | Die Referenz in der Hilfe nennt den Pfad des Programms je Betriebssystem. | ☑ | **gilt** | – | 24.11.2026 ok (Durchsicht, vier Sprachen; Windows-Pfad aus NSIS-Vorlage, auf Windows nicht nachgeprüft) |
