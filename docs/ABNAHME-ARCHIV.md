@@ -1951,3 +1951,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #257/AK1 | Die Auswahl für den Steuerwert zeigt in de, en, fr und it jede Wahl vollständig, ohne Abschneiden. | ☑ | **gilt** (Auswahl so breit wie die längste Wahl, Betrag bricht bei Platzmangel um; Ursache war die feste Breite aus #255) | e2e `ui-textfit.spec.js` AK1 (#257) | 24.11.2026 ok (e2e grün, 4 Sprachen, 1440 und 1000 px, alle drei Wahlen) |
 | #257/AK2 | `npx playwright test ui-textfit.spec.js` ist in allen vier Sprachen grün. | ☑ | **gilt** | e2e `ui-textfit.spec.js` | 24.11.2026 ok (72/72 grün zusammen mit `ui-steuern.spec.js`) |
+
+### #258 Test «Bestätigung ab 60 Sekunden» scheitert im Abdeckungslauf an fester Zeitgrenze
+
+[Issue #258](https://github.com/ingen63/VivaPlan/issues/258) · geschlossen · Umsetzung: d0ac8dc
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #258/AK1 | «Nichts gerechnet» vergleicht mit der geschätzten Rechenzeit statt festen 30 s. | ☑ | **gilt** | `issue_211_ak3_confirmation_from_60_seconds` | 24.11.2026 ok (Durchsicht) |
+| #258/AK2 | Test mit und ohne Abdeckung grün; Push-Hook läuft durch. | ☑ | **gilt** | `issue_211_ak3_confirmation_from_60_seconds` | 24.11.2026 ok (94/94 mit Abdeckung, Push-Hook grün) |
