@@ -1861,3 +1861,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #246/AK1 | Die Ursache ist benannt (welcher zusätzliche Eintrag, seit welchem Commit). | ☑ | **gilt** | – | 24.11.2026 ok (Kommentar: Link «VivaPlan unterstützen» in `#nav .navfoot`, seit #237 0806a57) |
 | #246/AK2 | Entweder zählt der Test nur Abschnitte der Navigation, oder die Erwartung ist begründet angepasst; `npx playwright test ui-start.spec.js` ist grün. | ☑ | **gilt** | [ui-start.spec.js](../e2e/ui-start.spec.js) `#246/AK2` | 24.11.2026 ok (Selektor `#nav a[data-sec]`; ui-start und ui-spende 26 Tests grün) |
+
+### #247 Oberflächentest #232: Meldung «noch 90'000 pro Jahr» fehlt
+
+[Issue #247](https://github.com/ingen63/VivaPlan/issues/247) · geschlossen · Umsetzung: ba8513b
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #247/AK1 | Die Ursache ist benannt (Verhalten geändert oder Test veraltet, seit welchem Commit). | ☑ | **gilt** | – | 24.11.2026 ok (Kommentar: Test veraltet; seit #236 bdff79d endet das Erwerbseinkommen einer neuen Person 2 mit dem PK-Bezug, die Warnung entfällt absichtlich) |
+| #247/AK2 | Ist das Verhalten richtig, passt der Test zur neuen Meldung; sonst ist der Fehler im Code behoben. `npx playwright test ui-planung.spec.js` ist grün. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5` | 24.11.2026 ok (Test angepasst: ohne Meldung bei eingeschaltetem Schalter, «noch 90'000 pro Jahr» bei ausgeschaltetem; 46 Tests grün) |
