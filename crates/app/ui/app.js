@@ -610,12 +610,11 @@ R.general = () => `
     <label class="field"><span>${tr("general.currency")}</span>${Sel("project.currency", [["CHF", tr("general.chf")], ["EUR", tr("general.eur")], ["USD", tr("general.usd")]], { rerender: 1 })}</label></div>
     <p class="hint">${tr("general.currencyHint")}</p></div>
   <div class="card"><h3>${tr("general.persons")}</h3><div class="persons">
-    <div class="person">${state.partner ? `<b>${tr("general.person1")}</b>` : ""}${F("household.persons.0.name", tr("general.name"), "text")}${F("household.persons.0.birth", tr("general.birth"), "month")}${C("age0")}${Chk("household.persons.0.noPensionFund", tr("general.noPensionFund"))}</div>
+    <div class="person">${state.partner ? `<b>${tr("general.person1")}</b>` : ""}${F("household.persons.0.name", tr("general.name"), "text")}${F("household.persons.0.birth", tr("general.birth"), "month")}${C("age0")}</div>
     ${state.partner
-      ? `<div class="person"><div class="phead"><b>${tr("general.person2")}</b><button class="btn ghost small" data-action="partner-del" title="${tr("general.removePerson2")}">✕</button></div>${F("household.persons.1.name", tr("general.name"), "text")}${F("household.persons.1.birth", tr("general.birth"), "month")}${C("age1")}${Chk("household.persons.1.noPensionFund", tr("general.noPensionFund"))}</div>`
+      ? `<div class="person"><div class="phead"><b>${tr("general.person2")}</b><button class="btn ghost small" data-action="partner-del" title="${tr("general.removePerson2")}">✕</button></div>${F("household.persons.1.name", tr("general.name"), "text")}${F("household.persons.1.birth", tr("general.birth"), "month")}${C("age1")}</div>`
       : `<div class="person ghost"><button class="btn" data-action="partner-add">${tr("general.addPerson2")}</button><span class="computed">${tr("general.doubleIncome")}</span></div>`}
   </div>
-  <p class="hint">${tr("general.noPensionFundHint", { max: fmtInt(limits().pillar3aMaxLarge) })}</p>
   ${state.partner ? `<div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
     <div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
     <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>` : ""}</div>
@@ -639,12 +638,18 @@ R.milestones = () => { const l = limits(); return `
 
 function PensionCards(root, who) {
   const pk = `${root === "partner" ? "partner" : "pension"}.pk`, ahv = `${root === "partner" ? "partner" : "pension"}.ahv`, t = who ? ` · ${esc(who)}` : "";
-  return `<div class="card"><h3>${tr("pension.pkTitle", { v: t })}</h3><div class="grid2">
+  // #253: «Ohne Pensionskasse» at the top of the card; when on, the pension fund fields are grey and read-only
+  // (the values stay in the plan, the engine counts the pension fund as 0).
+  const n = root === "partner" ? 1 : 0, off = !!state.household.persons[n]?.noPensionFund;
+  return `<div class="card" id="pkCard${n}"><h3>${tr("pension.pkTitle", { v: t })}</h3>
+    ${Chk(`household.persons.${n}.noPensionFund`, tr("pension.noPensionFund"), { rerender: 1 })}
+    <p class="hint">${tr("pension.noPensionFundHint", { max: fmtInt(limits().pillar3aMaxLarge) })}</p>
+    <fieldset class="locked-area" id="pkBody${n}" ${off ? "disabled" : ""}><div class="grid2">
     ${F(`${pk}.capital`, tr("pension.pkCapital", { startTxt: startTxt() }), "chf")}
-    ${fixedAt(root === "partner" ? 1 : 0, "pk")}
+    ${fixedAt(n, "pk")}
     ${F(`${pk}.lumpsum`, tr("pension.lumpsum"), "pct")}
     ${F(`${pk}.conversion`, tr("pension.conversion"), "pct")}</div>
-    <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></div>
+    <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></fieldset></div>
   <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2"><div>${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}${C("ahvEff", root === "partner" ? 1 : 0)}</div>
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
     <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>`;

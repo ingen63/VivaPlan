@@ -1,14 +1,14 @@
 # Editor: sezioni e campi
 
 ## @s-general Economia domestica e progetto
-Parole chiave: nome, valuta, persone, nascita, seconda persona, doppio reddito, periodo di simulazione, senza cassa pensione, grande pilastro 3a, indipendenti
+Parole chiave: nome, valuta, persone, nascita, seconda persona, doppio reddito, periodo di simulazione
 
 Qui stabilisce i dati di base.
 
 - **Nome del progetto e valuta:** tutti gli importi vengono registrati nella valuta del progetto (CHF, EUR o USD). Gli indici della [strategia d’investimento](#f-ret-series) sono in CHF; con una pianificazione in EUR o USD appare un’avvertenza.
 - **Persona 1:** nome e mese di nascita (formato MM.AAAA). Dal mese di nascita l’app calcola l’età per le tappe (‹a 65 anni›) e per le didascalie dei grafici.
 - **+ Seconda persona:** aggiunge una seconda persona con reddito proprio, cassa pensione propria e AVS propria (doppio reddito). Imposte, sostanza e spese valgono per l’economia domestica. Vedi [Seconda persona e regole per coppie sposate](#f-couple).
-- **Senza cassa pensione (grande pilastro 3a):** casella per persona per chi esercita un’attività lucrativa senza cassa pensione, soprattutto gli indipendenti. Per questa persona versamento e deduzione del [pilastro 3a](#s-pillar3a) arrivano fino al **20 % del reddito da attività lucrativa**, al massimo fino all’importo massimo del grande pilastro 3a (36'288 franchi, modificabile nelle [Impostazioni](#f-settings)); per tutte le altre vale il piccolo pilastro 3a (7'258 franchi). Se la pianificazione contiene comunque una cassa pensione della persona (capitale o contributi), la verifica mostra un avviso.
+- **Senza cassa pensione (grande pilastro 3a):** l’opzione si trova per ogni persona nella sezione [Previdenza](#s-pension), in cima alla scheda [Cassa pensione](#f-pk).
 - **Periodo di simulazione:** inizio e fine sono tappe e si modificano sotto [Tappe](#s-milestones).
 
 Tutte le indicazioni temporali hanno il formato **MM.AAAA** (ad esempio 05.2027).
@@ -102,8 +102,9 @@ Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu
 Il limite inferiore non può essere superiore a quello superiore, le età sono anni interi, l’importo massimo è 0 o superiore. «Valori standard» ripristina tutto dopo una domanda di conferma. Se dopo una modifica una pianificazione è al di fuori dei nuovi limiti, la verifica lo segnala; la stessa pianificazione può perciò dare un messaggio su un altro dispositivo con altre impostazioni. La riga di comando usa gli stessi limiti dell’app (vedi [riga di comando](#ref-cli)).
 
 ## @f-pk Cassa pensione
-Parole chiave: LPP, avere di vecchiaia, contributi, remunerazione, certificato di previdenza
+Parole chiave: LPP, avere di vecchiaia, contributi, remunerazione, certificato di previdenza, senza cassa pensione, grande pilastro 3a, indipendenti
 
+- **Senza cassa pensione (grande pilastro 3a):** opzione in cima alla scheda, per persona, per chi esercita un’attività lucrativa senza cassa pensione, soprattutto gli indipendenti. Per questa persona versamento e deduzione del [pilastro 3a](#s-pillar3a) arrivano fino al **20 % del reddito da attività lucrativa**, al massimo fino all’importo massimo del grande pilastro 3a (36'288 franchi, modificabile nelle [Impostazioni](#f-settings)); per tutte le altre vale il piccolo pilastro 3a (7'258 franchi). Se l’opzione è attiva, tutti i campi della cassa pensione di questa persona sono grigi e in sola lettura, e il calcolo avviene **senza cassa pensione** per lei: nessun avere, nessun contributo, nessuna rendita e nessun prelievo di capitale (quindi nessuna imposta sulle prestazioni in capitale). I valori inseriti restano salvati nel file di pianificazione e valgono di nuovo appena disattiva l’opzione. L’AVS resta invariata.
 - **Avere di vecchiaia all’inizio della simulazione (MM.AAAA):** l’avere secondo il certificato di previdenza (avere di vecchiaia inclusa la parte sovraobbligatoria). Le proiezioni del certificato (proiezione con interesse) non vanno inserite qui, le calcola l’app stessa.
 - **Prestazione da:** sempre la tappa **Prestazione della cassa pensione** della persona (da 58 a 65 anni). Il momento lo modifica sotto [Tappe](#s-milestones).
 - **Contributi al mese:** somma dei contributi del lavoratore e del datore di lavoro (e dei riscatti) versati fino alla prestazione. Con la prestazione terminano.

@@ -1349,23 +1349,6 @@ fn check(plan: &Plan, v: &mut Issues) {
             }
         }
     }
-    // #152/AK4: «ohne Pensionskasse» with a pension fund in the plan (capital or contributions).
-    for (i, p) in plan.household.persons.iter().take(2).enumerate() {
-        let fund = if i == 0 {
-            Some(&plan.pension.pk)
-        } else {
-            plan.partner.as_ref().map(|q| &q.pk)
-        };
-        if let (true, Some(fund)) = (p.no_pension_fund, fund) {
-            let contributes = Curve::compile(&fund.contribution, &r)
-                .ok()
-                .and_then(|c| c.first_above(start, end, 0.005))
-                .is_some();
-            if fund.capital > 0.005 || contributes {
-                v.warn("pension", msg!(pillar3a_large_with_pk, name = p.name));
-            }
-        }
-    }
 }
 
 #[cfg(test)]

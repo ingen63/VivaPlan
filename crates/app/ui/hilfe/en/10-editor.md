@@ -1,14 +1,14 @@
 # Editor: sections and fields
 
 ## @s-general Household & project
-Keywords: name, currency, persons, birth, second person, double income, simulation period, without pension fund, large pillar 3a, self-employed
+Keywords: name, currency, persons, birth, second person, double income, simulation period
 
 Here you set the basic data.
 
 - **Project name and currency:** All amounts are entered in the project currency (CHF, EUR or USD). The indices of the [investment strategy](#f-ret-series) are in CHF; with a plan in EUR or USD, a notice appears.
 - **Person 1:** Name and month of birth (format MM.YYYY). From the month of birth, the app calculates the age for milestones (‘at 65’) and for the labels of the charts.
 - **+ Second person:** Adds a second person with their own income, their own pension fund and their own AHV (double income). Taxes, wealth and spending apply to the household. See [Second person and rules for couples](#f-couple).
-- **Without pension fund (large pillar 3a):** Check box per person for gainfully employed persons without a pension fund, especially the self-employed. For this person, contribution and deduction of [pillar 3a](#s-pillar3a) go up to **20 % of the earned income**, at most the maximum of the large pillar 3a (36 288 francs, changeable in the [settings](#f-settings)); for everyone else the small pillar 3a applies (7 258 francs). If the plan still contains a pension fund for the person (capital or contributions), the validation shows a warning.
+- **Without pension fund (large pillar 3a):** The switch is in the section [Pensions](#s-pension) for each person, at the top of the card [Pension fund](#f-pk).
 - **Simulation period:** Start and end are milestones and are changed under [Milestones](#s-milestones).
 
 All dates have the format **MM.YYYY** (for example 05.2027).
@@ -102,8 +102,9 @@ On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, me
 The lower limit must not be above the upper one, ages are whole years, and the maximum amount is 0 or more. “Default values” resets everything after a confirmation. If a plan is outside the new limits after a change, the validation reports this; the same plan can therefore give a message on another device with other settings. The command line uses the same limits as the app (see [command line](#ref-cli)).
 
 ## @f-pk Pension fund
-Keywords: BVG, retirement savings, contributions, interest, pension statement
+Keywords: BVG, retirement savings, contributions, interest, pension statement, without pension fund, large pillar 3a, self-employed
 
+- **Without pension fund (large pillar 3a):** Switch at the top of the card, per person, for gainfully employed persons without a pension fund, especially the self-employed. For this person, contribution and deduction of [pillar 3a](#s-pillar3a) go up to **20 % of the earned income**, at most the maximum of the large pillar 3a (36 288 francs, changeable in the [settings](#f-settings)); for everyone else the small pillar 3a applies (7 258 francs). When the switch is on, all pension fund fields of this person are grey and read-only, and the calculation runs **without a pension fund** for them: no savings, no contributions, no pension and no lump sum (and so no lump-sum tax). The entered values stay saved in the plan file and apply again as soon as you switch it off. The AHV stays unchanged.
 - **Retirement savings at simulation start (MM.YYYY):** the balance according to the pension statement (retirement savings including the extra-mandatory part). Do not enter the projections in the statement (projection with interest) here; the app calculates them itself.
 - **Payout from:** always the milestone **pension fund payout** of the person (58 to 65 years). You change the point in time under [Milestones](#s-milestones).
 - **Contributions per month:** sum of employee and employer contributions (and buy-ins) paid in until the payout. They end with the payout.

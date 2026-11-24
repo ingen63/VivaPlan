@@ -1,14 +1,14 @@
 # Éditeur: sections et champs
 
 ## @s-general Ménage et projet
-Mots-clés: nom, monnaie, personnes, naissance, deuxième personne, double revenu, période de simulation, sans caisse de pension, grand pilier 3a, indépendants
+Mots-clés: nom, monnaie, personnes, naissance, deuxième personne, double revenu, période de simulation
 
 Vous définissez ici les données de base.
 
 - **Nom du projet et monnaie:** tous les montants sont saisis dans la monnaie du projet (CHF, EUR ou USD). Les indices de la [stratégie de placement](#f-ret-series) sont en CHF; pour une planification en EUR ou en USD, une remarque apparaît.
 - **Personne 1:** nom et mois de naissance (format MM.AAAA). À partir du mois de naissance, l’application calcule l’âge pour les jalons (‹à 65 ans›) et pour la légende des graphiques.
 - **+ Deuxième personne:** ajoute une deuxième personne avec son propre revenu, sa propre caisse de pension et sa propre AVS (double revenu). Les impôts, la fortune et les dépenses s’appliquent au ménage. Voir [Deuxième personne et règles pour couples mariés](#f-couple).
-- **Sans caisse de pension (grand pilier 3a):** case à cocher par personne pour les personnes exerçant une activité lucrative sans caisse de pension, surtout les indépendants. Pour cette personne, le versement et la déduction du [pilier 3a](#s-pillar3a) vont jusqu’à **20 % du revenu de l’activité lucrative**, au plus jusqu’au montant maximal du grand pilier 3a (36 288 francs, modifiable dans les [paramètres](#f-settings)); pour toutes les autres, le petit pilier 3a s’applique (7 258 francs). Si la planification contient malgré tout une caisse de pension pour cette personne (capital ou cotisations), la vérification affiche un avertissement.
+- **Sans caisse de pension (grand pilier 3a):** l’option se trouve pour chaque personne dans la section [Prévoyance](#s-pension), tout en haut de la carte [Caisse de pension](#f-pk).
 - **Période de simulation:** le début et la fin sont des jalons et sont modifiés sous [Jalons](#s-milestones).
 
 Toutes les indications de temps ont le format **MM.AAAA** (par exemple 05.2027).
@@ -102,8 +102,9 @@ Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu
 La limite inférieure ne doit pas être supérieure à la limite supérieure, les âges sont des années entières, le montant maximal est de 0 ou plus. «Valeurs standard» réinitialise tout après confirmation. Si une planification se situe en dehors des nouvelles limites après une modification, le contrôle le signale; la même planification peut donc donner un message sur un autre appareil avec d’autres paramètres. La ligne de commande utilise les mêmes limites que l’application (voir [ligne de commande](#ref-cli)).
 
 ## @f-pk Caisse de pension
-Mots-clés: LPP, avoir de vieillesse, cotisations, rémunération, certificat de prévoyance
+Mots-clés: LPP, avoir de vieillesse, cotisations, rémunération, certificat de prévoyance, sans caisse de pension, grand pilier 3a, indépendants
 
+- **Sans caisse de pension (grand pilier 3a):** option tout en haut de la carte, par personne, pour les personnes exerçant une activité lucrative sans caisse de pension, surtout les indépendants. Pour cette personne, le versement et la déduction du [pilier 3a](#s-pillar3a) vont jusqu’à **20 % du revenu de l’activité lucrative**, au plus jusqu’au montant maximal du grand pilier 3a (36 288 francs, modifiable dans les [paramètres](#f-settings)); pour toutes les autres, le petit pilier 3a s’applique (7 258 francs). Si l’option est cochée, tous les champs de la caisse de pension de cette personne sont grisés et en lecture seule, et le calcul se fait **sans caisse de pension** pour elle: ni avoir, ni cotisations, ni rente, ni retrait en capital (donc pas d’impôt sur les prestations en capital). Les valeurs saisies restent enregistrées dans le fichier de planification et s’appliquent de nouveau dès que vous décochez l’option. L’AVS reste inchangée.
 - **Avoir de vieillesse au début de la simulation (MM.AAAA):** l’avoir selon le certificat de prévoyance (avoir de vieillesse, part surobligatoire comprise). On n’inscrit pas ici les projections du certificat (projection avec intérêts); l’application les calcule elle-même.
 - **Prestation dès:** toujours le jalon **Prestation de la caisse de pension** de la personne (58 à 65 ans). Vous modifiez la date sous [Jalons](#s-milestones).
 - **Cotisations par mois:** somme des cotisations de l’employé et de l’employeur (et des rachats) versées jusqu’à la prestation. Elles prennent fin avec la prestation.

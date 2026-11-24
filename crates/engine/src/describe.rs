@@ -484,7 +484,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ("household.persons.*.name", "Name of the person."),
     (
         "household.persons.*.noPensionFund",
-        "Without pension fund: larger pillar 3a maximum.",
+        "No pension fund: large pillar 3a; pension fund counts as 0.",
     ),
     ("milestones.*.fixed", "Fixed milestone (start, end): cannot be removed."),
     (

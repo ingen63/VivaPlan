@@ -798,9 +798,15 @@ ein (`BUILTIN`).
   Einzahlungsgrenze der Planung (`validate.rs`, dieselbe Regel): Einzahlung 0 bis `pillar3a_max_of` (grosse oder
   kleine Säule 3a, Fehler am Feld); Einzahlung + indirekte Amortisation über diesem Betrag: Warnung
   `pillar3a_over_max`; sonst ohne Pensionskasse Warnung `pillar3a_over_income` für den ersten Monat vom Start bis vor
-  dem AHV-Bezug, in dem 20 % × 12 × Monatseinkommen darunter liegt. Warnung `pillar3a_large_with_pk`, wenn die
-  Person trotzdem eine Pensionskasse hat (Kapital > 0 oder Beiträge im Zeitraum). Ohne das Feld rechnen bestehende
+  dem AHV-Bezug, in dem 20 % × 12 × Monatseinkommen darunter liegt. Ohne das Feld rechnen bestehende
   Planungen unverändert (Golden-Dateien unverändert).
+- **Ohne Pensionskasse rechnet die Pensionskasse mit 0 (#253):** Ist `noPensionFund` gesetzt, setzt `Simulator::new`
+  (`person_cfg`) für diese Person Guthaben, Beiträge (Kurve 0), Kapitalbezugsanteil und Umwandlungssatz auf 0: kein
+  Guthaben, keine Beiträge, keine Rente, kein Kapitalbezug und keine Kapitalbezugssteuer. Der Bezugszeitpunkt bleibt
+  (Meilenstein «Bezug Pensionskasse», Beginn der Pensionierung). Die Werte unter `pension.pk` bzw. `partner.pk` bleiben
+  unverändert in der Datei und werden weiter geprüft; die Warnung `pillar3a_large_with_pk` (#152) gibt es nicht mehr.
+  Oberfläche: Schalter zuoberst in der Karte «Pensionskasse» (`PensionCards`), die Felder darunter stehen in einem
+  `fieldset.locked-area` (`#pkBody0`/`#pkBody1`), das bei gesetztem Schalter `disabled` ist (wie #196).
 - **Kapitalbezüge (#64):** je Kanton `capital` (Satz der einfachen Steuer auf den ganzen Bezug, Steuerfuss 100 %,
   Alleinstehende und Verheiratete), wo nötig `capitalMunicipal` (eigene Regel der Gemeindesteuer: Schwyz, Wallis,
   Genf; Freiburg wegen `cantonMultiplier`), `capitalRule` (Text) und `capitalApprox` (Näherung: Wallis, Zug); dazu

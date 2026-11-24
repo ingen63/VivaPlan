@@ -722,9 +722,10 @@ test.describe("Time-dependent place of residence (#151)", () => {
 });
 
 test.describe("Large pillar 3a for persons without a pension fund (#152)", () => {
-  test("AK1, AK4: check box per person; warning if the plan has a pension fund for this person", async ({ page }) => {
+  // AK4 (warning with a pension fund) was dropped with #253; the check box moved to «Vorsorge» (tests in #253).
+  test("AK1: check box per person (since #253 in the pension fund card)", async ({ page }) => {
     const errors = await open(page);
-    await nav(page, "Haushalt & Projekt");
+    await nav(page, "Vorsorge");
     const chk = page.locator('input[data-path="household.persons.0.noPensionFund"]');
     await expect(chk).toBeVisible();
     await expect(chk).not.toBeChecked();
@@ -732,11 +733,8 @@ test.describe("Large pillar 3a for persons without a pension fund (#152)", () =>
     await expect(page.locator("#main")).toContainText("höchstens 36'288 pro Jahr");
     await chk.check();
     expect(await page.evaluate(() => state.household.persons[0].noPensionFund)).toBe(true);
-    // the example plan has a pension fund: warning in the validation
-    expect(await page.evaluate(() => state.pension.pk.capital)).toBeGreaterThan(0);
-    await expect(page.locator("#val")).toContainText("«Ohne Pensionskasse (grosse Säule 3a)» ist gesetzt, die Planung enthält aber eine Pensionskasse");
     // a second person has their own check box
-    await page.locator('button[data-action="partner-add"]').click();
+    await page.evaluate(() => { ACTIONS["partner-add"](); renderSection(); });
     await expect(page.locator('input[data-path="household.persons.1.noPensionFund"]')).not.toBeChecked();
     await noErrors(page, errors);
   });
@@ -767,6 +765,64 @@ test.describe("Large pillar 3a for persons without a pension fund (#152)", () =>
     await expect(page.locator("#main")).toContainText("0 bis 36'288, höchstens 20 % des Erwerbseinkommens");
     await nav(page, "Steuern");
     await expect(page.locator("#tax-deductions")).toContainText("ohne Pensionskasse 20 % des Erwerbseinkommens, höchstens 36'288 Franken");
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Without pension fund in the pension section (#253)", () => {
+  const box = (page, n) => page.locator(`input[type=checkbox][data-path="household.persons.${n}.noPensionFund"]`);
+
+  test("AK1: not in household & project any more; at the top of the pension fund card of each person", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { ACTIONS["partner-add"](); renderSection(); });
+    await nav(page, "Haushalt & Projekt");
+    await expect(page.locator("#main input[data-path$=\".noPensionFund\"]")).toHaveCount(0);
+    await expect(page.locator("#main")).not.toContainText("Ohne Pensionskasse");
+    await nav(page, "Vorsorge");
+    for (const n of [0, 1]) {
+      const card = page.locator(`#pkCard${n}`);
+      await expect(card.locator("h3")).toContainText("Pensionskasse");
+      // first control of the card, with the hint on the large pillar 3a
+      expect(await card.evaluate(c => c.querySelector("input, select")?.dataset.path)).toBe(`household.persons.${n}.noPensionFund`);
+      await expect(card.locator(".hint").first()).toContainText("grosse Säule 3a");
+      await expect(card.locator(".hint").first()).toContainText("höchstens 36'288 pro Jahr");
+    }
+    await box(page, 1).check();
+    // saved as before in household.persons.N.noPensionFund
+    const saved = await page.evaluate(() => JSON.parse(JSON.stringify(state)).household.persons.map(p => !!p.noPensionFund));
+    expect(saved).toEqual([false, true]);
+    await noErrors(page, errors);
+  });
+
+  test("AK2: switched on, all pension fund fields of the person are grey and read-only; the AHV stays editable", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => {
+      ACTIONS["partner-add"]();
+      // timed rows for the contributions, so they are read-only too
+      state.pension.pk.contribution = { mode: "timed", rows: [{ from: "start", value: 800 }, { from: "2030-01", value: 900 }] };
+      renderSection();
+    });
+    await nav(page, "Vorsorge");
+    const body = page.locator("#pkBody0");
+    const before = await page.evaluate(() => JSON.stringify(state.pension.pk));
+    await expect(body).not.toHaveAttribute("disabled");
+    await box(page, 0).check();
+    await expect(body).toHaveAttribute("disabled");
+    for (const f of ["capital", "lumpsum", "conversion"]) await expect(body.locator(`input[data-path="pension.pk.${f}"]`)).toBeDisabled();
+    expect(await body.locator('input[data-path^="pension.pk.contribution.rows"]').count()).toBeGreaterThan(1);
+    expect(await body.locator("input:enabled, select:enabled, button:enabled").count()).toBe(0);
+    expect(await body.locator('[data-path^="pension.pk.interest"]').count()).toBeGreaterThan(0);
+    expect(Number(await body.evaluate(e => getComputedStyle(e).opacity))).toBeLessThan(1);
+    // the switch, the AHV and the pension fund of the second person stay editable
+    await expect(box(page, 0)).toBeEnabled();
+    await expect(page.locator('input[data-path="pension.ahv.monthly"]')).toBeEnabled();
+    await expect(page.locator("#pkBody1")).not.toHaveAttribute("disabled");
+    await expect(page.locator('input[data-path="partner.pk.capital"]')).toBeEnabled();
+    // values stay and the fields are editable again once the switch is off
+    await box(page, 0).uncheck();
+    await expect(body).not.toHaveAttribute("disabled");
+    await expect(body.locator('input[data-path="pension.pk.capital"]')).toBeEnabled();
+    expect(await page.evaluate(() => JSON.stringify(state.pension.pk))).toBe(before);
     await noErrors(page, errors);
   });
 });

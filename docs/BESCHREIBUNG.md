@@ -48,7 +48,11 @@ Der Editor führt durch zwölf Abschnitte:
   erhöht die App sie selbst nach den Sätzen der AHV (Vorbezug 6,8 % je Jahr, höchstens 13,6 %; Aufschub 5,2 % bis
   31,5 %; feste Beträge in Franken, bei Ehepaaren nach dem Plafond auf die ungekürzten Renten), neben dem Feld steht
   die effektive Rente; ab Dezember 2026 jedes Jahr im Dezember die 13. AHV-Rente (1/12 der im
-  Jahr ausbezahlten AHV-Renten, anteilig bei Beginn im Laufe des Jahres).
+  Jahr ausbezahlten AHV-Renten, anteilig bei Beginn im Laufe des Jahres). Zuoberst in der Karte «Pensionskasse» jeder
+  Person steht der Schalter «Ohne Pensionskasse (grosse Säule 3a)» (#152, seit #253 hier statt unter «Haushalt &
+  Projekt»): Ist er gesetzt, sind die Felder der Pensionskasse grau und schreibgeschützt, und die Berechnung rechnet
+  für diese Person ohne Pensionskasse (kein Guthaben, keine Beiträge, keine Rente, kein Kapitalbezug und keine
+  Kapitalbezugssteuer); die erfassten Werte bleiben gespeichert und gelten wieder, sobald der Schalter aus ist.
 - **Säule 3a:** ein Konto je Person mit Guthaben, Verzinsung, Einzahlung pro Jahr (bis zum Maximalbetrag; für eine
   Person «Ohne Pensionskasse (grosse Säule 3a)» bis 20 % des Erwerbseinkommens, höchstens der Maximalbetrag der grossen
   Säule 3a, #152; zählt zu den Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug); der Rest wird spätestens

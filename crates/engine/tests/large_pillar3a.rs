@@ -163,33 +163,8 @@ fn issue_152_ak3_others_keep_the_small_pillar3a() {
     close(deduction(&run(&v), 2030), 20_000.0 + SMALL, "A large, B small");
 }
 
-/// #152/AK4: «ohne Pensionskasse» with a pension fund in the plan (capital or contributions): warning, for the second
-/// person too.
-#[test]
-fn issue_152_ak4_warning_with_pension_fund() {
-    let code = "pillar3a_large_with_pk";
-    let v = base(100_000.0, 0.0, true);
-    assert!(!has(&v, code), "without a pension fund");
-    let mut w = v.clone();
-    w["pension"]["pk"]["capital"] = json!(100_000);
-    assert!(issues(&w).contains(&(Severity::Warning, code, String::new())));
-    let mut w = v.clone();
-    w["pension"]["pk"]["contribution"] = json!(500);
-    assert!(has(&w, code), "contributions");
-    let mut w = base(100_000.0, 0.0, false);
-    w["pension"]["pk"]["capital"] = json!(100_000);
-    assert!(!has(&w, code), "not set");
-    let mut w = couple(0.0, 100_000.0, 0.0);
-    assert!(!has(&w, code), "B has a pension fund, but no entry");
-    w["household"]["persons"][1]["noPensionFund"] = json!(true);
-    let text = validate(&serde_json::from_value(w).unwrap())
-        .into_iter()
-        .find(|i| i.message.code() == code)
-        .expect("warning for B")
-        .message
-        .to_string();
-    assert!(text.starts_with("B:"), "{text}");
-}
+// #152/AK4 (warning «ohne Pensionskasse» with a pension fund) was dropped with #253: the pension fund then counts
+// as 0 (`tests/no_pension_fund.rs`).
 
 /// #152/AK5: Existing plans compute unchanged: without the entry (or with `false`) the deduction stays at the small
 /// pillar 3a and the results are bit-identical.

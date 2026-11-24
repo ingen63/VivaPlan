@@ -1887,20 +1887,6 @@
     "text": "Person 2: contribution (12'346) and indirect amortization (12'346) together exceed 20 % of the earned income (12'346 per year from 07.2031); only this share is deductible."
   },
   {
-    "code": "pillar3a_large_with_pk",
-    "params": {
-      "name": {
-        "code": "person_n",
-        "params": {
-          "n": 2
-        },
-        "text": "Person 2"
-      }
-    },
-    "template": "{name}: “Without pension fund (large pillar 3a)” is set, but the plan contains a pension fund for this person.",
-    "text": "Person 2: “Without pension fund (large pillar 3a)” is set, but the plan contains a pension fund for this person."
-  },
-  {
     "code": "pillar3a_repay_without_indirect",
     "params": {
       "who": {

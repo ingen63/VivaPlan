@@ -616,7 +616,6 @@ codes! {
     pillar3a_contribution_range => "{who}: the contribution must be between 0 and the maximum amount of {max:int} per year (settings).",
     pillar3a_over_max => "{who}: contribution ({contribution:int}) and indirect amortization ({indirect:int}) together exceed the maximum amount of {max:int} per year.",
     pillar3a_over_income => "{who}: contribution ({contribution:int}) and indirect amortization ({indirect:int}) together exceed 20 % of the earned income ({limit:int} per year from {from:ym}); only this share is deductible.",
-    pillar3a_large_with_pk => "{name}: “Without pension fund (large pillar 3a)” is set, but the plan contains a pension fund for this person.",
     pillar3a_repay_without_indirect => "{who}: “Repay mortgage” requires a tranche with indirect amortization; the remainder goes to liquid wealth.",
     pillar3a_payout_date_invalid => "{who}: the date of payout no. {n} is missing or invalid.",
     pillar3a_payout_age_invalid => "{who}: the age (0 to 150 years) of payout no. {n} is missing or invalid.",

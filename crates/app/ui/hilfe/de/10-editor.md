@@ -1,14 +1,14 @@
 # Editor: Abschnitte und Felder
 
 ## @s-general Haushalt & Projekt
-Stichworte: Name, Währung, Personen, Geburt, zweite Person, Double Income, Simulationszeitraum, ohne Pensionskasse, grosse Säule 3a, Selbständige
+Stichworte: Name, Währung, Personen, Geburt, zweite Person, Double Income, Simulationszeitraum
 
 Hier legen Sie die Grunddaten fest.
 
 - **Projektname und Währung:** Alle Beträge werden in der Projektwährung erfasst (CHF, EUR oder USD). Die Indizes der [Anlagestrategie](#f-ret-series) sind in CHF; bei einer Planung in EUR oder USD erscheint ein Hinweis.
 - **Person 1:** Name und Geburtsmonat (Format MM.JJJJ). Aus dem Geburtsmonat berechnet die App das Alter für Meilensteine («mit 65») und für die Beschriftung der Grafiken.
 - **+ Zweite Person:** Fügt eine zweite Person mit eigenem Einkommen, eigener Pensionskasse und eigener AHV hinzu (Double Income). Steuern, Vermögen und Ausgaben gelten für den Haushalt. Siehe [Zweite Person und Ehepaar-Regeln](#f-couple).
-- **Ohne Pensionskasse (grosse Säule 3a):** Häkchen je Person für Erwerbstätige ohne Pensionskasse, vor allem Selbständige. Für diese Person gelten Einzahlung und Abzug der [Säule 3a](#s-pillar3a) bis **20 % des Erwerbseinkommens**, höchstens bis zum Maximalbetrag der grossen Säule 3a (36 288 Franken, änderbar in den [Einstellungen](#f-settings)); für alle anderen die kleine Säule 3a (7 258 Franken). Hat die Person in der Planung trotzdem eine Pensionskasse (Kapital oder Beiträge), zeigt die Prüfung eine Warnung.
+- **Ohne Pensionskasse (grosse Säule 3a):** Der Schalter steht je Person im Abschnitt [Vorsorge](#s-pension), zuoberst in der Karte [Pensionskasse](#f-pk).
 - **Simulationszeitraum:** Start und Ende sind Meilensteine und werden unter [Meilensteine](#s-milestones) geändert.
 
 Alle Zeitangaben haben das Format **MM.JJJJ** (zum Beispiel 05.2027).
@@ -102,8 +102,9 @@ Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Li
 Die untere Grenze darf nicht über der oberen liegen, Alter sind ganze Jahre, der Maximalbetrag ist 0 oder mehr. «Standardwerte» setzt alles nach Rückfrage zurück. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das; dieselbe Planung kann deshalb auf einem anderen Gerät mit anderen Einstellungen eine Meldung ergeben. Die Kommandozeile verwendet dieselben Grenzen wie die App (siehe [Kommandozeile](#ref-cli)).
 
 ## @f-pk Pensionskasse
-Stichworte: BVG, Altersguthaben, Beiträge, Verzinsung, Vorsorgeausweis
+Stichworte: BVG, Altersguthaben, Beiträge, Verzinsung, Vorsorgeausweis, ohne Pensionskasse, grosse Säule 3a, Selbständige
 
+- **Ohne Pensionskasse (grosse Säule 3a):** Schalter zuoberst in der Karte, je Person, für Erwerbstätige ohne Pensionskasse, vor allem Selbständige. Für diese Person gelten Einzahlung und Abzug der [Säule 3a](#s-pillar3a) bis **20 % des Erwerbseinkommens**, höchstens bis zum Maximalbetrag der grossen Säule 3a (36 288 Franken, änderbar in den [Einstellungen](#f-settings)); für alle anderen die kleine Säule 3a (7 258 Franken). Ist der Schalter gesetzt, sind alle Felder der Pensionskasse dieser Person grau und schreibgeschützt, und die Berechnung rechnet für sie **ohne Pensionskasse**: kein Guthaben, keine Beiträge, keine Rente und kein Kapitalbezug (also auch keine Kapitalbezugssteuer). Die erfassten Werte bleiben in der Planungsdatei gespeichert und gelten wieder, sobald Sie den Schalter ausschalten. Die AHV bleibt unverändert.
 - **Altersguthaben per Simulationsstart (MM.JJJJ):** Das Guthaben laut Vorsorgeausweis (Altersguthaben inkl. überobligatorischer Teil). Die Hochrechnungen im Ausweis (Projektion mit Zins) trägt man nicht hier ein, die rechnet die App selbst.
 - **Bezug ab:** immer der Meilenstein **Bezug Pensionskasse** der Person (58 bis 65 Jahre). Den Zeitpunkt ändern Sie unter [Meilensteine](#s-milestones).
 - **Beiträge pro Monat:** Summe aus Arbeitnehmer- und Arbeitgeberbeiträgen (und Einkäufen), die bis zum Bezug einbezahlt werden. Mit dem Bezug enden sie.

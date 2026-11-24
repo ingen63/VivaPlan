@@ -929,16 +929,24 @@ impl Simulator {
             } else {
                 None
             };
+            // #253: «ohne Pensionskasse» – the entered values stay in the file but count as 0
+            // (no capital, contributions, pension or lump sum); the payout date still marks retirement.
+            let active = !plan.household.persons.get(index).is_some_and(|p| p.no_pension_fund);
+            let zero_if_off = |v: f64| if active { v } else { 0.0 };
             Ok(PersonCfg {
                 birth,
                 income: curve(income)?,
                 income_indexed,
                 income_end,
-                pk_contribution: curve(&pk.contribution)?,
+                pk_contribution: if active {
+                    curve(&pk.contribution)?
+                } else {
+                    Curve::constant(0.0)
+                },
                 pk_interest: curve(&pk.interest)?,
-                pk_capital: pk.capital,
-                pk_lumpsum: pk.lumpsum,
-                pk_conversion: pk.conversion,
+                pk_capital: zero_if_off(pk.capital),
+                pk_lumpsum: zero_if_off(pk.lumpsum),
+                pk_conversion: zero_if_off(pk.conversion),
                 pk_at: r.resolve(&pk.at)?,
                 ahv: crate::ahv::Person::new(birth, ahv.monthly, ahv_at, ahv.indexed),
             })
