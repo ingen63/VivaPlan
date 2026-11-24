@@ -1582,6 +1582,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #207/AK6 | Die Prüfung von Pfad und Typ liegt im Rechenkern (`api`), nicht in der Kommandozeile. | ☑ | **gilt** | [api.rs](../crates/engine/src/api.rs) `issue_207_ak6_…` | 22.11.2026 ok (`api::set_fields` → `engine::fieldpath`) |
 | #207/AK7 | (Kommentar) Feldpfade erlauben einen Zeitpunkt in Verläufen: `@<meilenstein>`, `@age:<n>`, `@<JJJJ-MM>` wählt die Stufe … | – | **gilt** | [fieldpath.rs](../crates/engine/src/fieldpath.rs) `issue_207_ak7_…` (2 Tests) | 22.11.2026 ok (bestehende Stufe geändert, sonst neue Stufe; konstanter Wert wird zeitabhängig) |
 
+### #214 Messebene: Kennzahlen frei zusammensetzen, im Strom gerechnet
+
+[Issue #214](https://github.com/ingen63/VivaPlan/issues/214) · geschlossen · Umsetzung: 2955114
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #214/AK1 | Eine Kennzahl besteht aus Grösse, nominal/real, Zeitfenster, Reduktion je Pfad und Aggregation über Pfade. | ☑ | **gilt** | `issue_214_ak1_…` (6 Tests) | 24.11.2026 ok (Test grün; Fehler gesammelt als Liste) |
+| #214/AK2 | Die Kennzahlen werden während der Simulation gesammelt, ohne Monatsaufzeichnung. | ☑ | **gilt** | `issue_214_ak2_…` | 24.11.2026 ok (Test grün) |
+| #214/AK3 | `evaluate` und `batch::summarize` lassen sich so ausdrücken und ergeben exakt dieselben Werte wie heute (Golden). | ☑ | **gilt** | `issue_214_ak3_…`, Golden | 24.11.2026 ok (bitgenauer Vergleich, 5 Strategien und 3 Golden-Planungen; Golden-Dateien unverändert) |
+| #214/AK4 | Beispiel: Median, P10 und Mittel des realen Konsums für die Jahre 1–15 ab Pensionierung; ganze Laufzeit gleich wie `optimize --compare`. | ☑ | **gilt** | `issue_214_ak4_…` | 24.11.2026 ok (Test grün) |
+| #214/AK5 | Wahrscheinlichkeiten kommen mit Standardfehler. | ☑ | **gilt** | `issue_214_ak5_…` | 24.11.2026 ok (Test grün) |
+| #214/AK6 | Kommandozeile `run --metric <json>` (mehrfach), Ausgabe in `--json`; Referenz in der Hilfe nachgeführt. | ☑ | **gilt** | CLI-Test `issue_214_ak6_…` | 24.11.2026 ok (Test grün; Hilfe «Eigene Kennzahlen» de, en, fr, it, Beispiele von Hand ausgeführt) |
+
 ### #215 Renditepfade für mehrere Varianten wiederverwenden
 
 [Issue #215](https://github.com/ingen63/VivaPlan/issues/215) · geschlossen · Umsetzung: 50fa01d
