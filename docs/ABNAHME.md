@@ -983,3 +983,15 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #206/AK4 | Eine in der App importierte Reihe ist in der Kommandozeile verwendbar. | ☑ | **gilt** | `issue_206_ak4_series_of_the_app_library` | 24.11.2026 ok (Test grün) |
 | #206/AK5 | Fehlt der Datenordner, eingebaute Reihen und Standardgrenzen, einmal gemeldet. | ☑ | **gilt** | `issue_206_ak5_…` | 24.11.2026 ok (Test grün) |
 | #206/AK6 | Die Referenz in der Hilfe nennt den Pfad des Programms je Betriebssystem. | ☑ | **gilt** | – | 24.11.2026 ok (Durchsicht, vier Sprachen; Windows-Pfad aus NSIS-Vorlage, auf Windows nicht nachgeprüft) |
+
+### #208 Agent Skill «VivaPlan» mitliefern
+
+[Issue #208](https://github.com/ingen63/VivaPlan/issues/208) · offen (`implemented`) · Umsetzung: e6e2757
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #208/AK1 | Ein Ordner `vivaplan-skill/` mit `SKILL.md` erklärt Befehle, wichtige Felder mit Einheiten (Anteile statt Prozent), nominal und real, die Grenzen der Aussagen und den Haftungsausschluss. | ☑ | **gilt** | [skill.rs](../crates/cli/tests/skill.rs) `issue_208_ak1_…` (2 Tests) | 24.11.2026 ok (Format mit `name` = Ordnername; Beispiel «bis 95» rechnet auf der Beispielplanung) |
+| #208/AK2 | Die Skill sagt, dass abgefragte Daten an den Anbieter der KI gehen. | ☑ | **gilt** | [skill.rs](../crates/cli/tests/skill.rs) `issue_208_ak1_ak2_format_and_contents` | 24.11.2026 ok (Regel 1: Hinweis vor dem ersten Lesen) |
+| #208/AK3 | Ein automatischer Test prüft, dass alle in der Skill genannten Befehle und Optionen in `vivaplan --help` vorkommen. | ☑ | **gilt** | [skill.rs](../crates/cli/tests/skill.rs) `issue_208_ak3_…` (3 Tests) | 24.11.2026 ok (`--help` neu als Option auf der Standardausgabe; Gegenprobe mit unbekanntem Befehl) |
+| #208/AK4 | Die Skill liegt dem Paket bei. Die Hilfe sagt, wo sie liegt und wie man sie in Claude Code oder Claude Desktop (Bereich «Code») einrichtet. | ☑ | **gilt** | kein Test (lokaler Paketbau, Durchsicht) | 24.11.2026 ok (macOS `Contents/Resources/vivaplan-skill/SKILL.md`; Hilfe §ref-skill de, en, fr, it); Windows- und Linux-Pfad nach Tauri-Regel, nicht gebaut |
+| #208/AK5 | Von Hand nach der Prüfliste in `docs/QA.md`: Eingerichtet beantwortet Claude an der Beispielplanung «Reicht mein Vermögen bis 95?» mit einem Aufruf von `vivaplan run`. | ☐ | **gilt** | Prüfliste [QA.md](QA.md) «Prüfung von Hand: Agent Skill mit Claude» | offen (Prüfung von Hand) |
