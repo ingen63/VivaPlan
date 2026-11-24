@@ -207,8 +207,19 @@ Kennzeichen `readOnlyHint`; Fehler der Eingaben kommen als Werkzeugergebnis mit 
 kann. Die Daten stehen als kompaktes JSON im Text, ohne `structuredContent` (viele Hosts geben beides ans Modell).
 `privacy.rs`: Namen und freie Bezeichnungen (`name`, `label`) werden durch neutrale ersetzt, ausser mit `--names`;
 Ordner fallen weg. Die Werkzeugliste ist in `crates/cli/tests/mcp-tools.json` festgehalten; eine Änderung der
-Schnittstelle lässt `crates/cli/tests/mcp.rs` fehlschlagen, die neue Liste steht in der Meldung. Rechnende Werkzeuge
-folgen mit #211 (`Session::add_result` ist dafür vorbereitet), Ändern und Speichern mit #212.
+Schnittstelle lässt `crates/cli/tests/mcp.rs` fehlschlagen, die neue Liste steht in der Meldung. Ändern und Speichern
+folgen mit #212.
+
+**Rechnende Werkzeuge im MCP-Server (#211):** `compute.rs`: `simulation_run` (Schätzung wie die App: `bench_plan` ×
+Pfade × Kombinationen der Variationen, dann `run_simulation` über `dispatch::call`; das Ergebnis liegt als `RunOut` in
+der Sitzung) und `evaluate` (`experiment::evaluate_as` mit Kennung, Schätzung und `confirm` aus #216; Ergebnis in der
+Sitzung, `result_get` nur Sicht `summary`). Ab `experiment::CONFIRM_SECONDS` ohne `"confirm": true` Antwort
+`needsConfirmation` mit Schätzung. `mod.rs`: Der Hauptthread liest weiter, ein Thread pro Rechnung (`work`) rechnet in
+einem weiteren Thread und schickt etwa jede Sekunde `notifications/progress` (nur mit `_meta.progressToken`, aus
+`progress_get`); `notifications/cancelled` mit der Kennung der Anfrage ruft `cancel_job` (bei jedem Takt erneut, falls
+die Rechnung noch nicht gestartet war) und unterdrückt die Antwort. Eine Rechnung aufs Mal (Slot `Running`); ein
+zweiter Rechenaufruf ist ein Werkzeugfehler. Ende der Eingabe bricht ab und wartet auf den Thread. Ausgaben beider
+Threads gehen zeilenweise über `Output` (Mutex). Die Kennungen der Rechnungen beginnen bei 2^40.
 
 **App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
 vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung

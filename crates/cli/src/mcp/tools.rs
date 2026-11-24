@@ -1,6 +1,6 @@
 //! #210: Reading tools of the MCP server: open, read, look up and check plans, results of the session, data library and
 //! the catalog for AIs (`describe`). Thin layer: check the arguments, call the engine through `dispatch::call`, shape
-//! the answer. Computing tools follow with #211, changing and saving with #212.
+//! the answer. The computing tools are in `compute.rs` (#211), changing and saving follow with #212.
 
 use std::path::{Path, PathBuf};
 
@@ -17,10 +17,10 @@ pub(crate) struct Answer {
 }
 
 impl Answer {
-    fn data(data: Value) -> Self {
+    pub(crate) fn data(data: Value) -> Self {
         Answer { data, results: false }
     }
-    fn results(data: Value) -> Self {
+    pub(crate) fn results(data: Value) -> Self {
         Answer { data, results: true }
     }
 }
@@ -33,7 +33,7 @@ fn read_only() -> Value {
     json!({ "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false })
 }
 
-fn tool(name: &str, title: &str, description: &str, properties: Value, required: &[&str]) -> Value {
+pub(crate) fn tool(name: &str, title: &str, description: &str, properties: Value, required: &[&str]) -> Value {
     json!({
         "name": name,
         "title": title,
@@ -53,7 +53,7 @@ const VIEWS: &[&str] = &["summary", "yearly", "events", "bands", "variations"];
 /// The tool list of `tools/list`.
 pub(crate) fn list() -> Vec<Value> {
     let sections: Vec<&str> = engine::describe::Section::ALL.iter().map(|s| s.name()).collect();
-    vec![
+    let mut list = vec![
         tool(
             "describe",
             "Catalog for AIs",
@@ -147,17 +147,30 @@ pub(crate) fn list() -> Vec<Value> {
             json!({}),
             &[],
         ),
-    ]
+    ];
+    list.extend(super::compute::list());
+    list
 }
 
-/// Answers a tool call; `None` for an unknown tool (an error of the protocol).
-pub(crate) fn call(s: &mut Session, name: &str, args: &Value) -> Option<Outcome> {
+/// The arguments of a call to the tool `name`, checked against its schema (`{}` if missing); `None` for an unknown
+/// tool (an error of the protocol).
+pub(crate) fn checked(name: &str, args: &Value) -> Option<Result<Value, String>> {
     let args = match args {
-        Value::Null => &Value::Object(Map::new()),
-        a => a,
+        Value::Null => Value::Object(Map::new()),
+        a => a.clone(),
     };
     let known = list().into_iter().find(|t| t["name"] == name)?;
-    Some(check_args(&known, args).and_then(|()| match name {
+    Some(check_args(&known, &args).map(|()| args))
+}
+
+/// Answers a call of a reading tool; `None` for an unknown tool (an error of the protocol).
+pub(crate) fn call(s: &mut Session, name: &str, args: &Value) -> Option<Outcome> {
+    let args = match checked(name, args)? {
+        Ok(a) => a,
+        Err(e) => return Some(Err(e)),
+    };
+    let args = &args;
+    Some(match name {
         "describe" => describe(s, args),
         "plan_open" => plan_open(s, args),
         "plan_get" => plan_get(s, args),
@@ -166,8 +179,10 @@ pub(crate) fn call(s: &mut Session, name: &str, args: &Value) -> Option<Outcome>
         "result_list" => Ok(result_list(s)),
         "result_get" => result_get(s, args),
         "library_list" => library_list(s),
-        _ => unreachable!("every listed tool has a branch"),
-    }))
+        _ => Err(format!(
+            "The tool {name} computes; the server starts it in its own thread"
+        )),
+    })
 }
 
 /// Unknown arguments and wrong types are errors the AI can correct.
@@ -185,6 +200,7 @@ fn check_args(tool: &Value, args: &Value) -> Result<(), String> {
             Some("string") => v.is_string(),
             Some("boolean") => v.is_boolean(),
             Some("integer") => v.is_i64(),
+            Some("object") => v.is_object(),
             _ => true,
         };
         if !ok {
@@ -207,7 +223,7 @@ fn check_args(tool: &Value, args: &Value) -> Result<(), String> {
     Ok(())
 }
 
-fn arg<'a>(args: &'a Value, key: &str) -> Option<&'a str> {
+pub(crate) fn arg<'a>(args: &'a Value, key: &str) -> Option<&'a str> {
     args.get(key).and_then(Value::as_str)
 }
 
@@ -609,6 +625,17 @@ fn result_list(s: &Session) -> Answer {
         .results
         .iter()
         .map(|r| {
+            if r.kind == "evaluate" {
+                let best = &r.result["result"]["ranking"][0];
+                return json!({
+                    "result": r.id,
+                    "plan": r.plan,
+                    "tool": r.kind,
+                    "variants": r.result["result"]["variants"],
+                    "best": if best.is_null() { Value::Null } else { json!({ "settings": best["settings"], "objective": best["confirm"]["objective"] }) },
+                    "secondsAgo": r.at.elapsed().as_secs(),
+                });
+            }
             let d = s
                 .call("digest", &json!({ "result": r.result }), None)
                 .unwrap_or(Value::Null);
@@ -647,8 +674,21 @@ fn year_of(v: &Value) -> Option<i64> {
     v.as_str()?.split('-').next()?.parse().ok()
 }
 
-fn result_get(s: &mut Session, args: &Value) -> Outcome {
+pub(crate) fn result_get(s: &mut Session, args: &Value) -> Outcome {
     let r = s.result(arg(args, "result").unwrap_or_default())?;
+    if r.kind == "evaluate" {
+        // #211: An experiment keeps the metrics of its variants, no single runs.
+        if arg(args, "view").is_some_and(|v| v != "summary") {
+            return Err(format!(
+                "The result {} is an experiment (evaluate) and has only the view summary; for yearly values, events \
+                 and bands compute the plan with simulation_run",
+                r.id
+            ));
+        }
+        return Ok(Answer::results(
+            json!({ "result": r.id, "plan": r.plan, "experiment": r.result }),
+        ));
+    }
     let plan = s.plans.iter().find(|p| p.id == r.plan);
     let currency = plan
         .and_then(|p| p.plan["project"]["currency"].as_str())
@@ -799,7 +839,10 @@ mod tests {
                 "plan_validate",
                 "result_list",
                 "result_get",
-                "library_list"
+                "library_list",
+                // #211: the computing tools change no file either.
+                "simulation_run",
+                "evaluate"
             ]
         );
         for t in list() {
@@ -921,7 +964,7 @@ mod tests {
     fn issue_210_ak3_key_figures_as_in_the_app() {
         let mut s = session();
         let (id, run) = computed(&mut s);
-        let lib = s.library().to_path_buf();
+        let lib = s.data.library().unwrap().to_path_buf();
         let app = |cmd: &str, args: Value| engine::dispatch::call(cmd, &args, &lib, Path::new("/")).unwrap();
         let sum = ok(call(&mut s, "result_get", &json!({ "result": id })));
         assert_eq!(sum["digest"], app("digest", json!({ "result": run })));
@@ -963,6 +1006,7 @@ mod tests {
             include_str!("tools.rs"),
             include_str!("session.rs"),
             include_str!("mod.rs"),
+            include_str!("compute.rs"),
         ] {
             let code: String = src
                 .split("#[cfg(test)]")
@@ -984,6 +1028,11 @@ mod tests {
             "engine::describe::Section::ALL.iter",
             "engine::describe::Section::parse",
             "engine::dispatch::call",
+            // #211: the experiment with the id of the computation (as api::evaluate), the estimate as in the app.
+            "engine::experiment::evaluate_as",
+            "engine::experiment::CONFIRM_SECONDS",
+            "engine::scenarios::parse",
+            "engine::scenarios::count_combinations",
             "engine::model::Plan>",
             "engine::resolve::Resolver::new",
             "engine::schema_json",

@@ -67,7 +67,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
 | `optimize <planung>` | Strategie optimieren, siehe [Kommandozeile](#o-cli) |
 | `describe [<abschnitt>]` | Katalog für KIs: was sich ändern, variieren und messen lässt (`--plan`, `--json`), siehe [Katalog für KIs](#ref-describe) |
-| `mcp` | MCP-Server für KI-Programme, nur lesend (`--data-dir`, `--library`, `--names`), siehe [KI-Programme verbinden](#ref-mcp) |
+| `mcp` | MCP-Server für KI-Programme, liest und rechnet (`--data-dir`, `--library`, `--names`), siehe [KI-Programme verbinden](#ref-mcp) |
 | `evaluate <planung> <experiment.json>` | Experiment rechnen (`--json`, `--yes`), siehe [Experiment](#ref-experiment) |
 | `bench <planung>` | Rechenzeit messen (`--paths`, `--json`) |
 | `schema` | JSON-Schema der Planungsdatei ausgeben |
@@ -245,7 +245,7 @@ Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlagebera
 ## @ref-mcp KI-Programme verbinden (MCP-Server)
 Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz
 
-`vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. In dieser Version liest der Server nur; er rechnet nicht und ändert keine Datei.
+`vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. In dieser Version liest und rechnet der Server; er ändert keine Datei.
 
 | Werkzeug | Zweck |
 |---|---|
@@ -256,6 +256,10 @@ Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude
 | `describe` | [Katalog für KIs](#ref-describe) |
 | `result_list`, `result_get` | Ergebnisse der Sitzung (Kurzfassung, Jahreswerte, Ereignisse, Bandbreite, Variationen) |
 | `library_list` | Zeitreihen der [Datenbibliothek](#ref-library) |
+| `simulation_run` | Planung simulieren wie die App (mit ihren Variationen); Kennzahlen und Ergebnis in Worten |
+| `evaluate` | [Experiment](#ref-experiment) auf der Planung: Änderungen, Variationen, Kennzahlen, Bedingungen, Ziel; darüber laufen Optimierung und Vergleich |
+
+Vor jeder Rechnung schätzt der Server die Dauer. Ab 60 Sekunden rechnet er nur, wenn die KI ausdrücklich bestätigt (`"confirm": true`); sie soll Sie vorher fragen. Lange Rechnungen melden den Fortschritt und lassen sich im KI-Programm abbrechen. Es läuft immer nur eine Rechnung aufs Mal.
 
 **Einrichten:** Im KI-Programm tragen Sie das Programm `vivaplan` mit vollem Pfad (siehe [Kommandozeile](#ref-cli)) und dem Argument `mcp` ein. In Claude Desktop und LM Studio sieht der Eintrag unter macOS so aus:
 

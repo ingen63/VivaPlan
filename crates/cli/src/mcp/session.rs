@@ -65,24 +65,10 @@ impl Session {
         }
     }
 
-    /// Data library for the engine; without one an empty path (only the built-in series).
-    pub(crate) fn library(&self) -> &Path {
-        self.data.library().unwrap_or(Path::new(""))
-    }
-
     /// #210/AK3: Every computation of the server goes through the dispatcher of the app (`engine::dispatch::call`), with
     /// the same arguments as the user interface; an error is the English text of the message.
     pub(crate) fn call(&self, cmd: &str, args: &Value, file: Option<&Path>) -> Result<Value, String> {
-        let fallback = file
-            .and_then(Path::parent)
-            .map(Path::to_path_buf)
-            .or_else(|| std::env::current_dir().ok())
-            .unwrap_or_default();
-        let mut args = args.clone();
-        if let (Some(f), Some(o)) = (file, args.as_object_mut()) {
-            o.insert("path".into(), json!(f.display().to_string()));
-        }
-        engine::dispatch::call(cmd, &args, self.library(), &fallback).map_err(|m| m.text().to_string())
+        dispatch(self.data.library(), cmd, args, file)
     }
 
     /// The plan as the app computes with it: with the limits and the affordability of the settings (#206).
@@ -114,7 +100,6 @@ impl Session {
     }
 
     /// Keeps a result of the plan `plan`; the computing tools (#211) store their results here.
-    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn add_result(&mut self, plan: &str, kind: &str, result: Value) -> String {
         self.computed += 1;
         let id = format!("r{}", self.computed);
@@ -155,4 +140,19 @@ impl Session {
         }
         r
     }
+}
+
+/// [`Session::call`] without a session, for the thread that computes (#211): `library` is the data library, `file` the
+/// project file of the plan (folder for relative paths).
+pub(crate) fn dispatch(library: Option<&Path>, cmd: &str, args: &Value, file: Option<&Path>) -> Result<Value, String> {
+    let fallback = file
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_default();
+    let mut args = args.clone();
+    if let (Some(f), Some(o)) = (file, args.as_object_mut()) {
+        o.insert("path".into(), json!(f.display().to_string()));
+    }
+    engine::dispatch::call(cmd, &args, library.unwrap_or(Path::new("")), &fallback).map_err(|m| m.text().to_string())
 }

@@ -1,16 +1,24 @@
 //! #210: MCP server `vivaplan mcp` over stdio: JSON-RPC 2.0, one message per line, written by hand without an SDK and
-//! without any network library (decision E4 in #77). Basis that only reads: sign-on, tool list and the reading tools;
-//! computing follows with #211, changing and saving with #212. Concept: `docs/VivaPlan in Claude (MCP).md`, sections 4–7.
+//! without any network library (decision E4 in #77). Sign-on, tool list, the reading tools (#210) and the computing
+//! tools (#211); changing and saving follow with #212. Concept: `docs/VivaPlan in Claude (MCP).md`, sections 4–8.
+//!
+//! #211: One computation at a time. The main thread keeps reading the input while a thread of its own computes; it
+//! reports the progress (`notifications/progress`, when the call gives a `progressToken`) and is cancelled by
+//! `notifications/cancelled` or by the end of the input.
 
+mod compute;
 mod privacy;
 mod session;
 mod tools;
 
 use std::io::{BufRead, Write};
+use std::sync::{Arc, Mutex, MutexGuard};
+use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 use serde_json::{json, Map, Value};
 
-use session::Session;
+use session::{dispatch, Session};
 
 /// Versions of the protocol the server speaks, newest first; another request gets the newest.
 pub(crate) const PROTOCOL_VERSIONS: &[&str] = &["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -52,22 +60,55 @@ pub(crate) fn cmd_mcp(args: &[String]) -> crate::R {
     let data = crate::app_data(args)?;
     let mut server = Server::new(Session::new(data, args.iter().any(|a| a == "--names")));
     let mut input = std::io::stdin().lock();
-    let mut out = std::io::stdout().lock();
     let mut line = Vec::new();
     loop {
         line.clear();
         if input.read_until(b'\n', &mut line)? == 0 {
+            server.shutdown();
             return Ok(());
         }
         if let Some(answer) = server.handle(&String::from_utf8_lossy(&line)) {
-            writeln!(out, "{answer}")?;
-            out.flush()?;
+            server.out.send(&answer);
         }
     }
 }
 
+/// #211: Progress notifications come about once a second (concept, section 8).
+const PROGRESS_EVERY: Duration = Duration::from_secs(1);
+
+/// The standard output, shared by the main thread and the thread of the computation; one message per line.
+#[derive(Clone)]
+pub(crate) struct Output(Arc<Mutex<Box<dyn Write + Send>>>);
+
+impl Output {
+    fn send(&self, line: &str) {
+        let mut out = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        // Without a reader of the output there is nobody left to answer; the end of the input ends the server.
+        let _ = writeln!(out, "{line}").and_then(|()| out.flush());
+    }
+}
+
+/// The running computation.
+struct Running {
+    /// Id of the request that started it.
+    request: Value,
+    /// Id of the computation in `engine::progress`.
+    job: u64,
+    /// Cancelled by the client: no answer to the request.
+    cancelled: bool,
+}
+
+type Slot = Arc<Mutex<Option<Running>>>;
+
+fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 pub(crate) struct Server {
-    session: Session,
+    session: Arc<Mutex<Session>>,
+    out: Output,
+    running: Slot,
+    worker: Option<JoinHandle<()>>,
 }
 
 fn response(id: Value, result: Value) -> String {
@@ -80,10 +121,20 @@ fn error(id: Value, code: i64, message: &str) -> String {
 
 impl Server {
     pub(crate) fn new(session: Session) -> Self {
-        Server { session }
+        Self::with_output(session, Box::new(std::io::stdout()))
     }
 
-    /// Answers one line; `None` for notifications, answers of the client and empty lines.
+    pub(crate) fn with_output(session: Session, out: Box<dyn Write + Send>) -> Self {
+        Server {
+            session: Arc::new(Mutex::new(session)),
+            out: Output(Arc::new(Mutex::new(out))),
+            running: Arc::new(Mutex::new(None)),
+            worker: None,
+        }
+    }
+
+    /// Answers one line; `None` for notifications, answers of the client, empty lines and computations (their thread
+    /// answers when it is done).
     pub(crate) fn handle(&mut self, line: &str) -> Option<String> {
         let line = line.trim();
         if line.is_empty() {
@@ -102,14 +153,18 @@ impl Server {
         };
         let id = obj.get("id").cloned();
         let Some(method) = obj.get("method").and_then(Value::as_str) else {
-            // An answer of the client (to a request the server never sends in #210) needs no answer.
+            // An answer of the client (to a request the server never sends) needs no answer.
             if obj.contains_key("result") || obj.contains_key("error") {
                 return None;
             }
             return Some(error(id.unwrap_or(Value::Null), INVALID_REQUEST, "Method missing"));
         };
+        let params = obj.get("params").cloned().unwrap_or(Value::Null);
         let Some(id) = id else {
-            // Notifications (initialized, cancelled, …) need no answer; nothing runs long in #210.
+            // Notifications need no answer; a cancellation stops the running computation (#211/AK2).
+            if method == "notifications/cancelled" {
+                self.cancel(&params["requestId"]);
+            }
             return None;
         };
         if !(id.is_string() || id.is_i64() || id.is_u64()) {
@@ -119,7 +174,6 @@ impl Server {
                 "The id must be a string or an integer",
             ));
         }
-        let params = obj.get("params").cloned().unwrap_or(Value::Null);
         Some(match method {
             "initialize" => response(id, initialize(&params)),
             "ping" => response(id, json!({})),
@@ -129,8 +183,13 @@ impl Server {
                     return Some(error(id, INVALID_PARAMS, "Tool name missing"));
                 };
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
-                match tools::call(&mut self.session, name, &args) {
-                    Some(outcome) => response(id, self.tool_result(outcome)),
+                if compute::NAMES.contains(&name) {
+                    let token = params["_meta"].get("progressToken").cloned();
+                    return self.start(id, name, &args, token);
+                }
+                let mut session = lock(&self.session);
+                match tools::call(&mut session, name, &args) {
+                    Some(outcome) => response(id, tool_result(&session, outcome)),
                     None => error(id, INVALID_PARAMS, &format!("Unknown tool {name}")),
                 }
             }
@@ -138,25 +197,139 @@ impl Server {
         })
     }
 
-    /// Text of a tool result: names and paths replaced (AK5), at most [`MAX_CHARS`] characters (AK5), with the
-    /// disclaimer after results (AK6).
-    fn tool_result(&self, outcome: tools::Outcome) -> Value {
-        let redactor = self.session.redactor();
-        match outcome {
-            Ok(mut answer) => {
-                redactor.value(&mut answer.data);
-                let tail = if answer.results {
-                    format!("\n\n{DISCLAIMER}")
-                } else {
-                    String::new()
-                };
-                let data = fit(answer.data, MAX_CHARS - tail.chars().count());
-                json!({ "content": [{ "type": "text", "text": format!("{data}{tail}") }], "isError": false })
+    /// #211: Starts a computing tool in a thread of its own; an immediate answer if the arguments are wrong or another
+    /// computation is running.
+    fn start(&mut self, id: Value, name: &str, args: &Value, token: Option<Value>) -> Option<String> {
+        let session = lock(&self.session);
+        let refuse = |text: String| Some(response(id.clone(), tool_result(&session, Err(text))));
+        let args = match tools::checked(name, args).expect("a listed tool") {
+            Ok(a) => a,
+            Err(e) => return refuse(e),
+        };
+        let mut running = lock(&self.running);
+        if let Some(r) = running.as_ref() {
+            return refuse(format!(
+                "Another computation is running (request {}); wait for its answer or cancel it. One computation at a time.",
+                r.request
+            ));
+        }
+        let prepared = match compute::prepare(&session, name, &args) {
+            Ok(p) => p,
+            Err(e) => return refuse(e),
+        };
+        let job = compute::next_job();
+        *running = Some(Running {
+            request: id.clone(),
+            job,
+            cancelled: false,
+        });
+        drop(running);
+        drop(session);
+        if let Some(previous) = self.worker.take() {
+            let _ = previous.join();
+        }
+        let (state, slot, out) = (self.session.clone(), self.running.clone(), self.out.clone());
+        self.worker = Some(std::thread::spawn(move || {
+            work(&state, &slot, &out, id, prepared, job, token)
+        }));
+        None
+    }
+
+    /// #211/AK2: Cancels the running computation if it belongs to the request `request`.
+    fn cancel(&self, request: &Value) {
+        if let Some(r) = lock(&self.running).as_mut().filter(|r| &r.request == request) {
+            r.cancelled = true;
+            let _ = dispatch(None, "cancel_job", &json!({ "jobId": r.job }), None);
+        }
+    }
+
+    /// End of the input: cancels the running computation and waits for its thread.
+    pub(crate) fn shutdown(&mut self) {
+        if let Some(r) = lock(&self.running).as_mut() {
+            r.cancelled = true;
+            let _ = dispatch(None, "cancel_job", &json!({ "jobId": r.job }), None);
+        }
+        if let Some(w) = self.worker.take() {
+            let _ = w.join();
+        }
+    }
+}
+
+/// #211: The thread of a computation: computes in a further thread, meanwhile reports the progress and passes on a
+/// cancellation, then answers the request (not after a cancellation).
+fn work(
+    session: &Mutex<Session>,
+    running: &Mutex<Option<Running>>,
+    out: &Output,
+    id: Value,
+    prepared: compute::Prepared,
+    job: u64,
+    token: Option<Value>,
+) {
+    let computed = std::thread::scope(|sc| {
+        let thread = sc.spawn(|| compute::compute(&prepared, job));
+        let mut next = Instant::now() + PROGRESS_EVERY;
+        let mut last: Option<u64> = None;
+        while !thread.is_finished() {
+            std::thread::sleep(Duration::from_millis(20));
+            if lock(running).as_ref().is_some_and(|r| r.cancelled) {
+                // Again on every round: a cancellation before the engine started the computation would be lost.
+                let _ = dispatch(None, "cancel_job", &json!({ "jobId": job }), None);
             }
-            Err(e) => {
-                let text: String = redactor.text(&e).chars().take(MAX_CHARS).collect();
-                json!({ "content": [{ "type": "text", "text": text }], "isError": true })
+            if Instant::now() < next {
+                continue;
             }
+            next += PROGRESS_EVERY;
+            let (Some(token), Ok(p)) = (&token, dispatch(None, "progress_get", &json!({ "jobId": job }), None)) else {
+                continue;
+            };
+            let done = p["done"].as_u64().unwrap_or(0);
+            if p["active"] != true || last.is_some_and(|l| done <= l) {
+                continue;
+            }
+            last = Some(done);
+            let total = p["total"].as_u64().unwrap_or(0);
+            let mut params =
+                json!({ "progressToken": token, "progress": done, "message": format!("{done} runs computed") });
+            if total >= done && total > 0 {
+                params["total"] = json!(total);
+                params["message"] = json!(format!("{done} of {total} runs computed"));
+            }
+            out.send(&json!({ "jsonrpc": "2.0", "method": "notifications/progress", "params": params }).to_string());
+        }
+        thread.join()
+    });
+    // Free before answering, so that the client can start the next computation as soon as it has the answer.
+    let cancelled = lock(running).take().is_some_and(|r| r.cancelled);
+    if cancelled {
+        return;
+    }
+    let mut session = lock(session);
+    let outcome = match computed {
+        Ok(v) => compute::finish(&mut session, prepared, v),
+        Err(_) => Err("The computation failed".into()),
+    };
+    out.send(&response(id, tool_result(&session, outcome)));
+}
+
+/// Text of a tool result: names and paths replaced (AK5), at most [`MAX_CHARS`] characters (AK5), with the disclaimer
+/// after results (AK6).
+fn tool_result(session: &Session, outcome: tools::Outcome) -> Value {
+    let redactor = session.redactor();
+    match outcome {
+        Ok(mut answer) => {
+            redactor.value(&mut answer.data);
+            let tail = if answer.results {
+                format!("\n\n{DISCLAIMER}")
+            } else {
+                String::new()
+            };
+            let data = fit(answer.data, MAX_CHARS - tail.chars().count());
+            json!({ "content": [{ "type": "text", "text": format!("{data}{tail}") }], "isError": false })
+        }
+        Err(e) => {
+            let text: String = redactor.text(&e).chars().take(MAX_CHARS).collect();
+            json!({ "content": [{ "type": "text", "text": text }], "isError": true })
         }
     }
 }
@@ -392,6 +565,7 @@ mod tests {
             include_str!("tools.rs"),
             include_str!("session.rs"),
             include_str!("privacy.rs"),
+            include_str!("compute.rs"),
         ] {
             let code = src.split("#[cfg(test)]").next().unwrap();
             for word in ["std::net", "TcpStream", "TcpListener", "UdpSocket"] {

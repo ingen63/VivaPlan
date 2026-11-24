@@ -233,5 +233,70 @@
     },
     "name": "library_list",
     "title": "Data library"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Simulates an open plan as the desktop app does: according to its source of returns (fixed, historical, rolling, bootstrap, parametric) and with the variations stored in the plan. Returns the id of the result (r1, …), the key figures, the result in words and the estimate of the duration. First the duration is estimated; from 60 s nothing is computed without confirm: true (the answer then gives the estimate). Long computations report progress and can be cancelled. Details afterwards with result_get (yearly, events, bands, variations). To compare changes or search for better values use evaluate.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "confirm": {
+          "description": "Compute even if the estimate is 60 s or more. Set it only after the user agreed to the duration.",
+          "type": "boolean"
+        },
+        "paths": {
+          "description": "Number of paths for this run only (sources bootstrap and parametric).",
+          "type": "integer"
+        },
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "type": "object"
+    },
+    "name": "simulation_run",
+    "title": "Simulate a plan"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Computes an experiment on an open plan in one call: changes by field path (set), variations as a grid or a pattern search (vary), metrics, constraints and an objective; the ranking of the variants comes with values on independent confirmation paths. This is the way to optimize and to compare variants. The format of the experiment: describe with section experiment. The plan itself stays unchanged. First the duration is estimated; from 60 s nothing is computed without confirm: true (status needsConfirmation with the estimate). Long computations report progress and can be cancelled.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "confirm": {
+          "description": "Compute even if the estimate is 60 s or more. Set it only after the user agreed to the duration.",
+          "type": "boolean"
+        },
+        "experiment": {
+          "description": "The experiment (set, vary, metrics, constraints, objective, search, budget).",
+          "type": "object"
+        },
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan",
+        "experiment"
+      ],
+      "type": "object"
+    },
+    "name": "evaluate",
+    "title": "Experiment on a plan"
   }
 ]

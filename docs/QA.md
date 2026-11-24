@@ -137,8 +137,9 @@ Werkzeuge aufrufen kann (zum Beispiel Qwen 3 oder Llama 3.1 Instruct, in LM Stud
 
 1. In LM Studio unter «Program → Install → Edit mcp.json» den Eintrag aus der Hilfe (Referenz, «KI-Programme
    verbinden») eintragen, mit dem vollen Pfad des Programms und `"args": ["mcp"]`; speichern.
-2. Erwartet: LM Studio zeigt den Server `vivaplan` mit acht Werkzeugen (`describe`, `plan_open`, `plan_get`,
-   `plan_schema`, `plan_validate`, `result_list`, `result_get`, `library_list`), ohne Fehlermeldung.
+2. Erwartet: LM Studio zeigt den Server `vivaplan` mit zehn Werkzeugen (`describe`, `plan_open`, `plan_get`,
+   `plan_schema`, `plan_validate`, `result_list`, `result_get`, `library_list`, `simulation_run`, `evaluate`), ohne
+   Fehlermeldung.
 3. Beispielplanung in der App als Datei speichern (zum Beispiel `~/Documents/beispiel.vplan`), in LM Studio ein neues
    Gespräch beginnen und fragen: «Öffne ~/Documents/beispiel.vplan mit VivaPlan und sag mir, ob die Planung Fehler
    hat.» (bei Bedarf den vollen Pfad nennen).

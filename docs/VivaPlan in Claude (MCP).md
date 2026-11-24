@@ -138,7 +138,10 @@ Auflösung des Datenordners pro Betriebssystem kommt in den Rechenkern oder die 
 (intern ein Experiment ohne Variation). #210 setzt die lesenden Werkzeuge um (`plan_open`, `plan_get`, `plan_schema`,
 `plan_validate`, `result_get`, `result_list`, `library_list`, `describe`), #211 die rechnenden, #212 Ändern und
 Speichern. Die Daten stehen als kompaktes JSON im Text (ohne `structuredContent`); Namen werden ersetzt wie in
-Abschnitt 6. Die Tabelle unten ist der ursprüngliche Entwurf.
+Abschnitt 6. #211: `simulation_run` (Planung wie in der App, Ergebnis für `result_get`) und `evaluate` (Experiment)
+schätzen die Dauer selbst; ab 60 s nur mit `"confirm": true` (statt `simulation_estimate` und `confirm_long`).
+Fortschritt über `notifications/progress`, Abbruch über `notifications/cancelled`. Die Tabelle unten ist der
+ursprüngliche Entwurf.
 
 Jede geöffnete Planung bekommt eine Kennung (`plan`, zum Beispiel `p1`), jedes Ergebnis eine Kennung (`result`, zum
 Beispiel `r3`). Claude schickt nie die ganze Planung; es arbeitet mit Kennungen und Feldpfaden. Alle Werkzeuge liefern

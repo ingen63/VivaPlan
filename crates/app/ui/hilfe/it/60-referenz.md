@@ -67,7 +67,7 @@ Il motore di calcolo è disponibile anche nel terminale (programma `vivaplan`):
 | `diff <a> <b>` | elencare le differenze tra due pianificazioni (`--json`) |
 | `optimize <pianificazione>` | ottimizzare la strategia, vedi [Riga di comando](#o-cli) |
 | `describe [<sezione>]` | Catalogo per le IA: cosa si può modificare, variare e misurare (`--plan`, `--json`), vedi [Catalogo per le IA](#ref-describe) |
-| `mcp` | Server MCP per i programmi di IA, solo lettura (`--data-dir`, `--library`, `--names`), vedi [Collegare programmi di IA](#ref-mcp) |
+| `mcp` | Server MCP per i programmi di IA, legge e calcola (`--data-dir`, `--library`, `--names`), vedi [Collegare programmi di IA](#ref-mcp) |
 | `evaluate <pianificazione> <esperimento.json>` | Calcolare un esperimento (`--json`, `--yes`), vedi [Esperimento](#ref-experiment) |
 | `bench <pianificazione>` | misurare il tempo di calcolo (`--paths`, `--json`) |
 | `schema` | emettere lo schema JSON del file di pianificazione |
@@ -245,7 +245,7 @@ I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o
 ## @ref-mcp Collegare programmi di IA (server MCP)
 Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati
 
-`vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. In questa versione il server legge soltanto; non calcola e non modifica alcun file.
+`vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. In questa versione il server legge e calcola; non modifica alcun file.
 
 | Strumento | Scopo |
 |---|---|
@@ -256,6 +256,10 @@ Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Cla
 | `describe` | [Catalogo per le IA](#ref-describe) |
 | `result_list`, `result_get` | Risultati della sessione (sintesi, valori annuali, eventi, fascia, variazioni) |
 | `library_list` | Serie temporali della [biblioteca di dati](#ref-library) |
+| `simulation_run` | Simulare la pianificazione come l’app (con le sue variazioni); indicatori e risultato a parole |
+| `evaluate` | [Esperimento](#ref-experiment) sulla pianificazione: modifiche, variazioni, indicatori, condizioni, obiettivo; l’ottimizzazione e il confronto passano da qui |
+
+Prima di ogni calcolo il server ne stima la durata. Da 60 secondi calcola solo se l’IA lo conferma espressamente (`"confirm": true`); deve prima chiederlo a voi. I calcoli lunghi segnalano l’avanzamento e si possono interrompere nel programma di IA. Viene eseguito un solo calcolo alla volta.
 
 **Configurare:** nel programma di IA inserite il programma `vivaplan` con il percorso completo (vedi [riga di comando](#ref-cli)) e l’argomento `mcp`. In Claude Desktop e LM Studio la voce si presenta così su macOS:
 

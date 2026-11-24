@@ -355,3 +355,331 @@ fn issue_210_ak6_privacy_note_and_disclaimer() {
     assert!(t.ends_with("Model calculation without guarantee. No tax or investment advice. Taxes are estimates."));
     s.close();
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// #211: Computing tools
+
+const DISCLAIMER: &str = "Model calculation without guarantee. No tax or investment advice. Taxes are estimates.";
+
+/// The example plan with the source of returns `source` and `paths` paths, written as a project file into `dir`.
+fn plan_file(dir: &Path, name: &str, source: &str, paths: u64, sweeps: Value) -> (PathBuf, Value) {
+    let mut plan = engine::api::example_plan();
+    plan["returns"]["source"] = json!(source);
+    plan["returns"]["bootstrap"]["paths"] = json!(paths);
+    plan["scenarios"]["sweeps"] = sweeps;
+    let file = dir.join(name);
+    std::fs::write(&file, serde_json::to_string_pretty(&plan).unwrap()).unwrap();
+    (file, plan)
+}
+
+/// A plan whose simulation takes far longer than 60 s, even in a release build (about 40 million runs).
+fn long_plan(dir: &Path) -> PathBuf {
+    let sweeps = json!([
+        { "param": "flows.spendingFactor", "from": 0.5, "to": 1.5, "step": 0.01 },
+        { "param": "wealth.stockShare", "from": 0.0, "to": 1.0, "step": 0.05 },
+    ]);
+    plan_file(dir, "long.vplan", "bootstrap", 20_000, sweeps).0
+}
+
+/// An experiment that takes far longer than 60 s, even in a release build (about 10 million runs).
+fn long_experiment() -> Value {
+    json!({
+        "set": { "returns.source": "parametric" },
+        "budget": { "paths": 5000 },
+        "metrics": [{ "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } }],
+        "vary": [
+            { "path": "flows.spendingFactor", "range": [0.5, 1.5, 0.01] },
+            { "path": "pension.pk.lumpsum", "range": [0.0, 1.0, 0.05] },
+        ],
+    })
+}
+
+/// The example «lumpSum» of the catalog: three variants side by side, small.
+fn small_experiment() -> Value {
+    json!({
+        "set": { "returns.source": "parametric" },
+        "budget": { "paths": 300 },
+        "metrics": [
+            { "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } },
+            { "name": "end10", "quantity": "total", "real": true, "reduce": "atEnd", "aggregate": { "kind": "quantile", "q": 0.1 } },
+        ],
+        "vary": [{ "path": "pension.pk.lumpsum", "values": [0, 0.5, 1] }],
+    })
+}
+
+impl Server {
+    /// Starts a tool call with a progress token without waiting for the answer; the id of the request.
+    fn start_call(&mut self, name: &str, args: Value, token: &str) -> u64 {
+        self.next += 1;
+        let id = self.next;
+        let params = json!({ "name": name, "arguments": args, "_meta": { "progressToken": token } });
+        self.send(&json!({ "jsonrpc": "2.0", "id": id, "method": "tools/call", "params": params }).to_string());
+        id
+    }
+
+    /// Reads until the first message that is not a progress notification; the notifications read on the way.
+    fn read_past_progress(&mut self) -> (Vec<Value>, Value) {
+        let mut progress = vec![];
+        loop {
+            let m = self.read();
+            if m["method"] == "notifications/progress" {
+                progress.push(m);
+            } else {
+                return (progress, m);
+            }
+        }
+    }
+
+    fn cancel(&mut self, id: u64) {
+        let msg = json!({ "jsonrpc": "2.0", "method": "notifications/cancelled", "params": { "requestId": id, "reason": "test" } });
+        self.send(&msg.to_string());
+    }
+}
+
+/// #211/AK1: simulation_run computes the plan as the app does and keeps the result for result_get; evaluate computes an
+/// experiment; both answer with the disclaimer, errors of the input are tool errors.
+// slow: starts the program and computes over stdio
+#[test]
+fn issue_211_ak1_simulation_run_and_evaluate() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (file, _) = plan_file(tmp.path(), "plan.vplan", "bootstrap", 300, json!([]));
+    let mut s = Server::start(tmp.path(), &[]);
+    s.initialize();
+    let (t, _) = s.tool("plan_open", json!({ "path": file.to_str().unwrap() }));
+    assert_eq!(data(&t)["plan"], "p1");
+    let (t, error) = s.tool("simulation_run", json!({ "plan": "p1", "paths": 200 }));
+    assert!(!error, "{t}");
+    assert!(t.ends_with(DISCLAIMER), "{t}");
+    let r = data(&t);
+    assert_eq!(r["result"], "r1");
+    assert_eq!(r["digest"]["runs"], 200);
+    assert!(r["verdict"].as_str().unwrap().contains("runs"), "{r}");
+    assert_eq!(r["estimate"]["runs"], 200);
+    assert!(r["estimate"]["seconds"].as_f64().unwrap() < 60.0);
+    let (t, error) = s.tool("result_get", json!({ "result": "r1", "view": "bands" }));
+    assert!(!error, "{t}");
+    assert!(!data(&t)["rows"].as_array().unwrap().is_empty());
+
+    let (t, error) = s.tool("evaluate", json!({ "plan": "p1", "experiment": small_experiment() }));
+    assert!(!error, "{t}");
+    assert!(t.ends_with(DISCLAIMER));
+    let e = data(&t);
+    assert_eq!((e["result"].as_str(), e["status"].as_str()), (Some("r2"), Some("done")));
+    assert_eq!(e["experiment"]["listed"].as_array().unwrap().len(), 3);
+    let (t, _) = s.tool("result_list", json!({}));
+    let list = data(&t)["results"].clone();
+    assert_eq!(list[0]["tool"], "simulation_run");
+    assert_eq!(
+        (list[1]["tool"].as_str(), list[1]["variants"].as_u64()),
+        (Some("evaluate"), Some(3))
+    );
+    let (t, error) = s.tool("result_get", json!({ "result": "r2", "view": "yearly" }));
+    assert!(error && t.contains("simulation_run"), "{t}");
+
+    // Errors of the input come back as tool errors the AI can correct.
+    let (t, error) = s.tool(
+        "evaluate",
+        json!({ "plan": "p1", "experiment": { "vary": [{ "path": "no.such.field", "values": [1] }] } }),
+    );
+    assert!(error, "{t}");
+    let (t, error) = s.tool("evaluate", json!({ "plan": "p1", "experiment": [] }));
+    assert!(error && t.contains("type object"), "{t}");
+    let (t, error) = s.tool("simulation_run", json!({ "plan": "p9" }));
+    assert!(error && t.contains("Unknown plan p9"), "{t}");
+    let (t, _) = s.tool("plan_open", json!({ "example": true }));
+    assert_eq!(data(&t)["plan"], "p2");
+    let (t, error) = s.tool("simulation_run", json!({ "plan": "p2", "paths": 100 }));
+    assert!(error && t.contains("bootstrap and parametric"), "{t}");
+    let (t, error) = s.tool("simulation_run", json!({ "plan": "p2" }));
+    assert!(!error, "{t}");
+    assert!(data(&t)["verdict"].as_str().unwrap().starts_with("The wealth"), "{t}");
+    s.close();
+}
+
+/// #211/AK2: A long simulation reports its progress about once a second; while it runs the server answers other
+/// requests and refuses a second computation; the cancellation stops it without an answer to the request.
+// slow: starts the program and computes over stdio
+#[test]
+fn issue_211_ak2_progress_and_cancel_of_simulation_run() {
+    let tmp = tempfile::tempdir().unwrap();
+    let file = long_plan(tmp.path());
+    let mut s = Server::start(tmp.path(), &[]);
+    s.initialize();
+    s.tool("plan_open", json!({ "path": file.to_str().unwrap() }));
+    let id = s.start_call("simulation_run", json!({ "plan": "p1", "confirm": true }), "sim");
+    // Two notifications: the progress goes up and names the token.
+    let (mut seen, mut last) = (vec![], -1.0);
+    while seen.len() < 2 {
+        let m = s.read();
+        assert_eq!(m["method"], "notifications/progress", "{m}");
+        assert_eq!(m["params"]["progressToken"], "sim");
+        let p = m["params"]["progress"].as_f64().unwrap();
+        assert!(p > last, "{m}");
+        last = p;
+        seen.push(m);
+    }
+    assert!(seen[1]["params"]["total"].as_f64().unwrap() >= last);
+    // Meanwhile: reading tools answer, a second computation is refused.
+    s.next += 1;
+    let ping = s.next;
+    s.send(&json!({ "jsonrpc": "2.0", "id": ping, "method": "ping" }).to_string());
+    let (_, m) = s.read_past_progress();
+    assert_eq!(m["id"], ping);
+    let second = s.start_call("simulation_run", json!({ "plan": "p1" }), "second");
+    let (_, m) = s.read_past_progress();
+    assert_eq!(m["id"], second);
+    assert_eq!(m["result"]["isError"], true);
+    assert!(m["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("Another computation is running"));
+    // Cancel: no answer to the request, the next computation starts soon.
+    let t0 = std::time::Instant::now();
+    s.cancel(id);
+    loop {
+        let small = s.start_call("result_list", json!({}), "x");
+        let (_, m) = s.read_past_progress();
+        assert_eq!(m["id"], small, "no answer to the cancelled request: {m}");
+        let next = s.start_call(
+            "simulation_run",
+            json!({ "plan": "p1", "paths": 10, "confirm": true }),
+            "next",
+        );
+        let (_, m) = s.read_past_progress();
+        assert_eq!(m["id"], next, "{m}");
+        if m["result"]["isError"] != true {
+            break;
+        }
+        assert!(t0.elapsed().as_secs() < 20, "the cancelled computation still runs: {m}");
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    s.close();
+}
+
+/// #211/AK2: evaluate reports its progress and is cancelled in the middle; the end of the input cancels a running
+/// computation and ends the server.
+// slow: starts the program and computes over stdio
+#[test]
+fn issue_211_ak2_progress_and_cancel_of_evaluate() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut s = Server::start(tmp.path(), &[]);
+    s.initialize();
+    s.tool("plan_open", json!({ "example": true }));
+    let args = json!({ "plan": "p1", "experiment": long_experiment(), "confirm": true });
+    let id = s.start_call("evaluate", args.clone(), 7.to_string().as_str());
+    let m = s.read();
+    assert_eq!(m["method"], "notifications/progress", "{m}");
+    assert_eq!(m["params"]["progressToken"], "7");
+    assert!(m["params"]["total"].as_f64().unwrap() > 1e6, "{m}");
+    s.cancel(id);
+    let (t, error) = loop {
+        let next = s.start_call(
+            "evaluate",
+            json!({ "plan": "p1", "experiment": small_experiment() }),
+            "n",
+        );
+        let (_, m) = s.read_past_progress();
+        assert_eq!(m["id"], next, "no answer to the cancelled request: {m}");
+        let text = m["result"]["content"][0]["text"].as_str().unwrap().to_string();
+        if !text.contains("Another computation") {
+            break (text, m["result"]["isError"] == true);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    };
+    assert!(!error, "{t}");
+    // The end of the input while computing: the server cancels and ends at once.
+    s.start_call("evaluate", args, "end");
+    s.read();
+    let t0 = std::time::Instant::now();
+    drop(s.input);
+    let status = s.child.wait().unwrap();
+    assert!(status.success() && t0.elapsed().as_secs() < 20, "{status}");
+}
+
+/// #211/AK3: From 60 s of estimated duration nothing is computed without confirm: true; the answer gives the estimate.
+// slow: starts the program and measures the plan
+#[test]
+fn issue_211_ak3_confirmation_from_60_seconds() {
+    let tmp = tempfile::tempdir().unwrap();
+    let file = long_plan(tmp.path());
+    let mut s = Server::start(tmp.path(), &[]);
+    s.initialize();
+    s.tool("plan_open", json!({ "path": file.to_str().unwrap() }));
+    let t0 = std::time::Instant::now();
+    let (t, error) = s.tool("simulation_run", json!({ "plan": "p1" }));
+    assert!(!error, "{t}");
+    let a = data(&t);
+    assert_eq!(a["status"], "needsConfirmation");
+    assert!(a["estimate"]["seconds"].as_f64().unwrap() >= 60.0, "{a}");
+    assert_eq!(a["estimate"]["runs"], 20_000 * 101 * 21);
+    assert!(a["next"].as_str().unwrap().contains("confirm: true"));
+    assert!(!t.ends_with(DISCLAIMER), "no result: {t}");
+    let (t, error) = s.tool("evaluate", json!({ "plan": "p1", "experiment": long_experiment() }));
+    assert!(!error, "{t}");
+    let a = data(&t);
+    assert_eq!(a["status"], "needsConfirmation");
+    assert!(a["estimate"]["seconds"].as_f64().unwrap() >= 60.0, "{a}");
+    assert!(a["message"].as_str().unwrap().contains("confirm"), "{a}");
+    assert!(t0.elapsed().as_secs() < 30, "nothing computed");
+    let (t, _) = s.tool("result_list", json!({}));
+    assert_eq!(data(&t)["results"], json!([]));
+    s.close();
+}
+
+/// Equal up to the last digits of a number (reading JSON text rounds in the last place).
+fn assert_close(a: &Value, b: &Value, at: &str) {
+    match (a, b) {
+        (Value::Number(x), Value::Number(y)) => {
+            let (x, y) = (x.as_f64().unwrap(), y.as_f64().unwrap());
+            assert!((x - y).abs() <= 1e-12 * x.abs().max(y.abs()), "{at}: {x} != {y}");
+        }
+        (Value::Array(x), Value::Array(y)) => {
+            assert_eq!(x.len(), y.len(), "{at}");
+            for (i, (x, y)) in x.iter().zip(y).enumerate() {
+                assert_close(x, y, &format!("{at}.{i}"));
+            }
+        }
+        (Value::Object(x), Value::Object(y)) => {
+            assert_eq!(x.keys().collect::<Vec<_>>(), y.keys().collect::<Vec<_>>(), "{at}");
+            for (k, x) in x {
+                assert_close(x, &y[k], &format!("{at}.{k}"));
+            }
+        }
+        _ => assert_eq!(a, b, "{at}"),
+    }
+}
+
+/// #211/AK4: The key figures of simulation_run are those of api::run, the ranking of evaluate that of api::evaluate.
+// slow: computes over stdio and in the test
+#[test]
+fn issue_211_ak4_key_figures_as_api_run_and_evaluate() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (file, mut plan) = plan_file(tmp.path(), "plan.vplan", "bootstrap", 500, json!([]));
+    let mut s = Server::start(tmp.path(), &[]);
+    s.initialize();
+    s.tool("plan_open", json!({ "path": file.to_str().unwrap() }));
+    let (t, error) = s.tool("simulation_run", json!({ "plan": "p1" }));
+    assert!(!error, "{t}");
+    let answer = data(&t);
+    let (t, error) = s.tool("evaluate", json!({ "plan": "p1", "experiment": small_experiment() }));
+    assert!(!error, "{t}");
+    let experiment = data(&t);
+    s.close();
+
+    // The same computation as the app: plan with the (empty) settings, library of the data folder.
+    engine::appdata::apply(&mut plan, &serde_json::Map::new());
+    let library = app_data_in(tmp.path()).join("Zeitreihen");
+    let library = library.is_dir().then_some(library.as_path());
+    let run = engine::api::run(&plan, tmp.path(), library);
+    let digest = engine::api::digest(&serde_json::to_value(&run).unwrap()).unwrap();
+    assert_close(&answer["digest"], &serde_json::to_value(digest).unwrap(), "digest");
+    assert_eq!(answer["digest"]["runs"], 500);
+    let direct = engine::api::evaluate(&plan, &small_experiment(), tmp.path(), library);
+    let direct = serde_json::to_value(direct).unwrap();
+    assert_close(
+        &experiment["experiment"]["listed"],
+        &direct["result"]["listed"],
+        "listed",
+    );
+    assert_eq!(experiment["experiment"]["paths"], direct["result"]["paths"]);
+}

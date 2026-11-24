@@ -43,8 +43,12 @@ takes another one. If the user does not name a plan file, ask for it; plans are 
 
 If the AI program connects to VivaPlan as an MCP server (`vivaplan mcp`, set up by the user), use its tools instead
 of the command line: `plan_open` (path of a `.vplan`), `plan_get`, `plan_validate`, `plan_schema`, `describe`,
-`library_list`, `result_list`, `result_get`. The server only reads; it replaces names with neutral ones (Person 1) and
-shows only file names. The rules above apply in the same way.
+`library_list`, `result_list`, `result_get`, and to compute `simulation_run` (the plan as it is, like `run`) and
+`evaluate` (an experiment, like `vivaplan evaluate`; the way to optimize and compare). From 60 s of estimated duration
+the answer is `needsConfirmation` with the estimate: tell the user and call again with `"confirm": true` only after
+they agree. Long computations report progress and can be cancelled; one computation runs at a time. The server changes
+no file; it replaces names with neutral ones (Person 1) and shows only file names. The rules above apply in the same
+way.
 
 ## Workflow
 

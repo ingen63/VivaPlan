@@ -419,9 +419,13 @@ wo die Skill liegt und wie man sie einrichtet.
 
 MCP-Server (#210): `vivaplan mcp [--data-dir <ordner>] [--library <ordner>] [--names]` verbindet VivaPlan mit
 KI-Programmen, die das Model Context Protocol unterstützen (Claude Desktop, Claude Code, ChatGPT Desktop, LM Studio und
-andere). Das Programm spricht über Standardein- und -ausgabe, öffnet keine Netzwerkverbindung und liest in dieser
-Fassung nur: `plan_open`, `plan_get`, `plan_schema`, `plan_validate`, `describe`, `result_list`, `result_get`,
-`library_list`. Jede Rechnung geht über denselben Befehlsverteiler wie die App; Grenzen und Datenbibliothek kommen aus
+andere). Das Programm spricht über Standardein- und -ausgabe, öffnet keine Netzwerkverbindung und ändert in dieser
+Fassung keine Datei. Lesend: `plan_open`, `plan_get`, `plan_schema`, `plan_validate`, `describe`, `result_list`,
+`result_get`, `library_list`; rechnend (#211): `simulation_run` (die Planung wie in der App, mit ihren Variationen) und
+`evaluate` (Experiment wie `vivaplan evaluate`; darüber laufen Optimierung und Vergleich). Vor jeder Rechnung schätzt
+der Server die Dauer; ab 60 Sekunden rechnet er nur mit `"confirm": true`. Lange Rechnungen melden den Fortschritt
+(`notifications/progress`) und lassen sich abbrechen (`notifications/cancelled`); es läuft eine Rechnung aufs Mal.
+Jede Rechnung geht über denselben Befehlsverteiler wie die App; Grenzen und Datenbibliothek kommen aus
 dem Datenordner der App. Namen von Personen und frei eingegebene Bezeichnungen ersetzt der Server durch neutrale
 («Person 1»), ausser mit `--names`, und nennt nur Dateinamen; keine Antwort ist länger als 20'000 Zeichen. Das erste
 Öffnen einer Planung weist darauf hin, dass die abgefragten Daten Teil des Gesprächs mit der KI werden und an deren

@@ -67,7 +67,7 @@ The engine is also available in the terminal (program `vivaplan`):
 | `diff <a> <b>` | List the differences between two plans (`--json`) |
 | `optimize <plan>` | Optimize the strategy, see [Command line](#o-cli) |
 | `describe [<section>]` | Catalog for AIs: what can be changed, varied and measured (`--plan`, `--json`), see [Catalog for AIs](#ref-describe) |
-| `mcp` | MCP server for AI programs, reading only (`--data-dir`, `--library`, `--names`), see [Connecting AI programs](#ref-mcp) |
+| `mcp` | MCP server for AI programs, reads and computes (`--data-dir`, `--library`, `--names`), see [Connecting AI programs](#ref-mcp) |
 | `evaluate <plan> <experiment.json>` | Compute an experiment (`--json`, `--yes`), see [Experiment](#ref-experiment) |
 | `bench <plan>` | Measure the calculation time (`--paths`, `--json`) |
 | `schema` | Output the JSON schema of the plan file |
@@ -245,7 +245,7 @@ The results are model calculations without guarantee, no tax or investment advic
 ## @ref-mcp Connecting AI programs (MCP server)
 Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy
 
-`vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. In this version the server only reads; it does not compute and changes no file.
+`vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. In this version the server reads and computes; it changes no file.
 
 | Tool | Purpose |
 |---|---|
@@ -256,6 +256,10 @@ Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude D
 | `describe` | [Catalog for AIs](#ref-describe) |
 | `result_list`, `result_get` | Results of the session (summary, yearly values, events, bands, variations) |
 | `library_list` | Time series of the [data library](#ref-library) |
+| `simulation_run` | Simulate the plan as the app does (with its variations); key figures and the result in words |
+| `evaluate` | [Experiment](#ref-experiment) on the plan: changes, variations, metrics, constraints, objective; optimization and comparison run through it |
+
+Before every computation the server estimates its duration. From 60 seconds it computes only if the AI confirms explicitly (`"confirm": true`); it should ask you first. Long computations report their progress and can be cancelled in the AI program. Only one computation runs at a time.
 
 **Set up:** In the AI program, enter the program `vivaplan` with its full path (see [command line](#ref-cli)) and the argument `mcp`. In Claude Desktop and LM Studio the entry looks like this on macOS:
 
