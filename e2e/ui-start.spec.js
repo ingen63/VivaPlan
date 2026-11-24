@@ -9,7 +9,8 @@ test.describe("Start and navigation", () => {
   test("page starts without errors, preview and check appear", async ({ page }) => {
     const errors = await open(page);
     await expect(page).toHaveTitle("VivaPlan");
-    await expect(page.locator("#nav a")).toHaveCount(SECTIONS.length);
+    // #246/AK2: only the section links count, not the support line in the navigation foot (#237)
+    await expect(page.locator("#nav a[data-sec]")).toHaveCount(SECTIONS.length);
     await expect(page.locator("#kpis .kpi")).toHaveCount(4);
     await expect(page.locator("#val li").first()).toBeVisible();
     await expect(page.locator("#timeline svg .ms").first()).toBeAttached();
@@ -87,7 +88,7 @@ test.describe("Start and navigation", () => {
     await expect(page.locator("#main")).toContainText(`Bestände per Simulationsstart (${s1})`);
     await expect(page.locator("#main .lead")).toHaveText("Bestände per Simulationsstart und Aufteilung des Portfolios.");
     await page.evaluate(() => { state.milestones[0].date = "2027-03"; });
-    await page.locator("#nav a").nth(2).click();
+    await page.locator("#nav a[data-sec]").nth(2).click();
     await expect(page.locator("#main")).toContainText("Altersguthaben per Simulationsstart (03.2027)");
     await page.evaluate(() => ACTIONS["partner-add"]());
     await expect(page.locator("#main label.field span", { hasText: "Altersguthaben per Simulationsstart (03.2027)" })).toHaveCount(2);
@@ -97,7 +98,7 @@ test.describe("Start and navigation", () => {
     await nav(page, "Säule 3a");
     await expect(page.locator("#main")).toContainText("Guthaben per Simulationsstart (03.2027)");
     for (let i = 0; i < SECTIONS.length; i++) {
-      await page.locator("#nav a").nth(i).click();
+      await page.locator("#nav a[data-sec]").nth(i).click();
       const t = await page.locator("#main").innerText();
       expect(t, `Abschnitt ${i}`).not.toMatch(/Bestände heute|Aktuelle Bestände|Guthaben heute|Marktwert heute|Altersguthaben heute/);
     }
@@ -445,7 +446,7 @@ test.describe("Start and navigation", () => {
   test("all sections reachable by click and by keyboard", async ({ page }) => {
     const errors = await open(page);
     for (let i = 0; i < SECTIONS.length; i++) {
-      await page.locator("#nav a").nth(i).click();
+      await page.locator("#nav a[data-sec]").nth(i).click();
       await expect(page.locator("#main h2")).toContainText(SECTIONS[i].split(" ")[0]);
       await expect(page.locator("#nav a.active")).toContainText(SECTIONS[i]);
     }

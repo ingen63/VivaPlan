@@ -737,7 +737,7 @@ test.describe("Display", () => {
       await page.setViewportSize({ width, height });
       const errors = await open(page);
       for (const i of [0, 3, 4, 8]) {
-        await page.locator("#nav a").nth(i).click();
+        await page.locator("#nav a[data-sec]").nth(i).click();
         const over = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
           wide: [...document.querySelectorAll("header *")].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1).map(e => e.textContent.trim()) }));
         expect(over.scroll, `horizontales Scrollen im Abschnitt ${SECTIONS[i]}; zu breit: ${over.wide.join(", ")}`).toBeLessThanOrEqual(1);
