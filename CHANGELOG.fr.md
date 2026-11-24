@@ -17,6 +17,7 @@ Quatrième préversion de 1.0 ; elle contient aussi toutes les modifications de 
 
 ### Nouveautés, modifications, corrections
 
+- **Fortune imposable dans la carte «Déductions de la fortune» (#249) :** Remarque avec la fortune imposable estimée de la première année fiscale et la part des immeubles, avertissement si une valeur fiscale manque ; les détails la composent par année fiscale comme la déclaration d'impôt et proposent le champ «Valeur fiscale» par immeuble.
 - **Aide à la saisie tirée de la taxation (#251) :** Nouveau champ «dont pilier 3a selon la taxation», afin que le pilier 3a ne soit pas déduit deux fois avec «Déduire les versements au pilier 3a» ; une remarque s'affiche tant que le champ est vide.
 - **Comparer les stratégies (#196, #197, #200, #201, #205) :** Les stratégies se comparent sans optimisation, les résultats de l'optimisation s'enregistrent et se rouvrent ; option « Ne jamais vendre les immeubles » ; indication lorsque la limite inférieure détermine les dépenses ; tableau des résultats sans défilement horizontal.
 - **Thème sombre (#220, #235) :** Réglage « Apparence » avec thème clair et sombre ; meilleur contraste dans le menu.

@@ -17,6 +17,7 @@ Quarta versione preliminare di 1.0; contiene anche tutte le modifiche della 1.0.
 
 ### Novità, modifiche, correzioni
 
+- **Sostanza imponibile nella scheda «Deduzioni dalla sostanza» (#249):** Avvertenza con la sostanza imponibile stimata del primo anno fiscale e la quota degli immobili, avviso se manca un valore fiscale; i dettagli la compongono per anno fiscale come la dichiarazione d'imposta e offrono il campo «Valore fiscale» per immobile.
 - **Aiuto all'inserimento dalla tassazione (#251):** Nuovo campo «di cui pilastro 3a secondo la tassazione», affinché il pilastro 3a non venga dedotto due volte con «Dedurre i versamenti nel pilastro 3a»; un'avvertenza appare finché il campo è vuoto.
 - **Confrontare strategie (#196, #197, #200, #201, #205):** Le strategie si confrontano senza ottimizzazione, i risultati dell'ottimizzazione si salvano e si riaprono; opzione «Non vendere mai gli immobili»; indicazione quando il limite inferiore determina le spese; tabella dei risultati senza scorrimento orizzontale.
 - **Tema scuro (#220, #235):** Impostazione «Aspetto» con tema chiaro e scuro; contrasto migliore nel menu.

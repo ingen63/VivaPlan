@@ -17,6 +17,7 @@ Fourth pre-release of 1.0; it also contains all changes of the unpublished 1.0.0
 
 ### New, changed, fixed
 
+- **Taxable wealth in the card «Deductions from wealth» (#249):** A note with the estimated taxable wealth of the first tax year and the share of the properties, a warning when a tax value is missing; the details build it up per tax year as in the tax return and offer the field «Tax value» per property.
 - **Input help from the assessment (#251):** New field «of which pillar 3a according to the assessment», so that pillar 3a is not deducted twice with «Deduct contributions to pillar 3a»; a note is shown while the field is empty.
 - **Compare strategies (#196, #197, #200, #201, #205):** Strategies can be compared without optimization, optimization results saved and reopened; switch «Never sell real estate»; a hint when the lower limit determines spending; result table without horizontal scrolling.
 - **Dark theme (#220, #235):** Setting «Appearance» with light and dark theme; better contrast in the menu.

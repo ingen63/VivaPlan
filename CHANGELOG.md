@@ -15,6 +15,7 @@ Vierte Vorabversion von 1.0; sie enthält auch alle Änderungen der nicht veröf
 
 ### Neu, geändert, behoben
 
+- **Steuerbares Vermögen in der Karte «Abzüge vom Vermögen» (#249):** Hinweis mit dem geschätzten steuerbaren Vermögen des ersten Steuerjahres und dem Anteil der Liegenschaften, Warnung bei fehlendem Steuerwert; die Details setzen es je Steuerjahr zusammen wie die Steuererklärung und bieten das Feld «Steuerwert» je Liegenschaft.
 - **Eingabehilfe aus der Veranlagung (#251):** Neues Feld «davon Säule 3a laut Veranlagung», damit die Säule 3a mit «Einzahlungen in die Säule 3a abziehen» nicht doppelt abgezogen wird; Hinweis, solange das Feld leer ist.
 - **Strategien vergleichen (#196, #197, #200, #201, #205):** Strategien lassen sich ohne Optimierung vergleichen, Ergebnisse der Optimierung speichern und wieder öffnen; Schalter «Immobilien nie verkaufen»; Hinweis, wenn die Untergrenze die Ausgaben bestimmt; Ergebnistabelle ohne waagrechtes Scrollen.
 - **Dunkles Theme (#220, #235):** Einstellung «Darstellung» mit hellem und dunklem Theme; besserer Kontrast im Menü.
