@@ -1,15 +1,16 @@
 //! #210: Reading tools of the MCP server: open, read, look up and check plans, results of the session, data library and
 //! the catalog for AIs (`describe`). Thin layer: check the arguments, call the engine through `dispatch::call`, shape
-//! the answer. The computing tools are in `compute.rs` (#211), changing and saving follow with #212.
+//! the answer. The computing tools are in `compute.rs` (#211), changing and saving in `edit.rs` (#212).
 
 use std::path::{Path, PathBuf};
 
 use serde_json::{json, Map, Value};
 
 use super::privacy::neutral_plan;
-use super::session::Session;
+use super::session::{Session, Stamp};
 
 /// Answer of a tool before names, paths and size are handled.
+#[derive(Debug)]
 pub(crate) struct Answer {
     pub(crate) data: Value,
     /// Answer with results: ends with the disclaimer (AK6).
@@ -28,7 +29,8 @@ impl Answer {
 /// Error of a tool: comes back as a tool result with `isError`, so that the AI can correct the call.
 pub(crate) type Outcome = Result<Answer, String>;
 
-/// Hints of the protocol: all tools of #210 only read and touch nothing outside the computer.
+/// Hints of the protocol: the tools of #210 only read and touch nothing outside the computer (#212 changes the hints of
+/// its tools).
 fn read_only() -> Value {
     json!({ "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false })
 }
@@ -149,7 +151,16 @@ pub(crate) fn list() -> Vec<Value> {
         ),
     ];
     list.extend(super::compute::list());
+    list.extend(super::edit::list());
     list
+}
+
+/// #212/AK3: The tool list of the session: with `--read-only` without the tool that writes files.
+pub(crate) fn listed(s: &Session) -> Vec<Value> {
+    list()
+        .into_iter()
+        .filter(|t| !(s.read_only && t["name"] == "plan_save"))
+        .collect()
 }
 
 /// The arguments of a call to the tool `name`, checked against its schema (`{}` if missing); `None` for an unknown
@@ -163,8 +174,11 @@ pub(crate) fn checked(name: &str, args: &Value) -> Option<Result<Value, String>>
     Some(check_args(&known, &args).map(|()| args))
 }
 
-/// Answers a call of a reading tool; `None` for an unknown tool (an error of the protocol).
+/// Answers a call of a reading or changing tool; `None` for an unknown tool (an error of the protocol).
 pub(crate) fn call(s: &mut Session, name: &str, args: &Value) -> Option<Outcome> {
+    if s.read_only && name == "plan_save" {
+        return None;
+    }
     let args = match checked(name, args)? {
         Ok(a) => a,
         Err(e) => return Some(Err(e)),
@@ -179,6 +193,8 @@ pub(crate) fn call(s: &mut Session, name: &str, args: &Value) -> Option<Outcome>
         "result_list" => Ok(result_list(s)),
         "result_get" => result_get(s, args),
         "library_list" => library_list(s),
+        "plan_set" | "plan_changes" | "plan_undo" | "plan_apply" => super::edit::call(s, name, args),
+        "plan_save" => Err("plan_save asks the user first; the server handles it".into()),
         _ => Err(format!(
             "The tool {name} computes; the server starts it in its own thread"
         )),
@@ -201,6 +217,7 @@ fn check_args(tool: &Value, args: &Value) -> Result<(), String> {
             Some("boolean") => v.is_boolean(),
             Some("integer") => v.is_i64(),
             Some("object") => v.is_object(),
+            Some("array") => v.is_array(),
             _ => true,
         };
         if !ok {
@@ -246,10 +263,10 @@ pub(crate) fn full_disclaimer() -> String {
 
 fn plan_open(s: &mut Session, args: &Value) -> Outcome {
     let example = args.get("example").and_then(Value::as_bool).unwrap_or(false);
-    let (file, raw) = match (arg(args, "path"), example) {
+    let (file, raw, stamp) = match (arg(args, "path"), example) {
         (Some(_), true) => return Err("Give either path or example: true, not both".into()),
         (None, false) => return Err("Give the path of a plan (.vplan or .rplan) or example: true".into()),
-        (None, true) => (None, s.call("example_plan", &json!({}), None)?),
+        (None, true) => (None, s.call("example_plan", &json!({}), None)?, None),
         (Some(p), false) => {
             let path = PathBuf::from(p);
             let ext = path
@@ -264,8 +281,10 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
             } else {
                 std::env::current_dir().map_err(|e| e.to_string())?.join(path)
             };
+            // #212: the state before reading; a change in between only makes plan_save more careful (rule 4).
+            let stamp = Stamp::of(&path);
             let plan = engine::api::read_plan(&path).map_err(|e| e.message().text().to_string())?;
-            (Some(path), plan)
+            (Some(path), plan, stamp)
         }
     };
     let up = s.call("upgrade_plan", &json!({ "plan": raw }), file.as_deref())?;
@@ -288,7 +307,7 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
     } else {
         neutral_plan(&plan)["project"]["name"].clone()
     };
-    let p = s.add_plan(file, plan);
+    let p = s.add_plan(file, plan, stamp);
     let mut out = json!({
         "plan": p.id,
         "file": p.file_name(),
@@ -842,13 +861,46 @@ mod tests {
                 "library_list",
                 // #211: the computing tools change no file either.
                 "simulation_run",
-                "evaluate"
+                "evaluate",
+                // #212: changing the working copy and saving.
+                "plan_set",
+                "plan_changes",
+                "plan_undo",
+                "plan_apply",
+                "plan_save"
             ]
         );
         for t in list() {
-            assert_eq!(t["annotations"]["readOnlyHint"], true, "{}", t["name"]);
+            let changing = super::super::edit::list().iter().any(|e| e["name"] == t["name"]);
+            assert_eq!(t["annotations"]["readOnlyHint"], !changing, "{}", t["name"]);
+            // #212: only plan_save writes on the disk (concept, section 5).
+            assert_eq!(
+                t["annotations"]["destructiveHint"],
+                t["name"] == "plan_save",
+                "{}",
+                t["name"]
+            );
             assert_eq!(t["inputSchema"]["type"], "object");
         }
+    }
+
+    /// #212/AK3: --read-only removes plan_save from the tool list; a call of it is an unknown tool.
+    #[test]
+    fn issue_212_ak3_read_only_without_plan_save() {
+        let mut s = session();
+        let names = |s: &Session| -> Vec<String> {
+            listed(s)
+                .iter()
+                .map(|t| t["name"].as_str().unwrap().to_string())
+                .collect()
+        };
+        assert!(names(&s).contains(&"plan_save".to_string()));
+        s.read_only = true;
+        let left = names(&s);
+        assert_eq!(left.len(), list().len() - 1);
+        assert!(!left.contains(&"plan_save".to_string()));
+        assert!(left.contains(&"plan_set".to_string()) && left.contains(&"plan_apply".to_string()));
+        assert!(call(&mut s, "plan_save", &json!({ "plan": "p1" })).is_none());
     }
 
     /// #210/AK2: plan_open, plan_get, plan_validate on the example plan; the first opening brings the notes.
@@ -1007,6 +1059,7 @@ mod tests {
             include_str!("session.rs"),
             include_str!("mod.rs"),
             include_str!("compute.rs"),
+            include_str!("edit.rs"),
         ] {
             let code: String = src
                 .split("#[cfg(test)]")
@@ -1033,6 +1086,10 @@ mod tests {
             "engine::experiment::CONFIRM_SECONDS",
             "engine::scenarios::parse",
             "engine::scenarios::count_combinations",
+            // #212: changing by field path (#207) and writing the file, no computations.
+            "engine::api::set_fields",
+            "engine::api::diff_plans",
+            "engine::api::write_plan",
             "engine::model::Plan>",
             "engine::resolve::Resolver::new",
             "engine::schema_json",

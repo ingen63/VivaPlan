@@ -207,8 +207,8 @@ Kennzeichen `readOnlyHint`; Fehler der Eingaben kommen als Werkzeugergebnis mit 
 kann. Die Daten stehen als kompaktes JSON im Text, ohne `structuredContent` (viele Hosts geben beides ans Modell).
 `privacy.rs`: Namen und freie Bezeichnungen (`name`, `label`) werden durch neutrale ersetzt, ausser mit `--names`;
 Ordner fallen weg. Die Werkzeugliste ist in `crates/cli/tests/mcp-tools.json` festgehalten; eine Änderung der
-Schnittstelle lässt `crates/cli/tests/mcp.rs` fehlschlagen, die neue Liste steht in der Meldung. Ändern und Speichern
-folgen mit #212.
+Schnittstelle lässt `crates/cli/tests/mcp.rs` fehlschlagen, die neue Liste steht in der Meldung. Ändern und Speichern:
+#212.
 
 **Rechnende Werkzeuge im MCP-Server (#211):** `compute.rs`: `simulation_run` (Schätzung wie die App: `bench_plan` ×
 Pfade × Kombinationen der Variationen, dann `run_simulation` über `dispatch::call`; das Ergebnis liegt als `RunOut` in
@@ -220,6 +220,18 @@ einem weiteren Thread und schickt etwa jede Sekunde `notifications/progress` (nu
 die Rechnung noch nicht gestartet war) und unterdrückt die Antwort. Eine Rechnung aufs Mal (Slot `Running`); ein
 zweiter Rechenaufruf ist ein Werkzeugfehler. Ende der Eingabe bricht ab und wartet auf den Thread. Ausgaben beider
 Threads gehen zeilenweise über `Output` (Mutex). Die Kennungen der Rechnungen beginnen bei 2^40.
+
+**Ändern und Speichern im MCP-Server (#212):** `edit.rs`: `plan_set`, `plan_apply` über `api::set_fields` (Feldpfade
+aus #207, alles oder nichts), `plan_changes`/`plan_undo` über `api::diff_plans`. Jede `OpenPlan` führt `original`
+(Stand der Datei, nach `upgrade_plan`), `history` (Arbeitskopie vor jedem Schritt) und `stamp` (Änderungszeit und
+Inhalt der Datei beim Öffnen bzw. letzten Schreiben, Regel 4). `evaluate`-Ergebnisse behalten das `set` des
+Experiments für `plan_apply`. `plan_save` prüft die Regeln 1–6 (Konzept, Abschnitt 7) in `prepare_save`; ersetzt es
+eine vorhandene Datei, schickt `mod.rs` statt der Antwort eine Anfrage `elicitation/create` (nur wenn das Programm in
+`initialize` die Fähigkeit `elicitation` meldet) und merkt sich den Schreibauftrag mit dem Stand der Arbeitskopie;
+die Antwort des Programms (`accept` mit `replace: true`) löst `edit::write` aus (Regel 4 erneut, `.bak`, dann
+`api::write_plan` über eine Zwischendatei), danach geht die Antwort auf den ursprünglichen Aufruf hinaus.
+`notifications/cancelled` verwirft den Auftrag. `--read-only` nimmt `plan_save` aus `tools/list` (`tools::listed`);
+`--allow-dir` (mehrfach) gibt Ordner kanonisch frei. Verknüpfungen (Symlinks) als Ziel werden abgelehnt.
 
 **App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
 vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung

@@ -43,9 +43,10 @@ Usage:
   vivaplan describe [<section>] [--plan <plan.vplan>] [--json]
         (catalog for AIs: fields, series, state, metrics, experiment, examples, performance, limits;
          performance measured in about 0.5 s on the plan, otherwise on the example plan)
-  vivaplan mcp [--data-dir <folder>] [--library <folder>] [--names]
-        (MCP server over stdio for AI programs, reading only: plans, checks, results, data library, describe;
-         names replaced unless --names)
+  vivaplan mcp [--data-dir <folder>] [--library <folder>] [--names] [--read-only] [--allow-dir <folder>]…
+        (MCP server over stdio for AI programs: plans, checks, simulation, evaluate, change and undo, save;
+         names replaced unless --names; saves only into the folder of the plan or an --allow-dir folder,
+         --read-only offers no saving)
   vivaplan schema
   vivaplan --version
   vivaplan --help   (this help)

@@ -683,3 +683,172 @@ fn issue_211_ak4_key_figures_as_api_run_and_evaluate() {
     );
     assert_eq!(experiment["experiment"]["paths"], direct["result"]["paths"]);
 }
+
+// #212: Changing and saving
+
+impl Server {
+    /// Sign-on of a program that can ask the user (capability elicitation).
+    fn initialize_asking(&mut self) {
+        let a = self.request(
+            "initialize",
+            json!({ "protocolVersion": "2025-06-18", "capabilities": { "elicitation": {} }, "clientInfo": { "name": "test", "version": "1" } }),
+        );
+        assert!(a["result"].is_object(), "{a}");
+        self.send(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#);
+    }
+
+    /// Calls plan_save with overwrite and answers the question of the server with `answer`; the result of the call.
+    fn save_answering(&mut self, args: Value, answer: Value) -> (Value, String, bool) {
+        self.next += 1;
+        let id = self.next;
+        let params = json!({ "name": "plan_save", "arguments": args });
+        self.send(&json!({ "jsonrpc": "2.0", "id": id, "method": "tools/call", "params": params }).to_string());
+        let question = self.read();
+        assert_eq!(question["method"], "elicitation/create", "{question}");
+        let reply = json!({ "jsonrpc": "2.0", "id": question["id"], "result": answer });
+        self.send(&reply.to_string());
+        let a = self.read();
+        assert_eq!(a["id"], id);
+        let text = a["result"]["content"][0]["text"].as_str().unwrap().to_string();
+        (question, text, a["result"]["isError"] == true)
+    }
+}
+
+/// #212/AK1, AK2: Over stdio: change, list the changes, undo, take over a variant of evaluate, save to a new file and
+/// replace the opened file only after the question of the server, with a backup.
+// slow: starts the program and computes over stdio
+#[test]
+fn issue_212_ak1_ak2_change_undo_and_save_over_stdio() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (file, plan) = plan_file(tmp.path(), "plan.vplan", "bootstrap", 300, json!([]));
+    let original = std::fs::read(&file).unwrap();
+    let mut s = Server::start(tmp.path(), &[]);
+    s.initialize_asking();
+    let (text, error) = s.tool("plan_open", json!({ "path": file.display().to_string() }));
+    assert!(!error, "{text}");
+    // Change, list, undo.
+    let changes =
+        json!([{ "path": "wealth.stockShare", "value": 0.25 }, { "path": "withdrawal.strategy", "value": "vpw" }]);
+    let (text, error) = s.tool("plan_set", json!({ "plan": "p1", "changes": changes }));
+    assert!(!error, "{text}");
+    let set = data(&text);
+    assert_eq!(set["changes"][0]["path"], "wealth.stockShare");
+    assert_eq!(set["changes"][0]["old"], plan["wealth"]["stockShare"]);
+    assert_eq!(set["changes"][0]["new"], json!(0.25));
+    let (text, error) = s.tool(
+        "plan_set",
+        json!({ "plan": "p1", "changes": [{ "path": "wealth.nope", "value": 1 }] }),
+    );
+    assert!(error && text.starts_with("No change made"), "{text}");
+    let (text, _) = s.tool(
+        "plan_set",
+        json!({ "plan": "p1", "changes": [{ "path": "wealth.stockShare", "value": 0.5 }] }),
+    );
+    assert_eq!(data(&text)["steps"], 2);
+    let (text, _) = s.tool("plan_changes", json!({ "plan": "p1" }));
+    let list = data(&text);
+    assert_eq!(list["count"], 2);
+    assert_eq!(list["changes"][0]["file"], plan["wealth"]["stockShare"]);
+    assert_eq!(list["changes"][0]["current"], json!(0.5));
+    let (text, _) = s.tool("plan_undo", json!({ "plan": "p1" }));
+    assert_eq!(data(&text)["undone"][0]["new"], json!(0.25));
+    let (text, _) = s.tool("plan_undo", json!({ "plan": "p1", "all": true }));
+    assert_eq!(data(&text)["changesAgainstFile"], 0);
+    // Take over the variant «all as lump sum» of an experiment (the example plan takes half).
+    let (text, error) = s.tool("evaluate", json!({ "plan": "p1", "experiment": small_experiment() }));
+    assert!(!error, "{text}");
+    let result = data(&text)["result"].as_str().unwrap().to_string();
+    let (text, error) = s.tool("plan_apply", json!({ "result": result, "rank": 3 }));
+    assert!(!error, "{text}");
+    let applied = data(&text);
+    let paths: Vec<&str> = applied["changes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["path"].as_str().unwrap())
+        .collect();
+    assert!(
+        paths.contains(&"pension.pk.lumpsum") && paths.contains(&"returns.source"),
+        "{paths:?}"
+    );
+    // Rule 1: a new file, the opened one untouched; answers name only the file.
+    let (text, error) = s.tool("plan_save", json!({ "plan": "p1" }));
+    assert!(!error, "{text}");
+    assert_eq!(data(&text)["saved"], "plan (AI).vplan");
+    assert!(!text.contains(tmp.path().to_str().unwrap()));
+    assert_eq!(std::fs::read(&file).unwrap(), original);
+    let new = engine::api::read_plan(&tmp.path().join("plan (AI).vplan")).unwrap();
+    assert_eq!(new["pension"]["pk"]["lumpsum"], json!(1));
+    // Rule 2: declined, nothing written; accepted, replaced with a backup.
+    let (question, text, _) = s.save_answering(
+        json!({ "plan": "p1", "overwrite": true }),
+        json!({ "action": "decline" }),
+    );
+    let message = question["params"]["message"].as_str().unwrap();
+    assert!(
+        message.contains("plan.vplan") && message.contains("pension.pk.lumpsum"),
+        "{message}"
+    );
+    assert_eq!(question["params"]["requestedSchema"]["required"], json!(["replace"]));
+    assert_eq!(data(&text)["saved"], Value::Null);
+    assert_eq!(std::fs::read(&file).unwrap(), original);
+    let (_, text, error) = s.save_answering(
+        json!({ "plan": "p1", "overwrite": true }),
+        json!({ "action": "accept", "content": { "replace": true } }),
+    );
+    assert!(!error, "{text}");
+    assert_eq!(data(&text)["backup"], "plan.vplan.bak");
+    assert_eq!(std::fs::read(tmp.path().join("plan.vplan.bak")).unwrap(), original);
+    assert_eq!(
+        engine::api::read_plan(&file).unwrap()["pension"]["pk"]["lumpsum"],
+        json!(1)
+    );
+    let (text, _) = s.tool("plan_changes", json!({ "plan": "p1" }));
+    assert_eq!(data(&text)["count"], 0);
+    s.close();
+}
+
+/// #212/AK2, AK3: A program without questions gets no replacement (rule 2); --read-only lists no plan_save and refuses
+/// the call; --allow-dir releases a further folder (rule 6).
+// slow: starts the program over stdio
+#[test]
+fn issue_212_ak2_ak3_read_only_and_released_folders_over_stdio() {
+    let tmp = tempfile::tempdir().unwrap();
+    let out = tmp.path().join("out");
+    std::fs::create_dir(&out).unwrap();
+    let (file, _) = plan_file(tmp.path(), "plan.vplan", "bootstrap", 300, json!([]));
+    let original = std::fs::read(&file).unwrap();
+    let mut s = Server::start(tmp.path(), &["--allow-dir", out.to_str().unwrap()]);
+    s.initialize();
+    s.tool("plan_open", json!({ "path": file.display().to_string() }));
+    let (text, error) = s.tool("plan_save", json!({ "plan": "p1", "overwrite": true }));
+    assert!(error && text.contains("rule 1"), "{text}");
+    assert_eq!(std::fs::read(&file).unwrap(), original);
+    let (text, error) = s.tool(
+        "plan_save",
+        json!({ "plan": "p1", "path": out.join("copy.vplan").display().to_string() }),
+    );
+    assert!(!error, "{text}");
+    assert!(out.join("copy.vplan").exists());
+    s.close();
+
+    let mut s = Server::start(tmp.path(), &["--read-only"]);
+    s.initialize();
+    let tools = s.request("tools/list", json!({}))["result"]["tools"].clone();
+    let names: Vec<&str> = tools
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["name"].as_str().unwrap())
+        .collect();
+    assert!(!names.contains(&"plan_save"), "{names:?}");
+    assert!(names.contains(&"plan_set"));
+    s.tool("plan_open", json!({ "path": file.display().to_string() }));
+    let a = s.request(
+        "tools/call",
+        json!({ "name": "plan_save", "arguments": { "plan": "p1" } }),
+    );
+    assert_eq!(a["error"]["code"], -32602, "{a}");
+    assert!(!tmp.path().join("plan (AI).vplan").exists());
+    s.close();
+}

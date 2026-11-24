@@ -67,7 +67,7 @@ The engine is also available in the terminal (program `vivaplan`):
 | `diff <a> <b>` | List the differences between two plans (`--json`) |
 | `optimize <plan>` | Optimize the strategy, see [Command line](#o-cli) |
 | `describe [<section>]` | Catalog for AIs: what can be changed, varied and measured (`--plan`, `--json`), see [Catalog for AIs](#ref-describe) |
-| `mcp` | MCP server for AI programs, reads and computes (`--data-dir`, `--library`, `--names`), see [Connecting AI programs](#ref-mcp) |
+| `mcp` | MCP server for AI programs, reads, computes, changes and saves (`--data-dir`, `--library`, `--names`, `--read-only`, `--allow-dir`), see [Connecting AI programs](#ref-mcp) |
 | `evaluate <plan> <experiment.json>` | Compute an experiment (`--json`, `--yes`), see [Experiment](#ref-experiment) |
 | `bench <plan>` | Measure the calculation time (`--paths`, `--json`) |
 | `schema` | Output the JSON schema of the plan file |
@@ -243,9 +243,9 @@ On Windows copy the folder to `%USERPROFILE%\.claude\skills`. Then start a new s
 The results are model calculations without guarantee, no tax or investment advice; taxes are estimates.
 
 ## @ref-mcp Connecting AI programs (MCP server)
-Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy
+Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save
 
-`vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. In this version the server reads and computes; it changes no file.
+`vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. The server changes a working copy in memory; only `plan_save` writes to the disk, by fixed rules (see below).
 
 | Tool | Purpose |
 |---|---|
@@ -258,8 +258,15 @@ Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude D
 | `library_list` | Time series of the [data library](#ref-library) |
 | `simulation_run` | Simulate the plan as the app does (with its variations); key figures and the result in words |
 | `evaluate` | [Experiment](#ref-experiment) on the plan: changes, variations, metrics, constraints, objective; optimization and comparison run through it |
+| `plan_set` | Change values of the working copy by field path (as [`vivaplan set`](#ref-cli)); all changes of a call are one step, with old and new value and the check messages afterwards |
+| `plan_changes` | All differences of the working copy against the file |
+| `plan_undo` | Take back the last step, with `all` all of them |
+| `plan_apply` | Take over a variant of an `evaluate` result (by rank) into the plan, as one step |
+| `plan_save` | Save the working copy as `.vplan`; the only tool that writes to the disk |
 
 Before every computation the server estimates its duration. From 60 seconds it computes only if the AI confirms explicitly (`"confirm": true`); it should ask you first. Long computations report their progress and can be cancelled in the AI program. Only one computation runs at a time.
+
+**Saving:** `plan_save` keeps these rules itself, whatever the AI does: (1) Without a path a **new file** is created next to the opened one, `<name> (AI).vplan` (with a number if needed); an existing file stays untouched. (2) The server replaces an existing file only with `overwrite` and only after the AI program has asked you and shown the changes; if it cannot ask, the server refuses. (3) A backup `<file>.bak` is made first; writing goes through a temporary file. (4) If the file was changed since it was opened, it is not replaced. (5) Old `.rplan` files are never replaced; plans are saved as `.vplan`. (6) The server writes only into the folder of the opened plan or into a folder released with `--allow-dir <folder>`. With `--read-only` the server does not offer `plan_save` at all. Do not edit a plan in the app and in the AI at the same time: the app does not notice changes to the file.
 
 **Set up:** In the AI program, enter the program `vivaplan` with its full path (see [command line](#ref-cli)) and the argument `mcp`. In Claude Desktop and LM Studio the entry looks like this on macOS:
 

@@ -298,5 +298,159 @@
     },
     "name": "evaluate",
     "title": "Experiment on a plan"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false
+    },
+    "description": "Changes values of the working copy by field path as in the check messages (wealth.stockShare, household.persons.0.birth); a step of a course over time with path@<milestone id>, path@age:<years> or path@YYYY-MM. All changes of a call are one step: if one path or type is wrong, none is made. Answers every changed field with old and new value and the check messages afterwards. Nothing is written to a file; plan_undo takes the step back, plan_save saves.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "description": "List of {path, value}; value as JSON (number, text, true/false, object).",
+          "items": {
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "value": {}
+            },
+            "required": [
+              "path",
+              "value"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan",
+        "changes"
+      ],
+      "type": "object"
+    },
+    "name": "plan_set",
+    "title": "Change values"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false
+    },
+    "description": "Lists all differences of the working copy against the file as it was opened or last saved: field path, value in the file, current value; with the number of steps plan_undo can take back.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "type": "object"
+    },
+    "name": "plan_changes",
+    "title": "Changes against the file"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false
+    },
+    "description": "Takes back the last step of plan_set or plan_apply, with all: true all steps. Answers the values restored and the steps left.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "all": {
+          "description": "Take back all steps.",
+          "type": "boolean"
+        },
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "type": "object"
+    },
+    "name": "plan_undo",
+    "title": "Undo"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false
+    },
+    "description": "Takes over a variant of an evaluate result into the plan it was computed from: the fixed values of the experiment (set) and the values of the variant with the rank given (1 = best), as one step like plan_set. The variations of the plan itself stay as they are.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "rank": {
+          "description": "Rank of the variant in the result; default 1.",
+          "type": "integer"
+        },
+        "result": {
+          "description": "Id of an evaluate result (r1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "type": "object"
+    },
+    "name": "plan_apply",
+    "title": "Take over a variant"
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false
+    },
+    "description": "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file in the folder of the plan or a folder released with --allow-dir. overwrite: true replaces an existing file, but only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since opening and old .rplan files are never replaced. Answers the file name written.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "overwrite": {
+          "description": "Replace an existing file (asks the user first).",
+          "type": "boolean"
+        },
+        "path": {
+          "description": "File to write (.vplan); relative to the folder of the plan.",
+          "type": "string"
+        },
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "type": "object"
+    },
+    "name": "plan_save",
+    "title": "Save a plan"
   }
 ]

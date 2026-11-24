@@ -67,7 +67,7 @@ Il motore di calcolo è disponibile anche nel terminale (programma `vivaplan`):
 | `diff <a> <b>` | elencare le differenze tra due pianificazioni (`--json`) |
 | `optimize <pianificazione>` | ottimizzare la strategia, vedi [Riga di comando](#o-cli) |
 | `describe [<sezione>]` | Catalogo per le IA: cosa si può modificare, variare e misurare (`--plan`, `--json`), vedi [Catalogo per le IA](#ref-describe) |
-| `mcp` | Server MCP per i programmi di IA, legge e calcola (`--data-dir`, `--library`, `--names`), vedi [Collegare programmi di IA](#ref-mcp) |
+| `mcp` | Server MCP per i programmi di IA, legge, calcola, modifica e salva (`--data-dir`, `--library`, `--names`, `--read-only`, `--allow-dir`), vedi [Collegare programmi di IA](#ref-mcp) |
 | `evaluate <pianificazione> <esperimento.json>` | Calcolare un esperimento (`--json`, `--yes`), vedi [Esperimento](#ref-experiment) |
 | `bench <pianificazione>` | misurare il tempo di calcolo (`--paths`, `--json`) |
 | `schema` | emettere lo schema JSON del file di pianificazione |
@@ -243,9 +243,9 @@ Su Windows copi la cartella in `%USERPROFILE%\.claude\skills`. Avvii poi una nuo
 I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o d’investimento; le imposte sono stimate.
 
 ## @ref-mcp Collegare programmi di IA (server MCP)
-Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati
+Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati, salvare, annullare, plan_set, plan_save
 
-`vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. In questa versione il server legge e calcola; non modifica alcun file.
+`vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. Il server modifica una copia di lavoro in memoria; solo `plan_save` scrive sul disco, secondo regole fisse (vedi sotto).
 
 | Strumento | Scopo |
 |---|---|
@@ -258,8 +258,15 @@ Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Cla
 | `library_list` | Serie temporali della [biblioteca di dati](#ref-library) |
 | `simulation_run` | Simulare la pianificazione come l’app (con le sue variazioni); indicatori e risultato a parole |
 | `evaluate` | [Esperimento](#ref-experiment) sulla pianificazione: modifiche, variazioni, indicatori, condizioni, obiettivo; l’ottimizzazione e il confronto passano da qui |
+| `plan_set` | Modificare valori della copia di lavoro tramite percorso del campo (come [`vivaplan set`](#ref-cli)); tutte le modifiche di una chiamata sono un passo, con valore vecchio e nuovo e i messaggi di verifica che ne risultano |
+| `plan_changes` | Tutte le differenze tra la copia di lavoro e il file |
+| `plan_undo` | Annullare l’ultimo passo, con `all` tutti |
+| `plan_apply` | Riprendere nella pianificazione una variante di un risultato di `evaluate` (secondo il rango), in un passo |
+| `plan_save` | Salvare la copia di lavoro come `.vplan`; unico strumento che scrive sul disco |
 
 Prima di ogni calcolo il server ne stima la durata. Da 60 secondi calcola solo se l’IA lo conferma espressamente (`"confirm": true`); deve prima chiederlo a voi. I calcoli lunghi segnalano l’avanzamento e si possono interrompere nel programma di IA. Viene eseguito un solo calcolo alla volta.
+
+**Salvare:** `plan_save` rispetta da sé queste regole, qualunque cosa faccia l’IA: (1) Senza percorso nasce un **nuovo file** accanto a quello aperto, `<nome> (AI).vplan` (se necessario con un numero); un file esistente resta intatto. (2) Il server sostituisce un file esistente solo con `overwrite` e solo dopo che il programma di IA ve lo ha chiesto mostrando le modifiche; se non può chiedere, il server rifiuta. (3) Prima viene creata una copia di sicurezza `<file>.bak`; la scrittura passa da un file temporaneo. (4) Se il file è stato modificato dopo l’apertura, non viene sostituito. (5) I vecchi file `.rplan` non vengono mai sostituiti; si salva come `.vplan`. (6) Il server scrive solo nella cartella della pianificazione aperta o in una cartella autorizzata con `--allow-dir <cartella>`. Con `--read-only` il server non offre affatto `plan_save`. Non modificate una pianificazione contemporaneamente nell’app e nell’IA: l’app non si accorge delle modifiche al file.
 
 **Configurare:** nel programma di IA inserite il programma `vivaplan` con il percorso completo (vedi [riga di comando](#ref-cli)) e l’argomento `mcp`. In Claude Desktop e LM Studio la voce si presenta così su macOS:
 

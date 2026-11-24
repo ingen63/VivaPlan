@@ -140,8 +140,11 @@ Auflösung des Datenordners pro Betriebssystem kommt in den Rechenkern oder die 
 Speichern. Die Daten stehen als kompaktes JSON im Text (ohne `structuredContent`); Namen werden ersetzt wie in
 Abschnitt 6. #211: `simulation_run` (Planung wie in der App, Ergebnis für `result_get`) und `evaluate` (Experiment)
 schätzen die Dauer selbst; ab 60 s nur mit `"confirm": true` (statt `simulation_estimate` und `confirm_long`).
-Fortschritt über `notifications/progress`, Abbruch über `notifications/cancelled`. Die Tabelle unten ist der
-ursprüngliche Entwurf.
+Fortschritt über `notifications/progress`, Abbruch über `notifications/cancelled`. #212: `plan_set`, `plan_changes`,
+`plan_undo` wie unten; statt `optimize_apply` übernimmt `plan_apply` (`result`, `rank`) eine Variante eines
+`evaluate`-Ergebnisses; `result_compare` entfällt (Vergleich über `evaluate`). `plan_save` wie in Abschnitt 7; die neue
+Datei heisst `<name> (AI).vplan` (neutral für alle KI-Programme), die Rückfrage von Regel 2 ist `elicitation/create` mit
+dem Feld `replace`, `--read-only` nimmt `plan_save` aus der Liste. Die Tabelle unten ist der ursprüngliche Entwurf.
 
 Jede geöffnete Planung bekommt eine Kennung (`plan`, zum Beispiel `p1`), jedes Ergebnis eine Kennung (`result`, zum
 Beispiel `r3`). Claude schickt nie die ganze Planung; es arbeitet mit Kennungen und Feldpfaden. Alle Werkzeuge liefern
@@ -235,7 +238,7 @@ Texte, die bei der Umsetzung nachzuführen sind:
 ## 7 Änderungen sichtbar machen, rückgängig machen, speichern
 
 - **Arbeitskopie:** `plan_open` lädt die Planung in den Speicher. Alle Änderungen betreffen nur diese Kopie.
-- **Sichtbar:** Jede Antwort von `plan_set` und `optimize_apply` nennt Feldpfad, alten und neuen Wert. `plan_changes`
+- **Sichtbar:** Jede Antwort von `plan_set` und `plan_apply` (#212, statt `optimize_apply`) nennt Feldpfad, alten und neuen Wert. `plan_changes`
   zeigt jederzeit alle Unterschiede zur Datei.
 - **Rückgängig:** `plan_undo` nimmt die letzte Änderung zurück, mit `all` alle. Ein Aufruf von `plan_set` mit mehreren
   Änderungen ist ein Schritt.

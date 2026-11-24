@@ -46,9 +46,12 @@ of the command line: `plan_open` (path of a `.vplan`), `plan_get`, `plan_validat
 `library_list`, `result_list`, `result_get`, and to compute `simulation_run` (the plan as it is, like `run`) and
 `evaluate` (an experiment, like `vivaplan evaluate`; the way to optimize and compare). From 60 s of estimated duration
 the answer is `needsConfirmation` with the estimate: tell the user and call again with `"confirm": true` only after
-they agree. Long computations report progress and can be cancelled; one computation runs at a time. The server changes
-no file; it replaces names with neutral ones (Person 1) and shows only file names. The rules above apply in the same
-way.
+they agree. Long computations report progress and can be cancelled; one computation runs at a time. To change the
+plan use `plan_set` (list of `{path, value}`, one step, all or nothing), `plan_changes`, `plan_undo` and `plan_apply`
+(take over a variant of an `evaluate` result by rank); they change only a working copy in memory. `plan_save` writes
+a new file `<name> (AI).vplan` next to the plan; replace a file (`overwrite: true`) only when the user asks for it, the
+server then asks the user itself. The server replaces names with neutral ones (Person 1) and shows only file names.
+The rules above apply in the same way.
 
 ## Workflow
 

@@ -137,9 +137,9 @@ Werkzeuge aufrufen kann (zum Beispiel Qwen 3 oder Llama 3.1 Instruct, in LM Stud
 
 1. In LM Studio unter «Program → Install → Edit mcp.json» den Eintrag aus der Hilfe (Referenz, «KI-Programme
    verbinden») eintragen, mit dem vollen Pfad des Programms und `"args": ["mcp"]`; speichern.
-2. Erwartet: LM Studio zeigt den Server `vivaplan` mit zehn Werkzeugen (`describe`, `plan_open`, `plan_get`,
-   `plan_schema`, `plan_validate`, `result_list`, `result_get`, `library_list`, `simulation_run`, `evaluate`), ohne
-   Fehlermeldung.
+2. Erwartet: LM Studio zeigt den Server `vivaplan` mit fünfzehn Werkzeugen (`describe`, `plan_open`, `plan_get`,
+   `plan_schema`, `plan_validate`, `result_list`, `result_get`, `library_list`, `simulation_run`, `evaluate`,
+   `plan_set`, `plan_changes`, `plan_undo`, `plan_apply`, `plan_save`), ohne Fehlermeldung.
 3. Beispielplanung in der App als Datei speichern (zum Beispiel `~/Documents/beispiel.vplan`), in LM Studio ein neues
    Gespräch beginnen und fragen: «Öffne ~/Documents/beispiel.vplan mit VivaPlan und sag mir, ob die Planung Fehler
    hat.» (bei Bedarf den vollen Pfad nennen).
@@ -150,6 +150,11 @@ Werkzeuge aufrufen kann (zum Beispiel Qwen 3 oder Llama 3.1 Instruct, in LM Stud
      and is processed by its provider» und den vollen Haftungsausschluss.
    - Das Modell meldet keine Fehler (Beispielplanung) und gibt die Zahl der Hinweise wieder.
 5. Fragen: «Welche Zeitreihen gibt es in der Datenbibliothek?» – Erwartet: Aufruf von `library_list`, Liste der Dateien.
+   Dann (#212): «Setz den Aktienanteil auf 40 % und speichere die Planung.» – Erwartet: `plan_set` mit
+   `wealth.stockShare` 0.4, alter und neuer Wert; `plan_save` schreibt `beispiel (AI).vplan` neben die Datei,
+   `beispiel.vplan` bleibt unverändert. «Ersetze die Originaldatei.» – Erwartet: Unterstützt LM Studio Rückfragen
+   (Elicitation), erscheint eine Frage mit der Liste der Änderungen, und erst nach «Ja» entsteht `beispiel.vplan.bak`;
+   sonst lehnt der Server ab und nennt den Ausweg über eine neue Datei.
 6. In LM Studio den Server ausschalten: Der Prozess `vivaplan mcp` endet (Aktivitätsanzeige).
 7. Ergebnis mit Datum, Version, LM-Studio-Version und Modell unter «Messungen» oder im Issue festhalten.
 

@@ -67,7 +67,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
 | `optimize <planung>` | Strategie optimieren, siehe [Kommandozeile](#o-cli) |
 | `describe [<abschnitt>]` | Katalog für KIs: was sich ändern, variieren und messen lässt (`--plan`, `--json`), siehe [Katalog für KIs](#ref-describe) |
-| `mcp` | MCP-Server für KI-Programme, liest und rechnet (`--data-dir`, `--library`, `--names`), siehe [KI-Programme verbinden](#ref-mcp) |
+| `mcp` | MCP-Server für KI-Programme, liest, rechnet, ändert und speichert (`--data-dir`, `--library`, `--names`, `--read-only`, `--allow-dir`), siehe [KI-Programme verbinden](#ref-mcp) |
 | `evaluate <planung> <experiment.json>` | Experiment rechnen (`--json`, `--yes`), siehe [Experiment](#ref-experiment) |
 | `bench <planung>` | Rechenzeit messen (`--paths`, `--json`) |
 | `schema` | JSON-Schema der Planungsdatei ausgeben |
@@ -243,9 +243,9 @@ Unter Windows kopieren Sie den Ordner nach `%USERPROFILE%\.claude\skills`. Start
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
 
 ## @ref-mcp KI-Programme verbinden (MCP-Server)
-Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz
+Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz, Speichern, Rückgängig, plan_set, plan_save
 
-`vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. In dieser Version liest und rechnet der Server; er ändert keine Datei.
+`vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. Der Server ändert eine Arbeitskopie im Speicher; auf die Platte schreibt nur `plan_save`, nach festen Regeln (siehe unten).
 
 | Werkzeug | Zweck |
 |---|---|
@@ -258,8 +258,15 @@ Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude
 | `library_list` | Zeitreihen der [Datenbibliothek](#ref-library) |
 | `simulation_run` | Planung simulieren wie die App (mit ihren Variationen); Kennzahlen und Ergebnis in Worten |
 | `evaluate` | [Experiment](#ref-experiment) auf der Planung: Änderungen, Variationen, Kennzahlen, Bedingungen, Ziel; darüber laufen Optimierung und Vergleich |
+| `plan_set` | Werte der Arbeitskopie per Feldpfad ändern (wie [`vivaplan set`](#ref-cli)); alle Änderungen eines Aufrufs sind ein Schritt, mit altem und neuem Wert und den Prüfmeldungen danach |
+| `plan_changes` | Alle Unterschiede der Arbeitskopie zur Datei |
+| `plan_undo` | Letzten Schritt zurücknehmen, mit `all` alle |
+| `plan_apply` | Eine Variante eines `evaluate`-Ergebnisses (nach Rang) in die Planung übernehmen, als ein Schritt |
+| `plan_save` | Arbeitskopie als `.vplan` speichern; schreibt als einziges Werkzeug auf die Platte |
 
 Vor jeder Rechnung schätzt der Server die Dauer. Ab 60 Sekunden rechnet er nur, wenn die KI ausdrücklich bestätigt (`"confirm": true`); sie soll Sie vorher fragen. Lange Rechnungen melden den Fortschritt und lassen sich im KI-Programm abbrechen. Es läuft immer nur eine Rechnung aufs Mal.
+
+**Speichern:** `plan_save` hält diese Regeln selbst ein, unabhängig davon, was die KI tut: (1) Ohne Pfad entsteht eine **neue Datei** neben der geöffneten, `<name> (AI).vplan` (bei Bedarf mit Zähler); eine vorhandene Datei bleibt unberührt. (2) Eine vorhandene Datei ersetzt der Server nur mit `overwrite` und erst, nachdem das KI-Programm Sie gefragt und die Änderungen gezeigt hat; kann es nicht fragen, lehnt er ab. (3) Vorher entsteht eine Sicherungskopie `<datei>.bak`; geschrieben wird über eine Zwischendatei. (4) Wurde die Datei seit dem Öffnen geändert, ersetzt er sie nicht. (5) Alte `.rplan`-Dateien ersetzt er nie; gespeichert wird als `.vplan`. (6) Geschrieben wird nur in den Ordner der geöffneten Planung oder in einen mit `--allow-dir <ordner>` freigegebenen. Mit `--read-only` bietet der Server `plan_save` gar nicht an. Bearbeiten Sie eine Planung nicht gleichzeitig in der App und in der KI: Die App bemerkt Änderungen an der Datei nicht.
 
 **Einrichten:** Im KI-Programm tragen Sie das Programm `vivaplan` mit vollem Pfad (siehe [Kommandozeile](#ref-cli)) und dem Argument `mcp` ein. In Claude Desktop und LM Studio sieht der Eintrag unter macOS so aus:
 

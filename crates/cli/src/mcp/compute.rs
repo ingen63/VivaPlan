@@ -247,9 +247,12 @@ pub(crate) fn finish(s: &mut Session, p: Prepared, out: Value) -> Outcome {
             }
             Ok(answer)
         }
-        Task::Evaluate(_) => match out["status"].as_str().unwrap_or_default() {
+        Task::Evaluate(exp) => match out["status"].as_str().unwrap_or_default() {
             "done" => {
-                let id = s.add_result(&p.plan_id, "evaluate", out.clone());
+                // #212: with the fixed values of the experiment, which plan_apply takes over with a variant.
+                let mut kept = out.clone();
+                kept["set"] = exp.get("set").cloned().unwrap_or_else(|| json!({}));
+                let id = s.add_result(&p.plan_id, "evaluate", kept);
                 let mut result = out["result"].clone();
                 if let Some(o) = result.as_object_mut() {
                     o.insert("hints".into(), Value::Array(texts(&out["result"]["hints"])));
@@ -296,7 +299,7 @@ mod tests {
             false,
         );
         let plan = s.call("example_plan", &json!({}), None).unwrap();
-        s.add_plan(None, plan);
+        s.add_plan(None, plan, None);
         s
     }
 

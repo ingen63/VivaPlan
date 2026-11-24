@@ -417,14 +417,21 @@ den Haftungsausschluss. Sie ist englisch, die KI antwortet in der Sprache des Me
 dem ersten Lesen einer Planung darauf hinzuweisen, dass die gelesenen Daten an den Anbieter der KI gehen. Die Hilfe sagt,
 wo die Skill liegt und wie man sie einrichtet.
 
-MCP-Server (#210): `vivaplan mcp [--data-dir <ordner>] [--library <ordner>] [--names]` verbindet VivaPlan mit
+MCP-Server (#210): `vivaplan mcp [--data-dir <ordner>] [--library <ordner>] [--names] [--read-only] [--allow-dir <ordner>]` verbindet VivaPlan mit
 KI-Programmen, die das Model Context Protocol unterstützen (Claude Desktop, Claude Code, ChatGPT Desktop, LM Studio und
-andere). Das Programm spricht über Standardein- und -ausgabe, öffnet keine Netzwerkverbindung und ändert in dieser
-Fassung keine Datei. Lesend: `plan_open`, `plan_get`, `plan_schema`, `plan_validate`, `describe`, `result_list`,
+andere). Das Programm spricht über Standardein- und -ausgabe und öffnet keine Netzwerkverbindung. Lesend: `plan_open`, `plan_get`, `plan_schema`, `plan_validate`, `describe`, `result_list`,
 `result_get`, `library_list`; rechnend (#211): `simulation_run` (die Planung wie in der App, mit ihren Variationen) und
 `evaluate` (Experiment wie `vivaplan evaluate`; darüber laufen Optimierung und Vergleich). Vor jeder Rechnung schätzt
 der Server die Dauer; ab 60 Sekunden rechnet er nur mit `"confirm": true`. Lange Rechnungen melden den Fortschritt
 (`notifications/progress`) und lassen sich abbrechen (`notifications/cancelled`); es läuft eine Rechnung aufs Mal.
+Ändernd (#212): `plan_set` (Werte per Feldpfad, ein Aufruf ist ein Schritt, alles oder nichts), `plan_changes`
+(Unterschiede zur Datei), `plan_undo` (letzter Schritt oder alle) und `plan_apply` (Variante eines
+`evaluate`-Ergebnisses nach Rang übernehmen) ändern nur die Arbeitskopie im Speicher. Nur `plan_save` schreibt, nach
+sechs Regeln: ohne Pfad eine neue Datei `<name> (AI).vplan` neben der geöffneten; eine vorhandene Datei nur mit
+`overwrite` und nach einer Rückfrage des KI-Programms an den Nutzer (Elicitation, sonst Ablehnung); vorher eine
+Sicherungskopie `<datei>.bak`, geschrieben über eine Zwischendatei; keine seit dem Öffnen geänderte Datei; nie eine
+`.rplan`-Datei; nur in den Ordner der Planung oder einen mit `--allow-dir` freigegebenen. `--read-only` bietet
+`plan_save` nicht an.
 Jede Rechnung geht über denselben Befehlsverteiler wie die App; Grenzen und Datenbibliothek kommen aus
 dem Datenordner der App. Namen von Personen und frei eingegebene Bezeichnungen ersetzt der Server durch neutrale
 («Person 1»), ausser mit `--names`, und nennt nur Dateinamen; keine Antwort ist länger als 20'000 Zeichen. Das erste

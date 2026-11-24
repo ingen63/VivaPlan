@@ -1,5 +1,6 @@
 //! #210: State of an MCP session: open plans (working copies in memory) and results, each with an id (`p1`, `r1`).
 //! Everything stays in the memory of the server and disappears with it; the results of the desktop app are separate.
+//! #212: Every plan keeps the state of its file and the steps of its changes (concept, section 7).
 
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -16,6 +17,29 @@ pub(crate) struct OpenPlan {
     pub(crate) file: Option<PathBuf>,
     /// Working copy, brought up to date (without the limits of the settings).
     pub(crate) plan: Value,
+    /// #212: The plan as in the file (brought up to date): base of `plan_changes`.
+    pub(crate) original: Value,
+    /// #212: The working copy before each step of `plan_set` and `plan_apply`, oldest first (for `plan_undo`).
+    pub(crate) history: Vec<Value>,
+    /// #212: Time of change and content of the file when it was opened or last written (rule 4 of `plan_save`).
+    pub(crate) stamp: Option<Stamp>,
+}
+
+/// #212: What the file looked like: a change by someone else changes the time or the content.
+#[derive(Clone, PartialEq, Debug)]
+pub(crate) struct Stamp {
+    pub(crate) modified: Option<std::time::SystemTime>,
+    pub(crate) content: Vec<u8>,
+}
+
+impl Stamp {
+    /// The file as it is now; `None` if it cannot be read.
+    pub(crate) fn of(file: &Path) -> Option<Stamp> {
+        Some(Stamp {
+            modified: std::fs::metadata(file).ok()?.modified().ok(),
+            content: std::fs::read(file).ok()?,
+        })
+    }
 }
 
 impl OpenPlan {
@@ -44,6 +68,10 @@ pub(crate) struct Session {
     pub(crate) data: AppData,
     /// `--names`: names are not replaced.
     pub(crate) names: bool,
+    /// #212/AK3: `--read-only`: no tool writes a file (`plan_save` is not offered).
+    pub(crate) read_only: bool,
+    /// #212: Folders released with `--allow-dir` for `plan_save` (rule 6), canonical.
+    pub(crate) allowed: Vec<PathBuf>,
     pub(crate) plans: Vec<OpenPlan>,
     pub(crate) results: Vec<SessionResult>,
     /// The note on privacy and the full disclaimer come with the first `plan_open`.
@@ -57,6 +85,8 @@ impl Session {
         Session {
             data,
             names,
+            read_only: false,
+            allowed: Vec::new(),
             plans: Vec::new(),
             results: Vec::new(),
             notice_shown: false,
@@ -89,12 +119,15 @@ impl Session {
         })
     }
 
-    pub(crate) fn add_plan(&mut self, file: Option<PathBuf>, plan: Value) -> &OpenPlan {
+    pub(crate) fn add_plan(&mut self, file: Option<PathBuf>, plan: Value, stamp: Option<Stamp>) -> &OpenPlan {
         self.opened += 1;
         self.plans.push(OpenPlan {
             id: format!("p{}", self.opened),
             file,
+            original: plan.clone(),
             plan,
+            history: Vec::new(),
+            stamp,
         });
         self.plans.last().expect("just added")
     }
@@ -113,6 +146,12 @@ impl Session {
         id
     }
 
+    /// #212: The open plan `id` to change.
+    pub(crate) fn plan_mut(&mut self, id: &str) -> Result<&mut OpenPlan, String> {
+        self.plan(id)?;
+        Ok(self.plans.iter_mut().find(|p| p.id == id).expect("checked above"))
+    }
+
     pub(crate) fn result(&self, id: &str) -> Result<&SessionResult, String> {
         self.results.iter().find(|r| r.id == id).ok_or_else(|| {
             if self.results.is_empty() {
@@ -129,7 +168,10 @@ impl Session {
         let mut r = Redactor::new(Redactor::home());
         for p in &self.plans {
             if !self.names {
-                r.add_plan(&p.plan);
+                // #212: also the names of earlier states, which changes and undo show as old values.
+                for v in std::iter::once(&p.plan).chain(&p.history).chain([&p.original]) {
+                    r.add_plan(v);
+                }
             }
             if let Some(f) = &p.file {
                 r.add_file(f);
