@@ -1870,3 +1870,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #247/AK1 | Die Ursache ist benannt (Verhalten geändert oder Test veraltet, seit welchem Commit). | ☑ | **gilt** | – | 24.11.2026 ok (Kommentar: Test veraltet; seit #236 bdff79d endet das Erwerbseinkommen einer neuen Person 2 mit dem PK-Bezug, die Warnung entfällt absichtlich) |
 | #247/AK2 | Ist das Verhalten richtig, passt der Test zur neuen Meldung; sonst ist der Fehler im Code behoben. `npx playwright test ui-planung.spec.js` ist grün. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) `#232/AK1–AK5` | 24.11.2026 ok (Test angepasst: ohne Meldung bei eingeschaltetem Schalter, «noch 90'000 pro Jahr» bei ausgeschaltetem; 46 Tests grün) |
+
+### #248 Optimierung ersetzt Verläufe der neuen Formen auch vor der Pensionierung
+
+[Issue #248](https://github.com/ingen63/VivaPlan/issues/248) · geschlossen · Umsetzung: 1fc2fde
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #248/AK1 | Bei allen Verlaufsformen bleibt der Verlauf vor der Pensionierung unverändert; ab der Pensionierung gilt der optimierte Wert. | ☑ | **gilt** (Kennlinie wird ersetzt, nach Kommentar) | `issue_248_ak1_optimized_patch_keeps_the_line_before_retirement` | 24.11.2026 ok (Test grün, Monat für Monat verglichen) |
+| #248/AK2 | Test je Form (`const`, `timed`, `linear`, `table`, `factor`) für Aktienanteil und Reserve. | ☑ | **gilt** | `issue_248_ak2_…` (dazu `curve`) | 24.11.2026 ok (Tests grün; ohne Korrektur scheitern linear, table, factor) |
+| #248/AK3 | Golden unverändert. | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (Golden-Dateien unverändert) |
