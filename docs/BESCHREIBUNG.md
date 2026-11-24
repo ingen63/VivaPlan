@@ -34,7 +34,8 @@ Der Editor führt durch zwölf Abschnitte:
 - **Haushalt & Projekt:** Personen mit Geburtsdatum, Währung; auf Wunsch eine **zweite Person** (Double Income) mit
   eigenem Einkommen, eigener Pensionskasse und AHV und den Ehepaar-Regeln (Plafonierung der AHV-Renten,
   eigene Steuertabellen für Verheiratete, Kapitalbezüge eines Jahres zusammen besteuert); bei unverheirateten Paaren
-  zahlt jede Person die Kapitalbezugssteuer auf ihre eigenen Bezüge.
+  zahlt jede Person die Kapitalbezugssteuer auf ihre eigenen Bezüge. «Verheiratet» gibt es auch für eine Person
+  allein (Ehepartner ohne Einkommen und Rente): Dann gelten die Steuertarife und Abzüge für Verheiratete (#250).
 - **Meilensteine:** Zeitpunkte als Datum oder als Alter einer Person («mit 63»). Jede Person hat zwei feste,
   nicht löschbare Meilensteine: **Bezug Pensionskasse** (58 bis 65 Jahre) und **AHV-Bezug** (63 bis 70 Jahre), beide
   standardmässig 65. Alle anderen Angaben können sich auf Meilensteine beziehen; verschiebt man den Bezug der

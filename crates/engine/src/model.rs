@@ -187,6 +187,10 @@ pub struct Household {
     /// Married: rules for couples (AHV cap, tax tables for married couples).
     #[serde(default = "yes")]
     pub married: bool,
+    /// #250: `married` also applies to a single person (taxes for married couples). Marker of [`crate::upgrade`]:
+    /// older plans held `married` = true for one person without effect; they are taken over as single.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub married_noted: bool,
     /// Cap on the two AHV pensions together per month (150 % of the maximum pension).
     #[serde(default = "default_couple_cap")]
     pub ahv_couple_cap: f64,

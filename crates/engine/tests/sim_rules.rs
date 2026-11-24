@@ -172,6 +172,7 @@ fn couple() -> Value {
     let mut v = base();
     v["household"]["persons"] =
         json!([{"id": "A", "name": "A", "birth": "1966-11"}, {"id": "B", "name": "B", "birth": "1966-11"}]); // #191: both 65 in 2031-11
+    v["household"]["married"] = json!(true); // #250: the bundled plan starts unmarried
     v["pension"]["pk"] = json!({"capital": 800_000, "at": "retire", "lumpsum": 0, "conversion": 0.05});
     v["pension"]["ahv"] = json!({"monthly": 2500, "at": "ahv", "indexed": true});
     v["partner"] = json!({"income": 0, "pk": {"capital": 600_000, "at": "2031-12", "lumpsum": 0, "conversion": 0.05, "interest": 0.012},

@@ -5189,6 +5189,12 @@
     "text": "From December 2026 the simulation includes the 13th AHV pension: every December one twelfth of the AHV pensions paid in the year in addition. The result may therefore differ from before (more income in retirement)."
   },
   {
+    "code": "note_married_single",
+    "params": {},
+    "template": "“Married” now also applies to a single person (tariffs and deductions for married couples). Until now it had no effect with one person; the plan is therefore taken over as unmarried and computes as before. If you are married, tick “Married” under “General”.",
+    "text": "“Married” now also applies to a single person (tariffs and deductions for married couples). Until now it had no effect with one person; the plan is therefore taken over as unmarried and computes as before. If you are married, tick “Married” under “General”."
+  },
+  {
     "code": "note_ahv_early",
     "params": {
       "new": 12345.678,

@@ -484,9 +484,10 @@ R.general = () => `
       : `<div class="person ghost"><button class="btn" data-action="partner-add">${tr("general.addPerson2")}</button><span class="computed">${tr("general.doubleIncome")}</span></div>`}
   </div>
   <p class="hint">${tr("general.noPensionFundHint", { max: fmtInt(limits().pillar3aMaxLarge) })}</p>
-  ${state.partner ? `<div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
-    <div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
-    <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>` : ""}</div>
+  <div style="margin-top:14px">${Chk("household.married", tr("general.married"))}</div>
+  ${state.partner ? `<div class="grid2" style="margin-top:10px">${state.household.married ? F("household.ahvCoupleCap", tr("general.ahvCap"), "chf") : ""}</div>
+    <p class="hint">${state.household.married ? tr("general.ahvCapMarried") : tr("general.ahvCapSingle")} ${tr("general.householdHint")}</p>`
+    : `<p class="hint">${tr("general.marriedSingleHint")}</p>`}</div>
   <div class="card"><h3>${tr("general.period")}</h3>
     <div class="grid2"><div>${tr("general.start", { c: C("ms", "start") })}</div><div>${tr("general.end", { c: C("ms", "end") })}</div></div>
     <p class="hint">${tr("general.periodHint")}</p></div>`;
@@ -1451,7 +1452,7 @@ R.taxes = () => {
   ${own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : ""}
   ${own ? gainCard() : locGainCard()}
-  ${own && state.partner && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
+  ${own && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
     <p class="hint">${tr("taxes.marriedHint")}</p>
     ${coupleTables}</div>` : ""}`;
@@ -2296,6 +2297,8 @@ const ACTIONS = {
     const a = state.household.persons[0], id = a.id === "B" ? "C" : "B";
     state.household.persons.push({ id, name: tr("general.person2"), birth: a.birth });
     state.partner = newPartner();
+    // #250: new plans start unmarried; a couple starts married as before (the box can be cleared)
+    state.household.married = true;
     const at = state.milestones.length - 1;
     state.milestones.splice(at, 0, { id: "retire2", kind: "age", person: id, years: 65 }, { id: "ahv2", kind: "age", person: id, years: 65 });
     markDirty(); renderSection();
@@ -2307,7 +2310,8 @@ const ACTIONS = {
     const used = own.find(m => countRefs(m.id));
     if (used) { state.partner = saved; return toast(tr("actions.usedReplaceFirst", { name: msLabel(used) })); }
     state.milestones = state.milestones.filter(m => !own.includes(m));
-    state.household.persons.splice(1, 1); delete state.partner; delete state.taxes.couple;
+    // #250: the tables for married couples stay with «Verheiratet» (they also apply to a single person)
+    state.household.persons.splice(1, 1); delete state.partner; if (!state.household.married) delete state.taxes.couple;
     state.pillar3a = state.pillar3a.filter(a => a.person !== b.id);
     markDirty(); renderSection();
   },
@@ -3433,7 +3437,7 @@ function paramSections(plan, full = false) {
   const out = [];
   const persons = plan.household?.persons || [];
   out.push([tr("params.household"), [[tr("general.currency"), c], ...persons.map((p, i) => [tr("params.personBirth", { v: i + 1 }), ymShow(p.birth)]),
-    ...(persons.length > 1 ? [[tr("params.married"), yn(plan.household?.married)], ...(plan.household?.married ? [[tr("general.ahvCap"), money(plan.household.ahvCoupleCap)]] : [])] : [])]]);
+    [tr("params.married"), yn(plan.household?.married)], ...(persons.length > 1 && plan.household?.married ? [[tr("general.ahvCap"), money(plan.household.ahvCoupleCap)]] : [])]]);
   out.push([tr("section.milestones"), (plan.milestones || []).map(m => [m.name, m.kind === "date" ? ymShow(m.date) : tr("params.ageOfPerson", { years: m.years, max: Math.max(1, persons.findIndex(p => p.id === m.person) + 1) })])]);
   const pens = (pre, o, ahv) => [
     [tr("params.pkCapital", { pre }), money(o.pk?.capital)], [tr("params.pkFrom", { pre }), at(o.pk?.at)], [tr("params.lumpsum", { pre }), pc(o.pk?.lumpsum)],
@@ -3921,7 +3925,7 @@ onLanguage(() => PLAN_HIDDEN = [
   [/^realestate\.affordability\.wealthContribution$/, tr("planHidden.noField")], [/^withdrawal\.buckets\.reserveMonths$/, tr("planHidden.noField")],
   [/^realestate\.properties\.\d+\.inflation$/, tr("planHidden.legacyField")],
   [/^returns\.parametric\.sampler$/, tr("planHidden.sampling")],
-  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")], [/(^|\.)ahv\.referenceAge$/, tr("planHidden.noField")],
+  [/(^|\.)ahv\.thirteenthNoted$/, tr("planHidden.noField")], [/^household\.marriedNoted$/, tr("planHidden.noField")], [/(^|\.)ahv\.referenceAge$/, tr("planHidden.noField")],
 ]);
 function cmpPlan(body, items, datas) {
   // Sections in the order of the editor, within them the labels in the order of their first occurrence

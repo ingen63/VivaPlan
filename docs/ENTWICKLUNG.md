@@ -575,8 +575,10 @@ ein (`BUILTIN`).
   vereinigten Stützpunkten zusammen; Einkommenssteuer = diese Tabelle auf das steuerbare Einkommen Kanton + Bundeskurve
   auf das steuerbare Einkommen Bund (`Resolved::income_tax`). Vermögenssteuer = Vermögenskurve (Sozialabzüge
   eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie
-  bei `taxes.couple`: zweite Person und `household.married`; unverheiratete Paare rechnen mit den Kurven und Abzügen
-  für Alleinstehende auf dem Haushaltseinkommen.
+  bei `taxes.couple`: `household.married` und entweder eine zweite Person oder die Markierung
+  `household.marriedNoted` (#250: dann auch eine Person allein; ältere Planungen mit einer Person übernimmt
+  `upgrade` als unverheiratet); unverheiratete Paare rechnen mit den Kurven und Abzügen für Alleinstehende auf dem
+  Haushaltseinkommen. Die Plafonierung der AHV braucht immer zwei Personen.
 - **Abzüge vom Einkommen (#131):** `taxes.deductions` = zeitabhängige Zeilen `{ from, kind: "canton" | "own", amount,
   rate }` (`CDeduction`, sortiert wie eine Kurve), `taxes.deductPillar3a` (Standard nein). Fehlt `deductions`, gilt
   wie vor #131 im Modus «Wohnort» der Vorschlag über die ganze Zeit, mit eigenen Tabellen nichts. `Run::year_ded`

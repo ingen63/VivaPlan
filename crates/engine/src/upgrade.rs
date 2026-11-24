@@ -17,6 +17,8 @@
 //!   already adjusted; it is converted back to the pension at 65 (amount / (1 − reduction) or / (1 + supplement)),
 //!   with a note per person; the simulation computes with about the same pension (reduction and supplement in francs,
 //!   for married couples after the cap).
+//! - #250: The household gets the marker `marriedNoted`. Before, `married` had no effect for a single person (and was
+//!   true by default); such a plan is taken over as single (`married` = false) with a note, so it computes as before.
 
 use std::borrow::Cow;
 
@@ -79,6 +81,7 @@ pub fn upgrade(v: &mut Value) -> Vec<Message> {
     sampler(v, &mut notes);
     thirteenth_ahv(v, &mut notes);
     ahv_reference_age(v, &births, &mut notes);
+    married(v, &mut notes);
     // #154: last, because `housing` needs a readable plan, and the steps before can only make it readable
     // (e.g. an invalid `returns.series`). Otherwise only the next opening would catch up on the adjustment.
     housing(v, &mut notes);
@@ -148,6 +151,26 @@ fn thirteenth_ahv(v: &mut Value, notes: &mut Vec<Message>) {
     let pension = |p: &str| v.pointer(p).and_then(Value::as_f64).unwrap_or(0.0) > 0.0;
     if pension("/pension/ahv/monthly") || pension("/partner/ahv/monthly") {
         notes.push(msg!(note_thirteenth_ahv));
+    }
+}
+
+/// #250: Note when a plan with a single person is taken over as single.
+pub const MARRIED_SINGLE_NOTE: &str = "“Married” now also applies to a single person (tariffs and deductions for married couples). Until now it had no effect with one person; the plan is therefore taken over as unmarried and computes as before. If you are married, tick “Married” under “General”.";
+
+/// #250: Marker `household.marriedNoted`. If it is missing, `married` had no effect for a single person; such a plan
+/// with `married` (also by default) becomes single, with a note. Plans with two persons stay the same.
+fn married(v: &mut Value, notes: &mut Vec<Message>) {
+    let Some(h) = v.pointer_mut("/household").and_then(Value::as_object_mut) else {
+        return;
+    };
+    if h.get("marriedNoted").and_then(Value::as_bool) == Some(true) {
+        return;
+    }
+    h.insert("marriedNoted".into(), json!(true));
+    let single = h.get("persons").and_then(Value::as_array).is_some_and(|p| p.len() == 1);
+    if single && h.get("married").and_then(Value::as_bool) != Some(false) {
+        h.insert("married".into(), json!(false));
+        notes.push(msg!(note_married_single));
     }
 }
 
@@ -878,5 +901,43 @@ mod tests {
         let once = v.clone();
         assert!(upgrade(&mut v).is_empty());
         assert_eq!(v, once);
+    }
+
+    // #250/AK4: an older plan with one person and `married` (explicit or by default) becomes single, with a note,
+    // once; with the marker or two persons nothing changes.
+    #[test]
+    fn issue_250_ak4_single_person_taken_over_as_unmarried() {
+        for married in [Some(true), None] {
+            let mut v = plan();
+            if let Some(m) = married {
+                v["household"]["married"] = json!(m);
+            }
+            let notes = upgrade(&mut v);
+            assert_eq!(v["household"]["married"], false, "{married:?}");
+            assert_eq!(v["household"]["marriedNoted"], true);
+            assert!(notes.iter().any(|n| n == MARRIED_SINGLE_NOTE), "{notes:?}");
+            assert!(upgrade(&mut v).is_empty(), "nur einmal");
+        }
+        // unmarried single person: marker only, no note
+        let mut v = plan();
+        v["household"]["married"] = json!(false);
+        assert!(!upgrade(&mut v).iter().any(|n| n == MARRIED_SINGLE_NOTE));
+        assert_eq!(v["household"]["marriedNoted"], true);
+        // with the marker, `married` stays as it is (also for one person)
+        let mut v = plan();
+        v["household"]["married"] = json!(true);
+        v["household"]["marriedNoted"] = json!(true);
+        assert!(!upgrade(&mut v).iter().any(|n| n == MARRIED_SINGLE_NOTE));
+        assert_eq!(v["household"]["married"], true);
+        // two persons: `married` stays
+        let mut v = plan();
+        v["household"]["persons"] = json!([
+            { "id": "A", "name": "A", "birth": "1980-06" },
+            { "id": "B", "name": "B", "birth": "1982-06" }
+        ]);
+        v["household"]["married"] = json!(true);
+        assert!(!upgrade(&mut v).iter().any(|n| n == MARRIED_SINGLE_NOTE));
+        assert_eq!(v["household"]["married"], true);
+        assert_eq!(v["household"]["marriedNoted"], true);
     }
 }

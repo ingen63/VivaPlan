@@ -15,7 +15,8 @@
   "format": "vivaplan/1",
   "household": {
     "ahvCoupleCap": 3780,
-    "married": true,
+    "married": false,
+    "marriedNoted": true,
     "persons": [
       {
         "birth": "1966-11",

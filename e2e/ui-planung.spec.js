@@ -872,3 +872,30 @@ test.describe("Affordability in the settings (#233)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Married with one person (#250)", () => {
+  test("AK1: «Verheiratet» also for one person, with a hint; older plans are taken over as unmarried", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Haushalt & Projekt");
+    expect(await page.evaluate(() => state.household.persons.length)).toBe(1);
+    const box = page.locator('#main input[data-path="household.married"]');
+    await expect(box).toBeVisible();
+    await expect(box).not.toBeChecked();
+    await expect(page.locator("#main")).toContainText("Verheiratet mit einer Person: Steuern mit den Tarifen und Abzügen für Verheiratete");
+    // no AHV cap with one person
+    await expect(page.locator('#main input[data-path="household.ahvCoupleCap"]')).toHaveCount(0);
+    await box.check();
+    expect(await page.evaluate(() => state.household.married)).toBe(true);
+    // AK4: an older plan with one person and `married` becomes unmarried with a note
+    const r = await page.evaluate(async () => {
+      const p = structuredClone(state);
+      p.household.married = true; delete p.household.marriedNoted;
+      const u = await Engine.call("upgrade_plan", { plan: p });
+      return { married: u.plan.household.married, noted: u.plan.household.marriedNoted, notes: u.notes.map(msgText) };
+    });
+    expect(r.married).toBe(false);
+    expect(r.noted).toBe(true);
+    expect(r.notes.some(n => n.startsWith("«Verheiratet» gilt neu auch für eine Person allein"))).toBe(true);
+    await noErrors(page, errors);
+  });
+});

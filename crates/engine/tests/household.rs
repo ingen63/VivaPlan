@@ -239,6 +239,87 @@ fn single_person_plan_ignores_couple_settings() {
     assert!((res.records[16].taxes - 1_200.0).abs() < 1e-6);
 }
 
+/// #250: one person with income 100 000 per year, own deduction 30 000, taxes at the place of residence (Zurich).
+fn single_location(married: bool, noted: bool) -> Value {
+    let mut v = base();
+    v["household"]["married"] = json!(married);
+    v["household"]["marriedNoted"] = json!(noted);
+    v["milestones"][1]["date"] = json!("2040-01");
+    v["flows"]["income"] = json!(100_000.0 / 12.0);
+    v["taxes"] = json!({
+        "income": [], "wealth": [], "capital": [],
+        "mode": "location", "location": { "canton": "ZH", "municipality": 261, "church": "none" },
+        "deductions": [ { "from": "start", "kind": "own", "amount": 30_000 } ]
+    });
+    v
+}
+
+/// #250: income and wealth tax assessed for the first year (December 2030).
+fn assessed(v: Value) -> (f64, f64) {
+    let r = &run(v).records[11];
+    (r.assessed_income, r.assessed_wealth)
+}
+
+// #250/AK2: one person with «Verheiratet» computes like a married couple whose second person has no income
+// (tariffs and deductions for married couples, canton and federal tax); without it like a single person.
+#[test]
+fn issue_250_ak2_single_married_person_uses_married_tariffs() {
+    let married = assessed(single_location(true, true));
+    let mut couple = with_partner(single_location(true, true));
+    couple["household"]["marriedNoted"] = json!(false);
+    let couple = assessed(couple);
+    assert!((married.0 - couple.0).abs() < 1e-6, "{married:?} {couple:?}");
+    assert!((married.1 - couple.1).abs() < 1e-6, "{married:?} {couple:?}");
+    let single = assessed(single_location(false, true));
+    assert!(
+        single.0 > married.0 + 100.0,
+        "Alleinstehende zahlen mehr: {single:?} {married:?}"
+    );
+    assert!(single.1 > married.1, "{single:?} {married:?}");
+}
+
+// #250/AK2, AK4: without the marker (older plan, read directly) `married` has no effect for one person as before.
+#[test]
+fn issue_250_ak4_without_marker_single_person_stays_single() {
+    let old = assessed(single_location(true, false));
+    let single = assessed(single_location(false, true));
+    assert_eq!(old, single);
+}
+
+// #250/AK2: with own tables, the tables for married couples also apply to a single person with «Verheiratet».
+#[test]
+fn issue_250_ak2_own_couple_tables_for_single_married_person() {
+    let mut v = base();
+    v["household"]["married"] = json!(true);
+    v["household"]["marriedNoted"] = json!(true);
+    v["flows"]["income"] = json!(1_000);
+    v["milestones"][1]["date"] = json!("2040-01");
+    v["taxes"] = json!({
+        "multiplier": 1.0,
+        "income": [[0, 0.2]], "wealth": [], "capital": [],
+        "couple": { "income": [[0, 0.1]], "wealth": [], "capital": [] }
+    });
+    let res = run(v);
+    assert!(
+        (res.records[16].taxes - 1_200.0).abs() < 1e-6,
+        "{}",
+        res.records[16].taxes
+    );
+}
+
+// #250/AK3: one person with «Verheiratet» has no cap on the AHV pension (the cap needs two pensions).
+#[test]
+fn issue_250_ak3_single_married_person_ahv_not_capped() {
+    let mut v = base();
+    v["household"]["persons"][0]["birth"] = json!("1965-01");
+    v["household"]["married"] = json!(true);
+    v["household"]["marriedNoted"] = json!(true);
+    v["household"]["ahvCoupleCap"] = json!(2_000);
+    v["pension"]["ahv"] = json!({ "monthly": 2_520, "at": "start" });
+    let res = run(v);
+    assert!((res.records[0].ahv - 2_520.0).abs() < 1e-9, "{}", res.records[0].ahv);
+}
+
 // ---------------------------------------------------------------------------------------------
 // Withdrawal strategies
 // ---------------------------------------------------------------------------------------------

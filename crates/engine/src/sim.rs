@@ -951,7 +951,10 @@ impl Simulator {
                 &q.ahv,
             )?);
         }
-        let couple = people.len() > 1 && plan.household.married;
+        // #250: taxes for married couples also for a single person (plans with the marker `marriedNoted`);
+        // the AHV cap needs two persons.
+        let couple = plan.household.married && (people.len() > 1 || plan.household.married_noted);
+        let couple_cap = (plan.household.married && people.len() > 1).then_some(plan.household.ahv_couple_cap);
         let separate = people.len() > 1 && !plan.household.married;
         let mut taxes = plan.taxes.clone();
         if let (true, Some(c)) = (couple, &plan.taxes.couple) {
@@ -1140,7 +1143,7 @@ impl Simulator {
             end,
             months: (start.until(end) + 1) as usize,
             people,
-            couple_cap: couple.then_some(plan.household.ahv_couple_cap),
+            couple_cap,
             capital_per_person: separate,
             spending: curve(&plan.flows.spending)?,
             housing_share: if plan.flows.spending_includes_housing {
