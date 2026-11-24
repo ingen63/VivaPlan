@@ -1930,3 +1930,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #248/AK1 | Bei allen Verlaufsformen bleibt der Verlauf vor der Pensionierung unverändert; ab der Pensionierung gilt der optimierte Wert. | ☑ | **gilt** (Kennlinie wird ersetzt, nach Kommentar) | `issue_248_ak1_optimized_patch_keeps_the_line_before_retirement` | 24.11.2026 ok (Test grün, Monat für Monat verglichen) |
 | #248/AK2 | Test je Form (`const`, `timed`, `linear`, `table`, `factor`) für Aktienanteil und Reserve. | ☑ | **gilt** | `issue_248_ak2_…` (dazu `curve`) | 24.11.2026 ok (Tests grün; ohne Korrektur scheitern linear, table, factor) |
 | #248/AK3 | Golden unverändert. | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (Golden-Dateien unverändert) |
+
+### #253 «Ohne Pensionskasse» im Abschnitt Vorsorge, Pensionskasse dann gesperrt
+
+[Issue #253](https://github.com/ingen63/VivaPlan/issues/253) · geschlossen · Umsetzung: 0286c98
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #253/AK1 | Schalter zuoberst in der Karte «Pensionskasse», nicht mehr unter «Haushalt & Projekt»; gespeichert in `household.persons.N.noPensionFund`. | ☑ | **gilt** | e2e `ui-steuern.spec.js` AK1 (#253) | 24.11.2026 ok (e2e grün) |
+| #253/AK2 | Gesetzt: alle PK-Felder der Person schreibgeschützt und grau, AHV bleibt bearbeitbar. | ☑ | **gilt** (Link «ändern» zu Meilensteinen bleibt klickbar) | e2e `ui-steuern.spec.js` AK2 (#253) | 24.11.2026 ok (e2e grün) |
+| #253/AK3 | PK rechnet mit 0, Werte bleiben gespeichert, Warnung #152 entfällt. | ☑ | **gilt** | `tests/no_pension_fund.rs` | 24.11.2026 ok (Handwerte 2 083.33 / 0) |
+| #253/AK4 | Ohne Schalter unverändert, Golden unverändert. | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (1206/1206 grün) |
+| #253/AK5 | Tests, Hilfe 4 Sprachen, BESCHREIBUNG, Spezifikation nachgeführt. | ☑ | **gilt** | — | 24.11.2026 ok (Durchsicht) |
