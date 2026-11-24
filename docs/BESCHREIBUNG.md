@@ -409,6 +409,13 @@ Formen von Variationsraum und Ziel, drei Beispiel-Experimente, die beim Aufruf g
 0,5 s, an der angegebenen oder der Beispielplanung) und die Grenzen des Modells. Der Katalog wird aus Schema und Code
 erzeugt, ist englisch und bleibt unter 20'000 Zeichen; einzelne Abschnitte mit `describe <abschnitt>`.
 
+Agent Skill (#208): Dem Paket liegt die Anleitung `vivaplan-skill` (Ordner mit `SKILL.md`, offenes Format) für
+KI-Assistenten mit Zugriff auf die Kommandozeile bei, etwa Claude Code oder Claude Desktop (Bereich «Code»). Sie
+erklärt Befehle, wichtige Felder mit Einheiten (Anteile statt Prozent), nominal und real, die Grenzen der Aussagen und
+den Haftungsausschluss. Sie ist englisch, die KI antwortet in der Sprache des Menschen. Die Skill weist die KI an, vor
+dem ersten Lesen einer Planung darauf hinzuweisen, dass die gelesenen Daten an den Anbieter der KI gehen. Die Hilfe sagt,
+wo die Skill liegt und wie man sie einrichtet.
+
 ## Installation
 
 Pakete für **Windows** (.msi, .exe), **Linux** (.deb, .AppImage; .rpm nur ohne Vorabversion) und **macOS** (.dmg) baut

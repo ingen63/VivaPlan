@@ -44,6 +44,7 @@ Usage:
          performance measured in about 0.5 s on the plan, otherwise on the example plan)
   vivaplan schema
   vivaplan --version
+  vivaplan --help   (this help)
   vivaplan library [--library <folder>] [--data-dir <folder>]   (time series of the data library)
   vivaplan import-shiller <ie_data.xls|.xlsx|.ods> [--library <folder>]
   vivaplan import-snb <cube.csv>… [--library <folder>]   (devkum, plkopr, zimoma, rendoblim from data.snb.ch)
@@ -80,6 +81,11 @@ fn main() -> ExitCode {
                 .map(PathBuf::from)
                 .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../app/ui"));
             devserver::serve(port, ui, dev_library_dir(&args)).map_err(Into::into)
+        }
+        // #208: the help on request goes to the standard output and ends without an error code.
+        Some("--help" | "-h" | "help") => {
+            print!("{USAGE}");
+            Ok(())
         }
         Some("--version" | "-V") => {
             println!("vivaplan {}", env!("CARGO_PKG_VERSION"));

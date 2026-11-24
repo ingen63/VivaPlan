@@ -118,6 +118,25 @@
         "years"
       ],
       "reason": "JSON-Schlüssel und Werte des Experiment-Beispiels in der Referenz (#216); Code, in allen Sprachen gleich"
+    },
+    {
+      "langs": [
+        "en",
+        "fr",
+        "it"
+      ],
+      "words": [
+        "Applications",
+        "claude",
+        "Contents",
+        "cp",
+        "mkdir",
+        "Resources",
+        "skill",
+        "skills",
+        "vivaplan"
+      ],
+      "reason": "Terminalbefehl zum Einrichten der Agent Skill (#208): Befehle und Pfade, in allen Sprachen gleich"
     }
   ],
   "findings": [

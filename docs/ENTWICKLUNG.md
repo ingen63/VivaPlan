@@ -189,6 +189,12 @@ nicht in `tauri.conf.json`, weil `tauri-build` die Datei sonst bei jedem `cargo 
 Ohne `--config` entsteht das Paket wie bisher ohne Kommandozeile. Die Kommandozeile bestimmt den Datenordner der App wie
 Tauri (`engine::appdata`, Test in der App) und übernimmt die Einstellungen (Grenzen, Tragbarkeit) wie `api.js`.
 
+**Agent Skill im Paket (#208):** `vivaplan-skill/SKILL.md` (offenes Format, englisch; `name` = Ordnername) erklärt KIs die
+Kommandozeile. `tauri.cli.conf.json` legt sie als `bundle.resources` ins Paket (macOS `VivaPlan.app/Contents/Resources/`,
+Windows im Installationsordner, Linux `/usr/lib/VivaPlan/`). `crates/cli/tests/skill.rs` prüft, dass alle Befehle und
+Optionen der Skill in `vivaplan --help` stehen, die genannten `describe`-Abschnitte existieren und die Beispiel-Kennzahlen
+rechnen. Neue oder umbenannte Befehle und Optionen deshalb in der Skill nachführen.
+
 **App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
 vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung
 an einer der beiden Dateien alle Rasterdateien neu erzeugen (macOS):

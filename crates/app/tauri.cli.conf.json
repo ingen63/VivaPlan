@@ -6,6 +6,9 @@
   "bundle": {
     "externalBin": [
       "binaries/vivaplan"
-    ]
+    ],
+    "resources": {
+      "../../vivaplan-skill/SKILL.md": "vivaplan-skill/SKILL.md"
+    }
   }
 }

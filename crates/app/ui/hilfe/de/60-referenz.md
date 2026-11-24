@@ -87,7 +87,7 @@ Die Kommandozeile gibt ihre Texte, Meldungen und Ereignisse auf Englisch aus, un
 | Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
 | Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
 
-Beim AppImage liegt das Programm im Abbild und lässt sich nicht direkt aufrufen.
+Beim AppImage liegt das Programm im Abbild und lässt sich nicht direkt aufrufen. `vivaplan --help` zeigt alle Befehle. Für KI-Assistenten liegt eine [Anleitung](#ref-skill) bei.
 
 Die Kommandozeile rechnet wie die App mit deren Datenordner: mit den Zeitreihen im Unterordner `Zeitreihen`, auch mit in der App eingelesenen Reihen (`library:<Datei>`), und mit den Grenzen und der Tragbarkeit aus den [Einstellungen](#f-settings) (`einstellungen.json`). Der Datenordner ist unter macOS `~/Library/Application Support/ch.vivaplan-app.desktop`, unter Windows `%APPDATA%\ch.vivaplan-app.desktop` und unter Linux `~/.local/share/ch.vivaplan-app.desktop`. `--data-dir <ordner>` nimmt einen anderen Datenordner, `--library <ordner>` eine andere Datenbibliothek. Fehlt der Datenordner, rechnet die Kommandozeile mit den eingebauten Reihen und den Standardgrenzen und meldet das einmal.
 
@@ -216,6 +216,30 @@ Stichworte: describe, Katalog, KI, Felder, Einheit, Wertebereich, Zustandsgröss
 | `limits` | Grenzen des Modells: unabhängige Jahre im parametrischen Modell, Auswahlfehler bei vielen Varianten, Unsicherheit, nominal und real, Rechenzeit |
 
 Mit `--json` kommt der Katalog im festen Format `vivaplan-describe/1`. Die vollständigen Beschreibungen und den genauen Aufbau zeigt `vivaplan schema`.
+
+## @ref-skill Anleitung für KI-Assistenten (Agent Skill)
+Stichworte: Skill, Agent Skill, SKILL.md, Claude, Claude Code, KI, Assistent, einrichten
+
+Dem Installationspaket liegt eine Anleitung für KI-Assistenten bei, die Befehle ausführen können: die Agent Skill `vivaplan-skill` im offenen Format (Ordner mit der Datei `SKILL.md`). Sie erklärt der KI die [Kommandozeile](#ref-cli), die wichtigen Felder mit ihren Einheiten (Anteile statt Prozent), nominal und real, die Grenzen der Aussagen und den Haftungsausschluss. Die Anleitung ist englisch; die KI antwortet trotzdem in Ihrer Sprache.
+
+| System | Ordner der Skill |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/Resources/vivaplan-skill` |
+| Windows (Installationsprogramm `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan-skill` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan-skill` |
+| Linux (`.deb`, `.rpm`) | `/usr/lib/VivaPlan/vivaplan-skill` |
+
+**Einrichten in Claude Code und in Claude Desktop (Bereich «Code»):** Beide lesen persönliche Skills aus dem Ordner `.claude/skills` in Ihrem Benutzerordner. Kopieren Sie den Ordner `vivaplan-skill` dorthin, unter macOS zum Beispiel im Terminal:
+
+```
+mkdir -p ~/.claude/skills && cp -R /Applications/VivaPlan.app/Contents/Resources/vivaplan-skill ~/.claude/skills/
+```
+
+Unter Windows kopieren Sie den Ordner nach `%USERPROFILE%\.claude\skills`. Starten Sie danach eine neue Sitzung. Fragen Sie dann zum Beispiel: «Reicht mein Vermögen bis 95? Meine Planung ist ~/Dokumente/planung.vplan». Claude ruft dafür `vivaplan` auf und fragt vorher, ob es Befehle ausführen darf. Nach einer neuen Version von VivaPlan kopieren Sie den Ordner erneut.
+
+**Datenschutz:** Was die KI aus Ihrer Planung oder aus den Ergebnissen liest (Geburtsdaten, Einkommen, Vermögen, Renten), geht an den Anbieter der KI. Die Skill weist die KI an, Sie vor dem ersten Lesen darauf hinzuweisen. VivaPlan selbst sendet nichts.
+
+Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
 
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV

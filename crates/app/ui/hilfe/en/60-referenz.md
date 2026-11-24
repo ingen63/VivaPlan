@@ -87,7 +87,7 @@ The command line outputs its texts, messages and events in English, regardless o
 | Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
 | Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
 
-With the AppImage the program lies inside the image and cannot be called directly.
+With the AppImage the program lies inside the image and cannot be called directly. `vivaplan --help` shows all commands. A [guide](#ref-skill) for AI assistants is included.
 
 Like the app, the command line calculates with the app's data folder: with the time series in the subfolder `Zeitreihen`, including series imported in the app (`library:<file>`), and with the limits and the affordability from the [settings](#f-settings) (`einstellungen.json`). The data folder is `~/Library/Application Support/ch.vivaplan-app.desktop` on macOS, `%APPDATA%\ch.vivaplan-app.desktop` on Windows and `~/.local/share/ch.vivaplan-app.desktop` on Linux. `--data-dir <folder>` takes another data folder, `--library <folder>` another data library. If the data folder is missing, the command line calculates with the built-in series and the default limits and says so once.
 
@@ -216,6 +216,30 @@ Keywords: describe, catalog, AI, fields, unit, range, state variable, metric, co
 | `limits` | Limits of the model: independent years in the parametric model, selection error with many variants, uncertainty, nominal and real, computing time |
 
 With `--json` the catalog comes in the fixed format `vivaplan-describe/1`. The full descriptions and the exact structure are shown by `vivaplan schema`.
+
+## @ref-skill Guide for AI assistants (agent skill)
+Keywords: skill, agent skill, SKILL.md, Claude, Claude Code, AI, assistant, set up
+
+The installation package contains a guide for AI assistants that can run commands: the agent skill `vivaplan-skill` in the open format (folder with the file `SKILL.md`). It explains to the AI the [command line](#ref-cli), the important fields with their units (shares instead of percent), nominal and real, the limits of the results and the disclaimer. The guide is in English; the AI still answers in your language.
+
+| System | Folder of the skill |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/Resources/vivaplan-skill` |
+| Windows (installer `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan-skill` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan-skill` |
+| Linux (`.deb`, `.rpm`) | `/usr/lib/VivaPlan/vivaplan-skill` |
+
+**Set up in Claude Code and in Claude Desktop (section *Code*):** Both read personal skills from the folder `.claude/skills` in your user folder. Copy the folder `vivaplan-skill` there, on macOS for example in the Terminal:
+
+```
+mkdir -p ~/.claude/skills && cp -R /Applications/VivaPlan.app/Contents/Resources/vivaplan-skill ~/.claude/skills/
+```
+
+On Windows copy the folder to `%USERPROFILE%\.claude\skills`. Then start a new session. Ask for example: *Does my wealth last until 95? My plan is ~/Documents/plan.vplan*. Claude calls `vivaplan` for this and asks beforehand whether it may run commands. After a new version of VivaPlan copy the folder again.
+
+**Privacy:** What the AI reads from your plan or from the results (birth dates, income, wealth, pensions) goes to the provider of the AI. The skill tells the AI to point this out to you before it reads the first time. VivaPlan itself sends nothing.
+
+The results are model calculations without guarantee, no tax or investment advice; taxes are estimates.
 
 ## @ref-library Data library: folders and files
 Keywords: folder, time series, storage location, Application Support, CSV

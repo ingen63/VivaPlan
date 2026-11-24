@@ -108,6 +108,27 @@ Git prüfen. Die Ergebnisse sind über mehrere Läufe stabil (parallele Berechnu
 CPU-Auslastung wurde nicht separat erfasst (rayon nutzt alle Kerne; `time`: 101 s Benutzerzeit auf 37 s Wanduhr
 inklusive Kompilieren).
 
+## Prüfung von Hand: Agent Skill mit Claude (#208)
+
+Vor einer Version, nach Änderungen an `vivaplan-skill/SKILL.md` oder an der Kommandozeile. Paket mit
+`npx tauri build --config tauri.cli.conf.json` gebaut und installiert.
+
+1. Skill einrichten wie in der Hilfe (Referenz, «Anleitung für KI-Assistenten»): Ordner `vivaplan-skill` aus dem Paket
+   nach `~/.claude/skills/` kopieren, neue Sitzung in Claude Code oder Claude Desktop (Bereich «Code») starten.
+2. Beispielplanung in der App öffnen und als Datei speichern (zum Beispiel `~/Documents/beispiel.vplan`).
+3. In einem leeren Ordner auf Deutsch fragen: «Reicht mein Vermögen bis 95? Meine Planung ist
+   ~/Documents/beispiel.vplan».
+4. Erwartet:
+   - Claude nutzt die Skill (sichtbar im Verlauf) und weist vor dem ersten Lesen der Planung darauf hin, dass die Daten
+     an den Anbieter der KI gehen.
+   - Claude ruft `vivaplan run … --json` mit dem vollen Pfad des Programms auf, mit oder ohne `--metric`, und
+     rechnet nichts selbst.
+   - Die Antwort ist deutsch, nennt nominal oder real und die Methode (ein fester Pfad oder viele Pfade); bei einem
+     festen Pfad sagt sie, dass das keine Wahrscheinlichkeit ist, und bietet eine Monte-Carlo-Rechnung an.
+   - Die Antwort endet mit dem Haftungsausschluss; die Planungsdatei ist unverändert (`vivaplan set` schreibt eine
+     neue Datei).
+5. Ergebnis mit Datum, Version und Modell unter «Messungen» oder im Issue festhalten.
+
 ## Offene Punkte
 
 1. ~~**Cashflow-Invariante mit Immobilien, Pensionskasse und 3a**~~ – erledigt mit #133: Der Monatsdatensatz führt intern

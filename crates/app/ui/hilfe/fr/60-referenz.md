@@ -87,7 +87,7 @@ La ligne de commande affiche ses textes, messages et événements en anglais, in
 | Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
 | Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
 
-Avec l’AppImage, le programme se trouve dans l’image et ne peut pas être appelé directement.
+Avec l’AppImage, le programme se trouve dans l’image et ne peut pas être appelé directement. `vivaplan --help` affiche toutes les commandes. Un [guide](#ref-skill) pour les assistants IA est fourni.
 
 Comme l’application, la ligne de commande calcule avec le dossier de données de l’application: avec les séries temporelles du sous-dossier `Zeitreihen`, y compris les séries importées dans l’application (`library:<fichier>`), et avec les limites et la capacité financière des [paramètres](#f-settings) (`einstellungen.json`). Le dossier de données est `~/Library/Application Support/ch.vivaplan-app.desktop` sous macOS, `%APPDATA%\ch.vivaplan-app.desktop` sous Windows et `~/.local/share/ch.vivaplan-app.desktop` sous Linux. `--data-dir <dossier>` prend un autre dossier de données, `--library <dossier>` une autre bibliothèque de données. Si le dossier de données manque, la ligne de commande calcule avec les séries intégrées et les limites par défaut et le signale une fois.
 
@@ -216,6 +216,30 @@ Mots-clés: describe, catalogue, IA, champs, unité, plage de valeurs, grandeur 
 | `limits` | Limites du modèle : années indépendantes dans le modèle paramétrique, erreur de sélection avec de nombreuses variantes, incertitude, nominal et réel, temps de calcul |
 
 Avec `--json`, le catalogue est fourni au format fixe `vivaplan-describe/1`. Les descriptions complètes et la structure exacte sont affichées par `vivaplan schema`.
+
+## @ref-skill Guide pour les assistants IA (agent skill)
+Mots-clés: skill, agent skill, SKILL.md, Claude, Claude Code, IA, assistant, configurer
+
+Le paquet d’installation contient un guide pour les assistants IA capables d’exécuter des commandes: l’agent skill `vivaplan-skill` au format ouvert (dossier avec le fichier `SKILL.md`). Il explique à l’IA la [ligne de commande](#ref-cli), les champs importants avec leurs unités (parts au lieu de pourcentages), nominal et réel, les limites des résultats et la clause de non-responsabilité. Le guide est en anglais; l’IA répond néanmoins dans votre langue.
+
+| Système | Dossier du skill |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/Resources/vivaplan-skill` |
+| Windows (programme d’installation `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan-skill` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan-skill` |
+| Linux (`.deb`, `.rpm`) | `/usr/lib/VivaPlan/vivaplan-skill` |
+
+**Configurer dans Claude Code et dans Claude Desktop (section *Code*):** les deux lisent les skills personnels dans le dossier `.claude/skills` de votre dossier utilisateur. Copiez-y le dossier `vivaplan-skill`, sous macOS par exemple dans le Terminal:
+
+```
+mkdir -p ~/.claude/skills && cp -R /Applications/VivaPlan.app/Contents/Resources/vivaplan-skill ~/.claude/skills/
+```
+
+Sous Windows, copiez le dossier dans `%USERPROFILE%\.claude\skills`. Démarrez ensuite une nouvelle session. Demandez par exemple: *Ma fortune suffit-elle jusqu’à 95 ans? Ma planification est ~/Documents/planification.vplan*. Claude appelle pour cela `vivaplan` et demande auparavant s’il peut exécuter des commandes. Après une nouvelle version de VivaPlan, copiez à nouveau le dossier.
+
+**Protection des données:** ce que l’IA lit dans votre planification ou dans les résultats (dates de naissance, revenus, fortune, rentes) est transmis au fournisseur de l’IA. Le skill demande à l’IA de vous en avertir avant la première lecture. VivaPlan lui-même n’envoie rien.
+
+Les résultats sont des calculs de modèle sans garantie, pas un conseil fiscal ou en placement; les impôts sont estimés.
 
 ## @ref-library Bibliothèque de données: dossiers et fichiers
 Mots-clés: dossier, séries temporelles, emplacement, Application Support, CSV
