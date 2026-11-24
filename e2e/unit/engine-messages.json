@@ -3353,6 +3353,403 @@
     "text": "the number of years must be at least 1"
   },
   {
+    "code": "experiment_value_wrong",
+    "params": {
+      "expected": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: {value} does not fit; expected: {expected}",
+    "text": "Person 2: Person 2 does not fit; expected: Person 2"
+  },
+  {
+    "code": "experiment_key_unknown",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "valid": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: unknown key; valid: {valid}",
+    "text": "Person 2: unknown key; valid: Person 2"
+  },
+  {
+    "code": "experiment_key_missing",
+    "params": {
+      "key": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: “{key}” is missing",
+    "text": "Person 2: “Person 2” is missing"
+  },
+  {
+    "code": "experiment_items_count",
+    "params": {
+      "count": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "max": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "min": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: {count} entries; expected {min} to {max}",
+    "text": "Person 2: Person 2 entries; expected Person 2 to Person 2"
+  },
+  {
+    "code": "experiment_invalid",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: {problem}",
+    "text": "Person 2: Person 2"
+  },
+  {
+    "code": "experiment_variation_form",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: a variation needs a “path” with exactly one of “values”, “range” or “follows” (“offset” only with “follows”), or only a “group”",
+    "text": "Person 2: a variation needs a “path” with exactly one of “values”, “range” or “follows” (“offset” only with “follows”), or only a “group”"
+  },
+  {
+    "code": "experiment_values_empty",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: the list is empty",
+    "text": "Person 2: the list is empty"
+  },
+  {
+    "code": "experiment_range_invalid",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: a range [from, to, step] needs from ≤ to and a step above 0",
+    "text": "Person 2: a range [from, to, step] needs from ≤ to and a step above 0"
+  },
+  {
+    "code": "experiment_follows_unknown",
+    "params": {
+      "follows": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: “{follows}” is neither set nor varied in the experiment",
+    "text": "Person 2: “Person 2” is neither set nor varied in the experiment"
+  },
+  {
+    "code": "experiment_follows_number",
+    "params": {
+      "follows": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}”: the value of “{follows}” is not a number",
+    "text": "“Person 2”: the value of “Person 2” is not a number"
+  },
+  {
+    "code": "experiment_metric_unknown",
+    "params": {
+      "metric": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "valid": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: unknown metric “{metric}”; defined: {valid}",
+    "text": "Person 2: unknown metric “Person 2”; defined: Person 2"
+  },
+  {
+    "code": "experiment_metric_duplicate",
+    "params": {
+      "metric": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: the metric name “{metric}” is used more than once",
+    "text": "Person 2: the metric name “Person 2” is used more than once"
+  },
+  {
+    "code": "experiment_objective_form",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: the objective needs exactly one of “maximize”, “minimize”, “weighted” or “score”",
+    "text": "Person 2: the objective needs exactly one of “maximize”, “minimize”, “weighted” or “score”"
+  },
+  {
+    "code": "experiment_pattern_objective",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: the pattern search needs an objective",
+    "text": "Person 2: the pattern search needs an objective"
+  },
+  {
+    "code": "experiment_budget_invalid",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{path}: must be greater than 0 (the margin at least 0)",
+    "text": "Person 2: must be greater than 0 (the margin at least 0)"
+  },
+  {
+    "code": "experiment_too_many_variants",
+    "params": {
+      "max": 12345.678,
+      "variants": 12345.678
+    },
+    "template": "The experiment has {variants:int} variants; at most {max:int} are possible.",
+    "text": "The experiment has 12'346 variants; at most 12'346 are possible."
+  },
+  {
+    "code": "experiment_variant_invalid",
+    "params": {
+      "problem": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "variant": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Variant {variant}: {problem}",
+    "text": "Variant Person 2: Person 2"
+  },
+  {
+    "code": "experiment_too_many_runs",
+    "params": {
+      "max": 12345.678,
+      "runs": 12345.678
+    },
+    "template": "The experiment would compute about {runs:int} runs; at most {max:int} are possible. Reduce the variants or the paths.",
+    "text": "The experiment would compute about 12'346 runs; at most 12'346 are possible. Reduce the variants or the paths."
+  },
+  {
+    "code": "experiment_confirm",
+    "params": {
+      "runs": 12345.678,
+      "seconds": 12345.678
+    },
+    "template": "The computation takes about {seconds:int} s ({runs:int} runs). Confirm with “confirm”: true (command line: --yes).",
+    "text": "The computation takes about 12'346 s (12'346 runs). Confirm with “confirm”: true (command line: --yes)."
+  },
+  {
+    "code": "experiment_edge_low",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}”: the best value {value} lies at the lower edge of the grid; a smaller value could be better.",
+    "text": "“Person 2”: the best value Person 2 lies at the lower edge of the grid; a smaller value could be better."
+  },
+  {
+    "code": "experiment_edge_high",
+    "params": {
+      "path": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{path}”: the best value {value} lies at the upper edge of the grid; a larger value could be better.",
+    "text": "“Person 2”: the best value Person 2 lies at the upper edge of the grid; a larger value could be better."
+  },
+  {
+    "code": "experiment_confirm_same_paths",
+    "params": {},
+    "template": "The return source has fixed paths; the confirmation uses the same paths as the search.",
+    "text": "The return source has fixed paths; the confirmation uses the same paths as the search."
+  },
+  {
     "code": "opt_strategy_standard",
     "params": {},
     "template": "Standard",

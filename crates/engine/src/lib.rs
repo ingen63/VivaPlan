@@ -13,6 +13,7 @@ pub mod batch;
 pub mod calibrate;
 pub mod digest;
 pub mod dispatch;
+pub mod experiment;
 pub mod fieldpath;
 mod finite;
 pub mod housing;
@@ -104,8 +105,22 @@ impl std::error::Error for Error {}
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// JSON schema of the project file (for validation in the editor and as documentation).
+/// #216/AK1: The definitions also contain the experiment (`definitions.Experiment` and its parts).
 pub fn schema_json() -> String {
-    serde_json::to_string_pretty(&schemars::schema_for!(model::Plan)).expect("Schema ist serialisierbar")
+    let mut v = serde_json::to_value(schemars::schema_for!(model::Plan)).expect("Schema ist serialisierbar");
+    let exp = experiment::schema();
+    if let Some(defs) = v["definitions"].as_object_mut() {
+        for (k, d) in exp["definitions"].as_object().into_iter().flatten() {
+            defs.entry(k.clone()).or_insert_with(|| d.clone());
+        }
+        let mut root = exp.clone();
+        if let Some(o) = root.as_object_mut() {
+            o.remove("definitions");
+            o.remove("$schema");
+        }
+        defs.insert("Experiment".into(), root);
+    }
+    serde_json::to_string_pretty(&v).expect("Schema ist serialisierbar")
 }
 
 #[cfg(test)]

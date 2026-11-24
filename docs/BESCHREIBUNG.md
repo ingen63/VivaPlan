@@ -391,6 +391,15 @@ Standardfehler, bedingtes Mittel). So lässt sich etwa «Median des realen Konsu
 Pensionierung» ohne neuen Code beantworten. Die Kennzahlen werden während der Simulation gesammelt; die Optimierung
 rechnet ihre Kennzahlen auf demselben Weg.
 
+Experiment (#216): `vivaplan evaluate <planung> <experiment.json>` stellt eine Frage als eine JSON-Struktur – Änderungen
+(`set`), Variationen (`vary`: Liste, Bereich, gekoppelter Wert, Gruppe; Feldpfade auch mit Zeitpunkt), Kennzahlen,
+Nebenbedingungen (`{"metric", "op", "value"}`) und Ziel (maximieren, minimieren, gewichtete Liste oder das Ziel der
+Optimierung). Das Experiment wird vor dem Rechnen vollständig geprüft (Fehlerliste mit Pfad, Grund, gültigen Werten).
+Gesucht wird im Raster oder mit der Mustersuche auf wenigen Pfaden mit einer Marge auf die Nebenbedingungen; die besten
+Varianten werden auf unabhängigen Pfaden bestätigt. Das Ergebnis ist eine kurze Rangliste mit beiden Werten,
+Standardfehlern, Hinweisen («am Rand des Rasters») und dem vollständigen Experiment mit Version und Startwert. Ab 60 s
+geschätzter Dauer rechnet `evaluate` nur mit `--yes`. Variationen, Strategievergleich und Optimierung sind Spezialfälle.
+
 ## Installation
 
 Pakete für **Windows** (.msi, .exe), **Linux** (.deb, .AppImage; .rpm nur ohne Vorabversion) und **macOS** (.dmg) baut

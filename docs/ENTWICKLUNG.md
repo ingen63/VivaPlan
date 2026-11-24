@@ -239,6 +239,7 @@ $B bench crates/engine/assets/example.vplan --paths 50000   # Rechenleistung
 $B optimize crates/engine/assets/example.vplan --max-ruin 5 --ruin-age 95   # beste Entnahmestrategie suchen
 $B optimize crates/engine/assets/example.vplan --compare --property both    # Strategien ohne Suche vergleichen (#197)
 $B run crates/engine/assets/example.vplan --metric '{"quantity": "total", "real": true, "reduce": "atEnd", "aggregate": {"kind": "quantile", "q": 0.05}}'   # eigene Kennzahl (#214)
+$B evaluate crates/engine/assets/example.vplan experiment.json --json   # Experiment (#216), ab 60 s nur mit --yes
 $B schema > planung.schema.json                  # JSON-Schema der Projektdatei
 $B library                                       # Zeitreihen der Datenbibliothek (Ordner crates/engine/data/)
 $B import-shiller ie_data.xls                    # Shiller-Daten neu einlesen (.xls, .xlsx, .ods)
@@ -365,6 +366,37 @@ beschreibt alle Bausteine samt Doku-Kommentaren (für `describe`, #219).
   Monatsaufzeichnung und `path_stats`); `batch::summarize` lässt sich ausdrücken (Test `measure::issue_214_ak3_…`). Beide
   ergeben bitgleich dieselben Werte wie vorher.
 - **Kommandozeile:** `run --metric <json>` (mehrfach, auch Liste) über `api::measure`, im JSON unter `metrics`.
+
+## Experiment (#216)
+
+`engine::experiment`: Ein `Experiment` (JSON, Schema unter `definitions.Experiment` in `schema_json()`) hat `set`,
+`vary` (`Variation`: `values`, `range` [von, bis, Schritt], `follows`/`offset` oder `group` aus `GroupMember`),
+`metrics` (Messebene), `constraints`, `objective` (`maximize`, `minimize`, `weighted`, `score`), `search` (`grid`,
+`pattern`; `samples`, `seed`), `budget` (`paths` 1'000, `margin` 2, `top` 5, `confirmPaths` 10'000) und `confirm`.
+
+- **Prüfung:** `experiment::parse` prüft erst gegen das eigene Schema (unbekannte Schlüssel, Typen, feste Werte, mit
+  Pfad wie `vary[0].values[1]` und gültigen Werten), dann den Inhalt: jeder Wert per `fieldpath::set` gegen die Planung,
+  Bereiche, Kopplungen, Namen der Kennzahlen, genau eine Zielform, Budget; zuletzt jede Variante des Rasters (bei der
+  Mustersuche die Ecken der Bereiche) als Planung und Simulator. Fehler → `status: invalid`, nichts gerechnet.
+- **Raum:** `expand` bildet Zweige (feste Werte, Bereiche, Kopplungen); Variationen werden kartesisch kombiniert,
+  Gruppenmitglieder als Alternativen. Beim Raster werden Bereiche zu Werten (auf 12 Stellen gerundet), höchstens
+  `MAX_VARIANTS` = 10'000. Gekoppelte Werte folgen nach den übrigen Werten der Variante.
+- **Zwei Stufen:** Suche auf `optimize::with_paths(base, paths, 0)`, Bestätigung der besten `top` auf
+  `with_paths(base, confirmPaths, CHECK_SEED_OFFSET)` (anderer Startwert, wie die Optimierung). Alle Varianten nutzen
+  dieselben, einmal erzeugten Pfade (`batch::prepare`, #215); ändert eine Variante, wovon die Pfade abhängen
+  (`PathKey`, Renditequelle), bekommt sie eigene. Nebenbedingungen in der Suche mit Marge `margin` × Standardfehler (bei
+  Wahrscheinlichkeiten an der Grenze √(p(1 − p)/n), wie `optimize::fit_objective`), in der Bestätigung ohne.
+- **Mustersuche:** `optimize::search` mit denselben Startpunkten wie die Optimierung (Wert der Planung, Mitte,
+  `samples` Zufallspunkte mit `Rng(seed ^ START_SALT)`), je Zweig. Mit `score` rechnet jede Variante zusätzlich
+  `optimize::evaluate` und nutzt `Metrics::fitness`; so ergibt sie dieselben Zahlen wie die Optimierung (Test
+  `experiment::issue_216_ak8_…`).
+- **Dauer:** Läufe = Varianten × Suchpfade + `top` × Bestätigungspfade (× Durchgänge: Kennzahlen, `score`); Sekunden aus
+  `api::bench` (ohne Pfaderzeugung, die einmal je Pfad gezählt wird). Ab `CONFIRM_SECONDS` = 60 ohne `confirm`:
+  `status: needsConfirmation` mit `estimate`. Höchstens `optimize::MAX_RUNS`. Fortschritt und Abbruch über `progress`.
+- **Ergebnis:** `ranking` (je `settings`, `search`, `confirm`), ohne Ziel `listed` (höchstens 50), `hints`
+  (`experiment_edge_low/high`, `experiment_confirm_same_paths`), `paths` (Anzahl, Startwerte, `independent`), das
+  vollständige `experiment` und `version`. `api::evaluate` und `vivaplan evaluate` (`--json`, `--yes`); der MCP-Server
+  (#210–#212) soll `evaluate` als Hauptwerkzeug nutzen.
 
 ## Jahreswerte, Kurzfassung und Vergleich (#209)
 

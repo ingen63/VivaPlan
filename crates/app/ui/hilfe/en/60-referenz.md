@@ -66,6 +66,7 @@ The engine is also available in the terminal (program `vivaplan`):
 | `set <plan> <path>=<value>…` | Change values by field path, see [Changing values](#ref-set) |
 | `diff <a> <b>` | List the differences between two plans (`--json`) |
 | `optimize <plan>` | Optimize the strategy, see [Command line](#o-cli) |
+| `evaluate <plan> <experiment.json>` | Compute an experiment (`--json`, `--yes`), see [Experiment](#ref-experiment) |
 | `bench <plan>` | Measure the calculation time (`--paths`, `--json`) |
 | `schema` | Output the JSON schema of the plan file |
 | `library` | List the time series of the data library |
@@ -137,6 +138,52 @@ Examples:
 ```
 
 Median and P10 of `consumption` (real, whole duration from `retirement`) are the same values as in `optimize --compare`.
+
+## @ref-experiment Experiment (evaluate)
+Keywords: experiment, evaluate, variation, grid, pattern search, constraint, objective, budget, AI
+
+`vivaplan evaluate <plan> <experiment.json> [--json] [--yes]` asks the plan a question as one JSON structure and computes it in one call: changes, variations, [metrics](#ref-metric), constraints and objective. Everything is structured JSON without formulas in strings; the schema is under `definitions.Experiment` in `vivaplan schema`.
+
+| Key | Content |
+|---|---|
+| `set` | Changes for all variants: field path → value, as with [`set`](#ref-set), also with a point in time (`"wealth.stockShare@retire": 0.4`) |
+| `vary` | Variations, each combined with each: `{"path", "values": […]}` (list), `{"path", "range": [from, to, step]}` (range), `{"path", "follows", "offset"}` (coupled: value of the other path plus `offset`) or `{"group": [{"set", "vary"}, …]}` (group: the members are not combined with each other) |
+| `metrics` | Metrics as with `--metric`, each with a `name` |
+| `constraints` | Constraints `{"metric", "op", "value"}` with `op` = `le`, `lt`, `ge`, `gt` |
+| `objective` | exactly one: `{"maximize": "<metric>"}`, `{"minimize": "<metric>"}`, `{"weighted": [{"metric", "weight"}, …]}` (maximize the weighted sum) or `{"score": {…}}` (objective of the [optimization](#o-cli) with `maxRuin`, `weightMedian`, `volWeight` …). Without an objective all variants are listed (at most 50) |
+| `search` | `method`: `grid` (all variants; default) or `pattern` (pattern search within the ranges like the optimization, per combination of the other values; `samples` random starting points, default 30; `seed`) |
+| `budget` | `paths` search paths (1'000), `margin` margin on the constraints in standard errors (2), `top` number of confirmed variants (5), `confirmPaths` confirmation paths (10'000) |
+| `confirm` | `true`: compute even if it takes long |
+
+**Flow.** First the whole experiment is checked: errors come as a list with the path in the experiment (for example `vary[0].values[1]`), the reason and the valid values, and nothing is computed. Then the duration is estimated; from 60 seconds `evaluate` computes only with `--yes` (or `"confirm": true`) and otherwise reports the estimate. The search uses few paths; a constraint must be met with the margin. The best `top` variants are confirmed on **independent** paths (other seed); the ranking orders by the confirmed values. All variants compute on the same paths, so differences between them are more precise than the single values. With fixed paths (historical, all start dates) there are no independent paths; a hint says so.
+
+**Result** (with `--json` under `result`): `ranking` with `rank`, the values of the variant (`settings`), `search` and `confirm` (each `objective`, `feasible`, `figures` with `value` and `stdError`; with `score` also `optimization`), `hints` (for example at the edge of the grid: the best variant lies at the edge of a range), `paths` (number and seeds of both stages, `independent`), the complete `experiment` with all defaults and the `version` of the engine. `status` is `done`, `invalid`, `needsConfirmation`, `cancelled` or `failed`; `estimate` gives variants, runs and seconds. The output stays short (under 20'000 characters).
+
+Example: 10 years to retirement, stock allocation 40, 60 or 80 % before and 30 or 50 % after, withdrawal with a fixed rate of 3, 4 or 5 % or endowment 3 or 4 %, the highest real consumption in the first 15 years of retirement with at most 2 % ruin – 30 variants:
+
+```
+{
+  "vary": [
+    { "path": "wealth.stockShare@start", "values": [0.4, 0.6, 0.8] },
+    { "path": "wealth.stockShare@retire", "values": [0.3, 0.5] },
+    { "group": [
+      { "set": { "withdrawal.strategy": "fixed_rate" },
+        "vary": [ { "path": "withdrawal.fixedRate.rate", "values": [0.03, 0.04, 0.05] } ] },
+      { "set": { "withdrawal.strategy": "endowment" },
+        "vary": [ { "path": "withdrawal.endowment.rate", "values": [0.03, 0.04] } ] }
+    ] }
+  ],
+  "metrics": [
+    { "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } },
+    { "name": "cons15", "quantity": "consumption", "real": true, "window": { "from": "retire", "years": 15 },
+      "reduce": "annualSums", "aggregate": { "kind": "mean" } }
+  ],
+  "constraints": [ { "metric": "ruin", "op": "le", "value": 0.02 } ],
+  "objective": { "maximize": "cons15" }
+}
+```
+
+Variations, comparison of strategies and optimization can be expressed this way: variations are a grid without an objective; the comparison of strategies is a group of the strategies with `"objective": {"score": {}}` and `budget.paths` = paths of the plan; the optimization is a pattern search with `score` and `"margin": 1.5`.
 
 ## @ref-library Data library: folders and files
 Keywords: folder, time series, storage location, Application Support, CSV

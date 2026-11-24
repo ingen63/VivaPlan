@@ -117,7 +117,7 @@ impl Metrics {
 
     /// Comparison value: feasible candidates by objective, infeasible ones below them by violation.
     /// With the same objective (e.g. fixed spending) the smaller probability of ruin wins.
-    fn fitness(&self, o: &Objective) -> f64 {
+    pub(crate) fn fitness(&self, o: &Objective) -> f64 {
         let v = self.violation(o);
         if v > 1e-12 {
             -1e9 * (1.0 + v)
@@ -716,10 +716,10 @@ pub fn evaluate(plan: &Plan, paths: &Paths, o: &Objective) -> Result<Metrics> {
 // Search
 // ---------------------------------------------------------------------------------------------
 
-struct Rng(u64);
+pub(crate) struct Rng(pub(crate) u64);
 
 impl Rng {
-    fn next(&mut self) -> f64 {
+    pub(crate) fn next(&mut self) -> f64 {
         // splitmix64
         self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut z = self.0;
@@ -771,8 +771,13 @@ pub struct PathSets<'a, 'p> {
 /// Targets of the search on `n` paths. Otherwise the search exhausts the ruin limit to the full and exceeds it on
 /// new paths (random error of the estimate): safety margin of 1.5 standard errors.
 fn fit_objective(o: &Objective, n: usize) -> Objective {
+    fit_objective_with(o, n, 1.5)
+}
+
+/// #216: [`fit_objective`] with a margin of `margin` standard errors (the experiment sets it in its budget).
+pub(crate) fn fit_objective_with(o: &Objective, n: usize, margin: f64) -> Objective {
     let n = n.max(1) as f64;
-    let margin = 1.5 * (o.max_ruin * (1.0 - o.max_ruin) / n).sqrt();
+    let margin = margin * (o.max_ruin * (1.0 - o.max_ruin) / n).sqrt();
     Objective {
         max_ruin: (o.max_ruin - margin).max(0.0),
         ..o.clone()
@@ -796,7 +801,7 @@ fn start_points(base: &Value, defs: &[ParamDef], st: &Settings) -> Vec<Vec<f64>>
         return starts;
     }
     starts.push(defs.iter().map(mid).collect());
-    let mut rng = Rng(st.seed ^ 0xA5A5_5A5A);
+    let mut rng = Rng(st.seed ^ START_SALT);
     for _ in 0..st.samples {
         starts.push(defs.iter().map(|d| d.lo + (d.hi - d.lo) * rng.next()).collect());
     }
@@ -806,7 +811,7 @@ fn start_points(base: &Value, defs: &[ParamDef], st: &Settings) -> Vec<Vec<f64>>
 /// Searches the maximum of `eval` within the limits `bounds` (lower, upper per parameter): the best starting point is
 /// the initial value, followed by a pattern search (± step per axis, halve the step on failure).
 /// Result: parameters, extra value of `eval` and fitness of the best point.
-fn search<T>(
+pub(crate) fn search<T>(
     starts: Vec<Vec<f64>>,
     bounds: &[(f64, f64)],
     mut eval: impl FnMut(&[f64]) -> Result<(T, f64)>,
@@ -1107,7 +1112,13 @@ pub struct Report {
     pub elapsed_ms: f64,
 }
 
-fn with_paths(base: &Value, n: usize, seed_offset: u64) -> Value {
+/// #216: Salt of the random starting points (the experiment draws them the same way).
+pub(crate) const START_SALT: u64 = 0xA5A5_5A5A;
+
+/// Offset of the seed of the independent check paths against the search paths.
+pub(crate) const CHECK_SEED_OFFSET: u64 = 7919;
+
+pub(crate) fn with_paths(base: &Value, n: usize, seed_offset: u64) -> Value {
     let mut v = base.clone();
     for key in ["bootstrap", "parametric"] {
         if v["returns"][key].is_object() {
@@ -1300,7 +1311,7 @@ fn run_request_within(
         (fit_paths, check_paths) = (paths.len(), paths.len());
     } else {
         let p_fit = parse_plan(&with_paths(base, req.paths, 0))?;
-        let p_check = parse_plan(&with_paths(base, req.check_paths, 7919))?;
+        let p_check = parse_plan(&with_paths(base, req.check_paths, CHECK_SEED_OFFSET))?;
         // Create the search and check paths once, so that not every candidate recomputes them (#215: within the
         // memory limit, the search paths first).
         let fit = batch::prepare(batch::path_source(&p_fit, &sim, data.as_ref())?, &mut budget);

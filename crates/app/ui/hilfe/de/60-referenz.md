@@ -66,6 +66,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `set <planung> <pfad>=<wert>…` | Werte per Feldpfad ändern, siehe [Werte ändern](#ref-set) |
 | `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
 | `optimize <planung>` | Strategie optimieren, siehe [Kommandozeile](#o-cli) |
+| `evaluate <planung> <experiment.json>` | Experiment rechnen (`--json`, `--yes`), siehe [Experiment](#ref-experiment) |
 | `bench <planung>` | Rechenzeit messen (`--paths`, `--json`) |
 | `schema` | JSON-Schema der Planungsdatei ausgeben |
 | `library` | Zeitreihen der Datenbibliothek auflisten |
@@ -137,6 +138,52 @@ Beispiele:
 ```
 
 Median und P10 von `consumption` (real, ganze Dauer ab `retirement`) sind dieselben Werte wie unter `optimize --compare`.
+
+## @ref-experiment Experiment (evaluate)
+Stichworte: Experiment, evaluate, Variation, Raster, Mustersuche, Nebenbedingung, Ziel, Budget, KI
+
+`vivaplan evaluate <planung> <experiment.json> [--json] [--yes]` stellt eine Frage an die Planung als eine JSON-Struktur und rechnet sie in einem Aufruf: Änderungen, Variationen, [Kennzahlen](#ref-metric), Nebenbedingungen und Ziel. Alles ist strukturiertes JSON ohne Formeln in Zeichenketten; das Schema steht unter `definitions.Experiment` in `vivaplan schema`.
+
+| Schlüssel | Inhalt |
+|---|---|
+| `set` | Änderungen für alle Varianten: Feldpfad → Wert, wie bei [`set`](#ref-set), auch mit Zeitpunkt (`"wealth.stockShare@retire": 0.4`) |
+| `vary` | Variationen, jede mit jeder kombiniert: `{"path", "values": […]}` (Liste), `{"path", "range": [von, bis, Schritt]}` (Bereich), `{"path", "follows", "offset"}` (gekoppelt: Wert des anderen Pfads plus `offset`) oder `{"group": [{"set", "vary"}, …]}` (Gruppe: die Mitglieder werden nicht miteinander kombiniert) |
+| `metrics` | Kennzahlen wie bei `--metric`, je mit `name` |
+| `constraints` | Nebenbedingungen `{"metric", "op", "value"}` mit `op` = `le`, `lt`, `ge`, `gt` |
+| `objective` | genau eines: `{"maximize": "<kennzahl>"}`, `{"minimize": "<kennzahl>"}`, `{"weighted": [{"metric", "weight"}, …]}` (gewichtete Summe maximieren) oder `{"score": {…}}` (Ziel der [Optimierung](#o-cli) mit `maxRuin`, `weightMedian`, `volWeight` …). Ohne Ziel werden alle Varianten aufgelistet (höchstens 50) |
+| `search` | `method`: `grid` (Raster, alle Varianten; Standard) oder `pattern` (Mustersuche in den Bereichen wie die Optimierung, je Kombination der übrigen Werte; `samples` Zufallsstartpunkte, Standard 30; `seed`) |
+| `budget` | `paths` Suchpfade (1'000), `margin` Marge auf die Nebenbedingungen in Standardfehlern (2), `top` Anzahl bestätigter Varianten (5), `confirmPaths` Bestätigungspfade (10'000) |
+| `confirm` | `true`: auch bei langer Rechnung rechnen |
+
+**Ablauf.** Zuerst wird das ganze Experiment geprüft: Fehler kommen als Liste mit Pfad im Experiment (zum Beispiel `vary[0].values[1]`), Grund und gültigen Werten, und es wird nichts gerechnet. Dann wird die Dauer geschätzt; ab 60 Sekunden rechnet `evaluate` nur mit `--yes` (bzw. `"confirm": true`) und nennt sonst die Schätzung. Gesucht wird mit wenigen Pfaden; eine Nebenbedingung muss dabei mit der Marge erfüllt sein. Die besten `top` Varianten werden auf **unabhängigen** Pfaden (anderer Startwert) bestätigt; die Rangliste ordnet nach den bestätigten Werten. Alle Varianten rechnen auf denselben Pfaden, so sind Unterschiede zwischen ihnen genauer als die einzelnen Werte. Bei festen Pfaden (historisch, alle Startdaten) gibt es keine unabhängigen Pfade; ein Hinweis sagt das.
+
+**Ergebnis** (mit `--json` unter `result`): `ranking` mit `rank`, den Werten der Variante (`settings`), `search` und `confirm` (je `objective`, `feasible`, `figures` mit `value` und `stdError`; bei `score` zusätzlich `optimization`), `hints` (zum Beispiel am Rand des Rasters: die beste Variante liegt am Rand eines Bereichs), `paths` (Anzahl und Startwerte beider Stufen, `independent`), das vollständige `experiment` mit allen Standardwerten und die `version` des Rechenkerns. `status` ist `done`, `invalid`, `needsConfirmation`, `cancelled` oder `failed`; `estimate` nennt Varianten, Läufe und Sekunden. Die Ausgabe bleibt kurz (unter 20'000 Zeichen).
+
+Beispiel: 10 Jahre bis zur Rente, Aktienanteil vorher 40, 60 oder 80 % und nachher 30 oder 50 %, Entnahme mit fixer Rate 3, 4 oder 5 % oder Endowment 3 oder 4 %, möglichst hoher realer Konsum in den ersten 15 Rentenjahren bei höchstens 2 % Ruin – 30 Varianten:
+
+```
+{
+  "vary": [
+    { "path": "wealth.stockShare@start", "values": [0.4, 0.6, 0.8] },
+    { "path": "wealth.stockShare@retire", "values": [0.3, 0.5] },
+    { "group": [
+      { "set": { "withdrawal.strategy": "fixed_rate" },
+        "vary": [ { "path": "withdrawal.fixedRate.rate", "values": [0.03, 0.04, 0.05] } ] },
+      { "set": { "withdrawal.strategy": "endowment" },
+        "vary": [ { "path": "withdrawal.endowment.rate", "values": [0.03, 0.04] } ] }
+    ] }
+  ],
+  "metrics": [
+    { "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } },
+    { "name": "cons15", "quantity": "consumption", "real": true, "window": { "from": "retire", "years": 15 },
+      "reduce": "annualSums", "aggregate": { "kind": "mean" } }
+  ],
+  "constraints": [ { "metric": "ruin", "op": "le", "value": 0.02 } ],
+  "objective": { "maximize": "cons15" }
+}
+```
+
+Variationen, Strategievergleich und Optimierung lassen sich so formulieren: Variationen sind ein Raster ohne Ziel; der Strategievergleich ist eine Gruppe der Strategien mit `"objective": {"score": {}}` und `budget.paths` = Pfade der Planung; die Optimierung ist eine Mustersuche mit `score` und `"margin": 1.5`.
 
 ## @ref-library Datenbibliothek: Ordner und Dateien
 Stichworte: Ordner, Zeitreihen, Speicherort, Application Support, CSV

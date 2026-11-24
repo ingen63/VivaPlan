@@ -66,6 +66,7 @@ Le moteur de calcul est également disponible dans le terminal (programme `vivap
 | `set <planification> <chemin>=<valeur>…` | Modifier des valeurs par chemin de champ, voir [Modifier des valeurs](#ref-set) |
 | `diff <a> <b>` | Lister les différences entre deux planifications (`--json`) |
 | `optimize <planification>` | Optimiser la stratégie, voir [Ligne de commande](#o-cli) |
+| `evaluate <planification> <experience.json>` | Calculer une expérience (`--json`, `--yes`), voir [Expérience](#ref-experiment) |
 | `bench <planification>` | Mesurer le temps de calcul (`--paths`, `--json`) |
 | `schema` | Afficher le schéma JSON du fichier de planification |
 | `library` | Lister les séries temporelles de la bibliothèque de données |
@@ -137,6 +138,52 @@ Exemples :
 ```
 
 La médiane et le P10 de `consumption` (réel, toute la durée dès `retirement`) sont les mêmes valeurs que sous `optimize --compare`.
+
+## @ref-experiment Expérience (evaluate)
+Mots-clés: expérience, evaluate, variation, grille, recherche par motifs, contrainte, objectif, budget, IA
+
+`vivaplan evaluate <planification> <experience.json> [--json] [--yes]` pose une question à la planification sous forme d’une structure JSON et la calcule en un appel : modifications, variations, [indicateurs](#ref-metric), contraintes et objectif. Tout est du JSON structuré sans formules dans des chaînes; le schéma se trouve sous `definitions.Experiment` dans `vivaplan schema`.
+
+| Clé | Contenu |
+|---|---|
+| `set` | Modifications pour toutes les variantes : chemin de champ → valeur, comme avec [`set`](#ref-set), aussi avec un moment (`"wealth.stockShare@retire": 0.4`) |
+| `vary` | Variations, chacune combinée avec chacune : `{"path", "values": […]}` (liste), `{"path", "range": [de, à, pas]}` (plage), `{"path", "follows", "offset"}` (couplée : valeur de l’autre chemin plus `offset`) ou `{"group": [{"set", "vary"}, …]}` (groupe : les membres ne sont pas combinés entre eux) |
+| `metrics` | Indicateurs comme avec `--metric`, chacun avec un `name` |
+| `constraints` | Contraintes `{"metric", "op", "value"}` avec `op` = `le`, `lt`, `ge`, `gt` |
+| `objective` | exactement un : `{"maximize": "<indicateur>"}`, `{"minimize": "<indicateur>"}`, `{"weighted": [{"metric", "weight"}, …]}` (maximiser la somme pondérée) ou `{"score": {…}}` (objectif de l’[optimisation](#o-cli) avec `maxRuin`, `weightMedian`, `volWeight` …). Sans objectif, toutes les variantes sont listées (au plus 50) |
+| `search` | `method` : `grid` (grille, toutes les variantes; par défaut) ou `pattern` (recherche par motifs dans les plages comme l’optimisation, par combinaison des autres valeurs; `samples` points de départ aléatoires, 30 par défaut; `seed`) |
+| `budget` | `paths` trajectoires de recherche (1'000), `margin` marge sur les contraintes en erreurs types (2), `top` nombre de variantes confirmées (5), `confirmPaths` trajectoires de confirmation (10'000) |
+| `confirm` | `true` : calculer même si le calcul est long |
+
+**Déroulement.** D’abord toute l’expérience est vérifiée : les erreurs forment une liste avec le chemin dans l’expérience (par exemple `vary[0].values[1]`), la raison et les valeurs valides, et rien n’est calculé. Puis la durée est estimée; à partir de 60 secondes, `evaluate` ne calcule qu’avec `--yes` (ou `"confirm": true`) et indique sinon l’estimation. La recherche utilise peu de trajectoires; une contrainte doit y être respectée avec la marge. Les `top` meilleures variantes sont confirmées sur des trajectoires **indépendantes** (autre graine); le classement suit les valeurs confirmées. Toutes les variantes calculent sur les mêmes trajectoires, de sorte que les différences entre elles sont plus précises que les valeurs isolées. Avec des trajectoires fixes (historique, toutes les dates de départ), il n’y a pas de trajectoires indépendantes; une remarque le signale.
+
+**Résultat** (avec `--json` sous `result`) : `ranking` avec `rank`, les valeurs de la variante (`settings`), `search` et `confirm` (chacun `objective`, `feasible`, `figures` avec `value` et `stdError`; avec `score` aussi `optimization`), `hints` (par exemple au bord de la grille : la meilleure variante se trouve au bord d’une plage), `paths` (nombre et graines des deux étapes, `independent`), l’`experiment` complète avec toutes les valeurs par défaut et la `version` du moteur de calcul. `status` vaut `done`, `invalid`, `needsConfirmation`, `cancelled` ou `failed`; `estimate` indique variantes, simulations et secondes. La sortie reste courte (moins de 20'000 caractères).
+
+Exemple : 10 ans jusqu’à la retraite, part d'actions de 40, 60 ou 80 % avant et de 30 ou 50 % après, prélèvement à taux fixe de 3, 4 ou 5 % ou endowment 3 ou 4 %, la consommation réelle la plus élevée durant les 15 premières années de retraite avec au plus 2 % de ruine – 30 variantes :
+
+```
+{
+  "vary": [
+    { "path": "wealth.stockShare@start", "values": [0.4, 0.6, 0.8] },
+    { "path": "wealth.stockShare@retire", "values": [0.3, 0.5] },
+    { "group": [
+      { "set": { "withdrawal.strategy": "fixed_rate" },
+        "vary": [ { "path": "withdrawal.fixedRate.rate", "values": [0.03, 0.04, 0.05] } ] },
+      { "set": { "withdrawal.strategy": "endowment" },
+        "vary": [ { "path": "withdrawal.endowment.rate", "values": [0.03, 0.04] } ] }
+    ] }
+  ],
+  "metrics": [
+    { "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } },
+    { "name": "cons15", "quantity": "consumption", "real": true, "window": { "from": "retire", "years": 15 },
+      "reduce": "annualSums", "aggregate": { "kind": "mean" } }
+  ],
+  "constraints": [ { "metric": "ruin", "op": "le", "value": 0.02 } ],
+  "objective": { "maximize": "cons15" }
+}
+```
+
+Variations, comparaison des stratégies et optimisation s’expriment ainsi : les variations sont une grille sans objectif; la comparaison des stratégies est un groupe des stratégies avec `"objective": {"score": {}}` et `budget.paths` = trajectoires de la planification; l’optimisation est une recherche par motifs avec `score` et `"margin": 1.5`.
 
 ## @ref-library Bibliothèque de données: dossiers et fichiers
 Mots-clés: dossier, séries temporelles, emplacement, Application Support, CSV

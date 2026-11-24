@@ -215,6 +215,7 @@ Wörter in Grossbuchstaben nicht.
 | Kurzfassung, Ergebnis in Worten (#209) | `digest`, `verdict` | `Digest`, `Verdict`, `NextStep` |
 | Kennzahlen | `summary`, `metrics` | `Summary`, `Metrics` |
 | Messebene, Kennzahl aus Bausteinen (#214) | `measure`, `metric` | `Measurement`, `Metric`, `Quantity`, `Window`, `Reduce`, `Aggregate` |
+| Experiment, Variation, Nebenbedingung, Ziel, Raster, Mustersuche, Bestätigung (#216) | `experiment`, `vary`, `constraint`, `objective`, `grid`, `pattern`, `confirm` | `Experiment`, `Variation`, `GroupMember`, `Constraint`, `ExperimentObjective`, `ExperimentBudget` |
 | Vorschau | `preview` | |
 | Fortschritt, Abbruch | `progress`, `cancel` | |
 

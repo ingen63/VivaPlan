@@ -73,6 +73,51 @@
         "Version"
       ],
       "reason": "Französische Wörter, die gleich geschrieben werden wie die deutschen"
+    },
+    {
+      "langs": [
+        "en",
+        "fr",
+        "it"
+      ],
+      "words": [
+        "aggregate",
+        "annualSums",
+        "any",
+        "cons",
+        "constraints",
+        "consumption",
+        "depleted",
+        "fixed",
+        "from",
+        "group",
+        "kind",
+        "le",
+        "maximize",
+        "mean",
+        "metric",
+        "metrics",
+        "name",
+        "objective",
+        "op",
+        "path",
+        "probability",
+        "quantity",
+        "rate",
+        "real",
+        "reduce",
+        "retire",
+        "ruin",
+        "set",
+        "start",
+        "true",
+        "value",
+        "values",
+        "vary",
+        "window",
+        "years"
+      ],
+      "reason": "JSON-Schlüssel und Werte des Experiment-Beispiels in der Referenz (#216); Code, in allen Sprachen gleich"
     }
   ],
   "findings": [

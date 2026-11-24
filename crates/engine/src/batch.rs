@@ -113,7 +113,7 @@ impl Paths<'_> {
     }
 
     /// #215: Everything a Monte Carlo path depends on; `None` for fixed paths (they are not generated per run).
-    fn key(&self) -> Option<PathKey> {
+    pub(crate) fn key(&self) -> Option<PathKey> {
         let (fixed, start, months, generator) = match self {
             Paths::List(_) | Paths::Shared(_) => return None,
             Paths::Bootstrap(b) => (
@@ -164,7 +164,7 @@ pub fn path_bytes(n: usize, months: usize) -> usize {
 
 /// Inputs of a Monte Carlo path generator: equal keys give bit-identical paths for every index.
 #[derive(Clone, PartialEq)]
-struct PathKey {
+pub(crate) struct PathKey {
     fixed: market::FixedCurves,
     start: YearMonth,
     months: usize,

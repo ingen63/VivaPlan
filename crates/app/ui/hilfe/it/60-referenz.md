@@ -66,6 +66,7 @@ Il motore di calcolo è disponibile anche nel terminale (programma `vivaplan`):
 | `set <pianificazione> <percorso>=<valore>…` | modificare valori per percorso di campo, vedi [Modificare valori](#ref-set) |
 | `diff <a> <b>` | elencare le differenze tra due pianificazioni (`--json`) |
 | `optimize <pianificazione>` | ottimizzare la strategia, vedi [Riga di comando](#o-cli) |
+| `evaluate <pianificazione> <esperimento.json>` | Calcolare un esperimento (`--json`, `--yes`), vedi [Esperimento](#ref-experiment) |
 | `bench <pianificazione>` | misurare il tempo di calcolo (`--paths`, `--json`) |
 | `schema` | emettere lo schema JSON del file di pianificazione |
 | `library` | elencare le serie temporali della biblioteca di dati |
@@ -137,6 +138,52 @@ Esempi:
 ```
 
 Mediana e P10 di `consumption` (reale, intera durata da `retirement`) sono gli stessi valori che in `optimize --compare`.
+
+## @ref-experiment Esperimento (evaluate)
+Parole chiave: esperimento, evaluate, variazione, griglia, ricerca per pattern, vincolo, obiettivo, budget, IA
+
+`vivaplan evaluate <pianificazione> <esperimento.json> [--json] [--yes]` pone una domanda alla pianificazione come una struttura JSON e la calcola in una chiamata: modifiche, variazioni, [indicatori](#ref-metric), vincoli e obiettivo. Tutto è JSON strutturato senza formule nelle stringhe; lo schema si trova sotto `definitions.Experiment` in `vivaplan schema`.
+
+| Chiave | Contenuto |
+|---|---|
+| `set` | Modifiche per tutte le varianti: percorso di campo → valore, come con [`set`](#ref-set), anche con un momento (`"wealth.stockShare@retire": 0.4`) |
+| `vary` | Variazioni, ognuna combinata con ognuna: `{"path", "values": […]}` (elenco), `{"path", "range": [da, a, passo]}` (intervallo), `{"path", "follows", "offset"}` (accoppiata: valore dell’altro percorso più `offset`) oppure `{"group": [{"set", "vary"}, …]}` (gruppo: i membri non vengono combinati tra loro) |
+| `metrics` | Indicatori come con `--metric`, ognuno con un `name` |
+| `constraints` | Vincoli `{"metric", "op", "value"}` con `op` = `le`, `lt`, `ge`, `gt` |
+| `objective` | esattamente uno: `{"maximize": "<indicatore>"}`, `{"minimize": "<indicatore>"}`, `{"weighted": [{"metric", "weight"}, …]}` (massimizzare la somma ponderata) oppure `{"score": {…}}` (obiettivo dell’[ottimizzazione](#o-cli) con `maxRuin`, `weightMedian`, `volWeight` …). Senza obiettivo vengono elencate tutte le varianti (al massimo 50) |
+| `search` | `method`: `grid` (griglia, tutte le varianti; predefinito) oppure `pattern` (ricerca per pattern negli intervalli come l’ottimizzazione, per ogni combinazione degli altri valori; `samples` punti di partenza casuali, predefinito 30; `seed`) |
+| `budget` | `paths` percorsi di ricerca (1'000), `margin` margine sui vincoli in errori standard (2), `top` numero di varianti confermate (5), `confirmPaths` percorsi di conferma (10'000) |
+| `confirm` | `true`: calcolare anche se il calcolo è lungo |
+
+**Svolgimento.** Prima viene verificato l’intero esperimento: gli errori arrivano come elenco con il percorso nell’esperimento (per esempio `vary[0].values[1]`), il motivo e i valori validi, e non viene calcolato nulla. Poi viene stimata la durata; da 60 secondi `evaluate` calcola solo con `--yes` (o `"confirm": true`) e altrimenti indica la stima. La ricerca usa pochi percorsi; un vincolo deve esservi rispettato con il margine. Le `top` varianti migliori vengono confermate su percorsi **indipendenti** (altro seme); la classifica segue i valori confermati. Tutte le varianti calcolano sugli stessi percorsi, così le differenze tra loro sono più precise dei singoli valori. Con percorsi fissi (storico, tutte le date di inizio) non esistono percorsi indipendenti; un avviso lo segnala.
+
+**Risultato** (con `--json` sotto `result`): `ranking` con `rank`, i valori della variante (`settings`), `search` e `confirm` (ognuno `objective`, `feasible`, `figures` con `value` e `stdError`; con `score` anche `optimization`), `hints` (per esempio al bordo della griglia: la variante migliore si trova al bordo di un intervallo), `paths` (numero e semi delle due fasi, `independent`), l’`experiment` completo con tutti i valori predefiniti e la `version` del motore di calcolo. `status` è `done`, `invalid`, `needsConfirmation`, `cancelled` o `failed`; `estimate` indica varianti, simulazioni e secondi. L’output resta breve (meno di 20'000 caratteri).
+
+Esempio: 10 anni fino al pensionamento, quota azionaria prima 40, 60 o 80 % e dopo 30 o 50 %, prelievo a tasso fisso del 3, 4 o 5 % oppure endowment 3 o 4 %, il consumo reale più alto nei primi 15 anni di pensione con al massimo il 2 % di rovina – 30 varianti:
+
+```
+{
+  "vary": [
+    { "path": "wealth.stockShare@start", "values": [0.4, 0.6, 0.8] },
+    { "path": "wealth.stockShare@retire", "values": [0.3, 0.5] },
+    { "group": [
+      { "set": { "withdrawal.strategy": "fixed_rate" },
+        "vary": [ { "path": "withdrawal.fixedRate.rate", "values": [0.03, 0.04, 0.05] } ] },
+      { "set": { "withdrawal.strategy": "endowment" },
+        "vary": [ { "path": "withdrawal.endowment.rate", "values": [0.03, 0.04] } ] }
+    ] }
+  ],
+  "metrics": [
+    { "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } },
+    { "name": "cons15", "quantity": "consumption", "real": true, "window": { "from": "retire", "years": 15 },
+      "reduce": "annualSums", "aggregate": { "kind": "mean" } }
+  ],
+  "constraints": [ { "metric": "ruin", "op": "le", "value": 0.02 } ],
+  "objective": { "maximize": "cons15" }
+}
+```
+
+Variazioni, confronto delle strategie e ottimizzazione si formulano così: le variazioni sono una griglia senza obiettivo; il confronto delle strategie è un gruppo delle strategie con `"objective": {"score": {}}` e `budget.paths` = percorsi della pianificazione; l’ottimizzazione è una ricerca per pattern con `score` e `"margin": 1.5`.
 
 ## @ref-library Biblioteca di dati: cartelle e file
 Parole chiave: cartella, serie temporali, luogo di salvataggio, Application Support, CSV

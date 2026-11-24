@@ -846,3 +846,83 @@ fn consumption_value(name: &str, years: Option<u32>, q: f64) -> serde_json::Valu
     serde_json::json!({ "name": name, "quantity": "consumption", "real": true, "window": window,
         "reduce": "annualSums", "aggregate": { "kind": "quantile", "q": q } })
 }
+
+/// #216: The example of the issue as an experiment file (30 variants).
+fn experiment_file(dir: &Path, budget: serde_json::Value, vary: Option<serde_json::Value>) -> String {
+    let vary = vary.unwrap_or_else(|| {
+        serde_json::json!([
+            { "path": "wealth.stockShare@start", "values": [0.4, 0.6, 0.8] },
+            { "path": "wealth.stockShare@retire", "values": [0.3, 0.5] },
+            { "group": [
+                { "set": { "withdrawal.strategy": "fixed_rate" },
+                  "vary": [ { "path": "withdrawal.fixedRate.rate", "values": [0.03, 0.04, 0.05] } ] },
+                { "set": { "withdrawal.strategy": "endowment", "withdrawal.endowment": { "rate": 0.04, "smoothing": 0.5 } },
+                  "vary": [ { "path": "withdrawal.endowment.rate", "values": [0.03, 0.04] } ] }
+            ] }
+        ])
+    });
+    let exp = serde_json::json!({
+        "vary": vary,
+        "metrics": [
+            { "name": "ruin", "quantity": "depleted", "reduce": "any", "aggregate": { "kind": "probability" } },
+            { "name": "cons15", "quantity": "consumption", "real": true,
+              "window": { "from": "retirement", "years": 15 }, "reduce": "annualSums", "aggregate": { "kind": "mean" } }
+        ],
+        "constraints": [ { "metric": "ruin", "op": "le", "value": 0.02 } ],
+        "objective": { "maximize": "cons15" },
+        "budget": budget
+    });
+    let p = dir.join("experiment.json");
+    std::fs::write(&p, exp.to_string()).unwrap();
+    p.to_string_lossy().into_owned()
+}
+
+/// #216/AK9: `vivaplan evaluate <plan> <experiment.json> [--json]`; the output stays below 20'000 characters.
+#[test]
+fn issue_216_ak9_evaluate_json_and_text() {
+    let (_tmp, d) = tmp("evaluate");
+    let f = plan_file(&d, "parametric", |_| {});
+    let e = experiment_file(&d, serde_json::json!({ "paths": 60, "confirmPaths": 120 }), None);
+    let o = run(&["evaluate", &f, &e, "--json", "--yes"]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert!(o.stdout.len() < 20_000, "{}", o.stdout.len());
+    let v = stdout_json(&o);
+    assert_eq!(v["status"], "done");
+    assert_eq!(v["result"]["variants"], 30);
+    assert_eq!(v["result"]["ranking"].as_array().unwrap().len(), 5);
+    assert_eq!(v["result"]["experiment"]["confirm"], true, "--yes confirms");
+    assert!(v["estimate"]["seconds"].is_null(), "with confirmation not measured");
+    assert!(v["result"]["ranking"][0]["confirm"]["figures"].is_array());
+
+    let o = run(&["evaluate", &f, &e]);
+    assert!(o.status.success(), "{}", text(&o));
+    let t = text(&o);
+    assert!(t.contains("Experiment: 30 variants") && t.contains("confirmed:"), "{t}");
+    assert!(t.len() < 20_000);
+
+    // An invalid experiment: messages, nothing computed, error code.
+    let bad = d.join("bad.json");
+    std::fs::write(
+        &bad,
+        r#"{"vary": [{"path": "wealth.stockShar", "values": [1]}], "metrics": []}"#,
+    )
+    .unwrap();
+    let o = run(&["evaluate", &f, bad.to_str().unwrap(), "--json"]);
+    assert!(!o.status.success());
+    let v = stdout_json(&o);
+    assert_eq!(v["status"], "invalid");
+    assert_eq!(v["errors"][0]["params"]["path"], "vary[0].values[0]");
+}
+
+/// #216/AK7: From an estimated 60 s the command line stops with the estimate and computes only with `--yes`.
+#[test]
+fn issue_216_ak7_evaluate_stops_without_yes() {
+    let (_tmp, d) = tmp("evaluate-long");
+    let f = plan_file(&d, "parametric", |_| {});
+    let vary = serde_json::json!([ { "path": "flows.spending", "range": [3000, 12495, 5] } ]);
+    let e = experiment_file(&d, serde_json::json!({ "paths": 10000, "top": 1 }), Some(vary));
+    let o = run(&["evaluate", &f, &e]);
+    assert!(!o.status.success(), "{}", text(&o));
+    let t = text(&o);
+    assert!(t.contains("Estimate: 1900 variants") && t.contains("--yes"), "{t}");
+}

@@ -1,6 +1,7 @@
 //! Command line for the calculation engine (until the desktop app is ready; also for tests and comparisons).
 
 mod devserver;
+mod evaluate;
 mod optimize;
 
 // #116: memory limit per test process (engine::test_alloc).
@@ -34,6 +35,9 @@ Usage:
         [--paths 2000] [--check-paths 10000] [--samples 30] [--seed 1] [--json [<file.json>]]
         [--compare] [--property planned|never-sell|both]
         (--compare: strategies with the plan's values, without search, on the plan's paths as in run)
+  vivaplan evaluate <plan.vplan> <experiment.json> [--json] [--yes]
+        (experiment: changes, variations, metrics, constraints, objective; see the help, reference;
+         from an estimated 60 s only with --yes)
   vivaplan schema
   vivaplan --version
   vivaplan library [--library <folder>]          (time series of the data library)
@@ -59,6 +63,7 @@ fn main() -> ExitCode {
         Some("import-legacy") => cmd_import(&args[1..]),
         Some("bench") => cmd_bench(&args[1..]),
         Some("optimize") => optimize::cmd_optimize(&args[1..]),
+        Some("evaluate") => evaluate::cmd_evaluate(&args[1..]),
         Some("library") => cmd_library(&args[1..]),
         Some("import-shiller") => cmd_import_shiller(&args[1..]),
         Some("import-snb") => cmd_import_snb(&args[1..]),
@@ -110,13 +115,13 @@ pub(crate) fn library_dir(args: &[String]) -> PathBuf {
 /// Whether the option `flag` takes the next argument as its value. #207: `--json` only takes a file ending in `.json`.
 fn takes_value(flag: &str, next: Option<&String>) -> bool {
     match flag {
-        "--events" | "--compare" | "--overwrite" => false,
+        "--events" | "--compare" | "--overwrite" | "--yes" => false,
         "--json" => next.is_some_and(|n| n.ends_with(".json")),
         _ => true,
     }
 }
 
-fn positionals(args: &[String]) -> Vec<&String> {
+pub(crate) fn positionals(args: &[String]) -> Vec<&String> {
     let mut out = vec![];
     let mut skip = false;
     for (i, a) in args.iter().enumerate() {

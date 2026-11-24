@@ -34,7 +34,7 @@ pub fn example_plan() -> Value {
     serde_json::from_str(include_str!("../assets/example.vplan")).expect("Beispiel ist gültig")
 }
 
-fn parse(plan: &Value) -> Result<Plan, Issue> {
+pub(crate) fn parse(plan: &Value) -> Result<Plan, Issue> {
     serde_json::from_value(plan.clone()).map_err(|e| Issue {
         severity: Severity::Error,
         section: "general",
@@ -757,6 +757,17 @@ pub fn compare(items: &Value) -> Result<crate::digest::Comparison, Message> {
     Ok(crate::digest::compare(&read::<Vec<crate::digest::CompareInput>>(
         items,
     )?))
+}
+
+/// #216: Computes an experiment (changes, variations, metrics, constraints, objective) on a plan; see
+/// [`crate::experiment`]. The main tool of the MCP server later (#210–#212).
+pub fn evaluate(
+    plan: &Value,
+    experiment: &Value,
+    base_dir: &Path,
+    library: Option<&Path>,
+) -> crate::experiment::EvaluateOut {
+    crate::experiment::evaluate(plan, experiment, base_dir, library)
 }
 
 #[cfg(test)]
