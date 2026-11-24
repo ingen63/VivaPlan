@@ -5,7 +5,7 @@ use std::path::Path;
 
 use engine::describe::{Catalog, Item, Section};
 
-use crate::{json_out, library_dir, opt, positionals, print_json, JsonOut, R};
+use crate::{app_data, json_out, opt, positionals, print_json, JsonOut, R};
 
 fn items(out: &mut String, title: &str, list: &[Item]) {
     let _ = writeln!(out, "{title}:");
@@ -130,8 +130,9 @@ pub(crate) fn cmd_describe(args: &[String]) -> R {
         _ => return Err("At most one section expected".into()),
     };
     let plan_path = opt(args, &["--plan"]);
+    let data = app_data(args)?;
     let plan = match &plan_path {
-        Some(p) => Some(engine::api::read_plan(Path::new(p))?),
+        Some(p) => Some(data.read_plan(Path::new(p))?),
         None => None,
     };
     let base = plan_path
@@ -139,8 +140,7 @@ pub(crate) fn cmd_describe(args: &[String]) -> R {
         .and_then(|p| Path::new(p).parent())
         .unwrap_or(Path::new(""))
         .to_path_buf();
-    let library = library_dir(args);
-    let catalog = engine::api::describe(section, plan.as_ref(), &base, Some(&library));
+    let catalog = engine::api::describe(section, plan.as_ref(), &base, data.library());
     if json_out(args) == JsonOut::Stdout {
         print_json(&catalog)
     } else {

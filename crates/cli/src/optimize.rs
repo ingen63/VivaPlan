@@ -2,11 +2,10 @@
 
 use std::path::Path;
 
-use engine::api;
 use engine::model::{Goal, Plan, PropertyMode, ReturnSource};
 use engine::optimize::{self as opt, Objective, Outcome, Request};
 
-use crate::{chf, json_out, library_dir, opt as option, positional, print_json, JsonOut, R};
+use crate::{app_data, chf, json_out, opt as option, positional, print_json, JsonOut, R};
 
 fn num(args: &[String], name: &str) -> Result<Option<f64>, Box<dyn std::error::Error>> {
     option(args, &[name])
@@ -177,7 +176,8 @@ fn request_from(plan: &Plan, args: &[String]) -> Result<Request, Box<dyn std::er
 pub fn cmd_optimize(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
     let base_dir = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-    let base = api::read_plan(Path::new(path))?;
+    let data = app_data(args)?;
+    let base = data.read_plan(Path::new(path))?;
     let plan: Plan = serde_json::from_value(base.clone())?;
     if matches!(plan.returns.source, ReturnSource::Fixed | ReturnSource::Historical) {
         eprintln!(
@@ -192,7 +192,7 @@ pub fn cmd_optimize(args: &[String]) -> R {
     }
     let req = request_from(&plan, args)?;
     let obj = req.objective();
-    let report = opt::run_request(&base, &base_dir, Some(&library_dir(args)), &req)?;
+    let report = opt::run_request(&base, &base_dir, data.library(), &req)?;
     let json = json_out(args);
     if json == JsonOut::Stdout {
         return print_json(&engine::report::optimize(&report));
@@ -272,7 +272,7 @@ mod tests {
     }
 
     fn plan() -> Plan {
-        serde_json::from_value(api::example_plan()).unwrap()
+        serde_json::from_value(engine::api::example_plan()).unwrap()
     }
 
     fn metrics(ruin: f64) -> Metrics {

@@ -4,7 +4,7 @@ use std::path::Path;
 
 use engine::experiment::{self, EvaluateOut, Evaluation, Ranked, Status};
 
-use crate::{chf, json_out, library_dir, positionals, print_json, JsonOut, R};
+use crate::{app_data, chf, json_out, positionals, print_json, JsonOut, R};
 
 /// A number: amounts with thousands separator, shares and small numbers with four decimals.
 fn number(v: f64) -> String {
@@ -107,7 +107,8 @@ pub(crate) fn cmd_evaluate(args: &[String]) -> R {
     let [plan_path, exp_path] = list.as_slice() else {
         return Err("Project file and experiment expected".into());
     };
-    let plan = engine::api::read_plan(Path::new(plan_path.as_str()))?;
+    let data = app_data(args)?;
+    let plan = data.read_plan(Path::new(plan_path.as_str()))?;
     let text = std::fs::read_to_string(exp_path.as_str()).map_err(|e| format!("{exp_path}: {e}"))?;
     let mut exp: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("{exp_path}: {e}"))?;
     if args.iter().any(|a| a == "--yes") {
@@ -116,8 +117,7 @@ pub(crate) fn cmd_evaluate(args: &[String]) -> R {
         }
     }
     let base = Path::new(plan_path.as_str()).parent().unwrap_or(Path::new(""));
-    let library = library_dir(args);
-    let out = experiment::evaluate(&plan, &exp, base, Some(&library));
+    let out = experiment::evaluate(&plan, &exp, base, data.library());
     if json_out(args) == JsonOut::Stdout {
         print_json(&out)?;
     } else {

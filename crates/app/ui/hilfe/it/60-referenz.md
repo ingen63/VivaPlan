@@ -78,6 +78,19 @@ Il motore di calcolo è disponibile anche nel terminale (programma `vivaplan`):
 
 La riga di comando emette i suoi testi, messaggi ed eventi in inglese, indipendentemente dalla lingua dell’interfaccia; numeri e date sono nel formato svizzero.
 
+**Programma e cartella dei dati.** Il programma `vivaplan` fa parte del pacchetto d’installazione e si trova accanto all’app. Non viene aggiunto al percorso di ricerca; chiamatelo con il percorso completo:
+
+| Sistema | Percorso del programma |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/MacOS/vivaplan` |
+| Windows (programma d’installazione `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan.exe` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
+| Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
+
+Con l’AppImage il programma si trova nell’immagine e non si può chiamare direttamente.
+
+Come l’app, la riga di comando calcola con la cartella dei dati dell’app: con le serie temporali nella sottocartella `Zeitreihen`, anche con le serie importate nell’app (`library:<file>`), e con i limiti e la sostenibilità delle [impostazioni](#f-settings) (`einstellungen.json`). La cartella dei dati è `~/Library/Application Support/ch.vivaplan-app.desktop` con macOS, `%APPDATA%\ch.vivaplan-app.desktop` con Windows e `~/.local/share/ch.vivaplan-app.desktop` con Linux. `--data-dir <cartella>` usa un’altra cartella dei dati, `--library <cartella>` un’altra biblioteca di dati. Se manca la cartella dei dati, la riga di comando calcola con le serie integrate e i limiti standard e lo segnala una volta.
+
 ## @ref-json Output in JSON
 Parole chiave: JSON, leggibile da macchina, IA, script, output standard, format
 

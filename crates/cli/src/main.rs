@@ -44,15 +44,17 @@ Usage:
          performance measured in about 0.5 s on the plan, otherwise on the example plan)
   vivaplan schema
   vivaplan --version
-  vivaplan library [--library <folder>]          (time series of the data library)
+  vivaplan library [--library <folder>] [--data-dir <folder>]   (time series of the data library)
   vivaplan import-shiller <ie_data.xls|.xlsx|.ods> [--library <folder>]
   vivaplan import-snb <cube.csv>… [--library <folder>]   (devkum, plkopr, zimoma, rendoblim from data.snb.ch)
   vivaplan ui-dev [--port 8787] [--ui <folder>] [--library <folder>]   (user interface in the browser, local only)
 
 --json alone prints the result in a fixed format to the standard output (see the help, reference);
 --json <file.json> saves the detailed result as before.
-Without --library, the data library is the folder crates/engine/data/ of the project; plans refer to it
-with “library:<file>”. Messages and events are in English.
+Data folder: like the app, the command line calculates with the data folder of the app (time series in
+“Zeitreihen”, limits from “einstellungen.json”); --data-dir <folder> uses another one, --library <folder> another
+data library. Without the data folder: built-in series and default limits. Plans refer to the data library with
+“library:<file>”; ui-dev uses the folder crates/engine/data/ of the project. Messages and events are in English.
 
 Model calculation without guarantee. No tax or investment advice. Taxes are estimates.
 ";
@@ -77,7 +79,7 @@ fn main() -> ExitCode {
             let ui = opt(&args, &["--ui"])
                 .map(PathBuf::from)
                 .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../app/ui"));
-            devserver::serve(port, ui, library_dir(&args)).map_err(Into::into)
+            devserver::serve(port, ui, dev_library_dir(&args)).map_err(Into::into)
         }
         Some("--version" | "-V") => {
             println!("vivaplan {}", env!("CARGO_PKG_VERSION"));
@@ -110,11 +112,74 @@ pub(crate) fn opt(args: &[String], names: &[&str]) -> Option<String> {
         .map(|w| w[1].clone())
 }
 
-pub(crate) fn library_dir(args: &[String]) -> PathBuf {
+/// Data library of the development server `ui-dev`: `--library`, otherwise the folder crates/engine/data/ of the project.
+fn dev_library_dir(args: &[String]) -> PathBuf {
     opt(args, &["--library"]).map(PathBuf::from).unwrap_or_else(|| {
         let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../engine/data");
         std::fs::canonicalize(&p).unwrap_or(p)
     })
+}
+
+/// #206: What the command line calculates with, as the app: data library and settings of the app's data folder.
+pub(crate) struct AppData {
+    /// Data library; `None` = only the built-in series.
+    pub(crate) library: Option<PathBuf>,
+    /// Settings (`einstellungen.json`); empty = defaults.
+    pub(crate) settings: serde_json::Map<String, serde_json::Value>,
+}
+
+impl AppData {
+    pub(crate) fn library(&self) -> Option<&Path> {
+        self.library.as_deref()
+    }
+
+    /// Reads a plan and adds the settings as the app does with every calculation (limits, affordability).
+    pub(crate) fn read_plan(&self, path: &Path) -> Result<serde_json::Value, engine::Error> {
+        let mut plan = engine::api::read_plan(path)?;
+        engine::appdata::apply(&mut plan, &self.settings);
+        Ok(plan)
+    }
+}
+
+/// #206/AK5: The note on the missing data folder appears once per call.
+static MISSING_NOTE: std::sync::Once = std::sync::Once::new();
+
+/// #206/AK2–AK5: Data folder of the app (`--data-dir`, otherwise as in the app per operating system) with its library
+/// («Zeitreihen») and settings; `--library` replaces the library. Without the app's data folder: built-in series and
+/// default limits, with a note on the standard error output.
+pub(crate) fn app_data(args: &[String]) -> Result<AppData, String> {
+    let given = opt(args, &["--data-dir"]).map(PathBuf::from);
+    if let Some(d) = given.as_ref().filter(|d| !d.is_dir()) {
+        return Err(format!("Data folder not found: {}", d.display()));
+    }
+    let candidate = given.or_else(engine::appdata::default_dir);
+    let dir = candidate.clone().filter(|d| d.is_dir());
+    if dir.is_none() {
+        MISSING_NOTE.call_once(|| {
+            let place = candidate.map(|d| format!(" ({})", d.display())).unwrap_or_default();
+            eprintln!(
+                "Note: data folder of the app not found{place}; calculating with the built-in series and the default limits."
+            );
+        });
+    }
+    let library = opt(args, &["--library"])
+        .map(PathBuf::from)
+        .or_else(|| dir.as_deref().map(engine::appdata::library_dir).filter(|l| l.is_dir()));
+    let settings = dir.as_deref().map(engine::appdata::read_settings).unwrap_or_default();
+    Ok(AppData { library, settings })
+}
+
+/// #206: Folder of the data library for `library` and the imports: `--library`, otherwise «Zeitreihen» in the data folder
+/// of the app (`--data-dir` or as in the app); created if needed, as in the app.
+fn library_folder(args: &[String]) -> Result<PathBuf, String> {
+    if let Some(l) = opt(args, &["--library"]) {
+        return Ok(PathBuf::from(l));
+    }
+    opt(args, &["--data-dir"])
+        .map(PathBuf::from)
+        .or_else(engine::appdata::default_dir)
+        .map(|d| engine::appdata::library_dir(&d))
+        .ok_or_else(|| "Data folder of the app unknown; give the data library with --library".into())
 }
 
 /// Whether the option `flag` takes the next argument as its value. #207: `--json` only takes a file ending in `.json`.
@@ -196,7 +261,7 @@ fn print_report(r: &engine::library::ImportReport) {
 }
 
 fn cmd_library(args: &[String]) -> R {
-    let dir = library_dir(args);
+    let dir = library_folder(args)?;
     println!("Data library: {}", dir.display());
     for e in engine::api::library_list(&dir)?.entries {
         match (&e.info, &e.error) {
@@ -221,7 +286,7 @@ fn cmd_library(args: &[String]) -> R {
 
 fn cmd_import_shiller(args: &[String]) -> R {
     let file = positional(args).ok_or("Shiller file missing")?;
-    let r = engine::api::import_shiller(&library_dir(args), Path::new(file))?;
+    let r = engine::api::import_shiller(&library_folder(args)?, Path::new(file))?;
     print_report(&r);
     Ok(())
 }
@@ -231,7 +296,7 @@ fn cmd_import_snb(args: &[String]) -> R {
     if files.is_empty() {
         return Err("SNB file missing".into());
     }
-    let r = engine::api::import_snb(&library_dir(args), &files)?;
+    let r = engine::api::import_snb(&library_folder(args)?, &files)?;
     print_report(&r);
     Ok(())
 }
@@ -240,9 +305,10 @@ pub(crate) fn positional(args: &[String]) -> Option<&String> {
     positionals(args).into_iter().next()
 }
 
-fn load(path: &str) -> Result<(Plan, PathBuf), Box<dyn std::error::Error>> {
-    let text = std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?;
-    let plan = Plan::from_json(&text)?;
+/// Reads the plan with the settings of the app (#206).
+fn load(path: &str, data: &AppData) -> Result<(Plan, PathBuf), Box<dyn std::error::Error>> {
+    let value = data.read_plan(Path::new(path))?;
+    let plan = Plan::from_json(&value.to_string())?;
     let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
     Ok((plan, base))
 }
@@ -279,8 +345,9 @@ fn print_issues(plan: &Plan) -> bool {
 
 fn cmd_validate(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
+    let data = app_data(args)?;
     if json_out(args) == JsonOut::Stdout {
-        let report = engine::api::validate_report(&engine::api::read_plan(Path::new(path))?);
+        let report = engine::api::validate_report(&data.read_plan(Path::new(path))?);
         print_json(&report)?;
         return if report.valid {
             Ok(())
@@ -288,7 +355,7 @@ fn cmd_validate(args: &[String]) -> R {
             Err("The plan contains errors.".into())
         };
     }
-    let (plan, _) = load(path)?;
+    let (plan, _) = load(path, &data)?;
     if print_issues(&plan) {
         return Err("The plan contains errors.".into());
     }
@@ -308,10 +375,10 @@ fn metric_args(args: &[String]) -> Result<Vec<serde_json::Value>, String> {
 }
 
 /// #214: Prints the metrics after the result of `run`.
-fn print_metrics(path: &str, metrics: &[serde_json::Value], args: &[String]) -> R {
+fn print_metrics(path: &str, metrics: &[serde_json::Value], data: &AppData) -> R {
     let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-    let plan = engine::api::read_plan(Path::new(path))?;
-    let values = engine::api::measure(&plan, metrics, &base, Some(&library_dir(args))).map_err(|e| e.to_string())?;
+    let plan = data.read_plan(Path::new(path))?;
+    let values = engine::api::measure(&plan, metrics, &base, data.library()).map_err(|e| e.to_string())?;
     println!("\nMetrics:");
     let number = |v: f64| {
         if v.abs() >= 100.0 {
@@ -332,12 +399,13 @@ fn cmd_run(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
     let json = json_out(args);
     let metrics = metric_args(args)?;
+    let data = app_data(args)?;
     if json == JsonOut::Stdout {
         let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-        let plan = engine::api::read_plan(Path::new(path))?;
-        let mut report = engine::api::run_report(&plan, &base, Some(&library_dir(args)));
+        let plan = data.read_plan(Path::new(path))?;
+        let mut report = engine::api::run_report(&plan, &base, data.library());
         if !metrics.is_empty() && report.error.is_none() {
-            match engine::api::measure(&plan, &metrics, &base, Some(&library_dir(args))) {
+            match engine::api::measure(&plan, &metrics, &base, data.library()) {
                 Ok(v) => report.metrics = Some(v),
                 Err(e) => report.error = Some(e),
             }
@@ -348,12 +416,12 @@ fn cmd_run(args: &[String]) -> R {
             None => Ok(()),
         };
     }
-    let (plan, base) = load(path)?;
+    let (plan, base) = load(path, &data)?;
     print_issues(&plan);
     let t0 = Instant::now();
     let sim = Simulator::new(&plan)?;
-    let data = batch::load_series(&plan, &base, Some(&library_dir(args)))?;
-    let paths = batch::path_source(&plan, &sim, data.as_ref())?;
+    let series = batch::load_series(&plan, &base, data.library())?;
+    let paths = batch::path_source(&plan, &sim, series.as_ref())?;
     let prep = t0.elapsed();
 
     if paths.len() == 1 {
@@ -415,7 +483,7 @@ fn cmd_run(args: &[String]) -> R {
         }
     }
     if !metrics.is_empty() {
-        print_metrics(path, &metrics, args)?;
+        print_metrics(path, &metrics, &data)?;
     }
     Ok(())
 }
@@ -424,10 +492,11 @@ fn cmd_run(args: &[String]) -> R {
 fn cmd_bench(args: &[String]) -> R {
     let path = positional(args).ok_or("Project file missing")?;
     let n: usize = opt(args, &["--paths"]).map_or(Ok(50_000), |s| s.parse())?;
-    let (plan, base) = load(path)?;
+    let data = app_data(args)?;
+    let (plan, base) = load(path, &data)?;
     let sim = Simulator::new(&plan)?;
-    let data = batch::load_series(&plan, &base, Some(&library_dir(args)))?;
-    let first = batch::path_source(&plan, &sim, data.as_ref())?.get(0).into_owned();
+    let series = batch::load_series(&plan, &base, data.library())?;
+    let first = batch::path_source(&plan, &sim, series.as_ref())?.get(0).into_owned();
     let paths = vec![first; n];
     let t0 = Instant::now();
     let results = batch::run_all(&sim, &paths);

@@ -373,7 +373,9 @@ Lauf und ein Vorschlag für den nächsten Schritt.
 Für Fortgeschrittene gibt es eine Kommandozeile: rechnen, prüfen, optimieren, Monatswerte exportieren, Daten
 importieren und die Rechenleistung messen. Sie gibt Texte, Meldungen und Ereignisse auf Englisch aus (#176), Zahlen und
 Daten im Schweizer Format. Das Dateiformat ist als JSON-Schema dokumentiert. Konfigurationen eines
-früheren Programms lassen sich importieren.
+früheren Programms lassen sich importieren. Die Kommandozeile `vivaplan` liegt im Installationspaket neben der App
+(macOS, Windows, Linux; ohne Eintrag im Suchpfad, die Hilfe nennt den Pfad) und rechnet wie die App mit deren
+Datenordner: Zeitreihen, Grenzen und Tragbarkeit aus den Einstellungen; `--data-dir` nimmt einen anderen Ordner (#206).
 
 Für Skripte und KI-Assistenten (#207): `run`, `validate`, `optimize`, `bench` und `diff` geben mit `--json` ein festes,
 in der Hilfe dokumentiertes Format auf die Standardausgabe aus (kompakt: eine Zeile je Jahr, für die Beispielplanung

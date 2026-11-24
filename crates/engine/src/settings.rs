@@ -1,7 +1,8 @@
 //! Application-wide settings the calculation engine needs (#25).
 //!
 //! The user interface stores them locally (not in the plan file) and passes them with every call as `limits` in the
-//! plan. If they are missing (command line, tests), the default values of this file apply. All places that need a limit
+//! plan; the command line takes them from the app's settings (#206, `appdata`). If they are missing (tests, no data
+//! folder), the default values of this file apply. All places that need a limit
 //! read it from [`Limits`].
 
 use schemars::JsonSchema;

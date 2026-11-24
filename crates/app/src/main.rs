@@ -87,27 +87,18 @@ fn library_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     ensure_library_dir(&data)
 }
 
-/// Creates the subfolder «Zeitreihen» in the data directory (if needed) and returns it.
+/// Creates the subfolder «Zeitreihen» in the data directory (if needed) and returns it. #206: folder and settings file
+/// as on the command line (`engine::appdata`).
 fn ensure_library_dir(data_dir: &Path) -> Result<PathBuf, String> {
-    let dir = data_dir.join("Zeitreihen"); // i18n: allow (folder name)
+    let dir = engine::appdata::library_dir(data_dir);
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(dir)
 }
 
 /// File with the user interface settings in the data directory (settings only, no plan data).
-const SETTINGS_FILE: &str = "einstellungen.json"; // i18n: allow (file name)
+const SETTINGS_FILE: &str = engine::appdata::SETTINGS_FILE;
 
-/// Reads the settings; a missing or unreadable file yields empty settings (the defaults apply).
-fn read_settings(data_dir: &Path) -> serde_json::Map<String, Value> {
-    std::fs::read_to_string(data_dir.join(SETTINGS_FILE))
-        .ok()
-        .and_then(|t| serde_json::from_str::<Value>(&t).ok())
-        .and_then(|v| match v {
-            Value::Object(m) => Some(m),
-            _ => None,
-        })
-        .unwrap_or_default()
-}
+use engine::appdata::read_settings;
 
 /// Sets a setting and writes the file.
 fn write_setting(data_dir: &Path, key: &str, value: Value) -> Result<(), String> {
@@ -2356,6 +2347,16 @@ mod tests {
         assert_eq!(g.data.as_ref(), Some(&dir));
         drop(g);
         assert!(!dir.exists(), "Ordner bleibt nach dem Test zurück: {}", dir.display());
+    }
+
+    /// #206/AK2: The command line finds the same data folder as the app (Tauri) and knows the app's identifier.
+    #[test]
+    fn issue_206_ak2_command_line_uses_the_data_folder_of_the_app() {
+        let (app, _w, _g) = setup();
+        let id = app.config().identifier.clone();
+        assert_eq!(engine::appdata::data_dir_of(&id), app.path().app_data_dir().ok());
+        let conf: Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        assert_eq!(conf["identifier"], engine::appdata::APP_ID);
     }
 
     #[test]

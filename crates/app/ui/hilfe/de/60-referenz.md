@@ -78,6 +78,19 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 
 Die Kommandozeile gibt ihre Texte, Meldungen und Ereignisse auf Englisch aus, unabhängig von der Sprache der Oberfläche; Zahlen und Daten stehen im Schweizer Format.
 
+**Programm und Datenordner.** Das Programm `vivaplan` ist im Installationspaket enthalten und liegt neben der App. Es wird nicht in den Suchpfad eingetragen; rufen Sie es mit dem vollen Pfad auf:
+
+| System | Pfad des Programms |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/MacOS/vivaplan` |
+| Windows (Installationsprogramm `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan.exe` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
+| Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
+
+Beim AppImage liegt das Programm im Abbild und lässt sich nicht direkt aufrufen.
+
+Die Kommandozeile rechnet wie die App mit deren Datenordner: mit den Zeitreihen im Unterordner `Zeitreihen`, auch mit in der App eingelesenen Reihen (`library:<Datei>`), und mit den Grenzen und der Tragbarkeit aus den [Einstellungen](#f-settings) (`einstellungen.json`). Der Datenordner ist unter macOS `~/Library/Application Support/ch.vivaplan-app.desktop`, unter Windows `%APPDATA%\ch.vivaplan-app.desktop` und unter Linux `~/.local/share/ch.vivaplan-app.desktop`. `--data-dir <ordner>` nimmt einen anderen Datenordner, `--library <ordner>` eine andere Datenbibliothek. Fehlt der Datenordner, rechnet die Kommandozeile mit den eingebauten Reihen und den Standardgrenzen und meldet das einmal.
+
 ## @ref-json Ausgabe als JSON
 Stichworte: JSON, maschinenlesbar, KI, Skript, Standardausgabe, format
 

@@ -90,16 +90,35 @@ jobs:
         working-directory: crates/app
       # RPM erlaubt in der Version keinen Bindestrich: bei Vorabversionen (1.0.0-beta.1) entfällt das .rpm. Massgebend
       # ist die Version der App, nicht der Name des Tags (#141: beim Start von Hand heisst der Ref «main»).
+      # #206: tauri.cli.conf.json baut die Kommandozeile `vivaplan` und legt sie neben `vivaplan-app` ins Paket.
       - name: npx tauri build
         shell: bash
         working-directory: crates/app
         run: |
           version=$(node -p "require('./tauri.conf.json').version")
           if [ "${{ matrix.name }}" = linux ] && [[ "$version" == *-* ]]; then
-            npx tauri build --bundles deb,appimage
+            npx tauri build --config tauri.cli.conf.json --bundles deb,appimage
           else
-            npx tauri build
+            npx tauri build --config tauri.cli.conf.json
           fi
+      # #206/AK1: Die Pakete enthalten die Kommandozeile, und sie läuft (macOS im .app, Linux im .deb, Windows im
+      # NSIS-Installer; das .msi wird aus denselben Dateien gebaut).
+      - name: Kommandozeile im Paket
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ matrix.name }}" in
+            macos)
+              cli=target/release/bundle/macos/VivaPlan.app/Contents/MacOS/vivaplan
+              test -x "$cli"
+              "$cli" --version ;;
+            linux)
+              dpkg-deb -c target/release/bundle/deb/*.deb | grep -E '\./usr/bin/vivaplan$'
+              target/release/vivaplan --version ;;
+            windows)
+              7z l target/release/bundle/nsis/*.exe | grep -i 'vivaplan\.exe'
+              target/release/vivaplan.exe --version ;;
+          esac | tee -a "$GITHUB_STEP_SUMMARY"
       # #141: Rauchtest vor dem Release-Entwurf: Die gebaute App öffnet Fenster und Webansicht, rechnet die
       # Beispielplanung und beendet sich (Code 0 = in Ordnung). Unter Linux in einer virtuellen Anzeige (xvfb);
       # unter Windows hat die App keine Konsole, die Meldung steht deshalb in VIVAPLAN_SMOKE_OUT.

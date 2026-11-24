@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "node ../../tools/cli-sidecar.mjs"
+  },
+  "bundle": {
+    "externalBin": [
+      "binaries/vivaplan"
+    ]
+  }
+}

@@ -78,6 +78,19 @@ Le moteur de calcul est également disponible dans le terminal (programme `vivap
 
 La ligne de commande affiche ses textes, messages et événements en anglais, indépendamment de la langue de l’interface; les nombres et les dates sont au format suisse.
 
+**Programme et dossier de données.** Le programme `vivaplan` fait partie du paquet d’installation et se trouve à côté de l’application. Il n’est pas ajouté au chemin de recherche; appelez-le avec le chemin complet:
+
+| Système | Chemin du programme |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/MacOS/vivaplan` |
+| Windows (programme d’installation `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan.exe` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
+| Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
+
+Avec l’AppImage, le programme se trouve dans l’image et ne peut pas être appelé directement.
+
+Comme l’application, la ligne de commande calcule avec le dossier de données de l’application: avec les séries temporelles du sous-dossier `Zeitreihen`, y compris les séries importées dans l’application (`library:<fichier>`), et avec les limites et la capacité financière des [paramètres](#f-settings) (`einstellungen.json`). Le dossier de données est `~/Library/Application Support/ch.vivaplan-app.desktop` sous macOS, `%APPDATA%\ch.vivaplan-app.desktop` sous Windows et `~/.local/share/ch.vivaplan-app.desktop` sous Linux. `--data-dir <dossier>` prend un autre dossier de données, `--library <dossier>` une autre bibliothèque de données. Si le dossier de données manque, la ligne de commande calcule avec les séries intégrées et les limites par défaut et le signale une fois.
+
 ## @ref-json Sortie en JSON
 Mots-clés: JSON, lisible par machine, IA, script, sortie standard, format
 

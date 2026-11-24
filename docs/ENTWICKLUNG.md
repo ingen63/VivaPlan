@@ -175,11 +175,19 @@ Ablauf pro Release:
 
 ```sh
 cd crates/app && npm install   # einmalig: Tauri-Kommandozeile
-npx tauri build                # erzeugt target/release/bundle/macos/VivaPlan.app und .dmg
+npx tauri build --config tauri.cli.conf.json   # erzeugt target/release/bundle/macos/VivaPlan.app und .dmg
 npx tauri dev                  # App im Entwicklungsmodus
 ```
 
 Für Windows bzw. Linux wird `npx tauri build` auf dem jeweiligen System ausgeführt.
+
+**Kommandozeile im Paket (#206):** `tauri.cli.conf.json` ergänzt die Konfiguration um die Kommandozeile als Sidecar
+(`bundle.externalBin`). Vor dem Bau ruft sie `tools/cli-sidecar.mjs` auf: baut `vivaplan` (release) und legt es als
+`crates/app/binaries/vivaplan-<target-triple>` ab (nicht eingecheckt). Das Paket enthält dann `vivaplan` neben
+`vivaplan-app` (macOS `VivaPlan.app/Contents/MacOS/`, Windows im Installationsordner, Linux `/usr/bin`). Die Angabe steht
+nicht in `tauri.conf.json`, weil `tauri-build` die Datei sonst bei jedem `cargo build`/`cargo test` der App verlangt.
+Ohne `--config` entsteht das Paket wie bisher ohne Kommandozeile. Die Kommandozeile bestimmt den Datenordner der App wie
+Tauri (`engine::appdata`, Test in der App) und übernimmt die Einstellungen (Grenzen, Tragbarkeit) wie `api.js`.
 
 **App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
 vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung

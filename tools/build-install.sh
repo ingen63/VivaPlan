@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the desktop app (macOS only) and replaces /Applications/VivaPlan.app.
+# Builds the desktop app (macOS only, with the command line vivaplan, #206) and replaces /Applications/VivaPlan.app.
 # Started in the background by the git hook post-commit, but also works by hand:
 #   tools/build-install.sh
 # If a build is already running, a new one is only queued; the running build then builds once more,
@@ -38,7 +38,7 @@ while :; do
     (cd crates/app && npm install) || { echo "build-install: npm install fehlgeschlagen."; exit 1; }
   fi
 
-  if ! (cd crates/app && npx tauri build --bundles app); then
+  if ! (cd crates/app && npx tauri build --config tauri.cli.conf.json --bundles app); then
     echo "build-install: Build von $sha fehlgeschlagen, installierte App bleibt unverändert."
     exit 1
   fi

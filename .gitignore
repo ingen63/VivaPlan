@@ -24,3 +24,6 @@ fuzz/artifacts/
 
 # #94: Shillers Originaltabelle ohne Lizenz, nur lokal (Download: shillerdata.com)
 crates/engine/data/quellen/shiller-index.ods
+
+# #206: command line as sidecar of the app (tools/cli-sidecar.mjs)
+crates/app/binaries/

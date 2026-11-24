@@ -9,6 +9,7 @@
 pub mod message;
 pub mod ahv;
 pub mod api;
+pub mod appdata;
 pub mod batch;
 pub mod calibrate;
 pub mod describe;

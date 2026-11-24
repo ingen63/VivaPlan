@@ -322,7 +322,7 @@
       "where": "§ref-cli",
       "check": "terms",
       "subject": "Pfad",
-      "reason": "«Pfad» meint hier den Feldpfad der Planungsdatei (#207), nicht den Renditepfad; französisch «chemin de champ»"
+      "reason": "«Pfad» meint hier den Feldpfad der Planungsdatei (#207) und den Pfad des Programms (#206), nicht den Renditepfad; französisch «chemin de champ», «chemin du programme»"
     },
     {
       "file": "crates/app/ui/hilfe/fr/60-referenz.md",

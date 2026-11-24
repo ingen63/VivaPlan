@@ -78,6 +78,19 @@ The engine is also available in the terminal (program `vivaplan`):
 
 The command line outputs its texts, messages and events in English, regardless of the language of the user interface; numbers and dates are in the Swiss format.
 
+**Program and data folder.** The program `vivaplan` is part of the installation package and lies next to the app. It is not added to the search path; call it with the full path:
+
+| System | Path of the program |
+|---|---|
+| macOS | `/Applications/VivaPlan.app/Contents/MacOS/vivaplan` |
+| Windows (installer `.exe`) | `%LOCALAPPDATA%\VivaPlan\vivaplan.exe` |
+| Windows (`.msi`) | `C:\Program Files\VivaPlan\vivaplan.exe` |
+| Linux (`.deb`, `.rpm`) | `/usr/bin/vivaplan` |
+
+With the AppImage the program lies inside the image and cannot be called directly.
+
+Like the app, the command line calculates with the app's data folder: with the time series in the subfolder `Zeitreihen`, including series imported in the app (`library:<file>`), and with the limits and the affordability from the [settings](#f-settings) (`einstellungen.json`). The data folder is `~/Library/Application Support/ch.vivaplan-app.desktop` on macOS, `%APPDATA%\ch.vivaplan-app.desktop` on Windows and `~/.local/share/ch.vivaplan-app.desktop` on Linux. `--data-dir <folder>` takes another data folder, `--library <folder>` another data library. If the data folder is missing, the command line calculates with the built-in series and the default limits and says so once.
+
 ## @ref-json Output as JSON
 Keywords: JSON, machine-readable, AI, script, standard output, format
 

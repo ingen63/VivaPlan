@@ -10,8 +10,30 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Output, Stdio};
 use std::time::Duration;
 
+/// #206: The command line reads the app's data folder; the tests do not see the real one (home folder without data).
 fn bin() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_vivaplan"))
+    with_home(&root().join("target/vivaplan-cli-no-home"))
+}
+
+/// #206: Command line with `home` as home folder (HOME, APPDATA; no XDG_DATA_HOME).
+fn with_home(home: &Path) -> Command {
+    let mut c = Command::new(env!("CARGO_BIN_EXE_vivaplan"));
+    c.env("HOME", home)
+        .env("APPDATA", home.join("AppData").join("Roaming"))
+        .env_remove("XDG_DATA_HOME");
+    c
+}
+
+/// #206: Data folder of the app below the home folder `home`, as the app determines it per operating system.
+fn app_data_in(home: &Path) -> PathBuf {
+    let base = if cfg!(target_os = "macos") {
+        home.join("Library").join("Application Support")
+    } else if cfg!(windows) {
+        home.join("AppData").join("Roaming")
+    } else {
+        home.join(".local").join("share")
+    };
+    base.join("ch.vivaplan-app.desktop")
 }
 
 fn root() -> PathBuf {
@@ -1029,4 +1051,138 @@ fn issue_219_ak3_example_runs_with_evaluate() {
     let r = stdout_json(&o);
     assert_eq!(r["status"], "done");
     assert_eq!(r["result"]["variants"], 3);
+}
+
+/// #206: Fixed format of `run --json` from a command.
+fn run_json(c: &mut Command) -> (serde_json::Value, String) {
+    let o = c.current_dir(root()).output().unwrap();
+    (stdout_json(&o), String::from_utf8_lossy(&o.stderr).into_owned())
+}
+
+/// #206: Example plan with bootstrap paths, 3a contributions of 7000 and without its own affordability (the settings
+/// count, #233).
+fn plan_206(dir: &Path) -> String {
+    plan_file(dir, "bootstrap", |v| {
+        v["pillar3a"][0]["contribution"] = serde_json::json!(7000);
+        v["realestate"].as_object_mut().unwrap().remove("affordability");
+    })
+}
+
+/// #206: Data folder with settings `settings` and optionally the series `file` in «Zeitreihen».
+fn data_folder(dir: &Path, settings: &str, file: Option<&str>) {
+    std::fs::create_dir_all(dir.join("Zeitreihen")).unwrap();
+    std::fs::write(dir.join("einstellungen.json"), settings).unwrap();
+    if let Some(f) = file {
+        std::fs::copy(
+            root().join("crates/engine/data/Shiller CHF.csv"),
+            dir.join("Zeitreihen").join(f),
+        )
+        .unwrap();
+    }
+}
+
+// #206/AK2: Without --library and --data-dir the command line takes the app's data folder (settings and library);
+// --data-dir overrides it.
+#[test]
+fn issue_206_ak2_data_folder_of_the_app_and_data_dir() {
+    let (_tmp, d) = tmp("206-ak2");
+    let home = d.join("home");
+    data_folder(&app_data_in(&home), r#"{"limits": {"pillar3aMax": 2000}}"#, None);
+    let plan = plan_206(&d);
+    // The limit of the app's settings applies: the contribution of 7000 is too high.
+    let (v, _) = run_json(with_home(&home).args(["run", &plan, "--json"]));
+    assert_eq!(
+        v["error"]["params"]["errors"][0]["code"], "pillar3a_contribution_range",
+        "{v}"
+    );
+    let o = with_home(&home)
+        .args(["validate", &plan])
+        .current_dir(root())
+        .output()
+        .unwrap();
+    assert!(!o.status.success() && text(&o).contains("2'000"), "{}", text(&o));
+    // --data-dir with other settings overrides the app's data folder.
+    let other = d.join("other");
+    data_folder(&other, r#"{"limits": {"pillar3aMax": 7000}}"#, None);
+    let (v, err) = run_json(with_home(&home).args(["run", &plan, "--json", "--data-dir", other.to_str().unwrap()]));
+    assert!(v["error"].is_null(), "{v}");
+    assert_eq!(v["batch"]["runs"], 200);
+    assert!(!err.contains("Note"), "{err}");
+    // A given data folder that does not exist is an error.
+    let o = run(&["run", &plan, "--data-dir", d.join("missing").to_str().unwrap()]);
+    assert!(
+        !o.status.success() && text(&o).contains("Data folder not found"),
+        "{}",
+        text(&o)
+    );
+}
+
+// #206/AK3: Limits and affordability of the settings work as in the app: the result equals the engine's result for the
+// plan as the user interface sends it (limits and affordability added, api.js).
+#[test]
+fn issue_206_ak3_settings_give_the_same_result_as_in_the_app() {
+    let (_tmp, d) = tmp("206-ak3");
+    let plan = plan_206(&d);
+    let dir = d.join("data");
+    data_folder(
+        &dir,
+        r#"{"limits": {"pillar3aMax": 7000, "pkMin": 55}, "affordability": {"sustainability": 0.2}}"#,
+        None,
+    );
+    let (cli, _) = run_json(bin().args(["run", &plan, "--json", "--data-dir", dir.to_str().unwrap()]));
+    // The plan as the app sends it to the engine.
+    let mut ui: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&plan).unwrap()).unwrap();
+    let mut limits = serde_json::to_value(engine::settings::Limits::default()).unwrap();
+    limits["pillar3aMax"] = serde_json::json!(7000);
+    limits["pkMin"] = serde_json::json!(55);
+    ui["limits"] = limits;
+    let mut afford = serde_json::to_value(engine::model::Affordability::default()).unwrap();
+    afford["sustainability"] = serde_json::json!(0.2);
+    ui["realestate"]["affordability"] = afford;
+    let app = serde_json::to_value(engine::api::run_report(&ui, &d, None)).unwrap();
+    assert!(cli["error"].is_null(), "{cli}");
+    assert_eq!(cli["batch"]["successRate"], app["batch"]["successRate"]);
+    assert_eq!(cli["batch"]["percentiles"], app["batch"]["percentiles"]);
+    // The settings change the result (otherwise the comparison would prove nothing).
+    let (default, _) = run_json(bin().args(["run", &plan, "--json"]));
+    assert_ne!(default["batch"]["percentiles"], cli["batch"]["percentiles"]);
+}
+
+// #206/AK4: A series imported in the app (`library:<file>`) works on the command line without further options.
+#[test]
+fn issue_206_ak4_series_of_the_app_library() {
+    let (_tmp, d) = tmp("206-ak4");
+    let home = d.join("home");
+    data_folder(&app_data_in(&home), "{}", Some("Imported.csv"));
+    let plan = plan_file(&d, "bootstrap", |v| {
+        v["returns"]["series"] = serde_json::json!("library:Imported.csv")
+    });
+    let (v, _) = run_json(with_home(&home).args(["run", &plan, "--json"]));
+    assert!(v["error"].is_null(), "{v}");
+    assert_eq!(v["batch"]["runs"], 200);
+    // Without the app's data folder the series is unknown.
+    let (v, _) = run_json(bin().args(["run", &plan, "--json"]));
+    assert!(v["error"]["text"].as_str().unwrap().contains("Imported.csv"), "{v}");
+}
+
+// #206/AK5: Without the data folder the command line calculates with the built-in series and the default limits and
+// says so once.
+#[test]
+fn issue_206_ak5_without_data_folder_builtin_series_and_one_note() {
+    let (_tmp, d) = tmp("206-ak5");
+    let plan = plan_file(&d, "bootstrap", |_| {});
+    let metric = consumption_value("median", None, 0.5).to_string();
+    let o = run(&["run", &plan, "--metric", &metric]);
+    let t = text(&o);
+    assert!(o.status.success(), "{t}");
+    assert_eq!(t.matches("data folder of the app not found").count(), 1, "{t}");
+    assert!(t.contains("built-in series and the default limits"), "{t}");
+    // Same result as with an empty data folder (default limits, shipped series).
+    let empty = d.join("empty");
+    std::fs::create_dir_all(&empty).unwrap();
+    let (a, err) = run_json(bin().args(["run", &plan, "--json"]));
+    assert!(err.contains("not found"), "{err}");
+    let (b, err) = run_json(bin().args(["run", &plan, "--json", "--data-dir", empty.to_str().unwrap()]));
+    assert!(err.is_empty(), "{err}");
+    assert_eq!(a["batch"], b["batch"]);
 }
