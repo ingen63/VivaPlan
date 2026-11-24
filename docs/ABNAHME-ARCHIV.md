@@ -1582,6 +1582,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #207/AK6 | Die Prüfung von Pfad und Typ liegt im Rechenkern (`api`), nicht in der Kommandozeile. | ☑ | **gilt** | [api.rs](../crates/engine/src/api.rs) `issue_207_ak6_…` | 22.11.2026 ok (`api::set_fields` → `engine::fieldpath`) |
 | #207/AK7 | (Kommentar) Feldpfade erlauben einen Zeitpunkt in Verläufen: `@<meilenstein>`, `@age:<n>`, `@<JJJJ-MM>` wählt die Stufe … | – | **gilt** | [fieldpath.rs](../crates/engine/src/fieldpath.rs) `issue_207_ak7_…` (2 Tests) | 22.11.2026 ok (bestehende Stufe geändert, sonst neue Stufe; konstanter Wert wird zeitabhängig) |
 
+### #209 Jahreswerte, Kurzfassung und Vergleich im Rechenkern
+
+[Issue #209](https://github.com/ingen63/VivaPlan/issues/209) · geschlossen · Umsetzung: aa98d49
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #209/AK1 | `api` liefert Jahreswerte, Kennzahlen mit Ergebnis in Worten und den Vergleich mehrerer Ergebnisse. | ☑ | **gilt** (Befund strukturiert statt Text, nach Kommentar) | [tests/digest.rs](../crates/engine/tests/digest.rs) `issue_209_ak1_…` (6 Tests), Vertragstest #142, `command_sweep` (#221) | 24.11.2026 ok (Test grün) |
+| #209/AK2 | Die Oberfläche nutzt diese Funktionen; `yearly` und der Rechenteil von `compareRuns` in `app.js` entfallen. | ☑ | **gilt** | [ui-kurzfassung.spec.js](../e2e/ui-kurzfassung.spec.js) `AK2` | 24.11.2026 ok (Test grün) |
+| #209/AK3 | Die Anzeige der Beispielplanung ist unverändert (Oberflächentest). | ☑ | **gilt** | [ui-kurzfassung.spec.js](../e2e/ui-kurzfassung.spec.js) `AK3`, Referenz `e2e/fixtures/issue-209-display.json` | 24.11.2026 ok (Test grün; einzige Abweichung «-0» → «0», alter Darstellungsfehler) |
+| #209/AK4 | Die Golden-Dateien ändern nicht. | ☑ | **gilt** | `golden_masters`, `issue_209_ak4_…` | 24.11.2026 ok (Golden unverändert, Test grün) |
+
 ### #214 Messebene: Kennzahlen frei zusammensetzen, im Strom gerechnet
 
 [Issue #214](https://github.com/ingen63/VivaPlan/issues/214) · geschlossen · Umsetzung: 2955114
