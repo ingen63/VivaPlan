@@ -178,26 +178,23 @@ Monatliche Beträge, das Erwerbseinkommen pro Jahr. **Ausgaben werden in heutige
 Mit dem Alter sinken die Ausgaben oft, zum Beispiel weniger Reisen ab 80, dafür steigen Gesundheitskosten. Nutzen Sie dafür [zeitabhängige Werte](#f-timed).
 
 ## @f-timed Zeitabhängige Werte
-Stichworte: Konstant, Zeitabhängig, Zeile, ab, Verlauf, Minigrafik
+Stichworte: Konstant, Zeitabhängig, Treppe, Gerade, Tabelle, Faktor, Stützpunkt, Zeile, ab, Verlauf, Minigrafik, Gleitpfad
 
-Viele Beträge und Sätze gibt es in zwei Formen:
+Viele Beträge und Sätze sind zeitabhängig. Oben rechts im Feld wählen Sie die Form des Verlaufs:
 
 - **Konstant:** Ein Wert für die ganze Simulation.
-- **Zeitabhängig:** Eine Abfolge von Zeilen «ab *Zeitpunkt* gilt *Wert*». Der Zeitpunkt ist ein Meilenstein («ab Bezug Pensionskasse») oder ein festes Datum. Jede Zeile gilt, bis die nächste beginnt.
+- **Treppe:** Eine Abfolge von Zeilen «ab *Zeitpunkt* gilt *Wert*». Der Zeitpunkt ist ein Meilenstein («ab Bezug Pensionskasse») oder ein festes Datum. Jede Zeile gilt, bis die nächste beginnt. Beispiel Lebenshaltung: «ab Start 9 500», «ab Bezug Pensionskasse 8 500», «ab 80 7 000».
+- **Gerade:** «von» einem Wert zu einem Zeitpunkt gleichmässig, Monat für Monat, «bis» zu einem zweiten Wert zu einem späteren Zeitpunkt. Davor gilt der erste, danach der zweite Wert. Beispiel Aktienanteil: 90 % mit 55, 50 % mit 65 ergibt 70 % mit 60.
+- **Tabelle:** Stützpunkte «bei *Zeitpunkt* gilt *Wert*». Mit «+ Stützpunkt» fügen Sie einen weiteren hinzu, ✕ löscht ihn. «Dazwischen» wählt, ob der Wert zwischen zwei Stützpunkten **gleitend** wie eine Gerade oder als **Treppe** verläuft. Vor dem ersten Stützpunkt gilt sein Wert, nach dem letzten der letzte Wert.
+- **Faktor:** Ein **Grundwert** mal einem Verlauf von Faktoren in Prozent. Den Faktor erfassen Sie selbst wieder als Konstante, Treppe, Gerade oder Tabelle. Beispiel Lebenshaltung: Grundwert 6 000, Faktor als Tabelle mit Treppe: bei Simulationsstart 100 %, mit 80 80 %.
 
-Beispiel Lebenshaltung: «ab Start 9 500», «ab Bezug Pensionskasse 8 500», «ab 80 7 000».
+Bei Gerade und Tabelle ist der Zeitpunkt eines Stützpunkts ein **Alter** einer Person (mit Dezimalstellen, 64.5 = 64 Jahre und 6 Monate), ein **Meilenstein** oder ein **festes Datum**. Wechseln Sie die Art, bleibt der Zeitpunkt gleich; aus einem Meilenstein wird zum Beispiel das Alter, in dem er liegt.
 
-Die kleine Grafik neben dem Feld zeigt den Verlauf. Mit dem Mausrad zoomen Sie hinein, die Knöpfe «Alles», «10 J.», «5 J.» und «2 J.» wählen den Ausschnitt.
+Wechseln Sie die Form, übernimmt die App, was sich übernehmen lässt: Treppe, Gerade und Tabelle behalten ihre Zeitpunkte und Werte, «Konstant» nimmt den Wert bei Simulationsstart, «Faktor» nimmt ihn als Grundwert und den bisherigen Verlauf als Faktoren.
 
-Zeilen, die in der Zeit hinten stehen, aber vor einer anderen beginnen, ordnet die App nach dem Zeitpunkt. Verschieben Sie daher ruhig Meilensteine, die Reihenfolge der Werte bleibt konsistent.
+Die kleine Grafik neben dem Feld zeigt den Verlauf (beim Faktor das Ergebnis Grundwert mal Faktor). Mit dem Mausrad zoomen Sie hinein, die Knöpfe «Alles», «10 J.», «5 J.» und «2 J.» wählen den Ausschnitt.
 
-Für Gleitpfade und Ausgaben nach Lebensphase gibt es drei weitere Formen. Sie stehen in der [Planungsdatei](#ref-file) und gelten für jeden zeitabhängigen Wert:
-
-- **Gerade:** von einem Wert zu einem Zeitpunkt gleichmässig, Monat für Monat, zu einem zweiten Wert zu einem späteren Zeitpunkt. Davor gilt der erste, danach der zweite Wert. Beispiel Aktienanteil: 90 % mit 55, 50 % mit 65 ergibt 70 % mit 60.
-- **Tabelle:** Stützpunkte nach Alter, Datum oder Meilenstein; dazwischen gleitend wie eine Gerade oder als Treppe. Vor dem ersten Stützpunkt gilt sein Wert, nach dem letzten der letzte Wert.
-- **Faktor:** ein Grundwert mal einem Verlauf von Faktoren. Beispiel Lebenshaltung: 6 000 mit 100 % bis 80, danach 80 %.
-
-Der Editor zeigt diese Formen mit einem Hinweis und in der kleinen Grafik an; bearbeiten lassen sie sich dort noch nicht. «Konstant» oder «Zeitabhängig» ersetzt sie durch den Wert beim Simulationsstart.
+Zeilen und Stützpunkte, die in der Liste hinten stehen, aber vor einem anderen beginnen, ordnet die App nach dem Zeitpunkt. Verschieben Sie daher ruhig Meilensteine, die Reihenfolge der Werte bleibt konsistent. Alle Formen stehen auch so in der [Planungsdatei](#ref-file).
 
 ## @s-wealth Vermögen & Anlage
 Stichworte: Aktien, Obligationen, Cash, Liquidität, Aktienquote, Aktienanteil, Reserve, Portfolio, Anlagestrategie, Index

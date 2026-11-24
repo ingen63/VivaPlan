@@ -178,26 +178,23 @@ Importi mensili, il reddito da attività lucrativa all’anno. **Le spese vengon
 Con l’età le spese spesso diminuiscono, ad esempio meno viaggi dagli 80 anni, mentre aumentano i costi per la salute. Usi a tale scopo i [valori dipendenti dal tempo](#f-timed).
 
 ## @f-timed Valori dipendenti dal tempo
-Parole chiave: costante, dipendente dal tempo, riga, da, andamento, minigrafico
+Parole chiave: costante, dipendente dal tempo, gradini, retta, tabella, fattore, punto d’appoggio, riga, da, andamento, minigrafico, percorso
 
-Molti importi e aliquote esistono in due forme:
+Molti importi e aliquote dipendono dal tempo. In alto a destra del campo sceglie la forma dell’andamento:
 
 - **Costante:** un valore per l’intera simulazione.
-- **Dipendente dal tempo:** una sequenza di righe ‹da *momento* vale *valore*›. Il momento è una tappa (‹da prestazione della cassa pensione›) o una data fissa. Ogni riga vale finché inizia la successiva.
+- **Gradini:** una sequenza di righe ‹da *momento* vale *valore*›. Il momento è una tappa (‹da prestazione della cassa pensione›) o una data fissa. Ogni riga vale finché inizia la successiva. Esempio costo della vita: ‹da inizio 9'500›, ‹da prestazione della cassa pensione 8'500›, ‹da 80 7'000›.
+- **Retta:** ‹da› un valore a un momento in modo uniforme, mese per mese, ‹a› un secondo valore a un momento successivo. Prima vale il primo valore, dopo il secondo. Esempio quota azionaria: 90 % a 55, 50 % a 65 dà 70 % a 60.
+- **Tabella:** punti d’appoggio ‹a *momento* vale *valore*›. «+ Punto» ne aggiunge un altro, ✕ lo elimina. «Tra i punti» sceglie se il valore tra due punti d’appoggio procede in modo **graduale** come una retta oppure **a gradini**. Prima del primo punto d’appoggio vale il suo valore, dopo l’ultimo l’ultimo valore.
+- **Fattore:** un **valore di base** moltiplicato per un andamento di fattori in percento. Il fattore stesso lo inserisce di nuovo come costante, gradini, retta o tabella. Esempio costo della vita: valore di base 6'000, fattore come tabella a gradini: all’inizio della simulazione 100 %, a 80 80 %.
 
-Esempio costo della vita: ‹da inizio 9'500›, ‹da prestazione della cassa pensione 8'500›, ‹da 80 7'000›.
+Per retta e tabella il momento di un punto d’appoggio è un’**età** di una persona (con decimali, 64.5 = 64 anni e 6 mesi), una **tappa** o una **data fissa**. Se cambia il tipo, il momento resta lo stesso; una tappa diventa per esempio l’età in cui cade.
 
-Il piccolo grafico accanto al campo mostra l’andamento. Con la rotella del mouse ingrandisce, i pulsanti «Tutto», ‹10 a.›, ‹5 a.› e ‹2 a.› scelgono l’intervallo.
+Se cambia la forma, l’app riprende ciò che si può riprendere: gradini, retta e tabella mantengono i loro momenti e valori, «Costante» prende il valore all’inizio della simulazione, «Fattore» lo prende come valore di base e l’andamento precedente come fattori.
 
-Le righe inserite più in basso nell’elenco, ma che iniziano prima di un’altra, l’app le ordina secondo il momento. Può quindi spostare tranquillamente le tappe, l’ordine dei valori resta coerente.
+Il piccolo grafico accanto al campo mostra l’andamento (per un fattore il risultato valore di base per fattore). Con la rotella del mouse ingrandisce, i pulsanti «Tutto», ‹10 a.›, ‹5 a.› e ‹2 a.› scelgono l’intervallo.
 
-Per i percorsi di riduzione del rischio e le spese secondo la fase della vita esistono altre tre forme. Si trovano nel [file di pianificazione](#ref-file) e valgono per ogni valore dipendente dal tempo:
-
-- **Retta:** da un valore a un momento in modo uniforme, mese per mese, fino a un secondo valore a un momento successivo. Prima vale il primo valore, dopo il secondo. Esempio quota azionaria: 90 % a 55, 50 % a 65 dà 70 % a 60.
-- **Tabella:** punti d’appoggio secondo età, data o tappa; nel mezzo in modo continuo come una retta oppure a gradini. Prima del primo punto d’appoggio vale il suo valore, dopo l’ultimo l’ultimo valore.
-- **Fattore:** un valore di base moltiplicato per un andamento di fattori. Esempio costo della vita: 6'000 con 100 % fino a 80, poi 80 %.
-
-L’editor mostra queste forme con un’avvertenza e nel piccolo grafico; lì non si possono ancora modificare. «Costante» o «Dipendente dal tempo» le sostituisce con il valore all’inizio della simulazione.
+Le righe e i punti d’appoggio inseriti più in basso nell’elenco, ma che iniziano prima di un altro, l’app li ordina secondo il momento. Può quindi spostare tranquillamente le tappe, l’ordine dei valori resta coerente. Tutte le forme si trovano così anche nel [file di pianificazione](#ref-file).
 
 ## @s-wealth Sostanza e investimento
 Parole chiave: azioni, obbligazioni, cash, liquidità, quota azionaria, riserva, portafoglio, strategia d’investimento, indice

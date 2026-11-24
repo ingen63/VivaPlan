@@ -178,26 +178,23 @@ Montants mensuels, le revenu de l’activité lucrative par an. **Les dépenses 
 Avec l’âge, les dépenses diminuent souvent, par exemple moins de voyages dès 80 ans, alors que les frais de santé augmentent. Utilisez pour cela des [valeurs dépendant du temps](#f-timed).
 
 ## @f-timed Valeurs dépendant du temps
-Mots-clés: constant, dépendant du temps, ligne, dès, évolution, mini-graphique
+Mots-clés: constant, dépendant du temps, paliers, droite, tableau, facteur, point d’appui, ligne, dès, évolution, mini-graphique, trajectoire
 
-De nombreux montants et taux existent sous deux formes:
+De nombreux montants et taux dépendent du temps. En haut à droite du champ, vous choisissez la forme de l’évolution:
 
 - **Constant:** une valeur pour toute la simulation.
-- **Dépendant du temps:** une suite de lignes ‹dès *moment* s’applique *valeur*›. Le moment est un jalon («dès la prestation de la caisse de pension») ou une date fixe. Chaque ligne s’applique jusqu’à ce que la suivante commence.
+- **Paliers:** une suite de lignes ‹dès *moment* s’applique *valeur*›. Le moment est un jalon («dès la prestation de la caisse de pension») ou une date fixe. Chaque ligne s’applique jusqu’à ce que la suivante commence. Exemple coût de la vie: ‹dès le début 9 500›, ‹dès la prestation de la caisse de pension 8 500›, ‹dès 80 ans 7 000›.
+- **Droite:** ‹de› une valeur à un moment, régulièrement, mois par mois, ‹à› une seconde valeur à un moment ultérieur. Avant, la première valeur s’applique, après, la seconde. Exemple part d’actions: 90 % à 55 ans, 50 % à 65 ans donne 70 % à 60 ans.
+- **Tableau:** points d’appui ‹à *moment* s’applique *valeur*›. «+ Point» en ajoute un, ✕ le supprime. «Entre les points» choisit si la valeur entre deux points d’appui évolue de façon **progressive** comme une droite ou en **paliers**. Avant le premier point d’appui, sa valeur s’applique, après le dernier, la dernière valeur.
+- **Facteur:** une **valeur de base** multipliée par une évolution de facteurs en pour cent. Vous saisissez le facteur lui-même à nouveau comme constante, paliers, droite ou tableau. Exemple coût de la vie: valeur de base 6 000, facteur en tableau avec paliers: au début de la simulation 100 %, à 80 ans 80 %.
 
-Exemple coût de la vie: ‹dès le début 9 500›, ‹dès la prestation de la caisse de pension 8 500›, ‹dès 80 ans 7 000›.
+Pour la droite et le tableau, le moment d’un point d’appui est un **âge** d’une personne (avec décimales, 64.5 = 64 ans et 6 mois), un **jalon** ou une **date fixe**. Si vous changez le type, le moment reste le même; un jalon devient par exemple l’âge auquel il se situe.
 
-Le petit graphique à côté du champ montre l’évolution. Avec la molette de la souris, vous zoomez; les boutons «Tout», ‹10 ans›, ‹5 ans› et ‹2 ans› choisissent la plage.
+Si vous changez la forme, l’application reprend ce qui peut l’être: paliers, droite et tableau gardent leurs moments et leurs valeurs, «Constant» prend la valeur au début de la simulation, «Facteur» la prend comme valeur de base et l’évolution précédente comme facteurs.
 
-Les lignes qui figurent plus bas mais commencent avant une autre sont classées par l’application selon leur moment. Vous pouvez donc déplacer des jalons sans crainte, l’ordre des valeurs reste cohérent.
+Le petit graphique à côté du champ montre l’évolution (pour un facteur, le résultat valeur de base fois facteur). Avec la molette de la souris, vous zoomez; les boutons «Tout», ‹10 ans›, ‹5 ans› et ‹2 ans› choisissent la plage.
 
-Pour les trajectoires de désinvestissement et les dépenses selon la phase de vie, il existe trois autres formes. Elles figurent dans le [fichier de planification](#ref-file) et s’appliquent à toute valeur dépendant du temps:
-
-- **Droite:** d’une valeur à un moment, régulièrement, mois par mois, jusqu’à une seconde valeur à un moment ultérieur. Avant, la première valeur s’applique, après, la seconde. Exemple part d’actions: 90 % à 55 ans, 50 % à 65 ans donne 70 % à 60 ans.
-- **Tableau:** points d’appui selon l’âge, la date ou le jalon; entre eux de façon continue comme une droite ou en paliers. Avant le premier point d’appui, sa valeur s’applique, après le dernier, la dernière valeur.
-- **Facteur:** une valeur de base multipliée par une évolution de facteurs. Exemple coût de la vie: 6 000 avec 100 % jusqu’à 80 ans, ensuite 80 %.
-
-L’éditeur affiche ces formes avec une remarque et dans le petit graphique; elles ne peuvent pas encore y être modifiées. «Constant» ou «Dépendant du temps» les remplace par la valeur au début de la simulation.
+Les lignes et points d’appui qui figurent plus bas dans la liste mais commencent avant un autre sont classés par l’application selon leur moment. Vous pouvez donc déplacer des jalons sans crainte, l’ordre des valeurs reste cohérent. Toutes les formes figurent aussi ainsi dans le [fichier de planification](#ref-file).
 
 ## @s-wealth Fortune et placement
 Mots-clés: actions, obligations, cash, liquidités, quote-part d’actions, part d’actions, réserve, portefeuille, stratégie de placement, indice

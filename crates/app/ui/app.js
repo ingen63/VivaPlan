@@ -87,10 +87,12 @@ const FIXED_MS_IDS = ["start", "end", "retire", "ahv", "retire2", "ahv2"];
 const msLabel = ms => (ms && FIXED_MS_IDS.includes(ms.id) ? tr(`milestone.${ms.id}`) : ms?.name);
 function msName(ref) { if (ref === "never") return tr("ref.never"); if (ref === "afterSale") return tr("ref.afterSale"); if (saleOf(ref)) return tr("ref.afterSaleOf", { propById: propById(saleOf(ref))?.name ?? "?" }); if (isYM(ref)) return ymShow(ref); return msLabel(state.milestones.find(m => m.id === ref)) ?? "?"; }
 
-/** #217: the forms «linear», «table» and «factor»; the editor shows them read-only until #243. */
+/** #217: the forms «linear», «table» and «factor» (month by month in the mini chart, no dots). */
 const NEW_FORMS = ["linear", "table", "factor"];
 const isNewForm = ser => !!ser && typeof ser === "object" && NEW_FORMS.includes(ser.mode);
-const formName = mode => ({ linear: tr("series.form.linear"), table: tr("series.form.table"), factor: tr("series.form.factor") })[mode];
+/** #243: the five forms of a course in the order of the selector. */
+const SERIES_FORMS = ["const", "timed", ...NEW_FORMS];
+const formName = mode => ({ const: tr("series.form.const"), timed: tr("series.form.timed"), linear: tr("series.form.linear"), table: tr("series.form.table"), factor: tr("series.form.factor") })[mode];
 /** #217: month of a support point (date, milestone or age of a person, the first person without one). */
 function pointMonth(p) {
   if (p?.age == null) return refMonth(p?.at);
@@ -488,17 +490,91 @@ function Ref(path, o = {}) {
     <option value="__date" ${date ? "selected" : ""}>${tr("ref.fixedDate")}</option></select>
     ${date ? F(path, "", "month", { bare: true }) : ""}</div>`;
 }
-function Series(path, label, type, note = "", hint = "") {
-  const s = getP(path), timed = s.mode === "timed", form = isNewForm(s);
-  let body;
-  if (form) body = `<div class="rows"><p class="computed shint" data-form="${esc(s.mode)}">${tr("series.formReadOnly", { form: formName(s.mode) })}</p></div>`;
-  else if (!timed) body = `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
-  else body = `<div class="rows">${s.rows.map((r, i) => `<div class="row${type === "chfyear" ? " peryear" : ""}"><span class="ab">${tr("common.from")}</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
+/** #243: a course as an object (a plain number becomes a constant, also the course of factors). */
+function seriesDef(path) {
+  let s = getP(path);
+  if (s == null || typeof s !== "object") { s = { mode: "const", value: +s || 0 }; setP(path, s); }
+  return s;
+}
+/** #243: selector of the form of a course. */
+function seriesForms(path, mode, forms = SERIES_FORMS) {
+  return `<div class="seg">${forms.map(f => `<button class="${f === mode ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="${f}">${formName(f)}</button>`).join("")}</div>`;
+}
+const personLabel = (p, i) => p.name || tr("milestones.person") + (i + 1);
+/** #243: point in time of a support point: age of a person, milestone or fixed date (with the age or the date beside it). */
+function PointWhen(path) {
+  const p = getP(path), persons = state.household.persons;
+  const cur = p.age != null ? `age:${p.person ?? persons[0].id}` : isYM(p.at) ? "__date" : p.at;
+  const opt = (v, l) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`;
+  return `<div class="refwrap"><select class="plain" data-path="${path}" data-type="point">
+    <optgroup label="${tr("series.age")}">${persons.map((x, i) => opt(`age:${x.id}`, tr("series.ageOf", { name: personLabel(x, i) }))).join("")}</optgroup>
+    <optgroup label="${tr("ref.milestone")}">${state.milestones.map(ms => opt(ms.id, msLabel(ms))).join("")}</optgroup>
+    ${opt("__date", tr("ref.fixedDate"))}</select>
+    ${p.age != null ? F(path + ".age", "", "years", { bare: true }) : isYM(p.at) ? F(path + ".at", "", "month", { bare: true }) : ""}</div>`;
+}
+/** #243: «age:<person>», a milestone or «__date»; the point in time stays the same where it can. */
+function setPointWhen(p, v) {
+  const m = pointMonth(p), known = Number.isFinite(m) ? m : startM();
+  delete p.at; delete p.age; delete p.person;
+  if (v.startsWith("age:")) {
+    const pid = v.slice(4);
+    p.age = Math.max(0, Math.round(ageAt(known, pid) * 100) / 100);
+    if (pid !== state.household.persons[0].id) p.person = pid;
+  } else p.at = v === "__date" ? i2ym(known) : v;
+}
+/** #243: one support point: label, point in time, value and optionally a delete button. */
+function PointRow(path, type, ab, del = "") {
+  return `<div class="row${type === "chfyear" ? " peryear" : ""}" data-point="${path}"><span class="ab">${ab}</span>${PointWhen(path)}${F(path + ".value", "", type, { bare: true })}${del || "<span></span>"}</div>`;
+}
+/** Input fields of a course in its form (#243: also straight line, table and factor). */
+function seriesBody(path, type) {
+  const s = seriesDef(path);
+  if (s.mode === "timed") return `<div class="rows">${s.rows.map((r, i) => `<div class="row${type === "chfyear" ? " peryear" : ""}"><span class="ab">${tr("common.from")}</span>${Ref(`${path}.rows.${i}.from`)}${F(`${path}.rows.${i}.value`, "", type, { bare: true })}<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${path}.rows" data-i="${i}">✕</button></div>`).join("")}
     <div><button class="btn small" data-action="row-add" data-path="${path}.rows">${tr("series.addRow")}</button></div></div>`;
+  if (s.mode === "linear") return `<div class="rows" data-form="linear">${PointRow(path + ".start", type, tr("series.linearFrom"))}${PointRow(path + ".end", type, tr("series.linearTo"))}</div>`;
+  if (s.mode === "table") {
+    const pts = s.points || [], step = s.interpolation === "step";
+    return `<div class="rows" data-form="table">${pts.map((_, i) => PointRow(`${path}.points.${i}`, type, tr("series.at"),
+      pts.length > 1 ? `<button class="btn ghost small" title="${tr("series.removePoint")}" data-action="row-del" data-path="${path}.points" data-i="${i}">✕</button>` : "")).join("")}
+      <div class="sfoot"><button class="btn small" data-action="point-add" data-path="${path}.points">${tr("series.addPoint")}</button>
+      <span class="computed">${tr("series.between")}</span><div class="seg"><button class="${step ? "" : "on"}" data-action="set" data-path="${path}.interpolation" data-value="linear">${tr("series.interpLinear")}</button><button class="${step ? "on" : ""}" data-action="set" data-path="${path}.interpolation" data-value="step">${tr("series.interpStep")}</button></div></div></div>`;
+  }
+  if (s.mode === "factor") {
+    const f = seriesDef(path + ".factor");
+    return `<div class="rows" data-form="factor">${F(path + ".base", tr("series.base"), type)}
+      <div class="shead sub"><span class="t">${tr("series.factor")}</span>${seriesForms(path + ".factor", f.mode, ["const", "timed", "linear", "table"])}</div>${seriesBody(path + ".factor", "pct")}</div>`;
+  }
+  return `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
+}
+function Series(path, label, type, note = "", hint = "") {
+  const s = seriesDef(path);
   return `<div class="series"><div class="shead"><span class="t">${label}</span><span class="computed">${note}</span>
-    <div class="seg"><button class="${timed || form ? "" : "on"}" data-action="series-mode" data-path="${path}" data-mode="const">${tr("series.constant")}</button><button class="${timed ? "on" : ""}" data-action="series-mode" data-path="${path}" data-mode="timed">${tr("series.timeDependent")}</button></div></div>${hint ? `<p class="computed shint">${hint}</p>` : ""}
-    <div class="sbody">${body}<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
+    ${seriesForms(path, s.mode)}</div>${hint ? `<p class="computed shint">${hint}</p>` : ""}
+    <div class="sbody">${seriesBody(path, type)}<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
       <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>${tr("series.zoomHint")}</span></div></div></div></div>`;
+}
+/** #243: support points of a course sorted by time (a step's rows, the ends of a line or the table). */
+function seriesPoints(s) {
+  const pts = s.mode === "timed" ? (s.rows || []).map(r => ({ at: r.from, value: r.value }))
+    : s.mode === "linear" ? [s.start, s.end].filter(Boolean) : s.mode === "table" ? s.points || [] : [];
+  return pts.map(p => ({ ...p })).filter(p => Number.isFinite(pointMonth(p))).sort((x, y) => pointMonth(x) - pointMonth(y));
+}
+const scaleValues = (s, k) => JSON.parse(JSON.stringify(s), (key, v) => key === "value" && typeof v === "number" ? Math.round(v * k * 1e6) / 1e6 : v);
+/**
+ * #243: a course converted to another form, as close to the old values as the form allows: steps, line and table
+ * take over the support points, a factor takes the value at the simulation start as base and the course divided by it.
+ */
+function convertSeries(s, mode) {
+  const a = startM(), first = seriesAt(s, a), pts = seriesPoints(s), endM = msMonth("end");
+  if (mode === "const") return { mode, value: s.mode === "timed" ? s.rows?.[0]?.value ?? 0 : first };
+  if (mode === "timed") {
+    const rows = pts.filter(p => pointMonth(p) > a).map(p => ({ from: p.age != null ? i2ym(pointMonth(p)) : p.at, value: p.value }));
+    return { mode, rows: [{ from: "start", value: first }, ...rows] };
+  }
+  if (mode === "linear") return pts.length > 1 ? { mode, start: pts[0], end: pts[pts.length - 1] }
+    : { mode, start: { at: "start", value: first }, end: { at: "end", value: Number.isFinite(endM) ? seriesAt(s, endM) : first } };
+  if (mode === "table") return { mode, interpolation: s.mode === "timed" ? "step" : "linear", points: pts.length ? pts : [{ at: "start", value: first }] };
+  return { mode, base: first, factor: first && s.mode !== "const" && s.mode !== "factor" ? scaleValues(s, 1 / first) : { mode: "const", value: 1 } };
 }
 /** #232: The amount per month next to a field per year («= 10 000 / Monat»). */
 const perMonthText = v => tr("flows.perMonth", { v: fmtInt(v ?? 0) });
@@ -2164,6 +2240,7 @@ function readInput(el) {
 }
 function onEdit(el) {
   const path = el.dataset.path; if (!path) return;
+  if (el.dataset.type === "point") { setPointWhen(getP(path), el.value); markDirty(); renderSection(); return; } // #243
   if (el.dataset.type === "ref") {
     const prev = getP(path);
     setP(path, el.value === "__date" ? i2ym(Number.isFinite(refMonth(prev)) && refMonth(prev) !== Infinity ? refMonth(prev) : startM()) : el.value);
@@ -2263,12 +2340,16 @@ const ACTIONS = {
   // #100: follow the suggested values of the stock index again
   "param-suggest": () => { state.returns.parametric.auto = true; followSuggestion(); markDirty(); renderSection(); },
   "series-mode": d => {
-    const s = getP(d.path); if (s.mode === d.mode) return;
-    // #217: a straight line, table or factor is replaced by its value at the simulation start.
-    const first = isNewForm(s) ? seriesAt(s, startM()) : d.mode === "timed" ? s.value ?? 0 : s.rows?.[0]?.value ?? 0;
-    for (const k of ["value", "rows", "start", "end", "points", "interpolation", "base", "factor"]) delete s[k];
-    if (d.mode === "timed") s.rows = [{ from: "start", value: first }]; else s.value = first;
-    s.mode = d.mode; markDirty(); renderSection();
+    const s = seriesDef(d.path); if (s.mode === d.mode) return;
+    setP(d.path, convertSeries(s, d.mode)); markDirty(); renderSection();
+  },
+  // #243: a further support point one year after the last one, with its value
+  "point-add": d => {
+    const pts = getP(d.path), last = pts[pts.length - 1];
+    if (!last) pts.push({ at: "start", value: 0 });
+    else if (last.age != null) pts.push({ ...last, age: Math.round((last.age + 1) * 100) / 100 });
+    else { const m = pointMonth(last); pts.push({ at: i2ym((Number.isFinite(m) ? m : startM()) + 12), value: last.value }); }
+    markDirty(); renderSection();
   },
   "row-add": d => { const rows = getP(d.path), last = rows[rows.length - 1]; rows.push({ from: i2ym(Math.max(startM(), refMonth(last?.from ?? "start") === Infinity ? startM() : refMonth(last?.from ?? "start")) + 12), value: last?.value ?? 0 }); markDirty(); renderSection(); },
   "row-del": d => {

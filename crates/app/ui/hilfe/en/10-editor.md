@@ -178,26 +178,23 @@ Monthly amounts, earned income per year. **Spending is entered in today's prices
 Spending often decreases with age, for example less travel from 80, while health costs rise. Use [time-dependent values](#f-timed) for this.
 
 ## @f-timed Time-dependent values
-Keywords: constant, time-dependent, row, from, course, mini chart
+Keywords: constant, time-dependent, steps, line, table, factor, support point, row, from, course, mini chart, glide path
 
-Many amounts and rates come in two forms:
+Many amounts and rates are time-dependent. At the top right of the field you choose the form of the course:
 
 - **Constant:** one value for the whole simulation.
-- **Time-dependent:** a sequence of rows ‘from *point in time* applies *value*’. The point in time is a milestone (‘from pension fund payout’) or a fixed date. Every row applies until the next one begins.
+- **Steps:** a sequence of rows ‘from *point in time* applies *value*’. The point in time is a milestone (‘from pension fund payout’) or a fixed date. Every row applies until the next one begins. Example living expenses: ‘from start 9 500’, ‘from pension fund payout 8 500’, ‘from 80 7 000’.
+- **Line:** a straight line ‘from’ a value at one point in time evenly, month by month, ‘to’ a second value at a later point in time. Before it the first value applies, after it the second. Example stock allocation: 90 % at 55, 50 % at 65 gives 70 % at 60.
+- **Table:** support points ‘at *point in time* applies *value*’. “+ Point” adds another one, ✕ deletes it. “In between” chooses whether the value between two support points runs **gradual** like a line or as **steps**. Before the first support point its value applies, after the last one the last value.
+- **Factor:** a **base value** times a course of factors in percent. You enter the factor itself again as a constant, steps, line or table. Example living expenses: base value 6 000, factor as a table with steps: at simulation start 100 %, at 80 80 %.
 
-Example living expenses: ‘from start 9 500’, ‘from pension fund payout 8 500’, ‘from 80 7 000’.
+For line and table the point in time of a support point is an **age** of a person (with decimals, 64.5 = 64 years and 6 months), a **milestone** or a **fixed date**. If you change the kind, the point in time stays the same; a milestone becomes, for example, the age at which it lies.
 
-The small chart next to the field shows the course. With the mouse wheel you zoom in; the buttons “All”, ‘10 yrs’, ‘5 yrs’ and ‘2 yrs’ choose the range.
+If you change the form, the app takes over what can be taken over: steps, line and table keep their points in time and values, “Constant” takes the value at simulation start, “Factor” takes it as the base value and the previous course as factors.
 
-Rows that are further down but begin before another one are sorted by point in time by the app. So feel free to move milestones; the order of the values stays consistent.
+The small chart next to the field shows the course (for a factor the result base value times factor). With the mouse wheel you zoom in; the buttons “All”, ‘10 yrs’, ‘5 yrs’ and ‘2 yrs’ choose the range.
 
-For glide paths and spending by phase of life there are three further forms. They are written in the [plan file](#ref-file) and apply to every time-dependent value:
-
-- **Straight line:** from a value at one point in time evenly, month by month, to a second value at a later point in time. Before it the first value applies, after it the second. Example stock allocation: 90 % at 55, 50 % at 65 gives 70 % at 60.
-- **Table:** support points by age, date or milestone; in between gliding like a straight line or as steps. Before the first support point its value applies, after the last one the last value.
-- **Factor:** a base value times a course of factors. Example living expenses: 6 000 with 100 % up to 80, after that 80 %.
-
-The editor shows these forms with a note and in the small chart; they cannot be edited there yet. “Constant” or “Time-dependent” replaces them with the value at simulation start.
+Rows and support points that are further down in the list but begin before another one are sorted by point in time by the app. So feel free to move milestones; the order of the values stays consistent. All forms are also written like this in the [plan file](#ref-file).
 
 ## @s-wealth Wealth & investment
 Keywords: stocks, bonds, cash, liquidity, stock allocation, reserve, portfolio, investment strategy, index

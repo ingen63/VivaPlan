@@ -58,8 +58,11 @@ Der Editor führt durch zwölf Abschnitte:
   Zeitabhängige Werte (Verläufe) gibt es als Konstante, Treppe («ab Zeitpunkt gilt Wert»), Gerade (von Wert a zu
   Zeitpunkt t1 auf Wert b zu Zeitpunkt t2, davor a, danach b), Tabelle (Stützpunkte nach Alter, Datum oder Meilenstein,
   dazwischen gleitend oder als Treppe) und Faktor (Grundwert mal Verlauf, zum Beispiel Lebenshaltung 100 % bis 80, danach
-  80 %), #217. Gerade, Tabelle und Faktor gelten für jedes zeitabhängige Feld; sie stehen in der Planungsdatei, der
-  Editor zeigt sie bis #243 nur mit Hinweis und in der Minigrafik an.
+  80 %), #217. Gerade, Tabelle und Faktor gelten für jedes zeitabhängige Feld. Im Editor wählt eine Leiste beim Feld
+  die Form (#243); Stützpunkte von Gerade und Tabelle liegen bei einem Alter einer Person, einem Meilenstein oder einem
+  festen Datum, Tabellenpunkte lassen sich hinzufügen und löschen, der Faktor ist selbst ein Verlauf in Prozent. Beim
+  Wechsel der Form bleiben Zeitpunkte und Werte erhalten, soweit die neue Form sie fassen kann; die Minigrafik zeigt den
+  Verlauf.
   Das Erwerbseinkommen wird pro Jahr erfasst wie in der Steuererklärung («Einkünfte aus Erwerb netto / Jahr», Nettolohn
   im Lohnausweis Ziffer 11); daneben steht der Betrag pro Monat. Gespeichert und gerechnet wird pro Monat (ein Zwölftel).
   Das Erwerbseinkommen jeder Person kann wahlweise mit der Teuerung steigen (Beträge in heutigen Preisen; neue

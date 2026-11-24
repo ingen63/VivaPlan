@@ -885,9 +885,10 @@ test.describe("Course forms linear, table and factor (#217)", () => {
       markDirty(); renderSection();
     });
     const share = page.locator('.series:has(svg[data-mini="wealth.stockShare"])');
-    await expect(share.locator('.shint[data-form="linear"]')).toContainText("Die Form «Gerade» lässt sich hier noch nicht bearbeiten");
+    // #243: the editor edits the forms instead of a read-only note
+    await expect(share.locator('.rows[data-form="linear"]')).toBeVisible();
     await expect(share.locator('svg[data-mini="wealth.stockShare"] path').first()).toBeAttached();
-    await expect(share.locator('button[data-action="series-mode"].on')).toHaveCount(0);
+    await expect(share.locator('.shead > .seg button.on')).toHaveText("Gerade");
     // The value in the course: 70 % at 60 like the engine (#217/AK5), only for display.
     expect(await page.evaluate(() => {
       const b = ym2i(state.household.persons[0].birth);
@@ -897,13 +898,182 @@ test.describe("Course forms linear, table and factor (#217)", () => {
     await expect(page.locator("#chart path").first()).toBeAttached();
     await nav(page, "Einnahmen & Ausgaben");
     const spending = page.locator('.series:has(svg[data-mini="flows.spending"])');
-    await expect(spending.locator('.shint[data-form="factor"]')).toContainText("«Faktor»");
+    await expect(spending.locator('.rows[data-form="factor"]')).toBeVisible();
     // «Constant» replaces the course with its value at the simulation start.
-    await spending.locator('button[data-action="series-mode"][data-mode="const"]').click();
+    await spending.locator('button[data-action="series-mode"][data-path="flows.spending"][data-mode="const"]').click();
     expect(await page.evaluate(() => state.flows.spending)).toEqual({ mode: "const", value: 9000 });
     await nav(page, "Entnahmestrategie");
     await page.evaluate(() => { state.withdrawal.strategy = "standard"; renderSection(); });
-    await expect(page.locator('.series:has(svg[data-mini="wealth.reserveMonths"]) .shint[data-form="table"]')).toContainText("«Tabelle»");
+    await expect(page.locator('.series:has(svg[data-mini="wealth.reserveMonths"]) .rows[data-form="table"]')).toBeVisible();
+    await previewIdle(page);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Editor for the course forms linear, table and factor (#243)", () => {
+  const box = (page, p) => page.locator(`.series:has(svg[data-mini="${p}"])`);
+  const form = (page, p, mode) => box(page, p).locator(`button[data-action="series-mode"][data-path="${p}"][data-mode="${mode}"]`);
+  /** Types a value into a field and leaves it (the plan takes it over like after Tab). */
+  const type = async (page, p, v) => { const f = field(page, p); await f.fill(v); await f.press("Tab"); };
+  const when = (page, p) => page.locator(`select[data-path="${p}"][data-type="point"]`);
+  const at = (page, p, age) => page.evaluate(([p, age]) => seriesAt(getP(p), ym2i(state.household.persons[0].birth) + Math.round(age * 12)), [p, age]);
+
+  test("AK1: every course offers the five forms; switching keeps the value at the simulation start", async ({ page }) => {
+    const errors = await open(page);
+    // In every section, every course has the selector with the five forms
+    let seen = 0;
+    for (const id of await page.evaluate(() => SECTIONS.map(s => s.id))) {
+      await page.evaluate(id => goto(id), id);
+      for (const seg of await page.locator("#main .series > .shead > .seg").all()) {
+        await expect(seg.locator("button")).toHaveText(["Konstant", "Treppe", "Gerade", "Tabelle", "Faktor"]);
+        seen++;
+      }
+    }
+    expect(seen).toBeGreaterThanOrEqual(5);
+    await page.evaluate(() => goto("flows"));
+    const p = "flows.spending", first = await page.evaluate(p => seriesAt(getP(p), startM()), p);
+    for (const mode of ["timed", "linear", "table", "factor", "const"]) {
+      await form(page, p, mode).click();
+      await expect(form(page, p, mode)).toHaveClass(/\bon\b/);
+      expect(await page.evaluate(p => getP(p).mode, p)).toBe(mode);
+      expect(await page.evaluate(p => seriesAt(getP(p), startM()), p)).toBeCloseTo(first, 6);
+    }
+    await previewIdle(page);
+    await noErrors(page, errors);
+  });
+
+  test("AK2: straight line with value a, point t1, value b, point t2 as age, date or milestone", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    const p = "wealth.stockShare", pid = await page.evaluate(() => state.household.persons[0].id);
+    await form(page, p, "linear").click();
+    await expect(box(page, p).locator(".row")).toHaveCount(2);
+    await when(page, `${p}.start`).selectOption(`age:${pid}`);
+    await type(page, `${p}.start.age`, "55");
+    await type(page, `${p}.start.value`, "90");
+    await when(page, `${p}.end`).selectOption(`age:${pid}`);
+    await type(page, `${p}.end.age`, "65");
+    await type(page, `${p}.end.value`, "50");
+    expect(await page.evaluate(p => getP(p), p)).toEqual({ mode: "linear", start: { age: 55, value: 0.9 }, end: { age: 65, value: 0.5 } });
+    expect(await at(page, p, 60)).toBeCloseTo(0.7, 6);
+    expect(await at(page, p, 50)).toBeCloseTo(0.9, 6);
+    // Milestone: the end at the pension fund payout; date: the start as a fixed month, same point in time
+    await when(page, `${p}.end`).selectOption("retire");
+    expect(await page.evaluate(p => getP(p).end, p)).toEqual({ at: "retire", value: 0.5 });
+    const m55 = await page.evaluate(() => i2ym(ym2i(state.household.persons[0].birth) + 55 * 12));
+    await when(page, `${p}.start`).selectOption("__date");
+    expect(await page.evaluate(p => getP(p).start, p)).toEqual({ at: m55, value: 0.9 });
+    await expect(field(page, `${p}.start.at`)).toBeVisible();
+    await previewIdle(page);
+    await expect(page.locator("#main .ferr")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: table with support points by age or date, add, change and delete, linear or steps", async ({ page }) => {
+    const errors = await open(page, "flows");
+    const p = "flows.spending", pid = await page.evaluate(() => state.household.persons[0].id);
+    await form(page, p, "const").click(); // the example plan has steps; a table would take over their rows
+    await form(page, p, "table").click();
+    const rows = box(page, p).locator(".row");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first().locator("button")).toHaveCount(0); // the last point cannot be deleted
+    await type(page, `${p}.points.0.value`, "8000");
+    await box(page, p).locator('button[data-action="point-add"]').click();
+    await box(page, p).locator('button[data-action="point-add"]').click();
+    await expect(rows).toHaveCount(3);
+    await when(page, `${p}.points.1`).selectOption(`age:${pid}`);
+    await type(page, `${p}.points.1.age`, "75");
+    await type(page, `${p}.points.1.value`, "6000");
+    await when(page, `${p}.points.2`).selectOption("__date");
+    const d = await page.evaluate(() => i2ym(ym2i(state.household.persons[0].birth) + 85 * 12));
+    await type(page, `${p}.points.2.at`, `${d.slice(5)}.${d.slice(0, 4)}`);
+    await type(page, `${p}.points.2.value`, "5000");
+    expect(await page.evaluate(p => getP(p).points.slice(1), p)).toEqual([{ age: 75, value: 6000 }, { at: d, value: 5000 }]);
+    // Linear in between by default, steps on request
+    expect(await at(page, p, 80)).toBeCloseTo(5500, 6);
+    await box(page, p).locator('button[data-value="step"]').click();
+    expect(await page.evaluate(p => getP(p).interpolation, p)).toBe("step");
+    expect(await at(page, p, 80)).toBeCloseTo(6000, 6);
+    // Delete the middle point
+    await rows.nth(1).locator('button[data-action="row-del"]').click();
+    expect(await page.evaluate(p => getP(p).points.map(x => x.value), p)).toEqual([8000, 5000]);
+    await previewIdle(page);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: factor with base value and course of factors", async ({ page }) => {
+    const errors = await open(page, "flows");
+    const p = "flows.spending", pid = await page.evaluate(() => state.household.persons[0].id);
+    await form(page, p, "const").click();
+    await form(page, p, "factor").click();
+    await type(page, `${p}.base`, "6000");
+    // The course of factors has its own selector (without a factor in the factor) and fields in percent
+    const sub = box(page, p).locator(".shead.sub .seg button");
+    await expect(sub).toHaveText(["Konstant", "Treppe", "Gerade", "Tabelle"]);
+    await box(page, p).locator(`button[data-path="${p}.factor"][data-mode="table"]`).click();
+    await box(page, p).locator(`button[data-action="point-add"][data-path="${p}.factor.points"]`).click();
+    await when(page, `${p}.factor.points.1`).selectOption(`age:${pid}`);
+    await type(page, `${p}.factor.points.1.age`, "80");
+    await type(page, `${p}.factor.points.1.value`, "80");
+    await box(page, p).locator(`button[data-path="${p}.factor.interpolation"][data-value="step"]`).click();
+    expect(await page.evaluate(p => getP(p), p)).toEqual({ mode: "factor", base: 6000,
+      factor: { mode: "table", interpolation: "step", points: [{ at: "start", value: 1 }, { age: 80, value: 0.8 }] } });
+    expect(await at(page, p, 79)).toBeCloseTo(6000, 6);
+    expect(await at(page, p, 85)).toBeCloseTo(4800, 6);
+    await previewIdle(page);
+    await expect(page.locator("#main .ferr")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK5: the mini chart shows the course and follows every change", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    const p = "wealth.stockShare", line = box(page, p).locator(`svg[data-mini="${p}"] path`).nth(1);
+    await form(page, p, "linear").click();
+    const flat = await line.getAttribute("d");
+    await type(page, `${p}.end.value`, "20");
+    await expect(line).not.toHaveAttribute("d", flat);
+    // A straight line is drawn month by month, not as a single step
+    expect((await line.getAttribute("d")).split("V").length).toBeGreaterThan(24);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: a plan with the new forms opens, can be edited and saved without losing values", async ({ page }) => {
+    const errors = await open(page);
+    const plan = await page.evaluate(() => {
+      const s = JSON.parse(JSON.stringify(state)), pid = s.household.persons[1]?.id;
+      s.wealth.stockShare = { mode: "linear", start: { age: 55, value: 0.9 }, end: { at: "2040-01", value: 0.5 } };
+      s.wealth.reserveMonths = { mode: "table", interpolation: "step", points: [{ at: "start", value: 6 }, { age: 80, value: 12 }, { at: "retire", value: 9 }] };
+      s.flows.spending = { mode: "factor", base: 9000, factor: { mode: "table", points: [{ at: "start", value: 1 }, { age: 80, ...(pid ? { person: pid } : {}), value: 0.8 }] } };
+      s.pension.pk.interest = { mode: "factor", base: 0.02, factor: 1 };
+      return s;
+    });
+    const file = path.join(os.tmpdir(), `issue243-${process.pid}.vplan`);
+    fs.writeFileSync(file, JSON.stringify(plan));
+    await page.locator("#fileInput").setInputFiles(file);
+    await expect.poll(() => page.evaluate(() => state.flows.spending.mode)).toBe("factor");
+    // Open every section once (the editor must not change the forms) and edit one value
+    for (const id of await page.evaluate(() => SECTIONS.map(s => s.id))) await page.evaluate(id => goto(id), id);
+    await page.evaluate(() => goto("flows"));
+    await type(page, "flows.spending.base", "9500");
+    await previewIdle(page);
+    const download = page.waitForEvent("download");
+    await page.evaluate(() => command("save"));
+    const saved = JSON.parse(fs.readFileSync(await (await download).path(), "utf8"));
+    const expected = JSON.parse(JSON.stringify(plan));
+    expected.flows.spending.base = 9500;
+    expected.pension.pk.interest.factor = { mode: "const", value: 1 }; // a number as factor becomes a constant (same value)
+    for (const k of ["stockShare", "reserveMonths"]) expect(saved.wealth[k]).toEqual(expected.wealth[k]);
+    expect(saved.flows.spending).toEqual(expected.flows.spending);
+    expect(saved.pension.pk.interest).toEqual(expected.pension.pk.interest);
+    // Reopen the saved file: the same values in the editor
+    const again = path.join(os.tmpdir(), `issue243-${process.pid}-2.vplan`);
+    fs.writeFileSync(again, JSON.stringify(saved));
+    await page.evaluate(() => { dirty = false; });
+    await page.locator("#fileInput").setInputFiles(again);
+    await expect.poll(() => page.evaluate(() => state.flows.spending.base)).toBe(9500);
+    expect(await page.evaluate(() => state.wealth.reserveMonths)).toEqual(expected.wealth.reserveMonths);
+    await page.evaluate(() => goto("withdrawal"));
+    fs.rmSync(file); fs.rmSync(again);
     await previewIdle(page);
     await noErrors(page, errors);
   });
