@@ -137,6 +137,25 @@
         "vivaplan"
       ],
       "reason": "Terminalbefehl zum Einrichten der Agent Skill (#208): Befehle und Pfade, in allen Sprachen gleich"
+    },
+    {
+      "langs": [
+        "en",
+        "fr",
+        "it"
+      ],
+      "words": [
+        "mcpServers",
+        "vivaplan",
+        "command",
+        "Applications",
+        "VivaPlan",
+        "Contents",
+        "MacOS",
+        "args",
+        "mcp"
+      ],
+      "reason": "Eintrag zum Einrichten des MCP-Servers (#210): JSON-Schlüssel und Pfad, in allen Sprachen gleich"
     }
   ],
   "findings": [
@@ -349,6 +368,13 @@
       "check": "terms",
       "subject": "Pfad",
       "reason": "«Pfad» meint hier den Feldpfad der Planungsdatei (#207), nicht den Renditepfad; französisch «chemin de champ»"
+    },
+    {
+      "file": "crates/app/ui/hilfe/fr/60-referenz.md",
+      "where": "§ref-mcp",
+      "check": "terms",
+      "subject": "Pfad",
+      "reason": "«Pfad» meint hier den Pfad einer Datei oder des Programms (#210), nicht den Renditepfad; französisch «chemin»"
     }
   ]
 }

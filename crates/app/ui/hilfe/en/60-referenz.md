@@ -67,6 +67,7 @@ The engine is also available in the terminal (program `vivaplan`):
 | `diff <a> <b>` | List the differences between two plans (`--json`) |
 | `optimize <plan>` | Optimize the strategy, see [Command line](#o-cli) |
 | `describe [<section>]` | Catalog for AIs: what can be changed, varied and measured (`--plan`, `--json`), see [Catalog for AIs](#ref-describe) |
+| `mcp` | MCP server for AI programs, reading only (`--data-dir`, `--library`, `--names`), see [Connecting AI programs](#ref-mcp) |
 | `evaluate <plan> <experiment.json>` | Compute an experiment (`--json`, `--yes`), see [Experiment](#ref-experiment) |
 | `bench <plan>` | Measure the calculation time (`--paths`, `--json`) |
 | `schema` | Output the JSON schema of the plan file |
@@ -240,6 +241,37 @@ On Windows copy the folder to `%USERPROFILE%\.claude\skills`. Then start a new s
 **Privacy:** What the AI reads from your plan or from the results (birth dates, income, wealth, pensions) goes to the provider of the AI. The skill tells the AI to point this out to you before it reads the first time. VivaPlan itself sends nothing.
 
 The results are model calculations without guarantee, no tax or investment advice; taxes are estimates.
+
+## @ref-mcp Connecting AI programs (MCP server)
+Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy
+
+`vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. In this version the server only reads; it does not compute and changes no file.
+
+| Tool | Purpose |
+|---|---|
+| `plan_open` | Open a plan (`.vplan`, `.rplan`) or the example plan; overview without values and number of check messages |
+| `plan_get` | Read a section or a single field (field path) |
+| `plan_schema` | Look up the structure of the project file |
+| `plan_validate` | Check the plan as the app does |
+| `describe` | [Catalog for AIs](#ref-describe) |
+| `result_list`, `result_get` | Results of the session (summary, yearly values, events, bands, variations) |
+| `library_list` | Time series of the [data library](#ref-library) |
+
+**Set up:** In the AI program, enter the program `vivaplan` with its full path (see [command line](#ref-cli)) and the argument `mcp`. In Claude Desktop and LM Studio the entry looks like this on macOS:
+
+```
+{
+  "mcpServers": {
+    "vivaplan": { "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan", "args": ["mcp"] }
+  }
+}
+```
+
+In Claude Code, `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp` is enough. Like the command line, the server computes with the data folder of the app (limits, time series); `--data-dir` and `--library` override it.
+
+**Privacy:** Everything a tool returns becomes part of the conversation with your AI and goes to its provider; with a local model (for example in LM Studio) everything stays on the computer. The server only reads plans whose path is named explicitly and searches no folders. It replaces names of persons and freely entered labels with neutral ones (Person 1, Property 1), except with `--names`; answers name only the file name, not the folder. No answer is longer than 20'000 characters. The texts of the server are in English; the AI still answers in your language.
+
+The results are model calculations without warranty, not tax or investment advice; taxes are estimates.
 
 ## @ref-library Data library: folders and files
 Keywords: folder, time series, storage location, Application Support, CSV

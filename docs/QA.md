@@ -129,6 +129,29 @@ Vor einer Version, nach Änderungen an `vivaplan-skill/SKILL.md` oder an der Kom
      neue Datei).
 5. Ergebnis mit Datum, Version und Modell unter «Messungen» oder im Issue festhalten.
 
+## Prüfung von Hand: MCP-Server mit LM Studio (#210)
+
+Vor einer Version und nach Änderungen an `crates/cli/src/mcp/`. Prüft, dass der Server auch mit einem MCP-Programm
+läuft, das nicht von Anthropic ist (AK8). Paket gebaut und installiert, LM Studio mit einem lokalen Modell, das
+Werkzeuge aufrufen kann (zum Beispiel Qwen 3 oder Llama 3.1 Instruct, in LM Studio als «Tool Use» gekennzeichnet).
+
+1. In LM Studio unter «Program → Install → Edit mcp.json» den Eintrag aus der Hilfe (Referenz, «KI-Programme
+   verbinden») eintragen, mit dem vollen Pfad des Programms und `"args": ["mcp"]`; speichern.
+2. Erwartet: LM Studio zeigt den Server `vivaplan` mit acht Werkzeugen (`describe`, `plan_open`, `plan_get`,
+   `plan_schema`, `plan_validate`, `result_list`, `result_get`, `library_list`), ohne Fehlermeldung.
+3. Beispielplanung in der App als Datei speichern (zum Beispiel `~/Documents/beispiel.vplan`), in LM Studio ein neues
+   Gespräch beginnen und fragen: «Öffne ~/Documents/beispiel.vplan mit VivaPlan und sag mir, ob die Planung Fehler
+   hat.» (bei Bedarf den vollen Pfad nennen).
+4. Erwartet:
+   - LM Studio fragt vor jedem Werkzeugaufruf nach der Erlaubnis; nach dem Erlauben ruft das Modell `plan_open` und
+     `plan_validate` auf.
+   - Die Antwort von `plan_open` nennt nur den Dateinamen, die Person als «Person 1» und enthält den Hinweis «your AI
+     and is processed by its provider» und den vollen Haftungsausschluss.
+   - Das Modell meldet keine Fehler (Beispielplanung) und gibt die Zahl der Hinweise wieder.
+5. Fragen: «Welche Zeitreihen gibt es in der Datenbibliothek?» – Erwartet: Aufruf von `library_list`, Liste der Dateien.
+6. In LM Studio den Server ausschalten: Der Prozess `vivaplan mcp` endet (Aktivitätsanzeige).
+7. Ergebnis mit Datum, Version, LM-Studio-Version und Modell unter «Messungen» oder im Issue festhalten.
+
 ## Offene Punkte
 
 1. ~~**Cashflow-Invariante mit Immobilien, Pensionskasse und 3a**~~ – erledigt mit #133: Der Monatsdatensatz führt intern

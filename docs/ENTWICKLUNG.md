@@ -195,6 +195,21 @@ Windows im Installationsordner, Linux `/usr/lib/VivaPlan/`). `crates/cli/tests/s
 Optionen der Skill in `vivaplan --help` stehen, die genannten `describe`-Abschnitte existieren und die Beispiel-Kennzahlen
 rechnen. Neue oder umbenannte Befehle und Optionen deshalb in der Skill nachführen.
 
+**MCP-Server (#210):** `vivaplan mcp` (`crates/cli/src/mcp/`) spricht JSON-RPC 2.0 über stdio, eine Meldung pro Zeile,
+von Hand geschrieben ohne SDK und ohne Netzwerkbibliothek (Entscheid E4 in #77). `mod.rs`: Protokoll (`initialize` mit
+Aushandlung der Fassung, `ping`, `tools/list`, `tools/call`, Fehler nach JSON-RPC), Obergrenze 20'000 Zeichen je
+Werkzeugergebnis (`fit` kürzt die längste Liste und sagt, wie der Rest abzurufen ist), Haftungsausschluss nach
+Ergebnissen. `session.rs`: geöffnete Planungen (`p1`, …) und Ergebnisse (`r1`, …) im Speicher; jede Rechnung über
+`Session::call` → `engine::dispatch::call` (wie die App), die Einstellungen über `engine::appdata::apply`, Datenordner
+über `app_data()` wie die übrige Kommandozeile. `tools.rs`: Werkzeuge (nur lesend: `plan_open`, `plan_get`,
+`plan_schema`, `plan_validate`, `describe`, `result_list`, `result_get`, `library_list`) mit Schemas und
+Kennzeichen `readOnlyHint`; Fehler der Eingaben kommen als Werkzeugergebnis mit `isError`, damit die KI sie beheben
+kann. Die Daten stehen als kompaktes JSON im Text, ohne `structuredContent` (viele Hosts geben beides ans Modell).
+`privacy.rs`: Namen und freie Bezeichnungen (`name`, `label`) werden durch neutrale ersetzt, ausser mit `--names`;
+Ordner fallen weg. Die Werkzeugliste ist in `crates/cli/tests/mcp-tools.json` festgehalten; eine Änderung der
+Schnittstelle lässt `crates/cli/tests/mcp.rs` fehlschlagen, die neue Liste steht in der Meldung. Rechnende Werkzeuge
+folgen mit #211 (`Session::add_result` ist dafür vorbereitet), Ändern und Speichern mit #212.
+
 **App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
 vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung
 an einer der beiden Dateien alle Rasterdateien neu erzeugen (macOS):

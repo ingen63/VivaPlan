@@ -3,6 +3,7 @@
 mod describe;
 mod devserver;
 mod evaluate;
+mod mcp;
 mod optimize;
 
 // #116: memory limit per test process (engine::test_alloc).
@@ -42,6 +43,9 @@ Usage:
   vivaplan describe [<section>] [--plan <plan.vplan>] [--json]
         (catalog for AIs: fields, series, state, metrics, experiment, examples, performance, limits;
          performance measured in about 0.5 s on the plan, otherwise on the example plan)
+  vivaplan mcp [--data-dir <folder>] [--library <folder>] [--names]
+        (MCP server over stdio for AI programs, reading only: plans, checks, results, data library, describe;
+         names replaced unless --names)
   vivaplan schema
   vivaplan --version
   vivaplan --help   (this help)
@@ -72,6 +76,7 @@ fn main() -> ExitCode {
         Some("optimize") => optimize::cmd_optimize(&args[1..]),
         Some("evaluate") => evaluate::cmd_evaluate(&args[1..]),
         Some("describe") => describe::cmd_describe(&args[1..]),
+        Some("mcp") => mcp::cmd_mcp(&args[1..]),
         Some("library") => cmd_library(&args[1..]),
         Some("import-shiller") => cmd_import_shiller(&args[1..]),
         Some("import-snb") => cmd_import_snb(&args[1..]),

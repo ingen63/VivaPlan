@@ -18,7 +18,8 @@ Weil die Börsenrenditen unsicher sind, rechnet die App nicht nur einen Verlauf,
 des 1. und 99. Perzentils und des schlechtesten Laufs.
 
 Die App läuft auf macOS, Windows und Linux. Sie greift nie aufs Netzwerk zu: Planungen, Zeitreihen und Ergebnisse
-bleiben ausschliesslich auf dem eigenen Rechner. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
+bleiben ausschliesslich auf dem eigenen Rechner. Daten verlassen den Rechner nur, wenn man VivaPlan selbst mit einer KI
+verbindet (`vivaplan mcp`, Kommandozeile), und dann nur das, was die KI abfragt. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
 kopieren und archivieren lässt; ein Doppelklick auf die Datei öffnet sie in VivaPlan. Beim Start öffnet die Desktop-App die zuletzt geöffnete oder gespeicherte Planung (sonst eine mitgelieferte Beispielplanung); beim Beenden mit ungespeicherten Änderungen fragt sie nach. Das Menü «Datei → Zuletzt geöffnet» zeigt die letzten 10 geöffneten oder gespeicherten Planungen zum schnellen Wechseln; eine nicht mehr vorhandene Datei meldet die App und entfernt sie aus der Liste, «Liste löschen» leert sie. Die Liste enthält nur die Dateipfade und liegt in den lokalen Einstellungen der App.
 
 VivaPlan hiess früher «RetirementPlanner». Planungen von damals (`.rplan`) lassen sich weiterhin öffnen; beim Speichern
@@ -415,6 +416,16 @@ erklärt Befehle, wichtige Felder mit Einheiten (Anteile statt Prozent), nominal
 den Haftungsausschluss. Sie ist englisch, die KI antwortet in der Sprache des Menschen. Die Skill weist die KI an, vor
 dem ersten Lesen einer Planung darauf hinzuweisen, dass die gelesenen Daten an den Anbieter der KI gehen. Die Hilfe sagt,
 wo die Skill liegt und wie man sie einrichtet.
+
+MCP-Server (#210): `vivaplan mcp [--data-dir <ordner>] [--library <ordner>] [--names]` verbindet VivaPlan mit
+KI-Programmen, die das Model Context Protocol unterstützen (Claude Desktop, Claude Code, ChatGPT Desktop, LM Studio und
+andere). Das Programm spricht über Standardein- und -ausgabe, öffnet keine Netzwerkverbindung und liest in dieser
+Fassung nur: `plan_open`, `plan_get`, `plan_schema`, `plan_validate`, `describe`, `result_list`, `result_get`,
+`library_list`. Jede Rechnung geht über denselben Befehlsverteiler wie die App; Grenzen und Datenbibliothek kommen aus
+dem Datenordner der App. Namen von Personen und frei eingegebene Bezeichnungen ersetzt der Server durch neutrale
+(«Person 1»), ausser mit `--names`, und nennt nur Dateinamen; keine Antwort ist länger als 20'000 Zeichen. Das erste
+Öffnen einer Planung weist darauf hin, dass die abgefragten Daten Teil des Gesprächs mit der KI werden und an deren
+Anbieter gehen, und zeigt den vollen Haftungsausschluss; jede Antwort mit Ergebnissen endet mit der Kurzfassung.
 
 ## Installation
 

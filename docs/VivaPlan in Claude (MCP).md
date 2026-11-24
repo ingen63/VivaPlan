@@ -133,6 +133,13 @@ Auflösung des Datenordners pro Betriebssystem kommt in den Rechenkern oder die 
 
 ## 5 Werkzeuge
 
+**Stand der Umsetzung (#210, Entscheid vom 23.11.2026 in #210):** Hauptweg sind `evaluate` (#216) und `describe`
+(#219). `plan_preview`, `optimize_run` und `result_compare` entfallen; `simulation_run` bleibt als einfacher Einstieg
+(intern ein Experiment ohne Variation). #210 setzt die lesenden Werkzeuge um (`plan_open`, `plan_get`, `plan_schema`,
+`plan_validate`, `result_get`, `result_list`, `library_list`, `describe`), #211 die rechnenden, #212 Ändern und
+Speichern. Die Daten stehen als kompaktes JSON im Text (ohne `structuredContent`); Namen werden ersetzt wie in
+Abschnitt 6. Die Tabelle unten ist der ursprüngliche Entwurf.
+
 Jede geöffnete Planung bekommt eine Kennung (`plan`, zum Beispiel `p1`), jedes Ergebnis eine Kennung (`result`, zum
 Beispiel `r3`). Claude schickt nie die ganze Planung; es arbeitet mit Kennungen und Feldpfaden. Alle Werkzeuge liefern
 Text und dieselben Daten strukturiert. Feldpfade haben die Form der Prüfmeldungen (`household.persons.0.name`).

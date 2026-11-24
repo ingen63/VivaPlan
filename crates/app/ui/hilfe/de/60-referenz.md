@@ -67,6 +67,7 @@ Der Rechenkern steht auch im Terminal zur Verfügung (Programm `vivaplan`):
 | `diff <a> <b>` | Unterschiede zweier Planungen auflisten (`--json`) |
 | `optimize <planung>` | Strategie optimieren, siehe [Kommandozeile](#o-cli) |
 | `describe [<abschnitt>]` | Katalog für KIs: was sich ändern, variieren und messen lässt (`--plan`, `--json`), siehe [Katalog für KIs](#ref-describe) |
+| `mcp` | MCP-Server für KI-Programme, nur lesend (`--data-dir`, `--library`, `--names`), siehe [KI-Programme verbinden](#ref-mcp) |
 | `evaluate <planung> <experiment.json>` | Experiment rechnen (`--json`, `--yes`), siehe [Experiment](#ref-experiment) |
 | `bench <planung>` | Rechenzeit messen (`--paths`, `--json`) |
 | `schema` | JSON-Schema der Planungsdatei ausgeben |
@@ -238,6 +239,37 @@ mkdir -p ~/.claude/skills && cp -R /Applications/VivaPlan.app/Contents/Resources
 Unter Windows kopieren Sie den Ordner nach `%USERPROFILE%\.claude\skills`. Starten Sie danach eine neue Sitzung. Fragen Sie dann zum Beispiel: «Reicht mein Vermögen bis 95? Meine Planung ist ~/Dokumente/planung.vplan». Claude ruft dafür `vivaplan` auf und fragt vorher, ob es Befehle ausführen darf. Nach einer neuen Version von VivaPlan kopieren Sie den Ordner erneut.
 
 **Datenschutz:** Was die KI aus Ihrer Planung oder aus den Ergebnissen liest (Geburtsdaten, Einkommen, Vermögen, Renten), geht an den Anbieter der KI. Die Skill weist die KI an, Sie vor dem ersten Lesen darauf hinzuweisen. VivaPlan selbst sendet nichts.
+
+Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
+
+## @ref-mcp KI-Programme verbinden (MCP-Server)
+Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz
+
+`vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. In dieser Version liest der Server nur; er rechnet nicht und ändert keine Datei.
+
+| Werkzeug | Zweck |
+|---|---|
+| `plan_open` | Planung (`.vplan`, `.rplan`) oder die Beispielplanung öffnen; Übersicht ohne Werte und Zahl der Prüfmeldungen |
+| `plan_get` | Abschnitt oder einzelnes Feld (Feldpfad) lesen |
+| `plan_schema` | Aufbau der Planungsdatei nachschlagen |
+| `plan_validate` | Planung prüfen wie die App |
+| `describe` | [Katalog für KIs](#ref-describe) |
+| `result_list`, `result_get` | Ergebnisse der Sitzung (Kurzfassung, Jahreswerte, Ereignisse, Bandbreite, Variationen) |
+| `library_list` | Zeitreihen der [Datenbibliothek](#ref-library) |
+
+**Einrichten:** Im KI-Programm tragen Sie das Programm `vivaplan` mit vollem Pfad (siehe [Kommandozeile](#ref-cli)) und dem Argument `mcp` ein. In Claude Desktop und LM Studio sieht der Eintrag unter macOS so aus:
+
+```
+{
+  "mcpServers": {
+    "vivaplan": { "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan", "args": ["mcp"] }
+  }
+}
+```
+
+In Claude Code genügt `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp`. Der Server rechnet wie die Kommandozeile mit dem Datenordner der App (Grenzen, Zeitreihen); `--data-dir` und `--library` übersteuern ihn.
+
+**Datenschutz:** Alles, was ein Werkzeug zurückgibt, wird Teil des Gesprächs mit Ihrer KI und geht an deren Anbieter; mit einem lokalen Modell (zum Beispiel in LM Studio) bleibt alles auf dem Rechner. Der Server liest nur Planungen, deren Pfad ausdrücklich genannt wird, und durchsucht keine Ordner. Namen von Personen und frei eingegebene Bezeichnungen ersetzt er durch neutrale (Person 1, Property 1), ausser mit `--names`; Antworten nennen nur den Dateinamen, nicht den Ordner. Keine Antwort ist länger als 20'000 Zeichen. Texte des Servers sind englisch; die KI antwortet trotzdem in Ihrer Sprache.
 
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
 

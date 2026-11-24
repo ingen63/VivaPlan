@@ -1,0 +1,237 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "What VivaPlan can change, vary and measure: field paths with units, forms of time series, state variables, metric building blocks, experiment format, examples, measured computing time and limits. Without section a compact overview of all sections; read the section you need. With plan the computing time is measured on that plan.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "plan": {
+          "description": "Id of an open plan (p1, …) to measure the computing time on.",
+          "type": "string"
+        },
+        "section": {
+          "description": "Part of the catalog; without: all sections.",
+          "enum": [
+            "fields",
+            "series",
+            "state",
+            "metrics",
+            "experiment",
+            "examples",
+            "performance",
+            "limits"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "name": "describe",
+    "title": "Catalog for AIs"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Opens a VivaPlan project file (.vplan or an older .rplan) as a working copy in memory, brought up to the current format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, notes of the update, number of check messages. Only the named file is read; folders are not searched. With example: true the example plan is opened instead.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "example": {
+          "description": "Open the example plan instead of a file.",
+          "type": "boolean"
+        },
+        "path": {
+          "description": "Path of the file (.vplan or .rplan).",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "name": "plan_open",
+    "title": "Open a plan"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Reads the values of a section of an open plan (e.g. household, flows, wealth, pension, realestate, taxes, returns, withdrawal, scenarios) or of a single field by field path as in the check messages (household.persons.0.birth). Without section and path: the list of sections with their size. Shares are fractions (0.05 = 5 %), amounts are per year in the currency of the plan unless the field says otherwise.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Field path, dot separated, list entries by number from 0.",
+          "type": "string"
+        },
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        },
+        "section": {
+          "description": "Top-level section of the plan.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "type": "object"
+    },
+    "name": "plan_get",
+    "title": "Read part of a plan"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Looks up the structure of the project file (JSON Schema with descriptions). Without arguments the sections with their description; with section the part of the schema with the definitions it uses; with definition a single definition. Units and the meaning of the fields in short: describe with section fields.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "definition": {
+          "description": "Name of a definition of the schema (e.g. Person).",
+          "type": "string"
+        },
+        "section": {
+          "description": "Top-level section of the plan.",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "name": "plan_schema",
+    "title": "Structure of the project file"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Checks an open plan as the app does: messages with severity (error, warning, info), section, field path and text. A plan with errors cannot be computed.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "plan": {
+          "description": "Id of the open plan (p1, …).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "type": "object"
+    },
+    "name": "plan_validate",
+    "title": "Check a plan"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Lists the results computed in this session: id (r1, …), plan, tool, number of runs, main key figure. Results stay only in the memory of the server; the results of the desktop app are separate.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "name": "result_list",
+    "title": "Results of the session"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Details of a result of the session. view: summary (key figures and the result in words, default), yearly (one row per calendar year, nominal or real), events (events of the run), bands (wealth per year at the percentiles over all runs), variations (key figures per combination of the variations). With several runs percentile picks the run for yearly and events (0 worst, 1, 5, 50, 95, 99; default 50). from and to limit the calendar years.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "description": "First calendar year.",
+          "type": "integer"
+        },
+        "percentile": {
+          "enum": [
+            0,
+            1,
+            5,
+            50,
+            95,
+            99
+          ],
+          "type": "integer"
+        },
+        "real": {
+          "description": "Values in today's purchasing power instead of nominal (yearly, bands).",
+          "type": "boolean"
+        },
+        "result": {
+          "description": "Id of the result (r1, …).",
+          "type": "string"
+        },
+        "to": {
+          "description": "Last calendar year.",
+          "type": "integer"
+        },
+        "view": {
+          "enum": [
+            "summary",
+            "yearly",
+            "events",
+            "bands",
+            "variations"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "type": "object"
+    },
+    "name": "result_get",
+    "title": "Details of a result"
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "description": "Time series of the data library of the app (folder «Zeitreihen» of its data folder): file, currency, period, monthly or yearly, average returns of stocks and bonds and inflation. Plans refer to them as library:<file>.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "name": "library_list",
+    "title": "Data library"
+  }
+]

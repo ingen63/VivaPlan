@@ -39,6 +39,13 @@ Check it with `vivaplan --version`; `vivaplan --help` lists all commands. Below,
 It uses the data folder of the app (time series, limits from the settings) like the app does; `--data-dir <folder>`
 takes another one. If the user does not name a plan file, ask for it; plans are wherever the user saved them.
 
+## MCP server (alternative)
+
+If the AI program connects to VivaPlan as an MCP server (`vivaplan mcp`, set up by the user), use its tools instead
+of the command line: `plan_open` (path of a `.vplan`), `plan_get`, `plan_validate`, `plan_schema`, `describe`,
+`library_list`, `result_list`, `result_get`. The server only reads; it replaces names with neutral ones (Person 1) and
+shows only file names. The rules above apply in the same way.
+
 ## Workflow
 
 1. `vivaplan validate <plan.vplan> --json` - errors and warnings with the field path (`field`). Fix errors first.

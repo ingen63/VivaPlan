@@ -29,7 +29,7 @@ UNIT, INTEGRATION, PROGRAM = "unit", "integration", "program"
 LIMITS = {UNIT: 0.1, INTEGRATION: 1.0, PROGRAM: 15.0}
 KIND_NAMES = {UNIT: "Unit-Test", INTEGRATION: "Integrationstest", PROGRAM: "startet Programm/Server"}
 # nextest binary ids whose tests all start a program
-PROGRAM_TARGETS = {"vivaplan-cli::cli"}
+PROGRAM_TARGETS = {"vivaplan-cli::cli", "vivaplan-cli::mcp"}
 # package -> pattern in the body of a test function that starts a program or a server
 PROGRAM_MARKERS = {
     "vivaplan-cli": re.compile(r"Command::new|CARGO_BIN_EXE|\bserve\("),

@@ -67,6 +67,7 @@ Le moteur de calcul est également disponible dans le terminal (programme `vivap
 | `diff <a> <b>` | Lister les différences entre deux planifications (`--json`) |
 | `optimize <planification>` | Optimiser la stratégie, voir [Ligne de commande](#o-cli) |
 | `describe [<section>]` | Catalogue pour les IA : ce qui peut être modifié, varié et mesuré (`--plan`, `--json`), voir [Catalogue pour les IA](#ref-describe) |
+| `mcp` | Serveur MCP pour les programmes d’IA, en lecture seule (`--data-dir`, `--library`, `--names`), voir [Connecter des programmes d’IA](#ref-mcp) |
 | `evaluate <planification> <experience.json>` | Calculer une expérience (`--json`, `--yes`), voir [Expérience](#ref-experiment) |
 | `bench <planification>` | Mesurer le temps de calcul (`--paths`, `--json`) |
 | `schema` | Afficher le schéma JSON du fichier de planification |
@@ -240,6 +241,37 @@ Sous Windows, copiez le dossier dans `%USERPROFILE%\.claude\skills`. Démarrez e
 **Protection des données:** ce que l’IA lit dans votre planification ou dans les résultats (dates de naissance, revenus, fortune, rentes) est transmis au fournisseur de l’IA. Le skill demande à l’IA de vous en avertir avant la première lecture. VivaPlan lui-même n’envoie rien.
 
 Les résultats sont des calculs de modèle sans garantie, pas un conseil fiscal ou en placement; les impôts sont estimés.
+
+## @ref-mcp Connecter des programmes d’IA (serveur MCP)
+Mots-clés: MCP, Model Context Protocol, serveur, vivaplan mcp, LM Studio, Claude Desktop, IA, outil, protection des données
+
+`vivaplan mcp` est un serveur MCP : les programmes d’IA qui prennent en charge le Model Context Protocol (par exemple Claude Desktop, Claude Code, ChatGPT Desktop ou LM Studio) le démarrent eux-mêmes et communiquent avec lui par l’entrée et la sortie standard. Il n’ouvre aucune connexion réseau. Dans cette version, le serveur ne fait que lire ; il ne calcule pas et ne modifie aucun fichier.
+
+| Outil | But |
+|---|---|
+| `plan_open` | Ouvrir une planification (`.vplan`, `.rplan`) ou la planification d’exemple ; aperçu sans valeurs et nombre de messages de contrôle |
+| `plan_get` | Lire une section ou un seul champ (chemin de champ) |
+| `plan_schema` | Consulter la structure du fichier de projet |
+| `plan_validate` | Contrôler la planification comme l’application |
+| `describe` | [Catalogue pour les IA](#ref-describe) |
+| `result_list`, `result_get` | Résultats de la session (résumé, valeurs annuelles, événements, fourchette, variations) |
+| `library_list` | Séries temporelles de la [bibliothèque de données](#ref-library) |
+
+**Configurer :** dans le programme d’IA, indiquez le programme `vivaplan` avec son chemin complet (voir [ligne de commande](#ref-cli)) et l’argument `mcp`. Dans Claude Desktop et LM Studio, l’entrée se présente ainsi sous macOS :
+
+```
+{
+  "mcpServers": {
+    "vivaplan": { "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan", "args": ["mcp"] }
+  }
+}
+```
+
+Dans Claude Code, `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp` suffit. Comme la ligne de commande, le serveur calcule avec le dossier de données de l’application (limites, séries temporelles) ; `--data-dir` et `--library` le remplacent.
+
+**Protection des données :** tout ce qu’un outil renvoie fait partie de la conversation avec votre IA et est transmis à son fournisseur ; avec un modèle local (par exemple dans LM Studio), tout reste sur l’ordinateur. Le serveur ne lit que les planifications dont le chemin est indiqué explicitement et ne parcourt aucun dossier. Il remplace les noms de personnes et les désignations saisies librement par des noms neutres (Person 1, Property 1), sauf avec `--names` ; les réponses n’indiquent que le nom du fichier, pas le dossier. Aucune réponse ne dépasse 20'000 caractères. Les textes du serveur sont en anglais ; l’IA répond néanmoins dans votre langue.
+
+Les résultats sont des calculs de modèle sans garantie, pas un conseil fiscal ou en placement ; les impôts sont estimés.
 
 ## @ref-library Bibliothèque de données: dossiers et fichiers
 Mots-clés: dossier, séries temporelles, emplacement, Application Support, CSV

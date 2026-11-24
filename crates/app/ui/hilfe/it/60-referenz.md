@@ -67,6 +67,7 @@ Il motore di calcolo è disponibile anche nel terminale (programma `vivaplan`):
 | `diff <a> <b>` | elencare le differenze tra due pianificazioni (`--json`) |
 | `optimize <pianificazione>` | ottimizzare la strategia, vedi [Riga di comando](#o-cli) |
 | `describe [<sezione>]` | Catalogo per le IA: cosa si può modificare, variare e misurare (`--plan`, `--json`), vedi [Catalogo per le IA](#ref-describe) |
+| `mcp` | Server MCP per i programmi di IA, solo lettura (`--data-dir`, `--library`, `--names`), vedi [Collegare programmi di IA](#ref-mcp) |
 | `evaluate <pianificazione> <esperimento.json>` | Calcolare un esperimento (`--json`, `--yes`), vedi [Esperimento](#ref-experiment) |
 | `bench <pianificazione>` | misurare il tempo di calcolo (`--paths`, `--json`) |
 | `schema` | emettere lo schema JSON del file di pianificazione |
@@ -238,6 +239,37 @@ mkdir -p ~/.claude/skills && cp -R /Applications/VivaPlan.app/Contents/Resources
 Su Windows copi la cartella in `%USERPROFILE%\.claude\skills`. Avvii poi una nuova sessione. Chieda per esempio: *La mia sostanza basta fino a 95 anni? La mia pianificazione è ~/Documenti/pianificazione.vplan*. Claude chiama per questo `vivaplan` e chiede prima se può eseguire comandi. Dopo una nuova versione di VivaPlan copi di nuovo la cartella.
 
 **Protezione dei dati:** ciò che l’IA legge dalla sua pianificazione o dai risultati (date di nascita, redditi, sostanza, rendite) va al fornitore dell’IA. Lo skill indica all’IA di avvisarla prima della prima lettura. VivaPlan stesso non invia nulla.
+
+I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o d’investimento; le imposte sono stimate.
+
+## @ref-mcp Collegare programmi di IA (server MCP)
+Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati
+
+`vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. In questa versione il server legge soltanto; non calcola e non modifica alcun file.
+
+| Strumento | Scopo |
+|---|---|
+| `plan_open` | Aprire una pianificazione (`.vplan`, `.rplan`) o la pianificazione di esempio; panoramica senza valori e numero dei messaggi di verifica |
+| `plan_get` | Leggere una sezione o un singolo campo (percorso di campo) |
+| `plan_schema` | Consultare la struttura del file di progetto |
+| `plan_validate` | Verificare la pianificazione come l’app |
+| `describe` | [Catalogo per le IA](#ref-describe) |
+| `result_list`, `result_get` | Risultati della sessione (sintesi, valori annuali, eventi, fascia, variazioni) |
+| `library_list` | Serie temporali della [biblioteca di dati](#ref-library) |
+
+**Configurare:** nel programma di IA inserite il programma `vivaplan` con il percorso completo (vedi [riga di comando](#ref-cli)) e l’argomento `mcp`. In Claude Desktop e LM Studio la voce si presenta così su macOS:
+
+```
+{
+  "mcpServers": {
+    "vivaplan": { "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan", "args": ["mcp"] }
+  }
+}
+```
+
+In Claude Code basta `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp`. Come la riga di comando, il server calcola con la cartella dei dati dell’app (limiti, serie temporali); `--data-dir` e `--library` la sostituiscono.
+
+**Protezione dei dati:** tutto ciò che uno strumento restituisce diventa parte della conversazione con la vostra IA e va al suo fornitore; con un modello locale (per esempio in LM Studio) tutto resta sul computer. Il server legge solo le pianificazioni il cui percorso è indicato esplicitamente e non esplora cartelle. Sostituisce i nomi delle persone e le denominazioni inserite liberamente con nomi neutri (Person 1, Property 1), salvo con `--names`; le risposte indicano solo il nome del file, non la cartella. Nessuna risposta supera 20'000 caratteri. I testi del server sono in inglese; l’IA risponde comunque nella vostra lingua.
 
 I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o d’investimento; le imposte sono stimate.
 
