@@ -530,7 +530,8 @@ test.describe("13th AHV pension (#190)", () => {
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       realView = false;
       const recs = lastRun.single.records, at = m => recs.find(r => r.month === m);
-      const y = yearly(recs).find(a => String(a.y) === "2036");
+      await derive(lastRun);
+      const y = yearFlows(lastRun.single).find(a => a.y === "2036");
       return { jan: at("2036-01").ahv, nov: at("2036-11").ahv, dec: at("2036-12").ahv, year: y.ahv };
     });
     // example plan: AHV 2'000 from 06.2035, indexed in January; 2036 a full year with the same monthly pension

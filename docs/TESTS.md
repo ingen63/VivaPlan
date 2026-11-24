@@ -143,6 +143,11 @@ Die Bedienung der Oberfläche prüft Playwright in `e2e/` (176 Tests, Stand 16.1
 `optimum.spec.js` und getrennt `ui-cancel.spec.js`, weil der Abbruch für alle laufenden Berechnungen gilt; installiertes Google Chrome,
 lokaler Entwicklungsserver).
 
+**Anzeige gegen eine Referenz (#209/AK3):** `e2e/ui-kurzfassung.spec.js` vergleicht Ergebnis in Worten, Kennzahlen,
+Jahreswerte, Vergleich und die Balkengrafiken der Beispielplanung mit `e2e/fixtures/issue-209-display.json`, aufgenommen
+vor der Verlagerung der Rechnung aus `app.js` in den Rechenkern. Neu aufnehmen nur bei gewollter Änderung der Anzeige:
+`RECORD_209=1 npx playwright test ui-kurzfassung.spec.js`.
+
 ### Oberflächentests unabhängig von der Rechnerlast (#111)
 
 Ob ein Oberflächentest grün ist, darf nicht davon abhängen, wie schnell der Rechner ist oder wie viele Tests parallel

@@ -170,7 +170,8 @@ test.describe("#72 Result in words", () => {
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const v = page.locator("#verdict");
     const rate = (await resultKpi(page, "Erfolgsquote").textContent()).trim();
-    const cls = await page.evaluate(() => rateClass(lastRun.batch.summary.successRate));
+    // #209: the engine classifies (digest), the user interface words the class
+    const cls = await page.evaluate(() => tr(`verdict.rate_${RATE_WORD[digestOf(lastRun).verdict]}`));
     await expect(v).toContainText(`In ${rate} (${cls}) der Läufe reicht das Vermögen bis`);
     const ed = (await resultKpi(page, "Früheste Erschöpfung").textContent()).trim();
     if (ed === "keine") await expect(v).not.toContainText("ungünstigsten Lauf");
@@ -183,7 +184,9 @@ test.describe("#72 Result in words", () => {
 
   test("AK2: limits of the classification at the displayed, rounded value", async ({ page }) => {
     const errors = await open(page);
-    expect(await page.evaluate(() => [0.95, 0.9496, 0.9494, 0.8, 0.7996, 0.7994, 0].map(rateClass)))
+    // #209: the classification is in the engine (digest); here through the command the user interface calls
+    expect(await page.evaluate(() => Promise.all([0.95, 0.9496, 0.9494, 0.8, 0.7996, 0.7994, 0].map(async successRate =>
+      RATE_WORD[(await Engine.call("digest", { result: { batch: { summary: { runs: 1, successRate } } } })).verdict]))))
       .toEqual(["hoch", "hoch", "mittel", "mittel", "mittel", "tief", "tief"]);
     await noErrors(page, errors);
   });

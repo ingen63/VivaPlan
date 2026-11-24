@@ -39,7 +39,7 @@ Was fehlt, und was die Folge-Issues schliessen müssen:
 | Nr. | Lücke | Beleg |
 |---|---|---|
 | L1 | Die Antworten sind zu gross für Claude. | Beispielplanung: Vorschau 342 KB (472 Monate × 29 Felder), Simulation mit 2000 Pfaden 2,1 MB. Die Kennzahlen darin sind 0,5 bis 2 KB gross. |
-| L2 | Jahreswerte, Ergebnis in Worten, Vergleich und die Liste der Ergebnisse liegen in der Oberfläche. | `yearly`, `verdictHtml`, `compareRuns` in `crates/app/ui/app.js`; Liste in `runs.js` (IndexedDB) |
+| L2 | Jahreswerte, Ergebnis in Worten, Vergleich und die Liste der Ergebnisse liegen in der Oberfläche. Seit #209 liefert `api` Jahreswerte (`yearly`), Kurzfassung mit Befund (`digest`) und Vergleich (`compare`); offen ist die Liste. | `yearly`, `verdictHtml`, `compareRuns` in `crates/app/ui/app.js`; Liste in `runs.js` (IndexedDB) |
 | L3 | Der Rechenkern kann keine einzelnen Werte ändern. | `scenarios::apply` kennt sechs Parameter; der Editor ändert das JSON in JavaScript. |
 | L4 | `api` ist zustandslos; es gibt kein Änderungsprotokoll und kein Rückgängig ausserhalb der Oberfläche. | `History` in `app.js` |
 | L5 | Grenzen aus den Einstellungen und der Ordner der Datenbibliothek kommen heute von der Oberfläche. | `Engine.limits` in `api.js`; `library_dir` der Kommandozeile zeigt auf einen Pfad des Build-Rechners. |

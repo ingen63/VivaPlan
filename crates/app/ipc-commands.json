@@ -1,5 +1,5 @@
 {
-  "comment": "#142: Befehle der Oberfläche (crates/app/ui/api.js) mit Beispielargumenten, wie die Oberfläche sie sendet. compute: beantworten die Desktop-App (Tauri) und der Entwicklungsserver (engine::dispatch); der Vertragstest in crates/app/src/main.rs verlangt dieselbe Antwort (ohne elapsedMs und buildEpoch). compare «keys»: nur dieselben Felder (Messwerte). $plan = Beispielplanung mit festen Renditen, $planMc = Bootstrap mit 200 Pfaden. desktopOnly: nur in der Desktop-App (Dialoge, Einstellungen, Fenster).",
+  "comment": "#142: Befehle der Oberfläche (crates/app/ui/api.js) mit Beispielargumenten, wie die Oberfläche sie sendet. compute: beantworten die Desktop-App (Tauri) und der Entwicklungsserver (engine::dispatch); der Vertragstest in crates/app/src/main.rs verlangt dieselbe Antwort (ohne elapsedMs und buildEpoch). compare «keys»: nur dieselben Felder (Messwerte). $plan = Beispielplanung mit festen Renditen, $planMc = Bootstrap mit 200 Pfaden; #209: $single = Lauf von $plan, $result:$planMc = Ergebnis von $planMc, $items = beide Planungen mit Ergebnis. desktopOnly: nur in der Desktop-App (Dialoge, Einstellungen, Fenster).",
   "compute": [
     { "cmd": "app_info", "args": {}, "compare": "keys" },
     { "cmd": "example_plan", "args": {} },
@@ -17,7 +17,10 @@
     { "cmd": "progress_get", "args": { "jobId": 4711 } },
     { "cmd": "rerun_paths", "args": { "plan": "$planMc", "picks": [[0, 3], [0, 17]], "path": null } },
     { "cmd": "optimize", "args": { "plan": "$planMc", "request": { "strategies": ["fixed_rate"], "paths": 100, "checkPaths": 100, "samples": 2, "maxRuin": 0.1, "seed": 1 }, "path": null, "jobId": 4712 } },
-    { "cmd": "cancel_job", "args": { "jobId": 4713 } }
+    { "cmd": "cancel_job", "args": { "jobId": 4713 } },
+    { "cmd": "yearly", "args": { "run": "$single" } },
+    { "cmd": "digest", "args": { "result": "$result:$planMc" } },
+    { "cmd": "compare_results", "args": { "items": "$items" } }
   ],
   "desktopOnly": [
     "settings_get",

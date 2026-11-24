@@ -735,6 +735,30 @@ pub fn diff_plans(a: &Value, b: &Value) -> Vec<crate::fieldpath::Change> {
     crate::fieldpath::diff(a, b)
 }
 
+/// #209: Reads a saved result, a run or a list of results; an error in the form as a message.
+fn read<T: serde::de::DeserializeOwned>(value: &Value) -> Result<T, Message> {
+    serde_json::from_value(value.clone()).map_err(|e| msg!(raw_error, detail = e.to_string()))
+}
+
+/// #209/AK1: Yearly values of a run (a `SimResult` as in `single` or `batch.details`), nominal and real.
+pub fn yearly(run: &Value) -> Result<crate::digest::Yearly, Message> {
+    Ok(crate::digest::yearly(&read(run)?))
+}
+
+/// #209/AK1: Digest of a result (`{single}` or `{batch}` as [`run`] returns it): key figures and the verdict (result in
+/// words as a category with its values). `null` for a result without a run.
+pub fn digest(result: &Value) -> Result<Option<crate::digest::Digest>, Message> {
+    Ok(crate::digest::digest(&read(result)?))
+}
+
+/// #209/AK1: Comparison of several results (`[{result, plan}]`): key figures side by side, percentiles and ages at
+/// depletion of all results, differences of the plans against the first.
+pub fn compare(items: &Value) -> Result<crate::digest::Comparison, Message> {
+    Ok(crate::digest::compare(&read::<Vec<crate::digest::CompareInput>>(
+        items,
+    )?))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

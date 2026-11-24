@@ -19,6 +19,7 @@ mod cash_housing;
 mod command_sweep;
 mod compare_strategies;
 mod data;
+mod digest;
 mod example_neu;
 mod files;
 mod gain_location;

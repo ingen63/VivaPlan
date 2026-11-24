@@ -727,6 +727,24 @@ async fn rerun_paths<R: Runtime>(
     api::rerun_paths(&plan, &picks, &base_dir(path.as_deref()), lib.as_deref())
 }
 
+/// #209: Yearly values of a run (nominal and real).
+#[tauri::command]
+fn yearly(run: Value) -> Result<engine::digest::Yearly, CmdError> {
+    Ok(api::yearly(&run)?)
+}
+
+/// #209: Digest of a result: key figures and verdict.
+#[tauri::command]
+fn digest(result: Value) -> Result<Option<engine::digest::Digest>, CmdError> {
+    Ok(api::digest(&result)?)
+}
+
+/// #209: Comparison of saved results.
+#[tauri::command]
+fn compare_results(items: Value) -> Result<engine::digest::Comparison, CmdError> {
+    Ok(api::compare(&items)?)
+}
+
 #[tauri::command]
 async fn optimize<R: Runtime>(
     app: AppHandle<R>,
@@ -1173,6 +1191,9 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             preview,
             run_simulation,
             rerun_paths,
+            yearly,
+            digest,
+            compare_results,
             optimize,
             series_info,
             library_list,
@@ -1715,8 +1736,7 @@ mod tests {
 
     /// #142: replace the placeholders of the table with small plans.
     fn table_args(args: &Value) -> Value {
-        let mut a = args.clone();
-        if let Some(p) = a.get("plan").and_then(Value::as_str) {
+        let plan_of = |p: &str| {
             let mut plan = api::example_plan();
             plan["scenarios"]["sweeps"] = json!([]);
             match p {
@@ -1727,7 +1747,31 @@ mod tests {
                 }
                 other => panic!("unbekannter Platzhalter {other}"),
             }
-            a["plan"] = plan;
+            plan
+        };
+        // #209: results as the user interface holds them: `$result:<plan>` (answer of `run_simulation`), `$single`
+        // (its run), `$items` (both plans with their results, for the comparison)
+        let result_of = |p: &str| {
+            let lib = Path::new(env!("CARGO_MANIFEST_DIR")).join("../engine/data");
+            serde_json::to_value(api::run(&plan_of(p), &lib, Some(&lib))).unwrap()
+        };
+        let mut a = args.clone();
+        if let Some(obj) = a.as_object_mut() {
+            for v in obj.values_mut() {
+                let Some(p) = v.as_str().map(str::to_string) else {
+                    continue;
+                };
+                *v = match p.as_str() {
+                    "$plan" | "$planMc" => plan_of(&p),
+                    "$single" => result_of("$plan")["single"].clone(),
+                    "$result:$planMc" => result_of("$planMc"),
+                    "$items" => json!([
+                        { "result": result_of("$plan"), "plan": plan_of("$plan") },
+                        { "result": result_of("$planMc"), "plan": plan_of("$planMc") }
+                    ]),
+                    _ => continue,
+                };
+            }
         }
         a
     }

@@ -507,7 +507,7 @@ test.describe("Results", () => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
-      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      lastRun = await derive(await Engine.call("run_simulation", { plan: state, path: null }));
       resetVariation(); resultTab = "table"; showResults(true); renderResults(lastRun);
       const res = lastRun.single, recs = res.records, by = {};
       for (const r of recs) (by[r.month.slice(0, 4)] ||= []).push(r);

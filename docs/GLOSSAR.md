@@ -211,6 +211,7 @@ Wörter in Grossbuchstaben nicht.
 | Hauptbuch | `ledger` | `Ledger` |
 | Monatswerte | `month_record` | `MonthRecord` |
 | Jahreswerte | `yearly` | |
+| Kurzfassung, Ergebnis in Worten (#209) | `digest`, `verdict` | `Digest`, `Verdict`, `NextStep` |
 | Kennzahlen | `summary`, `metrics` | `Summary`, `Metrics` |
 | Messebene, Kennzahl aus Bausteinen (#214) | `measure`, `metric` | `Measurement`, `Metric`, `Quantity`, `Window`, `Reduce`, `Aggregate` |
 | Vorschau | `preview` | |

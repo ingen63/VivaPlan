@@ -131,6 +131,11 @@ impl Quantity {
         )
     }
 
+    /// Steps 1 and 2: value of the month, nominal or in prices of the start month.
+    pub fn value(self, real: bool, r: &MonthRecord, s: &Summary) -> f64 {
+        in_prices(self.of(r, s), real, r)
+    }
+
     /// Value of the month (nominal).
     fn of(self, r: &MonthRecord, s: &Summary) -> f64 {
         let flag = |b: bool| if b { 1.0 } else { 0.0 };
@@ -177,6 +182,15 @@ impl Quantity {
             Quantity::AffordabilitySales => s.affordability_sales as f64,
             Quantity::UnaffordableRenewals => s.unaffordable_renewals as f64,
         }
+    }
+}
+
+/// Step 2: an amount of the month nominal or in prices of the start month (divided by the price index of the month).
+pub fn in_prices(x: f64, real: bool, r: &MonthRecord) -> f64 {
+    if real {
+        x / r.price_index
+    } else {
+        x
     }
 }
 
@@ -727,8 +741,7 @@ impl State {
         if r.month < p.lo || r.month > p.hi {
             return;
         }
-        let v = p.quantity.of(r, s);
-        let v = if p.real { v / r.price_index } else { v };
+        let v = p.quantity.value(p.real, r, s);
         self.n += 1;
         match p.reduce {
             Reduce::AnnualSums | Reduce::Volatility => {

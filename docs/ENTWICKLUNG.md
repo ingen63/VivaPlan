@@ -366,6 +366,32 @@ beschreibt alle Bausteine samt Doku-Kommentaren (für `describe`, #219).
   ergeben bitgleich dieselben Werte wie vorher.
 - **Kommandozeile:** `run --metric <json>` (mehrfach, auch Liste) über `api::measure`, im JSON unter `metrics`.
 
+## Jahreswerte, Kurzfassung und Vergleich (#209)
+
+`engine::digest` wertet Ergebnisse aus, wie die Oberfläche sie hält und speichert (JSON von `RunOut` und `SimResult`;
+Felder, die in Ergebnissen älterer Versionen fehlen, gelten als fehlend oder 0). `MonthRecord`, `Summary`, `TaxBasis` und
+`WealthBasis` sind dafür lesbar (`Deserialize`, `serde(default)`). Die Beträge kommen aus den Bausteinen der Messebene:
+`Quantity::value` (Grösse, nominal oder real) und `measure::in_prices`.
+
+- **`api::yearly(run)`** (Befehl `yearly`): eine Zeile je Kalenderjahr, nominal und real: Bestände am Jahresende,
+  Ausgaben, Entnahme und Einnahmen als Monatsmittel, Entnahme des Jahres und Entnahmequote (gegenüber dem
+  Gesamtvermögen zu Jahresbeginn; `null` ohne Entnahme oder ohne Vermögen), Inflation, Steuern als Summe mit
+  Veranlagung und Wohnort, dazu `flows` (Jahressummen für die Balkengrafiken und die Entnahmequote am liquiden Vermögen).
+  Die Reihenfolge der Additionen ist die der früheren Rechnung in `app.js`, damit die Anzeige bis zur letzten Stelle
+  gleich bleibt; einzige Ausnahme ist «-0», das als «0» erscheint (JSON kennt keine negative Null).
+- **`api::digest(result)`** (Befehl `digest`): Kennzahlen und Befund. Der Befund ist eine Kategorie, kein Satz:
+  `verdict` `lasts`/`depleted` (ein Lauf) oder `high`/`medium`/`low` (Erfolgsquote, gerundet auf 0,1 %: ab 95,0 % hoch,
+  ab 80,0 % mittel, #72), `next` `scenarios` oder `optimize`, dazu Erfolgsquote, (früheste) Erschöpfung und Endvermögen je
+  Perzentil nominal und real (bei Ergebnissen vor #126 real aus den Detailläufen). Die Oberfläche formuliert den Satz in
+  ihrer Sprache (`verdictHtml`), Kommandozeile und MCP-Server (#210) englisch.
+- **`api::compare(items)`** (Befehl `compare_results`, `[{result, plan}]`): je Ergebnis Art, Kurzfassung, Erschöpfung
+  (Monat, `null` = in keinem Lauf, fehlt ohne Lauf) und Anteil der Läufe je Alter bei Erschöpfung; dazu die Perzentile
+  und Alter aller Ergebnisse und die Unterschiede der Planungen gegenüber der ersten (`fieldpath::diff`).
+- **Oberfläche:** `derive` holt Jahreswerte und Kurzfassung einmal je Lauf und Ergebnis (WeakMap `DERIVED`), bevor
+  gezeichnet wird; gezeichnet wird weiter synchron. Ein Ergebnis, das noch keine hat, zeichnet `renderResults` nach dem
+  Eintreffen neu. Der Vergleich schickt die Ergebnisse ohne Monatswerte (`slimResult`) und behält die Antwort, bis sich
+  die Auswahl oder die Liste ändert (`Runs.version`). `api::run` bleibt unverändert; die Golden-Dateien ändern nicht.
+
 ## Datenbibliothek
 
 Planungen verweisen mit `"series": "library:Shiller CHF.csv"` auf eine Reihe der Bibliothek, sonst mit einem

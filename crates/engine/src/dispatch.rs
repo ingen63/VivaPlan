@@ -30,6 +30,9 @@ pub const COMMANDS: &[&str] = &[
     "series_info",
     "optimize",
     "library_list",
+    "yearly",
+    "digest",
+    "compare_results",
 ];
 
 /// Folder of a file in the argument `key` (project file of the plan); if not given, `fallback`.
@@ -105,6 +108,10 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
             to(&api::optimize(&plan, &req, &base(), lib).map_err(|e| e.message())?)?
         }
         "library_list" => to(&api::library_list(library).map_err(|e| e.message())?)?,
+        // #209: evaluation of results the user interface holds (no plan, no computation of runs)
+        "yearly" => to(&api::yearly(args.get("run").unwrap_or(&Value::Null))?)?,
+        "digest" => to(&api::digest(args.get("result").unwrap_or(&Value::Null))?)?,
+        "compare_results" => to(&api::compare(args.get("items").unwrap_or(&Value::Null))?)?,
         _ => return Err(msg!(command_desktop_only, cmd = cmd)),
     })
 }

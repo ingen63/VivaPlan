@@ -2780,6 +2780,7 @@ async function runSimulation(tab = "overview", { noConfirm = false } = {}) {
     lastRun = await withJob(() => Engine.call("run_simulation", { plan: state, path: currentPath, jobId: job.id }));
     lastRunPlan = planAtRun;
     if (isCancelled(lastRun.error)) { lastRun = null; showResults(false); return toast(tr("run.cancelled")); }
+    await derive(lastRun);
     renderResults(lastRun); document.documentElement.dataset.rendered = resultTab; rememberRun(lastRun);
     if (!lastRun.error) Steps.mark("run"); }
   catch (e) { plainTitle(tr("run.error")); $("#resultsBody").innerHTML = `<div class="card errcard">${esc(errText(e))}</div>`; }
@@ -2908,46 +2909,39 @@ const pName = p => p === 0 ? tr("fan.worstRun") : tr("fan.percentile", { p });
 const pctTxt = v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`;
 
 /**
- * Yearly values: balances at year end, flows as the monthly average of the year, taxes as yearly sum.
- * `start`: total and liquid wealth at the simulation start (basis of the withdrawal rate in the first year).
- * `refills`: 3-bucket refills of the run; years with a refill have an expandable row with the derivation.
+ * #209: Yearly values and digest come from the engine (`yearly`, `digest`); the user interface keeps them per run and
+ * result and only formats them. `derive` fetches what is missing before a result is drawn, so that the drawing stays
+ * synchronous. Rows: balances at year end, flows as the monthly average of the year, taxes as yearly sum, `flows` the
+ * sums of the year for the bar charts.
  */
-/**
- * Values of the yearly values per calendar year (nominal or in today's purchasing power depending on the toggle). Basis of the table
- * «Jahreswerte» and of the yearly values in the comparison (#115), so that both show the same numbers.
- */
-function yearValues(recs, start) {
-  const by = new Map();
-  for (const r of recs) { const y = r.month.slice(0, 4); if (!by.has(y)) by.set(y, []); by.get(y).push(r); }
-  const sum = (rs, f) => rs.reduce((a, r) => a + rv(r, f(r)), 0), avg = (rs, f) => sum(rs, f) / rs.length;
-  let prevLast = null;
-  return [...by.entries()].map(([y, rs]) => {
-    const last = rs[rs.length - 1];
-    const planned = avg(rs, r => r.plannedSpending), housing = avg(rs, r => r.housing), income = avg(rs, r => r.income), draw = avg(rs, r => r.withdrawal);
-    // #52: Contributions to pillar 3a count as spending.
-    const p3aIn = avg(rs, r => r.pillar3aIn ?? 0);
-    const spending = planned + housing + p3aIn, receipts = income + draw;
-    const prev = prevLast ? prevLast.priceIndex : 1;
-    /** Withdrawal rate: yearly withdrawal (nominal, incomplete years extrapolated to 12 months) / wealth at the start of the year. */
-    const yearDraw = rs.reduce((a, r) => a + r.withdrawal, 0) / rs.length * 12;
-    const baseTotal = prevLast ? prevLast.total : start?.total;
-    prevLast = last;
-    const taxIncome = sum(rs, r => r.assessedIncome ?? 0), taxWealth = sum(rs, r => r.assessedWealth ?? 0), taxCapital = sum(rs, r => r.taxCapital), taxGain = sum(rs, r => r.taxGain);
-    // #131/AK14: income, deductions by origin and taxable income of the tax year (record of the assessment)
-    const br = rs.find(r => r.taxBasis), tb = br && Object.fromEntries(["income", "proposalCanton", "proposalFederal", "own", "extra", "oneOff", "pillar3a", "taxableCanton", "taxableFederal"].map(k => [k, rv(br, br.taxBasis[k])]));
-    // #229/AK7: tax value of the properties (only if a property has one)
-    if (tb && br.taxBasis.propertyTaxValue != null) tb.propertyTaxValue = rv(br, br.taxBasis.propertyTaxValue);
-    // #231/AK5: deductions from wealth by origin and taxable wealth (only with deductions from wealth)
-    const wb = br?.taxBasis.wealth;
-    if (tb && wb) tb.wealth = Object.fromEntries(["wealth", "ongoing", "oneOff", "taxable"].map(k => [k, rv(br, wb[k])]));
-    // #151/AK7: place of residence of the tax year (only if it changes during the plan)
-    return { basis: tb, residence: br?.taxBasis?.residence, y, months: rs.length, age: last.age, liquid: rv(last, last.liquid), property: rv(last, last.propertyEquity), pension: rv(last, last.pensionFund + last.pillar3a),
-      total: rv(last, last.total), spending, draw, receipts, yearDraw, rate: yearDraw > 0 && baseTotal > 0 ? yearDraw / baseTotal : yearDraw > 0 ? NaN : null,
-      deviation: receipts - spending, inflation: last.priceIndex / prev - 1, taxIncome, taxWealth, taxCapital, taxGain, taxTotal: taxIncome + taxWealth + taxCapital + taxGain };
-  });
+const DERIVED = new WeakMap();
+/** Rows of the engine with the year as text (key of the expandable rows) and the withdrawal rate «–» without wealth at the start. */
+const yearRowsOf = list => list.map(v => ({ ...v, y: String(v.year), rate: v.rate ?? (v.yearDraw > 0 ? NaN : null) }));
+/** Yearly values and digest of runs (`SimResult`) that do not have them yet. */
+const deriveRuns = runs => Promise.all([...new Set(runs.filter(run => run && !DERIVED.has(run)))].map(async run => {
+  const [yearly, digest] = await Promise.all([Engine.call("yearly", { run }), Engine.call("digest", { result: { single: { summary: run.summary } } })]);
+  DERIVED.set(run, { nominal: yearRowsOf(yearly.nominal), real: yearRowsOf(yearly.real), digest });
+}));
+/** Everything a result (answer of `run_simulation`, or of `rerun_paths` with `details`) needs for drawing. */
+async function derive(result) {
+  if (!result || result.error) return result;
+  const runs = [result.single, ...(result.batch?.details || result.details || []).map(([, run]) => run)];
+  await Promise.all([deriveRuns(runs), result.batch && !DERIVED.has(result)
+    ? Engine.call("digest", { result: { batch: slimBatch(result.batch) } }).then(digest => DERIVED.set(result, { digest })) : null]);
+  return result;
 }
+/** A saved result as the engine reads it for the digest and the comparison (without monthly values). */
+const slimResult = res => ({ single: res?.single ? { summary: res.single.summary } : null, batch: res?.batch ? slimBatch(res.batch) : null });
+/** What the engine reads of several runs for the digest and the comparison (without bands and monthly values). */
+const slimBatch = b => ({ summary: b.summary, stats: { depletionAges: b.stats?.depletionAges || [] }, details: (b.details || []).map(([p, run]) => [p, { summary: run.summary }]) });
+/** Yearly values of a run (nominal or in today's purchasing power depending on the toggle); empty until `derive` has them. */
+const yearValues = run => DERIVED.get(run)?.[realView ? "real" : "nominal"] || [];
+/** Sums per calendar year for the bar charts. */
+const yearFlows = run => yearValues(run).map(v => ({ y: v.y, months: v.months, ...v.flows }));
+/** Digest of a result or run (key figures and verdict of the engine). */
+const digestOf = x => DERIVED.get(x)?.digest;
 const rateTxt = r => r == null ? "" : Number.isNaN(r) ? "–" : `${(r * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
-function yearTable(recs, start, refills = []) {
+function yearTable(run, refills = []) {
   const cell = (v, bold) => `<td>${Math.abs(v) < 0.5 ? "" : bold ? `<b>${fmtInt(v)}</b>` : fmtInt(v)}</td>`;
   // #143/AK2: taxes rounded to 100 francs (an amount below 50 shows as empty)
   const taxCell = (v, bold) => cell(roundTax(v), bold);
@@ -2956,7 +2950,7 @@ function yearTable(recs, start, refills = []) {
   const est = tr("yearTable.taxEstimatedTitle"), check = tr("taxes.checkBeforeDecision");
   const taxHeads = () => [[tr("yearTable.taxIncome"), `${tr("yearTable.taxTitle")} ${est}`], [tr("yearTable.taxWealth"), est], [tr("yearTable.taxLumpsum"), `${est} ${check}`],
     [tr("yearTable.taxProperty"), `${est} ${check}`], [tr("yearTable.taxTotal"), est]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
-  const tx = showTaxCols, vals = yearValues(recs, start), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence);
+  const tx = showTaxCols, vals = yearValues(run), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence);
   const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), wx = tx && vals.some(v => v.basis?.wealth);
   const cols = 12 + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
   // #231/AK5: deductions from wealth with their origin as tooltip and the taxable wealth
@@ -3007,20 +3001,6 @@ function singleKpis(s) {
     ${kpi(tr("single.taxesTotal"), fmtMio(s.taxesTotal), tr("single.taxesSub"))}</div>`;
 }
 
-/** Sums per calendar year for the bar charts. */
-function yearly(recs) {
-  const by = new Map();
-  for (const r of recs) {
-    const y = r.month.slice(0, 4);
-    if (!by.has(y)) by.set(y, { y, earned: 0, pk: 0, ahv: 0, living: 0, housing: 0, p3a: 0, taxes: 0, liquidStart: rv(r, r.liquid + r.spending - r.income + r.taxes), months: 0 });
-    const a = by.get(y);
-    a.earned += rv(r, r.earned); a.pk += rv(r, r.pkPension); a.ahv += rv(r, r.ahv);
-    const p3a = r.pillar3aIn ?? 0;
-    a.housing += rv(r, r.housing); a.p3a += rv(r, p3a); a.living += rv(r, r.spending - r.housing - p3a); a.taxes += rv(r, r.taxes); a.months++;
-  }
-  return [...by.values()].map(a => ({ ...a, draw: a.living + a.housing + a.p3a + a.taxes - a.earned - a.pk - a.ahv }));
-}
-
 /** Charts of a single run (single run or percentile run). */
 function runChartsHtml(res, p) {
   const recs = res.records, hasProp = recs.some(r => r.propertyValue > 0), hasPk = recs.some(r => r.pensionFund > 0 || r.pillar3a > 0);
@@ -3053,13 +3033,13 @@ function drawRunCharts(res, p) {
     tip: i => { const r = recs[i], t = Math.max(1, r.cash + r.bonds + r.stocks), q = v => compPercent ? `${(Math.max(0, v) / t * 100).toFixed(1)} %` : fmtMoney(rv(r, v));
       return tipHead(i) + `<span style="color:var(--c1)">■</span> ${tr("runTip.stocks", { stocks: q(r.stocks) })}<br><span style="color:var(--c2)">■</span> ${tr("runTip.bonds", { bonds: q(r.bonds) })}<br><span style="color:var(--c3)">■</span> ${tr("runTip.cash", { cash: q(r.cash) })}`; } });
   // Bar charts: only the years that touch the zoom range
-  const view = resultView(), allYears = yearly(recs);
+  const view = resultView(), allYears = yearFlows(res);
   const ys = view ? allYears.filter(a => +a.y * 12 + 11 >= view[0] && +a.y * 12 <= view[1]) : allYears;
   Charts.bars($(`#${p}-flows`), $(`#${p}-flows-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: fmtMio,
     series: [{ group: "in", color: "--c2", values: ys.map(a => a.earned) }, { group: "in", color: "--c1", values: ys.map(a => a.pk) }, { group: "in", color: "--c4", values: ys.map(a => a.ahv) },
       { group: "out", color: "--c3", values: ys.map(a => a.living) }, { group: "out", color: "--warn", values: ys.map(a => a.housing) }, { group: "out", color: "--c4", values: ys.map(a => a.p3a) }, { group: "out", color: "--err", values: ys.map(a => a.taxes) }],
-    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.earned + a.pk + a.ahv), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.living + a.housing + a.p3a + a.taxes), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${tr("runTip.taxes", { taxes: `${fmtTax(a.taxes)} ${cur()}` })}`; } });
-  const rate = ys.map(a => a.liquidStart > 0 ? Math.max(0, a.draw) / a.liquidStart * 12 / a.months : 0);
+    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.income), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.spending), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${tr("runTip.taxes", { taxes: `${fmtTax(a.taxes)} ${cur()}` })}`; } });
+  const rate = ys.map(a => a.rate);
   Charts.bars($(`#${p}-draw`), $(`#${p}-draw-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: v => `${(v * 100).toFixed(1)} %`,
     series: [{ color: "--accent", values: rate }],
     tip: i => tr("runTip.withdrawal", { v: ys[i].y, money: fmtMoney(Math.max(0, ys[i].draw)), money2: fmtMoney(ys[i].liquidStart), pctTxt: pctTxt(rate[i]) }) });
@@ -3228,6 +3208,7 @@ async function pickBatchVariation(sel) {
     let out;
     try { out = await Engine.call("rerun_paths", { plan, picks, path: currentPath }); } catch (e) { out = { error: errText(e) }; }
     if (out.error) { variationSel = null; toast(tr("variation.batchFailed") + esc(errText(out.error))); return renderResults(lastRun); }
+    await derive(out);
     // If a final wealth differs from the saved value (e.g. changed time series), the display stays available, with a notice
     const off = out.details.filter(([pc, res]) => {
       const e = level.percentiles.find(p => p.percent === pc)?.endTotal;
@@ -3247,7 +3228,7 @@ async function pickVariation(sel) {
     plan.scenarios = { sweeps: [], select: sc.params.map((p, i) => (variationSel[i] == null ? null : { param: p, value: variationSel[i] })).filter(Boolean) };
     const out = await Engine.call("run_simulation", { plan, path: currentPath });
     if (out.error || !out.single) { variationSel = null; toast(tr("variation.failed") + (out.error ? errText(out.error) : tr("variation.noResult"))); }
-    else variationRuns.set(selKey(variationSel), out.single);
+    else { await derive(out); variationRuns.set(selKey(variationSel), out.single); }
   }
   renderResults(lastRun);
 }
@@ -3314,31 +3295,27 @@ function drawScenarioCharts(sc) {
 }
 
 // ---------- Layout ----------
-/**
- * #72: Classification of the success rate with the limits of the traffic light. Decisive is the displayed value rounded to 0.1 %:
- * 95.0 % is «hoch», 80.0 % «mittel».
- */
-function rateClass(rate) {
-  const shown = Number((rate * 100).toFixed(1));
-  return shown >= 95 ? "hoch" : shown >= 80 ? "mittel" : "tief";
-}
+/** #72: Word of the class of the success rate (the engine classifies, #209): key of the text table. */
+const RATE_WORD = { high: "hoch", medium: "mittel", low: "tief" };
 const helpLink = (topic, text, title = "") => `<a data-action="help-topic" data-topic="${topic}"${title ? ` title="${esc(title)}"` : ""}>${text}</a>`;
-/** #72: Result in words above the key figures of the overview, formed from the same values as the key figures. */
+/**
+ * #72: Result in words above the key figures of the overview. #209: The verdict (category and values) comes from the
+ * engine (`digest`); here it is only worded in the language of the user interface, with the links into the help.
+ */
 function verdictHtml(r, sg) {
+  const d = digestOf(sg || r);
+  if (!d) return "";
   const lines = [];
-  let weak;
   if (sg) {
-    const s = sg.summary;
-    weak = !!s.depleted;
-    lines.push(weak ? tr("verdict.depleted", { depleted: ymShow(s.depleted), ageStr: ageStr(ym2i(s.depleted)) })
-      : `${tr("verdict.lasts", { money: fmtMoney(realView ? s.endTotalReal : s.endTotal) })}${realView ? tr("verdict.real") : ""}.`);
+    const end = d.endWealth[0];
+    lines.push(d.verdict === "depleted" ? tr("verdict.depleted", { depleted: ymShow(d.depleted), ageStr: ageStr(ym2i(d.depleted)) })
+      : `${tr("verdict.lasts", { money: fmtMoney(realView ? end.real : end.nominal) })}${realView ? tr("verdict.real") : ""}.`);
   } else {
-    const s = r.batch.summary, ed = s.earliestDepletion, end = endM(), cls = rateClass(s.successRate);
-    weak = cls !== "hoch";
-    lines.push(`${tr("verdict.successPre")} <b>${pctTxt(s.successRate)}</b> (${helpLink("r-overview", tr(`verdict.rate_${cls}`), tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
-    if (ed) lines.push(tr("verdict.worstDepleted", { ageStr: ageStr(ym2i(ed[0])) }));
+    const end = endM();
+    lines.push(`${tr("verdict.successPre")} <b>${pctTxt(d.successRate)}</b> (${helpLink("r-overview", tr(`verdict.rate_${RATE_WORD[d.verdict]}`), tr("verdict.enoughQuestion"))}${tr("verdict.successTail", { ymShow: ymShow(i2ym(end)), end: ageStr(end) })}`);
+    if (d.depleted) lines.push(tr("verdict.worstDepleted", { ageStr: ageStr(ym2i(d.depleted)) }));
   }
-  const next = weak
+  const next = d.next === "optimize"
     ? `${tr("verdict.nextOptPre")} ${helpLink("s-optimize", tr("section.optimize"))} ${tr("verdict.nextOptPost")}`
     : `${tr("verdict.nextScenPre")} ${helpLink("s-scenarios", tr("scen.title"))} ${tr("verdict.nextScenPost")}`;
   return `<div class="card verdict" id="verdict"><p>${lines.join(" ")}</p><p class="next">${next}</p></div>`;
@@ -3373,7 +3350,7 @@ function renderResults(r) {
     if (sg) {
       const res = sg;
       body.innerHTML = verdictHtml(r, res) + singleKpis(res.summary) + card(tr("runCharts.wealth"), realNote(), chartBox("ov-wealth", 300, true) + WEALTH_LEGEND) + propertyEvents(res) + card(tr("results.events"), "", eventList(res.events));
-      drawRunCharts({ ...res, records: res.records }, "ov");
+      drawRunCharts(res, "ov");
     } else {
       const b = r.batch, s = b.summary, pc = q => s.percentiles.find(x => x.percent === q), ed = s.earliestDepletion;
       body.innerHTML = verdictHtml(r, null) + `<div class="rkpis">
@@ -3410,8 +3387,13 @@ function renderResults(r) {
     const res = detailRun();
     if (r.batch) $("#resultsPick").innerHTML = (r.scenarios ? variationPicker(r) : "") + runPicker(r, res);
     const info = r.batch ? [pName(detailP), percentInfo(r, detailP, res.label)].filter(Boolean).join(" · ") : "";
-    body.innerHTML = card(tr("results.yearValues"), `${tr("results.realAmounts", { realNote: realNote(), cur: cur() })}${info ? ` · ${esc(info)}` : ""}`, yearTable(res.records, { total: res.summary.startTotal, liquid: res.summary.startLiquid }, res.bucketRefills || []), "yearcard");
+    body.innerHTML = card(tr("results.yearValues"), `${tr("results.realAmounts", { realNote: realNote(), cur: cur() })}${info ? ` · ${esc(info)}` : ""}`, yearTable(res, res.bucketRefills || []), "yearcard");
   }
+  // #209: a result drawn before the engine delivered its yearly values and digest (e.g. directly after a computation)
+  // is drawn again once they are there
+  const shown = [sg, r.batch ? detailRun() : null, ...(r.batch?.details || []).map(([, x]) => x)].filter(Boolean);
+  if (shown.some(x => !DERIVED.has(x)) || (r.batch && !DERIVED.has(r)))
+    Promise.all([derive(r), deriveRuns(shown)]).then(() => { if (lastRun === r && !compareOpen) renderResults(r); });
   if (savedView) $("#resultsPick").insertAdjacentHTML("afterbegin", `<div class="card savedbar"><span>${tr("results.savedNote", { esc: esc(runDate(savedView.created)), name: esc(savedView.name) })}</span><span class="spacer"></span>
     <button class="btn small" data-action="runs-open">${tr("results.backToList")}</button><button class="btn small primary" data-action="run-restore" title="${tr("results.adoptPlanTitle")}">${tr("results.adoptPlan")}</button></div>`);
 }
@@ -3679,6 +3661,7 @@ async function viewRun(id) {
   const [meta] = (await Runs.list()).filter(m => m.id === id), data = await Runs.get(id);
   if (!meta || !data) { toast(tr("runs.gone")); return openRuns(); }
   if (meta.kind === "optimization") return viewOpt(meta, data);
+  await derive(data.result);
   resetVariation();
   if (!parkedState) parkedState = state;
   state = normalize(JSON.parse(JSON.stringify(data.plan)));
@@ -3686,11 +3669,6 @@ async function viewRun(id) {
   showResults(true); renderResults(lastRun);
   document.documentElement.dataset.rendered = "saved";
 }
-const flat = (o, p = "", out = {}) => {
-  if (o && typeof o === "object") { const ks = Object.keys(o); if (!ks.length) out[p] = Array.isArray(o) ? "[]" : "{}"; for (const k of ks) flat(o[k], p ? `${p}.${k}` : k, out); }
-  else out[p] = o;
-  return out;
-};
 // ---------- Comparison of saved results (#115) ----------
 // Tabs as for the single result: overview (key figures, range, percentiles, probability, depletion),
 // trajectories (charts of the single run or median run), yearly values (one column per result) and plan (differences).
@@ -3754,11 +3732,22 @@ function cmpYears(items, valuesOf) {
   const n = Math.max(0, ...per.map(v => v ? v.length : 0));
   return { per, n, same, label: k => same ? (per.find(v => v && v[k])?.[k].y ?? "") : tr("cmp.yearN", { v: k + 1 }) };
 }
+/** Saved results of the comparison by id until the list changes (`Runs.version`); the yearly values of the engine stay with them. */
+let cmpDatas = { version: -1, byId: new Map() };
+/** Key figures of the engine for the selection (ids in order), so that a toggle does not ask the engine again. */
+let cmpKeyFigures = { key: null, cmp: null };
 async function compareRuns() {
   const metas = (await Runs.list()).filter(m => runsSel.has(m.id) && m.kind !== "optimization").reverse().slice(0, CMP_MAX);
-  const datas = await Promise.all(metas.map(m => Runs.get(m.id)));
-  lastRun = null; savedView = null; compareOpen = true;
+  const version = Runs.version, kept = cmpDatas.version === version ? cmpDatas.byId : new Map();
+  const datas = await Promise.all(metas.map(m => kept.get(m.id) || Runs.get(m.id)));
+  cmpDatas = { version, byId: new Map(metas.map((m, i) => [m.id, datas[i]])) };
   const items = metas.map((m, i) => cmpItem(m, datas[i], i));
+  // #209: key figures side by side from the engine; yearly values of the shown runs
+  const key = `${version}:${metas.map(m => m.id).join("|")}`;
+  const [cmp] = await Promise.all([cmpKeyFigures.key === key ? cmpKeyFigures.cmp
+    : Engine.call("compare_results", { items: datas.map(d => ({ result: slimResult(d?.result), plan: d?.plan || null })) }), deriveRuns(items.map(it => it.run))]);
+  cmpKeyFigures = { key, cmp };
+  lastRun = null; savedView = null; compareOpen = true;
   if (!CMP_TABS.some(([k]) => k === compareTab)) compareTab = "overview";
   plainTitle(tr("cmp.title", { length: metas.length })); $("#resultsInfo").textContent = realView ? tr("single.todayPower") : tr("results.nominalLower");
   $("#resultsPick").innerHTML = "";
@@ -3766,7 +3755,7 @@ async function compareRuns() {
     <div class="seg tabs">${CMP_TABS.map(([k, t]) => `<button class="${k === compareTab ? "on" : ""}" data-action="cmp-tab" data-tab="${k}">${t}</button>`).join("")}</div>
     <div class="seg"><button class="${realView ? "" : "on"}" data-action="real" data-v="0" title="${tr("results.nominalTitle")}">${tr("results.nominal")}</button><button class="${realView ? "on" : ""}" data-action="real" data-v="1" title="${tr("cmp.realTitle")}">${tr("results.realLabel")}</button></div>`;
   const body = $("#resultsBody");
-  if (compareTab === "overview") cmpOverview(body, items);
+  if (compareTab === "overview") cmpOverview(body, items, cmp);
   else if (compareTab === "charts") cmpCharts(body, items);
   else if (compareTab === "table") cmpTable(body, items);
   else cmpPlan(body, items, datas);
@@ -3774,23 +3763,18 @@ async function compareRuns() {
 }
 const cmpSw = it => `<i class="sw" style="background:var(${it.color})"></i>`;
 const cmpReal = () => realView ? tr("cmp.realNote") : tr("results.nominalLower");
-function cmpOverview(body, items) {
+function cmpOverview(body, items, cmp) {
   const num = v => v == null || !Number.isFinite(v) ? "–" : fmtMio(v);
-  /** Final wealth of a percentile from the summary, converted to real with the inflation of the run of this percentile.
-   *  Results before #126 have the real value only in the detail runs (0, 1, 5, 50, 95, 99). */
-  const endAt = (it, q) => {
-    if (it.single) return q === 50 ? (realView ? it.single.summary.endTotalReal : it.single.summary.endTotal) : null;
-    if (!it.batch) return null;
-    const pc = it.batch.summary.percentiles.find(p => p.percent === q);
-    if (!realView) return pc?.endTotal ?? null;
-    return pc?.endTotalReal ?? it.batch.details?.find(([p]) => p === q)?.[1]?.summary.endTotalReal ?? null;
-  };
+  /** #209: Key figures of the engine (`compare_results`): final wealth of a percentile, nominal or in today's purchasing
+   *  power with the inflation of the run (for results before #126 from the detail runs), and the depletion. */
+  const kf = it => cmp.items[it.i];
+  const endAt = (it, q) => { const e = kf(it).digest?.endWealth.find(x => x.percent === q); return (e && (realView ? e.real : e.nominal)) ?? null; };
+  const depMonth = it => kf(it).depletion;
   const notes = [];
   // #118: Key figures sortable by column; colors and order of the other cards stay
-  const depAt = it => { const d = it.single ? it.single.summary.depleted : it.batch ? it.batch.summary.earliestDepletion?.[0] : undefined;
-    return !it.single && !it.batch ? null : d ? ym2i(d) : Infinity; };
+  const depAt = it => depMonth(it) === undefined ? null : depMonth(it) ? ym2i(depMonth(it)) : Infinity;
   const cols = [["name", tr("runs.result"), "l", it => it.name], ["series", tr("runs.series"), "l", it => it.m.seriesName || (it.m.source === "fixed" ? tr("runs.fixedReturns") : it.m.source === "parametric" ? tr("runs.parametric") : null)],
-    ["strat", tr("runs.strategy"), "l", it => stratName(it.m.strategy)], ["succ", tr("scen.successRate"), "r", it => it.batch ? it.batch.summary.successRate : null],
+    ["strat", tr("runs.strategy"), "l", it => stratName(it.m.strategy)], ["succ", tr("scen.successRate"), "r", it => kf(it).digest?.successRate ?? null],
     ["p50", tr("cmp.medianOrEnd"), "r", it => endAt(it, 50)], ["p5", tr("cmp.p5"), "r", it => endAt(it, 5)], ["p1", tr("cmp.p1"), "r", it => endAt(it, 1)],
     ["p0", tr("fan.worstRun"), "r", it => endAt(it, 0)], ["dep", tr("scen.earliestDepletion"), "r", depAt]];
   const sc = cmpSort && cols.find(c => c[0] === cmpSort.col);
@@ -3798,9 +3782,9 @@ function cmpOverview(body, items) {
   const head = cols.map(([k, t, al]) => { const on = sc && sc[0] === k, dir = on ? cmpSort.dir : 0;
     return `<th class="${al} sorth" aria-sort="${dir > 0 ? "ascending" : dir < 0 ? "descending" : "none"}"><button class="sortbtn" data-action="cmp-sort" data-col="${k}" title="${tr("cmp.sortTitle", { v: esc(t), v2: on ? (dir > 0 ? tr("cmp.descending") : tr("cmp.ascending")) : "" })}">${t}<span class="sorti${on ? " on" : ""}" aria-hidden="true">${dir > 0 ? "▲" : dir < 0 ? "▼" : "↕"}</span></button></th>`; }).join("");
   const rows = sorted.map(it => { const m = it.m; return `<tr><td class="l">${cmpSw(it)}${esc(m.name)}<br><small class="muted">${esc(runKind(m))}</small></td><td class="l">${seriesCell(m)}</td>${stratCell(m, " l")}
-    <td class="r">${it.batch ? pctTxt(it.batch.summary.successRate) : "–"}</td>
+    <td class="r">${kf(it).digest?.successRate != null ? pctTxt(kf(it).digest.successRate) : "–"}</td>
     <td class="r">${num(endAt(it, 50))}</td><td class="r">${num(endAt(it, 5))}</td><td class="r">${num(endAt(it, 1))}</td><td class="r">${num(endAt(it, 0))}</td>
-    <td class="r">${it.single ? (it.single.summary.depleted ? ymShow(it.single.summary.depleted) : tr("results.none")) : it.batch ? (it.batch.summary.earliestDepletion ? ymShow(it.batch.summary.earliestDepletion[0]) : tr("results.none")) : "–"}</td></tr>`; }).join("");
+    <td class="r">${depMonth(it) === undefined ? "–" : depMonth(it) ? ymShow(depMonth(it)) : tr("results.none")}</td></tr>`; }).join("");
   const scen = items.filter(it => it.scenariosOnly);
   if (scen.length) notes.push(tr("cmp.onlyKpi", { map: scen.map(it => esc(it.name)).join(", ") }));
   // Range: median (or single run) and 5th/95th percentile
@@ -3818,7 +3802,7 @@ function cmpOverview(body, items) {
     if (f.lo) fanLines.push({ color: items[k].color, dash: "5 3", width: 1.2, values: cmpPad(n, f.lo) }, { color: items[k].color, dash: "2 3", width: 1.2, values: cmpPad(n, f.hi) }); });
   // Percentiles: all percentiles of the results as rows
   const batches = items.filter(it => it.batch);
-  const qs = [...new Set(batches.flatMap(it => it.batch.summary.percentiles.map(p => p.percent)))].sort((a, b) => b - a);
+  const qs = cmp.percentiles;
   const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">${tr("results.percentile")}</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
     ${qs.map(q => `<tr><td class="l">${q === 0 ? tr("fan.worstRun") : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
       + (realView ? `<p class="hint">${tr("cmp.realOrder", { realPctHint: REAL_PCT_HINT })}</p>` : "")
@@ -3827,8 +3811,7 @@ function cmpOverview(body, items) {
   const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);
   const ns = Math.max(0, ...surv.map(v => v ? v.length : 0));
   // Age at depletion: share of runs per year of age (results with different numbers of runs stay comparable)
-  const ages = [...new Set(batches.flatMap(it => it.batch.stats.depletionAges.map(([a]) => a)))].sort((a, b) => a - b);
-  const depShare = it => ages.map(a => (it.batch.stats.depletionAges.find(([x]) => x === a)?.[1] || 0) / it.batch.summary.runs);
+  const ages = cmp.depletionAges;
   body.innerHTML = card(tr("cmp.kpis"), tr("cmp.endWealth", { cmpReal: cmpReal() }), `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
       + (realView ? `<p class="hint">${REAL_PCT_HINT}.</p>` : ""))
     + cmpNote(notes)
@@ -3842,7 +3825,7 @@ function cmpOverview(body, items) {
   if (batches.length) cmpTime("cmp-surv", ns, surv.map((v, j) => v && { color: items[j].color, values: cmpPad(ns, v) }).filter(Boolean),
     k => surv.map((v, j) => v ? cmpRow(items[j], cmpPad(ns, v)[k], x => `${x.toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`) : "").join(""), { yFmt: v => `${v} %`, range: survRange() });
   if (ages.length) {
-    const shares = batches.map(depShare);
+    const shares = batches.map(it => kf(it).depletionShares);
     Charts.bars($("#cmp-dep"), $("#cmp-dep-tip"), { cats: ages.map(String), minBar: 3, yFmt: v => `${(v * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 })} %`,
       series: batches.map((it, j) => ({ group: String(j), color: it.color, values: shares[j] })),
       tip: k => tr("cmp.ageTip", { v: ages[k] }) + batches.map((it, j) => cmpRow(it, shares[j][k], pctTxt)).join("") });
@@ -3858,9 +3841,9 @@ function cmpCharts(body, items) {
   const series = (it, f) => cmpPad(n, it.run.records.map(r => rv(r, f(r))));
   const LQ = { liquid: r => r.liquid, stocks: r => r.stocks, bonds: r => r.bonds, cash: r => r.cash };
   // Yearly values of the bars: income, spending, taxes; withdrawal rate as in the single result
-  const yrs = cmpYears(runs, it => yearly(it.run.records));
-  const flowOf = a => cmpFlow === "in" ? a.earned + a.pk + a.ahv : cmpFlow === "out" ? a.living + a.housing + a.p3a + a.taxes : a.taxes;
-  const rateOf = a => a.liquidStart > 0 ? Math.max(0, a.draw) / a.liquidStart * 12 / a.months : 0;
+  const yrs = cmpYears(runs, it => yearFlows(it.run));
+  const flowOf = a => cmpFlow === "in" ? a.income : cmpFlow === "out" ? a.spending : a.taxes;
+  const rateOf = a => a.rate;
   const yearSeries = f => yrs.per.map(v => v ? Array.from({ length: yrs.n }, (_, k) => v[k] ? f(v[k]) : NaN) : null).filter(Boolean);
   const cats = Array.from({ length: yrs.n }, (_, k) => String(yrs.label(k)));
   const idx = (it, key) => cmpPad(n, it.run.records.map(r => 100 * r[key] / (realView ? r.priceIndex : 1)));
@@ -3898,7 +3881,7 @@ function cmpCharts(body, items) {
 }
 function cmpTable(body, items) {
   const runs = items.filter(it => it.run);
-  const yrs = cmpYears(runs, it => yearValues(it.run.records, { total: it.run.summary.startTotal, liquid: it.run.summary.startLiquid }));
+  const yrs = cmpYears(runs, it => yearValues(it.run));
   const key = cmpYearKey, label = CMP_YEAR.find(([k]) => k === key)?.[1] || "";
   const cell = (v, y) => `<td title="${esc(String(y))}">${key === "rate" ? rateTxt(v) : !Number.isFinite(v) ? "–" : key === "taxTotal" ? fmtTax(v) : fmtInt(v)}</td>`; // #143/AK2
   const notes = cmpRunNotes(items);

@@ -11,6 +11,7 @@ pub mod ahv;
 pub mod api;
 pub mod batch;
 pub mod calibrate;
+pub mod digest;
 pub mod dispatch;
 pub mod fieldpath;
 mod finite;

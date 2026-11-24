@@ -198,7 +198,8 @@ test.describe("Comparison like the single result (#115)", () => {
       const single = await page.evaluate(async col => {
         const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[1], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
         const div = document.createElement("div");
-        div.innerHTML = yearTable(run.records, { total: run.summary.startTotal, liquid: run.summary.startLiquid });
+        await deriveRuns([run]);
+        div.innerHTML = yearTable(run);
         return [...div.querySelectorAll("table.yt tr")].slice(1).map(tr => tr.children[col].textContent);
       }, col);
       const cmp = await page.locator(".cmpyear tr").evaluateAll(trs => trs.slice(1).map(tr => tr.children[2].textContent));
@@ -224,7 +225,8 @@ test.describe("Comparison like the single result (#115)", () => {
     const single = await page.evaluate(async () => {
       const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 5)[1];
       const div = document.createElement("div");
-      div.innerHTML = yearTable(run.records, { total: run.summary.startTotal, liquid: run.summary.startLiquid });
+      await deriveRuns([run]);
+      div.innerHTML = yearTable(run);
       return [...div.querySelectorAll("table.yt tr")].slice(1).map(tr => tr.children[5].textContent);
     });
     const cmp = await page.locator(".cmpyear tr").evaluateAll(trs => trs.slice(1).map(tr => tr.children[1].textContent));
@@ -668,6 +670,12 @@ test.describe("Comparison: differences in the plan with labels (#123)", () => {
       v(p => (p.milestones || []).forEach(m => { if (m.years != null) m.kind = "age"; }));
       for (const status of ["owned", "planned", "rent"]) v(p => (p.realestate?.properties || []).forEach(pr => { pr.status = status; }));
       const ENUM = ["repay", "renew", "saron", "fixed", "indirect", "direct", "date", "age", "owned", "planned", "rent", "wealth", "aargau", "zurich", "worldCustom"];
+      // Field paths of the plan with their values (empty lists and objects as "[]" and "{}"); #209: no longer in app.js
+      const flat = (o, p = "", out = {}) => {
+        if (o && typeof o === "object") { const ks = Object.keys(o); if (!ks.length) out[p] = Array.isArray(o) ? "[]" : "{}"; for (const k of ks) flat(o[k], p ? `${p}.${k}` : k, out); }
+        else out[p] = o;
+        return out;
+      };
       const covered = new Set(), keys = new Set();
       for (const base of ctxs) {
         const s0 = JSON.stringify(paramSections(base, true)), f = flat(base);

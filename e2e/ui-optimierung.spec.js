@@ -362,7 +362,8 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
       return { selects, calls, endShown, expected, tableHasPicker, note, back: variationSel, shown };
     });
     expect(out.selects).toBe(2);
-    expect(out.calls).toEqual(["rerun_paths"]);                 // no full recomputation
+    // no full recomputation; #209: yearly values and digest of the recomputed runs come from the engine
+    expect(out.calls.filter(c => c !== "yearly" && c !== "digest")).toEqual(["rerun_paths"]);
     expect(out.endShown).toBeCloseTo(out.expected, 4);          // matches the scenario table
     expect(out.tableHasPicker).toBe(2);                          // also applies in «Jahreswerte»
     expect(out.note).toContain("Planwerte, nicht die gewählte Variation");

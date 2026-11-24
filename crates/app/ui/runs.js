@@ -6,6 +6,8 @@ const Runs = (() => {
   const DB = "retirementplanner", META = "meta", DATA = "data";
   const mem = { meta: new Map(), data: new Map() };
   let dbp = null, memoryOnly = false;
+  /** #209: Counts the changes of the content (add, remove); the comparison keeps what it read until the next change. */
+  let version = 0;
   const open = () => dbp ||= new Promise((res, rej) => {
     try {
       if (memoryOnly) throw new Error("nur Arbeitsspeicher"); // i18n: allow (internal, never shown)
@@ -32,7 +34,9 @@ const Runs = (() => {
   return {
     /** For the user interface tests (headless Chrome does not complete IndexedDB queries). */
     memoryOnly() { memoryOnly = true; dbp = null; },
+    get version() { return version; },
     async add(meta, data) {
+      version++;
       await run([META, DATA], "readwrite", (m, d) => { m.put(meta); d.put({ id: meta.id, ...data }); return {}; },
         () => { mem.meta.set(meta.id, meta); mem.data.set(meta.id, { id: meta.id, ...data }); });
     },
@@ -52,6 +56,7 @@ const Runs = (() => {
       }, () => { const e = mem.meta.get(id); if (e) Object.assign(e, fields); });
     },
     async remove(ids) {
+      version++;
       await run([META, DATA], "readwrite", (m, d) => { for (const id of ids) { m.delete(id); d.delete(id); } return {}; },
         () => ids.forEach(id => { mem.meta.delete(id); mem.data.delete(id); }));
     }

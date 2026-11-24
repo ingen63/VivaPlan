@@ -36,7 +36,7 @@
 //! guardrails steer spending and the buckets steer investment; the buckets' net need is then based on the
 //! guardrails' living costs.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::market::MarketPath;
 use crate::message::Message;
@@ -139,8 +139,9 @@ impl Ledger {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
+/// Deserializable for the evaluation of saved results (#209); fields missing in older results are 0.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct MonthRecord {
     pub month: YearMonth,
     pub age: f64,
@@ -199,8 +200,8 @@ pub struct MonthRecord {
 }
 
 /// #131: Basis of the income tax of a year: income, deductions by origin, taxable income for canton and federal tax.
-#[derive(Clone, Debug, Default, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct TaxBasis {
     /// Income of the year (earned income + PK pension + AHV).
     pub income: f64,
@@ -238,8 +239,8 @@ pub struct TaxBasis {
 }
 
 /// #231: Basis of the wealth tax of a year with deductions from wealth.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct WealthBasis {
     /// Wealth before the deductions (properties at their tax value, #229).
     pub wealth: f64,
@@ -475,8 +476,9 @@ pub trait MonthObserver {
     fn month(&mut self, record: &MonthRecord, summary: &Summary);
 }
 
-#[derive(Clone, Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
+/// Deserializable for the evaluation of saved results (#209); fields missing in older results are 0.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Summary {
     /// Emergency sales in this run (for any reason).
     pub emergency_sales: usize,

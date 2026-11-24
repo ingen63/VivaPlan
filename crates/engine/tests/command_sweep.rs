@@ -54,6 +54,35 @@ fn resolve(args: &Value) -> Value {
         }
         a["plan"] = plan;
     }
+    // #209: small results as the user interface holds them (a whole run would give thousands of fields to vary)
+    let run = || {
+        json!({
+            "summary": { "startTotal": 100_000.0, "endTotal": 90_000.0, "endTotalReal": 80_000.0, "depleted": null },
+            "records": [
+                { "month": "2030-12", "age": 65.0, "total": 100_000.0, "withdrawal": 1000.0, "taxes": 50.0, "priceIndex": 1.0 },
+                { "month": "2031-01", "age": 65.1, "total": 99_000.0, "withdrawal": 1000.0, "taxes": 50.0, "priceIndex": 1.01,
+                  "taxBasis": { "income": 1000.0, "wealth": { "wealth": 1.0, "ongoing": 2.0, "oneOff": 0.0, "taxable": 3.0 } } }
+            ]
+        })
+    };
+    let batch = || {
+        json!({ "batch": {
+            "summary": { "runs": 10, "successRate": 0.9, "percentiles": [{ "percent": 50, "endTotal": 1.0 }],
+                "earliestDepletion": ["2040-01", null] },
+            "stats": { "depletionAges": [[80, 1]] },
+            "details": [[50, { "summary": { "endTotalReal": 0.5 } }]]
+        } })
+    };
+    for v in a.as_object_mut().into_iter().flat_map(|o| o.values_mut()) {
+        match v.as_str() {
+            Some("$single") => *v = run(),
+            Some("$result:$planMc") => *v = batch(),
+            Some("$items") => {
+                *v = json!([{ "result": { "single": run() }, "plan": { "a": 1 } }, { "result": batch(), "plan": { "a": 2 } }])
+            }
+            _ => {}
+        }
+    }
     if let Some(r) = a.get_mut("request").and_then(Value::as_object_mut) {
         for key in ["paths", "checkPaths"] {
             if r.contains_key(key) {
@@ -244,6 +273,10 @@ fn systematic() -> Vec<Case> {
         let mut ptrs = vec![];
         pointers(&args, String::new(), &mut ptrs);
         ptrs.retain(|p| !p.starts_with("/plan/"));
+        // #209: of a result only the upper levels (the deeper fields are read leniently by serde: missing is 0)
+        ptrs.retain(|p| {
+            !["/run/", "/result/", "/items/"].iter().any(|r| p.starts_with(r)) || p.matches('/').count() <= 3
+        });
         for p in &ptrs {
             cases.push(changed(&cmd, &args, &[(p.clone(), None)]));
             for v in nonsense() {
