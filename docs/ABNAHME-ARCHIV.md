@@ -1618,6 +1618,24 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #215/AK4 | Bei 8 Varianten auf parametrischen Pfaden braucht die Rechnung höchstens die halbe Zeit wie vorher. Gemessen wird auf … | ☑ | **gilt** | [variants_bench.rs](../crates/engine/examples/variants_bench.rs) (Messprogramm, kein Test) | 22.11.2026 ok: M1 Pro, 1 Kern, 1000 Pfade, bestes von 5: Variationen 2143 → 1038 ms (48 %); Strategievergleich 2036 → 1082 ms (53 %, nur Hinweis) |
 | #215/AK5 | Der Speicherbedarf für zwischengespeicherte Pfade ist begrenzt (Obergrenze dokumentiert). Darüber wird ohne … | ☑ | **gilt** (512 MB, Entscheid im Issue vom 22.11.2026) | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak5_…`, `issue_215_ak2_prepare_…` | 22.11.2026 ok (`PATH_CACHE_BYTES`, `docs/ENTWICKLUNG.md`; darüber Erzeugung im Lauf) |
 
+### #216 Experiment-Aufruf: Änderungen, Variationsraum, Nebenbedingungen und Ziel in einem Aufruf
+
+[Issue #216](https://github.com/ingen63/VivaPlan/issues/216) · geschlossen · Umsetzung: 5561762
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #216/AK1 | Schema des Experiments in `schema_json()`; ungültiges Experiment ergibt Meldungen (Pfad, Grund, gültige Werte), nichts gerechnet. | ☑ | **gilt** | `issue_216_ak1_…` (2 Tests) | 24.11.2026 ok (Test grün; Pfade und gültige Werte in den Meldungen) |
+| #216/AK2 | `set` und `vary` mit allen Feldpfaden nach #207, mit Zeitpunkt, als Liste, Bereich oder Gruppe; Gruppen nicht kombiniert. | ☑ | **gilt** | `issue_216_ak2_…` | 24.11.2026 ok (Test grün; Variante gleich wie `set` + `measure`) |
+| #216/AK3 | Gekoppelte Werte `{"path", "follows", "offset"}`. | ☑ | **gilt** | `issue_216_ak3_…` | 24.11.2026 ok (Test grün) |
+| #216/AK4 | Nebenbedingungen `{"metric", "op", "value"}`; Ziel `maximize`/`minimize` oder gewichtete Liste. | ☑ | **gilt** | `issue_216_ak4_…` | 24.11.2026 ok (Test grün) |
+| #216/AK5 | Raster oder Mustersuche, zweistufig mit Marge, Bestätigung der besten k auf unabhängigen Pfaden; beide Werte im Ergebnis. | ☑ | **gilt** | `issue_216_ak5_…` | 24.11.2026 ok (Test grün; Startwert + 7919) |
+| #216/AK6 | Rangliste mit Werten, Kennzahlen, Standardfehlern, Hinweis «am Rand des Rasters», vollständiges Experiment mit Version und Startwert. | ☑ | **gilt** | `issue_216_ak6_…` | 24.11.2026 ok (Test grün) |
+| #216/AK7 | Dauer geschätzt; Fortschritt und Abbruch; ab 60 s nur mit Bestätigung. | ☑ | **gilt** | `issue_216_ak7_…` (3 Tests, CLI 1 Test) | 24.11.2026 ok (Test grün; CLI bricht ohne `--yes` ab) |
+| #216/AK8 | Variationen, Optimierung und Strategievergleich als Experiment mit denselben Zahlen. | ☑ | **gilt** | `issue_216_ak8_…` (3 Tests) | 24.11.2026 ok (Test grün; bitgleich) |
+| #216/AK9 | `vivaplan evaluate <plan> <experiment.json> [--json]`, Ausgabe unter 20'000 Zeichen. | ☑ | **gilt** | CLI `issue_216_ak9_…` | 24.11.2026 ok (Test grün) |
+| #216/AK10 | Beispiel mit 30 Varianten, Rangliste, beste bestätigt. | ☑ | **gilt** | `issue_216_ak10_…` | 24.11.2026 ok (Test grün) |
+| #216/AK11 | Hilfe-Referenz beschreibt Experiment und Ergebnis mit Beispielen. | ☑ | **gilt** | Hilfe `ref-experiment` | 24.11.2026 ok (vier Sprachen; i18n-check ohne Befund) |
+
 ### #217 Verlaufsformen linear, table und factor
 
 [Issue #217](https://github.com/ingen63/VivaPlan/issues/217) · geschlossen · Umsetzung: e5446b4
