@@ -1618,6 +1618,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #215/AK4 | Bei 8 Varianten auf parametrischen Pfaden braucht die Rechnung höchstens die halbe Zeit wie vorher. Gemessen wird auf … | ☑ | **gilt** | [variants_bench.rs](../crates/engine/examples/variants_bench.rs) (Messprogramm, kein Test) | 22.11.2026 ok: M1 Pro, 1 Kern, 1000 Pfade, bestes von 5: Variationen 2143 → 1038 ms (48 %); Strategievergleich 2036 → 1082 ms (53 %, nur Hinweis) |
 | #215/AK5 | Der Speicherbedarf für zwischengespeicherte Pfade ist begrenzt (Obergrenze dokumentiert). Darüber wird ohne … | ☑ | **gilt** (512 MB, Entscheid im Issue vom 22.11.2026) | [batch.rs](../crates/engine/src/batch.rs) `issue_215_ak5_…`, `issue_215_ak2_prepare_…` | 22.11.2026 ok (`PATH_CACHE_BYTES`, `docs/ENTWICKLUNG.md`; darüber Erzeugung im Lauf) |
 
+### #217 Verlaufsformen linear, table und factor
+
+[Issue #217](https://github.com/ingen63/VivaPlan/issues/217) · geschlossen · Umsetzung: e5446b4
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #217/AK1 | `linear`: von a zu t1 auf b zu t2; Zeitpunkte als Datum, Alter oder Meilenstein. | ☑ | **gilt** | `issue_217_ak1_…` | 24.11.2026 ok (Test grün; ungültige Stützpunkte gemeldet) |
+| #217/AK2 | `table`: Stützpunkte nach Alter oder Datum, linear oder Treppe. | ☑ | **gilt** | `issue_217_ak2_…` | 24.11.2026 ok (Test grün) |
+| #217/AK3 | `factor`: Grundwert mal Verlauf. | ☑ | **gilt** | `issue_217_ak3_…` | 24.11.2026 ok (Test grün; gleich wie entsprechende Treppe) |
+| #217/AK4 | Neue Formen für alle Verlaufsfelder; Schema, Prüfung, Upgrade nachgeführt. | ☑ | **gilt** | `issue_217_ak4_…` | 24.11.2026 ok (Test grün; Speichern/Laden) |
+| #217/AK5 | Aktienanteil `linear` 0.9 mit 55 → 0.5 mit 65 ergibt mit 60 den Wert 0.7. | ☑ | **gilt** | `issue_217_ak5_…` | 24.11.2026 ok (Test grün, auch in der Simulation) |
+| #217/AK6 | Bestehende Planungen rechnen unverändert (Golden). | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (Golden unverändert) |
+| #217/AK7 | Hilfe und Beschreibung nachgeführt (Editor ausgelagert nach #243). | ☑ | **gilt** (nach Kommentar) | e2e lesende Anzeige im Editor | 24.11.2026 ok (Hilfe vier Sprachen, BESCHREIBUNG; Editor zeigt die Formen lesend) |
+
 ### #222 Regel gegen überflüssige Tests für den rust-test-agent
 
 [Issue #222](https://github.com/ingen63/VivaPlan/issues/222) · geschlossen · Umsetzung: a2a4afe
