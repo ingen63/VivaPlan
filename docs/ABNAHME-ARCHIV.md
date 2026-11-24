@@ -1593,6 +1593,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #209/AK3 | Die Anzeige der Beispielplanung ist unverändert (Oberflächentest). | ☑ | **gilt** | [ui-kurzfassung.spec.js](../e2e/ui-kurzfassung.spec.js) `AK3`, Referenz `e2e/fixtures/issue-209-display.json` | 24.11.2026 ok (Test grün; einzige Abweichung «-0» → «0», alter Darstellungsfehler) |
 | #209/AK4 | Die Golden-Dateien ändern nicht. | ☑ | **gilt** | `golden_masters`, `issue_209_ak4_…` | 24.11.2026 ok (Golden unverändert, Test grün) |
 
+### #211 MCP-Server: Simulation und Optimierung mit Fortschritt und Abbruch
+
+[Issue #211](https://github.com/ingen63/VivaPlan/issues/211) · geschlossen · Umsetzung: 832adf8 · Kriterien AK1, AK3, AK4 zu Arbeitsbeginn umformuliert (Kommentar im Issue)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #211/AK1 | `simulation_run` und `evaluate` arbeiten wie in Abschnitt 5 des Konzepts; die Schätzung liefern die Werkzeuge selbst. | ☑ | **gilt** | [mcp.rs](../crates/cli/tests/mcp.rs) `issue_211_ak1_simulation_run_and_evaluate`; Unit-Tests in `crates/cli/src/mcp/compute.rs` `issue_211_ak1_…` (2) | 24.11.2026 ok (über stdio: Ergebnis in der Sitzung, `result_get`, Befund aus `api::digest`, Haftungsausschluss, Eingabefehler als Werkzeugfehler) |
+| #211/AK2 | Lange Rechnungen melden Fortschritt und lassen sich abbrechen. | ☑ | **gilt** | [mcp.rs](../crates/cli/tests/mcp.rs) `issue_211_ak2_progress_and_cancel_of_simulation_run`, `…_of_evaluate` | 24.11.2026 ok (`notifications/progress` steigend mit Token, `notifications/cancelled` mitten in der Rechnung ohne Antwort, zweite Rechnung abgelehnt, Ende der Eingabe bricht ab) |
+| #211/AK3 | Ab 60 s geschätzter Dauer startet die Rechnung nur mit `"confirm": true`. | ☑ | **gilt** | [mcp.rs](../crates/cli/tests/mcp.rs) `issue_211_ak3_confirmation_from_60_seconds` | 24.11.2026 ok (beide Werkzeuge: `needsConfirmation` mit Schätzung, kein Ergebnis) |
+| #211/AK4 | Die Kennzahlen stimmen mit `api::run` bzw. `api::evaluate` überein. | ☑ | **gilt** | [mcp.rs](../crates/cli/tests/mcp.rs) `issue_211_ak4_key_figures_as_api_run_and_evaluate` | 24.11.2026 ok (Kurzfassung und Varianten gleich bis auf die letzte Stelle beim Einlesen von JSON, rel. 1e-12) |
+
 ### #214 Messebene: Kennzahlen frei zusammensetzen, im Strom gerechnet
 
 [Issue #214](https://github.com/ingen63/VivaPlan/issues/214) · geschlossen · Umsetzung: 2955114
