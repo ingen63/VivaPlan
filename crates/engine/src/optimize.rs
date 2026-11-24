@@ -476,7 +476,8 @@ fn last_value(series: &Value) -> Option<f64> {
     }
 }
 
-/// Sets the value from retirement; earlier entries remain.
+/// Sets the value from retirement; earlier entries remain. A characteristic curve (#218) cannot be cut at a point in
+/// time; the value then applies from the start (#248).
 fn set_from_retirement(series: &mut Value, retire: &str, v: f64) {
     let mut rows: Vec<Value> = match &*series {
         Value::Object(o) => match o.get("rows") {
@@ -496,6 +497,34 @@ fn set_from_retirement(series: &mut Value, retire: &str, v: f64) {
     };
     rows.push(json!({"from": retire, "value": v}));
     *series = json!({"mode": "timed", "rows": rows});
+}
+
+/// #248: A straight line, a table or a factor (#217) in `wealth.<key>` as steps until retirement, month by month as
+/// the simulation reads them, so that the optimized value can follow from retirement on. `None` for the other forms
+/// or a plan whose points in time cannot be resolved.
+fn course_as_steps(plan: &Value, key: &str, retire: &str) -> Option<Value> {
+    let series = &plan["wealth"][key];
+    if !matches!(series["mode"].as_str(), Some("linear" | "table" | "factor")) {
+        return None;
+    }
+    let parsed: Plan = serde_json::from_value(plan.clone()).ok()?;
+    let course: crate::model::Series = serde_json::from_value(series.clone()).ok()?;
+    let r = crate::resolve::Resolver::new(&parsed).ok()?;
+    let curve = crate::resolve::Curve::compile(&course, &r).ok()?;
+    let start = r.milestone("start").ok()?;
+    let end: YearMonth = retire.parse().ok()?;
+    let mut last = curve.at(start);
+    let mut rows = vec![json!({"from": "start", "value": last})];
+    let mut m = start.plus(1);
+    while m < end {
+        let x = curve.at(m);
+        if x != last {
+            rows.push(json!({"from": m.iso(), "value": x}));
+            last = x;
+        }
+        m = m.plus(1);
+    }
+    Some(json!({"mode": "timed", "rows": rows}))
 }
 
 fn current(plan: &Value, key: &str) -> Option<f64> {
@@ -541,8 +570,12 @@ fn model_default(key: &str) -> Option<f64> {
 
 fn set(plan: &mut Value, key: &str, v: f64, retire: &str) {
     match key {
-        "stockShare" => set_from_retirement(&mut plan["wealth"]["stockShare"], retire, v),
-        "reserveMonths" => set_from_retirement(&mut plan["wealth"]["reserveMonths"], retire, v),
+        "stockShare" | "reserveMonths" => {
+            if let Some(steps) = course_as_steps(plan, key, retire) {
+                plan["wealth"][key] = steps;
+            }
+            set_from_retirement(&mut plan["wealth"][key], retire, v);
+        }
         "rate" => plan["withdrawal"]["fixedRate"] = json!({ "rate": v }),
         "floor" | "ceiling" => plan["withdrawal"][key] = json!(v),
         "initialRate" | "upper" | "lower" | "adjust" => {
@@ -2293,5 +2326,121 @@ mod tests {
         assert_eq!((kept.fit_paths, kept.outcomes.len()), (6, 7));
         let fresh = run_request_within(&v, dir, None, &r, 0).unwrap();
         assert_eq!(report_without_time(kept), report_without_time(fresh));
+    }
+
+    // ---- #248 ----
+
+    /// Monthly course of `wealth.<key>` as the simulation reads it, from the start to the end of [`calm`].
+    fn issue_248_course(v: &Value, key: &str) -> Vec<(YearMonth, f64)> {
+        let p = parse_plan(v).unwrap();
+        // The plan with the changed course must still be accepted by the simulation.
+        Simulator::new(&p).unwrap();
+        let r = crate::resolve::Resolver::new(&p).unwrap();
+        let s = match key {
+            "stockShare" => p.wealth.stock_share.as_series().unwrap(),
+            _ => &p.wealth.reserve_months,
+        };
+        let c = crate::resolve::Curve::compile(s, &r).unwrap();
+        let (start, end) = (r.milestone("start").unwrap(), r.milestone("end").unwrap());
+        (0..=start.until(end))
+            .map(|k| start.plus(k))
+            .map(|m| (m, c.at(m)))
+            .collect()
+    }
+
+    /// #248/AK1: The optimization of `key` with the value `x` keeps the course `course` before retirement (2031-11 in
+    /// [`calm`]) month by month and sets `x` from retirement on.
+    fn issue_248_keeps_course(key: &str, course: Value, x: f64) {
+        let retire = "2031-11";
+        let mut before = calm(100_000.0);
+        before["wealth"][key] = course.clone();
+        let mut after = before.clone();
+        set(&mut after, key, x, retire);
+        let (old, new) = (issue_248_course(&before, key), issue_248_course(&after, key));
+        let r: YearMonth = retire.parse().unwrap();
+        for ((m, a), (_, b)) in old.iter().zip(&new) {
+            let expected = if *m < r { *a } else { x };
+            assert_eq!(*b, expected, "{key} {course} in {}", m.iso());
+        }
+        // The course differs from the optimized value before retirement, so a replaced course would be noticed.
+        assert!(old.iter().any(|(m, a)| *m < r && *a != x), "{course}");
+    }
+
+    #[test]
+    fn issue_248_ak2_const_stock_share_and_reserve() {
+        issue_248_keeps_course("stockShare", json!({"mode": "const", "value": 0.4}), 0.7);
+        issue_248_keeps_course("stockShare", json!(0.4), 0.7);
+        issue_248_keeps_course("reserveMonths", json!({"mode": "const", "value": 6}), 9.0);
+        issue_248_keeps_course("reserveMonths", json!(6), 9.0);
+    }
+
+    #[test]
+    fn issue_248_ak2_timed_stock_share_and_reserve() {
+        let rows = |a: f64, b: f64, c: f64| {
+            json!({"mode": "timed", "rows": [{"from": "start", "value": a}, {"from": "2029-01", "value": b},
+                {"from": "retire", "value": c}, {"from": "2034-01", "value": a}]})
+        };
+        issue_248_keeps_course("stockShare", rows(0.3, 0.5, 0.8), 0.7);
+        issue_248_keeps_course("reserveMonths", rows(3.0, 6.0, 12.0), 9.0);
+    }
+
+    #[test]
+    fn issue_248_ak2_linear_stock_share_and_reserve() {
+        // From age 61 to 70, across retirement at 65; also entirely before retirement (by date).
+        let line = |a: f64, b: f64| json!({"mode": "linear", "start": {"age": 61, "value": a}, "end": {"age": 70, "value": b}});
+        issue_248_keeps_course("stockShare", line(0.8, 0.4), 0.7);
+        issue_248_keeps_course("reserveMonths", line(4.0, 12.0), 9.0);
+        let early =
+            json!({"mode": "linear", "start": {"at": "2027-01", "value": 2}, "end": {"at": "2030-01", "value": 8}});
+        issue_248_keeps_course("reserveMonths", early, 9.0);
+    }
+
+    #[test]
+    fn issue_248_ak2_table_stock_share_and_reserve() {
+        for interpolation in ["linear", "step"] {
+            let table = |a: f64, b: f64, c: f64| {
+                json!({"mode": "table", "interpolation": interpolation, "points": [{"age": 60, "value": a},
+                    {"at": "2029-06", "value": b}, {"age": 68, "value": c}]})
+            };
+            issue_248_keeps_course("stockShare", table(0.9, 0.7, 0.3), 0.6);
+            issue_248_keeps_course("reserveMonths", table(3.0, 6.0, 12.0), 9.0);
+        }
+    }
+
+    #[test]
+    fn issue_248_ak2_factor_stock_share_and_reserve() {
+        let factor = |base: f64| {
+            json!({"mode": "factor", "base": base, "factor": {"mode": "linear",
+                "start": {"at": "2028-01", "value": 1}, "end": {"at": "retire", "value": 0.5}}})
+        };
+        issue_248_keeps_course("stockShare", factor(0.8), 0.7);
+        issue_248_keeps_course("reserveMonths", factor(12.0), 9.0);
+    }
+
+    /// #248: A characteristic curve (#218) cannot be cut at a point in time; the optimized stock share applies from
+    /// the start (decision in the issue).
+    #[test]
+    fn issue_248_ak2_curve_stock_share_becomes_the_optimized_value() {
+        let mut v = calm(100_000.0);
+        v["wealth"]["stockShare"] = json!({"mode": "curve", "input": "age", "points": [[60, 0.8], [70, 0.4]]});
+        set(&mut v, "stockShare", 0.7, "2031-11");
+        assert!(issue_248_course(&v, "stockShare").iter().all(|(_, a)| *a == 0.7));
+    }
+
+    /// #248/AK1: The optimization itself (search and patch) keeps the straight line before retirement.
+    #[test]
+    fn issue_248_ak1_optimized_patch_keeps_the_line_before_retirement() {
+        let mut v = calm(100_000.0);
+        let line = json!({"mode": "linear", "start": {"age": 61, "value": 0.8}, "end": {"age": 70, "value": 0.4}});
+        v["wealth"]["stockShare"] = line;
+        let retire = YearMonth::new(2031, 11);
+        let x = [0.55];
+        let defs = [STOCK_SHARE];
+        let patched = with_params(&v, OptStrategy::FixedRate, &defs, &x, retire);
+        let old = issue_248_course(&v, "stockShare");
+        let new = issue_248_course(&patched, "stockShare");
+        for ((m, a), (_, b)) in old.iter().zip(&new) {
+            assert_eq!(*b, if *m < retire { *a } else { 0.55 }, "{}", m.iso());
+        }
     }
 }

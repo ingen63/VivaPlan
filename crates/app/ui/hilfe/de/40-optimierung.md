@@ -103,7 +103,7 @@ Wählen Sie die Strategien, die verglichen werden sollen. Es empfiehlt sich, **a
 
 **Wichtig:**
 
-- Der **Aktienanteil** wird **ab der Pensionierung** verändert. Frühere Zeilen eines zeitabhängigen Werts bleiben bestehen.
+- Der **Aktienanteil** wird **ab der Pensionierung** verändert. Bis zur Pensionierung bleibt der Verlauf Ihrer Planung, auch eine Gerade, Tabelle oder ein Faktor (er wird dazu Monat für Monat als Treppe übernommen). Eine [Kennlinie](#f-curve) lässt sich nicht an einem Zeitpunkt teilen; sie wird durch den optimierten Wert ersetzt, der dann ab Beginn gilt.
 - Die **Grenzen der Lebenshaltung** (Untergrenze, Obergrenze) bleiben standardmässig fix auf dem Wert Ihrer Planung. Das gilt bei allen Strategien, die die Lebenshaltung selbst festlegen: Fixe Rate, Guardrails, VPW, Endowment und 3-Topf + Guardrails. Sie können sie dort ebenfalls variieren lassen. Eine Untergrenze kann die Optimierung stark einschränken, weil sie Kürzungen verhindert.
 - Die **3-Topf-Strategie** legt den Aktienanteil durch die Töpfe fest, deshalb wird er dort nicht gesucht.
 - Ein Parameter am Rand des Bereichs ist ein Hinweis, dass der Bereich begrenzt: Das Optimum liegt am Rand, nicht dahinter.

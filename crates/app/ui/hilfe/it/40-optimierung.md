@@ -103,7 +103,7 @@ Scelga le strategie da confrontare. Si consiglia di calcolarle **tutte**, per ve
 
 **Importante:**
 
-- La **quota azionaria** viene modificata **dal pensionamento**. Le righe precedenti di un valore dipendente dal tempo restano.
+- La **quota azionaria** viene modificata **dal pensionamento**. Fino al pensionamento resta l’andamento della Sua pianificazione, anche una retta, una tabella o un fattore (ripreso mese per mese come gradini). Una [curva caratteristica](#f-curve) non si può dividere in un momento; viene sostituita dal valore ottimizzato, che vale allora dall’inizio.
 - I **limiti del costo della vita** (limite inferiore, limite superiore) restano per impostazione standard fissi sul valore della Sua pianificazione. Ciò vale per tutte le strategie che stabiliscono esse stesse il costo della vita: tasso fisso, Guardrails, VPW, Endowment e 3 comparti + Guardrails. Lì può anche farli variare. Un limite inferiore può limitare molto l’ottimizzazione, perché impedisce le riduzioni.
 - La **strategia a 3 comparti** stabilisce la quota azionaria tramite i comparti, perciò lì non viene cercata.
 - Un parametro al bordo del campo indica che il campo è limitante: l’ottimo è al bordo, non oltre.

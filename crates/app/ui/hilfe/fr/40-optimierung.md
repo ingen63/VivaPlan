@@ -103,7 +103,7 @@ Choisissez les stratégies à comparer. Il est recommandé de **toutes** les cal
 
 **Important:**
 
-- La **part d’actions** est modifiée **dès la retraite**. Les lignes antérieures d’une valeur dépendant du temps sont conservées.
+- La **part d’actions** est modifiée **dès la retraite**. Jusqu’à la retraite, l’évolution de votre planification est conservée, y compris une droite, un tableau ou un facteur (repris mois par mois sous forme de paliers). Une [courbe caractéristique](#f-curve) ne peut pas être coupée à une date; elle est remplacée par la valeur optimisée, qui s’applique alors dès le début.
 - Les **limites du coût de la vie** (plancher, plafond) restent par défaut fixées à la valeur de votre planification. Cela vaut pour toutes les stratégies qui fixent elles-mêmes le coût de la vie: taux fixe, Guardrails, VPW, Endowment et 3 compartiments + Guardrails. Vous pouvez également les y faire varier. Un plancher peut fortement restreindre l’optimisation, car il empêche les réductions.
 - La **stratégie à 3 compartiments** fixe la part d’actions par les compartiments; c’est pourquoi elle n’y est pas recherchée.
 - Un paramètre en bordure de la plage indique que la plage est limitante: l’optimum se trouve au bord, pas au-delà.

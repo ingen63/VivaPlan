@@ -103,7 +103,7 @@ Select the strategies to be compared. It is advisable to calculate **all** of th
 
 **Important:**
 
-- The **stock allocation** is changed **from retirement**. Earlier rows of a time-dependent value remain.
+- The **stock allocation** is changed **from retirement**. Until retirement the course of your plan remains, also a straight line, a table or a factor (it is taken over month by month as steps). A [characteristic curve](#f-curve) cannot be split at a point in time; it is replaced by the optimized value, which then applies from the start.
 - The **limits on living expenses** (floor, ceiling) stay fixed at the value of your plan by default. This applies to all strategies that set the living expenses themselves: fixed rate, guardrails, VPW, endowment and 3 buckets + guardrails. You can have them varied there as well. A floor can restrict the optimization considerably because it prevents cuts.
 - The **3-bucket strategy** sets the stock allocation through the buckets, so it is not searched there.
 - A parameter at the edge of the range is a sign that the range is limiting: the optimum is at the edge, not beyond it.
