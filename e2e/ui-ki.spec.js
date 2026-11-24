@@ -4,7 +4,7 @@
 // Desktop app stand-in: every call recorded, app_info with a given path of the command line; the clipboard is
 // replaced so that the test reads what was copied.
 const { test, expect } = require("@playwright/test");
-const { open, noErrors } = require("./helpers");
+const { open, noErrors, previewIdle } = require("./helpers");
 
 const MAC_CLI = "/Applications/VivaPlan.app/Contents/MacOS/vivaplan";
 const WIN_CLI = "C:\\Program Files\\VivaPlan\\vivaplan.exe";
@@ -62,6 +62,7 @@ test.describe("Connect to AI (#213)", () => {
   test("AK2: menu Help «connectai» shows four programs, each with configuration and setup line to copy", async ({ page }) => {
     const ext = external(page);
     const errors = await openApp(page, MAC_CLI);
+    await previewIdle(page); // the preview of the start computes on its own; only the dialog's commands count below
     const calls = await openDialog(page);
     await expect(page.locator("#askTitle")).toHaveText("Mit KI verbinden");
     const d = page.locator("#connectAi");
