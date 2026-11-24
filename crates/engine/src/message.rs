@@ -635,6 +635,7 @@ codes! {
     series_point_age_invalid => "Support point: age {years} is not possible",
     series_point_person_unknown => "Support point: unknown person “{person}”",
     linear_end_before_start => "The end ({end:ym}) of the straight line is before its start ({start:ym})",
+    curve_points_empty => "A characteristic curve needs at least one support point",
     // Files (model.rs, api.rs, library.rs)
     format_unknown => "The file has the format “{format}”. It requires a newer version of VivaPlan and will not be opened.",
     plan_file_invalid => "Project file: {detail}",

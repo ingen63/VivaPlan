@@ -279,7 +279,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         stocks,
         bonds,
         cash: c.f_or("WealthManagement.Cash", 0.0),
-        stock_share,
+        stock_share: stock_share.into(),
         reserve_months: c.series_or_zero("WealthManagement.CashThresholdMonths")?,
     };
 

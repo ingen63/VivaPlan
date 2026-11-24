@@ -217,9 +217,31 @@ The share of **stocks in the portfolio** (stocks + bonds, without cash). The res
 
 - The app restores this share every month (**rebalancing**), unless the strategy provides otherwise.
 - A high stock allocation brings more return on average, but also deeper lows. The risk is high especially at the beginning of retirement (**sequence risk**): a stock market crash shortly after retirement does much more damage than the same crash 20 years later.
-- The value can be [time-dependent](#f-timed), for example 70 % until retirement and 50 % afterwards.
+- The value can be [time-dependent](#f-timed), for example 70 % until retirement and 50 % afterwards, or a [characteristic curve](#f-curve) over the state of the simulation, for example over the withdrawal rate.
 
 How strongly the stock allocation changes the result is shown by a [variation](#f-sweep) of the stock allocation, or by the [optimization](#s-optimize), which searches for the allocation at the same time.
+
+## @f-curve Characteristic curve
+Stichworte: characteristic curve, curve, state, state variable, withdrawal rate, funded ratio, drawdown, peak, dynamic stock allocation
+
+Instead of a value or a course over time, the [stock allocation](#f-stockshare) can be a **characteristic curve**: it then depends on the **state** of the simulation, for example on the withdrawal rate. The curve consists of support points, each a *value of the state variable* with the *stock allocation* that applies there; in between it runs straight, below the first support point its value applies, above the last one the last value. The stock allocations lie between 0 and 1.
+
+**State variables:**
+
+- **Age** (`age`): age of the first person in years.
+- **Liquid wealth (real)** (`liquidReal`): cash, bonds and stocks in prices of the simulation start (divided by the inflation since the start).
+- **Withdrawal rate** (`withdrawalRate`): withdrawal of the last 12 months divided by the liquid wealth. The withdrawal of a month is the expenses (living expenses, housing costs, taxes) minus the income (earned income, pensions, savings contributions); one-off amounts, the purchase and sale of properties and pillar 3a do not count. In the first year the months so far count, extrapolated to 12; at the simulation start the uncovered expenses of the start month times 12.
+- **Funded ratio** (`fundedRatio`): liquid wealth divided by the remaining gap until the end of the simulation, both in prices of the simulation start. The gap is the living expenses minus earned income and pensions (AHV and pension fund, as far as known in the month of the evaluation), without discounting, without housing costs and taxes. From 1 the wealth covers the gap without returns. If income and pensions cover everything, the last value of the curve applies.
+- **Stock return 12 months** (`stockReturn12m`): return of the stock index over the last 12 months, 0.1 = 10 %.
+- **Distance from the peak** (`drawdown`): how far the stock index lies below its highest level so far (including the lead-in of the return path), 0 at the peak, 0.3 = 30 % below it.
+
+**Evaluation:** when **rebalancing**. With `"eval": "yearly"` (default) at the first rebalancing of every calendar year; the value then applies into the next year. With `"eval": "monthly"` every month. Like a course, the stock allocation applies with the [3-bucket strategy](#f-wd-three_buckets) only until retirement.
+
+**Example:** support points 2 % → 80 % and 6 % → 40 % over the withdrawal rate. At a withdrawal rate of 4 % a stock allocation of 60 % applies, at 1 % 80 %, at 8 % 40 %.
+
+**Entering:** In the editor the curve is shown only (state variable, evaluation, support points). Enter and change it in the [project file](#ref-file) or through the AI interface, for example `"stockShare": {"mode": "curve", "input": "withdrawalRate", "points": [[0.02, 0.8], [0.06, 0.4]], "eval": "yearly"}`. Another form at the top of the field replaces the curve with the value of its first support point.
+
+**Limit of the parametric model:** The [parametric model](#f-ret-parametric) draws the return of every year independently of the previous years; a crash is not more likely to be followed by a recovery there. Rules that rely on a recovery after crashes (for example more stocks at a large distance from the peak or after bad 12 months) cannot be checked meaningfully with it: they cannot show an advantage there. Check such rules with historical paths ([historical](#f-ret-historical), [all starting points](#f-ret-rolling) or [bootstrap](#f-ret-bootstrap) with blocks), and keep in mind the risk of fitting the rule to the past.
 
 ## @f-reserve Cash reserve
 Keywords: cash, reserve, months, liquidity reserve

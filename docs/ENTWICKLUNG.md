@@ -442,6 +442,13 @@ Oberfläche, eine Planung ist in jeder Sprache dieselbe Datei. Zeitabhängige We
 `factor`). Ein Stützpunkt (`SeriesPoint`) hat `at` (Datum oder Meilenstein, nicht `never`/`afterSale`) oder `age` (mit
 `person`, sonst die erste Person). `Curve::compile` übersetzt alle Formen vor der Simulation in eine Treppe über
 Kalendermonate (eine Gerade Monat für Monat, höchstens 2400 Stufen); zur Laufzeit kostet keine Form mehr als eine Treppe.
+`wealth.stockShare` ist ein `StateSeries` (#218): ein Verlauf oder eine Kennlinie
+`{"mode": "curve", "input": <Zustandsgrösse>, "points": [[x, y], …], "eval": "yearly"|"monthly"}`. Die Kennlinie
+(`state::StateLine`) wertet `Run::stock_share` beim Umschichten aus; den Zustand (Entnahmen der letzten 12 Monate,
+Höchststand des Aktienindex, Wert bis zur nächsten Auswertung) hält `state::Tracker`, nur wenn die Planung eine
+Kennlinie hat. Für `fundedRatio` summiert `Simulator::need_rest` Lebenshaltung minus Erwerbseinkommen vorab von hinten;
+die Renten kommen bei der Auswertung abschnittsweise (Bezug PK, Bezug AHV, Referenzalter) dazu. Ohne Kennlinie bleiben
+Ergebnisse und Rechenzeit gleich (Messung mit `variants_bench`).
 Beträge gelten pro Monat, Sätze pro Jahr als Dezimalzahl (0.05 = 5 %). Das vollständige Format liefert `vivaplan schema`.
 
 ## Rechenregeln

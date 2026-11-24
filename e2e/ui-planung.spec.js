@@ -1078,3 +1078,30 @@ test.describe("Editor for the course forms linear, table and factor (#243)", () 
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Characteristic curves (#218)", () => {
+  test("AK2: the editor shows a curve of the stock share read-only with a note, computes it and replaces it on request", async ({ page }) => {
+    const errors = await open(page, "wealth");
+    await page.evaluate(() => {
+      state.wealth.stockShare = { mode: "curve", input: "withdrawalRate", points: [[0.02, 0.8], [0.06, 0.4]], eval: "yearly" };
+      markDirty(); renderSection();
+    });
+    const share = page.locator('.series:has(.rows[data-form="curve"])');
+    await expect(share.locator(".shint")).toContainText("Kennlinie über «Entnahmerate», ausgewertet einmal pro Jahr");
+    await expect(share.locator(".row")).toHaveCount(2);
+    await expect(share.locator(".row").first()).toContainText("2 %");
+    await expect(share.locator(".row").first()).toContainText("80 %");
+    // No course over time: no mini chart, no form marked.
+    await expect(share.locator("svg[data-mini]")).toHaveCount(0);
+    await expect(share.locator(".shead > .seg button.on")).toHaveCount(0);
+    // The plan computes with the curve (no check error).
+    await previewIdle(page);
+    await expect(page.locator("#chart path").first()).toBeAttached();
+    // «Constant» replaces the curve with the value of its first support point.
+    await share.locator('button[data-action="series-mode"][data-path="wealth.stockShare"][data-mode="const"]').click();
+    expect(await page.evaluate(() => state.wealth.stockShare)).toEqual({ mode: "const", value: 0.8 });
+    await previewIdle(page);
+    await noErrors(page, errors);
+  });
+});

@@ -2155,6 +2155,12 @@
     "text": "The end (07.2031) of the straight line is before its start (07.2031)"
   },
   {
+    "code": "curve_points_empty",
+    "params": {},
+    "template": "A characteristic curve needs at least one support point",
+    "text": "A characteristic curve needs at least one support point"
+  },
+  {
     "code": "format_unknown",
     "params": {
       "format": {

@@ -217,9 +217,31 @@ Der Anteil der **Aktien am Portfolio** (Aktien + Obligationen, ohne Cash). Der R
 
 - Die App stellt diesen Anteil jeden Monat wieder her (**Rebalancing**), soweit die Strategie nichts anderes vorsieht.
 - Ein hoher Aktienanteil bringt im Mittel mehr Rendite, aber auch tiefere Tiefstände. Gerade am Anfang der Pensionierung ist das Risiko hoch (**Sequenzrisiko**): Ein Börseneinbruch kurz nach der Pensionierung schadet viel mehr als derselbe Einbruch 20 Jahre später.
-- Der Wert kann [zeitabhängig](#f-timed) sein, zum Beispiel 70 % bis zur Pensionierung und 50 % danach.
+- Der Wert kann [zeitabhängig](#f-timed) sein, zum Beispiel 70 % bis zur Pensionierung und 50 % danach, oder eine [Kennlinie](#f-curve) über den Zustand der Simulation, zum Beispiel über die Entnahmerate.
 
 Wie stark der Aktienanteil das Ergebnis verändert, zeigt eine [Variation](#f-sweep) des Aktienanteils, oder die [Optimierung](#s-optimize), die den Anteil gleich mit sucht.
+
+## @f-curve Kennlinie
+Stichworte: Kennlinie, Zustand, Zustandsgrösse, Entnahmerate, Deckungsgrad, Drawdown, Höchststand, dynamischer Aktienanteil, curve
+
+Statt eines Werts oder Verlaufs über die Zeit kann der [Aktienanteil](#f-stockshare) eine **Kennlinie** sein: Er hängt dann vom **Zustand** der Simulation ab, zum Beispiel von der Entnahmerate. Die Kennlinie besteht aus Stützpunkten, je ein *Wert der Zustandsgrösse* mit dem *Aktienanteil*, der dort gilt; dazwischen verläuft sie gerade, unter dem ersten Stützpunkt gilt sein Wert, über dem letzten der letzte Wert. Die Aktienanteile liegen zwischen 0 und 1.
+
+**Zustandsgrössen:**
+
+- **Alter** (`age`): Alter der ersten Person in Jahren.
+- **Liquides Vermögen real** (`liquidReal`): Cash, Obligationen und Aktien in Preisen des Simulationsstarts (geteilt durch die Teuerung seit dem Start).
+- **Entnahmerate** (`withdrawalRate`): Entnahme der letzten 12 Monate geteilt durch das liquide Vermögen. Die Entnahme eines Monats sind die Ausgaben (Lebenshaltung, Wohnkosten, Steuern) minus die Einnahmen (Erwerbseinkommen, Renten, Sparbeiträge); einmalige Beträge, Kauf und Verkauf von Immobilien und die Säule 3a zählen nicht. Im ersten Jahr zählen die bisherigen Monate, auf 12 hochgerechnet, beim Simulationsstart die ungedeckten Ausgaben des Startmonats mal 12.
+- **Deckungsgrad** (`fundedRatio`): liquides Vermögen geteilt durch die restliche Lücke bis zum Ende der Simulation, beides in Preisen des Simulationsstarts. Die Lücke ist die Lebenshaltung minus Erwerbseinkommen und Renten (AHV und Pensionskasse, so weit im Monat der Auswertung bekannt), ohne Abzinsung, ohne Wohnkosten und Steuern. Ab 1 reicht das Vermögen ohne Rendite für die Lücke. Decken Einkommen und Renten alles, gilt der letzte Wert der Kennlinie.
+- **Aktienrendite 12 Monate** (`stockReturn12m`): Rendite des Aktienindex der letzten 12 Monate, 0.1 = 10 %.
+- **Abstand vom Höchststand** (`drawdown`): wie weit der Aktienindex unter seinem bisherigen Höchststand liegt (mit dem Vorlauf des Renditepfads), 0 am Höchststand, 0.3 = 30 % darunter.
+
+**Auswertung:** beim **Umschichten** (Rebalancing). Mit `"eval": "yearly"` (Standard) beim ersten Umschichten jedes Kalenderjahres; der Wert gilt dann bis ins nächste Jahr. Mit `"eval": "monthly"` jeden Monat. Wie ein Verlauf gilt der Aktienanteil bei der [3-Topf-Strategie](#f-wd-three_buckets) nur bis zur Pensionierung.
+
+**Beispiel:** Stützpunkte 2 % → 80 % und 6 % → 40 % über der Entnahmerate. Bei einer Entnahmerate von 4 % gilt ein Aktienanteil von 60 %, bei 1 % 80 %, bei 8 % 40 %.
+
+**Erfassen:** Im Editor steht die Kennlinie nur zur Ansicht (Zustandsgrösse, Auswertung, Stützpunkte). Erfassen und ändern Sie sie in der [Planungsdatei](#ref-file) oder über die KI-Schnittstelle, zum Beispiel `"stockShare": {"mode": "curve", "input": "withdrawalRate", "points": [[0.02, 0.8], [0.06, 0.4]], "eval": "yearly"}`. Eine andere Form oben im Feld ersetzt die Kennlinie durch den Wert ihres ersten Stützpunkts.
+
+**Grenze des parametrischen Modells:** Das [parametrische Modell](#f-ret-parametric) zieht die Rendite jedes Jahres unabhängig von den Vorjahren; auf einen Einbruch folgt dort nicht eher eine Erholung. Regeln, die auf Erholung nach Einbrüchen setzen (zum Beispiel mehr Aktien bei grossem Abstand vom Höchststand oder nach schlechten 12 Monaten), lassen sich damit nicht sinnvoll prüfen: Sie können dort keinen Vorteil zeigen. Prüfen Sie solche Regeln mit historischen Pfaden ([historisch](#f-ret-historical), [alle Startzeitpunkte](#f-ret-rolling) oder [Bootstrap](#f-ret-bootstrap) mit Blöcken) und bedenken Sie dort die Gefahr, die Regel an die Vergangenheit anzupassen.
 
 ## @f-reserve Cash-Reserve
 Stichworte: Cash, Reserve, Monate, Liquidität, Liquiditätsreserve

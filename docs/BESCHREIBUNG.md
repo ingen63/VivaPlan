@@ -63,6 +63,14 @@ Der Editor führt durch zwölf Abschnitte:
   festen Datum, Tabellenpunkte lassen sich hinzufügen und löschen, der Faktor ist selbst ein Verlauf in Prozent. Beim
   Wechsel der Form bleiben Zeitpunkte und Werte erhalten, soweit die neue Form sie fassen kann; die Minigrafik zeigt den
   Verlauf.
+  Der Aktienanteil kann statt eines Verlaufs eine **Kennlinie** über eine Zustandsgrösse sein (#218): Stützpunkte
+  «bei Zustandswert gilt Aktienanteil», dazwischen linear. Zustandsgrössen sind Alter, liquides Vermögen in Preisen des
+  Starts, Entnahmerate (Entnahme der letzten 12 Monate / liquides Vermögen), Deckungsgrad (liquides Vermögen / restliche
+  Lücke aus Lebenshaltung minus Einkommen und Renten), Aktienrendite der letzten 12 Monate und Abstand vom Höchststand.
+  Ausgewertet wird beim Umschichten, einmal pro Jahr oder jeden Monat. Beispiel: 2 % → 80 %, 6 % → 40 % über der
+  Entnahmerate ergibt bei 4 % einen Aktienanteil von 60 %. Der Editor zeigt die Kennlinie nur an; erfasst wird sie in
+  der Planungsdatei oder über die KI-Schnittstelle. Die Hilfe nennt die Grenze: Im parametrischen Modell sind die Jahre
+  unabhängig, Regeln, die auf Erholung nach Einbrüchen setzen, lassen sich dort nicht sinnvoll prüfen.
   Das Erwerbseinkommen wird pro Jahr erfasst wie in der Steuererklärung («Einkünfte aus Erwerb netto / Jahr», Nettolohn
   im Lohnausweis Ziffer 11); daneben steht der Betrag pro Monat. Gespeichert und gerechnet wird pro Monat (ein Zwölftel).
   Das Erwerbseinkommen jeder Person kann wahlweise mit der Teuerung steigen (Beträge in heutigen Preisen; neue

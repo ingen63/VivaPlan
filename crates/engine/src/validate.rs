@@ -8,7 +8,7 @@ use crate::message::{arg, Arg, Message};
 use crate::model::{fixed_milestone_message, person_milestones, PayoutAt, PayoutUse};
 use crate::model::{
     AmortMode, AmountMode, GainModel, MilestoneKind, Plan, PropertyStatus, RateKind, ReturnSource, Series, SeriesDef,
-    Strategy, TaxValueKind, Withdrawal,
+    StateSeries, Strategy, TaxValueKind, Withdrawal,
 };
 use crate::resolve::{Curve, Resolver};
 use crate::tax;
@@ -588,13 +588,26 @@ fn check(plan: &Plan, v: &mut Issues) {
     if let Some(s) = &plan.flows.savings {
         series(v, "flows", term(msg!(term_savings)), s, None);
     }
-    series(
-        v,
-        "wealth",
-        term(msg!(term_stock_share)),
-        &plan.wealth.stock_share,
-        Some((0.0, 1.0)),
-    );
+    match &plan.wealth.stock_share {
+        StateSeries::Series(s) => series(v, "wealth", term(msg!(term_stock_share)), s, Some((0.0, 1.0))),
+        // #218: support points of the characteristic curve, values between 0 and 1.
+        StateSeries::Curve(c) => match crate::state::StateLine::compile(c) {
+            Ok(line) if line.values().any(|x| !(0.0..=1.0).contains(&x)) => v.err(
+                "wealth",
+                msg!(
+                    series_out_of_range,
+                    what = term(msg!(term_stock_share)),
+                    lo = 0.0,
+                    hi = 1.0
+                ),
+            ),
+            Ok(_) => {}
+            Err(e) => v.err(
+                "wealth",
+                msg!(labeled, what = term(msg!(term_stock_share)), problem = e.message()),
+            ),
+        },
+    }
     series(
         v,
         "wealth",

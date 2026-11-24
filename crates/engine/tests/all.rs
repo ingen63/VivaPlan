@@ -63,6 +63,7 @@ mod robustness;
 mod series_forms;
 mod sim_rules;
 mod simulation;
+mod state_curves;
 mod statistics;
 mod strategy;
 mod tax_capital_location;

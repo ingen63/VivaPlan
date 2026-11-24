@@ -410,6 +410,77 @@ impl Default for Series {
     }
 }
 
+/// A parameter that is either a course over time or a characteristic curve over a state variable (#218).
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum StateSeries {
+    Curve(StateCurve),
+    Series(Series),
+}
+
+impl StateSeries {
+    /// The course over time (`None` for a characteristic curve).
+    pub fn as_series(&self) -> Option<&Series> {
+        match self {
+            StateSeries::Series(s) => Some(s),
+            StateSeries::Curve(_) => None,
+        }
+    }
+}
+
+impl From<Series> for StateSeries {
+    fn from(s: Series) -> Self {
+        StateSeries::Series(s)
+    }
+}
+
+/// Characteristic curve (#218): support points `[input value, parameter value]` over a state variable, linear in
+/// between, the first value below the first point and the last value above the last point. It is evaluated when the
+/// portfolio is rebalanced, once per calendar year (`yearly`, the default) or every month (`monthly`).
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct StateCurve {
+    pub mode: CurveMode,
+    pub input: StateInput,
+    pub points: Vec<(f64, f64)>,
+    #[serde(default)]
+    pub eval: CurveEval,
+}
+
+/// The only value of the field `mode` of a characteristic curve (#218).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum CurveMode {
+    Curve,
+}
+
+/// State variables of a characteristic curve (#218).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum StateInput {
+    /// Age of the first person in years.
+    Age,
+    /// Liquid wealth (cash, bonds, stocks) in prices of the start month.
+    LiquidReal,
+    /// Withdrawal of the last 12 months / liquid wealth (in the first year the months so far extrapolated to 12).
+    WithdrawalRate,
+    /// Liquid wealth / sum of the remaining gap until the end (spending minus earned income and pensions, in
+    /// prices of the start month, without discounting).
+    FundedRatio,
+    /// Stock return of the last 12 months (0.1 = 10 %).
+    StockReturn12m,
+    /// Distance of the stock index below its highest level so far (0 at the peak, 0.3 = 30 % below it).
+    Drawdown,
+}
+
+/// When a characteristic curve is evaluated (#218).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum CurveEval {
+    #[default]
+    Yearly,
+    Monthly,
+}
+
 impl Series {
     pub fn constant(v: f64) -> Self {
         Series::Def(SeriesDef::Const { value: v })
@@ -517,8 +588,8 @@ pub struct Wealth {
     pub stocks: f64,
     pub bonds: f64,
     pub cash: f64,
-    /// Stock share of the invested wealth 0..1.
-    pub stock_share: Series,
+    /// Stock share of the invested wealth 0..1; #218: also a characteristic curve over a state variable.
+    pub stock_share: StateSeries,
     /// Cash reserve in months of uncovered spending.
     #[serde(default)]
     pub reserve_months: Series,

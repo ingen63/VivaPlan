@@ -217,9 +217,31 @@ La part des **actions dans le portefeuille** (actions + obligations, sans cash).
 
 - L’application rétablit cette part chaque mois (**rééquilibrage**), pour autant que la stratégie ne prévoie rien d’autre.
 - Une part d’actions élevée apporte en moyenne plus de rendement, mais aussi des creux plus profonds. Le risque est particulièrement élevé au début de la retraite (**risque de séquence**): un krach boursier peu après la retraite nuit beaucoup plus que le même krach 20 ans plus tard.
-- La valeur peut dépendre du [temps](#f-timed), par exemple 70 % jusqu’à la retraite et 50 % ensuite.
+- La valeur peut dépendre du [temps](#f-timed), par exemple 70 % jusqu’à la retraite et 50 % ensuite, ou être une [courbe caractéristique](#f-curve) selon l’état de la simulation, par exemple selon le taux de prélèvement.
 
 L’ampleur de l’effet de la part d’actions sur le résultat est montrée par une [variation](#f-sweep) de la part d’actions, ou par l’[optimisation](#s-optimize), qui recherche aussi la part.
+
+## @f-curve Courbe caractéristique
+Stichworte: courbe caractéristique, courbe, état, variable d’état, taux de prélèvement, taux de couverture, drawdown, plus haut, part d’actions dynamique, curve
+
+Au lieu d’une valeur ou d’une évolution dans le temps, la [part d’actions](#f-stockshare) peut être une **courbe caractéristique**: elle dépend alors de l’**état** de la simulation, par exemple du taux de prélèvement. La courbe se compose de points d’appui, chacun une *valeur de la variable d’état* avec la *part d’actions* qui s’y applique; entre eux elle est droite, sous le premier point d’appui sa valeur s’applique, au-dessus du dernier la dernière valeur. Les parts d’actions sont comprises entre 0 et 1.
+
+**Variables d’état:**
+
+- **Âge** (`age`): âge de la première personne en années.
+- **Fortune liquide réelle** (`liquidReal`): cash, obligations et actions aux prix du début de la simulation (divisés par le renchérissement depuis le début).
+- **Taux de prélèvement** (`withdrawalRate`): prélèvement des 12 derniers mois divisé par la fortune liquide. Le prélèvement d’un mois correspond aux dépenses (coût de la vie, frais de logement, impôts) moins les recettes (revenu d’une activité lucrative, rentes, versements d’épargne); les montants uniques, l’achat et la vente de biens immobiliers et le pilier 3a ne comptent pas. La première année comptent les mois écoulés, extrapolés à 12; au début de la simulation les dépenses non couvertes du mois de départ fois 12.
+- **Taux de couverture** (`fundedRatio`): fortune liquide divisée par la lacune restante jusqu’à la fin de la simulation, les deux aux prix du début de la simulation. La lacune est le coût de la vie moins le revenu d’une activité lucrative et les rentes (AVS et caisse de pension, telles que connues le mois de l’évaluation), sans actualisation, sans frais de logement ni impôts. À partir de 1, la fortune couvre la lacune sans rendement. Si le revenu et les rentes couvrent tout, la dernière valeur de la courbe s’applique.
+- **Rendement des actions sur 12 mois** (`stockReturn12m`): rendement de l’indice des actions des 12 derniers mois, 0.1 = 10 %.
+- **Écart par rapport au plus haut** (`drawdown`): de combien l’indice des actions se situe sous son plus haut atteint jusqu’ici (avec la période préalable du trajectoire de rendement), 0 au plus haut, 0.3 = 30 % en dessous.
+
+**Évaluation:** lors du **rééquilibrage**. Avec `"eval": "yearly"` (par défaut) au premier rééquilibrage de chaque année civile; la valeur s’applique alors jusque dans l’année suivante. Avec `"eval": "monthly"` chaque mois. Comme une évolution, la part d’actions ne s’applique avec la [stratégie à 3 compartiments](#f-wd-three_buckets) que jusqu’à la retraite.
+
+**Exemple:** points d’appui 2 % → 80 % et 6 % → 40 % selon le taux de prélèvement. Avec un taux de prélèvement de 4 %, la part d’actions est de 60 %, à 1 % de 80 %, à 8 % de 40 %.
+
+**Saisie:** dans l’éditeur, la courbe est seulement affichée (variable d’état, évaluation, points d’appui). Saisissez-la et modifiez-la dans le [fichier de projet](#ref-file) ou via l’interface IA, par exemple `"stockShare": {"mode": "curve", "input": "withdrawalRate", "points": [[0.02, 0.8], [0.06, 0.4]], "eval": "yearly"}`. Une autre forme en haut du champ remplace la courbe par la valeur de son premier point d’appui.
+
+**Limite du modèle paramétrique:** le [modèle paramétrique](#f-ret-parametric) tire le rendement de chaque année indépendamment des années précédentes; une chute n’y est pas plus souvent suivie d’une reprise. Les règles qui misent sur une reprise après une chute (par exemple plus d’actions quand l’écart par rapport au plus haut est grand ou après 12 mauvais mois) ne peuvent pas y être vérifiées de manière pertinente: elles ne peuvent pas y montrer d’avantage. Vérifiez de telles règles avec des trajectoires historiques ([historique](#f-ret-historical), [tous les points de départ](#f-ret-rolling) ou [bootstrap](#f-ret-bootstrap) par blocs) et pensez au risque d’adapter la règle au passé.
 
 ## @f-reserve Réserve de cash
 Mots-clés: cash, réserve, mois, liquidités, réserve de liquidités

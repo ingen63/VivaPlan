@@ -32,6 +32,7 @@ pub mod scenarios;
 pub mod series_text;
 pub mod settings;
 pub mod sim;
+pub mod state;
 pub mod strategy;
 pub mod tax;
 pub mod taxdata;

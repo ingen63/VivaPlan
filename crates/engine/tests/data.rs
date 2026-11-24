@@ -232,7 +232,7 @@ fn scenario_with_base_value_equals_base_run() {
     plan["returns"]["source"] = json!("bootstrap");
     plan["returns"]["bootstrap"] = json!({ "paths": 500, "block": 12, "seed": 9 });
     let p: Plan = serde_json::from_value(plan.clone()).unwrap();
-    let share = match &p.wealth.stock_share {
+    let share = match p.wealth.stock_share.as_series().unwrap() {
         engine::model::Series::Number(x) | engine::model::Series::Def(engine::model::SeriesDef::Const { value: x }) => {
             *x
         }

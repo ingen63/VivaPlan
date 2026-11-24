@@ -217,9 +217,31 @@ La quota delle **azioni nel portafoglio** (azioni + obbligazioni, senza cash). I
 
 - L’app ripristina questa quota ogni mese (**ribilanciamento**), salvo che la strategia preveda altrimenti.
 - Una quota azionaria alta porta in media più rendimento, ma anche minimi più bassi. Proprio all’inizio del pensionamento il rischio è alto (**rischio di sequenza**): un crollo di borsa poco dopo il pensionamento nuoce molto di più dello stesso crollo 20 anni dopo.
-- Il valore può essere [dipendente dal tempo](#f-timed), ad esempio 70 % fino al pensionamento e 50 % dopo.
+- Il valore può essere [dipendente dal tempo](#f-timed), ad esempio 70 % fino al pensionamento e 50 % dopo, oppure una [curva caratteristica](#f-curve) in funzione dello stato della simulazione, ad esempio del tasso di prelievo.
 
 Quanto la quota azionaria cambi il risultato lo mostra una [variazione](#f-sweep) della quota azionaria, o l’[ottimizzazione](#s-optimize), che cerca contemporaneamente anche la quota.
+
+## @f-curve Curva caratteristica
+Stichworte: curva caratteristica, curva, stato, variabile di stato, tasso di prelievo, grado di copertura, drawdown, massimo, quota azionaria dinamica, curve
+
+Invece di un valore o di un andamento nel tempo, la [quota azionaria](#f-stockshare) può essere una **curva caratteristica**: dipende allora dallo **stato** della simulazione, ad esempio dal tasso di prelievo. La curva è composta da punti d’appoggio, ognuno un *valore della variabile di stato* con la *quota azionaria* che vi si applica; tra di essi è una retta, sotto il primo punto d’appoggio vale il suo valore, sopra l’ultimo l’ultimo valore. Le quote azionarie sono comprese tra 0 e 1.
+
+**Variabili di stato:**
+
+- **Età** (`age`): età della prima persona in anni.
+- **Sostanza liquida reale** (`liquidReal`): cash, obbligazioni e azioni ai prezzi dell’inizio della simulazione (divisi per il rincaro dall’inizio).
+- **Tasso di prelievo** (`withdrawalRate`): prelievo degli ultimi 12 mesi diviso per la sostanza liquida. Il prelievo di un mese sono le uscite (costo della vita, costi dell’abitazione, imposte) meno le entrate (reddito da attività lucrativa, rendite, versamenti di risparmio); gli importi unici, l’acquisto e la vendita di immobili e il pilastro 3a non contano. Nel primo anno contano i mesi trascorsi, estrapolati a 12; all’inizio della simulazione le uscite non coperte del mese iniziale per 12.
+- **Grado di copertura** (`fundedRatio`): sostanza liquida divisa per la lacuna restante fino alla fine della simulazione, entrambe ai prezzi dell’inizio della simulazione. La lacuna è il costo della vita meno il reddito da attività lucrativa e le rendite (AVS e cassa pensioni, per quanto noti nel mese della valutazione), senza attualizzazione, senza costi dell’abitazione e imposte. Da 1 la sostanza copre la lacuna senza rendimento. Se reddito e rendite coprono tutto, vale l’ultimo valore della curva.
+- **Rendimento azionario 12 mesi** (`stockReturn12m`): rendimento dell’indice azionario degli ultimi 12 mesi, 0.1 = 10 %.
+- **Distanza dal massimo** (`drawdown`): di quanto l’indice azionario si trova sotto il suo massimo finora (compreso il periodo preliminare del percorso dei rendimenti), 0 al massimo, 0.3 = 30 % sotto.
+
+**Valutazione:** al **ribilanciamento**. Con `"eval": "yearly"` (predefinito) al primo ribilanciamento di ogni anno civile; il valore vale poi fino all’anno seguente. Con `"eval": "monthly"` ogni mese. Come un andamento, con la [strategia a 3 comparti](#f-wd-three_buckets) la quota azionaria vale solo fino al pensionamento.
+
+**Esempio:** punti d’appoggio 2 % → 80 % e 6 % → 40 % in funzione del tasso di prelievo. Con un tasso di prelievo del 4 % vale una quota azionaria del 60 %, con l’1 % dell’80 %, con l’8 % del 40 %.
+
+**Inserimento:** nell’editor la curva è solo visualizzata (variabile di stato, valutazione, punti d’appoggio). La inserisca e la modifichi nel [file di progetto](#ref-file) o tramite l’interfaccia IA, ad esempio `"stockShare": {"mode": "curve", "input": "withdrawalRate", "points": [[0.02, 0.8], [0.06, 0.4]], "eval": "yearly"}`. Un’altra forma in alto nel campo sostituisce la curva con il valore del suo primo punto d’appoggio.
+
+**Limite del modello parametrico:** il [modello parametrico](#f-ret-parametric) estrae il rendimento di ogni anno indipendentemente dagli anni precedenti; lì un crollo non è seguito più spesso da una ripresa. Le regole che puntano su una ripresa dopo i crolli (ad esempio più azioni con una grande distanza dal massimo o dopo 12 mesi negativi) non possono esservi verificate in modo sensato: lì non possono mostrare alcun vantaggio. Verifichi tali regole con percorsi storici ([storico](#f-ret-historical), [tutti i punti di partenza](#f-ret-rolling) o [bootstrap](#f-ret-bootstrap) a blocchi) e tenga presente il rischio di adattare la regola al passato.
 
 ## @f-reserve Riserva di cash
 Parole chiave: cash, riserva, mesi, liquidità, riserva di liquidità

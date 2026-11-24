@@ -73,14 +73,17 @@ fn nodes_at(path: &[&str]) -> Vec<&'static Value> {
     nodes
 }
 
-/// Whether the node refers to the course over time (`Series`), directly or in a combination.
+/// Whether the node refers to the course over time (`Series`), directly or in a combination (#218: also in the
+/// combination of a referenced definition, `StateSeries`).
 fn is_series(node: &Value) -> bool {
     node.get("$ref").and_then(Value::as_str) == Some(SERIES_REF)
-        || ["allOf", "anyOf", "oneOf"]
-            .iter()
-            .filter_map(|k| node.get(*k).and_then(Value::as_array))
-            .flatten()
-            .any(is_series)
+        || [node, resolve_ref(node)].into_iter().any(|n| {
+            ["allOf", "anyOf", "oneOf"]
+                .iter()
+                .filter_map(|k| n.get(*k).and_then(Value::as_array))
+                .flatten()
+                .any(is_series)
+        })
 }
 
 /// JSON type names of a value («integer» also for a whole number).
@@ -510,7 +513,7 @@ mod tests {
         // The plan still computes, with the new step.
         let p: Plan = serde_json::from_value(v).unwrap();
         let res = crate::resolve::Resolver::new(&p).unwrap();
-        let c = crate::resolve::Curve::compile(&p.wealth.stock_share, &res).unwrap();
+        let c = crate::resolve::Curve::compile(p.wealth.stock_share.as_series().unwrap(), &res).unwrap();
         assert_eq!(c.at(res.milestone("ahv").unwrap()), 0.4);
         assert_eq!(c.at(res.milestone("ahv").unwrap().plus(-1)), 0.6);
     }

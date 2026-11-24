@@ -92,7 +92,18 @@ const NEW_FORMS = ["linear", "table", "factor"];
 const isNewForm = ser => !!ser && typeof ser === "object" && NEW_FORMS.includes(ser.mode);
 /** #243: the five forms of a course in the order of the selector. */
 const SERIES_FORMS = ["const", "timed", ...NEW_FORMS];
-const formName = mode => ({ const: tr("series.form.const"), timed: tr("series.form.timed"), linear: tr("series.form.linear"), table: tr("series.form.table"), factor: tr("series.form.factor") })[mode];
+const formName = mode => ({ const: tr("series.form.const"), timed: tr("series.form.timed"), linear: tr("series.form.linear"), table: tr("series.form.table"), factor: tr("series.form.factor"), curve: tr("series.form.curve") })[mode];
+/** #218: characteristic curve over a state variable (only the stock share); the editor shows it read-only. */
+const isCurve = ser => !!ser && typeof ser === "object" && ser.mode === "curve";
+const STATE_INPUTS = ["age", "liquidReal", "withdrawalRate", "fundedRatio", "stockReturn12m", "drawdown"];
+const stateName = input => STATE_INPUTS.includes(input) ? tr(`state.${input}`) : String(input ?? "?");
+/** #218: input value of a support point in the unit of its state variable. */
+function stateValue(input, x) {
+  if (input === "age") return `${fmtNum(+x)} ${tr("unit.yearsShort")}`;
+  if (input === "liquidReal") return fmtInt(+x);
+  if (input === "fundedRatio") return fmtNum(+x);
+  return `${fmtPct(+x)} %`;
+}
 /** #217: month of a support point (date, milestone or age of a person, the first person without one). */
 function pointMonth(p) {
   if (p?.age == null) return refMonth(p?.at);
@@ -117,6 +128,8 @@ function seriesAt(ser, m) {
   if (ser.mode === "linear") return pointsAt([ser.start, ser.end].filter(Boolean), m, true);
   if (ser.mode === "table") return pointsAt(ser.points || [], m, ser.interpolation !== "step");
   if (ser.mode === "factor") return (+ser.base || 0) * seriesAt(ser.factor, m);
+  // #218: the course of a curve is only known in the computation; the value of its first support point.
+  if (ser.mode === "curve") return +ser.points?.[0]?.[1] || 0;
   let best = null, bm = -Infinity;
   for (const r of ser.rows || []) { const rm = refMonth(r.from); if (rm <= m && rm >= bm) { bm = rm; best = r; } }
   return best ? +best.value || 0 : 0;
@@ -129,6 +142,7 @@ function seriesValues(ser) {
   if (ser.mode === "linear") return [ser.start?.value, ser.end?.value];
   if (ser.mode === "table") return (ser.points || []).map(x => x.value);
   if (ser.mode === "factor") return seriesValues(ser.factor).map(x => (+ser.base || 0) * x);
+  if (ser.mode === "curve") return (ser.points || []).map(p => p?.[1]);
   return (ser.rows || []).map(x => x.value);
 }
 const tax = (table, x) => taxAt(table, x, state.taxes.multiplier); // #156: like the engine (multiplier 0 → no tax)
@@ -544,14 +558,21 @@ function seriesBody(path, type) {
     return `<div class="rows" data-form="factor">${F(path + ".base", tr("series.base"), type)}
       <div class="shead sub"><span class="t">${tr("series.factor")}</span>${seriesForms(path + ".factor", f.mode, ["const", "timed", "linear", "table"])}</div>${seriesBody(path + ".factor", "pct")}</div>`;
   }
+  if (s.mode === "curve") {
+    const when = tr(s.eval === "monthly" ? "series.evalMonthly" : "series.evalYearly");
+    return `<div class="rows" data-form="curve"><p class="computed shint">${tr("series.curveReadOnly", { input: esc(stateName(s.input)), eval: when })}</p>
+      ${(s.points || []).map(p => `<div class="row" data-point="${path}"><span class="ab">${tr("series.at")}</span><span>${esc(stateValue(s.input, p?.[0]))}</span><span>${esc(miniValue(type, +p?.[1] || 0))}</span><span></span></div>`).join("")}</div>`;
+  }
   return `<div class="rows">${F(path + ".value", tr("series.value"), type)}</div>`;
 }
 function Series(path, label, type, note = "", hint = "") {
   const s = seriesDef(path);
+  // #218: a characteristic curve has no course over time, hence no mini chart.
+  const mini = isCurve(s) ? "" : `<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
+      <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>${tr("series.zoomHint")}</span></div></div>`;
   return `<div class="series"><div class="shead"><span class="t">${label}</span><span class="computed">${note}</span>
     ${seriesForms(path, s.mode)}</div>${hint ? `<p class="computed shint">${hint}</p>` : ""}
-    <div class="sbody">${seriesBody(path, type)}<div class="miniwrap"><svg class="mini zoomable" data-mini="${path}" data-type="${type}"></svg><div class="tip"></div>
-      <div class="minizoom">${zoomButtons("mini-zoom", miniZoom[path]?.years, `data-path="${path}"`)}<span>${tr("series.zoomHint")}</span></div></div></div></div>`;
+    <div class="sbody">${seriesBody(path, type)}${mini}</div></div>`;
 }
 /** #243: support points of a course sorted by time (a step's rows, the ends of a line or the table). */
 function seriesPoints(s) {
@@ -3530,7 +3551,7 @@ function paramSections(plan, full = false) {
   const msName = id => msLabel(plan.milestones?.find(m => m.id === id));
   const at = r => isYM(r) ? ymShow(r) : (msName(r) ?? String(r ?? "–"));
   const ser = (v, f) => !v || typeof v !== "object" ? (v == null ? "–" : f(v))
-    : v.mode === "const" ? f(v.value) : isNewForm(v) ? formName(v.mode)
+    : v.mode === "const" ? f(v.value) : isNewForm(v) ? formName(v.mode) : isCurve(v) ? tr("params.curve", { input: stateName(v.input) })
     : (v.rows || []).map(r => tr("params.fromValue", { from: at(r.from), value: f(r.value) })).join("; ") || "–";
   const table = rows => (rows || []).map(([x, r]) => tr("params.fromValue", { from: fmtInt(x), value: `${fmtPct(r)} %` })).join("; ") || "–";
   const out = [];
@@ -3651,7 +3672,7 @@ const runTitle = (base, m, iso) => [base, m.kind === "optimization" ? optKindNam
 /** While viewing a saved simulation its plan applies; the editor state is set aside meanwhile. */
 function unpark() { if (parkedState) { state = parkedState; parkedState = null; } savedView = null; }
 /** Value of a time series of the plan as text: constant → value, otherwise «zeitabhängig». */
-const serTxt = (v, f) => v && typeof v === "object" ? (v.mode === "const" ? f(v.value) : tr("runs.timeDependent")) : v == null ? "–" : f(v);
+const serTxt = (v, f) => v && typeof v === "object" ? (v.mode === "const" ? f(v.value) : isCurve(v) ? tr("params.curve", { input: stateName(v.input) }) : tr("runs.timeDependent")) : v == null ? "–" : f(v);
 /** Parameters of the withdrawal strategy of a plan as pairs [label, value] (labels and units as in the editor). */
 function stratParams(plan) {
   const w = plan.withdrawal || {}, ws = plan.wealth || {}, pc = v => `${fmtPct(v)} %`, yrs = v => `${v} ${tr("unit.yearsShort")}`;

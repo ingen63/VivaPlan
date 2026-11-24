@@ -42,7 +42,7 @@ use crate::market::MarketPath;
 use crate::message::Message;
 use crate::model::{
     Affordability, AfterLast, AmortMode, AmountMode, Buckets, PayoutUse, Plan, Property, PropertyStatus, RateKind,
-    ReturnSource, Strategy, Tranche,
+    ReturnSource, StateInput, StateSeries, Strategy, Tranche,
 };
 use crate::resolve::{Curve, Resolver};
 use crate::tax;
@@ -810,6 +810,11 @@ pub struct Simulator {
     spending_factor: f64,
     savings: Curve,
     stock_share: Curve,
+    /// #218: the stock share as a characteristic curve over a state variable (then `stock_share` is not used).
+    share_curve: Option<crate::state::StateLine>,
+    /// #218: remaining spending minus earned income from month `k` until the end (prices of the start month), only
+    /// with a curve over `fundedRatio`.
+    need_rest: Vec<f64>,
     reserve: Curve,
     emergency: Curve,
     /// #196: Never sell a property (switch «Immobilien nie verkaufen»).
@@ -1164,7 +1169,15 @@ impl Simulator {
                 .map(curve)
                 .transpose()?
                 .unwrap_or(Curve::constant(0.0)),
-            stock_share: curve(&plan.wealth.stock_share)?,
+            stock_share: match &plan.wealth.stock_share {
+                StateSeries::Series(s) => curve(s)?,
+                StateSeries::Curve(_) => Curve::constant(0.0),
+            },
+            share_curve: match &plan.wealth.stock_share {
+                StateSeries::Curve(c) => Some(crate::state::StateLine::compile(c)?),
+                StateSeries::Series(_) => None,
+            },
+            need_rest: vec![],
             // Adjustable only with «Standard»; otherwise a fixed assumption (#18).
             reserve: if w.strategy == Strategy::Standard {
                 curve(&plan.wealth.reserve_months)?
@@ -1209,7 +1222,25 @@ impl Simulator {
             afford: plan.realestate.affordability.clone(),
             buckets,
             dynamic,
-        })
+        }
+        .with_need_rest())
+    }
+
+    /// #218: fills `need_rest` if the stock share is a curve over `fundedRatio` (sum from the back).
+    fn with_need_rest(mut self) -> Self {
+        if self
+            .share_curve
+            .as_ref()
+            .is_some_and(|c| c.input == StateInput::FundedRatio)
+        {
+            let mut rest = vec![0.0; self.months + 1];
+            for k in (0..self.months).rev() {
+                let m = self.start.plus(k as i32);
+                rest[k] = rest[k + 1] + self.planned_living(m) - self.earned(m, 1.0);
+            }
+            self.need_rest = rest;
+        }
+        self
     }
 
     /// Planned living costs without housing costs in month `m` in prices of the start month (#53): entered amount
@@ -1719,6 +1750,8 @@ struct Run<'a> {
     budget: f64,
     budget_rate0: f64,
     budget_on: bool,
+    /// #218: state for the characteristic curve of the stock share (only if the plan has one).
+    share: Option<crate::state::Tracker>,
 }
 
 /// Pension fund and AHV of one person in the run.
@@ -1831,6 +1864,7 @@ impl<'a> Run<'a> {
             budget: 0.0,
             budget_rate0: 0.0,
             budget_on: false,
+            share: s.share_curve.as_ref().map(|_| crate::state::Tracker::default()),
         }
     }
 
@@ -2714,6 +2748,64 @@ impl<'a> Run<'a> {
         );
     }
 
+    /// Stock share for the rebalancing in month `m` (index `k`), between 0 and 1: the course over time or (#218) the
+    /// characteristic curve with the state of the run; `first` is the withdrawal per month before the first recorded
+    /// month (start of the simulation).
+    fn stock_share(&mut self, m: YearMonth, k: usize, first: f64) -> f64 {
+        let s = self.s;
+        let (Some(c), Some(mut t)) = (&s.share_curve, self.share.take()) else {
+            return s.stock_share.at(m).clamp(0.0, 1.0);
+        };
+        if t.due(m.year(), c.monthly) {
+            let x = self.state_input(c.input, m, k, &mut t, first);
+            t.value = c.at(x).clamp(0.0, 1.0);
+        }
+        let share = t.value;
+        self.share = Some(t);
+        share
+    }
+
+    /// #218: value of a state variable in month `m` (index `k`).
+    fn state_input(&self, input: StateInput, m: YearMonth, k: usize, t: &mut crate::state::Tracker, first: f64) -> f64 {
+        use crate::state::ratio;
+        let liquid = self.cash + self.stocks + self.bonds;
+        match input {
+            StateInput::Age => f64::from(self.s.people[0].birth.until(m)) / 12.0,
+            StateInput::LiquidReal => liquid / self.infl_idx,
+            StateInput::WithdrawalRate => ratio(t.withdrawal_year(first), liquid),
+            StateInput::FundedRatio => ratio(liquid / self.infl_idx, self.remaining_gap(m, k)),
+            StateInput::StockReturn12m => self.stock_return(k).0,
+            StateInput::Drawdown => {
+                let i = (self.hist_off + k).min(self.stock_hist.len() - 1);
+                t.drawdown(&self.stock_hist, i)
+            }
+        }
+    }
+
+    /// #218: remaining gap from month `m` (index `k`) until the end in prices of the start month: spending minus
+    /// earned income, minus the pensions as known today (AHV and PK, from their start), without discounting.
+    fn remaining_gap(&self, m: YearMonth, k: usize) -> f64 {
+        let s = self.s;
+        let end = s.start.plus(s.months as i32);
+        let mut cuts = vec![m];
+        for c in &s.people {
+            for at in [c.pk_at, c.ahv.at, Some(c.ahv.reference)].into_iter().flatten() {
+                if m < at && at < end {
+                    cuts.push(at);
+                }
+            }
+        }
+        cuts.sort();
+        cuts.dedup();
+        let mut pensions = 0.0;
+        for (j, &a) in cuts.iter().enumerate() {
+            let b = cuts.get(j + 1).copied().unwrap_or(end);
+            let (ahv, pk) = self.pensions_at(a);
+            pensions += (ahv + pk) * f64::from(a.until(b));
+        }
+        s.need_rest[k] - pensions / self.infl_idx
+    }
+
     fn rebalance(&mut self, reserve: f64, share: f64) {
         let total = self.cash + self.stocks + self.bonds;
         if total - reserve < 0.0 {
@@ -3410,7 +3502,8 @@ impl<'a> Run<'a> {
             // taken over unchanged. If someone is already retired, the strategy splits as before.
             if s.people.iter().any(|p| p.pk_at.is_some_and(|a| a <= m)) {
                 let gap = (s.planned_living(m) + running - s.earned(m, self.infl_idx)).max(0.0);
-                self.rebalance(gap * s.reserve.at(m), s.stock_share.at(m).clamp(0.0, 1.0));
+                let share = self.stock_share(m, 0, gap);
+                self.rebalance(gap * s.reserve.at(m), share);
             }
         }
         {
@@ -3691,6 +3784,11 @@ impl<'a> Run<'a> {
                 }
             }
 
+            // #218: withdrawal of the month for the characteristic curve (expenses minus income).
+            if let Some(t) = &mut self.share {
+                t.push_withdrawal(living + prop_cost + paid - income - s.savings.at(m));
+            }
+
             // Withdrawal strategy: «3-Topf» from retirement, otherwise «Standard»
             match &s.buckets {
                 Some(b) if self.any_retired() => {
@@ -3710,7 +3808,8 @@ impl<'a> Run<'a> {
                         s.cash0 * self.infl_idx
                     };
                     let reserve = target + self.reserved_cash;
-                    self.rebalance(reserve, s.stock_share.at(m).clamp(0.0, 1.0));
+                    let share = self.stock_share(m, k, 0.0);
+                    self.rebalance(reserve, share);
                 }
             }
             // Log an additional application outside January (in January the strategy applies anyway).
