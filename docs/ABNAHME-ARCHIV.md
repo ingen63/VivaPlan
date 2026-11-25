@@ -2150,3 +2150,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #260/AK1 | `cargo clippy --workspace --all-targets -- -D warnings` ohne Befund, lokal und in CI. | ☑ | **gilt** | Job `clippy` | 25.11.2026 ok (lokal und Lauf 45594073984) |
 | #260/AK2 | Test in `measure.rs` rechnet unverändert (`as_chunks::<12>()`). | ☑ | **gilt** | `crates/engine/tests/measure.rs` | 25.11.2026 ok (Engine-Tests grün) |
+
+### #264 Wohnanteil der Lebenshaltungskosten ohne Amortisation
+
+[Issue #264](https://github.com/ingen63/VivaPlan/issues/264) · geschlossen · Umsetzung: 838dc12
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #264/AK1 | Wohnanteil mit Miete, Zins, Nebenkosten, ohne Amortisation; Beispiel ergibt 6'500. | ☑ | **gilt** | `housing::tests::issue_264_ak1_housing_share_without_amortization` | 25.11.2026 ok (Test) |
+| #264/AK2 | Änderung der Amortisation ändert die Lebenshaltung ohne Wohnen nicht. | ☑ | **gilt** | `cash_housing::issue_264_ak2_…`, e2e `ui-planung.spec.js` AK2 | 25.11.2026 ok (Test, e2e) |
+| #264/AK3 | Amortisation fliesst weiter als Ausgabe (Schuldabbau bzw. Einzahlung). | ☑ | **gilt** | `cash_housing::issue_264_ak3_amortization_still_paid` | 25.11.2026 ok (Test) |
+| #264/AK4 | Bestehende Planungen beim Öffnen angepasst, Ergebnis gleich, Hinweis. | ☑ | **gilt** | `cash_housing::issue_264_ak4_…`, `upgrade::tests::issue_264_ak4_map_series_forms` | 25.11.2026 ok (Test; Upgrade mit Marke `flows.amortExcluded`, Golden unverändert) |
+| #264/AK5 | `spending_below_housing` verwendet denselben Wohnanteil. | ☑ | **gilt** | `cash_housing::issue_264_ak5_check_uses_share_without_amortization` | 25.11.2026 ok (Test) |
+| #264/AK6 | Feldtext, Hilfe und `docs/BESCHREIBUNG.md` nennen die neue Abgrenzung. | ☑ | **gilt** | e2e `ui-planung.spec.js` AK6 | 25.11.2026 ok (e2e, Durchsicht) |
