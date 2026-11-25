@@ -2191,3 +2191,15 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #266/AK5 | Golden-Dateien mit Begründung nachgeführt, falls nötig. | ☑ | **gilt** (keine Änderung nötig) | `golden_masters` | 25.11.2026 ok (unverändert) |
 | #266/AK6 | Planung, Kommandozeile und MCP-Server mit denselben Einstellungen; `describe` nennt sie. | ☑ | **gilt** | `appdata`-Tests, `describe` | 25.11.2026 ok (Durchsicht, Tests grün) |
 | #266/AK7 | Hinweis, Werte, Hilfe und BESCHREIBUNG nennen die neuen Werte und die verschiedene Praxis der Banken. | ☑ | **gilt** | e2e AK1 (#266), `make i18n-check` | 25.11.2026 ok (Durchsicht, 4 Sprachen) |
+
+### #267 README in vier Sprachen auf den aktuellen Stand, KI-Anbindung herausstreichen
+
+[Issue #267](https://github.com/ingen63/VivaPlan/issues/267) · geschlossen · Umsetzung: d30a77f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #267/AK1 | Eigener Abschnitt zur KI-Anbindung in allen vier README (Beispielfrage, KI-Programme, Einrichtung, Daten, Planordner und «nur lesen»); Hinweis weit oben. | ☑ | **gilt** | [docs.test.js](../e2e/unit/docs.test.js) `#267/AK1, #267/AK3, #267/AK4` | 25.11.2026 ok (Test, Durchsicht 4 Sprachen) |
+| #267/AK2 | Liste «Was VivaPlan kann» entspricht dem aktuellen Stand; nichts Veraltetes. | ☑ | **gilt** | Durchsicht gegen `CHANGELOG.md`, `docs/BESCHREIBUNG.md` | 25.11.2026 ok (Durchsicht) |
+| #267/AK3 | Installation nennt das `.mcpb`-Paket auf der Release-Seite und stimmt mit den Paketen überein. | ☑ | **gilt** (Assets v1.0.0-beta.5: dmg, mcpb, deb, AppImage, exe, msi; Link auf die Release-Seite allgemein) | [docs.test.js](../e2e/unit/docs.test.js) `#267/AK1, #267/AK3, #267/AK4` | 25.11.2026 ok (Test, `gh release view`) |
+| #267/AK4 | Vier Sprachfassungen mit gleichem Inhalt und gleicher Gliederung; Begriffe wie in der App; «ss», «Sie». | ☑ | **gilt** | [docs.test.js](../e2e/unit/docs.test.js) `#267/AK1, #267/AK3, #267/AK4` (Gliederung) | 25.11.2026 ok (Test, Begriffe aus `i18n/*.json` und Hilfe) |
+| #267/AK5 | Alle Links funktionieren; Bildschirmfotos aktuell oder unverändert. | ☑ | **gilt** (Bilder aus #245 unverändert) | [docs.test.js](../e2e/unit/docs.test.js) `#267/AK5`, `make ui-unit` | 25.11.2026 ok (Test; externe Links 200, Videos `user-attachments` ohne Anmeldung 403, unverändert) |
