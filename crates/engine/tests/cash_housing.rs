@@ -59,7 +59,8 @@ fn errors(v: &Value) -> Vec<String> {
 }
 
 /// House: fix costs 500, mortgage 600'000 at 2 % (interest 1'000), amortization 1'500 per quarter (500 per month),
-/// indirect, so the debt and thus the interest stay the same. Renewal 2042-01 at 2.6 % (interest 1'300).
+/// indirect, so the debt and thus the interest stay the same. Renewal 2042-01 at 2.6 % (interest 1'300). Housing
+/// share 1'500 (interest and fix costs; #264: without the amortization, which is paid in addition).
 fn house(sell: &str) -> Value {
     json!({ "id": "h", "name": "Haus", "status": "owned", "price": 1_000_000, "worth": 1_000_000, "fixCosts": 500, "sell": sell,
         "mortgage": { "tranches": [ { "name": "T", "amount": 600_000, "start": "2037-01", "periods": [
@@ -67,8 +68,8 @@ fn house(sell: &str) -> Value {
             { "type": "fixed", "term": 10, "rate": 0.026, "amort": 1500, "amortMode": "indirect" } ] } ] } })
 }
 
-/// #53/AK3: Input 8'000 including housing costs 2'000: total spending 8'000; interest +300 gives 8'300; rent 2'500
-/// after the sale gives 8'500.
+/// #53/AK3: Input 8'000 including housing costs 1'500: total spending 8'000 plus the amortization 500 (#264); interest
+/// +300 gives 8'800; rent 2'500 after the sale (without amortization) gives 9'000.
 #[test]
 fn issue_53_ak3_real_housing_costs_replace_the_share() {
     let mut v = base();
@@ -76,10 +77,10 @@ fn issue_53_ak3_real_housing_costs_replace_the_share() {
     v["realestate"] = json!({ "properties": [ house("2043-01"),
         { "name": "Miete", "status": "rent", "from": "afterSale", "rent": 2500 } ] });
     let r = run(&v);
-    close(rec(&r, 2040, 1).planned_spending, 6000.0, "Lebenshaltung ohne Wohnen");
-    close(spending_total(&r, 2041), 8000.0, "2041");
-    close(spending_total(&r, 2042), 8300.0, "nach der Erneuerung");
-    close(spending_total(&r, 2044), 8500.0, "mit Miete");
+    close(rec(&r, 2040, 1).planned_spending, 6500.0, "Lebenshaltung ohne Wohnen");
+    close(spending_total(&r, 2041), 8500.0, "2041");
+    close(spending_total(&r, 2042), 8800.0, "nach der Erneuerung");
+    close(spending_total(&r, 2044), 9000.0, "mit Miete");
 }
 
 /// #53/AK4, AK5: A housing share larger than a row is an error; without housing costs nothing changes.
@@ -87,19 +88,19 @@ fn issue_53_ak3_real_housing_costs_replace_the_share() {
 fn issue_53_ak4_ak5_check_and_no_housing() {
     let mut v = base();
     v["realestate"] = json!({ "properties": [ house("never") ] });
-    v["flows"]["spending"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "2044-01", "value": 1999 } ] });
+    v["flows"]["spending"] = json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "2044-01", "value": 1499 } ] });
     let e = errors(&v);
-    assert_eq!(e, vec!["Living expenses (1'999) are lower than the housing costs at the simulation start (2'000) that they include.".to_string()]);
+    assert_eq!(e, vec!["Living expenses (1'499) are lower than the housing costs at the simulation start (1'500) that they include.".to_string()]);
     let i = engine::api::validate(&v)
         .into_iter()
-        .find(|i| i.message.contains("1'999"))
+        .find(|i| i.message.contains("1'499"))
         .unwrap();
     assert_eq!(i.field.as_deref(), Some("flows.spending.rows.1.value"));
-    v["flows"]["spending"]["rows"][1]["value"] = json!(2000);
+    v["flows"]["spending"]["rows"][1]["value"] = json!(1500);
     assert!(errors(&v).is_empty(), "genau der Wohnanteil ist gültig");
     // AK2: same deduction for every row
     let r = run(&v);
-    close(rec(&r, 2044, 1).planned_spending, 0.0, "2'000 − 2'000");
+    close(rec(&r, 2044, 1).planned_spending, 0.0, "1'500 − 1'500");
     // AK5: without property and rent
     let r = run(&base());
     close(rec(&r, 2040, 1).planned_spending, 8000.0, "ohne Wohnkosten");
@@ -112,7 +113,11 @@ fn issue_53_ak6_pillar3a_stays_separate() {
     v["realestate"] = json!({ "properties": [ house("never") ] });
     v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": 1200 }]);
     let r = run(&v);
-    close(spending_total(&r, 2041), 8100.0, "8'000 + 100 Säule 3a");
+    close(
+        spending_total(&r, 2041),
+        8600.0,
+        "8'000 + 500 Amortisation (indirekt, #264) + 100 Säule 3a",
+    );
 }
 
 /// #53/AK7: Older plans are converted on opening; the result stays the same.
@@ -123,13 +128,14 @@ fn issue_53_ak7_upgrade_keeps_the_result() {
     old["realestate"] = json!({ "properties": [ house("never") ] });
     let out = engine::api::upgrade_plan(&old);
     assert_eq!(out.plan["flows"]["spendingIncludesHousing"], true);
-    assert_eq!(out.plan["flows"]["spending"]["rows"][0]["value"], 8000.0);
-    assert_eq!(out.plan["flows"]["spending"]["rows"][1]["value"], 7000.0);
+    // #264: the housing share is 1'500 (without amortization)
+    assert_eq!(out.plan["flows"]["spending"]["rows"][0]["value"], 7500.0);
+    assert_eq!(out.plan["flows"]["spending"]["rows"][1]["value"], 6500.0);
     assert!(
         out.notes
             .iter()
             .any(|n| n
-                .contains("The housing costs at the simulation start (2000 per month) have been added to each value")),
+                .contains("The housing costs at the simulation start (1500 per month) have been added to each value")),
         "{:?}",
         out.notes
     );
@@ -168,7 +174,7 @@ fn issue_53_ak8_spending_factor_on_living_without_housing() {
     v["realestate"] = json!({ "properties": [ house("never") ] });
     v["flows"]["spendingFactor"] = json!(0.5);
     let r = run(&v);
-    close(rec(&r, 2040, 1).planned_spending, 3000.0, "0.5 × (8'000 − 2'000)");
+    close(rec(&r, 2040, 1).planned_spending, 3250.0, "0.5 × (8'000 − 1'500)");
 }
 
 /// #54/AK2: Income equal to spending: until retirement the holdings stay as entered.
@@ -244,4 +250,173 @@ fn issue_54_ak4_ak5_reserve_only_after_retirement() {
         "ab der Pensionierung: 12 Monate ungedeckte Ausgaben",
     );
     close(rec(&a, 2045, 1).cash, 0.0, "Reserve 0");
+}
+
+/// #264: House like [`house`] with the amortization per quarter `amort` and its mode.
+fn house_amort(amort: f64, mode: &str) -> Value {
+    let mut h = house("never");
+    for p in h["mortgage"]["tranches"][0]["periods"].as_array_mut().unwrap() {
+        p["amort"] = json!(amort);
+        p["amortMode"] = json!(mode);
+    }
+    h
+}
+
+/// #264/AK2: Two amortization amounts (and both modes) give the same living costs without housing in every month.
+#[test]
+fn issue_264_ak2_amortization_does_not_change_living_costs() {
+    let living = |amort: f64, mode: &str| {
+        let mut v = base();
+        v["flows"]["income"] = json!(20_000);
+        v["realestate"] = json!({ "properties": [ house_amort(amort, mode) ] });
+        run(&v).records.iter().map(|x| x.planned_spending).collect::<Vec<_>>()
+    };
+    let reference = living(0.0, "direct");
+    close(reference[0], 6500.0, "8'000 − 1'000 Zins − 500 Nebenkosten");
+    for (amort, mode) in [
+        (1500.0, "direct"),
+        (3000.0, "direct"),
+        (1500.0, "indirect"),
+        (3000.0, "indirect"),
+    ] {
+        assert_eq!(living(amort, mode), reference, "{amort} {mode}");
+    }
+}
+
+/// #264/AK3: The amortization still flows into the simulation: direct it lowers the debt, indirect it goes into
+/// pillar 3a; in both cases it is part of the housing costs paid.
+#[test]
+fn issue_264_ak3_amortization_still_paid() {
+    let sim = |amort: f64, mode: &str| {
+        let mut v = base();
+        v["flows"]["income"] = json!(20_000);
+        v["realestate"] = json!({ "properties": [ house_amort(amort, mode) ] });
+        v["pillar3a"] = json!([{ "person": "A", "balance": 0, "rate": 0, "contribution": 0 }]);
+        run(&v)
+    };
+    let (none, direct, indirect) = (sim(0.0, "direct"), sim(1500.0, "direct"), sim(1500.0, "indirect"));
+    // March: first quarterly amortization
+    close(
+        rec(&none, 2040, 3).mortgage - rec(&direct, 2040, 3).mortgage,
+        1500.0,
+        "Schuld direkt",
+    );
+    close(
+        rec(&none, 2040, 3).housing + 1500.0,
+        rec(&direct, 2040, 3).housing,
+        "Wohnkosten direkt",
+    );
+    close(
+        rec(&indirect, 2040, 3).mortgage,
+        rec(&none, 2040, 3).mortgage,
+        "Schuld indirekt unverändert",
+    );
+    close(
+        rec(&indirect, 2040, 12).pillar3a - rec(&none, 2040, 12).pillar3a,
+        6000.0,
+        "Säule 3a indirekt",
+    );
+}
+
+/// #264/AK4: An older plan with living costs including housing (without the marker `amortExcluded`) is lowered by the
+/// amortization of the start month (500 per month) on opening, for every form of the course; the living costs
+/// without housing, and thus the result, stay the same. A second opening changes nothing.
+#[test]
+fn issue_264_ak4_upgrade_keeps_the_living_costs() {
+    let forms = [
+        json!(8000),
+        json!({ "mode": "const", "value": 8000 }),
+        json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 }, { "from": "2044-01", "value": 7000 } ] }),
+        json!({ "mode": "linear", "start": { "at": "start", "value": 9000 }, "end": { "at": "2046-01", "value": 7000 } }),
+        json!({ "mode": "table", "interpolation": "linear", "points": [
+            { "at": "start", "value": 8000 }, { "age": 63, "value": 9000 }, { "at": "2046-06", "value": 6000 } ] }),
+        json!({ "mode": "table", "interpolation": "step", "points": [
+            { "at": "start", "value": 8000 }, { "age": 63, "value": 9000 } ] }),
+        json!({ "mode": "factor", "base": 8000, "factor": { "mode": "table", "interpolation": "linear", "points": [
+            { "at": "start", "value": 1 }, { "age": 65, "value": 0.8 } ] } }),
+        json!({ "mode": "factor", "base": 8000, "factor": { "mode": "timed", "rows": [
+            { "from": "start", "value": 1 }, { "from": "retire", "value": 0.75 } ] } }),
+    ];
+    for spending in forms {
+        let mut old = base();
+        old["flows"]["income"] = json!(20_000);
+        old["flows"]["spending"] = spending.clone();
+        old["realestate"] = json!({ "properties": [ house("never") ] });
+        // Living costs without housing before #264: input − 2'000 (interest, fix costs and amortization)
+        let mut plain = old.clone();
+        plain["flows"]["spendingIncludesHousing"] = json!(false);
+        let before: Vec<f64> = run(&plain)
+            .records
+            .iter()
+            .map(|x| x.planned_spending - 2000.0)
+            .collect();
+
+        let out = engine::api::upgrade_plan(&old);
+        assert_eq!(out.plan["flows"]["amortExcluded"], true);
+        assert!(
+            out.notes
+                .iter()
+                .any(|n| n.contains("lowered by the amortization at the simulation start (500 per month)")),
+            "{spending}: {:?}",
+            out.notes
+        );
+        let after: Vec<f64> = run(&out.plan).records.iter().map(|x| x.planned_spending).collect();
+        assert_eq!(before.len(), after.len());
+        for (i, (a, b)) in before.iter().zip(&after).enumerate() {
+            close(*a, *b, &format!("{spending} Monat {i}"));
+        }
+        // Second opening: nothing left to do
+        let again = engine::api::upgrade_plan(&out.plan);
+        assert!(again.notes.is_empty(), "{:?}", again.notes);
+        assert_eq!(again.plan, out.plan);
+    }
+}
+
+/// #264/AK4: A plan without amortization at the start only gets the marker; a plan before #53 is converted with the
+/// share without amortization.
+#[test]
+fn issue_264_ak4_upgrade_without_adjustment() {
+    let mut v = base();
+    v["realestate"] = json!({ "properties": [ house_amort(0.0, "indirect") ] });
+    let out = engine::api::upgrade_plan(&v);
+    assert_eq!(out.plan["flows"]["amortExcluded"], true);
+    assert_eq!(out.plan["flows"]["spending"], 8000);
+    assert!(
+        !out.notes
+            .iter()
+            .any(|n| n.contains("amortization at the simulation start")),
+        "{:?}",
+        out.notes
+    );
+    // before #53: the share added is 1'500, not 2'000
+    let mut old = base();
+    old["flows"] = json!({ "income": 8000, "spending": 6500 });
+    old["realestate"] = json!({ "properties": [ house("never") ] });
+    let out = engine::api::upgrade_plan(&old);
+    assert_eq!(out.plan["flows"]["spending"], 8000.0);
+    assert_eq!(out.plan["flows"]["amortExcluded"], true);
+    assert!(
+        !out.notes
+            .iter()
+            .any(|n| n.contains("amortization at the simulation start")),
+        "{:?}",
+        out.notes
+    );
+}
+
+/// #264/AK5: The check «living costs below the housing costs» uses the share without amortization (1'500).
+#[test]
+fn issue_264_ak5_check_uses_share_without_amortization() {
+    let mut v = base();
+    v["realestate"] = json!({ "properties": [ house("never") ] });
+    v["flows"]["spending"] = json!(1500);
+    assert!(
+        errors(&v).is_empty(),
+        "genau der Wohnanteil ohne Amortisation ist gültig"
+    );
+    v["flows"]["spending"] = json!(1499);
+    assert_eq!(
+        errors(&v),
+        vec!["Living expenses (1'499) are lower than the housing costs at the simulation start (1'500) that they include.".to_string()]
+    );
 }

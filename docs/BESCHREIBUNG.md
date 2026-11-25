@@ -88,7 +88,9 @@ Der Editor führt durch zwölf Abschnitte:
   hat; das gilt auch für grosse Säule 3a, Berufskosten, Abzüge für Erwerbstätige und Zweitverdienerabzug.
   Ausgeschaltet (Teilpensionierung, Arbeit nach der Pensionierung) gilt die Zeitreihe wie eingegeben.
   Die Lebenshaltungskosten enthalten Miete bzw. Wohnkosten; die App zieht den Wohnanteil zum Simulationsstart ab und
-  rechnet mit den simulierten Wohnkosten (Erneuerung, Verkauf, Miete).
+  rechnet mit den simulierten Wohnkosten (Erneuerung, Verkauf, Miete). Der Wohnanteil umfasst Miete, Hypothekarzins
+  und Nebenkosten, aber keine Amortisation (#264): Sie bildet Vermögen und fliesst in der Simulation als Schuldabbau
+  bzw. Einzahlung in die Säule 3a weiter.
 - **Vermögen & Anlage:** Aktien, Obligationen und Cash sowie die Aktienquote; neben Aktien und Obligationen steht ihr
   Anteil am Portfolio. Cash zählt nicht zum Portfolio; die
   Aktienquote gilt nur für Aktien und Obligationen. Bis zur Pensionierung hält die App so viel Cash wie erfasst (mit

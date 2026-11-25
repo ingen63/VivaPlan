@@ -162,12 +162,38 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
 });
 
 // ---------------------------------------------------------------------------------------------
+test.describe("Housing share without amortization (#264)", () => {
+  test("AK6: label and notice name the housing share without amortization", async ({ page }) => {
+    const errors = await open(page, "flows");
+    await expect(page.locator("#main")).toContainText("Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten (Zins, Nebenkosten; ohne Amortisation)");
+    await expect(page.locator("#main .hint").filter({ hasText: "Wohnanteil zum Simulationsstart" })).toContainText("die Amortisation ist Vermögensbildung und zählt nicht dazu");
+    await noErrors(page, errors);
+  });
+
+  test("AK2: changing the amortization leaves the housing share and the living costs without housing unchanged", async ({ page }) => {
+    const errors = await open(page);
+    const living = await page.evaluate(async () => {
+      const share = async amort => {
+        const s = JSON.parse(JSON.stringify(state));
+        for (const p of s.realestate.properties) for (const t of p.mortgage?.tranches ?? []) for (const d of t.periods) d.amort = amort;
+        const r = await Engine.call("preview", { plan: s });
+        return r.result.records.slice(0, 12).map(x => x.plannedSpending);
+      };
+      return [await share(0), await share(3000)];
+    });
+    expect(living[0][0]).toBeCloseTo(9700 - 1200, 6);
+    expect(living[0]).toEqual(living[1]);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
 test.describe("Living costs including housing and cash (#53, #54)", () => {
   test("#53/AK1, AK2: label including housing costs, notice with the housing share at the simulation start", async ({ page }) => {
     const errors = await open(page, "flows");
-    await expect(page.locator("#main")).toContainText("Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten (Zins, Amortisation, Nebenkosten)");
-    // Example plan: housing costs at the simulation start 1'700 per month
-    await expect(page.locator("#main .hint").filter({ hasText: "Wohnanteil zum Simulationsstart" })).toContainText("1'700");
+    await expect(page.locator("#main")).toContainText("Lebenshaltungskosten / Monat inklusive Miete bzw. Wohnkosten");
+    // Example plan: housing costs at the simulation start 1'200 per month (#264: without the amortization of 500)
+    await expect(page.locator("#main .hint").filter({ hasText: "Wohnanteil zum Simulationsstart" })).toContainText("1'200");
     await noErrors(page, errors);
   });
 
@@ -178,7 +204,7 @@ test.describe("Living costs including housing and cash (#53, #54)", () => {
       s.flows.spending = { mode: "const", value: 1000 };
       return (await Engine.call("validate", { plan: s })).map(i => msgText(i));
     });
-    expect(issues).toContain("Die Lebenshaltungskosten (1'000) sind kleiner als die Wohnkosten zum Simulationsstart (1'700), die sie enthalten.");
+    expect(issues).toContain("Die Lebenshaltungskosten (1'000) sind kleiner als die Wohnkosten zum Simulationsstart (1'200), die sie enthalten.");
     await noErrors(page, errors);
   });
 
@@ -205,10 +231,10 @@ test.describe("Living costs including housing and cash (#53, #54)", () => {
     await page.locator("#fileInput").setInputFiles(file);
     await expect(page.locator("#ask")).toBeVisible();
     const text = await page.locator("#askText").innerText();
-    expect(text).toContain("Die Wohnkosten zum Simulationsstart (1700 pro Monat) sind zu jedem Wert addiert");
+    expect(text).toContain("Die Wohnkosten zum Simulationsstart (1200 pro Monat) sind zu jedem Wert addiert");
     expect(text).toContain("Cash wird neu bis zur Pensionierung (Bezug Pensionskasse) auf dem erfassten Betrag gehalten");
     await page.locator("#ask button[value='ok']").click();
-    expect(await page.evaluate(() => [state.flows.spendingIncludesHousing, state.flows.spending.value])).toEqual([true, 6700]);
+    expect(await page.evaluate(() => [state.flows.spendingIncludesHousing, state.flows.spending.value])).toEqual([true, 6200]); // #264: share without amortization
     fs.rmSync(file);
     await noErrors(page, errors);
   });

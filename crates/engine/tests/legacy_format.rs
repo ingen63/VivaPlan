@@ -96,7 +96,9 @@ fn rplan_stays_unchanged_and_computes_like_the_vplan() {
     let upgraded = api::upgrade_plan(&rplan).plan;
     assert_eq!(upgraded["format"], FORMAT);
     assert_eq!(upgraded, api::upgrade_plan(&new_plan).plan);
-    assert_eq!(result(&rplan), result(&new_plan));
+    // #264: the frozen file still deducts the amortization with the housing share; the takeover on opening lowers its
+    // living costs, so the results are compared after it.
+    assert_eq!(result(&upgraded), result(&new_plan));
 }
 
 /// #44: New files write `vivaplan/1`, even if the plan still carries the old identifier.

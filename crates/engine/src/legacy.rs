@@ -247,6 +247,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         extras,
         // In the old program spending was without housing costs; the takeover on opening converts it (#53).
         spending_includes_housing: false,
+        amort_excluded: false,
         spending_factor: None,
     };
 

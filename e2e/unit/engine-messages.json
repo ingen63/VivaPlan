@@ -5838,6 +5838,14 @@
     "text": "Living expenses now include housing costs. The housing costs at the simulation start (12346 per month) have been added to each value; the result stays the same."
   },
   {
+    "code": "note_amort_excluded",
+    "params": {
+      "amort": 12345.678
+    },
+    "template": "The housing costs contained in the living expenses no longer include the amortization, which builds wealth. The living expenses have therefore been lowered by the amortization at the simulation start ({amort:fix0} per month); the result stays the same.",
+    "text": "The housing costs contained in the living expenses no longer include the amortization, which builds wealth. The living expenses have therefore been lowered by the amortization at the simulation start (12346 per month); the result stays the same."
+  },
+  {
     "code": "note_milestone_added",
     "params": {
       "name": {

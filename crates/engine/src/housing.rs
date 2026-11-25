@@ -2,8 +2,9 @@
 //!
 //! The entered living costs include rent or the monthly property costs. For the simulation the
 //! housing share contained in them is deducted and replaced by the simulated housing costs. The housing share is the
-//! housing costs in the start month as a monthly average: rent, fix costs, mortgage interest (debt × rate / 12) and
-//! amortization (quarterly amount / 3), direct and indirect. SARON is the plan's fixed value in the start month.
+//! housing costs in the start month as a monthly average: rent, fix costs and mortgage interest (debt × rate / 12).
+//! #264: amortization (direct or indirect) builds wealth and is not part of the housing share; it stays an expense of
+//! the simulation. SARON is the plan's fixed value in the start month.
 
 use crate::model::{AfterLast, Plan, PropertyStatus, RateKind};
 use crate::resolve::{Curve, Resolver};
@@ -11,11 +12,25 @@ use crate::time::YearMonth;
 
 /// Housing costs in the start month in prices of the start month (0 without property and rent).
 pub fn start_housing(plan: &Plan, r: &Resolver) -> f64 {
-    let Ok(start) = r.milestone("start") else { return 0.0 };
+    start_costs(plan, r).0
+}
+
+/// #264: Amortization in the start month as a monthly average (quarterly amount / 3), direct and indirect. Before #264
+/// it was part of the housing share; [`crate::upgrade`] lowers the living costs of older plans by it.
+pub fn start_amortization(plan: &Plan, r: &Resolver) -> f64 {
+    start_costs(plan, r).1
+}
+
+/// Housing share and amortization in the start month.
+fn start_costs(plan: &Plan, r: &Resolver) -> (f64, f64) {
+    let Ok(start) = r.milestone("start") else {
+        return (0.0, 0.0);
+    };
     let saron = Curve::compile(&plan.returns.fixed.saron, r)
         .map_or(0.0, |c| c.at(start))
         .max(0.0);
     let mut sum = 0.0;
+    let mut amort = 0.0;
     for p in &plan.realestate.properties {
         let resolve = |t: &Option<crate::time::TimeRef>| t.as_ref().and_then(|t| r.resolve(t).ok().flatten());
         match p.status {
@@ -55,7 +70,8 @@ pub fn start_housing(plan: &Plan, r: &Resolver) -> f64 {
                                 RateKind::Fixed => d.rate,
                                 RateKind::Saron => saron + d.margin,
                             };
-                            sum += t.amount * rate / 12.0 + d.amort / 3.0;
+                            sum += t.amount * rate / 12.0;
+                            amort += d.amort / 3.0;
                             break;
                         }
                         if m > start {
@@ -68,7 +84,7 @@ pub fn start_housing(plan: &Plan, r: &Resolver) -> f64 {
             }
         }
     }
-    sum
+    (sum, amort)
 }
 
 #[cfg(test)]
@@ -96,13 +112,14 @@ mod tests {
         start_housing(&p, &Resolver::new(&p).unwrap())
     }
 
-    // #53/AK2, AK3: interest 1'000, amortization 500, fix costs 500 = housing share 2'000.
+    // #53/AK2, AK3, #264/AK1: interest 1'000 and fix costs 500 = housing share 1'500; the amortization (500 per month)
+    // does not count.
     #[test]
     fn issue_53_owned_property() {
         let house = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 500, "sell": "never",
             "mortgage": { "tranches": [ { "amount": 600_000, "start": "2035-01",
                 "periods": [ { "type": "fixed", "term": 10, "rate": 0.02, "amort": 1500 } ] } ] } }]);
-        assert!((w(house) - 2000.0).abs() < 1e-9);
+        assert!((w(house) - 1500.0).abs() < 1e-9);
         // SARON with margin: 600'000 × (1 % + 1 %) / 12 = 1'000
         let saron = json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 0,
             "mortgage": { "tranches": [ { "amount": 600_000, "start": "2039-01",
@@ -170,5 +187,24 @@ mod tests {
             w(json!([{ "name": "M", "status": "rent", "from": "2030-01", "until": "2041-01", "rent": 2500 }])),
             2500.0
         );
+    }
+
+    // #264/AK1: spending 8'000 with interest 1'000, fix costs 500 and amortization 500 (direct or indirect) leaves
+    // 6'500 without housing, whatever the amortization.
+    #[test]
+    fn issue_264_ak1_housing_share_without_amortization() {
+        let house = |amort: f64, mode: &str| {
+            json!([{ "name": "H", "status": "owned", "price": 1, "fixCosts": 500, "sell": "never",
+                "mortgage": { "tranches": [ { "amount": 600_000, "start": "2035-01",
+                    "periods": [ { "type": "fixed", "term": 10, "rate": 0.02, "amort": amort, "amortMode": mode } ] } ] } }])
+        };
+        for (amort, mode) in [
+            (1500.0, "direct"),
+            (1500.0, "indirect"),
+            (0.0, "direct"),
+            (6000.0, "indirect"),
+        ] {
+            assert!((8000.0 - w(house(amort, mode)) - 6500.0).abs() < 1e-9, "{amort} {mode}");
+        }
     }
 }

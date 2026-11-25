@@ -611,6 +611,15 @@ Reihenfolge pro Monat:
    (`PersonCfg::income_end`, `Simulator::person_earned`), unabhängig von `pension.pk.at`. Alles, was das Erwerbseinkommen
    nutzt (Geldflüsse, Tragbarkeit, Berufskosten, Variante `working`, Zweitverdienerabzug, grosse Säule 3a, Netto-Bedarf),
    geht über `person_earned`. Die Warnung `income_after_pk` entfällt dann für diese Person.
+   **Wohnanteil (#53, #264):** Mit `flows.spendingIncludesHousing` zieht `Simulator::planned_living` von jedem Wert
+   der Lebenshaltung den Wohnanteil des Startmonats ab (`housing::start_housing`): Miete, Nebenkosten und Hypothekarzins
+   (Schuld × Satz / 12, SARON aus dem festen Wert zum Start), **ohne Amortisation** (direkt und indirekt); diese bildet
+   Vermögen und fliesst weiter als Schuldabbau bzw. Einzahlung in die Säule 3a in die Wohnkosten der Simulation. Die
+   Prüfung `spending_below_housing` verwendet denselben Wert. Planungen ohne die Marke `flows.amortExcluded` zogen die
+   Amortisation (Quartalsbetrag / 3, `housing::start_amortization`) mit ab: `upgrade.rs` senkt bei ihnen jeden Wert der
+   Lebenshaltung um diesen Betrag (Hinweis `note_amort_excluded`), für alle Verlaufsformen (`map_series`: Werte
+   `x − a`; beim Faktorverlauf Basis `b − a` und Faktoren `(b·f − a) / (b − a)`), sodass das Ergebnis gleich bleibt;
+   die 0 vor der ersten Zeile eines Stufenverlaufs bleibt. Ohne `spendingIncludesHousing` setzt es nur die Marke.
    **13. AHV-Rente (#190):** ab 2026 im Dezember zusätzlich zur AHV des Monats; Höhe 1/12 der von Januar bis Dezember
    ausbezahlten AHV des Haushalts (nach dem Plafond für Ehepaare, keine zweite Deckelung), je Monat auf Rappen, die Summe
    kaufmännisch auf ganze Franken gerundet (KS 13. AR Rz 4001–4005). Monate des Startjahrs vor dem Simulationsstart zählen

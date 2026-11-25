@@ -10,7 +10,8 @@
       "mode": "const",
       "value": 0
     },
-    "spendingIncludesHousing": true
+    "spendingIncludesHousing": true,
+    "amortExcluded": true
   },
   "format": "vivaplan/1",
   "household": {

@@ -19,6 +19,9 @@
 //!   for married couples after the cap).
 //! - #250: The household gets the marker `marriedNoted`. Before, `married` had no effect for a single person (and was
 //!   true by default); such a plan is taken over as single (`married` = false) with a note, so it computes as before.
+//! - #264: The living costs get the marker `amortExcluded`. A plan whose living costs include the housing costs
+//!   counted the amortization as part of the housing share; its living costs are lowered by the amortization of the
+//!   start month (with a note), so that the result stays the same.
 
 use std::borrow::Cow;
 
@@ -85,6 +88,8 @@ pub fn upgrade(v: &mut Value) -> Vec<Message> {
     // #154: last, because `housing` needs a readable plan, and the steps before can only make it readable
     // (e.g. an invalid `returns.series`). Otherwise only the next opening would catch up on the adjustment.
     housing(v, &mut notes);
+    // #264: after `housing`, which marks the plans it converts.
+    amort_excluded(v, &mut notes);
     notes
 }
 
@@ -323,6 +328,8 @@ fn housing(v: &mut Value, notes: &mut Vec<Message>) {
     };
     let w = crate::housing::start_housing(&plan, &r);
     v["flows"]["spendingIncludesHousing"] = json!(true);
+    // #264: the share added here already excludes the amortization.
+    v["flows"]["amortExcluded"] = json!(true);
     // #54/AK8: same marking of an older plan (before #53/#54).
     notes.push(msg!(note_cash));
     if w <= 0.0 {
@@ -349,6 +356,81 @@ fn housing(v: &mut Value, notes: &mut Vec<Message>) {
         }
     }
     notes.push(msg!(note_spending_includes_housing, housing = w));
+}
+
+/// #264: Marker `flows.amortExcluded`. If it is missing and the living costs include the housing costs, the plan
+/// deducted the amortization of the start month as part of the housing share; every value of the living costs is
+/// lowered by it, so that the living costs without housing stay the same. A plan without housing costs in the living
+/// costs only gets the marker, so that switching them on later does not lower anything.
+fn amort_excluded(v: &mut Value, notes: &mut Vec<Message>) {
+    let Some(f) = v.get("flows").and_then(Value::as_object) else {
+        return;
+    };
+    if f.get("amortExcluded").and_then(Value::as_bool) == Some(true) {
+        return;
+    }
+    if f.get("spendingIncludesHousing").and_then(Value::as_bool) == Some(true) {
+        // An unreadable plan stays unmarked; a later opening catches up on the adjustment.
+        let Ok(plan) = serde_json::from_value::<Plan>(v.clone()) else {
+            return;
+        };
+        let Ok(r) = crate::resolve::Resolver::new(&plan) else {
+            return;
+        };
+        let a = crate::housing::start_amortization(&plan, &r);
+        if a > 0.0 {
+            map_series(&mut v["flows"]["spending"], 1.0, -a);
+            notes.push(msg!(note_amort_excluded, amort = a));
+        }
+    }
+    v["flows"]["amortExcluded"] = json!(true);
+}
+
+/// #264: Maps every value of a series (JSON) to `c · x + d`, so that the series follows the map at every point in
+/// time (all forms of #217 interpolate linearly or in steps). A factor course keeps its form: the base becomes
+/// `c · base + d` and the factors follow; with a base of 0 the factor course becomes the series itself. The 0 before
+/// the first row of a series in steps stays.
+fn map_series(s: &mut Value, c: f64, d: f64) {
+    let map = |x: &mut Value| {
+        if let Some(n) = x.as_f64() {
+            *x = json!(c * n + d);
+        }
+    };
+    if s.is_number() {
+        map(s);
+        return;
+    }
+    if s.get("mode").and_then(Value::as_str) == Some("factor") {
+        let base = s.get("base").and_then(Value::as_f64).unwrap_or(0.0);
+        let new = c * base + d;
+        let Some(inner) = s.get_mut("factor") else {
+            return;
+        };
+        if new.abs() > 1e-9 {
+            map_series(inner, c * base / new, d / new);
+            s["base"] = json!(new);
+        } else {
+            let mut inner = inner.take();
+            map_series(&mut inner, c * base, d);
+            *s = inner;
+        }
+        return;
+    }
+    if let Some(x) = s.get_mut("value") {
+        map(x);
+    }
+    for key in ["start", "end"] {
+        if let Some(x) = s.get_mut(key).and_then(|p| p.get_mut("value")) {
+            map(x);
+        }
+    }
+    for key in ["rows", "points"] {
+        for row in s.get_mut(key).and_then(Value::as_array_mut).into_iter().flatten() {
+            if let Some(x) = row.get_mut("value") {
+                map(x);
+            }
+        }
+    }
 }
 
 /// #51: fixed milestones per person, names and limits. #170: the fixed milestones store no name; the German
@@ -939,5 +1021,59 @@ mod tests {
         assert!(!upgrade(&mut v).iter().any(|n| n == MARRIED_SINGLE_NOTE));
         assert_eq!(v["household"]["married"], true);
         assert_eq!(v["household"]["marriedNoted"], true);
+    }
+
+    // #264/AK4: every form of a course follows `c · x + d`; a factor course keeps its form, with a base that becomes 0
+    // it is replaced by the scaled factors; the 0 before the first row stays.
+    #[test]
+    fn issue_264_ak4_map_series_forms() {
+        let map = |mut s: Value| {
+            map_series(&mut s, 1.0, -500.0);
+            s
+        };
+        assert_eq!(map(json!(8000)), json!(7500.0));
+        assert_eq!(
+            map(json!({ "mode": "const", "value": 8000 })),
+            json!({ "mode": "const", "value": 7500.0 })
+        );
+        assert_eq!(
+            map(
+                json!({ "mode": "linear", "start": { "at": "start", "value": 9000 }, "end": { "age": 70, "value": 7000 } })
+            ),
+            json!({ "mode": "linear", "start": { "at": "start", "value": 8500.0 }, "end": { "age": 70, "value": 6500.0 } })
+        );
+        assert_eq!(
+            map(
+                json!({ "mode": "table", "points": [ { "at": "start", "value": 8000 }, { "age": 70, "value": 6000 } ] })
+            ),
+            json!({ "mode": "table", "points": [ { "at": "start", "value": 7500.0 }, { "age": 70, "value": 5500.0 } ] })
+        );
+        assert_eq!(
+            map(json!({ "mode": "timed", "rows": [ { "from": "start", "value": 8000 } ] })),
+            json!({ "mode": "timed", "rows": [ { "from": "start", "value": 7500.0 } ] })
+        );
+        // base 8'000 → 7'500; factor 0.8 → (6'400 − 500) / 7'500
+        let f = map(
+            json!({ "mode": "factor", "base": 8000, "factor": { "mode": "timed", "rows": [
+            { "from": "start", "value": 1 }, { "from": "retire", "value": 0.8 } ] } }),
+        );
+        assert_eq!(f["base"], 7500.0);
+        assert_eq!(f["factor"]["rows"][0]["value"], 1.0);
+        assert!((f["factor"]["rows"][1]["value"].as_f64().unwrap() - 5900.0 / 7500.0).abs() < 1e-12);
+        // base equal to the amount: the factors times the base minus the amount
+        let zero = map(json!({ "mode": "factor", "base": 500, "factor": { "mode": "const", "value": 2 } }));
+        assert_eq!(zero, json!({ "mode": "const", "value": 500.0 }));
+        // nested factor courses and unknown content
+        let nested =
+            map(json!({ "mode": "factor", "base": 1000, "factor": { "mode": "factor", "base": 2, "factor": 1 } }));
+        let inner = &nested["factor"];
+        let value =
+            nested["base"].as_f64().unwrap() * inner["base"].as_f64().unwrap() * inner["factor"].as_f64().unwrap();
+        assert!((value - 1500.0).abs() < 1e-9, "{nested}");
+        assert_eq!(
+            map(json!({ "mode": "factor", "base": 1000 })),
+            json!({ "mode": "factor", "base": 1000 })
+        );
+        assert_eq!(map(json!("x")), json!("x"));
     }
 }

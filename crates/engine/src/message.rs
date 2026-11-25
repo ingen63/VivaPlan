@@ -938,6 +938,7 @@ codes! {
     note_pictet_both => "The index “Switzerland (Pictet)” is no longer included for licensing reasons. The investment strategy now uses {first} and {second}; please check under “Wealth & investment”. The result changes.",
     note_own_series => "The custom time series “{name}” is no longer supported. The investment strategy is now “World (JST)” with Swiss Confederation bonds; please check under “Wealth & investment”. The result changes.",
     note_spending_includes_housing => "Living expenses now include housing costs. The housing costs at the simulation start ({housing:fix0} per month) have been added to each value; the result stays the same.",
+    note_amort_excluded => "The housing costs contained in the living expenses no longer include the amortization, which builds wealth. The living expenses have therefore been lowered by the amortization at the simulation start ({amort:fix0} per month); the result stays the same.",
     note_milestone_added => "The milestone “{name}” was missing and is now set to {years} years.",
     note_milestone_renamed => "The milestone “{old}” is now called “{name}”.",
     note_milestone_age_limited => "“{name}” was at {age} years, outside the limits of {lo} to {hi} years; now {years} years.",

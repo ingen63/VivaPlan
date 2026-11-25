@@ -566,6 +566,11 @@ pub struct Flows {
     /// field is missing (older plans), the living costs apply without housing costs.
     #[serde(default, skip_serializing_if = "is_false")]
     pub spending_includes_housing: bool,
+    /// #264: Marker of [`crate::upgrade`]: the housing share contains no amortization. An older plan with
+    /// `spending_includes_housing` and without the marker gets its living costs lowered by the amortization of the
+    /// start month when it is opened.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub amort_excluded: bool,
     /// Factor on the living costs without housing (variation «Ausgaben-Faktor»); missing: 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub spending_factor: Option<f64>,

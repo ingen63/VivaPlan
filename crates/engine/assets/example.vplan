@@ -30,23 +30,24 @@
       "rows": [
         {
           "from": "start",
-          "value": 10200.0
+          "value": 9700.0
         },
         {
           "from": "retire",
-          "value": 9200.0
-        },
-        {
-          "from": "sell_house",
           "value": 8700.0
         },
         {
+          "from": "sell_house",
+          "value": 8200.0
+        },
+        {
           "from": "2050-06",
-          "value": 7700.0
+          "value": 7200.0
         }
       ]
     },
-    "spendingIncludesHousing": true
+    "spendingIncludesHousing": true,
+    "amortExcluded": true
   },
   "format": "vivaplan/1",
   "household": {
