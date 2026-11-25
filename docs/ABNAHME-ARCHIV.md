@@ -2164,6 +2164,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #264/AK5 | `spending_below_housing` verwendet denselben Wohnanteil. | ☑ | **gilt** | `cash_housing::issue_264_ak5_check_uses_share_without_amortization` | 25.11.2026 ok (Test) |
 | #264/AK6 | Feldtext, Hilfe und `docs/BESCHREIBUNG.md` nennen die neue Abgrenzung. | ☑ | **gilt** | e2e `ui-planung.spec.js` AK6 | 25.11.2026 ok (e2e, Durchsicht) |
 
+### #265 Reale Endvermögen je Perzentil nicht aufsteigend
+
+[Issue #265](https://github.com/ingen63/VivaPlan/issues/265) · geschlossen · Umsetzung: c9df8b7
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #265/AK1 | Rechenkern liefert Perzentile nach nominaler und realer Ordnung mit Lauf, Endvermögen und Ereignissen. | ☑ | **gilt** | `batch::tests::issue_265_ak1_…`, `simulation::issue_265_ak3_…` | 25.11.2026 ok (Tests) |
+| #265/AK2 | Beim Öffnen steht der Umschalter auf «Heutige Kaufkraft». | ☑ | **gilt** | e2e `ui-ergebnisse.spec.js` AK2 (#265) | 25.11.2026 ok (e2e) |
+| #265/AK3 | Tabelle, Einzelläufe, Jahreswerte, Immobilienverkäufe und Kennzahlen folgen der gewählten Ordnung; Werte steigen in beiden Stellungen. | ☑ | **gilt** | e2e AK3 (#265), `ui-optimierung.spec.js` #24 | 25.11.2026 ok (e2e) |
+| #265/AK4 | Vergleich und Szenarien (realer Median) folgen derselben Regel; Hinweis angepasst. | ☑ | **gilt** | `simulation::issue_265_ak4_…`, e2e `ui-vergleich.spec.js` #126/AK2 | 25.11.2026 ok (Test, e2e) |
+| #265/AK5 | Ältere Ergebnisse ohne reale Ordnung: Hinweis und bisherige Darstellung, ohne Fehler. | ☑ | **gilt** | e2e AK5 (#265), `ui-vergleich.spec.js` #128 | 25.11.2026 ok (e2e) |
+| #265/AK6 | Bericht und Kurzfassung (digest, MCP) nennen die reale Ordnung und welche gilt. | ☑ | **gilt** | `digest::issue_265_ak6_…`, `report::tests::issue_265_ak6_…`, MCP `issue_265_ak6_…` | 25.11.2026 ok (Tests) |
+| #265/AK7 | Hilfe und BESCHREIBUNG erklären die Ordnung; Golden mit `Golden: #265` nachgeführt. | ☑ | **gilt** | `golden_masters`, `#helpcheck`, `make i18n-check` | 25.11.2026 ok (Durchsicht 4 Sprachen, nur neue Golden-Felder) |
+
 ### #266 Vermögensverzehr und Belehnung ab der Pensionierung in der Tragbarkeit
 
 [Issue #266](https://github.com/ingen63/VivaPlan/issues/266) · geschlossen · Umsetzung: 051b363, d06e4b2
