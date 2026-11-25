@@ -305,6 +305,8 @@ fn summary_only(mut r: SimResult) -> SimResult {
     r.property_events = vec![];
     r.bucket_refills = vec![];
     r.renewals = vec![];
+    // #249: the taxable wealth per tax year is only for the preview; kept per path it exceeds the memory limit (#139).
+    r.wealth_tax = vec![];
     r
 }
 
@@ -674,6 +676,21 @@ mod tests {
             pillar3a: vec![],
             wealth_tax: vec![],
         }
+    }
+
+    // #249, #139/AK4: A run of many does not keep the taxable wealth per tax year (preview only).
+    #[test]
+    fn issue_249_summary_only_drops_wealth_tax() {
+        let mut r = result(|_| {});
+        r.wealth_tax = vec![crate::sim::WealthTaxYear {
+            year: 2030,
+            liquid: 1.0,
+            properties: vec![],
+            ongoing: 0.0,
+            one_off: 0.0,
+            taxable: 1.0,
+        }];
+        assert!(summary_only(r).wealth_tax.is_empty());
     }
 
     // #40: Number of paths between 1 and 1'000'000 (limits included); `is_empty` follows the length.
