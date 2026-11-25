@@ -41,7 +41,8 @@ test.describe("Additional acceptance tests", () => {
   });
 
   test("#109/AK1, AK2, AK3: tax of the tax year in the row of the year, total is the sum, capital and real estate gains tax in the year of the withdrawal", async ({ page }) => {
-    const errors = await open(page, "results/nosweep");
+    // #265: the amounts of the records are nominal
+    const errors = await open(page, "results/nosweep/nominal");
     await page.getByRole("button", { name: "Jahreswerte" }).click();
     await page.locator('button[data-action="tax-cols"]').click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
@@ -193,6 +194,7 @@ test.describe("Additional acceptance tests", () => {
   test("#24/AK5, #24/AK6: notice on different final wealth; single run with variations as before", async ({ page }) => {
     const errors = await open(page);
     const out = await page.evaluate(async () => {
+      realView = false;   // #265: the nominal order of the scenario table
       state.returns.source = "fixed"; state.returns.bootstrap.paths = 100;
       state.scenarios.sweeps = [{ param: "wealth.stockShare", from: 0.3, to: 0.6, step: 0.3 }, { param: "pension.pk.lumpsum", from: 0.2, to: 0.6, step: 0.4 }];
       // Single run (AK6): the selected level shows the run of this level, as the scenario table names it

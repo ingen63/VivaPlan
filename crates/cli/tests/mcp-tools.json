@@ -167,7 +167,7 @@
       "openWorldHint": false,
       "readOnlyHint": true
     },
-    "description": "Details of a result of the session. view: summary (key figures and the result in words, default), yearly (one row per calendar year, nominal or real), events (events of the run), bands (wealth per year at the percentiles over all runs), variations (key figures per combination of the variations). With several runs percentile picks the run for yearly and events (0 worst, 1, 5, 50, 95, 99; default 50). from and to limit the calendar years.",
+    "description": "Details of a result of the session. view: summary (key figures and the result in words, default), yearly (one row per calendar year, nominal or real), events (events of the run), bands (wealth per year at the percentiles over all runs), variations (key figures per combination of the variations). With several runs percentile picks the run for yearly and events (0 worst, 1, 5, 50, 95, 99; default 50); the runs of the percentiles are ordered by the nominal end wealth, with real by the end wealth in today's purchasing power (the run of a percentile may differ). from and to limit the calendar years.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -187,7 +187,7 @@
           "type": "integer"
         },
         "real": {
-          "description": "Values in today's purchasing power instead of nominal (yearly, bands).",
+          "description": "Values in today's purchasing power instead of nominal (yearly, bands); yearly and events take the run of the percentile in the real order.",
           "type": "boolean"
         },
         "result": {

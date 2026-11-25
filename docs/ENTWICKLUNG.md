@@ -291,7 +291,12 @@ in `links.json`. Einführungsvideos (#240): je Länge und Sprache eine Kennung `
 die Oberfläche wählt die Sprache der Einstellung (`data-action="video"`, in der Hilfe ein Link mit dem Ziel `video:2min`).
 
 **Ergebnisse:** Registerkarten Übersicht, Grafiken, Einzelne Läufe (5./50./95. Perzentil), Szenarien, Jahreswerte;
-alle Beträge wahlweise nominal oder in heutiger Kaufkraft (Preise des Simulationsstarts). Grafiken eines Laufs:
+alle Beträge wahlweise nominal oder in heutiger Kaufkraft (Preise des Simulationsstarts); beim Öffnen heutige
+Kaufkraft (#265). Die Läufe der Perzentile folgen der Darstellung: `batch::summarize` liefert `percentiles` (nach dem
+nominalen Endvermögen geordnet) und `percentilesReal` (nach dem realen), `BatchOut` dazu `details` und `detailsReal`
+mit den Detailläufen je Ordnung (ein Lauf in beiden Ordnungen wird einmal gerechnet). Die Oberfläche wählt die Ordnung
+nach dem Umschalter (`pctsOf`, `batchDetails`); Ergebnisse vor #265 ohne reale Ordnung zeigen in heutiger Kaufkraft das
+reale Endvermögen der nominal geordneten Läufe mit einem Hinweis. Grafiken eines Laufs:
 Vermögensverlauf, liquides Vermögen nach Anlage (Beträge oder Anteile), Einnahmen und Ausgaben pro Jahr,
 Entnahmerate, Immobilien (Wert, Hypothek, Eigenkapital), Vorsorge. Bei mehreren Läufen zusätzlich: Bandbreite,
 Wahrscheinlichkeit, dass das Geld reicht (über die Zeit), Verteilung von Endvermögen und Vermögen bei Pensionierung,
@@ -407,7 +412,8 @@ einmal und werden für alle Varianten verwendet:
   gezogenen Jahr, die übrigen aus dem Jahr davor). Parametrisch: 12 Monate aus demselben Zufallsstrom, vor dem Pfad
   gezogen. Fixe Renditen: der Satz des Startmonats.
 - Pfad *i* entsteht immer aus (`seed`, *i*): gleiche Einstellungen ⇒ gleiche Ergebnisse; alle Szenarien verwenden
-  dieselben Pfade. Die Detailansichten (5./50./95. Perzentil) rechnen den betreffenden Pfad exakt nach.
+  dieselben Pfade. Die Detailansichten (5./50./95. Perzentil) rechnen den betreffenden Pfad exakt nach (in heutiger
+  Kaufkraft den Pfad der realen Ordnung, #265).
 - «Alle historischen Startzeitpunkte» unterschätzt die Streuung: 864 Startmonate aus 104 Jahren überlappen stark
   (nur gut drei unabhängige 32-Jahres-Abschnitte). Der Bootstrap zeigt deshalb breitere Bandbreiten.
 
@@ -417,6 +423,9 @@ einmal und werden für alle Varianten verwendet:
 `returns.startDate` (Monat, Schritt in Monaten), `milestone.retire` (Monat; setzt die Pensionierung als Datum),
 `flows.spendingFactor` (Faktor auf die Lebenshaltungskosten ohne Wohnanteil). Jede Kombination (technisch höchstens 1'000'000) wird mit allen Pfaden
 gerechnet: Erfolgsquote, Vermögen bei Pensionierung (Median), Endvermögen 5./50./95. Perzentil, früheste Erschöpfung.
+Der reale Median `p50Real` ist das reale Endvermögen des 50. Perzentils der realen Ordnung; `percentilesReal` nennt
+die Läufe dieser Ordnung mit Pfadnummer, damit «Stufe wählen» in heutiger Kaufkraft die Läufe der realen Ordnung
+nachrechnet (#265).
 
 ## Messebene: Kennzahlen aus Bausteinen (#214)
 
@@ -509,7 +518,8 @@ Felder, die in Ergebnissen älterer Versionen fehlen, gelten als fehlend oder 0)
 - **`api::digest(result)`** (Befehl `digest`): Kennzahlen und Befund. Der Befund ist eine Kategorie, kein Satz:
   `verdict` `lasts`/`depleted` (ein Lauf) oder `high`/`medium`/`low` (Erfolgsquote, gerundet auf 0,1 %: ab 95,0 % hoch,
   ab 80,0 % mittel, #72), `next` `scenarios` oder `optimize`, dazu Erfolgsquote, (früheste) Erschöpfung und Endvermögen je
-  Perzentil nominal und real (bei Ergebnissen vor #126 real aus den Detailläufen). Die Oberfläche formuliert den Satz in
+  Perzentil: `nominal` aus der nominalen, `real` aus der realen Ordnung (#265; `realOrder` sagt, welche gilt: bei
+  Ergebnissen vor #265 `false`, real dann vom nominal geordneten Lauf, vor #126 aus den Detailläufen). Die Oberfläche formuliert den Satz in
   ihrer Sprache (`verdictHtml`), Kommandozeile und MCP-Server (#210) englisch.
 - **`api::compare(items)`** (Befehl `compare_results`, `[{result, plan}]`): je Ergebnis Art, Kurzfassung, Erschöpfung
   (Monat, `null` = in keinem Lauf, fehlt ohne Lauf) und Anteil der Läufe je Alter bei Erschöpfung; dazu die Perzentile

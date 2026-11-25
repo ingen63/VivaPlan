@@ -109,7 +109,7 @@ Chaque sortie commence par `format` et la version. Les montants sont arrondis à
 
 **`single`** (une trajectoire de rendement): indicateurs de la simulation (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` sous forme de tableau avec `columns` et une ligne par année (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: état en fin d’année; `income`, `spending`, `taxes`: somme de l’année) et `events` sous forme de paires mois et texte.
 
-**`batch`** (plusieurs trajectoires): `runs`, `successRate`, `earliestDepletion`, `percentiles` (fortune finale à 0 = pire simulation, 1, 5, 10, 25, 50, 75, 90, 95 et 99 %) et `years` avec `p5` à `p95` de la fortune totale, la médiane réelle `p50Real` et la part des simulations avec de la fortune, `survival`.
+**`batch`** (plusieurs trajectoires): `runs`, `successRate`, `earliestDepletion`, `percentiles` (fortune finale `endTotal` et `endTotalReal` à 0 = pire simulation, 1, 5, 10, 25, 50, 75, 90, 95 et 99 %, simulations classées selon la fortune finale nominale), `percentilesReal` (idem avec les simulations classées selon la fortune finale en pouvoir d’achat actuel; la simulation d’un percentile peut différer) et `years` avec `p5` à `p95` de la fortune totale, la médiane réelle `p50Real` et la part des simulations avec de la fortune, `survival`.
 
 **`scenarios`** (variations): `params` et par combinaison `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
 

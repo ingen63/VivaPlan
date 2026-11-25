@@ -171,13 +171,17 @@ pub struct ScenarioResult {
     pub p5: f64,
     pub p50: f64,
     pub p95: f64,
-    /// Median end wealth in prices of the start month.
+    /// Median end wealth in prices of the start month: the run at the 50th percentile of the real order (#265).
     pub p50_real: f64,
     /// Median total wealth at retirement.
     pub at_retirement: Option<f64>,
     pub earliest_depletion: Option<YearMonth>,
     /// End wealth and depletion of the runs at the percentiles (0 = worst run); basis for the optimum per percentile.
     pub percentiles: Vec<crate::batch::Percentile>,
+    /// #265: The runs at the percentiles ordered by the end wealth in today's purchasing power, with their real end
+    /// wealth. Missing in the JSON when empty (error, results before #265).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub percentiles_real: Vec<crate::batch::Percentile>,
     /// Error if the scenario could not be computed (e.g. start month outside the series).
     pub error: Option<crate::message::Message>,
 }

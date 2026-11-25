@@ -337,7 +337,13 @@ pub struct BatchSummary {
     pub runs: usize,
     /// Share of runs in which wealth lasts until the end.
     pub success_rate: f64,
+    /// Runs at the percentiles ordered by the nominal end wealth (`end_total`).
     pub percentiles: Vec<Percentile>,
+    /// #265: Runs at the percentiles ordered by the end wealth in today's purchasing power (`end_total_real`); the
+    /// run of a percentile may differ from the nominal order, since runs with high inflation are nominally high but
+    /// really low. Missing in the JSON when empty (results before #265).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub percentiles_real: Vec<Percentile>,
     pub earliest_depletion: Option<(YearMonth, crate::message::Message)>,
     /// Number of runs with at least one lump sum or emergency sale because of insufficient affordability at renewals.
     pub lump_sum_runs: usize,
@@ -350,12 +356,15 @@ pub struct BatchSummary {
     pub unaffordable_renewal_runs: usize,
 }
 
-pub fn summarize(results: &[SimResult]) -> BatchSummary {
+/// Percentiles shown in the results: 0 is the worst run.
+const PERCENTS: [u32; 10] = [0, 1, 5, 10, 25, 50, 75, 90, 95, 99];
+
+/// Runs at the percentiles [`PERCENTS`] in the order of `key` (ascending; ties keep the order of the runs).
+fn percentiles_by(results: &[SimResult], key: impl Fn(&SimResult) -> f64) -> Vec<Percentile> {
     let n = results.len();
     let mut order: Vec<usize> = (0..n).collect();
-    order.sort_by(|&a, &b| results[a].summary.end_total.total_cmp(&results[b].summary.end_total));
-    // 0 = worst run
-    let percentiles = [0, 1, 5, 10, 25, 50, 75, 90, 95, 99]
+    order.sort_by(|&a, &b| key(&results[a]).total_cmp(&key(&results[b])));
+    PERCENTS
         .into_iter()
         .filter(|_| n > 0)
         .map(|p| {
@@ -372,7 +381,13 @@ pub fn summarize(results: &[SimResult]) -> BatchSummary {
                 emergency_sales: results[i].summary.emergency_sales,
             }
         })
-        .collect();
+        .collect()
+}
+
+pub fn summarize(results: &[SimResult]) -> BatchSummary {
+    let n = results.len();
+    let percentiles = percentiles_by(results, |r| r.summary.end_total);
+    let percentiles_real = percentiles_by(results, |r| r.summary.end_total_real);
     let ok = results.iter().filter(|r| r.summary.depleted.is_none()).count();
     let earliest_depletion = results
         .iter()
@@ -382,6 +397,7 @@ pub fn summarize(results: &[SimResult]) -> BatchSummary {
         runs: n,
         success_rate: if n > 0 { ok as f64 / n as f64 } else { 0.0 },
         percentiles,
+        percentiles_real,
         earliest_depletion,
         lump_sum_runs: results.iter().filter(|r| r.summary.lump_sums > 0).count(),
         affordability_sale_runs: results.iter().filter(|r| r.summary.affordability_sales > 0).count(),
@@ -739,6 +755,62 @@ mod tests {
         assert_eq!(s.unaffordable_renewal_runs, 1);
         assert_eq!(s.success_rate, 1.0);
         assert_eq!(s.percentiles.len(), 10);
+    }
+
+    // #265/AK1: Invented runs whose nominal and real order differ (high inflation: nominally high, really low). In the
+    // real order the real end wealth ascends, in the nominal order the nominal one; label, index, both end wealths and
+    // the events belong to the same run.
+    #[test]
+    fn issue_265_ak1_percentiles_in_nominal_and_real_order() {
+        // (nominal, real, emergency sales): nominal order 0..9, real order reversed for the high-inflation runs
+        let runs: Vec<SimResult> = (0..10)
+            .map(|k| {
+                let mut r = result(|s| {
+                    s.end_total = 100.0 * (k + 1) as f64;
+                    s.end_total_real = if k % 2 == 0 {
+                        1000.0 - 10.0 * k as f64
+                    } else {
+                        5.0 * k as f64
+                    };
+                    s.emergency_sales = k;
+                    s.depleted = (k == 3).then(|| YearMonth::new(2040, 1));
+                });
+                r.label = crate::msg!(raw_error, detail = format!("run {k}"));
+                r
+            })
+            .collect();
+        let s = summarize(&runs);
+        assert_eq!(s.percentiles_real.len(), s.percentiles.len());
+        let ascending = |v: Vec<f64>| v.windows(2).all(|w| w[0] <= w[1]);
+        assert!(ascending(s.percentiles.iter().map(|p| p.end_total).collect()));
+        assert!(ascending(
+            s.percentiles_real.iter().map(|p| p.end_total_real.unwrap()).collect()
+        ));
+        // The orders differ: the nominal order does not ascend in real terms, the real one not nominally.
+        assert!(!ascending(
+            s.percentiles.iter().map(|p| p.end_total_real.unwrap()).collect()
+        ));
+        assert!(!ascending(s.percentiles_real.iter().map(|p| p.end_total).collect()));
+        for p in s.percentiles.iter().chain(&s.percentiles_real) {
+            let run = &runs[p.index];
+            assert_eq!(p.label, run.label);
+            assert_eq!(
+                (p.end_total, p.end_total_real),
+                (run.summary.end_total, Some(run.summary.end_total_real))
+            );
+            assert_eq!(
+                (p.emergency_sales, p.depleted),
+                (run.summary.emergency_sales, run.summary.depleted)
+            );
+        }
+        // Worst run of each order: nominal run 0, real run 1 (real 5).
+        assert_eq!((s.percentiles[0].index, s.percentiles_real[0].index), (0, 1));
+        let json = serde_json::to_value(&s).unwrap();
+        assert_eq!(json["percentilesReal"].as_array().unwrap().len(), 10);
+        assert!(serde_json::to_value(summarize(&[]))
+            .unwrap()
+            .get("percentilesReal")
+            .is_none());
     }
 
     // #135/AK1: Bands with 0, 1 and 2 runs. Without runs all values are 0 (previously a panic from `len() - 1`).

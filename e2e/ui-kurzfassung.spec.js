@@ -77,14 +77,15 @@ test.describe("Yearly values, digest and comparison from the engine (#209)", () 
     // A new page per view: only the hash would change, and the app would not start anew
     let page = await context.newPage();
     const shown = {};
-    let errors = await open(page, "results/nosweep");
+    // #265: the reference was recorded starting nominal
+    let errors = await open(page, "results/nosweep/nominal");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     shown.single = await singleView(page);
     await noErrors(page, errors);
 
     // A saved Monte Carlo result (#runsflow/view): result in words, key figures and yearly values of the median run
     page = await context.newPage();
-    errors = await open(page, "runsflow/mem/view");
+    errors = await open(page, "runsflow/mem/view/nominal");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "saved");
     await expect(page.locator("#verdict")).toBeAttached();
     shown.batch = { verdict: await text(page, "#verdict"), kpis: await text(page, "#resultsBody .rkpis") };
@@ -94,7 +95,7 @@ test.describe("Yearly values, digest and comparison from the engine (#209)", () 
     await noErrors(page, errors);
 
     page = await context.newPage();
-    errors = await open(page, "runsflow/mem");
+    errors = await open(page, "runsflow/mem/nominal");
     shown.compare = await compareView(page);
     await noErrors(page, errors);
 

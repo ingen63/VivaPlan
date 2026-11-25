@@ -642,11 +642,11 @@ test.describe("Results", () => {
   test("nominal and today's purchasing power differ", async ({ page }) => {
     const errors = await open(page, "results/nosweep");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
-    const nominal = await resultKpi(page, "Vermögen am Ende").textContent();
-    await page.getByRole("button", { name: "Heutige Kaufkraft" }).click();
-    await expect(resultKpi(page, "Vermögen am Ende")).not.toHaveText(nominal);
+    const real = await resultKpi(page, "Vermögen am Ende").textContent();
     await page.getByRole("button", { name: "Nominal" }).click();
-    await expect(resultKpi(page, "Vermögen am Ende")).toHaveText(nominal);
+    await expect(resultKpi(page, "Vermögen am Ende")).not.toHaveText(real);
+    await page.getByRole("button", { name: "Heutige Kaufkraft" }).click();
+    await expect(resultKpi(page, "Vermögen am Ende")).toHaveText(real);
     await noErrors(page, errors);
   });
 
@@ -997,6 +997,69 @@ test.describe("KPI earliest depletion readable (#234)", () => {
     expect(await row()).toContain(">Pfad fehlt</td>");
     await page.evaluate(() => I18n.use("en"));
     expect(await row()).toContain(">Path missing</td>");
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Percentiles ordered by the chosen view (#265)", () => {
+  /** Monte Carlo with random inflation: nominal and real order of the runs differ. */
+  const openMc = async page => {
+    const errors = await open(page, "results/bootstrap");
+    await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
+    return errors;
+  };
+  const num = s => Number(s.replace(/[’'\s  ]/g, "").replace("−", "-"));
+  const tableValues = page => page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" }).locator("table tr td:nth-child(2)").allInnerTexts();
+
+  test("AK2: the results open in today's purchasing power", async ({ page }) => {
+    const errors = await openMc(page);
+    await expect(page.locator('#resultsTabs button[data-action="real"][data-v="1"]')).toHaveClass(/on/);
+    await expect(page.locator('#resultsTabs button[data-action="real"][data-v="0"]')).not.toHaveClass(/on/);
+    await noErrors(page, errors);
+  });
+
+  test("AK3: table, key figures and single runs follow the order of the view; values ascend in both", async ({ page }) => {
+    const errors = await openMc(page);
+    const s = await page.evaluate(() => lastRun.batch.summary);
+    expect(s.percentilesReal.map(p => p.index)).not.toEqual(s.percentiles.map(p => p.index));
+    for (const [view, list, key] of [["1", s.percentilesReal, "endTotalReal"], ["0", s.percentiles, "endTotal"]]) {
+      await page.locator(`#resultsTabs button[data-action="real"][data-v="${view}"]`).click();
+      await page.locator('button[data-action="rtab"][data-tab="overview"]').click();
+      const values = (await tableValues(page)).map(num);
+      expect(values).toEqual(list.map(p => Math.round(p[key])));
+      expect(values.every((v, i) => i === 0 || values[i - 1] <= v), `${view}: ${values}`).toBe(true);
+      const median = await page.evaluate(([q, k]) => fmtMio(q.find(p => p.percent === 50)[k]), [list, key]);
+      await expect(resultKpi(page, "Endvermögen Median")).toHaveText(median);
+      // single run of the median: the run of this order (same label and end wealth), yearly values of the same run
+      await page.locator('button[data-action="rtab"][data-tab="runs"]').click();
+      await page.locator('button[data-action="detail"][data-p="50"]').click();
+      const run = await page.evaluate(() => { const r = detailsOf(lastRun).find(([q]) => q === 50)[1]; return { endTotal: r.summary.endTotal, endTotalReal: r.summary.endTotalReal }; });
+      const p50 = list.find(p => p.percent === 50);
+      expect(run.endTotal).toBe(p50.endTotal);
+      expect(run.endTotalReal).toBe(p50.endTotalReal);
+      const shown = await page.evaluate(k => fmtMoney(detailsOf(lastRun).find(([q]) => q === 50)[1].summary[k]), key);
+      await expect(page.locator("#resultsPick")).toContainText(`Endvermögen ${shown}`);
+    }
+    await noErrors(page, errors);
+  });
+
+  test("AK5: an older result without the real order shows a notice and the previous display", async ({ page }) => {
+    const errors = await openMc(page);
+    const want = await page.evaluate(() => {
+      delete lastRun.batch.summary.percentilesReal; delete lastRun.batch.detailsReal;
+      renderResults(lastRun);
+      return lastRun.batch.summary.percentiles.map(p => Math.round(p.endTotalReal));
+    });
+    const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
+    await expect(card.locator(".hint").first()).toContainText("ohne Ordnung nach heutiger Kaufkraft gespeichert");
+    expect((await tableValues(page)).map(num)).toEqual(want);
+    await page.locator('button[data-action="rtab"][data-tab="runs"]').click();
+    await expect(page.locator("#resultsPick")).toContainText("Endvermögen");
+    // nominal: no notice
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
+    await page.locator('button[data-action="rtab"][data-tab="overview"]').click();
+    await expect(card.locator(".hint", { hasText: "ohne Ordnung" })).toHaveCount(0);
     await noErrors(page, errors);
   });
 });

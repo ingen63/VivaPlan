@@ -408,7 +408,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
-      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+      realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
     const heads = await page.locator("#resultsBody table.yt th.tx").allTextContents();
     expect(heads.slice(-3)).toEqual(["Einkommen", "Abzüge", "Steuerbar"]);
@@ -532,7 +532,7 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
-      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+      realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
     const origins = page.locator("#resultsBody table.yt td[data-ded-origin]");
     await expect(origins.first()).toHaveAttribute("title", /zusätzlich: 3'000/);
@@ -615,7 +615,7 @@ test.describe("Deductions from wealth (#231)", () => {
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
-      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+      realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
     const origins = page.locator("#resultsBody table.yt td[data-wded-origin]");
     await expect(origins.first()).toHaveAttribute("title", /zusätzlich: 50'000/);
@@ -705,7 +705,7 @@ test.describe("Time-dependent place of residence (#151)", () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       lastRunPlan = state;
-      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+      realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
     const rows = await page.evaluate(() => paramSections(state).flatMap(([, r]) => r).filter(([k]) => String(k).startsWith("Wohnort")));
     const from = await page.evaluate(() => ymShow(i2ym(startM() + 18)));
@@ -894,7 +894,7 @@ test.describe("Tax value per property for the wealth tax (#229)", () => {
       p.taxValue = { kind: "rate", value: 0.5 };
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
-      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+      realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
     const heads = await page.locator("#resultsBody table.yt th.tx").allTextContents();
     expect(heads).toContain("SteuerwertImmobilien");

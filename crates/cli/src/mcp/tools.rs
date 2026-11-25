@@ -129,13 +129,14 @@ pub(crate) fn list() -> Vec<Value> {
             "Details of a result of the session. view: summary (key figures and the result in words, default), yearly \
              (one row per calendar year, nominal or real), events (events of the run), bands (wealth per year at the \
              percentiles over all runs), variations (key figures per combination of the variations). With several runs \
-             percentile picks the run for yearly and events (0 worst, 1, 5, 50, 95, 99; default 50). from and to limit \
-             the calendar years.",
+             percentile picks the run for yearly and events (0 worst, 1, 5, 50, 95, 99; default 50); the runs of the \
+             percentiles are ordered by the nominal end wealth, with real by the end wealth in today's purchasing power \
+             (the run of a percentile may differ). from and to limit the calendar years.",
             json!({
                 "result": { "type": "string", "description": "Id of the result (r1, …)." },
                 "view": { "type": "string", "enum": VIEWS },
                 "percentile": { "type": "integer", "enum": [0, 1, 5, 50, 95, 99] },
-                "real": { "type": "boolean", "description": "Values in today's purchasing power instead of nominal (yearly, bands)." },
+                "real": { "type": "boolean", "description": "Values in today's purchasing power instead of nominal (yearly, bands); yearly and events take the run of the percentile in the real order." },
                 "from": { "type": "integer", "description": "First calendar year." },
                 "to": { "type": "integer", "description": "Last calendar year." },
             }),
@@ -639,6 +640,20 @@ pub(crate) fn verdict_text(d: &Value, currency: &str) -> String {
     out
 }
 
+/// #265: Which order of the runs the end wealth per percentile follows (several runs only).
+pub(crate) fn percentile_order(d: &Value) -> Option<&'static str> {
+    match d["realOrder"].as_bool()? {
+        true => Some(
+            "endWealth per percentile: nominal from the runs ordered by nominal end wealth, real from the runs ordered \
+             by end wealth in today's purchasing power; the run of a percentile may differ between the two.",
+        ),
+        false => Some(
+            "endWealth per percentile: runs ordered by nominal end wealth; real is the value of the same run in \
+             today's purchasing power (result saved without the real order), so it need not ascend.",
+        ),
+    }
+}
+
 fn result_list(s: &Session) -> Answer {
     let list: Vec<Value> = s
         .results
@@ -672,12 +687,16 @@ fn result_list(s: &Session) -> Answer {
     Answer::results(json!({ "results": list }))
 }
 
-/// Run of a result for yearly values and events: the single run or a percentile of the batch.
-fn pick_run(result: &Value, percentile: Option<i64>) -> Result<(&Value, Option<i64>), String> {
+/// Run of a result for yearly values and events: the single run or a percentile of the batch. #265: with `real` the
+/// run of the percentile in the order by real end wealth (results before #265: the nominal order).
+fn pick_run(result: &Value, percentile: Option<i64>, real: bool) -> Result<(&Value, Option<i64>), String> {
     if !result["single"].is_null() {
         return Ok((&result["single"], None));
     }
-    let details = result["batch"]["details"].as_array().ok_or("The result has no run")?;
+    let real_details = result["batch"]["detailsReal"].as_array().filter(|_| real);
+    let details = real_details
+        .or_else(|| result["batch"]["details"].as_array())
+        .ok_or("The result has no run")?;
     let want = percentile.unwrap_or(50);
     details
         .iter()
@@ -736,6 +755,9 @@ pub(crate) fn result_get(s: &mut Session, args: &Value) -> Outcome {
         "summary" => {
             let d = s.call("digest", &json!({ "result": r.result }), file.as_deref())?;
             out.insert("verdict".into(), json!(verdict_text(&d, &currency)));
+            if let Some(order) = percentile_order(&d) {
+                out.insert("percentileOrder".into(), json!(order));
+            }
             out.insert("digest".into(), d);
             out.insert(
                 "checks".into(),
@@ -748,7 +770,7 @@ pub(crate) fn result_get(s: &mut Session, args: &Value) -> Outcome {
             out.insert("elapsedMs".into(), r.result["elapsedMs"].clone());
         }
         "yearly" => {
-            let (run, pct) = pick_run(&r.result, percentile)?;
+            let (run, pct) = pick_run(&r.result, percentile, real)?;
             let y = s.call("yearly", &json!({ "run": run }), file.as_deref())?;
             let rows: Vec<Value> = y[if real { "real" } else { "nominal" }]
                 .as_array()
@@ -762,7 +784,7 @@ pub(crate) fn result_get(s: &mut Session, args: &Value) -> Outcome {
             out.insert("rows".into(), Value::Array(rows));
         }
         "events" => {
-            let (run, pct) = pick_run(&r.result, percentile)?;
+            let (run, pct) = pick_run(&r.result, percentile, real)?;
             let events: Vec<Value> = run["events"]
                 .as_array()
                 .into_iter()
@@ -1048,6 +1070,29 @@ mod tests {
         assert!(!ev["events"].as_array().unwrap().is_empty());
         let list = ok(call(&mut s, "result_list", &json!({})));
         assert_eq!(list["results"][0]["result"], id);
+    }
+
+    /// #265/AK6: With real, yearly values and events take the run of the percentile in the real order (results before
+    /// #265: the nominal order); the summary says which order the end wealth per percentile follows.
+    #[test]
+    fn issue_265_ak6_real_order_for_runs_and_summary() {
+        let result = json!({ "batch": {
+            "details": [[50, { "label": "nominal" }]],
+            "detailsReal": [[50, { "label": "real" }]] } });
+        assert_eq!(pick_run(&result, None, false).unwrap().0["label"], "nominal");
+        assert_eq!(pick_run(&result, Some(50), true).unwrap().0["label"], "real");
+        let old = json!({ "batch": { "details": [[50, { "label": "nominal" }]] } });
+        assert_eq!(pick_run(&old, None, true).unwrap().0["label"], "nominal");
+        assert!(pick_run(&result, Some(5), true)
+            .unwrap_err()
+            .contains("percentiles: 50"));
+        assert!(percentile_order(&json!({ "realOrder": true }))
+            .unwrap()
+            .contains("ordered by end wealth in today's"));
+        assert!(percentile_order(&json!({ "realOrder": false }))
+            .unwrap()
+            .contains("need not ascend"));
+        assert_eq!(percentile_order(&json!({ "verdict": "lasts" })), None);
     }
 
     /// #210/AK3: Only reading the file, the schema and the catalog bypass the dispatcher; every computation goes through it.

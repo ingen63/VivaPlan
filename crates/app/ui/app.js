@@ -2693,7 +2693,8 @@ const ACTIONS = {
   back: () => showResults(false),
   detail: d => showDetail(+d.p),
   rtab: d => { resultTab = d.tab; renderResults(lastRun); },
-  real: d => { realView = d.v === "1"; redrawResults(); },
+  // #265: a chosen variation step of several runs needs the runs of the other order
+  real: d => { realView = d.v === "1"; if (!compareOpen && variationSel && lastRun?.batch && lastRun.scenarios) pickBatchVariation(variationSel); else redrawResults(); },
   "surv-scale": d => { survFull = d.v === "0"; redrawResults(); },
   // #115: Tabs and selections in the comparison
   "cmp-tab": d => { compareTab = d.tab; compareRuns(); },
@@ -3007,7 +3008,7 @@ Theme.apply(); // system theme until the settings are loaded
 let showTaxCols = false;
 /** Years whose 3-bucket derivation is expanded in the yearly values. */
 const bucketOpen = new Set();
-let resultTab = "overview", realView = false, compPercent = false, detailP = 50, mktPct = false, mktLog = false, resultZoom = null, compareOpen = false;
+let resultTab = "overview", realView = true, compPercent = false, detailP = 50, mktPct = false, mktLog = false, resultZoom = null, compareOpen = false;
 function showResults(on) {
   if (!on) unpark();
   savedOpt = null;
@@ -3178,9 +3179,6 @@ const resultZoomBar = () => {
   return `<div class="minizoom">${zoomButtons("res-zoom", resultZoom ? (resultZoom.years ?? -1) : 0)}<span>${note}</span></div>`;
 };
 const chartBox = (id, h = 300, zoom = false) => `${zoom ? resultZoomBar() : ""}<div class="chartwrap"><svg id="${id}" class="bigchart" style="height:${h}px"></svg><div id="${id}-tip" class="tip"></div></div>`;
-/** Note on the final wealth per percentile in today's purchasing power (comparison, #126). */
-let REAL_PCT_HINT;
-onLanguage(() => REAL_PCT_HINT = tr("results.realPctHint"));
 let FAN_LEGEND;
 onLanguage(() => FAN_LEGEND = legend([["--c1", tr("fan.p5to95"), ".25"], ["--c1", tr("fan.p25to75"), ".5"], ["--c1", tr("fan.median"), null, "solid"], ["--warn", tr("fan.p1p99"), null, "dashed"], ["--err", tr("fan.worst"), null, "solid"]])
   + `<p class="hint">${tr("fan.worstHint")}</p>`);
@@ -3437,8 +3435,22 @@ let variationSel = null;          // chosen values per variation (null = plan va
 const variationRuns = new Map();  // selection → result of the single run of this step
 const selKey = sel => JSON.stringify(sel);
 const singleOf = r => (variationSel && variationRuns.get(selKey(variationSel))) || r.single;
-const batchRuns = () => variationSel && variationRuns.get(selKey(variationSel));
-const detailsOf = r => batchRuns()?.details || r.batch.details;
+/** #265: the runs of a step depend on the order of the display (real or nominal). */
+const batchKey = sel => selKey(sel) + (realView ? "|real" : "");
+const batchRuns = () => variationSel && variationRuns.get(batchKey(variationSel));
+const detailsOf = r => batchRuns()?.details || batchDetails(r.batch);
+/**
+ * #265: Percentiles of several runs and their runs in the order of the display: nominal by the nominal end wealth, in
+ * today's purchasing power by the real end wealth. Results saved before #265 have only the nominal order (`oldOrder`):
+ * in today's purchasing power they show the real end wealth of the runs of the nominal order, with a notice.
+ */
+const realOrder = b => realView && !!b.summary.percentilesReal?.length;
+const oldOrder = b => realView && !b.summary.percentilesReal?.length;
+const pctsOf = b => realOrder(b) ? b.summary.percentilesReal : b.summary.percentiles;
+const batchDetails = b => realOrder(b) && b.detailsReal?.length ? b.detailsReal : b.details;
+/** End wealth of a percentile in the display; results before #126 take the real value from the detail run. */
+const pctEnd = (b, p) => !realView ? p.endTotal
+  : p.endTotalReal ?? b.details?.find(([q]) => q === p.percent)?.[1].summary.endTotalReal ?? p.endTotal;
 const resetVariation = () => { variationSel = null; variationRuns.clear(); };
 /** Values of the variations for this run: the chosen step, otherwise the plan values. */
 function selectedVariationText() {
@@ -3474,14 +3486,15 @@ function levelOf(sc, sel) {
 async function pickBatchVariation(sel) {
   const sc = lastRun.scenarios;
   variationSel = sel.every(v => v == null) ? null : sel;
-  if (variationSel && !variationRuns.has(selKey(variationSel))) {
+  if (variationSel && !variationRuns.has(batchKey(variationSel))) {
     const level = levelOf(sc, variationSel);
     if (!level || !level.percentiles?.length) {
       variationSel = null;
       toast(tr("variation.notComputed"));
       return renderResults(lastRun);
     }
-    const picks = level.percentiles.filter(p => [0, 1, 5, 50, 95, 99].includes(p.percent)).map(p => [p.percent, p.index]);
+    const real = realView && level.percentilesReal?.length > 0, pcts = real ? level.percentilesReal : level.percentiles;
+    const picks = pcts.filter(p => [0, 1, 5, 50, 95, 99].includes(p.percent)).map(p => [p.percent, p.index]);
     const plan = JSON.parse(JSON.stringify(state));
     plan.scenarios = { sweeps: [], select: sc.params.map((p, i) => ({ param: p, value: variationSel[i] ?? sweepNow(p) })) };
     let out;
@@ -3490,10 +3503,10 @@ async function pickBatchVariation(sel) {
     await derive(out);
     // If a final wealth differs from the saved value (e.g. changed time series), the display stays available, with a notice
     const off = out.details.filter(([pc, res]) => {
-      const e = level.percentiles.find(p => p.percent === pc)?.endTotal;
+      const e = pcts.find(p => p.percent === pc)?.endTotal;
       return e != null && Math.abs(res.summary.endTotal - e) > 1e-6 * Math.max(1, Math.abs(e));
     }).map(([pc]) => pc);
-    variationRuns.set(selKey(variationSel), { details: out.details, off });
+    variationRuns.set(batchKey(variationSel), { details: out.details, off });
   }
   renderResults(lastRun);
 }
@@ -3631,21 +3644,23 @@ function renderResults(r) {
       body.innerHTML = verdictHtml(r, res) + singleKpis(res.summary) + card(tr("runCharts.wealth"), realNote(), chartBox("ov-wealth", 300, true) + WEALTH_LEGEND) + propertyEvents(res) + card(tr("results.events"), "", eventList(res.events));
       drawRunCharts(res, "ov");
     } else {
-      const b = r.batch, s = b.summary, pc = q => s.percentiles.find(x => x.percent === q), ed = s.earliestDepletion;
+      const b = r.batch, s = b.summary, pcts = pctsOf(b), pc = q => pcts.find(x => x.percent === q), ed = s.earliestDepletion;
+      const end = q => pctEnd(b, pc(q));
       body.innerHTML = verdictHtml(r, null) + `<div class="rkpis">
         ${kpi(tr("scen.successRate"), pctTxt(s.successRate), tr("results.lastsToEnd"), s.successRate >= 0.95 ? "good" : s.successRate < 0.8 ? "bad" : "")}
-        ${kpi(tr("results.endMedian"), fmtMio(pc(50).endTotal), esc(percentInfo(r, 50, pc(50).label)))}
-        ${kpi(tr("results.endP5"), fmtMio(pc(5).endTotal), esc(percentInfo(r, 5, pc(5).label)), pc(5).endTotal > 0 ? "" : "bad")}
-        ${kpi(tr("results.endP1"), fmtMio(pc(1).endTotal), esc(percentInfo(r, 1, pc(1).label)), pc(1).endTotal > 0 ? "" : "bad")}
-        ${kpi(tr("fan.worstRun"), fmtMio(pc(0).endTotal), esc(percentInfo(r, 0, pc(0).label)), pc(0).endTotal > 0 ? "" : "bad")}
-        ${kpi(tr("results.endP95"), fmtMio(pc(95).endTotal), esc(percentInfo(r, 95, pc(95).label)))}
-        ${kpi(tr("results.endP99"), fmtMio(pc(99).endTotal), esc(percentInfo(r, 99, pc(99).label)))}
+        ${kpi(tr("results.endMedian"), fmtMio(end(50)), esc(percentInfo(r, 50, pc(50).label)))}
+        ${kpi(tr("results.endP5"), fmtMio(end(5)), esc(percentInfo(r, 5, pc(5).label)), end(5) > 0 ? "" : "bad")}
+        ${kpi(tr("results.endP1"), fmtMio(end(1)), esc(percentInfo(r, 1, pc(1).label)), end(1) > 0 ? "" : "bad")}
+        ${kpi(tr("fan.worstRun"), fmtMio(end(0)), esc(percentInfo(r, 0, pc(0).label)), end(0) > 0 ? "" : "bad")}
+        ${kpi(tr("results.endP95"), fmtMio(end(95)), esc(percentInfo(r, 95, pc(95).label)))}
+        ${kpi(tr("results.endP99"), fmtMio(end(99)), esc(percentInfo(r, 99, pc(99).label)))}
         ${kpi(tr("scen.earliestDepletion"), ed ? tr("kpi.age") + ageStr(ym2i(ed[0])) : tr("results.none"), ed ? `${ymShow(ed[0])} · ${esc(msgText(ed[1]))}` : tr("results.inNoRun"), ed ? "bad" : "good")}
         ${hasProperties() ? kpi(tr("results.emergencySales"), tr("results.runsN", { runs: fmtInt(s.emergencySaleRuns) }), `${tr("results.ofRuns", { pctTxt: pctTxt(s.emergencySaleRuns / s.runs) })}${s.affordabilitySaleRuns ? tr("results.affordabilityPart", { affordabilitySaleRuns: fmtInt(s.affordabilitySaleRuns) }) : ""}`, s.emergencySaleRuns > 0 ? "bad" : "good") : ""}
         ${hasProperties() && (lastRunPlan || state).realestate.neverSell ? kpi(tr("results.unaffordableRenewals"), tr("results.runsN", { runs: fmtInt(s.unaffordableRenewalRuns || 0) }), tr("results.unaffordableRenewalsSub", { pctTxt: pctTxt((s.unaffordableRenewalRuns || 0) / s.runs) }), s.unaffordableRenewalRuns > 0 ? "bad" : "good") : ""}</div>`
         + card(tr("batch.band"), tr("batch.overRuns", { realNote: realNote() }), chartBox("mc-fan", 300, true) + FAN_LEGEND)
-        + card(tr("results.endByPercentile"), tr("results.nominalLower"), `<table class="tbl num"><tr><th class="l">${tr("results.percentile")}</th><th>${tr("scen.endWealth")}</th>${hasProperties() ? `<th class="l" title="${tr("results.salesTitle")}">${tr("results.sales")}</th>` : ""}<th class="l">${tr("scen.variation")}</th></tr>
-          ${s.percentiles.map(p => `<tr><td class="l">${p.percent === 0 ? tr("fan.worstRun") : p.percent + "."}</td><td>${fmtInt(p.endTotal)}</td>${hasProperties() ? `<td class="l">${propertySales(b.details.find(([q]) => q === p.percent)?.[1])}</td>` : ""}<td class="l">${esc(percentInfo(r, p.percent, p.label))}</td></tr>`).join("")}</table>
+        + card(tr("results.endByPercentile"), realNote(), `<table class="tbl num"><tr><th class="l">${tr("results.percentile")}</th><th>${tr("scen.endWealth")}</th>${hasProperties() ? `<th class="l" title="${tr("results.salesTitle")}">${tr("results.sales")}</th>` : ""}<th class="l">${tr("scen.variation")}</th></tr>
+          ${pcts.map(p => `<tr><td class="l">${p.percent === 0 ? tr("fan.worstRun") : p.percent + "."}</td><td>${fmtInt(pctEnd(b, p))}</td>${hasProperties() ? `<td class="l">${propertySales(batchDetails(b).find(([q]) => q === p.percent)?.[1])}</td>` : ""}<td class="l">${esc(percentInfo(r, p.percent, p.label))}</td></tr>`).join("")}</table>
+          <p class="hint">${oldOrder(b) ? tr("results.oldOrder") : tr("results.realPctHint")}</p>
           ${r.scenarios ? `<p class="hint">${tr("results.variationHint")}</p>` : ""}`);
       drawBatchCharts(b);
     }
@@ -3792,7 +3807,7 @@ function runPicker(r, res) {
   const info = [pName(detailP), percentInfo(r, detailP, res.label)].filter(Boolean).join(" · ");
   return card(tr("runPicker.title"), "", `<div class="seg">${detailsOf(r).map(([p]) => `<button class="${p === detailP ? "on" : ""}" data-action="detail" data-p="${p}">${pName(p)}</button>`).join("")}</div>
     ${batchRuns()?.off?.length ? `<p class="hint" style="color:var(--warn,#b45309)">${tr("runPicker.deviates", { batchRuns: batchRuns().off.map(pName).join(", ") })}</p>` : ""}
-    <p class="computed" style="margin-bottom:0">${tr("runPicker.info", { info: esc(info), endTotal: fmtMoney(res.summary.endTotal) })}${res.summary.depleted ? ` · ${tr("runPicker.depleted", { atAge: atAge(res.summary.depleted) })}` : ""}</p>`);
+    <p class="computed" style="margin-bottom:0">${tr("runPicker.info", { info: esc(info), endTotal: fmtMoney(realView ? res.summary.endTotalReal : res.summary.endTotal) })}${res.summary.depleted ? ` · ${tr("runPicker.depleted", { atAge: atAge(res.summary.depleted) })}` : ""}</p>`);
 }
 function showDetail(p) { detailP = p; bucketOpen.clear(); if (lastRun) renderResults(lastRun); }
 
@@ -3972,9 +3987,10 @@ onLanguage(() => CMP_FLOW = [["in", tr("cmp.income")], ["out", tr("cmp.spending"
  */
 function cmpItem(m, d, i) {
   const res = d?.result || {}, batch = res.batch || null, single = res.single || null;
-  const det = q => batch?.details?.find(([p]) => p === q)?.[1];
+  const details = batch ? batchDetails(batch) : [];
+  const det = q => details.find(([p]) => p === q)?.[1];
   const exact = batch ? det(cmpP) : null;
-  const run = single || exact || (batch && (det(50) || batch.details?.[0]?.[1])) || null;
+  const run = single || exact || (batch && (det(50) || details[0]?.[1])) || null;
   return { m, i, color: RUN_COLORS[i], name: m.name, batch, single, run, pMissing: !!batch && !exact, scenariosOnly: !batch && !single };
 }
 /** Selection of the percentile for trajectories and yearly values; only for results with multiple runs. */
@@ -4073,6 +4089,8 @@ function cmpOverview(body, items, cmp) {
   if (noReal.length) notes.push(tr("cmp.noReal", { map: noReal.map(it => esc(it.name)).join(", ") }));
   const partReal = realView ? items.filter(it => it.batch && it.batch.bands.real && it.batch.summary.percentiles.some(p => p.endTotalReal == null)) : [];
   if (partReal.length) notes.push(tr("cmp.partReal", { map: partReal.map(it => esc(it.name)).join(", ") }));
+  const oldReal = items.filter(it => it.batch && it.batch.bands.real && oldOrder(it.batch) && !partReal.includes(it));
+  if (oldReal.length) notes.push(tr("cmp.realOrder", { map: oldReal.map(it => esc(it.name)).join(", ") }));
   const singles = items.filter(it => it.single);
   if (singles.length) notes.push(tr("cmp.singleNoBand", { map: singles.map(it => esc(it.name)).join(", ") }));
   const fan = items.map(it => it.single ? { med: it.single.records.map(r => rv(r, r.total)) } : bandOf(it) ? { med: bandOf(it).p50, lo: bandOf(it).p5, hi: bandOf(it).p95 } : null);
@@ -4085,7 +4103,7 @@ function cmpOverview(body, items, cmp) {
   const qs = cmp.percentiles;
   const pTable = batches.length ? `<div class="tscroll"><table class="tbl num"><tr><th class="l">${tr("results.percentile")}</th>${batches.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>
     ${qs.map(q => `<tr><td class="l">${q === 0 ? tr("fan.worstRun") : q + "."}</td>${batches.map(it => { const v = endAt(it, q); return `<td>${v == null ? "–" : fmtInt(v)}</td>`; }).join("")}</tr>`).join("")}</table></div>`
-      + (realView ? `<p class="hint">${tr("cmp.realOrder", { realPctHint: REAL_PCT_HINT })}</p>` : "")
+      + `<p class="hint">${tr("results.realPctHint")}</p>`
     : `<p class="hint" style="margin:0">${tr("cmp.noMulti")}</p>`;
   // Probability that the money lasts
   const surv = items.map(it => it.batch ? it.batch.stats.survival.map(v => v * 100) : null);
@@ -4093,7 +4111,7 @@ function cmpOverview(body, items, cmp) {
   // Age at depletion: share of runs per year of age (results with different numbers of runs stay comparable)
   const ages = cmp.depletionAges;
   body.innerHTML = card(tr("cmp.kpis"), tr("cmp.endWealth", { cmpReal: cmpReal() }), `<div class="tscroll"><table class="tbl cmpkpi"><tr>${head}</tr>${rows}</table></div>`
-      + (realView ? `<p class="hint">${REAL_PCT_HINT}.</p>` : ""))
+      )
     + cmpNote(notes)
     + (fanLines.length ? card(tr("batch.band"), tr("cmp.bandSub", { cmpReal: cmpReal() }), chartBox("cmp-wealth", 300, true) + cmpLegend(items.filter((_, k) => fan[k]))) : "")
     + card(tr("results.endByPercentile"), cmpReal(), pTable)
@@ -4406,6 +4424,7 @@ Object.assign(ACTIONS, {
   })();
   // Development and test access: #results/<source>/<tab>/real
   if (initial.includes("real")) realView = true;
+  if (initial.includes("nominal")) realView = false;
   if (initial.includes("sweep2")) state.scenarios.sweeps.push({ param: "flows.spendingFactor", from: 0.9, to: 1.1, step: 0.1 });
   if (initial.includes("nosweep")) state.scenarios.sweeps = [];
   if (initial.includes("mem")) Runs.memoryOnly();

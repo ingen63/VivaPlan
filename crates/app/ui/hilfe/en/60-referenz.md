@@ -109,7 +109,7 @@ Every output starts with `format` and the version. Amounts are rounded to whole 
 
 **`single`** (one return path): key figures of the run (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` as a table with `columns` and one row per year (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: value at the end of the year; `income`, `spending`, `taxes`: sum of the year) and `events` as pairs of month and text.
 
-**`batch`** (several paths): `runs`, `successRate`, `earliestDepletion`, `percentiles` (final wealth at 0 = worst run, 1, 5, 10, 25, 50, 75, 90, 95 and 99 %) and `years` with `p5` to `p95` of the total wealth, the real median `p50Real` and the share of runs with wealth left, `survival`.
+**`batch`** (several paths): `runs`, `successRate`, `earliestDepletion`, `percentiles` (final wealth `endTotal` and `endTotalReal` at 0 = worst run, 1, 5, 10, 25, 50, 75, 90, 95 and 99 %, runs ordered by the nominal final wealth), `percentilesReal` (the same with the runs ordered by the final wealth in today's purchasing power; the run of a percentile may differ) and `years` with `p5` to `p95` of the total wealth, the real median `p50Real` and the share of runs with wealth left, `survival`.
 
 **`scenarios`** (variations): `params` and per combination `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
 

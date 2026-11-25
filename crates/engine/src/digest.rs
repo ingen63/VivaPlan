@@ -296,8 +296,14 @@ pub struct Digest {
     pub success_rate: Option<f64>,
     /// First month without funds: of the single run, or the earliest over all runs.
     pub depleted: Option<YearMonth>,
-    /// End wealth: of the single run (as percentile 50), or per percentile.
+    /// End wealth: of the single run (as percentile 50), or per percentile. #265: `nominal` is the run of the
+    /// percentile in the order by nominal end wealth, `real` the run in the order by end wealth in today's purchasing
+    /// power (see `real_order`); both ascend with the percentile.
     pub end_wealth: Vec<EndWealth>,
+    /// Several runs (#265): `true` if the real values of `end_wealth` come from the order by real end wealth, `false`
+    /// for results saved before #265, whose real value is that of the run of the nominal order (need not ascend).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub real_order: Option<bool>,
     /// Single run: total wealth at retirement.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total_at_retirement: Option<f64>,
@@ -332,6 +338,8 @@ pub struct StoredBatchSummary {
     pub runs: usize,
     pub success_rate: f64,
     pub percentiles: Vec<StoredPercentile>,
+    /// Percentiles in the order by real end wealth; missing in results before #265.
+    pub percentiles_real: Vec<StoredPercentile>,
     /// Month and reason (the reason is not read).
     pub earliest_depletion: Option<(YearMonth, Value)>,
     pub emergency_sale_runs: usize,
@@ -366,20 +374,32 @@ pub fn rate_class(success_rate: f64) -> Verdict {
 }
 
 impl StoredBatch {
-    /// End wealth per percentile; the real value of results before #126 from the detail runs (#128).
+    /// End wealth per percentile: nominal of the nominal order, real of the real order (#265). Results before #265
+    /// take the real value of the run of the nominal order; results before #126 from the detail runs (#128).
     fn end_wealth(&self) -> Vec<EndWealth> {
+        let real_of = |p: &StoredPercentile| {
+            if !self.summary.percentiles_real.is_empty() {
+                return self
+                    .summary
+                    .percentiles_real
+                    .iter()
+                    .find(|q| q.percent == p.percent)
+                    .and_then(|q| q.end_total_real);
+            }
+            p.end_total_real.or_else(|| {
+                self.details
+                    .iter()
+                    .find(|(q, _)| *q == p.percent)
+                    .map(|(_, d)| d.summary.end_total_real)
+            })
+        };
         self.summary
             .percentiles
             .iter()
             .map(|p| EndWealth {
                 percent: p.percent,
                 nominal: Some(p.end_total),
-                real: p.end_total_real.or_else(|| {
-                    self.details
-                        .iter()
-                        .find(|(q, _)| *q == p.percent)
-                        .map(|(_, d)| d.summary.end_total_real)
-                }),
+                real: real_of(p),
             })
             .collect()
     }
@@ -413,6 +433,7 @@ pub fn digest(result: &StoredResult) -> Option<Digest> {
             total_at_retirement: s.total_at_retirement,
             taxes_total: Some(s.taxes_total),
             emergency_sale_runs: None,
+            real_order: None,
         });
     }
     let b = result.batch.as_ref()?;
@@ -432,6 +453,7 @@ pub fn digest(result: &StoredResult) -> Option<Digest> {
         total_at_retirement: None,
         taxes_total: None,
         emergency_sale_runs: Some(s.emergency_sale_runs),
+        real_order: Some(!s.percentiles_real.is_empty()),
     })
 }
 

@@ -192,7 +192,7 @@ test.describe("#72 Result in words", () => {
   });
 
   test("AK4, AK5, AK7: single run, amounts follow nominal/purchasing power, depleted wealth refers to the optimization", async ({ page }) => {
-    const errors = await open(page, "results/nosweep");
+    const errors = await open(page, "results/nosweep/nominal");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const v = page.locator("#verdict");
     const nominal = await page.evaluate(() => fmtMoney(lastRun.single.summary.endTotal));

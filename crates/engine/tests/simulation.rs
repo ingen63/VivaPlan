@@ -1119,3 +1119,61 @@ fn issue_130_ak1_scenario_percentiles_without_real_end_wealth() {
     assert_eq!(batch.len(), 10);
     assert!(batch.iter().all(|p| p["endTotalReal"].is_f64()));
 }
+
+/// #265/AK1, AK3: Parametric with random inflation: the summary carries both orders, the detail runs of each order are
+/// the runs of its percentiles (same label, same end wealth), and the real order differs from the nominal one.
+#[test]
+fn issue_265_ak3_detail_runs_follow_each_order() {
+    let mut v = engine::api::example_plan();
+    v["returns"]["source"] = json!("parametric");
+    v["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
+    v["scenarios"]["sweeps"] = json!([]);
+    let out = engine::api::run(&v, Path::new("/"), None);
+    assert!(out.error.is_none(), "{:?}", out.error);
+    let b = out.batch.expect("mehrere Läufe");
+    let s = &b.summary;
+    let ascending = |v: Vec<f64>| v.windows(2).all(|w| w[0] <= w[1]);
+    assert!(ascending(s.percentiles.iter().map(|p| p.end_total).collect()));
+    assert!(ascending(
+        s.percentiles_real.iter().map(|p| p.end_total_real.unwrap()).collect()
+    ));
+    assert_ne!(
+        s.percentiles.iter().map(|p| p.index).collect::<Vec<_>>(),
+        s.percentiles_real.iter().map(|p| p.index).collect::<Vec<_>>(),
+        "Ordnungen gleich: Testfall ohne Aussage"
+    );
+    for (list, details) in [(&s.percentiles, &b.details), (&s.percentiles_real, &b.details_real)] {
+        assert_eq!(details.len(), engine::api::DETAIL_PERCENTS.len());
+        for (q, run) in details {
+            let p = list.iter().find(|p| p.percent == *q).expect("Perzentil");
+            assert_eq!(p.label, run.label, "{q}");
+            assert_eq!(p.end_total.to_bits(), run.summary.end_total.to_bits(), "{q}");
+            assert_eq!(
+                p.end_total_real.unwrap().to_bits(),
+                run.summary.end_total_real.to_bits(),
+                "{q}"
+            );
+            assert_eq!(p.emergency_sales, run.summary.emergency_sales, "{q}");
+        }
+    }
+}
+
+/// #265/AK4: The real median of the scenarios is the run at the 50th percentile of the real order; the scenarios
+/// carry the real order with its runs (path numbers for the single runs of a step).
+#[test]
+fn issue_265_ak4_scenarios_follow_the_real_order() {
+    let mut v = engine::api::example_plan();
+    v["returns"]["source"] = json!("parametric");
+    v["returns"]["parametric"] = json!({ "paths": 21, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
+    let out = engine::api::run(&v, Path::new("/"), None);
+    assert!(out.error.is_none(), "{:?}", out.error);
+    let sc = out.scenarios.expect("Szenarien");
+    assert!(!sc.results.is_empty());
+    for r in &sc.results {
+        assert_eq!(r.percentiles_real.len(), 10);
+        let median = r.percentiles_real.iter().find(|p| p.percent == 50).unwrap();
+        assert_eq!(r.p50_real.to_bits(), median.end_total_real.unwrap().to_bits());
+        let real: Vec<f64> = r.percentiles_real.iter().map(|p| p.end_total_real.unwrap()).collect();
+        assert!(real.windows(2).all(|w| w[0] <= w[1]), "{real:?}");
+    }
+}

@@ -203,8 +203,32 @@ pub struct BatchOut {
     pub summary: BatchSummary,
     pub bands: Bands,
     pub stats: batch::BatchStats,
-    /// Runs at the worst end wealth (0) and at the 1st, 5th, 50th, 95th and 99th percentile, with monthly values.
+    /// Runs at the worst end wealth (0) and at the 1st, 5th, 50th, 95th and 99th percentile, with monthly values
+    /// (nominal order, `summary.percentiles`).
     pub details: Vec<(u32, SimResult)>,
+    /// #265: The same in the order by the end wealth in today's purchasing power (`summary.percentiles_real`).
+    /// Missing in the JSON when empty (results before #265).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub details_real: Vec<(u32, SimResult)>,
+}
+
+/// Percentiles of the runs kept with all monthly values in [`BatchOut::details`].
+pub const DETAIL_PERCENTS: [u32; 6] = [0, 1, 5, 50, 95, 99];
+
+/// Runs of the percentiles [`DETAIL_PERCENTS`] with all monthly values; a run in both orders is simulated once.
+fn detail_runs(sim: &Simulator, paths: &batch::Paths, orders: [&[batch::Percentile]; 2]) -> [Vec<(u32, SimResult)>; 2] {
+    let mut done: std::collections::HashMap<usize, SimResult> = std::collections::HashMap::new();
+    orders.map(|list| {
+        list.iter()
+            .filter(|x| DETAIL_PERCENTS.contains(&x.percent))
+            .map(|x| {
+                let run = done
+                    .entry(x.index)
+                    .or_insert_with(|| sim.run(&paths.get(x.index), true));
+                (x.percent, run.clone())
+            })
+            .collect()
+    })
 }
 
 /// Parameters of all strategies with default ranges and the values of the plan (for the optimization).
@@ -398,12 +422,7 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
     drop(job);
     let summary = batch::summarize(&results);
     let stats = batch::stats(&sim, &results);
-    let details = summary
-        .percentiles
-        .iter()
-        .filter(|x| matches!(x.percent, 0 | 1 | 5 | 50 | 95 | 99))
-        .map(|x| (x.percent, sim.run(&paths.get(x.index), true)))
-        .collect();
+    let [details, details_real] = detail_runs(&sim, &paths, [&summary.percentiles, &summary.percentiles_real]);
     RunOut {
         issues,
         error: None,
@@ -413,6 +432,7 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
             bands,
             stats,
             details,
+            details_real,
         }),
         scenarios,
         elapsed_ms: t0.elapsed().as_secs_f64() * 1e3,
@@ -509,8 +529,6 @@ fn run_scenarios(
                 };
                 let mut at_ret: Vec<f64> = results.iter().filter_map(|r| r.summary.total_at_retirement).collect();
                 at_ret.sort_by(f64::total_cmp);
-                let mut real: Vec<f64> = results.iter().map(|r| r.summary.end_total_real).collect();
-                real.sort_by(f64::total_cmp);
                 Ok(ScenarioResult {
                     values: values.clone(),
                     runs: s.runs,
@@ -518,7 +536,13 @@ fn run_scenarios(
                     p5: pct(5),
                     p50: pct(50),
                     p95: pct(95),
-                    p50_real: real.get(real.len() / 2).copied().unwrap_or(0.0),
+                    // #265: the median of the real order, like the percentiles in today's purchasing power
+                    p50_real: s
+                        .percentiles_real
+                        .iter()
+                        .find(|p| p.percent == 50)
+                        .and_then(|p| p.end_total_real)
+                        .unwrap_or(0.0),
                     at_retirement: at_ret.get(at_ret.len() / 2).copied(),
                     earliest_depletion: s.earliest_depletion.map(|(m, _)| m),
                     // #130: without real end wealth per percentile, the scenarios do not show it
@@ -530,6 +554,7 @@ fn run_scenarios(
                             ..p
                         })
                         .collect(),
+                    percentiles_real: s.percentiles_real,
                     error: None,
                 })
             })();
@@ -544,6 +569,7 @@ fn run_scenarios(
                 at_retirement: None,
                 earliest_depletion: None,
                 percentiles: vec![],
+                percentiles_real: vec![],
                 error: Some(e.message()),
             })
         })

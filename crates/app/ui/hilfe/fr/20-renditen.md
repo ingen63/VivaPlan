@@ -51,7 +51,9 @@ L’**inflation** agit chaque mois. L’indice du renchérissement croît chaque
 **Nominal et réel:** les résultats existent en deux vues.
 
 - **Nominal:** montants tels qu’ils surviennent alors (en francs futurs).
-- **Pouvoir d’achat actuel:** montants aux prix du début de la simulation, corrigés du renchérissement. Cette vue est généralement la plus honnête pour décider, car 2 millions dans 30 ans ont moins de pouvoir d’achat qu’aujourd’hui.
+- **Pouvoir d’achat actuel:** montants aux prix du début de la simulation, corrigés du renchérissement. Cette vue est généralement la plus honnête pour décider, car 2 millions dans 30 ans ont moins de pouvoir d’achat qu’aujourd’hui. Les résultats s’ouvrent dans cette vue.
+
+Avec plusieurs simulations, les percentiles dépendent de la vue choisie: en pouvoir d’achat actuel, les simulations sont classées selon la fortune finale réelle, en nominal selon la nominale (voir [Fortune finale par percentile](#r-percentiles)).
 
 **Arithmétique et géométrique:** un ‹rendement moyen de 7 %› est généralement une moyenne arithmétique. La moyenne **géométrique** (ce dont votre fortune croît réellement) est plus basse en raison des fluctuations. Avec une espérance de 7 % et une volatilité de 15 %, elle est d’environ 5.9 %. L’info-bulle de la stratégie de placement montre le rendement annuel moyen géométrique.
 

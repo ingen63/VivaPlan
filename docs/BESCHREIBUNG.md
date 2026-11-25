@@ -320,7 +320,11 @@ Rechendauer.
 ## Ergebnisse und Grafiken
 
 Die Ergebnisansicht hat die Registerkarten Übersicht, Grafiken, Einzelne Läufe, Szenarien und Jahreswerte. Alle Beträge
-lassen sich nominal oder in heutiger Kaufkraft anzeigen.
+lassen sich nominal oder in heutiger Kaufkraft anzeigen; die Ansicht öffnet sich in heutiger Kaufkraft. Bei mehreren
+Läufen sind die Perzentile nach dem Endvermögen der gewählten Darstellung geordnet (in heutiger Kaufkraft nach dem
+realen, nominal nach dem nominalen); weil die Inflation je Lauf verschieden ist, kann ein Perzentil je Darstellung zu
+einem anderen Lauf gehören. Kennzahlen, Tabelle, Einzelläufe und Jahreswerte gehören immer zum selben Lauf. Bericht
+(`--json`) und Kurzfassung für die KI nennen beide Ordnungen.
 
 - **Ein Lauf:** Vermögensverlauf; liquides Vermögen nach Aktien, Obligationen und Cash; Einnahmen und Ausgaben pro
   Jahr; Entnahmerate; Immobilien; Vorsorgeguthaben; der Verlauf von Aktien und Obligationen als Index; Ereignisliste.

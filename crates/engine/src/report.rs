@@ -162,11 +162,26 @@ pub struct BatchReport {
     pub earliest_depletion: Option<YearMonth>,
     pub emergency_sale_runs: usize,
     pub unaffordable_renewal_runs: usize,
-    /// End wealth (nominal) at the percentiles 0 (worst run), 1, 5, 10, 25, 50, 75, 90, 95, 99.
+    /// End wealth at the percentiles 0 (worst run), 1, 5, 10, 25, 50, 75, 90, 95, 99, with the runs ordered by the
+    /// nominal end wealth (`endTotal` ascends; `endTotalReal` is the real value of the same run and need not ascend).
     pub percentiles: Vec<PercentileReport>,
+    /// #265: The same with the runs ordered by the end wealth in today's purchasing power (`endTotalReal` ascends).
+    /// The run of a percentile may differ between the orders: runs with high inflation are nominally high, really low.
+    pub percentiles_real: Vec<PercentileReport>,
     /// Per year (last month of the year): percentiles of the total wealth (nominal), median in prices of the start
     /// month, and share of the runs with wealth left.
     pub years: Table,
+}
+
+fn percentile_reports(list: &[crate::batch::Percentile]) -> Vec<PercentileReport> {
+    list.iter()
+        .map(|p| PercentileReport {
+            percent: p.percent,
+            end_total: amount(p.end_total),
+            end_total_real: p.end_total_real.map(amount),
+            depleted: p.depleted,
+        })
+        .collect()
 }
 
 const BATCH_COLUMNS: [&str; 8] = ["year", "p5", "p25", "p50", "p75", "p95", "p50Real", "survival"];
@@ -196,16 +211,8 @@ fn batch(b: &BatchOut) -> BatchReport {
         earliest_depletion: s.earliest_depletion.as_ref().map(|(m, _)| *m),
         emergency_sale_runs: s.emergency_sale_runs,
         unaffordable_renewal_runs: s.unaffordable_renewal_runs,
-        percentiles: s
-            .percentiles
-            .iter()
-            .map(|p| PercentileReport {
-                percent: p.percent,
-                end_total: amount(p.end_total),
-                end_total_real: p.end_total_real.map(amount),
-                depleted: p.depleted,
-            })
-            .collect(),
+        percentiles: percentile_reports(&s.percentiles),
+        percentiles_real: percentile_reports(&s.percentiles_real),
         years: Table {
             columns: BATCH_COLUMNS.to_vec(),
             rows,
@@ -353,6 +360,34 @@ mod tests {
 
     fn library() -> std::path::PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("data")
+    }
+
+    /// #265/AK6: The report (`--json`) names the percentiles in both orders: `percentiles` ascends nominally,
+    /// `percentilesReal` in today's purchasing power.
+    // slow: run of the example plan with 60 paths
+    #[test]
+    fn issue_265_ak6_report_names_both_orders() {
+        let mut plan = crate::api::example_plan();
+        plan["scenarios"]["sweeps"] = json!([]);
+        plan["returns"]["source"] = json!("parametric");
+        plan["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
+        let v = serde_json::to_value(run(&crate::api::run(&plan, Path::new("."), Some(&library())))).unwrap();
+        let col = |list: &str, key: &str| -> Vec<i64> {
+            v["batch"][list]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p[key].as_i64().unwrap())
+                .collect()
+        };
+        let ascending = |x: Vec<i64>| x.windows(2).all(|w| w[0] <= w[1]);
+        assert_eq!(col("percentilesReal", "percent"), col("percentiles", "percent"));
+        assert!(ascending(col("percentiles", "endTotal")));
+        assert!(ascending(col("percentilesReal", "endTotalReal")));
+        assert!(
+            !ascending(col("percentiles", "endTotalReal")),
+            "Ordnungen gleich: Testfall ohne Aussage"
+        );
     }
 
     /// #207/AK5: the result of `run` for the example plan stays below 20 000 characters (with variations), also

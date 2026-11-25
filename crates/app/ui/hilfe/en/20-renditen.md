@@ -51,7 +51,9 @@ Keywords: nominal, real, inflation, geometric, annual return, purchasing power
 **Nominal and real:** The results come in two views.
 
 - **Nominal:** amounts as they occur at the time (in future francs).
-- **Today's purchasing power:** amounts in prices of the simulation start, adjusted for inflation. This view is usually the more honest one for decisions, because 2 million in 30 years has less purchasing power than today.
+- **Today's purchasing power:** amounts in prices of the simulation start, adjusted for inflation. This view is usually the more honest one for decisions, because 2 million in 30 years has less purchasing power than today. The results open in this view.
+
+With several runs, the percentiles belong to the chosen view: in today's purchasing power the runs are ordered by the real final wealth, nominal by the nominal one (see [Final wealth by percentile](#r-percentiles)).
 
 **Arithmetic and geometric:** An ‘average return of 7 %’ is usually an arithmetic average. The **geometric** average (how much your wealth really grows) is lower because of the fluctuations. With an expectation of 7 % and a volatility of 15 %, it is about 5.9 %. The short info of the investment strategy shows the mean annual return geometrically.
 

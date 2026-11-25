@@ -109,7 +109,7 @@ Jede Ausgabe beginnt mit `format` und der Version. Beträge sind auf ganze Einhe
 
 **`single`** (ein Renditepfad): Kennzahlen des Laufs (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` als Tabelle mit `columns` und einer Zeile je Jahr (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: Stand Ende Jahr; `income`, `spending`, `taxes`: Summe des Jahres) und `events` als Paare aus Monat und Text.
 
-**`batch`** (mehrere Pfade): `runs`, `successRate`, `earliestDepletion`, `percentiles` (Endvermögen bei 0 = schlechtester Lauf, 1, 5, 10, 25, 50, 75, 90, 95 und 99 %) und `years` mit `p5` bis `p95` des Gesamtvermögens, dem realen Median `p50Real` und dem Anteil der Läufe mit Vermögen `survival`.
+**`batch`** (mehrere Pfade): `runs`, `successRate`, `earliestDepletion`, `percentiles` (Endvermögen `endTotal` und `endTotalReal` bei 0 = schlechtester Lauf, 1, 5, 10, 25, 50, 75, 90, 95 und 99 %, Läufe nach dem nominalen Endvermögen geordnet), `percentilesReal` (dasselbe mit den Läufen nach dem Endvermögen in heutiger Kaufkraft geordnet; der Lauf eines Perzentils kann sich unterscheiden) und `years` mit `p5` bis `p95` des Gesamtvermögens, dem realen Median `p50Real` und dem Anteil der Läufe mit Vermögen `survival`.
 
 **`scenarios`** (Variationen): `params` und je Kombination `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
 

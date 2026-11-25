@@ -111,7 +111,7 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
   test("#52/AK8: the contribution appears in total spending of the annual values", async ({ page }) => {
     const errors = await open(page);
     const total = async contribution => {
-      await page.evaluate(c => { state.returns.source = "fixed"; state.scenarios.sweeps = []; state.pillar3a[0].contribution = c; }, contribution);
+      await page.evaluate(c => { realView = false; state.returns.source = "fixed"; state.scenarios.sweeps = []; state.pillar3a[0].contribution = c; }, contribution);
       await page.evaluate(() => runSimulation("table", { noConfirm: true }));
       await expect(page.locator("#resultsBody table.yt")).toBeVisible();
       const v = await page.locator("#resultsBody table.yt tr").nth(2).locator("td").nth(6).textContent();

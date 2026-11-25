@@ -23,7 +23,8 @@ test.describe("Inputs, check and live preview", () => {
   });
 
   test("live preview matches the final simulation", async ({ page }) => {
-    const errors = await open(page, "results/nosweep");
+    // #265: the preview shows nominal amounts, the results start in today's purchasing power
+    const errors = await open(page, "results/nosweep/nominal");
     // Test access computes directly; back to the editor, remember the value, compute again and compare.
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     const finalEnd = await resultKpi(page, "Vermögen am Ende").textContent();

@@ -91,14 +91,14 @@ test.describe("Comparison like the single result (#115)", () => {
     // Key figure median real = final wealth of the median run in today's purchasing power, per result
     const exp = await page.evaluate(async () => {
       const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
-      return Promise.all(metas.map(async m => { const d = await Runs.get(m.id); return fmtMio(d.result.batch.details.find(([q]) => q === 50)[1].summary.endTotalReal); }));
+      return Promise.all(metas.map(async m => { const d = await Runs.get(m.id); return fmtMio(d.result.batch.detailsReal.find(([q]) => q === 50)[1].summary.endTotalReal); }));
     });
     const rows = page.locator("#resultsBody table").first().locator("tr");
     for (let i = 0; i < exp.length; i++) await expect(rows.nth(i + 1).locator("td").nth(4)).toHaveText(exp[i]);
     // Annual values: total wealth at the end of the first year = nominal / price index of this month (median run)
     await tab(page, "Jahreswerte");
     const want = await page.evaluate(async () => {
-      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.detailsReal.find(([q]) => q === 50)[1];
       const y = run.records[0].month.slice(0, 4), last = run.records.filter(r => r.month.startsWith(y)).pop();
       return fmtInt(last.total / last.priceIndex);
     });
@@ -110,6 +110,7 @@ test.describe("Comparison like the single result (#115)", () => {
 
   test("#115/AK2: overview with range, final wealth by percentile, probability and age at depletion per result", async ({ page }) => {
     const errors = await openCompare(page);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
     const titles = await page.locator("#resultsBody .card h3").allInnerTexts();
     for (const t of ["Kennzahlen", "Bandbreite des Gesamtvermögens", "Endvermögen nach Perzentil", "Wahrscheinlichkeit, dass das Geld reicht"])
       expect(titles.some(x => x.startsWith(t)), t).toBe(true);
@@ -131,19 +132,18 @@ test.describe("Comparison like the single result (#115)", () => {
   test("#126/AK2, #126/AK3, #129/AK2: final wealth by percentile in today's purchasing power shows every percentile per result, with notice", async ({ page }) => {
     const errors = await openCompare(page);
     const card = page.locator("#resultsBody .card", { hasText: "Endvermögen nach Perzentil" });
-    await expect(card.locator(".hint")).toHaveCount(0);
-    await page.locator('#resultsTabs button[data-action="real"][data-v="1"]').click();
-    // per result (column) the real final wealth of the run per percentile, rows descending as in the table
+    // #265: per result (column) the real final wealth of the runs in the real order, rows descending as in the table
     const want = await page.evaluate(async () => {
       const metas = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse();
-      return Promise.all(metas.map(async m => (await Runs.get(m.id)).result.batch.summary.percentiles
-        .slice().sort((a, b) => b.percent - a.percent).map(p => fmtInt(p.endTotalReal))));
+      const col = (list, key) => list.slice().sort((a, b) => b.percent - a.percent).map(p => fmtInt(p[key]));
+      return Promise.all(metas.map(async m => { const s = (await Runs.get(m.id)).result.batch.summary;
+        return { real: col(s.percentilesReal, "endTotalReal"), nominal: col(s.percentiles, "endTotal") }; }));
     });
     expect(want).toHaveLength(2);
-    for (let i = 0; i < want.length; i++) await expect(card.locator(`table tr td:nth-child(${i + 2})`)).toHaveText(want[i]);
-    await expect(card.locator(".hint")).toContainText("Laufs dieses Perzentils");
+    for (let i = 0; i < want.length; i++) await expect(card.locator(`table tr td:nth-child(${i + 2})`)).toHaveText(want[i].real);
+    await expect(card.locator(".hint")).toContainText("in heutiger Kaufkraft nach dem realen");
     await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();
-    await expect(card.locator(".hint")).toHaveCount(0);
+    for (let i = 0; i < want.length; i++) await expect(card.locator(`table tr td:nth-child(${i + 2})`)).toHaveText(want[i].nominal);
     await noErrors(page, errors);
   });
 
@@ -154,6 +154,7 @@ test.describe("Comparison like the single result (#115)", () => {
       const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], d = await Runs.get(m.id);
       const b = structuredClone(d.result.batch);
       b.summary.percentiles.forEach(p => delete p.endTotalReal);
+      delete b.summary.percentilesReal; delete b.detailsReal;
       await Runs.add(m, { ...d, result: { ...d.result, batch: b } });
       const det = new Map(b.details.map(([q, r]) => [q, fmtInt(r.summary.endTotalReal)]));
       return { name: m.name, want: b.summary.percentiles.slice().sort((x, y) => y.percent - x.percent).map(p => det.get(p.percent) ?? "–") };
@@ -196,7 +197,7 @@ test.describe("Comparison like the single result (#115)", () => {
       await page.locator('select[data-action="cmp-year"]').selectOption(key);
       // Table «Jahreswerte» of the single result (median run) for the second result
       const single = await page.evaluate(async col => {
-        const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[1], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1];
+        const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[1], run = batchDetails((await Runs.get(m.id)).result.batch).find(([q]) => q === 50)[1];
         const div = document.createElement("div");
         await deriveRuns([run]);
         div.innerHTML = yearTable(run);
@@ -223,7 +224,7 @@ test.describe("Comparison like the single result (#115)", () => {
     await tab(page, "Jahreswerte");
     await expect(page.locator('button[data-action="cmp-p"][data-p="5"].on')).toBeAttached();
     const single = await page.evaluate(async () => {
-      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 5)[1];
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], run = batchDetails((await Runs.get(m.id)).result.batch).find(([q]) => q === 5)[1];
       const div = document.createElement("div");
       await deriveRuns([run]);
       div.innerHTML = yearTable(run);
@@ -559,6 +560,7 @@ test.describe("Comparison: stocks, bonds and inflation like in the single result
 
   test("#122/AK2, AK5, AK6: change in % per result like in the single result, reference line at 0, also in today's purchasing power", async ({ page }) => {
     const errors = await openCharts(page);
+    await page.locator('#resultsTabs button[data-action="real"][data-v="0"]').click();   // #265: starts real
     await card(page).locator('button[data-action="mkt"][data-v="pct"]').click();
     await expect(card(page).locator("h3")).toContainText("Änderung gegenüber dem Vorjahresmonat in %");
     await expect(card(page).locator('button[data-action="mkt-log"]')).toHaveCount(0);
@@ -566,7 +568,7 @@ test.describe("Comparison: stocks, bonds and inflation like in the single result
     await expect(page.locator("#cmp-mkt path")).toHaveCount(6);
     // Tooltip in year 2: stocks = change over the last 12 months of the median run of the first result
     const want = await page.evaluate(async () => {
-      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], r = (await Runs.get(m.id)).result.batch.details.find(([q]) => q === 50)[1].records;
+      const m = (await Runs.list()).filter(m => runsSel.has(m.id)).reverse()[0], r = batchDetails((await Runs.get(m.id)).result.batch).find(([q]) => q === 50)[1].records;
       return (100 * (r[18].stockIndex / r[6].stockIndex - 1)).toLocaleString("de-CH", { maximumFractionDigits: 1 });
     });
     const box = await page.locator("#cmp-mkt").boundingBox();

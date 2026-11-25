@@ -109,7 +109,7 @@ Ogni output inizia con `format` e la versione. Gli importi sono arrotondati a un
 
 **`single`** (un percorso di rendimento): indicatori della simulazione (`endTotal`, `endTotalReal`, `totalAtRetirement`, `depleted`, `minLiquid`, `taxesTotal` …), `years` come tabella con `columns` e una riga per anno (`year`, `age`, `liquid`, `propertyEquity`, `pensionFund`, `pillar3a`, `total`: stato a fine anno; `income`, `spending`, `taxes`: somma dell’anno) ed `events` come coppie di mese e testo.
 
-**`batch`** (più percorsi): `runs`, `successRate`, `earliestDepletion`, `percentiles` (sostanza finale a 0 = simulazione peggiore, 1, 5, 10, 25, 50, 75, 90, 95 e 99 %) e `years` con `p5` fino a `p95` della sostanza totale, la mediana reale `p50Real` e la quota delle simulazioni con sostanza residua, `survival`.
+**`batch`** (più percorsi): `runs`, `successRate`, `earliestDepletion`, `percentiles` (sostanza finale `endTotal` e `endTotalReal` a 0 = simulazione peggiore, 1, 5, 10, 25, 50, 75, 90, 95 e 99 %, simulazioni ordinate secondo la sostanza finale nominale), `percentilesReal` (lo stesso con le simulazioni ordinate secondo la sostanza finale al potere d’acquisto attuale; la simulazione di un percentile può differire) e `years` con `p5` fino a `p95` della sostanza totale, la mediana reale `p50Real` e la quota delle simulazioni con sostanza residua, `survival`.
 
 **`scenarios`** (variazioni): `params` e per ogni combinazione `values`, `successRate`, `p5`, `p50`, `p95`, `p50Real`, `atRetirement`, `earliestDepletion`.
 

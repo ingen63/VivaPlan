@@ -351,7 +351,8 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
       const shown = document.querySelector("#resultsPick").textContent;
       const endShown = detailRun50().summary.endTotal;
       function detailRun50() { return detailsOf(lastRun).find(([q]) => q === 50)[1]; }
-      const expected = lvl.percentiles.find(p => p.percent === 50).endTotal;
+      // #265: in today's purchasing power (start) the run of the real order
+      const expected = (realView ? lvl.percentilesReal : lvl.percentiles).find(p => p.percent === 50).endTotal;
       resultTab = "table"; renderResults(lastRun);
       const tableHasPicker = document.querySelectorAll('select[data-action="var-sel"]').length;
       resultTab = "overview"; renderResults(lastRun);

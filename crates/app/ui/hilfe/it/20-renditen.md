@@ -51,7 +51,9 @@ L’**inflazione** agisce ogni mese. L’indice del rincaro cresce mensilmente, 
 **Nominale e reale:** i risultati esistono in due viste.
 
 - **Nominale:** importi come si presentano allora (in franchi futuri).
-- **Potere d’acquisto attuale:** importi ai prezzi dell’inizio della simulazione, depurati dal rincaro. Questa vista è per le decisioni di solito la più onesta, perché 2 milioni tra 30 anni hanno meno potere d’acquisto di oggi.
+- **Potere d’acquisto attuale:** importi ai prezzi dell’inizio della simulazione, depurati dal rincaro. Questa vista è per le decisioni di solito la più onesta, perché 2 milioni tra 30 anni hanno meno potere d’acquisto di oggi. I risultati si aprono in questa vista.
+
+Con più simulazioni i percentili dipendono dalla vista scelta: al potere d’acquisto attuale le simulazioni sono ordinate secondo la sostanza finale reale, in nominale secondo quella nominale (vedi [Sostanza finale per percentile](#r-percentiles)).
 
 **Aritmetico e geometrico:** un ‹rendimento medio del 7 %› è di solito una media aritmetica. La media **geometrica** (di quanto cresce davvero la Sua sostanza) è più bassa a causa delle variazioni. Con un’attesa del 7 % e una volatilità del 15 % è di circa il 5.9 %. L’informazione breve della strategia d’investimento mostra il rendimento annuo medio geometrico.
 

@@ -179,11 +179,22 @@ fn issue_209_ak1_digest_of_several_runs() {
         d.end_wealth.iter().map(|e| e.percent as u64).collect::<Vec<_>>(),
         percents
     );
-    for (e, p) in d.end_wealth.iter().zip(s["percentiles"].as_array().unwrap()) {
+    // #265: nominal of the nominal order, real of the real order
+    let real_order = s["percentilesReal"].as_array().unwrap();
+    for ((e, p), q) in d
+        .end_wealth
+        .iter()
+        .zip(s["percentiles"].as_array().unwrap())
+        .zip(real_order)
+    {
         assert_eq!(e.nominal, Some(num(&p["endTotal"])));
-        assert_eq!(e.real, Some(num(&p["endTotalReal"])));
+        assert_eq!(e.real, Some(num(&q["endTotalReal"])));
     }
     let mut old = res.clone();
+    old["batch"]["summary"]
+        .as_object_mut()
+        .unwrap()
+        .remove("percentilesReal");
     for p in old["batch"]["summary"]["percentiles"].as_array_mut().unwrap() {
         p.as_object_mut().unwrap().remove("endTotalReal");
     }
@@ -200,6 +211,37 @@ fn issue_209_ak1_digest_of_several_runs() {
         assert_eq!(e.real, detail(e.percent), "{}", e.percent);
     }
     assert!(d.end_wealth.iter().any(|e| e.real.is_none()));
+}
+
+/// #265/AK6: The digest names the end wealth per percentile in today's purchasing power in the real order (ascending)
+/// and says which order applies; a result saved before #265 keeps the real value of the nominal order.
+#[test]
+fn issue_265_ak6_digest_names_the_real_order() {
+    let res = result(&mc_plan());
+    let d = api::digest(&res).unwrap().unwrap();
+    assert_eq!(d.real_order, Some(true));
+    let ascending = |v: Vec<f64>| v.windows(2).all(|w| w[0] <= w[1]);
+    assert!(ascending(d.end_wealth.iter().map(|e| e.real.unwrap()).collect()));
+    assert!(ascending(d.end_wealth.iter().map(|e| e.nominal.unwrap()).collect()));
+    let json = serde_json::to_value(&d).unwrap();
+    assert_eq!(json["realOrder"], json!(true));
+
+    let mut old = res.clone();
+    old["batch"]["summary"]
+        .as_object_mut()
+        .unwrap()
+        .remove("percentilesReal");
+    let d = api::digest(&old).unwrap().unwrap();
+    assert_eq!(d.real_order, Some(false));
+    for (e, p) in d
+        .end_wealth
+        .iter()
+        .zip(res["batch"]["summary"]["percentiles"].as_array().unwrap())
+    {
+        assert_eq!(e.real, Some(num(&p["endTotalReal"])));
+    }
+    // a single run has no order
+    assert_eq!(api::digest(&result(&fixed_plan())).unwrap().unwrap().real_order, None);
 }
 
 /// #209/AK1: Digest of a single run: the wealth lasts (next step variations) or is depleted (next step optimization).
@@ -291,7 +333,8 @@ fn issue_209_ak4_run_answer_without_new_fields() {
     assert_eq!(keys, ["batch", "elapsedMs", "error", "issues", "scenarios", "single"]);
     let mut keys: Vec<&String> = res["batch"].as_object().unwrap().keys().collect();
     keys.sort();
-    assert_eq!(keys, ["bands", "details", "stats", "summary"]);
+    // #265: the runs of the percentiles in the order by real end wealth
+    assert_eq!(keys, ["bands", "details", "detailsReal", "stats", "summary"]);
     for (_, run) in res["batch"]["details"]
         .as_array()
         .unwrap()

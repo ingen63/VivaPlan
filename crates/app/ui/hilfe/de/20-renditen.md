@@ -51,7 +51,9 @@ Stichworte: nominal, real, Teuerung, geometrisch, Jahresrendite, Kaufkraft
 **Nominal und real:** Die Ergebnisse gibt es in zwei Ansichten.
 
 - **Nominal:** Beträge, wie sie dann anfallen (in künftigen Franken).
-- **Heutige Kaufkraft:** Beträge in Preisen des Simulationsstarts, bereinigt um die Teuerung. Diese Ansicht ist für Entscheide meist die ehrlichere, weil 2 Millionen in 30 Jahren weniger Kaufkraft haben als heute.
+- **Heutige Kaufkraft:** Beträge in Preisen des Simulationsstarts, bereinigt um die Teuerung. Diese Ansicht ist für Entscheide meist die ehrlichere, weil 2 Millionen in 30 Jahren weniger Kaufkraft haben als heute. Die Ergebnisse öffnen sich in dieser Ansicht.
+
+Bei mehreren Läufen gehören die Perzentile zur gewählten Ansicht: in heutiger Kaufkraft sind die Läufe nach dem realen Endvermögen geordnet, nominal nach dem nominalen (siehe [Endvermögen nach Perzentil](#r-percentiles)).
 
 **Arithmetisch und geometrisch:** Eine «durchschnittliche Rendite von 7 %» ist meist ein arithmetischer Durchschnitt. Der **geometrische** Durchschnitt (was Ihr Vermögen wirklich wächst) ist wegen der Schwankungen tiefer. Bei 7 % Erwartung und 15 % Schwankung liegt er bei rund 5.9 %. Die Kurzinfo der Anlagestrategie zeigt die mittlere Jahresrendite geometrisch.
 
