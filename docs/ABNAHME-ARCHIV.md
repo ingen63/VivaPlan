@@ -1973,3 +1973,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #258/AK1 | «Nichts gerechnet» vergleicht mit der geschätzten Rechenzeit statt festen 30 s. | ☑ | **gilt** | `issue_211_ak3_confirmation_from_60_seconds` | 24.11.2026 ok (Durchsicht) |
 | #258/AK2 | Test mit und ohne Abdeckung grün; Push-Hook läuft durch. | ☑ | **gilt** | `issue_211_ak3_confirmation_from_60_seconds` | 24.11.2026 ok (94/94 mit Abdeckung, Push-Hook grün) |
+
+### #259 Sprachtest meldet Namen der Immobilie in «Abzüge vom Vermögen» als fehlende Übersetzung
+
+[Issue #259](https://github.com/ingen63/VivaPlan/issues/259) · geschlossen · Umsetzung: 0a1b51c
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #259/AK1 | Beschriftung aus Daten der Planung gekennzeichnet, nicht als fehlende Übersetzung gemeldet; ohne Namen bleibt «Steuerwert» geprüft. | ☑ | **gilt** (auch Währung als Spaltenüberschrift, nach Kommentar) | `ui-sprache.spec.js` #170/AK1 | 25.11.2026 ok (e2e grün) |
+| #259/AK2 | `npx playwright test ui-sprache.spec.js` ist grün. | ☑ | **gilt** | `ui-sprache.spec.js` | 25.11.2026 ok (63/63, dreifach wiederholt) |
