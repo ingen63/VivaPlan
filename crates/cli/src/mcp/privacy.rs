@@ -289,6 +289,15 @@ mod tests {
         assert_eq!(v, json!({ "a": ["x.csv", "y.csv", "Person 2"], "b": 3 }));
     }
 
+    /// #210/AK5: A Windows folder is removed from texts with `\` and with `/` as separator.
+    #[test]
+    fn issue_210_ak5_windows_folder_with_both_separators() {
+        let mut r = Redactor::new(None);
+        r.add_dir(Path::new("C:\\Users\\hans\\Pläne"));
+        assert_eq!(r.text("in C:\\Users\\hans\\Pläne\\a.csv"), "in a.csv");
+        assert_eq!(r.text("in C:\\Users\\hans\\Pläne/a.csv"), "in a.csv");
+    }
+
     /// #210/AK5: Without plans and home folder nothing changes.
     #[test]
     fn issue_210_ak5_nothing_to_replace() {
