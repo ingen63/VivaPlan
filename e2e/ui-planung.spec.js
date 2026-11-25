@@ -806,7 +806,7 @@ test.describe("Affordability in the settings (#233)", () => {
     await nav(page, "Immobilien");
     await expect(page.locator('#main input[data-path^="realestate.affordability"]')).toHaveCount(0);
     await expect(page.locator("#main h3", { hasText: "Tragbarkeit" })).toHaveCount(0);
-    await expect(page.locator("#affordNote")).toHaveText("Tragbarkeit: 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 % – änderbar in den Einstellungen.");
+    await expect(page.locator("#affordNote")).toHaveText("Tragbarkeit: 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 % (ab der Pensionierung 65 %) – änderbar in den Einstellungen.");
     await page.locator("#affordNote a").click();
     await expect(dlg(page)).toBeVisible();
     await expect(page.locator("#set-afford-maxLoanToValue")).toBeVisible();
@@ -844,6 +844,8 @@ test.describe("Affordability in the settings (#233)", () => {
 
   test("AK3: loan-to-value 70 % instead of 80 % gives a smaller mortgage for the purchase after sale in preview and simulation", async ({ page }) => {
     const errors = await open(page);
+    // #266: the purchase is after retirement; the lower limit after retirement is not the subject here.
+    await page.evaluate(() => Pref.set("affordability", { ...affordability(), maxLoanToValueRetired: 1 }));
     await highMortgage(page);
     expect(await previewMortgage(page)).toBe(800000);
     expect(await simulationMortgage(page)).toBe(800000);
@@ -872,7 +874,7 @@ test.describe("Affordability in the settings (#233)", () => {
     await page.locator("#fileInput").setInputFiles(file);
     const ask = page.locator("#ask");
     await expect(ask).toBeVisible();
-    await expect(ask).toContainText("Die Tragbarkeit aus der Datei gilt jetzt für alle Planungen (Einstellungen): 30 % des Einkommens, Zins 4.5 %, Nebenkosten 1 %, Belehnung 75 %; bisher 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 %.");
+    await expect(ask).toContainText("Die Tragbarkeit aus der Datei gilt jetzt für alle Planungen (Einstellungen): 30 % des Einkommens, Zins 4.5 %, Nebenkosten 1 %, Belehnung 75 % (ab der Pensionierung 65 %); bisher 33.3 % des Einkommens, Zins 5 %, Nebenkosten 1 %, Belehnung 80 % (ab der Pensionierung 65 %).");
     await ask.locator("button[value='ok']").click();
     expect(await page.evaluate(() => affordability())).toMatchObject({ sustainability: 0.3, imputedRate: 0.045, fixCosts: 0.01, maxLoanToValue: 0.75 });
     expect(await page.evaluate(() => "affordability" in state.realestate)).toBe(false);
@@ -1159,6 +1161,43 @@ test.describe("Married with one person (#250)", () => {
     expect(r.married).toBe(false);
     expect(r.noted).toBe(true);
     expect(r.notes.some(n => n.startsWith("«Verheiratet» gilt neu auch für eine Person allein"))).toBe(true);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Wealth drawdown and loan-to-value after retirement in the affordability (#266)", () => {
+  const dlg = page => page.locator("#settings");
+  const openSettings = async page => { await page.keyboard.press(`${MOD}+,`); await expect(dlg(page)).toBeVisible(); };
+  test("AK1: switch, rate and loan-to-value after retirement with defaults; saved values and older settings", async ({ page }) => {
+    const errors = await open(page);
+    // Older settings without the new values get the defaults.
+    await page.evaluate(() => Pref.set("affordability", { sustainability: 0.3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8 }));
+    expect(await page.evaluate(() => affordability())).toMatchObject({ wealthDrawdown: false, wealthDrawdownRate: 0.03, maxLoanToValueRetired: 0.65 });
+    await openSettings(page);
+    for (const t of ["Vermögensverzehr in der Tragbarkeit anrechnen", "Vermögensverzehr pro Jahr", "Höchste Belehnung ab der Pensionierung"])
+      await expect(dlg(page)).toContainText(t);
+    await expect(page.locator("#set-afford-wealthDrawdown")).not.toBeChecked();
+    await expect(page.locator("#set-afford-wealthDrawdownRate")).toHaveValue("3");
+    await expect(page.locator("#set-afford-maxLoanToValueRetired")).toHaveValue("65");
+    await expect(page.locator("#settings label.field", { has: page.locator("#set-afford-maxLoanToValueRetired") })).toContainText("Standard 65 %");
+    await page.locator("#set-afford-wealthDrawdown").check();
+    await page.locator("#set-afford-wealthDrawdownRate").fill("4");
+    await page.locator("#set-afford-maxLoanToValueRetired").fill("60");
+    await page.locator("#settingsSave").click();
+    await expect(dlg(page)).toBeHidden();
+    await page.reload();
+    await page.waitForSelector("html[data-ready='1']");
+    expect(await page.evaluate(() => affordability())).toMatchObject({ wealthDrawdown: true, wealthDrawdownRate: 0.04, maxLoanToValueRetired: 0.6 });
+    // The note in the real estate section names the values (#266/AK7).
+    await nav(page, "Immobilien");
+    await expect(page.locator("#affordNote")).toContainText("Belehnung 80 % (ab der Pensionierung 60 %), Vermögensverzehr 4 % pro Jahr");
+    // Default values: switch off again.
+    await openSettings(page);
+    await page.locator("#settingsDefaults").click();
+    await page.locator("#ask button[value='ok']").click();
+    await expect(page.locator("#set-afford-wealthDrawdown")).not.toBeChecked();
+    expect(await page.evaluate(() => affordability())).toMatchObject({ wealthDrawdown: false, wealthDrawdownRate: 0.03, maxLoanToValueRetired: 0.65 });
     await noErrors(page, errors);
   });
 });

@@ -529,19 +529,23 @@ With this switch at the top of the “Real estate” tab you check whether the p
 - **Read-only:** while the switch is on, all other fields of the tab are grey and read-only. The values are kept and apply again unchanged when it is switched off.
 
 ## @f-re-afford Affordability
-Keywords: bank, affordability, loan-to-value, imputed interest rate, equity, mortgage
+Keywords: bank, affordability, loan-to-value, imputed interest rate, equity, mortgage, wealth drawdown, retirement
 
-The banks' affordability calculation, applied to purchases “after sale” and at every renewal of a mortgage period. A mortgage is affordable if the **imputed costs** do not exceed a share of the income. The four values are in the [settings](#f-settings) and apply to all plans on this device.
+The banks' affordability calculation, applied to purchases “after sale” and at every renewal of a mortgage period. A mortgage is affordable if the **imputed costs** do not exceed a share of the income. The values are in the [settings](#f-settings) and apply to all plans on this device.
 
 - **Max. share of income:** usually one third (33 %).
 - **Imputed interest rate:** usually 5 %, regardless of the current interest rate.
 - **Fixed costs:** usually 1 % of the price per year.
-- **Income:** Only earned income and pensions are counted, **not** the withdrawal from wealth. If the income is not sufficient, the mortgage is reduced; the purchase then shows the **one-off repayment** from wealth as an event.
+- **Income:** Earned income and pensions are counted. If the income is not sufficient, the mortgage is reduced; the purchase then shows the **one-off repayment** from wealth as an event.
+- **Wealth drawdown in the affordability** (switch, default off) with a **rate per year** (default 3 %): When switched on, this share of the **free wealth** (cash, stocks, bonds in the month of the check) also counts as income; at a purchase only the wealth after deducting the equity for this property. Pillar 3a and vested benefits do not count. Example: pension 60'000, free wealth 2'000'000, rate 3 % → counted income 120'000.
 - **Maximum loan-to-value:** usually 80 % of the price. At least 20 % is equity.
+- **Maximum loan-to-value from retirement** (default 65 %): Once all persons of the household are retired (pension fund payout), the mortgage at a purchase and at every renewal is at most this share of the market value in the month of the check. Anything above is treated like insufficient affordability.
+
+Banks' practice varies: some count 3 to 5 % of the free wealth, others no fixed rate; from retirement they usually lend 60 to 67 %. Adjust the values to your bank.
 
 If the purchase is not affordable, the mortgage is reduced. If the equity is still not sufficient, there is no purchase and the rents begin.
 
-**At every renewal** of a mortgage period (also for owned properties), the app checks the affordability of the whole mortgage again, with the income of the month of renewal (earned income and pensions). If the mortgage is no longer affordable, the simulation calculates the **minimum one-off payment** needed to make it affordable again and pays it from wealth (proportionally across all tranches). This only applies if wealth is **not negative** afterwards **and** the [emergency sale criterion](#f-re-emergency) is **not** triggered after the payment (estimated with the planned spending and the housing costs after the payment). Then the mortgage is renewed with the reduced amount. Otherwise there is **no payment**, the mortgage is **not renewed**, and an **emergency sale** of the property is initiated (carried out in the following month). The result view logs every renewal (date and age, affordability, one-off payment, new mortgage, emergency sale with the reason “Wealth < 0” or “Emergency sale criterion”) and, with several runs, counts in how many runs one-off payments and emergency sales occur, also per percentile. Typical case: income drops at retirement.
+**At every renewal** of a mortgage period (also for owned properties), the app checks the affordability of the whole mortgage again, with the income of the month of renewal (earned income and pensions, with wealth drawdown if switched on) and, once everyone is retired, with the loan-to-value from retirement. If the mortgage is no longer affordable, the simulation calculates the **minimum one-off payment** needed to make it affordable again and pays it from wealth (proportionally across all tranches). This only applies if wealth is **not negative** afterwards **and** the [emergency sale criterion](#f-re-emergency) is **not** triggered after the payment (estimated with the planned spending and the housing costs after the payment). Then the mortgage is renewed with the reduced amount. Otherwise there is **no payment**, the mortgage is **not renewed**, and an **emergency sale** of the property is initiated (carried out in the following month). The result view logs every renewal (date and age, affordability, one-off payment, new mortgage, emergency sale with the reason “Wealth < 0” or “Emergency sale criterion”) and, with several runs, counts in how many runs one-off payments and emergency sales occur, also per percentile. Typical case: income drops at retirement.
 
 ## @s-scenarios Scenarios & simulation
 Keywords: variation, sweep, parameter, runs, size

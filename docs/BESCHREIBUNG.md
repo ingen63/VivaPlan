@@ -131,7 +131,8 @@ Der Editor führt durch zwölf Abschnitte:
 
 **Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse, die
 Maximalbeträge der kleinen und der grossen Säule 3a und die Tragbarkeit der Banken (höchstens vom Einkommen, kalkulatorischer
-Zins, Nebenkosten, höchste Belehnung; Standard 33 %, 5 %, 1 %, 80 %). Sie gelten für alle Planungen auf dem Gerät und werden
+Zins, Nebenkosten, höchste Belehnung; Standard 33 %, 5 %, 1 %, 80 %; dazu Vermögensverzehr in der Tragbarkeit, Standard aus
+mit 3 % pro Jahr, und höchste Belehnung ab der Pensionierung, Standard 65 %, #266). Sie gelten für alle Planungen auf dem Gerät und werden
 nicht in der Planungsdatei gespeichert; der Abschnitt «Immobilien» nennt die geltende Tragbarkeit in einem Hinweis. Ältere
 Planungsdateien werden beim Öffnen übernommen (feste Meilensteine, Säule 3a als eigenes Konto, eigene Werte der Tragbarkeit
 gehen in die Einstellungen über); ein Dialog nennt jede Änderung. Gespeicherte Ergebnisse behalten die Tragbarkeit, mit der
@@ -207,7 +208,9 @@ Marge, mit Verlängerung oder Rückzahlung am Ende. Die Amortisation erfolgt dir
 indirekt nur bis zum AHV-Bezug, danach direkt.
 
 Beim Kauf prüft die App die Tragbarkeit wie eine Bank (Werte in den Einstellungen) und kürzt die Hypothek nötigenfalls;
-auf Wunsch wird mit der höchsten Belehnung (Standard 80 %) finanziert. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
+auf Wunsch wird mit der höchsten Belehnung (Standard 80 %) finanziert. Eingeschaltet zählt ein Anteil des freien Vermögens
+(Bargeld, Aktien, Obligationen; beim Kauf nach Abzug des Eigenkapitals) als Einkommen; sobald alle Personen pensioniert sind,
+gilt beim Kauf und bei jeder Erneuerung höchstens die Belehnung ab der Pensionierung (#266). Die Praxis der Banken ist verschieden. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
 Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten.
 
 Je Liegenschaft im Besitz oder mit geplantem Kauf lässt sich ein **Steuerwert** erfassen, als Betrag oder in % des

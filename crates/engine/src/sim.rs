@@ -2308,7 +2308,23 @@ impl<'a> Run<'a> {
         self.renewals.push(record);
     }
 
-    /// Affordability at the renewal of a mortgage period (imputed rate, income only).
+    /// #266: Every person of the household is retired (last payout of a pension fund reached).
+    fn all_retired(&self, m: YearMonth) -> bool {
+        self.s.retire_at().is_some_and(|r| m >= r)
+    }
+
+    /// #266: Share of the free wealth per year that the affordability counts as income (0 if switched off).
+    fn drawdown_rate(&self) -> f64 {
+        let a = &self.s.afford;
+        if a.wealth_drawdown {
+            a.wealth_drawdown_rate.max(0.0)
+        } else {
+            0.0
+        }
+    }
+
+    /// Affordability at the renewal of a mortgage period (imputed rate; income, with #266 also a share of the free
+    /// wealth; once everyone is retired the mortgage is at most `max_loan_to_value_retired` of the market value).
     /// - Affordable: nothing to do.
     /// - Not affordable: minimal lump sum so that it is affordable again. It is paid from wealth
     ///   and the mortgage is renewed at a reduced amount if wealth is >= 0 afterwards **and** the emergency sale
@@ -2331,7 +2347,14 @@ impl<'a> Run<'a> {
         } else {
             self.worth(i) * a.fix_costs
         };
-        let max = ((a.sustainability * income_m * 12.0 - fix) / a.imputed_rate).max(0.0);
+        // #266/AK2: wealth drawdown counts a share of the free wealth in the month of the check as income.
+        let free = (self.cash + self.stocks + self.bonds).max(0.0);
+        let income_y = income_m * 12.0 + self.drawdown_rate() * free;
+        let mut max = ((a.sustainability * income_y - fix) / a.imputed_rate).max(0.0);
+        // #266/AK4: loan-to-value limit once everyone is retired, on the market value in the month of the check.
+        if self.all_retired(m) {
+            max = max.min(a.max_loan_to_value_retired * self.worth(i));
+        }
         let lump = debt - max;
         let mut record = Renewal {
             month: m,
@@ -2431,7 +2454,7 @@ impl<'a> Run<'a> {
         let price = if p.infl_value { p.price * self.infl_idx } else { p.price };
         let entered: f64 = p.tranche_defs.iter().map(|t| t.amount).sum();
         let liquid = self.cash + self.stocks + self.bonds;
-        // Affordability: income only (earned income, pensions), no withdrawal from wealth.
+        // Affordability: earned income and pensions; with #266 also a share of the free wealth (below).
         let income = (s.earned(m, self.infl_idx) + self.pk_pension() + self.ahv()) * 12.0;
         let fix = if p.fix_costs > 0.0 {
             p.fix_costs * 12.0
@@ -2439,9 +2462,23 @@ impl<'a> Run<'a> {
             price * a.fix_costs
         };
         // Desired mortgage: maximum loan-to-value or the entered amounts, at most the loan-to-value limit.
-        let ltv = price * a.max_loan_to_value;
+        // #266/AK4: once everyone is retired, the lower loan-to-value limit applies.
+        let max_ltv = if self.all_retired(m) {
+            a.max_loan_to_value.min(a.max_loan_to_value_retired)
+        } else {
+            a.max_loan_to_value
+        };
+        let ltv = price * max_ltv;
         let cap = if p.max_loan { ltv } else { entered.min(ltv) };
-        let max = ((a.sustainability * income - fix) / a.imputed_rate).max(0.0);
+        let max = purchase_max_mortgage(
+            a.sustainability,
+            a.imputed_rate,
+            income,
+            fix,
+            self.drawdown_rate(),
+            liquid - price,
+            cap,
+        );
         let mortgage = cap.min(max);
         // One-off repayment: part of the desired mortgage paid from wealth for affordability.
         let lump = cap - mortgage;
@@ -4006,6 +4043,89 @@ fn pre_levels(pre: &[f64], months: usize) -> Vec<f64> {
     }
     levels.reverse();
     levels
+}
+
+/// #266/AK2, AK3: Highest affordable mortgage at a purchase. With wealth drawdown (`rate` > 0) the free wealth after the
+/// equity for this property, `liquid_after_price + mortgage`, counts with `rate` as income; it depends on the mortgage,
+/// so the limit solves `imputed × M + fix = sustainability × (income + rate × (liquid_after_price + M))`. Negative free
+/// wealth counts as 0 (no drawdown).
+fn purchase_max_mortgage(
+    sustainability: f64,
+    imputed: f64,
+    income: f64,
+    fix: f64,
+    rate: f64,
+    liquid_after_price: f64,
+    cap: f64,
+) -> f64 {
+    let income_only = ((sustainability * income - fix) / imputed).max(0.0);
+    if rate <= 0.0 {
+        return income_only;
+    }
+    let slope = imputed - sustainability * rate;
+    if slope <= 0.0 {
+        // The drawdown grows at least as fast as the costs: any mortgage up to the cap is affordable if the free wealth
+        // at the cap is not negative.
+        return if liquid_after_price + cap >= 0.0 {
+            cap.max(income_only)
+        } else {
+            income_only
+        };
+    }
+    let with_wealth = (sustainability * (income + rate * liquid_after_price) - fix) / slope;
+    if liquid_after_price + with_wealth >= 0.0 {
+        with_wealth.max(income_only)
+    } else {
+        income_only
+    }
+}
+
+#[cfg(test)]
+mod issue_266_tests {
+    use super::purchase_max_mortgage;
+
+    fn close(a: f64, b: f64) -> bool {
+        (a - b).abs() < 1e-6
+    }
+
+    // #266/AK2: pension 60'000 and 3 % of 2'000'000 free wealth count as 120'000 income.
+    #[test]
+    fn issue_266_ak2_counted_income_example() {
+        // Without equity to pay (free wealth stays 2'000'000): sustainability 1/3, imputed 5 %, no fix costs.
+        let m = purchase_max_mortgage(1.0 / 3.0, 0.05, 60_000.0, 0.0, 0.03, 2_000_000.0, 0.0);
+        // M solves 0.05 M = (60'000 + 0.03 (2'000'000 + M)) / 3: income at M is 120'000 + 0.03 M.
+        let income = 60_000.0 + 0.03 * (2_000_000.0 + m);
+        assert!(close(0.05 * m, income / 3.0), "{m}");
+        // Only the wealth part: 0.05 M = 40'000 / 3 + 0.01 M ⇒ M = 333'333.33 more than with the pension alone.
+        let pension_only = purchase_max_mortgage(1.0 / 3.0, 0.05, 60_000.0, 0.0, 0.0, 2_000_000.0, 0.0);
+        assert!(close(pension_only, 400_000.0));
+        assert!(close(m, 1_000_000.0), "{m}");
+    }
+
+    // #266/AK3: at a purchase only the wealth after the equity for this property counts; negative counts as 0.
+    #[test]
+    fn issue_266_ak3_purchase_counts_wealth_after_equity() {
+        // Price 1'000'000, liquid 2'500'000, income 60'000, fix 10'000: free wealth 1'500'000 + M.
+        let m = purchase_max_mortgage(1.0 / 3.0, 0.05, 60_000.0, 10_000.0, 0.03, 1_500_000.0, 800_000.0);
+        assert!(close(m, 625_000.0), "{m}");
+        // Check: costs 0.05 × 625'000 + 10'000 = 41'250 = (60'000 + 0.03 × 2'125'000) / 3.
+        assert!(close(0.05 * m + 10_000.0, (60_000.0 + 0.03 * (1_500_000.0 + m)) / 3.0));
+        // Free wealth negative after the equity: no drawdown, income only (20'000 − 10'000) / 0.05.
+        let m = purchase_max_mortgage(1.0 / 3.0, 0.05, 60_000.0, 10_000.0, 0.03, -1_000_000.0, 800_000.0);
+        assert!(close(m, 200_000.0), "{m}");
+        // Switched off: income only.
+        let m = purchase_max_mortgage(1.0 / 3.0, 0.05, 60_000.0, 10_000.0, 0.0, 1_500_000.0, 800_000.0);
+        assert!(close(m, 200_000.0), "{m}");
+        // Drawdown at least as high as the imputed costs: the cap, if the free wealth at the cap is not negative.
+        assert!(close(
+            purchase_max_mortgage(1.0 / 3.0, 0.05, 0.0, 0.0, 0.3, 0.0, 800_000.0),
+            800_000.0
+        ));
+        assert!(close(
+            purchase_max_mortgage(1.0 / 3.0, 0.05, 0.0, 0.0, 0.3, -900_000.0, 800_000.0),
+            0.0
+        ));
+    }
 }
 
 #[cfg(test)]

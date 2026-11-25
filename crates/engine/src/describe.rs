@@ -361,8 +361,14 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ),
     ("realestate.affordability.imputedRate", "rate/year", "0..0.2"),
     ("realestate.affordability.maxLoanToValue", "share", "0..1"),
+    ("realestate.affordability.maxLoanToValueRetired", "share", "0..1"),
     ("realestate.affordability.sustainability", "share", "0..1, of income"),
     ("realestate.affordability.wealthContribution", "share", "unused"),
+    (
+        "realestate.affordability.wealthDrawdownRate",
+        "rate/year",
+        "0..1, of free wealth",
+    ),
     ("realestate.emergencyMonths", "months", ">= 0"),
     ("realestate.properties.*.fixCosts", "CHF/month", ">= 0"),
     ("realestate.properties.*.mortgage.pillar3a.balance", "CHF", ">= 0"),
@@ -540,8 +546,20 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "Highest mortgage as a share of the value.",
     ),
     (
+        "realestate.affordability.maxLoanToValueRetired",
+        "Highest mortgage as a share of the value once everyone is retired.",
+    ),
+    (
         "realestate.affordability.sustainability",
         "Highest share of income for housing costs.",
+    ),
+    (
+        "realestate.affordability.wealthDrawdown",
+        "Count a share of the free wealth as income in the affordability.",
+    ),
+    (
+        "realestate.affordability.wealthDrawdownRate",
+        "Share of the free wealth per year counted as income.",
     ),
     ("realestate.neverSell", "Never sell properties (no emergency sales)."),
     (

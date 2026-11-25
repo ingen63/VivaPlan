@@ -647,13 +647,19 @@ Reihenfolge pro Monat:
    gekürzt) und die Eigenmittel reichen; sonst beginnen die Mieten mit `"from": "afterSale"`.
    Mit `"buy": "afterSale:<id>"` wird im Monat nach dem Verkauf einer bestimmten Immobilie gekauft (Verweis über
    deren `id`); klappt der Kauf nicht und ist keine Immobilie mehr im Besitz, beginnen die Mieten.
-   Die Tragbarkeit rechnet nur mit dem Einkommen (Erwerb, Renten): (`sustainability` × Jahreseinkommen − Nebenkosten) /
-   `imputedRate`; `wealthContribution` wird nicht mehr verwendet. Die Werte `realestate.affordability` sind seit #233
+   Die Tragbarkeit rechnet mit dem Einkommen (Erwerb, Renten): (`sustainability` × Jahreseinkommen − Nebenkosten) /
+   `imputedRate`; `wealthContribution` wird nicht mehr verwendet. #266: Mit `wealthDrawdown` (Standard aus) zählt
+   `wealthDrawdownRate` (Standard 3 %) × freies Vermögen (Bargeld, Aktien, Obligationen im Monat der Prüfung, negativ = 0)
+   zum Jahreseinkommen. Beim Kauf ist das freie Vermögen `liquid − Preis + M` und hängt von der Hypothek M ab; die höchste
+   Hypothek löst `imputedRate × M + Nebenkosten = sustainability × (Einkommen + Satz × (liquid − Preis + M))`
+   (`purchase_max_mortgage`). Sobald alle Personen pensioniert sind (letzter Bezug der Pensionskasse, `retire_at`), ist die
+   Hypothek beim Kauf höchstens `min(maxLoanToValue, maxLoanToValueRetired)` × Preis und bei der Erneuerung höchstens
+   `maxLoanToValueRetired` (Standard 65 %) × Marktwert; der Rest wird wie fehlende Tragbarkeit behandelt. Die Werte `realestate.affordability` sind seit #233
    eine Einstellung der App (`affordability` in `einstellungen.json`) und stehen nicht mehr in der Planungsdatei: Die
    Oberfläche setzt sie vor jeder Rechnung in die Planung ein (`Engine.call`, nur wenn die Planung keine eigenen hat, etwa
    die Planung eines gespeicherten Ergebnisses), entfernt sie beim Speichern und übernimmt beim Öffnen die abweichenden Werte
    einer älteren Datei in die Einstellungen (Hinweis im Dialog der Änderungen). Der Rechenkern und die Kommandozeile
-   lesen sie unverändert aus der Planung; fehlen sie, gelten die Standardwerte (1/3, 5 %, 1 %, 80 %). Sie wird auch bei **jeder Erneuerung** einer Hypothekarperiode
+   lesen sie unverändert aus der Planung; fehlen sie, gelten die Standardwerte (1/3, 5 %, 1 %, 80 %; #266: aus, 3 %, 65 %). Sie wird auch bei **jeder Erneuerung** einer Hypothekarperiode
    geprüft (Einkommen im Erneuerungsmonat, Nebenkosten wie erfasst, kalkulatorischer Zins `imputedRate`): Der nicht tragbare
    Teil ist die minimale Einmalzahlung. Sie wird aus dem Vermögen anteilig auf alle Tranchen bezahlt, wenn das Vermögen
    danach >= 0 ist und das Notverkaufskriterium nach der Zahlung nicht auslöst (Schätzung: geplante Ausgaben + Zins,

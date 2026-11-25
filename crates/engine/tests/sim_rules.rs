@@ -549,6 +549,8 @@ fn phase8_chain() -> Value {
     v["flows"]["extras"] = json!([{"date": "2030-01", "amount": -304_500, "label": "Ausgabe 1"},
                                   {"date": "2030-02", "amount": -540_000, "label": "Ausgabe 2"}]);
     buckets(&mut v, 1.0, 1.0, -1.0);
+    // #266: B is bought after retirement with 80 % of the price; the lower limit after retirement is not the subject here.
+    v["realestate"]["affordability"]["maxLoanToValueRetired"] = json!(0.8);
     v
 }
 
@@ -1320,4 +1322,92 @@ fn no_renewal_in_the_month_of_the_sale() {
     let r = run(&v);
     assert!(r.renewals.is_empty(), "{:?}", r.renewals);
     assert_eq!(sale(&r).month, ym(2027, 11));
+}
+
+// ---------------------------------------------------------------------------------------------
+// #266: wealth drawdown and loan-to-value after retirement in the affordability
+// ---------------------------------------------------------------------------------------------
+
+/// `renewal_plan` (retired in January 2027, renewal in November 2027, affordable with income 580'800) with plenty of
+/// free wealth; the lower loan-to-value limit after retirement is switched off unless a test sets it.
+fn drawdown_plan(debt: f64, drawdown: bool) -> Value {
+    let mut v = renewal_plan(debt, two_periods());
+    v["wealth"]["cash"] = json!(3_000_000);
+    v["realestate"]["affordability"]["wealthDrawdown"] = json!(drawdown);
+    v["realestate"]["affordability"]["wealthDrawdownRate"] = json!(0.03);
+    v["realestate"]["affordability"]["maxLoanToValueRetired"] = json!(1.0);
+    v
+}
+
+#[test]
+fn issue_266_ak2_renewal_affordable_with_wealth_drawdown() {
+    // Income only: 580'800 affordable, 680'000 needs a lump sum of 99'200.
+    let r = run(&drawdown_plan(680_000.0, false));
+    let n = &r.renewals[0];
+    assert!(!n.affordable);
+    assert_eq!((n.lump_sum, n.debt_after), (99_200.0, 580_800.0));
+    // With 3 % of about 3 million free wealth (about 90'000 more income) it is affordable without a lump sum.
+    let r = run(&drawdown_plan(680_000.0, true));
+    let n = &r.renewals[0];
+    assert!(n.affordable, "{n:?}");
+    assert_eq!((n.lump_sum, n.debt_after), (0.0, 680_000.0));
+    assert_eq!(r.summary.lump_sums, 0);
+}
+
+#[test]
+fn issue_266_ak2_renewal_counts_exactly_the_rate_of_the_free_wealth() {
+    // The affordable mortgage grows by sustainability × rate × free wealth / imputed rate.
+    let debt = 2_000_000.0;
+    let without = run(&drawdown_plan(debt, false)).renewals[0].debt_after;
+    let r = run(&drawdown_plan(debt, true));
+    let with = r.renewals[0].debt_after;
+    assert_eq!(r.renewals[0].month, ym(2027, 11));
+    let before = rec(&r, 2027, 10);
+    // Free wealth at the check: cash, stocks and bonds during the renewal month; the record of the month before is at
+    // its end, so the value lies within one month's flows of it.
+    let free = (with - without) * 0.0625 / (0.25 * 0.03);
+    let at_end = before.cash + before.stocks + before.bonds;
+    assert!(
+        (free - at_end).abs() < 0.05 * at_end,
+        "free {free}, end of month {at_end}"
+    );
+}
+
+#[test]
+fn issue_266_ak4_renewal_after_retirement_limited_to_65_percent() {
+    // Everyone retired since January 2027: mortgage 700'000 on a market value of 1'000'000 is limited to 650'000
+    // (lump sum 50'000); the affordability alone (with drawdown) would allow it.
+    let mut v = drawdown_plan(700_000.0, true);
+    v["realestate"]["affordability"]["maxLoanToValueRetired"] = json!(0.65);
+    let r = run(&v);
+    let n = &r.renewals[0];
+    assert_eq!((n.lump_sum, n.debt_after), (50_000.0, 650_000.0));
+    // Not yet retired (payout in 2030): only the affordability applies.
+    v["milestones"][1]["date"] = json!("2030-01");
+    let r = run(&v);
+    let n = &r.renewals[0];
+    assert_eq!((n.lump_sum, n.debt_after), (0.0, 700_000.0));
+}
+
+#[test]
+fn issue_266_ak4_purchase_after_retirement_gets_at_most_65_percent() {
+    let m = json!({"amountMode": "maxLoan", "tranches": [{"name": "A", "amount": 0, "periods": [{"type": "fixed", "term": 10, "rate": 0.02}]}]});
+    let mut v = estate(json!([planned(800_000.0, "2030-01", m)]));
+    v["wealth"]["cash"] = json!(3_000_000);
+    v["realestate"]["affordability"]["wealthDrawdown"] = json!(true);
+    let r = run(&v);
+    // Default 65 % of 800'000; the affordability with drawdown would allow more than the 80 % before retirement.
+    assert_eq!(purchase(&r).mortgage, Some(520_000.0));
+    v["realestate"]["affordability"]["maxLoanToValueRetired"] = json!(1.0);
+    let r = run(&v);
+    assert_eq!(purchase(&r).mortgage, Some(640_000.0));
+}
+
+#[test]
+fn issue_266_ak2_switched_off_calculates_as_before() {
+    // Without the switch the rate has no effect.
+    let mut a = drawdown_plan(680_000.0, false);
+    a["realestate"]["affordability"]["wealthDrawdownRate"] = json!(0.5);
+    let b = drawdown_plan(680_000.0, false);
+    assert_eq!(run(&a).renewals[0].debt_after, run(&b).renewals[0].debt_after);
 }

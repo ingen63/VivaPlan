@@ -518,6 +518,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             fix_costs: c.f_or("RealEstate.Affordability.FixCosts", d.fix_costs),
             wealth_contribution: c.f_or("RealEstate.Affordability.CapitalContribution", d.wealth_contribution),
             max_loan_to_value: d.max_loan_to_value,
+            ..d
         },
     };
 

@@ -83,14 +83,20 @@ pub fn affordability(settings: &Map<String, Value>) -> Affordability {
     )
 }
 
-/// The defaults with every saved field of the same name that is a number (except `fixed`).
+/// The defaults with every saved field of the same name that is a number, or a switch where the default is one (#266),
+/// except `fixed`.
 fn overlay<T: Serialize + DeserializeOwned>(default: T, saved: Option<&Value>, fixed: &[&str]) -> T {
     let Ok(Value::Object(mut out)) = serde_json::to_value(&default) else {
         return default;
     };
     if let Some(Value::Object(saved)) = saved {
         for (k, v) in saved {
-            if out.contains_key(k) && !fixed.contains(&k.as_str()) && v.as_f64().is_some_and(f64::is_finite) {
+            let same_kind = match out.get(k) {
+                Some(Value::Bool(_)) => v.is_boolean(),
+                Some(_) => v.as_f64().is_some_and(f64::is_finite),
+                None => false,
+            };
+            if same_kind && !fixed.contains(&k.as_str()) {
                 out.insert(k.clone(), v.clone());
             }
         }
@@ -179,6 +185,36 @@ mod tests {
             (a.sustainability, a.wealth_contribution, a.imputed_rate),
             (0.4, 0.03, 0.05)
         );
+    }
+
+    // #266/AK1: new values with defaults; saved values (switch and numbers) are taken over.
+    #[test]
+    fn issue_266_ak1_affordability_defaults_and_saved_values() {
+        let s = |v: Value| v.as_object().unwrap().clone();
+        let a = affordability(&s(json!({"affordability": {"sustainability": 0.4}})));
+        assert_eq!(
+            (a.wealth_drawdown, a.wealth_drawdown_rate, a.max_loan_to_value_retired),
+            (false, 0.03, 0.65)
+        );
+        let a = affordability(&s(
+            json!({"affordability": {"wealthDrawdown": true, "wealthDrawdownRate": 0.05,
+            "maxLoanToValueRetired": 0.6}}),
+        ));
+        assert_eq!(
+            (a.wealth_drawdown, a.wealth_drawdown_rate, a.max_loan_to_value_retired),
+            (true, 0.05, 0.6)
+        );
+        // Wrong kinds are ignored.
+        let a = affordability(&s(
+            json!({"affordability": {"wealthDrawdown": 1, "wealthDrawdownRate": true}}),
+        ));
+        assert_eq!((a.wealth_drawdown, a.wealth_drawdown_rate), (false, 0.03));
+        // Older plans without the new fields still open.
+        let old: crate::model::Affordability =
+            serde_json::from_value(json!({"sustainability": 0.25, "imputedRate": 0.0625,
+            "fixCosts": 0.01, "wealthContribution": 0.03, "maxLoanToValue": 0.8}))
+            .unwrap();
+        assert_eq!((old.wealth_drawdown, old.max_loan_to_value_retired), (false, 0.65));
     }
 
     // #206/AK3: The plan gets the limits always and the affordability only if it has none.

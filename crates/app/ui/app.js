@@ -2864,17 +2864,21 @@ function limitProblems(l) {
   return out;
 }
 /** #233: Affordability of the banks (setting, before in the plan); the same defaults as the engine (`Affordability`). */
-const AFFORD_DEFAULTS = { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8 };
+const AFFORD_DEFAULTS = { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8, maxLoanToValueRetired: 0.65, wealthDrawdownRate: 0.03 };
+/** #266: wealth drawdown in the affordability (switch, default off). */
+const AFFORD_DRAWDOWN_DEFAULT = false;
 /** No longer used by the engine (affordability only uses income); the plan needs it. */
 const AFFORD_WEALTH_CONTRIBUTION = 0.03;
 let AFFORD_FIELDS;
 onLanguage(() => AFFORD_FIELDS = [["sustainability", tr("realestate.maxIncomeShare")], ["imputedRate", tr("realestate.imputedRate")],
-  ["fixCosts", tr("realestate.costs")], ["maxLoanToValue", tr("realestate.maxLtv")]]);
+  ["fixCosts", tr("realestate.costs")], ["maxLoanToValue", tr("realestate.maxLtv")], ["maxLoanToValueRetired", tr("realestate.maxLtvRetired")],
+  ["wealthDrawdownRate", tr("realestate.drawdownRate")]]);
 /** Applicable affordability: saved values, otherwise the defaults (shares as decimals). */
 function affordability() {
   const saved = Pref.get("affordability", null), a = { ...AFFORD_DEFAULTS };
   if (saved && typeof saved === "object") for (const k of Object.keys(AFFORD_DEFAULTS)) if (Number.isFinite(saved[k])) a[k] = saved[k];
-  return { ...a, wealthContribution: AFFORD_WEALTH_CONTRIBUTION };
+  const wealthDrawdown = typeof saved?.wealthDrawdown === "boolean" ? saved.wealthDrawdown : AFFORD_DRAWDOWN_DEFAULT;
+  return { ...a, wealthDrawdown, wealthContribution: AFFORD_WEALTH_CONTRIBUTION };
 }
 Engine.affordability = affordability;
 /** Validation as before in the editor: every value is a number. */
@@ -2883,7 +2887,8 @@ function affordProblems(a) {
 }
 /** Short text of the values («33.3 % des Einkommens, Zins 5 %, …»), one decimal at most. */
 const affordPct = v => (Math.round(v * 1000) / 10).toLocaleString("de-CH", { maximumFractionDigits: 1 });
-const affordText = a => tr("realestate.affordabilityValues", { income: affordPct(a.sustainability), rate: affordPct(a.imputedRate), costs: affordPct(a.fixCosts), ltv: affordPct(a.maxLoanToValue) });
+const affordText = a => tr("realestate.affordabilityValues", { income: affordPct(a.sustainability), rate: affordPct(a.imputedRate), costs: affordPct(a.fixCosts), ltv: affordPct(a.maxLoanToValue), ltvRetired: affordPct(a.maxLoanToValueRetired ?? AFFORD_DEFAULTS.maxLoanToValueRetired) })
+  + (a.wealthDrawdown ? tr("realestate.affordabilityDrawdown", { drawdown: affordPct(a.wealthDrawdownRate ?? AFFORD_DEFAULTS.wealthDrawdownRate) }) : "");
 /** Copy of the plan with the affordability it is calculated with (saved results, #233/AK5). */
 function withAffordability(plan) {
   const p = JSON.parse(JSON.stringify(plan));
@@ -2906,6 +2911,8 @@ function adoptAffordability(file) {
   const before = affordability(), next = {};
   for (const k of Object.keys(AFFORD_DEFAULTS)) next[k] = Number.isFinite(file[k]) ? file[k] : before[k];
   if (Object.keys(next).every(k => Math.abs(next[k] - before[k]) < 1e-9)) return null;
+  // #266: an older file has no switch for the wealth drawdown; the setting stays.
+  next.wealthDrawdown = before.wealthDrawdown;
   Pref.set("affordability", next);
   return tr("notes.affordabilityAdopted", { values: affordText(next), before: affordText(before) });
 }
@@ -2918,6 +2925,7 @@ function settingsFields(l, language = I18n.choice(), theme = Theme.choice(), af 
     + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
     + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("")
     + `<div id="set-afford" style="grid-column:1/-1;margin-top:6px"><b>${tr("realestate.affordability")}</b> <span class="computed">${tr("realestate.forAfterSale")}</span></div>`
+    + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-afford-wealthDrawdown" ${af.wealthDrawdown ? "checked" : ""}> ${tr("realestate.drawdown")}</label>`
     + AFFORD_FIELDS.map(([k, label]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-afford-${k}" value="${esc(fmtPct(af[k]))}"><span class="unit">%</span></div><span class="computed">${tr("settings.default", { v: `${affordPct(AFFORD_DEFAULTS[k])} %` })}</span></label>`).join("")
     + `<p class="hint" style="grid-column:1/-1">${tr("realestate.affordabilityHint")}</p>`;
 }
@@ -2931,6 +2939,7 @@ function readSettings() {
 function readAffordability() {
   const a = {};
   for (const [k] of AFFORD_FIELDS) { const v = parseNum($("#set-afford-" + k).value); a[k] = v === null ? NaN : v / 100; }
+  a.wealthDrawdown = $("#set-afford-wealthDrawdown").checked;
   return a;
 }
 /** Dialog «Einstellungen»: applies to all plans, is stored locally, never in the plan file. */
@@ -2953,7 +2962,7 @@ $("#settingsSave").addEventListener("click", e => {
 $("#settingsDefaults").addEventListener("click", async e => {
   e.preventDefault();
   if (!await ask(tr("settings.defaults"), tr("settings.resetAsk"), null, tr("settings.reset"))) return;
-  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("affordability", { ...AFFORD_DEFAULTS }); Pref.set("askSaveBeforeRun", true); Pref.set("theme", "system"); Theme.apply();
+  Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("affordability", { ...AFFORD_DEFAULTS, wealthDrawdown: AFFORD_DRAWDOWN_DEFAULT }); Pref.set("askSaveBeforeRun", true); Pref.set("theme", "system"); Theme.apply();
   $("#settingsBody").innerHTML = settingsFields(limits(), I18n.SYSTEM, "system"); $("#settingsErr").textContent = "";
   renderSection();
 });

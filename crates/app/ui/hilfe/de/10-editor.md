@@ -529,19 +529,23 @@ Mit diesem Schalter oben im Reiter «Immobilien» prüfen Sie, ob die Planung au
 - **Nur lesbar:** Ist der Schalter an, sind alle übrigen Felder des Reiters grau und nur lesbar. Die Werte bleiben erhalten und gelten beim Ausschalten wieder unverändert.
 
 ## @f-re-afford Tragbarkeit
-Stichworte: Bank, Belehnung, kalkulatorischer Zins, Eigenmittel, Hypothek
+Stichworte: Bank, Belehnung, kalkulatorischer Zins, Eigenmittel, Hypothek, Vermögensverzehr, Pensionierung
 
-Die Tragbarkeitsrechnung der Banken, angewandt auf Käufe «nach Verkauf» und bei jeder Erneuerung einer Hypothekarperiode. Eine Hypothek ist tragbar, wenn die **kalkulatorischen Kosten** einen Anteil des Einkommens nicht übersteigen. Die vier Werte stehen in den [Einstellungen](#f-settings) und gelten für alle Planungen auf diesem Gerät.
+Die Tragbarkeitsrechnung der Banken, angewandt auf Käufe «nach Verkauf» und bei jeder Erneuerung einer Hypothekarperiode. Eine Hypothek ist tragbar, wenn die **kalkulatorischen Kosten** einen Anteil des Einkommens nicht übersteigen. Die Werte stehen in den [Einstellungen](#f-settings) und gelten für alle Planungen auf diesem Gerät.
 
 - **Höchstens vom Einkommen:** üblich ein Drittel (33 %).
 - **Kalkulatorischer Zins:** meist 5 %, unabhängig vom aktuellen Zins.
 - **Nebenkosten:** üblich 1 % des Preises pro Jahr.
-- **Einkommen:** Angerechnet werden nur Erwerbseinkommen und Renten, **nicht** die Entnahme aus dem Vermögen. Reicht das Einkommen nicht, wird die Hypothek gekürzt; der Kauf zeigt dann die **Einmalrückzahlung** aus dem Vermögen als Ereignis.
+- **Einkommen:** Angerechnet werden Erwerbseinkommen und Renten. Reicht das Einkommen nicht, wird die Hypothek gekürzt; der Kauf zeigt dann die **Einmalrückzahlung** aus dem Vermögen als Ereignis.
+- **Vermögensverzehr in der Tragbarkeit** (Schalter, Standard aus) mit **Satz pro Jahr** (Standard 3 %): Eingeschaltet zählt zusätzlich dieser Anteil des **freien Vermögens** (Bargeld, Aktien, Obligationen im Monat der Prüfung) als Einkommen; beim Kauf nur das Vermögen nach Abzug des Eigenkapitals für dieses Objekt. Säule 3a und Freizügigkeit zählen nicht. Beispiel: Rente 60'000, freies Vermögen 2'000'000, Satz 3 % → angerechnetes Einkommen 120'000.
 - **Höchste Belehnung:** meist 80 % des Preises. Mindestens 20 % sind Eigenmittel.
+- **Höchste Belehnung ab der Pensionierung** (Standard 65 %): Sobald alle Personen des Haushalts pensioniert sind (Bezug der Pensionskasse), ist die Hypothek beim Kauf und bei jeder Erneuerung höchstens dieser Anteil des Marktwerts im Monat der Prüfung. Was darüber liegt, wird wie fehlende Tragbarkeit behandelt.
+
+Die Praxis der Banken ist verschieden: Manche rechnen 3 bis 5 % des freien Vermögens an, andere keinen festen Satz; ab der Pensionierung belehnen sie meist 60 bis 67 %. Passen Sie die Werte Ihrer Bank an.
 
 Ist der Kauf nicht tragbar, wird die Hypothek gekürzt. Reichen auch dann die Eigenmittel nicht, wird nicht gekauft und es beginnen die Mieten.
 
-**Bei jeder Erneuerung** einer Hypothekarperiode (auch bei Immobilien im Besitz) prüft die App die Tragbarkeit der ganzen Hypothek neu, mit dem Einkommen des Erneuerungsmonats (Erwerb und Renten). Ist die Hypothek nicht mehr tragbar, berechnet die Simulation die **minimal nötige Einmalzahlung**, damit sie es wieder ist, und zahlt sie aus dem Vermögen (anteilig auf alle Tranchen). Das gilt nur, wenn das Vermögen danach **nicht negativ** ist **und** das [Notverkaufskriterium](#f-re-emergency) nach der Zahlung **nicht** ausgelöst wird (geschätzt mit den geplanten Ausgaben und den Wohnkosten nach der Zahlung). Dann wird die Hypothek mit dem reduzierten Betrag erneuert. Sonst gibt es **keine Zahlung**, die Hypothek wird **nicht erneuert**, und ein **Notverkauf** der Immobilie wird eingeleitet (ausgeführt im Folgemonat). Die Ergebnisansicht protokolliert jede Erneuerung (Datum und Alter, Tragbarkeit, Einmalzahlung, neue Hypothek, Notverkauf mit Grund «Vermögen < 0» oder «Notverkaufskriterium») und zählt bei mehreren Läufen, in wie vielen Läufen Einmalzahlungen und Notverkäufe vorkommen, auch je Perzentil. Typischer Fall: Das Einkommen sinkt mit der Pensionierung.
+**Bei jeder Erneuerung** einer Hypothekarperiode (auch bei Immobilien im Besitz) prüft die App die Tragbarkeit der ganzen Hypothek neu, mit dem Einkommen des Erneuerungsmonats (Erwerb und Renten, eingeschaltet mit Vermögensverzehr) und, sobald alle pensioniert sind, mit der Belehnung ab der Pensionierung. Ist die Hypothek nicht mehr tragbar, berechnet die Simulation die **minimal nötige Einmalzahlung**, damit sie es wieder ist, und zahlt sie aus dem Vermögen (anteilig auf alle Tranchen). Das gilt nur, wenn das Vermögen danach **nicht negativ** ist **und** das [Notverkaufskriterium](#f-re-emergency) nach der Zahlung **nicht** ausgelöst wird (geschätzt mit den geplanten Ausgaben und den Wohnkosten nach der Zahlung). Dann wird die Hypothek mit dem reduzierten Betrag erneuert. Sonst gibt es **keine Zahlung**, die Hypothek wird **nicht erneuert**, und ein **Notverkauf** der Immobilie wird eingeleitet (ausgeführt im Folgemonat). Die Ergebnisansicht protokolliert jede Erneuerung (Datum und Alter, Tragbarkeit, Einmalzahlung, neue Hypothek, Notverkauf mit Grund «Vermögen < 0» oder «Notverkaufskriterium») und zählt bei mehreren Läufen, in wie vielen Läufen Einmalzahlungen und Notverkäufe vorkommen, auch je Perzentil. Typischer Fall: Das Einkommen sinkt mit der Pensionierung.
 
 ## @s-scenarios Szenarien & Simulation
 Stichworte: Variation, Sweep, Parameter, Läufe, Umfang

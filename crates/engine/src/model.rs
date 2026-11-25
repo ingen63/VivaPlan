@@ -1322,7 +1322,8 @@ pub struct RealEstate {
 }
 
 /// Banks' affordability calculation: (imputed rate × mortgage + fix costs) at most
-/// `sustainability` × annual income (earned income and pensions, without withdrawal from wealth); mortgage at most 80 %.
+/// `sustainability` × annual income (earned income and pensions; with `wealth_drawdown` also a share of the free
+/// wealth, #266); mortgage at most 80 %, once everyone is retired at most `max_loan_to_value_retired`.
 /// If that is not enough, the mortgage is reduced (one-off repayment from wealth).
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -1331,9 +1332,26 @@ pub struct Affordability {
     pub imputed_rate: f64,
     /// Fix costs per year in percent of the purchase price.
     pub fix_costs: f64,
-    /// No longer used (affordability only uses income); kept for older files.
+    /// No longer used (affordability only uses income); kept for older files. #266 uses `wealth_drawdown_rate`.
     pub wealth_contribution: f64,
     pub max_loan_to_value: f64,
+    /// #266: count `wealth_drawdown_rate` × free wealth (cash, stocks, bonds) per year as income.
+    #[serde(default)]
+    pub wealth_drawdown: bool,
+    /// #266: share of the free wealth per year counted as income when `wealth_drawdown` is on.
+    #[serde(default = "default_wealth_drawdown_rate")]
+    pub wealth_drawdown_rate: f64,
+    /// #266: maximum loan-to-value once every person of the household is retired (purchase and renewal).
+    #[serde(default = "default_max_loan_to_value_retired")]
+    pub max_loan_to_value_retired: f64,
+}
+
+fn default_wealth_drawdown_rate() -> f64 {
+    0.03
+}
+
+fn default_max_loan_to_value_retired() -> f64 {
+    0.65
 }
 
 impl Default for Affordability {
@@ -1344,6 +1362,9 @@ impl Default for Affordability {
             fix_costs: 0.01,
             wealth_contribution: 0.03,
             max_loan_to_value: 0.8,
+            wealth_drawdown: false,
+            wealth_drawdown_rate: default_wealth_drawdown_rate(),
+            max_loan_to_value_retired: default_max_loan_to_value_retired(),
         }
     }
 }
