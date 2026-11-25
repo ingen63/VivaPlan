@@ -42,9 +42,10 @@ fn dir_for(os: &str, id: &str, var: impl Fn(&str) -> Option<OsString>) -> Option
     let base = match os {
         "macos" => set("HOME").map(|h| h.join("Library").join("Application Support")),
         "windows" => set("APPDATA"),
-        // Linux and other Unix systems (XDG): XDG_DATA_HOME only counts if it is an absolute path.
+        // Linux and other Unix systems (XDG): XDG_DATA_HOME only counts if it is an absolute path
+        // (`has_root` equals `is_absolute` on Unix and keeps the test portable to Windows).
         _ => set("XDG_DATA_HOME")
-            .filter(|p| p.is_absolute())
+            .filter(|p| p.has_root())
             .or_else(|| set("HOME").map(|h| h.join(".local").join("share"))),
     }?;
     Some(base.join(id))

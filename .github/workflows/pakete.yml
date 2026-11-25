@@ -113,7 +113,9 @@ jobs:
               test -x "$cli"
               "$cli" --version ;;
             linux)
-              dpkg-deb -c target/release/bundle/deb/*.deb | grep -E '\./usr/bin/vivaplan$'
+              # Tauri schreibt die Pfade im .deb mit oder ohne «./» davor; fehlt die Datei, zeigt der Lauf usr/bin.
+              dpkg-deb -c target/release/bundle/deb/*.deb > deb-inhalt.txt
+              grep -E '(^|[ /])usr/bin/vivaplan$' deb-inhalt.txt || { grep 'usr/bin' deb-inhalt.txt >&2; exit 1; }
               target/release/vivaplan --version ;;
             windows)
               7z l target/release/bundle/nsis/*.exe | grep -i 'vivaplan\.exe'

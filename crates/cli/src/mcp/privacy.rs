@@ -187,8 +187,9 @@ impl Redactor {
     pub(crate) fn add_dir(&mut self, dir: &Path) {
         let dir = dir.display().to_string();
         if dir.len() > 1 {
-            self.paths
-                .push((format!("{dir}{}", std::path::MAIN_SEPARATOR), String::new()));
+            // Both separators: texts may join paths with `/` on Windows too.
+            self.paths.push((format!("{dir}/"), String::new()));
+            self.paths.push((format!("{dir}\\"), String::new()));
             self.paths.push((dir, ".".into()));
         }
         self.paths.sort_by_key(|(p, _)| std::cmp::Reverse(p.len()));
