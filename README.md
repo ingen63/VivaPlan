@@ -30,32 +30,84 @@ https://github.com/user-attachments/assets/d5e55050-891c-4345-a27d-df911424cc30
 
 VivaPlan rechnet Ihre finanzielle Zukunft vom heutigen Tag bis zum Ende der Planung durch, mit den Schweizer
 Eigenheiten: AHV, Pensionskasse mit Umwandlungssatz und Kapitalbezug, Säule 3a, Einkommens-, Vermögens-,
-Kapitalbezugs- und Grundstückgewinnsteuer, SARON-Hypotheken und die Tragbarkeitsrechnung der Banken.
+Kapitalbezugs- und Grundstückgewinnsteuer nach Kanton und Gemeinde, SARON-Hypotheken und die Tragbarkeitsrechnung der
+Banken.
 
 Weil niemand die Börse kennt, rechnet VivaPlan nicht einen Verlauf, sondern tausende: jeden historischen Startmonat
 oder Monte-Carlo-Pfade. Am Ende steht eine klare Zahl, in wie vielen Fällen das Geld reicht, und der schlechteste
 Fall daneben.
 
+Und Sie müssen nicht alles selbst eintippen: **Verbinden Sie VivaPlan mit einer KI** wie Claude, ChatGPT oder einem
+lokalen Modell in LM Studio, erfragt die KI Ihre Zahlen im Gespräch, rechnet mit VivaPlan, vergleicht Varianten und
+erklärt die Ergebnisse ([mehr dazu](#vivaplan-mit-einer-ki-nutzen)).
+
 ## Was VivaPlan kann
 
+- 🤖 **Mit einer KI planen:** Die KI öffnet, ändert, rechnet und vergleicht Planungen und erklärt die Ergebnisse in
+  Worten; Einrichtung über *Hilfe → Mit KI verbinden …*, für Claude Desktop mit einem Klick
+  ([mehr dazu](#vivaplan-mit-einer-ki-nutzen))
 - 🧮 **Monat für Monat:** Einkommen, Vorsorge, Steuern, Immobilien und Hypotheken in einer Rechnung
 - 📈 **120 Jahre Börsengeschichte:** Welt (11 Länder, 1900–2020), Schweiz, S&P 500 seit 1872, alles in CHF
 - 🎲 **Monte Carlo:** Bootstrap aus historischen Blöcken oder ein Aktienmodell mit Kurssprüngen; 50 000 Pfade in
   wenigen Sekunden, gleiche Einstellungen ergeben immer gleiche Ergebnisse
 - 🪜 **Sechs Entnahmestrategien:** Standard, 3-Topf (wahlweise mit Guardrails), fixe Entnahmerate, Guardrails
   (Guyton-Klinger), VPW, Endowment
-- 🎯 **Optimierung:** sucht die Strategie mit dem höchsten und gleichmässigsten Konsum bei begrenztem Ruinrisiko und
-  übernimmt sie mit einem Klick
-- 🏠 **Immobilien:** Kauf, Verkauf, Wechsel vom Haus in eine Wohnung, Notverkauf, Grundstückgewinnsteuer
-- 👫 **Zwei Personen:** eigene Pensionskasse und AHV, Ehepaar-Regeln bei AHV und Steuern
+- 🎯 **Optimierung und Vergleich:** sucht die Strategie mit dem höchsten und gleichmässigsten Konsum bei begrenztem
+  Ruinrisiko und übernimmt sie mit einem Klick; auf Wunsch *Strategien vergleichen (ohne Optimierung)*; Ergebnisse
+  der Optimierung lassen sich speichern und wieder öffnen
+- 🧾 **Steuern nach Wohnort:** Einkommens-, Vermögens- und Kapitalbezugssteuer nach Kanton und Gemeinde, die
+  Grundstückgewinnsteuer nach dem Kanton der Immobilie; Abzüge vom Einkommen (Vorschlag des Kantons oder eigene
+  Zeilen) und vom Vermögen, Steuerwert je Liegenschaft, ein Wohnort, der mit der Zeit wechseln kann. Die Steuern sind
+  eine Schätzung.
+- 🏠 **Immobilien:** Kauf, Verkauf, Wechsel vom Haus in eine Wohnung, Notverkauf, Grundstückgewinnsteuer; Tragbarkeit
+  nach den Regeln der Banken, anpassbar in den Einstellungen; Schalter «Immobilien nie verkaufen»
+- 👫 **Zwei Personen:** eigene Pensionskasse und AHV, Ehepaar-Regeln bei AHV und Steuern; Personen ohne Pensionskasse
+  mit grosser Säule 3a
+- 📐 **Zeitabhängige Werte und Kennlinien:** Beträge und Sätze bleiben konstant oder verlaufen als Treppe, Gerade,
+  Tabelle oder mit Faktor; Kennlinien machen einen Wert vom Zustand der Planung abhängig
 - 🔀 **Szenarien:** «Was, wenn ich mit 63 gehe und die Hälfte als Kapital beziehe?» als Kurven und Heatmaps
 - 🕰️ **Was wäre gewesen:** «Wie wäre es mir ergangen, wenn ich 1973 pensioniert worden wäre?»
 - 🗂️ **Simulationen vergleichen:** jede Simulation wird mit der Planung von damals gespeichert
-- ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein [Handbuch](crates/app/ui/hilfe/de/00-einstieg.md) mit Suche
+- ❓ **Hilfe auf F1:** zum Feld, an dem Sie gerade arbeiten, dazu ein [Handbuch](crates/app/ui/hilfe/de/00-einstieg.md)
+  mit Suche und zwei Einführungsvideos (*Hilfe → Einführungsvideos …*)
+- 🌗 **Hell oder dunkel:** Einstellung «Darstellung» mit hellem und dunklem Theme oder wie das System
 - 🌐 **Deutsch, Englisch, Französisch und Italienisch:** Oberfläche, Menüs, Meldungen und Hilfe in allen vier Sprachen
-  (Wahl unter *Ansicht → Sprache*); Zahlen immer im Schweizer Format. Die Kommandozeile gibt englische Texte aus.
+  (Wahl unter *Ansicht → Sprache*); Zahlen immer im Schweizer Format. Die Kommandozeile `vivaplan` liegt dem
+  Installationspaket bei und gibt englische Texte aus.
 
 Die ausführliche Beschreibung steht in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG.md).
+
+## VivaPlan mit einer KI nutzen
+
+VivaPlan bringt einen MCP-Server mit (`vivaplan mcp`, Model Context Protocol). Darüber arbeitet eine KI direkt mit
+dem Rechenkern von VivaPlan: Sie öffnet eine Planung, liest und ändert Werte, simuliert, vergleicht Varianten,
+übernimmt die beste und speichert das Ergebnis als neue Datei. Sie rechnet dabei genau wie die App und erklärt die
+Zahlen in Ihrer Sprache. Zum Beispiel:
+
+> «Ich bin 58 und möchte mit 63 aufhören. Reicht mein Geld bis 95? Und was ändert sich, wenn ich die Hälfte der
+> Pensionskasse als Kapital beziehe?»
+
+- **Mit eigenen Zahlen beginnen:** Haben Sie noch keine Planung, beginnt die KI mit einer leeren Planung (wie
+  *Datei → Neue Planung*), fragt Sie nach den fehlenden Angaben (Einkommen, Ausgaben, Vermögen, Pensionskasse, AHV und
+  was sonst dazugehört) und erfindet keine Werte. Die Beispielplanung dient nur zum Ausprobieren und Vorführen.
+- **Unterstützte KI-Programme:** Claude Desktop, Claude Code, die ChatGPT-Desktop-App und LM Studio; andere Programme
+  mit MCP lassen sich ebenso anbinden.
+- **Einrichten:** Das Menü *Hilfe → Mit KI verbinden …* zeigt je KI-Programm, wohin der Eintrag gehört, und eine
+  fertige Zeile mit dem Pfad des Programms auf Ihrem Rechner zum Kopieren. VivaPlan richtet nichts selbst ein. Für
+  Claude Desktop unter macOS gibt es das Ein-Klick-Paket `VivaPlan_<Version>_aarch64.mcpb` auf der
+  [Release-Seite](https://github.com/ingen63/VivaPlan/releases): Doppelklick, und Claude Desktop installiert VivaPlan
+  als Erweiterung.
+- **Planordner und «Nur lesen»:** Beim Einrichten wählen Sie einen Planordner (das `.mcpb` fragt beim Installieren
+  danach). Die KI öffnet und speichert Planungen nur in diesem Ordner und seinen Unterordnern. Mit dem Schalter «Nur
+  lesen» kann sie Planungen öffnen, ändern und rechnen, aber nicht speichern. Gespeichert wird ohnehin als neue Datei;
+  eine vorhandene ersetzt die KI nur nach Ihrer Rückfrage und mit Sicherungskopie.
+- **Was mit Ihren Daten geschieht:** Was die KI aus Ihrer Planung liest, wird Teil des Gesprächs. Mit einer Cloud-KI
+  (Claude, ChatGPT) geht es an deren Anbieter, mit einem lokalen Modell (zum Beispiel in LM Studio) bleibt alles auf
+  Ihrem Rechner. Namen ersetzt der Server durch neutrale («Person 1»), Antworten nennen nur den Dateinamen. VivaPlan
+  selbst sendet nichts.
+
+Alles Weitere steht in der Hilfe unter «KI-Programme verbinden» ([Referenz](crates/app/ui/hilfe/de/60-referenz.md)).
+Die Ergebnisse sind Modellrechnungen ohne Gewähr, auch wenn eine KI sie erklärt.
 
 ## Ihre Daten bleiben bei Ihnen
 
@@ -65,8 +117,14 @@ einzelne Datei (`.vplan`), die Sie speichern, kopieren und archivieren wie jedes
 
 ## Installation
 
-Pakete für macOS (.dmg), Windows (.msi, .exe) und Linux (.deb, .AppImage; .rpm nur bei Versionen ohne «beta») stehen
-unter [Releases](https://github.com/ingen63/VivaPlan/releases).
+Die Pakete jeder Version stehen auf der [Release-Seite](https://github.com/ingen63/VivaPlan/releases):
+
+| System | Paket |
+|---|---|
+| macOS (Apple-Chip) | `.dmg` |
+| Windows | `.msi` oder `-setup.exe` |
+| Linux | `.deb` oder `.AppImage` (`.rpm` nur bei Versionen ohne «beta») |
+| Claude Desktop unter macOS | `.mcpb`, das Ein-Klick-Paket für die KI-Anbindung |
 
 Die Pakete sind nicht signiert. Beim ersten Start warnt das Betriebssystem deshalb:
 
@@ -74,14 +132,19 @@ Die Pakete sind nicht signiert. Beim ersten Start warnt das Betriebssystem desha
   kann, unter *Systemeinstellungen → Datenschutz & Sicherheit* auf «Dennoch öffnen» klicken.
 - **Windows:** Im blauen Fenster «Der Computer wurde durch Windows geschützt» auf «Weitere Informationen» und dann
   «Trotzdem ausführen» klicken.
-- **Linux:** Die AppImage-Datei ausführbar machen (`chmod +x VivaPlan*.AppImage`) oder das .deb- bzw. .rpm-Paket
-  installieren.
+- **Linux:** Die AppImage-Datei ausführbar machen (`chmod +x VivaPlan*.AppImage`) oder das .deb-Paket installieren.
+
+Auch Claude Desktop warnt beim Installieren des `.mcpb`, die Erweiterung erhalte Zugriff auf alles auf dem Computer. Das
+zeigt Claude Desktop bei jeder Erweiterung; die Begrenzung auf den Planordner setzt VivaPlan selbst durch.
 
 ## Erste Schritte
 
 1. VivaPlan starten: Der Willkommensdialog bietet die Beispielplanung, eine eigene oder eine leere Planung an.
 2. Die Checkliste «Erste Schritte» führt durch die acht Schritte des Schnellstarts und hakt Erledigtes selbst ab.
 3. Simulation starten: Die Übersicht sagt in Worten, wie sicher der Plan ist, und schlägt den nächsten Schritt vor.
+
+Oder Sie lassen sich von einer KI führen: *Hilfe → Mit KI verbinden …* einrichten und im KI-Programm fragen, ob Ihr
+Geld reicht.
 
 > **Hinweis:** VivaPlan ist ein Rechenwerkzeug und keine Anlage-, Steuer- oder Vorsorgeberatung. Vergangene
 > Renditen sind keine Prognose.

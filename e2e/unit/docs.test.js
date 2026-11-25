@@ -54,6 +54,54 @@ test("#48/AK7: links in README, CLAUDE.md and docs/ to files in the repository d
   assert.deepEqual(dead, []);
 });
 
+// #267: the four README files (German and the translations).
+const READMES = ["README.md", "README.en.md", "README.fr.md", "README.it.md"].map(f => path.join(ROOT, f));
+// Anchor of a heading as GitHub builds it: lower case, punctuation removed, spaces become hyphens.
+const slug = h => h.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s/g, "-");
+
+test("#267/AK5: links in all four README lead to existing files and headings", () => {
+  const dead = [];
+  for (const f of READMES) {
+    const raw = fs.readFileSync(f, "utf8");
+    const anchors = new Set([...raw.matchAll(/^#{1,6} (.+)$/gm)].map(m => slug(m[1])));
+    const text = raw.replace(/```[\s\S]*?```/g, "");
+    const hrefs = [...text.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g), ...text.matchAll(/href="([^"]+)"/g)].map(m => m[1]);
+    for (const href of hrefs) {
+      if (/^(https?:|mailto:)/.test(href)) continue;
+      if (href.startsWith("#")) { if (!anchors.has(decodeURIComponent(href.slice(1)))) dead.push(`${rel(f)}: ${href}`); continue; }
+      const file = decodeURIComponent(href.split("#")[0]);
+      if (!fs.existsSync(path.resolve(path.dirname(f), file))) dead.push(`${rel(f)}: ${href}`);
+    }
+    for (const m of raw.matchAll(/<img src="([^"]+)"/g)) {
+      if (!/^https?:/.test(m[1]) && !fs.existsSync(path.resolve(path.dirname(f), m[1]))) dead.push(`${rel(f)}: ${m[1]}`);
+    }
+  }
+  assert.deepEqual(dead, []);
+});
+
+test("#267/AK1, #267/AK3, #267/AK4: the four README have the same structure and name the AI connection and the packages", () => {
+  const shape = f => {
+    const text = fs.readFileSync(f, "utf8");
+    return {
+      sections: (text.match(/^## /gm) || []).length,
+      bullets: (text.match(/^- /gm) || []).length,
+      tableRows: (text.match(/^\| /gm) || []).length,
+      quotes: (text.match(/^(?!> ).*\n> /gm) || []).length, // quote blocks, not lines
+    };
+  };
+  const de = shape(READMES[0]);
+  for (const f of READMES.slice(1)) assert.deepEqual(shape(f), de, rel(f));
+  for (const f of READMES) {
+    const text = fs.readFileSync(f, "utf8");
+    for (const word of ["vivaplan mcp", ".mcpb", ".dmg", ".msi", "-setup.exe", ".deb", ".AppImage", "LM Studio", "Claude Code", "ChatGPT", "releases"]) {
+      assert.ok(text.includes(word), `${rel(f)}: ${word}`);
+    }
+    // The AI connection is pointed to near the top: the introduction links to its own section.
+    const intro = text.slice(0, text.indexOf("\n## ", text.indexOf("\n## ") + 1));
+    assert.match(intro, /\]\(#[^)]+\)/, `${rel(f)}: link to the AI section in the introduction`);
+  }
+});
+
 test("#93/AK1, #93/AK3: all places name the same program version, the changelog starts with it", () => {
   const read = f => fs.readFileSync(path.join(ROOT, f), "utf8");
   const toml = f => read(f).match(/^version\s*=\s*"([^"]+)"/m)?.[1];
