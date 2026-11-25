@@ -203,6 +203,13 @@ mod tests {
         assert_eq!(info.as_object().unwrap().get("cliPath"), Some(&Value::Null));
     }
 
+    /// #263/AK4: the dev server has no plan folder; `planDir` must exist as an explicit null (the desktop app fills it).
+    #[test]
+    fn issue_263_ak4_dev_server_reports_plan_dir_as_null() {
+        let info = call("app_info", &json!({}), &lib(), Path::new("/")).unwrap();
+        assert_eq!(info.as_object().unwrap().get("planDir"), Some(&Value::Null));
+    }
+
     /// #142: `series_info` reads a relative path in the folder of the project file (`planPath`), without a project file in
     /// the fallback folder; the plan's `path` does not count here.
     // slow: copies and reads a whole return series
