@@ -556,19 +556,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #63/AK11 | Ein Werkzeug unter `tools/steuerdaten/` erzeugt die Steuerdatei aus den ESTV-Grunddaten (Steuerfüsse als Excel-Export … | ☑ | **gilt** | [test_build.py](../tools/steuerdaten/test_build.py) (15 Tests) | 22.11.2026 ok (Tests grün, README mit Ablauf) |
 | #63/AK12 | Hilfe (`crates/app/ui/hilfe/`), `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
 
-### #66 Steuertarife mit der Teuerung
-
-[Issue #66](https://github.com/ingen63/VivaPlan/issues/66) · offen (AK3 nach #63 belegt, Abhaken offen) · Umsetzung: 5e01d8f
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #66/AK1 | Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug wachsen jedes Jahr mit der kumulierten simulierten … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak1_…` (3 Tests) | 22.11.2026 ok (Einkommen, Vermögen, Kapitalbezug, Bedarf der 3-Topf-Strategie) |
-| #66/AK2 | Beispiel: Tabelle `[[0, 0], [200000, 0.10]]`, Teuerung 2 % pro Jahr. Im Jahr 10 liegt die Stufe bei 243 799 … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak2_…`, `issue_66_nonpositive_index_…` | 22.11.2026 ok (Satz 5 % statt 6.09 %) |
-| #66/AK3 | Die Anpassung gilt im Modus «Eigene Tabellen», auch für die Tabellen der Verheirateten, und im Modus «Wohnort» (#63 … | ☐ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak3_…`; [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_66_ak3_location_…` | 22.11.2026 ok: «Eigene Tabellen», Verheiratete und Modus «Wohnort» (nach #63, 02fcbe5); im Issue noch nicht abgehakt |
-| #66/AK4 | Eine Option «Tarife mit der Teuerung» ist für neue Planungen eingeschaltet; bestehende Planungen und der Import alter … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak4_…` (2 Tests); [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK4» (#66) | 22.11.2026 ok (Kästchen, «Neu», Import, Übersicht ja/nein) |
-| #66/AK5 | Die Grundstückgewinnsteuer bleibt unverändert (ihr Tarif bezieht sich auf den einzelnen Gewinn). | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak5_…` | 22.11.2026 ok |
-| #66/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
-
 ### #69 Anlagestrategie statt Renditewahl, Gewichtung von CH, EU und USA, Reiter «Renditen & Daten» entfällt
 
 [Issue #69](https://github.com/ingen63/VivaPlan/issues/69) · geschlossen · Umsetzung: `c2b4e38`, `93adc88` (altes Repository) · Tests zum Issue ohne Kriterium: [cli/tests/cli.rs:111](../crates/cli/tests/cli.rs#L111), [engine/tests/strategy.rs:1](../crates/engine/tests/strategy.rs#L1) (+2)
@@ -884,11 +871,11 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
-| #202/AK1 | `mutants-diff` startet nicht mehr nächtlich, sondern einmal pro Woche zu einer festen Zeit (`schedule`). Die übrigen nächtlichen … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 22.11.2026 teilweise: Konfiguration ok (`17 2 * * 0`, übrige Jobs schliessen ihn aus); wöchentlicher Start erst nach Push belegbar |
+| #202/AK1 | `mutants-diff` startet nicht mehr nächtlich, sondern einmal pro Woche zu einer festen Zeit (`schedule`). Die übrigen nächtlichen … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 25.11.2026 teilweise: nächtliche Läufe 23.11./24.11. ohne `mutants-diff`, übrige Jobs liefen; erster wöchentlicher Lauf am 29.11.2026 |
 | #202/AK2 | `mutants-diff` läuft in 4 Teilen (`--shard i/4`) statt in 16. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 22.11.2026 ok |
-| #202/AK3 | Der wöchentliche Lauf mutiert nur die geänderten Zeilen des Rechenkerns (`crates/engine`). Er vergleicht mit dem letzten … | ☐ | **gilt** | kein Test (Durchsicht; Abfrage `gh run list`/`gh run view` lokal gegen vorhandene Läufe) | 22.11.2026 teilweise: Pfadangabe und Basis-Abfrage lokal ok; echter wöchentlicher Lauf fehlt |
+| #202/AK3 | Der wöchentliche Lauf mutiert nur die geänderten Zeilen des Rechenkerns (`crates/engine`). Er vergleicht mit dem letzten … | ☐ | **gilt** | kein Test (Durchsicht; Abfrage `gh run list`/`gh run view` lokal gegen vorhandene Läufe) | 25.11.2026 offen: erst mit dem wöchentlichen Lauf belegbar |
 | #202/AK4 | Ein Start von Hand mit `nightly` startet `mutants-diff` weiterhin. Bei einem Pull Request bleibt das Verhalten gleich. | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`) | 22.11.2026 ok |
-| #202/AK5 | «Installationspakete» baut nur das `.dmg` für macOS, als Start von Hand und durch ein Versions-Tag. Der Release-Entwurf … | ☐ | **gilt** | kein Test (Durchsicht `pakete.yml`, `actionlint`) | 22.11.2026 teilweise: Matrix nur `macos`; Lauf mit Release-Entwurf fehlt |
+| #202/AK5 | «Installationspakete» baut nur das `.dmg` für macOS, als Start von Hand und durch ein Versions-Tag. Der Release-Entwurf … | ☑ | **gilt** | kein Test (Durchsicht `pakete.yml`, `actionlint`) | 25.11.2026 überholt durch #203: neues Verhalten geprüft (Lauf 45577107168 baut alle drei Plattformen, Release-Entwurf mit allen Paketen) |
 | #202/AK6 | `docs/TESTS.md` und die Kommentare in den Workflows beschreiben den neuen Ablauf. Hilfe und Übersicht nennen die Pakete für … | ☑ | **gilt** | kein Test (Durchsicht, `grep`) | 22.11.2026 ok: TESTS, ENTWICKLUNG, BESCHREIBUNG, README; Hilfe nannte nie Pakete |
 
 ### #220 Auswahlmenu ohne kontrast
@@ -904,7 +891,7 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #220/AK5 | Im hellen Theme ändert sich das Aussehen nicht, auch nicht unter einem dunklen Systemthema (Ursache dieses Fehlers). | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK5` | 23.11.2026 ok (berechnete Farben aller Elemente gleich; aktiver Menüeintrag hell 4,1:1, bestehendes Design) |
 | #220/AK6 | Ein e2e-Test prüft den Kontrast der wichtigsten Elemente (inkl. Auswahlmenü) in beiden Themen bei emuliertem … | ☑ | **gilt** | [ui-darstellung.spec.js](../e2e/ui-darstellung.spec.js) `AK3 AK6` | 23.11.2026 ok |
 | #220/AK7 | Texte als Schlüssel in `i18n`; Hilfe und `BESCHREIBUNG.md` nachgeführt. | ☑ | **gilt** | `make ui-texts` | 23.11.2026 ok (Hilfe de/en/fr/it) |
-| #220/AK8 | Unter Linux (AppImage, dunkles Systemthema) sind die Auswahlmenüs lesbar. Prüfbar erst mit dem nächsten Paket. | ☐ | **gilt** | kein Test | 23.11.2026 nicht geprüft: erst mit dem nächsten AppImage |
+| #220/AK8 | Unter Linux (AppImage, dunkles Systemthema) sind die Auswahlmenüs lesbar. Prüfbar erst mit dem nächsten Paket. | ☐ | **gilt** | kein Test | 25.11.2026 offen: Kontrast der Auswahl «Darstellung» unter Linux-Chrome in c25c2c9 behoben, e2e unter Linux grün (Lauf 45580396772); Sichtprüfung im AppImage mit dunklem Systemthema von Hand steht aus |
 
 ### #221 Robustheitstest über alle Rechenbefehle mit unsinnigen Argumenten
 
@@ -927,34 +914,10 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
 |---|---|---|---|---|---|
 | #226/AK1 | Ein Skript liest die Laufzeiten aus `target/nextest/ci/junit.xml` und listet jeden Test über der Grenze ohne … | ☑ | **gilt** (Grenze je Testart, Klärung vom 23.11.2026) | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak1_ak3_…` | 23.11.2026 ok (9 Tests grün; am echten Lauf: 80 Funde vor, 30 nach den Begründungen) |
-| #226/AK2 | Der Befund erscheint in der Zusammenfassung von `test-quality.yml` und auf der Übersichtsseite (Schicht «Hygiene» … | ☐ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak2_…`; [test_report.py](../tools/report/test_report.py) `test_issue_226_ak2_…` | 23.11.2026 teilweise: Seite lokal mit echtem Lauf erzeugt (Hygiene «Hinweis», Liste), Markdown getestet, `actionlint` ohne neuen Befund; Ausgabe im CI-Lauf erst nach dem nächsten Push belegbar |
+| #226/AK2 | Der Befund erscheint in der Zusammenfassung von `test-quality.yml` und auf der Übersichtsseite (Schicht «Hygiene» … | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak2_…`; [test_report.py](../tools/report/test_report.py) `test_issue_226_ak2_…` | 25.11.2026 ok (CI-Lauf 45580396772: Schritte «Laufzeitgrenzen der Tests (Hinweis)» und «Übersichtsseite Testqualität» grün) |
 | #226/AK3 | Das Skript hat eigene Tests mit gestellten junit-Dateien (Test unter Grenze, über Grenze mit und ohne Begründung). | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak3_…` (3 Tests) | 23.11.2026 ok |
 | #226/AK4 | Die heute langsamen Tests sind entweder schneller oder begründet; die Liste steht im Issue. | ☐ | **unklar** (30 Tests nur unter Last über der Grenze) | kein Test (Messung `--profile ci`, voll und `-j 1`) | 23.11.2026 teilweise: Liste im Issue; 50 auch einzeln langsame Tests mit `// slow:` begründet; 30 nur im parallelen Lauf über der Grenze, Entscheid offen |
 | #226/AK5 | `docs/TESTS.md` nennt Grenze und Begründungsform. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
-
-### #225 Rust-Tests unter Windows bei jedem Push
-
-[Issue #225](https://github.com/ingen63/VivaPlan/issues/225) · offen (`implemented`) · Umsetzung: 0099b33
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #225/AK1 | `test-quality.yml` führt die Rust-Tests bei jedem Push auf `main` auch unter Windows aus (ohne Abdeckung, ohne … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 23.11.2026 teilweise: Job `tests-os` mit Matrix `windows-latest` beim Push, `cargo nextest run --workspace` ohne llvm-cov/mutants; Lauf beim Push erst nach dem nächsten Push belegbar |
-| #225/AK2 | Der Windows-Job läuft nur, wenn Rust-Code, `Cargo.toml`/`Cargo.lock` oder der Workflow geändert wurden (wie der Job … | ☑ | **gilt** | kein Test (Filter von Hand gegen echte Pushes) | 23.11.2026 ok: Ausgabe `rust` des Jobs `changes`; Compare-API gegen 4 Pushes mit Rust-Code (`true`) und 1 nur mit Doku (`false`); unbekannter Stand → `true` |
-| #225/AK3 | Die Dauer des Jobs und die zusätzlichen Actions-Minuten pro Woche sind gemessen und im Issue festgehalten; überschreiten … | ☐ | **gilt** (Budget 300 min/Woche, Klärung vom 23.11.2026) | kein Test | 23.11.2026 teilweise: Schätzung aus nächtlichen Läufen im Issue (6–8 min, ≈160–184 min/Woche, unter Budget → ganzer Workspace); Messung beim Push fehlt |
-| #225/AK4 | macOS bleibt nächtlich. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Matrix beim Push nur `windows-latest`, sonst Windows und macOS |
-| #225/AK5 | `docs/TESTS.md`, Abschnitt «Plattformen», ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
-
-### #224 Übersprungene Tests in CI als Fehler werten
-
-[Issue #224](https://github.com/ingen63/VivaPlan/issues/224) · offen (`implemented`) · Umsetzung: ab71e68
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #224/AK1 | Jeder bedingt laufende Test meldet beim Überspringen einen Grund in der Testausgabe; kein stilles `return`. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak1_…` | 23.11.2026 ok (Windows-, Unix- und Datentests über `test_resource`, Grund mit `--success-output immediate` gesehen; `#[ignore]` mit Grund; e2e und `ui-smoke.sh` überspringen nichts) |
-| #224/AK2 | Eine Umgebungsvariable je Ressource (z. B. `VIVAPLAN_WINDOWS_REQUIRED`): leer oder nicht gesetzt = überspringen, `1` = … | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak2_…` (2 Tests) | 23.11.2026 ok (`WINDOWS`, `UNIX`, `DATA`; ungültiger Wert von Hand) |
-| #224/AK3 | Die Jobs in `test-quality.yml`, die die Ressource haben (z. B. `tests-os` unter Windows für `issue_141_ak3_windows_paths`), … | ☐ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 23.11.2026 teilweise: `tests-os` (Windows, macOS) und `tests-coverage` setzen die Variablen; Lauf in CI erst nach dem nächsten Push belegbar |
-| #224/AK4 | Ein Test prüft, dass bei gesetzter Pflicht und fehlender Ressource ein Fehler entsteht. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak4_…` (2 Tests) | 23.11.2026 ok (zusätzlich von Hand: `VIVAPLAN_WINDOWS_REQUIRED=1` auf macOS → Fehler) |
-| #224/AK5 | `docs/TESTS.md` listet die Variablen und die Jobs, die sie setzen. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
 
 ### #237 Spendenlink «Buy me a coffee»
 
@@ -970,19 +933,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #237/AK6 | `README.md` hat vor dem Abschnitt «Lizenz» einen kurzen Absatz … mit Link auf https://buymeacoffee.com/vivaplan. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Abschnitt «Unterstützen») |
 | #237/AK7 | `.github/FUNDING.yml` enthält `buy_me_a_coffee: vivaplan`; auf der Repo-Seite erscheint der Knopf «Sponsor». | ☐ | **gilt** | kein Test (Durchsicht) | 23.11.2026 teilweise: Datei vorhanden; Knopf «Sponsor» erst nach dem Push prüfbar |
 | #237/AK8 | `tools/check-network-free.sh` bleibt grün (`tauri-plugin-opener` zieht keine Netzwerkbibliothek nach). | ☑ | **gilt** | `tools/check-network-free.sh` | 23.11.2026 ok (neu u. a. `open`, `zbus`; keine gesperrte Bibliothek) |
-
-### #206 Kommandozeile im Installationspaket mit dem Datenordner der App
-
-[Issue #206](https://github.com/ingen63/VivaPlan/issues/206) · offen (`implemented`) · Umsetzung: a5484e8
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #206/AK1 | Das Paket enthält das Programm `vivaplan` neben `vivaplan-app` (nach Kommentar: alle drei Systeme). | ☐ | **gilt** | `pakete.yml` Schritt «Kommandozeile im Paket» | 24.11.2026 teilweise: macOS ok (lokaler Bau, `vivaplan --version` im Bundle); Windows und Linux erst im CI-Lauf prüfbar |
-| #206/AK2 | Ohne `--library`/`--data-dir` nimmt die Kommandozeile den Datenordner der App; `--data-dir` übersteuert. | ☑ | **gilt** | `issue_206_ak2_…` (CLI, Rechenkern, App) | 24.11.2026 ok (Test grün) |
-| #206/AK3 | Grenzen aus den Einstellungen wirken gleich wie in der App. | ☑ | **gilt** | `issue_206_ak3_settings_give_the_same_result_as_in_the_app` | 24.11.2026 ok (Test grün) |
-| #206/AK4 | Eine in der App importierte Reihe ist in der Kommandozeile verwendbar. | ☑ | **gilt** | `issue_206_ak4_series_of_the_app_library` | 24.11.2026 ok (Test grün) |
-| #206/AK5 | Fehlt der Datenordner, eingebaute Reihen und Standardgrenzen, einmal gemeldet. | ☑ | **gilt** | `issue_206_ak5_…` | 24.11.2026 ok (Test grün) |
-| #206/AK6 | Die Referenz in der Hilfe nennt den Pfad des Programms je Betriebssystem. | ☑ | **gilt** | – | 24.11.2026 ok (Durchsicht, vier Sprachen; Windows-Pfad aus NSIS-Vorlage, auf Windows nicht nachgeprüft) |
 
 ### #208 Agent Skill «VivaPlan» mitliefern
 

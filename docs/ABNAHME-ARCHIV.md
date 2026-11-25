@@ -383,6 +383,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #65/AK6 | Prüfung: Im Modus «Wohnort» ohne eigene Regeln sind die eigenen Regeln keine Pflicht. Ein unbekannter Kanton … | ☑ | **gilt** | [gain_location.rs](../crates/engine/tests/gain_location.rs) `issue_65_ak6_…` | 22.11.2026 ok (Test grün) |
 | #65/AK7 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor und 60-referenz in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md, Pflichteingaben.md |
 
+### #66 Steuertarife mit der Teuerung
+
+[Issue #66](https://github.com/ingen63/VivaPlan/issues/66) · geschlossen · Umsetzung: 5e01d8f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #66/AK1 | Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug wachsen jedes Jahr mit der kumulierten simulierten … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak1_…` (3 Tests) | 22.11.2026 ok (Einkommen, Vermögen, Kapitalbezug, Bedarf der 3-Topf-Strategie) |
+| #66/AK2 | Beispiel: Tabelle `[[0, 0], [200000, 0.10]]`, Teuerung 2 % pro Jahr. Im Jahr 10 liegt die Stufe bei 243 799 … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak2_…`, `issue_66_nonpositive_index_…` | 22.11.2026 ok (Satz 5 % statt 6.09 %) |
+| #66/AK3 | Die Anpassung gilt im Modus «Eigene Tabellen», auch für die Tabellen der Verheirateten, und im Modus «Wohnort» (#63 … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak3_…`; [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_66_ak3_location_…` | 25.11.2026 ok (`issue_66_ak3_…` erneut grün; im Issue abgehakt) |
+| #66/AK4 | Eine Option «Tarife mit der Teuerung» ist für neue Planungen eingeschaltet; bestehende Planungen und der Import alter … | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak4_…` (2 Tests); [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK4» (#66) | 22.11.2026 ok (Kästchen, «Neu», Import, Übersicht ja/nein) |
+| #66/AK5 | Die Grundstückgewinnsteuer bleibt unverändert (ihr Tarif bezieht sich auf den einzelnen Gewinn). | ☑ | **gilt** | [tax_indexed.rs](../crates/engine/tests/tax_indexed.rs) `issue_66_ak5_…` | 22.11.2026 ok |
+| #66/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
+
 ### #67 Eigener Welt-Aktienindex aus den JST-Daten nach BIP gewichtet, Vergleich mit DMS
 
 [Issue #67](https://github.com/ingen63/VivaPlan/issues/67) · geschlossen · Umsetzung: `2ccfc9e` (altes Repository) · Tests zum Issue ohne Kriterium: [engine/tests/jst.rs:1](../crates/engine/tests/jst.rs#L1), [engine/tests/jst.rs:63](../crates/engine/tests/jst.rs#L63) (+1)
@@ -579,6 +592,7 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #117/AK9 | Keine alten Labels mehr im Repo. | ☑ | **gilt** (Präzisierung 2: Labels in Backticks, `gefunden:`) | kein Test (`git grep`) | 17.11.2026 ok |
 | #117/AK10 | `docs/ABNAHME.md` nach Nummer, Auswahl-Abfrage funktioniert. | ☑ | **gilt** | kein Test (Abfrage ausgeführt) | 17.11.2026 ok |
 | #117/AK11 | Alle Tests grün, `cargo fmt` sauber, Golden-Dateien unverändert. | ☑ | **gilt** | alle Testsuiten | 17.11.2026 ok |
+
 ### #118 Vergleich: Kennzahlen nach Spalte sortieren (auf- und absteigend)
 
 [Issue #118](https://github.com/ingen63/VivaPlan/issues/118) · geschlossen · Umsetzung: db2e666
@@ -1544,6 +1558,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #201/AK8 | Ohne IndexedDB (gesperrter Speicher) bleibt das Ergebnis bis zum Schliessen im Arbeitsspeicher, wie bei Simulationen. … | ☑ | **gilt** | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK8» (#201) | 22.11.2026 ok |
 | #201/AK9 | Hilfe und `docs/BESCHREIBUNG.md` beschreiben das Speichern und Öffnen von Optimierungen. | ☑ | **gilt** | kein Test (Durchsicht); Hilfe-Tests [help.rs](../crates/app/tests/help.rs) | 22.11.2026 ok: vier Sprachen, Beschreibung, Spezifikation |
 
+### #203 Installationspakete für Linux und Windows wieder einschalten
+
+[Issue #203](https://github.com/ingen63/VivaPlan/issues/203) · geschlossen · Umsetzung: 14af567
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #203/AK1 | «Installationspakete» baut wieder .msi/.exe und .deb/.AppImage; .rpm nur ohne Vorabversion. | ☑ | **gilt** | Lauf 45577107168 | 25.11.2026 ok (Pakete gebaut, .rpm bei Vorabversion entfallen) |
+| #203/AK2 | Der Rauchtest läuft auf allen drei Systemen. | ☑ | **gilt** | Lauf 45577107168 | 25.11.2026 ok («Rauchtest der App» grün auf allen drei) |
+| #203/AK3 | Der Release-Entwurf enthält die Pakete aller drei Systeme. | ☑ | **gilt** | Lauf 45577107168 | 25.11.2026 ok (Entwurf Beta 5 mit .dmg, .mcpb, .msi, .exe, .deb, .AppImage) |
+| #203/AK4 | Hilfe, BESCHREIBUNG.md und TESTS.md nennen die Pakete wieder. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht) |
+
 ### #204 Grenzen der Lebenshaltung bei VPW und Endowment im Vergleich und in der Optimierung zeigen
 
 [Issue #204](https://github.com/ingen63/VivaPlan/issues/204) · geschlossen · Umsetzung: 62d3230
@@ -1567,6 +1592,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #205/AK4 | Beispiel: Vermögen 300'000, Renten 3'000 pro Monat, Ausgaben 9'000 pro Monat, Untergrenze 80 %, fixe Renditen. Bei Fixe … | ☑ | **gilt** | [optimize.rs](../crates/engine/src/optimize.rs) `issue_205_ak1_ak4_…`, `issue_205_ak4_…` | 22.11.2026 ok (100 %; bei 3'000'000 im ersten Jahr 0 %) |
 | #205/AK5 | Hilfe (Optimierung, Grenzen der Lebenshaltung) und Beschreibung erklären die Kennzahl. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: vier Sprachen, 40-optimierung und 30-entnahme; BESCHREIBUNG.md |
 | #205/AK6 | Ein gespeichertes Optimierungsergebnis (#201) zeigt die Kennzahl nach dem Öffnen wieder. | ☑ | **gilt** (vor #205 gespeichert: «–», Kommentar im Issue) | [ui-optimierung.spec.js](../e2e/ui-optimierung.spec.js) «AK6» (#205) | 22.11.2026 ok |
+
+### #206 Kommandozeile im Installationspaket mit dem Datenordner der App
+
+[Issue #206](https://github.com/ingen63/VivaPlan/issues/206) · geschlossen · Umsetzung: a5484e8
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #206/AK1 | Das Paket enthält das Programm `vivaplan` neben `vivaplan-app` (nach Kommentar: alle drei Systeme). | ☑ | **gilt** | `pakete.yml` Schritt «Kommandozeile im Paket» | 25.11.2026 ok (Lauf 45577107168: .deb mit `usr/bin/vivaplan`, Installer mit `vivaplan.exe`, .app mit `vivaplan`; `--version` auf allen drei) |
+| #206/AK2 | Ohne `--library`/`--data-dir` nimmt die Kommandozeile den Datenordner der App; `--data-dir` übersteuert. | ☑ | **gilt** | `issue_206_ak2_…` (CLI, Rechenkern, App) | 24.11.2026 ok (Test grün) |
+| #206/AK3 | Grenzen aus den Einstellungen wirken gleich wie in der App. | ☑ | **gilt** | `issue_206_ak3_settings_give_the_same_result_as_in_the_app` | 24.11.2026 ok (Test grün) |
+| #206/AK4 | Eine in der App importierte Reihe ist in der Kommandozeile verwendbar. | ☑ | **gilt** | `issue_206_ak4_series_of_the_app_library` | 24.11.2026 ok (Test grün) |
+| #206/AK5 | Fehlt der Datenordner, eingebaute Reihen und Standardgrenzen, einmal gemeldet. | ☑ | **gilt** | `issue_206_ak5_…` | 24.11.2026 ok (Test grün) |
+| #206/AK6 | Die Referenz in der Hilfe nennt den Pfad des Programms je Betriebssystem. | ☑ | **gilt** | – | 24.11.2026 ok (Durchsicht, vier Sprachen; Windows-Pfad aus NSIS-Vorlage, auf Windows nicht nachgeprüft) |
 
 ### #207 Kommandozeile für KIs: JSON-Ausgabe und Werte per Feldpfad ändern
 
@@ -1717,6 +1755,30 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #223/AK3 | `docs/TESTS.md` (Schicht 3) und `.claude/agents/rust-test-agent.md` schreiben vor: neuer Fund → benannter … | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
 | #223/AK4 | Die Regressionsdateien bleiben eingecheckt, gelten aber nicht als Dokumentation des Fundes. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (`git ls-files`, TESTS.md) |
 
+### #224 Übersprungene Tests in CI als Fehler werten
+
+[Issue #224](https://github.com/ingen63/VivaPlan/issues/224) · geschlossen · Umsetzung: ab71e68
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #224/AK1 | Jeder bedingt laufende Test meldet beim Überspringen einen Grund in der Testausgabe; kein stilles `return`. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak1_…` | 23.11.2026 ok (Windows-, Unix- und Datentests über `test_resource`, Grund mit `--success-output immediate` gesehen; `#[ignore]` mit Grund; e2e und `ui-smoke.sh` überspringen nichts) |
+| #224/AK2 | Eine Umgebungsvariable je Ressource (z. B. `VIVAPLAN_WINDOWS_REQUIRED`): leer oder nicht gesetzt = überspringen, `1` = … | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak2_…` (2 Tests) | 23.11.2026 ok (`WINDOWS`, `UNIX`, `DATA`; ungültiger Wert von Hand) |
+| #224/AK3 | Die Jobs in `test-quality.yml`, die die Ressource haben (z. B. `tests-os` unter Windows für `issue_141_ak3_windows_paths`), … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 25.11.2026 ok (Lauf 45580396772: `issue_141_ak3_windows_paths` und #136-Tests PASS, nicht übersprungen) |
+| #224/AK4 | Ein Test prüft, dass bei gesetzter Pflicht und fehlender Ressource ein Fehler entsteht. | ☑ | **gilt** | [test_resource.rs](../crates/engine/src/test_resource.rs) `issue_224_ak4_…` (2 Tests) | 23.11.2026 ok (zusätzlich von Hand: `VIVAPLAN_WINDOWS_REQUIRED=1` auf macOS → Fehler) |
+| #224/AK5 | `docs/TESTS.md` listet die Variablen und die Jobs, die sie setzen. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
+### #225 Rust-Tests unter Windows bei jedem Push
+
+[Issue #225](https://github.com/ingen63/VivaPlan/issues/225) · geschlossen · Umsetzung: 0099b33
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #225/AK1 | `test-quality.yml` führt die Rust-Tests bei jedem Push auf `main` auch unter Windows aus (ohne Abdeckung, ohne … | ☑ | **gilt** | kein Test (Durchsicht `test-quality.yml`, `actionlint`) | 25.11.2026 ok (Push-Lauf 45574420572: `tests-os (windows-latest)` 1213 Tests grün) |
+| #225/AK2 | Der Windows-Job läuft nur, wenn Rust-Code, `Cargo.toml`/`Cargo.lock` oder der Workflow geändert wurden (wie der Job … | ☑ | **gilt** | kein Test (Filter von Hand gegen echte Pushes) | 23.11.2026 ok: Ausgabe `rust` des Jobs `changes`; Compare-API gegen 4 Pushes mit Rust-Code (`true`) und 1 nur mit Doku (`false`); unbekannter Stand → `true` |
+| #225/AK3 | Die Dauer des Jobs und die zusätzlichen Actions-Minuten pro Woche sind gemessen und im Issue festgehalten; überschreiten … | ☑ | **gilt** (Budget 300 min/Woche, Klärung vom 23.11.2026) | kein Test | 25.11.2026 ok (gemessen 12–13 min je Lauf, ≤ 15 Push-Läufe/Woche → höchstens ≈ 190 min, unter 300) |
+| #225/AK4 | macOS bleibt nächtlich. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Matrix beim Push nur `windows-latest`, sonst Windows und macOS |
+| #225/AK5 | `docs/TESTS.md`, Abschnitt «Plattformen», ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
 ### #227 Zuletzt geöffnete Planungen im Menü Datei
 
 [Issue #227](https://github.com/ingen63/VivaPlan/issues/227) · geschlossen · Umsetzung: fede6bc
@@ -1851,6 +1913,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #236/AK6 | Folgen fürs Erwerbseinkommen (Säule 3a, Pauschalabzug Berufskosten, Steuervariante «erwerbstätig») richten sich nach dem wirksamen Einkommen, also 0 nach dem Bezug bei eingeschaltetem Schalter. | ☑ | **gilt** | [engine/tests/income_ends.rs](../crates/engine/tests/income_ends.rs) `issue_236_ak6_…` (3 Tests) | 23.11.2026 ok (Test grün: grosse Säule 3a 10'000 statt 20'000 bzw. 0; ZH Berufskosten 0 und Variante ohne Erwerb; kein Zweitverdienerabzug) |
 | #236/AK7 | Hilfe und `docs/BESCHREIBUNG.md` beschreiben den Schalter. | ☑ | **gilt** | – | 23.11.2026 ok (nachgelesen: Hilfe de, en, fr, it, Meilensteine und Einnahmen; BESCHREIBUNG) |
 
+### #239 Monte Carlo bricht ab: Leitplanken-Ereignis mit unendlichem Entnahmesatz bei aufgebrauchtem Vermögen
+
+[Issue #239](https://github.com/ingen63/VivaPlan/issues/239) · geschlossen · Umsetzung: 6e4cf3d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #239/AK1 | Bei liquidem Vermögen ≤ 0 keine Anpassung und kein Ereignis der Leitplanken. | ☑ | **gilt** | `issue_239_ak1_ak2_…` | 25.11.2026 ok (Test grün) |
+| #239/AK2 | Planung mit «3-Topf + Leitplanken» und aufgebrauchtem Vermögen rechnet fehlerfrei (Regressionstest). | ☑ | **gilt** | `issue_239_ak1_ak2_…` | 25.11.2026 ok (Test grün) |
+| #239/AK3 | Kein Ereignis der Entnahme enthält einen nicht-endlichen Wert. | ☑ | **gilt** | `issue_239_ak3_…` | 25.11.2026 ok (Test grün) |
+
 ### #240 Einführungsvideos aus der App öffnen
 
 [Issue #240](https://github.com/ingen63/VivaPlan/issues/240) · geschlossen · Umsetzung: b45576d
@@ -1878,6 +1950,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #241/AK6 | Erklärungsabsätze (Vorschlag/eigener Wert, Säule 3a) in ⓘ-Infos; Kästchen «Einzahlungen in die Säule 3a abziehen» mit Höchstbeträgen im ⓘ. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK6` | 23.11.2026 ok (Test grün) |
 | #241/AK7 | «Einmalige Abzüge» unter eigenem Zwischentitel, getrennt von den Zeilen. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK7` | 23.11.2026 ok (Test grün; am Ende der Karte) |
 | #241/AK8 | Gleiches Verhalten in «Wohnort» und «Eigene Tabellen»; Dateiformat unverändert; Hilfe (4 Sprachen) und `e2e/ui-steuern.spec.js` nachgeführt. | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) `AK8` | 23.11.2026 ok (Test grün; Hilfe de, en, fr, it und BESCHREIBUNG nachgelesen; Modell unverändert) |
+
+### #242 README: ein Bildschirmfoto, Teaser und Links zu den Einführungsvideos
+
+[Issue #242](https://github.com/ingen63/VivaPlan/issues/242) · geschlossen · Umsetzung: 7e3b609
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #242/AK1 | Im Kopf nur `docs/bilder/uebersicht.png`. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht README) |
+| #242/AK2 | Darunter der Teaser als Video-Player von GitHub, ohne Autostart. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht README) |
+| #242/AK3 | Links «VivaPlan in 2 Minuten» und «in 10 Minuten» auf archive.org. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht README) |
+| #242/AK4 | Bildunterschrift: Beispielplanung mit erfundenen Daten. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht README) |
 
 ### #243 Editor für die Verlaufsformen linear, table und factor
 
@@ -1944,6 +2027,43 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #248/AK2 | Test je Form (`const`, `timed`, `linear`, `table`, `factor`) für Aktienanteil und Reserve. | ☑ | **gilt** | `issue_248_ak2_…` (dazu `curve`) | 24.11.2026 ok (Tests grün; ohne Korrektur scheitern linear, table, factor) |
 | #248/AK3 | Golden unverändert. | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (Golden-Dateien unverändert) |
 
+### #249 Abzüge vom Vermögen übersichtlich wie die Abzüge vom Einkommen
+
+[Issue #249](https://github.com/ingen63/VivaPlan/issues/249) · geschlossen · Umsetzung: 360246e, a504e7e
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #249/AK1 | Zusammenstellung des steuerbaren Vermögens für ein wählbares Jahr. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK1, AK3» (#249) | 25.11.2026 ok (e2e grün) |
+| #249/AK2 | Summe stimmt mit dem steuerbaren Vermögen überein (Beispiel 500 000). | ☑ | **gilt** | `issue_249_ak2_…` | 25.11.2026 ok (Test grün) |
+| #249/AK3 | Ohne Steuerwert «wie Marktwert» mit Hinweis und Eingabefeld. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK1, AK3» (#249) | 25.11.2026 ok (e2e grün) |
+| #249/AK4 | Ohne Immobilien entfallen die Liegenschaftszeilen. | ☑ | **gilt** | `issue_249_ak4_…`, e2e `ui-steuern.spec.js` «AK4» | 25.11.2026 ok (Tests grün) |
+| #249/AK5 | Bestehende Planungen unverändert, Golden-Dateien unverändert. | ☑ | **gilt** | Job `golden` | 25.11.2026 ok (keine Golden-Datei geändert, CI grün; Speicher-Nachbesserung a504e7e) |
+| #249/AK6 | Tests für AK1–AK3, AK7; Hilfe, BESCHREIBUNG.md, Spezifikation nachgeführt. | ☑ | **gilt** | wie oben | 25.11.2026 ok (Durchsicht) |
+| #249/AK7 | Hinweis mit geschätztem steuerbarem Vermögen des ersten Steuerjahres. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK7» (#249) | 25.11.2026 ok (e2e grün) |
+
+### #250 Verheiratet mit nur einer Person rechnet mit dem Tarif für Alleinstehende
+
+[Issue #250](https://github.com/ingen63/VivaPlan/issues/250) · geschlossen · Umsetzung: 7363c92
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #250/AK1 | «Verheiratet» auch mit einer Person; Hilfe erklärt es. | ☑ | **gilt** | e2e `ui-planung.spec.js` «AK1» (#250) | 25.11.2026 ok (e2e grün, Hilfe 4 Sprachen) |
+| #250/AK2 | Tarife und Abzüge für Verheiratete bei einer Person. | ☑ | **gilt** | `issue_250_ak2_…` (2) | 25.11.2026 ok (Tests grün) |
+| #250/AK3 | Regeln für zwei Personen bleiben aus. | ☑ | **gilt** | `issue_250_ak3_…` | 25.11.2026 ok (Test grün) |
+| #250/AK4 | Bestehende Planungen unverändert, Golden-Dateien unverändert. | ☑ | **gilt** | `issue_250_ak4_…` (2) | 25.11.2026 ok (Tests grün, keine Golden-Datei geändert) |
+| #250/AK5 | Tests mit Handwert; Hilfe, BESCHREIBUNG.md, Spezifikation nachgeführt. | ☑ | **gilt** | wie oben | 25.11.2026 ok (Durchsicht) |
+
+### #251 Eingabehilfe aus der Veranlagung: Säule 3a nicht doppelt abziehen
+
+[Issue #251](https://github.com/ingen63/VivaPlan/issues/251) · geschlossen · Umsetzung: dd4e473
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #251/AK1 | Feld «davon Säule 3a laut Veranlagung», Abzug bei eingeschalteter Säule 3a. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK1» (#251) | 25.11.2026 ok (e2e grün) |
+| #251/AK2 | Hinweis bei leerem Feld. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK2, AK3» (#251) | 25.11.2026 ok (e2e grün) |
+| #251/AK3 | Hinweis beim eigenen Wert nennt die Doppelzählung. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK2, AK3» (#251) | 25.11.2026 ok (e2e grün) |
+| #251/AK4 | e2e-Test für AK1 und AK2; Hilfe nachgeführt. | ☑ | **gilt** | wie oben | 25.11.2026 ok (Hilfe 4 Sprachen) |
+
 ### #253 «Ohne Pensionskasse» im Abschnitt Vorsorge, Pensionskasse dann gesperrt
 
 [Issue #253](https://github.com/ingen63/VivaPlan/issues/253) · geschlossen · Umsetzung: 0286c98
@@ -1955,6 +2075,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #253/AK3 | PK rechnet mit 0, Werte bleiben gespeichert, Warnung #152 entfällt. | ☑ | **gilt** | `tests/no_pension_fund.rs` | 24.11.2026 ok (Handwerte 2 083.33 / 0) |
 | #253/AK4 | Ohne Schalter unverändert, Golden unverändert. | ☑ | **gilt** | `golden_masters` | 24.11.2026 ok (1206/1206 grün) |
 | #253/AK5 | Tests, Hilfe 4 Sprachen, BESCHREIBUNG, Spezifikation nachgeführt. | ☑ | **gilt** | — | 24.11.2026 ok (Durchsicht) |
+
+### #255 Feld «Steuerwert» der Liegenschaft zu schmal
+
+[Issue #255](https://github.com/ingen63/VivaPlan/issues/255) · geschlossen · Umsetzung: b0d6f2a
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #255/AK1 | Betrag bis 99 999 999 und Prozentwert ganz sichtbar, auch in der kleinsten Fensterbreite. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK1, AK3» (#255) | 25.11.2026 ok (e2e grün) |
+| #255/AK2 | Andere Felder mit Auswahl und Betrag unverändert. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK2» (#255) | 25.11.2026 ok (e2e grün) |
+| #255/AK3 | e2e-Test mit 1 250 000. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK1, AK3» (#255) | 25.11.2026 ok (e2e grün) |
 
 ### #257 Auswahl «Steuerwert» bei Immobilien in Französisch und Italienisch abgeschnitten
 
@@ -1982,3 +2112,22 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #259/AK1 | Beschriftung aus Daten der Planung gekennzeichnet, nicht als fehlende Übersetzung gemeldet; ohne Namen bleibt «Steuerwert» geprüft. | ☑ | **gilt** (auch Währung als Spaltenüberschrift, nach Kommentar) | `ui-sprache.spec.js` #170/AK1 | 25.11.2026 ok (e2e grün) |
 | #259/AK2 | `npx playwright test ui-sprache.spec.js` ist grün. | ☑ | **gilt** | `ui-sprache.spec.js` | 25.11.2026 ok (63/63, dreifach wiederholt) |
+
+### #261 Linux-Paket enthält /usr/bin/vivaplan nicht, Release-Entwurf fehlt
+
+[Issue #261](https://github.com/ingen63/VivaPlan/issues/261) · geschlossen · Umsetzung: c81dbd2, b1f9d01
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #261/AK1 | Ursache benannt (Inhalt des .deb im Protokoll). | ☑ | **gilt** | Lauf 45577107168 | 25.11.2026 ok (Pfade im .deb ohne `./`) |
+| #261/AK2 | Das .deb enthält `/usr/bin/vivaplan`, die Prüfung erkennt es. | ☑ | **gilt** | Lauf 45577107168 | 25.11.2026 ok (Schritt «Kommandozeile im Paket» grün) |
+| #261/AK3 | `pakete.yml` läuft für Linux grün durch. | ☑ | **gilt** | Lauf 45577107168 | 25.11.2026 ok (grün) |
+
+### #262 Vor jedem Versions-Tag Pakete für alle Plattformen von Hand bauen
+
+[Issue #262](https://github.com/ingen63/VivaPlan/issues/262) · geschlossen · Umsetzung: 429c81d
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #262/AK1 | Ablauf in `docs/ENTWICKLUNG.md` «Ablauf pro Release». | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht) |
+| #262/AK2 | `rust-test-agent.md` hält Hinweis bzw. Auslösen vor einem Tag fest. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht) |
