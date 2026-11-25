@@ -171,7 +171,11 @@ Ablauf pro Release:
 4. Prüfen: `make changelog` bzw. `python3 tools/changelog.py check` (läuft auch in `make test-quiet` und im Job
    `english`). Gemeldet werden abweichende Versionen, Abschnitte oder Issue-Nummern und verbotene Varianten aus dem
    Glossar.
-5. Versionsnummern nachführen, committen, das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
+5. Versionsnummern nachführen, committen und pushen (noch kein Tag).
+6. Pakete vorab prüfen (#262): `gh workflow run pakete.yml -f plattformen=macos,windows,linux` (ohne `tag`: Stand des
+   Zweigs, nur Artefakte), mit `gh run watch` abwarten. Erst nach grünem Lauf taggen; ein Paketfehler fällt sonst erst
+   nach dem Tag auf (v1.0.0-beta.4/5, #261).
+7. Das Tag `v…` setzen und pushen. `pakete.yml` bricht ab, wenn die Version in
    einer Sprache fehlt, und setzt den Text aus `python3 tools/changelog.py notes v…` als Beschreibung des
    Release-Entwurfs: Englisch offen, Deutsch, Französisch und Italienisch aufklappbar.
    Der Titel ist sprachneutral, nur Produkt und Version (`python3 tools/changelog.py title v…`, z. B. v1.0.0-beta.2 →

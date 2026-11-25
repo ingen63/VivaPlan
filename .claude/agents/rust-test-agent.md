@@ -33,6 +33,11 @@ zu prüfen, zählt nicht.
 
 Die folgenden Schritte gelten im Vollmodus; im Schnellmodus entfallen Schritt 4 und das clippy aus Schritt 5, Schritt 4b nur unter der Zeitgrenze oben.
 
+- **Vor einem Versions-Tag (#262):** Weder Hooks noch `test-quality.yml` bauen Pakete. Steht ein Tag `v…` an, weise
+  darauf hin und löse `gh workflow run pakete.yml -f plattformen=macos,windows,linux` aus (ohne `tag`, nur Artefakte;
+  nur mit Freigabe des Nutzers, der Lauf kostet Actions-Minuten) und warte das Ergebnis ab (`gh run watch`). Getaggt wird
+  erst nach grünem Lauf; ein roter Lauf gehört in den Bericht.
+
 ## Arbeitsbaum sauber halten (verbindlich)
 
 Das Projekt ist mit rustfmt formatiert (#56, Einstellungen in `rustfmt.toml`).
