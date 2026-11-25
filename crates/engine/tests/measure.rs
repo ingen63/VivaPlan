@@ -352,7 +352,9 @@ fn issue_214_ak4_consumption_in_the_first_15_years() {
                 .collect();
             all.extend(
                 months
-                    .chunks_exact(12)
+                    .as_chunks::<12>()
+                    .0
+                    .iter()
                     .take(15)
                     .map(|c| c.iter().fold(0.0, |a, b| a + b)),
             );
