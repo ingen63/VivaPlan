@@ -243,13 +243,13 @@ On Windows copy the folder to `%USERPROFILE%\.claude\skills`. Then start a new s
 The results are model calculations without guarantee, no tax or investment advice; taxes are estimates.
 
 ## @ref-mcp Connecting AI programs (MCP server)
-Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save, plan folder, read only, warning, allow-dir
+Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save, plan folder, read only, warning, allow-dir, new plan, own figures
 
 `vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. The server changes a working copy in memory; only `plan_save` writes to the disk, by fixed rules (see below).
 
 | Tool | Purpose |
 |---|---|
-| `plan_open` | Open a plan (`.vplan`, `.rplan`) or the example plan; overview without values and number of check messages |
+| `plan_open` | Open a plan (`.vplan`, `.rplan`), an empty plan (`new`) or the example plan; overview without values and number of check messages |
 | `plan_get` | Read a section or a single field (field path) |
 | `plan_schema` | Look up the structure of the project file |
 | `plan_validate` | Check the plan as the app does |
@@ -265,6 +265,8 @@ Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude D
 | `plan_save` | Save the working copy as `.vplan`; the only tool that writes to the disk |
 
 Before every computation the server estimates its duration. From 60 seconds it computes only if the AI confirms explicitly (`"confirm": true`); it should ask you first. Long computations report their progress and can be cancelled in the AI program. Only one computation runs at a time.
+
+**Starting with your own figures:** If you ask the AI to compute with your own figures and you have no plan file yet, it opens an empty plan with `plan_open` and `new`, the same as *File → New* in the app. The answer lists the inputs still missing (name or label of the person, income, spending, wealth, pension fund, AHV) and the assumed values (date of birth, retirement age, tax tariffs). The AI should ask you for them and not invent any values; it adds a partner, pillar 3a, properties and one-off expenses only if you have them. The new plan is saved with `plan_save` as a new file in the plan folder. The example plan only serves to try out and demonstrate.
 
 **Saving:** `plan_save` keeps these rules itself, whatever the AI does: (1) Without a path a **new file** is created next to the opened one, `<name> (AI).vplan` (with a number if needed); an existing file stays untouched. (2) The server replaces an existing file only with `overwrite` and only after the AI program has asked you and shown the changes; if it cannot ask, the server refuses. (3) A backup `<file>.bak` is made first; writing goes through a temporary file. (4) If the file was changed since it was opened, it is not replaced. (5) Old `.rplan` files are never replaced; plans are saved as `.vplan`. (6) The server writes only into the folder of the opened plan or into a folder released with `--allow-dir <folder>` (subfolders included). With `--read-only` the server does not offer `plan_save` at all. Do not edit a plan in the app and in the AI at the same time: the app does not notice changes to the file.
 

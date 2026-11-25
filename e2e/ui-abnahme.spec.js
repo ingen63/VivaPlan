@@ -229,8 +229,8 @@ test.describe("Additional acceptance tests", () => {
 
   test("#51/AK3: a new plan has the AHV start and the pension fund withdrawal at age 65", async ({ page }) => {
     const errors = await open(page);
-    const ms = await page.evaluate(() => {
-      const p = blankPlan(JSON.parse(JSON.stringify(state)));
+    const ms = await page.evaluate(async () => {
+      const p = await blankPlan();
       return p.milestones.filter(m => m.id === "ahv" || m.id === "retire").map(m => ({ id: m.id, name: m.name, label: msLabel(m), kind: m.kind, years: m.years }));
     });
     expect(ms).toEqual(expect.arrayContaining([
@@ -240,7 +240,7 @@ test.describe("Additional acceptance tests", () => {
     ]));
     expect(ms).toHaveLength(2);
     // and it appears like this in the user interface: «Neue Planung» shows both milestones with age 65
-    await page.evaluate(() => { state = blankPlan(JSON.parse(JSON.stringify(state))); goto("milestones"); });
+    await page.evaluate(async () => { state = await blankPlan(); goto("milestones"); });
     for (const id of ["retire", "ahv"]) {
       await expect((await msRow(page, id)).locator("input[data-type=years]")).toHaveValue("65");
     }

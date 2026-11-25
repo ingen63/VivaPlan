@@ -8,7 +8,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::batch::{self, Bands, BatchSummary};
 use crate::library::{self, ImportReport, SeriesInfo};
@@ -17,9 +17,9 @@ use crate::message::Message;
 use crate::model::{Plan, ReturnSource};
 use crate::scenarios::{self, ScenarioResult};
 use crate::sim::{SimResult, Simulator};
+use crate::time::YearMonth;
 use crate::validate::{self, Issue, Severity};
 
-/// Example plan for «Neu».
 /// #138: Templates of the property gain tax (Zurich, Aargau), single source for the user interface and tests.
 pub fn gain_templates() -> Value {
     serde_json::from_str(include_str!("../assets/gain-templates.json")).expect("Vorlagen sind gültig")
@@ -30,8 +30,94 @@ pub fn tax_locations() -> crate::taxdata::LocationsOut {
     crate::taxdata::locations()
 }
 
+/// Example plan for trying out and demonstrating; base of [`blank_plan`].
 pub fn example_plan() -> Value {
     serde_json::from_str(include_str!("../assets/example.vplan")).expect("Beispiel ist gültig")
+}
+
+/// #269: Current month (UTC) for a new plan when the caller gives none (AI server, command line).
+pub fn current_month() -> YearMonth {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    month_of_secs(secs)
+}
+
+/// Month (UTC) of a point in time in seconds since 1970-01-01.
+fn month_of_secs(secs: u64) -> YearMonth {
+    month_of_day((secs / 86_400) as i64)
+}
+
+/// Month of the day `days` after 1970-01-01 (civil calendar, H. Hinnant's algorithm).
+fn month_of_day(days: i64) -> YearMonth {
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    YearMonth::new(year as i32, month as u32)
+}
+
+/// Merges `fields` into the object `v[key]` (like `{ ...v[key], ...fields }` in JavaScript).
+fn merge(v: &mut Value, key: &str, fields: Value) {
+    if let (Some(o), Value::Object(f)) = (v.get_mut(key).and_then(Value::as_object_mut), fields) {
+        o.extend(f);
+    }
+}
+
+/// #269/AK1: Empty plan with default values for «Neu» in the app and `plan_open` with `new: true`: starts in `start`,
+/// one person without a name (born 60 years before the start), no amounts, no properties, no variations. Returns, tax
+/// tables and strategy parameters keep the default values of the example plan. Moved here from the user interface
+/// (`blankPlan`, one construction instead of two).
+pub fn blank_plan(start: YearMonth) -> Value {
+    let mut p = example_plan();
+    let zero = json!({ "mode": "const", "value": 0 });
+    // #170/AK8: no texts of the user interface in the file (the same new plan in every language); the header
+    // shows «Neue Planung» as long as there is no file name.
+    merge(&mut p, "project", json!({ "name": "" }));
+    p["household"] = json!({ "persons": [{ "id": "A", "name": "", "birth": start.plus(-60 * 12).iso() }] });
+    p["milestones"] = json!([
+        { "id": "start", "kind": "date", "date": start.iso(), "fixed": true },
+        { "id": "retire", "kind": "age", "person": "A", "years": 65 },
+        { "id": "ahv", "kind": "age", "person": "A", "years": 65 },
+        { "id": "end", "kind": "age", "person": "A", "years": 95, "fixed": true },
+    ]);
+    let o = p.as_object_mut().expect("plan is an object");
+    o.remove("partner");
+    o.remove("optimization");
+    p["pillar3a"] = json!([]);
+    let pension = &mut p["pension"];
+    merge(
+        pension,
+        "pk",
+        json!({ "capital": 0, "at": "retire", "lumpsum": 0, "contribution": zero, "interest": { "mode": "const", "value": 0.02 } }),
+    );
+    merge(pension, "ahv", json!({ "monthly": 0, "at": "ahv" }));
+    // #236/AK1: new plans end the earned income with the pension fund payout
+    p["flows"] = json!({
+        "income": zero, "incomeIndexed": true, "incomeEndsAtRetirement": true, "spending": zero, "extras": [],
+        "spendingIncludesHousing": true, "amortExcluded": true,
+    });
+    // #66/AK4: tariffs with inflation; #131/AK3: rows «bis Pensionierung» and «ab Pensionierung»; AK1: pillar 3a
+    merge(
+        &mut p,
+        "taxes",
+        json!({
+            "indexed": true,
+            "deductions": [
+                { "from": "start", "kind": "own", "amount": 0, "rate": 0 },
+                { "from": "retire", "kind": "own", "amount": 0, "rate": 0 },
+            ],
+            "deductPillar3a": true,
+        }),
+    );
+    merge(&mut p, "wealth", json!({ "stocks": 0, "bonds": 0, "cash": 0 }));
+    merge(&mut p, "realestate", json!({ "properties": [] }));
+    merge(&mut p, "scenarios", json!({ "sweeps": [] }));
+    p
 }
 
 pub(crate) fn parse(plan: &Value) -> Result<Plan, Issue> {
@@ -972,5 +1058,118 @@ mod tests {
         assert!(validate_report(&v).valid);
         let r = run_report(&v, Path::new("."), None);
         assert!(r.error.is_none() && r.single.is_some());
+    }
+
+    /// #269/AK1: the empty plan of the engine: start month, one person without a name 60 years before the start, no
+    /// amounts, no partner, properties, pillar 3a, variations or optimization; the rest from the example plan.
+    #[test]
+    fn issue_269_ak1_blank_plan_is_empty_and_starts_in_the_given_month() {
+        let p = blank_plan(YearMonth::new(2030, 1));
+        let ex = example_plan();
+        assert_eq!(
+            p["household"],
+            json!({ "persons": [{ "id": "A", "name": "", "birth": "1970-01" }] })
+        );
+        assert_eq!(
+            p["milestones"][0],
+            json!({ "id": "start", "kind": "date", "date": "2030-01", "fixed": true })
+        );
+        let ms: Vec<_> = p["milestones"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| (m["id"].clone(), m["years"].clone()))
+            .collect();
+        assert_eq!(
+            ms,
+            [
+                (json!("start"), Value::Null),
+                (json!("retire"), json!(65)),
+                (json!("ahv"), json!(65)),
+                (json!("end"), json!(95))
+            ]
+        );
+        assert_eq!(p["project"]["name"], "");
+        assert_eq!(p["project"]["currency"], ex["project"]["currency"]);
+        assert!(p.get("partner").is_none() && p.get("optimization").is_none());
+        assert_eq!(p["pillar3a"], json!([]));
+        for path in [
+            "/wealth/stocks",
+            "/wealth/bonds",
+            "/wealth/cash",
+            "/pension/pk/capital",
+            "/pension/pk/lumpsum",
+            "/pension/ahv/monthly",
+            "/flows/income/value",
+            "/flows/spending/value",
+        ] {
+            assert_eq!(p.pointer(path), Some(&json!(0)), "{path}");
+        }
+        assert_eq!(p["pension"]["pk"]["at"], "retire");
+        assert_eq!(
+            p["pension"]["pk"]["interest"],
+            json!({ "mode": "const", "value": 0.02 })
+        );
+        assert_eq!(p["pension"]["pk"]["conversion"], ex["pension"]["pk"]["conversion"]);
+        assert_eq!(p["pension"]["ahv"]["at"], "ahv");
+        assert_eq!(p["pension"]["ahv"]["indexed"], ex["pension"]["ahv"]["indexed"]);
+        assert_eq!(p["flows"]["extras"], json!([]));
+        for k in [
+            "incomeIndexed",
+            "incomeEndsAtRetirement",
+            "spendingIncludesHousing",
+            "amortExcluded",
+        ] {
+            assert_eq!(p["flows"][k], true, "{k}");
+        }
+        assert_eq!(p["taxes"]["indexed"], true);
+        assert_eq!(p["taxes"]["deductPillar3a"], true);
+        assert_eq!(p["taxes"]["deductions"][1]["from"], "retire");
+        assert_eq!(p["taxes"]["income"], ex["taxes"]["income"]);
+        assert_eq!(p["wealth"]["stockShare"], ex["wealth"]["stockShare"]);
+        assert_eq!(p["realestate"]["properties"], json!([]));
+        assert_eq!(p["realestate"]["emergencyMonths"], ex["realestate"]["emergencyMonths"]);
+        assert_eq!(p["scenarios"]["sweeps"], json!([]));
+        assert_eq!(p["returns"], ex["returns"]);
+        assert_eq!(p["withdrawal"], ex["withdrawal"]);
+        // a plan the engine reads; the only error is the missing name of the person
+        assert!(parse(&p).is_ok());
+        let errors: Vec<_> = validate(&p)
+            .into_iter()
+            .filter(|i| i.severity == Severity::Error)
+            .map(|i| i.field)
+            .collect();
+        assert_eq!(errors, [Some("household.persons.0.name".to_string())]);
+        assert_eq!(
+            blank_plan(YearMonth::new(2026, 12))["household"]["persons"][0]["birth"],
+            "1966-12"
+        );
+    }
+
+    /// #269: month of a day since 1970 (leap years, turn of the year and century) and the current month.
+    #[test]
+    fn issue_269_month_of_day_and_current_month() {
+        for (days, y, m) in [
+            (0, 1970, 1),
+            (30, 1970, 1),
+            (31, 1970, 2),
+            (59, 1970, 3),
+            (365, 1971, 1),
+            (11_016, 2000, 2),
+            (11_017, 2000, 3),
+            (20_512, 2026, 2),
+            (20_513, 2026, 3),
+            (20_453, 2025, 12),
+            (20_454, 2026, 1),
+            (-1, 1969, 12),
+            (47_540, 2100, 2),
+            (47_541, 2100, 3),
+        ] {
+            assert_eq!(month_of_day(days), YearMonth::new(y, m), "{days}");
+        }
+        assert_eq!(month_of_secs(1_764_547_199), YearMonth::new(2025, 11));
+        assert_eq!(month_of_secs(1_764_547_200), YearMonth::new(2025, 12));
+        let now = current_month();
+        assert!(now >= YearMonth::new(2026, 1) && now < YearMonth::new(2200, 1), "{now}");
     }
 }

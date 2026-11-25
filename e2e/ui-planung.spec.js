@@ -1201,3 +1201,54 @@ test.describe("Wealth drawdown and loan-to-value after retirement in the afforda
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("New plan from the engine (#269)", () => {
+  // The construction of the user interface before #269 (`blankPlan` in app.js), kept here as the reference.
+  const oldBlankPlan = (base, now) => {
+    const i2ym = i => { const y = Math.floor(i / 12), mo = i - y * 12 + 1; return `${y}-${String(mo).padStart(2, "0")}`; };
+    const p = JSON.parse(JSON.stringify(base)), cur = now.getFullYear() * 12 + now.getMonth(), start = i2ym(cur);
+    const zero = { mode: "const", value: 0 };
+    p.project = { ...p.project, name: "" };
+    p.household = { persons: [{ id: "A", name: "", birth: i2ym(cur - 60 * 12) }] };
+    p.milestones = [
+      { id: "start", kind: "date", date: start, fixed: true },
+      { id: "retire", kind: "age", person: "A", years: 65 },
+      { id: "ahv", kind: "age", person: "A", years: 65 },
+      { id: "end", kind: "age", person: "A", years: 95, fixed: true },
+    ];
+    delete p.partner;
+    p.pillar3a = [];
+    p.pension = { ...p.pension, pk: { ...p.pension.pk, capital: 0, at: "retire", lumpsum: 0, contribution: { ...zero }, interest: { mode: "const", value: 0.02 } },
+      ahv: { ...p.pension.ahv, monthly: 0, at: "ahv" } };
+    p.flows = { income: { ...zero }, incomeIndexed: true, incomeEndsAtRetirement: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true, amortExcluded: true };
+    p.taxes = { ...p.taxes, indexed: true };
+    p.taxes.deductions = [{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }];
+    p.taxes.deductPillar3a = true;
+    p.wealth = { ...p.wealth, stocks: 0, bonds: 0, cash: 0 };
+    p.realestate = { ...p.realestate, properties: [] };
+    p.scenarios = { ...p.scenarios, sweeps: [] };
+    delete p.optimization;
+    return p;
+  };
+  const sorted = v => Array.isArray(v) ? v.map(sorted) : v && typeof v === "object"
+    ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sorted(v[k])])) : v;
+
+  test("AK1: «Neu» gives the same plan as the old construction of the user interface", async ({ page }) => {
+    const errors = await open(page);
+    const example = await (await page.request.post("/api/example_plan", { data: {} })).json();
+    // engine construction for several months (January, December, end of a year) equals the old one
+    for (const [y, m] of [[2030, 0], [2026, 10], [1999, 11]]) {
+      const now = new Date(y, m, 15);
+      const got = await page.evaluate(async t => blankPlan(new Date(t)), now.getTime());
+      expect(sorted(got)).toEqual(sorted(oldBlankPlan(example, now)));
+    }
+    // the action «Neu» takes over the plan of the engine with the current month
+    await page.evaluate(() => { const orig = adopt; adopt = (p, ...r) => { window.adopted = JSON.parse(JSON.stringify(p)); return orig(p, ...r); }; });
+    await page.locator('button[data-action="new"]').click();
+    await page.waitForFunction(() => window.adopted && state.wealth.stocks === 0);
+    const adopted = await page.evaluate(() => window.adopted);
+    expect(sorted(adopted)).toEqual(sorted(oldBlankPlan(example, new Date())));
+    await noErrors(page, errors);
+  });
+});

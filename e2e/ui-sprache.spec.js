@@ -202,7 +202,7 @@ test.describe("Multilingual user interface (#170)", () => {
     // New plan (File → New) in every language: identical file
     for (const l of ["de", "en"]) {
       await page.evaluate(l => I18n.use(l), l);
-      const p = await page.evaluate(async () => blankPlan(await Engine.call("example_plan"), new Date(2030, 0, 1)));
+      const p = await page.evaluate(async () => blankPlan(new Date(2030, 0, 1)));
       fresh.push(JSON.stringify(p));
     }
     expect(fresh[0]).toBe(fresh[1]);

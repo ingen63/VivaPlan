@@ -243,13 +243,13 @@ Unter Windows kopieren Sie den Ordner nach `%USERPROFILE%\.claude\skills`. Start
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
 
 ## @ref-mcp KI-Programme verbinden (MCP-Server)
-Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz, Speichern, Rückgängig, plan_set, plan_save, Planordner, Nur lesen, Warnung, allow-dir
+Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz, Speichern, Rückgängig, plan_set, plan_save, Planordner, Nur lesen, Warnung, allow-dir, neue Planung, eigene Zahlen
 
 `vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. Der Server ändert eine Arbeitskopie im Speicher; auf die Platte schreibt nur `plan_save`, nach festen Regeln (siehe unten).
 
 | Werkzeug | Zweck |
 |---|---|
-| `plan_open` | Planung (`.vplan`, `.rplan`) oder die Beispielplanung öffnen; Übersicht ohne Werte und Zahl der Prüfmeldungen |
+| `plan_open` | Planung (`.vplan`, `.rplan`), eine leere Planung (`new`) oder die Beispielplanung öffnen; Übersicht ohne Werte und Zahl der Prüfmeldungen |
 | `plan_get` | Abschnitt oder einzelnes Feld (Feldpfad) lesen |
 | `plan_schema` | Aufbau der Planungsdatei nachschlagen |
 | `plan_validate` | Planung prüfen wie die App |
@@ -265,6 +265,8 @@ Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude
 | `plan_save` | Arbeitskopie als `.vplan` speichern; schreibt als einziges Werkzeug auf die Platte |
 
 Vor jeder Rechnung schätzt der Server die Dauer. Ab 60 Sekunden rechnet er nur, wenn die KI ausdrücklich bestätigt (`"confirm": true`); sie soll Sie vorher fragen. Lange Rechnungen melden den Fortschritt und lassen sich im KI-Programm abbrechen. Es läuft immer nur eine Rechnung aufs Mal.
+
+**Mit eigenen Zahlen beginnen:** Bitten Sie die KI, mit Ihren eigenen Zahlen zu rechnen, und haben Sie noch keine Planungsdatei, öffnet sie mit `plan_open` und `new` eine leere Planung, dieselbe wie *Datei → Neu* in der App. Die Antwort nennt die noch fehlenden Angaben (Name oder Bezeichnung der Person, Einkommen, Ausgaben, Vermögen, Pensionskasse, AHV) und die angenommenen Werte (Geburtsdatum, Pensionierungsalter, Steuertarife). Die KI soll Sie danach fragen und keine Werte erfinden; Partner, Säule 3a, Liegenschaften und einmalige Ausgaben ergänzt sie nur, wenn Sie welche haben. Gespeichert wird die neue Planung mit `plan_save` als neue Datei im Planordner. Die Beispielplanung dient nur zum Ausprobieren und Vorführen.
 
 **Speichern:** `plan_save` hält diese Regeln selbst ein, unabhängig davon, was die KI tut: (1) Ohne Pfad entsteht eine **neue Datei** neben der geöffneten, `<name> (AI).vplan` (bei Bedarf mit Zähler); eine vorhandene Datei bleibt unberührt. (2) Eine vorhandene Datei ersetzt der Server nur mit `overwrite` und erst, nachdem das KI-Programm Sie gefragt und die Änderungen gezeigt hat; kann es nicht fragen, lehnt er ab. (3) Vorher entsteht eine Sicherungskopie `<datei>.bak`; geschrieben wird über eine Zwischendatei. (4) Wurde die Datei seit dem Öffnen geändert, ersetzt er sie nicht. (5) Alte `.rplan`-Dateien ersetzt er nie; gespeichert wird als `.vplan`. (6) Geschrieben wird nur in den Ordner der geöffneten Planung oder in einen mit `--allow-dir <ordner>` freigegebenen (samt Unterordnern). Mit `--read-only` bietet der Server `plan_save` gar nicht an. Bearbeiten Sie eine Planung nicht gleichzeitig in der App und in der KI: Die App bemerkt Änderungen an der Datei nicht.
 

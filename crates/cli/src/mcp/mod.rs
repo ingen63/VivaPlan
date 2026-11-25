@@ -37,8 +37,10 @@ pub(crate) const DISCLAIMER: &str =
 
 /// Description of the server for the AI (`instructions` of `initialize`).
 const INSTRUCTIONS: &str = "VivaPlan computes Swiss retirement plans (AHV, pension fund, pillar 3a, taxes, real estate, \
-withdrawal of the wealth) on this computer. Open a project file with plan_open (or example: true), read its values with \
-plan_get, check it with plan_validate. describe explains field paths, units, metrics and the experiment format: shares are \
+withdrawal of the wealth) on this computer. Open a project file with plan_open, read its values with plan_get, check it \
+with plan_validate. To compute with the user's own figures without a file, start with plan_open new: true (an empty plan \
+as «New» in the app), ask the user for every missing input the answer lists and never invent values; the example plan \
+(example: true) only serves to try out or demonstrate VivaPlan, never take its values for the user's situation. describe explains field paths, units, metrics and the experiment format: shares are \
 fractions (0.05 = 5 %), amounts are per year in the currency of the plan, nominal or real (today's purchasing power) as \
 stated. Results of the session: result_list, result_get. Change values of the working copy with plan_set (plan_changes, \
 plan_undo), take over a variant of an evaluate result with plan_apply, save with plan_save (a new file unless the user \
@@ -562,6 +564,32 @@ mod tests {
 
     /// #210/AK1: initialize answers with a version of the protocol, the tools capability and the server; notifications
     /// get no answer.
+    /// #269/AK3: The instructions and the description of plan_open: own figures start with new: true, missing inputs
+    /// are asked, values are never invented, the example plan only serves to demonstrate.
+    #[test]
+    fn issue_269_ak3_instructions_start_empty_and_ask() {
+        for t in [
+            "plan_open new: true",
+            "ask the user for every missing input",
+            "never invent values",
+            "only serves to try out or demonstrate",
+        ] {
+            assert!(INSTRUCTIONS.contains(t), "{t}");
+        }
+        assert!(!INSTRUCTIONS.contains("(or example: true)"));
+        let open = tools::list().into_iter().find(|t| t["name"] == "plan_open").unwrap();
+        let d = open["description"].as_str().unwrap();
+        for t in [
+            "With new: true an empty plan",
+            "own figures",
+            "never invent values",
+            "only to try out or demonstrate",
+        ] {
+            assert!(d.contains(t), "{t}");
+        }
+        assert_eq!(open["inputSchema"]["properties"]["new"]["type"], "boolean");
+    }
+
     #[test]
     fn issue_210_ak1_initialize_and_notifications() {
         let mut s = server();

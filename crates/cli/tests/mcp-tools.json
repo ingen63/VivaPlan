@@ -42,12 +42,16 @@
       "openWorldHint": false,
       "readOnlyHint": true
     },
-    "description": "Opens a VivaPlan project file (.vplan or an older .rplan) as a working copy in memory, brought up to the current format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, notes of the update, number of check messages. Only the named file is read; folders are not searched. If the user released plan folders, only files inside them are opened. With example: true the example plan is opened instead.",
+    "description": "Opens a VivaPlan project file (.vplan or an older .rplan) as a working copy in memory, brought up to the current format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, notes of the update, number of check messages. Only the named file is read; folders are not searched. If the user released plan folders, only files inside them are opened. With new: true an empty plan without a file is opened, as «New» in the app: use it when the user wants to compute with their own figures and has no file; the answer lists the missing inputs, ask the user for them and never invent values. With example: true the example plan is opened, only to try out or demonstrate VivaPlan; never compute the user's own situation with its values.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
         "example": {
-          "description": "Open the example plan instead of a file.",
+          "description": "Open the example plan (only to try out or demonstrate).",
+          "type": "boolean"
+        },
+        "new": {
+          "description": "Open a new, empty plan without a file (for the user's own figures).",
           "type": "boolean"
         },
         "path": {
@@ -428,7 +432,7 @@
       "openWorldHint": false,
       "readOnlyHint": false
     },
-    "description": "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file in the folder of the plan or a folder released with --allow-dir. overwrite: true replaces an existing file, but only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since opening and old .rplan files are never replaced. Answers the file name written.",
+    "description": "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file in the folder of the plan or a folder released with --allow-dir; a plan without a file (new or example plan) needs a path in a released folder, a relative one is taken there. overwrite: true replaces an existing file, but only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since opening and old .rplan files are never replaced. Answers the file name written.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

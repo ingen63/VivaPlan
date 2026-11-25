@@ -223,6 +223,23 @@ target/release/bundle/mcpb`), `VivaPlan.app` nach `/Applications` kopiert. Beisp
 1. Program → Install → Edit mcp.json, die Zeile aus dem Dialog einfügen, speichern.
 2. Erwartet: wie in der Prüfung «MCP-Server mit LM Studio (#210)», Schritte 2 bis 6.
 
+## Prüfung von Hand: Neue Planung über die KI (#269)
+
+Voraussetzung: VivaPlan ist in Claude Desktop eingerichtet (Prüfung «Mit KI verbinden (#213)»), mit einem Planordner.
+
+1. In Claude Desktop ein neues Gespräch beginnen und fragen: «Rechne meine Pension mit VivaPlan.» (ohne Datei zu
+   nennen).
+2. Erwartet (AK6): Claude ruft `plan_open` mit `new: true` auf, nicht mit `example: true`; die Antwort zeigt
+   `"file": "(new plan)"` und eine Liste `missing`. Claude fragt nach den fehlenden Angaben (Geburtsdatum, Einkommen,
+   Ausgaben, Vermögen, Pensionskasse, AHV) und rechnet nicht mit Werten des Beispielplans (keine Partnerin, keine
+   Liegenschaften, keine Säule 3a, die nicht genannt wurden).
+3. Erfundene Antworten geben (z. B. Geburt 06.1970, Einkommen 90'000, Ausgaben 70'000, Cash 300'000, PK 400'000,
+   AHV 2'200 pro Monat). Erwartet: `plan_set` mit diesen Werten, danach `simulation_run`.
+4. Bitten: «Speichere die Planung als Meine Pension.vplan.» Erwartet: `plan_save` schreibt eine neue Datei in den
+   Planordner; in der App geöffnet zeigt sie die eingegebenen Werte und sonst die Werte von *Datei → Neu*.
+5. Gegenprobe: «Zeig mir VivaPlan am Beispiel.» Erwartet: `plan_open` mit `example: true`.
+6. Ergebnis mit Datum, Version, Claude-Desktop-Version und Modell im Issue festhalten.
+
 ## Offene Punkte
 
 1. ~~**Cashflow-Invariante mit Immobilien, Pensionskasse und 3a**~~ – erledigt mit #133: Der Monatsdatensatz führt intern

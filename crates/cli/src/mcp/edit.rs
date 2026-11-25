@@ -31,7 +31,8 @@ pub(crate) fn list() -> Vec<Value> {
         "Save a plan",
         "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one \
          (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file \
-         in the folder of the plan or a folder released with --allow-dir. overwrite: true replaces an existing file, but \
+         in the folder of the plan or a folder released with --allow-dir; a plan without a file (new or example plan) needs a \
+         path in a released folder, a relative one is taken there. overwrite: true replaces an existing file, but \
          only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since \
          opening and old .rplan files are never replaced. Answers the file name written.",
         json!({
@@ -354,14 +355,19 @@ fn prepare_save(s: &Session, args: &Value, can_ask: bool) -> Result<Pending, Str
     let file = open.file.as_deref();
     let no_file = || {
         format!(
-            "The plan {} has no file (example plan); give a path in a folder released with --allow-dir",
-            open.id
+            "The plan {} has no file ({}); give a path (.vplan) in a folder released with --allow-dir",
+            open.id,
+            if open.blank { "new plan" } else { "example plan" }
         )
     };
     let target = match (arg(args, "path"), overwrite) {
         (Some(p), _) => {
             let p = PathBuf::from(p);
-            let base = file.and_then(Path::parent).map(Path::to_path_buf);
+            // #269/AK4: a plan without a file (new or example plan) saves a relative path into the first released folder
+            let base = file
+                .and_then(Path::parent)
+                .map(Path::to_path_buf)
+                .or_else(|| s.allowed.first().cloned());
             let p = match (p.is_absolute(), base) {
                 (true, _) => p,
                 (false, Some(b)) => b.join(p),
@@ -848,6 +854,50 @@ mod tests {
             assert!(e.contains("link"), "{e}");
             assert!(files(&elsewhere).is_empty());
         }
+    }
+
+    /// #269/AK4: A new plan (no file) is saved as a new file in a released folder (relative paths there); without a
+    /// released folder or outside of it nothing is written.
+    #[test]
+    fn issue_269_ak4_new_plan_saved_in_a_released_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (released, elsewhere) = (tmp.path().join("plans"), tmp.path().join("other"));
+        std::fs::create_dir(&released).unwrap();
+        std::fs::create_dir(&elsewhere).unwrap();
+        let mut s = session();
+        ok(super::super::tools::call(&mut s, "plan_open", &json!({ "new": true })).unwrap());
+        ok(set(
+            &mut s,
+            json!([{ "path": "household.persons.0.name", "value": "Person 1" }]),
+        ));
+        // without a released folder: no file and a hint
+        let e = save_done(&mut s, json!({ "plan": "p1" }), true).unwrap_err();
+        assert!(e.contains("new plan") && e.contains("--allow-dir"), "{e}");
+        let e = save_done(
+            &mut s,
+            json!({ "plan": "p1", "path": elsewhere.join("n.vplan").display().to_string() }),
+            true,
+        )
+        .unwrap_err();
+        assert!(e.contains("rule 6"), "{e}");
+        s.allowed.push(std::fs::canonicalize(&released).unwrap());
+        let e = save_done(
+            &mut s,
+            json!({ "plan": "p1", "path": elsewhere.join("n.vplan").display().to_string() }),
+            true,
+        )
+        .unwrap_err();
+        assert!(e.contains("rule 6"), "{e}");
+        assert!(files(&elsewhere).is_empty());
+        // relative: into the released folder, a new file; an existing one is not touched
+        let a = ok(save_done(&mut s, json!({ "plan": "p1", "path": "Mine.vplan" }), true));
+        assert_eq!(a["saved"], "Mine.vplan");
+        assert_eq!(files(&released), ["Mine.vplan"]);
+        let saved = engine::api::read_plan(&released.join("Mine.vplan")).unwrap();
+        assert_eq!(saved["household"]["persons"][0]["name"], "Person 1");
+        assert_eq!(saved["wealth"]["stocks"], 0);
+        let e = save_done(&mut s, json!({ "plan": "p1", "path": "Mine.vplan" }), true).unwrap_err();
+        assert!(e.contains("rule 1"), "{e}");
     }
 
     /// #263/AK2: With released folders plan_open reads only inside them (subfolders included); `..`, a linked file

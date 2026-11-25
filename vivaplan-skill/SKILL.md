@@ -37,12 +37,15 @@ The program is not on the search path. Call it with its full path:
 
 Check it with `vivaplan --version`; `vivaplan --help` lists all commands. Below, `vivaplan` stands for the full path.
 It uses the data folder of the app (time series, limits from the settings) like the app does; `--data-dir <folder>`
-takes another one. If the user does not name a plan file, ask for it; plans are wherever the user saved them.
+takes another one. If the user does not name a plan file, ask for it; plans are wherever the user saved them. Without a plan file the
+user creates one in the app (File → New) or, with the MCP server, you start an empty one (see below); never compute
+the user's situation with the example plan.
 
 ## MCP server (alternative)
 
 If the AI program connects to VivaPlan as an MCP server (`vivaplan mcp`, set up by the user), use its tools instead
-of the command line: `plan_open` (path of a `.vplan`), `plan_get`, `plan_validate`, `plan_schema`, `describe`,
+of the command line: `plan_open` (path of a `.vplan`; `new: true` for an empty plan, `example: true` for the example
+plan), `plan_get`, `plan_validate`, `plan_schema`, `describe`,
 `library_list`, `result_list`, `result_get`, and to compute `simulation_run` (the plan as it is, like `run`) and
 `evaluate` (an experiment, like `vivaplan evaluate`; the way to optimize and compare). From 60 s of estimated duration
 the answer is `needsConfirmation` with the estimate: tell the user and call again with `"confirm": true` only after
@@ -53,6 +56,11 @@ a new file `<name> (AI).vplan` next to the plan; replace a file (`overwrite: tru
 server then asks the user itself. The server replaces names with neutral ones (Person 1) and shows only file names. If the user released a plan folder
 (`--allow-dir`), the server opens and saves plans only inside it; a plan elsewhere is refused: ask the user to move it
 into the plan folder or to choose another plan folder when setting up VivaPlan.
+If the user wants to compute with their own figures and has no plan file, open an empty plan with
+`plan_open` and `"new": true` (as «New» in the app). Its answer lists the missing inputs (`missing`) and the assumed
+values to confirm (`assumed`): ask the user for them, never invent values and never take them from the example plan;
+enter the answers with `plan_set` and save with `plan_save` and a path (`.vplan`) in the plan folder. The example plan
+(`"example": true`) only serves to try out or demonstrate VivaPlan.
 The rules above apply in the same way.
 
 ## Workflow

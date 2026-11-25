@@ -243,13 +243,13 @@ Sous Windows, copiez le dossier dans `%USERPROFILE%\.claude\skills`. Démarrez e
 Les résultats sont des calculs de modèle sans garantie, pas un conseil fiscal ou en placement; les impôts sont estimés.
 
 ## @ref-mcp Connecter des programmes d’IA (serveur MCP)
-Mots-clés: MCP, Model Context Protocol, serveur, vivaplan mcp, LM Studio, Claude Desktop, IA, outil, protection des données, enregistrer, annuler, plan_set, plan_save, dossier des planifications, lecture seule, avertissement, allow-dir
+Mots-clés: MCP, Model Context Protocol, serveur, vivaplan mcp, LM Studio, Claude Desktop, IA, outil, protection des données, enregistrer, annuler, plan_set, plan_save, dossier des planifications, lecture seule, avertissement, allow-dir, nouvelle planification, propres chiffres
 
 `vivaplan mcp` est un serveur MCP : les programmes d’IA qui prennent en charge le Model Context Protocol (par exemple Claude Desktop, Claude Code, ChatGPT Desktop ou LM Studio) le démarrent eux-mêmes et communiquent avec lui par l’entrée et la sortie standard. Il n’ouvre aucune connexion réseau. Le serveur modifie une copie de travail en mémoire ; seul `plan_save` écrit sur le disque, selon des règles fixes (voir ci-dessous).
 
 | Outil | But |
 |---|---|
-| `plan_open` | Ouvrir une planification (`.vplan`, `.rplan`) ou la planification d’exemple ; aperçu sans valeurs et nombre de messages de contrôle |
+| `plan_open` | Ouvrir une planification (`.vplan`, `.rplan`), une planification vide (`new`) ou la planification d’exemple ; aperçu sans valeurs et nombre de messages de contrôle |
 | `plan_get` | Lire une section ou un seul champ (chemin de champ) |
 | `plan_schema` | Consulter la structure du fichier de projet |
 | `plan_validate` | Contrôler la planification comme l’application |
@@ -265,6 +265,8 @@ Mots-clés: MCP, Model Context Protocol, serveur, vivaplan mcp, LM Studio, Claud
 | `plan_save` | Enregistrer la copie de travail en `.vplan` ; seul outil qui écrit sur le disque |
 
 Avant chaque calcul, le serveur estime sa durée. À partir de 60 secondes, il ne calcule que si l’IA le confirme expressément (`"confirm": true`) ; elle doit vous le demander auparavant. Les calculs longs indiquent leur progression et peuvent être interrompus dans le programme d’IA. Un seul calcul s’exécute à la fois.
+
+**Commencer avec vos propres chiffres :** Si vous demandez à l’IA de calculer avec vos propres chiffres et que vous n’avez pas encore de fichier de planification, elle ouvre une planification vide avec `plan_open` et `new`, la même que *Fichier → Nouveau* dans l’application. La réponse indique les données encore manquantes (nom ou désignation de la personne, revenu, dépenses, fortune, caisse de pension, AVS) et les valeurs supposées (date de naissance, âge de la retraite, barèmes fiscaux). L’IA doit vous les demander et ne rien inventer ; elle n’ajoute un partenaire, un pilier 3a, des immeubles et des dépenses uniques que si vous en avez. La nouvelle planification est enregistrée avec `plan_save` comme nouveau fichier dans le dossier des planifications. La planification d’exemple sert uniquement à essayer et à présenter.
 
 **Enregistrer :** `plan_save` respecte lui-même ces règles, quoi que fasse l’IA : (1) Sans chemin, un **nouveau fichier** est créé à côté de celui ouvert, `<nom> (AI).vplan` (avec un numéro si nécessaire) ; un fichier existant reste intact. (2) Le serveur ne remplace un fichier existant qu’avec `overwrite` et seulement après que le programme d’IA vous a posé la question en montrant les modifications ; s’il ne peut pas poser de question, le serveur refuse. (3) Une copie de sauvegarde `<fichier>.bak` est créée auparavant ; l’écriture passe par un fichier temporaire. (4) Si le fichier a été modifié depuis son ouverture, il n’est pas remplacé. (5) Les anciens fichiers `.rplan` ne sont jamais remplacés ; l’enregistrement se fait en `.vplan`. (6) Le serveur n’écrit que dans le dossier de la planification ouverte ou dans un dossier autorisé avec `--allow-dir <dossier>` (sous-dossiers compris). Avec `--read-only`, le serveur ne propose pas du tout `plan_save`. Ne modifiez pas une planification en même temps dans l’application et dans l’IA : l’application ne remarque pas les modifications du fichier.
 

@@ -715,6 +715,17 @@ fn example_plan() -> Value {
     api::example_plan()
 }
 
+/// #269/AK1: empty plan for «Neu», starting in `start` (YYYY-MM, the current month of the user interface).
+#[tauri::command]
+fn blank_plan(start: Option<String>) -> Result<Value, CmdError> {
+    Ok(engine::dispatch::call(
+        "blank_plan",
+        &serde_json::json!({ "start": start }),
+        Path::new(""),
+        Path::new(""),
+    )?)
+}
+
 /// #138: templates of the property gains tax.
 #[tauri::command]
 fn gain_templates() -> Value {
@@ -1225,6 +1236,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             progress_get,
             cancel_job,
             example_plan,
+            blank_plan,
             gain_templates,
             tax_locations,
             upgrade_plan,

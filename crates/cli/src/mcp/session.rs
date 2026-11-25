@@ -13,8 +13,10 @@ use crate::AppData;
 /// An open plan.
 pub(crate) struct OpenPlan {
     pub(crate) id: String,
-    /// File of the plan; `None` for the example plan.
+    /// File of the plan; `None` for the example plan and a new plan.
     pub(crate) file: Option<PathBuf>,
+    /// #269: a new, empty plan (`plan_open` with `new: true`), not the example plan.
+    pub(crate) blank: bool,
     /// Working copy, brought up to date (without the limits of the settings).
     pub(crate) plan: Value,
     /// #212: The plan as in the file (brought up to date): base of `plan_changes`.
@@ -45,10 +47,10 @@ impl Stamp {
 impl OpenPlan {
     /// File name as answers show it.
     pub(crate) fn file_name(&self) -> String {
-        self.file
-            .as_deref()
-            .and_then(Path::file_name)
-            .map_or_else(|| "(example plan)".into(), |n| n.to_string_lossy().to_string())
+        self.file.as_deref().and_then(Path::file_name).map_or_else(
+            || if self.blank { "(new plan)" } else { "(example plan)" }.into(),
+            |n| n.to_string_lossy().to_string(),
+        )
     }
 }
 
@@ -147,6 +149,7 @@ impl Session {
         self.plans.push(OpenPlan {
             id: format!("p{}", self.opened),
             file,
+            blank: false,
             original: plan.clone(),
             plan,
             history: Vec::new(),

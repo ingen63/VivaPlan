@@ -75,10 +75,14 @@ pub(crate) fn list() -> Vec<Value> {
              format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, \
              notes of the update, number of check messages. Only the named file is read; folders are not searched. \
              If the user released plan folders, only files inside them are opened. \
-             With example: true the example plan is opened instead.",
+             With new: true an empty plan without a file is opened, as «New» in the app: use it when the user wants to \
+             compute with their own figures and has no file; the answer lists the missing inputs, ask the user for them \
+             and never invent values. With example: true the example plan is opened, only to try out or demonstrate \
+             VivaPlan; never compute the user's own situation with its values.",
             json!({
                 "path": { "type": "string", "description": "Path of the file (.vplan or .rplan)." },
-                "example": { "type": "boolean", "description": "Open the example plan instead of a file." },
+                "new": { "type": "boolean", "description": "Open a new, empty plan without a file (for the user's own figures)." },
+                "example": { "type": "boolean", "description": "Open the example plan (only to try out or demonstrate)." },
             }),
             &[],
         ),
@@ -263,11 +267,92 @@ pub(crate) fn full_disclaimer() -> String {
         .to_string()
 }
 
+/// #269/AK2: Inputs a new plan needs from the user, with the field path, while they are still empty (0 or no text).
+const NEEDED: &[(&str, &str)] = &[
+    (
+        "household.persons.0.name",
+        "Name or neutral label of the person (any label, e.g. «Person 1»)",
+    ),
+    ("flows.income", "Net earned income per year until retirement"),
+    ("flows.spending", "Living costs per year (housing included)"),
+    ("wealth.stocks", "Wealth today in shares"),
+    ("wealth.bonds", "Wealth today in bonds"),
+    ("wealth.cash", "Wealth today in cash and accounts"),
+    (
+        "pension.pk.capital",
+        "Pension fund: retirement capital today (0 without a pension fund)",
+    ),
+    (
+        "pension.pk.contribution",
+        "Pension fund: savings credits per year until retirement",
+    ),
+    (
+        "pension.ahv.monthly",
+        "AHV: expected pension per month (individual account statement or estimate)",
+    ),
+];
+
+/// #269/AK2: Values of a new plan that are assumptions, to confirm with the user.
+const ASSUMED: &[(&str, &str)] = &[
+    (
+        "household.persons.0.birth",
+        "Month of birth (assumed: 60 years before the start)",
+    ),
+    (
+        "milestones.1.years",
+        "Age at retirement and pension fund payout (assumed: 65)",
+    ),
+    (
+        "milestones.2.years",
+        "Age at the start of the AHV pension (assumed: 65)",
+    ),
+    ("milestones.3.years", "Age at the end of the plan (assumed: 95)"),
+    (
+        "taxes",
+        "Place of residence for the taxes (assumed: the tariffs of the example)",
+    ),
+];
+
+/// Whether a value of a new plan is still empty: 0, an empty text or a constant course with the value 0.
+fn empty_input(v: Option<&Value>) -> bool {
+    match v {
+        None | Some(Value::Null) => true,
+        Some(Value::Number(n)) => n.as_f64() == Some(0.0),
+        Some(Value::String(t)) => t.trim().is_empty(),
+        Some(Value::Object(o)) => o.get("mode").and_then(Value::as_str) == Some("const") && empty_input(o.get("value")),
+        Some(_) => false,
+    }
+}
+
+/// #269/AK2: What the answer of `plan_open` with `new: true` asks the AI to collect from the user.
+fn missing_inputs(plan: &Value) -> Value {
+    let entry = |(path, ask): &(&str, &str)| json!({ "path": path, "ask": ask });
+    let missing: Vec<Value> = NEEDED
+        .iter()
+        .filter(|(path, _)| empty_input(at_path(plan, path)))
+        .map(entry)
+        .collect();
+    json!({
+        "missing": missing,
+        "assumed": ASSUMED.iter().map(entry).collect::<Vec<_>>(),
+        "alsoAsk": "Partner, pillar 3a accounts, real estate and one-off expenses: add them only if the user has them.",
+    })
+}
+
 fn plan_open(s: &mut Session, args: &Value) -> Outcome {
-    let example = args.get("example").and_then(Value::as_bool).unwrap_or(false);
+    let flag = |k: &str| args.get(k).and_then(Value::as_bool).unwrap_or(false);
+    let (example, new) = (flag("example"), flag("new"));
+    if new && (example || arg(args, "path").is_some()) {
+        return Err("new: true opens an empty plan without a file; give it without path and example".into());
+    }
     let (file, raw, stamp) = match (arg(args, "path"), example) {
+        _ if new => (None, s.call("blank_plan", &json!({}), None)?, None),
         (Some(_), true) => return Err("Give either path or example: true, not both".into()),
-        (None, false) => return Err("Give the path of a plan (.vplan or .rplan) or example: true".into()),
+        (None, false) => {
+            return Err(
+                "Give the path of a plan (.vplan or .rplan), new: true for an empty plan or example: true".into(),
+            )
+        }
         (None, true) => (None, s.call("example_plan", &json!({}), None)?, None),
         (Some(p), false) => {
             let path = PathBuf::from(p);
@@ -310,7 +395,10 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
     } else {
         neutral_plan(&plan)["project"]["name"].clone()
     };
-    let p = s.add_plan(file, plan, stamp);
+    let missing = new.then(|| missing_inputs(&plan));
+    s.add_plan(file, plan, stamp);
+    let p = s.plans.last_mut().expect("just added");
+    p.blank = new;
     let mut out = json!({
         "plan": p.id,
         "file": p.file_name(),
@@ -323,12 +411,24 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
         "checks".into(),
         json!({ "errors": count("error"), "warnings": count("warning"), "infos": count("info") }),
     );
-    o.insert(
-        "next".into(),
-        json!(
-            "plan_get for the values of a section, plan_validate for the messages, describe for what can be measured"
-        ),
-    );
+    if let Some(m) = missing {
+        o.extend(m.as_object().expect("object").clone());
+        o.insert(
+            "next".into(),
+            json!(
+                "Ask the user for the missing inputs and confirm the assumed ones; never invent values or take them from \
+                 the example plan. Enter the answers with plan_set, check with plan_validate, save with plan_save and a \
+                 path (.vplan) in a released plan folder"
+            ),
+        );
+    } else {
+        o.insert(
+            "next".into(),
+            json!(
+                "plan_get for the values of a section, plan_validate for the messages, describe for what can be measured"
+            ),
+        );
+    }
     if !s.notice_shown {
         s.notice_shown = true;
         o.insert("privacy".into(), json!(PRIVACY_NOTE));
@@ -967,6 +1067,87 @@ mod tests {
         let v = ok(call(&mut s, "plan_validate", &json!({ "plan": "p1" })));
         assert_eq!(v["errors"], 0);
         assert!(v["messages"].is_array());
+    }
+
+    /// #269/AK2: new: true opens the empty plan of the engine without a file and lists the missing inputs; new together
+    /// with path or example is an error.
+    #[test]
+    fn issue_269_ak2_new_opens_an_empty_plan_with_the_missing_inputs() {
+        let mut s = session();
+        let o = ok(call(&mut s, "plan_open", &json!({ "new": true })));
+        assert_eq!(o["plan"], "p1");
+        assert_eq!(o["file"], "(new plan)");
+        assert_eq!((o["persons"].clone(), o["partner"].clone()), (json!(1), json!(false)));
+        assert_eq!(
+            (o["properties"].clone(), o["pillar3aAccounts"].clone()),
+            (json!(0), json!(0))
+        );
+        let now = engine::api::current_month();
+        assert_eq!(o["period"]["start"], now.iso());
+        let paths = |k: &str| -> Vec<String> {
+            o[k].as_array()
+                .unwrap()
+                .iter()
+                .map(|m| m["path"].as_str().unwrap().to_string())
+                .collect()
+        };
+        let needed: Vec<String> = NEEDED.iter().map(|(p, _)| p.to_string()).collect();
+        assert_eq!(paths("missing"), needed);
+        assert!(paths("assumed").contains(&"household.persons.0.birth".to_string()));
+        for (path, _) in NEEDED.iter().chain(ASSUMED) {
+            assert!(at_path(&s.plan("p1").unwrap().plan, path).is_some(), "{path}");
+        }
+        assert!(o["missing"][1]["ask"].as_str().unwrap().contains("income"));
+        assert!(o["alsoAsk"].as_str().unwrap().contains("Partner"));
+        assert!(o["next"].as_str().unwrap().contains("never invent"));
+        assert_eq!(o["checks"]["errors"], 1); // only the name of the person
+                                              // the working copy is the plan of the engine (brought up to date like every plan)
+        let plan = &s.plan("p1").unwrap().plan;
+        assert_eq!(plan["household"]["persons"][0]["birth"], now.plus(-720).iso());
+        assert_eq!(plan["wealth"]["stocks"], 0);
+        // a filled-in value is no longer missing; the example plan and files have no such list
+        let mut filled = plan.clone();
+        filled["flows"]["income"] = json!({ "mode": "const", "value": 90000 });
+        filled["household"]["persons"][0]["name"] = json!("Person 1");
+        let m = missing_inputs(&filled);
+        assert_eq!(m["missing"].as_array().unwrap().len(), NEEDED.len() - 2);
+        let ex = ok(call(&mut s, "plan_open", &json!({ "example": true, "new": false })));
+        assert!(ex.get("missing").is_none() && ex["file"] == "(example plan)");
+        for bad in [
+            json!({ "new": true, "example": true }),
+            json!({ "new": true, "path": "x.vplan" }),
+        ] {
+            assert!(
+                err(call(&mut s, "plan_open", &bad)).contains("without path and example"),
+                "{bad}"
+            );
+        }
+        assert!(err(call(&mut s, "plan_open", &json!({}))).contains("new: true"));
+    }
+
+    /// #269/AK2: empty inputs are 0, an empty text, a constant course with 0 or no value at all.
+    #[test]
+    fn issue_269_ak2_empty_input() {
+        for v in [
+            json!(0),
+            json!(0.0),
+            json!(" "),
+            json!({ "mode": "const", "value": 0 }),
+            Value::Null,
+        ] {
+            assert!(empty_input(Some(&v)), "{v}");
+        }
+        assert!(empty_input(None));
+        for v in [
+            json!(1),
+            json!(-5),
+            json!("A"),
+            json!({ "mode": "const", "value": 2 }),
+            json!({ "mode": "timed" }),
+            json!(true),
+        ] {
+            assert!(!empty_input(Some(&v)), "{v}");
+        }
     }
 
     /// #210/AK2: Wrong calls come back as tool errors with a hint, not as protocol errors.

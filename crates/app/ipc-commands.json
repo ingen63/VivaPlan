@@ -3,6 +3,7 @@
   "compute": [
     { "cmd": "app_info", "args": {}, "compare": "keys" },
     { "cmd": "example_plan", "args": {} },
+    { "cmd": "blank_plan", "args": { "start": "2030-01" } },
     { "cmd": "gain_templates", "args": {} },
     { "cmd": "tax_locations", "args": {} },
     { "cmd": "library_list", "args": {} },

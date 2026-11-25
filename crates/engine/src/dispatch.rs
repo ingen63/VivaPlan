@@ -20,6 +20,7 @@ pub const COMMANDS: &[&str] = &[
     "cancel_job",
     "opt_params",
     "example_plan",
+    "blank_plan",
     "gain_templates",
     "tax_locations",
     "validate",
@@ -41,6 +42,14 @@ fn dir_of(args: &Value, key: &str, fallback: &Path) -> PathBuf {
         .and_then(Value::as_str)
         .and_then(|p| Path::new(p).parent().map(Path::to_path_buf))
         .unwrap_or_else(|| fallback.to_path_buf())
+}
+
+/// #269: Start month of a new plan (`start`, YYYY-MM); without it the current month.
+fn start_month(args: &Value) -> Result<crate::time::YearMonth, crate::message::Message> {
+    match args.get("start").and_then(Value::as_str) {
+        Some(s) => s.parse().map_err(|e: String| msg!(raw_error, detail = e)),
+        None => Ok(api::current_month()),
+    }
 }
 
 /// Id of the computation (`jobId`) that the user interface passes at the start.
@@ -83,6 +92,8 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
         }
         "opt_params" => to(&api::opt_params(&plan))?,
         "example_plan" => api::example_plan(),
+        // #269/AK1: «Neu»; `start` (YYYY-MM) is the current month of the user interface, without it the current month
+        "blank_plan" => api::blank_plan(start_month(args)?),
         "gain_templates" => api::gain_templates(),
         "tax_locations" => to(&api::tax_locations())?,
         "validate" => to(&api::validate(&plan))?,
@@ -258,5 +269,16 @@ mod tests {
             dir_of(&json!({ "path": null }), "path", Path::new("/x")),
             PathBuf::from("/x")
         );
+    }
+
+    /// #269/AK1: `blank_plan` starts in `start`; without it in the current month; an invalid month is an error.
+    #[test]
+    fn issue_269_ak1_blank_plan_start_month() {
+        let call = |args: Value| call("blank_plan", &args, &lib(), Path::new("/"));
+        let p = call(json!({ "start": "2031-07" })).unwrap();
+        assert_eq!(p, api::blank_plan("2031-07".parse().unwrap()));
+        let now = call(json!({})).unwrap();
+        assert_eq!(now["milestones"][0]["date"], api::current_month().iso());
+        assert!(call(json!({ "start": "2031-13" })).unwrap_err().contains("2031-13"));
     }
 }

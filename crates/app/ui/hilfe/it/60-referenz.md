@@ -243,13 +243,13 @@ Su Windows copi la cartella in `%USERPROFILE%\.claude\skills`. Avvii poi una nuo
 I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o d’investimento; le imposte sono stimate.
 
 ## @ref-mcp Collegare programmi di IA (server MCP)
-Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati, salvare, annullare, plan_set, plan_save, cartella delle pianificazioni, sola lettura, avviso, allow-dir
+Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati, salvare, annullare, plan_set, plan_save, cartella delle pianificazioni, sola lettura, avviso, allow-dir, nuova pianificazione, proprie cifre
 
 `vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. Il server modifica una copia di lavoro in memoria; solo `plan_save` scrive sul disco, secondo regole fisse (vedi sotto).
 
 | Strumento | Scopo |
 |---|---|
-| `plan_open` | Aprire una pianificazione (`.vplan`, `.rplan`) o la pianificazione di esempio; panoramica senza valori e numero dei messaggi di verifica |
+| `plan_open` | Aprire una pianificazione (`.vplan`, `.rplan`), una pianificazione vuota (`new`) o la pianificazione di esempio; panoramica senza valori e numero dei messaggi di verifica |
 | `plan_get` | Leggere una sezione o un singolo campo (percorso di campo) |
 | `plan_schema` | Consultare la struttura del file di progetto |
 | `plan_validate` | Verificare la pianificazione come l’app |
@@ -265,6 +265,8 @@ Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Cla
 | `plan_save` | Salvare la copia di lavoro come `.vplan`; unico strumento che scrive sul disco |
 
 Prima di ogni calcolo il server ne stima la durata. Da 60 secondi calcola solo se l’IA lo conferma espressamente (`"confirm": true`); deve prima chiederlo a voi. I calcoli lunghi segnalano l’avanzamento e si possono interrompere nel programma di IA. Viene eseguito un solo calcolo alla volta.
+
+**Iniziare con le proprie cifre:** Se chiede all’IA di calcolare con le Sue cifre e non ha ancora un file di pianificazione, l’IA apre una pianificazione vuota con `plan_open` e `new`, la stessa di *File → Nuova* nell’app. La risposta indica i dati ancora mancanti (nome o designazione della persona, reddito, spese, sostanza, cassa pensioni, AVS) e i valori presunti (data di nascita, età di pensionamento, tariffe fiscali). L’IA deve chiederglieli e non inventare valori; aggiunge partner, pilastro 3a, immobili e spese uniche solo se ne ha. La nuova pianificazione viene salvata con `plan_save` come nuovo file nella cartella delle pianificazioni. La pianificazione di esempio serve solo per provare e mostrare.
 
 **Salvare:** `plan_save` rispetta da sé queste regole, qualunque cosa faccia l’IA: (1) Senza percorso nasce un **nuovo file** accanto a quello aperto, `<nome> (AI).vplan` (se necessario con un numero); un file esistente resta intatto. (2) Il server sostituisce un file esistente solo con `overwrite` e solo dopo che il programma di IA ve lo ha chiesto mostrando le modifiche; se non può chiedere, il server rifiuta. (3) Prima viene creata una copia di sicurezza `<file>.bak`; la scrittura passa da un file temporaneo. (4) Se il file è stato modificato dopo l’apertura, non viene sostituito. (5) I vecchi file `.rplan` non vengono mai sostituiti; si salva come `.vplan`. (6) Il server scrive solo nella cartella della pianificazione aperta o in una cartella autorizzata con `--allow-dir <cartella>` (sottocartelle comprese). Con `--read-only` il server non offre affatto `plan_save`. Non modificate una pianificazione contemporaneamente nell’app e nell’IA: l’app non si accorge delle modifiche al file.
 

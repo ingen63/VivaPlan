@@ -313,7 +313,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
 
   test("AK3: new plans have the rows until and from retirement; more rows possible", async ({ page }) => {
     const errors = await open(page);
-    const p = await page.evaluate(async () => blankPlan(await Engine.call("example_plan")));
+    const p = await page.evaluate(async () => blankPlan());
     expect(p.taxes.deductions).toEqual([{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
     expect(p.taxes.deductPillar3a).toBe(true);
     await withRows(page, p.taxes.deductions);

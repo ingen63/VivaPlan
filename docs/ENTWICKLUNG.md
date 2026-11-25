@@ -624,7 +624,7 @@ Reihenfolge pro Monat:
    Grundstückgewinnsteuer, Hypothekarperioden); Säule 3a (Verzinsung, Auszahlung).
 3. **Geldflüsse** in das Cash: Einkommen + Renten + Zuflüsse − Lebenshaltung − Wohnkosten.
    **Ende des Erwerbseinkommens (#236):** `flows.incomeEndsAtRetirement` bzw. `partner.incomeEndsAtRetirement`
-   (fehlt: `false`, ältere Planungen und Golden-Dateien unverändert; `blankPlan` und eine neue zweite Person: `true`).
+   (fehlt: `false`, ältere Planungen und Golden-Dateien unverändert; `api::blank_plan` und eine neue zweite Person: `true`).
    Eingeschaltet ist das Erwerbseinkommen der Person ab dem Monat ihres Meilensteins `retire` bzw. `retire2` 0
    (`PersonCfg::income_end`, `Simulator::person_earned`), unabhängig von `pension.pk.at`. Alles, was das Erwerbseinkommen
    nutzt (Geldflüsse, Tragbarkeit, Berufskosten, Variante `working`, Zweitverdienerabzug, grosse Säule 3a, Netto-Bedarf),

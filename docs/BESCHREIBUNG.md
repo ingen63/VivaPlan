@@ -452,6 +452,14 @@ sechs Regeln: ohne Pfad eine neue Datei `<name> (AI).vplan` neben der geöffnete
 Sicherungskopie `<datei>.bak`, geschrieben über eine Zwischendatei; keine seit dem Öffnen geänderte Datei; nie eine
 `.rplan`-Datei; nur in den Ordner der Planung oder einen mit `--allow-dir` freigegebenen. `--read-only` bietet
 `plan_save` nicht an.
+Neue Planung (#269): `plan_open` mit `new: true` öffnet eine leere Planung ohne Datei, dieselbe wie *Datei → Neu* in
+der App; beide baut der Rechenkern (`api::blank_plan`, Befehl `blank_plan`). Die Antwort nennt die noch fehlenden
+Angaben mit Feldpfad (`missing`: Name der Person, Einkommen, Ausgaben, Vermögen, Pensionskasse, AHV), die angenommenen
+Werte (`assumed`: Geburtsdatum, Alter der Meilensteine, Steuertarife) und was zusätzlich zu erfragen ist (Partner,
+Säule 3a, Liegenschaften, einmalige Ausgaben). `new` zusammen mit `path` oder `example` ist ein Fehler. Die Anweisungen
+des Servers sagen der KI, für eigene Zahlen so zu beginnen, Fehlendes beim Menschen zu erfragen und keine Werte zu
+erfinden; die Beispielplanung dient nur zum Vorführen. `plan_save` speichert eine Planung ohne Datei nur mit einem Pfad
+in einem freigegebenen Ordner; ein relativer Pfad gilt dann im ersten freigegebenen Ordner.
 Planordner (#263): Mit `--allow-dir <ordner>` (auch mehrfach) öffnet und speichert der Server Planungen nur in diesen
 Ordnern und ihren Unterordnern; verglichen werden kanonische Pfade, so dass `..` und symbolische Links aus dem Ordner
 hinaus abgewiesen werden (Fehler «outside the plan folder», nur mit dem Dateinamen). Der Datenordner der App bleibt

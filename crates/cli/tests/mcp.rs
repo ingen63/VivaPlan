@@ -1004,3 +1004,36 @@ fn issue_263_ak2_allow_dir_needs_an_existing_folder() {
         assert!(!err.contains("panicked"), "{args:?}: {err}");
     }
 }
+
+/// #269/AK2, AK4: Over stdio a new plan opens empty with the missing inputs; after plan_set it is saved as a new file in
+/// the released folder (relative path), nowhere else.
+// slow: starts the program over stdio
+#[test]
+fn issue_269_ak2_ak4_new_plan_over_stdio() {
+    let tmp = tempfile::tempdir().unwrap();
+    let plans = tmp.path().join("plans");
+    std::fs::create_dir(&plans).unwrap();
+    let mut s = Server::start(tmp.path(), &["--allow-dir", plans.to_str().unwrap()]);
+    s.initialize();
+    let (text, error) = s.tool("plan_open", json!({ "new": true }));
+    assert!(!error, "{text}");
+    let open = data(&text);
+    assert_eq!(open["file"], "(new plan)");
+    assert!(open["missing"].as_array().unwrap().len() >= 9, "{open}");
+    let (text, error) = s.tool(
+        "plan_set",
+        json!({ "plan": "p1", "changes": [
+            { "path": "household.persons.0.name", "value": "Person 1" },
+            { "path": "wealth.cash", "value": 50000 },
+        ] }),
+    );
+    assert!(!error, "{text}");
+    let (text, error) = s.tool("plan_save", json!({ "plan": "p1", "path": "New.vplan" }));
+    assert!(!error, "{text}");
+    let saved: Value = serde_json::from_str(&std::fs::read_to_string(plans.join("New.vplan")).unwrap()).unwrap();
+    assert_eq!(saved["wealth"]["cash"], 50000);
+    assert!(saved.get("partner").is_none());
+    let (text, error) = s.tool("plan_open", json!({ "new": true, "example": true }));
+    assert!(error && text.contains("without path and example"), "{text}");
+    s.close();
+}
