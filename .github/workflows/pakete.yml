@@ -113,9 +113,11 @@ jobs:
               test -x "$cli"
               "$cli" --version ;;
             linux)
-              # Tauri schreibt die Pfade im .deb mit oder ohne «./» davor; fehlt die Datei, zeigt der Lauf usr/bin.
-              dpkg-deb -c target/release/bundle/deb/*.deb > deb-inhalt.txt
-              grep -E '(^|[ /])usr/bin/vivaplan$' deb-inhalt.txt || { grep 'usr/bin' deb-inhalt.txt >&2; exit 1; }
+              # Tauri schreibt die Pfade im .deb mit oder ohne «./» davor (#261); der Lauf zeigt immer die Zeilen mit
+              # usr/bin, auch bei Erfolg, damit die Ursache bei einem Fehler im Protokoll steht.
+              dpkg-deb -c target/release/bundle/deb/*.deb > "$RUNNER_TEMP/deb-inhalt.txt"
+              grep 'usr/bin' "$RUNNER_TEMP/deb-inhalt.txt" >&2 || true
+              grep -E '(^|[ /])usr/bin/vivaplan$' "$RUNNER_TEMP/deb-inhalt.txt" || { echo "usr/bin/vivaplan fehlt im .deb" >&2; exit 1; }
               target/release/vivaplan --version ;;
             windows)
               7z l target/release/bundle/nsis/*.exe | grep -i 'vivaplan\.exe'
