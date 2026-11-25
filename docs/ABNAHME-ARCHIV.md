@@ -2163,3 +2163,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #264/AK4 | Bestehende Planungen beim Öffnen angepasst, Ergebnis gleich, Hinweis. | ☑ | **gilt** | `cash_housing::issue_264_ak4_…`, `upgrade::tests::issue_264_ak4_map_series_forms` | 25.11.2026 ok (Test; Upgrade mit Marke `flows.amortExcluded`, Golden unverändert) |
 | #264/AK5 | `spending_below_housing` verwendet denselben Wohnanteil. | ☑ | **gilt** | `cash_housing::issue_264_ak5_check_uses_share_without_amortization` | 25.11.2026 ok (Test) |
 | #264/AK6 | Feldtext, Hilfe und `docs/BESCHREIBUNG.md` nennen die neue Abgrenzung. | ☑ | **gilt** | e2e `ui-planung.spec.js` AK6 | 25.11.2026 ok (e2e, Durchsicht) |
+
+### #266 Vermögensverzehr und Belehnung ab der Pensionierung in der Tragbarkeit
+
+[Issue #266](https://github.com/ingen63/VivaPlan/issues/266) · geschlossen · Umsetzung: 051b363, d06e4b2
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #266/AK1 | Einstellungen mit Schalter Vermögensverzehr (aus), Satz 3 %, Belehnung ab der Pensionierung 65 %; ältere Einstellungen erhalten Standardwerte. | ☑ | **gilt** | e2e `ui-planung.spec.js` AK1 (#266), `issue_266_ak1_affordability_defaults_and_saved_values` | 25.11.2026 ok (Tests grün) |
+| #266/AK2 | Einkommen der Tragbarkeit mit Satz × freies Vermögen bei Kauf und Erneuerung; Handwert 120'000; ausgeschaltet wie heute. | ☑ | **gilt** | `issue_266_ak2_…` | 25.11.2026 ok (Tests grün) |
+| #266/AK3 | Beim Kauf nur Vermögen nach Eigenkapital, negatives ohne Vermögensverzehr. | ☑ | **gilt** | `issue_266_ak3_…` | 25.11.2026 ok (Handwert 625'000, Simulation) |
+| #266/AK4 | Nach der Pensionierung aller: Erneuerung auf 650'000 begrenzt, Kauf höchstens 65 %. | ☑ | **gilt** | `issue_266_ak4_…` | 25.11.2026 ok (Tests grün) |
+| #266/AK5 | Golden-Dateien mit Begründung nachgeführt, falls nötig. | ☑ | **gilt** (keine Änderung nötig) | `golden_masters` | 25.11.2026 ok (unverändert) |
+| #266/AK6 | Planung, Kommandozeile und MCP-Server mit denselben Einstellungen; `describe` nennt sie. | ☑ | **gilt** | `appdata`-Tests, `describe` | 25.11.2026 ok (Durchsicht, Tests grün) |
+| #266/AK7 | Hinweis, Werte, Hilfe und BESCHREIBUNG nennen die neuen Werte und die verschiedene Praxis der Banken. | ☑ | **gilt** | e2e AK1 (#266), `make i18n-check` | 25.11.2026 ok (Durchsicht, 4 Sprachen) |
