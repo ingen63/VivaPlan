@@ -310,6 +310,59 @@ Entnahmerate, Immobilien (Wert, Hypothek, Eigenkapital), Vorsorge. Bei mehreren 
 Wahrscheinlichkeit, dass das Geld reicht (über die Zeit), Verteilung von Endvermögen und Vermögen bei Pensionierung,
 Alter bei Erschöpfung. Szenarien: Erfolgsquote und Endvermögen je Variante (eine Variation) bzw. Heatmaps (zwei).
 
+## Beta-Token (#270)
+
+Während der geschlossenen Beta brauchen die Desktop-App und `vivaplan mcp` eine einmalige Aktivierung. Die übrigen
+Befehle der Kommandozeile und der Entwicklungsserver bleiben frei. Das Token ist eine Hürde, kein Schutz (GPL).
+
+- **Rechenkern** `crates/engine/src/beta.rs`: Format `VP1.beta.<Kennung>.<Kürzel>.<JJJJ-MM-TT>.<Signatur>`; signiert ist
+  alles vor dem letzten Punkt (Ed25519, `ed25519-dalek`; Signatur base64url ohne Auffüllung). Kennung und Kürzel: 1 bis
+  16 Buchstaben, Ziffern oder Bindestriche. `redeem` prüft Format, Signatur und Einlösefrist (einschliesslich, UTC),
+  `activate` schreibt `beta-aktivierung.json` (Token und Tag) in den Datenordner der App, `Status::of` liest sie und
+  prüft nur die Signatur (die Frist zählt nach der Aktivierung nicht mehr). Leerzeichen und Zeilenumbrüche im Token
+  werden übergangen. Meldungen: Codes `beta_*` in `message.rs`.
+- **App:** Befehle `beta_status` und `beta_activate` (nur Desktop-App, `ipc-commands.json`). `app.js` (`betaGate`) zeigt
+  vor allem anderen den Dialog `#beta`; solange er offen ist, laden weder Startplanung noch Menü, Tastenkürzel oder
+  «Datei öffnen» etwas. Der Rauchtest (`--smoke`) überspringt ihn. «Über VivaPlan» zeigt Kürzel und Tag.
+- **MCP:** `vivaplan mcp` prüft beim Start die Aktivierung im Datenordner (`--data-dir`, sonst wie die App); fehlt sie,
+  löst es `--beta-token=<token>` ein (Feld «Beta token» des `.mcpb`, `user_config.beta_token`) und speichert die
+  Aktivierung für App und Server. Ein leeres Feld oder der nicht ersetzte Platzhalter `${user_config.beta_token}` zählt
+  als kein Token. Sonst beantwortet der Server jeden `tools/call` mit dem Grund (`isError`); `initialize`,
+  `tools/list` und `ping` gehen weiter.
+- **Entwicklungsserver:** braucht keine Aktivierung (`beta_status`: `required: false`). Der Testzugang `#beta` der
+  Oberfläche verhält sich wie eine App ohne Aktivierung; `beta_activate` prüft dann mit dem Testschlüssel und speichert
+  nichts (e2e `ui-beta.spec.js`).
+- **Testschlüssel:** `beta::TEST_SEED`; Tests und Entwicklungsserver verwenden nur ihn. Ein Debug-Build prüft mit
+  gesetzter Umgebungsvariable `VIVAPLAN_BETA_TEST_KEY=1` gegen den Testschlüssel (Tests von `vivaplan mcp`,
+  `tools/test_mcpb.py`); ein Release-Build beachtet sie nicht.
+- **Abschalten ab 1.0.0:** Cargo-Feature `beta-token` des Rechenkerns, standardmässig an. Ohne es (aus `default` in
+  `crates/engine/Cargo.toml` entfernen) braucht nichts eine Aktivierung; danach Dialog, Befehle und Feld entfernen.
+
+**Schlüssel erzeugen und einsetzen (einmal):** Das Werkzeug `beta-token` (`crates/cli/src/beta_token.rs`) ist ein
+eigenes Programm für Entwickler und kommt nicht in die Pakete (`tools/cli-sidecar.mjs` kopiert nur `vivaplan`).
+
+```sh
+cargo run -q -p vivaplan-cli --bin beta-token -- keygen --out ~/VivaPlan-Beta/beta-privat.key
+```
+
+`keygen` schreibt den privaten Schlüssel (nur für den Besitzer lesbar) und gibt den öffentlichen aus. Es verweigert
+eine vorhandene Datei und jeden Ort im Repository; `.gitignore` schliesst `*.key`, `*.pem` und `*private*key*` aus. Den
+privaten Schlüssel sicher aufbewahren (z. B. Passwortverwaltung), nie weitergeben, nie einchecken. Den öffentlichen
+Schlüssel (64 Hexadezimalzeichen) in `crates/engine/src/beta.rs` bei `PUBLIC_KEY` anstelle des Platzhalters einsetzen,
+committen und eine neue Version bauen. Solange der Platzhalter dort steht, nimmt die App kein Token an (Meldung
+`beta_no_key`). Ein neuer Schlüssel macht alle bisherigen Tokens und Aktivierungen ungültig.
+
+**Tokens ausgeben:**
+
+```sh
+cargo run -q -p vivaplan-cli --bin beta-token -- issue --key ~/VivaPlan-Beta/beta-privat.key --who AB --until 2026-12-31
+cargo run -q -p vivaplan-cli --bin beta-token -- check VP1.beta.…   # prüft gegen den eingebauten Schlüssel
+```
+
+`--who` ist das Kürzel der Testperson (kein voller Name), `--until` die Einlösefrist; ohne `--id` wählt das Werkzeug
+eine zufällige Kennung. Das Token als eine Zeile verschicken. `tools/mcpb.py check <paket> --beta-token <token>` prüft
+ein Paket samt Aktivierung; ohne Token prüft es nur, dass der Server ohne Aktivierung jeden Aufruf ablehnt.
+
 ## Befehle
 
 ```sh

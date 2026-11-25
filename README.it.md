@@ -141,6 +141,13 @@ I pacchetti non sono firmati. Al primo avvio il sistema operativo mostra quindi 
 Anche Claude Desktop avvisa durante l’installazione del `.mcpb` che l’estensione ottiene accesso a tutto il computer.
 Claude Desktop lo mostra per ogni estensione; il limite alla cartella delle pianificazioni lo impone VivaPlan stesso.
 
+**Token beta (beta chiusa):** al primo avvio l’app chiede il token beta personale, una riga che inizia con
+`VP1.beta.`. L’attivazione vale poi in modo permanente per questo computer, anche dopo gli aggiornamenti. La data nel
+token è un termine di riscatto: solo fino ad allora può essere inserito; un’installazione attivata continua a
+funzionare anche dopo. Se l’app è attivata, il `.mcpb` non ha bisogno di un token; altrimenti inserirlo nel campo
+«Beta token» durante l’installazione in Claude Desktop. La verifica avviene sul computer, senza Internet. Dalla
+versione 1.0.0 non serve più alcun token.
+
 ## Primi passi
 
 1. Avviare VivaPlan: il dialogo di benvenuto propone la pianificazione d’esempio, una pianificazione propria o una

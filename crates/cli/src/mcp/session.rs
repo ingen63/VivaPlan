@@ -79,6 +79,8 @@ pub(crate) struct Session {
     pub(crate) results: Vec<SessionResult>,
     /// The note on privacy and the full disclaimer come with the first `plan_open`.
     pub(crate) notice_shown: bool,
+    /// #270/AK9: Not activated with a beta token: every tool call is answered with this text.
+    pub(crate) locked: Option<String>,
     opened: usize,
     computed: usize,
 }
@@ -93,6 +95,7 @@ impl Session {
             plans: Vec::new(),
             results: Vec::new(),
             notice_shown: false,
+            locked: None,
             opened: 0,
             computed: 0,
         }

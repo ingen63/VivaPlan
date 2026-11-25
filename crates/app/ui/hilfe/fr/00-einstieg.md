@@ -65,6 +65,19 @@ Mots-clés: menu, clavier, raccourcis, enregistrer, ouvrir, annuler, F1, langue,
 
 La liste complète des raccourcis clavier figure dans le menu *Aide → Raccourcis clavier* et dans le [chapitre de référence](#ref-shortcuts).
 
+## @beta Jeton bêta et activation
+Mots-clés: bêta, jeton, activation, activer, délai d’utilisation, bêta fermée, testeur, mise à jour
+
+Pendant la bêta fermée, VivaPlan ne peut être utilisé qu’après une **activation unique**. Vous recevez pour cela un jeton bêta personnel, une ligne commençant par `VP1.beta.`. Au premier démarrage, l’application n’affiche que le dialogue « Saisir le jeton bêta » ; collez-y le jeton entier et cliquez sur *Activer*. Les retours à la ligne et les espaces provenant d’un e-mail ne gênent pas.
+
+- **Une seule fois :** l’activation vaut pour cet ordinateur et votre compte d’utilisateur. Ensuite, VivaPlan ne le redemande plus jamais, même après une mise à jour vers une nouvelle version.
+- **Délai d’utilisation :** la date du jeton indique seulement jusqu’à quand il peut être saisi. Une fois le délai passé, VivaPlan refuse le jeton ; demandez alors un nouveau jeton. Une installation déjà activée continue de fonctionner après le délai.
+- **Sans Internet :** VivaPlan vérifie le jeton sur votre ordinateur. Il n’envoie rien.
+- **Paquet pour l’IA :** l’application et la connexion à l’IA (`vivaplan mcp`) partagent l’activation. Si l’application est activée, le paquet pour Claude Desktop n’a pas besoin de jeton. Sinon, saisissez le jeton dans le champ « Beta token » lors de l’installation du paquet ; cela active aussi l’application ([Connecter des programmes d’IA](#ref-mcp)).
+- **Affichage :** *Aide → À propos de VivaPlan* affiche vos initiales et le jour de l’activation.
+
+L’activation est conservée dans le fichier `beta-aktivierung.json` du dossier de données de l’application (voir [Protection des données](#privacy)). À partir de la version 1.0.0, VivaPlan n’a plus besoin de jeton.
+
 ## @privacy Protection des données et données locales
 Mots-clés: Internet, cloud, emplacement, sécurité, réseau, protection des données
 

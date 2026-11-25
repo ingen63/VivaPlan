@@ -191,7 +191,9 @@ target/release/bundle/mcpb`), `VivaPlan.app` nach `/Applications` kopiert. Beisp
 2. `VivaPlan_<Version>_aarch64.mcpb` im Finder doppelklicken. Erwartet: Claude Desktop öffnet die Installationsansicht
    mit Name «VivaPlan», Version, Symbol, Beschreibung und den fünfzehn Werkzeugen; «Installieren» gelingt ohne
    Fehlermeldung (auch keine von Gatekeeper zum Programm `server/vivaplan`). #263/AK1: Vor dem Einschalten fragt
-   Claude Desktop nach «Plan folder» (Pflicht, Vorschlag Dokumente-Ordner) und «Read only» (aus). Prüfen, ob Claude
+   Claude Desktop nach «Plan folder» (Pflicht, Vorschlag Dokumente-Ordner) und «Read only» (aus). #270/AK8: dazu das
+   Feld «Beta token» (freiwillig, verdeckt); `ps` zeigt am Ende `--beta-token=<eingegebenes Token>`, bei leerem Feld
+   `--beta-token=`. Prüfen, ob Claude
    Desktop beide Werte in die Argumente einsetzt: `ps -ax -o args | grep '[v]ivaplan mcp'` im Terminal zeigt
    `mcp --allow-dir <ordner> --read-only=false`. Mit
    «Read only» eingeschaltet `--read-only=true` und kein `plan_save` in der Werkzeugliste.
@@ -239,6 +241,26 @@ Voraussetzung: VivaPlan ist in Claude Desktop eingerichtet (Prüfung «Mit KI ve
    Planordner; in der App geöffnet zeigt sie die eingegebenen Werte und sonst die Werte von *Datei → Neu*.
 5. Gegenprobe: «Zeig mir VivaPlan am Beispiel.» Erwartet: `plan_open` mit `example: true`.
 6. Ergebnis mit Datum, Version, Claude-Desktop-Version und Modell im Issue festhalten.
+
+## Prüfung von Hand: Beta-Token (#270)
+
+Voraussetzung: echter öffentlicher Schlüssel in `crates/engine/src/beta.rs` (`docs/ENTWICKLUNG.md`, «Beta-Token»), ein
+installiertes Paket dieser Version und zwei Tokens von `beta-token issue`: eines mit Frist in der Zukunft, eines mit
+abgelaufener Frist. Vorher `~/Library/Application Support/ch.vivaplan-app.desktop/beta-aktivierung.json` wegsichern.
+
+1. App starten (AK4): Nur der Dialog «Beta-Token eingeben» erscheint; Menü *Datei → Neu/Öffnen*, Doppelklick auf eine
+   `.vplan` und die Tastenkürzel bewirken nichts.
+2. Abgelaufenes Token eingeben (AK2): Meldung «… nur bis TT.MM.JJJJ einlösen. Bitte fragen Sie nach einem neuen
+   Token.». Ein Zeichen im gültigen Token ändern (AK3): «nicht gültig».
+3. Gültiges Token eingeben (AK1): Die App startet; nach Beenden und Neustart kein Dialog. *Hilfe → Über VivaPlan*
+   zeigt Kürzel und Tag (AK10).
+4. Systemuhr nach die Frist des Tokens stellen, App neu starten (AK5): kein Dialog, kein Hinweis. Uhr zurückstellen.
+5. Update (AK6): Ein Paket mit höherer Version über die installierte App installieren und starten: kein Dialog.
+6. Claude Desktop (AK7, AK8): Mit aktivierter App das `.mcpb` mit leerem Feld «Beta token» installieren; Prüfung 4 von
+   «Mit KI verbinden» gelingt. Dann `beta-aktivierung.json` entfernen, Erweiterung neu installieren mit gültigem Token:
+   gelingt; danach startet die App ohne Dialog. Mit leerem Feld und ohne Aktivierung (AK9): Jede Frage an VivaPlan
+   endet mit «VivaPlan is not activated yet …».
+7. Ergebnis mit Datum und Version im Issue festhalten; die gesicherte Aktivierungsdatei zurücklegen.
 
 ## Offene Punkte
 

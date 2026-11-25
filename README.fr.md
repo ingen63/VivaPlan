@@ -144,6 +144,13 @@ Les paquets ne sont pas signés. Au premier démarrage, le système d’exploita
 Claude Desktop avertit aussi lors de l’installation du `.mcpb` que l’extension obtient l’accès à tout l’ordinateur.
 Claude Desktop l’affiche pour chaque extension; VivaPlan applique lui-même la limite au dossier des planifications.
 
+**Jeton bêta (bêta fermée):** au premier démarrage, l’app demande votre jeton bêta personnel, une ligne commençant par
+`VP1.beta.`. L’activation vaut ensuite durablement pour cet ordinateur, même après les mises à jour. La date du jeton
+est un délai d’utilisation: il ne peut être saisi que jusque-là; une installation activée continue ensuite de
+fonctionner. Si l’app est activée, le `.mcpb` n’a pas besoin de jeton; sinon, saisissez-le dans le champ «Beta token»
+lors de l’installation dans Claude Desktop. La vérification a lieu sur votre ordinateur, sans Internet. À partir de
+la version 1.0.0, aucun jeton n’est plus nécessaire.
+
 ## Premiers pas
 
 1. Démarrer VivaPlan: le dialogue de bienvenue propose la planification d’exemple, une planification propre ou une

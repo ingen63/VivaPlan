@@ -222,6 +222,13 @@ exclude_re = [
     # Menü «Ansicht → Sprache»: muda baut Menüs unter macOS nur im Hauptthread, auch mit der Mock-Runtime (wie
     # `install_menu`); die Einträge sind in `language_entries` getestet.
     "main\\.rs:\\d+:14: replace == with != in language_menu",
+    # #270, Beta-Token: Beim Zusammensetzen der Bits für base64url überschneiden sich die Teile nie; | und ^ ergeben
+    # dasselbe.
+    "beta\\.rs:\\d+:40: replace \\| with \\^ in base64url",
+    "beta\\.rs:\\d+:68: replace \\| with \\^ in from_base64url",
+    # #270: Das Feature beta-token ist bis 1.0.0 standardmässig an; «required → true» ist im Standard-Build gleichwertig
+    # (der Test issue_270_ak11_… fängt «→ false»).
+    "beta\\.rs:\\d+:5: replace required -> bool with true",
 ]
 
 # #43: Laufzeit begrenzen. Das Zeitlimit eines Mutanten ist max(Mindestzeit, Dauer des unveränderten Testlaufs × Faktor).

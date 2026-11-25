@@ -46,11 +46,33 @@ struct Server {
     next: u64,
 }
 
+/// #270/AK11: A beta token of the test key, redeemable until `until`.
+fn test_token(until: &str) -> String {
+    engine::beta::issue(&engine::beta::TEST_SEED, "T001", "AB", until).unwrap()
+}
+
+/// #270: Activates the data folder `dir` with a token of the test key (the server checks against it, `TEST_KEY_VAR`).
+fn activate(dir: &Path) {
+    let key = engine::beta::test_key();
+    engine::beta::activate(dir, &test_token("2099-12-31"), Some(&key), "2026-11-25").unwrap();
+}
+
 impl Server {
+    /// A server whose data folders (that of the app and one given with `--data-dir`) are activated (#270).
     fn start(home: &Path, args: &[&str]) -> Server {
+        activate(&app_data_in(home));
+        if let Some(w) = args.windows(2).find(|w| w[0] == "--data-dir") {
+            activate(Path::new(w[1]));
+        }
+        Server::start_as_is(home, args)
+    }
+
+    /// A server without activating anything first (#270).
+    fn start_as_is(home: &Path, args: &[&str]) -> Server {
         let mut child = Command::new(env!("CARGO_BIN_EXE_vivaplan"))
             .arg("mcp")
             .args(args)
+            .env(engine::beta::TEST_KEY_VAR, "1")
             .env("HOME", home)
             .env("APPDATA", home.join("AppData").join("Roaming"))
             .env("USERPROFILE", home)
@@ -1036,4 +1058,86 @@ fn issue_269_ak2_ak4_new_plan_over_stdio() {
     let (text, error) = s.tool("plan_open", json!({ "new": true, "example": true }));
     assert!(error && text.contains("without path and example"), "{text}");
     s.close();
+}
+
+/// #270/AK7: With an activated app, `vivaplan mcp` runs without a token.
+// slow: starts the program over stdio
+#[test]
+fn issue_270_ak7_runs_without_token_when_the_app_is_activated() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut s = Server::start(tmp.path(), &["--beta-token=${user_config.beta_token}"]);
+    s.initialize();
+    let (text, error) = s.tool("plan_open", json!({ "example": true }));
+    assert!(!error, "{text}");
+    s.close();
+}
+
+/// #270/AK8: Without an activation a valid token of the installation field activates; the activation lands in the data
+/// folder of the app, so that the app and the next start of the server need no token.
+// slow: starts the program over stdio
+#[test]
+fn issue_270_ak8_token_of_the_installation_activates() {
+    let tmp = tempfile::tempdir().unwrap();
+    let home = tmp.path();
+    let data = app_data_in(home);
+    assert!(!data.exists());
+    let token = format!("--beta-token= {} ", test_token("2099-12-31"));
+    let mut s = Server::start_as_is(home, &[&token]);
+    s.initialize();
+    let (text, error) = s.tool("plan_open", json!({ "example": true }));
+    assert!(!error, "{text}");
+    s.close();
+    let key = engine::beta::test_key();
+    let status = engine::beta::Status::of(Some(&data), Some(&key));
+    assert!(status.active && status.who.as_deref() == Some("AB"), "{status:?}");
+    // The app reads the same folder (#206: same path as Tauri's app_data_dir) and starts without the dialog.
+    let mut again = Server::start_as_is(home, &[]);
+    again.initialize();
+    let (text, error) = again.tool("plan_open", json!({ "example": true }));
+    assert!(!error, "{text}");
+    again.close();
+}
+
+/// #270/AK9: Without an activation and without a token that can be redeemed, every tool call gets an understandable
+/// error; the server keeps answering.
+// slow: starts the program over stdio
+#[test]
+fn issue_270_ak9_without_activation_every_call_is_refused() {
+    let tmp = tempfile::tempdir().unwrap();
+    let home = tmp.path();
+    let expired = format!("--beta-token={}", test_token("2020-01-01"));
+    let mut changed = test_token("2099-12-31");
+    changed.replace_range(10..11, if &changed[10..11] == "A" { "B" } else { "A" });
+    let changed = format!("--beta-token={changed}");
+    for (args, want) in [
+        (vec![], "not activated yet"),
+        (vec!["--beta-token="], "not activated yet"),
+        (vec!["--beta-token=${user_config.beta_token}"], "not activated yet"),
+        (vec![expired.as_str()], "ask for a new token"),
+        (vec![changed.as_str()], "not valid"),
+    ] {
+        let mut s = Server::start_as_is(home, &args);
+        s.initialize();
+        let tools = s.request("tools/list", json!({}));
+        assert!(
+            tools["result"]["tools"].as_array().is_some_and(|t| !t.is_empty()),
+            "{tools}"
+        );
+        for (name, a) in [
+            ("plan_open", json!({ "example": true })),
+            ("describe", json!({})),
+            ("simulation_run", json!({ "plan": "p1" })),
+            ("unknown_tool", json!({})),
+        ] {
+            let (text, error) = s.tool(name, a);
+            assert!(error, "{args:?} {name}: {text}");
+            assert!(
+                text.contains(want) && text.to_lowercase().contains("beta token"),
+                "{args:?} {name}: {text}"
+            );
+        }
+        assert!(s.request("ping", json!({}))["result"].is_object());
+        s.close();
+    }
+    assert!(!app_data_in(home).join(engine::beta::ACTIVATION_FILE).exists());
 }

@@ -42,6 +42,8 @@
     "import_legacy",
     "pick_series",
     "pick_plan_folder",
-    "open_link"
+    "open_link",
+    "beta_status",
+    "beta_activate"
   ]
 }

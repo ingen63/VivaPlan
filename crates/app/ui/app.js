@@ -296,6 +296,28 @@ function disclaimerGate() {
     d.returnValue = ""; d.showModal();
   });
 }
+/** #270: Beta token. Without an activation only this dialog is reachable: no opening, creating or calculating of a plan.
+ *  The engine checks the token and saves the activation. The development server needs no activation; its test access
+ *  #beta (`asIfLocked`) behaves like an app without one and checks with the test key. */
+let betaLocked = false, betaInfo = null;
+async function betaGate(asIfLocked = false) {
+  const status = asIfLocked ? { required: true, active: false } : await Engine.call("beta_status");
+  if (!status.required || status.active) return;
+  betaLocked = true; document.documentElement.dataset.beta = "open";
+  const d = $("#beta"), input = $("#betaToken"), err = $("#betaErr"), ok = $("#betaOk");
+  d.oncancel = e => e.preventDefault();
+  await new Promise(res => {
+    $("#betaForm").onsubmit = async e => {
+      e.preventDefault();
+      ok.disabled = true; err.textContent = "";
+      try { betaInfo = await Engine.call("beta_activate", { token: input.value }); d.close(); res(); }
+      catch (x) { err.textContent = errText(x); input.focus(); }
+      finally { ok.disabled = false; }
+    };
+    d.showModal(); input.focus();
+  });
+  betaLocked = false; document.documentElement.dataset.beta = "ok";
+}
 /** #74: Setting «notice about the cash reserve shown»; the notice appears only when an affected plan is loaded for the first time. */
 const RESERVE_NOTICE_KEY = "reserveNoticeShown";
 async function reserveNotice(p) {
@@ -2223,6 +2245,7 @@ function command(id) {
   const now = performance.now();
   if (lastCommand.id === id && now - lastCommand.t < 250) return;
   lastCommand = { id, t: now };
+  if (betaLocked) return;
   if ($("#ask").open && id !== "help") return;
   if ($("#welcome").open) return;
   if ($("#disclaimer").open) return;
@@ -2343,11 +2366,16 @@ async function showAbout() {
   let info = null, donate = null;
   try { info = await Engine.call("app_info"); } catch { /* without the engine no details */ }
   try { donate = (await linkUrl("donate"))?.replace(/^https:\/\//, ""); } catch { /* without the list no link */ }
+  // #270/AK10: initials and day of the beta activation
+  let beta = betaInfo;
+  if (!beta) try { beta = await Engine.call("beta_status"); } catch { /* without the engine no activation shown */ }
+  const betaDate = beta?.activated ? beta.activated.split("-").reverse().join(".") : "";
   const built = info?.buildEpoch ? new Date(info.buildEpoch * 1000).toLocaleString("de-CH", { dateStyle: "medium", timeStyle: "medium" }) : tr("about.unknownBuild");
   ask(tr("about.title"), `<p style="margin-top:0">${tr("about.tagline")}</p>
     <table class="tbl" id="aboutTbl"><tr><td class="l">${tr("about.version")}</td><td class="l"><b>${esc(info?.version ?? tr("about.unknownVersion"))}</b></td></tr>
     <tr><td class="l">${tr("about.built")}</td><td class="l"><b>${esc(built)}</b></td></tr>
     <tr><td class="l">${tr("about.website")}</td><td class="l">vivaplan-app.ch</td></tr>
+    ${beta?.active && beta.who ? `<tr id="aboutBeta"><td class="l">${tr("about.beta")}</td><td class="l"><b>${tr("about.betaValue", { who: esc(beta.who), date: esc(betaDate) })}</b></td></tr>` : ""}
     ${donate ? `<tr id="aboutSupport"><td class="l">${tr("about.support")}</td><td class="l"><a href="#" data-action="link" data-link="donate" title="${esc(tr("nav.supportTitle"))}">${esc(donate)}</a></td></tr>` : ""}</table>
     <p class="hint">${tr("about.local")}</p>
     <p class="hint" id="aboutDisclaimer">${tr("about.disclaimer", { disclaimerFoot: esc(DISCLAIMER_FOOT) })}</p>`);
@@ -2357,6 +2385,7 @@ function gotoIndex(i) {
   if (SECTIONS[i]) goto(SECTIONS[i].id);
 }
 document.addEventListener("keydown", e => {
+  if (betaLocked) return;
   const mod = IS_MAC ? e.metaKey : e.ctrlKey, k = e.key.toLowerCase();
   if (e.key === "Enter" && e.target.matches?.("input[data-path]")) releaseField(e.target); // #57
   if (e.key === "Escape" && closeInfoPops()) return;
@@ -2732,6 +2761,7 @@ async function showOpened(r) {
 }
 // #44: Double-click on a plan in the Finder while the app is running.
 if (window.__TAURI__?.event) window.__TAURI__.event.listen("open-file", async ev => {
+  if (betaLocked) return;
   if (!await confirmDiscard()) return;
   try { await showOpened(await Engine.call("open_path", { path: ev.payload })); } catch (e) { toast(errText(e)); }
 });
@@ -4355,6 +4385,10 @@ Object.assign(ACTIONS, {
   Theme.apply();
   showTaxCols = Pref.get("showTaxCols", false) === true;
   if (SECTIONS.some(s => s.id === initial[0])) current = initial[0];
+  // #270/AK4: the activation comes before everything else; the plan of the start is loaded only afterwards.
+  if (!window.__VIVAPLAN_SMOKE__ && (Engine.inApp || initial.includes("beta"))) {
+    try { await betaGate(!Engine.inApp); } catch (e) { document.body.innerHTML = `<p style="padding:24px">${tr("boot.engineUnreachable", { esc: esc(errText(e)) })}</p>`; return; }
+  }
   let startup = null;
   try {
     // Desktop app: plan last opened, otherwise the bundled example plan (#4)

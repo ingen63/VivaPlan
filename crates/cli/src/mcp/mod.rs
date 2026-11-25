@@ -55,7 +55,7 @@ const METHOD_NOT_FOUND: i64 = -32601;
 const INVALID_PARAMS: i64 = -32602;
 
 const OPTIONS: &str = "vivaplan mcp [--data-dir <folder>] [--library <folder>] [--names] [--read-only[=true|false]] \
-     [--allow-dir <folder>]…";
+     [--allow-dir <folder>]… [--beta-token=<token>]";
 
 /// `vivaplan mcp`: answers the messages of the standard input on the standard output until the input ends.
 pub(crate) fn cmd_mcp(args: &[String]) -> crate::R {
@@ -64,7 +64,7 @@ pub(crate) fn cmd_mcp(args: &[String]) -> crate::R {
         match args[i].as_str() {
             "--data-dir" | "--library" | "--allow-dir" if i + 1 < args.len() => i += 2,
             "--names" => i += 1,
-            other if read_only_flag(other).is_some() => i += 1,
+            other if read_only_flag(other).is_some() || other.starts_with("--beta-token=") => i += 1,
             other => return Err(format!("Unknown option {other}; {OPTIONS}").into()),
         }
     }
@@ -76,6 +76,10 @@ pub(crate) fn cmd_mcp(args: &[String]) -> crate::R {
         if a == "--allow-dir" {
             session.allowed.push(released_folder(&args[i + 1])?);
         }
+    }
+    session.locked = beta_lock(args);
+    if let Some(text) = &session.locked {
+        eprintln!("{text}");
     }
     let mut server = Server::new(session);
     let mut input = std::io::stdin().lock();
@@ -100,6 +104,45 @@ fn read_only_flag(arg: &str) -> Option<bool> {
         "--read-only=false" => Some(false),
         _ => None,
     }
+}
+
+/// #270: `None` if the server may work: no activation needed (Cargo feature `beta-token` off), an activation in the
+/// data folder of the app (`--data-dir`, otherwise as the app), or a token of `--beta-token=<token>` (field «Beta
+/// token» of the one-click package) that is redeemed now and saved as the activation of the app. Otherwise the text for
+/// every tool call (AK9).
+fn beta_lock(args: &[String]) -> Option<String> {
+    use engine::beta;
+    let dir = crate::opt(args, &["--data-dir"])
+        .map(PathBuf::from)
+        .or_else(engine::appdata::default_dir);
+    let key = beta::key();
+    if beta::Status::of(dir.as_deref(), key.as_ref()).active {
+        return None;
+    }
+    let refused = |reason: engine::message::Message| {
+        engine::msg!(beta_install_token_refused, reason = reason)
+            .text()
+            .to_string()
+    };
+    match (install_token(args), dir) {
+        (None, _) => Some(engine::msg!(beta_not_activated).text().to_string()),
+        (Some(_), None) => Some(refused(engine::msg!(
+            raw_error,
+            detail = "data folder of the app unknown"
+        ))),
+        (Some(token), Some(dir)) => beta::activate(&dir, token, key.as_ref(), &beta::today())
+            .err()
+            .map(refused),
+    }
+}
+
+/// #270: The token of `--beta-token=<token>`; none if the field was left empty or the program of the AI did not replace
+/// the placeholder `${user_config.beta_token}`.
+fn install_token(args: &[String]) -> Option<&str> {
+    args.iter()
+        .filter_map(|a| a.strip_prefix("--beta-token="))
+        .map(str::trim)
+        .find(|t| !t.is_empty() && !t.starts_with("${"))
 }
 
 /// #263: a folder of `--allow-dir`, canonical (`..` and symbolic links resolved); `~/` stands for the home folder,
@@ -239,6 +282,12 @@ impl Server {
                     return Some(error(id, INVALID_PARAMS, "Tool name missing"));
                 };
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
+                // #270/AK9: not activated: every tool call gets the reason.
+                let session = lock(&self.session);
+                if let Some(text) = session.locked.clone() {
+                    return Some(response(id, tool_result(&session, Err(text))));
+                }
+                drop(session);
                 if compute::NAMES.contains(&name) {
                     let token = params["_meta"].get("progressToken").cloned();
                     return self.start(id, name, &args, token);

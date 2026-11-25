@@ -1321,6 +1321,11 @@ mod tests {
             "engine::model::Plan>",
             "engine::resolve::Resolver::new",
             "engine::schema_json",
+            // #270: activation with a beta token, no computations.
+            "engine::appdata::default_dir",
+            "engine::beta",
+            "engine::message::Message|",
+            "engine::msg!",
         ];
         for u in uses.keys() {
             assert!(allowed.contains(&u.as_str()), "{u} bypasses engine::dispatch::call");

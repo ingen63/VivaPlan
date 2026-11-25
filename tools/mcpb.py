@@ -12,6 +12,10 @@ Usage:
       checks the manifest, unpacks the package into a temporary folder, starts the server as Claude Desktop would
       (initialize, tools/list) and compares the tools; #263: with a temporary plan folder as the chosen folder it saves
       and opens a plan there, is refused a plan outside it and offers no plan_save with «read only»;
+      #270: always with a fresh data folder (--data-dir), so that an activation of this computer does not count: without
+      an activation every tool call must be refused; the checks with plans need a token
+  python3 tools/mcpb.py check FILE.mcpb --beta-token TOKEN
+      #270: the same with a beta token in the field «Beta token»: it must activate the server, then the plan checks run
       exit code 0 = in order, 1 = error
 """
 import argparse
@@ -53,8 +57,21 @@ USER_CONFIG = {
         "required": False,
         "default": False,
     },
+    # #270: beta token for the one-time activation; not needed if the app on this computer is activated already.
+    "beta_token": {
+        "type": "string",
+        "title": "Beta token",
+        "description": "Personal beta token for the one-time activation (starts with VP1.beta.). Leave it empty if the "
+                       "VivaPlan app on this computer is activated already.",
+        "required": False,
+        "sensitive": True,
+        "default": "",
+    },
 }
-ARGS = ["mcp", "--allow-dir", "${user_config.plan_folder}", "--read-only=${user_config.read_only}"]
+ARGS = ["mcp", "--allow-dir", "${user_config.plan_folder}", "--read-only=${user_config.read_only}",
+        "--beta-token=${user_config.beta_token}"]
+# #270: text of a tool call refused for want of an activation (engine message beta_not_activated)
+NOT_ACTIVATED = "not activated"
 
 
 def app_version() -> str:
@@ -140,7 +157,9 @@ def manifest(version: str, tools: list[dict]) -> dict:
             "assets). This extension starts the local VivaPlan server (`vivaplan mcp`). It opens and saves plans only "
             "in the plan folder you choose (optionally read only), computes on this computer and opens no network "
             "connection; what a tool returns becomes part of the conversation with your AI. Names of persons are replaced by neutral ones. Results are model "
-            "calculations without warranty, not tax or investment advice."
+            "calculations without warranty, not tax or investment advice. During the closed beta it needs a one-time "
+            "activation with your personal beta token (field «Beta token»), unless the VivaPlan app on this computer "
+            "is activated already."
         ),
         "author": {"name": "VivaPlan", "url": "https://vivaplan-app.ch"},
         "homepage": "https://vivaplan-app.ch",
@@ -214,6 +233,9 @@ def check_manifest(m: dict, names: set[str]) -> list[str]:
     switch = config.get("read_only", {})
     if switch.get("type") != "boolean" or switch.get("default") is not False:
         errors.append("user_config.read_only must be a switch (type boolean), default off")
+    token = config.get("beta_token", {})
+    if token.get("type") != "string" or token.get("required") is not False:
+        errors.append("user_config.beta_token must be a text field (type string), not required")
     for key, c in config.items():
         if not (c.get("title") and c.get("description")):
             errors.append(f"user_config.{key} without title or description")
@@ -227,8 +249,10 @@ def check_manifest(m: dict, names: set[str]) -> list[str]:
     return errors
 
 
-def check(package: Path) -> list[str]:
-    """Checks the package like Claude Desktop would install it: unpack, manifest, start, tool list."""
+def check(package: Path, token: str = "", notes: list[str] | None = None) -> list[str]:
+    """Checks the package like Claude Desktop would install it: unpack, manifest, start, tool list. #270: with a fresh
+    data folder; the checks with plans run only with `token` or with a server that needs no activation (`notes` says
+    when they were left out)."""
     with zipfile.ZipFile(package) as z:
         names = set(z.namelist())
         if "manifest.json" not in names:
@@ -245,17 +269,27 @@ def check(package: Path) -> list[str]:
             program = Path(tmp) / entry.filename
             program.chmod((entry.external_attr >> 16) & 0o777 or 0o644)
             cfg = m["server"]["mcp_config"]
-            plans, other = Path(tmp) / "plans", Path(tmp) / "other"
-            plans.mkdir()
-            other.mkdir()
-            command = [cfg["command"].replace("${__dirname}", tmp),
-                       *with_config(cfg["args"], {"plan_folder": plans, "read_only": False})]
+            plans, other, data = Path(tmp) / "plans", Path(tmp) / "other", Path(tmp) / "data"
+            for d in (plans, other, data):
+                d.mkdir()
+            program = cfg["command"].replace("${__dirname}", tmp)
+
+            def command(read_only: bool, beta_token: str) -> list[str]:
+                values = {"plan_folder": plans, "read_only": read_only, "beta_token": beta_token}
+                return [program, *with_config(cfg["args"], values), "--data-dir", str(data)]
             try:
-                info, tools = ask_server(command)
-                errors += check_plan_folder(command, plans, other)
-                read_only = [command[0], *with_config(cfg["args"], {"plan_folder": plans, "read_only": True})]
-                if "plan_save" in [t["name"] for t in ask_server(read_only)[1]]:
-                    errors.append("with «read only» the server still offers plan_save")
+                info, tools = ask_server(command(False, ""))
+                locked = is_locked(command(False, ""))
+                if locked and not token:
+                    (notes if notes is not None else []).append(
+                        "the server needs an activation: without --beta-token only the refusal was checked, "
+                        "not the plan folder")
+                else:
+                    errors += check_plan_folder(command(False, token), plans, other)
+                    if locked and is_locked(command(False, "")):
+                        errors.append("the beta token did not activate the server")
+                    if "plan_save" in [t["name"] for t in ask_server(command(True, ""))[1]]:
+                        errors.append("with «read only» the server still offers plan_save")
             except (OSError, RuntimeError, subprocess.TimeoutExpired) as e:
                 return errors + [f"server does not start: {e}"]
     if info.get("serverInfo", {}).get("name") != "vivaplan":
@@ -266,6 +300,13 @@ def check(package: Path) -> list[str]:
     if listed != [t["name"] for t in tools]:
         errors.append(f"tools in the manifest {listed} differ from the server's {[t['name'] for t in tools]}")
     return errors
+
+
+def is_locked(command: list[str]) -> bool:
+    """#270/AK9: whether the server refuses every tool call for want of an activation (and still answers)."""
+    _, opened, described = talk(command, [tool_call("plan_open", {"example": True}), tool_call("describe", {})])
+    refused = [tool_text(r) for r in (opened, described)]
+    return all(error and NOT_ACTIVATED in text for text, error in refused)
 
 
 def check_plan_folder(command: list[str], plans: Path, other: Path) -> list[str]:
@@ -301,11 +342,15 @@ def main(argv: list[str]) -> int:
     b.add_argument("--out", type=Path, required=True)
     c = sub.add_parser("check")
     c.add_argument("package", type=Path)
+    c.add_argument("--beta-token", default="", help="beta token for the field «Beta token» (#270)")
     a = p.parse_args(argv)
     if a.cmd == "build":
         print(build(a.binary, a.out))
         return 0
-    errors = check(a.package)
+    notes: list[str] = []
+    errors = check(a.package, a.beta_token, notes)
+    for n in notes:
+        print(f"mcpb: note: {n}")
     for e in errors:
         print(f"mcpb: {e}", file=sys.stderr)
     if not errors:

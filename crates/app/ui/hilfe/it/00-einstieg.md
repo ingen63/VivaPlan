@@ -65,6 +65,19 @@ Parole chiave: menu, tastiera, scorciatoie, salvare, aprire, annullare, F1, ling
 
 L’elenco completo delle scelte rapide da tastiera si trova nel menu *Aiuto → Scelte rapide da tastiera* e nel [capitolo di riferimento](#ref-shortcuts).
 
+## @beta Token beta e attivazione
+Parole chiave: beta, token, attivazione, attivare, termine di riscatto, beta chiusa, tester, aggiornamento
+
+Durante la beta chiusa VivaPlan può essere usato solo dopo un’**attivazione unica**. Per questo riceve un token beta personale, una riga che inizia con `VP1.beta.`. Al primo avvio l’app mostra solo il dialogo «Inserire il token beta»; vi incolli l’intero token e clicchi su *Attivare*. Interruzioni di riga e spazi provenienti da un’e-mail non disturbano.
+
+- **Una sola volta:** l’attivazione vale per questo computer e per il Suo account utente. In seguito VivaPlan non lo chiede più, neppure dopo un aggiornamento a una versione più recente.
+- **Termine di riscatto:** la data nel token indica solo fino a quando può essere inserito. Scaduto il termine, VivaPlan rifiuta il token; chieda allora un nuovo token. Un’installazione già attivata continua a funzionare anche dopo il termine.
+- **Senza Internet:** VivaPlan verifica il token sul Suo computer. Non invia nulla.
+- **Pacchetto per l’IA:** l’app e il collegamento all’IA (`vivaplan mcp`) condividono l’attivazione. Se l’app è attivata, il pacchetto per Claude Desktop non ha bisogno di un token. Altrimenti inserisca il token nel campo «Beta token» durante l’installazione del pacchetto; ciò attiva anche l’app ([Collegare programmi di IA](#ref-mcp)).
+- **Visualizzazione:** *Aiuto → Informazioni su VivaPlan* mostra le Sue iniziali e il giorno dell’attivazione.
+
+L’attivazione è conservata nel file `beta-aktivierung.json` nella cartella dei dati dell’app (vedi [Protezione dei dati](#privacy)). Dalla versione 1.0.0 VivaPlan non ha più bisogno di un token.
+
 ## @privacy Protezione dei dati e dati locali
 Parole chiave: Internet, cloud, luogo di salvataggio, sicurezza, rete, protezione dei dati
 

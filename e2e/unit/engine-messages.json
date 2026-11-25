@@ -3123,6 +3123,93 @@
     "text": "The result contains an invalid number (field Person 2). Please check the inputs."
   },
   {
+    "code": "beta_no_key",
+    "params": {},
+    "template": "This version of VivaPlan has no key for beta tokens; no token can be redeemed.",
+    "text": "This version of VivaPlan has no key for beta tokens; no token can be redeemed."
+  },
+  {
+    "code": "beta_token_malformed",
+    "params": {},
+    "template": "This is not a complete beta token. Please copy the whole token, starting with “VP1.beta.”.",
+    "text": "This is not a complete beta token. Please copy the whole token, starting with “VP1.beta.”."
+  },
+  {
+    "code": "beta_token_invalid",
+    "params": {},
+    "template": "The beta token is not valid. Please check that it was copied completely and unchanged.",
+    "text": "The beta token is not valid. Please check that it was copied completely and unchanged."
+  },
+  {
+    "code": "beta_token_expired",
+    "params": {
+      "until": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "The beta token could only be redeemed until {until}. Please ask for a new token.",
+    "text": "The beta token could only be redeemed until Person 2. Please ask for a new token."
+  },
+  {
+    "code": "beta_token_field_invalid",
+    "params": {
+      "field": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{field} “{value}”: 1 to 16 letters, digits or hyphens.",
+    "text": "Person 2 “Person 2”: 1 to 16 letters, digits or hyphens."
+  },
+  {
+    "code": "beta_token_date_invalid",
+    "params": {
+      "value": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "“{value}” is not a valid date (expected YYYY-MM-DD).",
+    "text": "“Person 2” is not a valid date (expected YYYY-MM-DD)."
+  },
+  {
+    "code": "beta_not_activated",
+    "params": {},
+    "template": "VivaPlan is not activated yet. Enter your beta token when starting the app, or in the field “Beta token” when installing VivaPlan in Claude Desktop.",
+    "text": "VivaPlan is not activated yet. Enter your beta token when starting the app, or in the field “Beta token” when installing VivaPlan in Claude Desktop."
+  },
+  {
+    "code": "beta_install_token_refused",
+    "params": {
+      "reason": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "VivaPlan is not activated: the beta token from the installation was not accepted. {reason} Enter a valid token when starting the app, or install the package again with a valid token.",
+    "text": "VivaPlan is not activated: the beta token from the installation was not accepted. Person 2 Enter a valid token when starting the app, or install the package again with a valid token."
+  },
+  {
     "code": "percent_value",
     "params": {
       "value": {

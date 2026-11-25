@@ -44,9 +44,11 @@ Usage:
         (catalog for AIs: fields, series, state, metrics, experiment, examples, performance, limits;
          performance measured in about 0.5 s on the plan, otherwise on the example plan)
   vivaplan mcp [--data-dir <folder>] [--library <folder>] [--names] [--read-only] [--allow-dir <folder>]…
+               [--beta-token=<token>]
         (MCP server over stdio for AI programs: plans, checks, simulation, evaluate, change and undo, save;
          names replaced unless --names; with --allow-dir opens and saves plans only in those folders,
-         otherwise saves only into the folder of the plan; --read-only offers no saving)
+         otherwise saves only into the folder of the plan; --read-only offers no saving; during the beta it
+         needs the activation of the app or a beta token, which then activates the app as well)
   vivaplan schema
   vivaplan --version
   vivaplan --help   (this help)

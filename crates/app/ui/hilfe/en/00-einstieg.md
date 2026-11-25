@@ -65,6 +65,19 @@ Keywords: menu, keyboard, shortcuts, save, open, undo, F1, language, open recent
 
 The complete list of keyboard shortcuts is in the menu *Help → Keyboard shortcuts* and in the [reference chapter](#ref-shortcuts).
 
+## @beta Beta token and activation
+Keywords: beta, token, activation, activate, redemption deadline, closed beta, tester, update
+
+During the closed beta, VivaPlan can only be used after a **one-time activation**. For it you receive a personal beta token, one line starting with `VP1.beta.`. At the first start the app shows only the dialog “Enter beta token”; paste the whole token there and click *Activate*. Line breaks and spaces from an e-mail do no harm.
+
+- **Once:** The activation applies to this computer and your user account. After that VivaPlan never asks again, not even after an update to a newer version.
+- **Redemption deadline:** The date in the token only says until when it can be entered. Once the deadline is over, VivaPlan refuses the token; then ask for a new one. An installation that is activated already keeps running after the deadline.
+- **Without the internet:** VivaPlan checks the token on your computer. It sends nothing.
+- **AI package:** The app and the AI connection (`vivaplan mcp`) share the activation. If the app is activated, the package for Claude Desktop needs no token. Otherwise enter the token in the field “Beta token” when installing the package; this activates the app as well ([Connecting AI programs](#ref-mcp)).
+- **Display:** *Help → About VivaPlan* shows your initials and the day of the activation.
+
+The activation is kept in the file `beta-aktivierung.json` in the data folder of the app (see [Privacy](#privacy)). From version 1.0.0 on, VivaPlan needs no token any more.
+
 ## @privacy Privacy and local data
 Keywords: internet, cloud, storage location, security, network, data protection
 

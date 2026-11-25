@@ -93,7 +93,36 @@ fn error_body(e: &engine::message::Message) -> Value {
 /// #142: the calculation commands are answered by the same dispatcher that the desktop app's contract test checks
 /// (`engine::dispatch`); without a plan file, relative paths start in the working directory.
 fn call(cmd: &str, args: &Value, library: &Path) -> Result<Value, engine::message::Message> {
-    engine::dispatch::call(cmd, args, library, &std::env::current_dir().unwrap_or_default())
+    match cmd {
+        "beta_status" | "beta_activate" => beta(cmd, args),
+        _ => engine::dispatch::call(cmd, args, library, &std::env::current_dir().unwrap_or_default()),
+    }
+}
+
+/// #270/AK4: The development server needs no activation (`beta_status`: not required). The test access `#beta` of the
+/// user interface behaves like an app without an activation; `beta_activate` then checks with the test key and saves
+/// nothing.
+fn beta(cmd: &str, args: &Value) -> Result<Value, engine::message::Message> {
+    use engine::beta;
+    let status = match cmd {
+        "beta_activate" => {
+            let token = args.get("token").and_then(Value::as_str).unwrap_or_default();
+            let claims = beta::redeem(token, Some(&beta::test_key()), &beta::today())?;
+            let activation = beta::Activation {
+                token: token.into(),
+                activated: beta::today(),
+            };
+            beta::Status::activated(&claims, &activation)
+        }
+        _ => beta::Status {
+            required: false,
+            active: true,
+            who: None,
+            id: None,
+            activated: None,
+        },
+    };
+    Ok(serde_json::to_value(status).expect("serialisable"))
 }
 
 #[cfg(test)]
@@ -141,6 +170,25 @@ mod tests {
         assert!(call_ok("example_plan", json!({}))["household"].is_object());
         assert!(call_ok("library_list", json!({}))["entries"].is_array());
         assert!(call_ok("opt_params", json!({ "plan": plan() })).is_array());
+    }
+
+    // #270/AK4: the development server answers the beta commands with the test key and saves nothing.
+    #[test]
+    fn issue_270_ak4_beta_commands_with_the_test_key() {
+        let s = call_ok("beta_status", json!({}));
+        assert_eq!(
+            (s["required"].clone(), s["active"].clone(), s["who"].clone()),
+            (json!(false), json!(true), Value::Null)
+        );
+        let token = engine::beta::issue(&engine::beta::TEST_SEED, "T001", "AB", "2099-12-31").unwrap();
+        let a = call_ok("beta_activate", json!({ "token": token }));
+        assert_eq!((a["active"].clone(), a["who"].clone()), (json!(true), json!("AB")));
+        assert!(call_ok("beta_status", json!({}))["who"].is_null(), "nothing saved");
+        let expired = engine::beta::issue(&engine::beta::TEST_SEED, "T001", "AB", "2020-01-01").unwrap();
+        let e = call("beta_activate", &json!({ "token": expired }), library().path()).unwrap_err();
+        assert_eq!(e.code(), "beta_token_expired");
+        let e = call("beta_activate", &json!({}), library().path()).unwrap_err();
+        assert_eq!(e.code(), "beta_token_malformed");
     }
 
     // slow: calls every compute command of the development server, simulation and optimization included

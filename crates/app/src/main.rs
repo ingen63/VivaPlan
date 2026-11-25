@@ -646,6 +646,29 @@ fn plan_dir(recent: &[String], documents: Option<PathBuf>) -> Option<PathBuf> {
         .or(documents)
 }
 
+/// #270: Key the beta tokens are checked with (`engine::beta::key`; the tests use the test key).
+struct BetaKey(Option<engine::beta::VerifyingKey>);
+
+/// #270: Whether the app needs an activation and the activation in the data folder of the app (AK1, AK5, AK10).
+#[tauri::command]
+fn beta_status<R: Runtime>(app: AppHandle<R>, key: State<'_, BetaKey>) -> engine::beta::Status {
+    let dir = app.path().app_data_dir().ok();
+    engine::beta::Status::of(dir.as_deref(), key.0.as_ref())
+}
+
+/// #270: Redeems a beta token and saves the activation in the data folder of the app (shared with `vivaplan mcp`).
+#[tauri::command]
+fn beta_activate<R: Runtime>(
+    app: AppHandle<R>,
+    key: State<'_, BetaKey>,
+    token: String,
+) -> Result<engine::beta::Status, CmdError> {
+    let dir = app.path().app_data_dir().map_err(|e| CmdError::Text(e.to_string()))?;
+    let (claims, activation) =
+        engine::beta::activate(&dir, &token, key.0.as_ref(), &engine::beta::today()).map_err(CmdError::Message)?;
+    Ok(engine::beta::Status::activated(&claims, &activation))
+}
+
 /// #263/AK4: «Ordner wählen …» in «Mit KI verbinden»: the chosen plan folder, `None` if cancelled.
 #[tauri::command]
 async fn pick_plan_folder(dialogs: State<'_, Picker>, start: Option<String>) -> Result<Option<String>, CmdError> {
@@ -1268,7 +1291,9 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             import_legacy,
             pick_series,
             pick_plan_folder,
-            open_link
+            open_link,
+            beta_status,
+            beta_activate
         ])
 }
 
@@ -1349,6 +1374,7 @@ fn main() {
     let smoke = smoke_requested(std::env::args_os());
     let app = configure(tauri::Builder::default())
         .manage(Smoke(smoke))
+        .manage(BetaKey(engine::beta::key()))
         .setup(setup_app)
         .build(tauri::generate_context!())
         .expect("VivaPlan konnte nicht gestartet werden"); // i18n: allow (start error, only in the log)
@@ -1468,6 +1494,7 @@ mod tests {
         let fake = Arc::new(fake);
         let picker: Picker = fake.clone();
         app.manage(picker);
+        app.manage(BetaKey(Some(engine::beta::test_key())));
         let w = WebviewWindowBuilder::new(&app, "main", Default::default())
             .build()
             .expect("Fenster");
@@ -3166,6 +3193,47 @@ mod tests {
         }
         let (_app, w, _g, _) = setup_with(FakeDialogs::default());
         assert_eq!(call(&w, "pick_plan_folder", json!({})).unwrap(), Value::Null);
+    }
+
+    /// #270/AK1, AK10: without an activation the app asks; a valid token activates, the activation is saved in the data
+    /// folder and read again from there (next start), with initials and day for «Über VivaPlan».
+    #[test]
+    fn issue_270_ak1_ak10_activate_and_status() {
+        let (app, w, _g) = setup();
+        let before = call(&w, "beta_status", json!({})).unwrap();
+        assert_eq!(before["required"], json!(engine::beta::required()));
+        assert_eq!(before["active"], json!(!engine::beta::required()));
+        let token = engine::beta::issue(&engine::beta::TEST_SEED, "T001", "AB", "2099-12-31").unwrap();
+        let v = call(&w, "beta_activate", json!({ "token": token })).unwrap();
+        assert_eq!((v["active"].clone(), v["who"].clone()), (json!(true), json!("AB")));
+        let dir = app.path().app_data_dir().unwrap();
+        assert!(dir.join(engine::beta::ACTIVATION_FILE).is_file());
+        let after = call(&w, "beta_status", json!({})).unwrap();
+        assert_eq!(after["active"], true);
+        assert_eq!(after["who"], "AB");
+        assert_eq!(after["activated"], json!(engine::beta::today()));
+    }
+
+    /// #270/AK2, AK3: an expired, a changed and a foreign token are refused with a message of the engine; nothing is
+    /// saved.
+    #[test]
+    fn issue_270_ak2_ak3_refused_tokens() {
+        let (app, w, _g) = setup();
+        let seed = engine::beta::TEST_SEED;
+        let expired = engine::beta::issue(&seed, "T001", "AB", "2020-01-01").unwrap();
+        let mut changed = engine::beta::issue(&seed, "T001", "AB", "2099-12-31").unwrap();
+        changed.replace_range(14..15, "C");
+        let foreign = engine::beta::issue(&[9; 32], "T001", "AB", "2099-12-31").unwrap();
+        for (token, code) in [
+            (expired, "beta_token_expired"),
+            (changed, "beta_token_invalid"),
+            (foreign, "beta_token_invalid"),
+        ] {
+            let e = call(&w, "beta_activate", json!({ "token": token })).unwrap_err();
+            assert_eq!(e["code"], code, "{e}");
+        }
+        let dir = app.path().app_data_dir().unwrap();
+        assert!(!dir.join(engine::beta::ACTIVATION_FILE).exists());
     }
 
     /// #240/AK4: the command `open_link` rejects a video address and an id of a video that does not exist.

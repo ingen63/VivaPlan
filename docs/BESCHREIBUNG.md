@@ -493,6 +493,19 @@ ein GitHub-Workflow beim Setzen eines Versions-Tags und legt sie als Release-Ent
 nur die gewählten Plattformen, auf Wunsch für ein bestehendes Tag. Die Pakete sind nicht signiert, Windows und macOS
 zeigen deshalb beim ersten Start eine Warnung.
 
+**Beta-Token (#270):** Während der geschlossenen Beta lassen sich die Desktop-App und die KI-Anbindung (`vivaplan mcp`)
+erst nach einer einmaligen Aktivierung mit einem persönlichen, signierten Beta-Token benutzen (eine Zeile
+`VP1.beta.<Kennung>.<Kürzel>.<Einlösefrist>.<Signatur>`, Ed25519). Ohne Aktivierung zeigt die App nur den Dialog
+«Beta-Token eingeben»; der MCP-Server beantwortet jeden Werkzeugaufruf mit dem Hinweis, VivaPlan sei nicht aktiviert.
+Das Datum im Token ist eine **Einlösefrist**: Nur bis dann (einschliesslich) lässt sich das Token eingeben; eine
+aktivierte Installation läuft danach dauerhaft weiter, auch nach Updates. Die Aktivierung (Token und Tag) liegt in
+`beta-aktivierung.json` im Datenordner der App; App und MCP-Server teilen sie. Das Ein-Klick-Paket fragt bei der
+Installation nach dem Feld «Beta token» (freiwillig, wenn die App schon aktiviert ist); ein gültiges Token aktiviert
+dann auch die App. «Über VivaPlan» zeigt Kürzel und Tag der Aktivierung. Die Prüfung läuft im Rechenkern, ohne
+Netzwerk. Die übrigen Befehle der Kommandozeile und der Entwicklungsserver brauchen keine Aktivierung. Das Token ist
+eine Hürde, kein Schutz: Der Code ist öffentlich (GPL), die Uhr lässt sich beim Einlösen zurückstellen und eine
+kopierte Aktivierungsdatei aktiviert auch einen anderen Rechner. Ab Version 1.0.0 entfällt die Prüfung.
+
 ## Verlässlichkeit
 
 Die Rechenregeln sind in `docs/ENTWICKLUNG.md` Schritt für Schritt beschrieben. Jede Regel ist mit einem von Hand nachgerechneten

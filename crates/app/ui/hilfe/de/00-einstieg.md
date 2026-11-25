@@ -65,6 +65,19 @@ Stichworte: Menü, Tastatur, speichern, öffnen, rückgängig, F1, Sprache, zule
 
 Die vollständige Liste der Tastenkürzel steht im Menü *Hilfe → Tastenkürzel* und im [Referenzkapitel](#ref-shortcuts).
 
+## @beta Beta-Token und Aktivierung
+Stichworte: Beta, Token, Aktivierung, aktivieren, Einlösefrist, Closed Beta, Testperson, Update
+
+Während der geschlossenen Beta lässt sich VivaPlan erst nach einer **einmaligen Aktivierung** benutzen. Dafür erhalten Sie ein persönliches Beta-Token, eine Zeile, die mit `VP1.beta.` beginnt. Beim ersten Start zeigt die App nur den Dialog «Beta-Token eingeben»; fügen Sie dort das ganze Token ein und klicken Sie auf *Aktivieren*. Zeilenumbrüche und Leerzeichen aus einer E-Mail stören nicht.
+
+- **Einmalig:** Die Aktivierung gilt für diesen Rechner und Ihr Benutzerkonto. Danach fragt VivaPlan nie mehr, auch nicht nach einem Update auf eine neuere Version.
+- **Einlösefrist:** Das Datum im Token sagt nur, bis wann es sich eingeben lässt. Ist die Frist vorbei, lehnt VivaPlan das Token ab; bitten Sie dann um ein neues. Eine schon aktivierte Installation läuft auch nach der Frist weiter.
+- **Ohne Internet:** VivaPlan prüft das Token auf Ihrem Rechner. Es sendet nichts.
+- **KI-Paket:** App und KI-Anbindung (`vivaplan mcp`) teilen die Aktivierung. Ist die App aktiviert, braucht das Paket für Claude Desktop kein Token. Sonst geben Sie das Token beim Installieren des Pakets im Feld «Beta token» ein; das aktiviert auch die App ([KI-Programme verbinden](#ref-mcp)).
+- **Anzeige:** *Hilfe → Über VivaPlan* zeigt Ihr Kürzel und den Tag der Aktivierung.
+
+Die Aktivierung liegt in der Datei `beta-aktivierung.json` im Datenordner der App (siehe [Datenschutz](#privacy)). Ab Version 1.0.0 braucht VivaPlan kein Token mehr.
+
 ## @privacy Datenschutz und lokale Daten
 Stichworte: Internet, Cloud, Speicherort, Sicherheit, Netzwerk
 

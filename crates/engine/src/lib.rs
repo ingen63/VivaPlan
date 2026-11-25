@@ -11,6 +11,7 @@ pub mod ahv;
 pub mod api;
 pub mod appdata;
 pub mod batch;
+pub mod beta;
 pub mod calibrate;
 pub mod describe;
 pub mod digest;

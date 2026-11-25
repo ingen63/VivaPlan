@@ -4,6 +4,7 @@ Builds the package from the command line of the debug build (built here if missi
 build in pakete.yml does: manifest, unpacking, start of `vivaplan mcp`, tool list.
 """
 import json
+import os
 import stat
 import subprocess
 import sys
@@ -16,12 +17,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mcpb  # noqa: E402
 
 BINARY = mcpb.ROOT / "target" / "debug" / "vivaplan"
+TOOL = mcpb.ROOT / "target" / "debug" / "beta-token"
+# #270/AK11: the debug build checks the beta tokens against the test key of the engine (engine::beta::TEST_SEED)
+os.environ["VIVAPLAN_BETA_TEST_KEY"] = "1"
+TEST_SEED = b"vivaplan-beta-test-key-NOT-REAL!"
 
 
 def cli() -> Path:
-    if not BINARY.exists():
+    if not (BINARY.exists() and TOOL.exists()):
         subprocess.run(["cargo", "build", "-q", "-p", "vivaplan-cli"], cwd=mcpb.ROOT, check=True)
     return BINARY
+
+
+def test_token(until: str = "2099-12-31", seed: bytes = TEST_SEED) -> str:
+    """#270: a beta token of the test key, made with the developer tool beta-token."""
+    cli()
+    with tempfile.TemporaryDirectory() as tmp:
+        key = Path(tmp) / "test.key"
+        key.write_text(seed.hex())
+        run = subprocess.run([str(TOOL), "issue", "--key", str(key), "--who", "AB", "--until", until],
+                             capture_output=True, text=True, check=True)
+    return run.stdout.strip()
 
 
 class McpbTest(unittest.TestCase):
@@ -42,7 +58,13 @@ class McpbTest(unittest.TestCase):
         # #213/AK1: name of the file per version and architecture, manifest without errors, server starts
         self.assertRegex(self.package.name, r"^VivaPlan_\d+\.\d+\.\d+.*_(aarch64|x86_64)\.mcpb$")
         self.assertEqual(mcpb.check_manifest(self.manifest, self.names), [])
-        self.assertEqual(mcpb.check(self.package), [])
+        notes = []
+        self.assertEqual(mcpb.check(self.package, notes=notes), [])
+        self.assertTrue(any("needs an activation" in n for n in notes), notes)
+        # #270: with a beta token the plan checks run as well
+        notes = []
+        self.assertEqual(mcpb.check(self.package, test_token(), notes), [])
+        self.assertEqual(notes, [])
         m = self.manifest
         self.assertEqual(m["version"], mcpb.app_version())
         self.assertEqual(m["server"]["mcp_config"]["command"], "${__dirname}/server/vivaplan")
@@ -113,10 +135,11 @@ class McpbTest(unittest.TestCase):
         self.assertEqual(config["read_only"]["type"], "boolean")
         self.assertIs(config["read_only"]["default"], False)
         args = self.manifest["server"]["mcp_config"]["args"]
-        self.assertEqual(args, ["mcp", "--allow-dir", "${user_config.plan_folder}", "--read-only=${user_config.read_only}"])
-        self.assertEqual(mcpb.with_config(args, {"plan_folder": Path("/a b"), "read_only": True}),
-                         ["mcp", "--allow-dir", "/a b", "--read-only=true"])
-        self.assertEqual(mcpb.with_config(args, {"plan_folder": "/a", "read_only": False})[-1], "--read-only=false")
+        self.assertEqual(args, ["mcp", "--allow-dir", "${user_config.plan_folder}", "--read-only=${user_config.read_only}",
+                                "--beta-token=${user_config.beta_token}"])
+        self.assertEqual(mcpb.with_config(args, {"plan_folder": Path("/a b"), "read_only": True, "beta_token": "VP1.x"}),
+                         ["mcp", "--allow-dir", "/a b", "--read-only=true", "--beta-token=VP1.x"])
+        self.assertEqual(mcpb.with_config(args, {"plan_folder": "/a", "read_only": False})[-2], "--read-only=false")
         self.assertIn("plan folder", self.manifest["long_description"])
 
     def test_issue_263_ak1_check_reports_missing_plan_folder_or_switch(self):
@@ -141,7 +164,9 @@ class McpbTest(unittest.TestCase):
             plans, other = Path(tmp) / "plans", Path(tmp) / "other"
             plans.mkdir()
             other.mkdir()
-            limited = [str(cli()), "mcp", "--allow-dir", str(plans)]
+            data = Path(tmp) / "data"
+            data.mkdir()
+            limited = [str(cli()), "mcp", "--data-dir", str(data), f"--beta-token={test_token()}", "--allow-dir", str(plans)]
             self.assertEqual(mcpb.check_plan_folder(limited, plans, other), [])
             self.assertTrue((plans / "check.vplan").is_file())
             (plans / "check.vplan").unlink()
@@ -149,10 +174,34 @@ class McpbTest(unittest.TestCase):
             errors = mcpb.check_plan_folder(too_wide, plans, other)
             self.assertTrue(any("outside the plan folder is opened" in e for e in errors), errors)
             (plans / "check.vplan").unlink()
-            self.assertNotEqual(mcpb.check_plan_folder([str(cli()), "mcp"], plans, other), [])
+            self.assertNotEqual(mcpb.check_plan_folder([str(cli()), "mcp", "--data-dir", str(data)], plans, other), [])
             # with «read only» plan_save is not a tool of the server
             with self.assertRaisesRegex(RuntimeError, "Unknown tool plan_save"):
                 mcpb.check_plan_folder([*limited, "--read-only=true"], plans, other)
+
+    def test_issue_270_ak8_manifest_asks_for_the_beta_token(self):
+        # #270/AK8: optional, secret text field «Beta token», passed as --beta-token=…; the check reports a wrong field
+        token = self.manifest["user_config"]["beta_token"]
+        self.assertEqual((token["type"], token["required"], token["sensitive"]), ("string", False, True))
+        self.assertEqual(token["title"], "Beta token")
+        self.assertIn("beta token", self.manifest["long_description"])
+        config = self.manifest["user_config"]
+        for c in ({k: v for k, v in config.items() if k != "beta_token"},
+                  {**config, "beta_token": {**token, "required": True}},
+                  {**config, "beta_token": {**token, "type": "boolean"}}):
+            errors = mcpb.check_manifest({**self.manifest, "user_config": c}, self.names)
+            self.assertTrue(any("user_config.beta_token" in e for e in errors), errors)
+
+    def test_issue_270_ak8_ak9_check_knows_locked_and_activated_servers(self):
+        # #270/AK9: without an activation every call is refused (and the server answers); AK8: a token activates
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp)
+            plain = [str(cli()), "mcp", "--data-dir", str(data)]
+            self.assertTrue(mcpb.is_locked(plain))
+            self.assertTrue(mcpb.is_locked([*plain, f"--beta-token={test_token('2020-01-01')}"]))
+            self.assertTrue(mcpb.is_locked([*plain, f"--beta-token={test_token(seed=bytes(32))}"]))
+            self.assertFalse(mcpb.is_locked([*plain, f"--beta-token={test_token()}"]))
+            self.assertFalse(mcpb.is_locked(plain), "the activation stays")
 
     def test_first_sentence(self):
         self.assertEqual(mcpb.first_sentence("Open a plan. Then more."), "Open a plan.")

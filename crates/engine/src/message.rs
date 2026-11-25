@@ -714,6 +714,15 @@ codes! {
     historical_start_outside => "Historical start {start:ym} is outside the time series {name} ({first:ym} – {last:ym})",
     raw_error => "{detail}",
     result_not_finite => "The result contains an invalid number (field {field}). Please check the inputs.",
+    // Beta token (#270; beta.rs)
+    beta_no_key => "This version of VivaPlan has no key for beta tokens; no token can be redeemed.",
+    beta_token_malformed => "This is not a complete beta token. Please copy the whole token, starting with “VP1.beta.”.",
+    beta_token_invalid => "The beta token is not valid. Please check that it was copied completely and unchanged.",
+    beta_token_expired => "The beta token could only be redeemed until {until}. Please ask for a new token.",
+    beta_token_field_invalid => "{field} “{value}”: 1 to 16 letters, digits or hyphens.",
+    beta_token_date_invalid => "“{value}” is not a valid date (expected YYYY-MM-DD).",
+    beta_not_activated => "VivaPlan is not activated yet. Enter your beta token when starting the app, or in the field “Beta token” when installing VivaPlan in Claude Desktop.",
+    beta_install_token_refused => "VivaPlan is not activated: the beta token from the installation was not accepted. {reason} Enter a valid token when starting the app, or install the package again with a valid token.",
     // Optimization (optimize.rs)
     percent_value => "{value} %",
     optimize_range_invalid => "{strategy}, {param}: the range from {lo} to {hi} is invalid (“from” must not be greater than “to”).",

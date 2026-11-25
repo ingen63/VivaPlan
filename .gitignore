@@ -27,3 +27,9 @@ crates/engine/data/quellen/shiller-index.ods
 
 # #206: command line as sidecar of the app (tools/cli-sidecar.mjs)
 crates/app/binaries/
+
+# #270: private key of the beta tokens (beta-token keygen) – never into the repository
+*.key
+*.pem
+*private*key*
+beta-token*.txt
