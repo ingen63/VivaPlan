@@ -1411,3 +1411,27 @@ fn issue_266_ak2_switched_off_calculates_as_before() {
     let b = drawdown_plan(680_000.0, false);
     assert_eq!(run(&a).renewals[0].debt_after, run(&b).renewals[0].debt_after);
 }
+
+#[test]
+fn issue_266_ak3_purchase_counts_only_the_wealth_after_the_equity() {
+    // Purchase 800'000 in January 2030 with drawdown 3 %; the cap (80 %, limit after retirement off) is not reached, the
+    // mortgage follows the free wealth after the equity: (0.25 × (income + 0.03 × (liquid − price)) − 8'000) / 0.055.
+    let m = json!({"amountMode": "maxLoan", "tranches": [{"name": "A", "amount": 0, "periods": [{"type": "fixed", "term": 10, "rate": 0.02}]}]});
+    let mut v = estate(json!([planned(800_000.0, "2030-01", m)]));
+    v["wealth"]["cash"] = json!(1_000_000);
+    v["realestate"]["affordability"]["wealthDrawdown"] = json!(true);
+    v["realestate"]["affordability"]["maxLoanToValueRetired"] = json!(1.0);
+    let r = run(&v);
+    let mortgage = purchase(&r).mortgage.unwrap();
+    let before = rec(&r, 2029, 12);
+    let liquid = before.cash + before.stocks + before.bonds;
+    let income = 12.0 * rec(&r, 2030, 1).income;
+    let expected = (0.25 * (income + 0.03 * (liquid - 800_000.0)) - 8_000.0) / (0.0625 - 0.25 * 0.03);
+    assert!(mortgage < 640_000.0, "{mortgage}");
+    assert!(
+        (mortgage - expected).abs() < 0.02 * expected,
+        "{mortgage} vs {expected}"
+    );
+    // More than with the income alone.
+    assert!(mortgage > (0.25 * income - 8_000.0) / 0.0625);
+}

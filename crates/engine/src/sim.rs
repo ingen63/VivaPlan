@@ -4125,6 +4125,15 @@ mod issue_266_tests {
             purchase_max_mortgage(1.0 / 3.0, 0.05, 0.0, 0.0, 0.3, -900_000.0, 800_000.0),
             0.0
         ));
+        // Free wealth before the mortgage negative, at the cap positive: −500'000 + 800'000 ≥ 0 gives the cap.
+        assert!(close(
+            purchase_max_mortgage(1.0 / 3.0, 0.05, 0.0, 0.0, 0.3, -500_000.0, 800_000.0),
+            800_000.0
+        ));
+        // Equity larger than the liquid wealth, but the mortgage makes the free wealth positive again:
+        // M = (1/3 (60'000 − 0.03 × 100'000) − 10'000) / 0.04 = 225'000; free wealth −100'000 + 225'000 ≥ 0.
+        let m = purchase_max_mortgage(1.0 / 3.0, 0.05, 60_000.0, 10_000.0, 0.03, -100_000.0, 800_000.0);
+        assert!(close(m, 225_000.0), "{m}");
     }
 }
 
