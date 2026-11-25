@@ -2086,6 +2086,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #255/AK2 | Andere Felder mit Auswahl und Betrag unverändert. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK2» (#255) | 25.11.2026 ok (e2e grün) |
 | #255/AK3 | e2e-Test mit 1 250 000. | ☑ | **gilt** | e2e `ui-steuern.spec.js` «AK1, AK3» (#255) | 25.11.2026 ok (e2e grün) |
 
+### #256 e2e-Test #232: Warnung zum Erwerbseinkommen für Person 2 fehlt
+
+[Issue #256](https://github.com/ingen63/VivaPlan/issues/256) · geschlossen · Umsetzung: ba8513b (#247)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #256/AK1 | Ursache benannt (Test oder App, seit welchem Commit). | ☑ | **gilt** (Test veraltet seit #236, bdff79d: zweite Person mit Schalter «Einkommen endet» angelegt; behoben durch #247, ba8513b) | – | 25.11.2026 ok (Durchsicht) |
+| #256/AK2 | Warnung für Person 2 nennt den Betrag pro Jahr bei ausgeschaltetem Schalter; mit Schalter entfällt sie. | ☑ | **gilt** | e2e `ui-planung.spec.js` #232/AK1–AK5 | 25.11.2026 ok (e2e grün) |
+| #256/AK3 | `npx playwright test ui-planung.spec.js -g "232"` ist grün. | ☑ | **gilt** | e2e `ui-planung.spec.js` #232/AK1–AK5 | 25.11.2026 ok (1 passed) |
+
 ### #257 Auswahl «Steuerwert» bei Immobilien in Französisch und Italienisch abgeschnitten
 
 [Issue #257](https://github.com/ingen63/VivaPlan/issues/257) · geschlossen · Umsetzung: 4c5de87
