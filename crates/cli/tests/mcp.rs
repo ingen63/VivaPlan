@@ -977,3 +977,30 @@ fn issue_263_ak5_read_only_switch_over_stdio() {
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("--read-only=maybe"));
 }
+
+/// #263/AK2: --allow-dir without a folder, or with a folder that does not exist, ends the start with a message instead of
+/// running without the limit.
+#[test]
+fn issue_263_ak2_allow_dir_needs_an_existing_folder() {
+    let tmp = tempfile::tempdir().unwrap();
+    let missing = tmp.path().join("none");
+    for (args, want) in [
+        (vec!["mcp", "--allow-dir"], "Unknown option --allow-dir"),
+        (vec!["mcp", "--names", "--allow-dir"], "Unknown option --allow-dir"),
+        (
+            vec!["mcp", "--allow-dir", missing.to_str().unwrap()],
+            "Folder not found",
+        ),
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_vivaplan"))
+            .args(&args)
+            .env("HOME", tmp.path())
+            .stdin(Stdio::null())
+            .output()
+            .unwrap();
+        let err = String::from_utf8_lossy(&out.stderr);
+        assert!(!out.status.success(), "{args:?}");
+        assert!(err.contains(want), "{args:?}: {err}");
+        assert!(!err.contains("panicked"), "{args:?}: {err}");
+    }
+}
