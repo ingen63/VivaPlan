@@ -2131,3 +2131,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #262/AK1 | Ablauf in `docs/ENTWICKLUNG.md` «Ablauf pro Release». | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht) |
 | #262/AK2 | `rust-test-agent.md` hält Hinweis bzw. Auslösen vor einem Tag fest. | ☑ | **gilt** | kein Test | 25.11.2026 ok (Durchsicht) |
+
+### #260 Clippy-Regel chunks_exact_to_as_chunks in measure.rs
+
+[Issue #260](https://github.com/ingen63/VivaPlan/issues/260) · geschlossen · Umsetzung: 043779c
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #260/AK1 | `cargo clippy --workspace --all-targets -- -D warnings` ohne Befund, lokal und in CI. | ☑ | **gilt** | Job `clippy` | 25.11.2026 ok (lokal und Lauf 45594073984) |
+| #260/AK2 | Test in `measure.rs` rechnet unverändert (`as_chunks::<12>()`). | ☑ | **gilt** | `crates/engine/tests/measure.rs` | 25.11.2026 ok (Engine-Tests grün) |
