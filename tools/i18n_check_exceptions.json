@@ -153,9 +153,12 @@
         "Contents",
         "MacOS",
         "args",
-        "mcp"
+        "mcp",
+        "allow",
+        "dir",
+        "Documents"
       ],
-      "reason": "Eintrag zum Einrichten des MCP-Servers (#210): JSON-Schlüssel und Pfad, in allen Sprachen gleich"
+      "reason": "Eintrag zum Einrichten des MCP-Servers (#210, Planordner #263): JSON-Schlüssel und Pfad, in allen Sprachen gleich"
     }
   ],
   "findings": [

@@ -70,7 +70,8 @@ pub(crate) struct Session {
     pub(crate) names: bool,
     /// #212/AK3: `--read-only`: no tool writes a file (`plan_save` is not offered).
     pub(crate) read_only: bool,
-    /// #212: Folders released with `--allow-dir` for `plan_save` (rule 6), canonical.
+    /// #212: Folders released with `--allow-dir` for `plan_save` (rule 6), canonical; #263: with at least one, plans
+    /// are read and written only inside them (subfolders included).
     pub(crate) allowed: Vec<PathBuf>,
     pub(crate) plans: Vec<OpenPlan>,
     pub(crate) results: Vec<SessionResult>,
@@ -92,6 +93,28 @@ impl Session {
             notice_shown: false,
             opened: 0,
             computed: 0,
+        }
+    }
+
+    /// #263/AK2: The canonical path of a plan file to read. With folders released by `--allow-dir` only a file inside
+    /// one of them (`..` and symbolic links are resolved first); without, every path as before.
+    pub(crate) fn readable(&self, path: &Path) -> Result<PathBuf, String> {
+        if self.allowed.is_empty() {
+            return Ok(path.to_path_buf());
+        }
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let canonical = std::fs::canonicalize(path).map_err(|_| format!("{name} was not found"))?;
+        if self.allowed.iter().any(|d| canonical.starts_with(d)) {
+            Ok(canonical)
+        } else {
+            Err(format!(
+                "{name} is outside the plan folder: this server opens and saves plans only in the folders the user \
+                 released (--allow-dir). Ask the user to move the plan into the plan folder or to choose another plan \
+                 folder when setting up VivaPlan"
+            ))
         }
     }
 

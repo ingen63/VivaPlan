@@ -64,7 +64,9 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
     let base = || dir_of(args, "path", fallback);
     let lib = Some(library);
     Ok(match cmd {
-        "app_info" => json!({ "version": env!("CARGO_PKG_VERSION"), "buildEpoch": null, "cliPath": null }),
+        "app_info" => {
+            json!({ "version": env!("CARGO_PKG_VERSION"), "buildEpoch": null, "cliPath": null, "planDir": null })
+        }
         "bench_plan" => to(&api::bench(&plan, &base(), lib)?)?,
         "progress_get" => to(&match job_id(args) {
             Some(id) => progress::snapshot_of(id),

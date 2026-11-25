@@ -516,6 +516,8 @@ trait Dialogs: Send + Sync {
     fn pick_file(&self, dialog: &Dialog) -> Option<FilePath>;
     fn pick_files(&self, dialog: &Dialog) -> Option<Vec<FilePath>>;
     fn save_file(&self, dialog: &Dialog, file_name: &str) -> Option<FilePath>;
+    /// #263/AK4: a folder, the dialog opened at `start`.
+    fn pick_folder(&self, title: &str, start: Option<&Path>) -> Option<FilePath>;
 }
 
 /// The shared managed file picker service (see `install_dialogs`).
@@ -546,6 +548,16 @@ impl<R: Runtime> Dialogs for NativeDialogs<R> {
 
     fn save_file(&self, dialog: &Dialog, file_name: &str) -> Option<FilePath> {
         self.builder(dialog).set_file_name(file_name).blocking_save_file()
+    }
+
+    fn pick_folder(&self, title: &str, start: Option<&Path>) -> Option<FilePath> {
+        let lang = self.0.state::<i18n::UiLanguage>().language();
+        let builder = self.0.dialog().file().set_title(i18n::tr(&lang, title));
+        match start.filter(|d| d.is_dir()) {
+            Some(d) => builder.set_directory(d),
+            None => builder,
+        }
+        .blocking_pick_folder()
     }
 }
 
@@ -607,17 +619,38 @@ struct Opened {
     plan: Value,
 }
 
-/// Version and time of the build for the «About» window; #213: path of the command line for «Mit KI verbinden».
+/// Version and time of the build for the «About» window; #213: path of the command line for «Mit KI verbinden»;
+/// #263: the plan folder it suggests.
 #[tauri::command]
 fn app_info<R: Runtime>(app: AppHandle<R>) -> Value {
     let cli = std::env::current_exe()
         .ok()
         .and_then(|exe| cli_next_to(&exe, std::env::var_os("APPIMAGE").is_some()));
+    let plans = plan_dir(&recent_plans(&app), app.path().document_dir().ok());
     serde_json::json!({
         "version": app.package_info().version.to_string(),
         "buildEpoch": env!("PP_BUILD_EPOCH").parse::<u64>().unwrap_or(0),
         "cliPath": cli.map(|p| p.display().to_string()),
+        "planDir": plans.map(|p| p.display().to_string()),
     })
+}
+
+/// #263/AK4: the plan folder suggested in «Mit KI verbinden»: the folder of the plan opened last (the first of the
+/// recent plans whose folder still exists), otherwise the documents folder.
+fn plan_dir(recent: &[String], documents: Option<PathBuf>) -> Option<PathBuf> {
+    recent
+        .iter()
+        .filter_map(|p| Path::new(p).parent())
+        .find(|d| !d.as_os_str().is_empty() && d.is_dir())
+        .map(Path::to_path_buf)
+        .or(documents)
+}
+
+/// #263/AK4: «Ordner wählen …» in «Mit KI verbinden»: the chosen plan folder, `None` if cancelled.
+#[tauri::command]
+async fn pick_plan_folder(dialogs: State<'_, Picker>, start: Option<String>) -> Result<Option<String>, CmdError> {
+    let folder = dialogs.pick_folder("dialog.planFolder", start.as_deref().map(Path::new));
+    Ok(folder.map(path_string).transpose()?.map(|p| p.display().to_string()))
 }
 
 /// #213: the command line `vivaplan` next to the program `exe` of the app (all packages put it there, #206), if it
@@ -1222,6 +1255,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             save_plan,
             import_legacy,
             pick_series,
+            pick_plan_folder,
             open_link
         ])
 }
@@ -1344,6 +1378,7 @@ mod tests {
         file: Option<FilePath>,
         files: Option<Vec<FilePath>>,
         save: Option<FilePath>,
+        folder: Option<FilePath>,
         asked: std::sync::Mutex<Vec<String>>,
     }
 
@@ -1374,6 +1409,15 @@ mod tests {
         fn save_file(&self, d: &Dialog, name: &str) -> Option<FilePath> {
             self.note("save", d, name);
             self.save.clone()
+        }
+
+        fn pick_folder(&self, title: &str, start: Option<&Path>) -> Option<FilePath> {
+            let start = start.map(|p| p.display().to_string()).unwrap_or_default();
+            self.asked
+                .lock()
+                .unwrap()
+                .push(format!("folder|{}|{start}", i18n::tr("de", title)));
+            self.folder.clone()
         }
     }
 
@@ -3064,6 +3108,52 @@ mod tests {
         let (_app, w, _g) = setup();
         let v = call(&w, "app_info", json!({})).unwrap();
         assert!(v.get("cliPath").is_some_and(|p| p.is_null() || p.is_string()), "{v}");
+    }
+
+    /// #263/AK4: the suggested plan folder is the folder of the plan opened last, otherwise the documents folder.
+    #[test]
+    fn issue_263_ak4_plan_folder_of_the_last_plan_otherwise_documents() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (a, b) = (tmp.path().join("A"), tmp.path().join("B"));
+        std::fs::create_dir(&a).unwrap();
+        std::fs::create_dir(&b).unwrap();
+        let docs = Some(tmp.path().join("Documents"));
+        let p = |d: &Path, f: &str| d.join(f).display().to_string();
+        assert_eq!(
+            plan_dir(&[p(&a, "x.vplan"), p(&b, "y.vplan")], docs.clone()),
+            Some(a.clone())
+        );
+        let gone = tmp.path().join("gone");
+        assert_eq!(
+            plan_dir(&[p(&gone, "x.vplan"), p(&b, "y.vplan")], docs.clone()),
+            Some(b)
+        );
+        assert_eq!(plan_dir(&["x.vplan".into()], docs.clone()), docs);
+        assert_eq!(plan_dir(&[], docs.clone()), docs);
+        assert_eq!(plan_dir(&[], None), None);
+        let (_app, w, _g) = setup();
+        let v = call(&w, "app_info", json!({})).unwrap();
+        assert!(v.get("planDir").is_some_and(|p| p.is_null() || p.is_string()), "{v}");
+    }
+
+    /// #263/AK4: «Ordner wählen …» asks the system for a folder, opened at the shown one; cancelling gives null.
+    #[test]
+    fn issue_263_ak4_pick_plan_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let start = tmp.path().display().to_string();
+        let chosen = tmp.path().join("Plans");
+        let fake = FakeDialogs {
+            folder: Some(FilePath::Path(chosen.clone())),
+            ..FakeDialogs::default()
+        };
+        {
+            let (_app, w, _g, dialogs) = setup_with(fake);
+            let v = call(&w, "pick_plan_folder", json!({ "start": start })).unwrap();
+            assert_eq!(v, json!(chosen.display().to_string()));
+            assert_eq!(dialogs.asked(), vec![format!("folder|Planordner wählen|{start}")]);
+        }
+        let (_app, w, _g, _) = setup_with(FakeDialogs::default());
+        assert_eq!(call(&w, "pick_plan_folder", json!({})).unwrap(), Value::Null);
     }
 
     /// #240/AK4: the command `open_link` rejects a video address and an id of a video that does not exist.

@@ -164,7 +164,7 @@ Vor einer Version und nach Änderungen am Dialog *Hilfe → Mit KI verbinden …
 Kommandozeile. Paket gebaut (`pakete.yml` oder `npx tauri build --config tauri.cli.conf.json`, dann
 `python3 tools/mcpb.py build --binary target/release/bundle/macos/VivaPlan.app/Contents/MacOS/vivaplan --out
 target/release/bundle/mcpb`), `VivaPlan.app` nach `/Applications` kopiert. Beispielplanung als
-`~/Documents/beispiel.vplan` gespeichert.
+`~/Documents/beispiel.vplan` gespeichert, eine Kopie als `~/Desktop/aussen.vplan` (#263).
 
 **Für alle Programme gleich**
 
@@ -177,14 +177,24 @@ target/release/bundle/mcpb`), `VivaPlan.app` nach `/Applications` kopiert. Beisp
    vergleichen: keine Datei geändert. Die App öffnet keine Netzwerkverbindung (Little Snitch oder `nettop -p vivaplan-app`).
 4. Nach dem Einrichten in jedem Programm fragen: «Öffne ~/Documents/beispiel.vplan mit VivaPlan und sag mir, ob die
    Planung Fehler hat.» Erwartet: Aufruf von `plan_open` und `plan_validate`, Person als «Person 1», keine Fehler.
-5. Ergebnis mit Datum, Version, Programmversion und Modell im Issue festhalten.
+   #263: Planordner im Dialog ist `~/Documents` (oder dorthin geändert). Dann fragen: «Öffne ~/Desktop/aussen.vplan.»
+   Erwartet: Fehler «outside the plan folder», die KI bittet, die Planung in den Planordner zu legen. «Speichere die
+   Planung als Kopie.» Erwartet: neue Datei `beispiel (AI).vplan` in `~/Documents`.
+5. #263/AK4, AK5: Im Dialog «Ordner wählen …» drücken: Erwartet der Ordnerdialog des Systems am angezeigten Ordner; der
+   gewählte Ordner steht danach in allen vier Zeilen hinter `--allow-dir`. «Nur lesen» einschalten: alle Zeilen enden
+   auf `--read-only`; nach dem Einrichten damit bietet die KI kein Speichern an (`plan_save` fehlt in der Werkzeugliste).
+6. Ergebnis mit Datum, Version, Programmversion und Modell im Issue festhalten.
 
 **Claude Desktop, Ein-Klick-Paket (AK1)**
 
 1. Ist VivaPlan schon als Server in `claude_desktop_config.json` eingetragen, den Eintrag vorher entfernen.
 2. `VivaPlan_<Version>_aarch64.mcpb` im Finder doppelklicken. Erwartet: Claude Desktop öffnet die Installationsansicht
    mit Name «VivaPlan», Version, Symbol, Beschreibung und den fünfzehn Werkzeugen; «Installieren» gelingt ohne
-   Fehlermeldung (auch keine von Gatekeeper zum Programm `server/vivaplan`).
+   Fehlermeldung (auch keine von Gatekeeper zum Programm `server/vivaplan`). #263/AK1: Vor dem Einschalten fragt
+   Claude Desktop nach «Plan folder» (Pflicht, Vorschlag Dokumente-Ordner) und «Read only» (aus). Prüfen, ob Claude
+   Desktop beide Werte in die Argumente einsetzt: `ps -ax -o args | grep '[v]ivaplan mcp'` im Terminal zeigt
+   `mcp --allow-dir <ordner> --read-only=false`. Mit
+   «Read only» eingeschaltet `--read-only=true` und kein `plan_save` in der Werkzeugliste.
 3. Unter *Settings → Extensions* ist VivaPlan eingeschaltet; Prüfung 4 oben gelingt. In der Aktivitätsanzeige läuft
    `vivaplan mcp` aus dem Erweiterungsordner von Claude Desktop.
 4. Erweiterung deaktivieren: Der Prozess `vivaplan mcp` endet.

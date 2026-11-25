@@ -243,7 +243,7 @@ On Windows copy the folder to `%USERPROFILE%\.claude\skills`. Then start a new s
 The results are model calculations without guarantee, no tax or investment advice; taxes are estimates.
 
 ## @ref-mcp Connecting AI programs (MCP server)
-Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save
+Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save, plan folder, read only, warning, allow-dir
 
 `vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. The server changes a working copy in memory; only `plan_save` writes to the disk, by fixed rules (see below).
 
@@ -266,23 +266,30 @@ Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude D
 
 Before every computation the server estimates its duration. From 60 seconds it computes only if the AI confirms explicitly (`"confirm": true`); it should ask you first. Long computations report their progress and can be cancelled in the AI program. Only one computation runs at a time.
 
-**Saving:** `plan_save` keeps these rules itself, whatever the AI does: (1) Without a path a **new file** is created next to the opened one, `<name> (AI).vplan` (with a number if needed); an existing file stays untouched. (2) The server replaces an existing file only with `overwrite` and only after the AI program has asked you and shown the changes; if it cannot ask, the server refuses. (3) A backup `<file>.bak` is made first; writing goes through a temporary file. (4) If the file was changed since it was opened, it is not replaced. (5) Old `.rplan` files are never replaced; plans are saved as `.vplan`. (6) The server writes only into the folder of the opened plan or into a folder released with `--allow-dir <folder>`. With `--read-only` the server does not offer `plan_save` at all. Do not edit a plan in the app and in the AI at the same time: the app does not notice changes to the file.
+**Saving:** `plan_save` keeps these rules itself, whatever the AI does: (1) Without a path a **new file** is created next to the opened one, `<name> (AI).vplan` (with a number if needed); an existing file stays untouched. (2) The server replaces an existing file only with `overwrite` and only after the AI program has asked you and shown the changes; if it cannot ask, the server refuses. (3) A backup `<file>.bak` is made first; writing goes through a temporary file. (4) If the file was changed since it was opened, it is not replaced. (5) Old `.rplan` files are never replaced; plans are saved as `.vplan`. (6) The server writes only into the folder of the opened plan or into a folder released with `--allow-dir <folder>` (subfolders included). With `--read-only` the server does not offer `plan_save` at all. Do not edit a plan in the app and in the AI at the same time: the app does not notice changes to the file.
 
-**Set up with one click:** The menu *Help → Connect to AI …* shows for Claude Desktop, Claude Code, the ChatGPT desktop app (through the configuration of Codex) and LM Studio where the entry belongs, and the matching line with the path of the program on your computer to copy. VivaPlan sets up nothing itself. For Claude Desktop on macOS every version comes with the package `VivaPlan_<version>_aarch64.mcpb`: a double click installs VivaPlan as an extension in Claude Desktop; the package contains the program `vivaplan` itself.
+**Plan folder and “Read only”:** When setting up you choose a plan folder; it reaches the server as `--allow-dir <folder>` (several folders: `--allow-dir` several times). The server then opens and saves plans only in this folder and its subfolders. It refuses paths with `..` and symbolic links leading out of the folder; for a plan outside it reports that the plan is outside the plan folder. The data folder of the app (time series, settings) stays readable, so that the server computes as the app does. Opening, computing, fetching results, changing and saving in the plan folder work as without a plan folder. With the switch “Read only” (`--read-only`, off by default) the AI can open, change and compute plans but not save them. Without `--allow-dir` the server reads every plan named and writes only into its folder.
 
-**Set up:** In the AI program, enter the program `vivaplan` with its full path (see [command line](#ref-cli)) and the argument `mcp`. In Claude Desktop and LM Studio the entry looks like this on macOS:
+**The warning of Claude Desktop:** When installing the package, Claude Desktop warns that the extension gets access to everything on the computer. Claude Desktop shows this for every extension, because the package format knows no permissions: the server runs with your user rights, in the other AI programs as well, only without a warning. VivaPlan itself enforces the limit to the plan folder, not the operating system. The server reads plans only in the plan folder, plus the data folder of the app and the data that comes with it; it writes only with `plan_save` into the plan folder and opens no network connection.
+
+**Set up with one click:** The menu *Help → Connect to AI …* shows for Claude Desktop, Claude Code, the ChatGPT desktop app (through the configuration of Codex) and LM Studio where the entry belongs, and the matching line with the path of the program on your computer to copy. Every line contains the plan folder: suggested is the folder of the plan opened last, otherwise the documents folder; *Choose folder …* changes it. The switch “Read only” adds `--read-only`. VivaPlan sets up nothing itself. For Claude Desktop on macOS every version comes with the package `VivaPlan_<version>_aarch64.mcpb`: a double click installs VivaPlan as an extension in Claude Desktop; the package contains the program `vivaplan` itself. When installing, Claude Desktop asks for the plan folder (Plan folder, required) and the switch “Read only”.
+
+**Set up:** In the AI program, enter the program `vivaplan` with its full path (see [command line](#ref-cli)) with the arguments `mcp --allow-dir <plan folder>` (`~` stands for your home folder). In Claude Desktop and LM Studio the entry looks like this on macOS:
 
 ```
 {
   "mcpServers": {
-    "vivaplan": { "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan", "args": ["mcp"] }
+    "vivaplan": {
+      "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan",
+      "args": ["mcp", "--allow-dir", "~/Documents"]
+    }
   }
 }
 ```
 
-In Claude Code, `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp` is enough. Like the command line, the server computes with the data folder of the app (limits, time series); `--data-dir` and `--library` override it.
+In Claude Code, `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp --allow-dir ~/Documents` is enough. Like the command line, the server computes with the data folder of the app (limits, time series); `--data-dir` and `--library` override it.
 
-**Privacy:** Everything a tool returns becomes part of the conversation with your AI and goes to its provider; with a local model (for example in LM Studio) everything stays on the computer. The server only reads plans whose path is named explicitly and searches no folders. It replaces names of persons and freely entered labels with neutral ones (Person 1, Property 1), except with `--names`; answers name only the file name, not the folder. No answer is longer than 20'000 characters. The texts of the server are in English; the AI still answers in your language.
+**Privacy:** Everything a tool returns becomes part of the conversation with your AI and goes to its provider; with a local model (for example in LM Studio) everything stays on the computer. The server only reads plans whose path is named explicitly, with a plan folder only those inside it, and searches no folders. It replaces names of persons and freely entered labels with neutral ones (Person 1, Property 1), except with `--names`; answers name only the file name, not the folder. No answer is longer than 20'000 characters. The texts of the server are in English; the AI still answers in your language.
 
 The results are model calculations without warranty, not tax or investment advice; taxes are estimates.
 

@@ -816,11 +816,21 @@ fn issue_212_ak1_ak2_change_undo_and_save_over_stdio() {
 #[test]
 fn issue_212_ak2_ak3_read_only_and_released_folders_over_stdio() {
     let tmp = tempfile::tempdir().unwrap();
-    let out = tmp.path().join("out");
+    let (plans, out) = (tmp.path().join("plans"), tmp.path().join("out"));
+    std::fs::create_dir(&plans).unwrap();
     std::fs::create_dir(&out).unwrap();
-    let (file, _) = plan_file(tmp.path(), "plan.vplan", "bootstrap", 300, json!([]));
+    let (file, _) = plan_file(&plans, "plan.vplan", "bootstrap", 300, json!([]));
     let original = std::fs::read(&file).unwrap();
-    let mut s = Server::start(tmp.path(), &["--allow-dir", out.to_str().unwrap()]);
+    // #263: with --allow-dir plans are opened only in released folders, so the folder of the plan is released too.
+    let mut s = Server::start(
+        tmp.path(),
+        &[
+            "--allow-dir",
+            plans.to_str().unwrap(),
+            "--allow-dir",
+            out.to_str().unwrap(),
+        ],
+    );
     s.initialize();
     s.tool("plan_open", json!({ "path": file.display().to_string() }));
     let (text, error) = s.tool("plan_save", json!({ "plan": "p1", "overwrite": true }));
@@ -851,6 +861,119 @@ fn issue_212_ak2_ak3_read_only_and_released_folders_over_stdio() {
         json!({ "name": "plan_save", "arguments": { "plan": "p1" } }),
     );
     assert_eq!(a["error"]["code"], -32602, "{a}");
-    assert!(!tmp.path().join("plan (AI).vplan").exists());
+    assert!(!plans.join("plan (AI).vplan").exists());
     s.close();
+}
+
+/// #263/AK2, AK3: With --allow-dir the server opens plans only inside the plan folder (also after resolving `..` and
+/// symbolic links) and names only the file in its error; inside, opening, changing, computing, taking over a variant
+/// and saving a new file work as without it.
+// slow: starts the program and computes over stdio
+#[test]
+fn issue_263_ak2_ak3_plan_folder_over_stdio() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (a, b) = (tmp.path().join("A"), tmp.path().join("B"));
+    std::fs::create_dir(&a).unwrap();
+    std::fs::create_dir(&b).unwrap();
+    let (inside, _) = plan_file(&a, "plan.vplan", "bootstrap", 300, json!([]));
+    let (outside, _) = plan_file(&b, "other.vplan", "bootstrap", 300, json!([]));
+    let mut s = Server::start(tmp.path(), &["--allow-dir", a.to_str().unwrap()]);
+    s.initialize();
+    let mut refused = vec![outside.clone(), a.join("..").join("B").join("other.vplan")];
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(&outside, a.join("link.vplan")).unwrap();
+        std::os::unix::fs::symlink(&b, a.join("linked")).unwrap();
+        refused.push(a.join("link.vplan"));
+        refused.push(a.join("linked").join("other.vplan"));
+    }
+    for path in &refused {
+        let (text, error) = s.tool("plan_open", json!({ "path": path.to_str().unwrap() }));
+        assert!(error, "{}: {text}", path.display());
+        assert!(text.contains("outside the plan folder"), "{text}");
+        assert!(
+            !text.contains(tmp.path().to_str().unwrap()),
+            "names only the file: {text}"
+        );
+    }
+    // Without --allow-dir as before: every path.
+    let mut free = Server::start(tmp.path(), &[]);
+    free.initialize();
+    let (text, error) = free.tool("plan_open", json!({ "path": outside.to_str().unwrap() }));
+    assert!(!error, "{text}");
+    free.close();
+
+    let (text, error) = s.tool("plan_open", json!({ "path": inside.to_str().unwrap() }));
+    assert!(!error, "{text}");
+    assert_eq!(data(&text)["plan"], "p1");
+    let (text, error) = s.tool(
+        "plan_set",
+        json!({ "plan": "p1", "changes": [{ "path": "wealth.stockShare", "value": 0.3 }] }),
+    );
+    assert!(!error, "{text}");
+    let (text, error) = s.tool("simulation_run", json!({ "plan": "p1", "paths": 200 }));
+    assert!(!error, "{text}");
+    let (text, error) = s.tool("result_get", json!({ "result": "r1", "view": "bands" }));
+    assert!(!error, "{text}");
+    let (text, error) = s.tool("evaluate", json!({ "plan": "p1", "experiment": small_experiment() }));
+    assert!(!error, "{text}");
+    assert_eq!(data(&text)["result"], "r2");
+    let (text, error) = s.tool("plan_apply", json!({ "result": "r2", "rank": 2 }));
+    assert!(!error, "{text}");
+    let (text, error) = s.tool("plan_save", json!({ "plan": "p1" }));
+    assert!(!error, "{text}");
+    let saved = data(&text)["saved"].as_str().unwrap().to_string();
+    assert!(a.join(&saved).is_file(), "{saved}");
+    let (text, error) = s.tool(
+        "plan_save",
+        json!({ "plan": "p1", "path": b.join("copy.vplan").to_str().unwrap() }),
+    );
+    assert!(error && text.contains("rule 6"), "{text}");
+    assert!(!b.join("copy.vplan").exists());
+    s.close();
+}
+
+/// #263/AK5: The switch «read only» of the package comes as --read-only=true or --read-only=false: with true the
+/// server offers no plan_save, changing and computing go on; another value is refused at the start.
+// slow: starts the program and computes over stdio
+#[test]
+fn issue_263_ak5_read_only_switch_over_stdio() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (file, _) = plan_file(tmp.path(), "plan.vplan", "bootstrap", 300, json!([]));
+    let dir = tmp.path().to_str().unwrap();
+    let names = |s: &mut Server| -> Vec<String> {
+        s.request("tools/list", json!({}))["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap().to_string())
+            .collect()
+    };
+    let mut s = Server::start(tmp.path(), &["--allow-dir", dir, "--read-only=true"]);
+    s.initialize();
+    let list = names(&mut s);
+    assert!(!list.contains(&"plan_save".to_string()), "{list:?}");
+    s.tool("plan_open", json!({ "path": file.to_str().unwrap() }));
+    let (text, error) = s.tool(
+        "plan_set",
+        json!({ "plan": "p1", "changes": [{ "path": "wealth.stockShare", "value": 0.3 }] }),
+    );
+    assert!(!error, "{text}");
+    let (text, error) = s.tool("simulation_run", json!({ "plan": "p1", "paths": 200 }));
+    assert!(!error, "{text}");
+    s.close();
+
+    let mut s = Server::start(tmp.path(), &["--allow-dir", dir, "--read-only=false"]);
+    s.initialize();
+    assert!(names(&mut s).contains(&"plan_save".to_string()));
+    s.close();
+
+    let out = Command::new(env!("CARGO_BIN_EXE_vivaplan"))
+        .args(["mcp", "--read-only=maybe"])
+        .env("HOME", tmp.path())
+        .stdin(Stdio::null())
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("--read-only=maybe"));
 }

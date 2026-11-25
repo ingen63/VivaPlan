@@ -45,7 +45,8 @@ class McpbTest(unittest.TestCase):
         self.assertEqual(mcpb.check(self.package), [])
         m = self.manifest
         self.assertEqual(m["version"], mcpb.app_version())
-        self.assertEqual(m["server"]["mcp_config"], {"command": "${__dirname}/server/vivaplan", "args": ["mcp"]})
+        self.assertEqual(m["server"]["mcp_config"]["command"], "${__dirname}/server/vivaplan")
+        self.assertEqual(m["server"]["mcp_config"]["args"][0], "mcp")
         self.assertEqual(m["compatibility"]["platforms"], ["darwin"])
         self.assertTrue(stat.S_ISREG(self.entry_mode) and self.entry_mode & 0o111, oct(self.entry_mode))
         self.assertEqual(self.names, {"manifest.json", "icon.png", "server/vivaplan"})
@@ -64,7 +65,7 @@ class McpbTest(unittest.TestCase):
             "field version missing": {k: v for k, v in good.items() if k != "version"},
             "is not semantic versioning": {**good, "version": "1.0"},
             "does not start the entry point": {**good, "server": {**good["server"], "mcp_config": {"command": "vivaplan", "args": ["mcp"]}}},
-            "instead of ['mcp']": {**good, "server": {**good["server"], "mcp_config": {**good["server"]["mcp_config"], "args": []}}},
+            "mcp_config.args": {**good, "server": {**good["server"], "mcp_config": {**good["server"]["mcp_config"], "args": ["mcp"]}}},
             "is not in the package": {**good, "server": {**good["server"], "entry_point": "server/other"}},
             "instead of 'binary'": {**good, "server": {**good["server"], "type": "node"}},
             "only lower case": {**good, "name": "VivaPlan"},
@@ -102,6 +103,56 @@ class McpbTest(unittest.TestCase):
         self.assertIn("tools/mcpb.py build --binary target/release/bundle/macos/VivaPlan.app/Contents/MacOS/vivaplan", step)
         self.assertIn('tools/mcpb.py check "$mcpb"', step)
         self.assertIn("target/release/bundle/mcpb/*.mcpb", flow[flow.index("upload-artifact"):])
+
+    def test_issue_263_ak1_ak5_manifest_asks_for_plan_folder_and_read_only(self):
+        # #263/AK1: one folder, required, passed as --allow-dir; AK5: switch «read only», default off, as --read-only=…
+        config = self.manifest["user_config"]
+        self.assertEqual(config["plan_folder"]["type"], "directory")
+        self.assertIs(config["plan_folder"]["required"], True)
+        self.assertNotIn("multiple", config["plan_folder"])
+        self.assertEqual(config["read_only"]["type"], "boolean")
+        self.assertIs(config["read_only"]["default"], False)
+        args = self.manifest["server"]["mcp_config"]["args"]
+        self.assertEqual(args, ["mcp", "--allow-dir", "${user_config.plan_folder}", "--read-only=${user_config.read_only}"])
+        self.assertEqual(mcpb.with_config(args, {"plan_folder": Path("/a b"), "read_only": True}),
+                         ["mcp", "--allow-dir", "/a b", "--read-only=true"])
+        self.assertEqual(mcpb.with_config(args, {"plan_folder": "/a", "read_only": False})[-1], "--read-only=false")
+        self.assertIn("plan folder", self.manifest["long_description"])
+
+    def test_issue_263_ak1_check_reports_missing_plan_folder_or_switch(self):
+        good = self.manifest
+        config = good["user_config"]
+        cases = {
+            "plan_folder": {**config, "plan_folder": {**config["plan_folder"], "required": False}},
+            "plan_folder ": {**config, "plan_folder": {**config["plan_folder"], "multiple": True}},
+            "plan_folder  ": {k: v for k, v in config.items() if k != "plan_folder"},
+            "read_only": {**config, "read_only": {**config["read_only"], "default": True}},
+            "without title": {**config, "read_only": {**config["read_only"], "title": ""}},
+        }
+        for want, c in cases.items():
+            with self.subTest(want):
+                errors = mcpb.check_manifest({**good, "user_config": c}, self.names)
+                self.assertTrue(any(want.strip() in e for e in errors), errors)
+
+    def test_issue_263_ak2_ak3_check_proves_the_plan_folder(self):
+        # #263/AK2, AK3: with the plan folder saving and opening there work, a plan outside is refused; a server that
+        # ignores the folder is reported
+        with tempfile.TemporaryDirectory() as tmp:
+            plans, other = Path(tmp) / "plans", Path(tmp) / "other"
+            plans.mkdir()
+            other.mkdir()
+            limited = [str(cli()), "mcp", "--allow-dir", str(plans)]
+            self.assertEqual(mcpb.check_plan_folder(limited, plans, other), [])
+            self.assertTrue((plans / "check.vplan").is_file())
+            (plans / "check.vplan").unlink()
+            too_wide = [*limited, "--allow-dir", str(other)]
+            errors = mcpb.check_plan_folder(too_wide, plans, other)
+            self.assertTrue(any("outside the plan folder is opened" in e for e in errors), errors)
+            (plans / "check.vplan").unlink()
+            self.assertNotEqual(mcpb.check_plan_folder([str(cli()), "mcp"], plans, other), [])
+            # with «read only» plan_save is not a tool of the server
+            with self.assertRaisesRegex(RuntimeError, "Unknown tool plan_save"):
+                mcpb.check_plan_folder([*limited, "--read-only=true"], plans, other)
 
     def test_first_sentence(self):
         self.assertEqual(mcpb.first_sentence("Open a plan. Then more."), "Open a plan.")

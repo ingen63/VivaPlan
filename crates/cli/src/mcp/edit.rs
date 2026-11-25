@@ -314,7 +314,8 @@ fn allowed_folder(s: &Session, file: Option<&Path>, target: &Path) -> Result<Pat
     let folder =
         std::fs::canonicalize(parent).map_err(|_| format!("The folder of {} does not exist", name_of(target)))?;
     let own = file.and_then(Path::parent).and_then(|d| std::fs::canonicalize(d).ok());
-    if own.iter().chain(&s.allowed).any(|d| *d == folder) {
+    // #263: a released folder includes its subfolders, as for reading.
+    if own.iter().any(|d| *d == folder) || s.allowed.iter().any(|d| folder.starts_with(d)) {
         Ok(folder)
     } else {
         Err(format!(
@@ -847,5 +848,72 @@ mod tests {
             assert!(e.contains("link"), "{e}");
             assert!(files(&elsewhere).is_empty());
         }
+    }
+
+    /// #263/AK2: With released folders plan_open reads only inside them (subfolders included); `..`, a linked file
+    /// and a linked folder leading out are refused, the error names only the file. Without them every path as before.
+    #[test]
+    fn issue_263_ak2_plan_open_only_inside_released_folders() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (a, b) = (tmp.path().join("A"), tmp.path().join("B"));
+        std::fs::create_dir_all(a.join("sub")).unwrap();
+        std::fs::create_dir(&b).unwrap();
+        let example = engine::api::example_plan().to_string();
+        for f in [a.join("p.vplan"), a.join("sub").join("p.vplan"), b.join("q.vplan")] {
+            std::fs::write(f, &example).unwrap();
+        }
+        let open = |s: &mut Session, p: &Path| {
+            super::super::tools::call(s, "plan_open", &json!({ "path": p.display().to_string() })).unwrap()
+        };
+        let mut s = session();
+        assert!(
+            open(&mut s, &b.join("q.vplan")).is_ok(),
+            "without --allow-dir every path"
+        );
+        s.allowed.push(std::fs::canonicalize(&a).unwrap());
+        assert!(open(&mut s, &a.join("p.vplan")).is_ok());
+        assert!(open(&mut s, &a.join("sub").join("p.vplan")).is_ok());
+        let mut refused = vec![
+            b.join("q.vplan"),
+            a.join("sub").join("..").join("..").join("B").join("q.vplan"),
+        ];
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(b.join("q.vplan"), a.join("link.vplan")).unwrap();
+            std::os::unix::fs::symlink(&b, a.join("out")).unwrap();
+            refused.push(a.join("link.vplan"));
+            refused.push(a.join("out").join("q.vplan"));
+        }
+        for p in refused {
+            let e = open(&mut s, &p).unwrap_err();
+            assert!(
+                e.contains("outside the plan folder") && e.contains("--allow-dir"),
+                "{e}"
+            );
+            assert!(!e.contains(&tmp.path().display().to_string()), "{e}");
+        }
+        let e = open(&mut s, &a.join("none.vplan")).unwrap_err();
+        assert_eq!(e, "none.vplan was not found");
+    }
+
+    /// #263: A released folder includes its subfolders for saving as for reading; outside stays refused (rule 6).
+    #[test]
+    fn issue_263_ak3_save_into_subfolders_of_a_released_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (a, b) = (tmp.path().join("A"), tmp.path().join("B"));
+        std::fs::create_dir_all(a.join("sub")).unwrap();
+        std::fs::create_dir(&b).unwrap();
+        let (mut s, _) = opened(&a, "plan.vplan");
+        s.allowed.push(std::fs::canonicalize(&a).unwrap());
+        let a2 = ok(save_done(&mut s, json!({ "plan": "p1", "path": "sub/x.vplan" }), true));
+        assert_eq!(a2["saved"], "x.vplan");
+        assert!(a.join("sub").join("x.vplan").is_file());
+        let e = save_done(
+            &mut s,
+            json!({ "plan": "p1", "path": b.join("x.vplan").display().to_string() }),
+            true,
+        )
+        .unwrap_err();
+        assert!(e.contains("rule 6"), "{e}");
     }
 }

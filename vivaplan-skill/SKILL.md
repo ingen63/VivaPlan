@@ -50,7 +50,9 @@ they agree. Long computations report progress and can be cancelled; one computat
 plan use `plan_set` (list of `{path, value}`, one step, all or nothing), `plan_changes`, `plan_undo` and `plan_apply`
 (take over a variant of an `evaluate` result by rank); they change only a working copy in memory. `plan_save` writes
 a new file `<name> (AI).vplan` next to the plan; replace a file (`overwrite: true`) only when the user asks for it, the
-server then asks the user itself. The server replaces names with neutral ones (Person 1) and shows only file names.
+server then asks the user itself. The server replaces names with neutral ones (Person 1) and shows only file names. If the user released a plan folder
+(`--allow-dir`), the server opens and saves plans only inside it; a plan elsewhere is refused: ask the user to move it
+into the plan folder or to choose another plan folder when setting up VivaPlan.
 The rules above apply in the same way.
 
 ## Workflow

@@ -2264,46 +2264,74 @@ function showVideos() {
     <p class="hint">${tr("videos.browser")}</p>`);
 }
 // #213: «Mit KI verbinden»: one instruction per AI program with the place of its configuration and a setup line to
-// copy. The app only shows and copies; it writes no configuration and loads nothing. The path of the program comes
+// copy. The app only shows and copies; it writes no configuration and loads nothing. #263: every line carries the
+// plan folder (--allow-dir) and, if chosen, --read-only. The path of the program comes
 // from the desktop app (`cliPath` of app_info, the program next to the app); without it the usual path of the system.
 const IS_WIN = /Win/.test(navigator.platform || navigator.userAgent);
 const CLI_DEFAULT = IS_MAC ? "/Applications/VivaPlan.app/Contents/MacOS/vivaplan"
   : IS_WIN ? "%LOCALAPPDATA%\\VivaPlan\\vivaplan.exe" : "/usr/bin/vivaplan";
 let aiLines = [];
+/** #263: what the dialog shows: program path, version, plan folder (--allow-dir) and switch «read only». */
+const aiSetup = { cli: "", version: "…", dir: "", readOnly: false };
+/** Arguments of the server: #263/AK4 the plan folder as --allow-dir, AK5 «read only» as --read-only. */
+const aiArgs = (dir, readOnly) => ["mcp", "--allow-dir", dir, ...(readOnly ? ["--read-only"] : [])];
 /** Setup per AI program: name (product names, not translated), text key, configuration file, line to copy. */
-function aiPrograms(cli, version) {
+function aiPrograms({ cli, version, dir, readOnly }) {
   const home = IS_WIN ? "%USERPROFILE%" : "~";
   const sep = IS_WIN ? "\\" : "/";
-  const json = JSON.stringify({ mcpServers: { vivaplan: { command: cli, args: ["mcp"] } } });
-  const shell = /\s/.test(cli) ? `"${cli}"` : cli;
+  const args = aiArgs(dir, readOnly);
+  const json = JSON.stringify({ mcpServers: { vivaplan: { command: cli, args } } });
+  const shell = a => /\s/.test(a) ? `"${a}"` : a;
   const claudeConfig = IS_MAC ? "~/Library/Application Support/Claude/claude_desktop_config.json"
     : IS_WIN ? "%APPDATA%\\Claude\\claude_desktop_config.json" : "~/.config/Claude/claude_desktop_config.json";
   return [
     { id: "claudeDesktop", name: "Claude Desktop", config: claudeConfig, line: json,
       extra: IS_MAC ? tr("ai.claudeDesktop.mcpb", { file: `VivaPlan_${version}_aarch64.mcpb` }) : "" },
-    { id: "claudeCode", name: "Claude Code", config: "", line: `claude mcp add --scope user vivaplan -- ${shell} mcp` },
+    { id: "claudeCode", name: "Claude Code", config: "", line: `claude mcp add --scope user vivaplan -- ${[cli, ...args].map(shell).join(" ")}` },
+    // TOML: the program as a literal string (backslashes stay); the arguments as basic strings, escaped like JSON
     { id: "chatgpt", name: "ChatGPT Desktop", config: `${home}${sep}.codex${sep}config.toml`,
-      line: `[mcp_servers.vivaplan]\ncommand = '${cli}'\nargs = ["mcp"]` },
+      line: `[mcp_servers.vivaplan]\ncommand = '${cli}'\nargs = [${args.map(a => JSON.stringify(a)).join(", ")}]` },
     { id: "lmstudio", name: "LM Studio", config: `${home}${sep}.lmstudio${sep}mcp.json`, line: json },
   ];
+}
+/** #263: writes the plan folder and the setup lines anew after «Ordner wählen …» or the switch «read only». */
+function aiRender() {
+  aiLines = [aiSetup.cli, ...aiPrograms(aiSetup).map(p => p.line)];
+  const dir = $("#aiDir");
+  if (dir) dir.textContent = aiSetup.dir;
+  document.querySelectorAll("#connectAi section.aiprog pre").forEach((pre, i) => { pre.textContent = aiLines[i + 1]; });
 }
 async function showConnectAi() {
   let info = null;
   try { info = await Engine.call("app_info"); } catch { /* without the engine the usual path */ }
-  const cli = info?.cliPath || CLI_DEFAULT;
-  const programs = aiPrograms(cli, info?.version ?? "…");
-  aiLines = [cli, ...programs.map(p => p.line)];
+  Object.assign(aiSetup, { cli: info?.cliPath || CLI_DEFAULT, version: info?.version ?? "…",
+    dir: info?.planDir || (IS_WIN ? "%USERPROFILE%\\Documents" : "~/Documents"), readOnly: false });
+  const programs = aiPrograms(aiSetup);
+  aiLines = [aiSetup.cli, ...programs.map(p => p.line)];
   const copy = i => `<button type="button" class="btn aicopy" data-action="ai-copy" data-copy="${i}" title="${esc(tr("ai.copyTitle"))}">${tr("ai.copy")}</button>`;
   const code = i => `<div class="aicode"><pre>${esc(aiLines[i])}</pre>${copy(i)}</div>`;
   const section = (p, i) => `<section class="aiprog" data-program="${p.id}"><h4>${esc(p.name)}</h4>
     ${p.extra ? `<p class="hint">${p.extra}</p>` : ""}
     <p class="hint">${tr(`ai.${p.id}.steps`, { config: `<code>${esc(p.config)}</code>` })}</p>${code(i + 1)}</section>`;
+  const pick = Engine.inApp ? `<button type="button" class="btn aipick" data-action="ai-folder">${tr("ai.chooseFolder")}</button>` : "";
   ask(tr("ai.title"), `<div id="connectAi"><p style="margin-top:0">${tr("ai.intro")}</p>
     <p class="hint">${tr("ai.path")}</p>${code(0)}
+    <p class="hint">${tr("ai.folder")}</p><div class="aidir"><pre id="aiDir">${esc(aiSetup.dir)}</pre>${pick}</div>
+    <label class="aiopt"><input type="checkbox" id="aiReadOnly"> ${tr("ai.readOnly")}</label>
     ${programs.map(section).join("")}
     <p class="hint">${tr("ai.privacy")} <a href="#" data-action="ai-help" data-topic="privacy">${tr("ai.privacyLink")}</a> ·
     <a href="#" data-action="ai-help" data-topic="ref-mcp">${tr("ai.moreLink")}</a></p></div>`);
 }
+/** #263/AK4: «Ordner wählen …»: the folder dialog of the system, opened at the shown folder. */
+async function aiFolder() {
+  try {
+    const dir = await Engine.call("pick_plan_folder", { start: aiSetup.dir });
+    if (dir) { aiSetup.dir = dir; aiRender(); }
+  } catch (e) { toast(errText(e)); }
+}
+document.addEventListener("change", e => {
+  if (e.target?.id === "aiReadOnly") { aiSetup.readOnly = e.target.checked; aiRender(); }
+});
 /** Copies a setup line; the button confirms it, because a toast would lie behind the open dialog. */
 function aiCopy(d, el) {
   const done = ok => { el.textContent = tr(ok ? "ai.copied" : "actions.copyFailed"); setTimeout(() => { el.textContent = tr("ai.copy"); }, 1600); };
@@ -4344,6 +4372,7 @@ Object.assign(ACTIONS, {
   "steps-go": d => d.step === "run" ? runSimulation() : goto(d.step),
   "help-topic": d => Help.show(d.topic),
   "ai-copy": aiCopy,
+  "ai-folder": aiFolder,
   "ai-help": d => { $("#ask").close(); Help.show(d.topic); },
 });
 

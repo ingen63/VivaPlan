@@ -74,6 +74,7 @@ pub(crate) fn list() -> Vec<Value> {
             "Opens a VivaPlan project file (.vplan or an older .rplan) as a working copy in memory, brought up to the current \
              format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, \
              notes of the update, number of check messages. Only the named file is read; folders are not searched. \
+             If the user released plan folders, only files inside them are opened. \
              With example: true the example plan is opened instead.",
             json!({
                 "path": { "type": "string", "description": "Path of the file (.vplan or .rplan)." },
@@ -282,6 +283,7 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
             } else {
                 std::env::current_dir().map_err(|e| e.to_string())?.join(path)
             };
+            let path = s.readable(&path)?;
             // #212: the state before reading; a change in between only makes plan_save more careful (rule 4).
             let stamp = Stamp::of(&path);
             let plan = engine::api::read_plan(&path).map_err(|e| e.message().text().to_string())?;

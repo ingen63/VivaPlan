@@ -452,6 +452,13 @@ sechs Regeln: ohne Pfad eine neue Datei `<name> (AI).vplan` neben der geöffnete
 Sicherungskopie `<datei>.bak`, geschrieben über eine Zwischendatei; keine seit dem Öffnen geänderte Datei; nie eine
 `.rplan`-Datei; nur in den Ordner der Planung oder einen mit `--allow-dir` freigegebenen. `--read-only` bietet
 `plan_save` nicht an.
+Planordner (#263): Mit `--allow-dir <ordner>` (auch mehrfach) öffnet und speichert der Server Planungen nur in diesen
+Ordnern und ihren Unterordnern; verglichen werden kanonische Pfade, so dass `..` und symbolische Links aus dem Ordner
+hinaus abgewiesen werden (Fehler «outside the plan folder», nur mit dem Dateinamen). Der Datenordner der App bleibt
+lesbar. Ohne `--allow-dir` bleibt alles wie oben. Die Begrenzung setzt der Server selbst durch, nicht das Betriebssystem
+(keine Sandbox). Claude Desktop warnt beim Installieren jeder Erweiterung, sie erhalte Zugriff auf alles auf dem
+Computer, weil das Paketformat keine Rechte kennt; der Server läuft mit den Rechten des Benutzers, in den anderen
+KI-Programmen ebenso, nur ohne Warnung. Die Hilfe «KI-Programme verbinden» erklärt, was der Server tatsächlich tut.
 Jede Rechnung geht über denselben Befehlsverteiler wie die App; Grenzen und Datenbibliothek kommen aus
 dem Datenordner der App. Namen von Personen und frei eingegebene Bezeichnungen ersetzt der Server durch neutrale
 («Person 1»), ausser mit `--names`, und nennt nur Dateinamen; keine Antwort ist länger als 20'000 Zeichen. Das erste
@@ -461,9 +468,13 @@ Anbieter gehen, und zeigt den vollen Haftungsausschluss; jede Antwort mit Ergebn
 Mit KI verbinden (#213): Menü *Hilfe → Mit KI verbinden …* zeigt Anleitungen für Claude Desktop, Claude Code, die
 ChatGPT-Desktop-App (über die Konfiguration von Codex, `~/.codex/config.toml`) und LM Studio, je mit dem Ort der
 Einrichtung und einer Einrichtungszeile mit dem Pfad des Programms `vivaplan` neben der installierten App, zum Kopieren
-in die Zwischenablage. Die App richtet nichts selbst ein und greift nicht aufs Netz zu. Für Claude Desktop unter macOS
+in die Zwischenablage. Jede Zeile enthält den Planordner als `--allow-dir` (#263): vorgeschlagen ist der Ordner der
+zuletzt geöffneten Planung, sonst der Dokumente-Ordner, änderbar über «Ordner wählen …»; der Schalter «Nur lesen»
+(Standard aus) ergänzt `--read-only`. Die App richtet nichts selbst ein und greift nicht aufs Netz zu. Für Claude Desktop unter macOS
 enthält jede Version das Ein-Klick-Paket `VivaPlan_<Version>_aarch64.mcpb` (MCP Bundle mit `manifest.json`, dem
-Programm `vivaplan` und dem Symbol); ein Doppelklick installiert VivaPlan als Erweiterung. Die Hilfe zum Datenschutz
+Programm `vivaplan` und dem Symbol); ein Doppelklick installiert VivaPlan als Erweiterung. Beim Installieren fragt
+Claude Desktop nach dem Planordner (`user_config` vom Typ Ordner, Pflicht, Vorschlag Dokumente-Ordner) und dem Schalter
+«Nur lesen» (Read only, Standard aus); das Paket übergibt sie als `--allow-dir <ordner>` und `--read-only=true|false`. Die Hilfe zum Datenschutz
 erklärt: Mit einer Cloud-KI gehen die gelesenen Daten an deren Anbieter, mit einem lokalen Modell bleiben sie auf dem
 Rechner.
 

@@ -42,7 +42,7 @@
       "openWorldHint": false,
       "readOnlyHint": true
     },
-    "description": "Opens a VivaPlan project file (.vplan or an older .rplan) as a working copy in memory, brought up to the current format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, notes of the update, number of check messages. Only the named file is read; folders are not searched. With example: true the example plan is opened instead.",
+    "description": "Opens a VivaPlan project file (.vplan or an older .rplan) as a working copy in memory, brought up to the current format, and returns its id (p1, …) with an overview without values: period, number of persons and properties, notes of the update, number of check messages. Only the named file is read; folders are not searched. If the user released plan folders, only files inside them are opened. With example: true the example plan is opened instead.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

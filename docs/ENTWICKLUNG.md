@@ -243,7 +243,8 @@ die Antwort des Programms (`accept` mit `replace: true`) löst `edit::write` aus
 
 **Ein-Klick-Paket und «Mit KI verbinden» (#213):** `tools/mcpb.py build --binary <vivaplan> --out <ordner>` schreibt
 `VivaPlan_<Version>_<Architektur>.mcpb`, ein ZIP mit `manifest.json` (MCPB, `manifest_version` 0.2, `server.type`
-`binary`, `mcp_config` `${__dirname}/server/vivaplan mcp`, `compatibility.platforms` `darwin`), dem Programm unter
+`binary`, `mcp_config` `${__dirname}/server/vivaplan mcp --allow-dir ${user_config.plan_folder}
+--read-only=${user_config.read_only}`, `user_config` Planordner und «nur lesen», `compatibility.platforms` `darwin`), dem Programm unter
 `server/vivaplan` (Unix-Rechte 755 im ZIP) und `icon.png`. Die Werkzeugliste des Manifests fragt das Skript beim
 Server selbst ab (`tools/list`, erster Satz der Beschreibung). `tools/mcpb.py check <paket>` prüft das Manifest, packt
 aus und startet den Server wie Claude Desktop; `pakete.yml` baut und prüft das Paket unter macOS, Tests in
@@ -251,7 +252,14 @@ aus und startet den Server wie Claude Desktop; `pakete.yml` baut und prüft das 
 nimmt den Pfad des Programms aus `app_info.cliPath` (`cli_next_to`: das Programm neben `current_exe`, nicht bei
 AppImage und App Translocation), sonst den Standardpfad des Systems; kopiert wird mit `navigator.clipboard`.
 `notifications/cancelled` verwirft den Auftrag. `--read-only` nimmt `plan_save` aus `tools/list` (`tools::listed`);
-`--allow-dir` (mehrfach) gibt Ordner kanonisch frei. Verknüpfungen (Symlinks) als Ziel werden abgelehnt.
+`--allow-dir` (mehrfach) gibt Ordner kanonisch frei. Verknüpfungen (Symlinks) als Ziel werden abgelehnt. #263: Mit
+mindestens einem `--allow-dir` liest `plan_open` nur Dateien, deren kanonischer Pfad in einem freigegebenen Ordner liegt
+(`Session::readable`), und `plan_save` schreibt auch in Unterordner; `~/` am Anfang steht für den Benutzerordner. Das
+Paket übergibt den Schalter «nur lesen» als `--read-only=true|false`, weil das Format ein Argument nicht weglassen kann
+(`${user_config.read_only}` wird ersetzt). `tools/mcpb.py check` startet den Server mit einem temporären Planordner:
+speichert und öffnet dort eine Planung, erwartet die Ablehnung einer Planung ausserhalb und mit «nur lesen» kein
+`plan_save`. Der Dialog nimmt den Planordner aus `app_info.planDir` (`plan_dir`) und wählt ihn mit
+`pick_plan_folder`.
 
 **App-Icon (#185):** Quellen sind `crates/app/icons/icon.svg` (Variante «Gipfelweg – Abendrot», ab 48 px) und die
 vereinfachte Fassung `crates/app/icons/icon-small.svg` (ohne Weg, grössere Sonne; 16, 24 und 32 px). Nach einer Änderung

@@ -243,7 +243,7 @@ Unter Windows kopieren Sie den Ordner nach `%USERPROFILE%\.claude\skills`. Start
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
 
 ## @ref-mcp KI-Programme verbinden (MCP-Server)
-Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz, Speichern, Rückgängig, plan_set, plan_save
+Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude Desktop, KI, Werkzeug, Datenschutz, Speichern, Rückgängig, plan_set, plan_save, Planordner, Nur lesen, Warnung, allow-dir
 
 `vivaplan mcp` ist ein MCP-Server: KI-Programme, die das Model Context Protocol unterstützen (zum Beispiel Claude Desktop, Claude Code, ChatGPT Desktop oder LM Studio), starten ihn selbst und sprechen über die Standardein- und -ausgabe mit ihm. Er öffnet keine Netzwerkverbindung. Der Server ändert eine Arbeitskopie im Speicher; auf die Platte schreibt nur `plan_save`, nach festen Regeln (siehe unten).
 
@@ -266,23 +266,30 @@ Stichworte: MCP, Model Context Protocol, Server, vivaplan mcp, LM Studio, Claude
 
 Vor jeder Rechnung schätzt der Server die Dauer. Ab 60 Sekunden rechnet er nur, wenn die KI ausdrücklich bestätigt (`"confirm": true`); sie soll Sie vorher fragen. Lange Rechnungen melden den Fortschritt und lassen sich im KI-Programm abbrechen. Es läuft immer nur eine Rechnung aufs Mal.
 
-**Speichern:** `plan_save` hält diese Regeln selbst ein, unabhängig davon, was die KI tut: (1) Ohne Pfad entsteht eine **neue Datei** neben der geöffneten, `<name> (AI).vplan` (bei Bedarf mit Zähler); eine vorhandene Datei bleibt unberührt. (2) Eine vorhandene Datei ersetzt der Server nur mit `overwrite` und erst, nachdem das KI-Programm Sie gefragt und die Änderungen gezeigt hat; kann es nicht fragen, lehnt er ab. (3) Vorher entsteht eine Sicherungskopie `<datei>.bak`; geschrieben wird über eine Zwischendatei. (4) Wurde die Datei seit dem Öffnen geändert, ersetzt er sie nicht. (5) Alte `.rplan`-Dateien ersetzt er nie; gespeichert wird als `.vplan`. (6) Geschrieben wird nur in den Ordner der geöffneten Planung oder in einen mit `--allow-dir <ordner>` freigegebenen. Mit `--read-only` bietet der Server `plan_save` gar nicht an. Bearbeiten Sie eine Planung nicht gleichzeitig in der App und in der KI: Die App bemerkt Änderungen an der Datei nicht.
+**Speichern:** `plan_save` hält diese Regeln selbst ein, unabhängig davon, was die KI tut: (1) Ohne Pfad entsteht eine **neue Datei** neben der geöffneten, `<name> (AI).vplan` (bei Bedarf mit Zähler); eine vorhandene Datei bleibt unberührt. (2) Eine vorhandene Datei ersetzt der Server nur mit `overwrite` und erst, nachdem das KI-Programm Sie gefragt und die Änderungen gezeigt hat; kann es nicht fragen, lehnt er ab. (3) Vorher entsteht eine Sicherungskopie `<datei>.bak`; geschrieben wird über eine Zwischendatei. (4) Wurde die Datei seit dem Öffnen geändert, ersetzt er sie nicht. (5) Alte `.rplan`-Dateien ersetzt er nie; gespeichert wird als `.vplan`. (6) Geschrieben wird nur in den Ordner der geöffneten Planung oder in einen mit `--allow-dir <ordner>` freigegebenen (samt Unterordnern). Mit `--read-only` bietet der Server `plan_save` gar nicht an. Bearbeiten Sie eine Planung nicht gleichzeitig in der App und in der KI: Die App bemerkt Änderungen an der Datei nicht.
 
-**Einrichten mit einem Klick:** Das Menü *Hilfe → Mit KI verbinden …* zeigt für Claude Desktop, Claude Code, die ChatGPT-Desktop-App (über die Konfiguration von Codex) und LM Studio, wohin der Eintrag gehört, und die passende Zeile mit dem Pfad des Programms auf Ihrem Rechner zum Kopieren. VivaPlan richtet nichts selbst ein. Für Claude Desktop unter macOS liegt jeder Version das Paket `VivaPlan_<Version>_aarch64.mcpb` bei: Ein Doppelklick installiert VivaPlan als Erweiterung in Claude Desktop; das Paket enthält das Programm `vivaplan` selbst.
+**Planordner und «Nur lesen»:** Beim Einrichten wählen Sie einen Planordner; er geht als `--allow-dir <ordner>` an den Server (mehrere Ordner: `--allow-dir` mehrmals). Dann öffnet und speichert der Server Planungen nur in diesem Ordner und seinen Unterordnern. Pfade mit `..` und symbolische Links, die aus dem Ordner hinausführen, lehnt er ab; für eine Planung ausserhalb meldet er, sie liege ausserhalb des Planordners. Der Datenordner der App (Zeitreihen, Einstellungen) bleibt lesbar, damit gleich gerechnet wird wie in der App. Öffnen, Rechnen, Ergebnisse abrufen, Ändern und Speichern im Planordner gehen wie ohne Planordner. Mit dem Schalter «Nur lesen» (`--read-only`, Standard aus) kann die KI Planungen öffnen, ändern und rechnen, aber nicht speichern. Ohne `--allow-dir` liest der Server jede genannte Planung und schreibt nur in ihren Ordner.
 
-**Einrichten:** Im KI-Programm tragen Sie das Programm `vivaplan` mit vollem Pfad (siehe [Kommandozeile](#ref-cli)) und dem Argument `mcp` ein. In Claude Desktop und LM Studio sieht der Eintrag unter macOS so aus:
+**Die Warnung von Claude Desktop:** Beim Installieren des Pakets warnt Claude Desktop, die Erweiterung erhalte Zugriff auf alles auf dem Computer. Das zeigt Claude Desktop bei jeder Erweiterung, denn das Paketformat kennt keine Rechte: Der Server läuft mit Ihren Benutzerrechten, in den anderen KI-Programmen ebenso, nur ohne Warnung. Die Begrenzung auf den Planordner setzt VivaPlan selbst durch, nicht das Betriebssystem. Der Server liest Planungen nur im Planordner, dazu den Datenordner der App und die mitgelieferten Daten; er schreibt nur mit `plan_save` in den Planordner und öffnet keine Netzwerkverbindung.
+
+**Einrichten mit einem Klick:** Das Menü *Hilfe → Mit KI verbinden …* zeigt für Claude Desktop, Claude Code, die ChatGPT-Desktop-App (über die Konfiguration von Codex) und LM Studio, wohin der Eintrag gehört, und die passende Zeile mit dem Pfad des Programms auf Ihrem Rechner zum Kopieren. Jede Zeile enthält den Planordner: vorgeschlagen ist der Ordner der zuletzt geöffneten Planung, sonst der Dokumente-Ordner; *Ordner wählen …* ändert ihn. Der Schalter «Nur lesen» ergänzt `--read-only`. VivaPlan richtet nichts selbst ein. Für Claude Desktop unter macOS liegt jeder Version das Paket `VivaPlan_<Version>_aarch64.mcpb` bei: Ein Doppelklick installiert VivaPlan als Erweiterung in Claude Desktop; das Paket enthält das Programm `vivaplan` selbst. Beim Installieren fragt Claude Desktop nach dem Planordner (Plan folder, Pflicht) und dem Schalter «Nur lesen» (Read only).
+
+**Einrichten:** Im KI-Programm tragen Sie das Programm `vivaplan` mit vollem Pfad (siehe [Kommandozeile](#ref-cli)) mit den Argumenten `mcp --allow-dir <planordner>` ein (`~` steht für Ihren Benutzerordner). In Claude Desktop und LM Studio sieht der Eintrag unter macOS so aus:
 
 ```
 {
   "mcpServers": {
-    "vivaplan": { "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan", "args": ["mcp"] }
+    "vivaplan": {
+      "command": "/Applications/VivaPlan.app/Contents/MacOS/vivaplan",
+      "args": ["mcp", "--allow-dir", "~/Documents"]
+    }
   }
 }
 ```
 
-In Claude Code genügt `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp`. Der Server rechnet wie die Kommandozeile mit dem Datenordner der App (Grenzen, Zeitreihen); `--data-dir` und `--library` übersteuern ihn.
+In Claude Code genügt `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp --allow-dir ~/Documents`. Der Server rechnet wie die Kommandozeile mit dem Datenordner der App (Grenzen, Zeitreihen); `--data-dir` und `--library` übersteuern ihn.
 
-**Datenschutz:** Alles, was ein Werkzeug zurückgibt, wird Teil des Gesprächs mit Ihrer KI und geht an deren Anbieter; mit einem lokalen Modell (zum Beispiel in LM Studio) bleibt alles auf dem Rechner. Der Server liest nur Planungen, deren Pfad ausdrücklich genannt wird, und durchsucht keine Ordner. Namen von Personen und frei eingegebene Bezeichnungen ersetzt er durch neutrale (Person 1, Property 1), ausser mit `--names`; Antworten nennen nur den Dateinamen, nicht den Ordner. Keine Antwort ist länger als 20'000 Zeichen. Texte des Servers sind englisch; die KI antwortet trotzdem in Ihrer Sprache.
+**Datenschutz:** Alles, was ein Werkzeug zurückgibt, wird Teil des Gesprächs mit Ihrer KI und geht an deren Anbieter; mit einem lokalen Modell (zum Beispiel in LM Studio) bleibt alles auf dem Rechner. Der Server liest nur Planungen, deren Pfad ausdrücklich genannt wird, mit Planordner nur solche darin, und durchsucht keine Ordner. Namen von Personen und frei eingegebene Bezeichnungen ersetzt er durch neutrale (Person 1, Property 1), ausser mit `--names`; Antworten nennen nur den Dateinamen, nicht den Ordner. Keine Antwort ist länger als 20'000 Zeichen. Texte des Servers sind englisch; die KI antwortet trotzdem in Ihrer Sprache.
 
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, keine Steuer- oder Anlageberatung; Steuern sind geschätzt.
 

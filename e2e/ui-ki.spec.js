@@ -9,8 +9,10 @@ const { open, noErrors, previewIdle } = require("./helpers");
 const MAC_CLI = "/Applications/VivaPlan.app/Contents/MacOS/vivaplan";
 const WIN_CLI = "C:\\Program Files\\VivaPlan\\vivaplan.exe";
 
-async function openApp(page, cliPath) {
-  await page.addInitScript(cli => {
+const PLAN_DIR = "/Users/test/Planungen";
+
+async function openApp(page, cliPath, planDir = PLAN_DIR, picked = null) {
+  await page.addInitScript(([cli, dir, chosen]) => {
     window.__calls = []; window.__listeners = {}; window.__copied = [];
     Object.defineProperty(navigator, "clipboard", { value: { writeText: async t => { window.__copied.push(t); } } });
     window.__TAURI__ = {
@@ -21,7 +23,8 @@ async function openApp(page, cliPath) {
           if (cmd === "settings_get") return { disclaimerAccepted: 2 };
           if (cmd === "first_start_language") return null;
           if (cmd === "startup_plan") return { path: "/x/Familie.vplan", plan: await example(), notice: null, first: false };
-          if (cmd === "app_info") return { version: "1.2.3", buildEpoch: 1, cliPath: cli };
+          if (cmd === "app_info") return { version: "1.2.3", buildEpoch: 1, cliPath: cli, planDir: dir };
+          if (cmd === "pick_plan_folder") { window.__picked = args; return chosen; }
           if (["settings_set", "set_dirty", "quit_app", "set_window_title", "set_menu_language", "open_link"].includes(cmd)) return null;
           const res = await fetch(`/api/${cmd}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(args) });
           const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
@@ -30,7 +33,7 @@ async function openApp(page, cliPath) {
       event: { listen: (name, cb) => { (window.__listeners[name] ??= []).push(cb); return Promise.resolve(() => {}); } }
     };
     window.__menu = id => { for (const cb of window.__listeners.menu || []) cb({ payload: id }); };
-  }, cliPath);
+  }, [cliPath, planDir, picked]);
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   await page.goto("/#nobench");
@@ -76,11 +79,11 @@ test.describe("Connect to AI (#213)", () => {
 
     const sections = d.locator("section.aiprog");
     await expect(sections.locator("h4")).toHaveText(["Claude Desktop", "Claude Code", "ChatGPT Desktop", "LM Studio"]);
-    const json = { mcpServers: { vivaplan: { command: MAC_CLI, args: ["mcp"] } } };
+    const json = { mcpServers: { vivaplan: { command: MAC_CLI, args: ["mcp", "--allow-dir", PLAN_DIR] } } };
     const want = {
       claudeDesktop: { line: JSON.stringify(json), config: "claude_desktop_config.json" },
-      claudeCode: { line: `claude mcp add --scope user vivaplan -- ${MAC_CLI} mcp`, config: "Terminal" },
-      chatgpt: { line: `[mcp_servers.vivaplan]\ncommand = '${MAC_CLI}'\nargs = ["mcp"]`, config: "/.codex/config.toml" },
+      claudeCode: { line: `claude mcp add --scope user vivaplan -- ${MAC_CLI} mcp --allow-dir ${PLAN_DIR}`, config: "Terminal" },
+      chatgpt: { line: `[mcp_servers.vivaplan]\ncommand = '${MAC_CLI}'\nargs = ["mcp", "--allow-dir", "${PLAN_DIR}"]`, config: "/.codex/config.toml" },
       lmstudio: { line: JSON.stringify(json), config: "/.lmstudio/mcp.json" },
     };
     for (const [id, w] of Object.entries(want)) {
@@ -101,14 +104,15 @@ test.describe("Connect to AI (#213)", () => {
   });
 
   test("AK2: a path with spaces stays one argument in every setup line", async ({ page }) => {
-    const errors = await openApp(page, WIN_CLI);
+    const errors = await openApp(page, WIN_CLI, "C:\\Users\\test\\Meine Planungen");
     await openDialog(page);
     const line = id => page.locator(`section[data-program="${id}"] pre`).textContent();
     expect(JSON.parse(await line("claudeDesktop")).mcpServers.vivaplan.command).toBe(WIN_CLI);
     expect(JSON.parse(await line("lmstudio")).mcpServers.vivaplan.command).toBe(WIN_CLI);
-    expect(await line("claudeCode")).toBe(`claude mcp add --scope user vivaplan -- "${WIN_CLI}" mcp`);
-    // TOML literal string: backslashes stay as they are
+    expect(await line("claudeCode")).toBe(`claude mcp add --scope user vivaplan -- "${WIN_CLI}" mcp --allow-dir "C:\\Users\\test\\Meine Planungen"`);
+    // TOML literal string: backslashes stay as they are; the arguments are basic strings with escaped backslashes
     expect(await line("chatgpt")).toContain(`command = '${WIN_CLI}'`);
+    expect(await line("chatgpt")).toContain(`args = ["mcp", "--allow-dir", "C:\\\\Users\\\\test\\\\Meine Planungen"]`);
     await noErrors(page, errors);
   });
 
@@ -173,6 +177,92 @@ test.describe("Connect to AI (#213)", () => {
     await expect(page.locator("#connectAi section.aiprog")).toHaveCount(4);
     await expect(page.locator("#connectAi > .aicode pre")).toHaveText(await page.evaluate(() => CLI_DEFAULT));
     expect(ext).toEqual([]);
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Plan folder for every AI (#263)", () => {
+  const lines = page => page.locator("#connectAi section.aiprog pre").allTextContents();
+  const argsOf = async page => {
+    const [desktop, code, chatgpt, lm] = await lines(page);
+    return {
+      desktop: JSON.parse(desktop).mcpServers.vivaplan.args, lm: JSON.parse(lm).mcpServers.vivaplan.args,
+      code: code.split(" -- ")[1], chatgpt: JSON.parse(chatgpt.split("args = ")[1]),
+    };
+  };
+
+  test("AK4: the folder of the last plan is suggested and set as --allow-dir into all four setup lines", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI);
+    await openDialog(page);
+    await expect(page.locator("#aiDir")).toHaveText(PLAN_DIR);
+    await expect(page.locator("#connectAi")).toContainText("nur in diesem Ordner und seinen Unterordnern");
+    const want = ["mcp", "--allow-dir", PLAN_DIR];
+    const a = await argsOf(page);
+    expect(a.desktop).toEqual(want);
+    expect(a.lm).toEqual(want);
+    expect(a.chatgpt).toEqual(want);
+    expect(a.code).toBe(`${MAC_CLI} ${want.join(" ")}`);
+    // the copied line is the shown one
+    const s = page.locator('section[data-program="claudeCode"]');
+    expect(await copyOf(page, s)).toBe(await s.locator("pre").textContent());
+    await noErrors(page, errors);
+  });
+
+  test("AK4: «Choose folder …» opens the folder dialog at the shown folder and puts the chosen one into every line", async ({ page }) => {
+    const chosen = "/Users/test/Andere Pläne";
+    const errors = await openApp(page, MAC_CLI, PLAN_DIR, chosen);
+    await openDialog(page);
+    const button = page.locator('#connectAi [data-action="ai-folder"]');
+    await expect(button).toHaveText("Ordner wählen …");
+    await button.click();
+    await expect(page.locator("#aiDir")).toHaveText(chosen);
+    expect(await page.evaluate(() => window.__picked)).toEqual({ start: PLAN_DIR });
+    const a = await argsOf(page);
+    for (const args of [a.desktop, a.lm, a.chatgpt]) expect(args).toEqual(["mcp", "--allow-dir", chosen]);
+    expect(a.code).toBe(`${MAC_CLI} mcp --allow-dir "${chosen}"`);
+    expect(await copyOf(page, page.locator('section[data-program="lmstudio"]'))).toContain(chosen);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: cancelling the folder dialog keeps the folder; without a last plan the documents folder", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI, "/Users/test/Documents", null);
+    await openDialog(page);
+    await expect(page.locator("#aiDir")).toHaveText("/Users/test/Documents");
+    await page.locator('#connectAi [data-action="ai-folder"]').click();
+    await expect.poll(() => page.evaluate(() => window.__picked)).toEqual({ start: "/Users/test/Documents" });
+    await expect(page.locator("#aiDir")).toHaveText("/Users/test/Documents");
+    expect((await argsOf(page)).desktop).toEqual(["mcp", "--allow-dir", "/Users/test/Documents"]);
+    await noErrors(page, errors);
+  });
+
+  test("AK5: switch «read only», off by default, adds --read-only to every line and removes it again", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI);
+    await openDialog(page);
+    const box = page.locator("#aiReadOnly");
+    await expect(box).not.toBeChecked();
+    await expect(page.locator("#connectAi .aiopt")).toContainText("nicht speichern");
+    await box.check();
+    let a = await argsOf(page);
+    for (const args of [a.desktop, a.lm, a.chatgpt]) expect(args).toEqual(["mcp", "--allow-dir", PLAN_DIR, "--read-only"]);
+    expect(a.code).toMatch(/ --read-only$/);
+    expect(await copyOf(page, page.locator('section[data-program="chatgpt"]'))).toContain('"--read-only"]');
+    await box.uncheck();
+    a = await argsOf(page);
+    expect(a.desktop).toEqual(["mcp", "--allow-dir", PLAN_DIR]);
+    await noErrors(page, errors);
+  });
+
+  test("AK4, AK5: the folder row and the switch in all four languages, without unknown texts", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI);
+    const want = { de: "Ordner wählen …", en: "Choose folder …", fr: "Choisir le dossier …", it: "Scegliere la cartella …" };
+    for (const [lang, label] of Object.entries(want)) {
+      await page.evaluate(l => I18n.use(l), lang);
+      await openDialog(page);
+      await expect(page.locator('#connectAi [data-action="ai-folder"]')).toHaveText(label);
+      await expect(page.locator("#connectAi")).not.toContainText(/\b(ai|dialog)\.[a-zA-Z]/);
+      if (await page.evaluate(() => IS_MAC)) await expect(page.locator('section[data-program="claudeDesktop"]')).toContainText("Plan folder");
+      await page.evaluate(() => $("#ask").close());
+    }
     await noErrors(page, errors);
   });
 });

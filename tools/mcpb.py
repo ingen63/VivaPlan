@@ -10,7 +10,9 @@ Usage:
       writes VivaPlan_<version>_<arch>.mcpb and prints its path; the tool list comes from the server itself
   python3 tools/mcpb.py check FILE.mcpb
       checks the manifest, unpacks the package into a temporary folder, starts the server as Claude Desktop would
-      (initialize, tools/list) and compares the tools; exit code 0 = in order, 1 = error
+      (initialize, tools/list) and compares the tools; #263: with a temporary plan folder as the chosen folder it saves
+      and opens a plan there, is refused a plan outside it and offers no plan_save with «read only»;
+      exit code 0 = in order, 1 = error
 """
 import argparse
 import json
@@ -33,6 +35,26 @@ PROTOCOL = "2025-06-18"
 SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 # Required fields of the manifest and their type (MCPB specification, manifest_version 0.2)
 REQUIRED = {"manifest_version": str, "name": str, "version": str, "description": str, "author": dict, "server": dict}
+# #263: settings asked at installation (user_config) and how they reach the server; Claude Desktop replaces
+# ${user_config.<key>} in the arguments. A switch cannot leave an argument out, so «read only» is passed as its value.
+USER_CONFIG = {
+    "plan_folder": {
+        "type": "directory",
+        "title": "Plan folder",
+        "description": "Folder with your VivaPlan plans. The server opens and saves plans only in this folder and its "
+                       "subfolders.",
+        "required": True,
+        "default": "${DOCUMENTS}",
+    },
+    "read_only": {
+        "type": "boolean",
+        "title": "Read only",
+        "description": "The AI can open, change and compute plans but not save them.",
+        "required": False,
+        "default": False,
+    },
+}
+ARGS = ["mcp", "--allow-dir", "${user_config.plan_folder}", "--read-only=${user_config.read_only}"]
 
 
 def app_version() -> str:
@@ -52,13 +74,14 @@ def first_sentence(text: str) -> str:
     return (m.group(1) if m else text.strip()).replace("\n", " ")
 
 
-def ask_server(command: list[str], timeout: float = 60) -> tuple[dict, list[dict]]:
-    """Starts the MCP server, sends initialize and tools/list, returns (initialize result, tools)."""
+def talk(command: list[str], calls: list[tuple[str, dict]], timeout: float = 60) -> list[dict]:
+    """Starts the MCP server, signs on (initialize) and sends the requests (method, params) one after the other;
+    returns the results in the same order, the first being the one of initialize."""
     lines = [
-        {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+        {"jsonrpc": "2.0", "id": 0, "method": "initialize",
          "params": {"protocolVersion": PROTOCOL, "capabilities": {}, "clientInfo": {"name": "mcpb-check", "version": "1"}}},
         {"jsonrpc": "2.0", "method": "notifications/initialized"},
-        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+        *({"jsonrpc": "2.0", "id": i + 1, "method": m, "params": p} for i, (m, p) in enumerate(calls)),
     ]
     stdin = "".join(json.dumps(m) + "\n" for m in lines)
     run = subprocess.run(command, input=stdin, capture_output=True, text=True, timeout=timeout)
@@ -68,12 +91,40 @@ def ask_server(command: list[str], timeout: float = 60) -> tuple[dict, list[dict
             msg = json.loads(line)
             if "id" in msg:
                 answers[msg["id"]] = msg
-    if 1 not in answers or 2 not in answers:
+    ids = range(len(calls) + 1)
+    if any(k not in answers for k in ids):
         raise RuntimeError(f"server did not answer (exit {run.returncode}): {run.stderr.strip()[:500]}")
-    for k in (1, 2):
+    for k in ids:
         if "error" in answers[k]:
             raise RuntimeError(f"server error: {answers[k]['error']}")
-    return answers[1]["result"], answers[2]["result"]["tools"]
+    return [answers[k]["result"] for k in ids]
+
+
+def ask_server(command: list[str], timeout: float = 60) -> tuple[dict, list[dict]]:
+    """Starts the MCP server, sends initialize and tools/list, returns (initialize result, tools)."""
+    info, tools = talk(command, [("tools/list", {})], timeout)
+    return info, tools["tools"]
+
+
+def tool_call(name: str, arguments: dict) -> tuple[str, dict]:
+    return "tools/call", {"name": name, "arguments": arguments}
+
+
+def tool_text(result: dict) -> tuple[str, bool]:
+    """Text of a tool result and whether it is an error."""
+    return result["content"][0]["text"], result.get("isError") is True
+
+
+def with_config(args: list[str], values: dict) -> list[str]:
+    """The arguments as Claude Desktop passes them: ${user_config.<key>} replaced, a boolean as true or false."""
+    def value(v) -> str:
+        return ("true" if v else "false") if isinstance(v, bool) else str(v)
+    out = []
+    for a in args:
+        for k, v in values.items():
+            a = a.replace("${user_config." + k + "}", value(v))
+        out.append(a)
+    return out
 
 
 def manifest(version: str, tools: list[dict]) -> dict:
@@ -86,9 +137,9 @@ def manifest(version: str, tools: list[dict]) -> dict:
         "description": "Swiss retirement planning: open, check, simulate, change and save VivaPlan plans on this computer.",
         "long_description": (
             "VivaPlan simulates a Swiss retirement plan month by month (income, pension fund, AHV, pillar 3a, taxes, "
-            "assets). This extension starts the local VivaPlan server (`vivaplan mcp`). It reads only plans whose path "
-            "you name, computes on this computer and opens no network connection; what a tool returns becomes part of "
-            "the conversation with your AI. Names of persons are replaced by neutral ones. Results are model "
+            "assets). This extension starts the local VivaPlan server (`vivaplan mcp`). It opens and saves plans only "
+            "in the plan folder you choose (optionally read only), computes on this computer and opens no network "
+            "connection; what a tool returns becomes part of the conversation with your AI. Names of persons are replaced by neutral ones. Results are model "
             "calculations without warranty, not tax or investment advice."
         ),
         "author": {"name": "VivaPlan", "url": "https://vivaplan-app.ch"},
@@ -99,8 +150,9 @@ def manifest(version: str, tools: list[dict]) -> dict:
         "server": {
             "type": "binary",
             "entry_point": ENTRY,
-            "mcp_config": {"command": "${__dirname}/" + ENTRY, "args": ["mcp"]},
+            "mcp_config": {"command": "${__dirname}/" + ENTRY, "args": ARGS},
         },
+        "user_config": USER_CONFIG,
         "tools": [{"name": t["name"], "description": first_sentence(t.get("description", ""))} for t in tools],
         "compatibility": {"platforms": ["darwin"]},
     }
@@ -152,8 +204,19 @@ def check_manifest(m: dict, names: set[str]) -> list[str]:
     cfg = server.get("mcp_config", {})
     if cfg.get("command") != "${__dirname}/" + str(entry):
         errors.append(f"mcp_config.command {cfg.get('command')!r} does not start the entry point")
-    if cfg.get("args") != ["mcp"]:
-        errors.append(f"mcp_config.args {cfg.get('args')!r} instead of ['mcp']")
+    if cfg.get("args") != ARGS:
+        errors.append(f"mcp_config.args {cfg.get('args')!r} instead of {ARGS}")
+    # #263/AK1: the plan folder is asked at installation (folder, required) and reaches the server as --allow-dir.
+    config = m.get("user_config", {})
+    folder = config.get("plan_folder", {})
+    if folder.get("type") != "directory" or folder.get("required") is not True or folder.get("multiple"):
+        errors.append("user_config.plan_folder must be one folder (type directory), required")
+    switch = config.get("read_only", {})
+    if switch.get("type") != "boolean" or switch.get("default") is not False:
+        errors.append("user_config.read_only must be a switch (type boolean), default off")
+    for key, c in config.items():
+        if not (c.get("title") and c.get("description")):
+            errors.append(f"user_config.{key} without title or description")
     if m.get("icon") and m["icon"] not in names:
         errors.append(f"icon {m['icon']!r} is not in the package")
     if m.get("compatibility", {}).get("platforms") != ["darwin"]:
@@ -182,9 +245,17 @@ def check(package: Path) -> list[str]:
             program = Path(tmp) / entry.filename
             program.chmod((entry.external_attr >> 16) & 0o777 or 0o644)
             cfg = m["server"]["mcp_config"]
-            command = [cfg["command"].replace("${__dirname}", tmp), *cfg["args"]]
+            plans, other = Path(tmp) / "plans", Path(tmp) / "other"
+            plans.mkdir()
+            other.mkdir()
+            command = [cfg["command"].replace("${__dirname}", tmp),
+                       *with_config(cfg["args"], {"plan_folder": plans, "read_only": False})]
             try:
                 info, tools = ask_server(command)
+                errors += check_plan_folder(command, plans, other)
+                read_only = [command[0], *with_config(cfg["args"], {"plan_folder": plans, "read_only": True})]
+                if "plan_save" in [t["name"] for t in ask_server(read_only)[1]]:
+                    errors.append("with «read only» the server still offers plan_save")
             except (OSError, RuntimeError, subprocess.TimeoutExpired) as e:
                 return errors + [f"server does not start: {e}"]
     if info.get("serverInfo", {}).get("name") != "vivaplan":
@@ -194,6 +265,31 @@ def check(package: Path) -> list[str]:
     listed = [t["name"] for t in m.get("tools", [])]
     if listed != [t["name"] for t in tools]:
         errors.append(f"tools in the manifest {listed} differ from the server's {[t['name'] for t in tools]}")
+    return errors
+
+
+def check_plan_folder(command: list[str], plans: Path, other: Path) -> list[str]:
+    """#263/AK2, AK3: in the chosen plan folder a plan is saved and opened again; a plan outside is refused."""
+    saved = plans / "check.vplan"
+    _, opened, save, reopen = talk(command, [
+        tool_call("plan_open", {"example": True}),
+        tool_call("plan_save", {"plan": "p1", "path": str(saved)}),
+        tool_call("plan_open", {"path": str(saved)}),
+    ])
+    errors = []
+    for what, result in (("opening the example plan", opened), ("saving into the plan folder", save),
+                         ("opening a plan in the plan folder", reopen)):
+        text, error = tool_text(result)
+        if error:
+            errors.append(f"{what} fails: {text[:200]}")
+    if not saved.is_file():
+        errors.append("plan_save wrote no file into the plan folder")
+        return errors
+    outside = other / "outside.vplan"
+    outside.write_bytes(saved.read_bytes())
+    text, error = tool_text(talk(command, [tool_call("plan_open", {"path": str(outside)})])[1])
+    if not (error and "outside the plan folder" in text):
+        errors.append(f"a plan outside the plan folder is opened: {text[:200]}")
     return errors
 
 
