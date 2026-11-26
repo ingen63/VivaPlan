@@ -285,10 +285,11 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 
 - [Impôt selon le domicile](#f-tax-location)
 - [Déductions du revenu](#f-tax-deductions)
+- [Rendement imposable de la fortune](#f-tax-yield)
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
 - [Barèmes avec le renchérissement](#f-tax-indexed)
 - [Quelle est la précision de l’impôt?](#tax-accuracy)
-- L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes comprises), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net (avec la [valeur fiscale](#f-re-tax-value) si elle est saisie, sinon avec la valeur vénale). Les deux sont payés en mai de l’année suivante.
+- L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes et [rendement imposable de la fortune](#f-tax-yield) compris), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net (avec la [valeur fiscale](#f-re-tax-value) si elle est saisie, sinon avec la valeur vénale). Les deux sont payés en mai de l’année suivante.
 - Un impôt encore dû à la fin de la planification est déduit le dernier mois.
 - L’[impôt sur les gains immobiliers](#f-tax-gain) est dû lors de la vente d’un bien immobilier, voir aussi [Immobilier](#s-realestate).
 
@@ -373,6 +374,29 @@ La carte **Déductions de la fortune** de la section Impôts fixe ce qui est dé
 **Contrôle:** Un montant négatif et une année fiscale en dehors de la simulation sont des erreurs dans la section Impôts.
 
 **Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent les déductions de la fortune (l’origine – en plus, unique – dans l’infobulle de la cellule) et la fortune imposable (la fortune avant déductions dans l’infobulle).
+
+## @f-tax-yield Rendement imposable de la fortune
+Mots-clés: rendement, dividendes, intérêts, coupon, distribution, rendement distribué, revenu imposable, actions, obligations, gain en capital, capitalisation
+
+Les dividendes et les intérêts de la fortune sont un revenu imposable. La carte **Rendement imposable de la fortune** de la section Impôts suppose pour cela un taux par an pour chaque classe d’actifs:
+
+- **Actions (rendement distribué):** dividendes en pour cent du solde.
+- **Obligations (coupon):** intérêts en pour cent du solde.
+- **Le cash** et le produit de vente réservé n’ont pas de rendement imposable (la simulation ne les rémunère pas).
+
+**Calcul:** Le rendement imposable d’une année est le solde moyen de chaque classe d’actifs dans l’année × taux. Exemple: actions en moyenne 500 000 à 2 %, obligations 300 000 à 1 %: rendement imposable 13 000. La première et la dernière année, seuls les mois de la planification comptent. Le rendement compte dans le revenu de l’impôt sur le revenu, de la même manière dans les deux modes fiscaux; dans le mode [Domicile](#f-tax-location) avant les déductions du canton et de la Confédération. Les déductions applicables (actif ou retraité) dépendent toujours uniquement du revenu de l’activité lucrative. Le rendement fait aussi partie du revenu net sur lequel se calcule la quote-part des frais d’un [EMS](#f-care-home). Le taux n’augmente pas avec les [barèmes avec le renchérissement](#f-tax-indexed), car il est une part du solde.
+
+**Partie de la performance:** Le rendement n’est pas un apport supplémentaire. La performance de la simulation reste la même (les [séries de rendement](#s-returns) contiennent déjà dividendes et coupons); seul l’impôt sur celle-ci est nouveau. **Les gains en capital** ne sont pas imposables. Le taux couvre les fonds de distribution et de capitalisation, car le rendement retenu d’un fonds de capitalisation est aussi imposable.
+
+**Valeurs indicatives:** Le rendement en dividendes d’un indice mondial d’actions est d’environ 2 %, le rendement du Swiss Bond Index d’environ 1 %. Les nouvelles planifications commencent avec actions 2 % et obligations 1 %. **Les planifications existantes** s’ouvrent avec 0 % et calculent comme avant.
+
+**Stratégie à 3 compartiments:** Le besoin net de la [stratégie à 3 compartiments](#f-wd-three_buckets) contient l’impôt sur le revenu du rendement (soldes actuels × taux). Le rendement lui-même n’y compte pas comme recette, car il fait partie de la performance.
+
+**Non compris:** impôt anticipé et son remboursement, impôt à la source étranger, déduction des frais de gestion de fortune.
+
+**Contrôle:** Un taux inférieur à 0 % ou supérieur à 100 % est une erreur dans la section Impôts.
+
+**Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent la colonne **Rendement imposable** avant l’impôt sur le revenu, si un taux est saisi.
 
 ## @f-tax-multiplier Coefficient d’impôt
 Mots-clés: canton, commune, multiplicateur

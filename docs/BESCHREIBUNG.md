@@ -134,7 +134,13 @@ Der Editor führt durch zwölf Abschnitte:
   Zeitraum bzw. Jahr. Die Sätze der Tabellen werden zwischen den Stufen
   linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
   Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
-  Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne.
+  Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne. Steuerbarer Ertrag des
+  Vermögens (#149): je Satz pro Jahr für Aktien (Ausschüttungsrendite) und Obligationen (Coupon); der durchschnittliche
+  Bestand eines Jahres × Satz zählt zum steuerbaren Einkommen, in beiden Modi vor den Abzügen. Der Ertrag ist Teil der
+  Rendite, kein zusätzlicher Zufluss, Kapitalgewinne bleiben steuerfrei; Cash hat keinen Ertrag. Neue Planungen
+  beginnen mit 2 % und 1 % (Richtwerte: Dividendenrendite eines globalen Aktienindex, Rendite des Swiss Bond Index),
+  bestehende mit 0 %. Die 3-Topf-Strategie rechnet die Steuer darauf in den Netto-Bedarf ein; die Jahreswerte zeigen
+  die Spalte «Steuerbarer Ertrag».
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 

@@ -865,6 +865,22 @@ fn check(plan: &Plan, v: &mut Issues) {
     if multiplier_used && !(0.0..=10.0).contains(&t.multiplier) {
         v.err_at("taxes", "taxes.multiplier", msg!(tax_multiplier_range));
     }
+    // #149/AK8: taxable yield of the wealth per asset class between 0 and 100 %
+    let y = t.investment_yield;
+    if !(0.0..=1.0).contains(&y.stocks) {
+        v.err_at(
+            "taxes",
+            "taxes.investmentYield.stocks",
+            msg!(investment_yield_stocks_range),
+        );
+    }
+    if !(0.0..=1.0).contains(&y.bonds) {
+        v.err_at(
+            "taxes",
+            "taxes.investmentYield.bonds",
+            msg!(investment_yield_bonds_range),
+        );
+    }
     /// Key in the path, name in the message, brackets [(amount, rate)].
     type Table<'a> = (&'a str, Message, &'a [(f64, f64)]);
     // #63, #64: In the mode «Wohnort» the own tables for income, wealth and lump sums do not apply (hidden, kept in

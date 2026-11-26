@@ -1102,6 +1102,28 @@ pub struct Taxes {
     /// #231: One-off deductions from taxable wealth: each counts on 31 December of its tax year (nominal).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub one_off_wealth_deductions: Vec<OneOffDeduction>,
+    /// #149: Taxable yield of the wealth per asset class (share of the balance per year): dividends of the stocks,
+    /// coupons of the bonds. Part of the return, not an additional inflow; counts to the taxable income. Missing: 0.
+    #[serde(default, skip_serializing_if = "InvestmentYield::is_zero")]
+    pub investment_yield: InvestmentYield,
+}
+
+/// #149: Taxable yield per asset class as a share of the average balance per year (0.02 = 2 %).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct InvestmentYield {
+    /// Distribution yield of the stocks (dividends).
+    #[serde(default)]
+    pub stocks: f64,
+    /// Coupon yield of the bonds (interest).
+    #[serde(default)]
+    pub bonds: f64,
+}
+
+impl InvestmentYield {
+    pub fn is_zero(&self) -> bool {
+        self.stocks == 0.0 && self.bonds == 0.0
+    }
 }
 
 /// #231: Row of the deductions from wealth: amount per year in prices of the simulation start (grows with «tariffs

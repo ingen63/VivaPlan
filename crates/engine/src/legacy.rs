@@ -383,6 +383,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         one_off_deductions: vec![],
         wealth_deductions: vec![],
         one_off_wealth_deductions: vec![],
+        investment_yield: Default::default(),
     };
 
     // Properties (approximately)

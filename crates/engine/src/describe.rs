@@ -436,6 +436,8 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("taxes.deductions.*.amount", "CHF/year", ">= 0"),
     ("taxes.deductions.*.extra", "CHF/year", ">= 0"),
     ("taxes.deductions.*.rate", "share", "0..1"),
+    ("taxes.investmentYield.bonds", "rate/year", "0..1"),
+    ("taxes.investmentYield.stocks", "rate/year", "0..1"),
     ("taxes.location.municipality", "count", "BFS number"),
     ("taxes.multiplier", "factor", ">= 0"),
     ("taxes.oneOffDeductions.*.amount", "CHF", ">= 0"),
@@ -661,6 +663,14 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     ("taxes.income", "Tax table for income: [from amount, rate]."),
     ("taxes.indexed", "Tax brackets rise with inflation."),
+    (
+        "taxes.investmentYield.bonds",
+        "Taxable coupons of the bonds per year (share).",
+    ),
+    (
+        "taxes.investmentYield.stocks",
+        "Taxable dividends of the stocks per year (share).",
+    ),
     (
         "taxes.oneOffDeductions.*.amount",
         "One-off deduction from income (nominal).",

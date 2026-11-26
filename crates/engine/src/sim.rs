@@ -174,6 +174,10 @@ pub struct MonthRecord {
     /// following year, see `tax_income`/`tax_wealth`). The yearly values show it in the row of the tax year.
     pub assessed_income: f64,
     pub assessed_wealth: f64,
+    /// #149: Taxable yield of the wealth (stocks, bonds) of the tax year, part of the income of `assessed_income`;
+    /// only in December, missing without a yield.
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub assessed_yield: f64,
     /// #131: Income, deductions by origin and taxable income of the tax year; only in the month of the assessment
     /// (December) of plans with deductions (mode «Wohnort», `taxes.deductions` or `taxes.deductPillar3a`).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -211,7 +215,7 @@ pub struct MonthRecord {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct TaxBasis {
-    /// Income of the year (earned income + PK pension + AHV).
+    /// Income of the year (earned income + PK pension + AHV + taxable yield of the wealth, #149).
     pub income: f64,
     /// Proposal of the canton as applied (share of the year with a row «Vorschlag des Kantons»).
     pub proposal_canton: f64,
@@ -409,8 +413,12 @@ pub struct NeedBasis {
     /// #271: Care home costs; missing without a care home.
     #[serde(skip_serializing_if = "is_zero_amount")]
     pub care: f64,
-    /// Income tax on the (extrapolated) annual income.
+    /// Income tax on the (extrapolated) annual income and the taxable yield of the wealth.
     pub income_tax: f64,
+    /// #149: Taxable yield of the wealth per year (current balances × rates); raises the income tax, but is no
+    /// receipt (it is part of the return). Missing without a yield.
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub investment_yield: f64,
     /// AHV pension.
     pub ahv: f64,
     /// PK pension.
@@ -1474,7 +1482,7 @@ impl Simulator {
         }
     }
 
-    /// Income tax of the year of month `m` on the income `income` (earned income + PK pension + AHV) with the
+    /// Income tax of the year of month `m` on the income `income` (earned income + PK pension + AHV + yield) with the
     /// deductions `acc` (#131) and its basis; `earned`: earned income per person (proposal of the canton, #63).
     /// `index`: price index for the amounts (#66). #151: with the place of residence on 31 December, for the whole year.
     fn income_tax(
@@ -1812,6 +1820,8 @@ struct Run<'a> {
     month_capital_tax: f64,
     month_gain_tax: f64,
     year_income: f64,
+    /// #149: Taxable yield of the wealth of the calendar year (part of the return, counts to the taxable income).
+    year_yield: f64,
     /// #63: Earned income of the calendar year per person (mode «Wohnort»: deductions).
     year_earned: [f64; 2],
     /// #131: Deductions of the calendar year (rows, pillar 3a).
@@ -1949,6 +1959,7 @@ impl<'a> Run<'a> {
             month_capital_tax: 0.0,
             month_gain_tax: 0.0,
             year_income: 0.0,
+            year_yield: 0.0,
             year_earned: [0.0; 2],
             year_ded: YearDeductions::default(),
             year_capital: vec![0.0; s.people.len().max(1)],
@@ -3109,6 +3120,9 @@ impl<'a> Run<'a> {
         ded.own_rate *= f;
         ded.care *= f;
         ded.pillar3a = ded.pillar3a.map(|y| y * f);
+        // #149: taxable yield of a year on the current balances, like the assessment before the deductions
+        let y = s.taxes.investment_yield;
+        let investment_yield = self.stocks * y.stocks + self.bonds * y.bonds;
         NeedBasis {
             year: m.year(),
             source,
@@ -3119,7 +3133,7 @@ impl<'a> Run<'a> {
             income_tax: s
                 .income_tax(
                     m,
-                    (ahv + pk + earned) * f,
+                    (ahv + pk + earned) * f + investment_yield,
                     &per_person[..s.people.len().min(2)],
                     &ded,
                     self.tax_index(),
@@ -3129,6 +3143,7 @@ impl<'a> Run<'a> {
             pk: pk * f,
             earned: earned * f,
             pillar3a: p3a * f,
+            investment_yield,
             months: n,
         }
     }
@@ -3931,6 +3946,9 @@ impl<'a> Run<'a> {
             // Returns
             let wealth = self.cash + self.stocks + self.bonds;
             if wealth > 0.0 {
+                // #149: taxable yield on the balances that earn this month's return (a part of it, no inflow)
+                let y = s.taxes.investment_yield;
+                self.year_yield += (self.stocks * y.stocks + self.bonds * y.bonds) / 12.0;
                 self.ledger.market += self.stocks * self.path.stocks[k] + self.bonds * self.path.bonds[k];
                 self.stocks *= 1.0 + self.path.stocks[k];
                 self.bonds *= 1.0 + self.path.bonds[k];
@@ -3961,7 +3979,7 @@ impl<'a> Run<'a> {
             // Taxes
             let mut paid = 0.0;
             let (mut paid_income, mut paid_wealth) = (0.0, 0.0);
-            let (mut assessed_income, mut assessed_wealth) = (0.0, 0.0);
+            let (mut assessed_income, mut assessed_wealth, mut assessed_yield) = (0.0, 0.0, 0.0);
             let mut tax_basis = None;
             if m.month() == 5 {
                 paid += std::mem::take(&mut self.tax_pending);
@@ -3973,9 +3991,11 @@ impl<'a> Run<'a> {
                 let taxable_wealth = wealth + self.tax_equity();
                 let idx = self.tax_index();
                 self.year_ded.one_off = s.one_off_deduction(m.year());
+                // #149: the taxable yield of the wealth counts to the income (both modes, before the deductions)
+                assessed_yield = std::mem::take(&mut self.year_yield);
                 let (ti, mut basis) = s.income_tax(
                     m,
-                    self.year_income,
+                    self.year_income + assessed_yield,
                     &self.year_earned[..s.people.len().min(2)],
                     &self.year_ded,
                     idx,
@@ -4107,6 +4127,7 @@ impl<'a> Run<'a> {
                     tax_gain: self.month_gain_tax,
                     assessed_income,
                     assessed_wealth,
+                    assessed_yield,
                     tax_basis,
                     planned_spending: planned,
                     withdrawal: living + prop_cost + care + p3a_in - income,

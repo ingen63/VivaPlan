@@ -56,6 +56,10 @@ pub struct YearRow {
     pub deviation: f64,
     /// Inflation of the year: price index at the end of the year against the end of the previous year.
     pub inflation: f64,
+    /// #149/AK6: Taxable yield of the wealth of the tax year (part of the income of `tax_income`); missing without a
+    /// yield.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub tax_yield: f64,
     pub tax_income: f64,
     pub tax_wealth: f64,
     pub tax_capital: f64,
@@ -175,6 +179,7 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
         prev_last = Some(last);
         let (tax_income, tax_wealth) = (sum(rs, Quantity::AssessedIncome), sum(rs, Quantity::AssessedWealth));
         let (tax_capital, tax_gain) = (sum(rs, Quantity::TaxCapital), sum(rs, Quantity::TaxGain));
+        let tax_yield = rs.iter().fold(0.0, |a, r| a + at(r.assessed_yield, r));
         let assessed = rs.iter().find(|r| r.tax_basis.is_some());
         let basis = assessed
             .and_then(|r| r.tax_basis.as_ref().map(|b| (r, b)))
@@ -263,6 +268,7 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
             rate: (year_draw > 0.0 && base_total > 0.0).then(|| year_draw / base_total),
             deviation: receipts - spending,
             inflation: last.price_index / prev_index - 1.0,
+            tax_yield,
             tax_income,
             tax_wealth,
             tax_capital,

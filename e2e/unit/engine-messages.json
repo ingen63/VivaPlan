@@ -1297,6 +1297,18 @@
     "text": "Deductions from income, row Person 2: the additional amount must be 0 or greater."
   },
   {
+    "code": "investment_yield_stocks_range",
+    "params": {},
+    "template": "Taxable yield of the wealth, stocks: the rate must be between 0 % and 100 %.",
+    "text": "Taxable yield of the wealth, stocks: the rate must be between 0 % and 100 %."
+  },
+  {
+    "code": "investment_yield_bonds_range",
+    "params": {},
+    "template": "Taxable yield of the wealth, bonds: the rate must be between 0 % and 100 %.",
+    "text": "Taxable yield of the wealth, bonds: the rate must be between 0 % and 100 %."
+  },
+  {
     "code": "one_off_deduction_negative",
     "params": {
       "row": {

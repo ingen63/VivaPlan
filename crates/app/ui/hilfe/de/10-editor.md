@@ -285,10 +285,11 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 
 - [Steuer nach Wohnort](#f-tax-location)
 - [Abzüge vom Einkommen](#f-tax-deductions)
+- [Steuerbarer Ertrag des Vermögens](#f-tax-yield)
 - [Steuerfuss und Tabellen](#f-tax-tables)
 - [Tarife mit der Teuerung](#f-tax-indexed)
 - [Wie genau ist die Steuer?](#tax-accuracy)
-- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto (mit dem [Steuerwert](#f-re-tax-value), wo erfasst, sonst mit dem Marktwert). Bezahlt wird beides im Mai des Folgejahres.
+- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten und [steuerbarem Ertrag des Vermögens](#f-tax-yield)) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto (mit dem [Steuerwert](#f-re-tax-value), wo erfasst, sonst mit dem Marktwert). Bezahlt wird beides im Mai des Folgejahres.
 - Eine bei Planende noch offene Steuer wird im letzten Monat abgezogen.
 - Die [Grundstückgewinnsteuer](#f-tax-gain) fällt beim Verkauf einer Immobilie an, siehe auch [Immobilien](#s-realestate).
 
@@ -373,6 +374,29 @@ Die Karte **Abzüge vom Vermögen** im Abschnitt Steuern legt fest, was vom Verm
 **Prüfung:** Ein negativer Betrag und ein Steuerjahr ausserhalb der Simulation sind Fehler im Abschnitt Steuern.
 
 **Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte die Abzüge vom Vermögen (die Herkunft – zusätzlich, einmalig – im Tooltip der Zelle) und das steuerbare Vermögen (das Vermögen vor Abzügen im Tooltip).
+
+## @f-tax-yield Steuerbarer Ertrag des Vermögens
+Stichworte: Ertrag, Dividenden, Zinsen, Coupon, Ausschüttung, Ausschüttungsrendite, steuerbares Einkommen, Aktien, Obligationen, Kapitalgewinn, thesaurierend
+
+Dividenden und Zinsen des Vermögens sind steuerbares Einkommen. Die Karte **Steuerbarer Ertrag des Vermögens** im Abschnitt Steuern nimmt dafür je Anlageklasse einen Satz pro Jahr an:
+
+- **Aktien (Ausschüttungsrendite):** Dividenden in Prozent des Bestands.
+- **Obligationen (Coupon):** Zinsen in Prozent des Bestands.
+- **Cash** und reservierter Verkaufserlös haben keinen steuerbaren Ertrag (die Simulation verzinst sie nicht).
+
+**Rechnung:** Der steuerbare Ertrag eines Jahres ist der durchschnittliche Bestand jeder Anlageklasse im Jahr × Satz. Beispiel: Aktien durchschnittlich 500 000 mit 2 %, Obligationen 300 000 mit 1 %: steuerbarer Ertrag 13 000. Im ersten und letzten Jahr zählen nur die Monate der Planung. Der Ertrag zählt zum Einkommen der Einkommenssteuer, in beiden Steuermodi gleich; im Modus [Wohnort](#f-tax-location) vor den Abzügen von Kanton und Bund. Welche Abzüge gelten (erwerbstätig oder pensioniert), hängt weiter nur vom Erwerbseinkommen ab. Der Ertrag gehört auch zum Nettoeinkommen, von dem der Selbstbehalt der Kosten im [Pflegeheim](#f-care-home) rechnet. Der Satz wächst nicht mit den [Tarifen mit der Teuerung](#f-tax-indexed), denn er ist ein Anteil des Bestands.
+
+**Teil der Rendite:** Der Ertrag ist kein zusätzlicher Zufluss. Die Rendite der Simulation bleibt gleich (die [Renditereihen](#s-returns) enthalten Dividenden und Coupons schon); neu ist nur die Steuer darauf. **Kapitalgewinne** sind nicht steuerbar. Der Satz deckt ausschüttende und thesaurierende Fonds ab, denn auch der zurückbehaltene Ertrag eines thesaurierenden Fonds ist steuerbar.
+
+**Richtwerte:** Die Dividendenrendite eines globalen Aktienindex liegt bei rund 2 %, die Rendite des Swiss Bond Index bei rund 1 %. Neue Planungen beginnen mit Aktien 2 % und Obligationen 1 %. **Bestehende Planungen** öffnen mit 0 % und rechnen wie bisher.
+
+**3-Topf-Strategie:** Der Netto-Bedarf der [3-Topf-Strategie](#f-wd-three_buckets) enthält die Einkommenssteuer auf den Ertrag (aktuelle Bestände × Sätze). Der Ertrag selbst zählt dort nicht zu den Einnahmen, weil er Teil der Rendite ist.
+
+**Nicht enthalten:** Verrechnungssteuer und ihre Rückforderung, ausländische Quellensteuer, Abzug der Kosten der Vermögensverwaltung.
+
+**Prüfung:** Ein Satz unter 0 % oder über 100 % ist ein Fehler im Abschnitt Steuern.
+
+**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte die Spalte **Steuerbarer Ertrag** vor der Einkommenssteuer, sofern ein Satz erfasst ist.
 
 ## @f-tax-multiplier Steuerfuss
 Stichworte: Kanton, Gemeinde, Multiplikator

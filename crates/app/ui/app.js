@@ -339,6 +339,7 @@ function normalize(p) {
   for (const m of p.milestones || []) if (m.kind === "age") { m.person ??= p.household?.persons?.[0]?.id; m.years ??= 65; }
   p.household.married ??= true; p.household.ahvCoupleCap ??= 3780;
   if (!p.household.persons[1]) delete p.partner;
+  p.taxes.investmentYield ??= { stocks: 0, bonds: 0 }; // #149/AK5: existing plans open with 0 %
   if (p.taxes.couple) p.taxes.couple = { income: p.taxes.couple.income ?? [], wealth: p.taxes.couple.wealth ?? [], capital: p.taxes.couple.capital ?? [] };
   p.scenarios ??= { sweeps: [] }; p.scenarios.sweeps ??= [];
   p.flows.extras ??= [];
@@ -1589,6 +1590,13 @@ function wtaxTable() {
 }
 /** #231, #249: card «Abzüge vom Vermögen»: estimated taxable wealth (AK7), composition per tax year with the tax value
  *  of the properties (AK1, AK3), the rows of the deductions and the one-off deductions. */
+/** #149/AK1: taxable yield of the wealth per asset class (stocks, bonds; cash has none). */
+function investmentYieldCard() {
+  const info = infoPop(`<p>${tr("investmentYield.hint")}</p><p>${tr("investmentYield.defaults")}</p>`);
+  return `<div class="card" id="tax-investment-yield"><h3>${tr("investmentYield.title")}${info}</h3>
+    <div class="grid3">${F("taxes.investmentYield.stocks", tr("investmentYield.stocks"), "pct", { unit: tr("investmentYield.unit") })}${F("taxes.investmentYield.bonds", tr("investmentYield.bonds"), "pct", { unit: tr("investmentYield.unit") })}</div>
+    <p class="hint">${tr("investmentYield.note")}</p></div>`;
+}
 function wealthDeductionsCard() {
   const P = "taxes.wealthDeductions", rows = state.taxes.wealthDeductions ?? [];
   const body = rows.map((r, i) => `<div class="dedrow" data-wded-row="${i}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${Ref(`${P}.${i}.from`)}</div>
@@ -1698,6 +1706,7 @@ R.taxes = () => {
   ${own ? "" : taxLocationCard()}
   ${deductionsCard()}
   ${wealthDeductionsCard()}
+  ${investmentYieldCard()}
   <div class="card">${own || gainOwn() ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>` : ""}
     ${own ? "" : `<p class="hint">${gainOwn() ? tr("taxes.locationOwnTablesHint") : tr("taxes.locationCantonGainHint")}</p>`}
     <div>${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
@@ -3298,7 +3307,8 @@ function yearTable(run, refills = []) {
   const tx = showTaxCols, vals = yearValues(run), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence);
   const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), wx = tx && vals.some(v => v.basis?.wealth);
   const cx = vals.some(v => v.care); // #271: column of the care home costs only with a care home
-  const cols = 12 + (cx ? 1 : 0) + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
+  const yx = tx && vals.some(v => v.taxYield); // #149/AK6: column of the taxable yield only with a yield
+  const cols = 12 + (cx ? 1 : 0) + (yx ? 1 : 0) + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
   // #231/AK5: deductions from wealth with their origin as tooltip and the taxable wealth
   const wealthHeads = () => [[tr("yearTable.wealthDeductions"), tr("yearTable.wealthDeductionsTitle")], [tr("yearTable.taxableWealth"), tr("yearTable.taxableWealthTitle")]]
     .map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
@@ -3327,7 +3337,7 @@ function yearTable(run, refills = []) {
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cx ? `<td data-care>${Math.abs(v.care ?? 0) < 0.5 ? "" : fmtInt(v.care)}</td>` : ""}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${wx ? wealthCells(v.basis?.wealth) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
+      ${yx ? `<td data-tax-yield>${Math.abs(v.taxYield ?? 0) < 0.5 ? "" : fmtInt(v.taxYield)}</td>` : ""}${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${wx ? wealthCells(v.basis?.wealth) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
@@ -3335,7 +3345,7 @@ function yearTable(run, refills = []) {
     <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th>${cx ? `<th title="${tr("yearTable.careTitle")}">${tr("yearTable.care")}</th>` : ""}<th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
-      ${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
+      ${yx ? `<th class="tx" title="${tr("yearTable.taxYieldTitle")}">${tr("yearTable.taxYield")}</th>` : ""}${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
     <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {
@@ -3844,7 +3854,9 @@ function paramSections(plan, full = false) {
   const lumpsum = isLocation(plan) ? (cantons.length ? cantons.map(c => tr("params.lumpsumLocation", { rule: (cantons.length > 1 ? `${c}: ` : "") + tr(`capitalRule.${c}`) })).join("; ") : tr("taxes.modeLocation")) : table(t.capital);
   const incomeWealth = isLocation(plan) ? [[tr("params.taxMode"), tr("taxes.modeLocation")], ...places.map(r => [r.from == null ? tr("taxes.location") : tr("params.locationFrom", { when: at(r.from) }), locationText(r.loc)])]
     : [[tr("params.taxMode"), tr("taxes.modeOwn")], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)]];
-  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("taxes.lumpsumTax"), lumpsum],
+  // #149: taxable yield of the wealth (stocks / bonds)
+  const yieldText = tr("params.investmentYieldValue", { stocks: pc(t.investmentYield?.stocks ?? 0), bonds: pc(t.investmentYield?.bonds ?? 0) });
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("params.investmentYield"), yieldText], [tr("taxes.lumpsumTax"), lumpsum],
     // #65: in the mode «Wohnort» without own rules the rule of the canton of each property
     [tr("gain.title"), !gainOwn(plan) ? tr("params.gainCanton") : g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);

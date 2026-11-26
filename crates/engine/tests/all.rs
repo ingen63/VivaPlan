@@ -33,6 +33,7 @@ mod income_ends;
 mod income_indexed;
 mod inflow_strategy;
 mod invariants;
+mod investment_yield;
 mod jst;
 mod large_pillar3a;
 mod legacy_format;

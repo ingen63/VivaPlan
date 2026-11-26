@@ -50,6 +50,7 @@ A plan is **a text file** in JSON format with the extension `.vplan`. It can be 
 - **Optimization:** goal, strategies, paths and the **ranges of the parameters** per strategy are under `optimization` (`ranges`: strategy, parameter, then `fixed` or `lo`/`hi`, shares as a decimal number).
 - **Property gains tax:** `taxes.propertyGain` with `brackets` (width, rate), `duration` (from full years, surcharge or reduction), `exemptBelow` and `reduction`; the purchase date of an owned property is in `bought`. In the mode “Place of residence” the rule set of the canton of the property applies (`canton` per property, without an entry the canton of residence); `taxes.propertyGainOwn: true` switches to the own rules.
 - **Place of residence:** `taxes.location` (`canton`, `municipality` as BFS number, `church`) applies from the start; further places of residence are in `taxes.relocations` as rows `{"from": "2031-01", "canton": "ZG", "municipality": 1711, "church": "none"}`.
+- **Taxable yield:** `taxes.investmentYield` with `stocks` and `bonds` as a rate per year (0.02 = 2 %); if missing, 0 % applies.
 - The complete format is provided by `vivaplan schema` in the terminal.
 
 The file contains **no results**. The app stores results in the [list of results](#r-list).

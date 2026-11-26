@@ -582,6 +582,8 @@ codes! {
     deduction_amount_negative => "Deductions from income, row {row}: the amount must be 0 or greater.",
     deduction_rate_range => "Deductions from income, row {row}: the share of the income must be between 0 % and 100 %.",
     deduction_extra_negative => "Deductions from income, row {row}: the additional amount must be 0 or greater.",
+    investment_yield_stocks_range => "Taxable yield of the wealth, stocks: the rate must be between 0 % and 100 %.",
+    investment_yield_bonds_range => "Taxable yield of the wealth, bonds: the rate must be between 0 % and 100 %.",
     one_off_deduction_negative => "One-off deductions, row {row}: the amount must be 0 or greater.",
     one_off_deduction_year => "One-off deductions, row {row}: the tax year {year} lies outside the simulation ({from} to {to}).",
     wealth_deduction_negative => "Deductions from wealth, row {row}: the amount must be 0 or greater.",

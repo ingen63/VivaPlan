@@ -917,6 +917,22 @@ ein (`BUILTIN`).
   Tabelle. `TaxBasis.wealth` = `WealthBasis { wealth, ongoing, oneOff, taxable }`, nur mit Abzügen vom Vermögen; diese
   schalten die Aufzeichnung ein. Prüfung: Zeitpunkt auflösbar, Beträge ≥ 0, Steuerjahr zwischen Start und Ende (Fehler am
   Feld).
+- **Steuerbarer Ertrag des Vermögens (#149):** `taxes.investmentYield` = `{ stocks, bonds }` (Satz pro Jahr, Anteil 0
+  bis 1; nur gespeichert, wenn ein Satz ≠ 0; fehlt er, 0 % – bestehende Planungen und die Golden-Dateien rechnen
+  unverändert). Neue Planungen (`api::blank_plan`) haben 2 % / 1 % (Dividendenrendite eines globalen Aktienindex,
+  Rendite des Swiss Bond Index); das Beispiel bleibt bei 0 %, weil es der eingefrorenen Altformat-Datei gleichen muss
+  (#44). Kein Satz für Cash: Cash und reservierter Verkaufserlös haben keinen Zins. `Run::year_yield` sammelt jeden
+  Monat vor der Rendite (nur wenn diese angewendet wird) (Aktien × Satz + Obligationen × Satz) / 12; bei einem ganzen
+  Jahr ist das der Durchschnitt des Bestands × Satz, Start- und Endjahr gelten anteilig. Im Dezember kommt er zum
+  Einkommen für `Simulator::income_tax`, in beiden Modi vor den Abzügen und damit auch ins Nettoeinkommen des
+  Selbstbehalts der Heimkosten (#271); die Variante der Abzüge (`working`/`retired`) und die Berufskostenpauschale
+  hängen weiter nur vom Erwerb ab, `rate` der Abzugszeilen nur vom Monatseinkommen ohne Ertrag. Der Ertrag fliesst
+  nirgends dem Vermögen zu (Teil der Rendite) und wächst nicht mit dem Index (#66). `MonthRecord.assessed_yield`
+  (nur im Dezember, ohne Ertrag nicht geschrieben), `YearRow.tax_yield` (Spalte «Steuerbarer Ertrag» der
+  Steuer-Spaltengruppe, nur mit Ertrag), Bericht der Kommandozeile: Spalte `taxableYield`. `TaxBasis.income` enthält
+  den Ertrag. Netto-Bedarf (`plan_basis`): `NeedBasis.investment_yield` = aktuelle Bestände × Sätze, nur in der
+  Einkommenssteuer, nicht in den Einnahmen. Prüfung: Satz 0 bis 1, sonst Fehler am Feld
+  `taxes.investmentYield.stocks|bonds` (`investment_yield_stocks_range`, `investment_yield_bonds_range`).
 - **Zusammenstellung des steuerbaren Vermögens (#249):** Mit `record` legt der Lauf im Dezember je Steuerjahr ein
   `WealthTaxYear { year, liquid, properties: [PropertyTax { index, name, worth, taxValue, hasTaxValue, mortgage }],
   ongoing, oneOff, taxable }` ab (`liquid` = bar + Obligationen + Aktien; `taxValue` ohne Steuerwert = Marktwert;

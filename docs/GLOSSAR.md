@@ -83,6 +83,7 @@ Wörter in Grossbuchstaben nicht.
 | Lebenshaltungskosten, Ausgaben | `spending` | im Hauptbuch `living` |
 | Wohnkosten | `housing` | `spending_includes_housing` |
 | Pflegeheim, Heimkosten | `care_home`, `care` | `CareHome`, Ergebnis `care` (#271) |
+| steuerbarer Ertrag des Vermögens | `investment_yield` | `taxes.investmentYield`, `assessed_yield`, `tax_yield` (#149) |
 | Ausgaben-Faktor | `spending_factor` | |
 | Sparbetrag, weitere Zuflüsse | `savings` | |
 | Einmalbetrag | `extra` | `Extra`; positiv = Zufluss (`inflow`) |
@@ -182,7 +183,7 @@ Wörter in Grossbuchstaben nicht.
 | Höchstbelastung | `max_share` | #65, Anteil des Gewinns |
 | Anlagekosten | `cost` | #65, Modell «return»: bezahlter Kaufpreis |
 | Regelsatz des Kantons | `rule`, `GainRule` | #65 |
-| veranlagt, Steuerjahr | `assessed`, `tax_year` | `assessed_income`, `assessed_wealth` |
+| veranlagt, Steuerjahr | `assessed`, `tax_year` | `assessed_income`, `assessed_wealth`, `assessed_yield` |
 | Verheiratetentarif | `couple` | |
 | Kanton, Gemeinde | `canton`, `municipality` | |
 | Zweitverdienerabzug | `second_earner` | #63; `SecondEarner`, Teil `secondEarner` im Vorschlag des Kantons (#241) |
@@ -298,6 +299,7 @@ englisch umschrieben, das Schweizer Kürzel steht in Klammern; Schreibweise amer
 | Ausgaben | spending | |
 | Wohnkosten | housing costs | |
 | Pflegeheim, Heimkosten | care home, care home costs | |
+| steuerbarer Ertrag des Vermögens | taxable yield of the wealth | |
 | Einmaliger Betrag | one-off amount | |
 | Zufluss | inflow | |
 | ungedeckte Ausgaben, Netto-Bedarf | uncovered spending, net need | |
@@ -429,6 +431,7 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | Ausgaben | dépenses | |
 | Wohnkosten | frais de logement | |
 | Pflegeheim, Heimkosten | EMS, frais d’EMS | «établissement médico-social» |
+| steuerbarer Ertrag des Vermögens | rendement imposable de la fortune | |
 | Einmaliger Betrag | montant unique | |
 | Zufluss | entrée | |
 | ungedeckte Ausgaben, Netto-Bedarf | dépenses non couvertes, besoin net | |
@@ -567,6 +570,7 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | Ausgaben | spese | |
 | Wohnkosten | spese d’alloggio | |
 | Pflegeheim, Heimkosten | casa di cura, spese della casa di cura | |
+| steuerbarer Ertrag des Vermögens | reddito imponibile della sostanza | |
 | Einmaliger Betrag | importo unico | |
 | Zufluss | entrata | |
 | ungedeckte Ausgaben, Netto-Bedarf | spese non coperte, fabbisogno netto | |

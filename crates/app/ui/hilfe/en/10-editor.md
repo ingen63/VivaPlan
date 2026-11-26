@@ -285,10 +285,11 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 
 - [Tax by place of residence](#f-tax-location)
 - [Deductions from income](#f-tax-deductions)
+- [Taxable yield of the wealth](#f-tax-yield)
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
 - [How accurate is the tax?](#tax-accuracy)
-- **Income tax** is assessed in December on the annual income (including pensions), **wealth tax** on the portfolio plus real estate net (with the [tax value](#f-re-tax-value) where entered, otherwise with the market value). Both are paid in May of the following year.
+- **Income tax** is assessed in December on the annual income (including pensions and the [taxable yield of the wealth](#f-tax-yield)), **wealth tax** on the portfolio plus real estate net (with the [tax value](#f-re-tax-value) where entered, otherwise with the market value). Both are paid in May of the following year.
 - A tax still open at the end of the plan is deducted in the last month.
 - The [property gains tax](#f-tax-gain) is due when a property is sold, see also [Real estate](#s-realestate).
 
@@ -373,6 +374,29 @@ The card **Deductions from wealth** in the section Taxes sets what is deducted f
 **Validation:** A negative amount and a tax year outside the simulation are errors in the section Taxes.
 
 **Results:** With “Show taxes” the yearly values show the deductions from wealth (the origin – additionally, one-off – in the tooltip of the cell) and the taxable wealth (the wealth before deductions in the tooltip).
+
+## @f-tax-yield Taxable yield of the wealth
+Keywords: yield, dividends, interest, coupon, distribution, distribution yield, taxable income, stocks, bonds, capital gain, accumulating
+
+Dividends and interest of the wealth are taxable income. The card **Taxable yield of the wealth** in the section Taxes assumes a rate per year for each asset class:
+
+- **Stocks (distribution yield):** dividends as a percentage of the balance.
+- **Bonds (coupon):** interest as a percentage of the balance.
+- **Cash** and reserved sale proceeds have no taxable yield (the simulation pays no interest on them).
+
+**Computation:** The taxable yield of a year is the average balance of each asset class in the year × rate. Example: stocks 500 000 on average at 2 %, bonds 300 000 at 1 %: taxable yield 13 000. In the first and last year only the months of the plan count. The yield counts to the income for the income tax, the same in both tax modes; in the mode [Place of residence](#f-tax-location) before the deductions of canton and federal tax. Which deductions apply (working or retired) still depends only on the earned income. The yield also belongs to the net income on which the self-share of the costs of a [care home](#f-care-home) is computed. The rate does not grow with [tariffs with inflation](#f-tax-indexed), because it is a share of the balance.
+
+**Part of the return:** The yield is not an additional inflow. The return of the simulation stays the same (the [return series](#s-returns) already contain dividends and coupons); only the tax on it is new. **Capital gains** are not taxable. The rate covers distributing and accumulating funds, because the retained yield of an accumulating fund is taxable too.
+
+**Guide values:** The dividend yield of a global stock index is about 2 %, the yield of the Swiss Bond Index about 1 %. New plans start with stocks 2 % and bonds 1 %. **Existing plans** open with 0 % and compute as before.
+
+**3-bucket strategy:** The net need of the [3-bucket strategy](#f-wd-three_buckets) contains the income tax on the yield (current balances × rates). The yield itself does not count as a receipt there, because it is part of the return.
+
+**Not included:** withholding tax and its refund, foreign withholding tax, deduction of the costs of asset management.
+
+**Validation:** A rate below 0 % or above 100 % is an error in the section Taxes.
+
+**Results:** With “Show taxes” the yearly values show the column **Taxable yield** before the income tax, if a rate is entered.
 
 ## @f-tax-multiplier Tax multiplier
 Keywords: canton, municipality, multiplier

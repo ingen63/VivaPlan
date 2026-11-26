@@ -77,7 +77,8 @@ pub struct SingleReport {
     pub emergency_sales: usize,
     pub unaffordable_renewals: usize,
     /// Per year: wealth at the end of the year, income, spending and taxes summed over the year; #271: with a care home
-    /// also the column `care` (care home costs, part of `spending`).
+    /// also the column `care` (care home costs, part of `spending`); #149: with a taxable yield of the wealth also the
+    /// column `taxableYield` (part of the taxable income of the tax year, not of `income`).
     pub years: Table,
     /// Events: month and text.
     pub events: Vec<(YearMonth, String)>,
@@ -99,13 +100,15 @@ const SINGLE_COLUMNS: [&str; 10] = [
 fn single(r: &SimResult) -> SingleReport {
     let s = &r.summary;
     let mut rows: Vec<Vec<Value>> = vec![];
-    let mut flows = [0.0; 4];
+    let mut flows = [0.0; 5];
     let care = r.records.iter().any(|m| m.care != 0.0);
+    let taxable_yield = r.records.iter().any(|m| m.assessed_yield != 0.0);
     for (i, m) in r.records.iter().enumerate() {
         flows[0] += m.income;
         flows[1] += m.spending;
         flows[2] += m.taxes;
         flows[3] += m.care;
+        flows[4] += m.assessed_yield;
         if m.month.is_december() || i + 1 == r.records.len() {
             let mut row = vec![
                 json!(m.month.year()),
@@ -122,13 +125,19 @@ fn single(r: &SimResult) -> SingleReport {
             if care {
                 row.push(json!(amount(flows[3])));
             }
+            if taxable_yield {
+                row.push(json!(amount(flows[4])));
+            }
             rows.push(row);
-            flows = [0.0; 4];
+            flows = [0.0; 5];
         }
     }
     let mut columns = SINGLE_COLUMNS.to_vec();
     if care {
         columns.push("care");
+    }
+    if taxable_yield {
+        columns.push("taxableYield");
     }
     SingleReport {
         label: r.label.text().to_string(),
@@ -491,6 +500,31 @@ mod tests {
             .sum();
         assert!(i > 0 && sum > 0.0);
         assert_eq!(row[col], json!(amount(sum)));
+    }
+
+    /// #149/AK6: the report shows the taxable yield of the wealth in the column `taxableYield` only with a yield; the
+    /// value of a year is the assessed yield of December.
+    #[test]
+    fn issue_149_ak6_report_column_taxable_yield() {
+        let mut plan = crate::api::example_plan();
+        plan["scenarios"]["sweeps"] = json!([]);
+        let out = crate::api::run(&plan, Path::new("."), Some(&library()));
+        assert!(!run(&out).single.unwrap().years.columns.contains(&"taxableYield"));
+        plan["taxes"]["investmentYield"] = json!({ "stocks": 0.02, "bonds": 0.01 });
+        let out = crate::api::run(&plan, Path::new("."), Some(&library()));
+        let res = out.single.as_ref().unwrap();
+        let s = run(&out).single.unwrap();
+        let col = s
+            .years
+            .columns
+            .iter()
+            .position(|c| *c == "taxableYield")
+            .expect("column taxableYield");
+        assert_eq!(col, SINGLE_COLUMNS.len());
+        let dec = res.records.iter().find(|m| m.month.is_december()).expect("a December");
+        assert!(dec.assessed_yield > 0.0);
+        let row = s.years.rows.iter().find(|r| r[0] == json!(dec.month.year())).unwrap();
+        assert_eq!(row[col], json!(amount(dec.assessed_yield)));
     }
 
     /// #207/AK1: the other formats.

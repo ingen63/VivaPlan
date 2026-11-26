@@ -285,10 +285,11 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 
 - [Imposta secondo il domicilio](#f-tax-location)
 - [Deduzioni dal reddito](#f-tax-deductions)
+- [Reddito imponibile della sostanza](#f-tax-yield)
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
 - [Quanto è precisa l’imposta?](#tax-accuracy)
-- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti (con il [valore fiscale](#f-re-tax-value) se registrato, altrimenti con il valore venale). Entrambe vengono pagate a maggio dell’anno successivo.
+- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite e il [reddito imponibile della sostanza](#f-tax-yield)), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti (con il [valore fiscale](#f-re-tax-value) se registrato, altrimenti con il valore venale). Entrambe vengono pagate a maggio dell’anno successivo.
 - Un’imposta ancora aperta alla fine della pianificazione viene dedotta nell’ultimo mese.
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
 
@@ -373,6 +374,29 @@ La scheda **Deduzioni dalla sostanza** nella sezione Imposte stabilisce che cosa
 **Verifica:** Un importo negativo e un anno fiscale al di fuori della simulazione sono errori nella sezione Imposte.
 
 **Risultati:** Con «Mostrare le imposte» i valori annuali mostrano le deduzioni dalla sostanza (l’origine – in aggiunta, unica – nel tooltip della cella) e la sostanza imponibile (la sostanza prima delle deduzioni nel tooltip).
+
+## @f-tax-yield Reddito imponibile della sostanza
+Parole chiave: reddito, dividendi, interessi, cedola, distribuzione, rendimento distribuito, reddito imponibile, azioni, obbligazioni, utile di capitale, ad accumulazione
+
+Dividendi e interessi della sostanza sono reddito imponibile. La scheda **Reddito imponibile della sostanza** nella sezione Imposte assume per questo un tasso annuo per ogni classe d’investimento:
+
+- **Azioni (rendimento distribuito):** dividendi in percentuale del saldo.
+- **Obbligazioni (cedola):** interessi in percentuale del saldo.
+- **La liquidità** e il ricavo di vendita riservato non hanno reddito imponibile (la simulazione non li remunera).
+
+**Calcolo:** Il reddito imponibile di un anno è il saldo medio di ogni classe d’investimento nell’anno × tasso. Esempio: azioni in media 500 000 al 2 %, obbligazioni 300 000 all’1 %: reddito imponibile 13 000. Nel primo e nell’ultimo anno contano solo i mesi della pianificazione. Il reddito conta nel reddito dell’imposta sul reddito, allo stesso modo in entrambe le modalità fiscali; nella modalità [Domicilio](#f-tax-location) prima delle deduzioni del Cantone e della Confederazione. Quali deduzioni valgono (attivo o pensionato) dipende sempre solo dal reddito da attività lucrativa. Il reddito fa parte anche del reddito netto su cui si calcola la quota a carico dei costi di una [casa di cura](#f-care-home). Il tasso non cresce con le [tariffe con il rincaro](#f-tax-indexed), perché è una quota del saldo.
+
+**Parte del rendimento:** Il reddito non è un afflusso supplementare. Il rendimento della simulazione resta uguale (le [serie di rendimento](#s-returns) contengono già dividendi e cedole); nuova è solo l’imposta su di esso. **Gli utili di capitale** non sono imponibili. Il tasso copre i fondi a distribuzione e ad accumulazione, perché anche il reddito trattenuto di un fondo ad accumulazione è imponibile.
+
+**Valori indicativi:** Il rendimento da dividendi di un indice azionario globale è di circa il 2 %, il rendimento dello Swiss Bond Index di circa l’1 %. Le nuove pianificazioni iniziano con azioni 2 % e obbligazioni 1 %. **Le pianificazioni esistenti** si aprono con 0 % e calcolano come prima.
+
+**Strategia a 3 comparti:** Il fabbisogno netto della [strategia a 3 comparti](#f-wd-three_buckets) contiene l’imposta sul reddito del reddito della sostanza (saldi attuali × tassi). Il reddito stesso non conta lì come entrata, perché fa parte del rendimento.
+
+**Non compresi:** imposta preventiva e il suo rimborso, imposta alla fonte estera, deduzione dei costi di gestione patrimoniale.
+
+**Verifica:** Un tasso inferiore a 0 % o superiore a 100 % è un errore nella sezione Imposte.
+
+**Risultati:** Con «Mostrare le imposte» i valori annuali mostrano la colonna **Reddito imponibile** prima dell’imposta sul reddito, se è inserito un tasso.
 
 ## @f-tax-multiplier Moltiplicatore d’imposta
 Parole chiave: cantone, comune, moltiplicatore

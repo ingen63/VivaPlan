@@ -1233,6 +1233,47 @@ mod tests {
         }
     }
 
+    /// #149: a new plan has the taxable yield of the wealth (2 % / 1 %), plan_set changes it (also on the example
+    /// without the field), the validation rejects a rate above 100 % and describe names the fields.
+    #[test]
+    fn issue_149_investment_yield_over_plan_set_and_describe() {
+        let mut s = session();
+        ok(call(&mut s, "plan_open", &json!({ "new": true })));
+        assert_eq!(
+            s.plans[0].plan["taxes"]["investmentYield"],
+            json!({ "stocks": 0.02, "bonds": 0.01 })
+        );
+        let mut s = session();
+        ok(call(&mut s, "plan_open", &json!({ "example": true })));
+        assert!(s.plans[0].plan["taxes"].get("investmentYield").is_none());
+        let rates = json!({ "stocks": 0.025, "bonds": 0.01 });
+        let set = ok(call(
+            &mut s,
+            "plan_set",
+            &json!({ "plan": "p1", "changes": [{ "path": "taxes.investmentYield", "value": rates }] }),
+        ));
+        assert_eq!(set["changes"][0]["new"], rates, "{set}");
+        ok(call(
+            &mut s,
+            "plan_set",
+            &json!({ "plan": "p1", "changes": [{ "path": "taxes.investmentYield.bonds", "value": 0.015 }] }),
+        ));
+        assert_eq!(s.plans[0].plan["taxes"]["investmentYield"]["bonds"], json!(0.015));
+        let v = ok(call(&mut s, "plan_validate", &json!({ "plan": "p1" }))).to_string();
+        assert!(!v.contains("investmentYield"), "{v}");
+        ok(call(
+            &mut s,
+            "plan_set",
+            &json!({ "plan": "p1", "changes": [{ "path": "taxes.investmentYield.stocks", "value": 1.5 }] }),
+        ));
+        let v = ok(call(&mut s, "plan_validate", &json!({ "plan": "p1" }))).to_string();
+        assert!(v.contains("taxes.investmentYield.stocks"), "{v}");
+        let d = ok(call(&mut s, "describe", &json!({ "section": "fields" }))).to_string();
+        for field in ["taxes.investmentYield", "Taxable dividends", "Taxable coupons"] {
+            assert!(d.contains(field), "{field}");
+        }
+    }
+
     /// The example plan computed as the app does (dispatch `run_simulation`), kept as a result of the session.
     fn computed(s: &mut Session) -> (String, Value) {
         ok(call(s, "plan_open", &json!({ "example": true })));

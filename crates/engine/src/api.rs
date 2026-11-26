@@ -112,6 +112,9 @@ pub fn blank_plan(start: YearMonth) -> Value {
                 { "from": "retire", "kind": "own", "amount": 0, "rate": 0 },
             ],
             "deductPillar3a": true,
+            // #149/AK5: taxable yield of the wealth (dividend yield of a global stock index about 2 %, yield of the
+            // Swiss Bond Index about 1 %); existing plans and the example keep 0 %.
+            "investmentYield": { "stocks": 0.02, "bonds": 0.01 },
         }),
     );
     merge(&mut p, "wealth", json!({ "stocks": 0, "bonds": 0, "cash": 0 }));
