@@ -2237,6 +2237,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #271/AK8 | CLI, MCP (`plan_set`, `describe`) und Bericht kennen die Felder; Hilfe (4 Sprachen) und `docs/BESCHREIBUNG.md`; Texte in `de.json`. | ☑ | **gilt** (Bericht mit Spalte `care`) | `report::tests::issue_271_ak8_…`, `mcp::tools::tests::issue_271_ak8_…`, e2e AK8 (#271), `make ui-texts`, `make i18n-check` | 26.11.2026 ok (Tests, CLI von Hand, Durchsicht 4 Sprachen) |
 | #271/AK9 | Heimkosten als Krankheitskosten bei Bund und Kanton abziehbar über 5 % des Nettoeinkommens; Beispiel 60 000 / 108 000 → Abzug 105 000, steuerbar nicht unter 0. | ☑ | **gilt** (Kriterium aus dem Kommentar; Regel in Hilfe und `docs/ENTWICKLUNG.md`) | `issue_271_ak9_…` (3) | 26.11.2026 ok (Tests) |
 
+### #272 Steuern: Wohnort als Standard, übrige Angaben als Annahmen
+
+[Issue #272](https://github.com/ingen63/VivaPlan/issues/272) · geschlossen · Umsetzung: df3ab5a, fafd7b3 · Entscheide vor der Umsetzung (25.11.2026) und Messung #276 im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #272/AK1 | Im Modus «Wohnort» zuerst nur Gemeinde (Suche über alle Gemeinden, Kanton ergibt sich) und Konfession. | ☑ | **gilt** | e2e [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) AK1, AK2, AK4 (#272); #63 AK1, AK2 | 26.11.2026 ok (Tests) |
+| #272/AK2 | Zeile «Annahmen» mit den Vorgaben in Worten; Klick öffnet die Einstellungen. | ☑ | **gilt** (nach Entscheid: Säule-3a-Abzug ein, Vorschlag des Kantons bis und ab Pensionierung gesetzt) | e2e AK1, AK2, AK4 (#272), `issue_272_ak4_…` | 26.11.2026 ok (Tests) |
+| #272/AK3 | Zwei Zahlen in heutigen Preisen, auf 100 gerundet; nur eine, wenn die Pensionierung vor dem Start liegt. | ☑ | **gilt** (Wert aus dem Rechenkern: `PreviewOut.taxEstimates`) | `issue_272_ak3_…` (4), e2e AK3 (#272) | 26.11.2026 ok (Tests) |
+| #272/AK4 | Neue Planungen im Modus «Wohnort» ohne Gemeinde; Prüfung meldet die fehlende Gemeinde. | ☑ | **gilt** (`blank_plan`, auch MCP `plan_open` mit `new`) | `issue_272_ak4_…`, `issue_63_ak8_…`, `issue_151_ak6_…`, `issue_269_…`, e2e #269 AK1, #14 | 26.11.2026 ok (Tests) |
+| #272/AK5 | «Eigene Tabellen» unter «Experte», nicht mehr gleichrangiger Modus. | ☑ | **gilt** (nach Entscheid nur für Planungen, die sie benutzen) | e2e AK5, AK6 (#272) | 26.11.2026 ok (Test) |
+| #272/AK6 | Bestehende Planungen unverändert, Golden unverändert; Knopf «Auf Wohnort umstellen» mit vorher/nachher, rückgängig. | ☑ | **gilt** | e2e AK5, AK6 (#272), `golden::*` | 26.11.2026 ok (Tests) |
+| #272/AK7 | e2e-Tests: neue Planung, eigene Tabellen mit Umstellknopf, zwei Kennzahlen. | ☑ | **gilt** | e2e «… (#272)» (5 Tests) | 26.11.2026 ok (Tests) |
+| #272/AK8 | Hilfe (Editor, Referenz), `BESCHREIBUNG.md` und Spezifikation nachgeführt. | ☑ | **gilt** (Hilfe 4 Sprachen, `ENTWICKLUNG.md`) | e2e AK8 (#272), `make i18n-check`, `make ui-texts` | 26.11.2026 ok (Tests, Durchsicht) |
+
 ### #273 Vorgabe für den Steuerwert der Immobilien
 
 [Issue #273](https://github.com/ingen63/VivaPlan/issues/273) · geschlossen · Umsetzung: a1f9a3d · Entscheide vor der Umsetzung (25.11.2026) und Messung #276 im Issue
