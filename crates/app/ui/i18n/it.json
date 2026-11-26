@@ -1279,7 +1279,7 @@
   "care.hintSingle": "Dall’entrata cessano l’affitto e le spese d’alloggio. Con «vendere» l’immobile abitato dal proprietario viene venduto nel mese dell’entrata (con l’imposta sugli utili immobiliari); gli affitti «dopo la vendita» non iniziano. «Non vendere mai gli immobili» ha la precedenza. Le spese della casa di cura sono deducibili dalle imposte come spese di malattia nella misura in cui superano il 5 % del reddito netto.",
   "care.hintCouple": "Le spese d’alloggio dell’economia domestica continuano finché entrambe le persone vivono in una casa di cura. Solo allora, con «vendere» (scelto per una delle due persone), l’immobile abitato dal proprietario viene venduto e gli affitti «dopo la vendita» non iniziano. «Non vendere mai gli immobili» ha la precedenza. Le spese della casa di cura sono deducibili dalle imposte come spese di malattia nella misura in cui superano il 5 % del reddito netto.",
   "pension.rentAtStart": "Rendita al mese all’inizio della prestazione",
-  "pension.rentAtStartHint": "Rendita AVS mensile attesa con riscossione a 65 anni (età di riferimento) secondo il calcolo anticipato della rendita, ai prezzi attuali, senza la 13a rendita (l’applicazione la aggiunge da sé da dicembre 2026).",
+  "pension.rentAtStartHint": "Rendita AVS mensile attesa con riscossione a 65 anni (età di riferimento) secondo il calcolo anticipato della rendita, nominale (senza rincaro fino al diritto alla rendita), senza la 13a rendita (l’applicazione la aggiunge da sé da dicembre 2026).",
   "pension.subtitle": "Cassa pensione (LPP, 2° pilastro) e AVS (1° pilastro)",
   "pillar3a.add": "+ Conto 3a",
   "pillar3a.addPayout": "+ Riscossione",

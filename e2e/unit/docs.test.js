@@ -160,3 +160,20 @@ test("#183/AK5: the help names no number of combinations other than MAX_COMBINAT
   // Each language names the limit (10-editor.md), so the check does not pass by finding nothing.
   for (const lang of ["de", "en", "fr", "it"]) assert.ok(found.some(f => f.includes(`/hilfe/${lang}/`)), `limit in ${lang}`);
 });
+
+test("#282/AK1: the AHV pension is described as the expected nominal pension at 65, never in today's prices", () => {
+  const today = /heutigen Preisen|today['’]s prices|prix actuels|prezzi attuali/;
+  const hits = [];
+  for (const lang of ["de", "en", "fr", "it"]) {
+    const hint = JSON.parse(fs.readFileSync(path.join(ROOT, `crates/app/ui/i18n/${lang}.json`), "utf8"))["pension.rentAtStartHint"];
+    if (today.test(hint)) hits.push(`${lang}.json pension.rentAtStartHint`);
+    if (!/nomina/.test(hint)) hits.push(`${lang}.json pension.rentAtStartHint: not nominal`);
+    const help = fs.readFileSync(path.join(ROOT, `crates/app/ui/hilfe/${lang}/10-editor.md`), "utf8");
+    const section = help.slice(help.indexOf("## @f-ahv"), help.indexOf("## @f-couple"));
+    if (today.test(section)) hits.push(`hilfe/${lang}/10-editor.md @f-ahv`);
+    if (!/nomina/.test(section)) hits.push(`hilfe/${lang}/10-editor.md @f-ahv: not nominal`);
+  }
+  const doc = fs.readFileSync(path.join(ROOT, "docs/BESCHREIBUNG.md"), "utf8");
+  if (!/erwartete Rente mit 65[^;]*nominal/.test(doc)) hits.push("docs/BESCHREIBUNG.md: AHV input not described as nominal pension at 65"); // check-english: allow (searched term)
+  assert.deepEqual(hits, []);
+});

@@ -1279,7 +1279,7 @@
   "care.hintSingle": "Dès l’entrée, le loyer et les frais de logement tombent. Avec «vendre», le bien immobilier habité par son propriétaire est vendu le mois de l’entrée (avec l’impôt sur les gains immobiliers); les loyers «après la vente» ne commencent pas. «Ne jamais vendre les biens immobiliers» a la priorité. Les frais d’EMS sont déductibles des impôts comme frais de maladie dans la mesure où ils dépassent 5 % du revenu net.",
   "care.hintCouple": "Les frais de logement du ménage continuent jusqu’à ce que les deux personnes vivent en EMS. Ce n’est qu’alors que, avec «vendre» (choisi pour l’une des deux personnes), le bien immobilier habité par son propriétaire est vendu, et les loyers «après la vente» ne commencent pas. «Ne jamais vendre les biens immobiliers» a la priorité. Les frais d’EMS sont déductibles des impôts comme frais de maladie dans la mesure où ils dépassent 5 % du revenu net.",
   "pension.rentAtStart": "Rente par mois au début de la prestation",
-  "pension.rentAtStartHint": "Rente AVS mensuelle attendue lors d’une perception à 65 ans (âge de référence) selon le calcul anticipé de la rente, aux prix actuels, sans la 13e rente (l’application l’ajoute elle-même dès décembre 2026).",
+  "pension.rentAtStartHint": "Rente AVS mensuelle attendue lors d’une perception à 65 ans (âge de référence) selon le calcul anticipé de la rente, nominale (sans renchérissement jusqu’au droit à la rente), sans la 13e rente (l’application l’ajoute elle-même dès décembre 2026).",
   "pension.subtitle": "Caisse de pension (LPP, 2e pilier) et AVS (1er pilier)",
   "pillar3a.add": "+ Compte 3a",
   "pillar3a.addPayout": "+ Retrait",

@@ -1270,7 +1270,7 @@
   "care.hintSingle": "Ab dem Eintritt entfallen Miete und Wohnkosten. Mit «verkaufen» wird die selbst bewohnte Liegenschaft im Eintrittsmonat verkauft (mit Grundstückgewinnsteuer); Mieten «nach Verkauf» beginnen nicht. «Immobilien nie verkaufen» hat Vorrang. Die Heimkosten sind bei den Steuern als Krankheitskosten abziehbar, soweit sie 5 % des Nettoeinkommens übersteigen.",
   "care.hintCouple": "Die Wohnkosten des Haushalts laufen weiter, bis beide Personen im Pflegeheim sind. Erst dann wird mit «verkaufen» (bei einer der beiden Personen gewählt) die selbst bewohnte Liegenschaft verkauft, und Mieten «nach Verkauf» beginnen nicht. «Immobilien nie verkaufen» hat Vorrang. Die Heimkosten sind bei den Steuern als Krankheitskosten abziehbar, soweit sie 5 % des Nettoeinkommens übersteigen.",
   "pension.rentAtStart": "Rente pro Monat bei Bezugsbeginn",
-  "pension.rentAtStartHint": "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, in heutigen Preisen, ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).",
+  "pension.rentAtStartHint": "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, nominal (bis zum Anspruch ohne Teuerung), ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).",
   "pension.subtitle": "Pensionskasse (2. Säule) und AHV (1. Säule)",
   "pillar3a.add": "+ 3a-Konto",
   "pillar3a.addPayout": "+ Auszahlung",

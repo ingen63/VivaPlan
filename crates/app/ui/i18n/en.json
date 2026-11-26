@@ -1279,7 +1279,7 @@
   "care.hintSingle": "From the entry the rent and housing costs end. With “sell” the self-occupied property is sold in the month of the entry (with property gains tax); rents “after sale” do not start. “Never sell properties” has priority. The care home costs are deductible from the taxes as costs of illness as far as they exceed 5 % of the net income.",
   "care.hintCouple": "The household’s housing costs go on until both persons live in a care home. Only then, with “sell” (chosen for one of the two persons), is the self-occupied property sold, and rents “after sale” do not start. “Never sell properties” has priority. The care home costs are deductible from the taxes as costs of illness as far as they exceed 5 % of the net income.",
   "pension.rentAtStart": "Pension per month at the start of payout",
-  "pension.rentAtStartHint": "Expected monthly AHV pension when drawn at 65 (reference age) according to the pension forecast, in today’s prices, without the 13th pension (the app adds it itself from December 2026).",
+  "pension.rentAtStartHint": "Expected monthly AHV pension when drawn at 65 (reference age) according to the pension forecast, nominal (without inflation until entitlement), without the 13th pension (the app adds it itself from December 2026).",
   "pension.subtitle": "Pension fund (BVG, pillar 2) and old-age pension (AHV, pillar 1)",
   "pillar3a.add": "+ 3a account",
   "pillar3a.addPayout": "+ Payout",
