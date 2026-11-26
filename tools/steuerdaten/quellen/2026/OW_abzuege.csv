@@ -1,0 +1,12 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+OW,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"StG OW Art. 28 Abs. 3; Ausführungsbestimmungen über den Abzug von Berufskosten (GDB 641.412, Stand 1.1.2026) Art. 5 und Anhang 1 Ziff. 3.4"
+OW,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,3300,"StG OW Art. 35 Abs. 1 lit. g (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,4950,"StG OW Art. 35 Abs. 1 lit. g Ziff. 1 (GDB 641.4, Stand 1.1.2026; ohne Beiträge um die Hälfte erhöht)"
+OW,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,1700,"StG OW Art. 35 Abs. 1 lit. g (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,2550,"StG OW Art. 35 Abs. 1 lit. g Ziff. 1 (GDB 641.4, Stand 1.1.2026; ohne Beiträge um die Hälfte erhöht)"
+OW,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,3400,"StG OW Art. 35 Abs. 2 (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,EINKOMMENSSTEUER,SozVerheiratet_EK,Verheiratetenabzug,"PERCENT,MINIMUM,MAXIMUM",0,20,4300,10000,"StG OW Art. 37 Abs. 1 lit. a (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,EINKOMMENSSTEUER,SozZusAbzug_EK,Zusätzlicher Sozialabzug,STANDARDIZED,10000,0,0,0,"StG OW Art. 37 Abs. 1 lit. e Ziff. 1 (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,50000,0,0,0,"StG OW Art. 54 Abs. 1 lit. a und c (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,25000,0,0,0,"StG OW Art. 54 Abs. 1 lit. a und c (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,EINKOMMENSSTEUER,SozLedig_EK,Sozialabzug übrige Steuerpflichtige,STANDARDIZED,10000,0,0,0,"StG OW Art. 37 Abs. 1 lit. e Ziff. 2 (GDB 641.4, Stand 1.1.2026; fehlt in den ESTV-Daten)"

@@ -230,7 +230,8 @@ class Capital(unittest.TestCase):
         for cid, r in rules.items():
             self.assertTrue(r["text"], cid)
             self.assertIn(r["kind"], ("table", "income"), cid)
-        self.assertEqual(sorted(c for c, r in rules.items() if r.get("approx")), ["VS", "ZG"])
+        # #288: Zug follows the law (StG ZG § 37 Abs. 2)
+        self.assertEqual(sorted(c for c, r in rules.items() if r.get("approx")), ["VS"])
 
     def test_build_writes_curves_rule_and_federal_fifth(self):
         tariffs, deductions = minimal_inputs()
@@ -288,7 +289,7 @@ class PropertyGain(unittest.TestCase):
                 self.assertTrue(r["durationRates"], cid)
         self.assertEqual({r["model"] for r in rules.values()}, self.MODELS)
         self.assertEqual(sorted(c for c, r in rules.items() if r.get("useMultiplier")),
-                         ["BE", "JU", "LU", "OW", "SH", "SO"])
+                         ["BE", "JU", "OW", "SH", "SO"])  # #288: Lucerne with the fixed multiplier 4.2
 
     def test_issue_65_ak3_approximations_are_marked(self):
         """#65/AK3: the simplified rules carry a note."""
@@ -541,6 +542,69 @@ class Sources(unittest.TestCase):
         """#287/AK4: the lump-sum and property gain rules of Zurich name the article of the tax law."""
         self.assertTrue(build.read_rules(build.RULES)["ZH"]["source"].startswith("StG ZH § 37"))
         self.assertTrue(grundstueckgewinn.rules()["ZH"]["source"].startswith("StG ZH § 225"))
+
+    CENTRAL = ("LU", "UR", "SZ", "OW", "NW", "ZG")
+
+    def test_issue_288_ak1_central_switzerland_sources_are_complete(self):
+        """#288/AK1: source files 2026 for LU, UR, SZ, OW, NW and ZG with tariffs for income and wealth, the
+        deductions used and a source per row (checked by `read_sources`)."""
+        tariffs, deductions, covered = build.read_sources(self.REPO)
+        self.assertLessEqual(set(self.CENTRAL), covered)
+        kinds = {(r["Kanton"], r["Steuerart"]) for r in tariffs}
+        ids = {(r["Kanton"], r["ID"]) for r in deductions}
+        for cid in self.CENTRAL:
+            self.assertIn((cid, "EINKOMMENSSTEUER"), kinds)
+            self.assertIn((cid, "VERMOEGENSSTEUER"), kinds)
+            self.assertIn((cid, "HauptErw_EK"), ids)
+            self.assertIn((cid, "ZweitVerdiener_EK"), ids)
+            self.assertIn((cid, "KKSparLedigMitBVGS3a_EK"), ids)
+            self.assertIn((cid, "KKSparVerhOhneBVGS3a_EK"), ids)
+        self.assertIn(("SZ", "GEMEINDE", "EINKOMMENSSTEUER"),
+                      {(r["Kanton"], r["Hoheit"], r["Steuerart"]) for r in tariffs})
+
+    def test_issue_288_ak1_values_from_the_laws(self):
+        """#288/AK1: spot checks against the laws: LU § 57 Abs. 1 (last bracket, then 5.7 % on the whole income), NW
+        Art. 40 (divisor 1.85), OW Art. 37 Abs. 1 lit. e Ziff. 2 (10 000 francs also for single persons, missing in
+        the ESTV tables), ZG Grundtarif 2026 of the tax administration."""
+        tariffs, deductions, _ = build.read_sources(self.REPO)
+        t = build.load_tariffs(tariffs)
+        lu = build.pick(t[("LU", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertAlmostEqual(lu.tax(2_096_800, False) / 2_096_800, 0.057, places=3)
+        nw = build.pick(t[("NW", "KANTON", "EINKOMMENSSTEUER")], True)
+        self.assertAlmostEqual(nw.tax(185_000, True), 185_000 * nw.tax(100_000, False) / 100_000, places=2)
+        ow = {r["ID"]: r for r in deductions if r["Kanton"] == "OW"}
+        self.assertEqual(float(ow["SozLedig_EK"]["Betrag"]), 10_000)
+        self.assertIn("Art. 37 Abs. 1 lit. e Ziff. 2", ow["SozLedig_EK"]["Quelle"])
+        zg = build.pick(t[("ZG", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertAlmostEqual(zg.tax(149_900, False), 10_326.50, places=2)
+
+    def test_issue_288_ak2_rules_name_the_law(self):
+        """#288/AK2: the lump-sum and property gain rules of these cantons name the article of the law; Zug's lump-sum
+        rule is no longer an approximation."""
+        capital = build.read_rules(build.RULES)
+        gain = grundstueckgewinn.rules()
+        for cid in self.CENTRAL:
+            self.assertRegex(capital[cid]["source"], rf"^StG {cid} (§|Art\.) \d+", cid)
+            self.assertRegex(gain[cid]["source"], rf"^(GG)?StG {cid} (§|Art\.)", cid)
+        self.assertNotIn("approx", capital["ZG"])
+
+    def test_issue_288_ak4_zug_lump_sums_by_parts(self):
+        """#288/AK4: Zug, StG § 37 Abs. 2: 30 % of the tariff tax on the first 230 600 francs and 40 % on the rest,
+        at least 1 %; values of the tax calculator of the canton of Zug 2026 (simple tax)."""
+        tariffs, _, _ = build.read_sources(self.REPO)
+        t = build.load_tariffs(tariffs)
+        rule = build.read_rules(build.RULES)["ZG"]
+        for married, amount, want in ((False, 30_000, 300.00), (False, 500_000, 13_655.55),
+                                      (True, 300_000, 6_834.70), (True, 1_000_000, 29_234.70)):
+            self.assertAlmostEqual(build.capital_tax(rule, t, "ZG", married, amount), want, delta=0.05,
+                                   msg=(married, amount))
+
+    def test_issue_288_ak2_lucerne_property_gain_with_fixed_multiplier(self):
+        """#288/AK2: Lucerne, GGStG §§ 22–24: income tariff 2026 × 4.2 without the multiplier of the municipality."""
+        lu = grundstueckgewinn.rules()["LU"]
+        self.assertFalse(lu.get("useMultiplier", False))
+        self.assertEqual(lu["brackets"][3], [1200, 0.084])
+        self.assertEqual(lu["uniformAbove"], [2096800, 0.2394])
 
 
 if __name__ == "__main__":

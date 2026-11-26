@@ -1,0 +1,11 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+UR,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"StG UR Art. 31 Abs. 2; Regierungsratsbeschluss Nr. 2025-595 «Bemessung der Berufskosten, gültig ab Steuerperiode 2026» Ziff. 3"
+UR,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,3700,"StG UR Art. 38 Abs. 1 lit. g Ziff. 1 und 2 (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,5550,"StG UR Art. 38 Abs. 1 lit. g Ziff. 1–3 (RB 3.2211, Stand 1.1.2026; ohne Beiträge um die Hälfte erhöht)"
+UR,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,1800,"StG UR Art. 38 Abs. 1 lit. g Ziff. 1 und 2 (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,2700,"StG UR Art. 38 Abs. 1 lit. g Ziff. 1–3 (RB 3.2211, Stand 1.1.2026; ohne Beiträge um die Hälfte erhöht)"
+UR,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,3700,"StG UR Art. 38 Abs. 2 (RB 3.2211, Stand 1.1.2026; nur der Höchstbetrag, die Schwelle von 15 300 Franken ist nicht abgebildet)"
+UR,KANTON,EINKOMMENSSTEUER,SozVerheiratet_EK,Verheiratetenabzug,STANDARDIZED,26900,0,0,0,"StG UR Art. 41 Abs. 1 lit. e (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,EINKOMMENSSTEUER,SozLedig_EK,Abzug für ledige Steuerpflichtige,STANDARDIZED,15300,0,0,0,"StG UR Art. 41 Abs. 1 lit. g (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,211700,0,0,0,"StG UR Art. 56 Abs. 1 lit. a und b (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,105800,0,0,0,"StG UR Art. 56 Abs. 1 lit. a und b (RB 3.2211, Stand 1.1.2026)"

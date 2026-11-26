@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+LU,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,StG LU § 33 Abs. 2; StV LU § 11 (SRL 621) mit Berufskostenverordnung (SR 642.118.1) Art. 7
+LU,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,5200,"StG LU § 40 Abs. 1 lit. g (SRL 620, Stand 1.10.2026)"
+LU,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,6700,"StG LU § 40 Abs. 1 lit. g (SRL 620, Stand 1.10.2026)"
+LU,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,2600,"StG LU § 40 Abs. 1 lit. g (SRL 620, Stand 1.10.2026)"
+LU,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,3300,"StG LU § 40 Abs. 1 lit. g (SRL 620, Stand 1.10.2026)"
+LU,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,5000,"StG LU § 40 Abs. 2 (SRL 620, Stand 1.10.2026)"
+LU,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,125000,0,0,0,"StG LU § 52 Abs. 1 lit. a und b (SRL 620, Stand 1.10.2026)"
+LU,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,62500,0,0,0,"StG LU § 52 Abs. 1 lit. a und b (SRL 620, Stand 1.10.2026)"

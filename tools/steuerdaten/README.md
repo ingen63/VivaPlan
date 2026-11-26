@@ -54,19 +54,22 @@ Die ESTV-Grunddaten enthalten nur für 12 Kantone einen Tarif «Kapitalauszahlun
 `VORSORGESTEUER` in `tarife_<Jahr>.csv`). Die Regeln aller 26 Kantone stehen deshalb von Hand erfasst in
 `kapitalregeln.json`, abgeleitet aus 364 Rechnungen des ESTV-Steuerrechners 2026 «Kapitalauszahlung aus Vorsorge»
 (alle Kantonshauptorte, Bezüge 50 000 bis 5 Millionen, alleinstehend und verheiratet, Alter 65, ohne Kinder, ohne
-Konfession): Kantons- und Gemeindesteuer geteilt durch den Steuerfuss ergibt die einfache Steuer. Nicht aus
-Steuermäppchen oder Gesetzen geprüft.
+Konfession): Kantons- und Gemeindesteuer geteilt durch den Steuerfuss ergibt die einfache Steuer. Gegen das Gesetz
+geprüft sind ZH (#287) sowie LU, UR, SZ, OW, NW und ZG (#288); sie nennen den Artikel in `source`.
 
 - `kind: table`: Tarif «Kapitalauszahlung aus Vorsorge» der ESTV (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
   als Typ `BUND`, Bern); `kind: income`: Anteil `share` der Steuer nach dem Einkommenstarif ohne Abzüge, Satz für
-  `Bezug / divisor`, Verheiratete mit dem Splitting des Tarifs;
+  `Bezug / divisor`, Verheiratete mit dem Splitting des Tarifs; mit `parts` (Zug, #288) statt dessen je Teil des
+  Bezugs bis `upTo` die Tarifsteuer auf diesem Teil mal `share`;
 - `min`, `max`: Grenzen des Satzes; `rebate`: Ermässigung (`rate` des Bezugs, höchstens `max`);
 - `single`, `married`: Werte je Zivilstand; `municipal`: eigene Regel der Gemeindesteuer (`target: GEMEINDE` nimmt
   den Gemeindetarif); `cantonMultiplier`: Kantonssteuer mit eigenem Steuerfuss (Freiburg 100 % statt 96 %);
 - `text`: die Regel für die Steuerdatei (`capitalRule`); `approx`: Hinweis bei einer Näherung (`capitalApprox`).
 
-Näherungen: Wallis (Höchstsatz der Gemeindesteuer aus Sitten abgeleitet) und Zug (Abweichung bis rund 7 %, genaue
-Regel nicht gefunden). Alle anderen Kantone treffen die 364 Rechnungen auf 1 % genau. Die Oberfläche zeigt die Regel
+Näherung: Wallis (Höchstsatz der Gemeindesteuer aus Sitten abgeleitet). Zug folgt seit #288 dem Gesetz (§ 37 Abs. 2
+StG: 30 % der Tarifsteuer auf den ersten 230 600 Franken, 40 % auf dem Rest, mindestens 1 %; Grenzbetrag 2026 der
+Steuerverwaltung) und trifft den Zuger Steuerrechner auf den Rappen. Alle anderen Kantone treffen die 364 Rechnungen auf
+1 % genau. Die Oberfläche zeigt die Regel
 aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsche Text muss `text` entsprechen
 (e2e-Test). Für ein neues Steuerjahr die Rechnungen wiederholen und die Regeln und Referenzfälle
 (`crates/engine/tests/tax_capital_location.rs`) nachführen.
@@ -75,7 +78,9 @@ aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsc
 
 Die Regelsätze aller 26 Kantone stehen von Hand erfasst in `grundstueckgewinn.py` (Funktion `rules()`). Quelle:
 ESTV-Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3, Seite je Kanton;
-ZG, FR, VS, BS, BL, SG und VD zusätzlich gegen das kantonale Gesetz geprüft (Stand November 2026). Je Kanton `text`
+ZG, FR, VS, BS, BL, SG und VD zusätzlich gegen das kantonale Gesetz geprüft (Stand November 2026), ebenso ZH (#287)
+sowie LU, UR, SZ, OW und NW (#288). Luzern: seit 2025 fester Steuerfuss von 4,2 Einheiten (§ 23 GGStG), in die Sätze
+eingerechnet (ohne `useMultiplier`). Je Kanton `text`
 (Regel für `propertyGainRule`), `source` (Seite oder Gesetz, nur im Bericht) und, wo vereinfacht, `approx`.
 
 - Modelle: `zurich` (Stufen `brackets`, optional `uniformAbove`, `longBrackets`), `aargau` (`durationRates`), `curve`
@@ -106,7 +111,9 @@ Jede Zeile nennt in `Quelle` den Erlass mit Artikel und Stand (z. B. `StG ZH § 
 braucht beide Dateien; seine Zeilen aus den ESTV-Tabellen fallen dann ganz weg, die übrigen Kantone kommen unverändert
 aus den ESTV-Tabellen. Der Bericht beginnt mit der Herkunft je Kanton (`laws (source files)` oder `ESTV tables`).
 Kapitalbezugs- und Grundstückgewinnregeln nennen den Gesetzesartikel in `source` (`kapitalregeln.json`,
-`grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287).
+`grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287), Zentralschweiz LU, UR, SZ, OW, NW, ZG (#288). Wo das
+Gesetz Grundbeträge nennt und die Verwaltung die Teuerung ausgleicht (Zug), nennt `Quelle` auch die Veröffentlichung
+der Steuerverwaltung für das Jahr.
 
 Die Erlasse selbst (PDF und Textauszug) liegen lokal unter `local/steuerquellen/<Jahr>/` mit `quellen.txt` (Datei,
 Adresse, Abrufdatum), nicht im Repository.

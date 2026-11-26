@@ -7,7 +7,7 @@ const { open, noErrors, nav, previewIdle, helpTitle } = require("./helpers");
 
 const muni = page => page.locator("#tax-muni");
 /** A municipality per canton for the tests that only need the canton (#272: the canton follows from the municipality). */
-const MUNI_OF = { ZH: "Zürich", ZG: "Zug", BL: "Liestal", AG: "Aarau", BE: "Bern" };
+const MUNI_OF = { ZH: "Zürich", ZG: "Zug", BL: "Liestal", AG: "Aarau", BE: "Bern", VS: "Sion" };
 
 /** Switches the section «Steuern» to the mode «Wohnort» (#272/AK6: knob «Auf Wohnort umstellen» of a plan with own
  *  tables, the example plan) and opens the settings below «Annahmen». */
@@ -208,7 +208,8 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
     await toLocation(page);
     const ids = await page.evaluate(() => taxLoc.cantons.map(c => [c.id, c.capitalRule, !!c.capitalApprox]));
     expect(ids).toHaveLength(26);
-    expect(ids.filter(([, , a]) => a).map(([id]) => id).sort()).toEqual(["VS", "ZG"]);
+    // #288: Zug follows the law, only Valais is approximated
+    expect(ids.filter(([, , a]) => a).map(([id]) => id).sort()).toEqual(["VS"]);
     const texts = Object.fromEntries(["de", "en", "fr", "it"].map(l =>
       [l, JSON.parse(fs.readFileSync(path.join(__dirname, "..", "crates", "app", "ui", "i18n", `${l}.json`), "utf8"))]));
     for (const [id, rule, approx] of ids) {
@@ -219,8 +220,8 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
         if (approx) expect(texts[l][`capitalApprox.${id}`], `${l} ${id}`).toBeTruthy();
       }
     }
-    await pickCanton(page, "ZG");
-    await expect(page.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert: Die Regel ist angenähert");
+    await pickCanton(page, "VS");
+    await expect(page.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert: Der Höchstsatz");
     await pickCanton(page, "ZH");
     await expect(page.locator("#tax-capital-approx")).toHaveCount(0);
     await expect(page.locator("#tax-capital-rule")).toBeVisible();

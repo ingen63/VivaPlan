@@ -1,5 +1,5 @@
 {
-  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German). Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
+  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287, #288), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
   "AG": {
     "kind": "income",
     "share": 0.3,
@@ -66,7 +66,8 @@
   },
   "LU": {
     "kind": "table",
-    "text": "eigener Tarif für Kapitalleistungen"
+    "text": "eigener Tarif für Kapitalleistungen",
+    "source": "StG LU § 58 Abs. 2 und § 259f (SRL 620, Stand 1.10.2026)"
   },
   "NE": {
     "kind": "income",
@@ -78,12 +79,14 @@
     "kind": "income",
     "share": 0.25,
     "min": 0.005,
-    "text": "25 % der Steuer nach dem Einkommenstarif, Satz mindestens 0.5 %"
+    "text": "25 % der Steuer nach dem Einkommenstarif, Satz mindestens 0.5 %",
+    "source": "StG NW Art. 42 Abs. 3 (NG 521.1, Stand 1.1.2026)"
   },
   "OW": {
     "kind": "income",
     "share": 0.4,
-    "text": "40 % des Einkommenssatzes (Pauschalsatz)"
+    "text": "40 % des Einkommenssatzes (Pauschalsatz)",
+    "source": "StG OW Art. 40 Abs. 2 (GDB 641.4, Stand 1.1.2026)"
   },
   "SG": {
     "kind": "table",
@@ -111,7 +114,8 @@
       "share": 1.0,
       "max": 0.015
     },
-    "text": "Satz des Einkommenstarifs für einen Fünfundzwanzigstel des Bezugs, höchstens 1.5 %"
+    "text": "Satz des Einkommenstarifs für einen Fünfundzwanzigstel des Bezugs, höchstens 1.5 %",
+    "source": "StG SZ § 38 Abs. 1 (SRSZ 172.200, Stand 1.2.2026)"
   },
   "TG": {
     "kind": "table",
@@ -132,7 +136,8 @@
   },
   "UR": {
     "kind": "table",
-    "text": "fester Satz von 1.9 %"
+    "text": "fester Satz von 1.9 %",
+    "source": "StG UR Art. 45 Abs. 2 (RB 3.2211, Stand 1.1.2026)"
   },
   "VD": {
     "kind": "income",
@@ -168,20 +173,18 @@
   },
   "ZG": {
     "kind": "income",
-    "single": {
-      "divisor": 10,
-      "share": 0.7731,
-      "min": 0.012,
-      "max": 0.02966
-    },
-    "married": {
-      "divisor": 8,
-      "share": 0.8199,
-      "min": 0.01,
-      "max": 0.03062
-    },
-    "text": "Anteil des Einkommenstarifs, Satz zwischen 1 % und rund 3 %",
-    "approx": "Die Regel ist angenähert; die Steuer kann bis rund 7 % vom Steuerrechner der ESTV abweichen."
+    "parts": [
+      {
+        "upTo": 230600,
+        "share": 0.3
+      },
+      {
+        "share": 0.4
+      }
+    ],
+    "min": 0.01,
+    "text": "30 % der Steuer nach dem Einkommenstarif auf den ersten 230 600 Franken, 40 % auf dem Rest, Satz mindestens 1 %",
+    "source": "StG ZG § 37 Abs. 2 und § 45 (BGS 632.1, Stand 1.1.2026); Grenzbetrag 2026 nach Steuerverwaltung Zug, Sozialabzüge Kantonssteuern Steuerperiode 2026"
   },
   "ZH": {
     "kind": "income",

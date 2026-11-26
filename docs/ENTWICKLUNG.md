@@ -1029,7 +1029,7 @@ ein (`BUILTIN`).
   `fieldset.locked-area` (`#pkBody0`/`#pkBody1`), das bei gesetztem Schalter `disabled` ist (wie #196).
 - **Kapitalbezüge (#64):** je Kanton `capital` (Satz der einfachen Steuer auf den ganzen Bezug, Steuerfuss 100 %,
   Alleinstehende und Verheiratete), wo nötig `capitalMunicipal` (eigene Regel der Gemeindesteuer: Schwyz, Wallis,
-  Genf; Freiburg wegen `cantonMultiplier`), `capitalRule` (Text) und `capitalApprox` (Näherung: Wallis, Zug); dazu
+  Genf; Freiburg wegen `cantonMultiplier`), `capitalRule` (Text) und `capitalApprox` (Näherung: Wallis); dazu
   `federalCapital` (ein Fünftel des Bundestarifs, ohne Abzüge). `resolve` liefert `capital` = Kantonskurve × (Steuerfuss
   Kanton + Kirche) + Gemeindekurve × Steuerfuss Gemeinde + Bundeskurve, mit den Steuerfüssen der Einkommenssteuer.
   `Run::capital_tax` nimmt im Modus «Wohnort» diese Tabelle mit Steuerfuss 1 statt `taxes.capital` × `taxes.multiplier`;

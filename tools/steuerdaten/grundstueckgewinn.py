@@ -2,7 +2,8 @@
 
 Source: ESTV, «Steuermäppchen» on the property gain tax («Grundstückgewinnsteuer»), tax period 2025
 (as of 26.11.2025), table 3 «Berechnung der Grundstückgewinnsteuer». The page is given with each canton; ZG, FR, VS,
-BS, BL, SG and VD were also checked against the cantonal law (as of November 2026).
+BS, BL, SG and VD were also checked against the cantonal law (as of November 2026); ZH (#287) and LU, UR,
+SZ, OW, NW (#288) name the law article.
 
 Each rule is an object in the format of `PropertyGainTax` of the engine (camelCase):
 - model «zurich»: `brackets` [width, rate], optionally `uniformAbove` [from gain, rate for the whole gain];
@@ -62,37 +63,40 @@ def rules():
         text="einfache Steuer 1.44 % bis 8.1 % × Steuerfuss, Zuschlag unter 5 Jahren, Gewinn ab 5 Jahren je Jahr "
              "2 % tiefer (höchstens 70 %)",
         source="S. 9")
+    # #288: income tax tariff 2026 (StG LU § 57 Abs. 1) times the fixed tax multiplier of 4.2 units (§ 23 GGStG)
+    lu = 4.2
     r["LU"] = dict(
-        model="zurich", useMultiplier=True, exemptBelow=13000, maxShare=0.40,
-        brackets=[[9900, 0.0], [2400, 0.005], [3200, 0.01], [1100, 0.02], [1200, 0.03], [2900, 0.04], [4300, 0.045],
-                  [85000, 0.05], [53800, 0.0525], [26200, 0.055], [BIG, 0.058]],
-        uniformAbove=[2093000, 0.057],
+        model="zurich", exemptBelow=13000, maxShare=0.40,
+        brackets=[[w, round(p * lu, 6)] for w, p in (
+            [9900, 0.0], [2400, 0.005], [3200, 0.01], [1200, 0.02], [1200, 0.03], [2900, 0.04], [4300, 0.045],
+            [85000, 0.05], [53800, 0.0525], [26200, 0.055], [BIG, 0.058])],
+        uniformAbove=[2096800, round(0.057 * lu, 6)],
         duration=[[0, 0.5], [1, 0.4], [2, 0.3], [3, 0.2], [4, 0.1], [5, 0.0]] + steps(9, -0.01, -0.01, -0.25),
-        text="Einkommenssteuertarif (einfache Steuer) × Steuerfuss, Zuschlag unter 6 Jahren, Ermässigung ab 9 Jahren "
-             "bis 25 %, höchstens 40 % des Gewinns",
-        source="S. 10")
+        text="Einkommenssteuertarif (einfache Steuer) × 4.2 (fester Steuerfuss), Zuschlag unter 6 Jahren, Ermässigung "
+             "ab 9 Jahren bis 25 %, höchstens 40 % des Gewinns",
+        source="GGStG LU §§ 22–24 (SRL 647, Stand 1.1.2025) mit StG LU § 57 Abs. 1 (SRL 620, Stand 1.10.2026)")
     r["UR"] = dict(
         model="aargau", allowance=10000,
         durationRates=[[y, round(0.31 - 0.01 * y, 4)] for y in range(21)],
         text="Satz nach Besitzdauer 31 % bis 11 %, Freibetrag 10 000 Franken",
-        source="S. 10")
+        source="StG UR Art. 142 (RB 3.2211, Stand 1.1.2026)")
     r["SZ"] = dict(
         model="zurich", allowance=2000,
         brackets=[[3000, 0.08], [5000, 0.12], [7000, 0.16], [10000, 0.20], [15000, 0.25], [BIG, 0.30]],
         duration=[[0, 0.4], [1, 0.3], [2, 0.2], [3, 0.1], [4, 0.0]] + steps(5, -0.10, -0.03, -0.70),
         text="Stufentarif 8 % bis 30 %, Freibetrag 2 000 Franken, Zuschlag unter 4 Jahren, Ermässigung bis 70 %",
-        source="S. 11")
+        source="StG SZ § 120 (SRSZ 172.200, Stand 1.2.2026)")
     r["OW"] = dict(
         model="zurich", useMultiplier=True, exemptBelow=5000, brackets=[[BIG, 0.02]],
         duration=[[0, 0.3], [1, 0.2], [2, 0.1], [3, 0.0]],
         text="einfache Steuer 2 % × Steuerfuss, Zuschlag unter 3 Jahren",
-        source="S. 11")
+        source="StG OW Art. 155 und 156 (GDB 641.4, Stand 1.1.2026)")
     nw = [0.36, 0.33, 0.31, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24, 0.23, 0.22]
     nw += [round(0.215 - 0.005 * i, 4) for i in range(19)]  # 11 to 29 years: 21.5 % to 12.5 %
     r["NW"] = dict(
         model="aargau", durationRates=[[y, v] for y, v in enumerate(nw)] + [[30, 0.12]],
         text="Satz nach Besitzdauer 36 % bis 12 %",
-        source="S. 12")
+        source="StG NW Art. 151 (NG 521.1, Stand 1.1.2026)")
     r["GL"] = dict(
         model="zurich", exemptBelow=5000,
         brackets=[[5000, 0.10], [5000, 0.15], [5000, 0.20], [5000, 0.25], [BIG, 0.30]],
@@ -105,7 +109,7 @@ def rules():
         returnMaxDuration=[[0, 0.60]] + [[y, round(0.60 - 0.025 * (y - 11), 4)] for y in range(12, 25)] + [[25, 0.25]],
         text="Satz = Jahresrendite des Gewinns auf den Anlagekosten, mindestens 10 %, höchstens 60 %; der Höchstsatz "
              "sinkt ab 12 Jahren um 2.5 Punkte je Jahr auf 25 %",
-        source="§ 199 StG, BGS 632.1")
+        source="StG ZG § 199 (BGS 632.1, Stand 1.1.2026)")
     r["FR"] = dict(
         model="aargau", exemptBelow=6000, shortSurcharge=[400000, 0.40, 5],
         durationRates=[[0, 0.22], [2, 0.20], [4, 0.18], [6, 0.16], [8, 0.14], [10, 0.12], [15, 0.10]],

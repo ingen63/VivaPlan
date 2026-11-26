@@ -139,8 +139,8 @@ fn issue_64_ak2_formula_with_church_and_one_fifth_federal() {
     assert!((tax::rate_at(&c, x) - want).abs() < 1e-12);
 }
 
-/// #64/AK3: All 26 cantons have a rule; only Valais and Zug are approximated, with a note in the data file and in
-/// the list for the user interface.
+/// #64/AK3: All 26 cantons have a rule; only Valais is approximated, with a note in the data file and in the list for
+/// the user interface (Zug follows the law since #288).
 #[test]
 fn issue_64_ak3_every_canton_has_a_rule_and_approximations_are_marked() {
     let data = taxdata::builtin();
@@ -158,16 +158,16 @@ fn issue_64_ak3_every_canton_has_a_rule_and_approximations_are_marked() {
         .collect();
     let mut sorted = approx.clone();
     sorted.sort_unstable();
-    assert_eq!(sorted, ["VS", "ZG"]);
+    assert_eq!(sorted, ["VS"]);
     let json = serde_json::to_value(&out).unwrap();
-    let zg = json["cantons"]
+    let vs = json["cantons"]
         .as_array()
         .unwrap()
         .iter()
-        .find(|c| c["id"] == "ZG")
+        .find(|c| c["id"] == "VS")
         .unwrap();
-    assert!(zg["capitalRule"].as_str().is_some_and(|s| !s.is_empty()));
-    assert!(zg["capitalApprox"].as_str().is_some_and(|s| !s.is_empty()));
+    assert!(vs["capitalRule"].as_str().is_some_and(|s| !s.is_empty()));
+    assert!(vs["capitalApprox"].as_str().is_some_and(|s| !s.is_empty()));
     let zh = json["cantons"]
         .as_array()
         .unwrap()
@@ -312,4 +312,34 @@ fn issue_64_ak1_own_capital_table_not_checked_in_location_mode() {
     assert_eq!(errors(&v), 0);
     v["taxes"]["mode"] = json!("own");
     assert_eq!(errors(&v), 2);
+}
+
+/// #288/AK4: Zug, simple cantonal tax on lump sums (StG ZG § 37 Abs. 2: 30 % of the tariff tax on the first 230 600
+/// francs, 40 % on the rest, rate at least 1 %) against the tax calculator of the canton of Zug, 2026, 26.11.2026:
+/// married, lump sum, simple tax. Form «Kapitalabfindungen aus Vorsorge» on steuern.zg.ch. «check-english: allow»
+const ZG_CALCULATOR: [(bool, f64, f64); 10] = [
+    (false, 30_000.0, 300.00),
+    (false, 60_000.0, 765.30),
+    (false, 100_000.0, 1_690.35),
+    (false, 500_000.0, 13_655.55),
+    (false, 2_000_000.0, 61_655.55),
+    (false, 5_000_000.0, 157_655.55),
+    (true, 50_000.0, 500.00),
+    (true, 200_000.0, 3_380.70),
+    (true, 300_000.0, 6_834.70),
+    (true, 1_000_000.0, 29_234.70),
+];
+
+#[test]
+fn issue_288_ak4_zug_lump_sums_match_the_cantonal_calculator() {
+    let zg = taxdata::builtin().canton("ZG").unwrap().clone();
+    assert!(zg.capital_approx.is_none());
+    for (married, amount, want) in ZG_CALCULATOR {
+        let mine = tax::tax(zg.capital.get(married), amount, 1.0);
+        assert!(
+            (mine / want - 1.0).abs() <= 0.005,
+            "{} {amount}: {mine} instead of {want}",
+            if married { "married" } else { "single" }
+        );
+    }
 }

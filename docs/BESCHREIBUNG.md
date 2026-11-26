@@ -122,7 +122,7 @@ Der Editor führt durch zwölf Abschnitte:
   der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
   Netzwerkzugriff. Im Modus «Wohnort» auch die Kapitalbezugssteuer (#64) nach der Regel des Kantons mit den
   Steuerfüssen der Einkommenssteuer und einem Fünftel des Bundestarifs, ohne eigene Tabelle; die Regel steht unter der
-  Gemeinde, angenäherte Regeln (Wallis, Zug) mit ⚠. Wohnort als Standard (#272): Neue Planungen beginnen im Modus
+  Gemeinde, angenäherte Regeln (Wallis) mit ⚠. Wohnort als Standard (#272): Neue Planungen beginnen im Modus
   «Wohnort» ohne Gemeinde; nötig sind nur die Gemeinde (Suche über alle Gemeinden, der Kanton ergibt sich daraus) und
   die Konfession. Die übrigen Einstellungen gelten mit Vorgaben und stehen als Zeile «Annahmen» in Worten da
   (Standardabzüge des Kantons bis und ab Pensionierung, Tarife mit der Teuerung, Abzug der Säule 3a ja, Steuerwert der
@@ -275,7 +275,8 @@ würde die Scheingenauigkeit verstärken.
   (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %);
   25 Fälle mit Erwerbstätigen (alleinstehend, verheiratet mit einem oder zwei Erwerbseinkommen) ebenfalls unter 1 %.
   Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
-  (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis und Zug nur angenähert.
+  (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis nur angenähert; Zug nach dem Gesetz,
+  10 Fälle gegen den Zuger Steuerrechner auf 0,5 % genau (#288).
   Grundstückgewinnsteuer im Modus «Wohnort»: je Kanton erfundene Fälle gegen von Hand nachgerechnete Werte nach
   Steuermäppchen oder Gesetz.
 - **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
@@ -345,7 +346,7 @@ würde die Scheingenauigkeit verstärken.
 Im Modus «Wohnort» nennt der Abschnitt Steuern die Steuerfüsse der Gemeinde, das Steuerjahr und die Quelle der Daten
 und dass die Steuer eine Schätzung mit den Standardabzügen des Kantons ist; Berufskosten, für die die ESTV-Daten nur
 einen Höchstbetrag nennen (BL, BS, TI), sind mit ⚠ markiert. Unter der Gemeinde steht die Regel des Kantons für
-Kapitalbezüge, angenäherte Regeln (Wallis, Zug) mit ⚠; die Tabellen für den Kapitalbezug sind ausgeblendet. Die Warnung bei alten Daten folgt mit #143.
+Kapitalbezüge, angenäherte Regeln (Wallis) mit ⚠; die Tabellen für den Kapitalbezug sind ausgeblendet. Die Warnung bei alten Daten folgt mit #143.
 
 ## Datenbibliothek
 

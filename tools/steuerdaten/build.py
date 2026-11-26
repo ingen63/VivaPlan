@@ -454,7 +454,9 @@ def capital_tax(rule, tariffs, canton, married, x):
 
     Rule `table`: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV. Rule `income`: share `share` of the tax by the
     income tariff, rate determined for `x / divisor` (without deductions, married couples with the splitting of the
-    tariff). The rate lies between `min` and `max` if given; `rebate` reduces by a share of the amount, at most `max`.
+    tariff); with `parts` (#288, Zug) instead the sum over the parts of the tariff tax on each part of the amount
+    (`upTo`: upper limit of the part, missing for the last one) times its `share`. The rate lies between `min` and
+    `max` if given; `rebate` reduces by a share of the amount, at most `max`.
     """
     if x <= 0:
         return 0.0
@@ -466,6 +468,15 @@ def capital_tax(rule, tariffs, canton, married, x):
         if t is None:
             raise ValueError(f"{canton}: tariff for lump sums missing")
         rate = t.tax(x, married) / x * r.get("share", 1.0)
+    elif r["kind"] == "income" and r.get("parts"):
+        t = pick(tariffs.get((canton, target, "EINKOMMENSSTEUER")), married)
+        tax, lower = 0.0, 0.0
+        for part in r["parts"]:
+            upper = min(x, part.get("upTo", x))
+            if upper > lower:
+                tax += (t.tax(upper, married) - t.tax(lower, married)) * part["share"]
+            lower = max(lower, upper)
+        rate = tax / x
     elif r["kind"] == "income":
         t = pick(tariffs.get((canton, target, "EINKOMMENSSTEUER")), married)
         d = r.get("divisor", 1)

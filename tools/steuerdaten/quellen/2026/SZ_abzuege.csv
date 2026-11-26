@@ -1,0 +1,11 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+SZ,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MAXIMUM",0,20,0,6900,"StG SZ § 28 Abs. 2 (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,8400,"StG SZ § 33 Abs. 1 lit. g (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,12600,"StG SZ § 33 Abs. 1 lit. g (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,4200,"StG SZ § 33 Abs. 1 lit. g (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,6300,"StG SZ § 33 Abs. 1 lit. g (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,2100,"StG SZ § 33 Abs. 2 (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,SozVerheiratet_EK,Verheiratetenabzug,STANDARDIZED,8400,0,0,0,"StG SZ § 35 Abs. 1 lit. a und b (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,EINKOMMENSSTEUER,SozLedig_EK,Abzug für ledige Steuerpflichtige,STANDARDIZED,4200,0,0,0,"StG SZ § 35 Abs. 1 lit. a und b (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,250000,0,0,0,"StG SZ § 47 Abs. 1 lit. a und b (SRSZ 172.200, Stand 1.2.2026)"
+SZ,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,125000,0,0,0,"StG SZ § 47 Abs. 1 lit. a und b (SRSZ 172.200, Stand 1.2.2026)"

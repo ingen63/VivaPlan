@@ -1,0 +1,4 @@
+Kanton,Hoheit,Steuerart,Tariftyp,Splitting,Gruppe,Zeile,Betrag,Prozent,Steuer,Formel,Quelle
+UR,KANTON,EINKOMMENSSTEUER,FLATTAX,0,ALLE,0,0,7.1,0,,"StG UR Art. 42 Abs. 1 lit. a (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,VERMOEGENSSTEUER,FLATTAX,0,ALLE,0,0,0.1,0,,"StG UR Art. 57 Abs. 1 lit. a (RB 3.2211, Stand 1.1.2026)"
+UR,KANTON,VORSORGESTEUER,FLATTAX,0,ALLE,0,0,1.9,0,,"StG UR Art. 45 Abs. 2 lit. a (RB 3.2211, Stand 1.1.2026)"

@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+NW,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MAXIMUM",0,5,0,7000,"StV NW § 19 Abs. 1 und Anhang 1 § A1-8 (NG 521.11, Stand 1.1.2026)"
+NW,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,3700,"StG NW Art. 35 Abs. 1 Ziff. 7 lit. a und b (NG 521.1, Stand 1.1.2026) mit DBG Art. 33 Abs. 1 lit. g"
+NW,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,5550,"StG NW Art. 35 Abs. 1 Ziff. 7 lit. a–c (NG 521.1, Stand 1.1.2026) mit DBG Art. 33 Abs. 1 lit. g; ohne Beiträge um die Hälfte erhöht"
+NW,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,1800,"StG NW Art. 35 Abs. 1 Ziff. 7 lit. a und b (NG 521.1, Stand 1.1.2026) mit DBG Art. 33 Abs. 1 lit. g"
+NW,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,2700,"StG NW Art. 35 Abs. 1 Ziff. 7 lit. a–c (NG 521.1, Stand 1.1.2026) mit DBG Art. 33 Abs. 1 lit. g; ohne Beiträge um die Hälfte erhöht"
+NW,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,1200,"StG NW Art. 36 Abs. 1 (NG 521.1, Stand 1.1.2026)"
+NW,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,70000,0,0,0,"StG NW Art. 53 Abs. 1 Ziff. 1 und 2 (NG 521.1, Stand 1.1.2026)"
+NW,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,35000,0,0,0,"StG NW Art. 53 Abs. 1 Ziff. 1 und 2 (NG 521.1, Stand 1.1.2026)"

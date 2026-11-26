@@ -1,0 +1,3 @@
+Kanton,Hoheit,Steuerart,Tariftyp,Splitting,Gruppe,Zeile,Betrag,Prozent,Steuer,Formel,Quelle
+OW,KANTON,EINKOMMENSSTEUER,FLATTAX,0,ALLE,0,0,1.8,1,,"StG OW Art. 38 Abs. 1 (GDB 641.4, Stand 1.1.2026)"
+OW,KANTON,VERMOEGENSSTEUER,FLATTAX,0,ALLE,0,0,0.02,0,,"StG OW Art. 55 Abs. 1 (GDB 641.4, Stand 1.1.2026)"

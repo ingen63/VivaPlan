@@ -207,13 +207,17 @@ fn issue_65_ak4_ju_hand_values() {
     close(tax_m("JU", 60000.0, 180, 1.8), 3762.00);
 }
 
-/// Lucerne (LU), ESTV «Steuermäppchen» 2025 p. 10: income tax tariff (simple tax) × tax multiplier, surcharge under 6 years, reduction from 9 years up to 25 %, at most 40 % of the gain.
+/// Lucerne (LU), #288: GGStG LU §§ 22–24 (SRL 647): income tax tariff 2026 (StG LU § 57 Abs. 1, simple tax) × fixed
+/// tax multiplier 4.2 (§ 23), surcharge under 6 years, reduction from 9 years up to 25 %, at most 40 % of the gain; the
+/// tax multiplier of the municipality has no effect.
 #[test]
 fn issue_65_ak4_lu_hand_values() {
-    // gain 60 000, held 30 months: 0 % × 9 900 + 0.5 % × 2 400 + 1 % × 3 200 + 2 % × 1 100 + 3 % × 1 200 + 4 % × 2 900 + 4.5 % × 4 300 + 5 % × 35 000 × (1 +0.3) × tax multiplier 1.8 = 5057.91
-    close(tax_m("LU", 60000.0, 30, 1.8), 5057.91);
-    // gain 60 000, held 15 years: 0 % × 9 900 + 0.5 % × 2 400 + 1 % × 3 200 + 2 % × 1 100 + 3 % × 1 200 + 4 % × 2 900 + 4.5 % × 4 300 + 5 % × 35 000 × (1 -0.07) × tax multiplier 1.8 = 3618.35
-    close(tax_m("LU", 60000.0, 180, 1.8), 3618.35);
+    // gain 60 000, held 30 months: 0 % × 9 900 + 0.5 % × 2 400 + 1 % × 3 200 + 2 % × 1 200 + 3 % × 1 200 + 4 % × 2 900 + 4.5 % × 4 300 + 5 % × 34 900 = 2 158.50 × 4.2 × (1 +0.3) = 11 785.41
+    close(tax_m("LU", 60000.0, 30, 1.8), 11785.41);
+    // gain 60 000, held 15 years: 2 158.50 × 4.2 × (1 -0.07) = 8 431.10
+    close(tax_m("LU", 60000.0, 180, 1.8), 8431.10);
+    // #288: the fixed tax multiplier ignores the tax multiplier passed in
+    close(tax_m("LU", 60000.0, 180, 3.0), 8431.10);
 }
 
 /// Neuchâtel (NE), ESTV «Steuermäppchen» 2025 p. 22: bracket tariff 10 % to 40 %, from 135 000 francs 33 %, surcharge under 4 years, reduction up to 60 %.
