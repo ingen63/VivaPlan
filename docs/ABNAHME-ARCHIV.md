@@ -2283,6 +2283,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #274/AK10 | Tests: Handwert-Beispiel, Pensionierung vor dem Start, e2e für den Dialog. | ☑ | **gilt** | `issue_274_…` (14), e2e «… (#274)» (8) | 26.11.2026 ok (Tests) |
 | #274/AK11 | Hilfe, `BESCHREIBUNG.md` und Spezifikation nachgeführt. | ☑ | **gilt** (Hilfe 4 Sprachen mit Referenz, `ENTWICKLUNG.md`, `describe`) | `make i18n-check`, `make ui-texts`, Hilfe-Tests | 26.11.2026 ok (Tests) |
 
+### #275 Abzüge im Einzelnen unter «Experte»
+
+[Issue #275](https://github.com/ingen63/VivaPlan/issues/275) · geschlossen · Umsetzung: 9de30d6
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #275/AK1 | Abzüge vom Einkommen (Zeilen, zusätzlich), Abzüge vom Vermögen, Tarife mit der Teuerung und eigene Tabellen zugeklappt unter «Experte»; Planungen mit eigenen Werten darin öffnen ihn. | ☑ | **gilt** (Häkchen Säule 3a bleibt bei den Annahmen; auch bei Fehlern darin offen) | e2e [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «… (#275)» AK1, AK4 (2), AK1 | 26.11.2026 ok (Tests) |
+| #275/AK2 | Einmalige Abzüge (#230) ausserhalb, direkt erreichbar; Link «Einkauf als Abzug erfassen» in der PK-Karte legt einen einmaligen Abzug im Jahr des Einkaufs an. | ☑ | **gilt** (eigene Karte «Einmalige Abzüge»; Vorgabe Jahr nach dem Start, da die Planung kein Einkaufsdatum kennt; Fokus auf dem Steuerjahr) | e2e AK2, AK4 und AK2 (zwei Personen) | 26.11.2026 ok (Tests) |
+| #275/AK3 | Rechnung und Speicherformat ändern nicht. | ☑ | **gilt** (kein Engine-Code, Golden unverändert) | `golden::*`, e2e AK1, AK4 (Planung unverändert) | 26.11.2026 ok (Tests) |
+| #275/AK4 | e2e-Tests für Zuklappen, automatisches Aufklappen und Link aus der Pensionskasse. | ☑ | **gilt** | e2e «… (#275)» (6) | 26.11.2026 ok (Tests) |
+| #275/AK5 | Hilfe nachgeführt. | ☑ | **gilt** (4 Sprachen, BESCHREIBUNG, ENTWICKLUNG) | e2e AK5, `make i18n-check`, `make ui-texts`, Hilfe-Tests | 26.11.2026 ok (Tests) |
+
 ### #276 Einfluss der Steuern für weitere Haushalte messen
 
 [Issue #276](https://github.com/ingen63/VivaPlan/issues/276) · geschlossen · Umsetzung: nur Auswertung in `local/steuer/messung-276/` (nicht im Repo) · Entscheide vor der Umsetzung im Issue
