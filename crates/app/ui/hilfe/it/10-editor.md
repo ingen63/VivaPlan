@@ -359,7 +359,7 @@ Ogni riga è (le spiegazioni si trovano anche nell’ⓘ accanto al titolo della
 
 **Verifica:** Un importo negativo (anche «in aggiunta» e unico), una percentuale inferiore a 0 % o superiore a 100 % e un anno fiscale al di fuori della simulazione sono errori nella sezione Imposte.
 
-**Risultati:** Con «Mostrare le imposte» i valori annuali mostrano il reddito, le deduzioni (cantone; l’origine – proposta del cantone, in aggiunta, valore proprio, unica, pilastro 3a – nel tooltip della cella) e il reddito imponibile (quello della Confederazione nel tooltip se diverso).
+**Risultati:** Con «Mostrare le imposte» i valori annuali mostrano il reddito e le deduzioni (cantone; l’origine – proposta del cantone, in aggiunta, valore proprio, unica, pilastro 3a – nel tooltip della cella); il reddito imponibile è nella colonna **Reddito imponibile** subito prima delle imposte (quello della Confederazione nel tooltip se diverso).
 
 **Casa di cura:** L’app deduce in aggiunta le spese della casa di cura dalla scheda [Casa di cura](#f-care-home) come spese di malattia nella misura in cui superano il 5 % del reddito netto (Confederazione e cantone ciascuno con il proprio reddito netto). I valori annuali indicano la deduzione nell’origine delle deduzioni.
 

@@ -206,7 +206,7 @@ Sopra i grafici e in ogni titolo di grafico figura **quale variazione** è rappr
 Tutte le varianti usano **gli stessi percorsi casuali**. Le differenze provengono quindi dal parametro, non dal caso.
 
 ## @r-table Valori annuali
-Parole chiave: tabella, anno, esportazione, numeri, prelievo, scostamento dal piano, imposte, spese, affitto, ipoteca, percentile, prelievo del capitale, utile immobiliare
+Parole chiave: tabella, anno, esportazione, numeri, prelievo, scostamento dal piano, imposte, spese, affitto, ipoteca, percentile, prelievo del capitale, utile immobiliare, reddito imponibile
 
 Una tabella con **una riga per anno** per la simulazione scelta. Importi nella valuta del progetto, nominali o al potere d’acquisto attuale secondo il commutatore. Con più simulazioni sceglie in alto la simulazione (simulazione peggiore, 1°, 5°, 50°, 95°, 99° percentile); lo standard è la mediana.
 
@@ -220,6 +220,7 @@ Una tabella con **una riga per anno** per la simulazione scelta. Importi nella v
 | Tasso di prelievo | **prelievo annuo / sostanza totale a inizio anno** in percentuale (colonna «Totale» dell’anno precedente) |
 | Scostamento dal piano | media mensile: reddito totale meno spese totali. Con **0** tutto procede come pianificato. Con le strategie che legano le spese alla sostanza (Guardrails, tasso fisso, VPW, Endowment), un valore **negativo** è la riduzione rispetto al Suo piano, uno positivo l’aumento |
 | Inflazione all’anno | variazione dell’indice dei prezzi nell’anno civile, nel primo anno dall’inizio della simulazione |
+| Reddito imponibile | appare con le colonne delle imposte **subito prima delle imposte**: reddito imponibile dell’**anno fiscale** per il cantone, cioè il reddito (reddito da lavoro netto, rendita della cassa pensioni, AVS, [reddito imponibile della sostanza](#f-tax-yield)) meno le [deduzioni](#f-tax-deductions), mai negativo; i prelievi di capitale non ne fanno parte. Se quello della Confederazione è diverso, il tooltip della cella indica entrambi i valori. Così si capisce perché l’imposta cambia con lo stesso «Reddito totale» (deduzioni, reddito della sostanza, tariffa, domicilio). Gli anni senza tassazione (l’ultimo anno se la pianificazione termina prima di dicembre) mostrano 0 |
 | Imposte pagate nell’anno | **somme annue delle imposte pagate** per tipo: imposta reddito, imposta sostanza, imposta prestazione in capitale, imposta utili immobiliari, più il totale. Le colonne sono **chiuse per impostazione standard**; il pulsante **«Mostrare le imposte»** sopra la tabella le mostra e le nasconde, la scelta resta memorizzata. Le intestazioni si chiamano **«Imposta stimata …»**, il loro tooltip indica l’arrotondamento a 100 franchi |
 | Valore fiscale immobili | appare con le colonne delle imposte se un immobile ha un [valore fiscale](#f-re-tax-value): somma dei valori fiscali al 31 dicembre (immobili senza valore fiscale al valore venale); l’imposta sulla sostanza lo usa meno l’ipoteca |
 | Deduzioni sostanza, Sostanza imponibile | appaiono con le colonne delle imposte se la pianificazione ha [deduzioni dalla sostanza](#f-tax-wealth-deductions): deduzioni al 31 dicembre con la loro origine nel tooltip e sostanza meno deduzioni, mai sotto 0 (nella modalità «domicilio» si aggiungono le deduzioni sociali del cantone) |

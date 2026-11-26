@@ -25,7 +25,8 @@ test.describe("Additional acceptance tests", () => {
     const snap = () => page.evaluate(() => {
       const t = document.querySelector("#resultsBody table.yt");
       const heads = [...t.rows[0].cells];
-      const keep = heads.map((c, i) => (c.classList.contains("tx") ? -1 : i)).filter(i => i >= 0);
+      // #281: the taxable income (txb) belongs to the tax group too
+      const keep = heads.map((c, i) => (c.classList.contains("tx") || c.classList.contains("txb") ? -1 : i)).filter(i => i >= 0);
       return { head: keep.map(i => heads[i].innerText.trim()), rows: [...t.rows].slice(1).map(r => keep.map(i => r.cells[i]?.innerText.trim())), run: JSON.stringify(lastRun).length };
     });
     const closed = await snap();

@@ -3539,7 +3539,7 @@ function yearTable(run, refills = []) {
   const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), wx = tx && vals.some(v => v.basis?.wealth);
   const cx = vals.some(v => v.care); // #271: column of the care home costs only with a care home
   const yx = tx && vals.some(v => v.taxYield); // #149/AK6: column of the taxable yield only with a yield
-  const cols = 12 + (cx ? 1 : 0) + (yx ? 1 : 0) + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
+  const cols = 12 + (cx ? 1 : 0) + (yx ? 1 : 0) + (tx ? 6 : 0) + (bx ? 2 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
   // #231/AK5: deductions from wealth with their origin as tooltip and the taxable wealth
   const wealthHeads = () => [[tr("yearTable.wealthDeductions"), tr("yearTable.wealthDeductionsTitle")], [tr("yearTable.taxableWealth"), tr("yearTable.taxableWealthTitle")]]
     .map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
@@ -3549,11 +3549,20 @@ function yearTable(run, refills = []) {
       .filter(([v]) => Math.abs(v) >= 0.5).map(([v, t]) => `${t}: ${fmtInt(v)}`).join("; ");
     return `<td title="${esc(origin || tr("deductions.originNone"))}" data-wded-origin="${esc(origin)}">${fmtInt(w.ongoing + w.oneOff)}</td><td title="${esc(`${tr("yearTable.wealthBefore")}: ${fmtInt(w.wealth)}`)}" data-taxable-wealth>${fmtInt(w.taxable)}</td>`;
   };
-  // #131/AK14: tax breakdown: income, deductions (canton) with their origin as tooltip, taxable income
-  const basisHeads = () => [[tr("yearTable.taxBasisIncome"), tr("yearTable.taxBasisIncomeTitle")], [tr("yearTable.taxBasisDeductions"), tr("yearTable.taxBasisDeductionsTitle")],
-    [tr("yearTable.taxBasisTaxable"), tr("yearTable.taxBasisTaxableTitle")]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
+  // #281: taxable income of the tax year (canton) directly before the taxes, 0 without an assessment; the class `txb`
+  // marks it as a column of the tax group that is no tax. AK2: if the federal tax differs, the tooltip shows both.
+  const taxableHead = () => `<th class="txb" title="${tr("yearTable.taxableIncomeTitle")}">${tr("yearTable.taxableIncome")}</th>`;
+  const taxableCell = v => {
+    const b = v.basis, fed = b && Math.abs(b.taxableFederal - b.taxableCanton) > 0.5;
+    const title = fed ? `${tr("taxes.canton")}: ${fmtInt(b.taxableCanton)}; ${tr("deductions.federal")}: ${fmtInt(b.taxableFederal)}` : "";
+    return `<td data-taxable${title ? ` title="${esc(title)}"` : ""}>${fmtInt(v.taxableIncome ?? 0)}</td>`;
+  };
+  // #131/AK14: tax breakdown: income, deductions (canton) with their origin as tooltip; the taxable income is the column
+  // before the taxes (#281)
+  const basisHeads = () => [[tr("yearTable.taxBasisIncome"), tr("yearTable.taxBasisIncomeTitle")], [tr("yearTable.taxBasisDeductions"), tr("yearTable.taxBasisDeductionsTitle")]]
+    .map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
   const basisCells = b => {
-    if (!b) return "<td></td><td></td><td></td>";
+    if (!b) return "<td></td><td></td>";
     const fed = Math.abs(b.proposalFederal - b.proposalCanton) > 0.5 || Math.abs(b.taxableFederal - b.taxableCanton) > 0.5;
     // #274/AK7: own value and additional amount of rows taken over from the tax bill name it
     const bill = b.taxBill ? ` (${tr("taxBill.origin", { year: b.taxBill })})` : "";
@@ -3561,7 +3570,7 @@ function yearTable(run, refills = []) {
       [b.careCanton ?? 0, tr("deductions.originCare") + (fed && Math.abs((b.careFederal ?? 0) - (b.careCanton ?? 0)) > 0.5 ? ` (${tr("deductions.federal")} ${fmtInt(b.careFederal)})` : "")]]
       .filter(([v]) => Math.abs(v) >= 0.5).map(([v, t]) => `${t}: ${fmtInt(v)}`).join("; ");
     const ded = b.proposalCanton + (b.extra ?? 0) + b.own + (b.oneOff ?? 0) + b.pillar3a + (b.careCanton ?? 0);
-    return `${cell(b.income)}<td title="${esc(origin || tr("deductions.originNone"))}" data-ded-origin="${esc(origin)}">${fmtInt(ded)}</td><td title="${fed ? esc(`${tr("deductions.federal")}: ${fmtInt(b.taxableFederal)}`) : ""}">${fmtInt(b.taxableCanton)}</td>`;
+    return `${cell(b.income)}<td title="${esc(origin || tr("deductions.originNone"))}" data-ded-origin="${esc(origin)}">${fmtInt(ded)}</td>`;
   };
   const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);
   const rows = vals.map(v => {
@@ -3570,7 +3579,7 @@ function yearTable(run, refills = []) {
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
       ${cell(v.spending, true)}${cx ? `<td data-care>${Math.abs(v.care ?? 0) < 0.5 ? "" : fmtInt(v.care)}</td>` : ""}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
-      ${yx ? `<td data-tax-yield>${Math.abs(v.taxYield ?? 0) < 0.5 ? "" : fmtInt(v.taxYield)}</td>` : ""}${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${wx ? wealthCells(v.basis?.wealth) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
+      ${yx ? `<td data-tax-yield>${Math.abs(v.taxYield ?? 0) < 0.5 ? "" : fmtInt(v.taxYield)}</td>` : ""}${tx ? `${taxableCell(v)}${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${wx ? wealthCells(v.basis?.wealth) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
@@ -3578,7 +3587,7 @@ function yearTable(run, refills = []) {
     <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th>${cx ? `<th title="${tr("yearTable.careTitle")}">${tr("yearTable.care")}</th>` : ""}<th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
-      ${yx ? `<th class="tx" title="${tr("yearTable.taxYieldTitle")}">${tr("yearTable.taxYield")}</th>` : ""}${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
+      ${yx ? `<th class="tx" title="${tr("yearTable.taxYieldTitle")}">${tr("yearTable.taxYield")}</th>` : ""}${tx ? taxableHead() + taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
     <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {

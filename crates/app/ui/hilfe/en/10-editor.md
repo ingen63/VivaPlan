@@ -359,7 +359,7 @@ Each row is either (the explanations are also in the ⓘ next to the title of th
 
 **Validation:** A negative amount (also “additionally” and one-off), a percentage below 0 % or above 100 % and a tax year outside the simulation are errors in the section Taxes.
 
-**Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, additionally, own value, one-off, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
+**Results:** With “Show taxes” the yearly values show the income and the deductions (canton; the origin – proposal of the canton, additionally, own value, one-off, pillar 3a – in the tooltip of the cell); the taxable income is in the column **Taxable income** directly before the taxes (the federal one in the tooltip if it differs).
 
 **Care home:** The app also deducts the care home costs from the card [Care home](#f-care-home) as costs of illness as far as they exceed 5 % of the net income (federal tax and canton each with their own net income). The yearly values name the deduction in the origin of the deductions.
 

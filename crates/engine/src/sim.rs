@@ -178,6 +178,10 @@ pub struct MonthRecord {
     /// only in December, missing without a yield.
     #[serde(skip_serializing_if = "is_zero_amount")]
     pub assessed_yield: f64,
+    /// #281: Taxable income of the tax year for the canton (after the deductions, never negative); only in December,
+    /// missing in years without taxable income. Federal tax: `tax_basis`.
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub assessed_taxable: f64,
     /// #131: Income, deductions by origin and taxable income of the tax year; only in the month of the assessment
     /// (December) of plans with deductions (mode «Wohnort», `taxes.deductions` or `taxes.deductPillar3a`).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -4014,6 +4018,7 @@ impl<'a> Run<'a> {
             let mut paid = 0.0;
             let (mut paid_income, mut paid_wealth) = (0.0, 0.0);
             let (mut assessed_income, mut assessed_wealth, mut assessed_yield) = (0.0, 0.0, 0.0);
+            let mut assessed_taxable = 0.0;
             let mut tax_basis = None;
             if m.month() == 5 {
                 paid += std::mem::take(&mut self.tax_pending);
@@ -4037,6 +4042,7 @@ impl<'a> Run<'a> {
                 // #231: minus the deductions from wealth (in the mode «Wohnort» in addition to those of the canton)
                 let (taxable_wealth, wealth_basis) = s.taxable_wealth(m, taxable_wealth, idx);
                 let tw = s.wealth_tax(m, taxable_wealth, idx);
+                assessed_taxable = basis.taxable_canton;
                 if s.tax_basis && self.record {
                     if s.tax_values {
                         basis.property_tax_value = Some(self.tax_worth());
@@ -4162,6 +4168,7 @@ impl<'a> Run<'a> {
                     assessed_income,
                     assessed_wealth,
                     assessed_yield,
+                    assessed_taxable,
                     tax_basis,
                     planned_spending: planned,
                     withdrawal: living + prop_cost + care + p3a_in - income,

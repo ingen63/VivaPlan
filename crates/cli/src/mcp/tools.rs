@@ -1358,6 +1358,27 @@ mod tests {
         assert_eq!(list["results"][0]["result"], id);
     }
 
+    /// #281/AK5: the yearly values of result_get carry the taxable income of the tax year (canton), nominal and real.
+    // slow: computes the example plan as the app does
+    #[test]
+    fn issue_281_ak5_yearly_values_with_taxable_income() {
+        let mut s = session();
+        let (id, _) = computed(&mut s);
+        for real in [false, true] {
+            let y = ok(call(
+                &mut s,
+                "result_get",
+                &json!({ "result": id, "view": "yearly", "real": real }),
+            ));
+            let rows = y["rows"].as_array().unwrap();
+            assert!(rows.iter().all(|r| r["taxableIncome"].is_number()), "real {real}");
+            assert!(
+                rows.iter().any(|r| r["taxableIncome"].as_f64().unwrap() > 0.0),
+                "real {real}"
+            );
+        }
+    }
+
     /// #265/AK6: With real, yearly values and events take the run of the percentile in the real order (results before
     /// #265: the nominal order); the summary says which order the end wealth per percentile follows.
     #[test]

@@ -602,6 +602,15 @@ fn issue_207_ak1_json_on_standard_output() {
     let v = stdout_json(&o);
     assert_eq!(v["format"], "vivaplan-run/1");
     assert!(v["single"]["years"]["rows"].as_array().unwrap().len() > 30);
+    // #281/AK5: the yearly values carry the taxable income of the tax year directly before the taxes
+    let columns: Vec<&str> = v["single"]["years"]["columns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c.as_str().unwrap())
+        .collect();
+    let col = columns.iter().position(|c| *c == "taxableIncome").expect("#281/AK5");
+    assert_eq!(columns[col + 1], "taxes");
     // `--json` in front of the plan is a switch, not a file name
     let v = stdout_json(&run(&["run", "--json", &fixed]));
     assert_eq!(v["format"], "vivaplan-run/1");

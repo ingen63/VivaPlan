@@ -359,7 +359,7 @@ Jede Zeile ist entweder (die Erklärungen dazu stehen auch im ⓘ neben dem Tite
 
 **Prüfung:** Ein negativer Betrag (auch «zusätzlich» und einmalig), ein Prozentsatz unter 0 % oder über 100 % und ein Steuerjahr ausserhalb der Simulation sind Fehler im Abschnitt Steuern.
 
-**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, zusätzlich, eigener Wert, einmalig, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
+**Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen und die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, zusätzlich, eigener Wert, einmalig, Säule 3a – im Tooltip der Zelle); das steuerbare Einkommen steht in der Spalte **Steuerbares Einkommen** direkt vor den Steuern (der Bund im Tooltip, wenn er abweicht).
 
 **Pflegeheim:** Die Heimkosten aus der Karte [Pflegeheim](#f-care-home) zieht die App zusätzlich als Krankheitskosten ab, soweit sie 5 % des Nettoeinkommens übersteigen (Bund und Kanton je mit ihrem Nettoeinkommen). Die Jahreswerte nennen den Abzug bei der Herkunft der Abzüge.
 

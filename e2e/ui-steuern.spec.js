@@ -434,7 +434,8 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
       realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
     const heads = await page.locator("#resultsBody table.yt th.tx").allTextContents();
-    expect(heads.slice(-3)).toEqual(["Einkommen", "Abzüge", "Steuerbar"]);
+    // #281: the taxable income is the column before the taxes (th.txb), no longer in the breakdown
+    expect(heads.slice(-2)).toEqual(["Einkommen", "Abzüge"]);
     const origin = page.locator("#resultsBody table.yt td[data-ded-origin]").first();
     await expect(origin).toHaveAttribute("title", /eigener Wert: 10'000/);
     await noErrors(page, errors);
@@ -1779,5 +1780,81 @@ test.describe("Deductions in detail under «Experte» (#275)", () => {
     for (const [l, words] of [["de", ["Einkauf als Abzug erfassen", "Abzüge im Einzelnen"]], ["en", ["Enter buy-in as a deduction", "deductions in detail"]],
       ["fr", ["Saisir le rachat comme déduction", "déductions en détail"]], ["it", ["Registrare il riscatto come deduzione", "deduzioni in dettaglio"]]])
       for (const w of words) expect(help(l), `${l} ${w}`).toContain(w);
+  });
+});
+
+test.describe("Taxable income next to the taxes (#281)", () => {
+  /** Computes the plan and shows the yearly values with the tax columns (`real`: today's purchasing power). */
+  async function table(page, real = false) {
+    await page.evaluate(async real => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      realView = real; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    }, real);
+    await expect(page.locator("#resultsBody table.yt")).toBeVisible();
+  }
+  /** Values of the column as the engine delivers them and as the table shows them. */
+  const values = page => page.evaluate(() => ({
+    rows: yearValues(lastRun.single).map(v => ({ y: v.y, taxable: v.taxableIncome, basis: v.basis ?? null })),
+    cells: [...document.querySelectorAll("#resultsBody table.yt td[data-taxable]")].map(td => ({ text: td.textContent, title: td.getAttribute("title") })),
+    fmt: yearValues(lastRun.single).map(v => fmtInt(v.taxableIncome)),
+  }));
+
+  test("AK1: column taxable income directly left of the taxes, column total income unchanged", async ({ page }) => {
+    const errors = await open(page);
+    await table(page);
+    const heads = await page.locator("#resultsBody table.yt tr").first().locator("th").allInnerTexts();
+    const col = heads.findIndex(h => /^Steuerbares\s+Einkommen$/.test(h));
+    expect(col).toBeGreaterThan(0);
+    expect(heads[col + 1]).toMatch(/^Steuer geschätzt\s+Einkommen$/);
+    expect(heads).toContain("Einkommen total");
+    expect(heads.indexOf("Einkommen total")).toBeLessThan(col);
+    // hidden with the tax columns
+    await page.locator('button[data-action="tax-cols"]').click();
+    await expect(page.locator("#resultsBody table.yt th.txb")).toHaveCount(0);
+    await expect(page.locator("#resultsBody table.yt th", { hasText: "Einkommen total" })).toHaveCount(1);
+    await noErrors(page, errors);
+  });
+
+  test("AK2: value of the canton; if the federal tax differs, the tooltip shows both", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => {
+      state.taxes.mode = "location"; state.taxes.location = { canton: "ZH", municipality: 261, church: "none" };
+      state.taxes.deductions = [{ from: "start", kind: "canton" }];
+    });
+    await table(page);
+    const { rows, cells, fmt } = await values(page);
+    expect(cells.map(c => c.text)).toEqual(fmt);
+    const i = rows.findIndex(r => r.basis && Math.abs(r.basis.taxableFederal - r.basis.taxableCanton) > 0.5);
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(rows[i].taxable).toBeCloseTo(rows[i].basis.taxableCanton, 6);
+    expect(cells[i].title).toContain("Kanton: ");
+    expect(cells[i].title).toContain("Bund: ");
+    await noErrors(page, errors);
+  });
+
+  test("AK3: a year without an assessment shows 0", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { const end = state.milestones.find(m => m.id === "end"); Object.assign(end, { kind: "date", date: "2050-06" }); });
+    await table(page);
+    const { rows, cells } = await values(page);
+    expect(rows[rows.length - 1].y).toBe("2050");
+    expect(rows[rows.length - 1].taxable).toBe(0);
+    expect(cells[cells.length - 1].text).toBe("0");
+    expect(cells.some(c => c.text !== "0")).toBe(true);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: follows the toggle nominal / real like the other amounts", async ({ page }) => {
+    const errors = await open(page);
+    await table(page, false);
+    const nominal = await values(page);
+    expect(nominal.cells.map(c => c.text)).toEqual(nominal.fmt);
+    await table(page, true);
+    const real = await values(page);
+    expect(real.cells.map(c => c.text)).toEqual(real.fmt);
+    const k = nominal.rows.findIndex((r, i) => i > 2 && r.taxable > 0);
+    expect(real.rows[k].taxable).toBeLessThan(nominal.rows[k].taxable);
+    await noErrors(page, errors);
   });
 });

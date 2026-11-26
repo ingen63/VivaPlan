@@ -359,7 +359,7 @@ Chaque ligne est soit (les explications figurent aussi dans le ⓘ à côté du 
 
 **Contrôle:** Un montant négatif (aussi «en plus» et unique), un pourcentage inférieur à 0 % ou supérieur à 100 % et une année fiscale en dehors de la simulation sont des erreurs dans la section Impôts.
 
-**Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent le revenu, les déductions (canton; l’origine – proposition du canton, en plus, valeur propre, unique, pilier 3a – dans l’infobulle de la cellule) et le revenu imposable (celui de la Confédération dans l’infobulle s’il diffère).
+**Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent le revenu et les déductions (canton; l’origine – proposition du canton, en plus, valeur propre, unique, pilier 3a – dans l’infobulle de la cellule); le revenu imposable figure dans la colonne **Revenu imposable** juste avant les impôts (celui de la Confédération dans l’infobulle s’il diffère).
 
 **EMS:** L’app déduit en plus les frais d’EMS de la carte [EMS](#f-care-home) comme frais de maladie dans la mesure où ils dépassent 5 % du revenu net (Confédération et canton chacun avec son revenu net). Les valeurs annuelles indiquent la déduction dans l’origine des déductions.
 

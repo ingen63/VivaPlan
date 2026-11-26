@@ -288,7 +288,12 @@ würde die Scheingenauigkeit verstärken.
   Amortisation), höchstens der Maximalbetrag je Person der Einstellungen; für eine Person ohne Pensionskasse 20 % ihres
   Erwerbseinkommens im Jahr, höchstens der Maximalbetrag der grossen Säule 3a (#152). Steuerbares Einkommen nie negativ;
   Hypothekarzinsen nie automatisch (Wohneigentum gehört in den eigenen Wert). Bestehende Planungen rechnen wie bisher.
-  Die Jahreswerte zeigen mit den Steuerspalten Einkommen, Abzüge mit Herkunft und steuerbares Einkommen.
+  Die Jahreswerte zeigen mit den Steuerspalten Einkommen und Abzüge mit Herkunft.
+- **Steuerbares Einkommen in den Jahreswerten (#281):** Mit den Steuerspalten steht direkt vor den Steuern die Spalte
+  «Steuerbares Einkommen»: steuerbares Einkommen des Steuerjahres beim Kanton (nach den Abzügen, nie negativ, ohne
+  Kapitalbezüge); weicht der Bund ab, zeigt der Tooltip beide Werte. Jahre ohne Veranlagung zeigen 0. Die Spalte folgt
+  der Umschaltung nominal / heutige Kaufkraft. Kommandozeile (`vivaplan run --json`, Spalte `taxableIncome`) und
+  `vivaplan mcp` (`result_get`, Ansicht `yearly`, Feld `taxableIncome`) liefern den Wert ebenfalls.
 - **Zusätzliche und einmalige Abzüge (#230):** Zum Vorschlag des Kantons lässt sich je Zeile ein Betrag pro Jahr
   dazurechnen («zusätzlich», Preise des Starts, für Kanton und Bund). Einmalige Abzüge (Steuerjahr, Beschreibung,
   Betrag nominal, zum Beispiel PK-Einkauf, Sanierung, Krankheitskosten) zählen nur in ihrem Steuerjahr zusätzlich zur

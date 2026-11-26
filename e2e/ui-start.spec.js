@@ -280,7 +280,9 @@ test.describe("Start and navigation", () => {
     await btn.click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(5);
     await expect(btn).toHaveText("Steuern ausblenden");
-    expect(await page.locator("#resultsBody table.yt tr").nth(1).locator("td").count()).toBe(cols.length + 5);
+    // #281: plus the column of the taxable income before the taxes
+    await expect(page.locator("#resultsBody table.yt th.txb")).toHaveCount(1);
+    expect(await page.locator("#resultsBody table.yt tr").nth(1).locator("td").count()).toBe(cols.length + 6);
     await btn.click();
     await expect(page.locator("#resultsBody table.yt th.tx")).toHaveCount(0);
     await noErrors(page, errors);

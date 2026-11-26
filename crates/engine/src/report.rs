@@ -76,7 +76,8 @@ pub struct SingleReport {
     pub taxes_total: i64,
     pub emergency_sales: usize,
     pub unaffordable_renewals: usize,
-    /// Per year: wealth at the end of the year, income, spending and taxes summed over the year; #271: with a care home
+    /// Per year: wealth at the end of the year, income, spending, taxable income of the tax year (#281, canton) and
+    /// taxes summed over the year; #271: with a care home
     /// also the column `care` (care home costs, part of `spending`); #149: with a taxable yield of the wealth also the
     /// column `taxableYield` (part of the taxable income of the tax year, not of `income`).
     pub years: Table,
@@ -84,7 +85,7 @@ pub struct SingleReport {
     pub events: Vec<(YearMonth, String)>,
 }
 
-const SINGLE_COLUMNS: [&str; 10] = [
+const SINGLE_COLUMNS: [&str; 11] = [
     "year",
     "age",
     "liquid",
@@ -94,13 +95,14 @@ const SINGLE_COLUMNS: [&str; 10] = [
     "total",
     "income",
     "spending",
+    "taxableIncome",
     "taxes",
 ];
 
 fn single(r: &SimResult) -> SingleReport {
     let s = &r.summary;
     let mut rows: Vec<Vec<Value>> = vec![];
-    let mut flows = [0.0; 5];
+    let mut flows = [0.0; 6];
     let care = r.records.iter().any(|m| m.care != 0.0);
     let taxable_yield = r.records.iter().any(|m| m.assessed_yield != 0.0);
     for (i, m) in r.records.iter().enumerate() {
@@ -109,6 +111,7 @@ fn single(r: &SimResult) -> SingleReport {
         flows[2] += m.taxes;
         flows[3] += m.care;
         flows[4] += m.assessed_yield;
+        flows[5] += m.assessed_taxable;
         if m.month.is_december() || i + 1 == r.records.len() {
             let mut row = vec![
                 json!(m.month.year()),
@@ -120,6 +123,7 @@ fn single(r: &SimResult) -> SingleReport {
                 json!(amount(m.total)),
                 json!(amount(flows[0])),
                 json!(amount(flows[1])),
+                json!(amount(flows[5])),
                 json!(amount(flows[2])),
             ];
             if care {
@@ -129,7 +133,7 @@ fn single(r: &SimResult) -> SingleReport {
                 row.push(json!(amount(flows[4])));
             }
             rows.push(row);
-            flows = [0.0; 5];
+            flows = [0.0; 6];
         }
     }
     let mut columns = SINGLE_COLUMNS.to_vec();
@@ -464,7 +468,7 @@ mod tests {
         assert!(sum(|m| m.taxes) > 0.0);
         assert_eq!(row[7], json!(amount(sum(|m| m.income))));
         assert_eq!(row[8], json!(amount(sum(|m| m.spending))));
-        assert_eq!(row[9], json!(amount(sum(|m| m.taxes))));
+        assert_eq!(row[10], json!(amount(sum(|m| m.taxes))));
         let last = res.records.last().unwrap();
         assert_eq!(s.years.rows.last().unwrap()[6], json!(amount(last.total)));
         assert_eq!(s.end_total, amount(res.summary.end_total));
@@ -525,6 +529,27 @@ mod tests {
         assert!(dec.assessed_yield > 0.0);
         let row = s.years.rows.iter().find(|r| r[0] == json!(dec.month.year())).unwrap();
         assert_eq!(row[col], json!(amount(dec.assessed_yield)));
+    }
+
+    /// #281/AK5: the report shows the taxable income of the tax year (canton) in the column `taxableIncome` directly
+    /// before `taxes`; a year without an assessment (the last year without a December) shows 0.
+    #[test]
+    fn issue_281_ak5_report_column_taxable_income() {
+        let mut plan = crate::api::example_plan();
+        plan["scenarios"]["sweeps"] = json!([]);
+        let out = crate::api::run(&plan, Path::new("."), Some(&library()));
+        let res = out.single.as_ref().unwrap();
+        let s = run(&out).single.unwrap();
+        let col = s.years.columns.iter().position(|c| *c == "taxableIncome").unwrap();
+        assert_eq!(s.years.columns[col + 1], "taxes");
+        assert_eq!(s.years.columns[col - 1], "spending");
+        let dec = res.records.iter().filter(|m| m.month.is_december()).nth(1).unwrap();
+        assert!(dec.assessed_taxable > 0.0);
+        let row = s.years.rows.iter().find(|r| r[0] == json!(dec.month.year())).unwrap();
+        assert_eq!(row[col], json!(amount(dec.assessed_taxable)));
+        // #281/AK3: the last year ends before December: no assessment, 0
+        assert!(!res.records.last().unwrap().month.is_december());
+        assert_eq!(s.years.rows.last().unwrap()[col], json!(0));
     }
 
     /// #207/AK1: the other formats.

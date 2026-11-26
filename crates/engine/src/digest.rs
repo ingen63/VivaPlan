@@ -60,6 +60,8 @@ pub struct YearRow {
     /// yield.
     #[serde(skip_serializing_if = "is_zero")]
     pub tax_yield: f64,
+    /// #281: Taxable income of the tax year for the canton (federal tax: `basis`); 0 in a year without an assessment.
+    pub taxable_income: f64,
     pub tax_income: f64,
     pub tax_wealth: f64,
     pub tax_capital: f64,
@@ -209,6 +211,13 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
                 tax_bill: b.tax_bill,
             });
         let residence = assessed.and_then(|r| r.tax_basis.as_ref()?.residence.clone());
+        // #281: results before #281 lack `assessed_taxable`; with an assessment the value of the canton from the basis
+        let assessed_taxable = rs.iter().fold(0.0, |a, r| a + at(r.assessed_taxable, r));
+        let taxable_income = if assessed_taxable == 0.0 {
+            basis.as_ref().map_or(0.0, |b| b.taxable_canton)
+        } else {
+            assessed_taxable
+        };
         let mut f = YearFlows {
             earned: 0.0,
             pk: 0.0,
@@ -273,6 +282,7 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
             deviation: receipts - spending,
             inflation: last.price_index / prev_index - 1.0,
             tax_yield,
+            taxable_income,
             tax_income,
             tax_wealth,
             tax_capital,

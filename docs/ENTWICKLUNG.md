@@ -994,6 +994,13 @@ ein (`BUILTIN`).
   den Ertrag. Netto-Bedarf (`plan_basis`): `NeedBasis.investment_yield` = aktuelle Bestände × Sätze, nur in der
   Einkommenssteuer, nicht in den Einnahmen. Prüfung: Satz 0 bis 1, sonst Fehler am Feld
   `taxes.investmentYield.stocks|bonds` (`investment_yield_stocks_range`, `investment_yield_bonds_range`).
+- **Steuerbares Einkommen in den Jahreswerten (#281):** `MonthRecord.assessed_taxable` = `TaxBasis.taxable_canton` der
+  Veranlagung im Dezember, immer (auch ohne `tax_basis`), 0 nicht geschrieben. `YearRow.taxable_income` = Summe der
+  Monate des Jahres (nominal oder real wie die übrigen Beträge), immer geschrieben, 0 ohne Veranlagung; Ergebnisse vor
+  #281 ohne `assessedTaxable` nehmen `basis.taxable_canton`, sonst 0. Der Bund steht in `basis.taxable_federal`
+  (Tooltip der Zelle). Oberfläche: Spalte «Steuerbares Einkommen» (`th.txb`) direkt vor den Steuern in der
+  Steuer-Spaltengruppe; die Zerlegung (#131) zeigt nur noch Einkommen und Abzüge. Bericht der Kommandozeile: Spalte
+  `taxableIncome` vor `taxes`; `result_get` yearly: Feld `taxableIncome`.
 - **Zusammenstellung des steuerbaren Vermögens (#249):** Mit `record` legt der Lauf im Dezember je Steuerjahr ein
   `WealthTaxYear { year, liquid, properties: [PropertyTax { index, name, worth, taxValue, hasTaxValue,
   defaultTaxValue, mortgage }], ongoing, oneOff, taxable }` ab (`liquid` = bar + Obligationen + Aktien; `taxValue`

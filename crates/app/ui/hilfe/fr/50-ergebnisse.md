@@ -206,7 +206,7 @@ Au-dessus des graphiques et dans chaque titre de graphique figure **quelle varia
 Toutes les variantes utilisent **les mêmes trajectoires aléatoires**. Les différences proviennent donc du paramètre, et non du hasard.
 
 ## @r-table Valeurs annuelles
-Mots-clés: tableau, année, exportation, chiffres, prélèvement, écart par rapport au plan, impôts, dépenses, loyer, hypothèque, percentile, retrait en capital, gain immobilier
+Mots-clés: tableau, année, exportation, chiffres, prélèvement, écart par rapport au plan, impôts, dépenses, loyer, hypothèque, percentile, retrait en capital, gain immobilier, revenu imposable
 
 Un tableau avec **une ligne par année** pour la simulation choisie. Montants dans la monnaie du projet, nominaux ou en pouvoir d’achat actuel selon le commutateur. Avec plusieurs simulations, vous choisissez la simulation en haut (pire simulation, 1er, 5e, 50e, 95e, 99e percentile); la médiane est le standard.
 
@@ -220,6 +220,7 @@ Un tableau avec **une ligne par année** pour la simulation choisie. Montants da
 | Taux de prélèvement | **prélèvement annuel / fortune totale en début d’année** en pour cent (colonne «Total» de l’année précédente) |
 | Écart par rapport au plan | moyenne mensuelle: total des revenus moins total des dépenses. À **0**, tout se déroule comme planifié. Pour les stratégies qui lient les dépenses à la fortune (Guardrails, taux fixe, VPW, Endowment), une valeur **négative** est la réduction par rapport à votre plan, une valeur positive l’augmentation |
 | Inflation par année | variation de l’indice des prix pendant l’année civile, la première année depuis le début de la simulation |
+| Revenu imposable | apparaît avec les colonnes d’impôts **juste avant les impôts**: revenu imposable de l’**année fiscale** pour le canton, soit le revenu (revenu d’activité net, rente de la caisse de pension, AVS, [rendement imposable](#f-tax-yield)) moins les [déductions](#f-tax-deductions), jamais négatif; les retraits en capital n’en font pas partie. Si celui de la Confédération diffère, l’infobulle de la cellule indique les deux valeurs. On voit ainsi pourquoi l’impôt change pour un même «Total des revenus» (déductions, rendement, barème, domicile). Les années sans taxation (la dernière année si la planification se termine avant décembre) affichent 0 |
 | Impôts payés dans l’année | **sommes annuelles des impôts payés** par type: impôt revenu, impôt fortune, impôt prestation en capital, impôt gain immobilier, plus le total. Les colonnes sont **repliées par défaut**; le bouton **«Afficher les impôts»** au-dessus du tableau les affiche et les masque, le choix est conservé. Les en-têtes s’appellent **«Impôt estimé …»**, leur infobulle mentionne l’arrondi à 100 francs |
 | Valeur fiscale biens immobiliers | apparaît avec les colonnes d’impôts si un bien immobilier a une [valeur fiscale](#f-re-tax-value) : somme des valeurs fiscales au 31 décembre (biens immobiliers sans valeur fiscale à la valeur vénale) ; l’impôt sur la fortune l’utilise moins l’hypothèque |
 | Déductions fortune, Fortune imposable | apparaissent avec les colonnes d’impôts si la planification a des [déductions de la fortune](#f-tax-wealth-deductions) : déductions au 31 décembre avec leur origine dans l’infobulle et fortune moins déductions, jamais inférieure à 0 (dans le mode «domicile», les déductions sociales du canton s’y ajoutent) |

@@ -78,6 +78,7 @@ mod tax_indexed;
 mod tax_location;
 mod tax_parity;
 mod tax_simple;
+mod taxable_income;
 mod upgrade_api;
 mod validate_extra;
 mod wealth_deductions;

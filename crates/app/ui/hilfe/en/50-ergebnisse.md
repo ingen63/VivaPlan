@@ -206,7 +206,7 @@ Above the charts and in every chart title, it says **which variation** is shown.
 All variants use **the same random paths**. Differences therefore come from the parameter, not from chance.
 
 ## @r-table Yearly values
-Keywords: table, year, export, numbers, withdrawal, deviation from plan, taxes, spending, rent, mortgage, percentile, lump sum, property gain
+Keywords: table, year, export, numbers, withdrawal, deviation from plan, taxes, spending, rent, mortgage, percentile, lump sum, property gain, taxable income
 
 A table with **one row per year** for the chosen run. Amounts in the project currency, nominal or in today's purchasing power depending on the switch. With several runs, you choose the run at the top (worst run, 1st, 5th, 50th, 95th, 99th percentile); the default is the median.
 
@@ -220,6 +220,7 @@ A table with **one row per year** for the chosen run. Amounts in the project cur
 | Withdrawal rate | **annual withdrawal / total wealth at the start of the year** in percent (column “Total” of the previous year) |
 | Deviation from plan | monthly average: total income minus total spending. At **0**, everything goes as planned. With strategies that link spending to wealth (Guardrails, fixed rate, VPW, endowment), a **negative** value is the cut compared with your plan, a positive one the increase |
 | Inflation per year | change in the price index in the calendar year, in the first year since the simulation start |
+| Taxable income | appears with the tax columns **directly before the taxes**: taxable income of the **tax year** for the canton, i.e. income (net earned income, pension fund pension, AHV, [taxable yield](#f-tax-yield)) minus the [deductions](#f-tax-deductions), never negative; lump-sum withdrawals do not count. If the federal amount differs, the tooltip of the cell shows both values. This shows why the tax changes with the same “Total income” (deductions, yield, tariff, place of residence). Years without an assessment (the last year if the plan ends before December) show 0 |
 | Taxes paid in the year | **annual sums of the taxes paid** by type: income tax, wealth tax, lump-sum tax, property gains tax, plus the total. The columns are **collapsed by default**; the button **“Show taxes”** above the table shows and hides them, and the choice is kept. The column headers read **“Estimated …”**; their tooltip mentions the rounding to 100 francs |
 | Tax value properties | appears with the tax columns if a property has a [tax value](#f-re-tax-value): sum of the tax values on 31 December (properties without a tax value at market value); the wealth tax uses it minus the mortgage |
 | Wealth deductions, Taxable wealth | appear with the tax columns if the plan has [deductions from wealth](#f-tax-wealth-deductions): deductions on 31 December with their origin in the tooltip and wealth minus deductions, never below 0 (in the mode “place of residence” the social deductions of the canton are added) |

@@ -206,7 +206,7 @@ Die Szenarien-Registerkarte zeigt die Wirkung der [Variationen](#f-sweep): Jede 
 Alle Varianten verwenden **dieselben Zufallspfade**. Unterschiede stammen daher vom Parameter, nicht vom Zufall.
 
 ## @r-table Jahreswerte
-Stichworte: Tabelle, Jahr, Export, Zahlen, Entnahme, Abweichung vom Plan, Steuern, Ausgaben, Miete, Hypothek, Perzentil, Kapitalbezug, Grundstückgewinn
+Stichworte: Tabelle, Jahr, Export, Zahlen, Entnahme, Abweichung vom Plan, Steuern, Ausgaben, Miete, Hypothek, Perzentil, Kapitalbezug, Grundstückgewinn, steuerbares Einkommen
 
 Eine Tabelle mit **einer Zeile pro Jahr** für den gewählten Lauf. Beträge in der Projektwährung, nominal oder in heutiger Kaufkraft je nach Schalter. Bei mehreren Läufen wählen Sie oben den Lauf (Schlechtester Lauf, 1., 5., 50., 95., 99. Perzentil); Standard ist der Median.
 
@@ -220,6 +220,7 @@ Eine Tabelle mit **einer Zeile pro Jahr** für den gewählten Lauf. Beträge in 
 | Entnahmerate | **jährliche Entnahme / Gesamtvermögen am Jahresanfang** in Prozent (Spalte «Total» des Vorjahres) |
 | Abweichung vom Plan | Monatsdurchschnitt: Einkommen total minus Ausgaben total. Bei **0** verläuft alles wie geplant. Bei Strategien, die die Ausgaben an das Vermögen koppeln (Guardrails, Fixe Rate, VPW, Endowment), ist ein **negativer** Wert die Kürzung gegenüber Ihrem Plan, ein positiver die Erhöhung |
 | Inflation pro Jahr | Veränderung des Preisindex im Kalenderjahr, im ersten Jahr seit Simulationsstart |
+| Steuerbares Einkommen | erscheint mit den Steuerspalten **direkt vor den Steuern**: steuerbares Einkommen des **Steuerjahres** beim Kanton, also Einkommen (Erwerb netto, Pensionskassenrente, AHV, [steuerbarer Ertrag](#f-tax-yield)) minus die [Abzüge](#f-tax-deductions), nie negativ; Kapitalbezüge zählen nicht dazu. Weicht der Bund ab, zeigt der Tooltip der Zelle beide Werte. Damit lässt sich nachvollziehen, warum sich die Steuer bei gleichem «Einkommen total» ändert (Abzüge, Ertrag, Tarif, Wohnort). Jahre ohne Veranlagung (das letzte Jahr, wenn die Planung vor Dezember endet) zeigen 0 |
 | Steuern bezahlt im Jahr | **Jahressummen der bezahlten Steuern** nach Art: Steuer Einkommen, Steuer Vermögen, Steuer Kapital Bezug, Steuer Grundstück, dazu das Total. Die Spalten sind **standardmässig eingeklappt**; die Schaltfläche **«Steuern anzeigen»** über der Tabelle blendet sie ein und aus, die Wahl bleibt erhalten. Die Spaltenköpfe heissen **«Steuer geschätzt …»**, ihr Tooltip nennt die Rundung auf 100 Franken |
 | Steuerwert Immobilien | erscheint mit den Steuerspalten, wenn eine Immobilie einen [Steuerwert](#f-re-tax-value) hat: Summe der Steuerwerte am 31. Dezember (Immobilien ohne Steuerwert mit dem Marktwert); die Vermögenssteuer rechnet damit minus Hypothek |
 | Abzüge Vermögen, Steuerbares Vermögen | erscheinen mit den Steuerspalten, wenn die Planung [Abzüge vom Vermögen](#f-tax-wealth-deductions) hat: Abzüge am 31. Dezember mit Herkunft im Tooltip und Vermögen minus Abzüge, nie unter 0 (im Modus «Wohnort» kommen die Sozialabzüge des Kantons dazu) |
