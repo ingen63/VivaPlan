@@ -38,8 +38,11 @@ pub struct YearRow {
     /// Pension fund and pillar 3a.
     pub pension: f64,
     pub total: f64,
-    /// Monthly average: planned living costs, housing costs and pillar 3a contributions (#52).
+    /// Monthly average: planned living costs, housing costs, care home costs (#271) and pillar 3a contributions (#52).
     pub spending: f64,
+    /// #271: Monthly average of the care home costs; missing without a care home.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub care: f64,
     /// Monthly average of the withdrawal from wealth.
     pub draw: f64,
     /// Monthly average: income and withdrawal.
@@ -80,6 +83,13 @@ pub struct YearTaxBasis {
     pub pillar3a: f64,
     pub taxable_canton: f64,
     pub taxable_federal: f64,
+    /// #271: Care home costs of the year and their deduction as costs of illness (canton, federal tax).
+    #[serde(skip_serializing_if = "is_zero")]
+    pub care: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub care_canton: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub care_federal: f64,
     /// #229/AK7: Tax value of the properties (only if a property has one).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub property_tax_value: Option<f64>,
@@ -98,11 +108,14 @@ pub struct YearFlows {
     /// Living costs without housing costs and pillar 3a contributions.
     pub living: f64,
     pub housing: f64,
+    /// #271: Care home costs; missing without a care home.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub care: f64,
     pub p3a: f64,
     pub taxes: f64,
     /// Earned income and pensions.
     pub income: f64,
-    /// Living costs, housing costs, pillar 3a contributions and taxes.
+    /// Living costs, housing costs, care home costs, pillar 3a contributions and taxes.
     pub spending: f64,
     /// Liquid wealth before the first month of the year.
     pub liquid_start: f64,
@@ -110,6 +123,10 @@ pub struct YearFlows {
     pub draw: f64,
     /// `draw` (at least 0) relative to `liquid_start`, per 12 months; 0 without liquid wealth.
     pub rate: f64,
+}
+
+fn is_zero(v: &f64) -> bool {
+    *v == 0.0
 }
 
 /// A run as the user interface keeps it: summary and monthly values.
@@ -148,7 +165,9 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
         let income = avg(rs, Quantity::Income);
         let draw = avg(rs, Quantity::Withdrawal);
         let p3a_in = avg(rs, Quantity::Pillar3aIn);
-        let spending = planned + housing + p3a_in;
+        let care = rs.iter().fold(0.0, |a, r| a + at(r.care, r)) / n;
+        // #271: without a care home `care` is 0 and the sum the same as before
+        let spending = planned + housing + care + p3a_in;
         let receipts = income + draw;
         let prev_index = prev_last.map_or(1.0, |r| r.price_index);
         let year_draw = rs.iter().fold(0.0, |a, r| a + nominal(Quantity::Withdrawal, r)) / n * 12.0;
@@ -169,6 +188,9 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
                 pillar3a: at(b.pillar3a, r),
                 taxable_canton: at(b.taxable_canton, r),
                 taxable_federal: at(b.taxable_federal, r),
+                care: at(b.care, r),
+                care_canton: at(b.care_canton, r),
+                care_federal: at(b.care_federal, r),
                 property_tax_value: b.property_tax_value.map(|v| at(v, r)),
                 wealth: b.wealth.map(|w| WealthBasis {
                     wealth: at(w.wealth, r),
@@ -184,6 +206,7 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
             ahv: 0.0,
             living: 0.0,
             housing: 0.0,
+            care: 0.0,
             p3a: 0.0,
             taxes: 0.0,
             income: 0.0,
@@ -203,14 +226,18 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
             f.ahv += q(Quantity::Ahv, r);
             f.housing += q(Quantity::Housing, r);
             f.p3a += q(Quantity::Pillar3aIn, r);
+            f.care += at(r.care, r);
             f.living += at(
-                nominal(Quantity::Spending, r) - nominal(Quantity::Housing, r) - nominal(Quantity::Pillar3aIn, r),
+                nominal(Quantity::Spending, r)
+                    - nominal(Quantity::Housing, r)
+                    - nominal(Quantity::Pillar3aIn, r)
+                    - r.care,
                 r,
             );
             f.taxes += q(Quantity::Taxes, r);
         }
         f.income = f.earned + f.pk + f.ahv;
-        f.spending = f.living + f.housing + f.p3a + f.taxes;
+        f.spending = f.living + f.housing + f.care + f.p3a + f.taxes;
         f.draw = f.spending - f.earned - f.pk - f.ahv;
         f.rate = if f.liquid_start > 0.0 {
             f.draw.max(0.0) / f.liquid_start * 12.0 / n
@@ -229,6 +256,7 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
             ),
             total: q(Quantity::Total, last),
             spending,
+            care,
             draw,
             receipts,
             year_draw,

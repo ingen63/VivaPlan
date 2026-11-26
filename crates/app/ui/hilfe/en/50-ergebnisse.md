@@ -214,6 +214,7 @@ A table with **one row per year** for the chosen run. Amounts in the project cur
 |---|---|
 | Liquid, Real estate, Pension assets, Total | **wealth at year end**: liquid assets, real estate (net), pension assets (PK, 3a), sum |
 | Total spending | **monthly average of the year**: planned spending (living expenses from your plan) plus **rent or mortgage interest**, amortization and other housing costs of the real estate plus **pillar 3a contributions** |
+| Care home | Only with a [care home](#f-care-home): monthly average of the care home costs of the year, included in “Total spending” |
 | Withdrawal | monthly average of the year: what is **withdrawn** from wealth (actual spending minus income, before taxes) |
 | Total income | monthly average of the year: income (earned income and pensions) plus withdrawal |
 | Withdrawal rate | **annual withdrawal / total wealth at the start of the year** in percent (column “Total” of the previous year) |

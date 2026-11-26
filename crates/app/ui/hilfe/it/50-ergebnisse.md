@@ -214,6 +214,7 @@ Una tabella con **una riga per anno** per la simulazione scelta. Importi nella v
 |---|---|
 | Liquida, immobili, previdenza, totale | **sostanza a fine anno**: mezzi liquidi, immobili (netto), previdenza (CP, 3a), somma |
 | Spese totali | **media mensile dell’anno**: spese pianificate (costo della vita dalla Sua pianificazione) più **affitto o interesse ipotecario**, ammortamento e altre spese d’alloggio degli immobili più **versamento nel pilastro 3a** |
+| Casa di cura | Solo con una [casa di cura](#f-care-home): media mensile delle spese della casa di cura dell’anno, comprese in «Spese totali» |
 | Prelievo | media mensile dell’anno: ciò che viene **prelevato** dalla sostanza (spese effettive meno reddito, prima delle imposte) |
 | Reddito totale | media mensile dell’anno: reddito (reddito da attività lucrativa e rendite) più prelievo |
 | Tasso di prelievo | **prelievo annuo / sostanza totale a inizio anno** in percentuale (colonna «Totale» dell’anno precedente) |

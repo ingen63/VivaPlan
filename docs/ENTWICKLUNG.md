@@ -804,6 +804,37 @@ danach Verlängerung zu gleichen Konditionen oder Rückzahlung. Zins = Schuld ×
 Amortisation als fixer Betrag pro Quartal, fällig Ende März/Juni/September/Dezember; direkt (reduziert die Schuld)
 oder indirekt (Einzahlung in die Säule 3a). Die 3a-Auszahlung zahlt zuerst Tranchen mit indirekter Amortisation zurück.
 
+**Pflegeheim (#271):** `household.persons[i].careHome` = `{ age | at, monthly, sell }` (Eintritt als Alter der Person
+oder `TimeRef` mit Datum oder Meilenstein; Kosten pro Monat in Preisen des Starts, mit dem Teuerungsindex fortgeschrieben;
+`sell` Standard nein). Nur Personen, die im Rechenkern zählen (zweite Person nur mit `partner`). `Simulator::new`
+sammelt je Person Eintritt und Kosten (`care`; ein Eintritt vor dem Start gilt ab dem Start), `all_in_care` = Monat, ab
+dem alle Personen im Heim sind (spätester Eintritt), `care_sale` = derselbe Monat, wenn eine Person `sell` gewählt hat
+und `realestate.neverSell` aus ist. Im Monat:
+- Heimkosten = Summe der Personen ab ihrem Eintritt × Teuerungsindex; sie zählen wie die Wohnkosten zu den Ausgaben
+  (`MonthRecord.care`, in `spending` und `withdrawal`), zur Ausgaben-Seite der Entnahmeregeln (Fixkosten der
+  Ausgabenregel, Notverkaufskriterium, Netto-Bedarf der 3-Topf-Strategie `NeedBasis.care`, `need_rest`) und im
+  Kassenbuch zu `Ledger.care`. Ereignis `careHome` im Eintrittsmonat.
+- Ab `all_in_care`: keine Miete (auch nicht mit festem Beginn), `after_sales` bricht ab (keine Käufe und Mieten «nach
+  Verkauf», auch nach einem Notverkauf), kein reservierter Verkaufserlös für einen Folgekauf. Im Monat `care_sale`
+  werden alle aktiven Liegenschaften am Ende der Monatsrechnung verkauft wie ein geplanter Verkauf (Grundstückgewinnsteuer,
+  Hypothek abgelöst). Bei Paaren laufen Miete und Liegenschaft weiter, bis beide im Heim sind; ein Todesfall wird nicht
+  abgebildet.
+- **Steuern (vereinfachte Regel für Bund und alle Kantone):** Die Heimkosten des Steuerjahres (`YearDeductions.care`,
+  nominal) sind Krankheits- und Behinderungskosten. Abzug = max(0, Heimkosten − 5 % × Nettoeinkommen), Nettoeinkommen
+  = Einkommen minus die übrigen Abzüge (je Kanton und Bund, mindestens 0; `sim::care_deduction`, `CARE_SELF_SHARE`).
+  Steuerbares Einkommen = max(0, Nettoeinkommen − Abzug). Beispiel: Nettoeinkommen 60 000, Heimkosten 108 000 → Abzug
+  105 000, steuerbar 0. `TaxBasis` (und die Jahreswerte) führen `care`, `careCanton`, `careFederal`; ein Plan mit
+  Pflegeheim schreibt die Basis immer.
+- **Prüfung:** Eintritt fehlt (`care_home_entry_missing`), Alter ausserhalb 0..150 (`care_home_age_invalid`), Kosten
+  negativ (`care_home_costs_invalid`) sind Fehler; `sell` mit «Immobilien nie verkaufen» ist eine Warnung
+  (`care_home_never_sell`). `housing_missing_after_sale` (Warnung, Abschnitt Immobilien): Alle Liegenschaften im
+  Besitz oder mit Kauf haben einen geplanten Verkauf innerhalb der Planung, und danach folgt weder eine Miete (mit
+  «nach Verkauf» oder über den Verkaufsmonat hinaus) noch der Heimeintritt aller Personen (spätestens im Monat nach dem
+  Verkauf). Ein Verkauf wegen des Pflegeheims setzt voraus, dass alle im Heim sind; nach ihm gibt es deshalb nie einen
+  Hinweis. Notverkäufe kennt die Prüfung nicht.
+- Ohne `careHome` rechnet alles wie bisher; `care` erscheint in Ergebnissen, Jahreswerten (`YearRow.care`,
+  `YearFlows.care`) und Bericht (`years.columns` + `care`) nur, wenn es Heimkosten gibt (Golden-Dateien unverändert).
+
 **Steuern:** Satz aus der Tabelle linear interpoliert × Steuerfuss, auf Rappen gerundet. Kapitalbezüge im selben
 Kalenderjahr (PK, 3a) werden für den Satz zusammengerechnet: für den Haushalt (eine Person, Verheiratete) oder je
 Person (unverheiratetes Paar, #150). Die Oberfläche zeigt Steuerbeträge als «geschätzt» und auf 100 Franken gerundet

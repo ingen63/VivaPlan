@@ -232,6 +232,40 @@ pub struct Person {
     /// earned income, at most `limits.pillar3aMaxLarge`. Missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub no_pension_fund: bool,
+    /// #271: Care home of the person; missing: none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub care_home: Option<CareHome>,
+}
+
+/// #271: Care home of a person. From the entry on the person pays the monthly costs. The household's housing costs
+/// (rent, property) end only once every person of the household lives in a care home; then, with `sell`, the
+/// self-occupied properties are sold in that month (not with «Immobilien nie verkaufen») and no rent «nach Verkauf»
+/// starts. For the taxes the costs count as costs of illness (see [`crate::sim`]).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct CareHome {
+    /// Entry as the age of the person (decimal years, 85.5 = 85 years 6 months); either this or `at`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub age: Option<f64>,
+    /// Entry as a date `"YYYY-MM"` or a milestone; either this or `age`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at: Option<TimeRef>,
+    /// Costs per month in prices at the simulation start; they rise with inflation.
+    pub monthly: f64,
+    /// Sell the self-occupied properties at the entry (couples: once both persons live in a care home).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub sell: bool,
+}
+
+impl CareHome {
+    /// Month of the entry of a person born in `birth`; `None` with neither age nor point in time or with «nie».
+    pub fn entry(&self, birth: YearMonth, r: &crate::resolve::Resolver) -> crate::Result<Option<YearMonth>> {
+        match (&self.at, self.age) {
+            (Some(at), _) => r.resolve(at),
+            (None, Some(years)) => Ok(Some(birth.plus((years * 12.0).round() as i32))),
+            (None, None) => Ok(None),
+        }
+    }
 }
 
 /// German name of the milestone `retire` as older plans stored it (formerly «Pensionierung», #51); only for the

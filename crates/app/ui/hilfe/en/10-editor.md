@@ -49,6 +49,7 @@ Pension fund (BVG, pillar 2) and old-age pension (AHV, pillar 1); with two perso
 
 - Pension fund: [retirement savings, payout, lump sum, conversion rate](#f-pk)
 - AHV: [pension and start of payout](#f-ahv)
+- Care home: [entry, care home costs, sale of the owned home](#f-care-home)
 
 A line below the cards shows what becomes of the balance at the pension fund payout (capital and pension).
 
@@ -166,6 +167,25 @@ With “+ Second person”, you enter a household with two persons.
 **Married with one person:** The “Married” box is also available without a second person, for example if the spouse has neither income nor a pension. The tax tariffs and deductions for married couples then apply (in the “Place of residence” mode canton, municipality and federal tax, with your own tables the tables for married couples); the tax is the same as for a married couple with a second person without income. The cap on the AHV pensions only applies with two persons. Older plans with one person had “Married” ticked without effect; they are taken over as unmarried when opened and calculate as before, a note says so. New plans start unmarried.
 
 **Not calculated:** death of a person, survivors' pensions, widow's pension. The plan calculates as if both lived until the end.
+
+## @f-care-home Care home
+Keywords: care home, nursing home, care home costs, care, age, entry, sell the owned home, costs of illness, deduction
+
+One card of its own per person in the tab “Pensions”. With **“Plan a care home”** you enter:
+
+- **Entry:** age of the person (e.g. 85), a milestone or a fixed date.
+- **Care home costs per month (today’s prices):** board, care and support as far as you pay them yourself. The costs rise with inflation. From the month of the entry they count as spending; the [yearly values](#r-table) show them in the column “Care home”, the chart [Income and spending per year](#r-flows) as a bar of their own, and the [events](#r-events) show the entry.
+- **Sell the owned home at the entry:** the self-occupied properties are sold in the month of the entry, like a planned sale with property gains tax; mortgage, interest and fixed costs end.
+
+**Housing costs:** When a single person lives in the care home, rent and other housing costs end from the month of the entry. Rents “after sale” do not start, not even after a sale or an [emergency sale](#f-re-emergency); nor does a purchase “after sale” take place. Without “sell” the property stays with its costs and the care home costs come on top; an emergency sale with scarce wealth still applies.
+
+**Couples:** The household’s housing costs go on as long as one person lives at home; the care home costs of the person in the care home come on top. Only when **both** live in a care home do rent and housing costs end, and the property is sold if “sell” is chosen for one of the two persons. The plan does not model a death.
+
+**[Never sell properties](#f-re-never-sell)** has priority: no sale at the entry, the costs of the property go on; the validation points this out.
+
+**Taxes (simplified):** The care home costs count as costs of illness and disability. They are deductible for the federal and the cantonal tax as far as they exceed 5 % of the net income; the net income is the income after the other [deductions](#f-tax-deductions). Example: net income 60 000, care home costs 108 000 a year → deduction 108 000 − 3 000 = 105 000; the taxable income never drops below 0. The app applies this rule for every canton; some cantons calculate differently, for example only with the share for care. The app does not calculate supplementary benefits.
+
+**Validation:** A missing entry, an age outside 0 to 150 years or negative costs are errors. After the sale of the last property (planned or because of the care home) the validation points out when neither a rent nor a care home follows, because then the plan would have no housing costs.
 
 ## @s-flows Income & spending
 Keywords: income, living expenses, spending, one-off amounts, inheritance, inflation
@@ -319,7 +339,7 @@ Each row is either (the explanations are also in the ⓘ next to the title of th
 - **Without pillar 3a:** the contributions come from the plan (see below). The deduction according to the assessment already includes them: if “Deduct contributions to pillar 3a” is switched on, enter pillar 3a according to the assessment under **“of which pillar 3a”**; the input help takes it off, otherwise it counts twice. Example: 120 000, taxable 80 000, of which pillar 3a 7 000 gives 33 000 (without the check box 40 000). If the field is empty, the input help points this out.
 - **Home ownership** (imputed rental value, mortgage interest, maintenance) belongs in the own value. From 2029 there is no imputed rental value and no interest deduction for owner-occupied property; add a row “from 2029” for it. **Mortgage interest is not deducted automatically.**
 
-**One-off deductions:** They are listed under a subtitle of their own at the end of the card. “+ One-off deduction” adds a deduction for a single tax year, with tax year, description and amount (nominal, without inflation), for example a pension fund buy-in, a renovation or medical costs. The amount counts in this tax year in addition to the row that applies, with the proposal of the canton as with the own value and in both modes. Example: income 120 000, own value 30 000, one-off 50 000 in the year 2027 gives a taxable income of 40 000 in 2027, 90 000 in the other years. The estimate of the net need of the [3-bucket strategy](#f-wd-three_buckets) uses only the ongoing deductions.
+**One-off deductions:** They are listed under a subtitle of their own at the end of the card. “+ One-off deduction” adds a deduction for a single tax year, with tax year, description and amount (nominal, without inflation), for example a pension fund buy-in, a renovation or costs of illness. The amount counts in this tax year in addition to the row that applies, with the proposal of the canton as with the own value and in both modes. Example: income 120 000, own value 30 000, one-off 50 000 in the year 2027 gives a taxable income of 40 000 in 2027, 90 000 in the other years. The estimate of the net need of the [3-bucket strategy](#f-wd-three_buckets) uses only the ongoing deductions.
 
 **Pillar 3a:** With the check box **“Deduct contributions to pillar 3a”** the contributions of a year from the section [Pillar 3a](#s-pillar3a) (including the indirect amortization) are deducted from the taxable income, for canton and federal tax, at most the maximum per person from the settings (the maximum amounts are in the ⓘ next to the check box). Example: income 100 000, no other deductions, contribution 7 000, tax as on 93 000. For a person “Without pension fund (large pillar 3a)”, 20 % of their earned income in the year applies, at most the maximum of the large pillar 3a; like the other amounts it grows with “Tariffs with inflation”. Example: earned income 100 000, contribution 25 000, deduction 20 000; earned income 300 000, contribution 40 000, deduction 36 288. New plans have the check box set.
 
@@ -328,6 +348,8 @@ Each row is either (the explanations are also in the ⓘ next to the title of th
 **Validation:** A negative amount (also “additionally” and one-off), a percentage below 0 % or above 100 % and a tax year outside the simulation are errors in the section Taxes.
 
 **Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, additionally, own value, one-off, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
+
+**Care home:** The app also deducts the care home costs from the card [Care home](#f-care-home) as costs of illness as far as they exceed 5 % of the net income (federal tax and canton each with their own net income). The yearly values name the deduction in the origin of the deductions.
 
 ## @f-tax-wealth-deductions Deductions from wealth
 Keywords: deductions, taxable wealth, wealth tax, debts, social deductions, one-off
@@ -527,6 +549,7 @@ With this switch at the top of the “Real estate” tab you check whether the p
 - **Purchases:** a planned purchase with a date or milestone takes place. Purchases and rents “after sale” do **not** take place; the validation points this out, as well as planned sales.
 - **Wealth depleted:** if liquid wealth is no longer sufficient, the run counts as depleted, as without a property. The success rate is therefore usually lower than with a sale.
 - **Read-only:** while the switch is on, all other fields of the tab are grey and read-only. The values are kept and apply again unchanged when it is switched off.
+- **Care home:** Even with “Sell the owned home at the entry” nothing is sold at the entry into the [care home](#f-care-home); the costs of the property go on.
 
 ## @f-re-afford Affordability
 Keywords: bank, affordability, loan-to-value, imputed interest rate, equity, mortgage, wealth drawdown, retirement

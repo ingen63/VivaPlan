@@ -214,6 +214,7 @@ Un tableau avec **une ligne par année** pour la simulation choisie. Montants da
 |---|---|
 | Liquide, Immobilier, Prévoyance, Total | **fortune en fin d’année**: liquidités, immobilier (net), prévoyance (CP, 3a), somme |
 | Total des dépenses | **moyenne mensuelle de l’année**: dépenses planifiées (coût de la vie selon votre planification) plus **loyer ou intérêts hypothécaires**, amortissement et autres frais de logement des biens immobiliers plus **versement au pilier 3a** |
+| EMS | Seulement avec un [EMS](#f-care-home): moyenne mensuelle des frais d’EMS de l’année, compris dans «Total des dépenses» |
 | Prélèvement | moyenne mensuelle de l’année: ce qui est **prélevé** sur la fortune (dépenses effectives moins revenus, avant impôts) |
 | Total des revenus | moyenne mensuelle de l’année: revenus (revenu de l’activité lucrative et rentes) plus prélèvement |
 | Taux de prélèvement | **prélèvement annuel / fortune totale en début d’année** en pour cent (colonne «Total» de l’année précédente) |

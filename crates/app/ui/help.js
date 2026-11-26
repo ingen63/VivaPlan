@@ -13,7 +13,7 @@ const Help = (() => {
     [/^returns\.bootstrap\./, "f-ret-bootstrap"], [/^returns\.parametric\./, "f-ret-parametric"], [/^returns\.extrapolation\./, "f-ret-extrapolation"],
     [/^returns\.(series|strategy)\b/, "f-ret-series"], [/^taxes\.propertyGain\./, "f-tax-gain"], [/^realestate\.properties\.\d+\.bought$/, "f-re-bought"], [/^realestate\.properties\.\d+\.canton$/, "f-tax-gain-canton"], [/^realestate\.properties\.\d+\.taxValue\./, "f-re-tax-value"],
     [/^(pension|partner)\.pk\.conversion$/, "f-pk-conversion"], [/^(pension|partner)\.pk\.lumpsum$/, "f-pk-lumpsum"], [/^(pension|partner)\.pk\./, "f-pk"],
-    [/^(pension|partner)\.ahv\./, "f-ahv"], [/^household\.(married|ahvCoupleCap)$/, "f-couple"],
+    [/^(pension|partner)\.ahv\./, "f-ahv"], [/^household\.(married|ahvCoupleCap)$/, "f-couple"], [/^household\.persons\.\d+\.careHome\b/, "f-care-home"],
     [/^wealth\.stockShare/, "f-stockshare"], [/^wealth\.reserveMonths/, "f-reserve"],
     [/^withdrawal\.strategy$/, "f-wd-choice"], [/^withdrawal\.buckets\.spending$/, "f-wd-three_buckets_guardrails"], [/^withdrawal\.buckets\./, "f-wd-three_buckets"], [/^withdrawal\.fixedRate\./, "f-wd-fixed_rate"],
     [/^withdrawal\.guardrails\./, "f-wd-guardrails"], [/^withdrawal\.vpw\./, "f-wd-vpw"], [/^withdrawal\.endowment\./, "f-wd-endowment"],
@@ -29,7 +29,7 @@ const Help = (() => {
   /** Card headings (start of the text) → topic. */
   let HEADING_TOPICS;
   onLanguage(() => HEADING_TOPICS = [
-    [tr("runCharts.pk"), "f-pk"], [tr("common.ahv"), "f-ahv"], [tr("section.pillar3a"), "s-pillar3a"], [tr("withdrawal.buckets"), "f-wd-three_buckets"], [tr("realestate.emergency"), "f-re-emergency"], [tr("realestate.affordability"), "f-re-afford"],
+    [tr("runCharts.pk"), "f-pk"], [tr("common.ahv"), "f-ahv"], [tr("care.title", { v: "" }), "f-care-home"], [tr("section.pillar3a"), "s-pillar3a"], [tr("withdrawal.buckets"), "f-wd-three_buckets"], [tr("realestate.emergency"), "f-re-emergency"], [tr("realestate.affordability"), "f-re-afford"],
     [tr("scen.variations"), "f-sweep"], [tr("params.series"), "f-ret-series"], [tr("strategy.title", { info: "" }).trim(), "f-ret-series"], [tr("returns.fromStrategy"), "f-ret-series"], [tr("returns.extrapolationTitle"), "f-ret-extrapolation"], [tr("returns.bootstrap"), "f-ret-bootstrap"],
     [tr("returns.stockModel"), "f-ret-parametric"], [tr("source.fixed"), "f-ret-fixed"], [tr("returns.run"), "f-ret-rolling"], [tr("optimize.goal"), "o-goal"], [tr("optimize.strategies"), "o-strategies"], [tr("optimize.strategyParams"), "o-ranges"],
     [tr("strat.standard"), "f-wd-standard"], [tr("limits.title"), "f-wd-limits"], [tr("strat.fixedRate"), "f-wd-fixed_rate"], [tr("strat.guardrails"), "f-wd-guardrails"], [tr("withdrawal.vpw"), "f-wd-vpw"], [tr("strat.endowmentShort"), "f-wd-endowment"],

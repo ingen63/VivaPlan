@@ -108,6 +108,20 @@
     "text": "Pension fund payout (person 2)"
   },
   {
+    "code": "term_care_home",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Care home (person {n})",
+    "text": "Care home (person Person 2)"
+  },
+  {
     "code": "term_ahv_payout_2",
     "params": {},
     "template": "AHV pension start (person 2)",
@@ -366,6 +380,70 @@
     },
     "template": "Person {n}: the name may be at most {max} characters long.",
     "text": "Person Person 2: the name may be at most Person 2 characters long."
+  },
+  {
+    "code": "care_home_entry_missing",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}: care home – the entry (age or date) is missing.",
+    "text": "Person Person 2: care home – the entry (age or date) is missing."
+  },
+  {
+    "code": "care_home_age_invalid",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}: care home – the age at the entry must be between 0 and 150 years.",
+    "text": "Person Person 2: care home – the age at the entry must be between 0 and 150 years."
+  },
+  {
+    "code": "care_home_costs_invalid",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}: care home – the costs per month must be 0 or more.",
+    "text": "Person Person 2: care home – the costs per month must be 0 or more."
+  },
+  {
+    "code": "care_home_never_sell",
+    "params": {
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Person {n}: care home – “Never sell properties” is switched on – the property is not sold at the entry, its costs continue.",
+    "text": "Person Person 2: care home – “Never sell properties” is switched on – the property is not sold at the entry, its costs continue."
+  },
+  {
+    "code": "housing_missing_after_sale",
+    "params": {
+      "month": "2031-07"
+    },
+    "template": "After the sale of the last property ({month:ym}) neither a rent nor a care home follows: from then on the plan has no housing costs.",
+    "text": "After the sale of the last property (07.2031) neither a rent nor a care home follows: from then on the plan has no housing costs."
   },
   {
     "code": "ahv_cap_not_positive",
@@ -4871,6 +4949,28 @@
     },
     "template": "Renting from now on: {names}",
     "text": "Renting from now on: Person 2"
+  },
+  {
+    "code": "event_care_home",
+    "params": {
+      "amount": 12345.678,
+      "currency": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Care home{who}: costs {amount:fix0} {currency} / month",
+    "text": "Care homePerson 2: costs 12346 Person 2 / month"
   },
   {
     "code": "event_mortgage_unaffordable_wealth",

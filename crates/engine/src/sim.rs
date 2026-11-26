@@ -61,6 +61,8 @@ pub enum EventKind {
     AhvStart,
     Purchase,
     RentStart,
+    /// #271: Entry of a person into the care home.
+    CareHome,
     Sale,
     EmergencySale,
     MortgageRenewal,
@@ -110,6 +112,8 @@ pub struct Ledger {
     pub housing: f64,
     /// Amortization within housing costs: lowers the mortgage or raises pillar 3a, so it stays in wealth.
     pub amortization: f64,
+    /// #271: Care home costs (outflow, counted positive).
+    pub care: f64,
     /// All taxes paid (outflow, counted positive).
     pub taxes: f64,
     /// Returns on stocks and bonds.
@@ -129,7 +133,8 @@ pub struct Ledger {
 impl Ledger {
     /// Change in total wealth according to the ledger.
     pub fn sum(&self) -> f64 {
-        self.income + self.extras + self.savings - self.living - self.housing + self.amortization - self.taxes
+        self.income + self.extras + self.savings - self.living - self.housing - self.care + self.amortization
+            - self.taxes
             + self.market
             + self.pk_contributions
             + self.pk_interest
@@ -183,6 +188,9 @@ pub struct MonthRecord {
     pub pk_pension: f64,
     pub ahv: f64,
     pub housing: f64,
+    /// #271: Care home costs of the household (part of `spending`); missing in plans without a care home.
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub care: f64,
     /// Market value of the properties and mortgages.
     pub property_value: f64,
     pub mortgage: f64,
@@ -223,6 +231,14 @@ pub struct TaxBasis {
     pub one_off: f64,
     /// Pillar 3a contributions, at most the maximum per person.
     pub pillar3a: f64,
+    /// #271: Care home costs of the year and their deduction as costs of illness (the part above
+    /// [`CARE_SELF_SHARE`] of the net income) for canton and federal tax; missing without a care home.
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub care: f64,
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub care_canton: f64,
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub care_federal: f64,
     /// Taxable income, never negative; with own tables both are the same.
     pub taxable_canton: f64,
     pub taxable_federal: f64,
@@ -268,6 +284,17 @@ struct YearDeductions {
     /// #230: One-off deductions of the tax year (nominal); set at the assessment, not in the estimate of the net need.
     one_off: f64,
     pillar3a: [f64; 2],
+    /// #271: Care home costs of the tax year (nominal).
+    care: f64,
+}
+
+/// #271: Costs of illness (care home) are deductible as far as they exceed this share of the net income (simplified
+/// rule for the federal tax and every canton).
+pub const CARE_SELF_SHARE: f64 = 0.05;
+
+/// #271: Deduction of the care home costs `care` from the net income `net` (income minus the other deductions).
+pub fn care_deduction(care: f64, net: f64) -> f64 {
+    (care - CARE_SELF_SHARE * net.max(0.0)).max(0.0)
 }
 
 /// #151: Compiled place of residence: applies from month `from` (index of `YearMonth`) until the next row.
@@ -379,6 +406,9 @@ pub struct NeedBasis {
     pub living_source: String,
     pub living: f64,
     pub housing: f64,
+    /// #271: Care home costs; missing without a care home.
+    #[serde(skip_serializing_if = "is_zero_amount")]
+    pub care: f64,
     /// Income tax on the (extrapolated) annual income.
     pub income_tax: f64,
     /// AHV pension.
@@ -395,7 +425,7 @@ pub struct NeedBasis {
 
 impl NeedBasis {
     pub fn expenses(&self) -> f64 {
-        self.living + self.housing + self.income_tax + self.pillar3a
+        self.living + self.housing + self.care + self.income_tax + self.pillar3a
     }
     /// Regular income: pensions and earned income.
     pub fn receipts(&self) -> f64 {
@@ -464,6 +494,10 @@ pub struct Renewal {
     pub debt_after: f64,
     /// Reason for the emergency sale: «wealth < 0» or «emergency sale criterion»; `None`: no emergency sale.
     pub emergency_sale: Option<Message>,
+}
+
+fn is_zero_amount(v: &f64) -> bool {
+    *v == 0.0
 }
 
 pub(crate) fn is_zero_count(n: &usize) -> bool {
@@ -858,6 +892,12 @@ pub struct Simulator {
     emergency: Curve,
     /// #196: Never sell a property (switch «Immobilien nie verkaufen»).
     never_sell: bool,
+    /// #271: Care home per person (index as in `people`): month of the entry and costs per month in prices of the start.
+    care: Vec<(YearMonth, f64, usize)>,
+    /// #271: First month in which every person of the household lives in a care home (housing of the household ends).
+    all_in_care: Option<YearMonth>,
+    /// #271: Month of the sale of the properties because of the care home (`sell`, not with «Immobilien nie verkaufen»).
+    care_sale: Option<YearMonth>,
     stocks0: f64,
     bonds0: f64,
     cash0: f64,
@@ -1011,6 +1051,22 @@ impl Simulator {
                 &q.ahv,
             )?);
         }
+        // #271: care home per person; the household's housing ends once everyone lives in a care home.
+        let mut care = vec![];
+        let mut care_sell = false;
+        for (i, p) in persons.iter().take(people.len()).enumerate() {
+            if let Some(c) = &p.care_home {
+                if let Some(entry) = c.entry(p.birth, &r)? {
+                    care.push((entry, c.monthly, i));
+                    care_sell |= c.sell;
+                }
+            }
+        }
+        let all_in_care = (care.len() == people.len())
+            .then(|| care.iter().map(|c| c.0).max())
+            .flatten()
+            .map(|m| m.max(start));
+        let care_sale = all_in_care.filter(|_| care_sell && !plan.realestate.never_sell);
         // #250: taxes for married couples also for a single person (plans with the marker `marriedNoted`);
         // the AHV cap needs two persons.
         let couple = plan.household.married && (people.len() > 1 || plan.household.married_noted);
@@ -1141,7 +1197,8 @@ impl Simulator {
             || !one_off.is_empty()
             || !plan.taxes.wealth_deductions.is_empty()
             || !one_off_wealth.is_empty()
-            || tax_values;
+            || tax_values
+            || !care.is_empty();
         let props = plan
             .realestate
             .properties
@@ -1236,6 +1293,9 @@ impl Simulator {
             },
             emergency: curve(&plan.realestate.emergency_months)?,
             never_sell: plan.realestate.never_sell,
+            care,
+            all_in_care,
+            care_sale,
             stocks0: plan.wealth.stocks,
             bonds0: plan.wealth.bonds,
             cash0: plan.wealth.cash,
@@ -1286,7 +1346,7 @@ impl Simulator {
             let mut rest = vec![0.0; self.months + 1];
             for k in (0..self.months).rev() {
                 let m = self.start.plus(k as i32);
-                rest[k] = rest[k + 1] + self.planned_living(m) - self.earned(m, 1.0);
+                rest[k] = rest[k + 1] + self.planned_living(m) + self.care_at(m) - self.earned(m, 1.0);
             }
             self.need_rest = rest;
         }
@@ -1297,6 +1357,17 @@ impl Simulator {
     /// minus housing share, times the factor of the variation.
     fn planned_living(&self, m: YearMonth) -> f64 {
         (self.spending.at(m) - self.housing_share) * self.spending_factor
+    }
+
+    /// #271: Care home costs of the household in month `m` in prices of the start month.
+    fn care_at(&self, m: YearMonth) -> f64 {
+        self.care.iter().filter(|c| m >= c.0).map(|c| c.1).sum()
+    }
+
+    /// #271: Every person of the household lives in a care home in month `m`: no rent, no purchase or rent after a
+    /// sale.
+    fn in_care(&self, m: YearMonth) -> bool {
+        self.all_in_care.is_some_and(|a| m >= a)
     }
 
     /// Earned income of the household in this month; `infl_idx` is the path's price index since the start. If a
@@ -1451,14 +1522,26 @@ impl Simulator {
                     basis.parts_federal = r.federal_deductions.parts(income, earned, index);
                 }
                 let common = own + extra + one_off + pillar3a;
-                basis.taxable_canton = (income - (basis.proposal_canton + common)).max(0.0);
-                basis.taxable_federal = (income - (basis.proposal_federal + common)).max(0.0);
+                let net_canton = income - (basis.proposal_canton + common);
+                let net_federal = income - (basis.proposal_federal + common);
+                basis.care = acc.care;
+                basis.care_canton = care_deduction(acc.care, net_canton);
+                basis.care_federal = care_deduction(acc.care, net_federal);
+                basis.taxable_canton = (net_canton - basis.care_canton).max(0.0);
+                basis.taxable_federal = (net_federal - basis.care_federal).max(0.0);
                 r.income_tax_on(basis.taxable_canton, basis.taxable_federal, index)
             }
             None => {
                 let d = own + extra + one_off + pillar3a;
+                basis.care = acc.care;
+                basis.care_canton = care_deduction(acc.care, income - d);
+                basis.care_federal = basis.care_canton;
                 // Without deductions exactly the income as before #131.
-                let taxable = if d == 0.0 { income } else { (income - d).max(0.0) };
+                let taxable = if d == 0.0 && acc.care == 0.0 {
+                    income
+                } else {
+                    (income - d - basis.care_canton).max(0.0)
+                };
                 basis.taxable_canton = taxable;
                 basis.taxable_federal = taxable;
                 tax::tax_indexed(&self.taxes.income, taxable, self.taxes.multiplier, index)
@@ -2168,6 +2251,10 @@ impl<'a> Run<'a> {
     /// Is a purchase of another property planned in the month after the sale of property `sold` (month `m`)?
     /// Counts the fixed purchase month M+1 and purchases «nach Verkauf» of this property or of the last property.
     fn follow_up_purchase(&self, sold: usize, m: YearMonth) -> bool {
+        // #271: everyone lives in a care home: no purchase «nach Verkauf»
+        if self.s.in_care(m.plus(1)) {
+            return false;
+        }
         let other_active = self.props.iter().enumerate().any(|(j, p)| j != sold && p.active);
         self.s.props.iter().enumerate().any(|(j, p)| {
             if j == sold || p.status != PropertyStatus::Planned {
@@ -2190,6 +2277,10 @@ impl<'a> Run<'a> {
     /// financeable; otherwise the rents «nach Verkauf» start.
     fn after_sales(&mut self, m: YearMonth) {
         let s = self.s;
+        // #271: everyone lives in a care home: no purchase or rent «nach Verkauf» (also after an emergency sale)
+        if s.in_care(m) {
+            return;
+        }
         for i in 0..s.props.len() {
             let Trigger::SaleOf(j) = s.props[i].buy_trigger else {
                 continue;
@@ -2615,7 +2706,8 @@ impl<'a> Run<'a> {
                         Trigger::SaleOf(j) => self.props[j].sold.is_some_and(|sm| m > sm),
                     };
                     let until = p.rent_until.is_none_or(|u| m < u);
-                    if from && until {
+                    // #271: the rent ends once everyone lives in a care home
+                    if from && until && !s.in_care(m) {
                         let rent = p.rent * if p.infl_rent { self.infl_idx } else { 1.0 };
                         cost += rent;
                         running += rent;
@@ -2741,7 +2833,8 @@ impl<'a> Run<'a> {
             if m.is_quarter_end() || k + 1 == s.months {
                 cost += std::mem::take(&mut self.props[i].int_accr);
             }
-            if p.status != PropertyStatus::Rent && p.sell == Some(m) {
+            // #271: sale at the entry into the care home (once everyone lives in one)
+            if p.status != PropertyStatus::Rent && (p.sell == Some(m) || s.care_sale == Some(m)) {
                 self.sell(i, m, EventKind::Sale);
             }
         }
@@ -2961,6 +3054,7 @@ impl<'a> Run<'a> {
         let s = self.s;
         let last = s.start.plus(s.months as i32 - 1);
         let (mut living, mut housing, mut ahv, mut pk, mut earned, mut p3a) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut care = 0.0;
         let mut per_person = [0.0; 2];
         // #131: the same deductions as the assessment
         let mut ded = YearDeductions::default();
@@ -2973,12 +3067,15 @@ impl<'a> Run<'a> {
                 break;
             }
             let (a, p) = self.pensions_at(mm);
+            let care_mm = s.care_at(mm) * self.infl_idx;
+            care += care_mm;
+            ded.care += care_mm;
             living += match &rule {
                 Some(d) => self.rule_living(
                     d,
                     mm,
                     a + p + s.earned(mm, self.infl_idx),
-                    self.month_running + s.pillar3a_contribution(mm),
+                    self.month_running + care_mm + s.pillar3a_contribution(mm),
                 ),
                 None => s.planned_living(mm) * self.infl_idx,
             };
@@ -3010,6 +3107,7 @@ impl<'a> Run<'a> {
         }
         let per_person = per_person.map(|e| e * f);
         ded.own_rate *= f;
+        ded.care *= f;
         ded.pillar3a = ded.pillar3a.map(|y| y * f);
         NeedBasis {
             year: m.year(),
@@ -3017,6 +3115,7 @@ impl<'a> Run<'a> {
             living_source: if rule.is_some() { "Guardrails" } else { "geplant" }.into(),
             living: living * f,
             housing: housing * f,
+            care: care * f,
             income_tax: s
                 .income_tax(
                     m,
@@ -3748,6 +3847,23 @@ impl<'a> Run<'a> {
                     );
                 }
             }
+            // #271: entry into the care home (before the start: in the start month)
+            for &(entry, monthly, pi) in &s.care {
+                if entry.max(s.start) == m {
+                    let who = if s.people.len() > 1 {
+                        crate::message::arg(&msg!(suffix_person, n = pi + 1))
+                    } else {
+                        crate::message::Arg::Null
+                    };
+                    let text = msg!(
+                        event_care_home,
+                        who = who,
+                        amount = (monthly * self.infl_idx),
+                        currency = self.s.currency
+                    );
+                    self.event(m, EventKind::CareHome, text);
+                }
+            }
             // #191: AHV of the month (cap, reduction, supplement) and the start of a payout
             for pi in self.ahv.step(m, k == 0) {
                 let who = if s.people.len() > 1 {
@@ -3787,20 +3903,24 @@ impl<'a> Run<'a> {
             let ahv = ahv_monthly + self.thirteenth_ahv(m, ahv_monthly);
             let income = earned + pk_pension + ahv;
             let planned = s.planned_living(m) * self.infl_idx;
+            // #271: care home costs with inflation
+            let care = s.care_at(m) * self.infl_idx;
             // #6/#47: The spending rule applies from the retirement of the first person.
             let (living, at_floor) = match s.dynamic {
                 Some(d) if self.any_retired() => {
                     self.update_budget(&d, m, infl_factor);
-                    self.rule_living_bound(&d, m, income, prop_cost + p3a_in)
+                    self.rule_living_bound(&d, m, income, prop_cost + p3a_in + care)
                 }
                 _ => (planned, false),
             };
             self.month_running = prop_running;
-            self.cash += s.savings.at(m) + income - living - prop_cost - p3a_in;
+            self.cash += s.savings.at(m) + income - living - prop_cost - care - p3a_in;
             self.ledger.income += income;
             self.ledger.savings += s.savings.at(m);
             self.ledger.living += living;
             self.ledger.housing += prop_cost;
+            self.ledger.care += care;
+            self.year_ded.care += care;
             self.year_income += income;
             s.add_deduction_month(&mut self.year_ded, m, income);
             // #63 proposal of the canton, #152 large pillar 3a: earned income per person of the tax year.
@@ -3896,7 +4016,7 @@ impl<'a> Run<'a> {
 
             // Check for an emergency sale (with the pensions after any indexing)
             let liquid = self.cash + self.stocks + self.bonds;
-            let shortfall = living + prop_running + p3a_in - (earned + self.pk_pension() + self.ahv());
+            let shortfall = living + prop_running + care + p3a_in - (earned + self.pk_pension() + self.ahv());
             if !s.never_sell
                 && liquid - s.emergency.at(m) * shortfall < 0.0
                 && !self.props.iter().any(|p| p.emergency_pending)
@@ -3909,14 +4029,14 @@ impl<'a> Run<'a> {
 
             // #218: withdrawal of the month for the characteristic curve (expenses minus income).
             if let Some(t) = &mut self.share {
-                t.push_withdrawal(living + prop_cost + paid - income - s.savings.at(m));
+                t.push_withdrawal(living + prop_cost + care + paid - income - s.savings.at(m));
             }
 
             // Withdrawal strategy: «3-Topf» from retirement, otherwise «Standard»
             match &s.buckets {
                 Some(b) if self.any_retired() => {
                     let one_off = extras_out + self.month_out;
-                    let pay = living + prop_cost + p3a_in + paid + one_off;
+                    let pay = living + prop_cost + care + p3a_in + paid + one_off;
                     let housing_now = (prop_running - self.month_amort).max(0.0);
                     self.bucket_step(b, m, k, pay, one_off, housing_now);
                 }
@@ -3979,7 +4099,7 @@ impl<'a> Run<'a> {
                     total,
                     pillar3a_in: p3a_in,
                     income,
-                    spending: living + prop_cost + p3a_in,
+                    spending: living + prop_cost + care + p3a_in,
                     taxes: month_tax,
                     tax_income: paid_income,
                     tax_wealth: paid_wealth,
@@ -3989,11 +4109,12 @@ impl<'a> Run<'a> {
                     assessed_wealth,
                     tax_basis,
                     planned_spending: planned,
-                    withdrawal: living + prop_cost + p3a_in - income,
+                    withdrawal: living + prop_cost + care + p3a_in - income,
                     earned,
                     pk_pension,
                     ahv,
                     housing: prop_cost,
+                    care,
                     property_value: (0..self.props.len())
                         .filter(|&i| self.props[i].active)
                         .map(|i| self.worth(i))
@@ -4258,9 +4379,10 @@ mod tests_ledger {
             p3a_interest: 1024.0,
             revaluation: 2048.0,
             annuity: 4096.0,
+            care: 8192.0,
         };
         let plus = 1.0 + 2.0 + 4.0 + 32.0 + 128.0 + 256.0 + 512.0 + 1024.0 + 2048.0;
-        let minus = 8.0 + 16.0 + 64.0 + 4096.0;
+        let minus = 8.0 + 16.0 + 64.0 + 4096.0 + 8192.0;
         assert_eq!(l.sum(), plus - minus);
         assert_eq!(Ledger::default().sum(), 0.0);
     }

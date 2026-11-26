@@ -49,6 +49,7 @@ Cassa pensione (2° pilastro) e AVS (1° pilastro), con due persone schede propr
 
 - Cassa pensione: [avere di vecchiaia, prestazione, prelievo del capitale, aliquota di conversione](#f-pk)
 - AVS: [rendita e inizio della riscossione](#f-ahv)
+- Casa di cura: [entrata, spese della casa di cura, vendita dell’abitazione di proprietà](#f-care-home)
 
 Una riga sotto le schede mostra che cosa diventa l’avere alla prestazione della cassa pensione (capitale e rendita).
 
@@ -166,6 +167,25 @@ Con «+ Seconda persona» registra un’economia domestica con due persone.
 **Coniugati con una sola persona:** La casella «Coniugati» esiste anche senza seconda persona, ad esempio se il coniuge non ha né reddito né rendita. Valgono allora le tariffe e le deduzioni per coniugati (nella modalità «Domicilio» cantone, comune e Confederazione, con tabelle proprie le tabelle per coniugati); l’imposta è la stessa di una coppia sposata con una seconda persona senza reddito. La limitazione delle rendite AVS vale solo con due persone. Le pianificazioni meno recenti con una persona avevano «Coniugati» spuntato senza effetto; all’apertura vengono riprese come non coniugate e calcolano come prima, un’avvertenza lo segnala. Le nuove pianificazioni iniziano non coniugate.
 
 **Non calcolati:** decesso di una persona, rendite per superstiti, rendita vedovile. La pianificazione calcola come se entrambi vivessero fino alla fine.
+
+## @f-care-home Casa di cura
+Parole chiave: casa di cura, casa per anziani, spese della casa di cura, cure, età, entrata, vendere l’abitazione di proprietà, spese di malattia, deduzione
+
+Una scheda propria per persona nella scheda «Previdenza». Con **«Prevedere una casa di cura»** inserite:
+
+- **Entrata:** età della persona (p. es. 85), una tappa o una data fissa.
+- **Spese della casa di cura al mese (prezzi attuali):** pensione, cure e assistenza nella misura in cui le pagate voi stessi. Le spese aumentano con il rincaro. Dal mese dell’entrata contano tra le spese; i [valori annuali](#r-table) le mostrano nella colonna «Casa di cura», il grafico [Entrate e spese all’anno](#r-flows) come barra propria e gli [eventi](#r-events) indicano l’entrata.
+- **Vendere l’abitazione di proprietà all’entrata:** gli immobili abitati dal proprietario vengono venduti nel mese dell’entrata, come una vendita pianificata con l’imposta sugli utili immobiliari; ipoteca, interessi e spese accessorie terminano.
+
+**Spese d’alloggio:** Quando una persona sola vive in una casa di cura, l’affitto e le altre spese d’alloggio terminano dal mese dell’entrata. Gli affitti «dopo la vendita» non iniziano, nemmeno dopo una vendita o una [vendita forzata](#f-re-emergency); non ha luogo nemmeno un acquisto «dopo la vendita». Senza «vendere» l’immobile resta con le sue spese e le spese della casa di cura si aggiungono; una vendita forzata in caso di sostanza scarsa continua a valere.
+
+**Coppie:** Le spese d’alloggio dell’economia domestica continuano finché una persona vive a casa; le spese della casa di cura della persona in casa di cura si aggiungono. Solo quando **entrambe** vivono in una casa di cura terminano l’affitto e le spese d’alloggio, e l’immobile viene venduto se «vendere» è scelto per una delle due persone. La pianificazione non rappresenta un decesso.
+
+**[Non vendere mai gli immobili](#f-re-never-sell)** ha la precedenza: nessuna vendita all’entrata, le spese dell’immobile continuano; il controllo lo segnala.
+
+**Imposte (semplificato):** Le spese della casa di cura contano come spese di malattia e spese dovute a disabilità. Sono deducibili per l’imposta federale e l’imposta del cantone nella misura in cui superano il 5 % del reddito netto; il reddito netto è il reddito dopo le altre [deduzioni](#f-tax-deductions). Esempio: reddito netto 60 000, spese della casa di cura 108 000 all’anno → deduzione 108 000 − 3 000 = 105 000; il reddito imponibile non scende mai sotto 0. L’app applica questa regola per tutti i cantoni; alcuni cantoni calcolano diversamente, per esempio solo con la quota per le cure. L’app non calcola le prestazioni complementari.
+
+**Controllo:** Un’entrata mancante, un’età al di fuori da 0 a 150 anni o spese negative sono errori. Dopo la vendita dell’ultimo immobile (pianificata o a causa della casa di cura) il controllo segnala quando non segue né un affitto né una casa di cura, perché allora la pianificazione non avrebbe più spese d’alloggio.
 
 ## @s-flows Entrate e spese
 Parole chiave: reddito, costo della vita, spese, importi unici, eredità, inflazione
@@ -328,6 +348,8 @@ Ogni riga è (le spiegazioni si trovano anche nell’ⓘ accanto al titolo della
 **Verifica:** Un importo negativo (anche «in aggiunta» e unico), una percentuale inferiore a 0 % o superiore a 100 % e un anno fiscale al di fuori della simulazione sono errori nella sezione Imposte.
 
 **Risultati:** Con «Mostrare le imposte» i valori annuali mostrano il reddito, le deduzioni (cantone; l’origine – proposta del cantone, in aggiunta, valore proprio, unica, pilastro 3a – nel tooltip della cella) e il reddito imponibile (quello della Confederazione nel tooltip se diverso).
+
+**Casa di cura:** L’app deduce in aggiunta le spese della casa di cura dalla scheda [Casa di cura](#f-care-home) come spese di malattia nella misura in cui superano il 5 % del reddito netto (Confederazione e cantone ciascuno con il proprio reddito netto). I valori annuali indicano la deduzione nell’origine delle deduzioni.
 
 ## @f-tax-wealth-deductions Deduzioni dalla sostanza
 Parole chiave: deduzioni, sostanza imponibile, imposta sulla sostanza, debiti, deduzioni sociali, unica
@@ -527,6 +549,7 @@ Con questo commutatore in alto nella scheda «Immobili» verificate se la pianif
 - **Acquisti:** un acquisto pianificato con una data o una tappa ha luogo. Acquisti e affitti «dopo la vendita» **non** hanno luogo; la verifica lo segnala, come pure le vendite pianificate.
 - **Sostanza esaurita:** se la sostanza liquida non basta più, l’esecuzione conta come esaurita, come senza immobile. Il tasso di successo è quindi di solito più basso che con una vendita.
 - **Sola lettura:** finché il commutatore è attivo, tutti gli altri campi della scheda sono grigi e di sola lettura. I valori restano invariati e tornano a valere quando il commutatore viene disattivato.
+- **Casa di cura:** Anche con «Vendere l’abitazione di proprietà all’entrata» non viene venduto nulla all’entrata nella [casa di cura](#f-care-home); le spese dell’immobile continuano.
 
 ## @f-re-afford Sostenibilità
 Parole chiave: banca, sostenibilità, grado d’anticipo, tasso d’interesse teorico, fondi propri, ipoteca, consumo della sostanza, pensionamento

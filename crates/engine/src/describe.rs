@@ -326,6 +326,8 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("flows.spending", "CHF/month", ">= 0"),
     ("flows.spendingFactor", "factor", "> 0"),
     ("household.ahvCoupleCap", "CHF/month", ">= 0"),
+    ("household.persons.*.careHome.age", "age", "0..150"),
+    ("household.persons.*.careHome.monthly", "CHF/month", ">= 0"),
     ("milestones.*.years", "age", "0..120"),
     ("optimization.checkPaths", "count", ">= 1"),
     ("optimization.maxRuin", "share", "0..1"),

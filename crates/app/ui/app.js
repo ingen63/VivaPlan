@@ -675,7 +675,38 @@ function PensionCards(root, who) {
     <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></fieldset></div>
   <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2"><div>${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}${C("ahvEff", root === "partner" ? 1 : 0)}</div>
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
-    <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>`;
+    <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>
+  ${CareCard(n, t)}`;
+}
+/** #271: care home of person `n`: entry (age, milestone or date), costs per month and «Wohneigentum verkaufen». */
+function CareCard(n, t) {
+  const P = `household.persons.${n}.careHome`, c = getP(P);
+  const body = c ? `<div class="grid2">
+      <label class="field"><span>${tr("care.entry")}</span>${CareWhen(P, n)}</label>
+      ${F(P + ".monthly", tr("care.monthly"), "chf", { hint: tr("care.monthlyHint") })}</div>
+    <div style="margin-top:10px">${Chk(P + ".sell", tr("care.sell"))}</div>
+    <p class="hint">${tr(state.partner ? "care.hintCouple" : "care.hintSingle")}</p>` : `<p class="hint">${tr("care.none")}</p>`;
+  return `<div class="card" id="careCard${n}"><h3>${tr("care.title", { v: t })}</h3>
+    <label class="check"><input type="checkbox" data-action="care-toggle" data-n="${n}" ${c ? "checked" : ""}> ${tr("care.on")}</label>
+    ${body}</div>`;
+}
+/** #271: entry into the care home: age of the person, a milestone or a fixed date (with the age or the date beside it). */
+function CareWhen(path, n) {
+  const c = getP(path), cur = c.at == null ? "age" : isYM(c.at) ? "__date" : c.at;
+  const opt = (v, l) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`;
+  return `<div class="refwrap"><select class="plain" data-path="${path}" data-type="carewhen" data-n="${n}">
+    ${opt("age", tr("care.age"))}
+    <optgroup label="${tr("ref.milestone")}">${state.milestones.map(ms => opt(ms.id, msLabel(ms))).join("")}</optgroup>
+    ${opt("__date", tr("ref.fixedDate"))}</select>
+    ${c.at == null ? F(path + ".age", "", "years", { bare: true, unit: tr("unit.yearsShort") }) : isYM(c.at) ? F(path + ".at", "", "month", { bare: true }) : ""}</div>`;
+}
+/** #271: «age», a milestone or «__date»; the point in time stays the same where it can. */
+function setCareWhen(c, v, n) {
+  const pid = state.household.persons[n].id, m = c.at == null ? ym2i(person(pid).birth) + Math.round((+c.age || 0) * 12) : refMonth(c.at);
+  const known = Number.isFinite(m) && m !== Infinity ? m : startM();
+  delete c.at; delete c.age;
+  if (v === "age") c.age = Math.max(0, Math.round(ageAt(known, pid) * 100) / 100);
+  else c.at = v === "__date" ? i2ym(known) : v;
 }
 /** #51: Pension fund and AHV start at the fixed milestones of the person. */
 function fixedAt(index, kind) {
@@ -2439,6 +2470,7 @@ function readInput(el) {
 function onEdit(el) {
   const path = el.dataset.path; if (!path) return;
   if (el.dataset.type === "point") { setPointWhen(getP(path), el.value); markDirty(); renderSection(); return; } // #243
+  if (el.dataset.type === "carewhen") { setCareWhen(getP(path), el.value, +el.dataset.n); markDirty(); renderSection(); return; } // #271
   if (el.dataset.type === "ref") {
     const prev = getP(path);
     setP(path, el.value === "__date" ? i2ym(Number.isFinite(refMonth(prev)) && refMonth(prev) !== Infinity ? refMonth(prev) : startM()) : el.value);
@@ -2540,6 +2572,12 @@ const ACTIONS = {
       if (users.length) return toast(tr("actions.stillUsedBy", { map: users.map(q => q.name).join(", ") }));
     }
     getP(d.path).splice(+d.i, 1); markDirty(); renderSection();
+  },
+  // #271: care home of a person on or off (default: entry at 85, 9 000 per month, no sale)
+  "care-toggle": d => {
+    const p = state.household.persons[+d.n];
+    if (p.careHome) delete p.careHome; else p.careHome = { age: 85, monthly: 9000, sell: false };
+    markDirty(); renderSection();
   },
   "extra-add": () => { state.flows.extras.push({ date: i2ym(startM() + 12), amount: -10000, label: tr("actions.newAmount") }); markDirty(); renderSection(); },
   "tax-add": d => { const t = getP("taxes." + d.key), last = t[t.length - 1] || [0, 0]; t.push([last[0] * 2 || 100000, last[1]]); markDirty(); renderSection(); },
@@ -3154,7 +3192,7 @@ function bucketDerivation(rs) {
     const cond = inflow ? "–" : r.conditionIgnored ? `<small>${tr("buckets.ignored")}</small>` : `${r.conditionMet ? tr("buckets.met") : `<span class="bad">${tr("buckets.notMet")}</span>`}<br><small>${pct(r.stockReturn)} (${esc(msgText(r.returnBasis))}) ${r.conditionMet ? "≥" : "<"} ${pct(r.threshold)}</small>`;
     const moves = r.moves?.length ? r.moves.map(x => `${side(x.from)} → ${side(x.to)}: ${n(x.amount)}`).join("<br>") : "–";
     const basis = inflow ? `<td colspan="8" class="l"><small>${tr("buckets.noRefill")}</small></td>`
-      : `<td>${n(b.living)}${b.livingSource === "Guardrails" ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing)}</td><td>${n(b.pillar3a ?? 0)}</td><td>${fmtTax(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
+      : `<td>${n(b.living)}${b.livingSource === "Guardrails" ? tr("buckets.guardrailsSmall") : ""}</td><td>${n(b.housing + (b.care ?? 0))}</td><td>${n(b.pillar3a ?? 0)}</td><td>${fmtTax(b.incomeTax)}</td><td>${n(b.ahv)}</td><td>${n(b.pk)}</td><td>${n(b.earned)}</td><td><b>${n(r.need)}</b></td>`;
     const targets = inflow ? "<td>–</td><td>–</td>" : `<td>${n(r.target1)}</td><td>${n(r.target2)}</td>`;
     const passed = (r.trigger === "A" || r.trigger === "C1") && r.passedMonths > 0 ? `<br><small>${tr("buckets.targetsShortened", { passedMonths: r.passedMonths })}</small>` : "";
     const base = inflow || !b.source ? "" : `<br><small>${esc(msgText(b.source))}</small>`;
@@ -3259,7 +3297,8 @@ function yearTable(run, refills = []) {
     [tr("yearTable.taxProperty"), `${est} ${check}`], [tr("yearTable.taxTotal"), est]].map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
   const tx = showTaxCols, vals = yearValues(run), bx = tx && vals.some(v => v.basis), lx = tx && vals.some(v => v.residence);
   const px = tx && vals.some(v => v.basis?.propertyTaxValue != null), wx = tx && vals.some(v => v.basis?.wealth);
-  const cols = 12 + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
+  const cx = vals.some(v => v.care); // #271: column of the care home costs only with a care home
+  const cols = 12 + (cx ? 1 : 0) + (tx ? 5 : 0) + (bx ? 3 : 0) + (px ? 1 : 0) + (wx ? 2 : 0) + (lx ? 1 : 0);
   // #231/AK5: deductions from wealth with their origin as tooltip and the taxable wealth
   const wealthHeads = () => [[tr("yearTable.wealthDeductions"), tr("yearTable.wealthDeductionsTitle")], [tr("yearTable.taxableWealth"), tr("yearTable.taxableWealthTitle")]]
     .map(([head, title]) => `<th class="tx" title="${title}">${head}</th>`).join("");
@@ -3275,9 +3314,10 @@ function yearTable(run, refills = []) {
   const basisCells = b => {
     if (!b) return "<td></td><td></td><td></td>";
     const fed = Math.abs(b.proposalFederal - b.proposalCanton) > 0.5 || Math.abs(b.taxableFederal - b.taxableCanton) > 0.5;
-    const origin = [[b.proposalCanton, tr("deductions.originCanton") + (fed ? ` (${tr("deductions.federal")} ${fmtInt(b.proposalFederal)})` : "")], [b.extra ?? 0, tr("deductions.originExtra")], [b.own, tr("deductions.originOwn")], [b.oneOff ?? 0, tr("deductions.originOneOff")], [b.pillar3a, tr("deductions.originPillar3a")]]
+    const origin = [[b.proposalCanton, tr("deductions.originCanton") + (fed ? ` (${tr("deductions.federal")} ${fmtInt(b.proposalFederal)})` : "")], [b.extra ?? 0, tr("deductions.originExtra")], [b.own, tr("deductions.originOwn")], [b.oneOff ?? 0, tr("deductions.originOneOff")], [b.pillar3a, tr("deductions.originPillar3a")],
+      [b.careCanton ?? 0, tr("deductions.originCare") + (fed && Math.abs((b.careFederal ?? 0) - (b.careCanton ?? 0)) > 0.5 ? ` (${tr("deductions.federal")} ${fmtInt(b.careFederal)})` : "")]]
       .filter(([v]) => Math.abs(v) >= 0.5).map(([v, t]) => `${t}: ${fmtInt(v)}`).join("; ");
-    const ded = b.proposalCanton + (b.extra ?? 0) + b.own + (b.oneOff ?? 0) + b.pillar3a;
+    const ded = b.proposalCanton + (b.extra ?? 0) + b.own + (b.oneOff ?? 0) + b.pillar3a + (b.careCanton ?? 0);
     return `${cell(b.income)}<td title="${esc(origin || tr("deductions.originNone"))}" data-ded-origin="${esc(origin)}">${fmtInt(ded)}</td><td title="${fed ? esc(`${tr("deductions.federal")}: ${fmtInt(b.taxableFederal)}`) : ""}">${fmtInt(b.taxableCanton)}</td>`;
   };
   const refillsOf = y => refills.filter(r => r.month.slice(0, 4) === y);
@@ -3286,14 +3326,14 @@ function yearTable(run, refills = []) {
     const rf = refillsOf(y), open = bucketOpen.has(y);
     const toggle = rf.length ? `<button class="btn ghost small bkbtn" data-action="bk-toggle" data-y="${y}" aria-expanded="${open}" title="${tr("yearTable.bucketTitle", { v: open ? tr("yearTable.bucketHide") : tr("yearTable.bucketShow") })}">${open ? "▾" : "▸"}</button>` : "";
     return `<tr><td>${toggle}${y}${part}</td><td>${v.age.toFixed(1)}</td><td>${fmtInt(v.liquid)}</td><td>${fmtInt(v.property)}</td><td>${fmtInt(v.pension)}</td><td><b>${fmtInt(v.total)}</b></td>
-      ${cell(v.spending, true)}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
+      ${cell(v.spending, true)}${cx ? `<td data-care>${Math.abs(v.care ?? 0) < 0.5 ? "" : fmtInt(v.care)}</td>` : ""}${cell(v.draw)}${cell(v.receipts, true)}<td>${rateTxt(v.rate)}</td>${cell(v.deviation)}<td>${(v.inflation * 100).toLocaleString("de-CH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
       ${tx ? `${taxCell(v.taxIncome)}${taxCell(v.taxWealth)}${taxCell(v.taxCapital)}${taxCell(v.taxGain)}${taxCell(v.taxTotal, true)}` : ""}${bx ? basisCells(v.basis) : ""}${px ? `<td data-property-tax-value>${v.basis?.propertyTaxValue != null ? fmtInt(v.basis.propertyTaxValue) : ""}</td>` : ""}${wx ? wealthCells(v.basis?.wealth) : ""}${lx ? `<td class="l" data-residence>${v.residence ? esc(locationText(v.residence)) : ""}</td>` : ""}</tr>`
       + (rf.length && open ? `<tr class="bk"><td colspan="${cols}" class="l">${bucketDerivation(rf)}</td></tr>` : "");
   }).join("");
   const taxHint = tx ? ` ${tr("yearTable.taxHint")}` : "";
   return `<div class="seg" style="margin-bottom:8px"><button class="${tx ? "on" : ""}" data-action="tax-cols" aria-pressed="${tx}" title="${tr("yearTable.taxToggleTitle")}">${tx ? tr("yearTable.hideTaxes") : tr("yearTable.showTaxes")}</button></div>
     <div class="tscroll"><table class="tbl num yt"><tr><th>${tr("yearTable.year")}</th><th>${tr("yearTable.age")}</th><th title="${tr("yearTable.liquidTitle")}">${tr("yearTable.liquid")}</th><th title="${tr("yearTable.propertyTitle")}">${tr("yearTable.property")}</th><th title="${tr("yearTable.pensionTitle")}">${tr("yearTable.pension")}</th><th title="${tr("yearTable.totalTitle")}">${tr("yearTable.total")}</th>
-      <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th><th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
+      <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th>${cx ? `<th title="${tr("yearTable.careTitle")}">${tr("yearTable.care")}</th>` : ""}<th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
       ${tx ? taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
     <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
@@ -3315,7 +3355,8 @@ function runChartsHtml(res, p) {
     + card(tr("runCharts.liquidByAsset"), realNote(), `<div class="seg" style="margin-bottom:8px"><button class="${compPercent ? "" : "on"}" data-action="comp" data-v="0">${tr("runCharts.amounts")}</button><button class="${compPercent ? "on" : ""}" data-action="comp" data-v="1">${tr("runCharts.shares")}</button></div>`
       + chartBox(`${p}-comp`, 300, true) + legend([["--c1", tr("wealth.stocks")], ["--c2", tr("wealth.bonds")], ["--c3", tr("wealth.cash")]]))
     + card(tr("runCharts.flows"), realNote(), chartBox(`${p}-flows`, 300, true)
-      + legend([["--c2", tr("runCharts.earned")], ["--c1", tr("single.pkPension")], ["--c4", tr("common.ahv")], ["--c3", tr("runCharts.living")], ["--warn", tr("runCharts.housing")], ["--err", tr("runCharts.taxesEstimated")]])
+      + legend([["--c2", tr("runCharts.earned")], ["--c1", tr("single.pkPension")], ["--c4", tr("common.ahv")], ["--c3", tr("runCharts.living")], ["--warn", tr("runCharts.housing")],
+        ...(recs.some(r => r.care) ? [["--accent", tr("runCharts.care")]] : []), ["--err", tr("runCharts.taxesEstimated")]])
       + `<p class="hint">${tr("runCharts.flowsHint")}</p>`)
     + card(tr("runCharts.withdrawal"), tr("runCharts.withdrawalSub"), chartBox(`${p}-draw`, 260, true)
       + `<p class="hint">${tr("runCharts.withdrawalHint")}</p>`)
@@ -3344,8 +3385,9 @@ function drawRunCharts(res, p) {
   const ys = view ? allYears.filter(a => +a.y * 12 + 11 >= view[0] && +a.y * 12 <= view[1]) : allYears;
   Charts.bars($(`#${p}-flows`), $(`#${p}-flows-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: fmtMio,
     series: [{ group: "in", color: "--c2", values: ys.map(a => a.earned) }, { group: "in", color: "--c1", values: ys.map(a => a.pk) }, { group: "in", color: "--c4", values: ys.map(a => a.ahv) },
-      { group: "out", color: "--c3", values: ys.map(a => a.living) }, { group: "out", color: "--warn", values: ys.map(a => a.housing) }, { group: "out", color: "--c4", values: ys.map(a => a.p3a) }, { group: "out", color: "--err", values: ys.map(a => a.taxes) }],
-    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.income), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.spending), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${tr("runTip.taxes", { taxes: `${fmtTax(a.taxes)} ${cur()}` })}`; } });
+      { group: "out", color: "--c3", values: ys.map(a => a.living) }, { group: "out", color: "--warn", values: ys.map(a => a.housing) },
+      ...(ys.some(a => a.care) ? [{ group: "out", color: "--accent", values: ys.map(a => a.care ?? 0) }] : []), { group: "out", color: "--c4", values: ys.map(a => a.p3a) }, { group: "out", color: "--err", values: ys.map(a => a.taxes) }],
+    tip: i => { const a = ys[i]; return `${tr("runTip.flows", { y: a.y, months: a.months, money: fmtMoney(a.income), earned: fmtMoney(a.earned), pk: fmtMoney(a.pk), ahv: fmtMoney(a.ahv), money2: fmtMoney(a.spending), living: fmtMoney(a.living), housing: fmtMoney(a.housing) })}<br>${a.p3a ? `${tr("runTip.pillar3a", { p3a: fmtMoney(a.p3a) })}<br>` : ""}${a.care ? `${tr("runTip.care", { care: fmtMoney(a.care) })}<br>` : ""}${tr("runTip.taxes", { taxes: `${fmtTax(a.taxes)} ${cur()}` })}`; } });
   const rate = ys.map(a => a.rate);
   Charts.bars($(`#${p}-draw`), $(`#${p}-draw-tip`), { cats: ys.map(a => a.y), onSelect: (a, b) => setCustomZoom(+ys[a].y * 12 - startM(), +ys[b].y * 12 + 11 - startM()), yFmt: v => `${(v * 100).toFixed(1)} %`,
     series: [{ color: "--accent", values: rate }],

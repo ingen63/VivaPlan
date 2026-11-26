@@ -537,6 +537,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 name: "Person A".into(),
                 birth,
                 no_pension_fund: false,
+                care_home: None,
             }],
             married: true,
             married_noted: false,

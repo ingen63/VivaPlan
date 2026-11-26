@@ -114,6 +114,50 @@ pub fn validate(plan: &Plan) -> Vec<Issue> {
     v.0
 }
 
+/// #271/AK6: Month of the last planned sale of a property if afterwards neither a rent nor the care home of every
+/// person follows; `None` if a property stays, nothing is sold or the housing goes on. A sale because of the care home
+/// needs every person in the care home, so the care home always follows it. Emergency sales are not known before the
+/// simulation.
+fn housing_gap_after_sale(plan: &Plan, r: &Resolver, end: YearMonth) -> Option<YearMonth> {
+    if plan.realestate.never_sell {
+        return None;
+    }
+    let resolve = |t: &Option<TimeRef>| t.as_ref().and_then(|t| r.resolve(t).ok().flatten());
+    let owned: Vec<_> = plan
+        .realestate
+        .properties
+        .iter()
+        .filter(|p| match p.status {
+            PropertyStatus::Rent => false,
+            PropertyStatus::Owned => true,
+            PropertyStatus::Planned => !p.buy.as_ref().is_some_and(|b| b.is_never()),
+        })
+        .collect();
+    // The last planned sale; `None` without a property or as soon as a property is never sold.
+    let sold = owned
+        .iter()
+        .map(|p| resolve(&p.sell))
+        .try_fold(None, |a: Option<YearMonth>, s| s.map(|s| a.max(Some(s))))??;
+    if sold > end {
+        return None;
+    }
+    let rent = plan.realestate.properties.iter().any(|p| {
+        p.status == PropertyStatus::Rent
+            && (p.from.as_ref().is_some_and(|f| f.is_dynamic())
+                || (resolve(&p.from).is_some() && resolve(&p.until).is_none_or(|u| u > sold)))
+    });
+    let people = if plan.partner.is_some() { 2 } else { 1 };
+    let entries: Vec<YearMonth> = plan
+        .household
+        .persons
+        .iter()
+        .take(people)
+        .filter_map(|p| p.care_home.as_ref()?.entry(p.birth, r).ok().flatten())
+        .collect();
+    let care = entries.len() == people && entries.iter().all(|&e| e <= sold.plus(1));
+    (!rent && !care).then_some(sold)
+}
+
 /// #63/AK8: Mode «Wohnort»: the canton must be in the tax data and the municipality must belong to it. #151: `row`
 /// is the index in `taxes.relocations` for the further places of residence (`None`: `taxes.location`, first row).
 fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>, row: Option<usize>) {
@@ -421,6 +465,44 @@ fn check(plan: &Plan, v: &mut Issues) {
             }
         }
     };
+
+    // #271: care home per person
+    let people = if plan.partner.is_some() { 2 } else { 1 };
+    for (i, p) in plan.household.persons.iter().enumerate().take(people) {
+        let Some(c) = &p.care_home else { continue };
+        let base = format!("household.persons.{i}.careHome");
+        match (&c.at, c.age) {
+            (Some(t), _) => {
+                resolve(v, "pension", term(msg!(term_care_home, n = i + 1)), t);
+            }
+            (None, Some(a)) if !(0.0..=crate::resolve::MAX_POINT_AGE).contains(&a) => {
+                v.err_at("pension", format!("{base}.age"), msg!(care_home_age_invalid, n = i + 1));
+            }
+            (None, None) => v.err_at("pension", base.clone(), msg!(care_home_entry_missing, n = i + 1)),
+            _ => {}
+        }
+        if !(c.monthly >= 0.0 && c.monthly.is_finite()) {
+            v.err_at(
+                "pension",
+                format!("{base}.monthly"),
+                msg!(care_home_costs_invalid, n = i + 1),
+            );
+        }
+        // #271/AK7: «Immobilien nie verkaufen» has priority over «verkaufen»
+        if c.sell
+            && plan.realestate.never_sell
+            && plan
+                .realestate
+                .properties
+                .iter()
+                .any(|q| q.status != PropertyStatus::Rent)
+        {
+            v.warn_at("pension", format!("{base}.sell"), msg!(care_home_never_sell, n = i + 1));
+        }
+    }
+    if let Some(m) = housing_gap_after_sale(plan, &r, end) {
+        v.warn("realestate", msg!(housing_missing_after_sale, month = m));
+    }
 
     // Pension
     let pk = &plan.pension.pk;

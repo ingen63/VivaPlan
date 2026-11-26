@@ -97,7 +97,7 @@ pub enum Quantity {
     Age,
     /// Spending that is actually paid: after depletion only what the income covers.
     Consumption,
-    /// Planned living costs plus housing costs.
+    /// Planned living costs plus housing costs and care home costs (#271).
     PlannedConsumption,
     /// 1 from the month in which wealth is depleted, otherwise 0.
     Depleted,
@@ -174,7 +174,7 @@ impl Quantity {
             // After depletion only what income covers counts (as the optimization has always counted).
             Quantity::Consumption if depleted => r.spending.min(r.income).max(0.0),
             Quantity::Consumption => r.spending,
-            Quantity::PlannedConsumption => r.planned_spending + r.housing,
+            Quantity::PlannedConsumption => r.planned_spending + r.housing + r.care,
             Quantity::Depleted => flag(depleted),
             Quantity::AtFloor => flag(r.at_floor),
             Quantity::EmergencySales => s.emergency_sales as f64,
@@ -1299,6 +1299,14 @@ mod tests {
         }
         assert_eq!(Quantity::Total.of(r, &s), r.total);
         assert_eq!(Quantity::PlannedConsumption.of(r, &s), r.planned_spending + r.housing);
+        // #271: the care home costs count like the housing costs
+        let c = MonthRecord {
+            planned_spending: 4000.0,
+            housing: 500.0,
+            care: 9000.0,
+            ..Default::default()
+        };
+        assert_eq!(Quantity::PlannedConsumption.of(&c, &s), 13_500.0);
         assert!(Quantity::Total.is_amount() && !Quantity::Age.is_amount() && !Quantity::LumpSums.is_amount());
     }
 }

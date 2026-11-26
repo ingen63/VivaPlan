@@ -49,6 +49,7 @@ Caisse de pension (2e pilier) et AVS (1er pilier); avec deux personnes, chacune 
 
 - Caisse de pension: [avoir de vieillesse, prestation, retrait en capital, taux de conversion](#f-pk)
 - AVS: [rente et début de la prestation](#f-ahv)
+- EMS: [entrée, frais d’EMS, vente du logement en propriété](#f-care-home)
 
 Une ligne sous les cartes montre ce que devient l’avoir lors de la prestation de la caisse de pension (capital et rente).
 
@@ -166,6 +167,25 @@ Avec «+ Deuxième personne», vous saisissez un ménage de deux personnes.
 **Marié·e avec une seule personne:** La case «Marié·e·s» existe aussi sans deuxième personne, par exemple si le conjoint n’a ni revenu ni rente. Les barèmes et déductions pour personnes mariées s’appliquent alors (en mode «Domicile» canton, commune et Confédération, avec des barèmes propres les barèmes pour personnes mariées); l’impôt est le même que pour un couple marié avec une deuxième personne sans revenu. Le plafonnement des rentes AVS ne s’applique qu’avec deux personnes. Les anciennes planifications avec une personne avaient la case «Marié·e·s» cochée sans effet; elles sont reprises comme non mariées à l’ouverture et calculent comme avant, une remarque l’indique. Les nouvelles planifications commencent non mariées.
 
 **Ne sont pas calculés:** le décès d’une personne, les rentes de survivants, la rente de veuve ou de veuf. La planification calcule comme si les deux vivaient jusqu’à la fin.
+
+## @f-care-home EMS
+Mots-clés: EMS, établissement médico-social, home, frais d’EMS, soins, âge, entrée, vendre le logement en propriété, frais de maladie, déduction
+
+Une carte propre par personne dans l’onglet «Prévoyance». Avec **«Prévoir un EMS»**, vous saisissez:
+
+- **Entrée:** âge de la personne (p. ex. 85), un jalon ou une date fixe.
+- **Frais d’EMS par mois (prix actuels):** pension, soins et accompagnement dans la mesure où vous les payez vous-même. Les frais augmentent avec le renchérissement. Dès le mois de l’entrée, ils comptent parmi les dépenses; les [valeurs annuelles](#r-table) les montrent dans la colonne «EMS», le graphique [Revenus et dépenses par année](#r-flows) comme barre propre, et les [événements](#r-events) indiquent l’entrée.
+- **Vendre le logement en propriété à l’entrée:** les biens immobiliers habités par leur propriétaire sont vendus le mois de l’entrée, comme une vente planifiée avec l’impôt sur les gains immobiliers; hypothèque, intérêts et frais accessoires prennent fin.
+
+**Frais de logement:** Lorsqu’une personne seule vit en EMS, le loyer et les autres frais de logement prennent fin dès le mois de l’entrée. Les loyers «après la vente» ne commencent pas, même pas après une vente ou une [vente forcée](#f-re-emergency); aucun achat «après la vente» n’a lieu non plus. Sans «vendre», le bien immobilier reste avec ses frais et les frais d’EMS s’y ajoutent; une vente forcée en cas de fortune insuffisante s’applique toujours.
+
+**Couples:** Les frais de logement du ménage continuent tant qu’une personne vit à la maison; les frais d’EMS de la personne en EMS s’y ajoutent. Ce n’est que lorsque **les deux** vivent en EMS que le loyer et les frais de logement prennent fin, et le bien immobilier est vendu si «vendre» est choisi pour l’une des deux personnes. La planification ne représente pas de décès.
+
+**[Ne jamais vendre les biens immobiliers](#f-re-never-sell)** a la priorité: pas de vente à l’entrée, les frais du bien immobilier continuent; le contrôle le signale.
+
+**Impôts (simplifié):** Les frais d’EMS comptent comme frais de maladie et frais liés à un handicap. Ils sont déductibles pour l’impôt fédéral et l’impôt du canton dans la mesure où ils dépassent 5 % du revenu net; le revenu net est le revenu après les autres [déductions](#f-tax-deductions). Exemple: revenu net 60 000, frais d’EMS 108 000 par année → déduction 108 000 − 3 000 = 105 000; le revenu imposable ne descend jamais sous 0. L’app applique cette règle pour tous les cantons; certains cantons calculent autrement, par exemple seulement avec la part des soins. L’app ne calcule pas les prestations complémentaires.
+
+**Contrôle:** Une entrée manquante, un âge en dehors de 0 à 150 ans ou des frais négatifs sont des erreurs. Après la vente du dernier bien immobilier (planifiée ou en raison de l’EMS), le contrôle signale lorsque ni un loyer ni un EMS ne suit, car la planification n’aurait alors plus de frais de logement.
 
 ## @s-flows Revenus et dépenses
 Mots-clés: revenu, coût de la vie, dépenses, montants uniques, succession, inflation
@@ -328,6 +348,8 @@ Chaque ligne est soit (les explications figurent aussi dans le ⓘ à côté du 
 **Contrôle:** Un montant négatif (aussi «en plus» et unique), un pourcentage inférieur à 0 % ou supérieur à 100 % et une année fiscale en dehors de la simulation sont des erreurs dans la section Impôts.
 
 **Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent le revenu, les déductions (canton; l’origine – proposition du canton, en plus, valeur propre, unique, pilier 3a – dans l’infobulle de la cellule) et le revenu imposable (celui de la Confédération dans l’infobulle s’il diffère).
+
+**EMS:** L’app déduit en plus les frais d’EMS de la carte [EMS](#f-care-home) comme frais de maladie dans la mesure où ils dépassent 5 % du revenu net (Confédération et canton chacun avec son revenu net). Les valeurs annuelles indiquent la déduction dans l’origine des déductions.
 
 ## @f-tax-wealth-deductions Déductions de la fortune
 Mots-clés: déductions, fortune imposable, impôt sur la fortune, dettes, déductions sociales, unique
@@ -527,6 +549,7 @@ Avec ce commutateur en haut de l’onglet «Immobilier», vous vérifiez si la p
 - **Achats:** un achat planifié avec une date ou un jalon a lieu. Les achats et locations «après la vente» n’ont **pas** lieu; la vérification le signale, de même que les ventes planifiées.
 - **Fortune épuisée:** si la fortune liquide ne suffit plus, la simulation compte comme épuisée, comme sans bien immobilier. Le taux de réussite est donc en général plus bas qu’avec une vente.
 - **Lecture seule:** tant que le commutateur est activé, tous les autres champs de l’onglet sont grisés et en lecture seule. Les valeurs sont conservées et s’appliquent à nouveau sans changement lors de la désactivation.
+- **EMS:** Même avec «Vendre le logement en propriété à l’entrée», rien n’est vendu à l’entrée en [EMS](#f-care-home); les frais du bien immobilier continuent.
 
 ## @f-re-afford Capacité financière
 Mots-clés: banque, capacité financière, taux d’avance, taux d’intérêt théorique, fonds propres, hypothèque, consommation de la fortune, retraite

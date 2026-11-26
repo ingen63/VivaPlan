@@ -76,7 +76,8 @@ pub struct SingleReport {
     pub taxes_total: i64,
     pub emergency_sales: usize,
     pub unaffordable_renewals: usize,
-    /// Per year: wealth at the end of the year, income, spending and taxes summed over the year.
+    /// Per year: wealth at the end of the year, income, spending and taxes summed over the year; #271: with a care home
+    /// also the column `care` (care home costs, part of `spending`).
     pub years: Table,
     /// Events: month and text.
     pub events: Vec<(YearMonth, String)>,
@@ -98,13 +99,15 @@ const SINGLE_COLUMNS: [&str; 10] = [
 fn single(r: &SimResult) -> SingleReport {
     let s = &r.summary;
     let mut rows: Vec<Vec<Value>> = vec![];
-    let mut flows = [0.0; 3];
+    let mut flows = [0.0; 4];
+    let care = r.records.iter().any(|m| m.care != 0.0);
     for (i, m) in r.records.iter().enumerate() {
         flows[0] += m.income;
         flows[1] += m.spending;
         flows[2] += m.taxes;
+        flows[3] += m.care;
         if m.month.is_december() || i + 1 == r.records.len() {
-            rows.push(vec![
+            let mut row = vec![
                 json!(m.month.year()),
                 json!((m.age * 10.0).round() / 10.0),
                 json!(amount(m.liquid)),
@@ -115,9 +118,17 @@ fn single(r: &SimResult) -> SingleReport {
                 json!(amount(flows[0])),
                 json!(amount(flows[1])),
                 json!(amount(flows[2])),
-            ]);
-            flows = [0.0; 3];
+            ];
+            if care {
+                row.push(json!(amount(flows[3])));
+            }
+            rows.push(row);
+            flows = [0.0; 4];
         }
+    }
+    let mut columns = SINGLE_COLUMNS.to_vec();
+    if care {
+        columns.push("care");
     }
     SingleReport {
         label: r.label.text().to_string(),
@@ -135,10 +146,7 @@ fn single(r: &SimResult) -> SingleReport {
         taxes_total: amount(s.taxes_total),
         emergency_sales: s.emergency_sales,
         unaffordable_renewals: s.unaffordable_renewals,
-        years: Table {
-            columns: SINGLE_COLUMNS.to_vec(),
-            rows,
-        },
+        years: Table { columns, rows },
         events: r.events.iter().map(|e| (e.month, e.text.text().to_string())).collect(),
     }
 }
@@ -452,6 +460,37 @@ mod tests {
         assert_eq!(s.years.rows.last().unwrap()[6], json!(amount(last.total)));
         assert_eq!(s.end_total, amount(res.summary.end_total));
         assert_eq!(s.events.len(), res.events.len());
+    }
+
+    /// #271/AK8: the report shows the care home costs in the column `care` only for a plan with a care home.
+    #[test]
+    fn issue_271_ak8_report_column_care() {
+        let mut plan = crate::api::example_plan();
+        plan["scenarios"]["sweeps"] = json!([]);
+        let out = crate::api::run(&plan, Path::new("."), Some(&library()));
+        assert!(!run(&out).single.unwrap().years.columns.contains(&"care"));
+        plan["household"]["persons"][0]["careHome"] = json!({ "age": 85, "monthly": 9000, "sell": true });
+        let out = crate::api::run(&plan, Path::new("."), Some(&library()));
+        let res = out.single.as_ref().unwrap();
+        let s = run(&out).single.unwrap();
+        let col = s.years.columns.iter().position(|c| *c == "care").expect("column care");
+        assert_eq!(col, SINGLE_COLUMNS.len());
+        let (i, row) = s
+            .years
+            .rows
+            .iter()
+            .enumerate()
+            .find(|(_, r)| r[col] != json!(0))
+            .expect("a year with costs");
+        let year = row[0].as_i64().unwrap() as i32;
+        let sum: f64 = res
+            .records
+            .iter()
+            .filter(|m| m.month.year() == year)
+            .map(|m| m.care)
+            .sum();
+        assert!(i > 0 && sum > 0.0);
+        assert_eq!(row[col], json!(amount(sum)));
     }
 
     /// #207/AK1: the other formats.

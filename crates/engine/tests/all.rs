@@ -15,6 +15,7 @@ mod bench;
 mod buckets_guardrails;
 mod buckets_need;
 mod cancel;
+mod care_home;
 mod cash_housing;
 mod command_sweep;
 mod compare_strategies;

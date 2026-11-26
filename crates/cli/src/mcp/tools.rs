@@ -1206,6 +1206,33 @@ mod tests {
         assert!(d.get("fields").is_none_or(Value::is_null));
     }
 
+    /// #271/AK8: plan_set sets the care home of a person (also as a whole object), describe names its fields.
+    #[test]
+    fn issue_271_ak8_care_home_over_plan_set_and_describe() {
+        let mut s = session();
+        ok(call(&mut s, "plan_open", &json!({ "example": true })));
+        let care = json!({ "age": 85, "monthly": 9000, "sell": true });
+        let set = ok(call(
+            &mut s,
+            "plan_set",
+            &json!({ "plan": "p1", "changes": [{ "path": "household.persons.0.careHome", "value": care }] }),
+        ));
+        assert_eq!(set["changes"][0]["new"], care, "{set}");
+        ok(call(
+            &mut s,
+            "plan_set",
+            &json!({ "plan": "p1", "changes": [{ "path": "household.persons.0.careHome.monthly", "value": 8000 }] }),
+        ));
+        assert_eq!(
+            s.plans[0].plan["household"]["persons"][0]["careHome"]["monthly"],
+            json!(8000)
+        );
+        let d = ok(call(&mut s, "describe", &json!({ "section": "fields" }))).to_string();
+        for field in ["careHome", "monthly", "sell"] {
+            assert!(d.contains(field), "{field}");
+        }
+    }
+
     /// The example plan computed as the app does (dispatch `run_simulation`), kept as a result of the session.
     fn computed(s: &mut Session) -> (String, Value) {
         ok(call(s, "plan_open", &json!({ "example": true })));

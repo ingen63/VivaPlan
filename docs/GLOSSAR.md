@@ -82,6 +82,7 @@ Wörter in Grossbuchstaben nicht.
 | an die Teuerung gebunden | `indexed` | `income_indexed` |
 | Lebenshaltungskosten, Ausgaben | `spending` | im Hauptbuch `living` |
 | Wohnkosten | `housing` | `spending_includes_housing` |
+| Pflegeheim, Heimkosten | `care_home`, `care` | `CareHome`, Ergebnis `care` (#271) |
 | Ausgaben-Faktor | `spending_factor` | |
 | Sparbetrag, weitere Zuflüsse | `savings` | |
 | Einmalbetrag | `extra` | `Extra`; positiv = Zufluss (`inflow`) |
@@ -167,6 +168,7 @@ Wörter in Grossbuchstaben nicht.
 | Fachbegriff | Bezeichner | Bestehend / Bemerkung |
 |---|---|---|
 | Steuern | `taxes` | `Taxes`; einzelne Steuer `tax` |
+| Abzug der Krankheitskosten (Pflegeheim), Selbstbehalt | `care_deduction`, `self_share` | `CARE_SELF_SHARE` (#271) |
 | Steuertabelle, Tarif | `tax_table` | `TaxTables`, Stufen `brackets` |
 | Steuerfuss (Kanton und Gemeinde) | `tax_multiplier` | bestehend `multiplier` (serialisiert) |
 | Einkommenssteuer | `income_tax` | Ergebnis `tax_income` |
@@ -295,6 +297,7 @@ englisch umschrieben, das Schweizer Kürzel steht in Klammern; Schreibweise amer
 | Lebenshaltungskosten, Lebenshaltung | living expenses | |
 | Ausgaben | spending | |
 | Wohnkosten | housing costs | |
+| Pflegeheim, Heimkosten | care home, care home costs | |
 | Einmaliger Betrag | one-off amount | |
 | Zufluss | inflow | |
 | ungedeckte Ausgaben, Netto-Bedarf | uncovered spending, net need | |
@@ -425,6 +428,7 @@ BVG); französische Begriffe aus Frankreich (*retraite complémentaire*, *PER*, 
 | Lebenshaltungskosten, Lebenshaltung | coût de la vie | |
 | Ausgaben | dépenses | |
 | Wohnkosten | frais de logement | |
+| Pflegeheim, Heimkosten | EMS, frais d’EMS | «établissement médico-social» |
 | Einmaliger Betrag | montant unique | |
 | Zufluss | entrée | |
 | ungedeckte Ausgaben, Netto-Bedarf | dépenses non couvertes, besoin net | |
@@ -562,6 +566,7 @@ AHV-Ausgleichskassen und des BVG); Begriffe aus Italien (*TFR*, *previdenza comp
 | Lebenshaltungskosten, Lebenshaltung | costo della vita | |
 | Ausgaben | spese | |
 | Wohnkosten | spese d’alloggio | |
+| Pflegeheim, Heimkosten | casa di cura, spese della casa di cura | |
 | Einmaliger Betrag | importo unico | |
 | Zufluss | entrata | |
 | ungedeckte Ausgaben, Netto-Bedarf | spese non coperte, fabbisogno netto | |
@@ -758,6 +763,8 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | Landesindex der Konsumentenpreise; Landesindex | consumer price index; CPI | indice suisse des prix à la consommation; indice des prix à la consommation | indice nazionale dei prezzi al consumo; indice nazionale | keine amtliche Quelle | - |
 | Vermögen | wealth | fortune | sostanza | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | fr: patrimoine; it: patrimonio |
 | Einkommenssteuer | income tax | impôt sur le revenu | imposta sul reddito | DBG Art. 1 (FR, IT); StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | - |
+| Krankheitskosten | costs of illness | frais de maladie | spese di malattia | DBG Art. 33 (FR, IT); EN: keine amtliche Quelle | - |
+| Pflegeheim | care home | EMS; établissement médico-social | casa di cura | keine amtliche Quelle | - |
 | Vermögenssteuer | wealth tax | impôt sur la fortune; sur la fortune | imposta sulla sostanza; sulla sostanza | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | en: property tax; it: imposta patrimoniale |
 | Grundstückgewinnsteuer | property gains tax; property gains | impôt sur les gains immobiliers; gains immobiliers | imposta sugli utili immobiliari; utili immobiliari; utili da sostanza immobiliare | StHG Art. 2 (FR, IT); EN: keine amtliche Quelle | en: capital gains tax; fr: impôt sur la plus-value |
 | Zweitverdienerabzug | second earner deduction | déduction pour couple à deux revenus | deduzione per coppie con doppio reddito | DBG Art. 33 Abs. 2 (Sachverhalt); keine amtliche Kurzform (#241) | - |

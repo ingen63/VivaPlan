@@ -49,6 +49,7 @@ Pensionskasse (2. Säule) und AHV (1. Säule), bei zwei Personen für jede Perso
 
 - Pensionskasse: [Altersguthaben, Bezug, Kapitalbezug, Umwandlungssatz](#f-pk)
 - AHV: [Rente und Bezugsbeginn](#f-ahv)
+- Pflegeheim: [Eintritt, Heimkosten, Verkauf des Wohneigentums](#f-care-home)
 
 Eine Zeile unter den Karten zeigt, was beim Bezug der Pensionskasse aus dem Guthaben wird (Kapital und Rente).
 
@@ -166,6 +167,25 @@ Mit «+ Zweite Person» erfassen Sie einen Haushalt mit zwei Personen.
 **Verheiratet mit einer Person:** Das Häkchen «Verheiratet» gibt es auch ohne zweite Person, zum Beispiel wenn der Ehepartner weder Einkommen noch Rente hat. Dann gelten die Steuertarife und Abzüge für Verheiratete (im Modus «Wohnort» Kanton, Gemeinde und Bund, mit eigenen Tabellen die Tabellen für Verheiratete); die Steuer ist dieselbe wie bei einem Ehepaar mit einer zweiten Person ohne Einkommen. Die Begrenzung der AHV-Renten gilt erst mit zwei Personen. Ältere Planungen mit einer Person hatten «Verheiratet» ohne Wirkung angekreuzt; sie werden beim Öffnen als unverheiratet übernommen und rechnen wie bisher, ein Hinweis nennt das. Neue Planungen beginnen unverheiratet.
 
 **Nicht gerechnet:** Todesfall einer Person, Hinterlassenenrenten, Witwenrente. Die Planung rechnet, als lebten beide bis zum Ende.
+
+## @f-care-home Pflegeheim
+Stichworte: Pflegeheim, Heim, Heimkosten, Pflege, Alter, Eintritt, Wohneigentum verkaufen, Krankheitskosten, Abzug
+
+Je Person eine eigene Karte im Reiter «Vorsorge». Mit **«Pflegeheim einplanen»** erfassen Sie:
+
+- **Eintritt:** Alter der Person (z. B. 85), ein Meilenstein oder ein festes Datum.
+- **Heimkosten pro Monat (heutige Preise):** Taxe, Pflege und Betreuung, soweit Sie sie selbst zahlen. Die Kosten steigen mit der Teuerung. Ab dem Eintrittsmonat zählen sie zu den Ausgaben; die [Jahreswerte](#r-table) zeigen sie in der Spalte «Heimkosten», die Grafik [Einnahmen und Ausgaben pro Jahr](#r-flows) als eigenen Balken, die [Ereignisse](#r-events) den Eintritt.
+- **Wohneigentum beim Eintritt verkaufen:** Die selbst bewohnten Immobilien werden im Eintrittsmonat verkauft, wie ein geplanter Verkauf mit Grundstückgewinnsteuer; Hypothek, Zinsen und Nebenkosten enden.
+
+**Wohnkosten:** Lebt eine alleinstehende Person im Heim, enden ab dem Eintrittsmonat Miete und übrige Wohnkosten. Mieten «nach Verkauf» beginnen nicht, auch nicht nach einem Verkauf oder einem [Notverkauf](#f-re-emergency); ebenso findet kein Kauf «nach Verkauf» statt. Ohne «verkaufen» bleibt die Immobilie mit ihren Kosten bestehen, die Heimkosten kommen dazu; ein Notverkauf bei knappem Vermögen gilt weiter.
+
+**Paare:** Die Wohnkosten des Haushalts laufen weiter, solange eine Person zu Hause lebt; die Heimkosten der Person im Heim kommen dazu. Erst wenn **beide** im Heim sind, enden Miete und Wohnkosten, und die Immobilie wird verkauft, wenn bei einer der beiden Personen «verkaufen» gewählt ist. Einen Todesfall bildet die Planung nicht ab.
+
+**[Immobilien nie verkaufen](#f-re-never-sell)** hat Vorrang: kein Verkauf beim Eintritt, die Kosten der Immobilie laufen weiter; die Prüfung weist darauf hin.
+
+**Steuern (vereinfacht):** Die Heimkosten zählen als Krankheitskosten und Behinderungskosten. Sie sind bei Bund und Kanton abziehbar, soweit sie 5 % des Nettoeinkommens übersteigen; Nettoeinkommen ist das Einkommen nach den übrigen [Abzügen](#f-tax-deductions). Beispiel: Nettoeinkommen 60 000, Heimkosten 108 000 im Jahr → Abzug 108 000 − 3 000 = 105 000; das steuerbare Einkommen sinkt nie unter 0. Die App wendet diese Regel für alle Kantone an; einzelne Kantone rechnen anders, zum Beispiel nur mit dem Anteil für die Pflege. Ergänzungsleistungen rechnet die App nicht.
+
+**Prüfung:** Fehlt der Eintritt, liegt das Alter ausserhalb von 0 bis 150 Jahren oder sind die Kosten negativ, ist das ein Fehler. Nach dem Verkauf der letzten Immobilie (geplant oder wegen des Pflegeheims) weist die Prüfung darauf hin, wenn weder eine Miete noch ein Pflegeheim folgt, denn dann hätte die Planung keine Wohnkosten mehr.
 
 ## @s-flows Einnahmen & Ausgaben
 Stichworte: Einkommen, Lebenshaltung, Ausgaben, einmalige Beträge, Erbschaft, Inflation
@@ -328,6 +348,8 @@ Jede Zeile ist entweder (die Erklärungen dazu stehen auch im ⓘ neben dem Tite
 **Prüfung:** Ein negativer Betrag (auch «zusätzlich» und einmalig), ein Prozentsatz unter 0 % oder über 100 % und ein Steuerjahr ausserhalb der Simulation sind Fehler im Abschnitt Steuern.
 
 **Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, zusätzlich, eigener Wert, einmalig, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
+
+**Pflegeheim:** Die Heimkosten aus der Karte [Pflegeheim](#f-care-home) zieht die App zusätzlich als Krankheitskosten ab, soweit sie 5 % des Nettoeinkommens übersteigen (Bund und Kanton je mit ihrem Nettoeinkommen). Die Jahreswerte nennen den Abzug bei der Herkunft der Abzüge.
 
 ## @f-tax-wealth-deductions Abzüge vom Vermögen
 Stichworte: Abzüge, steuerbares Vermögen, Vermögenssteuer, Schulden, Sozialabzüge, einmalig
@@ -527,6 +549,7 @@ Mit diesem Schalter oben im Reiter «Immobilien» prüfen Sie, ob die Planung au
 - **Käufe:** Ein geplanter Kauf mit Datum oder Meilenstein findet statt. Käufe und Mieten «nach Verkauf» finden **nicht** statt; die Prüfung weist darauf hin, ebenso auf geplante Verkäufe.
 - **Vermögen aufgebraucht:** Reicht das liquide Vermögen nicht mehr, zählt der Lauf als aufgebraucht, wie ohne Immobilie. Die Erfolgsquote ist deshalb meist tiefer als mit Verkauf.
 - **Nur lesbar:** Ist der Schalter an, sind alle übrigen Felder des Reiters grau und nur lesbar. Die Werte bleiben erhalten und gelten beim Ausschalten wieder unverändert.
+- **Pflegeheim:** Auch mit «Wohneigentum beim Eintritt verkaufen» wird beim Eintritt ins [Pflegeheim](#f-care-home) nicht verkauft; die Kosten der Immobilie laufen weiter.
 
 ## @f-re-afford Tragbarkeit
 Stichworte: Bank, Belehnung, kalkulatorischer Zins, Eigenmittel, Hypothek, Vermögensverzehr, Pensionierung

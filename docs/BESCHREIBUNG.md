@@ -54,6 +54,15 @@ Der Editor führt durch zwölf Abschnitte:
   Projekt»): Ist er gesetzt, sind die Felder der Pensionskasse grau und schreibgeschützt, und die Berechnung rechnet
   für diese Person ohne Pensionskasse (kein Guthaben, keine Beiträge, keine Rente, kein Kapitalbezug und keine
   Kapitalbezugssteuer); die erfassten Werte bleiben gespeichert und gelten wieder, sobald der Schalter aus ist.
+  Je Person eine Karte **«Pflegeheim»** (#271): Eintritt als Alter, Meilenstein oder Datum, Heimkosten pro Monat in
+  heutigen Preisen (mit der Teuerung) und «Wohneigentum beim Eintritt verkaufen». Ab dem Eintritt zählen die
+  Heimkosten zu den Ausgaben (Spalte «Heimkosten» in den Jahreswerten). Die Wohnkosten des Haushalts (Miete,
+  Immobilie) enden erst, wenn alle Personen im Heim sind; dann verkauft die App mit «verkaufen» die Liegenschaften im
+  Eintrittsmonat (mit Grundstückgewinnsteuer, nicht mit «Immobilien nie verkaufen»), und Mieten oder Käufe «nach
+  Verkauf» beginnen nicht, auch nicht nach einem Notverkauf. Ein Todesfall wird nicht abgebildet. Bei den Steuern
+  gelten die Heimkosten vereinfacht als Krankheitskosten: abziehbar bei Bund und Kanton, soweit sie 5 % des
+  Nettoeinkommens übersteigen. Folgt nach dem Verkauf der letzten Liegenschaft weder eine Miete noch ein Pflegeheim,
+  weist die Prüfung darauf hin.
 - **Säule 3a:** ein Konto je Person mit Guthaben, Verzinsung, Einzahlung pro Jahr (bis zum Maximalbetrag; für eine
   Person «Ohne Pensionskasse (grosse Säule 3a)» bis 20 % des Erwerbseinkommens, höchstens der Maximalbetrag der grossen
   Säule 3a, #152; zählt zu den Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug); der Rest wird spätestens
@@ -211,7 +220,8 @@ Beim Kauf prüft die App die Tragbarkeit wie eine Bank (Werte in den Einstellung
 auf Wunsch wird mit der höchsten Belehnung (Standard 80 %) finanziert. Eingeschaltet zählt ein Anteil des freien Vermögens
 (Bargeld, Aktien, Obligationen; beim Kauf nach Abzug des Eigenkapitals) als Einkommen; sobald alle Personen pensioniert sind,
 gilt beim Kauf und bei jeder Erneuerung höchstens die Belehnung ab der Pensionierung (#266). Die Praxis der Banken ist verschieden. Wird das liquide Vermögen knapp, verkauft die App eine Liegenschaft als Notverkauf.
-Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten.
+Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten, ausser alle Personen leben im
+[Pflegeheim](#planung-erfassen) (#271).
 
 Je Liegenschaft im Besitz oder mit geplantem Kauf lässt sich ein **Steuerwert** erfassen, als Betrag oder in % des
 Marktwerts, zum Beispiel aus der letzten Steuererklärung (#229). Nur die Vermögenssteuer rechnet damit (Steuerwert

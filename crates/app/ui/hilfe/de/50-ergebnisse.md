@@ -214,6 +214,7 @@ Eine Tabelle mit **einer Zeile pro Jahr** für den gewählten Lauf. Beträge in 
 |---|---|
 | Liquid, Immobilien, Vorsorge, Total | **Vermögen am Jahresende**: liquide Mittel, Immobilien (netto), Vorsorge (PK, 3a), Summe |
 | Ausgaben total | **Monatsdurchschnitt des Jahres**: geplante Ausgaben (Lebenshaltung aus Ihrer Planung) plus **Miete bzw. Hypothekarzins**, Amortisation und übrige Wohnkosten der Immobilien plus **Einzahlung in die Säule 3a** |
+| Heimkosten | Nur mit [Pflegeheim](#f-care-home): Monatsdurchschnitt der Heimkosten des Jahres, in «Ausgaben total» enthalten |
 | Entnahme | Monatsdurchschnitt des Jahres: was dem Vermögen **entnommen** wird (tatsächliche Ausgaben minus Einkommen, vor Steuern) |
 | Einkommen total | Monatsdurchschnitt des Jahres: Einkommen (Erwerbseinkommen und Renten) plus Entnahme |
 | Entnahmerate | **jährliche Entnahme / Gesamtvermögen am Jahresanfang** in Prozent (Spalte «Total» des Vorjahres) |
