@@ -2,6 +2,31 @@
 
 Traduzione italiana di `CHANGELOG.md` (tedesco, versione di riferimento) a partire dalla versione 1.0.0-beta.1.
 
+## Versione 1.0.0-beta.6
+
+Sesta versione preliminare di 1.0. Il pacchetto d'installazione Windows `.msi` porta il numero di versione 1.0.0.6; i pacchetti d'installazione sono disponibili per macOS, Windows e Linux, costruiti a mano per tutte le piattaforme prima del tag (#262).
+
+### Può modificare i risultati
+
+- **Quota abitativa del costo della vita (#264):** La quota abitativa dedotta comprende affitto, interessi e spese accessorie, non più l'ammortamento. Le pianificazioni più vecchie vengono adattate all'apertura (con un avviso); il loro risultato resta uguale.
+- **Percentili (#265):** I risultati si aprono nel potere d'acquisto odierno; i percentili sono ordinati secondo la rappresentazione scelta (nominale o reale).
+- **Reddito imponibile del patrimonio (#149):** Un tasso annuo per azioni e obbligazioni conta nel reddito imponibile. Le nuove pianificazioni iniziano con 2 % e 1 %, quelle esistenti con 0 %.
+
+### Nuovo, modificato, corretto
+
+- **Token beta (#270):** L'app e il pacchetto IA si attivano una volta con un token beta.
+- **Casa di cura (#271):** Elemento proprio con età d'entrata, costi e vendita dell'abitazione; avviso se dopo la vendita dell'ultimo immobile non restano costi d'abitazione.
+- **Imposte (#272–#275):** Le nuove pianificazioni calcolano le imposte al domicilio; la sezione mostra prima comune e confessione, le altre indicazioni come ipotesi, i dettagli sotto «Esperto». Le deduzioni si possono riprendere dall'ultima tassazione, il valore fiscale degli immobili ha un valore predefinito in percento del valore venale, un riscatto nella cassa pensione si registra direttamente come deduzione.
+- **Deduzioni dal patrimonio (#249)** presentate come le deduzioni dal reddito.
+- **Sostenibilità (#266):** A scelta con consumo del patrimonio e anticipo più basso dal pensionamento.
+- **Collegamento IA (#263, #269):** Il server MCP apre e salva le pianificazioni solo nella cartella autorizzata, a scelta in sola lettura; una nuova pianificazione inizia vuota e l'IA chiede le indicazioni mancanti.
+- **README (#267, #277)** in quattro lingue: l'app è al 100 % locale, solo il collegamento IA invia dati all'IA scelta.
+- **Visualizzazione (#220):** Scelta «Aspetto» nel dialogo delle impostazioni con lo sfondo del tema.
+
+### Test e sviluppo
+
+- Il pacchetto Linux contiene di nuovo `vivaplan` (#261), memoria dei grandi calcoli ridotta (#249), regola Clippy (#260), misurazione dell'influsso delle imposte per altre economie domestiche (#276).
+
 ## Versione 1.0.0-beta.5
 
 Quinta versione preliminare di 1.0. Il pacchetto d'installazione Windows `.msi` porta il numero di versione 1.0.0.5; i pacchetti d'installazione sono di nuovo disponibili per macOS, Windows e Linux (#203).

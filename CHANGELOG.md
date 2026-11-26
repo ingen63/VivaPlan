@@ -1,5 +1,30 @@
 # Changelog
 
+## Version 1.0.0-beta.6
+
+Sechste Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.6; Installationspakete gibt es für macOS, Windows und Linux, vor dem Tag von Hand für alle Plattformen gebaut (#262).
+
+### Kann Ergebnisse ändern
+
+- **Wohnanteil der Lebenshaltungskosten (#264):** Der abgezogene Wohnanteil umfasst Miete, Zins und Nebenkosten, nicht mehr die Amortisation. Ältere Planungen werden beim Öffnen angepasst (mit Hinweis); ihr Ergebnis bleibt gleich.
+- **Perzentile (#265):** Die Ergebnisse öffnen in heutiger Kaufkraft; die Perzentile sind nach der gewählten Darstellung (nominal oder real) geordnet.
+- **Steuerbarer Ertrag des Vermögens (#149):** Ein Satz pro Jahr für Aktien und Obligationen zählt zum steuerbaren Einkommen. Neue Planungen beginnen mit 2 % und 1 %, bestehende mit 0 %.
+
+### Neu, geändert, behoben
+
+- **Beta-Token (#270):** App und KI-Paket werden einmalig mit einem Beta-Token aktiviert.
+- **Pflegeheim (#271):** Eigener Baustein mit Eintrittsalter, Kosten und Verkauf der Wohnung; Hinweis, wenn nach dem Verkauf der letzten Immobilie keine Wohnkosten mehr anfallen.
+- **Steuern (#272–#275):** Neue Planungen rechnen mit den Steuern am Wohnort; der Abschnitt zeigt zuerst Gemeinde und Konfession, die übrigen Angaben als Annahmen, Einzelheiten unter «Experte». Abzüge lassen sich aus der letzten Steuerrechnung übernehmen, der Steuerwert der Immobilien hat eine Vorgabe in Prozent des Marktwerts, ein Einkauf in die Pensionskasse lässt sich direkt als Abzug erfassen.
+- **Abzüge vom Vermögen (#249)** übersichtlich wie die Abzüge vom Einkommen.
+- **Tragbarkeit (#266):** Wahlweise mit Vermögensverzehr und tieferer Belehnung ab der Pensionierung.
+- **KI-Anbindung (#263, #269):** Der MCP-Server öffnet und speichert Planungen nur im freigegebenen Planordner, wahlweise nur lesend; eine neue Planung beginnt leer und die KI fragt die fehlenden Angaben ab.
+- **README (#267, #277)** in vier Sprachen: Die App ist zu 100 % lokal, nur die KI-Anbindung sendet Daten an die gewählte KI.
+- **Darstellung (#220):** Auswahl «Darstellung» im Einstellungsdialog mit Hintergrund des Themas.
+
+### Tests und Entwicklung
+
+- Linux-Paket enthält `vivaplan` wieder (#261), Speicherbedarf grosser Rechnungen gesenkt (#249), Clippy-Regel (#260), Messung des Steuereinflusses für weitere Haushalte (#276).
+
 ## Version 1.0.0-beta.5
 
 Fünfte Vorabversion von 1.0. Das Windows-Installationspaket `.msi` trägt die Versionsnummer 1.0.0.5; Installationspakete gibt es wieder für macOS, Windows und Linux (#203).

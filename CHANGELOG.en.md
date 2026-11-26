@@ -2,6 +2,31 @@
 
 English translation of `CHANGELOG.md` (German, authoritative) from version 1.0.0-beta.1 on.
 
+## Version 1.0.0-beta.6
+
+Sixth pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.6; installers are built for macOS, Windows and Linux, by hand for all platforms before the tag (#262).
+
+### May change results
+
+- **Housing share of living costs (#264):** The deducted housing share covers rent, interest and ancillary costs, no longer amortization. Older plans are adjusted when opened (with a notice); their result stays the same.
+- **Percentiles (#265):** Results open in today's purchasing power; percentiles are ordered by the chosen view (nominal or real).
+- **Taxable income from assets (#149):** A rate per year for shares and bonds counts as taxable income. New plans start with 2 % and 1 %, existing ones with 0 %.
+
+### New, changed, fixed
+
+- **Beta token (#270):** App and AI package are activated once with a beta token.
+- **Care home (#271):** Own building block with entry age, costs and sale of the home; notice when no housing costs remain after the sale of the last property.
+- **Taxes (#272–#275):** New plans calculate taxes at the place of residence; the section first shows municipality and denomination, the other details as assumptions, details under «Expert». Deductions can be taken from the last tax bill, the tax value of real estate has a default in percent of the market value, a pension fund buy-in can be entered directly as a deduction.
+- **Deductions from wealth (#249)** laid out like the deductions from income.
+- **Affordability (#266):** Optionally with wealth drawdown and lower mortgage ratio from retirement.
+- **AI connection (#263, #269):** The MCP server opens and saves plans only in the shared plan folder, optionally read-only; a new plan starts empty and the AI asks for the missing details.
+- **README (#267, #277)** in four languages: the app is 100 % local, only the AI connection sends data to the chosen AI.
+- **Display (#220):** Choice «Appearance» in the settings dialog with the theme's background.
+
+### Tests and development
+
+- Linux package contains `vivaplan` again (#261), memory use of large calculations reduced (#249), Clippy rule (#260), measurement of the tax influence for more households (#276).
+
 ## Version 1.0.0-beta.5
 
 Fifth pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.5; installers are built again for macOS, Windows and Linux (#203).

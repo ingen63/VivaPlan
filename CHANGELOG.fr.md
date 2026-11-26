@@ -2,6 +2,31 @@
 
 Traduction française de `CHANGELOG.md` (allemand, version de référence) à partir de la version 1.0.0-beta.1.
 
+## Version 1.0.0-beta.6
+
+Sixième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.6; les paquets d'installation sont disponibles pour macOS, Windows et Linux, construits à la main pour toutes les plateformes avant le tag (#262).
+
+### Peut modifier les résultats
+
+- **Part du logement dans le coût de la vie (#264):** La part du logement déduite comprend le loyer, les intérêts et les charges, et non plus l'amortissement. Les planifications plus anciennes sont adaptées à l'ouverture (avec un avis); leur résultat reste le même.
+- **Percentiles (#265):** Les résultats s'ouvrent en pouvoir d'achat actuel; les percentiles sont classés selon la présentation choisie (nominale ou réelle).
+- **Rendement imposable de la fortune (#149):** Un taux annuel pour les actions et les obligations compte dans le revenu imposable. Les nouvelles planifications commencent avec 2 % et 1 %, les existantes avec 0 %.
+
+### Nouveau, modifié, corrigé
+
+- **Jeton bêta (#270):** L'app et le paquet IA s'activent une fois avec un jeton bêta.
+- **EMS (#271):** Élément propre avec âge d'entrée, coûts et vente du logement; avis lorsqu'il ne reste plus de frais de logement après la vente du dernier bien immobilier.
+- **Impôts (#272–#275):** Les nouvelles planifications calculent les impôts au domicile; la section montre d'abord la commune et la confession, les autres indications comme hypothèses, les détails sous «Expert». Les déductions peuvent être reprises de la dernière taxation, la valeur fiscale des immeubles a une valeur par défaut en pour cent de la valeur vénale, un rachat dans la caisse de pension se saisit directement comme déduction.
+- **Déductions de la fortune (#249)** présentées comme les déductions du revenu.
+- **Capacité financière (#266):** Au choix avec consommation de la fortune et avance plus basse dès la retraite.
+- **Connexion IA (#263, #269):** Le serveur MCP n'ouvre et n'enregistre les planifications que dans le dossier autorisé, au choix en lecture seule; une nouvelle planification commence vide et l'IA demande les indications manquantes.
+- **README (#267, #277)** en quatre langues: l'app est 100 % locale, seule la connexion IA envoie des données à l'IA choisie.
+- **Affichage (#220):** Choix «Apparence» dans le dialogue des réglages avec le fond du thème.
+
+### Tests et développement
+
+- Le paquet Linux contient à nouveau `vivaplan` (#261), mémoire des grands calculs réduite (#249), règle Clippy (#260), mesure de l'influence des impôts pour d'autres ménages (#276).
+
 ## Version 1.0.0-beta.5
 
 Cinquième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le numéro de version 1.0.0.5; les paquets d'installation sont à nouveau disponibles pour macOS, Windows et Linux (#203).
