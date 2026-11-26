@@ -45,7 +45,8 @@ Der Editor führt durch zwölf Abschnitte:
   Pensionskasse, solange der Schalter dazu im Einkommen eingeschaltet ist (#236); läuft es bei ausgeschaltetem Schalter
   nach dem Bezug der Pensionskasse weiter, warnt die Prüfung.
 - **Vorsorge:** Pensionskasse mit Guthaben, Beiträgen, Verzinsung, Umwandlungssatz und Kapitalbezug in Prozent;
-  AHV-Rente mit oder ohne Teuerungsanpassung, eingegeben als Rente mit 65; bei Bezug vor oder nach 65 kürzt bzw.
+  AHV-Rente mit oder ohne Teuerungsanpassung (im Januar, nominal nie tiefer als im Vorjahr: nach einer Deflation steigt
+  sie erst, wenn die Preise den bisher höchsten Stand übersteigen, #280), eingegeben als Rente mit 65; bei Bezug vor oder nach 65 kürzt bzw.
   erhöht die App sie selbst nach den Sätzen der AHV (Vorbezug 6,8 % je Jahr, höchstens 13,6 %; Aufschub 5,2 % bis
   31,5 %; feste Beträge in Franken, bei Ehepaaren nach dem Plafond auf die ungekürzten Renten), neben dem Feld steht
   die effektive Rente; ab Dezember 2026 jedes Jahr im Dezember die 13. AHV-Rente (1/12 der im

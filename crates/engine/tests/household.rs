@@ -208,6 +208,33 @@ fn issue_145_ak4_cap_when_second_pension_starts_later() {
     assert!((ahv_in(&res, 36) - 4_130.51).abs() < 0.01, "{}", ahv_in(&res, 36));
 }
 
+// #280/AK1–AK3 (regression through the simulation): married couple at 65 from 01.2030, both pensions indexed, cap
+// 3'780; inflation −8.4 % in 2030, +15.7 % in 2031, +2 % afterwards. 01.2031: the capped AHV stays 3'780 (not 3'462.48);
+// 01.2032: 3'780 × 0.916 × 1.157 = 4'006.09 (no catch-up to 3'780 × 1.157 = 4'373.46); 01.2033: × 1.02 = 4'086.21.
+// November instead of December: the December contains the 13th AHV pension (#190).
+#[test]
+fn issue_280_ak1_ak3_capped_ahv_never_falls_nominally() {
+    let mut v = with_partner_65(base());
+    v["pension"]["ahv"] = json!({ "monthly": 2_520, "at": "start", "indexed": true });
+    v["partner"]["ahv"] = json!({ "monthly": 2_520, "at": "start", "indexed": true });
+    v["household"]["ahvCoupleCap"] = json!(3_780);
+    let p = plan(v);
+    let sim = Simulator::new(&p).unwrap();
+    let mut path = batch::market_paths(&p, &sim, None).unwrap().remove(0);
+    for (k, i) in path.inflation.iter_mut().enumerate() {
+        *i = match k {
+            0..=11 => -0.084,
+            12..=23 => 0.157,
+            _ => 0.02,
+        };
+    }
+    let res = sim.run(&path, true);
+    assert!((ahv_in(&res, 12) - 3_780.0).abs() < 0.01, "{}", ahv_in(&res, 12));
+    assert!((ahv_in(&res, 22) - 3_780.0).abs() < 0.01, "{}", ahv_in(&res, 22));
+    assert!((ahv_in(&res, 24) - 4_006.09).abs() < 0.01, "{}", ahv_in(&res, 24));
+    assert!((ahv_in(&res, 36) - 4_086.21).abs() < 0.01, "{}", ahv_in(&res, 36));
+}
+
 #[test]
 fn couple_tax_tables_replace_single_ones() {
     let mut v = with_partner(base());

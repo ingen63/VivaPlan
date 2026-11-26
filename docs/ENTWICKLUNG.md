@@ -659,7 +659,11 @@ Reihenfolge pro Monat:
    `inflationValue`, `inflationFixCosts`, `inflationRent`; fehlen sie, gilt `inflation` für Wert und Nebenkosten und die
    Miete wird fortgeschrieben); Ausgaben werden in Preisen bei
    Simulationsstart erfasst. Die AHV (falls indexiert) wird nur im Januar um die seit dem letzten Januar
-   aufgelaufene Teuerung angepasst.
+   aufgelaufene Teuerung angepasst, nominal nie nach unten (#280): Je Person ab dem Anspruch und für den Plafond ab dem
+   ersten Januar mit einer indexierten Rente führt `ahv::Floor` den Teuerungsindex und seinen Höchststand; Rente,
+   Kürzung, Zuschlag und Plafond wachsen mit max(1, Index / bisheriger Höchststand). Nach einer Deflation zählt also
+   nur der Teil über dem Höchststand (−8,4 %, dann +15,7 % → × 1 und × 0,916 × 1,157). Vor dem Anspruch gilt die
+   eingegebene Rente unverändert (nominal, ohne Teuerung bis zum Anspruch).
 2. **Ereignisse:** einmalige Beträge; Pensionierung (Kapitalbezug mit Kapitalsteuer, Rente = Restkapital ×
    Umwandlungssatz / 12); AHV-Beginn (**Vorbezug, Aufschub und Plafond, #191:** `monthly` ist die Rente mit 65. Die
    Rechnung steht in `crates/engine/src/ahv.rs` (`Calc`, Sätze mit Gültigkeit und Quelle, Merkblatt 3.04, Stand

@@ -114,8 +114,37 @@ impl Person {
     }
 }
 
+/// #280: Nominal floor of an indexed amount. AHV pensions never fall nominally: in a year of deflation the amount
+/// stays, and later it rises only by the part of the price index above its highest level so far.
+#[derive(Clone, Copy, Debug)]
+struct Floor {
+    /// Price index since the start of the adjustment.
+    level: f64,
+    /// Highest `level` so far.
+    peak: f64,
+}
+
+impl Default for Floor {
+    fn default() -> Self {
+        Floor { level: 1.0, peak: 1.0 }
+    }
+}
+
+impl Floor {
+    /// Applies the inflation `factor` of the year to the index and returns the factor for the amount: max(1, index /
+    /// highest index so far).
+    fn adjust(&mut self, factor: f64) -> f64 {
+        self.level *= factor;
+        let applied = (self.level / self.peak).max(1.0);
+        self.peak = self.peak.max(self.level);
+        applied
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 struct State {
+    /// #280: Index and highest level since the entitlement.
+    floor: Floor,
     entitled: bool,
     started: bool,
     /// Pension at 65 (nominal, adjusted to inflation from the entitlement).
@@ -135,13 +164,16 @@ struct State {
 ///   reduction applies: the rate times the average of the (capped) pensions during the early payout.
 /// - A deferral of at least one year gets a fixed supplement from the payout: the rate times the average of the
 ///   (capped) deferred pension. Reduction and supplement lie outside the cap.
-/// - Amounts in whole francs; pension, cap, reduction and supplement follow inflation in January alike.
+/// - Amounts in whole francs; pension, cap, reduction and supplement follow inflation in January alike, never below
+///   the nominal amount of the previous year (#280, [`Floor`]).
 #[derive(Clone, Debug)]
 pub struct Calc {
     people: Vec<Person>,
     cap: Option<f64>,
     /// Inflation of the cap since the first entitlement (#145: once per January, not per person).
     cap_scale: f64,
+    /// #280: Index and highest level of the cap since the first January with an indexed entitled pension.
+    cap_floor: Floor,
     st: Vec<State>,
 }
 
@@ -153,25 +185,28 @@ impl Calc {
             people,
             cap: cap.filter(|_| st.len() > 1),
             cap_scale: 1.0,
+            cap_floor: Floor::default(),
             st,
         }
     }
 
-    /// January: pensions (and their reduction or supplement) of entitled indexed persons rise by `factor`; the cap
-    /// rises once if at least one of them does.
+    /// January: pensions (and their reduction or supplement) of entitled indexed persons follow the inflation
+    /// `factor`; the cap follows once if at least one of them does. #280: never below the nominal amount of the previous
+    /// year; after a deflation only the part of the index above its highest level counts ([`Floor`]).
     pub fn index(&mut self, factor: f64) {
         let mut any = false;
         for (st, p) in self.st.iter_mut().zip(&self.people) {
             if st.entitled && p.indexed {
-                st.base *= factor;
+                let applied = st.floor.adjust(factor);
+                st.base *= applied;
                 if let Some(f) = st.fixed.as_mut() {
-                    *f *= factor;
+                    *f *= applied;
                 }
                 any = true;
             }
         }
         if any {
-            self.cap_scale *= factor;
+            self.cap_scale *= self.cap_floor.adjust(factor);
         }
     }
 
@@ -609,5 +644,127 @@ mod tests {
         run(&mut c, ym(2030, 1), ym(2033, 1));
         assert_eq!(c.projected(ym(2034, 6)), 2177.0);
         assert_eq!(c.projected(ym(2035, 1)), 1547.0 + 1890.0);
+    }
+
+    /// Deflation of −8.4 % followed by +15.7 % (#280): factor of the second January 0.916 × 1.157.
+    const DEFLATION: f64 = 0.916;
+    const RECOVERY: f64 = 1.157;
+
+    fn close(a: f64, b: f64) {
+        assert!((a - b).abs() < 1e-9, "{a} instead of {b}");
+    }
+
+    /// #280/AK1, AK2: Pension 2'500 per month (30'000 per year): −8.4 % → 2'500 stays; then +15.7 % → 2'500 × 0.916 ×
+    /// 1.157 = 2'649.53 (31'794.36 per year, +6.0 %, not 34'710); afterwards +2 % on top as usual.
+    #[test]
+    fn issue_280_ak1_ak2_pension_never_falls_and_rises_only_above_the_peak() {
+        let mut c = Calc::new(vec![person(2500.0, ym(2030, 1), Some(ym(2030, 1)))], None);
+        c.step(ym(2030, 1), true);
+        c.index(DEFLATION);
+        c.step(ym(2031, 1), false);
+        close(c.paid(0), 2500.0);
+        c.index(RECOVERY);
+        c.step(ym(2032, 1), false);
+        close(c.paid(0), 2500.0 * DEFLATION * RECOVERY);
+        assert!((c.paid(0) * 12.0 - 31_794.36).abs() < 0.01, "{}", c.paid(0) * 12.0);
+        c.index(1.02);
+        c.step(ym(2033, 1), false);
+        close(c.paid(0), 2500.0 * DEFLATION * RECOVERY * 1.02);
+        // two years of deflation in a row: the peak stays, the recovery must first make up both
+        let mut c = Calc::new(vec![person(2500.0, ym(2030, 1), Some(ym(2030, 1)))], None);
+        c.step(ym(2030, 1), true);
+        for f in [0.95, 0.95, 1.05, 1.06] {
+            c.index(f);
+        }
+        c.step(ym(2034, 1), false);
+        close(c.paid(0), 2500.0 * 0.95 * 0.95 * 1.05 * 1.06);
+    }
+
+    /// #280/AK3: Cap, reduction of an early payout and supplement of a deferral follow the same rule. Cases of
+    /// #191/AK21: A 1'547 (capped 1'890 − reduction 343), B 1'890; deferral 2'213 (1'890 + 323).
+    #[test]
+    fn issue_280_ak3_cap_reduction_and_supplement_follow_the_floor() {
+        let mut c = couple(
+            person(2520.0, ym(2032, 1), Some(ym(2030, 1))),
+            person(2520.0, ym(2035, 1), Some(ym(2035, 1))),
+        );
+        run(&mut c, ym(2030, 1), ym(2035, 12));
+        c.index(DEFLATION);
+        c.step(ym(2036, 1), false);
+        close(c.paid(0), 1547.0);
+        close(c.paid(1), 1890.0);
+        c.index(RECOVERY);
+        c.step(ym(2037, 1), false);
+        close(c.paid(0), 1547.0 * DEFLATION * RECOVERY);
+        close(c.paid(1), 1890.0 * DEFLATION * RECOVERY);
+        let mut c = couple(
+            person(2520.0, ym(2030, 1), Some(ym(2033, 1))),
+            person(2520.0, ym(2028, 1), Some(ym(2028, 1))),
+        );
+        run(&mut c, ym(2028, 1), ym(2033, 12));
+        c.index(DEFLATION);
+        c.step(ym(2034, 1), false);
+        close(c.paid(0), 2213.0);
+        close(c.total(), 2213.0 + 1890.0);
+        c.index(RECOVERY);
+        c.step(ym(2035, 1), false);
+        close(c.paid(0), 2213.0 * DEFLATION * RECOVERY);
+        close(c.total(), (2213.0 + 1890.0) * DEFLATION * RECOVERY);
+    }
+
+    /// #280: The highest level counts per person from the entitlement: a pension that starts after the deflation rises
+    /// with the full inflation of the next year.
+    #[test]
+    fn issue_280_floor_per_person_from_the_entitlement() {
+        let mut c = Calc::new(
+            vec![
+                person(2000.0, ym(2030, 1), Some(ym(2030, 1))),
+                person(2000.0, ym(2031, 6), Some(ym(2031, 6))),
+            ],
+            None,
+        );
+        run(&mut c, ym(2030, 1), ym(2030, 12));
+        c.index(DEFLATION);
+        run(&mut c, ym(2031, 1), ym(2031, 12));
+        c.index(RECOVERY);
+        c.step(ym(2032, 1), false);
+        close(c.paid(0), 2000.0 * DEFLATION * RECOVERY);
+        close(c.paid(1), 2000.0 * RECOVERY);
+    }
+
+    /// #280/AK4: With positive inflation every year the floor changes nothing: the pension rises by the product of the
+    /// factors, as before.
+    #[test]
+    fn issue_280_ak4_positive_inflation_unchanged() {
+        let mut c = couple(
+            person(2520.0, ym(2030, 1), Some(ym(2030, 1))),
+            person(2520.0, ym(2030, 1), Some(ym(2030, 1))),
+        );
+        c.step(ym(2030, 1), true);
+        let factors = [1.03, 1.0, 1.012, 1.05];
+        for f in factors {
+            c.index(f);
+        }
+        c.step(ym(2034, 1), false);
+        close(c.total(), CAP * factors.iter().product::<f64>());
+    }
+
+    /// #280/AK5: A pension that is not indexed stays unchanged, in deflation and afterwards.
+    #[test]
+    fn issue_280_ak5_pension_not_indexed_stays() {
+        let mut c = Calc::new(
+            vec![Person {
+                indexed: false,
+                ..person(2500.0, ym(2030, 1), Some(ym(2030, 1)))
+            }],
+            None,
+        );
+        c.step(ym(2030, 1), true);
+        c.index(DEFLATION);
+        c.step(ym(2031, 1), false);
+        close(c.paid(0), 2500.0);
+        c.index(RECOVERY);
+        c.step(ym(2032, 1), false);
+        close(c.paid(0), 2500.0);
     }
 }
