@@ -421,11 +421,11 @@ pub fn tax_estimates(records: &[MonthRecord], retire: Option<YearMonth>) -> Vec<
         return vec![];
     };
     let mut out = vec![estimate("first", first)];
-    let start = records.first().map(|r| r.month);
-    if let (Some(at), Some(start)) = (retire, start) {
-        // the whole year after the retirement: January at or after the month of the retirement
+    if let Some(at) = retire {
+        // the whole year after the retirement: January at or after the month of the retirement; with the retirement
+        // at or before the start that is the first full year, then only one estimate
         let after = rows.iter().filter(full).find(|y| YearMonth::new(y.year, 1) >= at);
-        if let Some(y) = after.filter(|y| at > start && y.year != first.year) {
+        if let Some(y) = after.filter(|y| y.year != first.year) {
             out.push(estimate("retired", y));
         }
     }
