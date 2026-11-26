@@ -2265,6 +2265,24 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #273/AK5 | Zusammenstellung des steuerbaren Vermögens (#249) nennt die Herkunft «Vorgabe». | ☑ | **gilt** | `issue_273_ak5_…`, e2e AK5 (#273) | 26.11.2026 ok (Tests) |
 | #273/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation nachgeführt, mit Quelle der Vorgabe. | ☑ | **gilt** (Hilfe 4 Sprachen, `ENTWICKLUNG.md`, `GLOSSAR.md`, `describe`) | e2e AK6 (#273), `make i18n-check`, `make ui-texts` | 26.11.2026 ok (Tests, Durchsicht) |
 
+### #274 Abzüge aus der letzten Steuerrechnung übernehmen
+
+[Issue #274](https://github.com/ingen63/VivaPlan/issues/274) · geschlossen · Umsetzung: 624a171 · Entscheide vor der Umsetzung (25.11.2026) und Messung #276 im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #274/AK1 | Dialog «Aus der Steuerrechnung übernehmen» mit Steuerjahr, steuerbarem Einkommen, steuerbarem Vermögen, optional Total Steuern. | ☑ | **gilt** (nach Entscheid zusätzlich Total der Einkünfte) | e2e [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) AK1, AK2, AK3, AK7 (#274) | 26.11.2026 ok (Tests) |
+| #274/AK2 | Vor der Pensionierung: Abzug = Einkommen − steuerbares Einkommen, nie negativ, als eigener Wert ab Start. | ☑ | **gilt** (nach Entscheid: Total der Einkünfte statt Einkommen der Planung; Säule 3a separat) | `issue_274_ak2_…` (2), `issue_274_ak3_example_by_hand`, e2e AK1, AK2, AK3, AK7 | 26.11.2026 ok (Tests) |
+| #274/AK3 | Ab der Pensionierung: Vorschlag ohne Erwerb + persönlicher Rest; Handwert-Beispiel 25 000 / 21 000 / 4 000 / 9 000 → 13 000. | ☑ | **gilt** (nach Entscheid: Standardabzug mit Erwerb für den ganzen Haushalt) | `issue_274_ak3_…` (4), `issue_274_ak2_ak3_rows_…` | 26.11.2026 ok (Tests) |
+| #274/AK4 | Pensionierung vor dem Start: übernommener Abzug ab Start, kein Rest. | ☑ | **gilt** | `issue_274_ak4_retired_before_the_start`, e2e AK4 | 26.11.2026 ok (Tests) |
+| #274/AK5 | Steuerbares Vermögen: Differenz zur Planung, Vorschlag Steuerwert-Anteil oder Vermögensabzug, nur nach Bestätigung. | ☑ | **gilt** (31.12. des ersten Jahres, Sozialabzüge aus dem Vermögenstarif geschätzt) | `issue_274_ak5_…` (4), e2e AK5 | 26.11.2026 ok (Tests) |
+| #274/AK6 | Mit Total Steuern eigene Schätzung und Abweichung; kein Korrekturfaktor; Hinweis ab 15 %. | ☑ | **gilt** | `issue_274_ak6_…`, `issue_274_ak5_ak6_values_by_hand`, e2e AK6 | 26.11.2026 ok (Tests) |
+| #274/AK7 | Herkunft «aus Steuerrechnung <Jahr>» im Tooltip der Abzüge und in den Parametern des Laufs. | ☑ | **gilt** (auch Kopfzeile und Annahmen; von Hand geändert entfällt sie) | e2e AK1, AK2, AK3, AK7 und AK7 (#274) | 26.11.2026 ok (Tests) |
+| #274/AK8 | Nur im Modus «Wohnort»; mit eigenen Tabellen kein Knopf. | ☑ | **gilt** | e2e AK8, `issue_274_ak8_…` | 26.11.2026 ok (Tests) |
+| #274/AK9 | Prüfung: Steuerjahr nicht nach dem Start, Beträge ≥ 0 (Fehler am Feld). | ☑ | **gilt** (auch fehlende Pflichtwerte) | `issue_274_ak9_…`, e2e AK9 | 26.11.2026 ok (Tests) |
+| #274/AK10 | Tests: Handwert-Beispiel, Pensionierung vor dem Start, e2e für den Dialog. | ☑ | **gilt** | `issue_274_…` (14), e2e «… (#274)» (8) | 26.11.2026 ok (Tests) |
+| #274/AK11 | Hilfe, `BESCHREIBUNG.md` und Spezifikation nachgeführt. | ☑ | **gilt** (Hilfe 4 Sprachen mit Referenz, `ENTWICKLUNG.md`, `describe`) | `make i18n-check`, `make ui-texts`, Hilfe-Tests | 26.11.2026 ok (Tests) |
+
 ### #276 Einfluss der Steuern für weitere Haushalte messen
 
 [Issue #276](https://github.com/ingen63/VivaPlan/issues/276) · geschlossen · Umsetzung: nur Auswertung in `local/steuer/messung-276/` (nicht im Repo) · Entscheide vor der Umsetzung im Issue
