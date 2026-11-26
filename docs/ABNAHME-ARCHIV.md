@@ -2376,3 +2376,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #281/AK4 | Die Spalte folgt der Umschaltung nominal / real wie die übrigen Beträge. | ☑ | **gilt** | `issue_281_ak4_real_like_the_other_amounts`, e2e AK4 (#281) | 26.11.2026 ok (Tests) |
 | #281/AK5 | Die Jahreswerte in Kommandozeile und `vivaplan mcp` (`result_get` yearly) enthalten das steuerbare Einkommen ebenfalls. | ☑ | **gilt** (Bericht: Spalte `taxableIncome`; MCP: Feld `taxableIncome`) | `issue_281_ak5_report_column_taxable_income`, `issue_207_ak1_json_on_standard_output`, `issue_281_ak5_yearly_values_with_taxable_income` | 26.11.2026 ok (Tests) |
 | #281/AK6 | Der Spaltentitel steht als Schlüssel in `i18n/de.json`; die Hilfe zu den Jahreswerten erklärt die Spalte. | ☑ | **gilt** (Schlüssel in 4 Sprachen, Hilfe in 4 Sprachen) | `make ui-texts`, `make i18n-check`, Hilfe-Tests; Inhalt Durchsicht | 26.11.2026 ok (Tests, Durchsicht) |
+
+### #282 Hilfe: AHV-Rente als erwartete Rente mit 65, nicht in heutigen Preisen
+
+[Issue #282](https://github.com/ingen63/VivaPlan/issues/282) · geschlossen · Umsetzung: 60d4901 · Entscheide: Eingabe als «nominal (bis zum Anspruch ohne Teuerung)», erste Anpassung im Januar nach dem Anspruch in der Hilfe genannt; `docs/ENTWICKLUNG.md` war schon richtig
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #282/AK1 | Hilfe (4 Sprachen), Oberflächentexte (`i18n`) und `docs/BESCHREIBUNG.md` beschreiben die AHV-Rente als erwartete Rente mit 65 (nominal, ohne Teuerung bis zum Anspruch); keine Stelle nennt sie «in heutigen Preisen». | ☑ | **gilt** (Feldhinweis, Hilfe «AHV» in 4 Sprachen, BESCHREIBUNG) | `#282/AK1` in `e2e/unit/docs.test.js`, `make i18n-check`, `make ui-texts`, e2e `ui-sprache`, `ui-textfit` | 26.11.2026 ok (Tests, Durchsicht) |
+| #282/AK2 | Der Rechenkern bleibt unverändert; Golden-Dateien unverändert. | ☑ | **gilt** | `git diff` ohne `crates/engine`, `make test-quiet` (`golden::*`) | 26.11.2026 ok (Tests) |
