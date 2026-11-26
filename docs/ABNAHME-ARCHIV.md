@@ -2335,3 +2335,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #277/AK2 | Der KI-Abschnitt beginnt mit einem gut sichtbaren Hinweis: Mit einer Cloud-KI gehen die Daten, die die KI liest, an deren Anbieter; nur mit einem lokalen Modell bleibt alles auf dem Rechner; die Anbindung ist freiwillig. | ☑ | **gilt** (`[!IMPORTANT]`) | kein Test (Durchsicht) | 26.11.2026 ok (Durchsicht) |
 | #277/AK3 | Alle vier Sprachfassungen haben denselben Inhalt; Deutsch mit «ss», Anrede «Sie». | ☑ | **gilt** | kein Test (Durchsicht) | 26.11.2026 ok (Durchsicht, kein «ß») |
 | #277/AK4 | Links und Anker funktionieren (`make ui-unit`). | ☑ | **gilt** | `make ui-unit` | 26.11.2026 ok (42/42 grün) |
+
+### #280 AHV-Rente nominal nie tiefer als im Vorjahr
+
+[Issue #280](https://github.com/ingen63/VivaPlan/issues/280) · geschlossen · Umsetzung: 3b2dcc6 · Klärung im Issue: Untergrenze ab dem Anspruch, Eingabe davor unverändert
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #280/AK1 | Bei negativer Teuerung des Vorjahres bleibt die AHV-Rente im Januar nominal gleich (30 000, −8,4 % → 30 000). | ☑ | **gilt** | `ahv::tests::issue_280_ak1_ak2_…`, `household::issue_280_ak1_ak3_capped_ahv_never_falls_nominally` | 26.11.2026 ok (Tests) |
+| #280/AK2 | Nach einer Deflation steigt die Rente erst über dem bisher höchsten Indexstand, nur um den Teil darüber (≈ 31 790, nicht 34 710). | ☑ | **gilt** (genau 31 794.36; auch zwei Deflationsjahre in Folge) | `ahv::tests::issue_280_ak1_ak2_…`, `household::issue_280_ak1_ak3_…` | 26.11.2026 ok (Tests) |
+| #280/AK3 | Plafond des Ehepaars, Kürzung bei Vorbezug und Zuschlag bei Aufschub folgen derselben Regel (#145, #191). | ☑ | **gilt** (Höchststand je Person ab Anspruch, Plafond eigener) | `ahv::tests::issue_280_ak3_…`, `issue_280_floor_per_person_…`, `household::issue_280_ak1_ak3_…` | 26.11.2026 ok (Tests) |
+| #280/AK4 | Bei durchgehend positiver Teuerung ändert sich nichts (Golden mit fester Teuerung gleich). | ☑ | **gilt** | `ahv::tests::issue_280_ak4_…`, `golden::*` unverändert, `issue_145_*`, `issue_191_ak21_*` | 26.11.2026 ok (Tests) |
+| #280/AK5 | Renten ohne Teuerungsanpassung bleiben unverändert. | ☑ | **gilt** | `ahv::tests::issue_280_ak5_pension_not_indexed_stays` | 26.11.2026 ok (Tests) |
+| #280/AK6 | Hilfe, `docs/BESCHREIBUNG.md` und Spezifikation beschreiben die Untergrenze. | ☑ | **gilt** (Hilfe AHV in 4 Sprachen, BESCHREIBUNG, ENTWICKLUNG) | kein Test (Durchsicht), `make test-quiet` (i18n-check) | 26.11.2026 ok (Durchsicht) |
