@@ -41,6 +41,10 @@ E non deve inserire tutto da solo: **colleghi VivaPlan a un’IA** come Claude, 
 LM Studio; l’IA Le chiede i Suoi dati nel corso della conversazione, calcola con VivaPlan, confronta varianti e spiega
 i risultati ([maggiori informazioni](#usare-vivaplan-con-un-programma-di-ia)).
 
+**L’applicazione è locale al 100 %:** calcola sul Suo computer e non invia nulla. Il collegamento a un’IA è facoltativo
+e non è locale: con un’IA nel cloud i dati della Sua pianificazione vanno al suo fornitore
+([che cosa significa](#usare-vivaplan-con-un-programma-di-ia)).
+
 ## Che cosa sa fare VivaPlan
 
 - 🤖 **Pianificare con un’IA:** l’IA apre, modifica, calcola e confronta pianificazioni e spiega i risultati a parole;
@@ -81,6 +85,13 @@ La descrizione dettagliata si trova in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG.
 
 ## Usare VivaPlan con un programma di IA
 
+> [!IMPORTANT]
+> **Con un’IA i Suoi dati lasciano il computer.** L’applicazione stessa è locale al 100 %, il collegamento a un’IA no:
+> tutto ciò che l’IA legge dalla Sua pianificazione (reddito, spese, patrimonio, cassa pensioni, immobili, risultati)
+> diventa parte della conversazione. Con un’IA nel cloud (Claude, ChatGPT) va al suo fornitore ed è soggetto alle sue
+> norme sulla protezione dei dati. Solo con un modello locale (per esempio in LM Studio) tutto resta sul Suo computer.
+> Il collegamento a un’IA è facoltativo; VivaPlan funziona completamente anche senza.
+
 VivaPlan include un server MCP (`vivaplan mcp`, Model Context Protocol). Tramite questo, un’IA lavora direttamente con
 il nucleo di calcolo di VivaPlan: apre una pianificazione, legge e modifica valori, simula, confronta varianti, riprende
 la migliore e salva il risultato in un nuovo file. Calcola esattamente come l’applicazione e spiega le cifre nella Sua
@@ -104,10 +115,9 @@ lingua. Per esempio:
   cartella e nelle sue sottocartelle. Con l’opzione «Sola lettura» può aprire, modificare e calcolare pianificazioni,
   ma non salvarle. Il salvataggio crea comunque un nuovo file; l’IA sostituisce un file esistente solo dopo averglielo
   chiesto e con una copia di sicurezza.
-- **Che cosa succede ai Suoi dati:** ciò che l’IA legge dalla Sua pianificazione diventa parte della conversazione.
-  Con un’IA nel cloud (Claude, ChatGPT) va al suo fornitore, con un modello locale (per esempio in LM Studio) tutto
-  resta sul Suo computer. Il server sostituisce i nomi con nomi neutri («Person 1»), le risposte citano solo il nome
-  del file. VivaPlan stesso non invia nulla.
+- **Che cosa succede ai Suoi dati:** vedere l’avviso sopra. Il server sostituisce i nomi con nomi neutri
+  («Person 1»), le risposte citano solo il nome del file; l’IA vede però tutti gli importi per intero. VivaPlan stesso
+  non invia nulla; è il programma di IA a trasmettere la conversazione.
 
 Tutto il resto si trova nell’aiuto alla voce «Collegare programmi di IA»
 ([riferimento](crates/app/ui/hilfe/it/60-referenz.md)). I risultati sono calcoli di modello senza garanzia, anche
@@ -115,8 +125,13 @@ quando è un’IA a spiegarli.
 
 ## I Suoi dati restano con Lei
 
-Nessun account, nessun cloud, nessun tracciamento: VivaPlan non accede mai alla rete, né l’applicazione, né il nucleo
-di calcolo, né il server MCP `vivaplan mcp`. I dati lasciano il computer solo tramite un’IA che Lei stesso collega.
+L’applicazione è locale al 100 %. Nessun account, nessun cloud, nessun tracciamento: VivaPlan non accede mai alla
+rete, né l’applicazione, né il nucleo di calcolo, né il server MCP `vivaplan mcp`.
+
+L’unica eccezione è un’IA che Lei stesso collega: con un’IA nel cloud i dati della pianificazione che l’IA legge vanno
+al suo fornitore; solo con un modello locale restano sul Suo computer
+([maggiori informazioni](#usare-vivaplan-con-un-programma-di-ia)).
+
 Una pianificazione è un unico file (`.vplan`) che Lei salva, copia e archivia come qualsiasi altro documento.
 
 ## Installazione

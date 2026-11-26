@@ -41,6 +41,10 @@ Et vous n’avez pas besoin de tout saisir vous-même: **connectez VivaPlan à u
 local dans LM Studio; l’IA vous demande vos chiffres au fil de la conversation, calcule avec VivaPlan, compare des
 variantes et explique les résultats ([en savoir plus](#utiliser-vivaplan-avec-une-ia)).
 
+**L’application est 100 % locale:** elle calcule sur votre ordinateur et n’envoie rien. La connexion à une IA est
+facultative et n’est pas locale: avec une IA dans le cloud, les données de votre planification sont transmises à son
+fournisseur ([ce que cela signifie](#utiliser-vivaplan-avec-une-ia)).
+
 ## Ce que VivaPlan sait faire
 
 - 🤖 **Planifier avec une IA:** l’IA ouvre, modifie, calcule et compare des planifications et explique les résultats
@@ -82,6 +86,14 @@ La description détaillée se trouve dans [docs/BESCHREIBUNG.md](docs/BESCHREIBU
 
 ## Utiliser VivaPlan avec une IA
 
+> [!IMPORTANT]
+> **Avec une IA, vos données quittent votre ordinateur.** L’application elle-même est 100 % locale, la connexion à une
+> IA ne l’est pas: tout ce que l’IA lit dans votre planification (revenus, dépenses, fortune, caisse de pension,
+> immeubles, résultats) fait partie de la conversation. Avec une IA dans le cloud (Claude, ChatGPT), cela est transmis
+> à son fournisseur et soumis à ses règles de protection des données. Ce n’est qu’avec un modèle local (par exemple
+> dans LM Studio) que tout reste sur votre ordinateur. La connexion à une IA est facultative; VivaPlan fonctionne
+> entièrement sans elle.
+
 VivaPlan est livré avec un serveur MCP (`vivaplan mcp`, Model Context Protocol). Par ce biais, une IA travaille
 directement avec le noyau de calcul de VivaPlan: elle ouvre une planification, lit et modifie des valeurs, simule,
 compare des variantes, reprend la meilleure et enregistre le résultat dans un nouveau fichier. Elle calcule exactement
@@ -106,10 +118,9 @@ comme l’application et explique les chiffres dans votre langue. Par exemple:
   dossier et ses sous-dossiers. Avec l’option «Lecture seule», elle peut ouvrir, modifier et calculer des
   planifications, mais pas les enregistrer. L’enregistrement crée de toute façon un nouveau fichier; l’IA ne remplace
   un fichier existant qu’après vous avoir demandé et avec une copie de sauvegarde.
-- **Ce qu’il advient de vos données:** ce que l’IA lit dans votre planification fait partie de la conversation. Avec
-  une IA dans le cloud (Claude, ChatGPT), cela est transmis à son fournisseur; avec un modèle local (par exemple dans
-  LM Studio), tout reste sur votre ordinateur. Le serveur remplace les noms par des noms neutres («Person 1»), les
-  réponses ne citent que le nom du fichier. VivaPlan lui-même n’envoie rien.
+- **Ce qu’il advient de vos données:** voir la remarque ci-dessus. Le serveur remplace les noms par des noms neutres
+  («Person 1»), les réponses ne citent que le nom du fichier; l’IA voit toutefois tous les montants en entier.
+  VivaPlan lui-même n’envoie rien; c’est le programme d’IA qui transmet la conversation.
 
 Tout le reste se trouve dans l’aide sous «Connecter des programmes d’IA»
 ([référence](crates/app/ui/hilfe/fr/60-referenz.md)). Les résultats sont des calculs de modèle sans garantie, même
@@ -117,9 +128,14 @@ lorsqu’une IA les explique.
 
 ## Vos données restent chez vous
 
-Pas de compte, pas de cloud, pas de suivi: VivaPlan n’accède jamais au réseau, ni l’application, ni le noyau de
-calcul, ni le serveur MCP `vivaplan mcp`. Les données ne quittent l’ordinateur que par une IA que vous connectez
-vous-même. Une planification est un seul fichier (`.vplan`) que vous enregistrez, copiez et archivez comme tout autre
+L’application est 100 % locale. Pas de compte, pas de cloud, pas de suivi: VivaPlan n’accède jamais au réseau, ni
+l’application, ni le noyau de calcul, ni le serveur MCP `vivaplan mcp`.
+
+La seule exception est une IA que vous connectez vous-même: avec une IA dans le cloud, les données de planification
+que l’IA lit sont transmises à son fournisseur; ce n’est qu’avec un modèle local qu’elles restent sur votre ordinateur
+([en savoir plus](#utiliser-vivaplan-avec-une-ia)).
+
+Une planification est un seul fichier (`.vplan`) que vous enregistrez, copiez et archivez comme tout autre
 document.
 
 ## Installation

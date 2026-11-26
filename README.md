@@ -41,6 +41,10 @@ Und Sie müssen nicht alles selbst eintippen: **Verbinden Sie VivaPlan mit einer
 lokalen Modell in LM Studio, erfragt die KI Ihre Zahlen im Gespräch, rechnet mit VivaPlan, vergleicht Varianten und
 erklärt die Ergebnisse ([mehr dazu](#vivaplan-mit-einer-ki-nutzen)).
 
+**Die App ist zu 100 % lokal:** Sie rechnet auf Ihrem Rechner und sendet nichts. Die KI-Anbindung ist freiwillig und
+nicht lokal: Mit einer Cloud-KI gehen Ihre Planungsdaten an deren Anbieter
+([was das heisst](#vivaplan-mit-einer-ki-nutzen)).
+
 ## Was VivaPlan kann
 
 - 🤖 **Mit einer KI planen:** Die KI öffnet, ändert, rechnet und vergleicht Planungen und erklärt die Ergebnisse in
@@ -79,6 +83,13 @@ Die ausführliche Beschreibung steht in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG
 
 ## VivaPlan mit einer KI nutzen
 
+> [!IMPORTANT]
+> **Mit einer KI verlassen Ihre Daten den Rechner.** Die App selbst ist zu 100 % lokal, die KI-Anbindung nicht: Alles,
+> was die KI aus Ihrer Planung liest (Einkommen, Ausgaben, Vermögen, Pensionskasse, Liegenschaften, Ergebnisse), wird
+> Teil des Gesprächs. Mit einer Cloud-KI (Claude, ChatGPT) geht es an deren Anbieter und unterliegt dessen
+> Datenschutzbestimmungen. Nur mit einem lokalen Modell (zum Beispiel in LM Studio) bleibt alles auf Ihrem Rechner.
+> Die KI-Anbindung ist freiwillig; ohne sie funktioniert VivaPlan vollständig.
+
 VivaPlan bringt einen MCP-Server mit (`vivaplan mcp`, Model Context Protocol). Darüber arbeitet eine KI direkt mit
 dem Rechenkern von VivaPlan: Sie öffnet eine Planung, liest und ändert Werte, simuliert, vergleicht Varianten,
 übernimmt die beste und speichert das Ergebnis als neue Datei. Sie rechnet dabei genau wie die App und erklärt die
@@ -101,18 +112,23 @@ Zahlen in Ihrer Sprache. Zum Beispiel:
   danach). Die KI öffnet und speichert Planungen nur in diesem Ordner und seinen Unterordnern. Mit dem Schalter «Nur
   lesen» kann sie Planungen öffnen, ändern und rechnen, aber nicht speichern. Gespeichert wird ohnehin als neue Datei;
   eine vorhandene ersetzt die KI nur nach Ihrer Rückfrage und mit Sicherungskopie.
-- **Was mit Ihren Daten geschieht:** Was die KI aus Ihrer Planung liest, wird Teil des Gesprächs. Mit einer Cloud-KI
-  (Claude, ChatGPT) geht es an deren Anbieter, mit einem lokalen Modell (zum Beispiel in LM Studio) bleibt alles auf
-  Ihrem Rechner. Namen ersetzt der Server durch neutrale («Person 1»), Antworten nennen nur den Dateinamen. VivaPlan
-  selbst sendet nichts.
+- **Was mit Ihren Daten geschieht:** Siehe den Hinweis oben. Namen ersetzt der Server durch neutrale («Person 1»),
+  Antworten nennen nur den Dateinamen; alle Beträge sieht die KI aber vollständig. VivaPlan selbst sendet nichts, das
+  KI-Programm schickt das Gespräch weiter.
 
 Alles Weitere steht in der Hilfe unter «KI-Programme verbinden» ([Referenz](crates/app/ui/hilfe/de/60-referenz.md)).
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, auch wenn eine KI sie erklärt.
 
 ## Ihre Daten bleiben bei Ihnen
 
-Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu, weder die App noch der Rechenkern noch der
-MCP-Server `vivaplan mcp`. Daten verlassen den Rechner nur über eine KI, die Sie selbst anbinden. Eine Planung ist eine
+Die App ist zu 100 % lokal. Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu, weder die
+App noch der Rechenkern noch der MCP-Server `vivaplan mcp`.
+
+Die einzige Ausnahme ist eine KI, die Sie selbst anbinden: Mit einer Cloud-KI gehen die Planungsdaten, die die KI
+liest, an deren Anbieter; nur mit einem lokalen Modell bleiben sie auf Ihrem Rechner
+([mehr dazu](#vivaplan-mit-einer-ki-nutzen)).
+
+Eine Planung ist eine
 einzelne Datei (`.vplan`), die Sie speichern, kopieren und archivieren wie jedes andere Dokument.
 
 ## Installation

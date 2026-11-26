@@ -41,6 +41,9 @@ And you do not have to type everything in yourself: **connect VivaPlan to an AI*
 model in LM Studio, and the AI asks for your figures in conversation, calculates with VivaPlan, compares variants and
 explains the results ([more](#using-vivaplan-with-an-ai)).
 
+**The app is 100 % local:** it calculates on your computer and sends nothing. The AI connection is optional and not
+local: with a cloud AI your plan data goes to its provider ([what this means](#using-vivaplan-with-an-ai)).
+
 ## What VivaPlan can do
 
 - 🤖 **Plan with an AI:** the AI opens, changes, computes and compares plans and explains the results in words; set up
@@ -77,6 +80,13 @@ The detailed description is in [docs/BESCHREIBUNG.md](docs/BESCHREIBUNG.md) (Ger
 
 ## Using VivaPlan with an AI
 
+> [!IMPORTANT]
+> **With an AI, your data leaves your computer.** The app itself is 100 % local, the AI connection is not: everything
+> the AI reads from your plan (income, expenses, assets, pension fund, real estate, results) becomes part of the
+> conversation. With a cloud AI (Claude, ChatGPT) it goes to its provider and is subject to the provider's privacy
+> policy. Only with a local model (for example in LM Studio) does everything stay on your computer. The AI connection
+> is optional; VivaPlan works fully without it.
+
 VivaPlan comes with an MCP server (`vivaplan mcp`, Model Context Protocol). Through it an AI works directly with the
 calculation core of VivaPlan: it opens a plan, reads and changes values, simulates, compares variants, adopts the best
 one and saves the result as a new file. It calculates exactly like the app and explains the figures in your language.
@@ -99,18 +109,22 @@ For example:
   installation). The AI opens and saves plans only in this folder and its subfolders. With the switch “Read only” it
   can open, change and compute plans but not save them. Saving creates a new file anyway; the AI replaces an existing
   one only after asking you and with a backup copy.
-- **What happens to your data:** what the AI reads from your plan becomes part of the conversation. With a cloud AI
-  (Claude, ChatGPT) it goes to the provider, with a local model (for example in LM Studio) everything stays on your
-  computer. The server replaces names with neutral ones (“Person 1”), answers name only the file name. VivaPlan itself
-  sends nothing.
+- **What happens to your data:** see the notice above. The server replaces names with neutral ones (“Person 1”),
+  answers name only the file name; the AI does, however, see all amounts in full. VivaPlan itself sends nothing; the
+  AI program passes the conversation on.
 
 Everything else is in the help under “Connecting AI programs” ([reference](crates/app/ui/hilfe/en/60-referenz.md)).
 The results are model calculations without guarantee, even when an AI explains them.
 
 ## Your data stays with you
 
-No account, no cloud, no tracking: VivaPlan never accesses the network, neither the app nor the calculation core nor
-the MCP server `vivaplan mcp`. Data leaves the computer only through an AI that you connect yourself. A plan is a
+The app is 100 % local. No account, no cloud, no tracking: VivaPlan never accesses the network, neither the app nor
+the calculation core nor the MCP server `vivaplan mcp`.
+
+The only exception is an AI that you connect yourself: with a cloud AI the plan data the AI reads goes to its
+provider; only with a local model does it stay on your computer ([more](#using-vivaplan-with-an-ai)).
+
+A plan is a
 single file (`.vplan`) that you save, copy and archive like any other document.
 
 ## Installation
