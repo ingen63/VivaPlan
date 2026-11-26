@@ -12,7 +12,7 @@ Sixième préversion de 1.0. Le paquet d'installation Windows `.msi` porte le nu
 - **Percentiles (#265):** Les résultats s'ouvrent en pouvoir d'achat actuel; les percentiles sont classés selon la présentation choisie (nominale ou réelle).
 - **Rendement imposable de la fortune (#149):** Un taux annuel pour les actions et les obligations compte dans le revenu imposable. Les nouvelles planifications commencent avec 2 % et 1 %, les existantes avec 0 %.
 
-### Nouveau, modifié, corrigé
+### Nouveautés, modifications, corrections
 
 - **Jeton bêta (#270):** L'app et le paquet IA s'activent une fois avec un jeton bêta.
 - **EMS (#271):** Élément propre avec âge d'entrée, coûts et vente du logement; avis lorsqu'il ne reste plus de frais de logement après la vente du dernier bien immobilier.

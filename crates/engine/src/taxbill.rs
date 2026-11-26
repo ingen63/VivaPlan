@@ -151,7 +151,7 @@ pub fn check(bill: &TaxBill, start: YearMonth) -> Vec<Issue> {
     for (field, v, required) in amounts {
         match v {
             None if required => out.push(issue(field, msg!(tax_bill_missing))),
-            Some(x) if !(x >= 0.0) => out.push(issue(field, msg!(tax_bill_negative))),
+            Some(x) if x.is_nan() || x < 0.0 => out.push(issue(field, msg!(tax_bill_negative))),
             _ => {}
         }
     }

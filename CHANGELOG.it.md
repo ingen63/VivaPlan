@@ -10,15 +10,15 @@ Sesta versione preliminare di 1.0. Il pacchetto d'installazione Windows `.msi` p
 
 - **Quota abitativa del costo della vita (#264):** La quota abitativa dedotta comprende affitto, interessi e spese accessorie, non più l'ammortamento. Le pianificazioni più vecchie vengono adattate all'apertura (con un avviso); il loro risultato resta uguale.
 - **Percentili (#265):** I risultati si aprono nel potere d'acquisto odierno; i percentili sono ordinati secondo la rappresentazione scelta (nominale o reale).
-- **Reddito imponibile del patrimonio (#149):** Un tasso annuo per azioni e obbligazioni conta nel reddito imponibile. Le nuove pianificazioni iniziano con 2 % e 1 %, quelle esistenti con 0 %.
+- **Reddito imponibile della sostanza (#149):** Un tasso annuo per azioni e obbligazioni conta nel reddito imponibile. Le nuove pianificazioni iniziano con 2 % e 1 %, quelle esistenti con 0 %.
 
-### Nuovo, modificato, corretto
+### Novità, modifiche, correzioni
 
 - **Token beta (#270):** L'app e il pacchetto IA si attivano una volta con un token beta.
 - **Casa di cura (#271):** Elemento proprio con età d'entrata, costi e vendita dell'abitazione; avviso se dopo la vendita dell'ultimo immobile non restano costi d'abitazione.
 - **Imposte (#272–#275):** Le nuove pianificazioni calcolano le imposte al domicilio; la sezione mostra prima comune e confessione, le altre indicazioni come ipotesi, i dettagli sotto «Esperto». Le deduzioni si possono riprendere dall'ultima tassazione, il valore fiscale degli immobili ha un valore predefinito in percento del valore venale, un riscatto nella cassa pensione si registra direttamente come deduzione.
-- **Deduzioni dal patrimonio (#249)** presentate come le deduzioni dal reddito.
-- **Sostenibilità (#266):** A scelta con consumo del patrimonio e anticipo più basso dal pensionamento.
+- **Deduzioni dalla sostanza (#249)** presentate come le deduzioni dal reddito.
+- **Sostenibilità (#266):** A scelta con consumo della sostanza e anticipo più basso dal pensionamento.
 - **Collegamento IA (#263, #269):** Il server MCP apre e salva le pianificazioni solo nella cartella autorizzata, a scelta in sola lettura; una nuova pianificazione inizia vuota e l'IA chiede le indicazioni mancanti.
 - **README (#267, #277)** in quattro lingue: l'app è al 100 % locale, solo il collegamento IA invia dati all'IA scelta.
 - **Visualizzazione (#220):** Scelta «Aspetto» nel dialogo delle impostazioni con lo sfondo del tema.

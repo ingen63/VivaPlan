@@ -124,7 +124,14 @@ fn write_private(path: &Path, text: &str) -> std::io::Result<()> {
     std::io::Write::write_all(&mut options.open(path)?, text.as_bytes())
 }
 
-/// 32 random bytes of the operating system.
+/// 32 random bytes of the operating system (`/dev/urandom`; macOS and Linux only, the tool is not shipped).
+#[cfg(not(unix))]
+fn random_bytes() -> Result<[u8; 32], String> {
+    Err("no random numbers: keygen and issue without --id need /dev/urandom (macOS or Linux)".into())
+}
+
+/// 32 random bytes of the operating system (`/dev/urandom`; macOS and Linux only, the tool is not shipped).
+#[cfg(unix)]
 fn random_bytes() -> Result<[u8; 32], String> {
     let mut b = [0; 32];
     std::fs::File::open("/dev/urandom")
@@ -205,13 +212,16 @@ mod tests {
         )
         .unwrap();
         assert!(late.contains(": no – "), "{late}");
-        // Without --id a random one.
+        // Without --id a random one (#278: only where /dev/urandom exists).
         let random = run(
             &args(&["issue", "--key", key, "--who", "AB", "--until", "2099-12-31"]),
             &repo,
-        )
-        .unwrap();
-        assert_eq!(random.split('.').nth(2).unwrap().len(), 6);
+        );
+        if cfg!(unix) {
+            assert_eq!(random.unwrap().split('.').nth(2).unwrap().len(), 6);
+        } else {
+            assert!(random.unwrap_err().contains("/dev/urandom"));
+        }
     }
 
     // #270: wrong calls end with a message.
@@ -260,7 +270,7 @@ mod tests {
         assert!(e.contains("letters, digits or hyphens"), "{e}");
         assert!(run(&args(&["--help"]), repo).unwrap().contains("keygen"));
         assert_eq!(random_id(&[0xab; 32]), "ABABAB");
-        assert!(random_bytes().is_ok());
+        assert_eq!(random_bytes().is_ok(), cfg!(unix));
         assert!(repo_root().join("Cargo.toml").is_file());
     }
 }
