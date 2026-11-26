@@ -936,6 +936,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #148/AK4 | Beispiel: Eine künstlich um 1 Prozentpunkt pro Jahr verschobene Aktienrendite lässt den Test fehlschlagen (einmal von Hand gezeigt und … | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) (in den Tests zu AK1–AK3) | 18.11.2026 ok |
 | #148/AK5 | Die Tests bleiben bei festem Startwert reproduzierbar und laufen im Standard unter 10 s; | ☑ | **gilt** | [statistics.rs](../crates/engine/tests/statistics.rs) | 18.11.2026 ok |
 
+### #149 Steuerbarer Ertrag des Vermögens
+
+[Issue #149](https://github.com/ingen63/VivaPlan/issues/149) · geschlossen · Umsetzung: 0a57109 · Analyse 22.11.2026 und Entscheide vor der Umsetzung (25.11.2026) im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #149/AK1 | Im Abschnitt Steuern je Anlageklasse ein steuerbarer Ertrag in Prozent pro Jahr. | ☑ | **gilt** (nach Entscheid nur Aktien und Obligationen, kein Cash; `taxes.investmentYield`, Karte im Abschnitt Steuern) | `investment_yield::issue_149_ak1_…`, e2e [ui-ertrag.spec.js](../e2e/ui-ertrag.spec.js) AK1 (#149) | 26.11.2026 ok (Tests) |
+| #149/AK2 | Ertrag = Durchschnitt des Bestands im Jahr × Satz, zählt zum steuerbaren Einkommen; Beispiel 13 000. | ☑ | **gilt** (Startjahr anteilig) | `issue_149_ak2_…` (2) | 26.11.2026 ok (Tests) |
+| #149/AK3 | Gesamtrendite ändert sich nicht, nur die Steuer ist neu. | ☑ | **gilt** | `issue_149_ak3_return_stays_the_same` | 26.11.2026 ok (Test) |
+| #149/AK4 | Kapitalgewinne sind nicht steuerbar. | ☑ | **gilt** | `issue_149_ak4_capital_gains_are_not_taxable` | 26.11.2026 ok (Test) |
+| #149/AK5 | Neue Planungen mit Vorgaben (mit Quelle), bestehende mit 0 %, Golden-Dateien unverändert. | ☑ | **gilt** (2 % / 1 % in `blank_plan`, Richtwerte in der Hilfe; Beispiel bleibt 0 %) | e2e AK5 (#149), e2e #269/AK1, MCP `issue_149_…`, `golden::*` | 26.11.2026 ok (Tests) |
+| #149/AK6 | Steuerzerlegung zeigt den Ertrag als eigene Zeile. | ☑ | **gilt** (nach Entscheid: Spalte «Steuerbarer Ertrag» der Jahrestabelle; Bericht `taxableYield`) | `issue_149_ak6_…` (2), e2e AK6 (#149) | 26.11.2026 ok (Tests) |
+| #149/AK7 | Netto-Bedarf der 3-Topf-Strategie berücksichtigt den Ertrag gleich. | ☑ | **gilt** (Steuer ja, Einnahme nein) | `issue_149_ak7_net_need_of_the_buckets` | 26.11.2026 ok (Test) |
+| #149/AK8 | Ungültige Werte (negativ, über 100 %) sind Fehler im Abschnitt Steuern. | ☑ | **gilt** (am Feld) | `issue_149_ak8_…`, e2e AK8 (#149) | 26.11.2026 ok (Tests) |
+| #149/AK9 | Test mit Handwert; Test der gleichbleibenden Rendite. | ☑ | **gilt** | AK2, AK3 | 26.11.2026 ok (Tests) |
+| #149/AK10 | Hilfe, `BESCHREIBUNG.md` und Spezifikation nachgeführt. | ☑ | **gilt** (Hilfe 4 Sprachen, F1, `ENTWICKLUNG.md`, `GLOSSAR.md`, `describe`) | e2e AK10 (#149), `make i18n-check`, `make ui-texts` | 26.11.2026 ok (Tests, Durchsicht) |
+
 ### #150 Kapitalbezüge unverheirateter Paare werden für den Haushalt zusammengerechnet
 
 [Issue #150](https://github.com/ingen63/VivaPlan/issues/150) · geschlossen · Umsetzung: a841d27
