@@ -489,3 +489,19 @@ fn issue_274_ak5_ak6_values_by_hand() {
         .check
         .is_none());
 }
+
+/// #278: NaN is rejected like a negative amount (JSON cannot carry it, direct callers can); 0 is allowed.
+#[test]
+fn issue_278_check_rejects_nan_amount() {
+    let ok = |v: f64| TaxBill {
+        year: Some(2026),
+        total_income: Some(v),
+        taxable_income: Some(0.0),
+        taxable_wealth: Some(0.0),
+        total_tax: None,
+    };
+    let issues = taxbill::check(&ok(f64::NAN), ym("2026-01"));
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].field.as_deref(), Some("totalIncome"));
+    assert!(taxbill::check(&ok(0.0), ym("2026-01")).is_empty());
+}
