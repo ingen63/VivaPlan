@@ -256,13 +256,14 @@ fn issue_65_ak4_sh_hand_values() {
     close(tax_m("SH", 60000.0, 144, 1.8), 8658.00);
 }
 
-/// Solothurn (SO), ESTV «Steuermäppchen» 2025 p. 14: income tax tariff for single persons × tax multiplier, reduction from 6 years up to 50 %.
+/// Solothurn (SO), #289: tax law SO §§ 57 and 58: income tax tariff 2026 for single persons (§ 44 para. 1, tax
+/// ordinance no. 20) × tax multiplier; from 6 years the gain (not the tax) is 2 % lower per year, at most 50 %.
 #[test]
 fn issue_65_ak4_so_hand_values() {
-    // gain 60 000, held 30 months: 0 % × 12 000 + 4.5 % × 4 000 + 5 % × 4 000 + 6.5 % × 3 000 + 8 % × 2 000 + 9 % × 3 000 + 9.5 % × 11 000 + 10 % × 15 000 + 10.5 % × 6 000 × tax multiplier 1.8 = 7 524
-    close(tax_m("SO", 60000.0, 30, 1.8), 7524.00);
-    // gain 60 000, held 12 years: 0 % × 12 000 + 4.5 % × 4 000 + 5 % × 4 000 + 6.5 % × 3 000 + 8 % × 2 000 + 9 % × 3 000 + 9.5 % × 11 000 + 10 % × 15 000 + 10.5 % × 6 000 × (1 -0.14) × tax multiplier 1.8 = 6470.64
-    close(tax_m("SO", 60000.0, 144, 1.8), 6470.64);
+    // gain 60 000, held 30 months: 0 % × 12 400 + 4.5 % × 4 100 + 5 % × 4 100 + 6.5 % × 3 100 + 8 % × 2 100 + 9 % × 3 100 + 9.5 % × 11 300 + 10 % × 15 500 + 10.5 % × 4 300 = 4 113 × tax multiplier 1.8 = 7 403.40
+    close(tax_m("SO", 60000.0, 30, 1.8), 7403.40);
+    // gain 60 000, held 12 years: gain × (1 -0.14) = 51 600; 2 111.50 (up to 40 200) + 10 % × 11 400 = 3 251.50 × tax multiplier 1.8 = 5 852.70
+    close(tax_m("SO", 60000.0, 144, 1.8), 5852.70);
 }
 
 /// Schwyz (SZ), ESTV «Steuermäppchen» 2025 p. 11: bracket tariff 8 % to 30 %, allowance 2 000 francs, surcharge under 4 years, reduction up to 70 %.

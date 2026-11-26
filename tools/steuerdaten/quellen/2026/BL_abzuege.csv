@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+BL,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,MAXIMUM,0,0,0,500,"StG BL § 29 Abs. 1 lit. a (SGS 331, Stand 1.1.2023; zusätzliche Pauschale von 500 Franken zu den tatsächlichen Berufskosten)"
+BL,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,4000,"StG BL § 29 Abs. 1 lit. k (SGS 331, Stand 1.1.2023; ohne Erhöhung ohne Beiträge)"
+BL,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,4000,"StG BL § 29 Abs. 1 lit. k (SGS 331, Stand 1.1.2023; ohne Erhöhung ohne Beiträge)"
+BL,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,2000,"StG BL § 29 Abs. 1 lit. k (SGS 331, Stand 1.1.2023; ohne Erhöhung ohne Beiträge)"
+BL,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,2000,"StG BL § 29 Abs. 1 lit. k (SGS 331, Stand 1.1.2023; ohne Erhöhung ohne Beiträge)"
+BL,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,1000,"StG BL § 8 Abs. 3 (SGS 331, Stand 1.1.2023)"
+BL,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,180000,0,0,0,"StG BL § 50 Abs. 1 lit. a und b (SGS 331, Stand 1.1.2023)"
+BL,KANTON,VERMOEGENSSTEUER,SozLedigOhneKinder_VM,Abzug für Alleinstehende ohne Kinder,STANDARDIZED,90000,0,0,0,"StG BL § 50 Abs. 1 lit. a und b (SGS 331, Stand 1.1.2023)"

@@ -55,7 +55,8 @@ Die ESTV-Grunddaten enthalten nur für 12 Kantone einen Tarif «Kapitalauszahlun
 `kapitalregeln.json`, abgeleitet aus 364 Rechnungen des ESTV-Steuerrechners 2026 «Kapitalauszahlung aus Vorsorge»
 (alle Kantonshauptorte, Bezüge 50 000 bis 5 Millionen, alleinstehend und verheiratet, Alter 65, ohne Kinder, ohne
 Konfession): Kantons- und Gemeindesteuer geteilt durch den Steuerfuss ergibt die einfache Steuer. Gegen das Gesetz
-geprüft sind ZH (#287) sowie LU, UR, SZ, OW, NW und ZG (#288); sie nennen den Artikel in `source`.
+geprüft sind ZH (#287), LU, UR, SZ, OW, NW und ZG (#288) sowie BE, SO, BS, BL und AG (#289); sie nennen den
+Artikel in `source`.
 
 - `kind: table`: Tarif «Kapitalauszahlung aus Vorsorge» der ESTV (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
   als Typ `BUND`, Bern); `kind: income`: Anteil `share` der Steuer nach dem Einkommenstarif ohne Abzüge, Satz für
@@ -79,7 +80,8 @@ aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsc
 Die Regelsätze aller 26 Kantone stehen von Hand erfasst in `grundstueckgewinn.py` (Funktion `rules()`). Quelle:
 ESTV-Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3, Seite je Kanton;
 ZG, FR, VS, BS, BL, SG und VD zusätzlich gegen das kantonale Gesetz geprüft (Stand November 2026), ebenso ZH (#287)
-sowie LU, UR, SZ, OW und NW (#288). Luzern: seit 2025 fester Steuerfuss von 4,2 Einheiten (§ 23 GGStG), in die Sätze
+sowie LU, UR, SZ, OW, NW (#288) und BE, SO, BS, BL, AG (#289). Solothurn: § 57 kürzt den Gewinn, nicht die
+Steuer (`gainDuration`). Luzern: seit 2025 fester Steuerfuss von 4,2 Einheiten (§ 23 GGStG), in die Sätze
 eingerechnet (ohne `useMultiplier`). Je Kanton `text`
 (Regel für `propertyGainRule`), `source` (Seite oder Gesetz, nur im Bericht) und, wo vereinfacht, `approx`.
 
@@ -111,9 +113,9 @@ Jede Zeile nennt in `Quelle` den Erlass mit Artikel und Stand (z. B. `StG ZH § 
 braucht beide Dateien; seine Zeilen aus den ESTV-Tabellen fallen dann ganz weg, die übrigen Kantone kommen unverändert
 aus den ESTV-Tabellen. Der Bericht beginnt mit der Herkunft je Kanton (`laws (source files)` oder `ESTV tables`).
 Kapitalbezugs- und Grundstückgewinnregeln nennen den Gesetzesartikel in `source` (`kapitalregeln.json`,
-`grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287), Zentralschweiz LU, UR, SZ, OW, NW, ZG (#288). Wo das
+`grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287), Zentralschweiz LU, UR, SZ, OW, NW, ZG (#288), Nordwestschweiz BE, SO, BS, BL, AG (#289). Wo das
 Gesetz Grundbeträge nennt und die Verwaltung die Teuerung ausgleicht (Zug), nennt `Quelle` auch die Veröffentlichung
-der Steuerverwaltung für das Jahr.
+der Steuerverwaltung für das Jahr (z. B. Aargau, Basel-Landschaft) oder die Teuerungsverordnung (Solothurn).
 
 Die Erlasse selbst (PDF und Textauszug) liegen lokal unter `local/steuerquellen/<Jahr>/` mit `quellen.txt` (Datei,
 Adresse, Abrufdatum), nicht im Repository.

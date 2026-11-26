@@ -2102,7 +2102,7 @@
   "propertyGainRule.OW": "impôt simple de 2 % × coefficient d’impôt, majoration en dessous de 3 ans",
   "propertyGainRule.SG": "impôt simple de 0 % à 11 % avec une majoration cantonale de 220 %, majoration en dessous de 5 ans, réduction dès 16 ans en cas d’occupation par le propriétaire de 1.5 % par an jusqu’à 40.5 % (part du gain jusqu’à 500 000 francs), sinon 1 % par an jusqu’à 20 %",
   "propertyGainRule.SH": "impôt simple de 2 % à 20 % × coefficient d’impôt, majoration en dessous de 5 ans, réduction jusqu’à 60 %, au plus 50 % du gain",
-  "propertyGainRule.SO": "barème de l’impôt sur le revenu pour personnes seules × coefficient d’impôt, réduction dès 6 ans jusqu’à 50 %",
+  "propertyGainRule.SO": "barème de l’impôt sur le revenu pour personnes seules × coefficient d’impôt, gain réduit de 2 % par an dès 6 ans (au plus 50 %)",
   "propertyGainRule.SZ": "barème progressif de 8 % à 30 %, montant exonéré de 2 000 francs, majoration en dessous de 4 ans, réduction jusqu’à 70 %",
   "propertyGainRule.TG": "40 % du gain, majoration de 1 % par mois en dessous de 3 ans, réduction dès la 6e année jusqu’à 72 %",
   "propertyGainRule.TI": "taux selon la durée de possession de 31 % à 4 %",

@@ -2102,7 +2102,7 @@
   "propertyGainRule.OW": "imposta semplice del 2 % × moltiplicatore d’imposta, maggiorazione sotto 3 anni",
   "propertyGainRule.SG": "imposta semplice dallo 0 % all’11 % con una maggiorazione cantonale del 220 %, maggiorazione sotto 5 anni, riduzione da 16 anni in caso di occupazione da parte del proprietario dell’1.5 % all’anno fino al 40.5 % (quota dell’utile fino a 500 000 franchi), altrimenti 1 % all’anno fino al 20 %",
   "propertyGainRule.SH": "imposta semplice dal 2 % al 20 % × moltiplicatore d’imposta, maggiorazione sotto 5 anni, riduzione fino al 60 %, al massimo 50 % dell’utile",
-  "propertyGainRule.SO": "tariffa dell’imposta sul reddito per persone sole × moltiplicatore d’imposta, riduzione da 6 anni fino al 50 %",
+  "propertyGainRule.SO": "tariffa dell’imposta sul reddito per persone sole × moltiplicatore d’imposta, utile ridotto del 2 % all’anno da 6 anni (al massimo 50 %)",
   "propertyGainRule.SZ": "tariffa a scaglioni dall’8 % al 30 %, importo esente di 2 000 franchi, maggiorazione sotto 4 anni, riduzione fino al 70 %",
   "propertyGainRule.TG": "40 % dell’utile, maggiorazione dell’1 % al mese sotto 3 anni, riduzione dal 6° anno fino al 72 %",
   "propertyGainRule.TI": "aliquota secondo la durata di possesso dal 31 % al 4 %",

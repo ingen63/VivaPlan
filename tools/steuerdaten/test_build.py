@@ -607,5 +607,53 @@ class Sources(unittest.TestCase):
         self.assertEqual(lu["uniformAbove"], [2096800, 0.2394])
 
 
+    NORTHWEST = ("BE", "SO", "BS", "BL", "AG")
+
+    def test_issue_289_ak1_northwest_sources_are_complete(self):
+        """#289/AK1: source files 2026 for BE, SO, BS, BL and AG with tariffs for income and wealth and the deductions
+        used, a source per row (checked by `read_sources`)."""
+        tariffs, deductions, covered = build.read_sources(self.REPO)
+        self.assertLessEqual(set(self.NORTHWEST), covered)
+        kinds = {(r["Kanton"], r["Steuerart"]) for r in tariffs}
+        ids = {(r["Kanton"], r["ID"]) for r in deductions}
+        for cid in self.NORTHWEST:
+            self.assertIn((cid, "EINKOMMENSSTEUER"), kinds)
+            self.assertIn((cid, "VERMOEGENSSTEUER"), kinds)
+            self.assertIn((cid, "HauptErw_EK"), ids)
+            self.assertIn((cid, "ZweitVerdiener_EK"), ids)
+            self.assertIn((cid, "KKSparzVerhMitBVGS3a_EK"), ids)
+        self.assertIn(("BL", "FORMEL"), {(r["Kanton"], r["Tariftyp"]) for r in tariffs})
+
+    def test_issue_289_ak4_values_of_the_cantons(self):
+        """#289/AK4: simple tax by the source files against the cantons: tax calculator of Aargau 2026 (taxable 120 000,
+        single: 8 887, rounded down to the franc; wealth 800 000: 1 055.30), official tariff table 2026 of
+        BL (formula, single and full splitting), official tariff table 2026 of SO
+        (40 200: 2 111.50)."""
+        tariffs, _, _ = build.read_sources(self.REPO)
+        t = build.load_tariffs(tariffs)
+        ag = build.pick(t[("AG", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertEqual(int(ag.tax(120_000, False)), 8_887)
+        self.assertAlmostEqual(build.pick(t[("AG", "KANTON", "VERMOEGENSSTEUER")], False).tax(800_000, False),
+                               1_055.30, places=2)
+        bl = t[("BL", "KANTON", "EINKOMMENSSTEUER")]
+        for x, single, split in ((17_000, 94.30, 83.30), (100_000, 11_218.95, 6_981.50), (440_000, 72_717.60, 64_640.15)):
+            self.assertAlmostEqual(build.pick(bl, False).tax(x, False), single, delta=0.05)
+            self.assertAlmostEqual(build.pick(bl, True).tax(x, True), split, delta=0.05)
+        so = build.pick(t[("SO", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertAlmostEqual(so.tax(40_200, False), 2_111.50, places=2)
+
+    def test_issue_289_ak2_rules_name_the_law(self):
+        """#289/AK2: the lump-sum and property gain rules of these cantons name the article of the law; Solothurn
+        reduces the gain (§ 57), not the tax."""
+        capital = build.read_rules(build.RULES)
+        gain = grundstueckgewinn.rules()
+        for cid in self.NORTHWEST:
+            self.assertRegex(capital[cid]["source"], rf"^StG {cid} (§|Art\.) \d+", cid)
+            self.assertRegex(gain[cid]["source"], rf"^StG {cid} (§|§§|Art\.) \d+", cid)
+        self.assertIn("gainDuration", gain["SO"])
+        self.assertNotIn("duration", gain["SO"])
+        self.assertEqual(gain["SO"]["uniformAbove"], [319900, 0.105])
+
+
 if __name__ == "__main__":
     unittest.main()

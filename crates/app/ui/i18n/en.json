@@ -2102,7 +2102,7 @@
   "propertyGainRule.OW": "simple tax 2 % × tax multiplier, surcharge under 3 years",
   "propertyGainRule.SG": "simple tax 0 % to 11 % with a cantonal surcharge of 220 %, surcharge under 5 years, reduction from 16 years with owner occupation 1.5 % per year up to 40.5 % (part of the gain up to 500 000 francs), otherwise 1 % per year up to 20 %",
   "propertyGainRule.SH": "simple tax 2 % to 20 % × tax multiplier, surcharge under 5 years, reduction up to 60 %, at most 50 % of the gain",
-  "propertyGainRule.SO": "income tax tariff for single persons × tax multiplier, reduction from 6 years up to 50 %",
+  "propertyGainRule.SO": "income tax tariff for single persons × tax multiplier, gain 2 % lower per year from 6 years (at most 50 %)",
   "propertyGainRule.SZ": "bracket tariff 8 % to 30 %, allowance 2 000 francs, surcharge under 4 years, reduction up to 70 %",
   "propertyGainRule.TG": "40 % of the gain, surcharge of 1 % per month under 3 years, reduction from the 6th year up to 72 %",
   "propertyGainRule.TI": "rate by holding period 31 % to 4 %",

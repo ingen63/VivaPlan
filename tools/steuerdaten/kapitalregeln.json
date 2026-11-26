@@ -1,10 +1,11 @@
 {
-  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287, #288), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
+  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287–#289), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
   "AG": {
     "kind": "income",
     "share": 0.3,
     "min": 0.01,
-    "text": "30 % der Steuer nach dem Einkommenstarif, Satz mindestens 1 %"
+    "text": "30 % der Steuer nach dem Einkommenstarif, Satz mindestens 1 %",
+    "source": "StG AG § 45 Abs. 1 (SAR 651.100, Stand 1.1.2025)"
   },
   "AI": {
     "kind": "income",
@@ -17,16 +18,19 @@
   },
   "BE": {
     "kind": "table",
-    "text": "eigener Tarif für Kapitalleistungen"
+    "text": "eigener Tarif für Kapitalleistungen",
+    "source": "StG BE Art. 44 Abs. 2–4 (BSG 661.11, Stand 1.1.2026)"
   },
   "BL": {
     "kind": "table",
     "max": 0.045,
-    "text": "eigener Tarif für Kapitalleistungen, Satz höchstens 4.5 %"
+    "text": "eigener Tarif für Kapitalleistungen, Satz höchstens 4.5 %",
+    "source": "StG BL § 36 Abs. 2 (SGS 331, Stand 1.1.2023)"
   },
   "BS": {
     "kind": "table",
-    "text": "eigener Tarif für Kapitalleistungen"
+    "text": "eigener Tarif für Kapitalleistungen",
+    "source": "StG BS § 39 Abs. 1 (SG 640.100, Stand 1.1.2026)"
   },
   "FR": {
     "kind": "table",
@@ -100,7 +104,8 @@
   "SO": {
     "kind": "income",
     "share": 0.25,
-    "text": "25 % der Steuer nach dem Einkommenstarif"
+    "text": "25 % der Steuer nach dem Einkommenstarif",
+    "source": "StG SO § 47 Abs. 2 (BGS 614.11, Stand 1.1.2025)"
   },
   "SZ": {
     "kind": "income",

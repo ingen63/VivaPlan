@@ -2102,7 +2102,7 @@
   "propertyGainRule.OW": "einfache Steuer 2 % × Steuerfuss, Zuschlag unter 3 Jahren",
   "propertyGainRule.SG": "einfache Steuer 0 % bis 11 % mit Zuschlag des Kantons von 220 %, Zuschlag unter 5 Jahren, Ermässigung ab 16 Jahren bei Selbstnutzung 1.5 % je Jahr bis 40.5 % (Gewinnanteil bis 500 000 Franken), sonst 1 % je Jahr bis 20 %",
   "propertyGainRule.SH": "einfache Steuer 2 % bis 20 % × Steuerfuss, Zuschlag unter 5 Jahren, Ermässigung bis 60 %, höchstens 50 % des Gewinns",
-  "propertyGainRule.SO": "Einkommenssteuertarif für Alleinstehende × Steuerfuss, Ermässigung ab 6 Jahren bis 50 %",
+  "propertyGainRule.SO": "Einkommenssteuertarif für Alleinstehende × Steuerfuss, Gewinn ab 6 Jahren je Jahr 2 % tiefer (höchstens 50 %)",
   "propertyGainRule.SZ": "Stufentarif 8 % bis 30 %, Freibetrag 2 000 Franken, Zuschlag unter 4 Jahren, Ermässigung bis 70 %",
   "propertyGainRule.TG": "40 % des Gewinns, Zuschlag unter 3 Jahren je Monat 1 %, Ermässigung ab dem 6. Jahr bis 72 %",
   "propertyGainRule.TI": "Satz nach Besitzdauer 31 % bis 4 %",

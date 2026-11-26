@@ -3,7 +3,7 @@
 Source: ESTV, «Steuermäppchen» on the property gain tax («Grundstückgewinnsteuer»), tax period 2025
 (as of 26.11.2025), table 3 «Berechnung der Grundstückgewinnsteuer». The page is given with each canton; ZG, FR, VS,
 BS, BL, SG and VD were also checked against the cantonal law (as of November 2026); ZH (#287) and LU, UR,
-SZ, OW, NW (#288) name the law article.
+SZ, OW, NW (#288), BE, SO, BS, BL, AG (#289) name the law article.
 
 Each rule is an object in the format of `PropertyGainTax` of the engine (camelCase):
 - model «zurich»: `brackets` [width, rate], optionally `uniformAbove` [from gain, rate for the whole gain];
@@ -62,7 +62,7 @@ def rules():
         gainDuration=steps(5, -0.10, -0.02, -0.70),
         text="einfache Steuer 1.44 % bis 8.1 % × Steuerfuss, Zuschlag unter 5 Jahren, Gewinn ab 5 Jahren je Jahr "
              "2 % tiefer (höchstens 70 %)",
-        source="S. 9")
+        source="StG BE Art. 144–147 (BSG 661.11, Stand 1.1.2026)")
     # #288: income tax tariff 2026 (StG LU § 57 Abs. 1) times the fixed tax multiplier of 4.2 units (§ 23 GGStG)
     lu = 4.2
     r["LU"] = dict(
@@ -116,28 +116,32 @@ def rules():
         text="Satz nach Besitzdauer 22 % bis 10 %, Zuschlag von 40 % auf dem Gewinn über 400 000 Franken bei weniger "
              "als 5 Jahren (je Immobilie gerechnet)",
         source="Art. 51 DStG, RSF 631.1")
+    # #289: income tax tariff 2026 of SO (tax law § 44 para. 1, tax ordinance no. 20); § 57 reduces the gain, not the
+    # tax
     r["SO"] = dict(
         model="zurich", useMultiplier=True,
-        brackets=[[12000, 0.0], [4000, 0.045], [4000, 0.05], [3000, 0.065], [2000, 0.08], [3000, 0.09],
-                  [11000, 0.095], [15000, 0.10], [44000, 0.105], [BIG, 0.115]],
-        uniformAbove=[310000, 0.105],
-        duration=steps(6, -0.02, -0.02, -0.50),
-        text="Einkommenssteuertarif für Alleinstehende × Steuerfuss, Ermässigung ab 6 Jahren bis 50 %",
-        source="S. 14")
+        brackets=[[12400, 0.0], [4100, 0.045], [4100, 0.05], [3100, 0.065], [2100, 0.08], [3100, 0.09],
+                  [11300, 0.095], [15500, 0.10], [45400, 0.105], [BIG, 0.115]],
+        uniformAbove=[319900, 0.105],
+        gainDuration=steps(6, -0.02, -0.02, -0.50),
+        text="Einkommenssteuertarif für Alleinstehende × Steuerfuss, Gewinn ab 6 Jahren je Jahr 2 % tiefer (höchstens "
+             "50 %)",
+        source="StG SO §§ 57 und 58 (BGS 614.11, Stand 1.1.2025) mit § 44 Abs. 1 und Steuerverordnung Nr. 20 § 1bis "
+               "(BGS 614.159.20, Stand 1.1.2026)")
     bs = [[0, 0.30]] + [[k - 1, round(0.30 - 0.009 * (k - 5), 4)] for k in range(6, 25)] + [[24, 0.12]]
     r["BS"] = dict(
         model="aargau", exemptBelow=500, durationRates=bs,
         text="Satz nach Besitzdauer für selbstgenutztes Wohneigentum: 30 % bis 12 %",
         approx="Angenommen ist dauernd selbstgenutztes Wohneigentum (übrige Liegenschaften 60 % bis 12 %); die "
                "Ermässigung für wertvermehrende Aufwendungen fehlt.",
-        source="S. 15")
+        source="StG BS § 109 Abs. 1, 3 und 5 (SG 640.100, Stand 1.1.2026)")
     r["BL"] = dict(
         model="curve", rateCurve=[[0, 0.03], [30000, 0.12], [70000, 0.20], [120000, 0.25]],
         duration=monthly_surcharge(60, 1 / 60),
         text="Satz nach Gewinn 3 % bis 25 %, Zuschlag unter 5 Jahren je Monat 1 2/3 %",
         approx="Die Ermässigung für selbstgenutzte Liegenschaften nach 20 Jahren und die Anpassung der Anlagekosten "
                "an die Teuerung fehlen.",
-        source="S. 16")
+        source="StG BL § 80 (SGS 331, Stand 1.1.2023)")
     r["SH"] = dict(
         model="zurich", useMultiplier=True, exemptBelow=5000, maxShare=0.50,
         brackets=[[2000, 0.02], [2000, 0.04], [2000, 0.06], [2000, 0.08], [7000, 0.10], [15000, 0.12], [15000, 0.14],
@@ -180,7 +184,7 @@ def rules():
         durationRates=[[0, 0.40]] + [[y, round(0.40 - 0.02 * y, 4)] for y in range(1, 11)]
         + [[y, round(0.20 - 0.01 * (y - 10), 4)] for y in range(11, 26)],
         text="Satz nach Besitzdauer 40 % bis 5 %",
-        source="S. 19")
+        source="StG AG § 109 Abs. 1 (SAR 651.100, Stand 1.1.2025)")
     r["TG"] = dict(
         model="zurich", brackets=[[BIG, 0.40]],
         duration=monthly_surcharge(36, 0.01) + steps(6, -0.04, -0.04, -0.72),
