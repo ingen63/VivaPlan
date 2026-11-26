@@ -306,7 +306,16 @@ würde die Scheingenauigkeit verstärken.
   Wert, Summe «Kanton … · Bund …» bzw. der eigene Betrag); «Details» klappt die Teile (Sozialabzüge,
   Versicherungsprämien, Sparzinsen, Berufskosten, Zweitverdienerabzug, zusätzlich) für Kanton und Bund mit Total für
   das erste Jahr der Zeile auf. Das Feld «zusätzlich» erscheint nur mit Betrag oder nach «+ Zusätzlicher Abzug»; die
-  Erklärungen und die Höchstbeträge der Säule 3a stehen im ⓘ; einmalige Abzüge unter eigenem Zwischentitel.
+  Erklärungen und die Höchstbeträge der Säule 3a stehen im ⓘ; einmalige Abzüge unter eigenem Titel.
+- **Abzüge im Einzelnen unter «Experte» (#275):** Die Zeilen der Abzüge vom Einkommen (mit «zusätzlich» und der
+  Hilfe «eigener Wert»), die Abzüge vom Vermögen, «Tarife mit der Teuerung» und bei bestehenden Planungen die eigenen
+  Tabellen stehen im zugeklappten Bereich «Experte» (Abzüge im Einzelnen, Abzüge vom Vermögen, Tarife mit der
+  Teuerung) unter den Annahmen. Er öffnet sich von selbst, wenn die Planung dort eigene Werte hat (Zeile mit eigenem
+  Wert, zusätzlichem Abzug oder aus der Steuerrechnung, Abzüge vom Vermögen, Tarife ohne Teuerung, eigene Tabellen).
+  Das Häkchen der Säule 3a bleibt bei den Annahmen; die einmaligen Abzüge vom Einkommen (#230) stehen in einer eigenen
+  Karte «Einmalige Abzüge» direkt im Abschnitt. Die Karte der Pensionskasse hat den Link «Einkauf als Abzug
+  erfassen»: Er legt einen einmaligen Abzug «PK-Einkauf» (bei zwei Personen mit dem Namen) im Jahr nach dem Start an,
+  wechselt zu den Steuern und setzt den Fokus auf das Steuerjahr. Rechnung und Dateiformat unverändert.
 - **Abzüge vom Vermögen (#231):** Karte «Abzüge vom Vermögen» mit zeitabhängigen Zeilen «zusätzlich … pro Jahr»
   (Preise des Starts, mit «Tarife mit der Teuerung») und einmaligen Abzügen (Steuerjahr, Beschreibung, Betrag nominal),
   zum Beispiel Schulden ausser der Hypothek. Steuerbares Vermögen = Vermögen am 31.12. (Immobilien zum Steuerwert) −

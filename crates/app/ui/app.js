@@ -676,7 +676,8 @@ function PensionCards(root, who) {
     ${fixedAt(n, "pk")}
     ${F(`${pk}.lumpsum`, tr("pension.lumpsum"), "pct")}
     ${F(`${pk}.conversion`, tr("pension.conversion"), "pct")}</div>
-    <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div></fieldset></div>
+    <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div>
+    <div style="margin-top:10px"><button class="btn ghost small" id="pk-buyin${n}" data-action="pk-buyin" data-n="${n}">${tr("pension.buyInDeduction")}</button></div></fieldset></div>
   <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2"><div>${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}${C("ahvEff", root === "partner" ? 1 : 0)}</div>
     ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
     <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>
@@ -1608,6 +1609,7 @@ function taxBillApply() {
   const r = taxBill.out?.result;
   if (!r) return;
   state.taxes.deductions = structuredClone(r.deductions);
+  taxOpen.expert = null; // #275/AK1: the taken over rows are own values, «Experte» opens
   const p = r.wealth.proposal;
   if (p && taxBill.wealth) {
     if (p.kind === "taxValueRate") for (const i of p.properties) state.realestate.properties[i].taxValue = { kind: "rate", value: p.rate };
@@ -1675,8 +1677,9 @@ function oneOffDeductions(key = "oneOffDeductions", hint = tr("deductions.oneOff
   const rows = list.map((x, i) => `<tr data-oneoff-row="${i}"><td style="width:110px">${F(`${P}.${i}.year`, "", "num", { bare: true, int: true })}</td><td>${F(`${P}.${i}.label`, "", "text", { bare: true })}</td><td style="width:200px">${F(`${P}.${i}.amount`, "", "chf", { bare: true })}</td>
       <td><button class="btn ghost small" title="${tr("series.removeRow")}" data-action="list-del" data-path="${P}" data-i="${i}">✕</button></td></tr>`).join("");
   // #241/AK7: in the card «Abzüge vom Einkommen» under a subtitle of their own
-  const head = wealth ? `<b>${tr("deductions.oneOff")}</b> <span class="sub">${hint}</span>` : `<h4 class="dedsubtitle">${tr("deductions.oneOff")}</h4><p class="hint">${hint}</p>`;
-  return `<div id="${wealth ? "wded-oneoff" : "ded-oneoff"}" style="margin-top:12px">${head}
+  // #275/AK2: the one-off deductions from income in their own card «Einmalige Abzüge» (title there)
+  const head = wealth ? `<b>${tr("deductions.oneOff")}</b> <span class="sub">${hint}</span>` : `<p class="hint">${hint}</p>`;
+  return `<div id="${wealth ? "wded-oneoff" : "ded-oneoff"}"${wealth ? ' style="margin-top:12px"' : ""}>${head}
     ${list.length ? `<table class="tbl"><tr><th>${tr("deductions.taxYear")}</th><th>${tr("flows.description")}</th><th>${tr("flows.amount")}</th><th></th></tr>${rows}</table>` : ""}
     <div style="margin-top:8px"><button class="btn small" data-action="ded-oneoff-add" data-key="${key}">${tr("deductions.addOneOff")}</button></div></div>`;
 }
@@ -1807,13 +1810,24 @@ function deductionsCard() {
   // #241/AK6: the explanations in ⓘ instead of paragraphs
   const info = infoPop(`<p id="ded-hint">${loc ? tr("deductions.hintLocation") : tr("deductions.hintOwn")}</p>
     ${own.length || !loc ? `<p id="ded-own-hint">${tr("deductions.ownHint")}</p>` : ""}`);
-  const p3aInfo = infoPop(`<p id="ded-p3a-hint">${tr("deductions.pillar3aMax", { max: fmtInt(limits().pillar3aMax), maxLarge: fmtInt(limits().pillar3aMaxLarge) })}</p><p>${tr("deductions.pillar3aHint")}</p>`);
   return `<div class="card" id="tax-deductions"><h3>${tr("deductions.title")}${info}</h3>
     <div class="rows">${body || `<p class="computed">${tr("deductions.none")}</p>`}
     <div>${stored ? `<button class="btn small" data-action="ded-add">${tr("series.addRow")}</button>` : `<button class="btn small" data-action="ded-edit">${tr("deductions.edit")}</button>`}</div></div>
-    ${calc}
-    <div class="dedp3a" style="margin-top:10px">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a"), { rerender: true })}${p3aInfo}</div>
-    ${oneOffDeductions()}</div>`;
+    ${calc}</div>`;
+}
+/** #275/AK1: the pillar 3a deduction stays among the assumptions (the rows of the deductions are under «Experte»). */
+function pillar3aDeductionCard() {
+  const p3aInfo = infoPop(`<p id="ded-p3a-hint">${tr("deductions.pillar3aMax", { max: fmtInt(limits().pillar3aMax), maxLarge: fmtInt(limits().pillar3aMaxLarge) })}</p><p>${tr("deductions.pillar3aHint")}</p>`);
+  return `<div class="card" id="tax-p3a"><div class="dedp3a">${Chk("taxes.deductPillar3a", tr("deductions.pillar3a"), { rerender: true })}${p3aInfo}</div></div>`;
+}
+/** #275/AK2: one-off deductions from income (#230) outside «Experte», directly reachable (also from the pension fund). */
+const oneOffCard = () => `<div class="card" id="tax-oneoff"><h3>${tr("deductions.oneOff")}</h3>${oneOffDeductions()}</div>`;
+/** #275/AK1: own values under «Experte»: own tables, rows of the deductions from income with an own value or an
+ *  additional amount, deductions from wealth (#231) or tariffs without inflation; such plans open «Experte». */
+function expertValues(s = state) {
+  const t = s.taxes;
+  return !isLocation(s) || (t.deductions ?? []).some(r => r.kind !== "canton" || (r.extra ?? 0) !== 0 || r.taxBill)
+    || (t.wealthDeductions ?? []).some(r => (r.amount ?? 0) !== 0) || !!t.oneOffWealthDeductions?.length || t.indexed === false;
 }
 /** #131/AK7: input help «eigener Wert» from income and taxable income of the last assessment (not saved). */
 const dedCalc = { income: "", taxable: "", p3a: "" };
@@ -1848,9 +1862,13 @@ function taxAssumptions() {
  *  closed in the mode «Wohnort», open with own tables. */
 const taxOpen = { settings: null, expert: null };
 document.addEventListener("toggle", e => { const k = e.target?.dataset?.taxOpen; if (k) taxOpen[k] = e.target.open; }, true);
-/** Errors at a field inside the settings open them, so that the message is visible. */
-const taxSettingsError = () => [...lastIssues.filter(i => i.severity === "error").map(i => i.field), ...invalidFields.keys()]
-  .some(f => /^taxes\.(?!location|relocations)|^realestate\.properties\.\d+\.taxValue/.test(f ?? ""));
+/** Errors at a field inside the settings (or #275 inside «Experte») open them, so that the message is visible. */
+const TAX_ERROR_RE = {
+  settings: /^taxes\.(?!location|relocations|deductions|wealthDeductions|oneOffDeductions|oneOffWealthDeductions|indexed|income|wealth|capital|couple)/,
+  expert: /^taxes\.(deductions|wealthDeductions|oneOffWealthDeductions|indexed|income|wealth|capital|couple|multiplier|gain)|^realestate\.properties\.\d+\.taxValue/,
+};
+const taxSettingsError = (k = "settings") => [...lastIssues.filter(i => i.severity === "error").map(i => i.field), ...invalidFields.keys()]
+  .some(f => TAX_ERROR_RE[k].test(f ?? ""));
 R.taxes = () => {
   const own = !isLocation(state);
   const note = own ? tr("taxes.estimateNote") : tr("taxes.estimateNoteLocation");
@@ -1864,28 +1882,37 @@ R.taxes = () => {
     ${taxFiguresBlock()}
     <p class="hint">${tr("taxes.ownHint")}</p>
     <div><button class="btn" data-action="tax-to-location" id="tax-to-location">${tr("taxes.switchToLocation")}</button></div></div>`;
-  const open = k => (taxOpen[k] ?? own) || (k === "settings" && taxSettingsError());
+  // #275/AK1: «Experte» opens by itself in plans with own values there (own tables included)
+  const open = k => (taxOpen[k] ?? (k === "expert" ? expertValues() : own)) || taxSettingsError(k);
+  // #275/AK1: in the mode «Wohnort» the multiplier only belongs to the own rules of the property gains tax
+  const gainMultiplier = !own && gainOwn() ? `<div class="card" id="tax-gain-multiplier"><div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>
+    <p class="hint">${tr("taxes.locationOwnTablesHint")}</p></div>` : own ? "" : `<div class="card" id="tax-gain-multiplier"><p class="hint">${tr("taxes.locationCantonGainHint")}</p></div>`;
   const settings = `<details class="taxsettings" id="tax-settings" data-tax-open="settings"${open("settings") ? " open" : ""}>
     <summary class="card taxassume" id="tax-assumptions"><b>${tr("taxes.assumptions")}</b> <span data-tax-assumptions>${C("taxAssumptions")}</span></summary>
-    ${deductionsCard()}
-    ${wealthDeductionsCard()}
+    ${pillar3aDeductionCard()}
     ${investmentYieldCard()}
-    <div class="card">${own || gainOwn() ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>` : ""}
-    ${own ? "" : `<p class="hint">${gainOwn() ? tr("taxes.locationOwnTablesHint") : tr("taxes.locationCantonGainHint")}</p>`}
+    ${own ? "" : locGainCard() + gainMultiplier}</details>`;
+  // #275/AK1: deductions in detail, deductions from wealth, tariffs with inflation and the own tables, closed
+  const tariffs = `<div class="card" id="tax-indexed">${own ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div>` : ""}
     <div>${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
-    <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>
-    ${own ? "" : locGainCard()}</details>`;
-  const expert = own ? `<details class="taxsettings" id="tax-expert" data-tax-open="expert"${open("expert") ? " open" : ""}><summary class="card taxassume"><b>${tr("taxes.expert")}:</b> ${tr("taxes.modeOwn")}</summary>
-    <div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
-    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>
-    ${gainCard()}
+    <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>`;
+  const ownTables = own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
+    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : "";
+  const ownRest = own ? `${gainCard()}
     ${state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
     <p class="hint">${tr("taxes.marriedHint")}</p>
-    ${coupleTables}</div>` : ""}</details>` : "";
+    ${coupleTables}</div>` : ""}` : "";
+  const expert = `<details class="taxsettings" id="tax-expert" data-tax-open="expert"${open("expert") ? " open" : ""}><summary class="card taxassume" id="tax-expert-summary"><b>${tr("taxes.expert")}:</b> ${tr("taxes.expertSummary")}${own ? ` · ${tr("taxes.modeOwn")}` : ""}</summary>
+    ${ownTables}
+    ${deductionsCard()}
+    ${wealthDeductionsCard()}
+    ${tariffs}
+    ${ownRest}</details>`;
   return `<h2>${tr("section.taxes")}</h2><p class="lead">${own ? tr("taxes.intro") : tr("taxes.introLocation")}</p>
   ${own ? ownCard : taxLocationCard()}
   ${settings}
+  ${oneOffCard()}
   ${expert}
   <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>`;
 };
@@ -2876,6 +2903,17 @@ const ACTIONS = {
   "ded-oneoff-add": d => {
     (state.taxes[d.key || "oneOffDeductions"] ??= []).push({ year: Math.floor(startM() / 12) + 1, label: tr("deductions.newOneOff"), amount: 0 });
     markDirty(); renderSection();
+  },
+  // #275/AK2: «Einkauf als Abzug erfassen» in the card of the pension fund: a one-off deduction (#230) in the year
+  // after the start (the plan has no date of the buy-in; the year is to be set), then the section «Steuern» with the
+  // year field of the new row focused
+  "pk-buyin": d => {
+    const who = state.partner ? state.household.persons[+d.n]?.name : "";
+    const list = (state.taxes.oneOffDeductions ??= []);
+    list.push({ year: Math.floor(startM() / 12) + 1, label: who ? tr("pension.buyInLabelWho", { who }) : tr("pension.buyInLabel"), amount: 0 });
+    markDirty(); goto("taxes");
+    const year = $(`#tax-oneoff [data-oneoff-row="${list.length - 1}"] input`);
+    year?.scrollIntoView({ block: "center" }); year?.focus(); year?.select?.();
   },
   // #231/AK1: first row from the start, each further one a year after the previous one
   "wded-add": () => {

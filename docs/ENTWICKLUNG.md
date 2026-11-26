@@ -957,6 +957,14 @@ ein (`BUILTIN`).
   (`DEVIATION_HINT`). `IncomeDeduction.taxBill` (Steuerjahr, nur gespeichert, wenn gesetzt) geht über `CDeduction` und
   `YearDeductions` in `TaxBasis.taxBill` und `YearTaxBasis.taxBill` (Tooltip der Abzüge); die Oberfläche entfernt
   es, wenn eine Zeile von Hand geändert wird.
+- **Abzüge im Einzelnen unter «Experte» (#275):** nur Darstellung (`app.js`, `R.taxes`), Rechnung und Dateiformat
+  unverändert. `<details id="tax-expert">` enthält `#tax-deductions`, `#tax-wealth-deductions`, `#tax-indexed` und mit
+  eigenen Tabellen deren Karten; offen, wenn `expertValues(state)` gilt (eigene Tabellen, Zeile `kind ≠ canton`,
+  `extra ≠ 0` oder `taxBill`, Abzug vom Vermögen ≠ 0, einmalige Abzüge vom Vermögen, `indexed: false`) oder ein Fehler
+  darin steht; der Zustand des Aufklappens (`taxOpen.expert`) gilt nur bis zum Öffnen einer anderen Planung.
+  `#tax-oneoff` (einmalige Abzüge vom Einkommen) steht ausserhalb, `#tax-p3a` unter den Annahmen. Aktion `pk-buyin`
+  (Link `#pk-buyin<n>` der PK-Karte): `taxes.oneOffDeductions` += `{ year: Startjahr + 1, label: «PK-Einkauf» [Name],
+  amount: 0 }`, dann Abschnitt Steuern mit Fokus auf dem Steuerjahr.
 - **Steuerbarer Ertrag des Vermögens (#149):** `taxes.investmentYield` = `{ stocks, bonds }` (Satz pro Jahr, Anteil 0
   bis 1; nur gespeichert, wenn ein Satz ≠ 0; fehlt er, 0 % – bestehende Planungen und die Golden-Dateien rechnen
   unverändert). Neue Planungen (`api::blank_plan`) haben 2 % / 1 % (Dividendenrendite eines globalen Aktienindex,

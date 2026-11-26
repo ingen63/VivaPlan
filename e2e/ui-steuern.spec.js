@@ -18,10 +18,13 @@ async function toLocation(page) {
   await openSettings(page);
 }
 
-/** #272/AK2: opens the settings below the line «Annahmen» (closed by default in the mode «Wohnort»). */
+/** #272/AK2: opens the settings below the line «Annahmen» (closed by default in the mode «Wohnort») and #275/AK1 the
+ *  area «Experte» with the deductions in detail. */
 async function openSettings(page) {
   if (!(await page.locator("#tax-settings").evaluate(d => d.open))) await page.locator("#tax-assumptions").click();
+  if (!(await page.locator("#tax-expert").evaluate(d => d.open))) await page.locator("#tax-expert-summary").click();
   await expect(page.locator("#tax-deductions")).toBeVisible();
+  await expect(page.locator("#tax-p3a")).toBeVisible();
 }
 
 /** #272: back to own tables (since #272 only for plans that use them, here directly in the plan). */
@@ -319,9 +322,10 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
   test("AK1, AK2: pillar 3a deduction with the maximum per person, can be switched off", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Steuern");
-    const chk = card(page).locator('input[data-path="taxes.deductPillar3a"]');
+    // #275/AK1: the check box among the assumptions (card #tax-p3a)
+    const chk = page.locator('#tax-p3a input[data-path="taxes.deductPillar3a"]');
     await expect(chk).not.toBeChecked();       // existing plan: no new deduction
-    await expect(card(page)).toContainText(/höchstens 7'258 Franken je Person/i); // #241/AK6: in the ⓘ
+    await expect(page.locator("#tax-p3a")).toContainText(/höchstens 7'258 Franken je Person/i); // #241/AK6: in the ⓘ
     await chk.check();
     expect(await page.evaluate(() => state.taxes.deductPillar3a)).toBe(true);
     await chk.uncheck();
@@ -530,17 +534,19 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     const errors = await open(page);
     await withRows(page, [{ from: "start", kind: "own", amount: 0, rate: 0 }], null);
     const y = await startYear(page);
-    await expect(card(page).locator("#ded-oneoff")).toContainText("Einmalige Abzüge");
-    await card(page).locator('button[data-action="ded-oneoff-add"]').click();
+    // #275/AK2: in their own card outside «Experte»
+    const oneOff = page.locator("#tax-oneoff");
+    await expect(oneOff.locator("h3")).toHaveText("Einmalige Abzüge");
+    await oneOff.locator('button[data-action="ded-oneoff-add"]').click();
     expect(await page.evaluate(() => state.taxes.oneOffDeductions)).toEqual([{ year: y + 1, label: "Einmaliger Abzug", amount: 0 }]);
-    const row = card(page).locator('[data-oneoff-row="0"]');
+    const row = oneOff.locator('[data-oneoff-row="0"]');
     await expect(row.locator('input[data-path="taxes.oneOffDeductions.0.year"]')).toHaveValue(String(y + 1));
     await row.locator('input[data-path="taxes.oneOffDeductions.0.label"]').fill("PK-Einkauf");
     await row.locator('input[data-path="taxes.oneOffDeductions.0.label"]').press("Tab");
     await row.locator('input[data-path="taxes.oneOffDeductions.0.amount"]').fill("50000");
     await row.locator('input[data-path="taxes.oneOffDeductions.0.amount"]').press("Tab");
     expect(await page.evaluate(() => state.taxes.oneOffDeductions[0])).toEqual({ year: y + 1, label: "PK-Einkauf", amount: 50000 });
-    await card(page).locator('[data-oneoff-row="0"] button[data-action="list-del"]').click();
+    await oneOff.locator('[data-oneoff-row="0"] button[data-action="list-del"]').click();
     expect(await page.evaluate(() => state.taxes.oneOffDeductions)).toEqual([]);
     await noErrors(page, errors);
   });
@@ -567,8 +573,10 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     await withRows(page, [{ from: "start", kind: "canton", extra: -1 }], [{ year: y - 1, label: "", amount: -5 }]);
     expect(await page.evaluate(() => lastIssues.filter(i => i.severity === "error").map(i => [i.section, i.field]))).toEqual([
       ["taxes", "taxes.deductions.0.extra"], ["taxes", "taxes.oneOffDeductions.0.amount"], ["taxes", "taxes.oneOffDeductions.0.year"]]);
-    await expect(card(page).locator(".ferr")).toHaveCount(3);
-    await expect(card(page)).toContainText(`Das Steuerjahr ${y - 1} liegt ausserhalb der Simulation`);
+    // #275/AK2: the one-off deductions in their own card
+    await expect(card(page).locator(".ferr")).toHaveCount(1);
+    await expect(page.locator("#tax-oneoff .ferr")).toHaveCount(2);
+    await expect(page.locator("#tax-oneoff")).toContainText(`Das Steuerjahr ${y - 1} liegt ausserhalb der Simulation`);
     await noErrors(page, errors);
   });
 });
@@ -784,7 +792,7 @@ test.describe("Large pillar 3a for persons without a pension fund (#152)", () =>
     await nav(page, "Säule 3a");
     await expect(page.locator("#main")).toContainText("0 bis 36'288, höchstens 20 % des Erwerbseinkommens");
     await nav(page, "Steuern");
-    await expect(page.locator("#tax-deductions")).toContainText("ohne Pensionskasse 20 % des Erwerbseinkommens, höchstens 36'288 Franken");
+    await expect(page.locator("#tax-p3a")).toContainText("ohne Pensionskasse 20 % des Erwerbseinkommens, höchstens 36'288 Franken");
     await noErrors(page, errors);
   });
 });
@@ -1035,22 +1043,22 @@ test.describe("Clearer card of the deductions from income (#241)", () => {
     await expect(card(page).locator("h3 .infopop .infobody #ded-hint")).toContainText("Je Zeile gilt der Vorschlag des Kantons");
     await expect(card(page).locator("h3 .infopop .infobody #ded-own-hint")).toContainText("Eigener Wert: Betrag pro Jahr");
     await expect(card(page).locator(":scope > p.hint")).toHaveCount(0);
-    const chk = card(page).locator(".dedp3a label.check");
+    // #275/AK1: the check box for pillar 3a among the assumptions, outside «Experte»
+    const p3a = page.locator("#tax-settings #tax-p3a");
+    const chk = p3a.locator(".dedp3a label.check");
     await expect(chk).toHaveText("Einzahlungen in die Säule 3a abziehen");
-    await expect(card(page).locator(".dedp3a .infopop .infobody")).toContainText("Höchstens 7'258 Franken je Person und Jahr");
-    await expect(card(page).locator(".dedp3a .infopop .infobody")).toContainText("indirekte Amortisation");
+    await expect(p3a.locator(".dedp3a .infopop .infobody")).toContainText("Höchstens 7'258 Franken je Person und Jahr");
+    await expect(p3a.locator(".dedp3a .infopop .infobody")).toContainText("indirekte Amortisation");
     await noErrors(page, errors);
   });
 
-  test("AK7: one-off deductions under a subtitle of their own, after the rows", async ({ page }) => {
+  test("AK7: one-off deductions under a title of their own, apart from the rows", async ({ page }) => {
     const errors = await open(page);
     await withRows(page, [{ from: "start", kind: "canton" }]);
-    const sub = card(page).locator("#ded-oneoff h4.dedsubtitle");
+    // #275/AK2: since #275 a card of their own outside «Experte» (before it, directly reachable)
+    const sub = page.locator("#tax-oneoff h3");
     await expect(sub).toHaveText("Einmalige Abzüge");
-    expect(await card(page).evaluate(c => {
-      const rows = c.querySelector(".rows"), h = c.querySelector("#ded-oneoff h4");
-      return !rows.contains(h) && !!(rows.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING);
-    })).toBe(true);
+    expect(await card(page).evaluate(c => !c.contains(document.querySelector("#tax-oneoff")) && !document.querySelector("#tax-expert").contains(document.querySelector("#tax-oneoff")))).toBe(true);
     await noErrors(page, errors);
   });
 
@@ -1071,7 +1079,7 @@ test.describe("Clearer card of the deductions from income (#241)", () => {
     await expect(row(page, 0).locator("details.deddetails, button[data-action='ded-extra-show']")).toHaveCount(0);
     await expect(card(page).locator("h3 .infopop .infobody #ded-hint")).toContainText("Mit eigenen Tabellen");
     await expect(card(page).locator(":scope > p.hint")).toHaveCount(0);
-    await expect(card(page).locator("#ded-oneoff h4.dedsubtitle")).toHaveText("Einmalige Abzüge");
+    await expect(page.locator("#tax-oneoff h3")).toHaveText("Einmalige Abzüge");
     expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 9000, rate: 0 }]);
     await noErrors(page, errors);
   });
@@ -1124,7 +1132,7 @@ test.describe("Input help from the assessment without double pillar 3a (#251)", 
     await page.locator('button[data-action="ded-calc-apply"]').click();
     expect(await page.evaluate(() => state.taxes.deductions[0].amount)).toBe(33000);
     // switched off: the field does not count
-    await card(page).locator('input[data-path="taxes.deductPillar3a"]').uncheck();
+    await page.locator('#tax-p3a input[data-path="taxes.deductPillar3a"]').uncheck(); // #275/AK1: among the assumptions
     await expect(page.locator("#ded-calc-result")).toHaveText("40'000");
     await expect(page.locator("#ded-calc-p3a-hint")).toBeHidden();
     await noErrors(page, errors);
@@ -1344,7 +1352,8 @@ test.describe("Place of residence as the default, other settings as assumptions 
     // AK1: first only the municipality (search over all municipalities) and the church; no own tables, no switch
     await expect(muni(page)).toBeVisible();
     await expect(page.locator('select[data-path="taxes.location.church"]')).toBeVisible();
-    await expect(page.locator("#tax-to-location, #tax-expert, #tax-mode")).toHaveCount(0);
+    await expect(page.locator("#tax-to-location, #tax-mode")).toHaveCount(0);
+    await expect(page.locator("#tax-expert")).not.toHaveAttribute("open", ""); // #275/AK1: closed
     await expect(page.locator('input[data-path="taxes.income.0.0"]')).toHaveCount(0);
     await expect(page.locator("#tax-deductions")).toBeHidden();
     await expect(page.locator("#tax-wealth-deductions")).toBeHidden();
@@ -1360,12 +1369,12 @@ test.describe("Place of residence as the default, other settings as assumptions 
     expect(await page.evaluate(() => collectIssues().filter(i => i.sec === "taxes"))).toEqual([]);
     // AK2: a click on the line opens the settings; a change shows in the line
     await assumptions(page).click();
-    await expect(page.locator("#tax-deductions")).toBeVisible();
+    await expect(page.locator("#tax-p3a")).toBeVisible();
     await expect(page.locator("#tax-investment-yield")).toBeVisible();
     await page.locator('input[data-path="taxes.deductPillar3a"]').uncheck();
     await previewIdle(page);
     await expect(assumptions(page)).toContainText("Abzug Säule 3a: nein");
-    await expect(page.locator("#tax-deductions")).toBeVisible(); // stays open after the change
+    await expect(page.locator("#tax-p3a")).toBeVisible(); // stays open after the change
     await noErrors(page, errors);
   });
 
@@ -1429,7 +1438,7 @@ test.describe("Place of residence as the default, other settings as assumptions 
     expect(await page.evaluate(() => [state.taxes.mode, state.taxes.location])).toEqual([undefined, undefined]);
     // AK5: own tables under «Experte», no mode of equal rank
     await expect(page.locator("#tax-mode")).toHaveCount(0);
-    await expect(page.locator("#tax-expert summary")).toContainText("Experte");
+    await expect(page.locator("#tax-expert-summary")).toContainText("Experte");
     await expect(page.locator('#tax-expert input[data-path="taxes.income.0.0"]')).toBeVisible();
     await expect(page.locator("#tax-own")).toContainText("Experte");
     const before = await page.evaluate(() => taxEstimates.find(e => e.kind === "first"));
@@ -1438,7 +1447,7 @@ test.describe("Place of residence as the default, other settings as assumptions 
     // AK6: knob «Auf Wohnort umstellen»; after the choice of the municipality the hint before and after
     await page.locator("#tax-to-location").click();
     expect(await page.evaluate(() => state.taxes.mode)).toBe("location");
-    await expect(page.locator("#tax-expert")).toHaveCount(0);
+    await expect(page.locator('input[data-path="taxes.income.0.0"]')).toHaveCount(0);
     await expect(page.locator("#tax-switch-hint")).toHaveCount(0);
     await choose(page, "ZH", "Zürich");
     await previewIdle(page);
@@ -1635,5 +1644,140 @@ test.describe("Deductions from the last tax bill (#274)", () => {
     await expect(page.locator("#taxbill-err-taxableWealth")).toContainText("Bitte diesen Wert eingeben");
     await expect(page.locator("#taxbill-apply")).toBeDisabled();
     await noErrors(page, errors);
+  });
+});
+
+test.describe("Deductions in detail under «Experte» (#275)", () => {
+  /** New plan in Zurich (mode «Wohnort», defaults of #272), section «Steuern». */
+  async function newPlan(page) {
+    await page.locator('button[data-action="new"]').click();
+    await page.waitForFunction(() => state.taxes.mode === "location" && state.wealth.stocks === 0);
+    await page.evaluate(() => { state.taxes.location = { canton: "ZH", municipality: 261, church: "none" }; markDirty(); });
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+  /** Opens the current plan anew after `change` (like a file), so that the open state of «Experte» is decided anew. */
+  async function reopen(page, change) {
+    await page.evaluate(async change => {
+      const plan = structuredClone(state);
+      new Function("plan", change)(plan);
+      await adopt(plan, false);
+      renderSection();
+    }, change);
+    await previewIdle(page);
+  }
+  const expert = page => page.locator("#tax-expert");
+  const isOpen = page => expert(page).evaluate(d => d.open);
+
+  test("AK1, AK4: deductions in detail, from wealth and the tariffs closed under «Experte»; one-off deductions outside", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    await expect(page.locator("#tax-expert-summary")).toContainText("Experte: Abzüge im Einzelnen, Abzüge vom Vermögen, Tarife mit der Teuerung");
+    expect(await isOpen(page)).toBe(false);
+    for (const id of ["#tax-deductions", "#tax-wealth-deductions", "#tax-indexed"]) {
+      await expect(expert(page).locator(id)).toHaveCount(1);
+      await expect(page.locator(id)).toBeHidden();
+    }
+    await expect(page.locator('#tax-expert input[data-path="taxes.indexed"]')).toHaveCount(1);
+    // AK2: one-off deductions directly reachable (neither under «Annahmen» nor under «Experte»)
+    await expect(page.locator("#tax-oneoff")).toBeVisible();
+    await expect(page.locator('#tax-oneoff button[data-action="ded-oneoff-add"]')).toBeVisible();
+    // the pillar 3a deduction stays among the assumptions
+    await expect(page.locator('#tax-settings input[data-path="taxes.deductPillar3a"]')).toHaveCount(1);
+    // AK3: opening and closing changes nothing in the plan
+    const before = await page.evaluate(() => JSON.stringify(state));
+    await page.locator("#tax-expert-summary").click();
+    await expect(page.locator("#tax-deductions")).toBeVisible();
+    await expect(page.locator("#tax-wealth-deductions")).toBeVisible();
+    await expect(page.locator("#tax-indexed")).toBeVisible();
+    await page.locator("#tax-expert-summary").click();
+    await expect(page.locator("#tax-deductions")).toBeHidden();
+    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);
+    // a plan without own values opens closed again
+    await reopen(page, "");
+    expect(await isOpen(page)).toBe(false);
+    await noErrors(page, errors);
+  });
+
+  test("AK1, AK4: plans with own values under «Experte» open the area", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    for (const change of [
+      "plan.taxes.deductions = [{ from: 'start', kind: 'own', amount: 20000, rate: 0 }]",
+      "plan.taxes.deductions = [{ from: 'start', kind: 'canton', extra: 3000 }]",
+      "plan.taxes.wealthDeductions = [{ from: 'start', amount: 50000 }]",
+      "plan.taxes.oneOffWealthDeductions = [{ year: 2030, label: 'x', amount: 1000 }]",
+      "plan.taxes.indexed = false",
+    ]) {
+      await reopen(page, change);
+      expect(await isOpen(page), change).toBe(true);
+      await expect(page.locator("#tax-deductions"), change).toBeVisible();
+      await reopen(page, "delete plan.taxes.deductions; delete plan.taxes.wealthDeductions; delete plan.taxes.oneOffWealthDeductions; plan.taxes.indexed = true;");
+      expect(await isOpen(page), change).toBe(false);
+    }
+    // own one-off deductions from income do not open «Experte» (they stand outside)
+    await reopen(page, "plan.taxes.oneOffDeductions = [{ year: 2030, label: 'x', amount: 1000 }]");
+    expect(await isOpen(page)).toBe(false);
+    await noErrors(page, errors);
+  });
+
+  test("AK1: the example plan with own tables opens «Experte» with tables and deductions", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+    expect(await page.evaluate(() => state.taxes.mode)).toBeUndefined();
+    expect(await isOpen(page)).toBe(true);
+    await expect(page.locator("#tax-expert-summary")).toContainText("Eigene Tabellen");
+    await expect(page.locator('#tax-expert input[data-path="taxes.income.0.0"]')).toBeVisible();
+    await expect(page.locator("#tax-expert #tax-deductions")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK4: link «Einkauf als Abzug erfassen» in the pension fund card creates a one-off deduction", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    const y = await page.evaluate(() => Math.floor(startM() / 12));
+    await nav(page, "Vorsorge");
+    const link = page.locator("#pk-buyin0");
+    await expect(link).toHaveText("Einkauf als Abzug erfassen");
+    await link.click();
+    await expect(page.locator("#main h2").first()).toContainText("Steuern");
+    expect(await page.evaluate(() => state.taxes.oneOffDeductions)).toEqual([{ year: y + 1, label: "PK-Einkauf", amount: 0 }]);
+    const year = page.locator('#tax-oneoff [data-oneoff-row="0"] input[data-path="taxes.oneOffDeductions.0.year"]');
+    await expect(year).toBeVisible();
+    await expect(year).toBeFocused();
+    await expect(year).toHaveValue(String(y + 1));
+    // «Experte» stays closed: the one-off deduction is directly reachable
+    expect(await isOpen(page)).toBe(false);
+    // the year and the amount of the buy-in are set like any one-off deduction
+    await year.fill(String(y + 3));
+    await year.press("Tab");
+    const amount = page.locator('input[data-path="taxes.oneOffDeductions.0.amount"]');
+    await amount.fill("40000");
+    await amount.press("Tab");
+    expect(await page.evaluate(() => state.taxes.oneOffDeductions)).toEqual([{ year: y + 3, label: "PK-Einkauf", amount: 40000 }]);
+    // without pension fund the link is locked
+    await page.evaluate(() => { state.household.persons[0].noPensionFund = true; markDirty(); });
+    await nav(page, "Vorsorge");
+    await expect(page.locator("#pk-buyin0")).toBeDisabled();
+    await noErrors(page, errors);
+  });
+
+  test("AK2: with two persons the description names the person", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { ACTIONS["partner-add"](); state.household.persons[1].name = "Beat"; renderSection(); });
+    const name = await page.evaluate(() => state.household.persons[1].name);
+    await nav(page, "Vorsorge");
+    await page.locator("#pk-buyin1").click();
+    const list = await page.evaluate(() => state.taxes.oneOffDeductions);
+    expect(list[list.length - 1].label).toBe(`PK-Einkauf ${name}`);
+    await noErrors(page, errors);
+  });
+
+  test("AK5: help in four languages", async () => {
+    const help = l => fs.readFileSync(path.join(__dirname, "..", "crates", "app", "ui", "hilfe", l, "10-editor.md"), "utf8");
+    for (const [l, words] of [["de", ["Einkauf als Abzug erfassen", "Abzüge im Einzelnen"]], ["en", ["Enter buy-in as a deduction", "deductions in detail"]],
+      ["fr", ["Saisir le rachat comme déduction", "déductions en détail"]], ["it", ["Registrare il riscatto come deduzione", "deduzioni in dettaglio"]]])
+      for (const w of words) expect(help(l), `${l} ${w}`).toContain(w);
   });
 });
