@@ -768,6 +768,40 @@
     "text": "Large pillar 3a: the maximum amount must be 0 or more."
   },
   {
+    "code": "limits_inflation_from",
+    "params": {},
+    "template": "Inflation in the parametric model: the first year must be a whole year between 1000 and 3000.",
+    "text": "Inflation in the parametric model: the first year must be a whole year between 1000 and 3000."
+  },
+  {
+    "code": "inflation_from_too_few",
+    "params": {
+      "last": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "min": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Inflation in the parametric model from {year} (settings): the time series ends in {last}; at least {min} years are needed.",
+    "text": "Inflation in the parametric model from Person 2 (settings): the time series ends in Person 2; at least Person 2 years are needed."
+  },
+  {
     "code": "milestone_age_limits",
     "params": {
       "age": {

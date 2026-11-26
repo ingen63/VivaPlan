@@ -155,7 +155,7 @@ Der Editor führt durch zwölf Abschnitte:
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
 
 **Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse, die
-Maximalbeträge der kleinen und der grossen Säule 3a und die Tragbarkeit der Banken (höchstens vom Einkommen, kalkulatorischer
+Maximalbeträge der kleinen und der grossen Säule 3a, das Startjahr der Teuerung im parametrischen Modell (Standard 1950) und die Tragbarkeit der Banken (höchstens vom Einkommen, kalkulatorischer
 Zins, Nebenkosten, höchste Belehnung; Standard 33 %, 5 %, 1 %, 80 %; dazu Vermögensverzehr in der Tragbarkeit, Standard aus
 mit 3 % pro Jahr, und höchste Belehnung ab der Pensionierung, Standard 65 %, #266). Sie gelten für alle Planungen auf dem Gerät und werden
 nicht in der Planungsdatei gespeichert; der Abschnitt «Immobilien» nennt die geltende Tragbarkeit in einem Hinweis. Ältere
@@ -178,7 +178,9 @@ laufende **Prüfung** meldet Fehler und Hinweise, bevor gerechnet wird. Eine **Z
 - **Parametrisch:** Monte Carlo mit einem Aktienmodell in Tagesschritten, mit breiten Rändern (Student-t) und
   Kurssprüngen. Die Parameter folgen dem gewählten Aktienindex (Vorschlagswerte, so gewählt, dass die Jahresrenditen
   dem historischen Bootstrap entsprechen) oder werden selbst gesetzt. Obligationen und Inflation sind zufällig und mit
-  den Aktien korreliert, mit Mittelwert, Streuung und Korrelation der Reihe aus der Anlagestrategie.
+  den Aktien korreliert, mit Mittelwert, Streuung und Korrelation der Reihe aus der Anlagestrategie. Die Teuerung
+  schätzt das Modell nur aus den Jahren ab einem Startjahr (Einstellung, Standard 1950), weil die Kriegsjahre ihre
+  Streuung von rund 2.3 % auf 5 % pro Jahr treiben; der Tab «Simulation» nennt den Zeitraum (z. B. «Teuerung 1950–2020»).
 
 Die Läufe werden parallel auf allen Prozessorkernen gerechnet, 50 000 Monte-Carlo-Pfade dauern wenige Sekunden. Gleiche
 Einstellungen ergeben immer gleiche Ergebnisse.

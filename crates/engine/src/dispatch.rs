@@ -116,7 +116,17 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
                 .and_then(Value::as_str)
                 .ok_or_else(|| msg!(path_missing))?;
             // #142: like the desktop app, relative to the folder of the project file (`planPath`)
-            to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib).map_err(|e| e.message())?)?
+            // #279: first year of the inflation in the parametric model from the settings
+            let from = args
+                .get("inflationFrom")
+                .and_then(Value::as_f64)
+                .map(|y| crate::settings::Limits {
+                    inflation_from: y,
+                    ..Default::default()
+                })
+                .unwrap_or_default()
+                .inflation_from_year();
+            to(&api::series_info(p, &dir_of(args, "planPath", fallback), lib, from).map_err(|e| e.message())?)?
         }
         "optimize" => {
             let mut req = args.get("request").cloned().unwrap_or(json!({}));
@@ -224,6 +234,27 @@ mod tests {
     fn issue_263_ak4_dev_server_reports_plan_dir_as_null() {
         let info = call("app_info", &json!({}), &lib(), Path::new("/")).unwrap();
         assert_eq!(info.as_object().unwrap().get("planDir"), Some(&Value::Null));
+    }
+
+    /// #279/AK5, AK6: `series_info` takes the first year of the inflation (`inflationFrom`, from the settings), without
+    /// it 1950; the suggestion names the years of the inflation.
+    #[test]
+    fn issue_279_ak5_series_info_takes_the_first_year() {
+        let years = |args: Value| {
+            let j = call("series_info", &args, &lib(), Path::new("/")).unwrap()["parametric"]["joint"].clone();
+            (j["inflationFirst"].as_i64(), j["inflationLast"].as_i64())
+        };
+        let path = "library:Welt (JST).csv";
+        assert_eq!(years(json!({ "path": path })), (Some(1950), Some(2020)));
+        assert_eq!(
+            years(json!({ "path": path, "inflationFrom": 1970 })),
+            (Some(1970), Some(2020))
+        );
+        assert_eq!(
+            years(json!({ "path": path, "inflationFrom": 1800 })),
+            (Some(1900), Some(2020))
+        );
+        assert_eq!(years(json!({ "path": path, "inflationFrom": 2015 })), (None, None));
     }
 
     /// #142: `series_info` reads a relative path in the folder of the project file (`planPath`), without a project file in

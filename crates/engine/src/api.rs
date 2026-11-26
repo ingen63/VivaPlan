@@ -201,13 +201,19 @@ fn preview_returns(p: &mut Plan, base_dir: &Path, library: Option<&Path>) -> Opt
         ReturnSource::Parametric => {
             // #100/#101: with a series the suggested values (with «auto») and the means of bonds and inflation
             let ds = crate::batch::returns_series(p, base_dir, library).ok().flatten();
-            let (q, _) = crate::calibrate::resolve(&p.returns.parametric.clone().unwrap_or_default(), ds.as_ref());
+            let from = p.limits.inflation_from_year();
+            let (q, _) =
+                crate::calibrate::resolve(&p.returns.parametric.clone().unwrap_or_default(), ds.as_ref(), from);
             let g = (q.mu - 0.5 * q.sigma * q.sigma + q.jump_lambda * q.jump_mu).exp() - 1.0;
             let f = &mut p.returns.fixed;
             f.stocks = Series::Number(g);
             match ds {
                 Some(ds) => {
-                    let (_, b, i) = ds.averages();
+                    let (_, b, mut i) = ds.averages();
+                    // #279: the inflation as the model estimates it (from the first year of the settings)
+                    if let Some(j) = crate::calibrate::joint(&crate::calibrate::yearly(&ds), from) {
+                        i = j.inflation_mean;
+                    }
                     f.bonds = Series::Number(b);
                     f.inflation = Series::Number(i);
                     Some(msg!(preview_model_and_series, stocks = g, bonds = b, inflation = i))
@@ -489,6 +495,12 @@ pub fn run_as(job: Option<crate::progress::JobId>, plan: &Value, base_dir: &Path
     if let Some(i) = data.as_ref().and_then(|d| currency_issue(d, &p.project.currency)) {
         issues.push(i);
     }
+    // #279/AK4: too few years of inflation from the first year of the settings: no run with too few years
+    if let Some(i) = data.as_ref().and_then(|d| inflation_from_issue(&p, d)) {
+        let m = i.message.clone();
+        issues.push(i);
+        return fail(issues, m);
+    }
     let source = match batch::path_source(&p, &sim, data.as_ref()) {
         Ok(x) => x,
         Err(e) => return fail(issues, e.message()),
@@ -684,6 +696,28 @@ fn run_scenarios(
     Ok(ScenariosOut { params, results })
 }
 
+/// #279/AK4: Error if the parametric model has fewer than [`crate::calibrate::MIN_YEARS`] years of inflation from the
+/// first year of the settings (`limits.inflationFrom`) while the whole series would have enough.
+pub fn inflation_from_issue(p: &Plan, ds: &DataSet) -> Option<Issue> {
+    use crate::calibrate::{joint, yearly, MIN_YEARS};
+    if p.returns.source != ReturnSource::Parametric {
+        return None;
+    }
+    let y = yearly(ds);
+    let from = p.limits.inflation_from_year();
+    (joint(&y, i32::MIN).is_some() && joint(&y, from).is_none()).then(|| Issue {
+        severity: Severity::Error,
+        section: "returns",
+        message: msg!(
+            inflation_from_too_few,
+            year = from,
+            last = y.first + y.inflation.len() as i32 - 1,
+            min = MIN_YEARS
+        ),
+        field: Some("limits.inflationFrom".into()),
+    })
+}
+
 /// Warning if the series is in a different currency than the plan.
 pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
     let c = ds.currency()?;
@@ -706,7 +740,13 @@ pub fn currency_issue(ds: &DataSet, plan_currency: &str) -> Option<Issue> {
 
 /// Short info about a series (for display in the editor).
 /// `series` is a reference to a file or an investment strategy (`strategy:<JSON>`, #69).
-pub fn series_info(series: &str, base_dir: &Path, library: Option<&Path>) -> crate::Result<SeriesInfo> {
+/// #279: `inflation_from` is the first year of the inflation in the parametric model (settings).
+pub fn series_info(
+    series: &str,
+    base_dir: &Path,
+    library: Option<&Path>,
+    inflation_from: i32,
+) -> crate::Result<SeriesInfo> {
     let (ds, parts) = match crate::strategy::from_reference_with_parts(series, library) {
         Some(r) => r?,
         None => (
@@ -716,7 +756,7 @@ pub fn series_info(series: &str, base_dir: &Path, library: Option<&Path>) -> cra
     };
     Ok(SeriesInfo {
         parts,
-        parametric: Some(crate::calibrate::suggestion(&ds)),
+        parametric: Some(crate::calibrate::suggestion(&ds, inflation_from)),
         ..SeriesInfo::of(&ds)
     })
 }
@@ -925,6 +965,78 @@ mod tests {
 
     fn example() -> Value {
         serde_json::from_str(include_str!("../assets/new.vplan")).unwrap()
+    }
+
+    /// #279/AK4: With fewer than 10 years of inflation from the first year of the settings the parametric run stops
+    /// with an error at the setting; AK7: the historical sources do not depend on it.
+    // slow: runs of the example plan with several return sources
+    #[test]
+    fn issue_279_ak4_ak7_too_few_years_stop_only_the_parametric_model() {
+        let mut v = example();
+        v["returns"]["source"] = json!("parametric");
+        v["returns"]["parametric"]["paths"] = json!(10);
+        v["limits"] = json!({ "inflationFrom": 2100 });
+        let out = run(&v, Path::new("."), None);
+        assert!(out.batch.is_none() && out.single.is_none());
+        let e = out.error.unwrap();
+        assert_eq!(e.code(), "inflation_from_too_few", "{e}");
+        assert!(e.contains("from 2100 (settings)"), "{e}");
+        let i = out.issues.iter().find(|i| i.message == e).unwrap();
+        assert_eq!(
+            (i.severity, i.field.as_deref()),
+            (Severity::Error, Some("limits.inflationFrom"))
+        );
+        // A year before the series and the default compute
+        for from in [json!(1800), json!(null)] {
+            v["limits"] = json!({ "inflationFrom": from });
+            if from.is_null() {
+                v.as_object_mut().unwrap().remove("limits");
+            }
+            let out = run(&v, Path::new("."), None);
+            assert!(out.error.is_none() && out.batch.is_some(), "{:?}", out.error);
+        }
+        // AK7: historical sources ignore the setting
+        v["limits"] = json!({ "inflationFrom": 2100 });
+        for (src, k) in [
+            ("historical", "single"),
+            ("rolling", "batch"),
+            ("bootstrap", "batch"),
+            ("fixed", "single"),
+        ] {
+            let mut w = v.clone();
+            w["returns"]["source"] = json!(src);
+            w["returns"]["bootstrap"]["paths"] = json!(10);
+            let with = serde_json::to_value(run(&w, Path::new("."), None)).unwrap();
+            w.as_object_mut().unwrap().remove("limits");
+            let without = serde_json::to_value(run(&w, Path::new("."), None)).unwrap();
+            assert!(
+                with["error"].is_null() && !with[k].is_null(),
+                "{src}: {}",
+                with["error"]
+            );
+            assert_eq!(with[k], without[k], "{src}");
+        }
+    }
+
+    /// #279/AK2: The preview of the parametric model shows the inflation from the first year of the settings.
+    // slow: preview of the example plan twice
+    #[test]
+    fn issue_279_ak2_preview_inflation_from_the_first_year() {
+        let mut v = example();
+        v["returns"]["source"] = json!("parametric");
+        v["returns"]["parametric"]["paths"] = json!(10);
+        let p: Plan = serde_json::from_value(v.clone()).unwrap();
+        let ds = batch::returns_series(&p, Path::new("."), None).unwrap().unwrap();
+        let y = crate::calibrate::yearly(&ds);
+        let want = |from| crate::calibrate::joint(&y, from).unwrap().inflation_mean;
+        let shown = |v: &Value| preview(v, Path::new("."), None).basis.unwrap().to_string();
+        let default = shown(&v);
+        v["limits"] = json!({ "inflationFrom": 1800 });
+        let whole = shown(&v);
+        assert_ne!(default, whole);
+        let pct = |x: f64| format!("inflation {:.1} %", x * 100.0);
+        assert!(default.contains(&pct(want(1950))), "{default}");
+        assert!(whole.contains(&pct(want(1800))), "{whole}");
     }
 
     /// #162/AK1: The temporary file is in the folder of the target file (otherwise the replacement would not be atomic and would fail

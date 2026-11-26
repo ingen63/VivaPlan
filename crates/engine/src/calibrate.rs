@@ -9,6 +9,8 @@
 //! - **Bonds and inflation (#101):** Mean, spread and the 3×3 correlation (stocks, bonds,
 //!   inflation) of the annual values from the same series the historical bootstrap uses. The years are
 //!   independent of each other.
+//! - **Inflation period (#279):** Mean and spread of the inflation and its correlation with stocks and bonds only
+//!   from the years from `limits.inflationFrom` (default 1950); the war years drive the spread from 2.3 % to 5 %.
 
 use serde::Serialize;
 
@@ -319,6 +321,9 @@ pub fn yearly(ds: &DataSet) -> YearlyTriples {
 pub struct Joint {
     pub first: i32,
     pub last: i32,
+    /// #279: Years the inflation (mean, spread, correlations) is estimated from.
+    pub inflation_first: i32,
+    pub inflation_last: i32,
     pub bonds_mean: f64,
     pub bonds_sd: f64,
     pub inflation_mean: f64,
@@ -327,7 +332,10 @@ pub struct Joint {
     pub corr: [[f64; 3]; 3],
 }
 
-pub fn joint(y: &YearlyTriples) -> Option<Joint> {
+/// Joint metrics of the annual values. Stocks and bonds from the whole series; inflation and its correlations
+/// only from the years from `inflation_from` (#279; a year before the series uses the whole series). `None` with
+/// fewer than [`MIN_YEARS`] years in the whole series or from `inflation_from`.
+pub fn joint(y: &YearlyTriples, inflation_from: i32) -> Option<Joint> {
     let n = y.stocks.len();
     if n < MIN_YEARS || y.bonds.len() != n || y.inflation.len() != n {
         return None;
@@ -336,21 +344,34 @@ pub fn joint(y: &YearlyTriples) -> Option<Joint> {
     if all.iter().any(|c| c.iter().any(|v| !v.is_finite())) {
         return None;
     }
+    let skip = (inflation_from.saturating_sub(y.first)).clamp(0, n as i32) as usize;
+    if n - skip < MIN_YEARS {
+        return None;
+    }
+    let tail = [&y.stocks[skip..], &y.bonds[skip..], &y.inflation[skip..]];
     let mut corr = [[1.0; 3]; 3];
     for a in 0..3 {
         for b in 0..3 {
             if a != b {
-                corr[a][b] = self::corr(all[a], all[b]);
+                // Pairs with the inflation only from its years
+                corr[a][b] = if a == 2 || b == 2 {
+                    self::corr(tail[a], tail[b])
+                } else {
+                    self::corr(all[a], all[b])
+                };
             }
         }
     }
+    let last = y.first + n as i32 - 1;
     Some(Joint {
         first: y.first,
-        last: y.first + n as i32 - 1,
+        last,
+        inflation_first: y.first + skip as i32,
+        inflation_last: last,
         bonds_mean: mean(&y.bonds),
         bonds_sd: sd(&y.bonds),
-        inflation_mean: mean(&y.inflation),
-        inflation_sd: sd(&y.inflation),
+        inflation_mean: mean(tail[2]),
+        inflation_sd: sd(tail[2]),
         corr,
     })
 }
@@ -470,7 +491,8 @@ fn stock_series(ds: &DataSet) -> StockSeries {
     })
 }
 
-pub fn suggestion(ds: &DataSet) -> Suggestion {
+/// Suggested values of a series; the inflation from the years from `inflation_from` (#279).
+pub fn suggestion(ds: &DataSet, inflation_from: i32) -> Suggestion {
     let y = yearly(ds);
     let s = stock_series(ds);
     let stocks = fit_stocks(&bootstrap_years(&s));
@@ -481,13 +503,18 @@ pub fn suggestion(ds: &DataSet) -> Suggestion {
     Suggestion {
         stock_years: stocks.map(|_| (s.first.year(), last)),
         stocks,
-        joint: joint(&y),
+        joint: joint(&y, inflation_from),
     }
 }
 
 /// Parameters the model computes with: with `auto` the suggested values of the series (#100), otherwise the
-/// saved ones; plus the correlation with bonds and inflation, if there is a series (#101).
-pub fn resolve(q: &ParametricParams, data: Option<&DataSet>) -> (ParametricParams, Option<Correlated>) {
+/// saved ones; plus the correlation with bonds and inflation, if there is a series (#101), the inflation from the years
+/// from `inflation_from` (#279).
+pub fn resolve(
+    q: &ParametricParams,
+    data: Option<&DataSet>,
+    inflation_from: i32,
+) -> (ParametricParams, Option<Correlated>) {
     let mut q = q.clone();
     let Some(ds) = data else {
         return (q, None);
@@ -498,7 +525,7 @@ pub fn resolve(q: &ParametricParams, data: Option<&DataSet>) -> (ParametricParam
             f.apply(&mut q);
         }
     }
-    let c = joint(&yearly(ds)).map(|j| Correlated::new(&j, &q));
+    let c = joint(&yearly(ds), inflation_from).map(|j| Correlated::new(&j, &q));
     (q, c)
 }
 
@@ -572,6 +599,8 @@ mod tests {
         let j = Joint {
             first: 1900,
             last: 2000,
+            inflation_first: 1900,
+            inflation_last: 2000,
             bonds_mean: 0.04,
             bonds_sd: 0.06,
             inflation_mean: 0.02,
@@ -601,6 +630,8 @@ mod tests {
         let j = Joint {
             first: 1900,
             last: 2000,
+            inflation_first: 1900,
+            inflation_last: 2000,
             bonds_mean: 0.0,
             bonds_sd: 0.1,
             inflation_mean: 0.0,
@@ -627,17 +658,17 @@ mod tests {
             ..Default::default()
         };
         let own = ParametricParams::default();
-        let (q, c) = resolve(&own, Some(&ds));
+        let (q, c) = resolve(&own, Some(&ds), 0);
         assert_eq!(q, own);
         assert!(c.is_some());
         let auto = ParametricParams {
             auto: true,
             ..Default::default()
         };
-        let (q, _) = resolve(&auto, Some(&ds));
+        let (q, _) = resolve(&auto, Some(&ds), 0);
         assert_ne!(q.mu, own.mu);
         assert_eq!((q.paths, q.seed, q.auto), (auto.paths, auto.seed, true));
-        let (q, c) = resolve(&auto, None);
+        let (q, c) = resolve(&auto, None, 0);
         assert_eq!((q, c), (auto, None));
         // Whole stock series of the index before the common years
         let mut ds2 = ds.clone();
@@ -646,9 +677,9 @@ mod tests {
             first: crate::time::YearMonth::new(1900, 1),
             values: vec![0.2; 50].into_iter().chain(ds.stocks.clone()).collect(),
         });
-        let s = suggestion(&ds2);
+        let s = suggestion(&ds2, 0);
         assert_eq!(s.stock_years, Some((1900, 2009)));
-        assert_ne!(s.stocks, suggestion(&ds).stocks);
+        assert_ne!(s.stocks, suggestion(&ds, 0).stocks);
     }
 }
 
@@ -702,7 +733,7 @@ mod bootstrap_tests {
             bonds: years.iter().map(|r| r / 3.0).collect(),
             inflation: years.iter().map(|r| 0.02 + r / 10.0).collect(),
         };
-        let j = joint(&y).expect("genau MIN_YEARS Jahre");
+        let j = joint(&y, 0).expect("genau MIN_YEARS Jahre");
         assert_eq!((j.first, j.last), (1990, 1990 + MIN_YEARS as i32 - 1));
         let short = YearlyTriples {
             stocks: y.stocks[1..].to_vec(),
@@ -710,13 +741,13 @@ mod bootstrap_tests {
             inflation: y.inflation[1..].to_vec(),
             ..y.clone()
         };
-        assert!(joint(&short).is_none(), "ein Jahr zu wenig");
+        assert!(joint(&short, 0).is_none(), "ein Jahr zu wenig");
         let mut bonds_short = y.clone();
         bonds_short.bonds.pop();
-        assert!(joint(&bonds_short).is_none(), "Obligationen unvollständig");
+        assert!(joint(&bonds_short, 0).is_none(), "Obligationen unvollständig");
         let mut inflation_short = y.clone();
         inflation_short.inflation.pop();
-        assert!(joint(&inflation_short).is_none(), "Inflation unvollständig");
+        assert!(joint(&inflation_short, 0).is_none(), "Inflation unvollständig");
 
         let monthly = StockSeries {
             freq: Freq::Monthly,

@@ -77,7 +77,7 @@ Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in d
 > Beispiel: Guthaben 120 000, Auszahlungen 2041 und 2042 je 50 000, AHV-Bezug 2045: Der Rest von 20 000 (plus Zins) wird im Monat des AHV-Bezugs ausbezahlt. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig, und der Rest kommt 2046.
 
 ## @f-settings Einstellungen
-Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache, Darstellung, dunkel, hell, Tragbarkeit, Belehnung
+Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache, Darstellung, dunkel, hell, Tragbarkeit, Belehnung, Teuerung, Startjahr
 
 Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Linux Menü «Datei → Einstellungen…» (Ctrl+,), oder die Schaltfläche «Einstellungen» oben. Die Einstellungen gelten für **alle Planungen auf diesem Gerät** und werden lokal gespeichert, **nicht in der Planungsdatei**.
 
@@ -89,6 +89,7 @@ Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Li
 | Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
 | Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
 | Grosse Säule 3a (ohne Pensionskasse): Maximalbetrag pro Jahr | 36 288 |
+| Teuerung im parametrischen Modell ab Jahr | 1950 |
 | Tragbarkeit: Höchstens vom Einkommen | ein Drittel (33 %) |
 | Tragbarkeit: Kalkulatorischer Zins | 5 % |
 | Tragbarkeit: Nebenkosten p.a. (vom Preis) | 1 % |
@@ -99,6 +100,8 @@ Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Li
 **Darstellung:** «System» folgt dem hellen oder dunklen Erscheinungsbild des Betriebssystems, auch wenn es während der Arbeit wechselt; «Hell» und «Dunkel» gelten unabhängig davon. Das Thema gilt für die ganze App: Eingabefelder, Auswahlmenüs, Dialoge, Hilfe und Diagramme. Die Wahl wirkt sofort beim Speichern.
 
 **Tragbarkeit:** Die vier Werte der [Tragbarkeit](#f-re-afford) sind Regeln der Bank, keine Angaben zur eigenen Planung; jeder Wert muss eine Zahl sein. Eine Änderung wirkt sofort auf Vorschau und Simulation. Der Abschnitt «Immobilien» zeigt die geltenden Werte in einem Hinweis. Öffnen Sie eine ältere Planungsdatei, die noch eigene Werte enthält und von den Einstellungen abweicht, übernimmt die App diese Werte in die Einstellungen; der Dialog «Hinweise zur Planung» nennt die übernommenen und die bisherigen Werte. Gespeicherte Ergebnisse und der Vergleich der Planungen zeigen die Werte, mit denen gerechnet wurde. Die Kommandozeile verwendet die Werte einer älteren Datei, sonst wie die App die Werte der Einstellungen (siehe [Kommandozeile](#ref-cli)).
+
+**Teuerung im parametrischen Modell ab Jahr:** «Monte Carlo · parametrisch» schätzt Mittelwert, Streuung und Korrelationen der Teuerung nur aus den Jahren der Reihe ab diesem Jahr (Standard 1950). Die Kriegs- und Nachkriegsjahre treiben die Streuung sonst stark hoch: bei «Welt (JST)» 5.0 % pro Jahr mit allen Jahren ab 1900, 2.3 % ab 1950, bei fast gleichem Mittelwert (2.3 % und 2.2 %). Aktien und Obligationen nutzen weiter die ganze Reihe; die historischen Quellen (fix, historisch, rollierend, Bootstrap) sind nicht betroffen. Ein Jahr vor dem Beginn der Reihe nutzt die ganze Reihe. Bleiben ab dem Startjahr weniger als 10 Jahre, meldet die Simulation einen Fehler und rechnet nicht. Siehe [Monte Carlo · parametrisch](#f-ret-parametric).
 
 Die untere Grenze darf nicht über der oberen liegen, Alter sind ganze Jahre, der Maximalbetrag ist 0 oder mehr. «Standardwerte» setzt alles nach Rückfrage zurück. Liegt eine Planung nach einer Änderung ausserhalb der neuen Grenzen, meldet die Prüfung das; dieselbe Planung kann deshalb auf einem anderen Gerät mit anderen Einstellungen eine Meldung ergeben. Die Kommandozeile verwendet dieselben Grenzen wie die App (siehe [Kommandozeile](#ref-cli)).
 

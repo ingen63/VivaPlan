@@ -252,12 +252,12 @@ fn issue_69_ak4_fixed_returns_ignore_the_strategy() {
 #[test]
 fn issue_69_strategy_info_and_new_plans() {
     let r = format!("{}{}", strategy::PREFIX, json!({ "stocks": "chJst", "bonds": "usa" }));
-    let i = api::series_info(&r, Path::new("."), None).unwrap();
+    let i = api::series_info(&r, Path::new("."), None, 1950).unwrap();
     assert!(!i.monthly);
     assert_eq!((i.first, i.last), (YearMonth::new(1922, 1), YearMonth::new(2020, 12)));
     assert_eq!(i.currency.as_deref(), Some("CHF"));
     assert!(i.title.unwrap().contains("Switzerland (JST)"));
-    assert!(api::series_info("strategy:{kaputt", Path::new("."), None).is_err());
+    assert!(api::series_info("strategy:{kaputt", Path::new("."), None, 1950).is_err());
     let new_plan: Plan = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     assert_eq!(new_plan.returns.strategy, Some(Investment::default()));
     assert!(new_plan.returns.series.is_none());
@@ -283,7 +283,7 @@ fn issue_69_strategy_info_and_new_plans() {
 fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     let info = |stocks: &str, bonds: &str| {
         let r = format!("{}{}", strategy::PREFIX, json!({ "stocks": stocks, "bonds": bonds }));
-        api::series_info(&r, Path::new("."), None).unwrap()
+        api::series_info(&r, Path::new("."), None, 1950).unwrap()
     };
     let years = |p: &library::SeriesPart| (p.label.to_string(), p.first, p.last);
 
@@ -312,7 +312,7 @@ fn issue_69_ak8_parts_and_common_period_of_the_averages() {
     assert_eq!((sp.parts[1].first, sp.parts[1].last), (sp.first.year(), sp.last.year()));
 
     // A single series has no parts.
-    let plain = api::series_info("library:Welt (JST).csv", &lib(), Some(&lib())).unwrap();
+    let plain = api::series_info("library:Welt (JST).csv", &lib(), Some(&lib()), 1950).unwrap();
     assert!(plain.parts.is_empty());
 }
 

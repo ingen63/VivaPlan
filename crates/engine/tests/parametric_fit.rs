@@ -39,6 +39,9 @@ fn fixed() -> FixedCurves {
     }
 }
 
+/// #279: The tests of #100/#101 estimate the inflation from the whole series (a year before every series).
+const WHOLE: i32 = 0;
+
 const YEARS: usize = 30;
 const PATHS: usize = 3000;
 
@@ -55,7 +58,7 @@ fn parametric_paths(d: &DataSet, paths: usize, correlated: bool) -> Vec<MarketPa
         auto: true,
         ..Default::default()
     };
-    let (params, c) = calibrate::resolve(&auto, Some(d));
+    let (params, c) = calibrate::resolve(&auto, Some(d), WHOLE);
     let g = Parametric {
         fixed: &f,
         start: start(),
@@ -177,7 +180,7 @@ fn issue_100_ak1_reference_values_of_the_series() {
 /// #100/AK3: The suggested values are created at runtime from the bundled series.
 #[test]
 fn issue_100_ak3_suggestions_for_the_shipped_series() {
-    let fit = |s, b| calibrate::suggestion(&ds(s, b)).stocks.unwrap();
+    let fit = |s, b| calibrate::suggestion(&ds(s, b), WHOLE).stocks.unwrap();
     let expected = [
         (StockIndex::WorldJst, BondIndex::Ch, [0.1215, 0.1225, 0.15, -0.25]),
         (StockIndex::ChJst, BondIndex::Ch, [0.1055, 0.145, 0.26, -0.1]),
@@ -204,7 +207,7 @@ fn issue_100_ak3_suggestions_for_the_shipped_series() {
         fit(StockIndex::WorldJst, BondIndex::Usa)
     );
     // S&P 500 with Swiss Confederation bonds: whole stock series from 1922, not only the common years from 1988
-    let s = calibrate::suggestion(&ds(StockIndex::Sp500, BondIndex::Ch));
+    let s = calibrate::suggestion(&ds(StockIndex::Sp500, BondIndex::Ch), WHOLE);
     assert_eq!(s.stock_years.unwrap().0, 1922);
 }
 
@@ -223,8 +226,8 @@ fn issue_100_ak3_new_shiller_data_changes_the_suggestion() {
         .collect();
     std::fs::write(dir.join("Shiller CHF.csv"), cut).unwrap();
     let i = inv(StockIndex::Sp500, BondIndex::Usa);
-    let before = calibrate::suggestion(&strategy::dataset(&i, Some(&lib())).unwrap());
-    let after = calibrate::suggestion(&strategy::dataset(&i, Some(&dir)).unwrap());
+    let before = calibrate::suggestion(&strategy::dataset(&i, Some(&lib())).unwrap(), WHOLE);
+    let after = calibrate::suggestion(&strategy::dataset(&i, Some(&dir)).unwrap(), WHOLE);
     std::fs::remove_dir_all(&dir).ok();
     assert_eq!(after.stock_years.unwrap().1, 1999);
     assert_ne!(before.stocks, after.stocks);
@@ -244,6 +247,7 @@ fn issue_100_ak7_custom_world_uses_its_own_series() {
                 Some(&lib()),
             )
             .unwrap(),
+            WHOLE,
         )
         .stocks
         .unwrap()
@@ -254,7 +258,7 @@ fn issue_100_ak7_custom_world_uses_its_own_series() {
         eu: 0.0,
         apac: 0.0,
     });
-    let ch = calibrate::suggestion(&ds(StockIndex::ChJst, BondIndex::Ch))
+    let ch = calibrate::suggestion(&ds(StockIndex::ChJst, BondIndex::Ch), WHOLE)
         .stocks
         .unwrap();
     assert_eq!(only_ch, ch, "nur Schweiz = Schweiz (JST)");
@@ -262,7 +266,7 @@ fn issue_100_ak7_custom_world_uses_its_own_series() {
     assert_ne!(mixed, ch);
     assert_ne!(
         mixed,
-        calibrate::suggestion(&ds(StockIndex::WorldJst, BondIndex::Ch))
+        calibrate::suggestion(&ds(StockIndex::WorldJst, BondIndex::Ch), WHOLE)
             .stocks
             .unwrap()
     );
@@ -303,7 +307,7 @@ fn issue_100_ak6_issue_101_ak6_older_plans_keep_their_parameters() {
     assert!(out.notes.iter().any(|n| n == engine::upgrade::PARAMETRIC_NOTE));
     // Computation: the saved stock parameters apply unchanged
     let q: ParametricParams = serde_json::from_value(old).unwrap();
-    let (r, _) = calibrate::resolve(&q, Some(&ds(StockIndex::WorldJst, BondIndex::Ch)));
+    let (r, _) = calibrate::resolve(&q, Some(&ds(StockIndex::WorldJst, BondIndex::Ch)), WHOLE);
     assert_eq!(r, q);
 }
 
@@ -318,7 +322,7 @@ fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
     for s in stocks {
         for b in bonds {
             let d = ds(s, b);
-            let j = calibrate::suggestion(&d).joint.unwrap();
+            let j = calibrate::suggestion(&d, WHOLE).joint.unwrap();
             let y = all_years(&parametric_paths(&d, 2000, true));
             let col = |k: usize| -> Vec<f64> {
                 y.iter()
@@ -355,7 +359,7 @@ fn issue_101_ak1_ak2_correlation_mean_and_sd_for_all_nine_combinations() {
     let reference = [[-0.07, -0.01, 0.24], [-0.02, -0.05, 0.45], [-0.07, 0.19, 0.27]];
     for (s, row) in stocks.iter().zip(reference) {
         for (b, r) in bonds.iter().zip(row) {
-            let c = calibrate::suggestion(&ds(*s, *b)).joint.unwrap().corr[0][1];
+            let c = calibrate::suggestion(&ds(*s, *b), WHOLE).joint.unwrap().corr[0][1];
             assert!((c - r).abs() < 0.03, "{s:?}/{b:?}: {c}");
         }
     }
@@ -430,7 +434,7 @@ fn issue_101_ak3_ruin_probability_close_to_the_bootstrap() {
 /// #101/AK4: A change of the bonds or the stocks changes the matrix.
 #[test]
 fn issue_101_ak4_matrix_depends_on_the_combination() {
-    let m = |s, b| calibrate::suggestion(&ds(s, b)).joint.unwrap();
+    let m = |s, b| calibrate::suggestion(&ds(s, b), WHOLE).joint.unwrap();
     let a = m(StockIndex::WorldJst, BondIndex::Ch);
     assert_ne!(a.corr, m(StockIndex::WorldJst, BondIndex::Usa).corr);
     assert_ne!(a.corr, m(StockIndex::ChJst, BondIndex::Ch).corr);
@@ -438,7 +442,7 @@ fn issue_101_ak4_matrix_depends_on_the_combination() {
     // The short info about the plan contains the values (displayed in the tab «Simulation»)
     let i = inv(StockIndex::WorldJst, BondIndex::Usa);
     let reference = format!("strategy:{}", serde_json::to_string(&i).unwrap());
-    let info = api::series_info(&reference, Path::new("."), Some(&lib())).unwrap();
+    let info = api::series_info(&reference, Path::new("."), Some(&lib()), WHOLE).unwrap();
     let p = info.parametric.unwrap();
     assert_eq!(p.joint.unwrap(), m(StockIndex::WorldJst, BondIndex::Usa));
     assert!(p.stocks.is_some());
@@ -454,7 +458,7 @@ fn issue_101_ak5_same_seed_same_paths_and_unchanged_stocks() {
         seed: 11,
         ..Default::default()
     };
-    let (params, c) = calibrate::resolve(&q, Some(&d));
+    let (params, c) = calibrate::resolve(&q, Some(&d), WHOLE);
     let g = |correlated: Option<Correlated>| Parametric {
         fixed: &f,
         start: YearMonth::new(2030, 7),
@@ -522,4 +526,81 @@ fn issue_132_ak7_older_parametric_plans_get_a_note() {
         v["returns"]["source"] = json!("parametric");
         assert!(!api::upgrade_plan(&v).notes.iter().any(|n| n == note));
     }
+}
+
+/// The series «Welt (JST)» of the data library (annual values 1900–2020).
+fn world_jst() -> DataSet {
+    DataSet::load_csv(&lib().join("Welt (JST).csv")).unwrap()
+}
+
+/// #279/AK2: Mean and spread of the inflation of «Welt (JST)» from 1950: ≈ 2.2 % and ≈ 2.3 % (from 1900: 2.3 % and
+/// 5.0 %); the correlations with the inflation only from these years.
+#[test]
+fn issue_279_ak2_inflation_from_1950() {
+    let d = world_jst();
+    let y = calibrate::yearly(&d);
+    let from = calibrate::joint(&y, 1950).unwrap();
+    let whole = calibrate::joint(&y, WHOLE).unwrap();
+    let near = |a: f64, b: f64| (a - b).abs() < 0.0005;
+    assert!(
+        near(from.inflation_mean, 0.0222) && near(from.inflation_sd, 0.0234),
+        "{from:?}"
+    );
+    assert!(
+        near(whole.inflation_mean, 0.0226) && near(whole.inflation_sd, 0.0502),
+        "{whole:?}"
+    );
+    assert_eq!((from.inflation_first, from.inflation_last), (1950, 2020));
+    assert_eq!((whole.inflation_first, whole.inflation_last), (1900, 2020));
+    // Correlations of the inflation from the years 1950–2020 (index 50 = 1950)
+    let k = (1950 - y.first) as usize;
+    let tail = |v: &[f64]| v[k..].to_vec();
+    let c = |a: &[f64], b: &[f64]| calibrate::corr(&tail(a), &tail(b));
+    assert_eq!(from.corr[0][2], c(&y.stocks, &y.inflation));
+    assert_eq!(from.corr[2][1], c(&y.inflation, &y.bonds));
+    assert_ne!(from.corr[0][2], whole.corr[0][2]);
+    // The suggestion of the tab «Simulation» shows the years of the inflation
+    assert_eq!(calibrate::suggestion(&d, 1950).joint.unwrap(), from);
+}
+
+/// #279/AK3: The first year of the inflation changes neither the stock parameters nor mean, spread and
+/// correlation of stocks and bonds.
+#[test]
+fn issue_279_ak3_stocks_and_bonds_unchanged() {
+    let d = world_jst();
+    let (a, b) = (calibrate::suggestion(&d, 1950), calibrate::suggestion(&d, WHOLE));
+    assert_eq!((a.stocks, a.stock_years), (b.stocks, b.stock_years));
+    let (ja, jb) = (a.joint.unwrap(), b.joint.unwrap());
+    assert_eq!(
+        (ja.bonds_mean, ja.bonds_sd, ja.corr[0][1], ja.corr[1][0]),
+        (jb.bonds_mean, jb.bonds_sd, jb.corr[0][1], jb.corr[1][0])
+    );
+    assert_eq!((ja.first, ja.last), (jb.first, jb.last));
+    let auto = ParametricParams {
+        auto: true,
+        ..Default::default()
+    };
+    let (qa, ca) = calibrate::resolve(&auto, Some(&d), 1950);
+    let (qb, cb) = calibrate::resolve(&auto, Some(&d), WHOLE);
+    assert_eq!(qa, qb);
+    let (ca, cb) = (ca.unwrap(), cb.unwrap());
+    assert_eq!(
+        (ca.bonds, ca.a_bonds, ca.log_mean, ca.log_sd),
+        (cb.bonds, cb.a_bonds, cb.log_mean, cb.log_sd)
+    );
+    assert_ne!(ca.inflation, cb.inflation);
+}
+
+/// #279/AK4: A first year before the series uses the whole series; with fewer than 10 years from the first year
+/// there is no estimate (and the run reports an error, see `api`).
+#[test]
+fn issue_279_ak4_first_year_outside_the_series() {
+    let y = calibrate::yearly(&world_jst());
+    assert_eq!(calibrate::joint(&y, 1800), calibrate::joint(&y, WHOLE));
+    assert_eq!(calibrate::joint(&y, 1900), calibrate::joint(&y, WHOLE));
+    assert!(calibrate::joint(&y, 2011).is_some(), "genau 10 Jahre 2011–2020");
+    assert!(calibrate::joint(&y, 2012).is_none(), "9 Jahre");
+    assert!(calibrate::joint(&y, 3000).is_none());
+    let auto = ParametricParams::default();
+    assert!(calibrate::resolve(&auto, Some(&world_jst()), 2012).1.is_none());
 }

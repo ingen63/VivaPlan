@@ -533,6 +533,8 @@ codes! {
     limits_reversed => "{what}: the lower limit ({lo}) is above the upper limit ({hi}).",
     limits_pillar3a_max => "Pillar 3a: the maximum amount must be 0 or more.",
     limits_pillar3a_max_large => "Large pillar 3a: the maximum amount must be 0 or more.",
+    limits_inflation_from => "Inflation in the parametric model: the first year must be a whole year between 1000 and 3000.",
+    inflation_from_too_few => "Inflation in the parametric model from {year} (settings): the time series ends in {last}; at least {min} years are needed.",
     milestone_age_limits => "“{name}”: age {age} is outside the limits of {lo} to {hi} years (settings).",
     income_after_pk => "After the pension fund payout ({at:ym}), earned income is still {amount:int} per month.",
     income_after_pk_indexed => "After the pension fund payout ({at:ym}), earned income is still {amount:int} per month in prices at the simulation start.",

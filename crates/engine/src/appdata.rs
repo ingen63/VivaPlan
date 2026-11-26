@@ -187,6 +187,24 @@ mod tests {
         );
     }
 
+    /// #279/AK6: The command line and `vivaplan mcp` take the first year of the inflation from the settings of the
+    /// app; without settings 1950.
+    #[test]
+    fn issue_279_ak6_inflation_from_of_the_settings() {
+        let s = |v: Value| v.as_object().unwrap().clone();
+        assert_eq!(limits(&Map::new()).inflation_from, 1950.0);
+        assert_eq!(
+            limits(&s(json!({"limits": {"inflationFrom": 1970}}))).inflation_from,
+            1970.0
+        );
+        let mut plan = json!({"limits": {"inflationFrom": 1900}});
+        apply(&mut plan, &s(json!({"limits": {"inflationFrom": 1960}})));
+        assert_eq!(plan["limits"]["inflationFrom"], json!(1960.0));
+        let mut plan = json!({});
+        apply(&mut plan, &Map::new());
+        assert_eq!(plan["limits"]["inflationFrom"], json!(1950.0));
+    }
+
     // #266/AK1: new values with defaults; saved values (switch and numbers) are taken over.
     #[test]
     fn issue_266_ak1_affordability_defaults_and_saved_values() {

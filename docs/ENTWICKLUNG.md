@@ -467,6 +467,15 @@ einmal und werden für alle Varianten verwendet:
   der Reihe / corr(exp(L) − 1, L), damit die Korrelation mit der einfachen Aktienrendite stimmt; l aus der Zerlegung der
   Restkovarianz (begrenzt, falls die Matrix nicht positiv definit wäre). Werte unter −95 % werden auf −95 % gesetzt. Die
   Jahre sind unabhängig, wie im Bootstrap.
+- **Startjahr der Teuerung (#279, `limits.inflationFrom`, Standard 1950):** Mittelwert und Streuung der Inflation sowie
+  ihre Korrelationen mit Aktien und Obligationen nur aus den Jahren ab dem Startjahr (`calibrate::joint`,
+  `Joint.inflationFirst`/`inflationLast`); Aktienparameter, Mittelwert und Streuung der Obligationen und die Korrelation
+  Aktien/Obligationen weiter aus der ganzen Reihe. Ein Startjahr vor der Reihe nutzt die ganze Reihe. Bleiben weniger als
+  `MIN_YEARS` (10) Jahre, gibt `joint` nichts zurück; `api::run` bricht dann mit dem Fehler `inflation_from_too_few`
+  (Feld `limits.inflationFrom`) ab, sofern die ganze Reihe genug Jahre hätte. Gültig sind ganze Jahre 1000–3000
+  (`limits_inflation_from`). Die Vorschau zeigt die Inflation ebenfalls ab dem Startjahr. «Welt (JST)»: 1900–2020
+  Mittel 2.26 %, Streuung 5.02 %; 1950–2020 Mittel 2.22 %, Streuung 2.34 %. `series_info` nimmt `inflationFrom`
+  als Argument (App: aus den Einstellungen); Kommandozeile und `vivaplan mcp` über `einstellungen.json` (#206).
 - **Vorlauf (#103, `MarketPath::pre_stocks`):** Jeder Pfad trägt die Aktien-Monatsrenditen der 12 Monate vor dem
   Start mit, nur für das Renditekriterium der 3-Topf-Strategie (kein Vermögen, kein Topf). Historisch: die echten Monate
   vor dem historischen Start (Jahresreihen nach Kalenderjahr, wie der Pfad), am Anfang der Reihe entsprechend weniger.

@@ -272,8 +272,11 @@ pub fn path_source<'a>(plan: &Plan, sim: &'a Simulator, data: Option<&'a DataSet
             }))
         }
         ReturnSource::Parametric => {
-            let (params, correlated) =
-                crate::calibrate::resolve(&plan.returns.parametric.clone().unwrap_or_default(), data);
+            let (params, correlated) = crate::calibrate::resolve(
+                &plan.returns.parametric.clone().unwrap_or_default(),
+                data,
+                plan.limits.inflation_from_year(),
+            );
             limit(params.paths)?;
             Ok(Paths::Parametric(Parametric {
                 fixed: &sim.fixed,

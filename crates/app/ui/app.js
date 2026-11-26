@@ -435,7 +435,7 @@ async function refreshSeriesInfo() {
   const s = seriesRef();
   seriesInfoRef = s;
   if (s) {
-    try { seriesInfo = await Engine.call("series_info", { path: s, planPath: currentPath }); }
+    try { seriesInfo = await Engine.call("series_info", { path: s, planPath: currentPath, inflationFrom: limits().inflationFrom }); }
     catch (e) { seriesInfo = { error: errText(e), code: e?.code }; }
   }
   if (seriesInfoRef !== s) return; // a newer query is running
@@ -2113,6 +2113,7 @@ const COMPUTED = {
     const names = [tr("wealth.stocks"), tr("wealth.bonds"), tr("returns.inflation")];
     return `<table class="tbl num"><thead><tr><th>${tr("computed.correlation")}</th>${names.map(n => `<th>${n}</th>`).join("")}<th>${tr("computed.mean")}</th><th>${tr("computed.spread")}</th></tr></thead><tbody>
       ${names.map((n, a) => `<tr><td>${n}</td>${names.map((_, b) => `<td>${a === b ? "1" : c(j.corr[a][b])}</td>`).join("")}<td>${a === 1 ? p(j.bondsMean) : a === 2 ? p(j.inflationMean) : tr("computed.model")}</td><td>${a === 1 ? p(j.bondsSd) : a === 2 ? p(j.inflationSd) : tr("computed.model")}</td></tr>`).join("")}</tbody></table>
+      <p class="hint" id="joint-inflation-years">${tr("computed.inflationYears", { first: j.inflationFirst, last: j.inflationLast })}</p>
       <p class="hint">${tr("computed.jointYears", { first: j.first, last: j.last })}</p>`;
   },
   bucket: k => {
@@ -3138,11 +3139,12 @@ window.addEventListener("resize", () => { renderDerived(); if (lastRun) renderRe
 
 // ---------- Settings (#25) ----------
 /** Default values of the settings; the engine knows the same ones (crates/engine/src/settings.rs). */
-const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258, pillar3aMaxLarge: 36288 };
+const LIMIT_DEFAULTS = { ahvMin: 63, ahvMax: 70, pkMin: 58, pkMax: 65, pillar3aMax: 7258, pillar3aMaxLarge: 36288, inflationFrom: 1950 };
 let LIMIT_FIELDS;
 onLanguage(() => LIMIT_FIELDS = [["ahvMin", tr("limits.ahvMin"), tr("unit.years")], ["ahvMax", tr("limits.ahvMax"), tr("unit.years")],
   ["pkMin", tr("limits.pkMin"), tr("unit.years")], ["pkMax", tr("limits.pkMax"), tr("unit.years")],
-  ["pillar3aMax", tr("limits.pillar3aMax"), null], ["pillar3aMaxLarge", tr("limits.pillar3aMaxLarge"), null]]);
+  ["pillar3aMax", tr("limits.pillar3aMax"), null], ["pillar3aMaxLarge", tr("limits.pillar3aMaxLarge"), null],
+  ["inflationFrom", tr("limits.inflationFrom"), ""]]);
 /** Settings that are amounts (thousands separator, #140). */
 const LIMIT_AMOUNTS = new Set(["pillar3aMax", "pillar3aMaxLarge"]);
 /** Applicable limits: saved values, otherwise the defaults. They apply to all plans on this device. */
@@ -3161,6 +3163,8 @@ function limitProblems(l) {
   }
   if (!(Number.isFinite(l.pillar3aMax) && l.pillar3aMax >= 0)) out.push(tr("limits.pillar3aNegative"));
   if (!(Number.isFinite(l.pillar3aMaxLarge) && l.pillar3aMaxLarge >= 0)) out.push(tr("limits.pillar3aLargeNegative"));
+  // #279: first year of the inflation in the parametric model
+  if (!(Number.isInteger(l.inflationFrom) && l.inflationFrom >= 1000 && l.inflationFrom <= 3000)) out.push(tr("limits.inflationFromInvalid"));
   return out;
 }
 /** #233: Affordability of the banks (setting, before in the plan); the same defaults as the engine (`Affordability`). */
@@ -3251,8 +3255,11 @@ function showSettings() {
 $("#settingsSave").addEventListener("click", e => {
   const l = readSettings(), af = readAffordability(), problems = [...limitProblems(l), ...affordProblems(af)];
   if (problems.length) { e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>"); return; }
+  const inflationChanged = l.inflationFrom !== limits().inflationFrom;
   Pref.set("limits", l); Pref.set("affordability", af); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
   Pref.set("theme", $("#set-theme").value); Theme.apply();
+  // #279: the suggested values of the tab «Simulation» depend on the first year of the inflation
+  if (inflationChanged && state) { refreshSeriesInfo(); requestPreview(); }
   const language = $("#set-language").value;
   $("#settings").close();
   // #170: a new language draws everything again (also the section)
@@ -3262,7 +3269,9 @@ $("#settingsSave").addEventListener("click", e => {
 $("#settingsDefaults").addEventListener("click", async e => {
   e.preventDefault();
   if (!await ask(tr("settings.defaults"), tr("settings.resetAsk"), null, tr("settings.reset"))) return;
+  const inflationChanged = limits().inflationFrom !== LIMIT_DEFAULTS.inflationFrom;
   Pref.set("limits", { ...LIMIT_DEFAULTS }); Pref.set("affordability", { ...AFFORD_DEFAULTS, wealthDrawdown: AFFORD_DRAWDOWN_DEFAULT }); Pref.set("askSaveBeforeRun", true); Pref.set("theme", "system"); Theme.apply();
+  if (inflationChanged && state) { refreshSeriesInfo(); requestPreview(); }
   $("#settingsBody").innerHTML = settingsFields(limits(), I18n.SYSTEM, "system"); $("#settingsErr").textContent = "";
   renderSection();
 });

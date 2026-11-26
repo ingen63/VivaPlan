@@ -77,7 +77,7 @@ The **indirect amortization** of a mortgage flows into this account until before
 > Example: balance 120 000, payouts in 2041 and 2042 of 50 000 each, AHV pension start 2045: the rest of 20 000 (plus interest) is paid out in the month of the AHV pension start. If the AHV pension start is moved to 2046, the plan stays valid, and the rest comes in 2046.
 
 ## @f-settings Settings
-Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, default values, language, appearance, dark, light, affordability, loan-to-value
+Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, default values, language, appearance, dark, light, affordability, loan-to-value, inflation, first year
 
 On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, menu “File → Settings…” (Ctrl+,); or the button “Settings” at the top. The settings apply to **all plans on this device** and are stored locally, **not in the plan file**.
 
@@ -89,6 +89,7 @@ On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, me
 | Pension fund payout: lower and upper limit | 58 and 65 years |
 | Pillar 3a: maximum contribution per year | 7 258 |
 | Large pillar 3a (without pension fund): maximum per year | 36 288 |
+| Inflation in the parametric model from year | 1950 |
 | Affordability: max. share of income | one third (33 %) |
 | Affordability: imputed interest rate | 5 % |
 | Affordability: fixed costs p.a. (of the price) | 1 % |
@@ -99,6 +100,8 @@ On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, me
 **Appearance:** “System” follows the light or dark appearance of the operating system, also when it changes while you work; “Light” and “Dark” apply regardless of it. The theme applies to the whole app: input fields, selection menus, dialogs, help and charts. The choice takes effect as soon as you save.
 
 **Affordability:** The four values of the [affordability](#f-re-afford) are rules of the bank, not details of your own plan; every value must be a number. A change takes effect immediately on the preview and the simulation. The section “Real estate” shows the values that apply in a note. If you open an older plan file that still contains its own values and they differ from the settings, the app takes these values over into the settings; the dialog “Notes on the plan” names the adopted and the previous values. Saved results and the comparison of the plans show the values that were used in the calculation. The command line uses the values of an older file, otherwise, like the app, the values of the settings (see [command line](#ref-cli)).
+
+**Inflation in the parametric model from year:** “Monte Carlo · parametric” estimates mean, dispersion and correlations of the inflation only from the years of the series from this year on (default 1950). Otherwise the war and post-war years drive the dispersion up strongly: for “World (JST)” 5.0 % per year with all years from 1900, 2.3 % from 1950, with almost the same mean (2.3 % and 2.2 %). Stocks and bonds still use the whole series; the historical sources (fixed, historical, rolling, bootstrap) are not affected. A year before the start of the series uses the whole series. If fewer than 10 years remain from the first year, the simulation reports an error and does not compute. See [Monte Carlo · parametric](#f-ret-parametric).
 
 The lower limit must not be above the upper one, ages are whole years, and the maximum amount is 0 or more. “Default values” resets everything after a confirmation. If a plan is outside the new limits after a change, the validation reports this; the same plan can therefore give a message on another device with other settings. The command line uses the same limits as the app (see [command line](#ref-cli)).
 

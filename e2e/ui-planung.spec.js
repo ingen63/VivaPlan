@@ -1255,3 +1255,42 @@ test.describe("New plan from the engine (#269)", () => {
     await noErrors(page, errors);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Inflation in the parametric model from a first year (#279)", () => {
+  test("AK1, AK5: setting with default 1950, stored locally; the tab «Simulation» names the years of the inflation", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.returns.source = "parametric"; goto("returns"); });
+    const years = page.locator("#joint-inflation-years");
+    await expect(years).toContainText(/^Teuerung 1950–\d{4}:/);
+    // AK1: field in the settings with the default 1950
+    await page.locator('header button[data-action="settings"]').click();
+    const dlg = page.locator("#settings");
+    await expect(dlg).toContainText("Teuerung im parametrischen Modell ab Jahr");
+    await expect(page.locator("#set-inflationFrom")).toHaveValue("1950");
+    // invalid year: error in the dialog, nothing saved
+    await page.locator("#set-inflationFrom").fill("1950.5");
+    await page.locator("#settingsSave").click();
+    await expect(page.locator("#settingsErr")).toContainText("Teuerung im parametrischen Modell: Das Startjahr muss ein ganzes Jahr zwischen 1000 und 3000 sein.");
+    expect(await page.evaluate(() => limits().inflationFrom)).toBe(1950);
+    const before = await page.evaluate(() => JSON.stringify(state));
+    await page.locator("#set-inflationFrom").fill("1970");
+    await page.locator("#settingsSave").click();
+    await expect(dlg).toBeHidden();
+    // AK5: the suggested values follow the new first year
+    await expect(years).toContainText(/^Teuerung 1970–\d{4}:/);
+    // AK1: stored locally, not in the plan (file)
+    expect(await page.evaluate(() => JSON.stringify(state))).toBe(before);
+    expect(await page.evaluate(() => JSON.stringify(planForFile(state)).includes("inflationFrom"))).toBe(false);
+    await page.reload();
+    await page.waitForSelector("html[data-ready='1']");
+    expect(await page.evaluate(() => limits().inflationFrom)).toBe(1970);
+    // «Standardwerte» restores 1950
+    await page.locator('header button[data-action="settings"]').click();
+    await page.locator("#settingsDefaults").click();
+    await page.locator("#ask button[value='ok']").click();
+    await expect(page.locator("#set-inflationFrom")).toHaveValue("1950");
+    expect(await page.evaluate(() => limits().inflationFrom)).toBe(1950);
+    await noErrors(page, errors);
+  });
+});

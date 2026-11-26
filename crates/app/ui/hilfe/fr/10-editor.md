@@ -77,7 +77,7 @@ L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusq
 > Exemple: avoir de 120 000, retraits en 2041 et 2042 de 50 000 chacun, début de la rente AVS en 2045: le solde de 20 000 (plus les intérêts) est versé le mois du début de la rente AVS. Si le début de la rente AVS est reporté à 2046, le plan reste valable, et le solde est versé en 2046.
 
 ## @f-settings Paramètres
-Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair, capacité financière, taux d’avance
+Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair, capacité financière, taux d’avance, renchérissement, année de départ
 
 Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu «Fichier → Paramètres…» (Ctrl+,), ou le bouton «Paramètres» en haut. Les paramètres valent pour **toutes les planifications sur cet appareil** et sont enregistrés localement, **pas dans le fichier de planification**.
 
@@ -89,6 +89,7 @@ Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu
 | Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
 | Pilier 3a: montant maximal du versement par année | 7 258 |
 | Grand pilier 3a (sans caisse de pension): montant maximal par année | 36 288 |
+| Renchérissement dans le modèle paramétrique dès l’année | 1950 |
 | Capacité financière: part maximale du revenu | un tiers (33 %) |
 | Capacité financière: taux d’intérêt théorique | 5 % |
 | Capacité financière: frais accessoires p.a. (du prix) | 1 % |
@@ -99,6 +100,8 @@ Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu
 **Apparence:** «Système» suit l’apparence claire ou sombre du système d’exploitation, même si elle change pendant le travail; «Clair» et «Sombre» s’appliquent indépendamment. Le thème vaut pour toute l’app: champs de saisie, menus de sélection, dialogues, aide et graphiques. Le choix s’applique dès l’enregistrement.
 
 **Capacité financière:** Les quatre valeurs de la [capacité financière](#f-re-afford) sont des règles de la banque, pas des données de votre planification; chaque valeur doit être un nombre. Une modification agit immédiatement sur l’aperçu et la simulation. La section «Immobilier» indique les valeurs applicables dans une remarque. Si vous ouvrez un ancien fichier de planification qui contient encore ses propres valeurs et qu’elles diffèrent des paramètres, l’app reprend ces valeurs dans les paramètres; le dialogue «Remarques sur la planification» indique les valeurs reprises et les valeurs précédentes. Les résultats enregistrés et la comparaison des planifications montrent les valeurs utilisées pour le calcul. La ligne de commande utilise les valeurs d’un ancien fichier, sinon, comme l’application, les valeurs des paramètres (voir [ligne de commande](#ref-cli)).
+
+**Renchérissement dans le modèle paramétrique dès l’année:** «Monte Carlo · paramétrique» estime la moyenne, la dispersion et les corrélations du renchérissement uniquement à partir des années de la série dès cette année (par défaut 1950). Sinon, les années de guerre et d’après-guerre font fortement monter la dispersion: pour «Monde (JST)» 5.0 % par année avec toutes les années dès 1900, 2.3 % dès 1950, pour une moyenne presque identique (2.3 % et 2.2 %). Les actions et les obligations utilisent toujours toute la série; les sources historiques (fixe, historique, glissante, bootstrap) ne sont pas concernées. Une année antérieure au début de la série utilise toute la série. S’il reste moins de 10 ans dès l’année de départ, la simulation signale une erreur et ne calcule pas. Voir [Monte Carlo · paramétrique](#f-ret-parametric).
 
 La limite inférieure ne doit pas être supérieure à la limite supérieure, les âges sont des années entières, le montant maximal est de 0 ou plus. «Valeurs standard» réinitialise tout après confirmation. Si une planification se situe en dehors des nouvelles limites après une modification, le contrôle le signale; la même planification peut donc donner un message sur un autre appareil avec d’autres paramètres. La ligne de commande utilise les mêmes limites que l’application (voir [ligne de commande](#ref-cli)).
 

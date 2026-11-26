@@ -844,9 +844,16 @@ fn series_info<R: Runtime>(
     app: AppHandle<R>,
     path: String,
     plan_path: Option<String>,
+    inflation_from: Option<f64>,
 ) -> Result<engine::library::SeriesInfo, CmdError> {
     let lib = library_dir(&app).ok();
-    api::series_info(&path, &base_dir(plan_path.as_deref()), lib.as_deref()).map_err(CmdError::from)
+    // #279: first year of the inflation in the parametric model from the settings
+    let from = engine::settings::Limits {
+        inflation_from: inflation_from.unwrap_or(engine::settings::DEFAULT_INFLATION_FROM),
+        ..Default::default()
+    }
+    .inflation_from_year();
+    api::series_info(&path, &base_dir(plan_path.as_deref()), lib.as_deref(), from).map_err(CmdError::from)
 }
 
 #[tauri::command]

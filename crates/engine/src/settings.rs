@@ -11,6 +11,9 @@ use serde::{Deserialize, Serialize};
 /// Default of the milestones «AHV-Bezug» and «Bezug Pensionskasse» in years (#51).
 pub const DEFAULT_AGE: f64 = 65.0;
 
+/// #279: Default of the first year the parametric model estimates the inflation from.
+pub const DEFAULT_INFLATION_FROM: f64 = 1950.0;
+
 /// Limits for the milestones «AHV-Bezug» and «Bezug Pensionskasse» and the pillar 3a maximum.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", default)]
@@ -26,6 +29,9 @@ pub struct Limits {
     /// #152: Maximum pillar 3a contribution per year for persons without a pension fund («large» pillar 3a, at most
     /// 20 % of the earned income).
     pub pillar3a_max_large: f64,
+    /// #279: The parametric model estimates the inflation (mean, spread, correlations) from the years from this
+    /// one; before it, the war years drive the spread to 5 %.
+    pub inflation_from: f64,
 }
 
 impl Default for Limits {
@@ -37,6 +43,7 @@ impl Default for Limits {
             pk_max: 65.0,
             pillar3a_max: 7258.0,
             pillar3a_max_large: 36288.0,
+            inflation_from: DEFAULT_INFLATION_FROM,
         }
     }
 }
@@ -62,7 +69,22 @@ impl Limits {
         if !self.pillar3a_max_large.is_finite() || self.pillar3a_max_large < 0.0 {
             out.push(msg!(limits_pillar3a_max_large));
         }
+        if !self.inflation_from.is_finite()
+            || self.inflation_from.fract() != 0.0
+            || !(1000.0..=3000.0).contains(&self.inflation_from)
+        {
+            out.push(msg!(limits_inflation_from));
+        }
         out
+    }
+
+    /// #279: First year of the inflation in the parametric model (whole year, invalid values give the default).
+    pub fn inflation_from_year(&self) -> i32 {
+        if self.inflation_from.is_finite() && (1000.0..=3000.0).contains(&self.inflation_from) {
+            self.inflation_from as i32
+        } else {
+            DEFAULT_INFLATION_FROM as i32
+        }
     }
 }
 
@@ -114,5 +136,30 @@ mod tests {
         assert_eq!(l.problems().len(), 1);
         l.pillar3a_max_large = 0.0;
         assert!(l.problems().is_empty());
+    }
+
+    /// #279/AK1: Default 1950 of the first year of the inflation; whole years between 1000 and 3000 are valid.
+    #[test]
+    fn issue_279_ak1_inflation_from_default_and_check() {
+        let l = Limits::default();
+        assert_eq!((l.inflation_from, l.inflation_from_year()), (1950.0, 1950));
+        let p: Limits = serde_json::from_str(r#"{"inflationFrom": 1970}"#).unwrap();
+        assert_eq!(p.inflation_from_year(), 1970);
+        for bad in [1950.5, 999.0, 3001.0, f64::NAN, f64::INFINITY] {
+            let l = Limits {
+                inflation_from: bad,
+                ..Limits::default()
+            };
+            assert!(l.problems()[0].contains("whole year between 1000 and 3000"), "{bad}");
+            assert_eq!(l.inflation_from_year(), 1950, "{bad}");
+        }
+        for ok in [1000.0, 1800.0, 3000.0] {
+            let l = Limits {
+                inflation_from: ok,
+                ..Limits::default()
+            };
+            assert!(l.problems().is_empty());
+            assert_eq!(l.inflation_from_year(), ok as i32);
+        }
     }
 }
