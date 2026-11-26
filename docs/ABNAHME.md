@@ -1030,3 +1030,20 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #270/AK10 | «Über VivaPlan» zeigt das Kürzel und das Datum der Aktivierung. | ☑ | **gilt** | App `issue_270_ak1_ak10_…`, e2e AK1, AK10 (#270) | 25.11.2026 ok (Tests) |
 | #270/AK11 | Tests verwenden einen eigenen Testschlüssel. Der echte private Schlüssel kommt weder im Code noch in Tests oder im Repository vor. | ☑ | **gilt** (`TEST_SEED`; Debug-Build mit `VIVAPLAN_BETA_TEST_KEY`; `keygen` schreibt nicht ins Repository; `.gitignore`) | `beta::tests::issue_270_ak11_…` (2), Werkzeug `issue_270_ak1_…` | 25.11.2026 ok (Tests, Durchsicht) |
 | #270/AK12 | Hilfe, README (Installation) und `docs/BESCHREIBUNG.md` beschreiben Aktivierung und Einlösefrist. Neue Texte stehen als Schlüssel in `de.json`. | ☑ | **gilt** | Hilfe `@beta` und `@ref-mcp` in 4 Sprachen, 4 README, `make ui-texts`, `make i18n-check`, App `help`-Tests | 25.11.2026 ok (Durchsicht, Prüfläufe) |
+
+### #271 Pflegeheim als eigener Baustein mit Wohnkosten und Verkauf
+
+[Issue #271](https://github.com/ingen63/VivaPlan/issues/271) · offen (`implemented`), alle Kriterien erfüllt; Häkchen, Kommentar und Schliessen von Hand (Berechtigungsprüfung) · Umsetzung: 1a029ac · Entscheide vor der Umsetzung im Issue (AK9 im Kommentar)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #271/AK1 | Je Person Pflegeheim-Eintritt (Alter oder Datum), monatliche Kosten (mit Teuerung) und «Wohneigentum verkaufen ja/nein» erfassbar; ohne Eintrag wie heute (Golden-Dateien unverändert). | ☐ | **gilt** (`household.persons[i].careHome`, Karte im Reiter «Vorsorge»; Eintritt auch als Meilenstein) | `care_home::issue_271_ak1_…` (2), `golden::*`, e2e [ui-pflegeheim.spec.js](../e2e/ui-pflegeheim.spec.js) AK1 (#271) | 26.11.2026 ok (Tests) |
+| #271/AK2 | Alleinstehend mit Miete, Heim ab 85 mit 9 000/Monat: ab dem Eintrittsmonat keine Miete, Heimkosten in den Ausgaben (eigene Spalte in den Jahreswerten). | ☐ | **gilt** (Spalte «Heimkosten», Balken, Ereignis) | `issue_271_ak2_…` (2), e2e AK2 (#271) | 26.11.2026 ok (Tests) |
+| #271/AK3 | Eigentumswohnung, «verkaufen ja», Miete «nach Verkauf»: Verkauf im Eintrittsmonat, Miete beginnt nicht; Hypothek, Unterhalt und Eigenmietwert enden. | ☐ | **gilt** (Eigenmietwert bildet der Rechenkern nicht eigens ab, er ist Teil des eigenen Abzugswerts) | `issue_271_ak3_…` (2) | 26.11.2026 ok (Tests) |
+| #271/AK4 | «verkaufen nein»: Liegenschaft bleibt mit Kosten, Heimkosten zusätzlich; Notverkauf wie heute, auch dann keine Miete. | ☐ | **gilt** | `issue_271_ak4_keep_the_property` | 26.11.2026 ok (Test) |
+| #271/AK5 | Paar, eine Person im Heim: Wohnkosten laufen weiter, Heimkosten dazu, kein Verkauf bis beide im Heim sind. | ☐ | **gilt** (ohne Todesfall, wie entschieden; «verkaufen» bei einer der beiden Personen genügt) | `issue_271_ak5_couple_…` | 26.11.2026 ok (Test) |
+| #271/AK6 | Hinweis in der Prüfung, wenn nach dem Verkauf der letzten Liegenschaft weder Pflegeheim noch Miete erfasst ist; kein Hinweis, wenn eines greift. | ☐ | **gilt** (`housing_missing_after_sale`; nach einem Verkauf wegen des Heims folgt das Heim immer) | `issue_271_ak6_…` (2), e2e AK6 (#271) | 26.11.2026 ok (Tests) |
+| #271/AK7 | «Immobilien nie verkaufen» hat Vorrang vor «verkaufen ja». | ☐ | **gilt** (Warnung `care_home_never_sell`) | `issue_271_ak7_…` (2) | 26.11.2026 ok (Tests) |
+| #271/AK8 | CLI, MCP (`plan_set`, `describe`) und Bericht kennen die Felder; Hilfe (4 Sprachen) und `docs/BESCHREIBUNG.md`; Texte in `de.json`. | ☐ | **gilt** (Bericht mit Spalte `care`) | `report::tests::issue_271_ak8_…`, `mcp::tools::tests::issue_271_ak8_…`, e2e AK8 (#271), `make ui-texts`, `make i18n-check` | 26.11.2026 ok (Tests, CLI von Hand, Durchsicht 4 Sprachen) |
+| #271/AK9 | Heimkosten als Krankheitskosten bei Bund und Kanton abziehbar über 5 % des Nettoeinkommens; Beispiel 60 000 / 108 000 → Abzug 105 000, steuerbar nicht unter 0. | ☐ | **gilt** (Kriterium aus dem Kommentar; Regel in Hilfe und `docs/ENTWICKLUNG.md`) | `issue_271_ak9_…` (3) | 26.11.2026 ok (Tests) |
+
