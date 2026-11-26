@@ -169,6 +169,16 @@ fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>, r
     // Row number as in the user interface: the first row is `taxes.location`.
     let n = row.map_or(1, |i| i + 2);
     let canton = loc.map(|l| l.canton.as_str()).unwrap_or("");
+    let municipality = loc.and_then(|l| l.municipality);
+    // #272/AK1, AK4: the canton follows from the municipality; without both the municipality is missing (new plans)
+    if canton.is_empty() && municipality.is_none() {
+        let m = match row {
+            None => msg!(tax_municipality_missing),
+            Some(_) => msg!(relocation_municipality_missing, row = n),
+        };
+        v.err_at("taxes", path("municipality"), m);
+        return;
+    }
     if canton.is_empty() {
         let m = match row {
             None => msg!(tax_canton_missing),
@@ -185,7 +195,7 @@ fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>, r
         v.err_at("taxes", path("canton"), m);
         return;
     }
-    match loc.and_then(|l| l.municipality) {
+    match municipality {
         None => {
             let m = match row {
                 None => msg!(tax_municipality_missing),

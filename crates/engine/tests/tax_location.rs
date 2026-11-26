@@ -582,7 +582,14 @@ fn issue_63_ak8_missing_canton_or_wrong_municipality_is_an_error() {
     v["taxes"]["income"] = json!([[0, 5.0]]);
     assert!(errors(&v).is_empty());
 
+    // #272/AK4: without canton and municipality the municipality is missing (the canton follows from it)
     v["taxes"]["location"] = json!({ "canton": "", "church": "none" });
+    let e = errors(&v);
+    assert_eq!(
+        e,
+        vec![("tax_municipality_missing", Some("taxes.location.municipality".into()))]
+    );
+    v["taxes"]["location"] = json!({ "canton": "", "municipality": 261 });
     let e = errors(&v);
     assert_eq!(e, vec![("tax_canton_missing", Some("taxes.location.canton".into()))]);
     v["taxes"]["location"] = json!({ "canton": "XY" });
@@ -609,8 +616,8 @@ fn issue_63_ak8_missing_canton_or_wrong_municipality_is_an_error() {
         assert!(Simulator::new(&plan).is_err());
     }
     v["taxes"].as_object_mut().unwrap().remove("location");
-    assert_eq!(errors(&v)[0].1.as_deref(), Some("taxes.location.canton"));
-    // The simulation rejects the plan
+    assert_eq!(errors(&v)[0].1.as_deref(), Some("taxes.location.municipality")); // #272/AK4
+                                                                                 // The simulation rejects the plan
     let plan: Plan = serde_json::from_value(v).unwrap();
     assert!(Simulator::new(&plan).is_err());
 }

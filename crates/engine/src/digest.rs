@@ -395,6 +395,43 @@ pub struct StoredStats {
     pub depletion_ages: Vec<(u32, usize)>,
 }
 
+/// #272/AK3: Estimated tax of a full calendar year for the card «Steuern»: income and wealth tax of the tax year (as
+/// on the tax assessment, without lump sums and property gains) in prices of the start month, rounded to 100.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaxEstimate {
+    /// `first`: first full calendar year of the plan; `retired`: first full calendar year after the retirement.
+    pub kind: &'static str,
+    pub year: i32,
+    pub amount: f64,
+}
+
+/// #272/AK3: Estimated tax of the first full calendar year and of the first full calendar year after the retirement
+/// `retire` (the household's last payout of a pension fund). Only the first if the retirement is before the start,
+/// missing, or the two years are the same; none without a full calendar year.
+pub fn tax_estimates(records: &[MonthRecord], retire: Option<YearMonth>) -> Vec<TaxEstimate> {
+    let rows = years(records, 0.0, true);
+    let full = |y: &&YearRow| y.months == 12;
+    let estimate = |kind, y: &YearRow| TaxEstimate {
+        kind,
+        year: y.year,
+        amount: ((y.tax_income + y.tax_wealth) / 100.0).round() * 100.0,
+    };
+    let Some(first) = rows.iter().find(full) else {
+        return vec![];
+    };
+    let mut out = vec![estimate("first", first)];
+    let start = records.first().map(|r| r.month);
+    if let (Some(at), Some(start)) = (retire, start) {
+        // the whole year after the retirement: January at or after the month of the retirement
+        let after = rows.iter().filter(full).find(|y| YearMonth::new(y.year, 1) >= at);
+        if let Some(y) = after.filter(|y| at > start && y.year != first.year) {
+            out.push(estimate("retired", y));
+        }
+    }
+    out
+}
+
 /// Class of a success rate; decisive is the value rounded to 0.1 % as displayed (#72).
 pub fn rate_class(success_rate: f64) -> Verdict {
     let shown: f64 = format!("{:.1}", success_rate * 100.0).parse().unwrap_or(0.0);

@@ -409,6 +409,8 @@ test.describe("Start and navigation", () => {
     const errors = await open(page);
     await page.locator('button[data-action="new"]').click();
     await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0); // #170: no project name in a new plan
+    // #272/AK4: a new plan also lacks the municipality (see the tax tests of #272); here only the household
+    await page.evaluate(() => { state.taxes.location = { canton: "ZH", municipality: 261, church: "none" }; renderSection(); scheduleRefresh(); });
     // Asterisk at name and birth
     const name = page.locator("#main label.field", { has: page.locator('input[data-path="household.persons.0.name"]') });
     await expect(name.locator(".req")).toHaveText("*");

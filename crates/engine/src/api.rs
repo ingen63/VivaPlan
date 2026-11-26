@@ -101,15 +101,19 @@ pub fn blank_plan(start: YearMonth) -> Value {
         "income": zero, "incomeIndexed": true, "incomeEndsAtRetirement": true, "spending": zero, "extras": [],
         "spendingIncludesHousing": true, "amortExcluded": true,
     });
-    // #66/AK4: tariffs with inflation; #131/AK3: rows «bis Pensionierung» and «ab Pensionierung»; AK1: pillar 3a
+    // #66/AK4: tariffs with inflation; #131/AK3: rows «bis Pensionierung» and «ab Pensionierung»; AK1: pillar 3a.
+    // #272/AK4: mode «Wohnort» without a municipality (the only input that is required); AK2: the proposal of the
+    // canton until and from retirement and the pillar 3a deduction are the assumptions (measurement #276).
     merge(
         &mut p,
         "taxes",
         json!({
+            "mode": "location",
+            "location": { "canton": "", "church": "none" },
             "indexed": true,
             "deductions": [
-                { "from": "start", "kind": "own", "amount": 0, "rate": 0 },
-                { "from": "retire", "kind": "own", "amount": 0, "rate": 0 },
+                { "from": "start", "kind": "canton" },
+                { "from": "retire", "kind": "canton" },
             ],
             "deductPillar3a": true,
             // #149/AK5: taxable yield of the wealth (dividend yield of a global stock index about 2 %, yield of the
@@ -184,6 +188,8 @@ pub struct PreviewOut {
     pub ahv: Vec<crate::sim::AhvView>,
     /// #249: Taxable wealth per tax year with the properties (card «Abzüge vom Vermögen»).
     pub wealth_tax: Vec<crate::sim::WealthTaxYear>,
+    /// #272/AK3: Estimated tax of the first full calendar year and of the first after the retirement (card «Steuern»).
+    pub tax_estimates: Vec<crate::digest::TaxEstimate>,
 }
 
 /// The preview computes one run with constant returns. For series these are their mean
@@ -234,6 +240,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
                 pillar3a: vec![],
                 ahv: vec![],
                 wealth_tax: vec![],
+                tax_estimates: vec![],
             }
         }
     };
@@ -247,6 +254,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
             let mut result = sim.run(&path, true);
             let pillar3a = std::mem::take(&mut result.pillar3a);
             let wealth_tax = std::mem::take(&mut result.wealth_tax);
+            let tax_estimates = crate::digest::tax_estimates(&result.records, sim.retire_at());
             PreviewOut {
                 issues,
                 result: Some(result),
@@ -255,6 +263,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
                 pillar3a,
                 ahv,
                 wealth_tax,
+                tax_estimates,
             }
         }
         Err(e) => PreviewOut {
@@ -265,6 +274,7 @@ pub fn preview(plan: &Value, base_dir: &Path, library: Option<&Path>) -> Preview
             pillar3a: vec![],
             ahv,
             wealth_tax: vec![],
+            tax_estimates: vec![],
         },
     }
 }
@@ -1152,14 +1162,20 @@ mod tests {
         assert_eq!(p["scenarios"]["sweeps"], json!([]));
         assert_eq!(p["returns"], ex["returns"]);
         assert_eq!(p["withdrawal"], ex["withdrawal"]);
-        // a plan the engine reads; the only error is the missing name of the person
+        // a plan the engine reads; the only errors are the missing name of the person and (#272/AK4) municipality
         assert!(parse(&p).is_ok());
         let errors: Vec<_> = validate(&p)
             .into_iter()
             .filter(|i| i.severity == Severity::Error)
             .map(|i| i.field)
             .collect();
-        assert_eq!(errors, [Some("household.persons.0.name".to_string())]);
+        assert_eq!(
+            errors,
+            [
+                Some("household.persons.0.name".to_string()),
+                Some("taxes.location.municipality".to_string())
+            ]
+        );
         assert_eq!(
             blank_plan(YearMonth::new(2026, 12))["household"]["persons"][0]["birth"],
             "1966-12"

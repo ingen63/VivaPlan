@@ -5,31 +5,49 @@ const os = require("os");
 const path = require("path");
 const { open, noErrors, nav, previewIdle, helpTitle } = require("./helpers");
 
-const cantonSel = page => page.locator("#tax-canton");
 const muni = page => page.locator("#tax-muni");
+/** A municipality per canton for the tests that only need the canton (#272: the canton follows from the municipality). */
+const MUNI_OF = { ZH: "Zürich", ZG: "Zug", BL: "Liestal", AG: "Aarau", BE: "Bern" };
 
-/** Switches the section «Steuern» to the mode «Wohnort». */
+/** Switches the section «Steuern» to the mode «Wohnort» (#272/AK6: knob «Auf Wohnort umstellen» of a plan with own
+ *  tables, the example plan) and opens the settings below «Annahmen». */
 async function toLocation(page) {
   await nav(page, "Steuern");
-  await page.locator('button[data-action="tax-mode"][data-v="location"]').click();
-  await expect(cantonSel(page)).toBeVisible();
+  await page.locator("#tax-to-location").click();
+  await expect(muni(page)).toBeVisible();
+  await openSettings(page);
 }
 
-/** Chooses canton and municipality like a user: canton from the list, municipality by typing the name. */
+/** #272/AK2: opens the settings below the line «Annahmen» (closed by default in the mode «Wohnort»). */
+async function openSettings(page) {
+  if (!(await page.locator("#tax-settings").evaluate(d => d.open))) await page.locator("#tax-assumptions").click();
+  await expect(page.locator("#tax-deductions")).toBeVisible();
+}
+
+/** #272: back to own tables (since #272 only for plans that use them, here directly in the plan). */
+async function toOwn(page) {
+  await page.evaluate(() => {
+    delete state.taxes.mode;
+    for (const r of state.taxes.deductions ?? []) if (r.kind === "canton") Object.assign(r, { kind: "own", amount: 0, rate: 0 });
+    markDirty(); renderSection();
+  });
+}
+
+/** Chooses the municipality like a user: #272/AK1 by typing the name, the canton follows. */
 async function choose(page, canton, name) {
-  await cantonSel(page).selectOption(canton);
-  await expect(muni(page)).toBeEnabled();
   await muni(page).fill(name);
   await muni(page).press("Tab");
-  await expect(muni(page)).toHaveValue(name);
+  await expect(muni(page)).toHaveValue(`${name} (${canton})`);
 }
+/** Chooses a municipality of the canton `canton`. */
+const pickCanton = (page, canton) => choose(page, canton, MUNI_OF[canton]);
 
 test.describe("Tax by place of residence (#63)", () => {
-  test("AK1: mode place of residence or own tables; only canton, municipality (search filtered by canton) and church tax", async ({ page }) => {
+  test("AK1: mode place of residence or own tables; only municipality (#272: search over all, the canton follows) and church tax", async ({ page }) => {
     const errors = await open(page);
     await nav(page, "Steuern");
-    // Example plan: own tables (AK7)
-    await expect(page.locator('button[data-action="tax-mode"][data-v="own"]')).toHaveClass(/on/);
+    // Example plan: own tables (AK7), since #272 under «Experte» with the knob «Auf Wohnort umstellen»
+    await expect(page.locator("#tax-to-location")).toBeVisible();
     await expect(page.locator('input[data-path="taxes.income.0.0"]')).toBeVisible();
     await toLocation(page);
     expect(await page.evaluate(() => state.taxes.mode)).toBe("location");
@@ -38,28 +56,30 @@ test.describe("Tax by place of residence (#63)", () => {
     await expect(page.locator('input[data-path="taxes.wealth.0.0"]')).toHaveCount(0);
     await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toHaveCount(0);
     expect(await page.evaluate(() => state.taxes.income.length)).toBeGreaterThan(0);
-    // Municipality only after the canton; the list holds the municipalities of the canton
-    await expect(muni(page)).toBeDisabled();
-    await cantonSel(page).selectOption("BE");
+    // #272/AK1: one list of all municipalities with the canton; the canton follows from the municipality
     const names = await page.locator("#tax-munis option").evaluateAll(o => o.map(x => x.value));
-    expect(names).toContain("Bern");
-    expect(names).not.toContain("Zürich");
+    expect(names).toContain("Bern (BE)");
+    expect(names).toContain("Zürich (ZH)");
     await choose(page, "ZH", "Winterthur");
     expect(await page.evaluate(() => state.taxes.location)).toEqual({ canton: "ZH", municipality: 230, church: "none" });
-    // Search ignores upper and lower case; another canton resets the municipality
+    await expect(page.locator("#tax-canton")).toHaveText("Zürich");
+    // Search ignores upper and lower case; another municipality changes the canton
     await muni(page).fill("zürich");
     await muni(page).press("Tab");
     expect(await page.evaluate(() => state.taxes.location.municipality)).toBe(261);
-    await cantonSel(page).selectOption("AG");
+    await choose(page, "AG", "Aarau");
+    expect(await page.evaluate(() => state.taxes.location)).toEqual({ canton: "AG", municipality: 4001, church: "none" });
+    // An unknown name: the municipality is missing
+    await muni(page).fill("Nirgendwo");
+    await muni(page).press("Tab");
     expect(await page.evaluate(() => state.taxes.location.municipality)).toBeUndefined();
-    await expect(muni(page)).toHaveValue("");
     // Church tax: four denominations
     const church = page.locator('select[data-path="taxes.location.church"]');
     expect(await church.locator("option").allTextContents()).toEqual(["keine", "reformiert", "römisch-katholisch", "christkatholisch"]);
     await church.selectOption("catholic");
     expect(await page.evaluate(() => state.taxes.location.church)).toBe("catholic");
-    // Back to own tables: the tables are there again, the place of residence stays in the plan
-    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    // Back to own tables (#272: only in the file): the tables are there again, the place of residence stays in the plan
+    await toOwn(page);
     await expect(page.locator('input[data-path="taxes.income.0.0"]')).toBeVisible();
     expect(await page.evaluate(() => [state.taxes.mode, state.taxes.location.canton])).toEqual([undefined, "AG"]);
     await noErrors(page, errors);
@@ -68,26 +88,23 @@ test.describe("Tax by place of residence (#63)", () => {
   test("AK2: all 26 cantons and all municipalities of the tax data are selectable", async ({ page }) => {
     const errors = await open(page);
     await toLocation(page);
-    await expect(cantonSel(page).locator("option")).toHaveCount(27); // with «– bitte wählen –»
     const counts = await page.evaluate(() => taxLoc.cantons.map(c => [c.id, c.municipalities.length]));
-    expect(counts.reduce((a, [, n]) => a + n, 0)).toBeGreaterThan(2000);
-    for (const [id, n] of [counts[0], counts[counts.length - 1]]) {
-      await cantonSel(page).selectOption(id);
-      await expect(page.locator("#tax-munis option")).toHaveCount(n);
-    }
+    expect(counts).toHaveLength(26);
+    const n = counts.reduce((a, [, k]) => a + k, 0);
+    expect(n).toBeGreaterThan(2000);
+    // #272/AK1: all municipalities of all cantons in one list
+    await expect(page.locator("#tax-munis option")).toHaveCount(n);
     await noErrors(page, errors);
   });
 
-  test("AK8: missing canton or municipality is an error in the taxes section", async ({ page }) => {
+  test("AK8: missing municipality or one of another canton is an error in the taxes section", async ({ page }) => {
     const errors = await open(page);
     await toLocation(page);
     await previewIdle(page);
-    await expect(page.locator('[data-path="taxes.location.canton"] + .ferr')).toContainText("Bitte den Kanton wählen");
-    await cantonSel(page).selectOption("ZH");
-    await previewIdle(page);
+    // #272/AK4: without a municipality the municipality is missing (the canton follows from it)
     await expect(page.locator('[data-path="taxes.location.municipality"] + .ferr')).toContainText("Bitte die Gemeinde wählen");
     // A municipality of another canton (Bern in the canton of Zurich), e.g. from an edited file
-    await page.evaluate(() => { state.taxes.location.municipality = 351; renderSection(); scheduleRefresh(); });
+    await page.evaluate(() => { state.taxes.location = { canton: "ZH", municipality: 351, church: "none" }; renderSection(); scheduleRefresh(); });
     await previewIdle(page);
     await expect(page.locator('[data-path="taxes.location.municipality"] + .ferr')).toContainText("liegt nicht im Kanton ZH");
     await choose(page, "ZH", "Zürich");
@@ -110,7 +127,7 @@ test.describe("Tax by place of residence (#63)", () => {
     await expect(page.locator("#tax-multipliers")).toContainText(`Kirche ${pct(m[2])} %`);
     // Professional expenses with only a maximum in the ESTV data: marked
     await expect(page.locator("#tax-earned-approx")).toHaveCount(0);
-    await cantonSel(page).selectOption("BL");
+    await pickCanton(page, "BL");
     await expect(page.locator("#tax-earned-approx")).toContainText("⚠");
     await noErrors(page, errors);
   });
@@ -178,7 +195,7 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
     const rows = await page.evaluate(() => Object.fromEntries(paramSections(state).flatMap(([, r]) => r)));
     expect(rows["Kapitalbezugssteuer"]).toBe("nach Wohnort (Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %)");
     // back to own tables: the table is there again
-    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    await toOwn(page);
     await expect(page.locator('input[data-path="taxes.capital.0.0"]')).toBeVisible();
     await noErrors(page, errors);
   });
@@ -199,9 +216,9 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
         if (approx) expect(texts[l][`capitalApprox.${id}`], `${l} ${id}`).toBeTruthy();
       }
     }
-    await cantonSel(page).selectOption("ZG");
+    await pickCanton(page, "ZG");
     await expect(page.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert: Die Regel ist angenähert");
-    await cantonSel(page).selectOption("ZH");
+    await pickCanton(page, "ZH");
     await expect(page.locator("#tax-capital-approx")).toHaveCount(0);
     await expect(page.locator("#tax-capital-rule")).toBeVisible();
     await noErrors(page, errors);
@@ -257,7 +274,7 @@ test.describe("Property gains tax by canton (#65)", () => {
     await page.locator("#gain-own").uncheck();
     expect(await page.evaluate(() => state.taxes.propertyGainOwn)).toBeUndefined();
     // AK5: in the mode «Eigene Tabellen» always the own rules, no check box
-    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    await toOwn(page);
     await expect(page.locator("#gain-own")).toHaveCount(0);
     await nav(page, "Immobilien");
     await expect(sel).toHaveCount(0);
@@ -296,6 +313,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     }, [rows, loc]);
     await nav(page, "Steuern");
     await previewIdle(page);
+    await openSettings(page);
   }
 
   test("AK1, AK2: pillar 3a deduction with the maximum per person, can be switched off", async ({ page }) => {
@@ -314,9 +332,10 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
   test("AK3: new plans have the rows until and from retirement; more rows possible", async ({ page }) => {
     const errors = await open(page);
     const p = await page.evaluate(async () => blankPlan());
-    expect(p.taxes.deductions).toEqual([{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }]);
+    // #272/AK2: with the proposal of the canton in the mode «Wohnort»
+    expect(p.taxes.deductions).toEqual([{ from: "start", kind: "canton" }, { from: "retire", kind: "canton" }]);
     expect(p.taxes.deductPillar3a).toBe(true);
-    await withRows(page, p.taxes.deductions);
+    await withRows(page, p.taxes.deductions, ["ZH", 261]);
     await expect(card(page).locator("[data-ded-row]")).toHaveCount(2);
     await expect(card(page).locator('select[data-path="taxes.deductions.1.from"]')).toHaveValue("retire");
     await card(page).locator('button[data-action="ded-add"]').click();
@@ -362,7 +381,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
   test("AK8, AK9: an own value stays when the canton changes; the explanation of the own value", async ({ page }) => {
     const errors = await open(page);
     await withRows(page, [{ from: "start", kind: "own", amount: 15000, rate: 0 }], ["ZH", 261]);
-    await cantonSel(page).selectOption("BE");
+    await pickCanton(page, "BE");
     expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 15000, rate: 0 }]);
     const hint = page.locator("#ded-own-hint");
     await expect(hint).toContainText("netto (nach AHV- und PK-Beiträgen");
@@ -387,7 +406,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     await card(page).locator('button[data-action="ded-edit"]').click();
     expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "canton" }]);
     // Back to own tables: the proposal becomes an own value of 0
-    await page.locator('button[data-action="tax-mode"][data-v="own"]').click();
+    await toOwn(page);
     expect(await page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 0, rate: 0 }]);
     await noErrors(page, errors);
   });
@@ -483,6 +502,7 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     }, [rows, oneOff, loc]);
     await nav(page, "Steuern");
     await previewIdle(page);
+    await openSettings(page);
   }
   const startYear = page => page.evaluate(() => Math.floor(startM() / 12));
 
@@ -565,6 +585,7 @@ test.describe("Deductions from wealth (#231)", () => {
     }, [rows, oneOff, loc]);
     await nav(page, "Steuern");
     await previewIdle(page);
+    await openSettings(page);
   }
   const startYear = page => page.evaluate(() => Math.floor(startM() / 12));
 
@@ -660,10 +681,9 @@ test.describe("Time-dependent place of residence (#151)", () => {
     const added = await page.evaluate(() => state.taxes.relocations[0]);
     expect(added.canton).toBe("ZH");
     expect(added.from).toBe(await page.evaluate(() => i2ym(startM() + 12)));
-    await row.locator("#tax-canton-1").selectOption("ZG");
-    await expect(row.locator("#tax-muni-1")).toBeEnabled();
     await row.locator("#tax-muni-1").fill("Zug");
     await row.locator("#tax-muni-1").press("Tab");
+    await expect(row.locator("#tax-canton-1")).toHaveText("Zug");
     await row.locator('select[data-path="taxes.relocations.0.church"]').selectOption("reformed");
     // From an event (milestone «AHV-Bezug» of the first person)
     const ahv = await page.evaluate(() => state.milestones.find(m => m.name === "AHV-Bezug" || m.id.endsWith("ahv"))?.id);
@@ -919,6 +939,7 @@ test.describe("Clearer card of the deductions from income (#241)", () => {
     }, [rows, loc, couple]);
     await nav(page, "Steuern");
     await previewIdle(page);
+    await openSettings(page);
   }
   /** Rows of the details table of row `i` as [part, canton, federal]. */
   const details = (page, i) => row(page, i).locator("table.dedparts tr").evaluateAll(trs =>
@@ -1300,6 +1321,135 @@ test.describe("Default tax value of the properties (#273)", () => {
     await expect(helpTitle(page)).toHaveText("Steuerwert");
     await expect(page.locator("#helpBody")).toContainText("50 % des Marktwerts");
     await expect(page.locator("#helpBody")).toContainText("einheitliche Annahme von VivaPlan für alle Kantone, keine amtliche Zahl");
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Place of residence as the default, other settings as assumptions (#272)", () => {
+  /** New plan («Neu») in the section «Steuern». */
+  async function newPlan(page) {
+    await page.locator('button[data-action="new"]').click();
+    await page.waitForFunction(() => state.taxes.mode === "location" && state.wealth.stocks === 0);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+  const assumptions = page => page.locator("#tax-assumptions");
+
+  test("AK1, AK2, AK4: a new plan asks only municipality and church; the line «Annahmen» opens the settings", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    // AK4: mode «Wohnort» without a municipality; the check reports the missing municipality as before
+    expect(await page.evaluate(() => state.taxes.location)).toEqual({ canton: "", church: "none" });
+    await expect(page.locator('[data-path="taxes.location.municipality"] + .ferr')).toContainText("Bitte die Gemeinde wählen");
+    // AK1: first only the municipality (search over all municipalities) and the church; no own tables, no switch
+    await expect(muni(page)).toBeVisible();
+    await expect(page.locator('select[data-path="taxes.location.church"]')).toBeVisible();
+    await expect(page.locator("#tax-to-location, #tax-expert, #tax-mode")).toHaveCount(0);
+    await expect(page.locator('input[data-path="taxes.income.0.0"]')).toHaveCount(0);
+    await expect(page.locator("#tax-deductions")).toBeHidden();
+    await expect(page.locator("#tax-wealth-deductions")).toBeHidden();
+    // AK2: the defaults in words
+    for (const t of ["Annahmen:", "Standardabzüge des Kantons bis und ab Pensionierung", "Tarife mit der Teuerung", "Abzug Säule 3a: ja",
+      "Steuerwert der Immobilien 50 % des Marktwerts", "steuerbarer Ertrag Aktien 2 %, Obligationen 1 %"])
+      await expect(assumptions(page)).toContainText(t);
+    await choose(page, "ZH", "Zürich");
+    await expect(page.locator("#tax-canton")).toHaveText("Zürich");
+    await previewIdle(page);
+    // AK4/AK7: with the municipality no message in the section «Steuern»
+    await expect(page.locator("#main .ferr")).toHaveCount(0);
+    expect(await page.evaluate(() => collectIssues().filter(i => i.sec === "taxes"))).toEqual([]);
+    // AK2: a click on the line opens the settings; a change shows in the line
+    await assumptions(page).click();
+    await expect(page.locator("#tax-deductions")).toBeVisible();
+    await expect(page.locator("#tax-investment-yield")).toBeVisible();
+    await page.locator('input[data-path="taxes.deductPillar3a"]').uncheck();
+    await previewIdle(page);
+    await expect(assumptions(page)).toContainText("Abzug Säule 3a: nein");
+    await expect(page.locator("#tax-deductions")).toBeVisible(); // stays open after the change
+    await noErrors(page, errors);
+  });
+
+  test("AK3: two estimated taxes from the engine, in today's prices rounded to 100; one if retired before the start", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    await expect(page.locator("[data-tax-figures-none]")).toBeVisible();
+    await page.evaluate(() => {
+      state.household.persons[0].name = "Anna";
+      state.taxes.location = { canton: "ZH", municipality: 261, church: "none" };
+      state.flows.income = { mode: "const", value: 120000 };
+      state.flows.spending = { mode: "const", value: 60000 };
+      state.wealth.stocks = 500000;
+      markDirty(); renderSection(); scheduleRefresh();
+    });
+    await previewIdle(page);
+    const est = await page.evaluate(() => taxEstimates);
+    expect(est.map(e => e.kind)).toEqual(["first", "retired"]);
+    const figs = page.locator("#tax-figures [data-tax-figure]");
+    await expect(figs).toHaveCount(2);
+    const start = await page.evaluate(() => Math.floor(startM() / 12));
+    for (const [i, e] of est.entries()) {
+      expect(e.amount % 100).toBe(0);
+      expect(e.amount).toBeGreaterThan(0);
+      await expect(figs.nth(i)).toContainText(`${e.year}`);
+      await expect(figs.nth(i)).toContainText(e.amount.toLocaleString("de-CH"));
+    }
+    // first full calendar year: the start year with a start in January, else the next
+    expect(est[0].year).toBe(await page.evaluate(() => startM() % 12 === 0) ? start : start + 1);
+    await expect(figs.nth(1)).toContainText("nach der Pensionierung");
+    await expect(page.locator("#tax-location")).toContainText("in heutigen Preisen, auf 100 Franken gerundet");
+    // retired before the start: only one number
+    await page.evaluate(() => { state.household.persons[0].birth = i2ym(startM() - 70 * 12); markDirty(); renderSection(); scheduleRefresh(); });
+    await previewIdle(page);
+    await expect(figs).toHaveCount(1);
+    await expect(figs.first()).toHaveAttribute("data-tax-figure", "first");
+    await noErrors(page, errors);
+  });
+
+  test("AK8: F1 at the municipality opens the help with the estimate, the assumptions and the switch; in four languages", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    await muni(page).focus();
+    await page.keyboard.press("F1");
+    await expect(helpTitle(page)).toHaveText("Steuer nach Wohnort");
+    for (const t of ["Geschätzte Steuer:", "ersten vollen Kalenderjahr nach der Pensionierung", "Annahmen:", "Ein Klick auf die Zeile öffnet die Einstellungen",
+      "Auf Wohnort umstellen", "der Kanton ergibt sich aus der Gemeinde"])
+      await expect(page.locator("#helpBody")).toContainText(t);
+    const help = l => fs.readFileSync(path.join(__dirname, "..", "crates", "app", "ui", "hilfe", l, "10-editor.md"), "utf8");
+    for (const [l, words] of [["de", ["«Experte»", "Auf Wohnort umstellen"]], ["en", ["“Expert”", "Switch to place of residence"]],
+      ["fr", ["«Expert»", "Passer au domicile"]], ["it", ["«Esperto»", "Passare al domicilio"]]])
+      for (const w of words) expect(help(l), `${l} ${w}`).toContain(w);
+    await noErrors(page, errors);
+  });
+
+  test("AK5, AK6: existing plan with own tables unchanged under «Experte», switch with before and after, undo", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+    // AK6: the example plan (own tables) opens unchanged
+    expect(await page.evaluate(() => [state.taxes.mode, state.taxes.location])).toEqual([undefined, undefined]);
+    // AK5: own tables under «Experte», no mode of equal rank
+    await expect(page.locator("#tax-mode")).toHaveCount(0);
+    await expect(page.locator("#tax-expert summary")).toContainText("Experte");
+    await expect(page.locator('#tax-expert input[data-path="taxes.income.0.0"]')).toBeVisible();
+    await expect(page.locator("#tax-own")).toContainText("Experte");
+    const before = await page.evaluate(() => taxEstimates.find(e => e.kind === "first"));
+    expect(before.amount).toBeGreaterThan(0);
+    await expect(page.locator('#tax-own [data-tax-figure="first"]')).toContainText(before.amount.toLocaleString("de-CH"));
+    // AK6: knob «Auf Wohnort umstellen»; after the choice of the municipality the hint before and after
+    await page.locator("#tax-to-location").click();
+    expect(await page.evaluate(() => state.taxes.mode)).toBe("location");
+    await expect(page.locator("#tax-expert")).toHaveCount(0);
+    await expect(page.locator("#tax-switch-hint")).toHaveCount(0);
+    await choose(page, "ZH", "Zürich");
+    await previewIdle(page);
+    const after = await page.evaluate(() => taxEstimates.find(e => e.kind === "first"));
+    const hint = page.locator("#tax-switch-hint");
+    await expect(hint).toContainText(`Geschätzte Steuer ${after.year}: vorher mit eigenen Tabellen ${before.amount.toLocaleString("de-CH")} Franken, nachher mit dem Wohnort ${after.amount.toLocaleString("de-CH")} Franken.`);
+    // undo like every change: back to the own tables
+    for (let i = 0; i < 5 && await page.evaluate(() => state.taxes.mode === "location"); i++) await page.evaluate(() => History.undo());
+    expect(await page.evaluate(() => state.taxes.mode)).toBeUndefined();
+    await expect(page.locator("#tax-to-location")).toBeVisible();
+    await expect(page.locator('#tax-expert input[data-path="taxes.income.0.0"]')).toBeVisible();
     await noErrors(page, errors);
   });
 });

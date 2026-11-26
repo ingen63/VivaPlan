@@ -182,6 +182,8 @@ const mortTotal = p => (p.mortgage?.tranches || []).reduce((a, t) => a + (+t.amo
 
 // ---------- Engine ----------
 let lastIssues = [], previewError = null, previewSeq = 0, previewTimer = 0;
+/** #272/AK3: estimated tax of the first full calendar year and of the first after the retirement (engine preview). */
+let taxEstimates = [];
 const TICK_KINDS = ["mortgageRenewal", "mortgageRepayment", "amortizationSwitch", "pillar3aPayout", "rentStart"];
 
 /** Brings the engine result into the form used by charts and displays. */
@@ -223,10 +225,10 @@ function requestPreview() {
     try {
       const r = await Engine.call("preview", { plan: state, path: currentPath });
       if (seq !== previewSeq) return;
-      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; if (lastSim) { lastSim.p3aView = r.pillar3a || []; lastSim.wealthTax = r.wealthTax || []; } lastAhv = r.ahv || []; previewBasis = r.basis;
+      lastIssues = r.issues; previewError = r.error; lastSim = r.result ? adapt(r.result) : null; taxEstimates = r.taxEstimates || []; if (lastSim) { lastSim.p3aView = r.pillar3a || []; lastSim.wealthTax = r.wealthTax || []; } lastAhv = r.ahv || []; previewBasis = r.basis;
     } catch (e) {
       if (seq !== previewSeq) return;
-      previewError = errText(e); lastSim = null; lastAhv = [];
+      previewError = errText(e); lastSim = null; lastAhv = []; taxEstimates = [];
     }
     renderDerived();
     if (req === requestPreview.n) document.documentElement.dataset.preview = "idle"; // no newer request
@@ -390,6 +392,7 @@ async function adopt(plan, fromFile = true) {
   try { const r = await Engine.call("upgrade_plan", { plan }); plan = r.plan; notes = r.notes || []; }
   catch { /* without the engine: take over unchanged */ }
   state = normalize(plan);
+  taxSwitch = null; taxOpen.settings = taxOpen.expert = null; // #272: only for the plan of the switch
   delete state.realestate.affordability;
   const adopted = adoptAffordability(fileAfford);
   if (adopted) notes.push(adopted);
@@ -1457,9 +1460,25 @@ function locRows(plan = state) {
   const t = plan?.taxes ?? {};
   return [{ path: "taxes.location", loc: t.location ?? {}, from: null }, ...(t.relocations ?? []).map((r, i) => ({ path: `taxes.relocations.${i}`, loc: r, from: r.from }))];
 }
-/** #63/AK1, AK9: one row of the card «Wohnort»: canton, municipality (search in the list of the canton), church tax;
- *  multipliers and the rule of the canton for lump sums (#64/AK1, AK3, with ⚠ if only approximated). #151/AK1: the
- *  first row from the start, the others with «ab» (year or event) and ✕; the first row keeps the ids of #63. */
+/** #272/AK1: all municipalities of the tax year as «Name (KT)» for the search; the canton follows from the municipality. */
+let muniAllOf = null, muniAllCache = [];
+function muniAll() {
+  if (muniAllOf !== taxLoc) { muniAllOf = taxLoc; muniAllCache = (taxLoc?.cantons ?? []).flatMap(c => c.municipalities.map(m => ({ label: `${m[1]} (${c.id})`, name: m[1], canton: c.id, bfs: m[0] }))).sort((a, b) => a.label.localeCompare(b.label, "de-CH")); }
+  return muniAllCache;
+}
+/** #272/AK1: municipality of an input: «Name (KT)» or a name that is unique (upper and lower case ignored); with a
+ *  name in several cantons the canton of the row (`canton`) decides. */
+function findMuni(text, canton) {
+  const t = text.trim().toLowerCase(), all = muniAll();
+  const exact = all.find(m => m.label.toLowerCase() === t);
+  if (exact) return exact;
+  const named = all.filter(m => m.name.toLowerCase() === t);
+  return named.length === 1 ? named[0] : named.find(m => m.canton === canton) ?? null;
+}
+/** #63/AK1, AK9: one row of the card «Wohnort»: municipality (#272/AK1: search over all municipalities, the canton
+ *  follows from it), canton as text and church tax; multipliers and the rule of the canton for lump sums (#64/AK1,
+ *  AK3, with ⚠ if only approximated). #151/AK1: the first row from the start, the others with «ab» (year or event)
+ *  and ✕; the first row keeps the ids of #63. */
 function locRow({ path, loc, from }, i) {
   const canton = taxLoc?.cantons.find(c => c.id === loc.canton), muni = canton?.municipalities.find(m => m[0] === loc.municipality);
   const earned = canton?.deductions.earned, id = k => i ? `${k}-${i}` : k;
@@ -1467,22 +1486,38 @@ function locRow({ path, loc, from }, i) {
   return `<div class="locrow" data-loc-row="${i}"><div class="row"><span class="ab">${tr("common.from")}</span>${when}
       ${i ? `<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="loc-del" data-i="${i - 1}">✕</button>` : ""}</div>
     <div class="grid3">
-    <label class="field"><span>${tr("taxes.canton")}</span><div data-path="${path}.canton"><select class="plain loc-canton" id="${id("tax-canton")}" data-loc="${path}">
-      <option value="" ${canton ? "" : "selected"}>${tr("taxes.choose")}</option>
-      ${(taxLoc?.cantons ?? []).map(c => `<option value="${c.id}" ${c.id === loc.canton ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div></label>
-    <label class="field"><span>${tr("taxes.municipality")}</span><div class="inp" data-path="${path}.municipality"><input class="loc-muni" id="${id("tax-muni")}" data-loc="${path}" list="${id("tax-munis")}" autocomplete="off" placeholder="${canton ? tr("taxes.municipalityPlaceholder") : tr("taxes.chooseCantonFirst")}" ${canton ? "" : "disabled"} value="${esc(muni ? muni[1] : "")}"></div>
-      <datalist id="${id("tax-munis")}">${(canton?.municipalities ?? []).map(m => `<option value="${esc(m[1])}"></option>`).join("")}</datalist></label>
+    <label class="field"><span>${tr("taxes.municipality")}</span><div class="inp" data-path="${path}.municipality"><input class="loc-muni" id="${id("tax-muni")}" data-loc="${path}" list="tax-munis" autocomplete="off" placeholder="${tr("taxes.municipalitySearch")}" value="${esc(muni ? `${muni[1]} (${canton.id})` : "")}"></div></label>
+    <label class="field"><span>${tr("taxes.canton")}</span><span class="computed" style="padding:8px 0" id="${id("tax-canton")}" data-path="${path}.canton">${canton ? esc(canton.name) : "–"}</span></label>
     <label class="field"><span>${tr("taxes.church")}</span>${Sel(`${path}.church`, CHURCH, { rerender: 1 })}</label></div>
     ${muni ? `<p class="hint" id="${id("tax-multipliers")}">${multiplierText(tr("taxes.income"), muni[2], loc.church)}; ${multiplierText(tr("taxes.wealth"), muni[3], loc.church)}.</p>` : ""}
     ${earned?.approx ? `<p class="hint warn" id="${id("tax-earned-approx")}">⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}
     ${canton ? `<p class="hint" id="${id("tax-capital-rule")}">${tr("taxes.capitalRule", { rule: tr(`capitalRule.${canton.id}`) })}</p>` : ""}
     ${canton?.capitalApprox ? `<p class="hint warn" id="${id("tax-capital-approx")}">⚠ ${tr("taxes.capitalApprox", { note: tr(`capitalApprox.${canton.id}`) })}</p>` : ""}</div>`;
 }
+/** #272/AK3: the two estimated taxes (first full calendar year, first full calendar year after the retirement) in
+ *  prices of the start, rounded to 100 by the engine; without a preview a dash. */
+function taxFigures() {
+  if (!taxEstimates.length) return `<span data-tax-figures-none>${tr("taxes.figuresNone")}</span>`;
+  return taxEstimates.map(e => `<span class="taxfig" data-tax-figure="${e.kind}"><span class="lbl">${tr(`taxes.figure.${e.kind}`, { year: e.year })}</span><b>${fmtInt(e.amount)} ${UNIT.chf()}</b></span>`).join("");
+}
+/** #272/AK6: before and after of the switch to the place of residence (not saved): estimate of the first year with the
+ *  own tables; the hint after the choice of the municipality. */
+let taxSwitch = null;
+function taxSwitchHint() {
+  const after = taxEstimates.find(e => e.kind === "first");
+  if (!taxSwitch || !isLocation(state) || state.taxes.location?.municipality == null || !after) return "";
+  return `<p class="hint" id="tax-switch-hint">${tr("taxes.switchResult", { year: after.year, before: fmtInt(taxSwitch.amount), after: fmtInt(after.amount) })}</p>`;
+}
+const taxFiguresBlock = () => `<div class="taxfigs" id="tax-figures">${C("taxFigures")}</div>
+    <p class="hint">${tr("taxes.figuresNote")}</p>${C("taxSwitchHint")}`;
 /** #63/AK1, AK9: Card «Wohnort» with the tax year, the source and the note that the tax is an estimate with the
- *  standard deductions. #151/AK1: one row per place of residence, «Wohnort hinzufügen» adds a row. */
+ *  standard deductions. #151/AK1: one row per place of residence, «Wohnort hinzufügen» adds a row. #272/AK3: the two
+ *  estimated taxes at the top. */
 function taxLocationCard() {
   return `<div class="card" id="tax-location"><h3>${tr("taxes.location")}</h3>
+    ${taxFiguresBlock()}
     <div class="rows">${locRows().map(locRow).join("")}
+    <datalist id="tax-munis">${muniAll().map(m => `<option value="${esc(m.label)}"></option>`).join("")}</datalist>
     <div><button class="btn small" data-action="loc-add">${tr("taxes.locationAdd")}</button></div></div>
     <p class="hint" id="tax-location-rule">${tr("taxes.locationRule")}</p>
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p>
@@ -1490,17 +1525,12 @@ function taxLocationCard() {
 }
 document.addEventListener("change", e => {
   const el = e.target, path = el?.dataset?.loc;
-  if (!path) return;
-  if (el.classList.contains("loc-canton")) {
-    if (path === "taxes.location") state.taxes.location ??= {};
-    const loc = getP(path); loc.canton = el.value; delete loc.municipality;
-    markDirty(); renderSection();
-  } else if (el.classList.contains("loc-muni")) {
-    const loc = getP(path), c = taxLoc?.cantons.find(x => x.id === loc?.canton), name = el.value.trim();
-    const m = c?.municipalities.find(x => x[1] === name) ?? c?.municipalities.find(x => x[1].toLowerCase() === name.toLowerCase());
-    if (m) loc.municipality = m[0]; else delete loc.municipality;
-    markDirty(); renderSection();
-  }
+  if (!path || !el.classList.contains("loc-muni")) return;
+  if (path === "taxes.location") state.taxes.location ??= { canton: "", church: "none" };
+  const loc = getP(path), m = findMuni(el.value, loc?.canton);
+  // #272/AK1: the canton follows from the municipality; without a match the municipality is missing
+  if (m) { loc.canton = m.canton; loc.municipality = m.bfs; } else delete loc.municipality;
+  markDirty(); renderSection();
 });
 /** #131: rows of the deductions from income; without `taxes.deductions` as before: in the mode «Wohnort» the proposal
  *  of the canton throughout, otherwise none (shown, but only stored after «Abzüge anpassen»). */
@@ -1697,33 +1727,63 @@ document.addEventListener("input", e => {
   const out = $("#ded-calc-result"); if (out) out.textContent = dedCalcText();
   const hint = $("#ded-calc-p3a-hint"); if (hint) hint.hidden = !dedCalcP3aMissing();
 });
+/** #272/AK2: the assumptions in words: deductions, tariffs with inflation, pillar 3a deduction, tax value of the
+ *  properties and taxable yield of the wealth. */
+function taxAssumptions() {
+  const t = state.taxes, rows = dedRows(), loc = isLocation(state);
+  const canton = loc && rows.length && rows.every(r => r.kind === "canton");
+  const extra = rows.some(r => (r.extra ?? 0) !== 0) || !!t.oneOffDeductions?.length;
+  const ded = canton ? tr(rows.some(r => r.from === "retire") ? "taxes.assume.dedCantonRetire" : "taxes.assume.dedCanton") + (extra ? tr("taxes.assume.dedExtra") : "")
+    : rows.some(r => r.kind === "canton" || r.amount || r.rate) || extra ? tr("taxes.assume.dedOwn") : tr("taxes.assume.dedNone");
+  const y = t.investmentYield ?? {};
+  return [ded, tr(t.indexed ? "taxes.assume.indexed" : "taxes.assume.notIndexed"), tr(t.deductPillar3a ? "taxes.assume.p3aYes" : "taxes.assume.p3aNo"),
+    state.realestate.defaultTaxValue ? tr("taxes.assume.taxValueDefault", { pc: taxValueDefaultPc() }) : tr("taxes.assume.taxValueMarket"),
+    tr("taxes.assume.yield", { stocks: fmtPct(y.stocks ?? 0), bonds: fmtPct(y.bonds ?? 0) })].join(" · ");
+}
+/** #272/AK2: open state of the settings below «Annahmen» and of «Experte» (only for the display, not saved); `null`:
+ *  closed in the mode «Wohnort», open with own tables. */
+const taxOpen = { settings: null, expert: null };
+document.addEventListener("toggle", e => { const k = e.target?.dataset?.taxOpen; if (k) taxOpen[k] = e.target.open; }, true);
+/** Errors at a field inside the settings open them, so that the message is visible. */
+const taxSettingsError = () => [...lastIssues.filter(i => i.severity === "error").map(i => i.field), ...invalidFields.keys()]
+  .some(f => /^taxes\.(?!location|relocations)|^realestate\.properties\.\d+\.taxValue/.test(f ?? ""));
 R.taxes = () => {
   const own = !isLocation(state);
-  const seg = `<div class="seg" style="margin-bottom:12px" id="tax-mode"><button class="${own ? "on" : ""}" data-action="tax-mode" data-v="own">${tr("taxes.modeOwn")}</button><button class="${own ? "" : "on"}" data-action="tax-mode" data-v="location">${tr("taxes.modeLocation")}</button></div>`;
   const note = own ? tr("taxes.estimateNote") : tr("taxes.estimateNoteLocation");
   // #63, #64: in the mode «Wohnort» the tables for income, wealth and lump sums are hidden (they stay in the file).
   // #65: the property gains tax follows the canton of each property; own rules and their multiplier only with the
   // check box.
   const tables = TaxTable("income", tr("taxes.incomeTax"), tr("taxes.income")) + TaxTable("wealth", tr("taxes.wealthTax"), tr("taxes.wealth"));
   const coupleTables = state.taxes.couple ? TaxTable("couple.income", tr("taxes.incomeTaxMarried"), tr("taxes.income")) + TaxTable("couple.wealth", tr("taxes.wealthTaxMarried"), tr("taxes.wealth")) + TaxTable("couple.capital", tr("taxes.lumpsumTaxMarried"), tr("taxes.lumpsum")) : "";
-  return `<h2>${tr("section.taxes")}</h2><p class="lead">${own ? tr("taxes.intro") : tr("taxes.introLocation")}</p>
-  ${seg}
-  <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>
-  ${own ? "" : taxLocationCard()}
-  ${deductionsCard()}
-  ${wealthDeductionsCard()}
-  ${investmentYieldCard()}
-  <div class="card">${own || gainOwn() ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>` : ""}
+  // #272/AK5, AK6: own tables only in plans that use them, under «Experte»; the card offers the switch
+  const ownCard = `<div class="card" id="tax-own"><h3>${tr("taxes.modeOwn")} <span class="sub">${tr("taxes.expert")}</span></h3>
+    ${taxFiguresBlock()}
+    <p class="hint">${tr("taxes.ownHint")}</p>
+    <div><button class="btn" data-action="tax-to-location" id="tax-to-location">${tr("taxes.switchToLocation")}</button></div></div>`;
+  const open = k => (taxOpen[k] ?? own) || (k === "settings" && taxSettingsError());
+  const settings = `<details class="taxsettings" id="tax-settings" data-tax-open="settings"${open("settings") ? " open" : ""}>
+    <summary class="card taxassume" id="tax-assumptions"><b>${tr("taxes.assumptions")}</b> <span data-tax-assumptions>${C("taxAssumptions")}</span></summary>
+    ${deductionsCard()}
+    ${wealthDeductionsCard()}
+    ${investmentYieldCard()}
+    <div class="card">${own || gainOwn() ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", own ? tr("taxes.multiplier") : tr("taxes.multiplierLocation"), "num", { unit: "×" })}</div>` : ""}
     ${own ? "" : `<p class="hint">${gainOwn() ? tr("taxes.locationOwnTablesHint") : tr("taxes.locationCantonGainHint")}</p>`}
     <div>${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
     <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>
-  ${own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
-    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : ""}
-  ${own ? gainCard() : locGainCard()}
-  ${own && state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
+    ${own ? "" : locGainCard()}</details>`;
+  const expert = own ? `<details class="taxsettings" id="tax-expert" data-tax-open="expert"${open("expert") ? " open" : ""}><summary class="card taxassume"><b>${tr("taxes.expert")}:</b> ${tr("taxes.modeOwn")}</summary>
+    <div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
+    <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>
+    ${gainCard()}
+    ${state.household.married ? `<div class="card"><h3>${tr("taxes.married")}</h3>
     <label class="check"><input type="checkbox" data-action="couple-tax" ${state.taxes.couple ? "checked" : ""}> ${tr("taxes.marriedTables")}</label>
     <p class="hint">${tr("taxes.marriedHint")}</p>
-    ${coupleTables}</div>` : ""}`;
+    ${coupleTables}</div>` : ""}</details>` : "";
+  return `<h2>${tr("section.taxes")}</h2><p class="lead">${own ? tr("taxes.intro") : tr("taxes.introLocation")}</p>
+  ${own ? ownCard : taxLocationCard()}
+  ${settings}
+  ${expert}
+  <div class="card taxnote" id="taxEstimateNote"><p class="hint">${note} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p></div>`;
 };
 
 let PSTAT;
@@ -1823,6 +1883,9 @@ function runsPerScenario() {
   return { fixed: 1, historical: 1, rolling: rollingCount(), bootstrap: r.bootstrap.paths, parametric: r.parametric.paths }[r.source];
 }
 const COMPUTED = {
+  taxFigures: () => taxFigures(),
+  taxSwitchHint: () => taxSwitchHint(),
+  taxAssumptions: () => taxAssumptions(),
   dedSum: i => dedSum(i),
   dedParts: i => dedParts(i),
   wtaxHint: () => wtaxHint(),
@@ -2665,16 +2728,17 @@ const ACTIONS = {
     state.pillar3a = state.pillar3a.filter(a => a.person !== b.id);
     markDirty(); renderSection();
   },
-  "tax-mode": d => {
-    if (d.v === "location") { state.taxes.mode = "location"; state.taxes.location ??= { canton: "", church: "none" }; }
-    else delete state.taxes.mode;
-    // #131/AK4, AK11: in the mode «Wohnort» the proposal of the canton is the default (rows without an own value);
-    // with own tables there is no proposal (own value 0)
-    for (const r of state.taxes.deductions ?? []) {
-      if (d.v === "location" && r.kind !== "canton" && !r.amount && !r.rate) { r.kind = "canton"; delete r.amount; delete r.rate; }
-      else if (d.v !== "location" && r.kind === "canton") Object.assign(r, { kind: "own", amount: 0, rate: 0 });
-    }
+  // #272/AK6: switch a plan with own tables to the place of residence (undo like every change); the estimate of the
+  // first year with the own tables stays for the hint «vorher, nachher» after the choice of the municipality
+  "tax-to-location": () => {
+    const before = taxEstimates.find(e => e.kind === "first");
+    taxSwitch = before ? { amount: before.amount } : null;
+    state.taxes.mode = "location"; state.taxes.location ??= { canton: "", church: "none" };
+    // #131/AK4: in the mode «Wohnort» the proposal of the canton is the default (rows without an own value)
+    for (const r of state.taxes.deductions ?? []) if (r.kind !== "canton" && !r.amount && !r.rate) { r.kind = "canton"; delete r.amount; delete r.rate; }
+    taxOpen.settings = null;
     markDirty(); renderSection();
+    $("#tax-muni")?.focus();
   },
   // #151/AK1: add a place of residence one year after the last row (canton and church of the last row, the
   // municipality is to be chosen); removing the last further row removes `relocations` from the file

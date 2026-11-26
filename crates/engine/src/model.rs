@@ -1069,7 +1069,8 @@ pub struct Taxes {
     /// since the simulation start (compensation of bracket creep); the rates stay the same. Missing: no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub indexed: bool,
-    /// #63: Source of the income and wealth tax: own tables (default, not written) or the place of residence.
+    /// #63: Source of the income and wealth tax: own tables (default, not written) or the place of residence (#272: new
+    /// plans).
     #[serde(default, skip_serializing_if = "TaxMode::is_own")]
     pub mode: TaxMode,
     /// #63: Place of residence for the mode `location`; missing details are reported by the validation.

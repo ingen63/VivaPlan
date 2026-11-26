@@ -1223,7 +1223,9 @@ test.describe("New plan from the engine (#269)", () => {
       ahv: { ...p.pension.ahv, monthly: 0, at: "ahv" } };
     p.flows = { income: { ...zero }, incomeIndexed: true, incomeEndsAtRetirement: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true, amortExcluded: true };
     p.taxes = { ...p.taxes, indexed: true };
-    p.taxes.deductions = [{ from: "start", kind: "own", amount: 0, rate: 0 }, { from: "retire", kind: "own", amount: 0, rate: 0 }];
+    // #272/AK2, AK4: mode «Wohnort» without a municipality, proposal of the canton until and from retirement
+    p.taxes.mode = "location"; p.taxes.location = { canton: "", church: "none" };
+    p.taxes.deductions = [{ from: "start", kind: "canton" }, { from: "retire", kind: "canton" }];
     p.taxes.deductPillar3a = true;
     p.taxes.investmentYield = { stocks: 0.02, bonds: 0.01 }; // #149/AK5: defaults of new plans
     p.wealth = { ...p.wealth, stocks: 0, bonds: 0, cash: 0 };

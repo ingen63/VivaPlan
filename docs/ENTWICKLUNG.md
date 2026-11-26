@@ -342,20 +342,21 @@ Befehle der Kommandozeile und der Entwicklungsserver bleiben frei. Das Token ist
 eigenes Programm für Entwickler und kommt nicht in die Pakete (`tools/cli-sidecar.mjs` kopiert nur `vivaplan`).
 
 ```sh
-cargo run -q -p vivaplan-cli --bin beta-token -- keygen --out ~/VivaPlan-Beta/beta-privat.key
+cargo run -q -p vivaplan-cli --bin beta-token -- keygen --out <ordner>/beta-privat.key
 ```
 
-`keygen` schreibt den privaten Schlüssel (nur für den Besitzer lesbar) und gibt den öffentlichen aus. Es verweigert
-eine vorhandene Datei und jeden Ort im Repository; `.gitignore` schliesst `*.key`, `*.pem` und `*private*key*` aus. Den
-privaten Schlüssel sicher aufbewahren (z. B. Passwortverwaltung), nie weitergeben, nie einchecken. Den öffentlichen
-Schlüssel (64 Hexadezimalzeichen) in `crates/engine/src/beta.rs` bei `PUBLIC_KEY` anstelle des Platzhalters einsetzen,
-committen und eine neue Version bauen. Solange der Platzhalter dort steht, nimmt die App kein Token an (Meldung
-`beta_no_key`). Ein neuer Schlüssel macht alle bisherigen Tokens und Aktivierungen ungültig.
+`<ordner>` ist ein Ordner ausserhalb des Repositorys. `keygen` schreibt den privaten Schlüssel (nur für den Besitzer
+lesbar) und gibt den öffentlichen aus. Es verweigert eine vorhandene Datei und jeden Ort im Repository; `.gitignore`
+schliesst `*.key`, `*.pem` und `*private*key*` aus. Den privaten Schlüssel sicher aufbewahren (z. B.
+Passwortverwaltung), nie weitergeben, nie einchecken. Den öffentlichen Schlüssel (64 Hexadezimalzeichen) in
+`crates/engine/src/beta.rs` bei `PUBLIC_KEY` anstelle des Platzhalters einsetzen, committen und eine neue Version bauen.
+Solange der Platzhalter dort steht, nimmt die App kein Token an (Meldung `beta_no_key`). Ein neuer Schlüssel macht alle
+bisherigen Tokens und Aktivierungen ungültig.
 
 **Tokens ausgeben:**
 
 ```sh
-cargo run -q -p vivaplan-cli --bin beta-token -- issue --key ~/VivaPlan-Beta/beta-privat.key --who AB --until 2026-12-31
+cargo run -q -p vivaplan-cli --bin beta-token -- issue --key <ordner>/beta-privat.key --who AB --until 2026-12-31
 cargo run -q -p vivaplan-cli --bin beta-token -- check VP1.beta.…   # prüft gegen den eingebauten Schlüssel
 ```
 
@@ -863,7 +864,15 @@ Im Modus «Wohnort» wachsen ebenso die Beträge der Tarife (Satz für `x / inde
 
 Modell: `taxes.mode` ist `"own"` (Standard, wird nicht geschrieben) oder `"location"`; `taxes.location` =
 `{ canton: "ZH", municipality: 261, church: "none" | "reformed" | "catholic" | "christCatholic" }`, `municipality` ist
-die BFS-Nummer. Die Steuerdatei `crates/engine/data/steuern-2026.json` erzeugt `tools/steuerdaten/build.py` aus den
+die BFS-Nummer. #272: `api::blank_plan` setzt `mode: "location"` mit `location: { canton: "", church: "none" }` (ohne
+Gemeinde), die Abzugszeilen «Vorschlag des Kantons» ab `start` und ab `retire` und `deductPillar3a: true`; fehlen Kanton
+und Gemeinde, meldet die Prüfung die fehlende Gemeinde (`tax_municipality_missing` am Feld `municipality`, bei weiteren
+Wohnorten `relocation_municipality_missing`), denn in der Oberfläche ergibt sich der Kanton aus der Gemeinde. Die
+Vorschau liefert `PreviewOut.taxEstimates` (`digest::tax_estimates`): je `{kind, year, amount}` die Einkommens- und
+Vermögenssteuer des Steuerjahres (Jahreswerte real, ohne Kapitalbezug und Grundstückgewinn), auf 100 gerundet, für das
+erste volle Kalenderjahr (`first`) und das erste volle Kalenderjahr, dessen Januar nicht vor `Simulator::retire_at`
+liegt (`retired`); `retired` fehlt, wenn die Pensionierung nicht nach dem Start liegt oder das Jahr dasselbe ist. Die
+Steuerdatei `crates/engine/data/steuern-2026.json` erzeugt `tools/steuerdaten/build.py` aus den
 ESTV-Grunddaten (Aufbau und Ablauf für ein neues Steuerjahr: `tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
 ein (`BUILTIN`).
 

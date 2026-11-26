@@ -290,6 +290,11 @@ const NEEDED: &[(&str, &str)] = &[
         "pension.ahv.monthly",
         "AHV: expected pension per month (individual account statement or estimate)",
     ),
+    // #272/AK4: new plans calculate with the place of residence, the municipality is the only input of the taxes
+    (
+        "taxes.location.municipality",
+        "Municipality of residence for the taxes: BFS number, with its canton in taxes.location.canton",
+    ),
 ];
 
 /// #269/AK2: Values of a new plan that are assumptions, to confirm with the user.
@@ -309,7 +314,8 @@ const ASSUMED: &[(&str, &str)] = &[
     ("milestones.3.years", "Age at the end of the plan (assumed: 95)"),
     (
         "taxes",
-        "Place of residence for the taxes (assumed: the tariffs of the example)",
+        "Taxes (assumed: no church tax, standard deductions of the canton until and from retirement, pillar 3a \
+         deduction, tariffs with inflation, taxable yield 2 % stocks and 1 % bonds)",
     ),
 ];
 
@@ -1094,13 +1100,18 @@ mod tests {
         let needed: Vec<String> = NEEDED.iter().map(|(p, _)| p.to_string()).collect();
         assert_eq!(paths("missing"), needed);
         assert!(paths("assumed").contains(&"household.persons.0.birth".to_string()));
-        for (path, _) in NEEDED.iter().chain(ASSUMED) {
+        // #272/AK4: the municipality is missing in the plan itself
+        for (path, _) in NEEDED
+            .iter()
+            .chain(ASSUMED)
+            .filter(|(p, _)| *p != "taxes.location.municipality")
+        {
             assert!(at_path(&s.plan("p1").unwrap().plan, path).is_some(), "{path}");
         }
         assert!(o["missing"][1]["ask"].as_str().unwrap().contains("income"));
         assert!(o["alsoAsk"].as_str().unwrap().contains("Partner"));
         assert!(o["next"].as_str().unwrap().contains("never invent"));
-        assert_eq!(o["checks"]["errors"], 1); // only the name of the person
+        assert_eq!(o["checks"]["errors"], 2); // only the name of the person and the municipality (#272)
                                               // the working copy is the plan of the engine (brought up to date like every plan)
         let plan = &s.plan("p1").unwrap().plan;
         assert_eq!(plan["household"]["persons"][0]["birth"], now.plus(-720).iso());

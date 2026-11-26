@@ -121,8 +121,17 @@ Der Editor führt durch zwölf Abschnitte:
   der direkten Bundessteuer; die Steuerdatei ist eingebettet, ohne
   Netzwerkzugriff. Im Modus «Wohnort» auch die Kapitalbezugssteuer (#64) nach der Regel des Kantons mit den
   Steuerfüssen der Einkommenssteuer und einem Fünftel des Bundestarifs, ohne eigene Tabelle; die Regel steht unter der
-  Gemeinde, angenäherte Regeln (Wallis, Zug) mit ⚠. Modus «Eigene Tabellen»: Tabellen für Einkommens-, Vermögens- und
-  Kapitalbezugssteuer mit Steuerfuss; bestehende Planungen öffnen in diesem Modus. Grundstückgewinnsteuer: im Modus
+  Gemeinde, angenäherte Regeln (Wallis, Zug) mit ⚠. Wohnort als Standard (#272): Neue Planungen beginnen im Modus
+  «Wohnort» ohne Gemeinde; nötig sind nur die Gemeinde (Suche über alle Gemeinden, der Kanton ergibt sich daraus) und
+  die Konfession. Die übrigen Einstellungen gelten mit Vorgaben und stehen als Zeile «Annahmen» in Worten da
+  (Standardabzüge des Kantons bis und ab Pensionierung, Tarife mit der Teuerung, Abzug der Säule 3a ja, Steuerwert der
+  Immobilien 50 % des Marktwerts, steuerbarer Ertrag); ein Klick öffnet die Einstellungen. Oben auf der Karte stehen
+  zwei Kennzahlen aus der Vorschau des Rechenkerns: Einkommens- und Vermögenssteuer im ersten vollen Kalenderjahr und
+  im ersten vollen Kalenderjahr nach der Pensionierung, in heutigen Preisen auf 100 Franken gerundet (eine Zahl, wenn
+  die Pensionierung vor dem Start liegt). Modus «Eigene Tabellen»: Tabellen für Einkommens-, Vermögens- und
+  Kapitalbezugssteuer mit Steuerfuss, nur noch für bestehende Planungen, die ihn benutzen (unter «Experte»); sie
+  öffnen unverändert, und der Knopf «Auf Wohnort umstellen» zeigt nach der Wahl der Gemeinde die geschätzte Steuer
+  des ersten Jahres vorher und nachher. Grundstückgewinnsteuer: im Modus
   «Wohnort» (#65) der Regelsatz des Kantons, in dem die Immobilie liegt (Feld Kanton je Immobilie, ohne Angabe der
   Wohnkanton; alle 26 Kantone nach dem ESTV-Steuermäppchen 2025 und, wo nötig, dem kantonalen Gesetz; Besitzdauer in
   Monaten; Steuerfuss der Wohngemeinde oder Median des Kantons; Regeltext bei der Immobilie, angenäherte Regeln von

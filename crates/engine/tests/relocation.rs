@@ -236,12 +236,14 @@ fn issue_151_ak6_validation_per_row_and_order() {
         { "from": "2040-06", "canton": "ZG", "municipality": 261 },
         { "from": "2042-01", "canton": "XX", "municipality": 1711 },
         { "from": "2042-02", "canton": "ZG" },
+        { "from": "2042-03", "canton": "", "municipality": 1711 },
         { "from": "2038-01", "canton": "ZG", "municipality": 1711 }
     ]);
     let got = issues(&v);
     let f = |s: &str| Some(s.to_string());
     for want in [
-        ("relocation_canton_missing", f("taxes.relocations.0.canton")),
+        // #272/AK4: without canton and municipality the municipality is missing
+        ("relocation_municipality_missing", f("taxes.relocations.0.municipality")),
         (
             "relocation_municipality_not_in_canton",
             f("taxes.relocations.1.municipality"),
@@ -249,11 +251,12 @@ fn issue_151_ak6_validation_per_row_and_order() {
         ("relocation_before_previous", f("taxes.relocations.1.from")),
         ("relocation_canton_unknown", f("taxes.relocations.2.canton")),
         ("relocation_municipality_missing", f("taxes.relocations.3.municipality")),
-        ("relocation_before_previous", f("taxes.relocations.4.from")),
+        ("relocation_canton_missing", f("taxes.relocations.4.canton")),
+        ("relocation_before_previous", f("taxes.relocations.5.from")),
     ] {
         assert!(got.contains(&want), "{want:?} missing in {got:?}");
     }
-    assert_eq!(got.len(), 6, "{got:?}");
+    assert_eq!(got.len(), 7, "{got:?}");
     // The row number in the message counts the first row (taxes.location) as row 1.
     let parsed: Plan = serde_json::from_value(v.clone()).unwrap();
     let text = validate(&parsed)
@@ -268,7 +271,8 @@ fn issue_151_ak6_validation_per_row_and_order() {
     );
     let texts: Vec<String> = validate(&parsed).into_iter().map(|i| i.message.to_string()).collect();
     for want in [
-        "row 2: please choose the canton",
+        "row 2: please choose the municipality",
+        "row 6: please choose the canton",
         "row 3: the municipality 261",
         "row 4: the canton “XX”",
         "row 5: please choose the municipality",
