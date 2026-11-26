@@ -537,25 +537,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #61/AK4 | Der vollständige Haftungsausschluss ist jederzeit erreichbar: im Dialog «Über …» (Menü und Hilfe) und als Seite in der Hilfe, mit Stand-Datum. | ☑ | **gilt** | [ui-einstieg.spec.js:124](../e2e/ui-einstieg.spec.js#L124) | 15.11.2026 ok (Test grün) |
 | #61/AK5 | Oberflächentests für AK1 bis AK4 (erster Start, gespeicherte Bestätigung, neue Version fragt erneut, Fusszeile, Info-Bereich). Hilfe, `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt**: Kommentar vom 14.11.2026: «AK-5. Nicht erfüllt.» Das Issue ist trotzdem geschlossen und abgehakt; nachprüfen. | kein Test | nicht geprüft: Kommentar im Issue: «AK-5 nicht erfüllt» |
 
-### #63 Einkommens- und Vermögenssteuer nach Kanton und Gemeinde
-
-[Issue #63](https://github.com/ingen63/VivaPlan/issues/63) · offen (AK6 Erwerbstätige) · Umsetzung: 02fcbe5
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #63/AK1 | Im Abschnitt Steuern lässt sich der Modus «Wohnort» oder «Eigene Tabellen» wählen. Im Modus «Wohnort» gibt es für … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1» (#63) | 22.11.2026 ok (Test grün) |
-| #63/AK2 | Alle 26 Kantone und alle Gemeinden des mitgelieferten Steuerjahres sind wählbar. | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak2_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK2» | 22.11.2026 ok (2110 Gemeinden) |
-| #63/AK3 | Steuerbares Einkommen = Einkommen (Erwerb netto + PK-Rente + AHV) − Abzüge, nie negativ. Ohne eigene Abzüge (#131) … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak3_…` (2 Tests) | 22.11.2026 ok (Beispiel Zürich 3000) |
-| #63/AK4 | Einkommenssteuer = Kantonskurve(steuerbares Einkommen Kanton) × (Steuerfuss Kanton + Kirche der gewählten … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak4_…` | 22.11.2026 ok |
-| #63/AK5 | Bei Verheirateten (`household.married` und zweite Person) gelten die Kurven und Abzüge für Verheiratete. | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak5_…` | 22.11.2026 ok |
-| #63/AK6 | Für je fünf Referenzfälle (Einkommen und Vermögen, Standardhaushalt ohne Kinder) in mindestens fünf Kantonen weicht … | ☐ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak6_…` | 22.11.2026 teilweise: Rentner ok (25 Fälle, unter 1 %); Erwerbstätige offen, Referenzwerte der ESTV fehlen |
-| #63/AK7 | Bestehende Planungen öffnen im Modus «Eigene Tabellen» und rechnen unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak7_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK7» | 22.11.2026 ok (Golden unverändert) |
-| #63/AK8 | Fehlt der Kanton oder passt die Gemeinde nicht zum Kanton im Modus «Wohnort», meldet die Prüfung einen Fehler im … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak8_…` (2 Tests); [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK8» | 22.11.2026 ok |
-| #63/AK9 | Die Oberfläche nennt die Steuerfüsse der gewählten Gemeinde, das Steuerjahr und die Quelle der Daten und dass die … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK9» | 22.11.2026 ok (Test grün) |
-| #63/AK10 | Die Übersicht der Annahmen und der Reiter «Parameter» eines Laufs nennen Modus und Wohnort mit dem Gemeindenamen … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK10» | 22.11.2026 ok (Test grün) |
-| #63/AK11 | Ein Werkzeug unter `tools/steuerdaten/` erzeugt die Steuerdatei aus den ESTV-Grunddaten (Steuerfüsse als Excel-Export … | ☑ | **gilt** | [test_build.py](../tools/steuerdaten/test_build.py) (15 Tests) | 22.11.2026 ok (Tests grün, README mit Ablauf) |
-| #63/AK12 | Hilfe (`crates/app/ui/hilfe/`), `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
-
 ### #69 Anlagestrategie statt Renditewahl, Gewichtung von CH, EU und USA, Reiter «Renditen & Daten» entfällt
 
 [Issue #69](https://github.com/ingen63/VivaPlan/issues/69) · geschlossen · Umsetzung: `c2b4e38`, `93adc88` (altes Repository) · Tests zum Issue ohne Kriterium: [cli/tests/cli.rs:111](../crates/cli/tests/cli.rs#L111), [engine/tests/strategy.rs:1](../crates/engine/tests/strategy.rs#L1) (+2)

@@ -355,6 +355,25 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #62/AK6 | Eine Planung lässt sich in jeder Sprache öffnen und unverändert speichern; keine sprachabhängigen Texte in der Datei. | ☑ | **gilt** | #170/AK6 | 21.11.2026 ok: `issue_170_` grün |
 | #62/AK7 | Oberflächentests je Sprache, Rust-Tests für übersetzte Meldungen, Doku nachgeführt. | ☑ | **gilt** | [ui-sprache.spec.js](../e2e/ui-sprache.spec.js); Rust `issue_171_`, `issue_176_` | 21.11.2026 ok: README, BESCHREIBUNG «Sprache» (Durchsicht) |
 
+### #63 Einkommens- und Vermögenssteuer nach Kanton und Gemeinde
+
+[Issue #63](https://github.com/ingen63/VivaPlan/issues/63) · geschlossen · Umsetzung: 02fcbe5
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #63/AK1 | Im Abschnitt Steuern lässt sich der Modus «Wohnort» oder «Eigene Tabellen» wählen. Im Modus «Wohnort» gibt es für … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK1» (#63) | 22.11.2026 ok (Test grün) |
+| #63/AK2 | Alle 26 Kantone und alle Gemeinden des mitgelieferten Steuerjahres sind wählbar. | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak2_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK2» | 22.11.2026 ok (2110 Gemeinden) |
+| #63/AK3 | Steuerbares Einkommen = Einkommen (Erwerb netto + PK-Rente + AHV) − Abzüge, nie negativ. Ohne eigene Abzüge (#131) … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak3_…` (2 Tests) | 22.11.2026 ok (Beispiel Zürich 3000) |
+| #63/AK4 | Einkommenssteuer = Kantonskurve(steuerbares Einkommen Kanton) × (Steuerfuss Kanton + Kirche der gewählten … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak4_…` | 22.11.2026 ok |
+| #63/AK5 | Bei Verheirateten (`household.married` und zweite Person) gelten die Kurven und Abzüge für Verheiratete. | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak5_…` | 22.11.2026 ok |
+| #63/AK6 | Für je fünf Referenzfälle (Einkommen und Vermögen, Standardhaushalt ohne Kinder) in mindestens fünf Kantonen weicht … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak6_…` (Rentner und Erwerbstätige, je 25 Fälle) | 26.11.2026 ok (Tests grün, beide unter 1 %; Erwerbstätige seit 2d235c0) |
+| #63/AK7 | Bestehende Planungen öffnen im Modus «Eigene Tabellen» und rechnen unverändert; die Golden-Dateien ändern nicht. | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak7_…`; [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK7» | 22.11.2026 ok (Golden unverändert) |
+| #63/AK8 | Fehlt der Kanton oder passt die Gemeinde nicht zum Kanton im Modus «Wohnort», meldet die Prüfung einen Fehler im … | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_63_ak8_…` (2 Tests); [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK8» | 22.11.2026 ok |
+| #63/AK9 | Die Oberfläche nennt die Steuerfüsse der gewählten Gemeinde, das Steuerjahr und die Quelle der Daten und dass die … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK9» | 22.11.2026 ok (Test grün) |
+| #63/AK10 | Die Übersicht der Annahmen und der Reiter «Parameter» eines Laufs nennen Modus und Wohnort mit dem Gemeindenamen … | ☑ | **gilt** | [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) «AK10» | 22.11.2026 ok (Test grün) |
+| #63/AK11 | Ein Werkzeug unter `tools/steuerdaten/` erzeugt die Steuerdatei aus den ESTV-Grunddaten (Steuerfüsse als Excel-Export … | ☑ | **gilt** | [test_build.py](../tools/steuerdaten/test_build.py) (15 Tests) | 22.11.2026 ok (Tests grün, README mit Ablauf) |
+| #63/AK12 | Hilfe (`crates/app/ui/hilfe/`), `BESCHREIBUNG.md` und Spezifikation sind nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 22.11.2026 ok: Hilfe 10-editor in vier Sprachen, BESCHREIBUNG.md, ENTWICKLUNG.md |
+
 ### #64 Kapitalbezugssteuer nach Kanton und Gemeinde
 
 [Issue #64](https://github.com/ingen63/VivaPlan/issues/64) · geschlossen · Umsetzung: 7d2dc59
@@ -2305,3 +2324,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #276/AK2 | Je Planung gemessen (parametric, gleiche Pfade): Steuerfuss ±10 %, vier Wohnorte, Abzüge Vorschlag gegen keine, Steuerwert 100 % gegen Vorgabe; Kennzahlen Risiko, Endvermögen Median und 10 %-Quantil, Vermögen bei Pensionierung, Steuern vor und nach der Pensionierung. | ☑ | **gilt** (Steuerfuss im Modus «Eigene Tabellen», Steuerwert-Vorgabe 50 %, 5 000 Pfade) | `vivaplan evaluate` mit `exp-*.json` | 26.11.2026 ok (CLI) |
 | #276/AK3 | Ergebnis als Tabelle in `local/steuer/` und Zusammenfassung im Konzept; ein Kommentar in #272, #273 und #274, falls sich die Rangliste der Stellschrauben ändert. | ☑ | **gilt** (Rangliste geändert: Abzüge vom Einkommen Rang 6 → 2; Kommentare geschrieben) | Durchsicht `tabellen.md`, Konzept 1e/2, Issue-Kommentare | 26.11.2026 ok (Durchsicht) |
 | #276/AK4 | Planungen und Experimente sind abgelegt, damit die Messung wiederholbar ist. | ☑ | **gilt** | `./run_all.sh` zweimal, Tabellen identisch | 26.11.2026 ok (Wiederholung) |
+
+### #277 README: App zu 100 % lokal, KI-Anbindung sendet Daten an die KI
+
+[Issue #277](https://github.com/ingen63/VivaPlan/issues/277) · geschlossen · Umsetzung: 272df7f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #277/AK1 | Einleitung und Abschnitt «Ihre Daten bleiben bei Ihnen» sagen, dass die App zu 100 % lokal ist, und nennen die KI-Anbindung ausdrücklich als Ausnahme. | ☑ | **gilt** | kein Test (Durchsicht) | 26.11.2026 ok (Durchsicht, vier Sprachen) |
+| #277/AK2 | Der KI-Abschnitt beginnt mit einem gut sichtbaren Hinweis: Mit einer Cloud-KI gehen die Daten, die die KI liest, an deren Anbieter; nur mit einem lokalen Modell bleibt alles auf dem Rechner; die Anbindung ist freiwillig. | ☑ | **gilt** (`[!IMPORTANT]`) | kein Test (Durchsicht) | 26.11.2026 ok (Durchsicht) |
+| #277/AK3 | Alle vier Sprachfassungen haben denselben Inhalt; Deutsch mit «ss», Anrede «Sie». | ☑ | **gilt** | kein Test (Durchsicht) | 26.11.2026 ok (Durchsicht, kein «ß») |
+| #277/AK4 | Links und Anker funktionieren (`make ui-unit`). | ☑ | **gilt** | `make ui-unit` | 26.11.2026 ok (42/42 grün) |
