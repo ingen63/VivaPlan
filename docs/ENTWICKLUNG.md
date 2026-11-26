@@ -711,7 +711,14 @@ Reihenfolge pro Monat:
    bei Mieten wird das Feld ignoriert. Prüfung: Betrag < 0 oder Anteil ausserhalb 0–1 ist ein Fehler am Feld
    `taxValue.value`. Hat eine Immobilie einen Steuerwert, wird die Steuerzerlegung (`taxBasis`) aufgezeichnet, mit
    `propertyTaxValue` (Summe der Steuerwerte am 31. Dezember). Vermögen, Ergebnisse, Grundstückgewinnsteuer,
-   Tragbarkeit und Notverkauf rechnen mit dem Marktwert.
+   Tragbarkeit und Notverkauf rechnen mit dem Marktwert. **Steuerwert-Vorgabe (#273):** Mit
+   `realestate.defaultTaxValue: true` gilt für Immobilien (Besitz, Kauf geplant) ohne `taxValue` der Anteil
+   `model::DEFAULT_TAX_VALUE_RATE` = 0.5 des Marktwerts, einheitlich für alle Kantone (Quelle: Annahme von VivaPlan,
+   gekennzeichnet in Hilfe und Karte; Richtwerte je Kanton wären ein eigenes Issue). Gespeichert wird nur das
+   Kennzeichen; der Anteil kommt zur Laufzeit aus dem Rechenkern und über `tax_locations` (`taxValueDefault`) an die
+   Oberfläche. `blank_plan` setzt das Kennzeichen (neue Planungen, auch MCP `plan_open` mit `new`); ohne das Feld
+   (bestehende Planungen, Beispiel #44) bleibt der Anteil 1, Golden-Dateien unverändert. Das Feld wird nur geschrieben,
+   wenn es gesetzt ist. Ein Hinweis in der Karte der Liegenschaft setzt es in einer bestehenden Planung.
 7. **Notverkauf prüfen:** wenn liquides Vermögen < Schwelle × (Ausgaben − Einkommen); ausgeführt im Folgemonat.
    Ist danach (oder nach einem geplanten Verkauf) keine Immobilie mehr im Besitz, wird im Folgemonat die nächste
    Immobilie mit Kauf `"afterSale"` gekauft, sofern tragbar (Tragbarkeit wie bei den Banken, Hypothek allenfalls
@@ -934,8 +941,9 @@ ein (`BUILTIN`).
   Einkommenssteuer, nicht in den Einnahmen. Prüfung: Satz 0 bis 1, sonst Fehler am Feld
   `taxes.investmentYield.stocks|bonds` (`investment_yield_stocks_range`, `investment_yield_bonds_range`).
 - **Zusammenstellung des steuerbaren Vermögens (#249):** Mit `record` legt der Lauf im Dezember je Steuerjahr ein
-  `WealthTaxYear { year, liquid, properties: [PropertyTax { index, name, worth, taxValue, hasTaxValue, mortgage }],
-  ongoing, oneOff, taxable }` ab (`liquid` = bar + Obligationen + Aktien; `taxValue` ohne Steuerwert = Marktwert;
+  `WealthTaxYear { year, liquid, properties: [PropertyTax { index, name, worth, taxValue, hasTaxValue,
+  defaultTaxValue, mortgage }], ongoing, oneOff, taxable }` ab (`liquid` = bar + Obligationen + Aktien; `taxValue`
+  ohne Steuerwert = Vorgabe (`defaultTaxValue`, #273, zählt als `hasTaxValue`) oder Marktwert;
   `taxable` = derselbe Wert wie für die Vermögenssteuer). Es steht in `SimResult.wealth_tax` (`serde(skip)`, nicht in
   den gespeicherten Ergebnissen und Golden-Dateien) und geht wie `pillar3a` über `PreviewOut.wealthTax` an die
   Oberfläche (Hinweis und Details der Karte «Abzüge vom Vermögen»).

@@ -118,7 +118,12 @@ pub fn blank_plan(start: YearMonth) -> Value {
         }),
     );
     merge(&mut p, "wealth", json!({ "stocks": 0, "bonds": 0, "cash": 0 }));
-    merge(&mut p, "realestate", json!({ "properties": [] }));
+    // #273: properties without an own tax value use the default share of the market value
+    merge(
+        &mut p,
+        "realestate",
+        json!({ "properties": [], "defaultTaxValue": true }),
+    );
     merge(&mut p, "scenarios", json!({ "sweeps": [] }));
     p
 }
@@ -1061,6 +1066,18 @@ mod tests {
         assert!(validate_report(&v).valid);
         let r = run_report(&v, Path::new("."), None);
         assert!(r.error.is_none() && r.single.is_some());
+    }
+
+    /// #273/AK1: new plans carry the flag of the default tax value (not the share: it comes from the engine at run
+    /// time and reaches the user interface with `tax_locations`); the example plan keeps the market value (#44).
+    #[test]
+    fn issue_273_ak1_new_plans_use_the_default_tax_value() {
+        let p = blank_plan(YearMonth::new(2030, 1));
+        assert_eq!(p["realestate"]["defaultTaxValue"], json!(true));
+        assert!(example_plan()["realestate"].get("defaultTaxValue").is_none());
+        let plan = parse(&p).expect("blank plan readable");
+        assert!(plan.realestate.default_tax_value);
+        assert_eq!(tax_locations().tax_value_default, crate::model::DEFAULT_TAX_VALUE_RATE);
     }
 
     /// #269/AK1: the empty plan of the engine: start month, one person without a name 60 years before the start, no

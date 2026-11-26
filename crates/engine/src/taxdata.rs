@@ -410,6 +410,8 @@ pub struct LocationsOut {
     pub note: String,
     pub federal_deductions: Deductions,
     pub property_gain_source: String,
+    /// #273: Default tax value of properties as a share of the market value (the same for all cantons).
+    pub tax_value_default: f64,
     pub cantons: Vec<CantonOut>,
 }
 
@@ -461,6 +463,7 @@ pub fn locations() -> LocationsOut {
         source: d.source.clone(),
         note: d.note.clone(),
         federal_deductions: d.federal_deductions.clone(),
+        tax_value_default: crate::model::DEFAULT_TAX_VALUE_RATE,
         property_gain_source: d.property_gain_source.clone(),
         cantons,
     }

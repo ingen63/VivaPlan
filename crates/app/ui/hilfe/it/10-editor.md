@@ -289,7 +289,7 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
 - [Quanto è precisa l’imposta?](#tax-accuracy)
-- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite e il [reddito imponibile della sostanza](#f-tax-yield)), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti (con il [valore fiscale](#f-re-tax-value) se registrato, altrimenti con il valore venale). Entrambe vengono pagate a maggio dell’anno successivo.
+- L’**imposta sul reddito** viene calcolata a dicembre sul reddito annuo (incluse le rendite e il [reddito imponibile della sostanza](#f-tax-yield)), l’**imposta sulla sostanza** sul portafoglio più gli immobili netti (con il [valore fiscale](#f-re-tax-value) se registrato, altrimenti con il valore predefinito o, nelle pianificazioni più vecchie, con il valore venale). Entrambe vengono pagate a maggio dell’anno successivo.
 - Un’imposta ancora aperta alla fine della pianificazione viene dedotta nell’ultimo mese.
 - L’[imposta sugli utili immobiliari](#f-tax-gain) è dovuta alla vendita di un immobile, vedi anche [Immobili](#s-realestate).
 
@@ -532,12 +532,14 @@ Stichworte: valore fiscale, imposta sulla sostanza, valore ufficiale, stima
 
 Il **valore fiscale** è il valore ufficiale con cui l’immobile figura nella dichiarazione d’imposta. Spesso è pari al **60–80 % del valore venale**, con stime più vecchie anche nettamente inferiore. Riprenda il valore dalla sua **dichiarazione d’imposta** o dall’ultima tassazione.
 
-- Il campo esiste per gli immobili di proprietà e con acquisto pianificato, non per gli affitti. Si può scegliere «come il valore venale» (nessuna indicazione), un **importo** o **% del valore venale**.
+- Il campo esiste per gli immobili di proprietà e con acquisto pianificato, non per gli affitti. Si può scegliere il **valore predefinito** (nessuna indicazione; nelle pianificazioni più vecchie «come il valore venale»), un **importo** o **% del valore venale**.
 - Solo l’**imposta sulla sostanza** lo utilizza: per ogni immobile è imponibile il valore fiscale meno l’ipoteca invece del valore venale meno l’ipoteca. Esempio: valore venale 1'000'000, valore fiscale 650'000, ipoteca 400'000 danno una sostanza imponibile di 250'000 invece di 600'000.
 - Sostanza, risultati, imposta sugli utili immobiliari, sostenibilità e vendita forzata continuano a usare il **valore venale**.
 - Un importo mantiene il suo **rapporto con il valore venale** (per un acquisto pianificato con il prezzo d’acquisto): se il valore venale aumenta con l’inflazione, il valore fiscale aumenta nella stessa proporzione. In realtà il valore fiscale cambia solo con una nuova stima; negli anni è un’approssimazione.
-- Senza valore fiscale vale il valore venale come finora; non c’è un valore predefinito. Un importo negativo o una percentuale fuori da 0–100 % è un errore nel campo.
-- Nei [valori annuali](#r-table) le colonne delle imposte comprendono la colonna **Valore fiscale immobili** (somma al 31 dicembre, immobili senza valore fiscale al valore venale).
+- **Valore predefinito:** Le nuove pianificazioni usano il **50 % del valore venale** per gli immobili senza un valore fiscale proprio (campo: «valore predefinito (50 % del valore venale)»). Il valore predefinito è un’ipotesi uniforme di VivaPlan per tutti i cantoni, non un dato ufficiale: secondo il cantone e l’età della stima, i valori fiscali sono per lo più nettamente inferiori al valore venale. Un importo o una quota propri lo sostituiscono. La pianificazione salva solo che vale il valore predefinito; la quota la determina il programma. Esempio: valore venale 1'000'000, ipoteca 400'000 danno con il valore predefinito una sostanza imponibile di 100'000.
+- **Le pianificazioni più vecchie** continuano a usare il valore venale senza valore fiscale. Un’avvertenza nella scheda dell’immobile propone il valore predefinito; il link lo applica a tutti gli immobili senza un valore fiscale proprio. La [composizione della sostanza imponibile](#f-tax-wealth-deductions) indica la provenienza «valore predefinito».
+- Un importo negativo o una percentuale fuori da 0–100 % è un errore nel campo.
+- Nei [valori annuali](#r-table) le colonne delle imposte comprendono la colonna **Valore fiscale immobili** (somma al 31 dicembre, immobili senza valore fiscale al valore predefinito o al valore venale).
 - Non sono calcolati: il valore locativo, il riparto fiscale per un immobile in un altro cantone e le deduzioni per sottoutilizzo.
 
 ## @f-re-mortgage Ipoteche

@@ -1372,6 +1372,11 @@ pub struct RealEstate {
     pub emergency_months: Series,
     #[serde(default)]
     pub properties: Vec<Property>,
+    /// #273: Properties (owned, planned) without an own tax value use the default share
+    /// [`DEFAULT_TAX_VALUE_RATE`] of the market value. New plans set it; without it (existing plans) the market
+    /// value applies.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub default_tax_value: bool,
     /// Affordability for purchases «nach Verkauf».
     #[serde(default)]
     pub affordability: Affordability,
@@ -1486,6 +1491,10 @@ pub struct Property {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tax_value: Option<TaxValue>,
 }
+
+/// #273: Default tax value of a property as a share of the market value, the same for all cantons. It is not
+/// stored in the plan: the flag `realestate.defaultTaxValue` refers to it.
+pub const DEFAULT_TAX_VALUE_RATE: f64 = 0.5;
 
 /// #229: How the tax value of a property is entered.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

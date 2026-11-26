@@ -513,6 +513,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
         never_sell: false,
         emergency_months: c.series_or_zero("RealEstate.ThresholdMonths")?,
         properties,
+        default_tax_value: false,
         affordability: Affordability {
             sustainability: c.f_or("RealEstate.Affordability.Sustainability", d.sustainability),
             imputed_rate: c.f_or("RealEstate.Affordability.MortageInterest", d.imputed_rate),

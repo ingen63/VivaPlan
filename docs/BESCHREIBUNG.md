@@ -232,8 +232,11 @@ Ist keine Liegenschaft mehr im Besitz, beginnen die erfassten Mieten, ausser all
 Je Liegenschaft im Besitz oder mit geplantem Kauf lässt sich ein **Steuerwert** erfassen, als Betrag oder in % des
 Marktwerts, zum Beispiel aus der letzten Steuererklärung (#229). Nur die Vermögenssteuer rechnet damit (Steuerwert
 minus Hypothek); ein Betrag behält sein Verhältnis zum Marktwert und wächst mit ihm. Alles andere rechnet mit dem
-Marktwert; ohne Steuerwert gilt der Marktwert wie bisher. Die Jahreswerte zeigen bei den Steuerspalten den Steuerwert
-der Immobilien als eigene Spalte.
+Marktwert. Ohne eigenen Steuerwert rechnen neue Planungen mit der **Vorgabe von 50 % des Marktwerts** (#273), einer
+einheitlichen, gekennzeichneten Annahme für alle Kantone; die Planung speichert nur das Kennzeichen, den Anteil bestimmt
+der Rechenkern. Ältere Planungen rechnen ohne Steuerwert weiter mit dem Marktwert; ein Hinweis in der Karte der
+Liegenschaft bietet die Vorgabe an. Die Jahreswerte zeigen bei den Steuerspalten den Steuerwert der Immobilien als
+eigene Spalte.
 
 Der Schalter **«Immobilien nie verkaufen»** prüft, ob die Planung auch ohne Verkauf aufgeht: Für alle Liegenschaften
 entfallen geplante Verkäufe, Notverkäufe und Verkäufe wegen fehlender Tragbarkeit bei der Erneuerung (die Hypothek wird
@@ -294,7 +297,8 @@ würde die Scheingenauigkeit verstärken.
 - **Steuerbares Vermögen in der Karte (#249):** Die Karte «Abzüge vom Vermögen» zeigt zuoberst das geschätzte
   steuerbare Vermögen des ersten Steuerjahres mit dem Anteil der Liegenschaften und warnt, wenn einer Immobilie der
   Steuerwert fehlt (dann zählt der Marktwert). Die Details setzen es für ein wählbares Jahr zusammen wie die
-  Steuererklärung (Vermögen ohne Immobilien, Steuerwert und Hypothek je Liegenschaft, Abzüge) und bieten das Feld
+  Steuererklärung (Vermögen ohne Immobilien, Steuerwert mit Herkunft «Vorgabe» (#273) und Hypothek je Liegenschaft,
+  Abzüge) und bieten das Feld
   «Steuerwert» je Liegenschaft.
 - **Was fehlt:** Abzüge im Einzelnen (nur als eigener Wert oder in den Sätzen), Eigenmietwert, Schuldzins- und
   Unterhaltsabzug (nur im eigenen Wert), Kirchen- und Personalsteuer sowie direkte Bundessteuer (soweit nicht in Tabellen oder Steuerfuss),

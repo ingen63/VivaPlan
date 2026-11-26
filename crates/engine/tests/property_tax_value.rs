@@ -288,3 +288,111 @@ fn issue_249_ak4_without_properties_and_not_in_run() {
     let run = serde_json::to_value(engine::api::run(&issue_249_plan(true), std::path::Path::new("."), None)).unwrap();
     assert!(!run.to_string().contains("wealthTax"), "not in the saved results");
 }
+
+/// #273: Plan of #229 with the flag of new plans (`realestate.defaultTaxValue`).
+fn with_default(mut v: Value) -> Value {
+    v["realestate"]["defaultTaxValue"] = json!(true);
+    v
+}
+
+/// #273/AK1: In a plan with the flag every owned or planned property without an own tax value uses the default
+/// share of the market value (50 %, the same for all cantons); a property with a canton too. An own tax value
+/// replaces the default.
+#[test]
+fn issue_273_ak1_default_share_for_owned_and_planned() {
+    assert_eq!(engine::model::DEFAULT_TAX_VALUE_RATE, 0.5);
+    for canton in [None, Some("ZH"), Some("GE")] {
+        let mut h = house(json!({}));
+        if let Some(c) = canton {
+            h["canton"] = json!(c);
+        }
+        let r = run(&with_default(plan(h)));
+        let dec = rec(&r, 2030, 12);
+        let tv = dec
+            .tax_basis
+            .as_ref()
+            .and_then(|b| b.property_tax_value)
+            .expect("tax value");
+        close(tv, 500_000.0, "50 % of the market value");
+    }
+    // own tax value: 65 %
+    let r = run(&with_default(plan(house(
+        json!({ "taxValue": { "kind": "rate", "value": 0.65 } }),
+    ))));
+    close(
+        rec(&r, 2030, 12).assessed_wealth,
+        3_500.0,
+        "own share instead of the default",
+    );
+    // planned purchase in 2031-01 at 1'000'000 without a mortgage: 50 % of the price, growing with the value
+    let planned = json!({ "id": "p", "name": "Kauf", "status": "planned", "price": 1_000_000, "buy": "2031-01",
+        "sell": "never", "fixCosts": 0, "inflationValue": true });
+    let mut v = with_default(PlanBuilder::new("Kauf").property(planned).build());
+    v["wealth"]["cash"] = json!(2_000_000);
+    v["returns"]["fixed"]["inflation"] = json!(0.02);
+    let r = run(&v);
+    let dec = rec(&r, 2032, 12);
+    let tv = dec
+        .tax_basis
+        .as_ref()
+        .and_then(|b| b.property_tax_value)
+        .expect("tax value");
+    close(tv / dec.property_value, 0.5, "50 % of the market value of the purchase");
+    // a rental has no tax value, also with the flag
+    let rent = json!({ "name": "Miete", "status": "rent", "from": "start", "rent": 0 });
+    let v = with_default(PlanBuilder::new("Miete").property(rent).build());
+    assert!(
+        run(&v).records.iter().all(|x| x.tax_basis.is_none()),
+        "no tax basis for a rental"
+    );
+}
+
+/// #273/AK3: Without the flag (existing plans) the market value applies unchanged; the flag is not written when it
+/// is off, so existing files keep their content.
+#[test]
+fn issue_273_ak3_existing_plans_keep_the_market_value() {
+    let v = plan(house(json!({})));
+    let r = run(&v);
+    close(rec(&r, 2030, 12).assessed_wealth, 7_000.0, "1 % of 100'000 + 600'000");
+    let p: Plan = serde_json::from_value(v).expect("plan readable");
+    assert!(!p.realestate.default_tax_value);
+    let back = serde_json::to_value(&p).expect("plan writable");
+    assert!(
+        back["realestate"].get("defaultTaxValue").is_none(),
+        "{}",
+        back["realestate"]
+    );
+    let p: Plan = serde_json::from_value(with_default(back)).expect("plan readable");
+    let back = serde_json::to_value(&p).expect("plan writable");
+    assert_eq!(back["realestate"]["defaultTaxValue"], json!(true));
+}
+
+/// #273/AK4: Market value 1'000'000, mortgage 400'000: with the default 50 % the property counts 100'000
+/// (500'000 − 400'000), with an own share of 70 % 300'000 (700'000 − 400'000); with the cash of 100'000 at 1 % a
+/// wealth tax of 2'000 or 4'000 (hand values).
+#[test]
+fn issue_273_ak4_example_by_hand() {
+    let r = run(&with_default(plan(house(json!({})))));
+    close(rec(&r, 2030, 12).assessed_wealth, 2_000.0, "1 % of 100'000 + 100'000");
+    let r = run(&plan(house(json!({ "taxValue": { "kind": "rate", "value": 0.7 } }))));
+    close(rec(&r, 2030, 12).assessed_wealth, 4_000.0, "1 % of 100'000 + 300'000");
+}
+
+/// #273/AK5: The composition of the taxable wealth (#249) marks the default as the origin; an own tax value and the
+/// market value are not marked.
+#[test]
+fn issue_273_ak5_composition_names_the_default() {
+    let preview = |v: &Value| engine::api::preview(v, std::path::Path::new("."), None);
+    let out = preview(&with_default(issue_249_plan(false)));
+    let y = out.wealth_tax.iter().find(|y| y.year == 2030).expect("tax year 2030");
+    let p = &y.properties[0];
+    assert!(p.has_tax_value && p.default_tax_value, "{p:?}");
+    close(p.tax_value, 500_000.0, "default 50 %");
+    close(y.taxable, 350_000.0, "300'000 + 500'000 − 400'000 − 50'000");
+    let json = serde_json::to_value(&out.wealth_tax).expect("serializable");
+    assert_eq!(json[0]["properties"][0]["defaultTaxValue"], json!(true));
+    for v in [with_default(issue_249_plan(true)), issue_249_plan(false)] {
+        let out = preview(&v);
+        assert!(!out.wealth_tax[0].properties[0].default_tax_value);
+    }
+}

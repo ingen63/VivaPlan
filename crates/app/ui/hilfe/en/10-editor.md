@@ -289,7 +289,7 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
 - [How accurate is the tax?](#tax-accuracy)
-- **Income tax** is assessed in December on the annual income (including pensions and the [taxable yield of the wealth](#f-tax-yield)), **wealth tax** on the portfolio plus real estate net (with the [tax value](#f-re-tax-value) where entered, otherwise with the market value). Both are paid in May of the following year.
+- **Income tax** is assessed in December on the annual income (including pensions and the [taxable yield of the wealth](#f-tax-yield)), **wealth tax** on the portfolio plus real estate net (with the [tax value](#f-re-tax-value) where entered, otherwise with the default or, in older plans, with the market value). Both are paid in May of the following year.
 - A tax still open at the end of the plan is deducted in the last month.
 - The [property gains tax](#f-tax-gain) is due when a property is sold, see also [Real estate](#s-realestate).
 
@@ -532,12 +532,14 @@ Stichworte: tax value, wealth tax, official value, valuation
 
 The **tax value** is the official value at which the property appears in the tax return. It is often **60–80 % of the market value**, with older valuations also considerably lower. Take the value from your **tax return** or the last assessment.
 
-- The field exists for owned properties and planned purchases, not for rentals. You can choose «as market value» (no entry), an **amount** or **% of market value**.
+- The field exists for owned properties and planned purchases, not for rentals. You can choose the **default** (no entry; in older plans «as market value»), an **amount** or **% of market value**.
 - Only the **wealth tax** uses it: for each property the tax value minus the mortgage is taxable instead of the market value minus the mortgage. Example: market value 1'000'000, tax value 650'000, mortgage 400'000 gives 250'000 taxable wealth instead of 600'000.
 - Wealth, results, property gains tax, affordability and emergency sale keep using the **market value**.
 - An amount keeps its **ratio to the market value** (for a planned purchase to the purchase price): if the market value rises with inflation, the tax value rises in the same ratio. In reality the tax value only changes with a revaluation; over the years this is an approximation.
-- Without a tax value the market value applies as before; there is no default. A negative amount or a percentage outside 0–100 % is an error at the field.
-- In the [annual values](#r-table) the tax columns include the column **Tax value properties** (sum on 31 December, properties without a tax value at market value).
+- **Default:** New plans use **50 % of the market value** for properties without an own tax value (field: «default (50 % of market value)»). The default is a uniform assumption of VivaPlan for all cantons, not an official figure: depending on the canton and the age of the valuation, tax values are mostly well below the market value. An own amount or share replaces it. The plan only stores that the default applies; the program determines the share. Example: market value 1'000'000, mortgage 400'000 gives 100'000 taxable wealth with the default.
+- **Older plans** keep using the market value without a tax value. A note in the card of the property offers the default; the link takes it over for all properties without an own tax value. The [composition of the taxable wealth](#f-tax-wealth-deductions) names the origin «default».
+- A negative amount or a percentage outside 0–100 % is an error at the field.
+- In the [annual values](#r-table) the tax columns include the column **Tax value properties** (sum on 31 December, properties without a tax value at the default or the market value).
 - Not calculated: imputed rental value, the tax allocation for a property in another canton, and deductions for underuse.
 
 ## @f-re-mortgage Mortgages

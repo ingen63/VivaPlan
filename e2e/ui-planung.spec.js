@@ -1227,7 +1227,7 @@ test.describe("New plan from the engine (#269)", () => {
     p.taxes.deductPillar3a = true;
     p.taxes.investmentYield = { stocks: 0.02, bonds: 0.01 }; // #149/AK5: defaults of new plans
     p.wealth = { ...p.wealth, stocks: 0, bonds: 0, cash: 0 };
-    p.realestate = { ...p.realestate, properties: [] };
+    p.realestate = { ...p.realestate, properties: [], defaultTaxValue: true }; // #273: default tax value of new plans
     p.scenarios = { ...p.scenarios, sweeps: [] };
     delete p.optimization;
     return p;

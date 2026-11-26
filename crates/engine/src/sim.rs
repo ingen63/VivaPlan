@@ -42,7 +42,7 @@ use crate::market::MarketPath;
 use crate::message::Message;
 use crate::model::{
     Affordability, AfterLast, AmortMode, AmountMode, Buckets, PayoutUse, Plan, Property, PropertyStatus, RateKind,
-    ReturnSource, StateInput, StateSeries, Strategy, Tranche,
+    ReturnSource, StateInput, StateSeries, Strategy, Tranche, DEFAULT_TAX_VALUE_RATE,
 };
 use crate::resolve::{Curve, Resolver};
 use crate::tax;
@@ -603,7 +603,10 @@ pub struct PropertyTax {
     pub worth: f64,
     /// Value for the wealth tax: the tax value, without one the market value.
     pub tax_value: f64,
+    /// An own tax value or the default (#273) applies; otherwise the market value.
     pub has_tax_value: bool,
+    /// #273: The tax value is the default share of the market value (origin «Vorgabe»).
+    pub default_tax_value: bool,
     pub mortgage: f64,
 }
 
@@ -794,8 +797,10 @@ struct CProp {
     worth: f64,
     /// #229: Ratio of the tax value to the market value (1.0 without a tax value).
     tax_ratio: f64,
-    /// #249: A tax value is entered (otherwise the wealth tax uses the market value).
+    /// #249: A tax value is entered or the default applies (otherwise the wealth tax uses the market value).
     has_tax_value: bool,
+    /// #273: The tax value is the default share of the market value.
+    default_tax_value: bool,
     infl_value: bool,
     infl_fix_costs: bool,
     infl_rent: bool,
@@ -1194,11 +1199,10 @@ impl Simulator {
                 None => one_off_wealth.push((d.year, d.amount)),
             }
         }
-        let tax_values = plan
-            .realestate
-            .properties
-            .iter()
-            .any(|p| p.status != PropertyStatus::Rent && p.tax_value.is_some());
+        let tax_values =
+            plan.realestate.properties.iter().any(|p| {
+                p.status != PropertyStatus::Rent && (p.tax_value.is_some() || plan.realestate.default_tax_value)
+            });
         let tax_basis = !locations.is_empty()
             || plan.taxes.deductions.is_some()
             || plan.taxes.deduct_pillar3a
@@ -1617,6 +1621,9 @@ impl Simulator {
 }
 
 fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> Result<CProp> {
+    // #273: the default share of the market value for properties without an own tax value (new plans)
+    let default_tax_value =
+        plan.realestate.default_tax_value && p.tax_value.is_none() && p.status != PropertyStatus::Rent;
     let res = |t: &Option<crate::time::TimeRef>| -> Result<Option<YearMonth>> {
         Ok(match t {
             Some(t) => r.resolve(t)?,
@@ -1693,9 +1700,11 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
         tax_ratio: match (p.status, p.tax_value) {
             (PropertyStatus::Owned, Some(t)) => t.ratio(p.worth.unwrap_or(p.price)),
             (PropertyStatus::Planned, Some(t)) => t.ratio(p.price),
+            (_, None) if default_tax_value => DEFAULT_TAX_VALUE_RATE,
             _ => 1.0,
         },
-        has_tax_value: p.tax_value.is_some() && p.status != PropertyStatus::Rent,
+        has_tax_value: p.status != PropertyStatus::Rent && (p.tax_value.is_some() || default_tax_value),
+        default_tax_value,
         infl_value: p.inflation_value.unwrap_or(p.inflation),
         infl_fix_costs: p.inflation_fix_costs.unwrap_or(p.inflation),
         infl_rent: p.inflation_rent.unwrap_or(true),
@@ -2107,6 +2116,7 @@ impl<'a> Run<'a> {
                     worth,
                     tax_value: worth * p.tax_ratio,
                     has_tax_value: p.has_tax_value,
+                    default_tax_value: p.default_tax_value,
                     mortgage: self.props[i].balances.iter().sum(),
                 }
             })

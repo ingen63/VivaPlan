@@ -289,7 +289,7 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
 - [Barèmes avec le renchérissement](#f-tax-indexed)
 - [Quelle est la précision de l’impôt?](#tax-accuracy)
-- L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes et [rendement imposable de la fortune](#f-tax-yield) compris), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net (avec la [valeur fiscale](#f-re-tax-value) si elle est saisie, sinon avec la valeur vénale). Les deux sont payés en mai de l’année suivante.
+- L’**impôt sur le revenu** est calculé en décembre sur le revenu annuel (rentes et [rendement imposable de la fortune](#f-tax-yield) compris), l’**impôt sur la fortune** sur le portefeuille plus l’immobilier net (avec la [valeur fiscale](#f-re-tax-value) si elle est saisie, sinon avec la valeur par défaut ou, dans les planifications plus anciennes, avec la valeur vénale). Les deux sont payés en mai de l’année suivante.
 - Un impôt encore dû à la fin de la planification est déduit le dernier mois.
 - L’[impôt sur les gains immobiliers](#f-tax-gain) est dû lors de la vente d’un bien immobilier, voir aussi [Immobilier](#s-realestate).
 
@@ -532,12 +532,14 @@ Stichworte: valeur fiscale, impôt sur la fortune, valeur officielle, estimation
 
 La **valeur fiscale** est la valeur officielle à laquelle le bien immobilier figure dans la déclaration d’impôt. Elle se situe souvent à **60–80 % de la valeur vénale**, nettement moins pour des estimations anciennes. Reprenez la valeur de votre **déclaration d’impôt** ou de la dernière taxation.
 
-- Le champ existe pour les biens immobiliers en propriété et les achats planifiés, pas pour les locations. Vous pouvez choisir «comme la valeur vénale» (pas d’indication), un **montant** ou **% de la valeur vénale**.
+- Le champ existe pour les biens immobiliers en propriété et les achats planifiés, pas pour les locations. Vous pouvez choisir la **valeur par défaut** (pas d’indication ; dans les planifications plus anciennes «comme la valeur vénale»), un **montant** ou **% de la valeur vénale**.
 - Seul l’**impôt sur la fortune** l’utilise : pour chaque bien immobilier, la valeur fiscale moins l’hypothèque est imposable au lieu de la valeur vénale moins l’hypothèque. Exemple : valeur vénale 1'000'000, valeur fiscale 650'000, hypothèque 400'000 donnent une fortune imposable de 250'000 au lieu de 600'000.
 - La fortune, les résultats, l’impôt sur les gains immobiliers, la capacité financière et la vente forcée continuent d’utiliser la **valeur vénale**.
 - Un montant garde son **rapport à la valeur vénale** (pour un achat planifié au prix d’achat) : si la valeur vénale augmente avec l’inflation, la valeur fiscale augmente dans la même proportion. En réalité, la valeur fiscale ne change que lors d’une réévaluation ; sur les années, c’est une approximation.
-- Sans valeur fiscale, la valeur vénale s’applique comme jusqu’ici ; il n’y a pas de valeur par défaut. Un montant négatif ou un pourcentage hors de 0–100 % est une erreur au champ.
-- Dans les [valeurs annuelles](#r-table), les colonnes d’impôts comprennent la colonne **Valeur fiscale biens immobiliers** (somme au 31 décembre, biens immobiliers sans valeur fiscale à la valeur vénale).
+- **Valeur par défaut :** Les nouvelles planifications utilisent **50 % de la valeur vénale** pour les biens immobiliers sans valeur fiscale propre (champ : «valeur par défaut (50 % de la valeur vénale)»). La valeur par défaut est une hypothèse uniforme de VivaPlan pour tous les cantons, pas un chiffre officiel : selon le canton et l’âge de l’estimation, les valeurs fiscales sont le plus souvent nettement inférieures à la valeur vénale. Un montant ou une part propre la remplace. La planification enregistre seulement que la valeur par défaut s’applique ; le programme détermine la part. Exemple : valeur vénale 1'000'000, hypothèque 400'000 donnent avec la valeur par défaut une fortune imposable de 100'000.
+- **Les planifications plus anciennes** continuent d’utiliser la valeur vénale sans valeur fiscale. Une remarque dans la carte du bien immobilier propose la valeur par défaut ; le lien l’applique à tous les biens sans valeur fiscale propre. La [composition de la fortune imposable](#f-tax-wealth-deductions) indique la provenance «valeur par défaut».
+- Un montant négatif ou un pourcentage hors de 0–100 % est une erreur au champ.
+- Dans les [valeurs annuelles](#r-table), les colonnes d’impôts comprennent la colonne **Valeur fiscale biens immobiliers** (somme au 31 décembre, biens immobiliers sans valeur fiscale à la valeur par défaut ou à la valeur vénale).
 - Ne sont pas calculés : la valeur locative, la répartition fiscale pour un bien immobilier dans un autre canton et les déductions pour sous-utilisation.
 
 ## @f-re-mortgage Hypothèques

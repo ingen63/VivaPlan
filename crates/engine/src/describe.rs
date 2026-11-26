@@ -565,6 +565,10 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "realestate.affordability.wealthDrawdownRate",
         "Share of the free wealth per year counted as income.",
     ),
+    (
+        "realestate.defaultTaxValue",
+        "Without a tax value: the default of 50 % of the market value.",
+    ),
     ("realestate.neverSell", "Never sell properties (no emergency sales)."),
     (
         "realestate.properties.*.buy",

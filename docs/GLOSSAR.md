@@ -142,6 +142,7 @@ Wörter in Grossbuchstaben nicht.
 | Kaufpreis | `price` | |
 | Marktwert | `worth` (Planung), `property_value` (Ergebnis) | |
 | Steuerwert (Vermögenssteuerwert) | `tax_value` (Planung), `property_tax_value` (Steuerzerlegung) | #229; Art `amount` oder `rate` |
+| Steuerwert-Vorgabe | `default_tax_value` (`realestate.defaultTaxValue`), `DEFAULT_TAX_VALUE_RATE` | #273; 50 % des Marktwerts |
 | Kauf, Verkauf | `purchase`, `sale` | Planungsfelder `buy`, `sell`, `bought` |
 | Notverkauf | `emergency_sale` | Schwelle `emergency_months` |
 | Immobilien nie verkaufen (Schalter) | `never_sell` | serialisiert `neverSell` (#196) |

@@ -1407,16 +1407,20 @@ function propertyGainRow(p, P) {
     ${c ? `<p class="hint" data-gain-rule>${tr("realestate.gainRule", { canton: esc(c.name), rule: tr(`propertyGainRule.${c.id}`) })}</p>` : `<p class="hint">${tr("realestate.gainCantonMissing")}</p>`}
     ${c?.propertyGainApprox ? `<p class="hint warn" data-gain-approx>⚠ ${tr("realestate.gainApprox", { note: tr(`propertyGainApprox.${c.id}`) })}</p>` : ""}`;
 }
-/** #229/AK1: tax value for the wealth tax (owned and planned): none (market value), amount or share of the market value. */
+/** #273: default share of the market value for the tax value, from the engine (`tax_locations`), as text. */
+const taxValueDefaultPc = () => taxLoc?.taxValueDefault != null ? `${fmtPct(taxLoc.taxValueDefault)} %` : "…";
+/** #229/AK1: tax value for the wealth tax (owned and planned): none (market value), amount or share of the market value.
+ *  #273/AK2, AK3: in plans with the default (new plans) «none» is the default share; otherwise a hint offers it. */
 function taxValueRow(p, i, P, o = {}) {
-  const kind = p.taxValue?.kind ?? "";
-  const opts = [["", tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
+  const kind = p.taxValue?.kind ?? "", dflt = !!state.realestate.defaultTaxValue;
+  const opts = [["", dflt ? tr("realestate.taxValueDefault", { pc: taxValueDefaultPc() }) : tr("realestate.taxValueNone")], ["amount", tr("realestate.taxValueAmount")], ["rate", tr("realestate.taxValueRate")]];
   const sel = `<select class="plain" data-action-change="tax-value-kind" data-i="${i}">${opts.map(([k, l]) => `<option value="${k}" ${k === kind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
   const value = kind ? F(`${P}.taxValue.value`, "", kind === "rate" ? "pct" : "chf", { bare: true }) : "";
   // #249: in the card «Abzüge vom Vermögen» with the name of the property as label and the hint only once;
   // #259/AK1: a label from the plan's data is marked as such
   return `<div class="grid2" style="margin-top:10px" data-tax-value="${i}"><label class="field"><span${o.userText ? " data-no-tr" : ""}>${o.label ?? tr("realestate.taxValue")}</span><div class="refwrap tv">${sel}${value}</div></label></div>
-    ${o.hint === false ? "" : `<p class="hint">${tr("realestate.taxValueHint")}</p>`}`;
+    ${o.hint === false ? "" : `<p class="hint">${tr("realestate.taxValueHint")}</p>`}
+    ${o.hint === false || dflt || kind ? "" : `<p class="hint" data-tax-value-offer="${i}">${tr("realestate.taxValueOffer", { pc: taxValueDefaultPc() })} <a href="#" data-action="tax-value-default">${tr("realestate.taxValueOfferLink")}</a></p>`}`;
 }
 /** #229: changing the kind keeps the tax value: an amount becomes its share of the market value (planned: purchase price) and back. */
 document.addEventListener("change", e => {
@@ -1578,7 +1582,9 @@ function wtaxTable() {
   const row = (label, v, cls = "") => `<tr${cls}><td>${label}</td><td class="r">${fmtInt(v)}</td></tr>`;
   const rows = [row(tr("wealthTax.liquid"), w.liquid)];
   for (const p of w.properties) {
-    rows.push(p.hasTaxValue ? row(tr("wealthTax.taxValue", { name: esc(p.name) }), p.taxValue)
+    // #273/AK5: the origin «Vorgabe» of the default tax value
+    rows.push(p.defaultTaxValue ? row(tr("wealthTax.taxValueDefault", { name: esc(p.name), pc: taxValueDefaultPc() }), p.taxValue, ` data-wtax-default="${p.index}"`)
+      : p.hasTaxValue ? row(tr("wealthTax.taxValue", { name: esc(p.name) }), p.taxValue)
       : row(`${tr("wealthTax.marketValue", { name: esc(p.name) })} <span class="warn">⚠</span>`, p.taxValue, ` data-wtax-market="${p.index}"`));
     rows.push(row(tr("wealthTax.mortgage", { name: esc(p.name) }), p.mortgage));
   }
@@ -2552,6 +2558,8 @@ const ACTIONS = {
     const el = $(`#tax-wealth-deductions [data-wtax-field="${d.i}"] select`);
     if (el) { el.scrollIntoView({ block: "center" }); el.focus(); }
   },
+  // #273/AK3: an existing plan takes over the default tax value for properties without an own tax value
+  "tax-value-default": () => { state.realestate.defaultTaxValue = true; markDirty(); renderSection(); },
   "ms-goto": d => { flashId = d.id; goto("milestones"); flashId = null; },
   set: d => { setP(d.path, d.value); markDirty(); renderSection(); if (d.path === "returns.source") refreshSeriesInfo(); },
   // #100: follow the suggested values of the stock index again
@@ -3836,6 +3844,8 @@ function paramSections(plan, full = false) {
     return [[tr("params.status", { nm }), STATUS[p.status] || p.status], ...(p.price != null ? [[tr("params.price", { nm }), money(p.price)]] : []), ...(p.worth != null ? [[tr("params.marketValue", { nm }), money(p.worth)]] : []),
       // #229: tax value (not for rentals)
       ...(p.taxValue && p.status !== "rent" ? [[tr("params.taxValue", { nm }), p.taxValue.kind === "rate" ? tr("params.taxValueRate", { pc: pc(p.taxValue.value) }) : money(p.taxValue.value)]] : []),
+      // #273: the default tax value
+      ...(!p.taxValue && p.status !== "rent" && plan.realestate?.defaultTaxValue ? [[tr("params.taxValue", { nm }), tr("params.taxValueDefault", { pc: taxValueDefaultPc() })]] : []),
       ...(p.buy ? [[tr("params.buy", { nm }), at(p.buy)]] : []), ...(p.sell ? [[tr("params.sell", { nm }), at(p.sell)]] : []),
       ...(p.fixCosts != null ? [[tr("params.costsMonth", { nm }), money(p.fixCosts)]] : []), ...(p.rent != null ? [[tr("params.rentMonth", { nm }), money(p.rent)]] : []),
       ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}`, `${money(t.amount)}${t.start ? ` ${tr("common.fromDate", { date: ymShow(t.start) })}` : ""}; ${(t.periods || []).map(d => tr("params.periodText", { v: d.type === "saron" ? "SARON" : tr("mortgage.fixedLower"), term: num(d.term), rate: pc(d.rate), margin: pc(d.margin), amort: money(d.amort), v2: d.amortMode === "indirect" ? tr("mortgage.indirect") : tr("mortgage.direct") })).join(" → ")}`]),

@@ -289,7 +289,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 - [Steuerfuss und Tabellen](#f-tax-tables)
 - [Tarife mit der Teuerung](#f-tax-indexed)
 - [Wie genau ist die Steuer?](#tax-accuracy)
-- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten und [steuerbarem Ertrag des Vermögens](#f-tax-yield)) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto (mit dem [Steuerwert](#f-re-tax-value), wo erfasst, sonst mit dem Marktwert). Bezahlt wird beides im Mai des Folgejahres.
+- Die **Einkommenssteuer** wird im Dezember auf das Jahreseinkommen (inkl. Renten und [steuerbarem Ertrag des Vermögens](#f-tax-yield)) veranlagt, die **Vermögenssteuer** auf das Portfolio plus Immobilien netto (mit dem [Steuerwert](#f-re-tax-value), wo erfasst, sonst mit der Vorgabe oder in älteren Planungen mit dem Marktwert). Bezahlt wird beides im Mai des Folgejahres.
 - Eine bei Planende noch offene Steuer wird im letzten Monat abgezogen.
 - Die [Grundstückgewinnsteuer](#f-tax-gain) fällt beim Verkauf einer Immobilie an, siehe auch [Immobilien](#s-realestate).
 
@@ -532,12 +532,14 @@ Stichworte: Vermögenssteuerwert, Vermögenssteuer, Steuerwert, amtlicher Wert, 
 
 Der **Steuerwert** (Vermögenssteuerwert) ist der amtliche Wert, mit dem die Immobilie in der Steuererklärung steht. Er liegt oft bei **60–80 % des Marktwerts**, bei älteren Schätzungen auch deutlich tiefer. Nehmen Sie den Wert aus Ihrer **Steuererklärung** oder der letzten Veranlagung.
 
-- Das Feld gibt es bei Immobilien im Besitz und mit geplantem Kauf, nicht bei Mieten. Zur Wahl stehen «wie Marktwert» (keine Angabe), ein **Betrag** oder **% des Marktwerts**.
+- Das Feld gibt es bei Immobilien im Besitz und mit geplantem Kauf, nicht bei Mieten. Zur Wahl stehen die **Vorgabe** (keine Angabe; in älteren Planungen «wie Marktwert»), ein **Betrag** oder **% des Marktwerts**.
 - Nur die **Vermögenssteuer** nutzt ihn: Steuerbar ist je Immobilie der Steuerwert minus die Hypothek statt Marktwert minus Hypothek. Beispiel: Marktwert 1'000'000, Steuerwert 650'000, Hypothek 400'000 ergibt 250'000 steuerbares Vermögen statt 600'000.
 - Vermögen, Ergebnisse, Grundstückgewinnsteuer, Tragbarkeit und Notverkauf rechnen weiter mit dem **Marktwert**.
 - Ein Betrag behält sein **Verhältnis zum Marktwert** (bei geplantem Kauf zum Kaufpreis): Steigt der Marktwert mit der Teuerung, steigt der Steuerwert im selben Verhältnis. In Wirklichkeit ändert der Steuerwert nur bei einer Neubewertung; über die Jahre ist das eine Näherung.
-- Ohne Steuerwert gilt der Marktwert wie bisher; eine Vorgabe gibt es nicht. Ein negativer Betrag oder Prozent ausserhalb von 0–100 % ist ein Fehler am Feld.
-- In den [Jahreswerten](#r-table) zeigen die Steuerspalten die Spalte **Steuerwert Immobilien** (Summe am 31. Dezember, Immobilien ohne Steuerwert mit dem Marktwert).
+- **Vorgabe:** Neue Planungen rechnen bei Immobilien ohne eigenen Steuerwert mit **50 % des Marktwerts** (Feld: «Vorgabe (50 % des Marktwerts)»). Die Vorgabe ist eine einheitliche Annahme von VivaPlan für alle Kantone, keine amtliche Zahl: Steuerwerte liegen je nach Kanton und Alter der Schätzung meist deutlich unter dem Marktwert. Ein eigener Betrag oder Anteil ersetzt sie. Die Planung speichert nur, dass die Vorgabe gilt; den Anteil bestimmt das Programm. Beispiel: Marktwert 1'000'000, Hypothek 400'000 ergibt mit der Vorgabe 100'000 steuerbares Vermögen.
+- **Ältere Planungen** rechnen ohne Steuerwert weiter mit dem Marktwert. Ein Hinweis in der Karte der Liegenschaft bietet die Vorgabe an; der Link übernimmt sie für alle Liegenschaften ohne eigenen Steuerwert. Die [Zusammenstellung des steuerbaren Vermögens](#f-tax-wealth-deductions) nennt die Herkunft «Vorgabe».
+- Ein negativer Betrag oder Prozent ausserhalb von 0–100 % ist ein Fehler am Feld.
+- In den [Jahreswerten](#r-table) zeigen die Steuerspalten die Spalte **Steuerwert Immobilien** (Summe am 31. Dezember, Immobilien ohne Steuerwert mit der Vorgabe oder dem Marktwert).
 - Nicht berechnet werden Eigenmietwert, die Steuerausscheidung bei einer Immobilie in einem anderen Kanton und Unternutzungsabzüge.
 
 ## @f-re-mortgage Hypotheken

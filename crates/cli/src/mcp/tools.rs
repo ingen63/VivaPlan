@@ -1274,6 +1274,30 @@ mod tests {
         }
     }
 
+    /// #273: a new plan uses the default tax value of the properties, the example does not; plan_set switches it on
+    /// and describe names the field.
+    #[test]
+    fn issue_273_default_tax_value_over_plan_set_and_describe() {
+        let mut s = session();
+        ok(call(&mut s, "plan_open", &json!({ "new": true })));
+        assert_eq!(s.plans[0].plan["realestate"]["defaultTaxValue"], json!(true));
+        let mut s = session();
+        ok(call(&mut s, "plan_open", &json!({ "example": true })));
+        assert!(s.plans[0].plan["realestate"].get("defaultTaxValue").is_none());
+        ok(call(
+            &mut s,
+            "plan_set",
+            &json!({ "plan": "p1", "changes": [{ "path": "realestate.defaultTaxValue", "value": true }] }),
+        ));
+        assert_eq!(s.plans[0].plan["realestate"]["defaultTaxValue"], json!(true));
+        let v = ok(call(&mut s, "plan_validate", &json!({ "plan": "p1" }))).to_string();
+        assert!(!v.contains("defaultTaxValue"), "{v}");
+        let d = ok(call(&mut s, "describe", &json!({ "section": "fields" }))).to_string();
+        for field in ["defaultTaxValue: boolean", "default of 50 %"] {
+            assert!(d.contains(field), "{field}");
+        }
+    }
+
     /// The example plan computed as the app does (dispatch `run_simulation`), kept as a result of the session.
     fn computed(s: &mut Session) -> (String, Value) {
         ok(call(s, "plan_open", &json!({ "example": true })));

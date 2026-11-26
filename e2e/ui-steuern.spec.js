@@ -3,7 +3,7 @@ const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { open, noErrors, nav, previewIdle } = require("./helpers");
+const { open, noErrors, nav, previewIdle, helpTitle } = require("./helpers");
 
 const cantonSel = page => page.locator("#tax-canton");
 const muni = page => page.locator("#tax-muni");
@@ -1214,6 +1214,92 @@ test.describe("Deductions from wealth as clear as the deductions from income (#2
     await expect(table).toContainText("Vermögen ohne Immobilien");
     await expect(table).not.toContainText("Hypothek");
     await expect(card(page).locator("[data-wtax-fields]")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Default tax value of the properties (#273)", () => {
+  const kindSel = (page, i) => page.locator(`select[data-action-change="tax-value-kind"][data-i="${i}"]`);
+  const owned = page => page.evaluate(() => state.realestate.properties.findIndex(p => p.status === "owned"));
+
+  test("AK1, AK2: a new plan uses the default of the engine; the card shows the default with its share, an own value replaces it", async ({ page }) => {
+    const errors = await open(page);
+    expect(await page.evaluate(() => taxLoc.taxValueDefault)).toBe(0.5);
+    // «Neu» (blank_plan of the engine) carries the flag, the example plan does not
+    expect(await page.evaluate(async () => (await blankPlan()).realestate.defaultTaxValue)).toBe(true);
+    expect(await page.evaluate(() => state.realestate.defaultTaxValue)).toBeUndefined();
+    const i = await owned(page);
+    await page.evaluate(i => {
+      for (const p of state.realestate.properties) delete p.taxValue;
+      state.realestate.properties[i].name = "Haus"; state.realestate.defaultTaxValue = true; markDirty();
+    }, i);
+    await nav(page, "Immobilien");
+    const sel = kindSel(page, i);
+    await expect(sel).toHaveValue("");
+    await expect(sel.locator("option:checked")).toHaveText("Vorgabe (50 % des Marktwerts)");
+    await expect(page.locator("[data-tax-value-offer]")).toHaveCount(0);
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toBeUndefined();
+    // own value: the default share as start, then a value of its own
+    await sel.selectOption("rate");
+    const value = page.locator(`input[data-path="realestate.properties.${i}.taxValue.value"]`);
+    await value.fill("70");
+    await value.press("Tab");
+    expect(await page.evaluate(i => state.realestate.properties[i].taxValue, i)).toEqual({ kind: "rate", value: 0.7 });
+    // the parameters name the default
+    await sel.selectOption("");
+    const rows = await page.evaluate(() => Object.fromEntries(paramSections(state, true).flatMap(([, r]) => r)));
+    expect(rows["Haus: Steuerwert"]).toBe("Vorgabe, 50 % des Marktwerts");
+    await noErrors(page, errors);
+  });
+
+  test("AK3: an existing plan keeps the market value; the hint in the card offers the default", async ({ page }) => {
+    const errors = await open(page);
+    const i = await owned(page);
+    await page.evaluate(() => { for (const p of state.realestate.properties) delete p.taxValue; });
+    expect(await page.evaluate(() => state.realestate.defaultTaxValue)).toBeUndefined();
+    await nav(page, "Immobilien");
+    await expect(kindSel(page, i).locator("option:checked")).toHaveText("wie Marktwert");
+    const offer = page.locator(`[data-tax-value-offer="${i}"]`);
+    await expect(offer).toContainText("Neue Planungen nehmen die Vorgabe von 50 % des Marktwerts.");
+    await offer.locator('a[data-action="tax-value-default"]').click();
+    expect(await page.evaluate(() => state.realestate.defaultTaxValue)).toBe(true);
+    await expect(page.locator("[data-tax-value-offer]")).toHaveCount(0);
+    await expect(kindSel(page, i).locator("option:checked")).toHaveText("Vorgabe (50 % des Marktwerts)");
+    await noErrors(page, errors);
+  });
+
+  test("AK5: the composition of the taxable wealth names the origin default", async ({ page }) => {
+    const errors = await open(page);
+    const i = await owned(page);
+    await page.evaluate(() => {
+      for (const p of state.realestate.properties) delete p.taxValue;
+      state.realestate.defaultTaxValue = true; state.taxes.mode = "own"; markDirty(); renderSection(); scheduleRefresh();
+    });
+    await nav(page, "Steuern");
+    await previewIdle(page);
+    const card = page.locator("#tax-wealth-deductions");
+    await card.locator("details[data-wtax-details] summary").click();
+    const row = card.locator(`table[data-wtax-year] [data-wtax-default="${i}"]`);
+    await expect(row).toContainText("(Vorgabe, 50 % des Marktwerts)");
+    const w = await page.evaluate(() => lastSim.wealthTax[0]);
+    const p = w.properties.find(p => p.index === i);
+    expect(p.defaultTaxValue).toBe(true);
+    expect(p.taxValue / p.worth).toBeCloseTo(0.5, 6);
+    await expect(page.locator("#wtax-hint [data-wtax-missing]")).toHaveCount(0);
+    await expect(card.locator("[data-wtax-market]")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK6: F1 at the tax value opens the help with the default and its source", async ({ page }) => {
+    const errors = await open(page);
+    const i = await owned(page);
+    await nav(page, "Immobilien");
+    await kindSel(page, i).selectOption("rate");
+    await page.locator(`input[data-path="realestate.properties.${i}.taxValue.value"]`).focus();
+    await page.keyboard.press("F1");
+    await expect(helpTitle(page)).toHaveText("Steuerwert");
+    await expect(page.locator("#helpBody")).toContainText("50 % des Marktwerts");
+    await expect(page.locator("#helpBody")).toContainText("einheitliche Annahme von VivaPlan für alle Kantone, keine amtliche Zahl");
     await noErrors(page, errors);
   });
 });
