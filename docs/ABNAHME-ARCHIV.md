@@ -2220,3 +2220,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #271/AK8 | CLI, MCP (`plan_set`, `describe`) und Bericht kennen die Felder; Hilfe (4 Sprachen) und `docs/BESCHREIBUNG.md`; Texte in `de.json`. | ☑ | **gilt** (Bericht mit Spalte `care`) | `report::tests::issue_271_ak8_…`, `mcp::tools::tests::issue_271_ak8_…`, e2e AK8 (#271), `make ui-texts`, `make i18n-check` | 26.11.2026 ok (Tests, CLI von Hand, Durchsicht 4 Sprachen) |
 | #271/AK9 | Heimkosten als Krankheitskosten bei Bund und Kanton abziehbar über 5 % des Nettoeinkommens; Beispiel 60 000 / 108 000 → Abzug 105 000, steuerbar nicht unter 0. | ☑ | **gilt** (Kriterium aus dem Kommentar; Regel in Hilfe und `docs/ENTWICKLUNG.md`) | `issue_271_ak9_…` (3) | 26.11.2026 ok (Tests) |
 
+### #276 Einfluss der Steuern für weitere Haushalte messen
+
+[Issue #276](https://github.com/ingen63/VivaPlan/issues/276) · geschlossen · Umsetzung: nur Auswertung in `local/steuer/messung-276/` (nicht im Repo) · Entscheide vor der Umsetzung im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #276/AK1 | Drei erfundene Planungen: Ehepaar mit zwei Erwerbseinkommen, Mieter ohne Immobilien, Person mit 35 Jahren. | ☑ | **gilt** | `vivaplan validate` der drei Planungen | 26.11.2026 ok (CLI) |
+| #276/AK2 | Je Planung gemessen (parametric, gleiche Pfade): Steuerfuss ±10 %, vier Wohnorte, Abzüge Vorschlag gegen keine, Steuerwert 100 % gegen Vorgabe; Kennzahlen Risiko, Endvermögen Median und 10 %-Quantil, Vermögen bei Pensionierung, Steuern vor und nach der Pensionierung. | ☑ | **gilt** (Steuerfuss im Modus «Eigene Tabellen», Steuerwert-Vorgabe 50 %, 5 000 Pfade) | `vivaplan evaluate` mit `exp-*.json` | 26.11.2026 ok (CLI) |
+| #276/AK3 | Ergebnis als Tabelle in `local/steuer/` und Zusammenfassung im Konzept; ein Kommentar in #272, #273 und #274, falls sich die Rangliste der Stellschrauben ändert. | ☑ | **gilt** (Rangliste geändert: Abzüge vom Einkommen Rang 6 → 2; Kommentare geschrieben) | Durchsicht `tabellen.md`, Konzept 1e/2, Issue-Kommentare | 26.11.2026 ok (Durchsicht) |
+| #276/AK4 | Planungen und Experimente sind abgelegt, damit die Messung wiederholbar ist. | ☑ | **gilt** | `./run_all.sh` zweimal, Tabellen identisch | 26.11.2026 ok (Wiederholung) |
