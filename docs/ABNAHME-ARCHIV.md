@@ -2237,6 +2237,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #271/AK8 | CLI, MCP (`plan_set`, `describe`) und Bericht kennen die Felder; Hilfe (4 Sprachen) und `docs/BESCHREIBUNG.md`; Texte in `de.json`. | ☑ | **gilt** (Bericht mit Spalte `care`) | `report::tests::issue_271_ak8_…`, `mcp::tools::tests::issue_271_ak8_…`, e2e AK8 (#271), `make ui-texts`, `make i18n-check` | 26.11.2026 ok (Tests, CLI von Hand, Durchsicht 4 Sprachen) |
 | #271/AK9 | Heimkosten als Krankheitskosten bei Bund und Kanton abziehbar über 5 % des Nettoeinkommens; Beispiel 60 000 / 108 000 → Abzug 105 000, steuerbar nicht unter 0. | ☑ | **gilt** (Kriterium aus dem Kommentar; Regel in Hilfe und `docs/ENTWICKLUNG.md`) | `issue_271_ak9_…` (3) | 26.11.2026 ok (Tests) |
 
+### #273 Vorgabe für den Steuerwert der Immobilien
+
+[Issue #273](https://github.com/ingen63/VivaPlan/issues/273) · geschlossen · Umsetzung: a1f9a3d · Entscheide vor der Umsetzung (25.11.2026) und Messung #276 im Issue
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #273/AK1 | Neue Planungen: Liegenschaften (Besitz, Kauf geplant) ohne eigenen Steuerwert mit einer Vorgabe als Anteil am Marktwert, je Kanton oder einheitlich. | ☑ | **gilt** (nach Entscheid einheitlich 50 %; Kennzeichen `realestate.defaultTaxValue` aus `blank_plan`, Anteil aus dem Rechenkern) | `issue_273_ak1_…` (2), `mcp::tools::tests::issue_273_…`, e2e [ui-steuern.spec.js](../e2e/ui-steuern.spec.js) AK1, AK2 (#273) | 26.11.2026 ok (Tests) |
+| #273/AK2 | Karte zeigt «Steuerwert: Vorgabe (xx % des Marktwerts)» und das Feld zum Überschreiben; eigener Wert ersetzt die Vorgabe. | ☑ | **gilt** | e2e AK1, AK2 (#273) | 26.11.2026 ok (Test) |
+| #273/AK3 | Bestehende Planungen unverändert mit dem Marktwert, Golden-Dateien unverändert; Hinweis bietet die Vorgabe an. | ☑ | **gilt** | `issue_273_ak3_…`, `golden::*`, e2e AK3 (#273) | 26.11.2026 ok (Tests) |
+| #273/AK4 | Beispiel mit Handwert (Marktwert 1 000 000, Hypothek 400 000). | ☑ | **gilt** (nach Entscheid: Vorgabe 50 % → 100 000; eigener Anteil 70 % → 300 000) | `issue_273_ak4_example_by_hand` | 26.11.2026 ok (Test) |
+| #273/AK5 | Zusammenstellung des steuerbaren Vermögens (#249) nennt die Herkunft «Vorgabe». | ☑ | **gilt** | `issue_273_ak5_…`, e2e AK5 (#273) | 26.11.2026 ok (Tests) |
+| #273/AK6 | Hilfe, `BESCHREIBUNG.md` und Spezifikation nachgeführt, mit Quelle der Vorgabe. | ☑ | **gilt** (Hilfe 4 Sprachen, `ENTWICKLUNG.md`, `GLOSSAR.md`, `describe`) | e2e AK6 (#273), `make i18n-check`, `make ui-texts` | 26.11.2026 ok (Tests, Durchsicht) |
+
 ### #276 Einfluss der Steuern für weitere Haushalte messen
 
 [Issue #276](https://github.com/ingen63/VivaPlan/issues/276) · geschlossen · Umsetzung: nur Auswertung in `local/steuer/messung-276/` (nicht im Repo) · Entscheide vor der Umsetzung im Issue
