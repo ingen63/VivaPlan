@@ -25,7 +25,7 @@ use crate::message::Message;
 // Replace the placeholder with the public key that `beta-token keygen` prints (64 hexadecimal characters); see
 // `docs/ENTWICKLUNG.md`, section «Beta-Token». As long as the placeholder is here, no token is accepted.
 // ------------------------------------------------------------------------------------------------------------------
-pub const PUBLIC_KEY: &str = "PLACEHOLDER-REPLACE-WITH-THE-PUBLIC-KEY-FROM-beta-token-keygen";
+pub const PUBLIC_KEY: &str = "f07d5c0bef016aad376b025a74b720dee9f0c35c3bfaef999850f5111ae0767e";
 
 /// Seed of the test key pair. Only for tests and the development server; never the real key.
 pub const TEST_SEED: [u8; 32] = *b"vivaplan-beta-test-key-NOT-REAL!";
