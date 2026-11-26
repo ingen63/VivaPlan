@@ -1,0 +1,7 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+ZH,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschale übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"StG ZH § 26 Abs. 2; Verfügung der Finanzdirektion über die Pauschalierung von Berufsauslagen (LS 631.33, ab 1.1.2026) Ziff. I.3"
+ZH,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Verheiratete mit Beiträgen 2. und 3. Säule",MAXIMUM,0,0,0,5800,"StG ZH § 31 Abs. 1 lit. g (LS 631.1, Stand 1.4.2026)"
+ZH,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge 2. und 3. Säule",MAXIMUM,0,0,0,8700,"StG ZH § 31 Abs. 1 lit. g (LS 631.1, Stand 1.4.2026), Satz 2 (5800 + 1/2)"
+ZH,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Alleinstehende mit Beiträgen 2. und 3. Säule",MAXIMUM,0,0,0,2900,"StG ZH § 31 Abs. 1 lit. g (LS 631.1, Stand 1.4.2026)"
+ZH,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Alleinstehende ohne Beiträge 2. und 3. Säule",MAXIMUM,0,0,0,4350,"StG ZH § 31 Abs. 1 lit. g (LS 631.1, Stand 1.4.2026), Satz 2 (2900 + 1/2)"
+ZH,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Abzug bei Erwerbstätigkeit beider Ehegatten,MAXIMUM,0,0,0,6200,"StG ZH § 31 Abs. 2 (Verordnung der Finanzdirektion über den Ausgleich der kalten Progression ab 1.1.2026 (OS 80, 273))"

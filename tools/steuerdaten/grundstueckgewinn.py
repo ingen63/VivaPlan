@@ -52,7 +52,7 @@ def rules():
         model="zurich", brackets=ZH_BRACKETS, exemptBelow=5000,
         duration=[[0, 0.5], [1, 0.25], [2, 0.0]] + steps(5, -0.05, -0.03, -0.50),
         text="Stufentarif 10 % bis 40 %, Zuschlag bis 50 % unter 2 Jahren, Ermässigung bis 50 % ab 20 Jahren",
-        source="S. 8–9")
+        source="StG ZH § 225 Abs. 1–3 und 5 (LS 631.1, Stand 1.4.2026)")
     r["BE"] = dict(
         model="zurich", useMultiplier=True, exemptBelow=5300,
         brackets=[[2800, 0.0144], [2800, 0.024], [8200, 0.0408], [13400, 0.0492], [26800, 0.0641], [80400, 0.0726],

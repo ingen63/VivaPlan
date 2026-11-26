@@ -1,0 +1,8 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+CH,BUND,EINKOMMENSSTEUER,HauptErw_EK,Pauschale übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"DBG Art. 26 Abs. 1 lit. c und Abs. 2; Berufskostenverordnung (SR 642.118.1) Art. 7 und Anhang Ziff. 1, Stand 1.1.2026"
+CH,BUND,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Verheiratete mit Beiträgen 2. und 3. Säule",MAXIMUM,0,0,0,3700,"DBG Art. 33 Abs. 1 lit. g Ziff. 1 (SR 642.11, Stand 2.9.2026)"
+CH,BUND,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge 2. und 3. Säule",MAXIMUM,0,0,0,5550,DBG Art. 33 Abs. 1 lit. g Ziff. 1 und Abs. 1bis lit. a (3700 + 1/2)
+CH,BUND,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Alleinstehende mit Beiträgen 2. und 3. Säule",MAXIMUM,0,0,0,1800,DBG Art. 33 Abs. 1 lit. g Ziff. 2
+CH,BUND,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Versicherungsprämien und Sparzinsen, Alleinstehende ohne Beiträge 2. und 3. Säule",MAXIMUM,0,0,0,2700,DBG Art. 33 Abs. 1 lit. g Ziff. 2 und Abs. 1bis lit. a (1800 + 1/2)
+CH,BUND,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,"PERCENT,MINIMUM,MAXIMUM",0,50,8600,14100,DBG Art. 33 Abs. 2
+CH,BUND,EINKOMMENSSTEUER,SozVerheiratet_EK,Verheiratetenabzug,STANDARDIZED,2800,0,0,0,DBG Art. 35 Abs. 1 lit. c

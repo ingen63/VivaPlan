@@ -918,3 +918,36 @@ fn issue_63_ak6_reference_cases_employed_match_estv_within_five_percent() {
     // Regression: measured at most 0.3 % (23.11.2026)
     assert!(worst < 0.01, "largest deviation {worst}");
 }
+
+/// Zurich, BFS 261, married, income, wealth (as in `CASES`); tax calculator of the canton of Zurich 2026 (on the
+/// taxable income and wealth, rounded down to 100 by the calculator): canton, municipality (income), canton,
+/// municipality (wealth). Calculated on 26.11.2026.
+const ZH_CALCULATOR: [(bool, f64, f64, [f64; 4]); 5] = [
+    (false, 80_000.0, 500_000.0, [3781.95, 4737.39, 283.10, 354.62]),
+    (false, 150_000.0, 1_200_000.0, [10108.00, 12661.60, 1172.30, 1468.46]),
+    (false, 300_000.0, 4_000_000.0, [26989.50, 33807.90, 7531.60, 9434.32]),
+    (true, 100_000.0, 300_000.0, [3891.20, 4874.24, 65.55, 82.11]),
+    (true, 220_000.0, 2_000_000.0, [14071.40, 17626.28, 2460.50, 3082.10]),
+];
+
+/// #287/AK6: The reference cases of Zurich also match the tax calculator of the canton of Zurich within ±5 %
+/// (cantonal and municipal tax on income and on wealth; the federal tax follows from DBG Art. 36).
+#[test]
+fn issue_287_ak6_zurich_cases_match_the_cantonal_calculator() {
+    let data = taxdata::builtin();
+    for (married, income, wealth, r) in ZH_CALCULATOR {
+        let res = data.resolve(&loc("ZH", 261, Church::None), married).unwrap();
+        let (taxable, _) = res.taxable(income, &[], 1.0);
+        let my_i = res.income_tax_on(taxable, 0.0, 1.0);
+        let my_w = res.wealth_tax(wealth, 1.0);
+        let (ref_i, ref_w) = (r[0] + r[1], r[2] + r[3]);
+        assert!(
+            (my_i / ref_i - 1.0).abs() <= 0.05,
+            "{income}/{wealth}: income {my_i} instead of {ref_i}"
+        );
+        assert!(
+            (my_w / ref_w - 1.0).abs() <= 0.05,
+            "{income}/{wealth}: wealth {my_w} instead of {ref_w}"
+        );
+    }
+}

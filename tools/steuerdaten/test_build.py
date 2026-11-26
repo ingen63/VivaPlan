@@ -405,5 +405,143 @@ class Inputs(unittest.TestCase):
             self.assertTrue(data["propertyGainSource"])
 
 
+def write_rows(path, rows):
+    import csv
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+
+
+class Sources(unittest.TestCase):
+    """#287: Source files from the laws replace the ESTV rows of their canton."""
+
+    REPO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quellen", "2026")
+
+    def test_issue_287_ak1_read_sources_checks_canton_and_source(self):
+        """#287/AK1: every row of a source file names its source and belongs to the canton of the file."""
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(build.read_sources(os.path.join(d, "fehlt")), ([], [], set()))
+            good = {**row("ZH", "KANTON", "EINKOMMENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 7), "Quelle": "StG § 1"}
+            write_rows(os.path.join(d, "ZH_tarife.csv"), [good])
+            write_rows(os.path.join(d, "ZH_abzuege.csv"),
+                       [{**ded("ZH", "KANTON", "HauptErw_EK", "STANDARDIZED", "100"), "Quelle": "StG § 26"}])
+            write_rows(os.path.join(d, "notiz.csv"), [{"x": "1"}])  # other files are ignored
+            tariffs, deductions, covered = build.read_sources(d)
+            self.assertEqual((len(tariffs), len(deductions), covered), (1, 1, {"ZH"}))
+            write_rows(os.path.join(d, "CH_abzuege.csv"),
+                       [{**ded("CH", "BUND", "HauptErw_EK", "STANDARDIZED", "100"), "Quelle": "DBG Art. 26"}])
+            with self.assertRaisesRegex(ValueError, "CH_tarife.csv missing"):
+                build.read_sources(d)
+            os.remove(os.path.join(d, "CH_abzuege.csv"))
+            write_rows(os.path.join(d, "ZH_tarife.csv"), [{**good, "Quelle": " "}])
+            with self.assertRaisesRegex(ValueError, "source missing"):
+                build.read_sources(d)
+            write_rows(os.path.join(d, "ZH_tarife.csv"), [{**good, "Kanton": "BE"}])
+            with self.assertRaisesRegex(ValueError, "instead of ZH"):
+                build.read_sources(d)
+            write_rows(os.path.join(d, "XX_tarife.csv"), [{**good, "Kanton": "XX"}])
+            with self.assertRaisesRegex(ValueError, "unknown canton"):
+                build.read_sources(d)
+
+    def test_issue_287_ak2_sources_replace_the_estv_rows_of_their_canton(self):
+        """#287/AK2: cantons with a source file come from it, the others unchanged from the ESTV tables; the report
+        names the origin per canton."""
+        tariffs, deductions = minimal_inputs()
+        src = [{**row("ZH", "KANTON", "EINKOMMENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 7), "Quelle": "q"},
+               {**row("ZH", "KANTON", "VERMOEGENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 0.2), "Quelle": "q"}]
+        merged = build.merge_sources(tariffs, src, {"ZH"})
+        self.assertEqual([r["Prozent"] for r in merged if r["Kanton"] == "ZH"], ["7", "0.2"])
+        self.assertEqual(len([r for r in merged if r["Kanton"] == "BE"]), 2)
+        src_ded = [{**ded("ZH", "KANTON", "HauptErw_EK", "STANDARDIZED", "1500"), "Quelle": "q"}]
+        data, _ = build.build(merged, build.merge_sources(deductions, src_ded, {"ZH"}), 2030, [])
+        zh = next(c for c in data["cantons"] if c["id"] == "ZH")
+        be = next(c for c in data["cantons"] if c["id"] == "BE")
+        self.assertEqual(next(p for p in zh["income"]["single"] if p[0] == 50_000)[1], 0.07)
+        self.assertEqual(next(p for p in be["income"]["single"] if p[0] == 50_000)[1], 0.1)
+        self.assertEqual(zh["deductions"]["earned"]["base"], 1500.0)
+        self.assertEqual(zh["deductions"]["single"]["retired"], [])  # the ESTV deductions of ZH are gone
+        rep = build.origin_report({"CH", "ZH"})
+        self.assertEqual(len(rep), 27)
+        self.assertIn("ZH origin: laws (source files)", rep)
+        self.assertIn("BE origin: ESTV tables", rep)
+
+    def test_issue_287_ak2_main_reads_the_source_directory(self):
+        """#287/AK2: `main` takes the rows of `--quellen` and writes the origin into the report."""
+        tariffs, deductions = minimal_inputs()
+        with tempfile.TemporaryDirectory() as d:
+            t, a = os.path.join(d, "t.csv"), os.path.join(d, "a.csv")
+            write_rows(t, tariffs)
+            write_rows(a, deductions)
+            q = os.path.join(d, "quellen")
+            os.mkdir(q)
+            write_rows(os.path.join(q, "ZH_tarife.csv"),
+                       [{**row("ZH", "KANTON", "EINKOMMENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 7), "Quelle": "q"},
+                        {**row("ZH", "KANTON", "VERMOEGENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 0.2), "Quelle": "q"}])
+            write_rows(os.path.join(q, "ZH_abzuege.csv"),
+                       [{**ded("ZH", "KANTON", "HauptErw_EK", "STANDARDIZED", "1500"), "Quelle": "q"}])
+            rules = os.path.join(d, "rules.json")
+            with open(rules, "w", encoding="utf-8") as f:
+                json.dump({c: {"kind": "income", "text": c} for c in build.NAMES}, f)
+            orig = build.read_multipliers
+            build.read_multipliers = lambda path: (2030, [[i, f"Ort {c}", c, [1, 1, 0, 0, 0], [1, 1, 0, 0, 0]]
+                                                          for i, c in enumerate(sorted(build.NAMES))])
+            try:
+                out, rep = os.path.join(d, "out.json"), os.path.join(d, "report.txt")
+                build.main(["--steuerfuesse", "x.xlsx", "--tarife", t, "--abzuege", a, "--kapitalregeln", rules,
+                            "--quellen", q, "--out", out, "--bericht", rep])
+            finally:
+                build.read_multipliers = orig
+            with open(out, encoding="utf-8") as f:
+                zh = next(c for c in json.load(f)["cantons"] if c["id"] == "ZH")
+            self.assertEqual(next(p for p in zh["income"]["single"] if p[0] == 50_000)[1], 0.07)
+            with open(rep, encoding="utf-8") as f:
+                self.assertIn("ZH origin: laws (source files)", f.read())
+
+    def test_issue_287_ak1_repository_sources_for_federal_and_zurich(self):
+        """#287/AK1: the source files 2026 for the federal tax and Zurich exist and name a source per row."""
+        tariffs, deductions, covered = build.read_sources(self.REPO)
+        self.assertLessEqual({"CH", "ZH"}, covered)
+        ids = {(r["Kanton"], r["ID"]) for r in deductions}
+        for cid in ("CH", "ZH"):
+            self.assertIn((cid, "HauptErw_EK"), ids)
+            self.assertIn((cid, "ZweitVerdiener_EK"), ids)
+            for ident in ("KKSparzVerhMitBVGS3a_EK", "KKSparVerhOhneBVGS3a_EK", "KKSparLedigMitBVGS3a_EK",
+                          "KKSparLedigOhneBVGS3a_EK"):
+                self.assertIn((cid, ident), ids)
+
+    def test_issue_287_ak3_federal_tariff_amounts_are_consistent(self):
+        """#287/AK3: DBG Art. 36: the amount of each bracket follows from the previous bracket and its rate (the law
+        rounds to 5 centimes), and the tariff gives the amounts printed in the law."""
+        tariffs, _, _ = build.read_sources(self.REPO)
+        fed = build.load_tariffs(tariffs)[("CH", "BUND", "EINKOMMENSSTEUER")]
+        for married in (False, True):
+            t = build.pick(fed, married)
+            for (a0, p0, t0, _), (a1, _, t1, _) in zip(t.rows, t.rows[1:]):
+                if t1:
+                    self.assertAlmostEqual(t0 + (a1 - a0) * p0 / 100, t1, delta=0.05, msg=(married, a1))
+        single, married = build.pick(fed, False), build.pick(fed, True)
+        self.assertAlmostEqual(single.tax(185_100, False), 10_936.55, places=2)
+        self.assertAlmostEqual(single.tax(1_000_000, False), 91_310 + 206_000 * 0.115, places=2)
+        self.assertAlmostEqual(married.tax(152_400, True), 5_692, places=2)
+
+    def test_issue_287_ak4_zurich_tariffs_from_the_law(self):
+        """#287/AK4: StG ZH § 35 and § 47 (2026): the brackets add up to the thresholds of the law."""
+        tariffs, _, _ = build.read_sources(self.REPO)
+        t = build.load_tariffs(tariffs)
+        inc = t[("ZH", "KANTON", "EINKOMMENSSTEUER")]
+        wealth = t[("ZH", "KANTON", "VERMOEGENSSTEUER")]
+        # sum of the widths up to the top rate: 266 700 / 370 600 (income), 3 304 000 / 3 385 000 (wealth)
+        for tariffs_, married, top in ((inc, False, 266_700), (inc, True, 370_600), (wealth, False, 3_304_000),
+                                       (wealth, True, 3_385_000)):
+            self.assertEqual(sum(r[0] for r in build.pick(tariffs_, married).rows[:-1]), top)
+        self.assertAlmostEqual(build.pick(inc, False).tax(266_700, False), 24_655)
+
+    def test_issue_287_ak4_zurich_rules_name_the_law(self):
+        """#287/AK4: the lump-sum and property gain rules of Zurich name the article of the tax law."""
+        self.assertTrue(build.read_rules(build.RULES)["ZH"]["source"].startswith("StG ZH § 37"))
+        self.assertTrue(grundstueckgewinn.rules()["ZH"]["source"].startswith("StG ZH § 225"))
+
+
 if __name__ == "__main__":
     unittest.main()

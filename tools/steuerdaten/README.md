@@ -92,6 +92,34 @@ nach Gewinnhöhe angenommen). Die Regeln gelten nicht jährlich neu: Bei einer G
 `propertyGainRule.<Kanton>` in `crates/app/ui/i18n/*.json` (deutsch = `text`, e2e-Test) und Handwerte in
 `crates/engine/tests/tax_gain_cantons.rs` nachführen.
 
+## Quelldateien aus den Erlassen (#286, #287)
+
+Tarife und Abzüge kommen Kanton für Kanton aus den Gesetzen und Verordnungen statt aus den ESTV-Tabellen. Je Kanton
+(und `CH` für den Bund) liegen unter `quellen/<Jahr>/` zwei Dateien:
+
+- `<KT>_tarife.csv`: Spalten wie `tarife_<Jahr>.csv` (siehe unten), dazu `Quelle`;
+- `<KT>_abzuege.csv`: Spalten wie `abzuege_<Jahr>.csv`, dazu `Quelle`; nur die Abzüge, die `build.py` verwendet
+  (`INCOME_DEDUCTIONS`, `WEALTH_DEDUCTIONS`, `HauptErw_EK`, `ZweitVerdiener_EK`); die IDs sind die Schlüssel von
+  `build.py`, die Bezeichnungen eigene Texte.
+
+Jede Zeile nennt in `Quelle` den Erlass mit Artikel und Stand (z. B. `StG ZH § 35 Abs. 1 (LS 631.1; …)`). Ein Kanton
+braucht beide Dateien; seine Zeilen aus den ESTV-Tabellen fallen dann ganz weg, die übrigen Kantone kommen unverändert
+aus den ESTV-Tabellen. Der Bericht beginnt mit der Herkunft je Kanton (`laws (source files)` oder `ESTV tables`).
+Kapitalbezugs- und Grundstückgewinnregeln nennen den Gesetzesartikel in `source` (`kapitalregeln.json`,
+`grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287).
+
+Die Erlasse selbst (PDF und Textauszug) liegen lokal unter `local/steuerquellen/<Jahr>/` mit `quellen.txt` (Datei,
+Adresse, Abrufdatum), nicht im Repository.
+
+**Abgleich:** `vergleich.py` vergleicht zwei Steuerdateien je Kanton und Bund (Kurven, Abzüge, Regeln; ohne
+Steuerfüsse) und meldet Sätze, die mehr als 1 % abweichen:
+
+```bash
+python3 -I tools/steuerdaten/vergleich.py crates/engine/data/steuern-2026.json neu.json --kanton CH --kanton ZH
+```
+
+Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder echte Abweichung).
+
 ## Ablauf für ein neues Steuerjahr
 
 1. Im ESTV-Steuerrechner unter «Grunddaten abrufen» das Steuerjahr wählen und herunterladen:
@@ -113,6 +141,8 @@ nach Gewinnhöhe angenommen). Die Regeln gelten nicht jährlich neu: Bei einer G
      --tarife local/estv/tarife_2026.csv --abzuege local/estv/abzuege_2026.csv \
      --out crates/engine/data/steuern-2026.json --bericht local/estv/bericht.txt
    ```
+   Die Quelldateien liest das Werkzeug aus `quellen/<Jahr>/` (anderer Ort: `--quellen`); sie gelten für ein neues
+   Steuerjahr erst nach Prüfung der Erlasse (Teuerungsausgleich) und Ablage unter dem neuen Jahr.
    Die Regeln für Kapitalbezüge liest das Werkzeug aus `kapitalregeln.json` (anderer Ort: `--kapitalregeln`).
    Die Regeln der Grundstückgewinnsteuer kommen aus `grundstueckgewinn.py`.
    Der Bericht nennt je Kanton die gewählten Tarife, Abzüge, die Regel für Kapitalbezüge und die der

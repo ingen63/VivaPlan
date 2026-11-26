@@ -56,6 +56,9 @@ CAPITAL_GRID = (
     + [10_000_000, 20_000_000, 50_000_000]
 )
 RULES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kapitalregeln.json")
+# #287: source files from the laws per canton and tax year (`<canton>_tarife.csv`, `<canton>_abzuege.csv`); they
+# replace the ESTV rows of their canton (`CH` = federal).
+SOURCES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quellen")
 
 # Standard deductions from the income, without children: per marital status and variant a list of groups; per group
 # the first deduction found applies. Variant «retired»: insurance premiums and savings interest without contributions
@@ -169,6 +172,47 @@ def read_multipliers(path):
 def read_csv(path):
     with open(path, encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+
+def read_sources(directory):
+    """#287: Tariff and deduction rows from the source files of a directory (columns as the ESTV tables plus
+    `Quelle`). Returns the tariff rows, the deduction rows and the cantons covered. Every row needs a source and must
+    belong to the canton of its file name; a canton needs both files (its ESTV rows are dropped as a whole). A missing
+    directory covers no canton."""
+    tariffs, deductions_, files = [], [], defaultdict(set)
+    if not directory or not os.path.isdir(directory):
+        return tariffs, deductions_, set()
+    for name in sorted(os.listdir(directory)):
+        m = re.fullmatch(r"([A-Z]{2})_(tarife|abzuege)\.csv", name)
+        if not m:
+            continue
+        canton, kind = m.groups()
+        if canton != "CH" and canton not in NAMES:
+            raise ValueError(f"{name}: unknown canton {canton}")
+        rows = read_csv(os.path.join(directory, name))
+        for i, r in enumerate(rows, start=2):
+            if r.get("Kanton") != canton:
+                raise ValueError(f"{name}, line {i}: canton {r.get('Kanton')} instead of {canton}")
+            if not (r.get("Quelle") or "").strip():
+                raise ValueError(f"{name}, line {i}: source missing")
+        (tariffs if kind == "tarife" else deductions_).extend(rows)
+        files[canton].add(kind)
+    for canton, kinds in files.items():
+        if kinds != {"tarife", "abzuege"}:
+            missing = ({"tarife", "abzuege"} - kinds).pop()
+            raise ValueError(f"{canton}: source file {canton}_{missing}.csv missing")
+    return tariffs, deductions_, set(files)
+
+
+def merge_sources(estv_rows, source_rows, covered):
+    """#287: The ESTV rows of the cantons not covered by a source file, then the rows of the source files."""
+    return [r for r in estv_rows if r["Kanton"] not in covered] + source_rows
+
+
+def origin_report(covered):
+    """#287: One report line per authority: data from the source files (laws) or from the ESTV tables."""
+    return [f"{cid} origin: {'laws (source files)' if cid in covered else 'ESTV tables'}"
+            for cid in ["CH"] + sorted(NAMES)]
 
 
 # ---------------------------------------------------------------- tariffs
@@ -461,7 +505,8 @@ def capital(c, rule, tariffs, munis, report):
     c["capitalRule"] = rule["text"]
     if rule.get("approx"):
         c["capitalApprox"] = rule["approx"]
-    report.append(f"{cid} capital: {rule['text']}" + (f" (approx: {rule['approx']})" if rule.get("approx") else ""))
+    report.append(f"{cid} capital: {rule['text']}" + (f" ({rule['source']})" if rule.get("source") else "")
+                  + (f" (approx: {rule['approx']})" if rule.get("approx") else ""))
 
 
 def property_gain(c, rule, munis, report):
@@ -567,6 +612,7 @@ def main(argv=None):
     ap.add_argument("--tarife", required=True)
     ap.add_argument("--abzuege", required=True)
     ap.add_argument("--kapitalregeln", default=RULES, help="rules of the cantons for lump sums (#64)")
+    ap.add_argument("--quellen", help="directory of the source files from the laws (#287, default quellen/<year>)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--bericht", help="file for the report of the chosen tariffs and deductions")
     a = ap.parse_args(argv)
@@ -574,8 +620,11 @@ def main(argv=None):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import grundstueckgewinn  # noqa: E402 (next to this file, also with python3 -I)
 
-    data, report = build(read_csv(a.tarife), read_csv(a.abzuege), year, munis, read_rules(a.kapitalregeln),
-                         grundstueckgewinn.rules())
+    src_tariffs, src_deductions, covered = read_sources(a.quellen or os.path.join(SOURCES, str(year)))
+    data, report = build(merge_sources(read_csv(a.tarife), src_tariffs, covered),
+                         merge_sources(read_csv(a.abzuege), src_deductions, covered), year, munis,
+                         read_rules(a.kapitalregeln), grundstueckgewinn.rules())
+    report = origin_report(covered) + report
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")

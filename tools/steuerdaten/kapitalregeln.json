@@ -188,6 +188,7 @@
     "divisor": 20,
     "share": 1.0,
     "min": 0.02,
-    "text": "Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %"
+    "text": "Satz des Einkommenstarifs für einen Zwanzigstel des Bezugs, mindestens 2 %",
+    "source": "StG ZH § 37 Abs. 1 (LS 631.1, Stand 1.4.2026)"
   }
 }
