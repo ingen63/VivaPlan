@@ -2363,3 +2363,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #280/AK4 | Bei durchgehend positiver Teuerung ändert sich nichts (Golden mit fester Teuerung gleich). | ☑ | **gilt** | `ahv::tests::issue_280_ak4_…`, `golden::*` unverändert, `issue_145_*`, `issue_191_ak21_*` | 26.11.2026 ok (Tests) |
 | #280/AK5 | Renten ohne Teuerungsanpassung bleiben unverändert. | ☑ | **gilt** | `ahv::tests::issue_280_ak5_pension_not_indexed_stays` | 26.11.2026 ok (Tests) |
 | #280/AK6 | Hilfe, `docs/BESCHREIBUNG.md` und Spezifikation beschreiben die Untergrenze. | ☑ | **gilt** (Hilfe AHV in 4 Sprachen, BESCHREIBUNG, ENTWICKLUNG) | kein Test (Durchsicht), `make test-quiet` (i18n-check) | 26.11.2026 ok (Durchsicht) |
+
+### #281 Steuerbares Einkommen als Spalte neben den Steuern
+
+[Issue #281](https://github.com/ingen63/VivaPlan/issues/281) · geschlossen · Umsetzung: d1cca30 · Entscheide: Spalte mit «Steuern anzeigen», Spalte «Steuerbar» der Zerlegung (#131) entfällt
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #281/AK1 | Die Tabelle «Jahreswerte» hat die Spalte «Steuerbares Einkommen» direkt links von «Steuern». Die Spalte «Einnahmen» bleibt unverändert. | ☑ | **gilt** (direkt vor «Steuer geschätzt Einkommen», mit den Steuerspalten; «Einkommen total» unverändert) | e2e AK1 (#281), `ui-start` #37, `ui-abnahme` #8 | 26.11.2026 ok (Tests) |
+| #281/AK2 | Der Wert ist das steuerbare Einkommen des Steuerjahres beim Kanton (`taxableCanton`). Weicht der Bund ab, zeigt der Tooltip beide Werte. | ☑ | **gilt** (ältere Ergebnisse: Wert aus der Zerlegung) | `issue_281_ak2_…` (3), e2e AK2 (#281) | 26.11.2026 ok (Tests) |
+| #281/AK3 | Jahre ohne Steuerrechnung (Steuern 0, kein steuerbares Einkommen) zeigen 0. | ☑ | **gilt** | `issue_281_ak3_zero_without_an_assessment`, e2e AK3 (#281) | 26.11.2026 ok (Tests) |
+| #281/AK4 | Die Spalte folgt der Umschaltung nominal / real wie die übrigen Beträge. | ☑ | **gilt** | `issue_281_ak4_real_like_the_other_amounts`, e2e AK4 (#281) | 26.11.2026 ok (Tests) |
+| #281/AK5 | Die Jahreswerte in Kommandozeile und `vivaplan mcp` (`result_get` yearly) enthalten das steuerbare Einkommen ebenfalls. | ☑ | **gilt** (Bericht: Spalte `taxableIncome`; MCP: Feld `taxableIncome`) | `issue_281_ak5_report_column_taxable_income`, `issue_207_ak1_json_on_standard_output`, `issue_281_ak5_yearly_values_with_taxable_income` | 26.11.2026 ok (Tests) |
+| #281/AK6 | Der Spaltentitel steht als Schlüssel in `i18n/de.json`; die Hilfe zu den Jahreswerten erklärt die Spalte. | ☑ | **gilt** (Schlüssel in 4 Sprachen, Hilfe in 4 Sprachen) | `make ui-texts`, `make i18n-check`, Hilfe-Tests; Inhalt Durchsicht | 26.11.2026 ok (Tests, Durchsicht) |
