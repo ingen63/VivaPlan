@@ -2336,6 +2336,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #277/AK3 | Alle vier Sprachfassungen haben denselben Inhalt; Deutsch mit «ss», Anrede «Sie». | ☑ | **gilt** | kein Test (Durchsicht) | 26.11.2026 ok (Durchsicht, kein «ß») |
 | #277/AK4 | Links und Anker funktionieren (`make ui-unit`). | ☑ | **gilt** | `make ui-unit` | 26.11.2026 ok (42/42 grün) |
 
+### #279 Teuerung im parametrischen Modell ab 1950, Startjahr einstellbar
+
+[Issue #279](https://github.com/ingen63/VivaPlan/issues/279) · geschlossen · Umsetzung: 7a0dce2 · Entscheide: Fehler bei zu wenigen Jahren beim Rechnen (Feld `limits.inflationFrom`), gültig 1000–3000; Vorschau zeigt die Teuerung ebenfalls ab dem Startjahr
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #279/AK1 | In den Einstellungen gibt es das Feld «Teuerung im parametrischen Modell ab Jahr» mit dem Standardwert 1950. Es wird wie die übrigen Einstellungen lokal gespeichert, nicht in der Planungsdatei. | ☑ | **gilt** | `settings::tests::issue_279_ak1_…`, e2e `ui-planung.spec.js` «AK1, AK5 … (#279)» | 26.11.2026 ok (Tests) |
+| #279/AK2 | Mittelwert und Streuung der Teuerung sowie ihre Korrelation mit Aktien und Obligationen stammen nur aus den Jahren ab dem Startjahr (Welt (JST) ab 1950: ≈ 2,2 %, ≈ 2,3 %). | ☑ | **gilt** (2.22 % / 2.34 %; ab 1900 2.26 % / 5.02 %) | `parametric_fit::issue_279_ak2_…`, `api::tests::issue_279_ak2_preview_…` | 26.11.2026 ok (Tests) |
+| #279/AK3 | Die Parameter der Aktien und Mittelwert und Streuung der Obligationen ändern sich durch das Startjahr nicht. | ☑ | **gilt** | `parametric_fit::issue_279_ak3_…` | 26.11.2026 ok (Tests) |
+| #279/AK4 | Ein Startjahr vor dem ersten Jahr der Reihe nutzt die ganze Reihe. Bleiben ab dem Startjahr weniger als 10 Jahre, meldet die Prüfung einen Fehler im Feld, und das Modell rechnet nicht mit zu wenigen Jahren. | ☑ | **gilt** (Fehler `inflation_from_too_few` beim Rechnen) | `parametric_fit::issue_279_ak4_…`, `api::tests::issue_279_ak4_ak7_…` | 26.11.2026 ok (Tests) |
+| #279/AK5 | Der Tab «Simulation» zeigt bei den vorgeschlagenen Werten den Zeitraum, aus dem die Teuerung geschätzt ist (z. B. «Teuerung 1950–2020»). | ☑ | **gilt** | e2e «AK1, AK5 … (#279)», `dispatch::tests::issue_279_ak5_…` | 26.11.2026 ok (Tests) |
+| #279/AK6 | Kommandozeile und `vivaplan mcp` übernehmen das Startjahr aus den Einstellungen der App (#206); ohne Einstellungen gilt 1950. | ☑ | **gilt** | `appdata::tests::issue_279_ak6_…` | 26.11.2026 ok (Tests, Code) |
+| #279/AK7 | Historische Quellen (fest, historisch, rollierend, Bootstrap) sind nicht betroffen. | ☑ | **gilt** (nur Golden `08-parametrisch` geändert) | `api::tests::issue_279_ak4_ak7_…`, `golden::*` | 26.11.2026 ok (Tests) |
+| #279/AK8 | Hilfe, `docs/BESCHREIBUNG.md` und Spezifikation beschreiben das Startjahr; die Golden-Dateien sind mit `Golden: #Nr` begründet nachgeführt. | ☑ | **gilt** (Hilfe in 4 Sprachen, BESCHREIBUNG, ENTWICKLUNG) | kein Test (Durchsicht), `make test-quiet` | 26.11.2026 ok (Durchsicht) |
+
 ### #280 AHV-Rente nominal nie tiefer als im Vorjahr
 
 [Issue #280](https://github.com/ingen63/VivaPlan/issues/280) · geschlossen · Umsetzung: 3b2dcc6 · Klärung im Issue: Untergrenze ab dem Anspruch, Eingabe davor unverändert
