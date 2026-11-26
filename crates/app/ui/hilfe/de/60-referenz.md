@@ -52,6 +52,7 @@ Eine Planung ist **eine Textdatei** im JSON-Format mit der Endung `.vplan`. Sie 
 - **Wohnort:** `taxes.location` (`canton`, `municipality` als BFS-Nummer, `church`) gilt ab dem Start, mit `taxes.mode: "location"` (neue Planungen; ohne `mode` gelten die eigenen Tabellen); weitere Wohnorte stehen in `taxes.relocations` als Zeilen `{"from": "2031-01", "canton": "ZG", "municipality": 1711, "church": "none"}`.
 - **Steuerbarer Ertrag:** `taxes.investmentYield` mit `stocks` und `bonds` als Satz pro Jahr (0.02 = 2 %); fehlt er, gilt 0 %.
 - **Steuerwert-Vorgabe:** `realestate.defaultTaxValue: true` (neue Planungen); Immobilien ohne `taxValue` zählen dann mit 50 % des Marktwerts. Fehlt das Feld, gilt der Marktwert.
+- **Herkunft Steuerrechnung:** Zeilen von `taxes.deductions`, die aus der Steuerrechnung übernommen sind ([Abzüge aus der Steuerrechnung](#f-tax-bill)), tragen `taxBill` mit dem Steuerjahr, zum Beispiel `{"from": "start", "kind": "own", "amount": 25000, "taxBill": 2025}`; es ändert die Rechnung nicht.
 - Das vollständige Format liefert `vivaplan schema` im Terminal.
 
 Die Datei enthält **keine Ergebnisse**. Ergebnisse legt die App in der [Liste der Ergebnisse](#r-list) ab.

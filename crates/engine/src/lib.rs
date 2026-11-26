@@ -39,6 +39,7 @@ pub mod sim;
 pub mod state;
 pub mod strategy;
 pub mod tax;
+pub mod taxbill;
 pub mod taxdata;
 #[doc(hidden)]
 pub mod test_alloc;

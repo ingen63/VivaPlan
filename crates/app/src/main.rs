@@ -772,6 +772,12 @@ fn upgrade_plan(plan: Value) -> api::UpgradeOut {
     api::upgrade_plan(&plan)
 }
 
+/// #274: Deductions from the last tax bill.
+#[tauri::command]
+fn tax_bill(plan: Value, bill: Value) -> engine::taxbill::TaxBillOut {
+    engine::taxbill::tax_bill(&plan, &bill)
+}
+
 #[tauri::command]
 async fn preview<R: Runtime>(app: AppHandle<R>, plan: Value, path: Option<String>) -> api::PreviewOut {
     let lib = library_dir(&app).ok();
@@ -1263,6 +1269,7 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             gain_templates,
             tax_locations,
             upgrade_plan,
+            tax_bill,
             validate,
             preview,
             run_simulation,

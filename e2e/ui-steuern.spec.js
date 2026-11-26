@@ -1453,3 +1453,187 @@ test.describe("Place of residence as the default, other settings as assumptions 
     await noErrors(page, errors);
   });
 });
+
+test.describe("Deductions from the last tax bill (#274)", () => {
+  /** New plan in Zurich with an earned income of 10'000 per month and wealth, section «Steuern»; `birth` optional. */
+  async function newPlan(page, birth = null) {
+    await page.locator('button[data-action="new"]').click();
+    await page.waitForFunction(() => state.taxes.mode === "location" && state.wealth.stocks === 0);
+    await page.evaluate(b => {
+      state.household.persons[0].name = "Anna";
+      if (b) state.household.persons[0].birth = b;
+      state.taxes.location = { canton: "ZH", municipality: 261, church: "none" };
+      state.flows.income = { mode: "const", value: b ? 0 : 10000 };
+      state.flows.spending = { mode: "const", value: 5000 };
+      state.wealth.stocks = 500000;
+      markDirty();
+    }, birth);
+    await nav(page, "Steuern");
+    await previewIdle(page);
+  }
+  const dialog = page => page.locator("#taxbill");
+  /** Opens the dialog and fills the fields (empty values stay empty). */
+  async function fill(page, values) {
+    await page.locator("#taxbill-open").click();
+    await expect(dialog(page)).toBeVisible();
+    for (const [k, v] of Object.entries(values)) await page.locator(`#taxbill-${k}`).fill(String(v));
+  }
+  const startYear = page => page.evaluate(() => Math.floor(startM() / 12));
+
+  test("AK1, AK2, AK3, AK7: dialog with the fields; the deduction until and from the retirement; origin in the card, the assumptions and the parameters", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    // AK1: the knob in the card «Wohnort», the dialog with the five fields
+    await page.locator("#taxbill-open").click();
+    for (const t of ["Steuerjahr", "Total der Einkünfte", "Steuerbares Einkommen (Kanton)", "Steuerbares Vermögen", "Total Steuern (Kanton, Gemeinde, Bund), freiwillig"])
+      await expect(dialog(page)).toContainText(t);
+    await expect(page.locator("#taxbill-apply")).toBeDisabled();
+    const year = (await startYear(page)) - 1;
+    for (const [k, v] of Object.entries({ year, totalIncome: "120'000", taxableIncome: "95000", taxableWealth: "450000" }))
+      await page.locator(`#taxbill-${k}`).fill(String(v));
+    await expect(page.locator("#taxbill-deduction")).toContainText("Abzüge laut Steuerrechnung: 25'000");
+    // AK2: until the retirement the own value; AK3: from the retirement proposal without earned income + rest
+    await expect(page.locator("#taxbill-until")).toContainText("Bis zur Pensionierung: eigener Wert 25'000 pro Jahr");
+    await expect(page.locator("#taxbill-from")).toContainText("Ab der Pensionierung: Vorschlag des Kantons ohne Erwerb");
+    await expect(page.locator("#taxbill-rest")).toContainText("Persönlicher Rest");
+    const r = await page.evaluate(() => taxBill.out.result);
+    expect(r.deduction).toBe(25000);
+    expect(r.rest).toBeCloseTo(25000 - r.working, 6);
+    await expect(page.locator("#taxbill-from")).toContainText(`= ${Math.round(r.retired + r.rest).toLocaleString("de-CH")} pro Jahr`);
+    await page.locator("#taxbill-apply").click();
+    await expect(dialog(page)).toBeHidden();
+    await expect.poll(() => page.evaluate(() => state.taxes.deductions?.[0]?.taxBill)).toBeTruthy();
+    const rows = await page.evaluate(() => state.taxes.deductions);
+    expect(rows).toEqual([
+      { from: "start", kind: "own", amount: 25000, rate: 0, taxBill: year },
+      { from: "retire", kind: "canton", amount: 0, rate: 0, extra: r.rest, taxBill: year },
+    ]);
+    // AK7: origin in the card (#241), in the line «Annahmen» and in the parameters of a run
+    await expect(page.locator("#tax-assumptions")).toContainText(`Abzüge vom Einkommen aus der Steuerrechnung ${year}`);
+    await page.locator("#tax-assumptions").click();
+    await expect(page.locator('[data-ded-taxbill="0"]')).toHaveText(`aus Steuerrechnung ${year}`);
+    await expect(page.locator('[data-ded-taxbill="1"]')).toHaveAttribute("title", `aus Steuerrechnung ${year}`);
+    const params = await page.evaluate(() => paramSections(state).flatMap(s => s[1]).filter(r => r[0] === "Abzüge vom Einkommen"));
+    expect(params).toEqual([["Abzüge vom Einkommen", `aus Steuerrechnung ${year}`]]);
+    // AK7: tooltip of the deductions in the yearly values
+    await page.evaluate(async () => {
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null });
+      realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    await expect(page.locator("#resultsBody table.yt td[data-ded-origin]").first()).toHaveAttribute("title", new RegExp(`eigener Wert \\(aus Steuerrechnung ${year}\\)`));
+    await noErrors(page, errors);
+  });
+
+  test("AK7: a row changed by hand loses the origin", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    await fill(page, { year: (await startYear(page)) - 1, totalIncome: 120000, taxableIncome: 95000, taxableWealth: 450000 });
+    await expect(page.locator("#taxbill-apply")).toBeEnabled();
+    await page.locator("#taxbill-apply").click();
+    await expect.poll(() => page.evaluate(() => state.taxes.deductions?.[0]?.taxBill)).toBeTruthy();
+    await page.locator("#tax-assumptions").click();
+    const amount = page.locator('input[data-path="taxes.deductions.0.amount"]');
+    await amount.fill("20000");
+    await amount.press("Tab");
+    expect(await page.evaluate(() => state.taxes.deductions.map(r => r.taxBill ?? null))).toEqual([null, (await startYear(page)) - 1]);
+    await expect(page.locator('[data-ded-taxbill="0"]')).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: retired before the start: one row from the start, no rest", async ({ page }) => {
+    const errors = await open(page);
+    const start = await page.evaluate(() => Math.floor(startM() / 12));
+    await newPlan(page, `${start - 70}-03`);
+    await fill(page, { year: start - 1, totalIncome: 80000, taxableIncome: 62000, taxableWealth: 400000 });
+    await expect(page.locator("#taxbill-retired")).toContainText("Die Pensionierung liegt vor dem Start");
+    await expect(page.locator("#taxbill-until")).toContainText("Ab Start: eigener Wert 18'000 pro Jahr");
+    await expect(page.locator("#taxbill-from")).toHaveCount(0);
+    await page.locator("#taxbill-apply").click();
+    await expect.poll(() => page.evaluate(() => state.taxes.deductions)).toEqual([{ from: "start", kind: "own", amount: 18000, rate: 0, taxBill: start - 1 }]);
+    await noErrors(page, errors);
+  });
+
+  test("AK5: the taxable wealth: difference and proposal, taken over only when ticked", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    await fill(page, { year: (await startYear(page)) - 1, totalIncome: 120000, taxableIncome: 95000, taxableWealth: 100000 });
+    await expect(page.locator("#taxbill-wealth-block")).toContainText("Planung am 31.12.");
+    await expect(page.locator("#taxbill-wealth-block")).toContainText("Steuerrechnung: 100'000");
+    const p = await page.evaluate(() => taxBill.out.result.wealth.proposal);
+    expect(p.kind).toBe("wealthDeduction");
+    await expect(page.locator("#taxbill-wealth-proposal")).toContainText(`Abzug vom Vermögen ${p.amount.toLocaleString("de-CH")} pro Jahr ab Start`);
+    // not ticked: the wealth stays as it is
+    await page.locator("#taxbill-apply").click();
+    await expect.poll(() => page.evaluate(() => state.taxes.deductions?.[0]?.taxBill)).toBeTruthy();
+    expect(await page.evaluate(() => state.taxes.wealthDeductions ?? [])).toEqual([]);
+    // ticked: the row of the deductions from wealth from the start
+    await fill(page, {});
+    await expect(page.locator("#taxbill-wealth")).toBeVisible();
+    await page.locator("#taxbill-wealth").check();
+    await page.locator("#taxbill-apply").click();
+    await expect.poll(() => page.evaluate(() => state.taxes.wealthDeductions)).toEqual([{ from: "start", amount: p.amount }]);
+    // with a property: the share of the tax value
+    await page.evaluate(() => {
+      state.realestate.properties = [{ id: "h", name: "Haus", status: "owned", price: 800000, worth: 1000000, fixCosts: 0, sell: "never", bought: "2010-01",
+        mortgage: { tranches: [{ name: "T", amount: 400000, start: i2ym(startM()), periods: [{ type: "fixed", term: 20, rate: 0, amort: 0 }] }] } }];
+      state.taxes.wealthDeductions = [];
+      markDirty(); renderSection();
+    });
+    await fill(page, { taxableWealth: 300000 });
+    await expect(page.locator("#taxbill-wealth-proposal")).toContainText("Steuerwert der Immobilien");
+    const rate = await page.evaluate(() => taxBill.out.result.wealth.proposal.rate);
+    await page.locator("#taxbill-wealth").check();
+    await page.locator("#taxbill-apply").click();
+    await expect.poll(() => page.evaluate(() => state.realestate.properties[0].taxValue)).toEqual({ kind: "rate", value: rate });
+    await noErrors(page, errors);
+  });
+
+  test("AK6: with the total of the taxes the own estimate and the deviation; from 15 % a hint", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    await fill(page, { year: (await startYear(page)) - 1, totalIncome: 120000, taxableIncome: 95000, taxableWealth: 450000 });
+    await expect(page.locator("#taxbill-deduction")).toBeVisible();
+    await expect(page.locator("#taxbill-check")).toHaveCount(0);
+    await page.locator("#taxbill-totalTax").fill("10000");
+    await expect(page.locator("#taxbill-check")).toContainText("Schätzung der App für dieselben steuerbaren Werte");
+    const c = await page.evaluate(() => taxBill.out.result.check);
+    await expect(page.locator("#taxbill-check")).toContainText(`Abweichung ${c.deviation > 0 ? "+" : ""}`);
+    await page.locator("#taxbill-totalTax").fill(String(Math.round(c.estimate / 1.05)));
+    await expect(page.locator("#taxbill-check")).toContainText("Abweichung +5 %");
+    await expect(page.locator("#taxbill-check-hint")).toHaveCount(0);
+    await page.locator("#taxbill-totalTax").fill(String(Math.round(c.estimate / 1.3)));
+    await expect(page.locator("#taxbill-check-hint")).toContainText("Mögliche Ursachen: Gemeinde, Zivilstand, Konfession oder Einkommen");
+    await noErrors(page, errors);
+  });
+
+  test("AK8: only in the mode «Wohnort»", async ({ page }) => {
+    const errors = await open(page);
+    await nav(page, "Steuern");
+    // example plan: own tables, no knob
+    await expect(page.locator("#tax-own")).toBeVisible();
+    await expect(page.locator("#taxbill-open")).toHaveCount(0);
+    await page.locator("#tax-to-location").click();
+    await expect(page.locator("#taxbill-open")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK9: tax year after the start and negative amounts are errors at the field", async ({ page }) => {
+    const errors = await open(page);
+    await newPlan(page);
+    const start = await startYear(page);
+    await fill(page, { year: start + 1, totalIncome: 120000, taxableIncome: -5, taxableWealth: 450000 });
+    await expect(page.locator("#taxbill-err-year")).toContainText(`Das Steuerjahr ${start + 1} liegt nach dem Start der Planung`);
+    await expect(page.locator("#taxbill-err-taxableIncome")).toContainText("Der Betrag muss 0 oder grösser sein");
+    await expect(page.locator("#taxbill-year")).toHaveClass(/invalid/);
+    await expect(page.locator("#taxbill-apply")).toBeDisabled();
+    await page.locator("#taxbill-year").fill(String(start));
+    await page.locator("#taxbill-taxableIncome").fill("95000");
+    await expect(page.locator("#taxbill-err-year")).toBeHidden();
+    await expect(page.locator("#taxbill-apply")).toBeEnabled();
+    // an empty required field
+    await page.locator("#taxbill-taxableWealth").fill("");
+    await expect(page.locator("#taxbill-err-taxableWealth")).toContainText("Bitte diesen Wert eingeben");
+    await expect(page.locator("#taxbill-apply")).toBeDisabled();
+    await noErrors(page, errors);
+  });
+});

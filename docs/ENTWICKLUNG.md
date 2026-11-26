@@ -933,6 +933,30 @@ ein (`BUILTIN`).
   Tabelle. `TaxBasis.wealth` = `WealthBasis { wealth, ongoing, oneOff, taxable }`, nur mit Abzügen vom Vermögen; diese
   schalten die Aufzeichnung ein. Prüfung: Zeitpunkt auflösbar, Beträge ≥ 0, Steuerjahr zwischen Start und Ende (Fehler am
   Feld).
+- **Abzüge aus der Steuerrechnung (#274):** Befehl `tax_bill` (`taxbill::tax_bill(plan, bill)`, Tauri und
+  Entwicklungsserver, Vertrag in `crates/app/ipc-commands.json`) mit `bill = { year, totalIncome, taxableIncome,
+  taxableWealth, totalTax? }`; Antwort `{ issues, error, result }`. `issues`: Fehler am Feld des Dialogs (`field` =
+  Name im Dialog): fehlender Wert (`tax_bill_missing`, `totalTax` freiwillig), Betrag < 0 (`tax_bill_negative`),
+  Steuerjahr nach dem Jahr des Starts (`tax_bill_year_after_start`). `error`: nicht im Modus «Wohnort»
+  (`tax_bill_mode`) oder Planung nicht rechenbar. Rechnung: ein Lauf der Planung mit festen Renditen und dem Vorschlag
+  des Kantons über die ganze Zeit; Vorschlag = Summe `TaxBasis.parts_canton` des Dezembers ÷ Preisindex (bei «Tarife mit
+  der Teuerung»), also Preise des Starts. Abzug = `totalIncome − taxableIncome`, eigener Wert = Abzug − Säule 3a der
+  Planung im Jahr mit Erwerb (`TaxBasis.pillar3a`, separat abgezogen), Rest = eigener Wert − Vorschlag mit Erwerb, alle
+  nie negativ (`taxbill::amounts`). Vorschlag mit Erwerb: erstes volles Jahr mit Erwerbseinkommen im Haushalt (sonst
+  das erste Jahr); ohne Erwerb (nur Anzeige): erstes volles Jahr ab `retire_at` ohne Erwerb.
+  Zeilen: `{ from: "start", kind: "own", amount: eigener Wert, taxBill }` und, wenn `retire_at` nach dem Start liegt,
+  `{ from, kind: "canton", extra: Rest, taxBill }` mit `from` = Meilenstein «Bezug Pensionskasse» der Person mit dem
+  letzten Bezug (`Simulator::last_retiree`, `retire`/`retire2`), sonst deren Monat. Vermögen: erstes `WealthTaxYear`
+  (31.12. des Startjahres), `taxable` − Sozialabzüge (`Resolved::wealth_allowance`: Vermögen ohne Steuer aus der
+  Vermögenskurve, von der ersten Stützstelle mit Satz mit dem Grenzsatz bis zur nächsten zurückgerechnet, zwischen der
+  letzten Stützstelle ohne Satz und dieser); Differenz = Steuerrechnung − Planung; ab 1 000 Franken Vorschlag
+  `taxValueRate` (Liegenschaften: (Σ Steuerwert + Differenz) ÷ Σ Marktwert, 0 bis 1, auf Prozent gerundet) oder
+  `wealthDeduction` (ohne Liegenschaften, nur wenn tiefer: laufende Zeile + Differenz, auf 100 gerundet). Kontrolle
+  (nur mit `totalTax` > 0): `income_tax_on(taxableIncome, taxableIncome, 1)` + `wealth_tax(taxableWealth +
+  Sozialabzüge, 1)` des Wohnorts am 31.12. des Startjahres, Abweichung = Schätzung ÷ Total − 1, Hinweis ab 15 %
+  (`DEVIATION_HINT`). `IncomeDeduction.taxBill` (Steuerjahr, nur gespeichert, wenn gesetzt) geht über `CDeduction` und
+  `YearDeductions` in `TaxBasis.taxBill` und `YearTaxBasis.taxBill` (Tooltip der Abzüge); die Oberfläche entfernt
+  es, wenn eine Zeile von Hand geändert wird.
 - **Steuerbarer Ertrag des Vermögens (#149):** `taxes.investmentYield` = `{ stocks, bonds }` (Satz pro Jahr, Anteil 0
   bis 1; nur gespeichert, wenn ein Satz ≠ 0; fehlt er, 0 % – bestehende Planungen und die Golden-Dateien rechnen
   unverändert). Neue Planungen (`api::blank_plan`) haben 2 % / 1 % (Dividendenrendite eines globalen Aktienindex,

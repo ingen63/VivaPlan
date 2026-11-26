@@ -71,6 +71,7 @@ mod simulation;
 mod state_curves;
 mod statistics;
 mod strategy;
+mod tax_bill;
 mod tax_capital_location;
 mod tax_gain_cantons;
 mod tax_indexed;

@@ -388,6 +388,27 @@ impl Resolved {
     pub fn wealth_tax(&self, wealth: f64, index: f64) -> f64 {
         tax_indexed(&self.wealth, wealth, 1.0, index)
     }
+
+    /// #274: Social deductions from wealth estimated from the wealth curve (they are included in it): the wealth below
+    /// which the curve has no tax, prices of the tax data. The tax at the first grid point with a rate is traced back
+    /// with the marginal rate up to the next grid point, within the step from the last grid point without a rate.
+    pub fn wealth_allowance(&self) -> f64 {
+        let t = &self.wealth;
+        let Some(k) = t.iter().position(|p| p.1 > 0.0) else {
+            return t.last().map_or(0.0, |p| p.0);
+        };
+        if k == 0 {
+            return 0.0;
+        }
+        let (x0, (x1, r1)) = (t[k - 1].0, t[k]);
+        let tax1 = x1 * r1;
+        let marginal = t.get(k + 1).map_or(0.0, |&(x2, r2)| (x2 * r2 - tax1) / (x2 - x1));
+        if marginal > 0.0 {
+            (x1 - tax1 / marginal).clamp(x0, x1)
+        } else {
+            x0
+        }
+    }
 }
 
 /// Sum of weighted rate tables on the united grid points. Because the engine interpolates linearly between the grid

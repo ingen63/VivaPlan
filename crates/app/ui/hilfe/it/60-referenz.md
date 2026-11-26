@@ -52,6 +52,7 @@ Una pianificazione è **un file di testo** in formato JSON con l’estensione `.
 - **Domicilio:** `taxes.location` (`canton`, `municipality` come numero UST, `church`) vale dall’inizio, con `taxes.mode: "location"` (nuove pianificazioni; senza `mode` valgono le tabelle proprie); altri domicili si trovano in `taxes.relocations` come righe `{"from": "2031-01", "canton": "ZG", "municipality": 1711, "church": "none"}`.
 - **Reddito imponibile:** `taxes.investmentYield` con `stocks` e `bonds` come tasso annuo (0.02 = 2 %); se manca, vale 0 %.
 - **Valore fiscale predefinito:** `realestate.defaultTaxValue: true` (nuove pianificazioni); gli immobili senza `taxValue` contano allora al 50 % del valore venale. Se il campo manca, vale il valore venale.
+- **Origine fattura d’imposta:** le righe di `taxes.deductions` riprese dalla fattura d’imposta ([Deduzioni dalla fattura d’imposta](#f-tax-bill)) portano `taxBill` con l’anno fiscale, per esempio `{"from": "start", "kind": "own", "amount": 25000, "taxBill": 2025}`; ciò non cambia il calcolo.
 - Il formato completo lo fornisce `vivaplan schema` nel terminale.
 
 Il file **non contiene risultati**. L’app archivia i risultati nell’[elenco dei risultati](#r-list).

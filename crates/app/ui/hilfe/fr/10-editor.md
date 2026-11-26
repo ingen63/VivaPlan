@@ -285,6 +285,7 @@ Des **barèmes de taux** simples, que vous pouvez tirer du calculateur d’impô
 
 - [Impôt selon le domicile](#f-tax-location)
 - [Déductions du revenu](#f-tax-deductions)
+- [Déductions du bordereau d’impôt](#f-tax-bill)
 - [Rendement imposable de la fortune](#f-tax-yield)
 - [Coefficient d’impôt et barèmes](#f-tax-tables)
 - [Barèmes avec le renchérissement](#f-tax-indexed)
@@ -300,7 +301,7 @@ Mots-clés: domicile, canton, commune, impôt ecclésiastique, confession, AFC, 
 
 Dans le mode **Domicile**, vous indiquez seulement la **commune** et l’**impôt ecclésiastique** (aucune, réformée, catholique romaine, catholique chrétienne). La recherche couvre toutes les communes de l’année fiscale: saisir le nom et choisir dans la liste (nom avec canton); le **canton** découle de la commune et figure à côté. Barèmes, déductions et coefficients d’impôt proviennent du fichier de données fiscales de l’AFC livré avec l’application (calculateur d’impôts, données de base); la carte indique l’année fiscale, la source et les coefficients d’impôt de la commune. Il n’y a pas d’accès au réseau.
 
-**Impôt estimé:** En haut de la carte figurent deux chiffres aux prix actuels, arrondis à 100 francs: l’impôt sur le revenu et sur la fortune de la **première année civile complète** et de la **première année civile complète après la retraite** (après le dernier retrait de la caisse de pension du ménage), sans retraits en capital ni gains immobiliers. Comparez-les avec votre dernier bordereau d’impôt. Si la retraite est antérieure au début, un seul chiffre figure. Les chiffres proviennent de l’aperçu; tant que des données manquent (par exemple la commune), une remarque remplace les chiffres.
+**Impôt estimé:** En haut de la carte figurent deux chiffres aux prix actuels, arrondis à 100 francs: l’impôt sur le revenu et sur la fortune de la **première année civile complète** et de la **première année civile complète après la retraite** (après le dernier retrait de la caisse de pension du ménage), sans retraits en capital ni gains immobiliers. Comparez-les avec votre dernier bordereau d’impôt. Si la retraite est antérieure au début, un seul chiffre figure. Les chiffres proviennent de l’aperçu; tant que des données manquent (par exemple la commune), une remarque remplace les chiffres. Les déductions deviennent plus précises avec **«Reprendre du bordereau d'impôt»** sous les chiffres, voir [Déductions du bordereau d’impôt](#f-tax-bill).
 
 **Hypothèses:** Sous le domicile figure une ligne avec les valeurs par défaut en vigueur, en mots: déductions standard du canton jusqu’à et dès la retraite ([Déductions du revenu](#f-tax-deductions)), [barèmes avec le renchérissement](#f-tax-indexed), déduction du pilier 3a (oui ou non), [valeur fiscale](#f-re-tax-value) des biens immobiliers (valeur par défaut 50 % de la valeur vénale) et [rendement imposable](#f-tax-yield) de la fortune. Un clic sur la ligne ouvre les réglages; la ligne affiche aussitôt les modifications. Les nouvelles planifications ont ces valeurs par défaut; la mesure sur plusieurs ménages fictifs montre que sans les déductions l’impôt serait nettement trop élevé pendant les années d’activité.
 
@@ -355,6 +356,21 @@ Chaque ligne est soit (les explications figurent aussi dans le ⓘ à côté du 
 **Résultats:** Avec «Afficher les impôts», les valeurs annuelles montrent le revenu, les déductions (canton; l’origine – proposition du canton, en plus, valeur propre, unique, pilier 3a – dans l’infobulle de la cellule) et le revenu imposable (celui de la Confédération dans l’infobulle s’il diffère).
 
 **EMS:** L’app déduit en plus les frais d’EMS de la carte [EMS](#f-care-home) comme frais de maladie dans la mesure où ils dépassent 5 % du revenu net (Confédération et canton chacun avec son revenu net). Les valeurs annuelles indiquent la déduction dans l’origine des déductions.
+
+## @f-tax-bill Déductions du bordereau d’impôt
+Mots-clés: bordereau d’impôt, taxation, déductions, revenu imposable, fortune imposable, reste personnel, contrôle
+
+La voie la plus précise vers les [déductions du revenu](#f-tax-deductions) sont les chiffres de votre dernier **bordereau d’impôt définitif**. Le bouton **«Reprendre du bordereau d'impôt»** dans la carte [Domicile](#f-tax-location) (seulement avec l’impôt selon le domicile) ouvre un dialogue avec des champs de la première page du bordereau d’impôt: **année fiscale**, **total des revenus**, **revenu imposable** du canton, **fortune imposable** et, facultativement, **total des impôts** (canton, commune, Confédération). L’app recalcule à chaque saisie.
+
+- **Jusqu’à la retraite:** déduction = total des revenus − revenu imposable, jamais négative. Elle devient la première ligne (dès le début de la simulation) comme valeur propre aux prix du début. L’app déduit séparément les versements au pilier 3a de la planification; ils sont donc retirés de la valeur propre, sinon ils compteraient deux fois.
+- **Dès la retraite**, les frais professionnels, la déduction pour couple à deux revenus et le pilier 3a disparaissent. L’app prend donc la proposition du canton sans activité lucrative et y ajoute le **reste personnel** comme déduction supplémentaire: reste = déduction sans pilier 3a − proposition du canton avec activité lucrative, jamais négatif. L’app prend la proposition avec activité lucrative de la première année complète de la planification avec un revenu de l’activité lucrative, pour les couples pour tout le ménage. La ligne commence avec le retrait de la caisse de pension; pour les couples avec celui de la personne qui part à la retraite en dernier. Exemple: revenus 120 000, imposable 95 000 → déduction 25 000; proposition avec activité lucrative 21 000 → reste 4 000; proposition sans activité lucrative 9 000 → dès la retraite 13 000.
+- **Déjà à la retraite:** si la retraite précède le début, la déduction s’applique dès le début; il n’y a pas de reste.
+- **Fortune imposable:** le dialogue montre la fortune imposable de la planification au 31 décembre de la première année après les déductions sociales du canton (estimées à partir du barème de la fortune) et la différence avec le bordereau d’impôt. En cas d’écart, il propose avec des biens immobiliers une part de la [valeur fiscale](#f-re-tax-value) de la valeur vénale, sans biens immobiliers une [déduction de la fortune](#f-tax-wealth-deductions) dès le début. La proposition n’est reprise qu’avec une coche. Si le bordereau d’impôt indique plus de fortune sans biens immobiliers, vérifiez la fortune dans la planification.
+- **Contrôle:** avec le total des impôts, le dialogue montre l’estimation de l’app pour les mêmes valeurs imposables (l’impôt fédéral sur le revenu imposable du canton) et l’écart en pour cent. Dès 15 %, une remarque nomme des causes possibles: commune, état civil, confession ou revenu. L’app continue sans facteur de correction.
+
+**«Reprendre»** remplace les lignes des déductions du revenu; les déductions uniques restent. Les lignes reprises indiquent leur origine (du bordereau d’impôt et l’année fiscale) dans la carte Déductions du revenu, dans la ligne Hypothèses, dans l’infobulle des déductions dans les valeurs annuelles et dans l’onglet «Paramètres» d’un calcul. Si vous modifiez une ligne à la main, son origine disparaît.
+
+**Vérification:** une année fiscale postérieure au début, un montant négatif et un champ obligatoire vide sont des erreurs au champ; «Reprendre» est alors bloqué.
 
 ## @f-tax-wealth-deductions Déductions de la fortune
 Mots-clés: déductions, fortune imposable, impôt sur la fortune, dettes, déductions sociales, unique

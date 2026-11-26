@@ -291,6 +291,17 @@ würde die Scheingenauigkeit verstärken.
   Betrag nominal, zum Beispiel PK-Einkauf, Sanierung, Krankheitskosten) zählen nur in ihrem Steuerjahr zusätzlich zur
   geltenden Zeile, bei beiden Arten von Zeilen und in beiden Modi; die Schätzung des Netto-Bedarfs (3-Topf) nutzt nur
   die laufenden Abzüge. Die Herkunft «zusätzlich» und «einmalig» steht im Tooltip der Abzüge.
+- **Abzüge aus der Steuerrechnung (#274):** Im Modus «Wohnort» öffnet «Aus der Steuerrechnung übernehmen» (Karte
+  «Wohnort») einen Dialog für die erste Seite der letzten definitiven Steuerrechnung: Steuerjahr, Total der Einkünfte,
+  steuerbares Einkommen (Kanton), steuerbares Vermögen, freiwillig Total Steuern. Bis zur Pensionierung gilt der Abzug
+  (Einkünfte − steuerbares Einkommen, ohne die separat abgezogene Säule 3a) als eigener Wert ab Start; ab der
+  Pensionierung der Vorschlag des Kantons ohne Erwerb plus der persönliche Rest (Abzug − Vorschlag mit Erwerb des
+  Haushalts, nie negativ), so dass Berufskosten, Zweitverdienerabzug und Säule 3a wegfallen. Liegt die Pensionierung vor
+  dem Start, gilt der Abzug ab Start. Zum steuerbaren Vermögen zeigt der Dialog die Differenz zur Planung (31.12. des
+  ersten Jahres, nach den aus dem Vermögenstarif geschätzten Sozialabzügen) und schlägt einen Anteil des Steuerwerts
+  oder einen Abzug vom Vermögen vor, übernommen nur mit Häkchen. Mit Total Steuern zeigt er die eigene Schätzung für
+  dieselben Werte und die Abweichung, ab 15 % mit möglichen Ursachen; kein Korrekturfaktor. Die Herkunft «aus
+  Steuerrechnung <Jahr>» steht in der Karte, in den Annahmen, im Tooltip der Abzüge und in den Parametern des Laufs.
 - **Darstellung der Abzüge vom Einkommen (#241):** Je Zeile eine Kopfzeile (ab, Vorschlag des Kantons oder eigener
   Wert, Summe «Kanton … · Bund …» bzw. der eigene Betrag); «Details» klappt die Teile (Sozialabzüge,
   Versicherungsprämien, Sparzinsen, Berufskosten, Zweitverdienerabzug, zusätzlich) für Kanton und Bund mit Total für

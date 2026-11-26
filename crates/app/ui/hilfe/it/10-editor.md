@@ -285,6 +285,7 @@ Semplici **tabelle delle aliquote**, che può ricavare dal calcolatore fiscale d
 
 - [Imposta secondo il domicilio](#f-tax-location)
 - [Deduzioni dal reddito](#f-tax-deductions)
+- [Deduzioni dalla fattura d’imposta](#f-tax-bill)
 - [Reddito imponibile della sostanza](#f-tax-yield)
 - [Moltiplicatore d’imposta e tabelle](#f-tax-tables)
 - [Tariffe con il rincaro](#f-tax-indexed)
@@ -300,7 +301,7 @@ Parole chiave: domicilio, cantone, comune, imposta di culto, confessione, AFC, d
 
 Nel modo **Domicilio** indica solo il **comune** e l’**imposta di culto** (nessuna, riformata, cattolica romana, cattolica cristiana). La ricerca comprende tutti i comuni dell’anno fiscale: digitare il nome e scegliere dall’elenco (nome con cantone); il **cantone** risulta dal comune ed è indicato accanto. Tariffe, deduzioni e moltiplicatori d’imposta provengono dal file dei dati fiscali dell’AFC fornito con l’app (calcolatore d’imposta, dati di base); la scheda indica l’anno fiscale, la fonte e i moltiplicatori d’imposta del comune. Non c’è accesso alla rete.
 
-**Imposta stimata:** In alto nella scheda figurano due cifre ai prezzi attuali, arrotondate a 100 franchi: l’imposta sul reddito e sulla sostanza nel **primo anno civile completo** e nel **primo anno civile completo dopo il pensionamento** (dopo l’ultimo prelievo della cassa pensioni dell’economia domestica), senza prelievi di capitale né utili immobiliari. Le confronti con la sua ultima fattura d’imposta. Se il pensionamento è prima dell’inizio, figura una sola cifra. Le cifre provengono dall’anteprima; finché mancano dati (per esempio il comune), una nota sostituisce le cifre.
+**Imposta stimata:** In alto nella scheda figurano due cifre ai prezzi attuali, arrotondate a 100 franchi: l’imposta sul reddito e sulla sostanza nel **primo anno civile completo** e nel **primo anno civile completo dopo il pensionamento** (dopo l’ultimo prelievo della cassa pensioni dell’economia domestica), senza prelievi di capitale né utili immobiliari. Le confronti con la sua ultima fattura d’imposta. Se il pensionamento è prima dell’inizio, figura una sola cifra. Le cifre provengono dall’anteprima; finché mancano dati (per esempio il comune), una nota sostituisce le cifre. Le deduzioni diventano più precise con **«Riprendere dalla fattura d'imposta»** sotto le cifre, vedi [Deduzioni dalla fattura d’imposta](#f-tax-bill).
 
 **Ipotesi:** Sotto il domicilio figura una riga con i valori predefiniti in vigore, a parole: deduzioni standard del cantone fino al e dal pensionamento ([Deduzioni dal reddito](#f-tax-deductions)), [tariffe con il rincaro](#f-tax-indexed), deduzione del pilastro 3a (sì o no), [valore fiscale](#f-re-tax-value) degli immobili (valore predefinito 50 % del valore venale) e [reddito imponibile](#f-tax-yield) della sostanza. Un clic sulla riga apre le impostazioni; la riga mostra subito le modifiche. Le nuove pianificazioni hanno questi valori predefiniti; la misurazione su diverse economie domestiche fittizie mostra che senza le deduzioni l’imposta sarebbe nettamente troppo alta negli anni di attività lucrativa.
 
@@ -355,6 +356,21 @@ Ogni riga è (le spiegazioni si trovano anche nell’ⓘ accanto al titolo della
 **Risultati:** Con «Mostrare le imposte» i valori annuali mostrano il reddito, le deduzioni (cantone; l’origine – proposta del cantone, in aggiunta, valore proprio, unica, pilastro 3a – nel tooltip della cella) e il reddito imponibile (quello della Confederazione nel tooltip se diverso).
 
 **Casa di cura:** L’app deduce in aggiunta le spese della casa di cura dalla scheda [Casa di cura](#f-care-home) come spese di malattia nella misura in cui superano il 5 % del reddito netto (Confederazione e cantone ciascuno con il proprio reddito netto). I valori annuali indicano la deduzione nell’origine delle deduzioni.
+
+## @f-tax-bill Deduzioni dalla fattura d’imposta
+Parole chiave: fattura d’imposta, tassazione, deduzioni, reddito imponibile, sostanza imponibile, resto personale, controllo
+
+La via più precisa verso le [deduzioni dal reddito](#f-tax-deductions) sono le cifre della sua ultima **fattura d’imposta definitiva**. Il pulsante **«Riprendere dalla fattura d'imposta»** nella scheda [Domicilio](#f-tax-location) (solo con l’imposta secondo il domicilio) apre un dialogo con campi della prima pagina della fattura d’imposta: **anno fiscale**, **totale dei redditi**, **reddito imponibile** del cantone, **sostanza imponibile** e facoltativamente **totale imposte** (cantone, comune, Confederazione). L’app ricalcola a ogni inserimento.
+
+- **Fino al pensionamento:** deduzione = totale dei redditi − reddito imponibile, mai negativa. Diventa la prima riga (dall’inizio della simulazione) come valore proprio ai prezzi dell’inizio. L’app deduce separatamente i versamenti nel pilastro 3a della pianificazione; vengono quindi tolti dal valore proprio, altrimenti conterebbero due volte.
+- **Dal pensionamento** le spese professionali, la deduzione per coppie con doppio reddito e il pilastro 3a decadono. L’app prende quindi la proposta del cantone senza attività lucrativa e vi aggiunge il **resto personale** come deduzione supplementare: resto = deduzione senza pilastro 3a − proposta del cantone con attività lucrativa, mai negativo. L’app prende la proposta con attività lucrativa dal primo anno completo della pianificazione con reddito da attività lucrativa, per le coppie per l’intera economia domestica. La riga inizia con il prelievo della cassa pensioni; per le coppie con quello della persona che va in pensione per ultima. Esempio: redditi 120 000, imponibile 95 000 → deduzione 25 000; proposta con attività lucrativa 21 000 → resto 4 000; proposta senza attività lucrativa 9 000 → dal pensionamento 13 000.
+- **Già in pensione:** se il pensionamento precede l’inizio, la deduzione vale dall’inizio; non c’è resto.
+- **Sostanza imponibile:** il dialogo mostra la sostanza imponibile della pianificazione al 31 dicembre del primo anno dopo le deduzioni sociali del cantone (stimate dalla tariffa della sostanza) e la differenza rispetto alla fattura d’imposta. Se differisce, propone con immobili una quota del [valore fiscale](#f-re-tax-value) sul valore venale, senza immobili una [deduzione dalla sostanza](#f-tax-wealth-deductions) dall’inizio. La proposta viene ripresa solo con una spunta. Se la fattura d’imposta indica più sostanza senza immobili, verifichi la sostanza nella pianificazione.
+- **Controllo:** con il totale imposte il dialogo mostra la stima dell’app per gli stessi valori imponibili (l’imposta federale sul reddito imponibile del cantone) e lo scostamento in percento. Dal 15 % un avviso indica cause possibili: comune, stato civile, confessione o reddito. L’app continua senza fattore di correzione.
+
+**«Riprendere»** sostituisce le righe delle deduzioni dal reddito; le deduzioni uniche restano. Le righe riprese indicano la loro origine (dalla fattura d’imposta e l’anno fiscale) nella scheda Deduzioni dal reddito, nella riga Ipotesi, nel tooltip delle deduzioni nei valori annuali e nella scheda «Parametri» di un calcolo. Se modifica una riga a mano, la sua origine decade.
+
+**Verifica:** un anno fiscale successivo all’inizio, un importo negativo e un campo obbligatorio vuoto sono errori al campo; «Riprendere» è allora bloccato.
 
 ## @f-tax-wealth-deductions Deduzioni dalla sostanza
 Parole chiave: deduzioni, sostanza imponibile, imposta sulla sostanza, debiti, deduzioni sociali, unica

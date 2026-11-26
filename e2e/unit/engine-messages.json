@@ -1297,6 +1297,39 @@
     "text": "Deductions from income, row Person 2: the additional amount must be 0 or greater."
   },
   {
+    "code": "tax_bill_missing",
+    "params": {},
+    "template": "Tax bill: please enter this value.",
+    "text": "Tax bill: please enter this value."
+  },
+  {
+    "code": "tax_bill_negative",
+    "params": {},
+    "template": "Tax bill: the amount must be 0 or greater.",
+    "text": "Tax bill: the amount must be 0 or greater."
+  },
+  {
+    "code": "tax_bill_year_after_start",
+    "params": {
+      "start": "2031-07",
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Tax bill: the tax year {year} lies after the start of the plan ({start:ym}).",
+    "text": "Tax bill: the tax year Person 2 lies after the start of the plan (07.2031)."
+  },
+  {
+    "code": "tax_bill_mode",
+    "params": {},
+    "template": "Tax bill: the takeover needs the tax by place of residence with a municipality.",
+    "text": "Tax bill: the takeover needs the tax by place of residence with a municipality."
+  },
+  {
     "code": "investment_yield_stocks_range",
     "params": {},
     "template": "Taxable yield of the wealth, stocks: the rate must be between 0 % and 100 %.",

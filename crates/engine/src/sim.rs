@@ -256,6 +256,10 @@ pub struct TaxBasis {
     /// deductions from wealth.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wealth: Option<WealthBasis>,
+    /// #274: Tax year of the tax bill a row of the year was taken over from (origin in the tooltip); missing for rows
+    /// entered by hand.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tax_bill: Option<i32>,
 }
 
 /// #231: Basis of the wealth tax of a year with deductions from wealth.
@@ -290,6 +294,8 @@ struct YearDeductions {
     pillar3a: [f64; 2],
     /// #271: Care home costs of the tax year (nominal).
     care: f64,
+    /// #274: Tax year of the tax bill of a row applied in the year (the last one).
+    tax_bill: Option<i32>,
 }
 
 /// #271: Costs of illness (care home) are deductible as far as they exceed this share of the net income (simplified
@@ -317,6 +323,7 @@ struct CDeduction {
     amount: f64,
     rate: f64,
     extra: f64,
+    tax_bill: Option<i32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -1159,6 +1166,7 @@ impl Simulator {
                             amount: d.amount,
                             rate: d.rate,
                             extra: d.extra,
+                            tax_bill: d.tax_bill,
                         });
                     }
                 }
@@ -1172,6 +1180,7 @@ impl Simulator {
                 amount: 0.0,
                 rate: 0.0,
                 extra: 0.0,
+                tax_bill: None,
             }],
             None => vec![],
         };
@@ -1470,6 +1479,9 @@ impl Simulator {
     /// #131: Adds month `m` with the income `income` to the deductions of the tax year.
     fn add_deduction_month(&self, acc: &mut YearDeductions, m: YearMonth, income: f64) {
         acc.months += 1;
+        if let Some(y) = self.deduction_at(m).and_then(|d| d.tax_bill) {
+            acc.tax_bill = Some(y);
+        }
         match self.deduction_at(m) {
             Some(d) if d.kind == crate::model::DeductionKind::Canton => {
                 // Own tables: no proposal (#131).
@@ -1517,6 +1529,7 @@ impl Simulator {
             extra,
             one_off,
             pillar3a,
+            tax_bill: acc.tax_bill,
             ..Default::default()
         };
         let location = self.location_of_year(m);
@@ -1578,6 +1591,17 @@ impl Simulator {
     /// Last payout of a pension fund (retirement of the household).
     pub fn retire_at(&self) -> Option<YearMonth> {
         self.people.iter().filter_map(|p| p.pk_at).max()
+    }
+
+    /// #274: Index of the person whose pension fund payout is [`Simulator::retire_at`] (the last in the household).
+    pub fn last_retiree(&self) -> Option<usize> {
+        let at = self.retire_at()?;
+        self.people.iter().position(|p| p.pk_at == Some(at))
+    }
+
+    /// #274: Tariffs and deduction rules of the place of residence of the tax year of month `m` (mode «Wohnort»).
+    pub fn residence_of_year(&self, m: YearMonth) -> Option<&crate::taxdata::Resolved> {
+        self.location_of_year(m).map(|l| &l.resolved)
     }
 
     pub fn months(&self) -> usize {

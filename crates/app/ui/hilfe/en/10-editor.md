@@ -285,6 +285,7 @@ Simple **rate tables** that you can derive from the tax calculator of your canto
 
 - [Tax by place of residence](#f-tax-location)
 - [Deductions from income](#f-tax-deductions)
+- [Deductions from the tax bill](#f-tax-bill)
 - [Taxable yield of the wealth](#f-tax-yield)
 - [Tax multiplier and tables](#f-tax-tables)
 - [Tariffs with inflation](#f-tax-indexed)
@@ -300,7 +301,7 @@ Keywords: place of residence, canton, municipality, church tax, denomination, FT
 
 In the mode **Place of residence** you only enter the **municipality** and the **church tax** (none, Reformed, Roman Catholic, Christ Catholic). The search covers all municipalities of the tax year: type the name and choose from the list (name with canton); the **canton** follows from the municipality and is shown next to it. Tariffs, deductions and tax multipliers come from the bundled tax data file of the FTA (tax calculator, base data); the card names the tax year, the source and the tax multipliers of the municipality. There is no network access.
 
-**Estimated tax:** At the top of the card there are two numbers in today’s prices, rounded to 100 francs: the income and wealth tax in the **first full calendar year** and in the **first full calendar year after retirement** (after the household’s last pension fund payout), without lump sums and property gains. Compare them with your last tax bill. If retirement is before the start, there is only one number. The numbers come from the preview; as long as details are missing (for example the municipality), a note stands instead of the numbers.
+**Estimated tax:** At the top of the card there are two numbers in today’s prices, rounded to 100 francs: the income and wealth tax in the **first full calendar year** and in the **first full calendar year after retirement** (after the household’s last pension fund payout), without lump sums and property gains. Compare them with your last tax bill. If retirement is before the start, there is only one number. The numbers come from the preview; as long as details are missing (for example the municipality), a note stands instead of the numbers. The deductions become more accurate with **“Take over from the tax bill”** below the numbers, see [Deductions from the tax bill](#f-tax-bill).
 
 **Assumptions:** Below the place of residence there is a line with the defaults that apply, in words: standard deductions of the canton until and from retirement ([Deductions from income](#f-tax-deductions)), [tariffs with inflation](#f-tax-indexed), pillar 3a deduction (yes or no), [tax value](#f-re-tax-value) of the properties (default 50 % of the market value) and [taxable yield](#f-tax-yield) of the wealth. A click on the line opens the settings; the line shows changes at once. New plans have these defaults set; the measurement with several made-up households shows that without the deductions the tax would be clearly too high in working years.
 
@@ -355,6 +356,21 @@ Each row is either (the explanations are also in the ⓘ next to the title of th
 **Results:** With “Show taxes” the yearly values show the income, the deductions (canton; the origin – proposal of the canton, additionally, own value, one-off, pillar 3a – in the tooltip of the cell) and the taxable income (the federal one in the tooltip if it differs).
 
 **Care home:** The app also deducts the care home costs from the card [Care home](#f-care-home) as costs of illness as far as they exceed 5 % of the net income (federal tax and canton each with their own net income). The yearly values name the deduction in the origin of the deductions.
+
+## @f-tax-bill Deductions from the tax bill
+Keywords: tax bill, assessment, deductions, taxable income, taxable wealth, personal rest, check
+
+The most accurate way to the [deductions from income](#f-tax-deductions) are the numbers of your last **final tax bill**. The button **“Take over from the tax bill”** in the card [Place of residence](#f-tax-location) (only with the tax by place of residence) opens a dialog with fields from the first page of the tax bill: **tax year**, **total income**, **taxable income** of the canton, **taxable wealth** and optionally **total taxes** (canton, municipality, federal). The app recalculates with every input.
+
+- **Until the retirement:** deduction = total income − taxable income, never negative. It becomes the first row (from the simulation start) as own value in prices of the start. The app deducts the contributions to pillar 3a of the plan separately; they therefore come off the own value, otherwise they would count twice.
+- **From the retirement** professional expenses, the second earner deduction and pillar 3a fall away. The app therefore takes the proposal of the canton without earned income and adds the **personal rest** as additional deduction: rest = deduction without pillar 3a − proposal of the canton with earned income, never negative. The app takes the proposal with earned income from the first full year of the plan with earned income, for couples for the whole household. The row starts with the pension fund payout; for couples with that of the person who retires last. Example: income 120 000, taxable 95 000 → deduction 25 000; proposal with earned income 21 000 → rest 4 000; proposal without earned income 9 000 → from retirement 13 000.
+- **Already retired:** if the retirement is before the start, the deduction applies from the start; there is no rest.
+- **Taxable wealth:** the dialog shows the taxable wealth of the plan on 31 December of the first year after the social deductions of the canton (estimated from the wealth tariff) and the difference to the tax bill. If it differs, it proposes with properties a share of the [tax value](#f-re-tax-value) of the market value, without properties a [deduction from wealth](#f-tax-wealth-deductions) from the start. The proposal is only taken over with a tick. If the tax bill shows more wealth without properties, check the wealth in the plan.
+- **Check:** with total taxes the dialog shows the estimate of the app for the same taxable values (the federal tax on the taxable income of the canton) and the deviation in percent. From 15 % a hint names possible causes: municipality, marital status, denomination or income. The app continues without a correction factor.
+
+**“Take over”** replaces the rows of the deductions from income; one-off deductions stay. The rows taken over name their origin (from tax bill and the tax year) in the card Deductions from income, in the line Assumptions, in the tooltip of the deductions in the yearly values and in the tab “Parameters” of a run. If you change a row by hand, its origin is dropped.
+
+**Check of the inputs:** a tax year after the start, a negative amount and an empty required field are errors at the field; “Take over” is then disabled.
 
 ## @f-tax-wealth-deductions Deductions from wealth
 Keywords: deductions, taxable wealth, wealth tax, debts, social deductions, one-off

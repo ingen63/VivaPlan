@@ -23,6 +23,7 @@ pub const COMMANDS: &[&str] = &[
     "blank_plan",
     "gain_templates",
     "tax_locations",
+    "tax_bill",
     "validate",
     "upgrade_plan",
     "preview",
@@ -98,6 +99,10 @@ pub fn call(cmd: &str, args: &Value, library: &Path, fallback: &Path) -> Result<
         "tax_locations" => to(&api::tax_locations())?,
         "validate" => to(&api::validate(&plan))?,
         "upgrade_plan" => to(&api::upgrade_plan(&plan))?,
+        "tax_bill" => to(&crate::taxbill::tax_bill(
+            &plan,
+            args.get("bill").unwrap_or(&Value::Null),
+        ))?,
         "preview" => to(&api::preview(&plan, &base(), lib))?,
         "run_simulation" => to(&api::run_as(job_id(args), &plan, &base(), lib))?,
         "rerun_paths" => {

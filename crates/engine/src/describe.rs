@@ -436,6 +436,7 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("taxes.deductions.*.amount", "CHF/year", ">= 0"),
     ("taxes.deductions.*.extra", "CHF/year", ">= 0"),
     ("taxes.deductions.*.rate", "share", "0..1"),
+    ("taxes.deductions.*.taxBill", "year", "tax year of the tax bill"),
     ("taxes.investmentYield.bonds", "rate/year", "0..1"),
     ("taxes.investmentYield.stocks", "rate/year", "0..1"),
     ("taxes.location.municipality", "count", "BFS number"),
@@ -664,6 +665,10 @@ pub const MEANINGS: &[(&str, &str)] = &[
     (
         "taxes.deductions.*.from",
         "Applies from (milestone id, age or YYYY-MM).",
+    ),
+    (
+        "taxes.deductions.*.taxBill",
+        "Origin: taken over from the tax bill of this tax year.",
     ),
     ("taxes.income", "Tax table for income: [from amount, rate]."),
     ("taxes.indexed", "Tax brackets rise with inflation."),

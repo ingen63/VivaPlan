@@ -10,6 +10,7 @@
     { "cmd": "opt_params", "args": { "plan": "$plan" } },
     { "cmd": "validate", "args": { "plan": "$plan" } },
     { "cmd": "upgrade_plan", "args": { "plan": "$plan" } },
+    { "cmd": "tax_bill", "args": { "plan": "$plan", "bill": { "year": 2025, "totalIncome": 120000, "taxableIncome": 95000, "taxableWealth": 400000, "totalTax": 20000 } } },
     { "cmd": "preview", "args": { "plan": "$plan", "path": null } },
     { "cmd": "series_info", "args": { "path": "library:Shiller CHF.csv", "planPath": null } },
     { "cmd": "bench_plan", "args": { "plan": "$plan", "path": null }, "compare": "keys" },

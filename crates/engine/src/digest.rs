@@ -100,6 +100,9 @@ pub struct YearTaxBasis {
     /// #231/AK5: Deductions from wealth and taxable wealth (only with deductions from wealth).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wealth: Option<WealthBasis>,
+    /// #274: Tax year of the tax bill a row of the year was taken over from.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tax_bill: Option<i32>,
 }
 
 /// Sums of a calendar year for the bar charts «income and spending» and «withdrawal».
@@ -203,6 +206,7 @@ fn years(records: &[MonthRecord], start_total: f64, real: bool) -> Vec<YearRow> 
                     one_off: at(w.one_off, r),
                     taxable: at(w.taxable, r),
                 }),
+                tax_bill: b.tax_bill,
             });
         let residence = assessed.and_then(|r| r.tax_basis.as_ref()?.residence.clone());
         let mut f = YearFlows {

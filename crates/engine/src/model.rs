@@ -1177,6 +1177,10 @@ pub struct IncomeDeduction {
     /// with inflation», #66), for canton and federal tax. `amount` is not reused, old plans may hold values there.
     #[serde(default, skip_serializing_if = "is_zero")]
     pub extra: f64,
+    /// #274: The row was taken over from the tax bill of this tax year (origin «aus Steuerrechnung <year>» in the
+    /// tooltips and the parameters of a run). Missing: entered by hand.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tax_bill: Option<i32>,
 }
 
 /// #63: Source of the income and wealth tax.

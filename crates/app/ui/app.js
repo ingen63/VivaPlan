@@ -1516,6 +1516,7 @@ const taxFiguresBlock = () => `<div class="taxfigs" id="tax-figures">${C("taxFig
 function taxLocationCard() {
   return `<div class="card" id="tax-location"><h3>${tr("taxes.location")}</h3>
     ${taxFiguresBlock()}
+    <div style="margin:8px 0 12px"><button class="btn small" data-action="taxbill-open" id="taxbill-open">${tr("taxBill.button")}</button></div>
     <div class="rows">${locRows().map(locRow).join("")}
     <datalist id="tax-munis">${muniAll().map(m => `<option value="${esc(m.label)}"></option>`).join("")}</datalist>
     <div><button class="btn small" data-action="loc-add">${tr("taxes.locationAdd")}</button></div></div>
@@ -1523,6 +1524,107 @@ function taxLocationCard() {
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p>
     <p class="hint" id="tax-source">${tr("taxes.locationSource", { year: taxLoc?.year ?? "–", source: esc(taxLoc?.source ?? "") })}</p></div>`;
 }
+/** #274: dialog «Aus der Steuerrechnung übernehmen»: the numbers of the last tax bill (not saved, kept while the app
+ *  is open), the result of the engine (`tax_bill`) and whether the proposal for the taxable wealth is taken over. */
+const taxBill = { year: "", totalIncome: "", taxableIncome: "", taxableWealth: "", totalTax: "", out: null, wealth: false, seq: 0 };
+const TAXBILL_FIELDS = [["year", "taxBill.year", true], ["totalIncome", "taxBill.totalIncome"], ["taxableIncome", "taxBill.taxableIncome"],
+  ["taxableWealth", "taxBill.taxableWealth"], ["totalTax", "taxBill.totalTax"]];
+/** #274: the inputs as numbers (empty: missing, the engine reports it at the field) and the fields with an unreadable
+ *  number. */
+function taxBillInput() {
+  const bill = {}, bad = new Map();
+  for (const [k, , int] of TAXBILL_FIELDS) {
+    const t = String(taxBill[k]).trim();
+    if (t === "") continue;
+    const v = parseAmount(t);
+    if (v === null || int && !Number.isInteger(v)) bad.set(k, ambiguousThousands(t) ? ambiguousText() : tr("input.invalidNumber"));
+    else bill[k] = v;
+  }
+  return { bill, bad };
+}
+/** #274: result part of the dialog: deductions until and from the retirement, taxable wealth with the proposal,
+ *  check with the total of the taxes. */
+function taxBillResult() {
+  const out = taxBill.out, r = out?.result;
+  if (out?.error) return `<p class="hint warn" id="taxbill-error">⚠ ${esc(msgText(out.error))}</p>`;
+  if (!r) return "";
+  const k = v => fmtInt(v);
+  const rows = [`<p id="taxbill-deduction"><b>${tr("taxBill.deduction", { amount: k(r.deduction) })}</b>${r.pillar3a ? `<br><span class="sub">${tr("taxBill.pillar3a", { amount: k(r.pillar3a) })}</span>` : ""}</p>`];
+  if (r.retiredBeforeStart) rows.push(`<p id="taxbill-until">${tr("taxBill.fromStart", { amount: k(r.own) })}</p><p class="hint" id="taxbill-retired">${tr("taxBill.retiredBeforeStart")}</p>`);
+  else {
+    rows.push(`<p id="taxbill-until">${tr("taxBill.untilRetirement", { amount: k(r.own) })}</p>`);
+    rows.push(`<p id="taxbill-from">${r.retired != null ? tr("taxBill.fromRetirement", { retired: k(r.retired), year: r.retiredYear, rest: k(r.rest), total: k(r.retired + r.rest) }) : tr("taxBill.fromRetirementShort", { rest: k(r.rest) })}</p>`);
+    if (r.working != null) rows.push(`<p class="hint" id="taxbill-rest">${tr("taxBill.rest", { working: k(r.working), year: r.workingYear })}</p>`);
+  }
+  const w = r.wealth, prop = w.proposal;
+  const wealthText = tr("taxBill.wealthCompare", { year: w.year, plan: k(w.plan), allowance: k(w.allowance), bill: k(w.bill), difference: (w.difference > 0 ? "+" : "") + k(w.difference) });
+  const proposal = prop ? `<label class="check" id="taxbill-wealth-proposal"><input type="checkbox" id="taxbill-wealth"${taxBill.wealth ? " checked" : ""}> ${prop.kind === "taxValueRate" ? tr("taxBill.wealthRate", { pc: fmtPct(prop.rate) }) : tr("taxBill.wealthDeduction", { amount: k(prop.amount) })}</label>`
+    : `<p class="hint" id="taxbill-wealth-none">${tr(w.difference >= 1000 ? "taxBill.wealthHigher" : "taxBill.wealthSmall")}</p>`;
+  rows.push(`<div id="taxbill-wealth-block" style="margin-top:12px"><b>${tr("taxBill.wealthTitle")}</b><p>${wealthText}</p>${proposal}</div>`);
+  const c = r.check;
+  if (c) rows.push(`<div id="taxbill-check" style="margin-top:12px"><b>${tr("taxBill.checkTitle")}</b><p>${tr("taxBill.check", { estimate: k(c.estimate), total: k(c.total), deviation: (c.deviation > 0 ? "+" : "") + (c.deviation * 100).toLocaleString("de-CH", { maximumFractionDigits: 1 }) })}</p>
+    ${c.hint ? `<p class="hint warn" id="taxbill-check-hint">⚠ ${tr("taxBill.checkHint")}</p>` : ""}</div>`);
+  return rows.join("");
+}
+/** #274: errors at the fields (unreadable number in the app, the others from the engine). */
+function taxBillErrors() {
+  const { bad } = taxBillInput(), errs = new Map(bad);
+  for (const i of taxBill.out?.issues ?? []) if (i.field && !errs.has(i.field)) errs.set(i.field, msgText(i));
+  for (const [k] of TAXBILL_FIELDS) {
+    const el = $(`#taxbill-${k}`), e = $(`#taxbill-err-${k}`), text = errs.get(k);
+    el?.classList.toggle("invalid", !!text);
+    if (e) { e.textContent = text ?? ""; e.hidden = !text; }
+  }
+  return errs;
+}
+function taxBillRender() {
+  const out = $("#taxbill-result"); if (out) out.innerHTML = taxBillResult();
+  const errs = taxBillErrors(), ok = $("#taxbill-apply");
+  if (ok) ok.disabled = !taxBill.out?.result || errs.size > 0;
+}
+/** #274: asks the engine for the result of the inputs; an older answer than the last request is dropped. */
+async function taxBillCompute() {
+  const { bill, bad } = taxBillInput(), seq = ++taxBill.seq;
+  if (bad.size) { taxBill.out = null; taxBillRender(); return; }
+  try {
+    const out = await Engine.call("tax_bill", { plan: state, bill });
+    if (seq === taxBill.seq) { taxBill.out = out; taxBillRender(); }
+  } catch (e) { if (seq === taxBill.seq) { taxBill.out = { issues: [], error: { code: "raw_error", params: { detail: errText(e) }, text: errText(e) }, result: null }; taxBillRender(); } }
+}
+function taxBillOpen() {
+  const d = $("#taxbill"), field = ([k, label]) => `<label class="field"><span>${tr(label)}</span><div class="inp"><input class="num" id="taxbill-${k}" data-taxbill="${k}" value="${esc(taxBill[k])}">${k === "year" ? "" : `<span class="unit">${UNIT.chf()}</span>`}</div><span class="ferr" id="taxbill-err-${k}" role="alert" hidden></span></label>`;
+  $("#taxbillForm").innerHTML = `<b id="taxbillTitle">${tr("taxBill.title")}</b><p class="hint">${tr("taxBill.intro")}</p>
+    <div class="grid2">${TAXBILL_FIELDS.map(field).join("")}</div>
+    <div id="taxbill-result" aria-live="polite"></div>
+    <p class="hint">${tr("taxBill.replaceNote")}</p>
+    <div class="askbtns"><button class="btn primary" id="taxbill-apply" value="ok" disabled>${tr("taxBill.apply")}</button><button class="btn" value="cancel">${tr("job.cancel")}</button></div>`;
+  d.returnValue = ""; taxBill.wealth = false;
+  d.onclose = () => { if (d.returnValue === "ok") taxBillApply(); };
+  d.showModal();
+  taxBill.out = null; taxBillRender(); taxBillCompute();
+}
+/** #274: takes over the rows of the deductions from income and, if ticked, the proposal for the taxable wealth. */
+function taxBillApply() {
+  const r = taxBill.out?.result;
+  if (!r) return;
+  state.taxes.deductions = structuredClone(r.deductions);
+  const p = r.wealth.proposal;
+  if (p && taxBill.wealth) {
+    if (p.kind === "taxValueRate") for (const i of p.properties) state.realestate.properties[i].taxValue = { kind: "rate", value: p.rate };
+    else {
+      const rows = state.taxes.wealthDeductions ??= [];
+      if (rows[0]?.from === "start") rows[0].amount = p.amount; else rows.unshift({ from: "start", amount: p.amount });
+    }
+  }
+  markDirty(); renderSection(); toast(tr("taxBill.applied", { year: r.year }));
+}
+document.addEventListener("input", e => {
+  const k = e.target?.dataset?.taxbill;
+  if (!k) return;
+  taxBill[k] = e.target.value;
+  clearTimeout(taxBillCompute.t); taxBillCompute.t = setTimeout(taxBillCompute, 250);
+});
+document.addEventListener("change", e => { if (e.target?.id === "taxbill-wealth") taxBill.wealth = e.target.checked; });
 document.addEventListener("change", e => {
   const el = e.target, path = el?.dataset?.loc;
   if (!path || !el.classList.contains("loc-muni")) return;
@@ -1684,8 +1786,10 @@ function deductionsCard() {
         : `<button class="btn ghost small" data-action="ded-extra-show" data-i="${i}">${tr("deductions.addExtra")}</button>`;
     // #241/AK4: parts of the proposal per row, closed by default
     const details = canton ? `<details class="deddetails" data-ded-details="${i}"${dedDetailsOpen.has(String(i)) ? " open" : ""}><summary>${tr("deductions.details")}</summary>${C("dedParts", i)}</details>` : "";
+    // #274/AK7: origin of a row taken over from the tax bill
+    const origin = r.taxBill ? `<span class="sub" data-ded-taxbill="${i}" title="${esc(tr("taxBill.origin", { year: r.taxBill }))}">${tr("taxBill.origin", { year: r.taxBill })}</span>` : "";
     return `<div class="dedblock" data-ded-row="${i}"><div class="dedrow inc${loc ? canton ? "" : " ownval" : " nokind"}"><span class="ab">${tr("common.from")}</span><div class="dedwhen">${stored ? Ref(`${R}.from`) : `<span class="computed">${tr("deductions.fromStart")}</span>`}</div>
-      <div class="dedkind">${kind}</div><div class="dedval">${value}</div>
+      <div class="dedkind">${kind}${origin}</div><div class="dedval">${value}</div>
       ${stored && rows.length > 1 ? `<button class="btn ghost small" title="${tr("series.removeRow")}" data-action="row-del" data-path="${P}" data-i="${i}">✕</button>` : "<span></span>"}</div>
       ${extra || details ? `<div class="dedsub">${extra}${details}</div>` : ""}
       ${canton && earned?.approx ? `<p class="hint warn" data-ded-approx>⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}</div>`;
@@ -1735,8 +1839,8 @@ function taxAssumptions() {
   const extra = rows.some(r => (r.extra ?? 0) !== 0) || !!t.oneOffDeductions?.length;
   const ded = canton ? tr(rows.some(r => r.from === "retire") ? "taxes.assume.dedCantonRetire" : "taxes.assume.dedCanton") + (extra ? tr("taxes.assume.dedExtra") : "")
     : rows.some(r => r.kind === "canton" || r.amount || r.rate) || extra ? tr("taxes.assume.dedOwn") : tr("taxes.assume.dedNone");
-  const y = t.investmentYield ?? {};
-  return [ded, tr(t.indexed ? "taxes.assume.indexed" : "taxes.assume.notIndexed"), tr(t.deductPillar3a ? "taxes.assume.p3aYes" : "taxes.assume.p3aNo"),
+  const y = t.investmentYield ?? {}, bill = rows.find(r => r.taxBill)?.taxBill;
+  return [bill ? tr("taxBill.assume", { year: bill }) : ded, tr(t.indexed ? "taxes.assume.indexed" : "taxes.assume.notIndexed"), tr(t.deductPillar3a ? "taxes.assume.p3aYes" : "taxes.assume.p3aNo"),
     state.realestate.defaultTaxValue ? tr("taxes.assume.taxValueDefault", { pc: taxValueDefaultPc() }) : tr("taxes.assume.taxValueMarket"),
     tr("taxes.assume.yield", { stocks: fmtPct(y.stocks ?? 0), bonds: fmtPct(y.bonds ?? 0) })].join(" · ");
 }
@@ -2545,6 +2649,13 @@ function readInput(el) {
   if (v === null) return null;
   return t === "pct" ? v / 100 : t === "chfyear" ? v / 12 : v;
 }
+/** #274: a row of the deductions from income changed by hand is no longer the one of the tax bill. */
+function dropTaxBill(path) {
+  const m = /^(taxes\.deductions\.(\d+))\.(from|kind|amount|rate|extra)$/.exec(path);
+  if (!m || getP(m[1])?.taxBill == null) return;
+  delete getP(m[1]).taxBill;
+  document.querySelector(`[data-ded-taxbill="${m[2]}"]`)?.remove();
+}
 function onEdit(el) {
   const path = el.dataset.path; if (!path) return;
   if (el.dataset.type === "point") { setPointWhen(getP(path), el.value); markDirty(); renderSection(); return; } // #243
@@ -2552,7 +2663,7 @@ function onEdit(el) {
   if (el.dataset.type === "ref") {
     const prev = getP(path);
     setP(path, el.value === "__date" ? i2ym(Number.isFinite(refMonth(prev)) && refMonth(prev) !== Infinity ? refMonth(prev) : startM()) : el.value);
-    markDirty(); renderSection(); return;
+    dropTaxBill(path); markDirty(); renderSection(); return;
   }
   const v = readInput(el);
   // #57: only text fields wait; checkboxes and radio buttons take effect immediately
@@ -2570,7 +2681,7 @@ function onEdit(el) {
   const resulting = kindMs ? msMonth(kindMs.id) : NaN; // point in time before the change (column «Ergibt»)
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
-  setP(path, v); markDirty();
+  setP(path, v); dropTaxBill(path); markDirty();
   if (el.dataset.type === "chfyear") { const pm = [...document.querySelectorAll("[data-permonth]")].find(x => x.dataset.permonth === path); if (pm) pm.textContent = perMonthText(v); }
   // #100: an own input in the stock model ends following the suggested values
   if (/^returns\.parametric\.(mu|sigma|df|jumpLambda|jumpMu|jumpSigma)$/.test(path)) state.returns.parametric.auto = false;
@@ -2775,8 +2886,9 @@ const ACTIONS = {
   "ded-calc-apply": d => {
     const v = dedCalcValue(), i = +($("#ded-calc-row")?.value ?? d.i), r = state.taxes.deductions?.[i];
     if (!Number.isFinite(v) || !r) return toast(tr("deductions.calcMissing"));
-    Object.assign(r, { kind: "own", amount: Math.round(v), rate: r.rate ?? 0 }); markDirty(); renderSection();
+    Object.assign(r, { kind: "own", amount: Math.round(v), rate: r.rate ?? 0 }); delete r.taxBill; markDirty(); renderSection();
   },
+  "taxbill-open": () => taxBillOpen(),
   "couple-tax": () => {
     if (state.taxes.couple) delete state.taxes.couple;
     else state.taxes.couple = { income: structuredClone(state.taxes.income), wealth: structuredClone(state.taxes.wealth), capital: structuredClone(state.taxes.capital) };
@@ -3396,7 +3508,9 @@ function yearTable(run, refills = []) {
   const basisCells = b => {
     if (!b) return "<td></td><td></td><td></td>";
     const fed = Math.abs(b.proposalFederal - b.proposalCanton) > 0.5 || Math.abs(b.taxableFederal - b.taxableCanton) > 0.5;
-    const origin = [[b.proposalCanton, tr("deductions.originCanton") + (fed ? ` (${tr("deductions.federal")} ${fmtInt(b.proposalFederal)})` : "")], [b.extra ?? 0, tr("deductions.originExtra")], [b.own, tr("deductions.originOwn")], [b.oneOff ?? 0, tr("deductions.originOneOff")], [b.pillar3a, tr("deductions.originPillar3a")],
+    // #274/AK7: own value and additional amount of rows taken over from the tax bill name it
+    const bill = b.taxBill ? ` (${tr("taxBill.origin", { year: b.taxBill })})` : "";
+    const origin = [[b.proposalCanton, tr("deductions.originCanton") + (fed ? ` (${tr("deductions.federal")} ${fmtInt(b.proposalFederal)})` : "")], [b.extra ?? 0, tr("deductions.originExtra") + bill], [b.own, tr("deductions.originOwn") + bill], [b.oneOff ?? 0, tr("deductions.originOneOff")], [b.pillar3a, tr("deductions.originPillar3a")],
       [b.careCanton ?? 0, tr("deductions.originCare") + (fed && Math.abs((b.careFederal ?? 0) - (b.careCanton ?? 0)) > 0.5 ? ` (${tr("deductions.federal")} ${fmtInt(b.careFederal)})` : "")]]
       .filter(([v]) => Math.abs(v) >= 0.5).map(([v, t]) => `${t}: ${fmtInt(v)}`).join("; ");
     const ded = b.proposalCanton + (b.extra ?? 0) + b.own + (b.oneOff ?? 0) + b.pillar3a + (b.careCanton ?? 0);
@@ -3930,7 +4044,9 @@ function paramSections(plan, full = false) {
     : [[tr("params.taxMode"), tr("taxes.modeOwn")], [tr("taxes.incomeTax"), table(t.income)], [tr("taxes.wealthTax"), table(t.wealth)]];
   // #149: taxable yield of the wealth (stocks / bonds)
   const yieldText = tr("params.investmentYieldValue", { stocks: pc(t.investmentYield?.stocks ?? 0), bonds: pc(t.investmentYield?.bonds ?? 0) });
-  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, [tr("params.investmentYield"), yieldText], [tr("taxes.lumpsumTax"), lumpsum],
+  // #274/AK7: deductions from income taken over from the tax bill
+  const bill = (t.deductions ?? []).find(r => r.taxBill)?.taxBill;
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, ...(bill ? [[tr("taxBill.params"), tr("taxBill.origin", { year: bill })]] : []), [tr("params.investmentYield"), yieldText], [tr("taxes.lumpsumTax"), lumpsum],
     // #65: in the mode «Wohnort» without own rules the rule of the canton of each property
     [tr("gain.title"), !gainOwn(plan) ? tr("params.gainCanton") : g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);

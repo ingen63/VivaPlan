@@ -285,6 +285,7 @@ Einfache **Satztabellen**, die Sie aus dem Steuerrechner Ihres Kantons ableiten 
 
 - [Steuer nach Wohnort](#f-tax-location)
 - [Abzüge vom Einkommen](#f-tax-deductions)
+- [Abzüge aus der Steuerrechnung](#f-tax-bill)
 - [Steuerbarer Ertrag des Vermögens](#f-tax-yield)
 - [Steuerfuss und Tabellen](#f-tax-tables)
 - [Tarife mit der Teuerung](#f-tax-indexed)
@@ -300,7 +301,7 @@ Stichworte: Wohnort, Kanton, Gemeinde, Kirchensteuer, Konfession, ESTV, Steuerda
 
 Im Modus **Wohnort** geben Sie nur die **Gemeinde** und die **Kirchensteuer** (keine, reformiert, römisch-katholisch, christkatholisch) an. Die Suche umfasst alle Gemeinden des Steuerjahres: Namen eintippen und aus der Liste wählen (Name mit Kanton); der **Kanton** ergibt sich aus der Gemeinde und steht daneben. Tarife, Abzüge und Steuerfüsse kommen aus der mitgelieferten Steuerdatei der ESTV (Steuerrechner, Grunddaten); die Karte nennt das Steuerjahr, die Quelle und die Steuerfüsse der Gemeinde. Es gibt keinen Netzwerkzugriff.
 
-**Geschätzte Steuer:** Oben auf der Karte stehen zwei Zahlen in heutigen Preisen, auf 100 Franken gerundet: die Einkommens- und Vermögenssteuer im **ersten vollen Kalenderjahr** und im **ersten vollen Kalenderjahr nach der Pensionierung** (nach dem letzten Bezug der Pensionskasse im Haushalt), ohne Kapitalbezüge und Grundstückgewinne. Vergleichen Sie sie mit Ihrer letzten Steuerrechnung. Liegt die Pensionierung vor dem Start, steht nur eine Zahl da. Die Zahlen kommen aus der Vorschau; solange Angaben fehlen (zum Beispiel die Gemeinde), steht ein Hinweis statt der Zahlen.
+**Geschätzte Steuer:** Oben auf der Karte stehen zwei Zahlen in heutigen Preisen, auf 100 Franken gerundet: die Einkommens- und Vermögenssteuer im **ersten vollen Kalenderjahr** und im **ersten vollen Kalenderjahr nach der Pensionierung** (nach dem letzten Bezug der Pensionskasse im Haushalt), ohne Kapitalbezüge und Grundstückgewinne. Vergleichen Sie sie mit Ihrer letzten Steuerrechnung. Liegt die Pensionierung vor dem Start, steht nur eine Zahl da. Die Zahlen kommen aus der Vorschau; solange Angaben fehlen (zum Beispiel die Gemeinde), steht ein Hinweis statt der Zahlen. Genauer werden die Abzüge mit **«Aus der Steuerrechnung übernehmen»** unter den Zahlen, siehe [Abzüge aus der Steuerrechnung](#f-tax-bill).
 
 **Annahmen:** Unter dem Wohnort steht eine Zeile mit den geltenden Vorgaben in Worten: Standardabzüge des Kantons bis und ab Pensionierung ([Abzüge vom Einkommen](#f-tax-deductions)), [Tarife mit der Teuerung](#f-tax-indexed), Abzug der Säule 3a (ja oder nein), [Steuerwert](#f-re-tax-value) der Immobilien (Vorgabe 50 % des Marktwerts) und [steuerbarer Ertrag](#f-tax-yield) des Vermögens. Ein Klick auf die Zeile öffnet die Einstellungen dazu; Änderungen zeigt die Zeile sofort. Neue Planungen haben diese Vorgaben gesetzt; die Messung an mehreren erfundenen Haushalten zeigt, dass ohne die Abzüge die Steuer in Erwerbsjahren deutlich zu hoch wäre.
 
@@ -355,6 +356,21 @@ Jede Zeile ist entweder (die Erklärungen dazu stehen auch im ⓘ neben dem Tite
 **Ergebnisse:** Mit «Steuern zeigen» zeigen die Jahreswerte das Einkommen, die Abzüge (Kanton; die Herkunft – Vorschlag des Kantons, zusätzlich, eigener Wert, einmalig, Säule 3a – im Tooltip der Zelle) und das steuerbare Einkommen (der Bund im Tooltip, wenn er abweicht).
 
 **Pflegeheim:** Die Heimkosten aus der Karte [Pflegeheim](#f-care-home) zieht die App zusätzlich als Krankheitskosten ab, soweit sie 5 % des Nettoeinkommens übersteigen (Bund und Kanton je mit ihrem Nettoeinkommen). Die Jahreswerte nennen den Abzug bei der Herkunft der Abzüge.
+
+## @f-tax-bill Abzüge aus der Steuerrechnung
+Stichworte: Steuerrechnung, Veranlagung, Abzüge, steuerbares Einkommen, steuerbares Vermögen, persönlicher Rest, Kontrolle
+
+Der genaueste Weg zu den [Abzügen vom Einkommen](#f-tax-deductions) sind die Zahlen Ihrer letzten **definitiven Steuerrechnung**. Der Knopf **«Aus der Steuerrechnung übernehmen»** in der Karte [Wohnort](#f-tax-location) (nur mit der Steuer nach Wohnort) öffnet einen Dialog mit Feldern von der ersten Seite der Steuerrechnung: **Steuerjahr**, **Total der Einkünfte**, **steuerbares Einkommen** des Kantons, **steuerbares Vermögen** und freiwillig **Total Steuern** (Kanton, Gemeinde, Bund). Die App rechnet bei jeder Eingabe neu.
+
+- **Bis zur Pensionierung:** Abzug = Total der Einkünfte − steuerbares Einkommen, nie negativ. Er wird die erste Zeile (ab Simulationsstart) als eigener Wert in Preisen des Starts. Die Einzahlungen in die Säule 3a der Planung zieht die App separat ab; sie kommen deshalb vom eigenen Wert weg, sonst zählten sie doppelt.
+- **Ab der Pensionierung** fallen Berufskosten, Zweitverdienerabzug und Säule 3a weg. Die App nimmt deshalb den Vorschlag des Kantons ohne Erwerb und zählt den **persönlichen Rest** als zusätzlichen Abzug dazu: Rest = Abzug ohne Säule 3a − Vorschlag des Kantons mit Erwerb, nie negativ. Den Vorschlag mit Erwerb nimmt die App aus dem ersten vollen Jahr der Planung mit Erwerbseinkommen, bei Paaren für den ganzen Haushalt. Die Zeile beginnt mit dem Bezug der Pensionskasse; bei Paaren mit dem der Person, die zuletzt in Pension geht. Beispiel: Einkünfte 120 000, steuerbar 95 000 → Abzug 25 000; Vorschlag mit Erwerb 21 000 → Rest 4 000; Vorschlag ohne Erwerb 9 000 → ab Pensionierung 13 000.
+- **Bereits pensioniert:** Liegt die Pensionierung vor dem Start, gilt der Abzug ab Start; es gibt keinen Rest.
+- **Steuerbares Vermögen:** Der Dialog zeigt das steuerbare Vermögen der Planung am 31. Dezember des ersten Jahres nach den Sozialabzügen des Kantons (geschätzt aus dem Vermögenstarif) und die Differenz zur Steuerrechnung. Weicht sie ab, schlägt er mit Immobilien einen Anteil des [Steuerwerts](#f-re-tax-value) am Marktwert vor, ohne Immobilien einen [Abzug vom Vermögen](#f-tax-wealth-deductions) ab Start. Übernommen wird der Vorschlag nur mit Häkchen. Nennt die Steuerrechnung ohne Immobilien mehr Vermögen, prüfen Sie das Vermögen in der Planung.
+- **Kontrolle:** Mit Total Steuern zeigt der Dialog die Schätzung der App für dieselben steuerbaren Werte (die Bundessteuer auf dem steuerbaren Einkommen des Kantons) und die Abweichung in Prozent. Ab 15 % nennt ein Hinweis mögliche Ursachen: Gemeinde, Zivilstand, Konfession oder Einkommen. Die App rechnet ohne Korrekturfaktor weiter.
+
+**«Übernehmen»** ersetzt die Zeilen der Abzüge vom Einkommen; einmalige Abzüge bleiben. Die übernommenen Zeilen nennen ihre Herkunft (aus Steuerrechnung und das Steuerjahr) in der Karte Abzüge vom Einkommen, in der Zeile Annahmen, im Tooltip der Abzüge in den Jahreswerten und im Reiter «Parameter» eines Laufs. Ändern Sie eine Zeile von Hand, entfällt ihre Herkunft.
+
+**Prüfung:** Ein Steuerjahr nach dem Start, ein negativer Betrag und ein leeres Pflichtfeld sind Fehler am Feld; «Übernehmen» ist dann gesperrt.
 
 ## @f-tax-wealth-deductions Abzüge vom Vermögen
 Stichworte: Abzüge, steuerbares Vermögen, Vermögenssteuer, Schulden, Sozialabzüge, einmalig

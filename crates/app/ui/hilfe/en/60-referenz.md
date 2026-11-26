@@ -52,6 +52,7 @@ A plan is **a text file** in JSON format with the extension `.vplan`. It can be 
 - **Place of residence:** `taxes.location` (`canton`, `municipality` as BFS number, `church`) applies from the start, with `taxes.mode: "location"` (new plans; without `mode` the own tables apply); further places of residence are in `taxes.relocations` as rows `{"from": "2031-01", "canton": "ZG", "municipality": 1711, "church": "none"}`.
 - **Taxable yield:** `taxes.investmentYield` with `stocks` and `bonds` as a rate per year (0.02 = 2 %); if missing, 0 % applies.
 - **Default tax value:** `realestate.defaultTaxValue: true` (new plans); properties without `taxValue` then count at 50 % of the market value. If the field is missing, the market value applies.
+- **Origin tax bill:** rows of `taxes.deductions` taken over from the tax bill ([Deductions from the tax bill](#f-tax-bill)) carry `taxBill` with the tax year, for example `{"from": "start", "kind": "own", "amount": 25000, "taxBill": 2025}`; it does not change the calculation.
 - The complete format is provided by `vivaplan schema` in the terminal.
 
 The file contains **no results**. The app stores results in the [list of results](#r-list).
