@@ -2,57 +2,22 @@
 
 English translation of `CHANGELOG.md` (German, authoritative) from version 1.0.0-beta.1 on.
 
-## Version 1.0.0-beta.6
+## Version 1.0.0-beta.3
 
-Sixth pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.6; installers are built for macOS, Windows and Linux, by hand for all platforms before the tag (#262).
+Third pre-release of 1.0. It combines the unpublished pre-releases 1.0.0-beta.4 to 1.0.0-beta.6 and contains all changes since. The Windows installer `.msi` carries the version number 1.0.0.3; installers are built for macOS, Windows and Linux. From this version on, the app can look for new versions itself if you agree.
 
 ### May change results
 
+- **Inflation (#306, #279):** Amounts that grow with inflation in reality always grow with the inflation of the path; exceptions for stress tests under «Expert». Inflation in the parametric model starts in 1950, the start year is adjustable. Existing plans compute as before.
+- **AHV (#284, #280):** The AHV pension follows the mixed index every two years, also before the payout, with the new assumption «real wage growth»; in nominal terms it never falls below the previous year.
+- **Mortgage interest (#307):** SARON and renewed fixed-rate mortgages follow the interest and inflation environment of the path; the margins are in the settings.
+- **Tax data from the law (#287–#292, #296, #297):** Rates, deductions and rules of the Confederation and the cantons come from laws and ordinances instead of the ESTV tax calculator; Valais computes with indexation and the reduction for married couples.
+- **New plans (#303):** They start with stocks «World (JST)» and short-term bonds.
 - **Housing share of living costs (#264):** The deducted housing share covers rent, interest and ancillary costs, no longer amortization. Older plans are adjusted when opened (with a notice); their result stays the same.
 - **Percentiles (#265):** Results open in today's purchasing power; percentiles are ordered by the chosen view (nominal or real).
 - **Taxable income from assets (#149):** A rate per year for shares and bonds counts as taxable income. New plans start with 2 % and 1 %, existing ones with 0 %.
-
-### New, changed, fixed
-
-- **Beta token (#270):** App and AI package are activated once with a beta token.
-- **Care home (#271):** Own building block with entry age, costs and sale of the home; notice when no housing costs remain after the sale of the last property.
-- **Taxes (#272–#275):** New plans calculate taxes at the place of residence; the section first shows municipality and denomination, the other details as assumptions, details under «Expert». Deductions can be taken from the last tax bill, the tax value of real estate has a default in percent of the market value, a pension fund buy-in can be entered directly as a deduction.
-- **Deductions from wealth (#249)** laid out like the deductions from income.
-- **Affordability (#266):** Optionally with wealth drawdown and lower mortgage ratio from retirement.
-- **AI connection (#263, #269):** The MCP server opens and saves plans only in the shared plan folder, optionally read-only; a new plan starts empty and the AI asks for the missing details.
-- **README (#267, #277)** in four languages: the app is 100 % local, only the AI connection sends data to the chosen AI.
-- **Display (#220):** Choice «Appearance» in the settings dialog with the theme's background.
-
-### Tests and development
-
-- Linux package contains `vivaplan` again (#261), memory use of large calculations reduced (#249), Clippy rule (#260), measurement of the tax influence for more households (#276).
-
-## Version 1.0.0-beta.5
-
-Fifth pre-release of 1.0. The Windows installer `.msi` carries the version number 1.0.0.5; installers are built again for macOS, Windows and Linux (#203).
-
-### May change results
-
 - **Without pension fund (#253):** The switch is now in the card «Pension fund» in the section Pensions. When set, the pension fund of this person counts as 0 (no assets, no contributions, no pension, no lump sum); the entered values stay saved, the fields are locked.
 - **Optimization (#248):** For all course forms, the course before retirement is kept; the optimized value applies from retirement.
-
-### New, changed, fixed
-
-- **Using VivaPlan with an AI (#208–#214, #216, #219):** The MCP server `vivaplan mcp` opens, changes, calculates and compares plans for Claude, ChatGPT, LM Studio and other AIs, with progress, cancelling and confirmation of long calculations. Menu «Help» › «Connect to AI» shows the setup; for Claude Desktop there is a one-click package `.mcpb` (#213). Data only goes to the AI you connect yourself.
-- **Course forms and characteristic curves (#217, #218, #243):** Values can follow a line, a table or a factor and be edited in the editor; characteristic curves make parameters depend on the state.
-- **Command line in the installer (#206):** `vivaplan` uses the same data folder as the app.
-- **Display (#244, #255, #257, #259):** Number fields and the choice «Tax value» are no longer cut off in any language.
-
-### Tests and development
-
-- User interface tests updated (#246, #247), time limit in the MCP test independent of the machine's speed (#258).
-
-## Version 1.0.0-beta.4
-
-Fourth pre-release of 1.0; it also contains all changes of the unpublished 1.0.0-beta.3. The Windows installer `.msi` carries the version number 1.0.0.4; for now installers are built for macOS only (#202).
-
-### May change results
-
 - **Married with one person (#250):** «Married» also applies without a second person; taxes are then calculated with the tariffs and deductions for married couples. Older plans with one person are taken over as unmarried when opened and calculate as before (note); new plans start unmarried.
 - **Taxes by canton and municipality (#63, #64, #65, #66):** In the mode «Place of residence», income, wealth and lump-sum tax follow canton and municipality, the property gains tax the canton of the property. Tariffs grow with inflation, the second-earner deduction applies to employed persons.
 - **Deductions and residence (#131, #151, #152, #228–#232):** Income deductions as proposed by the canton or as own rows, additional and one-off deductions, wealth deductions, tax value per property, earned income as an annual amount, residence changing over time and the large pillar 3a for persons without a pension fund.
@@ -62,6 +27,24 @@ Fourth pre-release of 1.0; it also contains all changes of the unpublished 1.0.0
 
 ### New, changed, fixed
 
+- **Pillar 3a (#300, #301, #310):** Payout in tranches from age 60 to 65 and early withdrawal for home ownership at any age.
+- **Automatic updates (#309):** At the first start the app asks whether it may look for new versions; without consent it stays entirely without network. Updates are signed.
+- **Settings in tabs (#308):** General, Pensions, Simulation and Real estate.
+- **Taxes (#143, #281):** Tax year, source and origin of the deductions are visible everywhere, the check warns about old tax data; taxable income is a column next to the taxes.
+- **AI connection (#302, #304, #298):** A new plan can be saved with a file name or `~/`; the AI knows the app's labels for all choice fields; note on incognito chats and privacy.
+- **AHV pension in the help (#282):** explained as the expected pension at 65.
+- **Beta token (#270):** App and AI package are activated once with a beta token.
+- **Care home (#271):** Own building block with entry age, costs and sale of the home; notice when no housing costs remain after the sale of the last property.
+- **Taxes (#272–#275):** New plans calculate taxes at the place of residence; the section first shows municipality and denomination, the other details as assumptions, details under «Expert». Deductions can be taken from the last tax bill, the tax value of real estate has a default in percent of the market value, a pension fund buy-in can be entered directly as a deduction.
+- **Deductions from wealth (#249)** laid out like the deductions from income.
+- **Affordability (#266):** Optionally with wealth drawdown and lower mortgage ratio from retirement.
+- **AI connection (#263, #269):** The MCP server opens and saves plans only in the shared plan folder, optionally read-only; a new plan starts empty and the AI asks for the missing details.
+- **README (#267, #277)** in four languages: the app is 100 % local, only the AI connection sends data to the chosen AI.
+- **Display (#220):** Choice «Appearance» in the settings dialog with the theme's background.
+- **Using VivaPlan with an AI (#208–#214, #216, #219):** The MCP server `vivaplan mcp` opens, changes, calculates and compares plans for Claude, ChatGPT, LM Studio and other AIs, with progress, cancelling and confirmation of long calculations. Menu «Help» › «Connect to AI» shows the setup; for Claude Desktop there is a one-click package `.mcpb` (#213). Data only goes to the AI you connect yourself.
+- **Course forms and characteristic curves (#217, #218, #243):** Values can follow a line, a table or a factor and be edited in the editor; characteristic curves make parameters depend on the state.
+- **Command line in the installer (#206):** `vivaplan` uses the same data folder as the app.
+- **Display (#244, #255, #257, #259):** Number fields and the choice «Tax value» are no longer cut off in any language.
 - **Taxable wealth in the card «Deductions from wealth» (#249):** A note with the estimated taxable wealth of the first tax year and the share of the properties, a warning when a tax value is missing; the details build it up per tax year as in the tax return and offer the field «Tax value» per property.
 - **Input help from the assessment (#251):** New field «of which pillar 3a according to the assessment», so that pillar 3a is not deducted twice with «Deduct contributions to pillar 3a»; a note is shown while the field is empty.
 - **Compare strategies (#196, #197, #200, #201, #205):** Strategies can be compared without optimization, optimization results saved and reopened; switch «Never sell real estate»; a hint when the lower limit determines spending; result table without horizontal scrolling.
@@ -73,6 +56,9 @@ Fourth pre-release of 1.0; it also contains all changes of the unpublished 1.0.0
 
 ### Tests and development
 
+- Faster and more stable tests (#226, #305, #311), release notes and tests on Windows (#278), outdated references to the ESTV updated (#286).
+- Linux package contains `vivaplan` again (#261), memory use of large calculations reduced (#249), Clippy rule (#260), measurement of the tax influence for more households (#276).
+- User interface tests updated (#246, #247), time limit in the MCP test independent of the machine's speed (#258).
 - Golden numbers compared in the push run (#195), change in property values recalculated independently (#194), requirement tracing of tests extended (#192).
 - Robustness test of all engine commands (#221), property test findings as regression tests (#223), Rust tests on Windows (#225), skipped tests count as errors (#224), time limit per test (#226), rules for the test agent (#222).
 - Release notes in four languages with a language-neutral title (#188); mutants-diff weekly (#202).
