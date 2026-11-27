@@ -26,7 +26,7 @@ use crate::model::Plan;
 pub const FORMAT: &str = "vivaplan-describe/1";
 
 /// Most characters of a meaning (longer texts are cut at a word; the full text is in `vivaplan schema`).
-pub const MEANING_CHARS: usize = 64;
+pub const MEANING_CHARS: usize = 58;
 
 /// Sections of the catalog (`vivaplan describe <section>`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -364,6 +364,8 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("pillar3a.*.payouts.*.amount", "CHF", ">= 0"),
     ("pillar3a.*.payouts.*.years", "age", "0..120"),
     ("pillar3a.*.rate", "rate/year", "-0.5..0.5"),
+    ("pillar3a.*.tranches.count", "count", "1..6"),
+    ("pillar3a.*.tranches.fromAge", "age", "60..65"),
     (
         "realestate.affordability.fixCosts",
         "share",
@@ -546,7 +548,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "partner.ahv.referenceAge",
-        "Pension already adjusted to the reference age (set by the program).",
+        "Pension already adjusted to the reference age (set by program).",
     ),
     (
         "partner.ahv.thirteenthNoted",
@@ -562,7 +564,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "pension.ahv.referenceAge",
-        "Pension already adjusted to the reference age (set by the program).",
+        "Pension already adjusted to the reference age (set by program).",
     ),
     (
         "pension.ahv.thirteenthNoted",
@@ -681,10 +683,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "Seed of the random number generator (same value ⇒ same paths).",
     ),
     ("returns.saronSeries", "Series of the SARON (library file)."),
-    (
-        "returns.source",
-        "Source of the returns; values with the app labels: describe choices.",
-    ),
+    ("returns.source", "Source of the returns; app labels: describe choices."),
     ("returns.strategy.weights.ch", "Switzerland."),
     ("returns.strategy.weights.usa", "United States."),
     ("scenarios.sweeps", "Variations of the user interface (list)."),
@@ -779,7 +778,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "withdrawal.strategy",
-        "Withdrawal strategy after retirement; app labels: describe choices.",
+        "Withdrawal strategy after retirement; labels: describe choices.",
     ),
 ];
 

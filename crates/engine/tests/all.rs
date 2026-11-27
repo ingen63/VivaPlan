@@ -53,6 +53,7 @@ mod parametric_fit;
 mod path_reuse;
 mod pillar3a;
 mod pillar3a_plan;
+mod pillar3a_tranches;
 mod plan_builder;
 mod property_gain_models;
 mod property_tax_value;

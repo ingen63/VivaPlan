@@ -1388,6 +1388,58 @@ fn check(plan: &Plan, v: &mut Issues) {
         if acc.usage == PayoutUse::Repay && !repay_possible {
             v.warn("pillar3a", msg!(pillar3a_repay_without_indirect, who = who));
         }
+        // #300: tranches instead of the payout plan (it is locked, its rows are not checked).
+        if let Some(t) = acc.tranches_on() {
+            let ok_age = (60..=65).contains(&t.from_age);
+            let ok_count = (1..=6).contains(&t.count);
+            if !ok_age {
+                v.err_at(
+                    "pillar3a",
+                    f("tranches.fromAge"),
+                    msg!(pillar3a_tranches_from_age, who = who),
+                );
+            }
+            if !ok_count {
+                v.err_at(
+                    "pillar3a",
+                    f("tranches.count"),
+                    msg!(pillar3a_tranches_count, who = who),
+                );
+            }
+            if let (Some(a), true, true) = (ahv, ok_age, ok_count) {
+                let birth = plan.household.persons[i].birth;
+                let (first, last) = (t.month(birth, 0), t.month(birth, t.count - 1));
+                let earliest = a.plus(-60);
+                if first < earliest {
+                    v.err_at(
+                        "pillar3a",
+                        f("tranches.fromAge"),
+                        msg!(
+                            pillar3a_payout_too_early,
+                            who = who,
+                            date = first,
+                            ahv = a,
+                            earliest = earliest
+                        ),
+                    );
+                }
+                // #300/AK4: the last tranche at the latest in the month of the AHV payout.
+                if last > a {
+                    v.err_at(
+                        "pillar3a",
+                        f("tranches.count"),
+                        msg!(
+                            pillar3a_tranches_after_ahv,
+                            who = who,
+                            age = t.from_age + t.count - 1,
+                            date = last,
+                            ahv = a
+                        ),
+                    );
+                }
+            }
+            continue;
+        }
         for (j, x) in acc.payouts.iter().enumerate() {
             // #55: Point in time as a date or age; the message is at the respective field.
             let at_field = match x.kind {

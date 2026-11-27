@@ -1029,6 +1029,19 @@ ein (`BUILTIN`).
   `taxable` = derselbe Wert wie für die Vermögenssteuer). Es steht in `SimResult.wealth_tax` (`serde(skip)`, nicht in
   den gespeicherten Ergebnissen und Golden-Dateien) und geht wie `pillar3a` über `PreviewOut.wealthTax` an die
   Oberfläche (Hinweis und Details der Karte «Abzüge vom Vermögen»).
+- **Säule 3a in Tranchen (#300):** `pillar3a[j].tranches = { enabled, fromAge, count }` (fehlt: aus, nicht
+  gespeichert; `fromAge` fehlt: 60, `count` fehlt: 5; ausgeschaltet bleiben die Werte stehen). Eingeschaltet
+  (`Pillar3aAccount::tranches_on`) ersetzt die Simulation den Auszahlungsplan (`CAccount.payouts` leer) durch die Monate
+  `Geburt + (fromAge + n) × 12`, n = 0 … count − 1 (`CAccount.tranches`). In einem Tranchenmonat bis und mit AHV-Bezug:
+  nach Zins und Einzahlung Tranche = Guthaben / (count − n), die letzte ist das ganze Guthaben; Auszahlung über
+  `pay_out_3a` mit der Verwendung des Kontos (`use`), Kapitalbezugssteuer wie jede 3a-Auszahlung, Ereignistext
+  `payout_tranche` («Tranche n von count»). Tranchen vor dem Simulationsstart sind vorbei, die verbleibenden teilen durch
+  ihre eigene Restzahl. Prüfung (`validate.rs`): `fromAge` 60–65 und `count` 1–6 (Fehler am Feld), erste Tranche nicht
+  vor AHV-Bezug − 60 Monate (`pillar3a_payout_too_early`), letzte nicht nach dem AHV-Bezug
+  (`pillar3a_tranches_after_ahv` mit Alter und Monat, am Feld `count`); die Zeilen des gesperrten Auszahlungsplans
+  werden nicht geprüft. Oberfläche: Schalter in der Karte Säule 3a, beim Einschalten Vorschlag ab
+  `max(60, ⌈(AHV − 60 Monate − Geburt) / 12⌉)` bis zum vollen Alter im AHV-Bezug (höchstens 6); Auszahlungsplan als
+  `fieldset.locked-area` gesperrt.
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
   Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung, wenn der 3a-Höchstbetrag

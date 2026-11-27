@@ -56,7 +56,7 @@ Una riga sotto le schede mostra che cosa diventa l’avere alla prestazione dell
 Il **pilastro 3a** ha una sezione propria, vedi [Pilastro 3a](#s-pillar3a).
 
 ## @s-pillar3a Pilastro 3a
-Parole chiave: 3a, previdenza vincolata, versamento, riscossione, piano di riscossione, età, data, avere, importo massimo, ammortamento indiretto
+Parole chiave: 3a, previdenza vincolata, versamento, riscossione, piano di riscossione, età, data, avere, importo massimo, ammortamento indiretto, tranche, riscossione parziale
 
 Il pilastro 3a è un conto proprio **per persona**, separato da cassa pensione e ipoteca.
 
@@ -66,11 +66,14 @@ Il pilastro 3a è un conto proprio **per persona**, separato da cassa pensione e
 - **Avere dall’anteprima:** ogni riga mostra l’**avere prima della riscossione** e il **resto dopo**, sotto il piano figura l’avere versato all’inizio della rendita AVS. I valori provengono dall’anteprima con rendimenti fissi; se la pianificazione ha un errore, non c’è anteprima, e figura ‹–›.
 - **+ Riscossione** crea una riga un anno dopo l’ultima (senza righe: nel primo mese ammesso, 5 anni prima dell’inizio della rendita AVS, non prima dell’inizio della simulazione), al massimo all’inizio della rendita AVS. Come importo figura l’avere in quel momento dopo le riscossioni precedenti, arrotondato per difetto a 1'000. In seguito può modificarlo liberamente.
 - **Resto all’inizio della rendita AVS:** ciò che resta sul conto viene versato **al più tardi nel mese d’inizio della rendita AVS**.
+- **Riscuotere a tranche:** con questa opzione l’app ripartisce la riscossione su più anni per ridurre l’imposta sulle prestazioni in capitale. Sceglie **dall’età di** (da 60 a 65) e il **numero di tranche** (da 1 a 6). Da quest’età l’app riscuote una tranche all’anno, nel **mese di nascita**: l’avere di quel mese diviso per il numero di tranche rimanenti; l’ultima tranche è il resto. Con versamenti o interessi le tranche seguono l’avere. L’ultima tranche deve cadere al più tardi nel mese d’inizio della rendita AVS, altrimenti la verifica segnala un errore. Finché l’opzione è attiva, il piano di riscossione è bloccato (le righe restano) e l’utilizzo vale per tutte le tranche. Se la simulazione inizia dopo la prima tranche, contano solo le tranche dall’inizio. **Semplificazione:** per legge ogni conto 3a viene riscosso per intero (salvo la riscossione anticipata per la proprietà d’abitazione). VivaPlan calcola con un conto e riscossioni parziali; per n tranche occorrono in realtà n conti. Fiscalmente il risultato è lo stesso.
 - **Utilizzo:** nella sostanza libera o, se esiste una tranche con ammortamento indiretto in questo conto, «Rimborsare l’ipoteca» (prima le tranche con ammortamento indiretto).
 
 Ogni riscossione è un **prelievo di capitale** con imposta sulle prestazioni in capitale. I prelievi nello stesso anno civile (cassa pensione e pilastro 3a) vengono sommati per l’aliquota, per le coppie non sposate per persona.
 
 L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a prima dell’inizio della rendita AVS (vedi [Ipoteche](#f-re-mortgage)). Versamento e ammortamento indiretto insieme non dovrebbero superare l’importo massimo annuo; altrimenti la verifica mostra un avviso. Senza cassa pensione la verifica avvisa inoltre non appena la somma supera il 20 % del reddito da attività lucrativa all’anno (con il primo mese in cui il reddito è troppo basso); viene dedotta solo questa quota.
+
+> Esempio: avere 150'000 a 63 anni, interesse 0 %, nessun versamento, dai 63 anni in 3 tranche: 50'000 ciascuna a 63, 64 e 65 anni.
 
 > Esempio: nascita 06.1980, avere 120'000 senza interesse, riscossione a 61.5 anni (risulta 12.2041) di 50'000: avere prima della riscossione 120'000, resto dopo 70'000. «+ Riscossione» propone una riga a 62.5 anni (12.2042) di 70'000.
 

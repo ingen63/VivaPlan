@@ -309,6 +309,69 @@ test.describe("Pillar 3a: payout plan with date or age (#55)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------
+test.describe("Pillar 3a in tranches (#300)", () => {
+  // Invented example: birth 1980-06 (AHV start 06.2045), balance 120'000, interest 0, no contribution, one payout row.
+  const setup = async page => {
+    await page.evaluate(() => {
+      state.household.persons[0].birth = "1980-06";
+      state.realestate.properties.forEach(x => x.mortgage?.tranches?.forEach(t => t.periods.forEach(d => { d.amortMode = "direct"; })));
+      state.pillar3a = [{ person: state.household.persons[0].id, balance: 120000, rate: 0, contribution: 0, use: "wealth", payouts: [{ date: "2041-06", amount: 10000, use: "wealth" }] }];
+      goto("pillar3a");
+    });
+  };
+  const sw = page => page.locator('input[data-path="pillar3a.0.tranches.enabled"]');
+
+  test("AK1, AK5, AK6: switch with age and count; payout plan locked with a reason; note on the simplification", async ({ page }) => {
+    const errors = await open(page);
+    await setup(page);
+    await expect(sw(page)).not.toBeChecked();
+    await expect(field(page, "pillar3a.0.payouts.0.amount")).toBeEnabled();
+    // AK6: the note is at the account
+    await expect(page.locator('#main [data-p3a="tranches-info"]')).toContainText("Gesetzlich wird jedes 3a-Konto ganz bezogen (ausser beim Vorbezug für Wohneigentum)");
+    await expect(page.locator('#main [data-p3a="tranches-info"]')).toContainText("Steuerlich ergibt das dasselbe.");
+    await sw(page).check();
+    // AK1: defaults from 60 up to the AHV start (65 → 6 tranches)
+    expect(await page.evaluate(() => state.pillar3a[0].tranches)).toEqual({ enabled: true, fromAge: 60, count: 6 });
+    await expect(field(page, "pillar3a.0.tranches.fromAge")).toHaveValue("60");
+    await expect(field(page, "pillar3a.0.tranches.count")).toHaveValue("6");
+    await expect(page.locator('#main [data-p3a="tranches"]')).toContainText("von 06.2040 bis 06.2045");
+    // AK5: plan locked with a reason, the rows stay; the usage applies to all tranches
+    await expect(page.locator('fieldset[data-p3a="plan"]')).toHaveAttribute("disabled", "");
+    await expect(field(page, "pillar3a.0.payouts.0.amount")).toBeDisabled();
+    await expect(page.locator('#main [data-p3a="locked"]')).toContainText("Gesperrt, solange «In Tranchen beziehen» eingeschaltet ist");
+    await expect(page.locator("#main")).toContainText("Verwendung der Tranchen");
+    expect(await page.evaluate(() => state.pillar3a[0].payouts.length)).toBe(1);
+    // switched off: plan editable again, the values of the tranches stay
+    await sw(page).uncheck();
+    await expect(field(page, "pillar3a.0.payouts.0.amount")).toBeEnabled();
+    expect(await page.evaluate(() => state.pillar3a[0].tranches)).toEqual({ enabled: false, fromAge: 60, count: 6 });
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK4, AK7: tranches in the preview; last tranche after the AHV start is an error", async ({ page }) => {
+    const errors = await open(page);
+    await setup(page);
+    await sw(page).check();
+    await field(page, "pillar3a.0.tranches.fromAge").fill("63");
+    await field(page, "pillar3a.0.tranches.count").fill("3");
+    await field(page, "pillar3a.0.tranches.count").press("Tab");
+    expect(await page.evaluate(() => state.pillar3a[0].tranches)).toEqual({ enabled: true, fromAge: 63, count: 3 });
+    // AK2/AK7: 120'000 in 3 tranches of 40'000 in June 2043, 2044 and 2045; the payout row is not used
+    const preview = () => page.evaluate(() => (lastSim?.p3a || []).map(e => `${ymShow(i2ym(e.m))} ${e.text}`).join("\n"));
+    await expect.poll(preview).toContain("06.2043 Säule 3a: Tranche 1 von 3 40000 CHF, Steuer");
+    await page.evaluate(() => renderSection());
+    await expect(page.locator("#main")).toContainText("Vorschau 06.2043: Säule 3a: Tranche 1 von 3 40000 CHF, Steuer");
+    await expect(page.locator("#main")).toContainText("Vorschau 06.2045: Säule 3a: Tranche 3 von 3 40000 CHF, Steuer");
+    await expect(page.locator("#main")).not.toContainText("Vorschau 06.2041");
+    // AK4: 4 tranches from 63 end at 66, after the AHV start
+    await field(page, "pillar3a.0.tranches.count").fill("4");
+    await field(page, "pillar3a.0.tranches.count").press("Tab");
+    await expect(page.locator("#val li.err").first()).toContainText("Die letzte Tranche mit 66 Jahren (06.2046) liegt nach dem AHV-Bezug (06.2045)");
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
 test.describe("Error message at the field only on leaving (#57)", () => {
   const ferr = el => el.locator("xpath=ancestor-or-self::div[contains(@class,'inp')][1]/following-sibling::span[contains(@class,'ferr')]");
   /**

@@ -56,7 +56,7 @@ A line below the cards shows what becomes of the balance at the pension fund pay
 **Pillar 3a** has a section of its own, see [Pillar 3a](#s-pillar3a).
 
 ## @s-pillar3a Pillar 3a
-Keywords: 3a, tied pension provision, contribution, payout, payout plan, age, date, balance, maximum amount, indirect amortization
+Keywords: 3a, tied pension provision, contribution, payout, payout plan, age, date, balance, maximum amount, indirect amortization, tranches, partial payout
 
 Pillar 3a is a separate account **per person**, separate from the pension fund and the mortgage.
 
@@ -66,11 +66,14 @@ Pillar 3a is a separate account **per person**, separate from the pension fund a
 - **Balance from the preview:** Every row shows the **balance before the payout** and the **rest after it**; below the plan is the balance paid out at the AHV pension start. The values come from the preview with fixed returns; if the plan has an error, there is no preview, and ‘–’ is shown.
 - **+ Payout** creates a row one year after the last one (without a row: in the earliest allowed month, 5 years before the AHV pension start, not before the simulation start), at the latest at the AHV pension start. The amount is the balance at that point in time after the earlier payouts, rounded down to 1 000. You can change it freely afterwards.
 - **Rest at the AHV pension start:** Whatever is still in the account is paid out **at the latest in the month of the AHV pension start**.
+- **Pay out in tranches:** With this switch the app spreads the payout over several years to lower the lump-sum tax. You choose **from age** (60 to 65) and the **number of tranches** (1 to 6). From this age the app pays out one tranche every year, each in the **birth month**: the balance in that month divided by the number of tranches left; the last tranche is the remainder. With contributions or interest the tranches follow the balance. The last tranche must be at the latest in the month of the AHV pension start, otherwise the check reports an error. While the switch is on, the payout plan is locked (its rows are kept), and the use applies to all tranches. If the simulation starts after the first tranche, only the tranches from the start count. **Simplification:** by law, each 3a account is paid out in full (except for an early withdrawal for home ownership). VivaPlan computes with one account and partial payouts; for n tranches you actually need n accounts. For taxes the result is the same.
 - **Use:** into liquid wealth or, if a tranche with indirect amortization into this account exists, “Repay mortgage” (first the tranches with indirect amortization).
 
 Every payout is a **lump-sum withdrawal** with lump-sum tax. Withdrawals in the same calendar year (pension fund and pillar 3a) are added together for the rate; for unmarried couples, per person.
 
 The **indirect amortization** of a mortgage flows into this account until before the AHV pension start (see [Mortgages](#f-re-mortgage)). Contribution and indirect amortization together should not exceed the maximum amount per year; otherwise the validation shows a warning. Without a pension fund, the validation also warns as soon as the sum exceeds 20 % of the earned income per year (with the first month in which the income is too low); only this share is then deducted.
+
+> Example: balance 150 000 at 63, interest 0 %, no contributions, from 63 in 3 tranches: 50 000 each at 63, 64 and 65.
 
 > Example: born 06.1980, balance 120 000 without interest, payout at 61.5 years (results in 12.2041) of 50 000: balance before the payout 120 000, rest after it 70 000. “+ Payout” suggests a row at 62.5 years (12.2042) of 70 000.
 

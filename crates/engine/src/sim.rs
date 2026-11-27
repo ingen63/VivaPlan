@@ -804,6 +804,8 @@ struct CAccount {
     /// AHV payout: end of contributions and of indirect amortization, payout of the remainder.
     ahv: Option<YearMonth>,
     rest_repay: bool,
+    /// #300: Payout in tranches instead of the payout plan: months of all tranches (the last one gets the remainder).
+    tranches: Vec<YearMonth>,
 }
 
 #[derive(Clone, Debug)]
@@ -1301,6 +1303,14 @@ impl Simulator {
                             })
                             .collect();
                         payouts.sort_by_key(|x| (x.0, x.3));
+                        // #300/AK5: with tranches the payout plan is locked.
+                        let tranches: Vec<YearMonth> = match a.tranches_on() {
+                            Some(t) => {
+                                payouts.clear();
+                                (0..t.count).map(|n| t.month(person.birth, n)).collect()
+                            }
+                            None => vec![],
+                        };
                         CAccount {
                             who,
                             person: person.id.clone(),
@@ -1312,6 +1322,7 @@ impl Simulator {
                             payouts,
                             ahv,
                             rest_repay: a.usage == PayoutUse::Repay,
+                            tranches,
                         }
                     }
                 }
@@ -3038,6 +3049,15 @@ impl<'a> Run<'a> {
                         paid: gross,
                         after,
                     });
+                }
+            }
+            // #300/AK2: tranche = balance of the month divided by the tranches left; the last one is the remainder.
+            if let Some(n) = c.tranches.iter().position(|&t| t == m) {
+                if c.ahv.is_none_or(|h| m <= h) {
+                    let left = c.tranches.len() - n;
+                    let gross = self.p3a[a] / left as f64;
+                    let what = msg!(payout_tranche, n = n + 1, count = c.tranches.len());
+                    self.pay_out_3a(a, m, gross, c.rest_repay, what);
                 }
             }
             if c.ahv.is_some_and(|h| m >= h) {

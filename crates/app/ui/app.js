@@ -733,6 +733,21 @@ function payoutMonth(x, pid) {
   return ym2i(x.date);
 }
 const p3aViewOf = pid => lastSim?.p3aView?.find(v => v.person === pid) ?? null;
+/** #300: Tranches when switched on first: first tranche at the earliest 5 years before the AHV payout (at least 60),
+ * the last one at the latest in the month of the AHV payout (at most 6). */
+function tranchesDefault(pid) {
+  const pi = state.household.persons.findIndex(q => q.id === pid), ahv = msMonth(pi === 1 ? "ahv2" : "ahv"), b = ym2i(person(pid).birth);
+  if (!Number.isFinite(ahv) || !Number.isFinite(b)) return { enabled: true, fromAge: 60, count: 5 };
+  const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const fromAge = clamp(Math.ceil((ahv - 60 - b) / 12), 60, 65), last = Math.floor((ahv - b) / 12);
+  return { enabled: true, fromAge, count: clamp(last - fromAge + 1, 1, 6) };
+}
+/** #300: Months of the tranches (birth month from the age of the first one), or [] when off or incomplete. */
+function trancheMonths(acc) {
+  const t = acc?.tranches, b = ym2i(person(acc?.person).birth);
+  if (!t?.enabled || !Number.isFinite(b) || !Number.isInteger(+t.fromAge) || !Number.isInteger(+t.count) || +t.count < 1 || +t.count > 6) return [];
+  return Array.from({ length: +t.count }, (_, n) => b + (+t.fromAge + n) * 12);
+}
 R.pillar3a = () => {
   const l = limits();
   const cards = state.household.persons.slice(0, 2).map((pp, pi) => {
@@ -743,11 +758,17 @@ R.pillar3a = () => {
     const uses = hasIndirectFor(pp.id) ? [["wealth", tr("pillar3a.toWealth")], ["repay", tr("pillar3a.repayMortgage")]] : [["wealth", tr("pillar3a.toWealth")]];
     const earliest = Number.isFinite(ahv) ? ymShow(i2ym(ahv - 60)) : "?";
     const events = (lastSim?.p3a || []).filter(e => state.household.persons.length < 2 || e.text.includes(`(${pp.name})`));
+    const tOn = !!acc.tranches?.enabled, tm = trancheMonths(acc);
+    // #300: switch «In Tranchen beziehen»; while on the payout plan is locked (its rows stay).
+    const tranches = `<div class="p3a-tranches" style="margin-top:12px">${Chk(A + ".tranches.enabled", tr("pillar3a.tranches"), { rerender: 1 })}${infoPop(`<p data-p3a="tranches-info">${tr("pillar3a.tranchesInfo")}</p>`)}
+      ${tOn ? `<div class="grid2">${F(A + ".tranches.fromAge", tr("pillar3a.tranchesFromAge"), "years", { int: 1 })}${F(A + ".tranches.count", tr("pillar3a.tranchesCount"), "num", { int: 1 })}</div>
+      <p class="hint" data-p3a="tranches">${tm.length ? tr("pillar3a.tranchesHint", { first: ymShow(i2ym(tm[0])), last: ymShow(i2ym(tm[tm.length - 1])), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) : ""}</p>` : ""}</div>`;
     return `<div class="card"><h3>${tr("pillar3a.title", { who })}<button class="btn ghost small" style="float:right" data-action="list-del" data-path="pillar3a" data-i="${k}" title="${tr("pillar3a.remove")}">✕</button></h3>
       <div class="grid3">${F(A + ".balance", tr("pillar3a.balance", { startTxt: startTxt() }), "chf")}${F(A + ".rate", tr("pillar3a.interest"), "pct")}
         ${F(A + ".contribution", tr("pillar3a.contribution"), "chf", { hint: tr(pp.noPensionFund ? "pillar3a.contributionHintLarge" : "pillar3a.contributionHint", { pillar3aMax: fmtInt(pp.noPensionFund ? l.pillar3aMaxLarge : l.pillar3aMax), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) })}</div>
-      <h4>${tr("pillar3a.payoutPlan")}</h4>
-      <table class="tbl"><tr><th>${tr("pillar3a.when")}</th><th>${tr("pillar3a.result")}</th><th>${tr("pillar3a.amount")}</th><th>${tr("pillar3a.use")}</th><th title="${tr("pillar3a.fromPreview")}">${tr("pillar3a.balanceAfter")}</th><th></th></tr>
+      ${tranches}
+      <h4>${tr("pillar3a.payoutPlan")}</h4>${tOn ? `<p class="hint" data-p3a="locked">${tr("pillar3a.payoutPlanLocked")}</p>` : ""}
+      <fieldset class="locked-area" data-p3a="plan" ${tOn ? "disabled" : ""}><table class="tbl"><tr><th>${tr("pillar3a.when")}</th><th>${tr("pillar3a.result")}</th><th>${tr("pillar3a.amount")}</th><th>${tr("pillar3a.use")}</th><th title="${tr("pillar3a.fromPreview")}">${tr("pillar3a.balanceAfter")}</th><th></th></tr>
       ${(acc.payouts || []).map((x, j) => {
         const P = `${A}.payouts.${j}`;
         return `<tr data-p3a-row="${j}"><td style="width:220px"><div class="refwrap">${Sel(P + ".kind", [["date", tr("pillar3a.date")], ["age", tr("pillar3a.age")]], { rerender: 1 })}${x.kind === "age" ? F(P + ".years", "", "years", { bare: true, unit: tr("unit.yearsShort") }) : F(P + ".date", "", "month", { bare: true })}</div></td>
@@ -757,9 +778,9 @@ R.pillar3a = () => {
         <td style="white-space:nowrap">${C("p3apay", `${k}.${j}`)}</td>
         <td><button class="btn ghost small" data-action="list-del" data-path="${A}.payouts" data-i="${j}" title="${tr("series.removeRow")}">✕</button></td></tr>`;
       }).join("")}</table>
-      <div style="margin-top:10px"><button class="btn small" data-action="p3a-payout-add" data-k="${k}">${tr("pillar3a.addPayout")}</button></div>
+      <div style="margin-top:10px"><button class="btn small" data-action="p3a-payout-add" data-k="${k}">${tr("pillar3a.addPayout")}</button></div></fieldset>
       <p class="hint">${C("p3arest", k)}</p>
-      <div class="grid2" style="margin-top:10px"><label class="field"><span>${tr("pillar3a.restAtAhv", { ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" })}</span>${Sel(A + ".use", uses)}</label></div>
+      <div class="grid2" style="margin-top:10px"><label class="field"><span>${tOn ? tr("pillar3a.useTranches") : tr("pillar3a.restAtAhv", { ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" })}</span>${Sel(A + ".use", uses)}</label></div>
       <p class="hint">${tr("pillar3a.payoutHint", { earliest })}</p>
       <p class="hint">${lastSim ? (events.length ? events.map(e => tr("pillar3a.preview", { ymShow: ymShow(i2ym(e.m)), text: esc(e.text) })).join("<br>") : tr("pillar3a.previewNone")) : ""}</p></div>`;
   }).join("");
@@ -2795,6 +2816,8 @@ function onEdit(el) {
   const resulting = kindMs ? msMonth(kindMs.id) : NaN; // point in time before the change (column «Ergibt»)
   const kindPay = /^pillar3a\.\d+\.payouts\.\d+\.kind$/.test(path) ? getP(path.replace(/\.kind$/, "")) : null;
   const payPid = kindPay ? state.pillar3a[+path.split(".")[1]].person : null, payAt = kindPay ? payoutMonth(kindPay, payPid) : NaN;
+  const trOf = /^(pillar3a\.\d+)\.tranches\.enabled$/.exec(path); // #300: first switched on: defaults
+  if (trOf && !getP(trOf[1]).tranches) getP(trOf[1]).tranches = tranchesDefault(getP(trOf[1]).person);
   setP(path, v); dropTaxBill(path); markDirty();
   if (el.dataset.type === "chfyear") { const pm = [...document.querySelectorAll("[data-permonth]")].find(x => x.dataset.permonth === path); if (pm) pm.textContent = perMonthText(v); }
   // #100: an own input in the stock model ends following the suggested values
@@ -4176,7 +4199,8 @@ function paramSections(plan, full = false) {
   out.push([tr("section.pillar3a"), (plan.pillar3a || []).flatMap(a => {
     const nm = (plan.household?.persons || []).find(q => q.id === a.person)?.name || a.person;
     return [[tr("params.pillar3aText", { nm }), `${money(a.balance)}, ${pc(a.rate)}, ${money(a.contribution ?? 0)}`],
-      ...(a.payouts || []).map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")})`])];
+      ...(a.tranches?.enabled ? [[tr("params.tranches", { nm }), tr("params.tranchesText", { fromAge: a.tranches.fromAge, count: a.tranches.count })]] : []),
+      ...(a.tranches?.enabled ? [] : a.payouts || []).map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")})`])];
   })]);
   const t = plan.taxes || {}, g = t.propertyGain;
   // #63/AK10: mode and place of residence with the name of the municipality instead of the own tables

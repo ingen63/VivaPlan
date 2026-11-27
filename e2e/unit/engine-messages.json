@@ -2199,6 +2199,57 @@
     "text": "Person 2: payout in 07.2031 and pension fund lump sum in the same year – they are added together for tax progression."
   },
   {
+    "code": "pillar3a_tranches_from_age",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: the age of the first tranche must be between 60 and 65.",
+    "text": "Person 2: the age of the first tranche must be between 60 and 65."
+  },
+  {
+    "code": "pillar3a_tranches_count",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: the number of tranches must be between 1 and 6.",
+    "text": "Person 2: the number of tranches must be between 1 and 6."
+  },
+  {
+    "code": "pillar3a_tranches_after_ahv",
+    "params": {
+      "age": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "ahv": "2031-07",
+      "date": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: the last tranche at age {age} ({date:ym}) is after the start of the AHV pension ({ahv:ym}); it must be paid out at the latest in that month.",
+    "text": "Person 2: the last tranche at age Person 2 (07.2031) is after the start of the AHV pension (07.2031); it must be paid out at the latest in that month."
+  },
+  {
     "code": "milestone_person_unknown",
     "params": {
       "name": {
@@ -5385,6 +5436,27 @@
     "params": {},
     "template": "Payout of the remainder at the start of the AHV pension",
     "text": "Payout of the remainder at the start of the AHV pension"
+  },
+  {
+    "code": "payout_tranche",
+    "params": {
+      "count": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "n": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Tranche {n} of {count}",
+    "text": "Tranche Person 2 of Person 2"
   },
   {
     "code": "event_extra",

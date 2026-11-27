@@ -70,6 +70,10 @@ Der Editor führt durch zwölf Abschnitte:
   im AHV-Bezug ausbezahlt. Der Zeitpunkt einer Auszahlung ist ein Datum oder ein Alter der Kontoinhaberin bzw. des
   Kontoinhabers; jede Zeile zeigt das Guthaben vor und nach der Auszahlung aus der Vorschau, und eine neue Zeile erhält
   als Betrag das Guthaben zu ihrem Zeitpunkt.
+  Mit dem Schalter **«In Tranchen beziehen»** (ab Alter 60 bis 65, 1 bis 6 Tranchen, #300) bezieht die App statt des
+  Auszahlungsplans jedes Jahr im Geburtsmonat eine Tranche: Guthaben ÷ Zahl der verbleibenden Tranchen, die letzte ist
+  der Rest, spätestens im AHV-Bezug. Das senkt die Kapitalbezugssteuer. Vereinfachung: ein Konto mit Teilbezügen statt
+  n Konten, die gesetzlich je ganz bezogen werden; steuerlich gleich.
 - **Einnahmen & Ausgaben:** Erwerbseinkommen, Lebenshaltung und einmalige Beträge (Erbschaft, Autokauf, Reise). Jeder
   Wert kann zeitabhängig sein, zum Beispiel tiefere Ausgaben ab 80.
   Zeitabhängige Werte (Verläufe) gibt es als Konstante, Treppe («ab Zeitpunkt gilt Wert»), Gerade (von Wert a zu

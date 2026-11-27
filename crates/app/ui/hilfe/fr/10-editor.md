@@ -56,7 +56,7 @@ Une ligne sous les cartes montre ce que devient l’avoir lors de la prestation 
 Le **pilier 3a** a sa propre section, voir [Pilier 3a](#s-pillar3a).
 
 ## @s-pillar3a Pilier 3a
-Mots-clés: 3a, prévoyance liée, versement, retrait, plan de retrait, âge, date, avoir, montant maximal, amortissement indirect
+Mots-clés: 3a, prévoyance liée, versement, retrait, plan de retrait, âge, date, avoir, montant maximal, amortissement indirect, tranches, retrait partiel
 
 Le pilier 3a est un compte propre **par personne**, séparé de la caisse de pension et de l’hypothèque.
 
@@ -66,11 +66,14 @@ Le pilier 3a est un compte propre **par personne**, séparé de la caisse de pen
 - **Avoir tiré de l’aperçu:** chaque ligne montre l’**avoir avant le retrait** et le **solde ensuite**; sous le plan figure l’avoir versé au début de la rente AVS. Les valeurs proviennent de l’aperçu avec rendements fixes; si la planification contient une erreur, il n’y a pas d’aperçu, et «–» est affiché.
 - **+ Retrait** crée une ligne un an après la dernière (sans ligne: au mois le plus précoce admis, 5 ans avant le début de la rente AVS, pas avant le début de la simulation), au plus tard au début de la rente AVS. Le montant proposé est l’avoir à ce moment après les retraits antérieurs, arrondi au millier inférieur. Vous pouvez ensuite le modifier librement.
 - **Solde au début de la rente AVS:** ce qui reste sur le compte est versé **au plus tard le mois du début de la rente AVS**.
+- **Retirer par tranches:** avec cette option, l’app répartit le retrait sur plusieurs années pour réduire l’impôt sur les prestations en capital. Vous choisissez **dès l’âge de** (60 à 65) et le **nombre de tranches** (1 à 6). Dès cet âge, l’app retire une tranche chaque année, le **mois de naissance**: l’avoir de ce mois divisé par le nombre de tranches restantes; la dernière tranche est le solde. Avec des versements ou des intérêts, les tranches suivent l’avoir. La dernière tranche doit avoir lieu au plus tard le mois du début de la rente AVS, sinon la vérification signale une erreur. Tant que l’option est activée, le plan de retrait est verrouillé (ses lignes sont conservées) et l’utilisation vaut pour toutes les tranches. Si la simulation commence après la première tranche, seules les tranches dès le début comptent. **Simplification:** selon la loi, chaque compte 3a est retiré en entier (sauf en cas de perception anticipée pour la propriété du logement). VivaPlan calcule avec un compte et des retraits partiels; pour n tranches, il faut en réalité n comptes. Fiscalement, le résultat est le même.
 - **Utilisation:** dans la fortune libre ou, s’il existe une tranche avec amortissement indirect sur ce compte, «Rembourser l’hypothèque» (d’abord les tranches avec amortissement indirect).
 
 Chaque retrait est une **prestation en capital** soumise à l’impôt sur les prestations en capital. Les retraits de la même année civile (caisse de pension et pilier 3a) sont additionnés pour le taux, pour les couples non mariés par personne.
 
 L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusqu’au mois précédant le début de la rente AVS (voir [Hypothèques](#f-re-mortgage)). Le versement et l’amortissement indirect ensemble ne devraient pas dépasser le montant maximal par année; sinon, le contrôle affiche un avertissement. Sans caisse de pension, la vérification avertit en outre dès que la somme dépasse 20 % du revenu de l’activité lucrative par année (avec le premier mois où le revenu est trop bas); seule cette part est alors déduite.
+
+> Exemple: avoir de 150 000 à 63 ans, intérêt 0 %, sans versements, dès 63 ans en 3 tranches: 50 000 chacune à 63, 64 et 65 ans.
 
 > Exemple: naissance 06.1980, avoir de 120 000 sans intérêt, retrait à 61.5 ans (donne 12.2041) de 50 000: avoir avant le retrait 120 000, solde ensuite 70 000. «+ Retrait» propose une ligne à 62.5 ans (12.2042) de 70 000.
 

@@ -56,7 +56,7 @@ Eine Zeile unter den Karten zeigt, was beim Bezug der Pensionskasse aus dem Guth
 Die **Säule 3a** hat einen eigenen Abschnitt, siehe [Säule 3a](#s-pillar3a).
 
 ## @s-pillar3a Säule 3a
-Stichworte: 3a, gebundene Vorsorge, Einzahlung, Auszahlung, Auszahlungsplan, Alter, Datum, Guthaben, Maximalbetrag, indirekte Amortisation
+Stichworte: 3a, gebundene Vorsorge, Einzahlung, Auszahlung, Auszahlungsplan, Alter, Datum, Guthaben, Maximalbetrag, indirekte Amortisation, Tranchen, Teilbezug
 
 Die Säule 3a ist ein eigenes Konto **je Person**, getrennt von Pensionskasse und Hypothek.
 
@@ -66,11 +66,14 @@ Die Säule 3a ist ein eigenes Konto **je Person**, getrennt von Pensionskasse un
 - **Guthaben aus der Vorschau:** Jede Zeile zeigt das **Guthaben vor der Auszahlung** und den **Rest danach**, unter dem Plan steht das Guthaben, das im AHV-Bezug ausbezahlt wird. Die Werte stammen aus der Vorschau mit fixen Renditen; hat die Planung einen Fehler, gibt es keine Vorschau, und es steht «–».
 - **+ Auszahlung** legt eine Zeile ein Jahr nach der letzten an (ohne Zeile: im frühesten erlaubten Monat, 5 Jahre vor dem AHV-Bezug, nicht vor dem Simulationsstart), höchstens im AHV-Bezug. Als Betrag steht das Guthaben zu diesem Zeitpunkt nach den früheren Auszahlungen, abgerundet auf 1 000. Sie können ihn danach frei ändern.
 - **Rest im AHV-Bezug:** Was noch im Konto ist, wird **spätestens im Monat des AHV-Bezugs** ausbezahlt.
+- **In Tranchen beziehen:** Mit dem Schalter verteilt die App den Bezug auf mehrere Jahre, um die Kapitalbezugssteuer zu senken. Sie wählen **ab Alter** (60 bis 65) und die **Anzahl Tranchen** (1 bis 6). Ab diesem Alter bezieht die App jedes Jahr eine Tranche, jeweils im **Geburtsmonat**: Guthaben in diesem Monat geteilt durch die Zahl der verbleibenden Tranchen; die letzte Tranche ist der Rest. Mit Einzahlungen oder Zins folgen die Tranchen dem jeweiligen Guthaben. Die letzte Tranche muss spätestens im Monat des AHV-Bezugs liegen, sonst meldet die Prüfung einen Fehler. Solange der Schalter an ist, ist der Auszahlungsplan gesperrt (die Zeilen bleiben erhalten), und die Verwendung gilt für alle Tranchen. Bei Simulationsstart nach der ersten Tranche zählen nur die Tranchen ab dem Start. **Vereinfachung:** Gesetzlich wird jedes 3a-Konto ganz bezogen (ausser beim Vorbezug für Wohneigentum). VivaPlan rechnet mit einem Konto und Teilbezügen; für n Tranchen braucht es in Wirklichkeit n Konten. Steuerlich ergibt das dasselbe.
 - **Verwendung:** ins freie Vermögen oder, wenn eine Tranche mit indirekter Amortisation in dieses Konto besteht, «Hypothek zurückzahlen» (zuerst die Tranchen mit indirekter Amortisation).
 
 Jede Auszahlung ist ein **Kapitalbezug** mit Kapitalbezugssteuer. Bezüge im selben Kalenderjahr (Pensionskasse und Säule 3a) werden für den Satz zusammengerechnet, bei unverheirateten Paaren je Person.
 
 Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in dieses Konto (siehe [Hypotheken](#f-re-mortgage)). Einzahlung und indirekte Amortisation zusammen sollten den Maximalbetrag pro Jahr nicht übersteigen; sonst zeigt die Prüfung eine Warnung. Ohne Pensionskasse warnt die Prüfung ausserdem, sobald die Summe 20 % des Erwerbseinkommens pro Jahr übersteigt (mit dem ersten Monat, in dem das Einkommen zu tief ist); abgezogen wird dann nur dieser Anteil.
+
+> Beispiel: Guthaben 150 000 mit 63, Zins 0 %, keine Einzahlungen, ab 63 in 3 Tranchen: je 50 000 mit 63, 64 und 65.
 
 > Beispiel: Geburt 06.1980, Guthaben 120 000 ohne Zins, Auszahlung mit 61.5 Jahren (ergibt 12.2041) über 50 000: Guthaben vor der Auszahlung 120 000, Rest danach 70 000. «+ Auszahlung» schlägt eine Zeile mit 62.5 Jahren (12.2042) über 70 000 vor.
 

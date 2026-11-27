@@ -1728,12 +1728,54 @@ pub struct Pillar3aAccount {
     /// the year; `false`: nominal. Missing: yes with `indexedByDefault`, otherwise no.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contribution_indexed: Option<bool>,
-    /// Planned payouts, at the earliest 5 years before the AHV payout.
+    /// Planned payouts, at the earliest 5 years before the AHV payout. Ignored while `tranches.enabled` is on.
     #[serde(default)]
     pub payouts: Vec<Pillar3aPayout>,
-    /// Usage of the remainder in the month of the AHV payout.
+    /// #300: Payout in yearly tranches instead of the payout plan.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tranches: Option<Pillar3aTranches>,
+    /// Usage of the remainder at the AHV payout (and of tranches).
     #[serde(rename = "use", default = "wealth_use")]
     pub usage: PayoutUse,
+}
+
+impl Pillar3aAccount {
+    /// #300: The tranches when switched on.
+    pub fn tranches_on(&self) -> Option<&Pillar3aTranches> {
+        self.tranches.as_ref().filter(|t| t.enabled)
+    }
+}
+
+/// #300: Payout of pillar 3a in yearly tranches, each in the birth month of the account holder. A tranche is the
+/// balance of that month divided by the number of tranches left; the last one is the remainder. Simplification: one
+/// account with partial payouts instead of one account per tranche (same taxes).
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Pillar3aTranches {
+    /// Tranches instead of the payout plan.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Age of the first tranche.
+    #[serde(default = "tranches_from_age")]
+    pub from_age: u32,
+    /// Tranches, one per year.
+    #[serde(default = "tranches_count")]
+    pub count: u32,
+}
+
+fn tranches_from_age() -> u32 {
+    60
+}
+
+fn tranches_count() -> u32 {
+    5
+}
+
+impl Pillar3aTranches {
+    /// Month of tranche `n` (0-based): the birth month at the age `from_age + n`.
+    pub fn month(&self, birth: YearMonth, n: u32) -> YearMonth {
+        birth.plus(((self.from_age + n) * 12) as i32)
+    }
 }
 
 /// Point in time of a 3a payout (#55): fixed date or age of the account holder.

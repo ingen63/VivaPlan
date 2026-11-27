@@ -639,6 +639,9 @@ codes! {
     pillar3a_payout_amount => "{who}: the amount of the payout in {date:ym} must be greater than 0.",
     pillar3a_payout_repay_without_indirect => "{who}: “Repay mortgage” (payout in {date:ym}) requires a tranche with indirect amortization; it goes to liquid wealth.",
     pillar3a_payout_same_year_as_pk => "{who}: payout in {date:ym} and pension fund lump sum in the same year – they are added together for tax progression.",
+    pillar3a_tranches_from_age => "{who}: the age of the first tranche must be between 60 and 65.",
+    pillar3a_tranches_count => "{who}: the number of tranches must be between 1 and 6.",
+    pillar3a_tranches_after_ahv => "{who}: the last tranche at age {age} ({date:ym}) is after the start of the AHV pension ({ahv:ym}); it must be paid out at the latest in that month.",
     // Milestones and points in time (resolve.rs)
     milestone_person_unknown => "Milestone “{name}”: unknown person “{person}”",
     milestone_id_duplicate => "Milestone ID “{id}” is used more than once",
@@ -899,6 +902,7 @@ codes! {
     event_pillar3a_payout => "Pillar 3a{who}: {what} {amount:fix0} {currency}, tax {tax:fix0} {currency}, to mortgage {repaid:fix0} {currency}",
     payout => "Payout",
     payout_rest => "Payout of the remainder at the start of the AHV pension",
+    payout_tranche => "Tranche {n} of {count}",
     event_extra => "{label}: {amount:fix0} {currency}",
     event_pk_payout => "Pension fund payout{who}: lump sum {lump:fix0} {currency} (tax {tax:fix0} {currency}), pension {pension:fix0} {currency} / month",
     event_ahv_start => "AHV pension{who} {pension:fix0} {currency} / month",
