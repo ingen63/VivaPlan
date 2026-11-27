@@ -2658,3 +2658,13 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #308/AK6 | Texte der Reiter in i18n (de, en, fr, it). | ☑ | **gilt** | `make ui-texts`, `make i18n-check` | 27.11.2026 ok (Prüfläufe) |
 | #308/AK7 | Hilfe `@f-settings`: Tabelle nach Reitern gegliedert. | ☑ | **gilt** | `help.rs` `issue_173_…` | 27.11.2026 ok (Test, Durchsicht) |
 | #308/AK8 | Test in `e2e/`: Reiter wechseln, ungültiger Wert in anderem Reiter, Sprung zum Fehler. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK3/AK8 (#308) | 27.11.2026 ok (Test) |
+
+### #310 Abschnitt Säule 3a auf Französisch und Italienisch zu breit
+
+[Issue #310](https://github.com/ingen63/VivaPlan/issues/310) · geschlossen · Umsetzung: 926ef28 · Ursache: Auswahl «Verwendung» mit der Option `pillar3a.homeEarly` aus #301
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #310/AK1 | Ursache festgehalten (Element und Text). | ☑ | **gilt** | Commit 926ef28, Kommentar im Issue | 27.11.2026 ok (Messung im Browser) |
+| #310/AK2 | Säule 3a passt in allen vier Sprachen; Kürzungen nur nach `docs/GLOSSAR.md`. | ☑ | **gilt** («Versement anticipé», «Prelievo anticipato») | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) AK4 (#182), `make ui-texts`, `tools/check_i18n.py` | 27.11.2026 ok (Tests) |
+| #310/AK3 | `npx playwright test e2e/ui-textfit.spec.js` grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) | 27.11.2026 ok (Test, 24/24) |
