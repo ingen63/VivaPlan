@@ -392,6 +392,8 @@ mod tests {
         plan["scenarios"]["sweeps"] = json!([]);
         plan["returns"]["source"] = json!("parametric");
         plan["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
+        // #303: the inflation of the former example strategy keeps the two orders apart
+        plan["returns"]["strategy"] = json!({ "stocks": "sp500", "bonds": "usa" });
         let v = serde_json::to_value(run(&crate::api::run(&plan, Path::new("."), Some(&library())))).unwrap();
         let col = |list: &str, key: &str| -> Vec<i64> {
             v["batch"][list]

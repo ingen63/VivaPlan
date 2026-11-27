@@ -979,7 +979,12 @@ test.describe("KPI earliest depletion readable (#234)", () => {
     const errors = await open(page, "results/rolling");
     await expect(page.locator("html")).toHaveAttribute("data-rendered", "overview");
     // more spending than the example plan can carry: some historical runs deplete
-    await page.evaluate(() => { state.flows.spendingFactor = 3; return runSimulation("overview", { noConfirm: true }); });
+    // #303: a monthly strategy (S&P 500 with US bonds), so the run starts in a month
+    await page.evaluate(() => {
+      state.flows.spendingFactor = 3;
+      state.returns.strategy = { stocks: "sp500", bonds: "usa" };
+      return runSimulation("overview", { noConfirm: true });
+    });
     const sub = page.locator(`#resultsBody .kpi:has(.k:text-is("Früheste Erschöpfung")) .s`);
     await expect(sub).toHaveText(/^\d\d\.\d{4} · Historisch ab \d\d\.\d{4}$/);
     await page.evaluate(() => I18n.use("en"));

@@ -122,7 +122,7 @@
       "seed": 42,
       "sigma": 0.15
     },
-    "strategy": {"bonds": "ch", "stocks": "worldJst"},
+    "strategy": {"bonds": "chShort", "stocks": "worldJst"},
     "source": "fixed",
     "startDate": "2000-01"
   },

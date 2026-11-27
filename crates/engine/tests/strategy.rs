@@ -258,8 +258,10 @@ fn issue_69_strategy_info_and_new_plans() {
     assert_eq!(i.currency.as_deref(), Some("CHF"));
     assert!(i.title.unwrap().contains("Switzerland (JST)"));
     assert!(api::series_info("strategy:{kaputt", Path::new("."), None, 1950).is_err());
+    // #303/AK4: «new.vplan» has the strategy of `blank_plan` (one default for new plans)
     let new_plan: Plan = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
-    assert_eq!(new_plan.returns.strategy, Some(Investment::default()));
+    let blank: Plan = serde_json::from_value(api::blank_plan(YearMonth::new(2030, 1))).unwrap();
+    assert_eq!(new_plan.returns.strategy, blank.returns.strategy);
     assert!(new_plan.returns.series.is_none());
     // With a strategy «rolling» or «bootstrap» no longer needs a series; without both it is an error.
     let mut v: Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
@@ -551,4 +553,26 @@ fn issue_124_ak8_common_years_of_the_indices() {
     assert_eq!(d.saron.as_deref().map(|s| s.len()), Some(1));
     assert!((d.saron.unwrap()[0] - 0.02).abs() < 1e-12, "SARON im einzigen Jahr");
     assert!(e.unwrap_err().to_string().contains("no years in common"));
+}
+
+/// #303/AK1, AK2, AK5: New plans (`blank_plan`) and the example plan start with «Welt (JST)» and short-term bonds.
+#[test]
+fn issue_303_ak5_new_and_example_plans_use_world_jst_and_short_term_bonds() {
+    let expected = Some(Investment {
+        stocks: StockIndex::WorldJst,
+        bonds: BondIndex::ChShort,
+        weights: RegionWeights::default(),
+    });
+    for (name, v) in [
+        ("blank", api::blank_plan(YearMonth::new(2030, 1))),
+        ("example", api::example_plan()),
+    ] {
+        assert_eq!(
+            v["returns"]["strategy"],
+            json!({ "stocks": "worldJst", "bonds": "chShort" }),
+            "{name}"
+        );
+        let plan: Plan = serde_json::from_value(v).unwrap();
+        assert_eq!(plan.returns.strategy, expected, "{name}");
+    }
 }

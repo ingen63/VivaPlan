@@ -201,7 +201,7 @@ test.describe("Start and navigation", () => {
     await eu.press("Tab");
     await expect(card).toContainText("Summe 100 %");
     await expect(card.locator(".ferr")).toHaveCount(0);
-    await expect(card).toContainText("Jährlich 01.1922 – 12.2020"); // Example plan: US bonds from 1922
+    await expect(card).toContainText("Jährlich 01.1900 – 12.2020"); // #303: example plan with short-term bonds from 1900
     await noErrors(page, errors);
   });
 

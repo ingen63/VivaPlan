@@ -70,8 +70,8 @@ fn merge(v: &mut Value, key: &str, fields: Value) {
 
 /// #269/AK1: Empty plan with default values for «Neu» in the app and `plan_open` with `new: true`: starts in `start`,
 /// one person without a name (born 60 years before the start), no amounts, no properties, no variations. Returns, tax
-/// tables and strategy parameters keep the default values of the example plan. Moved here from the user interface
-/// (`blankPlan`, one construction instead of two).
+/// tables and strategy parameters keep the default values of the example plan; the strategy is set here (#303). Moved
+/// here from the user interface (`blankPlan`, one construction instead of two).
 pub fn blank_plan(start: YearMonth) -> Value {
     let mut p = example_plan();
     let zero = json!({ "mode": "const", "value": 0 });
@@ -129,6 +129,8 @@ pub fn blank_plan(start: YearMonth) -> Value {
         json!({ "properties": [], "defaultTaxValue": true }),
     );
     merge(&mut p, "scenarios", json!({ "sweeps": [] }));
+    // #303/AK1: new plans start with «Welt (JST)» and short-term Swiss federal bonds (not the strategy of the example)
+    p["returns"]["strategy"] = json!({ "stocks": "worldJst", "bonds": "chShort" });
     p
 }
 

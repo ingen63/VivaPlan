@@ -5,7 +5,7 @@ use std::path::Path;
 
 use engine::api;
 use engine::model::{FORMAT, LEGACY_FORMAT};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 fn dir() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -91,8 +91,10 @@ fn rplan_stays_unchanged_and_computes_like_the_vplan() {
     );
     let rplan = api::read_plan(&old).unwrap();
     assert_eq!(rplan["format"], LEGACY_FORMAT);
-    let new_plan = api::read_plan(&dir().join("assets/example.vplan")).unwrap();
+    let mut new_plan = api::read_plan(&dir().join("assets/example.vplan")).unwrap();
     assert_eq!(new_plan["format"], FORMAT);
+    // #303: the example plan now starts with «Welt (JST)» and short-term bonds; the frozen file has the former strategy
+    new_plan["returns"]["strategy"] = json!({ "stocks": "sp500", "bonds": "usa" });
     let upgraded = api::upgrade_plan(&rplan).plan;
     assert_eq!(upgraded["format"], FORMAT);
     assert_eq!(upgraded, api::upgrade_plan(&new_plan).plan);
