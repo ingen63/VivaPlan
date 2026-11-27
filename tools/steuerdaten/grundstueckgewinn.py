@@ -3,7 +3,8 @@
 Source: ESTV, «Steuermäppchen» on the property gain tax («Grundstückgewinnsteuer»), tax period 2025
 (as of 26.11.2025), table 3 «Berechnung der Grundstückgewinnsteuer». The page is given with each canton; ZG, FR, VS,
 BS, BL, SG and VD were also checked against the cantonal law (as of November 2026); ZH (#287) and LU, UR,
-SZ, OW, NW (#288), BE, SO, BS, BL, AG (#289) name the law article.
+SZ, OW, NW (#288), BE, SO, BS, BL, AG (#289), GL, SH, AR, AI, SG, GR, TG (#290) name
+the law article.
 
 Each rule is an object in the format of `PropertyGainTax` of the engine (camelCase):
 - model «zurich»: `brackets` [width, rate], optionally `uniformAbove` [from gain, rate for the whole gain];
@@ -103,7 +104,7 @@ def rules():
         duration=[[0, 0.3], [1, 0.2], [2, 0.15], [3, 0.1], [4, 0.0]] + steps(5, -0.05, -0.03, -0.35)
         + steps(16, -0.40, -0.05, -0.85) + [[30, -0.90]],
         text="Stufentarif 10 % bis 30 %, Zuschlag unter 4 Jahren, Ermässigung bis 90 % ab 30 Jahren",
-        source="S. 13")
+        source="StG GL Art. 115 (VI C/1/1, Stand 1.1.2026)")
     r["ZG"] = dict(
         model="return", returnBounds=[0.10, 0.60], exemptBelow=5000,
         returnMaxDuration=[[0, 0.60]] + [[y, round(0.60 - 0.025 * (y - 11), 4)] for y in range(12, 25)] + [[25, 0.25]],
@@ -150,17 +151,17 @@ def rules():
         duration=[[y / 2, round(0.5 - 0.05 * y, 4)] for y in range(11)] + steps(6, -0.05, -0.05, -0.60),
         text="einfache Steuer 2 % bis 20 % × Steuerfuss, Zuschlag unter 5 Jahren, Ermässigung bis 60 %, höchstens "
              "50 % des Gewinns",
-        source="S. 17")
+        source="StG SH Art. 120 (SHR 641.100, Stand 1.1.2026)")
     r["AR"] = dict(
         model="zurich", exemptBelow=3000, brackets=[[BIG, 0.30]],
         duration=[[0, 0.5], [0.5, 0.35], [1, 0.2], [2, 0.1], [3, 0.05], [4, 0.0]] + steps(11, -0.025, -0.025, -0.50),
         text="30 % des Gewinns, Zuschlag unter 4 Jahren, Ermässigung ab 11 Jahren bis 50 %",
-        source="S. 17")
+        source="StG AR Art. 133 (bGS 621.11, Stand 1.1.2025)")
     r["AI"] = dict(
         model="zurich", exemptBelow=4000, brackets=ZH_BRACKETS,
         duration=monthly_surcharge(36, 0.01) + steps(5, -0.05, -0.03, -0.50),
         text="Stufentarif 10 % bis 40 %, Zuschlag unter 3 Jahren je Monat 1 %, Ermässigung bis 50 %",
-        source="S. 18")
+        source="StG AI Art. 109 (GS 640.000, Stand 1.1.2024)")
     sg = [[2200, 0.0], [2800, 0.005], [2700, 0.01], [2100, 0.02], [2100, 0.03], [2600, 0.04], [3700, 0.05],
           [6900, 0.06], [9600, 0.07], [16000, 0.08], [21100, 0.09], [176200, 0.10], [208000, 0.105], [BIG, 0.11]]
     sg_short = [[0, 0.05], [1, 0.04], [2, 0.03], [3, 0.02], [4, 0.01], [5, 0.0]]
@@ -172,13 +173,13 @@ def rules():
              "ab 16 Jahren bei Selbstnutzung 1.5 % je Jahr bis 40.5 % (Gewinnanteil bis 500 000 Franken), sonst 1 % "
              "je Jahr bis 20 %",
         approx="Angenommen ist Selbstnutzung während mindestens 15 Jahren; sonst gilt 1 % je Jahr, höchstens 20 %.",
-        source="Art. 140 und 141 StG, sGS 811.1")
+        source="StG SG Art. 140 und 141 (sGS 811.1, Stand 1.1.2026)")
     r["GR"] = dict(
         model="zurich", exemptBelow=4600,
         brackets=[[9919, round(0.05 + 0.01 * i, 4)] for i in range(21)], uniformAbove=[208299, 0.15],
         duration=monthly_surcharge(24, 0.02) + steps(11, -0.015, -0.015, -0.51),
         text="Stufentarif 5 % bis 25 %, ab 208 299 Franken 15 %, Zuschlag unter 2 Jahren, Ermässigung bis 51 %",
-        source="S. 19")
+        source="StG GR Art. 52 und 53 mit Art. 4 Abs. 1 (Indexstufe 109 %) (BR 720.000, Stand 1.1.2026)")
     r["AG"] = dict(
         model="aargau",
         durationRates=[[0, 0.40]] + [[y, round(0.40 - 0.02 * y, 4)] for y in range(1, 11)]
@@ -189,7 +190,7 @@ def rules():
         model="zurich", brackets=[[BIG, 0.40]],
         duration=monthly_surcharge(36, 0.01) + steps(6, -0.04, -0.04, -0.72),
         text="40 % des Gewinns, Zuschlag unter 3 Jahren je Monat 1 %, Ermässigung ab dem 6. Jahr bis 72 %",
-        source="S. 20")
+        source="StG TG §§ 135 und 136 (RB 640.1, Stand 1.1.2025)")
     r["TI"] = dict(
         model="aargau",
         durationRates=[[0, 0.31], [1, 0.30], [2, 0.29], [3, 0.28], [4, 0.27], [5, 0.26], [6, 0.23], [7, 0.20],

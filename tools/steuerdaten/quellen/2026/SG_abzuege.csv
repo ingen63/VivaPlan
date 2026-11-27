@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+SG,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"STANDARDIZED,PERCENT,MAXIMUM",700,10,0,2400,"StG SG Art. 39 Abs. 2; Steuerverordnung SG Art. 21 Abs. 1 (sGS 811.11, Stand 1.1.2024)"
+SG,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,6800,"StG SG Art. 45 Abs. 1 lit. g (sGS 811.1, Stand 1.1.2026)"
+SG,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,7900,"StG SG Art. 45 Abs. 1 lit. g (sGS 811.1, Stand 1.1.2026)"
+SG,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,3400,"StG SG Art. 45 Abs. 1 lit. g (sGS 811.1, Stand 1.1.2026)"
+SG,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,3900,"StG SG Art. 45 Abs. 1 lit. g (sGS 811.1, Stand 1.1.2026)"
+SG,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,500,"StG SG Art. 45 Abs. 2 (sGS 811.1, Stand 1.1.2026)"
+SG,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,150000,0,0,0,"StG SG Art. 64 Abs. 1 lit. a (sGS 811.1, Stand 1.1.2026; je steuerpflichtige Person 75 000 Franken)"
+SG,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,75000,0,0,0,"StG SG Art. 64 Abs. 1 lit. a (sGS 811.1, Stand 1.1.2026; je steuerpflichtige Person 75 000 Franken)"

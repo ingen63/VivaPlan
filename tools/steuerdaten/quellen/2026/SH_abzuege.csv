@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+SH,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"StG SH Art. 28 Abs. 2; Verordnung über die direkten Steuern § 18 (SHR 641.111, Stand 1.1.2026) mit Berufskostenverordnung (SR 642.118.1) Art. 7"
+SH,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,7500,"StG SH Art. 35 Abs. 1 lit. g Ziff. 1 und 2 (SHR 641.100, Stand 1.1.2026; ohne Erhöhung ohne Beiträge)"
+SH,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,7500,"StG SH Art. 35 Abs. 1 lit. g Ziff. 1 und 2 (SHR 641.100, Stand 1.1.2026; ohne Erhöhung ohne Beiträge)"
+SH,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,3750,"StG SH Art. 35 Abs. 1 lit. g Ziff. 1 und 2 (SHR 641.100, Stand 1.1.2026; ohne Erhöhung ohne Beiträge)"
+SH,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,3750,"StG SH Art. 35 Abs. 1 lit. g Ziff. 1 und 2 (SHR 641.100, Stand 1.1.2026; ohne Erhöhung ohne Beiträge)"
+SH,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,800,"StG SH Art. 35 Abs. 1 lit. h (SHR 641.100, Stand 1.1.2026)"
+SH,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,100000,0,0,0,"StG SH Art. 48 Abs. 1 lit. a und b (SHR 641.100, Stand 1.1.2026)"
+SH,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,50000,0,0,0,"StG SH Art. 48 Abs. 1 lit. a und b (SHR 641.100, Stand 1.1.2026)"

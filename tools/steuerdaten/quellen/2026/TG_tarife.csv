@@ -1,0 +1,13 @@
+Kanton,Hoheit,Steuerart,Tariftyp,Splitting,Gruppe,Zeile,Betrag,Prozent,Steuer,Formel,Quelle
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,0,0,0,0,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,1,12200,2,0,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,2,14600,3,48,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,3,16800,4,114,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,4,18900,5,198,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,5,21000,6,303,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,6,36800,7,1251,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,7,84400,7.5,4583,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,EINKOMMENSSTEUER,BUND,2,ALLE,8,158400,8,10133,,"StG TG § 37 Abs. 1 und 2 (RB 640.1, Stand 1.1.2025); Verordnung über den Ausgleich der kalten Progression § 2 (RB 640.13, Stand 1.1.2025)"
+TG,KANTON,VERMOEGENSSTEUER,FLATTAX,0,ALLE,0,0,0.11,0,,"StG TG § 54 Abs. 1 (RB 640.1, Stand 1.1.2025)"
+TG,KANTON,VORSORGESTEUER,FLATTAX,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",0,0,2.4,0,,"StG TG § 39 Abs. 2 (RB 640.1, Stand 1.1.2025)"
+TG,KANTON,VORSORGESTEUER,FLATTAX,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,VERHEIRATET,LEDIG_MIT_KINDER",0,0,2,0,,"StG TG § 39 Abs. 2 (RB 640.1, Stand 1.1.2025)"

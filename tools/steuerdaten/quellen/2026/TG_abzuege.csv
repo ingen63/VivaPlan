@@ -1,0 +1,8 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+TG,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,StG TG § 29 Abs. 2; Thurgauer Steuerpraxis StP 29 Nr. 7 Ziff. 2 (Stand 2026-09)
+TG,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,7000,"StG TG § 34 Abs. 1 Ziff. 9 lit. a und b (RB 640.1, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+TG,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,7000,"StG TG § 34 Abs. 1 Ziff. 9 lit. a und b (RB 640.1, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+TG,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,3500,"StG TG § 34 Abs. 1 Ziff. 9 lit. a und b (RB 640.1, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+TG,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,3500,"StG TG § 34 Abs. 1 Ziff. 9 lit. a und b (RB 640.1, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+TG,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,200000,0,0,0,"StG TG § 53 Abs. 1 Ziff. 1 und 2 (RB 640.1, Stand 1.1.2025)"
+TG,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,100000,0,0,0,"StG TG § 53 Abs. 1 Ziff. 1 und 2 (RB 640.1, Stand 1.1.2025)"

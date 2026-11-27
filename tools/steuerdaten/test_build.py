@@ -655,5 +655,44 @@ class Sources(unittest.TestCase):
         self.assertEqual(gain["SO"]["uniformAbove"], [319900, 0.105])
 
 
+    EAST = ("GL", "SH", "AR", "AI", "SG", "GR", "TG")
+
+    def test_issue_290_ak1_eastern_sources_are_complete(self):
+        """#290/AK1: source files 2026 for GL, SH, AR, AI, SG, GR and TG with tariffs for income and wealth and the
+        deductions used, a source per row (checked by `read_sources`); Thurgau has no second-earner deduction."""
+        tariffs, deductions, covered = build.read_sources(self.REPO)
+        self.assertLessEqual(set(self.EAST), covered)
+        kinds = {(r["Kanton"], r["Steuerart"]) for r in tariffs}
+        ids = {(r["Kanton"], r["ID"]) for r in deductions}
+        for cid in self.EAST:
+            self.assertIn((cid, "EINKOMMENSSTEUER"), kinds)
+            self.assertIn((cid, "VERMOEGENSSTEUER"), kinds)
+            self.assertIn((cid, "HauptErw_EK"), ids)
+            self.assertIn((cid, "KKSparLedigMitBVGS3a_EK"), ids)
+            self.assertEqual((cid, "ZweitVerdiener_EK") in ids, cid != "TG", cid)
+
+    def test_issue_290_ak4_graubuenden_against_the_cantonal_calculator(self):
+        """#290/AK4: GR, tax calculator of the canton 2026: simple income tax 120 000 single = 8.478633 %
+        (index step 109 %); lump sums by StG Art. 40a (rate for one fifteenth, 1.5 % to 2 %): 340 000 single 1.5 %,
+        370 000 about 1.708 % (the canton rounds the fifteenth down to 100 francs), 1 000 000 at 2 %."""
+        tariffs, _, _ = build.read_sources(self.REPO)
+        t = build.load_tariffs(tariffs)
+        gr = build.pick(t[("GR", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertAlmostEqual(gr.tax(120_000, False), 120_000 * 0.08478633, delta=0.05)
+        rule = build.read_rules(build.RULES)["GR"]
+        for amount, rate in ((340_000, 0.015), (370_000, 0.0170813), (1_000_000, 0.02)):
+            self.assertAlmostEqual(build.capital_tax(rule, t, "GR", False, amount) / amount, rate, delta=0.0003,
+                                   msg=amount)
+
+    def test_issue_290_ak2_rules_name_the_law(self):
+        """#290/AK2: the lump-sum and property gain rules of these cantons name the article of the law."""
+        capital = build.read_rules(build.RULES)
+        gain = grundstueckgewinn.rules()
+        for cid in self.EAST:
+            self.assertRegex(capital[cid]["source"], rf"^StG {cid} (§|Art\.) \d+", cid)
+            self.assertRegex(gain[cid]["source"], rf"^StG {cid} (§|§§|Art\.) \d+", cid)
+        self.assertEqual(capital["GR"]["divisor"], 15)
+
+
 if __name__ == "__main__":
     unittest.main()

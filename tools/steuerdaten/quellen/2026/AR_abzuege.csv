@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+AR,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"STANDARDIZED,PERCENT,MAXIMUM",700,10,0,2400,"StG AR Art. 29 Abs. 2; StV AR Art. 18 Abs. 1 (bGS 621.111, Stand 1.1.2024)"
+AR,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,5400,"StG AR Art. 35 Abs. 1 lit. g (bGS 621.11, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+AR,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,5400,"StG AR Art. 35 Abs. 1 lit. g (bGS 621.11, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+AR,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,2700,"StG AR Art. 35 Abs. 1 lit. g (bGS 621.11, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+AR,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,2700,"StG AR Art. 35 Abs. 1 lit. g (bGS 621.11, Stand 1.1.2025; ohne Erhöhung ohne Beiträge)"
+AR,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,"PERCENT,MINIMUM,MAXIMUM",0,10,2500,5200,"StG AR Art. 35 Abs. 1 lit. h (bGS 621.11, Stand 1.1.2025) und Anhang 1 (Ausgleich kalte Progression per 1.1.2024)"
+AR,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,150000,0,0,0,"StG AR Art. 51 Abs. 1 lit. a und b (bGS 621.11, Stand 1.1.2025)"
+AR,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,75000,0,0,0,"StG AR Art. 51 Abs. 1 lit. a und b (bGS 621.11, Stand 1.1.2025)"

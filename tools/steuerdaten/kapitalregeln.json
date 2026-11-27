@@ -1,5 +1,5 @@
 {
-  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287–#289), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
+  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287–#290), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
   "AG": {
     "kind": "income",
     "share": 0.3,
@@ -10,11 +10,13 @@
   "AI": {
     "kind": "income",
     "share": 0.25,
-    "text": "25 % der Steuer nach dem Einkommenstarif"
+    "text": "25 % der Steuer nach dem Einkommenstarif",
+    "source": "StG AI Art. 40 Abs. 1 (GS 640.000, Stand 1.1.2024)"
   },
   "AR": {
     "kind": "table",
-    "text": "eigener Tarif für Kapitalleistungen"
+    "text": "eigener Tarif für Kapitalleistungen",
+    "source": "StG AR Art. 41 Abs. 1 (bGS 621.11, Stand 1.1.2025) mit Anhang 1"
   },
   "BE": {
     "kind": "table",
@@ -54,15 +56,17 @@
   },
   "GL": {
     "kind": "table",
-    "text": "fester Satz von 4 %"
+    "text": "fester Satz von 4 %",
+    "source": "StG GL Art. 36 Abs. 1 (VI C/1/1, Stand 1.1.2026)"
   },
   "GR": {
     "kind": "income",
-    "divisor": 12,
+    "divisor": 15,
     "share": 1.0,
     "min": 0.015,
     "max": 0.02,
-    "text": "Satz des Einkommenstarifs für einen Zwölftel des Bezugs, zwischen 1.5 % und 2 %"
+    "text": "Satz des Einkommenstarifs für einen Fünfzehntel des Bezugs, zwischen 1.5 % und 2 %",
+    "source": "StG GR Art. 40a Abs. 1 (BR 720.000, Stand 1.1.2026)"
   },
   "JU": {
     "kind": "table",
@@ -94,12 +98,14 @@
   },
   "SG": {
     "kind": "table",
-    "text": "fester Satz (Alleinstehende 2.2 %, Verheiratete 2 %)"
+    "text": "fester Satz (Alleinstehende 2.2 %, Verheiratete 2 %)",
+    "source": "StG SG Art. 52 Abs. 2 und 3 (sGS 811.1, Stand 1.1.2026)"
   },
   "SH": {
     "kind": "income",
     "share": 0.2,
-    "text": "ein Fünftel der Steuer nach dem Einkommenstarif"
+    "text": "ein Fünftel der Steuer nach dem Einkommenstarif",
+    "source": "StG SH Art. 40 Abs. 2 (SHR 641.100, Stand 1.1.2026)"
   },
   "SO": {
     "kind": "income",
@@ -124,7 +130,8 @@
   },
   "TG": {
     "kind": "table",
-    "text": "fester Satz (Alleinstehende 2.4 %, Verheiratete 2 %)"
+    "text": "fester Satz (Alleinstehende 2.4 %, Verheiratete 2 %)",
+    "source": "StG TG § 39 Abs. 2 (RB 640.1, Stand 1.1.2025)"
   },
   "TI": {
     "kind": "income",

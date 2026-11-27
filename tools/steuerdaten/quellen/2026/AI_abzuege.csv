@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+AI,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"STANDARDIZED,PERCENT,MAXIMUM",1000,5,0,5000,"StG AI Art. 29 Abs. 2; Standeskommissionsbeschluss zum Steuergesetz (GS 640.011, Stand 1.1.2026) Art. 6"
+AI,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,5800,"StG AI Art. 35 Abs. 1 lit. g; Standeskommissionsbeschluss zum Steuergesetz (GS 640.011, Stand 1.1.2026) Art. 12 Abs. 1"
+AI,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,6800,"StG AI Art. 35 Abs. 1 lit. g; Standeskommissionsbeschluss zum Steuergesetz (GS 640.011, Stand 1.1.2026) Art. 12 Abs. 1"
+AI,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,2900,"StG AI Art. 35 Abs. 1 lit. g; Standeskommissionsbeschluss zum Steuergesetz (GS 640.011, Stand 1.1.2026) Art. 12 Abs. 1"
+AI,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,3400,"StG AI Art. 35 Abs. 1 lit. g; Standeskommissionsbeschluss zum Steuergesetz (GS 640.011, Stand 1.1.2026) Art. 12 Abs. 1"
+AI,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,500,"StG AI Art. 35 Abs. 2 (GS 640.000, Stand 1.1.2024)"
+AI,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,100000,0,0,0,"StG AI Art. 45 Abs. 1 lit. a (GS 640.000, Stand 1.1.2024; je steuerpflichtige Person 50 000 Franken)"
+AI,KANTON,VERMOEGENSSTEUER,SozLedigMitOhneKinder_VM,Abzug für Alleinstehende,STANDARDIZED,50000,0,0,0,"StG AI Art. 45 Abs. 1 lit. a (GS 640.000, Stand 1.1.2024; je steuerpflichtige Person 50 000 Franken)"

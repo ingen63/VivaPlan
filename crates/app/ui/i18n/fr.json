@@ -1983,7 +1983,7 @@
   "capitalRule.FR": "barème propre pour les prestations en capital, impôt cantonal avec un coefficient d’impôt de 100 %, personnes mariées 0.2 % du retrait (500 francs au plus) en moins",
   "capitalRule.GE": "un cinquième de l’impôt selon le barème du revenu (impôt cantonal légèrement inférieur)",
   "capitalRule.GL": "taux fixe de 4 %",
-  "capitalRule.GR": "taux du barème du revenu pour un douzième du retrait, entre 1.5 % et 2 %",
+  "capitalRule.GR": "taux du barème du revenu pour un quinzième du retrait, entre 1.5 % et 2 %",
   "capitalRule.JU": "barème propre pour les prestations en capital",
   "capitalRule.LU": "barème propre pour les prestations en capital",
   "capitalRule.NE": "25 % de l’impôt selon le barème du revenu, taux d’au moins 2.5 %",
