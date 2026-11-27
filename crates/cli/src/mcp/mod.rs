@@ -16,7 +16,7 @@ mod session;
 mod tools;
 
 use std::io::{BufRead, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -145,14 +145,27 @@ fn install_token(args: &[String]) -> Option<&str> {
         .find(|t| !t.is_empty() && !t.starts_with("${"))
 }
 
+/// The home folder of the user (`HOME`, on Windows `USERPROFILE`).
+pub(crate) fn home_folder() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .filter(|h| !h.is_empty())
+        .map(PathBuf::from)
+}
+
+/// #263, #302/AK3: `~/` at the start of a path (or `~` alone) stands for the home folder, as the AI and configuration
+/// files write it; without a home folder the path stays as it is.
+pub(crate) fn with_home(path: &str, home: Option<&Path>) -> PathBuf {
+    match (path.strip_prefix("~/").or((path == "~").then_some("")), home) {
+        (Some(rest), Some(home)) => home.join(rest),
+        _ => PathBuf::from(path),
+    }
+}
+
 /// #263: a folder of `--allow-dir`, canonical (`..` and symbolic links resolved); `~/` stands for the home folder,
 /// because a configuration file passes it to the server unexpanded.
 fn released_folder(dir: &str) -> Result<PathBuf, String> {
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
-    let path = match (dir.strip_prefix("~/").or((dir == "~").then_some("")), home) {
-        (Some(rest), Some(home)) => PathBuf::from(home).join(rest),
-        _ => PathBuf::from(dir),
-    };
+    let path = with_home(dir, home_folder().as_deref());
     std::fs::canonicalize(&path)
         .ok()
         .filter(|d| d.is_dir())

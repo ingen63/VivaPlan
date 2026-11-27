@@ -55,7 +55,7 @@
           "type": "boolean"
         },
         "path": {
-          "description": "Path of the file (.vplan or .rplan).",
+          "description": "Path of the file (.vplan or .rplan); ~/ stands for the home folder.",
           "type": "string"
         }
       },
@@ -432,7 +432,7 @@
       "openWorldHint": false,
       "readOnlyHint": false
     },
-    "description": "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file in the folder of the plan or a folder released with --allow-dir; a plan without a file (new or example plan) needs a path in a released folder, a relative one is taken there. overwrite: true replaces an existing file, but only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since opening and old .rplan files are never replaced. Answers the file name written.",
+    "description": "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file in the folder of the plan or a folder released with --allow-dir; a file name alone is enough. A plan without a file (new or example plan) is saved in the first released plan folder, so give only a file name such as `My plan.vplan`; ~/ stands for the home folder. overwrite: true replaces an existing file, but only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since opening and old .rplan files are never replaced. Answers the file name written.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -441,7 +441,7 @@
           "type": "boolean"
         },
         "path": {
-          "description": "File to write (.vplan); relative to the folder of the plan.",
+          "description": "File to write (.vplan). A file name alone is enough: it is saved in the folder of the plan, for a plan without a file (new or example plan) in the first released plan folder. ~/ stands for the home folder.",
           "type": "string"
         },
         "plan": {

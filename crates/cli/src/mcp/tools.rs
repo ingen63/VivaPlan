@@ -2,7 +2,7 @@
 //! the catalog for AIs (`describe`). Thin layer: check the arguments, call the engine through `dispatch::call`, shape
 //! the answer. The computing tools are in `compute.rs` (#211), changing and saving in `edit.rs` (#212).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::{json, Map, Value};
 
@@ -80,7 +80,7 @@ pub(crate) fn list() -> Vec<Value> {
              and never invent values. With example: true the example plan is opened, only to try out or demonstrate \
              VivaPlan; never compute the user's own situation with its values.",
             json!({
-                "path": { "type": "string", "description": "Path of the file (.vplan or .rplan)." },
+                "path": { "type": "string", "description": "Path of the file (.vplan or .rplan); ~/ stands for the home folder." },
                 "new": { "type": "boolean", "description": "Open a new, empty plan without a file (for the user's own figures)." },
                 "example": { "type": "boolean", "description": "Open the example plan (only to try out or demonstrate)." },
             }),
@@ -361,7 +361,7 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
         }
         (None, true) => (None, s.call("example_plan", &json!({}), None)?, None),
         (Some(p), false) => {
-            let path = PathBuf::from(p);
+            let path = super::with_home(p, s.home.as_deref());
             let ext = path
                 .extension()
                 .map(|e| e.to_string_lossy().to_lowercase())
@@ -424,7 +424,7 @@ fn plan_open(s: &mut Session, args: &Value) -> Outcome {
             json!(
                 "Ask the user for the missing inputs and confirm the assumed ones; never invent values or take them from \
                  the example plan. Enter the answers with plan_set, check with plan_validate, save with plan_save and a \
-                 path (.vplan) in a released plan folder"
+                 file name such as `My plan.vplan`: it is saved in the first released plan folder"
             ),
         );
     } else {
@@ -1073,6 +1073,20 @@ mod tests {
         let v = ok(call(&mut s, "plan_validate", &json!({ "plan": "p1" })));
         assert_eq!(v["errors"], 0);
         assert!(v["messages"].is_array());
+    }
+
+    /// #302/AK2: The hint next of plan_open new: true says that a file name alone is enough for plan_save and that the
+    /// file lands in the first released plan folder.
+    #[test]
+    fn issue_302_ak2_next_of_a_new_plan_names_a_file_name() {
+        let mut s = session();
+        let o = ok(call(&mut s, "plan_open", &json!({ "new": true })));
+        let next = o["next"].as_str().unwrap();
+        assert!(
+            next.contains("save with plan_save and a file name such as `My plan.vplan`"),
+            "{next}"
+        );
+        assert!(next.contains("first released plan folder"), "{next}");
     }
 
     /// #269/AK2: new: true opens the empty plan of the engine without a file and lists the missing inputs; new together

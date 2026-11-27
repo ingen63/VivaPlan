@@ -59,8 +59,9 @@ into the plan folder or to choose another plan folder when setting up VivaPlan.
 If the user wants to compute with their own figures and has no plan file, open an empty plan with
 `plan_open` and `"new": true` (as «New» in the app). Its answer lists the missing inputs (`missing`) and the assumed
 values to confirm (`assumed`): ask the user for them, never invent values and never take them from the example plan;
-enter the answers with `plan_set` and save with `plan_save` and a path (`.vplan`) in the plan folder. The example plan
-(`"example": true`) only serves to try out or demonstrate VivaPlan.
+enter the answers with `plan_set` and save with `plan_save` and a file name such as `My plan.vplan`: it lands in the
+plan folder (`~/` is the home folder). The example plan (`"example": true`) only serves to try out or demonstrate
+VivaPlan.
 The rules above apply in the same way.
 
 ## Workflow

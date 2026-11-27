@@ -31,13 +31,14 @@ pub(crate) fn list() -> Vec<Value> {
         "Save a plan",
         "Saves the working copy as a project file (.vplan). Without path and overwrite a new file next to the opened one \
          (<name> (AI).vplan, with a number if needed); an existing file is never touched. path saves to another new file \
-         in the folder of the plan or a folder released with --allow-dir; a plan without a file (new or example plan) needs a \
-         path in a released folder, a relative one is taken there. overwrite: true replaces an existing file, but \
+         in the folder of the plan or a folder released with --allow-dir; a file name alone is enough. A plan without a file \
+         (new or example plan) is saved in the first released plan folder, so give only a file name such as \
+         `My plan.vplan`; ~/ stands for the home folder. overwrite: true replaces an existing file, but \
          only after the program asked the user and showed the changes; a backup <file>.bak is kept, a file changed since \
          opening and old .rplan files are never replaced. Answers the file name written.",
         json!({
             "plan": plan,
-            "path": { "type": "string", "description": "File to write (.vplan); relative to the folder of the plan." },
+            "path": { "type": "string", "description": "File to write (.vplan). A file name alone is enough: it is saved in the folder of the plan, for a plan without a file (new or example plan) in the first released plan folder. ~/ stands for the home folder." },
             "overwrite": { "type": "boolean", "description": "Replace an existing file (asks the user first)." },
         }),
         &["plan"],
@@ -312,8 +313,14 @@ fn allowed_folder(s: &Session, file: Option<&Path>, target: &Path) -> Result<Pat
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(Path::new("."));
+    // #302/AK4: the way out, without naming a folder.
+    let hint = if file.is_some() || !s.allowed.is_empty() {
+        "; give only a file name such as `My plan.vplan`: it is saved in the plan folder"
+    } else {
+        ""
+    };
     let folder =
-        std::fs::canonicalize(parent).map_err(|_| format!("The folder of {} does not exist", name_of(target)))?;
+        std::fs::canonicalize(parent).map_err(|_| format!("The folder of {} does not exist{hint}", name_of(target)))?;
     let own = file.and_then(Path::parent).and_then(|d| std::fs::canonicalize(d).ok());
     // #263: a released folder includes its subfolders, as for reading.
     if own.iter().any(|d| *d == folder) || s.allowed.iter().any(|d| folder.starts_with(d)) {
@@ -321,7 +328,7 @@ fn allowed_folder(s: &Session, file: Option<&Path>, target: &Path) -> Result<Pat
     } else {
         Err(format!(
             "{} is outside the folder of the plan; the server writes only into the folder of the opened plan or a \
-             folder released with --allow-dir (rule 6)",
+             folder released with --allow-dir (rule 6){hint}",
             name_of(target)
         ))
     }
@@ -362,7 +369,8 @@ fn prepare_save(s: &Session, args: &Value, can_ask: bool) -> Result<Pending, Str
     };
     let target = match (arg(args, "path"), overwrite) {
         (Some(p), _) => {
-            let p = PathBuf::from(p);
+            // #302/AK3: `~/` is the home folder, as for --allow-dir; rule 6 applies afterwards unchanged.
+            let p = super::with_home(p, s.home.as_deref());
             // #269/AK4: a plan without a file (new or example plan) saves a relative path into the first released folder
             let base = file
                 .and_then(Path::parent)
@@ -965,5 +973,103 @@ mod tests {
         )
         .unwrap_err();
         assert!(e.contains("rule 6"), "{e}");
+    }
+
+    /// #302/AK1: The description of plan_save.path says that a file name alone is enough and that a plan without a file
+    /// (new or example plan) lands in the first released plan folder.
+    #[test]
+    fn issue_302_ak1_save_path_description_names_the_file_name_alone() {
+        let save = list().into_iter().find(|t| t["name"] == "plan_save").unwrap();
+        let path = save["inputSchema"]["properties"]["path"]["description"]
+            .as_str()
+            .unwrap();
+        for part in [
+            "A file name alone is enough",
+            "new or example plan",
+            "first released plan folder",
+            "~/",
+        ] {
+            assert!(path.contains(part), "{part}: {path}");
+        }
+        let text = save["description"].as_str().unwrap();
+        assert!(
+            text.contains("first released plan folder") && text.contains("My plan.vplan"),
+            "{text}"
+        );
+    }
+
+    /// A session with a staged home folder (`home`) holding the released folder `plans` and the folder `other`, with a
+    /// new plan opened as p1.
+    fn with_staged_home(home: &Path) -> Session {
+        std::fs::create_dir(home.join("plans")).unwrap();
+        std::fs::create_dir(home.join("other")).unwrap();
+        let mut s = session();
+        s.home = Some(home.to_path_buf());
+        s.allowed.push(std::fs::canonicalize(home.join("plans")).unwrap());
+        ok(super::super::tools::call(&mut s, "plan_open", &json!({ "new": true })).unwrap());
+        s
+    }
+
+    /// #302/AK3, AK5: `~/` at the start of path is the home folder for plan_save and plan_open, as for --allow-dir; a
+    /// new plan is saved with a `~/` path into a released folder under a staged home folder and opened again. Rule 6
+    /// still applies afterwards.
+    #[test]
+    fn issue_302_ak3_tilde_is_the_home_folder_for_save_and_open() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = tmp.path();
+        let mut s = with_staged_home(home);
+        let a = ok(save_done(
+            &mut s,
+            json!({ "plan": "p1", "path": "~/plans/Meine Pension.vplan" }),
+            true,
+        ));
+        assert_eq!(a["saved"], "Meine Pension.vplan");
+        assert_eq!(files(&home.join("plans")), ["Meine Pension.vplan"]);
+        let o = super::super::tools::call(&mut s, "plan_open", &json!({ "path": "~/plans/Meine Pension.vplan" }))
+            .unwrap()
+            .unwrap();
+        assert_eq!(o.data["file"], "Meine Pension.vplan");
+        // rule 6 unchanged: a folder under home that is not released stays refused, nothing is written
+        let e = save_done(&mut s, json!({ "plan": "p1", "path": "~/other/x.vplan" }), true).unwrap_err();
+        assert!(e.contains("rule 6"), "{e}");
+        assert!(files(&home.join("other")).is_empty());
+        // only `~/` at the start: elsewhere the tilde is a normal character
+        assert_eq!(
+            super::super::with_home("a/~/b.vplan", Some(home)),
+            Path::new("a/~/b.vplan")
+        );
+        assert_eq!(super::super::with_home("~/b.vplan", None), Path::new("~/b.vplan"));
+        assert_eq!(super::super::with_home("~", Some(home)), home.join(""));
+    }
+
+    /// #302/AK4: If the folder of the target does not exist or is outside the released folders, the message says that
+    /// a file name alone saves into the plan folder; it names no folder.
+    #[test]
+    fn issue_302_ak4_error_names_the_way_out_without_folders() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = tmp.path();
+        let mut s = with_staged_home(home);
+        for path in [
+            "~/Documents/VivaPlan/Meine Pension.vplan".to_string(),
+            "~/other/Meine Pension.vplan".to_string(),
+            home.join("other").join("Meine Pension.vplan").display().to_string(),
+        ] {
+            let e = save_done(&mut s, json!({ "plan": "p1", "path": path }), true).unwrap_err();
+            assert!(
+                e.contains("give only a file name such as `My plan.vplan`: it is saved in the plan folder"),
+                "{path}: {e}"
+            );
+            for folder in ["Documents", "VivaPlan", "other", "plans", &home.display().to_string()] {
+                assert!(!e.contains(folder), "{folder} in: {e}");
+            }
+        }
+        // the way out works
+        let a = ok(save_done(
+            &mut s,
+            json!({ "plan": "p1", "path": "Meine Pension.vplan" }),
+            true,
+        ));
+        assert_eq!(a["saved"], "Meine Pension.vplan");
+        assert_eq!(files(&home.join("plans")), ["Meine Pension.vplan"]);
     }
 }

@@ -75,6 +75,8 @@ pub(crate) struct Session {
     /// #212: Folders released with `--allow-dir` for `plan_save` (rule 6), canonical; #263: with at least one, plans
     /// are read and written only inside them (subfolders included).
     pub(crate) allowed: Vec<PathBuf>,
+    /// #302/AK3: The home folder for `~/` in the paths of `plan_open` and `plan_save` (set by tests).
+    pub(crate) home: Option<PathBuf>,
     pub(crate) plans: Vec<OpenPlan>,
     pub(crate) results: Vec<SessionResult>,
     /// The note on privacy and the full disclaimer come with the first `plan_open`.
@@ -92,6 +94,7 @@ impl Session {
             names,
             read_only: false,
             allowed: Vec::new(),
+            home: super::home_folder(),
             plans: Vec::new(),
             results: Vec::new(),
             notice_shown: false,

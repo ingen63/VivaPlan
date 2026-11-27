@@ -520,7 +520,11 @@ Werte (`assumed`: Geburtsdatum, Alter der Meilensteine, Steuertarife) und was zu
 Säule 3a, Liegenschaften, einmalige Ausgaben). `new` zusammen mit `path` oder `example` ist ein Fehler. Die Anweisungen
 des Servers sagen der KI, für eigene Zahlen so zu beginnen, Fehlendes beim Menschen zu erfragen und keine Werte zu
 erfinden; die Beispielplanung dient nur zum Vorführen. `plan_save` speichert eine Planung ohne Datei nur mit einem Pfad
-in einem freigegebenen Ordner; ein relativer Pfad gilt dann im ersten freigegebenen Ordner.
+in einem freigegebenen Ordner; ein relativer Pfad gilt dann im ersten freigegebenen Ordner, ein Dateiname allein
+genügt (#302). Das sagen die Beschreibung von `plan_save.path` und der Hinweis `next` von `new: true`. `~/` am Anfang
+von `path` steht bei `plan_save` und `plan_open` für den Benutzerordner wie bei `--allow-dir`; danach gilt Regel 6
+unverändert. Fehlt der Zielordner oder liegt er ausserhalb, nennt die Meldung als Ausweg den Dateinamen allein, ohne
+Ordnernamen.
 Planordner (#263): Mit `--allow-dir <ordner>` (auch mehrfach) öffnet und speichert der Server Planungen nur in diesen
 Ordnern und ihren Unterordnern; verglichen werden kanonische Pfade, so dass `..` und symbolische Links aus dem Ordner
 hinaus abgewiesen werden (Fehler «outside the plan folder», nur mit dem Dateinamen). Der Datenordner der App bleibt
