@@ -2578,3 +2578,20 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #305/AK1 | Der Test #190/AK8 prüft den Hinweis gegen den aktuellen Text, ohne den Inhalt des Tests sonst zu ändern. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «13th AHV pension (#190)» AK8 | 27.11.2026 ok (Test, Diff) |
 | #305/AK2 | Der e2e-Lauf `npx playwright test e2e/ui-planung.spec.js` ist grün. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) | 27.11.2026 ok (Lauf, 52 bestanden) |
+
+### #306 Beträge wie in der Realität mit der Teuerung, Ausnahmen unter «Experte»
+
+[Issue #306](https://github.com/ingen63/VivaPlan/issues/306) · geschlossen · Umsetzung: 47130f3 · ersetzt #299
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #306/AK1 | Immer mit der Teuerung (Preise beim Start): Lebenshaltung, Heim, Erwerbseinkommen, PK- und 3a-Beiträge, 3a-Höchstbetrag, AHV, Tarife und laufende Abzüge, einmalige Beträge und Abzüge, Wert und Fixkosten der Liegenschaften. | ☑ | **gilt** (AHV ab dem Anspruch; vor dem Bezug folgt #284) | `indexation.rs` `issue_306_ak1_…` | 27.11.2026 ok (Tests, Handwerte) |
+| #306/AK2 | Immer nominal: PK-Rente, Hypothek, PK- und 3a-Guthaben samt Verzinsung. | ☑ | **gilt** | `indexation.rs` `issue_306_ak2_…` | 27.11.2026 ok (Test, Durchsicht) |
+| #306/AK3 | Miete wächst bis zum Einzug, danach nominal; beim Start laufende Miete nominal (2 500 → rund 2 760). | ☑ | **gilt** | `indexation.rs` `issue_306_ak3_…` | 27.11.2026 ok (Test) |
+| #306/AK4 | Unter «Experte» je Betrag die Ausnahme «nominal»; Zeile Annahmen nennt sie. | ☑ | **gilt** («Simulation» › «Experte») | `indexation.rs` `issue_306_ak4_…`, [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK4, AK6 / AK3, AK4 (#306) | 27.11.2026 ok (Tests) |
+| #306/AK5 | Bisherige Schalter werden Ausnahmen, bestehende Planungen rechnen unverändert, Golden unverändert. | ☑ | **gilt** | `indexation.rs` `issue_306_ak5_…`, `golden`, [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK5 (#306) | 27.11.2026 ok (Tests) |
+| #306/AK6 | Neue Planungen haben keine Ausnahme. | ☑ | **gilt** | `indexation.rs` `issue_306_ak6_…`, e2e AK4, AK6 (#306) | 27.11.2026 ok (Tests) |
+| #306/AK7 | 3a-Einzahlung höchstens bis zum Höchstbetrag des Jahres; Prüfung in Preisen des Starts. | ☑ | **gilt** | `indexation.rs` `issue_306_ak7_…` | 27.11.2026 ok (Test) |
+| #306/AK8 | Hilfe-Übersicht «Was wächst mit der Teuerung» mit «ohne Teuerung = Teuerung 0 %». | ☑ | **gilt** (Thema `#inflation`, 4 Sprachen) | `make i18n-check` | 27.11.2026 ok (Durchsicht) |
+| #306/AK9 | `describe`, Schema und `plan_set` kennen die Ausnahmen. | ☑ | **gilt** | `indexation.rs` `issue_306_ak9_…` | 27.11.2026 ok (Test) |
+| #306/AK10 | Tests mit Handwert; Hilfe, BESCHREIBUNG und Spezifikation nachgeführt. | ☑ | **gilt** | – | 27.11.2026 ok (Durchsicht) |
