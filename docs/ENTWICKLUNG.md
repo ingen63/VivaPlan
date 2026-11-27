@@ -595,7 +595,9 @@ beschreibt alle Bausteine samt Doku-Kommentaren (für `describe`, #219).
   `optimize::evaluate` und nutzt `Metrics::fitness`; so ergibt sie dieselben Zahlen wie die Optimierung (Test
   `experiment::issue_216_ak8_…`).
 - **Dauer:** Läufe = Varianten × Suchpfade + `top` × Bestätigungspfade (× Durchgänge: Kennzahlen, `score`); Sekunden aus
-  `api::bench` (ohne Pfaderzeugung, die einmal je Pfad gezählt wird). Ab `CONFIRM_SECONDS` = 60 ohne `confirm`:
+  `api::bench` (ohne Pfaderzeugung, die einmal je Pfad gezählt wird; ein Lauf zählt mindestens die Hälfte der
+  gemessenen Zeit, weil die kurze Messung der Erzeugung unter Last fast den ganzen Lauf ausmachen kann, #311). Ab
+  `CONFIRM_SECONDS` = 60 ohne `confirm`:
   `status: needsConfirmation` mit `estimate`. Höchstens `optimize::MAX_RUNS`. Fortschritt und Abbruch über `progress`.
 - **Ergebnis:** `ranking` (je `settings`, `search`, `confirm`), ohne Ziel `listed` (höchstens 50), `hints`
   (`experiment_edge_low/high`, `experiment_confirm_same_paths`), `paths` (Anzahl, Startwerte, `independent`), das

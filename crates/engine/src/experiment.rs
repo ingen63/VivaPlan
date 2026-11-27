@@ -34,6 +34,18 @@ pub const MAX_VARIANTS: usize = 10_000;
 /// From this estimated duration (seconds) the computation starts only with confirmation (`confirm`, `--yes`).
 pub const CONFIRM_SECONDS: f64 = 60.0;
 
+/// Least share of the measured time per run that a run without generating its return path takes (#311). The
+/// generation is measured on its own and briefly; under load the measurement can come out as large as the whole run,
+/// which would put the estimate near 0 s and skip the confirmation. Too small a share only overestimates.
+const MIN_REUSE_SHARE: f64 = 0.5;
+
+/// Estimated seconds of `runs` runs of which `generated` generate their return path (#216/AK7), from the measurement
+/// of the machine.
+fn estimate_seconds(runs: u64, generated: f64, us_per_run: f64, us_generate: f64) -> f64 {
+    let us_reuse = (us_per_run - us_generate).max(us_per_run * MIN_REUSE_SHARE);
+    (runs as f64 * us_reuse + generated * us_generate) / 1e6
+}
+
 /// Most variants listed in the result of an experiment without an objective (the result stays small).
 pub const MAX_LISTED: usize = 50;
 
@@ -1252,7 +1264,7 @@ pub fn evaluate_as(
                 } else {
                     0.0
                 };
-                let seconds = (runs as f64 * (b.us_per_run - b.us_generate).max(0.0) + generated * b.us_generate) / 1e6;
+                let seconds = estimate_seconds(runs, generated, b.us_per_run, b.us_generate);
                 estimate.seconds = Some(seconds);
                 estimate.us_per_run = Some(b.us_per_run);
                 if seconds >= CONFIRM_SECONDS {
@@ -1462,4 +1474,23 @@ fn current(plan: &Value, path: &str) -> Option<f64> {
     }
     plan.pointer(&format!("/{}", path.replace('.', "/")))
         .and_then(Value::as_f64)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// #311: A run without generating its path counts at least half the measured time, also if the measurement of
+    /// the generation under load comes out as large as the whole run; otherwise the measured difference counts.
+    #[test]
+    fn issue_311_estimate_keeps_half_the_run_time_under_load() {
+        let quiet = estimate_seconds(1_000_000, 50.0, 100.0, 20.0);
+        assert!((quiet - (80.0 + 0.001)).abs() < 1e-9, "{quiet}");
+        for us_generate in [60.0, 100.0, 150.0] {
+            let loaded = estimate_seconds(1_000_000, 0.0, 100.0, us_generate);
+            assert!((loaded - 50.0).abs() < 1e-9, "{us_generate}: {loaded}");
+        }
+        // 19 million runs at 10 µs stay above the confirmation even with a generation measured too large.
+        assert!(estimate_seconds(19_000_000, 1.0, 10.0, 12.0) >= CONFIRM_SECONDS);
+    }
 }
