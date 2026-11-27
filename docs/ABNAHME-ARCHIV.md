@@ -2628,6 +2628,22 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #306/AK9 | `describe`, Schema und `plan_set` kennen die Ausnahmen. | ☑ | **gilt** | `indexation.rs` `issue_306_ak9_…` | 27.11.2026 ok (Test) |
 | #306/AK10 | Tests mit Handwert; Hilfe, BESCHREIBUNG und Spezifikation nachgeführt. | ☑ | **gilt** | – | 27.11.2026 ok (Durchsicht) |
 
+### #307 Hypothekarzinsen folgen dem Zins- und Teuerungsumfeld des Pfades
+
+[Issue #307](https://github.com/ingen63/VivaPlan/issues/307) · geschlossen · Umsetzung: 9374af6
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #307/AK1 | SARON ohne SARON-Daten (vor 1999, auch in Bootstrap-Blöcken): kurzfristiger Zins desselben Pfades (JST). | ☑ | **gilt** | `rates.rs`, `interest_environment.rs`, `library.rs` `issue_307_ak1_…` | 27.11.2026 ok (Test) |
+| #307/AK2 | Parametrisch: SARON = Teuerung + realer Kurzfristzins (Untergrenze 0), Parameter mit Vorgabe aus den Daten. | ☑ | **gilt** | `calibrate.rs`, `interest_environment.rs` `issue_307_ak2_…`; [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK2 (#307) | 27.11.2026 ok (Test) |
+| #307/AK3 | Festhypothek «Fest (Markt)»: bei Erneuerung Rendite Bundesobligationen 10 J. + Marge der Einstellungen. | ☑ | **gilt** | `interest_environment.rs` `issue_307_ak3_ak4_…`; [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK3 (#307) | 27.11.2026 ok (Test) |
+| #307/AK4 | Ereignisse zeigen bei jeder Erneuerung den neuen Satz und seine Herkunft. | ☑ | **gilt** | `interest_environment.rs` `issue_307_ak3_ak4_…`, `issue_307_ak4_…` | 27.11.2026 ok (Test) |
+| #307/AK5 | Kalkulatorische Werte der Tragbarkeit unverändert. | ☑ | **gilt** | `interest_environment.rs` `issue_307_ak5_…` | 27.11.2026 ok (Test) |
+| #307/AK6 | Bestehende Planungen unverändert oder `Golden:`-Begründung. | ☑ | **gilt** (Entscheid: AK1/AK2 immer, Golden nachgeführt) | `golden.rs` | 27.11.2026 ok (Test; nur Ereignistext geändert) |
+| #307/AK7 | Test über die Daten: Korrelation Teuerung/Hypothekarzins positiv; Pfad ab 1972 mit SARON über 4 %. | ☑ | **gilt** | `interest_environment.rs` `issue_307_ak7_…` | 27.11.2026 ok (Test) |
+| #307/AK8 | Tests mit Handwert; Hilfe, `BESCHREIBUNG.md`, Spezifikation nachgeführt. | ☑ | **gilt** | `help.rs`, `make i18n-check` | 27.11.2026 ok (Test, Durchsicht) |
+| #307/AK9 | Einstellungen «Marge SARON» (1.0 %) und «Marge Festhypothek» (1.2 %); Vorschlag für SARON-Perioden; Hilfe nennt Quelle und Stand. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK9 (#307) | 27.11.2026 ok (Test) |
+
 ### #308 Einstellungen nach Themen in Reitern
 
 [Issue #308](https://github.com/ingen63/VivaPlan/issues/308) · geschlossen · Umsetzung: 916e80e
