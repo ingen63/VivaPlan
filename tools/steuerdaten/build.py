@@ -59,6 +59,9 @@ RULES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kapitalregeln.
 # #287: source files from the laws per canton and tax year (`<canton>_tarife.csv`, `<canton>_abzuege.csv`); they
 # replace the ESTV rows of their canton (`CH` = federal).
 SOURCES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quellen")
+# #292: cantons whose tariffs and deductions may still come from the ESTV tables (Valais until #296); the ESTV rows
+# of all other cantons are ignored.
+ESTV_ONLY = {"VS"}
 
 # Standard deductions from the income, without children: per marital status and variant a list of groups; per group
 # the first deduction found applies. Variant «retired»: insurance premiums and savings interest without contributions
@@ -107,9 +110,9 @@ EARNED_DEDUCTION = "HauptErw_EK"
 SECOND_EARNER_DEDUCTION = "ZweitVerdiener_EK"
 SECOND_EARNER_TOTAL = {"BE"}
 
-GAIN_SOURCE = ("ESTV, Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3; "
-               "ZG, FR, VS, BS, BL, SG und VD zusätzlich nach dem kantonalen Gesetz")
-SOURCE = "ESTV, Steuerrechner, Grunddaten (Steuerfüsse, Tarife, Abzüge)"
+GAIN_SOURCE = "Steuergesetze der Kantone (Stand 2025/2026), Artikel je Kanton im Bericht (#287–#291)"
+SOURCE = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292); Steuerfüsse und Wallis: ESTV, Steuerrechner, "
+          "Grunddaten")
 NOTE = ("Schätzung für die Planung mit den Standardabzügen des Kantons und des Bundes für Alleinstehende oder "
         "Verheiratete ohne Kinder, ohne individuelle Abzüge.")
 
@@ -204,9 +207,21 @@ def read_sources(directory):
     return tariffs, deductions_, set(files)
 
 
-def merge_sources(estv_rows, source_rows, covered):
-    """#287: The ESTV rows of the cantons not covered by a source file, then the rows of the source files."""
-    return [r for r in estv_rows if r["Kanton"] not in covered] + source_rows
+def merge_sources(estv_rows, source_rows, covered, estv_only=None):
+    """#287: The ESTV rows of the cantons not covered by a source file, then the rows of the source files. #292: with
+    `estv_only`, ESTV rows are kept only for these cantons (the others must come from source files)."""
+    keep = [r for r in estv_rows if r["Kanton"] not in covered]
+    if estv_only is not None:
+        keep = [r for r in keep if r["Kanton"] in estv_only]
+    return keep + source_rows
+
+
+def check_coverage(covered, estv_only):
+    """#292: Every authority (`CH` and the 26 cantons) except those in `estv_only` needs source files."""
+    missing = sorted(({"CH"} | set(NAMES)) - set(covered) - set(estv_only))
+    if missing:
+        raise ValueError(f"source files missing for {', '.join(missing)} (only {', '.join(sorted(estv_only))} may "
+                         "come from the ESTV tables)")
 
 
 def origin_report(covered):
@@ -632,8 +647,9 @@ def main(argv=None):
     import grundstueckgewinn  # noqa: E402 (next to this file, also with python3 -I)
 
     src_tariffs, src_deductions, covered = read_sources(a.quellen or os.path.join(SOURCES, str(year)))
-    data, report = build(merge_sources(read_csv(a.tarife), src_tariffs, covered),
-                         merge_sources(read_csv(a.abzuege), src_deductions, covered), year, munis,
+    check_coverage(covered, ESTV_ONLY)
+    data, report = build(merge_sources(read_csv(a.tarife), src_tariffs, covered, ESTV_ONLY),
+                         merge_sources(read_csv(a.abzuege), src_deductions, covered, ESTV_ONLY), year, munis,
                          read_rules(a.kapitalregeln), grundstueckgewinn.rules())
     report = origin_report(covered) + report
     with open(a.out, "w", encoding="utf-8") as f:

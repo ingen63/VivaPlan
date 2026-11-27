@@ -119,7 +119,7 @@ test.describe("Tax by place of residence (#63)", () => {
   test("AK9: multipliers of the municipality, tax year, source and the note on the estimate", async ({ page }) => {
     const errors = await open(page);
     await toLocation(page);
-    await expect(page.locator("#tax-source")).toContainText("Steuerdaten 2026, Quelle: ESTV");
+    await expect(page.locator("#tax-source")).toContainText("Steuerdaten 2026, Quelle: Steuergesetze");
     await expect(page.locator("#taxEstimateNote")).toContainText("Die Steuer ist eine Schätzung mit den Standardabzügen des Kantons.");
     await expect(page.locator("#tax-multipliers")).toHaveCount(0);
     await choose(page, "ZH", "Zürich");

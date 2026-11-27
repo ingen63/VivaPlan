@@ -159,6 +159,27 @@ def minimal_inputs():
     return tariffs, deductions
 
 
+def write_sources(directory, tariffs, deductions, skip=("VS",)):
+    """#292: The rows of the invented inputs as source files per authority, except the cantons in `skip` (Valais
+    still comes from the ESTV tables)."""
+    import csv
+    os.makedirs(directory, exist_ok=True)
+    for kind, rows in (("tarife", tariffs), ("abzuege", deductions)):
+        by = {}
+        for r in rows:
+            by.setdefault(r["Kanton"], []).append({**r, "Quelle": "q"})
+        for c in ["CH"] + sorted(build.NAMES):
+            if c in skip:
+                continue
+            items = by.get(c) or []
+            if not items:
+                continue
+            with open(os.path.join(directory, f"{c}_{kind}.csv"), "w", encoding="utf-8", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=list(items[0]))
+                w.writeheader()
+                w.writerows(items)
+
+
 class Build(unittest.TestCase):
     def test_income_curve_is_the_tariff_and_deductions_are_rules(self):
         """#63: The income curves are the tariff on the taxable income; the deductions are rules beside it."""
@@ -391,8 +412,10 @@ class Inputs(unittest.TestCase):
                                                           for i, c in enumerate(sorted(build.NAMES))])
             try:
                 out, rep = os.path.join(d, "out.json"), os.path.join(d, "report.txt")
+                q = os.path.join(d, "quellen")
+                write_sources(q, tariffs, deductions)  # #292: all but Valais from source files
                 build.main(["--steuerfuesse", "x.xlsx", "--tarife", t, "--abzuege", a, "--kapitalregeln", rules,
-                           "--out", out, "--bericht", rep])
+                           "--quellen", q, "--out", out, "--bericht", rep])
             finally:
                 build.read_multipliers = orig
             with open(out, encoding="utf-8") as f:
@@ -475,7 +498,7 @@ class Sources(unittest.TestCase):
             write_rows(t, tariffs)
             write_rows(a, deductions)
             q = os.path.join(d, "quellen")
-            os.mkdir(q)
+            write_sources(q, tariffs, deductions, skip=("VS", "ZH"))
             write_rows(os.path.join(q, "ZH_tarife.csv"),
                        [{**row("ZH", "KANTON", "EINKOMMENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 7), "Quelle": "q"},
                         {**row("ZH", "KANTON", "VERMOEGENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 0.2), "Quelle": "q"}])
@@ -735,6 +758,20 @@ class Sources(unittest.TestCase):
         for cid in self.WEST:
             self.assertRegex(capital[cid]["source"], rf"^(LICD|LI|LCdir|LIPP|LT) {cid} Art\. \d+", cid)
             self.assertRegex(gain[cid]["source"], rf"^(LICD|LI|LCdir|LCP|LT) {cid} Art\. \d+", cid)
+
+
+    def test_issue_292_ak1_estv_tables_only_for_valais(self):
+        """#292/AK1 (changed 27.11.2026): every authority but Valais comes from source files; the ESTV rows of all
+        other cantons are ignored, and a missing source file stops the build."""
+        self.assertEqual(build.ESTV_ONLY, {"VS"})
+        _, _, covered = build.read_sources(self.REPO)
+        self.assertEqual(({"CH"} | set(build.NAMES)) - covered, {"VS"})
+        build.check_coverage(covered, build.ESTV_ONLY)
+        with self.assertRaisesRegex(ValueError, "source files missing for ZH"):
+            build.check_coverage(covered - {"ZH"}, build.ESTV_ONLY)
+        estv = [{"Kanton": "VS", "x": 1}, {"Kanton": "ZH", "x": 2}, {"Kanton": "BE", "x": 3}]
+        merged = build.merge_sources(estv, [{"Kanton": "ZH", "x": 4}], {"ZH"}, build.ESTV_ONLY)
+        self.assertEqual([r["x"] for r in merged], [1, 4])
 
 
 if __name__ == "__main__":

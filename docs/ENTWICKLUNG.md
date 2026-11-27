@@ -886,7 +886,8 @@ Vermögenssteuer des Steuerjahres (Jahreswerte real, ohne Kapitalbezug und Grund
 erste volle Kalenderjahr (`first`) und das erste volle Kalenderjahr, dessen Januar nicht vor `Simulator::retire_at`
 liegt (`retired`); `retired` fehlt, wenn die Pensionierung nicht nach dem Start liegt oder das Jahr dasselbe ist. Die
 Steuerdatei `crates/engine/data/steuern-2026.json` erzeugt `tools/steuerdaten/build.py` aus den
-ESTV-Grunddaten (Aufbau und Ablauf für ein neues Steuerjahr: `tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
+Quelldateien nach den Gesetzen (`tools/steuerdaten/quellen/<Jahr>/`, #286–#292; Steuerfüsse und Wallis noch aus den
+ESTV-Grunddaten) (Aufbau und Ablauf für ein neues Steuerjahr: `tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
 ein (`BUILTIN`).
 
 - **Tarif und Abzüge getrennt:** Die Einkommenskurven `[steuerbares Einkommen, Satz]` sind der Tarif der einfachen
@@ -899,7 +900,8 @@ ein (`BUILTIN`).
 - **Zweitverdienerabzug** (`secondEarner`, nur Verheiratete, nur wenn beide Erwerbseinkommen haben): Regel wie oben,
   Bezug `lower` = das tiefere Erwerbseinkommen nach der Berufskostenpauschale (Bund, fast alle Kantone) oder `total` =
   Summe der Erwerbseinkommen (Bern); höchstens das tiefere Erwerbseinkommen nach der Berufskostenpauschale. Thurgau hat
-  keinen. Bezug und Obergrenze sind aus dem ESTV-Steuerrechner 2026 abgeleitet (ZH, BE, LU, AG, SG, AR, GL, NE, Bund).
+  keinen. Bezug und Obergrenze sind aus dem ESTV-Steuerrechner 2026 abgeleitet (ZH, BE, LU, AG, SG, AR, GL, NE, Bund) und
+  gegen die Gesetze geprüft (#287–#291).
 - **Steuerbares Einkommen** je Kanton und Bund = Jahreseinkommen (Erwerb netto + PK-Rente + AHV) − Abzüge, nie
   negativ. Variante `working`, sobald im Kalenderjahr eine Person Erwerbseinkommen hat, sonst `retired`; die
   Berufskostenpauschale gilt je Person (`Run::year_earned`).
@@ -1082,8 +1084,10 @@ ein (`BUILTIN`).
 - **Befehl `tax_locations`** (App und Entwicklungsserver): Steuerjahr, Quelle, Hinweis, Abzugsregeln von Bund und
   Kantonen und je Kanton die Gemeinden mit den Steuerfüssen für Einkommen und Vermögen. Die Oberfläche lädt ihn beim
   Start, damit Übersicht und Reiter «Parameter» den Gemeindenamen ohne geöffneten Abschnitt Steuern kennen.
-- Tests: `crates/engine/tests/tax_location.rs` (`issue_63_ak…`, Referenzfälle ESTV 2026),
-  `crates/engine/tests/tax_capital_location.rs` (`issue_64_…`, 48 Referenzfälle Kapitalbezug),
+- Tests: `crates/engine/tests/tax_location.rs` (`issue_63_ak…`, Referenzfälle ESTV 2026; `issue_287_ak6_…`
+  Zürcher Steuerrechner),
+  `crates/engine/tests/tax_capital_location.rs` (`issue_64_…`, 48 Referenzfälle Kapitalbezug; `issue_288_ak4_…`
+  Zuger Steuerrechner),
   `tools/steuerdaten/test_build.py`, e2e `ui-steuern.spec.js`.
 
 ## Import alter Konfigurationen

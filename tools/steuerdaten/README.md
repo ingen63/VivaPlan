@@ -1,8 +1,10 @@
 # Steuerdatei für den Modus «Wohnort» (#63)
 
-`build.py` erzeugt `crates/engine/data/steuern-<Jahr>.json` aus den Grunddaten des
-[Steuerrechners der ESTV](https://swisstaxcalculator.estv.admin.ch/#/taxdata/tax-scales). Die App bettet die Datei ein,
-es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weiteren Pakete.
+`build.py` erzeugt `crates/engine/data/steuern-<Jahr>.json`. Tarife, Abzüge und Regeln des Bundes und der Kantone
+kommen seit #286 aus den Gesetzen und Verordnungen (Quelldateien unter `quellen/<Jahr>/`, siehe unten). Aus den
+Grunddaten des [Steuerrechners der ESTV](https://swisstaxcalculator.estv.admin.ch/#/taxdata/tax-scales) kommen nur noch
+die Steuerfüsse (bis #285) und Tarife und Abzüge des Wallis (bis #296; `ESTV_ONLY` in `build.py`). Die App bettet die
+Datei ein, es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weiteren Pakete.
 
 ## Inhalt der Steuerdatei
 
@@ -50,14 +52,13 @@ mit den Steuerfüssen der Einkommenssteuer.
 
 ## Regeln für Kapitalbezüge (#64)
 
-Die ESTV-Grunddaten enthalten nur für 12 Kantone einen Tarif «Kapitalauszahlung aus Vorsorge» (Steuerart
-`VORSORGESTEUER` in `tarife_<Jahr>.csv`). Die Regeln aller 26 Kantone stehen deshalb von Hand erfasst in
-`kapitalregeln.json`, abgeleitet aus 364 Rechnungen des ESTV-Steuerrechners 2026 «Kapitalauszahlung aus Vorsorge»
-(alle Kantonshauptorte, Bezüge 50 000 bis 5 Millionen, alleinstehend und verheiratet, Alter 65, ohne Kinder, ohne
-Konfession): Kantons- und Gemeindesteuer geteilt durch den Steuerfuss ergibt die einfache Steuer. Gegen das Gesetz
-geprüft sind ZH (#287), LU, UR, SZ, OW, NW und ZG (#288) BE, SO, BS, BL und AG (#289) GL, SH, AR, AI, SG, GR und
-TG (#290) sowie FR, VD, NE, GE, JU und TI (#291); sie nennen den Artikel in `source`. Graubünden: Satz für einen Fünfzehntel des Bezugs (Art. 40a), mit
-dem Bündner Steuerrechner geprüft.
+Die Regeln aller 26 Kantone stehen von Hand erfasst in `kapitalregeln.json`. Sie wurden zuerst aus 364 Rechnungen des
+ESTV-Steuerrechners 2026 «Kapitalauszahlung aus Vorsorge» abgeleitet (#64; alle Kantonshauptorte, Bezüge 50 000 bis
+5 Millionen, alleinstehend und verheiratet, Alter 65, ohne Kinder, ohne Konfession: Kantons- und Gemeindesteuer
+geteilt durch den Steuerfuss ergibt die einfache Steuer) und danach Kanton für Kanton gegen das Gesetz geprüft
+(#287–#291); jede Regel nennt den Artikel in `source`. Graubünden (Art. 40a: Satz für einen Fünfzehntel des Bezugs)
+und Zug (§ 37 Abs. 2) sind mit dem kantonalen Steuerrechner geprüft. Bei Genf und Tessin enthalten die Regeln
+zusätzlich Faktoren aus den ESTV-Rechnungen; das steht in `source`.
 
 - `kind: table`: Tarif «Kapitalauszahlung aus Vorsorge» der ESTV (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
   als Typ `BUND`, Bern); `kind: income`: Anteil `share` der Steuer nach dem Einkommenstarif ohne Abzüge, Satz für
@@ -78,13 +79,12 @@ aus den Texten `capitalRule.<Kanton>` in `crates/app/ui/i18n/*.json`; der deutsc
 
 ## Regeln der Grundstückgewinnsteuer (#65)
 
-Die Regelsätze aller 26 Kantone stehen von Hand erfasst in `grundstueckgewinn.py` (Funktion `rules()`). Quelle:
-ESTV-Steuermäppchen «Grundstückgewinnsteuer», Steuerperiode 2025 (Stand 26.11.2025), Tabelle 3, Seite je Kanton;
-ZG, FR, VS, BS, BL, SG und VD zusätzlich gegen das kantonale Gesetz geprüft (Stand November 2026), ebenso ZH (#287)
-sowie LU, UR, SZ, OW, NW (#288) BE, SO, BS, BL, AG (#289) GL, SH, AR, AI, SG, GR, TG (#290) und VD, NE, GE, JU, TI (#291). Solothurn: § 57 kürzt den Gewinn, nicht die
-Steuer (`gainDuration`). Luzern: seit 2025 fester Steuerfuss von 4,2 Einheiten (§ 23 GGStG), in die Sätze
-eingerechnet (ohne `useMultiplier`). Je Kanton `text`
-(Regel für `propertyGainRule`), `source` (Seite oder Gesetz, nur im Bericht) und, wo vereinfacht, `approx`.
+Die Regelsätze aller 26 Kantone stehen von Hand erfasst in `grundstueckgewinn.py` (Funktion `rules()`). Sie wurden
+zuerst nach dem ESTV-Steuermäppchen «Grundstückgewinnsteuer» 2025 erfasst (#65) und danach Kanton für Kanton gegen das
+Gesetz geprüft (#287–#291). Je Kanton `text` (Regel für `propertyGainRule`), `source` (Gesetz mit Artikel, nur im
+Bericht) und, wo vereinfacht, `approx`. Funde dabei: Solothurn § 57 kürzt den Gewinn, nicht die Steuer
+(`gainDuration`); Luzern hat seit 2025 einen festen Steuerfuss von 4,2 Einheiten (§ 23 GGStG), in die Sätze
+eingerechnet (ohne `useMultiplier`).
 
 - Modelle: `zurich` (Stufen `brackets`, optional `uniformAbove`, `longBrackets`), `aargau` (`durationRates`), `curve`
   (`rateCurve`) und `return` (`returnBounds`, `returnMaxDuration`);
@@ -133,36 +133,34 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
 
 ## Ablauf für ein neues Steuerjahr
 
-1. Im ESTV-Steuerrechner unter «Grunddaten abrufen» das Steuerjahr wählen und herunterladen:
-   - **Steuerfüsse**, Gesamte Schweiz, Export als Excel, ablegen als `local/estv_income_rates.xlsx`;
-   - **Tarife** Einkommen und Vermögen für alle 26 Kantone und den Bund;
-   - **Abzüge** Einkommen und Vermögen, Gesamte Schweiz.
-   Die Dateien gehören nach `local/estv/` (nicht im Repository).
-2. Tarife und Abzüge als CSV (UTF-8) ablegen, Spalten:
-   - `local/estv/tarife_<Jahr>.csv`: `Kanton,Hoheit,Steuerart,Tariftyp,Splitting,Gruppe,Zeile,Betrag,Prozent,Steuer,Formel`
-     (Kanton `CH` mit Hoheit `BUND` für die Bundessteuer, Hoheit `GEMEINDE` für eigene Gemeindetarife; Steuerart
-     `EINKOMMENSSTEUER` oder `VERMOEGENSSTEUER`; Tariftyp `ZUERICH`, `BUND`, `FLATTAX`, `FREIBURG` oder `FORMEL`, wie in
-     der Tarifansicht der ESTV; Gruppe wie `ALLE`, `VERHEIRATET` oder `LEDIG_OHNE_KINDER`);
-   - `local/estv/abzuege_<Jahr>.csv`: `Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum`.
-   Für 2026 wurden die Tarife und Abzüge der Ergebnistabelle der ESTV-Seite entnommen, weil der Excel-Export nur je
-   Kanton und Steuerart möglich ist. Die undokumentierte Schnittstelle des Rechners nicht verwenden.
-3. Erzeugen:
+1. **Erlasse beschaffen:** Für den Bund und jeden Kanton die Fassung des Steuergesetzes, der Verordnungen und der
+   Veröffentlichungen zum Teuerungsausgleich für das neue Jahr herunterladen (Fedlex, kantonale Gesetzessammlung,
+   Steuerverwaltung). Ablage unter `local/steuerquellen/<Jahr>/`, jede Datei mit Datum und Adresse in `quellen.txt`
+   (nicht im Repository). Zugangssperren nicht umgehen.
+2. **Quelldateien nachführen:** `quellen/<Vorjahr>/` nach `quellen/<Jahr>/` kopieren und je Zeile Betrag, Satz und
+   `Quelle` (Erlass, Artikel, Stand) nach den neuen Erlassen anpassen. Viele Kantone passen Tarifstufen und Abzüge
+   jährlich an die Teuerung an; massgebend ist dann die Veröffentlichung der Steuerverwaltung oder die
+   Teuerungsverordnung (Beispiele: SO Steuerverordnung Nr. 20, GE RCEPF, JU Arrêté, GR Indexstufe nach Art. 4,
+   AR Anhang 1, ZG und VD Tarifblätter). `kapitalregeln.json` und `grundstueckgewinn.py` ebenso prüfen.
+3. **Steuerfüsse** (bis #285): Im ESTV-Steuerrechner unter «Grunddaten abrufen» die Steuerfüsse (Gesamte Schweiz,
+   Excel) als `local/estv_income_rates.xlsx` ablegen. Für das Wallis (bis #296) auch Tarife und Abzüge als CSV nach
+   `local/estv/` (Spalten wie die Quelldateien ohne `Quelle`); die Zeilen der übrigen Kantone werden ignoriert.
+   Die undokumentierte Schnittstelle des Rechners nicht verwenden.
+4. **Erzeugen:**
    ```bash
    python3 -I tools/steuerdaten/build.py --steuerfuesse local/estv_income_rates.xlsx \
-     --tarife local/estv/tarife_2026.csv --abzuege local/estv/abzuege_2026.csv \
-     --out crates/engine/data/steuern-2026.json --bericht local/estv/bericht.txt
+     --tarife local/estv/tarife_<Jahr>.csv --abzuege local/estv/abzuege_<Jahr>.csv \
+     --out crates/engine/data/steuern-<Jahr>.json --bericht local/estv/bericht.txt
    ```
-   Die Quelldateien liest das Werkzeug aus `quellen/<Jahr>/` (anderer Ort: `--quellen`); sie gelten für ein neues
-   Steuerjahr erst nach Prüfung der Erlasse (Teuerungsausgleich) und Ablage unter dem neuen Jahr.
-   Die Regeln für Kapitalbezüge liest das Werkzeug aus `kapitalregeln.json` (anderer Ort: `--kapitalregeln`).
-   Die Regeln der Grundstückgewinnsteuer kommen aus `grundstueckgewinn.py`.
-   Der Bericht nennt je Kanton die gewählten Tarife, Abzüge, die Regel für Kapitalbezüge und die der
-   Grundstückgewinnsteuer mit Quelle.
-4. Den Dateinamen in `crates/engine/src/taxdata.rs` (`BUILTIN`) anpassen.
-5. Referenzfälle prüfen: Im ESTV-Steuerrechner (Einkommens- und Vermögenssteuer, ohne Kinder, ohne Konfession) die Fälle
-   aus `crates/engine/tests/tax_location.rs` für das neue Jahr rechnen und die Werte im Test ersetzen. Der Test verlangt
-   höchstens ±5 % Abweichung.
-6. Tests: `python3 -I -m unittest discover -s tools/steuerdaten` und `make test`.
+   Das Werkzeug bricht ab, wenn ausser dem Wallis ein Kanton oder der Bund keine Quelldatei hat. Der Bericht nennt je
+   Kanton die Herkunft, die gewählten Tarife und Abzüge und die Regeln mit Gesetzesartikel.
+5. **Abgleichen:** `vergleich.py` gegen die Datei des Vorjahres; jede Abweichung über 1 % mit der Teuerung oder einer
+   Gesetzesänderung erklären.
+6. Den Dateinamen in `crates/engine/src/taxdata.rs` (`BUILTIN`) anpassen.
+7. **Referenzfälle:** Die Fälle aus den kantonalen Steuerrechnern (ZH, ZG, AG, GR) und aus den amtlichen Tarifblättern
+   (Tests `issue_287_…` bis `issue_291_…`) für das neue Jahr neu rechnen. Die älteren Fälle aus dem ESTV-Steuerrechner
+   in `tax_location.rs` und `tax_capital_location.rs` bleiben als zweite Prüfung (#292); Toleranz ±5 %.
+8. Tests: `python3 -I -m unittest discover -s tools/steuerdaten` und `make test`.
 
 ## Rechtliches
 

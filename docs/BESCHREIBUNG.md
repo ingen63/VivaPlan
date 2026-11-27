@@ -115,7 +115,8 @@ Der Editor führt durch zwölf Abschnitte:
 - **Entnahmestrategie:** sechs Strategien (siehe unten).
 - **Optimierung:** sucht die beste Strategie für das eigene Szenario (siehe unten).
 - **Steuern:** Modus «Wohnort» (#63): Einkommens- und Vermögenssteuer aus Kanton, Gemeinde (alle Gemeinden des
-  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuerdaten der ESTV, mit den
+  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuergesetzen von Bund und Kantonen (#286; Steuerfüsse und Wallis noch aus
+  den ESTV-Grunddaten, #285, #296), mit den
   Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
   «mit 2. und 3. Säule», Berufskostenpauschale, bei Ehepaaren mit zwei Erwerbseinkommen der Zweitverdienerabzug;
   statt dessen je Zeitraum ein eigener Wert, dazu die Säule 3a, #131) und
@@ -134,7 +135,7 @@ Der Editor führt durch zwölf Abschnitte:
   öffnen unverändert, und der Knopf «Auf Wohnort umstellen» zeigt nach der Wahl der Gemeinde die geschätzte Steuer
   des ersten Jahres vorher und nachher. Grundstückgewinnsteuer: im Modus
   «Wohnort» (#65) der Regelsatz des Kantons, in dem die Immobilie liegt (Feld Kanton je Immobilie, ohne Angabe der
-  Wohnkanton; alle 26 Kantone nach dem ESTV-Steuermäppchen 2025 und, wo nötig, dem kantonalen Gesetz; Besitzdauer in
+  Wohnkanton; alle 26 Kantone nach dem kantonalen Gesetz mit Artikel (#287–#291); Besitzdauer in
   Monaten; Steuerfuss der Wohngemeinde oder Median des Kantons; Regeltext bei der Immobilie, angenäherte Regeln von
   Basel-Stadt, Basel-Landschaft, St. Gallen, Waadt und Wallis mit ⚠); mit dem Häkchen «Eigene Regeln statt der Regeln
   des Kantons» und im Modus «Eigene Tabellen» die eigenen Regeln. Wohnort zeitabhängig (#151): weitere Wohnorte ab
@@ -264,7 +265,7 @@ Steuer» (Kennzahl, Diagrammlegenden, Jahreswerte, Vergleich, Übersicht der Ann
 **100 Franken gerundet**; gerechnet wird genau. Die Kommandozeile und ihr CSV-Export geben die genauen Werte aus und
 nennen sie ebenfalls geschätzt (Spalte `taxes_estimated`). Der Abschnitt Steuern zeigt einen festen Hinweis, unter den
 Jahreswerten steht «Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet. Keine Steuerberatung.» (im
-Modus «Wohnort»: «… mit den Steuerdaten 2026 der ESTV und den Standardabzügen des Kantons …»), und
+Modus «Wohnort»: «… mit den Steuerdaten 2026 aus den Steuergesetzen und den Standardabzügen des Kantons …»), und
 bei Kapitalbezugs- und Grundstückgewinnsteuer der Rat, vor dem Entscheid mit dem Steuerrechner des Kantons oder einer
 Fachperson zu prüfen. Eine Bandbreite (± %) zeigt die App bewusst nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl
 würde die Scheingenauigkeit verstärken.
@@ -272,13 +273,15 @@ würde die Scheingenauigkeit verstärken.
 - **Referenzfälle:** Von Hand nachgerechnete Fälle prüfen die Regeln (Satz linear interpoliert mal Steuerfuss,
   Kapitalbezüge eines Jahres zusammen, Stufen und Besitzdauer der Grundstückgewinnsteuer); die Vorlage Zürich der
   Grundstückgewinnsteuer stimmt mit der amtlichen Tabelle überein. Modus «Wohnort»: 25 erfundene Fälle in fünf Kantonen
-  (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %);
+  (Rentner, ohne Kinder und Konfession) weichen weniger als 1 % vom ESTV-Steuerrechner 2026 ab (verlangt ±5 %; bleiben als zweite Prüfung, #292);
   25 Fälle mit Erwerbstätigen (alleinstehend, verheiratet mit einem oder zwei Erwerbseinkommen) ebenfalls unter 1 %.
   Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
   (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis nur angenähert; Zug nach dem Gesetz,
-  10 Fälle gegen den Zuger Steuerrechner auf 0,5 % genau (#288).
+  10 Fälle gegen den Zuger Steuerrechner auf 0,5 % genau (#288). Zusätzlich Fälle aus den kantonalen
+  Steuerrechnern von Zürich, Aargau und Graubünden und aus den amtlichen Tarifblättern von LU, SO, BL, VD, JU und GE
+  (#287–#291).
   Grundstückgewinnsteuer im Modus «Wohnort»: je Kanton erfundene Fälle gegen von Hand nachgerechnete Werte nach
-  Steuermäppchen oder Gesetz.
+  Gesetz.
 - **Näherungen:** Durchschnittssätze je Betrag, dazwischen linear interpoliert; ein Steuerfuss für Kanton und Gemeinde;
   Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
 - **Abzüge vom Einkommen (#131):** zeitabhängige Zeilen, je «Vorschlag des Kantons» (Modus «Wohnort», Standard:
@@ -344,8 +347,8 @@ würde die Scheingenauigkeit verstärken.
   Immobilie und die Anpassung der Anlagekosten an die Teuerung, künftige Gesetzesänderungen.
 
 Im Modus «Wohnort» nennt der Abschnitt Steuern die Steuerfüsse der Gemeinde, das Steuerjahr und die Quelle der Daten
-und dass die Steuer eine Schätzung mit den Standardabzügen des Kantons ist; Berufskosten, für die die ESTV-Daten nur
-einen Höchstbetrag nennen (BL, BS, TI), sind mit ⚠ markiert. Unter der Gemeinde steht die Regel des Kantons für
+und dass die Steuer eine Schätzung mit den Standardabzügen des Kantons ist; Berufskosten, für die nur ein fester Betrag
+erfasst ist (BL, BS, TI), sind mit ⚠ markiert. Unter der Gemeinde steht die Regel des Kantons für
 Kapitalbezüge, angenäherte Regeln (Wallis) mit ⚠; die Tabellen für den Kapitalbezug sind ausgeblendet. Die Warnung bei alten Daten folgt mit #143.
 
 ## Datenbibliothek
