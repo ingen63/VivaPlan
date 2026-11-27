@@ -2533,6 +2533,17 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #296/AK3 | Abzüge, Vermögen, Kapitalbezugs- und Grundstückgewinnregel mit Artikel; Näherung beim Kapitalbezug geklärt. | ☑ | **gilt** (LF Art. 33b, Divisor 19,77 statt 40; verbleibende Näherung Alter 65 und Höchstsatz Gemeinde aus Sitten in `capitalApprox`) | `test_build.py` `issue_296_ak3_…` | 27.11.2026 ok (Test, Durchsicht) |
 | #296/AK4 | Referenzfälle für mindestens zwei Gemeinden mit verschiedenem Index stimmen mit dem Walliser Steuerrechner (±5 %). | ☑ | **gilt** | `tax_location.rs` `issue_296_ak4_…`, `tax_capital_location.rs` `issue_296_ak4_…` | 27.11.2026 ok (Tests) |
 
+### #297 Ermässigung der Einkommenssteuer für Verheiratete und Alleinerziehende im Wallis
+
+[Issue #297](https://github.com/ingen63/VivaPlan/issues/297) · geschlossen · Umsetzung: 88586e0 · folgt aus #296
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #297/AK1 | Die Steuerdatei beschreibt die Ermässigung als Regel (Satz, Mindest- und Höchstbetrag) mit Gesetzesartikel. | ☑ | **gilt** | `test_build.py` `issue_297_ak1_…` | 27.11.2026 ok (Test) |
+| #297/AK2 | Die Engine wendet sie für Verheiratete auf die Steuer von Kanton und Gemeinde an. | ☑ | **gilt** (Alleinerziehende kennt das Modell nicht) | `tax_location.rs` `issue_297_ak2_…` | 27.11.2026 ok (Test) |
+| #297/AK3 | Fälle für Verheiratete aus dem Walliser Steuerrechner stimmen auf ±5 %. | ☑ | **gilt** (vier Fälle in Sitten) | `tax_location.rs` `issue_297_ak3_…` | 27.11.2026 ok (Test) |
+| #297/AK4 | Hilfe und Doku sind nachgeführt. | ☑ | **gilt** | – | 27.11.2026 ok (Durchsicht) |
+
 ### #302 Neue Planung lässt sich über die KI nicht speichern, wenn die KI einen Pfad rät
 
 [Issue #302](https://github.com/ingen63/VivaPlan/issues/302) · geschlossen · Umsetzung: 0e6ca40 · Fehler aus der Nutzung (Claude Desktop, beta.6)
