@@ -959,3 +959,16 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #270/AK10 | «Über VivaPlan» zeigt das Kürzel und das Datum der Aktivierung. | ☑ | **gilt** | App `issue_270_ak1_ak10_…`, e2e AK1, AK10 (#270) | 25.11.2026 ok (Tests) |
 | #270/AK11 | Tests verwenden einen eigenen Testschlüssel. Der echte private Schlüssel kommt weder im Code noch in Tests oder im Repository vor. | ☑ | **gilt** (`TEST_SEED`; Debug-Build mit `VIVAPLAN_BETA_TEST_KEY`; `keygen` schreibt nicht ins Repository; `.gitignore`) | `beta::tests::issue_270_ak11_…` (2), Werkzeug `issue_270_ak1_…` | 25.11.2026 ok (Tests, Durchsicht) |
 | #270/AK12 | Hilfe, README (Installation) und `docs/BESCHREIBUNG.md` beschreiben Aktivierung und Einlösefrist. Neue Texte stehen als Schlüssel in `de.json`. | ☑ | **gilt** | Hilfe `@beta` und `@ref-mcp` in 4 Sprachen, 4 README, `make ui-texts`, `make i18n-check`, App `help`-Tests | 25.11.2026 ok (Durchsicht, Prüfläufe) |
+
+### #298 Hinweis auf Inkognito-Chats und Datenschutz in Hilfe und «Mit KI verbinden»
+
+[Issue #298](https://github.com/ingen63/VivaPlan/issues/298) · offen (`implemented`) · Umsetzung: a3a44dd · Entscheid vor der Umsetzung im Issue (AK1 von Hand später)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #298/AK1 | Das Verhalten ist geprüft und im Issue festgehalten, getrennt für `.mcpb`-Paket und Konfigurationseintrag; AK2 und AK3 beschreiben nur das geprüfte Verhalten. | ☐ | offen (Texte gehen von «nicht verfügbar» aus) | [QA.md](QA.md) «Claude Desktop, Inkognito-Chat (#298/AK1)» | offen: nur von Hand in Claude Desktop |
+| #298/AK2 | Absatz «Inkognito-Chats» in `#ref-mcp`: nicht verfügbar, VivaPlan kann nichts tun, Alternativen (normaler Chat und löschen, Gedächtnis aus, LM Studio); Stichwort «Inkognito». | ☑ | **gilt** | [ui-ki.spec.js](../e2e/ui-ki.spec.js) «Incognito chats and privacy (#298)» AK2, AK5 | 27.11.2026 ok (Test, Durchsicht) |
+| #298/AK3 | Dialog «Mit KI verbinden» zeigt beim Datenschutzhinweis einen Satz zu Inkognito-Chats mit Verweis auf den Absatz. | ☑ | **gilt** (Verweis öffnet das Thema `ref-mcp`, nicht direkt den Absatz) | ui-ki.spec.js AK6, AK3 (#298) | 27.11.2026 ok (Test) |
+| #298/AK4 | Hinweis im Dialog: Namen werden ersetzt, Beträge und Daten gehen an den Anbieter. | ☑ | **gilt** | ui-ki.spec.js AK4 (#298) | 27.11.2026 ok (Test) |
+| #298/AK5 | Neue Texte in de, en, fr, it; `make ui-texts` und Prüfung der Übersetzungen ohne Fehler. | ☑ | **gilt** | ui-ki.spec.js AK2, AK5 (#298), `make ui-texts`, `tools/check_i18n.py` | 27.11.2026 ok (Prüfläufe) |
+| #298/AK6 | Ein e2e-Test prüft Inkognito-Satz und Verweis im Dialog. | ☑ | **gilt** | ui-ki.spec.js AK6, AK3 (#298) | 27.11.2026 ok (Lauf, 3 bestanden) |
