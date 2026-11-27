@@ -239,7 +239,8 @@ fn issue_216_ak2_lists_ranges_groups_and_points_in_time() {
                 ] }
             ],
             "metrics": [ ruin(), cons15() ],
-            "budget": { "paths": 40 }
+            "budget": { "paths": 40 },
+            "confirm": true
         }),
     );
     // 2 × 3 × (2 + 1)
@@ -303,7 +304,8 @@ fn issue_216_ak3_coupled_value_follows_with_offset() {
                 { "path": "wealth.stockShare@retire", "follows": "wealth.stockShare@start", "offset": -0.2 }
             ],
             "metrics": [ cons15() ],
-            "budget": { "paths": 40 }
+            "budget": { "paths": 40 },
+            "confirm": true
         }),
     );
     assert_eq!(r.listed.len(), 2);
@@ -329,7 +331,7 @@ fn spending_experiment(objective: Value, constraints: Value) -> Value {
         "metrics": [ ruin(), cons15() ],
         "constraints": constraints,
         "objective": objective,
-        "budget": { "paths": 300, "confirmPaths": 300, "top": 4, "margin": 0 },
+        "budget": { "paths": 150, "confirmPaths": 150, "top": 4, "margin": 0 },
         "confirm": true
     })
 }
@@ -342,9 +344,10 @@ fn spending_order(r: &experiment::ExperimentResult) -> Vec<i64> {
 }
 
 /// #216/AK4: Constraints `{metric, op, value}`; objective `maximize`, `minimize` or a weighted list.
+// slow: four experiments with four variants on 150 search and 150 confirmation paths each
 #[test]
 fn issue_216_ak4_constraints_and_objectives() {
-    let p = plan(300);
+    let p = plan(150);
     // Without a constraint more spending means more consumption.
     let r = done(&p, &spending_experiment(json!({ "maximize": "cons15" }), json!([])));
     assert_eq!(spending_order(&r), [11000, 8000, 6000, 4000]);
@@ -381,6 +384,7 @@ fn issue_216_ak4_constraints_and_objectives() {
 
 /// #216/AK5: Search on few paths, confirmation of the best `top` on independent paths (other seed); the result shows
 /// both values.
+// slow: search on 200 and confirmation on 400 paths, the path counts are asserted
 #[test]
 fn issue_216_ak5_search_and_independent_confirmation() {
     let p = plan(100);
@@ -481,6 +485,7 @@ fn issue_216_ak6_ranking_edge_hint_and_traceability() {
 
 /// #216/AK7: The duration is estimated before the start; from 60 s the computation needs the confirmation. Here a long
 /// plan with 19 million runs (at least about a minute on a fast computer).
+// slow: measures the run time on a 50-year plan (4000 runs) to estimate 19 million runs
 #[test]
 fn issue_216_ak7_long_experiment_needs_confirmation() {
     let mut p = plan(100);
@@ -501,6 +506,7 @@ fn issue_216_ak7_long_experiment_needs_confirmation() {
 }
 
 /// #216/AK7: A short experiment computes at once, with the estimate; the progress counts all runs.
+// slow: measures the run time (4000 runs) before the computation, the estimate is asserted
 #[test]
 fn issue_216_ak7_estimate_and_progress_of_a_short_experiment() {
     let p = plan(100);
@@ -574,7 +580,8 @@ fn issue_216_ak8_variations_as_experiment() {
                   "aggregate": { "kind": "probability", "condition": never } },
                 quantile("p5", 0.05), quantile("p50", 0.5), quantile("p95", 0.95)
             ],
-            "budget": { "paths": 150 }
+            "budget": { "paths": 150 },
+            "confirm": true
         }),
     );
     assert_eq!(r.listed.len(), sc.results.len());
@@ -593,6 +600,7 @@ fn optimization_metrics(m: &optimize::Metrics) -> Value {
 
 /// #216/AK8: The comparison of strategies (`optimize --compare`) as a group of strategies with the objective `score`
 /// on the plan's own paths: same numbers.
+// slow: compares strategies on 200 search and 200 confirmation paths against the comparison
 #[test]
 fn issue_216_ak8_strategy_comparison_as_experiment() {
     let mut p = plan(200);
@@ -638,6 +646,7 @@ fn issue_216_ak8_strategy_comparison_as_experiment() {
 
 /// #216/AK8: The optimization of a strategy as a pattern search with the objective `score`: same parameter and the
 /// same numbers on search and check paths.
+// slow: pattern search twice (optimization and experiment, 200 search and 400 check paths)
 #[test]
 fn issue_216_ak8_optimization_as_experiment() {
     let mut p = plan(100);
@@ -699,6 +708,7 @@ pub fn example_experiment(paths: usize, confirm_paths: usize) -> Value {
 }
 
 /// #216/AK10: 30 variants, a ranking, the best variant confirmed.
+// slow: example experiment with 30 variants on search and confirmation paths
 #[test]
 fn issue_216_ak10_example_with_30_variants() {
     let p = plan(100);

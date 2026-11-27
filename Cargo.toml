@@ -20,6 +20,9 @@ split-debuginfo = "off"
 
 [profile.test]
 split-debuginfo = "off"
+# #226: Tests with light optimization (like the profile mutants): the full parallel run takes about a third of the
+# time and most tests stay under their limit. Overflow checks and debug_assert stay on (inherited from dev).
+opt-level = 1
 
 [profile.release]
 lto = "thin"

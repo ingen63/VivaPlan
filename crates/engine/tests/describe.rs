@@ -16,10 +16,16 @@ fn catalog(section: Option<Section>, plan: Option<&Value>) -> Catalog {
     engine::api::describe(section, plan, &library(), Some(&library()))
 }
 
-/// The whole catalog, measured once for all tests (the measurement takes a while in a debug build).
+/// The whole catalog, measured once for all tests. #226: measured on a short given plan (three years); the
+/// measurement on the example plan has its own test (`issue_219_ak1_measures_microseconds_per_run`).
 fn whole() -> &'static Catalog {
     static WHOLE: std::sync::OnceLock<Catalog> = std::sync::OnceLock::new();
-    WHOLE.get_or_init(|| catalog(None, None))
+    WHOLE.get_or_init(|| {
+        let short = crate::plan_builder::PlanBuilder::new("Describe")
+            .dates("2030-01", "2031-01", "2032-12")
+            .build();
+        catalog(None, Some(&short))
+    })
 }
 
 /// Paths of the field list of the catalog.
@@ -148,6 +154,7 @@ fn issue_219_ak1_catalog_has_all_parts() {
 
 /// #219/AK1: The microseconds per run are measured at the call, on the example plan (with Monte Carlo as in the
 /// examples) or on the given plan; the test checks the form and plausibility, not the value.
+// slow: measures the run time on the example plan (4000 runs) and on two given plans
 #[test]
 fn issue_219_ak1_measures_microseconds_per_run() {
     let c = catalog(Some(Section::Performance), None);
@@ -337,18 +344,21 @@ fn example_runs(name: &str) {
 }
 
 /// #219/AK3: Example «spending» (objective, constraint, range).
+// slow: runs the shipped example experiment on the example plan with its own budget, time measurement included
 #[test]
 fn issue_219_ak3_example_spending_runs() {
     example_runs("spending");
 }
 
 /// #219/AK3: Example «lumpSum» (no objective: all variants listed).
+// slow: runs the shipped example experiment on the example plan with its own budget, time measurement included
 #[test]
 fn issue_219_ak3_example_lump_sum_runs() {
     example_runs("lumpSum");
 }
 
 /// #219/AK3: Example «strategy» (points in time, coupled value, group of strategies).
+// slow: runs the shipped example experiment on the example plan with its own budget, time measurement included
 #[test]
 fn issue_219_ak3_example_strategy_runs() {
     example_runs("strategy");

@@ -2,7 +2,7 @@
 """#226: lists every Rust test over its run time limit that has no reason comment.
 
 Reads the run times from the nextest JUnit file (profile ci, `target/nextest/ci/junit.xml`) and assigns every test to
-a kind with its own limit (debug build):
+a kind with its own limit (test profile: debug build with opt-level 1):
 
 - unit test (library or program target, `src/`): 0.1 s
 - integration test (target under `tests/`): 1 s

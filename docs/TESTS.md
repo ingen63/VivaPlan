@@ -208,7 +208,9 @@ Abdeckung und Mutanten) ist unverändert. Tests des Hooks: `python3 -m unittest 
 (kleines Git-Repository, `cargo` ersetzt).
 
 **Laufzeitgrenzen (#226).** Langsame Tests verlängern jeden Push-Lauf und vervielfachen sich in den Mutationsläufen.
-Jeder Rust-Test bleibt deshalb unter der Grenze seiner Art (Debug-Build):
+Jeder Rust-Test bleibt deshalb unter der Grenze seiner Art (Testprofil: Debug-Build mit `opt-level = 1`,
+Überlaufprüfung und `debug_assert` an; seit #226 in `Cargo.toml`, der volle Lauf braucht damit rund ein Drittel der
+Zeit):
 
 | Art | Grenze | Zuordnung |
 |---|---:|---|

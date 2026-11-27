@@ -84,7 +84,7 @@ fn rerun_rejects_unknown_paths_and_bad_selection() {
 #[test]
 fn issue_132_ak3_same_seed_same_results_and_detail_path() {
     let mut v = plan();
-    v["returns"]["parametric"] = json!({ "paths": 200, "mu": 0.06, "sigma": 0.15, "df": 6, "jumpLambda": 2.0,
+    v["returns"]["parametric"] = json!({ "paths": 100, "mu": 0.06, "sigma": 0.15, "df": 6, "jumpLambda": 2.0,
         "jumpMu": -0.2, "jumpSigma": 0.1, "seed": 11 });
     let ends = |run: &api::RunOut| -> Vec<(u32, usize, f64)> {
         (0..run.scenarios.as_ref().unwrap().results.len())
