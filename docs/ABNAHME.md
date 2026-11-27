@@ -815,22 +815,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #132/AK7 | Ändern sich die Zufallspfade, zeigt die App beim Öffnen einer älteren Planung mit «Monte Carlo parametrisch» einen Hinweis, dass sich das … | ☑ | **gilt** | [parametric_fit.rs](../crates/engine/tests/parametric_fit.rs) «issue_132_ak7_…», [ui-abnahme.spec.js](../e2e/ui-abnahme.spec.js) «AK7: …» | 18.11.2026 ok |
 | #132/AK8 | Keine Netzwerkzugriffe und keine Abhängigkeit von Grafiktreibern; `docs/ENTWICKLUNG.md` (Abschnitt Monte Carlo) beschreibt das Verfahren. | ☑ | **gilt** | kein Test (Durchsicht `Cargo.toml`, `docs/ENTWICKLUNG.md`) | 18.11.2026 ok |
 
-### #143 Steuer als Schätzung kennzeichnen
-
-[Issue #143](https://github.com/ingen63/VivaPlan/issues/143) · offen (Teilumsetzung, Rest mit #63 in M3) · Umsetzung: 8ed364e
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #143/AK1 | Überschriften, Diagrammlegenden, Übersicht der Annahmen und Export sprechen von «geschätzter Steuer»; die Jahreswerte … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK1» (#143); [cli/tests/cli.rs](../crates/cli/tests/cli.rs) `run_single_with_outputs` | 22.11.2026 ok (Kennzahl, Legende, Kopfzeilen «Steuer geschätzt», Übersicht, CSV `taxes_estimated`) |
-| #143/AK2 | Die Oberfläche zeigt Steuerbeträge auf 100 Franken gerundet. Der Rechenkern rechnet weiter genau; Golden-Dateien … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK2» (#143); [unit/util.test.js](../e2e/unit/util.test.js) `#143/AK2` | 22.11.2026 ok (Golden-Dateien unverändert, 865 Rust-Tests grün) |
-| #143/AK3 | Der Abschnitt Steuern zeigt einen fest sichtbaren Hinweis: Steuerjahr und Quelle der Daten, Herkunft der Abzüge, … | ☐ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK3» (#143) | 22.11.2026 teilweise: Hinweis im Modus «Eigene Tabellen» ok; Steuerjahr, Herkunft der Abzüge und Näherungen des Kantons warten auf #63 |
-| #143/AK4 | Unter der Steuerzerlegung und den Jahreswerten steht eine Zeile mit Steuerjahr der Daten, Herkunft der Abzüge und … | ☐ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK4» (#143) | 22.11.2026 teilweise: Zeile unter den Jahreswerten mit «Keine Steuerberatung» ok; Steuerjahr, Herkunft der Abzüge und Steuerzerlegung fehlen (#63) |
-| #143/AK5 | Ist das laufende Kalenderjahr grösser als das Steuerjahr der Daten + 1, meldet die Prüfung eine Warnung. | ☐ | **gilt** | kein Test | nicht geprüft: zurückgestellt bis #63 (M3) |
-| #143/AK6 | Bei Kapitalbezugs- und Grundstückgewinnsteuer steht zusätzlich: «Vor dem Entscheid mit dem Steuerrechner des Kantons … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK6» (#143, 2 Tests) | 22.11.2026 ok |
-| #143/AK7 | Der Haftungsausschluss nennt ausdrücklich: keine Steuer- oder Anlageberatung. | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK7» (#143); [ui-einstieg.spec.js](../e2e/ui-einstieg.spec.js) #61 | 22.11.2026 ok (Version 2, wird erneut bestätigt) |
-| #143/AK8 | Hilfe und `BESCHREIBUNG.md` haben einen Abschnitt «Wie genau ist die Steuer?» mit den Referenzfällen, den Näherungen … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK8» (#143); BESCHREIBUNG.md Durchsicht | 22.11.2026 ok (Hilfe in vier Sprachen) |
-| #143/AK9 | Eine Bandbreite (±x %) wird nicht angezeigt. | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK9» (#143) | 22.11.2026 ok |
-
 ### #188 Release Notes in vier Sprachen
 
 [Issue #188](https://github.com/ingen63/VivaPlan/issues/188) · offen (`implemented`) · Umsetzung: c17f7ff, 5ebe461 (Titel)

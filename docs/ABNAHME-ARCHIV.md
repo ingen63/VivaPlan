@@ -896,6 +896,22 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #142/AK4 | Beispiel: `run_simulation` mit `jobId` und anschliessend `progress_get` mit derselben Kennung liefern in beiden Verteilern denselben … | ☑ | **gilt** | [main.rs](../crates/app/src/main.rs) «issue_142_ak2_…» | 18.11.2026 ok |
 | #142/AK5 | `docs/TESTS.md` (Schicht 6) nennt den Test. | ☑ | **gilt** | kein Test (Durchsicht) | 18.11.2026 ok |
 
+### #143 Steuer als Schätzung kennzeichnen
+
+[Issue #143](https://github.com/ingen63/VivaPlan/issues/143) · geschlossen 27.11.2026 · Umsetzung: 8ed364e, b535302
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #143/AK1 | Überschriften, Diagrammlegenden, Übersicht der Annahmen und Export sprechen von «geschätzter Steuer»; die Jahreswerte … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK1» (#143); [cli/tests/cli.rs](../crates/cli/tests/cli.rs) `run_single_with_outputs` | 22.11.2026 ok (Kennzahl, Legende, Kopfzeilen «Steuer geschätzt», Übersicht, CSV `taxes_estimated`) |
+| #143/AK2 | Die Oberfläche zeigt Steuerbeträge auf 100 Franken gerundet. Der Rechenkern rechnet weiter genau; Golden-Dateien … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK2» (#143); [unit/util.test.js](../e2e/unit/util.test.js) `#143/AK2` | 22.11.2026 ok (Golden-Dateien unverändert, 865 Rust-Tests grün) |
+| #143/AK3 | Der Abschnitt Steuern zeigt einen fest sichtbaren Hinweis: Steuerjahr und Quelle der Daten, Herkunft der Abzüge, … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK3» (#143, 2 Tests) | 27.11.2026 ok (eigene Tabellen und «Wohnort»: Steuerjahr und Quelle der Datei, Herkunft der Abzüge, ⚠ Berufskosten, Kapitalbezug, Grundstückgewinn) |
+| #143/AK4 | Unter der Steuerzerlegung und den Jahreswerten steht eine Zeile mit Steuerjahr der Daten, Herkunft der Abzüge und … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK4» (#143, 3 Tests) | 27.11.2026 ok (Jahreswerte mit Steuerzerlegung, «Wohnort» mit Steuerjahr, Quelle, Abzügen; Vergleich Jahreswerte und Geldflüsse) |
+| #143/AK5 | Ist das laufende Kalenderjahr grösser als das Steuerjahr der Daten + 1, meldet die Prüfung eine Warnung. | ☑ | **gilt** | [tests/tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_143_ak5_warning_when_tax_data_outdated` | 27.11.2026 ok (Jahr injiziert: +1 keine, +2 Warnung; eigene Tabellen keine) |
+| #143/AK6 | Bei Kapitalbezugs- und Grundstückgewinnsteuer steht zusätzlich: «Vor dem Entscheid mit dem Steuerrechner des Kantons … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK6» (#143, 2 Tests) | 22.11.2026 ok |
+| #143/AK7 | Der Haftungsausschluss nennt ausdrücklich: keine Steuer- oder Anlageberatung. | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK7» (#143); [ui-einstieg.spec.js](../e2e/ui-einstieg.spec.js) #61 | 22.11.2026 ok (Version 2, wird erneut bestätigt) |
+| #143/AK8 | Hilfe und `BESCHREIBUNG.md` haben einen Abschnitt «Wie genau ist die Steuer?» mit den Referenzfällen, den Näherungen … | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK8» (#143); BESCHREIBUNG.md Durchsicht | 22.11.2026 ok (Hilfe in vier Sprachen) |
+| #143/AK9 | Eine Bandbreite (±x %) wird nicht angezeigt. | ☑ | **gilt** | [ui-ergebnisse.spec.js](../e2e/ui-ergebnisse.spec.js) «AK9» (#143) | 22.11.2026 ok |
+
 ### #144 Unbekannte Formatversion beim Öffnen melden
 
 [Issue #144](https://github.com/ingen63/VivaPlan/issues/144) · geschlossen · Umsetzung: 4678dc0
