@@ -681,12 +681,19 @@ Reihenfolge pro Monat:
    der Abzug der Säule 3a deckelt mit dem Index des 3a-Höchstbetrags (`YearDeductions::pillar3a_index`). Die Übernahme
    (`upgrade::indexation`) schreibt für ältere Planungen die bisherigen Regeln als Kennzeichen (nur für Beträge, die
    die Planung hat), setzt die Markierung und meldet `note_indexation`; das Ergebnis bleibt gleich (Test
-   `issue_306_ak5_…` über die Golden-Planungen). Die AHV (falls indexiert) wird nur im Januar um die seit dem letzten Januar
-   aufgelaufene Teuerung angepasst, nominal nie nach unten (#280): Je Person ab dem Anspruch und für den Plafond ab dem
-   ersten Januar mit einer indexierten Rente führt `ahv::Floor` den Teuerungsindex und seinen Höchststand; Rente,
-   Kürzung, Zuschlag und Plafond wachsen mit max(1, Index / bisheriger Höchststand). Nach einer Deflation zählt also
-   nur der Teil über dem Höchststand (−8,4 %, dann +15,7 % → × 1 und × 0,916 × 1,157). Vor dem Anspruch gilt die
-   eingegebene Rente unverändert (nominal, ohne Teuerung bis zum Anspruch).
+   `issue_306_ak5_…` über die Golden-Planungen). **AHV nach Mischindex (#284):** `ahv::Calc::index` führt ab dem
+   Simulationsstart den Preisindex (× Teuerungsfaktor seit dem letzten Januar), den Lohnindex = Preisindex × (1 +
+   Reallohnsteigerung)^Jahre (`returns.realWageGrowth`, Vorgabe 0,5 % = `ahv::REAL_WAGE_GROWTH_DEFAULT`; Jahre = Monate
+   seit Start / 12) und den Mischindex = Mittel aus beiden (Art. 33ter AHVG). Angepasst wird im Januar ungerader Jahre,
+   in geraden Jahren nur, wenn der Preisindex seit dem letzten Januar um mehr als 4 % gestiegen ist
+   (`ahv::REVIEW_PRICE_RISE`), jeweils um Mischindex / Mischindex der letzten Anpassung. Die eingegebenen Renten (falls
+   indexiert) und der Plafond (falls mindestens eine Rente indexiert ist) gelten in Werten des Simulationsstarts und
+   folgen der Anpassung schon vor dem Anspruch; Kürzung und Zuschlag folgen ab ihrer Festlegung. Nominal nie nach
+   unten (#280): `ahv::Floor` führt den Mischindex und seinen Höchststand ab dem Start; alle angepassten Beträge wachsen
+   mit max(1, Index / bisheriger Höchststand). Nach einem Rückgang zählt also nur der Teil über dem Höchststand
+   (−8,4 %, dann +15,7 % → × 1 und × 0,916 × 1,157). Renten ohne Teuerungsanpassung bleiben vor und nach dem Bezug
+   beim eingegebenen Wert. Die Prüfung warnt bei einer Reallohnsteigerung ausserhalb von −2 % bis +3 %
+   (`real_wage_growth_unusual`).
 2. **Ereignisse:** einmalige Beträge; Pensionierung (Kapitalbezug mit Kapitalsteuer, Rente = Restkapital ×
    Umwandlungssatz / 12); AHV-Beginn (**Vorbezug, Aufschub und Plafond, #191:** `monthly` ist die Rente mit 65. Die
    Rechnung steht in `crates/engine/src/ahv.rs` (`Calc`, Sätze mit Gültigkeit und Quelle, Merkblatt 3.04, Stand

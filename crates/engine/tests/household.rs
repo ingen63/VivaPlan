@@ -146,7 +146,8 @@ fn couple_ahv_is_capped_but_single_pension_is_not() {
     assert!((res.records[0].ahv - 5_040.0).abs() < 1e-9);
 }
 
-/// #145: Married couple with cap 3'780 and inflation 3 % (fixed); AHV in month `k` (0 = January 2030).
+/// #145: Married couple with cap 3'780 and inflation 3 % (fixed); AHV in month `k` (0 = January 2030). #284: real
+/// wage growth 0, so the mixed index equals the price index; the AHV is adjusted in January of odd years.
 fn capped_ahv(a_indexed: bool, b_indexed: bool, b_at: &str) -> SimResult {
     // #191: B reaches 65 at its AHV payout (2030-01 or 2032-01)
     let mut v = if b_at == "start" {
@@ -159,6 +160,7 @@ fn capped_ahv(a_indexed: bool, b_indexed: bool, b_at: &str) -> SimResult {
         .unwrap()
         .push(json!({ "id": "b_ahv", "name": "AHV B", "kind": "date", "date": "2032-01" }));
     v["returns"]["fixed"]["inflation"] = json!(0.03);
+    v["returns"]["realWageGrowth"] = json!(0.0);
     v["pension"]["ahv"] = json!({ "monthly": 2_520, "at": "start", "indexed": a_indexed });
     v["partner"]["ahv"] = json!({ "monthly": 2_520, "at": b_at, "indexed": b_indexed });
     v["household"]["ahvCoupleCap"] = json!(3_780);
@@ -189,6 +191,7 @@ fn issue_145_ak3_cap_with_only_one_indexed_pension() {
     // The cap only applies when it is below the sum: A 1'000 indexed, B 2'000 fixed.
     let mut v = with_partner_65(base());
     v["returns"]["fixed"]["inflation"] = json!(0.03);
+    v["returns"]["realWageGrowth"] = json!(0.0);
     v["pension"]["ahv"] = json!({ "monthly": 1_000, "at": "start", "indexed": true });
     v["partner"]["ahv"] = json!({ "monthly": 2_000, "at": "start", "indexed": false });
     v["household"]["ahvCoupleCap"] = json!(3_780);
@@ -198,19 +201,20 @@ fn issue_145_ak3_cap_with_only_one_indexed_pension() {
 }
 
 // #145/AK4: The second pension starts in January 2032. 01.2031: only A, 2'520 × 1.03 = 2'595.60 (below the cap).
-// 01.2032: A = 2'520 × 1.03² = 2'673.47, B starts with 2'520; sum 5'193.47, cap 3'780 × 1.03² = 4'010.20.
-// 01.2033: both adjusted, cap 3'780 × 1.03³ = 4'130.51 (previously 4'254.42).
+// 01.2032 (#284: even year, no adjustment): A = 2'595.60, B starts with 2'520 × 1.03 = 2'595.60 (adjusted before the
+// payout); sum 5'191.20, cap 3'780 × 1.03 = 3'893.40. 01.2033: both adjusted, cap 3'780 × 1.03³ = 4'130.51.
 #[test]
 fn issue_145_ak4_cap_when_second_pension_starts_later() {
     let res = capped_ahv(true, true, "b_ahv");
     assert!((ahv_in(&res, 12) - 2_595.60).abs() < 0.01, "{}", ahv_in(&res, 12));
-    assert!((ahv_in(&res, 24) - 4_010.20).abs() < 0.01, "{}", ahv_in(&res, 24));
+    assert!((ahv_in(&res, 24) - 3_893.40).abs() < 0.01, "{}", ahv_in(&res, 24));
     assert!((ahv_in(&res, 36) - 4_130.51).abs() < 0.01, "{}", ahv_in(&res, 36));
 }
 
 // #280/AK1–AK3 (regression through the simulation): married couple at 65 from 01.2030, both pensions indexed, cap
 // 3'780; inflation −8.4 % in 2030, +15.7 % in 2031, +2 % afterwards. 01.2031: the capped AHV stays 3'780 (not 3'462.48);
 // 01.2032: 3'780 × 0.916 × 1.157 = 4'006.09 (no catch-up to 3'780 × 1.157 = 4'373.46); 01.2033: × 1.02 = 4'086.21.
+// #284: real wage growth 0 (mixed index = price index); 01.2032 is even, adjusted because prices rose by more than 4 %.
 // November instead of December: the December contains the 13th AHV pension (#190).
 #[test]
 fn issue_280_ak1_ak3_capped_ahv_never_falls_nominally() {
@@ -218,6 +222,7 @@ fn issue_280_ak1_ak3_capped_ahv_never_falls_nominally() {
     v["pension"]["ahv"] = json!({ "monthly": 2_520, "at": "start", "indexed": true });
     v["partner"]["ahv"] = json!({ "monthly": 2_520, "at": "start", "indexed": true });
     v["household"]["ahvCoupleCap"] = json!(3_780);
+    v["returns"]["realWageGrowth"] = json!(0.0);
     let p = plan(v);
     let sim = Simulator::new(&p).unwrap();
     let mut path = batch::market_paths(&p, &sim, None).unwrap().remove(0);

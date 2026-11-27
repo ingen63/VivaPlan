@@ -2,7 +2,7 @@
 //! 3-bucket strategy, monthly procedure). Every test covers cases no other test checks.
 //!
 //! Base plan (made up): start 2026-11, birth 1966-11, retirement and AHV 2031-11 (age 65), end 2061-11;
-//! without taxes, inflation and returns, spending 1000 per month, wealth 1'000'000 as cash.
+//! without taxes, inflation, real wage growth and returns, spending 1000 per month, wealth 1'000'000 as cash.
 
 use engine::market::MarketPath;
 use engine::model::Plan;
@@ -13,6 +13,8 @@ use serde_json::{json, Value};
 fn base() -> Value {
     let mut v: Value = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
     v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
+    // #284: without real wage growth the AHV stays nominal without inflation (mixed index = price index)
+    v["returns"]["realWageGrowth"] = json!(0.0);
     v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
     v["flows"]["spending"] = json!(1000);
     // The rules here count housing costs in addition to spending (#53 is checked by crates/engine/tests/cash_housing.rs).
@@ -431,6 +433,8 @@ fn criterion_plan(emergency_months: f64) -> Value {
     v["wealth"]["cash"] = json!(400_000);
     v["realestate"]["emergencyMonths"] = json!(emergency_months);
     v["realestate"]["properties"][0]["inflation"] = json!(true);
+    // #284: the AHV nominal, so the income stays 12'500 (with inflation it would follow the mixed index in 01.2027)
+    v["pension"]["ahv"]["indexed"] = json!(false);
     for p in v["realestate"]["properties"][0]["mortgage"]["tranches"][0]["periods"]
         .as_array_mut()
         .unwrap()

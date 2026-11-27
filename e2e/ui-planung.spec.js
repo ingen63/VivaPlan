@@ -668,7 +668,7 @@ test.describe("13th AHV pension (#190)", () => {
     const label = page.locator("label.field", { hasText: "Rente pro Monat bei Bezugsbeginn" });
     await expect(label).toHaveCount(1);
     await expect(label.locator(".computed")).toHaveText(
-      "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, nominal (bis zum Anspruch ohne Teuerung), ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).");
+      "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, in heutigen Werten (bis zum Bezug nach dem Mischindex angepasst), ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).");
     await noErrors(page, errors);
   });
 
@@ -1413,6 +1413,35 @@ test.describe("Inflation in the parametric model from a first year (#279)", () =
     await page.locator("#ask button[value='ok']").click();
     await expect(page.locator("#set-inflationFrom")).toHaveValue("1950");
     expect(await page.evaluate(() => limits().inflationFrom)).toBe(1950);
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("AHV by the mixed index every two years (#284)", () => {
+  test("AK1: real wage growth under «Experte» with default 0.5 %, in the plan and the parameters; warning outside −2 % to +3 %", async ({ page }) => {
+    const errors = await open(page, "returns");
+    const line = page.locator("#infl-assumptions");
+    await expect(line).toContainText("Reallohnsteigerung 0.5 % (AHV)");
+    await line.click();
+    const input = field(page, "returns.realWageGrowth");
+    await expect(input).toHaveValue("0.5");
+    expect(await page.evaluate(() => state.returns.realWageGrowth)).toBe(0.005);
+    const row = () => page.evaluate(() => paramSections(state).flatMap(([, r]) => r).find(([k]) => k === "Reallohnsteigerung pro Jahr")?.[1]);
+    expect(await row()).toBe("0.5 %");
+    const warning = page.locator("#val li.warn", { hasText: "Reallohnsteigerung" });
+    await expect(warning).toHaveCount(0);
+    const endValue = () => page.evaluate(() => lastSim?.total.at(-1));
+    await expect(kpiValue(page, "Vermögen am Ende")).not.toHaveText("–");
+    const before = await endValue();
+    await input.fill("4");
+    await input.press("Tab");
+    expect(await page.evaluate(() => state.returns.realWageGrowth)).toBeCloseTo(0.04, 10);
+    await expect(warning).toContainText("Reallohnsteigerung 4.0 % pro Jahr liegt ausserhalb des üblichen Bereichs von −2 % bis +3 %.");
+    await expect(line).toContainText("Reallohnsteigerung 4 % (AHV)");
+    await expect.poll(endValue).not.toBe(before);
+    await input.fill("0.5");
+    await input.press("Tab");
+    await expect(warning).toHaveCount(0);
     await noErrors(page, errors);
   });
 });

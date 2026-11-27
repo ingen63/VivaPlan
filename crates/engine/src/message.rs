@@ -526,6 +526,7 @@ codes! {
     ahv_payout_age_law => "The AHV pension{who} starts at {age} years; the AHV only allows a payout from 63 to 70. The app computes with at most 13.6 % reduction or 31.5 % supplement.",
     ahv_deferral_short => "The AHV pension{who} starts {months} months after 65; a deferral needs at least one year, so there is no supplement.",
     pk_conversion_high => "Conversion rate of {rate:pct2} % is unusually high.",
+    real_wage_growth_unusual => "Real wage growth of {rate:pct1} % per year is outside the usual range of −2 % to +3 %.",
     pk_lumpsum_range_2 => "Person 2: the lump sum must be between 0 % and 100 %.",
     pk_conversion_high_2 => "Person 2: conversion rate of {rate:pct2} % is unusually high.",
     settings_problem => "Settings: {problem}",

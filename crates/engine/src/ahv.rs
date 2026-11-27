@@ -16,6 +16,12 @@ use crate::time::YearMonth;
 /// Year from which the rates of this file apply (leaflet 3.04, edition November 2025, valid from 1 January 2026).
 pub const RATES_VALID_FROM: i32 = 2026;
 
+/// #284: Assumed real wage growth per year for the wage index of the mixed index, if the plan has none.
+pub const REAL_WAGE_GROWTH_DEFAULT: f64 = 0.005;
+
+/// #284: A price rise of more than this share since the previous January also adjusts the pensions in an even year.
+pub const REVIEW_PRICE_RISE: f64 = 0.04;
+
 /// Reference age in months (65 years).
 pub const REFERENCE_AGE_MONTHS: i32 = 65 * 12;
 
@@ -87,7 +93,7 @@ pub struct Person {
     pub at: Option<YearMonth>,
     /// Month in which the person reaches the reference age.
     pub reference: YearMonth,
-    /// Annual adjustment to inflation.
+    /// Adjustment to the mixed index (#284), also before the payout; `false`: nominal.
     pub indexed: bool,
 }
 
@@ -115,10 +121,10 @@ impl Person {
 }
 
 /// #280: Nominal floor of an indexed amount. AHV pensions never fall nominally: in a year of deflation the amount
-/// stays, and later it rises only by the part of the price index above its highest level so far.
+/// stays, and later it rises only by the part of the index above its highest level so far (#284: the mixed index).
 #[derive(Clone, Copy, Debug)]
 struct Floor {
-    /// Price index since the start of the adjustment.
+    /// Index since the start of the adjustment.
     level: f64,
     /// Highest `level` so far.
     peak: f64,
@@ -131,8 +137,8 @@ impl Default for Floor {
 }
 
 impl Floor {
-    /// Applies the inflation `factor` of the year to the index and returns the factor for the amount: max(1, index /
-    /// highest index so far).
+    /// Applies the change `factor` of the index and returns the factor for the amount: max(1, index / highest index
+    /// so far).
     fn adjust(&mut self, factor: f64) -> f64 {
         self.level *= factor;
         let applied = (self.level / self.peak).max(1.0);
@@ -143,11 +149,9 @@ impl Floor {
 
 #[derive(Clone, Debug, Default)]
 struct State {
-    /// #280: Index and highest level since the entitlement.
-    floor: Floor,
     entitled: bool,
     started: bool,
-    /// Pension at 65 (nominal, adjusted to inflation from the entitlement).
+    /// Pension at 65 (nominal; from the entitlement, adjusted to the mixed index).
     base: f64,
     /// Fixed reduction (negative) or supplement from the reference age or the end of the deferral (nominal).
     fixed: Option<f64>,
@@ -164,16 +168,23 @@ struct State {
 ///   reduction applies: the rate times the average of the (capped) pensions during the early payout.
 /// - A deferral of at least one year gets a fixed supplement from the payout: the rate times the average of the
 ///   (capped) deferred pension. Reduction and supplement lie outside the cap.
-/// - Amounts in whole francs; pension, cap, reduction and supplement follow inflation in January alike, never below
-///   the nominal amount of the previous year (#280, [`Floor`]).
+/// - Amounts in whole francs. #284: The entered pensions and the cap are in values of the simulation start; pension
+///   (also before the payout), cap, reduction and supplement follow the mixed index alike ([`Calc::index`]), never
+///   below the nominal amount of the previous adjustment (#280, [`Floor`]).
 #[derive(Clone, Debug)]
 pub struct Calc {
     people: Vec<Person>,
     cap: Option<f64>,
-    /// Inflation of the cap since the first entitlement (#145: once per January, not per person).
-    cap_scale: f64,
-    /// #280: Index and highest level of the cap since the first January with an indexed entitled pension.
-    cap_floor: Floor,
+    /// #284: Assumed real wage growth per year (fraction) for the wage index.
+    real_wage: f64,
+    /// #284: Price index since the simulation start.
+    price: f64,
+    /// #284: Mixed index at the last adjustment.
+    mix: f64,
+    /// #280: Mixed index and its highest level since the simulation start.
+    floor: Floor,
+    /// Factor of the indexed amounts since the simulation start (product of the adjustments).
+    scale: f64,
     st: Vec<State>,
 }
 
@@ -184,29 +195,64 @@ impl Calc {
         Calc {
             people,
             cap: cap.filter(|_| st.len() > 1),
-            cap_scale: 1.0,
-            cap_floor: Floor::default(),
+            real_wage: REAL_WAGE_GROWTH_DEFAULT,
+            price: 1.0,
+            mix: 1.0,
+            floor: Floor::default(),
+            scale: 1.0,
             st,
         }
     }
 
-    /// January: pensions (and their reduction or supplement) of entitled indexed persons follow the inflation
-    /// `factor`; the cap follows once if at least one of them does. #280: never below the nominal amount of the previous
-    /// year; after a deflation only the part of the index above its highest level counts ([`Floor`]).
-    pub fn index(&mut self, factor: f64) {
-        let mut any = false;
+    /// #284: Assumed real wage growth per year (fraction) for the wage index of [`Calc::index`].
+    pub fn with_real_wage(mut self, real_wage: f64) -> Self {
+        self.real_wage = real_wage;
+        self
+    }
+
+    /// #284: January of `year`, `years` after the simulation start, with the price `factor` since the previous
+    /// January. Price index since the start × `factor`; wage index = price index × (1 + real wage growth)^years; mixed
+    /// index = mean of both (Art. 33ter AHVG). The pensions follow the mixed index in January of odd years, and in an
+    /// even year if prices rose by more than 4 % since the previous January ([`Calc::adjust`]).
+    pub fn index(&mut self, year: i32, years: f64, factor: f64) {
+        self.price *= factor;
+        if year % 2 == 0 && factor <= 1.0 + REVIEW_PRICE_RISE {
+            return;
+        }
+        let wage = self.price * (1.0 + self.real_wage).max(0.0).powf(years);
+        let mix = (self.price + wage) / 2.0;
+        self.adjust(mix / self.mix);
+        self.mix = mix;
+    }
+
+    /// Adjustment by the change `factor` of the mixed index: entered pensions (also before the entitlement), pensions,
+    /// reduction and supplement of indexed persons and the cap (if at least one person is indexed, #145) follow it
+    /// alike. #280: never below the nominal amount of the previous adjustment; after a fall only the part of the
+    /// index above its highest level counts ([`Floor`]).
+    pub fn adjust(&mut self, factor: f64) {
+        let applied = self.floor.adjust(factor);
+        self.scale *= applied;
         for (st, p) in self.st.iter_mut().zip(&self.people) {
             if st.entitled && p.indexed {
-                let applied = st.floor.adjust(factor);
                 st.base *= applied;
                 if let Some(f) = st.fixed.as_mut() {
                     *f *= applied;
                 }
-                any = true;
             }
         }
-        if any {
-            self.cap_scale *= self.cap_floor.adjust(factor);
+    }
+
+    /// Entered pension of person `p` in today's nominal amount (in values of the start, adjusted if indexed).
+    fn entered_now(&self, p: &Person) -> f64 {
+        p.entered * if p.indexed { self.scale } else { 1.0 }
+    }
+
+    /// Factor of the cap since the simulation start: adjusted if at least one person is indexed.
+    fn cap_scale(&self) -> f64 {
+        if self.people.iter().any(|p| p.indexed) {
+            self.scale
+        } else {
+            1.0
         }
     }
 
@@ -218,9 +264,10 @@ impl Calc {
             .map(|(b, e)| if *e { *b } else { 0.0 })
             .collect();
         let sum: f64 = b.iter().sum();
+        let cap_scale = self.cap_scale();
         match self.cap {
-            Some(cap) if entitled.iter().all(|e| *e) && sum > cap * self.cap_scale => {
-                b.iter().map(|x| x * cap * self.cap_scale / sum).collect()
+            Some(cap) if entitled.iter().all(|e| *e) && sum > cap * cap_scale => {
+                b.iter().map(|x| x * cap * cap_scale / sum).collect()
             }
             _ => b,
         }
@@ -231,10 +278,11 @@ impl Calc {
     /// it count with the pensions of `m` (#191/AK22).
     pub fn step(&mut self, m: YearMonth, first: bool) -> Vec<usize> {
         let mut started = vec![];
+        let entered: Vec<f64> = self.people.iter().map(|p| self.entered_now(p)).collect();
         for (i, (st, p)) in self.st.iter_mut().zip(&self.people).enumerate() {
             if !st.entitled && p.entitled_from().is_some_and(|e| m >= e) {
                 st.entitled = true;
-                st.base = p.entered;
+                st.base = entered[i];
             }
             if !st.started && p.at.is_some_and(|a| m >= a) {
                 st.started = true;
@@ -289,7 +337,8 @@ impl Calc {
     }
 
     /// Estimated household AHV in a later month `m` (planning of the current year): today's amounts, pensions not yet
-    /// due from their entitlement with the entered pension, the cap and the reduction or supplement as known today.
+    /// due from their entitlement with the entered pension as adjusted so far, the cap and the reduction or supplement
+    /// as known today.
     pub fn projected(&self, m: YearMonth) -> f64 {
         let entitled: Vec<bool> = self
             .st
@@ -301,7 +350,7 @@ impl Calc {
             .st
             .iter()
             .zip(&self.people)
-            .map(|(s, p)| if s.entitled { s.base } else { p.entered })
+            .map(|(s, p)| if s.entitled { s.base } else { self.entered_now(p) })
             .collect();
         let b = self.capped(&entitled, &base);
         self.st
@@ -567,7 +616,7 @@ mod tests {
             person(2520.0, ym(2035, 1), Some(ym(2035, 1))),
         );
         run(&mut c, ym(2030, 1), ym(2035, 12));
-        c.index(1.1);
+        c.adjust(1.1);
         c.step(ym(2036, 1), false);
         assert!((c.paid(0) - 1547.0 * 1.1).abs() < 1e-9, "{}", c.paid(0));
         assert!((c.paid(1) - 1890.0 * 1.1).abs() < 1e-9, "{}", c.paid(1));
@@ -576,7 +625,7 @@ mod tests {
             person(2520.0, ym(2028, 1), Some(ym(2028, 1))),
         );
         run(&mut c, ym(2028, 1), ym(2033, 12));
-        c.index(1.1);
+        c.adjust(1.1);
         c.step(ym(2034, 1), false);
         assert!((c.paid(0) - 2213.0 * 1.1).abs() < 1e-9, "{}", c.paid(0));
         // a pension that is not indexed stays; the cap rises with the other
@@ -588,7 +637,7 @@ mod tests {
             },
         );
         c.step(ym(2030, 1), true);
-        c.index(1.1);
+        c.adjust(1.1);
         c.step(ym(2031, 1), false);
         assert!((c.total() - CAP * 1.1).abs() < 1e-9, "{}", c.total());
     }
@@ -660,21 +709,21 @@ mod tests {
     fn issue_280_ak1_ak2_pension_never_falls_and_rises_only_above_the_peak() {
         let mut c = Calc::new(vec![person(2500.0, ym(2030, 1), Some(ym(2030, 1)))], None);
         c.step(ym(2030, 1), true);
-        c.index(DEFLATION);
+        c.adjust(DEFLATION);
         c.step(ym(2031, 1), false);
         close(c.paid(0), 2500.0);
-        c.index(RECOVERY);
+        c.adjust(RECOVERY);
         c.step(ym(2032, 1), false);
         close(c.paid(0), 2500.0 * DEFLATION * RECOVERY);
         assert!((c.paid(0) * 12.0 - 31_794.36).abs() < 0.01, "{}", c.paid(0) * 12.0);
-        c.index(1.02);
+        c.adjust(1.02);
         c.step(ym(2033, 1), false);
         close(c.paid(0), 2500.0 * DEFLATION * RECOVERY * 1.02);
         // two years of deflation in a row: the peak stays, the recovery must first make up both
         let mut c = Calc::new(vec![person(2500.0, ym(2030, 1), Some(ym(2030, 1)))], None);
         c.step(ym(2030, 1), true);
         for f in [0.95, 0.95, 1.05, 1.06] {
-            c.index(f);
+            c.adjust(f);
         }
         c.step(ym(2034, 1), false);
         close(c.paid(0), 2500.0 * 0.95 * 0.95 * 1.05 * 1.06);
@@ -689,11 +738,11 @@ mod tests {
             person(2520.0, ym(2035, 1), Some(ym(2035, 1))),
         );
         run(&mut c, ym(2030, 1), ym(2035, 12));
-        c.index(DEFLATION);
+        c.adjust(DEFLATION);
         c.step(ym(2036, 1), false);
         close(c.paid(0), 1547.0);
         close(c.paid(1), 1890.0);
-        c.index(RECOVERY);
+        c.adjust(RECOVERY);
         c.step(ym(2037, 1), false);
         close(c.paid(0), 1547.0 * DEFLATION * RECOVERY);
         close(c.paid(1), 1890.0 * DEFLATION * RECOVERY);
@@ -702,20 +751,20 @@ mod tests {
             person(2520.0, ym(2028, 1), Some(ym(2028, 1))),
         );
         run(&mut c, ym(2028, 1), ym(2033, 12));
-        c.index(DEFLATION);
+        c.adjust(DEFLATION);
         c.step(ym(2034, 1), false);
         close(c.paid(0), 2213.0);
         close(c.total(), 2213.0 + 1890.0);
-        c.index(RECOVERY);
+        c.adjust(RECOVERY);
         c.step(ym(2035, 1), false);
         close(c.paid(0), 2213.0 * DEFLATION * RECOVERY);
         close(c.total(), (2213.0 + 1890.0) * DEFLATION * RECOVERY);
     }
 
-    /// #280: The highest level counts per person from the entitlement: a pension that starts after the deflation rises
-    /// with the full inflation of the next year.
+    /// #284/AK6: The highest level counts from the simulation start for every indexed amount: a pension that starts
+    /// after the deflation starts at the entered pension and rises only above the peak, like the running one.
     #[test]
-    fn issue_280_floor_per_person_from_the_entitlement() {
+    fn issue_284_ak6_floor_from_the_start_also_before_the_entitlement() {
         let mut c = Calc::new(
             vec![
                 person(2000.0, ym(2030, 1), Some(ym(2030, 1))),
@@ -724,12 +773,141 @@ mod tests {
             None,
         );
         run(&mut c, ym(2030, 1), ym(2030, 12));
-        c.index(DEFLATION);
+        c.adjust(DEFLATION);
         run(&mut c, ym(2031, 1), ym(2031, 12));
-        c.index(RECOVERY);
+        close(c.paid(1), 2000.0);
+        c.adjust(RECOVERY);
         c.step(ym(2032, 1), false);
         close(c.paid(0), 2000.0 * DEFLATION * RECOVERY);
-        close(c.paid(1), 2000.0 * RECOVERY);
+        close(c.paid(1), 2000.0 * DEFLATION * RECOVERY);
+    }
+
+    /// Steps month by month from `from` to `to` and calls [`Calc::index`] in every January after `from` with the
+    /// constant `inflation` (as the simulation: price factor since the previous January, years since the start).
+    fn simulate(calc: &mut Calc, from: YearMonth, to: YearMonth, inflation: f64) -> Vec<(YearMonth, Vec<f64>)> {
+        let mut out = vec![];
+        let mut m = from;
+        while m <= to {
+            if m.month() == 1 && m > from {
+                calc.index(m.year(), f64::from(from.until(m)) / 12.0, 1.0 + inflation);
+            }
+            calc.step(m, m == from);
+            out.push((m, (0..calc.st.len()).map(|i| calc.paid(i)).collect()));
+            m = m.plus(1);
+        }
+        out
+    }
+
+    /// Mixed index after `years` with inflation 1 % and real wage growth 0.5 %.
+    fn mix(years: i32) -> f64 {
+        let price = 1.01_f64.powi(years);
+        (price + price * 1.005_f64.powi(years)) / 2.0
+    }
+
+    /// #284/AK2, AK3: Start 01.2030, pension 2'000 from the start, inflation 1 %, real wages 0.5 %: 01.2031 2'025.05
+    /// (mixed index (1.01 + 1.01 × 1.005) / 2), 01.2032 unchanged, 01.2033 2'000 × mixed index after 3 years.
+    #[test]
+    fn issue_284_ak2_ak3_adjusted_in_odd_years_by_the_mixed_index() {
+        let mut c = Calc::new(vec![person(2000.0, ym(2030, 1), Some(ym(2030, 1)))], None).with_real_wage(0.005);
+        let out = simulate(&mut c, ym(2030, 1), ym(2033, 12), 0.01);
+        close(at(&out, ym(2030, 12))[0], 2000.0);
+        assert!(
+            (at(&out, ym(2031, 1))[0] - 2025.05).abs() < 0.005,
+            "{:?}",
+            at(&out, ym(2031, 1))
+        );
+        close(at(&out, ym(2031, 1))[0], 2000.0 * 1.012525);
+        close(at(&out, ym(2032, 1))[0], at(&out, ym(2031, 1))[0]);
+        close(at(&out, ym(2032, 12))[0], at(&out, ym(2031, 1))[0]);
+        close(at(&out, ym(2033, 1))[0], 2000.0 * mix(3));
+        // the mixed index lies between the price and the wage index
+        assert!(mix(3) > 1.01_f64.powi(3) && mix(3) < (1.01_f64 * 1.005).powi(3));
+    }
+
+    /// #284/AK4: A price rise of more than 4 % since the previous January also adjusts in an even year; 4 % exactly
+    /// does not.
+    #[test]
+    fn issue_284_ak4_more_than_4_percent_adjusts_in_an_even_year() {
+        let make = || Calc::new(vec![person(2000.0, ym(2030, 1), Some(ym(2030, 1)))], None).with_real_wage(0.0);
+        let mut c = make();
+        c.step(ym(2030, 1), true);
+        c.index(2030, 0.0, 1.0);
+        c.index(2032, 2.0, 1.05);
+        c.step(ym(2032, 1), false);
+        close(c.paid(0), 2000.0 * 1.05);
+        let mut c = make();
+        c.step(ym(2030, 1), true);
+        c.index(2032, 2.0, 1.04);
+        c.step(ym(2032, 1), false);
+        close(c.paid(0), 2000.0);
+        c.index(2033, 3.0, 1.0);
+        c.step(ym(2033, 1), false);
+        close(c.paid(0), 2000.0 * 1.04);
+    }
+
+    /// #284/AK5: Start 01.2030, payout 01.2040, pension 2'000 in values of the start, inflation 1 %, real wages
+    /// 0.5 %: the first payout is 2'000 × mixed index 01.2039 ≈ 2'237.58 (01.2040 is even: no adjustment).
+    #[test]
+    fn issue_284_ak5_entered_pension_follows_the_mixed_index_until_the_payout() {
+        let mut c = Calc::new(vec![person(2000.0, ym(2040, 1), Some(ym(2040, 1)))], None).with_real_wage(0.005);
+        let out = simulate(&mut c, ym(2030, 1), ym(2041, 1), 0.01);
+        close(at(&out, ym(2039, 12))[0], 0.0);
+        close(at(&out, ym(2040, 1))[0], 2000.0 * mix(9));
+        assert!(
+            (at(&out, ym(2040, 1))[0] - 2237.58).abs() < 0.005,
+            "{:?}",
+            at(&out, ym(2040, 1))
+        );
+        close(at(&out, ym(2041, 1))[0], 2000.0 * mix(11));
+    }
+
+    /// #284/AK6: The cap (in values of the start), the reduction of an early payout and the supplement of a deferral
+    /// follow the same adjustment. The reduction or supplement is fixed as an amount from the pensions during the
+    /// early payout or deferral (already adjusted) and then follows the later adjustments.
+    #[test]
+    fn issue_284_ak6_cap_reduction_and_supplement_follow_the_mixed_index() {
+        // A early from 01.2031 (reference age 01.2033, 24 months: 13.6 % of 2'520 × mixed index 2031 = 347), B at 65
+        // in 01.2035: both capped from 01.2035 to 1'890 each in values of the start
+        let mut c = couple(
+            person(2520.0, ym(2033, 1), Some(ym(2031, 1))),
+            person(2520.0, ym(2035, 1), Some(ym(2035, 1))),
+        )
+        .with_real_wage(0.005);
+        let out = simulate(&mut c, ym(2030, 1), ym(2035, 1), 0.01);
+        close(at(&out, ym(2031, 1))[0], 2520.0 * mix(1) - 347.0);
+        close(at(&out, ym(2033, 1))[0], 2520.0 * mix(3) - 347.0);
+        let a = at(&out, ym(2035, 1));
+        close(a[0], 1890.0 * mix(5) - 347.0 * mix(5) / mix(3));
+        close(a[1], 1890.0 * mix(5));
+        // A defers by one year to 01.2032 (5.2 %) while B draws from the start: capped 1'890 × mixed index 2031,
+        // supplement 100; from 01.2033 both follow the mixed index
+        let mut c = couple(
+            person(2520.0, ym(2031, 1), Some(ym(2032, 1))),
+            person(2520.0, ym(2030, 1), Some(ym(2030, 1))),
+        )
+        .with_real_wage(0.005);
+        let out = simulate(&mut c, ym(2030, 1), ym(2033, 1), 0.01);
+        close(at(&out, ym(2030, 1))[1], 2520.0);
+        close(at(&out, ym(2032, 1))[0], 1890.0 * mix(1) + 100.0);
+        close(at(&out, ym(2033, 1))[0], (1890.0 * mix(1) + 100.0) * mix(3) / mix(1));
+        close(at(&out, ym(2033, 1))[1], 1890.0 * mix(3));
+    }
+
+    /// #284/AK7: A pension without adjustment stays at the entered value, before and after the payout; the cap of a
+    /// couple in which nobody is indexed stays as well.
+    #[test]
+    fn issue_284_ak7_pension_not_indexed_stays_before_and_after_the_payout() {
+        let nominal = |at| Person {
+            indexed: false,
+            ..person(2520.0, ym(2035, 1), Some(at))
+        };
+        let mut c = Calc::new(vec![nominal(ym(2035, 1))], None).with_real_wage(0.005);
+        let out = simulate(&mut c, ym(2030, 1), ym(2040, 1), 0.02);
+        close(at(&out, ym(2035, 1))[0], 2520.0);
+        close(at(&out, ym(2040, 1))[0], 2520.0);
+        let mut c = couple(nominal(ym(2035, 1)), nominal(ym(2035, 1))).with_real_wage(0.005);
+        let out = simulate(&mut c, ym(2030, 1), ym(2040, 1), 0.02);
+        close(at(&out, ym(2040, 1)).iter().sum(), CAP);
     }
 
     /// #280/AK4: With positive inflation every year the floor changes nothing: the pension rises by the product of the
@@ -743,7 +921,7 @@ mod tests {
         c.step(ym(2030, 1), true);
         let factors = [1.03, 1.0, 1.012, 1.05];
         for f in factors {
-            c.index(f);
+            c.adjust(f);
         }
         c.step(ym(2034, 1), false);
         close(c.total(), CAP * factors.iter().product::<f64>());
@@ -760,10 +938,10 @@ mod tests {
             None,
         );
         c.step(ym(2030, 1), true);
-        c.index(DEFLATION);
+        c.adjust(DEFLATION);
         c.step(ym(2031, 1), false);
         close(c.paid(0), 2500.0);
-        c.index(RECOVERY);
+        c.adjust(RECOVERY);
         c.step(ym(2032, 1), false);
         close(c.paid(0), 2500.0);
     }

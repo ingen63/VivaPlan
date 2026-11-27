@@ -1442,6 +1442,8 @@ mod tests {
         // Pension fund payout also after 65 (the test moves it); #51 checks the limits elsewhere.
         v["limits"] = json!({"pkMax": 130, "ahvMax": 130});
         v["returns"]["fixed"] = json!({"stocks": 0, "bonds": 0, "inflation": 0, "saron": 0});
+        // #284: without real wage growth the AHV stays nominal without inflation
+        v["returns"]["realWageGrowth"] = json!(0.0);
         v["taxes"] = json!({"multiplier": 1, "income": [[0, 0]], "wealth": [[0, 0]], "capital": [[0, 0]]});
         v["flows"]["spending"] = json!(1000);
         v["wealth"] = json!({"stocks": 0, "bonds": 0, "cash": cash, "stockShare": 0, "reserveMonths": 0});

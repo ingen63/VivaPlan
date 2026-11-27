@@ -686,6 +686,14 @@
     "text": "Conversion rate of 3.71 % is unusually high."
   },
   {
+    "code": "real_wage_growth_unusual",
+    "params": {
+      "rate": 0.0371
+    },
+    "template": "Real wage growth of {rate:pct1} % per year is outside the usual range of −2 % to +3 %.",
+    "text": "Real wage growth of 3.7 % per year is outside the usual range of −2 % to +3 %."
+  },
+  {
     "code": "pk_lumpsum_range_2",
     "params": {},
     "template": "Person 2: the lump sum must be between 0 % and 100 %.",

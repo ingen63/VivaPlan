@@ -355,6 +355,8 @@ function normalize(p) {
   p.returns.parametric.seed ??= 42; p.returns.bootstrap.seed ??= 42;
   p.returns.parametric.auto ??= p.returns.source !== "parametric";
   p.returns.fixed.saron ??= 0;
+  // #284: real wage growth for the AHV mixed index (engine default 0.5 %)
+  p.returns.realWageGrowth ??= 0.005;
   // #69: investment strategy (older plans: taken over from the time series, see upgrade_plan)
   p.returns.strategy ??= { stocks: "worldJst", bonds: "ch" };
   p.returns.strategy.weights ??= { ch: 0.2, usa: 0.4, eu: 0.3, apac: 0.1 };
@@ -957,7 +959,9 @@ function inflationExceptions(plan = state) {
 }
 function inflAssumptions() {
   const list = inflationExceptions();
-  return list.length ? tr("infl.assumeExceptions", { list: esc(list.join(", ")) }) : tr("infl.assumeNone");
+  // #284: the real wage growth of the AHV mixed index is an assumption too
+  const wage = tr("infl.realWageAssume", { pct: fmtPct(state.returns.realWageGrowth ?? 0.005) });
+  return `${list.length ? tr("infl.assumeExceptions", { list: esc(list.join(", ")) }) : tr("infl.assumeNone")}; ${wage}`;
 }
 /** #306/AK4: «Experte» with the exceptions «nominal, ohne Teuerung» per amount; opens by itself with an exception. */
 function inflationExpert() {
@@ -968,6 +972,8 @@ function inflationExpert() {
       .map(([k, l]) => `<option value="${k}" ${(rentInflation(state, p) === (k || "until")) ? "selected" : ""}>${l}</option>`).join("")}</select></label>`).join("");
   return `<details class="taxsettings" id="infl-expert" data-tax-open="infl"${open ? " open" : ""}>
     <summary class="card taxassume" id="infl-assumptions"><b>${tr("infl.expert")}:</b> ${tr("infl.expertSummary")} · <span data-infl-assumptions>${C("inflAssumptions")}</span></summary>
+    <div class="card" id="infl-ahv"><h3>${tr("infl.ahvTitle")}</h3><div class="grid2">${F("returns.realWageGrowth", tr("infl.realWage"), "pct")}</div>
+    <p class="hint">${tr("infl.ahvHint")}</p></div>
     <div class="card" id="infl-exceptions"><h3>${tr("infl.title")}</h3><p class="hint" style="margin-top:0">${tr("infl.hint")}</p>
     <div class="grid2">${inflationItems().map(nominal).join("")}</div>
     ${rents ? `<div class="grid2" style="margin-top:10px">${rents}</div>` : ""}
@@ -4154,7 +4160,8 @@ function paramSections(plan, full = false) {
   out.push([tr("section.pension"), [...pens(part ? tr("params.person1") : "", plan.pension || {}, plan.pension?.ahv),
     ...(part ? pens(tr("params.person2"), part, part.ahv) : [])]]);
   // #306/AK4: the exceptions «nominal, ohne Teuerung»
-  out.push([tr("infl.expert"), [[tr("infl.paramsExceptions"), inflationExceptions(plan).join(", ") || tr("infl.none")]]]);
+  out.push([tr("infl.expert"), [[tr("infl.paramsExceptions"), inflationExceptions(plan).join(", ") || tr("infl.none")],
+    [tr("infl.realWage"), pc(plan.returns?.realWageGrowth ?? 0.005)]]]);
   out.push([tr("params.flows"), [[tr("params.incomeYear"), ser(plan.flows?.income, moneyYear)], ...(part ? [[tr("params.income2Year"), ser(part.income, moneyYear)]] : []),
     [tr("params.spendingMonth"), ser(plan.flows?.spending, money)],
     ...(plan.flows?.extras || []).map(e => [tr("params.oneOff", { date: ymShow(e.date), v: e.label ? " " + e.label : "" }), money(e.amount)])]]);

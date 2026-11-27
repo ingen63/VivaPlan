@@ -64,10 +64,20 @@ fn issue_306_ak1_amounts_grow_with_inflation() {
     close(jan31.earned, 6120.0, "earned income");
     close(jan31.ledger.pk_contributions, 1020.0, "pension fund contributions");
     close(jan31.pillar3a_in, 510.0, "pillar 3a contribution");
+    // #284: the AHV follows the mixed index (real wage growth 0.5 % by default) in odd years, also before the payout
+    let mix = |n: i32| (1.02_f64.powi(n) + (1.02_f64 * 1.005).powi(n)) / 2.0;
+    // early payout at 58 (birth 1975-01): reduced by 13.6 %, in whole francs
+    let paid = |b: f64| b + (b * -0.136).round();
+    close(rec(&r, 2033, 1).ahv, paid(2000.0 * mix(3)), "AHV pension at the payout");
     close(
-        rec(&r, 2034, 1).ahv / rec(&r, 2033, 6).ahv,
-        1.02,
-        "AHV pension adjusted in January",
+        rec(&r, 2034, 1).ahv,
+        rec(&r, 2033, 6).ahv,
+        "AHV pension unchanged in an even year",
+    );
+    close(
+        rec(&r, 2035, 1).ahv,
+        paid(2000.0 * mix(5)),
+        "AHV pension adjusted in an odd year",
     );
     close(rec(&r, 2032, 1).care, 9363.6, "care home");
     close(rec(&r, 2035, 1).ledger.extras, -44_163.23, "one-off amount");

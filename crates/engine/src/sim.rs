@@ -911,6 +911,8 @@ pub struct Simulator {
     people: Vec<PersonCfg>,
     /// Cap on a married couple's AHV pensions per month.
     couple_cap: Option<f64>,
+    /// #284: Assumed real wage growth per year for the mixed index of the AHV.
+    real_wage_growth: f64,
     /// #150: Unmarried couples pay the lump-sum tax per person; otherwise the household's lump sums add up.
     capital_per_person: bool,
     spending: Curve,
@@ -1339,6 +1341,7 @@ impl Simulator {
             months: (start.until(end) + 1) as usize,
             people,
             couple_cap,
+            real_wage_growth: plan.returns.real_wage_growth(),
             capital_per_person: separate,
             spending: curve(&plan.flows.spending)?,
             spending_indexed: ix.spending,
@@ -2079,7 +2082,8 @@ impl<'a> Run<'a> {
                     ..Default::default()
                 })
                 .collect(),
-            ahv: crate::ahv::Calc::new(s.people.iter().map(|p| p.ahv.clone()).collect(), s.couple_cap),
+            ahv: crate::ahv::Calc::new(s.people.iter().map(|p| p.ahv.clone()).collect(), s.couple_cap)
+                .with_real_wage(s.real_wage_growth),
             ahv13_centimes: 0.0,
             event_tax: 0.0,
             infl_idx: 1.0,
@@ -3939,7 +3943,8 @@ impl<'a> Run<'a> {
             self.month_gain_tax = 0.0;
             let mut infl_factor = 1.0;
             // Inflation monthly with the previous month's inflation. Amounts are in prices of the
-            // start month. AHV and the withdrawal budget follow in January with the accrued inflation.
+            // start month. The withdrawal budget follows in January with the accrued inflation, the AHV by the mixed
+            // index (#284).
             if k > 0 {
                 let before = self.active_worth();
                 self.infl_idx *= (1.0 + self.path.inflation[k - 1]).max(0.0).powf(1.0 / 12.0);
@@ -3949,8 +3954,8 @@ impl<'a> Run<'a> {
                 let factor = self.infl_idx / self.infl_idx_jan;
                 self.infl_idx_jan = self.infl_idx;
                 infl_factor = factor;
-                // #145: The cap rises once per January as soon as at least one indexed pension is running (not per person).
-                self.ahv.index(factor);
+                // #284: AHV by the mixed index every two years, also before the payout (#145: the cap once, not per person).
+                self.ahv.index(m.year(), k as f64 / 12.0, factor);
             }
 
             // Events

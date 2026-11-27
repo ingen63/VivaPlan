@@ -48,7 +48,7 @@ fn stocks_grow_with_yearly_return() {
 }
 
 #[test]
-fn spending_is_indexed_monthly_and_ahv_every_january() {
+fn spending_is_indexed_monthly_and_ahv_by_the_mixed_index() {
     let mut v = base();
     v["wealth"]["cash"] = json!(100_000);
     v["flows"]["spending"] = json!(1_000);
@@ -68,7 +68,8 @@ fn spending_is_indexed_monthly_and_ahv_every_january() {
     assert!((r[10].income - 2_000.0).abs() < 1e-9, "AHV bis November unverändert");
     // #190: December with the 13th AHV pension (from 2026 in every plan year of this test).
     assert!((r[11].income - 4_000.0).abs() < 1e-9, "Dezember mit 13. AHV-Rente");
-    assert!((r[12].income - 2_200.0).abs() < 1e-9, "AHV im Januar angepasst");
+    // #284: 01.2031 by the mixed index (1.1 + 1.1 × 1.005) / 2 (default real wage growth 0.5 %)
+    assert!((r[12].income - 2_205.5).abs() < 1e-9, "AHV im Januar angepasst");
 }
 
 #[test]

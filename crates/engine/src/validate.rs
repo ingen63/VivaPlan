@@ -778,6 +778,14 @@ fn check(plan: &Plan, v: &mut Issues) {
         &ret.fixed.saron,
         Some((-0.99, 10.0)),
     );
+    // #284: real wage growth for the AHV mixed index
+    if let Some(g) = ret.real_wage_growth.filter(|g| !(-0.02..=0.03).contains(g)) {
+        v.warn_at(
+            "returns",
+            "returns.realWageGrowth",
+            msg!(real_wage_growth_unusual, rate = g),
+        );
+    }
     // #69: Weights of «Welt individuell»
     if let Some(st) = ret
         .strategy

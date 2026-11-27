@@ -45,8 +45,12 @@ Der Editor führt durch zwölf Abschnitte:
   Pensionskasse, solange der Schalter dazu im Einkommen eingeschaltet ist (#236); läuft es bei ausgeschaltetem Schalter
   nach dem Bezug der Pensionskasse weiter, warnt die Prüfung.
 - **Vorsorge:** Pensionskasse mit Guthaben, Beiträgen, Verzinsung, Umwandlungssatz und Kapitalbezug in Prozent;
-  AHV-Rente mit Teuerungsanpassung (im Januar, nominal nie tiefer als im Vorjahr: nach einer Deflation steigt
-  sie erst, wenn die Preise den bisher höchsten Stand übersteigen, #280), eingegeben als erwartete Rente mit 65 laut Rentenvorausberechnung (nominal, bis zum Anspruch ohne Teuerung, #282); bei Bezug vor oder nach 65 kürzt bzw.
+  AHV-Rente nach dem Mischindex wie bei der AHV (#284: Mittel aus Preis- und Lohnindex, Lohnindex aus der Teuerung
+  und der Annahme «Reallohnsteigerung», Vorgabe 0,5 % pro Jahr, unter «Simulation» › «Experte»; Anpassung im Januar
+  ungerader Jahre, bei mehr als 4 % Teuerung seit dem letzten Januar auch in geraden Jahren; nominal nie tiefer als
+  zuvor: nach einer Deflation steigt sie erst, wenn der Index den bisher höchsten Stand übersteigt, #280), eingegeben
+  als erwartete Rente mit 65 laut Rentenvorausberechnung in heutigen Werten (bis zum Bezug nach dem Mischindex
+  angepasst, #282, #284); bei Bezug vor oder nach 65 kürzt bzw.
   erhöht die App sie selbst nach den Sätzen der AHV (Vorbezug 6,8 % je Jahr, höchstens 13,6 %; Aufschub 5,2 % bis
   31,5 %; feste Beträge in Franken, bei Ehepaaren nach dem Plafond auf die ungekürzten Renten), neben dem Feld steht
   die effektive Rente; ab Dezember 2026 jedes Jahr im Dezember die 13. AHV-Rente (1/12 der im

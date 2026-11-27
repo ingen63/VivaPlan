@@ -332,6 +332,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             extrapolation,
             bootstrap: None,
             parametric: parametric.clone(),
+            real_wage_growth: None,
         },
         Some(y) => {
             let file = c
@@ -350,6 +351,7 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
                 extrapolation,
                 bootstrap: None,
                 parametric: parametric.clone(),
+                real_wage_growth: None,
             }
         }
     };

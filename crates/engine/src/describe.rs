@@ -429,6 +429,7 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("returns.fixed.bonds", "rate/year", "-1..1"),
     ("returns.fixed.inflation", "rate/year", "-0.1..0.2"),
     ("returns.fixed.saron", "rate/year", "-0.05..0.2"),
+    ("returns.realWageGrowth", "rate/year", "-0.02..0.03"),
     ("returns.fixed.stocks", "rate/year", "-1..1"),
     ("returns.parametric.df", "count", "0 or > 2"),
     ("returns.parametric.jumpLambda", "count", ">= 0, per year"),
@@ -663,6 +664,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     ("returns.fixed.bonds", "Bond return per year (source fixed)."),
     ("returns.fixed.inflation", "Inflation per year (source fixed)."),
+    ("returns.realWageGrowth", "Real wage growth for the AHV mixed index."),
     (
         "returns.fixed.saron",
         "SARON per year (source fixed), for SARON mortgages.",

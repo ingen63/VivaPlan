@@ -771,6 +771,17 @@ pub struct Returns {
     /// Monte Carlo with a stock model (source `parametric`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parametric: Option<ParametricParams>,
+    /// #284: Assumed real wage growth per year (fraction) for the wage index of the AHV mixed index. Missing: 0.5 %
+    /// ([`crate::ahv::REAL_WAGE_GROWTH_DEFAULT`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub real_wage_growth: Option<f64>,
+}
+
+impl Returns {
+    /// #284: Real wage growth of the plan, otherwise the default.
+    pub fn real_wage_growth(&self) -> f64 {
+        self.real_wage_growth.unwrap_or(crate::ahv::REAL_WAGE_GROWTH_DEFAULT)
+    }
 }
 
 fn default_paths() -> usize {

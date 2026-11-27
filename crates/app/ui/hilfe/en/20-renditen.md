@@ -64,14 +64,14 @@ Keywords: inflation, nominal, today's prices, exception, expert, stress test, re
 
 The app carries every amount forward the way it behaves in reality. You enter amounts that grow with inflation in **today's prices** (prices at the simulation start); the app projects them into the future with the inflation of each path, so with Monte Carlo differently for every path.
 
-- **Always with inflation:** living expenses, care home, earned income, pension fund contributions, pillar 3a contribution and maximum, AHV pension (from entitlement every January), tax tariffs and ongoing deductions, one-off amounts (inflows and spending), one-off deductions from income and from wealth, value and fixed costs of the properties. Example: spending of 40 000 in five years at 2 % inflation then costs about 44 163.
+- **Always with inflation:** living expenses, care home, earned income, pension fund contributions, pillar 3a contribution and maximum, AHV pension (by the mixed index of prices and wages every two years, also before the payout, see [AHV](#f-ahv)), tax tariffs and ongoing deductions, one-off amounts (inflows and spending), one-off deductions from income and from wealth, value and fixed costs of the properties. Example: spending of 40 000 in five years at 2 % inflation then costs about 44 163.
 - **Always nominal:** pension fund pension, mortgage (debt, interest, amortization), pension fund and pillar 3a balances including their interest.
 - **Rent:** The amount is in today's prices and grows with inflation until the month of moving in (“Rent from”), after which it stays nominal. A rent already running at the simulation start is nominal from the beginning. Example: 2 500 today, moving in after 5 years, 2 % inflation gives about 2 760 when moving in, then a constant 2 760. In reality an adjustment is possible after moving in (reference interest rate, 40 % of inflation); the app simplifies here.
 - **Pillar 3a:** The contribution grows at most up to the maximum of the year. The check compares it with the maximum in today's prices.
 
 **Exceptions for stress tests:** Under “Simulation” › **“Expert”** every amount of the first list can be calculated as the exception **“nominal, without inflation”**; it then stays at the entered value over the whole plan. For every rent there is the choice “with inflation until moving in, then nominal”, “always with inflation” or “nominal, without inflation”. The line “Assumptions” above the area names the exceptions set, as do the parameters of a run. New plans have no exception; the area opens by itself as soon as there is one.
 
-**Without inflation = inflation 0 %:** To calculate entirely without inflation, set inflation to 0 % (fixed returns).
+**Without inflation = inflation 0 %:** To calculate entirely without inflation, set inflation to 0 % (fixed returns) and, for the AHV, the real wage growth under “Expert” to 0 %.
 
 **Older plans** calculated some amounts nominally (for example one-off amounts and deductions, pension fund and pillar 3a contributions) or had switches of their own (earned income, AHV, tariffs, properties). When opening, the app takes over this choice as exceptions and says so; the result stays the same. A rent that always grew with inflation keeps “always with inflation”.
 

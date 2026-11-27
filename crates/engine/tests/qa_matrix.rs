@@ -407,8 +407,12 @@ fn ahv_fixed_and_indexed() {
     let idx = run(&make(true, 0.03));
     assert!((idx.records[0].ahv - 2000.0).abs() < 1e-9);
     assert!(idx.records[12].ahv > idx.records[10].ahv, "Teuerung wirkt im Januar");
-    assert!((idx.records[12].ahv / idx.records[10].ahv - 1.03).abs() < 1e-9);
-    let none = run(&make(true, 0.0));
+    // #284: 01.2031 by the mixed index (1.03 + 1.03 × 1.005) / 2 with the default real wage growth 0.5 %
+    assert!((idx.records[12].ahv / idx.records[10].ahv - (1.03 + 1.03 * 1.005) / 2.0).abs() < 1e-9);
+    // without inflation and without real wage growth the AHV stays
+    let mut v = make(true, 0.0);
+    v["returns"]["realWageGrowth"] = json!(0.0);
+    let none = run(&v);
     assert!(none.records.iter().all(|r| (monthly(r) - 2000.0).abs() < 1e-9));
 }
 
@@ -1606,9 +1610,14 @@ fn indexed_ahv_changes_only_in_january() {
         let (prev, r) = (w[0], w[1]);
         if (r.income - prev.income).abs() > 0.005 {
             jumps += 1;
+            // #284: only in January of odd years, by the mixed index since the previous adjustment (two years)
             assert_eq!(r.month.month(), 1, "AHV-Änderung im {}", r.month);
+            assert_eq!(r.month.year() % 2, 1, "AHV-Änderung im geraden Jahr {}", r.month);
+            let n = res.records[0].month.until(r.month) / 12;
+            let mix = |n: i32| 1.03_f64.powi(n) * (1.0 + 1.005_f64.powi(n)) / 2.0;
+            let expected = if n == 1 { mix(1) } else { mix(n) / mix(n - 2) };
             assert!(
-                (r.income / prev.income - 1.03).abs() < 1e-9,
+                (r.income / prev.income - expected).abs() < 1e-9,
                 "{}: Faktor {}",
                 r.month,
                 r.income / prev.income
