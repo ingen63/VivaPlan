@@ -972,3 +972,20 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #304/AK7 | `BESCHREIBUNG.md` (KI-Server) nachgeführt. | ☑ | **gilt** (auch Hilfe `#ref-describe`, `vivaplan-skill`) | – | 27.11.2026 ok (Durchsicht) |
 | #304/AK8 | Jede Entnahmestrategie einzeln mit Wert, Bezeichnung und Bedeutung in einem Satz. | ☑ | **gilt** | `describe.rs` `issue_304_ak8_…` | 27.11.2026 ok (Test) |
 | #304/AK9 | Anweisungen: eingestellte Strategie nennen, auf weitere hinweisen, nur auf Wunsch wechseln; Handprüfung. | ☐ | **gilt** im Text | `mod.rs` `issue_304_ak9_…` | 27.11.2026 teilweise: Text geprüft, Verhalten in Claude Desktop von Hand offen |
+
+### #309 Automatische Updates mit Zustimmung beim ersten Start
+
+[Issue #309](https://github.com/ingen63/VivaPlan/issues/309) · offen (`implemented`) · Umsetzung: 12a1d03 · AK3, AK6, AK10 brauchen ein echtes Release mit Signaturschlüssel
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #309/AK1 | Frage beim ersten Start nach der Beta-Aktivierung mit «Ja»/«Nein», nennt die übertragenen Daten, nur einmal. | ☑ | **gilt** | [ui-update.spec.js](../e2e/ui-update.spec.js) AK1 (#309) | 27.11.2026 ok (Test; in der echten App von Hand offen) |
+| #309/AK2 | Wahl im Reiter «Allgemein» änderbar; bestehende Installationen einmal gefragt. | ☑ | **gilt** (fehlender Schlüssel `updateCheck` = nicht gefragt) | [ui-update.spec.js](../e2e/ui-update.spec.js) AK2, AK4 (#309) | 27.11.2026 ok (Test) |
+| #309/AK3 | Mit «Ja» Suche bei jedem Start, Version und Änderungen mit «Jetzt installieren»/«Später», Neustart nach Installation. | ☐ | **gilt** im Ablauf | `update.rs` `issue_309_ak3_…`; [ui-update.spec.js](../e2e/ui-update.spec.js) AK3 (#309) | 27.11.2026 teilweise: Ablauf mit Ersatz-Suche geprüft, echter Endpunkt und Neustart offen (QA.md «Updates») |
+| #309/AK4 | Ohne Zustimmung nie Netzwerk; Test belegt es. | ☑ | **gilt** | `update.rs` `issue_309_ak4_…`, `main.rs` `issue_309_ak4_commands_…`, `csp.rs` `issue_309_ak4_…`, `test_check_network_free.py` | 27.11.2026 ok (Tests) |
+| #309/AK5 | Ohne Internet oder bei Serverfehler normaler Start ohne Meldung, Fehler im Protokoll. | ☑ | **gilt** | `update.rs` `issue_309_ak5_…` | 27.11.2026 ok (Test; WLAN aus von Hand offen) |
+| #309/AK6 | Updates signiert; ungültige Signatur wird nicht installiert, Hinweis nennt Grund. | ☐ | **gilt** im Code | `update.rs` `issue_309_ak6_…` | 27.11.2026 teilweise: Zuordnung des Fehlers geprüft, Installation mit falscher Signatur offen |
+| #309/AK7 | Rechenkern, Kommandozeile, `vivaplan mcp` ohne Netzwerk. | ☑ | **gilt** | `make network-free`, `test_check_network_free.py` `test_309_ak7_…` | 27.11.2026 ok (Prüflauf) |
+| #309/AK8 | Netzwerkregel in BESCHREIBUNG, README, CLAUDE.md, Hilfe Datenschutz nennt die Ausnahme. | ☑ | **gilt** | – | 27.11.2026 ok (Durchsicht) |
+| #309/AK9 | Texte in i18n (4 Sprachen); Hilfe Einstellungen und Datenschutz nachgeführt. | ☑ | **gilt** | `make ui-texts`, `make i18n-check`, `help.rs` | 27.11.2026 ok (Prüfläufe, Durchsicht) |
+| #309/AK10 | Release erzeugt Manifest und Signaturen für drei Plattformen; QA.md mit Prüfliste. | ☐ | **gilt** im Workflow | `test_update_manifest.py`, `actionlint` | 27.11.2026 teilweise: Werkzeug und Prüfliste da, Lauf mit Secret und Update von der Vorversion offen |
