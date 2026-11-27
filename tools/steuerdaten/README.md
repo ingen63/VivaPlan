@@ -223,6 +223,10 @@ Hinweis; genommen wird der erste Teil bzw. die Hauptzeile, wie im ESTV-Export.
 
 ## Rechtliches
 
-Für die ESTV-Daten gibt es keine offene Lizenz (rechtliche Hinweise admin.ch). Die schriftliche Zustimmung der
-Steuerstatistik der ESTV zur Weitergabe der Steuerdatei liegt vor (#63, 22.11.2026). Für ein neues Steuerjahr prüfen, ob
-sie weiter gilt.
+Für die ESTV-Daten gibt es keine offene Lizenz (rechtliche Hinweise admin.ch). Eine Zustimmung der ESTV zur
+Weitergabe liegt **nicht** vor (Stand 28.11.2026, #283): Die ESTV hat im November 2026 geantwortet, es gebe keine
+Schnittstelle und keine Datenlieferung, und einer Weiterverwendung der Daten in Programmen anderer stimme sie vorerst
+nicht zu; die Rückfrage zu den Steuerfüssen läuft. Bis zu einem Entscheid gibt keine verteilte Version die Steuerfüsse
+aus dem ESTV-Export weiter (#283/AK5). Tarife, Abzüge und Regeln stammen aus den Erlassen (#286); die Steuerfüsse aus
+den Quellen der Kantone sind der Weg ohne ESTV-Daten (#285, Abschnitt oben). Bei diesen gelten die Nutzungsbedingungen
+der jeweiligen Quelle (offene Daten meist mit Quellenangabe).
