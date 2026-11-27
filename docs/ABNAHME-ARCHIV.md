@@ -2517,6 +2517,19 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #296/AK3 | Abzüge, Vermögen, Kapitalbezugs- und Grundstückgewinnregel mit Artikel; Näherung beim Kapitalbezug geklärt. | ☑ | **gilt** (LF Art. 33b, Divisor 19,77 statt 40; verbleibende Näherung Alter 65 und Höchstsatz Gemeinde aus Sitten in `capitalApprox`) | `test_build.py` `issue_296_ak3_…` | 27.11.2026 ok (Test, Durchsicht) |
 | #296/AK4 | Referenzfälle für mindestens zwei Gemeinden mit verschiedenem Index stimmen mit dem Walliser Steuerrechner (±5 %). | ☑ | **gilt** | `tax_location.rs` `issue_296_ak4_…`, `tax_capital_location.rs` `issue_296_ak4_…` | 27.11.2026 ok (Tests) |
 
+### #302 Neue Planung lässt sich über die KI nicht speichern, wenn die KI einen Pfad rät
+
+[Issue #302](https://github.com/ingen63/VivaPlan/issues/302) · geschlossen · Umsetzung: 0e6ca40 · Fehler aus der Nutzung (Claude Desktop, beta.6)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #302/AK1 | Beschreibung von `plan_save.path`: bei einer Planung ohne Datei genügt ein Dateiname, die Datei landet im ersten freigegebenen Planordner. | ☑ | **gilt** | `mcp/edit.rs` `issue_302_ak1_…`, [mcp-tools.json](../crates/cli/tests/mcp-tools.json) | 27.11.2026 ok (Test) |
+| #302/AK2 | Hinweis `next` von `plan_open new: true` sagt dasselbe. | ☑ | **gilt** | `mcp/tools.rs` `issue_302_ak2_…` | 27.11.2026 ok (Test) |
+| #302/AK3 | `~/` am Anfang von `path` ist bei `plan_save` und `plan_open` der Home-Ordner wie bei `--allow-dir`; Regel 6 unverändert. | ☑ | **gilt** | `mcp/edit.rs` `issue_302_ak3_…` | 27.11.2026 ok (Test) |
+| #302/AK4 | Fehlender oder nicht freigegebener Zielordner: Meldung nennt den Dateinamen allein als Ausweg, ohne Ordnernamen. | ☑ | **gilt** | `mcp/edit.rs` `issue_302_ak4_…` | 27.11.2026 ok (Test) |
+| #302/AK5 | Ein Test je Kriterium; Speichern einer neuen Planung mit `~/`-Pfad unter gestelltem Home-Ordner. | ☑ | **gilt** | `issue_302_ak1_…` bis `issue_302_ak4_…` | 27.11.2026 ok (Tests) |
+| #302/AK6 | Hilfe (MCP-Server) und `docs/BESCHREIBUNG.md` nachgeführt. | ☑ | **gilt** (auch `vivaplan-skill/SKILL.md`) | – | 27.11.2026 ok (Durchsicht, 4 Sprachen) |
+
 ### #303 Neue Planung und Beispielplanung mit Welt (JST) und kurzfristigen Obligationen statt Shiller
 
 [Issue #303](https://github.com/ingen63/VivaPlan/issues/303) · geschlossen · Umsetzung: 3eebc19 · Fehler aus der Nutzung (seit #269)
