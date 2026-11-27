@@ -168,6 +168,14 @@ impl Bootstrap<'_> {
                 .filter(|v| !v.is_nan())
                 .unwrap_or_else(|| self.fixed.saron.at(m))
         };
+        // #307: yield of the 10-year federal bonds from the same month or year
+        let yield10 = |i: usize, m: YearMonth| {
+            ds.yield10
+                .as_ref()
+                .map(|s| s[i])
+                .filter(|v| !v.is_nan())
+                .unwrap_or_else(|| self.fixed.bonds.at(m))
+        };
         match ds.freq {
             Freq::Monthly => {
                 let pos = self.positions(&mut rng, self.months, self.params.block);
@@ -183,6 +191,7 @@ impl Bootstrap<'_> {
                     p.bonds.push(ds.bonds[i]);
                     p.inflation.push(ds.inflation[i]);
                     p.saron.push(saron(i, m));
+                    p.yield10.push(yield10(i, m));
                 }
             }
             Freq::Yearly => {
@@ -206,6 +215,7 @@ impl Bootstrap<'_> {
                     p.bonds.push(monthly(ds.bonds[i]));
                     p.inflation.push(ds.inflation[i]);
                     p.saron.push(saron(i, m));
+                    p.yield10.push(yield10(i, m));
                 }
             }
         }
@@ -227,7 +237,8 @@ pub const TRADING_DAYS: usize = 21;
 /// Poisson price jumps, computed in daily steps and combined into monthly returns.
 /// Bonds and inflation: with `correlated` random per calendar year and correlated with the year's stock return
 /// (#101), from a random stream of their own, so the stock paths stay the same; otherwise, like SARON,
-/// the fixed values.
+/// the fixed values. #307: with `correlated` SARON follows the drawn inflation (inflation + real short-term rate, at
+/// least 0) and the yield of the 10-year federal bonds lies the term spread above it.
 pub struct Parametric<'a> {
     pub fixed: &'a FixedCurves,
     pub start: YearMonth,
@@ -340,8 +351,9 @@ impl Parametric<'_> {
                 logs.push(log);
             }
             p.stocks.push(log.exp() - 1.0);
-            p.saron.push(self.fixed.saron.at(m));
             if self.correlated.is_none() {
+                p.saron.push(self.fixed.saron.at(m));
+                p.yield10.push(self.fixed.bonds.at(m));
                 p.bonds.push(monthly(self.fixed.bonds.at(m)));
                 p.inflation.push(self.fixed.inflation.at(m));
             }
@@ -362,9 +374,12 @@ impl Parametric<'_> {
                 let log: f64 = logs[k..k + len].iter().sum();
                 let (e1, e2) = (rng.normal(), rng.normal());
                 let (b, i) = c.draw(log, len, e1, e2);
+                let (saron, yield10) = c.rates(i);
                 for _ in 0..len {
                     p.bonds.push(monthly(b));
                     p.inflation.push(i);
+                    p.saron.push(saron);
+                    p.yield10.push(yield10);
                 }
                 k += len;
             }

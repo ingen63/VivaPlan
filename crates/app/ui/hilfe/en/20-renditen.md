@@ -98,7 +98,7 @@ A single run with **constant annual values** for stocks, bonds, inflation and SA
 - **Choice of values:** Calculate with cautious, **realistic** values, not with the peak years of the past. A sober assumption would be, for example, 4 % to 5 % for stocks, 1 % to 2 % for bonds and 1 % to 2 % inflation.
 - With the strategies “Fixed rate”, “Guardrails” and others, a run with fixed returns only shows the average case.
 
-With the other sources, the fixed values still partly apply: for the **SARON** outside the period of the series and with the [parametric model](#f-ret-parametric), and after the end of the series with the [extrapolation](#f-ret-extrapolation).
+With the other sources, the fixed values still partly apply: for the **SARON** outside the data of the interest environment ([SARON and mortgages](#ret-saron)), with the [parametric model](#f-ret-parametric) without a time series, and after the end of the series with the [extrapolation](#f-ret-extrapolation).
 
 ## @f-ret-historical Historical from start date
 Keywords: review, start month, 1973, 1929, backtest, time series
@@ -157,7 +157,7 @@ The bootstrap creates **thousands of new return paths** by joining random sectio
 ## @f-ret-parametric Monte Carlo · parametric
 Keywords: Student t, fat tails, volatility, drift, price jumps, mu, sigma, degrees of freedom, Poisson, crash, suggested values, correlation, bonds, inflation
 
-A **stock model with your own or suggested assumptions**. Stock prices follow a random walk in **daily steps** (21 per month), supplemented by rare **price jumps**. **Bonds and inflation** are also random and **correlated** with the stocks, as in the series of the [investment strategy](#f-ret-series). The SARON is held constant at the fixed value.
+A **stock model with your own or suggested assumptions**. Stock prices follow a random walk in **daily steps** (21 per month), supplemented by rare **price jumps**. **Bonds and inflation** are also random and **correlated** with the stocks, as in the series of the [investment strategy](#f-ret-series). The **SARON follows the drawn inflation** (inflation plus the real short-term rate), see [SARON and mortgages](#ret-saron).
 
 | Input | Suggestion (example World (JST)) | Meaning |
 |---|---|---|
@@ -223,7 +223,7 @@ The methods “Historical from start date”, “All historical start dates” a
 
 - **Monthly** are only “S&P 500 (Shiller)” with “USA 10 years (Shiller)” (from 01.1922) and “S&P 500 (Shiller)” with “Swiss Confederation 10 years” (02.1988 to 07.2025).
 - All other combinations are **annual** as soon as one part is annual. Monthly returns are compounded to calendar years for this. The series covers the years for which both indices have values: for example “World (JST)” with “USA 10 years (Shiller)” 1922–2020.
-- **Inflation** comes from the source of the stocks (Swiss inflation in all cases), the **SARON** from the SNB values (for annual series as an annual average, from 2000).
+- **Inflation** comes from the source of the stocks (Swiss inflation in all cases), the **SARON** from the SNB values (for annual series as an annual average, from 2000), before that the short-term rate of the Swiss Confederation (JST); see [SARON and mortgages](#ret-saron).
 - All indices are **in CHF**. With a plan in EUR or USD, a notice appears.
 
 Below the selection are the period, the frequency and the mean annual returns (geometric) of the chosen strategy; the ⓘ next to it names the source and the period.
@@ -257,13 +257,29 @@ The period (“Average over” … years) applies to the two moving methods. Thi
 Note: an extrapolation is an **assumption**, not a historical result. With very long extrapolations, the result loses its historical character.
 
 ## @ret-saron SARON and mortgages
-Keywords: SARON, mortgage, interest, margin, time series
+Keywords: SARON, mortgage, interest, margin, time series, interest environment, federal bonds, inflation, fixed-rate mortgage
 
-The **SARON** is only needed if a mortgage has a SARON period. It comes from the time series (from 06.1999, if available); otherwise the **fixed SARON value** of the plan applies.
+Mortgage interest rates follow the **interest and inflation environment of the path**: in a path with high inflation, SARON and the rates at the renewal of a fixed-rate mortgage rise as well. Two rates belong to every month of a path:
 
-- Outside the SARON period of the series, with “Fixed returns”, with the parametric model and after an extrapolation, the fixed value applies. The view only shows the field when it is needed.
-- The interest rate of a SARON tranche is SARON plus margin, with a floor of 0.
-- Before 1999, there is no SARON. For historical runs before 1999, use the fixed value as an approximation.
+- **SARON** (short-term rate) for SARON periods.
+- **Yield of 10-year Swiss Confederation bonds** for periods “Fixed (market)”, see [Mortgages](#f-re-mortgage).
+
+**Historical, all start dates and bootstrap:** Both rates come from the same historical month or year as stocks, bonds and inflation, also in the blocks of the bootstrap.
+
+| Rate | Source | Frequency |
+|---|---|---|
+| SARON | SNB (zimoma) from 06.1999; before that the short-term rate of the Swiss Confederation (JST, paper of about 3 months) | SNB monthly, JST one value per calendar year that applies to all months of the year |
+| Federal bonds 10 years | SNB (rendoblim) from 01.1988; before that the JST yield | likewise |
+
+Annual series take the annual value (JST, after 2020 the mean of the twelve SNB months). In the path from 1972 the SARON thus stands at 5.97 % in 1974, the federal bonds at 7.15 %. Over all historical years the correlation of inflation and mortgage interest rate is positive. Only where data is missing (before 1870 or after an extrapolation) the fixed SARON value applies, and for the federal bonds the fixed bond return.
+
+**Monte Carlo · parametric:** The SARON follows the drawn inflation of the year: **inflation plus the real short-term rate**, at least 0. The 10-year federal bonds lie the mean term spread of the series above it (at least 0). The card “Interest rates for mortgages” shows the real rate: empty means the default from the series, the mean of SARON minus inflation in the years of the inflation (for “World (JST)” from 1950: 0.08 %, term spread 0.87 %); your own number applies instead. Without a time series the fixed SARON value applies.
+
+**Fixed returns:** The SARON is the fixed value of the plan, the yield of the federal bonds the fixed bond return. The view only shows the field when it is needed.
+
+- The interest rate of a SARON period is SARON plus margin, with a floor of 0 for the SARON.
+- The imputed values of the [affordability](#f-re-afford) stay unchanged; the interest environment only changes the interest paid.
+- The [events](#r-events) name the new rate and its origin at every renewal, for example 4.20 % (10-year Swiss Confederation bonds 3.00 % + margin 1.20 %).
 
 More on tranches and periods: [Mortgages](#f-re-mortgage).
 

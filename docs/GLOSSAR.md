@@ -154,7 +154,7 @@ Wörter in Grossbuchstaben nicht.
 | Hypothek | `mortgage` | `Mortgage` |
 | Tranche | `tranche` | `Tranche` |
 | Hypothekarperiode, Laufzeit | `period`, `term` | `Period` |
-| Festhypothek, SARON-Hypothek | `fixed`, `saron` | `RateKind` |
+| Festhypothek, Festhypothek aus Zinsumfeld («Fest (Markt)», #307), SARON-Hypothek | `fixed`, `market`, `saron` | `RateKind` |
 | Marge | `margin` | |
 | Erneuerung | `renewal` | `Renewal`, `AfterLast::Renew` |
 | Rückzahlung | `repayment` | `AfterLast::Repay` |

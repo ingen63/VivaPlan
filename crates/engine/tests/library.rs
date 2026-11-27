@@ -81,7 +81,7 @@ fn plan_uses_library_reference() {
 }
 
 #[test]
-fn saron_gaps_use_fixed_value() {
+fn issue_307_ak1_saron_gaps_use_the_short_term_rate() {
     let p: engine::model::Plan = serde_json::from_value({
         let mut v = api::example_plan();
         v["returns"]["source"] = json!("historical");
@@ -96,10 +96,11 @@ fn saron_gaps_use_fixed_value() {
         .unwrap()
         .unwrap();
     let path = &batch::market_paths(&p, &sim, Some(&ds)).unwrap()[0];
-    // Until 05.1999 no SARON in the series → fixed value, afterwards the SNB values.
+    // #307/AK1: Until 05.1999 no SARON in the series → short-term rate of the Swiss Confederation of the same year (JST:
+    // 1990 8.75 %, 1999 1.09375 %), afterwards the SNB values; the fixed value no longer applies.
     let k_may99 = (YearMonth::new(1999, 5).0 - YearMonth::new(1990, 1).0) as usize;
-    assert_eq!(path.saron[0], 0.0123);
-    assert_eq!(path.saron[k_may99], 0.0123);
+    assert!((path.saron[0] - 0.0875).abs() < 1e-6);
+    assert!((path.saron[k_may99] - 0.010_937_5).abs() < 1e-6);
     assert!((path.saron[k_may99 + 2] - 0.0065).abs() < 1e-12);
 }
 

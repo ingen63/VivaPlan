@@ -213,6 +213,7 @@ laufende **Prüfung** meldet Fehler und Hinweise, bevor gerechnet wird. Eine **Z
   den Aktien korreliert, mit Mittelwert, Streuung und Korrelation der Reihe aus der Anlagestrategie. Die Teuerung
   schätzt das Modell nur aus den Jahren ab einem Startjahr (Einstellung, Standard 1950), weil die Kriegsjahre ihre
   Streuung von rund 2.3 % auf 5 % pro Jahr treiben; der Tab «Simulation» nennt den Zeitraum (z. B. «Teuerung 1950–2020»).
+  Der SARON folgt der gezogenen Teuerung (Teuerung plus realer Kurzfristzins, Vorgabe aus der Reihe).
 
 Die Läufe werden parallel auf allen Prozessorkernen gerechnet, 50 000 Monte-Carlo-Pfade dauern wenige Sekunden. Gleiche
 Einstellungen ergeben immer gleiche Ergebnisse.
@@ -262,9 +263,13 @@ Beim Öffnen einer Planung zeigt der Abschnitt «Optimierung» das neueste dazu 
 
 Eine Liegenschaft kann bereits im Besitz sein, zu einem Datum gekauft und verkauft werden oder erst nach dem Verkauf
 einer anderen gekauft werden, etwa der Wechsel vom Haus in eine kleinere Wohnung. Beim Verkauf fällt die
-Grundstückgewinnsteuer an. Hypotheken bestehen aus Tranchen mit aufeinanderfolgenden Perioden, fest oder SARON plus
-Marge, mit Verlängerung oder Rückzahlung am Ende. Die Amortisation erfolgt direkt oder indirekt über die Säule 3a;
-indirekt nur bis zum AHV-Bezug, danach direkt.
+Grundstückgewinnsteuer an. Hypotheken bestehen aus Tranchen mit aufeinanderfolgenden Perioden, fest, «Fest (Markt)»
+oder SARON plus Marge, mit Verlängerung oder Rückzahlung am Ende. Die Zinsen folgen dem Zins- und Teuerungsumfeld des
+Pfades: Der SARON stammt aus den historischen Daten (vor seiner Einführung 1999 der kurzfristige Zins der
+Eidgenossenschaft) oder folgt im parametrischen Modell der gezogenen Teuerung; eine Periode «Fest (Markt)» erhält bei der
+Erneuerung die Rendite der Bundesobligationen 10 Jahre des Pfades plus eine Marge aus den Einstellungen. Die
+Ereignisse nennen bei jeder Erneuerung den neuen Satz und seine Herkunft. Die Amortisation erfolgt direkt oder indirekt
+über die Säule 3a; indirekt nur bis zum AHV-Bezug, danach direkt.
 
 Beim Kauf prüft die App die Tragbarkeit wie eine Bank (Werte in den Einstellungen) und kürzt die Hypothek nötigenfalls;
 auf Wunsch wird mit der höchsten Belehnung (Standard 80 %) finanziert. Eingeschaltet zählt ein Anteil des freien Vermögens

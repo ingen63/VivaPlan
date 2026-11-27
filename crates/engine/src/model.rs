@@ -851,6 +851,10 @@ pub struct ParametricParams {
     /// method [`crate::montecarlo::SAMPLER`].
     #[serde(default)]
     pub sampler: u32,
+    /// #307: real short-term rate (SARON minus inflation) of the model; missing: the suggested value of the series
+    /// ([`crate::calibrate::Joint::real_short`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub real_short_rate: Option<f64>,
 }
 
 impl Default for ParametricParams {
@@ -866,6 +870,7 @@ impl Default for ParametricParams {
             seed: default_seed(),
             auto: false,
             sampler: crate::montecarlo::SAMPLER,
+            real_short_rate: None,
         }
     }
 }
@@ -1471,6 +1476,29 @@ pub struct Affordability {
     /// #266: maximum loan-to-value once every person of the household is retired (purchase and renewal).
     #[serde(default = "default_max_loan_to_value_retired")]
     pub max_loan_to_value_retired: f64,
+    /// #307: suggested margin of a new SARON period (the user interface takes it over; each period keeps its own).
+    /// Not part of the schema: the engine does not use it.
+    #[serde(default = "default_saron_margin")]
+    #[schemars(skip)]
+    pub saron_margin: f64,
+    /// #307: margin of a fixed-rate period «from the interest environment» over the yield of 10-year Swiss
+    /// Confederation bonds.
+    #[serde(default = "default_fixed_margin")]
+    pub fixed_margin: f64,
+}
+
+/// #307: default of [`Affordability::saron_margin`] (average of Swiss banks, 11/2026).
+pub const DEFAULT_SARON_MARGIN: f64 = 0.01;
+/// #307: default of [`Affordability::fixed_margin`] (banks price on the swap rate, which lies above the yield of the
+/// federal bonds; estimate).
+pub const DEFAULT_FIXED_MARGIN: f64 = 0.012;
+
+fn default_saron_margin() -> f64 {
+    DEFAULT_SARON_MARGIN
+}
+
+fn default_fixed_margin() -> f64 {
+    DEFAULT_FIXED_MARGIN
 }
 
 fn default_wealth_drawdown_rate() -> f64 {
@@ -1492,6 +1520,8 @@ impl Default for Affordability {
             wealth_drawdown: false,
             wealth_drawdown_rate: default_wealth_drawdown_rate(),
             max_loan_to_value_retired: default_max_loan_to_value_retired(),
+            saron_margin: DEFAULT_SARON_MARGIN,
+            fixed_margin: DEFAULT_FIXED_MARGIN,
         }
     }
 }
@@ -1662,6 +1692,10 @@ pub enum RateKind {
     Fixed,
     /// SARON plus margin.
     Saron,
+    /// #307: Fixed rate that a period starting after the simulation start (renewal or purchase) takes from the
+    /// interest environment of the path: yield of 10-year Swiss Confederation bonds in its first month plus
+    /// [`Affordability::fixed_margin`]. A period already running at the start keeps `rate`.
+    Market,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -1681,7 +1715,7 @@ pub struct Period {
     pub kind: RateKind,
     /// Term in years.
     pub term: f64,
-    /// Fixed interest p.a. (kind `fixed`).
+    /// Fixed interest p.a. (kind `fixed`; with `market` until the first renewal).
     #[serde(default)]
     pub rate: f64,
     /// Margin p.a. on SARON (kind `saron`).

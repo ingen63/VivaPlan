@@ -98,7 +98,7 @@ Ein einziger Lauf mit **konstanten Jahreswerten** für Aktien, Obligationen, Inf
 - **Wahl der Werte:** Rechnen Sie mit vorsichtigen, **realistischen** Werten, nicht mit den Spitzenjahren der Vergangenheit. Eine nüchterne Annahme wäre zum Beispiel 4 % bis 5 % für Aktien, 1 % bis 2 % für Obligationen, 1 % bis 2 % Inflation.
 - Bei den Strategien «Fixe Rate», «Guardrails» und anderen zeigt ein Lauf mit fixen Renditen nur den Durchschnittsfall.
 
-Bei den anderen Quellen gelten die fixen Werte teilweise trotzdem: für den **SARON** ausserhalb des Zeitraums der Reihe und beim [parametrischen Modell](#f-ret-parametric) und nach dem Ende der Reihe bei der [Fortschreibung](#f-ret-extrapolation).
+Bei den anderen Quellen gelten die fixen Werte teilweise trotzdem: für den **SARON** ausserhalb der Daten des Zinsumfelds ([SARON und Hypotheken](#ret-saron)), beim [parametrischen Modell](#f-ret-parametric) ohne Zeitreihe und nach dem Ende der Reihe bei der [Fortschreibung](#f-ret-extrapolation).
 
 ## @f-ret-historical Historisch ab Startzeitpunkt
 Stichworte: Rückblick, Startmonat, 1973, 1929, Backtest, Zeitreihe
@@ -157,7 +157,7 @@ Der Bootstrap erzeugt **tausende neue Renditepfade**, indem er zufällige Abschn
 ## @f-ret-parametric Monte Carlo · parametrisch
 Stichworte: Student-t, Fat Tails, Volatilität, Drift, Kurssprünge, mu, sigma, Freiheitsgrade, Poisson, Crash, Vorschlagswerte, Korrelation, Obligationen, Inflation
 
-Ein **Aktienmodell mit eigenen oder vorgeschlagenen Annahmen**. Die Aktienkurse folgen einer Zufallsbewegung in **Tagesschritten** (21 pro Monat), ergänzt um seltene **Kurssprünge**. **Obligationen und Inflation** sind ebenfalls zufällig und mit den Aktien **korreliert**, so wie in der Reihe der [Anlagestrategie](#f-ret-series). Der SARON gilt konstant als fixer Wert.
+Ein **Aktienmodell mit eigenen oder vorgeschlagenen Annahmen**. Die Aktienkurse folgen einer Zufallsbewegung in **Tagesschritten** (21 pro Monat), ergänzt um seltene **Kurssprünge**. **Obligationen und Inflation** sind ebenfalls zufällig und mit den Aktien **korreliert**, so wie in der Reihe der [Anlagestrategie](#f-ret-series). Der **SARON folgt der gezogenen Inflation** (Inflation plus realer Kurzfristzins), siehe [SARON und Hypotheken](#ret-saron).
 
 | Eingabe | Vorschlag (Beispiel Welt (JST)) | Bedeutung |
 |---|---|---|
@@ -223,7 +223,7 @@ Die Methoden «Historisch», «Alle Startzeitpunkte» und «Bootstrap» brauchen
 
 - **Monatlich** sind nur «S&P 500» mit «USA 10 Jahre» (ab 01.1922) und «S&P 500» mit «Eidgenossenschaft 10 Jahre» (02.1988 bis 07.2025).
 - Alle anderen Kombinationen sind **jährlich**, sobald ein Teil jährlich ist. Monatsrenditen werden dazu zu Kalenderjahren verknüpft. Die Reihe umfasst die Jahre, für die beide Indizes Werte haben: zum Beispiel «Welt (JST)» mit «USA 10 Jahre» 1922–2020.
-- Die **Teuerung** stammt aus der Quelle der Aktien (Schweizer Teuerung in allen Fällen), der **SARON** aus den SNB-Werten (bei Jahresreihen als Jahresmittel, ab 2000).
+- Die **Teuerung** stammt aus der Quelle der Aktien (Schweizer Teuerung in allen Fällen), der **SARON** aus den SNB-Werten (bei Jahresreihen als Jahresmittel, ab 2000), davor der kurzfristige Zins der Eidgenossenschaft (JST); siehe [SARON und Hypotheken](#ret-saron).
 - Alle Indizes sind **in CHF**. Bei einer Planung in EUR oder USD erscheint ein Hinweis.
 
 Unter der Auswahl stehen Zeitraum, Häufigkeit und die mittleren Jahresrenditen (geometrisch) der gewählten Strategie; das ⓘ daneben nennt Quelle und Zeitraum.
@@ -257,13 +257,29 @@ Der Zeitraum («Durchschnitt über … Jahre») gilt für die beiden gleitenden 
 Beachten Sie: Eine Fortschreibung ist eine **Annahme**, kein historisches Ergebnis. Bei sehr langen Fortschreibungen verliert das Ergebnis seinen historischen Charakter.
 
 ## @ret-saron SARON und Hypotheken
-Stichworte: SARON, Hypothek, Zins, Marge, Zeitreihe
+Stichworte: SARON, Hypothek, Zins, Marge, Zeitreihe, Zinsumfeld, Bundesobligationen, Teuerung, Festhypothek
 
-Der **SARON** wird nur gebraucht, wenn eine Hypothek eine SARON-Periode hat. Er stammt aus der Zeitreihe (ab 06.1999, wenn vorhanden), sonst gilt der **fixe SARON-Wert** der Planung.
+Die Hypothekarzinsen folgen dem **Zins- und Teuerungsumfeld des Pfades**: In einem Pfad mit hoher Teuerung steigen auch SARON und die Zinsen bei der Erneuerung einer Festhypothek. Zwei Zinsen gehören zu jedem Monat eines Pfades:
 
-- Ausserhalb des SARON-Zeitraums der Reihe, bei «Fixe Renditen», beim parametrischen Modell und nach einer Fortschreibung gilt der fixe Wert. Die Ansicht zeigt das Feld nur, wenn es gebraucht wird.
-- Der Zinssatz einer SARON-Tranche ist SARON plus Marge, mit Untergrenze 0.
-- Vor 1999 gibt es keinen SARON. Verwenden Sie für historische Läufe vor 1999 den fixen Wert als Annäherung.
+- **SARON** (kurzfristiger Zins) für SARON-Perioden.
+- **Rendite der Bundesobligationen 10 Jahre** für Perioden «Fest (Markt)», siehe [Hypotheken](#f-re-mortgage).
+
+**Historisch, alle Startdaten und Bootstrap:** Beide Zinsen stammen aus demselben historischen Monat oder Jahr wie Aktien, Obligationen und Inflation, auch in den Blöcken des Bootstraps.
+
+| Zins | Quelle | Häufigkeit |
+|---|---|---|
+| SARON | SNB (zimoma) ab 06.1999; davor der kurzfristige Zins der Eidgenossenschaft (JST, Papiere von etwa 3 Monaten) | SNB monatlich, JST ein Wert pro Kalenderjahr, der für alle Monate des Jahres gilt |
+| Bundesobligationen 10 Jahre | SNB (rendoblim) ab 01.1988; davor die Rendite der JST | ebenso |
+
+Jahresreihen nehmen den Jahreswert (JST, nach 2020 das Mittel der zwölf SNB-Monate). Im Pfad ab 1972 liegt der SARON damit 1974 bei 5.97 %, die Bundesobligationen bei 7.15 %. Über alle historischen Jahre ist die Korrelation von Teuerung und Hypothekarzins positiv. Nur wo die Daten fehlen (vor 1870 oder nach einer Fortschreibung), gilt der fixe SARON-Wert und für die Bundesobligationen die fixe Obligationenrendite.
+
+**Monte Carlo · parametrisch:** Der SARON folgt der gezogenen Inflation des Jahres: **Inflation plus realer Kurzfristzins**, mindestens 0. Die Bundesobligationen 10 Jahre liegen um den mittleren Zinsabstand der Reihe darüber (mindestens 0). Den realen Zins zeigt die Karte «Zinsen für Hypotheken»: leer bedeutet die Vorgabe aus der Reihe, das Mittel von SARON minus Inflation in den Jahren der Inflation (bei «Welt (JST)» ab 1950: 0.08 %, Zinsabstand 0.87 %); eine eigene Zahl gilt stattdessen. Ohne Zeitreihe gilt der fixe SARON-Wert.
+
+**Fixe Renditen:** Der SARON ist der fixe Wert der Planung, die Rendite der Bundesobligationen die fixe Obligationenrendite. Die Ansicht zeigt das Feld nur, wenn es gebraucht wird.
+
+- Der Zinssatz einer SARON-Periode ist SARON plus Marge, mit Untergrenze 0 für den SARON.
+- Die kalkulatorischen Werte der [Tragbarkeit](#f-re-afford) bleiben unverändert; das Zinsumfeld ändert nur die bezahlten Zinsen.
+- Die [Ereignisse](#r-events) nennen bei jeder Erneuerung den neuen Satz und seine Herkunft, zum Beispiel 4.20 % (Bundesobligationen 10 J. 3.00 % + Marge 1.20 %).
 
 Mehr zu Tranchen und Perioden: [Hypotheken](#f-re-mortgage).
 

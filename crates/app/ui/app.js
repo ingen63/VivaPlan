@@ -152,7 +152,8 @@ const tax = (table, x) => taxAt(table, x, state.taxes.multiplier); // #156: like
 // due at the end of March/June/September/December; direct (reduces the debt) or indirect (contribution to pillar 3a).
 const saron = () => +state.returns.fixed.saron || 0;
 const perRate = d => d.type === "saron" ? Math.max(0, saron() + (+d.margin || 0)) : +d.rate || 0;
-const newPeriod = (o = {}) => ({ type: "fixed", term: 5, rate: 0.015, margin: 0.009, amort: 0, amortMode: "direct", ...o });
+// #307/AK9: the margin of a new SARON period is the one of the settings
+const newPeriod = (o = {}) => ({ type: "fixed", term: 5, rate: 0.015, margin: affordability().saronMargin, amort: 0, amortMode: "direct", ...o });
 const newMortgage = () => ({ tranches: [ { name: tr("mortgage.tranche1"), amount: 400000, after: "renew", periods: [newPeriod({ term: 10 })] } ] });
 
 function trancheSchedule(p, t) {
@@ -444,13 +445,14 @@ async function refreshSeriesInfo() {
 }
 
 // ---------- Form building blocks ----------
-const UNIT = { chf: () => cur(), chfopt: () => cur(), chfyear: () => cur(), pct: () => "%", months: () => tr("unit.months"), years: () => tr("unit.years"), num: () => "" };
+const UNIT = { chf: () => cur(), chfopt: () => cur(), chfyear: () => cur(), pct: () => "%", pctopt: () => "%", months: () => tr("unit.months"), years: () => tr("unit.years"), num: () => "" };
 // #232: `chfyear` is an amount per year in the field, stored per month (field value / 12).
 function showVal(type, v) {
   if (type === "chf") return fmtInt(v ?? 0);
   if (type === "chfyear") return fmtInt((v ?? 0) * 12);
   if (type === "chfopt") return v == null ? "" : fmtInt(v);
   if (type === "pct") return fmtPct(v ?? 0);
+  if (type === "pctopt") return v == null ? "" : fmtPct(v); // #307: empty = suggested value
   if (type === "month") return ymShow(v);
   return v ?? "";
 }
@@ -508,7 +510,7 @@ async function blockedByErrors() {
 }
 function F(path, label, type = "chf", o = {}) {
   const v = getP(path), unit = o.unit ?? (UNIT[type] ? UNIT[type]() : "");
-  const cls = ["chf", "chfopt", "chfyear", "pct", "num", "months", "years"].includes(type) ? "num" : "";
+  const cls = ["chf", "chfopt", "chfyear", "pct", "pctopt", "num", "months", "years"].includes(type) ? "num" : "";
   const input = `<div class="inp"><input class="${cls}" data-path="${path}" data-type="${type}"${o.int ? ' data-int="1"' : ""}${o.size ? ` size="${o.size}"` : ""} value="${esc(showVal(type, v))}" ${type === "month" ? `placeholder="${tr("input.datePlaceholder")}"` : ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div>${type === "chfyear" ? perMonth(path) : ""}`;
   if (o.bare) return input;
   return `<label class="field"><span>${label}${reqMark(path)}</span>${input}${o.hint ? `<span class="computed">${o.hint}</span>` : ""}</label>`;
@@ -877,7 +879,8 @@ function returnsUse() {
     // #101: The parametric model takes bonds and inflation from the series; fixed only without a series.
     fixedBonds: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
     fixedInflation: src === "fixed" || (src === "parametric" && !paramJoint()) || (extrapolate && r.extrapolation.method === "fixed"),
-    fixedSaron: usesSaron && (!withSeries || saronGap || extrapolate),
+    // #307/AK2: the parametric model with a series derives SARON from the drawn inflation
+    fixedSaron: usesSaron && (src === "fixed" || (src === "parametric" && !paramJoint()) || (withSeries && (saronGap || extrapolate))),
     usesSaron
   };
 }
@@ -904,7 +907,9 @@ R.returns = () => {
     ${P("df", tr("returns.dof"))}${P("jumpLambda", tr("returns.jumps"))}${P("jumpMu", tr("returns.jumpMu"))}
     ${P("jumpSigma", tr("returns.jumpSigma"))}${F("returns.parametric.seed", tr("returns.seed"), "num", { int: true })}</div>
     <p class="hint">${tr("returns.modelHint")}</p></div>
-    <div class="card"><h3>${tr("returns.bondsInfl")} <span class="sub">${tr("returns.displayOnly")}</span></h3><div id="paramJoint">${C("pjoint")}</div></div>`;
+    <div class="card"><h3>${tr("returns.bondsInfl")} <span class="sub">${tr("returns.displayOnly")}</span></h3><div id="paramJoint">${C("pjoint")}</div></div>
+    ${paramJoint() ? `<div class="card" id="paramRates"><h3>${tr("returns.ratesTitle")}</h3><div class="grid3">${F("returns.parametric.realShortRate", tr("returns.realShortRate"), "pctopt", { hint: C("rsug") })}</div>
+    <p class="hint">${C("rhint")}</p></div>` : ""}`;
   }
   const extra = !u.extrapolate ? "" : `<div class="card"><h3>${tr("returns.extrapolationTitle")} <span class="sub">${tr("returns.seriesEnds")}</span></h3>
     <div class="grid2"><label class="field"><span>${tr("returns.method")}</span>${Sel("returns.extrapolation.method", [["fixed", tr("returns.fixedValues")], ["average", tr("returns.movingAvg")], ["geometric", tr("returns.movingGeoAvg")]], { rerender: 1 })}</label>
@@ -2046,7 +2051,7 @@ function MortgageUI(p, i) {
     const rows = t.periods.map((d, k) => {
       const D = `${T}.periods.${k}`;
       return `<tr><td style="white-space:nowrap">${k ? tr("mortgage.followUp", { k }) : owned ? tr("mortgage.current") : tr("mortgage.first")}</td>
-        <td>${Sel(D + ".type", [["fixed", tr("mortgage.fixed")], ["saron", "SARON"]], { rerender: 1 })}</td>
+        <td>${Sel(D + ".type", [["fixed", tr("mortgage.fixed")], ["market", tr("mortgage.market")], ["saron", "SARON"]], { rerender: 1 })}</td>
         <td>${F(D + ".term", "", "years", { bare: true, unit: tr("unit.yearsShort") })}</td>
         <td>${d.type === "saron" ? F(D + ".margin", "", "pct", { bare: true, unit: tr("mortgage.margin") }) : F(D + ".rate", "", "pct", { bare: true })}</td>
         <td><div class="refwrap">${F(D + ".amort", "", "chf", { bare: true })}${periodAfterAhv(p, t, k) ? `<span class="computed" style="padding:8px 4px" title="${tr("mortgage.directOnly")}">${tr("mortgage.directFromAhv")}</span>` : Sel(D + ".amortMode", [["direct", tr("mortgage.direct")], ["indirect", tr("mortgage.indirect")]], { rerender: 1 })}</div></td>
@@ -2063,9 +2068,11 @@ function MortgageUI(p, i) {
       <div style="margin-top:8px"><button class="btn small" data-action="period-add" data-i="${i}" data-t="${ti}">${tr("mortgage.addFollowUp")}</button></div></div>`;
   }).join("");
   const p3a = anyIndirect ? `<p class="hint">${tr("mortgage.indirectHint")}</p>` : "";
+  // #307/AK3: periods «Fest aus Zinsumfeld» take the rate of the path at renewal
+  const market = mg.tranches.some(t => t.periods.some(d => d.type === "market")) ? `<p class="hint" id="marketHint-${i}">${tr("mortgage.marketHint", { margin: fmtPct(affordability().fixedMargin) })}</p>` : "";
   return `<h4>${tr("mortgage.title")}</h4>${mode}${tranches}
     <div style="margin:4px 0 0"><button class="btn small" data-action="tranche-add" data-i="${i}">${tr("mortgage.addTranche")}</button></div>
-    <p class="hint">${C("mort", i)}</p>${p3a}`;
+    <p class="hint">${C("mort", i)}</p>${market}${p3a}`;
 }
 // #196: «Immobilien nie verkaufen» at the top; when on, the rest of the tab is grey and read-only (values are kept).
 R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("realestate.intro")}</p>
@@ -2214,6 +2221,14 @@ const COMPUTED = {
       : `${tr("computed.ownValues", { name: esc(name) })} <button class="btn small" data-action="param-suggest">${tr("computed.adoptSuggestion")}</button>`;
   },
   // #101: Mean, spread and correlation of stocks, bonds and inflation of the series
+  // #307/AK2: suggested real short-term rate and the rule of the rates in the parametric model
+  rsug: () => {
+    const j = paramJoint(), v = state.returns.parametric.realShortRate;
+    if (!j) return "";
+    const s = j.realShort ?? 0;
+    return v == null ? tr("returns.realShortSuggested", { v: fmtPct(s) }) : tr("computed.suggestion", { k: `${fmtPct(s)} %` });
+  },
+  rhint: () => tr("returns.ratesHint", { spread: fmtPct(paramJoint()?.termSpread ?? 0.01), first: paramJoint()?.inflationFirst ?? "", last: paramJoint()?.inflationLast ?? "" }),
   pjoint: () => {
     const j = paramJoint();
     if (!seriesInfo) return "";
@@ -2785,11 +2800,11 @@ function readInput(el) {
   if (t === "rentinfl") return el.value === "always" ? true : el.value === "nominal" ? false : undefined;
   if (t === "select" || t === "radio" || t === "text") return el.value;
   if (t === "month") return parseShow(el.value);
-  if (t === "chfopt" && el.value.trim() === "") return undefined;
+  if ((t === "chfopt" || t === "pctopt") && el.value.trim() === "") return undefined;
   // #140: Amounts and integers do not take «1.234» as 1.234
   const v = ["chf", "chfopt", "chfyear"].includes(t) || el.dataset.int ? parseAmount(el.value) : parseNum(el.value);
   if (v === null) return null;
-  return t === "pct" ? v / 100 : t === "chfyear" ? v / 12 : v;
+  return t === "pct" || t === "pctopt" ? v / 100 : t === "chfyear" ? v / 12 : v;
 }
 /** #274: a row of the deductions from income changed by hand is no longer the one of the tax bill. */
 function dropTaxBill(path) {
@@ -2826,6 +2841,8 @@ function onEdit(el) {
   const trOf = /^(pillar3a\.\d+)\.tranches\.enabled$/.exec(path); // #300: first switched on: defaults
   if (trOf && !getP(trOf[1]).tranches) getP(trOf[1]).tranches = tranchesDefault(getP(trOf[1]).person);
   setP(path, v); dropTaxBill(path); markDirty();
+  // #307/AK9: a period switched to SARON takes the margin of the settings as a suggestion
+  if (/\.periods\.\d+\.type$/.test(path) && v === "saron") setP(path.replace(/\.type$/, ".margin"), affordability().saronMargin);
   if (el.dataset.type === "chfyear") { const pm = [...document.querySelectorAll("[data-permonth]")].find(x => x.dataset.permonth === path); if (pm) pm.textContent = perMonthText(v); }
   // #100: an own input in the stock model ends following the suggested values
   if (/^returns\.parametric\.(mu|sigma|df|jumpLambda|jumpMu|jumpSigma)$/.test(path)) state.returns.parametric.auto = false;
@@ -2860,7 +2877,7 @@ document.addEventListener("focusout", e => {
   const el = e.target; if (!el.matches("input[data-path]")) return;
   releaseField(el);
   if (el.classList.contains("invalid")) return;
-  const t = el.dataset.type; if (["chf", "chfopt", "chfyear", "pct", "month"].includes(t)) el.value = showVal(t, getP(el.dataset.path));
+  const t = el.dataset.type; if (["chf", "chfopt", "chfyear", "pct", "pctopt", "month"].includes(t)) el.value = showVal(t, getP(el.dataset.path));
 });
 
 /**
@@ -3284,7 +3301,7 @@ function limitProblems(l) {
   return out;
 }
 /** #233: Affordability of the banks (setting, before in the plan); the same defaults as the engine (`Affordability`). */
-const AFFORD_DEFAULTS = { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8, maxLoanToValueRetired: 0.65, wealthDrawdownRate: 0.03 };
+const AFFORD_DEFAULTS = { sustainability: 1 / 3, imputedRate: 0.05, fixCosts: 0.01, maxLoanToValue: 0.8, maxLoanToValueRetired: 0.65, wealthDrawdownRate: 0.03, saronMargin: 0.01, fixedMargin: 0.012 };
 /** #266: wealth drawdown in the affordability (switch, default off). */
 const AFFORD_DRAWDOWN_DEFAULT = false;
 /** No longer used by the engine (affordability only uses income); the plan needs it. */
@@ -3293,6 +3310,9 @@ let AFFORD_FIELDS;
 onLanguage(() => AFFORD_FIELDS = [["sustainability", tr("realestate.maxIncomeShare")], ["imputedRate", tr("realestate.imputedRate")],
   ["fixCosts", tr("realestate.costs")], ["maxLoanToValue", tr("realestate.maxLtv")], ["maxLoanToValueRetired", tr("realestate.maxLtvRetired")],
   ["wealthDrawdownRate", tr("realestate.drawdownRate")]]);
+/** #307/AK9: margins of the mortgages (stored with the affordability, shown in their own group). */
+let MARGIN_FIELDS;
+onLanguage(() => MARGIN_FIELDS = [["saronMargin", tr("settings.saronMargin")], ["fixedMargin", tr("settings.fixedMargin")]]);
 /** Applicable affordability: saved values, otherwise the defaults (shares as decimals). */
 function affordability() {
   const saved = Pref.get("affordability", null), a = { ...AFFORD_DEFAULTS };
@@ -3303,7 +3323,7 @@ function affordability() {
 Engine.affordability = affordability;
 /** Validation as before in the editor: every value is a number. */
 function affordProblems(a) {
-  return AFFORD_FIELDS.filter(([k]) => !Number.isFinite(a[k])).map(([, what]) => tr("settings.affordInvalid", { what }));
+  return [...AFFORD_FIELDS, ...MARGIN_FIELDS].filter(([k]) => !Number.isFinite(a[k])).map(([, what]) => tr("settings.affordInvalid", { what }));
 }
 /** Short text of the values («33.3 % des Einkommens, Zins 5 %, …»), one decimal at most. */
 const affordPct = v => (Math.round(v * 1000) / 10).toLocaleString("de-CH", { maximumFractionDigits: 1 });
@@ -3347,6 +3367,7 @@ function settingsFields(l, language = I18n.choice(), theme = Theme.choice(), af 
   const langs = [[I18n.SYSTEM, tr("language.system")], ...Object.entries(I18n.languages())];
   const limitField = ([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`;
   const limitsOf = tab => LIMIT_FIELDS.filter(([k]) => LIMIT_TAB[k] === tab).map(limitField).join("");
+  const affordField = ([k, label]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-afford-${k}" value="${esc(fmtPct(af[k]))}"><span class="unit">%</span></div><span class="computed">${tr("settings.default", { v: `${affordPct(AFFORD_DEFAULTS[k])} %` })}</span></label>`;
   const panels = {
     general: `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
       + `<label class="field" style="grid-column:1/-1"><span>${tr("settings.theme")}</span><select id="set-theme" class="plain">${Theme.CHOICES.map(k => `<option value="${k}" ${k === theme ? "selected" : ""}>${tr("theme." + k)}</option>`).join("")}</select></label>`
@@ -3355,8 +3376,11 @@ function settingsFields(l, language = I18n.choice(), theme = Theme.choice(), af 
     simulation: limitsOf("simulation"),
     realestate: `<div id="set-afford" style="grid-column:1/-1"><b>${tr("realestate.affordability")}</b> <span class="computed">${tr("realestate.forAfterSale")}</span></div>`
       + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-afford-wealthDrawdown" ${af.wealthDrawdown ? "checked" : ""}> ${tr("realestate.drawdown")}</label>`
-      + AFFORD_FIELDS.map(([k, label]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-afford-${k}" value="${esc(fmtPct(af[k]))}"><span class="unit">%</span></div><span class="computed">${tr("settings.default", { v: `${affordPct(AFFORD_DEFAULTS[k])} %` })}</span></label>`).join("")
-      + `<p class="hint" style="grid-column:1/-1">${tr("realestate.affordabilityHint")}</p>`,
+      + AFFORD_FIELDS.map(affordField).join("")
+      + `<p class="hint" style="grid-column:1/-1">${tr("realestate.affordabilityHint")}</p>`
+      + `<div id="set-margins" style="grid-column:1/-1"><b>${tr("settings.margins")}</b></div>`
+      + MARGIN_FIELDS.map(affordField).join("")
+      + `<p class="hint" style="grid-column:1/-1">${tr("settings.marginsHint")}</p>`,
   };
   // #308/AK5: tablist with roving tabindex; the arrow keys move between the tabs, Tab leads into the panel
   return `<div class="seg tabs" id="setTabs" role="tablist" aria-label="${esc(tr("shortcuts.settings"))}">${SETTINGS_TABS.map(k => `<button type="button" role="tab" id="settab-${k}" data-settab="${k}" aria-controls="setpanel-${k}" aria-selected="${k === settingsTab}" tabindex="${k === settingsTab ? 0 : -1}" class="${k === settingsTab ? "on" : ""}">${tr("settings.tab." + k)}</button>`).join("")}</div>`
@@ -3415,7 +3439,7 @@ function readSettings() {
 /** #233: Affordability of the dialog «Einstellungen» (input in percent). */
 function readAffordability() {
   const a = {};
-  for (const [k] of AFFORD_FIELDS) { const v = parseNum($("#set-afford-" + k).value); a[k] = v === null ? NaN : v / 100; }
+  for (const [k] of [...AFFORD_FIELDS, ...MARGIN_FIELDS]) { const v = parseNum($("#set-afford-" + k).value); a[k] = v === null ? NaN : v / 100; }
   a.wealthDrawdown = $("#set-afford-wealthDrawdown").checked;
   return a;
 }
@@ -4266,7 +4290,7 @@ function paramSections(plan, full = false) {
       ...(!p.taxValue && p.status !== "rent" && plan.realestate?.defaultTaxValue ? [[tr("params.taxValue", { nm }), tr("params.taxValueDefault", { pc: taxValueDefaultPc() })]] : []),
       ...(p.buy ? [[tr("params.buy", { nm }), at(p.buy)]] : []), ...(p.sell ? [[tr("params.sell", { nm }), at(p.sell)]] : []),
       ...(p.fixCosts != null ? [[tr("params.costsMonth", { nm }), money(p.fixCosts)]] : []), ...(p.rent != null ? [[tr("params.rentMonth", { nm }), money(p.rent)]] : []),
-      ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}`, `${money(t.amount)}${t.start ? ` ${tr("common.fromDate", { date: ymShow(t.start) })}` : ""}; ${(t.periods || []).map(d => tr("params.periodText", { v: d.type === "saron" ? "SARON" : tr("mortgage.fixedLower"), term: num(d.term), rate: pc(d.rate), margin: pc(d.margin), amort: money(d.amort), v2: d.amortMode === "indirect" ? tr("mortgage.indirect") : tr("mortgage.direct") })).join(" → ")}`]),
+      ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}`, `${money(t.amount)}${t.start ? ` ${tr("common.fromDate", { date: ymShow(t.start) })}` : ""}; ${(t.periods || []).map(d => tr("params.periodText", { v: d.type === "saron" ? "SARON" : d.type === "market" ? tr("mortgage.market") : tr("mortgage.fixedLower"), term: num(d.term), rate: pc(d.rate), margin: pc(d.margin), amort: money(d.amort), v2: d.amortMode === "indirect" ? tr("mortgage.indirect") : tr("mortgage.direct") })).join(" → ")}`]),
     ];
   })]]);
   out.push([tr("section.pillar3a"), (plan.pillar3a || []).flatMap(a => {

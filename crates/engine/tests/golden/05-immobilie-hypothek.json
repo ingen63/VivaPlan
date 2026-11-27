@@ -25,7 +25,7 @@
       {
         "kind": "mortgageRenewal",
         "month": "2035-01",
-        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 % (SARON 1.00 % + margin 0.70 %), 300000 CHF"
       },
       {
         "kind": "mortgageRepayment",
@@ -35,17 +35,17 @@
       {
         "kind": "mortgageRenewal",
         "month": "2040-01",
-        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 % (SARON 1.00 % + margin 0.70 %), 300000 CHF"
       },
       {
         "kind": "mortgageRenewal",
         "month": "2045-01",
-        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 % (SARON 1.00 % + margin 0.70 %), 300000 CHF"
       },
       {
         "kind": "mortgageRenewal",
         "month": "2050-01",
-        "text": "New mortgage period Haus (Fest): 1.70 %, 300000 CHF"
+        "text": "New mortgage period Haus (Fest): 1.70 % (SARON 1.00 % + margin 0.70 %), 300000 CHF"
       }
     ],
     "label": "Fixed returns",

@@ -98,7 +98,7 @@ Une seule simulation avec des **valeurs annuelles constantes** pour les actions,
 - **Choix des valeurs:** calculez avec des valeurs prudentes et **réalistes**, pas avec les années record du passé. Une hypothèse sobre serait par exemple 4 % à 5 % pour les actions, 1 % à 2 % pour les obligations, 1 % à 2 % d’inflation.
 - Avec les stratégies «Taux fixe», «Guardrails» et autres, une simulation avec rendements fixes ne montre que le cas moyen.
 
-Avec les autres sources, les valeurs fixes s’appliquent malgré tout en partie: pour le **SARON** en dehors de la période de la série et avec le [modèle paramétrique](#f-ret-parametric), ainsi qu’après la fin de la série lors de l’[extrapolation](#f-ret-extrapolation).
+Avec les autres sources, les valeurs fixes s’appliquent malgré tout en partie: pour le **SARON** en dehors des données de l’environnement des taux ([SARON et hypothèques](#ret-saron)), avec le [modèle paramétrique](#f-ret-parametric) sans série temporelle, ainsi qu’après la fin de la série lors de l’[extrapolation](#f-ret-extrapolation).
 
 ## @f-ret-historical Historique dès la date de départ
 Mots-clés: rétrospective, mois de départ, 1973, 1929, backtest, série temporelle
@@ -157,7 +157,7 @@ Le bootstrap génère **des milliers de nouvelles trajectoires de rendement** en
 ## @f-ret-parametric Monte Carlo · paramétrique
 Mots-clés: Student t, queues épaisses, volatilité, dérive, sauts de cours, mu, sigma, degrés de liberté, Poisson, krach, valeurs proposées, corrélation, obligations, inflation
 
-Un **modèle des actions avec des hypothèses propres ou proposées**. Les cours des actions suivent un mouvement aléatoire en **pas journaliers** (21 par mois), complété par de rares **sauts de cours**. **Les obligations et l’inflation** sont également aléatoires et **corrélées** aux actions, comme dans la série de la [stratégie de placement](#f-ret-series). Le SARON s’applique de manière constante comme valeur fixe.
+Un **modèle des actions avec des hypothèses propres ou proposées**. Les cours des actions suivent un mouvement aléatoire en **pas journaliers** (21 par mois), complété par de rares **sauts de cours**. **Les obligations et l’inflation** sont également aléatoires et **corrélées** aux actions, comme dans la série de la [stratégie de placement](#f-ret-series). Le **SARON suit l’inflation tirée** (inflation plus taux réel à court terme), voir [SARON et hypothèques](#ret-saron).
 
 | Saisie | Proposition (exemple Monde (JST)) | Signification |
 |---|---|---|
@@ -223,7 +223,7 @@ Les méthodes «Historique», «Toutes les dates de départ historiques» et «B
 
 - Seules les combinaisons «S&P 500» avec «USA 10 ans» (dès 01.1922) et «S&P 500» avec «Confédération 10 ans» (02.1988 à 07.2025) sont **mensuelles**.
 - Toutes les autres combinaisons sont **annuelles** dès qu’une partie est annuelle. Les rendements mensuels sont alors chaînés en années civiles. La série comprend les années pour lesquelles les deux indices ont des valeurs: par exemple «Monde (JST)» avec «USA 10 ans» 1922–2020.
-- Le **renchérissement** provient de la source des actions (renchérissement suisse dans tous les cas), le **SARON** des valeurs de la BNS (pour les séries annuelles en moyenne annuelle, dès 2000).
+- Le **renchérissement** provient de la source des actions (renchérissement suisse dans tous les cas), le **SARON** des valeurs de la BNS (pour les séries annuelles en moyenne annuelle, dès 2000), auparavant le taux à court terme de la Confédération (JST); voir [SARON et hypothèques](#ret-saron).
 - Tous les indices sont **en CHF**. Pour une planification en EUR ou en USD, une remarque apparaît.
 
 Sous la sélection figurent la période, la fréquence et les rendements annuels moyens (géométriques) de la stratégie choisie; le ⓘ à côté indique la source et la période.
@@ -257,13 +257,29 @@ La période («Moyenne sur» … années) vaut pour les deux méthodes mobiles. 
 Attention: une extrapolation est une **hypothèse**, pas un résultat historique. Avec des extrapolations très longues, le résultat perd son caractère historique.
 
 ## @ret-saron SARON et hypothèques
-Mots-clés: SARON, hypothèque, intérêt, marge, série temporelle
+Mots-clés: SARON, hypothèque, intérêt, marge, série temporelle, environnement des taux, obligations de la Confédération, inflation, hypothèque à taux fixe
 
-Le **SARON** n’est nécessaire que si une hypothèque a une période SARON. Il provient de la série temporelle (dès 06.1999, si disponible), sinon c’est la **valeur fixe du SARON** de la planification qui s’applique.
+Les taux hypothécaires suivent l’**environnement des taux et de l’inflation de la trajectoire**: dans une trajectoire à forte inflation, le SARON et les taux au renouvellement d’une hypothèque à taux fixe augmentent aussi. Deux taux appartiennent à chaque mois d’une trajectoire:
 
-- En dehors de la période SARON de la série, avec «Rendements fixes», avec le modèle paramétrique et après une extrapolation, la valeur fixe s’applique. La vue n’affiche le champ que s’il est nécessaire.
-- Le taux d’intérêt d’une tranche SARON est le SARON plus la marge, avec un plancher de 0.
-- Avant 1999, il n’y a pas de SARON. Pour les simulations historiques avant 1999, utilisez la valeur fixe comme approximation.
+- **SARON** (taux à court terme) pour les périodes SARON.
+- **Rendement des obligations de la Confédération à 10 ans** pour les périodes «Fixe (marché)», voir [Hypothèques](#f-re-mortgage).
+
+**Historique, toutes les dates de départ et bootstrap:** Les deux taux proviennent du même mois ou de la même année historique que les actions, les obligations et l’inflation, aussi dans les blocs du bootstrap.
+
+| Taux | Source | Fréquence |
+|---|---|---|
+| SARON | BNS (zimoma) dès 06.1999; auparavant le taux à court terme de la Confédération (JST, papiers d’environ 3 mois) | BNS mensuel, JST une valeur par année civile qui vaut pour tous les mois de l’année |
+| Obligations de la Confédération à 10 ans | BNS (rendoblim) dès 01.1988; auparavant le rendement JST | de même |
+
+Les séries annuelles prennent la valeur annuelle (JST, après 2020 la moyenne des douze mois de la BNS). Dans la trajectoire dès 1972, le SARON se situe ainsi à 5.97 % en 1974, les obligations de la Confédération à 7.15 %. Sur toutes les années historiques, la corrélation entre l’inflation et le taux hypothécaire est positive. Seulement là où les données manquent (avant 1870 ou après une extrapolation), la valeur fixe du SARON s’applique, et pour les obligations de la Confédération le rendement fixe des obligations.
+
+**Monte Carlo · paramétrique:** Le SARON suit l’inflation tirée de l’année: **inflation plus taux réel à court terme**, au moins 0. Les obligations de la Confédération à 10 ans se situent au-dessus de l’écart moyen de la série (au moins 0). La carte «Taux pour les hypothèques» indique le taux réel: vide signifie la valeur par défaut de la série, la moyenne du SARON moins l’inflation dans les années de l’inflation (pour «Monde (JST)» dès 1950: 0.08 %, écart 0.87 %); un nombre propre s’applique à la place. Sans série temporelle, la valeur fixe du SARON s’applique.
+
+**Rendements fixes:** Le SARON est la valeur fixe de la planification, le rendement des obligations de la Confédération le rendement fixe des obligations. La vue n’affiche le champ que s’il est nécessaire.
+
+- Le taux d’intérêt d’une période SARON est le SARON plus la marge, avec un plancher de 0 pour le SARON.
+- Les valeurs théoriques de la [capacité financière](#f-re-afford) restent inchangées; l’environnement des taux ne modifie que les intérêts payés.
+- Les [événements](#r-events) indiquent à chaque renouvellement le nouveau taux et son origine, par exemple 4.20 % (obligations de la Confédération à 10 ans 3.00 % + marge 1.20 %).
 
 Pour en savoir plus sur les tranches et les périodes: [Hypothèques](#f-re-mortgage).
 

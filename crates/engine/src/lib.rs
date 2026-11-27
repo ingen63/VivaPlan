@@ -32,6 +32,7 @@ pub mod model;
 pub mod montecarlo;
 pub mod optimize;
 pub mod progress;
+pub mod rates;
 pub mod report;
 pub mod resolve;
 pub mod scenarios;

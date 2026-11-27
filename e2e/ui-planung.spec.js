@@ -1559,3 +1559,75 @@ test.describe("Settings in tabs (#308)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Mortgage rates from the interest environment (#307)", () => {
+  const openSettings = async page => { await page.locator('header button[data-action="settings"]').click(); await expect(page.locator("#settings")).toBeVisible(); };
+
+  test("AK9: margins in the tab real estate; a period switched to SARON takes the SARON margin as a suggestion", async ({ page }) => {
+    const errors = await open(page, "realestate");
+    await openSettings(page);
+    await settingsTab(page, "realestate");
+    const panel = page.locator("#setpanel-realestate");
+    await expect(panel).toContainText("Hypothek: Marge SARON");
+    await expect(panel).toContainText("Hypothek: Marge Festhypothek über Bundesobligationen 10 J.");
+    await expect(page.locator("#set-afford-saronMargin")).toHaveValue("1");
+    await expect(page.locator("#set-afford-fixedMargin")).toHaveValue("1.2");
+    await expect(panel).toContainText("Stand 11/2026");
+    await page.locator("#set-afford-saronMargin").fill("0.8");
+    await page.locator("#set-afford-fixedMargin").fill("1.5");
+    await page.locator("#settingsSave").click();
+    await expect(page.locator("#settings")).toBeHidden();
+    expect(await page.evaluate(() => [affordability().saronMargin, affordability().fixedMargin])).toEqual([0.008, 0.015]);
+    // the engine gets the margins with the plan (as the affordability)
+    expect(await page.evaluate(() => withAffordability(state).realestate.affordability.fixedMargin)).toBe(0.015);
+    // a fixed period switched to SARON: margin of the settings, still changeable per period
+    const type = page.locator('select[data-path="realestate.properties.0.mortgage.tranches.0.periods.0.type"]');
+    await type.selectOption("fixed");
+    await type.selectOption("saron");
+    const margin = field(page, "realestate.properties.0.mortgage.tranches.0.periods.0.margin");
+    await expect(margin).toHaveValue("0.8");
+    await margin.fill("0.95");
+    await margin.press("Tab");
+    expect(await page.evaluate(() => state.realestate.properties[0].mortgage.tranches[0].periods[0].margin)).toBeCloseTo(0.0095, 10);
+    // invalid margin: error in the dialog, tab marked
+    await openSettings(page);
+    await page.locator("#set-afford-fixedMargin").fill("x");
+    await page.locator("#settingsSave").click();
+    await expect(page.locator("#settab-realestate")).toHaveClass(/\bbad\b/);
+    await expect(page.locator("#settingsErr")).toContainText("Hypothek: Marge Festhypothek");
+    await noErrors(page, errors);
+  });
+
+  test("AK3: period type fixed (market) with a note on the margin and a link to the settings", async ({ page }) => {
+    const errors = await open(page, "realestate");
+    const type = page.locator('select[data-path="realestate.properties.0.mortgage.tranches.0.periods.0.type"]');
+    await type.selectOption("market");
+    expect(await page.evaluate(() => state.realestate.properties[0].mortgage.tranches[0].periods[0].type)).toBe("market");
+    const hint = page.locator("#marketHint-0");
+    await expect(hint).toContainText("Bundesobligationen 10 Jahre");
+    await expect(hint).toContainText("1.2 %");
+    await hint.locator('a[data-action="settings"]').click();
+    await expect(page.locator("#setpanel-realestate")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK2: parametric model: SARON follows the inflation, real short-term rate with the default of the series", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { state.returns.source = "parametric"; goto("returns"); });
+    const card = page.locator("#paramRates");
+    await expect(card).toContainText("Zinsen für Hypotheken");
+    await expect(card).toContainText(/Vorgabe aus der Reihe: -?\d/);
+    await expect(card).toContainText("Der SARON folgt der gezogenen Inflation");
+    const f = field(page, "returns.parametric.realShortRate");
+    await expect(f).toHaveValue("");
+    // no fixed SARON field any more (the series supplies the inflation)
+    await expect(field(page, "returns.fixed.saron")).toHaveCount(0);
+    await f.fill("0.5");
+    await f.press("Tab");
+    expect(await page.evaluate(() => state.returns.parametric.realShortRate)).toBeCloseTo(0.005, 10);
+    await f.fill("");
+    await f.press("Tab");
+    expect(await page.evaluate(() => state.returns.parametric.realShortRate)).toBeUndefined();
+    await noErrors(page, errors);
+  });
+});

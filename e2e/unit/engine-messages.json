@@ -4472,8 +4472,8 @@
   {
     "code": "investment_note_saron",
     "params": {},
-    "template": "SARON: annual average of the SNB monthly values, before 2000 the fixed value applies.",
-    "text": "SARON: annual average of the SNB monthly values, before 2000 the fixed value applies."
+    "template": "SARON: annual average of the SNB monthly values, before 2000 the short-term rate of the Swiss Confederation (JST).",
+    "text": "SARON: annual average of the SNB monthly values, before 2000 the short-term rate of the Swiss Confederation (JST)."
   },
   {
     "code": "investment_note_confed_short",
@@ -4566,6 +4566,18 @@
     "params": {},
     "template": "Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the fixed value applies.",
     "text": "Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the fixed value applies."
+  },
+  {
+    "code": "series_note_chf_inflation_rates",
+    "params": {},
+    "template": "Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the short-term rate of the Swiss Confederation (JST).",
+    "text": "Inflation: Swiss consumer price index compared with the same month of the previous year; SARON since its introduction (06.1999), before that the short-term rate of the Swiss Confederation (JST)."
+  },
+  {
+    "code": "series_note_rates",
+    "params": {},
+    "template": "Interest environment for mortgages: short-term rate and yield of 10-year Swiss Confederation bonds of the same month (JST annual values, SNB monthly values from 1988 and SARON from 06.1999).",
+    "text": "Interest environment for mortgages: short-term rate and yield of 10-year Swiss Confederation bonds of the same month (JST annual values, SNB monthly values from 1988 and SARON from 06.1999)."
   },
   {
     "code": "series_note_ch_bonds_stocks",
@@ -5354,6 +5366,13 @@
         },
         "text": "Person 2"
       },
+      "origin": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
       "rate": 0.0371,
       "tranche": {
         "code": "person_n",
@@ -5363,8 +5382,32 @@
         "text": "Person 2"
       }
     },
-    "template": "New mortgage period {name}{tranche}: {rate:pct2} %, {amount:fix0} {currency}",
-    "text": "New mortgage period Person 2Person 2: 3.71 %, 12346 Person 2"
+    "template": "New mortgage period {name}{tranche}: {rate:pct2} % ({origin}), {amount:fix0} {currency}",
+    "text": "New mortgage period Person 2Person 2: 3.71 % (Person 2), 12346 Person 2"
+  },
+  {
+    "code": "rate_origin_fixed",
+    "params": {},
+    "template": "fixed rate",
+    "text": "fixed rate"
+  },
+  {
+    "code": "rate_origin_saron",
+    "params": {
+      "base": 0.0371,
+      "margin": 0.0371
+    },
+    "template": "SARON {base:pct2} % + margin {margin:pct2} %",
+    "text": "SARON 3.71 % + margin 3.71 %"
+  },
+  {
+    "code": "rate_origin_market",
+    "params": {
+      "base": 0.0371,
+      "margin": 0.0371
+    },
+    "template": "10-year Swiss Confederation bonds {base:pct2} % + margin {margin:pct2} %",
+    "text": "10-year Swiss Confederation bonds 3.71 % + margin 3.71 %"
   },
   {
     "code": "event_mortgage_repaid",

@@ -91,6 +91,11 @@ pub const LABELS: &[(&str, &str, &[&str])] = &[
         &["=SARON"],
     ),
     (
+        "realestate.properties.*.mortgage.tranches.*.periods.*.type",
+        "market",
+        &["mortgage.market"],
+    ),
+    (
         "realestate.properties.*.taxValue.kind",
         "amount",
         &["realestate.taxValueAmount"],

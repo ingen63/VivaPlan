@@ -98,7 +98,7 @@ Un’unica simulazione con **valori annuali costanti** per azioni, obbligazioni,
 - **Scelta dei valori:** calcoli con valori prudenti e **realistici**, non con gli anni migliori del passato. Un’ipotesi sobria sarebbe ad esempio dal 4 % al 5 % per le azioni, dall’1 % al 2 % per le obbligazioni, dall’1 % al 2 % di inflazione.
 - Con le strategie «Tasso fisso», «Guardrails» e altre una simulazione con rendimenti fissi mostra solo il caso medio.
 
-Con le altre fonti i valori fissi valgono comunque in parte: per il **SARON** al di fuori del periodo della serie e con il [modello parametrico](#f-ret-parametric), e dopo la fine della serie con l’[estrapolazione](#f-ret-extrapolation).
+Con le altre fonti i valori fissi valgono comunque in parte: per il **SARON** al di fuori dei dati del contesto dei tassi ([SARON e ipoteche](#ret-saron)), con il [modello parametrico](#f-ret-parametric) senza serie temporale, e dopo la fine della serie con l’[estrapolazione](#f-ret-extrapolation).
 
 ## @f-ret-historical Storico dal momento d’inizio
 Parole chiave: retrospettiva, mese d’inizio, 1973, 1929, backtest, serie temporale
@@ -157,7 +157,7 @@ Il bootstrap genera **migliaia di nuovi percorsi dei rendimenti** concatenando s
 ## @f-ret-parametric Monte Carlo · parametrico
 Parole chiave: Student-t, fat tails, volatilità, drift, salti di corso, mu, sigma, gradi di libertà, Poisson, crash, valori proposti, correlazione, obbligazioni, inflazione
 
-Un **modello azionario con ipotesi proprie o proposte**. I corsi azionari seguono un movimento casuale in **passi giornalieri** (21 al mese), integrato da rari **salti di corso**. Anche **obbligazioni e inflazione** sono casuali e **correlate** con le azioni, come nella serie della [strategia d’investimento](#f-ret-series). Il SARON vale costante come valore fisso.
+Un **modello azionario con ipotesi proprie o proposte**. I corsi azionari seguono un movimento casuale in **passi giornalieri** (21 al mese), integrato da rari **salti di corso**. Anche **obbligazioni e inflazione** sono casuali e **correlate** con le azioni, come nella serie della [strategia d’investimento](#f-ret-series). Il **SARON segue l’inflazione estratta** (inflazione più tasso reale a breve termine), vedi [SARON e ipoteche](#ret-saron).
 
 | Dato | Proposta (esempio Mondo (JST)) | Significato |
 |---|---|---|
@@ -223,7 +223,7 @@ I metodi «Storico», «Tutti i momenti d’inizio storici» e «Bootstrap» ric
 
 - **Mensili** sono solo «S&P 500» con «USA 10 anni» (dal 01.1922) e «S&P 500» con «Confederazione 10 anni» (dal 02.1988 al 07.2025).
 - Tutte le altre combinazioni sono **annuali**, non appena una parte è annuale. I rendimenti mensili vengono allora concatenati in anni civili. La serie comprende gli anni per i quali entrambi gli indici hanno valori: ad esempio «Mondo (JST)» con «USA 10 anni» 1922–2020.
-- Il **rincaro** proviene dalla fonte delle azioni (rincaro svizzero in tutti i casi), il **SARON** dai valori della BNS (per le serie annuali come media annua, dal 2000).
+- Il **rincaro** proviene dalla fonte delle azioni (rincaro svizzero in tutti i casi), il **SARON** dai valori della BNS (per le serie annuali come media annua, dal 2000), prima il tasso a breve termine della Confederazione (JST); vedi [SARON e ipoteche](#ret-saron).
 - Tutti gli indici sono **in CHF**. Con una pianificazione in EUR o USD appare un’avvertenza.
 
 Sotto la selezione figurano periodo, frequenza e i rendimenti annui medi (geometrici) della strategia scelta; la ⓘ accanto indica fonte e periodo.
@@ -257,13 +257,29 @@ Il periodo («Media su» … anni) vale per i due metodi mobili. Questo dato app
 Tenga presente: un’estrapolazione è un’**ipotesi**, non un risultato storico. Con estrapolazioni molto lunghe il risultato perde il suo carattere storico.
 
 ## @ret-saron SARON e ipoteche
-Parole chiave: SARON, ipoteca, interesse, margine, serie temporale
+Parole chiave: SARON, ipoteca, interesse, margine, serie temporale, contesto dei tassi, obbligazioni della Confederazione, inflazione, ipoteca fissa
 
-Il **SARON** serve solo se un’ipoteca ha un periodo SARON. Proviene dalla serie temporale (dal 06.1999, se disponibile), altrimenti vale il **valore SARON fisso** della pianificazione.
+I tassi ipotecari seguono il **contesto dei tassi e dell’inflazione del percorso**: in un percorso con inflazione elevata salgono anche il SARON e i tassi al rinnovo di un’ipoteca fissa. A ogni mese di un percorso appartengono due tassi:
 
-- Al di fuori del periodo SARON della serie, con «Rendimenti fissi», con il modello parametrico e dopo un’estrapolazione vale il valore fisso. La vista mostra il campo solo se serve.
-- Il tasso d’interesse di una tranche SARON è SARON più margine, con limite inferiore 0.
-- Prima del 1999 il SARON non esiste. Per simulazioni storiche prima del 1999 usi il valore fisso come approssimazione.
+- **SARON** (tasso a breve termine) per i periodi SARON.
+- **Rendimento delle obbligazioni della Confederazione a 10 anni** per i periodi «Fissa (mercato)», vedi [Ipoteche](#f-re-mortgage).
+
+**Storico, tutte le date d’inizio e bootstrap:** Entrambi i tassi provengono dallo stesso mese o anno storico di azioni, obbligazioni e inflazione, anche nei blocchi del bootstrap.
+
+| Tasso | Fonte | Frequenza |
+|---|---|---|
+| SARON | BNS (zimoma) dal 06.1999; prima il tasso a breve termine della Confederazione (JST, titoli di circa 3 mesi) | BNS mensile, JST un valore per anno civile che vale per tutti i mesi dell’anno |
+| Obbligazioni della Confederazione a 10 anni | BNS (rendoblim) dal 01.1988; prima il rendimento JST | idem |
+
+Le serie annuali prendono il valore annuo (JST, dopo il 2020 la media dei dodici mesi BNS). Nel percorso dal 1972 il SARON è quindi al 5.97 % nel 1974, le obbligazioni della Confederazione al 7.15 %. Su tutti gli anni storici la correlazione tra inflazione e tasso ipotecario è positiva. Solo dove mancano i dati (prima del 1870 o dopo un’estrapolazione) vale il valore SARON fisso e per le obbligazioni della Confederazione il rendimento fisso delle obbligazioni.
+
+**Monte Carlo · parametrico:** Il SARON segue l’inflazione estratta dell’anno: **inflazione più tasso reale a breve termine**, almeno 0. Le obbligazioni della Confederazione a 10 anni sono superiori dello scarto medio della serie (almeno 0). La scheda «Tassi per le ipoteche» mostra il tasso reale: vuoto significa il valore predefinito della serie, la media del SARON meno l’inflazione negli anni dell’inflazione (per «Mondo (JST)» dal 1950: 0.08 %, scarto 0.87 %); un numero proprio vale al suo posto. Senza serie temporale vale il valore SARON fisso.
+
+**Rendimenti fissi:** Il SARON è il valore fisso della pianificazione, il rendimento delle obbligazioni della Confederazione il rendimento fisso delle obbligazioni. La vista mostra il campo solo se serve.
+
+- Il tasso d’interesse di un periodo SARON è SARON più margine, con limite inferiore 0 per il SARON.
+- I valori teorici della [sostenibilità](#f-re-afford) restano invariati; il contesto dei tassi cambia solo gli interessi pagati.
+- Gli [eventi](#r-events) indicano a ogni rinnovo il nuovo tasso e la sua origine, per esempio 4.20 % (obbligazioni della Confederazione a 10 anni 3.00 % + margine 1.20 %).
 
 Altro su tranche e periodi: [Ipoteche](#f-re-mortgage).
 

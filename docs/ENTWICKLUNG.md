@@ -436,9 +436,20 @@ einmal und werden für alle Varianten verwendet:
 - **`parametric`** (`{"paths", "mu", "sigma", "df", "jumpLambda", "jumpMu", "jumpSigma", "seed", "auto", "sampler"}`): Aktienmodell
   des bisherigen Programms in Tagesschritten (21 pro Monat): Log-Rendite (μ − σ²/2)·dt + σ·√dt·Z mit Student-t-Schocks Z
   (auf Varianz 1 skaliert, `df` = 0 → Normalverteilung) plus Poisson-Sprünge (Rate `jumpLambda` pro Jahr, Höhe
-  log-normal mit `jumpMu`, `jumpSigma`). Der SARON folgt dem fixen Wert. Die Zeitreihe der Planung (Anlagestrategie)
-  wird auch für `parametric` geladen (`batch::load_series`); ohne Reihe folgen auch Obligationen und Inflation den
-  fixen Werten.
+  log-normal mit `jumpMu`, `jumpSigma`). Die Zeitreihe der Planung (Anlagestrategie)
+  wird auch für `parametric` geladen (`batch::load_series`); ohne Reihe folgen Obligationen, Inflation und SARON den
+  fixen Werten. Mit Reihe (#307/AK2) gilt pro Kalenderjahr SARON = max(0, Inflation + `realShortRate`) und Rendite der
+  Bundesobligationen 10 J. = max(0, Inflation + `realShortRate` + Zinsabstand). `realShortRate` fehlt → Vorgabe
+  `Joint::real_short` = Mittel von SARON − Inflation über die Jahre der Inflation (ab `limits.inflationFrom`); Zinsabstand
+  `Joint::term_spread` = Mittel von Rendite 10 J. − SARON über alle Jahre (Welt (JST) ab 1950: 0.08 %, 0.87 %).
+- **Zinsumfeld (#307, `rates.rs`):** `batch::returns_series` und `api::series_info` ergänzen jede Reihe mit
+  `RateHistory::complete`: fehlende SARON-Werte (`NaN` oder ohne Spalte) erhalten den kurzfristigen Zins desselben Monats
+  oder Jahres, dazu kommt `DataSet::yield10` (Rendite der Bundesobligationen 10 J.). Quellen: SARON SNB `zimoma`
+  monatlich ab 06.1999, davor JST `bill_rate` (CHE); Rendite SNB `rendoblim` monatlich ab 01.1988, davor JST `bond_rate`.
+  JST hat einen Wert pro Kalenderjahr; er gilt für alle Monate des Jahres. Jahresreihen nehmen den JST-Wert, nach dem
+  letzten JST-Jahr das Mittel der zwölf SNB-Monate. Werte ausserhalb der Quellen bleiben `NaN`; dort gelten der fixe
+  SARON bzw. die fixe Obligationenrendite. `MarketPath::yield10` läuft wie der SARON durch historische Pfade,
+  Fortschreibung und Bootstrap (gleicher Index wie Inflation); fixe Pfade nehmen die fixe Obligationenrendite.
 - **Zufallsziehung des Aktienmodells (#132, `montecarlo::SAMPLER` = 1):** Student-t nach der Polar-Methode von Bailey:
   (u, v) gleichverteilt im Einheitskreis, beide aus einer 64-Bit-Zufallszahl (je 32 Bit), w = u² + v², dann ist
   u·√(df·(w^(−2/df) − 1)/w) exakt t-verteilt; bei `df` = 6 mit ∛w statt der allgemeinen Potenz. Ob ein Punkt angenommen
@@ -624,7 +635,8 @@ ausgelieferte Reihen an; Kommandozeile und Entwicklungsserver verwenden `crates/
 - **SNB-Würfel** von data.snb.ch (CSV): `devkum` (Reihe M0/USD1), `plkopr` (LD2010100), `zimoma` (SARON), `rendoblim` (10J).
   Ein Auszug ist eingebaut; neuere Downloads ersetzen ihn (`crates/engine/data/quellen/snb-<würfel>.csv`).
 - **CSV-Format:** Kommentarzeilen `# Titel: …`, `# Währung: CHF`, `# Quelle: …`, `# Hinweis: …` vor der Kopfzeile.
-  Leere SARON-Werte sind erlaubt; dort gilt der fixe SARON-Wert der Planung. Die mitgelieferten Reihen haben seit
+  Leere SARON-Werte sind erlaubt; dort gilt der kurzfristige Zins aus dem Zinsumfeld (#307), ausserhalb der Daten der
+  fixe SARON-Wert der Planung. Die mitgelieferten Reihen haben seit
   #177 englische Texte; ältere deutsche Texte in der Datenbibliothek werden erkannt und übersetzt (`series_text.rs`).
 - Ist die Reihe in einer anderen Währung als die Planung, meldet die Prüfung einen Hinweis.
 - **Rechte:** Die Zeitreihen fallen nicht unter die GPL; Quellen, Bedingungen und Haftungsausschluss in
@@ -840,9 +852,14 @@ Reihenfolge pro Monat:
    Die neue Jahresentnahme gilt ab dem Zuflussmonat, nicht rückwirkend. Protokoll: Ereignis «Entnahmestrategie angewendet
    nach …» (nur ausserhalb des Januars und nicht beim Start der Strategie) und `propertyEvents[].note` beim Verkauf.
 
-**Hypotheken:** Tranchen mit einer Abfolge von Perioden (fest oder SARON + Marge, SARON mit Untergrenze 0).
+**Hypotheken:** Tranchen mit einer Abfolge von Perioden (fest, `market` oder SARON + Marge, SARON mit Untergrenze 0).
+`market` (#307/AK3, «Fest (Markt)»): Beginnt die Periode nach dem Simulationsstart (k > 0, Erneuerung oder Kauf), gilt
+max(0, `yield10` im ersten Monat der Periode) + `realestate.affordability.fixedMargin` (Standard 1.2 %) für die ganze
+Laufzeit; eine beim Start laufende Periode behält `rate`. Die Marge SARON (`saronMargin`, Standard 1.0 %) ist nur der
+Vorschlag der Oberfläche für neue SARON-Perioden. Ereignis der Erneuerung: Satz und Herkunft (`rate_origin_*`). Die
+Tragbarkeit rechnet unverändert mit dem kalkulatorischen Zins (#307/AK5).
 Die erste Periode beginnt am Startdatum der Tranche (bzw. beim Kauf), jede weitere am Ende der vorherigen;
-danach Verlängerung zu gleichen Konditionen oder Rückzahlung. Zins = Schuld × Satz / 12 pro Monat, aufgelaufen und zusammen mit der Amortisation am Quartalsende (März, Juni, September, Dezember) bezahlt; beginnt die Hypothek im April, ist die erste Zahlung im Juni fällig (April bis Juni). Bei einem Verkauf werden die aufgelaufenen Zinsen sofort, am Planende im letzten Monat bezahlt. Die Lebenshaltung enthält keine Miete und keine Hypothekarzinsen; diese kommen als Wohnkosten hinzu.
+danach Verlängerung zu gleichen Konditionen (bei `market` zum Satz des Erneuerungsmonats) oder Rückzahlung. Zins = Schuld × Satz / 12 pro Monat, aufgelaufen und zusammen mit der Amortisation am Quartalsende (März, Juni, September, Dezember) bezahlt; beginnt die Hypothek im April, ist die erste Zahlung im Juni fällig (April bis Juni). Bei einem Verkauf werden die aufgelaufenen Zinsen sofort, am Planende im letzten Monat bezahlt. Die Lebenshaltung enthält keine Miete und keine Hypothekarzinsen; diese kommen als Wohnkosten hinzu.
 Amortisation als fixer Betrag pro Quartal, fällig Ende März/Juni/September/Dezember; direkt (reduziert die Schuld)
 oder indirekt (Einzahlung in die Säule 3a). Die 3a-Auszahlung zahlt zuerst Tranchen mit indirekter Amortisation zurück.
 

@@ -746,11 +746,56 @@ struct SPeriod {
     direct: bool,
 }
 
+/// #307: Interest environment of a run for the rates of the periods.
+#[derive(Clone, Copy)]
+struct RateEnv<'a> {
+    path: &'a MarketPath,
+    start: YearMonth,
+    /// Margin of a period «from the interest environment» over the 10-year federal bonds.
+    fixed_margin: f64,
+}
+
+impl RateEnv<'_> {
+    /// Yield of the 10-year federal bonds (at least 0) in month `m` if it lies after the simulation start.
+    fn yield_at(&self, m: YearMonth) -> Option<f64> {
+        let k = m.0 - self.start.0;
+        if k <= 0 {
+            return None;
+        }
+        self.path
+            .yield10
+            .get(k as usize)
+            .copied()
+            .filter(|v| !v.is_nan())
+            .map(|v| v.max(0.0))
+    }
+}
+
 impl SPeriod {
-    fn rate(&self, saron: f64) -> f64 {
+    /// Rate p.a. with the SARON of the month; a period «from the interest environment» that starts after the simulation
+    /// start takes the yield of its first month plus the margin, otherwise the entered rate.
+    fn rate(&self, saron: f64, env: RateEnv) -> f64 {
+        self.priced(saron, env).0
+    }
+
+    /// #307/AK4: Rate p.a. and where it comes from.
+    fn priced(&self, saron: f64, env: RateEnv) -> (f64, Message) {
         match self.kind {
-            RateKind::Fixed => self.rate,
-            RateKind::Saron => saron.max(0.0) + self.margin,
+            RateKind::Fixed => (self.rate, msg!(rate_origin_fixed)),
+            RateKind::Saron => {
+                let base = saron.max(0.0);
+                (
+                    base + self.margin,
+                    msg!(rate_origin_saron, base = base, margin = self.margin),
+                )
+            }
+            RateKind::Market => match env.yield_at(self.start) {
+                Some(base) => (
+                    base + env.fixed_margin,
+                    msg!(rate_origin_market, base = base, margin = env.fixed_margin),
+                ),
+                None => (self.rate, msg!(rate_origin_fixed)),
+            },
         }
     }
 }
@@ -2045,6 +2090,15 @@ struct PersonState {
 }
 
 impl<'a> Run<'a> {
+    /// #307: interest environment of this run.
+    fn env(&self) -> RateEnv<'a> {
+        RateEnv {
+            path: self.path,
+            start: self.s.start,
+            fixed_margin: self.s.afford.fixed_margin,
+        }
+    }
+
     fn new(s: &'a Simulator, path: &'a MarketPath, record: bool) -> Self {
         let props = s
             .props
@@ -2510,7 +2564,7 @@ impl<'a> Run<'a> {
                     .find(|x| x.start <= m && m < x.end)
                     .or(tr.periods.last());
                 if let Some(x) = per {
-                    total += b * x.rate(saron) / 12.0;
+                    total += b * x.rate(saron, self.env()) / 12.0;
                     if x.amort_q > 0.0 && b > 0.0 {
                         total += x.amort_q / 3.0;
                     }
@@ -2533,7 +2587,7 @@ impl<'a> Run<'a> {
                 .or(tr.periods.last())
             {
                 sum += b;
-                weighted += b * x.rate(saron);
+                weighted += b * x.rate(saron, self.env());
             }
         }
         if sum > 0.0 {
@@ -2898,6 +2952,7 @@ impl<'a> Run<'a> {
                 let b = self.props[i].balances[j];
                 if let Some(x) = per {
                     if x.index > 0 && x.start == m && b > 0.0 && k > 0 && renewed {
+                        let (rate, origin) = x.priced(saron, self.env());
                         let tn = if tranches.len() > 1 {
                             crate::message::arg(&msg!(suffix_name, name = t.name))
                         } else {
@@ -2910,7 +2965,8 @@ impl<'a> Run<'a> {
                                 event_mortgage_period,
                                 name = p.name,
                                 tranche = tn,
-                                rate = x.rate(saron),
+                                rate = rate,
+                                origin = origin,
                                 amount = b,
                                 currency = self.s.currency
                             ),
@@ -2960,7 +3016,7 @@ impl<'a> Run<'a> {
                         }
                     }
                 }
-                let rate = per.or(t.periods.last()).map_or(0.0, |x| x.rate(saron));
+                let rate = per.or(t.periods.last()).map_or(0.0, |x| x.rate(saron, self.env()));
                 let interest = b * rate / 12.0;
                 self.props[i].int_accr += interest;
                 running += interest;
@@ -3892,7 +3948,8 @@ impl<'a> Run<'a> {
                 running += p.fix_costs;
                 for (j, t) in p.tranches.iter().enumerate() {
                     if let Some(x) = t.periods.iter().find(|x| x.start <= m && m < x.end) {
-                        running += self.props[i].balances[j] * x.rate(self.path.saron[0]) / 12.0 + x.amort_q / 3.0;
+                        running +=
+                            self.props[i].balances[j] * x.rate(self.path.saron[0], self.env()) / 12.0 + x.amort_q / 3.0;
                     }
                 }
             }

@@ -31,6 +31,9 @@ pub struct DataSet {
     pub bonds: Vec<f64>,
     pub inflation: Vec<f64>,
     pub saron: Option<Vec<f64>>,
+    /// #307: yield of 10-year Swiss Confederation bonds (annual rate, `NaN` = unknown). Not part of the CSV file; added
+    /// from the interest environment ([`crate::rates::RateHistory::complete`]).
+    pub yield10: Option<Vec<f64>>,
     /// #100: whole stock series of the index (also beyond the years in common with the bonds), in the
     /// frequency the bootstrap uses; for the suggested values of the parametric model.
     pub stock_series: Option<StockSeries>,
@@ -152,6 +155,7 @@ impl DataSet {
         let mut ds = DataSet {
             name: name.to_string(),
             saron: c_saron.map(|_| vec![]),
+            yield10: None,
             ..Default::default()
         };
         let mut prev: Option<YearMonth> = None;
@@ -298,6 +302,9 @@ pub struct MarketPath {
     /// Annual rates.
     pub inflation: Vec<f64>,
     pub saron: Vec<f64>,
+    /// #307: yield of 10-year Swiss Confederation bonds (annual rate) for fixed-rate mortgages from the interest
+    /// environment.
+    pub yield10: Vec<f64>,
     /// Lead-in (#103): monthly stock returns of up to 12 months before the start, the oldest first. It only serves the
     /// return criterion of the 3-bucket strategy (last 12 months) and changes no wealth.
     pub pre_stocks: Vec<f64>,
@@ -328,6 +335,7 @@ pub fn fixed_path(c: &FixedCurves, start: YearMonth, months: usize) -> MarketPat
         p.bonds.push(monthly(c.bonds.at(m)));
         p.inflation.push(c.inflation.at(m));
         p.saron.push(c.saron.at(m));
+        p.yield10.push(c.bonds.at(m));
     }
     // Lead-in with the rate of the start month (no curve is defined before the start)
     p.pre_stocks = vec![monthly(c.stocks.at(start)); PRE_MONTHS];
@@ -340,6 +348,7 @@ impl MarketPath {
         self.bonds.push(monthly(c.bonds.at(m)));
         self.inflation.push(c.inflation.at(m));
         self.saron.push(c.saron.at(m));
+        self.yield10.push(c.bonds.at(m));
     }
 
     pub(crate) fn with_capacity(label: crate::message::Message, n: usize) -> Self {
@@ -349,6 +358,7 @@ impl MarketPath {
             bonds: Vec::with_capacity(n),
             inflation: Vec::with_capacity(n),
             saron: Vec::with_capacity(n),
+            yield10: Vec::with_capacity(n),
             pre_stocks: Vec::new(),
         }
     }
@@ -391,6 +401,7 @@ pub fn historical_path(
             let bonds = extend(&ds.bonds, needed, ex, fy(&fixed.bonds), 1);
             let infl = extend(&ds.inflation, needed, ex, fy(&fixed.inflation), 1);
             let saron = ds.saron.as_ref().map(|s| extend(s, needed, ex, fy(&fixed.saron), 1));
+            let yield10 = ds.yield10.as_ref().map(|s| extend(s, needed, ex, fy(&fixed.bonds), 1));
             for k in 0..months {
                 let m = sim_start.plus(k as i32);
                 let i = offset + (m.year() - sim_start.year()) as usize;
@@ -402,6 +413,7 @@ pub fn historical_path(
                 p.bonds.push(monthly(bonds[i]));
                 p.inflation.push(infl[i]);
                 p.saron.push(or_fixed(saron.as_deref(), i, || fixed.saron.at(m)));
+                p.yield10.push(or_fixed(yield10.as_deref(), i, || fixed.bonds.at(m)));
             }
             // Lead-in: the months before the start belong, as in the path, to the annual value of their calendar year
             for j in (1..=PRE_MONTHS as i32).rev() {
@@ -425,6 +437,10 @@ pub fn historical_path(
                 .saron
                 .as_ref()
                 .map(|s| extend(s, needed, ex, fixed.saron.at(sim_start), 12));
+            let yield10 = ds
+                .yield10
+                .as_ref()
+                .map(|s| extend(s, needed, ex, fixed.bonds.at(sim_start), 12));
             for k in 0..months {
                 let i = offset as usize + k;
                 if i >= ds.len() && fixed_ex {
@@ -436,6 +452,9 @@ pub fn historical_path(
                 p.inflation.push(infl[i]);
                 p.saron.push(or_fixed(saron.as_deref(), i, || {
                     fixed.saron.at(sim_start.plus(k as i32))
+                }));
+                p.yield10.push(or_fixed(yield10.as_deref(), i, || {
+                    fixed.bonds.at(sim_start.plus(k as i32))
                 }));
             }
             // Lead-in: the real months before the historical start, as far as the series contains them

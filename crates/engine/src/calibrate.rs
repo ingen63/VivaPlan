@@ -291,6 +291,10 @@ pub struct YearlyTriples {
     pub stocks: Vec<f64>,
     pub bonds: Vec<f64>,
     pub inflation: Vec<f64>,
+    /// #307: short-term rate (SARON) and yield of the 10-year federal bonds as annual means (`NaN` = unknown; empty
+    /// without the column).
+    pub short: Vec<f64>,
+    pub yield10: Vec<f64>,
 }
 
 pub fn yearly(ds: &DataSet) -> YearlyTriples {
@@ -300,19 +304,45 @@ pub fn yearly(ds: &DataSet) -> YearlyTriples {
             stocks: ds.stocks.clone(),
             bonds: ds.bonds.clone(),
             inflation: ds.inflation.clone(),
+            short: ds.saron.clone().unwrap_or_default(),
+            yield10: ds.yield10.clone().unwrap_or_default(),
         },
         Freq::Monthly => {
             let s = crate::strategy::compound_years(ds.first, &ds.stocks);
             let b = crate::strategy::compound_years(ds.first, &ds.bonds);
             let i = crate::strategy::yearly_rates(ds.first, &ds.inflation, true);
+            let mean = |c: &Option<Vec<f64>>| {
+                c.as_ref()
+                    .map(|v| crate::strategy::yearly_rates(ds.first, v, false).values)
+                    .unwrap_or_default()
+            };
             YearlyTriples {
                 first: s.first,
                 stocks: s.values,
                 bonds: b.values,
                 inflation: i.values,
+                short: mean(&ds.saron),
+                yield10: mean(&ds.yield10),
             }
         }
     }
+}
+
+/// #307: Real short-term rate without a suggested value from the series.
+pub const DEFAULT_REAL_SHORT: f64 = 0.0;
+/// #307: Spread of the 10-year federal bonds over the short-term rate without a suggested value from the series.
+pub const DEFAULT_TERM_SPREAD: f64 = 0.01;
+
+/// Mean of `a − b` over the years `from..` in which both are known; `None` with fewer than [`MIN_YEARS`] such years.
+fn mean_difference(a: &[f64], b: &[f64], from: usize) -> Option<f64> {
+    let d: Vec<f64> = a
+        .iter()
+        .zip(b)
+        .skip(from)
+        .filter(|(x, y)| x.is_finite() && y.is_finite())
+        .map(|(x, y)| x - y)
+        .collect();
+    (d.len() >= MIN_YEARS).then(|| mean(&d))
 }
 
 /// Mean, spread and correlation of stocks, bonds and inflation (annual values).
@@ -330,6 +360,10 @@ pub struct Joint {
     pub inflation_sd: f64,
     /// Order stocks, bonds, inflation.
     pub corr: [[f64; 3]; 3],
+    /// #307: mean of SARON minus inflation over the years of the inflation (suggested real short-term rate).
+    pub real_short: Option<f64>,
+    /// #307: mean spread of the 10-year federal bonds over the short-term rate (all years of the series).
+    pub term_spread: Option<f64>,
 }
 
 /// Joint metrics of the annual values. Stocks and bonds from the whole series; inflation and its correlations
@@ -373,6 +407,8 @@ pub fn joint(y: &YearlyTriples, inflation_from: i32) -> Option<Joint> {
         inflation_mean: mean(tail[2]),
         inflation_sd: sd(tail[2]),
         corr,
+        real_short: mean_difference(&y.short, &y.inflation, skip),
+        term_spread: mean_difference(&y.yield10, &y.short, 0),
     })
 }
 
@@ -390,6 +426,9 @@ pub struct Correlated {
     pub a_inflation: f64,
     /// Lower triangular matrix of the residual covariance: l11, l21, l22.
     pub l: (f64, f64, f64),
+    /// #307: real short-term rate (own value of the plan, otherwise the suggested value) and term spread.
+    pub real_short: f64,
+    pub term_spread: f64,
 }
 
 impl Correlated {
@@ -415,7 +454,16 @@ impl Correlated {
             a_bonds: a_b,
             a_inflation: a_i,
             l: (l11, l21, l22),
+            real_short: q.real_short_rate.or(j.real_short).unwrap_or(DEFAULT_REAL_SHORT),
+            term_spread: j.term_spread.unwrap_or(DEFAULT_TERM_SPREAD),
         }
+    }
+
+    /// #307/AK2: SARON and yield of the 10-year federal bonds for the drawn inflation of a year: inflation plus the real
+    /// short-term rate, plus the term spread for the bonds, each at least 0.
+    pub fn rates(&self, inflation: f64) -> (f64, f64) {
+        let short = inflation + self.real_short;
+        (short.max(0.0), (short + self.term_spread).max(0.0))
     }
 
     /// Annual values (bonds, inflation) for the log return of the stocks `log` over `months` months of the year.
@@ -606,6 +654,8 @@ mod tests {
             inflation_mean: 0.02,
             inflation_sd: 0.03,
             corr: [[1.0, 0.3, -0.2], [0.3, 1.0, -0.5], [-0.2, -0.5, 1.0]],
+            real_short: None,
+            term_spread: None,
         };
         let q = ParametricParams::default();
         let c = Correlated::new(&j, &q);
@@ -637,6 +687,8 @@ mod tests {
             inflation_mean: 0.0,
             inflation_sd: 0.1,
             corr: [[1.0, 0.99, -0.99], [0.99, 1.0, 0.99], [-0.99, 0.99, 1.0]],
+            real_short: None,
+            term_spread: None,
         };
         let c = Correlated::new(&j, &ParametricParams::default());
         assert!(c.a_bonds <= 0.99 && c.a_inflation >= -0.99);
@@ -732,6 +784,7 @@ mod bootstrap_tests {
             stocks: years.clone(),
             bonds: years.iter().map(|r| r / 3.0).collect(),
             inflation: years.iter().map(|r| 0.02 + r / 10.0).collect(),
+            ..Default::default()
         };
         let j = joint(&y, 0).expect("genau MIN_YEARS Jahre");
         assert_eq!((j.first, j.last), (1990, 1990 + MIN_YEARS as i32 - 1));
@@ -787,8 +840,81 @@ mod bootstrap_tests {
             a_bonds: 0.3,
             a_inflation: 0.2,
             l: (0.9, 0.1, 0.9),
+            real_short: 0.005,
+            term_spread: 0.01,
         };
         assert_eq!(c.draw(0.4, 12, 0.0, 0.0), (0.03, 0.01));
+    }
+
+    // #307/AK2: SARON = inflation + real short-term rate (at least 0), bonds 10 years = SARON before the floor + spread.
+    #[test]
+    fn issue_307_ak2_saron_follows_the_drawn_inflation() {
+        let j = Joint {
+            first: 1900,
+            last: 2000,
+            inflation_first: 1950,
+            inflation_last: 2000,
+            bonds_mean: 0.03,
+            bonds_sd: 0.05,
+            inflation_mean: 0.02,
+            inflation_sd: 0.02,
+            corr: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+            real_short: Some(0.004),
+            term_spread: Some(0.012),
+        };
+        let c = Correlated::new(&j, &ParametricParams::default());
+        // 6 % inflation + 0.4 % = 6.4 %; + 1.2 % = 7.6 %
+        let (s, y) = c.rates(0.06);
+        assert!((s - 0.064).abs() < 1e-12 && (y - 0.076).abs() < 1e-12, "{s} {y}");
+        // −2 % inflation: floor 0; bonds −1.6 % + 1.2 % = −0.4 % → 0
+        assert_eq!(c.rates(-0.02), (0.0, 0.0));
+        // Own value of the plan instead of the suggestion
+        let q = ParametricParams {
+            real_short_rate: Some(-0.01),
+            ..Default::default()
+        };
+        let (s, _) = Correlated::new(&j, &q).rates(0.03);
+        assert!((s - 0.02).abs() < 1e-12);
+        // Without values from the series: defaults
+        let none = Joint {
+            real_short: None,
+            term_spread: None,
+            ..j
+        };
+        let c = Correlated::new(&none, &ParametricParams::default());
+        assert_eq!((c.real_short, c.term_spread), (DEFAULT_REAL_SHORT, DEFAULT_TERM_SPREAD));
+    }
+
+    // #307/AK2: Suggested real short-term rate = mean of SARON − inflation over the years of the inflation; spread over
+    // all years with both rates.
+    #[test]
+    fn issue_307_ak2_real_short_rate_from_the_series() {
+        let n = MIN_YEARS + 4;
+        let years: Vec<f64> = (0..n).map(|i| ((i * 7) % 11) as f64 / 50.0 - 0.1).collect();
+        let y = YearlyTriples {
+            first: 1990,
+            stocks: years.clone(),
+            bonds: years.iter().map(|r| r / 3.0).collect(),
+            inflation: (0..n).map(|i| if i < 4 { 0.10 } else { 0.02 }).collect(),
+            // SARON 3 % (first year unknown), bonds 10 years 4.5 %
+            short: (0..n).map(|i| if i == 0 { f64::NAN } else { 0.03 }).collect(),
+            yield10: vec![0.045; n],
+        };
+        // From 1994 (skip 4): 3 % − 2 % = 1 %
+        let j = joint(&y, 1994).unwrap();
+        assert!((j.real_short.unwrap() - 0.01).abs() < 1e-12);
+        assert!((j.term_spread.unwrap() - 0.015).abs() < 1e-12);
+        // Without the columns: no suggestion
+        let j = joint(
+            &YearlyTriples {
+                short: vec![],
+                yield10: vec![],
+                ..y
+            },
+            1994,
+        )
+        .unwrap();
+        assert_eq!((j.real_short, j.term_spread), (None, None));
     }
 
     // #124/AK5: Choice of the grid. A series without outliers fits best without jumps (λ = 0); for series with

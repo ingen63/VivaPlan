@@ -366,21 +366,14 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("pillar3a.*.rate", "rate/year", "-0.5..0.5"),
     ("pillar3a.*.tranches.count", "count", "1..6"),
     ("pillar3a.*.tranches.fromAge", "age", "60..65"),
-    (
-        "realestate.affordability.fixCosts",
-        "share",
-        "0..1, per year of the price",
-    ),
+    ("realestate.affordability.fixCosts", "share", "0..1"),
+    ("realestate.affordability.fixedMargin", "rate/year", ">= 0"),
     ("realestate.affordability.imputedRate", "rate/year", "0..0.2"),
     ("realestate.affordability.maxLoanToValue", "share", "0..1"),
     ("realestate.affordability.maxLoanToValueRetired", "share", "0..1"),
     ("realestate.affordability.sustainability", "share", "0..1, of income"),
     ("realestate.affordability.wealthContribution", "share", "unused"),
-    (
-        "realestate.affordability.wealthDrawdownRate",
-        "rate/year",
-        "0..1, of free wealth",
-    ),
+    ("realestate.affordability.wealthDrawdownRate", "rate/year", "0..1"),
     ("realestate.emergencyMonths", "months", ">= 0"),
     ("realestate.properties.*.fixCosts", "CHF/month", ">= 0"),
     ("realestate.properties.*.mortgage.pillar3a.balance", "CHF", ">= 0"),
@@ -437,6 +430,7 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("returns.parametric.jumpSigma", "factor", ">= 0, log"),
     ("returns.parametric.mu", "rate/year", "-0.2..0.3"),
     ("returns.parametric.paths", "count", "1..100000"),
+    ("returns.parametric.realShortRate", "rate/year", "optional"),
     ("returns.parametric.sampler", "count", "internal"),
     ("returns.parametric.seed", "count", ">= 0"),
     ("returns.parametric.sigma", "rate/year", "0..1"),
@@ -447,7 +441,7 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("taxes.deductions.*.amount", "CHF/year", ">= 0"),
     ("taxes.deductions.*.extra", "CHF/year", ">= 0"),
     ("taxes.deductions.*.rate", "share", "0..1"),
-    ("taxes.deductions.*.taxBill", "year", "tax year of the tax bill"),
+    ("taxes.deductions.*.taxBill", "year", "tax year"),
     ("taxes.investmentYield.bonds", "rate/year", "0..1"),
     ("taxes.investmentYield.stocks", "rate/year", "0..1"),
     ("taxes.location.municipality", "count", "BFS number"),
@@ -578,6 +572,15 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ("project.currency", "Currency of all amounts (CHF)."),
     ("project.name", "Name of the plan."),
     (
+        "realestate.affordability.fixedMargin",
+        "Margin of `market` over bonds 10 y.",
+    ),
+    (
+        "realestate.affordability.fixCosts",
+        "Fix costs per year, share of the price.",
+    ),
+    ("realestate.affordability.wealthContribution", "Unused."),
+    (
         "realestate.affordability.imputedRate",
         "Imputed mortgage rate of the affordability check.",
     ),
@@ -587,7 +590,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "realestate.affordability.maxLoanToValueRetired",
-        "Highest mortgage as a share of the value once everyone is retired.",
+        "Highest mortgage share once everyone is retired.",
     ),
     (
         "realestate.affordability.sustainability",
@@ -599,7 +602,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "realestate.affordability.wealthDrawdownRate",
-        "Share of the free wealth per year counted as income.",
+        "Share of free wealth counted as income per year.",
     ),
     (
         "realestate.defaultTaxValue",
@@ -648,7 +651,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "realestate.properties.*.mortgage.tranches.*.periods.*.type",
-        "Fixed rate or SARON.",
+        "Fixed, from the market (`market`), SARON.",
     ),
     ("realestate.properties.*.name", "Name of the property."),
     (
@@ -676,14 +679,12 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "Standard deviation of the logarithmic jump size.",
     ),
     ("returns.parametric.paths", "Number of paths (Monte Carlo)."),
+    ("returns.parametric.realShortRate", "SARON − inflation (empty: series)."),
     (
         "returns.parametric.sampler",
         "Version of the random method (set by the program).",
     ),
-    (
-        "returns.parametric.seed",
-        "Seed of the random number generator (same value ⇒ same paths).",
-    ),
+    ("returns.parametric.seed", "Random seed (same value ⇒ same paths)."),
     ("returns.saronSeries", "Series of the SARON (library file)."),
     ("returns.source", "Source of the returns; app labels: describe choices."),
     ("returns.strategy.weights.ch", "Switzerland."),

@@ -28,15 +28,22 @@ pub fn load_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Resu
 /// Series of the plan, independent of the return source: from `series` if set (older plans and the
 /// command line; relative paths from the directory of the project file, `library:<file>` in the data library), otherwise
 /// from the investment strategy (#69). When opened in the app, `series` becomes the strategy (`upgrade`).
+/// #307: completed with the interest environment of its months ([`crate::rates::RateHistory::complete`]).
 pub fn returns_series(plan: &Plan, base_dir: &Path, library: Option<&Path>) -> Result<Option<DataSet>> {
-    if let Some(s) = &plan.returns.series {
-        return DataSet::load_csv(&crate::library::resolve(s, base_dir, library)?).map(Some);
-    }
-    plan.returns
-        .strategy
-        .as_ref()
-        .map(|s| crate::strategy::dataset(s, library))
-        .transpose()
+    let ds = match &plan.returns.series {
+        Some(s) => Some(DataSet::load_csv(&crate::library::resolve(s, base_dir, library)?)?),
+        None => plan
+            .returns
+            .strategy
+            .as_ref()
+            .map(|s| crate::strategy::dataset(s, library))
+            .transpose()?,
+    };
+    ds.map(|mut ds| {
+        crate::rates::RateHistory::load(library)?.complete(&mut ds);
+        Ok(ds)
+    })
+    .transpose()
 }
 
 /// All return paths according to `returns.source`.
@@ -156,9 +163,9 @@ impl Paths<'_> {
 /// variant generates its paths again while computing (as before #215): slower, but without additional memory.
 pub const PATH_CACHE_BYTES: usize = 512 * 1024 * 1024;
 
-/// Memory of `n` paths over `months` months (four monthly series plus the lead-in).
+/// Memory of `n` paths over `months` months (five monthly series plus the lead-in).
 pub fn path_bytes(n: usize, months: usize) -> usize {
-    let per_path = (4 * months + market::PRE_MONTHS) * std::mem::size_of::<f64>() + std::mem::size_of::<MarketPath>();
+    let per_path = (5 * months + market::PRE_MONTHS) * std::mem::size_of::<f64>() + std::mem::size_of::<MarketPath>();
     n.saturating_mul(per_path)
 }
 
@@ -586,7 +593,11 @@ mod tests {
                         (&p.inflation, &q.inflation),
                     ]
                     .into_iter()
-                    .chain([(&p.saron, &q.saron), (&p.pre_stocks, &q.pre_stocks)])
+                    .chain([
+                        (&p.saron, &q.saron),
+                        (&p.yield10, &q.yield10),
+                        (&p.pre_stocks, &q.pre_stocks),
+                    ])
                     .all(|(x, y)| bits(x) == bits(y))
             })
     }
@@ -626,7 +637,7 @@ mod tests {
         let bytes = path_bytes(4, sim.months());
         assert_eq!(
             bytes,
-            4 * ((4 * sim.months() + market::PRE_MONTHS) * 8 + std::mem::size_of::<MarketPath>())
+            4 * ((5 * sim.months() + market::PRE_MONTHS) * 8 + std::mem::size_of::<MarketPath>())
         );
         assert_eq!(path_bytes(usize::MAX, 1), usize::MAX);
         let mut cache = PathCache::with_limit(bytes);

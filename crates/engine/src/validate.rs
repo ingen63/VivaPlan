@@ -1323,7 +1323,7 @@ fn check(plan: &Plan, v: &mut Issues) {
                 if d.term <= 0.0 {
                     v.err("realestate", msg!(period_term_not_positive, name = tn, period = k + 1));
                 }
-                if d.kind == RateKind::Fixed && d.rate > 0.1 {
+                if matches!(d.kind, RateKind::Fixed | RateKind::Market) && d.rate > 0.1 {
                     v.warn(
                         "realestate",
                         msg!(period_rate_high, name = tn, period = k + 1, rate = d.rate),

@@ -748,13 +748,15 @@ pub fn series_info(
     library: Option<&Path>,
     inflation_from: i32,
 ) -> crate::Result<SeriesInfo> {
-    let (ds, parts) = match crate::strategy::from_reference_with_parts(series, library) {
+    let (mut ds, parts) = match crate::strategy::from_reference_with_parts(series, library) {
         Some(r) => r?,
         None => (
             DataSet::load_csv(&library::resolve(series, base_dir, library)?)?,
             vec![],
         ),
     };
+    // #307: SARON gaps and the yield of the bonds as in the simulation
+    crate::rates::RateHistory::load(library)?.complete(&mut ds);
     Ok(SeriesInfo {
         parts,
         parametric: Some(crate::calibrate::suggestion(&ds, inflation_from)),

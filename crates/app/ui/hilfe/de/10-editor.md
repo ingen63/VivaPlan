@@ -102,12 +102,16 @@ Der Dialog ist in die Reiter **Allgemein**, **Vorsorge**, **Simulation** und **I
 |  | Tragbarkeit: Kalkulatorischer Zins | 5 % |
 |  | Tragbarkeit: Nebenkosten p.a. (vom Preis) | 1 % |
 |  | Tragbarkeit: Höchste Belehnung | 80 % |
+|  | Hypothek: Marge SARON | 1.0 % |
+|  | Hypothek: Marge Festhypothek über Bundesobligationen 10 J. | 1.2 % |
 
 **Sprache:** «wie System» folgt der Sprache des Betriebssystems (beim ersten Start; ohne Region, fr_FR gilt als Französisch), sonst gilt die gewählte Sprache. Angeboten werden Deutsch, Englisch, Französisch und Italienisch; fehlt die Sprache des Systems, gilt Deutsch. Die Hilfe erscheint in der gewählten Sprache; ein noch nicht übersetztes Kapitel erscheint deutsch. Dieselbe Wahl steht im Menü «Ansicht → Sprache». Ein Wechsel wirkt sofort, auch auf die Menüs; die Planung, ungespeicherte Änderungen und die Ansicht bleiben. Zahlen, Beträge und Daten erscheinen in jeder Sprache im Schweizer Format (1'234'567.50, 2.5 %, 03.2040), und die Planungsdatei ist in jeder Sprache dieselbe. Namen in der Planung (Personen, Immobilien, Meilensteine) werden nicht übersetzt; nur die Beispielplanung erhält beim Öffnen ihre Namen in der gewählten Sprache, mit denselben Zahlen.
 
 **Darstellung:** «System» folgt dem hellen oder dunklen Erscheinungsbild des Betriebssystems, auch wenn es während der Arbeit wechselt; «Hell» und «Dunkel» gelten unabhängig davon. Das Thema gilt für die ganze App: Eingabefelder, Auswahlmenüs, Dialoge, Hilfe und Diagramme. Die Wahl wirkt sofort beim Speichern.
 
 **Tragbarkeit:** Die vier Werte der [Tragbarkeit](#f-re-afford) sind Regeln der Bank, keine Angaben zur eigenen Planung; jeder Wert muss eine Zahl sein. Eine Änderung wirkt sofort auf Vorschau und Simulation. Der Abschnitt «Immobilien» zeigt die geltenden Werte in einem Hinweis. Öffnen Sie eine ältere Planungsdatei, die noch eigene Werte enthält und von den Einstellungen abweicht, übernimmt die App diese Werte in die Einstellungen; der Dialog «Hinweise zur Planung» nennt die übernommenen und die bisherigen Werte. Gespeicherte Ergebnisse und der Vergleich der Planungen zeigen die Werte, mit denen gerechnet wurde. Die Kommandozeile verwendet die Werte einer älteren Datei, sonst wie die App die Werte der Einstellungen (siehe [Kommandozeile](#ref-cli)).
+
+**Hypothekarzinsen:** Die **Marge SARON** ist der Vorschlag für eine neue SARON-Periode (neu angelegt oder auf «SARON» umgestellt); jede Periode behält danach ihre eigene Marge, die Sie wie bisher ändern können. Die **Marge Festhypothek** gilt für alle Perioden «Fest (Markt)»: Satz = Rendite der Bundesobligationen 10 Jahre des Pfades plus diese Marge (siehe [Hypotheken](#f-re-mortgage)). Quelle und Stand der Vorgaben (11/2026): Angaben von VZ, cash.ch, PostFinance und Comparis. SARON-Margen liegen im Schnitt bei 0.8 % (Mitte 2025) bis 1.1 %, je nach Bonität 0.6 % bis 1.5 %. Für Festhypotheken mit 10 Jahren rechnen Banken 0.8 % bis 1.1 % auf den Swapsatz; die Bundesobligationen rentieren meist tiefer als der Swapsatz, deshalb ist die Vorgabe mit 1.2 % höher (Schätzung, nicht belegt).
 
 **Teuerung im parametrischen Modell ab Jahr:** «Monte Carlo · parametrisch» schätzt Mittelwert, Streuung und Korrelationen der Teuerung nur aus den Jahren der Reihe ab diesem Jahr (Standard 1950). Die Kriegs- und Nachkriegsjahre treiben die Streuung sonst stark hoch: bei «Welt (JST)» 5.0 % pro Jahr mit allen Jahren ab 1900, 2.3 % ab 1950, bei fast gleichem Mittelwert (2.3 % und 2.2 %). Aktien und Obligationen nutzen weiter die ganze Reihe; die historischen Quellen (fix, historisch, rollierend, Bootstrap) sind nicht betroffen. Ein Jahr vor dem Beginn der Reihe nutzt die ganze Reihe. Bleiben ab dem Startjahr weniger als 10 Jahre, meldet die Simulation einen Fehler und rechnet nicht. Siehe [Monte Carlo · parametrisch](#f-ret-parametric).
 
@@ -585,9 +589,10 @@ Stichworte: Tranche, SARON, Festhypothek, Amortisation, Marge, Zins
 Eine Hypothek besteht aus **Tranchen**. Jede Tranche hat eine Folge von **Perioden**:
 
 - **fest:** fester Zinssatz für die Laufzeit der Periode
-- **SARON:** SARON plus Marge (der SARON hat eine Untergrenze von 0). Den SARON-Verlauf liefert die Zeitreihe oder der fixe Wert, siehe [SARON](#ret-saron).
+- **Fest (Markt):** fester Zinssatz, der bei der Erneuerung aus dem Zinsumfeld des Pfades kommt: Beginnt die Periode nach dem Start der Simulation (Erneuerung oder Kauf), gilt die Rendite der Bundesobligationen 10 Jahre des Pfades im ersten Monat der Periode (mindestens 0) plus die Marge Festhypothek der [Einstellungen](#f-settings) (Standard 1.2 %), fest für die ganze Laufzeit. Der erfasste Zins gilt nur für eine Periode, die beim Start schon läuft. Mit «Wie letzte Periode verlängern» erhält jede weitere Erneuerung den Satz ihres Monats.
+- **SARON:** SARON plus Marge (der SARON hat eine Untergrenze von 0). Den SARON-Verlauf liefert das Zinsumfeld des Pfades oder der fixe Wert, siehe [SARON](#ret-saron). Eine neue SARON-Periode übernimmt die Marge SARON der Einstellungen als Vorschlag.
 
-Die erste Periode beginnt am Startdatum der Tranche (beim Kauf), jede weitere am Ende der vorherigen. Danach wird die Tranche zu gleichen Konditionen verlängert oder zurückbezahlt.
+Die erste Periode beginnt am Startdatum der Tranche (beim Kauf), jede weitere am Ende der vorherigen. Danach wird die Tranche zu gleichen Konditionen verlängert (bei «Fest (Markt)» zum Satz des Erneuerungsmonats) oder zurückbezahlt.
 
 - **Zins** = Schuld × Satz / 12 pro Monat. Er läuft auf und wird zusammen mit der Amortisation am **Quartalsende** (März, Juni, September, Dezember) bezahlt.
 - **Amortisation:** fixer Betrag pro Quartal, direkt (reduziert die Schuld) oder **indirekt** (Einzahlung in die [Säule 3a](#s-pillar3a) der Person; bei zwei Personen wählen Sie das Konto an der Tranche).

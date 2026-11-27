@@ -67,7 +67,7 @@ fn start_costs(plan: &Plan, r: &Resolver) -> (f64, f64) {
                         let end: YearMonth = m.plus(((d.term * 12.0).round() as i32).max(1));
                         if m <= start && start < end {
                             let rate = match d.kind {
-                                RateKind::Fixed => d.rate,
+                                RateKind::Fixed | RateKind::Market => d.rate,
                                 RateKind::Saron => saron + d.margin,
                             };
                             sum += t.amount * rate / 12.0;

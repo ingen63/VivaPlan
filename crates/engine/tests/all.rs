@@ -33,6 +33,7 @@ mod income_ends;
 mod income_indexed;
 mod indexation;
 mod inflow_strategy;
+mod interest_environment;
 mod invariants;
 mod investment_yield;
 mod jst;

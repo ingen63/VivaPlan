@@ -355,6 +355,7 @@ pub fn dataset_with_parts(s: &Investment, lib: Option<&Path>) -> Result<(DataSet
         bonds: years.clone().map(|y| bonds.at(y)).collect(),
         inflation: years.clone().map(|y| inflation.at(y)).collect(),
         saron: Some(years.map(saron_at).collect()),
+        yield10: None,
         stock_series: Some(StockSeries {
             freq: Freq::Yearly,
             first: YearMonth::new(stocks.first, 1),

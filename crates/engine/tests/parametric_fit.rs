@@ -434,7 +434,13 @@ fn issue_101_ak3_ruin_probability_close_to_the_bootstrap() {
 /// #101/AK4: A change of the bonds or the stocks changes the matrix.
 #[test]
 fn issue_101_ak4_matrix_depends_on_the_combination() {
-    let m = |s, b| calibrate::suggestion(&ds(s, b), WHOLE).joint.unwrap();
+    // #307: like the simulation with the interest environment of the series
+    let rates = engine::rates::RateHistory::load(Some(&lib())).unwrap();
+    let m = |s, b| {
+        let mut d = ds(s, b);
+        rates.complete(&mut d);
+        calibrate::suggestion(&d, WHOLE).joint.unwrap()
+    };
     let a = m(StockIndex::WorldJst, BondIndex::Ch);
     assert_ne!(a.corr, m(StockIndex::WorldJst, BondIndex::Usa).corr);
     assert_ne!(a.corr, m(StockIndex::ChJst, BondIndex::Ch).corr);

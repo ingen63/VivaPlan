@@ -102,12 +102,16 @@ The dialog is divided into the tabs **General**, **Pensions**, **Simulation** an
 |  | Affordability: imputed interest rate | 5 % |
 |  | Affordability: fixed costs p.a. (of the price) | 1 % |
 |  | Affordability: maximum loan-to-value | 80 % |
+|  | Mortgage: SARON margin | 1.0 % |
+|  | Mortgage: fixed-rate margin over 10-year federal bonds | 1.2 % |
 
 **Language:** “as system” follows the language of the operating system (at the first start; without region, fr_FR counts as French); otherwise the chosen language applies. German, English, French and Italian are offered; if the system's language is missing, German applies. The help appears in the chosen language; a chapter that is not yet translated appears in German. The same choice is in the menu “View → Language”. A change takes effect immediately, also on the menus; the plan, unsaved changes and the view stay. Numbers, amounts and dates appear in the Swiss format in every language (1'234'567.50, 2.5 %, 03.2040), and the plan file is the same in every language. Names in the plan (persons, properties, milestones) are not translated; only the example plan gets its names in the chosen language when it is opened, with the same numbers.
 
 **Appearance:** “System” follows the light or dark appearance of the operating system, also when it changes while you work; “Light” and “Dark” apply regardless of it. The theme applies to the whole app: input fields, selection menus, dialogs, help and charts. The choice takes effect as soon as you save.
 
 **Affordability:** The four values of the [affordability](#f-re-afford) are rules of the bank, not details of your own plan; every value must be a number. A change takes effect immediately on the preview and the simulation. The section “Real estate” shows the values that apply in a note. If you open an older plan file that still contains its own values and they differ from the settings, the app takes these values over into the settings; the dialog “Notes on the plan” names the adopted and the previous values. Saved results and the comparison of the plans show the values that were used in the calculation. The command line uses the values of an older file, otherwise, like the app, the values of the settings (see [command line](#ref-cli)).
+
+**Mortgage interest rates:** The **SARON margin** is the suggestion for a new SARON period (newly added or switched to “SARON”); afterwards every period keeps its own margin, which you can change as before. The **fixed-rate margin** applies to all periods “Fixed (market)”: rate = yield of 10-year Swiss Confederation bonds of the path plus this margin (see [Mortgages](#f-re-mortgage)). Source and date of the defaults (11/2026): figures from VZ, cash.ch, PostFinance and Comparis. SARON margins average 0.8 % (mid-2025) to 1.1 %, 0.6 % to 1.5 % depending on creditworthiness. For 10-year fixed-rate mortgages banks charge 0.8 % to 1.1 % on the swap rate; federal bonds usually yield less than the swap rate, so the default of 1.2 % is higher (estimate, not documented).
 
 **Inflation in the parametric model from year:** “Monte Carlo · parametric” estimates mean, dispersion and correlations of the inflation only from the years of the series from this year on (default 1950). Otherwise the war and post-war years drive the dispersion up strongly: for “World (JST)” 5.0 % per year with all years from 1900, 2.3 % from 1950, with almost the same mean (2.3 % and 2.2 %). Stocks and bonds still use the whole series; the historical sources (fixed, historical, rolling, bootstrap) are not affected. A year before the start of the series uses the whole series. If fewer than 10 years remain from the first year, the simulation reports an error and does not compute. See [Monte Carlo · parametric](#f-ret-parametric).
 
@@ -585,9 +589,10 @@ Keywords: tranche, SARON, fixed mortgage, amortization, margin, interest
 A mortgage consists of **tranches**. Every tranche has a sequence of **periods**:
 
 - **Fixed:** fixed interest rate for the term of the period
-- **SARON:** SARON plus margin (the SARON has a floor of 0). The course of the SARON comes from the time series or the fixed value, see [SARON](#ret-saron).
+- **Fixed (market):** fixed interest rate that comes from the interest environment of the path at renewal: if the period starts after the start of the simulation (renewal or purchase), the yield of 10-year Swiss Confederation bonds of the path in the first month of the period (at least 0) plus the fixed-rate margin of the [settings](#f-settings) (default 1.2 %) applies, fixed for the whole term. The entered rate only applies to a period that is already running at the start. With “Renew on the same terms as the last period” every further renewal gets the rate of its month.
+- **SARON:** SARON plus margin (the SARON has a floor of 0). The course of the SARON comes from the interest environment of the path or the fixed value, see [SARON](#ret-saron). A new SARON period takes the SARON margin of the settings as a suggestion.
 
-The first period starts on the start date of the tranche (at the purchase), every further one at the end of the previous one. After that, the tranche is extended on the same terms or repaid.
+The first period starts on the start date of the tranche (at the purchase), every further one at the end of the previous one. After that, the tranche is extended on the same terms (with “Fixed (market)” at the rate of the renewal month) or repaid.
 
 - **Interest** = debt × rate / 12 per month. It accrues and is paid together with the amortization at the **end of the quarter** (March, June, September, December).
 - **Amortization:** fixed amount per quarter, direct (reduces the debt) or **indirect** (contribution to the [pillar 3a](#s-pillar3a) of the person; with two persons, you choose the account at the tranche).
