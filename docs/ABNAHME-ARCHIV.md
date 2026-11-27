@@ -2627,3 +2627,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #306/AK8 | Hilfe-Übersicht «Was wächst mit der Teuerung» mit «ohne Teuerung = Teuerung 0 %». | ☑ | **gilt** (Thema `#inflation`, 4 Sprachen) | `make i18n-check` | 27.11.2026 ok (Durchsicht) |
 | #306/AK9 | `describe`, Schema und `plan_set` kennen die Ausnahmen. | ☑ | **gilt** | `indexation.rs` `issue_306_ak9_…` | 27.11.2026 ok (Test) |
 | #306/AK10 | Tests mit Handwert; Hilfe, BESCHREIBUNG und Spezifikation nachgeführt. | ☑ | **gilt** | – | 27.11.2026 ok (Durchsicht) |
+
+### #308 Einstellungen nach Themen in Reitern
+
+[Issue #308](https://github.com/ingen63/VivaPlan/issues/308) · geschlossen · Umsetzung: 916e80e
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #308/AK1 | Reiter Allgemein, Vorsorge, Simulation, Immobilien mit den passenden Einstellungen. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK1/AK5 (#308) | 27.11.2026 ok (Test) |
+| #308/AK2 | Öffnet beim zuletzt gewählten Reiter; ein Link aus der App öffnet den passenden Reiter. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK2 (#308) | 27.11.2026 ok (Test) |
+| #308/AK3 | Ungültiger Wert markiert seinen Reiter; «Speichern» springt zum ersten Reiter mit Fehler. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK3/AK8 (#308) | 27.11.2026 ok (Test) |
+| #308/AK4 | «Standardwerte» setzt alle Werte aller Reiter zurück (nach Rückfrage). | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK4 (#308) | 27.11.2026 ok (Test) |
+| #308/AK5 | Bedienung mit Pfeiltasten und Tab; Rollen tablist, tab, tabpanel. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK1/AK5 (#308) | 27.11.2026 ok (Test; Bildschirmleser nicht geprüft) |
+| #308/AK6 | Texte der Reiter in i18n (de, en, fr, it). | ☑ | **gilt** | `make ui-texts`, `make i18n-check` | 27.11.2026 ok (Prüfläufe) |
+| #308/AK7 | Hilfe `@f-settings`: Tabelle nach Reitern gegliedert. | ☑ | **gilt** | `help.rs` `issue_173_…` | 27.11.2026 ok (Test, Durchsicht) |
+| #308/AK8 | Test in `e2e/`: Reiter wechseln, ungültiger Wert in anderem Reiter, Sprung zum Fehler. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK3/AK8 (#308) | 27.11.2026 ok (Test) |
