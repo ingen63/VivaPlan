@@ -563,6 +563,7 @@ codes! {
     optimize_paths => "Optimization: the number of paths must be greater than 0.",
     optimize_problem => "Optimization: {problem}",
     tax_multiplier_range => "Tax multiplier: the factor must be between 0 and 10.",
+    tax_data_outdated => "Taxes (place of residence): the tax data are for the tax year {year}; in {current} tariffs, deductions and multipliers may have changed. The estimate can deviate more; a newer version of VivaPlan may contain newer tax data.",
     tax_canton_missing => "Taxes (place of residence): please choose the canton.",
     tax_canton_unknown => "Taxes (place of residence): the canton “{canton}” is not in the tax data.",
     tax_municipality_missing => "Taxes (place of residence): please choose the municipality.",

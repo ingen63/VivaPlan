@@ -265,9 +265,13 @@ Steuer» (Kennzahl, Diagrammlegenden, Jahreswerte, Vergleich, Übersicht der Ann
 **100 Franken gerundet**; gerechnet wird genau. Die Kommandozeile und ihr CSV-Export geben die genauen Werte aus und
 nennen sie ebenfalls geschätzt (Spalte `taxes_estimated`). Der Abschnitt Steuern zeigt einen festen Hinweis, unter den
 Jahreswerten steht «Geschätzte Steuer mit Ihren eigenen Tabellen, auf 100 Franken gerundet. Keine Steuerberatung.» (im
-Modus «Wohnort»: «… mit den Steuerdaten 2026 aus den Steuergesetzen und den Standardabzügen des Kantons …»), und
+Modus «Wohnort»: «… mit den Steuerdaten 2026 (Quelle: …) und den Standardabzügen des Kantons …», Quelle aus der
+Steuerdatei, Herkunft der Abzüge je Planung: Standardabzüge des Kantons, eigene Abzüge oder beides; dieselbe Zeile im
+Vergleich unter den Jahreswerten «Geschätzte Steuern total» und unter der Grafik der Geldflüsse mit den Steuern), und
 bei Kapitalbezugs- und Grundstückgewinnsteuer der Rat, vor dem Entscheid mit dem Steuerrechner des Kantons oder einer
-Fachperson zu prüfen. Eine Bandbreite (± %) zeigt die App bewusst nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl
+Fachperson zu prüfen. Im Modus «Wohnort» nennt die Karte «Wohnort» fest Steuerjahr und Quelle der Steuerdatei und die
+Näherungen des Kantons (⚠: Berufskosten, Kapitalbezug, Grundstückgewinn in den Kantonen der Immobilien). Ist das laufende
+Kalenderjahr grösser als das Steuerjahr der Daten + 1, meldet die Prüfung eine Warnung (`tax_data_outdated`). Eine Bandbreite (± %) zeigt die App bewusst nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl
 würde die Scheingenauigkeit verstärken.
 
 - **Referenzfälle:** Von Hand nachgerechnete Fälle prüfen die Regeln (Satz linear interpoliert mal Steuerfuss,

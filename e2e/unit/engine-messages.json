@@ -1034,6 +1034,27 @@
     "text": "Tax multiplier: the factor must be between 0 and 10."
   },
   {
+    "code": "tax_data_outdated",
+    "params": {
+      "current": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      },
+      "year": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "Taxes (place of residence): the tax data are for the tax year {year}; in {current} tariffs, deductions and multipliers may have changed. The estimate can deviate more; a newer version of VivaPlan may contain newer tax data.",
+    "text": "Taxes (place of residence): the tax data are for the tax year Person 2; in Person 2 tariffs, deductions and multipliers may have changed. The estimate can deviate more; a newer version of VivaPlan may contain newer tax data."
+  },
+  {
     "code": "tax_canton_missing",
     "params": {},
     "template": "Taxes (place of residence): please choose the canton.",

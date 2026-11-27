@@ -107,11 +107,30 @@ impl Issues {
 }
 
 pub fn validate(plan: &Plan) -> Vec<Issue> {
+    validate_in(plan, current_year())
+}
+
+/// #143/AK5: Validation in the calendar year `year` (the tests give the year instead of reading the clock).
+pub fn validate_in(plan: &Plan, year: i32) -> Vec<Issue> {
     let mut v = Issues(vec![]);
     // Take over older pillar 3a on the mortgage as when loading (#52).
     let plan = crate::upgrade::normalized(plan);
     check(&plan, &mut v);
+    check_tax_data_age(&plan, crate::taxdata::builtin().year, year, &mut v);
     v.0
+}
+
+/// Current calendar year (UTC) from the clock of the computer.
+fn current_year() -> i32 {
+    crate::beta::today()[..4].parse().unwrap_or(0)
+}
+
+/// #143/AK5: In the mode «Wohnort» a warning if the calendar year `year` is later than the tax year of the data + 1:
+/// tariffs, deductions and multipliers may have changed since.
+fn check_tax_data_age(plan: &Plan, data_year: i32, year: i32, v: &mut Issues) {
+    if !plan.taxes.mode.is_own() && year > data_year + 1 {
+        v.warn("taxes", msg!(tax_data_outdated, year = data_year, current = year));
+    }
 }
 
 /// #271/AK6: Month of the last planned sale of a property if afterwards neither a rent nor the care home of every

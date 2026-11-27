@@ -524,6 +524,8 @@ Die Steuer in VivaPlan ist eine **Schätzung für die Planung**, kein Steuerbesc
 - Wertvermehrende Investitionen, Handänderungs- und Verkaufskosten bei der Grundstückgewinnsteuer.
 - Künftige Gesetzesänderungen.
 
+**Steuerjahr und Quelle:** Im Modus «Wohnort» nennt die Karte «Wohnort» im Abschnitt Steuern fest das Steuerjahr und die Quelle der Steuerdaten, darunter die Näherungen des Kantons mit ⚠: Berufskosten, Kapitalbezugssteuer und Grundstückgewinnsteuer in den Kantonen Ihrer Immobilien. Unter den Jahreswerten mit der Steuerzerlegung und im Vergleich (Jahreswerte «Geschätzte Steuern total», Grafik der Geldflüsse mit den Steuern) steht eine Zeile mit Steuerjahr, Quelle und Herkunft der Abzüge (Standardabzüge des Kantons, eigene Abzüge oder beides) und «Keine Steuerberatung». Ist das laufende Kalenderjahr mehr als ein Jahr später als das Steuerjahr der Daten, meldet die Prüfung eine Warnung: Tarife, Abzüge und Steuerfüsse können sich seither geändert haben.
+
 Eine **Bandbreite** (± %) zeigt VivaPlan nicht: Dafür fehlt eine Grundlage, und eine weitere Zahl würde eine Genauigkeit vortäuschen.
 
 Bei **Kapitalbezugs- und Grundstückgewinnsteuer** geht es oft um viel Geld: Vor dem Entscheid mit dem Steuerrechner des Kantons oder einer Fachperson prüfen. VivaPlan ist keine Steuerberatung.

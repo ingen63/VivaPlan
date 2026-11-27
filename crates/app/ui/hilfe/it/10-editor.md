@@ -524,6 +524,8 @@ L’imposta in VivaPlan è una **stima per la pianificazione**, non una tassazio
 - Gli investimenti che aumentano il valore, i costi di trapasso e di vendita per l’imposta sugli utili immobiliari.
 - Le future modifiche di legge.
 
+**Anno fiscale e fonte:** Nella modalità «Domicilio» la scheda «Domicilio» della sezione Imposte indica sempre l’anno fiscale e la fonte dei dati fiscali, e sotto le approssimazioni del cantone con ⚠: spese professionali, imposta sulle prestazioni in capitale e imposta sugli utili immobiliari nei cantoni dei Suoi immobili. Sotto i valori annuali con la scomposizione dell’imposta e nel confronto (valori annuali «Imposte stimate totali», grafico dei flussi con le imposte) una riga indica l’anno fiscale, la fonte, l’origine delle deduzioni (deduzioni standard del cantone, deduzioni proprie o entrambe) e «Nessuna consulenza fiscale». Se l’anno civile in corso supera di più di un anno l’anno fiscale dei dati, la verifica segnala un avvertimento: tariffe, deduzioni e moltiplicatori possono essere cambiati da allora.
+
 VivaPlan non mostra un **intervallo** (± %): manca una base, e un numero in più farebbe credere a una precisione che non esiste.
 
 **L’imposta sulle prestazioni in capitale e l’imposta sugli utili immobiliari** riguardano spesso molto denaro: prima di decidere, verificare con il calcolatore fiscale del Cantone o con uno specialista. VivaPlan non è una consulenza fiscale.

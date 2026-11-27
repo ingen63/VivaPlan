@@ -1401,6 +1401,31 @@ onLanguage(() => CHURCH = [["none", tr("church.none")], ["reformed", tr("church.
 const isLocation = plan => plan?.taxes?.mode === "location";
 /** #65/AK5: the own rules of the property gains tax apply in the mode «Eigene Tabellen» or with the check box. */
 const gainOwn = (plan = state) => !isLocation(plan) || !!plan.taxes.propertyGainOwn;
+/** #143/AK3, AK4: source of the tax data as the file names it (`source`), without the references to issues. */
+const taxDataSource = () => (taxLoc?.source ?? "").replace(/\s*\(#[^)]*\)/g, "");
+/** #143/AK4: origin of the deductions from income of a plan in the mode «Wohnort»: «canton» (also without rows: the
+ *  proposal of the canton throughout), «own» (only own values, also taken over from a tax bill) or «mixed». */
+function deductionOrigin(plan) {
+  const rows = plan?.taxes?.deductions;
+  if (!rows?.length) return "canton";
+  const canton = rows.some(r => r.kind === "canton"), own = rows.some(r => r.kind !== "canton");
+  return canton && own ? "mixed" : canton ? "canton" : "own";
+}
+/** #143/AK4: line below the tax breakdown and the yearly values and in the comparison: tax year and source of the
+ *  data, origin of the deductions and «Keine Steuerberatung»; with own tables without tax year. */
+function taxLine(plan) {
+  return isLocation(plan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–", source: esc(taxDataSource()), deductions: tr(`taxes.deductionOrigin.${deductionOrigin(plan)}`) })
+    : tr("taxes.estimateLine");
+}
+/** #143/AK3: approximations of the property gains tax in the cantons of the properties (own canton or, without one,
+ *  the cantons of residence), fixed in the card «Wohnort»; only with the rules of the canton. */
+function gainApproxHints() {
+  if (gainOwn() || !taxLoc) return "";
+  const homes = locRows().map(r => r.loc.canton).filter(Boolean);
+  const ids = [...new Set(state.realestate.properties.filter(p => p.status !== "rent").flatMap(p => p.canton ? [p.canton] : homes))];
+  return taxLoc.cantons.filter(c => ids.includes(c.id) && c.propertyGainApprox)
+    .map(c => `<p class="hint warn" data-tax-gain-approx="${c.id}">⚠ ${tr("taxes.gainApprox", { canton: esc(c.name), note: tr(`propertyGainApprox.${c.id}`) })}</p>`).join("");
+}
 /** #65/AK1, AK3: canton of the property and the rule that applies there (mode «Wohnort», canton rules). */
 function propertyGainRow(p, P) {
   if (gainOwn() || p.status === "rent" || !taxLoc) return "";
@@ -1522,8 +1547,9 @@ function taxLocationCard() {
     <datalist id="tax-munis">${muniAll().map(m => `<option value="${esc(m.label)}"></option>`).join("")}</datalist>
     <div><button class="btn small" data-action="loc-add">${tr("taxes.locationAdd")}</button></div></div>
     <p class="hint" id="tax-location-rule">${tr("taxes.locationRule")}</p>
+    ${gainApproxHints()}
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p>
-    <p class="hint" id="tax-source">${tr("taxes.locationSource", { year: taxLoc?.year ?? "–", source: esc(taxLoc?.source ?? "") })}</p></div>`;
+    <p class="hint" id="tax-source">${tr("taxes.locationSource", { year: taxLoc?.year ?? "–", source: esc(taxDataSource()) })}</p></div>`;
 }
 /** #274: dialog «Aus der Steuerrechnung übernehmen»: the numbers of the last tax bill (not saved, kept while the app
  *  is open), the result of the engine (`tax_bill`) and whether the proposal for the taxable wealth is taken over. */
@@ -3589,7 +3615,7 @@ function yearTable(run, refills = []) {
       <th title="${tr("yearTable.spendingTitle")}">${tr("yearTable.spending")}</th>${cx ? `<th title="${tr("yearTable.careTitle")}">${tr("yearTable.care")}</th>` : ""}<th title="${tr("yearTable.withdrawalTitle")}">${tr("yearTable.withdrawal")}</th><th title="${tr("yearTable.incomeTitle")}">${tr("yearTable.income")}</th><th title="${tr("yearTable.rateTitle")}">${tr("yearTable.rate")}</th>
       <th title="${tr("yearTable.deviationTitle")}">${tr("yearTable.deviation")}</th><th title="${tr("yearTable.inflationTitle")}">${tr("yearTable.inflation")}</th>
       ${yx ? `<th class="tx" title="${tr("yearTable.taxYieldTitle")}">${tr("yearTable.taxYield")}</th>` : ""}${tx ? taxableHead() + taxHeads() : ""}${bx ? basisHeads() : ""}${px ? `<th class="tx" title="${tr("yearTable.propertyTaxValueTitle")}">${tr("yearTable.propertyTaxValue")}</th>` : ""}${wx ? wealthHeads() : ""}${lx ? `<th class="tx" title="${tr("yearTable.residenceTitle")}">${tr("yearTable.residence")}</th>` : ""}</tr>${rows}</table></div>
-    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${isLocation(lastRunPlan) ? tr("taxes.estimateLineLocation", { year: taxLoc?.year ?? "–" }) : tr("taxes.estimateLine")} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
+    <p class="hint">${tr("yearTable.wealthHint", { taxHint })}</p><p class="hint taxline">${taxLine(lastRunPlan)} ${helpLink("tax-accuracy", tr("taxes.accuracyLink"))}</p>${refills.length ? `<p class="hint">${tr("yearTable.bucketsHint")}</p>${bucketHint()}` : ""}`;
 }
 function singleKpis(s) {
   const dep = s.depleted ? ym2i(s.depleted) : null;
@@ -4322,7 +4348,7 @@ function cmpItem(m, d, i) {
   const det = q => details.find(([p]) => p === q)?.[1];
   const exact = batch ? det(cmpP) : null;
   const run = single || exact || (batch && (det(50) || details[0]?.[1])) || null;
-  return { m, i, color: RUN_COLORS[i], name: m.name, batch, single, run, pMissing: !!batch && !exact, scenariosOnly: !batch && !single };
+  return { m, i, color: RUN_COLORS[i], name: m.name, plan: d?.plan || null, batch, single, run, pMissing: !!batch && !exact, scenariosOnly: !batch && !single };
 }
 /** Selection of the percentile for trajectories and yearly values; only for results with multiple runs. */
 function cmpPicker(items) {
@@ -4345,6 +4371,8 @@ function cmpRunNotes(items) {
 const cmpSel = (action, opts, cur) => `<div class="seg" style="margin-bottom:8px">${opts.map(([k, t]) => `<button class="${k === cur ? "on" : ""}" data-action="${action}" data-v="${k}">${t}</button>`).join("")}</div>`;
 const cmpNote = list => list.length ? `<p class="hint cmpnote">${list.join(" ")}</p>` : "";
 const cmpLegend = items => legend(items.map(it => [it.color, esc(it.name)]));
+/** #143/AK4: the line on the estimated tax in the comparison, once per different line of the compared plans. */
+const cmpTaxLines = runs => [...new Set(runs.map(it => taxLine(it.plan)))].map(t => `<p class="hint taxline">${t}</p>`).join("");
 /** Series of equal length (months since start); missing months stay gaps. */
 const cmpPad = (n, v) => Array.from({ length: n }, (_, k) => k < v.length ? v[k] : NaN);
 const cmpX = n => Array.from({ length: n }, (_, k) => k);
@@ -4479,7 +4507,7 @@ function cmpCharts(body, items) {
   body.innerHTML = cmpPicker(items) + cmpNote(notes)
     + card(tr("cmp.totalWealthShort"), cmpReal(), chartBox("cmp-total", 280, true) + cmpLegend(runs))
     + card(tr("runCharts.liquidByAsset"), cmpReal(), cmpSel("cmp-liquid", CMP_LIQUID, cmpLiquid) + chartBox("cmp-liq", 280, true) + cmpLegend(runs))
-    + card(tr("runCharts.flows"), tr("cmp.flowsSub", { cmpReal: cmpReal() }), cmpSel("cmp-flow", CMP_FLOW, cmpFlow) + chartBox("cmp-flows", 260) + cmpLegend(runs))
+    + card(tr("runCharts.flows"), tr("cmp.flowsSub", { cmpReal: cmpReal() }), cmpSel("cmp-flow", CMP_FLOW, cmpFlow) + chartBox("cmp-flows", 260) + cmpLegend(runs) + (cmpFlow === "taxes" ? cmpTaxLines(runs) : ""))
     + card(tr("runCharts.withdrawal"), tr("runCharts.withdrawalSub"), chartBox("cmp-draw", 240) + cmpLegend(runs))
     + (hasProp.length ? card(tr("section.realestate"), tr("cmp.equitySub", { cmpReal: cmpReal() }), chartBox("cmp-prop", 240, true) + cmpLegend(hasProp) + cmpNote(noProp.length ? [tr("cmp.noProperty", { map: noProp.map(it => esc(it.name)).join(", ") })] : [])) : "")
     + (hasPk.length ? card(tr("section.pension"), tr("cmp.pensionSub", { cmpReal: cmpReal() }), chartBox("cmp-pk", 240, true) + cmpLegend(hasPk) + cmpNote(noPk.length ? [tr("cmp.noPension", { map: noPk.map(it => esc(it.name)).join(", ") })] : [])) : "")
@@ -4518,7 +4546,7 @@ function cmpTable(body, items) {
   body.innerHTML = cmpPicker(items) + cmpNote(notes) + card(tr("results.yearValues"), `${tr("cmp.tableSub", { label, cmpReal: cmpReal(), cur: cur() })}${runs.some(it => it.batch) ? ` · ${pName(cmpP)}` : ""}`,
     `<label class="field" style="max-width:320px"><span>${tr("cmp.measure")}</span><select data-action="cmp-year">${CMP_YEAR.map(([k, t]) => `<option value="${k}" ${k === key ? "selected" : ""}>${t}</option>`).join("")}</select></label>
     <div class="tscroll"><table class="tbl num yt cmpyear"><tr><th>${yrs.same ? tr("yearTable.year") : tr("cmp.yearSinceStart")}</th>${runs.map(it => `<th class="cmph">${cmpSw(it)}${esc(it.name)}</th>`).join("")}</tr>${rows}</table></div>
-    <p class="hint">${tr("cmp.tableHint")}${yrs.same ? "" : tr("cmp.tableYearsHint")}</p>${key === "taxTotal" ? `<p class="hint taxline">${tr("taxes.estimateLine")}</p>` : ""}`, "yearcard");
+    <p class="hint">${tr("cmp.tableHint")}${yrs.same ? "" : tr("cmp.tableYearsHint")}</p>${key === "taxTotal" ? cmpTaxLines(runs) : ""}`, "yearcard");
 }
 document.addEventListener("change", e => { if (e.target.matches?.('select[data-action="cmp-year"]')) { cmpYearKey = e.target.value; compareRuns(); } });
 /**

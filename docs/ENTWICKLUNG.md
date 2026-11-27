@@ -860,7 +860,10 @@ und `realestate.neverSell` aus ist. Im Monat:
 Kalenderjahr (PK, 3a) werden für den Satz zusammengerechnet: für den Haushalt (eine Person, Verheiratete) oder je
 Person (unverheiratetes Paar, #150). Die Oberfläche zeigt Steuerbeträge als «geschätzt» und auf 100 Franken gerundet
 (#143, nur Anzeige: `roundTax`/`fmtTax` und `taxRounded` für Ereignistexte in `util.js`); Rechenkern, Kommandozeile und
-CSV-Export (Spalte `taxes_estimated`) bleiben genau.
+CSV-Export (Spalte `taxes_estimated`) bleiben genau. Die Zeile unter Jahreswerten und Vergleich (`taxLine` in
+`app.js`) nimmt Steuerjahr und Quelle aus der Steuerdatei (`year`, `source` ohne Verweise auf Issues). Im Modus
+«Wohnort» warnt die Prüfung, wenn das Kalenderjahr grösser ist als das Steuerjahr der Daten + 1 (`tax_data_outdated`);
+`validate::validate` liest das Jahr von der Uhr, `validate::validate_in(plan, year)` nimmt es als Argument (Tests).
 
 **Tarife mit der Teuerung** (`taxes.indexed`, #66): Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug
 (auch `taxes.couple`) wachsen mit dem Preisindex des Pfades seit Simulationsstart (`Run::infl_idx`, derselbe wie für

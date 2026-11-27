@@ -524,6 +524,8 @@ L’impôt dans VivaPlan est une **estimation pour la planification**, pas une t
 - Les investissements à plus-value, les frais de mutation et de vente pour l’impôt sur les gains immobiliers.
 - Les futures modifications de la loi.
 
+**Année fiscale et source:** En mode «Domicile», la carte «Domicile» de la section Impôts indique toujours l’année fiscale et la source des données fiscales, et en dessous les approximations du canton avec ⚠: frais professionnels, impôt sur les prestations en capital et impôt sur les gains immobiliers dans les cantons de vos immeubles. Sous les valeurs annuelles avec la décomposition de l’impôt et dans la comparaison (valeurs annuelles «Impôts estimés au total», graphique des flux avec les impôts), une ligne indique l’année fiscale, la source, l’origine des déductions (déductions standard du canton, déductions propres ou les deux) et «Pas de conseil fiscal». Si l’année civile en cours dépasse de plus d’un an l’année fiscale des données, la vérification affiche un avertissement: les barèmes, les déductions et les coefficients peuvent avoir changé depuis.
+
 VivaPlan n’affiche pas de **fourchette** (± %): il n’y a pas de base pour cela, et un chiffre de plus ferait croire à une précision qui n’existe pas.
 
 **L’impôt sur les prestations en capital et l’impôt sur les gains immobiliers** portent souvent sur des montants importants: à vérifier avec le calculateur d’impôt du canton ou un spécialiste avant de décider. VivaPlan n’est pas un conseil fiscal.

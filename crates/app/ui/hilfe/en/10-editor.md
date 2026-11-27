@@ -524,6 +524,8 @@ The tax in VivaPlan is an **estimate for planning**, not a tax assessment. The r
 - Value-adding investments, transfer and selling costs for the property gains tax.
 - Future changes in the law.
 
+**Tax year and source:** In the mode “Place of residence” the card “Place of residence” in the section Taxes always names the tax year and the source of the tax data, below it the approximations of the canton with ⚠: professional expenses, lump-sum tax and property gains tax in the cantons of your properties. Below the yearly values with the tax breakdown and in the comparison (yearly values “Estimated taxes total”, chart of the cash flows with the taxes) a line names the tax year, the source, the origin of the deductions (standard deductions of the canton, own deductions or both) and “No tax advice”. If the current calendar year is more than one year later than the tax year of the data, the check shows a warning: tariffs, deductions and multipliers may have changed since.
+
 VivaPlan does not show a **range** (± %): there is no basis for it, and another number would suggest a precision that does not exist.
 
 **Lump-sum tax and property gains tax** often involve a lot of money: check with the canton’s tax calculator or a professional before deciding. VivaPlan is not tax advice.

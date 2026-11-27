@@ -10,7 +10,7 @@ use engine::sim::{MonthRecord, SimResult, Simulator};
 use engine::tax;
 use engine::taxdata::{self, combine};
 use engine::time::YearMonth;
-use engine::validate::{validate, Severity};
+use engine::validate::{validate, validate_in, Severity};
 use serde_json::{json, Value};
 
 /// Canton, BFS number, married, income, wealth, ESTV: federal, canton, municipality (income),
@@ -982,4 +982,37 @@ fn issue_296_ak4_valais_municipalities_match_the_cantonal_calculator() {
             "{bfs} ({index} %): wealth {my_w} instead of {ref_w}"
         );
     }
+}
+
+/// #143/AK5: In the mode «Wohnort» the validation warns once the calendar year is later than the tax year of the
+/// data + 1; the year is given, so the test does not depend on the clock. Own tables do not use the data.
+#[test]
+fn issue_143_ak5_warning_when_tax_data_outdated() {
+    let data_year = taxdata::builtin().year;
+    let outdated = |v: &Value, year: i32| {
+        let plan: Plan = serde_json::from_value(v.clone()).unwrap();
+        validate_in(&plan, year)
+            .into_iter()
+            .filter(|i| i.message.code() == "tax_data_outdated")
+            .collect::<Vec<_>>()
+    };
+    let v = base(false);
+    assert!(outdated(&v, data_year).is_empty());
+    assert!(outdated(&v, data_year + 1).is_empty());
+    let w = outdated(&v, data_year + 2);
+    assert_eq!(w.len(), 1);
+    assert_eq!(w[0].severity, Severity::Warning);
+    assert_eq!(w[0].section, "taxes");
+    let text = w[0].message.text();
+    assert!(text.contains(&format!("tax year {data_year}")), "{text}");
+    assert!(text.contains(&format!("in {}", data_year + 2)), "{text}");
+    // own tables: no warning
+    let mut own = base(false);
+    own["taxes"]["mode"] = json!("own");
+    assert!(outdated(&own, data_year + 5).is_empty());
+    // validate() reads the clock: today the built-in data are current enough (no warning before the data year + 2)
+    let plan: Plan = serde_json::from_value(v).unwrap();
+    let now: i32 = engine::beta::today()[..4].parse().unwrap();
+    let warned = validate(&plan).iter().any(|i| i.message.code() == "tax_data_outdated");
+    assert_eq!(warned, now > data_year + 1);
 }

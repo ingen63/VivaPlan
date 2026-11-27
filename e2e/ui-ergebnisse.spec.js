@@ -912,6 +912,100 @@ test.describe("Estimated tax (#143)", () => {
     await noErrors(page, errors);
   });
 
+  /** Mode «Wohnort» in Liestal (BL: professional expenses and property gains tax approximated), as in a file. */
+  const toLiestal = page => page.evaluate(() => {
+    const bl = taxLoc.cantons.find(c => c.id === "BL");
+    state.taxes.mode = "location"; delete state.taxes.deductions;
+    state.taxes.location = { canton: "BL", municipality: bl.municipalities.find(m => m[1] === "Liestal")[0], church: "none" };
+    markDirty();
+  });
+
+  test("AK3: mode «Wohnort»: tax year and source of the file, origin of the deductions, approximations of the canton", async ({ page }) => {
+    const errors = await open(page);
+    await toLiestal(page);
+    await page.evaluate(() => { for (const p of state.realestate.properties) delete p.canton; state.realestate.properties[0].status = "owned"; });
+    await nav(page, "Steuern");
+    const src = await page.evaluate(() => ({ year: taxLoc.year, source: taxLoc.source }));
+    const card = page.locator("#tax-location");
+    // tax year and source as the file names them (without references to issues)
+    await expect(page.locator("#tax-source")).toHaveText(`Steuerdaten ${src.year}, Quelle: ${src.source.replace(/\s*\(#[^)]*\)/g, "")}.`);
+    await expect(page.locator("#tax-source")).not.toContainText("#");
+    await expect(page.locator("#tax-source")).toContainText("Steuergesetze");
+    // origin of the deductions and what is missing
+    await expect(page.locator("#taxEstimateNote")).toContainText("Standardabzügen des Kantons");
+    await expect(page.locator("#taxEstimateNote")).toContainText("Nicht enthalten sind");
+    // approximations of the canton (⚠), fixed visible in the card «Wohnort»: professional expenses, property gains tax
+    await expect(card.locator("#tax-earned-approx")).toBeVisible();
+    const gain = card.locator('[data-tax-gain-approx="BL"]');
+    await expect(gain).toBeVisible();
+    await expect(gain).toHaveText(/^⚠ Grundstückgewinnsteuer im Kanton Basel-Landschaft angenähert: Die Ermässigung/);
+    // a property in a canton without approximation: no hint for BL, but for its own canton if approximated
+    await page.evaluate(() => { for (const p of state.realestate.properties) p.canton = "ZH"; renderSection(); });
+    await expect(card.locator("[data-tax-gain-approx]")).toHaveCount(0);
+    await page.evaluate(() => { state.realestate.properties[0].canton = "VS"; renderSection(); });
+    await expect(card.locator('[data-tax-gain-approx="VS"]')).toBeVisible();
+    // lump-sum tax approximated (VS): fixed in the row of the place of residence
+    await page.evaluate(() => { const vs = taxLoc.cantons.find(c => c.id === "VS"); state.taxes.location = { canton: "VS", municipality: vs.municipalities[0][0], church: "none" }; renderSection(); });
+    await expect(card.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert");
+    // own rules for the property gains tax: no approximation of the canton
+    await page.evaluate(() => { state.taxes.propertyGainOwn = true; state.taxes.propertyGain ??= GAIN_ZH(); renderSection(); });
+    await expect(card.locator("[data-tax-gain-approx]")).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: mode «Wohnort»: line with tax year, source, origin of the deductions below breakdown and yearly values", async ({ page }) => {
+    const errors = await open(page);
+    await toLiestal(page);
+    const show = () => page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      lastRun = await Engine.call("run_simulation", { plan: state, path: null }); lastRunPlan = structuredClone(state);
+      resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
+    });
+    await show();
+    const year = await page.evaluate(() => taxLoc.year);
+    const line = page.locator("#resultsBody p.taxline");
+    await expect(page.locator("#resultsBody table.yt th", { hasText: "Abzüge" }).first()).toBeVisible();   // tax breakdown
+    await expect(line).toHaveText(new RegExp(`^Geschätzte Steuer mit den Steuerdaten ${year} \\(Quelle: Steuergesetze[^#)]*\\) und den Standardabzügen des Kantons, auf 100 Franken gerundet\\. Keine Steuerberatung\\.`));
+    // own deductions, then both
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => { state.taxes.deductions = [{ from: "start", kind: "own", amount: 12000, rate: 0 }]; });
+    await show();
+    await expect(line).toContainText("und eigenen Abzügen, auf 100 Franken gerundet");
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => { state.taxes.deductions = [{ from: "start", kind: "canton" }, { from: "retire", kind: "own", amount: 12000, rate: 0 }]; });
+    await show();
+    await expect(line).toContainText("und den Standardabzügen des Kantons und eigenen Abzügen,");
+    await noErrors(page, errors);
+  });
+
+  test("AK4: comparison: the line below the yearly values and the chart of the taxes, per kind of plan", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(async () => {
+      state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
+    });
+    await toLiestal(page);
+    await page.evaluate(async () => {
+      await rememberRun(await Engine.call("run_simulation", { plan: state, path: null }));
+      runsSel.clear(); (await Runs.list()).slice(0, 2).forEach(m => runsSel.add(m.id));
+      compareTab = "table"; cmpYearKey = "taxTotal"; await compareRuns();
+    });
+    const lines = page.locator("#resultsBody p.taxline");
+    await expect(lines).toHaveCount(2);
+    await expect(lines.nth(0)).toContainText(/Geschätzte Steuer mit (Ihren eigenen Tabellen|den Steuerdaten \d{4})/);
+    expect((await lines.allTextContents()).join("|")).toMatch(/eigenen Tabellen.*\|.*Steuerdaten \d{4} \(Quelle: Steuergesetze|Steuerdaten \d{4} \(Quelle: Steuergesetze.*\|.*eigenen Tabellen/);
+    for (const t of await lines.allTextContents()) expect(t).toContain("Keine Steuerberatung.");
+    // other measure: no line
+    await page.evaluate(async () => { cmpYearKey = "total"; await compareRuns(); });
+    await expect(lines).toHaveCount(0);
+    // chart of the flows with the taxes
+    await page.evaluate(async () => { compareTab = "charts"; cmpFlow = "taxes"; await compareRuns(); });
+    await expect(lines).toHaveCount(2);
+    await page.evaluate(async () => { cmpFlow = "in"; await compareRuns(); });
+    await expect(lines).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+
   test("AK6: lump-sum and property gains tax with the advice to check before deciding", async ({ page }) => {
     const errors = await open(page);
     await page.evaluate(() => { state.taxes.propertyGain = GAIN_ZH(); markDirty(); });
