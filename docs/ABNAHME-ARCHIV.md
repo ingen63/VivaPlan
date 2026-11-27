@@ -2437,3 +2437,82 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 |---|---|---|---|---|---|
 | #282/AK1 | Hilfe (4 Sprachen), Oberflächentexte (`i18n`) und `docs/BESCHREIBUNG.md` beschreiben die AHV-Rente als erwartete Rente mit 65 (nominal, ohne Teuerung bis zum Anspruch); keine Stelle nennt sie «in heutigen Preisen». | ☑ | **gilt** (Feldhinweis, Hilfe «AHV» in 4 Sprachen, BESCHREIBUNG) | `#282/AK1` in `e2e/unit/docs.test.js`, `make i18n-check`, `make ui-texts`, e2e `ui-sprache`, `ui-textfit` | 26.11.2026 ok (Tests, Durchsicht) |
 | #282/AK2 | Der Rechenkern bleibt unverändert; Golden-Dateien unverändert. | ☑ | **gilt** | `git diff` ohne `crates/engine`, `make test-quiet` (`golden::*`) | 26.11.2026 ok (Tests) |
+
+### #287 Pilot Bund und Zürich: Steuerdaten aus Erlassen
+
+[Issue #287](https://github.com/ingen63/VivaPlan/issues/287) · geschlossen · Umsetzung: f0e8cd2 · Teil von #286; Aufwand im Kommentar vom 26.11.2026
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #287/AK1 | Quelldatei je Kanton und Bund unter `tools/steuerdaten/quellen/<Jahr>/` mit Spalte `Quelle`; für Bund und ZH vollständig. | ☑ | **gilt** | `test_build.py` `issue_287_ak1_…` (2) | 27.11.2026 ok (Tests) |
+| #287/AK2 | `build.py` nimmt für Kantone mit Quelldatei deren Zeilen statt der ESTV-Tabellen; der Bericht nennt je Kanton die Herkunft. | ☑ | **gilt** | `test_build.py` `issue_287_ak2_…` (2) | 27.11.2026 ok (Tests; Neuaufbau byteweise gleich, Bericht mit Herkunft) |
+| #287/AK3 | Bund: Tarif, Standardabzüge, Berufskostenpauschale und Zweitverdienerabzug aus DBG und SR 642.119.2. | ☑ | **gilt** | `test_build.py` `issue_287_ak3_…` | 27.11.2026 ok (Test, Durchsicht `CH_*.csv`) |
+| #287/AK4 | ZH: Tarife und Abzüge aus StG ZH und Verordnungen; Kapitalbezugs- und Grundstückgewinnregel nennen den Artikel. | ☑ | **gilt** | `test_build.py` `issue_287_ak4_…` (2) | 27.11.2026 ok (Tests) |
+| #287/AK5 | `vergleich.py` vergleicht zwei Steuerdateien je Kanton und meldet Abweichungen über 1 %; für Bund und ZH keine unerklärte. | ☑ | **gilt** | [test_vergleich.py](../tools/steuerdaten/test_vergleich.py) `issue_287_ak5_…` (4) | 27.11.2026 ok (Tests; vor/nach f0e8cd2 «no differences») |
+| #287/AK6 | Referenzfälle ZH zusätzlich mit dem Steuerrechner des Kantons Zürich geprüft (±5 %). | ☑ | **gilt** | [tax_location.rs](../crates/engine/tests/tax_location.rs) `issue_287_ak6_…` | 27.11.2026 ok (Test) |
+| #287/AK7 | Aufwand für Bund und ZH im Issue festgehalten. | ☑ | **gilt** | kein Test (Kommentar im Issue) | 27.11.2026 ok (Durchsicht) |
+
+### #288 Steuerdaten aus Erlassen: Zentralschweiz
+
+[Issue #288](https://github.com/ingen63/VivaPlan/issues/288) · geschlossen · Umsetzung: 92f642d · Teil von #286
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #288/AK1 | Vollständige Quelldatei je Kanton (LU, UR, SZ, OW, NW, ZG) mit Quelle. | ☑ | **gilt** | `test_build.py` `issue_288_ak1_…` (2) | 27.11.2026 ok (Tests) |
+| #288/AK2 | Kapitalbezugs- und Grundstückgewinnregel nennen den Gesetzesartikel. | ☑ | **gilt** | `test_build.py` `issue_288_ak2_…` (2) | 27.11.2026 ok (Tests) |
+| #288/AK3 | `vergleich.py` ohne unerklärte Abweichung über 1 %. | ☑ | **gilt** | `vergleich.py` vor/nach 92f642d | 27.11.2026 ok (nur OW Sozialabzug, LU Grundstückgewinn, ZG Kapitalbezug; im Commit erklärt) |
+| #288/AK4 | Referenzfälle mit dem kantonalen Steuerrechner geprüft (±5 %), wo es einen gibt. | ☑ | **gilt** | [tax_capital_location.rs](../crates/engine/tests/tax_capital_location.rs) `issue_288_ak4_…`, `test_build.py` `issue_288_ak4_…` | 27.11.2026 ok (Tests) |
+
+### #289 Steuerdaten aus Erlassen: Mittelland und Nordwestschweiz
+
+[Issue #289](https://github.com/ingen63/VivaPlan/issues/289) · geschlossen · Umsetzung: 78e5afa · Teil von #286
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #289/AK1 | Vollständige Quelldatei je Kanton (BE, SO, BS, BL, AG) mit Quelle. | ☑ | **gilt** | `test_build.py` `issue_289_ak1_…` | 27.11.2026 ok (Test) |
+| #289/AK2 | Kapitalbezugs- und Grundstückgewinnregel nennen den Gesetzesartikel. | ☑ | **gilt** | `test_build.py` `issue_289_ak2_…` | 27.11.2026 ok (Test) |
+| #289/AK3 | `vergleich.py` ohne unerklärte Abweichung über 1 %. | ☑ | **gilt** | `vergleich.py` vor/nach 78e5afa | 27.11.2026 ok (nur SO Grundstückgewinn § 57; im Commit erklärt) |
+| #289/AK4 | Referenzfälle mit dem kantonalen Steuerrechner geprüft (±5 %), wo es einen gibt. | ☑ | **gilt** | `test_build.py` `issue_289_ak4_…` (AG Rechner, SO und BL Tarifblätter) | 27.11.2026 ok (Test) |
+
+### #290 Steuerdaten aus Erlassen: Ostschweiz
+
+[Issue #290](https://github.com/ingen63/VivaPlan/issues/290) · geschlossen · Umsetzung: c3e8d17 · Teil von #286
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #290/AK1 | Vollständige Quelldatei je Kanton (GL, SH, AR, AI, SG, GR, TG) mit Quelle. | ☑ | **gilt** | `test_build.py` `issue_290_ak1_…` | 27.11.2026 ok (Test) |
+| #290/AK2 | Kapitalbezugs- und Grundstückgewinnregel nennen den Gesetzesartikel. | ☑ | **gilt** | `test_build.py` `issue_290_ak2_…` | 27.11.2026 ok (Test) |
+| #290/AK3 | `vergleich.py` ohne unerklärte Abweichung über 1 %. | ☑ | **gilt** | `vergleich.py` vor/nach c3e8d17 | 27.11.2026 ok (nur GR Kapitalbezug Art. 40a; im Commit erklärt) |
+| #290/AK4 | Referenzfälle mit dem kantonalen Steuerrechner geprüft (±5 %), wo es einen gibt. | ☑ | **gilt** | `test_build.py` `issue_290_ak4_…` (GR) | 27.11.2026 ok (Test) |
+
+### #291 Steuerdaten aus Erlassen: Westschweiz und Tessin
+
+[Issue #291](https://github.com/ingen63/VivaPlan/issues/291) · geschlossen · Umsetzung: a5498f4 · Teil von #286; Wallis nach Kommentar vom 27.11.2026 in #296
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #291/AK1 | Vollständige Quelldatei je Kanton mit Quelle. | ☑ | **gilt** (FR, VD, NE, GE, JU, TI; VS in #296) | `test_build.py` `issue_291_ak1_…` | 27.11.2026 ok (Test) |
+| #291/AK2 | Kapitalbezugs- und Grundstückgewinnregel nennen den Gesetzesartikel. | ☑ | **gilt** | `test_build.py` `issue_291_ak2_…` | 27.11.2026 ok (Test) |
+| #291/AK3 | `vergleich.py` ohne unerklärte Abweichung über 1 %. | ☑ | **gilt** | `vergleich.py` vor/nach a5498f4 | 27.11.2026 ok (nur JU Abzug für Ledige; im Commit erklärt) |
+| #291/AK4 | Referenzfälle mit dem kantonalen Steuerrechner geprüft (±5 %), wo es einen gibt. | ☑ | **gilt** | `test_build.py` `issue_291_ak4_…` (Tarifblätter VD, JU, GE) | 27.11.2026 ok (Test) |
+
+### #292 Steuerdaten aus Erlassen: Abschluss der Umstellung
+
+[Issue #292](https://github.com/ingen63/VivaPlan/issues/292) · geschlossen · Umsetzung: b62c798, 87e56e9 · Teil von #286; AK1 und AK2 per Kommentar vom 27.11.2026 geändert
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #292/AK1 | Alle 26 Kantone und der Bund aus Quelldateien; `build.py` liest die ESTV-Tabellen nur noch für die Steuerfüsse. | ☑ | **gilt** (seit #296 auch das Wallis, `ESTV_ONLY` leer) | `test_build.py` `issue_292_ak1_…` | 27.11.2026 ok (Test; Neuaufbau: alle «laws (source files)», byteweise gleich) |
+| #292/AK2 | Referenzfälle aus den kantonalen Steuerrechnern. | ☑ | **gilt** (nach Kommentar: ESTV-Fälle als zweite Prüfung, dazu Rechner ZH, ZG, AG, GR, VS und Tarifblätter LU, SO, BL, VD, JU, GE) | `issue_287_ak6_…`, `issue_288_ak4_…`, `issue_289_ak4_…`, `issue_290_ak4_…`, `issue_291_ak4_…`, `issue_296_ak4_…` | 27.11.2026 ok (Tests) |
+| #292/AK3 | `source`, README mit Ablauf für ein neues Steuerjahr, BESCHREIBUNG, ENTWICKLUNG und Hilfe nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 27.11.2026 ok (Durchsicht; Hinweis: README «Alle anderen Kantone treffen die 364 Rechnungen auf 1 % genau» gilt für GR seit #290 nicht mehr) |
+
+### #296 Steuerdaten Wallis aus Erlassen, mit Indexierung von Kanton und Gemeinden
+
+[Issue #296](https://github.com/ingen63/VivaPlan/issues/296) · geschlossen · Umsetzung: 87e56e9 · Teil von #286, aus #291 herausgelöst
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #296/AK1 | Kantonssteuer auf das Einkommen nach der amtlichen Tabelle 2026 (Index 173 %), mit Quelldatei. | ☑ | **gilt** | `test_build.py` `issue_296_ak1_…` | 27.11.2026 ok (Test; `vergleich.py`: Walliser Einkommenssteuer rund −40 %, gewollt) |
+| #296/AK2 | Gemeindesteuer mit dem Index jeder Gemeinde. | ☑ | **gilt** | `test_build.py` `issue_296_ak2_…`, `tax_location.rs` `issue_296_ak4_…` | 27.11.2026 ok (Test; `municipalIndex` = alle 122 Walliser Gemeinden) |
+| #296/AK3 | Abzüge, Vermögen, Kapitalbezugs- und Grundstückgewinnregel mit Artikel; Näherung beim Kapitalbezug geklärt. | ☑ | **gilt** (LF Art. 33b, Divisor 19,77 statt 40; verbleibende Näherung Alter 65 und Höchstsatz Gemeinde aus Sitten in `capitalApprox`) | `test_build.py` `issue_296_ak3_…` | 27.11.2026 ok (Test, Durchsicht) |
+| #296/AK4 | Referenzfälle für mindestens zwei Gemeinden mit verschiedenem Index stimmen mit dem Walliser Steuerrechner (±5 %). | ☑ | **gilt** | `tax_location.rs` `issue_296_ak4_…`, `tax_capital_location.rs` `issue_296_ak4_…` | 27.11.2026 ok (Tests) |
