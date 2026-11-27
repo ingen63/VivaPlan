@@ -294,6 +294,35 @@ class ReadCantons(unittest.TestCase):
                 re.compile(row)
 
 
+class ParishesAndExceptions(unittest.TestCase):
+    # #285/AK1 (b3): FR parish rates from the PDF rows «commune | parish | income | …»: the first parish counts.
+    def test_issue_285_ak1_fr_parishes(self):
+        lines = ["Commune | Paroisse | Revenu", "Seeville | Seeville-Nord | 9.0 | 20.0 | 8.0 | 10.0",
+                 "Seeville | Seeville-Süd | 7.0 | 20.0 | 8.0 | 10.0", "Bergdorf | Tal | 10 | 15 | 10 | 10"]
+        original = steuerfuesse.pdf_lines
+        steuerfuesse.pdf_lines = lambda path: lines
+        try:
+            self.assertEqual(steuerfuesse.read_fr_parishes("x.pdf"), {"Seeville": 0.09, "Bergdorf": 0.1})
+        finally:
+            steuerfuesse.pdf_lines = original
+
+    # #285/AK1 (b3): exceptions with their source replace values of the cantonal source or fill a missing municipality.
+    def test_issue_285_ak1_exceptions(self):
+        path = write(json.dumps({"_comment": "x", "ZH": {"9001": {"municipal": 1.2, "source": "Beschluss A"},
+                                                         "9003": {"municipal": 1.2, "source": "Beschluss B"},
+                                                         "9999": {"municipal": 1.0, "source": "unbekannt"}}}), ".json")
+        exceptions = steuerfuesse.read_exceptions(path)
+        os.unlink(path)
+        self.assertEqual(exceptions["ZH"][9001], ({"municipal": 1.2}, "Beschluss A"))
+        source = {9001: ("Seedorf", [0.95, 1.1, 0.11, 0.12, 0.14], [])}
+        steuerfuesse.apply_exceptions("ZH", source, exceptions, REFERENCE)
+        self.assertEqual(source[9001], ("Seedorf", [0.95, 1.2, 0.11, 0.12, 0.14], ["exception: Beschluss A"]))
+        self.assertEqual(source[9003], ("Hügelwil", [0.95, 1.2, None, None, None], ["exception: Beschluss B"]))
+        self.assertNotIn(9999, source)
+        steuerfuesse.apply_exceptions("BE", source, exceptions, REFERENCE)  # no exceptions: nothing changes
+        self.assertEqual(len(source), 2)
+
+
 class Compare(unittest.TestCase):
     # #285/AK2: the comparison names every differing value, missing municipalities and notes.
     def test_issue_285_ak2_compare(self):

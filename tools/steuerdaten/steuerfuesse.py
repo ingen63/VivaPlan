@@ -25,12 +25,15 @@ The other 21 cantons are described in `quellen/<year>/kantone.json` (source, can
 rows, see `read_table`) and read by one general reader (`--kantone`, files in `--ordner`). PDFs whose tables the reader
 here cannot take apart are converted to text first with `pdf2txt.swift` (PDFKit of macOS).
 
-Values a source does not have (church tax of GE, VD, FR) are not compared.
+Values a source does not have (church tax of GE, VD) are not compared. FR: church tax from the parish PDFs of the tax
+administration (`--fr-ref`, `--fr-kath`). `--ausnahmen`: values of single municipalities decided after the cantonal
+source was published, each with its source (`quellen/<year>/ausnahmen.json`).
 
 Output: one line per difference and a summary per canton. Exit code 1 if a value differs or a municipality is missing.
 
 Usage: python3 -I tools/steuerdaten/steuerfuesse.py REFERENCE.json [--zh CSV] [--be PDF] [--ge HTML] [--vd CSV]  «check-english: allow» (path)
        [--fr CSV] [--zh-canton 0.95] [--ge-canton 1.475] [--vd-canton 1.55] [--fr-canton 0.96]
+       [--fr-ref PDF] [--fr-kath PDF] [--ausnahmen JSON]  «check-english: allow» (option names)
        [--kantone JSON --ordner FOLDER [--nur XX]]  «check-english: allow» (option names)
 """
 
@@ -427,6 +430,40 @@ def read_cantons(path, folder, reference, only=None):
     return out
 
 
+def read_fr_parishes(path):
+    """{commune: share} from a PDF of the FR tax administration on the parish tax rates (reformed or Catholic): rows
+    «commune | parish | income | wealth | profit | capital» in percent of the cantonal base tax; the income rate of
+    the first parish of a commune (a commune with several parishes: the first listed)."""
+    out = {}
+    for line in pdf_lines(path):
+        parts = [p.strip() for p in line.split("|") if p.strip()]
+        if len(parts) >= 6 and re.fullmatch(r"\d+(\.\d+)?", parts[2]) and not re.search(r"\d", parts[0]):
+            out.setdefault(parts[0], round(float(parts[2]) / 100, 6))
+    return out
+
+
+def read_exceptions(path):
+    """{canton: {bfs: (values by group, source)}} from the JSON file of exceptions: values of single municipalities
+    that the cantonal source does not have yet (decisions after its publication), each with its source."""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return {canton: {int(bfs): ({g: e[g] for g in GROUPS if g in e}, e["source"]) for bfs, e in rows.items()}
+            for canton, rows in data.items() if not canton.startswith("_")}
+
+
+def apply_exceptions(canton, source, exceptions, reference):
+    """Puts the exceptions of a canton into its source rows (also municipalities the source lacks), with a note."""
+    for bfs, (values, origin) in exceptions.get(canton, {}).items():
+        ref = next((m for m in reference if m[0] == bfs), None)
+        if bfs not in source and ref is None:
+            continue
+        name, row, notes = source.get(bfs, (ref[1], [ref[3][0], None, None, None, None], []))
+        row = list(row)
+        for g, v in values.items():
+            row[1 + GROUPS.index(g)] = v
+        source[bfs] = (name, row, notes + [f"exception: {origin}"])
+
+
 LABELS = ("canton", "municipal") + CHURCHES
 
 
@@ -460,6 +497,9 @@ def main(argv=None):
     ap.add_argument("--ge")
     ap.add_argument("--vd")
     ap.add_argument("--fr")
+    ap.add_argument("--fr-ref", help="PDF of the FR reformed parish tax rates")
+    ap.add_argument("--fr-kath", help="PDF of the FR Catholic parish tax rates")
+    ap.add_argument("--ausnahmen", help="JSON file with exceptions per municipality")
     ap.add_argument("--kantone", help="JSON file describing the sources of further cantons")
     ap.add_argument("--ordner", help="folder with the source files named in --kantone")
     ap.add_argument("--nur", action="append", help="only these cantons of --kantone")
@@ -488,9 +528,21 @@ def main(argv=None):
             matched, unmatched = match_names(reader(path, value), [m for m in reference if m[2] == canton])
             sources.append((canton, matched, unmatched))
     if a.fr:
-        sources.append(("FR", read_fr(a.fr, a.fr_canton, year)[0], []))
+        fr = read_fr(a.fr, a.fr_canton, year)[0]
+        ref_fr = [m for m in reference if m[2] == "FR"]
+        for path, i in ((a.fr_ref, 2), (a.fr_kath, 3)):
+            if path:
+                matched, _ = match_names(read_fr_parishes(path), ref_fr)
+                for bfs, (_, share, _) in matched.items():
+                    if bfs in fr:
+                        fr[bfs][1][i] = share
+        sources.append(("FR", fr, []))
     if a.kantone:
         sources += read_cantons(a.kantone, a.ordner or ".", reference, a.nur)
+    if a.ausnahmen:
+        exceptions = read_exceptions(a.ausnahmen)
+        for canton, source, *_ in sources:
+            apply_exceptions(canton, source, exceptions, reference)
     for canton, source, unmatched, *notes in sources:
         lines, n = compare(canton, source, reference)
         lines += [f"{canton} {name}: name not found in the reference" for name in unmatched]

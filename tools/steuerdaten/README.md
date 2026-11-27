@@ -200,6 +200,10 @@ vergleicht sie mit einer Steuerdatei. Als Versuch für alle 26 Kantone (Stand No
 - **VD:** Tabelle der Steuerbeschlüsse der Gemeinden (Excel des Kantons, `Arrêtés_d_imposition_<Jahr>.xls`, von Hand
   in CSV umgewandelt, z. B. mit LibreOffice), Spalte «Pour-cent total»; Kantonskoeffizient ein einziger Wert
   (`--vd-canton`, 2026: 155 %). Fraktionen von Gemeinden mit eigenem Satz werden wie im ESTV-Export weggelassen.
+- **FR Kirchensteuer:** PDF der Steuerverwaltung «Coefficients d'impôt des paroisses réformées/catholiques» 2026
+  (`--fr-ref`, `--fr-kath`); bei mehreren Pfarreien einer Gemeinde gilt die erste.
+- **Ausnahmen:** `quellen/2026/ausnahmen.json` hält Werte einzelner Gemeinden fest, die nach der Kantonsquelle
+  beschlossen wurden (z. B. Dornach 92 % per Regierungsratsbeschluss), je mit Quelle (`--ausnahmen`).
 - **FR:** offene Daten des Amts für Statistik (`18_03_coefficients`, CSV mit «;», mit BFS-Nummern); genommen wird das
   neuste Jahr bis zum Jahr der Steuerdatei, mit Hinweis, wenn es älter ist. Im November 2026 reichten sie bis 2025;
   die Listen 2026 gibt es nur als PDF auf fr.ch.

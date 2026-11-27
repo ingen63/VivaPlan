@@ -1,0 +1,12 @@
+{
+  "_comment": "#285: values of single municipalities that the cantonal source does not have yet, each with its source. Shares as in kantone.json (0.92 = 92 %).",
+  "SO": {
+    "2473": {"municipal": 0.92, "source": "Dornach: Regierungsrat SO setzt das Budget 2026 fest, Steuerfuss rückwirkend 92 % (Medienmitteilung so.ch, 30.6.2026)"}
+  },
+  "FR": {
+    "2025": {"municipal": 0.85, "source": "Lully: Budget 2026 mit fünf Steuerpunkten mehr angenommen, 85 % (La Liberté, Budget déficitaire approuvé à Lully)"},
+    "2087": {"municipal": 0.93, "source": "Mézières (FR): Antrag an die Gemeindeversammlung vom 10.12.2025, Koeffizient 85 % → 93 % (mezieres-fr.ch)"},
+    "2271": {"municipal": 0.58, "source": "Meyriez: Antrag an die Gemeindeversammlung, Steuerfuss 52.3 % → 58 % für 2026 (Informationsblatt, merlach.ch)"},
+    "2296": {"municipal": 0.81, "source": "Heitenried: Steuerfuss 2026 81 % (heitenried.ch/steuerfuss)"}
+  }
+}
