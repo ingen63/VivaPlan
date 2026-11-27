@@ -115,7 +115,7 @@ Der Editor führt durch zwölf Abschnitte:
 - **Entnahmestrategie:** sechs Strategien (siehe unten).
 - **Optimierung:** sucht die beste Strategie für das eigene Szenario (siehe unten).
 - **Steuern:** Modus «Wohnort» (#63): Einkommens- und Vermögenssteuer aus Kanton, Gemeinde (alle Gemeinden des
-  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuergesetzen von Bund und Kantonen (#286, Wallis mit indexierten Tarifen von Kanton und Gemeinden #296; Steuerfüsse noch aus
+  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuergesetzen von Bund und Kantonen (#286, Wallis mit indexierten Tarifen von Kanton und Gemeinden #296 und der Ermässigung für Verheiratete #297; Steuerfüsse noch aus
   den ESTV-Grunddaten, #285), mit den
   Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
   «mit 2. und 3. Säule», Berufskostenpauschale, bei Ehepaaren mit zwei Erwerbseinkommen der Zweitverdienerabzug;
@@ -282,7 +282,7 @@ würde die Scheingenauigkeit verstärken.
   Kapitalbezug im Modus «Wohnort»: 48 erfundene Fälle in acht Kantonen
   (100 000 bis 1 Million, alleinstehend und verheiratet) höchstens ±5 %; Wallis angenähert, drei Bezüge in Sitten unter 1 % neben dem Walliser Steuerrechner (#296); Zug nach dem Gesetz,
   10 Fälle gegen den Zuger Steuerrechner auf 0,5 % genau (#288). Zusätzlich Fälle aus den kantonalen
-  Steuerrechnern von Zürich, Aargau, Graubünden und Wallis (Sitten, Agarn) und aus den amtlichen Tarifblättern von LU, SO, BL, VD, JU und GE
+  Steuerrechnern von Zürich, Aargau, Graubünden und Wallis (Sitten, Agarn; Verheiratete in Sitten mit Ermässigung, #297) und aus den amtlichen Tarifblättern von LU, SO, BL, VD, JU und GE
   (#287–#291).
   Grundstückgewinnsteuer im Modus «Wohnort»: je Kanton erfundene Fälle gegen von Hand nachgerechnete Werte nach
   Gesetz.

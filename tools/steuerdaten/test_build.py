@@ -796,6 +796,25 @@ class Sources(unittest.TestCase):
         self.assertEqual(rule["divisor"], 19.77)
         self.assertTrue(grundstueckgewinn.rules()["VS"]["source"])
 
+    def test_issue_297_ak1_valais_rebate_rule_from_the_source_files(self):
+        """#297/AK1: the reduction for married couples in Valais (35 %, at least 680, at most 4900 in 2026) is a rule of
+        canton and municipality with the article of the law; a wrong format stops the build."""
+        _, deductions_, _ = build.read_sources(self.REPO)
+        rows = {r["Hoheit"]: r for r in deductions_ if r["Kanton"] == "VS" and r["ID"] == build.TAX_REBATE}
+        canton, municipal = build.tax_rebate(rows["KANTON"]), build.tax_rebate(rows["GEMEINDE"])
+        self.assertEqual((canton["rate"], canton["min"], canton["max"]), (0.35, 680.0, 4900.0))
+        self.assertEqual((municipal["rate"], municipal["min"], municipal["max"]), (0.35, 680.0, 4900.0))
+        self.assertTrue(canton["source"].startswith("LF VS Art. 32 Abs. 3 lit. a"))
+        self.assertTrue(municipal["source"].startswith("LF VS Art. 178 Abs. 3 lit. a"))
+        self.assertIsNone(build.tax_rebate(None))
+        with self.assertRaisesRegex(ValueError, "PERCENT,MINIMUM,MAXIMUM"):
+            build.tax_rebate({**rows["KANTON"], "Format": "PERCENT"})
+        with open(os.path.join(os.path.dirname(build.SOURCES), "..", "..", "crates", "engine", "data",
+                               "steuern-2026.json"), encoding="utf-8") as f:
+            cantons = {c["id"]: c for c in json.load(f)["cantons"]}
+        self.assertEqual(cantons["VS"]["incomeRebate"]["canton"], canton)
+        self.assertEqual([k for k, c in cantons.items() if "incomeRebate" in c], ["VS"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -110,6 +110,10 @@ EARNED_DEDUCTION = "HauptErw_EK"
 # calculator 2026 (ZH, BE, LU, AG, SG, AR, GL, NE and federal, 23.11.2026).
 SECOND_EARNER_DEDUCTION = "ZweitVerdiener_EK"
 SECOND_EARNER_TOTAL = {"BE"}
+# #297: reduction of the income tax for married couples (Valais: 35 %, at least and at most an indexed amount), as a
+# row of the deduction table of the canton (`KANTON`) and of the municipality (`GEMEINDE`), format
+# PERCENT,MINIMUM,MAXIMUM.
+TAX_REBATE = "Ermaessigung_EK"
 
 GAIN_SOURCE = "Steuergesetze der Kantone (Stand 2025/2026), Artikel je Kanton im Bericht (#287–#291, #296)"
 SOURCE = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292, #296); Steuerfüsse: ESTV, Steuerrechner, "
@@ -455,6 +459,17 @@ def second_earner_rule(row, label):
     return {**rule, "reference": "total" if label in SECOND_EARNER_TOTAL else "lower"}
 
 
+def tax_rebate(row):
+    """#297: Reduction of the tax as `{rate, min, max, source}`: the tax (after the tax multiplier) is reduced by
+    `rate` of it, at least `min` and at most `max` (0 = no maximum), never below zero. None without such a row."""
+    if row is None:
+        return None
+    if set(row["Format"].split(",")) != {"PERCENT", "MINIMUM", "MAXIMUM"}:
+        raise ValueError(f"{row['Kanton']} {row['Hoheit']}: tax rebate needs the format PERCENT,MINIMUM,MAXIMUM")
+    return {"rate": float(row["Prozent"]) / 100, "min": float(row["Minimum"]), "max": float(row["Maximum"]),
+            "source": row.get("Quelle", "")}
+
+
 def total_deduction(table, spec, base):
     """Sum of the deductions of a specification for the amount `base` (wealth curves)."""
     return sum(rule_amount(r, base) for r in deduction_rules(table, spec))
@@ -636,6 +651,13 @@ def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rul
         if not c["income"] or not c["wealth"]:
             raise ValueError(f"canton {cid}: tariff missing")
         c["deductions"] = deductions(deds.get((cid, "KANTON", "EINKOMMENSSTEUER"), {}), cid, report)
+        rebate = {target: tax_rebate(deds.get((cid, hoheit, "EINKOMMENSSTEUER"), {}).get(TAX_REBATE))
+                  for target, hoheit in (("canton", "KANTON"), ("municipal", "GEMEINDE"))}
+        rebate = {k: v for k, v in rebate.items() if v}
+        if rebate:
+            # #297: married couples only (the model has no single parents)
+            c["incomeRebate"] = rebate
+            report.append(f"{cid} income rebate married: {rebate}")
         if capital_rules is not None:
             if cid not in capital_rules:
                 raise ValueError(f"canton {cid}: capital rule missing")

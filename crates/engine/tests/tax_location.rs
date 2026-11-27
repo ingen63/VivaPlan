@@ -984,6 +984,105 @@ fn issue_296_ak4_valais_municipalities_match_the_cantonal_calculator() {
     }
 }
 
+/// #297/AK3: Married couples without children in Sion (BFS 6266, index 176 %, coefficient 1.1) from the tax
+/// calculator of the canton of Valais (https://taxcalculator.apps.vs.ch/, «Natürliche Person», tax year 2026, retrieved
+/// 27.11.2026, invented taxable incomes, no wealth): `(taxable income, [canton tax, canton reduction, municipal tax,
+/// municipal reduction])`, tax before the reduction. 25000 reaches the minimum (680), 250000 the maximum (4900).
+const VS_MARRIED_CALCULATOR: [(f64, [f64; 4]); 4] = [
+    (25_000.0, [810.35, 680.00, 846.45, 680.00]),
+    (60_000.0, [3590.80, 1256.80, 3739.75, 1308.90]),
+    (120_000.0, [12201.00, 4270.35, 10434.05, 3651.95]),
+    (250_000.0, [34057.00, 4900.00, 25603.35, 4900.00]),
+];
+
+/// #297/AK3: The tax of married couples in Valais after the reduction matches the cantonal calculator within ±5 %,
+/// canton and municipality separately; the reductions themselves within one franc.
+#[test]
+fn issue_297_ak3_valais_married_match_the_cantonal_calculator() {
+    let data = taxdata::builtin();
+    let res = data.resolve(&loc("VS", 6266, Church::None), true).unwrap();
+    assert_eq!(res.rebates.len(), 2, "canton and municipality");
+    for (income, r) in VS_MARRIED_CALCULATOR {
+        let parts: Vec<(f64, f64)> = res
+            .rebates
+            .iter()
+            .map(|rb| {
+                let tax = tax::tax_indexed(&rb.table, income, 1.0, 1.0);
+                (tax, tax - rb.rule.amount(tax, 1.0))
+            })
+            .collect();
+        for (k, (name, (tax, after))) in ["canton", "municipality"].iter().zip(parts).enumerate() {
+            let (ref_tax, ref_rebate) = (r[2 * k], r[2 * k + 1]);
+            let ref_after = ref_tax - ref_rebate;
+            assert!(
+                (tax - after - ref_rebate).abs() <= 1.0,
+                "{income} {name}: reduction {} instead of {ref_rebate}",
+                tax - after
+            );
+            assert!(
+                (after / ref_after - 1.0).abs() <= 0.05,
+                "{income} {name}: {after} instead of {ref_after}"
+            );
+        }
+        let total = res.income_tax_on(income, 0.0, 1.0);
+        let ref_total = r[0] - r[1] + r[2] - r[3];
+        assert!(
+            (total / ref_total - 1.0).abs() <= 0.05,
+            "{income}: total {total} instead of {ref_total}"
+        );
+    }
+}
+
+/// #297/AK2: The reduction applies to married couples only, to canton and municipality (not to the church tax), and its
+/// minimum and maximum follow the price index.
+#[test]
+fn issue_297_ak2_valais_reduction_for_married_couples_only() {
+    let data = taxdata::builtin();
+    let vs = data.canton("VS").unwrap();
+    let rule = vs.income_rebate.canton.clone().unwrap();
+    assert_eq!((rule.rate, rule.min, rule.max), (0.35, 680.0, 4900.0));
+    assert!(rule.source.contains("Art. 32 Abs. 3 lit. a"), "{}", rule.source);
+    assert!(vs
+        .income_rebate
+        .municipal
+        .as_ref()
+        .unwrap()
+        .source
+        .contains("Art. 178 Abs. 3 lit. a"));
+    // single persons: no reduction
+    let single = data.resolve(&loc("VS", 6266, Church::None), false).unwrap();
+    assert!(single.rebates.is_empty());
+    // married couples: tax after the reduction = tax of the curves minus both reductions
+    let married = data.resolve(&loc("VS", 6266, Church::None), true).unwrap();
+    let full = tax::tax_indexed(&married.cantonal, 60_000.0, 1.0, 1.0);
+    let after = married.income_tax_on(60_000.0, 0.0, 1.0);
+    assert!((full - after - 1256.80 - 1308.90).abs() <= 1.0, "{full} - {after}");
+    // church tax (Sion, Roman Catholic 3 %) is not reduced: the difference to no denomination stays the full church tax
+    let catholic = data.resolve(&loc("VS", 6266, Church::Catholic), true).unwrap();
+    let church = catholic.income_tax_on(60_000.0, 0.0, 1.0) - after;
+    assert!((church - 0.03 * 3590.80).abs() <= 1.0, "church {church}");
+    // other cantons: no reduction
+    assert!(data
+        .resolve(&loc("ZH", 261, Church::None), true)
+        .unwrap()
+        .rebates
+        .is_empty());
+    // the index raises minimum and maximum
+    assert_eq!(rule.amount(100.0, 1.0), 100.0, "never more than the tax");
+    assert_eq!(rule.amount(1000.0, 1.0), 680.0);
+    assert!((rule.amount(1000.0, 1.1) - 748.0).abs() < 1e-9);
+    assert!((rule.amount(100_000.0, 1.1) - 5390.0).abs() < 1e-9);
+    assert_eq!(rule.amount(10_000.0, 1.0), 3500.0);
+    assert_eq!(rule.amount(0.0, 1.0), 0.0);
+    let open = taxdata::TaxRebate {
+        rate: 0.35,
+        min: 0.0,
+        max: 0.0,
+        source: String::new(),
+    };
+    assert_eq!(open.amount(100_000.0, 1.0), 35_000.0, "max 0: no maximum");
+}
+
 /// #143/AK5: In the mode «Wohnort» the validation warns once the calendar year is later than the tax year of the
 /// data + 1; the year is given, so the test does not depend on the clock. Own tables do not use the data.
 #[test]

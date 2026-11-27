@@ -911,7 +911,9 @@ ein (`BUILTIN`).
   Gemeindekurve (Schwyz, Wallis: eigene, sonst die des Kantons; Wallis gestreckt mit dem Faktor der Gemeinde aus
   `municipalIndex`, `taxdata::stretch`, #296) × Steuerfuss Gemeinde mit `combine` exakt auf den
   vereinigten Stützpunkten zusammen; Einkommenssteuer = diese Tabelle auf das steuerbare Einkommen Kanton + Bundeskurve
-  auf das steuerbare Einkommen Bund (`Resolved::income_tax`). Vermögenssteuer = Vermögenskurve (Sozialabzüge
+  auf das steuerbare Einkommen Bund (`Resolved::income_tax`), abzüglich der Ermässigungen in `Resolved::rebates`
+  (#297, Wallis, nur Verheiratete: je für Kanton und Gemeinde `TaxRebate::amount` auf die Steuer nach dem
+  Steuerfuss ohne Kirche, Mindest- und Höchstbetrag mit dem Preisindex). Vermögenssteuer = Vermögenskurve (Sozialabzüge
   eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie
   bei `taxes.couple`: `household.married` und entweder eine zweite Person oder die Markierung
   `household.marriedNoted` (#250: dann auch eine Person allein; ältere Planungen mit einer Person übernimmt

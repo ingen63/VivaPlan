@@ -377,6 +377,7 @@ fn issue_274_ak5_wealth_allowance_from_the_curve() {
         capital: vec![],
         canton_deductions: Default::default(),
         federal_deductions: Default::default(),
+        rebates: vec![],
     };
     // tax 100 at 100'000 and 300 at 150'000: marginal 0.4 ‰ → no tax below 75'000
     let r = resolved(vec![

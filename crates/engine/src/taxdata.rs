@@ -12,6 +12,9 @@
 //! The municipal curve is the cantonal one, except in Schwyz and Valais. Wealth tax = wealth curve × (multiplier
 //! canton + municipality + church), without federal tax.
 //!
+//! #297: Valais reduces the income tax of married couples by a share of the tax (after the multiplier), at least and
+//! at most an indexed amount, separately for canton and municipality (`incomeRebate`); the church tax is not reduced.
+//!
 //! #64: Lump sums from pension savings = capital curve of the canton × (multiplier canton + church) plus capital curve
 //! of the municipality × multiplier municipality plus federal capital curve (one fifth of the federal tariff, without
 //! deductions). The curves hold the rate of the simple tax on the whole lump sum; the multipliers are those of the
@@ -221,6 +224,9 @@ pub struct Canton {
     #[serde(default)]
     pub municipal_index: Vec<(u32, f64)>,
     pub deductions: Deductions,
+    /// #297: Reduction of the income tax of married couples (Valais), for canton and municipality.
+    #[serde(default)]
+    pub income_rebate: IncomeRebate,
     /// #64: Rate of the simple tax on lump sums from pension savings (multiplier 100 %), on the whole lump sum.
     pub capital: Curves,
     /// #64: Own capital curve of the municipal tax (otherwise the cantonal one applies).
@@ -240,6 +246,43 @@ pub struct Canton {
     pub property_gain_approx: Option<String>,
     /// #65: Median tax multiplier (canton + municipality) for a property outside the canton of residence.
     pub gain_multiplier: f64,
+}
+
+/// #297: Reduction of the income tax: `rate` of the tax after the multiplier, at least `min`, at most `max` (0 = no
+/// maximum), never more than the tax; `min` and `max` in prices of the tax data (indexed like the tariff).
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TaxRebate {
+    pub rate: f64,
+    pub min: f64,
+    pub max: f64,
+    /// Article of the law and publication of the indexed amounts.
+    #[serde(default)]
+    pub source: String,
+}
+
+impl TaxRebate {
+    /// Reduction of the tax `tax`; `index`: price index for `min` and `max` (1.0 = prices of the tax data).
+    pub fn amount(&self, tax: f64, index: f64) -> f64 {
+        if tax <= 0.0 {
+            return 0.0;
+        }
+        let mut v = (self.rate * tax).max(self.min * index);
+        if self.max > 0.0 {
+            v = v.min(self.max * index);
+        }
+        v.min(tax)
+    }
+}
+
+/// #297: Reductions of the income tax of married couples, per authority (missing: none).
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct IncomeRebate {
+    #[serde(default)]
+    pub canton: Option<TaxRebate>,
+    #[serde(default)]
+    pub municipal: Option<TaxRebate>,
 }
 
 /// Tax multipliers of a municipality as shares (0.95 = 95 %): canton, municipality, reformed, Roman Catholic, Christ
@@ -314,8 +357,26 @@ impl TaxData {
         let gem = stretch(canton.municipal_income.as_ref().map_or(kt, |c| c.get(married)), factor);
         let ck = canton.capital.get(married);
         let cg = stretch(canton.capital_municipal.as_ref().map_or(ck, |c| c.get(married)), factor);
+        // #297: reductions for married couples on the tax of canton and municipality (after the multiplier)
+        let mut rebates = Vec::new();
+        if married {
+            let r = &canton.income_rebate;
+            if let Some(c) = &r.canton {
+                rebates.push(Rebate {
+                    table: combine(&[(kt, ek[0])]),
+                    rule: c.clone(),
+                });
+            }
+            if let Some(m) = &r.municipal {
+                rebates.push(Rebate {
+                    table: combine(&[(&gem, ek[1])]),
+                    rule: m.clone(),
+                });
+            }
+        }
         Ok(Resolved {
             cantonal: combine(&[(kt, ek[0] + church(ek, loc.church)), (&gem, ek[1])]),
+            rebates,
             federal: self.federal.get(married).to_vec(),
             wealth: combine(&[(canton.wealth.get(married), vm[0] + vm[1] + church(vm, loc.church))]),
             capital: combine(&[
@@ -358,6 +419,16 @@ pub struct Resolved {
     pub capital: Table,
     pub canton_deductions: Applied,
     pub federal_deductions: Applied,
+    /// #297: Reductions of the income tax (married couples in Valais), each on its part of the cantonal tax.
+    pub rebates: Vec<Rebate>,
+}
+
+/// #297: A reduction of the income tax: rule and the part of the tax it applies to (rate table, multiplier
+/// included) on the cantonal taxable income.
+#[derive(Clone, Debug)]
+pub struct Rebate {
+    pub table: Table,
+    pub rule: TaxRebate,
 }
 
 impl Resolved {
@@ -386,7 +457,12 @@ impl Resolved {
 
     /// #131: Income tax of a year on the taxable income for canton (`canton`) and federal tax (`federal`).
     pub fn income_tax_on(&self, canton: f64, federal: f64, index: f64) -> f64 {
-        tax_indexed(&self.cantonal, canton, 1.0, index) + tax_indexed(&self.federal, federal, 1.0, index)
+        let rebate: f64 = self
+            .rebates
+            .iter()
+            .map(|r| r.rule.amount(tax_indexed(&r.table, canton, 1.0, index), index))
+            .sum();
+        tax_indexed(&self.cantonal, canton, 1.0, index) - rebate + tax_indexed(&self.federal, federal, 1.0, index)
     }
 
     /// Wealth tax of a year.

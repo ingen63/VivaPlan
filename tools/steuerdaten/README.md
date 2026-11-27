@@ -20,6 +20,12 @@ Datei ein, es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, ke
   `secondEarner`, der Zweitverdienerabzug für Ehepaare mit zwei Erwerbseinkommen (`reference`: `lower` = tieferes
   Erwerbseinkommen nach der Berufskostenpauschale, `total` = Summe der Erwerbseinkommen, nur Bern; höchstens das tiefere
   Erwerbseinkommen nach der Berufskostenpauschale; fehlt im Thurgau);
+- `incomeRebate` (Wallis, #297): Ermässigung der Einkommenssteuer für Verheiratete, je für Kanton (`canton`) und
+  Gemeinde (`municipal`) als `{rate, min, max, source}`: die Steuer nach dem Steuerfuss (ohne Kirchensteuer) sinkt um
+  `rate` davon, mindestens `min`, höchstens `max` und nie unter null (LF VS Art. 32 Abs. 3 lit. a und Art. 178 Abs. 3
+  lit. a: 35 %, 2026 indexiert 680 bis 4 900 Franken). Quelle: Zeilen `Ermaessigung_EK` (Format
+  `PERCENT,MINIMUM,MAXIMUM`, Hoheit `KANTON` und `GEMEINDE`) in `VS_abzuege.csv`. Alleinerziehende fehlen, weil das
+  Modell keine Kinder kennt;
 - `wealth`: je Kanton die Kurve `[Vermögen, Satz]`, der Satz auf das Vermögen **vor** den Sozialabzügen (eingerechnet);
 - `municipalities`: je Gemeinde BFS-Nummer, Name, Kanton und die Steuerfüsse als Anteile (0.95 = 95 %) für Kanton,
   Gemeinde, reformierte, römisch-katholische und christkatholische Kirche, je für Einkommen und Vermögen;
@@ -49,7 +55,7 @@ Rentner, Entlastungsabzüge), Fahrkosten, Verpflegung.
 
 Der Rechenkern (`crates/engine/src/taxdata.rs`) rechnet:
 Einkommenssteuer = Kantonskurve(steuerbares Einkommen Kanton) × (Steuerfuss Kanton + Kirche)
-+ Gemeindekurve × Steuerfuss Gemeinde + Bundeskurve(steuerbares Einkommen Bund);
++ Gemeindekurve × Steuerfuss Gemeinde − Ermässigung (Wallis, Verheiratete) + Bundeskurve(steuerbares Einkommen Bund);
 Vermögenssteuer = Vermögenskurve × (Steuerfuss Kanton + Gemeinde + Kirche);
 Kapitalbezugssteuer = Kapitalkurve × (Steuerfuss Kanton + Kirche) + Gemeindekurve × Steuerfuss Gemeinde + Bundeskurve,
 mit den Steuerfüssen der Einkommenssteuer.
@@ -154,7 +160,9 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
 3. **Steuerfüsse** (bis #285): Im ESTV-Steuerrechner unter «Grunddaten abrufen» die Steuerfüsse (Gesamte Schweiz,
    Excel) als `local/estv_income_rates.xlsx` ablegen. Die Optionen `--tarife` und `--abzuege` lesen weiterhin die
    ESTV-CSV; deren Zeilen werden für keinen Kanton mehr übernommen (`ESTV_ONLY` leer). Wallis: Index des Kantons und
-   der Gemeinden für das neue Jahr nachführen (`VS_tarife.csv`, `VS_gemeindeindex.csv`).
+   der Gemeinden für das neue Jahr nachführen (`VS_tarife.csv`, `VS_gemeindeindex.csv`), ebenso Mindest- und
+   Höchstbetrag der Ermässigung für Verheiratete (`Ermaessigung_EK` in `VS_abzuege.csv`, «Adaptation des déductions
+   forfaitaires»).
    Die undokumentierte Schnittstelle des Rechners nicht verwenden.
 4. **Erzeugen:**
    ```bash
