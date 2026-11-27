@@ -87,19 +87,21 @@ Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione,
 
 Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu «File → Impostazioni…» (Ctrl+,), oppure il pulsante «Impostazioni» in alto. Le impostazioni valgono per **tutte le pianificazioni su questo dispositivo** e vengono salvate in locale, **non nel file di pianificazione**.
 
-| Impostazione | Standard |
-|---|---|
-| Lingua | come il sistema |
-| Aspetto | Sistema |
-| Inizio della rendita AVS: limite inferiore e superiore | 63 e 70 anni |
-| Prestazione della cassa pensione: limite inferiore e superiore | 58 e 65 anni |
-| Pilastro 3a: importo massimo del versamento all’anno | 7'258 |
-| Grande pilastro 3a (senza cassa pensione): importo massimo all’anno | 36'288 |
-| Rincaro nel modello parametrico dall’anno | 1950 |
-| Sostenibilità: quota massima del reddito | un terzo (33 %) |
-| Sostenibilità: tasso d’interesse teorico | 5 % |
-| Sostenibilità: spese accessorie annue (del prezzo) | 1 % |
-| Sostenibilità: grado d’anticipo massimo | 80 % |
+Il dialogo è suddiviso nelle schede **Generale**, **Previdenza**, **Simulazione** e **Immobili** e si apre sulla scheda scelta per ultima; un link nell’app (p. es. nella nota sulla sostenibilità nella sezione «Immobili») apre direttamente la scheda corrispondente. I tasti freccia passano da una scheda all’altra, il tasto di tabulazione porta ai campi. Se al «Salvare» una scheda contiene un valore non valido, è contrassegnata con ⚠ e il dialogo passa alla prima scheda con un errore.
+
+| Scheda | Impostazione | Standard |
+|---|---|---|
+| **Generale** | Lingua | come il sistema |
+|  | Aspetto | Sistema |
+| **Previdenza** | Inizio della rendita AVS: limite inferiore e superiore | 63 e 70 anni |
+|  | Prestazione della cassa pensione: limite inferiore e superiore | 58 e 65 anni |
+|  | Pilastro 3a: importo massimo del versamento all’anno | 7'258 |
+|  | Grande pilastro 3a (senza cassa pensione): importo massimo all’anno | 36'288 |
+| **Simulazione** | Rincaro nel modello parametrico dall’anno | 1950 |
+| **Immobili** | Sostenibilità: quota massima del reddito | un terzo (33 %) |
+|  | Sostenibilità: tasso d’interesse teorico | 5 % |
+|  | Sostenibilità: spese accessorie annue (del prezzo) | 1 % |
+|  | Sostenibilità: grado d’anticipo massimo | 80 % |
 
 **Lingua:** «come il sistema» segue la lingua del sistema operativo (al primo avvio; senza regione, it_CH vale come italiano), altrimenti vale la lingua scelta. Sono offerti tedesco, inglese, francese e italiano; se manca la lingua del sistema, vale il tedesco. L’aiuto appare nella lingua scelta; un capitolo non ancora tradotto appare in tedesco. La stessa scelta si trova nel menu «Vista → Lingua». Un cambio ha effetto subito, anche sui menu; la pianificazione, le modifiche non salvate e la vista restano. Numeri, importi e date appaiono in ogni lingua nel formato svizzero (1'234'567.50, 2.5 %, 03.2040), e il file di pianificazione è lo stesso in ogni lingua. I nomi nella pianificazione (persone, immobili, tappe) non vengono tradotti; solo la pianificazione d’esempio riceve i suoi nomi nella lingua scelta all’apertura, con le stesse cifre.
 

@@ -3,7 +3,7 @@ const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
+const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs, settingsTab } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
 test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", () => {
@@ -17,6 +17,7 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
     await expect(page.locator("#set-pkMin")).toHaveValue("58");
     await expect(page.locator("#set-pillar3aMax")).toHaveValue("7'258");
     // AK4: a lower limit above the upper one is rejected and not saved
+    await settingsTab(page, "pension");
     await page.locator("#set-ahvMin").fill("71");
     await page.locator("#settingsSave").click();
     await expect(page.locator("#settingsErr")).toContainText("AHV-Bezug: Die untere Grenze (71) liegt über der oberen Grenze (70).");
@@ -944,6 +945,7 @@ test.describe("Affordability in the settings (#233)", () => {
       await expect(page.locator(`#set-afford-${k}`)).toHaveValue(v);
     await expect(page.locator("#settings label.field", { has: page.locator("#set-afford-sustainability") })).toContainText("Standard 33.3 %");
     // as before in the editor: a number is required
+    await settingsTab(page, "realestate");
     await page.locator("#set-afford-imputedRate").fill("abc");
     await page.locator("#settingsSave").click();
     await expect(page.locator("#settingsErr")).toContainText("Tragbarkeit, Kalkulatorischer Zins: Bitte eine Zahl eingeben.");
@@ -973,6 +975,7 @@ test.describe("Affordability in the settings (#233)", () => {
     expect(await previewMortgage(page)).toBe(800000);
     expect(await simulationMortgage(page)).toBe(800000);
     await openSettings(page);
+    await settingsTab(page, "realestate");
     await page.locator("#set-afford-maxLoanToValue").fill("70");
     await page.locator("#settingsSave").click();
     await expect(dlg(page)).toBeHidden();
@@ -1012,6 +1015,7 @@ test.describe("Affordability in the settings (#233)", () => {
   test("AK5: a saved result and the comparison show the values the plan was calculated with", async ({ page }) => {
     const errors = await open(page);
     await openSettings(page);
+    await settingsTab(page, "realestate");
     await page.locator("#set-afford-maxLoanToValue").fill("70");
     await page.locator("#settingsSave").click();
     await page.evaluate(() => { state.returns.source = "fixed"; state.scenarios.sweeps = []; });
@@ -1304,6 +1308,7 @@ test.describe("Wealth drawdown and loan-to-value after retirement in the afforda
     await expect(page.locator("#set-afford-wealthDrawdownRate")).toHaveValue("3");
     await expect(page.locator("#set-afford-maxLoanToValueRetired")).toHaveValue("65");
     await expect(page.locator("#settings label.field", { has: page.locator("#set-afford-maxLoanToValueRetired") })).toContainText("Standard 65 %");
+    await settingsTab(page, "realestate");
     await page.locator("#set-afford-wealthDrawdown").check();
     await page.locator("#set-afford-wealthDrawdownRate").fill("4");
     await page.locator("#set-afford-maxLoanToValueRetired").fill("60");
@@ -1391,6 +1396,7 @@ test.describe("Inflation in the parametric model from a first year (#279)", () =
     await expect(dlg).toContainText("Teuerung im parametrischen Modell ab Jahr");
     await expect(page.locator("#set-inflationFrom")).toHaveValue("1950");
     // invalid year: error in the dialog, nothing saved
+    await settingsTab(page, "simulation");
     await page.locator("#set-inflationFrom").fill("1950.5");
     await page.locator("#settingsSave").click();
     await expect(page.locator("#settingsErr")).toContainText("Teuerung im parametrischen Modell: Das Startjahr muss ein ganzes Jahr zwischen 1000 und 3000 sein.");
@@ -1442,6 +1448,114 @@ test.describe("AHV by the mixed index every two years (#284)", () => {
     await input.fill("0.5");
     await input.press("Tab");
     await expect(warning).toHaveCount(0);
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Settings in tabs (#308)", () => {
+  const dlg = page => page.locator("#settings");
+  const tab = (page, k) => page.locator(`#settab-${k}`);
+  const openSettings = async page => { await page.locator('header button[data-action="settings"]').click(); await expect(dlg(page)).toBeVisible(); };
+
+  test("AK1/AK5: four tabs with their fields and the roles tablist, tab and tabpanel", async ({ page }) => {
+    const errors = await open(page);
+    await openSettings(page);
+    await expect(page.locator("#settings [role=tablist] [role=tab]")).toHaveText(["Allgemein", "Vorsorge", "Simulation", "Immobilien"]);
+    await expect(page.locator("#settings [role=tabpanel]")).toHaveCount(4);
+    const fields = { general: ["#set-language", "#set-theme", "#set-askSave"],
+      pension: ["#set-ahvMin", "#set-ahvMax", "#set-pkMin", "#set-pkMax", "#set-pillar3aMax", "#set-pillar3aMaxLarge"],
+      simulation: ["#set-inflationFrom"],
+      realestate: ["#set-afford-sustainability", "#set-afford-imputedRate", "#set-afford-fixCosts", "#set-afford-maxLoanToValue", "#set-afford-wealthDrawdown"] };
+    for (const [k, ids] of Object.entries(fields)) for (const id of ids) await expect(page.locator(`#setpanel-${k} ${id}`)).toHaveCount(1);
+    // only the chosen tab is visible
+    await expect(page.locator("#setpanel-general")).toBeVisible();
+    await expect(page.locator("#setpanel-pension")).toBeHidden();
+    await expect(tab(page, "general")).toHaveAttribute("aria-selected", "true");
+    await expect(tab(page, "pension")).toHaveAttribute("aria-controls", "setpanel-pension");
+    await expect(page.locator("#setpanel-pension")).toHaveAttribute("aria-labelledby", "settab-pension");
+    // AK5: arrow keys, Home/End move between the tabs; Tab leads into the panel
+    await tab(page, "general").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(tab(page, "pension")).toBeFocused();
+    await expect(page.locator("#setpanel-pension")).toBeVisible();
+    await expect(tab(page, "pension")).toHaveAttribute("tabindex", "0");
+    await expect(tab(page, "general")).toHaveAttribute("tabindex", "-1");
+    await page.keyboard.press("End");
+    await expect(tab(page, "realestate")).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(tab(page, "general")).toBeFocused();
+    await page.keyboard.press("ArrowLeft");
+    await expect(tab(page, "realestate")).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(tab(page, "general")).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator("#set-language")).toBeFocused();
+    await noErrors(page, errors);
+  });
+
+  test("AK2: opens at the tab chosen last; a link of the app opens the matching tab", async ({ page }) => {
+    const errors = await open(page);
+    await openSettings(page);
+    await settingsTab(page, "simulation");
+    await page.locator("#settings .btn[value=cancel]").click();
+    await openSettings(page);
+    await expect(page.locator("#setpanel-simulation")).toBeVisible();
+    await page.locator("#settings .btn[value=cancel]").click();
+    // the note on the affordability in the section «Immobilien»
+    await nav(page, "Immobilien");
+    await page.locator("#affordNote a").click();
+    await expect(dlg(page)).toBeVisible();
+    await expect(page.locator("#setpanel-realestate")).toBeVisible();
+    await expect(tab(page, "realestate")).toHaveAttribute("aria-selected", "true");
+    await page.locator("#settings .btn[value=cancel]").click();
+    // the link of pillar 3a opens «Vorsorge»
+    await nav(page, "Säule 3a");
+    await page.locator('#main a[data-action="settings"]').first().click();
+    await expect(page.locator("#setpanel-pension")).toBeVisible();
+    await noErrors(page, errors);
+  });
+
+  test("AK3/AK8: switch tabs, save an invalid value of another tab, the dialog goes to the first tab with an error", async ({ page }) => {
+    const errors = await open(page);
+    await openSettings(page);
+    await settingsTab(page, "realestate");
+    await page.locator("#set-afford-imputedRate").fill("abc");
+    await settingsTab(page, "pension");
+    await page.locator("#set-ahvMin").fill("71");
+    await settingsTab(page, "general");
+    await page.locator("#settingsSave").click();
+    await expect(dlg(page)).toBeVisible();
+    // both tabs are marked, the dialog shows the first one with an error
+    await expect(tab(page, "pension")).toHaveClass(/\bbad\b/);
+    await expect(tab(page, "realestate")).toHaveClass(/\bbad\b/);
+    await expect(tab(page, "general")).not.toHaveClass(/\bbad\b/);
+    await expect(tab(page, "simulation")).not.toHaveClass(/\bbad\b/);
+    await expect(page.locator("#setpanel-pension")).toBeVisible();
+    await expect(page.locator("#settingsErr")).toContainText("AHV-Bezug: Die untere Grenze (71) liegt über der oberen Grenze (70).");
+    expect(await page.evaluate(() => limits().ahvMin)).toBe(63);
+    // corrected: the mark goes away; saving goes to the remaining tab with an error
+    await page.locator("#set-ahvMin").fill("63");
+    await expect(tab(page, "pension")).not.toHaveClass(/\bbad\b/);
+    await page.locator("#settingsSave").click();
+    await expect(page.locator("#setpanel-realestate")).toBeVisible();
+    await page.locator("#set-afford-imputedRate").fill("4.5");
+    await page.locator("#settingsSave").click();
+    await expect(dlg(page)).toBeHidden();
+    expect(await page.evaluate(() => affordability().imputedRate)).toBe(0.045);
+    await noErrors(page, errors);
+  });
+
+  test("AK4: the default values button resets the values of all tabs", async ({ page }) => {
+    const errors = await open(page);
+    await page.evaluate(() => { Pref.set("limits", { ...limits(), ahvMin: 64, inflationFrom: 1970 }); Pref.set("affordability", { ...affordability(), maxLoanToValue: 0.7 }); Pref.set("theme", "dark"); });
+    await openSettings(page);
+    await settingsTab(page, "simulation");
+    await page.locator("#settingsDefaults").click();
+    await page.locator("#ask button[value='ok']").click();
+    await expect(page.locator("#setpanel-simulation")).toBeVisible();
+    for (const [id, v] of [["#set-theme", "system"], ["#set-ahvMin", "63"], ["#set-inflationFrom", "1950"], ["#set-afford-maxLoanToValue", "80"]]) await expect(page.locator(id)).toHaveValue(v);
+    expect(await page.evaluate(() => [limits().ahvMin, limits().inflationFrom, affordability().maxLoanToValue])).toEqual([63, 1950, 0.8]);
     await noErrors(page, errors);
   });
 });

@@ -356,6 +356,12 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
 .evlist li{padding:5px 0;border-bottom:1px solid var(--grid);display:flex;gap:14px}
 .evlist li span:first-child{color:var(--muted);width:64px;flex:none;font-variant-numeric:tabular-nums}
 .askform{padding:18px;display:flex;flex-direction:column;gap:10px;min-width:380px}
+/* #308: tabs of the dialog «Einstellungen» (same look as the tabs of the results) */
+#setTabs{margin-bottom:12px}
+#settingsBody [role=tabpanel][hidden]{display:none}
+#setTabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#setTabs button.bad{color:var(--err)}
+#setTabs button.bad::after{content:" ⚠"}
 .askinput{border:1px solid var(--border);border-radius:7px;padding:7px 9px;background:var(--panel)}
 .askbtns{display:flex;flex-direction:row-reverse;gap:8px}
 .seriesrow{display:flex;gap:12px;align-items:center;justify-content:space-between}
@@ -465,7 +471,7 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
 <dialog id="settings"><form method="dialog" class="askform">
   <b data-i18n="shortcuts.settings"></b>
   <div class="computed" data-i18n="settings.hint"></div>
-  <div id="settingsBody" class="grid2"></div><div id="settingsErr" style="color:var(--err)"></div>
+  <div id="settingsBody"></div><div id="settingsErr" style="color:var(--err)"></div>
   <div class="askbtns"><button class="btn primary" id="settingsSave" value="ok" data-i18n="quit.save"></button><button class="btn" id="settingsDefaults" type="button" data-i18n="settings.defaults"></button><button class="btn" value="cancel" data-i18n="job.cancel"></button></div>
 </form></dialog>
 

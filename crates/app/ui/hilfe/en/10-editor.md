@@ -87,19 +87,21 @@ Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, de
 
 On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, menu “File → Settings…” (Ctrl+,); or the button “Settings” at the top. The settings apply to **all plans on this device** and are stored locally, **not in the plan file**.
 
-| Setting | Default |
-|---|---|
-| Language | as system |
-| Appearance | System |
-| AHV pension start: lower and upper limit | 63 and 70 years |
-| Pension fund payout: lower and upper limit | 58 and 65 years |
-| Pillar 3a: maximum contribution per year | 7 258 |
-| Large pillar 3a (without pension fund): maximum per year | 36 288 |
-| Inflation in the parametric model from year | 1950 |
-| Affordability: max. share of income | one third (33 %) |
-| Affordability: imputed interest rate | 5 % |
-| Affordability: fixed costs p.a. (of the price) | 1 % |
-| Affordability: maximum loan-to-value | 80 % |
+The dialog is divided into the tabs **General**, **Pensions**, **Simulation** and **Real estate** and opens at the tab chosen last; a link in the app (e.g. in the note on affordability in the section “Real estate”) opens the matching tab directly. The arrow keys switch between the tabs, the Tab key leads into the fields. If a tab contains an invalid value when you “Save”, it is marked with ⚠ and the dialog goes to the first tab with an error.
+
+| Tab | Setting | Default |
+|---|---|---|
+| **General** | Language | as system |
+|  | Appearance | System |
+| **Pensions** | AHV pension start: lower and upper limit | 63 and 70 years |
+|  | Pension fund payout: lower and upper limit | 58 and 65 years |
+|  | Pillar 3a: maximum contribution per year | 7 258 |
+|  | Large pillar 3a (without pension fund): maximum per year | 36 288 |
+| **Simulation** | Inflation in the parametric model from year | 1950 |
+| **Real estate** | Affordability: max. share of income | one third (33 %) |
+|  | Affordability: imputed interest rate | 5 % |
+|  | Affordability: fixed costs p.a. (of the price) | 1 % |
+|  | Affordability: maximum loan-to-value | 80 % |
 
 **Language:** “as system” follows the language of the operating system (at the first start; without region, fr_FR counts as French); otherwise the chosen language applies. German, English, French and Italian are offered; if the system's language is missing, German applies. The help appears in the chosen language; a chapter that is not yet translated appears in German. The same choice is in the menu “View → Language”. A change takes effect immediately, also on the menus; the plan, unsaved changes and the view stay. Numbers, amounts and dates appear in the Swiss format in every language (1'234'567.50, 2.5 %, 03.2040), and the plan file is the same in every language. Names in the plan (persons, properties, milestones) are not translated; only the example plan gets its names in the chosen language when it is opened, with the same numbers.
 

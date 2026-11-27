@@ -87,19 +87,21 @@ Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetra
 
 Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Linux Menü «Datei → Einstellungen…» (Ctrl+,), oder die Schaltfläche «Einstellungen» oben. Die Einstellungen gelten für **alle Planungen auf diesem Gerät** und werden lokal gespeichert, **nicht in der Planungsdatei**.
 
-| Einstellung | Standard |
-|---|---|
-| Sprache | wie System |
-| Darstellung | System |
-| AHV-Bezug: untere und obere Grenze | 63 und 70 Jahre |
-| Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
-| Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
-| Grosse Säule 3a (ohne Pensionskasse): Maximalbetrag pro Jahr | 36 288 |
-| Teuerung im parametrischen Modell ab Jahr | 1950 |
-| Tragbarkeit: Höchstens vom Einkommen | ein Drittel (33 %) |
-| Tragbarkeit: Kalkulatorischer Zins | 5 % |
-| Tragbarkeit: Nebenkosten p.a. (vom Preis) | 1 % |
-| Tragbarkeit: Höchste Belehnung | 80 % |
+Der Dialog ist in die Reiter **Allgemein**, **Vorsorge**, **Simulation** und **Immobilien** gegliedert und öffnet beim zuletzt gewählten Reiter; ein Link in der App (z. B. im Hinweis zur Tragbarkeit im Abschnitt «Immobilien») öffnet direkt den passenden Reiter. Die Pfeiltasten wechseln zwischen den Reitern, die Tabulatortaste führt in die Felder. Enthält ein Reiter beim «Speichern» einen ungültigen Wert, ist er mit ⚠ markiert, und der Dialog springt zum ersten Reiter mit Fehler.
+
+| Reiter | Einstellung | Standard |
+|---|---|---|
+| **Allgemein** | Sprache | wie System |
+|  | Darstellung | System |
+| **Vorsorge** | AHV-Bezug: untere und obere Grenze | 63 und 70 Jahre |
+|  | Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
+|  | Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
+|  | Grosse Säule 3a (ohne Pensionskasse): Maximalbetrag pro Jahr | 36 288 |
+| **Simulation** | Teuerung im parametrischen Modell ab Jahr | 1950 |
+| **Immobilien** | Tragbarkeit: Höchstens vom Einkommen | ein Drittel (33 %) |
+|  | Tragbarkeit: Kalkulatorischer Zins | 5 % |
+|  | Tragbarkeit: Nebenkosten p.a. (vom Preis) | 1 % |
+|  | Tragbarkeit: Höchste Belehnung | 80 % |
 
 **Sprache:** «wie System» folgt der Sprache des Betriebssystems (beim ersten Start; ohne Region, fr_FR gilt als Französisch), sonst gilt die gewählte Sprache. Angeboten werden Deutsch, Englisch, Französisch und Italienisch; fehlt die Sprache des Systems, gilt Deutsch. Die Hilfe erscheint in der gewählten Sprache; ein noch nicht übersetztes Kapitel erscheint deutsch. Dieselbe Wahl steht im Menü «Ansicht → Sprache». Ein Wechsel wirkt sofort, auch auf die Menüs; die Planung, ungespeicherte Änderungen und die Ansicht bleiben. Zahlen, Beträge und Daten erscheinen in jeder Sprache im Schweizer Format (1'234'567.50, 2.5 %, 03.2040), und die Planungsdatei ist in jeder Sprache dieselbe. Namen in der Planung (Personen, Immobilien, Meilensteine) werden nicht übersetzt; nur die Beispielplanung erhält beim Öffnen ihre Namen in der gewählten Sprache, mit denselben Zahlen.
 

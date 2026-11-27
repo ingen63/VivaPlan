@@ -3,7 +3,7 @@ const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs } = require("./helpers");
+const { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs, settingsTab } = require("./helpers");
 
 // ---------------------------------------------------------------------------------------------
 // Acceptance criteria that had no test of their own before (acceptance list docs/ABNAHME.md, column «Test»)
@@ -255,6 +255,7 @@ test.describe("Additional acceptance tests", () => {
     const before = await page.evaluate(() => JSON.stringify(state));
     const setMax = async v => {
       await page.locator('header button[data-action="settings"]').click();
+      await settingsTab(page, "pension");
       await page.locator("#set-pillar3aMax").fill(v);
       await page.locator("#settingsSave").click();
       await expect(page.locator("#settings")).toBeHidden();

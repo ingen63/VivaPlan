@@ -186,7 +186,7 @@ keine Ausnahme (Markierung `indexedByDefault`); ältere Planungen übernehmen be
 (Schalter für Erwerbseinkommen, AHV, Tarife und Liegenschaften, bisher nominale einmalige Beträge und Abzüge, PK- und
 3a-Beiträge) als Ausnahmen mit einem Hinweis und rechnen unverändert.
 
-**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse, die
+**Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»), in Reitern gegliedert (Allgemein, Vorsorge, Simulation, Immobilien, #308): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse, die
 Maximalbeträge der kleinen und der grossen Säule 3a, das Startjahr der Teuerung im parametrischen Modell (Standard 1950) und die Tragbarkeit der Banken (höchstens vom Einkommen, kalkulatorischer
 Zins, Nebenkosten, höchste Belehnung; Standard 33 %, 5 %, 1 %, 80 %; dazu Vermögensverzehr in der Tragbarkeit, Standard aus
 mit 3 % pro Jahr, und höchste Belehnung ab der Pensionierung, Standard 65 %, #266). Sie gelten für alle Planungen auf dem Gerät und werden

@@ -47,6 +47,8 @@ async function msRow(page, id) {
 const welcome = page => page.locator("#welcome");
 const steps = page => page.locator("#steps");
 const helpTitle = page => page.locator("#help:not([hidden]) #helpBody h1").first();
+/** #308: chooses a tab of the dialog «Einstellungen» (general, pension, simulation, realestate). */
+const settingsTab = async (page, tab) => { await page.locator(`#settab-${tab}`).click(); await expect(page.locator(`#setpanel-${tab}`)).toBeVisible(); };
 const prefs = page => page.evaluate(() => JSON.parse(localStorage.getItem("rp.settings") || "{}"));
 
-module.exports = { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs };
+module.exports = { MOD, SECTIONS, open, noErrors, field, previewIdle, nav, kpiValue, resultKpi, parseNum, setOpt, msRow, welcome, steps, helpTitle, prefs, settingsTab };

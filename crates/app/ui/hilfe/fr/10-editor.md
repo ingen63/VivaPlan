@@ -87,19 +87,21 @@ Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, 
 
 Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu «Fichier → Paramètres…» (Ctrl+,), ou le bouton «Paramètres» en haut. Les paramètres valent pour **toutes les planifications sur cet appareil** et sont enregistrés localement, **pas dans le fichier de planification**.
 
-| Paramètre | Standard |
-|---|---|
-| Langue | comme le système |
-| Apparence | Système |
-| Début de la rente AVS: limite inférieure et supérieure | 63 et 70 ans |
-| Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
-| Pilier 3a: montant maximal du versement par année | 7 258 |
-| Grand pilier 3a (sans caisse de pension): montant maximal par année | 36 288 |
-| Renchérissement dans le modèle paramétrique dès l’année | 1950 |
-| Capacité financière: part maximale du revenu | un tiers (33 %) |
-| Capacité financière: taux d’intérêt théorique | 5 % |
-| Capacité financière: frais accessoires p.a. (du prix) | 1 % |
-| Capacité financière: taux d’avance maximal | 80 % |
+Le dialogue est divisé en onglets **Général**, **Prévoyance**, **Simulation** et **Immobilier** et s’ouvre sur l’onglet choisi en dernier; un lien dans l’app (p. ex. dans la remarque sur la capacité financière de la section «Immobilier») ouvre directement l’onglet correspondant. Les touches fléchées passent d’un onglet à l’autre, la touche de tabulation mène aux champs. Si un onglet contient une valeur non valable lors de l’«Enregistrer», il est marqué de ⚠ et le dialogue passe au premier onglet avec une erreur.
+
+| Onglet | Paramètre | Standard |
+|---|---|---|
+| **Général** | Langue | comme le système |
+|  | Apparence | Système |
+| **Prévoyance** | Début de la rente AVS: limite inférieure et supérieure | 63 et 70 ans |
+|  | Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
+|  | Pilier 3a: montant maximal du versement par année | 7 258 |
+|  | Grand pilier 3a (sans caisse de pension): montant maximal par année | 36 288 |
+| **Simulation** | Renchérissement dans le modèle paramétrique dès l’année | 1950 |
+| **Immobilier** | Capacité financière: part maximale du revenu | un tiers (33 %) |
+|  | Capacité financière: taux d’intérêt théorique | 5 % |
+|  | Capacité financière: frais accessoires p.a. (du prix) | 1 % |
+|  | Capacité financière: taux d’avance maximal | 80 % |
 
 **Langue:** «comme le système» suit la langue du système d’exploitation (au premier démarrage; sans région, fr_FR compte comme français), sinon la langue choisie s’applique. Sont proposés l’allemand, l’anglais, le français et l’italien; si la langue du système manque, l’allemand s’applique. L’aide apparaît dans la langue choisie; un chapitre pas encore traduit apparaît en allemand. Le même choix figure dans le menu «Affichage → Langue». Un changement agit immédiatement, y compris sur les menus; la planification, les modifications non enregistrées et la vue sont conservées. Les nombres, montants et dates apparaissent dans chaque langue au format suisse (1'234'567.50, 2.5 %, 03.2040), et le fichier de planification est le même dans chaque langue. Les noms dans la planification (personnes, biens immobiliers, jalons) ne sont pas traduits; seule la planification d’exemple reçoit ses noms dans la langue choisie à l’ouverture, avec les mêmes chiffres.
 

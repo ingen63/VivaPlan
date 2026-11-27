@@ -2960,7 +2960,7 @@ const ACTIONS = {
     a.payouts.push(row);
     markDirty(); renderSection();
   },
-  settings: () => showSettings(),
+  settings: d => showSettings(d?.tab),
   "partner-add": () => {
     const a = state.household.persons[0], id = a.id === "B" ? "C" : "B";
     state.household.persons.push({ id, name: tr("general.person2"), birth: a.birth });
@@ -3338,17 +3338,74 @@ function adoptAffordability(file) {
 }
 /** #110: Question about saving before the simulation (default: on). */
 const askSaveOn = () => Pref.get("askSaveBeforeRun", true) !== false;
+/** #308: tabs of the dialog «Einstellungen» in their order; `settingsTab` is the last chosen one (for this session). */
+const SETTINGS_TABS = ["general", "pension", "simulation", "realestate"];
+let settingsTab = "general";
+/** Fields of the limits per tab (#308); the others are in «Allgemein» and «Immobilien». */
+const LIMIT_TAB = { ahvMin: "pension", ahvMax: "pension", pkMin: "pension", pkMax: "pension", pillar3aMax: "pension", pillar3aMaxLarge: "pension", inflationFrom: "simulation" };
 function settingsFields(l, language = I18n.choice(), theme = Theme.choice(), af = affordability()) {
   const langs = [[I18n.SYSTEM, tr("language.system")], ...Object.entries(I18n.languages())];
-  return `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
-    + `<label class="field" style="grid-column:1/-1"><span>${tr("settings.theme")}</span><select id="set-theme" class="plain">${Theme.CHOICES.map(k => `<option value="${k}" ${k === theme ? "selected" : ""}>${tr("theme." + k)}</option>`).join("")}</select></label>`
-    + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
-    + LIMIT_FIELDS.map(([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`).join("")
-    + `<div id="set-afford" style="grid-column:1/-1;margin-top:6px"><b>${tr("realestate.affordability")}</b> <span class="computed">${tr("realestate.forAfterSale")}</span></div>`
-    + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-afford-wealthDrawdown" ${af.wealthDrawdown ? "checked" : ""}> ${tr("realestate.drawdown")}</label>`
-    + AFFORD_FIELDS.map(([k, label]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-afford-${k}" value="${esc(fmtPct(af[k]))}"><span class="unit">%</span></div><span class="computed">${tr("settings.default", { v: `${affordPct(AFFORD_DEFAULTS[k])} %` })}</span></label>`).join("")
-    + `<p class="hint" style="grid-column:1/-1">${tr("realestate.affordabilityHint")}</p>`;
+  const limitField = ([k, label, unit]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-${k}" value="${esc(LIMIT_AMOUNTS.has(k) ? fmtInt(l[k]) : String(l[k]))}"><span class="unit">${unit ?? cur()}</span></div><span class="computed">${tr("settings.default", { v: LIMIT_AMOUNTS.has(k) ? fmtInt(LIMIT_DEFAULTS[k]) : LIMIT_DEFAULTS[k] })}</span></label>`;
+  const limitsOf = tab => LIMIT_FIELDS.filter(([k]) => LIMIT_TAB[k] === tab).map(limitField).join("");
+  const panels = {
+    general: `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
+      + `<label class="field" style="grid-column:1/-1"><span>${tr("settings.theme")}</span><select id="set-theme" class="plain">${Theme.CHOICES.map(k => `<option value="${k}" ${k === theme ? "selected" : ""}>${tr("theme." + k)}</option>`).join("")}</select></label>`
+      + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`,
+    pension: limitsOf("pension"),
+    simulation: limitsOf("simulation"),
+    realestate: `<div id="set-afford" style="grid-column:1/-1"><b>${tr("realestate.affordability")}</b> <span class="computed">${tr("realestate.forAfterSale")}</span></div>`
+      + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-afford-wealthDrawdown" ${af.wealthDrawdown ? "checked" : ""}> ${tr("realestate.drawdown")}</label>`
+      + AFFORD_FIELDS.map(([k, label]) => `<label class="field"><span>${label}</span><div class="inp"><input class="num" id="set-afford-${k}" value="${esc(fmtPct(af[k]))}"><span class="unit">%</span></div><span class="computed">${tr("settings.default", { v: `${affordPct(AFFORD_DEFAULTS[k])} %` })}</span></label>`).join("")
+      + `<p class="hint" style="grid-column:1/-1">${tr("realestate.affordabilityHint")}</p>`,
+  };
+  // #308/AK5: tablist with roving tabindex; the arrow keys move between the tabs, Tab leads into the panel
+  return `<div class="seg tabs" id="setTabs" role="tablist" aria-label="${esc(tr("shortcuts.settings"))}">${SETTINGS_TABS.map(k => `<button type="button" role="tab" id="settab-${k}" data-settab="${k}" aria-controls="setpanel-${k}" aria-selected="${k === settingsTab}" tabindex="${k === settingsTab ? 0 : -1}" class="${k === settingsTab ? "on" : ""}">${tr("settings.tab." + k)}</button>`).join("")}</div>`
+    + SETTINGS_TABS.map(k => `<div class="grid2" role="tabpanel" id="setpanel-${k}" aria-labelledby="settab-${k}"${k === settingsTab ? "" : " hidden"}>${panels[k]}</div>`).join("");
 }
+/** #308: shows a tab of the dialog «Einstellungen» (and remembers it); `focus` moves the keyboard focus to it. */
+function selectSettingsTab(tab, focus = false) {
+  if (!SETTINGS_TABS.includes(tab)) return;
+  settingsTab = tab;
+  for (const k of SETTINGS_TABS) {
+    const b = $("#settab-" + k), on = k === tab;
+    if (!b) return;
+    b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1;
+    $("#setpanel-" + k).hidden = !on;
+  }
+  if (focus) $("#settab-" + tab).focus();
+}
+/** #308/AK3: tabs with an invalid value (the limits are checked one tab at a time with the defaults for the others). */
+function settingsBadTabs(l, af) {
+  const bad = new Set();
+  const pension = Object.fromEntries(Object.keys(LIMIT_DEFAULTS).map(k => [k, LIMIT_TAB[k] === "pension" ? l[k] : LIMIT_DEFAULTS[k]]));
+  if (limitProblems(pension).length) bad.add("pension");
+  if (limitProblems({ ...LIMIT_DEFAULTS, inflationFrom: l.inflationFrom }).length) bad.add("simulation");
+  if (affordProblems(af).length) bad.add("realestate");
+  return SETTINGS_TABS.filter(k => bad.has(k));
+}
+/** Marks the tabs with an invalid value; returns them in the order of the tabs. */
+function markSettingsTabs() {
+  const bad = settingsBadTabs(readSettings(), readAffordability());
+  for (const k of SETTINGS_TABS) {
+    const b = $("#settab-" + k), on = bad.includes(k);
+    b.classList.toggle("bad", on);
+    if (on) b.title = tr("settings.tabError"); else b.removeAttribute("title");
+  }
+  return bad;
+}
+$("#settingsBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-settab]");
+  if (b) { e.preventDefault(); selectSettingsTab(b.dataset.settab); }
+});
+$("#settingsBody").addEventListener("keydown", e => {
+  const b = e.target.closest?.("[data-settab]"); if (!b) return;
+  const i = SETTINGS_TABS.indexOf(b.dataset.settab), n = SETTINGS_TABS.length;
+  const to = { ArrowRight: (i + 1) % n, ArrowLeft: (i + n - 1) % n, Home: 0, End: n - 1 }[e.key];
+  if (to === undefined) return;
+  e.preventDefault(); selectSettingsTab(SETTINGS_TABS[to], true);
+});
+// After a failed «Speichern» the marks follow the corrections.
+$("#settingsBody").addEventListener("input", () => { if ($("#setTabs .bad")) markSettingsTabs(); });
 function readSettings() {
   const l = {};
   // #140: The maximum amount of pillar 3a is an amount («7.258» is ambiguous)
@@ -3363,14 +3420,22 @@ function readAffordability() {
   return a;
 }
 /** Dialog «Einstellungen»: applies to all plans, is stored locally, never in the plan file. */
-function showSettings() {
+function showSettings(tab) {
   const d = $("#settings");
+  // #308/AK2: the last chosen tab, or the one a link of the app asks for
+  if (SETTINGS_TABS.includes(tab)) settingsTab = tab;
   $("#settingsBody").innerHTML = settingsFields(limits()); $("#settingsErr").textContent = "";
   d.showModal();
 }
 $("#settingsSave").addEventListener("click", e => {
   const l = readSettings(), af = readAffordability(), problems = [...limitProblems(l), ...affordProblems(af)];
-  if (problems.length) { e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>"); return; }
+  if (problems.length) {
+    e.preventDefault(); $("#settingsErr").innerHTML = problems.map(esc).join("<br>");
+    // #308/AK3: mark the tabs with errors and go to the first one
+    const bad = markSettingsTabs();
+    if (bad.length) selectSettingsTab(bad[0]);
+    return;
+  }
   const inflationChanged = l.inflationFrom !== limits().inflationFrom;
   Pref.set("limits", l); Pref.set("affordability", af); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
   Pref.set("theme", $("#set-theme").value); Theme.apply();
