@@ -2542,3 +2542,12 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #303/AK4 | `assets/new.vplan` hat dieselbe Strategie wie `blank_plan`. | ☑ | **gilt** | `strategy.rs` `issue_69_strategy_info_and_new_plans` | 27.11.2026 ok (Test) |
 | #303/AK5 | Test: neue Planung aus `blank_plan` hat `worldJst` und `chShort`. | ☑ | **gilt** | `strategy.rs` `issue_303_ak5_…` | 27.11.2026 ok (Test) |
 | #303/AK6 | Hilfe und `BESCHREIBUNG.md` nennen die Vorgabe, falls sie dort steht. | ☑ | **gilt** (keine Vorgabe genannt, nichts zu ändern) | – | 27.11.2026 ok (Durchsicht) |
+
+### #305 e2e-Test #190/AK8 erwartet alten Hinweistext zur AHV-Rente
+
+[Issue #305](https://github.com/ingen63/VivaPlan/issues/305) · geschlossen · Umsetzung: 6804c15 · Fehler aus dem Test (Lauf zu #303)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #305/AK1 | Der Test #190/AK8 prüft den Hinweis gegen den aktuellen Text, ohne den Inhalt des Tests sonst zu ändern. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) «13th AHV pension (#190)» AK8 | 27.11.2026 ok (Test, Diff) |
+| #305/AK2 | Der e2e-Lauf `npx playwright test e2e/ui-planung.spec.js` ist grün. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) | 27.11.2026 ok (Lauf, 52 bestanden) |
