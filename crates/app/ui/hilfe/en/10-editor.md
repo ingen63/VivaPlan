@@ -315,7 +315,7 @@ In the mode **Place of residence** you only enter the **municipality** and the *
 
 - **Social deductions** for single persons or married couples, where the canton has them.
 - **Insurance premiums and savings interest:** in years with earned income the amount “with contributions to the 2nd and 3rd pillar”, otherwise the amount “without”.
-- **Flat deduction for professional expenses** on the earned income of each working person: rate, minimum and maximum of the canton, at most the earned income, no deduction without earned income. Example Zurich: 3 %, at least 2 000, at most 4 000 francs, so 3 000 with 100 000 earned income. Basel-Landschaft, Basel-Stadt and Ticino only name a maximum in the FTA data; it applies as a fixed deduction (⚠).
+- **Flat deduction for professional expenses** on the earned income of each working person: rate, minimum and maximum of the canton, at most the earned income, no deduction without earned income. Example Zurich: 3 %, at least 2 000, at most 4 000 francs, so 3 000 with 100 000 earned income. In Basel-Landschaft, Basel-Stadt and Ticino a fixed flat amount according to the law is recorded (500, 4 200 and 3 500 francs); the actual costs can be higher (⚠).
 - **Second earner deduction** for married couples when both have earned income: according to the rule of canton and federal tax, based on the lower earned income after the flat deduction for professional expenses and at most this amount; Bern takes 2 % of the total earned income. Example federal tax: 50 %, at least 8 600, at most 14 100 francs; Zurich a fixed 6 200 francs. Thurgau has no second earner deduction.
 
 **Tax:**

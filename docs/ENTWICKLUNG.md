@@ -900,8 +900,7 @@ ein (`BUILTIN`).
 - **Zweitverdienerabzug** (`secondEarner`, nur Verheiratete, nur wenn beide Erwerbseinkommen haben): Regel wie oben,
   Bezug `lower` = das tiefere Erwerbseinkommen nach der Berufskostenpauschale (Bund, fast alle Kantone) oder `total` =
   Summe der Erwerbseinkommen (Bern); höchstens das tiefere Erwerbseinkommen nach der Berufskostenpauschale. Thurgau hat
-  keinen. Bezug und Obergrenze sind aus dem ESTV-Steuerrechner 2026 abgeleitet (ZH, BE, LU, AG, SG, AR, GL, NE, Bund) und
-  gegen die Gesetze geprüft (#287–#291).
+  keinen. Bezug und Obergrenze folgen den Gesetzen von Bund und Kantonen (Quelldateien, #287–#291, #296).
 - **Steuerbares Einkommen** je Kanton und Bund = Jahreseinkommen (Erwerb netto + PK-Rente + AHV) − Abzüge, nie
   negativ. Variante `working`, sobald im Kalenderjahr eine Person Erwerbseinkommen hat, sonst `retired`; die
   Berufskostenpauschale gilt je Person (`Run::year_earned`).

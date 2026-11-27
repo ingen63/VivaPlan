@@ -315,7 +315,7 @@ Im Modus **Wohnort** geben Sie nur die **Gemeinde** und die **Kirchensteuer** (k
 
 - **Sozialabzüge** für Alleinstehende oder Verheiratete, soweit der Kanton sie kennt.
 - **Versicherungsprämien und Sparzinsen:** in Jahren mit Erwerbseinkommen der Betrag «mit Beiträgen an die 2. und 3. Säule», sonst der Betrag «ohne».
-- **Berufskostenpauschale** auf dem Erwerb jeder erwerbstätigen Person: Satz, Mindest- und Höchstbetrag des Kantons, höchstens der Erwerb, ohne Erwerb kein Abzug. Beispiel Zürich: 3 %, mindestens 2 000, höchstens 4 000 Franken, bei 100 000 Erwerb also 3 000. Basel-Landschaft, Basel-Stadt und Tessin nennen in den ESTV-Daten nur einen Höchstbetrag; er gilt als fester Abzug (⚠).
+- **Berufskostenpauschale** auf dem Erwerb jeder erwerbstätigen Person: Satz, Mindest- und Höchstbetrag des Kantons, höchstens der Erwerb, ohne Erwerb kein Abzug. Beispiel Zürich: 3 %, mindestens 2 000, höchstens 4 000 Franken, bei 100 000 Erwerb also 3 000. In Basel-Landschaft, Basel-Stadt und Tessin ist nach dem Gesetz ein fester Pauschalbetrag erfasst (500, 4 200 und 3 500 Franken); die tatsächlichen Kosten können höher sein (⚠).
 - **Zweitverdienerabzug** bei Ehepaaren, wenn beide Erwerbseinkommen haben: nach der Regel von Kanton und Bund, bezogen auf das tiefere Erwerbseinkommen nach der Berufskostenpauschale und höchstens dieses; Bern rechnet 2 % des gesamten Erwerbseinkommens. Beispiel Bund: 50 %, mindestens 8 600, höchstens 14 100 Franken; Zürich fest 6 200 Franken. Der Thurgau kennt keinen Zweitverdienerabzug.
 
 **Steuer:**

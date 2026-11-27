@@ -36,12 +36,14 @@ Datei ein, es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, ke
 Eine Regel ergibt den Abzug `base + rate × Bezugsgrösse`, mindestens `min`, höchstens `max` (0 = ohne Höchstbetrag).
 Bezugsgrösse ist das Einkommen vor Abzügen, bei `earned` das Erwerbseinkommen (höchstens der Erwerb, ohne Erwerb 0).
 `kind` ist `insurance` (Versicherungsprämien und Sparzinsen), `savingsInterest` (Sparzinsen, wo getrennt) oder `social`
-(Sozialabzug); `id` ist die ID der ESTV.
+(Sozialabzug); `id` ist der Schlüssel in `build.py` (Benennung wie in den früheren ESTV-Grunddaten, z. B.
+`HauptErw_EK`).
 
 **Auswahl der Abzüge** (ohne Kinder; je Gruppe gilt der erste vorhandene): `INCOME_DEDUCTIONS` in `build.py`.
 Fehlt die gewünschte Variante, gilt die nächste vorhandene (Genf kennt nur «mit Beiträgen»). Berufskosten:
-«Pauschalabzug übrige Berufskosten» (`HauptErw_EK`). Basel-Landschaft, Basel-Stadt und Tessin nennen nur einen
-Höchstbetrag; er gilt als fester Abzug und trägt `approx: true`. Bei Format `STANDARDIZED` mit Prozent gilt der Betrag
+«Pauschalabzug übrige Berufskosten» (`HauptErw_EK`). Basel-Landschaft, Basel-Stadt und Tessin haben nach dem Gesetz
+einen festen Pauschalbetrag (Format `MAXIMUM`); er gilt als fester Abzug und trägt `approx: true`, weil die
+tatsächlichen Kosten höher sein können. Bei Format `STANDARDIZED` mit Prozent gilt der Betrag
 als Mindestbetrag (AI 1000, AR und SG 700). Nicht enthalten: Kinder, einkommensabhängige Abzüge (bescheidene Einkommen,
 Rentner, Entlastungsabzüge), Fahrkosten, Verpflegung.
 
@@ -62,7 +64,7 @@ geteilt durch den Steuerfuss ergibt die einfache Steuer) und danach Kanton für 
 und Zug (§ 37 Abs. 2) sind mit dem kantonalen Steuerrechner geprüft. Bei Genf und Tessin enthalten die Regeln
 zusätzlich Faktoren aus den ESTV-Rechnungen; das steht in `source`.
 
-- `kind: table`: Tarif «Kapitalauszahlung aus Vorsorge» der ESTV (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
+- `kind: table`: eigener Tarif des Kantons für Kapitalleistungen aus Vorsorge (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
   als Typ `BUND`, Bern); `kind: income`: Anteil `share` der Steuer nach dem Einkommenstarif ohne Abzüge, Satz für
   `Bezug / divisor`, Verheiratete mit dem Splitting des Tarifs; mit `parts` (Zug, #288) statt dessen je Teil des
   Bezugs bis `upTo` die Tarifsteuer auf diesem Teil mal `share`;
@@ -104,7 +106,7 @@ nach Gewinnhöhe angenommen). Die Regeln gelten nicht jährlich neu: Bei einer G
 
 ## Quelldateien aus den Erlassen (#286, #287)
 
-Tarife und Abzüge kommen Kanton für Kanton aus den Gesetzen und Verordnungen statt aus den ESTV-Tabellen. Je Kanton
+Tarife und Abzüge kommen für den Bund und alle Kantone aus den Gesetzen und Verordnungen (seit #296 auch das Wallis). Je Kanton
 (und `CH` für den Bund) liegen unter `quellen/<Jahr>/` zwei Dateien:
 
 - `<KT>_tarife.csv`: Spalten wie `tarife_<Jahr>.csv` (siehe unten), dazu `Quelle`;
@@ -113,8 +115,9 @@ Tarife und Abzüge kommen Kanton für Kanton aus den Gesetzen und Verordnungen s
   `build.py`, die Bezeichnungen eigene Texte.
 
 Jede Zeile nennt in `Quelle` den Erlass mit Artikel und Stand (z. B. `StG ZH § 35 Abs. 1 (LS 631.1; …)`). Ein Kanton
-braucht beide Dateien; seine Zeilen aus den ESTV-Tabellen fallen dann ganz weg, die übrigen Kantone kommen unverändert
-aus den ESTV-Tabellen. Der Bericht beginnt mit der Herkunft je Kanton (`laws (source files)` oder `ESTV tables`).
+braucht beide Dateien; seine Zeilen aus den ESTV-Tabellen fallen dann ganz weg. Seit #296 haben alle Kantone
+Quelldateien (`ESTV_ONLY` leer), es wird keine ESTV-Zeile mehr übernommen. Der Bericht beginnt mit der Herkunft je
+Kanton (`laws (source files)`).
 Kapitalbezugs- und Grundstückgewinnregeln nennen den Gesetzesartikel in `source` (`kapitalregeln.json`,
 `grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287), Zentralschweiz LU, UR, SZ, OW, NW, ZG (#288), Nordwestschweiz BE, SO, BS, BL, AG (#289), Ostschweiz GL, SH, AR, AI, SG, GR, TG (#290), Westschweiz und Tessin FR, VD, NE, GE, JU,
 TI (#291), Wallis (#296). Das Wallis hat dazu `VS_gemeindeindex.csv` (Spalten `Kanton,BFS,Nr,Gemeinde,Index,Quelle`):
@@ -164,8 +167,8 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
 5. **Abgleichen:** `vergleich.py` gegen die Datei des Vorjahres; jede Abweichung über 1 % mit der Teuerung oder einer
    Gesetzesänderung erklären.
 6. Den Dateinamen in `crates/engine/src/taxdata.rs` (`BUILTIN`) anpassen.
-7. **Referenzfälle:** Die Fälle aus den kantonalen Steuerrechnern (ZH, ZG, AG, GR) und aus den amtlichen Tarifblättern
-   (Tests `issue_287_…` bis `issue_291_…`) für das neue Jahr neu rechnen. Die älteren Fälle aus dem ESTV-Steuerrechner
+7. **Referenzfälle:** Die Fälle aus den kantonalen Steuerrechnern (ZH, ZG, AG, GR, VS) und aus den amtlichen Tarifblättern
+   (Tests `issue_287_…` bis `issue_291_…`, `issue_296_…`) für das neue Jahr neu rechnen. Die älteren Fälle aus dem ESTV-Steuerrechner
    in `tax_location.rs` und `tax_capital_location.rs` bleiben als zweite Prüfung (#292); Toleranz ±5 %.
 8. Tests: `python3 -I -m unittest discover -s tools/steuerdaten` und `make test`.
 

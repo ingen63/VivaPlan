@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""#63: Builds the tax data file for the mode «Wohnort» from the ESTV base data.
+"""#63: Builds the tax data file for the mode «Wohnort». Since #286 tariffs and deductions come from the source files
+after the laws (`quellen/<year>/`); only the tax multipliers still come from the ESTV base data (#285).
 
-Inputs (ESTV tax calculator, «Grunddaten abrufen», one tax year):
-  --steuerfuesse  Excel export «Steuerfüsse», whole of Switzerland (xlsx)
-  --tarife        tariffs for income and wealth (CSV, columns see README.md)
-  --abzuege       deductions for income and wealth, whole of Switzerland (CSV)
+Inputs:
+  --steuerfuesse  ESTV tax calculator, «Grunddaten abrufen»: Excel export «Steuerfüsse», whole of Switzerland (xlsx)
+  --tarife        ESTV tariffs for income and wealth (CSV, columns see README.md); since #296 no row is used
+  --abzuege       ESTV deductions (CSV); since #296 no row is used
   --kapitalregeln rules of the cantons for lump sums from pension savings (JSON, default kapitalregeln.json, #64)
 Output: JSON with the income tariffs (on the taxable income), the standard deduction rules, the wealth curves (social
 deductions included), the curves for lump sums (#64) per canton and for the federal tax, and the tax multipliers per
@@ -368,7 +369,7 @@ def pick(tariffs, married):
 def rule_of(row):
     """Deduction as a rule `{base, rate, min, max}`: amount = base + rate × reference, at least min, at most max
     (0 = no maximum). The reference is the income (general deductions) or the earned income (professional expenses).
-    A percentage with the format STANDARDIZED takes the amount of the ESTV data as the minimum. Returns the rule and
+    A percentage with the format STANDARDIZED takes the amount as the minimum. Returns the rule and
     whether it is an approximation (only a maximum is known; it applies as a fixed deduction)."""
     fmt = set(row["Format"].split(","))
     amount, pct = float(row["Betrag"]), float(row["Prozent"]) / 100
@@ -415,8 +416,8 @@ def deduction_rules(table, spec):
 
 
 def earned_rule(row):
-    """Flat deduction «other professional expenses» as `{base, rate, min, max}` and the flag `approx` if the ESTV
-    data only name a maximum (taken as a fixed deduction of that amount)."""
+    """Flat deduction «other professional expenses» as `{base, rate, min, max}` and the flag `approx` if only a
+    flat maximum is recorded (taken as a fixed deduction of that amount)."""
     rule, _ = rule_of(row)
     fmt = set(row["Format"].split(","))
     if "PERCENT" not in fmt and "MAXIMUM" in fmt:
