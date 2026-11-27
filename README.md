@@ -124,6 +124,11 @@ Die Ergebnisse sind Modellrechnungen ohne Gewähr, auch wenn eine KI sie erklär
 Die App ist zu 100 % lokal. Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu, weder die
 App noch der Rechenkern noch der MCP-Server `vivaplan mcp`.
 
+Einzige Ausnahme in der App ist die Suche nach Updates, und nur mit Ihrer Zustimmung: Beim ersten Start fragt VivaPlan,
+ob es beim Start nach neuen Versionen suchen darf. Mit «Ja» fragt die App die Releases von VivaPlan auf GitHub ab und
+überträgt dabei nur Version und Betriebssystem, keine Planungsdaten; installiert wird nur auf Ihren Klick. Mit «Nein»
+bleibt die App ganz ohne Netzwerk. Die Wahl lässt sich in den Einstellungen (Reiter «Allgemein») jederzeit ändern.
+
 Die einzige Ausnahme ist eine KI, die Sie selbst anbinden: Mit einer Cloud-KI gehen die Planungsdaten, die die KI
 liest, an deren Anbieter; nur mit einem lokalen Modell bleiben sie auf Ihrem Rechner
 ([mehr dazu](#vivaplan-mit-einer-ki-nutzen)).

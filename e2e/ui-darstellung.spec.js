@@ -88,7 +88,7 @@ test.describe("Theme light and dark (#220)", () => {
 
   test("AK1: in the desktop app the choice is stored in the app settings", async ({ page }) => {
     await page.addInitScript(() => {
-      window.__settings = { disclaimerAccepted: 2, theme: "dark" };
+      window.__settings = { disclaimerAccepted: 2, updateCheck: false, theme: "dark" };
       window.__TAURI__ = {
         core: {
           invoke: async (cmd, args = {}) => {

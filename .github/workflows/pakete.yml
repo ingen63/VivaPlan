@@ -1,6 +1,7 @@
 # Baut die Installationspakete: Windows (.msi, .exe), Linux (.deb, .AppImage; .rpm nur ohne Vorabversion) und macOS
 # (.dmg, dazu das Ein-Klick-Paket .mcpb für Claude Desktop, #213). Ein Versions-Tag (v0.3.0) baut alle drei und legt
-# einen Entwurf unter «Releases» an, mit den Release Notes in vier Sprachen (#188, #203). Von Hand (Actions →
+# einen Entwurf unter «Releases» an, mit den Release Notes in vier Sprachen (#188, #203) und den signierten
+# Update-Dateien samt Manifest latest.json für die Update-Suche der App (#309). Von Hand (Actions →
 # «Installationspakete» → Run workflow, oder `gh workflow run pakete.yml -f tag=v1.0.0-beta.3 -f plattformen=windows,linux`)
 # baut nur die gewählten Plattformen (Vorgabe macOS, spart Actions-Minuten, #202): mit «tag» den Stand dieses Tags, die
 # Pakete kommen in dessen Release-Entwurf; ohne «tag» den Stand des gewählten Zweigs, nur als Artefakte.
@@ -91,15 +92,30 @@ jobs:
       # RPM erlaubt in der Version keinen Bindestrich: bei Vorabversionen (1.0.0-beta.1) entfällt das .rpm. Massgebend
       # ist die Version der App, nicht der Name des Tags (#141: beim Start von Hand heisst der Ref «main»).
       # #206: tauri.cli.conf.json baut die Kommandozeile `vivaplan` und legt sie neben `vivaplan-app` ins Paket.
+      # #309/AK10: Mit dem Secret TAURI_SIGNING_PRIVATE_KEY (Einrichtung: docs/ENTWICKLUNG.md, «Updates») erzeugt Tauri
+      # zusätzlich die signierten Update-Dateien (.app.tar.gz, -setup.exe, .msi, .AppImage, je mit .sig). Ohne Secret
+      # entstehen nur die Pakete, ohne Update-Dateien; ein Release-Lauf (Tag) bricht dann ab.
       - name: npx tauri build
         shell: bash
         working-directory: crates/app
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           version=$(node -p "require('./tauri.conf.json').version")
-          if [ "${{ matrix.name }}" = linux ] && [[ "$version" == *-* ]]; then
-            npx tauri build --config tauri.cli.conf.json --bundles deb,appimage
+          updater=()
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            updater=(--config '{"bundle":{"createUpdaterArtifacts":true}}')
+          elif [ -n "$TAG" ]; then
+            echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY fehlt: ohne signierte Update-Dateien kein Release (#309)"
+            exit 1
           else
-            npx tauri build --config tauri.cli.conf.json
+            echo "::warning::Ohne TAURI_SIGNING_PRIVATE_KEY keine Update-Dateien (#309)"
+          fi
+          if [ "${{ matrix.name }}" = linux ] && [[ "$version" == *-* ]]; then
+            npx tauri build --config tauri.cli.conf.json "${updater[@]}" --bundles deb,appimage
+          else
+            npx tauri build --config tauri.cli.conf.json "${updater[@]}"
           fi
       # #206/AK1: Die Pakete enthalten die Kommandozeile, und sie läuft (macOS im .app, Linux im .deb, Windows im
       # NSIS-Installer; das .msi wird aus denselben Dateien gebaut).
@@ -161,6 +177,8 @@ jobs:
             target/release/bundle/appimage/*.AppImage
             target/release/bundle/dmg/*.dmg
             target/release/bundle/mcpb/*.mcpb
+            target/release/bundle/macos/*.app.tar.gz
+            target/release/bundle/**/*.sig
 
   release:
     # job-level `if` kennt `env` nicht: dieselbe Bedingung wie TAG
@@ -189,6 +207,19 @@ jobs:
           mkdir flach
           find pakete -type f -exec mv {} flach/ \;
           ls -l flach
+      # #309/AK10: Manifest latest.json für die Update-Suche der App (Version, Änderungen in vier Sprachen, je Plattform
+      # Download-Adresse und Signatur). Die App liest es unter releases/latest/download/latest.json, also erst, wenn
+      # der Release veröffentlicht ist (nicht Entwurf, nicht Vorabversion).
+      # Von Hand mit nur einem Teil der Plattformen entsteht kein Manifest (das bestehende bleibt im Release).
+      - name: Update-Manifest
+        run: |
+          if python3 tools/update_manifest.py flach --tag "$TAG" --repo "$GITHUB_REPOSITORY" --complete -o "$RUNNER_TEMP/latest.json"; then
+            mv "$RUNNER_TEMP/latest.json" flach/latest.json
+          elif [ "$GITHUB_EVENT_NAME" = push ]; then
+            exit 1
+          else
+            echo "::warning::kein latest.json: nicht alle Plattformen gebaut (#309)"
+          fi
       # Tag-Push: neuer Entwurf mit allen Paketen
       - uses: softprops/action-gh-release@v2
         if: github.event_name == 'push'

@@ -83,7 +83,7 @@ Die **indirekte Amortisation** einer Hypothek fliesst bis vor dem AHV-Bezug in d
 > Beispiel: Guthaben 120 000, Auszahlungen 2041 und 2042 je 50 000, AHV-Bezug 2045: Der Rest von 20 000 (plus Zins) wird im Monat des AHV-Bezugs ausbezahlt. Wird der AHV-Bezug auf 2046 verschoben, bleibt der Plan gültig, und der Rest kommt 2046.
 
 ## @f-settings Einstellungen
-Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache, Darstellung, dunkel, hell, Tragbarkeit, Belehnung, Teuerung, Startjahr
+Stichworte: Einstellungen, Grenzen, AHV-Alter, Bezug Pensionskasse, Maximalbetrag, 3a, Standardwerte, Sprache, Darstellung, dunkel, hell, Tragbarkeit, Belehnung, Teuerung, Startjahr, Updates
 
 Auf dem Mac Menü «VivaPlan → Einstellungen…» (⌘,), unter Windows und Linux Menü «Datei → Einstellungen…» (Ctrl+,), oder die Schaltfläche «Einstellungen» oben. Die Einstellungen gelten für **alle Planungen auf diesem Gerät** und werden lokal gespeichert, **nicht in der Planungsdatei**.
 
@@ -93,6 +93,7 @@ Der Dialog ist in die Reiter **Allgemein**, **Vorsorge**, **Simulation** und **I
 |---|---|---|
 | **Allgemein** | Sprache | wie System |
 |  | Darstellung | System |
+|  | Beim Start nach neuen Versionen suchen | Antwort auf die Frage beim ersten Start |
 | **Vorsorge** | AHV-Bezug: untere und obere Grenze | 63 und 70 Jahre |
 |  | Bezug Pensionskasse: untere und obere Grenze | 58 und 65 Jahre |
 |  | Säule 3a: Maximalbetrag der Einzahlung pro Jahr | 7 258 |
@@ -108,6 +109,8 @@ Der Dialog ist in die Reiter **Allgemein**, **Vorsorge**, **Simulation** und **I
 **Sprache:** «wie System» folgt der Sprache des Betriebssystems (beim ersten Start; ohne Region, fr_FR gilt als Französisch), sonst gilt die gewählte Sprache. Angeboten werden Deutsch, Englisch, Französisch und Italienisch; fehlt die Sprache des Systems, gilt Deutsch. Die Hilfe erscheint in der gewählten Sprache; ein noch nicht übersetztes Kapitel erscheint deutsch. Dieselbe Wahl steht im Menü «Ansicht → Sprache». Ein Wechsel wirkt sofort, auch auf die Menüs; die Planung, ungespeicherte Änderungen und die Ansicht bleiben. Zahlen, Beträge und Daten erscheinen in jeder Sprache im Schweizer Format (1'234'567.50, 2.5 %, 03.2040), und die Planungsdatei ist in jeder Sprache dieselbe. Namen in der Planung (Personen, Immobilien, Meilensteine) werden nicht übersetzt; nur die Beispielplanung erhält beim Öffnen ihre Namen in der gewählten Sprache, mit denselben Zahlen.
 
 **Darstellung:** «System» folgt dem hellen oder dunklen Erscheinungsbild des Betriebssystems, auch wenn es während der Arbeit wechselt; «Hell» und «Dunkel» gelten unabhängig davon. Das Thema gilt für die ganze App: Eingabefelder, Auswahlmenüs, Dialoge, Hilfe und Diagramme. Die Wahl wirkt sofort beim Speichern.
+
+**Updates:** Beim ersten Start (nach der Beta-Aktivierung) fragt VivaPlan einmal, ob es beim Start nach neuen Versionen suchen darf; Installationen von früher werden einmal nach dem Update gefragt. Mit «Ja» fragt die App bei jedem Start im Hintergrund die Download-Seite von VivaPlan auf GitHub ab. Gibt es eine neue Version, zeigt sie Version und Änderungen mit «Jetzt installieren» und «Später»; installiert wird nur nach dem Klick, danach startet VivaPlan neu. Updates sind signiert: Ein Update mit ungültiger Signatur wird nicht installiert, ein Hinweis nennt den Grund. Ohne Internet oder bei einem Fehler des Servers startet VivaPlan normal, ohne Meldung. Mit «Nein» oder ohne Antwort verbindet sich VivaPlan nie mit dem Internet. Die Wahl ändern Sie hier im Reiter «Allgemein»; «Standardwerte» lässt sie unverändert. Siehe [Datenschutz](#privacy).
 
 **Tragbarkeit:** Die vier Werte der [Tragbarkeit](#f-re-afford) sind Regeln der Bank, keine Angaben zur eigenen Planung; jeder Wert muss eine Zahl sein. Eine Änderung wirkt sofort auf Vorschau und Simulation. Der Abschnitt «Immobilien» zeigt die geltenden Werte in einem Hinweis. Öffnen Sie eine ältere Planungsdatei, die noch eigene Werte enthält und von den Einstellungen abweicht, übernimmt die App diese Werte in die Einstellungen; der Dialog «Hinweise zur Planung» nennt die übernommenen und die bisherigen Werte. Gespeicherte Ergebnisse und der Vergleich der Planungen zeigen die Werte, mit denen gerechnet wurde. Die Kommandozeile verwendet die Werte einer älteren Datei, sonst wie die App die Werte der Einstellungen (siehe [Kommandozeile](#ref-cli)).
 

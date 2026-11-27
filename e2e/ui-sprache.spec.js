@@ -23,7 +23,7 @@ async function openApp(page, { settings = {}, firstStart = null, startup = null 
       core: {
         invoke: async (cmd, args = {}) => {
           window.__calls.push([cmd, JSON.parse(JSON.stringify(args))]);
-          if (cmd === "settings_get") return { disclaimerAccepted: 2, ...window.__settings };
+          if (cmd === "settings_get") return { disclaimerAccepted: 2, updateCheck: false, ...window.__settings };
           if (cmd === "settings_set") { window.__settings[args.key] = args.value; return null; }
           if (cmd === "first_start_language") return firstStart;
           if (cmd === "startup_plan") return startup ?? { path: "/x/Familie.vplan", plan: await (await fetch("/api/example_plan", { method: "POST", body: "{}" })).json(), notice: null, first: false };

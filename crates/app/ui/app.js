@@ -318,6 +318,59 @@ async function betaGate(asIfLocked = false) {
   });
   betaLocked = false; document.documentElement.dataset.beta = "ok";
 }
+/**
+ * #309: Search for updates, only with consent. The setting `updateCheck` holds the answer (true/false); missing = not
+ * asked yet. The question comes once after the beta activation, also for installations from before this function.
+ * The app searches in the background (command `update_check`, which itself checks the consent) and shows a new version
+ * with «Jetzt installieren» and «Später»; errors of the search stay in the log of the app.
+ */
+const UPDATE_KEY = "updateCheck";
+const updateAsked = () => typeof Pref.get(UPDATE_KEY, null) === "boolean";
+/** Asks once; Esc counts as «Nein». The answer is written before the search starts, which reads it from the file. */
+function updateConsentGate() {
+  const d = $("#updateAsk");
+  return new Promise(res => {
+    d.onclose = async () => {
+      const yes = d.returnValue === "yes";
+      Pref.cache[UPDATE_KEY] = yes;
+      if (Engine.inApp) await Engine.call("settings_set", { key: UPDATE_KEY, value: yes }).catch(e => noteError(errText(e)));
+      else Pref.set(UPDATE_KEY, yes);
+      res(yes);
+    };
+    d.returnValue = ""; d.showModal(); $("#updateYes").focus();
+  });
+}
+/** Changes of the version: the release writes a JSON object per language; otherwise the text as it is. */
+function updateNotes(notes) {
+  if (!notes) return "";
+  try { const j = JSON.parse(notes); if (j && typeof j === "object") return String(j[I18n.language()] ?? j.en ?? j.de ?? ""); } catch { /* plain text */ }
+  return String(notes);
+}
+/** Shows a version found; installs only after the click, the app then starts again (in the app). */
+function showUpdateOffer(offer) {
+  const d = $("#updateOffer"), install = $("#updateInstall"), status = $("#updateStatus");
+  $("#updateOfferText").textContent = tr("update.offerText", { version: offer.version });
+  const notes = updateNotes(offer.notes);
+  $("#updateNotes").textContent = notes; $("#updateNotesBox").hidden = !notes;
+  status.textContent = ""; install.disabled = false;
+  install.onclick = async e => {
+    e.preventDefault();
+    install.disabled = true; status.textContent = tr("update.installing");
+    try { if (Engine.inApp) await Engine.call("update_install"); }
+    catch (x) {
+      d.close();
+      const key = x?.key === "update.badSignature" ? x.key : "update.failed";
+      ask(tr("update.failedTitle"), `<p>${esc(tr(key, { reason: x?.reason ?? errText(x) }))}</p>`);
+    }
+  };
+  d.showModal();
+}
+async function updateSearch() {
+  if (Pref.get(UPDATE_KEY, false) !== true) return;
+  let offer = null;
+  try { offer = await Engine.call("update_check"); } catch { /* AK5: no message; the app logs the error */ }
+  if (offer?.version) showUpdateOffer(offer);
+}
 /** #74: Setting «notice about the cash reserve shown»; the notice appears only when an affected plan is loaded for the first time. */
 const RESERVE_NOTICE_KEY = "reserveNoticeShown";
 async function reserveNotice(p) {
@@ -3371,7 +3424,8 @@ function settingsFields(l, language = I18n.choice(), theme = Theme.choice(), af 
   const panels = {
     general: `<label class="field" style="grid-column:1/-1"><span>${tr("settings.language")}</span><select id="set-language">${langs.map(([k, name]) => `<option value="${k}" ${k === language ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`
       + `<label class="field" style="grid-column:1/-1"><span>${tr("settings.theme")}</span><select id="set-theme" class="plain">${Theme.CHOICES.map(k => `<option value="${k}" ${k === theme ? "selected" : ""}>${tr("theme." + k)}</option>`).join("")}</select></label>`
-      + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`,
+      + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-askSave" ${askSaveOn() ? "checked" : ""}> ${tr("settings.askSave")}</label>`
+      + `<label class="check" style="grid-column:1/-1"><input type="checkbox" id="set-updateCheck" ${Pref.get(UPDATE_KEY, false) === true ? "checked" : ""}> ${tr("settings.updateCheck")}</label>`,
     pension: limitsOf("pension"),
     simulation: limitsOf("simulation"),
     realestate: `<div id="set-afford" style="grid-column:1/-1"><b>${tr("realestate.affordability")}</b> <span class="computed">${tr("realestate.forAfterSale")}</span></div>`
@@ -3462,6 +3516,8 @@ $("#settingsSave").addEventListener("click", e => {
   }
   const inflationChanged = l.inflationFrom !== limits().inflationFrom;
   Pref.set("limits", l); Pref.set("affordability", af); Pref.set("askSaveBeforeRun", $("#set-askSave").checked);
+  // #309/AK2: the consent to the update search changes only here; «Standardwerte» leaves it as it is
+  if ($("#set-updateCheck").checked !== (Pref.get(UPDATE_KEY, false) === true)) Pref.set(UPDATE_KEY, $("#set-updateCheck").checked);
   Pref.set("theme", $("#set-theme").value); Theme.apply();
   // #279: the suggested values of the tab «Simulation» depend on the first year of the inflation
   if (inflationChanged && state) { refreshSeriesInfo(); requestPreview(); }
@@ -4947,6 +5003,11 @@ Object.assign(ACTIONS, {
     await disclaimerGate();
     document.documentElement.dataset.disclaimer = "ok";
   }
+  // #309/AK1, AK2: ask once whether to search for updates (desktop app; in the browser test access #updateask),
+  // then search in the background; test access #updateoffer shows a version found without the app.
+  if ((Engine.inApp || initial.includes("updateask")) && !updateAsked()) await updateConsentGate();
+  if (Engine.inApp) updateSearch();
+  if (initial.includes("updateoffer")) showUpdateOffer({ version: "9.9.9", notes: JSON.stringify({ de: "Neu: Test", en: "New: test", fr: "Nouveau : test", it: "Nuovo: test" }) });
   // #70: Welcome dialog at the very first start, after the disclaimer (test access in the browser: #welcome). This is remembered immediately so that it
   // does not come back even if the app is quit without a choice.
   if (startup?.first || initial[0] === "welcome") { Pref.set("welcomeShown", true); showWelcome(); }

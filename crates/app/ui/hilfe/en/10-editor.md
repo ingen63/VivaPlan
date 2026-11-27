@@ -83,7 +83,7 @@ The **indirect amortization** of a mortgage flows into this account until before
 > Example: balance 120 000, payouts in 2041 and 2042 of 50 000 each, AHV pension start 2045: the rest of 20 000 (plus interest) is paid out in the month of the AHV pension start. If the AHV pension start is moved to 2046, the plan stays valid, and the rest comes in 2046.
 
 ## @f-settings Settings
-Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, default values, language, appearance, dark, light, affordability, loan-to-value, inflation, first year
+Keywords: settings, limits, AHV age, pension fund payout, maximum amount, 3a, default values, language, appearance, dark, light, affordability, loan-to-value, inflation, first year, updates
 
 On the Mac, menu “VivaPlan → Settings…” (⌘,); on Windows and Linux, menu “File → Settings…” (Ctrl+,); or the button “Settings” at the top. The settings apply to **all plans on this device** and are stored locally, **not in the plan file**.
 
@@ -93,6 +93,7 @@ The dialog is divided into the tabs **General**, **Pensions**, **Simulation** an
 |---|---|---|
 | **General** | Language | as system |
 |  | Appearance | System |
+|  | Search for new versions at startup | answer to the question at the first start |
 | **Pensions** | AHV pension start: lower and upper limit | 63 and 70 years |
 |  | Pension fund payout: lower and upper limit | 58 and 65 years |
 |  | Pillar 3a: maximum contribution per year | 7 258 |
@@ -108,6 +109,8 @@ The dialog is divided into the tabs **General**, **Pensions**, **Simulation** an
 **Language:** “as system” follows the language of the operating system (at the first start; without region, fr_FR counts as French); otherwise the chosen language applies. German, English, French and Italian are offered; if the system's language is missing, German applies. The help appears in the chosen language; a chapter that is not yet translated appears in German. The same choice is in the menu “View → Language”. A change takes effect immediately, also on the menus; the plan, unsaved changes and the view stay. Numbers, amounts and dates appear in the Swiss format in every language (1'234'567.50, 2.5 %, 03.2040), and the plan file is the same in every language. Names in the plan (persons, properties, milestones) are not translated; only the example plan gets its names in the chosen language when it is opened, with the same numbers.
 
 **Appearance:** “System” follows the light or dark appearance of the operating system, also when it changes while you work; “Light” and “Dark” apply regardless of it. The theme applies to the whole app: input fields, selection menus, dialogs, help and charts. The choice takes effect as soon as you save.
+
+**Updates:** At the first start (after the beta activation) VivaPlan asks once whether it may search for new versions at startup; existing installations are asked once after the update. With “Yes” the app queries the VivaPlan download page on GitHub in the background at every start. If there is a new version, it shows the version and the changes with “Install now” and “Later”; it installs only after the click, then VivaPlan restarts. Updates are signed: an update with an invalid signature is not installed, and a notice names the reason. Without internet or on a server error VivaPlan starts normally, without a message. With “No” or without an answer VivaPlan never connects to the internet. You change the choice here in the tab “General”; “Defaults” leaves it unchanged. See [privacy](#privacy).
 
 **Affordability:** The four values of the [affordability](#f-re-afford) are rules of the bank, not details of your own plan; every value must be a number. A change takes effect immediately on the preview and the simulation. The section “Real estate” shows the values that apply in a note. If you open an older plan file that still contains its own values and they differ from the settings, the app takes these values over into the settings; the dialog “Notes on the plan” names the adopted and the previous values. Saved results and the comparison of the plans show the values that were used in the calculation. The command line uses the values of an older file, otherwise, like the app, the values of the settings (see [command line](#ref-cli)).
 

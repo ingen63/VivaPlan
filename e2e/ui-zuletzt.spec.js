@@ -12,7 +12,7 @@ async function openApp(page, recent) {
         invoke: async (cmd, args = {}) => {
           window.__calls.push([cmd, JSON.parse(JSON.stringify(args))]);
           const example = async () => (await fetch("/api/example_plan", { method: "POST", body: "{}" })).json();
-          if (cmd === "settings_get") return { disclaimerAccepted: 2 };
+          if (cmd === "settings_get") return { disclaimerAccepted: 2, updateCheck: false };
           if (cmd === "first_start_language") return null;
           if (cmd === "startup_plan") return { path: "/x/Familie.vplan", plan: await example(), notice: null, first: false };
           if (cmd === "open_recent") {

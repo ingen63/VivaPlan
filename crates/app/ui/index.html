@@ -461,6 +461,21 @@ table.num td:first-child,table.num th:first-child,table.num td.l,table.num th.l{
   <div class="askbtns"><button class="btn primary" id="betaOk" value="ok" data-i18n="beta.activate"></button></div>
 </form></dialog>
 
+<dialog id="updateAsk" aria-labelledby="updateAskTitle"><form method="dialog" class="askform">
+  <h2 id="updateAskTitle" data-i18n="update.askTitle"></h2>
+  <p><b data-i18n="update.askText"></b></p>
+  <p data-i18n="update.askDetail"></p>
+  <div class="askbtns"><button class="btn" id="updateNo" value="no" data-i18n="update.no"></button><button class="btn primary" id="updateYes" value="yes" data-i18n="update.yes"></button></div>
+</form></dialog>
+
+<dialog id="updateOffer" aria-labelledby="updateOfferTitle"><form method="dialog" class="askform">
+  <h2 id="updateOfferTitle" data-i18n="update.offerTitle"></h2>
+  <p id="updateOfferText"></p>
+  <div id="updateNotesBox"><b data-i18n="update.changes"></b><div id="updateNotes" style="white-space:pre-wrap;max-height:40vh;overflow:auto"></div></div>
+  <p id="updateStatus" role="status"></p>
+  <div class="askbtns"><button class="btn" id="updateLater" value="later" data-i18n="update.later"></button><button class="btn primary" id="updateInstall" value="install" data-i18n="update.install"></button></div>
+</form></dialog>
+
 <dialog id="disclaimer" aria-labelledby="disclaimerTitle"><form method="dialog" class="askform">
   <h2 id="disclaimerTitle" data-i18n="disclaimer.title"></h2>
   <p id="disclaimerText"></p>

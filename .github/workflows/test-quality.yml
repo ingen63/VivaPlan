@@ -110,7 +110,9 @@ jobs:
         run: cargo fmt --all --check
 
   # #157: Netzwerkfreiheit. cargo tree (ohne Entwicklungsabhängigkeiten, alle Desktop-Ziele) darf keine Bibliothek aus der
-  # Sperrliste in tools/check-network-free.sh enthalten; ein Treffer lässt den Lauf fehlschlagen.
+  # Sperrliste in tools/check-network-free.sh enthalten; ein Treffer lässt den Lauf fehlschlagen. #309: einzige Ausnahme
+  # ist tauri-plugin-updater als direkte Abhängigkeit der App (Update-Suche nur mit Zustimmung); Rechenkern und
+  # Kommandozeile bleiben ohne.
   network-free:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -147,6 +149,8 @@ jobs:
         run: python3 -m unittest discover -s tools -p 'test_changelog.py'
       - name: Release Notes in vier Sprachen gegen CHANGELOG.md (#188)
         run: python3 tools/changelog.py check
+      - name: Tests des Update-Manifests (#309/AK10)
+        run: python3 -m unittest discover -s tools -p 'test_update_manifest.py'
       - name: Tests des Werkzeugs für die Steuerdatei (#63)
         run: python3 -I -m unittest discover -s tools/steuerdaten
 

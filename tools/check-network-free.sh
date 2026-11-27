@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 # #157: checks that no network library is among the app's dependencies (promise «keine Netzwerkzugriffe»).
+# #309: the only exception is the search for updates of the desktop app (only with consent): in vivaplan-app the
+# plugin tauri-plugin-updater may be a direct dependency, and the network libraries below it are allowed. The engine
+# and the command line (with `vivaplan mcp`) stay without any network library, the updater included.
 #
-# Usage:  tools/check-network-free.sh               cargo tree for the three packages and all desktop targets
-#         tools/check-network-free.sh `--liste` FILE  checks a given list in cargo tree format (test mode)
+# Usage:  tools/check-network-free.sh                    cargo tree for the three packages and all desktop targets
+#         tools/check-network-free.sh `--liste` FILE      checks a given list in cargo tree format (test mode, strict)
+#         tools/check-network-free.sh `--app-liste` FILE  the same with the exception of the app (test mode)
+#
+# Lists carry the depth in front of the name (`cargo tree --prefix depth`): `1tauri-plugin-updater v2.0.0`; lines
+# without a depth count as depth 0. Below the exception (greater depth) every crate is allowed; a crate repeated
+# elsewhere with `(*)` is checked there again.
 #
 # Only normal and build dependencies are checked (-e normal,build), no dev dependencies.
 # Targets: the desktop platforms that are built (pakete.yml), x86_64 and aarch64 each. Not `--target all`:
@@ -23,32 +31,49 @@ TARGETS=(
   x86_64-apple-darwin aarch64-apple-darwin
 )
 
-# Reads lines `name vX.Y.Z …` from stdin and reports every blocklist hit exactly once.
+# #309: allowed as direct dependency of the app only, together with everything below it.
+APP_EXCEPTION=tauri-plugin-updater
+
+# Reads lines `[depth]name vX.Y.Z …` from stdin and reports every blocklist hit exactly once.
+# $1: crate allowed as direct dependency (depth 1) with its subtree, empty = strict.
 check() {
-  awk -v blocklist="${BLOCKLIST[*]}" '
-    BEGIN { n = split(blocklist, s, " "); for (i = 1; i <= n; i++) blocked[s[i]] = 1 }
-    NF && ($1 in blocked) && !($1 in reported) { reported[$1] = 1; print $1; hit = 1 }
+  awk -v blocklist="${BLOCKLIST[*]}" -v allowed="${1:-}" '
+    BEGIN { n = split(blocklist, s, " "); for (i = 1; i <= n; i++) blocked[s[i]] = 1; under = -1 }
+    NF {
+      line = $0; depth = 0
+      if (match(line, /^[0-9]+/)) { depth = substr(line, 1, RLENGTH) + 0; line = substr(line, RLENGTH + 1) }
+      split(line, f, " "); name = f[1]
+      if (under >= 0 && depth > under) next
+      under = -1
+      if (allowed != "" && name == allowed && depth == 1) { under = depth; next }
+      if ((name in blocked) && !(name in reported)) { reported[name] = 1; print name; hit = 1 }
+    }
     END { exit hit ? 1 : 0 }
   '
 }
 
-if [ "${1:-}" = "--liste" ]; then
-  [ $# -eq 2 ] && [ -r "$2" ] || { echo "Aufruf: $0 --liste DATEI" >&2; exit 2; }
-  list=$(cat "$2")
+hits=""
+if [ "${1:-}" = "--liste" ] || [ "${1:-}" = "--app-liste" ]; then
+  [ $# -eq 2 ] && [ -r "$2" ] || { echo "Aufruf: $0 --liste|--app-liste DATEI" >&2; exit 2; }
+  allowed=""
+  [ "$1" = "--app-liste" ] && allowed=$APP_EXCEPTION
+  hits=$(check "$allowed" < "$2") || true
 else
-  [ $# -eq 0 ] || { echo "Aufruf: $0 [--liste DATEI]" >&2; exit 2; }
+  [ $# -eq 0 ] || { echo "Aufruf: $0 [--liste|--app-liste DATEI]" >&2; exit 2; }
   cd "$(git rev-parse --show-toplevel)"
-  list=""
   for target in "${TARGETS[@]}"; do
     for package in "${PACKAGES[@]}"; do
-      part=$(cargo tree -p "$package" -e normal,build --target "$target" --prefix none --format '{p}') \
+      part=$(cargo tree -p "$package" -e normal,build --target "$target" --prefix depth --format '{p}') \
         || { echo "cargo tree fehlgeschlagen ($package, $target)" >&2; exit 2; }
-      list+="$part"$'\n'
+      allowed=""
+      [ "$package" = vivaplan-app ] && allowed=$APP_EXCEPTION
+      hits+=$'\n'$(printf '%s\n' "$part" | check "$allowed") || true
     done
   done
 fi
+hits=$(printf '%s\n' $hits | sort -u)
 
-if hits=$(printf '%s\n' "$list" | check); then
+if [ -z "$hits" ]; then
   echo "Netzwerkfreiheit: keine gesperrte Bibliothek gefunden."
 else
   echo "Netzwerkfreiheit verletzt, gesperrte Bibliotheken in den Abhängigkeiten:" >&2

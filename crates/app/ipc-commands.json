@@ -45,6 +45,8 @@
     "pick_plan_folder",
     "open_link",
     "beta_status",
-    "beta_activate"
+    "beta_activate",
+    "update_check",
+    "update_install"
   ]
 }

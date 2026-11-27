@@ -71,7 +71,14 @@ nicht `h2`). Nicht `--target all`: `tauri` zieht für Android und iOS `reqwest` 
 aber nicht gebaut. Dass ein Treffer wirklich fehlschlägt, prüfen die Tests des Skripts mit gestellten Listen
 (`--liste DATEI`): `python3 -m unittest discover -s tools -p 'test_check_network_free.py'`. Dazu prüft
 `crates/app/tests/csp.rs` (`issue_157_ak2_…`) die Content-Security-Policy in `crates/app/tauri.conf.json`: `connect-src`
-enthält nur `'self'` und die IPC-Quellen `ipc:` und `http://ipc.localhost`, keine externen Adressen.
+enthält nur `'self'` und die IPC-Quellen `ipc:` und `http://ipc.localhost`, keine externen Adressen. #309: Einzige Ausnahme ist
+die Update-Suche der App: `tauri-plugin-updater` und die Netzwerkbibliotheken darunter sind nur als direkte
+Abhängigkeit von `vivaplan-app` erlaubt (Liste mit `--prefix depth`, Testmodus `--app-liste DATEI`); Rechenkern und
+Kommandozeile prüft das Skript weiter ohne Ausnahme. Dass ohne Zustimmung keine Suche startet, prüfen
+`update::tests::issue_309_ak4_…` und `tests::issue_309_ak4_commands_search_only_with_consent` mit einer zählenden
+Ersatz-Suche; `tests/csp.rs` (`issue_309_ak4_…`) prüft, dass die Oberfläche keine Updater-Rechte hat und der Endpunkt
+nur `https://github.com/ingen63/VivaPlan/releases/` ist. `tools/test_update_manifest.py` prüft das Manifest
+`latest.json` des Releases.
 
 **Code intern englisch (#165):** `tools/check-english.sh` (`make english`, Job `english` in `test-quality.yml`) meldet
 deutsche Kommentare und Testnamen mit Datei und Zeile; seit #168 ist die Übergangsliste leer und die Prüfung läuft

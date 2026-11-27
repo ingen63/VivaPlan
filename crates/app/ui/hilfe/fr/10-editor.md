@@ -83,7 +83,7 @@ L’**amortissement indirect** d’une hypothèque est versé sur ce compte jusq
 > Exemple: avoir de 120 000, retraits en 2041 et 2042 de 50 000 chacun, début de la rente AVS en 2045: le solde de 20 000 (plus les intérêts) est versé le mois du début de la rente AVS. Si le début de la rente AVS est reporté à 2046, le plan reste valable, et le solde est versé en 2046.
 
 ## @f-settings Paramètres
-Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair, capacité financière, taux d’avance, renchérissement, année de départ
+Mots-clés: paramètres, limites, âge AVS, prestation de la caisse de pension, montant maximal, 3a, valeurs standard, langue, apparence, sombre, clair, capacité financière, taux d’avance, renchérissement, année de départ, mises à jour
 
 Sur Mac, menu «VivaPlan → Paramètres…» (⌘,), sous Windows et Linux menu «Fichier → Paramètres…» (Ctrl+,), ou le bouton «Paramètres» en haut. Les paramètres valent pour **toutes les planifications sur cet appareil** et sont enregistrés localement, **pas dans le fichier de planification**.
 
@@ -93,6 +93,7 @@ Le dialogue est divisé en onglets **Général**, **Prévoyance**, **Simulation*
 |---|---|---|
 | **Général** | Langue | comme le système |
 |  | Apparence | Système |
+|  | Rechercher de nouvelles versions au démarrage | réponse à la question au premier démarrage |
 | **Prévoyance** | Début de la rente AVS: limite inférieure et supérieure | 63 et 70 ans |
 |  | Prestation de la caisse de pension: limite inférieure et supérieure | 58 et 65 ans |
 |  | Pilier 3a: montant maximal du versement par année | 7 258 |
@@ -108,6 +109,8 @@ Le dialogue est divisé en onglets **Général**, **Prévoyance**, **Simulation*
 **Langue:** «comme le système» suit la langue du système d’exploitation (au premier démarrage; sans région, fr_FR compte comme français), sinon la langue choisie s’applique. Sont proposés l’allemand, l’anglais, le français et l’italien; si la langue du système manque, l’allemand s’applique. L’aide apparaît dans la langue choisie; un chapitre pas encore traduit apparaît en allemand. Le même choix figure dans le menu «Affichage → Langue». Un changement agit immédiatement, y compris sur les menus; la planification, les modifications non enregistrées et la vue sont conservées. Les nombres, montants et dates apparaissent dans chaque langue au format suisse (1'234'567.50, 2.5 %, 03.2040), et le fichier de planification est le même dans chaque langue. Les noms dans la planification (personnes, biens immobiliers, jalons) ne sont pas traduits; seule la planification d’exemple reçoit ses noms dans la langue choisie à l’ouverture, avec les mêmes chiffres.
 
 **Apparence:** «Système» suit l’apparence claire ou sombre du système d’exploitation, même si elle change pendant le travail; «Clair» et «Sombre» s’appliquent indépendamment. Le thème vaut pour toute l’app: champs de saisie, menus de sélection, dialogues, aide et graphiques. Le choix s’applique dès l’enregistrement.
+
+**Mises à jour:** Au premier démarrage (après l’activation bêta), VivaPlan demande une fois s’il peut rechercher de nouvelles versions au démarrage; les installations existantes sont interrogées une fois après la mise à jour. Avec «Oui», l’application consulte en arrière-plan, à chaque démarrage, la page de téléchargement de VivaPlan sur GitHub. S’il existe une nouvelle version, elle affiche la version et les modifications avec «Installer maintenant» et «Plus tard»; l’installation n’a lieu qu’après le clic, puis VivaPlan redémarre. Les mises à jour sont signées: une mise à jour dont la signature n’est pas valable n’est pas installée, et un avis en indique le motif. Sans Internet ou en cas d’erreur du serveur, VivaPlan démarre normalement, sans message. Avec «Non» ou sans réponse, VivaPlan ne se connecte jamais à Internet. Vous modifiez ce choix ici, dans l’onglet «Général»; «Valeurs par défaut» le laisse inchangé. Voir [protection des données](#privacy).
 
 **Capacité financière:** Les quatre valeurs de la [capacité financière](#f-re-afford) sont des règles de la banque, pas des données de votre planification; chaque valeur doit être un nombre. Une modification agit immédiatement sur l’aperçu et la simulation. La section «Immobilier» indique les valeurs applicables dans une remarque. Si vous ouvrez un ancien fichier de planification qui contient encore ses propres valeurs et qu’elles diffèrent des paramètres, l’app reprend ces valeurs dans les paramètres; le dialogue «Remarques sur la planification» indique les valeurs reprises et les valeurs précédentes. Les résultats enregistrés et la comparaison des planifications montrent les valeurs utilisées pour le calcul. La ligne de commande utilise les valeurs d’un ancien fichier, sinon, comme l’application, les valeurs des paramètres (voir [ligne de commande](#ref-cli)).
 

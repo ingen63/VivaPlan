@@ -79,9 +79,9 @@ Pendant la bêta fermée, VivaPlan ne peut être utilisé qu’après une **acti
 L’activation est conservée dans le fichier `beta-aktivierung.json` du dossier de données de l’application (voir [Protection des données](#privacy)). À partir de la version 1.0.0, VivaPlan n’a plus besoin de jeton.
 
 ## @privacy Protection des données et données locales
-Mots-clés: Internet, cloud, emplacement, sécurité, réseau, protection des données
+Mots-clés: Internet, cloud, emplacement, sécurité, réseau, protection des données, mises à jour
 
-Toutes les données restent sur votre ordinateur. L’application ne se connecte jamais à Internet, ni pour les données, ni pour les mises à jour, ni pour des analyses. Seuls deux types de liens ouvrent votre navigateur: les [vidéos d’introduction](#start) et le lien de don «Soutenir VivaPlan» ([utilisation](#bedienung)). Les adresses sont fixées dans l’application; l’application elle-même ne charge rien.
+Toutes les données restent sur votre ordinateur. L’application ne se connecte jamais à Internet, ni pour les données, ni pour des analyses. **La seule exception est la recherche de mises à jour, et uniquement avec votre accord:** au premier démarrage, VivaPlan demande s’il peut rechercher de nouvelles versions au démarrage. Avec «Oui», l’application consulte la page de téléchargement de VivaPlan sur GitHub; seuls la version de VivaPlan et le système d’exploitation sont transmis (ainsi que, comme pour tout accès à Internet, l’adresse IP), jamais de données de planification. Avec «Non», l’application reste entièrement hors ligne. Vous pouvez modifier ce choix à tout moment ([paramètres](#f-settings), onglet «Général»). Seuls deux types de liens ouvrent votre navigateur: les [vidéos d’introduction](#start) et le lien de don «Soutenir VivaPlan» ([utilisation](#bedienung)). Les adresses sont fixées dans l’application; l’application elle-même ne charge rien.
 
 - Les **planifications** se trouvent là où vous enregistrez le fichier `.vplan`. Les chemins des planifications ouvertes ou enregistrées en dernier (liste «Ouverts récemment») figurent dans le fichier `einstellungen.json` du dossier de données de l’application.
 - Les **séries temporelles** (la bibliothèque de données) se trouvent dans le dossier de données de l’application. Sous macOS, il s’agit de `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

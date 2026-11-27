@@ -55,3 +55,38 @@ fn issue_157_ak2_external_sources_are_detected() {
         );
     }
 }
+
+fn json_file(name: &str) -> serde_json::Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(name);
+    serde_json::from_str(&std::fs::read_to_string(&path).expect("lesbar")).expect("JSON")
+}
+
+/// #309/AK4: the user interface gets no permission of the updater plugin; it only calls the commands of the app,
+/// which search only with consent. The search goes over https to the GitHub releases of the project, nowhere else.
+#[test]
+fn issue_309_ak4_update_search_is_limited() {
+    let caps = json_file("capabilities/default.json");
+    let permissions = caps["permissions"].as_array().expect("permissions");
+    assert!(
+        permissions.iter().all(|p| !p.to_string().contains("updater")),
+        "the user interface must not use the updater plugin directly: {permissions:?}"
+    );
+    let conf = json_file("tauri.conf.json");
+    let endpoints = conf["plugins"]["updater"]["endpoints"].as_array().expect("endpoints");
+    assert!(!endpoints.is_empty());
+    for e in endpoints {
+        let e = e.as_str().unwrap();
+        assert!(
+            e.starts_with("https://github.com/ingen63/VivaPlan/releases/"),
+            "unexpected update endpoint {e}"
+        );
+    }
+    let updater = &conf["plugins"]["updater"];
+    for dangerous in [
+        "dangerousInsecureTransportProtocol",
+        "dangerousAcceptInvalidCerts",
+        "dangerousAcceptInvalidHostnames",
+    ] {
+        assert!(updater.get(dangerous).is_none(), "{dangerous} must not be set");
+    }
+}

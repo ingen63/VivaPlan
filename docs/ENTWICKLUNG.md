@@ -364,6 +364,46 @@ cargo run -q -p vivaplan-cli --bin beta-token -- check VP1.beta.…   # prüft g
 eine zufällige Kennung. Das Token als eine Zeile verschicken. `tools/mcpb.py check <paket> --beta-token <token>` prüft
 ein Paket samt Aktivierung; ohne Token prüft es nur, dass der Server ohne Aktivierung jeden Aufruf ablehnt.
 
+## Updates (#309)
+
+Einzige Ausnahme von der Netzwerkfreiheit (#157, #213): die Desktop-App sucht beim Start nach neuen Versionen, nur
+mit Zustimmung. Rechenkern, Kommandozeile und `vivaplan mcp` haben keinen Updater.
+
+- **App:** Plugin `tauri-plugin-updater`, nur in `main()` registriert (nicht in den Tests mit der Mock-Laufzeit).
+  `src/update.rs`: Befehle `update_check` und `update_install` (nur Desktop-App, `ipc-commands.json`). Beide lesen die
+  Zustimmung selbst aus `einstellungen.json` (Schlüssel `updateCheck`, nur `true` zählt); ohne sie wird die Suche
+  (`update::Search`) gar nicht aufgerufen. Fehler der Suche (kein Internet, Server) gehen nach stderr und zählen als
+  «keine neue Version». Ohne öffentlichen Schlüssel in `tauri.conf.json` fragt die App den Server nicht ab.
+- **Grenzen:** Die Oberfläche hat keine Rechte des Updater-Plugins (`capabilities/default.json`) und keine externen
+  Quellen in `connect-src`; der Endpunkt ist `https://github.com/ingen63/VivaPlan/releases/latest/download/latest.json`
+  (Test `issue_309_ak4_update_search_is_limited` in `tests/csp.rs`). `tools/check-network-free.sh` erlaubt
+  `tauri-plugin-updater` und die Netzwerkbibliotheken darunter nur als direkte Abhängigkeit von `vivaplan-app`;
+  Rechenkern und Kommandozeile prüft es weiter streng.
+- **Oberfläche** (`app.js`, `updateConsentGate`, `updateSearch`, `showUpdateOffer`): Frage `#updateAsk` einmal nach
+  Beta-Aktivierung und Haftungsausschluss (Esc zählt als «Nein»); Einstellung im Reiter «Allgemein»
+  (`set-updateCheck`). Testzugänge im Browser: `#updateask` (Frage), `#updateoffer` (gefundene Version 9.9.9).
+- **Release** (`pakete.yml`): Mit dem Secret `TAURI_SIGNING_PRIVATE_KEY` baut Tauri zusätzlich die signierten
+  Update-Dateien (`--config '{"bundle":{"createUpdaterArtifacts":true}}'`); ein Tag-Lauf ohne Secret bricht ab.
+  `tools/update_manifest.py` schreibt daraus `latest.json` (Version, Änderungen je Sprache als JSON-Text,
+  `darwin-aarch64`, `windows-x86_64`, `linux-x86_64` mit Adresse und Signatur) in den Release-Entwurf. Die App findet
+  es erst, wenn der Release veröffentlicht ist (GitHub `latest` zählt keine Entwürfe und keine Vorabversionen).
+
+**Schlüssel erzeugen und hinterlegen (einmal, von Hand, nicht durch Claude):**
+
+1. Auf dem eigenen Rechner, ausserhalb des Repositorys:
+   `cd crates/app && npx tauri signer generate -w ~/.tauri/vivaplan-updater.key` (mit Passwort).
+   Der private Schlüssel kommt **nie** ins Repository; eine Sicherung gehört in den Passwortmanager. Geht er verloren,
+   lassen sich installierte Versionen nicht mehr aktualisieren (nur mit neuer Installation von Hand).
+2. Den Inhalt von `~/.tauri/vivaplan-updater.key.pub` in `crates/app/tauri.conf.json` unter
+   `plugins.updater.pubkey` eintragen und committen (öffentlich, gehört ins Repository).
+3. Auf GitHub unter *Settings → Secrets and variables → Actions* zwei Repository-Secrets anlegen:
+   `TAURI_SIGNING_PRIVATE_KEY` (Inhalt der Datei `vivaplan-updater.key`) und `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+4. Erstes Release mit Schlüssel bauen und veröffentlichen; danach die Prüfliste in `docs/QA.md` («Updates») mit dem
+   nächsten Release durchgehen.
+
+Zieht das Repository um (Entscheid «Repo öffentlich»), ändern sich Endpunkt in `tauri.conf.json` und der Test in
+`tests/csp.rs`; installierte Versionen suchen am alten Ort, bis sie von Hand aktualisiert sind.
+
 ## Befehle
 
 ```sh

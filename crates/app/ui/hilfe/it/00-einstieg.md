@@ -79,9 +79,9 @@ Durante la beta chiusa VivaPlan può essere usato solo dopo un’**attivazione u
 L’attivazione è conservata nel file `beta-aktivierung.json` nella cartella dei dati dell’app (vedi [Protezione dei dati](#privacy)). Dalla versione 1.0.0 VivaPlan non ha più bisogno di un token.
 
 ## @privacy Protezione dei dati e dati locali
-Parole chiave: Internet, cloud, luogo di salvataggio, sicurezza, rete, protezione dei dati
+Parole chiave: Internet, cloud, luogo di salvataggio, sicurezza, rete, protezione dei dati, aggiornamenti
 
-Tutti i dati restano sul Suo computer. L’app non si collega mai a Internet, nemmeno per i dati, gli aggiornamenti o le statistiche. Solo due tipi di link aprono il Suo browser: i [video introduttivi](#start) e il link per le donazioni «Sostenere VivaPlan» ([uso](#bedienung)). Gli indirizzi sono fissati nell’app; l’app stessa non carica nulla.
+Tutti i dati restano sul Suo computer. L’app non si collega mai a Internet, nemmeno per i dati o le statistiche. **L’unica eccezione è la ricerca di aggiornamenti, e solo con il Suo consenso:** al primo avvio VivaPlan chiede se può cercare nuove versioni all’avvio. Con «Sì» l’app consulta la pagina di download di VivaPlan su GitHub; vengono trasmessi solo la versione di VivaPlan e il sistema operativo (e, come per ogni accesso a Internet, l’indirizzo IP), mai dati di pianificazione. Con «No» l’app resta completamente offline. La scelta si può modificare in qualsiasi momento ([impostazioni](#f-settings), scheda «Generale»). Solo due tipi di link aprono il Suo browser: i [video introduttivi](#start) e il link per le donazioni «Sostenere VivaPlan» ([uso](#bedienung)). Gli indirizzi sono fissati nell’app; l’app stessa non carica nulla.
 
 - Le **pianificazioni** si trovano dove salva il file `.vplan`. I percorsi delle ultime pianificazioni aperte o salvate (elenco «Aperti di recente») figurano nel file `einstellungen.json` nella cartella dei dati dell’app.
 - Le **serie temporali** (la biblioteca di dati) si trovano nella cartella dei dati dell’app. Con macOS è `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

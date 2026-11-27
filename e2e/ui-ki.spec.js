@@ -20,7 +20,7 @@ async function openApp(page, cliPath, planDir = PLAN_DIR, picked = null) {
         invoke: async (cmd, args = {}) => {
           window.__calls.push(cmd);
           const example = async () => (await fetch("/api/example_plan", { method: "POST", body: "{}" })).json();
-          if (cmd === "settings_get") return { disclaimerAccepted: 2 };
+          if (cmd === "settings_get") return { disclaimerAccepted: 2, updateCheck: false };
           if (cmd === "first_start_language") return null;
           if (cmd === "startup_plan") return { path: "/x/Familie.vplan", plan: await example(), notice: null, first: false };
           if (cmd === "app_info") return { version: "1.2.3", buildEpoch: 1, cliPath: cli, planDir: dir };

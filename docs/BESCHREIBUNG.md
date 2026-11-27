@@ -19,7 +19,15 @@ des 1. und 99. Perzentils und des schlechtesten Laufs.
 
 Die App läuft auf macOS, Windows und Linux. Sie greift nie aufs Netzwerk zu (das gilt für die App, den Rechenkern und
 den MCP-Server `vivaplan mcp`): Planungen, Zeitreihen und Ergebnisse
-bleiben ausschliesslich auf dem eigenen Rechner. Daten verlassen den Rechner nur, wenn man VivaPlan selbst mit einer KI
+bleiben ausschliesslich auf dem eigenen Rechner. Einzige Ausnahme ist die Suche nach Updates in der App, und nur mit
+Zustimmung (#309): Beim ersten Start (nach der Beta-Aktivierung; bestehende Installationen einmal nach dem Update) fragt
+die App, ob sie beim Start nach neuen Versionen suchen darf. Mit «Ja» fragt sie bei jedem Start im Hintergrund das
+Manifest der Releases von VivaPlan auf GitHub ab (übertragen werden nur Version und Betriebssystem, keine
+Planungsdaten) und zeigt eine neue Version mit ihren Änderungen, «Jetzt installieren» und «Später»; installiert wird nur
+nach dem Klick, danach startet die App neu. Updates sind signiert; eine Version mit ungültiger Signatur wird nicht
+installiert, ein Hinweis nennt den Grund. Ohne Internet oder bei einem Fehler des Servers startet die App normal, der
+Fehler steht nur im Protokoll. Mit «Nein» oder ohne Antwort baut die App nie eine Verbindung auf. Die Wahl steht in den
+Einstellungen (Reiter «Allgemein»). Daten verlassen den Rechner nur, wenn man VivaPlan selbst mit einer KI
 verbindet (`vivaplan mcp`, Kommandozeile), und dann nur das, was die KI abfragt. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
 kopieren und archivieren lässt; ein Doppelklick auf die Datei öffnet sie in VivaPlan. Beim Start öffnet die Desktop-App die zuletzt geöffnete oder gespeicherte Planung (sonst eine mitgelieferte Beispielplanung); beim Beenden mit ungespeicherten Änderungen fragt sie nach. Das Menü «Datei → Zuletzt geöffnet» zeigt die letzten 10 geöffneten oder gespeicherten Planungen zum schnellen Wechseln; eine nicht mehr vorhandene Datei meldet die App und entfernt sie aus der Liste, «Liste löschen» leert sie. Die Liste enthält nur die Dateipfade und liegt in den lokalen Einstellungen der App.
 

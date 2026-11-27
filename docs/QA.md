@@ -272,6 +272,28 @@ abgelaufener Frist. Vorher `~/Library/Application Support/ch.vivaplan-app.deskto
    endet mit «VivaPlan is not activated yet …».
 7. Ergebnis mit Datum und Version im Issue festhalten; die gesicherte Aktivierungsdatei zurücklegen.
 
+## Prüfung von Hand: Updates (#309)
+
+Voraussetzung: Schlüssel eingerichtet (`docs/ENTWICKLUNG.md`, «Updates»), eine veröffentlichte Vorversion **mit**
+Update-Funktion und öffentlichem Schlüssel (installiert) und ein veröffentlichter neuer Release mit `latest.json`.
+Jede Plattform einzeln (macOS, Windows, Linux AppImage). Vorher die Einstellungsdatei der App wegsichern.
+
+1. Erster Start einer frischen Installation (AK1): nach der Beta-Aktivierung und dem Haftungsausschluss die Frage
+   «Soll VivaPlan beim Start nach neuen Versionen suchen?» mit «Ja» und «Nein»; der Text nennt, was übertragen wird.
+2. «Nein» wählen, App neu starten (AK4): keine Frage mehr; mit einem Netzwerkmonitor (Little Snitch, Windows-Firewall-
+   Protokoll, `nettop`/`ss`) keine Verbindung von `vivaplan-app`. Dasselbe nach Esc statt einer Antwort.
+3. Einstellungen, Reiter «Allgemein» (AK2): Schalter «Beim Start nach neuen Versionen suchen» einschalten, speichern.
+4. Neustart mit Internet (AK3): Dialog «Neue Version verfügbar» mit Version und Änderungen in der Sprache der App.
+   «Später»: nichts geschieht. Neustart, «Jetzt installieren»: Download, Installation, die App startet neu und zeigt in
+   «Über VivaPlan» die neue Version; die Beta-Aktivierung bleibt gültig, die Frage kommt nicht wieder (AK1).
+5. Ohne Internet (WLAN aus) starten (AK5): normaler Start ohne Meldung; im Protokoll (Terminal-Start) steht
+   «Update-Suche fehlgeschlagen …».
+6. Ungültige Signatur (AK6): In einem Test-Release die `.sig` einer Plattform in `latest.json` ändern, installieren:
+   Hinweis «Update nicht installiert … Signatur ungültig» mit Grund, die alte Version läuft weiter.
+7. Bestehende Installation ohne die Frage (AK2): Version vor #309 installieren, benutzen, das Paket der neuen Version
+   von Hand darüber installieren: beim ersten Start einmal die Frage, danach nie mehr.
+8. Ergebnis mit Datum, Plattform und Versionen im Issue festhalten; die Einstellungsdatei zurücklegen.
+
 ## Offene Punkte
 
 1. ~~**Cashflow-Invariante mit Immobilien, Pensionskasse und 3a**~~ – erledigt mit #133: Der Monatsdatensatz führt intern

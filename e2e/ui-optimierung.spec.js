@@ -152,7 +152,7 @@ test.describe("Optimization: ranges, withdrawal rate, progress", () => {
   test.describe("#4: start with the plan opened last, question on quitting (desktop app simulated)", () => {
     /** Simulates the desktop app: commands of the Tauri layer are emulated, all others go to the engine. */
     async function openApp(page, startup, settings = {}) {
-      settings = { disclaimerAccepted: 2, ...settings }; // #61: The disclaimer counts as confirmed unless a test says otherwise
+      settings = { disclaimerAccepted: 2, updateCheck: false, ...settings }; // #61, #309: disclaimer and update question count as answered unless a test says otherwise
       await page.addInitScript(([startup, settings]) => {
         window.__calls = [];
         window.__TAURI__ = {

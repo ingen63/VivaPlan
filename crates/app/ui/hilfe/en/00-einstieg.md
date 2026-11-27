@@ -79,9 +79,9 @@ During the closed beta, VivaPlan can only be used after a **one-time activation*
 The activation is kept in the file `beta-aktivierung.json` in the data folder of the app (see [Privacy](#privacy)). From version 1.0.0 on, VivaPlan needs no token any more.
 
 ## @privacy Privacy and local data
-Keywords: internet, cloud, storage location, security, network, data protection
+Keywords: internet, cloud, storage location, security, network, data protection, updates
 
-All data stays on your computer. The app never connects to the internet, not even for data, updates or analytics. Only two kinds of links open your browser: the [introductory videos](#start) and the donation link “Support VivaPlan” ([operation](#bedienung)). The addresses are fixed in the app; the app itself loads nothing.
+All data stays on your computer. The app never connects to the internet, not even for data or analytics. **The only exception is the search for updates, and only with your consent:** at the first start VivaPlan asks whether it may search for new versions at startup. With “Yes” the app queries the VivaPlan download page on GitHub; only the version of VivaPlan and the operating system are sent (and, as with any internet access, the IP address), never planning data. With “No” the app stays entirely offline. You can change the choice at any time ([settings](#f-settings), tab “General”). Only two kinds of links open your browser: the [introductory videos](#start) and the donation link “Support VivaPlan” ([operation](#bedienung)). The addresses are fixed in the app; the app itself loads nothing.
 
 - **Plans** are where you save the `.vplan` file. The paths of the plans last opened or saved (list “Open Recent”) are in the file `einstellungen.json` in the data folder of the app.
 - **Time series** (the data library) are in the data folder of the app. On macOS this is `~/Library/Application Support/ch.vivaplan-app.desktop/Zeitreihen`.

@@ -7,6 +7,7 @@ mod i18n;
 mod links;
 mod migrate;
 mod recent;
+mod update;
 
 // #116: memory limit per test process (engine::test_alloc).
 #[cfg(test)]
@@ -121,6 +122,23 @@ fn update_settings(data_dir: &Path, change: impl FnOnce(&mut serde_json::Map<Str
 async fn settings_get<R: Runtime>(app: AppHandle<R>) -> Result<Value, String> {
     let data = app.path().app_data_dir().map_err(|e| e.to_string())?;
     Ok(Value::Object(read_settings(&data)))
+}
+
+/// #309/AK3: searches for a new version in the background, only with the consent of the user (`update`).
+#[tauri::command]
+async fn update_check<R: Runtime>(app: AppHandle<R>) -> Option<update::Offer> {
+    let data = app.path().app_data_dir().ok()?;
+    update::check(&read_settings(&data), app.try_state::<update::Search>().as_deref()).await
+}
+
+/// #309/AK3, AK6: installs the version found and starts the app again; on an error the reason for the user.
+#[tauri::command]
+async fn update_install<R: Runtime>(app: AppHandle<R>) -> Result<(), update::Failure> {
+    let data = app.path().app_data_dir().map_err(|e| update::Failure {
+        key: "update.failed",
+        reason: e.to_string(),
+    })?;
+    update::install(&read_settings(&data), app.try_state::<update::Search>().as_deref()).await
 }
 
 #[tauri::command]
@@ -1289,6 +1307,8 @@ fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
             library_list,
             settings_get,
             settings_set,
+            update_check,
+            update_install,
             first_start_language,
             set_menu_language,
             startup_plan,
@@ -1380,6 +1400,8 @@ fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::err
     migrate::take_over_all(&migrate::legacy_pairs(&data_dirs(app.handle())));
     create_windows(app)?;
     install_dialogs(app);
+    // #309: the updater only in the real app; it reaches the network only with consent (`update`)
+    update::install_search(app.handle());
     install_menu(app)
 }
 
@@ -1387,6 +1409,7 @@ fn main() {
     let given = plan_arg(std::env::args_os());
     let smoke = smoke_requested(std::env::args_os());
     let app = configure(tauri::Builder::default())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Smoke(smoke))
         .manage(BetaKey(engine::beta::key()))
         .setup(setup_app)
@@ -3207,6 +3230,43 @@ mod tests {
         }
         let (_app, w, _g, _) = setup_with(FakeDialogs::default());
         assert_eq!(call(&w, "pick_plan_folder", json!({})).unwrap(), Value::Null);
+    }
+
+    /// #309/AK4: the commands read the consent from the settings file; without «Ja» the search set up in the app is
+    /// never asked (no network), with «Ja» it is, and the version found reaches the user interface.
+    #[test]
+    fn issue_309_ak4_commands_search_only_with_consent() {
+        use std::sync::atomic::AtomicUsize;
+        let (app, w, _g) = setup();
+        let asked = Arc::new(AtomicUsize::new(0));
+        let (c, i) = (asked.clone(), asked.clone());
+        app.manage(update::Search {
+            check: Box::new(move || {
+                c.fetch_add(1, Ordering::SeqCst);
+                Box::pin(async {
+                    Ok(Some(update::Offer {
+                        version: "9.0.0".into(),
+                        notes: None,
+                        date: None,
+                    }))
+                })
+            }),
+            install: Box::new(move || {
+                i.fetch_add(1, Ordering::SeqCst);
+                Box::pin(async { Ok(()) })
+            }),
+        });
+        let dir = app.path().app_data_dir().unwrap();
+        assert_eq!(call(&w, "update_check", json!({})).unwrap(), Value::Null);
+        write_setting(&dir, update::CONSENT_KEY, json!(false)).unwrap();
+        assert_eq!(call(&w, "update_check", json!({})).unwrap(), Value::Null);
+        let refused = call(&w, "update_install", json!({})).unwrap_err();
+        assert_eq!(refused["key"], "update.failed");
+        assert_eq!(asked.load(Ordering::SeqCst), 0, "network reached without consent");
+        write_setting(&dir, update::CONSENT_KEY, json!(true)).unwrap();
+        assert_eq!(call(&w, "update_check", json!({})).unwrap()["version"], "9.0.0");
+        assert_eq!(call(&w, "update_install", json!({})).unwrap(), Value::Null);
+        assert_eq!(asked.load(Ordering::SeqCst), 2);
     }
 
     /// #270/AK1, AK10: without an activation the app asks; a valid token activates, the activation is saved in the data

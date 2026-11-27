@@ -83,7 +83,7 @@ L’**ammortamento indiretto** di un’ipoteca confluisce in questo conto fino a
 > Esempio: avere 120'000, riscossioni 2041 e 2042 di 50'000 ciascuno, inizio della rendita AVS 2045: il resto di 20'000 (più interesse) viene versato nel mese d’inizio della rendita AVS. Se l’inizio della rendita AVS viene spostato al 2046, il piano resta valido, e il resto arriva nel 2046.
 
 ## @f-settings Impostazioni
-Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua, aspetto, scuro, chiaro, sostenibilità, grado d’anticipo, rincaro, anno iniziale
+Parole chiave: impostazioni, limiti, età AVS, prestazione della cassa pensione, importo massimo, 3a, valori standard, lingua, aspetto, scuro, chiaro, sostenibilità, grado d’anticipo, rincaro, anno iniziale, aggiornamenti
 
 Sul Mac menu ‹VivaPlan → Impostazioni…› (⌘,), con Windows e Linux menu «File → Impostazioni…» (Ctrl+,), oppure il pulsante «Impostazioni» in alto. Le impostazioni valgono per **tutte le pianificazioni su questo dispositivo** e vengono salvate in locale, **non nel file di pianificazione**.
 
@@ -93,6 +93,7 @@ Il dialogo è suddiviso nelle schede **Generale**, **Previdenza**, **Simulazione
 |---|---|---|
 | **Generale** | Lingua | come il sistema |
 |  | Aspetto | Sistema |
+|  | Cercare nuove versioni all’avvio | risposta alla domanda al primo avvio |
 | **Previdenza** | Inizio della rendita AVS: limite inferiore e superiore | 63 e 70 anni |
 |  | Prestazione della cassa pensione: limite inferiore e superiore | 58 e 65 anni |
 |  | Pilastro 3a: importo massimo del versamento all’anno | 7'258 |
@@ -108,6 +109,8 @@ Il dialogo è suddiviso nelle schede **Generale**, **Previdenza**, **Simulazione
 **Lingua:** «come il sistema» segue la lingua del sistema operativo (al primo avvio; senza regione, it_CH vale come italiano), altrimenti vale la lingua scelta. Sono offerti tedesco, inglese, francese e italiano; se manca la lingua del sistema, vale il tedesco. L’aiuto appare nella lingua scelta; un capitolo non ancora tradotto appare in tedesco. La stessa scelta si trova nel menu «Vista → Lingua». Un cambio ha effetto subito, anche sui menu; la pianificazione, le modifiche non salvate e la vista restano. Numeri, importi e date appaiono in ogni lingua nel formato svizzero (1'234'567.50, 2.5 %, 03.2040), e il file di pianificazione è lo stesso in ogni lingua. I nomi nella pianificazione (persone, immobili, tappe) non vengono tradotti; solo la pianificazione d’esempio riceve i suoi nomi nella lingua scelta all’apertura, con le stesse cifre.
 
 **Aspetto:** «Sistema» segue l’aspetto chiaro o scuro del sistema operativo, anche se cambia durante il lavoro; «Chiaro» e «Scuro» valgono indipendentemente. Il tema vale per tutta l’app: campi di immissione, menu di selezione, dialoghi, guida e grafici. La scelta ha effetto al salvataggio.
+
+**Aggiornamenti:** Al primo avvio (dopo l’attivazione beta) VivaPlan chiede una volta se può cercare nuove versioni all’avvio; le installazioni esistenti vengono interpellate una volta dopo l’aggiornamento. Con «Sì» l’app consulta in background, a ogni avvio, la pagina di download di VivaPlan su GitHub. Se c’è una nuova versione, mostra la versione e le modifiche con «Installa ora» e «Più tardi»; l’installazione avviene solo dopo il clic, poi VivaPlan si riavvia. Gli aggiornamenti sono firmati: un aggiornamento con firma non valida non viene installato e un avviso ne indica il motivo. Senza Internet o in caso di errore del server VivaPlan si avvia normalmente, senza messaggi. Con «No» o senza risposta VivaPlan non si collega mai a Internet. La scelta si modifica qui, nella scheda «Generale»; «Valori predefiniti» la lascia invariata. Vedi [protezione dei dati](#privacy).
 
 **Sostenibilità:** I quattro valori della [sostenibilità](#f-re-afford) sono regole della banca, non dati della propria pianificazione; ogni valore deve essere un numero. Una modifica agisce subito sull’anteprima e sulla simulazione. La sezione «Immobili» mostra i valori applicabili in un’avvertenza. Se si apre un vecchio file di pianificazione che contiene ancora valori propri diversi dalle impostazioni, l’app riprende questi valori nelle impostazioni; il dialogo «Avvertenze sulla pianificazione» indica i valori ripresi e quelli precedenti. I risultati salvati e il confronto delle pianificazioni mostrano i valori con cui è stato calcolato. La riga di comando usa i valori di un vecchio file, altrimenti, come l’app, i valori delle impostazioni (vedi [riga di comando](#ref-cli)).
 
