@@ -257,4 +257,77 @@ mod tests {
         let other = tauri_plugin_updater::Error::EmptyEndpoints;
         assert_eq!(failure(&other).key, "update.failed");
     }
+
+    // #309/AK6: every signature-related error kind maps to the signature text, not only one of them.
+    #[test]
+    fn issue_309_ak6_all_signature_kinds_map_to_bad_signature() {
+        use tauri_plugin_updater::Error as E;
+        for e in [E::SignatureUtf8("x".into()), E::MissingSignedVersion] {
+            assert_eq!(failure(&e).key, "update.badSignature", "{e}");
+        }
+    }
+
+    // #309/AK4: an installation error of the updater reaches the caller unchanged (key and reason).
+    #[test]
+    fn issue_309_install_failure_is_passed_on() {
+        let search = Search {
+            check: Box::new(|| Box::pin(async { Ok(None) })),
+            install: Box::new(|| {
+                Box::pin(async {
+                    Err(Failure {
+                        key: "update.badSignature",
+                        reason: "boom".into(),
+                    })
+                })
+            }),
+        };
+        let yes = settings(json!({ "updateCheck": true }));
+        let r = tauri::async_runtime::block_on(install(&yes, Some(&search)));
+        assert_eq!(
+            r,
+            Err(Failure {
+                key: "update.badSignature",
+                reason: "boom".into()
+            })
+        );
+    }
+
+    // #309/AK4: refusals name their reason (no consent vs. no updater) and use the general text key.
+    #[test]
+    fn issue_309_install_refusal_reasons() {
+        let no = settings(json!({}));
+        let yes = settings(json!({ "updateCheck": true }));
+        let (search, _) = counting(Ok(None));
+        let a = tauri::async_runtime::block_on(install(&no, Some(&search))).unwrap_err();
+        assert_eq!((a.key, a.reason.as_str()), ("update.failed", "no consent"));
+        let b = tauri::async_runtime::block_on(install(&yes, None)).unwrap_err();
+        assert_eq!((b.key, b.reason.as_str()), ("update.failed", "no updater"));
+    }
+
+    // #309/AK4: the real search without public key does not ask the server (error before any request), and an
+    // installation without a found version fails; both run on the mock runtime without network.
+    #[test]
+    fn issue_309_real_search_without_pubkey_or_pending_update_fails_locally() {
+        use tauri::test::{mock_builder, mock_context, noop_assets};
+        let app = mock_builder()
+            .build(mock_context(noop_assets()))
+            .expect("mock app builds");
+        let handle = app.handle().clone();
+        assert_eq!(pubkey(&handle), "");
+        install_search(&handle);
+        let search = handle.state::<Search>();
+        let checked = tauri::async_runtime::block_on((search.check)());
+        assert_eq!(
+            checked,
+            Err("no public key for update signatures in tauri.conf.json".to_string())
+        );
+        let installed = tauri::async_runtime::block_on((search.install)());
+        assert_eq!(
+            installed,
+            Err(Failure {
+                key: "update.failed",
+                reason: "no update found".into()
+            })
+        );
+    }
 }
