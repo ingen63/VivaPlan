@@ -545,7 +545,7 @@ test.describe("13th AHV pension (#190)", () => {
     const label = page.locator("label.field", { hasText: "Rente pro Monat bei Bezugsbeginn" });
     await expect(label).toHaveCount(1);
     await expect(label.locator(".computed")).toHaveText(
-      "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, in heutigen Preisen, ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).");
+      "Erwartete monatliche AHV-Rente beim Bezug mit 65 (Referenzalter) laut Rentenvorausberechnung, nominal (bis zum Anspruch ohne Teuerung), ohne 13. Rente (die App rechnet sie ab Dezember 2026 selbst dazu).");
     await noErrors(page, errors);
   });
 
