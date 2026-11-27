@@ -13,6 +13,7 @@ pub mod appdata;
 pub mod batch;
 pub mod beta;
 pub mod calibrate;
+pub mod choices;
 pub mod describe;
 pub mod digest;
 pub mod dispatch;

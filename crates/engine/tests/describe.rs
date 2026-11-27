@@ -13,7 +13,7 @@ fn library() -> PathBuf {
 }
 
 fn catalog(section: Option<Section>, plan: Option<&Value>) -> Catalog {
-    engine::api::describe(section, plan, &library(), Some(&library()))
+    engine::api::describe(section, plan, &library(), Some(&library()), "de")
 }
 
 /// The whole catalog, measured once for all tests. #226: measured on a short given plan (three years); the
@@ -57,7 +57,9 @@ fn issue_219_ak1_catalog_has_all_parts() {
     let c = whole();
     assert!(c.performance.as_ref().is_some_and(|p| p.us_per_run.is_some()));
     assert_eq!(c.format, "vivaplan-describe/1");
-    assert_eq!(c.sections.len(), 8);
+    // #304: the ninth section `choices` only when asked for.
+    assert_eq!(c.sections.len(), 9);
+    assert!(c.choices.is_none());
 
     // Fields: the meaning only in the section (the whole catalog stays small).
     let f = c.fields.as_ref().unwrap();
@@ -397,4 +399,194 @@ fn issue_219_ak4_json_under_20000_characters() {
         };
         assert!(one.chars().count() < 20_000, "{}: {}", s.name(), one.chars().count());
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// #304: choice fields with the labels of the app
+// ---------------------------------------------------------------------------------------------
+
+/// #304/AK4, AK2: Every value of every choice field of the schema has a meaning and, unless it is listed in
+/// `WITHOUT_LABEL` with a reason, a label of the app in all four languages; the label tables name only fields and
+/// values of the schema. A new value without a label fails here.
+#[test]
+fn issue_304_ak4_every_choice_value_has_a_label_in_four_languages() {
+    use engine::choices::{self, COMBINED, LABELS, LANGUAGES, VALUE_MEANINGS, WITHOUT_LABEL};
+    let leaves = describe::schema_leaves();
+    let enums: Vec<_> = leaves.iter().filter(|l| l.kind == "enum").collect();
+    assert!(enums.len() >= 24, "{}", enums.len());
+    let known = |path: &str, value: &str| {
+        enums
+            .iter()
+            .any(|l| l.path == path && l.values.iter().any(|v| v == value))
+            || COMBINED.contains(&(path, value))
+    };
+    let mut seen = BTreeSet::new();
+    for (path, value, keys) in LABELS {
+        assert!(
+            known(path, value),
+            "LABELS: {path}={value} is not a value of the schema"
+        );
+        assert!(seen.insert((*path, *value)), "LABELS: {path}={value} twice");
+        assert!(!keys.is_empty(), "LABELS: {path}={value} without a key");
+    }
+    for (path, value, reason) in WITHOUT_LABEL {
+        assert!(
+            *value == "*" || known(path, value),
+            "WITHOUT_LABEL: {path}={value} unknown"
+        );
+        assert!(enums.iter().any(|l| l.path == *path), "WITHOUT_LABEL: {path} unknown");
+        assert!(!reason.is_empty(), "WITHOUT_LABEL: {path}={value} without a reason");
+    }
+    for (path, value, _) in VALUE_MEANINGS {
+        assert!(known(path, value), "VALUE_MEANINGS: {path}={value} unknown");
+    }
+    let exempt = |path: &str, value: &str| {
+        WITHOUT_LABEL
+            .iter()
+            .any(|w| w.0 == path && (w.1 == "*" || w.1 == value))
+    };
+    for lang in LANGUAGES {
+        let all = choices::values(lang);
+        for l in &enums {
+            for v in &l.values {
+                assert!(
+                    all.iter().any(|c| c.path == l.path && c.value == *v),
+                    "{}={v} missing",
+                    l.path
+                );
+            }
+        }
+        for c in &all {
+            assert!(!c.meaning.is_empty(), "{}={} has no meaning", c.path, c.value);
+            let keys = LABELS.iter().find(|x| x.0 == c.path && x.1 == c.value).map(|x| x.2);
+            if exempt(&c.path, &c.value) {
+                assert!(
+                    keys.is_none(),
+                    "{}={} has a label and is in WITHOUT_LABEL",
+                    c.path,
+                    c.value
+                );
+                continue;
+            }
+            let keys = keys.unwrap_or_else(|| panic!("{}={} has no label of the app (LABELS)", c.path, c.value));
+            assert_eq!(
+                c.labels.len(),
+                keys.len(),
+                "{lang}: {}={} lacks a text {keys:?}",
+                c.path,
+                c.value
+            );
+        }
+    }
+}
+
+/// #304/AK2: The labels come from the text tables of the user interface in the language asked for (no copy in the
+/// code): «Monte Carlo · historisch» in German, the English, French and Italian texts of the same key otherwise.
+#[test]
+fn issue_304_ak2_labels_from_the_text_tables_in_the_language() {
+    let table = |lang: &str| -> Value {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../app/ui/i18n/{lang}.json"));
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    };
+    for lang in engine::choices::LANGUAGES {
+        let expected = table(lang)["source.bootstrap"].as_str().unwrap().to_string();
+        let ch = engine::api::describe(Some(Section::Choices), None, &library(), None, lang)
+            .choices
+            .unwrap();
+        assert_eq!(ch.language, lang);
+        let source = &ch.fields.iter().find(|(p, _)| p == "returns.source").unwrap().1;
+        let bootstrap = source.iter().find(|i| i.name == "bootstrap").unwrap();
+        assert!(
+            bootstrap.meaning.starts_with(&format!("«{expected}» – ")),
+            "{lang}: {}",
+            bootstrap.meaning
+        );
+    }
+    // Another language: German.
+    let ch = engine::api::describe(Some(Section::Choices), None, &library(), None, "es")
+        .choices
+        .unwrap();
+    assert_eq!(ch.language, "de");
+}
+
+/// The text of the section `choices` (German) for a field and a value.
+fn choice_text(path: &str, value: &str) -> String {
+    let ch = catalog(Some(Section::Choices), None).choices.expect("choices");
+    let values = &ch
+        .fields
+        .iter()
+        .find(|(p, _)| p == path)
+        .unwrap_or_else(|| panic!("{path}"))
+        .1;
+    values
+        .iter()
+        .find(|i| i.name == value)
+        .unwrap_or_else(|| panic!("{path}={value}"))
+        .meaning
+        .clone()
+}
+
+/// #304/AK5, AK1: describe names «Monte Carlo · historisch» for bootstrap and «Alle historischen Startzeitpunkte» for
+/// rolling (German), every source with label and meaning.
+#[test]
+fn issue_304_ak5_sources_with_the_labels_of_the_app() {
+    assert!(choice_text("returns.source", "bootstrap").starts_with("«Monte Carlo · historisch» – "));
+    assert!(choice_text("returns.source", "rolling").starts_with("«Alle historischen Startzeitpunkte» – "));
+    assert!(choice_text("returns.source", "fixed").starts_with("«Fixe Renditen» – "));
+    assert!(choice_text("returns.source", "historical").starts_with("«Historisch ab Startzeitpunkt» – "));
+    assert!(choice_text("returns.source", "parametric").starts_with("«Monte Carlo · parametrisch» – "));
+    assert!(choice_text("returns.source", "rolling").contains("one path per start month"));
+    assert!(choice_text("returns.source", "bootstrap").contains("blocks of the historical series"));
+    // AK1: other fields whose values differ from the app.
+    assert!(choice_text("returns.strategy.stocks", "worldJst").starts_with("«Welt (JST)» – "));
+    assert!(choice_text("returns.strategy.bonds", "chShort").starts_with("«Eidgenossenschaft kurzfristig» – "));
+    assert!(choice_text("taxes.mode", "location").starts_with("«Wohnort» – "));
+    assert!(choice_text("pillar3a.*.use", "wealth").starts_with("«Ins freie Vermögen» – "));
+}
+
+/// #304/AK8: Every withdrawal strategy with its value, label of the app and a meaning of one sentence; 3 buckets with
+/// guardrails as the combination it is.
+#[test]
+fn issue_304_ak8_withdrawal_strategies_one_by_one() {
+    let expect = [
+        (
+            "standard",
+            "«Standard»",
+            "Cash reserve, the rest invested by stock share",
+        ),
+        ("three_buckets", "«3-Topf»", "Three buckets"),
+        (
+            "three_buckets_guardrails",
+            "«3-Topf + Guardrails»",
+            "withdrawal.buckets.spending = guardrails",
+        ),
+        ("guardrails", "«Guardrails»", "Guyton-Klinger"),
+        ("fixed_rate", "«Fixe Rate»", "fixed rate of the liquid wealth"),
+        ("vpw", "VPW", "Variable percentage withdrawal"),
+        ("endowment", "«Endowment»", "Endowment rule"),
+    ];
+    for (value, label, meaning) in expect {
+        let t = choice_text("withdrawal.strategy", value);
+        let (labels, text) = t.split_once(" – ").unwrap_or_else(|| panic!("{value}: {t}"));
+        assert!(labels.contains(label), "{value}: {t}");
+        assert!(text.contains(meaning), "{value}: {t}");
+        assert_eq!(text.matches(". ").count(), 0, "{value}: one sentence: {t}");
+    }
+}
+
+/// #304/AK1: The meanings of the fields `returns.source` and `withdrawal.strategy` point to the section `choices`.
+#[test]
+fn issue_304_ak1_fields_point_to_the_choices() {
+    let c = catalog(Some(Section::Fields), None);
+    let f = c.fields.unwrap();
+    let row = |g: &str, name: &str| {
+        f.groups[g]
+            .iter()
+            .find(|r| r.starts_with(&format!("{name}:")))
+            .unwrap()
+            .clone()
+    };
+    assert!(row("returns", "source").contains("describe choices"));
+    assert!(row("withdrawal", "strategy").contains("describe choices"));
+    assert!(f.notes.iter().any(|n| n.contains("describe choices")));
 }

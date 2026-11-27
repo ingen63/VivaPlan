@@ -71,6 +71,8 @@ The rules above apply in the same way.
    performance, limits. Read one section with `vivaplan describe <section>`, for example `vivaplan describe fields`;
    `--plan <plan.vplan>` measures the computing time on that plan; `--json` gives the format `vivaplan-describe/1`.
    Read the catalog instead of guessing field names. `vivaplan schema` prints the full JSON schema of a plan.
+   People name a choice with its label in the app («Monte Carlo · historisch»); `vivaplan describe choices` gives
+   the value of the plan for every label (`bootstrap`).
 3. `vivaplan run <plan.vplan> --json` - compute the plan as it is. Add `--metric '<json>'` for the exact quantity
    the question asks about.
 4. For "what if": `vivaplan set` to a new file, then `run`; or one `vivaplan evaluate` experiment for many variants.

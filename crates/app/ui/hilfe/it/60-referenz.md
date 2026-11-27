@@ -218,6 +218,7 @@ Parole chiave: describe, catalogo, IA, campi, unità, intervallo di valori, gran
 | `examples` | tre esperimenti di esempio (spese con al massimo il 5 % di rovina, rendita o capitale, quota azionaria e regola di prelievo) che girano sulla pianificazione di esempio |
 | `performance` | Microsecondi per calcolo, misurati alla chiamata (circa mezzo secondo) sulla pianificazione di `--plan`, altrimenti sulla pianificazione di esempio con rendimenti parametrici; permettono di stimare la durata di un esperimento |
 | `limits` | Limiti del modello: anni indipendenti nel modello parametrico, errore di selezione con molte varianti, incertezza, nominale e reale, tempo di calcolo |
+| `choices` | solo richiesta da sola: ogni valore di ogni campo di scelta con la sua denominazione nell’app (nella lingua dell’interfaccia) e il suo significato, p. es. `bootstrap` = «Monte Carlo · storico» |
 
 Con `--json` il catalogo arriva nel formato fisso `vivaplan-describe/1`. Le descrizioni complete e la struttura esatta sono mostrate da `vivaplan schema`.
 

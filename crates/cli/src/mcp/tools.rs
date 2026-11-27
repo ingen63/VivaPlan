@@ -60,8 +60,9 @@ pub(crate) fn list() -> Vec<Value> {
             "describe",
             "Catalog for AIs",
             "What VivaPlan can change, vary and measure: field paths with units, forms of time series, state variables, \
-             metric building blocks, experiment format, examples, measured computing time and limits. Without section a \
-             compact overview of all sections; read the section you need. With plan the computing time is measured on that plan.",
+             metric building blocks, experiment format, examples, measured computing time and limits; section choices \
+             explains every value of a choice field with its label in the app. Without section a compact overview of \
+             the other sections; read the section you need. With plan the computing time is measured on that plan.",
             json!({
                 "section": { "type": "string", "enum": sections, "description": "Part of the catalog; without: all sections." },
                 "plan": { "type": "string", "description": "Id of an open plan (p1, …) to measure the computing time on." },
@@ -694,7 +695,7 @@ fn describe(s: &mut Session, args: &Value) -> Outcome {
         .and_then(Path::parent)
         .map(Path::to_path_buf)
         .unwrap_or_default();
-    let catalog = engine::api::describe(section, plan.as_ref(), &base, s.data.library());
+    let catalog = engine::api::describe(section, plan.as_ref(), &base, s.data.library(), s.data.language());
     Ok(Answer::data(serde_json::to_value(catalog).map_err(|e| e.to_string())?))
 }
 
@@ -1229,6 +1230,38 @@ mod tests {
         let d = ok(call(&mut s, "describe", &json!({ "section": "metrics" })));
         assert!(d["metrics"].is_object(), "{d}");
         assert!(d.get("fields").is_none_or(Value::is_null));
+    }
+
+    /// #304/AK3, AK2: simulation_run points to the section choices for the source; describe answers it with the labels
+    /// in the language of the app's settings (fr) and stays under the limit of a tool result.
+    #[test]
+    fn issue_304_ak3_simulation_run_points_to_choices() {
+        let all = list();
+        let run = all.iter().find(|t| t["name"] == "simulation_run").unwrap();
+        let d = run["description"].as_str().unwrap();
+        assert!(d.contains("describe with section choices"), "{d}");
+        assert!(d.contains("«Monte Carlo · historisch» is bootstrap"), "{d}");
+        let desc = all.iter().find(|t| t["name"] == "describe").unwrap();
+        assert!(desc["inputSchema"]["properties"]["section"]["enum"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("choices")));
+        let mut settings = Map::new();
+        settings.insert("language".into(), json!("fr"));
+        let mut s = Session::new(
+            crate::AppData {
+                library: None,
+                settings,
+            },
+            false,
+        );
+        let c = ok(call(&mut s, "describe", &json!({ "section": "choices" })));
+        assert_eq!(c["choices"]["language"], "fr", "{c}");
+        let fr: Value = serde_json::from_str(include_str!("../../../app/ui/i18n/fr.json")).unwrap();
+        let label = fr["source.bootstrap"].as_str().unwrap();
+        let text = c["choices"]["fields"]["returns.source"]["bootstrap"].as_str().unwrap();
+        assert!(text.starts_with(&format!("«{label}»")), "{text}");
+        assert!(c.to_string().chars().count() < super::super::MAX_CHARS);
     }
 
     /// #271/AK8: plan_set sets the care home of a person (also as a whole object), describe names its fields.

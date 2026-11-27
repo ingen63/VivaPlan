@@ -494,6 +494,13 @@ Bedeutung, die Formen zeitabhängiger Werte, die Zustandsgrössen der Kennlinien
 Formen von Variationsraum und Ziel, drei Beispiel-Experimente, die beim Aufruf gemessenen Mikrosekunden je Lauf (rund
 0,5 s, an der angegebenen oder der Beispielplanung) und die Grenzen des Modells. Der Katalog wird aus Schema und Code
 erzeugt, ist englisch und bleibt unter 20'000 Zeichen; einzelne Abschnitte mit `describe <abschnitt>`.
+Auswahlfelder (#304): Der Abschnitt `choices` (nur einzeln abgefragt) erklärt jeden Wert jedes Felds mit festen Werten
+einzeln mit seiner Bezeichnung in der App und seiner Bedeutung, etwa `returns.source`: `bootstrap` ist «Monte Carlo ·
+historisch», `rolling` «Alle historischen Startzeitpunkte»; bei den Entnahmestrategien auch «3-Topf + Guardrails»
+(`three_buckets` mit `withdrawal.buckets.spending` = `guardrails`). Die Bezeichnungen stammen aus den Texttabellen der
+Oberfläche (`ui/i18n`), in der Sprache der Oberfläche (Einstellung der App, bei «wie System» die Sprache der Umgebung,
+sonst Deutsch); Werte ohne Auswahl in der App (z. B. Grundstückgewinnsteuer-Modelle `curve` und `return` aus den
+Steuerdaten) haben nur die Bedeutung.
 
 Agent Skill (#208): Dem Paket liegt die Anleitung `vivaplan-skill` (Ordner mit `SKILL.md`, offenes Format) für
 KI-Assistenten mit Zugriff auf die Kommandozeile bei, etwa Claude Code oder Claude Desktop (Bereich «Code»). Sie
@@ -523,7 +530,11 @@ Angaben mit Feldpfad (`missing`: Name der Person, Einkommen, Ausgaben, Vermögen
 Werte (`assumed`: Geburtsdatum, Alter der Meilensteine, Steuertarife) und was zusätzlich zu erfragen ist (Partner,
 Säule 3a, Liegenschaften, einmalige Ausgaben). `new` zusammen mit `path` oder `example` ist ein Fehler. Die Anweisungen
 des Servers sagen der KI, für eigene Zahlen so zu beginnen, Fehlendes beim Menschen zu erfragen und keine Werte zu
-erfinden; die Beispielplanung dient nur zum Vorführen. `plan_save` speichert eine Planung ohne Datei nur mit einem Pfad
+erfinden; die Beispielplanung dient nur zum Vorführen. Ausserdem (#304): Menschen nennen Auswahlfelder mit den
+Bezeichnungen der App, die KI schlägt den Wert vor dem Setzen in `describe` mit Abschnitt `choices` nach (darauf
+verweist auch die Beschreibung von `simulation_run` für die Renditequelle). Bei Fragen zu Entnahme, Vermögensverzehr
+oder Ruinrisiko nennt sie die eingestellte Entnahmestrategie mit ihrer Bezeichnung in der App, weist auf die übrigen
+hin und wechselt die Strategie nur auf Wunsch des Menschen. `plan_save` speichert eine Planung ohne Datei nur mit einem Pfad
 in einem freigegebenen Ordner; ein relativer Pfad gilt dann im ersten freigegebenen Ordner, ein Dateiname allein
 genügt (#302). Das sagen die Beschreibung von `plan_save.path` und der Hinweis `next` von `new: true`. `~/` am Anfang
 von `path` steht bei `plan_save` und `plan_open` für den Benutzerordner wie bei `--allow-dir`; danach gilt Regel 6

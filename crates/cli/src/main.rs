@@ -147,6 +147,17 @@ impl AppData {
         self.library.as_deref()
     }
 
+    /// #304: Language of the app's user interface: the choice in the settings, with «wie System» the locale of the
+    /// environment (`LC_ALL`, `LC_MESSAGES`, `LANG`), otherwise German.
+    pub(crate) fn language(&self) -> &'static str {
+        let choice = self.settings.get("language").and_then(serde_json::Value::as_str);
+        let locale = ["LC_ALL", "LC_MESSAGES", "LANG"]
+            .iter()
+            .filter_map(|k| std::env::var(k).ok())
+            .find(|v| !v.is_empty());
+        engine::choices::ui_language(choice, locale.as_deref())
+    }
+
     /// Reads a plan and adds the settings as the app does with every calculation (limits, affordability).
     pub(crate) fn read_plan(&self, path: &Path) -> Result<serde_json::Value, engine::Error> {
         let mut plan = engine::api::read_plan(path)?;

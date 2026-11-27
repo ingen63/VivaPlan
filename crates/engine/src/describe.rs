@@ -48,10 +48,12 @@ pub enum Section {
     Performance,
     /// Limits of the model.
     Limits,
+    /// #304: Every value of a choice field with its label in the app and its meaning.
+    Choices,
 }
 
 impl Section {
-    pub const ALL: [Section; 8] = [
+    pub const ALL: [Section; 9] = [
         Section::Fields,
         Section::Series,
         Section::State,
@@ -60,6 +62,7 @@ impl Section {
         Section::Examples,
         Section::Performance,
         Section::Limits,
+        Section::Choices,
     ];
 
     pub fn name(self) -> &'static str {
@@ -72,6 +75,7 @@ impl Section {
             Section::Examples => "examples",
             Section::Performance => "performance",
             Section::Limits => "limits",
+            Section::Choices => "choices",
         }
     }
 
@@ -110,6 +114,9 @@ pub struct Catalog {
     pub performance: Option<Performance>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limits: Option<Vec<&'static str>>,
+    /// #304: only as the section `choices` (the whole catalog stays small).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub choices: Option<crate::choices::Choices>,
 }
 
 /// A name with its meaning.
@@ -170,6 +177,7 @@ impl Fields {
                 "Set with vivaplan set <plan> <path>=<value> or in an experiment (set, vary); * is a list index.",
                 "type series: a course over time (section series); one step with path@<point in time>.",
                 "Meanings: vivaplan describe fields; full texts and structure: vivaplan schema.",
+                "Values a|b with the labels of the app: describe choices.",
             ],
             units: UNIT_LEGEND.iter().map(|&(u, m)| item(u, m)).collect(),
             row: if meanings {
@@ -651,7 +659,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ("returns.saronSeries", "Series of the SARON (library file)."),
     (
         "returns.source",
-        "Source of the returns; parametric and bootstrap: Monte Carlo.",
+        "Source of the returns; values with the app labels: describe choices.",
     ),
     ("returns.strategy.weights.ch", "Switzerland."),
     ("returns.strategy.weights.usa", "United States."),
@@ -748,7 +756,10 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "withdrawal.guardrails.lower",
         "Lower guardrail: relative downward deviation of the rate.",
     ),
-    ("withdrawal.strategy", "Withdrawal strategy after retirement."),
+    (
+        "withdrawal.strategy",
+        "Withdrawal strategy after retirement; app labels: describe choices.",
+    ),
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -886,6 +897,8 @@ pub struct Leaf {
     pub kind: String,
     pub values: Vec<String>,
     pub meaning: String,
+    /// #304: Meaning of single values from the schema (doc comment of an enum variant); values without one are missing.
+    pub value_meanings: BTreeMap<String, String>,
 }
 
 fn join(path: &str, key: &str) -> String {
@@ -903,6 +916,7 @@ fn walk<'a>(root: &'a Value, nodes: &[&'a Value], path: &str, out: &mut Vec<Leaf
             kind: kind.to_string(),
             values: vec![],
             meaning: schema_meaning(root, nodes),
+            value_meanings: BTreeMap::new(),
         });
         return;
     }
@@ -911,6 +925,7 @@ fn walk<'a>(root: &'a Value, nodes: &[&'a Value], path: &str, out: &mut Vec<Leaf
     let mut items = vec![];
     let mut types = vec![];
     let mut values = vec![];
+    let mut value_meanings = BTreeMap::new();
     let mut map = false;
     for a in &alts {
         for (k, p) in a.get("properties").and_then(Value::as_object).into_iter().flatten() {
@@ -929,6 +944,14 @@ fn walk<'a>(root: &'a Value, nodes: &[&'a Value], path: &str, out: &mut Vec<Leaf
             let v = v.as_str().map_or_else(|| v.to_string(), str::to_string);
             if !values.contains(&v) {
                 values.push(v);
+            }
+        }
+        // #304: an alternative with a single value carries the meaning of that value.
+        if let Some([v]) = a.get("enum").and_then(Value::as_array).map(Vec::as_slice) {
+            let text = doc(a);
+            if !text.is_empty() {
+                let v = v.as_str().map_or_else(|| v.to_string(), str::to_string);
+                value_meanings.entry(v).or_insert(text);
             }
         }
     }
@@ -962,6 +985,7 @@ fn walk<'a>(root: &'a Value, nodes: &[&'a Value], path: &str, out: &mut Vec<Leaf
         kind: kind.to_string(),
         values,
         meaning: schema_meaning(root, nodes),
+        value_meanings,
     });
 }
 
@@ -1295,8 +1319,15 @@ pub const LIMITS: &[&str] = &[
 ];
 
 /// The catalog, all sections or one. The performance is measured on `plan` (`None`: the example plan) only if it is
-/// part of the answer.
-pub fn describe(section: Option<Section>, plan: Option<&Value>, base_dir: &Path, library: Option<&Path>) -> Catalog {
+/// part of the answer. #304: the section `choices` only when asked for, with the labels in `language` (de, en, fr, it;
+/// another one: German).
+pub fn describe(
+    section: Option<Section>,
+    plan: Option<&Value>,
+    base_dir: &Path,
+    library: Option<&Path>,
+    language: &str,
+) -> Catalog {
     let want = |s: Section| section.is_none_or(|x| x == s);
     Catalog {
         format: FORMAT,
@@ -1310,6 +1341,7 @@ pub fn describe(section: Option<Section>, plan: Option<&Value>, base_dir: &Path,
         examples: want(Section::Examples).then(examples),
         performance: want(Section::Performance).then(|| performance(plan, base_dir, library)),
         limits: want(Section::Limits).then(|| LIMITS.to_vec()),
+        choices: (section == Some(Section::Choices)).then(|| crate::choices::choices(language)),
     }
 }
 

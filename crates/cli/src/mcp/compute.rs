@@ -40,7 +40,9 @@ pub(crate) fn list() -> Vec<Value> {
             "simulation_run",
             "Simulate a plan",
             "Simulates an open plan as the desktop app does: according to its source of returns (fixed, historical, rolling, \
-             bootstrap, parametric) and with the variations stored in the plan. Returns the id of the result (r1, …), the \
+             bootstrap, parametric; returns.source) and with the variations stored in the plan. To choose the source by its \
+             label in the app («Monte Carlo · historisch» is bootstrap, «Alle historischen Startzeitpunkte» is rolling) \
+             read describe with section choices first. Returns the id of the result (r1, …), the \
              key figures, the result in words and the estimate of the duration. First the duration is estimated; from 60 s \
              nothing is computed without confirm: true (the answer then gives the estimate). Long computations report \
              progress and can be cancelled. Details afterwards with result_get (yearly, events, bands, variations). To \

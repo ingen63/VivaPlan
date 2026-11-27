@@ -218,6 +218,7 @@ Stichworte: describe, Katalog, KI, Felder, Einheit, Wertebereich, Zustandsgröss
 | `examples` | drei Beispiel-Experimente (Ausgaben bei höchstens 5 % Ruin, Rente oder Kapital, Aktienanteil und Entnahmeregel), die auf der Beispielplanung laufen |
 | `performance` | Mikrosekunden je Lauf, beim Aufruf gemessen (rund eine halbe Sekunde) an der Planung von `--plan`, sonst an der Beispielplanung mit parametrischen Renditen; daraus lässt sich die Dauer eines Experiments abschätzen |
 | `limits` | Grenzen des Modells: unabhängige Jahre im parametrischen Modell, Auswahlfehler bei vielen Varianten, Unsicherheit, nominal und real, Rechenzeit |
+| `choices` | nur einzeln abgefragt: jeder Wert jedes Auswahlfelds mit seiner Bezeichnung in der App (in der Sprache der Oberfläche) und seiner Bedeutung, etwa `bootstrap` = «Monte Carlo · historisch» |
 
 Mit `--json` kommt der Katalog im festen Format `vivaplan-describe/1`. Die vollständigen Beschreibungen und den genauen Aufbau zeigt `vivaplan schema`.
 

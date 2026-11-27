@@ -218,6 +218,7 @@ Mots-clés: describe, catalogue, IA, champs, unité, plage de valeurs, grandeur 
 | `examples` | trois expériences d’exemple (dépenses avec au plus 5 % de ruine, rente ou capital, part d’actions et règle de prélèvement) qui tournent sur la planification d’exemple |
 | `performance` | Microsecondes par calcul, mesurées lors de l’appel (environ une demi-seconde) sur la planification de `--plan`, sinon sur la planification d’exemple avec rendements paramétriques; elles permettent d’estimer la durée d’une expérience |
 | `limits` | Limites du modèle : années indépendantes dans le modèle paramétrique, erreur de sélection avec de nombreuses variantes, incertitude, nominal et réel, temps de calcul |
+| `choices` | uniquement demandée seule : chaque valeur de chaque champ à choix avec sa désignation dans l’app (dans la langue de l’interface) et sa signification, p. ex. `bootstrap` = «Monte Carlo · historique» |
 
 Avec `--json`, le catalogue est fourni au format fixe `vivaplan-describe/1`. Les descriptions complètes et la structure exacte sont affichées par `vivaplan schema`.
 

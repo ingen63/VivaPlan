@@ -6,7 +6,7 @@
       "openWorldHint": false,
       "readOnlyHint": true
     },
-    "description": "What VivaPlan can change, vary and measure: field paths with units, forms of time series, state variables, metric building blocks, experiment format, examples, measured computing time and limits. Without section a compact overview of all sections; read the section you need. With plan the computing time is measured on that plan.",
+    "description": "What VivaPlan can change, vary and measure: field paths with units, forms of time series, state variables, metric building blocks, experiment format, examples, measured computing time and limits; section choices explains every value of a choice field with its label in the app. Without section a compact overview of the other sections; read the section you need. With plan the computing time is measured on that plan.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -24,7 +24,8 @@
             "experiment",
             "examples",
             "performance",
-            "limits"
+            "limits",
+            "choices"
           ],
           "type": "string"
         }
@@ -245,7 +246,7 @@
       "openWorldHint": false,
       "readOnlyHint": true
     },
-    "description": "Simulates an open plan as the desktop app does: according to its source of returns (fixed, historical, rolling, bootstrap, parametric) and with the variations stored in the plan. Returns the id of the result (r1, …), the key figures, the result in words and the estimate of the duration. First the duration is estimated; from 60 s nothing is computed without confirm: true (the answer then gives the estimate). Long computations report progress and can be cancelled. Details afterwards with result_get (yearly, events, bands, variations). To compare changes or search for better values use evaluate.",
+    "description": "Simulates an open plan as the desktop app does: according to its source of returns (fixed, historical, rolling, bootstrap, parametric; returns.source) and with the variations stored in the plan. To choose the source by its label in the app («Monte Carlo · historisch» is bootstrap, «Alle historischen Startzeitpunkte» is rolling) read describe with section choices first. Returns the id of the result (r1, …), the key figures, the result in words and the estimate of the duration. First the duration is estimated; from 60 s nothing is computed without confirm: true (the answer then gives the estimate). Long computations report progress and can be cancelled. Details afterwards with result_get (yearly, events, bands, variations). To compare changes or search for better values use evaluate.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

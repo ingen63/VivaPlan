@@ -956,8 +956,9 @@ pub fn describe(
     plan: Option<&Value>,
     base_dir: &Path,
     library: Option<&Path>,
+    language: &str,
 ) -> crate::describe::Catalog {
-    crate::describe::describe(section, plan, base_dir, library)
+    crate::describe::describe(section, plan, base_dir, library, language)
 }
 
 #[cfg(test)]

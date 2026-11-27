@@ -641,10 +641,15 @@ pub struct Wealth {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ReturnSource {
+    /// Fixed returns per year from `returns.fixed`, one path.
     Fixed,
+    /// The historical series from one start point in time on, one path.
     Historical,
+    /// The historical series from every start month, one path per start month.
     Rolling,
+    /// Monte Carlo: random paths from blocks of the historical series.
     Bootstrap,
+    /// Monte Carlo: random paths from a statistical model of the returns.
     Parametric,
 }
 
@@ -1042,10 +1047,15 @@ pub enum Strategy {
     /// Cash reserve, the rest invested by stock share, monthly rebalancing.
     #[default]
     Standard,
+    /// Three buckets: cash, bonds and stocks, refilled from the stocks by a rule (`withdrawal.buckets`).
     ThreeBuckets,
+    /// Guyton-Klinger: initial rate on the wealth, spending adjusted when the rate leaves the guardrails.
     Guardrails,
+    /// A fixed rate of the liquid wealth every year (`withdrawal.fixedRate.rate`).
     FixedRate,
+    /// Variable percentage withdrawal: annuity rate up to an age with an assumed real return.
     Vpw,
+    /// Endowment rule (Yale): target rate, smoothed with the spending of the previous year.
     Endowment,
 }
 
@@ -1204,10 +1214,14 @@ impl TaxMode {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Church {
+    /// No church tax.
     #[default]
     None,
+    /// Evangelical reformed church.
     Reformed,
+    /// Roman catholic church.
     Catholic,
+    /// Christ catholic church.
     ChristCatholic,
 }
 
@@ -1438,8 +1452,11 @@ impl Default for Affordability {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PropertyStatus {
+    /// Owned at the simulation start.
     Owned,
+    /// Purchase planned at a later point in time.
     Planned,
+    /// Rented home: rent instead of a property.
     Rent,
 }
 
@@ -1590,14 +1607,17 @@ pub struct Tranche {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum RateKind {
+    /// Fixed interest rate for the period.
     #[default]
     Fixed,
+    /// SARON plus margin.
     Saron,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum AmortMode {
+    /// Amortization reduces the debt.
     #[default]
     Direct,
     /// Contribution into pillar 3a instead of reducing the debt.
@@ -1627,8 +1647,10 @@ pub struct Period {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PayoutUse {
+    /// Repays the mortgage.
     #[default]
     Repay,
+    /// Goes to the liquid wealth.
     Wealth,
 }
 
@@ -1675,8 +1697,10 @@ pub struct Pillar3aAccount {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PayoutAt {
+    /// Fixed date (`date`).
     #[default]
     Date,
+    /// Age of the account holder (`years`).
     Age,
 }
 

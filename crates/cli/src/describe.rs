@@ -110,6 +110,15 @@ pub(crate) fn text(c: &Catalog) -> String {
         }
         let _ = writeln!(out, "Estimate: {}", p.estimate);
     }
+    if let Some(ch) = &c.choices {
+        let _ = writeln!(out, "\n## choices (labels in the language {})", ch.language);
+        for n in &ch.notes {
+            let _ = writeln!(out, "{n}");
+        }
+        for (path, values) in &ch.fields {
+            items(&mut out, path, values);
+        }
+    }
     if let Some(l) = &c.limits {
         let _ = writeln!(out, "\n## limits");
         for x in l {
@@ -140,7 +149,7 @@ pub(crate) fn cmd_describe(args: &[String]) -> R {
         .and_then(|p| Path::new(p).parent())
         .unwrap_or(Path::new(""))
         .to_path_buf();
-    let catalog = engine::api::describe(section, plan.as_ref(), &base, data.library());
+    let catalog = engine::api::describe(section, plan.as_ref(), &base, data.library(), data.language());
     if json_out(args) == JsonOut::Stdout {
         print_json(&catalog)
     } else {

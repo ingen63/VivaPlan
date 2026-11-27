@@ -218,6 +218,7 @@ Keywords: describe, catalog, AI, fields, unit, range, state variable, metric, co
 | `examples` | three example experiments (spending at most 5 % ruin, pension or lump sum, stock allocation and withdrawal rule) that run on the example plan |
 | `performance` | Microseconds per run, measured at the call (about half a second) on the plan of `--plan`, otherwise on the example plan with parametric returns; it gives an estimate of the duration of an experiment |
 | `limits` | Limits of the model: independent years in the parametric model, selection error with many variants, uncertainty, nominal and real, computing time |
+| `choices` | only asked for on its own: every value of every choice field with its label in the app (in the language of the user interface) and its meaning, e.g. `bootstrap` = «Monte Carlo · historical» |
 
 With `--json` the catalog comes in the fixed format `vivaplan-describe/1`. The full descriptions and the exact structure are shown by `vivaplan schema`.
 
