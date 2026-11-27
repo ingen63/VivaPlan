@@ -180,6 +180,30 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
    in `tax_location.rs` und `tax_capital_location.rs` bleiben als zweite Prüfung (#292); Toleranz ±5 %.
 8. Tests: `python3 -I -m unittest discover -s tools/steuerdaten` und `make test`.
 
+## Steuerfüsse aus den Quellen der Kantone (#285, Weg b3, Versuch)
+
+`steuerfuesse.py` liest die Steuerfüsse aus den Veröffentlichungen der Kantone statt aus dem ESTV-Steuerrechner und
+vergleicht sie mit einer Steuerdatei. Bisher nur als Versuch für zwei Kantone; die Steuerdatei baut weiter `build.py`.
+
+- **ZH:** offene Daten des Statistischen Amts, `kanton_zuerich_stf_aktuell.csv` («Steuerfüsse der Zürcher Gemeinden»
+  auf opendata.swiss, Nutzung mit Quellenangabe). Die Datei enthält den Gemeindesteuerfuss ohne Kirche und mit jeder
+  Kirche; der Kirchensteuerfuss ist die Differenz. Der Staatssteuerfuss fehlt darin, er ist ein einziger Wert
+  (`--zh-canton`, 2026: 95 %).
+- **BE:** PDF der Finanzverwaltung «Steueranlagen der Gemeinden und Steuersätze der Kirchgemeinden»
+  (`fv-stat-steueranlage_<Jahr>_1.pdf`), Tabelle 2.1; die Steueranlage des Kantons steht in Abschnitt 1.2. Das PDF wird
+  ohne Bibliothek gelesen (nur Standardbibliothek). Es hat keine BFS-Nummern; die Namen werden mit der Steuerdatei
+  abgeglichen, auch abgekürzte («Muri b. B.»). Die Geodaten «Steueranlagen pro Gemeinde» (opendata.swiss) enthalten
+  keine Kirchensteuer und lagen im November 2026 noch beim Steuerjahr 2025.
+
+Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository.
+
+```bash
+python3 -I tools/steuerdaten/steuerfuesse.py crates/engine/data/steuern-2026.json --zh <csv> --be <pdf>
+```
+
+Gemeinden mit mehreren Teilen (ZH) oder Kirchgemeinden mit eigenem Satz (BE, Zeilen unter der Gemeinde) erscheinen als
+Hinweis; genommen wird der erste Teil bzw. die Hauptzeile, wie im ESTV-Export.
+
 ## Rechtliches
 
 Für die ESTV-Daten gibt es keine offene Lizenz (rechtliche Hinweise admin.ch). Die schriftliche Zustimmung der
