@@ -192,7 +192,8 @@ Desktop-App ist davon getrennt.
 
 ## 6 Daten und Datenschutz
 
-**Was sich nicht ändert.** Die Desktop-App und der Rechenkern greifen weiterhin nie aufs Netzwerk zu. Auch
+**Was sich nicht ändert.** Die Desktop-App und der Rechenkern laden weiterhin nichts und senden nichts (einzige Ausnahme:
+die Update-Suche der App, nur mit Zustimmung, #309). Auch
 `vivaplan mcp` öffnet keine Verbindung: Es liest und schreibt nur Standardeingabe, Standardausgabe und Dateien.
 
 **Was neu ist.** Wer VivaPlan in Claude einrichtet, entscheidet bewusst, Daten an Claude zu geben. Alles, was ein

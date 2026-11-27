@@ -119,19 +119,20 @@ Zahlen in Ihrer Sprache. Zum Beispiel:
 Alles Weitere steht in der Hilfe unter «KI-Programme verbinden» ([Referenz](crates/app/ui/hilfe/de/60-referenz.md)).
 Die Ergebnisse sind Modellrechnungen ohne Gewähr, auch wenn eine KI sie erklärt.
 
-## Ihre Daten bleiben bei Ihnen
+## Ihre Daten und das Internet
 
-Die App ist zu 100 % lokal. Kein Konto, keine Cloud, kein Tracking: VivaPlan greift nie aufs Netzwerk zu, weder die
-App noch der Rechenkern noch der MCP-Server `vivaplan mcp`.
+Gerechnet und gespeichert wird zu 100 % lokal. Kein Konto, keine Cloud, kein Tracking: Die App, der Rechenkern und der
+MCP-Server `vivaplan mcp` laden keine Daten und senden nichts.
 
-Einzige Ausnahme in der App ist die Suche nach Updates, und nur mit Ihrer Zustimmung: Beim ersten Start fragt VivaPlan,
+Die App selbst verbindet sich nur für die Suche nach Updates mit dem Internet, und nur mit Ihrer Zustimmung: Beim ersten Start fragt VivaPlan,
 ob es beim Start nach neuen Versionen suchen darf. Mit «Ja» fragt die App die Releases von VivaPlan auf GitHub ab und
 überträgt dabei nur Version und Betriebssystem, keine Planungsdaten; installiert wird nur auf Ihren Klick. Mit «Nein»
-bleibt die App ganz ohne Netzwerk. Die Wahl lässt sich in den Einstellungen (Reiter «Allgemein») jederzeit ändern.
+bleibt die App ganz ohne Internet. Die Wahl lässt sich in den Einstellungen (Reiter «Allgemein») jederzeit ändern.
 
-Die einzige Ausnahme ist eine KI, die Sie selbst anbinden: Mit einer Cloud-KI gehen die Planungsdaten, die die KI
-liest, an deren Anbieter; nur mit einem lokalen Modell bleiben sie auf Ihrem Rechner
-([mehr dazu](#vivaplan-mit-einer-ki-nutzen)).
+Planungsdaten verlassen den Rechner nur, wenn Sie selbst eine KI anbinden und nutzen: Mit einer Cloud-KI gehen die
+Daten, die die KI liest, an deren Anbieter; nur mit einem lokalen Modell bleiben sie auf Ihrem Rechner
+([mehr dazu](#vivaplan-mit-einer-ki-nutzen)). Links in der App (Einführungsvideos, «VivaPlan unterstützen») öffnen
+Ihren Browser mit einer festen Adresse; die App selbst lädt dabei nichts.
 
 Eine Planung ist eine
 einzelne Datei (`.vplan`), die Sie speichern, kopieren und archivieren wie jedes andere Dokument.

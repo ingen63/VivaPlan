@@ -4,7 +4,7 @@
 
 Lokale Desktop-App für die Schweizer Pensionsplanung: Monat für Monat simuliert sie Einkommen, Pensionskasse, AHV,
 Steuern, Immobilien und Hypotheken bis zum Lebensende, mit historischen Daten oder Monte Carlo, sechs Entnahmestrategien,
-Szenarien und einer Optimierung, die die passende Strategie sucht. Alle Daten bleiben auf dem eigenen Rechner.
+Szenarien und einer Optimierung, die die passende Strategie sucht. Gerechnet und gespeichert wird auf dem eigenen Rechner.
 
 ## Worum es geht
 
@@ -17,9 +17,9 @@ Weil die Börsenrenditen unsicher sind, rechnet die App nicht nur einen Verlauf,
 (Monte Carlo oder alle historischen Startzeitpunkte) und zeigt, in wie vielen davon das Geld reicht, einschliesslich
 des 1. und 99. Perzentils und des schlechtesten Laufs.
 
-Die App läuft auf macOS, Windows und Linux. Sie greift nie aufs Netzwerk zu (das gilt für die App, den Rechenkern und
-den MCP-Server `vivaplan mcp`): Planungen, Zeitreihen und Ergebnisse
-bleiben ausschliesslich auf dem eigenen Rechner. Einzige Ausnahme ist die Suche nach Updates in der App, und nur mit
+Die App läuft auf macOS, Windows und Linux. Berechnen und Speichern laufen ohne Internet: Die App, der Rechenkern und
+der MCP-Server `vivaplan mcp` laden nichts und senden nichts; Planungen, Zeitreihen und Ergebnisse liegen auf dem
+eigenen Rechner (#238). Einzige Ausnahme ist die Suche nach Updates in der App, und nur mit
 Zustimmung (#309): Beim ersten Start (nach der Beta-Aktivierung; bestehende Installationen einmal nach dem Update) fragt
 die App, ob sie beim Start nach neuen Versionen suchen darf. Mit «Ja» fragt sie bei jedem Start im Hintergrund das
 Manifest der Releases von VivaPlan auf GitHub ab (übertragen werden nur Version und Betriebssystem, keine
@@ -28,7 +28,8 @@ nach dem Klick, danach startet die App neu. Updates sind signiert; eine Version 
 installiert, ein Hinweis nennt den Grund. Ohne Internet oder bei einem Fehler des Servers startet die App normal, der
 Fehler steht nur im Protokoll. Mit «Nein» oder ohne Antwort baut die App nie eine Verbindung auf. Die Wahl steht in den
 Einstellungen (Reiter «Allgemein»). Daten verlassen den Rechner nur, wenn man VivaPlan selbst mit einer KI
-verbindet (`vivaplan mcp`, Kommandozeile), und dann nur das, was die KI abfragt. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
+verbindet (`vivaplan mcp`, Kommandozeile), und dann nur das, was die KI abfragt. Links (Einführungsvideos, Spendenlink) öffnen den Standardbrowser mit einer festen
+Adresse; die App selbst lädt dabei nichts. Eine Planung ist eine einzelne Datei (`.vplan`), die sich speichern,
 kopieren und archivieren lässt; ein Doppelklick auf die Datei öffnet sie in VivaPlan. Beim Start öffnet die Desktop-App die zuletzt geöffnete oder gespeicherte Planung (sonst eine mitgelieferte Beispielplanung); beim Beenden mit ungespeicherten Änderungen fragt sie nach. Das Menü «Datei → Zuletzt geöffnet» zeigt die letzten 10 geöffneten oder gespeicherten Planungen zum schnellen Wechseln; eine nicht mehr vorhandene Datei meldet die App und entfernt sie aus der Liste, «Liste löschen» leert sie. Die Liste enthält nur die Dateipfade und liegt in den lokalen Einstellungen der App.
 
 VivaPlan hiess früher «RetirementPlanner». Planungen von damals (`.rplan`) lassen sich weiterhin öffnen; beim Speichern
