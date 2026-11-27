@@ -263,6 +263,9 @@ mod tests {
                 "A.B",
                 "--until",
                 "2099-12-31",
+                // fixed id: without it, Windows fails earlier for lack of random numbers (#278)
+                "--id",
+                "T1",
             ]),
             repo,
         )
