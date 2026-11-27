@@ -6,6 +6,7 @@ Run: `python3 -I -m unittest discover -s tools/steuerdaten`
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -167,6 +168,117 @@ class ReadFrenchCantons(unittest.TestCase):
         self.assertEqual(steuerfuesse.words("St-Martin (Lac)"), ["saint", "martin"])
         self.assertEqual(steuerfuesse.words("Vandœuvres"), ["vandoeuvres"])
         self.assertEqual(steuerfuesse.words("Les"), ["les"])
+
+
+# invented cantons «XA» … for the general reader
+TABLE_REF = [
+    [9301, "Seeberg", "XA", [1.0, 0.9, 0.2, 0.15, 0.1], [1.0, 0.9, 0.2, 0.15, 0.1]],
+    [9302, "Talheim", "XA", [1.0, 1.1, 0.25, 0.2, 0.0], [1.0, 1.1, 0.25, 0.2, 0.0]],
+    [9303, "Berg am See", "XA", [1.0, 1.2, 0.1, 0.1, 0.0], [1.0, 1.2, 0.1, 0.1, 0.0]],
+]
+
+
+class ReadTable(unittest.TestCase):
+    # #285/AK1 (b3): a canton described by a row pattern: several rows on one line, start and end of the table.
+    def test_issue_285_ak1_row_pattern(self):
+        path = write("Liste 2026\nGemeinde ref kath\nSeeberg 90 20 15 Talheim 110 25 20\nTotal 999 9 9\n", ".txt")
+        spec = {"canton": 1.0, "start": "Gemeinde ref kath", "end": "Total",
+                "row": r"(?P<name>[A-Z][^\d\n]*?) (?P<municipal>\d+) (?P<reformed>\d+) (?P<catholic>\d+)",
+                "fixed": {"christ": 0.0}}
+        self.assertEqual(steuerfuesse.read_table(path, spec), {"Seeberg": [1.0, 0.9, 0.2, 0.15, 0.0],
+                                                              "Talheim": [1.0, 1.1, 0.25, 0.2, 0.0]})
+        with self.assertRaises(ValueError):
+            steuerfuesse.read_table(path, dict(spec, start="missing"))
+        os.unlink(path)
+
+    # #285/AK1 (b3): totals (canton + municipality + church) give the shares as differences; units with scale 1.
+    def test_issue_285_ak1_totals(self):
+        path = write("Seeberg 2.1 2.05 1.9\n", ".txt")
+        spec = {"canton": 1.0, "scale": 1.0, "total": True,
+                "row": r"(?P<name>\w+) (?P<reformed>[\d.]+) (?P<catholic>[\d.]+) (?P<municipal>[\d.]+)"}
+        self.assertEqual(steuerfuesse.read_table(path, spec), {"Seeberg": [1.0, 0.9, 0.2, 0.15, None]})
+        os.unlink(path)
+
+    # #285/AK1 (b3): added and subtracted columns, a scale per group, aliases, sections in parentheses, skipped rows.
+    def test_issue_285_ak1_columns(self):
+        path = write("Seeberg (Nord) 0.95 0.05 17 3.5 15\nSeeberg (Süd) 0.80 0.00 10 3.5 9\n"
+                     "Bezirk Ost 1.00 0.00 10 1 1\nTalheim-Dorf 1.10 0.00 20 5 20\n", ".txt")
+        spec = {"canton": 1.0, "scale": 0.01, "scales": {"municipal": 1.0}, "base_name": True, "skip": "Bezirk",
+                "aliases": {"Talheim-Dorf": "Talheim"},
+                "row": r"^(?P<name>[^\d\n]+?) (?P<municipal>[\d.]+) (?P<municipal_sub>[\d.]+) "
+                       r"(?P<reformed>[\d.]+) (?P<reformed_add>[\d.]+) (?P<catholic>[\d.]+)$"}
+        self.assertEqual(steuerfuesse.read_table(path, spec), {"Seeberg": [1.0, 0.9, 0.205, 0.15, None],
+                                                              "Talheim": [1.0, 1.1, 0.25, 0.2, None]})
+        os.unlink(path)
+
+    # #285/AK1 (b3): several patterns, one per municipality, for shares in different parts of the text.
+    def test_issue_285_ak1_several_patterns(self):
+        path = write("Bezirke\nSeeberg 30\nKirchen\nSeeberg kath. 15\nSchulen\nSeeberg 60\n", ".txt")
+        spec = {"canton": 1.0, "rows": [r"(?s)Bezirke\n(?P<name>Seeberg) (?P<municipal>\d+).*?Seeberg kath\. "
+                                        r"(?P<catholic>\d+).*?Schulen\nSeeberg (?P<municipal_add>\d+)"]}
+        self.assertEqual(steuerfuesse.read_table(path, spec), {"Seeberg": [1.0, 0.9, None, 0.15, None]})
+        os.unlink(path)
+
+    # #285/AK1 (b3): HTML pages and CSV tables become text before the pattern is applied.
+    def test_issue_285_ak1_html_and_csv(self):
+        html = write("<table><tr><td>Seeberg</td><td>90&nbsp;%</td></tr></table>", ".html")
+        spec = {"canton": 1.0, "row": r"(?P<name>[A-Z]\w+) (?P<municipal>\d+) %"}
+        self.assertEqual(steuerfuesse.read_table(html, spec), {"Seeberg": [1.0, 0.9, None, None, None]})
+        os.unlink(html)
+        table = write("jahr;bfs;name;wert\n2026;9301;Seeberg;90.0\n2025;9301;Seeberg;95.0\n", ".csv")
+        spec = {"canton": 1.0, "csv": True, "delimiter": ";", "row": r"^2026 \d+ (?P<name>\w+) (?P<municipal>[\d.]+)$"}
+        self.assertEqual(steuerfuesse.read_table(table, spec), {"Seeberg": [1.0, 0.9, None, None, None]})
+        os.unlink(table)
+        self.assertEqual(steuerfuesse.number("1'234,5"), 1234.5)
+
+    # #285/AK1 (b3): a table set column by column (UR): names of a block, then one line of values per name.
+    def test_issue_285_ak1_blocks(self):
+        path = write("Gemeinden 2025 2026\nSeeberg Talheim 95% 90%\n110% 1)\nBerg 120% 120%\n", ".txt")
+        spec = {"canton": 1.0, "blocks": True, "group": "municipal", "start": "2025 2026", "fixed": {"christ": 0.0}}
+        self.assertEqual(steuerfuesse.read_table(path, spec), {"Seeberg": [1.0, 0.9, None, None, 0.0],
+                                                              "Berg": [1.0, 1.2, None, None, 0.0]})
+        os.unlink(path)
+
+
+class ReadCantons(unittest.TestCase):
+    # #285/AK1, AK5 (b3): the JSON description of the cantons: parts and further rows become notes, two columns run
+    # together are split at the name of a municipality, cantons without a source file are left out.
+    def test_issue_285_ak1_description_file(self):
+        folder = tempfile.mkdtemp()
+        with open(os.path.join(folder, "xa.txt"), "w", encoding="utf-8") as f:
+            f.write("Seeberg 90\nSeeberg-Nord 95\nAlt Talheim 110\nBerg am See 120\nOstdorf 80\n")
+        specs = {"XA": {"file": "xa.txt", "canton": 1.0, "row": r"^(?P<name>[^\d\n]+?) (?P<municipal>\d+)$",
+                        "parts": True, "subrows": True, "suffix_names": True, "notes": ["test"]},
+                 "XB": {"file": "missing.txt", "canton": 1.0, "row": "x"},
+                 "_comment": {"file": "xa.txt"}}
+        path = os.path.join(folder, "kantone.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(specs, f)
+        out = steuerfuesse.read_cantons(path, folder, TABLE_REF)
+        self.assertEqual([c for c, *_ in out], ["XA"])
+        _, matched, unmatched, notes = out[0]
+        self.assertEqual({b: v[0] for b, v in matched.items()}, {9301: "Seeberg", 9302: "Talheim", 9303: "Berg am See"})
+        self.assertEqual(matched[9301][2], ["test", "further rows for parts: Seeberg-Nord"])
+        self.assertEqual((unmatched, notes), ([], ["rows not compared (Kirchgemeinden or parts): Ostdorf"]))
+        self.assertEqual(steuerfuesse.read_cantons(path, folder, TABLE_REF, ["XB"]), [])
+        ref = write(json.dumps({"year": 2026, "municipalities": TABLE_REF}), ".json")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.assertEqual(steuerfuesse.main([ref, "--kantone", path, "--ordner", folder]), 0)
+        self.assertIn("XA: 3 of 3 municipalities equal, 0 differences or gaps", out.getvalue())
+        self.assertIn("XA: note: rows not compared", out.getvalue())
+        os.unlink(ref)
+
+    # #285/AK1 (b3): the description of the 26 cantons is valid and names a source for each.
+    def test_issue_285_ak1_all_cantons_described(self):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quellen", "2026", "kantone.json")
+        with open(path, encoding="utf-8") as f:
+            specs = json.load(f)
+        self.assertEqual(len(specs), 21)  # ZH, BE, GE, VD and FR have their own readers
+        for canton, spec in specs.items():
+            self.assertTrue(spec["source"] and spec["file"] and spec["canton"] > 0, canton)
+            for row in spec.get("rows") or [spec.get("row", "")]:
+                re.compile(row)
 
 
 class Compare(unittest.TestCase):

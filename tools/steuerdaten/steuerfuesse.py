@@ -21,17 +21,24 @@ Sources (downloaded by hand, not part of the repository, no network access here)
   reference is taken. The cantonal coefficient is a single value (`--fr-canton`, default 0.96 for income). No church
   tax.
 
+The other 21 cantons are described in `quellen/<year>/kantone.json` (source, cantonal multiplier and a pattern for the
+rows, see `read_table`) and read by one general reader (`--kantone`, files in `--ordner`). PDFs whose tables the reader
+here cannot take apart are converted to text first with `pdf2txt.swift` (PDFKit of macOS).
+
 Values a source does not have (church tax of GE, VD, FR) are not compared.
 
 Output: one line per difference and a summary per canton. Exit code 1 if a value differs or a municipality is missing.
 
 Usage: python3 -I tools/steuerdaten/steuerfuesse.py REFERENCE.json [--zh CSV] [--be PDF] [--ge HTML] [--vd CSV]  «check-english: allow» (path)
        [--fr CSV] [--zh-canton 0.95] [--ge-canton 1.475] [--vd-canton 1.55] [--fr-canton 0.96]
+       [--kantone JSON --ordner FOLDER [--nur XX]]  «check-english: allow» (option names)
 """
 
 import argparse
 import csv
+import io
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -71,9 +78,10 @@ TOKEN = re.compile(
     rb"|\((?P<s>(?:\\.|[^\\)])*)\)\s*Tj"
     rb"|(?P<td>-?[\d.]+\s+-?[\d.]+)\s+T[dD]"
     rb"|(?P<tm>(?:-?[\d.]+\s+){5}-?[\d.]+)\s+Tm"
+    rb"|/\S+\s+(?P<tf>-?[\d.]+)\s+Tf"
     rb"|\bBT\b"
 )
-PIECE = re.compile(rb"\((?:\\.|[^\\)])*\)|-?[\d.]+")
+PIECE = re.compile(rb"\((?:\\.|[^\\)])*\)|-?(?:\d+\.?\d*|\.\d+)")
 
 
 def unescape(s):
@@ -83,12 +91,19 @@ def unescape(s):
     return s.decode("cp1252", errors="replace").replace("\x1f", "fl").replace("\x1d", "fi")
 
 
+EM = 0.5  # estimated width of a character in em (no font metrics without a library)
+
+
 def text_lines(content):
-    """Lines of one page content stream: text pieces grouped by their baseline, left to right, joined with « | »."""
-    items, x, y, scale = [], 0.0, 0.0, 1.0
+    """Lines of one page content stream: text pieces grouped by their baseline, left to right. Pieces that follow each
+    other closely (estimated end of the previous one, `EM`) are joined directly, so digits or letters set one by one
+    form one number or word again; other pieces are separated with « | »."""
+    items, x, y, scale, size = [], 0.0, 0.0, 1.0, 1.0
     for m in TOKEN.finditer(content):
         if m.group(0) == b"BT":
             x = y = 0.0
+        elif m.group("tf"):
+            size = abs(float(m.group("tf"))) or 1.0
         elif m.group("tm"):
             a, _, _, d, e, f = map(float, m.group("tm").split())
             scale, x, y = d or a or 1.0, e, f
@@ -105,11 +120,19 @@ def text_lines(content):
                         text += " "
             else:
                 text = unescape(m.group("s"))
-            items.append((round(y), x, text))
+            items.append((round(y), x, text, size * scale))
     rows = {}
-    for yy, xx, text in items:
-        rows.setdefault(yy, []).append((xx, text))
-    return [" | ".join(t for _, t in sorted(v)) for _, v in sorted(rows.items(), reverse=True)]
+    for yy, xx, text, em in items:
+        rows.setdefault(yy, []).append((xx, text, em))
+    lines = []
+    for _, pieces in sorted(rows.items(), reverse=True):
+        line, end = "", None
+        for xx, text, em in sorted(pieces, key=lambda p: p[0]):
+            close = end is not None and xx - end < 0.3 * em and line[-1:].isalnum() and text[:1].isalnum()
+            line += text if close or end is None else " | " + text
+            end = xx + len(text) * EM * em
+        lines.append(line)
+    return lines
 
 
 def pdf_lines(path):
@@ -141,7 +164,8 @@ def flat(line):
     # thousands separator (a thin space in the PDF, which Python counts as \s)
     line = re.sub(r"(\d)[\x1e'](\d)", r"\1\2", line)
     line = re.sub(r"\s*\|\s*", " ", line).strip()
-    return re.sub(r"\s+-\s+", "-", re.sub(r"\s+", " ", line))
+    line = re.sub(r"\s+-\s+", "-", re.sub(r"\s+", " ", line))
+    return re.sub(r"(\d) ?\. ?(\d)", r"\1.\2", line)  # «7 . 6» set digit by digit
 
 
 def read_be(lines, year):
@@ -261,6 +285,143 @@ def read_fr(path, canton, year):
     return out, taken
 
 
+GROUPS = ("municipal", "reformed", "catholic", "christ")
+
+
+def number(text):
+    """A published number: decimal comma or point, thousands separators and footnote marks removed."""
+    return float(re.sub(r"[\s'’]", "", text).replace(",", "."))
+
+
+def read_table(path, spec):
+    """{name: values} from a PDF (read with `pdf_lines`), an HTML page, a text or an Excel table saved as CSV, by the
+    description `spec` of a canton (see `quellen/<year>/kantone.json`):
+    - `row`: a regular expression with the groups `name` and `municipal`, optionally `reformed`, `catholic` and
+      `christ` (church shares), applied to the whole text (several rows on one line are found as well); `rows`
+      instead: a list of such expressions, one per municipality, where the shares stand in different parts of the
+      text (AI); a group with the suffix `_add` or `_sub` is added to or subtracted from its share;
+    - `scale` turns a published number into a share (0.01 for percent), `scales` per group; `canton` is the cantonal
+      multiplier; `fixed`: shares that hold for the whole canton (e.g. one cantonal Kirchgemeinde);
+    - `total`: the municipal group is the total of canton and municipality and the church groups are totals with the
+      church, so the shares are differences;
+    - `start`/`end` cut the text; `csv`/`delimiter` for CSV; `blocks` for a table set column by column (UR);
+    - `skip`: names to leave out; `base_name`: sections in parentheses belong to the municipality; `aliases`."""
+    if path.lower().endswith(".pdf"):
+        text = "\n".join(flat(line) for line in pdf_lines(path))
+    elif path.lower().endswith((".html", ".htm")):
+        with open(path, encoding=spec.get("encoding", "utf-8"), errors="replace") as f:
+            text = re.sub(r"\s+", " ", html_unescape(re.sub(r"<[^>]+>", " ", f.read())))
+    else:
+        with open(path, encoding=spec.get("encoding", "utf-8-sig"), errors="replace") as f:
+            text = f.read()
+    if spec.get("start"):
+        i = text.find(spec["start"])
+        if i < 0:
+            raise ValueError(f"{path}: «{spec['start']}» not found")
+        text = text[i + len(spec["start"]):]
+    if spec.get("end") and spec["end"] in text:
+        text = text[:text.find(spec["end"])]
+    if spec.get("csv"):
+        rows = csv.reader(io.StringIO(text), delimiter=spec.get("delimiter", ","))
+        text = "\n".join(" ".join(c.strip() for c in row) for row in rows)
+    scale, canton = spec.get("scale", 0.01), spec["canton"]
+    if spec.get("blocks"):
+        return read_blocks(text, spec)
+    out = {}
+    matches = [m for row in (spec.get("rows") or [spec["row"]]) for m in re.finditer(row, text, re.M)]
+    for m in matches:
+        name = re.sub(r"\s+", " ", m.group("name")).strip(" *-–")
+        if spec.get("skip") and re.search(spec["skip"], name):  # e.g. averages of a district
+            continue
+        if spec.get("base_name"):  # «Haute-Sorne (Glovelier)»: a section of Haute-Sorne
+            name = re.sub(r"\s*\(.*?\)", "", name).strip()
+        name = spec.get("aliases", {}).get(name, name)
+        got = m.groupdict()
+        scales = [spec.get("scales", {}).get(g, scale) for g in GROUPS]
+        values = [None if got.get(g) is None else round(number(got[g]) * s, 6) for g, s in zip(GROUPS, scales)]
+        for i, g in enumerate(GROUPS):  # column added to a share (cantonal church, GR) or subtracted (rebate, NW)
+            if got.get(g + "_add") is not None:
+                values[i] = round(values[i] + number(got[g + "_add"]) * scales[i], 6)
+            if got.get(g + "_sub") is not None:
+                values[i] = round(values[i] - number(got[g + "_sub"]) * scales[i], 6)
+        if spec.get("total"):
+            base = values[0]
+            values[0] = round(base - canton, 6)
+            values[1:] = [None if v is None else round(v - base, 6) for v in values[1:]]
+        for g, v in spec.get("fixed", {}).items():
+            values[GROUPS.index(g)] = v
+        if name and name not in out:
+            out[name] = [canton] + values
+    return out
+
+
+def read_blocks(text, spec):
+    """{name: values} from a table set column by column (UR): a line starts with the names of a block, followed by
+    the values of the first name; each further line holds the values of the next name. `column` picks the value
+    (-1: the last year); `group` says which share it is. Values like «1)» (footnote instead of a rate) are left
+    out."""
+    out, names, row = {}, [], 0
+    group = GROUPS.index(spec.get("group", "municipal"))
+    for line in text.splitlines():
+        m = re.match(r"^([^\d%]+?)\s+(?=\d)", line)
+        if m and not re.search(r"\d", m.group(1)):
+            names, row = m.group(1).split(), 0
+            line = line[m.end():]
+        cells = re.findall(r"(\d+(?:\.\d+)?)%|\d+\)", line)
+        if not names or not cells or row >= len(names):
+            continue
+        value = cells[spec.get("column", -1)]
+        if value:
+            values = [spec["canton"], None, None, None, None]
+            values[1 + group] = round(number(value) * spec.get("scale", 0.01), 6)
+            for g, v in spec.get("fixed", {}).items():
+                values[1 + GROUPS.index(g)] = v
+            out.setdefault(names[row], values)
+        row += 1
+    return out
+
+
+def read_cantons(path, folder, reference, only=None):
+    """[(canton, {bfs: (name, values, notes)}, unmatched, notes)] for every canton described in the JSON file `path`
+    whose source file lies in `folder`."""
+    with open(path, encoding="utf-8") as f:
+        specs = json.load(f)
+    out = []
+    for canton, spec in sorted(specs.items()):
+        source = os.path.join(folder, spec["file"])
+        if canton.startswith("_") or (only and canton not in only) or not os.path.exists(source):
+            continue
+        rows, ref = read_table(source, spec), [m for m in reference if m[2] == canton]
+        if spec.get("suffix_names"):
+            # two columns run together (SO): «Biberist Bolken Balm bei Günsberg 100 100» belongs to the longest end
+            # of the text that is the name of a municipality
+            known = {keys(m[1])[0] for m in ref}
+            renamed = {}
+            for name, values in rows.items():
+                w = name.split()
+                hit = next((" ".join(w[i:]) for i in range(len(w))
+                            if (keys(" ".join(w[i:])) or [None])[0] in known), name)
+                renamed.setdefault(hit, values)
+            rows = renamed
+        matched, unmatched = match_names(rows, ref)
+        for bfs, (name, values, notes) in matched.items():
+            notes.extend(spec.get("notes", []))
+        if spec.get("parts") and unmatched:
+            # rows for parts of a municipality (e.g. one row per Kirchgemeinde): not a gap, the whole is compared
+            for bfs, (name, values, notes) in matched.items():
+                parts = [u for u in unmatched if keys(u)[2] == keys(name)[2]]
+                if parts:
+                    notes.append("further rows for parts: " + ", ".join(parts))
+            unmatched = [u for u in unmatched if all(keys(u)[2] != keys(n)[2] for n, _, _ in matched.values())]
+        notes = []
+        if spec.get("subrows") and unmatched:
+            # rows of Kirchgemeinden or parts that are not municipalities of their own
+            notes.append("rows not compared (Kirchgemeinden or parts): " + ", ".join(unmatched))
+            unmatched = []
+        out.append((canton, matched, unmatched, notes))
+    return out
+
+
 LABELS = ("canton", "municipal") + CHURCHES
 
 
@@ -294,6 +455,9 @@ def main(argv=None):
     ap.add_argument("--ge")
     ap.add_argument("--vd")
     ap.add_argument("--fr")
+    ap.add_argument("--kantone", help="JSON file describing the sources of further cantons")
+    ap.add_argument("--ordner", help="folder with the source files named in --kantone")
+    ap.add_argument("--nur", action="append", help="only these cantons of --kantone")
     ap.add_argument("--zh-canton", type=float, default=0.95)
     ap.add_argument("--ge-canton", type=float, default=1.475)
     ap.add_argument("--vd-canton", type=float, default=1.55)
@@ -319,9 +483,12 @@ def main(argv=None):
             sources.append((canton, matched, unmatched))
     if a.fr:
         sources.append(("FR", read_fr(a.fr, a.fr_canton, year)[0], []))
-    for canton, source, unmatched in sources:
+    if a.kantone:
+        sources += read_cantons(a.kantone, a.ordner or ".", reference, a.nur)
+    for canton, source, unmatched, *notes in sources:
         lines, n = compare(canton, source, reference)
         lines += [f"{canton} {name}: name not found in the reference" for name in unmatched]
+        lines += [f"{canton}: note: {note}" for note in (notes[0] if notes else [])]
         print("\n".join(lines))
         differing = sum(1 for line in lines if ": note:" not in line)
         print(f"{canton}: {n['equal']} of {n['reference']} municipalities equal, {differing} differences or gaps")

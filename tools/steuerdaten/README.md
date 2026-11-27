@@ -183,7 +183,7 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
 ## Steuerfüsse aus den Quellen der Kantone (#285, Weg b3, Versuch)
 
 `steuerfuesse.py` liest die Steuerfüsse aus den Veröffentlichungen der Kantone statt aus dem ESTV-Steuerrechner und
-vergleicht sie mit einer Steuerdatei. Bisher nur als Versuch für fünf Kantone; die Steuerdatei baut weiter `build.py`.
+vergleicht sie mit einer Steuerdatei. Als Versuch für alle 26 Kantone (Stand November 2026); die Steuerdatei baut weiter `build.py`.
 
 - **ZH:** offene Daten des Statistischen Amts, `kanton_zuerich_stf_aktuell.csv` («Steuerfüsse der Zürcher Gemeinden»
   auf opendata.swiss, Nutzung mit Quellenangabe). Die Datei enthält den Gemeindesteuerfuss ohne Kirche und mit jeder
@@ -204,11 +204,18 @@ vergleicht sie mit einer Steuerdatei. Bisher nur als Versuch für fünf Kantone;
   neuste Jahr bis zum Jahr der Steuerdatei, mit Hinweis, wenn es älter ist. Im November 2026 reichten sie bis 2025;
   die Listen 2026 gibt es nur als PDF auf fr.ch.
 
+- **Übrige 21 Kantone:** beschrieben in `quellen/2026/kantone.json`, je Kanton Quelle (`source`), Datei (`file`),
+  Kantonssteuerfuss (`canton`) und ein regulärer Ausdruck für die Zeilen (`row`), dazu Angaben wie Massstab, Gesamt-
+  statt Einzelsteuerfüsse, feste Kirchensteuer des ganzen Kantons, addierte Spalten oder Namensaliase (siehe
+  `read_table` in `steuerfuesse.py`). Ein einziger Leser liest PDF, HTML, CSV und Text. PDFs, deren Tabellen der
+  eigene PDF-Leser nicht zerlegen kann (JU, NW, SO, UR, VS), wandelt `pdf2txt.swift` (PDFKit von macOS) zuerst in Text
+  um: `swift tools/steuerdaten/pdf2txt.swift <pdf> > <txt>`; Excel-Tabellen werden als CSV gespeichert.
+
 Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository.
 
 ```bash
 python3 -I tools/steuerdaten/steuerfuesse.py crates/engine/data/steuern-2026.json --zh <csv> --be <pdf> \
-  --ge <htm> --vd <csv> --fr <csv>
+  --ge <htm> --vd <csv> --fr <csv> --kantone tools/steuerdaten/quellen/2026/kantone.json --ordner <Ordner>
 ```
 
 Gemeinden mit mehreren Teilen (ZH) oder Kirchgemeinden mit eigenem Satz (BE, Zeilen unter der Gemeinde) erscheinen als
