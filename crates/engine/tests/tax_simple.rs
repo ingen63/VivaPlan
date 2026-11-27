@@ -61,7 +61,9 @@ fn issue_272_ak4_new_plans_in_the_mode_location_without_municipality() {
         json!([{ "from": "start", "kind": "canton" }, { "from": "retire", "kind": "canton" }])
     );
     assert_eq!(t["deductPillar3a"], true);
-    assert_eq!(t["indexed"], true);
+    // #306/AK6: tariffs with inflation without an exception
+    assert_eq!(t.get("indexed"), None);
+    assert_eq!(v["indexedByDefault"], true);
     let errors: Vec<_> = api::validate(&v)
         .into_iter()
         .filter(|i| i.severity == Severity::Error && i.section == "taxes")

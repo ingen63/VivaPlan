@@ -189,7 +189,7 @@ fn issue_58_ak5_tax_and_warning_use_the_indexed_amount() {
 fn issue_58_ak1_written_only_when_set() {
     let mut v = base(0.0);
     let plan: Plan = serde_json::from_value(v.clone()).unwrap();
-    assert!(!plan.flows.income_indexed);
+    assert!(!engine::indexation::Indexation::of(&plan).income[0]);
     assert!(serde_json::to_value(&plan).unwrap()["flows"]
         .get("incomeIndexed")
         .is_none());
@@ -201,5 +201,5 @@ fn issue_58_ak1_written_only_when_set() {
     );
     // New plans: «ja» (decision on #58)
     let new_plan: Plan = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
-    assert!(new_plan.flows.income_indexed);
+    assert!(engine::indexation::Indexation::of(&new_plan).income[0]);
 }

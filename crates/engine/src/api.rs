@@ -98,10 +98,10 @@ pub fn blank_plan(start: YearMonth) -> Value {
     merge(pension, "ahv", json!({ "monthly": 0, "at": "ahv" }));
     // #236/AK1: new plans end the earned income with the pension fund payout
     p["flows"] = json!({
-        "income": zero, "incomeIndexed": true, "incomeEndsAtRetirement": true, "spending": zero, "extras": [],
+        "income": zero, "incomeEndsAtRetirement": true, "spending": zero, "extras": [],
         "spendingIncludesHousing": true, "amortExcluded": true,
     });
-    // #66/AK4: tariffs with inflation; #131/AK3: rows «bis Pensionierung» and «ab Pensionierung»; AK1: pillar 3a.
+    // #66/AK4, #306/AK6: tariffs with inflation (no flag: the example has `indexedByDefault`); #131/AK3: rows «bis Pensionierung» and «ab Pensionierung»; AK1: pillar 3a.
     // #272/AK4: mode «Wohnort» without a municipality (the only input that is required); AK2: the proposal of the
     // canton until and from retirement and the pillar 3a deduction are the assumptions (measurement #276).
     merge(
@@ -110,7 +110,6 @@ pub fn blank_plan(start: YearMonth) -> Value {
         json!({
             "mode": "location",
             "location": { "canton": "", "church": "none" },
-            "indexed": true,
             "deductions": [
                 { "from": "start", "kind": "canton" },
                 { "from": "retire", "kind": "canton" },
@@ -1259,15 +1258,13 @@ mod tests {
         assert_eq!(p["pension"]["ahv"]["at"], "ahv");
         assert_eq!(p["pension"]["ahv"]["indexed"], ex["pension"]["ahv"]["indexed"]);
         assert_eq!(p["flows"]["extras"], json!([]));
-        for k in [
-            "incomeIndexed",
-            "incomeEndsAtRetirement",
-            "spendingIncludesHousing",
-            "amortExcluded",
-        ] {
+        // #306/AK6: no exception from inflation (no flag, the marker of the example)
+        assert_eq!(p["indexedByDefault"], true);
+        assert_eq!(p["flows"].get("incomeIndexed"), None);
+        assert_eq!(p["taxes"].get("indexed"), None);
+        for k in ["incomeEndsAtRetirement", "spendingIncludesHousing", "amortExcluded"] {
             assert_eq!(p["flows"][k], true, "{k}");
         }
-        assert_eq!(p["taxes"]["indexed"], true);
         assert_eq!(p["taxes"]["deductPillar3a"], true);
         assert_eq!(p["taxes"]["deductions"][1]["from"], "retire");
         assert_eq!(p["taxes"]["income"], ex["taxes"]["income"]);

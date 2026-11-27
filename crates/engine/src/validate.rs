@@ -634,13 +634,13 @@ fn check(plan: &Plan, v: &mut Issues) {
         let (income, indexed, ends) = if i == 0 {
             (
                 Some(&plan.flows.income),
-                plan.flows.income_indexed,
+                crate::indexation::Indexation::of(plan).income[0],
                 plan.flows.income_ends_at_retirement,
             )
         } else {
             (
                 plan.partner.as_ref().map(|q| &q.income),
-                plan.partner.as_ref().is_some_and(|q| q.income_indexed),
+                crate::indexation::Indexation::of(plan).income[1],
                 plan.partner.as_ref().is_some_and(|q| q.income_ends_at_retirement),
             )
         };

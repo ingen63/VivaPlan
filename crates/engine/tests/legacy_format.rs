@@ -95,6 +95,14 @@ fn rplan_stays_unchanged_and_computes_like_the_vplan() {
     assert_eq!(new_plan["format"], FORMAT);
     // #303: the example plan now starts with «Welt (JST)» and short-term bonds; the frozen file has the former strategy
     new_plan["returns"]["strategy"] = json!({ "stocks": "sp500", "bonds": "usa" });
+    // #306: the example plan now follows inflation as in reality; the frozen file has the former rules
+    new_plan.as_object_mut().unwrap().remove("indexedByDefault");
+    new_plan["pension"]["ahv"]["indexed"] = json!(true);
+    for p in new_plan["realestate"]["properties"].as_array_mut().unwrap() {
+        for k in ["inflation", "inflationFixCosts", "inflationRent", "inflationValue"] {
+            p[k] = json!(true);
+        }
+    }
     let upgraded = api::upgrade_plan(&rplan).plan;
     assert_eq!(upgraded["format"], FORMAT);
     assert_eq!(upgraded, api::upgrade_plan(&new_plan).plan);

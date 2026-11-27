@@ -111,7 +111,8 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
   test("#52/AK8: the contribution appears in total spending of the annual values", async ({ page }) => {
     const errors = await open(page);
     const total = async contribution => {
-      await page.evaluate(c => { realView = false; state.returns.source = "fixed"; state.scenarios.sweeps = []; state.pillar3a[0].contribution = c; }, contribution);
+      await page.evaluate(c => { realView = false; state.returns.source = "fixed"; state.scenarios.sweeps = []; state.pillar3a[0].contribution = c;
+        state.pillar3a[0].contributionIndexed = false; }, contribution); // #306: nominal, as entered
       await page.evaluate(() => runSimulation("table", { noConfirm: true }));
       await expect(page.locator("#resultsBody table.yt")).toBeVisible();
       const v = await page.locator("#resultsBody table.yt tr").nth(2).locator("td").nth(6).textContent();
@@ -431,42 +432,6 @@ test.describe("Number input with a dot as thousands separator (#140)", () => {
   });
 });
 
-test.describe("Earned income with inflation (#58)", () => {
-  test("#58/AK1: selection per person, preview recomputes immediately", async ({ page }) => {
-    const errors = await open(page, "flows");
-    const own = page.locator('input[data-path="flows.incomeIndexed"]');
-    await expect(own).toBeVisible();
-    await expect(own).not.toBeChecked(); // Example plan without a value: «nein»
-    await expect(page.locator('input[data-path="partner.incomeIndexed"]')).toHaveCount(0); // without a second person
-    // Exact final value of the preview (the key figure is rounded)
-    const endValue = () => page.evaluate(() => lastSim?.total.at(-1));
-    await expect(kpiValue(page, "Vermögen am Ende")).not.toHaveText("–");
-    const before = await endValue();
-    await own.check();
-    expect(await page.evaluate(() => state.flows.incomeIndexed)).toBe(true);
-    await expect.poll(endValue).not.toBe(before);
-    await own.uncheck();
-    await expect.poll(endValue).toBe(before);
-    // Second person: own selection, new with «ja»
-    await nav(page, "Haushalt & Projekt");
-    await page.getByRole("button", { name: "+ Zweite Person" }).click();
-    await nav(page, "Einnahmen & Ausgaben");
-    await expect(page.locator('input[data-path="partner.incomeIndexed"]')).toBeChecked();
-    await expect(own).not.toBeChecked();
-    await noErrors(page, errors);
-  });
-
-  test("#58: new plans and a new second person with rises with inflation", async ({ page }) => {
-    const errors = await open(page);
-    await page.locator('button[data-action="new"]').click();
-    await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0); // #170: no project name in a new plan
-    expect(await page.evaluate(() => state.flows.incomeIndexed)).toBe(true);
-    await nav(page, "Einnahmen & Ausgaben");
-    await expect(page.locator('input[data-path="flows.incomeIndexed"]')).toBeChecked();
-    await noErrors(page, errors);
-  });
-});
-
 test.describe("Earned income ends with the pension fund payout (#236)", () => {
   test("AK1: new plans and a new second person with the switch on", async ({ page }) => {
     const errors = await open(page);
@@ -507,38 +472,86 @@ test.describe("Earned income ends with the pension fund payout (#236)", () => {
   });
 });
 
-test.describe("Tax tariffs with inflation (#66)", () => {
-  test("AK4: option in the taxes section, off for existing plans, on for new plans, named in the overview", async ({ page }) => {
-    const errors = await open(page, "taxes");
-    const box = page.locator('input[data-path="taxes.indexed"]');
-    await expect(box).toBeVisible();
-    await expect(page.locator("label.check", { has: box })).toContainText("Tarife mit der Teuerung (Beträge der Tabellen in heutigen Preisen)");
-    await expect(box).not.toBeChecked(); // example plan without a value: «nein»
-    const row = () => page.evaluate(() => paramSections(state).flatMap(([, r]) => r).find(([k]) => k === "Tarife mit der Teuerung")?.[1]);
-    expect(await row()).toBe("nein");
-    // AK1: the preview recomputes with the shifted brackets
+test.describe("Amounts with inflation, exceptions under «Experte» (#306)", () => {
+  const expert = page => page.locator("#infl-expert");
+  const line = page => page.locator("#infl-assumptions");
+  const row = page => page.evaluate(() => paramSections(state).flatMap(([, r]) => r).find(([k]) => k === "Ausnahmen von der Teuerung")?.[1]);
+
+  test("AK4, AK6: «Experte» in the section Simulation, closed without exception; an exception is named in «Annahmen» and the parameters and changes the preview", async ({ page }) => {
+    const errors = await open(page, "returns");
+    await expect(line(page)).toContainText("Experte: Ausnahmen von der Teuerung");
+    await expect(line(page)).toContainText("Annahmen: alle Beträge wie in der Realität mit der Teuerung");
+    expect(await expert(page).evaluate(d => d.open)).toBe(false);
+    expect(await row(page)).toBe("keine");
+    // the former switches are gone from their sections (AK5)
+    for (const p of ["flows.incomeIndexed", "taxes.indexed", "pension.ahv.indexed"]) await expect(page.locator(`input[data-type="bool"][data-path="${p}"]`)).toHaveCount(0);
     const endValue = () => page.evaluate(() => lastSim?.total.at(-1));
     await expect(kpiValue(page, "Vermögen am Ende")).not.toHaveText("–");
     const before = await endValue();
-    await box.check();
-    expect(await page.evaluate(() => state.taxes.indexed)).toBe(true);
-    expect(await row()).toBe("ja");
+    await line(page).click();
+    const income = expert(page).locator('input[data-type="nominal"][data-path="flows.incomeIndexed"]');
+    await expect(expert(page).locator("label.check", { has: page.locator('input[data-path="flows.incomeIndexed"]') })).toContainText("Erwerbseinkommen");
+    await expect(income).not.toBeChecked();
+    await income.check();
+    expect(await page.evaluate(() => state.flows.incomeIndexed)).toBe(false);
+    await expect(line(page)).toContainText("Annahmen: Erwerbseinkommen: nominal, ohne Teuerung");
+    expect(await row(page)).toBe("Erwerbseinkommen: nominal, ohne Teuerung");
     await expect.poll(endValue).not.toBe(before);
-    await box.uncheck();
+    await income.uncheck();
+    expect(await page.evaluate(() => "incomeIndexed" in state.flows && state.flows.incomeIndexed !== undefined)).toBe(false);
+    await expect(line(page)).toContainText("alle Beträge wie in der Realität mit der Teuerung");
     await expect.poll(endValue).toBe(before);
-    // New plan: on (the unchecked change is discarded)
+    // AK6: a new plan has no exception and the marker (the changed plan is discarded)
     await page.locator('button[data-action="new"]').click();
     await page.locator('#ask button[value="ok"]').click();
     await page.waitForFunction(() => state.project.name === "" && state.wealth.stocks === 0);
-    expect(await page.evaluate(() => state.taxes.indexed)).toBe(true);
-    await nav(page, "Steuern");
-    await expect(box).toBeChecked();
-    expect(await row()).toBe("ja");
+    expect(await page.evaluate(() => [state.indexedByDefault, inflationExceptions().length])).toEqual([true, 0]);
+    await noErrors(page, errors);
+  });
+
+  test("AK3, AK4: rent until moving in by default, always or nominal selectable; value and fixed costs per property", async ({ page }) => {
+    const errors = await open(page, "returns");
+    await page.evaluate(() => {
+      state.realestate.properties = [
+        { id: "h", name: "Haus", status: "owned", price: 400000, worth: 500000, fixCosts: 500, mortgage: { tranches: [] } },
+        { id: "w", name: "Wohnung", status: "rent", from: "retire", rent: 2000 }];
+      state = normalize(state); renderSection();
+    });
+    await line(page).click();
+    const rent = expert(page).locator('select[data-path="realestate.properties.1.inflationRent"]');
+    await expect(rent).toHaveValue("");
+    await expect(rent.locator("option:checked")).toHaveText("bis zum Einzug mit der Teuerung, danach nominal");
+    await rent.selectOption("nominal");
+    expect(await page.evaluate(() => state.realestate.properties[1].inflationRent)).toBe(false);
+    await rent.selectOption("always");
+    expect(await page.evaluate(() => state.realestate.properties[1].inflationRent)).toBe(true);
+    await expect(line(page)).toContainText("Miete Wohnung: immer mit der Teuerung");
+    await expert(page).locator('input[data-path="realestate.properties.0.inflationFixCosts"]').check();
+    const p = await page.evaluate(() => state.realestate.properties);
+    expect([p[0].inflationValue, p[0].inflationFixCosts, p[1].inflationRent]).toEqual([undefined, false, true]);
+    await expect(line(page)).toContainText("Nebenkosten Haus: nominal, ohne Teuerung");
+    await noErrors(page, errors);
+  });
+
+  test("AK5: an older plan opens with its earlier rules as exceptions and a note", async ({ page }) => {
+    const errors = await open(page, "returns");
+    const notes = await page.evaluate(async () => {
+      const plan = structuredClone(state);
+      delete plan.indexedByDefault;
+      plan.flows.extras = [{ date: "2030-01", amount: -10000, label: "Auto" }];
+      const n = await adopt(plan, false);
+      renderSection();
+      return n.map(x => x.code);
+    });
+    expect(notes).toContain("note_indexation");
+    expect(await page.evaluate(() => [state.indexedByDefault, state.flows.incomeIndexed, state.flows.extrasIndexed])).toEqual([true, false, false]);
+    expect(await expert(page).evaluate(d => d.open)).toBe(true);
+    await expect(line(page)).toContainText("Erwerbseinkommen: nominal, ohne Teuerung");
+    await expect(line(page)).toContainText("Einmalige Beträge: nominal, ohne Teuerung");
     await noErrors(page, errors);
   });
 });
 
-// ---------------------------------------------------------------------------------------------
 test.describe("13th AHV pension (#190)", () => {
   test("AK8: the field for the monthly AHV pension explains which amount is meant", async ({ page }) => {
     const errors = await open(page, "pension");
@@ -1221,8 +1234,7 @@ test.describe("New plan from the engine (#269)", () => {
     p.pillar3a = [];
     p.pension = { ...p.pension, pk: { ...p.pension.pk, capital: 0, at: "retire", lumpsum: 0, contribution: { ...zero }, interest: { mode: "const", value: 0.02 } },
       ahv: { ...p.pension.ahv, monthly: 0, at: "ahv" } };
-    p.flows = { income: { ...zero }, incomeIndexed: true, incomeEndsAtRetirement: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true, amortExcluded: true };
-    p.taxes = { ...p.taxes, indexed: true };
+    p.flows = { income: { ...zero }, incomeEndsAtRetirement: true, spending: { ...zero }, extras: [], spendingIncludesHousing: true, amortExcluded: true };
     // #272/AK2, AK4: mode «Wohnort» without a municipality, proposal of the canton until and from retirement
     p.taxes.mode = "location"; p.taxes.location = { canton: "", church: "none" };
     p.taxes.deductions = [{ from: "start", kind: "canton" }, { from: "retire", kind: "canton" }];

@@ -46,7 +46,7 @@ Stichworte: nominal, real, Teuerung, geometrisch, Jahresrendite, Kaufkraft
 
 **Jahresrenditen** werden in der App monatlich angewandt. Eine Jahresrendite von 5 % ergibt pro Monat (1.05)^(1/12) − 1, also rund 0.41 %. Der Jahresverlauf stimmt damit genau.
 
-**Inflation** wirkt jeden Monat. Der Teuerungsindex wächst monatlich, und alle Ausgaben, Mieten und (falls gewählt) Immobilienwerte werden damit fortgeschrieben. Ihre Ausgaben erfassen Sie in **heutigen Preisen**, die App rechnet sie mit der Inflation in die Zukunft.
+**Inflation** wirkt jeden Monat. Der Teuerungsindex wächst monatlich, und alle Beträge, die in der Realität mit der Teuerung wachsen, werden damit fortgeschrieben (siehe [Was wächst mit der Teuerung](#inflation)). Ihre Beträge erfassen Sie in **heutigen Preisen**, die App rechnet sie mit der Inflation in die Zukunft.
 
 **Nominal und real:** Die Ergebnisse gibt es in zwei Ansichten.
 
@@ -58,6 +58,22 @@ Bei mehreren Läufen gehören die Perzentile zur gewählten Ansicht: in heutiger
 **Arithmetisch und geometrisch:** Eine «durchschnittliche Rendite von 7 %» ist meist ein arithmetischer Durchschnitt. Der **geometrische** Durchschnitt (was Ihr Vermögen wirklich wächst) ist wegen der Schwankungen tiefer. Bei 7 % Erwartung und 15 % Schwankung liegt er bei rund 5.9 %. Die Kurzinfo der Anlagestrategie zeigt die mittlere Jahresrendite geometrisch.
 
 **Gesamtrendite:** Alle Reihen enthalten Dividenden und Kupons (Total Return), keine Anlagekosten, keine Steuern auf Erträge.
+
+## @inflation Was wächst mit der Teuerung
+Stichworte: Teuerung, Inflation, nominal, heutige Preise, Ausnahme, Experte, Stresstest, Miete
+
+Die App schreibt jeden Betrag so fort, wie er sich in der Realität verhält. Beträge, die mit der Teuerung wachsen, erfassen Sie in **heutigen Preisen** (Preise beim Simulationsstart); die App rechnet sie mit der Teuerung des jeweiligen Pfades in die Zukunft, bei Monte Carlo also je Pfad anders.
+
+- **Immer mit der Teuerung:** Lebenshaltung, Pflegeheim, Erwerbseinkommen, Beiträge an die Pensionskasse, Einzahlung und Höchstbetrag der Säule 3a, AHV-Rente (ab dem Anspruch jeden Januar), Steuertarife und laufende Abzüge, einmalige Beträge (Zuflüsse und Ausgaben), einmalige Abzüge vom Einkommen und vom Vermögen, Wert und Nebenkosten der Immobilien. Beispiel: eine Ausgabe von 40 000 in fünf Jahren bei 2 % Teuerung kostet dann rund 44 163.
+- **Immer nominal:** Rente der Pensionskasse, Hypothek (Schuld, Zins, Amortisation), Guthaben der Pensionskasse und der Säule 3a samt Verzinsung.
+- **Miete:** Der Betrag gilt in heutigen Preisen und wächst bis zum Monat des Einzugs («Miete ab») mit der Teuerung, danach bleibt er nominal. Eine Miete, die beim Simulationsstart schon läuft, ist von Anfang an nominal. Beispiel: 2 500 heute, Einzug in 5 Jahren, 2 % Teuerung ergibt beim Einzug rund 2 760, danach gleichbleibend 2 760. In der Realität ist nach dem Einzug eine Anpassung möglich (Referenzzins, 40 % der Teuerung); die App vereinfacht hier.
+- **Säule 3a:** Die Einzahlung wächst höchstens bis zum Höchstbetrag des Jahres. Die Prüfung vergleicht sie in heutigen Preisen mit dem Höchstbetrag.
+
+**Ausnahmen für Stresstests:** Unter «Simulation» › **«Experte»** lässt sich jeder Betrag der ersten Liste als Ausnahme **«nominal, ohne Teuerung»** rechnen; er bleibt dann über die ganze Planung beim erfassten Wert. Für jede Miete gibt es die Wahl «bis zum Einzug mit der Teuerung, danach nominal», «immer mit der Teuerung» oder «nominal, ohne Teuerung». Die Zeile «Annahmen» über dem Bereich nennt die gesetzten Ausnahmen, ebenso die Parameter eines Laufs. Neue Planungen haben keine Ausnahme; der Bereich öffnet sich von selbst, sobald es eine gibt.
+
+**Ohne Teuerung = Teuerung 0 %:** Wer ganz ohne Teuerung rechnen will, setzt die Teuerung auf 0 % (fixe Renditen).
+
+**Ältere Planungen** rechneten einzelne Beträge nominal (zum Beispiel einmalige Beträge und Abzüge, Beiträge an Pensionskasse und Säule 3a) oder hatten eigene Schalter (Erwerbseinkommen, AHV, Tarife, Immobilien). Beim Öffnen übernimmt die App diese Wahl als Ausnahmen und meldet es; das Ergebnis bleibt gleich. Eine Miete, die bisher immer mit der Teuerung wuchs, behält «immer mit der Teuerung».
 
 ## @f-ret-source Quelle der Renditen
 Stichworte: Auswahl, fix, historisch, rolling, bootstrap, parametrisch

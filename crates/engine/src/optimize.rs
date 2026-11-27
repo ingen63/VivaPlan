@@ -1780,7 +1780,7 @@ mod tests {
         v["returns"]["fixed"]["inflation"] = json!(0.02);
         v["flows"]["spendingIncludesHousing"] = json!(false);
         v["realestate"]["properties"] = json!([{"name": "Miete", "status": "rent", "price": 0, "fixCosts": 0,
-            "inflation": true, "from": "start", "rent": 500}]);
+            "inflation": true, "inflationRent": true, "from": "start", "rent": 500}]);
         let sim = Simulator::new(&parse_plan(&v).unwrap()).unwrap();
         let res = sim.run(&crate::market::fixed_path(&sim.fixed, sim.start, sim.months()), true);
         assert!(res.records.last().unwrap().price_index > 1.5);

@@ -31,6 +31,7 @@ mod household;
 mod income_deductions;
 mod income_ends;
 mod income_indexed;
+mod indexation;
 mod inflow_strategy;
 mod invariants;
 mod investment_yield;

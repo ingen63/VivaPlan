@@ -46,7 +46,7 @@ Mots-clés: nominal, réel, renchérissement, géométrique, rendement annuel, p
 
 Les **rendements annuels** sont appliqués mensuellement dans l’application. Un rendement annuel de 5 % donne par mois (1.05)^(1/12) − 1, soit environ 0.41 %. L’évolution annuelle est ainsi exacte.
 
-L’**inflation** agit chaque mois. L’indice du renchérissement croît chaque mois, et toutes les dépenses, loyers et (si choisi) valeurs immobilières sont indexés avec lui. Vous saisissez vos dépenses aux **prix actuels**, l’application les projette dans l’avenir avec l’inflation.
+L’**inflation** agit chaque mois. L’indice du renchérissement croît chaque mois, et tous les montants qui augmentent avec le renchérissement dans la réalité sont indexés avec lui (voir [Ce qui augmente avec le renchérissement](#inflation)). Vous saisissez vos montants aux **prix actuels**, l’application les projette dans l’avenir avec l’inflation.
 
 **Nominal et réel:** les résultats existent en deux vues.
 
@@ -58,6 +58,22 @@ Avec plusieurs simulations, les percentiles dépendent de la vue choisie: en pou
 **Arithmétique et géométrique:** un ‹rendement moyen de 7 %› est généralement une moyenne arithmétique. La moyenne **géométrique** (ce dont votre fortune croît réellement) est plus basse en raison des fluctuations. Avec une espérance de 7 % et une volatilité de 15 %, elle est d’environ 5.9 %. L’info-bulle de la stratégie de placement montre le rendement annuel moyen géométrique.
 
 **Rendement global:** toutes les séries contiennent les dividendes et les coupons (total return), sans frais de placement ni impôts sur les revenus.
+
+## @inflation Ce qui augmente avec le renchérissement
+Mots-clés: renchérissement, inflation, nominal, prix actuels, exception, expert, test de résistance, loyer
+
+L’application fait évoluer chaque montant comme il se comporte dans la réalité. Vous saisissez les montants qui augmentent avec le renchérissement aux **prix actuels** (prix au début de la simulation); l’application les projette dans l’avenir avec le renchérissement de chaque trajectoire, donc différemment pour chaque trajectoire avec Monte Carlo.
+
+- **Toujours avec le renchérissement:** coût de la vie, EMS, revenu de l’activité lucrative, cotisations à la caisse de pension, versement et montant maximal du pilier 3a, rente AVS (dès le droit à la rente, chaque janvier), barèmes fiscaux et déductions courantes, montants uniques (entrées et dépenses), déductions uniques du revenu et de la fortune, valeur et frais accessoires des biens immobiliers. Exemple: une dépense de 40 000 dans cinq ans coûte alors environ 44 163 avec 2 % de renchérissement.
+- **Toujours nominal:** rente de la caisse de pension, hypothèque (dette, intérêt, amortissement), avoirs de la caisse de pension et du pilier 3a avec leurs intérêts.
+- **Loyer:** Le montant s’entend aux prix actuels et augmente avec le renchérissement jusqu’au mois de l’emménagement («Loyer dès»), ensuite il reste nominal. Un loyer qui court déjà au début de la simulation est nominal dès le départ. Exemple: 2 500 aujourd’hui, emménagement dans 5 ans, 2 % de renchérissement donne environ 2 760 à l’emménagement, ensuite 2 760 constants. Dans la réalité, une adaptation est possible après l’emménagement (taux de référence, 40 % du renchérissement); l’application simplifie ici.
+- **Pilier 3a:** Le versement augmente au plus jusqu’au montant maximal de l’année. La vérification le compare au montant maximal aux prix actuels.
+
+**Exceptions pour des tests de résistance:** Sous «Simulation» › **«Expert»**, chaque montant de la première liste peut être calculé comme exception **«nominal, sans renchérissement»**; il reste alors à la valeur saisie sur toute la planification. Pour chaque loyer, on choisit entre «avec le renchérissement jusqu’à l’emménagement, ensuite nominal», «toujours avec le renchérissement» ou «nominal, sans renchérissement». La ligne «Hypothèses» au-dessus de la zone indique les exceptions définies, de même que les paramètres d’un calcul. Les nouvelles planifications n’ont pas d’exception; la zone s’ouvre d’elle-même dès qu’il y en a une.
+
+**Sans renchérissement = renchérissement 0 %:** Pour calculer entièrement sans renchérissement, fixer le renchérissement à 0 % (rendements fixes).
+
+**Les anciennes planifications** calculaient certains montants en valeur nominale (par exemple les montants et déductions uniques, les cotisations à la caisse de pension et au pilier 3a) ou avaient leurs propres options (revenu de l’activité lucrative, AVS, barèmes, biens immobiliers). À l’ouverture, l’application reprend ce choix comme exceptions et le signale; le résultat reste le même. Un loyer qui augmentait toujours avec le renchérissement garde «toujours avec le renchérissement».
 
 ## @f-ret-source Source des rendements
 Mots-clés: choix, fixe, historique, glissant, bootstrap, paramétrique

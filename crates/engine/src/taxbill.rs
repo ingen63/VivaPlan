@@ -267,7 +267,7 @@ pub fn compute(plan: &Plan, bill: &TaxBill) -> TaxBillOut {
     let path = crate::market::fixed_path(&sim.fixed, start, sim.months());
     let run = sim.run(&path, true);
     let ys = years(&run.records);
-    let indexed = plan.taxes.indexed;
+    let indexed = crate::indexation::Indexation::of(plan).taxes;
     let retire = sim.retire_at();
     let retired_before_start = retire.is_none_or(|r| r <= start);
 

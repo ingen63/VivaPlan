@@ -45,7 +45,7 @@ Der Editor führt durch zwölf Abschnitte:
   Pensionskasse, solange der Schalter dazu im Einkommen eingeschaltet ist (#236); läuft es bei ausgeschaltetem Schalter
   nach dem Bezug der Pensionskasse weiter, warnt die Prüfung.
 - **Vorsorge:** Pensionskasse mit Guthaben, Beiträgen, Verzinsung, Umwandlungssatz und Kapitalbezug in Prozent;
-  AHV-Rente mit oder ohne Teuerungsanpassung (im Januar, nominal nie tiefer als im Vorjahr: nach einer Deflation steigt
+  AHV-Rente mit Teuerungsanpassung (im Januar, nominal nie tiefer als im Vorjahr: nach einer Deflation steigt
   sie erst, wenn die Preise den bisher höchsten Stand übersteigen, #280), eingegeben als erwartete Rente mit 65 laut Rentenvorausberechnung (nominal, bis zum Anspruch ohne Teuerung, #282); bei Bezug vor oder nach 65 kürzt bzw.
   erhöht die App sie selbst nach den Sätzen der AHV (Vorbezug 6,8 % je Jahr, höchstens 13,6 %; Aufschub 5,2 % bis
   31,5 %; feste Beträge in Franken, bei Ehepaaren nach dem Plafond auf die ungekürzten Renten), neben dem Feld steht
@@ -90,8 +90,8 @@ Der Editor führt durch zwölf Abschnitte:
   unabhängig, Regeln, die auf Erholung nach Einbrüchen setzen, lassen sich dort nicht sinnvoll prüfen.
   Das Erwerbseinkommen wird pro Jahr erfasst wie in der Steuererklärung («Einkünfte aus Erwerb netto / Jahr», Nettolohn
   im Lohnausweis Ziffer 11); daneben steht der Betrag pro Monat. Gespeichert und gerechnet wird pro Monat (ein Zwölftel).
-  Das Erwerbseinkommen jeder Person kann wahlweise mit der Teuerung steigen (Beträge in heutigen Preisen; neue
-  Planungen: ja).
+  Das Erwerbseinkommen jeder Person steigt mit der Teuerung (Beträge in heutigen Preisen; Ausnahme «nominal» unter
+  «Experte», siehe [Teuerung](#teuerung)).
   Je Person gibt es den Schalter «Erwerbseinkommen endet mit dem Bezug der Pensionskasse» (#236; neue Planungen und
   eine neu hinzugefügte zweite Person: ein, ältere Planungen ohne Angabe: aus). Eingeschaltet ist das
   Erwerbseinkommen ab dem Monat ihres Meilensteins «Bezug Pensionskasse» 0, auch wenn die Zeitreihe danach einen Wert
@@ -126,7 +126,7 @@ Der Editor führt durch zwölf Abschnitte:
   Gemeinde, angenäherte Regeln (Wallis) mit ⚠. Wohnort als Standard (#272): Neue Planungen beginnen im Modus
   «Wohnort» ohne Gemeinde; nötig sind nur die Gemeinde (Suche über alle Gemeinden, der Kanton ergibt sich daraus) und
   die Konfession. Die übrigen Einstellungen gelten mit Vorgaben und stehen als Zeile «Annahmen» in Worten da
-  (Standardabzüge des Kantons bis und ab Pensionierung, Tarife mit der Teuerung, Abzug der Säule 3a ja, Steuerwert der
+  (Standardabzüge des Kantons bis und ab Pensionierung, Tarife mit oder ohne Teuerung, Abzug der Säule 3a ja, Steuerwert der
   Immobilien 50 % des Marktwerts, steuerbarer Ertrag); ein Klick öffnet die Einstellungen. Oben auf der Karte stehen
   zwei Kennzahlen aus der Vorschau des Rechenkerns: Einkommens- und Vermögenssteuer im ersten vollen Kalenderjahr und
   im ersten vollen Kalenderjahr nach der Pensionierung, in heutigen Preisen auf 100 Franken gerundet (eine Zahl, wenn
@@ -143,9 +143,9 @@ Der Editor führt durch zwölf Abschnitte:
   Jahr, Kapitalbezugssteuer nach dem Wohnort im Monat des Bezugs, Grundstückgewinnsteuer einer Immobilie ohne eigenen
   Kanton nach dem Wohnkanton im Monat des Verkaufs (StHG Art. 4b); Parameter und Jahreswerte nennen den Wohnort je
   Zeitraum bzw. Jahr. Die Sätze der Tabellen werden zwischen den Stufen
-  linear interpoliert. Mit «Tarife mit der Teuerung» wachsen die Beträge der Tabellen für
-  Einkommen, Vermögen und Kapitalbezug mit der simulierten Teuerung (Ausgleich der kalten Progression); für neue
-  Planungen eingeschaltet, ältere Planungen und importierte Konfigurationen rechnen ohne. Steuerbarer Ertrag des
+  linear interpoliert. Die Beträge der Tabellen für Einkommen, Vermögen und Kapitalbezug und die laufenden Abzüge
+  wachsen mit der simulierten Teuerung (Ausgleich der kalten Progression); die Ausnahme «nominal» steht unter
+  «Simulation» › «Experte» (#306), ältere Planungen und importierte Konfigurationen behalten so ihre Rechnung. Steuerbarer Ertrag des
   Vermögens (#149): je Satz pro Jahr für Aktien (Ausschüttungsrendite) und Obligationen (Coupon); der durchschnittliche
   Bestand eines Jahres × Satz zählt zum steuerbaren Einkommen, in beiden Modi vor den Abzügen. Der Ertrag ist Teil der
   Rendite, kein zusätzlicher Zufluss, Kapitalgewinne bleiben steuerfrei; Cash hat keinen Ertrag. Neue Planungen
@@ -154,6 +154,21 @@ Der Editor führt durch zwölf Abschnitte:
   die Spalte «Steuerbarer Ertrag».
 - **Immobilien:** beliebig viele Liegenschaften und Mietverhältnisse.
 - **Szenarien & Simulation:** Variationen und Einstellungen für mehrere Läufe.
+
+<a id="teuerung"></a>**Teuerung wie in der Realität (#306):** Alle Beträge, die in der Realität mit der Teuerung wachsen, sind
+in Preisen beim Simulationsstart erfasst und wachsen mit der Teuerung des Pfades: Lebenshaltung, Pflegeheim,
+Erwerbseinkommen, Beiträge an die Pensionskasse, Einzahlung und Höchstbetrag der Säule 3a (die Einzahlung höchstens bis
+zum Höchstbetrag des Jahres; die Prüfung vergleicht in Preisen des Starts), AHV-Rente (ab dem Anspruch), Steuertarife
+und laufende Abzüge, einmalige Beträge, einmalige Abzüge vom Einkommen und vom Vermögen, Wert und Nebenkosten der
+Liegenschaften. Immer nominal bleiben die Rente der Pensionskasse, die Hypothek (Schuld, Zins, Amortisation) und die
+Guthaben von Pensionskasse und Säule 3a samt Verzinsung. Eine Miete wächst bis zum Monat des Einzugs mit der Teuerung,
+danach bleibt sie nominal; eine beim Start laufende Miete ist von Anfang an nominal (2 500 heute, Einzug in 5 Jahren,
+2 % Teuerung: rund 2 760, danach gleichbleibend). Unter «Simulation» › «Experte» lässt sich je Betrag die Ausnahme
+«nominal, ohne Teuerung» setzen (je Miete: bis zum Einzug, immer oder nominal); die Zeile «Annahmen» darüber und die
+Parameter eines Laufs nennen die gesetzten Ausnahmen. Ohne Teuerung rechnen heisst Teuerung 0 %. Neue Planungen haben
+keine Ausnahme (Markierung `indexedByDefault`); ältere Planungen übernehmen beim Öffnen ihre bisherigen Regeln
+(Schalter für Erwerbseinkommen, AHV, Tarife und Liegenschaften, bisher nominale einmalige Beträge und Abzüge, PK- und
+3a-Beiträge) als Ausnahmen mit einem Hinweis und rechnen unverändert.
 
 **Einstellungen** (macOS: Menü «VivaPlan → Einstellungen…», Windows und Linux: «Datei → Einstellungen…»): Sprache, Darstellung, Grenzen für AHV-Bezug und Bezug Pensionskasse, die
 Maximalbeträge der kleinen und der grossen Säule 3a, das Startjahr der Teuerung im parametrischen Modell (Standard 1950) und die Tragbarkeit der Banken (höchstens vom Einkommen, kalkulatorischer
@@ -290,7 +305,7 @@ würde die Scheingenauigkeit verstärken.
   Ausgleich der kalten Progression mit der simulierten Teuerung; Grundstückgewinn = Verkaufswert − Kaufpreis.
 - **Abzüge vom Einkommen (#131):** zeitabhängige Zeilen, je «Vorschlag des Kantons» (Modus «Wohnort», Standard:
   Standardabzüge der Steuerdatei, Betrag des ersten Jahres mit Bestandteilen für Kanton und Bund) oder «eigener Wert»
-  (Betrag pro Jahr in Preisen des Starts, wächst mit «Tarife mit der Teuerung», optional Prozentsatz des Einkommens, für
+  (Betrag pro Jahr in Preisen des Starts, wächst mit der Teuerung der Tarife, optional Prozentsatz des Einkommens, für
   Kanton und Bund; Eingabehilfe aus Einkommen und steuerbarem Einkommen der Veranlagung). Neue Planungen: Zeilen «bis
   Pensionierung» und «ab Pensionierung». Dazu abschaltbar die Einzahlungen in die Säule 3a (mit indirekter
   Amortisation), höchstens der Maximalbetrag je Person der Einstellungen; für eine Person ohne Pensionskasse 20 % ihres
@@ -324,16 +339,17 @@ würde die Scheingenauigkeit verstärken.
   das erste Jahr der Zeile auf. Das Feld «zusätzlich» erscheint nur mit Betrag oder nach «+ Zusätzlicher Abzug»; die
   Erklärungen und die Höchstbeträge der Säule 3a stehen im ⓘ; einmalige Abzüge unter eigenem Titel.
 - **Abzüge im Einzelnen unter «Experte» (#275):** Die Zeilen der Abzüge vom Einkommen (mit «zusätzlich» und der
-  Hilfe «eigener Wert»), die Abzüge vom Vermögen, «Tarife mit der Teuerung» und bei bestehenden Planungen die eigenen
-  Tabellen stehen im zugeklappten Bereich «Experte» (Abzüge im Einzelnen, Abzüge vom Vermögen, Tarife mit der
-  Teuerung) unter den Annahmen. Er öffnet sich von selbst, wenn die Planung dort eigene Werte hat (Zeile mit eigenem
-  Wert, zusätzlichem Abzug oder aus der Steuerrechnung, Abzüge vom Vermögen, Tarife ohne Teuerung, eigene Tabellen).
+  Hilfe «eigener Wert»), die Abzüge vom Vermögen, der Hinweis zu den Tarifen mit der Teuerung und bei bestehenden
+  Planungen die eigenen Tabellen stehen im zugeklappten Bereich «Experte» (Abzüge im Einzelnen, Abzüge vom Vermögen,
+  Tarife) unter den Annahmen. Er öffnet sich von selbst, wenn die Planung dort eigene Werte hat (Zeile mit eigenem
+  Wert, zusätzlichem Abzug oder aus der Steuerrechnung, Abzüge vom Vermögen, eigene Tabellen).
   Das Häkchen der Säule 3a bleibt bei den Annahmen; die einmaligen Abzüge vom Einkommen (#230) stehen in einer eigenen
   Karte «Einmalige Abzüge» direkt im Abschnitt. Die Karte der Pensionskasse hat den Link «Einkauf als Abzug
   erfassen»: Er legt einen einmaligen Abzug «PK-Einkauf» (bei zwei Personen mit dem Namen) im Jahr nach dem Start an,
   wechselt zu den Steuern und setzt den Fokus auf das Steuerjahr. Rechnung und Dateiformat unverändert.
 - **Abzüge vom Vermögen (#231):** Karte «Abzüge vom Vermögen» mit zeitabhängigen Zeilen «zusätzlich … pro Jahr»
-  (Preise des Starts, mit «Tarife mit der Teuerung») und einmaligen Abzügen (Steuerjahr, Beschreibung, Betrag nominal),
+  (Preise des Starts, mit der Teuerung der Tarife) und einmaligen Abzügen (Steuerjahr, Beschreibung, Betrag in
+  Preisen des Starts, wächst mit der Teuerung bis zum Steuerjahr, #306),
   zum Beispiel Schulden ausser der Hypothek. Steuerbares Vermögen = Vermögen am 31.12. (Immobilien zum Steuerwert) −
   Abzüge, nie negativ; es zählt die Zeile vom 31.12., ein einmaliger Abzug am 31.12. seines Steuerjahres. Im Modus
   «Wohnort» kommen die Abzüge zu den Sozialabzügen des Kantons in den Vermögenskurven dazu und ersetzen sie nicht; mit

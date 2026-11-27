@@ -154,6 +154,8 @@ fn issue_54_ak8_note_for_older_plans() {
     old["flows"] = json!({ "income": 8000, "spending": 6000 });
     // #250: unmarried, so that only the note about the cash rule remains
     old["household"]["married"] = json!(false);
+    // #306: the rules of inflation as in reality, so that only the note about the cash rule remains
+    old["indexedByDefault"] = json!(true);
     let out = engine::api::upgrade_plan(&old);
     assert_eq!(out.notes, vec![engine::upgrade::CASH_NOTE]);
     assert_eq!(out.plan["flows"]["spending"], 6000, "ohne Wohnkosten bleibt der Wert");
@@ -161,6 +163,7 @@ fn issue_54_ak8_note_for_older_plans() {
     // a new plan carries the marker of #250 (like `assets/new.vplan`)
     let mut fresh = base();
     fresh["household"]["marriedNoted"] = json!(true);
+    fresh["indexedByDefault"] = json!(true);
     assert!(
         engine::api::upgrade_plan(&fresh).notes.is_empty(),
         "neue Planung ohne Hinweis"

@@ -251,15 +251,12 @@ function collectIssues() {
 /** Adds missing parts so that the editor can show every valid project file. */
 const SERIES_PATHS = ["flows.income", "flows.spending", "pension.pk.contribution", "pension.pk.interest", "wealth.stockShare", "wealth.reserveMonths", "realestate.emergencyMonths",
   "partner.income", "partner.pk.contribution", "partner.pk.interest"];
-/** #58: Labels of the choice for the earned income of each person. */
-let INCOME_INDEXED;
-onLanguage(() => INCOME_INDEXED = tr("flows.incomeIndexed"));
 /** #236: Switch per person: the earned income ends with the milestone «Bezug Pensionskasse». */
 const incomeEnds = path => `<div style="margin:-8px 0 12px">${Chk(path, tr("flows.incomeEndsAtRetirement"))}</div>`;
 // #236/AK1: a new person's earned income ends with their pension fund payout
-const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeIndexed: true, incomeEndsAtRetirement: true,
+const newPartner = (pid = "B") => ({ income: { mode: "const", value: 0 }, incomeEndsAtRetirement: true,
   pk: { capital: 0, at: "retire2", lumpsum: 0, conversion: 0.05, contribution: { mode: "const", value: 0 }, interest: { mode: "const", value: 0.01 } },
-  ahv: { monthly: 2000, at: "ahv2", indexed: true } });
+  ahv: { monthly: 2000, at: "ahv2" } });
 function newPropId(p = state) {
   const used = new Set(p.realestate.properties.map(q => q.id));
   let id; do { id = "obj" + Math.random().toString(36).slice(2, 7); } while (used.has(id));
@@ -372,8 +369,8 @@ function normalize(p) {
     if (v == null || typeof v === "number") o[last] = { mode: "const", value: v ?? 0 };
   }
   for (const pr of p.realestate.properties) {
-    pr.id ??= newPropId(p); pr.fixCosts ??= 0; pr.inflation ??= false;
-    pr.inflationValue ??= pr.inflation; pr.inflationFixCosts ??= pr.inflation; pr.inflationRent ??= true;
+    // #306: no inflation flags filled in: missing means «with inflation» (rent: until moving in)
+    pr.id ??= newPropId(p); pr.fixCosts ??= 0;
     if (pr.status === "rent") continue;
     pr.mortgage ??= { tranches: [] };
     for (const t of pr.mortgage.tranches) { t.name ??= tr("mortgage.tranche"); t.after ??= "renew"; t.periods = t.periods.map(d => newPeriod(d)); }
@@ -392,7 +389,7 @@ async function adopt(plan, fromFile = true) {
   try { const r = await Engine.call("upgrade_plan", { plan }); plan = r.plan; notes = r.notes || []; }
   catch { /* without the engine: take over unchanged */ }
   state = normalize(plan);
-  taxSwitch = null; taxOpen.settings = taxOpen.expert = null; // #272: only for the plan of the switch
+  taxSwitch = null; taxOpen.settings = taxOpen.expert = taxOpen.infl = null; // #272: only for the plan of the switch
   delete state.realestate.affordability;
   const adopted = adoptAffordability(fileAfford);
   if (adopted) notes.push(adopted);
@@ -679,8 +676,7 @@ function PensionCards(root, who) {
     <div style="margin-top:14px">${Series(`${pk}.contribution`, tr("pension.contribution"), "chf")}${Series(`${pk}.interest`, tr("pension.interest"), "pct")}</div>
     <div style="margin-top:10px"><button class="btn ghost small" id="pk-buyin${n}" data-action="pk-buyin" data-n="${n}">${tr("pension.buyInDeduction")}</button></div></fieldset></div>
   <div class="card"><h3>${tr("common.ahv")}${t}</h3><div class="grid2"><div>${F(`${ahv}.monthly`, tr("pension.rentAtStart"), "chf", { hint: tr("pension.rentAtStartHint") })}${C("ahvEff", root === "partner" ? 1 : 0)}</div>
-    ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div>
-    <div style="margin-top:10px">${Chk(`${ahv}.indexed`, tr("pension.indexed"))}</div></div>
+    ${fixedAt(root === "partner" ? 1 : 0, "ahv")}</div></div>
   ${CareCard(n, t)}`;
 }
 /** #271: care home of person `n`: entry (age, milestone or date), costs per month and «Wohneigentum verkaufen». */
@@ -774,9 +770,9 @@ R.pillar3a = () => {
 R.flows = () => `
   <h2>${tr("section.flows")}</h2><p class="lead">${tr("flows.intro")}</p>
   <div class="card">${Series("flows.income", state.partner ? tr("flows.incomeOf", { esc: esc(state.household.persons[0].name) }) : tr("flows.income"), "chfyear", "", tr("flows.incomeHint"))}
-    <div style="margin:-4px 0 12px">${Chk("flows.incomeIndexed", INCOME_INDEXED)}</div>${incomeEnds("flows.incomeEndsAtRetirement")}
+    ${incomeEnds("flows.incomeEndsAtRetirement")}
     ${state.partner ? `${Series("partner.income", tr("flows.incomeOf", { esc: esc(state.household.persons[1].name) }), "chfyear", "", tr("flows.incomeHint"))}
-    <div style="margin:-4px 0 12px">${Chk("partner.incomeIndexed", INCOME_INDEXED)}</div>${incomeEnds("partner.incomeEndsAtRetirement")}` : ""}
+    ${incomeEnds("partner.incomeEndsAtRetirement")}` : ""}
     ${Series("flows.spending", tr("flows.spending"), "chf", state.partner ? tr("flows.spendingNote") : tr("flows.todayPrices"))}
     <p class="hint">${C("housingshare")}</p></div>
   <div class="card"><h3>${tr("flows.oneOff")} <span class="sub">${tr("flows.oneOffHint")}</span></h3>
@@ -892,8 +888,69 @@ R.returns = () => {
   return `<h2>${tr("section.returns")}</h2><p class="lead">${tr("returns.intro")}</p>
     <div class="card"><div class="choices">${SOURCES.map(([k, t, d, ok]) => `<div class="choice ${k === src ? "on" : ""} ${ok ? "" : "off"}" ${ok ? `data-action="set" data-path="returns.source" data-value="${k}"` : ""}><b>${t}</b><small>${d}</small></div>`).join("")}</div></div>
     ${series}${params}${extra}${fixed}
-    <p class="hint">${tr("returns.inflationHint")} ${src !== "fixed" ? tr("returns.previewBasis", { c: C("basis") }) : ""}</p>`;
+    <p class="hint">${tr("returns.inflationHint")} ${src !== "fixed" ? tr("returns.previewBasis", { c: C("basis") }) : ""}</p>
+    ${inflationExpert()}`;
 };
+
+// ---------- #306: exceptions from inflation ----------
+/** #306: A flag of inflation is «with inflation» unless it is `false`; plans without the marker `indexedByDefault`
+ *  (older results) keep the earlier default `legacy`. */
+const indexedOf = (plan, flag, legacy = false) => flag ?? (plan.indexedByDefault ? true : legacy);
+/** #306: Rent and inflation: "until" (until moving in, then nominal), "always" or "nominal". */
+const rentInflation = (plan, p) => p.inflationRent === false ? "nominal" : p.inflationRent === true || !plan.indexedByDefault ? "always" : "until";
+/** #306: The amounts of the plan that grow with inflation and can be set to «nominal» (AK1, AK4): [path, label]
+ *  (labels as text, not escaped). */
+function inflationItems(plan = state) {
+  const ps = plan.household?.persons || [], two = !!plan.partner && ps.length > 1;
+  const of = (key, i) => two ? tr("infl.ofPerson", { what: tr(key), name: personLabel(ps[i], i) }) : tr(key);
+  const nameOf = id => { const i = ps.findIndex(q => q.id === id); return i < 0 ? id : personLabel(ps[i], i); };
+  const props = plan.realestate?.properties || [];
+  return [
+    ["flows.spendingIndexed", tr("infl.spending")],
+    ...ps.map((p, i) => p.careHome && [`household.persons.${i}.careHome.indexed`, two ? tr("infl.ofPerson", { what: tr("infl.care"), name: personLabel(p, i) }) : tr("infl.care")]),
+    ["flows.incomeIndexed", of("infl.income", 0)], two && ["partner.incomeIndexed", of("infl.income", 1)],
+    ["pension.pk.contributionIndexed", of("infl.pkContribution", 0)], two && ["partner.pk.contributionIndexed", of("infl.pkContribution", 1)],
+    ...(plan.pillar3a || []).map((a, j) => [`pillar3a.${j}.contributionIndexed`, two ? tr("infl.ofPerson", { what: tr("infl.pillar3a"), name: nameOf(a.person) }) : tr("infl.pillar3a")]),
+    ["taxes.pillar3aMaxIndexed", tr("infl.pillar3aMax")],
+    ["pension.ahv.indexed", of("infl.ahv", 0)], two && ["partner.ahv.indexed", of("infl.ahv", 1)],
+    ["taxes.indexed", tr("infl.taxes")],
+    ["flows.extrasIndexed", tr("infl.extras")],
+    ["taxes.oneOffIndexed", tr("infl.oneOff")], ["taxes.oneOffWealthIndexed", tr("infl.oneOffWealth")],
+    ...props.flatMap((p, i) => p.status === "rent" ? [] : [
+      [`realestate.properties.${i}.inflationValue`, tr("infl.value", { nm: p.name || tr("params.property") })],
+      [`realestate.properties.${i}.inflationFixCosts`, tr("infl.fixCosts", { nm: p.name || tr("params.property") })]]),
+  ].filter(Boolean);
+}
+const getIn = (plan, path) => path.split(".").reduce((a, k) => a?.[k], plan);
+/** #306/AK4: the exceptions set in `plan` as text («keine» without one). */
+function inflationExceptions(plan = state) {
+  const list = inflationItems(plan).filter(([path]) => getIn(plan, path) === false).map(([, what]) => tr("infl.nominal", { what }));
+  (plan.realestate?.properties || []).forEach(p => {
+    if (p.status !== "rent") return;
+    const r = rentInflation(plan, p), nm = p.name || tr("params.property");
+    if (r === "nominal") list.push(tr("infl.nominal", { what: tr("infl.rent", { nm }) }));
+    if (r === "always") list.push(tr("infl.rentAlwaysOf", { nm }));
+  });
+  return list;
+}
+function inflAssumptions() {
+  const list = inflationExceptions();
+  return list.length ? tr("infl.assumeExceptions", { list: esc(list.join(", ")) }) : tr("infl.assumeNone");
+}
+/** #306/AK4: «Experte» with the exceptions «nominal, ohne Teuerung» per amount; opens by itself with an exception. */
+function inflationExpert() {
+  const open = taxOpen.infl ?? inflationExceptions().length > 0;
+  const nominal = ([path, label]) => `<label class="check"><input type="checkbox" data-path="${path}" data-type="nominal" ${getP(path) === false ? "checked" : ""}> ${esc(label)}</label>`;
+  const rents = state.realestate.properties.map((p, i) => p.status !== "rent" ? "" : `<label class="field"><span>${tr("infl.rent", { nm: esc(p.name || tr("params.property")) })}</span>
+    <select class="plain" data-path="realestate.properties.${i}.inflationRent" data-type="rentinfl">${[["", tr("infl.rentUntil")], ["always", tr("infl.rentAlways")], ["nominal", tr("infl.rentNominal")]]
+      .map(([k, l]) => `<option value="${k}" ${(rentInflation(state, p) === (k || "until")) ? "selected" : ""}>${l}</option>`).join("")}</select></label>`).join("");
+  return `<details class="taxsettings" id="infl-expert" data-tax-open="infl"${open ? " open" : ""}>
+    <summary class="card taxassume" id="infl-assumptions"><b>${tr("infl.expert")}:</b> ${tr("infl.expertSummary")} · <span data-infl-assumptions>${C("inflAssumptions")}</span></summary>
+    <div class="card" id="infl-exceptions"><h3>${tr("infl.title")}</h3><p class="hint" style="margin-top:0">${tr("infl.hint")}</p>
+    <div class="grid2">${inflationItems().map(nominal).join("")}</div>
+    ${rents ? `<div class="grid2" style="margin-top:10px">${rents}</div>` : ""}
+    <p class="hint">${tr("infl.zeroHint")} ${helpLink("inflation", tr("infl.helpLink"))}</p></div></details>`;
+}
 
 let STRATS;
 onLanguage(() => STRATS = [
@@ -1678,7 +1735,7 @@ function dedFirstYear(i) {
   const y = String(Math.floor(from / 12)), b = lastSim.taxBasis.get(y);
   if (!b || !b.partsCanton.length && !b.partsFederal.length) return null;
   const sum = (list, k) => list.filter(p => p[0] === k).reduce((a, p) => a + p[1], 0);
-  const extra = (r.extra ?? 0) * (state.taxes.indexed ? b.priceIndex ?? 1 : 1);
+  const extra = (r.extra ?? 0) * (indexedOf(state, state.taxes.indexed) ? b.priceIndex ?? 1 : 1);
   const parts = [...DED_PARTS.map(k => [tr(`deductions.part.${k}`), sum(b.partsCanton, k), sum(b.partsFederal, k)]), [tr("deductions.originExtra"), extra, extra]]
     .filter(p => p[1] !== 0 || p[2] !== 0);
   return { year: y, parts, canton: parts.reduce((a, p) => a + p[1], 0), federal: parts.reduce((a, p) => a + p[2], 0) };
@@ -1853,7 +1910,7 @@ const oneOffCard = () => `<div class="card" id="tax-oneoff"><h3>${tr("deductions
 function expertValues(s = state) {
   const t = s.taxes;
   return !isLocation(s) || (t.deductions ?? []).some(r => r.kind !== "canton" || (r.extra ?? 0) !== 0 || r.taxBill)
-    || (t.wealthDeductions ?? []).some(r => (r.amount ?? 0) !== 0) || !!t.oneOffWealthDeductions?.length || t.indexed === false;
+    || (t.wealthDeductions ?? []).some(r => (r.amount ?? 0) !== 0) || !!t.oneOffWealthDeductions?.length;
 }
 /** #131/AK7: input help «eigener Wert» from income and taxable income of the last assessment (not saved). */
 const dedCalc = { income: "", taxable: "", p3a: "" };
@@ -1880,7 +1937,7 @@ function taxAssumptions() {
   const ded = canton ? tr(rows.some(r => r.from === "retire") ? "taxes.assume.dedCantonRetire" : "taxes.assume.dedCanton") + (extra ? tr("taxes.assume.dedExtra") : "")
     : rows.some(r => r.kind === "canton" || r.amount || r.rate) || extra ? tr("taxes.assume.dedOwn") : tr("taxes.assume.dedNone");
   const y = t.investmentYield ?? {}, bill = rows.find(r => r.taxBill)?.taxBill;
-  return [bill ? tr("taxBill.assume", { year: bill }) : ded, tr(t.indexed ? "taxes.assume.indexed" : "taxes.assume.notIndexed"), tr(t.deductPillar3a ? "taxes.assume.p3aYes" : "taxes.assume.p3aNo"),
+  return [bill ? tr("taxBill.assume", { year: bill }) : ded, tr(indexedOf(state, t.indexed) ? "taxes.assume.indexed" : "taxes.assume.notIndexed"), tr(t.deductPillar3a ? "taxes.assume.p3aYes" : "taxes.assume.p3aNo"),
     state.realestate.defaultTaxValue ? tr("taxes.assume.taxValueDefault", { pc: taxValueDefaultPc() }) : tr("taxes.assume.taxValueMarket"),
     tr("taxes.assume.yield", { stocks: fmtPct(y.stocks ?? 0), bonds: fmtPct(y.bonds ?? 0) })].join(" · ");
 }
@@ -1918,9 +1975,9 @@ R.taxes = () => {
     ${pillar3aDeductionCard()}
     ${investmentYieldCard()}
     ${own ? "" : locGainCard() + gainMultiplier}</details>`;
-  // #275/AK1: deductions in detail, deductions from wealth, tariffs with inflation and the own tables, closed
+  // #275/AK1: deductions in detail, deductions from wealth and the own tables, closed. #306: the tariffs grow with
+  // inflation; the exception «nominal» is under «Experte» in the section «Renditen».
   const tariffs = `<div class="card" id="tax-indexed">${own ? `<div class="grid3" style="margin-bottom:10px">${F("taxes.multiplier", tr("taxes.multiplier"), "num", { unit: "×" })}</div>` : ""}
-    <div>${Chk("taxes.indexed", tr("taxes.indexed"))}</div>
     <p class="hint">${own ? tr("taxes.indexedHint") : tr("taxes.indexedHintLocation")}</p></div>`;
   const ownTables = own ? `<div class="card">${tables}${TaxTable("capital", tr("taxes.lumpsumTax"), tr("taxes.lumpsum"))}
     <p class="hint lumpcheck">${tr("taxes.lumpsumTax")}: ${tr("taxes.checkBeforeDecision")}</p></div>` : "";
@@ -1993,14 +2050,12 @@ R.realestate = () => `<h2>${tr("section.realestate")}</h2><p class="lead">${tr("
   ${state.realestate.properties.map((p, i) => {
     const P = `realestate.properties.${i}`;
     let body = "";
-    if (p.status === "rent") body = `<div class="grid2"><label class="field"><span>${tr("realestate.rentFrom")}</span>${Ref(P + ".from", { afterSale: true, self: p.id })}</label>${F(P + ".rent", tr("realestate.rentMonth"), "chf")}</div>
-      <div style="margin-top:10px">${Chk(P + ".inflationRent", tr("realestate.rentIndexed"))}</div>`;
+    if (p.status === "rent") body = `<div class="grid2"><label class="field"><span>${tr("realestate.rentFrom")}</span>${Ref(P + ".from", { afterSale: true, self: p.id })}</label>${F(P + ".rent", tr("realestate.rentMonth"), "chf", { hint: tr("realestate.rentHint") })}</div>`;
     else body = `<div class="grid2 pgrid">
       ${p.status === "owned" ? F(P + ".bought", tr("realestate.buyDate"), "month") : `<label class="field"><span>${tr("realestate.buyFrom")}</span>${Ref(P + ".buy", { afterSale: true, self: p.id })}</label>`}
       ${F(P + ".price", p.status === "owned" ? tr("realestate.pricePaid") : tr("realestate.price"), "chf")}
       <label class="field"><span>${tr("realestate.sellFrom")}</span>${Ref(P + ".sell", { never: true })}</label>
       ${F(P + ".fixCosts", tr("realestate.costsMonth"), "chf")}</div>
-      <div class="grid3" style="margin-top:10px">${Chk(P + ".inflationValue", tr("realestate.valueIndexed"))}${Chk(P + ".inflationFixCosts", tr("realestate.costsIndexed"))}</div>
       ${taxValueRow(p, i, P)}
       ${propertyGainRow(p, P)}
       ${MortgageUI(p, i)}`;
@@ -2043,6 +2098,7 @@ const COMPUTED = {
   taxFigures: () => taxFigures(),
   taxSwitchHint: () => taxSwitchHint(),
   taxAssumptions: () => taxAssumptions(),
+  inflAssumptions: () => inflAssumptions(),
   dedSum: i => dedSum(i),
   dedParts: i => dedParts(i),
   wtaxHint: () => wtaxHint(),
@@ -2696,6 +2752,9 @@ function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.ad
 function readInput(el) {
   const t = el.dataset.type;
   if (t === "bool") return el.checked;
+  // #306: exception «nominal, ohne Teuerung» (false) or none (flag removed: with inflation)
+  if (t === "nominal") return el.checked ? false : undefined;
+  if (t === "rentinfl") return el.value === "always" ? true : el.value === "nominal" ? false : undefined;
   if (t === "select" || t === "radio" || t === "text") return el.value;
   if (t === "month") return parseShow(el.value);
   if (t === "chfopt" && el.value.trim() === "") return undefined;
@@ -2968,7 +3027,7 @@ const ACTIONS = {
     if (d.v === "planned") { p.buy ??= "retire"; p.sell ??= "never"; }
     markDirty(); renderSection();
   },
-  "prop-add": () => { state.realestate.properties.push({ id: newPropId(), name: tr("actions.newProperty"), status: "planned", buy: "retire", sell: "never", price: 800000, fixCosts: 400, inflation: true, inflationValue: true, inflationFixCosts: true, inflationRent: true, mortgage: newMortgage() }); markDirty(); renderSection(); },
+  "prop-add": () => { state.realestate.properties.push({ id: newPropId(), name: tr("actions.newProperty"), status: "planned", buy: "retire", sell: "never", price: 800000, fixCosts: 400, mortgage: newMortgage() }); markDirty(); renderSection(); },
   "period-add": d => { const ps = state.realestate.properties[+d.i].mortgage.tranches[+d.t].periods, last = ps[ps.length - 1]; ps.push(newPeriod(last ? { ...last, term: 5 } : {})); markDirty(); renderSection(); },
   "tranche-add": d => {
     const p = state.realestate.properties[+d.i], ts = p.mortgage.tranches;
@@ -4066,10 +4125,12 @@ function paramSections(plan, full = false) {
   const pens = (pre, o, ahv) => [
     [tr("params.pkCapital", { pre }), money(o.pk?.capital)], [tr("params.pkFrom", { pre }), at(o.pk?.at)], [tr("params.lumpsum", { pre }), pc(o.pk?.lumpsum)],
     [tr("params.conversion", { pre }), pc(o.pk?.conversion)], [tr("params.pkContribution", { pre }), ser(o.pk?.contribution, money)], [tr("params.pkInterest", { pre }), ser(o.pk?.interest, pc)],
-    [tr("params.ahvMonth", { pre }), money(ahv?.monthly)], [tr("params.ahvFrom", { pre }), at(ahv?.at)], [tr("params.ahvIndexed", { pre }), yn(ahv?.indexed)]];
+    [tr("params.ahvMonth", { pre }), money(ahv?.monthly)], [tr("params.ahvFrom", { pre }), at(ahv?.at)], [tr("params.ahvIndexed", { pre }), yn(indexedOf(plan, ahv?.indexed))]];
   const part = plan.partner;
   out.push([tr("section.pension"), [...pens(part ? tr("params.person1") : "", plan.pension || {}, plan.pension?.ahv),
     ...(part ? pens(tr("params.person2"), part, part.ahv) : [])]]);
+  // #306/AK4: the exceptions «nominal, ohne Teuerung»
+  out.push([tr("infl.expert"), [[tr("infl.paramsExceptions"), inflationExceptions(plan).join(", ") || tr("infl.none")]]]);
   out.push([tr("params.flows"), [[tr("params.incomeYear"), ser(plan.flows?.income, moneyYear)], ...(part ? [[tr("params.income2Year"), ser(part.income, moneyYear)]] : []),
     [tr("params.spendingMonth"), ser(plan.flows?.spending, money)],
     ...(plan.flows?.extras || []).map(e => [tr("params.oneOff", { date: ymShow(e.date), v: e.label ? " " + e.label : "" }), money(e.amount)])]]);
@@ -4129,7 +4190,7 @@ function paramSections(plan, full = false) {
   const yieldText = tr("params.investmentYieldValue", { stocks: pc(t.investmentYield?.stocks ?? 0), bonds: pc(t.investmentYield?.bonds ?? 0) });
   // #274/AK7: deductions from income taken over from the tax bill
   const bill = (t.deductions ?? []).find(r => r.taxBill)?.taxBill;
-  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(t.indexed)], ...incomeWealth, ...(bill ? [[tr("taxBill.params"), tr("taxBill.origin", { year: bill })]] : []), [tr("params.investmentYield"), yieldText], [tr("taxes.lumpsumTax"), lumpsum],
+  out.push([tr("params.taxAssumptions"), [[tr("params.multiplier"), num(t.multiplier)], [tr("params.taxIndexed"), yn(indexedOf(plan, t.indexed))], ...incomeWealth, ...(bill ? [[tr("taxBill.params"), tr("taxBill.origin", { year: bill })]] : []), [tr("params.investmentYield"), yieldText], [tr("taxes.lumpsumTax"), lumpsum],
     // #65: in the mode «Wohnort» without own rules the rule of the canton of each property
     [tr("gain.title"), !gainOwn(plan) ? tr("params.gainCanton") : g ? `${g.model === "aargau" ? tr("params.modelAg") : tr("params.steps")}${tr("params.reduction", { pc: pc(g.reduction ?? 0) })}${g.exemptBelow ? tr("params.exemptBelow", { exemptBelow: money(g.exemptBelow) }) : ""}` : tr("results.none")]]]);
   out.push([tr("scen.variations"), (plan.scenarios?.sweeps || []).length ? plan.scenarios.sweeps.map(sw => [sweepLabel(sw.param), tr("params.rangeStep", { v: SWEEP_SHOW[sweepType(sw.param)]?.(sw.from) ?? sw.from, v2: SWEEP_SHOW[sweepType(sw.param)]?.(sw.to) ?? sw.to, step: sw.step })]) : [[tr("scen.variations"), tr("results.none")]]]);
@@ -4141,8 +4202,8 @@ function paramSections(plan, full = false) {
       ...props.flatMap(p => { const nm = p.name || tr("params.property"); return [
         ...(p.status === "owned" ? [[tr("params.buyDate", { nm }), ymShow(p.bought)]] : []),
         ...(!gainOwn(plan) && p.status !== "rent" ? [[tr("params.gainCantonOf", { nm }), p.canton || cantons.join(" → ") || "–"]] : []),
-        ...(p.status === "rent" ? [[tr("params.rentFrom", { nm }), at(p.from)], [tr("params.rentIndexed", { nm }), yn(p.inflationRent)]]
-          : [[tr("params.valueIndexed", { nm }), yn(p.inflationValue)], [tr("params.costsIndexed", { nm }), yn(p.inflationFixCosts)]]),
+        ...(p.status === "rent" ? [[tr("params.rentFrom", { nm }), at(p.from)], [tr("params.rentIndexed", { nm }), tr(`infl.rentParam.${rentInflation(plan, p)}`)]]
+          : [[tr("params.valueIndexed", { nm }), yn(indexedOf(plan, p.inflationValue, p.inflation))], [tr("params.costsIndexed", { nm }), yn(indexedOf(plan, p.inflationFixCosts, p.inflation))]]),
         ...(p.mortgage?.tranches || []).map(t => [`${nm}: ${t.name || tr("mortgage.tranche")}${tr("params.afterLast")}`, t.after === "repay" ? tr("mortgage.repay") : tr("params.extendLower")])]; })]);
     add(tr("section.pillar3a"), (plan.pillar3a || []).map(x => [tr("params.restAtAhv", { v: (plan.household?.persons || []).find(q => q.id === x.person)?.name || x.person }), x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")]));
     // Time-dependent values of the strategy as a list instead of «zeitabhängig», so that differences are visible

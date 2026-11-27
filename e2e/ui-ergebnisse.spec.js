@@ -323,8 +323,9 @@ test.describe("Results", () => {
       state.taxes.propertyGain = { brackets: [], reduction: 0 };   // required with real estate; rate 0 % so that the amounts stay unchanged
       setP("flows.income", { mode: "const", value: 6000 }); setP("flows.spending", { mode: "const", value: 0 });
       state.flows.spendingIncludesHousing = false; // housing costs in addition (#53)
+      state.flows.incomeIndexed = false; // #306: income nominal, so that the affordability at the renewal stays as planned
       state.wealth.cash = 2000000;
-      const house = (extra = {}) => ({ id: "h", name: "Haus", status: "owned", price: 500000, worth: 800000, sell: "never", fixCosts: 0, inflation: false,
+      const house = (extra = {}) => ({ id: "h", name: "Haus", status: "owned", price: 500000, worth: 800000, sell: "never", fixCosts: 0, inflationValue: false, // #306: value nominal
         mortgage: { tranches: [{ name: "T", amount: 400000, start: "2026-03", after: "renew", periods: [{ type: "fixed", term: 1, rate: 0.01 }] }] }, ...extra });
       const show = async props => {
         state.realestate.properties = props;
@@ -336,7 +337,7 @@ test.describe("Results", () => {
       const res = {};
       res.none = await show([]);
       res.sale = await show([house({ sell: "2026-09" })]);
-      res.buy = await show([{ id: "n", name: "Neubau", status: "planned", buy: "2028-06", price: 600000, fixCosts: 0, inflation: false,
+      res.buy = await show([{ id: "n", name: "Neubau", status: "planned", buy: "2028-06", price: 600000, fixCosts: 0, inflationValue: false,
         mortgage: { tranches: [{ name: "T", amount: 300000, periods: [{ type: "fixed", term: 20, rate: 0.015 }] }] } }]);
       res.lump = await show([house()]);
       setP("flows.income", { mode: "const", value: 2000 }); state.wealth.cash = 10000; state.wealth.stocks = 0; state.wealth.bonds = 0;

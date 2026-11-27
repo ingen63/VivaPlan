@@ -38,6 +38,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::indexation::{Indexation, PropertyIndexation, RentIndexation};
 use crate::market::MarketPath;
 use crate::message::Message;
 use crate::model::{
@@ -296,6 +297,8 @@ struct YearDeductions {
     /// #230: One-off deductions of the tax year (nominal); set at the assessment, not in the estimate of the net need.
     one_off: f64,
     pillar3a: [f64; 2],
+    /// #306: Price index for the pillar 3a maximum (1 if it stays nominal); missing: the index of the tax tables.
+    pillar3a_index: Option<f64>,
     /// #271: Care home costs of the tax year (nominal).
     care: f64,
     /// #274: Tax year of the tax bill of a row applied in the year (the last one).
@@ -790,6 +793,10 @@ struct CAccount {
     rate_m: f64,
     /// Contribution per month (one twelfth of the annual contribution), until before the AHV payout.
     contribution_m: f64,
+    /// #306: The contribution is in prices of the start and grows with inflation, at most to the maximum of the year.
+    indexed: bool,
+    /// #306: Maximum contribution per year in prices of the start (large pillar 3a without a pension fund).
+    max: f64,
     /// Person (id), for displaying the payout plan.
     person: String,
     /// Planned payouts: month, amount (missing: whole balance), repay mortgage, row in the plan.
@@ -814,7 +821,8 @@ struct CProp {
     default_tax_value: bool,
     infl_value: bool,
     infl_fix_costs: bool,
-    infl_rent: bool,
+    /// #306: rent with inflation throughout, until moving in or nominal.
+    infl_rent: RentIndexation,
     fix_costs: f64,
     buy: Option<YearMonth>,
     sell: Option<YearMonth>,
@@ -841,6 +849,8 @@ struct PersonCfg {
     /// #236: First month without earned income (milestone «Bezug Pensionskasse» of the person), if the switch is on.
     income_end: Option<YearMonth>,
     pk_contribution: Curve,
+    /// #306: The contributions are in prices of the start (grow with the path's price index).
+    pk_contribution_indexed: bool,
     pk_interest: Curve,
     pk_capital: f64,
     pk_lumpsum: f64,
@@ -902,6 +912,15 @@ pub struct Simulator {
     /// #150: Unmarried couples pay the lump-sum tax per person; otherwise the household's lump sums add up.
     capital_per_person: bool,
     spending: Curve,
+    /// #306: The living costs grow with inflation (otherwise nominal, exception).
+    spending_indexed: bool,
+    /// #306: One-off amounts, one-off deductions from income and from wealth grow with inflation.
+    extras_indexed: bool,
+    one_off_indexed: bool,
+    one_off_wealth_indexed: bool,
+    /// #66/#306: Tax tables and ongoing deductions grow with inflation; the pillar 3a maximum.
+    tax_indexed: bool,
+    pillar3a_max_indexed: bool,
     /// #53: Housing share of the entered living costs (prices of the start month) and factor of the variation.
     housing_share: f64,
     spending_factor: f64,
@@ -916,8 +935,9 @@ pub struct Simulator {
     emergency: Curve,
     /// #196: Never sell a property (switch «Immobilien nie verkaufen»).
     never_sell: bool,
-    /// #271: Care home per person (index as in `people`): month of the entry and costs per month in prices of the start.
-    care: Vec<(YearMonth, f64, usize)>,
+    /// #271: Care home per person (index as in `people`): month of the entry and costs per month in prices of the start;
+    /// #306: with inflation (otherwise nominal).
+    care: Vec<(YearMonth, f64, usize, bool)>,
     /// #271: First month in which every person of the household lives in a care home (housing of the household ends).
     all_in_care: Option<YearMonth>,
     /// #271: Month of the sale of the properties because of the care home (`sell`, not with «Immobilien nie verkaufen»).
@@ -1021,6 +1041,8 @@ impl Simulator {
                           birth: YearMonth,
                           income: &crate::model::Series,
                           income_indexed: bool,
+                          contribution_indexed: bool,
+                          ahv_indexed: bool,
                           income_ends: bool,
                           pk: &crate::model::PensionFund,
                           ahv: &crate::model::Ahv|
@@ -1046,20 +1068,25 @@ impl Simulator {
                 } else {
                     Curve::constant(0.0)
                 },
+                pk_contribution_indexed: contribution_indexed,
                 pk_interest: curve(&pk.interest)?,
                 pk_capital: zero_if_off(pk.capital),
                 pk_lumpsum: zero_if_off(pk.lumpsum),
                 pk_conversion: zero_if_off(pk.conversion),
                 pk_at: r.resolve(&pk.at)?,
-                ahv: crate::ahv::Person::new(birth, ahv.monthly, ahv_at, ahv.indexed),
+                ahv: crate::ahv::Person::new(birth, ahv.monthly, ahv_at, ahv_indexed),
             })
         };
         let persons = &plan.household.persons;
+        // #306: which amounts grow with inflation
+        let ix = Indexation::of(plan);
         let mut people = vec![person_cfg(
             0,
             persons[0].birth,
             &plan.flows.income,
-            plan.flows.income_indexed,
+            ix.income[0],
+            ix.pk_contribution[0],
+            ix.ahv[0],
             plan.flows.income_ends_at_retirement,
             &plan.pension.pk,
             &plan.pension.ahv,
@@ -1069,7 +1096,9 @@ impl Simulator {
                 1,
                 p2.birth,
                 &q.income,
-                q.income_indexed,
+                ix.income[1],
+                ix.pk_contribution[1],
+                ix.ahv[1],
                 q.income_ends_at_retirement,
                 &q.pk,
                 &q.ahv,
@@ -1081,7 +1110,7 @@ impl Simulator {
         for (i, p) in persons.iter().take(people.len()).enumerate() {
             if let Some(c) = &p.care_home {
                 if let Some(entry) = c.entry(p.birth, &r)? {
-                    care.push((entry, c.monthly, i));
+                    care.push((entry, c.monthly, i, ix.care[i]));
                     care_sell |= c.sell;
                 }
             }
@@ -1228,7 +1257,8 @@ impl Simulator {
             .realestate
             .properties
             .iter()
-            .map(|p| compile_property(p, plan, &r, end))
+            .zip(&ix.properties)
+            .map(|(p, pi)| compile_property(p, pi, plan, &r, end))
             .collect::<Result<Vec<_>>>()?;
         // Pillar 3a: one account per person (empty if not given), so indirect amortization always has a target.
         let accounts = persons
@@ -1242,14 +1272,20 @@ impl Simulator {
                     crate::message::Arg::Null
                 };
                 let ahv = r.milestone(crate::model::person_milestones(i).1).ok();
-                match plan.pillar3a.iter().find(|a| a.person == person.id) {
+                let max = if person.no_pension_fund {
+                    plan.limits.pillar3a_max_large
+                } else {
+                    plan.limits.pillar3a_max
+                };
+                match plan.pillar3a.iter().enumerate().find(|(_, a)| a.person == person.id) {
                     None => CAccount {
                         who,
                         ahv,
+                        max,
                         person: person.id.clone(),
                         ..Default::default()
                     },
-                    Some(a) => {
+                    Some((j, a)) => {
                         // #55: Point in time as a date or as the age of the account holder.
                         let mut payouts: Vec<_> = a
                             .payouts
@@ -1271,6 +1307,8 @@ impl Simulator {
                             balance: a.balance,
                             rate_m: crate::market::monthly(a.rate),
                             contribution_m: a.contribution / 12.0,
+                            indexed: ix.pillar3a[j],
+                            max,
                             payouts,
                             ahv,
                             rest_repay: a.usage == PayoutUse::Repay,
@@ -1288,6 +1326,12 @@ impl Simulator {
             couple_cap,
             capital_per_person: separate,
             spending: curve(&plan.flows.spending)?,
+            spending_indexed: ix.spending,
+            extras_indexed: ix.extras,
+            one_off_indexed: ix.one_off,
+            one_off_wealth_indexed: ix.one_off_wealth,
+            tax_indexed: ix.taxes,
+            pillar3a_max_indexed: ix.pillar3a_max,
             housing_share: if plan.flows.spending_includes_housing {
                 crate::housing::start_housing(plan, &r)
             } else {
@@ -1389,6 +1433,21 @@ impl Simulator {
         self.care.iter().filter(|c| m >= c.0).map(|c| c.1).sum()
     }
 
+    /// #306: Planned living costs in month `m` as they are paid: with the price index `infl` or, as an exception,
+    /// nominal.
+    fn living_at(&self, m: YearMonth, infl: f64) -> f64 {
+        self.planned_living(m) * if self.spending_indexed { infl } else { 1.0 }
+    }
+
+    /// #271/#306: Care home costs of the household in month `m` as they are paid (price index `infl`).
+    fn care_cost(&self, m: YearMonth, infl: f64) -> f64 {
+        self.care
+            .iter()
+            .filter(|c| m >= c.0)
+            .map(|c| c.1 * if c.3 { infl } else { 1.0 })
+            .sum()
+    }
+
     /// #271: Every person of the household lives in a care home in month `m`: no rent, no purchase or rent after a
     /// sale.
     fn in_care(&self, m: YearMonth) -> bool {
@@ -1442,7 +1501,7 @@ impl Simulator {
     /// #231: Taxable wealth on 31 December of the year of month `m`: `wealth` minus the row of the deductions from
     /// wealth of December (prices of the start × `index`) and the one-off deductions of the year (nominal), never
     /// negative. Without deductions from wealth exactly `wealth` and no basis (as before #231).
-    fn taxable_wealth(&self, m: YearMonth, wealth: f64, index: f64) -> (f64, Option<WealthBasis>) {
+    fn taxable_wealth(&self, m: YearMonth, wealth: f64, index: f64, one_off_index: f64) -> (f64, Option<WealthBasis>) {
         if self.wealth_deductions.is_empty() && self.one_off_wealth.is_empty() {
             return (wealth, None);
         }
@@ -1455,7 +1514,7 @@ impl Simulator {
             .one_off_wealth
             .iter()
             .filter(|(y, _)| *y == m.year())
-            .map(|(_, a)| a)
+            .map(|(_, a)| a * one_off_index)
             .sum();
         let taxable = (wealth - ongoing - one_off).max(0.0);
         (
@@ -1521,7 +1580,14 @@ impl Simulator {
         let one_off = acc.one_off;
         let pillar3a = if self.deduct_pillar3a {
             (0..self.people.len().min(2))
-                .map(|i| acc.pillar3a[i].min(self.pillar3a_cap(i, earned.get(i).copied().unwrap_or(0.0), index)))
+                .map(|i| {
+                    let cap = self.pillar3a_cap(
+                        i,
+                        earned.get(i).copied().unwrap_or(0.0),
+                        acc.pillar3a_index.unwrap_or(index),
+                    );
+                    acc.pillar3a[i].min(cap)
+                })
                 .sum()
         } else {
             0.0
@@ -1612,21 +1678,32 @@ impl Simulator {
         self.months
     }
 
-    /// Planned pillar 3a contributions in month `m` (until before the person's AHV payout).
-    fn pillar3a_contribution(&self, m: YearMonth) -> f64 {
-        self.accounts
-            .iter()
-            .filter(|a| a.ahv.is_none_or(|h| m < h))
-            .map(|a| a.contribution_m)
+    /// Planned pillar 3a contributions in month `m` (until before the person's AHV payout); `infl`, `infl_jan`: price
+    /// index of the month and of January (#306).
+    fn pillar3a_contribution(&self, m: YearMonth, infl: f64, infl_jan: f64) -> f64 {
+        (0..self.accounts.len())
+            .map(|i| self.pillar3a_contribution_of(i, m, infl, infl_jan))
             .sum()
     }
 
-    /// #131: Planned pillar 3a contribution of person `i` in month `m`.
-    fn pillar3a_contribution_of(&self, i: usize, m: YearMonth) -> f64 {
+    /// #131: Planned pillar 3a contribution of person `i` in month `m`. #306/AK7: an indexed contribution grows with the
+    /// price index `infl`, at most to the maximum of the year (maximum × price index of January `infl_jan`, if the
+    /// maximum grows with inflation).
+    fn pillar3a_contribution_of(&self, i: usize, m: YearMonth, infl: f64, infl_jan: f64) -> f64 {
         self.accounts
             .get(i)
             .filter(|a| a.ahv.is_none_or(|h| m < h))
-            .map_or(0.0, |a| a.contribution_m)
+            .map_or(0.0, |a| self.account_contribution(a, infl, infl_jan))
+    }
+
+    /// #306/AK7: Contribution of the account `a` in a month (see [`Self::pillar3a_contribution_of`]).
+    fn account_contribution(&self, a: &CAccount, infl: f64, infl_jan: f64) -> f64 {
+        if a.indexed {
+            let max = a.max * if self.pillar3a_max_indexed { infl_jan } else { 1.0 };
+            (a.contribution_m * infl).min(max / 12.0).max(0.0)
+        } else {
+            a.contribution_m
+        }
     }
 
     pub fn age_at(&self, m: YearMonth) -> f64 {
@@ -1648,7 +1725,7 @@ impl Simulator {
     }
 }
 
-fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> Result<CProp> {
+fn compile_property(p: &Property, ix: &PropertyIndexation, plan: &Plan, r: &Resolver, end: YearMonth) -> Result<CProp> {
     // #273: the default share of the market value for properties without an own tax value (new plans)
     let default_tax_value =
         plan.realestate.default_tax_value && p.tax_value.is_none() && p.status != PropertyStatus::Rent;
@@ -1733,9 +1810,9 @@ fn compile_property(p: &Property, plan: &Plan, r: &Resolver, end: YearMonth) -> 
         },
         has_tax_value: p.status != PropertyStatus::Rent && (p.tax_value.is_some() || default_tax_value),
         default_tax_value,
-        infl_value: p.inflation_value.unwrap_or(p.inflation),
-        infl_fix_costs: p.inflation_fix_costs.unwrap_or(p.inflation),
-        infl_rent: p.inflation_rent.unwrap_or(true),
+        infl_value: ix.value,
+        infl_fix_costs: ix.fix_costs,
+        infl_rent: ix.rent,
         fix_costs: p.fix_costs,
         buy,
         sell,
@@ -1815,6 +1892,8 @@ struct PropState {
     attempted: bool,
     /// Accrued mortgage interest not yet paid (due at quarter end).
     int_accr: f64,
+    /// #306/AK3: Rent fixed at moving in (grows with inflation until then, nominal afterwards).
+    rent_fixed: Option<f64>,
 }
 
 /// #190: First year with a 13th AHV pension (first payout December 2026).
@@ -1966,6 +2045,7 @@ impl<'a> Run<'a> {
                     sold: None,
                     attempted: false,
                     int_accr: 0.0,
+                    rent_fixed: None,
                 }
             })
             .collect();
@@ -2190,10 +2270,19 @@ impl<'a> Run<'a> {
         (after - before).max(0.0)
     }
 
+    /// #306: Price index for the pillar 3a maximum (cumulative inflation since the start), 1.0 if it stays nominal.
+    fn pillar3a_index(&self) -> f64 {
+        if self.s.pillar3a_max_indexed {
+            self.infl_idx
+        } else {
+            1.0
+        }
+    }
+
     /// #66: Price index for the amounts of the tax tables (cumulative inflation since the simulation start) if the
     /// plan chose «tariffs with inflation»; otherwise 1.0 (tables in nominal francs).
     fn tax_index(&self) -> f64 {
-        if self.s.taxes.indexed {
+        if self.s.tax_indexed {
             self.infl_idx
         } else {
             1.0
@@ -2516,8 +2605,7 @@ impl<'a> Run<'a> {
         let reason = if liquid - lump < 0.0 {
             Some("wealth < 0")
         } else {
-            let shortfall =
-                s.planned_living(m) * self.infl_idx + self.running_estimate(m, k, i, tranches, keep) - income_m;
+            let shortfall = s.living_at(m, self.infl_idx) + self.running_estimate(m, k, i, tranches, keep) - income_m;
             (liquid - lump - s.emergency.at(m) * shortfall < 0.0).then_some("emergency sale criterion")
         };
         if reason.is_some() && s.never_sell {
@@ -2757,7 +2845,13 @@ impl<'a> Run<'a> {
                     let until = p.rent_until.is_none_or(|u| m < u);
                     // #271: the rent ends once everyone lives in a care home
                     if from && until && !s.in_care(m) {
-                        let rent = p.rent * if p.infl_rent { self.infl_idx } else { 1.0 };
+                        let rent = match p.infl_rent {
+                            RentIndexation::Always => p.rent * self.infl_idx,
+                            RentIndexation::Nominal => p.rent,
+                            RentIndexation::UntilMoveIn => {
+                                *self.props[i].rent_fixed.get_or_insert(p.rent * self.infl_idx)
+                            }
+                        };
                         cost += rent;
                         running += rent;
                     }
@@ -2904,10 +2998,12 @@ impl<'a> Run<'a> {
             self.ledger.p3a_interest += self.p3a[a] * c.rate_m;
             self.p3a[a] *= 1.0 + c.rate_m;
             if c.contribution_m > 0.0 && c.ahv.is_none_or(|h| m < h) {
-                self.p3a[a] += c.contribution_m;
-                paid_in += c.contribution_m;
+                // #306/AK7: in prices of the start, at most the maximum of the year
+                let contribution = s.account_contribution(c, self.infl_idx, self.infl_idx_jan);
+                self.p3a[a] += contribution;
+                paid_in += contribution;
                 if let Some(y) = self.year_ded.pillar3a.get_mut(a) {
-                    *y += c.contribution_m;
+                    *y += contribution;
                 }
             }
             if self.record {
@@ -3116,7 +3212,7 @@ impl<'a> Run<'a> {
                 break;
             }
             let (a, p) = self.pensions_at(mm);
-            let care_mm = s.care_at(mm) * self.infl_idx;
+            let care_mm = s.care_cost(mm, self.infl_idx);
             care += care_mm;
             ded.care += care_mm;
             living += match &rule {
@@ -3124,12 +3220,12 @@ impl<'a> Run<'a> {
                     d,
                     mm,
                     a + p + s.earned(mm, self.infl_idx),
-                    self.month_running + care_mm + s.pillar3a_contribution(mm),
+                    self.month_running + care_mm + s.pillar3a_contribution(mm, self.infl_idx, self.infl_idx_jan),
                 ),
-                None => s.planned_living(mm) * self.infl_idx,
+                None => s.living_at(mm, self.infl_idx),
             };
             housing += housing_now;
-            p3a += s.pillar3a_contribution(mm);
+            p3a += s.pillar3a_contribution(mm, self.infl_idx, self.infl_idx_jan);
             ahv += a;
             pk += p;
             earned += s.earned(mm, self.infl_idx);
@@ -3144,7 +3240,7 @@ impl<'a> Run<'a> {
             };
             s.add_deduction_month(&mut ded, mm, a13 + p + s.earned(mm, self.infl_idx));
             for (i, y) in ded.pillar3a.iter_mut().enumerate().take(s.people.len()) {
-                *y += s.pillar3a_contribution_of(i, mm);
+                *y += s.pillar3a_contribution_of(i, mm, self.infl_idx, self.infl_idx_jan);
             }
             n += 1;
         }
@@ -3173,7 +3269,10 @@ impl<'a> Run<'a> {
                     m,
                     (ahv + pk + earned) * f + investment_yield,
                     &per_person[..s.people.len().min(2)],
-                    &ded,
+                    &YearDeductions {
+                        pillar3a_index: Some(self.pillar3a_index()),
+                        ..ded
+                    },
                     self.tax_index(),
                 )
                 .0,
@@ -3650,7 +3749,7 @@ impl<'a> Run<'a> {
     /// As [`Self::rule_living`]; also tells whether the floor sets the living costs (#205).
     fn rule_living_bound(&self, d: &Dynamic, m: YearMonth, income: f64, housing: f64) -> (f64, bool) {
         let s = self.s;
-        let planned = s.planned_living(m) * self.infl_idx;
+        let planned = s.living_at(m, self.infl_idx);
         let mut l = (self.budget / 12.0 + s.savings.at(m) + income - housing).max(0.0);
         if let Some(c) = d.ceiling {
             l = l.min(c * planned);
@@ -3834,6 +3933,8 @@ impl<'a> Run<'a> {
             let mut extras_out = 0.0;
             for (em, amount, label) in &s.extras {
                 if *em == m {
+                    // #306: in prices of the start until the month of the amount (otherwise nominal)
+                    let amount = &(amount * if s.extras_indexed { self.infl_idx } else { 1.0 });
                     self.cash += amount;
                     self.ledger.extras += amount;
                     if *amount < 0.0 {
@@ -3901,7 +4002,7 @@ impl<'a> Run<'a> {
                 }
             }
             // #271: entry into the care home (before the start: in the start month)
-            for &(entry, monthly, pi) in &s.care {
+            for &(entry, monthly, pi, indexed) in &s.care {
                 if entry.max(s.start) == m {
                     let who = if s.people.len() > 1 {
                         crate::message::arg(&msg!(suffix_person, n = pi + 1))
@@ -3911,7 +4012,7 @@ impl<'a> Run<'a> {
                     let text = msg!(
                         event_care_home,
                         who = who,
-                        amount = (monthly * self.infl_idx),
+                        amount = (monthly * if indexed { self.infl_idx } else { 1.0 }),
                         currency = self.s.currency
                     );
                     self.event(m, EventKind::CareHome, text);
@@ -3955,9 +4056,9 @@ impl<'a> Run<'a> {
             // #190: the 13th AHV pension in December counts as AHV income (also for the income tax).
             let ahv = ahv_monthly + self.thirteenth_ahv(m, ahv_monthly);
             let income = earned + pk_pension + ahv;
-            let planned = s.planned_living(m) * self.infl_idx;
-            // #271: care home costs with inflation
-            let care = s.care_at(m) * self.infl_idx;
+            let planned = s.living_at(m, self.infl_idx);
+            // #271: care home costs with inflation (#306: or nominal)
+            let care = s.care_cost(m, self.infl_idx);
             // #6/#47: The spending rule applies from the retirement of the first person.
             let (living, at_floor) = match s.dynamic {
                 Some(d) if self.any_retired() => {
@@ -4004,8 +4105,11 @@ impl<'a> Run<'a> {
             for (st, c) in self.people.iter_mut().zip(&s.people) {
                 if !st.retired {
                     st.pk_accrued += st.pk * c.pk_interest.at(m) / 12.0;
-                    st.pk += c.pk_contribution.at(m);
-                    self.ledger.pk_contributions += c.pk_contribution.at(m);
+                    // #306: contributions in prices of the start (otherwise nominal)
+                    let contribution =
+                        c.pk_contribution.at(m) * if c.pk_contribution_indexed { self.infl_idx } else { 1.0 };
+                    st.pk += contribution;
+                    self.ledger.pk_contributions += contribution;
                     if december {
                         self.ledger.pk_interest += st.pk_accrued;
                         st.pk += st.pk_accrued;
@@ -4029,7 +4133,10 @@ impl<'a> Run<'a> {
                 // #229: the wealth tax uses the tax value of the properties instead of the market value
                 let taxable_wealth = wealth + self.tax_equity();
                 let idx = self.tax_index();
-                self.year_ded.one_off = s.one_off_deduction(m.year());
+                // #306: one-off deductions in prices of the start until their tax year (otherwise nominal)
+                self.year_ded.one_off =
+                    s.one_off_deduction(m.year()) * if s.one_off_indexed { self.infl_idx } else { 1.0 };
+                self.year_ded.pillar3a_index = Some(self.pillar3a_index());
                 // #149: the taxable yield of the wealth counts to the income (both modes, before the deductions)
                 assessed_yield = std::mem::take(&mut self.year_yield);
                 let (ti, mut basis) = s.income_tax(
@@ -4040,7 +4147,8 @@ impl<'a> Run<'a> {
                     idx,
                 );
                 // #231: minus the deductions from wealth (in the mode «Wohnort» in addition to those of the canton)
-                let (taxable_wealth, wealth_basis) = s.taxable_wealth(m, taxable_wealth, idx);
+                let one_off_idx = if s.one_off_wealth_indexed { self.infl_idx } else { 1.0 };
+                let (taxable_wealth, wealth_basis) = s.taxable_wealth(m, taxable_wealth, idx, one_off_idx);
                 let tw = s.wealth_tax(m, taxable_wealth, idx);
                 assessed_taxable = basis.taxable_canton;
                 if s.tax_basis && self.record {

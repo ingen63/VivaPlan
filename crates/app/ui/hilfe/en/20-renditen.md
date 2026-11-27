@@ -46,7 +46,7 @@ Keywords: nominal, real, inflation, geometric, annual return, purchasing power
 
 **Annual returns** are applied monthly in the app. An annual return of 5 % gives (1.05)^(1/12) − 1 per month, i.e. about 0.41 %. The course over the year is therefore exact.
 
-**Inflation** takes effect every month. The price index grows monthly, and all spending, rents and (if chosen) property values are carried forward with it. You enter your spending in **today's prices**; the app projects it into the future with inflation.
+**Inflation** takes effect every month. The price index grows monthly, and all amounts that grow with inflation in reality are carried forward with it (see [What grows with inflation](#inflation)). You enter your amounts in **today's prices**; the app projects them into the future with inflation.
 
 **Nominal and real:** The results come in two views.
 
@@ -58,6 +58,22 @@ With several runs, the percentiles belong to the chosen view: in today's purchas
 **Arithmetic and geometric:** An ‘average return of 7 %’ is usually an arithmetic average. The **geometric** average (how much your wealth really grows) is lower because of the fluctuations. With an expectation of 7 % and a volatility of 15 %, it is about 5.9 %. The short info of the investment strategy shows the mean annual return geometrically.
 
 **Total return:** All series include dividends and coupons (total return), no investment costs, no taxes on income.
+
+## @inflation What grows with inflation
+Keywords: inflation, nominal, today's prices, exception, expert, stress test, rent
+
+The app carries every amount forward the way it behaves in reality. You enter amounts that grow with inflation in **today's prices** (prices at the simulation start); the app projects them into the future with the inflation of each path, so with Monte Carlo differently for every path.
+
+- **Always with inflation:** living expenses, care home, earned income, pension fund contributions, pillar 3a contribution and maximum, AHV pension (from entitlement every January), tax tariffs and ongoing deductions, one-off amounts (inflows and spending), one-off deductions from income and from wealth, value and fixed costs of the properties. Example: spending of 40 000 in five years at 2 % inflation then costs about 44 163.
+- **Always nominal:** pension fund pension, mortgage (debt, interest, amortization), pension fund and pillar 3a balances including their interest.
+- **Rent:** The amount is in today's prices and grows with inflation until the month of moving in (“Rent from”), after which it stays nominal. A rent already running at the simulation start is nominal from the beginning. Example: 2 500 today, moving in after 5 years, 2 % inflation gives about 2 760 when moving in, then a constant 2 760. In reality an adjustment is possible after moving in (reference interest rate, 40 % of inflation); the app simplifies here.
+- **Pillar 3a:** The contribution grows at most up to the maximum of the year. The check compares it with the maximum in today's prices.
+
+**Exceptions for stress tests:** Under “Simulation” › **“Expert”** every amount of the first list can be calculated as the exception **“nominal, without inflation”**; it then stays at the entered value over the whole plan. For every rent there is the choice “with inflation until moving in, then nominal”, “always with inflation” or “nominal, without inflation”. The line “Assumptions” above the area names the exceptions set, as do the parameters of a run. New plans have no exception; the area opens by itself as soon as there is one.
+
+**Without inflation = inflation 0 %:** To calculate entirely without inflation, set inflation to 0 % (fixed returns).
+
+**Older plans** calculated some amounts nominally (for example one-off amounts and deductions, pension fund and pillar 3a contributions) or had switches of their own (earned income, AHV, tariffs, properties). When opening, the app takes over this choice as exceptions and says so; the result stays the same. A rent that always grew with inflation keeps “always with inflation”.
 
 ## @f-ret-source Source of the returns
 Keywords: choice, fixed, historical, rolling, bootstrap, parametric

@@ -394,6 +394,14 @@ mod tests {
         plan["returns"]["parametric"] = json!({ "paths": 60, "mu": 0.06, "sigma": 0.15, "df": 0, "seed": 3 });
         // #303: the inflation of the former example strategy keeps the two orders apart
         plan["returns"]["strategy"] = json!({ "stocks": "sp500", "bonds": "usa" });
+        // #306: and the former rules of inflation of the example (nominal earned income, rent with inflation)
+        plan.as_object_mut().unwrap().remove("indexedByDefault");
+        plan["pension"]["ahv"]["indexed"] = json!(true);
+        for p in plan["realestate"]["properties"].as_array_mut().unwrap() {
+            for k in ["inflation", "inflationFixCosts", "inflationRent", "inflationValue"] {
+                p[k] = json!(true);
+            }
+        }
         let v = serde_json::to_value(run(&crate::api::run(&plan, Path::new("."), Some(&library())))).unwrap();
         let col = |list: &str, key: &str| -> Vec<i64> {
             v["batch"][list]

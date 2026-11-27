@@ -66,6 +66,12 @@ pub struct Plan {
     /// Pillar 3a, at most one account per person (#52).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pillar3a: Vec<Pillar3aAccount>,
+    /// #306: Amounts follow inflation as in reality: every amount that grows with inflation in reality is in prices
+    /// of the simulation start, a missing inflation flag means «with inflation», and a flag `false` is an exception
+    /// «nominal, without inflation» (see [`crate::indexation`]). New plans and plans brought up to date by
+    /// [`crate::upgrade`] have it. Missing (older plans): every flag keeps its earlier default.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub indexed_by_default: bool,
     /// Application-wide limits from the settings (#25). The user interface passes them with every call; they
     /// do not belong to the plan and are never saved. If they are missing, the default values apply.
     #[serde(default, skip_serializing)]
@@ -211,9 +217,10 @@ pub struct Partner {
     /// Net earned income per month (taxable).
     #[serde(default)]
     pub income: Series,
-    /// #58: Earned income rises with inflation (amounts in prices of the simulation start); missing: no.
-    #[serde(default, skip_serializing_if = "is_false")]
-    pub income_indexed: bool,
+    /// #58/#306: Earned income rises with inflation (amounts in prices of the simulation start); `false`: nominal.
+    /// Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub income_indexed: Option<bool>,
     /// #236: Earned income ends with the person's milestone «Bezug Pensionskasse» (`retire`, `retire2`): from that
     /// month it is 0 whatever the series says. New plans switch it on; missing (older plans): no.
     #[serde(default, skip_serializing_if = "is_false")]
@@ -252,6 +259,9 @@ pub struct CareHome {
     pub at: Option<TimeRef>,
     /// Costs per month in prices at the simulation start; they rise with inflation.
     pub monthly: f64,
+    /// #306: The costs rise with inflation; `false`: nominal, without inflation (exception). Missing: yes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub indexed: Option<bool>,
     /// Sell the self-occupied properties at the entry (couples: once both persons live in a care home).
     #[serde(default, skip_serializing_if = "is_false")]
     pub sell: bool,
@@ -555,6 +565,10 @@ pub struct PensionFund {
     /// Contributions per month until the payout.
     #[serde(default)]
     pub contribution: Series,
+    /// #306: The contributions rise with inflation (prices of the simulation start); `false`: nominal. Missing: yes
+    /// with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contribution_indexed: Option<bool>,
     /// Interest per year, credited in December.
     #[serde(default)]
     pub interest: Series,
@@ -567,9 +581,10 @@ pub struct Ahv {
     /// Monthly pension at the start of payout.
     pub monthly: f64,
     pub at: TimeRef,
-    /// Annual adjustment to inflation (in December).
-    #[serde(default)]
-    pub indexed: bool,
+    /// Annual adjustment to inflation (in January); `false`: nominal. #306: Missing: yes with `indexedByDefault`,
+    /// otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub indexed: Option<bool>,
     /// #190: The plan knows the 13th AHV pension (marker of [`crate::upgrade`] for the note when opening an older
     /// plan; no switch: the simulation always pays the 13th pension from December 2026).
     #[serde(default, skip_serializing_if = "is_false")]
@@ -586,15 +601,19 @@ pub struct Flows {
     /// Net earned income per month (taxable).
     #[serde(default)]
     pub income: Series,
-    /// #58: Earned income rises with inflation (amounts in prices of the simulation start); missing: no.
-    #[serde(default, skip_serializing_if = "is_false")]
-    pub income_indexed: bool,
+    /// #58/#306: Earned income rises with inflation (amounts in prices of the simulation start); `false`: nominal.
+    /// Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub income_indexed: Option<bool>,
     /// #236: Earned income ends with the person's milestone «Bezug Pensionskasse» (`retire`, `retire2`): from that
     /// month it is 0 whatever the series says. New plans switch it on; missing (older plans): no.
     #[serde(default, skip_serializing_if = "is_false")]
     pub income_ends_at_retirement: bool,
     /// Living costs per month in prices at the simulation start.
     pub spending: Series,
+    /// #306: The living costs rise with inflation; `false`: nominal, without inflation (exception). Missing: yes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spending_indexed: Option<bool>,
     /// #53: Living costs include rent or housing costs. The simulation deducts the housing share
     /// (housing costs in the start month, see [`crate::housing`]) and computes with the simulated housing costs. If the
     /// field is missing (older plans), the living costs apply without housing costs.
@@ -613,6 +632,10 @@ pub struct Flows {
     pub savings: Option<Series>,
     #[serde(default)]
     pub extras: Vec<Extra>,
+    /// #306: The one-off amounts are in prices of the simulation start and rise with inflation until their month;
+    /// `false`: nominal. Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extras_indexed: Option<bool>,
 }
 
 /// One-off amount; positive = inflow.
@@ -1076,9 +1099,21 @@ pub struct Taxes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub couple: Option<TaxTables>,
     /// #66: The amounts of the tables for income, wealth and lump sums grow with the cumulative simulated inflation
-    /// since the simulation start (compensation of bracket creep); the rates stay the same. Missing: no.
-    #[serde(default, skip_serializing_if = "is_false")]
-    pub indexed: bool,
+    /// since the simulation start (compensation of bracket creep), as do the ongoing deductions; the rates stay the
+    /// same. `false`: nominal. #306: Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub indexed: Option<bool>,
+    /// #306: The maximum pillar 3a contribution (settings) rises with inflation; `false`: nominal. Missing: yes with
+    /// `indexedByDefault`, otherwise like `indexed`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pillar3a_max_indexed: Option<bool>,
+    /// #306: The one-off deductions from income are in prices of the simulation start and rise with inflation until
+    /// their tax year; `false`: nominal. Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub one_off_indexed: Option<bool>,
+    /// #306: The same for the one-off deductions from wealth. Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub one_off_wealth_indexed: Option<bool>,
     /// #63: Source of the income and wealth tax: own tables (default, not written) or the place of residence (#272: new
     /// plans).
     #[serde(default, skip_serializing_if = "TaxMode::is_own")]
@@ -1110,7 +1145,8 @@ pub struct Taxes {
     /// the wealth curves; with own tables the whole deduction. Missing: none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub wealth_deductions: Vec<WealthDeduction>,
-    /// #231: One-off deductions from taxable wealth: each counts on 31 December of its tax year (nominal).
+    /// #231: One-off deductions from taxable wealth: each counts on 31 December of its tax year (#306: with inflation
+    /// as `oneOffWealthIndexed` says).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub one_off_wealth_deductions: Vec<OneOffDeduction>,
     /// #149: Taxable yield of the wealth per asset class (share of the balance per year): dividends of the stocks,
@@ -1495,16 +1531,19 @@ pub struct Property {
     pub rent: Option<f64>,
     #[serde(default)]
     pub fix_costs: f64,
-    /// Adjust value and fix costs with inflation (older field; applies where the individual choice is missing).
+    /// Adjust value and fix costs with inflation (older field; applies where the individual choice is missing and
+    /// the plan has no `indexedByDefault`).
     #[serde(default)]
     pub inflation: bool,
-    /// Adjust the value with inflation (missing: `inflation`).
+    /// Adjust the value with inflation; `false`: nominal. Missing: yes with `indexedByDefault`, otherwise `inflation`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inflation_value: Option<bool>,
-    /// Adjust fix costs with inflation (missing: `inflation`).
+    /// Adjust fix costs with inflation; `false`: nominal. Missing: yes with `indexedByDefault`, otherwise `inflation`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inflation_fix_costs: Option<bool>,
-    /// Adjust rent with inflation (missing: yes).
+    /// Rent and inflation. #306 with `indexedByDefault`: missing = the rent (prices of today) rises with inflation
+    /// until the month of moving in, then stays nominal; `true` = rises with inflation throughout (older plans);
+    /// `false` = nominal throughout. Without `indexedByDefault`: missing or `true` = throughout, `false` = nominal.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inflation_rent: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1685,6 +1724,10 @@ pub struct Pillar3aAccount {
     /// Contribution per year (0 to the maximum), monthly one twelfth, until before the AHV payout. Counts as spending.
     #[serde(default)]
     pub contribution: f64,
+    /// #306: The contribution is in prices of the simulation start and rises with inflation, at most to the maximum of
+    /// the year; `false`: nominal. Missing: yes with `indexedByDefault`, otherwise no.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contribution_indexed: Option<bool>,
     /// Planned payouts, at the earliest 5 years before the AHV payout.
     #[serde(default)]
     pub payouts: Vec<Pillar3aPayout>,

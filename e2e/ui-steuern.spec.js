@@ -431,6 +431,7 @@ test.describe("Deductions from income with the proposal of the canton (#131)", (
     await withRows(page, [{ from: "start", kind: "own", amount: 10000, rate: 0 }]);
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      state.taxes.indexed = false; // #306: amounts nominal, as entered
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
@@ -559,6 +560,7 @@ test.describe("Additional and one-off deductions from income (#230)", () => {
     await withRows(page, [{ from: "start", kind: "canton", extra: 3000 }], [{ year: y, label: "Sanierung", amount: 8000 }]);
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      state.taxes.indexed = state.taxes.oneOffIndexed = false; // #306: amounts nominal, as entered
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
@@ -645,6 +647,7 @@ test.describe("Deductions from wealth (#231)", () => {
     await withRows(page, [{ from: "start", amount: 50000 }], [{ year: y, label: "Schuld", amount: 100000 }]);
     await page.evaluate(async () => {
       state.returns.source = "fixed"; state.scenarios.sweeps = [];
+      state.taxes.indexed = state.taxes.oneOffWealthIndexed = false; // #306: amounts nominal, as entered
       lastRun = await Engine.call("run_simulation", { plan: state, path: null });
       realView = false; resetVariation(); resultTab = "table"; showTaxCols = true; showResults(true); renderResults(lastRun);
     });
@@ -997,6 +1000,7 @@ test.describe("Clearer card of the deductions from income (#241)", () => {
 
   test("AK4: details show the parts for canton and federal tax with the total, closed by default", async ({ page }) => {
     const errors = await open(page);
+    await page.evaluate(() => { state.taxes.indexed = false; }); // #306: the additional amount nominal, as entered
     await withRows(page, [{ from: "start", kind: "canton", extra: 1000 }], { couple: true });
     const det = row(page, 0).locator("details.deddetails");
     await expect(det).not.toHaveAttribute("open", "");
@@ -1674,13 +1678,14 @@ test.describe("Deductions in detail under «Experte» (#275)", () => {
   test("AK1, AK4: deductions in detail, from wealth and the tariffs closed under «Experte»; one-off deductions outside", async ({ page }) => {
     const errors = await open(page);
     await newPlan(page);
-    await expect(page.locator("#tax-expert-summary")).toContainText("Experte: Abzüge im Einzelnen, Abzüge vom Vermögen, Tarife mit der Teuerung");
+    await expect(page.locator("#tax-expert-summary")).toContainText("Experte: Abzüge im Einzelnen, Abzüge vom Vermögen, Tarife");
     expect(await isOpen(page)).toBe(false);
     for (const id of ["#tax-deductions", "#tax-wealth-deductions", "#tax-indexed"]) {
       await expect(expert(page).locator(id)).toHaveCount(1);
       await expect(page.locator(id)).toBeHidden();
     }
-    await expect(page.locator('#tax-expert input[data-path="taxes.indexed"]')).toHaveCount(1);
+    // #306: the exception «Tarife nominal» is under «Simulation» › «Experte»
+    await expect(page.locator('#tax-expert input[data-path="taxes.indexed"]')).toHaveCount(0);
     // AK2: one-off deductions directly reachable (neither under «Annahmen» nor under «Experte»)
     await expect(page.locator("#tax-oneoff")).toBeVisible();
     await expect(page.locator('#tax-oneoff button[data-action="ded-oneoff-add"]')).toBeVisible();
@@ -1709,12 +1714,11 @@ test.describe("Deductions in detail under «Experte» (#275)", () => {
       "plan.taxes.deductions = [{ from: 'start', kind: 'canton', extra: 3000 }]",
       "plan.taxes.wealthDeductions = [{ from: 'start', amount: 50000 }]",
       "plan.taxes.oneOffWealthDeductions = [{ year: 2030, label: 'x', amount: 1000 }]",
-      "plan.taxes.indexed = false",
     ]) {
       await reopen(page, change);
       expect(await isOpen(page), change).toBe(true);
       await expect(page.locator("#tax-deductions"), change).toBeVisible();
-      await reopen(page, "delete plan.taxes.deductions; delete plan.taxes.wealthDeductions; delete plan.taxes.oneOffWealthDeductions; plan.taxes.indexed = true;");
+      await reopen(page, "delete plan.taxes.deductions; delete plan.taxes.wealthDeductions; delete plan.taxes.oneOffWealthDeductions;");
       expect(await isOpen(page), change).toBe(false);
     }
     // own one-off deductions from income do not open «Experte» (they stand outside)

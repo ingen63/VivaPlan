@@ -199,11 +199,12 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             conversion: c.f_or("Pension.Private.ConversionRate", 0.0),
             contribution: c.series_or_zero("Pension.Private.Contribution")?,
             interest: c.series_or_zero("Pension.Private.Interest")?,
+            contribution_indexed: None,
         },
         ahv: Ahv {
             monthly: c.f_or("Pension.Legal", 0.0),
             at: TimeRef::milestone("ahv"),
-            indexed: true,
+            indexed: Some(true),
             thirteenth_noted: false,
             reference_age: false,
         },
@@ -239,12 +240,15 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     let flows = Flows {
         income: c.series_or_zero("MoneyFlows.Income")?,
         // In the old program the income stayed the same in nominal terms (#58).
-        income_indexed: false,
+        income_indexed: None,
         // The old program let the income run on after retirement (#236).
         income_ends_at_retirement: false,
         spending: c.series_or_zero("MoneyFlows.Spendings")?,
         savings: c.series("MoneyFlows.Savings", |x| x)?,
         extras,
+        // #306: without the marker the living costs grow and the one-off amounts stay nominal as in the old program
+        spending_indexed: None,
+        extras_indexed: None,
         // In the old program spending was without housing costs; the takeover on opening converts it (#53).
         spending_includes_housing: false,
         amort_excluded: false,
@@ -373,7 +377,10 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
             ..Default::default()
         }),
         couple: None,
-        indexed: false,
+        indexed: None,
+        pillar3a_max_indexed: None,
+        one_off_indexed: None,
+        one_off_wealth_indexed: None,
         mode: TaxMode::Own,
         location: None,
         relocations: vec![],
@@ -528,6 +535,8 @@ pub fn import(text: &str, start_year: i32, base_dir: &Path, name: &str) -> Resul
     // the minus afterwards would overflow. This way it gives a very distant month like `YearMonth::plus` instead of a crash.
     let birth = start.plus((-start_age * 12.0).round_ties_even() as i32);
     let plan = Plan {
+        // #306: the upgrade on opening writes the rules of the old program as exceptions
+        indexed_by_default: false,
         format: FORMAT.into(),
         project: Project {
             name: name.into(),

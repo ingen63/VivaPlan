@@ -22,6 +22,10 @@
 //! - #264: The living costs get the marker `amortExcluded`. A plan whose living costs include the housing costs
 //!   counted the amortization as part of the housing share; its living costs are lowered by the amortization of the
 //!   start month (with a note), so that the result stays the same.
+//! - #306: Amounts follow inflation as in reality (marker `indexedByDefault`). An older plan keeps its earlier rules:
+//!   every amount that stayed nominal (earned income, AHV, tariffs, one-off amounts and deductions, pension fund and
+//!   pillar 3a contributions, value and fix costs of a property) gets the exception «nominal», a rent that grew
+//!   throughout keeps that (`inflationRent: true`), with a note; the result stays the same.
 
 use std::borrow::Cow;
 
@@ -90,6 +94,8 @@ pub fn upgrade(v: &mut Value) -> Vec<Message> {
     housing(v, &mut notes);
     // #264: after `housing`, which marks the plans it converts.
     amort_excluded(v, &mut notes);
+    // #306: last, it needs a readable plan
+    indexation(v, &mut notes);
     notes
 }
 
@@ -1075,5 +1081,117 @@ mod tests {
             json!({ "mode": "factor", "base": 1000 })
         );
         assert_eq!(map(json!("x")), json!("x"));
+    }
+}
+
+/// #306: Marker `indexedByDefault`. An older plan without it gets its earlier rules as explicit flags: an exception
+/// «nominal» (`false`) for every amount of the plan that did not grow with inflation, `inflationRent: true` for a rent
+/// that grew throughout; then the marker. Amounts the plan does not have (no one-off amounts, no contributions, …) get
+/// no exception, they follow the new rules once entered. An unreadable plan stays unmarked (a later opening catches
+/// up).
+pub fn indexation(v: &mut Value, notes: &mut Vec<Message>) {
+    if v.get("indexedByDefault").and_then(Value::as_bool) == Some(true) || v.get("flows").is_none() {
+        return;
+    }
+    let Ok(plan) = serde_json::from_value::<Plan>(v.clone()) else {
+        return;
+    };
+    let ix = crate::indexation::Indexation::of(&plan);
+    let mut flags: Vec<(String, &str, bool)> = vec![];
+    let mut nominal = |cond: bool, ptr: &str, key: &'static str| {
+        if cond {
+            flags.push((ptr.to_string(), key, false));
+        }
+    };
+    let partner = plan.partner.as_ref();
+    nominal(!ix.spending, "/flows", "spendingIndexed");
+    nominal(
+        !ix.income[0] && !series_zero(&plan.flows.income),
+        "/flows",
+        "incomeIndexed",
+    );
+    nominal(!ix.extras && !plan.flows.extras.is_empty(), "/flows", "extrasIndexed");
+    nominal(
+        !ix.pk_contribution[0] && !series_zero(&plan.pension.pk.contribution),
+        "/pension/pk",
+        "contributionIndexed",
+    );
+    nominal(!ix.ahv[0] && plan.pension.ahv.monthly != 0.0, "/pension/ahv", "indexed");
+    if let Some(q) = partner {
+        nominal(!ix.income[1] && !series_zero(&q.income), "/partner", "incomeIndexed");
+        nominal(
+            !ix.pk_contribution[1] && !series_zero(&q.pk.contribution),
+            "/partner/pk",
+            "contributionIndexed",
+        );
+        nominal(!ix.ahv[1] && q.ahv.monthly != 0.0, "/partner/ahv", "indexed");
+    }
+    nominal(!ix.taxes, "/taxes", "indexed");
+    let pillar3a = plan.taxes.deduct_pillar3a || plan.pillar3a.iter().any(|a| a.contribution > 0.0);
+    nominal(!ix.pillar3a_max && pillar3a, "/taxes", "pillar3aMaxIndexed");
+    nominal(
+        !ix.one_off && !plan.taxes.one_off_deductions.is_empty(),
+        "/taxes",
+        "oneOffIndexed",
+    );
+    nominal(
+        !ix.one_off_wealth && !plan.taxes.one_off_wealth_deductions.is_empty(),
+        "/taxes",
+        "oneOffWealthIndexed",
+    );
+    for (j, a) in plan.pillar3a.iter().enumerate() {
+        nominal(
+            !ix.pillar3a[j] && a.contribution > 0.0,
+            &format!("/pillar3a/{j}"),
+            "contributionIndexed",
+        );
+    }
+    for (i, p) in plan.household.persons.iter().enumerate() {
+        nominal(
+            !ix.care[i] && p.care_home.is_some(),
+            &format!("/household/persons/{i}/careHome"),
+            "indexed",
+        );
+    }
+    let mut always = vec![];
+    for (i, (p, pi)) in plan.realestate.properties.iter().zip(&ix.properties).enumerate() {
+        let ptr = format!("/realestate/properties/{i}");
+        if p.status == crate::model::PropertyStatus::Rent {
+            match pi.rent {
+                crate::indexation::RentIndexation::Always => always.push(ptr),
+                _ => nominal(true, &ptr, "inflationRent"),
+            }
+        } else {
+            nominal(!pi.value, &ptr, "inflationValue");
+            nominal(!pi.fix_costs, &ptr, "inflationFixCosts");
+        }
+    }
+    // a rent that grows throughout is the earlier rule (`true`); only a flag that changes asks for the note
+    flags.extend(always.into_iter().map(|ptr| (ptr, "inflationRent", true)));
+    let mut changed = false;
+    for (ptr, key, val) in flags {
+        if let Some(o) = v.pointer_mut(&ptr).and_then(Value::as_object_mut) {
+            if o.get(key).and_then(Value::as_bool) != Some(val) {
+                changed = true;
+            }
+            o.insert(key.to_string(), json!(val));
+        }
+    }
+    v["indexedByDefault"] = json!(true);
+    if changed {
+        notes.push(msg!(note_indexation));
+    }
+}
+
+/// #306: A series (earned income, contributions) that is 0 throughout.
+fn series_zero(s: &crate::model::Series) -> bool {
+    use crate::model::{Series, SeriesDef};
+    match s {
+        Series::Number(x) => *x == 0.0,
+        Series::Def(SeriesDef::Const { value }) => *value == 0.0,
+        Series::Def(SeriesDef::Timed { rows }) => rows.iter().all(|r| r.value == 0.0),
+        Series::Def(SeriesDef::Linear { start, end }) => start.value == 0.0 && end.value == 0.0,
+        Series::Def(SeriesDef::Table { points, .. }) => points.iter().all(|p| p.value == 0.0),
+        Series::Def(SeriesDef::Factor { base, .. }) => *base == 0.0,
     }
 }

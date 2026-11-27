@@ -212,13 +212,17 @@ fn issue_66_ak4_default_off_for_existing_plans_on_for_new() {
     );
 
     let plan: Plan = serde_json::from_value(base(0.02, None)).unwrap();
-    assert!(!plan.taxes.indexed);
+    assert_eq!(plan.taxes.indexed, None);
+    assert!(!engine::indexation::Indexation::of(&plan).taxes);
     assert!(serde_json::to_value(&plan).unwrap()["taxes"].get("indexed").is_none());
     let plan: Plan = serde_json::from_value(base(0.02, Some(true))).unwrap();
     assert_eq!(serde_json::to_value(&plan).unwrap()["taxes"]["indexed"], json!(true));
 
     let new: Plan = serde_json::from_str(include_str!("../assets/new.vplan")).unwrap();
-    assert!(new.taxes.indexed, "new plans: «Tarife mit der Teuerung» on");
+    assert!(
+        engine::indexation::Indexation::of(&new).taxes,
+        "new plans: «Tarife mit der Teuerung» on"
+    );
 }
 
 /// #66/AK4: The import of an old `config.json` sets the option off.
@@ -227,7 +231,7 @@ fn issue_66_ak4_legacy_import_option_off() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
     let text = std::fs::read_to_string(dir.join("legacy_fixed.json")).unwrap();
     let imp = legacy::import(&text, 2026, &dir, "Test").unwrap();
-    assert!(!imp.plan.taxes.indexed);
+    assert!(!engine::indexation::Indexation::of(&imp.plan).taxes);
     assert!(serde_json::to_value(&imp.plan).unwrap()["taxes"]
         .get("indexed")
         .is_none());

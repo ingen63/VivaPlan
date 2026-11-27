@@ -663,11 +663,25 @@ Beträge gelten pro Monat, Sätze pro Jahr als Dezimalzahl (0.05 = 5 %). Das vol
 
 Reihenfolge pro Monat:
 
-1. **Teuerung:** jeden Monat Teuerungsindex × (1 + Inflation des Vormonats)^(1/12). Ausgaben, Mieten und (falls
-   gewählt) Immobilienwerte und Nebenkosten werden damit fortgeschrieben (je Objekt einzeln wählbar:
-   `inflationValue`, `inflationFixCosts`, `inflationRent`; fehlen sie, gilt `inflation` für Wert und Nebenkosten und die
-   Miete wird fortgeschrieben); Ausgaben werden in Preisen bei
-   Simulationsstart erfasst. Die AHV (falls indexiert) wird nur im Januar um die seit dem letzten Januar
+1. **Teuerung:** jeden Monat Teuerungsindex × (1 + Inflation des Vormonats)^(1/12). Welche Beträge damit
+   fortgeschrieben werden, entscheidet `indexation::Indexation::of(plan)` (#306, eine Stelle für Rechenkern, Prüfung,
+   Steuerrechnung und Übernahme): Mit der Markierung `indexedByDefault` (neue Planungen, nach dem Öffnen auch ältere)
+   heisst ein fehlendes Kennzeichen «mit der Teuerung», `false` ist die Ausnahme «nominal»; ohne Markierung (Golden-
+   Dateien, Tests, Import) gelten die Vorgaben vor #306 (Lebenshaltung und Heim ja, Erwerbseinkommen, AHV, Tarife,
+   einmalige Beträge und Abzüge, PK- und 3a-Beiträge nein, 3a-Höchstbetrag wie die Tarife, Wert und Nebenkosten nach
+   `inflation`, Miete immer). Kennzeichen: `flows.spendingIndexed`, `flows.incomeIndexed`, `partner.incomeIndexed`,
+   `flows.extrasIndexed`, `household.persons[i].careHome.indexed`, `pension.pk.contributionIndexed`,
+   `partner.pk.contributionIndexed`, `pension.ahv.indexed`, `partner.ahv.indexed`, `pillar3a[j].contributionIndexed`,
+   `taxes.indexed`, `taxes.pillar3aMaxIndexed`, `taxes.oneOffIndexed`, `taxes.oneOffWealthIndexed`,
+   `realestate.properties[i].inflationValue`, `.inflationFixCosts`, `.inflationRent`. Die Miete kennt drei Fälle
+   (`RentIndexation`): fehlend mit Markierung = bis zum Einzug mit dem Index, beim ersten Monat mit Miete festgehalten
+   (`PropState::rent_fixed`), danach nominal; `true` = immer mit dem Index; `false` = nominal. Einmalige Beträge
+   × Index ihres Monats, einmalige Abzüge × Index im Dezember des Steuerjahres, PK-Beiträge × Index des Monats.
+   3a-Einzahlung (#306/AK7): Beitrag/12 × Index, höchstens Höchstbetrag × Index vom Januar / 12 (`account_contribution`);
+   der Abzug der Säule 3a deckelt mit dem Index des 3a-Höchstbetrags (`YearDeductions::pillar3a_index`). Die Übernahme
+   (`upgrade::indexation`) schreibt für ältere Planungen die bisherigen Regeln als Kennzeichen (nur für Beträge, die
+   die Planung hat), setzt die Markierung und meldet `note_indexation`; das Ergebnis bleibt gleich (Test
+   `issue_306_ak5_…` über die Golden-Planungen). Die AHV (falls indexiert) wird nur im Januar um die seit dem letzten Januar
    aufgelaufene Teuerung angepasst, nominal nie nach unten (#280): Je Person ab dem Anspruch und für den Plafond ab dem
    ersten Januar mit einer indexierten Rente führt `ahv::Floor` den Teuerungsindex und seinen Höchststand; Rente,
    Kürzung, Zuschlag und Plafond wachsen mit max(1, Index / bisheriger Höchststand). Nach einer Deflation zählt also
@@ -871,8 +885,8 @@ Lebenshaltung und Einkommen); die Sätze bleiben gleich. `tax::tax_indexed(table
 für `x / index` (Betrag in Preisen des Starts), Steuer = `x × Satz × Steuerfuss`, auf Rappen gerundet; bei Index ≤ 0
 gilt die Tabelle ohne Anpassung. Massgebend ist der Index im Monat der Veranlagung (Dezember für Einkommen und
 Vermögen, Monat des Bezugs für Kapitalbezüge, Januar bzw. Neuberechnung für die geschätzte Einkommenssteuer im Bedarf
-der 3-Topf-Strategie). Fehlt das Feld, gilt «nein» und es wird nicht geschrieben; der Import alter `config.json`
-setzt «nein», `new.vplan` und «Neu» in der Oberfläche setzen «ja». Die Grundstückgewinnsteuer bleibt unverändert.
+der 3-Topf-Strategie). Fehlt das Feld, gilt nach #306 «ja» mit `indexedByDefault`, sonst «nein»; der Import alter
+`config.json` schreibt nichts (also «nein»), `new.vplan` und «Neu» haben die Markierung (also «ja»). Die Grundstückgewinnsteuer bleibt unverändert.
 Im Modus «Wohnort» wachsen ebenso die Beträge der Tarife (Satz für `x / index`) und der Abzüge (`base`, `min`, `max`
 × Index; der Satz `rate` bleibt).
 
@@ -1017,8 +1031,8 @@ ein (`BUILTIN`).
   Oberfläche (Hinweis und Details der Karte «Abzüge vom Vermögen»).
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
-  Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung bei «Tarife mit der
-  Teuerung» (#66), sonst 1. Das Erwerbseinkommen je Person (`Run::year_earned`) wird dafür immer gesammelt, auch mit
+  Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung, wenn der 3a-Höchstbetrag
+  mit der Teuerung wächst (#306, `taxes.pillar3aMaxIndexed`; ohne Markierung wie «Tarife mit der Teuerung», #66), sonst 1. Das Erwerbseinkommen je Person (`Run::year_earned`) wird dafür immer gesammelt, auch mit
   eigenen Tabellen. Alle anderen Personen: `limits.pillar3aMax` × Index wie bisher.
   `limits.pillar3aMaxLarge` Standard 36 288 (BSV, FAQ «Welche Beiträge kann ich in die Säule 3a einzahlen?», Stand
   2025/26; Fachmitteilung admin.ch vom 5.10.2026 «Höchstabzüge Säule 3a im Steuerjahr 2027»: bis Ende 2026 36 288).

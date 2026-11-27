@@ -6133,6 +6133,12 @@
     "text": "The housing costs contained in the living expenses no longer include the amortization, which builds wealth. The living expenses have therefore been lowered by the amortization at the simulation start (12346 per month); the result stays the same."
   },
   {
+    "code": "note_indexation",
+    "params": {},
+    "template": "Amounts now grow with inflation as in reality (in prices of the simulation start). This plan keeps its previous assumptions as exceptions under “Simulation” › “Expert”; the result stays the same.",
+    "text": "Amounts now grow with inflation as in reality (in prices of the simulation start). This plan keeps its previous assumptions as exceptions under “Simulation” › “Expert”; the result stays the same."
+  },
+  {
     "code": "note_milestone_added",
     "params": {
       "name": {

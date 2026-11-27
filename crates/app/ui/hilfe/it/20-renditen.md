@@ -46,7 +46,7 @@ Parole chiave: nominale, reale, rincaro, geometrico, rendimento annuo, potere d�
 
 I **rendimenti annui** vengono applicati nell’app mensilmente. Un rendimento annuo del 5 % dà al mese (1.05)^(1/12) − 1, cioè circa lo 0.41 %. L’andamento annuo è così esatto.
 
-L’**inflazione** agisce ogni mese. L’indice del rincaro cresce mensilmente, e tutte le spese, gli affitti e (se scelto) i valori degli immobili vengono adeguati con esso. Le Sue spese le registra ai **prezzi attuali**, l’app le proietta nel futuro con l’inflazione.
+L’**inflazione** agisce ogni mese. L’indice del rincaro cresce mensilmente, e tutti gli importi che nella realtà crescono con il rincaro vengono adeguati con esso (vedi [Che cosa cresce con il rincaro](#inflation)). I Suoi importi li registra ai **prezzi attuali**, l’app li proietta nel futuro con l’inflazione.
 
 **Nominale e reale:** i risultati esistono in due viste.
 
@@ -58,6 +58,22 @@ Con più simulazioni i percentili dipendono dalla vista scelta: al potere d’ac
 **Aritmetico e geometrico:** un ‹rendimento medio del 7 %› è di solito una media aritmetica. La media **geometrica** (di quanto cresce davvero la Sua sostanza) è più bassa a causa delle variazioni. Con un’attesa del 7 % e una volatilità del 15 % è di circa il 5.9 %. L’informazione breve della strategia d’investimento mostra il rendimento annuo medio geometrico.
 
 **Rendimento complessivo:** tutte le serie contengono dividendi e cedole (total return), nessun costo d’investimento, nessuna imposta sui redditi.
+
+## @inflation Che cosa cresce con il rincaro
+Parole chiave: rincaro, inflazione, nominale, prezzi attuali, eccezione, esperto, test di stress, affitto
+
+L’app fa evolvere ogni importo come si comporta nella realtà. Gli importi che crescono con il rincaro li registra ai **prezzi attuali** (prezzi all’inizio della simulazione); l’app li proietta nel futuro con il rincaro di ogni percorso, con Monte Carlo quindi in modo diverso per ogni percorso.
+
+- **Sempre con il rincaro:** costo della vita, casa di cura, reddito da attività lucrativa, contributi alla cassa pensione, versamento e importo massimo del pilastro 3a, rendita AVS (dal diritto alla rendita, ogni gennaio), tariffe fiscali e deduzioni correnti, importi unici (entrate e spese), deduzioni uniche dal reddito e dalla sostanza, valore e spese accessorie degli immobili. Esempio: una spesa di 40 000 fra cinque anni costa allora circa 44 163 con un rincaro del 2 %.
+- **Sempre nominale:** rendita della cassa pensione, ipoteca (debito, interesse, ammortamento), averi della cassa pensione e del pilastro 3a con i loro interessi.
+- **Affitto:** L’importo vale ai prezzi attuali e cresce con il rincaro fino al mese del trasloco («Affitto da»), poi resta nominale. Un affitto che decorre già all’inizio della simulazione è nominale fin dall’inizio. Esempio: 2 500 oggi, trasloco fra 5 anni, rincaro del 2 % dà circa 2 760 al trasloco, poi 2 760 invariati. Nella realtà dopo il trasloco è possibile un adeguamento (tasso di riferimento, 40 % del rincaro); l’app qui semplifica.
+- **Pilastro 3a:** Il versamento cresce al massimo fino all’importo massimo dell’anno. La verifica lo confronta con l’importo massimo ai prezzi attuali.
+
+**Eccezioni per test di stress:** Sotto «Simulazione» › **«Esperto»** ogni importo del primo elenco si può calcolare come eccezione **«nominale, senza rincaro»**; resta allora al valore registrato per tutta la pianificazione. Per ogni affitto si sceglie fra «con il rincaro fino al trasloco, poi nominale», «sempre con il rincaro» o «nominale, senza rincaro». La riga «Ipotesi» sopra l’area indica le eccezioni impostate, come pure i parametri di un calcolo. Le nuove pianificazioni non hanno eccezioni; l’area si apre da sé appena ce n’è una.
+
+**Senza rincaro = rincaro 0 %:** Per calcolare del tutto senza rincaro, impostare il rincaro allo 0 % (rendimenti fissi).
+
+**Le pianificazioni meno recenti** calcolavano alcuni importi in termini nominali (per esempio importi e deduzioni unici, contributi alla cassa pensione e al pilastro 3a) o avevano opzioni proprie (reddito da attività lucrativa, AVS, tariffe, immobili). All’apertura l’app riprende questa scelta come eccezioni e lo segnala; il risultato resta invariato. Un affitto che cresceva sempre con il rincaro mantiene «sempre con il rincaro».
 
 ## @f-ret-source Fonte dei rendimenti
 Parole chiave: scelta, fisso, storico, rolling, bootstrap, parametrico

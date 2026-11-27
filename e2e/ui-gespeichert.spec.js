@@ -238,24 +238,6 @@ test.describe("Real estate gains tax and purchase date", () => {
     await noErrors(page, errors);
   });
 
-  test("real estate: inflation for value, additional costs and rent selectable separately", async ({ page }) => {
-    const errors = await open(page, "realestate");
-    await page.evaluate(() => {
-      state.realestate.properties = [
-        { id: "h", name: "Haus", status: "owned", price: 400000, worth: 500000, fixCosts: 500, inflation: true, mortgage: { tranches: [] } },
-        { id: "w", name: "Wohnung", status: "rent", from: "retire", rent: 2000 }];
-      state = normalize(state); renderSection();
-    });
-    await expect(page.locator('input[data-path="realestate.properties.0.inflationValue"]')).toBeChecked();
-    await expect(page.locator('input[data-path="realestate.properties.0.inflationFixCosts"]')).toBeChecked();
-    await expect(page.locator('input[data-path="realestate.properties.1.inflationRent"]')).toBeChecked();
-    await page.locator('input[data-path="realestate.properties.0.inflationFixCosts"]').uncheck();
-    await page.locator('input[data-path="realestate.properties.1.inflationRent"]').uncheck();
-    const p = await page.evaluate(() => state.realestate.properties);
-    expect([p[0].inflationValue, p[0].inflationFixCosts, p[1].inflationRent]).toEqual([true, false, false]);
-    await noErrors(page, errors);
-  });
-
   test("purchase date only for owned real estate; warning without purchase date, undo restores the rules", async ({ page }) => {
     const errors = await open(page, "realestate");
     await page.evaluate(() => {

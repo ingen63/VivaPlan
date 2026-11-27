@@ -50,6 +50,7 @@
     "amortExcluded": true
   },
   "format": "vivaplan/1",
+  "indexedByDefault": true,
   "household": {
     "ahvCoupleCap": 3780,
     "married": false,
@@ -101,7 +102,6 @@
   "pension": {
     "ahv": {
       "at": "ahv",
-      "indexed": true,
       "monthly": 2000,
       "thirteenthNoted": true,
       "referenceAge": true
@@ -166,10 +166,6 @@
         "bought": "2020-04",
         "fixCosts": 500,
         "id": "obji5sap",
-        "inflation": true,
-        "inflationFixCosts": true,
-        "inflationRent": true,
-        "inflationValue": true,
         "mortgage": {
           "tranches": [
             {
@@ -232,10 +228,6 @@
         "buy": "afterSale:obji5sap",
         "fixCosts": 400,
         "id": "obj6curi",
-        "inflation": true,
-        "inflationFixCosts": true,
-        "inflationRent": true,
-        "inflationValue": true,
         "mortgage": {
           "tranches": [
             {
@@ -267,10 +259,6 @@
         "fixCosts": 400,
         "from": "afterSale",
         "id": "objoejdd",
-        "inflation": true,
-        "inflationFixCosts": true,
-        "inflationRent": true,
-        "inflationValue": true,
         "mortgage": {
           "tranches": [
             {

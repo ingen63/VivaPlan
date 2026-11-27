@@ -483,7 +483,31 @@ pub const UNITS: &[(&str, &str, &str)] = &[
 
 /// Meanings of fields whose schema has no description (or only an unclear one).
 pub const MEANINGS: &[(&str, &str)] = &[
-    ("flows.extras.*.amount", "One-off amount in this month (nominal)."),
+    ("flows.extras.*.amount", "One-off amount in this month."),
+    ("flows.extrasIndexed", "With inflation."),
+    ("flows.incomeIndexed", "With inflation."),
+    ("flows.spendingIndexed", "With inflation."),
+    ("household.persons.*.careHome.indexed", "With inflation."),
+    ("indexedByDefault", "Missing inflation flags mean yes (set by program)."),
+    ("partner.ahv.indexed", "With inflation."),
+    ("partner.incomeIndexed", "With inflation."),
+    ("partner.pk.contributionIndexed", "With inflation."),
+    ("pension.ahv.indexed", "With inflation."),
+    ("pension.pk.contributionIndexed", "With inflation."),
+    ("pillar3a.*.contributionIndexed", "With inflation, at most the maximum."),
+    (
+        "realestate.properties.*.inflation",
+        "Older field for value and fix costs.",
+    ),
+    ("realestate.properties.*.inflationFixCosts", "With inflation."),
+    (
+        "realestate.properties.*.inflationRent",
+        "Missing: until moving in; true: always; false: nominal.",
+    ),
+    ("realestate.properties.*.inflationValue", "With inflation."),
+    ("taxes.oneOffIndexed", "With inflation."),
+    ("taxes.oneOffWealthIndexed", "With inflation."),
+    ("taxes.pillar3aMaxIndexed", "With inflation."),
     ("flows.extras.*.date", "Month of the one-off amount (YYYY-MM)."),
     ("flows.extras.*.label", "Label of the one-off amount."),
     (
@@ -679,7 +703,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "Origin: taken over from the tax bill of this tax year.",
     ),
     ("taxes.income", "Tax table for income: [from amount, rate]."),
-    ("taxes.indexed", "Tax brackets rise with inflation."),
+    ("taxes.indexed", "Tax brackets and ongoing deductions with inflation."),
     (
         "taxes.investmentYield.bonds",
         "Taxable coupons of the bonds per year (share).",
@@ -688,15 +712,12 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "taxes.investmentYield.stocks",
         "Taxable dividends of the stocks per year (share).",
     ),
-    (
-        "taxes.oneOffDeductions.*.amount",
-        "One-off deduction from income (nominal).",
-    ),
+    ("taxes.oneOffDeductions.*.amount", "One-off deduction from income."),
     ("taxes.oneOffDeductions.*.label", "Label of the deduction."),
     ("taxes.oneOffDeductions.*.year", "Tax year of the deduction."),
     (
         "taxes.oneOffWealthDeductions.*.amount",
-        "One-off deduction from wealth (nominal).",
+        "One-off deduction from wealth.",
     ),
     ("taxes.oneOffWealthDeductions.*.label", "Label of the deduction."),
     ("taxes.oneOffWealthDeductions.*.year", "Tax year of the deduction."),

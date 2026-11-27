@@ -22,6 +22,7 @@ pub mod fieldpath;
 mod finite;
 pub mod housing;
 pub mod import;
+pub mod indexation;
 pub mod jst;
 pub mod legacy;
 pub mod library;
