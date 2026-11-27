@@ -2454,6 +2454,21 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #282/AK1 | Hilfe (4 Sprachen), Oberflächentexte (`i18n`) und `docs/BESCHREIBUNG.md` beschreiben die AHV-Rente als erwartete Rente mit 65 (nominal, ohne Teuerung bis zum Anspruch); keine Stelle nennt sie «in heutigen Preisen». | ☑ | **gilt** (Feldhinweis, Hilfe «AHV» in 4 Sprachen, BESCHREIBUNG) | `#282/AK1` in `e2e/unit/docs.test.js`, `make i18n-check`, `make ui-texts`, e2e `ui-sprache`, `ui-textfit` | 26.11.2026 ok (Tests, Durchsicht) |
 | #282/AK2 | Der Rechenkern bleibt unverändert; Golden-Dateien unverändert. | ☑ | **gilt** | `git diff` ohne `crates/engine`, `make test-quiet` (`golden::*`) | 26.11.2026 ok (Tests) |
 
+### #284 AHV nach Mischindex alle zwei Jahre, auch vor dem Bezug
+
+[Issue #284](https://github.com/ingen63/VivaPlan/issues/284) · geschlossen · Umsetzung: a5f7662 · Entscheide: Feld `returns.realWageGrowth` unter «Simulation» › «Experte»; der Test zu #282/AK1 prüft neu «in heutigen Werten, nach dem Mischindex»; 3a-Höchstbetrag nach Mischindex als Nebenbaustelle vorgeschlagen
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #284/AK1 | Annahme «Reallohnsteigerung» (Vorgabe 0,5 %) bei den Annahmen zur Teuerung, gespeichert, Warnung ausserhalb −2 % bis +3 %, ohne Feld die Vorgabe. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK1 (#284), `indexation.rs` `issue_306_ak1_…` | 27.11.2026 ok (Tests) |
+| #284/AK2 | Lohnindex = Preisindex × (1 + Reallohn)^Jahre, Mischindex = Mittel, ab Simulationsstart. | ☑ | **gilt** | `ahv.rs` `issue_284_ak2_ak3_…` | 27.11.2026 ok (Test, Handwert) |
+| #284/AK3 | Anpassung im Januar ungerader Jahre (2 025.05 / 2 025.05 / Mischindex nach 3 Jahren). | ☑ | **gilt** | `ahv.rs` `issue_284_ak2_ak3_…`, `qa_matrix.rs` `indexed_ahv_changes_only_in_january` | 27.11.2026 ok (Tests, Handwert) |
+| #284/AK4 | Über 4 % Teuerung seit dem letzten Januar: Anpassung auch im geraden Jahr. | ☑ | **gilt** | `ahv.rs` `issue_284_ak4_…`, `household.rs` `issue_280_ak1_ak3_…` | 27.11.2026 ok (Tests) |
+| #284/AK5 | Eingegebene Rente in Werten des Starts, angepasst bis zum Bezug (≈ 2 237.58). | ☑ | **gilt** | `ahv.rs` `issue_284_ak5_…`, `indexation.rs` `issue_306_ak1_…` | 27.11.2026 ok (Tests, Handwert) |
+| #284/AK6 | Plafond, Kürzung und Zuschlag folgen derselben Anpassung; Untergrenze #280 für den Mischindex. | ☑ | **gilt** | `ahv.rs` `issue_284_ak6_…`, `issue_280_…`, `household.rs` `issue_145_…` | 27.11.2026 ok (Tests) |
+| #284/AK7 | Renten ohne Anpassung bleiben vor und nach dem Bezug nominal. | ☑ | **gilt** | `ahv.rs` `issue_284_ak7_…`, `qa_matrix.rs` `ahv_fixed_and_indexed` | 27.11.2026 ok (Tests) |
+| #284/AK8 | Golden mit Begründung; Hilfe (4 Sprachen), BESCHREIBUNG und Spezifikation nachgeführt. | ☑ | **gilt** | `golden`, [docs.test.js](../e2e/unit/docs.test.js) #282/AK1, #284/AK5 | 27.11.2026 ok (Durchsicht, Tests) |
+
 ### #287 Pilot Bund und Zürich: Steuerdaten aus Erlassen
 
 [Issue #287](https://github.com/ingen63/VivaPlan/issues/287) · geschlossen · Umsetzung: f0e8cd2 · Teil von #286; Aufwand im Kommentar vom 26.11.2026
