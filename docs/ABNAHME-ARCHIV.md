@@ -2516,3 +2516,16 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #296/AK2 | Gemeindesteuer mit dem Index jeder Gemeinde. | ☑ | **gilt** | `test_build.py` `issue_296_ak2_…`, `tax_location.rs` `issue_296_ak4_…` | 27.11.2026 ok (Test; `municipalIndex` = alle 122 Walliser Gemeinden) |
 | #296/AK3 | Abzüge, Vermögen, Kapitalbezugs- und Grundstückgewinnregel mit Artikel; Näherung beim Kapitalbezug geklärt. | ☑ | **gilt** (LF Art. 33b, Divisor 19,77 statt 40; verbleibende Näherung Alter 65 und Höchstsatz Gemeinde aus Sitten in `capitalApprox`) | `test_build.py` `issue_296_ak3_…` | 27.11.2026 ok (Test, Durchsicht) |
 | #296/AK4 | Referenzfälle für mindestens zwei Gemeinden mit verschiedenem Index stimmen mit dem Walliser Steuerrechner (±5 %). | ☑ | **gilt** | `tax_location.rs` `issue_296_ak4_…`, `tax_capital_location.rs` `issue_296_ak4_…` | 27.11.2026 ok (Tests) |
+
+### #303 Neue Planung und Beispielplanung mit Welt (JST) und kurzfristigen Obligationen statt Shiller
+
+[Issue #303](https://github.com/ingen63/VivaPlan/issues/303) · geschlossen · Umsetzung: 3eebc19 · Fehler aus der Nutzung (seit #269)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #303/AK1 | `blank_plan` setzt `returns.strategy` auf `worldJst`, `chShort`; gilt für «Neu» und `plan_open` mit `new: true`. | ☑ | **gilt** | `strategy.rs` `issue_303_ak5_…` | 27.11.2026 ok (Test, Durchsicht `app.js`, `mcp/tools.rs`) |
+| #303/AK2 | Die Beispielplanung hat ebenfalls `worldJst`, `chShort`. | ☑ | **gilt** | `strategy.rs` `issue_303_ak5_…` | 27.11.2026 ok (Test) |
+| #303/AK3 | Bestehende Planungen rechnen unverändert; Golden-Dateien ändern nicht. | ☑ | **gilt** (Tests mit früherer Beispielstrategie setzen sie ausdrücklich; Referenz #209/AK3 neu aufgenommen) | Golden-Tests, `make test-quiet` | 27.11.2026 ok (Tests, Commit ohne Golden-Änderung) |
+| #303/AK4 | `assets/new.vplan` hat dieselbe Strategie wie `blank_plan`. | ☑ | **gilt** | `strategy.rs` `issue_69_strategy_info_and_new_plans` | 27.11.2026 ok (Test) |
+| #303/AK5 | Test: neue Planung aus `blank_plan` hat `worldJst` und `chShort`. | ☑ | **gilt** | `strategy.rs` `issue_303_ak5_…` | 27.11.2026 ok (Test) |
+| #303/AK6 | Hilfe und `BESCHREIBUNG.md` nennen die Vorgabe, falls sie dort steht. | ☑ | **gilt** (keine Vorgabe genannt, nichts zu ändern) | – | 27.11.2026 ok (Durchsicht) |
