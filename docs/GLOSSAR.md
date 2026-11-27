@@ -70,6 +70,7 @@ Wörter in Grossbuchstaben nicht.
 | 3a-Konto | `pillar3a_account` | `Pillar3aAccount` |
 | Einzahlung (3a) | `contribution` | |
 | Auszahlung (3a) | `payout` | `Pillar3aPayout`, `PayoutAt` |
+| Vorbezug für Wohneigentum (3a) | `early withdrawal`, Verwendung `home` | `PayoutUse::Home`, `allows_early` (#301) |
 | Verwendung (Auszahlung) | `usage` | `PayoutUse` |
 | Rente (allgemein) | `pension` | Leibrente aus Kapital: `annuity` |
 
@@ -700,6 +701,8 @@ Arbeitslisten der Übersetzung; bei Widerspruch gilt dieser Abschnitt.
 - `DBG`: Bundesgesetz über die direkte Bundessteuer, SR 642.11 (fedlex, DE, FR, IT; keine englische Fassung).
 - `StHG`: Bundesgesetz über die Harmonisierung der direkten Steuern der Kantone und Gemeinden, SR 642.14 (fedlex, DE,
   FR, IT).
+- `BVV 3`: Verordnung über die steuerliche Abzugsberechtigung für Beiträge an anerkannte Vorsorgeformen, SR
+  831.461.3 (fedlex, DE, FR, IT).
 - `ZGB`: Schweizerisches Zivilgesetzbuch, SR 210 (fedlex, DE, FR, IT, EN).
 - `MB 3.01`: Merkblatt 3.01 «Altersrenten und Hilflosenentschädigungen der AHV» der Informationsstelle AHV/IV, Stand
   1.1.2026 (DE, FR, IT, EN).
@@ -736,6 +739,7 @@ Schweizer Kürzel (AHV statt der amtlichen englischen Form OASI im MB 3.01).
 | Alters- und Hinterlassenenversicherung | old-age and survivors' insurance | assurance-vieillesse et survivants | assicurazione per la vecchiaia e per i superstiti; assicurazione vecchiaia e superstiti | AHVG Titel (DE, FR, IT); MB 3.01 (EN) | - |
 | AHV-Rente; Altersrente | AHV pension; old-age pension | rente AVS; rentes AVS; rente de vieillesse; rentes de vieillesse | rendita AVS; rendite AVS; rendita di vecchiaia; rendite di vecchiaia | MB 3.01 | - |
 | Vorbezug | early withdrawal; drawing early | anticipation; perception anticipée | anticipazione; riscossione anticipata | MB 3.04 (DE, FR, IT); MB 3.01 (EN); AHVG Art. 40 | - |
+| Vorbezug für Wohneigentum; Vorbezüge für Wohneigentum; Wohneigentum (Vorbezug) | early withdrawal for home ownership; early withdrawals for home ownership; home ownership (early withdrawal) | versement anticipé; versements anticipés | prelievo anticipato; prelievi anticipati | BVV 3 Art. 3 Abs. 3–6 (FR, IT); EN: keine amtliche Quelle; Säule 3a (#301), getrennt vom AHV-Vorbezug | - |
 | Aufschub | deferral; deferring | ajournement | rinvio | MB 3.04 (DE, FR, IT); MB 3.01 (EN) | - |
 | Plafonierung | cap; capped | plafonnement; plafonné | limitazione; limite massimo | MB 3.01; AHVG Art. 35 | - |
 | Maximalrente | maximum pension | rente maximale | rendita massima | MB 3.01 | - |

@@ -99,8 +99,9 @@ test.describe("Settings, fixed milestones and pillar 3a (#25, #50, #52, #51)", (
     expect(await page.evaluate(n => "amount" in state.pillar3a[0].payouts[n] && state.pillar3a[0].payouts[n].amount !== undefined, before)).toBe(false);
     await page.locator(`button[data-action="list-del"][data-path="pillar3a.0.payouts"]`).last().click();
     expect(await page.evaluate(() => state.pillar3a[0].payouts.length)).toBe(before);
-    // AK4: a payout more than 5 years before the AHV start is an error
-    await page.evaluate(() => { state.pillar3a[0].payouts[0].date = "2028-01"; renderSection(); });
+    // AK4: a payout more than 5 years before the AHV start is an error (#301: into wealth; home ownership and mortgage
+    // repayment may be earlier)
+    await page.evaluate(() => { Object.assign(state.pillar3a[0].payouts[0], { date: "2028-01", use: "wealth" }); renderSection(); });
     await expect(page.locator("#val li.err").first()).toContainText("liegt mehr als 5 Jahre vor dem AHV-Bezug");
     // AK7: contribution above the maximum amount
     await page.evaluate(() => { state.pillar3a[0].payouts[0].date = "2031-01"; state.pillar3a[0].contribution = 8000; renderSection(); });
@@ -367,6 +368,52 @@ test.describe("Pillar 3a in tranches (#300)", () => {
     await field(page, "pillar3a.0.tranches.count").fill("4");
     await field(page, "pillar3a.0.tranches.count").press("Tab");
     await expect(page.locator("#val li.err").first()).toContainText("Die letzte Tranche mit 66 Jahren (06.2046) liegt nach dem AHV-Bezug (06.2045)");
+    await noErrors(page, errors);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe("Pillar 3a: early withdrawal for home ownership (#301)", () => {
+  // Invented example: birth 1980-06 (AHV start 06.2045, limit 06.2040), balance 120'000, interest 0, one owned house
+  // without mortgage; early withdrawal of 30'000 in June 2032 for a renovation.
+  const setup = async (page, properties = true) => {
+    await page.evaluate(props => {
+      state.household.persons[0].birth = "1980-06";
+      state.realestate.properties = props ? [{ name: "Haus", status: "owned", price: 500000, worth: 800000, bought: "2010-01", sell: "never", fixCosts: 0, inflation: false }] : [];
+      state.pillar3a = [{ person: state.household.persons[0].id, balance: 120000, rate: 0, contribution: 0, use: "wealth", payouts: [{ date: "2032-06", amount: 30000, use: "home" }] }];
+      markDirty();
+      goto("pillar3a");
+    }, properties);
+  };
+  const errs = page => page.locator("#val li.err");
+
+  test("AK1, AK2: usage home ownership (early withdrawal) in the payout plan, allowed before the limit; hint", async ({ page }) => {
+    const errors = await open(page);
+    await setup(page);
+    const sel = page.locator('select[data-path="pillar3a.0.payouts.0.use"]');
+    await expect(sel.locator("option")).toContainText(["Ins freie Vermögen", "Wohneigentum (Vorbezug)"]);
+    await expect(sel).toHaveValue("home");
+    await expect(page.locator("#main")).toContainText("«Wohneigentum (Vorbezug)» und «Hypothek zurückzahlen» sind auch früher möglich");
+    const preview = () => page.evaluate(() => (lastSim?.p3a || []).map(e => `${ymShow(i2ym(e.m))} ${e.text}`).join("\n"));
+    await expect.poll(preview).toContain("06.2032 Säule 3a: Auszahlung 30000 CHF");
+    await expect(errs(page)).toHaveCount(0);
+    // AK2: «Ins freie Vermögen» before the limit stays an error
+    await sel.selectOption("wealth");
+    await expect(errs(page).first()).toContainText("frühestens im 06.2040");
+    await noErrors(page, errors);
+  });
+
+  test("AK5: without an owned home the early withdrawal is an error; with tranches it still applies", async ({ page }) => {
+    const errors = await open(page);
+    await setup(page, false);
+    await expect(errs(page).first()).toContainText("Der Vorbezug für Wohneigentum im 06.2032 setzt eine selbst bewohnte Immobilie in diesem Monat voraus");
+    await setup(page);
+    await expect(errs(page)).toHaveCount(0);
+    await page.locator('input[data-path="pillar3a.0.tranches.enabled"]').check();
+    await expect(page.locator('#main [data-p3a="locked"]')).toContainText("Vorbezüge für Wohneigentum vor dem 06.2040 gelten auch mit Tranchen");
+    const preview = () => page.evaluate(() => (lastSim?.p3a || []).map(e => `${ymShow(i2ym(e.m))} ${e.text}`).join("\n"));
+    await expect.poll(preview).toContain("06.2032 Säule 3a: Auszahlung 30000 CHF");
+    await expect.poll(preview).toContain("06.2040 Säule 3a: Tranche 1 von 6 15000 CHF");
     await noErrors(page, errors);
   });
 });

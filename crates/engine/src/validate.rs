@@ -5,7 +5,7 @@ use serde::{Serialize, Serializer};
 
 use crate::message::{arg, Arg, Message};
 
-use crate::model::{fixed_milestone_message, person_milestones, PayoutAt, PayoutUse};
+use crate::model::{fixed_milestone_message, person_milestones, PayoutAt, PayoutUse, EARLY_WITHDRAWAL_GAP_MONTHS};
 use crate::model::{
     AmortMode, AmountMode, GainModel, MilestoneKind, Plan, PropertyStatus, RateKind, ReturnSource, Series, SeriesDef,
     StateSeries, Strategy, TaxValueKind, Withdrawal,
@@ -131,6 +131,22 @@ fn check_tax_data_age(plan: &Plan, data_year: i32, year: i32, v: &mut Issues) {
     if !plan.taxes.mode.is_own() && year > data_year + 1 {
         v.warn("taxes", msg!(tax_data_outdated, year = data_year, current = year));
     }
+}
+
+/// #301/AK5: Whether the plan has an owner-occupied property in month `m`: owned at the start or bought in `m` at the
+/// latest, and not sold before or in `m`. A point in time known only during the simulation («after sale») counts as
+/// fulfilled.
+fn owns_home_in(plan: &Plan, r: &Resolver, m: YearMonth) -> bool {
+    let at = |t: &TimeRef| r.resolve(t).ok().flatten();
+    plan.realestate.properties.iter().any(|p| {
+        let bought = match (p.status, &p.buy) {
+            (PropertyStatus::Owned, _) => true,
+            (PropertyStatus::Planned, Some(b)) => b.is_dynamic() || at(b).is_some_and(|d| d <= m),
+            _ => false,
+        };
+        let sold = p.sell.as_ref().and_then(at).is_some_and(|d| d <= m);
+        bought && !sold
+    })
 }
 
 /// #271/AK6: Month of the last planned sale of a property if afterwards neither a rent nor the care home of every
@@ -1388,6 +1404,10 @@ fn check(plan: &Plan, v: &mut Issues) {
         if acc.usage == PayoutUse::Repay && !repay_possible {
             v.warn("pillar3a", msg!(pillar3a_repay_without_indirect, who = who));
         }
+        // #301: an early withdrawal is a single payout, not the remainder or the tranches.
+        if acc.usage == PayoutUse::Home {
+            v.err_at("pillar3a", f("use"), msg!(pillar3a_home_not_for_rest, who = who));
+        }
         // #300: tranches instead of the payout plan (it is locked, its rows are not checked).
         if let Some(t) = acc.tranches_on() {
             let ok_age = (60..=65).contains(&t.from_age);
@@ -1438,15 +1458,27 @@ fn check(plan: &Plan, v: &mut Issues) {
                     );
                 }
             }
-            continue;
         }
+        // #301: early withdrawals for home ownership (before the limit of 5 years before the AHV payout).
+        let tranches = acc.tranches_on().is_some();
+        let earliest = ahv.map(|a| a.plus(-60));
+        let mut early: Vec<(YearMonth, String)> = Vec::new();
         for (j, x) in acc.payouts.iter().enumerate() {
+            // #300: with tranches the payout plan is locked; #301: except early withdrawals.
+            if tranches && !x.usage.allows_early() {
+                continue;
+            }
             // #55: Point in time as a date or age; the message is at the respective field.
             let at_field = match x.kind {
                 PayoutAt::Date => format!("pillar3a.{k}.payouts.{j}.date"),
                 PayoutAt::Age => format!("pillar3a.{k}.payouts.{j}.years"),
             };
-            let Some(date) = x.month(Some(plan.household.persons[i].birth)) else {
+            let month = x.month(Some(plan.household.persons[i].birth));
+            let is_early = x.usage.allows_early() && month.zip(earliest).is_some_and(|(d, e)| d < e);
+            if tranches && !is_early {
+                continue;
+            }
+            let Some(date) = month else {
                 let text = match x.kind {
                     PayoutAt::Date => msg!(pillar3a_payout_date_invalid, who = who, n = j + 1),
                     PayoutAt::Age => msg!(pillar3a_payout_age_invalid, who = who, n = j + 1),
@@ -1454,12 +1486,12 @@ fn check(plan: &Plan, v: &mut Issues) {
                 v.err_at("pillar3a", at_field, text);
                 continue;
             };
-            if let Some(a) = ahv {
-                let earliest = a.plus(-60);
-                if date < earliest {
+            if let (Some(a), Some(earliest)) = (ahv, earliest) {
+                // #301/AK2: home ownership and repayment of the mortgage at any age.
+                if date < earliest && !x.usage.allows_early() {
                     v.err_at(
                         "pillar3a",
-                        at_field,
+                        at_field.clone(),
                         msg!(
                             pillar3a_payout_too_early,
                             who = who,
@@ -1488,6 +1520,17 @@ fn check(plan: &Plan, v: &mut Issues) {
                     msg!(pillar3a_payout_repay_without_indirect, who = who, date = date),
                 );
             }
+            // #301/AK5: an early withdrawal needs an owner-occupied property in the month of the payout.
+            if (x.usage == PayoutUse::Home || is_early) && !owns_home_in(plan, &r, date) {
+                v.err_at(
+                    "pillar3a",
+                    at_field.clone(),
+                    msg!(pillar3a_early_without_home, who = who, date = date),
+                );
+            }
+            if is_early {
+                early.push((date, at_field.clone()));
+            }
             if let (Some(pm), true) = (retire_of[i.min(1)], pk_lumpsum[i.min(1)] > 0.0) {
                 if pm.year() == date.year() {
                     v.warn(
@@ -1495,6 +1538,17 @@ fn check(plan: &Plan, v: &mut Issues) {
                         msg!(pillar3a_payout_same_year_as_pk, who = who, date = date),
                     );
                 }
+            }
+        }
+        // #301/AK4: at least 5 years between two early withdrawals (BVV 3 Art. 3 para. 4).
+        early.sort();
+        for w in early.windows(2) {
+            if w[1].0 < w[0].0.plus(EARLY_WITHDRAWAL_GAP_MONTHS) {
+                v.err_at(
+                    "pillar3a",
+                    w[1].1.clone(),
+                    msg!(pillar3a_early_too_close, who = who, first = w[0].0, second = w[1].0),
+                );
             }
         }
     }

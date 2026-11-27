@@ -52,6 +52,7 @@ mod optimize_ranges;
 mod parametric_fit;
 mod path_reuse;
 mod pillar3a;
+mod pillar3a_home;
 mod pillar3a_plan;
 mod pillar3a_tranches;
 mod plan_builder;

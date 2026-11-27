@@ -66,7 +66,7 @@ Der Editor führt durch zwölf Abschnitte:
   weist die Prüfung darauf hin.
 - **Säule 3a:** ein Konto je Person mit Guthaben, Verzinsung, Einzahlung pro Jahr (bis zum Maximalbetrag; für eine
   Person «Ohne Pensionskasse (grosse Säule 3a)» bis 20 % des Erwerbseinkommens, höchstens der Maximalbetrag der grossen
-  Säule 3a, #152; zählt zu den Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug); der Rest wird spätestens
+  Säule 3a, #152; zählt zu den Ausgaben, bis vor dem AHV-Bezug) und Auszahlungsplan (frühestens 5 Jahre vor dem AHV-Bezug, ausser Vorbezug für Wohneigentum); der Rest wird spätestens
   im AHV-Bezug ausbezahlt. Der Zeitpunkt einer Auszahlung ist ein Datum oder ein Alter der Kontoinhaberin bzw. des
   Kontoinhabers; jede Zeile zeigt das Guthaben vor und nach der Auszahlung aus der Vorschau, und eine neue Zeile erhält
   als Betrag das Guthaben zu ihrem Zeitpunkt.
@@ -74,6 +74,14 @@ Der Editor führt durch zwölf Abschnitte:
   Auszahlungsplans jedes Jahr im Geburtsmonat eine Tranche: Guthaben ÷ Zahl der verbleibenden Tranchen, die letzte ist
   der Rest, spätestens im AHV-Bezug. Das senkt die Kapitalbezugssteuer. Vereinfachung: ein Konto mit Teilbezügen statt
   n Konten, die gesetzlich je ganz bezogen werden; steuerlich gleich.
+  **Vorbezug für Wohneigentum (#301):** Eine Auszahlung mit der Verwendung «Wohneigentum (Vorbezug)» oder «Hypothek
+  zurückzahlen» darf in jedem Alter liegen (BVV 3 Art. 3), als Teilbetrag oder ganzes Guthaben. «Wohneigentum
+  (Vorbezug)» geht ins freie Vermögen; Kauf oder Renovation werden separat erfasst (geplante Immobilie, einmalige
+  Ausgabe). Die Prüfung verlangt im Monat der Auszahlung eine selbst bewohnte Immobilie (im Besitz oder im selben Monat
+  gekauft) und zwischen zwei Vorbezügen für Wohneigentum vor der Grenze von 5 Jahren vor dem AHV-Bezug mindestens 5
+  Jahre. Besteuert wird der Vorbezug wie jede Auszahlung als Kapitalbezug; Einzahlungen gehen weiter. Mit Tranchen
+  gelten Vorbezüge für Wohneigentum vor dieser Grenze weiter, die Tranchen rechnen mit dem kleineren Guthaben.
+  Zustimmung des Ehepartners und Nachweis bei der Stiftung nennt die Hilfe; die App prüft sie nicht.
 - **Einnahmen & Ausgaben:** Erwerbseinkommen, Lebenshaltung und einmalige Beträge (Erbschaft, Autokauf, Reise). Jeder
   Wert kann zeitabhängig sein, zum Beispiel tiefere Ausgaben ab 80.
   Zeitabhängige Werte (Verläufe) gibt es als Konstante, Treppe («ab Zeitpunkt gilt Wert»), Gerade (von Wert a zu

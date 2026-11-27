@@ -213,13 +213,6 @@
     },
     {
       "file": "crates/app/ui/hilfe/it/10-editor.md",
-      "where": "§s-pillar3a",
-      "check": "terms",
-      "subject": "Ehepaar",
-      "reason": "«unverheirateten Paaren» enthält «verheiratet»; die Übersetzung meint unverheiratete Paare"
-    },
-    {
-      "file": "crates/app/ui/hilfe/it/10-editor.md",
       "where": "§f-pk-lumpsum",
       "check": "terms",
       "subject": "Ehepaar",

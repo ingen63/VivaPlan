@@ -2199,6 +2199,51 @@
     "text": "Person 2: payout in 07.2031 and pension fund lump sum in the same year – they are added together for tax progression."
   },
   {
+    "code": "pillar3a_home_not_for_rest",
+    "params": {
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: “Home ownership (early withdrawal)” is only possible for a single payout, not for the remainder or the tranches.",
+    "text": "Person 2: “Home ownership (early withdrawal)” is only possible for a single payout, not for the remainder or the tranches."
+  },
+  {
+    "code": "pillar3a_early_without_home",
+    "params": {
+      "date": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: the early withdrawal for home ownership in {date:ym} requires an owner-occupied property in that month (owned or bought in the same month).",
+    "text": "Person 2: the early withdrawal for home ownership in 07.2031 requires an owner-occupied property in that month (owned or bought in the same month)."
+  },
+  {
+    "code": "pillar3a_early_too_close",
+    "params": {
+      "first": "2031-07",
+      "second": "2031-07",
+      "who": {
+        "code": "person_n",
+        "params": {
+          "n": 2
+        },
+        "text": "Person 2"
+      }
+    },
+    "template": "{who}: the early withdrawals for home ownership in {first:ym} and {second:ym} are less than 5 years apart; an early withdrawal for home ownership is possible every 5 years.",
+    "text": "Person 2: the early withdrawals for home ownership in 07.2031 and 07.2031 are less than 5 years apart; an early withdrawal for home ownership is possible every 5 years."
+  },
+  {
     "code": "pillar3a_tranches_from_age",
     "params": {
       "who": {

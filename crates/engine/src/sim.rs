@@ -1303,10 +1303,14 @@ impl Simulator {
                             })
                             .collect();
                         payouts.sort_by_key(|x| (x.0, x.3));
-                        // #300/AK5: with tranches the payout plan is locked.
+                        // #300/AK5: with tranches the payout plan is locked; #301: early withdrawals for home
+                        // ownership before the limit of 5 years before the AHV payout still apply.
                         let tranches: Vec<YearMonth> = match a.tranches_on() {
                             Some(t) => {
-                                payouts.clear();
+                                let early = |j: usize, m: YearMonth| {
+                                    a.payouts[j].usage.allows_early() && ahv.is_some_and(|h| m < h.plus(-60))
+                                };
+                                payouts.retain(|x| early(x.3, x.0));
                                 (0..t.count).map(|n| t.month(person.birth, n)).collect()
                             }
                             None => vec![],

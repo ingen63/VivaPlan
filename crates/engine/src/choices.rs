@@ -46,6 +46,7 @@ pub const LABELS: &[(&str, &str, &[&str])] = &[
     ("pillar3a.*.payouts.*.kind", "age", &["pillar3a.age"]),
     ("pillar3a.*.payouts.*.use", "repay", &["pillar3a.repayMortgage"]),
     ("pillar3a.*.payouts.*.use", "wealth", &["pillar3a.toWealth"]),
+    ("pillar3a.*.payouts.*.use", "home", &["pillar3a.homeEarly"]),
     ("realestate.properties.*.status", "owned", &["property.owned"]),
     ("realestate.properties.*.status", "planned", &["property.planned"]),
     ("realestate.properties.*.status", "rent", &["property.rent"]),
@@ -169,6 +170,11 @@ pub const WITHOUT_LABEL: &[(&str, &str, &str)] = &[
         "realestate.properties.*.mortgage.pillar3a.use",
         "*",
         "pillar 3a on the mortgage of older plans (before #52), only read",
+    ),
+    (
+        "pillar3a.*.use",
+        "home",
+        "#301: early withdrawal only as a single payout; for the remainder and the tranches an error",
     ),
     (
         "taxes.propertyGain.model",

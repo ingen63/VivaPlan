@@ -1039,9 +1039,22 @@ ein (`BUILTIN`).
   ihre eigene Restzahl. Prüfung (`validate.rs`): `fromAge` 60–65 und `count` 1–6 (Fehler am Feld), erste Tranche nicht
   vor AHV-Bezug − 60 Monate (`pillar3a_payout_too_early`), letzte nicht nach dem AHV-Bezug
   (`pillar3a_tranches_after_ahv` mit Alter und Monat, am Feld `count`); die Zeilen des gesperrten Auszahlungsplans
-  werden nicht geprüft. Oberfläche: Schalter in der Karte Säule 3a, beim Einschalten Vorschlag ab
+  werden nicht geprüft (ausser Vorbezügen, #301). Oberfläche: Schalter in der Karte Säule 3a, beim Einschalten Vorschlag ab
   `max(60, ⌈(AHV − 60 Monate − Geburt) / 12⌉)` bis zum vollen Alter im AHV-Bezug (höchstens 6); Auszahlungsplan als
   `fieldset.locked-area` gesperrt.
+- **Vorbezug für Wohneigentum (#301):** `PayoutUse::Home` (`use: "home"`) neben `repay` und `wealth`;
+  `PayoutUse::allows_early` = `home` oder `repay` (BVV 3 Art. 3 Abs. 3). Simulation: `home` wie `wealth` (ins freie
+  Vermögen über `pay_out_3a`, Kapitalbezugssteuer wie jede 3a-Auszahlung, Einzahlungen laufen weiter). Mit Tranchen
+  bleiben im `CAccount.payouts` die Zeilen mit `allows_early` vor AHV-Bezug − 60 Monate (Vorbezüge), alle anderen
+  fallen weg. Prüfung (`validate.rs`): Eine Zeile vor AHV-Bezug − 60 Monate ist nur ohne `allows_early` ein Fehler
+  (`pillar3a_payout_too_early`). Vorbezug = `allows_early` und vor dieser Grenze; ein Vorbezug oder jede Zeile mit `home`
+  braucht im Auszahlungsmonat eine Immobilie im Besitz bzw. gekauft bis und mit diesem Monat, nicht verkauft bis und
+  mit diesem Monat (`owns_home_in`; ein Kauf «nach Verkauf» gilt als erfüllt), sonst `pillar3a_early_without_home` am
+  Zeitpunkt der Zeile. Zwei Vorbezüge (sortiert) brauchen mindestens `EARLY_WITHDRAWAL_GAP_MONTHS` = 60 Monate Abstand
+  (BVV 3 Art. 3 Abs. 4), sonst `pillar3a_early_too_close` mit beiden Monaten am späteren. Mit Tranchen werden nur die
+  Vorbezüge geprüft. `use: "home"` beim Konto (Rest, Tranchen) ist ein Fehler (`pillar3a_home_not_for_rest`).
+  Mindestbetrag 20 000 und Grenze ab Alter 50 der WEFV gelten für die Säule 3a nicht (BVV 3 Art. 3 Abs. 5 verweist nur
+  auf WEFV Art. 2–4). Oberfläche: Option «Wohneigentum (Vorbezug)» nur in den Zeilen des Auszahlungsplans.
 - **Grosse Säule 3a (#152):** `household.persons[i].noPensionFund` (Standard nein, nur gespeichert, wenn gesetzt) =
   erwerbstätig ohne Pensionskasse. Für diese Person ist `pillar3a_cap` = min(20 % (`LARGE_PILLAR3A_SHARE`) × ihr
   Erwerbseinkommen des Kalenderjahres, `limits.pillar3aMaxLarge` × Index); Index = Teuerung, wenn der 3a-Höchstbetrag

@@ -1691,7 +1691,20 @@ pub enum PayoutUse {
     Repay,
     /// Goes to the liquid wealth.
     Wealth,
+    /// #301: Early withdrawal for owner-occupied home ownership (purchase, renovation); goes to the liquid wealth.
+    Home,
 }
+
+impl PayoutUse {
+    /// #301: Usages for which the law permits an early withdrawal at any age (BVV 3 Art. 3 para. 3): home ownership
+    /// and repayment of the mortgage.
+    pub fn allows_early(self) -> bool {
+        matches!(self, PayoutUse::Home | PayoutUse::Repay)
+    }
+}
+
+/// #301: Months between two early withdrawals for home ownership (BVV 3 Art. 3 para. 4: every five years).
+pub const EARLY_WITHDRAWAL_GAP_MONTHS: i32 = 60;
 
 /// Deprecated pillar 3a on the mortgage (before #52); only for loading older files.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -1728,7 +1741,8 @@ pub struct Pillar3aAccount {
     /// the year; `false`: nominal. Missing: yes with `indexedByDefault`, otherwise no.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contribution_indexed: Option<bool>,
-    /// Planned payouts, at the earliest 5 years before the AHV payout. Ignored while `tranches.enabled` is on.
+    /// Planned payouts, at the earliest 5 years before the AHV payout; #301: with the usage `home` or `repay` at any
+    /// age (early withdrawal). Ignored while `tranches.enabled` is on, except early withdrawals before that limit.
     #[serde(default)]
     pub payouts: Vec<Pillar3aPayout>,
     /// #300: Payout in yearly tranches instead of the payout plan.

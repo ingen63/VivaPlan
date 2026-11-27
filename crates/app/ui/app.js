@@ -759,7 +759,8 @@ R.pillar3a = () => {
     const earliest = Number.isFinite(ahv) ? ymShow(i2ym(ahv - 60)) : "?";
     const events = (lastSim?.p3a || []).filter(e => state.household.persons.length < 2 || e.text.includes(`(${pp.name})`));
     const tOn = !!acc.tranches?.enabled, tm = trancheMonths(acc);
-    // #300: switch «In Tranchen beziehen»; while on the payout plan is locked (its rows stay).
+    // #300: switch «In Tranchen beziehen»; while on the payout plan is locked (its rows stay; #301: early withdrawals
+    // before the limit still apply).
     const tranches = `<div class="p3a-tranches" style="margin-top:12px">${Chk(A + ".tranches.enabled", tr("pillar3a.tranches"), { rerender: 1 })}${infoPop(`<p data-p3a="tranches-info">${tr("pillar3a.tranchesInfo")}</p>`)}
       ${tOn ? `<div class="grid2">${F(A + ".tranches.fromAge", tr("pillar3a.tranchesFromAge"), "years", { int: 1 })}${F(A + ".tranches.count", tr("pillar3a.tranchesCount"), "num", { int: 1 })}</div>
       <p class="hint" data-p3a="tranches">${tm.length ? tr("pillar3a.tranchesHint", { first: ymShow(i2ym(tm[0])), last: ymShow(i2ym(tm[tm.length - 1])), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) : ""}</p>` : ""}</div>`;
@@ -767,14 +768,14 @@ R.pillar3a = () => {
       <div class="grid3">${F(A + ".balance", tr("pillar3a.balance", { startTxt: startTxt() }), "chf")}${F(A + ".rate", tr("pillar3a.interest"), "pct")}
         ${F(A + ".contribution", tr("pillar3a.contribution"), "chf", { hint: tr(pp.noPensionFund ? "pillar3a.contributionHintLarge" : "pillar3a.contributionHint", { pillar3aMax: fmtInt(pp.noPensionFund ? l.pillar3aMaxLarge : l.pillar3aMax), ahv: Number.isFinite(ahv) ? ymShow(i2ym(ahv)) : "?" }) })}</div>
       ${tranches}
-      <h4>${tr("pillar3a.payoutPlan")}</h4>${tOn ? `<p class="hint" data-p3a="locked">${tr("pillar3a.payoutPlanLocked")}</p>` : ""}
+      <h4>${tr("pillar3a.payoutPlan")}</h4>${tOn ? `<p class="hint" data-p3a="locked">${tr("pillar3a.payoutPlanLocked", { earliest })}</p>` : ""}
       <fieldset class="locked-area" data-p3a="plan" ${tOn ? "disabled" : ""}><table class="tbl"><tr><th>${tr("pillar3a.when")}</th><th>${tr("pillar3a.result")}</th><th>${tr("pillar3a.amount")}</th><th>${tr("pillar3a.use")}</th><th title="${tr("pillar3a.fromPreview")}">${tr("pillar3a.balanceAfter")}</th><th></th></tr>
       ${(acc.payouts || []).map((x, j) => {
         const P = `${A}.payouts.${j}`;
         return `<tr data-p3a-row="${j}"><td style="width:220px"><div class="refwrap">${Sel(P + ".kind", [["date", tr("pillar3a.date")], ["age", tr("pillar3a.age")]], { rerender: 1 })}${x.kind === "age" ? F(P + ".years", "", "years", { bare: true, unit: tr("unit.yearsShort") }) : F(P + ".date", "", "month", { bare: true })}</div></td>
         <td>${C("p3aat", `${k}.${j}`)}</td>
         <td style="width:170px">${F(P + ".amount", "", "chfopt", { bare: true })}</td>
-        <td>${Sel(P + ".use", uses)}</td>
+        <td>${Sel(P + ".use", [...uses, ["home", tr("pillar3a.homeEarly")]])}</td>
         <td style="white-space:nowrap">${C("p3apay", `${k}.${j}`)}</td>
         <td><button class="btn ghost small" data-action="list-del" data-path="${A}.payouts" data-i="${j}" title="${tr("series.removeRow")}">✕</button></td></tr>`;
       }).join("")}</table>
@@ -4200,7 +4201,8 @@ function paramSections(plan, full = false) {
     const nm = (plan.household?.persons || []).find(q => q.id === a.person)?.name || a.person;
     return [[tr("params.pillar3aText", { nm }), `${money(a.balance)}, ${pc(a.rate)}, ${money(a.contribution ?? 0)}`],
       ...(a.tranches?.enabled ? [[tr("params.tranches", { nm }), tr("params.tranchesText", { fromAge: a.tranches.fromAge, count: a.tranches.count })]] : []),
-      ...(a.tranches?.enabled ? [] : a.payouts || []).map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : tr("params.wealthShort")})`])];
+      // #301: with tranches only the early withdrawals (home ownership, mortgage) can still apply
+      ...(a.payouts || []).filter(x => !a.tranches?.enabled || x.use === "home" || x.use === "repay").map(x => [`${tr("params.payout", { nm })} ${x.kind === "age" ? tr("params.atYears", { years: x.years }) : ymShow(x.date)}`, `${x.amount != null ? money(x.amount) : tr("params.wholeBalance")} (${x.use === "repay" ? tr("mortgage.title") : x.use === "home" ? tr("pillar3a.homeEarly") : tr("params.wealthShort")})`])];
   })]);
   const t = plan.taxes || {}, g = t.propertyGain;
   // #63/AK10: mode and place of residence with the name of the municipality instead of the own tables

@@ -572,7 +572,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
     ),
     (
         "pillar3a.*.payouts.*.use",
-        "Payout repays the mortgage or goes to wealth.",
+        "Repay mortgage, to wealth or home (early withdrawal at any age).",
     ),
     ("project.currency", "Currency of all amounts (CHF)."),
     ("project.name", "Name of the plan."),
