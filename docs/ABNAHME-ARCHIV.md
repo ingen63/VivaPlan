@@ -2544,6 +2544,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #297/AK3 | Fälle für Verheiratete aus dem Walliser Steuerrechner stimmen auf ±5 %. | ☑ | **gilt** (vier Fälle in Sitten) | `tax_location.rs` `issue_297_ak3_…` | 27.11.2026 ok (Test) |
 | #297/AK4 | Hilfe und Doku sind nachgeführt. | ☑ | **gilt** | – | 27.11.2026 ok (Durchsicht) |
 
+### #300 Säule 3a in Tranchen beziehen
+
+[Issue #300](https://github.com/ingen63/VivaPlan/issues/300) · geschlossen · Umsetzung: 09d6092
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #300/AK1 | Schalter «In Tranchen beziehen» im 3a-Konto mit «ab Alter» (60–65) und «Anzahl Tranchen» (1–6). | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak1_…`, [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK1, AK5, AK6 (#300) | 27.11.2026 ok (Tests) |
+| #300/AK2 | Je Jahr eine Tranche im Geburtsmonat, Guthaben ÷ verbleibende Tranchen, letzte = Rest (150 000 → 3 × 50 000). | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak2_…`, e2e AK2, AK4, AK7 (#300) | 27.11.2026 ok (Tests, Handwerte) |
+| #300/AK3 | Mit Einzahlungen oder Zins folgen die Tranchen dem Guthaben, je Pfad verschieden. | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak3_…` | 27.11.2026 ok (Tests, Handwerte) |
+| #300/AK4 | Letzte Tranche spätestens im AHV-Bezug, sonst Fehler mit Alter und AHV-Bezug. | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak4_…`, e2e AK2, AK4, AK7 (#300) | 27.11.2026 ok (Tests) |
+| #300/AK5 | Mit Schalter Auszahlungsplan gesperrt mit Hinweis; Verwendung gilt für alle Tranchen. | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak5_…`, e2e AK1, AK5, AK6 (#300) | 27.11.2026 ok (Tests) |
+| #300/AK6 | Hinweis beim Konto zur Vereinfachung (ein Konto, Teilbezüge, steuerlich gleich). | ☑ | **gilt** (Info-Symbol neben dem Schalter, 4 Sprachen) | e2e AK1, AK5, AK6 (#300) | 27.11.2026 ok (Test) |
+| #300/AK7 | Kapitalbezugssteuer je Jahr wie heute (mit PK-Bezug, Haushalt nach #150); Jahreswerte und Ereignisse zeigen jede Tranche. | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak7_…`, e2e AK2, AK4, AK7 (#300) | 27.11.2026 ok (Tests; Haushalt über denselben Weg wie jede 3a-Auszahlung, Durchsicht) |
+| #300/AK8 | Ohne Schalter unverändert, Golden-Dateien unverändert. | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak8_…`, `golden` | 27.11.2026 ok (Tests) |
+| #300/AK9 | `describe`, Schema und `plan_set` kennen Schalter und Angaben. | ☑ | **gilt** | `pillar3a_tranches.rs` `issue_300_ak9_…` | 27.11.2026 ok (Test) |
+| #300/AK10 | Tests mit Handwert; Hilfe, BESCHREIBUNG und Spezifikation nachgeführt. | ☑ | **gilt** | `make i18n-check` | 27.11.2026 ok (Durchsicht) |
+
 ### #302 Neue Planung lässt sich über die KI nicht speichern, wenn die KI einen Pfad rät
 
 [Issue #302](https://github.com/ingen63/VivaPlan/issues/302) · geschlossen · Umsetzung: 0e6ca40 · Fehler aus der Nutzung (Claude Desktop, beta.6)
