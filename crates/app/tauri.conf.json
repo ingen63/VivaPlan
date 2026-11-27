@@ -80,7 +80,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAyRTgxMzNBQkZFRDM2QzYKUldUR051Mi9PaFBvQWtMTDg0OGxsSWZxZ3NFKzByYkE0WGVlbFBTM1l0UkEzZXlDVkxJSjBPU0MK",
       "endpoints": [
         "https://github.com/ingen63/VivaPlan/releases/latest/download/latest.json"
       ],
