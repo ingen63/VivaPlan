@@ -951,3 +951,35 @@ fn issue_287_ak6_zurich_cases_match_the_cantonal_calculator() {
         );
     }
 }
+
+/// #296/AK4: Cases from the tax calculator of the canton of Valais 2026 (single, no children, taxable income
+/// 100000, wealth 500000): `(BFS, index of the municipality, [canton income, canton wealth, municipality income,
+/// municipality wealth])`. Sion (index 176 %, coefficient 1.1) and Agarn (index 153 %, coefficient 1.3).
+const VS_CALCULATOR: [(u32, u32, [f64; 4]); 2] = [
+    (6266, 176, [8676.30, 1100.00, 8127.45, 1210.00]),
+    (6101, 153, [8676.30, 1100.00, 10414.55, 1430.00]),
+];
+
+/// #296/AK4: The indexed tariffs of the canton and of two municipalities with different index match the tax
+/// calculator of the canton of Valais within ±5 % (canton and municipality together, income and wealth; the
+/// wealth tax of the municipality is not indexed).
+#[test]
+fn issue_296_ak4_valais_municipalities_match_the_cantonal_calculator() {
+    let data = taxdata::builtin();
+    for (bfs, index, r) in VS_CALCULATOR {
+        let res = data.resolve(&loc("VS", bfs, Church::None), false).unwrap();
+        let my_i = res.income_tax_on(100_000.0, 0.0, 1.0);
+        // The wealth curve holds the deduction for single persons (LF VS Art. 59 Abs. 1 lit. b, 45000); the
+        // calculator takes the entered wealth as taxable.
+        let my_w = res.wealth_tax(545_000.0, 1.0);
+        let (ref_i, ref_w) = (r[0] + r[2], r[1] + r[3]);
+        assert!(
+            (my_i / ref_i - 1.0).abs() <= 0.05,
+            "{bfs} ({index} %): income {my_i} instead of {ref_i}"
+        );
+        assert!(
+            (my_w / ref_w - 1.0).abs() <= 0.05,
+            "{bfs} ({index} %): wealth {my_w} instead of {ref_w}"
+        );
+    }
+}

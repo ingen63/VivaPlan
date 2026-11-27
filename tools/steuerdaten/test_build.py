@@ -159,9 +159,8 @@ def minimal_inputs():
     return tariffs, deductions
 
 
-def write_sources(directory, tariffs, deductions, skip=("VS",)):
-    """#292: The rows of the invented inputs as source files per authority, except the cantons in `skip` (Valais
-    still comes from the ESTV tables)."""
+def write_sources(directory, tariffs, deductions, skip=()):
+    """#292: The rows of the invented inputs as source files per authority, except the cantons in `skip`."""
     import csv
     os.makedirs(directory, exist_ok=True)
     for kind, rows in (("tarife", tariffs), ("abzuege", deductions)):
@@ -413,7 +412,7 @@ class Inputs(unittest.TestCase):
             try:
                 out, rep = os.path.join(d, "out.json"), os.path.join(d, "report.txt")
                 q = os.path.join(d, "quellen")
-                write_sources(q, tariffs, deductions)  # #292: all but Valais from source files
+                write_sources(q, tariffs, deductions)  # #292, #296: all authorities from source files
                 build.main(["--steuerfuesse", "x.xlsx", "--tarife", t, "--abzuege", a, "--kapitalregeln", rules,
                            "--quellen", q, "--out", out, "--bericht", rep])
             finally:
@@ -498,7 +497,7 @@ class Sources(unittest.TestCase):
             write_rows(t, tariffs)
             write_rows(a, deductions)
             q = os.path.join(d, "quellen")
-            write_sources(q, tariffs, deductions, skip=("VS", "ZH"))
+            write_sources(q, tariffs, deductions, skip=("ZH",))
             write_rows(os.path.join(q, "ZH_tarife.csv"),
                        [{**row("ZH", "KANTON", "EINKOMMENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 7), "Quelle": "q"},
                         {**row("ZH", "KANTON", "VERMOEGENSSTEUER", "FLATTAX", 0, "ALLE", 0, 0, 0.2), "Quelle": "q"}])
@@ -721,10 +720,9 @@ class Sources(unittest.TestCase):
 
     def test_issue_291_ak1_western_sources_are_complete(self):
         """#291/AK1: source files 2026 for FR, VD, NE, GE, JU and TI with tariffs for income and wealth and the
-        deductions used, a source per row; Valais still comes from the ESTV tables."""
+        deductions used, a source per row (Valais: #296)."""
         tariffs, deductions, covered = build.read_sources(self.REPO)
         self.assertLessEqual(set(self.WEST), covered)
-        self.assertNotIn("VS", covered)
         kinds = {(r["Kanton"], r["Steuerart"]) for r in tariffs}
         ids = {(r["Kanton"], r["ID"]) for r in deductions}
         for cid in self.WEST:
@@ -761,17 +759,42 @@ class Sources(unittest.TestCase):
 
 
     def test_issue_292_ak1_estv_tables_only_for_valais(self):
-        """#292/AK1 (changed 27.11.2026): every authority but Valais comes from source files; the ESTV rows of all
-        other cantons are ignored, and a missing source file stops the build."""
-        self.assertEqual(build.ESTV_ONLY, {"VS"})
+        """#292/AK1, #296: every authority comes from source files (Valais since #296); the ESTV rows are ignored except
+        for the cantons in `ESTV_ONLY`, and a missing source file stops the build."""
+        self.assertEqual(build.ESTV_ONLY, set())
         _, _, covered = build.read_sources(self.REPO)
-        self.assertEqual(({"CH"} | set(build.NAMES)) - covered, {"VS"})
+        self.assertEqual(({"CH"} | set(build.NAMES)) - covered, set())
         build.check_coverage(covered, build.ESTV_ONLY)
         with self.assertRaisesRegex(ValueError, "source files missing for ZH"):
             build.check_coverage(covered - {"ZH"}, build.ESTV_ONLY)
         estv = [{"Kanton": "VS", "x": 1}, {"Kanton": "ZH", "x": 2}, {"Kanton": "BE", "x": 3}]
-        merged = build.merge_sources(estv, [{"Kanton": "ZH", "x": 4}], {"ZH"}, build.ESTV_ONLY)
+        merged = build.merge_sources(estv, [{"Kanton": "ZH", "x": 4}], {"ZH"}, {"VS"})
         self.assertEqual([r["x"] for r in merged], [1, 4])
+
+
+    def test_issue_296_ak1_valais_cantonal_tariff_indexed(self):
+        """#296/AK1: Valais, cantonal income tax with the classes at 100 % times the factor of the index 173 %
+        (1.1^7 × 1.03); against the table «Taux d'impôt cantonaux 2026» (100 000: 8.6763 %, 200 000: 13.4928 %)."""
+        self.assertAlmostEqual(build.index_factor(173), 1.1 ** 7 * 1.03)
+        self.assertAlmostEqual(build.index_factor(125), 1.1 * 1.1 * 1.05)  # SCC example
+        tariffs, _, _ = build.read_sources(self.REPO)
+        vs = build.pick(build.load_tariffs(tariffs)[("VS", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertAlmostEqual(vs.tax(100_000, False) / 100_000, 0.086763, delta=0.00002)
+        self.assertAlmostEqual(vs.tax(200_000, False) / 200_000, 0.134928, delta=0.00002)
+
+    def test_issue_296_ak2_municipal_index_per_municipality(self):
+        """#296/AK2: an index per municipality from the official list (Brig-Glis and Sion 176 %, Veysonnaz 110 %)."""
+        idx = build.read_municipal_index(self.REPO)["VS"]
+        self.assertEqual(len(idx), 122)
+        self.assertAlmostEqual(idx[6002], build.index_factor(176))
+        self.assertAlmostEqual(min(idx.values()), build.index_factor(110))
+
+    def test_issue_296_ak3_capital_rule_names_the_law(self):
+        """#296/AK3: lump sums in Valais by LF Art. 33b (rate of the equivalent annuity, divisor 19.77 for age 65)."""
+        rule = build.read_rules(build.RULES)["VS"]
+        self.assertTrue(rule["source"].startswith("LF VS Art. 33b"))
+        self.assertEqual(rule["divisor"], 19.77)
+        self.assertTrue(grundstueckgewinn.rules()["VS"]["source"])
 
 
 if __name__ == "__main__":

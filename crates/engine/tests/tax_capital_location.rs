@@ -343,3 +343,25 @@ fn issue_288_ak4_zug_lump_sums_match_the_cantonal_calculator() {
         );
     }
 }
+
+/// #296/AK4: Lump sums in Sion from the tax calculator of the canton of Valais 2026 (single, 65 years, male):
+/// `(amount, canton, municipality)`.
+const VS_SION_CALCULATOR: [(f64, f64, f64); 3] = [
+    (200_000.0, 4_009.60, 4_400.00),
+    (500_000.0, 16_342.00, 17_073.65),
+    (1_000_000.0, 40_000.00, 40_000.00),
+];
+
+/// #296/AK4: Cantonal and municipal tax on lump sums in Sion match the cantonal calculator within ±5 % (the
+/// resolved curve also holds one fifth of the federal tariff, which is subtracted here).
+#[test]
+fn issue_296_ak4_valais_lump_sums_match_the_cantonal_calculator() {
+    let data = taxdata::builtin();
+    let capital = data.resolve(&loc("VS", 6266, Church::None), false).unwrap().capital;
+    for (amount, canton, municipality) in VS_SION_CALCULATOR {
+        let federal = tax::tax(data.federal_capital.get(false), amount, 1.0);
+        let mine = tax::tax(&capital, amount, 1.0) - federal;
+        let want = canton + municipality;
+        assert!((mine / want - 1.0).abs() <= 0.05, "{amount}: {mine} instead of {want}");
+    }
+}

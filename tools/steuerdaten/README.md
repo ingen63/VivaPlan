@@ -3,14 +3,16 @@
 `build.py` erzeugt `crates/engine/data/steuern-<Jahr>.json`. Tarife, Abzüge und Regeln des Bundes und der Kantone
 kommen seit #286 aus den Gesetzen und Verordnungen (Quelldateien unter `quellen/<Jahr>/`, siehe unten). Aus den
 Grunddaten des [Steuerrechners der ESTV](https://swisstaxcalculator.estv.admin.ch/#/taxdata/tax-scales) kommen nur noch
-die Steuerfüsse (bis #285) und Tarife und Abzüge des Wallis (bis #296; `ESTV_ONLY` in `build.py`). Die App bettet die
+die Steuerfüsse (bis #285); seit #296 auch das Wallis aus den Gesetzen (`ESTV_ONLY` in `build.py` ist leer). Die App bettet die
 Datei ein, es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weiteren Pakete.
 
 ## Inhalt der Steuerdatei
 
 - `income`: je Kanton der Tarif der Einkommenssteuer als Kurve `[steuerbares Einkommen, Satz]` der einfachen Steuer
   (Steuerfuss 100 %), getrennt für Alleinstehende (`single`) und Verheiratete (`married`, mit Splitting des Kantons);
-  `municipalIncome`: Schwyz und Wallis zusätzlich der Tarif der Gemeindesteuer;
+  `municipalIncome`: Schwyz und Wallis zusätzlich der Tarif der Gemeindesteuer; `municipalIndex` (Wallis, #296):
+  je Gemeinde `[BFS-Nummer, Faktor]`, um den die Engine die Kurven der Gemeindesteuer (Einkommen und Kapitalbezug)
+  streckt (Satz bei `x × Faktor` = Satz der Grundkurve bei `x`);
 - `federal`: der Tarif der direkten Bundessteuer, ebenso auf das steuerbare Einkommen;
 - `deductions` (je Kanton) und `federalDeductions` (Bund): die Standardabzüge vom Einkommen als Regeln
   `{id, kind, base, rate, min, max}` je Zivilstand und Variante (`retired`: Versicherungsprämien und Sparzinsen ohne
@@ -115,7 +117,11 @@ braucht beide Dateien; seine Zeilen aus den ESTV-Tabellen fallen dann ganz weg, 
 aus den ESTV-Tabellen. Der Bericht beginnt mit der Herkunft je Kanton (`laws (source files)` oder `ESTV tables`).
 Kapitalbezugs- und Grundstückgewinnregeln nennen den Gesetzesartikel in `source` (`kapitalregeln.json`,
 `grundstueckgewinn.py`). Stand 2026: Bund und Zürich (#287), Zentralschweiz LU, UR, SZ, OW, NW, ZG (#288), Nordwestschweiz BE, SO, BS, BL, AG (#289), Ostschweiz GL, SH, AR, AI, SG, GR, TG (#290), Westschweiz und Tessin FR, VD, NE, GE, JU,
-TI (#291; Wallis mit eigenem Issue, weil die Gemeinden eigene Indexstufen haben). Wo das
+TI (#291), Wallis (#296). Das Wallis hat dazu `VS_gemeindeindex.csv` (Spalten `Kanton,BFS,Nr,Gemeinde,Index,Quelle`):
+den Index der Gemeindesteuer je Gemeinde in Prozent (LF VS Art. 178 Abs. 5, «Coefficients et indexations des
+communes», Spalte des Steuerjahres); `build.py` rechnet ihn in den Faktor um (je 10 Punkte über 100 ÷ 1.10, der Rest
+linear) und bricht ab, wenn eine Walliser Gemeinde fehlt. Die Kantonsstufen in `VS_tarife.csv` sind bereits mit dem
+Index des Kantons umgerechnet. Wo das
 Gesetz Grundbeträge nennt und die Verwaltung die Teuerung ausgleicht (Zug), nennt `Quelle` auch die Veröffentlichung
 der Steuerverwaltung für das Jahr (z. B. Aargau, Basel-Landschaft) oder die Teuerungsverordnung (Solothurn).
 
@@ -143,8 +149,9 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
    Teuerungsverordnung (Beispiele: SO Steuerverordnung Nr. 20, GE RCEPF, JU Arrêté, GR Indexstufe nach Art. 4,
    AR Anhang 1, ZG und VD Tarifblätter). `kapitalregeln.json` und `grundstueckgewinn.py` ebenso prüfen.
 3. **Steuerfüsse** (bis #285): Im ESTV-Steuerrechner unter «Grunddaten abrufen» die Steuerfüsse (Gesamte Schweiz,
-   Excel) als `local/estv_income_rates.xlsx` ablegen. Für das Wallis (bis #296) auch Tarife und Abzüge als CSV nach
-   `local/estv/` (Spalten wie die Quelldateien ohne `Quelle`); die Zeilen der übrigen Kantone werden ignoriert.
+   Excel) als `local/estv_income_rates.xlsx` ablegen. Die Optionen `--tarife` und `--abzuege` lesen weiterhin die
+   ESTV-CSV; deren Zeilen werden für keinen Kanton mehr übernommen (`ESTV_ONLY` leer). Wallis: Index des Kantons und
+   der Gemeinden für das neue Jahr nachführen (`VS_tarife.csv`, `VS_gemeindeindex.csv`).
    Die undokumentierte Schnittstelle des Rechners nicht verwenden.
 4. **Erzeugen:**
    ```bash
@@ -152,7 +159,7 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
      --tarife local/estv/tarife_<Jahr>.csv --abzuege local/estv/abzuege_<Jahr>.csv \
      --out crates/engine/data/steuern-<Jahr>.json --bericht local/estv/bericht.txt
    ```
-   Das Werkzeug bricht ab, wenn ausser dem Wallis ein Kanton oder der Bund keine Quelldatei hat. Der Bericht nennt je
+   Das Werkzeug bricht ab, wenn ein Kanton oder der Bund keine Quelldatei hat. Der Bericht nennt je
    Kanton die Herkunft, die gewählten Tarife und Abzüge und die Regeln mit Gesetzesartikel.
 5. **Abgleichen:** `vergleich.py` gegen die Datei des Vorjahres; jede Abweichung über 1 % mit der Teuerung oder einer
    Gesetzesänderung erklären.

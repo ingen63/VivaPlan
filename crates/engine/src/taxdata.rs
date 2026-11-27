@@ -216,6 +216,10 @@ pub struct Canton {
     /// Own tariff of the municipal income tax (Schwyz, Valais; otherwise the cantonal one applies).
     #[serde(default)]
     pub municipal_income: Option<Curves>,
+    /// #296: Index of the municipal tariff per municipality (Valais): `(BFS number, factor)`; the municipal tariff (income
+    /// and lump sums) applies to the amount divided by the factor. Missing municipality: factor 1.
+    #[serde(default)]
+    pub municipal_index: Vec<(u32, f64)>,
     pub deductions: Deductions,
     /// #64: Rate of the simple tax on lump sums from pension savings (multiplier 100 %), on the whole lump sum.
     pub capital: Curves,
@@ -306,16 +310,17 @@ impl TaxData {
         })?;
         let (ek, vm) = (&muni.3, &muni.4);
         let kt = canton.income.get(married);
-        let gem = canton.municipal_income.as_ref().map_or(kt, |c| c.get(married));
+        let factor = canton.municipal_index.iter().find(|m| m.0 == bfs).map_or(1.0, |m| m.1);
+        let gem = stretch(canton.municipal_income.as_ref().map_or(kt, |c| c.get(married)), factor);
         let ck = canton.capital.get(married);
-        let cg = canton.capital_municipal.as_ref().map_or(ck, |c| c.get(married));
+        let cg = stretch(canton.capital_municipal.as_ref().map_or(ck, |c| c.get(married)), factor);
         Ok(Resolved {
-            cantonal: combine(&[(kt, ek[0] + church(ek, loc.church)), (gem, ek[1])]),
+            cantonal: combine(&[(kt, ek[0] + church(ek, loc.church)), (&gem, ek[1])]),
             federal: self.federal.get(married).to_vec(),
             wealth: combine(&[(canton.wealth.get(married), vm[0] + vm[1] + church(vm, loc.church))]),
             capital: combine(&[
                 (ck, ek[0] + church(ek, loc.church)),
-                (cg, ek[1]),
+                (&cg, ek[1]),
                 (self.federal_capital.get(married), 1.0),
             ]),
             canton_deductions: canton.deductions.applied(married),
@@ -413,6 +418,12 @@ impl Resolved {
 
 /// Sum of weighted rate tables on the united grid points. Because the engine interpolates linearly between the grid
 /// points, the sum is exact.
+/// #296: Curve of rates on amounts stretched by `factor`: the rate at `x × factor` is the rate of the curve at `x`
+/// (indexed tariff of a municipality in Valais). Factor 1 leaves the curve unchanged.
+pub fn stretch(curve: &[(f64, f64)], factor: f64) -> Vec<(f64, f64)> {
+    curve.iter().map(|&(x, r)| (x * factor, r)).collect()
+}
+
 pub fn combine(parts: &[(&[(f64, f64)], f64)]) -> Table {
     let mut xs: Vec<f64> = parts.iter().flat_map(|(t, _)| t.iter().map(|p| p.0)).collect();
     xs.sort_by(f64::total_cmp);

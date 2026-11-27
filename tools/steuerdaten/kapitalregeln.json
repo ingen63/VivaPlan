@@ -164,7 +164,7 @@
   },
   "VS": {
     "kind": "income",
-    "divisor": 40,
+    "divisor": 19.77,
     "max": 0.04,
     "single": {
       "share": 1.0
@@ -175,7 +175,7 @@
     "municipal": {
       "kind": "income",
       "target": "GEMEINDE",
-      "divisor": 40,
+      "divisor": 19.77,
       "min": 0.02,
       "single": {
         "share": 0.99,
@@ -186,8 +186,9 @@
         "max": 0.03564
       }
     },
-    "text": "Satz des Einkommenstarifs für einen Vierzigstel des Bezugs, höchstens 4 %",
-    "approx": "Der Höchstsatz der Gemeindesteuer ist aus der Gemeinde Sitten abgeleitet; bei anderen Gemeindesteuerfüssen kann die Steuer auf grossen Bezügen abweichen."
+    "text": "Satz des Einkommenstarifs für die gleichwertige Jahresrente (Bezug geteilt durch 19.77), höchstens 4 %",
+    "approx": "Die Umrechnung in eine Jahresrente gilt für eine Person von 65 Jahren; der Höchstsatz der Gemeindesteuer ist aus der Gemeinde Sitten abgeleitet.",
+    "source": "LF VS Art. 33b Abs. 1 und 4 (RS 642.1, Stand 1.1.2026); Divisor und Höchstsatz der Gemeinde aus dem Walliser Steuerrechner 2026 (Sitten, 65 Jahre)"
   },
   "ZG": {
     "kind": "income",

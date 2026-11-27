@@ -213,7 +213,7 @@ def rules():
         text="Stufentarif 12 % bis 24 %, Zuschlag in den ersten 5 Jahren, ab dem 6. Jahr 4 % weniger je Jahr, ab "
              "25 Jahren 1 % bis 3 %",
         approx="Angenommen ist ein Stufentarif nach Gewinnhöhe (nicht ein Satz für den ganzen Gewinn).",
-        source="Art. 52 StG, SGS 642.1")
+        source="LF VS Art. 52 (RS 642.1, Stand 1.1.2026)")
     r["NE"] = dict(
         model="zurich",
         brackets=[[5000, 0.10], [5000, 0.15], [20000, 0.20], [20000, 0.25], [25000, 0.30], [25000, 0.35],

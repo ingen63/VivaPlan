@@ -886,7 +886,7 @@ Vermögenssteuer des Steuerjahres (Jahreswerte real, ohne Kapitalbezug und Grund
 erste volle Kalenderjahr (`first`) und das erste volle Kalenderjahr, dessen Januar nicht vor `Simulator::retire_at`
 liegt (`retired`); `retired` fehlt, wenn die Pensionierung nicht nach dem Start liegt oder das Jahr dasselbe ist. Die
 Steuerdatei `crates/engine/data/steuern-2026.json` erzeugt `tools/steuerdaten/build.py` aus den
-Quelldateien nach den Gesetzen (`tools/steuerdaten/quellen/<Jahr>/`, #286–#292; Steuerfüsse und Wallis noch aus den
+Quelldateien nach den Gesetzen (`tools/steuerdaten/quellen/<Jahr>/`, #286–#292, #296; Steuerfüsse noch aus den
 ESTV-Grunddaten) (Aufbau und Ablauf für ein neues Steuerjahr: `tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
 ein (`BUILTIN`).
 
@@ -906,7 +906,8 @@ ein (`BUILTIN`).
   negativ. Variante `working`, sobald im Kalenderjahr eine Person Erwerbseinkommen hat, sonst `retired`; die
   Berufskostenpauschale gilt je Person (`Run::year_earned`).
 - **Steuer:** `TaxData::resolve(location, married)` fasst Kantonskurve × (Steuerfuss Kanton + Kirche) und
-  Gemeindekurve (Schwyz, Wallis: eigene, sonst die des Kantons) × Steuerfuss Gemeinde mit `combine` exakt auf den
+  Gemeindekurve (Schwyz, Wallis: eigene, sonst die des Kantons; Wallis gestreckt mit dem Faktor der Gemeinde aus
+  `municipalIndex`, `taxdata::stretch`, #296) × Steuerfuss Gemeinde mit `combine` exakt auf den
   vereinigten Stützpunkten zusammen; Einkommenssteuer = diese Tabelle auf das steuerbare Einkommen Kanton + Bundeskurve
   auf das steuerbare Einkommen Bund (`Resolved::income_tax`). Vermögenssteuer = Vermögenskurve (Sozialabzüge
   eingerechnet, Satz auf das Vermögen vor Abzügen) × (Kanton + Gemeinde + Kirche), ohne Bund. Verheiratet heisst wie

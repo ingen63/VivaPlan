@@ -59,9 +59,9 @@ RULES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kapitalregeln.
 # #287: source files from the laws per canton and tax year (`<canton>_tarife.csv`, `<canton>_abzuege.csv`); they
 # replace the ESTV rows of their canton (`CH` = federal).
 SOURCES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quellen")
-# #292: cantons whose tariffs and deductions may still come from the ESTV tables (Valais until #296); the ESTV rows
-# of all other cantons are ignored.
-ESTV_ONLY = {"VS"}
+# #292: cantons whose tariffs and deductions may still come from the ESTV tables; the ESTV rows of all other cantons
+# are ignored. Since #296 none (Valais from the laws as well).
+ESTV_ONLY = set()
 
 # Standard deductions from the income, without children: per marital status and variant a list of groups; per group
 # the first deduction found applies. Variant «retired»: insurance premiums and savings interest without contributions
@@ -110,8 +110,8 @@ EARNED_DEDUCTION = "HauptErw_EK"
 SECOND_EARNER_DEDUCTION = "ZweitVerdiener_EK"
 SECOND_EARNER_TOTAL = {"BE"}
 
-GAIN_SOURCE = "Steuergesetze der Kantone (Stand 2025/2026), Artikel je Kanton im Bericht (#287–#291)"
-SOURCE = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292); Steuerfüsse und Wallis: ESTV, Steuerrechner, "
+GAIN_SOURCE = "Steuergesetze der Kantone (Stand 2025/2026), Artikel je Kanton im Bericht (#287–#291, #296)"
+SOURCE = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292, #296); Steuerfüsse: ESTV, Steuerrechner, "
           "Grunddaten")
 NOTE = ("Schätzung für die Planung mit den Standardabzügen des Kantons und des Bundes für Alleinstehende oder "
         "Verheiratete ohne Kinder, ohne individuelle Abzüge.")
@@ -205,6 +205,31 @@ def read_sources(directory):
             missing = ({"tarife", "abzuege"} - kinds).pop()
             raise ValueError(f"{canton}: source file {canton}_{missing}.csv missing")
     return tariffs, deductions_, set(files)
+
+
+def index_factor(index):
+    """#296: Valais: an income indexed at `index` percent is brought back to 100 % step by step, divided by 1.10 for
+    each 10 points above 100 and by 1 + the rest in percent (SCC, «Calcul du taux pour l'impôt communal»); the factor is
+    the product of these divisors (173 % -> 1.1^7 × 1.03)."""
+    steps, rest = divmod(index - 100, 10)
+    return 1.1 ** steps * (1 + rest / 100)
+
+
+def read_municipal_index(directory):  # check-english: allow (CSV column names)
+    """#296: Index of the municipal income tax per municipality (`<KT>_gemeindeindex.csv`: Kanton, BFS, Nr, Gemeinde,
+    Index, Quelle) as {canton: {BFS number: factor}}. A missing directory or file gives no index."""
+    out = {}
+    if not directory or not os.path.isdir(directory):
+        return out
+    for name in sorted(os.listdir(directory)):
+        m = re.fullmatch(r"([A-Z]{2})_gemeindeindex\.csv", name)
+        if not m:
+            continue
+        for i, r in enumerate(read_csv(os.path.join(directory, name)), start=2):
+            if r.get("Kanton") != m.group(1) or not (r.get("Quelle") or "").strip():
+                raise ValueError(f"{name}, line {i}: wrong canton or source missing")
+            out.setdefault(m.group(1), {})[int(r["BFS"])] = index_factor(int(r["Index"]))
+    return out
 
 
 def merge_sources(estv_rows, source_rows, covered, estv_only=None):
@@ -561,7 +586,7 @@ def read_rules(path):
         return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
 
 
-def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rules=None):
+def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rules=None, municipal_index=None):
     tariffs = load_tariffs(tariff_rows)
     deds = defaultdict(dict)
     for r in deduction_rows:
@@ -598,6 +623,15 @@ def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rul
         muni = income(cid, "GEMEINDE")
         if muni:
             c["municipalIncome"] = muni
+        if municipal_index and cid in municipal_index:
+            # #296: the municipal tariff applies to the income divided by the factor of the municipality
+            idx = municipal_index[cid]
+            missing = [m[0] for m in munis if m[2] == cid and m[0] not in idx]
+            if missing:
+                raise ValueError(f"canton {cid}: municipal index missing for {missing}")
+            c["municipalIndex"] = [[bfs, round(f, 6)] for bfs, f in sorted(idx.items())]
+            report.append(f"{cid} municipal index: {len(idx)} municipalities, factors "
+                          f"{min(idx.values()):.4f} to {max(idx.values()):.4f}")
         if not c["income"] or not c["wealth"]:
             raise ValueError(f"canton {cid}: tariff missing")
         c["deductions"] = deductions(deds.get((cid, "KANTON", "EINKOMMENSSTEUER"), {}), cid, report)
@@ -650,7 +684,8 @@ def main(argv=None):
     check_coverage(covered, ESTV_ONLY)
     data, report = build(merge_sources(read_csv(a.tarife), src_tariffs, covered, ESTV_ONLY),
                          merge_sources(read_csv(a.abzuege), src_deductions, covered, ESTV_ONLY), year, munis,
-                         read_rules(a.kapitalregeln), grundstueckgewinn.rules())
+                         read_rules(a.kapitalregeln), grundstueckgewinn.rules(),
+                         read_municipal_index(a.quellen or os.path.join(SOURCES, str(year))))
     report = origin_report(covered) + report
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))

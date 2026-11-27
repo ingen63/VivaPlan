@@ -221,7 +221,7 @@ test.describe("Lump-sum tax by place of residence (#64)", () => {
       }
     }
     await pickCanton(page, "VS");
-    await expect(page.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert: Der Höchstsatz");
+    await expect(page.locator("#tax-capital-approx")).toContainText("⚠ Kapitalbezugssteuer angenähert: Die Umrechnung");
     await pickCanton(page, "ZH");
     await expect(page.locator("#tax-capital-approx")).toHaveCount(0);
     await expect(page.locator("#tax-capital-rule")).toBeVisible();
