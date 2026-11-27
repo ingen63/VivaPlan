@@ -112,6 +112,63 @@ class ReadBern(unittest.TestCase):
         self.assertEqual(steuerfuesse.keys("--"), [])
 
 
+GE_HTML = ("<html><p>arrête :</p><p>Communes Taux</p><table><tr><td>Ville de Seeville</td><td>45,49</td></tr>"
+           "<tr><td>Le Grand-Pont</td><td>50</td></tr><tr><td>Bergd&ocirc;t</td><td>31 (1)</td></tr></table>"
+           "<p>RSG Intitulé Date</p><p>Lacville 99</p></html>")
+VD_CSV = ('2026,,,"En % imp. cant. base",,,\n'
+          '"DISTRICT DU LAC",,,,,,\n'
+          '"Seeville",2021,2026," 66.0 "," - "," 66.0 "\n'
+          '"St-Martin (Lac)","2024","2029"," 70.0 "," 2.5 "," 72.5 "\n'
+          '"Le Hameau (fraction)",2024,2026," 60.0 "," - "," 60.0 "\n'
+          '"Bergdorf",2025,2026," - "," - "," - "\n')
+FR_CSV = ("annee;commune;commune_id;coefficients_de;valeur\n"
+          "2024;Seeville;9201;Einkommens- und Vermoegenssteuer, in % der einfachen Kantonssteuer;70.0\n"
+          "2025;Seeville;9201;Einkommens- und Vermoegenssteuer, in % der einfachen Kantonssteuer;75.0\n"
+          "2025;Seeville;9201;Gewinn- und Kapitalsteuer, in % der einfachen Kantonssteuer;80.0\n"
+          "2027;Seeville;9201;Einkommens- und Vermoegenssteuer, in % der einfachen Kantonssteuer;90.0\n")
+
+
+class ReadFrenchCantons(unittest.TestCase):
+    # #285/AK1 (b3): GE decree: «centimes additionnels» in hundredths, «Ville de» dropped, footnotes ignored.
+    def test_issue_285_ak1_ge_decree(self):
+        path = write(GE_HTML, ".htm")
+        rows = steuerfuesse.read_ge(path, 1.5)
+        os.unlink(path)
+        self.assertEqual(rows, {"Seeville": [1.5, 0.4549, None, None, None],
+                                "Le Grand-Pont": [1.5, 0.5, None, None, None],
+                                "Bergdôt": [1.5, 0.31, None, None, None]})
+        path = write("<p>nothing</p>", ".htm")
+        with self.assertRaises(ValueError):
+            steuerfuesse.read_ge(path, 1.5)
+        os.unlink(path)
+
+    # #285/AK1 (b3): VD table: «Pour-cent total» of the municipalities; districts, fractions and empty rates skipped.
+    def test_issue_285_ak1_vd_table(self):
+        path = write(VD_CSV, ".csv")
+        rows = steuerfuesse.read_vd(path, 1.55)
+        os.unlink(path)
+        self.assertEqual(rows, {"Seeville": [1.55, 0.66, None, None, None],
+                                "St-Martin (Lac)": [1.55, 0.725, None, None, None]})
+
+    # #285/AK1 (b3): FR open data: latest year up to the reference year, with a note if it is older.
+    def test_issue_285_ak1_fr_open_data(self):
+        path = write(FR_CSV, ".csv")
+        rows, year = steuerfuesse.read_fr(path, 0.96, 2026)
+        self.assertEqual(year, 2025)
+        self.assertEqual(rows, {9201: ("Seeville", [0.96, 0.75, None, None, None], ["source year 2025, not 2026"])})
+        self.assertEqual(steuerfuesse.read_fr(path, 0.96, 2024)[0][9201][2], [])
+        with self.assertRaises(ValueError):
+            steuerfuesse.read_fr(path, 0.96, 2020)
+        os.unlink(path)
+
+    # #285/AK5: articles, «St-» and accents do not prevent the match.
+    def test_issue_285_ak5_french_names(self):
+        self.assertEqual(steuerfuesse.words("Le Grand-Pont"), ["grand", "pont"])
+        self.assertEqual(steuerfuesse.words("St-Martin (Lac)"), ["saint", "martin"])
+        self.assertEqual(steuerfuesse.words("Vandœuvres"), ["vandoeuvres"])
+        self.assertEqual(steuerfuesse.words("Les"), ["les"])
+
+
 class Compare(unittest.TestCase):
     # #285/AK2: the comparison names every differing value, missing municipalities and notes.
     def test_issue_285_ak2_compare(self):
@@ -124,6 +181,10 @@ class Compare(unittest.TestCase):
                                  "ZH 9003 Hügelwil: missing in the source",
                                  "ZH 9009 Neudorf: not in the reference"])
         self.assertEqual(n, {"reference": 3, "source": 3, "equal": 1})
+        # values the source does not have are not compared
+        lines, n = steuerfuesse.compare("ZH", {9002: ("Bachtal", [0.95, 1.0, None, None, None], [])}, REFERENCE[:2])
+        self.assertEqual(lines, ["ZH 9001 Seedorf: missing in the source"])
+        self.assertEqual(n["equal"], 1)
 
     def test_issue_285_ak2_main(self):
         ref = write(json.dumps({"year": 2026, "municipalities": REFERENCE}), ".json")
@@ -135,6 +196,14 @@ class Compare(unittest.TestCase):
         self.assertIn("ZH: 1 of 3 municipalities equal, 2 differences or gaps", out.getvalue())
         with redirect_stdout(io.StringIO()):
             self.assertEqual(steuerfuesse.main([ref]), 0)
+        ge, vd, fr = write(GE_HTML, ".htm"), write(VD_CSV, ".csv"), write(FR_CSV, ".csv")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            steuerfuesse.main([ref, "--ge", ge, "--vd", vd, "--fr", fr])
+        self.assertIn("GE: 0 of 0 municipalities equal", out.getvalue())
+        self.assertIn("FR 9201 Seeville: not in the reference", out.getvalue())
+        for path in (ge, vd, fr):
+            os.unlink(path)
         os.unlink(ref)
         os.unlink(zh)
 

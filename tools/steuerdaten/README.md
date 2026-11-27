@@ -183,7 +183,7 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
 ## Steuerfüsse aus den Quellen der Kantone (#285, Weg b3, Versuch)
 
 `steuerfuesse.py` liest die Steuerfüsse aus den Veröffentlichungen der Kantone statt aus dem ESTV-Steuerrechner und
-vergleicht sie mit einer Steuerdatei. Bisher nur als Versuch für zwei Kantone; die Steuerdatei baut weiter `build.py`.
+vergleicht sie mit einer Steuerdatei. Bisher nur als Versuch für fünf Kantone; die Steuerdatei baut weiter `build.py`.
 
 - **ZH:** offene Daten des Statistischen Amts, `kanton_zuerich_stf_aktuell.csv` («Steuerfüsse der Zürcher Gemeinden»
   auf opendata.swiss, Nutzung mit Quellenangabe). Die Datei enthält den Gemeindesteuerfuss ohne Kirche und mit jeder
@@ -194,11 +194,21 @@ vergleicht sie mit einer Steuerdatei. Bisher nur als Versuch für zwei Kantone; 
   ohne Bibliothek gelesen (nur Standardbibliothek). Es hat keine BFS-Nummern; die Namen werden mit der Steuerdatei
   abgeglichen, auch abgekürzte («Muri b. B.»). Die Geodaten «Steueranlagen pro Gemeinde» (opendata.swiss) enthalten
   keine Kirchensteuer und lagen im November 2026 noch beim Steuerjahr 2025.
+- **GE:** Erlass des Staatsrats über die «centimes additionnels» des Jahres (HTML-Seite der Gesetzessammlung,
+  `rsg_d3_05p30.htm`), in Hundertsteln der kantonalen Grundsteuer; Kantonssatz ein einziger Wert (`--ge-canton`, 2026:
+  147.5). Keine Kirchensteuer (in Genf freiwillig).
+- **VD:** Tabelle der Steuerbeschlüsse der Gemeinden (Excel des Kantons, `Arrêtés_d_imposition_<Jahr>.xls`, von Hand
+  in CSV umgewandelt, z. B. mit LibreOffice), Spalte «Pour-cent total»; Kantonskoeffizient ein einziger Wert
+  (`--vd-canton`, 2026: 155 %). Fraktionen von Gemeinden mit eigenem Satz werden wie im ESTV-Export weggelassen.
+- **FR:** offene Daten des Amts für Statistik (`18_03_coefficients`, CSV mit «;», mit BFS-Nummern); genommen wird das
+  neuste Jahr bis zum Jahr der Steuerdatei, mit Hinweis, wenn es älter ist. Im November 2026 reichten sie bis 2025;
+  die Listen 2026 gibt es nur als PDF auf fr.ch.
 
 Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository.
 
 ```bash
-python3 -I tools/steuerdaten/steuerfuesse.py crates/engine/data/steuern-2026.json --zh <csv> --be <pdf>
+python3 -I tools/steuerdaten/steuerfuesse.py crates/engine/data/steuern-2026.json --zh <csv> --be <pdf> \
+  --ge <htm> --vd <csv> --fr <csv>
 ```
 
 Gemeinden mit mehreren Teilen (ZH) oder Kirchgemeinden mit eigenem Satz (BE, Zeilen unter der Gemeinde) erscheinen als

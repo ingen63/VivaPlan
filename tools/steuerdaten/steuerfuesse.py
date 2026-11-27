@@ -10,10 +10,23 @@ Sources (downloaded by hand, not part of the repository, no network access here)
   (`fv-stat-steueranlage_<year>_1.pdf`), table 2.1: municipal tax quota and church tax rates as multiples of the
   simple tax; the cantonal quota stands in section 1.2. The PDF has no BFS numbers: names are matched with the
   reference file.
+- GE: decree of the cantonal government on the «centimes additionnels» of the year (HTML page of the official
+  collection of laws, `rsg_d3_05p30.htm`): municipal surcharge in hundredths of the cantonal base tax; the cantonal
+  rate is a single value (`--ge-canton`, default 1.475). No church tax (voluntary in GE).
+- VD: table of the municipal tax decrees of the year (Excel of the canton, converted to CSV by hand, e.g. with
+  LibreOffice): column «Pour-cent total» in percent of the cantonal base tax; the cantonal coefficient is a single
+  value (`--vd-canton`, default 1.55). No church tax.
+- FR: open data of the statistical office of the canton (`18_03_coefficients`, CSV with «;»): municipal coefficient
+  for income and wealth in percent of the cantonal base tax, with BFS numbers; the latest year up to the year of the
+  reference is taken. The cantonal coefficient is a single value (`--fr-canton`, default 0.96 for income). No church
+  tax.
+
+Values a source does not have (church tax of GE, VD, FR) are not compared.
 
 Output: one line per difference and a summary per canton. Exit code 1 if a value differs or a municipality is missing.
 
-Usage: python3 -I tools/steuerdaten/steuerfuesse.py REFERENCE.json [--zh CSV] [--be PDF] [--zh-canton 0.95]  «check-english: allow» (path)
+Usage: python3 -I tools/steuerdaten/steuerfuesse.py REFERENCE.json [--zh CSV] [--be PDF] [--ge HTML] [--vd CSV]  «check-english: allow» (path)
+       [--fr CSV] [--zh-canton 0.95] [--ge-canton 1.475] [--vd-canton 1.55] [--fr-canton 0.96]
 """
 
 import argparse
@@ -21,7 +34,9 @@ import csv
 import json
 import re
 import sys
+import unicodedata
 import zlib
+from html import unescape as html_unescape
 
 TOL = 0.0005  # multipliers are published with at most 4 decimals
 CHURCHES = ("reformed", "catholic", "christ catholic")
@@ -158,11 +173,14 @@ def read_be(lines, year):
 
 
 def words(name):
-    """Words of a name in lower case without umlauts, without a part in parentheses («Bargen (BE)»)."""
-    name = re.sub(r"\(.*?\)", " ", name.lower())
-    for a, b in (("ä", "a"), ("ö", "o"), ("ü", "u"), ("é", "e"), ("è", "e")):
-        name = name.replace(a, b)
-    return re.findall(r"[a-z0-9]+", name)
+    """Words of a name in lower case without accents, without a part in parentheses («Bargen (BE)») and without a
+    leading article («Le Grand-Saconnex» = «Grand-Saconnex»); «St» and «Ste» written out."""
+    name = re.sub(r"\(.*?\)", " ", name.lower()).replace("œ", "oe")
+    name = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c))
+    w = [{"st": "saint", "ste": "sainte"}.get(x, x) for x in re.findall(r"[a-z0-9]+", name)]
+    while len(w) > 1 and w[0] in ("le", "la", "les", "l"):
+        w = w[1:]
+    return w
 
 
 def keys(name):
@@ -192,6 +210,57 @@ def match_names(rows, reference):
     return out, unmatched
 
 
+def read_ge(path, canton):
+    """{name: values} from the decree on the «centimes additionnels» (HTML): «Commune rate» pairs after the
+    introduction, rates with a decimal comma; «Ville de Genève» is the municipality Genève. Churches: None."""
+    with open(path, encoding="cp1252", errors="replace") as f:
+        text = html_unescape(re.sub(r"<[^>]+>", " ", f.read()))
+    text = re.sub(r"\s+", " ", text)
+    start = text.find("Communes Taux")
+    if start < 0:
+        raise ValueError("table «Communes Taux» not found in the decree")
+    body = text[start + len("Communes Taux"):]
+    body = body[:body.find(" RSG ")] if " RSG " in body else body
+    out = {}
+    for name, rate in re.findall(r"([^\d()]+?)\s+(\d+(?:,\d+)?)(?:\s*\(\d+\))?(?=\s|$)", body):
+        name = re.sub(r"^Ville de ", "", name.strip())
+        out[name] = [canton, round(float(rate.replace(",", ".")) / 100, 6), None, None, None]
+    return out
+
+
+def read_vd(path, canton):
+    """{name: values} from the table of the municipal tax decrees of VD (CSV): rows with the years of adoption and
+    validity; column 6 is «Pour-cent total» (percent of the cantonal base tax). Fractions of a municipality with their
+    own rate («Le Brassus (fraction)») are left out, as in the ESTV export. Churches: None."""
+    out = {}
+    with open(path, encoding="utf-8-sig") as f:
+        for row in csv.reader(f):
+            if (len(row) > 5 and row[0].strip() and "(fraction)" not in row[0]
+                    and re.fullmatch(r"\s*\d{4}\s*", row[1] or "")):
+                total = row[5].strip()
+                if re.fullmatch(r"\d+(\.\d+)?", total):
+                    out[row[0].strip()] = [canton, pct(total), None, None, None]
+    return out
+
+
+FR_INCOME = "Einkommens- und Vermoegenssteuer"
+
+
+def read_fr(path, canton, year):
+    """({bfs: (name, values, notes)}, year taken) from the open data of FR: the latest year up to `year`, the
+    coefficient for income and wealth. Churches: None."""
+    with open(path, encoding="utf-8-sig") as f:
+        rows = [r for r in csv.DictReader(f, delimiter=";") if r["coefficients_de"].startswith(FR_INCOME)]
+    years = sorted({int(r["annee"]) for r in rows if int(r["annee"]) <= year})
+    if not years:
+        raise ValueError(f"no year up to {year} in the FR data")
+    taken = years[-1]
+    notes = [] if taken == year else [f"source year {taken}, not {year}"]
+    out = {int(r["commune_id"]): (r["commune"], [canton, pct(r["valeur"]), None, None, None], list(notes))
+           for r in rows if int(r["annee"]) == taken}
+    return out, taken
+
+
 LABELS = ("canton", "municipal") + CHURCHES
 
 
@@ -208,7 +277,7 @@ def compare(canton, source, reference):
             lines.append(f"{canton} {bfs} {name}: not in the reference")
             continue
         diffs = [f"{LABELS[i]} {values[i]:g} (reference {ref[bfs][3][i]:g})"
-                 for i in range(5) if abs(values[i] - ref[bfs][3][i]) > TOL]
+                 for i in range(5) if values[i] is not None and abs(values[i] - ref[bfs][3][i]) > TOL]
         if diffs:
             lines.append(f"{canton} {bfs} {name}: " + ", ".join(diffs))
         else:
@@ -222,7 +291,13 @@ def main(argv=None):
     ap.add_argument("reference")
     ap.add_argument("--zh")
     ap.add_argument("--be")
+    ap.add_argument("--ge")
+    ap.add_argument("--vd")
+    ap.add_argument("--fr")
     ap.add_argument("--zh-canton", type=float, default=0.95)
+    ap.add_argument("--ge-canton", type=float, default=1.475)
+    ap.add_argument("--vd-canton", type=float, default=1.55)
+    ap.add_argument("--fr-canton", type=float, default=0.96)
     a = ap.parse_args(argv)
     with open(a.reference, encoding="utf-8") as f:
         data = json.load(f)
@@ -238,6 +313,12 @@ def main(argv=None):
             if name in sections:
                 notes.append("church rates of the main part taken; other rates in " + ", ".join(sections[name]))
         sources.append(("BE", matched, unmatched))
+    for canton, path, reader, value in (("GE", a.ge, read_ge, a.ge_canton), ("VD", a.vd, read_vd, a.vd_canton)):
+        if path:
+            matched, unmatched = match_names(reader(path, value), [m for m in reference if m[2] == canton])
+            sources.append((canton, matched, unmatched))
+    if a.fr:
+        sources.append(("FR", read_fr(a.fr, a.fr_canton, year)[0], []))
     for canton, source, unmatched in sources:
         lines, n = compare(canton, source, reference)
         lines += [f"{canton} {name}: name not found in the reference" for name in unmatched]
