@@ -2659,6 +2659,23 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #308/AK7 | Hilfe `@f-settings`: Tabelle nach Reitern gegliedert. | ☑ | **gilt** | `help.rs` `issue_173_…` | 27.11.2026 ok (Test, Durchsicht) |
 | #308/AK8 | Test in `e2e/`: Reiter wechseln, ungültiger Wert in anderem Reiter, Sprung zum Fehler. | ☑ | **gilt** | [ui-planung.spec.js](../e2e/ui-planung.spec.js) AK3/AK8 (#308) | 27.11.2026 ok (Test) |
 
+### #301 Säule 3a: Vorbezug für Wohneigentum vor 60
+
+[Issue #301](https://github.com/ingen63/VivaPlan/issues/301) · geschlossen · Umsetzung: 46ee441 · Abgleich mit BVV 3 und WEFV im Kommentar vom 27.11.2026 (AK4: «Hypothek zurückzahlen» vor der Grenze zählt mit)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #301/AK1 | Verwendung «Wohneigentum (Vorbezug)»; das Geld geht ins Vermögen. | ☑ | **gilt** | [pillar3a_home.rs](../crates/engine/tests/pillar3a_home.rs) `issue_301_ak1_…`, e2e [ui-planung.spec.js](../e2e/ui-planung.spec.js) «AK1, AK2» (#301) | 27.11.2026 ok (Tests, Handwert) |
+| #301/AK2 | «Wohneigentum (Vorbezug)» und «Hypothek zurückzahlen» in jedem Alter; für «Vermögen» bleibt die Regel. | ☑ | **gilt** | `issue_301_ak2_…`, e2e «AK1, AK2» (#301) | 27.11.2026 ok (Tests) |
+| #301/AK3 | Teilbetrag möglich; ohne Betrag das ganze Guthaben. | ☑ | **gilt** | `issue_301_ak1_…`, `issue_301_ak3_ak6_…` | 27.11.2026 ok (Tests) |
+| #301/AK4 | Zwischen zwei Vorbezügen vor der Grenze mindestens 5 Jahre; sonst Fehler mit beiden Daten. | ☑ | **gilt** (zählt auch «Hypothek zurückzahlen» vor der Grenze, Kommentar) | `issue_301_ak4_…` | 27.11.2026 ok (Test) |
+| #301/AK5 | Nur mit selbst bewohnter Immobilie im Monat oder Kauf im selben Monat; sonst Fehler. | ☑ | **gilt** | `issue_301_ak5_…`, e2e «AK5» (#301) | 27.11.2026 ok (Tests) |
+| #301/AK6 | Besteuerung als Kapitalleistung, zusammengerechnet nach #150; Einzahlungen danach möglich. | ☑ | **gilt** | `issue_301_ak6_…`, `issue_301_ak3_ak6_…` | 27.11.2026 ok (Tests, Handwert) |
+| #301/AK7 | Hilfe nennt die Bedingungen (selbst bewohnt, alle 5 Jahre, Zustimmung, Nachweis). | ☑ | **gilt** | kein Test (Durchsicht) | 27.11.2026 ok (Durchsicht de, en, fr, it) |
+| #301/AK8 | Bestehende Planungen rechnen unverändert; Golden-Dateien ändern nicht. | ☑ | **gilt** | `golden::*` | 27.11.2026 ok (Tests; 46ee441 ohne Golden-Datei) |
+| #301/AK9 | `describe`, Schema und `plan_set` kennen die neue Verwendung. | ☑ | **gilt** | `issue_301_ak9_…` | 27.11.2026 ok (Test) |
+| #301/AK10 | Tests mit Handwert; Hilfe, `BESCHREIBUNG.md` und Spezifikation nachgeführt. | ☑ | **gilt** | `make i18n-check`, Durchsicht | 27.11.2026 ok (Tests, Durchsicht) |
+
 ### #310 Abschnitt Säule 3a auf Französisch und Italienisch zu breit
 
 [Issue #310](https://github.com/ingen63/VivaPlan/issues/310) · geschlossen · Umsetzung: 926ef28 · Ursache: Auswahl «Verwendung» mit der Option `pillar3a.homeEarly` aus #301
