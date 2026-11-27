@@ -211,6 +211,19 @@ class ReadTable(unittest.TestCase):
                                                               "Talheim": [1.0, 1.1, 0.25, 0.2, None]})
         os.unlink(path)
 
+    # #285/AK1 (b3): a name broken at the hyphen over two lines is one name.
+    def test_issue_285_ak1_broken_name(self):
+        path = write("Seeberg-\nTalheim 100 110\n", ".txt")
+        spec = {"canton": 1.0, "row": r"(?P<name>[A-Z][^\d\n]*?(?:-\n[^\d\n]*?)?) \d+ (?P<municipal>\d+)"}
+        self.assertEqual(steuerfuesse.read_table(path, spec), {"Seeberg-Talheim": [1.0, 1.1, None, None, None]})
+        os.unlink(path)
+
+    # #285/AK1 (b3): digits and letters that stand close together are not joined into one word («Medel 70»).
+    def test_issue_285_ak1_pdf_digits_and_letters(self):
+        content = (b"BT 10 0 0 10 0 700 Tm (Medel)Tj ET\n"
+                   b"BT 10 0 0 10 26 700 Tm (7)Tj ET\nBT 10 0 0 10 31 700 Tm (0)Tj ET\n")
+        self.assertEqual(steuerfuesse.text_lines(content), ["Medel | 70"])
+
     # #285/AK1 (b3): several patterns, one per municipality, for shares in different parts of the text.
     def test_issue_285_ak1_several_patterns(self):
         path = write("Bezirke\nSeeberg 30\nKirchen\nSeeberg kath. 15\nSchulen\nSeeberg 60\n", ".txt")

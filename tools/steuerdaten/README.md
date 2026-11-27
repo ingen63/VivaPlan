@@ -208,8 +208,10 @@ vergleicht sie mit einer Steuerdatei. Als Versuch für alle 26 Kantone (Stand No
   Kantonssteuerfuss (`canton`) und ein regulärer Ausdruck für die Zeilen (`row`), dazu Angaben wie Massstab, Gesamt-
   statt Einzelsteuerfüsse, feste Kirchensteuer des ganzen Kantons, addierte Spalten oder Namensaliase (siehe
   `read_table` in `steuerfuesse.py`). Ein einziger Leser liest PDF, HTML, CSV und Text. PDFs, deren Tabellen der
-  eigene PDF-Leser nicht zerlegen kann (JU, NW, SO, UR, VS), wandelt `pdf2txt.swift` (PDFKit von macOS) zuerst in Text
-  um: `swift tools/steuerdaten/pdf2txt.swift <pdf> > <txt>`; Excel-Tabellen werden als CSV gespeichert.
+  eigene PDF-Leser nicht zerlegen kann, wandelt `pdf2txt.swift` (PDFKit von macOS) zuerst in Text um:
+  `swift tools/steuerdaten/pdf2txt.swift [--rows] <pdf> > <txt>`. Mit `--rows` setzt es die Textstücke nach ihrer Lage
+  auf der Seite zu Zeilen zusammen; das braucht es, wo PDFKit spaltenweise liest (AR, GR, SH, SO, VS); ohne `--rows`
+  für JU, NW, UR. Excel-Tabellen werden als CSV gespeichert.
 
 Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository.
 

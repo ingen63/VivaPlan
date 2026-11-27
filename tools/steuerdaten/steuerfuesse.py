@@ -128,7 +128,8 @@ def text_lines(content):
     for _, pieces in sorted(rows.items(), reverse=True):
         line, end = "", None
         for xx, text, em in sorted(pieces, key=lambda p: p[0]):
-            close = end is not None and xx - end < 0.3 * em and line[-1:].isalnum() and text[:1].isalnum()
+            close = (end is not None and xx - end < 0.3 * em
+                     and (line[-1:].isdigit() and text[:1].isdigit() or line[-1:].isalpha() and text[:1].isalpha()))
             line += text if close or end is None else " | " + text
             end = xx + len(text) * EM * em
         lines.append(line)
@@ -194,6 +195,9 @@ def read_be(lines, year):
         elif last and SECTION_ROW.match(flat(line)):
             sections.setdefault(last, []).append(SECTION_ROW.match(flat(line)).group("name").strip())
     return out, quota, sections
+
+
+BE_TYPOS = {"Rapperwil": "Rapperswil"}  # misspelt in the PDF 2026
 
 
 def words(name):
@@ -330,7 +334,8 @@ def read_table(path, spec):
     out = {}
     matches = [m for row in (spec.get("rows") or [spec["row"]]) for m in re.finditer(row, text, re.M)]
     for m in matches:
-        name = re.sub(r"\s+", " ", m.group("name")).strip(" *-–")
+        # «Welschenrohr-⏎Gänsbrunnen»: a name broken at the hyphen
+        name = re.sub(r"-\s+", "-", re.sub(r"\s+", " ", m.group("name"))).strip(" *-–")
         if spec.get("skip") and re.search(spec["skip"], name):  # e.g. averages of a district
             continue
         if spec.get("base_name"):  # «Haute-Sorne (Glovelier)»: a section of Haute-Sorne
@@ -472,6 +477,7 @@ def main(argv=None):
         sources.append(("ZH", read_zh(a.zh, a.zh_canton), []))
     if a.be:
         rows, _, sections = read_be(pdf_lines(a.be), year)
+        rows = {BE_TYPOS.get(k, k): v for k, v in rows.items()}
         matched, unmatched = match_names(rows, [m for m in reference if m[2] == "BE"])
         for bfs, (name, values, notes) in matched.items():
             if name in sections:
