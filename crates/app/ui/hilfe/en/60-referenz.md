@@ -246,7 +246,7 @@ On Windows copy the folder to `%USERPROFILE%\.claude\skills`. Then start a new s
 The results are model calculations without guarantee, no tax or investment advice; taxes are estimates.
 
 ## @ref-mcp Connecting AI programs (MCP server)
-Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save, plan folder, read only, warning, allow-dir, new plan, own figures
+Keywords: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, AI, tool, privacy, save, undo, plan_set, plan_save, plan folder, read only, warning, allow-dir, new plan, own figures, incognito, memory
 
 `vivaplan mcp` is an MCP server: AI programs that support the Model Context Protocol (for example Claude Desktop, Claude Code, ChatGPT Desktop or LM Studio) start it themselves and talk to it over the standard input and output. It opens no network connection. The server changes a working copy in memory; only `plan_save` writes to the disk, by fixed rules (see below).
 
@@ -295,6 +295,8 @@ Before every computation the server estimates its duration. From 60 seconds it c
 In Claude Code, `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp --allow-dir ~/Documents` is enough. Like the command line, the server computes with the data folder of the app (limits, time series); `--data-dir` and `--library` override it.
 
 **Privacy:** Everything a tool returns becomes part of the conversation with your AI and goes to its provider; with a local model (for example in LM Studio) everything stays on the computer. The server only reads plans whose path is named explicitly, with a plan folder only those inside it, and searches no folders. It replaces names of persons and freely entered labels with neutral ones (Person 1, Property 1), except with `--names`; answers name only the file name, not the folder. No answer is longer than 20'000 characters. The texts of the server are in English; the AI still answers in your language.
+
+**Incognito chats:** In an incognito chat of Claude VivaPlan is not available: the AI sees no VivaPlan tools there. The AI program decides this; VivaPlan cannot do anything about it. If you still want to share your plan data sparingly: (1) Use a normal chat and delete it afterwards; what the provider keeps after that is governed by its privacy policy. (2) Switch off the memory for these conversations in the privacy area of the settings of your AI program, so that it remembers nothing from them. (3) Use a local model in LM Studio; then the data does not leave the computer.
 
 The results are model calculations without warranty, not tax or investment advice; taxes are estimates.
 

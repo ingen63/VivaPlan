@@ -246,7 +246,7 @@ Su Windows copi la cartella in `%USERPROFILE%\.claude\skills`. Avvii poi una nuo
 I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o d’investimento; le imposte sono stimate.
 
 ## @ref-mcp Collegare programmi di IA (server MCP)
-Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati, salvare, annullare, plan_set, plan_save, cartella delle pianificazioni, sola lettura, avviso, allow-dir, nuova pianificazione, proprie cifre
+Parole chiave: MCP, Model Context Protocol, server, vivaplan mcp, LM Studio, Claude Desktop, IA, strumento, protezione dei dati, salvare, annullare, plan_set, plan_save, cartella delle pianificazioni, sola lettura, avviso, allow-dir, nuova pianificazione, proprie cifre, incognito, memoria
 
 `vivaplan mcp` è un server MCP: i programmi di IA che supportano il Model Context Protocol (per esempio Claude Desktop, Claude Code, ChatGPT Desktop o LM Studio) lo avviano da soli e comunicano con lui tramite l’input e l’output standard. Non apre alcuna connessione di rete. Il server modifica una copia di lavoro in memoria; solo `plan_save` scrive sul disco, secondo regole fisse (vedi sotto).
 
@@ -295,6 +295,8 @@ Prima di ogni calcolo il server ne stima la durata. Da 60 secondi calcola solo s
 In Claude Code basta `claude mcp add --scope user vivaplan -- /Applications/VivaPlan.app/Contents/MacOS/vivaplan mcp --allow-dir ~/Documents`. Come la riga di comando, il server calcola con la cartella dei dati dell’app (limiti, serie temporali); `--data-dir` e `--library` la sostituiscono.
 
 **Protezione dei dati:** tutto ciò che uno strumento restituisce diventa parte della conversazione con la vostra IA e va al suo fornitore; con un modello locale (per esempio in LM Studio) tutto resta sul computer. Il server legge solo le pianificazioni il cui percorso è indicato esplicitamente, con una cartella delle pianificazioni solo quelle al suo interno, e non esplora cartelle. Sostituisce i nomi delle persone e le denominazioni inserite liberamente con nomi neutri (Person 1, Property 1), salvo con `--names`; le risposte indicano solo il nome del file, non la cartella. Nessuna risposta supera 20'000 caratteri. I testi del server sono in inglese; l’IA risponde comunque nella vostra lingua.
+
+**Chat in incognito:** in una chat in incognito di Claude VivaPlan non è disponibile: l’IA non vi vede alcuno strumento di VivaPlan. Lo decide il programma di IA; VivaPlan non può farci nulla. Se vuole comunque condividere i dati della Sua pianificazione con riserbo: (1) usi una chat normale e la cancelli dopo; ciò che il fornitore conserva in seguito è regolato dalle sue norme sulla protezione dei dati. (2) Disattivi la memoria per queste conversazioni nella parte protezione dei dati delle impostazioni del Suo programma di IA, affinché non ne ricordi nulla. (3) Usi un modello locale in LM Studio; così i dati non lasciano il computer.
 
 I risultati sono calcoli di modello senza garanzia, non una consulenza fiscale o d’investimento; le imposte sono stimate.
 

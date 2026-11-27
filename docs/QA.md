@@ -207,6 +207,16 @@ target/release/bundle/mcpb`), `VivaPlan.app` nach `/Applications` kopiert. Beisp
    `"vivaplan": {…}` ergänzen), Claude Desktop neu starten.
 2. Erwartet: VivaPlan erscheint unter den Werkzeugen (Schieberegler-Symbol) mit fünfzehn Werkzeugen; Prüfung 4 gelingt.
 
+**Claude Desktop, Inkognito-Chat (#298/AK1)**
+
+1. Mit dem installierten Paket (`.mcpb`, eingeschaltet) in Claude Desktop einen Inkognito-Chat beginnen und fragen:
+   «Öffne ~/Documents/beispiel.vplan mit VivaPlan.» Werkzeugliste (Schieberegler-Symbol) ansehen.
+2. Paket deaktivieren, VivaPlan von Hand in `claude_desktop_config.json` eintragen, Claude Desktop neu starten und
+   Schritt 1 wiederholen.
+3. Erwartet (Annahme der Texte): In beiden Fällen fehlen die VivaPlan-Werkzeuge, im normalen Chat sind sie da. Ergebnis
+   je Fall mit Datum und Programmversion in #298 festhalten. Weicht es ab, den Absatz «Inkognito-Chats» in
+   `#ref-mcp` (vier Sprachen) und den Text `ai.incognito` anpassen.
+
 **Claude Code**
 
 1. Die Zeile `claude mcp add --scope user vivaplan -- … mcp` im Terminal ausführen.

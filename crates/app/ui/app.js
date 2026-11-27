@@ -2584,7 +2584,8 @@ async function showConnectAi() {
     <label class="aiopt"><input type="checkbox" id="aiReadOnly"> ${tr("ai.readOnly")}</label>
     ${programs.map(section).join("")}
     <p class="hint">${tr("ai.privacy")} <a href="#" data-action="ai-help" data-topic="privacy">${tr("ai.privacyLink")}</a> ·
-    <a href="#" data-action="ai-help" data-topic="ref-mcp">${tr("ai.moreLink")}</a></p></div>`);
+    <a href="#" data-action="ai-help" data-topic="ref-mcp">${tr("ai.moreLink")}</a></p>
+    <p class="hint" id="aiIncognito">${tr("ai.incognito", { link: `<a href="#" data-action="ai-help" data-topic="ref-mcp">${tr("ai.incognitoLink")}</a>` })}</p></div>`);
 }
 /** #263/AK4: «Ordner wählen …»: the folder dialog of the system, opened at the shown folder. */
 async function aiFolder() {

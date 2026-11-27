@@ -2241,8 +2241,10 @@
   "ai.claudeCode.steps": "Run the line in the terminal. VivaPlan is then available in every new session of Claude Code.",
   "ai.chatgpt.steps": "The ChatGPT desktop app uses the MCP servers from the configuration of Codex. Paste the lines below into the file {config} (create it if it is missing) and restart the app.",
   "ai.lmstudio.steps": "In LM Studio click Install → Edit mcp.json in the Program area (the file {config}), paste the entry below and save. With a local model your data stays on this computer; small models use the tools less reliably, though.",
-  "ai.privacy": "Privacy: what the AI reads from your plan goes to the provider with Claude and ChatGPT; with a local model in LM Studio it stays on this computer. VivaPlan itself sends nothing.",
+  "ai.privacy": "Privacy: what the AI reads from your plan goes to the provider with Claude and ChatGPT. VivaPlan replaces names of persons and freely entered labels with neutral ones; amounts and dates such as birth dates go to the provider unchanged. With a local model in LM Studio everything stays on this computer. VivaPlan itself sends nothing.",
   "ai.privacyLink": "Privacy",
+  "ai.incognito": "VivaPlan is not available in incognito chats of Claude; how to share your data sparingly anyway is in the help under {link}.",
+  "ai.incognitoLink": "Incognito chats",
   "ai.moreLink": "More about the MCP server",
   "welcome.video": "▶ Watch VivaPlan in 2 minutes",
   "welcome.videoTitle": "Opens the video in the browser"

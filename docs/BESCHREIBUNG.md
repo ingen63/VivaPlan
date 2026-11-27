@@ -549,7 +549,10 @@ Programm `vivaplan` und dem Symbol); ein Doppelklick installiert VivaPlan als Er
 Claude Desktop nach dem Planordner (`user_config` vom Typ Ordner, Pflicht, Vorschlag Dokumente-Ordner) und dem Schalter
 «Nur lesen» (Read only, Standard aus); das Paket übergibt sie als `--allow-dir <ordner>` und `--read-only=true|false`. Die Hilfe zum Datenschutz
 erklärt: Mit einer Cloud-KI gehen die gelesenen Daten an deren Anbieter, mit einem lokalen Modell bleiben sie auf dem
-Rechner.
+Rechner. Der Dialog sagt dazu, dass VivaPlan Namen ersetzt, Beträge und Daten aber an den Anbieter gehen, und dass
+VivaPlan in Inkognito-Chats von Claude nicht zur Verfügung steht (#298); der Absatz «Inkognito-Chats» unter
+«KI-Programme verbinden» nennt die Alternativen (normaler Chat und danach löschen, Gedächtnis ausschalten, lokales
+Modell).
 
 ## Installation
 

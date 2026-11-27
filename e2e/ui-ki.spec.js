@@ -129,12 +129,12 @@ test.describe("Connect to AI (#213)", () => {
   test("AK2, AK3: privacy note in the dialog, links to the help topics privacy and MCP server", async ({ page }) => {
     const errors = await openApp(page, MAC_CLI);
     await openDialog(page);
-    await expect(page.locator("#connectAi")).toContainText("lokalen Modell in LM Studio bleibt es auf diesem Rechner");
+    await expect(page.locator("#connectAi")).toContainText("lokalen Modell in LM Studio bleibt alles auf diesem Rechner");
     await page.locator('#connectAi a[data-topic="privacy"]').click();
     await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
     await expect(page.locator("#help:not([hidden]) #helpBody")).toContainText("lokalen Modell");
     await openDialog(page);
-    await page.locator('#connectAi a[data-topic="ref-mcp"]').click();
+    await page.locator("#connectAi").getByRole("link", { name: "Mehr zum MCP-Server" }).click();
     await expect(page.locator("#help:not([hidden]) #helpBody")).toContainText("Mit KI verbinden");
     await noErrors(page, errors);
   });
@@ -263,6 +263,54 @@ test.describe("Plan folder for every AI (#263)", () => {
       if (await page.evaluate(() => IS_MAC)) await expect(page.locator('section[data-program="claudeDesktop"]')).toContainText("Plan folder");
       await page.evaluate(() => $("#ask").close());
     }
+    await noErrors(page, errors);
+  });
+});
+
+test.describe("Incognito chats and privacy (#298)", () => {
+  test("AK6, AK3: the dialog names incognito chats and links to the paragraph in «Connecting AI programs»", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI);
+    await openDialog(page);
+    await expect(page.locator("#aiIncognito")).toContainText("In Inkognito-Chats von Claude steht VivaPlan nicht zur Verfügung");
+    const link = page.locator('#aiIncognito a[data-topic="ref-mcp"]');
+    await expect(link).toHaveText("Inkognito-Chats");
+    await link.click();
+    await expect(page.locator("#ask")).not.toHaveAttribute("open", "");
+    const body = page.locator("#help:not([hidden]) #helpBody");
+    await expect(body).toContainText("Inkognito-Chats:");
+    await expect(body).toContainText("VivaPlan kann nichts dagegen tun");
+    await noErrors(page, errors);
+  });
+
+  test("AK4: the privacy note says that names are replaced, amounts and dates go to the provider", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI);
+    await openDialog(page);
+    const note = page.locator("#connectAi").getByText(/^Datenschutz:/);
+    await expect(note).toContainText("ersetzt Namen von Personen");
+    await expect(note).toContainText("Beträge und Daten wie Geburtsdaten gehen unverändert an den Anbieter");
+    await noErrors(page, errors);
+  });
+
+  test("AK2, AK5: help paragraph «Incognito chats» with its alternatives and keyword, four languages", async ({ page }) => {
+    const errors = await openApp(page, MAC_CLI);
+    const want = {
+      de: ["Inkognito-Chats:", "VivaPlan kann nichts dagegen tun", "normalen Chat", "Gedächtnis", "LM Studio", "Inkognito-Chats"],
+      en: ["Incognito chats:", "VivaPlan cannot do anything about it", "normal chat", "memory", "LM Studio", "Incognito chats"],
+      fr: ["Chats incognito :", "VivaPlan n’y peut rien", "chat normal", "mémoire", "LM Studio", "Chats incognito"],
+      it: ["Chat in incognito:", "VivaPlan non può farci nulla", "chat normale", "memoria", "LM Studio", "Chat in incognito"] };
+    for (const [lang, [head, cannot, normal, memory, local, linkText]] of Object.entries(want)) {
+      await page.evaluate(l => I18n.use(l), lang);
+      await page.evaluate(() => Help.show("ref-mcp"));
+      const body = page.locator("#help:not([hidden]) #helpBody");
+      for (const w of [head, cannot, normal, memory, local]) await expect(body).toContainText(w);
+      await page.evaluate(q => Help.show("search:" + q), lang === "de" ? "inkognito" : "incognito");
+      await expect(page.locator('#help:not([hidden]) #helpBody a[data-topic="ref-mcp"]').first()).toBeVisible();
+      await openDialog(page);
+      await expect(page.locator('#aiIncognito a[data-topic="ref-mcp"]')).toHaveText(linkText);
+      await expect(page.locator("#connectAi")).not.toContainText(/\bai\.[a-zA-Z]/);
+      await page.evaluate(() => $("#ask").close());
+    }
+    expect(await page.evaluate(() => Help.check())).toEqual([]);
     await noErrors(page, errors);
   });
 });
