@@ -874,18 +874,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #220/AK7 | Texte als Schlüssel in `i18n`; Hilfe und `BESCHREIBUNG.md` nachgeführt. | ☑ | **gilt** | `make ui-texts` | 23.11.2026 ok (Hilfe de/en/fr/it) |
 | #220/AK8 | Unter Linux (AppImage, dunkles Systemthema) sind die Auswahlmenüs lesbar. Prüfbar erst mit dem nächsten Paket. | ☐ | **gilt** | kein Test | 25.11.2026 offen: Kontrast der Auswahl «Darstellung» unter Linux-Chrome in c25c2c9 behoben, e2e unter Linux grün (Lauf 45580396772); Sichtprüfung im AppImage mit dunklem Systemthema von Hand steht aus |
 
-### #226 Laufzeitgrenze für einzelne Tests
-
-[Issue #226](https://github.com/ingen63/VivaPlan/issues/226) · offen (`implemented`) · Umsetzung: 3c97ec3
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #226/AK1 | Ein Skript liest die Laufzeiten aus `target/nextest/ci/junit.xml` und listet jeden Test über der Grenze ohne … | ☑ | **gilt** (Grenze je Testart, Klärung vom 23.11.2026) | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak1_ak3_…` | 23.11.2026 ok (9 Tests grün; am echten Lauf: 80 Funde vor, 30 nach den Begründungen) |
-| #226/AK2 | Der Befund erscheint in der Zusammenfassung von `test-quality.yml` und auf der Übersichtsseite (Schicht «Hygiene» … | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak2_…`; [test_report.py](../tools/report/test_report.py) `test_issue_226_ak2_…` | 25.11.2026 ok (CI-Lauf 45580396772: Schritte «Laufzeitgrenzen der Tests (Hinweis)» und «Übersichtsseite Testqualität» grün) |
-| #226/AK3 | Das Skript hat eigene Tests mit gestellten junit-Dateien (Test unter Grenze, über Grenze mit und ohne Begründung). | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak3_…` (3 Tests) | 23.11.2026 ok |
-| #226/AK4 | Die heute langsamen Tests sind entweder schneller oder begründet; die Liste steht im Issue. | ☐ | **unklar** (30 Tests nur unter Last über der Grenze) | kein Test (Messung `--profile ci`, voll und `-j 1`) | 23.11.2026 teilweise: Liste im Issue; 50 auch einzeln langsame Tests mit `// slow:` begründet; 30 nur im parallelen Lauf über der Grenze, Entscheid offen |
-| #226/AK5 | `docs/TESTS.md` nennt Grenze und Begründungsform. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
-
 ### #208 Agent Skill «VivaPlan» mitliefern
 
 [Issue #208](https://github.com/ingen63/VivaPlan/issues/208) · offen (`implemented`) · Umsetzung: e6e2757

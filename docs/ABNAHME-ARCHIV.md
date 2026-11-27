@@ -1829,6 +1829,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #225/AK4 | macOS bleibt nächtlich. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok: Matrix beim Push nur `windows-latest`, sonst Windows und macOS |
 | #225/AK5 | `docs/TESTS.md`, Abschnitt «Plattformen», ist nachgeführt. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
 
+### #226 Laufzeitgrenze für einzelne Tests
+
+[Issue #226](https://github.com/ingen63/VivaPlan/issues/226) · geschlossen · Umsetzung: 3c97ec3
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #226/AK1 | Ein Skript liest die Laufzeiten aus `target/nextest/ci/junit.xml` und listet jeden Test über der Grenze ohne … | ☑ | **gilt** (Grenze je Testart, Klärung vom 23.11.2026) | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak1_ak3_…` | 23.11.2026 ok (9 Tests grün; am echten Lauf: 80 Funde vor, 30 nach den Begründungen) |
+| #226/AK2 | Der Befund erscheint in der Zusammenfassung von `test-quality.yml` und auf der Übersichtsseite (Schicht «Hygiene» … | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak2_…`; [test_report.py](../tools/report/test_report.py) `test_issue_226_ak2_…` | 25.11.2026 ok (CI-Lauf 45580396772: Schritte «Laufzeitgrenzen der Tests (Hinweis)» und «Übersichtsseite Testqualität» grün) |
+| #226/AK3 | Das Skript hat eigene Tests mit gestellten junit-Dateien (Test unter Grenze, über Grenze mit und ohne Begründung). | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak3_…` (3 Tests) | 23.11.2026 ok |
+| #226/AK4 | Die heute langsamen Tests sind entweder schneller oder begründet; die Liste steht im Issue. | ☑ | **gilt** (Kommentar «alle schneller machen» vom 26.11.2026) | kein Test (Messung `--profile ci` mit `tools/slow_tests.py`) | 27.11.2026 ok (13e4e55: Testprofil `opt-level = 1`, voller Lauf 305 → 90 s; 50 begründet, 1 knapp über der Grenze nur unter Last: `issue_197_ak1_…` 1,02 s, allein 0,39 s; Liste im Issue) |
+| #226/AK5 | `docs/TESTS.md` nennt Grenze und Begründungsform. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
+
 ### #227 Zuletzt geöffnete Planungen im Menü Datei
 
 [Issue #227](https://github.com/ingen63/VivaPlan/issues/227) · geschlossen · Umsetzung: fede6bc
