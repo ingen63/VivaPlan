@@ -1,0 +1,8 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+TI,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,MAXIMUM,0,0,0,3500,"LT TI Art. 25 Abs. 2 (LT TI (RL 640.100, stato 1.1.2026); Pauschale 3500 Franken)"
+TI,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,10900,"LT TI Art. 32 Abs. 1 lit. g (LT TI (RL 640.100, stato 1.1.2026))"
+TI,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,15400,"LT TI Art. 32 Abs. 1 lit. g (LT TI (RL 640.100, stato 1.1.2026); erhöhter Betrag ohne Beiträge)"
+TI,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,5500,"LT TI Art. 32 Abs. 1 lit. g (LT TI (RL 640.100, stato 1.1.2026))"
+TI,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,7800,"LT TI Art. 32 Abs. 1 lit. g (LT TI (RL 640.100, stato 1.1.2026); erhöhter Betrag ohne Beiträge)"
+TI,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,8100,"LT TI Art. 32 Abs. 2 (LT TI (RL 640.100, stato 1.1.2026))"
+TI,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,60000,0,0,0,"LT TI Art. 48 lit. a (LT TI (RL 640.100, stato 1.1.2026))"

@@ -1,0 +1,8 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+VD,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,LI VD Art. 31; Tableau des principales déductions vaudoises 2026 (ACI) Code 160
+VD,KANTON,EINKOMMENSSTEUER,SparzinsenVerheiratet_EK,"Abzug Sparzinsen, Verheiratete",MAXIMUM,0,0,0,3300,LI VD Art. 37 Abs. 1 lit. g mit Art. 60; Tableau des principales déductions vaudoises 2026 (ACI) Code 480
+VD,KANTON,EINKOMMENSSTEUER,SparzinsenLedig_EK,"Abzug Sparzinsen, alleinstehende Personen",MAXIMUM,0,0,0,1600,LI VD Art. 37 Abs. 1 lit. g mit Art. 60; Tableau des principales déductions vaudoises 2026 (ACI) Code 480
+VD,KANTON,EINKOMMENSSTEUER,KKPrivVersVerheiratet_EK,"Abzug Versicherungsprämien, Verheiratete",MAXIMUM,0,0,0,9900,LI VD Art. 37 Abs. 1 lit. g mit Art. 60; Tableau des principales déductions vaudoises 2026 (ACI) Code 300
+VD,KANTON,EINKOMMENSSTEUER,KKPrivVersLedig_EK,"Abzug Versicherungsprämien, alleinstehende Personen",MAXIMUM,0,0,0,5000,LI VD Art. 37 Abs. 1 lit. g mit Art. 60; Tableau des principales déductions vaudoises 2026 (ACI) Code 300
+VD,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,1700,LI VD Art. 37 Abs. 2 mit Art. 60; Tableau des principales déductions vaudoises 2026 (ACI) Code 235
+VD,KANTON,EINKOMMENSSTEUER,SozVerheiratet_EK,Verheiratetenabzug,MAXIMUM,0,0,0,1300,"LI VD Art. 42a Abs. 2 (BLV 642.11, Stand 1.5.2026; voller Betrag bis 116 000 Franken Reineinkommen, darüber abnehmend, nicht abgebildet)"

@@ -1,0 +1,9 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+FR,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"LICD FR Art. 27 Abs. 2; Ordonnance DFIN sur la déduction des frais professionnels Art. 6 Abs. 1 (RSF 631.411, Stand 1.1.2023)"
+FR,KANTON,EINKOMMENSSTEUER,KKVerheiratet_EK,"Abzug Krankenkassenprämien, Verheiratete",MAXIMUM,0,0,0,9620,LICD FR Art. 34 Abs. 1 lit. g Ziff. 1.1; Ordonnance concernant la déduction des primes d'assurance-maladie et accidents Art. 1 Abs. 1 lit. a (RSF 631.48; je erwachsene Person 4810 Franken)
+FR,KANTON,EINKOMMENSSTEUER,KKLedig_EK,"Abzug Krankenkassenprämien, alleinstehende Personen",MAXIMUM,0,0,0,4810,LICD FR Art. 34 Abs. 1 lit. g Ziff. 1.1; Ordonnance concernant la déduction des primes d'assurance-maladie et accidents Art. 1 Abs. 1 lit. a (RSF 631.48; je erwachsene Person 4810 Franken)
+FR,KANTON,EINKOMMENSSTEUER,SparzinsenVerheiratet_EK,"Abzug Sparzinsen, Verheiratete",MAXIMUM,0,0,0,300,"LICD FR Art. 34 Abs. 1 lit. g Ziff. 1.3 (RSF 631.1, Stand 1.1.2025)"
+FR,KANTON,EINKOMMENSSTEUER,SparzinsenLedig_EK,"Abzug Sparzinsen, alleinstehende Personen",MAXIMUM,0,0,0,150,"LICD FR Art. 34 Abs. 1 lit. g Ziff. 1.3 (RSF 631.1, Stand 1.1.2025)"
+FR,KANTON,EINKOMMENSSTEUER,PrivVersVerheiratet_EK,"Abzug private Versicherungen, Verheiratete",MAXIMUM,0,0,0,1500,"LICD FR Art. 34 Abs. 1 lit. g Ziff. 1.2 (RSF 631.1, Stand 1.1.2025)"
+FR,KANTON,EINKOMMENSSTEUER,PrivVersLedig_EK,"Abzug private Versicherungen, alleinstehende Personen",MAXIMUM,0,0,0,750,"LICD FR Art. 34 Abs. 1 lit. g Ziff. 1.2 (RSF 631.1, Stand 1.1.2025)"
+FR,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,500,"LICD FR Art. 34 Abs. 2 (RSF 631.1, Stand 1.1.2025)"

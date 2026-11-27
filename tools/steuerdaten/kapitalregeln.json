@@ -1,5 +1,5 @@
 {
-  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287–#290), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
+  "_info": "#64: Rules of the cantons for lump sums from pension savings (simple tax, tax multiplier 100 %). kind=table: tariff «Kapitalauszahlung aus Vorsorge» of the ESTV; kind=income: share `share` of the tax by the income tariff without deductions, rate determined for amount/divisor, bounded by min and max; parts (#288) instead sums the tariff tax on each part of the amount up to upTo times its share. single/married override values per marital status, municipal is the rule of the municipal tax (otherwise the cantonal one applies), cantonMultiplier replaces the cantonal tax multiplier, rebate is a reduction (share of the amount, at most max), approx marks an approximation. text and approx are shown in the tax data file (German); source names the law (#287–#291), only in the report. Derived from the ESTV tax calculator 2026 (Kapitalauszahlung aus Vorsorge, age 65, without children, without denomination); see tools/steuerdaten/README.md.",
   "AG": {
     "kind": "income",
     "share": 0.3,
@@ -43,7 +43,8 @@
         "max": 500
       }
     },
-    "text": "eigener Tarif für Kapitalleistungen, Kantonssteuer mit Steuerfuss 100 %, Verheiratete 0.2 % des Bezugs (höchstens 500 Franken) weniger"
+    "text": "eigener Tarif für Kapitalleistungen, Kantonssteuer mit Steuerfuss 100 %, Verheiratete 0.2 % des Bezugs (höchstens 500 Franken) weniger",
+    "source": "LICD FR Art. 39 Abs. 2, 2bis und 4 (RSF 631.1, Stand 1.1.2025)"
   },
   "GE": {
     "kind": "income",
@@ -52,7 +53,8 @@
       "kind": "income",
       "share": 0.2
     },
-    "text": "ein Fünftel der Steuer nach dem Einkommenstarif (Kantonssteuer leicht tiefer)"
+    "text": "ein Fünftel der Steuer nach dem Einkommenstarif (Kantonssteuer leicht tiefer)",
+    "source": "LIPP GE Art. 45 Abs. 2 (rsGE D 3 08); tieferer Anteil der Kantonssteuer aus den ESTV-Rechnungen abgeleitet"
   },
   "GL": {
     "kind": "table",
@@ -70,7 +72,8 @@
   },
   "JU": {
     "kind": "table",
-    "text": "eigener Tarif für Kapitalleistungen"
+    "text": "eigener Tarif für Kapitalleistungen",
+    "source": "LI JU Art. 37 Abs. 2 (RSJU 641.11) mit Arrêté RSJU 641.111.24 (2026)"
   },
   "LU": {
     "kind": "table",
@@ -81,7 +84,8 @@
     "kind": "income",
     "share": 0.25,
     "min": 0.025,
-    "text": "25 % der Steuer nach dem Einkommenstarif, Satz mindestens 2.5 %"
+    "text": "25 % der Steuer nach dem Einkommenstarif, Satz mindestens 2.5 %",
+    "source": "LCdir NE Art. 42 (RSN 631.0, Stand 1.1.2026)"
   },
   "NW": {
     "kind": "income",
@@ -144,7 +148,8 @@
     "married": {
       "share": 0.4292
     },
-    "text": "Anteil des Satzes für einen Zehntel des Bezugs, zwischen 2 % und 3 %"
+    "text": "Anteil des Satzes für einen Zehntel des Bezugs, zwischen 2 % und 3 %",
+    "source": "LT TI Art. 38 Abs. 2 (RL 640.100, stato 1.1.2026); Umrechnung auf eine Jahresleistung aus den ESTV-Rechnungen abgeleitet"
   },
   "UR": {
     "kind": "table",
@@ -154,7 +159,8 @@
   "VD": {
     "kind": "income",
     "share": 0.2,
-    "text": "ein Fünftel der Steuer nach dem Einkommenstarif"
+    "text": "ein Fünftel der Steuer nach dem Einkommenstarif",
+    "source": "LI VD Art. 49 Abs. 2 und 4 (BLV 642.11, Stand 1.5.2026)"
   },
   "VS": {
     "kind": "income",

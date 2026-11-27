@@ -1,0 +1,7 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+GE,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,641,1817,"LIPP GE Art. 29 Abs. 2; RCEPF (rsGE D 3 08.05, in Kraft 1.1.2026) Art. 6 Abs. 2"
+GE,KANTON,EINKOMMENSSTEUER,PrivVersSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete",MAXIMUM,0,0,0,3528,"LIPP GE Art. 31 lit. d; RCEPF (rsGE D 3 08.05, in Kraft 1.1.2026) Art. 8"
+GE,KANTON,EINKOMMENSSTEUER,PrivVersSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen",MAXIMUM,0,0,0,2352,"LIPP GE Art. 31 lit. d; RCEPF (rsGE D 3 08.05, in Kraft 1.1.2026) Art. 8"
+GE,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,MAXIMUM,0,0,0,1054,"LIPP GE Art. 36; RCEPF (rsGE D 3 08.05, in Kraft 1.1.2026) Art. 10"
+GE,KANTON,VERMOEGENSSTEUER,SozVerheiratet_VM,Verheiratetenabzug,STANDARDIZED,175743,0,0,0,"LIPP GE Art. 58 Abs. 1; RCEPF (rsGE D 3 08.05, in Kraft 1.1.2026) Art. 16 Abs. 1"
+GE,KANTON,VERMOEGENSSTEUER,SozLedigOhneKinder_VM,Abzug für Alleinstehende ohne Kinder,STANDARDIZED,87872,0,0,0,"LIPP GE Art. 58 Abs. 1; RCEPF (rsGE D 3 08.05, in Kraft 1.1.2026) Art. 16 Abs. 1"

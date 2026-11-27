@@ -1,0 +1,38 @@
+Kanton,Hoheit,Steuerart,Tariftyp,Splitting,Gruppe,Zeile,Betrag,Prozent,Steuer,Formel,Quelle
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",0,6900,0,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",1,7800,1.66702,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",2,14000,3.14902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",3,21800,4.02902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",4,42200,4.90902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",5,112500,5.558,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",6,9999999999,5.78902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",0,12600,0,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",1,6200,0.88,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",2,9300,2.26902,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",3,20300,3.242,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",4,42200,4.122,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",5,112500,4.77102,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",6,234500,5.69702,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",7,9999999999,5.78902,0,,"LI JU Art. 35 Abs. 2 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",0,6900,0,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",1,7800,1.66702,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",2,14000,3.14902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",3,21800,4.02902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",4,42200,4.90902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",5,112500,5.558,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,EINKOMMENSSTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",6,9999999999,5.78902,0,,"LI JU Art. 35 Abs. 1 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VERMOEGENSSTEUER,BUND,0,ALLE,0,0,0,0,,"LI JU Art. 48 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VERMOEGENSSTEUER,BUND,0,ALLE,1,58000,0.05,29,,"LI JU Art. 48 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VERMOEGENSSTEUER,BUND,0,ALLE,2,112000,0.075,56,,"LI JU Art. 48 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VERMOEGENSSTEUER,BUND,0,ALLE,3,449000,0.095,308.75,,"LI JU Art. 48 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VERMOEGENSSTEUER,BUND,0,ALLE,4,842000,0.11,682.1,,"LI JU Art. 48 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VERMOEGENSSTEUER,BUND,0,ALLE,5,1685000,0.12,1609.4,,"LI JU Art. 48 (RSJU 641.11); Service des contributions, Tarifs 2026 (quotité 2.85, hier je Einheit)"
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",0,56700,1.1,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",1,56700,1.3,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_ALLEINE,LEDIG_KONKUBINAT,LEDIG_OHNE_KINDER",2,9999999999,1.7,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",0,56700,0.9,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",1,56700,1.1,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_ALLEINE,VERHEIRATET,LEDIG_MIT_KINDER",2,9999999999,1.3,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",0,56700,1.1,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",1,56700,1.3,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)
+JU,KANTON,VORSORGESTEUER,ZUERICH,0,"LEDIG_KONKUBINAT,LEDIG_MIT_KINDER",2,9999999999,1.7,0,,LI JU Art. 37 (RSJU 641.11); Arrêté portant adaptation des déductions et des taux unitaires pour l'année fiscale 2026 (RSJU 641.111.24)

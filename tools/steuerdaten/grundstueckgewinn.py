@@ -3,8 +3,8 @@
 Source: ESTV, «Steuermäppchen» on the property gain tax («Grundstückgewinnsteuer»), tax period 2025
 (as of 26.11.2025), table 3 «Berechnung der Grundstückgewinnsteuer». The page is given with each canton; ZG, FR, VS,
 BS, BL, SG and VD were also checked against the cantonal law (as of November 2026); ZH (#287) and LU, UR,
-SZ, OW, NW (#288), BE, SO, BS, BL, AG (#289), GL, SH, AR, AI, SG, GR, TG (#290) name
-the law article.
+SZ, OW, NW (#288), BE, SO, BS, BL, AG (#289), GL, SH, AR, AI, SG, GR, TG (#290), FR, VD, NE, GE,
+JU, TI (#291) name the law article.
 
 Each rule is an object in the format of `PropertyGainTax` of the engine (camelCase):
 - model «zurich»: `brackets` [width, rate], optionally `uniformAbove` [from gain, rate for the whole gain];
@@ -116,7 +116,7 @@ def rules():
         durationRates=[[0, 0.22], [2, 0.20], [4, 0.18], [6, 0.16], [8, 0.14], [10, 0.12], [15, 0.10]],
         text="Satz nach Besitzdauer 22 % bis 10 %, Zuschlag von 40 % auf dem Gewinn über 400 000 Franken bei weniger "
              "als 5 Jahren (je Immobilie gerechnet)",
-        source="Art. 51 DStG, RSF 631.1")
+        source="LICD FR Art. 51 (RSF 631.1, Stand 1.1.2025)")
     # #289: income tax tariff 2026 of SO (tax law § 44 para. 1, tax ordinance no. 20); § 57 reduces the gain, not the
     # tax
     r["SO"] = dict(
@@ -197,14 +197,14 @@ def rules():
                        [8, 0.17], [9, 0.14], [10, 0.11], [11, 0.10], [12, 0.09], [13, 0.08], [14, 0.07], [15, 0.06],
                        [20, 0.05], [30, 0.04]],
         text="Satz nach Besitzdauer 31 % bis 4 %",
-        source="S. 20")
+        source="LT TI Art. 139 (RL 640.100, stato 1.1.2026)")
     vd = [[0, 0.30], [1, 0.27], [2, 0.24], [3, 0.22], [4, 0.20], [5, 0.18], [6, 0.17], [7, 0.16], [8, 0.15],
           [10, 0.14], [12, 0.13], [14, 0.12], [16, 0.11], [18, 0.10], [20, 0.09], [22, 0.08], [24, 0.07]]
     r["VD"] = dict(
         model="aargau", exemptBelow=5000, durationRates=[[y / 2, v] for y, v in vd],
         text="Satz nach Besitzdauer 30 % bis 7 %, Jahre der Selbstnutzung zählen doppelt",
         approx="Angenommen ist Selbstnutzung während der ganzen Besitzdauer.",
-        source="S. 21")
+        source="LI VD Art. 72 Abs. 3 und 4 (BLV 642.11, Stand 1.5.2026)")
     r["VS"] = dict(
         model="zurich", brackets=[[50000, 0.12], [50000, 0.18], [BIG, 0.24]],
         longBrackets=[25, [[50000, 0.01], [50000, 0.02], [BIG, 0.03]]],
@@ -221,16 +221,16 @@ def rules():
         uniformAbove=[135000, 0.33],
         duration=[[0, 0.6], [1, 0.45], [2, 0.3], [3, 0.15], [4, 0.0]] + steps(5, -0.06, -0.06, -0.60),
         text="Stufentarif 10 % bis 40 %, ab 135 000 Franken 33 %, Zuschlag unter 4 Jahren, Ermässigung bis 60 %",
-        source="S. 22")
+        source="LCdir NE Art. 71–73 (RSN 631.0, Stand 1.1.2026)")
     r["GE"] = dict(
         model="aargau",
         durationRates=[[0, 0.50], [2, 0.40], [4, 0.30], [6, 0.20], [8, 0.15], [10, 0.10], [25, 0.02]],
         text="Satz nach Besitzdauer 50 % bis 2 %",
-        source="S. 23")
+        source="LCP GE Art. 84 Abs. 1 (rsGE D 3 05)")
     r["JU"] = dict(
         model="zurich", useMultiplier=True, exemptBelow=4000,
         brackets=[[50000, 0.035], [50000, 0.045], [100000, 0.055], [BIG, 0.06]],
         duration=[[0, 0.5], [2, 0.25], [5, 0.0]] + steps(11, -0.01, -0.01, -0.30) + steps(41, -0.32, -0.02, -0.50),
         text="einfache Steuer 3.5 % bis 6 % × Steuerfuss, Zuschlag unter 5 Jahren, Ermässigung ab 11 Jahren bis 50 %",
-        source="S. 23")
+        source="LI JU Art. 102–104 (RSJU 641.11)")
     return r

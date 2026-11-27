@@ -694,5 +694,48 @@ class Sources(unittest.TestCase):
         self.assertEqual(capital["GR"]["divisor"], 15)
 
 
+    WEST = ("FR", "VD", "NE", "GE", "JU", "TI")  # #291 without Valais (own issue)
+
+    def test_issue_291_ak1_western_sources_are_complete(self):
+        """#291/AK1: source files 2026 for FR, VD, NE, GE, JU and TI with tariffs for income and wealth and the
+        deductions used, a source per row; Valais still comes from the ESTV tables."""
+        tariffs, deductions, covered = build.read_sources(self.REPO)
+        self.assertLessEqual(set(self.WEST), covered)
+        self.assertNotIn("VS", covered)
+        kinds = {(r["Kanton"], r["Steuerart"]) for r in tariffs}
+        ids = {(r["Kanton"], r["ID"]) for r in deductions}
+        for cid in self.WEST:
+            self.assertIn((cid, "EINKOMMENSSTEUER"), kinds)
+            self.assertIn((cid, "VERMOEGENSSTEUER"), kinds)
+            self.assertIn((cid, "HauptErw_EK"), ids)
+            self.assertIn((cid, "ZweitVerdiener_EK"), ids)
+        # JU: the deduction of 1 800 francs is only for divorced or separated persons (arrêté 2026 art. 34 al. 1 let. b)
+        self.assertNotIn(("JU", "SozLedig_EK"), ids)
+
+    def test_issue_291_ak4_values_of_the_cantons(self):
+        """#291/AK4: simple tax by the source files against the official tables 2026: VD «Barème de l'impôt sur le
+        revenu 2026» (5 100: 103, 291 700: 35 049) and wealth (200 000: 260.85), JU «Tarifs 2026» at a quotité of
+        2.85 (single 100 000: 11 190.65, married 100 000: 8 868.25), GE RCEPF 2026 (no tax up to 18 700)."""
+        tariffs, _, _ = build.read_sources(self.REPO)
+        t = build.load_tariffs(tariffs)
+        vd = build.pick(t[("VD", "KANTON", "EINKOMMENSSTEUER")], False)
+        self.assertAlmostEqual(vd.tax(5_100, False), 103.0, places=2)
+        self.assertAlmostEqual(vd.tax(291_700, False), 35_049.0, places=2)
+        self.assertAlmostEqual(build.pick(t[("VD", "KANTON", "VERMOEGENSSTEUER")], False).tax(200_000, False),
+                               260.85, delta=0.02)
+        ju = t[("JU", "KANTON", "EINKOMMENSSTEUER")]
+        self.assertAlmostEqual(build.pick(ju, False).tax(100_000, False) * 2.85, 11_190.65, delta=0.1)
+        self.assertAlmostEqual(build.pick(ju, True).tax(100_000, True) * 2.85, 8_868.25, delta=0.1)
+        self.assertEqual(build.pick(t[("GE", "KANTON", "EINKOMMENSSTEUER")], False).tax(18_700, False), 0)
+
+    def test_issue_291_ak2_rules_name_the_law(self):
+        """#291/AK2: the lump-sum and property gain rules of these cantons name the article of the law."""
+        capital = build.read_rules(build.RULES)
+        gain = grundstueckgewinn.rules()
+        for cid in self.WEST:
+            self.assertRegex(capital[cid]["source"], rf"^(LICD|LI|LCdir|LIPP|LT) {cid} Art\. \d+", cid)
+            self.assertRegex(gain[cid]["source"], rf"^(LICD|LI|LCdir|LCP|LT) {cid} Art\. \d+", cid)
+
+
 if __name__ == "__main__":
     unittest.main()

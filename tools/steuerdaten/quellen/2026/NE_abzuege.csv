@@ -1,0 +1,7 @@
+Kanton,Hoheit,Steuerart,ID,Bezeichnung,Format,Betrag,Prozent,Minimum,Maximum,Quelle
+NE,KANTON,EINKOMMENSSTEUER,HauptErw_EK,Pauschalabzug übrige Berufskosten,"PERCENT,MINIMUM,MAXIMUM",0,3,2000,4000,"LCdir NE Art. 29 Abs. 2; RELCdir Art. 29 Abs. 3 (RSN 631.01, Stand 27.5.2025)"
+NE,KANTON,EINKOMMENSSTEUER,KKSparzVerhMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete mit  Beiträgen Säule 2/3a",MAXIMUM,0,0,0,4900,"LCdir NE Art. 36 Abs. 1 lit. g (RSN 631.0, Stand 1.1.2026)"
+NE,KANTON,EINKOMMENSSTEUER,KKSparVerhOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, Verheiratete ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,6125,"LCdir NE Art. 36 Abs. 1 lit. g (RSN 631.0, Stand 1.1.2026; ohne Beiträge um 25 % erhöht)"
+NE,KANTON,EINKOMMENSSTEUER,KKSparLedigMitBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen mit Beiträgen Säule 2/3a",MAXIMUM,0,0,0,2500,"LCdir NE Art. 36 Abs. 1 lit. g (RSN 631.0, Stand 1.1.2026)"
+NE,KANTON,EINKOMMENSSTEUER,KKSparLedigOhneBVGS3a_EK,"Abzug Versicherungsprämien und Sparzinsen, alleinstehende Personen ohne Beiträge Säule 2/3a",MAXIMUM,0,0,0,3125,"LCdir NE Art. 36 Abs. 1 lit. g (RSN 631.0, Stand 1.1.2026; ohne Beiträge um 25 % erhöht)"
+NE,KANTON,EINKOMMENSSTEUER,ZweitVerdiener_EK,Zweitverdienerabzug,"PERCENT,MAXIMUM",0,25,0,1200,"LCdir NE Art. 36 Abs. 2 (RSN 631.0, Stand 1.1.2026)"
