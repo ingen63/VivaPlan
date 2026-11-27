@@ -874,20 +874,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #220/AK7 | Texte als Schlüssel in `i18n`; Hilfe und `BESCHREIBUNG.md` nachgeführt. | ☑ | **gilt** | `make ui-texts` | 23.11.2026 ok (Hilfe de/en/fr/it) |
 | #220/AK8 | Unter Linux (AppImage, dunkles Systemthema) sind die Auswahlmenüs lesbar. Prüfbar erst mit dem nächsten Paket. | ☐ | **gilt** | kein Test | 25.11.2026 offen: Kontrast der Auswahl «Darstellung» unter Linux-Chrome in c25c2c9 behoben, e2e unter Linux grün (Lauf 45580396772); Sichtprüfung im AppImage mit dunklem Systemthema von Hand steht aus |
 
-### #221 Robustheitstest über alle Rechenbefehle mit unsinnigen Argumenten
-
-[Issue #221](https://github.com/ingen63/VivaPlan/issues/221) · offen (`implemented`) · Umsetzung: 4162603
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #221/AK1 | Ein Test schickt jeden Befehl der Tabelle mit unsinnigen Argumenten an `engine::dispatch`: falscher Typ, fehlendes … | ☑ | **gilt** (Mengenfelder mit Fehlermeldung, Kommentar vom 23.11.2026) | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak1_…` (2 Tests); [optimize.rs](../crates/engine/src/optimize.rs) `issue_221_ak1_…` (2 Tests) | 23.11.2026 ok (Push-Umfang 133 Aufrufe in 9 s; nächtlicher Umfang lokal 1'358 Aufrufe in 89 s ohne Absturz) |
-| #221/AK2 | Jeder Aufruf endet mit einem Ergebnis oder einer Fehlermeldung; ein Absturz in irgendeinem Thread (auch Rayon) lässt … | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak1_every_command_…` (Panic-Hook) | 23.11.2026 ok (während der Umsetzung meldete er echte Funde mit Befehl und Argumenten: `bench_plan` mit Liste als Planung, Speicherabbruch bei `rerun_paths` mit 10'000 Läufen; behoben) |
-| #221/AK3 | Ein Hänger wird beendet und lässt den Lauf fehlschlagen (Zeitgrenze im nextest-Profil `ci`); die letzte Ausgabe … | ☐ | **gilt** | `.config/nextest.toml` (Override `command_sweep`) | 23.11.2026 teilweise: Konfiguration gelesen (`nextest list --profile ci`), jeder Aufruf steht vorher in der Ausgabe; Abbruch eines Hängers nur in CI belegbar |
-| #221/AK4 | Ein neuer Befehl in `ipc-commands.json` ist ohne weiteres Zutun im Test enthalten. | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak4_…` | 23.11.2026 ok (Befehle und Beispielargumente aus der Tabelle gelesen) |
-| #221/AK5 | Ein Befehl mit gültigen Argumenten, der ein Ergebnis mit NaN oder ∞ liefert, lässt den Test fehlschlagen. | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak5_…`; [finite.rs](../crates/engine/src/finite.rs) `issue_221_ak5_…` | 23.11.2026 ok (`dispatch` meldet NaN/∞ als `result_not_finite`, der Test verlangt mit gültigen Argumenten ein Ergebnis) |
-| #221/AK6 | Die Fallzahl folgt dem Budget wie bei proptest (wenige Fälle bei jedem Push, viele nächtlich). | ☑ | **gilt** | [command_sweep.rs](../crates/engine/tests/command_sweep.rs) `issue_221_ak6_…` | 23.11.2026 ok (`PROPTEST_CASES` 256 → 133 Aufrufe, 10'000 → alle systematischen und 625 zufällige) |
-| #221/AK7 | `docs/TESTS.md` nennt den Test in der Schicht 5. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
-
 ### #226 Laufzeitgrenze für einzelne Tests
 
 [Issue #226](https://github.com/ingen63/VivaPlan/issues/226) · offen (`implemented`) · Umsetzung: 3c97ec3
@@ -899,21 +885,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #226/AK3 | Das Skript hat eigene Tests mit gestellten junit-Dateien (Test unter Grenze, über Grenze mit und ohne Begründung). | ☑ | **gilt** | [test_slow_tests.py](../tools/test_slow_tests.py) `test_issue_226_ak3_…` (3 Tests) | 23.11.2026 ok |
 | #226/AK4 | Die heute langsamen Tests sind entweder schneller oder begründet; die Liste steht im Issue. | ☐ | **unklar** (30 Tests nur unter Last über der Grenze) | kein Test (Messung `--profile ci`, voll und `-j 1`) | 23.11.2026 teilweise: Liste im Issue; 50 auch einzeln langsame Tests mit `// slow:` begründet; 30 nur im parallelen Lauf über der Grenze, Entscheid offen |
 | #226/AK5 | `docs/TESTS.md` nennt Grenze und Begründungsform. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok |
-
-### #237 Spendenlink «Buy me a coffee»
-
-[Issue #237](https://github.com/ingen63/VivaPlan/issues/237) · offen (`implemented`) · Umsetzung: 0806a57
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #237/AK1 | Im Info-/Hilfebereich steht ein Eintrag «Kaffee spendieren» (Text über `de.json`, Anrede «Sie»). | ☑ | **gilt** (Ort und Text nach Entscheid im Issue: Menü Hilfe «VivaPlan unterstützen…», Navigation, Fenster «Über VivaPlan») | `main.rs` `issue_237_ak1_…`, [ui-spende.spec.js](../e2e/ui-spende.spec.js) `AK1` (4 Tests) | 23.11.2026 ok (Eintrag vor «Über VivaPlan», graue Zeile unter `nav.localData`, Zeile «Unterstützen» unter «Website»; Texte in de, en, fr, it; Tooltip «Freiwillig einen Kaffee spendieren …») |
-| #237/AK2 | Ein Klick öffnet die festgelegte Buy-me-a-coffee-Adresse im Standardbrowser, nicht in einem App-Fenster. | ☑ | **gilt** | [links.rs](../crates/app/src/links.rs) `issue_237_ak2_…` (2 Tests), `main.rs` `issue_237_ak2_open_link_rejects_addresses`, [ui-spende.spec.js](../e2e/ui-spende.spec.js) `AK2` | 23.11.2026 ok (Befehl `open_link` mit Kennung aus `links.json` über `tauri_plugin_opener::open_url`; fremde Adressen abgewiesen; im Browser neuer Tab; Klick in der installierten App nicht von Hand geprüft) |
-| #237/AK3 | Die App sendet keine Anfrage ins Netz. Sie lädt weder Logo noch Zähler und prüft nicht, ob die Seite erreichbar ist. | ☑ | **gilt** | [ui-spende.spec.js](../e2e/ui-spende.spec.js) (alle Tests prüfen: keine Anfrage ausser an den lokalen Server) | 23.11.2026 ok (kein Bild, kein Abruf; CSP unverändert) |
-| #237/AK4 | Der Hinweis stört nicht: kein Popup, kein Hinweis beim Start, keine Wiederholung. | ☑ | **gilt** | [ui-spende.spec.js](../e2e/ui-spende.spec.js) `AK4` | 23.11.2026 ok |
-| #237/AK5 | Die Hilfe (`crates/app/ui/hilfe/`) und `docs/BESCHREIBUNG.md` erwähnen den Link. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Hilfe de, en, fr, it «Bedienung und Tastenkürzel»; BESCHREIBUNG «Hilfe und Bedienung»; zusätzlich ENTWICKLUNG) |
-| #237/AK6 | `README.md` hat vor dem Abschnitt «Lizenz» einen kurzen Absatz … mit Link auf https://buymeacoffee.com/vivaplan. | ☑ | **gilt** | kein Test (Durchsicht) | 23.11.2026 ok (Abschnitt «Unterstützen») |
-| #237/AK7 | `.github/FUNDING.yml` enthält `buy_me_a_coffee: vivaplan`; auf der Repo-Seite erscheint der Knopf «Sponsor». | ☐ | **gilt** | kein Test (Durchsicht) | 23.11.2026 teilweise: Datei vorhanden; Knopf «Sponsor» erst nach dem Push prüfbar |
-| #237/AK8 | `tools/check-network-free.sh` bleibt grün (`tauri-plugin-opener` zieht keine Netzwerkbibliothek nach). | ☑ | **gilt** | `tools/check-network-free.sh` | 23.11.2026 ok (neu u. a. `open`, `zbus`; keine gesperrte Bibliothek) |
 
 ### #208 Agent Skill «VivaPlan» mitliefern
 
@@ -981,17 +952,6 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #269/AK4 | `plan_save` speichert eine neue Planung als neue Datei in einem freigegebenen Ordner. | ☑ | **gilt** (relativer Pfad im ersten freigegebenen Ordner; ohne `--allow-dir` Fehler mit Hinweis) | `mcp::edit::tests::issue_269_ak4_…`, MCP `issue_269_ak2_ak4_new_plan_over_stdio` | 25.11.2026 ok (Tests) |
 | #269/AK5 | `vivaplan-skill/SKILL.md`, Hilfe und `docs/BESCHREIBUNG.md` nachgeführt. | ☑ | **gilt** (dazu [QA.md](QA.md) «Neue Planung über die KI») | `make i18n-check`, Durchsicht 4 Sprachen | 25.11.2026 ok (Durchsicht) |
 | #269/AK6 | Von Hand: In Claude Desktop führt «Rechne meine Pension mit VivaPlan» zu einer leeren Planung und Rückfragen. | ☐ | **gilt** | [QA.md](QA.md) «Neue Planung über die KI (#269)» | offen: nur von Hand in Claude Desktop |
-
-### #268 Teaser-Video: KI-Anbindung zeigen, privat und lokal auch ohne KI
-
-[Issue #268](https://github.com/ingen63/VivaPlan/issues/268) · offen (`implemented`) · Umsetzung ausserhalb des Repos in `local/video/` (`ki-bild.js` neu, `szenen.js` `TEASER_EXTRA`, `schnitt.js` Teaser 40 s mit Musikschleife), kein Code-Commit; Upload vorbereitet in `local/video/UPLOAD-268.md`
-
-| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
-|---|---|---|---|---|---|
-| #268/AK1 | Der Teaser enthält mindestens eine Szene zur KI-Anbindung mit Bild aus der App (Dialog «Mit KI verbinden») und einer Texttafel, die zeigt, was man die KI fragen kann. | ☑ | **gilt** (8.5 s ab 23 s: App mit offenem Dialog, dann vergrössert Planordner und «Nur lesen» mit Mauszeiger und Häkchen; Tafel «Fragen Sie Ihre KI: «Reicht es, wenn ich mit 63 gehe?»»; Programmpfad und Planordner als Beispielwerte, keine Pfade des Rechners) | Standbilder mit `ffmpeg` bei 21–38.5 s, 16:9 und Quadrat, je Sprache | 25.11.2026 ok (Durchsicht der Standbilder) |
-| #268/AK2 | Eine Tafel sagt klar, dass VivaPlan privat und lokal ist und ohne KI voll funktioniert; mit einem lokalen Modell verlassen die Daten den Rechner nicht. | ☑ | **gilt** (ganzflächige Tafel 5 s: «Privat und lokal – auch ganz ohne KI» / «Mit einem lokalen Modell bleibt alles auf Ihrem Rechner.»; die Schlusstafel «VivaPlan – lokal und privat» entfällt, damit es sich nicht wiederholt) | Standbilder bei 33 s, 16:9 und Quadrat, je Sprache | 25.11.2026 ok (Durchsicht) |
-| #268/AK3 | Texttafeln in de, en, fr, it (Begriffe wie in `crates/app/ui/i18n/*.json`); Teaser und quadratische Fassung in allen vier Sprachen neu erzeugt. | ☑ | **gilt** (KI/AI/IA, Planordner, «Nur lesen» aus dem Dialog selbst; it mit «Sua/Suo» wie `it.json`; Länge 40 s, Musik mit Überblendung wiederholt) | 8 Dateien, je 40 s, Ton ohne Lücke (`silencedetect`); Standbilder: Tafeln lesbar, nichts abgeschnitten (fr/it zweizeilig) | 25.11.2026 ok (Durchsicht; angehört nicht) |
-| #268/AK4 | Die neuen Videos sind wie die bisherigen auf archive.org abgelegt; ändern sich die Adressen, sind `links.json`, README und Hilfe nachgeführt und `e2e/ui-videos.spec.js` grün. | ☐ | **gilt** (gleiche Dateinamen in den bestehenden Items `vivaplan-video-<l>`, Adressen bleiben; Teaser ist im Repo nicht verlinkt) | Upload-Anleitung `local/video/UPLOAD-268.md` | offen: Upload wartet auf das Wort des Benutzers |
 
 ### #270 Beta-Token zur einmaligen Aktivierung von App und KI-Paket
 
