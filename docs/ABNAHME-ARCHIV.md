@@ -2685,3 +2685,14 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #310/AK1 | Ursache festgehalten (Element und Text). | ☑ | **gilt** | Commit 926ef28, Kommentar im Issue | 27.11.2026 ok (Messung im Browser) |
 | #310/AK2 | Säule 3a passt in allen vier Sprachen; Kürzungen nur nach `docs/GLOSSAR.md`. | ☑ | **gilt** («Versement anticipé», «Prelievo anticipato») | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) AK4 (#182), `make ui-texts`, `tools/check_i18n.py` | 27.11.2026 ok (Tests) |
 | #310/AK3 | `npx playwright test e2e/ui-textfit.spec.js` grün. | ☑ | **gilt** | [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) | 27.11.2026 ok (Test, 24/24) |
+
+### #311 Test #216/AK7 schlägt unter Last gelegentlich fehl
+
+[Issue #311](https://github.com/ingen63/VivaPlan/issues/311) · geschlossen · Umsetzung: 5f0d406 · Ursache: Die kurze Messung der Pfaderzeugung (`us_generate`) kann unter Last fast den ganzen Lauf ausmachen; die Schätzung fiel dann unter 60 s
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #311/AK1 | Ursache festgehalten, mit Ausgabe eines Fehllaufs. | ☑ | **gilt** (alte Formel unter Last: 2 von 40 Läufen rechnen statt abzubrechen) | Kommentar im Issue | 27.11.2026 ok (Nachstellung unter Last) |
+| #311/AK2 | Test prüft weiter #216/AK7, unabhängig vom Tempo. | ☑ | **gilt** (Lauf zählt mindestens die Hälfte der gemessenen Zeit) | `experiment::tests::issue_311_…`, `issue_216_ak7_evaluate_stops_without_yes` | 27.11.2026 ok (Tests) |
+| #311/AK3 | 20 Läufe unter Last grün. | ☑ | **gilt** | `issue_216_ak7_evaluate_stops_without_yes`, `issue_216_ak7_long_experiment_needs_confirmation` | 27.11.2026 ok (20/20 parallel zu `cargo nextest run --workspace`) |
+| #311/AK4 | Schwestertest in `experiment.rs` ebenso. | ☑ | **gilt** (dieselbe Formel, mitbehoben) | `issue_216_ak7_long_experiment_needs_confirmation` | 27.11.2026 ok (Test, in AK3) |
