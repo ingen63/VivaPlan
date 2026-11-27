@@ -956,3 +956,19 @@ Abgeschlossene Issues (geschlossen, alle Kriterien `ok` oder überholt) stehen i
 | #298/AK4 | Hinweis im Dialog: Namen werden ersetzt, Beträge und Daten gehen an den Anbieter. | ☑ | **gilt** | ui-ki.spec.js AK4 (#298) | 27.11.2026 ok (Test) |
 | #298/AK5 | Neue Texte in de, en, fr, it; `make ui-texts` und Prüfung der Übersetzungen ohne Fehler. | ☑ | **gilt** | ui-ki.spec.js AK2, AK5 (#298), `make ui-texts`, `tools/check_i18n.py` | 27.11.2026 ok (Prüfläufe) |
 | #298/AK6 | Ein e2e-Test prüft Inkognito-Satz und Verweis im Dialog. | ☑ | **gilt** | ui-ki.spec.js AK6, AK3 (#298) | 27.11.2026 ok (Lauf, 3 bestanden) |
+
+### #304 KI-Server: Auswahlfelder mit den Bezeichnungen der App erklären
+
+[Issue #304](https://github.com/ingen63/VivaPlan/issues/304) · offen (`implemented`) · Umsetzung: 06f3073 · Fehler aus der Nutzung (AK6, AK9 von Hand)
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #304/AK1 | `describe` erklärt jeden Wert jedes Auswahlfelds einzeln mit Bedeutung und Bezeichnung in der App. | ☑ | **gilt** (eigener Abschnitt `choices`) | `describe.rs` `issue_304_ak1_…`, `issue_304_ak5_…`; `choices.rs` `issue_304_ak1_…` | 27.11.2026 ok (Tests, Durchsicht) |
+| #304/AK2 | Bezeichnungen in de, en, fr, it, in der Sprache der Oberfläche, aus `i18n`. | ☑ | **gilt** (`=SARON` als Name ohne Übersetzung) | `describe.rs` `issue_304_ak2_…`, `choices.rs` `issue_304_ak2_…`, `tools.rs` `issue_304_ak3_…` | 27.11.2026 ok (Tests) |
+| #304/AK3 | `simulation_run` verweist für die Quelle auf die Erklärung. | ☑ | **gilt** | `tools.rs` `issue_304_ak3_…`, `mcp-tools.json` | 27.11.2026 ok (Test) |
+| #304/AK4 | Test: jeder Wert hat eine Bezeichnung in vier Sprachen; neuer Wert ohne Bezeichnung scheitert. | ☑ | **gilt** (Ausnahmen begründet in `WITHOUT_LABEL`) | `describe.rs` `issue_304_ak4_…` | 27.11.2026 ok (Test, Gegenversuch) |
+| #304/AK5 | Test: «Monte Carlo · historisch» für `bootstrap`, «Alle historischen Startzeitpunkte» für `rolling`. | ☑ | **gilt** | `describe.rs` `issue_304_ak5_…` | 27.11.2026 ok (Test) |
+| #304/AK6 | Von Hand in Claude Desktop: «Rechne mit Monte Carlo historisch» setzt `bootstrap`. | ☐ | offen | – | offen: nur von Hand in Claude Desktop |
+| #304/AK7 | `BESCHREIBUNG.md` (KI-Server) nachgeführt. | ☑ | **gilt** (auch Hilfe `#ref-describe`, `vivaplan-skill`) | – | 27.11.2026 ok (Durchsicht) |
+| #304/AK8 | Jede Entnahmestrategie einzeln mit Wert, Bezeichnung und Bedeutung in einem Satz. | ☑ | **gilt** | `describe.rs` `issue_304_ak8_…` | 27.11.2026 ok (Test) |
+| #304/AK9 | Anweisungen: eingestellte Strategie nennen, auf weitere hinweisen, nur auf Wunsch wechseln; Handprüfung. | ☐ | **gilt** im Text | `mod.rs` `issue_304_ak9_…` | 27.11.2026 teilweise: Text geprüft, Verhalten in Claude Desktop von Hand offen |
