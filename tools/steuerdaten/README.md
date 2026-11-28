@@ -228,7 +228,8 @@ Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository. 
 nennt je Datei Adresse, Abrufdatum, Herausgeber, Nutzungsbedingungen und SHA-256 (abgeleitete Dateien mit dem Befehl).
 **Nachweis der Herkunft:** `python3 -I tools/steuerdaten/nachweis.py --ordner <Ordner>` prüft die Hashes, dass keine
 Quelle von der ESTV stammt und jede Tarif- und Abzugszeile ihre Rechtsquelle nennt, baut die Steuerdatei neu und
-vergleicht sie byte-genau mit der Datei im Repository.
+vergleicht sie byte-genau mit der Datei im Repository. Das Ergebnis und die Würdigung jeder Quelle stehen in
+[`docs/STEUERDATEN-HERKUNFT.md`](../../docs/STEUERDATEN-HERKUNFT.md).
 
 ```bash
 python3 -I tools/steuerdaten/steuerfuesse.py crates/engine/data/steuern-2026.json --zh <csv> --be <pdf> \

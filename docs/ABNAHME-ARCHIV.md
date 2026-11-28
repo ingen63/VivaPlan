@@ -2006,6 +2006,18 @@ Platzhalter «Verwaltung, nicht öffentlich», kein Inhalt.
 | #237/AK7 | `.github/FUNDING.yml` enthält `buy_me_a_coffee: vivaplan`; auf der Repo-Seite erscheint der Knopf «Sponsor». | ☑ | **gilt** | kein Test (Durchsicht) | 26.11.2026 ok («Sponsorships» eingeschaltet, `fundingLinks` BUY_ME_A_COFFEE, Repo-Seite zeigt «Sponsor this project») |
 | #237/AK8 | `tools/check-network-free.sh` bleibt grün (`tauri-plugin-opener` zieht keine Netzwerkbibliothek nach). | ☑ | **gilt** | `tools/check-network-free.sh` | 23.11.2026 ok (neu u. a. `open`, `zbus`; keine gesperrte Bibliothek) |
 
+### #238 Aussagen zur Internetverbindung an KI-Anbindung anpassen
+
+[Issue #238](https://github.com/ingen63/VivaPlan/issues/238) · geschlossen · Umsetzung: 4ba3b93, 628a08f
+
+| Kennung | Kriterium | Im Issue | Einschätzung | Test | Geprüft |
+|---|---|---|---|---|---|
+| #238/AK1 | Die Aussage unterscheidet: Rechnen und Speichern ohne Internet; Daten verlassen den Rechner nur über eine selbst angebundene KI; Links öffnen den Browser, die App lädt nichts. | ☑ | **gilt** | kein Test (Durchsicht Oberfläche, Hilfe, README, BESCHREIBUNG) | 28.11.2026 ok (dazu die Update-Suche mit Zustimmung, #309) |
+| #238/AK2 | Alle Fundstellen angepasst (`about.local`, `nav.localData`, Hilfe Datenschutz, README, BESCHREIBUNG). | ☑ | **gilt** | `make ui-texts`, [ui-textfit.spec.js](../e2e/ui-textfit.spec.js) | 28.11.2026 ok (zusätzlich `welcome.intro`; den früheren Schritt 6 gibt es nicht mehr) |
+| #238/AK3 | Die Hilfe zur KI-Anbindung sagt, dass die KI Planungsdaten an ihren Anbieter senden kann, und verweist auf den Datenschutz. | ☑ | **gilt** | `help.rs` (Verweise, zitierte Bezeichnungen) | 28.11.2026 ok (4 Sprachen) |
+| #238/AK4 | Die Suche nach «nie mit dem Internet», «nie aufs Netzwerk», «Keine Verbindung ins Internet» findet keine unzutreffende Aussage. | ☑ | **gilt** | kein Test (Suche) | 28.11.2026 ok (nur zutreffende bedingte Sätze «Mit Nein … nie») |
+| #238/AK5 | Die Regel «Keine Netzwerkzugriffe in der App» in `CLAUDE.md` ist präzisiert. | ☑ | **gilt** | kein Test (Durchsicht) | 28.11.2026 ok |
+
 ### #239 Monte Carlo bricht ab: Leitplanken-Ereignis mit unendlichem Entnahmesatz bei aufgebrauchtem Vermögen
 
 [Issue #239](https://github.com/ingen63/VivaPlan/issues/239) · geschlossen · Umsetzung: 6e4cf3d
